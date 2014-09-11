@@ -44,12 +44,11 @@ By default a database does not require authentication.
 
 The sqlite3_open(), sqlite3_open16(), and sqlite3_open_v2() interfaces
 work as before: they open a new database connection.  However, if the
-database being opened requires authentication, then attempts to prepare
-SQL statements (using sqlite3_prepare_v2(), for example) will fail
-with an SQLITE_AUTH error until after sqlite3_user_authenticate()
-has been called successfully.  The sqlite3_user_authenticate() call
-will return SQLITE_OK if the authentication credentials are accepted
-and SQLITE_ERROR if not.
+database being opened requires authentication, then attempts to read
+or write from the database will fail with an SQLITE_AUTH error until 
+after sqlite3_user_authenticate() has been called successfully.  The 
+sqlite3_user_authenticate() call will return SQLITE_OK if the 
+authentication credentials are accepted and SQLITE_ERROR if not.
 
 Calling sqlite3_user_authenticate() on a no-authentication-required
 database connection is a harmless no-op.  
@@ -133,12 +132,12 @@ new table:
       pw BLOB
     ) WITHOUT ROWID;
 
-This table is inaccessible (unreadable and unwriteable) to non-admin users
-and is read-only for admin users.  However, if the same database file is
-opened by a version of SQLite that omits the -DSQLITE_USER_AUTHENTICATION
-compile-time option, then the sqlite_user table will be readable by
-anybody and writeable by anybody if the "PRAGMA writable_schema=ON"
-statement is run first.
+The sqlite_user table is inaccessible (unreadable and unwriteable) to
+non-admin users and is read-only for admin users.  However, if the same
+database file is opened by a version of SQLite that omits
+the -DSQLITE_USER_AUTHENTICATION compile-time option, then the sqlite_user
+table will be readable by anybody and writeable by anybody if
+the "PRAGMA writable_schema=ON" statement is run first.
 
 The sqlite_user.pw field is encoded by a built-in SQL function
 "sqlite_crypt(X,Y)".  The two arguments are both BLOBs.  The first argument

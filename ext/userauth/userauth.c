@@ -268,7 +268,11 @@ int sqlite3_user_change(
   int isAdmin            /* Modified admin privilege for the user */
 ){
   sqlite3_stmt *pStmt;
-  if( db->auth.authLevel<UAUTH_User ){
+  int rc;
+  u8 authLevel;
+
+  authLevel = db->auth.authLevel;
+  if( authLevel<UAUTH_User ){
     /* Must be logged in to make a change */
     return SQLITE_AUTH;
   }
@@ -277,21 +281,27 @@ int sqlite3_user_change(
       /* Must be an administrator to change a different user */
       return SQLITE_AUTH;
     }
-  }else if( isAdmin!=(db->auth.authLevel==UAUTH_Admin) ){
+  }else if( isAdmin!=(authLevel==UAUTH_Admin) ){
     /* Cannot change the isAdmin setting for self */
     return SQLITE_AUTH;
   }
+  db->auth.authLevel = UAUTH_Admin;
   if( !userTableExists(db, "main") ){
     /* This routine is a no-op if the user to be modified does not exist */
-    return SQLITE_OK;
+  }else{
+    pStmt = sqlite3UserAuthPrepare(db,
+              "UPDATE sqlite_user SET isAdmin=%d, pw=sqlite_crypt(?1,NULL)"
+              " WHERE uname=%Q", isAdmin, zUsername);
+    if( pStmt==0 ){
+      rc = SQLITE_NOMEM;
+    }else{
+      sqlite3_bind_blob(pStmt, 1, aPW, nPW, SQLITE_STATIC);
+      sqlite3_step(pStmt);
+      rc = sqlite3_finalize(pStmt);
+    }
   }
-  pStmt = sqlite3UserAuthPrepare(db,
-            "UPDATE sqlite_user SET isAdmin=%d, pw=sqlite_crypt(?1,NULL)"
-            " WHERE uname=%Q", isAdmin, zUsername);
-  if( pStmt==0 ) return SQLITE_NOMEM;
-  sqlite3_bind_blob(pStmt, 1, aPW, nPW, SQLITE_STATIC);
-  sqlite3_step(pStmt);
-  return sqlite3_finalize(pStmt);
+  db->auth.authLevel = authLevel;
+  return rc;
 }
 
 /*

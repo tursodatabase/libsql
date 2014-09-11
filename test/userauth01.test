@@ -70,5 +70,47 @@ do_test userauth01-1.5 {
   }
 } {NULL 1 2.5 'three' X'4444' alice 1 sqlite_user t1}
 
+# The sqlite3_user_add() interface can be used (by an admin user only)
+# to create a new user.
+#
+do_test userauth01-1.6 {
+  sqlite3_user_add db bob pw-4-bob 0
+  sqlite3_user_add db cindy pw-4-cindy 0
+  sqlite3_user_add db david pw-4-david 0
+  execsql {
+    SELECT uname, isadmin FROM sqlite_user ORDER BY uname;
+  }
+} {alice 1 bob 0 cindy 0 david 0}
+
+# The sqlite_user table is inaccessible (unreadable and unwriteable) to
+# non-admin users and is read-only for admin users.  However, if the same
+#
+do_test userauth01-1.7 {
+  sqlite3 db2 test.db
+  sqlite3_user_authenticate db2 cindy pw-4-cindy
+  db2 eval {
+    SELECT quote(x) FROM t1 ORDER BY x;
+    SELECT name FROM sqlite_master ORDER BY name;
+  }
+} {NULL 1 2.5 'three' X'4444' sqlite_user t1}
+do_test userauth01-1.8 {
+  catchsql {
+    SELECT uname, isadmin FROM sqlite_user ORDER BY uname;
+  } db2
+} {1 {no such table: sqlite_user}}
+
+# Any user can change their own password.  
+#
+do_test userauth01-1.9 {
+  sqlite3_user_change db2 cindy xyzzy-cindy 0
+} {SQLITE_OK}
+do_test userauth01-1.10 {
+  sqlite3_user_authenticate db2 cindy pw-4-cindy
+} {SQLITE_AUTH}
+do_test userauth01-1.11 {
+  sqlite3_user_authenticate db2 cindy xyzzy-cindy
+} {SQLITE_OK}
+
+
 
 finish_test
