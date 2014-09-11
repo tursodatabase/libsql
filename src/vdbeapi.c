@@ -235,12 +235,11 @@ static int invokeValueDestructor(
   void (*xDel)(void*),       /* The destructor */
   sqlite3_context *pCtx      /* Set a SQLITE_TOOBIG error if no NULL */
 ){
+  assert( xDel!=SQLITE_DYNAMIC );
   if( xDel==0 ){
     /* noop */
   }else if( xDel==SQLITE_TRANSIENT ){
     /* noop */
-  }else if( xDel==SQLITE_DYNAMIC ){
-    sqlite3_free((void*)p);
   }else{
     xDel((void*)p);
   }
@@ -264,6 +263,7 @@ void sqlite3_result_blob64(
   void (*xDel)(void *)
 ){
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
+  assert( xDel!=SQLITE_DYNAMIC );
   if( n>0x7fffffff ){
     (void)invokeValueDestructor(z, xDel, pCtx);
   }else{
@@ -317,6 +317,7 @@ void sqlite3_result_text64(
   unsigned char enc
 ){
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
+  assert( xDel!=SQLITE_DYNAMIC );
   if( n>0x7fffffff ){
     (void)invokeValueDestructor(z, xDel, pCtx);
   }else{
@@ -1179,6 +1180,7 @@ int sqlite3_bind_blob64(
   sqlite3_uint64 nData, 
   void (*xDel)(void*)
 ){
+  assert( xDel!=SQLITE_DYNAMIC );
   if( nData>0x7fffffff ){
     return invokeValueDestructor(zData, xDel, 0);
   }else{
@@ -1234,9 +1236,11 @@ int sqlite3_bind_text64(
   void (*xDel)(void*),
   unsigned char enc
 ){
+  assert( xDel!=SQLITE_DYNAMIC );
   if( nData>0x7fffffff ){
     return invokeValueDestructor(zData, xDel, 0);
   }else{
+    if( enc==SQLITE_UTF16 ) enc = SQLITE_UTF16NATIVE;
     return bindText(pStmt, i, zData, nData, xDel, enc);
   }
 }
