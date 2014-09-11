@@ -177,8 +177,8 @@ void sqlite3CryptFunc(
 int sqlite3_user_authenticate(
   sqlite3 *db,           /* The database connection */
   const char *zUsername, /* Username */
-  int nPW,               /* Number of bytes in aPW[] */
-  const char *zPW        /* Password or credentials */
+  const char *zPW,       /* Password or credentials */
+  int nPW                /* Number of bytes in aPW[] */
 ){
   int rc;
   u8 authLevel = UAUTH_Fail;
@@ -217,9 +217,9 @@ int sqlite3_user_authenticate(
 int sqlite3_user_add(
   sqlite3 *db,           /* Database connection */
   const char *zUsername, /* Username to be added */
-  int isAdmin,           /* True to give new user admin privilege */
+  const char *aPW,       /* Password or credentials */
   int nPW,               /* Number of bytes in aPW[] */
-  const char *aPW        /* Password or credentials */
+  int isAdmin            /* True to give new user admin privilege */
 ){
   sqlite3_stmt *pStmt;
   int rc;
@@ -248,7 +248,7 @@ int sqlite3_user_add(
   if( rc ) return rc;
   if( db->auth.zAuthUser==0 ){
     assert( isAdmin!=0 );
-    sqlite3_user_authenticate(db, zUsername, nPW, aPW);
+    sqlite3_user_authenticate(db, zUsername, aPW, nPW);
   }
   return SQLITE_OK;
 }
@@ -263,9 +263,9 @@ int sqlite3_user_add(
 int sqlite3_user_change(
   sqlite3 *db,           /* Database connection */
   const char *zUsername, /* Username to change */
-  int isAdmin,           /* Modified admin privilege for the user */
+  const char *aPW,       /* Modified password or credentials */
   int nPW,               /* Number of bytes in aPW[] */
-  const char *aPW        /* Modified password or credentials */
+  int isAdmin            /* Modified admin privilege for the user */
 ){
   sqlite3_stmt *pStmt;
   if( db->auth.authLevel<UAUTH_User ){

@@ -1,0 +1,74 @@
+# 2014-09-10
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# 
+# This file implements tests of the SQLITE_USER_AUTHENTICATION extension.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix userauth01
+
+ifcapable !userauth {
+  finish_test
+  return
+}
+
+# Create a no-authentication-required database
+#
+do_execsql_test userauth01-1.0 {
+  CREATE TABLE t1(x);
+  INSERT INTO t1 VALUES(1),(2.5),('three'),(x'4444'),(NULL);
+  SELECT quote(x) FROM t1 ORDER BY x;
+  SELECT name FROM sqlite_master;
+} {NULL 1 2.5 'three' X'4444' t1}
+
+# Calling sqlite3_user_authenticate() on a no-authentication-required
+# database connection is a harmless no-op.  
+#
+do_test userauth01-1.1 {
+  sqlite3_user_authenticate db alice pw-4-alice
+  execsql {
+    SELECT quote(x) FROM t1 ORDER BY x;
+    SELECT name FROM sqlite_master;
+  }
+} {NULL 1 2.5 'three' X'4444' t1}
+
+# If sqlite3_user_add(D,U,P,N,A) is called on a no-authentication-required
+# database and A is false, then the call fails with an SQLITE_AUTH error.
+#
+do_test userauth01-1.2 {
+  sqlite3_user_add db bob pw-4-bob 0
+} {SQLITE_AUTH}
+do_test userauth01-1.3 {
+  execsql {
+    SELECT quote(x) FROM t1 ORDER BY x;
+    SELECT name FROM sqlite_master;
+  }
+} {NULL 1 2.5 'three' X'4444' t1}
+
+# When called on a no-authentication-required
+# database and when A is true, the sqlite3_user_add(D,U,P,N,A) routine
+# converts the database into an authentication-required database and
+# logs the database connection D in using user U with password P,N.
+#  
+do_test userauth01-1.4 {
+  sqlite3_user_add db alice pw-4-alice 1
+} {SQLITE_OK}
+do_test userauth01-1.5 {
+  execsql {
+    SELECT quote(x) FROM t1 ORDER BY x;
+    SELECT uname, isadmin FROM sqlite_user ORDER BY uname;
+    SELECT name FROM sqlite_master ORDER BY name;
+  }
+} {NULL 1 2.5 'three' X'4444' alice 1 sqlite_user t1}
+
+
+finish_test

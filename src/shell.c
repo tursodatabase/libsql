@@ -3451,31 +3451,34 @@ static int do_meta_command(char *zLine, ShellState *p){
         rc = 1;
         goto meta_command_exit;
       }
-      rc = sqlite3_user_authenticate(p->db, azArg[2], (int)strlen(azArg[3]), azArg[3]);
+      rc = sqlite3_user_authenticate(p->db, azArg[2], azArg[3],
+                                    (int)strlen(azArg[3]));
       if( rc ){
         fprintf(stderr, "Authentication failed for user %s\n", azArg[2]);
         rc = 1;
       }
     }else if( strcmp(azArg[1],"add")==0 ){
       if( nArg!=5 ){
-        fprintf(stderr, "Usage: .user add USER ISADMIN PASSWORD\n");
+        fprintf(stderr, "Usage: .user add USER PASSWORD ISADMIN\n");
         rc = 1;
         goto meta_command_exit;
       }
-      rc = sqlite3_user_add(p->db, azArg[2], booleanValue(azArg[3]),
-                            (int)strlen(azArg[4]), azArg[4]);
+      rc = sqlite3_user_add(p->db, azArg[2],
+                            azArg[3], (int)strlen(azArg[3]),
+                            booleanValue(azArg[4]));
       if( rc ){
         fprintf(stderr, "User-Add failed: %d\n", rc);
         rc = 1;
       }
     }else if( strcmp(azArg[1],"edit")==0 ){
       if( nArg!=5 ){
-        fprintf(stderr, "Usage: .user edit USER ISADMIN PASSWORD\n");
+        fprintf(stderr, "Usage: .user edit USER PASSWORD ISADMIN\n");
         rc = 1;
         goto meta_command_exit;
       }
-      rc = sqlite3_user_change(p->db, azArg[2], booleanValue(azArg[3]),
-                              (int)strlen(azArg[4]), azArg[4]);
+      rc = sqlite3_user_change(p->db, azArg[2],
+                              azArg[3], (int)strlen(azArg[3]),
+                              booleanValue(azArg[4]));
       if( rc ){
         fprintf(stderr, "User-Edit failed: %d\n", rc);
         rc = 1;

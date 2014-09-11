@@ -7,24 +7,24 @@ activated:
    int sqlite3_user_authenticate(
      sqlite3 *db,           /* The database connection */
      const char *zUsername, /* Username */
-     int nPW,               /* Number of bytes in aPW[] */
-     const void *aPW        /* Password or credentials */
+     const char *aPW,       /* Password or credentials */
+     int nPW                /* Number of bytes in aPW[] */
    );
    
    int sqlite3_user_add(
      sqlite3 *db,           /* Database connection */
      const char *zUsername, /* Username to be added */
-     int isAdmin,           /* True to give new user admin privilege */
+     const char *aPW,       /* Password or credentials */
      int nPW,               /* Number of bytes in aPW[] */
-     const void *aPW        /* Password or credentials */
+     int isAdmin            /* True to give new user admin privilege */
    );
    
    int sqlite3_user_change(
      sqlite3 *db,           /* Database connection */
      const char *zUsername, /* Username to change */
-     int isAdmin,           /* Modified admin privilege for the user */
+     const void *aPW,       /* Modified password or credentials */
      int nPW,               /* Number of bytes in aPW[] */
-     const void *aPW        /* Modified password or credentials */
+     int isAdmin            /* Modified admin privilege for the user */
    );
    
    int sqlite3_user_delete(
@@ -71,12 +71,15 @@ check fails, then the ATTACH-ed database is unreadable [1g].
 
 The sqlite3_user_add() interface can be used (by an admin user only)
 to create a new user.  When called on a no-authentication-required
-database, this routine converts the database into an authentication-
-required database [3], automatically makes the added user an
-administrator [1b], and logs in the current connection as that user [1a].
-The sqlite3_user_add() interface only works for the "main" database, not
-for any ATTACH-ed databases.  Any call to sqlite3_user_add() by a
-non-admin user results in an error.
+database and when A is true, the sqlite3_user_add(D,U,P,N,A) routine
+converts the database into an authentication-required database and
+logs the database connection D in using user U with password P,N.
+To convert a no-authentication-required database into an authentication-
+required database, the isAdmin parameter must be true.  If
+sqlite3_user_add(D,U,P,N,A) is called on a no-authentication-required
+database and A is false, then the call fails with an SQLITE_AUTH error.
+
+Any call to sqlite3_user_add() by a non-admin user results in an error.
 
 Hence, to create a new, unencrypted, authentication-required database,
 the call sequence is:

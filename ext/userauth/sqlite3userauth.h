@@ -36,8 +36,8 @@
 int sqlite3_user_authenticate(
   sqlite3 *db,           /* The database connection */
   const char *zUsername, /* Username */
-  int nPW,               /* Number of bytes in aPW[] */
-  const char *aPW        /* Password or credentials */
+  const char *aPW,       /* Password or credentials */
+  int nPW                /* Number of bytes in aPW[] */
 );
 
 /*
@@ -53,9 +53,9 @@ int sqlite3_user_authenticate(
 int sqlite3_user_add(
   sqlite3 *db,           /* Database connection */
   const char *zUsername, /* Username to be added */
-  int isAdmin,           /* True to give new user admin privilege */
+  const char *aPW,       /* Password or credentials */
   int nPW,               /* Number of bytes in aPW[] */
-  const char *aPW        /* Password or credentials */
+  int isAdmin            /* True to give new user admin privilege */
 );
 
 /*
@@ -68,9 +68,9 @@ int sqlite3_user_add(
 int sqlite3_user_change(
   sqlite3 *db,           /* Database connection */
   const char *zUsername, /* Username to change */
-  int isAdmin,           /* Modified admin privilege for the user */
+  const char *aPW,       /* New password or credentials */
   int nPW,               /* Number of bytes in aPW[] */
-  const char *aPW        /* Modified password or credentials */
+  int isAdmin            /* Modified admin privilege for the user */
 );
 
 /*
