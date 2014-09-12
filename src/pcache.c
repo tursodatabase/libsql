@@ -116,14 +116,14 @@ static void pcacheManageDirtyList(PgHdr *pPage, u8 addRemove){
     if( pPage->pDirtyNext ){
       assert( pPage->pDirtyNext->pDirtyPrev==0 );
       pPage->pDirtyNext->pDirtyPrev = pPage;
-    }else if( p->bPurgeable ){
-      assert( p->eCreate==2 );
-      p->eCreate = 1;
+    }else{
+      p->pDirtyTail = pPage;
+      if( p->bPurgeable ){
+        assert( p->eCreate==2 );
+        p->eCreate = 1;
+      }
     }
     p->pDirty = pPage;
-    if( !p->pDirtyTail ){
-      p->pDirtyTail = pPage;
-    }
     if( !p->pSynced && 0==(pPage->flags&PGHDR_NEED_SYNC) ){
       p->pSynced = pPage;
     }
@@ -399,7 +399,7 @@ void SQLITE_NOINLINE sqlite3PcacheRelease(PgHdr *p){
     p->pCache->nRef--;
     if( (p->flags&PGHDR_DIRTY)==0 ){
       pcacheUnpin(p);
-    }else{
+    }else if( p->pDirtyPrev!=0 ){
       /* Move the page to the head of the dirty list. */
       pcacheManageDirtyList(p, PCACHE_DIRTYLIST_FRONT);
     }
