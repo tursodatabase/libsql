@@ -1,5 +1,5 @@
-C Fix\san\sissue\swith\ssqlite3_bind_text64()\swith\sthe\sSQLITE_UTF16\sencoding\nparameter.\s\sRemove\ssome\sunreachable\scode\sfrom\sthe\stext64()\sand\sblob64()\nimplementation.
-D 2014-09-11T23:34:55.607
+C Fix\sa\sproblem\swith\sparser\smemory\sallocation\son\s32-bit\ssystems.
+D 2014-09-12T04:28:33.110
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -191,7 +191,7 @@ F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
 F src/insert.c 0b073fade178d9dbd990bbb32b4438e50b884a06
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
-F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
+F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
 F src/loadext.c de741e66e5ddc1598d904d7289239696e40ed994
 F src/main.c d15621461fb0c52675eba2b650492ed1beef69ab
 F src/malloc.c cc015821ba267ad5c91dc8761d0498a3fc3ce6ce
@@ -231,7 +231,7 @@ F src/shell.c c00220cdd7f2027780bc25b78376c16dc24e4b7d
 F src/sqlite.h.in 8b018219ce988913e5977d5de9ab4beb33be23b6
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
-F src/sqliteInt.h 0f6bd5c2bc864b1261898a73673bed1030cfbfe2
+F src/sqliteInt.h e9030816d5ee6fe2063553b40359096f994664ee
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 218ae2ba022881846741dfc8351aefdf129e0377
@@ -282,7 +282,7 @@ F src/test_vfs.c f84075a388527892ff184988f43b69ce69b8083c
 F src/test_vfstrace.c bab9594adc976cbe696ff3970728830b4c5ed698
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 22dded4283dc4b25422f6444cdcb8d6b1ea0b5ff
-F src/tokenize.c 722872c816887fd66931333c59570ebd9622a95f
+F src/tokenize.c 3df63041994f55afeb168b463ec836e8f1c50e7c
 F src/trigger.c 25571661fdeae8c7f975ff40ffec205520a3f92f
 F src/update.c 729f6f18fc27740591d085e1172cebe311144bf0
 F src/utf.c 77abb5e6d27f3d236e50f7c8fff1d00e15262359
@@ -1197,7 +1197,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7e4978c003867d1b532b69221013dda75ca61953
-R 5b504a805873df7c692d762cd653895b
+P 34292b084ef48cd6e9ca5704f6b072a29733b4c2
+R 9210ace0d122525851cce20a27ee9393
 U drh
-Z 9235587180e257c32aca7830c18cbf2e
+Z 8a9f5697995e1302a3aaac24500097fb

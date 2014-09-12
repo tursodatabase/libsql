@@ -3520,7 +3520,7 @@ int sqlite3Stat4Column(sqlite3*, const void*, int, int, sqlite3_value**);
 /*
 ** The interface to the LEMON-generated parser
 */
-void *sqlite3ParserAlloc(void*(*)(size_t));
+void *sqlite3ParserAlloc(void*(*)(u64));
 void sqlite3ParserFree(void*, void(*)(void*));
 void sqlite3Parser(void*, int, Token, Parse*);
 #ifdef YYTRACKMAXSTACKDEPTH
