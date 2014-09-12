@@ -2432,16 +2432,9 @@ void sqlite3ExprCacheAffinityChange(Parse *pParse, int iStart, int iCount){
 ** over to iTo..iTo+nReg-1. Keep the column cache up-to-date.
 */
 void sqlite3ExprCodeMove(Parse *pParse, int iFrom, int iTo, int nReg){
-  int i;
-  struct yColCache *p;
   assert( iFrom>=iTo+nReg || iFrom+nReg<=iTo );
   sqlite3VdbeAddOp3(pParse->pVdbe, OP_Move, iFrom, iTo, nReg);
-  for(i=0, p=pParse->aColCache; i<SQLITE_N_COLCACHE; i++, p++){
-    int x = p->iReg;
-    if( x>=iFrom && x<iFrom+nReg ){
-      p->iReg += iTo-iFrom;
-    }
-  }
+  sqlite3ExprCacheRemove(pParse, iFrom, nReg);
 }
 
 #if defined(SQLITE_DEBUG) || defined(SQLITE_COVERAGE_TEST)

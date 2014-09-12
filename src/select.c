@@ -488,7 +488,7 @@ static void pushOntoSorter(
     sqlite3VdbeAddOp2(v, OP_Sequence, pSort->iECursor, regBase+nExpr);
   }
   if( nPrefixReg==0 ){
-    sqlite3VdbeAddOp3(v, OP_Move, regData, regBase+nExpr+bSeq, nData);
+    sqlite3ExprCodeMove(pParse, regData, regBase+nExpr+bSeq, nData);
   }
 
   sqlite3VdbeAddOp3(v, OP_MakeRecord, regBase+nOBSat, nBase-nOBSat, regRecord);
@@ -524,7 +524,7 @@ static void pushOntoSorter(
     sqlite3VdbeAddOp2(v, OP_Gosub, pSort->regReturn, pSort->labelBkOut);
     sqlite3VdbeAddOp1(v, OP_ResetSorter, pSort->iECursor);
     sqlite3VdbeJumpHere(v, addrFirst);
-    sqlite3VdbeAddOp3(v, OP_Move, regBase, regPrevKey, pSort->nOBSat);
+    sqlite3ExprCodeMove(pParse, regBase, regPrevKey, pSort->nOBSat);
     sqlite3VdbeJumpHere(v, addrJmp);
   }
   if( pSort->sortFlags & SORTFLAG_UseSorter ){

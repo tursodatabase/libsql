@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sparser\smemory\sallocation\son\s32-bit\ssystems.
-D 2014-09-12T04:28:33.110
+C Simplify\sthe\sway\sthe\scolumn\scache\sis\smanaged\saround\sOP_Move\sinstructions.
+D 2014-09-12T17:41:30.440
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -180,7 +180,7 @@ F src/complete.c 535183afb3c75628b78ce82612931ac7cdf26f14
 F src/ctime.c 16cd19215d9fd849ee2b7509b092f2e0bbd6a958
 F src/date.c 57a7f9ba9f6b4d5268f5e411739066a611f99036
 F src/delete.c fae81cc2eb14b75267d4f47d3cfc9ae02aae726f
-F src/expr.c 441a7e24e2f7bea9475778fa8acce9e8a69ca8f0
+F src/expr.c 19392d98e089640c3336e65b4254cc337efef7d1
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c da985ae673efef2c712caef825a5d2edb087ead7
 F src/func.c d4d218704b13bc1814b7d76874e405743c903773
@@ -226,7 +226,7 @@ F src/printf.c e74925089a85e3c9f0e315595f41c139d3d118c2
 F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 0d1621e45fffe4b4396477cf46e41a84b0145ffb
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c b4457526cee73c0b69fad42f799f619b1d5a8a8a
+F src/select.c bd8ed75592642f79871fd331d869c37fc6a14846
 F src/shell.c c00220cdd7f2027780bc25b78376c16dc24e4b7d
 F src/sqlite.h.in 8b018219ce988913e5977d5de9ab4beb33be23b6
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
@@ -1197,7 +1197,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 34292b084ef48cd6e9ca5704f6b072a29733b4c2
-R 9210ace0d122525851cce20a27ee9393
+P 2f69a1fa6adc9377149ae7faa586a5d30b6a631b
+R 2196198b201612a018f7c15a4c2f1424
 U drh
-Z 8a9f5697995e1302a3aaac24500097fb
+Z a609740927532bd8f27cb3bc904eb4ff
