@@ -75,5 +75,29 @@ do_execsql_test 2.2 {
   PRAGMA integrity_check;
 } {ok}
 
+#--------------------------------------------------------------------
+# Test that missing columns are detected.
+#
+forcedelete ota.db
+reset_db
+
+do_execsql_test 2.0 {
+  CREATE TABLE x1(a INTEGER PRIMARY KEY, b, c);
+  CREATE INDEX i1 ON x1(b, c);
+} {}
+
+do_test 2.1 {
+  sqlite3 db2 ota.db
+  db2 eval {
+    CREATE TABLE data_x1(a, b, ota_control);
+    INSERT INTO data_x1 VALUES(1, 'a', 0);
+  }
+  db2 close
+  list [catch { run_ota test.db ota.db } msg] $msg
+} {1 {SQLITE_ERROR - no such column: c}}
+
+do_execsql_test 2.2 {
+  PRAGMA integrity_check;
+} {ok}
 
 finish_test

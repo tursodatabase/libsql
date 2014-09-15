@@ -1,5 +1,5 @@
-C Ensure\sthe\scorrect\scollation\ssequences\sare\sused\swhen\ssorting\sdata\sin\ssqlite3ota.c.
-D 2014-09-15T14:54:07.328
+C Have\ssqlite3ota.c\suse\sgrave\saccents\sinstead\sof\sdouble-quotes\sto\senclose\sidentifiers\sin\sgenerated\sSQL.\sTo\savoid\shaving\sthe\sSQL\sengine\ssubstitute\sa\sliteral\sstring\sif\sa\scolumn\sreference\scannot\sbe\sresolved.
+D 2014-09-15T15:22:32.496
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -124,8 +124,8 @@ F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
 F ext/ota/ota.c d37097e92a005d3915883adefbb93019ea6f8841
 F ext/ota/ota1.test fe0bb8acf0caef6c19937b84c6547b788342610d
 F ext/ota/ota2.test 13f76922446c62ed96192e938b8e625ebf0142fa
-F ext/ota/ota3.test 7179a90eb64cf8135a6885568653f158fb130872
-F ext/ota/sqlite3ota.c c29b3eb617f37d0e51744508b8f609014244727d
+F ext/ota/ota3.test 1c48b7476af1c5920db9a43e7b1476d421a463b5
+F ext/ota/sqlite3ota.c 668ed08dd81ff8ae1e8524b2d4bf0f2609cbf907
 F ext/ota/sqlite3ota.h 39ce4dffbfcf4ade9e4526369fe2243709345c8e
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 57bec53e1a677ab74217fe1f20a58c3a47261d6b
@@ -1199,7 +1199,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P cca376bff3510dc5e99fc5824862c3471ceced16
-R 286b5daf6c561394d2eea11438cdac48
+P 473a72d7009a22ea514a98ee8869e7e7bca14cf5
+R 6e8944bfcc8da0bf6b98d50ae7beb161
 U dan
-Z e26ad3cda7162cfc9e1d6f5aeb5cd971
+Z 793743aae527be1bb170d7639993b8ad

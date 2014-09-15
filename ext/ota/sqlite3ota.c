@@ -299,7 +299,7 @@ static int otaObjIterFirst(sqlite3ota *p, OtaObjIter *pIter){
 ** string in the argument buffer, suitable for use as an SQL identifier. 
 ** For example:
 **
-**      [quick "brown" fox]    ->    ["quick ""brown"" fox"]
+**      [quick `brown` fox]    ->    [`quick ``brown`` fox`]
 **
 ** Assuming the allocation is successful, a pointer to the new buffer is 
 ** returned. It is the responsibility of the caller to free it using 
@@ -312,12 +312,12 @@ static char *otaQuoteName(const char *zName){
   if( zRet ){
     int i;
     char *p = zRet;
-    *p++ = '"';
+    *p++ = '`';
     for(i=0; i<nName; i++){
-      if( zName[i]=='"' ) *p++ = '"';
+      if( zName[i]=='`' ) *p++ = '`';
       *p++ = zName[i];
     }
-    *p++ = '"';
+    *p++ = '`';
     *p++ = '\0';
   }
   return zRet;
