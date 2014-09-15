@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\supdate\sstatements\sto\ssqlite3ota.c.
-D 2014-09-08T17:50:35.158
+C Add\sOP_Affinity\sopcodes\sto\sthe\sVMs\sgenerated\sby\ssqlite3_index_writer().
+D 2014-09-15T10:44:24.271
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -124,6 +124,7 @@ F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
 F ext/ota/ota.c d37097e92a005d3915883adefbb93019ea6f8841
 F ext/ota/ota1.test fe0bb8acf0caef6c19937b84c6547b788342610d
 F ext/ota/ota2.test 13f76922446c62ed96192e938b8e625ebf0142fa
+F ext/ota/ota3.test 9e3e42c6083e92909c408f1fe62aa07b0c9f905c
 F ext/ota/sqlite3ota.c 3697f6db2d51d5f7c0f0306fe94514785361e521
 F ext/ota/sqlite3ota.h 545f0008b5f02f2595899cb9841caddada5c17c0
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
@@ -295,7 +296,7 @@ F src/vdbe.h c63fad052c9e7388d551e556e119c0bcf6bebdf8
 F src/vdbeInt.h cdc8e421f85beb1ac9b4669ec5beadab6faa15e0
 F src/vdbeapi.c 09677a53dd8c71bcd670b0bd073bb9aefa02b441
 F src/vdbeaux.c cef5d34a64ae3a65b56d96d3fd663246ec8e1c36
-F src/vdbeblob.c b1b8b2cd86617db009f027f116b335f86e95b617
+F src/vdbeblob.c 7a28ade0cae13bd99f5c4c8f008f68e942c23115
 F src/vdbemem.c 921d5468a68ac06f369810992e84ca22cc730a62
 F src/vdbesort.c 7c45bfcd823f30d172bbbc1b9f51ef4402fbfe8d
 F src/vdbetrace.c 6f52bc0c51e144b7efdcfb2a8f771167a8816767
@@ -1198,7 +1199,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f988234ba54d7c667f7deef1d04beed4e7fe6182
-R c23b09bc3993f39690d272fa85636507
+P e109b27e4d66b83e1a804e7556d9c91aa37fea28
+R 75f9e5319b2343a328ed4364426b7add
 U dan
-Z 28e28dd83293020abb0c0fb47ae5ab2c
+Z c56c0b8cb355334f7ef68c91cc8c371e
