@@ -1,5 +1,5 @@
-C Merge\slatest\strunk\schanges\swith\sthis\sbranch.
-D 2014-09-15T15:34:31.844
+C Merge\slatest\strunk\sfixes\sinto\sthis\sbranch.
+D 2014-09-15T16:57:10.623
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -301,7 +301,7 @@ F src/vdbeapi.c 06b712d4772b318b69cd37a416deb1ff0426aa8c
 F src/vdbeaux.c 91fd1e0c54a765838dc61fcf79f31acce035ce38
 F src/vdbeblob.c a8e2c3baa3e7081347c4677185a631bfc43de043
 F src/vdbemem.c dc36ea9fe26c25550c50085f388167086ef7d73a
-F src/vdbesort.c 36ac09004c2ca57486ba3d1f4ac5d0d62257b136
+F src/vdbesort.c a7a40ceca6325b853040ffcc363dcd49a45f201b
 F src/vdbetrace.c 16d39c1ef7d1f4a3a7464bea3b7b4bdd7849c415
 F src/vtab.c 019dbfd0406a7447c990e1f7bd1dfcdb8895697f
 F src/wal.c 6f5ff51117293e7b2c75ad21834f51115e59ea96
@@ -851,6 +851,7 @@ F test/sort.test 15e1d3014abc3f6d4357ed81b93b82117aefd235
 F test/sort2.test 269f4f50c6e468cc32b302ae7ff0add8338ec6de
 F test/sort3.test 6178ade30810ac9166fcdf14b7065e49c0f534e2
 F test/sort4.test 6c37d85f7cd28d50cce222fcab84ccd771e105cb
+F test/sort5.test a448240a42b49239edc00f85d6d7ac7a1b261e1f
 F test/sortfault.test b8e35177f97438b930ee87c9419ca2599e8073e1
 F test/speed1.test f2974a91d79f58507ada01864c0e323093065452
 F test/speed1p.explain d841e650a04728b39e6740296b852dccdca9b2cb
@@ -1203,7 +1204,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 79f2418429aa05c56069c56d51b4d72f662a6970 69a64560777f85b47349b4b2aab01dc99298592e
-R 10cbf38158f2f089e176ffb2e809ade0
+P 55b8011d5b455927f5b92a3cb911fd909fb0edab 4060efb646c873c4abde7ab9ddf330489a44f274
+R a8de04acab3d1132246bf5d89e41e027
 U dan
-Z c612131a6abb7d1e449d4f88a8b72de0
+Z 1d00f387d17c6184cf9c7c454dc66aca

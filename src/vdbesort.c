@@ -601,11 +601,12 @@ static int vdbePmaReadVarint(PmaReader *p, u64 *pnOut){
 */
 static int vdbeSorterMapFile(SortSubtask *pTask, SorterFile *pFile, u8 **pp){
   int rc = SQLITE_OK;
-  if( pFile->iEof<=(i64)(pTask->pSorter->db->nMaxSorterMmap)
-   && pFile->pFd->pMethods->xFetch 
-  ){
-    rc = sqlite3OsFetch(pFile->pFd, 0, (int)pFile->iEof, (void**)pp);
-    testcase( rc!=SQLITE_OK );
+  if( pFile->iEof<=(i64)(pTask->pSorter->db->nMaxSorterMmap) ){
+    sqlite3_file *pFd = pFile->pFd;
+    if( pFd->pMethods->iVersion>=3 ){
+      rc = sqlite3OsFetch(pFd, 0, (int)pFile->iEof, (void**)pp);
+      testcase( rc!=SQLITE_OK );
+    }
   }
   return rc;
 }
@@ -1125,7 +1126,7 @@ void sqlite3VdbeSorterClose(sqlite3 *db, VdbeCursor *pCsr){
 static void vdbeSorterExtendFile(sqlite3 *db, sqlite3_file *pFd, i64 nByte){
   if( nByte<=(i64)(db->nMaxSorterMmap) ){
     int rc = sqlite3OsTruncate(pFd, nByte);
-    if( rc==SQLITE_OK && pFd->pMethods->xFetch ){
+    if( rc==SQLITE_OK && pFd->pMethods->iVersion>=3 ){
       void *p = 0;
       sqlite3OsFetch(pFd, 0, (int)nByte, &p);
       sqlite3OsUnfetch(pFd, 0, p);
