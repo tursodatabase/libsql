@@ -1,5 +1,5 @@
-C Remove\sthe\sEXPENSIVE_ASSERTS\sin\spcache.c\shaving\sto\sdo\swith\sthe\spSynced\sfield\nof\sthe\sPcache\sobject,\sas\sthey\sare\sincorrect,\sas\srevealed\sby\srecent\spcache\nenhancements.
-D 2014-09-15T14:59:12.274
+C Avoid\sattempting\sto\scall\sthe\sxFetch()\smethod\sof\san\ssqlite3_io_methods\sobject\swith\sa\sversion\snumber\sless\sthan\s3.
+D 2014-09-15T16:50:34.423
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -295,7 +295,7 @@ F src/vdbeapi.c 06b712d4772b318b69cd37a416deb1ff0426aa8c
 F src/vdbeaux.c 91fd1e0c54a765838dc61fcf79f31acce035ce38
 F src/vdbeblob.c 848238dc73e93e48432991bb5651bf87d865eca4
 F src/vdbemem.c dc36ea9fe26c25550c50085f388167086ef7d73a
-F src/vdbesort.c ab39574ec6e0c6213bd2a5c09cca9f9f8ba98450
+F src/vdbesort.c a7a40ceca6325b853040ffcc363dcd49a45f201b
 F src/vdbetrace.c 16d39c1ef7d1f4a3a7464bea3b7b4bdd7849c415
 F src/vtab.c 019dbfd0406a7447c990e1f7bd1dfcdb8895697f
 F src/wal.c 10e7de7ce90865a68153f001a61f1d985cd17983
@@ -845,6 +845,7 @@ F test/sort.test 15e1d3014abc3f6d4357ed81b93b82117aefd235
 F test/sort2.test 269f4f50c6e468cc32b302ae7ff0add8338ec6de
 F test/sort3.test 6178ade30810ac9166fcdf14b7065e49c0f534e2
 F test/sort4.test 6c37d85f7cd28d50cce222fcab84ccd771e105cb
+F test/sort5.test a448240a42b49239edc00f85d6d7ac7a1b261e1f
 F test/sortfault.test b8e35177f97438b930ee87c9419ca2599e8073e1
 F test/speed1.test f2974a91d79f58507ada01864c0e323093065452
 F test/speed1p.explain d841e650a04728b39e6740296b852dccdca9b2cb
@@ -1197,7 +1198,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0bdf1a086b3946722f4d4b328e25917f61c14713
-R 6604c3404d8f943a6eb10e6ee4c1398f
-U drh
-Z 9f457bfb74de1e07b081e001cb58874a
+P 69a64560777f85b47349b4b2aab01dc99298592e
+R 41452df15ff1b435df3a846f31103df4
+U dan
+Z 356b29f991ba0eb562f8fca4ef2b2ea4
