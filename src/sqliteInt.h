@@ -1285,6 +1285,7 @@ struct FuncDestructor {
 #define SQLITE_FUNC_COALESCE 0x200 /* Built-in coalesce() or ifnull() */
 #define SQLITE_FUNC_UNLIKELY 0x400 /* Built-in unlikely() function */
 #define SQLITE_FUNC_CONSTANT 0x800 /* Constant inputs give a constant output */
+#define SQLITE_FUNC_MINMAX  0x1000 /* True for min() and max() aggregates */
 
 /*
 ** The following three macros, FUNCTION(), LIKEFUNC() and AGGREGATE() are
@@ -1331,6 +1332,9 @@ struct FuncDestructor {
    (void *)arg, 0, likeFunc, 0, 0, #zName, 0, 0}
 #define AGGREGATE(zName, nArg, arg, nc, xStep, xFinal) \
   {nArg, SQLITE_UTF8|(nc*SQLITE_FUNC_NEEDCOLL), \
+   SQLITE_INT_TO_PTR(arg), 0, 0, xStep,xFinal,#zName,0,0}
+#define AGGREGATE2(zName, nArg, arg, nc, xStep, xFinal, extraFlags) \
+  {nArg, SQLITE_UTF8|(nc*SQLITE_FUNC_NEEDCOLL)|extraFlags, \
    SQLITE_INT_TO_PTR(arg), 0, 0, xStep,xFinal,#zName,0,0}
 
 /*
@@ -2254,17 +2258,22 @@ struct NameContext {
   NameContext *pNext;  /* Next outer name context.  NULL for outermost */
   int nRef;            /* Number of names resolved by this context */
   int nErr;            /* Number of errors encountered while resolving names */
-  u8 ncFlags;          /* Zero or more NC_* flags defined below */
+  u16 ncFlags;         /* Zero or more NC_* flags defined below */
 };
 
 /*
 ** Allowed values for the NameContext, ncFlags field.
+**
+** Note:  NC_MinMaxAgg must have the same value as SF_MinMaxAgg and
+** SQLITE_FUNC_MINMAX.
+** 
 */
-#define NC_AllowAgg  0x01    /* Aggregate functions are allowed here */
-#define NC_HasAgg    0x02    /* One or more aggregate functions seen */
-#define NC_IsCheck   0x04    /* True if resolving names in a CHECK constraint */
-#define NC_InAggFunc 0x08    /* True if analyzing arguments to an agg func */
-#define NC_PartIdx   0x10    /* True if resolving a partial index WHERE */
+#define NC_AllowAgg  0x0001  /* Aggregate functions are allowed here */
+#define NC_HasAgg    0x0002  /* One or more aggregate functions seen */
+#define NC_IsCheck   0x0004  /* True if resolving names in a CHECK constraint */
+#define NC_InAggFunc 0x0008  /* True if analyzing arguments to an agg func */
+#define NC_PartIdx   0x0010  /* True if resolving a partial index WHERE */
+#define NC_MinMaxAgg 0x1000  /* min/max aggregates seen.  See note above */
 
 /*
 ** An instance of the following structure contains all information
@@ -2315,13 +2324,13 @@ struct Select {
 #define SF_UsesEphemeral   0x0008  /* Uses the OpenEphemeral opcode */
 #define SF_Expanded        0x0010  /* sqlite3SelectExpand() called on this */
 #define SF_HasTypeInfo     0x0020  /* FROM subqueries have Table metadata */
-                    /*     0x0040  NOT USED */
+#define SF_Compound        0x0040  /* Part of a compound query */
 #define SF_Values          0x0080  /* Synthesized from VALUES clause */
                     /*     0x0100  NOT USED */
 #define SF_NestedFrom      0x0200  /* Part of a parenthesized FROM clause */
 #define SF_MaybeConvert    0x0400  /* Need convertCompoundSelectToSubquery() */
 #define SF_Recursive       0x0800  /* The recursive part of a recursive CTE */
-#define SF_Compound        0x1000  /* Part of a compound query */
+#define SF_MinMaxAgg       0x1000  /* Aggregate containing min() or max() */
 
 
 /*

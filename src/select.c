@@ -3197,6 +3197,11 @@ static void substSelect(
 **        parent to a compound query confuses the code that handles
 **        recursive queries in multiSelect().
 **
+**  (24)  The subquery is not an aggregate that uses the built-in min() or 
+**        or max() functions.  (Without this restriction, a query like:
+**        "SELECT x FROM (SELECT max(y), x FROM t1)" would not necessarily
+**        return the value X for which Y was maximal.)
+**
 **
 ** In this routine, the "p" parameter is a pointer to the outer query.
 ** The subquery is p->pSrc->a[iFrom].  isAgg is true if the outer query
@@ -3269,8 +3274,14 @@ static int flattenSubquery(
   if( pSub->pLimit && (p->selFlags & SF_Distinct)!=0 ){
      return 0;         /* Restriction (21) */
   }
-  if( pSub->selFlags & SF_Recursive ) return 0;          /* Restriction (22)  */
-  if( (p->selFlags & SF_Recursive) && pSub->pPrior ) return 0;       /* (23)  */
+  testcase( pSub->selFlags & SF_Recursive );
+  testcase( pSub->selFlags & SF_MinMaxAgg );
+  if( pSub->selFlags & (SF_Recursive|SF_MinMaxAgg) ){
+    return 0; /* Restrictions (22) and (24) */
+  }
+  if( (p->selFlags & SF_Recursive) && pSub->pPrior ){
+    return 0; /* Restriction (23) */
+  }
 
   /* OBSOLETE COMMENT 1:
   ** Restriction 3:  If the subquery is a join, make sure the subquery is 
