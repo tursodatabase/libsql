@@ -45,23 +45,6 @@ struct PCache {
 
 /********************************** Linked List Management ********************/
 
-#if !defined(NDEBUG) && defined(SQLITE_ENABLE_EXPENSIVE_ASSERT)
-/*
-** Check that the pCache->pSynced variable is set correctly. If it
-** is not, either fail an assert or return zero. Otherwise, return
-** non-zero. This is only used in debugging builds, as follows:
-**
-**   expensive_assert( pcacheCheckSynced(pCache) );
-*/
-static int pcacheCheckSynced(PCache *pCache){
-  PgHdr *p;
-  for(p=pCache->pDirtyTail; p!=pCache->pSynced; p=p->pDirtyPrev){
-    assert( p->nRef || (p->flags&PGHDR_NEED_SYNC) );
-  }
-  return (p==0 || p->nRef || (p->flags&PGHDR_NEED_SYNC)==0);
-}
-#endif /* !NDEBUG && SQLITE_ENABLE_EXPENSIVE_ASSERT */
-
 /* Allowed values for second argument to pcacheManageDirtyList() */
 #define PCACHE_DIRTYLIST_REMOVE   1    /* Remove pPage from dirty list */
 #define PCACHE_DIRTYLIST_ADD      2    /* Add pPage to the dirty list */
@@ -107,7 +90,6 @@ static void pcacheManageDirtyList(PgHdr *pPage, u8 addRemove){
     }
     pPage->pDirtyNext = 0;
     pPage->pDirtyPrev = 0;
-    expensive_assert( pcacheCheckSynced(p) );
   }
   if( addRemove & PCACHE_DIRTYLIST_ADD ){
     assert( pPage->pDirtyNext==0 && pPage->pDirtyPrev==0 && p->pDirty!=pPage );
@@ -127,7 +109,6 @@ static void pcacheManageDirtyList(PgHdr *pPage, u8 addRemove){
     if( !p->pSynced && 0==(pPage->flags&PGHDR_NEED_SYNC) ){
       p->pSynced = pPage;
     }
-    expensive_assert( pcacheCheckSynced(p) );
   }
 }
 
@@ -304,7 +285,6 @@ int sqlite3PcacheFetchStress(
   ** cleared), but if that is not possible settle for any other 
   ** unreferenced dirty page.
   */
-  expensive_assert( pcacheCheckSynced(pCache) );
   for(pPg=pCache->pSynced; 
       pPg && (pPg->nRef || (pPg->flags&PGHDR_NEED_SYNC)); 
       pPg=pPg->pDirtyPrev
