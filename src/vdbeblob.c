@@ -549,6 +549,11 @@ int sqlite3_index_writer(
   }
   regRec = ++pParse->nMem;
 
+  /* If this is a rowid table, check that the rowid field is an integer. */
+  if( HasRowid(pTab) ){
+    sqlite3VdbeAddOp2(v, OP_MustBeInt, pIdx->nColumn, 0);
+  }
+
   if( bDelete==0 ){
     sqlite3VdbeAddOp4(v, OP_MakeRecord, 1, pIdx->nColumn, regRec, zAffinity, 0);
 

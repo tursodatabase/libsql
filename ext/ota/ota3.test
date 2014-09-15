@@ -49,6 +49,31 @@ do_execsql_test 1.2 {
   PRAGMA integrity_check;
 } {ok}
 
+#--------------------------------------------------------------------
+# Test that NULL values may not be inserted into INTEGER PRIMARY KEY
+# columns.
+#
+forcedelete ota.db
+reset_db
+
+do_execsql_test 2.0 {
+  CREATE TABLE x1(a INTEGER PRIMARY KEY, b TEXT, c REAL);
+  CREATE INDEX i1 ON x1(b, c);
+} {}
+
+do_test 2.1 {
+  sqlite3 db2 ota.db
+  db2 eval {
+    CREATE TABLE data_x1(a, b, c, ota_control);
+    INSERT INTO data_x1 VALUES(NULL, 'a', 'b', 0);
+  }
+  db2 close
+  list [catch { run_ota test.db ota.db } msg] $msg
+} {1 {SQLITE_MISMATCH - datatype mismatch}}
+
+do_execsql_test 2.2 {
+  PRAGMA integrity_check;
+} {ok}
 
 
 finish_test
