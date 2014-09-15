@@ -33,6 +33,9 @@
 #include <stdio.h>
 #include <assert.h>
 #include "sqlite3.h"
+#if SQLITE_USER_AUTHENTICATION
+# include "sqlite3userauth.h"
+#endif
 #include <ctype.h>
 #include <stdarg.h>
 
@@ -3434,6 +3437,71 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
 #endif
   }else
+
+#if SQLITE_USER_AUTHENTICATION
+  if( c=='u' && strncmp(azArg[0], "user", n)==0 ){
+    if( nArg<2 ){
+      fprintf(stderr, "Usage: .user SUBCOMMAND ...\n");
+      rc = 1;
+      goto meta_command_exit;
+    }
+    open_db(p, 0);
+    if( strcmp(azArg[1],"login")==0 ){
+      if( nArg!=4 ){
+        fprintf(stderr, "Usage: .user login USER PASSWORD\n");
+        rc = 1;
+        goto meta_command_exit;
+      }
+      rc = sqlite3_user_authenticate(p->db, azArg[2], azArg[3],
+                                    (int)strlen(azArg[3]));
+      if( rc ){
+        fprintf(stderr, "Authentication failed for user %s\n", azArg[2]);
+        rc = 1;
+      }
+    }else if( strcmp(azArg[1],"add")==0 ){
+      if( nArg!=5 ){
+        fprintf(stderr, "Usage: .user add USER PASSWORD ISADMIN\n");
+        rc = 1;
+        goto meta_command_exit;
+      }
+      rc = sqlite3_user_add(p->db, azArg[2],
+                            azArg[3], (int)strlen(azArg[3]),
+                            booleanValue(azArg[4]));
+      if( rc ){
+        fprintf(stderr, "User-Add failed: %d\n", rc);
+        rc = 1;
+      }
+    }else if( strcmp(azArg[1],"edit")==0 ){
+      if( nArg!=5 ){
+        fprintf(stderr, "Usage: .user edit USER PASSWORD ISADMIN\n");
+        rc = 1;
+        goto meta_command_exit;
+      }
+      rc = sqlite3_user_change(p->db, azArg[2],
+                              azArg[3], (int)strlen(azArg[3]),
+                              booleanValue(azArg[4]));
+      if( rc ){
+        fprintf(stderr, "User-Edit failed: %d\n", rc);
+        rc = 1;
+      }
+    }else if( strcmp(azArg[1],"delete")==0 ){
+      if( nArg!=3 ){
+        fprintf(stderr, "Usage: .user delete USER\n");
+        rc = 1;
+        goto meta_command_exit;
+      }
+      rc = sqlite3_user_delete(p->db, azArg[2]);
+      if( rc ){
+        fprintf(stderr, "User-Delete failed: %d\n", rc);
+        rc = 1;
+      }
+    }else{
+      fprintf(stderr, "Usage: .user login|add|edit|delete ...\n");
+      rc = 1;
+      goto meta_command_exit;
+    }    
+  }else
+#endif /* SQLITE_USER_AUTHENTICATION */
 
   if( c=='v' && strncmp(azArg[0], "version", n)==0 ){
     fprintf(p->out, "SQLite %s %s\n" /*extra-version-info*/,

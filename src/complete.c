@@ -70,7 +70,7 @@ extern const char sqlite3IsEbcdicIdChar[];
 **                 a statement.
 **
 **   (4) CREATE    The keyword CREATE has been seen at the beginning of a
-**                 statement, possibly preceeded by EXPLAIN and/or followed by
+**                 statement, possibly preceded by EXPLAIN and/or followed by
 **                 TEMP or TEMPORARY
 **
 **   (5) TRIGGER   We are in the middle of a trigger definition that must be
@@ -80,7 +80,7 @@ extern const char sqlite3IsEbcdicIdChar[];
 **                 the end of a trigger definition.
 **
 **   (7) END       We've seen the ";END" of the ";END;" that occurs at the end
-**                 of a trigger difinition.
+**                 of a trigger definition.
 **
 ** Transitions between states above are determined by tokens extracted
 ** from the input.  The following tokens are significant:
@@ -123,7 +123,7 @@ int sqlite3_complete(const char *zSql){
   };
 #else
   /* If triggers are not supported by this compile then the statement machine
-  ** used to detect the end of a statement is much simplier
+  ** used to detect the end of a statement is much simpler
   */
   static const u8 trans[3][3] = {
                      /* Token:           */

@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** This file implements a external (disk-based) database using BTrees.
+** This file implements an external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
 **
 **     Donald E. Knuth, THE ART OF COMPUTER PROGRAMMING, Volume 3:
@@ -135,7 +135,7 @@
 **
 ** The flags define the format of this btree page.  The leaf flag means that
 ** this page has no children.  The zerodata flag means that this page carries
-** only keys and no data.  The intkey flag means that the key is a integer
+** only keys and no data.  The intkey flag means that the key is an integer
 ** which is stored in the key size entry of the cell header rather than in
 ** the payload area.
 **
@@ -544,7 +544,7 @@ struct BtCursor {
 **   seek the cursor to the saved position.
 **
 ** CURSOR_FAULT:
-**   A unrecoverable error (an I/O error or a malloc failure) has occurred
+**   An unrecoverable error (an I/O error or a malloc failure) has occurred
 **   on a different connection that shares the BtShared cache with this
 **   cursor.  The error has left the cache in an inconsistent state.
 **   Do nothing else with this cursor.  Any attempt to use the cursor

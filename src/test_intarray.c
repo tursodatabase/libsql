@@ -37,13 +37,13 @@ struct sqlite3_intarray {
 typedef struct intarray_vtab intarray_vtab;
 typedef struct intarray_cursor intarray_cursor;
 
-/* A intarray table object */
+/* An intarray table object */
 struct intarray_vtab {
   sqlite3_vtab base;            /* Base class */
   sqlite3_intarray *pContent;   /* Content of the integer array */
 };
 
-/* A intarray cursor object */
+/* An intarray cursor object */
 struct intarray_cursor {
   sqlite3_vtab_cursor base;    /* Base class */
   int i;                       /* Current cursor position */

@@ -2061,7 +2061,7 @@ static void *vdbePmaReaderBgInit(void *pCtx){
 
 /*
 ** Use a background thread to invoke vdbePmaReaderIncrMergeInit(INCRINIT_TASK) 
-** on the the PmaReader object passed as the first argument.
+** on the PmaReader object passed as the first argument.
 **
 ** This call will initialize the various fields of the pReadr->pIncr 
 ** structure and, if it is a multi-threaded IncrMerger, launch a 

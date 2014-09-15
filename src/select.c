@@ -488,7 +488,7 @@ static void pushOntoSorter(
     sqlite3VdbeAddOp2(v, OP_Sequence, pSort->iECursor, regBase+nExpr);
   }
   if( nPrefixReg==0 ){
-    sqlite3VdbeAddOp3(v, OP_Move, regData, regBase+nExpr+bSeq, nData);
+    sqlite3ExprCodeMove(pParse, regData, regBase+nExpr+bSeq, nData);
   }
 
   sqlite3VdbeAddOp3(v, OP_MakeRecord, regBase+nOBSat, nBase-nOBSat, regRecord);
@@ -524,7 +524,7 @@ static void pushOntoSorter(
     sqlite3VdbeAddOp2(v, OP_Gosub, pSort->regReturn, pSort->labelBkOut);
     sqlite3VdbeAddOp1(v, OP_ResetSorter, pSort->iECursor);
     sqlite3VdbeJumpHere(v, addrFirst);
-    sqlite3VdbeAddOp3(v, OP_Move, regBase, regPrevKey, pSort->nOBSat);
+    sqlite3ExprCodeMove(pParse, regBase, regPrevKey, pSort->nOBSat);
     sqlite3VdbeJumpHere(v, addrJmp);
   }
   if( pSort->sortFlags & SORTFLAG_UseSorter ){
@@ -1010,7 +1010,7 @@ int sqlite3KeyInfoIsWriteable(KeyInfo *p){ return p->nRef==1; }
 ** then the KeyInfo structure is appropriate for initializing a virtual
 ** index to implement a DISTINCT test.
 **
-** Space to hold the KeyInfo structure is obtain from malloc.  The calling
+** Space to hold the KeyInfo structure is obtained from malloc.  The calling
 ** function is responsible for seeing that this structure is eventually
 ** freed.
 */
@@ -1541,7 +1541,7 @@ static void generateColumnNames(
 }
 
 /*
-** Given a an expression list (which is really the list of expressions
+** Given an expression list (which is really the list of expressions
 ** that form the result set of a SELECT statement) compute appropriate
 ** column names for a table that would hold the expression list.
 **
@@ -1614,7 +1614,7 @@ static int selectColumnsFromExprList(
     }
 
     /* Make sure the column name is unique.  If the name is not unique,
-    ** append a integer to the name so that it becomes unique.
+    ** append an integer to the name so that it becomes unique.
     */
     nName = sqlite3Strlen30(zName);
     for(j=cnt=0; j<i; j++){
@@ -3098,7 +3098,7 @@ static void substSelect(
 **
 **     SELECT x+y AS a FROM t1 WHERE z<100 AND a>5
 **
-** The code generated for this simpification gives the same result
+** The code generated for this simplification gives the same result
 ** but only has to scan the data once.  And because indices might 
 ** exist on the table t1, a complete scan of the data might be
 ** avoided.
@@ -3131,8 +3131,10 @@ static void substSelect(
 **   (9)  The subquery does not use LIMIT or the outer query does not use
 **        aggregates.
 **
-**  (10)  The subquery does not use aggregates or the outer query does not
-**        use LIMIT.
+**  (**)  Restriction (10) was removed from the code on 2005-02-05 but we
+**        accidently carried the comment forward until 2014-09-15.  Original
+**        text: "The subquery does not use aggregates or the outer query does not
+**        use LIMIT."
 **
 **  (11)  The subquery and the outer query do not both have ORDER BY clauses.
 **
@@ -3195,6 +3197,11 @@ static void substSelect(
 **        parent to a compound query confuses the code that handles
 **        recursive queries in multiSelect().
 **
+**  (24)  The subquery is not an aggregate that uses the built-in min() or 
+**        or max() functions.  (Without this restriction, a query like:
+**        "SELECT x FROM (SELECT max(y), x FROM t1)" would not necessarily
+**        return the value X for which Y was maximal.)
+**
 **
 ** In this routine, the "p" parameter is a pointer to the outer query.
 ** The subquery is p->pSrc->a[iFrom].  isAgg is true if the outer query
@@ -3242,7 +3249,7 @@ static int flattenSubquery(
   pSubSrc = pSub->pSrc;
   assert( pSubSrc );
   /* Prior to version 3.1.2, when LIMIT and OFFSET had to be simple constants,
-  ** not arbitrary expresssions, we allowed some combining of LIMIT and OFFSET
+  ** not arbitrary expressions, we allowed some combining of LIMIT and OFFSET
   ** because they could be computed at compile-time.  But when LIMIT and OFFSET
   ** became arbitrary expressions, we were forced to add restrictions (13)
   ** and (14). */
@@ -3267,8 +3274,14 @@ static int flattenSubquery(
   if( pSub->pLimit && (p->selFlags & SF_Distinct)!=0 ){
      return 0;         /* Restriction (21) */
   }
-  if( pSub->selFlags & SF_Recursive ) return 0;          /* Restriction (22)  */
-  if( (p->selFlags & SF_Recursive) && pSub->pPrior ) return 0;       /* (23)  */
+  testcase( pSub->selFlags & SF_Recursive );
+  testcase( pSub->selFlags & SF_MinMaxAgg );
+  if( pSub->selFlags & (SF_Recursive|SF_MinMaxAgg) ){
+    return 0; /* Restrictions (22) and (24) */
+  }
+  if( (p->selFlags & SF_Recursive) && pSub->pPrior ){
+    return 0; /* Restriction (23) */
+  }
 
   /* OBSOLETE COMMENT 1:
   ** Restriction 3:  If the subquery is a join, make sure the subquery is 
@@ -3628,7 +3641,7 @@ static u8 minMaxQuery(AggInfo *pAggInfo, ExprList **ppMinMax){
 
 /*
 ** The select statement passed as the first argument is an aggregate query.
-** The second argment is the associated aggregate-info object. This 
+** The second argument is the associated aggregate-info object. This 
 ** function tests if the SELECT is of the form:
 **
 **   SELECT count(*) FROM <tbl>
@@ -3958,10 +3971,10 @@ static void selectPopWith(Walker *pWalker, Select *p){
 **         fill pTabList->a[].pSelect with a copy of the SELECT statement
 **         that implements the view.  A copy is made of the view's SELECT
 **         statement so that we can freely modify or delete that statement
-**         without worrying about messing up the presistent representation
+**         without worrying about messing up the persistent representation
 **         of the view.
 **
-**    (3)  Add terms to the WHERE clause to accomodate the NATURAL keyword
+**    (3)  Add terms to the WHERE clause to accommodate the NATURAL keyword
 **         on joins and the ON and USING clause of joins.
 **
 **    (4)  Scan the list of columns in the result set (pEList) looking

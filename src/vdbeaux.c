@@ -895,7 +895,7 @@ void sqlite3VdbeSetLineNumber(Vdbe *v, int iLine){
 ** routine, then a pointer to a dummy VdbeOp will be returned.  That opcode
 ** is readable but not writable, though it is cast to a writable value.
 ** The return of a dummy opcode allows the call to continue functioning
-** after a OOM fault without having to check to see if the return from 
+** after an OOM fault without having to check to see if the return from 
 ** this routine is a valid pointer.  But because the dummy.opcode is 0,
 ** dummy will never be written to.  This is verified by code inspection and
 ** by running with Valgrind.
@@ -1610,9 +1610,9 @@ void sqlite3VdbeRewind(Vdbe *p){
 ** After the VDBE has be prepped, it can be executed by one or more
 ** calls to sqlite3VdbeExec().  
 **
-** This function may be called exact once on a each virtual machine.
+** This function may be called exactly once on each virtual machine.
 ** After this routine is called the VM has been "packaged" and is ready
-** to run.  After this routine is called, futher calls to 
+** to run.  After this routine is called, further calls to 
 ** sqlite3VdbeAddOp() functions are prohibited.  This routine disconnects
 ** the Vdbe from the Parse object that helped generate it so that the
 ** the Vdbe becomes an independent entity and the Parse object can be
@@ -1990,7 +1990,7 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
 
   /* The complex case - There is a multi-file write-transaction active.
   ** This requires a master journal file to ensure the transaction is
-  ** committed atomicly.
+  ** committed atomically.
   */
 #ifndef SQLITE_OMIT_DISKIO
   else{
@@ -2638,7 +2638,7 @@ int sqlite3VdbeFinalize(Vdbe *p){
 **      from left to right), or
 **
 **    * the corresponding bit in argument mask is clear (where the first
-**      function parameter corrsponds to bit 0 etc.).
+**      function parameter corresponds to bit 0 etc.).
 */
 void sqlite3VdbeDeleteAuxData(Vdbe *pVdbe, int iOp, int mask){
   AuxData **pp = &pVdbe->pAuxData;
@@ -2742,7 +2742,7 @@ static int SQLITE_NOINLINE handleDeferredMoveto(VdbeCursor *p){
 ** Something has moved cursor "p" out of place.  Maybe the row it was
 ** pointed to was deleted out from under it.  Or maybe the btree was
 ** rebalanced.  Whatever the cause, try to restore "p" to the place it
-** is suppose to be pointing.  If the row was deleted out from under the
+** is supposed to be pointing.  If the row was deleted out from under the
 ** cursor, set the cursor to point to a NULL row.
 */
 static int SQLITE_NOINLINE handleMovedCursor(VdbeCursor *p){
@@ -3267,7 +3267,7 @@ static int vdbeRecordCompareDebug(
   assert( mem1.zMalloc==0 );
 
   /* rc==0 here means that one of the keys ran out of fields and
-  ** all the fields up to that point were equal. Return the the default_rc
+  ** all the fields up to that point were equal. Return the default_rc
   ** value.  */
   rc = pPKey2->default_rc;
 
@@ -3458,7 +3458,7 @@ static i64 vdbeRecordDecodeInt(u32 serial_type, const u8 *aKey){
 ** specified by {nKey1, pKey1} and pPKey2.  It returns a negative, zero
 ** or positive integer if key1 is less than, equal to or 
 ** greater than key2.  The {nKey1, pKey1} key must be a blob
-** created by th OP_MakeRecord opcode of the VDBE.  The pPKey2
+** created by the OP_MakeRecord opcode of the VDBE.  The pPKey2
 ** key must be a parsed key such as obtained from
 ** sqlite3VdbeParseRecord.
 **
@@ -3648,7 +3648,7 @@ int sqlite3VdbeRecordCompare(
   assert( mem1.zMalloc==0 );
 
   /* rc==0 here means that one or both of the keys ran out of fields and
-  ** all the fields up to that point were equal. Return the the default_rc
+  ** all the fields up to that point were equal. Return the default_rc
   ** value.  */
   assert( CORRUPT_DB 
        || vdbeRecordCompareDebug(nKey1, pKey1, pPKey2, pPKey2->default_rc) 

@@ -204,7 +204,7 @@ void sqlite3ErrorMsg(Parse *pParse, const char *zFormat, ...){
 ** occur.
 **
 ** 2002-Feb-14: This routine is extended to remove MS-Access style
-** brackets from around identifers.  For example:  "[a-b-c]" becomes
+** brackets from around identifiers.  For example:  "[a-b-c]" becomes
 ** "a-b-c".
 */
 int sqlite3Dequote(char *z){
