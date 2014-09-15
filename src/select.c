@@ -3131,8 +3131,10 @@ static void substSelect(
 **   (9)  The subquery does not use LIMIT or the outer query does not use
 **        aggregates.
 **
-**  (10)  The subquery does not use aggregates or the outer query does not
-**        use LIMIT.
+**  (**)  Restriction (10) was removed from the code on 2005-02-05 but we
+**        accidently carried the comment forward until 2014-09-15.  Original
+**        text: "The subquery does not use aggregates or the outer query does not
+**        use LIMIT."
 **
 **  (11)  The subquery and the outer query do not both have ORDER BY clauses.
 **
