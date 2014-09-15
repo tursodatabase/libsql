@@ -1,5 +1,5 @@
-C Have\sthe\ssqlite3_index_writer()\sVMs\scheck\sthat\sthe\sfinal\svalues\sof\srecords\sinserted\sinto\sindexes\son\srowid\stables\sare\sintegers.
-D 2014-09-15T12:18:29.913
+C Ensure\sthe\scorrect\scollation\ssequences\sare\sused\swhen\ssorting\sdata\sin\ssqlite3ota.c.
+D 2014-09-15T14:54:07.328
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -125,7 +125,7 @@ F ext/ota/ota.c d37097e92a005d3915883adefbb93019ea6f8841
 F ext/ota/ota1.test fe0bb8acf0caef6c19937b84c6547b788342610d
 F ext/ota/ota2.test 13f76922446c62ed96192e938b8e625ebf0142fa
 F ext/ota/ota3.test 7179a90eb64cf8135a6885568653f158fb130872
-F ext/ota/sqlite3ota.c 3697f6db2d51d5f7c0f0306fe94514785361e521
+F ext/ota/sqlite3ota.c c29b3eb617f37d0e51744508b8f609014244727d
 F ext/ota/sqlite3ota.h 39ce4dffbfcf4ade9e4526369fe2243709345c8e
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 57bec53e1a677ab74217fe1f20a58c3a47261d6b
@@ -231,7 +231,7 @@ F src/resolve.c 0ea356d32a5e884add23d1b9b4e8736681dd5697
 F src/rowset.c a9c9aae3234b44a6d7c6f5a3cadf90dce1e627be
 F src/select.c 89e569b263535662f54b537eb9118b2c554ae7aa
 F src/shell.c 713cef4d73c05fc8e12f4960072329d767a05d50
-F src/sqlite.h.in 706b420dc3390532435a3bd196360a940805f02f
+F src/sqlite.h.in 578c42cb3899ee6ad93a0cccff4eb47e1e9a2c80
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
 F src/sqliteInt.h 7c090825333d91ca392c2479a9e835e7b6a5eb12
@@ -296,7 +296,7 @@ F src/vdbe.h c63fad052c9e7388d551e556e119c0bcf6bebdf8
 F src/vdbeInt.h cdc8e421f85beb1ac9b4669ec5beadab6faa15e0
 F src/vdbeapi.c 09677a53dd8c71bcd670b0bd073bb9aefa02b441
 F src/vdbeaux.c cef5d34a64ae3a65b56d96d3fd663246ec8e1c36
-F src/vdbeblob.c 7ddae314db27c39f654fd2af577c9afc33d089d9
+F src/vdbeblob.c a8e2c3baa3e7081347c4677185a631bfc43de043
 F src/vdbemem.c 921d5468a68ac06f369810992e84ca22cc730a62
 F src/vdbesort.c 7c45bfcd823f30d172bbbc1b9f51ef4402fbfe8d
 F src/vdbetrace.c 6f52bc0c51e144b7efdcfb2a8f771167a8816767
@@ -1199,7 +1199,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b9b38cb8e21826ddfb4c87a1f166ad33c3c7b6eb
-R 6282c8b629d24290f7b2f44befcb6a71
+P cca376bff3510dc5e99fc5824862c3471ceced16
+R 286b5daf6c561394d2eea11438cdac48
 U dan
-Z 32d433205c33319cd81cbc2b152b81af
+Z e26ad3cda7162cfc9e1d6f5aeb5cd971

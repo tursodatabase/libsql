@@ -463,12 +463,77 @@ int sqlite3_blob_reopen(sqlite3_blob *pBlob, sqlite3_int64 iRow){
   return rc;
 }
 
+static int indexWriterOutputVars(
+  sqlite3 *db,
+  Index *pIdx,
+  const char ***pazColl,          /* OUT: Array of collation sequences */
+  int **paiCol,                   /* OUT: Array of column indexes */
+  int *pnCol                      /* OUT: Total columns in index keys */
+){
+  Table *pTbl = pIdx->pTable;     /* Table index is attached to */
+  Index *pPk = 0;
+  int nByte = 0;                  /* Total bytes of space to allocate */
+  int i;                          /* Iterator variable */
+
+  int *aiCol;
+  const char **azColl;
+  char *pCsr;
+
+  if( !HasRowid(pTbl) ){
+    pPk = sqlite3PrimaryKeyIndex(pTbl);
+  }
+
+  for(i=0; i<pIdx->nColumn; i++){
+    const char *zColl = 0;
+    if( i<pIdx->nKeyCol ){
+      zColl = pIdx->azColl[i];
+    }else if( pPk ){
+      zColl = pPk->azColl[i-pIdx->nKeyCol];
+    }
+    if( zColl==0 ) zColl = "BINARY";
+    nByte += sqlite3Strlen30(zColl) + 1;
+  }
+  nByte += (pIdx->nColumn) * (sizeof(const char*) + sizeof(int));
+
+  /* Populate the output variables */
+  *pazColl = azColl = (const char**)sqlite3DbMallocZero(db, nByte);
+  if( azColl==0 ) return SQLITE_NOMEM;
+  *paiCol = aiCol = (int*)&azColl[pIdx->nColumn];
+  *pnCol = pIdx->nColumn;
+  pCsr = (char*)&aiCol[pIdx->nColumn];
+
+  for(i=0; i<pIdx->nColumn; i++){
+    const char *zColl = 0;
+    int nColl;
+    int iCol = pTbl->iPKey;
+    if( i<pIdx->nKeyCol ){
+      zColl = pIdx->azColl[i];
+      iCol = pIdx->aiColumn[i];
+    }else if( pPk ){
+      zColl = pPk->azColl[i-pIdx->nKeyCol];
+      iCol = pPk->aiColumn[i-pIdx->nKeyCol];
+    }
+    if( zColl==0 ) zColl = "BINARY";
+
+    aiCol[i] = iCol;
+    azColl[i] = pCsr;
+    nColl = 1 + sqlite3Strlen30(zColl);
+    memcpy(pCsr, zColl, nColl);
+    pCsr += nColl;
+  }
+
+  return SQLITE_OK;
+}
+
+
 int sqlite3_index_writer(
   sqlite3 *db, 
   int bDelete,
   const char *zIndex, 
   sqlite3_stmt **ppStmt,
-  int **paiCol, int *pnCol
+  const char ***pazColl,          /* OUT: Array of collation sequences */
+  int **paiCol,                   /* OUT: Array of column indexes */
+  int *pnCol                      /* OUT: Total columns in index keys */
 ){
   int rc = SQLITE_OK;
   Parse *pParse = 0;
@@ -477,7 +542,6 @@ int sqlite3_index_writer(
   int i;                          /* Used to iterate through index columns */
   Vdbe *v = 0;
   int regRec;                     /* Register to assemble record in */
-  int *aiCol = 0;
   const char *zAffinity = 0;      /* Affinity string for the current index */
 
   sqlite3_mutex_enter(db->mutex);
@@ -502,37 +566,15 @@ int sqlite3_index_writer(
   pTab = pIdx->pTable;
   zAffinity = sqlite3IndexAffinityStr(v, pIdx);
 
-  /* Populate the two output variables, *pnCol and *pnAiCol. */
-  *pnCol = pIdx->nColumn;
-  *paiCol = aiCol = sqlite3DbMallocZero(db, sizeof(int) * pIdx->nColumn);
-  if( aiCol==0 ){
-    rc = SQLITE_NOMEM;
-    goto index_writer_out;
-  }
-  for(i=0; i<pIdx->nKeyCol; i++){
-    aiCol[i] = pIdx->aiColumn[i];
-  }
-  if( !HasRowid(pTab) ){
-    Index *pPk = sqlite3PrimaryKeyIndex(pIdx->pTable);
-    assert( pIdx->nColumn==pIdx->nKeyCol+pPk->nKeyCol );
-    if( pPk==pIdx ){
-      rc = SQLITE_ERROR;
-      goto index_writer_out;
-    }
-    for(i=0; i<pPk->nKeyCol; i++){
-      aiCol[pIdx->nKeyCol+i] = pPk->aiColumn[i];
-    }
-  }else{
-    assert( pIdx->nColumn==pIdx->nKeyCol+1 );
-    aiCol[i] = pTab->iPKey;
-  }
+  rc = indexWriterOutputVars(db, pIdx, pazColl, paiCol, pnCol);
+  if( rc!=SQLITE_OK ) goto index_writer_out;
 
   /* Add an OP_Noop to the VDBE program. Then store a pointer to the 
   ** output array *paiCol as its P4 value. This is so that the array
   ** is automatically deleted when the user finalizes the statement. The
   ** OP_Noop serves no other purpose. */
   sqlite3VdbeAddOp0(v, OP_Noop);
-  sqlite3VdbeChangeP4(v, -1, (const char*)aiCol, P4_INTARRAY);
+  sqlite3VdbeChangeP4(v, -1, (const char*)(*pazColl), P4_INTARRAY);
 
   sqlite3BeginWriteOperation(pParse, 0, 0);
 

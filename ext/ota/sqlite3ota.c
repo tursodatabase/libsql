@@ -401,11 +401,46 @@ static int otaObjIterGetCols(sqlite3ota *p, OtaObjIter *pIter){
   return p->rc;
 }
 
+/*
+** This function constructs and returns a pointer to a nul-terminated 
+** string containing some SQL clause or list based on one or more of the 
+** column names currently stored in the pIter->azTblCol[] array.
+**
+** If an OOM error is encountered, NULL is returned and an error code
+** left in the OTA handle passed as the first argument. Otherwise, a pointer
+** to the allocated string buffer is returned. It is the responsibility
+** of the caller to eventually free this buffer using sqlite3_free().
+**
+** The number of column names to include in the returned string is passed
+** as the third argument.
+**
+** If arguments aiCol and azCollate are both NULL, then the returned string
+** contains the first nCol column names as a comma-separated list. For 
+** example:
+**
+**     "a", "b", "c"
+**
+** If argument aiCol is not NULL, it must point to an array containing nCol
+** entries - the index of each column name to include in the comma-separated
+** list. For example, if aiCol[] contains {2, 0, 1), then the returned 
+** string is changed to:
+**
+**     "c", "a", "b"
+**
+** If azCollate is not NULL, it must also point to an array containing nCol
+** entries - collation sequence names to associated with each element of
+** the comma separated list. For example, ef azCollate[] contains 
+** {"BINARY", "NOCASE", "REVERSE"}, then the retuned string is:
+**
+**     "c" COLLATE "BINARY", "a" COLLATE "NOCASE", "b" COLLATE "REVERSE"
+**
+*/
 static char *otaObjIterGetCollist(
-  sqlite3ota *p, 
-  OtaObjIter *pIter, 
-  int nCol, 
-  int *aiCol
+  sqlite3ota *p,                  /* OTA object */
+  OtaObjIter *pIter,              /* Object iterator for column names */
+  int nCol,                       /* Number of column names */
+  int *aiCol,                     /* Array of nCol column indexes */
+  const char **azCollate          /* Array of nCol collation sequence names */
 ){
   char *zList = 0;
   if( p->rc==SQLITE_OK ){
@@ -414,6 +449,9 @@ static char *otaObjIterGetCollist(
     for(i=0; i<nCol; i++){
       int iCol = aiCol ? aiCol[i] : i;
       zList = sqlite3_mprintf("%z%s%s", zList, zSep, pIter->azTblCol[iCol]);
+      if( zList && azCollate ){
+        zList = sqlite3_mprintf("%z COLLATE %Q", zList, azCollate[i]);
+      }
       zSep = ", ";
       if( zList==0 ){
         p->rc = SQLITE_NOMEM;
@@ -548,21 +586,22 @@ static int otaObjIterPrepareAll(
 
     if( zIdx ){
       int *aiCol;                 /* Column map */
+      const char **azColl;        /* Collation sequences */
 
       /* Create the index writers */
       if( p->rc==SQLITE_OK ){
         p->rc = sqlite3_index_writer(
-            p->db, 0, zIdx, &pIter->pInsert, &aiCol, &pIter->nCol
+            p->db, 0, zIdx, &pIter->pInsert, &azColl, &aiCol, &pIter->nCol
         );
       }
       if( p->rc==SQLITE_OK ){
         p->rc = sqlite3_index_writer(
-            p->db, 1, zIdx, &pIter->pDelete, &aiCol, &pIter->nCol
+            p->db, 1, zIdx, &pIter->pDelete, &azColl, &aiCol, &pIter->nCol
         );
       }
 
       /* Create the SELECT statement to read keys in sorted order */
-      zCollist = otaObjIterGetCollist(p, pIter, pIter->nCol, aiCol);
+      zCollist = otaObjIterGetCollist(p, pIter, pIter->nCol, aiCol, azColl);
       if( p->rc==SQLITE_OK ){
         p->rc = prepareFreeAndCollectError(p->db, &pIter->pSelect, pz,
             sqlite3_mprintf(
@@ -582,7 +621,7 @@ static int otaObjIterPrepareAll(
       char *zWhere = otaObjIterGetWhere(p, pIter);
       char *zOldlist = otaObjIterGetOldlist(p, pIter, "old");
       char *zNewlist = otaObjIterGetOldlist(p, pIter, "new");
-      zCollist = otaObjIterGetCollist(p, pIter, pIter->nTblCol, 0);
+      zCollist = otaObjIterGetCollist(p, pIter, pIter->nTblCol, 0, 0);
       pIter->nCol = pIter->nTblCol;
 
       /* Create the SELECT statement to read keys from data_xxx */

@@ -7415,6 +7415,7 @@ int sqlite3_index_writer(
   int bDelete,                    /* Zero for insert, non-zero for delete */
   const char *zIndex,             /* Index to write to */
   sqlite3_stmt**,                 /* OUT: New statement handle */
+  const char ***pazColl,          /* OUT: Collation sequences for each column */
   int **paiCol, int *pnCol        /* OUT: See above */
 );
 
