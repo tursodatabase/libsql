@@ -6497,70 +6497,6 @@ static int sorter_test_sort4_helper(
 }
 
 
-/*
-** tclcmd: sqlite3_transaction_save DB
-*/
-static int testTransactionSave(
-  void * clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-  void *pState;
-  int nState;
-  sqlite3 *db;
-  int rc;
-
-  if( objc!=2 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "DB");
-    return TCL_ERROR;
-  }
-  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
-
-  rc = sqlite3_transaction_save(db, &pState, &nState);
-  if( rc==SQLITE_OK ){
-    Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(pState, nState));
-  }else{
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
-    return TCL_ERROR;
-  }
-
-  sqlite3_free(pState);
-  return TCL_OK;
-}
-
-/*
-** tclcmd: sqlite3_transaction_restore DB BLOB
-*/
-static int testTransactionRestore(
-  void * clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-  void *pState;
-  int nState;
-  sqlite3 *db;
-  int rc;
-
-  if( objc!=3 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "DB BLOB");
-    return TCL_ERROR;
-  }
-  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
-  pState = (void*)Tcl_GetByteArrayFromObj(objv[2], &nState);
-
-  rc = sqlite3_transaction_restore(db, pState, nState);
-  if( rc==SQLITE_OK ){
-    Tcl_ResetResult(interp);
-  }else{
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
-    return TCL_ERROR;
-  }
-
-  return TCL_OK;
-}
-
 #ifdef SQLITE_USER_AUTHENTICATION
 #include "sqlite3userauth.h"
 /*
@@ -6924,8 +6860,6 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "load_static_extension", tclLoadStaticExtensionCmd },
      { "sorter_test_fakeheap", sorter_test_fakeheap },
      { "sorter_test_sort4_helper", sorter_test_sort4_helper },
-     { "sqlite3_transaction_save",    testTransactionSave },
-     { "sqlite3_transaction_restore", testTransactionRestore },
 #ifdef SQLITE_USER_AUTHENTICATION
      { "sqlite3_user_authenticate", test_user_authenticate, 0 },
      { "sqlite3_user_add",          test_user_add,          0 },

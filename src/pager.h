@@ -207,9 +207,6 @@ void *sqlite3PagerCodec(DbPage *);
 # define enable_simulated_io_errors()
 #endif
 
-int sqlite3PagerSaveState(Pager *pPager, void **ppState, int *pnState);
-int sqlite3PagerRestoreState(Pager *pPager, const void *pState, int nState);
-
 int sqlite3PagerSetOtaMode(Pager *pPager, int bOta);
 
 #endif /* _PAGER_H_ */

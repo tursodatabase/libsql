@@ -797,6 +797,7 @@ int sqlite3_prepare_v2(
   return rc;
 }
 
+
 #ifndef SQLITE_OMIT_UTF16
 /*
 ** Compile the UTF-16 encoded SQL statement zSql into a statement handle.

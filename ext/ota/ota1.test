@@ -219,6 +219,12 @@ foreach {tn2 cmd} {1 run_ota 2 step_ota} {
       CREATE INDEX i2 ON t1(c, b);
       CREATE INDEX i3 ON t1(c, b, c);
     }
+    4 {
+      CREATE TABLE t1(a INT PRIMARY KEY, b, c) WITHOUT ROWID;
+      CREATE INDEX i1 ON t1(b);
+      CREATE INDEX i2 ON t1(c, b);
+      CREATE INDEX i3 ON t1(c, b, c);
+    }
   } {
     reset_db
     execsql $schema
@@ -254,6 +260,15 @@ foreach {tn2 cmd} {1 run_ota 2 step_ota} {
     }
     2 {
       CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c, d);
+      CREATE INDEX i1 ON t1(d);
+      CREATE INDEX i2 ON t1(d, c);
+      CREATE INDEX i3 ON t1(d, c, b);
+      CREATE INDEX i4 ON t1(b);
+      CREATE INDEX i5 ON t1(c);
+      CREATE INDEX i6 ON t1(c, b);
+    }
+    3 {
+      CREATE TABLE t1(a PRIMARY KEY, b, c, d) WITHOUT ROWID;
       CREATE INDEX i1 ON t1(d);
       CREATE INDEX i2 ON t1(d, c);
       CREATE INDEX i3 ON t1(d, c, b);

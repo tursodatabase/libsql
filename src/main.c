@@ -3473,15 +3473,3 @@ int sqlite3_db_readonly(sqlite3 *db, const char *zDbName){
   Btree *pBt = sqlite3DbNameToBtree(db, zDbName);
   return pBt ? sqlite3BtreeIsReadonly(pBt) : -1;
 }
-
-int sqlite3_transaction_save(sqlite3 *db, void **ppState, int *pnState){
-  Pager *pPager = sqlite3BtreePager(db->aDb[0].pBt);
-  return sqlite3PagerSaveState(pPager, ppState, pnState);
-}
-
-int sqlite3_transaction_restore(sqlite3 *db, const void *pState, int nState){
-  Pager *pPager = sqlite3BtreePager(db->aDb[0].pBt);
-  return sqlite3PagerRestoreState(pPager, pState, nState);
-}
-
-

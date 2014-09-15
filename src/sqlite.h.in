@@ -7465,25 +7465,6 @@ int sqlite3_index_writer(
 );
 
 /*
-** This function is used to save the state of an ongoing WAL mode write 
-** transaction on the "main" database of the supplied database handle.
-**
-** If successful, SQLITE_OK is returned and output variable (*ppState)
-** is set to point to a buffer containing the transaction state data. 
-** (*pnState) is set to the size of that buffer in bytes. Otherwise, if
-** an error occurs, an SQLite error code is returned and both output
-** variables are zeroed.
-**
-** A transaction state may be saved if: 
-**
-**   * the transaction does not contain any schema modifications.
-**   * there are no open sub-transactions.
-*/
-int sqlite3_transaction_save(sqlite3 *db, void **ppState, int *pnState);
-
-int sqlite3_transaction_restore(sqlite3 *db, const void *pState, int nState);
-
-/*
 ** Undo the hack that converts floating point types to integer for
 ** builds on processors without floating point support.
 */

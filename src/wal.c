@@ -1046,62 +1046,6 @@ static int walIndexAppend(Wal *pWal, u32 iFrame, u32 iPage){
   return rc;
 }
 
-static int walFileReadHdr(Wal *pWal, int *pbValid){
-  u8 aBuf[WAL_HDRSIZE];           /* Buffer to load WAL header into */
-  int rc;                         /* Return code */
-  u32 magic;                      /* Magic value read from WAL header */
-  int szPage;                     /* Page size according to the log */
-  u32 version;                    /* Magic value read from WAL header */
-
-  *pbValid = 0;
-
-  /* Read in the WAL header. */
-  rc = sqlite3OsRead(pWal->pWalFd, aBuf, WAL_HDRSIZE, 0);
-  if( rc!=SQLITE_OK ){
-    return rc;
-  }
-
-  /* If the database page size is not a power of two, or is greater than
-  ** SQLITE_MAX_PAGE_SIZE, conclude that the WAL file contains no valid 
-  ** data. Similarly, if the 'magic' value is invalid, ignore the whole
-  ** WAL file.
-  */
-  magic = sqlite3Get4byte(&aBuf[0]);
-  szPage = sqlite3Get4byte(&aBuf[8]);
-  if( (magic&0xFFFFFFFE)!=WAL_MAGIC 
-      || szPage&(szPage-1) 
-      || szPage>SQLITE_MAX_PAGE_SIZE 
-      || szPage<512 
-  ){
-    return SQLITE_OK;
-  }
-
-  pWal->hdr.bigEndCksum = (u8)(magic&0x00000001);
-  pWal->szPage = szPage;
-  pWal->nCkpt = sqlite3Get4byte(&aBuf[12]);
-  memcpy(&pWal->hdr.aSalt, &aBuf[16], 8);
-
-  /* Verify that the WAL header checksum is correct */
-  walChecksumBytes(pWal->hdr.bigEndCksum==SQLITE_BIGENDIAN, 
-      aBuf, WAL_HDRSIZE-2*4, 0, pWal->hdr.aFrameCksum
-  );
-  if( pWal->hdr.aFrameCksum[0]!=sqlite3Get4byte(&aBuf[24])
-      || pWal->hdr.aFrameCksum[1]!=sqlite3Get4byte(&aBuf[28])
-  ){
-    return SQLITE_OK;
-  }
-
-  /* Verify that the version number on the WAL format is one that
-  ** are able to understand */
-  version = sqlite3Get4byte(&aBuf[4]);
-  if( version!=WAL_MAX_VERSION ){
-    return SQLITE_CANTOPEN_BKPT;
-  }
-
-  *pbValid = 1;
-  return SQLITE_OK;
-}
-
 
 /*
 ** Recover the wal-index by reading the write-ahead log file. 
@@ -1146,18 +1090,59 @@ static int walIndexRecover(Wal *pWal){
   }
 
   if( nSize>WAL_HDRSIZE ){
+    u8 aBuf[WAL_HDRSIZE];         /* Buffer to load WAL header into */
     u8 *aFrame = 0;               /* Malloc'd buffer to load entire frame */
     int szFrame;                  /* Number of bytes in buffer aFrame[] */
     u8 *aData;                    /* Pointer to data part of aFrame buffer */
     int iFrame;                   /* Index of last frame read */
     i64 iOffset;                  /* Next offset to read from log file */
     int szPage;                   /* Page size according to the log */
+    u32 magic;                    /* Magic value read from WAL header */
+    u32 version;                  /* Magic value read from WAL header */
     int isValid;                  /* True if this frame is valid */
 
-    rc = walFileReadHdr(pWal, &isValid);
-    if( rc!=SQLITE_OK ) goto recovery_error;
-    if( isValid==0 ) goto finished;
-    szPage = pWal->szPage;
+    /* Read in the WAL header. */
+    rc = sqlite3OsRead(pWal->pWalFd, aBuf, WAL_HDRSIZE, 0);
+    if( rc!=SQLITE_OK ){
+      goto recovery_error;
+    }
+
+    /* If the database page size is not a power of two, or is greater than
+    ** SQLITE_MAX_PAGE_SIZE, conclude that the WAL file contains no valid 
+    ** data. Similarly, if the 'magic' value is invalid, ignore the whole
+    ** WAL file.
+    */
+    magic = sqlite3Get4byte(&aBuf[0]);
+    szPage = sqlite3Get4byte(&aBuf[8]);
+    if( (magic&0xFFFFFFFE)!=WAL_MAGIC 
+     || szPage&(szPage-1) 
+     || szPage>SQLITE_MAX_PAGE_SIZE 
+     || szPage<512 
+    ){
+      goto finished;
+    }
+    pWal->hdr.bigEndCksum = (u8)(magic&0x00000001);
+    pWal->szPage = szPage;
+    pWal->nCkpt = sqlite3Get4byte(&aBuf[12]);
+    memcpy(&pWal->hdr.aSalt, &aBuf[16], 8);
+
+    /* Verify that the WAL header checksum is correct */
+    walChecksumBytes(pWal->hdr.bigEndCksum==SQLITE_BIGENDIAN, 
+        aBuf, WAL_HDRSIZE-2*4, 0, pWal->hdr.aFrameCksum
+    );
+    if( pWal->hdr.aFrameCksum[0]!=sqlite3Get4byte(&aBuf[24])
+     || pWal->hdr.aFrameCksum[1]!=sqlite3Get4byte(&aBuf[28])
+    ){
+      goto finished;
+    }
+
+    /* Verify that the version number on the WAL format is one that
+    ** are able to understand */
+    version = sqlite3Get4byte(&aBuf[4]);
+    if( version!=WAL_MAX_VERSION ){
+      rc = SQLITE_CANTOPEN_BKPT;
+      goto finished;
+    }
 
     /* Malloc a buffer to read frames into. */
     szFrame = szPage + WAL_FRAME_HDRSIZE;
@@ -1833,6 +1818,9 @@ static void walLimitSize(Wal *pWal, i64 nMax){
 
 /*
 ** Close a connection to a log file.
+**
+** If parameter zBuf is not NULL, attempt to obtain an exclusive lock 
+** and run a checkpoint.
 */
 int sqlite3WalClose(
   Wal *pWal,                      /* Wal to close */
@@ -3094,157 +3082,6 @@ int sqlite3WalExclusiveMode(Wal *pWal, int op){
 */
 int sqlite3WalHeapMemory(Wal *pWal){
   return (pWal && pWal->exclusiveMode==WAL_HEAPMEMORY_MODE );
-}
-
-/*
-** Save current transaction state.
-**
-** The transaction state consists of a series of 32-bit big-endian integers:
-**
-**     * initial number of frames in WAL file.
-**     * initial checksum values (2 integers).
-**     * current number of frames.
-**     * current checksum values (2 integers).
-*/
-int sqlite3WalSaveState(Wal *pWal, void **ppState, int *pnState){
-  int rc = SQLITE_OK;
-
-  *ppState = 0;
-  *pnState = 0;
-  if( pWal->writeLock==0 ){
-    /* Must be in a write transaction to call this function. */
-    rc = SQLITE_ERROR;
-  }else{
-    WalIndexHdr *pOrig = (WalIndexHdr*)walIndexHdr(pWal);
-    int nBuf = 6 * 4;             /* Bytes of space to allocate */
-    u8 *aBuf;
-
-    aBuf = sqlite3_malloc(nBuf);
-    if( aBuf==0 ){
-      rc = SQLITE_NOMEM;
-    }else{
-      sqlite3Put4byte(&aBuf[0], pOrig->mxFrame);
-      sqlite3Put4byte(&aBuf[4], pOrig->aFrameCksum[0]);
-      sqlite3Put4byte(&aBuf[8], pOrig->aFrameCksum[1]);
-      sqlite3Put4byte(&aBuf[12], pWal->hdr.mxFrame);
-      sqlite3Put4byte(&aBuf[16], pWal->hdr.aFrameCksum[0]);
-      sqlite3Put4byte(&aBuf[20], pWal->hdr.aFrameCksum[1]);
-      *ppState = (void*)aBuf;
-      *pnState = nBuf;
-    }
-  }
-
-  return rc;
-}
-
-static int walUndoNoop(void *pUndoCtx, Pgno pgno){
-  UNUSED_PARAMETER(pUndoCtx);
-  UNUSED_PARAMETER(pgno);
-  return SQLITE_OK;
-}
-
-/*
-** If possible, restore the state of the curent transaction to that 
-** described by the second and third arguments.
-*/
-int sqlite3WalRestoreState(Wal *pWal, const void *pState, int nState){
-  int rc = SQLITE_OK;
-
-  if( pWal->writeLock==0 ){
-    /* Must have opened a write transaction to call this */
-    rc = SQLITE_ERROR;
-  }else{
-    u8 *aBuf = (u8*)pState;
-    int szFrame;                    /* Size of each frame in WAL file */
-    u8 *aFrame = 0;                 /* Buffer to read data into */
-    u8 *aData;                      /* Data part of aFrame[] buffer */
-    u32 mxFrame;                    /* Maximum frame following restoration */
-    int i;                          /* Iterator variable */
-
-    WalIndexHdr *pOrig = (WalIndexHdr*)walIndexHdr(pWal);
-
-    /* Check that no dirty pages have been written to the WAL file since
-    ** the current transaction was opened.  */
-    if( pOrig->mxFrame!=pWal->hdr.mxFrame 
-     || pOrig->aFrameCksum[0]!=pWal->hdr.aFrameCksum[0] 
-     || pOrig->aFrameCksum[1]!=pWal->hdr.aFrameCksum[1] 
-    ){
-      rc = SQLITE_ERROR;
-    }
-
-    /* Check that the WAL file is in the same state that it was when the
-    ** transaction was saved. If not, return SQLITE_MISMATCH - cannot 
-    ** resume this transaction  */
-    if( rc==SQLITE_OK && (
-          pWal->hdr.mxFrame!=sqlite3Get4byte(&aBuf[0])
-       || pWal->hdr.aFrameCksum[0]!=sqlite3Get4byte(&aBuf[4])
-       || pWal->hdr.aFrameCksum[1]!=sqlite3Get4byte(&aBuf[8])
-    )){
-      rc = SQLITE_MISMATCH;
-    }
-
-    if( rc==SQLITE_OK && pWal->readLock==0 ){
-      int cnt = 0;
-      walUnlockShared(pWal, WAL_READ_LOCK(0));
-      pWal->readLock = -1;
-      do{
-        int notUsed;
-        rc = walTryBeginRead(pWal, &notUsed, 1, ++cnt);
-      }while( rc==WAL_RETRY );
-      
-      if( rc==SQLITE_OK ){
-        int bValid;
-        rc = walFileReadHdr(pWal, &bValid);
-        if( rc==SQLITE_OK && bValid==0 ) rc = SQLITE_MISMATCH;
-        pWal->hdr.szPage = (u16)((pWal->szPage&0xff00) | (pWal->szPage>>16));
-      }
-    }
-
-    /* Malloc a buffer to read frames into. */
-    if( rc==SQLITE_OK ){
-      szFrame = pWal->szPage + WAL_FRAME_HDRSIZE;
-      aFrame = (u8*)sqlite3_malloc(szFrame);
-      if( !aFrame ){
-        rc = SQLITE_NOMEM;
-      }else{
-        aData = &aFrame[WAL_FRAME_HDRSIZE];
-      }
-    }
-
-    mxFrame = sqlite3Get4byte(&aBuf[12]);
-    for(i=pWal->hdr.mxFrame+1; rc==SQLITE_OK && i<=mxFrame; i++){
-      sqlite3_int64 iOff = walFrameOffset(i, pWal->szPage);
-      rc = sqlite3OsRead(pWal->pWalFd, aFrame, szFrame, iOff);
-      if( rc==SQLITE_OK ){
-        u32 iPg;
-        u32 dummy;
-        if( 0==walDecodeFrame(pWal, &iPg, &dummy, aData, aFrame) ){
-          rc = SQLITE_MISMATCH;
-        }else{
-          rc = walIndexAppend(pWal, i, iPg);
-          if( iPg>pWal->hdr.nPage ) pWal->hdr.nPage = iPg;
-        }
-        pWal->hdr.mxFrame = i;
-      }
-    }
-    sqlite3_free(aFrame);
-
-    if( rc==SQLITE_OK ){
-      assert( pWal->hdr.mxFrame==mxFrame );
-      if( pWal->hdr.aFrameCksum[0]!=sqlite3Get4byte(&aBuf[16])
-       || pWal->hdr.aFrameCksum[1]!=sqlite3Get4byte(&aBuf[20])
-      ){
-        rc = SQLITE_MISMATCH;
-      }
-    }
-
-
-    if( rc!=SQLITE_OK ){
-      sqlite3WalUndo(pWal, walUndoNoop, 0);
-    }
-  }
-
-  return rc;
 }
 
 #ifdef SQLITE_ENABLE_ZIPVFS

@@ -1,5 +1,5 @@
-C Merge\slatest\strunk\sfixes\sinto\sthis\sbranch.
-D 2014-09-15T16:57:10.623
+C Remove\sthe\sexperimental\ssqlite3_transaction_save()\sand\srestore()\sAPIs.
+D 2014-09-15T19:34:04.372
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -122,7 +122,7 @@ F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
 F ext/ota/ota.c d37097e92a005d3915883adefbb93019ea6f8841
-F ext/ota/ota1.test fe0bb8acf0caef6c19937b84c6547b788342610d
+F ext/ota/ota1.test 7cbf37a9f6cd29320f47b041cfeb0cc1d7eaa916
 F ext/ota/ota2.test 13f76922446c62ed96192e938b8e625ebf0142fa
 F ext/ota/ota3.test 1c48b7476af1c5920db9a43e7b1476d421a463b5
 F ext/ota/sqlite3ota.c 668ed08dd81ff8ae1e8524b2d4bf0f2609cbf907
@@ -199,7 +199,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
 F src/loadext.c de741e66e5ddc1598d904d7289239696e40ed994
-F src/main.c 6b9fd1867a5575db2119f850302a883e7684009c
+F src/main.c d15621461fb0c52675eba2b650492ed1beef69ab
 F src/malloc.c cc015821ba267ad5c91dc8761d0498a3fc3ce6ce
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c faf615aafd8be74a71494dfa027c113ea5c6615f
@@ -220,21 +220,21 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c addd023b26c623fec4dedc110fc4370a65b4768c
 F src/os_win.c 0a4042ef35f322e86fa01f6c8884c5e645b911e7
 F src/os_win.h 09e751b20bbc107ffbd46e13555dc73576d88e21
-F src/pager.c b7c625fc92e86fea1971b8a630009eab3ff18997
-F src/pager.h 6a08df06b7edc3684375c0fab40602c695a044f2
+F src/pager.c c1cdf5509386b5c3695082655ce6de6431d920d6
+F src/pager.h 5c13927809e1c35d85e82e14342d817df3019e07
 F src/parse.y 22d6a074e5f5a7258947a1dc55a9bf946b765dd0
 F src/pcache.c 4121a0571c18581ee9f82f086d5e2030051ebd6a
 F src/pcache.h 9b559127b83f84ff76d735c8262f04853be0c59a
 F src/pcache1.c dab8ab930d4a73b99768d881185994f34b80ecaa
-F src/pragma.c 5dba6b386cbfe0b094350b7d6c99fd410958f22d
-F src/prepare.c 905c3c601ccadd22bb70b63cd48392f7126c9807
+F src/pragma.c c401b5ddbb5c882e2b9d9e16fad2abd8b4a86564
+F src/prepare.c 6ef0cf2f9274982988ed6b7cab1be23147e94196
 F src/printf.c e74925089a85e3c9f0e315595f41c139d3d118c2
 F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c a3466128b52a86c466e47ac1a19e2174f7b5cf89
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 0cd6706fd52ae5db229e9041094db6ec27195335
 F src/shell.c c00220cdd7f2027780bc25b78376c16dc24e4b7d
-F src/sqlite.h.in 5bcaca9d5a8403fda0c8677de4c527907b317f1d
+F src/sqlite.h.in a98b0429855f023074f44a63dba23d11469ebc6d
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
 F src/sqliteInt.h 3210f8bd040d1c6d8b1616325b15dd3ff749e48f
@@ -242,7 +242,7 @@ F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 218ae2ba022881846741dfc8351aefdf129e0377
 F src/tclsqlite.c ac7d1672f69c9d69defeb022f656d04f5cefd198
-F src/test1.c 75655557ebc7138e1d745313635b6b100c90c151
+F src/test1.c 44562bf344a6b12a273f46fd906631ef301a6416
 F src/test2.c 98049e51a17dc62606a99a9eb95ee477f9996712
 F src/test3.c 1c0e5d6f080b8e33c1ce8b3078e7013fdbcd560c
 F src/test4.c 9b32d22f5f150abe23c1830e2057c4037c45b3df
@@ -304,8 +304,8 @@ F src/vdbemem.c dc36ea9fe26c25550c50085f388167086ef7d73a
 F src/vdbesort.c a7a40ceca6325b853040ffcc363dcd49a45f201b
 F src/vdbetrace.c 16d39c1ef7d1f4a3a7464bea3b7b4bdd7849c415
 F src/vtab.c 019dbfd0406a7447c990e1f7bd1dfcdb8895697f
-F src/wal.c 6f5ff51117293e7b2c75ad21834f51115e59ea96
-F src/wal.h 237bc4484f7c289f094ecb6efb2b6c02005484e1
+F src/wal.c 3c56c85d80a17b51cd8cb0bed5c1ecc4f0771012
+F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
 F src/where.c 839b5e1db2507e221ad1c308f148a8519ed750be
 F src/whereInt.h 124d970450955a6982e174b07c320ae6d62a595c
@@ -1204,7 +1204,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 55b8011d5b455927f5b92a3cb911fd909fb0edab 4060efb646c873c4abde7ab9ddf330489a44f274
-R a8de04acab3d1132246bf5d89e41e027
+P 5efafef51d146bcba3adc425561bfa1ac083c0a7
+R 684c9325f89b1d695bf7f6172a6df69f
 U dan
-Z 1d00f387d17c6184cf9c7c454dc66aca
+Z 4568916327f8707f39b56bf66a2404a6

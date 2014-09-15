@@ -482,7 +482,6 @@ static const struct sPragmaNames {
 #endif
 };
 /* Number of pragmas: 59 on by default, 72 total. */
-/* Number of pragmas: 58 on by default, 71 total. */
 /* End of the automatically generated pragma table.
 ***************************************************************************/
 
