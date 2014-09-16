@@ -885,8 +885,11 @@ int sqlite3VdbeMemSetStr(
 ** key is true to get the key or false to get data.  The result is written
 ** into the pMem element.
 **
-** The pMem structure is assumed to be uninitialized.  Any prior content
-** is overwritten without being freed.
+** The pMem object must have been initialized.  This routine will use
+** pMem->zMalloc to hold the content from the btree, if possible.  New
+** pMem->zMalloc space will be allocated if necessary.  The calling routine
+** is responsible for making sure that the pMem object is eventually
+** destroyed.
 **
 ** If this routine fails for any reason (malloc returns NULL or unable
 ** to read from the disk) then the pMem is left in an inconsistent state.
