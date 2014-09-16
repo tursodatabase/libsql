@@ -208,5 +208,6 @@ void *sqlite3PagerCodec(DbPage *);
 #endif
 
 int sqlite3PagerSetOtaMode(Pager *pPager, int bOta);
+void sqlite3PagerWalSalt(Pager *pPager, u32 *aSalt);
 
 #endif /* _PAGER_H_ */

@@ -877,13 +877,37 @@ void sqlite3Pragma(
 
   /*
   **  PRAGMA [database.]pager_ota_mode=[01]
+  **
+  ** This pragma sets a flag on the pager associated with the main database
+  ** only. The flag can only be set when there is no open transaction and 
+  ** the pager does not already have an open WAL file.
+  **
+  ** Once the flag has been set, it is not possible to open a regular WAL
+  ** file. If, when the next read-transaction is opened, a *-wal file is 
+  ** found or the database header flags indicate that it is a wal-mode 
+  ** database, SQLITE_CANTOPEN is returned.
+  **
+  ** Otherwise, if no WAL file or flags are found, the pager opens the *-oal
+  ** file and uses it as a write-ahead-log with the *-shm data stored in
+  ** heap-memory. If the *-oal file already exists but the database file has
+  ** been modified since it was created, an SQLITE_BUSY_SNAPSHOT error is
+  ** returned and the read-transaction cannot be opened.
+  **
+  ** Other clients see a rollback-mode database on which the pager_ota_mode
+  ** client is holding a SHARED lock.
   */
   case PragTyp_PAGER_OTA_MODE: {
     Btree *pBt = pDb->pBt;
     assert( pBt!=0 );
     if( zRight ){
       int iArg = !!sqlite3Atoi(zRight);
-      rc = sqlite3PagerSetOtaMode(sqlite3BtreePager(pBt), iArg);
+      if( sqlite3BtreeIsInReadTrans(pBt) ){
+        sqlite3ErrorMsg(pParse, 
+            "cannot set pager_ota_mode with open transaction"
+        );
+      }else if( sqlite3PagerSetOtaMode(sqlite3BtreePager(pBt), iArg) ){
+        sqlite3ErrorMsg(pParse, "cannot set pager_ota_mode in wal mode");
+      }
     }
     break;
   }

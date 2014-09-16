@@ -2769,7 +2769,9 @@ int sqlite3WalFrames(
     sqlite3Put4byte(&aWalHdr[4], WAL_MAX_VERSION);
     sqlite3Put4byte(&aWalHdr[8], szPage);
     sqlite3Put4byte(&aWalHdr[12], pWal->nCkpt);
-    if( pWal->nCkpt==0 ) sqlite3_randomness(8, pWal->hdr.aSalt);
+    if( pWal->nCkpt==0 ){
+      sqlite3PagerWalSalt(pList->pPager, pWal->hdr.aSalt);
+    }
     memcpy(&aWalHdr[16], pWal->hdr.aSalt, 8);
     walChecksumBytes(1, aWalHdr, WAL_HDRSIZE-2*4, 0, aCksum);
     sqlite3Put4byte(&aWalHdr[24], aCksum[0]);
@@ -3082,6 +3084,24 @@ int sqlite3WalExclusiveMode(Wal *pWal, int op){
 */
 int sqlite3WalHeapMemory(Wal *pWal){
   return (pWal && pWal->exclusiveMode==WAL_HEAPMEMORY_MODE );
+}
+
+/*
+** Unless the wal file is empty, check that the 8 bytes of salt stored in
+** the wal header are identical to those in the buffer indicated by the
+** second argument. If they are not, return SQLITE_BUSY_SNAPSHOT. Otherwise,
+** if the buffers match or the WAL file is empty, return SQLITE_OK.
+*/
+int sqlite3WalCheckSalt(Wal *pWal, sqlite3_file *pFd){
+  int rc = SQLITE_OK;
+  if( pWal->hdr.mxFrame>0 ){
+    u8 aData[16];
+    rc = sqlite3OsRead(pFd, aData, sizeof(aData), 24);
+    if( rc==SQLITE_OK && memcmp(pWal->hdr.aSalt, aData, 8) ){
+      rc = SQLITE_BUSY_SNAPSHOT;
+    }
+  }
+  return rc;
 }
 
 #ifdef SQLITE_ENABLE_ZIPVFS
