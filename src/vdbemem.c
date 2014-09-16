@@ -730,6 +730,7 @@ void sqlite3VdbeMemAboutToChange(Vdbe *pVdbe, Mem *pMem){
 */
 void sqlite3VdbeMemShallowCopy(Mem *pTo, const Mem *pFrom, int srcType){
   assert( (pFrom->flags & MEM_RowSet)==0 );
+  assert( pTo->db==pFrom->db );
   VdbeMemReleaseExtern(pTo);
   memcpy(pTo, pFrom, MEMCELLSIZE);
   pTo->xDel = 0;
@@ -747,6 +748,7 @@ void sqlite3VdbeMemShallowCopy(Mem *pTo, const Mem *pFrom, int srcType){
 int sqlite3VdbeMemCopy(Mem *pTo, const Mem *pFrom){
   int rc = SQLITE_OK;
 
+  assert( pTo->db==pFrom->db );
   assert( (pFrom->flags & MEM_RowSet)==0 );
   VdbeMemReleaseExtern(pTo);
   memcpy(pTo, pFrom, MEMCELLSIZE);

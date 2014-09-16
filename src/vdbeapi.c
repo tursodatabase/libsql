@@ -803,11 +803,21 @@ static const Mem *columnNullValue(void){
 #if defined(SQLITE_DEBUG) && defined(__GNUC__)
     __attribute__((aligned(8))) 
 #endif
-    = {0, "", (double)0, {0}, 0, MEM_Null, 0,
+    = {
+         .flags      = MEM_Null,
+         .enc        = 0,
+         .n          = 0,
+         .r          = (double)0,
+         .u          = {0},
+         .z          = 0,
+         .zMalloc    = 0,
+         .db         = 0,
+         .xDel       = 0,
 #ifdef SQLITE_DEBUG
-       0, 0,  /* pScopyFrom, pFiller */
+         .pScopyFrom = 0,
+         .pFiller    = 0,
 #endif
-       0, 0 };
+      };
   return &nullMem;
 }
 

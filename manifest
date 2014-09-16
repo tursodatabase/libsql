@@ -1,5 +1,5 @@
-C Changes\sto\ssqlite3VdbeRecordUnpack()\sto\smake\sit\sslightly\ssmaller\sand\sfaster.
-D 2014-09-16T13:30:05.468
+C Reorder\sthe\selements\sof\sthe\sMem\sobject\sfor\sa\ssmall\ssize\sreduction\sand\nperformance\simprovement.
+D 2014-09-16T14:16:31.846
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -183,7 +183,7 @@ F src/delete.c fae81cc2eb14b75267d4f47d3cfc9ae02aae726f
 F src/expr.c 19392d98e089640c3336e65b4254cc337efef7d1
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c da985ae673efef2c712caef825a5d2edb087ead7
-F src/func.c 5d498933f6168dff80941c873805fe04dc2b766d
+F src/func.c 1629ccdd8ef3f19d7accc9d9287190489469ff81
 F src/global.c 5110fa12e09729b84eee0191c984ec4008e21937
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
 F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
@@ -290,11 +290,11 @@ F src/util.c 4006c01772bd8d8ac4306d523bbcee41d3e392d8
 F src/vacuum.c 59f03f92bcff57faa6a8ca256eb29ccddfb0614a
 F src/vdbe.c 9a45dcbcc967fc0cb9248c75ba245d1d47de3e78
 F src/vdbe.h c63fad052c9e7388d551e556e119c0bcf6bebdf8
-F src/vdbeInt.h b4843c35c3ba533b69d4250f550b5bacf2fb013d
-F src/vdbeapi.c 06b712d4772b318b69cd37a416deb1ff0426aa8c
-F src/vdbeaux.c 2f284f8b052acc5b484682fbd3de35c990c2ca1c
+F src/vdbeInt.h 0de8705e38b5f28808e37cebb9ec6df995ac3304
+F src/vdbeapi.c 4d2aa56efa1b4a010012466bf8e97dbf179081a6
+F src/vdbeaux.c 4d607ce804cc4ee129df5745f7b73ed472f808b6
 F src/vdbeblob.c 848238dc73e93e48432991bb5651bf87d865eca4
-F src/vdbemem.c dc36ea9fe26c25550c50085f388167086ef7d73a
+F src/vdbemem.c 4d1e1398be24f85805196c20a80699be0699a9ca
 F src/vdbesort.c a7a40ceca6325b853040ffcc363dcd49a45f201b
 F src/vdbetrace.c 16d39c1ef7d1f4a3a7464bea3b7b4bdd7849c415
 F src/vtab.c 019dbfd0406a7447c990e1f7bd1dfcdb8895697f
@@ -1198,7 +1198,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 20ed2321b09ba076e50f9fc2f42c135b25746d72
-R 052add0d7794460f3fc0b9bdb3e7879a
+P 8fb90da77ce0e662c1ef1ae0d854e5164494b7af
+R 66ed6d98b57d603d2a5f34403ecc91fe
 U drh
-Z bf1aaf6028da77cf4241e813f52ee696
+Z d53857782fade1fcfcd0d6fed6dee986

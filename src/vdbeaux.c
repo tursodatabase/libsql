@@ -3303,8 +3303,9 @@ static int vdbeCompareMemString(
     int n1, n2;
     Mem c1;
     Mem c2;
-    memset(&c1, 0, sizeof(c1));
-    memset(&c2, 0, sizeof(c2));
+    c1.db = c2.db = pMem1->db;
+    c1.flags = c2.flags = 0;
+    c1.zMalloc = c2.zMalloc = 0;
     sqlite3VdbeMemShallowCopy(&c1, pMem1, MEM_Ephem);
     sqlite3VdbeMemShallowCopy(&c2, pMem2, MEM_Ephem);
     v1 = sqlite3ValueText((sqlite3_value*)&c1, pColl->enc);

@@ -161,9 +161,6 @@ struct VdbeFrame {
 ** integer etc.) of the same value.
 */
 struct Mem {
-  sqlite3 *db;        /* The associated database connection */
-  char *z;            /* String or BLOB value */
-  double r;           /* Real value */
   union {
     i64 i;              /* Integer value used when MEM_Int is set in flags */
     int nZero;          /* Used when bit MEM_Zero is set in flags */
@@ -171,15 +168,19 @@ struct Mem {
     RowSet *pRowSet;    /* Used only when flags==MEM_RowSet */
     VdbeFrame *pFrame;  /* Used when flags==MEM_Frame */
   } u;
-  int n;              /* Number of characters in string value, excluding '\0' */
   u16 flags;          /* Some combination of MEM_Null, MEM_Str, MEM_Dyn, etc. */
   u8  enc;            /* SQLITE_UTF8, SQLITE_UTF16BE, SQLITE_UTF16LE */
+  int n;              /* Number of characters in string value, excluding '\0' */
+  double r;           /* Real value */
+  char *z;            /* String or BLOB value */
+  char *zMalloc;      /* Dynamic buffer allocated by sqlite3_malloc() */
+  /* ShallowCopy only needs to copy the information above */
+  sqlite3 *db;        /* The associated database connection */
+  void (*xDel)(void*);/* If not null, call this function to delete Mem.z */
 #ifdef SQLITE_DEBUG
   Mem *pScopyFrom;    /* This Mem is a shallow copy of pScopyFrom */
   void *pFiller;      /* So that sizeof(Mem) is a multiple of 8 */
 #endif
-  void (*xDel)(void *);  /* If not null, call this function to delete Mem.z */
-  char *zMalloc;      /* Dynamic buffer allocated by sqlite3_malloc() */
 };
 
 /* One or more of the following flags are set to indicate the validOK
