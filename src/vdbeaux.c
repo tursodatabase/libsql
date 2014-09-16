@@ -3161,7 +3161,7 @@ void sqlite3VdbeRecordUnpack(
   idx = getVarint32(aKey, szHdr);
   d = szHdr;
   u = 0;
-  while( idx<szHdr && u<p->nField && d<=nKey ){
+  while( idx<szHdr && d<=nKey ){
     u32 serial_type;
 
     idx += getVarint32(&aKey[idx], serial_type);
@@ -3171,7 +3171,7 @@ void sqlite3VdbeRecordUnpack(
     pMem->zMalloc = 0;
     d += sqlite3VdbeSerialGet(&aKey[d], serial_type, pMem);
     pMem++;
-    u++;
+    if( (++u)>=p->nField ) break;
   }
   assert( u<=pKeyInfo->nField + 1 );
   p->nField = u;

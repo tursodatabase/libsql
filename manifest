@@ -1,5 +1,5 @@
-C Performance\simprovement\sto\sthe\ssqlite3MemCompare()\sroutine\sby\sfactoring\sout\nsqlite3BlobCompare().
-D 2014-09-16T03:24:43.248
+C Changes\sto\ssqlite3VdbeRecordUnpack()\sto\smake\sit\sslightly\ssmaller\sand\sfaster.
+D 2014-09-16T13:30:05.468
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -292,7 +292,7 @@ F src/vdbe.c 9a45dcbcc967fc0cb9248c75ba245d1d47de3e78
 F src/vdbe.h c63fad052c9e7388d551e556e119c0bcf6bebdf8
 F src/vdbeInt.h b4843c35c3ba533b69d4250f550b5bacf2fb013d
 F src/vdbeapi.c 06b712d4772b318b69cd37a416deb1ff0426aa8c
-F src/vdbeaux.c cde99fa6659f5f9000d2d84bb5c4cc85d9e0a200
+F src/vdbeaux.c 2f284f8b052acc5b484682fbd3de35c990c2ca1c
 F src/vdbeblob.c 848238dc73e93e48432991bb5651bf87d865eca4
 F src/vdbemem.c dc36ea9fe26c25550c50085f388167086ef7d73a
 F src/vdbesort.c a7a40ceca6325b853040ffcc363dcd49a45f201b
@@ -1198,7 +1198,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4060efb646c873c4abde7ab9ddf330489a44f274
-R 2d14ce03cde1c84220e0226983629fd3
+P 20ed2321b09ba076e50f9fc2f42c135b25746d72
+R 052add0d7794460f3fc0b9bdb3e7879a
 U drh
-Z 10220c87d8978c341785bd01c3f5069d
+Z bf1aaf6028da77cf4241e813f52ee696
