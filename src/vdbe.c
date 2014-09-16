@@ -4769,7 +4769,7 @@ case OP_IdxRowid: {              /* out2-prerelease */
   assert( pC->isTable==0 );
   if( !pC->nullRow ){
     rowid = 0;  /* Not needed.  Only used to silence a warning. */
-    rc = sqlite3VdbeIdxRowid(db, pCrsr, &rowid);
+    rc = sqlite3VdbeIdxRowid(pCrsr, &rowid);
     if( rc!=SQLITE_OK ){
       goto abort_due_to_error;
     }

@@ -1,5 +1,5 @@
-C Reduce\sthe\snumber\sof\sarguments\sto\sRecordCompare\sfunctions\sfrom\s4\sto\s3,\nresulting\sin\sa\ssmall\sperformance\sincrease.
-D 2014-09-16T14:37:35.076
+C Remove\san\sunused\sparameter\sfrom\ssqlite3VdbeIdxRowid().\s\sThis\sis\scosmetic\nonly\sas\sthe\sC-compiler\soptimizers\swere\salready\somitting\sthis\sparameter\son\namalgamation\sbuilds.
+D 2014-09-16T14:55:08.312
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -288,11 +288,11 @@ F src/update.c 729f6f18fc27740591d085e1172cebe311144bf0
 F src/utf.c 77abb5e6d27f3d236e50f7c8fff1d00e15262359
 F src/util.c 4006c01772bd8d8ac4306d523bbcee41d3e392d8
 F src/vacuum.c 59f03f92bcff57faa6a8ca256eb29ccddfb0614a
-F src/vdbe.c 9a45dcbcc967fc0cb9248c75ba245d1d47de3e78
+F src/vdbe.c ae07ee84667c190d31946ae31c2fc63a3aa81a32
 F src/vdbe.h 09f5b4e3719fa454f252322b1cdab5cf1f361327
-F src/vdbeInt.h 0de8705e38b5f28808e37cebb9ec6df995ac3304
+F src/vdbeInt.h dc1743de339f5556cc6687219cf8727ad0d35f72
 F src/vdbeapi.c 4d2aa56efa1b4a010012466bf8e97dbf179081a6
-F src/vdbeaux.c d06769a7c1f8db9c04fe1457d357203a06684662
+F src/vdbeaux.c 79ce140ee79ecc7638eac070b48f1d24bbf9653c
 F src/vdbeblob.c 848238dc73e93e48432991bb5651bf87d865eca4
 F src/vdbemem.c 4d1e1398be24f85805196c20a80699be0699a9ca
 F src/vdbesort.c 09efa5e5098d1a159cd21f588eb118e4fe87cfde
@@ -1198,7 +1198,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0be3019ed794c10de67dfd645ceea7d45815bc4b
-R 4ac54fa45280398cdbf86b6ba8db7793
+P 8239c35aedd583af79505378bb7dbb78346a3f45
+R 8e31ee1c1cfa56f2cb381e2e177d1a9b
 U drh
-Z fba86109c421937fd36d2c7c73cc5fa1
+Z 717af3cbede201cebaf3af532573dee2
