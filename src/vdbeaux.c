@@ -3320,6 +3320,18 @@ static int vdbeCompareMemString(
 }
 
 /*
+** Compare two blobs.  Return negative, zero, or positive if the first
+** is less than, equal to, or greater than the second, respectively.
+** If one blob is a prefix of the other, then the shorter is the lessor.
+*/
+static SQLITE_NOINLINE int sqlite3BlobCompare(const Mem *pB1, const Mem *pB2){
+  int c = memcmp(pB1->z, pB2->z, pB1->n>pB2->n ? pB2->n : pB1->n);
+  if( c ) return c;
+  return pB1->n - pB2->n;
+}
+
+
+/*
 ** Compare the values contained by the two memory cells, returning
 ** negative, zero or positive if pMem1 is less than, equal to, or greater
 ** than pMem2. Sorting order is NULL's first, followed by numbers (integers
@@ -3329,7 +3341,6 @@ static int vdbeCompareMemString(
 ** Two NULL values are considered equal by this function.
 */
 int sqlite3MemCompare(const Mem *pMem1, const Mem *pMem2, const CollSeq *pColl){
-  int rc;
   int f1, f2;
   int combined_flags;
 
@@ -3404,11 +3415,7 @@ int sqlite3MemCompare(const Mem *pMem1, const Mem *pMem2, const CollSeq *pColl){
   }
  
   /* Both values must be blobs.  Compare using memcmp().  */
-  rc = memcmp(pMem1->z, pMem2->z, (pMem1->n>pMem2->n)?pMem2->n:pMem1->n);
-  if( rc==0 ){
-    rc = pMem1->n - pMem2->n;
-  }
-  return rc;
+  return sqlite3BlobCompare(pMem1, pMem2);
 }
 
 
