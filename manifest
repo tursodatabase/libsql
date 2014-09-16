@@ -1,5 +1,5 @@
-C Reorder\sthe\selements\sof\sthe\sMem\sobject\sfor\sa\ssmall\ssize\sreduction\sand\nperformance\simprovement.
-D 2014-09-16T14:16:31.846
+C Reduce\sthe\snumber\sof\sarguments\sto\sRecordCompare\sfunctions\sfrom\s4\sto\s3,\nresulting\sin\sa\ssmall\sperformance\sincrease.
+D 2014-09-16T14:37:35.076
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -171,7 +171,7 @@ F src/auth.c d8abcde53426275dab6243b441256fcd8ccbebb2
 F src/backup.c a31809c65623cc41849b94d368917f8bb66e6a7e
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 49ca66250c7dfa844a4d4cb8272b87420d27d3a5
-F src/btree.c e4916b441bb036897cc69df275a2df3fea4d53b6
+F src/btree.c 6aa61c0e3d20d1d1acc8fb33d8f0ebd675305d3c
 F src/btree.h a79aa6a71e7f1055f01052b7f821bd1c2dce95c8
 F src/btreeInt.h e0ecb5dba292722039a7540beb3fc448103273cc
 F src/build.c 047d7e1d2d89fa55134fa1d6b669c9c2983c0d11
@@ -289,19 +289,19 @@ F src/utf.c 77abb5e6d27f3d236e50f7c8fff1d00e15262359
 F src/util.c 4006c01772bd8d8ac4306d523bbcee41d3e392d8
 F src/vacuum.c 59f03f92bcff57faa6a8ca256eb29ccddfb0614a
 F src/vdbe.c 9a45dcbcc967fc0cb9248c75ba245d1d47de3e78
-F src/vdbe.h c63fad052c9e7388d551e556e119c0bcf6bebdf8
+F src/vdbe.h 09f5b4e3719fa454f252322b1cdab5cf1f361327
 F src/vdbeInt.h 0de8705e38b5f28808e37cebb9ec6df995ac3304
 F src/vdbeapi.c 4d2aa56efa1b4a010012466bf8e97dbf179081a6
-F src/vdbeaux.c 4d607ce804cc4ee129df5745f7b73ed472f808b6
+F src/vdbeaux.c d06769a7c1f8db9c04fe1457d357203a06684662
 F src/vdbeblob.c 848238dc73e93e48432991bb5651bf87d865eca4
 F src/vdbemem.c 4d1e1398be24f85805196c20a80699be0699a9ca
-F src/vdbesort.c a7a40ceca6325b853040ffcc363dcd49a45f201b
+F src/vdbesort.c 09efa5e5098d1a159cd21f588eb118e4fe87cfde
 F src/vdbetrace.c 16d39c1ef7d1f4a3a7464bea3b7b4bdd7849c415
 F src/vtab.c 019dbfd0406a7447c990e1f7bd1dfcdb8895697f
 F src/wal.c 10e7de7ce90865a68153f001a61f1d985cd17983
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
-F src/where.c 839b5e1db2507e221ad1c308f148a8519ed750be
+F src/where.c dc276288039fb45ce23c80e4535980f5a152d8ec
 F src/whereInt.h 124d970450955a6982e174b07c320ae6d62a595c
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1198,7 +1198,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8fb90da77ce0e662c1ef1ae0d854e5164494b7af
-R 66ed6d98b57d603d2a5f34403ecc91fe
+P 0be3019ed794c10de67dfd645ceea7d45815bc4b
+R 4ac54fa45280398cdbf86b6ba8db7793
 U drh
-Z d53857782fade1fcfcd0d6fed6dee986
+Z fba86109c421937fd36d2c7c73cc5fa1
