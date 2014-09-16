@@ -314,10 +314,10 @@ SQLITE_NOINLINE int sqlite3VdbeMemTranslate(Mem *pMem, u8 desiredEnc){
   *z = 0;
   assert( (pMem->n+(desiredEnc==SQLITE_UTF8?1:2))<=len );
 
+  c = pMem->flags;
   sqlite3VdbeMemRelease(pMem);
-  pMem->flags &= ~(MEM_Static|MEM_Dyn|MEM_Ephem);
+  pMem->flags = MEM_Str|MEM_Term|(c&MEM_AffMask);
   pMem->enc = desiredEnc;
-  pMem->flags |= (MEM_Term);
   pMem->z = (char*)zOut;
   pMem->zMalloc = pMem->z;
 

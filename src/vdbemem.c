@@ -335,8 +335,11 @@ void sqlite3VdbeMemReleaseExternal(Mem *p){
   }else if( p->flags&MEM_RowSet ){
     sqlite3RowSetClear(p->u.pRowSet);
   }else if( p->flags&MEM_Frame ){
-    sqlite3VdbeMemSetNull(p);
+    VdbeFrame *pFrame = p->u.pFrame;
+    pFrame->pParent = pFrame->v->pDelFrame;
+    pFrame->v->pDelFrame = pFrame;
   }
+  p->flags = MEM_Null;
 }
 
 /*
@@ -589,15 +592,11 @@ void sqlite3VdbeMemCast(Mem *pMem, u8 aff, u8 encoding){
 ** Delete any previous value and set the value stored in *pMem to NULL.
 */
 void sqlite3VdbeMemSetNull(Mem *pMem){
-  if( pMem->flags & MEM_Frame ){
-    VdbeFrame *pFrame = pMem->u.pFrame;
-    pFrame->pParent = pFrame->v->pDelFrame;
-    pFrame->v->pDelFrame = pFrame;
+  if( VdbeMemDynamic(pMem) ){
+    sqlite3VdbeMemReleaseExternal(pMem);
+  }else{
+    pMem->flags = MEM_Null;
   }
-  if( pMem->flags & MEM_RowSet ){
-    sqlite3RowSetClear(pMem->u.pRowSet);
-  }
-  MemSetTypeFlag(pMem, MEM_Null);
 }
 void sqlite3ValueSetNull(sqlite3_value *p){
   sqlite3VdbeMemSetNull((Mem*)p); 
