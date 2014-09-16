@@ -310,9 +310,13 @@ int sqlite3VdbeMemFinalize(Mem *pMem, FuncDef *pFunc){
 }
 
 /*
-** If the memory cell contains a string value that must be freed by
-** invoking an external callback, free it now. Calling this function
-** does not free any Mem.zMalloc buffer.
+** If the memory cell contains a value that must be freed by
+** invoking an external callback, then free it now. 
+**
+** This routine does NOT do any of the following:
+**    (1)  Set the Mem.flags field to a rational value.
+**    (2)  Free memory held by Mem.zMalloc
+** The caller is expected to take care of setting Mem.flags appropriately.
 **
 ** The VdbeMemReleaseExtern() macro invokes this routine if only if there
 ** is work for this routine to do.
@@ -340,8 +344,8 @@ void sqlite3VdbeMemReleaseExternal(Mem *p){
 ** by p->xDel and memory in p->zMalloc.
 **
 ** This is a helper routine invoked by sqlite3VdbeMemRelease() in
-** the uncommon case when there really is memory in p that is
-** need of freeing.
+** the uncommon case when there really is memory in p that needs
+** to be freeing.
 */
 static SQLITE_NOINLINE void vdbeMemRelease(Mem *p){
   if( VdbeMemDynamic(p) ){
@@ -355,9 +359,11 @@ static SQLITE_NOINLINE void vdbeMemRelease(Mem *p){
 }
 
 /*
-** Release any memory held by the Mem. This may leave the Mem in an
-** inconsistent state, for example with (Mem.z==0) and
-** (Mem.flags==MEM_Str).
+** Release any memory held by the Mem. This may leave the Mem.flags in an
+** inconsistent state, for example with (Mem.z==0) and (Mem.flags==MEM_Str).
+**
+** This routine releases both the Mem.xDel space and the Mem.zMalloc space.
+** Use sqlite3VdbeMemReleaseExternal() to release just the Mem.xDel space.
 */
 void sqlite3VdbeMemRelease(Mem *p){
   assert( sqlite3VdbeCheckMemInvariants(p) );
@@ -733,7 +739,7 @@ void sqlite3VdbeMemShallowCopy(Mem *pTo, const Mem *pFrom, int srcType){
   assert( pTo->db==pFrom->db );
   VdbeMemReleaseExtern(pTo);
   memcpy(pTo, pFrom, MEMCELLSIZE);
-  pTo->xDel = 0;
+  assert( pTo->xDel==0 );
   if( (pFrom->flags&MEM_Static)==0 ){
     pTo->flags &= ~(MEM_Dyn|MEM_Static|MEM_Ephem);
     assert( srcType==MEM_Ephem || srcType==MEM_Static );
@@ -753,7 +759,7 @@ int sqlite3VdbeMemCopy(Mem *pTo, const Mem *pFrom){
   VdbeMemReleaseExtern(pTo);
   memcpy(pTo, pFrom, MEMCELLSIZE);
   pTo->flags &= ~MEM_Dyn;
-  pTo->xDel = 0;
+  assert( pTo->xDel==0 );
 
   if( pTo->flags&(MEM_Str|MEM_Blob) ){
     if( 0==(pFrom->flags&MEM_Static) ){
@@ -906,6 +912,7 @@ int sqlite3VdbeMemFromBtree(
   int rc = SQLITE_OK; /* Return code */
 
   assert( sqlite3BtreeCursorIsValid(pCur) );
+  assert( pMem->xDel==0 );
 
   /* Note: the calls to BtreeKeyFetch() and DataFetch() below assert() 
   ** that both the BtShared and database handle mutexes are held. */
@@ -922,19 +929,22 @@ int sqlite3VdbeMemFromBtree(
     pMem->z = &zData[offset];
     pMem->flags = MEM_Blob|MEM_Ephem;
     pMem->n = (int)amt;
-  }else if( SQLITE_OK==(rc = sqlite3VdbeMemGrow(pMem, amt+2, 0)) ){
-    if( key ){
-      rc = sqlite3BtreeKey(pCur, offset, amt, pMem->z);
-    }else{
-      rc = sqlite3BtreeData(pCur, offset, amt, pMem->z);
-    }
-    if( rc==SQLITE_OK ){
-      pMem->z[amt] = 0;
-      pMem->z[amt+1] = 0;
-      pMem->flags = MEM_Blob|MEM_Term;
-      pMem->n = (int)amt;
-    }else{
-      sqlite3VdbeMemRelease(pMem);
+  }else{
+    pMem->flags = MEM_Null;
+    if( SQLITE_OK==(rc = sqlite3VdbeMemGrow(pMem, amt+2, 0)) ){
+      if( key ){
+        rc = sqlite3BtreeKey(pCur, offset, amt, pMem->z);
+      }else{
+        rc = sqlite3BtreeData(pCur, offset, amt, pMem->z);
+      }
+      if( rc==SQLITE_OK ){
+        pMem->z[amt] = 0;
+        pMem->z[amt+1] = 0;
+        pMem->flags = MEM_Blob|MEM_Term;
+        pMem->n = (int)amt;
+      }else{
+        sqlite3VdbeMemRelease(pMem);
+      }
     }
   }
 

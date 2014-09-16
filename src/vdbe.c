@@ -2437,10 +2437,10 @@ case OP_Column: {
   assert( p2<pC->nHdrParsed );
   assert( rc==SQLITE_OK );
   assert( sqlite3VdbeCheckMemInvariants(pDest) );
+  VdbeMemReleaseExtern(pDest);
   if( pC->szRow>=aOffset[p2+1] ){
     /* This is the common case where the desired content fits on the original
     ** page - where the content is not on an overflow page */
-    VdbeMemReleaseExtern(pDest);
     sqlite3VdbeSerialGet(pC->aRow+aOffset[p2], aType[p2], pDest);
   }else{
     /* This branch happens only when content is on overflow pages */
