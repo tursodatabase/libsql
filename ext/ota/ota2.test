@@ -14,7 +14,7 @@ set testdir [file join [file dirname $argv0] .. .. test]
 source $testdir/tester.tcl
 set ::testprefix ota2
 
-forcedelete test.db-oal 
+forcedelete test.db-oal test.db-bak
 
 do_execsql_test 1.0 {
   CREATE TABLE t1(a, b);

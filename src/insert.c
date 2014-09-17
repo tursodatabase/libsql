@@ -1564,7 +1564,7 @@ void sqlite3CompleteInsertion(
     /* If the "ota_mode" flag is set, ignore all indexes except the PK 
     ** index of WITHOUT ROWID tables.  */
     if( (pParse->db->flags & SQLITE_OtaMode) 
-     && (pTab->iPKey>=0 || pIdx->idxType!=SQLITE_IDXTYPE_PRIMARYKEY) 
+     && (HasRowid(pTab) || pIdx->idxType!=SQLITE_IDXTYPE_PRIMARYKEY) 
     ){
       continue;
     }

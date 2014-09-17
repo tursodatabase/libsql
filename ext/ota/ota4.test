@@ -9,13 +9,17 @@
 #
 #***********************************************************************
 #
-# Test some properties of the pager_ota_mode pragma.
+# Test some properties of the pager_ota_mode and ota_mode pragmas.
 #
 
 set testdir [file join [file dirname $argv0] .. .. test]
 source $testdir/tester.tcl
 set ::testprefix ota4
 
+#-------------------------------------------------------------------------
+# The following tests aim to verify some properties of the pager_ota_mode
+# pragma:
+#
 # 1. Cannot set the pager_ota_mode flag on a WAL mode database.
 #
 # 2. Or if there is an open read transaction.
@@ -30,34 +34,34 @@ set ::testprefix ota4
 #    file was started.
 #
 
-do_execsql_test 1.1 { 
+do_execsql_test 1.1.1 { 
   PRAGMA journal_mode = wal;
   SELECT * FROM sqlite_master;
 } {wal}
-do_catchsql_test 1.2 { 
+do_catchsql_test 1.1.2 { 
   PRAGMA pager_ota_mode = 1 
 } {1 {cannot set pager_ota_mode in wal mode}}
 
 
-do_execsql_test 2.1 { 
+do_execsql_test 1.2.1 { 
   PRAGMA journal_mode = delete;
   BEGIN;
     SELECT * FROM sqlite_master;
 } {delete}
-do_catchsql_test 2.2 { 
+do_catchsql_test 1.2.2 { 
   PRAGMA pager_ota_mode = 1 
 } {1 {cannot set pager_ota_mode with open transaction}}
-do_execsql_test 2.3 { 
+do_execsql_test 1.2.3 { 
   COMMIT;
 } {}
 
 
-do_execsql_test 3.1 {
+do_execsql_test 1.3.1 {
   PRAGMA journal_mode = wal;
   CREATE TABLE t1(a, b);
   INSERT INTO t1 VALUES(1, 2);
 } {wal}
-do_test 3.2 {
+do_test 1.3.2 {
   forcecopy test.db-wal test.db-bak
   execsql { 
     PRAGMA journal_mode = delete;
@@ -69,7 +73,7 @@ do_test 3.2 {
   }
 } {1 {unable to open database file}}
 
-do_test 4.1 {
+do_test 1.4.1 {
   db close
   forcedelete test.db-wal test.db-oal
   sqlite3 db test.db
@@ -82,7 +86,7 @@ do_test 4.1 {
   }
 } {1 {unable to open database file}}
 
-do_test 5.1 {
+do_test 1.5.1 {
   forcedelete test.db-oal
   reset_db
   execsql {
@@ -100,7 +104,7 @@ do_test 5.1 {
     SELECT * FROM t1;
   }
 } {1 2}
-do_execsql_test 5.2 {
+do_execsql_test 1.5.2 {
   PRAGMA pager_ota_mode = 1;
   SELECT * FROM t1;
   INSERT INTO t1 VALUES(5, 6);
@@ -113,9 +117,115 @@ do_test 5.3 {
     SELECT * FROM t1;
   }
 } {1 2 7 8}
-do_catchsql_test 5.4 {
+do_catchsql_test 1.5.4 {
   PRAGMA pager_ota_mode = 1;
   SELECT * FROM t1;
 } {1 {database is locked}}
 
+#-------------------------------------------------------------------------
+# These tests - ota4-2.* - aim to verify some properties of the ota_mode
+# pragma.
+#
+#   1. Check that UNIQUE constraints are not tested in ota_mode.
+#   2. Except for (real) PRIMARY KEY constraints.
+#   3. Check that all non-temporary triggers are ignored.
+#
+reset_db
+do_execsql_test 2.1.1 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+  CREATE UNIQUE INDEX i1 ON t1(b);
+  INSERT INTO t1 VALUES(1, 2, 3);
+  INSERT INTO t1 VALUES(2, 4, 6);
+}
+
+do_execsql_test 2.1.2 {
+  PRAGMA ota_mode = 1;
+  INSERT INTO t1 VALUES(3, 2, 6);
+  UPDATE t1 SET b=2 WHERE a=2;
+  SELECT * FROM t1;
+} {
+  1 2 3
+  2 2 6
+  3 2 6
+}
+
+reset_db
+do_execsql_test 2.2.1 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+  CREATE TABLE t2(x, y, z, PRIMARY KEY(y, z)) WITHOUT ROWID;
+
+  INSERT INTO t1 VALUES(1, 2, 3);
+  INSERT INTO t2 VALUES(4, 5, 6);
+  PRAGMA ota_mode = 1;
+}
+do_catchsql_test 2.2.2 {
+  INSERT INTO t1 VALUES(1, 'two', 'three');
+} {1 {UNIQUE constraint failed: t1.a}}
+do_catchsql_test 2.2.3 {
+  INSERT INTO t2 VALUES('four', 5, 6);
+} {1 {UNIQUE constraint failed: t2.y, t2.z}}
+
+reset_db
+do_execsql_test 2.3.1 {
+  CREATE TABLE t1(a, b, c);
+  CREATE TABLE log(x);
+  INSERT INTO t1 VALUES(1, 2, 3);
+
+  CREATE TRIGGER tr1 BEFORE INSERT ON t1 BEGIN
+    INSERT INTO log VALUES('permanent');
+  END;
+  CREATE TRIGGER tr2 AFTER INSERT ON t1 BEGIN
+    INSERT INTO log VALUES('permanent');
+  END;
+  CREATE TRIGGER tr3 BEFORE DELETE ON t1 BEGIN
+    INSERT INTO log VALUES('permanent');
+  END;
+  CREATE TRIGGER tr4 AFTER DELETE ON t1 BEGIN
+    INSERT INTO log VALUES('permanent');
+  END;
+  CREATE TRIGGER tr5 BEFORE UPDATE ON t1 BEGIN
+    INSERT INTO log VALUES('permanent');
+  END;
+  CREATE TRIGGER tr6 AFTER UPDATE ON t1 BEGIN
+    INSERT INTO log VALUES('permanent');
+  END;
+
+  CREATE TEMP TRIGGER ttr1 BEFORE INSERT ON t1 BEGIN
+    INSERT INTO log VALUES('temp');
+  END;
+  CREATE TEMP TRIGGER ttr2 AFTER INSERT ON t1 BEGIN
+    INSERT INTO log VALUES('temp');
+  END;
+  CREATE TEMP TRIGGER ttr3 BEFORE DELETE ON t1 BEGIN
+    INSERT INTO log VALUES('temp');
+  END;
+  CREATE TEMP TRIGGER ttr4 AFTER DELETE ON t1 BEGIN
+    INSERT INTO log VALUES('temp');
+  END;
+  CREATE TEMP TRIGGER ttr5 BEFORE UPDATE ON t1 BEGIN
+    INSERT INTO log VALUES('temp');
+  END;
+  CREATE TEMP TRIGGER ttr6 AFTER UPDATE ON t1 BEGIN
+    INSERT INTO log VALUES('temp');
+  END;
+}
+do_execsql_test 2.3.2 {
+  INSERT INTO t1 VALUES(4, 5, 6);
+  DELETE FROM t1 WHERE a = 4;
+  UPDATE t1 SET c = 6;
+  SELECT x FROM log;
+} {
+  temp permanent temp permanent temp permanent 
+  temp permanent temp permanent temp permanent
+}
+do_execsql_test 2.3.3 {
+  DELETE FROM log;
+  PRAGMA ota_mode = 1;
+  INSERT INTO t1 VALUES(4, 5, 6);
+  DELETE FROM t1 WHERE a = 4;
+  UPDATE t1 SET c = 6;
+  SELECT x FROM log;
+} {temp temp temp temp temp temp}
+
 finish_test
+

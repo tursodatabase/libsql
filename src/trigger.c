@@ -43,10 +43,14 @@ void sqlite3DeleteTriggerStep(sqlite3 *db, TriggerStep *pTriggerStep){
 ** To state it another way:  This routine returns a list of all triggers
 ** that fire off of pTab.  The list will include any TEMP triggers on
 ** pTab as well as the triggers lised in pTab->pTrigger.
+**
+** If the SQLITE_OtaMode flag is set, do not include any non-temporary
+** triggers in the returned list.
 */
 Trigger *sqlite3TriggerList(Parse *pParse, Table *pTab){
   Schema * const pTmpSchema = pParse->db->aDb[1].pSchema;
   Trigger *pList = 0;                  /* List of triggers to return */
+  int bOta = !!(pParse->db->flags & SQLITE_OtaMode);
 
   if( pParse->disableTriggers ){
     return 0;
@@ -60,13 +64,13 @@ Trigger *sqlite3TriggerList(Parse *pParse, Table *pTab){
       if( pTrig->pTabSchema==pTab->pSchema
        && 0==sqlite3StrICmp(pTrig->table, pTab->zName) 
       ){
-        pTrig->pNext = (pList ? pList : pTab->pTrigger);
+        pTrig->pNext = ((pList || bOta) ? pList : pTab->pTrigger);
         pList = pTrig;
       }
     }
   }
 
-  return (pList ? pList : pTab->pTrigger);
+  return ((pList || bOta) ? pList : pTab->pTrigger);
 }
 
 /*

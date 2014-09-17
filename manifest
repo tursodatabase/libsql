@@ -1,5 +1,5 @@
-C Clarify\sthe\seffects\sof\sthe\spager_ota_mode\spragma.\sAdd\stests\sand\sfixes\sfor\sthe\ssame.
-D 2014-09-16T20:02:41.756
+C Add\stests\sand\sfixes\sfor\s"PRAGMA\sota_mode".
+D 2014-09-17T15:20:24.516
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -123,9 +123,9 @@ F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
 F ext/ota/ota.c d37097e92a005d3915883adefbb93019ea6f8841
 F ext/ota/ota1.test 7cbf37a9f6cd29320f47b041cfeb0cc1d7eaa916
-F ext/ota/ota2.test 13f76922446c62ed96192e938b8e625ebf0142fa
+F ext/ota/ota2.test 716f9c66e8bf8b0ad2fe3a5d8323e6cf460a2e27
 F ext/ota/ota3.test 1c48b7476af1c5920db9a43e7b1476d421a463b5
-F ext/ota/ota4.test ec01b0d69ad2989559a65fde74560c1cfcca8202
+F ext/ota/ota4.test baf23b47748a5056c713871959cc70fc623c90e9
 F ext/ota/sqlite3ota.c 668ed08dd81ff8ae1e8524b2d4bf0f2609cbf907
 F ext/ota/sqlite3ota.h 39ce4dffbfcf4ade9e4526369fe2243709345c8e
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
@@ -195,7 +195,7 @@ F src/global.c 5110fa12e09729b84eee0191c984ec4008e21937
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
 F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c 25e63641927530eee0487c5a8bbf6e5414c4c753
+F src/insert.c 887551441b3a46d964733b16a86c614d0152778d
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
@@ -290,7 +290,7 @@ F src/test_vfstrace.c bab9594adc976cbe696ff3970728830b4c5ed698
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 22dded4283dc4b25422f6444cdcb8d6b1ea0b5ff
 F src/tokenize.c 3df63041994f55afeb168b463ec836e8f1c50e7c
-F src/trigger.c 25571661fdeae8c7f975ff40ffec205520a3f92f
+F src/trigger.c eb921d1292aca83d515bde5881df71df91d962d6
 F src/update.c 729f6f18fc27740591d085e1172cebe311144bf0
 F src/utf.c 77abb5e6d27f3d236e50f7c8fff1d00e15262359
 F src/util.c 4006c01772bd8d8ac4306d523bbcee41d3e392d8
@@ -1205,7 +1205,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 48d201cd8b68c0377cf8a2cc6439b893f9462fe2
-R de185427497b23c6bf5f7a43a97cdd26
+P decaccc37cbdcd2a663233469efdf4982a810513
+R d8d51626052024a717c822f3b6627467
 U dan
-Z de73fdb4c4401b74adf143cdfee4f7e2
+Z 65720a0642c813fef614e2d54b0a69b7
