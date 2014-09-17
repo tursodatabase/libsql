@@ -1174,7 +1174,6 @@ case OP_Move: {
     }
 #endif
     pIn1->flags = MEM_Undefined;
-    pIn1->xDel = 0;
     pIn1->zMalloc = zMalloc;
     REGISTER_TRACE(p2++, pOut);
     pIn1++;
@@ -2645,7 +2644,6 @@ case OP_MakeRecord: {
   assert( pOp->p3>0 && pOp->p3<=(p->nMem-p->nCursor) );
   pOut->n = (int)nByte;
   pOut->flags = MEM_Blob;
-  pOut->xDel = 0;
   if( nZero ){
     pOut->u.nZero = nZero;
     pOut->flags |= MEM_Zero;
@@ -4755,7 +4753,7 @@ case OP_IdxRowid: {              /* out2-prerelease */
   assert( pC->isTable==0 );
   if( !pC->nullRow ){
     rowid = 0;  /* Not needed.  Only used to silence a warning. */
-    rc = sqlite3VdbeIdxRowid(pCrsr, &rowid);
+    rc = sqlite3VdbeIdxRowid(db, pCrsr, &rowid);
     if( rc!=SQLITE_OK ){
       goto abort_due_to_error;
     }
@@ -4839,7 +4837,7 @@ case OP_IdxGE:  {       /* jump */
   { int i; for(i=0; i<r.nField; i++) assert( memIsValid(&r.aMem[i]) ); }
 #endif
   res = 0;  /* Not needed.  Only used to silence a warning. */
-  rc = sqlite3VdbeIdxKeyCompare(pC, &r, &res);
+  rc = sqlite3VdbeIdxKeyCompare(db, pC, &r, &res);
   assert( (OP_IdxLE&1)==(OP_IdxLT&1) && (OP_IdxGE&1)==(OP_IdxGT&1) );
   if( (pOp->opcode&1)==(OP_IdxLT&1) ){
     assert( pOp->opcode==OP_IdxLE || pOp->opcode==OP_IdxLT );
@@ -5609,11 +5607,7 @@ case OP_AggStep: {
   assert( pOp->p3>0 && pOp->p3<=(p->nMem-p->nCursor) );
   ctx.pMem = pMem = &aMem[pOp->p3];
   pMem->n++;
-  t.flags = MEM_Null;
-  t.z = 0;
-  t.zMalloc = 0;
-  t.xDel = 0;
-  t.db = db;
+  sqlite3VdbeMemInit(&t, db, MEM_Null);
   ctx.pOut = &t;
   ctx.isError = 0;
   ctx.pColl = 0;

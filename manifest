@@ -1,5 +1,5 @@
-C Improved\sinterface\sto\sthe\sMem\sobject\shandling.\s\sSmall\ssize\sreduction\sand\nperformance\sincrease.
-D 2014-09-17T14:52:46.727
+C In\sthe\sMem\sobject,\sstop\srequiring\sthat\sMem.xDel\sbe\sNULL\swhen\sthe\sMEM_Dyn\nbit\sis\sclear.\s\sAlso\sreduce\sthe\samount\sof\sinitialization\sof\sMem\sobjects.\nAll\sfor\sa\ssmall\ssize\sreduction\sand\sperformance\sincrease.
+D 2014-09-17T16:41:15.094
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -288,13 +288,13 @@ F src/update.c 729f6f18fc27740591d085e1172cebe311144bf0
 F src/utf.c 8f634b93d41c089029dd503161a7d3e685d59a9c
 F src/util.c 4006c01772bd8d8ac4306d523bbcee41d3e392d8
 F src/vacuum.c 59f03f92bcff57faa6a8ca256eb29ccddfb0614a
-F src/vdbe.c d39487782c0c6a2448bd1b351eba6a2dce101343
+F src/vdbe.c d3c548ad4ea6a5549d2d0b502070e0523023ff97
 F src/vdbe.h 09f5b4e3719fa454f252322b1cdab5cf1f361327
-F src/vdbeInt.h 9d398055c873980b61ce0f7bf82140a8e4e2ccbc
+F src/vdbeInt.h f90b0de6153f50de630a5a113537efb47083812f
 F src/vdbeapi.c c6e63f913bcb12977731a8b12e7e5c5762981527
-F src/vdbeaux.c 211ad29d51e01c44a0db1ab69b74c11c8de1cccf
+F src/vdbeaux.c 9ac63bc59d2783df77e591e4c4fa8c1153a07eab
 F src/vdbeblob.c 848238dc73e93e48432991bb5651bf87d865eca4
-F src/vdbemem.c cf552a404f0e73a48bd266699aa27f0df26b096b
+F src/vdbemem.c 8b5e1083fed2da94e315858a7edf5604a5b91804
 F src/vdbesort.c 09efa5e5098d1a159cd21f588eb118e4fe87cfde
 F src/vdbetrace.c 16d39c1ef7d1f4a3a7464bea3b7b4bdd7849c415
 F src/vtab.c 019dbfd0406a7447c990e1f7bd1dfcdb8895697f
@@ -1198,7 +1198,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2598aedc5dd2bac67e2e518a31f2803e469c2ba6
-R f63e98cc1bcae44946c79c20cdee7610
+P 4e437844322cc20eef92928b53fa6b37eded586e
+R 8244691fd19236cfb5e445e4012669fa
 U drh
-Z 1559702e8c6b5218f324b4f43d7dc2c7
+Z ef23a1637c5e3046b6cead80453b022e

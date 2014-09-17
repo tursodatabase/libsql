@@ -26,11 +26,10 @@
 ** this:    assert( sqlite3VdbeCheckMemInvariants(pMem) );
 */
 int sqlite3VdbeCheckMemInvariants(Mem *p){
-  /* The MEM_Dyn bit is set if and only if Mem.xDel is a non-NULL destructor
-  ** function for Mem.z 
+  /* If MEM_Dyn is set then Mem.xDel!=0.  
+  ** Mem.xDel is might not be initialized if MEM_Dyn is clear.
   */
   assert( (p->flags & MEM_Dyn)==0 || p->xDel!=0 );
-  assert( (p->flags & MEM_Dyn)!=0 || p->xDel==0 );
 
   /* If p holds a string or blob, the Mem.z must point to exactly
   ** one of the following:
@@ -136,7 +135,6 @@ int sqlite3VdbeMemGrow(Mem *pMem, int n, int bPreserve){
 
   pMem->z = pMem->zMalloc;
   pMem->flags &= ~(MEM_Dyn|MEM_Ephem|MEM_Static);
-  pMem->xDel = 0;
   return SQLITE_OK;
 }
 
@@ -299,7 +297,7 @@ int sqlite3VdbeMemFinalize(Mem *pMem, FuncDef *pFunc){
     ctx.pMem = pMem;
     ctx.pFunc = pFunc;
     pFunc->xFinalize(&ctx); /* IMP: R-24505-23230 */
-    assert( 0==(pMem->flags&MEM_Dyn) && !pMem->xDel );
+    assert( (pMem->flags & MEM_Dyn)==0 );
     sqlite3DbFree(pMem->db, pMem->zMalloc);
     memcpy(pMem, &t, sizeof(t));
     rc = ctx.isError;
@@ -328,7 +326,6 @@ static SQLITE_NOINLINE void vdbeMemClearExternAndSetNull(Mem *p){
     assert( (p->flags&MEM_RowSet)==0 );
     assert( p->xDel!=SQLITE_DYNAMIC && p->xDel!=0 );
     p->xDel((void *)p->z);
-    p->xDel = 0;
   }else if( p->flags&MEM_RowSet ){
     sqlite3RowSetClear(p->u.pRowSet);
   }else if( p->flags&MEM_Frame ){
@@ -373,7 +370,6 @@ void sqlite3VdbeMemRelease(Mem *p){
   if( VdbeMemDynamic(p) || p->zMalloc ){
     vdbeMemClear(p);
   }
-  assert( p->xDel==0 );
 }
 
 /*
@@ -585,6 +581,18 @@ void sqlite3VdbeMemCast(Mem *pMem, u8 aff, u8 encoding){
   }
 }
 
+/*
+** Initialize bulk memory to be a consistent Mem object.
+**
+** The minimum amount of initialization feasible is performed.
+*/
+void sqlite3VdbeMemInit(Mem *pMem, sqlite3 *db, u16 flags){
+  assert( (flags & ~MEM_TypeMask)==0 );
+  pMem->flags = flags;
+  pMem->db = db;
+  pMem->zMalloc = 0;
+}
+
 
 /*
 ** Delete any previous value and set the value stored in *pMem to NULL.
@@ -736,7 +744,6 @@ void sqlite3VdbeMemShallowCopy(Mem *pTo, const Mem *pFrom, int srcType){
   assert( pTo->db==pFrom->db );
   if( VdbeMemDynamic(pTo) ) vdbeMemClearExternAndSetNull(pTo);
   memcpy(pTo, pFrom, MEMCELLSIZE);
-  assert( pTo->xDel==0 );
   if( (pFrom->flags&MEM_Static)==0 ){
     pTo->flags &= ~(MEM_Dyn|MEM_Static|MEM_Ephem);
     assert( srcType==MEM_Ephem || srcType==MEM_Static );
@@ -756,8 +763,6 @@ int sqlite3VdbeMemCopy(Mem *pTo, const Mem *pFrom){
   if( VdbeMemDynamic(pTo) ) vdbeMemClearExternAndSetNull(pTo);
   memcpy(pTo, pFrom, MEMCELLSIZE);
   pTo->flags &= ~MEM_Dyn;
-  assert( pTo->xDel==0 );
-
   if( pTo->flags&(MEM_Str|MEM_Blob) ){
     if( 0==(pFrom->flags&MEM_Static) ){
       pTo->flags |= MEM_Ephem;
@@ -782,7 +787,6 @@ void sqlite3VdbeMemMove(Mem *pTo, Mem *pFrom){
   sqlite3VdbeMemRelease(pTo);
   memcpy(pTo, pFrom, sizeof(Mem));
   pFrom->flags = MEM_Null;
-  pFrom->xDel = 0;
   pFrom->zMalloc = 0;
 }
 
@@ -857,7 +861,6 @@ int sqlite3VdbeMemSetStr(
   }else if( xDel==SQLITE_DYNAMIC ){
     sqlite3VdbeMemRelease(pMem);
     pMem->zMalloc = pMem->z = (char *)z;
-    pMem->xDel = 0;
   }else{
     sqlite3VdbeMemRelease(pMem);
     pMem->z = (char *)z;
@@ -910,7 +913,7 @@ int sqlite3VdbeMemFromBtree(
   int rc = SQLITE_OK; /* Return code */
 
   assert( sqlite3BtreeCursorIsValid(pCur) );
-  assert( pMem->xDel==0 );
+  assert( !VdbeMemDynamic(pMem) );
 
   /* Note: the calls to BtreeKeyFetch() and DataFetch() below assert() 
   ** that both the BtShared and database handle mutexes are held. */
@@ -923,7 +926,6 @@ int sqlite3VdbeMemFromBtree(
   assert( zData!=0 );
 
   if( offset+amt<=available ){
-    sqlite3VdbeMemRelease(pMem);
     pMem->z = &zData[offset];
     pMem->flags = MEM_Blob|MEM_Ephem;
     pMem->n = (int)amt;

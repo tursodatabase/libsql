@@ -3085,7 +3085,6 @@ u32 sqlite3VdbeSerialGet(
       static const u16 aFlag[] = { MEM_Blob|MEM_Ephem, MEM_Str|MEM_Ephem };
       pMem->z = (char *)buf;
       pMem->n = (serial_type-12)/2;
-      pMem->xDel = 0;
       pMem->flags = aFlag[serial_type&1];
       return pMem->n;
     }
@@ -3306,7 +3305,6 @@ static int vdbeCompareMemString(
     c1.db = c2.db = pMem1->db;
     c1.flags = c2.flags = 0;
     c1.zMalloc = c2.zMalloc = 0;
-    c1.xDel = c2.xDel = 0;
     sqlite3VdbeMemShallowCopy(&c1, pMem1, MEM_Ephem);
     sqlite3VdbeMemShallowCopy(&c2, pMem2, MEM_Ephem);
     v1 = sqlite3ValueText((sqlite3_value*)&c1, pColl->enc);
@@ -3877,7 +3875,7 @@ RecordCompare sqlite3VdbeFindCompare(UnpackedRecord *p){
 ** pCur might be pointing to text obtained from a corrupt database file.
 ** So the content cannot be trusted.  Do appropriate checks on the content.
 */
-int sqlite3VdbeIdxRowid(BtCursor *pCur, i64 *rowid){
+int sqlite3VdbeIdxRowid(sqlite3 *db, BtCursor *pCur, i64 *rowid){
   i64 nCellKey = 0;
   int rc;
   u32 szHdr;        /* Size of the header */
@@ -3896,7 +3894,7 @@ int sqlite3VdbeIdxRowid(BtCursor *pCur, i64 *rowid){
   assert( (nCellKey & SQLITE_MAX_U32)==(u64)nCellKey );
 
   /* Read in the complete content of the index entry */
-  memset(&m, 0, sizeof(m));
+  sqlite3VdbeMemInit(&m, db, 0);
   rc = sqlite3VdbeMemFromBtree(pCur, 0, (u32)nCellKey, 1, &m);
   if( rc ){
     return rc;
@@ -3956,6 +3954,7 @@ idx_rowid_corruption:
 ** of the keys prior to the final rowid, not the entire key.
 */
 int sqlite3VdbeIdxKeyCompare(
+  sqlite3 *db,                     /* Database connection */
   VdbeCursor *pC,                  /* The cursor to compare against */
   UnpackedRecord *pUnpacked,       /* Unpacked version of key */
   int *res                         /* Write the comparison result here */
@@ -3974,7 +3973,7 @@ int sqlite3VdbeIdxKeyCompare(
     *res = 0;
     return SQLITE_CORRUPT_BKPT;
   }
-  memset(&m, 0, sizeof(m));
+  sqlite3VdbeMemInit(&m, db, 0);
   rc = sqlite3VdbeMemFromBtree(pC->pCursor, 0, (u32)nCellKey, 1, &m);
   if( rc ){
     return rc;

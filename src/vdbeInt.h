@@ -176,7 +176,7 @@ struct Mem {
   char *zMalloc;      /* Dynamic buffer allocated by sqlite3_malloc() */
   /* ShallowCopy only needs to copy the information above */
   sqlite3 *db;        /* The associated database connection */
-  void (*xDel)(void*);/* If not null, call this function to delete Mem.z */
+  void (*xDel)(void*);/* Destructor for Mem.z - only valid if MEM_Dyn */
 #ifdef SQLITE_DEBUG
   Mem *pScopyFrom;    /* This Mem is a shallow copy of pScopyFrom */
   void *pFiller;      /* So that sizeof(Mem) is a multiple of 8 */
@@ -397,8 +397,8 @@ u32 sqlite3VdbeSerialGet(const unsigned char*, u32, Mem*);
 void sqlite3VdbeDeleteAuxData(Vdbe*, int, int);
 
 int sqlite2BtreeKeyCompare(BtCursor *, const void *, int, int, int *);
-int sqlite3VdbeIdxKeyCompare(VdbeCursor*,UnpackedRecord*,int*);
-int sqlite3VdbeIdxRowid(BtCursor *, i64 *);
+int sqlite3VdbeIdxKeyCompare(sqlite3*,VdbeCursor*,UnpackedRecord*,int*);
+int sqlite3VdbeIdxRowid(sqlite3*, BtCursor*, i64*);
 int sqlite3VdbeExec(Vdbe*);
 int sqlite3VdbeList(Vdbe*);
 int sqlite3VdbeHalt(Vdbe*);
@@ -415,6 +415,7 @@ void sqlite3VdbeMemSetInt64(Mem*, i64);
 #else
   void sqlite3VdbeMemSetDouble(Mem*, double);
 #endif
+void sqlite3VdbeMemInit(Mem*,sqlite3*,u16);
 void sqlite3VdbeMemSetNull(Mem*);
 void sqlite3VdbeMemSetZeroBlob(Mem*,int);
 void sqlite3VdbeMemSetRowSet(Mem*);
