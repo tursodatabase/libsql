@@ -971,7 +971,7 @@ static void otaLoadTransactionState(sqlite3ota *p, OtaState *pState){
   assert( p->rc==SQLITE_OK );
   if( pState->zTbl ){
     OtaObjIter *pIter = &p->objiter;
-    int rc;
+    int rc = SQLITE_OK;
 
     while( rc==SQLITE_OK && pIter->zTbl && (pIter->bCleanup 
        || otaStrCompare(pIter->zTbl, pState->zTbl) 
