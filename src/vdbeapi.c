@@ -662,8 +662,7 @@ static SQLITE_NOINLINE void *createAggContext(sqlite3_context *p, int nByte){
   Mem *pMem = p->pMem;
   assert( (pMem->flags & MEM_Agg)==0 );
   if( nByte<=0 ){
-    sqlite3VdbeMemReleaseExternal(pMem);
-    pMem->flags = MEM_Null;
+    sqlite3VdbeMemSetNull(pMem);
     pMem->z = 0;
   }else{
     sqlite3VdbeMemGrow(pMem, nByte, 0);

@@ -640,7 +640,7 @@ int sqlite3VdbeExec(
       assert( pOp->p2<=(p->nMem-p->nCursor) );
       pOut = &aMem[pOp->p2];
       memAboutToChange(p, pOut);
-      VdbeMemReleaseExtern(pOut);
+      if( VdbeMemDynamic(pOut) ) sqlite3VdbeMemSetNull(pOut);
       pOut->flags = MEM_Int;
     }
 
@@ -1079,7 +1079,7 @@ case OP_Null: {           /* out2-prerelease */
   while( cnt>0 ){
     pOut++;
     memAboutToChange(p, pOut);
-    VdbeMemReleaseExtern(pOut);
+    sqlite3VdbeMemSetNull(pOut);
     pOut->flags = nullFlag;
     cnt--;
   }
@@ -2107,10 +2107,10 @@ case OP_Or: {             /* same as TK_OR, in1, in2, out3 */
 case OP_Not: {                /* same as TK_NOT, in1, out2 */
   pIn1 = &aMem[pOp->p1];
   pOut = &aMem[pOp->p2];
-  if( pIn1->flags & MEM_Null ){
-    sqlite3VdbeMemSetNull(pOut);
-  }else{
-    sqlite3VdbeMemSetInt64(pOut, !sqlite3VdbeIntValue(pIn1));
+  sqlite3VdbeMemSetNull(pOut);
+  if( (pIn1->flags & MEM_Null)==0 ){
+    pOut->flags = MEM_Int;
+    pOut->u.i = !sqlite3VdbeIntValue(pIn1);
   }
   break;
 }
@@ -2125,10 +2125,10 @@ case OP_Not: {                /* same as TK_NOT, in1, out2 */
 case OP_BitNot: {             /* same as TK_BITNOT, in1, out2 */
   pIn1 = &aMem[pOp->p1];
   pOut = &aMem[pOp->p2];
-  if( pIn1->flags & MEM_Null ){
-    sqlite3VdbeMemSetNull(pOut);
-  }else{
-    sqlite3VdbeMemSetInt64(pOut, ~sqlite3VdbeIntValue(pIn1));
+  sqlite3VdbeMemSetNull(pOut);
+  if( (pIn1->flags & MEM_Null)==0 ){
+    pOut->flags = MEM_Int;
+    pOut->u.i = ~sqlite3VdbeIntValue(pIn1);
   }
   break;
 }
@@ -2437,7 +2437,7 @@ case OP_Column: {
   assert( p2<pC->nHdrParsed );
   assert( rc==SQLITE_OK );
   assert( sqlite3VdbeCheckMemInvariants(pDest) );
-  VdbeMemReleaseExtern(pDest);
+  if( VdbeMemDynamic(pDest) ) sqlite3VdbeMemSetNull(pDest);
   if( pC->szRow>=aOffset[p2+1] ){
     /* This is the common case where the desired content fits on the original
     ** page - where the content is not on an overflow page */
