@@ -26,11 +26,10 @@
 ** this:    assert( sqlite3VdbeCheckMemInvariants(pMem) );
 */
 int sqlite3VdbeCheckMemInvariants(Mem *p){
-  /* The MEM_Dyn bit is set if and only if Mem.xDel is a non-NULL destructor
-  ** function for Mem.z 
+  /* If MEM_Dyn is set then Mem.xDel!=0.  
+  ** Mem.xDel is might not be initialized if MEM_Dyn is clear.
   */
   assert( (p->flags & MEM_Dyn)==0 || p->xDel!=0 );
-  assert( (p->flags & MEM_Dyn)!=0 || p->xDel==0 );
 
   /* If p holds a string or blob, the Mem.z must point to exactly
   ** one of the following:
@@ -48,7 +47,6 @@ int sqlite3VdbeCheckMemInvariants(Mem *p){
       ((p->flags&MEM_Static)!=0 ? 1 : 0) == 1
     );
   }
-
   return 1;
 }
 #endif
@@ -121,9 +119,8 @@ int sqlite3VdbeMemGrow(Mem *pMem, int n, int bPreserve){
       pMem->zMalloc = sqlite3DbMallocRaw(pMem->db, n);
     }
     if( pMem->zMalloc==0 ){
-      VdbeMemReleaseExtern(pMem);
+      sqlite3VdbeMemSetNull(pMem);
       pMem->z = 0;
-      pMem->flags = MEM_Null;  
       return SQLITE_NOMEM;
     }
   }
@@ -138,7 +135,6 @@ int sqlite3VdbeMemGrow(Mem *pMem, int n, int bPreserve){
 
   pMem->z = pMem->zMalloc;
   pMem->flags &= ~(MEM_Dyn|MEM_Ephem|MEM_Static);
-  pMem->xDel = 0;
   return SQLITE_OK;
 }
 
@@ -301,7 +297,7 @@ int sqlite3VdbeMemFinalize(Mem *pMem, FuncDef *pFunc){
     ctx.pMem = pMem;
     ctx.pFunc = pFunc;
     pFunc->xFinalize(&ctx); /* IMP: R-24505-23230 */
-    assert( 0==(pMem->flags&MEM_Dyn) && !pMem->xDel );
+    assert( (pMem->flags & MEM_Dyn)==0 );
     sqlite3DbFree(pMem->db, pMem->zMalloc);
     memcpy(pMem, &t, sizeof(t));
     rc = ctx.isError;
@@ -310,29 +306,34 @@ int sqlite3VdbeMemFinalize(Mem *pMem, FuncDef *pFunc){
 }
 
 /*
-** If the memory cell contains a string value that must be freed by
-** invoking an external callback, free it now. Calling this function
-** does not free any Mem.zMalloc buffer.
+** If the memory cell contains a value that must be freed by
+** invoking the external callback in Mem.xDel, then this routine
+** will free that value.  It also sets Mem.flags to MEM_Null.
 **
-** The VdbeMemReleaseExtern() macro invokes this routine if only if there
-** is work for this routine to do.
+** This is a helper routine for sqlite3VdbeMemSetNull() and
+** for sqlite3VdbeMemRelease().  Use those other routines as the
+** entry point for releasing Mem resources.
 */
-void sqlite3VdbeMemReleaseExternal(Mem *p){
+static SQLITE_NOINLINE void vdbeMemClearExternAndSetNull(Mem *p){
   assert( p->db==0 || sqlite3_mutex_held(p->db->mutex) );
+  assert( VdbeMemDynamic(p) );
   if( p->flags&MEM_Agg ){
     sqlite3VdbeMemFinalize(p, p->u.pDef);
     assert( (p->flags & MEM_Agg)==0 );
-    sqlite3VdbeMemRelease(p);
-  }else if( p->flags&MEM_Dyn ){
+    testcase( p->flags & MEM_Dyn );
+  }
+  if( p->flags&MEM_Dyn ){
     assert( (p->flags&MEM_RowSet)==0 );
     assert( p->xDel!=SQLITE_DYNAMIC && p->xDel!=0 );
     p->xDel((void *)p->z);
-    p->xDel = 0;
   }else if( p->flags&MEM_RowSet ){
     sqlite3RowSetClear(p->u.pRowSet);
   }else if( p->flags&MEM_Frame ){
-    sqlite3VdbeMemSetNull(p);
+    VdbeFrame *pFrame = p->u.pFrame;
+    pFrame->pParent = pFrame->v->pDelFrame;
+    pFrame->v->pDelFrame = pFrame;
   }
+  p->flags = MEM_Null;
 }
 
 /*
@@ -340,12 +341,12 @@ void sqlite3VdbeMemReleaseExternal(Mem *p){
 ** by p->xDel and memory in p->zMalloc.
 **
 ** This is a helper routine invoked by sqlite3VdbeMemRelease() in
-** the uncommon case when there really is memory in p that is
-** need of freeing.
+** the unusual case where there really is memory in p that needs
+** to be freed.
 */
-static SQLITE_NOINLINE void vdbeMemRelease(Mem *p){
+static SQLITE_NOINLINE void vdbeMemClear(Mem *p){
   if( VdbeMemDynamic(p) ){
-    sqlite3VdbeMemReleaseExternal(p);
+    vdbeMemClearExternAndSetNull(p);
   }
   if( p->zMalloc ){
     sqlite3DbFree(p->db, p->zMalloc);
@@ -355,18 +356,20 @@ static SQLITE_NOINLINE void vdbeMemRelease(Mem *p){
 }
 
 /*
-** Release any memory held by the Mem. This may leave the Mem in an
-** inconsistent state, for example with (Mem.z==0) and
-** (Mem.flags==MEM_Str).
+** Release any memory resources held by the Mem.  Both the memory that is
+** free by Mem.xDel and the Mem.zMalloc allocation are freed.
+**
+** Use this routine prior to clean up prior to abandoning a Mem, or to
+** reset a Mem back to its minimum memory utilization.
+**
+** Use sqlite3VdbeMemSetNull() to release just the Mem.xDel space
+** prior to inserting new content into the Mem.
 */
 void sqlite3VdbeMemRelease(Mem *p){
   assert( sqlite3VdbeCheckMemInvariants(p) );
   if( VdbeMemDynamic(p) || p->zMalloc ){
-    vdbeMemRelease(p);
-  }else{
-    p->z = 0;
+    vdbeMemClear(p);
   }
-  assert( p->xDel==0 );
 }
 
 /*
@@ -578,20 +581,37 @@ void sqlite3VdbeMemCast(Mem *pMem, u8 aff, u8 encoding){
   }
 }
 
+/*
+** Initialize bulk memory to be a consistent Mem object.
+**
+** The minimum amount of initialization feasible is performed.
+*/
+void sqlite3VdbeMemInit(Mem *pMem, sqlite3 *db, u16 flags){
+  assert( (flags & ~MEM_TypeMask)==0 );
+  pMem->flags = flags;
+  pMem->db = db;
+  pMem->zMalloc = 0;
+}
+
 
 /*
 ** Delete any previous value and set the value stored in *pMem to NULL.
+**
+** This routine calls the Mem.xDel destructor to dispose of values that
+** require the destructor.  But it preserves the Mem.zMalloc memory allocation.
+** To free all resources, use sqlite3VdbeMemRelease(), which both calls this
+** routine to invoke the destructor and deallocates Mem.zMalloc.
+**
+** Use this routine to reset the Mem prior to insert a new value.
+**
+** Use sqlite3VdbeMemRelease() to complete erase the Mem prior to abandoning it.
 */
 void sqlite3VdbeMemSetNull(Mem *pMem){
-  if( pMem->flags & MEM_Frame ){
-    VdbeFrame *pFrame = pMem->u.pFrame;
-    pFrame->pParent = pFrame->v->pDelFrame;
-    pFrame->v->pDelFrame = pFrame;
+  if( VdbeMemDynamic(pMem) ){
+    vdbeMemClearExternAndSetNull(pMem);
+  }else{
+    pMem->flags = MEM_Null;
   }
-  if( pMem->flags & MEM_RowSet ){
-    sqlite3RowSetClear(pMem->u.pRowSet);
-  }
-  MemSetTypeFlag(pMem, MEM_Null);
 }
 void sqlite3ValueSetNull(sqlite3_value *p){
   sqlite3VdbeMemSetNull((Mem*)p); 
@@ -608,14 +628,7 @@ void sqlite3VdbeMemSetZeroBlob(Mem *pMem, int n){
   if( n<0 ) n = 0;
   pMem->u.nZero = n;
   pMem->enc = SQLITE_UTF8;
-
-#ifdef SQLITE_OMIT_INCRBLOB
-  sqlite3VdbeMemGrow(pMem, n, 0);
-  if( pMem->z ){
-    pMem->n = n;
-    memset(pMem->z, 0, n);
-  }
-#endif
+  pMem->z = 0;
 }
 
 /*
@@ -624,7 +637,7 @@ void sqlite3VdbeMemSetZeroBlob(Mem *pMem, int n){
 ** a 64-bit integer.
 */
 static SQLITE_NOINLINE void vdbeReleaseAndSetInt64(Mem *pMem, i64 val){
-  sqlite3VdbeMemReleaseExternal(pMem);
+  sqlite3VdbeMemSetNull(pMem);
   pMem->u.i = val;
   pMem->flags = MEM_Int;
 }
@@ -648,10 +661,8 @@ void sqlite3VdbeMemSetInt64(Mem *pMem, i64 val){
 ** manifest type REAL.
 */
 void sqlite3VdbeMemSetDouble(Mem *pMem, double val){
-  if( sqlite3IsNaN(val) ){
-    sqlite3VdbeMemSetNull(pMem);
-  }else{
-    sqlite3VdbeMemRelease(pMem);
+  sqlite3VdbeMemSetNull(pMem);
+  if( !sqlite3IsNaN(val) ){
     pMem->r = val;
     pMem->flags = MEM_Real;
   }
@@ -730,9 +741,9 @@ void sqlite3VdbeMemAboutToChange(Vdbe *pVdbe, Mem *pMem){
 */
 void sqlite3VdbeMemShallowCopy(Mem *pTo, const Mem *pFrom, int srcType){
   assert( (pFrom->flags & MEM_RowSet)==0 );
-  VdbeMemReleaseExtern(pTo);
+  assert( pTo->db==pFrom->db );
+  if( VdbeMemDynamic(pTo) ) vdbeMemClearExternAndSetNull(pTo);
   memcpy(pTo, pFrom, MEMCELLSIZE);
-  pTo->xDel = 0;
   if( (pFrom->flags&MEM_Static)==0 ){
     pTo->flags &= ~(MEM_Dyn|MEM_Static|MEM_Ephem);
     assert( srcType==MEM_Ephem || srcType==MEM_Static );
@@ -747,12 +758,11 @@ void sqlite3VdbeMemShallowCopy(Mem *pTo, const Mem *pFrom, int srcType){
 int sqlite3VdbeMemCopy(Mem *pTo, const Mem *pFrom){
   int rc = SQLITE_OK;
 
+  assert( pTo->db==pFrom->db );
   assert( (pFrom->flags & MEM_RowSet)==0 );
-  VdbeMemReleaseExtern(pTo);
+  if( VdbeMemDynamic(pTo) ) vdbeMemClearExternAndSetNull(pTo);
   memcpy(pTo, pFrom, MEMCELLSIZE);
   pTo->flags &= ~MEM_Dyn;
-  pTo->xDel = 0;
-
   if( pTo->flags&(MEM_Str|MEM_Blob) ){
     if( 0==(pFrom->flags&MEM_Static) ){
       pTo->flags |= MEM_Ephem;
@@ -777,7 +787,6 @@ void sqlite3VdbeMemMove(Mem *pTo, Mem *pFrom){
   sqlite3VdbeMemRelease(pTo);
   memcpy(pTo, pFrom, sizeof(Mem));
   pFrom->flags = MEM_Null;
-  pFrom->xDel = 0;
   pFrom->zMalloc = 0;
 }
 
@@ -825,7 +834,8 @@ int sqlite3VdbeMemSetStr(
   if( nByte<0 ){
     assert( enc!=0 );
     if( enc==SQLITE_UTF8 ){
-      for(nByte=0; nByte<=iLimit && z[nByte]; nByte++){}
+      nByte = sqlite3Strlen30(z);
+      if( nByte>iLimit ) nByte = iLimit+1;
     }else{
       for(nByte=0; nByte<=iLimit && (z[nByte] | z[nByte+1]); nByte+=2){}
     }
@@ -851,7 +861,6 @@ int sqlite3VdbeMemSetStr(
   }else if( xDel==SQLITE_DYNAMIC ){
     sqlite3VdbeMemRelease(pMem);
     pMem->zMalloc = pMem->z = (char *)z;
-    pMem->xDel = 0;
   }else{
     sqlite3VdbeMemRelease(pMem);
     pMem->z = (char *)z;
@@ -883,8 +892,11 @@ int sqlite3VdbeMemSetStr(
 ** key is true to get the key or false to get data.  The result is written
 ** into the pMem element.
 **
-** The pMem structure is assumed to be uninitialized.  Any prior content
-** is overwritten without being freed.
+** The pMem object must have been initialized.  This routine will use
+** pMem->zMalloc to hold the content from the btree, if possible.  New
+** pMem->zMalloc space will be allocated if necessary.  The calling routine
+** is responsible for making sure that the pMem object is eventually
+** destroyed.
 **
 ** If this routine fails for any reason (malloc returns NULL or unable
 ** to read from the disk) then the pMem is left in an inconsistent state.
@@ -901,6 +913,7 @@ int sqlite3VdbeMemFromBtree(
   int rc = SQLITE_OK; /* Return code */
 
   assert( sqlite3BtreeCursorIsValid(pCur) );
+  assert( !VdbeMemDynamic(pMem) );
 
   /* Note: the calls to BtreeKeyFetch() and DataFetch() below assert() 
   ** that both the BtShared and database handle mutexes are held. */
@@ -913,23 +926,25 @@ int sqlite3VdbeMemFromBtree(
   assert( zData!=0 );
 
   if( offset+amt<=available ){
-    sqlite3VdbeMemRelease(pMem);
     pMem->z = &zData[offset];
     pMem->flags = MEM_Blob|MEM_Ephem;
     pMem->n = (int)amt;
-  }else if( SQLITE_OK==(rc = sqlite3VdbeMemGrow(pMem, amt+2, 0)) ){
-    if( key ){
-      rc = sqlite3BtreeKey(pCur, offset, amt, pMem->z);
-    }else{
-      rc = sqlite3BtreeData(pCur, offset, amt, pMem->z);
-    }
-    if( rc==SQLITE_OK ){
-      pMem->z[amt] = 0;
-      pMem->z[amt+1] = 0;
-      pMem->flags = MEM_Blob|MEM_Term;
-      pMem->n = (int)amt;
-    }else{
-      sqlite3VdbeMemRelease(pMem);
+  }else{
+    pMem->flags = MEM_Null;
+    if( SQLITE_OK==(rc = sqlite3VdbeMemGrow(pMem, amt+2, 0)) ){
+      if( key ){
+        rc = sqlite3BtreeKey(pCur, offset, amt, pMem->z);
+      }else{
+        rc = sqlite3BtreeData(pCur, offset, amt, pMem->z);
+      }
+      if( rc==SQLITE_OK ){
+        pMem->z[amt] = 0;
+        pMem->z[amt+1] = 0;
+        pMem->flags = MEM_Blob|MEM_Term;
+        pMem->n = (int)amt;
+      }else{
+        sqlite3VdbeMemRelease(pMem);
+      }
     }
   }
 

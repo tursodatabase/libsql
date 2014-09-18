@@ -761,7 +761,7 @@ static int vdbeSorterCompare(
   if( pKey2 ){
     sqlite3VdbeRecordUnpack(pTask->pSorter->pKeyInfo, nKey2, pKey2, r2);
   }
-  return sqlite3VdbeRecordCompare(nKey1, pKey1, r2, 0);
+  return sqlite3VdbeRecordCompare(nKey1, pKey1, r2);
 }
 
 /*
@@ -2517,6 +2517,6 @@ int sqlite3VdbeSorterCompare(
     }
   }
 
-  *pRes = sqlite3VdbeRecordCompare(pVal->n, pVal->z, r2, 0);
+  *pRes = sqlite3VdbeRecordCompare(pVal->n, pVal->z, r2);
   return SQLITE_OK;
 }
