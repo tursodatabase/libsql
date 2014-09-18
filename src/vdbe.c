@@ -277,15 +277,7 @@ static void applyAffinity(
   char affinity,      /* The affinity to be applied */
   u8 enc              /* Use this text encoding */
 ){
-  if( affinity==SQLITE_AFF_TEXT ){
-    /* Only attempt the conversion to TEXT if there is an integer or real
-    ** representation (blob and NULL do not get converted) but no string
-    ** representation.
-    */
-    if( 0==(pRec->flags&MEM_Str) && (pRec->flags&(MEM_Real|MEM_Int)) ){
-      sqlite3VdbeMemStringify(pRec, enc, 1);
-    }
-  }else if( affinity!=SQLITE_AFF_NONE ){
+  if( affinity>=SQLITE_AFF_NUMERIC ){
     assert( affinity==SQLITE_AFF_INTEGER || affinity==SQLITE_AFF_REAL
              || affinity==SQLITE_AFF_NUMERIC );
     if( (pRec->flags & MEM_Int)==0 ){
@@ -294,6 +286,14 @@ static void applyAffinity(
       }else{
         sqlite3VdbeIntegerAffinity(pRec);
       }
+    }
+  }else if( affinity==SQLITE_AFF_TEXT ){
+    /* Only attempt the conversion to TEXT if there is an integer or real
+    ** representation (blob and NULL do not get converted) but no string
+    ** representation.
+    */
+    if( 0==(pRec->flags&MEM_Str) && (pRec->flags&(MEM_Real|MEM_Int)) ){
+      sqlite3VdbeMemStringify(pRec, enc, 1);
     }
   }
 }
@@ -1754,7 +1754,7 @@ case OP_RealAffinity: {                  /* in1 */
 ** A NULL value is not changed by this routine.  It remains NULL.
 */
 case OP_Cast: {                  /* in1 */
-  assert( pOp->p2>=SQLITE_AFF_TEXT && pOp->p2<=SQLITE_AFF_REAL );
+  assert( pOp->p2>=SQLITE_AFF_NONE && pOp->p2<=SQLITE_AFF_REAL );
   testcase( pOp->p2==SQLITE_AFF_TEXT );
   testcase( pOp->p2==SQLITE_AFF_NONE );
   testcase( pOp->p2==SQLITE_AFF_NUMERIC );
@@ -1904,7 +1904,7 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
   }else{
     /* Neither operand is NULL.  Do a comparison. */
     affinity = pOp->p5 & SQLITE_AFF_MASK;
-    if( affinity ){
+    if( affinity>=SQLITE_AFF_TEXT ){
       applyAffinity(pIn1, affinity, encoding);
       applyAffinity(pIn3, affinity, encoding);
       if( db->mallocFailed ) goto no_mem;

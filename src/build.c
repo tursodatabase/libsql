@@ -1177,7 +1177,7 @@ char sqlite3AffinityType(const char *zIn, u8 *pszEst){
   ** estimate is scaled so that the size of an integer is 1.  */
   if( pszEst ){
     *pszEst = 1;   /* default size is approx 4 bytes */
-    if( aff<=SQLITE_AFF_NONE ){
+    if( aff<SQLITE_AFF_NUMERIC ){
       if( zChar ){
         while( zChar[0] ){
           if( sqlite3Isdigit(zChar[0]) ){
@@ -1548,8 +1548,8 @@ static char *createTableStmt(sqlite3 *db, Table *p){
   zStmt[k++] = '(';
   for(pCol=p->aCol, i=0; i<p->nCol; i++, pCol++){
     static const char * const azType[] = {
-        /* SQLITE_AFF_TEXT    */ " TEXT",
         /* SQLITE_AFF_NONE    */ "",
+        /* SQLITE_AFF_TEXT    */ " TEXT",
         /* SQLITE_AFF_NUMERIC */ " NUM",
         /* SQLITE_AFF_INTEGER */ " INT",
         /* SQLITE_AFF_REAL    */ " REAL"
@@ -1561,15 +1561,15 @@ static char *createTableStmt(sqlite3 *db, Table *p){
     k += sqlite3Strlen30(&zStmt[k]);
     zSep = zSep2;
     identPut(zStmt, &k, pCol->zName);
-    assert( pCol->affinity-SQLITE_AFF_TEXT >= 0 );
-    assert( pCol->affinity-SQLITE_AFF_TEXT < ArraySize(azType) );
-    testcase( pCol->affinity==SQLITE_AFF_TEXT );
+    assert( pCol->affinity-SQLITE_AFF_NONE >= 0 );
+    assert( pCol->affinity-SQLITE_AFF_NONE < ArraySize(azType) );
     testcase( pCol->affinity==SQLITE_AFF_NONE );
+    testcase( pCol->affinity==SQLITE_AFF_TEXT );
     testcase( pCol->affinity==SQLITE_AFF_NUMERIC );
     testcase( pCol->affinity==SQLITE_AFF_INTEGER );
     testcase( pCol->affinity==SQLITE_AFF_REAL );
     
-    zType = azType[pCol->affinity - SQLITE_AFF_TEXT];
+    zType = azType[pCol->affinity - SQLITE_AFF_NONE];
     len = sqlite3Strlen30(zType);
     assert( pCol->affinity==SQLITE_AFF_NONE 
             || pCol->affinity==sqlite3AffinityType(zType, 0) );

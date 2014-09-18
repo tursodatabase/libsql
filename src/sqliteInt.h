@@ -1427,10 +1427,10 @@ struct CollSeq {
 ** used as the P4 operand, they will be more readable.
 **
 ** Note also that the numeric types are grouped together so that testing
-** for a numeric type is a single comparison.
+** for a numeric type is a single comparison.  And the NONE type is first.
 */
-#define SQLITE_AFF_TEXT     'a'
-#define SQLITE_AFF_NONE     'b'
+#define SQLITE_AFF_NONE     'a'
+#define SQLITE_AFF_TEXT     'b'
 #define SQLITE_AFF_NUMERIC  'c'
 #define SQLITE_AFF_INTEGER  'd'
 #define SQLITE_AFF_REAL     'e'

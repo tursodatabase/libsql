@@ -1,5 +1,5 @@
-C Modify\san\sassert()\swithin\ssqlite3PagerWalFramesize(),\sa\sfunction\sonly\sever\sused\sby\szipvfs,\sto\saccount\sfor\srecent\szipvfs\schanges.
-D 2014-09-18T09:59:28.052
+C Since\snumeric\saffinity\sis\sthe\smost\scommon\scase,\scheck\sit\sfirst.\s\sInterchange\nthe\sNONE\sand\sTEXT\saffinity\scodes\sfor\seasier\schecking\sof\sno\saffinity.
+D 2014-09-18T14:36:00.055
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -174,7 +174,7 @@ F src/btmutex.c 49ca66250c7dfa844a4d4cb8272b87420d27d3a5
 F src/btree.c 6aa61c0e3d20d1d1acc8fb33d8f0ebd675305d3c
 F src/btree.h a79aa6a71e7f1055f01052b7f821bd1c2dce95c8
 F src/btreeInt.h e0ecb5dba292722039a7540beb3fc448103273cc
-F src/build.c 047d7e1d2d89fa55134fa1d6b669c9c2983c0d11
+F src/build.c 8dbca25988045fbf2a33c9631c42706fa6449e60
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c 535183afb3c75628b78ce82612931ac7cdf26f14
 F src/ctime.c 16cd19215d9fd849ee2b7509b092f2e0bbd6a958
@@ -231,7 +231,7 @@ F src/shell.c c00220cdd7f2027780bc25b78376c16dc24e4b7d
 F src/sqlite.h.in 8b018219ce988913e5977d5de9ab4beb33be23b6
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
-F src/sqliteInt.h 0803e900eb1882f7dd88e86ddcddd2d1b27c8d86
+F src/sqliteInt.h 9bb8f655b076e1b9ed7cfe0b8c181e758d937369
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2e99ef7ef16187e17033d9398dc962ce22dab5cb
@@ -288,7 +288,7 @@ F src/update.c 729f6f18fc27740591d085e1172cebe311144bf0
 F src/utf.c 8f634b93d41c089029dd503161a7d3e685d59a9c
 F src/util.c 4006c01772bd8d8ac4306d523bbcee41d3e392d8
 F src/vacuum.c 59f03f92bcff57faa6a8ca256eb29ccddfb0614a
-F src/vdbe.c 78606777e4ce5dba147ab75e71c0127b0d8d4c3d
+F src/vdbe.c 2caa3b1e32f3fddc60fecb2cfd66afe2c2eb96b1
 F src/vdbe.h 09f5b4e3719fa454f252322b1cdab5cf1f361327
 F src/vdbeInt.h f90b0de6153f50de630a5a113537efb47083812f
 F src/vdbeapi.c c02242df5e9e8d1001e0086f405953833f9c426b
@@ -1198,7 +1198,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5192f964b2a85459553f1cea741b9791606ccc4e
-R e8be2bb63b11cad540f46beed0dd6c95
-U dan
-Z 6d111ffcef80c669aed6101b87cfb783
+P 3bd7c1b2faa2d4cc95b255633204006849bfd5e0
+R c1df8072077a2642e4ce7426502f62dc
+U drh
+Z 04ecbaaf95d3fdde0c1a120923b44258
