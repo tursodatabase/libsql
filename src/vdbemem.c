@@ -34,6 +34,10 @@ int sqlite3VdbeCheckMemInvariants(Mem *p){
   /* Cannot be both MEM_Int and MEM_Real at the same time */
   assert( (p->flags & (MEM_Int|MEM_Real))!=(MEM_Int|MEM_Real) );
 
+  /* The szMalloc field holds the correct memory allocation size */
+  assert( p->szMalloc==0
+       || p->szMalloc==sqlite3DbMallocSize(p->db,p->zMalloc) );
+
   /* If p holds a string or blob, the Mem.z must point to exactly
   ** one of the following:
   **
@@ -42,9 +46,9 @@ int sqlite3VdbeCheckMemInvariants(Mem *p){
   **   (3) An ephemeral string or blob
   **   (4) A static string or blob
   */
-  if( (p->flags & (MEM_Str|MEM_Blob)) && p->z!=0 ){
+  if( (p->flags & (MEM_Str|MEM_Blob)) && p->n>0 ){
     assert( 
-      ((p->z==p->zMalloc)? 1 : 0) +
+      ((p->szMalloc>0 && p->z==p->zMalloc)? 1 : 0) +
       ((p->flags&MEM_Dyn)!=0 ? 1 : 0) +
       ((p->flags&MEM_Ephem)!=0 ? 1 : 0) +
       ((p->flags&MEM_Static)!=0 ? 1 : 0) == 1
@@ -112,19 +116,24 @@ int sqlite3VdbeMemGrow(Mem *pMem, int n, int bPreserve){
   assert( bPreserve==0 || pMem->flags&(MEM_Blob|MEM_Str) );
   testcase( bPreserve && pMem->z==0 );
 
-  if( pMem->zMalloc==0 || sqlite3DbMallocSize(pMem->db, pMem->zMalloc)<n ){
+  assert( pMem->szMalloc==0
+       || pMem->szMalloc==sqlite3DbMallocSize(pMem->db, pMem->zMalloc) );
+  if( pMem->szMalloc<n ){
     if( n<32 ) n = 32;
-    if( bPreserve && pMem->z==pMem->zMalloc ){
+    if( bPreserve && pMem->szMalloc>0 && pMem->z==pMem->zMalloc ){
       pMem->z = pMem->zMalloc = sqlite3DbReallocOrFree(pMem->db, pMem->z, n);
       bPreserve = 0;
     }else{
-      sqlite3DbFree(pMem->db, pMem->zMalloc);
+      if( pMem->szMalloc>0 ) sqlite3DbFree(pMem->db, pMem->zMalloc);
       pMem->zMalloc = sqlite3DbMallocRaw(pMem->db, n);
     }
     if( pMem->zMalloc==0 ){
       sqlite3VdbeMemSetNull(pMem);
       pMem->z = 0;
+      pMem->szMalloc = 0;
       return SQLITE_NOMEM;
+    }else{
+      pMem->szMalloc = sqlite3DbMallocSize(pMem->db, pMem->zMalloc);
     }
   }
 
@@ -155,7 +164,7 @@ int sqlite3VdbeMemMakeWriteable(Mem *pMem){
   assert( (pMem->flags&MEM_RowSet)==0 );
   ExpandBlob(pMem);
   f = pMem->flags;
-  if( (f&(MEM_Str|MEM_Blob)) && pMem->z!=pMem->zMalloc ){
+  if( (f&(MEM_Str|MEM_Blob)) && (pMem->szMalloc==0 || pMem->z!=pMem->zMalloc) ){
     if( sqlite3VdbeMemGrow(pMem, pMem->n + 2, 1) ){
       return SQLITE_NOMEM;
     }
@@ -301,7 +310,7 @@ int sqlite3VdbeMemFinalize(Mem *pMem, FuncDef *pFunc){
     ctx.pFunc = pFunc;
     pFunc->xFinalize(&ctx); /* IMP: R-24505-23230 */
     assert( (pMem->flags & MEM_Dyn)==0 );
-    sqlite3DbFree(pMem->db, pMem->zMalloc);
+    if( pMem->szMalloc>0 ) sqlite3DbFree(pMem->db, pMem->zMalloc);
     memcpy(pMem, &t, sizeof(t));
     rc = ctx.isError;
   }
@@ -351,9 +360,9 @@ static SQLITE_NOINLINE void vdbeMemClear(Mem *p){
   if( VdbeMemDynamic(p) ){
     vdbeMemClearExternAndSetNull(p);
   }
-  if( p->zMalloc ){
+  if( p->szMalloc ){
     sqlite3DbFree(p->db, p->zMalloc);
-    p->zMalloc = 0;
+    p->szMalloc = 0;
   }
   p->z = 0;
 }
@@ -370,7 +379,7 @@ static SQLITE_NOINLINE void vdbeMemClear(Mem *p){
 */
 void sqlite3VdbeMemRelease(Mem *p){
   assert( sqlite3VdbeCheckMemInvariants(p) );
-  if( VdbeMemDynamic(p) || p->zMalloc ){
+  if( VdbeMemDynamic(p) || p->szMalloc ){
     vdbeMemClear(p);
   }
 }
@@ -592,7 +601,7 @@ void sqlite3VdbeMemInit(Mem *pMem, sqlite3 *db, u16 flags){
   assert( (flags & ~MEM_TypeMask)==0 );
   pMem->flags = flags;
   pMem->db = db;
-  pMem->zMalloc = 0;
+  pMem->szMalloc = 0;
 }
 
 
@@ -683,10 +692,11 @@ void sqlite3VdbeMemSetRowSet(Mem *pMem){
   pMem->zMalloc = sqlite3DbMallocRaw(db, 64);
   if( db->mallocFailed ){
     pMem->flags = MEM_Null;
+    pMem->szMalloc = 0;
   }else{
     assert( pMem->zMalloc );
-    pMem->u.pRowSet = sqlite3RowSetInit(db, pMem->zMalloc, 
-                                       sqlite3DbMallocSize(db, pMem->zMalloc));
+    pMem->szMalloc = sqlite3DbMallocSize(db, pMem->zMalloc);
+    pMem->u.pRowSet = sqlite3RowSetInit(db, pMem->zMalloc, pMem->szMalloc);
     assert( pMem->u.pRowSet!=0 );
     pMem->flags = MEM_RowSet;
   }
@@ -789,7 +799,7 @@ void sqlite3VdbeMemMove(Mem *pTo, Mem *pFrom){
   sqlite3VdbeMemRelease(pTo);
   memcpy(pTo, pFrom, sizeof(Mem));
   pFrom->flags = MEM_Null;
-  pFrom->zMalloc = 0;
+  pFrom->szMalloc = 0;
 }
 
 /*
@@ -863,6 +873,7 @@ int sqlite3VdbeMemSetStr(
   }else if( xDel==SQLITE_DYNAMIC ){
     sqlite3VdbeMemRelease(pMem);
     pMem->zMalloc = pMem->z = (char *)z;
+    pMem->szMalloc = sqlite3DbMallocSize(pMem->db, pMem->zMalloc);
   }else{
     sqlite3VdbeMemRelease(pMem);
     pMem->z = (char *)z;
@@ -1485,7 +1496,7 @@ void sqlite3Stat4ProbeFree(UnpackedRecord *pRec){
     Mem *aMem = pRec->aMem;
     sqlite3 *db = aMem[0].db;
     for(i=0; i<nCol; i++){
-      sqlite3DbFree(db, aMem[i].zMalloc);
+      if( aMem[i].szMalloc ) sqlite3DbFree(db, aMem[i].zMalloc);
     }
     sqlite3KeyInfoUnref(pRec->pKeyInfo);
     sqlite3DbFree(db, pRec);

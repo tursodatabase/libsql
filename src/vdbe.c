@@ -1026,9 +1026,9 @@ case OP_String8: {         /* same as TK_STRING, out2-prerelease */
     rc = sqlite3VdbeMemSetStr(pOut, pOp->p4.z, -1, SQLITE_UTF8, SQLITE_STATIC);
     if( rc==SQLITE_TOOBIG ) goto too_big;
     if( SQLITE_OK!=sqlite3VdbeChangeEncoding(pOut, encoding) ) goto no_mem;
-    assert( pOut->zMalloc==pOut->z );
+    assert( pOut->szMalloc>0 && pOut->zMalloc==pOut->z );
     assert( VdbeMemDynamic(pOut)==0 );
-    pOut->zMalloc = 0;
+    pOut->szMalloc = 0;
     pOut->flags |= MEM_Static;
     if( pOp->p4type==P4_DYNAMIC ){
       sqlite3DbFree(db, pOp->p4.z);
@@ -1148,7 +1148,6 @@ case OP_Variable: {            /* out2-prerelease */
 ** for P3 to be less than 1.
 */
 case OP_Move: {
-  char *zMalloc;   /* Holding variable for allocated memory */
   int n;           /* Number of registers left to copy */
   int p1;          /* Register to copy from */
   int p2;          /* Register to copy to */
@@ -1166,16 +1165,12 @@ case OP_Move: {
     assert( pIn1<=&aMem[(p->nMem-p->nCursor)] );
     assert( memIsValid(pIn1) );
     memAboutToChange(p, pOut);
-    sqlite3VdbeMemRelease(pOut);
-    zMalloc = pOut->zMalloc;
-    memcpy(pOut, pIn1, sizeof(Mem));
+    sqlite3VdbeMemMove(pOut, pIn1);
 #ifdef SQLITE_DEBUG
     if( pOut->pScopyFrom>=&aMem[p1] && pOut->pScopyFrom<&aMem[p1+pOp->p3] ){
       pOut->pScopyFrom += p1 - pOp->p2;
     }
 #endif
-    pIn1->flags = MEM_Undefined;
-    pIn1->zMalloc = zMalloc;
     REGISTER_TRACE(p2++, pOut);
     pIn1++;
     pOut++;

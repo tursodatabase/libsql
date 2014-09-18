@@ -809,6 +809,8 @@ static const Mem *columnNullValue(void){
         /* .n          = */ 0,
         /* .z          = */ 0,
         /* .zMalloc    = */ 0,
+        /* .szMalloc   = */ 0,
+        /* .iPadding1  = */ 0,
         /* .db         = */ 0,
         /* .xDel       = */ 0,
 #ifdef SQLITE_DEBUG

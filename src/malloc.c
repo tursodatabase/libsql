@@ -451,15 +451,18 @@ int sqlite3MallocSize(void *p){
   return sqlite3GlobalConfig.m.xSize(p);
 }
 int sqlite3DbMallocSize(sqlite3 *db, void *p){
-  assert( db!=0 );
-  assert( sqlite3_mutex_held(db->mutex) );
-  if( isLookaside(db, p) ){
-    return db->lookaside.sz;
+  if( db==0 ){
+    return sqlite3MallocSize(p);
   }else{
-    assert( sqlite3MemdebugHasType(p, MEMTYPE_DB) );
-    assert( sqlite3MemdebugHasType(p, MEMTYPE_LOOKASIDE|MEMTYPE_HEAP) );
-    assert( db!=0 || sqlite3MemdebugNoType(p, MEMTYPE_LOOKASIDE) );
-    return sqlite3GlobalConfig.m.xSize(p);
+    assert( sqlite3_mutex_held(db->mutex) );
+    if( isLookaside(db, p) ){
+      return db->lookaside.sz;
+    }else{
+      assert( sqlite3MemdebugHasType(p, MEMTYPE_DB) );
+      assert( sqlite3MemdebugHasType(p, MEMTYPE_LOOKASIDE|MEMTYPE_HEAP) );
+      assert( db!=0 || sqlite3MemdebugNoType(p, MEMTYPE_LOOKASIDE) );
+      return sqlite3GlobalConfig.m.xSize(p);
+    }
   }
 }
 sqlite3_uint64 sqlite3_msize(void *p){

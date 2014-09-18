@@ -174,7 +174,9 @@ struct Mem {
   int n;              /* Number of characters in string value, excluding '\0' */
   char *z;            /* String or BLOB value */
   /* ShallowCopy only needs to copy the information above */
-  char *zMalloc;      /* Dynamic buffer allocated by sqlite3_malloc() */
+  char *zMalloc;      /* Space to hold MEM_Str or MEM_Blob if szMalloc>0 */
+  int szMalloc;       /* Size of the zMalloc allocation */
+  int iPadding1;      /* Padding for 8-byte alignment */
   sqlite3 *db;        /* The associated database connection */
   void (*xDel)(void*);/* Destructor for Mem.z - only valid if MEM_Dyn */
 #ifdef SQLITE_DEBUG

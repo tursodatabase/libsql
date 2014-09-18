@@ -1,5 +1,5 @@
-C Correct\stypos\sin\scomments.\s\sNo\schanges\sto\scode.
-D 2014-09-18T18:55:47.619
+C Add\sthe\sMem.szMalloc\selement\sto\sthe\sMem\sobject\sand\suse\sit\sto\skeep\strack\sof\nthe\ssize\sof\sthe\sMem.zMalloc\sallocation.
+D 2014-09-18T21:25:33.845
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -194,7 +194,7 @@ F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
 F src/loadext.c de741e66e5ddc1598d904d7289239696e40ed994
 F src/main.c d15621461fb0c52675eba2b650492ed1beef69ab
-F src/malloc.c 4c1d511157defd7b1d023062cf05a1dc17b8f79b
+F src/malloc.c 5bb99ee1e08ad58e457063cf79ce521db0e24195
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c faf615aafd8be74a71494dfa027c113ea5c6615f
 F src/mem2.c dce31758da87ec2cfa52ba4c5df1aed6e07d8e8f
@@ -253,7 +253,7 @@ F src/test_config.c 6f721f0337b96d58e81ff69bba101113c8168c2b
 F src/test_demovfs.c 69b2085076654ebc18014cbc6386f04409c959a9
 F src/test_devsym.c e7498904e72ba7491d142d5c83b476c4e76993bc
 F src/test_fs.c ced436e3d4b8e4681328409b8081051ce614e28f
-F src/test_func.c d3013ce36f19ac72a99c73864930fd1fa41832f8
+F src/test_func.c 14e543ae4d905ee31dc322b2f8d31bfac1769d45
 F src/test_hexio.c abfdecb6fa58c354623978efceb088ca18e379cd
 F src/test_init.c 66b33120ffe9cd853b5a905ec850d51151337b32
 F src/test_intarray.c 6c610a21ab8edde85a3a2c7f2b069244ecf4d834
@@ -285,16 +285,16 @@ F src/threads.c 22dded4283dc4b25422f6444cdcb8d6b1ea0b5ff
 F src/tokenize.c 3df63041994f55afeb168b463ec836e8f1c50e7c
 F src/trigger.c 25571661fdeae8c7f975ff40ffec205520a3f92f
 F src/update.c 729f6f18fc27740591d085e1172cebe311144bf0
-F src/utf.c 8f634b93d41c089029dd503161a7d3e685d59a9c
+F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c 4006c01772bd8d8ac4306d523bbcee41d3e392d8
 F src/vacuum.c 59f03f92bcff57faa6a8ca256eb29ccddfb0614a
-F src/vdbe.c 17f285ff89d73b6af5bd1fc90c0943341f4003d5
+F src/vdbe.c fb490f5b1b2ee2f33f60c7dc678c0d0b70f2e0cb
 F src/vdbe.h 09f5b4e3719fa454f252322b1cdab5cf1f361327
-F src/vdbeInt.h 1c31448d9d4f074e93863ebe69164ff29cc4f7f8
-F src/vdbeapi.c 88929e02676fdbd5f436fcfd63fa0d371756a7ce
-F src/vdbeaux.c ac3188f182f25eac58923b1a3c0840c69949ed28
+F src/vdbeInt.h 1ac536d1fa1260d72f81003ff5b283e8f3c40442
+F src/vdbeapi.c e088ed70b6cc42ed68985ab064397ebd452286d6
+F src/vdbeaux.c b3230032238df611aefee5907ea792786362a55d
 F src/vdbeblob.c 848238dc73e93e48432991bb5651bf87d865eca4
-F src/vdbemem.c 1907e24ab431bd465f5709c30ec28a9119502f9a
+F src/vdbemem.c 3aea3831a981378368ca058cd8fc700b1982772d
 F src/vdbesort.c 09efa5e5098d1a159cd21f588eb118e4fe87cfde
 F src/vdbetrace.c 4f29b04edb0cec3d5fcd9b566d9f0e75c8984362
 F src/vtab.c 019dbfd0406a7447c990e1f7bd1dfcdb8895697f
@@ -1198,7 +1198,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4c8c89d7e62aecfe2eb735f7bb114aed6b452847
-R a232caa53ffd8c1fd2d0c9fb51cf1463
-U mistachkin
-Z b2beb30c7e105753dffdcae3bc62d871
+P 55879932116d373c95a5f32ec44b53a9c3f4db24
+R 508057a57cef866ce62608d1eb2d9e8e
+U drh
+Z 7d8fd1db974daf115bf085d0714b6de9

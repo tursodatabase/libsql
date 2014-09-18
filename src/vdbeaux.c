@@ -698,7 +698,7 @@ static void freeP4(sqlite3 *db, int p4type, void *p4){
           sqlite3ValueFree((sqlite3_value*)p4);
         }else{
           Mem *p = (Mem*)p4;
-          sqlite3DbFree(db, p->zMalloc);
+          if( p->szMalloc ) sqlite3DbFree(db, p->zMalloc);
           sqlite3DbFree(db, p);
         }
         break;
@@ -1231,7 +1231,7 @@ static void releaseMemArray(Mem *p, int N){
     u8 malloc_failed = db->mallocFailed;
     if( db->pnBytesFreed ){
       for(pEnd=&p[N]; p<pEnd; p++){
-        sqlite3DbFree(db, p->zMalloc);
+        if( p->szMalloc ) sqlite3DbFree(db, p->zMalloc);
       }
       return;
     }
@@ -1257,9 +1257,9 @@ static void releaseMemArray(Mem *p, int N){
       testcase( p->flags & MEM_RowSet );
       if( p->flags&(MEM_Agg|MEM_Dyn|MEM_Frame|MEM_RowSet) ){
         sqlite3VdbeMemRelease(p);
-      }else if( p->zMalloc ){
+      }else if( p->szMalloc ){
         sqlite3DbFree(db, p->zMalloc);
-        p->zMalloc = 0;
+        p->szMalloc = 0;
       }
 
       p->flags = MEM_Undefined;
@@ -3167,7 +3167,7 @@ void sqlite3VdbeRecordUnpack(
     pMem->enc = pKeyInfo->enc;
     pMem->db = pKeyInfo->db;
     /* pMem->flags = 0; // sqlite3VdbeSerialGet() will set this for us */
-    pMem->zMalloc = 0;
+    pMem->szMalloc = 0;
     d += sqlite3VdbeSerialGet(&aKey[d], serial_type, pMem);
     pMem++;
     if( (++u)>=p->nField ) break;
@@ -3207,7 +3207,7 @@ static int vdbeRecordCompareDebug(
   mem1.enc = pKeyInfo->enc;
   mem1.db = pKeyInfo->db;
   /* mem1.flags = 0;  // Will be initialized by sqlite3VdbeSerialGet() */
-  VVA_ONLY( mem1.zMalloc = 0; ) /* Only needed by assert() statements */
+  VVA_ONLY( mem1.szMalloc = 0; ) /* Only needed by assert() statements */
 
   /* Compilers may complain that mem1.u.i is potentially uninitialized.
   ** We could initialize it, as shown here, to silence those complaints.
@@ -3250,7 +3250,7 @@ static int vdbeRecordCompareDebug(
     */
     rc = sqlite3MemCompare(&mem1, &pPKey2->aMem[i], pKeyInfo->aColl[i]);
     if( rc!=0 ){
-      assert( mem1.zMalloc==0 );  /* See comment below */
+      assert( mem1.szMalloc==0 );  /* See comment below */
       if( pKeyInfo->aSortOrder[i] ){
         rc = -rc;  /* Invert the result for DESC sort order. */
       }
@@ -3263,7 +3263,7 @@ static int vdbeRecordCompareDebug(
   ** the following assert().  If the assert() fails, it indicates a
   ** memory leak and a need to call sqlite3VdbeMemRelease(&mem1).
   */
-  assert( mem1.zMalloc==0 );
+  assert( mem1.szMalloc==0 );
 
   /* rc==0 here means that one of the keys ran out of fields and
   ** all the fields up to that point were equal. Return the default_rc
@@ -3302,9 +3302,8 @@ static int vdbeCompareMemString(
     int n1, n2;
     Mem c1;
     Mem c2;
-    c1.db = c2.db = pMem1->db;
-    c1.flags = c2.flags = 0;
-    c1.zMalloc = c2.zMalloc = 0;
+    sqlite3VdbeMemInit(&c1, pMem1->db, MEM_Null);
+    sqlite3VdbeMemInit(&c2, pMem1->db, MEM_Null);
     sqlite3VdbeMemShallowCopy(&c1, pMem1, MEM_Ephem);
     sqlite3VdbeMemShallowCopy(&c2, pMem2, MEM_Ephem);
     v1 = sqlite3ValueText((sqlite3_value*)&c1, pColl->enc);
@@ -3516,7 +3515,7 @@ static int vdbeRecordCompareWithSkip(
     i = 0;
   }
 
-  VVA_ONLY( mem1.zMalloc = 0; ) /* Only needed by assert() statements */
+  VVA_ONLY( mem1.szMalloc = 0; ) /* Only needed by assert() statements */
   assert( pPKey2->pKeyInfo->nField+pPKey2->pKeyInfo->nXField>=pPKey2->nField 
        || CORRUPT_DB );
   assert( pPKey2->pKeyInfo->aSortOrder!=0 );
@@ -3639,7 +3638,7 @@ static int vdbeRecordCompareWithSkip(
         rc = -rc;
       }
       assert( vdbeRecordCompareDebug(nKey1, pKey1, pPKey2, rc) );
-      assert( mem1.zMalloc==0 );  /* See comment below */
+      assert( mem1.szMalloc==0 );  /* See comment below */
       return rc;
     }
 
@@ -3652,7 +3651,7 @@ static int vdbeRecordCompareWithSkip(
   /* No memory allocation is ever used on mem1.  Prove this using
   ** the following assert().  If the assert() fails, it indicates a
   ** memory leak and a need to call sqlite3VdbeMemRelease(&mem1).  */
-  assert( mem1.zMalloc==0 );
+  assert( mem1.szMalloc==0 );
 
   /* rc==0 here means that one or both of the keys ran out of fields and
   ** all the fields up to that point were equal. Return the default_rc
@@ -3937,7 +3936,7 @@ int sqlite3VdbeIdxRowid(sqlite3 *db, BtCursor *pCur, i64 *rowid){
   /* Jump here if database corruption is detected after m has been
   ** allocated.  Free the m object and return SQLITE_CORRUPT. */
 idx_rowid_corruption:
-  testcase( m.zMalloc!=0 );
+  testcase( m.szMalloc!=0 );
   sqlite3VdbeMemRelease(&m);
   return SQLITE_CORRUPT_BKPT;
 }
