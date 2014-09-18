@@ -168,7 +168,7 @@
 #ifndef _SQLITE3OTA_H
 #define _SQLITE3OTA_H
 
-#include <sqlite3.h>              /* Required for error code definitions */
+#include "sqlite3.h"              /* Required for error code definitions */
 
 typedef struct sqlite3ota sqlite3ota;
 
