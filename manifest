@@ -1,5 +1,5 @@
-C Fix\sharmless\swarnings\son\s32-bit\sMSVC\sbuilds.
-D 2014-09-18T02:20:54.689
+C Modify\san\sassert()\swithin\ssqlite3PagerWalFramesize(),\sa\sfunction\sonly\sever\sused\sby\szipvfs,\sto\saccount\sfor\srecent\szipvfs\schanges.
+D 2014-09-18T09:59:28.052
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -214,7 +214,7 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c addd023b26c623fec4dedc110fc4370a65b4768c
 F src/os_win.c 0a4042ef35f322e86fa01f6c8884c5e645b911e7
 F src/os_win.h 09e751b20bbc107ffbd46e13555dc73576d88e21
-F src/pager.c c6c809987f0c6a4e27634099d062d425527de173
+F src/pager.c caab007743821d96752597c9cfd7351654697b06
 F src/pager.h ffd5607f7b3e4590b415b007a4382f693334d428
 F src/parse.y 22d6a074e5f5a7258947a1dc55a9bf946b765dd0
 F src/pcache.c 4121a0571c18581ee9f82f086d5e2030051ebd6a
@@ -1198,7 +1198,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ef1aa10b7f54912cba71cd0a98c5055d501de54f
-R c34bfcc3b603f9401507c43eeaad2e7b
-U drh
-Z e8711818b1e0ba1f2fd0d1d927b89d2c
+P 5192f964b2a85459553f1cea741b9791606ccc4e
+R e8be2bb63b11cad540f46beed0dd6c95
+U dan
+Z 6d111ffcef80c669aed6101b87cfb783
