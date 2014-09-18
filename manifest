@@ -1,5 +1,5 @@
-C Make\ssure\sof\sthe\sstrchrnul()\slibrary\sfunction\son\splatforms\swhere\sit\sis\navailable.
-D 2014-09-18T01:50:09.699
+C Fix\sharmless\swarnings\son\s32-bit\sMSVC\sbuilds.
+D 2014-09-18T02:20:54.689
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -194,7 +194,7 @@ F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
 F src/loadext.c de741e66e5ddc1598d904d7289239696e40ed994
 F src/main.c d15621461fb0c52675eba2b650492ed1beef69ab
-F src/malloc.c c6dc1e154eb7d4a33eb737bde2c4103d00007597
+F src/malloc.c 4c1d511157defd7b1d023062cf05a1dc17b8f79b
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c faf615aafd8be74a71494dfa027c113ea5c6615f
 F src/mem2.c dce31758da87ec2cfa52ba4c5df1aed6e07d8e8f
@@ -1198,7 +1198,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1de558bcb13edc4e9a42a0b05e4b0ed6b14286a4
-R 5de5c16595c1a6599607c0d453169480
+P ef1aa10b7f54912cba71cd0a98c5055d501de54f
+R c34bfcc3b603f9401507c43eeaad2e7b
 U drh
-Z 45b315c664f0110e7c4a00564360b273
+Z e8711818b1e0ba1f2fd0d1d927b89d2c

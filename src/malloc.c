@@ -599,7 +599,7 @@ void *sqlite3_realloc64(void *pOld, sqlite3_uint64 n){
 void *sqlite3MallocZero(u64 n){
   void *p = sqlite3Malloc(n);
   if( p ){
-    memset(p, 0, n);
+    memset(p, 0, (size_t)n);
   }
   return p;
 }
@@ -611,7 +611,7 @@ void *sqlite3MallocZero(u64 n){
 void *sqlite3DbMallocZero(sqlite3 *db, u64 n){
   void *p = sqlite3DbMallocRaw(db, n);
   if( p ){
-    memset(p, 0, n);
+    memset(p, 0, (size_t)n);
   }
   return p;
 }
@@ -753,7 +753,7 @@ char *sqlite3DbStrNDup(sqlite3 *db, const char *z, u64 n){
   assert( (n&0x7fffffff)==n );
   zNew = sqlite3DbMallocRaw(db, n+1);
   if( zNew ){
-    memcpy(zNew, z, n);
+    memcpy(zNew, z, (size_t)n);
     zNew[n] = 0;
   }
   return zNew;
