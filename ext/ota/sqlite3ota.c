@@ -40,7 +40,6 @@
 
 typedef struct OtaState OtaState;
 typedef struct OtaObjIter OtaObjIter;
-typedef unsigned char u8;
 
 /*
 ** A structure to store values read from the ota_state table in memory.
@@ -66,7 +65,7 @@ struct OtaObjIter {
   sqlite3_stmt *pIdxIter;         /* Index iterator */
   int nTblCol;                    /* Size of azTblCol[] array */
   char **azTblCol;                /* Array of quoted column names */
-  u8 *abTblPk;                    /* Array of flags - true for PK columns */
+  unsigned char *abTblPk;         /* Array of flags - true for PK columns */
 
   /* Output variables. zTbl==0 implies EOF. */
   int bCleanup;                   /* True in "cleanup" state */
@@ -372,9 +371,10 @@ static int otaObjIterGetCols(sqlite3ota *p, OtaObjIter *pIter){
     p->rc = prepareFreeAndCollectError(p->db, &pStmt, &p->zErrmsg, zSql);
     while( p->rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
       if( (nCol % 8)==0 ){
+        unsigned char *abNew;
         int nByte = sizeof(char*) * (nCol+8);
         char **azNew = (char**)sqlite3_realloc(pIter->azTblCol, nByte);
-        u8 *abNew = (u8*)sqlite3_realloc(pIter->abTblPk, nCol+8);
+        abNew = (unsigned char*)sqlite3_realloc(pIter->abTblPk, nCol+8);
 
         if( azNew ) pIter->azTblCol = azNew;
         if( abNew ) pIter->abTblPk = abNew;
@@ -834,10 +834,11 @@ static int otaStep(sqlite3ota *p){
       }
 
       for(i=0; i<pIter->nCol; i++){
+        sqlite3_value *pVal;
         if( eType==SQLITE_DELETE && pIter->zIdx==0 && pIter->abTblPk[i]==0 ){
           continue;
         }
-        sqlite3_value *pVal = sqlite3_column_value(pIter->pSelect, i);
+        pVal = sqlite3_column_value(pIter->pSelect, i);
         sqlite3_bind_value(pWriter, i+1, pVal);
       }
       sqlite3_step(pWriter);
@@ -874,7 +875,7 @@ int sqlite3ota_step(sqlite3ota *p){
         /* Clean up the ota_tmp_xxx table for the previous table. It 
         ** cannot be dropped as there are currently active SQL statements.
         ** But the contents can be deleted.  */
-        // otaMPrintfExec(p, "DELETE FROM ota.'ota_tmp_%q'", pIter->zTbl);
+        otaMPrintfExec(p, "DELETE FROM ota.'ota_tmp_%q'", pIter->zTbl);
       }else{
         otaObjIterPrepareAll(p, pIter, 0);
         

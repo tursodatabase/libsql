@@ -1,5 +1,5 @@
-C Add\snew\sfile\sext/ota/README.txt,\scontaining\snotes\sregarding\sthe\simplementation\sof\sthe\sota\sextension.
-D 2014-09-18T15:22:48.861
+C Remove\ssome\sc++isms\sfrom\ssqlite3ota.c.
+D 2014-09-18T15:57:22.238
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -127,7 +127,7 @@ F ext/ota/ota1.test 7cbf37a9f6cd29320f47b041cfeb0cc1d7eaa916
 F ext/ota/ota2.test 716f9c66e8bf8b0ad2fe3a5d8323e6cf460a2e27
 F ext/ota/ota3.test 1c48b7476af1c5920db9a43e7b1476d421a463b5
 F ext/ota/ota4.test baf23b47748a5056c713871959cc70fc623c90e9
-F ext/ota/sqlite3ota.c e5dfb63ac4564139b66acf6f712d6d1bb5007b26
+F ext/ota/sqlite3ota.c 4b7f15662e725bd79c92242293336d74ebeff854
 F ext/ota/sqlite3ota.h 4f9d8c56c673f279167ddc57e8f84c0c406346f0
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 57bec53e1a677ab74217fe1f20a58c3a47261d6b
@@ -1206,7 +1206,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e3943fa7bbbfc5e16f73a494d8fa54d19e9cfcf9
-R fb02b3fe38b193b1aa6184b0012599dc
+P 3c6e1cbb4baaebc5958ab7276f27ff0ba14f4fa2
+R 144b17f95f9943a0f5b2a1840d65f3bd
 U dan
-Z 4cd279ef72288cc868c417c33c545f0f
+Z 850176a0d2bd1d95bab64ffe8e2adfdc
