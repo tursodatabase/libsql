@@ -1076,7 +1076,7 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
       }else if( pMem->flags & MEM_Int ){
         sqlite3_snprintf(nTemp, zTemp, "%lld", pMem->u.i);
       }else if( pMem->flags & MEM_Real ){
-        sqlite3_snprintf(nTemp, zTemp, "%.16g", pMem->r);
+        sqlite3_snprintf(nTemp, zTemp, "%.16g", pMem->u.r);
       }else if( pMem->flags & MEM_Null ){
         sqlite3_snprintf(nTemp, zTemp, "NULL");
       }else{
@@ -2949,8 +2949,8 @@ u32 sqlite3VdbeSerialPut(u8 *buf, Mem *pMem, u32 serial_type){
     u64 v;
     u32 i;
     if( serial_type==7 ){
-      assert( sizeof(v)==sizeof(pMem->r) );
-      memcpy(&v, &pMem->r, sizeof(v));
+      assert( sizeof(v)==sizeof(pMem->u.r) );
+      memcpy(&v, &pMem->u.r, sizeof(v));
       swapMixedEndianFloat(v);
     }else{
       v = pMem->u.i;
@@ -3020,10 +3020,10 @@ static u32 SQLITE_NOINLINE serialGet(
     swapMixedEndianFloat(t2);
     assert( sizeof(r1)==sizeof(t2) && memcmp(&r1, &t2, sizeof(r1))==0 );
 #endif
-    assert( sizeof(x)==8 && sizeof(pMem->r)==8 );
+    assert( sizeof(x)==8 && sizeof(pMem->u.r)==8 );
     swapMixedEndianFloat(x);
-    memcpy(&pMem->r, &x, sizeof(x));
-    pMem->flags = sqlite3IsNaN(pMem->r) ? MEM_Null : MEM_Real;
+    memcpy(&pMem->u.r, &x, sizeof(x));
+    pMem->flags = sqlite3IsNaN(pMem->u.r) ? MEM_Null : MEM_Real;
   }
   return 8;
 }
@@ -3368,14 +3368,14 @@ int sqlite3MemCompare(const Mem *pMem1, const Mem *pMem2, const CollSeq *pColl){
       return 0;
     }
     if( (f1&MEM_Real)!=0 ){
-      r1 = pMem1->r;
+      r1 = pMem1->u.r;
     }else if( (f1&MEM_Int)!=0 ){
       r1 = (double)pMem1->u.i;
     }else{
       return 1;
     }
     if( (f2&MEM_Real)!=0 ){
-      r2 = pMem2->r;
+      r2 = pMem2->u.r;
     }else if( (f2&MEM_Int)!=0 ){
       r2 = (double)pMem2->u.i;
     }else{
@@ -3536,9 +3536,9 @@ static int vdbeRecordCompareWithSkip(
       }else if( serial_type==7 ){
         double rhs = (double)pRhs->u.i;
         sqlite3VdbeSerialGet(&aKey1[d1], serial_type, &mem1);
-        if( mem1.r<rhs ){
+        if( mem1.u.r<rhs ){
           rc = -1;
-        }else if( mem1.r>rhs ){
+        }else if( mem1.u.r>rhs ){
           rc = +1;
         }
       }else{
@@ -3560,11 +3560,11 @@ static int vdbeRecordCompareWithSkip(
       }else if( serial_type==0 ){
         rc = -1;
       }else{
-        double rhs = pRhs->r;
+        double rhs = pRhs->u.r;
         double lhs;
         sqlite3VdbeSerialGet(&aKey1[d1], serial_type, &mem1);
         if( serial_type==7 ){
-          lhs = mem1.r;
+          lhs = mem1.u.r;
         }else{
           lhs = (double)mem1.u.i;
         }

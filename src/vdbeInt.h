@@ -161,7 +161,8 @@ struct VdbeFrame {
 ** integer etc.) of the same value.
 */
 struct Mem {
-  union {
+  union MemValue {
+    double r;           /* Real value used when MEM_Realis set in flags */
     i64 i;              /* Integer value used when MEM_Int is set in flags */
     int nZero;          /* Used when bit MEM_Zero is set in flags */
     FuncDef *pDef;      /* Used only when flags==MEM_Agg */
@@ -171,10 +172,9 @@ struct Mem {
   u16 flags;          /* Some combination of MEM_Null, MEM_Str, MEM_Dyn, etc. */
   u8  enc;            /* SQLITE_UTF8, SQLITE_UTF16BE, SQLITE_UTF16LE */
   int n;              /* Number of characters in string value, excluding '\0' */
-  double r;           /* Real value */
   char *z;            /* String or BLOB value */
-  char *zMalloc;      /* Dynamic buffer allocated by sqlite3_malloc() */
   /* ShallowCopy only needs to copy the information above */
+  char *zMalloc;      /* Dynamic buffer allocated by sqlite3_malloc() */
   sqlite3 *db;        /* The associated database connection */
   void (*xDel)(void*);/* Destructor for Mem.z - only valid if MEM_Dyn */
 #ifdef SQLITE_DEBUG

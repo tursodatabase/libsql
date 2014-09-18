@@ -807,7 +807,6 @@ static const Mem *columnNullValue(void){
         /* .flags      = */ MEM_Null,
         /* .enc        = */ 0,
         /* .n          = */ 0,
-        /* .r          = */ (double)0,
         /* .z          = */ 0,
         /* .zMalloc    = */ 0,
         /* .db         = */ 0,
@@ -1272,7 +1271,7 @@ int sqlite3_bind_value(sqlite3_stmt *pStmt, int i, const sqlite3_value *pValue){
       break;
     }
     case SQLITE_FLOAT: {
-      rc = sqlite3_bind_double(pStmt, i, pValue->r);
+      rc = sqlite3_bind_double(pStmt, i, pValue->u.r);
       break;
     }
     case SQLITE_BLOB: {
