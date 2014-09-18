@@ -1,5 +1,5 @@
-C Performance\simprovement\sand\sslight\ssize\sreduction\sto\sthe\scomparison\soperators\nin\sthe\sVDBE.
-D 2014-09-17T23:37:39.000
+C Fix\scompiler\swarnings\sand\schange\sthe\snullMem\sstructure\sinitializer\sinto\sa\nformat\sthat\sMSVC\scan\sunderstand.
+D 2014-09-18T01:21:43.977
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -194,7 +194,7 @@ F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
 F src/loadext.c de741e66e5ddc1598d904d7289239696e40ed994
 F src/main.c d15621461fb0c52675eba2b650492ed1beef69ab
-F src/malloc.c cc015821ba267ad5c91dc8761d0498a3fc3ce6ce
+F src/malloc.c c6dc1e154eb7d4a33eb737bde2c4103d00007597
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c faf615aafd8be74a71494dfa027c113ea5c6615f
 F src/mem2.c dce31758da87ec2cfa52ba4c5df1aed6e07d8e8f
@@ -234,7 +234,7 @@ F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
 F src/sqliteInt.h 0803e900eb1882f7dd88e86ddcddd2d1b27c8d86
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
-F src/table.c 218ae2ba022881846741dfc8351aefdf129e0377
+F src/table.c 2e99ef7ef16187e17033d9398dc962ce22dab5cb
 F src/tclsqlite.c c67d310c833046cccc192125d64ad422ab882684
 F src/test1.c 523cd70ded28db71af9a30ec184cbe0957de9575
 F src/test2.c 98049e51a17dc62606a99a9eb95ee477f9996712
@@ -291,7 +291,7 @@ F src/vacuum.c 59f03f92bcff57faa6a8ca256eb29ccddfb0614a
 F src/vdbe.c 78606777e4ce5dba147ab75e71c0127b0d8d4c3d
 F src/vdbe.h 09f5b4e3719fa454f252322b1cdab5cf1f361327
 F src/vdbeInt.h f90b0de6153f50de630a5a113537efb47083812f
-F src/vdbeapi.c c6e63f913bcb12977731a8b12e7e5c5762981527
+F src/vdbeapi.c c02242df5e9e8d1001e0086f405953833f9c426b
 F src/vdbeaux.c 9ac63bc59d2783df77e591e4c4fa8c1153a07eab
 F src/vdbeblob.c 848238dc73e93e48432991bb5651bf87d865eca4
 F src/vdbemem.c 8b5e1083fed2da94e315858a7edf5604a5b91804
@@ -1198,7 +1198,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fdddb477c89dabb9f7bf2d5ccb32534868df3a03
-R 27b98108123b0758f30cbbc4e2693ca1
+P 14052a7d088bed8196d90a3361ce717a5193bdc8
+R fdb25cd80d01110b7b302f5203339ac7
 U drh
-Z 7dd9c2f8b2084fea7b27f362515d2b5a
+Z 3225a18fbab1063469f56e7e3c1f239a

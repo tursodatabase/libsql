@@ -803,18 +803,18 @@ static const Mem *columnNullValue(void){
     __attribute__((aligned(8))) 
 #endif
     = {
-         .flags      = MEM_Null,
-         .enc        = 0,
-         .n          = 0,
-         .r          = (double)0,
-         .u          = {0},
-         .z          = 0,
-         .zMalloc    = 0,
-         .db         = 0,
-         .xDel       = 0,
+        /* .u          = */ {0},
+        /* .flags      = */ MEM_Null,
+        /* .enc        = */ 0,
+        /* .n          = */ 0,
+        /* .r          = */ (double)0,
+        /* .z          = */ 0,
+        /* .zMalloc    = */ 0,
+        /* .db         = */ 0,
+        /* .xDel       = */ 0,
 #ifdef SQLITE_DEBUG
-         .pScopyFrom = 0,
-         .pFiller    = 0,
+        /* .pScopyFrom = */ 0,
+        /* .pFiller    = */ 0,
 #endif
       };
   return &nullMem;
@@ -1193,7 +1193,7 @@ int sqlite3_bind_blob64(
   if( nData>0x7fffffff ){
     return invokeValueDestructor(zData, xDel, 0);
   }else{
-    return bindText(pStmt, i, zData, nData, xDel, 0);
+    return bindText(pStmt, i, zData, (int)nData, xDel, 0);
   }
 }
 int sqlite3_bind_double(sqlite3_stmt *pStmt, int i, double rValue){
@@ -1250,7 +1250,7 @@ int sqlite3_bind_text64(
     return invokeValueDestructor(zData, xDel, 0);
   }else{
     if( enc==SQLITE_UTF16 ) enc = SQLITE_UTF16NATIVE;
-    return bindText(pStmt, i, zData, nData, xDel, enc);
+    return bindText(pStmt, i, zData, (int)nData, xDel, enc);
   }
 }
 #ifndef SQLITE_OMIT_UTF16
