@@ -1000,11 +1000,45 @@ static void otaLoadTransactionState(sqlite3ota *p, OtaState *pState){
 }
 
 /*
+** This routine is a copy of the sqlite3FileSuffix3() routine from the core.
+** It is a no-op unless SQLITE_ENABLE_8_3_NAMES is defined.
+**
+** If SQLITE_ENABLE_8_3_NAMES is set at compile-time and if the database
+** filename in zBaseFilename is a URI with the "8_3_names=1" parameter and
+** if filename in z[] has a suffix (a.k.a. "extension") that is longer than
+** three characters, then shorten the suffix on z[] to be the last three
+** characters of the original suffix.
+**
+** If SQLITE_ENABLE_8_3_NAMES is set to 2 at compile-time, then always
+** do the suffix shortening regardless of URI parameter.
+**
+** Examples:
+**
+**     test.db-journal    =>   test.nal
+**     test.db-wal        =>   test.wal
+**     test.db-shm        =>   test.shm
+**     test.db-mj7f3319fa =>   test.9fa
+*/
+static void otaFileSuffix3(const char *zBase, char *z){
+#ifdef SQLITE_ENABLE_8_3_NAMES
+#if SQLITE_ENABLE_8_3_NAMES<2
+  if( sqlite3_uri_boolean(zBase, "8_3_names", 0) )
+#endif
+  {
+    int i, sz;
+    sz = sqlite3Strlen30(z);
+    for(i=sz-1; i>0 && z[i]!='/' && z[i]!='.'; i--){}
+    if( z[i]=='.' && ALWAYS(sz>i+4) ) memmove(&z[i+1], &z[sz-3], 4);
+  }
+#endif
+}
+
+/*
 ** Move the "*-oal" file corresponding to the target database to the
 ** "*-wal" location. If an error occurs, leave an error code and error 
 ** message in the ota handle.
 */
-static void otaMoveOalFile(sqlite3ota *p){
+static void otaMoveOalFile(const char *zBase, sqlite3ota *p){
   char *zWal = sqlite3_mprintf("%s-wal", p->zTarget);
   char *zOal = sqlite3_mprintf("%s-oal", p->zTarget);
 
@@ -1012,6 +1046,8 @@ static void otaMoveOalFile(sqlite3ota *p){
   if( zWal==0 || zOal==0 ){
     p->rc = SQLITE_NOMEM;
   }else{
+    otaFileSuffix3(zBase, zWal);
+    otaFileSuffix3(zBase, zOal);
     rename(zOal, zWal);
   }
 
@@ -1096,6 +1132,7 @@ sqlite3ota *sqlite3ota_open(const char *zTarget, const char *zOta){
 int sqlite3ota_close(sqlite3ota *p, char **pzErrmsg){
   int rc;
   if( p ){
+    const char *zBase = sqlite3_db_filename(p->db, "main");
 
     /* If the update has not been fully applied, save the state in 
     ** the ota db. If successful, this call also commits the open 
@@ -1121,7 +1158,7 @@ int sqlite3ota_close(sqlite3ota *p, char **pzErrmsg){
     /* If the OTA has been completely applied and no error occurred, move
     ** the *-oal file to *-wal. */
     if( p->rc==SQLITE_DONE ){
-      otaMoveOalFile(p);
+      otaMoveOalFile(zBase, p);
     }
 
     rc = p->rc;
