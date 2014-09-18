@@ -1,5 +1,5 @@
-C Fix\san\sunintialized\svariable\sproblem\sin\ssqlite3ota.c.
-D 2014-09-17T19:05:46.738
+C Fix\san\sota\sbug\scausing\sattempts\sto\swrite\sto\stables\swith\smore\sthan\s8\scolumns\sto\sfail.
+D 2014-09-18T11:15:17.379
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -126,7 +126,7 @@ F ext/ota/ota1.test 7cbf37a9f6cd29320f47b041cfeb0cc1d7eaa916
 F ext/ota/ota2.test 716f9c66e8bf8b0ad2fe3a5d8323e6cf460a2e27
 F ext/ota/ota3.test 1c48b7476af1c5920db9a43e7b1476d421a463b5
 F ext/ota/ota4.test baf23b47748a5056c713871959cc70fc623c90e9
-F ext/ota/sqlite3ota.c 49187d90b40f223b1b618872e71bad44686165d9
+F ext/ota/sqlite3ota.c 276c0426e678edc06df5c295515b44f773ad6e93
 F ext/ota/sqlite3ota.h 39ce4dffbfcf4ade9e4526369fe2243709345c8e
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 57bec53e1a677ab74217fe1f20a58c3a47261d6b
@@ -1205,7 +1205,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 39df35c4ac65ffba76ba2c6f6727cf5e843e7517
-R 11f94a1a393bad4eb750c64571794419
+P 01268607515a30d07559648c43034e522605748a
+R 9c5669944e9da69cf3cdc8cdadb20c7b
 U dan
-Z 16716967f94fb6bc011dff17e7e27c1f
+Z b82db3d99eb0abfa9c3989bdc212a9ca

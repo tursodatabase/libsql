@@ -372,7 +372,7 @@ static int otaObjIterGetCols(sqlite3ota *p, OtaObjIter *pIter){
       if( (nCol % 8)==0 ){
         int nByte = sizeof(char*) * (nCol+8);
         char **azNew = (char**)sqlite3_realloc(pIter->azTblCol, nByte);
-        u8 *abNew = (u8*)sqlite3_realloc(pIter->azTblCol, nCol+8);
+        u8 *abNew = (u8*)sqlite3_realloc(pIter->abTblPk, nCol+8);
 
         if( azNew ) pIter->azTblCol = azNew;
         if( abNew ) pIter->abTblPk = abNew;
