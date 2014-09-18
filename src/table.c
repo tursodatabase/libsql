@@ -73,7 +73,7 @@ static int sqlite3_get_table_cb(void *pArg, int nCol, char **argv, char **colv){
       if( z==0 ) goto malloc_failed;
       p->azResult[p->nData++] = z;
     }
-  }else if( p->nColumn!=nCol ){
+  }else if( (int)p->nColumn!=nCol ){
     sqlite3_free(p->zErrMsg);
     p->zErrMsg = sqlite3_mprintf(
        "sqlite3_get_table() called with two or more incompatible queries"

@@ -161,9 +161,6 @@ struct VdbeFrame {
 ** integer etc.) of the same value.
 */
 struct Mem {
-  sqlite3 *db;        /* The associated database connection */
-  char *z;            /* String or BLOB value */
-  double r;           /* Real value */
   union {
     i64 i;              /* Integer value used when MEM_Int is set in flags */
     int nZero;          /* Used when bit MEM_Zero is set in flags */
@@ -171,15 +168,19 @@ struct Mem {
     RowSet *pRowSet;    /* Used only when flags==MEM_RowSet */
     VdbeFrame *pFrame;  /* Used when flags==MEM_Frame */
   } u;
-  int n;              /* Number of characters in string value, excluding '\0' */
   u16 flags;          /* Some combination of MEM_Null, MEM_Str, MEM_Dyn, etc. */
   u8  enc;            /* SQLITE_UTF8, SQLITE_UTF16BE, SQLITE_UTF16LE */
+  int n;              /* Number of characters in string value, excluding '\0' */
+  double r;           /* Real value */
+  char *z;            /* String or BLOB value */
+  char *zMalloc;      /* Dynamic buffer allocated by sqlite3_malloc() */
+  /* ShallowCopy only needs to copy the information above */
+  sqlite3 *db;        /* The associated database connection */
+  void (*xDel)(void*);/* Destructor for Mem.z - only valid if MEM_Dyn */
 #ifdef SQLITE_DEBUG
   Mem *pScopyFrom;    /* This Mem is a shallow copy of pScopyFrom */
   void *pFiller;      /* So that sizeof(Mem) is a multiple of 8 */
 #endif
-  void (*xDel)(void *);  /* If not null, call this function to delete Mem.z */
-  char *zMalloc;      /* Dynamic buffer allocated by sqlite3_malloc() */
 };
 
 /* One or more of the following flags are set to indicate the validOK
@@ -396,8 +397,8 @@ u32 sqlite3VdbeSerialGet(const unsigned char*, u32, Mem*);
 void sqlite3VdbeDeleteAuxData(Vdbe*, int, int);
 
 int sqlite2BtreeKeyCompare(BtCursor *, const void *, int, int, int *);
-int sqlite3VdbeIdxKeyCompare(VdbeCursor*,UnpackedRecord*,int*);
-int sqlite3VdbeIdxRowid(sqlite3*, BtCursor *, i64 *);
+int sqlite3VdbeIdxKeyCompare(sqlite3*,VdbeCursor*,UnpackedRecord*,int*);
+int sqlite3VdbeIdxRowid(sqlite3*, BtCursor*, i64*);
 int sqlite3VdbeExec(Vdbe*);
 int sqlite3VdbeList(Vdbe*);
 int sqlite3VdbeHalt(Vdbe*);
@@ -414,6 +415,7 @@ void sqlite3VdbeMemSetInt64(Mem*, i64);
 #else
   void sqlite3VdbeMemSetDouble(Mem*, double);
 #endif
+void sqlite3VdbeMemInit(Mem*,sqlite3*,u16);
 void sqlite3VdbeMemSetNull(Mem*);
 void sqlite3VdbeMemSetZeroBlob(Mem*,int);
 void sqlite3VdbeMemSetRowSet(Mem*);
@@ -428,11 +430,8 @@ int sqlite3VdbeMemNumerify(Mem*);
 void sqlite3VdbeMemCast(Mem*,u8,u8);
 int sqlite3VdbeMemFromBtree(BtCursor*,u32,u32,int,Mem*);
 void sqlite3VdbeMemRelease(Mem *p);
-void sqlite3VdbeMemReleaseExternal(Mem *p);
 #define VdbeMemDynamic(X)  \
   (((X)->flags&(MEM_Agg|MEM_Dyn|MEM_RowSet|MEM_Frame))!=0)
-#define VdbeMemReleaseExtern(X)  \
-  if( VdbeMemDynamic(X) ) sqlite3VdbeMemReleaseExternal(X);
 int sqlite3VdbeMemFinalize(Mem*, FuncDef*);
 const char *sqlite3OpcodeName(int);
 int sqlite3VdbeMemGrow(Mem *pMem, int n, int preserve);

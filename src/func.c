@@ -1492,6 +1492,7 @@ static void minmaxStep(
       sqlite3SkipAccumulatorLoad(context);
     }
   }else{
+    pBest->db = sqlite3_context_db_handle(context);
     sqlite3VdbeMemCopy(pBest, pArg);
   }
 }

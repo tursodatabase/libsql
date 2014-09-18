@@ -3085,7 +3085,6 @@ u32 sqlite3VdbeSerialGet(
       static const u16 aFlag[] = { MEM_Blob|MEM_Ephem, MEM_Str|MEM_Ephem };
       pMem->z = (char *)buf;
       pMem->n = (serial_type-12)/2;
-      pMem->xDel = 0;
       pMem->flags = aFlag[serial_type&1];
       return pMem->n;
     }
@@ -3303,8 +3302,9 @@ static int vdbeCompareMemString(
     int n1, n2;
     Mem c1;
     Mem c2;
-    memset(&c1, 0, sizeof(c1));
-    memset(&c2, 0, sizeof(c2));
+    c1.db = c2.db = pMem1->db;
+    c1.flags = c2.flags = 0;
+    c1.zMalloc = c2.zMalloc = 0;
     sqlite3VdbeMemShallowCopy(&c1, pMem1, MEM_Ephem);
     sqlite3VdbeMemShallowCopy(&c2, pMem2, MEM_Ephem);
     v1 = sqlite3ValueText((sqlite3_value*)&c1, pColl->enc);
@@ -3481,7 +3481,7 @@ static i64 vdbeRecordDecodeInt(u32 serial_type, const u8 *aKey){
 ** pPKey2->errCode is set to SQLITE_NOMEM and, if it is not NULL, the
 ** malloc-failed flag set on database handle (pPKey2->pKeyInfo->db).
 */
-int sqlite3VdbeRecordCompare(
+static int vdbeRecordCompareWithSkip(
   int nKey1, const void *pKey1,   /* Left key */
   UnpackedRecord *pPKey2,         /* Right key */
   int bSkip                       /* If true, skip the first field */
@@ -3663,6 +3663,13 @@ int sqlite3VdbeRecordCompare(
   );
   return pPKey2->default_rc;
 }
+int sqlite3VdbeRecordCompare(
+  int nKey1, const void *pKey1,   /* Left key */
+  UnpackedRecord *pPKey2          /* Right key */
+){
+  return vdbeRecordCompareWithSkip(nKey1, pKey1, pPKey2, 0);
+}
+
 
 /*
 ** This function is an optimized version of sqlite3VdbeRecordCompare() 
@@ -3675,8 +3682,7 @@ int sqlite3VdbeRecordCompare(
 */
 static int vdbeRecordCompareInt(
   int nKey1, const void *pKey1, /* Left key */
-  UnpackedRecord *pPKey2,       /* Right key */
-  int bSkip                     /* Ignored */
+  UnpackedRecord *pPKey2        /* Right key */
 ){
   const u8 *aKey = &((const u8*)pKey1)[*(const u8*)pKey1 & 0x3F];
   int serial_type = ((const u8*)pKey1)[1];
@@ -3685,9 +3691,7 @@ static int vdbeRecordCompareInt(
   u64 x;
   i64 v = pPKey2->aMem[0].u.i;
   i64 lhs;
-  UNUSED_PARAMETER(bSkip);
 
-  assert( bSkip==0 );
   assert( (*(u8*)pKey1)<=0x3F || CORRUPT_DB );
   switch( serial_type ){
     case 1: { /* 1-byte signed integer */
@@ -3737,10 +3741,10 @@ static int vdbeRecordCompareInt(
     ** (as gcc is clever enough to combine the two like cases). Other 
     ** compilers might be similar.  */ 
     case 0: case 7:
-      return sqlite3VdbeRecordCompare(nKey1, pKey1, pPKey2, 0);
+      return sqlite3VdbeRecordCompare(nKey1, pKey1, pPKey2);
 
     default:
-      return sqlite3VdbeRecordCompare(nKey1, pKey1, pPKey2, 0);
+      return sqlite3VdbeRecordCompare(nKey1, pKey1, pPKey2);
   }
 
   if( v>lhs ){
@@ -3750,7 +3754,7 @@ static int vdbeRecordCompareInt(
   }else if( pPKey2->nField>1 ){
     /* The first fields of the two keys are equal. Compare the trailing 
     ** fields.  */
-    res = sqlite3VdbeRecordCompare(nKey1, pKey1, pPKey2, 1);
+    res = vdbeRecordCompareWithSkip(nKey1, pKey1, pPKey2, 1);
   }else{
     /* The first fields of the two keys are equal and there are no trailing
     ** fields. Return pPKey2->default_rc in this case. */
@@ -3769,17 +3773,13 @@ static int vdbeRecordCompareInt(
 */
 static int vdbeRecordCompareString(
   int nKey1, const void *pKey1, /* Left key */
-  UnpackedRecord *pPKey2,       /* Right key */
-  int bSkip
+  UnpackedRecord *pPKey2        /* Right key */
 ){
   const u8 *aKey1 = (const u8*)pKey1;
   int serial_type;
   int res;
-  UNUSED_PARAMETER(bSkip);
 
-  assert( bSkip==0 );
   getVarint32(&aKey1[1], serial_type);
-
   if( serial_type<12 ){
     res = pPKey2->r1;      /* (pKey1/nKey1) is a number or a null */
   }else if( !(serial_type & 0x01) ){ 
@@ -3801,7 +3801,7 @@ static int vdbeRecordCompareString(
       res = nStr - pPKey2->aMem[0].n;
       if( res==0 ){
         if( pPKey2->nField>1 ){
-          res = sqlite3VdbeRecordCompare(nKey1, pKey1, pPKey2, 1);
+          res = vdbeRecordCompareWithSkip(nKey1, pKey1, pPKey2, 1);
         }else{
           res = pPKey2->default_rc;
         }
@@ -3883,8 +3883,6 @@ int sqlite3VdbeIdxRowid(sqlite3 *db, BtCursor *pCur, i64 *rowid){
   u32 lenRowid;     /* Size of the rowid */
   Mem m, v;
 
-  UNUSED_PARAMETER(db);
-
   /* Get the size of the index entry.  Only indices entries of less
   ** than 2GiB are support - anything large must be database corruption.
   ** Any corruption is detected in sqlite3BtreeParseCellPtr(), though, so
@@ -3896,7 +3894,7 @@ int sqlite3VdbeIdxRowid(sqlite3 *db, BtCursor *pCur, i64 *rowid){
   assert( (nCellKey & SQLITE_MAX_U32)==(u64)nCellKey );
 
   /* Read in the complete content of the index entry */
-  memset(&m, 0, sizeof(m));
+  sqlite3VdbeMemInit(&m, db, 0);
   rc = sqlite3VdbeMemFromBtree(pCur, 0, (u32)nCellKey, 1, &m);
   if( rc ){
     return rc;
@@ -3956,6 +3954,7 @@ idx_rowid_corruption:
 ** of the keys prior to the final rowid, not the entire key.
 */
 int sqlite3VdbeIdxKeyCompare(
+  sqlite3 *db,                     /* Database connection */
   VdbeCursor *pC,                  /* The cursor to compare against */
   UnpackedRecord *pUnpacked,       /* Unpacked version of key */
   int *res                         /* Write the comparison result here */
@@ -3974,12 +3973,12 @@ int sqlite3VdbeIdxKeyCompare(
     *res = 0;
     return SQLITE_CORRUPT_BKPT;
   }
-  memset(&m, 0, sizeof(m));
+  sqlite3VdbeMemInit(&m, db, 0);
   rc = sqlite3VdbeMemFromBtree(pC->pCursor, 0, (u32)nCellKey, 1, &m);
   if( rc ){
     return rc;
   }
-  *res = sqlite3VdbeRecordCompare(m.n, m.z, pUnpacked, 0);
+  *res = sqlite3VdbeRecordCompare(m.n, m.z, pUnpacked);
   sqlite3VdbeMemRelease(&m);
   return SQLITE_OK;
 }
