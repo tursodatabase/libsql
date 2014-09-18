@@ -55,6 +55,7 @@ int main(int argc, char **argv){
   sqlite3ota *pOta;               /* OTA handle */
   int nStep = 0;                  /* Maximum number of step() calls */
   int rc;
+  sqlite3_int64 nProgress = 0;
 
   /* Process command line arguments. Following this block local variables 
   ** zTarget, zOta and nStep are all set. */
@@ -76,16 +77,23 @@ int main(int argc, char **argv){
   ** sqlite3ota_step() a maximum of nStep times.  */
   pOta = sqlite3ota_open(zTarget, zOta);
   for(i=0; (nStep<=0 || i<nStep) && sqlite3ota_step(pOta)==SQLITE_OK; i++);
+  nProgress = sqlite3ota_progress(pOta);
   rc = sqlite3ota_close(pOta, &zErrmsg);
 
   /* Let the user know what happened. */
   switch( rc ){
     case SQLITE_OK:
-      fprintf(stdout, "SQLITE_OK: ota update incomplete\n");
+      fprintf(stdout, 
+          "SQLITE_OK: ota update incomplete (%lld operations so far)\n",
+          nProgress
+      );
       break;
 
     case SQLITE_DONE:
-      fprintf(stdout, "SQLITE_DONE: ota update completed\n");
+      fprintf(stdout, 
+          "SQLITE_DONE: ota update completed (%lld operations)\n",
+          nProgress
+      );
       break;
 
     default:

@@ -1,5 +1,5 @@
-C Merge\slatest\strunk\schanges\swith\sthis\sbranch.
-D 2014-09-18T11:31:52.958
+C Add\san\sAPI\sto\squery\san\sota\shandle\sfor\sthe\stotal\snumber\sof\skey/value\soperations\sperformed\sso\sfar.
+D 2014-09-18T14:48:38.579
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -121,13 +121,13 @@ F ext/misc/totype.c 4a167594e791abeed95e0a8db028822b5e8fe512
 F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
-F ext/ota/ota.c d37097e92a005d3915883adefbb93019ea6f8841
+F ext/ota/ota.c c11a85af71dccc45976622fe7a51169a481caa91
 F ext/ota/ota1.test 7cbf37a9f6cd29320f47b041cfeb0cc1d7eaa916
 F ext/ota/ota2.test 716f9c66e8bf8b0ad2fe3a5d8323e6cf460a2e27
 F ext/ota/ota3.test 1c48b7476af1c5920db9a43e7b1476d421a463b5
 F ext/ota/ota4.test baf23b47748a5056c713871959cc70fc623c90e9
-F ext/ota/sqlite3ota.c 276c0426e678edc06df5c295515b44f773ad6e93
-F ext/ota/sqlite3ota.h 39ce4dffbfcf4ade9e4526369fe2243709345c8e
+F ext/ota/sqlite3ota.c e5dfb63ac4564139b66acf6f712d6d1bb5007b26
+F ext/ota/sqlite3ota.h 4f9d8c56c673f279167ddc57e8f84c0c406346f0
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 57bec53e1a677ab74217fe1f20a58c3a47261d6b
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
@@ -1205,7 +1205,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7da98ca2422166dc5d68607541707f41b77b5784 3bd7c1b2faa2d4cc95b255633204006849bfd5e0
-R 8e63365c95630e53dbe0beb2fbad87f1
+P 67ea2979d5831b6d0d55173bd9413b21644cf6a1
+R 38d6ede7d1ef519b3ce4a32ffbb6512b
 U dan
-Z 4b3913e6deb233dcf8270d9446c1c662
+Z 2cc714eb22b38452d154c6b43dc8544c

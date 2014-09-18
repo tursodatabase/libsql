@@ -215,5 +215,12 @@ int sqlite3ota_step(sqlite3ota *pOta);
 */
 int sqlite3ota_close(sqlite3ota *pOta, char **pzErrmsg);
 
+/*
+** Return the total number of key-value operations (inserts, deletes or 
+** updates) that have been performed on the target database since the
+** current OTA update was started.
+*/
+sqlite3_int64 sqlite3ota_progress(sqlite3ota *pOta);
+
 #endif /* _SQLITE3OTA_H */
 

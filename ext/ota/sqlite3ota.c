@@ -49,6 +49,7 @@ struct OtaState {
   char *zTbl;
   char *zIdx;
   int nRow;
+  sqlite3_int64 nProgress;
 };
 
 /*
@@ -93,6 +94,7 @@ struct sqlite3ota {
   int rc;                         /* Value returned by last ota_step() call */
   char *zErrmsg;                  /* Error message if rc!=SQLITE_OK */
   int nStep;                      /* Rows processed for current object */
+  int nProgress;                  /* Rows processed for all objects */
   OtaObjIter objiter;
 };
 
@@ -881,6 +883,7 @@ int sqlite3ota_step(sqlite3ota *p){
           int rc = sqlite3_step(pIter->pSelect);
           if( rc==SQLITE_ROW ){
             p->nStep++;
+            p->nProgress++;
             return otaStep(p);
           }
           p->rc = sqlite3_reset(pIter->pSelect);
@@ -901,8 +904,8 @@ int sqlite3ota_step(sqlite3ota *p){
 static void otaSaveTransactionState(sqlite3ota *p){
   otaMPrintfExec(p, 
     "INSERT OR REPLACE INTO ota.ota_state(rowid, tbl, idx, row, progress)"
-    "VALUES(1, %Q, %Q, %d, NULL)",
-    p->objiter.zTbl, p->objiter.zIdx, p->nStep
+    "VALUES(1, %Q, %Q, %d, %lld)",
+    p->objiter.zTbl, p->objiter.zIdx, p->nStep, p->nProgress
   );
 }
 
@@ -942,6 +945,7 @@ static OtaState *otaLoadState(sqlite3ota *p){
           pRet->zIdx = 0;
         }
         pRet->nRow = sqlite3_column_int(pStmt, 2);
+        pRet->nProgress = sqlite3_column_int64(pStmt, 3);
       }
     }else{
       pRet = (OtaState*)sqlite3_malloc(sizeof(OtaState));
@@ -1075,6 +1079,7 @@ sqlite3ota *sqlite3ota_open(const char *zTarget, const char *zOta){
     }
 
     if( p->rc==SQLITE_OK ){
+      p->nProgress = pState->nProgress;
       otaLoadTransactionState(p, pState);
     }
 
@@ -1126,6 +1131,15 @@ int sqlite3ota_close(sqlite3ota *p, char **pzErrmsg){
     *pzErrmsg = 0;
   }
   return rc;
+}
+
+/*
+** Return the total number of key-value operations (inserts, deletes or 
+** updates) that have been performed on the target database since the
+** current OTA update was started.
+*/
+sqlite3_int64 sqlite3ota_progress(sqlite3ota *pOta){
+  return pOta->nProgress;
 }
 
 
