@@ -1,5 +1,5 @@
-C Merge\smicro-optimizations\sinto\strunk\safter\sfixing\sthe\sbuild\son\sMSVC.\nPerformance\snow\sshows\s7.58%\sfaster\sthan\sthe\s3.8.6\srelease\son\sx64\swith\ngcc\s4.8.1\sand\s-Os.
-D 2014-09-18T01:29:11.287
+C Make\ssure\sof\sthe\sstrchrnul()\slibrary\sfunction\son\splatforms\swhere\sit\sis\navailable.
+D 2014-09-18T01:50:09.699
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -222,7 +222,7 @@ F src/pcache.h 9b559127b83f84ff76d735c8262f04853be0c59a
 F src/pcache1.c dab8ab930d4a73b99768d881185994f34b80ecaa
 F src/pragma.c 3f3e959390a10c0131676f0e307acce372777e0f
 F src/prepare.c 6ef0cf2f9274982988ed6b7cab1be23147e94196
-F src/printf.c e74925089a85e3c9f0e315595f41c139d3d118c2
+F src/printf.c 19e3e81addf593195369ec8d487ed063ad3170bb
 F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c a3466128b52a86c466e47ac1a19e2174f7b5cf89
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
@@ -1198,8 +1198,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8fb90da77ce0e662c1ef1ae0d854e5164494b7af 163bfae8583b2d3002a3a43d6bf8a66fefd73acb
-R fdb25cd80d01110b7b302f5203339ac7
-T +closed 163bfae8583b2d3002a3a43d6bf8a66fefd73acb
+P 1de558bcb13edc4e9a42a0b05e4b0ed6b14286a4
+R 5de5c16595c1a6599607c0d453169480
 U drh
-Z a578f94c122b57df374e40cc66ef0667
+Z 45b315c664f0110e7c4a00564360b273
