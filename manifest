@@ -1,5 +1,5 @@
-C Merge\sthe\sMem.r\svalue\sinto\sthe\sMemValue\sunion\sas\sMem.u.r.\s\sHence,\sa\sMem\scan\nnow\sstore\san\sinteger\sor\sa\sreal\sbut\snot\sboth\sat\sthe\ssame\stime.\s\sStrings\sare\nstill\sstored\sin\sa\sseparate\selement\sMem.z,\sfor\snow.
-D 2014-09-18T17:52:15.374
+C Correct\stypos\sin\scomments.\s\sNo\schanges\sto\scode.
+D 2014-09-18T18:55:47.619
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -290,7 +290,7 @@ F src/util.c 4006c01772bd8d8ac4306d523bbcee41d3e392d8
 F src/vacuum.c 59f03f92bcff57faa6a8ca256eb29ccddfb0614a
 F src/vdbe.c 17f285ff89d73b6af5bd1fc90c0943341f4003d5
 F src/vdbe.h 09f5b4e3719fa454f252322b1cdab5cf1f361327
-F src/vdbeInt.h 45a0b4c5e4b38a2ff8af05102d45e7fa2e6c4439
+F src/vdbeInt.h 1c31448d9d4f074e93863ebe69164ff29cc4f7f8
 F src/vdbeapi.c 88929e02676fdbd5f436fcfd63fa0d371756a7ce
 F src/vdbeaux.c ac3188f182f25eac58923b1a3c0840c69949ed28
 F src/vdbeblob.c 848238dc73e93e48432991bb5651bf87d865eca4
@@ -1198,7 +1198,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d7afdcbac24350b73a30c06c45cf0f2122820e4f
-R 320866568edfdafc16dd0b942dd87d16
-U drh
-Z 7641aa17b0b2d51a4b828447b0d0dc99
+P 4c8c89d7e62aecfe2eb735f7bb114aed6b452847
+R a232caa53ffd8c1fd2d0c9fb51cf1463
+U mistachkin
+Z b2beb30c7e105753dffdcae3bc62d871

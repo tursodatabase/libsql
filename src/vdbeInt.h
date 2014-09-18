@@ -162,7 +162,7 @@ struct VdbeFrame {
 */
 struct Mem {
   union MemValue {
-    double r;           /* Real value used when MEM_Realis set in flags */
+    double r;           /* Real value used when MEM_Real is set in flags */
     i64 i;              /* Integer value used when MEM_Int is set in flags */
     int nZero;          /* Used when bit MEM_Zero is set in flags */
     FuncDef *pDef;      /* Used only when flags==MEM_Agg */
@@ -268,13 +268,13 @@ struct AuxData {
 */
 struct sqlite3_context {
   Mem *pOut;            /* The return value is stored here */
-  FuncDef *pFunc;       /* Pointer to function information.  MUST BE FIRST */
+  FuncDef *pFunc;       /* Pointer to function information */
   Mem *pMem;            /* Memory cell used to store aggregate context */
   CollSeq *pColl;       /* Collating sequence */
   Vdbe *pVdbe;          /* The VM that owns this context */
   int iOp;              /* Instruction number of OP_Function */
   int isError;          /* Error code returned by the function. */
-  u8 skipFlag;          /* Skip skip accumulator loading if true */
+  u8 skipFlag;          /* Skip accumulator loading if true */
   u8 fErrorOrAux;       /* isError!=0 or pVdbe->pAuxData modified */
 };
 
