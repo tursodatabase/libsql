@@ -1,5 +1,5 @@
-C Small\ssize\sreduction\sand\sperformance\sincrease\sfor\sreleaseMemArray().
-D 2014-09-19T16:13:12.685
+C Remove\sa\slocal\svariable\sfrom\sthe\sOP_Column\simplementation,\sresulting\sin\sa\nmodest\ssize\sreduction\sand\sa\sperformance\sincrease.
+D 2014-09-19T16:56:45.748
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -288,7 +288,7 @@ F src/update.c 729f6f18fc27740591d085e1172cebe311144bf0
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c 4006c01772bd8d8ac4306d523bbcee41d3e392d8
 F src/vacuum.c 59f03f92bcff57faa6a8ca256eb29ccddfb0614a
-F src/vdbe.c 9f2a0a2dfa06e99feabd754e9be3a436ac3cf97d
+F src/vdbe.c c90b7ebe856beb75077cf4486efc1863de219f34
 F src/vdbe.h 09f5b4e3719fa454f252322b1cdab5cf1f361327
 F src/vdbeInt.h f177bed1ec8d4eb5c7089f012aeb95f374745735
 F src/vdbeapi.c e9e33b59834e3edc8790209765e069874c269d9d
@@ -1198,7 +1198,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9b42c3da6b2593a10b8fe4b2fcc3d650132625c1
-R 351b243201f0eb22d3adcd68e13fd4a5
+P 24cd32d681df58f687b2afbe4b13d579e3efdd4b
+R dfacf0845df6af56f07b0acf2e71dc1f
 U drh
-Z 9538899cfe34e917b2f35980fa39505f
+Z 845eafc57b4e53556b2c7ee6a79ebdad
