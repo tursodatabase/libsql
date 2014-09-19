@@ -1224,16 +1224,16 @@ void sqlite3VdbePrintOp(FILE *pOut, int pc, Op *pOp){
 */
 static void releaseMemArray(Mem *p, int N){
   if( p && N ){
-    Mem *pEnd;
+    Mem *pEnd = &p[N];
     sqlite3 *db = p->db;
     u8 malloc_failed = db->mallocFailed;
     if( db->pnBytesFreed ){
-      for(pEnd=&p[N]; p<pEnd; p++){
+      do{
         if( p->szMalloc ) sqlite3DbFree(db, p->zMalloc);
-      }
+      }while( (++p)<pEnd );
       return;
     }
-    for(pEnd=&p[N]; p<pEnd; p++){
+    do{
       assert( (&p[1])==pEnd || p[0].db==p[1].db );
       assert( sqlite3VdbeCheckMemInvariants(p) );
 
@@ -1261,7 +1261,7 @@ static void releaseMemArray(Mem *p, int N){
       }
 
       p->flags = MEM_Undefined;
-    }
+    }while( (++p)<pEnd );
     db->mallocFailed = malloc_failed;
   }
 }

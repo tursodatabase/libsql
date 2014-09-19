@@ -1,5 +1,5 @@
-C Updates\sto\scomments.\s\sNo\scode\schanges.
-D 2014-09-19T16:02:06.389
+C Small\ssize\sreduction\sand\sperformance\sincrease\sfor\sreleaseMemArray().
+D 2014-09-19T16:13:12.685
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -292,7 +292,7 @@ F src/vdbe.c 9f2a0a2dfa06e99feabd754e9be3a436ac3cf97d
 F src/vdbe.h 09f5b4e3719fa454f252322b1cdab5cf1f361327
 F src/vdbeInt.h f177bed1ec8d4eb5c7089f012aeb95f374745735
 F src/vdbeapi.c e9e33b59834e3edc8790209765e069874c269d9d
-F src/vdbeaux.c 498b42510679767ea6c893c8c51a8fd935d7ab2d
+F src/vdbeaux.c a05adc3c96abdaf3db14768ddd63132fc9678060
 F src/vdbeblob.c 848238dc73e93e48432991bb5651bf87d865eca4
 F src/vdbemem.c 5cd963730414a1a6ba53b8b340eba3f46ec2cb1d
 F src/vdbesort.c 75c66c2fc02d450b67b4816873fba8088feaf12c
@@ -1198,7 +1198,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 36b613ccf0ddb764af90841994da91b7fcaa8f00
-R 080b311a7df7cfe0ac5886dd9047451e
+P 9b42c3da6b2593a10b8fe4b2fcc3d650132625c1
+R 351b243201f0eb22d3adcd68e13fd4a5
 U drh
-Z bac819561e5ec88b9538e526b2bc8493
+Z 9538899cfe34e917b2f35980fa39505f
