@@ -1,5 +1,5 @@
-C Update\sthe\sota\sextension\sto\ssupport\sSQLITE_ENABLE_8_3_NAMES\sbuilds.
-D 2014-09-18T17:57:46.895
+C Add\sextra\stests\sfor\sthe\sota\sextension.
+D 2014-09-19T15:06:23.790
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -127,6 +127,7 @@ F ext/ota/ota1.test 7cbf37a9f6cd29320f47b041cfeb0cc1d7eaa916
 F ext/ota/ota2.test 716f9c66e8bf8b0ad2fe3a5d8323e6cf460a2e27
 F ext/ota/ota3.test 1c48b7476af1c5920db9a43e7b1476d421a463b5
 F ext/ota/ota4.test baf23b47748a5056c713871959cc70fc623c90e9
+F ext/ota/ota5.test bd0e0f7609ece4eee2c62c5132935f0c80190cb8
 F ext/ota/sqlite3ota.c b22002105b3b7f3baf63bda2b4e6a00c4973418c
 F ext/ota/sqlite3ota.h 7b20abe9247d292429d00f0a5c237ff6e0dc0196
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
@@ -1206,7 +1207,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fce9c6ccf101d28492a84b85463433f32ef569fb
-R feab70887c117c061b61fe713ccedbe4
+P 718da6de870231d358384473b40e81c4394b8067
+R 4772700da78a181e555d5cf639b019fb
 U dan
-Z 86cf672a01ea748dc788d9b12ee5fdc1
+Z 93b575ac2dc5f2154ac020bd95667b18
