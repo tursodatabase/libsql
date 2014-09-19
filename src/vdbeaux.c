@@ -10,9 +10,7 @@
 **
 *************************************************************************
 ** This file contains code used for creating, destroying, and populating
-** a VDBE (or an "sqlite3_stmt" as it is known to the outside world.)  Prior
-** to version 2.8.7, all this code was combined into the vdbe.c source file.
-** But that file was getting too big so this subroutines were split out.
+** a VDBE (or an "sqlite3_stmt" as it is known to the outside world.) 
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -1606,7 +1604,7 @@ void sqlite3VdbeRewind(Vdbe *p){
 /*
 ** Prepare a virtual machine for execution for the first time after
 ** creating the virtual machine.  This involves things such
-** as allocating stack space and initializing the program counter.
+** as allocating registers and initializing the program counter.
 ** After the VDBE has be prepped, it can be executed by one or more
 ** calls to sqlite3VdbeExec().  
 **
@@ -1818,11 +1816,7 @@ static void closeAllCursors(Vdbe *p){
 }
 
 /*
-** Clean up the VM after execution.
-**
-** This routine will automatically close any cursors, lists, and/or
-** sorters that were left open.  It also deletes the values of
-** variables in the aVar[] array.
+** Clean up the VM after a single run.
 */
 static void Cleanup(Vdbe *p){
   sqlite3 *db = p->db;
