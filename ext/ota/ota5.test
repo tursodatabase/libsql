@@ -12,7 +12,9 @@
 # Test some properties of the pager_ota_mode and ota_mode pragmas.
 #
 
-set testdir [file join [file dirname $argv0] .. .. test]
+if {![info exists testdir]} {
+  set testdir [file join [file dirname [info script]] .. .. test]
+}
 source $testdir/tester.tcl
 set ::testprefix ota5
 
@@ -235,6 +237,91 @@ foreach {tn idx} {
 
 #-------------------------------------------------------------------------
 #
+reset_db
+do_execsql_test 2.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c, d, e);
+  INSERT INTO t1 VALUES(-750250,'fyetckfaagjkzqjx',-185831,X'FEAD',444258.29);
+  INSERT INTO t1 VALUES(649081,NULL,X'7DF25BF78778',-342324.63,'akvspktocwozo');
+  INSERT INTO t1 VALUES(-133045,-44822.31,X'',287935,NULL);
+  INSERT INTO t1 VALUES(202132,NULL,X'5399','cujsjtspryqeyovcdpz','m');
+  INSERT INTO t1 VALUES(302910,NULL,'dvdhivtfkaedzhdcnn',-717113.41,688487);
+  INSERT INTO t1 VALUES(-582327,X'7A267A',X'7E6B3CFE5CB9','zacuzilrok',-196478);
+  INSERT INTO t1 VALUES(-190462,X'D1A087E7D68D9578','lsmleti',NULL,-928094);
+  INSERT INTO t1 VALUES(-467665,176344.57,-536684.23,828876.22,X'903E');
+  INSERT INTO t1 VALUES(-629138,632630.29,X'28D6',-774501,X'819BBBFC65');
+  INSERT INTO t1 VALUES(-828110,-54379.24,-881121.44,X'',X'8D5A894F0D');
+
+  CREATE TABLE t2(a PRIMARY KEY, b, c, d, e) WITHOUT ROWID;
+  INSERT INTO t2 VALUES(-65174,X'AC1DBFFE27310F',-194471.08,347988,X'84041BA6F9BDDE86A8');
+  INSERT INTO t2 VALUES('bzbpi',-952693.69,811628.25,NULL,-817434);
+  INSERT INTO t2 VALUES(-643830,NULL,'n',NULL,'dio');
+  INSERT INTO t2 VALUES('rovoenxxj',NULL,'owupbtdcoxxnvg',-119676,X'55431DFA');
+  INSERT INTO t2 VALUES(899770,'jlygdl',X'DBCA4D1A',NULL,-631773);
+  INSERT INTO t2 VALUES(334698.80,NULL,-697585.58,-89277,-817352);
+  INSERT INTO t2 VALUES(X'1A9EB7547A4AAF38','aiprdhkpzdz','anw','szvjbwdvzucybpwwqjt',X'53');
+  INSERT INTO t2 VALUES(713220,NULL,'hfcqhqzjuqplvkum',X'20B076075649DE','fthgpvqdyy');
+  INSERT INTO t2 VALUES(763908,NULL,'xgslzcpvwfknbr',X'75',X'668146');
+  INSERT INTO t2 VALUES(X'E1BA2B6BA27278','wjbpd',NULL,139341,-290086.15);
+}
+db close
+
+set cksum [generate_ota_db test.db ota.db {
+INSERT INTO t2 VALUES(222916.23,'idh',X'472C517405',X'E3',X'7C4F31824669');
+INSERT INTO t2 VALUES('xcndjwafcoxwxizoktd',-319567.21,NULL,-720906.43,-577170);
+INSERT INTO t2 VALUES(376369.99,-536058,'yoaiurfqupdscwc',X'29EC8A2542EC3953E9',-740485.22);
+INSERT INTO t2 VALUES(X'0EFB4DC50693',-175590.83,X'1779E253CAB5B1789E',X'BC6903',NULL);
+INSERT INTO t2 VALUES(-288299,'hfrp',NULL,528477,730676.77);
+DELETE FROM t2 WHERE a < -60000;
+
+UPDATE t2 SET b = 'pgnnaaoflnw' WHERE a = 'bzbpi';
+UPDATE t2 SET c = -675583 WHERE a = 'rovoenxxj';
+UPDATE t2 SET d = X'09CDF2B2C241' WHERE a = 713220;
+
+INSERT INTO t1 VALUES(224938,'bmruycvfznhhnfmgqys','fr',854381,789143);
+INSERT INTO t1 VALUES(-863931,-1386.26,X'2A058540C2FB5C',NULL,X'F9D5990A');
+INSERT INTO t1 VALUES(673696,X'97301F0AC5735F44B5',X'440C',227999.92,-709599.79);
+INSERT INTO t1 VALUES(-243640,NULL,-71718.11,X'1EEFEB38',X'8CC7C55D95E142FBA5');
+INSERT INTO t1 VALUES(275893,X'',375606.30,X'0AF9EC334711FB',-468194);
+DELETE FROM t1 WHERE a > 200000;
+
+UPDATE t1 SET b = 'pgnnaaoflnw' WHERE a = -190462;
+UPDATE t1 SET c = -675583 WHERE a = -467665;
+UPDATE t1 SET d = X'09CDF2B2C241' WHERE a = -133045;
+
+}]
+
+foreach {tn idx} {
+  1 {
+  }
+  2 {
+    CREATE UNIQUE INDEX i1 ON t1(b, c, d);
+    CREATE UNIQUE INDEX i2 ON t1(d, e, a);
+    CREATE UNIQUE INDEX i3 ON t1(e, d, c, b);
+
+    CREATE UNIQUE INDEX i4 ON t2(b, c, d);
+    CREATE UNIQUE INDEX i5 ON t2(d, e, a);
+    CREATE UNIQUE INDEX i6 ON t2(e, d, c, b);
+  }
+} {
+  foreach cmd {run step} {
+    forcecopy test.db test.db2
+    forcecopy ota.db ota.db2
+
+    sqlite3 db test.db2
+    db eval $idx
+
+    do_test 2.$tn.$cmd.1 {
+      ${cmd}_ota test.db2 ota.db2
+      datacksum db
+    } $cksum
+
+    do_test 2.$tn.$cmd.2 {
+      db eval { PRAGMA integrity_check } 
+    } {ok}
+
+    db close
+  }
+}
 
 
 finish_test

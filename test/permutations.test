@@ -923,6 +923,12 @@ test_suite "rtree" -description {
   All R-tree related tests. Provides coverage of source file rtree.c.
 } -files [glob -nocomplain $::testdir/../ext/rtree/*.test]
 
+test_suite "ota" -description {
+  OTA tests.
+} -files [
+  test_set [glob -nocomplain $::testdir/../ext/ota/*.test] -exclude ota.test
+]
+
 test_suite "no_optimization" -description {
   Run test scripts with optimizations disabled using the
   sqlite3_test_control(SQLITE_TESTCTRL_OPTIMIZATIONS) interface.
