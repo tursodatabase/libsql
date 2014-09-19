@@ -1,5 +1,5 @@
-C Tighten\sthe\sconditions\sunder\swhich\sapplyNumericAffinity()\sbe\scalled\sand\sadd\nassert()\sstatements\sto\sprove\sthat\sit\sis\snever\scalled\sotherwise.
-D 2014-09-19T22:01:54.366
+C Recognize\sthe\sinvariant\sthat\sa\sMem\sobject\scannot\sbe\sMEM_Dyn\sand\shave\s\na\snon-zero\sszMalloc\sat\sthe\ssame\stime.\s\sEnforce\sthis\swith\sassert()s\sand\nexploit\sit\sin\sthe\ssqlite3VdbeMemClearAndResize()\sroutine\sfor\sa\sperformance\nincrease.
+D 2014-09-19T22:30:49.809
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -294,7 +294,7 @@ F src/vdbeInt.h f177bed1ec8d4eb5c7089f012aeb95f374745735
 F src/vdbeapi.c e9e33b59834e3edc8790209765e069874c269d9d
 F src/vdbeaux.c a05adc3c96abdaf3db14768ddd63132fc9678060
 F src/vdbeblob.c 848238dc73e93e48432991bb5651bf87d865eca4
-F src/vdbemem.c 5cd963730414a1a6ba53b8b340eba3f46ec2cb1d
+F src/vdbemem.c 1e105dacf5190fc85a8ec2107c0dcc1884e75099
 F src/vdbesort.c 5c1bacf90578d22b630fbf6ed98ccf60d83435ef
 F src/vdbetrace.c 4f29b04edb0cec3d5fcd9b566d9f0e75c8984362
 F src/vtab.c 019dbfd0406a7447c990e1f7bd1dfcdb8895697f
@@ -1198,7 +1198,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3f3ca76aea38d566a574f4403b375bdac32854ed
-R fc5d306f71c9e96ead7521f7177e02ff
+P e996ca32cb643c558b616c0dd872f3351b6aa3ef
+R 5148a059197bc43e5fc9e398f77834ac
 U drh
-Z cb569a0dfcbf7ed8e3897eb9a80bb15e
+Z 24b5c2935cab55558784e01172e53731

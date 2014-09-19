@@ -31,6 +31,9 @@ int sqlite3VdbeCheckMemInvariants(Mem *p){
   */
   assert( (p->flags & MEM_Dyn)==0 || p->xDel!=0 );
 
+  /* MEM_Dyn may only be set if Mem.szMalloc==0 */
+  assert( (p->flags & MEM_Dyn)==0 || p->szMalloc==0 );
+
   /* Cannot be both MEM_Int and MEM_Real at the same time */
   assert( (p->flags & (MEM_Int|MEM_Real))!=(MEM_Int|MEM_Real) );
 
@@ -164,19 +167,19 @@ SQLITE_NOINLINE int sqlite3VdbeMemGrow(Mem *pMem, int n, int bPreserve){
 ** if unable to complete the resizing.
 */
 int sqlite3VdbeMemClearAndResize(Mem *pMem, int szNew){
-  if( pMem->szMalloc<szNew || (pMem->flags & MEM_Dyn)!=0 ){
+  assert( szNew>=0 );
+  if( pMem->szMalloc<szNew ){
     return sqlite3VdbeMemGrow(pMem, szNew, 0);
   }
+  assert( (pMem->flags & MEM_Dyn)==0 );
   pMem->z = pMem->zMalloc;
   pMem->flags &= (MEM_Null|MEM_Int|MEM_Real);
   return SQLITE_OK;
 }
 
 /*
-** Make the given Mem object MEM_Dyn.  In other words, make it so
-** that any TEXT or BLOB content is stored in memory obtained from
-** malloc().  In this way, we know that the memory is safe to be
-** overwritten or altered.
+** Change pMem so that its MEM_Str or MEM_Blob value is stored in
+** MEM.zMalloc, where it can be safely written.
 **
 ** Return SQLITE_OK on success or SQLITE_NOMEM if malloc fails.
 */
