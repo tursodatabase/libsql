@@ -1,5 +1,5 @@
-C Add\sthe\ssqlite3VdbeMemClearAndResize()\sinterface\sto\sbe\sused\sin\splace\sof\nsqlite3VdbeMemGrow().
-D 2014-09-19T00:43:39.899
+C Make\ssure\sthat\sthe\ssorting-index\spre-filter\srecognizes\sthat\sa\srowid\sreference\nmight\sbe\ssortable.\s\sThis\sfixes\sa\sperformance\sregression.
+D 2014-09-19T02:01:37.043
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -301,7 +301,7 @@ F src/vtab.c 019dbfd0406a7447c990e1f7bd1dfcdb8895697f
 F src/wal.c 10e7de7ce90865a68153f001a61f1d985cd17983
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
-F src/where.c dc276288039fb45ce23c80e4535980f5a152d8ec
+F src/where.c 0888567c0e01a41b6001647e333f8ccfd3ae7d36
 F src/whereInt.h 124d970450955a6982e174b07c320ae6d62a595c
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -739,7 +739,7 @@ F test/notnull.test f8fcf58669ddba79274daa2770d61dfad8274f62
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
 F test/numcast.test 5d126f7f581432e86a90d1e35cac625164aec4a1
 F test/openv2.test 0d3040974bf402e19b7df4b783e447289d7ab394
-F test/orderby1.test 12426f99518cde45f34215ca6a0ebc0e9bc5c77a
+F test/orderby1.test eb246e377612b21a418fbea57047ba8ea88aaa6b
 F test/orderby2.test bc11009f7cd99d96b1b11e57b199b00633eb5b04
 F test/orderby3.test 8619d06a3debdcd80a27c0fdea5c40b468854b99
 F test/orderby4.test 4d39bfbaaa3ae64d026ca2ff166353d2edca4ba4
@@ -1198,7 +1198,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9c09ac353df6041808cace41880f4729ee73f5e1
-R eeadad19cadf3315e345f0babe4222b0
+P 5b9b8987797abf7c68d2c3154f6657be9b8b1c8f
+R 15204d62056b16fb4766540f7ebb9528
 U drh
-Z fd83cfbfc71d89fd149fcf4e06924224
+Z d3f0dcf862181fb956350fa4a77ff638
