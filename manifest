@@ -1,5 +1,5 @@
-C Fix\sthe\saffinity\son\sinserts\sinto\sthe\sANALYZE\stables.\s\sChange\sthe\saffinity\ncharacters\sto\sbe\supper\scase,\sto\smake\sthe\sP5\sparameter\sof\scomparison\soperators\neasier\sto\sread.
-D 2014-09-19T20:13:25.422
+C Tighten\sthe\sconditions\sunder\swhich\sapplyNumericAffinity()\sbe\scalled\sand\sadd\nassert()\sstatements\sto\sprove\sthat\sit\sis\snever\scalled\sotherwise.
+D 2014-09-19T22:01:54.366
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -288,7 +288,7 @@ F src/update.c 729f6f18fc27740591d085e1172cebe311144bf0
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c 4006c01772bd8d8ac4306d523bbcee41d3e392d8
 F src/vacuum.c 59f03f92bcff57faa6a8ca256eb29ccddfb0614a
-F src/vdbe.c c90b7ebe856beb75077cf4486efc1863de219f34
+F src/vdbe.c 16efd1ae26d877827cd6669f5f19afd8d8903d08
 F src/vdbe.h 09f5b4e3719fa454f252322b1cdab5cf1f361327
 F src/vdbeInt.h f177bed1ec8d4eb5c7089f012aeb95f374745735
 F src/vdbeapi.c e9e33b59834e3edc8790209765e069874c269d9d
@@ -1198,7 +1198,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3ab20ba14f0204efeec62c7dbb87cb3f60e2497f
-R 6403cad332b96b991c6e79d4338c8e0a
+P 3f3ca76aea38d566a574f4403b375bdac32854ed
+R fc5d306f71c9e96ead7521f7177e02ff
 U drh
-Z a6ee4447c2926dae75a9d9931c4a5376
+Z cb569a0dfcbf7ed8e3897eb9a80bb15e

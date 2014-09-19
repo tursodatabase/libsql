@@ -242,8 +242,7 @@ static void applyNumericAffinity(Mem *pRec, int bTryForInt){
   double rValue;
   i64 iValue;
   u8 enc = pRec->enc;
-  if( (pRec->flags&MEM_Str)==0 ) return;
-  if( (pRec->flags&(MEM_Int|MEM_Real))!=0 ) return;
+  assert( (pRec->flags & (MEM_Str|MEM_Int|MEM_Real))==MEM_Str );
   if( sqlite3AtoF(pRec->z, &rValue, pRec->n, enc)==0 ) return;
   if( 0==sqlite3Atoi64(pRec->z, &iValue, pRec->n, enc) ){
     pRec->u.i = iValue;
@@ -283,7 +282,7 @@ static void applyAffinity(
              || affinity==SQLITE_AFF_NUMERIC );
     if( (pRec->flags & MEM_Int)==0 ){
       if( (pRec->flags & MEM_Real)==0 ){
-        applyNumericAffinity(pRec,1);
+        if( pRec->flags & MEM_Str ) applyNumericAffinity(pRec,1);
       }else{
         sqlite3VdbeIntegerAffinity(pRec);
       }
@@ -3558,7 +3557,7 @@ case OP_SeekGT: {       /* jump, in3 */
     ** blob, or NULL.  But it needs to be an integer before we can do
     ** the seek, so convert it. */
     pIn3 = &aMem[pOp->p3];
-    if( (pIn3->flags & (MEM_Int|MEM_Real))==0 ){
+    if( (pIn3->flags & (MEM_Int|MEM_Real|MEM_Str))==MEM_Str ){
       applyNumericAffinity(pIn3, 0);
     }
     iKey = sqlite3VdbeIntValue(pIn3);
