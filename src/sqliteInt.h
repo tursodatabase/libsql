@@ -1422,18 +1422,18 @@ struct CollSeq {
 ** 't' for SQLITE_AFF_TEXT.  But we can save a little space and improve
 ** the speed a little by numbering the values consecutively.  
 **
-** But rather than start with 0 or 1, we begin with 'a'.  That way,
+** But rather than start with 0 or 1, we begin with 'A'.  That way,
 ** when multiple affinity types are concatenated into a string and
 ** used as the P4 operand, they will be more readable.
 **
 ** Note also that the numeric types are grouped together so that testing
 ** for a numeric type is a single comparison.  And the NONE type is first.
 */
-#define SQLITE_AFF_NONE     'a'
-#define SQLITE_AFF_TEXT     'b'
-#define SQLITE_AFF_NUMERIC  'c'
-#define SQLITE_AFF_INTEGER  'd'
-#define SQLITE_AFF_REAL     'e'
+#define SQLITE_AFF_NONE     'A'
+#define SQLITE_AFF_TEXT     'B'
+#define SQLITE_AFF_NUMERIC  'C'
+#define SQLITE_AFF_INTEGER  'D'
+#define SQLITE_AFF_REAL     'E'
 
 #define sqlite3IsNumericAffinity(X)  ((X)>=SQLITE_AFF_NUMERIC)
 
@@ -1441,7 +1441,7 @@ struct CollSeq {
 ** The SQLITE_AFF_MASK values masks off the significant bits of an
 ** affinity value. 
 */
-#define SQLITE_AFF_MASK     0x67
+#define SQLITE_AFF_MASK     0x47
 
 /*
 ** Additional bit values that can be ORed with an affinity without
@@ -1452,10 +1452,10 @@ struct CollSeq {
 ** operator is NULL.  It is added to certain comparison operators to
 ** prove that the operands are always NOT NULL.
 */
-#define SQLITE_JUMPIFNULL   0x08  /* jumps if either operand is NULL */
-#define SQLITE_STOREP2      0x10  /* Store result in reg[P2] rather than jump */
+#define SQLITE_JUMPIFNULL   0x10  /* jumps if either operand is NULL */
+#define SQLITE_STOREP2      0x20  /* Store result in reg[P2] rather than jump */
 #define SQLITE_NULLEQ       0x80  /* NULL=NULL */
-#define SQLITE_NOTNULL      0x88  /* Assert that operands are never NULL */
+#define SQLITE_NOTNULL      0x90  /* Assert that operands are never NULL */
 
 /*
 ** An object of this type is created for each virtual table present in

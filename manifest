@@ -1,5 +1,5 @@
-C Do\snot\sattempt\sto\sextend\sthe\stemp\sfile\sif\sVFS\sversion\s3\sis\snot\ssupported\sand\nhence\smemory\smapped\sI/O\sis\sunavailable.
-D 2014-09-19T19:43:20.458
+C Fix\sthe\saffinity\son\sinserts\sinto\sthe\sANALYZE\stables.\s\sChange\sthe\saffinity\ncharacters\sto\sbe\supper\scase,\sto\smake\sthe\sP5\sparameter\sof\scomparison\soperators\neasier\sto\sread.
+D 2014-09-19T20:13:25.422
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -165,7 +165,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 3d8b83c91651f53472ca17599dae3457b8b89494
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c ba266a779bc7ce10e52e59e7d3dc79fa342e8fdb
-F src/analyze.c 79383a54fee3b7f1fb03dd4c8c8115583f506de5
+F src/analyze.c 6290a109be876daaa242cd7216f97240f5401776
 F src/attach.c f4e94df2d1826feda65eb0939f7f6f5f923a0ad9
 F src/auth.c d8abcde53426275dab6243b441256fcd8ccbebb2
 F src/backup.c a31809c65623cc41849b94d368917f8bb66e6a7e
@@ -188,7 +188,7 @@ F src/global.c 5110fa12e09729b84eee0191c984ec4008e21937
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
 F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c 0b073fade178d9dbd990bbb32b4438e50b884a06
+F src/insert.c 5b9243a33726008cc4132897d2be371db12a13be
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
@@ -231,7 +231,7 @@ F src/shell.c c00220cdd7f2027780bc25b78376c16dc24e4b7d
 F src/sqlite.h.in 8b018219ce988913e5977d5de9ab4beb33be23b6
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
-F src/sqliteInt.h 9bb8f655b076e1b9ed7cfe0b8c181e758d937369
+F src/sqliteInt.h 686e6a49ebcea813eafa24752d19751ffa6a1b93
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2e99ef7ef16187e17033d9398dc962ce22dab5cb
@@ -1198,7 +1198,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3db78d6100a1ecf58c18eec3abefa7d1250c649c
-R 818146e215cbcd83bc222da6a20cc822
+P 3ab20ba14f0204efeec62c7dbb87cb3f60e2497f
+R 6403cad332b96b991c6e79d4338c8e0a
 U drh
-Z 7ba13d68a7d8baeb2d8a716a6d033daa
+Z a6ee4447c2926dae75a9d9931c4a5376
