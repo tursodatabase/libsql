@@ -107,7 +107,7 @@ int sqlite3VdbeChangeEncoding(Mem *pMem, int desiredEnc){
 ** blob if bPreserve is true.  If bPreserve is false, any prior content
 ** in pMem->z is discarded.
 */
-int sqlite3VdbeMemGrow(Mem *pMem, int n, int bPreserve){
+SQLITE_NOINLINE int sqlite3VdbeMemGrow(Mem *pMem, int n, int bPreserve){
   assert( sqlite3VdbeCheckMemInvariants(pMem) );
   assert( (pMem->flags&MEM_RowSet)==0 );
 
@@ -147,6 +147,33 @@ int sqlite3VdbeMemGrow(Mem *pMem, int n, int bPreserve){
 
   pMem->z = pMem->zMalloc;
   pMem->flags &= ~(MEM_Dyn|MEM_Ephem|MEM_Static);
+  return SQLITE_OK;
+}
+
+/*
+** Change the pMem->zMalloc allocation to be at least szNew bytes.
+** If pMem->zMalloc already meets or exceeds the requested size, this
+** routine is a no-op.
+**
+** Any prior string or blob content in the pMem object may be discarded.
+** The pMem->xDel destructor is called, if it exists.
+**
+** The value of the pMem after this routine returns might be NULL or
+** it might retain its prior value, depending on circumstances.  The
+** caller should make no assumptions about the state of pMem after this
+** routine returns, except that pMem->zMalloc is at least the requested
+** size and pMem->z==pMem->zMalloc.
+**
+** Return SQLITE_OK on success or an error code (probably SQLITE_NOMEM)
+** if unable to complete the resizing.
+*/
+int sqlite3VdbeMemClearAndResize(Mem *pMem, int szNew){
+  if( pMem->szMalloc<szNew || (pMem->flags & MEM_Dyn)!=0 ){
+    return sqlite3VdbeMemGrow(pMem, szNew, 0);
+  }
+  pMem->z = pMem->zMalloc;
+  pMem->flags &= ~(MEM_Dyn|MEM_Ephem|MEM_Static);
+//  pMem->flags = MEM_Null;
   return SQLITE_OK;
 }
 
@@ -262,7 +289,7 @@ int sqlite3VdbeMemStringify(Mem *pMem, u8 enc, u8 bForce){
   assert( EIGHT_BYTE_ALIGNMENT(pMem) );
 
 
-  if( sqlite3VdbeMemGrow(pMem, nByte, 0) ){
+  if( sqlite3VdbeMemClearAndResize(pMem, nByte) ){
     return SQLITE_NOMEM;
   }
 
@@ -866,7 +893,7 @@ int sqlite3VdbeMemSetStr(
     if( nByte>iLimit ){
       return SQLITE_TOOBIG;
     }
-    if( sqlite3VdbeMemGrow(pMem, nAlloc, 0) ){
+    if( sqlite3VdbeMemClearAndResize(pMem, nAlloc) ){
       return SQLITE_NOMEM;
     }
     memcpy(pMem->z, z, nAlloc);
@@ -944,7 +971,7 @@ int sqlite3VdbeMemFromBtree(
     pMem->n = (int)amt;
   }else{
     pMem->flags = MEM_Null;
-    if( SQLITE_OK==(rc = sqlite3VdbeMemGrow(pMem, amt+2, 0)) ){
+    if( SQLITE_OK==(rc = sqlite3VdbeMemClearAndResize(pMem, amt+2)) ){
       if( key ){
         rc = sqlite3BtreeKey(pCur, offset, amt, pMem->z);
       }else{

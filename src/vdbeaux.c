@@ -1426,7 +1426,7 @@ int sqlite3VdbeList(
     pMem->u.i = pOp->p3;                          /* P3 */
     pMem++;
 
-    if( sqlite3VdbeMemGrow(pMem, 32, 0) ){            /* P4 */
+    if( sqlite3VdbeMemClearAndResize(pMem, 32) ){ /* P4 */
       assert( p->db->mallocFailed );
       return SQLITE_ERROR;
     }
@@ -1442,7 +1442,7 @@ int sqlite3VdbeList(
     pMem++;
 
     if( p->explain==1 ){
-      if( sqlite3VdbeMemGrow(pMem, 4, 0) ){
+      if( sqlite3VdbeMemClearAndResize(pMem, 4) ){
         assert( p->db->mallocFailed );
         return SQLITE_ERROR;
       }
@@ -1453,7 +1453,7 @@ int sqlite3VdbeList(
       pMem++;
   
 #ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
-      if( sqlite3VdbeMemGrow(pMem, 500, 0) ){
+      if( sqlite3VdbeMemClearAndResize(pMem, 500) ){
         assert( p->db->mallocFailed );
         return SQLITE_ERROR;
       }

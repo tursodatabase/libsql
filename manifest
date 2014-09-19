@@ -1,5 +1,5 @@
-C Add\sthe\sMem.szMalloc\selement\sto\sthe\sMem\sobject\sand\suse\sit\sto\skeep\strack\sof\nthe\ssize\sof\sthe\sMem.zMalloc\sallocation.
-D 2014-09-18T21:25:33.845
+C Add\sthe\ssqlite3VdbeMemClearAndResize()\sinterface\sto\sbe\sused\sin\splace\sof\nsqlite3VdbeMemGrow().
+D 2014-09-19T00:43:39.899
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -288,14 +288,14 @@ F src/update.c 729f6f18fc27740591d085e1172cebe311144bf0
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c 4006c01772bd8d8ac4306d523bbcee41d3e392d8
 F src/vacuum.c 59f03f92bcff57faa6a8ca256eb29ccddfb0614a
-F src/vdbe.c fb490f5b1b2ee2f33f60c7dc678c0d0b70f2e0cb
+F src/vdbe.c 7bc115e540282b1bfff9b43205cbf6528e6398a6
 F src/vdbe.h 09f5b4e3719fa454f252322b1cdab5cf1f361327
-F src/vdbeInt.h 1ac536d1fa1260d72f81003ff5b283e8f3c40442
-F src/vdbeapi.c e088ed70b6cc42ed68985ab064397ebd452286d6
-F src/vdbeaux.c b3230032238df611aefee5907ea792786362a55d
+F src/vdbeInt.h f177bed1ec8d4eb5c7089f012aeb95f374745735
+F src/vdbeapi.c e9e33b59834e3edc8790209765e069874c269d9d
+F src/vdbeaux.c ecf0bb835f7c809ba8e22ba7d3a587b7a087ac52
 F src/vdbeblob.c 848238dc73e93e48432991bb5651bf87d865eca4
-F src/vdbemem.c 3aea3831a981378368ca058cd8fc700b1982772d
-F src/vdbesort.c 09efa5e5098d1a159cd21f588eb118e4fe87cfde
+F src/vdbemem.c 0678ba6214a810539e51c6d8f263634d405b990f
+F src/vdbesort.c 75c66c2fc02d450b67b4816873fba8088feaf12c
 F src/vdbetrace.c 4f29b04edb0cec3d5fcd9b566d9f0e75c8984362
 F src/vtab.c 019dbfd0406a7447c990e1f7bd1dfcdb8895697f
 F src/wal.c 10e7de7ce90865a68153f001a61f1d985cd17983
@@ -1198,7 +1198,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 55879932116d373c95a5f32ec44b53a9c3f4db24
-R 508057a57cef866ce62608d1eb2d9e8e
+P 9c09ac353df6041808cace41880f4729ee73f5e1
+R eeadad19cadf3315e345f0babe4222b0
 U drh
-Z 7d8fd1db974daf115bf085d0714b6de9
+Z fd83cfbfc71d89fd149fcf4e06924224

@@ -665,7 +665,7 @@ static SQLITE_NOINLINE void *createAggContext(sqlite3_context *p, int nByte){
     sqlite3VdbeMemSetNull(pMem);
     pMem->z = 0;
   }else{
-    sqlite3VdbeMemGrow(pMem, nByte, 0);
+    sqlite3VdbeMemClearAndResize(pMem, nByte);
     pMem->flags = MEM_Agg;
     pMem->u.pDef = p->pFunc;
     if( pMem->z ){
