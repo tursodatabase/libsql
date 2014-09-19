@@ -1,5 +1,5 @@
-C Make\sthe\s"nolock"\sVFS\son\sunix\sa\sversion-3\sVFS\sso\sthat\sthe\ssorter\scan\nuse\smemory-mapped\sI/O.
-D 2014-09-19T19:00:48.687
+C Do\snot\sattempt\sto\sextend\sthe\stemp\sfile\sif\sVFS\sversion\s3\sis\snot\ssupported\sand\nhence\smemory\smapped\sI/O\sis\sunavailable.
+D 2014-09-19T19:43:20.458
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -295,7 +295,7 @@ F src/vdbeapi.c e9e33b59834e3edc8790209765e069874c269d9d
 F src/vdbeaux.c a05adc3c96abdaf3db14768ddd63132fc9678060
 F src/vdbeblob.c 848238dc73e93e48432991bb5651bf87d865eca4
 F src/vdbemem.c 5cd963730414a1a6ba53b8b340eba3f46ec2cb1d
-F src/vdbesort.c 75c66c2fc02d450b67b4816873fba8088feaf12c
+F src/vdbesort.c 5c1bacf90578d22b630fbf6ed98ccf60d83435ef
 F src/vdbetrace.c 4f29b04edb0cec3d5fcd9b566d9f0e75c8984362
 F src/vtab.c 019dbfd0406a7447c990e1f7bd1dfcdb8895697f
 F src/wal.c 10e7de7ce90865a68153f001a61f1d985cd17983
@@ -1198,7 +1198,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6199760d1340858d97c845177986b783da915d9e
-R 747bc9b4978b6e3fd1fc3d52243dfaf2
+P 3db78d6100a1ecf58c18eec3abefa7d1250c649c
+R 818146e215cbcd83bc222da6a20cc822
 U drh
-Z 26fea32b6bd594b310d5a7de197ed86f
+Z 7ba13d68a7d8baeb2d8a716a6d033daa
