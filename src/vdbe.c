@@ -2482,7 +2482,21 @@ case OP_Column: {
   pDest->enc = encoding;
 
 op_column_out:
-  Deephemeralize(pDest);
+  /* If the column value is an ephemeral string, go ahead and persist
+  ** that string in case the cursor moves before the column value is
+  ** used.  The following code does the equivalent of Deephemeralize()
+  ** but does it faster. */
+  if( (pDest->flags & MEM_Ephem)!=0 && pDest->z ){
+    u16 f = pDest->flags & (MEM_Str|MEM_Blob);
+    assert( f!=0 );
+    zData = (const u8*)pDest->z;
+    len = pDest->n;
+    if( sqlite3VdbeMemClearAndResize(pDest, len+2) ) goto no_mem;
+    memcpy(pDest->z, zData, len);
+    pDest->z[len] = 0;
+    pDest->z[len+1] = 0;
+    pDest->flags = f|MEM_Term;
+  }
 op_column_error:
   UPDATE_MAX_BLOBSIZE(pDest);
   REGISTER_TRACE(pOp->p3, pDest);
