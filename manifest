@@ -1,5 +1,5 @@
-C Add\sthe\sMem.szMalloc\selement\sto\sthe\sMem\sobject\sand\suse\sit\sto\skeep\strack\sof\nthe\ssize\sof\sthe\sMem.zMalloc\sallocation.
-D 2014-09-18T21:25:33.845
+C Add\sthe\ssqlite3VdbeMemClearAndResize()\sfunction.\s\sFix\sa\ssorting-index\nprefilter\sproblem.
+D 2014-09-19T04:42:38.074
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -288,20 +288,20 @@ F src/update.c 729f6f18fc27740591d085e1172cebe311144bf0
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c 4006c01772bd8d8ac4306d523bbcee41d3e392d8
 F src/vacuum.c 59f03f92bcff57faa6a8ca256eb29ccddfb0614a
-F src/vdbe.c fb490f5b1b2ee2f33f60c7dc678c0d0b70f2e0cb
+F src/vdbe.c 7bc115e540282b1bfff9b43205cbf6528e6398a6
 F src/vdbe.h 09f5b4e3719fa454f252322b1cdab5cf1f361327
-F src/vdbeInt.h 1ac536d1fa1260d72f81003ff5b283e8f3c40442
-F src/vdbeapi.c e088ed70b6cc42ed68985ab064397ebd452286d6
-F src/vdbeaux.c b3230032238df611aefee5907ea792786362a55d
+F src/vdbeInt.h f177bed1ec8d4eb5c7089f012aeb95f374745735
+F src/vdbeapi.c e9e33b59834e3edc8790209765e069874c269d9d
+F src/vdbeaux.c ecf0bb835f7c809ba8e22ba7d3a587b7a087ac52
 F src/vdbeblob.c 848238dc73e93e48432991bb5651bf87d865eca4
-F src/vdbemem.c 3aea3831a981378368ca058cd8fc700b1982772d
-F src/vdbesort.c 09efa5e5098d1a159cd21f588eb118e4fe87cfde
+F src/vdbemem.c 5cd963730414a1a6ba53b8b340eba3f46ec2cb1d
+F src/vdbesort.c 75c66c2fc02d450b67b4816873fba8088feaf12c
 F src/vdbetrace.c 4f29b04edb0cec3d5fcd9b566d9f0e75c8984362
 F src/vtab.c 019dbfd0406a7447c990e1f7bd1dfcdb8895697f
 F src/wal.c 10e7de7ce90865a68153f001a61f1d985cd17983
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
-F src/where.c dc276288039fb45ce23c80e4535980f5a152d8ec
+F src/where.c 0888567c0e01a41b6001647e333f8ccfd3ae7d36
 F src/whereInt.h 124d970450955a6982e174b07c320ae6d62a595c
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -739,7 +739,7 @@ F test/notnull.test f8fcf58669ddba79274daa2770d61dfad8274f62
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
 F test/numcast.test 5d126f7f581432e86a90d1e35cac625164aec4a1
 F test/openv2.test 0d3040974bf402e19b7df4b783e447289d7ab394
-F test/orderby1.test 12426f99518cde45f34215ca6a0ebc0e9bc5c77a
+F test/orderby1.test eb246e377612b21a418fbea57047ba8ea88aaa6b
 F test/orderby2.test bc11009f7cd99d96b1b11e57b199b00633eb5b04
 F test/orderby3.test 8619d06a3debdcd80a27c0fdea5c40b468854b99
 F test/orderby4.test 4d39bfbaaa3ae64d026ca2ff166353d2edca4ba4
@@ -1198,7 +1198,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 55879932116d373c95a5f32ec44b53a9c3f4db24
-R 508057a57cef866ce62608d1eb2d9e8e
+P 9c09ac353df6041808cace41880f4729ee73f5e1 72727b68cd07969165f1f0943cc7e1a265436653
+R a5960c77be61d5e92e67de5776336365
+T +closed 72727b68cd07969165f1f0943cc7e1a265436653
 U drh
-Z 7d8fd1db974daf115bf085d0714b6de9
+Z 88c7b85ca090541e4ecff878bb673522
