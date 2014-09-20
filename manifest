@@ -1,5 +1,5 @@
-C Simplify\stwo\sconditionals\sand\sadd\stestcase()\smacros\sto\sthe\saffinity\stransform\nlogic\sin\sthe\scomparison\soperators.
-D 2014-09-19T22:44:20.033
+C Revise\smacro\susage\sin\s'sqliteInt.h'.
+D 2014-09-20T00:02:23.616
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -222,7 +222,7 @@ F src/pcache.h 9b559127b83f84ff76d735c8262f04853be0c59a
 F src/pcache1.c dab8ab930d4a73b99768d881185994f34b80ecaa
 F src/pragma.c 3f3e959390a10c0131676f0e307acce372777e0f
 F src/prepare.c 6ef0cf2f9274982988ed6b7cab1be23147e94196
-F src/printf.c 19e3e81addf593195369ec8d487ed063ad3170bb
+F src/printf.c 901a2b924f10db42b7c32936eda80feb3a769aca
 F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c a3466128b52a86c466e47ac1a19e2174f7b5cf89
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
@@ -231,7 +231,7 @@ F src/shell.c c00220cdd7f2027780bc25b78376c16dc24e4b7d
 F src/sqlite.h.in 8b018219ce988913e5977d5de9ab4beb33be23b6
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
-F src/sqliteInt.h 686e6a49ebcea813eafa24752d19751ffa6a1b93
+F src/sqliteInt.h 6fd801cac974d310949ddefd6a6c6982c9778f3f
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2e99ef7ef16187e17033d9398dc962ce22dab5cb
@@ -1198,7 +1198,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3b21cf2b284048da4b728a5d6ec89e5c330144d4
-R c321e5b6443015b26d22f3eade4b771c
-U drh
-Z b0d83e95571a3002a17dc014110d23f5
+P 544664cadfb4e504bc0b321c865d1ecb8a831e20
+R 5186d6949cf27e738e34796d88aa31e5
+T *branch * sqliteIntMacros
+T *sym-sqliteIntMacros *
+T -sym-trunk *
+U mistachkin
+Z 51ca01ef3bf4ffdaf2fde2b29bc4c756
