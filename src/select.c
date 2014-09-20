@@ -4612,6 +4612,7 @@ int sqlite3Select(
   }
   if( sqlite3AuthCheck(pParse, SQLITE_SELECT, 0, 0, 0) ) return 1;
   memset(&sAggInfo, 0, sizeof(sAggInfo));
+  SELECTTRACE(1, ("begin processing %s\n", p->zSelLabel));
 
   assert( p->pOrderBy==0 || pDest->eDest!=SRT_DistFifo );
   assert( p->pOrderBy==0 || pDest->eDest!=SRT_Fifo );
@@ -5367,6 +5368,7 @@ select_end:
 
   sqlite3DbFree(db, sAggInfo.aCol);
   sqlite3DbFree(db, sAggInfo.aFunc);
+  SELECTTRACE(1, ("end processing %s\n", p->zSelLabel));
   return rc;
 }
 
