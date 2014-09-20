@@ -1,5 +1,5 @@
-C Fix\sthe\sSELECTTRACE_ENABLE\smacro\sso\sthat\sit\sdoesn't\scause\sproblems\sfor\ntestfixture.\s\sAdd\snew\sSELECTTRACE()\scalls.
-D 2014-09-20T20:24:49.725
+C Candidate\sfix\sfor\s[d11a6e908f].
+D 2014-09-20T20:38:48.213
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -226,7 +226,7 @@ F src/printf.c 3a47f526b173813d9a7f4e7044007771ba68cde1
 F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c a3466128b52a86c466e47ac1a19e2174f7b5cf89
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c a2aac0a26b122b057f02464d6bfeeae3063583e7
+F src/select.c 3108c73dff614eb8771cd251bed41e3fa5dfe33f
 F src/shell.c dad23987c34faddb061a339da3e92e05ccc6935e
 F src/sqlite.h.in 8b018219ce988913e5977d5de9ab4beb33be23b6
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
@@ -1198,7 +1198,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P cbe0cf9ddf46f0a678c85d49bfa74e3b7712e1a1
-R 0e38789ee4b65d4c643d61f203d35efb
-U drh
-Z 34fd21290591a3034ab211fbb42794da
+P f1ba68f131d2f03e4a7bc50cde23a7609d384279
+R 9363b1bc0cd8b39c47583b734f41ef37
+U dan
+Z 365a1de296dc4c896c5c2cb92f759a75

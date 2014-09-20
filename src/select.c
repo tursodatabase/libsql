@@ -3561,8 +3561,23 @@ static int flattenSubquery(
       pParent->pHaving = substExpr(db, pParent->pHaving, iParent, pSub->pEList);
     }
     if( pSub->pOrderBy ){
+      /* At this point, any non-zero iOrderByCol values indicate that the
+      ** ORDER BY column expression is identical to the iOrderByCol'th
+      ** expression returned by SELECT statement pSub. Since these values
+      ** do not necessarily correspond to columns in SELECT statement pParent,
+      ** zero them before transfering the ORDER BY clause.
+      **
+      ** Not doing this may cause an error if a subsequent call to this
+      ** function attempts to flatten a compound sub-query into pParent
+      ** (the only way this can happen is if the compound sub-query is
+      ** currently part of pSub->pSrc). See ticket [d11a6e908f].  */
+      ExprList *pOrderBy = pSub->pOrderBy;
+      for(i=0; i<pOrderBy->nExpr; i++){
+        pOrderBy->a[i].u.x.iOrderByCol = 0;
+      }
       assert( pParent->pOrderBy==0 );
-      pParent->pOrderBy = pSub->pOrderBy;
+      assert( pSub->pPrior==0 );
+      pParent->pOrderBy = pOrderBy;
       pSub->pOrderBy = 0;
     }else if( pParent->pOrderBy ){
       substExprList(db, pParent->pOrderBy, iParent, pSub->pEList);
