@@ -15,6 +15,17 @@
 #include "sqliteInt.h"
 
 /*
+** Trace output macros
+*/
+#if SELECTTRACE_ENABLED
+/***/ int sqlite3SelectTrace = 0;
+# define SELECTTRACE(K,X)  if(sqlite3SelectTrace&(K)) sqlite3DebugPrintf X
+#else
+# define SELECTTRACE(K,X)
+#endif
+
+
+/*
 ** An instance of the following object is used to record information about
 ** how to process the DISTINCT keyword, to simplify passing that information
 ** into the selectInnerLoop() routine.
@@ -3355,6 +3366,8 @@ static int flattenSubquery(
   }
 
   /***** If we reach this point, flattening is permitted. *****/
+  SELECTTRACE(1, ("flatten %s (term %d) into %s\n",
+                   pSub->zSelLabel, iFrom, p->zSelLabel));
 
   /* Authorize the subquery */
   pParse->zAuthContext = pSubitem->zName;

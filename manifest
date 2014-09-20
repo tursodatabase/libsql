@@ -1,5 +1,5 @@
-C Fix\sthe\susage\sof\sthe\s_GNU_SOURCE\sand\s_BSD_SOURCE\smacros\sin\sthe\smain\ninternal\sheader\sfile,\ssqliteInt.h.\s\sSet\sHAVE_STRCHRNUL\sto\s1\sby\sdefault\son\nLinux\sonly.
-D 2014-09-20T00:35:05.099
+C Enable\sSELECT\squery\splanning\stracing\swhen\scompiled\swith\s\nSQLITE_ENABLE_SELECTTRACE\sand\seither\sSQLITE_DEBUG\sor\sSQLITE_TEST.
+D 2014-09-20T18:18:33.584
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -216,7 +216,7 @@ F src/os_win.c 0a4042ef35f322e86fa01f6c8884c5e645b911e7
 F src/os_win.h 09e751b20bbc107ffbd46e13555dc73576d88e21
 F src/pager.c caab007743821d96752597c9cfd7351654697b06
 F src/pager.h ffd5607f7b3e4590b415b007a4382f693334d428
-F src/parse.y 22d6a074e5f5a7258947a1dc55a9bf946b765dd0
+F src/parse.y 1976d28f168c63c6c14008e9a896620e0c76c25e
 F src/pcache.c 4121a0571c18581ee9f82f086d5e2030051ebd6a
 F src/pcache.h 9b559127b83f84ff76d735c8262f04853be0c59a
 F src/pcache1.c dab8ab930d4a73b99768d881185994f34b80ecaa
@@ -226,12 +226,12 @@ F src/printf.c 3a47f526b173813d9a7f4e7044007771ba68cde1
 F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c a3466128b52a86c466e47ac1a19e2174f7b5cf89
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c 0cd6706fd52ae5db229e9041094db6ec27195335
-F src/shell.c c00220cdd7f2027780bc25b78376c16dc24e4b7d
+F src/select.c 4e00e042994ae38e60576921f78e45311eead49e
+F src/shell.c dad23987c34faddb061a339da3e92e05ccc6935e
 F src/sqlite.h.in 8b018219ce988913e5977d5de9ab4beb33be23b6
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
-F src/sqliteInt.h 6fd801cac974d310949ddefd6a6c6982c9778f3f
+F src/sqliteInt.h 59b0796cd2fa201510ae9850b3b407fa9f997512
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2e99ef7ef16187e17033d9398dc962ce22dab5cb
@@ -1198,8 +1198,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 544664cadfb4e504bc0b321c865d1ecb8a831e20 0fac2c045f47c7735af4eb68ced81d8b43622a1f
-R 8acbfeff4e0806bab5948d89d293bcf4
-T +closed 0fac2c045f47c7735af4eb68ced81d8b43622a1f
+P 59e2c9df02d7e988c5ad44c560ead1e5288b12e7
+R e5319fc7a5c9cf5efe2dc73e6ab8c7e0
 U drh
-Z 03e6ed8cf11426837aa81912fc8917d5
+Z 7cccf9f838c01602cd52161c3ac81285

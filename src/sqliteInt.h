@@ -707,6 +707,17 @@ extern const int sqlite3one;
 #endif
 
 /*
+** SELECTTRACE_ENABLED will be either 1 or 0 depending on whether or not
+** the Select query generator tracing logic is turned on.
+*/
+#if defined(SQLITE_DEBUG) \
+    && (defined(SQLITE_TEST) || defined(SQLITE_ENABLE_SELECTTRACE))
+# define SELECTTRACE_ENABLED 1
+#else
+# define SELECTTRACE_ENABLED 0
+#endif
+
+/*
 ** An instance of the following structure is used to store the busy-handler
 ** callback for a given sqlite handle. 
 **
@@ -2300,6 +2311,9 @@ struct Select {
   u8 op;                 /* One of: TK_UNION TK_ALL TK_INTERSECT TK_EXCEPT */
   u16 selFlags;          /* Various SF_* values */
   int iLimit, iOffset;   /* Memory registers holding LIMIT & OFFSET counters */
+#if SELECTTRACE_ENABLED
+  char zSelLabel[12];    /* Text in comment following SELECT keyword */
+#endif
   int addrOpenEphm[2];   /* OP_OpenEphem opcodes related to this select */
   u64 nSelectRow;        /* Estimated number of result rows */
   SrcList *pSrc;         /* The FROM clause */
@@ -2558,6 +2572,9 @@ struct Parse {
   int regRowid;        /* Register holding rowid of CREATE TABLE entry */
   int regRoot;         /* Register holding root page number for new objects */
   int nMaxArg;         /* Max args passed to user function by sub-program */
+#if SELECTTRACE_ENABLED
+  int nSelect;         /* Number of SELECT statements seen */
+#endif
 #ifndef SQLITE_OMIT_SHARED_CACHE
   int nTableLock;        /* Number of locks in aTableLock */
   TableLock *aTableLock; /* Required table locks for shared-cache mode */
