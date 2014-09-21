@@ -156,8 +156,14 @@ do_test aggnested-3.2 {
      (SELECT value1 as xyz, max(x1) AS pqr
         FROM t1
        GROUP BY id1);
+    SELECT
+     (SELECT sum(value2<>xyz) FROM t2)
+    FROM
+     (SELECT value1 as xyz, max(x1) AS pqr
+        FROM t1
+       GROUP BY id1);
   }
-} {0}
+} {1 0}
 do_test aggnested-3.3 {
   db eval {
     DROP TABLE IF EXISTS t1;

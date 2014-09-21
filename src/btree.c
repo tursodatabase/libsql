@@ -606,7 +606,7 @@ static int saveCursorPosition(BtCursor *pCur){
   ** data.
   */
   if( 0==pCur->apPage[0]->intKey ){
-    void *pKey = sqlite3Malloc( (int)pCur->nKey );
+    void *pKey = sqlite3Malloc( pCur->nKey );
     if( pKey ){
       rc = sqlite3BtreeKey(pCur, 0, (int)pCur->nKey, pKey);
       if( rc==SQLITE_OK ){
@@ -4746,14 +4746,14 @@ int sqlite3BtreeMovetoUnpacked(
           ** single byte varint and the record fits entirely on the main
           ** b-tree page.  */
           testcase( pCell+nCell+1==pPage->aDataEnd );
-          c = xRecordCompare(nCell, (void*)&pCell[1], pIdxKey, 0);
+          c = xRecordCompare(nCell, (void*)&pCell[1], pIdxKey);
         }else if( !(pCell[1] & 0x80) 
           && (nCell = ((nCell&0x7f)<<7) + pCell[1])<=pPage->maxLocal
         ){
           /* The record-size field is a 2 byte varint and the record 
           ** fits entirely on the main b-tree page.  */
           testcase( pCell+nCell+2==pPage->aDataEnd );
-          c = xRecordCompare(nCell, (void*)&pCell[2], pIdxKey, 0);
+          c = xRecordCompare(nCell, (void*)&pCell[2], pIdxKey);
         }else{
           /* The record flows over onto one or more overflow pages. In
           ** this case the whole cell needs to be parsed, a buffer allocated
@@ -4774,7 +4774,7 @@ int sqlite3BtreeMovetoUnpacked(
             sqlite3_free(pCellKey);
             goto moveto_finish;
           }
-          c = xRecordCompare(nCell, pCellKey, pIdxKey, 0);
+          c = xRecordCompare(nCell, pCellKey, pIdxKey);
           sqlite3_free(pCellKey);
         }
         assert( 

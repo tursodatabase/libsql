@@ -250,6 +250,23 @@ struct sqlite3_api_routines {
   const char *(*uri_parameter)(const char*,const char*);
   char *(*vsnprintf)(int,char*,const char*,va_list);
   int (*wal_checkpoint_v2)(sqlite3*,const char*,int,int*,int*);
+  /* Version 3.8.7 and later */
+  int (*auto_extension)(void(*)(void));
+  int (*bind_blob64)(sqlite3_stmt*,int,const void*,sqlite3_uint64,
+                     void(*)(void*));
+  int (*bind_text64)(sqlite3_stmt*,int,const char*,sqlite3_uint64,
+                      void(*)(void*),unsigned char);
+  int (*cancel_auto_extension)(void(*)(void));
+  int (*load_extension)(sqlite3*,const char*,const char*,char**);
+  void *(*malloc64)(sqlite3_uint64);
+  sqlite3_uint64 (*msize)(void*);
+  void *(*realloc64)(void*,sqlite3_uint64);
+  void (*reset_auto_extension)(void);
+  void (*result_blob64)(sqlite3_context*,const void*,sqlite3_uint64,
+                        void(*)(void*));
+  void (*result_text64)(sqlite3_context*,const char*,sqlite3_uint64,
+                         void(*)(void*), unsigned char);
+  int (*strglob)(const char*,const char*);
 };
 
 /*
@@ -467,6 +484,19 @@ struct sqlite3_api_routines {
 #define sqlite3_uri_parameter          sqlite3_api->uri_parameter
 #define sqlite3_uri_vsnprintf          sqlite3_api->vsnprintf
 #define sqlite3_wal_checkpoint_v2      sqlite3_api->wal_checkpoint_v2
+/* Version 3.8.7 and later */
+#define sqlite3_auto_extension         sqlite3_api->auto_extension
+#define sqlite3_bind_blob64            sqlite3_api->bind_blob64
+#define sqlite3_bind_text64            sqlite3_api->bind_text64
+#define sqlite3_cancel_auto_extension  sqlite3_api->cancel_auto_extension
+#define sqlite3_load_extension         sqlite3_api->load_extension
+#define sqlite3_malloc64               sqlite3_api->malloc64
+#define sqlite3_msize                  sqlite3_api->msize
+#define sqlite3_realloc64              sqlite3_api->realloc64
+#define sqlite3_reset_auto_extension   sqlite3_api->reset_auto_extension
+#define sqlite3_result_blob64          sqlite3_api->result_blob64
+#define sqlite3_result_text64          sqlite3_api->result_text64
+#define sqlite3_strglob                sqlite3_api->strglob
 #endif /* SQLITE_CORE */
 
 #ifndef SQLITE_CORE

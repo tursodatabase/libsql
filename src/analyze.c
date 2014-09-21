@@ -1201,7 +1201,8 @@ static void analyzeOneTable(
 
     /* Add the entry to the stat1 table. */
     callStatGet(v, regStat4, STAT_GET_STAT1, regStat1);
-    sqlite3VdbeAddOp4(v, OP_MakeRecord, regTabname, 3, regTemp, "aaa", 0);
+    assert( "BBB"[0]==SQLITE_AFF_TEXT );
+    sqlite3VdbeAddOp4(v, OP_MakeRecord, regTabname, 3, regTemp, "BBB", 0);
     sqlite3VdbeAddOp2(v, OP_NewRowid, iStatCur, regNewRowid);
     sqlite3VdbeAddOp3(v, OP_Insert, iStatCur, regTemp, regNewRowid);
     sqlite3VdbeChangeP5(v, OPFLAG_APPEND);
@@ -1264,7 +1265,8 @@ static void analyzeOneTable(
     sqlite3VdbeAddOp2(v, OP_Count, iTabCur, regStat1);
     jZeroRows = sqlite3VdbeAddOp1(v, OP_IfNot, regStat1); VdbeCoverage(v);
     sqlite3VdbeAddOp2(v, OP_Null, 0, regIdxname);
-    sqlite3VdbeAddOp4(v, OP_MakeRecord, regTabname, 3, regTemp, "aaa", 0);
+    assert( "BBB"[0]==SQLITE_AFF_TEXT );
+    sqlite3VdbeAddOp4(v, OP_MakeRecord, regTabname, 3, regTemp, "BBB", 0);
     sqlite3VdbeAddOp2(v, OP_NewRowid, iStatCur, regNewRowid);
     sqlite3VdbeAddOp3(v, OP_Insert, iStatCur, regTemp, regNewRowid);
     sqlite3VdbeChangeP5(v, OPFLAG_APPEND);
