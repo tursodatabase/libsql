@@ -1069,9 +1069,7 @@ Select *sqlite3SelectDup(sqlite3 *db, Select *p, int flags){
   pNew->addrOpenEphm[1] = -1;
   pNew->nSelectRow = p->nSelectRow;
   pNew->pWith = withDup(db, p->pWith);
-#if SELECTTRACE_ENABLED
-  memcpy(pNew->zSelLabel, p->zSelLabel, sizeof(p->zSelLabel));
-#endif
+  sqlite3SelectSetName(pNew, p->zSelName);
   return pNew;
 }
 #else

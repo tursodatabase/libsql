@@ -2311,7 +2311,7 @@ struct Select {
   u16 selFlags;          /* Various SF_* values */
   int iLimit, iOffset;   /* Memory registers holding LIMIT & OFFSET counters */
 #if SELECTTRACE_ENABLED
-  char zSelLabel[12];    /* Text in comment following SELECT keyword */
+  char zSelName[12];     /* Symbolic name of this SELECT use for debugging */
 #endif
   int addrOpenEphm[2];   /* OP_OpenEphem opcodes related to this select */
   u64 nSelectRow;        /* Estimated number of result rows */
@@ -2573,6 +2573,7 @@ struct Parse {
   int nMaxArg;         /* Max args passed to user function by sub-program */
 #if SELECTTRACE_ENABLED
   int nSelect;         /* Number of SELECT statements seen */
+  int nSelectIndent;   /* How far to indent SELECTTRACE() output */
 #endif
 #ifndef SQLITE_OMIT_SHARED_CACHE
   int nTableLock;        /* Number of locks in aTableLock */
@@ -3308,6 +3309,11 @@ ExprList *sqlite3ExprListDup(sqlite3*,ExprList*,int);
 SrcList *sqlite3SrcListDup(sqlite3*,SrcList*,int);
 IdList *sqlite3IdListDup(sqlite3*,IdList*);
 Select *sqlite3SelectDup(sqlite3*,Select*,int);
+#if SELECTTRACE_ENABLED
+void sqlite3SelectSetName(Select*,const char*);
+#else
+# define sqlite3SelectSetName(A,B)
+#endif
 void sqlite3FuncDefInsert(FuncDefHash*, FuncDef*);
 FuncDef *sqlite3FindFunction(sqlite3*,const char*,int,int,u8,u8);
 void sqlite3RegisterBuiltinFunctions(sqlite3*);
