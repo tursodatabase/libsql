@@ -1,5 +1,5 @@
-C Add\sthe\s"showauth"\sextension\sin\sext/misc.
-D 2014-09-21T17:51:37.899
+C Add\stest\scases\sfor\sticket\s[89398880bcfff9].
+D 2014-09-21T20:31:26.194
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -862,7 +862,7 @@ F test/sqllimits1.test b1aae27cc98eceb845e7f7adf918561256e31298
 F test/stat.test 76fd746b85459e812a0193410fb599f0531f22de
 F test/stmt.test 25d64e3dbf9a3ce89558667d7f39d966fe2a71b9
 F test/subquery.test 666fdecceac258f5fd84bed09a64e49d9f37edd9
-F test/subquery2.test 91e1e364072aeff431d1f9689b15147e421d88c7
+F test/subquery2.test 438f8a7da1457277b22e4176510f7659b286995f
 F test/subselect.test d24fd8757daf97dafd2e889c73ea4c4272dcf4e4
 F test/substr.test 18f57c4ca8a598805c4d64e304c418734d843c1a
 F test/superlock.test 1cde669f68d2dd37d6c9bd35eee1d95491ae3fc2
@@ -1199,7 +1199,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c0b61f7092a7fd2c5f51db26ce7a7a5c75c227fe
-R 90118272bfe5d13644b89a2578b8154b
+P 28d52c1c38d849f099bc777f5987d1ef89680c2a
+R df45958fe8f93552efb788581c98f0f7
 U drh
-Z 3c4b3bea487974dee315367e89ebebc8
+Z e77b30925e1036bea887cc5097672af2
