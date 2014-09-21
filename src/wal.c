@@ -574,7 +574,7 @@ static volatile WalIndexHdr *walIndexHdr(Wal *pWal){
 ** The argument to this macro must be of type u32. On a little-endian
 ** architecture, it returns the u32 value that results from interpreting
 ** the 4 bytes as a big-endian value. On a big-endian architecture, it
-** returns the value that would be produced by intepreting the 4 bytes
+** returns the value that would be produced by interpreting the 4 bytes
 ** of the input value as a little-endian integer.
 */
 #define BYTESWAP32(x) ( \
@@ -988,7 +988,7 @@ static int walIndexAppend(Wal *pWal, u32 iFrame, u32 iPage){
     assert( idx <= HASHTABLE_NSLOT/2 + 1 );
     
     /* If this is the first entry to be added to this hash-table, zero the
-    ** entire hash table and aPgno[] array before proceding. 
+    ** entire hash table and aPgno[] array before proceeding. 
     */
     if( idx==1 ){
       int nByte = (int)((u8 *)&aHash[HASHTABLE_NSLOT] - (u8 *)&aPgno[1]);
@@ -1651,7 +1651,7 @@ static int walPagesize(Wal *pWal){
 ** database file.
 **
 ** This routine uses and updates the nBackfill field of the wal-index header.
-** This is the only routine tha will increase the value of nBackfill.  
+** This is the only routine that will increase the value of nBackfill.  
 ** (A WAL reset or recovery will revert nBackfill to zero, but not increase
 ** its value.)
 **
@@ -1958,7 +1958,7 @@ static int walIndexTryHdr(Wal *pWal, int *pChanged){
 ** wal-index from the WAL before returning.
 **
 ** Set *pChanged to 1 if the wal-index header value in pWal->hdr is
-** changed by this opertion.  If pWal->hdr is unchanged, set *pChanged
+** changed by this operation.  If pWal->hdr is unchanged, set *pChanged
 ** to 0.
 **
 ** If the wal-index header is successfully read, return SQLITE_OK. 
@@ -2162,7 +2162,7 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
         ** may have been appended to the log before READ_LOCK(0) was obtained.
         ** When holding READ_LOCK(0), the reader ignores the entire log file,
         ** which implies that the database file contains a trustworthy
-        ** snapshoT. Since holding READ_LOCK(0) prevents a checkpoint from
+        ** snapshot. Since holding READ_LOCK(0) prevents a checkpoint from
         ** happening, this is usually correct.
         **
         ** However, if frames have been appended to the log (or if the log 
@@ -2864,7 +2864,7 @@ int sqlite3WalFrames(
   **
   ** Padding and syncing only occur if this set of frames complete a
   ** transaction and if PRAGMA synchronous=FULL.  If synchronous==NORMAL
-  ** or synchonous==OFF, then no padding or syncing are needed.
+  ** or synchronous==OFF, then no padding or syncing are needed.
   **
   ** If SQLITE_IOCAP_POWERSAFE_OVERWRITE is defined, then padding is not
   ** needed and only the sync is done.  If padding is needed, then the

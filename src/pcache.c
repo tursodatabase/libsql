@@ -45,23 +45,6 @@ struct PCache {
 
 /********************************** Linked List Management ********************/
 
-#if !defined(NDEBUG) && defined(SQLITE_ENABLE_EXPENSIVE_ASSERT)
-/*
-** Check that the pCache->pSynced variable is set correctly. If it
-** is not, either fail an assert or return zero. Otherwise, return
-** non-zero. This is only used in debugging builds, as follows:
-**
-**   expensive_assert( pcacheCheckSynced(pCache) );
-*/
-static int pcacheCheckSynced(PCache *pCache){
-  PgHdr *p;
-  for(p=pCache->pDirtyTail; p!=pCache->pSynced; p=p->pDirtyPrev){
-    assert( p->nRef || (p->flags&PGHDR_NEED_SYNC) );
-  }
-  return (p==0 || p->nRef || (p->flags&PGHDR_NEED_SYNC)==0);
-}
-#endif /* !NDEBUG && SQLITE_ENABLE_EXPENSIVE_ASSERT */
-
 /* Allowed values for second argument to pcacheManageDirtyList() */
 #define PCACHE_DIRTYLIST_REMOVE   1    /* Remove pPage from dirty list */
 #define PCACHE_DIRTYLIST_ADD      2    /* Add pPage to the dirty list */
@@ -107,7 +90,6 @@ static void pcacheManageDirtyList(PgHdr *pPage, u8 addRemove){
     }
     pPage->pDirtyNext = 0;
     pPage->pDirtyPrev = 0;
-    expensive_assert( pcacheCheckSynced(p) );
   }
   if( addRemove & PCACHE_DIRTYLIST_ADD ){
     assert( pPage->pDirtyNext==0 && pPage->pDirtyPrev==0 && p->pDirty!=pPage );
@@ -116,18 +98,17 @@ static void pcacheManageDirtyList(PgHdr *pPage, u8 addRemove){
     if( pPage->pDirtyNext ){
       assert( pPage->pDirtyNext->pDirtyPrev==0 );
       pPage->pDirtyNext->pDirtyPrev = pPage;
-    }else if( p->bPurgeable ){
-      assert( p->eCreate==2 );
-      p->eCreate = 1;
+    }else{
+      p->pDirtyTail = pPage;
+      if( p->bPurgeable ){
+        assert( p->eCreate==2 );
+        p->eCreate = 1;
+      }
     }
     p->pDirty = pPage;
-    if( !p->pDirtyTail ){
-      p->pDirtyTail = pPage;
-    }
     if( !p->pSynced && 0==(pPage->flags&PGHDR_NEED_SYNC) ){
       p->pSynced = pPage;
     }
-    expensive_assert( pcacheCheckSynced(p) );
   }
 }
 
@@ -304,7 +285,6 @@ int sqlite3PcacheFetchStress(
   ** cleared), but if that is not possible settle for any other 
   ** unreferenced dirty page.
   */
-  expensive_assert( pcacheCheckSynced(pCache) );
   for(pPg=pCache->pSynced; 
       pPg && (pPg->nRef || (pPg->flags&PGHDR_NEED_SYNC)); 
       pPg=pPg->pDirtyPrev
@@ -390,7 +370,7 @@ PgHdr *sqlite3PcacheFetchFinish(
 
 /*
 ** Decrement the reference count on a page. If the page is clean and the
-** reference count drops to 0, then it is made elible for recycling.
+** reference count drops to 0, then it is made eligible for recycling.
 */
 void SQLITE_NOINLINE sqlite3PcacheRelease(PgHdr *p){
   assert( p->nRef>0 );
@@ -399,7 +379,7 @@ void SQLITE_NOINLINE sqlite3PcacheRelease(PgHdr *p){
     p->pCache->nRef--;
     if( (p->flags&PGHDR_DIRTY)==0 ){
       pcacheUnpin(p);
-    }else{
+    }else if( p->pDirtyPrev!=0 ){
       /* Move the page to the head of the dirty list. */
       pcacheManageDirtyList(p, PCACHE_DIRTYLIST_FRONT);
     }

@@ -504,7 +504,7 @@ static void test_extract(
       sqlite3_result_value(context, &mem);
     }
 
-    sqlite3DbFree(db, mem.zMalloc);
+    if( mem.szMalloc ) sqlite3DbFree(db, mem.zMalloc);
   }
 }
 
@@ -591,7 +591,7 @@ static void test_decode(
 
     Tcl_ListObjAppendElement(0, pRet, pVal);
 
-    if( mem.zMalloc ){
+    if( mem.szMalloc ){
       sqlite3DbFree(db, mem.zMalloc);
     }
   }

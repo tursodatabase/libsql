@@ -47,6 +47,15 @@
 # define _LARGEFILE_SOURCE 1
 #endif
 
+/* Needed for various definitions... */
+#if defined(__GNUC__) && !defined(_GNU_SOURCE)
+# define _GNU_SOURCE
+#endif
+
+#if defined(__OpenBSD__) && !defined(_BSD_SOURCE)
+# define _BSD_SOURCE
+#endif
+
 /*
 ** For MinGW, check to see if we can include the header file containing its
 ** version information, among other things.  Normally, this internal MinGW
@@ -102,15 +111,6 @@
 #pragma warn -aus /* Assigned value is never used */
 #pragma warn -csu /* Comparing signed and unsigned */
 #pragma warn -spa /* Suspicious pointer arithmetic */
-#endif
-
-/* Needed for various definitions... */
-#ifndef _GNU_SOURCE
-# define _GNU_SOURCE
-#endif
-
-#if defined(__OpenBSD__) && !defined(_BSD_SOURCE)
-# define _BSD_SOURCE
 #endif
 
 /*
@@ -351,7 +351,7 @@
 #endif
 
 /*
-** Return true (non-zero) if the input is a integer that is too large
+** Return true (non-zero) if the input is an integer that is too large
 ** to fit in 32-bits.  This macro is used inside of various testcase()
 ** macros to verify that we have tested SQLite for large-file support.
 */
@@ -639,7 +639,7 @@ extern const int sqlite3one;
 ** all alignment restrictions correct.
 **
 ** Except, if SQLITE_4_BYTE_ALIGNED_MALLOC is defined, then the
-** underlying malloc() implemention might return us 4-byte aligned
+** underlying malloc() implementation might return us 4-byte aligned
 ** pointers.  In that case, only verify 4-byte alignment.
 */
 #ifdef SQLITE_4_BYTE_ALIGNED_MALLOC
@@ -704,6 +704,16 @@ extern const int sqlite3one;
 # define SQLITE_ENABLE_STAT3_OR_STAT4 1
 #elif SQLITE_ENABLE_STAT3_OR_STAT4
 # undef SQLITE_ENABLE_STAT3_OR_STAT4
+#endif
+
+/*
+** SELECTTRACE_ENABLED will be either 1 or 0 depending on whether or not
+** the Select query generator tracing logic is turned on.
+*/
+#if defined(SQLITE_DEBUG) || defined(SQLITE_ENABLE_SELECTTRACE)
+# define SELECTTRACE_ENABLED 1
+#else
+# define SELECTTRACE_ENABLED 0
 #endif
 
 /*
@@ -998,6 +1008,45 @@ struct FuncDefHash {
   FuncDef *a[23];       /* Hash table for functions */
 };
 
+#ifdef SQLITE_USER_AUTHENTICATION
+/*
+** Information held in the "sqlite3" database connection object and used
+** to manage user authentication.
+*/
+typedef struct sqlite3_userauth sqlite3_userauth;
+struct sqlite3_userauth {
+  u8 authLevel;                 /* Current authentication level */
+  int nAuthPW;                  /* Size of the zAuthPW in bytes */
+  char *zAuthPW;                /* Password used to authenticate */
+  char *zAuthUser;              /* User name used to authenticate */
+};
+
+/* Allowed values for sqlite3_userauth.authLevel */
+#define UAUTH_Unknown     0     /* Authentication not yet checked */
+#define UAUTH_Fail        1     /* User authentication failed */
+#define UAUTH_User        2     /* Authenticated as a normal user */
+#define UAUTH_Admin       3     /* Authenticated as an administrator */
+
+/* Functions used only by user authorization logic */
+int sqlite3UserAuthTable(const char*);
+int sqlite3UserAuthCheckLogin(sqlite3*,const char*,u8*);
+void sqlite3UserAuthInit(sqlite3*);
+void sqlite3CryptFunc(sqlite3_context*,int,sqlite3_value**);
+
+#endif /* SQLITE_USER_AUTHENTICATION */
+
+/*
+** typedef for the authorization callback function.
+*/
+#ifdef SQLITE_USER_AUTHENTICATION
+  typedef int (*sqlite3_xauth)(void*,int,const char*,const char*,const char*,
+                               const char*, const char*);
+#else
+  typedef int (*sqlite3_xauth)(void*,int,const char*,const char*,const char*,
+                               const char*);
+#endif
+
+
 /*
 ** Each database connection is an instance of the following structure.
 */
@@ -1065,8 +1114,7 @@ struct sqlite3 {
   } u1;
   Lookaside lookaside;          /* Lookaside malloc configuration */
 #ifndef SQLITE_OMIT_AUTHORIZATION
-  int (*xAuth)(void*,int,const char*,const char*,const char*,const char*);
-                                /* Access authorization function */
+  sqlite3_xauth xAuth;          /* Access authorization function */
   void *pAuthArg;               /* 1st argument to the access auth function */
 #endif
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
@@ -1092,7 +1140,6 @@ struct sqlite3 {
   i64 nDeferredCons;            /* Net deferred constraints this transaction. */
   i64 nDeferredImmCons;         /* Net deferred immediate constraints */
   int *pnBytesFreed;            /* If not NULL, increment this in DbFree() */
-
 #ifdef SQLITE_ENABLE_UNLOCK_NOTIFY
   /* The following variables are all protected by the STATIC_MASTER 
   ** mutex, not by sqlite3.mutex. They are used by code in notify.c. 
@@ -1109,6 +1156,9 @@ struct sqlite3 {
   void *pUnlockArg;                     /* Argument to xUnlockNotify */
   void (*xUnlockNotify)(void **, int);  /* Unlock notify callback */
   sqlite3 *pNextBlocked;        /* Next in list of all blocked connections */
+#endif
+#ifdef SQLITE_USER_AUTHENTICATION
+  sqlite3_userauth auth;        /* User authentication information */
 #endif
 };
 
@@ -1169,7 +1219,6 @@ struct sqlite3 {
 #define SQLITE_Transitive     0x0200   /* Transitive constraints */
 #define SQLITE_OmitNoopJoin   0x0400   /* Omit unused tables in joins */
 #define SQLITE_Stat3          0x0800   /* Use the SQLITE_STAT3 table */
-#define SQLITE_AdjustOutEst   0x1000   /* Adjust output estimates using WHERE */
 #define SQLITE_AllOpts        0xffff   /* All optimizations */
 
 /*
@@ -1256,6 +1305,7 @@ struct FuncDestructor {
 #define SQLITE_FUNC_COALESCE 0x200 /* Built-in coalesce() or ifnull() */
 #define SQLITE_FUNC_UNLIKELY 0x400 /* Built-in unlikely() function */
 #define SQLITE_FUNC_CONSTANT 0x800 /* Constant inputs give a constant output */
+#define SQLITE_FUNC_MINMAX  0x1000 /* True for min() and max() aggregates */
 
 /*
 ** The following three macros, FUNCTION(), LIKEFUNC() and AGGREGATE() are
@@ -1302,6 +1352,9 @@ struct FuncDestructor {
    (void *)arg, 0, likeFunc, 0, 0, #zName, 0, 0}
 #define AGGREGATE(zName, nArg, arg, nc, xStep, xFinal) \
   {nArg, SQLITE_UTF8|(nc*SQLITE_FUNC_NEEDCOLL), \
+   SQLITE_INT_TO_PTR(arg), 0, 0, xStep,xFinal,#zName,0,0}
+#define AGGREGATE2(zName, nArg, arg, nc, xStep, xFinal, extraFlags) \
+  {nArg, SQLITE_UTF8|(nc*SQLITE_FUNC_NEEDCOLL)|extraFlags, \
    SQLITE_INT_TO_PTR(arg), 0, 0, xStep,xFinal,#zName,0,0}
 
 /*
@@ -1389,18 +1442,18 @@ struct CollSeq {
 ** 't' for SQLITE_AFF_TEXT.  But we can save a little space and improve
 ** the speed a little by numbering the values consecutively.  
 **
-** But rather than start with 0 or 1, we begin with 'a'.  That way,
+** But rather than start with 0 or 1, we begin with 'A'.  That way,
 ** when multiple affinity types are concatenated into a string and
 ** used as the P4 operand, they will be more readable.
 **
 ** Note also that the numeric types are grouped together so that testing
-** for a numeric type is a single comparison.
+** for a numeric type is a single comparison.  And the NONE type is first.
 */
-#define SQLITE_AFF_TEXT     'a'
-#define SQLITE_AFF_NONE     'b'
-#define SQLITE_AFF_NUMERIC  'c'
-#define SQLITE_AFF_INTEGER  'd'
-#define SQLITE_AFF_REAL     'e'
+#define SQLITE_AFF_NONE     'A'
+#define SQLITE_AFF_TEXT     'B'
+#define SQLITE_AFF_NUMERIC  'C'
+#define SQLITE_AFF_INTEGER  'D'
+#define SQLITE_AFF_REAL     'E'
 
 #define sqlite3IsNumericAffinity(X)  ((X)>=SQLITE_AFF_NUMERIC)
 
@@ -1408,7 +1461,7 @@ struct CollSeq {
 ** The SQLITE_AFF_MASK values masks off the significant bits of an
 ** affinity value. 
 */
-#define SQLITE_AFF_MASK     0x67
+#define SQLITE_AFF_MASK     0x47
 
 /*
 ** Additional bit values that can be ORed with an affinity without
@@ -1419,10 +1472,10 @@ struct CollSeq {
 ** operator is NULL.  It is added to certain comparison operators to
 ** prove that the operands are always NOT NULL.
 */
-#define SQLITE_JUMPIFNULL   0x08  /* jumps if either operand is NULL */
-#define SQLITE_STOREP2      0x10  /* Store result in reg[P2] rather than jump */
+#define SQLITE_JUMPIFNULL   0x10  /* jumps if either operand is NULL */
+#define SQLITE_STOREP2      0x20  /* Store result in reg[P2] rather than jump */
 #define SQLITE_NULLEQ       0x80  /* NULL=NULL */
-#define SQLITE_NOTNULL      0x88  /* Assert that operands are never NULL */
+#define SQLITE_NOTNULL      0x90  /* Assert that operands are never NULL */
 
 /*
 ** An object of this type is created for each virtual table present in
@@ -2225,17 +2278,22 @@ struct NameContext {
   NameContext *pNext;  /* Next outer name context.  NULL for outermost */
   int nRef;            /* Number of names resolved by this context */
   int nErr;            /* Number of errors encountered while resolving names */
-  u8 ncFlags;          /* Zero or more NC_* flags defined below */
+  u16 ncFlags;         /* Zero or more NC_* flags defined below */
 };
 
 /*
 ** Allowed values for the NameContext, ncFlags field.
+**
+** Note:  NC_MinMaxAgg must have the same value as SF_MinMaxAgg and
+** SQLITE_FUNC_MINMAX.
+** 
 */
-#define NC_AllowAgg  0x01    /* Aggregate functions are allowed here */
-#define NC_HasAgg    0x02    /* One or more aggregate functions seen */
-#define NC_IsCheck   0x04    /* True if resolving names in a CHECK constraint */
-#define NC_InAggFunc 0x08    /* True if analyzing arguments to an agg func */
-#define NC_PartIdx   0x10    /* True if resolving a partial index WHERE */
+#define NC_AllowAgg  0x0001  /* Aggregate functions are allowed here */
+#define NC_HasAgg    0x0002  /* One or more aggregate functions seen */
+#define NC_IsCheck   0x0004  /* True if resolving names in a CHECK constraint */
+#define NC_InAggFunc 0x0008  /* True if analyzing arguments to an agg func */
+#define NC_PartIdx   0x0010  /* True if resolving a partial index WHERE */
+#define NC_MinMaxAgg 0x1000  /* min/max aggregates seen.  See note above */
 
 /*
 ** An instance of the following structure contains all information
@@ -2262,6 +2320,9 @@ struct Select {
   u8 op;                 /* One of: TK_UNION TK_ALL TK_INTERSECT TK_EXCEPT */
   u16 selFlags;          /* Various SF_* values */
   int iLimit, iOffset;   /* Memory registers holding LIMIT & OFFSET counters */
+#if SELECTTRACE_ENABLED
+  char zSelName[12];     /* Symbolic name of this SELECT use for debugging */
+#endif
   int addrOpenEphm[2];   /* OP_OpenEphem opcodes related to this select */
   u64 nSelectRow;        /* Estimated number of result rows */
   SrcList *pSrc;         /* The FROM clause */
@@ -2286,13 +2347,13 @@ struct Select {
 #define SF_UsesEphemeral   0x0008  /* Uses the OpenEphemeral opcode */
 #define SF_Expanded        0x0010  /* sqlite3SelectExpand() called on this */
 #define SF_HasTypeInfo     0x0020  /* FROM subqueries have Table metadata */
-                    /*     0x0040  NOT USED */
+#define SF_Compound        0x0040  /* Part of a compound query */
 #define SF_Values          0x0080  /* Synthesized from VALUES clause */
                     /*     0x0100  NOT USED */
 #define SF_NestedFrom      0x0200  /* Part of a parenthesized FROM clause */
 #define SF_MaybeConvert    0x0400  /* Need convertCompoundSelectToSubquery() */
 #define SF_Recursive       0x0800  /* The recursive part of a recursive CTE */
-#define SF_Compound        0x1000  /* Part of a compound query */
+#define SF_MinMaxAgg       0x1000  /* Aggregate containing min() or max() */
 
 
 /*
@@ -2520,6 +2581,10 @@ struct Parse {
   int regRowid;        /* Register holding rowid of CREATE TABLE entry */
   int regRoot;         /* Register holding root page number for new objects */
   int nMaxArg;         /* Max args passed to user function by sub-program */
+#if SELECTTRACE_ENABLED
+  int nSelect;         /* Number of SELECT statements seen */
+  int nSelectIndent;   /* How far to indent SELECTTRACE() output */
+#endif
 #ifndef SQLITE_OMIT_SHARED_CACHE
   int nTableLock;        /* Number of locks in aTableLock */
   TableLock *aTableLock; /* Required table locks for shared-cache mode */
@@ -2894,8 +2959,8 @@ int sqlite3CantopenError(int);
 
 /*
 ** FTS4 is really an extension for FTS3.  It is enabled using the
-** SQLITE_ENABLE_FTS3 macro.  But to avoid confusion we also all
-** the SQLITE_ENABLE_FTS4 macro to serve as an alisse for SQLITE_ENABLE_FTS3.
+** SQLITE_ENABLE_FTS3 macro.  But to avoid confusion we also call
+** the SQLITE_ENABLE_FTS4 macro to serve as an alias for SQLITE_ENABLE_FTS3.
 */
 #if defined(SQLITE_ENABLE_FTS4) && !defined(SQLITE_ENABLE_FTS3)
 # define SQLITE_ENABLE_FTS3
@@ -2942,15 +3007,15 @@ int sqlite3Strlen30(const char*);
 
 int sqlite3MallocInit(void);
 void sqlite3MallocEnd(void);
-void *sqlite3Malloc(int);
-void *sqlite3MallocZero(int);
-void *sqlite3DbMallocZero(sqlite3*, int);
-void *sqlite3DbMallocRaw(sqlite3*, int);
+void *sqlite3Malloc(u64);
+void *sqlite3MallocZero(u64);
+void *sqlite3DbMallocZero(sqlite3*, u64);
+void *sqlite3DbMallocRaw(sqlite3*, u64);
 char *sqlite3DbStrDup(sqlite3*,const char*);
-char *sqlite3DbStrNDup(sqlite3*,const char*, int);
-void *sqlite3Realloc(void*, int);
-void *sqlite3DbReallocOrFree(sqlite3 *, void *, int);
-void *sqlite3DbRealloc(sqlite3 *, void *, int);
+char *sqlite3DbStrNDup(sqlite3*,const char*, u64);
+void *sqlite3Realloc(void*, u64);
+void *sqlite3DbReallocOrFree(sqlite3 *, void *, u64);
+void *sqlite3DbRealloc(sqlite3 *, void *, u64);
 void sqlite3DbFree(sqlite3*, void*);
 int sqlite3MallocSize(void*);
 int sqlite3DbMallocSize(sqlite3*, void*);
@@ -3254,6 +3319,11 @@ ExprList *sqlite3ExprListDup(sqlite3*,ExprList*,int);
 SrcList *sqlite3SrcListDup(sqlite3*,SrcList*,int);
 IdList *sqlite3IdListDup(sqlite3*,IdList*);
 Select *sqlite3SelectDup(sqlite3*,Select*,int);
+#if SELECTTRACE_ENABLED
+void sqlite3SelectSetName(Select*,const char*);
+#else
+# define sqlite3SelectSetName(A,B)
+#endif
 void sqlite3FuncDefInsert(FuncDefHash*, FuncDef*);
 FuncDef *sqlite3FindFunction(sqlite3*,const char*,int,int,u8,u8);
 void sqlite3RegisterBuiltinFunctions(sqlite3*);
@@ -3491,7 +3561,7 @@ int sqlite3Stat4Column(sqlite3*, const void*, int, int, sqlite3_value**);
 /*
 ** The interface to the LEMON-generated parser
 */
-void *sqlite3ParserAlloc(void*(*)(size_t));
+void *sqlite3ParserAlloc(void*(*)(u64));
 void sqlite3ParserFree(void*, void(*)(void*));
 void sqlite3Parser(void*, int, Token, Parse*);
 #ifdef YYTRACKMAXSTACKDEPTH

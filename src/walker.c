@@ -19,7 +19,7 @@
 
 /*
 ** Walk an expression tree.  Invoke the callback once for each node
-** of the expression, while decending.  (In other words, the callback
+** of the expression, while descending.  (In other words, the callback
 ** is invoked before visiting children.)
 **
 ** The return value from the callback should be one of the WRC_*

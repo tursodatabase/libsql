@@ -127,7 +127,7 @@ void sqlite3BeginTrigger(
   **                                                 ^^^^^^^^
   **
   ** To maintain backwards compatibility, ignore the database
-  ** name on pTableName if we are reparsing our of SQLITE_MASTER.
+  ** name on pTableName if we are reparsing out of SQLITE_MASTER.
   */
   if( db->init.busy && iDb!=1 ){
     sqlite3DbFree(db, pTableName->a[0].zDatabase);

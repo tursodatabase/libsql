@@ -176,7 +176,7 @@ static int whereLoopResize(sqlite3*, WhereLoop*, int);
 ** 1.  Then using those as a basis to compute the N best WherePath objects
 ** of length 2.  And so forth until the length of WherePaths equals the
 ** number of nodes in the FROM clause.  The best (lowest cost) WherePath
-** at the end is the choosen query plan.
+** at the end is the chosen query plan.
 */
 struct WherePath {
   Bitmask maskLoop;     /* Bitmask of all WhereLoop objects in this path */

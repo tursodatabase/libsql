@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** This file implements a external (disk-based) database using BTrees.
+** This file implements an external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
 ** Including a description of file format and an overview of operation.
 */
@@ -612,7 +612,7 @@ static int saveCursorPosition(BtCursor *pCur){
   ** data.
   */
   if( 0==pCur->apPage[0]->intKey ){
-    void *pKey = sqlite3Malloc( (int)pCur->nKey );
+    void *pKey = sqlite3Malloc( pCur->nKey );
     if( pKey ){
       rc = sqlite3BtreeKey(pCur, 0, (int)pCur->nKey, pKey);
       if( rc==SQLITE_OK ){
@@ -1150,7 +1150,7 @@ static void ptrmapPutOvflPtr(MemPage *pPage, u8 *pCell, int *pRC){
 */
 static int defragmentPage(MemPage *pPage){
   int i;                     /* Loop counter */
-  int pc;                    /* Address of a i-th cell */
+  int pc;                    /* Address of the i-th cell */
   int hdr;                   /* Offset to the page header */
   int size;                  /* Size of a cell */
   int usableSize;            /* Number of usable bytes on a page */
@@ -2628,7 +2628,7 @@ page1_init_failed:
 ** false then all cursors are counted.
 **
 ** For the purposes of this routine, a cursor is any cursor that
-** is capable of reading or writing to the databse.  Cursors that
+** is capable of reading or writing to the database.  Cursors that
 ** have been tripped into the CURSOR_FAULT state are not counted.
 */
 static int countValidCursors(BtShared *pBt, int wrOnly){
@@ -3092,7 +3092,7 @@ static int allocateBtreePage(BtShared *, MemPage **, Pgno *, Pgno, u8);
 ** calling this function again), return SQLITE_DONE. Or, if an error 
 ** occurs, return some other error code.
 **
-** More specificly, this function attempts to re-organize the database so 
+** More specifically, this function attempts to re-organize the database so 
 ** that the last page of the file currently in use is no longer in use.
 **
 ** Parameter nFin is the number of pages that this database would contain
@@ -3100,7 +3100,7 @@ static int allocateBtreePage(BtShared *, MemPage **, Pgno *, Pgno, u8);
 **
 ** If the bCommit parameter is non-zero, this function assumes that the 
 ** caller will keep calling incrVacuumStep() until it returns SQLITE_DONE 
-** or an error. bCommit is passed true for an auto-vacuum-on-commmit 
+** or an error. bCommit is passed true for an auto-vacuum-on-commit 
 ** operation, or false for an incremental vacuum.
 */
 static int incrVacuumStep(BtShared *pBt, Pgno nFin, Pgno iLastPg, int bCommit){
@@ -3567,7 +3567,7 @@ int sqlite3BtreeRollback(Btree *p, int tripCode){
 }
 
 /*
-** Start a statement subtransaction. The subtransaction can can be rolled
+** Start a statement subtransaction. The subtransaction can be rolled
 ** back independently of the main transaction. You must start a transaction 
 ** before starting a subtransaction. The subtransaction is ended automatically 
 ** if the main transaction commits or rolls back.
@@ -3801,7 +3801,7 @@ int sqlite3BtreeCloseCursor(BtCursor *pCur){
 ** compiler to crash when getCellInfo() is implemented as a macro.
 ** But there is a measureable speed advantage to using the macro on gcc
 ** (when less compiler optimizations like -Os or -O0 are used and the
-** compiler is not doing agressive inlining.)  So we use a real function
+** compiler is not doing aggressive inlining.)  So we use a real function
 ** for MSVC and a macro for everything else.  Ticket #2457.
 */
 #ifndef NDEBUG
@@ -4018,7 +4018,7 @@ static int copyPayload(
 **
 ** If the current cursor entry uses one or more overflow pages and the
 ** eOp argument is not 2, this function may allocate space for and lazily 
-** popluates the overflow page-list cache array (BtCursor.aOverflow). 
+** populates the overflow page-list cache array (BtCursor.aOverflow). 
 ** Subsequent calls use this cache to make seeking to the supplied offset 
 ** more efficient.
 **
@@ -4220,7 +4220,7 @@ static int accessPayload(
 
 /*
 ** Read part of the key associated with cursor pCur.  Exactly
-** "amt" bytes will be transfered into pBuf[].  The transfer
+** "amt" bytes will be transferred into pBuf[].  The transfer
 ** begins at "offset".
 **
 ** The caller must ensure that pCur is pointing to a valid row
@@ -4773,14 +4773,14 @@ int sqlite3BtreeMovetoUnpacked(
           ** single byte varint and the record fits entirely on the main
           ** b-tree page.  */
           testcase( pCell+nCell+1==pPage->aDataEnd );
-          c = xRecordCompare(nCell, (void*)&pCell[1], pIdxKey, 0);
+          c = xRecordCompare(nCell, (void*)&pCell[1], pIdxKey);
         }else if( !(pCell[1] & 0x80) 
           && (nCell = ((nCell&0x7f)<<7) + pCell[1])<=pPage->maxLocal
         ){
           /* The record-size field is a 2 byte varint and the record 
           ** fits entirely on the main b-tree page.  */
           testcase( pCell+nCell+2==pPage->aDataEnd );
-          c = xRecordCompare(nCell, (void*)&pCell[2], pIdxKey, 0);
+          c = xRecordCompare(nCell, (void*)&pCell[2], pIdxKey);
         }else{
           /* The record flows over onto one or more overflow pages. In
           ** this case the whole cell needs to be parsed, a buffer allocated
@@ -4801,7 +4801,7 @@ int sqlite3BtreeMovetoUnpacked(
             sqlite3_free(pCellKey);
             goto moveto_finish;
           }
-          c = xRecordCompare(nCell, pCellKey, pIdxKey, 0);
+          c = xRecordCompare(nCell, pCellKey, pIdxKey);
           sqlite3_free(pCellKey);
         }
         assert( 
@@ -5916,7 +5916,7 @@ static void insertCell(
 ** The cells are guaranteed to fit on the page.
 */
 static void assemblePage(
-  MemPage *pPage,   /* The page to be assemblied */
+  MemPage *pPage,   /* The page to be assembled */
   int nCell,        /* The number of cells to add to this page */
   u8 **apCell,      /* Pointers to cell bodies */
   u16 *aSize        /* Sizes of the cells */
@@ -6582,7 +6582,7 @@ static int balance_nonroot(
   }
 
   /*
-  ** Put the new pages in accending order.  This helps to
+  ** Put the new pages in ascending order.  This helps to
   ** keep entries in the disk file in order so that a scan
   ** of the table is a linear scan through the file.  That
   ** in turn helps the operating system to deliver pages
@@ -6977,7 +6977,7 @@ static int balance(BtCursor *pCur){
           /* Call balance_quick() to create a new sibling of pPage on which
           ** to store the overflow cell. balance_quick() inserts a new cell
           ** into pParent, which may cause pParent overflow. If this
-          ** happens, the next interation of the do-loop will balance pParent 
+          ** happens, the next iteration of the do-loop will balance pParent 
           ** use either balance_nonroot() or balance_deeper(). Until this
           ** happens, the overflow cell is stored in the aBalanceQuickSpace[]
           ** buffer. 
@@ -7054,7 +7054,7 @@ static int balance(BtCursor *pCur){
 ** MovetoUnpacked() to seek cursor pCur to (pKey, nKey) has already
 ** been performed. seekResult is the search result returned (a negative
 ** number if pCur points at an entry that is smaller than (pKey, nKey), or
-** a positive value if pCur points at an etry that is larger than 
+** a positive value if pCur points at an entry that is larger than 
 ** (pKey, nKey)). 
 **
 ** If the seekResult parameter is non-zero, then the caller guarantees that
@@ -7211,7 +7211,7 @@ end_insert:
 
 /*
 ** Delete the entry that the cursor is pointing to.  The cursor
-** is left pointing at a arbitrary location.
+** is left pointing at an arbitrary location.
 */
 int sqlite3BtreeDelete(BtCursor *pCur){
   Btree *p = pCur->pBtree;
@@ -7909,7 +7909,7 @@ static void setPageReferenced(IntegrityCk *pCheck, Pgno iPg){
 /*
 ** Add 1 to the reference count for page iPage.  If this is the second
 ** reference to the page, add an error message to pCheck->zErrMsg.
-** Return 1 if there are 2 ore more references to the page and 0 if
+** Return 1 if there are 2 or more references to the page and 0 if
 ** if this is the first reference to the page.
 **
 ** Also check that the page number is in bounds.

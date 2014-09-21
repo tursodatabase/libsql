@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** This file contains the C-language implementions for many of the SQL
+** This file contains the C-language implementations for many of the SQL
 ** functions of SQLite.  (Some function, and in particular the date and
 ** time functions, are implemented separately.)
 */
@@ -328,13 +328,14 @@ static void substrFunc(
     for(z2=z; *z2 && p2; p2--){
       SQLITE_SKIP_UTF8(z2);
     }
-    sqlite3_result_text(context, (char*)z, (int)(z2-z), SQLITE_TRANSIENT);
+    sqlite3_result_text64(context, (char*)z, z2-z, SQLITE_TRANSIENT,
+                          SQLITE_UTF8);
   }else{
     if( p1+p2>len ){
       p2 = len-p1;
       if( p2<0 ) p2 = 0;
     }
-    sqlite3_result_blob(context, (char*)&z[p1], (int)p2, SQLITE_TRANSIENT);
+    sqlite3_result_blob64(context, (char*)&z[p1], (u64)p2, SQLITE_TRANSIENT);
   }
 }
 
@@ -393,7 +394,7 @@ static void *contextMalloc(sqlite3_context *context, i64 nByte){
     sqlite3_result_error_toobig(context);
     z = 0;
   }else{
-    z = sqlite3Malloc((int)nByte);
+    z = sqlite3Malloc(nByte);
     if( !z ){
       sqlite3_result_error_nomem(context);
     }
@@ -1044,7 +1045,7 @@ static void charFunc(
       *zOut++ = 0x80 + (u8)(c & 0x3F);
     }                                                    \
   }
-  sqlite3_result_text(context, (char*)z, (int)(zOut-z), sqlite3_free);
+  sqlite3_result_text64(context, (char*)z, zOut-z, sqlite3_free, SQLITE_UTF8);
 }
 
 /*
@@ -1494,6 +1495,7 @@ static void minmaxStep(
       sqlite3SkipAccumulatorLoad(context);
     }
   }else{
+    pBest->db = sqlite3_context_db_handle(context);
     sqlite3VdbeMemCopy(pBest, pArg);
   }
 }
@@ -1641,7 +1643,7 @@ int sqlite3IsLikeFunction(sqlite3 *db, Expr *pExpr, int *pIsNocase, char *aWc){
 }
 
 /*
-** All all of the FuncDef structures in the aBuiltinFunc[] array above
+** All of the FuncDef structures in the aBuiltinFunc[] array above
 ** to the global function hash table.  This occurs at start-time (as
 ** a consequence of calling sqlite3_initialize()).
 **
@@ -1665,10 +1667,12 @@ void sqlite3RegisterGlobalFunctions(void){
     FUNCTION(trim,               2, 3, 0, trimFunc         ),
     FUNCTION(min,               -1, 0, 1, minmaxFunc       ),
     FUNCTION(min,                0, 0, 1, 0                ),
-    AGGREGATE(min,               1, 0, 1, minmaxStep,      minMaxFinalize ),
+    AGGREGATE2(min,              1, 0, 1, minmaxStep,      minMaxFinalize,
+                                          SQLITE_FUNC_MINMAX ),
     FUNCTION(max,               -1, 1, 1, minmaxFunc       ),
     FUNCTION(max,                0, 1, 1, 0                ),
-    AGGREGATE(max,               1, 1, 1, minmaxStep,      minMaxFinalize ),
+    AGGREGATE2(max,              1, 1, 1, minmaxStep,      minMaxFinalize,
+                                          SQLITE_FUNC_MINMAX ),
     FUNCTION2(typeof,            1, 0, 0, typeofFunc,  SQLITE_FUNC_TYPEOF),
     FUNCTION2(length,            1, 0, 0, lengthFunc,  SQLITE_FUNC_LENGTH),
     FUNCTION(instr,              2, 0, 0, instrFunc        ),
@@ -1698,6 +1702,9 @@ void sqlite3RegisterGlobalFunctions(void){
     FUNCTION(sqlite_version,     0, 0, 0, versionFunc      ),
     FUNCTION(sqlite_source_id,   0, 0, 0, sourceidFunc     ),
     FUNCTION(sqlite_log,         2, 0, 0, errlogFunc       ),
+#if SQLITE_USER_AUTHENTICATION
+    FUNCTION(sqlite_crypt,       2, 0, 0, sqlite3CryptFunc ),
+#endif
 #ifndef SQLITE_OMIT_COMPILEOPTION_DIAGS
     FUNCTION(sqlite_compileoption_used,1, 0, 0, compileoptionusedFunc  ),
     FUNCTION(sqlite_compileoption_get, 1, 0, 0, compileoptiongetFunc  ),
@@ -1718,8 +1725,8 @@ void sqlite3RegisterGlobalFunctions(void){
     AGGREGATE(sum,               1, 0, 0, sumStep,         sumFinalize    ),
     AGGREGATE(total,             1, 0, 0, sumStep,         totalFinalize    ),
     AGGREGATE(avg,               1, 0, 0, sumStep,         avgFinalize    ),
- /* AGGREGATE(count,             0, 0, 0, countStep,       countFinalize  ), */
-    {0,SQLITE_UTF8|SQLITE_FUNC_COUNT,0,0,0,countStep,countFinalize,"count",0,0},
+    AGGREGATE2(count,            0, 0, 0, countStep,       countFinalize,
+               SQLITE_FUNC_COUNT  ),
     AGGREGATE(count,             1, 0, 0, countStep,       countFinalize  ),
     AGGREGATE(group_concat,      1, 0, 0, groupConcatStep, groupConcatFinalize),
     AGGREGATE(group_concat,      2, 0, 0, groupConcatStep, groupConcatFinalize),

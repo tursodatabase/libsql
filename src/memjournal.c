@@ -26,7 +26,7 @@ typedef struct FileChunk FileChunk;
 **
 ** The size chosen is a little less than a power of two.  That way,
 ** the FileChunk object will have a size that almost exactly fills
-** a power-of-two allocation.  This mimimizes wasted space in power-of-two
+** a power-of-two allocation.  This minimizes wasted space in power-of-two
 ** memory allocators.
 */
 #define JOURNAL_CHUNKSIZE ((int)(1024-sizeof(FileChunk*)))

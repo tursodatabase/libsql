@@ -595,6 +595,14 @@ static int sqlite3demo_superunlock_corrupt(sqlite3_file *id, int eFileLock) {
 #endif
 
 /*
+** Explicitly call the 64-bit version of lseek() on Android. Otherwise, lseek()
+** is the 32-bit version, even if _FILE_OFFSET_BITS=64 is defined.
+*/
+#ifdef __ANDROID__
+# define lseek lseek64
+#endif
+
+/*
 ** Different Unix systems declare open() in different ways.  Same use
 ** open(const char*,int,mode_t).  Others use open(const char*,int,...).
 ** The difference is important when using a pointer to the function.
@@ -926,7 +934,7 @@ static int unixMutexHeld(void) {
 #if defined(SQLITE_TEST) && defined(SQLITE_DEBUG)
 /*
 ** Helper function for printing out trace information from debugging
-** binaries. This returns the string represetation of the supplied
+** binaries. This returns the string representation of the supplied
 ** integer lock-type.
 */
 static const char *azFileLock(int eFileLock){
@@ -1003,9 +1011,22 @@ static int lockTrace(int fd, int op, struct flock *p){
 
 /*
 ** Retry ftruncate() calls that fail due to EINTR
+**
+** All calls to ftruncate() within this file should be made through this wrapper.
+** On the Android platform, bypassing the logic below could lead to a corrupt
+** database.
 */
 static int robust_ftruncate(int h, sqlite3_int64 sz){
   int rc;
+#ifdef __ANDROID__
+  /* On Android, ftruncate() always uses 32-bit offsets, even if 
+  ** _FILE_OFFSET_BITS=64 is defined. This means it is unsafe to attempt to
+  ** truncate a file to any size larger than 2GiB. Silently ignore any
+  ** such attempts.  */
+  if( sz>(sqlite3_int64)0x7FFFFFFF ){
+    rc = SQLITE_OK;
+  }else
+#endif
   do{ rc = osFtruncate(h,sz); }while( rc<0 && errno==EINTR );
   return rc;
 }
@@ -3487,7 +3508,7 @@ static int nfsUnlock(sqlite3_file *id, int eFileLock){
 ** NB:  If you define USE_PREAD or USE_PREAD64, then it might also
 ** be necessary to define _XOPEN_SOURCE to be 500.  This varies from
 ** one system to another.  Since SQLite does not define USE_PREAD
-** any any form by default, we will not attempt to define _XOPEN_SOURCE.
+** in any form by default, we will not attempt to define _XOPEN_SOURCE.
 ** See tickets #2741 and #2681.
 **
 ** To avoid stomping the errno value on a failed read the lastErrno value
@@ -4005,7 +4026,7 @@ static int unixTruncate(sqlite3_file *id, i64 nByte){
     nByte = ((nByte + pFile->szChunk - 1)/pFile->szChunk) * pFile->szChunk;
   }
 
-  rc = robust_ftruncate(pFile->h, (off_t)nByte);
+  rc = robust_ftruncate(pFile->h, nByte);
   if( rc ){
     storeLastErrno(pFile, errno);
     return unixLogError(SQLITE_IOERR_TRUNCATE, "ftruncate", pFile->zPath);
@@ -4442,7 +4463,7 @@ static int unixLockstatePid(unixFile *, pid_t, int *);
 
 
 /*
-** If *pArg is inititially negative then this is a query.  Set *pArg to
+** If *pArg is initially negative then this is a query.  Set *pArg to
 ** 1 or 0 depending on whether or not bit mask of pFile->ctrlFlags is set.
 **
 ** If *pArg is 0 or 1, then clear or set the mask bit of pFile->ctrlFlags.
@@ -4669,7 +4690,7 @@ static int unixSectorSize(sqlite3_file *id){
 ** Return the device characteristics for the file.
 **
 ** This VFS is set up to return SQLITE_IOCAP_POWERSAFE_OVERWRITE by default.
-** However, that choice is contraversial since technically the underlying
+** However, that choice is controversial since technically the underlying
 ** file system does not always provide powersafe overwrites.  (In other
 ** words, after a power-loss event, parts of the file that were never
 ** written might end up being altered.)  However, non-PSOW behavior is very,
@@ -6082,7 +6103,7 @@ static int unixUnfetch(sqlite3_file *fd, i64 iOff, void *p){
 ** looks at the filesystem type and tries to guess the best locking
 ** strategy from that.
 **
-** For finder-funtion F, two objects are created:
+** For finder-function F, two objects are created:
 **
 **    (1) The real finder-function named "FImpt()".
 **
@@ -6344,7 +6365,7 @@ static const sqlite3_io_methods
 #endif /* OS_VXWORKS && SQLITE_ENABLE_LOCKING_STYLE */
 
 /*
-** An abstract type for a pointer to a IO method finder function:
+** An abstract type for a pointer to an IO method finder function:
 */
 typedef const sqlite3_io_methods *(*finder_type)(const char*,unixFile*);
 
@@ -6660,7 +6681,7 @@ static UnixUnusedFd *findReusableFd(const char *zPath, int flags){
   ** descriptor on the same path, fail, and return an error to SQLite.
   **
   ** Even if a subsequent open() call does succeed, the consequences of
-  ** not searching for a resusable file descriptor are not dire.  */
+  ** not searching for a reusable file descriptor are not dire.  */
   if( 0==osStat(zPath, &sStat) ){
     unixInodeInfo *pInode;
 
@@ -6691,7 +6712,7 @@ static UnixUnusedFd *findReusableFd(const char *zPath, int flags){
 ** written to *pMode. If an IO error occurs, an SQLite error code is 
 ** returned and the value of *pMode is not modified.
 **
-** In most cases cases, this routine sets *pMode to 0, which will become
+** In most cases, this routine sets *pMode to 0, which will become
 ** an indication to robust_open() to create the file using
 ** SQLITE_DEFAULT_FILE_PERMISSIONS adjusted by the umask.
 ** But if the file being opened is a WAL or regular journal file, then 
@@ -7502,7 +7523,7 @@ static int unixGetLastError(sqlite3_vfs *NotUsed, int NotUsed2, char *NotUsed3){
 ** proxy path against the values stored in the conch.  The conch file is
 ** stored in the same directory as the database file and the file name
 ** is patterned after the database file name as ".<databasename>-conch".
-** If the conch file does not exist, or it's contents do not match the
+** If the conch file does not exist, or its contents do not match the
 ** host ID and/or proxy path, then the lock is escalated to an exclusive
 ** lock and the conch file contents is updated with the host ID and proxy
 ** path and the lock is downgraded to a shared lock again.  If the conch
@@ -7554,7 +7575,7 @@ static int unixGetLastError(sqlite3_vfs *NotUsed, int NotUsed2, char *NotUsed3){
 ** setting the environment variable SQLITE_FORCE_PROXY_LOCKING to 1 will
 ** force proxy locking to be used for every database file opened, and 0
 ** will force automatic proxy locking to be disabled for all database
-** files (explicity calling the SQLITE_SET_LOCKPROXYFILE pragma or
+** files (explicitly calling the SQLITE_SET_LOCKPROXYFILE pragma or
 ** sqlite_file_control API is not affected by SQLITE_FORCE_PROXY_LOCKING).
 */
 

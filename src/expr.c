@@ -22,7 +22,7 @@
 ** affinity of that column is returned. Otherwise, 0x00 is returned,
 ** indicating no affinity for the expression.
 **
-** i.e. the WHERE clause expresssions in the following statements all
+** i.e. the WHERE clause expressions in the following statements all
 ** have an affinity:
 **
 ** CREATE TABLE t1(a);
@@ -501,7 +501,7 @@ void sqlite3ExprAttachSubtrees(
 }
 
 /*
-** Allocate a Expr node which joins as many as two subtrees.
+** Allocate an Expr node which joins as many as two subtrees.
 **
 ** One or both of the subtrees can be NULL.  Return a pointer to the new
 ** Expr node.  Or, if an OOM error occurs, set pParse->db->mallocFailed,
@@ -611,7 +611,7 @@ Expr *sqlite3ExprFunction(Parse *pParse, ExprList *pList, Token *pToken){
 **
 ** Wildcards of the form ":aaa", "@aaa", or "$aaa" are assigned the same number
 ** as the previous instance of the same wildcard.  Or if this is the first
-** instance of the wildcard, the next sequenial variable number is
+** instance of the wildcard, the next sequential variable number is
 ** assigned.
 */
 void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr){
@@ -746,7 +746,7 @@ static int exprStructSize(Expr *p){
 ** During expression analysis, extra information is computed and moved into
 ** later parts of teh Expr object and that extra information might get chopped
 ** off if the expression is reduced.  Note also that it does not work to
-** make a EXPRDUP_REDUCE copy of a reduced expression.  It is only legal
+** make an EXPRDUP_REDUCE copy of a reduced expression.  It is only legal
 ** to reduce a pristine expression tree from the parser.  The implementation
 ** of dupedExprStructSize() contain multiple assert() statements that attempt
 ** to enforce this constraint.
@@ -815,7 +815,7 @@ static int dupedExprSize(Expr *p, int flags){
 ** is not NULL then *pzBuffer is assumed to point to a buffer large enough 
 ** to store the copy of expression p, the copies of p->u.zToken
 ** (if applicable), and the copies of the p->pLeft and p->pRight expressions,
-** if any. Before returning, *pzBuffer is set to the first byte passed the
+** if any. Before returning, *pzBuffer is set to the first byte past the
 ** portion of the buffer copied into by this function.
 */
 static Expr *exprDup(sqlite3 *db, Expr *p, int flags, u8 **pzBuffer){
@@ -1069,6 +1069,7 @@ Select *sqlite3SelectDup(sqlite3 *db, Select *p, int flags){
   pNew->addrOpenEphm[1] = -1;
   pNew->nSelectRow = p->nSelectRow;
   pNew->pWith = withDup(db, p->pWith);
+  sqlite3SelectSetName(pNew, p->zSelName);
   return pNew;
 }
 #else
@@ -1541,7 +1542,7 @@ static int sqlite3InRhsIsConstant(Expr *pIn){
 **
 ** If the RHS of the IN operator is a list or a more complex subquery, then
 ** an ephemeral table might need to be generated from the RHS and then
-** pX->iTable made to point to the ephermeral table instead of an
+** pX->iTable made to point to the ephemeral table instead of an
 ** existing table.
 **
 ** The inFlags parameter must contain exactly one of the bits
@@ -1671,7 +1672,7 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, u32 inFlags, int *prRhsHasNull){
   ** and IN_INDEX_NOOP is an allowed reply
   ** and the RHS of the IN operator is a list, not a subquery
   ** and the RHS is not contant or has two or fewer terms,
-  ** then it is not worth creating an ephermeral table to evaluate
+  ** then it is not worth creating an ephemeral table to evaluate
   ** the IN operator so return IN_INDEX_NOOP.
   */
   if( eType==0
@@ -2432,16 +2433,9 @@ void sqlite3ExprCacheAffinityChange(Parse *pParse, int iStart, int iCount){
 ** over to iTo..iTo+nReg-1. Keep the column cache up-to-date.
 */
 void sqlite3ExprCodeMove(Parse *pParse, int iFrom, int iTo, int nReg){
-  int i;
-  struct yColCache *p;
   assert( iFrom>=iTo+nReg || iFrom+nReg<=iTo );
   sqlite3VdbeAddOp3(pParse->pVdbe, OP_Move, iFrom, iTo, nReg);
-  for(i=0, p=pParse->aColCache; i<SQLITE_N_COLCACHE; i++, p++){
-    int x = p->iReg;
-    if( x>=iFrom && x<iFrom+nReg ){
-      p->iReg += iTo-iFrom;
-    }
-  }
+  sqlite3ExprCacheRemove(pParse, iFrom, nReg);
 }
 
 #if defined(SQLITE_DEBUG) || defined(SQLITE_COVERAGE_TEST)
@@ -2758,7 +2752,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       }
 
       /* Attempt a direct implementation of the built-in COALESCE() and
-      ** IFNULL() functions.  This avoids unnecessary evalation of
+      ** IFNULL() functions.  This avoids unnecessary evaluation of
       ** arguments past the first non-NULL argument.
       */
       if( pDef->funcFlags & SQLITE_FUNC_COALESCE ){
@@ -3197,7 +3191,7 @@ void sqlite3ExprCodeFactorable(Parse *pParse, Expr *pExpr, int target){
 }
 
 /*
-** Generate code that evalutes the given expression and puts the result
+** Generate code that evaluates the given expression and puts the result
 ** in register target.
 **
 ** Also make a copy of the expression results into another "cache" register
@@ -3552,7 +3546,7 @@ int sqlite3ExprCodeExprList(
 **    x>=y AND x<=z
 **
 ** Code it as such, taking care to do the common subexpression
-** elementation of x.
+** elimination of x.
 */
 static void exprCodeBetween(
   Parse *pParse,    /* Parsing and code generating context */
@@ -4289,7 +4283,7 @@ int sqlite3GetTempReg(Parse *pParse){
 ** purpose.
 **
 ** If a register is currently being used by the column cache, then
-** the dallocation is deferred until the column cache line that uses
+** the deallocation is deferred until the column cache line that uses
 ** the register becomes stale.
 */
 void sqlite3ReleaseTempReg(Parse *pParse, int iReg){

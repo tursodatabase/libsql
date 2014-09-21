@@ -228,9 +228,12 @@ int sqlite3_value_type(sqlite3_value* pVal){
 ** The following routines are used by user-defined functions to specify
 ** the function result.
 **
-** The setStrOrError() funtion calls sqlite3VdbeMemSetStr() to store the
+** The setStrOrError() function calls sqlite3VdbeMemSetStr() to store the
 ** result as a string or blob but if the string or blob is too large, it
 ** then sets the error code to SQLITE_TOOBIG
+**
+** The invokeValueDestructor(P,X) routine invokes destructor function X()
+** on value P is not going to be used and need to be destroyed.
 */
 static void setResultStrOrError(
   sqlite3_context *pCtx,  /* Function context */
@@ -243,6 +246,22 @@ static void setResultStrOrError(
     sqlite3_result_error_toobig(pCtx);
   }
 }
+static int invokeValueDestructor(
+  const void *p,             /* Value to destroy */
+  void (*xDel)(void*),       /* The destructor */
+  sqlite3_context *pCtx      /* Set a SQLITE_TOOBIG error if no NULL */
+){
+  assert( xDel!=SQLITE_DYNAMIC );
+  if( xDel==0 ){
+    /* noop */
+  }else if( xDel==SQLITE_TRANSIENT ){
+    /* noop */
+  }else{
+    xDel((void*)p);
+  }
+  if( pCtx ) sqlite3_result_error_toobig(pCtx);
+  return SQLITE_TOOBIG;
+}
 void sqlite3_result_blob(
   sqlite3_context *pCtx, 
   const void *z, 
@@ -252,6 +271,20 @@ void sqlite3_result_blob(
   assert( n>=0 );
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
   setResultStrOrError(pCtx, z, n, 0, xDel);
+}
+void sqlite3_result_blob64(
+  sqlite3_context *pCtx, 
+  const void *z, 
+  sqlite3_uint64 n,
+  void (*xDel)(void *)
+){
+  assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
+  assert( xDel!=SQLITE_DYNAMIC );
+  if( n>0x7fffffff ){
+    (void)invokeValueDestructor(z, xDel, pCtx);
+  }else{
+    setResultStrOrError(pCtx, z, (int)n, 0, xDel);
+  }
 }
 void sqlite3_result_double(sqlite3_context *pCtx, double rVal){
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
@@ -291,6 +324,21 @@ void sqlite3_result_text(
 ){
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
   setResultStrOrError(pCtx, z, n, SQLITE_UTF8, xDel);
+}
+void sqlite3_result_text64(
+  sqlite3_context *pCtx, 
+  const char *z, 
+  sqlite3_uint64 n,
+  void (*xDel)(void *),
+  unsigned char enc
+){
+  assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
+  assert( xDel!=SQLITE_DYNAMIC );
+  if( n>0x7fffffff ){
+    (void)invokeValueDestructor(z, xDel, pCtx);
+  }else{
+    setResultStrOrError(pCtx, z, (int)n, enc, xDel);
+  }
 }
 #ifndef SQLITE_OMIT_UTF16
 void sqlite3_result_text16(
@@ -630,11 +678,10 @@ static SQLITE_NOINLINE void *createAggContext(sqlite3_context *p, int nByte){
   Mem *pMem = p->pMem;
   assert( (pMem->flags & MEM_Agg)==0 );
   if( nByte<=0 ){
-    sqlite3VdbeMemReleaseExternal(pMem);
-    pMem->flags = MEM_Null;
+    sqlite3VdbeMemSetNull(pMem);
     pMem->z = 0;
   }else{
-    sqlite3VdbeMemGrow(pMem, nByte, 0);
+    sqlite3VdbeMemClearAndResize(pMem, nByte);
     pMem->flags = MEM_Agg;
     pMem->u.pDef = p->pFunc;
     if( pMem->z ){
@@ -661,7 +708,7 @@ void *sqlite3_aggregate_context(sqlite3_context *p, int nByte){
 }
 
 /*
-** Return the auxilary data pointer, if any, for the iArg'th argument to
+** Return the auxiliary data pointer, if any, for the iArg'th argument to
 ** the user-function defined by pCtx.
 */
 void *sqlite3_get_auxdata(sqlite3_context *pCtx, int iArg){
@@ -676,7 +723,7 @@ void *sqlite3_get_auxdata(sqlite3_context *pCtx, int iArg){
 }
 
 /*
-** Set the auxilary data pointer and delete function, for the iArg'th
+** Set the auxiliary data pointer and delete function, for the iArg'th
 ** argument to the user-function defined by pCtx. Any previous value is
 ** deleted by calling the delete function specified when it was set.
 */
@@ -722,7 +769,7 @@ failed:
 
 #ifndef SQLITE_OMIT_DEPRECATED
 /*
-** Return the number of times the Step function of a aggregate has been 
+** Return the number of times the Step function of an aggregate has been 
 ** called.
 **
 ** This function is deprecated.  Do not use it for new code.  It is
@@ -771,11 +818,22 @@ static const Mem *columnNullValue(void){
 #if defined(SQLITE_DEBUG) && defined(__GNUC__)
     __attribute__((aligned(8))) 
 #endif
-    = {0, "", (double)0, {0}, 0, MEM_Null, 0,
+    = {
+        /* .u          = */ {0},
+        /* .flags      = */ MEM_Null,
+        /* .enc        = */ 0,
+        /* .n          = */ 0,
+        /* .z          = */ 0,
+        /* .zMalloc    = */ 0,
+        /* .szMalloc   = */ 0,
+        /* .iPadding1  = */ 0,
+        /* .db         = */ 0,
+        /* .xDel       = */ 0,
 #ifdef SQLITE_DEBUG
-       0, 0,  /* pScopyFrom, pFiller */
+        /* .pScopyFrom = */ 0,
+        /* .pFiller    = */ 0,
 #endif
-       0, 0 };
+      };
   return &nullMem;
 }
 
@@ -992,7 +1050,7 @@ const void *sqlite3_column_decltype16(sqlite3_stmt *pStmt, int N){
 /*
 ** Return the name of the database from which a result column derives.
 ** NULL is returned if the result column is an expression or constant or
-** anything else which is not an unabiguous reference to a database column.
+** anything else which is not an unambiguous reference to a database column.
 */
 const char *sqlite3_column_database_name(sqlite3_stmt *pStmt, int N){
   return columnName(
@@ -1008,7 +1066,7 @@ const void *sqlite3_column_database_name16(sqlite3_stmt *pStmt, int N){
 /*
 ** Return the name of the table from which a result column derives.
 ** NULL is returned if the result column is an expression or constant or
-** anything else which is not an unabiguous reference to a database column.
+** anything else which is not an unambiguous reference to a database column.
 */
 const char *sqlite3_column_table_name(sqlite3_stmt *pStmt, int N){
   return columnName(
@@ -1024,7 +1082,7 @@ const void *sqlite3_column_table_name16(sqlite3_stmt *pStmt, int N){
 /*
 ** Return the name of the table column from which a result column derives.
 ** NULL is returned if the result column is an expression or constant or
-** anything else which is not an unabiguous reference to a database column.
+** anything else which is not an unambiguous reference to a database column.
 */
 const char *sqlite3_column_origin_name(sqlite3_stmt *pStmt, int N){
   return columnName(
@@ -1144,6 +1202,20 @@ int sqlite3_bind_blob(
 #endif
   return bindText(pStmt, i, zData, nData, xDel, 0);
 }
+int sqlite3_bind_blob64(
+  sqlite3_stmt *pStmt, 
+  int i, 
+  const void *zData, 
+  sqlite3_uint64 nData, 
+  void (*xDel)(void*)
+){
+  assert( xDel!=SQLITE_DYNAMIC );
+  if( nData>0x7fffffff ){
+    return invokeValueDestructor(zData, xDel, 0);
+  }else{
+    return bindText(pStmt, i, zData, (int)nData, xDel, 0);
+  }
+}
 int sqlite3_bind_double(sqlite3_stmt *pStmt, int i, double rValue){
   int rc;
   Vdbe *p = (Vdbe *)pStmt;
@@ -1200,6 +1272,22 @@ int sqlite3_bind_text(
 #endif
   return bindText(pStmt, i, zData, nData, xDel, SQLITE_UTF8);
 }
+int sqlite3_bind_text64( 
+  sqlite3_stmt *pStmt, 
+  int i, 
+  const char *zData, 
+  sqlite3_uint64 nData, 
+  void (*xDel)(void*),
+  unsigned char enc
+){
+  assert( xDel!=SQLITE_DYNAMIC );
+  if( nData>0x7fffffff ){
+    return invokeValueDestructor(zData, xDel, 0);
+  }else{
+    if( enc==SQLITE_UTF16 ) enc = SQLITE_UTF16NATIVE;
+    return bindText(pStmt, i, zData, (int)nData, xDel, enc);
+  }
+}
 #ifndef SQLITE_OMIT_UTF16
 int sqlite3_bind_text16(
   sqlite3_stmt *pStmt, 
@@ -1222,7 +1310,7 @@ int sqlite3_bind_value(sqlite3_stmt *pStmt, int i, const sqlite3_value *pValue){
       break;
     }
     case SQLITE_FLOAT: {
-      rc = sqlite3_bind_double(pStmt, i, pValue->r);
+      rc = sqlite3_bind_double(pStmt, i, pValue->u.r);
       break;
     }
     case SQLITE_BLOB: {
@@ -1331,7 +1419,7 @@ int sqlite3TransferBindings(sqlite3_stmt *pFromStmt, sqlite3_stmt *pToStmt){
 ** Deprecated external interface.  Internal/core SQLite code
 ** should call sqlite3TransferBindings.
 **
-** Is is misuse to call this routine with statements from different
+** It is misuse to call this routine with statements from different
 ** database connections.  But as this is a deprecated interface, we
 ** will not bother to check for that condition.
 **

@@ -156,6 +156,17 @@ void sqlite3FinishCoding(Parse *pParse){
     while( sqlite3VdbeDeletePriorOpcode(v, OP_Close) ){}
     sqlite3VdbeAddOp0(v, OP_Halt);
 
+#if SQLITE_USER_AUTHENTICATION
+    if( pParse->nTableLock>0 && db->init.busy==0 ){
+      sqlite3UserAuthInit(db);
+      if( db->auth.authLevel<UAUTH_User ){
+        pParse->rc = SQLITE_AUTH_USER;
+        sqlite3ErrorMsg(pParse, "user not authenticated");
+        return;
+      }
+    }
+#endif
+
     /* The cookie mask contains one bit for each database file open.
     ** (Bit 0 is for main, bit 1 is for temp, and so forth.)  Bits are
     ** set for each database that is used.  Generate code to start a
@@ -271,6 +282,16 @@ void sqlite3NestedParse(Parse *pParse, const char *zFormat, ...){
   pParse->nested--;
 }
 
+#if SQLITE_USER_AUTHENTICATION
+/*
+** Return TRUE if zTable is the name of the system table that stores the
+** list of users and their access credentials.
+*/
+int sqlite3UserAuthTable(const char *zTable){
+  return sqlite3_stricmp(zTable, "sqlite_user")==0;
+}
+#endif
+
 /*
 ** Locate the in-memory structure that describes a particular database
 ** table given the name of that table and (optionally) the name of the
@@ -289,6 +310,13 @@ Table *sqlite3FindTable(sqlite3 *db, const char *zName, const char *zDatabase){
   assert( zName!=0 );
   /* All mutexes are required for schema access.  Make sure we hold them. */
   assert( zDatabase!=0 || sqlite3BtreeHoldsAllMutexes(db) );
+#if SQLITE_USER_AUTHENTICATION
+  /* Only the admin user is allowed to know that the sqlite_user table
+  ** exists */
+  if( db->auth.authLevel<UAUTH_Admin && sqlite3UserAuthTable(zName)!=0 ){
+    return 0;
+  }
+#endif
   for(i=OMIT_TEMPDB; i<db->nDb; i++){
     int j = (i<2) ? i^1 : i;   /* Search TEMP before MAIN */
     if( zDatabase!=0 && sqlite3StrICmp(zDatabase, db->aDb[j].zName) ) continue;
@@ -333,6 +361,12 @@ Table *sqlite3LocateTable(
     }
     pParse->checkSchema = 1;
   }
+#if SQLITE_USER_AUTHENICATION
+  else if( pParse->db->auth.authLevel<UAUTH_User ){
+    sqlite3ErrorMsg(pParse, "user not authenticated");
+    p = 0;
+  }
+#endif
   return p;
 }
 
@@ -1143,7 +1177,7 @@ char sqlite3AffinityType(const char *zIn, u8 *pszEst){
   ** estimate is scaled so that the size of an integer is 1.  */
   if( pszEst ){
     *pszEst = 1;   /* default size is approx 4 bytes */
-    if( aff<=SQLITE_AFF_NONE ){
+    if( aff<SQLITE_AFF_NUMERIC ){
       if( zChar ){
         while( zChar[0] ){
           if( sqlite3Isdigit(zChar[0]) ){
@@ -1514,8 +1548,8 @@ static char *createTableStmt(sqlite3 *db, Table *p){
   zStmt[k++] = '(';
   for(pCol=p->aCol, i=0; i<p->nCol; i++, pCol++){
     static const char * const azType[] = {
-        /* SQLITE_AFF_TEXT    */ " TEXT",
         /* SQLITE_AFF_NONE    */ "",
+        /* SQLITE_AFF_TEXT    */ " TEXT",
         /* SQLITE_AFF_NUMERIC */ " NUM",
         /* SQLITE_AFF_INTEGER */ " INT",
         /* SQLITE_AFF_REAL    */ " REAL"
@@ -1527,15 +1561,15 @@ static char *createTableStmt(sqlite3 *db, Table *p){
     k += sqlite3Strlen30(&zStmt[k]);
     zSep = zSep2;
     identPut(zStmt, &k, pCol->zName);
-    assert( pCol->affinity-SQLITE_AFF_TEXT >= 0 );
-    assert( pCol->affinity-SQLITE_AFF_TEXT < ArraySize(azType) );
-    testcase( pCol->affinity==SQLITE_AFF_TEXT );
+    assert( pCol->affinity-SQLITE_AFF_NONE >= 0 );
+    assert( pCol->affinity-SQLITE_AFF_NONE < ArraySize(azType) );
     testcase( pCol->affinity==SQLITE_AFF_NONE );
+    testcase( pCol->affinity==SQLITE_AFF_TEXT );
     testcase( pCol->affinity==SQLITE_AFF_NUMERIC );
     testcase( pCol->affinity==SQLITE_AFF_INTEGER );
     testcase( pCol->affinity==SQLITE_AFF_REAL );
     
-    zType = azType[pCol->affinity - SQLITE_AFF_TEXT];
+    zType = azType[pCol->affinity - SQLITE_AFF_NONE];
     len = sqlite3Strlen30(zType);
     assert( pCol->affinity==SQLITE_AFF_NONE 
             || pCol->affinity==sqlite3AffinityType(zType, 0) );
@@ -1619,7 +1653,7 @@ static int hasColumn(const i16 *aiCol, int nCol, int x){
 **          no rowid btree for a WITHOUT ROWID.  Instead, the canonical
 **          data storage is a covering index btree.
 **     (2)  Bypass the creation of the sqlite_master table entry
-**          for the PRIMARY KEY as the the primary key index is now
+**          for the PRIMARY KEY as the primary key index is now
 **          identified by the sqlite_master table entry of the table itself.
 **     (3)  Set the Index.tnum of the PRIMARY KEY Index object in the
 **          schema to the rootpage from the main table.
@@ -1640,7 +1674,7 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
   Vdbe *v = pParse->pVdbe;
 
   /* Convert the OP_CreateTable opcode that would normally create the
-  ** root-page for the table into a OP_CreateIndex opcode.  The index
+  ** root-page for the table into an OP_CreateIndex opcode.  The index
   ** created will become the PRIMARY KEY index.
   */
   if( pParse->addrCrTab ){
@@ -2052,7 +2086,7 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
   int nErr = 0;     /* Number of errors encountered */
   int n;            /* Temporarily holds the number of cursors assigned */
   sqlite3 *db = pParse->db;  /* Database connection for malloc errors */
-  int (*xAuth)(void*,int,const char*,const char*,const char*,const char*);
+  sqlite3_xauth xAuth;       /* Saved xAuth pointer */
 
   assert( pTable );
 
@@ -2654,7 +2688,7 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
   int iPartIdxLabel;             /* Jump to this label to skip a row */
   Vdbe *v;                       /* Generate code into this virtual machine */
   KeyInfo *pKey;                 /* KeyInfo for index */
-  int regRecord;                 /* Register holding assemblied index record */
+  int regRecord;                 /* Register holding assembled index record */
   sqlite3 *db = pParse->db;      /* The database connection */
   int iDb = sqlite3SchemaToIndex(db, pIndex->pSchema);
 
@@ -2867,6 +2901,10 @@ Index *sqlite3CreateIndex(
   assert( pTab!=0 );
   assert( pParse->nErr==0 );
   if( sqlite3StrNICmp(pTab->zName, "sqlite_", 7)==0 
+       && db->init.busy==0
+#if SQLITE_USER_AUTHENTICATION
+       && sqlite3UserAuthTable(pTab->zName)==0
+#endif
        && sqlite3StrNICmp(&pTab->zName[7],"altertab_",9)!=0 ){
     sqlite3ErrorMsg(pParse, "table %s may not be indexed", pTab->zName);
     goto exit_create_index;
@@ -3254,7 +3292,7 @@ exit_create_index:
 ** Fill the Index.aiRowEst[] array with default information - information
 ** to be used when we have not run the ANALYZE command.
 **
-** aiRowEst[0] is suppose to contain the number of elements in the index.
+** aiRowEst[0] is supposed to contain the number of elements in the index.
 ** Since we do not know, guess 1 million.  aiRowEst[1] is an estimate of the
 ** number of rows in the table that match any particular value of the
 ** first column of the index.  aiRowEst[2] is an estimate of the number
@@ -3633,7 +3671,7 @@ void sqlite3SrcListDelete(sqlite3 *db, SrcList *pList){
 ** if this is the first term of the FROM clause.  pTable and pDatabase
 ** are the name of the table and database named in the FROM clause term.
 ** pDatabase is NULL if the database name qualifier is missing - the
-** usual case.  If the term has a alias, then pAlias points to the
+** usual case.  If the term has an alias, then pAlias points to the
 ** alias token.  If the term is a subquery, then pSubquery is the
 ** SELECT statement that the subquery encodes.  The pTable and
 ** pDatabase parameters are NULL for subqueries.  The pOn and pUsing

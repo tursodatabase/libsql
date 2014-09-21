@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** This file contains definitions of global variables and contants.
+** This file contains definitions of global variables and constants.
 */
 #include "sqliteInt.h"
 

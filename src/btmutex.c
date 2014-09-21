@@ -106,7 +106,7 @@ static void SQLITE_NOINLINE btreeLockCarefully(Btree *p){
   Btree *pLater;
 
   /* In most cases, we should be able to acquire the lock we
-  ** want without having to go throught the ascending lock
+  ** want without having to go through the ascending lock
   ** procedure that follows.  Just be sure not to block.
   */
   if( sqlite3_mutex_try(p->pBt->mutex)==SQLITE_OK ){

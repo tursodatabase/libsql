@@ -46,7 +46,7 @@
 #
 TCCX =  $(TCC) $(OPTS) -I. -I$(TOP)/src -I$(TOP) 
 TCCX += -I$(TOP)/ext/rtree -I$(TOP)/ext/icu -I$(TOP)/ext/fts3
-TCCX += -I$(TOP)/ext/async
+TCCX += -I$(TOP)/ext/async -I$(TOP)/ext/userauth
 
 # Object files for the SQLite library.
 #
@@ -67,7 +67,7 @@ LIBOBJ+= vdbe.o parse.o \
          pager.o pcache.o pcache1.o pragma.o prepare.o printf.o \
          random.o resolve.o rowset.o rtree.o select.o status.o \
          table.o threads.o tokenize.o trigger.o \
-         update.o util.o vacuum.o \
+         update.o userauth.o util.o vacuum.o \
          vdbeapi.o vdbeaux.o vdbeblob.o vdbemem.o vdbesort.o \
 	 vdbetrace.o wal.o walker.o where.o utf.o vtab.o
 
@@ -216,7 +216,9 @@ SRC += \
   $(TOP)/ext/rtree/rtree.c
 SRC += \
   $(TOP)/ext/sqlrr/sqlrr.c
-
+SRC += \
+  $(TOP)/ext/userauth/userauth.c \
+  $(TOP)/ext/userauth/sqlite3userauth.h
 
 # Generated source code files
 #
@@ -364,6 +366,8 @@ HDR = \
 #
 EXTHDR += \
   $(TOP)/ext/sqlrr/sqlrr.h
+EXTHDR += \
+  $(TOP)/ext/userauth/sqlite3userauth.h
 
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
@@ -544,6 +548,9 @@ fts3_write.o:	$(TOP)/ext/fts3/fts3_write.c $(HDR) $(EXTHDR)
 
 rtree.o:	$(TOP)/ext/rtree/rtree.c $(HDR) $(EXTHDR)
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/rtree/rtree.c
+
+userauth.o:	$(TOP)/ext/userauth/userauth.c $(HDR) $(EXTHDR)
+	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/userauth/userauth.c
 
 
 # Rules for building test programs and for running tests

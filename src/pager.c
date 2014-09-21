@@ -76,12 +76,12 @@
 ** Definition: Two databases (or the same database at two points it time)
 ** are said to be "logically equivalent" if they give the same answer to
 ** all queries.  Note in particular the content of freelist leaf
-** pages can be changed arbitarily without effecting the logical equivalence
+** pages can be changed arbitrarily without affecting the logical equivalence
 ** of the database.
 ** 
 ** (7) At any time, if any subset, including the empty set and the total set,
 **     of the unsynced changes to a rollback journal are removed and the 
-**     journal is rolled back, the resulting database file will be logical
+**     journal is rolled back, the resulting database file will be logically
 **     equivalent to the database file at the beginning of the transaction.
 ** 
 ** (8) When a transaction is rolled back, the xTruncate method of the VFS
@@ -378,7 +378,7 @@ int sqlite3PagerTrace=1;  /* True to enable tracing */
 **
 ** The exception is when the database file is unlocked as the pager moves
 ** from ERROR to OPEN state. At this point there may be a hot-journal file 
-** in the file-system that needs to be rolled back (as part of a OPEN->SHARED
+** in the file-system that needs to be rolled back (as part of an OPEN->SHARED
 ** transition, by the same pager or any other). If the call to xUnlock()
 ** fails at this point and the pager is left holding an EXCLUSIVE lock, this
 ** can confuse the call to xCheckReservedLock() call made later as part
@@ -461,7 +461,7 @@ struct PagerSavepoint {
 #define SPILLFLAG_NOSYNC      0x04      /* Spill is ok, but do not sync */
 
 /*
-** A open page cache is an instance of struct Pager. A description of
+** An open page cache is an instance of struct Pager. A description of
 ** some of the more important member variables follows:
 **
 ** eState
@@ -633,7 +633,7 @@ struct Pager {
 
   /**************************************************************************
   ** The following block contains those class members that change during
-  ** routine opertion.  Class members not in this block are either fixed
+  ** routine operation.  Class members not in this block are either fixed
   ** when the pager is first created or else only change when there is a
   ** significant mode change (such as changing the page_size, locking_mode,
   ** or the journal_mode).  From another view, these class members describe
@@ -2432,7 +2432,7 @@ static int pager_delmaster(Pager *pPager, const char *zMaster){
   rc = sqlite3OsFileSize(pMaster, &nMasterJournal);
   if( rc!=SQLITE_OK ) goto delmaster_out;
   nMasterPtr = pVfs->mxPathname+1;
-  zMasterJournal = sqlite3Malloc((int)nMasterJournal + nMasterPtr + 1);
+  zMasterJournal = sqlite3Malloc(nMasterJournal + nMasterPtr + 1);
   if( !zMasterJournal ){
     rc = SQLITE_NOMEM;
     goto delmaster_out;
@@ -2505,7 +2505,7 @@ delmaster_out:
 ** If the file on disk is currently larger than nPage pages, then use the VFS
 ** xTruncate() method to truncate it.
 **
-** Or, it might might be the case that the file on disk is smaller than 
+** Or, it might be the case that the file on disk is smaller than 
 ** nPage pages. Some operating system implementations can get confused if 
 ** you try to truncate a file to some size that is larger than it 
 ** currently is, so detect this case and write a single zero byte to 
@@ -2564,7 +2564,7 @@ int sqlite3SectorSize(sqlite3_file *pFile){
 /*
 ** Set the value of the Pager.sectorSize variable for the given
 ** pager based on the value returned by the xSectorSize method
-** of the open database file. The sector size will be used used 
+** of the open database file. The sector size will be used 
 ** to determine the size and alignment of journal header and 
 ** master journal pointers within created journal files.
 **
@@ -3630,11 +3630,13 @@ int sqlite3PagerSetPagesize(Pager *pPager, u32 *pPageSize, int nReserve){
 
     if( rc==SQLITE_OK ){
       pager_reset(pPager);
-      pPager->dbSize = (Pgno)((nByte+pageSize-1)/pageSize);
-      pPager->pageSize = pageSize;
       sqlite3PageFree(pPager->pTmpSpace);
       pPager->pTmpSpace = pNew;
       rc = sqlite3PcacheSetPageSize(pPager->pPCache, pageSize);
+    }
+    if( rc==SQLITE_OK ){
+      pPager->dbSize = (Pgno)((nByte+pageSize-1)/pageSize);
+      pPager->pageSize = pageSize;
     }
   }
 
@@ -3768,7 +3770,7 @@ static int pager_wait_on_lock(Pager *pPager, int locktype){
   int rc;                              /* Return code */
 
   /* Check that this is either a no-op (because the requested lock is 
-  ** already held, or one of the transistions that the busy-handler
+  ** already held), or one of the transitions that the busy-handler
   ** may be invoked during, according to the comment above
   ** sqlite3PagerSetBusyhandler().
   */
@@ -4396,7 +4398,7 @@ static int pagerStress(void *p, PgHdr *pPg){
   ** a rollback or by user request, respectively.
   **
   ** Spilling is also prohibited when in an error state since that could
-  ** lead to database corruption.   In the current implementaton it 
+  ** lead to database corruption.   In the current implementation it 
   ** is impossible for sqlite3PcacheFetch() to be called with createFlag==3
   ** while in the error state, hence it is impossible for this routine to
   ** be called in the error state.  Nevertheless, we include a NEVER()
@@ -4943,7 +4945,7 @@ static int hasHotJournal(Pager *pPager, int *pExists){
             *pExists = (first!=0);
           }else if( rc==SQLITE_CANTOPEN ){
             /* If we cannot open the rollback journal file in order to see if
-            ** its has a zero header, that might be due to an I/O error, or
+            ** it has a zero header, that might be due to an I/O error, or
             ** it might be due to the race condition described above and in
             ** ticket #3883.  Either way, assume that the journal is hot.
             ** This might be a false positive.  But if it is, then the
@@ -7274,7 +7276,7 @@ int sqlite3PagerCloseWal(Pager *pPager){
 ** is empty, return 0.
 */
 int sqlite3PagerWalFramesize(Pager *pPager){
-  assert( pPager->eState==PAGER_READER );
+  assert( pPager->eState>=PAGER_READER );
   return sqlite3WalFramesize(pPager->pWal);
 }
 #endif

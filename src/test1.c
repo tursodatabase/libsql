@@ -2605,7 +2605,7 @@ static int test_bind(
 ** SQLite selected to call. The TCL test script implements the
 ** "test_collate" proc.
 **
-** Note that this will only work with one intepreter at a time, as the
+** Note that this will only work with one interpreter at a time, as the
 ** interp pointer to use when evaluating the TCL script is stored in
 ** pTestCollateInterp.
 */
@@ -3776,7 +3776,7 @@ static int test_prepare_v2(
 ** Usage: sqlite3_prepare_tkt3134 DB
 **
 ** Generate a prepared statement for a zero-byte string as a test
-** for ticket #3134.  The string should be preceeded by a zero byte.
+** for ticket #3134.  The string should be preceded by a zero byte.
 */
 static int test_prepare_tkt3134(
   void * clientData,
@@ -6689,6 +6689,132 @@ static int sorter_test_sort4_helper(
 }
 
 
+#ifdef SQLITE_USER_AUTHENTICATION
+#include "sqlite3userauth.h"
+/*
+** tclcmd:  sqlite3_user_authenticate DB USERNAME PASSWORD
+*/
+static int test_user_authenticate(
+  ClientData clientData, /* Unused */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  char *zUser = 0;
+  char *zPasswd = 0;
+  int nPasswd = 0;
+  sqlite3 *db;
+  int rc;
+
+  if( objc!=4 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB USERNAME PASSWORD");
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ){
+    return TCL_ERROR;
+  }
+  zUser = Tcl_GetString(objv[2]);
+  zPasswd = Tcl_GetStringFromObj(objv[3], &nPasswd);
+  rc = sqlite3_user_authenticate(db, zUser, zPasswd, nPasswd);
+  Tcl_SetResult(interp, (char *)t1ErrorName(rc), TCL_STATIC);
+  return TCL_OK;
+}
+#endif /* SQLITE_USER_AUTHENTICATION */
+
+#ifdef SQLITE_USER_AUTHENTICATION
+/*
+** tclcmd:  sqlite3_user_add DB USERNAME PASSWORD ISADMIN
+*/
+static int test_user_add(
+  ClientData clientData, /* Unused */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  char *zUser = 0;
+  char *zPasswd = 0;
+  int nPasswd = 0;
+  int isAdmin = 0;
+  sqlite3 *db;
+  int rc;
+
+  if( objc!=5 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB USERNAME PASSWORD ISADMIN");
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ){
+    return TCL_ERROR;
+  }
+  zUser = Tcl_GetString(objv[2]);
+  zPasswd = Tcl_GetStringFromObj(objv[3], &nPasswd);
+  Tcl_GetBooleanFromObj(interp, objv[4], &isAdmin);
+  rc = sqlite3_user_add(db, zUser, zPasswd, nPasswd, isAdmin);
+  Tcl_SetResult(interp, (char *)t1ErrorName(rc), TCL_STATIC);
+  return TCL_OK;
+}
+#endif /* SQLITE_USER_AUTHENTICATION */
+
+#ifdef SQLITE_USER_AUTHENTICATION
+/*
+** tclcmd:  sqlite3_user_change DB USERNAME PASSWORD ISADMIN
+*/
+static int test_user_change(
+  ClientData clientData, /* Unused */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  char *zUser = 0;
+  char *zPasswd = 0;
+  int nPasswd = 0;
+  int isAdmin = 0;
+  sqlite3 *db;
+  int rc;
+
+  if( objc!=5 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB USERNAME PASSWORD ISADMIN");
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ){
+    return TCL_ERROR;
+  }
+  zUser = Tcl_GetString(objv[2]);
+  zPasswd = Tcl_GetStringFromObj(objv[3], &nPasswd);
+  Tcl_GetBooleanFromObj(interp, objv[4], &isAdmin);
+  rc = sqlite3_user_change(db, zUser, zPasswd, nPasswd, isAdmin);
+  Tcl_SetResult(interp, (char *)t1ErrorName(rc), TCL_STATIC);
+  return TCL_OK;
+}
+#endif /* SQLITE_USER_AUTHENTICATION */
+
+#ifdef SQLITE_USER_AUTHENTICATION
+/*
+** tclcmd:  sqlite3_user_delete DB USERNAME
+*/
+static int test_user_delete(
+  ClientData clientData, /* Unused */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  char *zUser = 0;
+  sqlite3 *db;
+  int rc;
+
+  if( objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB USERNAME");
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ){
+    return TCL_ERROR;
+  }
+  zUser = Tcl_GetString(objv[2]);
+  rc = sqlite3_user_delete(db, zUser);
+  Tcl_SetResult(interp, (char *)t1ErrorName(rc), TCL_STATIC);
+  return TCL_OK;
+}
+#endif /* SQLITE_USER_AUTHENTICATION */
+
 /*
 ** Register commands with the TCL interpreter.
 */
@@ -6933,6 +7059,13 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "load_static_extension", tclLoadStaticExtensionCmd },
      { "sorter_test_fakeheap", sorter_test_fakeheap },
      { "sorter_test_sort4_helper", sorter_test_sort4_helper },
+#ifdef SQLITE_USER_AUTHENTICATION
+     { "sqlite3_user_authenticate", test_user_authenticate, 0 },
+     { "sqlite3_user_add",          test_user_add,          0 },
+     { "sqlite3_user_change",       test_user_change,       0 },
+     { "sqlite3_user_delete",       test_user_delete,       0 },
+#endif
+
   };
   static int bitmask_size = sizeof(Bitmask)*8;
   int i;

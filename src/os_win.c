@@ -1286,12 +1286,14 @@ void sqlite3_win32_sleep(DWORD milliseconds){
 #endif
 }
 
+#if SQLITE_MAX_WORKER_THREADS>0 && !SQLITE_OS_WINRT && SQLITE_THREADSAFE>0
 DWORD sqlite3Win32Wait(HANDLE hObject){
   DWORD rc;
   while( (rc = osWaitForSingleObjectEx(hObject, INFINITE,
                                        TRUE))==WAIT_IO_COMPLETION ){}
   return rc;
 }
+#endif
 
 /*
 ** Return true (non-zero) if we are running under WinNT, Win2K, WinXP,
@@ -3126,7 +3128,7 @@ static int winUnlock(sqlite3_file *id, int locktype){
 }
 
 /*
-** If *pArg is inititially negative then this is a query.  Set *pArg to
+** If *pArg is initially negative then this is a query.  Set *pArg to
 ** 1 or 0 depending on whether or not bit mask of pFile->ctrlFlags is set.
 **
 ** If *pArg is 0 or 1, then clear or set the mask bit of pFile->ctrlFlags.
@@ -4149,7 +4151,7 @@ static int winUnfetch(sqlite3_file *fd, i64 iOff, void *p){
   }else{
     /* FIXME:  If Windows truly always prevents truncating or deleting a
     ** file while a mapping is held, then the following winUnmapfile() call
-    ** is unnecessary can can be omitted - potentially improving
+    ** is unnecessary can be omitted - potentially improving
     ** performance.  */
     winUnmapfile(pFd);
   }

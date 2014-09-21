@@ -602,8 +602,11 @@ static int vdbePmaReadVarint(PmaReader *p, u64 *pnOut){
 static int vdbeSorterMapFile(SortSubtask *pTask, SorterFile *pFile, u8 **pp){
   int rc = SQLITE_OK;
   if( pFile->iEof<=(i64)(pTask->pSorter->db->nMaxSorterMmap) ){
-    rc = sqlite3OsFetch(pFile->pFd, 0, (int)pFile->iEof, (void**)pp);
-    testcase( rc!=SQLITE_OK );
+    sqlite3_file *pFd = pFile->pFd;
+    if( pFd->pMethods->iVersion>=3 ){
+      rc = sqlite3OsFetch(pFd, 0, (int)pFile->iEof, (void**)pp);
+      testcase( rc!=SQLITE_OK );
+    }
   }
   return rc;
 }
@@ -758,7 +761,7 @@ static int vdbeSorterCompare(
   if( pKey2 ){
     sqlite3VdbeRecordUnpack(pTask->pSorter->pKeyInfo, nKey2, pKey2, r2);
   }
-  return sqlite3VdbeRecordCompare(nKey1, pKey1, r2, 0);
+  return sqlite3VdbeRecordCompare(nKey1, pKey1, r2);
 }
 
 /*
@@ -1121,7 +1124,7 @@ void sqlite3VdbeSorterClose(sqlite3 *db, VdbeCursor *pCsr){
 ** the specific VFS implementation.
 */
 static void vdbeSorterExtendFile(sqlite3 *db, sqlite3_file *pFd, i64 nByte){
-  if( nByte<=(i64)(db->nMaxSorterMmap) ){
+  if( nByte<=(i64)(db->nMaxSorterMmap) && pFd->pMethods->iVersion>=3 ){
     int rc = sqlite3OsTruncate(pFd, nByte);
     if( rc==SQLITE_OK ){
       void *p = 0;
@@ -2059,7 +2062,7 @@ static void *vdbePmaReaderBgInit(void *pCtx){
 
 /*
 ** Use a background thread to invoke vdbePmaReaderIncrMergeInit(INCRINIT_TASK) 
-** on the the PmaReader object passed as the first argument.
+** on the PmaReader object passed as the first argument.
 **
 ** This call will initialize the various fields of the pReadr->pIncr 
 ** structure and, if it is a multi-threaded IncrMerger, launch a 
@@ -2458,7 +2461,7 @@ int sqlite3VdbeSorterRowkey(const VdbeCursor *pCsr, Mem *pOut){
   void *pKey; int nKey;           /* Sorter key to copy into pOut */
 
   pKey = vdbeSorterRowkey(pSorter, &nKey);
-  if( sqlite3VdbeMemGrow(pOut, nKey, 0) ){
+  if( sqlite3VdbeMemClearAndResize(pOut, nKey) ){
     return SQLITE_NOMEM;
   }
   pOut->n = nKey;
@@ -2514,6 +2517,6 @@ int sqlite3VdbeSorterCompare(
     }
   }
 
-  *pRes = sqlite3VdbeRecordCompare(pVal->n, pVal->z, r2, 0);
+  *pRes = sqlite3VdbeRecordCompare(pVal->n, pVal->z, r2);
   return SQLITE_OK;
 }

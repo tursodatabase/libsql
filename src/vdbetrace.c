@@ -64,7 +64,7 @@ static int findNextHostParameter(const char *zSql, int *pnToken){
 ** ALGORITHM:  Scan the input string looking for host parameters in any of
 ** these forms:  ?, ?N, $A, @A, :A.  Take care to avoid text within
 ** string literals, quoted identifier names, and comments.  For text forms,
-** the host parameter index is found by scanning the perpared
+** the host parameter index is found by scanning the prepared
 ** statement for the corresponding OP_Variable opcode.  Once the host
 ** parameter index is known, locate the value in p->aVar[].  Then render
 ** the value as a literal in place of the host parameter name.
@@ -127,7 +127,7 @@ char *sqlite3VdbeExpandSql(
       }else if( pVar->flags & MEM_Int ){
         sqlite3XPrintf(&out, 0, "%lld", pVar->u.i);
       }else if( pVar->flags & MEM_Real ){
-        sqlite3XPrintf(&out, 0, "%!.15g", pVar->r);
+        sqlite3XPrintf(&out, 0, "%!.15g", pVar->u.r);
       }else if( pVar->flags & MEM_Str ){
         int nOut;  /* Number of bytes of the string text to include in output */
 #ifndef SQLITE_OMIT_UTF16

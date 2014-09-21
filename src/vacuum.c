@@ -87,7 +87,7 @@ static int execExecSql(sqlite3 *db, char **pzErrMsg, const char *zSql){
 ** step (3) requires additional temporary disk space approximately equal
 ** to the size of the original database for the rollback journal.
 ** Hence, temporary disk space that is approximately 2x the size of the
-** orginal database is required.  Every page of the database is written
+** original database is required.  Every page of the database is written
 ** approximately 3 times:  Once for step (2) and twice for step (3).
 ** Two writes per page are required in step (3) because the original
 ** database content must be written into the rollback journal prior to

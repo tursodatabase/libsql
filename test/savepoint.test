@@ -561,7 +561,7 @@ do_test savepoint-8-2 {
 #
 ifcapable auth {
   proc auth {args} {
-    eval lappend ::authdata $args
+    eval lappend ::authdata [lrange $args 0 4]
     return SQLITE_OK
   }
   db auth auth
@@ -583,7 +583,7 @@ ifcapable auth {
   } {SQLITE_SAVEPOINT RELEASE sp1 {} {}}
 
   proc auth {args} {
-    eval lappend ::authdata $args
+    eval lappend ::authdata [lrange $args 0 4]
     return SQLITE_DENY
   }
   db auth auth

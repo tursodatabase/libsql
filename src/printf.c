@@ -15,6 +15,21 @@
 #include "sqliteInt.h"
 
 /*
+** If the strchrnul() library function is available, then set
+** HAVE_STRCHRNUL.  If that routine is not available, this module
+** will supply its own.  The built-in version is slower than
+** the glibc version so the glibc version is definitely preferred.
+*/
+#if !defined(HAVE_STRCHRNUL)
+# if defined(linux)
+#  define HAVE_STRCHRNUL 1
+# else
+#  define HAVE_STRCHRNUL 0
+# endif
+#endif
+
+
+/*
 ** Conversion types fall into various categories as defined by the
 ** following enumeration.
 */
@@ -224,9 +239,13 @@ void sqlite3VXPrintf(
   for(; (c=(*fmt))!=0; ++fmt){
     if( c!='%' ){
       bufpt = (char *)fmt;
-      while( (c=(*++fmt))!='%' && c!=0 ){};
+#if HAVE_STRCHRNUL
+      fmt = strchrnul(fmt, '%');
+#else
+      do{ fmt++; }while( *fmt && *fmt != '%' );
+#endif
       sqlite3StrAccumAppend(pAccum, bufpt, (int)(fmt - bufpt));
-      if( c==0 ) break;
+      if( *fmt==0 ) break;
     }
     if( (c=(*++fmt))==0 ){
       sqlite3StrAccumAppend(pAccum, "%", 1);
@@ -904,7 +923,7 @@ char *sqlite3MPrintf(sqlite3 *db, const char *zFormat, ...){
 
 /*
 ** Like sqlite3MPrintf(), but call sqlite3DbFree() on zStr after formatting
-** the string and before returnning.  This routine is intended to be used
+** the string and before returning.  This routine is intended to be used
 ** to modify an existing string.  For example:
 **
 **       x = sqlite3MPrintf(db, x, "prefix %s suffix", x);

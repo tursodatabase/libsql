@@ -760,7 +760,7 @@ static void tclSqlFunc(sqlite3_context *context, int argc, sqlite3_value**argv){
     /* If there are arguments to the function, make a shallow copy of the
     ** script object, lappend the arguments, then evaluate the copy.
     **
-    ** By "shallow" copy, we mean a only the outer list Tcl_Obj is duplicated.
+    ** By "shallow" copy, we mean only the outer list Tcl_Obj is duplicated.
     ** The new Tcl_Obj contains pointers to the original list elements. 
     ** That way, when Tcl_EvalObjv() is run and shimmers the first element
     ** of the list to tclCmdNameType, that alternate representation will
@@ -872,6 +872,9 @@ static int auth_callback(
   const char *zArg2,
   const char *zArg3,
   const char *zArg4
+#ifdef SQLITE_USER_AUTHENTICATION
+  ,const char *zArg5
+#endif
 ){
   const char *zCode;
   Tcl_DString str;
@@ -924,6 +927,9 @@ static int auth_callback(
   Tcl_DStringAppendElement(&str, zArg2 ? zArg2 : "");
   Tcl_DStringAppendElement(&str, zArg3 ? zArg3 : "");
   Tcl_DStringAppendElement(&str, zArg4 ? zArg4 : "");
+#ifdef SQLITE_USER_AUTHENTICATION
+  Tcl_DStringAppendElement(&str, zArg5 ? zArg5 : "");
+#endif  
   rc = Tcl_GlobalEval(pDb->interp, Tcl_DStringValue(&str));
   Tcl_DStringFree(&str);
   zReply = rc==TCL_OK ? Tcl_GetStringResult(pDb->interp) : "SQLITE_DENY";
@@ -1700,8 +1706,11 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
         pDb->zAuth = 0;
       }
       if( pDb->zAuth ){
+        typedef int (*sqlite3_auth_cb)(
+           void*,int,const char*,const char*,
+           const char*,const char*);
         pDb->interp = interp;
-        sqlite3_set_authorizer(pDb->db, auth_callback, pDb);
+        sqlite3_set_authorizer(pDb->db,(sqlite3_auth_cb)auth_callback,pDb);
       }else{
         sqlite3_set_authorizer(pDb->db, 0, 0);
       }
