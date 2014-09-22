@@ -1,5 +1,5 @@
-C Tune\sthe\squery\splanner\sto\sbe\smore\saggressive\sabout\susing\sautomatic\sindexes\non\sviews\sand\ssubqueries\sfor\swhich\sthere\sis\snot\sopportunity\sto\sdeclare\sa\npersistent\sschema\sindex.
-D 2014-09-22T14:30:51.911
+C Size\sreduction\sand\ssubstantial\sperformance\sincrease\sfor\scellSizePtr().
+D 2014-09-22T19:51:35.432
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -172,7 +172,7 @@ F src/auth.c d8abcde53426275dab6243b441256fcd8ccbebb2
 F src/backup.c a31809c65623cc41849b94d368917f8bb66e6a7e
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 49ca66250c7dfa844a4d4cb8272b87420d27d3a5
-F src/btree.c 6aa61c0e3d20d1d1acc8fb33d8f0ebd675305d3c
+F src/btree.c 86cc6efed093b80360489acac4d2daf064a1ad58
 F src/btree.h a79aa6a71e7f1055f01052b7f821bd1c2dce95c8
 F src/btreeInt.h e0ecb5dba292722039a7540beb3fc448103273cc
 F src/build.c 8dbca25988045fbf2a33c9631c42706fa6449e60
@@ -1199,7 +1199,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 10a6e510497b471d67ac3dfb19ff256a7d18adf4
-R f6ce79b0bd0352edf4a2c65db2a400a7
+P 41de1643bfc9ae25e20790d707e2789b665baa2b
+R 20814d8e71474a3ca52334b7cc5e7228
 U drh
-Z b1246ec5b6570c51d45a58350d46840c
+Z 93d80b8ba28615b25f3f6e1541988990

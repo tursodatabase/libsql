@@ -1057,6 +1057,7 @@ static void btreeParseCell(
 */
 static u16 cellSizePtr(MemPage *pPage, u8 *pCell){
   u8 *pIter = &pCell[pPage->childPtrSize];
+  u8 *pEnd;
   u32 nSize;
 
 #ifdef SQLITE_DEBUG
@@ -1068,21 +1069,25 @@ static u16 cellSizePtr(MemPage *pPage, u8 *pCell){
   btreeParseCellPtr(pPage, pCell, &debuginfo);
 #endif
 
-  if( pPage->intKey ){
-    u8 *pEnd;
-    if( pPage->hasData ){
-      pIter += getVarint32(pIter, nSize);
-    }else{
-      nSize = 0;
+  if( pPage->intKey==0 || pPage->hasData ){
+    nSize = *pIter;
+    if( nSize>=0x80 ){
+      pEnd = &pIter[9];
+      nSize &= 0x7f;
+      do{
+        nSize = (nSize<<7) | (*++pIter & 0x7f);
+      }while( *(pIter)>=0x80 && pIter<&pCell[6] );
     }
-
+    pIter++;
+  }else{
+    nSize = 0;
+  }
+  if( pPage->intKey ){
     /* pIter now points at the 64-bit integer key value, a variable length 
     ** integer. The following block moves pIter to point at the first byte
     ** past the end of the key value. */
     pEnd = &pIter[9];
     while( (*pIter++)&0x80 && pIter<pEnd );
-  }else{
-    pIter += getVarint32(pIter, nSize);
   }
 
   testcase( nSize==pPage->maxLocal );
@@ -1104,7 +1109,7 @@ static u16 cellSizePtr(MemPage *pPage, u8 *pCell){
     nSize = 4;
   }
 
-  assert( nSize==debuginfo.nSize );
+  assert( nSize==debuginfo.nSize || CORRUPT_DB );
   return (u16)nSize;
 }
 
