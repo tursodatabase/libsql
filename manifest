@@ -1,5 +1,5 @@
-C Correctly\shandle\san\sORDER\sBY\sclause\son\san\souter\squery\swhen\sapplying\nthe\scompound-subquery\sflattening\soptimization.\s\sTicket\s[89398880bcfff].\nAlso\sadd\sthe\sSQLITE_ENABLE_SELECTTRACE\soption\sfor\sadditional\sdebugging\nand\sanalysis\sinformation\sabout\sselect\sstatement\sprocessing.
-D 2014-09-21T22:31:52.593
+C Disable\sshared\smemory\soperations\susing\sthe\sunix-nolock\sVFS.
+D 2014-09-22T03:22:27.824
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -212,7 +212,7 @@ F src/os.c 1b147e4cf7cc39e618115c14a086aed44bc91ace
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c 9096a1b1449182e67e759f59994eee04113bc587
+F src/os_unix.c fb587121840f690101336879adfa6d0b2cd0e8c7
 F src/os_win.c 0a4042ef35f322e86fa01f6c8884c5e645b911e7
 F src/os_win.h 09e751b20bbc107ffbd46e13555dc73576d88e21
 F src/pager.c caab007743821d96752597c9cfd7351654697b06
@@ -1199,8 +1199,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 59e2c9df02d7e988c5ad44c560ead1e5288b12e7 9683e001ed38b41979220eef0bdfcb54df5f3191
-R df45958fe8f93552efb788581c98f0f7
-T +closed 9683e001ed38b41979220eef0bdfcb54df5f3191
+P d5880abd63c83c88e135257373afa0a3fd88297e
+R 78a2249f9b04bb5d20ea2c24b3aed300
 U drh
-Z d861c46be738b6f104b52fa4441ce204
+Z 8d87b3613ef02056468b7e3fc8779d9f
