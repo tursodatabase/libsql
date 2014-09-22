@@ -1076,7 +1076,7 @@ static u16 cellSizePtr(MemPage *pPage, u8 *pCell){
       nSize &= 0x7f;
       do{
         nSize = (nSize<<7) | (*++pIter & 0x7f);
-      }while( *(pIter)>=0x80 && pIter<&pCell[6] );
+      }while( *(pIter)>=0x80 && pIter<pEnd );
     }
     pIter++;
   }else{
