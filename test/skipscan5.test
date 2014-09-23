@@ -108,7 +108,7 @@ foreach {tn dbenc coll} {
     3 { c > 'q' }                     {/*ANY(a) AND ANY(b) AND c>?*/}
     4 { c > 'e' }                     {/*SCAN TABLE t2*/}
     5 { c < 'q' }                     {/*SCAN TABLE t2*/}
-    4 { c < 'e' }                     {/*ANY(a) AND ANY(b) AND c<?*/}
+    6 { c < 'c' }                     {/*ANY(a) AND ANY(b) AND c<?*/}
   } {
     set sql "EXPLAIN QUERY PLAN SELECT * FROM t2 WHERE $q" 
     do_execsql_test 2.$tn.$tn2 $sql $res
@@ -180,7 +180,3 @@ foreach {tn q res} {
 }
 
 finish_test
-
-
-
-
