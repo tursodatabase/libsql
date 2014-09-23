@@ -456,12 +456,10 @@ struct BtShared {
 */
 typedef struct CellInfo CellInfo;
 struct CellInfo {
-  i64 nKey;      /* The key for INTKEY tables, or number of bytes in key */
-  u8 *pCell;     /* Pointer to the start of cell content */
-  u32 nData;     /* Number of bytes of data */
-  u32 nPayload;  /* Total amount of payload */
-  u16 nHeader;   /* Size of the cell content header in bytes */
-  u16 nLocal;    /* Amount of payload held locally */
+  i64 nKey;      /* The key for INTKEY tables, or nPayload otherwise */
+  u8 *pPayload;  /* Pointer to the start of payload */
+  u32 nPayload;  /* Bytes of payload */
+  u16 nLocal;    /* Amount of payload held locally, not on overflow */
   u16 iOverflow; /* Offset to overflow page number.  Zero if no overflow */
   u16 nSize;     /* Size of the cell content on the main b-tree page */
 };

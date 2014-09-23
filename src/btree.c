@@ -977,38 +977,33 @@ static void btreeParseCellPtr(
   u8 *pCell,              /* Pointer to the cell text. */
   CellInfo *pInfo         /* Fill in this structure */
 ){
-  u16 n;                  /* Number bytes in cell content header */
+  u8 *pIter = &pCell[pPage->childPtrSize];
   u32 nPayload;           /* Number of bytes of cell payload */
 
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
-
-  pInfo->pCell = pCell;
   assert( pPage->leaf==0 || pPage->leaf==1 );
-  n = pPage->childPtrSize;
-  assert( n==4-4*pPage->leaf );
   if( pPage->intKey ){
     if( pPage->hasData ){
-      assert( n==0 );
-      n = getVarint32(pCell, nPayload);
+      assert( pIter==pCell );
+      pIter += getVarint32(pIter, nPayload);
     }else{
       nPayload = 0;
     }
-    n += getVarint(&pCell[n], (u64*)&pInfo->nKey);
-    pInfo->nData = nPayload;
+    pIter += getVarint(pIter, (u64*)&pInfo->nKey);
   }else{
-    pInfo->nData = 0;
-    n += getVarint32(&pCell[n], nPayload);
+    pIter += getVarint32(pIter, nPayload);
     pInfo->nKey = nPayload;
   }
   pInfo->nPayload = nPayload;
-  pInfo->nHeader = n;
+  pInfo->pPayload = pIter;
   testcase( nPayload==pPage->maxLocal );
   testcase( nPayload==pPage->maxLocal+1 );
-  if( likely(nPayload<=pPage->maxLocal) ){
+  if( nPayload<=pPage->maxLocal ){
     /* This is the (easy) common case where the entire payload fits
     ** on the local page.  No overflow is required.
     */
-    if( (pInfo->nSize = (u16)(n+nPayload))<4 ) pInfo->nSize = 4;
+    pInfo->nSize = nPayload + (u16)(pIter - pCell);
+    if( pInfo->nSize<4 ) pInfo->nSize = 4;
     pInfo->nLocal = (u16)nPayload;
     pInfo->iOverflow = 0;
   }else{
@@ -1035,7 +1030,7 @@ static void btreeParseCellPtr(
     }else{
       pInfo->nLocal = (u16)minLocal;
     }
-    pInfo->iOverflow = (u16)(pInfo->nLocal + n);
+    pInfo->iOverflow = (u16)(&pInfo->pPayload[pInfo->nLocal] - pCell);
     pInfo->nSize = pInfo->iOverflow + 4;
   }
 }
@@ -1132,7 +1127,6 @@ static void ptrmapPutOvflPtr(MemPage *pPage, u8 *pCell, int *pRC){
   if( *pRC ) return;
   assert( pCell!=0 );
   btreeParseCellPtr(pPage, pCell, &info);
-  assert( (info.nData+(pPage->intKey?0:info.nKey))==info.nPayload );
   if( info.iOverflow ){
     Pgno ovfl = get4byte(&pCell[info.iOverflow]);
     ptrmapPut(pPage->pBt, ovfl, PTRMAP_OVERFLOW1, pPage->pgno, pRC);
@@ -3866,8 +3860,9 @@ int sqlite3BtreeKeySize(BtCursor *pCur, i64 *pSize){
 int sqlite3BtreeDataSize(BtCursor *pCur, u32 *pSize){
   assert( cursorHoldsMutex(pCur) );
   assert( pCur->eState==CURSOR_VALID );
+  assert( pCur->apPage[pCur->iPage]->intKey==1 );
   getCellInfo(pCur);
-  *pSize = pCur->info.nData;
+  *pSize = pCur->info.nPayload;
   return SQLITE_OK;
 }
 
@@ -4018,7 +4013,6 @@ static int accessPayload(
 ){
   unsigned char *aPayload;
   int rc = SQLITE_OK;
-  u32 nKey;
   int iIdx = 0;
   MemPage *pPage = pCur->apPage[pCur->iPage]; /* Btree page of current entry */
   BtShared *pBt = pCur->pBt;                  /* Btree this cursor belongs to */
@@ -4033,15 +4027,13 @@ static int accessPayload(
   assert( eOp!=2 || offset==0 );      /* Always start from beginning for eOp==2 */
 
   getCellInfo(pCur);
-  aPayload = pCur->info.pCell + pCur->info.nHeader;
-  nKey = (pPage->intKey ? 0 : (int)pCur->info.nKey);
+  aPayload = pCur->info.pPayload;
 #ifdef SQLITE_DIRECT_OVERFLOW_READ
-  bEnd = (offset+amt==nKey+pCur->info.nData);
+  bEnd = offset+amt==pCur->info.nPayload;
 #endif
+  assert( offset+amt <= pCur->info.nPayload );
 
-  if( NEVER(offset+amt > nKey+pCur->info.nData) 
-   || &aPayload[pCur->info.nLocal] > &pPage->aData[pBt->usableSize]
-  ){
+  if( &aPayload[pCur->info.nLocal] > &pPage->aData[pBt->usableSize] ){
     /* Trying to read or write past the end of the data is an error */
     return SQLITE_CORRUPT_BKPT;
   }
@@ -4275,7 +4267,7 @@ static const void *fetchPayload(
   assert( pCur->aiIdx[pCur->iPage]<pCur->apPage[pCur->iPage]->nCell );
   assert( pCur->info.nSize>0 );
   *pAmt = pCur->info.nLocal;
-  return (void*)(pCur->info.pCell + pCur->info.nHeader);
+  return (void*)pCur->info.pPayload;
 }
 
 
@@ -5640,9 +5632,10 @@ static int fillInCell(
   }
   nHeader += putVarint(&pCell[nHeader], *(u64*)&nKey);
   btreeParseCellPtr(pPage, pCell, &info);
-  assert( info.nHeader==nHeader );
+  assert( nHeader=(int)(info.pPayload - pCell) );
   assert( info.nKey==nKey );
-  assert( info.nData==(u32)(nData+nZero) );
+  assert( pPage->intKey==0 || info.nPayload==(u32)(nData+nZero) );
+  assert( pPage->intKey==1 || info.nPayload==nKey );
   
   /* Fill in the payload */
   nPayload = nData + nZero;
@@ -8086,19 +8079,18 @@ static int checkTreePage(
              "On tree page %d cell %d: ", iPage, i);
     pCell = findCell(pPage,i);
     btreeParseCellPtr(pPage, pCell, &info);
-    sz = info.nData;
-    if( !pPage->intKey ) sz += (int)info.nKey;
+    sz = info.nPayload;
     /* For intKey pages, check that the keys are in order.
     */
-    else if( i==0 ) nMinKey = nMaxKey = info.nKey;
-    else{
-      if( info.nKey <= nMaxKey ){
+    if( pPage->intKey ){
+      if( i==0 ){
+        nMinKey = nMaxKey = info.nKey;
+      }else if( info.nKey <= nMaxKey ){
         checkAppendMsg(pCheck, zContext, 
-            "Rowid %lld out of order (previous was %lld)", info.nKey, nMaxKey);
+           "Rowid %lld out of order (previous was %lld)", info.nKey, nMaxKey);
       }
       nMaxKey = info.nKey;
     }
-    assert( sz==info.nPayload );
     if( (sz>info.nLocal) 
      && (&pCell[info.iOverflow]<=&pPage->aData[pBt->usableSize])
     ){
