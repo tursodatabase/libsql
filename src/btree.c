@@ -5611,7 +5611,6 @@ static int fillInCell(
   BtShared *pBt = pPage->pBt;
   Pgno pgnoOvfl = 0;
   int nHeader;
-  CellInfo info;
 
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
 
@@ -5621,24 +5620,18 @@ static int fillInCell(
             || sqlite3PagerIswriteable(pPage->pDbPage) );
 
   /* Fill in the header. */
-  nHeader = 0;
-  if( !pPage->leaf ){
-    nHeader += 4;
-  }
+  nHeader = pPage->childPtrSize;
+  nPayload = nData + nZero;
   if( pPage->hasData ){
-    nHeader += putVarint32(&pCell[nHeader], nData+nZero);
+    assert( pPage->intKey );
+    nHeader += putVarint32(&pCell[nHeader], nPayload);
   }else{
-    nData = nZero = 0;
+    assert( nData==0 );
+    assert( nZero==0 );
   }
   nHeader += putVarint(&pCell[nHeader], *(u64*)&nKey);
-  btreeParseCellPtr(pPage, pCell, &info);
-  assert( nHeader=(int)(info.pPayload - pCell) );
-  assert( info.nKey==nKey );
-  assert( pPage->intKey==0 || info.nPayload==(u32)(nData+nZero) );
-  assert( pPage->intKey==1 || info.nPayload==nKey );
   
-  /* Fill in the payload */
-  nPayload = nData + nZero;
+  /* Fill in the payload size */
   if( pPage->intKey ){
     pSrc = pData;
     nSrc = nData;
@@ -5647,15 +5640,55 @@ static int fillInCell(
     if( NEVER(nKey>0x7fffffff || pKey==0) ){
       return SQLITE_CORRUPT_BKPT;
     }
-    nPayload += (int)nKey;
+    nPayload = (int)nKey;
     pSrc = pKey;
     nSrc = (int)nKey;
   }
-  *pnSize = info.nSize;
-  spaceLeft = info.nLocal;
+  if( nPayload<=pPage->maxLocal ){
+    n = nHeader + nPayload;
+    testcase( n==3 );
+    testcase( n==4 );
+    if( n<4 ) n = 4;
+    *pnSize = n;
+    spaceLeft = nPayload;
+    pPrior = pCell;
+  }else{
+    int mn = pPage->minLocal;
+    n = mn + (nPayload - mn) % (pPage->pBt->usableSize - 4);
+    testcase( n==pPage->maxLocal );
+    testcase( n==pPage->maxLocal+1 );
+    if( n > pPage->maxLocal ) n = mn;
+    spaceLeft = n;
+    *pnSize = n + nHeader + 4;
+    pPrior = &pCell[nHeader+n];
+  }
   pPayload = &pCell[nHeader];
-  pPrior = &pCell[info.iOverflow];
 
+  /* At this point variables should be set as follows:
+  **
+  **   nPayload           Total payload size in bytes
+  **   pPayload           Begin writing payload here
+  **   spaceLeft          Space available at pPayload.  If nPayload>spaceLeft,
+  **                      that means content must spill into overflow pages.
+  **   *pnSize            Size of the local cell (not counting overflow pages)
+  **   pPrior             Where to write the pgno of the first overflow page
+  **
+  ** Use a call to btreeParseCellPtr() to verify that the values above
+  ** were computed correctly.
+  */
+#if SQLITE_DEBUG
+  {
+    CellInfo info;
+    btreeParseCellPtr(pPage, pCell, &info);
+    assert( nHeader=(int)(info.pPayload - pCell) );
+    assert( info.nKey==nKey );
+    assert( *pnSize == info.nSize );
+    assert( spaceLeft == info.nLocal );
+    assert( pPrior == &pCell[info.iOverflow] );
+  }
+#endif
+
+  /* Write the payload into the local Cell and any extra into overflow pages */
   while( nPayload>0 ){
     if( spaceLeft==0 ){
 #ifndef SQLITE_OMIT_AUTOVACUUM
