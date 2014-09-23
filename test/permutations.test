@@ -938,6 +938,14 @@ test_suite "session_eec" -description {
   sqlite3_extended_result_codes $::dbhandle 1
 }
 
+test_suite "session_str" -description {
+  All session module related tests using the streaming APIs.
+} -files [
+  glob -nocomplain $::testdir/../ext/session/*.test
+] -dbconfig {
+  set ::sqlite3session_streams 1
+}
+
 test_suite "no_optimization" -description {
   Run test scripts with optimizations disabled using the
   sqlite3_test_control(SQLITE_TESTCTRL_OPTIMIZATIONS) interface.

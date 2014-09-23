@@ -14,6 +14,23 @@ struct TestSession {
   Tcl_Obj *pFilterScript;
 };
 
+#define SESSION_STREAM_TCL_VAR "sqlite3session_streams"
+
+/*
+** Attempt to find the global variable zVar within interpreter interp
+** and extract a boolean value from it. Return this value.
+**
+** If the named variable cannot be found, or if it cannot be interpreted
+** as a boolean, return 0.
+*/
+static int test_tcl_boolean(Tcl_Interp *interp, const char *zVar){
+  Tcl_Obj *pObj;
+  int bVal = 0;
+  pObj = Tcl_ObjGetVar2(interp, Tcl_NewStringObj(zVar, -1), 0, TCL_GLOBAL_ONLY);
+  if( pObj ) Tcl_GetBooleanFromObj(0, pObj, &bVal);
+  return bVal;
+}
+
 static int test_session_error(Tcl_Interp *interp, int rc){
   extern const char *sqlite3ErrName(int);
   Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
@@ -44,12 +61,38 @@ static int test_table_filter(void *pCtx, const char *zTbl){
   return bRes;
 }
 
+struct TestSessionsBlob {
+  void *p;
+  int n;
+};
+typedef struct TestSessionsBlob TestSessionsBlob;
+
+static int testSessionsOutput(
+  void *pCtx,
+  const void *pData,
+  int nData
+){
+  TestSessionsBlob *pBlob = (TestSessionsBlob*)pCtx;
+  char *pNew;
+
+  assert( nData>0 );
+  pNew = (char*)sqlite3_realloc(pBlob->p, pBlob->n + nData);
+  if( pNew==0 ){
+    return SQLITE_NOMEM;
+  }
+  pBlob->p = (void*)pNew;
+  memcpy(&pNew[pBlob->n], pData, nData);
+  pBlob->n += nData;
+  return SQLITE_OK;
+}
+
 /*
 ** Tclcmd:  $session attach TABLE
 **          $session changeset
 **          $session delete
 **          $session enable BOOL
 **          $session indirect INTEGER
+**          $session patchset
 **          $session table_filter SCRIPT
 */
 static int test_session_cmd(
@@ -105,17 +148,26 @@ static int test_session_cmd(
 
     case 7:        /* patchset */
     case 1: {      /* changeset */
-      int nChange;
-      void *pChange;
-      if( iSub==7 ){
-        rc = sqlite3session_patchset(pSession, &nChange, &pChange);
+      TestSessionsBlob o = {0, 0};
+      if( test_tcl_boolean(interp, SESSION_STREAM_TCL_VAR) ){
+        void *pCtx = (void*)&o;
+        if( iSub==7 ){
+          rc = sqlite3session_patchset_str(pSession, testSessionsOutput, pCtx);
+        }else{
+          rc = sqlite3session_changeset_str(pSession, testSessionsOutput, pCtx);
+        }
       }else{
-        rc = sqlite3session_changeset(pSession, &nChange, &pChange);
+        if( iSub==7 ){
+          rc = sqlite3session_patchset(pSession, &o.n, &o.p);
+        }else{
+          rc = sqlite3session_changeset(pSession, &o.n, &o.p);
+        }
       }
       if( rc==SQLITE_OK ){
-        Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(pChange, nChange)); 
-        sqlite3_free(pChange);
-      }else{
+        Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(o.p, o.n)); 
+      }
+      sqlite3_free(o.p);
+      if( rc!=SQLITE_OK ){
         return test_session_error(interp, rc);
       }
       break;
