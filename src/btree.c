@@ -968,9 +968,6 @@ static u8 *findOverflowCell(MemPage *pPage, int iCell){
 ** are two versions of this function.  btreeParseCell() takes a 
 ** cell index as the second argument and btreeParseCellPtr() 
 ** takes a pointer to the body of the cell as its second argument.
-**
-** Within this file, the parseCell() macro can be called instead of
-** btreeParseCellPtr(). Using some compilers, this will be faster.
 */
 static void btreeParseCellPtr(
   MemPage *pPage,         /* Page containing the cell */
@@ -1034,14 +1031,12 @@ static void btreeParseCellPtr(
     pInfo->nSize = pInfo->iOverflow + 4;
   }
 }
-#define parseCell(pPage, iCell, pInfo) \
-  btreeParseCellPtr((pPage), findCell((pPage), (iCell)), (pInfo))
 static void btreeParseCell(
   MemPage *pPage,         /* Page containing the cell */
   int iCell,              /* The cell index.  First cell is 0 */
   CellInfo *pInfo         /* Fill in this structure */
 ){
-  parseCell(pPage, iCell, pInfo);
+  btreeParseCellPtr(pPage, findCell(pPage, iCell), pInfo);
 }
 
 /*
