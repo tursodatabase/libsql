@@ -1,5 +1,5 @@
-C Adjust\sskip-scan\scost\sestimates\sslightly\sso\sthat\sa\sfull\stable\sscan\sis\npreferred\sover\sa\sskip-scan\sto\sa\scolumn\swith\sonly\stwo\sdistinct\svalues.
-D 2014-09-23T01:40:59.122
+C Add\sthe\s"multiplex_truncate"\sPRAGMA\sto\sthe\smultiplexor\sextension,\sfor\nquerying\sand\ssetting\sthe\struncate\sflag\son\sa\sdatabase\sconnection.
+D 2014-09-23T18:30:00.961
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -262,7 +262,7 @@ F src/test_intarray.h 9dc57417fb65bc7835cc18548852cc08cc062202
 F src/test_journal.c f5c0a05b7b3d5930db769b5ee6c3766dc2221a64
 F src/test_loadext.c a5251f956ab6af21e138dc1f9c0399394a510cb4
 F src/test_malloc.c ba34143f941a9d74b30bbffc8818389bb73a1ca2
-F src/test_multiplex.c ca90057438b63bf0840ebb84d0ef050624519a76
+F src/test_multiplex.c caadb62cc777268b4f8fb94d5b27b80156c8f7c0
 F src/test_multiplex.h c08e4e8f8651f0c5e0509b138ff4d5b43ed1f5d3
 F src/test_mutex.c 293042d623ebba969160f471a82aa1551626454f
 F src/test_onefile.c 0396f220561f3b4eedc450cef26d40c593c69a25
@@ -729,6 +729,7 @@ F test/mmapfault.test d4c9eff9cd8c2dc14bc43e71e042f175b0a26fe3
 F test/multiplex.test efd015ca0b5b4a57dc9535b8feb1273eebeadb60
 F test/multiplex2.test 580ca5817c7edbe4cc68fa150609c9473393003a
 F test/multiplex3.test d228f59eac91839a977eac19f21d053f03e4d101
+F test/multiplex4.test d3e8a5a522c51cbf3ed1c5b0bd496be02c29d7b1
 F test/mutex1.test 78b2b9bb320e51d156c4efdb71b99b051e7a4b41
 F test/mutex2.test bfeaeac2e73095b2ac32285d2756e3a65e681660
 F test/nan.test e9648b9d007c7045242af35e11a984d4b169443a
@@ -1199,7 +1200,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7609744014c6a84a8379794a0351a2e9626ec86b
-R cb94e4a1db7c56387373fb77d2698ee3
+P ae9a42b268ad3f7d21a5813bb931e795c6917014
+R 38a39c43ba2ffbcd445b1883953d7c57
 U drh
-Z a13a3c1c4006b80e078cd097de2cdb1a
+Z 9797dd2e522d2cafa5364dec0ef721e8
