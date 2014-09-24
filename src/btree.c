@@ -974,20 +974,25 @@ static void btreeParseCellPtr(
   u8 *pCell,              /* Pointer to the cell text. */
   CellInfo *pInfo         /* Fill in this structure */
 ){
-  u8 *pIter = &pCell[pPage->childPtrSize];
+  u8 *pIter;              /* For scanning through pCell */
   u32 nPayload;           /* Number of bytes of cell payload */
 
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
   assert( pPage->leaf==0 || pPage->leaf==1 );
-  if( pPage->intKey ){
-    if( pPage->hasData ){
-      assert( pIter==pCell );
-      pIter += getVarint32(pIter, nPayload);
-    }else{
-      nPayload = 0;
-    }
+  if( pPage->intKeyLeaf ){
+    assert( pPage->childPtrSize==0 );
+    pIter = pCell + getVarint32(pCell, nPayload);
     pIter += getVarint(pIter, (u64*)&pInfo->nKey);
+  }else if( pPage->noPayload ){
+    assert( pPage->childPtrSize==4 );
+    pInfo->nSize = 4 + getVarint(&pCell[4], (u64*)&pInfo->nKey);
+    pInfo->nPayload = 0;
+    pInfo->nLocal = 0;
+    pInfo->iOverflow = 0;
+    pInfo->pPayload = 0;
+    return;
   }else{
+    pIter = pCell + pPage->childPtrSize;
     pIter += getVarint32(pIter, nPayload);
     pInfo->nKey = nPayload;
   }
@@ -1046,9 +1051,9 @@ static void btreeParseCell(
 ** the space used by the cell pointer.
 */
 static u16 cellSizePtr(MemPage *pPage, u8 *pCell){
-  u8 *pIter = &pCell[pPage->childPtrSize];
-  u8 *pEnd;
-  u32 nSize;
+  u8 *pIter = pCell + pPage->childPtrSize;   /* For looping over bytes of pCell */
+  u8 *pEnd;                                  /* End mark for a varint */
+  u32 nSize;                                 /* Size value to return */
 
 #ifdef SQLITE_DEBUG
   /* The value returned by this function should always be the same as
@@ -1059,19 +1064,21 @@ static u16 cellSizePtr(MemPage *pPage, u8 *pCell){
   btreeParseCellPtr(pPage, pCell, &debuginfo);
 #endif
 
-  if( pPage->intKey==0 || pPage->hasData ){
-    nSize = *pIter;
-    if( nSize>=0x80 ){
-      pEnd = &pIter[9];
-      nSize &= 0x7f;
-      do{
-        nSize = (nSize<<7) | (*++pIter & 0x7f);
-      }while( *(pIter)>=0x80 && pIter<pEnd );
-    }
-    pIter++;
-  }else{
-    nSize = 0;
+  if( pPage->noPayload ){
+    pEnd = &pIter[9];
+    while( (*pIter++)&0x80 && pIter<pEnd );
+    assert( pPage->childPtrSize==4 );
+    return (u16)(pIter - pCell);
   }
+  nSize = *pIter;
+  if( nSize>=0x80 ){
+    pEnd = &pIter[9];
+    nSize &= 0x7f;
+    do{
+      nSize = (nSize<<7) | (*++pIter & 0x7f);
+    }while( *(pIter)>=0x80 && pIter<pEnd );
+  }
+  pIter++;
   if( pPage->intKey ){
     /* pIter now points at the 64-bit integer key value, a variable length 
     ** integer. The following block moves pIter to point at the first byte
@@ -1079,10 +1086,12 @@ static u16 cellSizePtr(MemPage *pPage, u8 *pCell){
     pEnd = &pIter[9];
     while( (*pIter++)&0x80 && pIter<pEnd );
   }
-
   testcase( nSize==pPage->maxLocal );
   testcase( nSize==pPage->maxLocal+1 );
-  if( nSize>pPage->maxLocal ){
+  if( nSize<=pPage->maxLocal ){
+    nSize += (u32)(pIter - pCell);
+    if( nSize<4 ) nSize = 4;
+  }else{
     int minLocal = pPage->minLocal;
     nSize = minLocal + (nSize - minLocal) % (pPage->pBt->usableSize - 4);
     testcase( nSize==pPage->maxLocal );
@@ -1090,15 +1099,8 @@ static u16 cellSizePtr(MemPage *pPage, u8 *pCell){
     if( nSize>pPage->maxLocal ){
       nSize = minLocal;
     }
-    nSize += 4;
+    nSize += 4 + (u16)(pIter - pCell);
   }
-  nSize += (u32)(pIter - pCell);
-
-  /* The minimum size of any cell is 4 bytes. */
-  if( nSize<4 ){
-    nSize = 4;
-  }
-
   assert( nSize==debuginfo.nSize || CORRUPT_DB );
   return (u16)nSize;
 }
@@ -1442,12 +1444,14 @@ static int decodeFlags(MemPage *pPage, int flagByte){
   pBt = pPage->pBt;
   if( flagByte==(PTF_LEAFDATA | PTF_INTKEY) ){
     pPage->intKey = 1;
-    pPage->hasData = pPage->leaf;
+    pPage->intKeyLeaf = pPage->leaf;
+    pPage->noPayload = !pPage->leaf;
     pPage->maxLocal = pBt->maxLeaf;
     pPage->minLocal = pBt->minLeaf;
   }else if( flagByte==PTF_ZERODATA ){
     pPage->intKey = 0;
-    pPage->hasData = 0;
+    pPage->intKeyLeaf = 0;
+    pPage->noPayload = 0;
     pPage->maxLocal = pBt->maxLocal;
     pPage->minLocal = pBt->minLocal;
   }else{
@@ -3855,7 +3859,7 @@ int sqlite3BtreeKeySize(BtCursor *pCur, i64 *pSize){
 int sqlite3BtreeDataSize(BtCursor *pCur, u32 *pSize){
   assert( cursorHoldsMutex(pCur) );
   assert( pCur->eState==CURSOR_VALID );
-  assert( pCur->apPage[pCur->iPage]->intKey==1 );
+  assert( pCur->apPage[pCur->iPage]->intKeyLeaf==1 );
   getCellInfo(pCur);
   *pSize = pCur->info.nPayload;
   return SQLITE_OK;
@@ -4690,7 +4694,7 @@ int sqlite3BtreeMovetoUnpacked(
       for(;;){
         i64 nCellKey;
         pCell = findCell(pPage, idx) + pPage->childPtrSize;
-        if( pPage->hasData ){
+        if( pPage->intKeyLeaf ){
           while( 0x80 <= *(pCell++) ){
             if( pCell>=pPage->aDataEnd ) return SQLITE_CORRUPT_BKPT;
           }
@@ -5617,8 +5621,7 @@ static int fillInCell(
   /* Fill in the header. */
   nHeader = pPage->childPtrSize;
   nPayload = nData + nZero;
-  if( pPage->hasData ){
-    assert( pPage->intKey );
+  if( pPage->intKeyLeaf ){
     nHeader += putVarint32(&pCell[nHeader], nPayload);
   }else{
     assert( nData==0 );
@@ -6391,7 +6394,7 @@ static int balance_nonroot(
   **       leafData:  1 if pPage holds key+data and pParent holds only keys.
   */
   leafCorrection = apOld[0]->leaf*4;
-  leafData = apOld[0]->hasData;
+  leafData = apOld[0]->intKeyLeaf;
   for(i=0; i<nOld; i++){
     int limit;
     
@@ -6967,7 +6970,7 @@ static int balance(BtCursor *pCur){
       rc = sqlite3PagerWrite(pParent->pDbPage);
       if( rc==SQLITE_OK ){
 #ifndef SQLITE_OMIT_QUICKBALANCE
-        if( pPage->hasData
+        if( pPage->intKeyLeaf
          && pPage->nOverflow==1
          && pPage->aiOvfl[0]==pPage->nCell
          && pParent->pgno!=1

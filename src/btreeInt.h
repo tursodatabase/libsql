@@ -273,9 +273,10 @@ typedef struct BtLock BtLock;
 struct MemPage {
   u8 isInit;           /* True if previously initialized. MUST BE FIRST! */
   u8 nOverflow;        /* Number of overflow cell bodies in aCell[] */
-  u8 intKey;           /* True if intkey flag is set */
-  u8 leaf;             /* True if leaf flag is set */
-  u8 hasData;          /* True if this page stores data */
+  u8 intKey;           /* True if table b-trees.  False for index b-trees */
+  u8 intKeyLeaf;       /* True if the leaf of an intKey table */
+  u8 noPayload;        /* True if internal intKey page (thus w/o data) */
+  u8 leaf;             /* True if a leaf page */
   u8 hdrOffset;        /* 100 for page 1.  0 otherwise */
   u8 childPtrSize;     /* 0 if leaf==1.  4 if leaf==0 */
   u8 max1bytePayload;  /* min(maxLocal,127) */
