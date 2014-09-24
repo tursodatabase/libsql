@@ -4695,6 +4695,8 @@ int sqlite3BtreeMovetoUnpacked(
     idx = upr>>(1-biasRight); /* idx = biasRight ? upr : (lwr+upr)/2; */
     pCur->aiIdx[pCur->iPage] = (u16)idx;
     if( xRecordCompare==0 ){
+      u8 bits = 0;
+      i64 iLwr = 0, iUpr = 0;
       for(;;){
         i64 nCellKey;
         pCell = findCell(pPage, idx) + pPage->childPtrSize;
@@ -4707,9 +4709,13 @@ int sqlite3BtreeMovetoUnpacked(
         if( nCellKey<intKey ){
           lwr = idx+1;
           if( lwr>upr ){ c = -1; break; }
+          iLwr = nCellKey;
+          bits |= 1;
         }else if( nCellKey>intKey ){
           upr = idx-1;
           if( lwr>upr ){ c = +1; break; }
+          iUpr = nCellKey;
+          bits |= 2;
         }else{
           assert( nCellKey==intKey );
           pCur->curFlags |= BTCF_ValidNKey;
@@ -4724,8 +4730,17 @@ int sqlite3BtreeMovetoUnpacked(
             goto moveto_finish;
           }
         }
-        assert( lwr+upr>=0 );
-        idx = (lwr+upr)>>1;  /* idx = (lwr+upr)/2; */
+        assert( lwr>=0 && upr>=lwr );
+        if( bits<3 || upr<=lwr+2 ){
+          idx = (lwr+upr)>>1;  /* idx = (lwr+upr)/2; */
+        }else if( (iUpr - iLwr)>100000 ){
+          i64 spacing = (iUpr-iLwr)/(upr-lwr);
+          idx = (intKey-iLwr)/spacing+lwr;
+          assert( idx>=lwr && idx<=upr );
+        }else{
+          idx = (intKey-iLwr)*(upr-lwr)/(iUpr-iLwr)+lwr;
+          assert( idx>=lwr && idx<=upr );
+        }
       }
     }else{
       for(;;){

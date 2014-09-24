@@ -1,5 +1,5 @@
-C Have\sthe\sclearCell()\sroutine\sreturn\sthe\scell\ssize\sto\sthe\scaller,\srather\nthan\shave\sthe\scaller\smake\sa\sseparate\scall\sto\scellSizePtr().
-D 2014-09-24T02:05:41.968
+C Experiment\susing\slinear\sinterpolation,\sinstead\sof\sa\sstrict\sbinary\ssearch,\nwhen\slooking\sfor\sinteger-keyed\srows\son\sa\ssingle\sb-tree\spage.\s\sThe\nexperiment\swas\snot\ssuccessful.\s\sThe\snumber\sof\skey\scomparisons\sis\sreduced\nby\sabout\s15%,\sbut\sthe\sadded\scomplexity\sof\sthe\ssearch\slogic\scauses\san\s\noverall\sreduction\sin\sperformance.\s\sThe\spatch\sis\ssaved\sfor\shistorical\sreference\nonly.
+D 2014-09-24T04:38:14.865
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -172,7 +172,7 @@ F src/auth.c d8abcde53426275dab6243b441256fcd8ccbebb2
 F src/backup.c a31809c65623cc41849b94d368917f8bb66e6a7e
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 49ca66250c7dfa844a4d4cb8272b87420d27d3a5
-F src/btree.c 183d62b37358f95d2ffac796f8491591a3456362
+F src/btree.c f1b4d64c99769477fd3cab1f0f058a2d146e4c14
 F src/btree.h a79aa6a71e7f1055f01052b7f821bd1c2dce95c8
 F src/btreeInt.h 9db0d303b203d18871dc9a1d78a3e1ae4d62c1ef
 F src/build.c 8dbca25988045fbf2a33c9631c42706fa6449e60
@@ -1200,7 +1200,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5dd41cdbfebdd088ebd9a90a394ee296c207ad90
-R c3c34442c09fda273806b002932cda25
+P f21d217583c205dc17f98bb4877fd4ed98cefcb1
+R 57ef17a58ef685784b3f9bebc4b1cc14
+T *branch * linear-interpolation
+T *sym-linear-interpolation *
+T -sym-trunk *
 U drh
-Z 4d0ec3d41d82b7fff44b33f0ea314f2b
+Z c2ae9214f9fc214001752b0150fe1166
