@@ -3672,6 +3672,10 @@ static int btreeCursor(
   if( NEVER(wrFlag && (pBt->btsFlags & BTS_READ_ONLY)!=0) ){
     return SQLITE_READONLY;
   }
+  if( wrFlag ){
+    allocateTempSpace(pBt);
+    if( pBt->pTmpSpace==0 ) return SQLITE_NOMEM;
+  }
   if( iTable==1 && btreePagecount(pBt)==0 ){
     assert( wrFlag==0 );
     iTable = 0;
@@ -7154,9 +7158,8 @@ int sqlite3BtreeInsert(
           pCur->pgnoRoot, nKey, nData, pPage->pgno,
           loc==0 ? "overwrite" : "new entry"));
   assert( pPage->isInit );
-  allocateTempSpace(pBt);
   newCell = pBt->pTmpSpace;
-  if( newCell==0 ) return SQLITE_NOMEM;
+  assert( newCell!=0 );
   rc = fillInCell(pPage, newCell, pKey, nKey, pData, nData, nZero, &szNew);
   if( rc ) goto end_insert;
   assert( szNew==cellSizePtr(pPage, newCell) );
@@ -7302,10 +7305,8 @@ int sqlite3BtreeDelete(BtCursor *pCur){
     pCell = findCell(pLeaf, pLeaf->nCell-1);
     nCell = cellSizePtr(pLeaf, pCell);
     assert( MX_CELL_SIZE(pBt) >= nCell );
-
-    allocateTempSpace(pBt);
     pTmp = pBt->pTmpSpace;
-
+    assert( pTmp!=0 );
     rc = sqlite3PagerWrite(pLeaf->pDbPage);
     insertCell(pPage, iCellIdx, pCell-4, nCell+4, pTmp, n, &rc);
     dropCell(pLeaf, pLeaf->nCell-1, nCell, &rc);

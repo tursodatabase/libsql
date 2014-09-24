@@ -3287,10 +3287,6 @@ case OP_OpenWrite: {
   assert( OPFLAG_BULKCSR==BTREE_BULKLOAD );
   sqlite3BtreeCursorHints(pCur->pCursor, (pOp->p5 & OPFLAG_BULKCSR));
 
-  /* Since it performs no memory allocation or IO, the only value that
-  ** sqlite3BtreeCursor() may return is SQLITE_OK. */
-  assert( rc==SQLITE_OK );
-
   /* Set the VdbeCursor.isTable variable. Previous versions of
   ** SQLite used to check if the root-page flags were sane at this point
   ** and report database corruption if they were not, but this check has

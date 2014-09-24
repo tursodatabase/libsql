@@ -1,5 +1,5 @@
-C Small\sperformance\sand\ssize\soptimization\sfor\sbtreeUnlockIfUnused().
-D 2014-09-24T18:31:07.339
+C Have\seach\sopen\sdatabase\sallocate\sits\spTmpSpace\swhen\sthe\sfirst\swrite\scursor\nis\sopened,\srather\sthan\son\seach\sinsert\sor\sdelete,\sfor\sa\ssmall\sspace\ssavings\nand\sperformance\sboost.
+D 2014-09-24T19:47:27.033
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -172,7 +172,7 @@ F src/auth.c d8abcde53426275dab6243b441256fcd8ccbebb2
 F src/backup.c a31809c65623cc41849b94d368917f8bb66e6a7e
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 49ca66250c7dfa844a4d4cb8272b87420d27d3a5
-F src/btree.c ee77b1d3a346dd0d581e3d729524243c68ba5b96
+F src/btree.c 4d5cdfeaea4a00f796c17af246dd5b48cd525d5e
 F src/btree.h a79aa6a71e7f1055f01052b7f821bd1c2dce95c8
 F src/btreeInt.h 9db0d303b203d18871dc9a1d78a3e1ae4d62c1ef
 F src/build.c bde83dd5cf812e310a7e5ad2846790a14745bef4
@@ -289,7 +289,7 @@ F src/update.c 729f6f18fc27740591d085e1172cebe311144bf0
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c 4006c01772bd8d8ac4306d523bbcee41d3e392d8
 F src/vacuum.c 59f03f92bcff57faa6a8ca256eb29ccddfb0614a
-F src/vdbe.c de1af1795bebdad20c23e82bafa2f531e9893198
+F src/vdbe.c 23db9b11f0d0a022c42bf71c2b036d32c82a9abd
 F src/vdbe.h 09f5b4e3719fa454f252322b1cdab5cf1f361327
 F src/vdbeInt.h f177bed1ec8d4eb5c7089f012aeb95f374745735
 F src/vdbeapi.c e9e33b59834e3edc8790209765e069874c269d9d
@@ -1200,7 +1200,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1ad2bc1ed4c4ac81ac67a9660761f0eeb47c7fef
-R d6b9d6f16b042c47207345c5727aac20
+P 13c746f85d254475b10c3dd58555acd3bbead0ce
+R dd216235dc00cda1e50e4687ef88aee3
 U drh
-Z 51a889840b720ee888395fd53da3c843
+Z 5eb3b3c4f4a76619f8f4a6dc0df5e879
