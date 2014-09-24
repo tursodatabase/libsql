@@ -1,5 +1,5 @@
-C Begin\sadding\s'streaming'\sAPIs\sto\ssessions\smodule.\sThis\sis\sa\swork\sin\sprogress.
-D 2014-09-23T20:39:55.903
+C Add\sstreaming\sversion\sof\ssqlite3changeset_apply().\sTests\sand\sfixes\sfor\sthe\ssame\sand\ssqlite3changeset_start_str().
+D 2014-09-24T17:13:20.331
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd5f245aa8c741bc65845747203c8ce2f3fb6c83
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -158,9 +158,9 @@ F ext/session/sessionA.test eb05c13e4ef1ca8046a3a6dbf2d5f6f5b04a11d4
 F ext/session/sessionB.test 276267cd7fc37c2e2dd03f1e2ed9ada336a8bdb4
 F ext/session/session_common.tcl 1539d8973b2aea0025c133eb0cc4c89fcef541a5
 F ext/session/sessionfault.test e7965159a73d385c1a4af12d82c3a039ebdd71a6
-F ext/session/sqlite3session.c ead909b1b0976aa6d08dcb7b487a902e358f7e4c
-F ext/session/sqlite3session.h d074a929d368b438d32c15af8f8fe2afa80afe3f
-F ext/session/test_session.c e39119c8554fe1b0925a038423ca137ddf6f6bd9
+F ext/session/sqlite3session.c 1c653844900de41e175f77f22fe1af7abb05e798
+F ext/session/sqlite3session.h 7e7a31ad1992f6678a20654c9751dacd10384292
+F ext/session/test_session.c 77f1e7a269daeb60f82441ff859c812d686ef79d
 F ext/userauth/sqlite3userauth.h 19cb6f0e31316d0ee4afdfb7a85ef9da3333a220
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
@@ -832,7 +832,7 @@ F test/selectD.test b0f02a04ef7737decb24e08be2c39b9664b43394
 F test/selectE.test fc02a1eb04c8eb537091482644b7d778ae8759b7
 F test/selectF.test 21c94e6438f76537b72532fa9fd4710cdd455fc3
 F test/server1.test 46803bd3fe8b99b30dbc5ff38ffc756f5c13a118
-F test/session.test 082dea459efc76e2a527b8ee9ff74d76e63ea7b6
+F test/session.test 35f9c76809c26bee45d86891c7620b692ef9b8a8
 F test/shared.test 1da9dbad400cee0d93f252ccf76e1ae007a63746
 F test/shared2.test 03eb4a8d372e290107d34b6ce1809919a698e879
 F test/shared3.test fcd65cb11d189eff5f5c85cc4fad246fb0933108
@@ -1216,7 +1216,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6406b77f2c447751a2fbb16f01c61cdcfd6af59e
-R 67d8884fcab24bc7ffc4823662b37f4a
+P 3c7d3d950bbf5f5ed3696ebc61c77ca48bafe2b5
+R bba1026624291c9ce371985c2bc9cae0
 U dan
-Z 2bbe541c87040990ceab83529c1e7e80
+Z 40a11f75418a19b3b02aba54325bf64c

@@ -16,6 +16,7 @@ ifcapable session {
   # again with it clear.
   run_test_suite session_eec
   run_test_suite session
+  run_test_suite session_str
 }
 
 finish_test

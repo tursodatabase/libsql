@@ -14,21 +14,29 @@ struct TestSession {
   Tcl_Obj *pFilterScript;
 };
 
+typedef struct TestStreamInput TestStreamInput;
+struct TestStreamInput {
+  int nStream;                    /* Maximum chunk size */
+  unsigned char *aData;           /* Pointer to buffer containing data */
+  int nData;                      /* Size of buffer aData in bytes */
+  int iData;                      /* Bytes of data already read by sessions */
+};
+
 #define SESSION_STREAM_TCL_VAR "sqlite3session_streams"
 
 /*
 ** Attempt to find the global variable zVar within interpreter interp
-** and extract a boolean value from it. Return this value.
+** and extract an integer value from it. Return this value.
 **
 ** If the named variable cannot be found, or if it cannot be interpreted
-** as a boolean, return 0.
+** as a integer, return 0.
 */
-static int test_tcl_boolean(Tcl_Interp *interp, const char *zVar){
+static int test_tcl_integer(Tcl_Interp *interp, const char *zVar){
   Tcl_Obj *pObj;
-  int bVal = 0;
+  int iVal = 0;
   pObj = Tcl_ObjGetVar2(interp, Tcl_NewStringObj(zVar, -1), 0, TCL_GLOBAL_ONLY);
-  if( pObj ) Tcl_GetBooleanFromObj(0, pObj, &bVal);
-  return bVal;
+  if( pObj ) Tcl_GetIntFromObj(0, pObj, &iVal);
+  return iVal;
 }
 
 static int test_session_error(Tcl_Interp *interp, int rc){
@@ -149,7 +157,7 @@ static int test_session_cmd(
     case 7:        /* patchset */
     case 1: {      /* changeset */
       TestSessionsBlob o = {0, 0};
-      if( test_tcl_boolean(interp, SESSION_STREAM_TCL_VAR) ){
+      if( test_tcl_integer(interp, SESSION_STREAM_TCL_VAR) ){
         void *pCtx = (void*)&o;
         if( iSub==7 ){
           rc = sqlite3session_patchset_str(pSession, testSessionsOutput, pCtx);
@@ -544,6 +552,30 @@ static int replace_handler(
   return SQLITE_CHANGESET_OMIT;
 }
 
+static int testStreamInput(
+  void *pCtx,                     /* Context pointer */
+  void *pData,                    /* Buffer to populate */
+  int *pnData                     /* IN/OUT: Bytes requested/supplied */
+){
+  TestStreamInput *p = (TestStreamInput*)pCtx;
+  int nReq = *pnData;             /* Bytes of data requested */
+  int nRem = p->nData - p->iData; /* Bytes of data available */
+  int nRet = p->nStream;          /* Bytes actually returned */
+
+  if( nRet>nReq ) nRet = nReq;
+  if( nRet>nRem ) nRet = nRem;
+
+  assert( nRet>=0 );
+  if( nRet>0 ){
+    memcpy(pData, &p->aData[p->iData], nRet);
+    p->iData += nRet;
+  }
+
+  *pnData = nRet;
+  return SQLITE_OK;
+}
+
+
 /*
 ** sqlite3changeset_apply DB CHANGESET CONFLICT-SCRIPT ?FILTER-SCRIPT?
 */
@@ -559,6 +591,10 @@ static int test_sqlite3changeset_apply(
   void *pChangeset;               /* Buffer containing changeset */
   int nChangeset;                 /* Size of buffer aChangeset in bytes */
   TestConflictHandler ctx;
+  TestStreamInput sStr;
+
+  memset(&sStr, 0, sizeof(sStr));
+  sStr.nStream = test_tcl_integer(interp, SESSION_STREAM_TCL_VAR);
 
   if( objc!=4 && objc!=5 ){
     Tcl_WrongNumArgs(interp, 1, objv, 
@@ -576,9 +612,18 @@ static int test_sqlite3changeset_apply(
   ctx.pFilterScript = objc==5 ? objv[4] : 0;
   ctx.interp = interp;
 
-  rc = sqlite3changeset_apply(db, nChangeset, pChangeset, 
-      (objc==5) ? test_filter_handler : 0, test_conflict_handler, (void *)&ctx
-  );
+  if( sStr.nStream==0 ){
+    rc = sqlite3changeset_apply(db, nChangeset, pChangeset, 
+        (objc==5) ? test_filter_handler : 0, test_conflict_handler, (void *)&ctx
+    );
+  }else{
+    sStr.aData = (unsigned char*)pChangeset;
+    sStr.nData = nChangeset;
+    rc = sqlite3changeset_apply_str(db, testStreamInput, (void*)&sStr,
+        (objc==5) ? test_filter_handler : 0, test_conflict_handler, (void *)&ctx
+    );
+  }
+
   if( rc!=SQLITE_OK ){
     return test_session_error(interp, rc);
   }
@@ -632,7 +677,7 @@ static int test_sqlite3changeset_invert(
 ){
   int rc;                         /* Return code from changeset_invert() */
   void *aChangeset;               /* Input changeset */
-  int nChangeSet;                 /* Size of buffer aChangeset in bytes */
+  int nChangeset;                 /* Size of buffer aChangeset in bytes */
   void *aOut;                     /* Output changeset */
   int nOut;                       /* Size of buffer aOut in bytes */
 
@@ -640,9 +685,9 @@ static int test_sqlite3changeset_invert(
     Tcl_WrongNumArgs(interp, 1, objv, "CHANGESET");
     return TCL_ERROR;
   }
-  aChangeset = (void *)Tcl_GetByteArrayFromObj(objv[1], &nChangeSet);
+  aChangeset = (void *)Tcl_GetByteArrayFromObj(objv[1], &nChangeset);
 
-  rc = sqlite3changeset_invert(nChangeSet, aChangeset, &nOut, &aOut);
+  rc = sqlite3changeset_invert(nChangeset, aChangeset, &nOut, &aOut);
   if( rc!=SQLITE_OK ){
     return test_session_error(interp, rc);
   }
@@ -693,14 +738,17 @@ static int test_sqlite3session_foreach(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-  void *pChangeSet;
-  int nChangeSet;
+  void *pChangeset;
+  int nChangeset;
   sqlite3_changeset_iter *pIter;
   int rc;
   Tcl_Obj *pVarname;
   Tcl_Obj *pCS;
   Tcl_Obj *pScript;
   int isCheckNext = 0;
+
+  TestStreamInput sStr;
+  memset(&sStr, 0, sizeof(sStr));
 
   if( objc>1 ){
     char *zOpt = Tcl_GetString(objv[1]);
@@ -715,8 +763,15 @@ static int test_sqlite3session_foreach(
   pCS = objv[2+isCheckNext];
   pScript = objv[3+isCheckNext];
 
-  pChangeSet = (void *)Tcl_GetByteArrayFromObj(pCS, &nChangeSet);
-  rc = sqlite3changeset_start(&pIter, nChangeSet, pChangeSet);
+  pChangeset = (void *)Tcl_GetByteArrayFromObj(pCS, &nChangeset);
+  sStr.nStream = test_tcl_integer(interp, SESSION_STREAM_TCL_VAR);
+  if( sStr.nStream==0 ){
+    rc = sqlite3changeset_start(&pIter, nChangeset, pChangeset);
+  }else{
+    sStr.aData = (unsigned char*)pChangeset;
+    sStr.nData = nChangeset;
+    rc = sqlite3changeset_start_str(&pIter, testStreamInput, (void*)&sStr);
+  }
   if( rc!=SQLITE_OK ){
     return test_session_error(interp, rc);
   }
