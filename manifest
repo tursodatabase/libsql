@@ -1,5 +1,5 @@
-C Have\seach\sopen\sdatabase\sallocate\sits\spTmpSpace\swhen\sthe\sfirst\swrite\scursor\nis\sopened,\srather\sthan\son\seach\sinsert\sor\sdelete,\sfor\sa\ssmall\sspace\ssavings\nand\sperformance\sboost.
-D 2014-09-24T19:47:27.033
+C Size\sreduction\sand\sperformance\simprovement\sin\sthe\sLIKE\sand\sGLOB\soperators.
+D 2014-09-25T00:56:00.685
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -184,7 +184,7 @@ F src/delete.c fae81cc2eb14b75267d4f47d3cfc9ae02aae726f
 F src/expr.c f32119248996680aa73c5c37bfdd42820804dc17
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c da985ae673efef2c712caef825a5d2edb087ead7
-F src/func.c 1629ccdd8ef3f19d7accc9d9287190489469ff81
+F src/func.c fd49097fdd74eecbc244e5e64fd288a303db20e9
 F src/global.c 5110fa12e09729b84eee0191c984ec4008e21937
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
 F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
@@ -1200,7 +1200,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 13c746f85d254475b10c3dd58555acd3bbead0ce
-R dd216235dc00cda1e50e4687ef88aee3
+P 99323552c001bc9173eb2a44542234c8ef7a9845
+R 81650f65f515728b656a3f04c1aeaf34
 U drh
-Z 5eb3b3c4f4a76619f8f4a6dc0df5e879
+Z 2d4294ecf245e95fb6c7da3803927f1a

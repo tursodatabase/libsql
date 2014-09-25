@@ -622,10 +622,9 @@ static int patternCompare(
   u8 matchAll = pInfo->matchAll;
   u8 matchSet = pInfo->matchSet;
   u8 noCase = pInfo->noCase; 
-  int prevEscape = 0;     /* True if the previous character was 'escape' */
 
   while( (c = sqlite3Utf8Read(&zPattern))!=0 ){
-    if( c==matchAll && !prevEscape ){
+    if( c==matchAll ){
       while( (c=sqlite3Utf8Read(&zPattern)) == matchAll
                || c == matchOne ){
         if( c==matchOne && sqlite3Utf8Read(&zString)==0 ){
@@ -664,7 +663,7 @@ static int patternCompare(
         if( patternCompare(zPattern,zString,pInfo,esc) ) return 1;
       }
       return 0;
-    }else if( c==matchOne && !prevEscape ){
+    }else if( c==matchOne ){
       if( sqlite3Utf8Read(&zString)==0 ){
         return 0;
       }
@@ -700,10 +699,11 @@ static int patternCompare(
       if( c2==0 || (seen ^ invert)==0 ){
         return 0;
       }
-    }else if( esc==c && !prevEscape ){
-      prevEscape = 1;
     }else{
       c2 = sqlite3Utf8Read(&zString);
+      if( c==esc ){
+        c = sqlite3Utf8Read(&zPattern);
+      }
       if( noCase ){
         GlobUpperToLower(c);
         GlobUpperToLower(c2);
@@ -711,7 +711,6 @@ static int patternCompare(
       if( c!=c2 ){
         return 0;
       }
-      prevEscape = 0;
     }
   }
   return *zString==0;
