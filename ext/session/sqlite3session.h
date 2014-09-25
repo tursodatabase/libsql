@@ -671,6 +671,16 @@ int sqlite3changeset_invert(
 );
 
 /*
+** Streaming version of sqlite3changeset_invert().
+*/
+int sqlite3changeset_invert_str(
+  int (*xInput)(void *pIn, void *pData, int *pnData),
+  void *pIn,
+  int (*xOutput)(void *pOut, const void *pData, int nData),
+  void *pOut
+);
+
+/*
 ** CAPI3REF: Concatenate Two Changeset Objects
 **
 ** This function is used to concatenate two changesets, A and B, into a 

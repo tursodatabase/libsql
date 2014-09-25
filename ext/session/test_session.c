@@ -676,24 +676,33 @@ static int test_sqlite3changeset_invert(
   Tcl_Obj *CONST objv[]
 ){
   int rc;                         /* Return code from changeset_invert() */
-  void *aChangeset;               /* Input changeset */
-  int nChangeset;                 /* Size of buffer aChangeset in bytes */
-  void *aOut;                     /* Output changeset */
-  int nOut;                       /* Size of buffer aOut in bytes */
+  TestStreamInput sIn;            /* Input stream */
+  TestSessionsBlob sOut;          /* Output blob */
 
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "CHANGESET");
     return TCL_ERROR;
   }
-  aChangeset = (void *)Tcl_GetByteArrayFromObj(objv[1], &nChangeset);
 
-  rc = sqlite3changeset_invert(nChangeset, aChangeset, &nOut, &aOut);
-  if( rc!=SQLITE_OK ){
-    return test_session_error(interp, rc);
+  memset(&sIn, 0, sizeof(sIn));
+  memset(&sOut, 0, sizeof(sOut));
+  sIn.nStream = test_tcl_integer(interp, SESSION_STREAM_TCL_VAR);
+  sIn.aData = Tcl_GetByteArrayFromObj(objv[1], &sIn.nData);
+
+  if( sIn.nStream ){
+    rc = sqlite3changeset_invert_str(
+        testStreamInput, (void*)&sIn, testSessionsOutput, (void*)&sOut
+    );
+  }else{
+    rc = sqlite3changeset_invert(sIn.nData, sIn.aData, &sOut.n, &sOut.p);
   }
-  Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((unsigned char *)aOut, nOut));
-  sqlite3_free(aOut);
-  return TCL_OK;
+  if( rc!=SQLITE_OK ){
+    rc = test_session_error(interp, rc);
+  }else{
+    Tcl_SetObjResult(interp,Tcl_NewByteArrayObj((unsigned char*)sOut.p,sOut.n));
+  }
+  sqlite3_free(sOut.p);
+  return rc;
 }
 
 /*

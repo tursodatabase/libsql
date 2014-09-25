@@ -1,5 +1,5 @@
-C Add\sstreaming\sversion\sof\ssqlite3changeset_apply().\sTests\sand\sfixes\sfor\sthe\ssame\sand\ssqlite3changeset_start_str().
-D 2014-09-24T17:13:20.331
+C Add\sstreaming\sversion\sof\ssqlite3changeset_invert()\sto\ssessions\smodule.
+D 2014-09-25T14:54:20.019
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd5f245aa8c741bc65845747203c8ce2f3fb6c83
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -158,9 +158,9 @@ F ext/session/sessionA.test eb05c13e4ef1ca8046a3a6dbf2d5f6f5b04a11d4
 F ext/session/sessionB.test 276267cd7fc37c2e2dd03f1e2ed9ada336a8bdb4
 F ext/session/session_common.tcl 1539d8973b2aea0025c133eb0cc4c89fcef541a5
 F ext/session/sessionfault.test e7965159a73d385c1a4af12d82c3a039ebdd71a6
-F ext/session/sqlite3session.c 1c653844900de41e175f77f22fe1af7abb05e798
-F ext/session/sqlite3session.h 7e7a31ad1992f6678a20654c9751dacd10384292
-F ext/session/test_session.c 77f1e7a269daeb60f82441ff859c812d686ef79d
+F ext/session/sqlite3session.c 9edf9273280c804c45e7508be9644cf96f278c63
+F ext/session/sqlite3session.h 944d7b2c3e87b5598a2c34afe8dd032d51d09818
+F ext/session/test_session.c 4449ef150e52baad844aa08c29569f3ec10902d8
 F ext/userauth/sqlite3userauth.h 19cb6f0e31316d0ee4afdfb7a85ef9da3333a220
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
@@ -1216,7 +1216,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3c7d3d950bbf5f5ed3696ebc61c77ca48bafe2b5
-R bba1026624291c9ce371985c2bc9cae0
+P b917fc146876f764442de08d5ec36e5b4cf5ab52
+R b1265a84c7bae5ddb87cac377b4def7e
 U dan
-Z 40a11f75418a19b3b02aba54325bf64c
+Z 0bbb9bee98e102db876d83b2977969a7
