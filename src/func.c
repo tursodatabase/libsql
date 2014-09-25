@@ -585,7 +585,7 @@ static const struct compareInfo likeInfoAlt = { '%', '_',   0, 0 };
 
 /*
 ** Compare two UTF-8 strings for equality where the first string can
-** potentially be a "glob" expression.  Return true (1) if they
+** potentially be a "glob" or "like" expression.  Return true (1) if they
 ** are the same and false (0) if they are different.
 **
 ** Globbing rules:
@@ -605,11 +605,18 @@ static const struct compareInfo likeInfoAlt = { '%', '_',   0, 0 };
 ** "[a-z]" matches any single lower-case letter.  To match a '-', make
 ** it the last character in the list.
 **
+** Like matching rules:
+** 
+**      '%'       Matches any sequence of zero or more characters
+**
+***     '_'       Matches any one character
+**
+**      Ec        Where E is the "esc" character and c is any other
+**                character, including '%', '_', and esc, match exactly c.
+**
+** The comments through this routine usually assume glob matching.
+**
 ** This routine is usually quick, but can be N**2 in the worst case.
-**
-** Hints: to match '*' or '?', put them in "[]".  Like this:
-**
-**         abc[*]xyz        Matches "abc*xyz" only
 */
 static int patternCompare(
   const u8 *zPattern,              /* The glob pattern */
@@ -617,13 +624,12 @@ static int patternCompare(
   const struct compareInfo *pInfo, /* Information about how to do the compare */
   u32 esc                          /* The escape character */
 ){
-  u32 c, c2;
-  int invert;
-  int seen;
-  u32 matchOne = pInfo->matchOne;
-  u32 matchAll = pInfo->matchAll;
-  u32 matchOther;
-  u8 noCase = pInfo->noCase;
+  u32 c, c2;                       /* Next pattern and input string chars */
+  u32 matchOne = pInfo->matchOne;  /* "?" or "_" */
+  u32 matchAll = pInfo->matchAll;  /* "*" or "%" */
+  u32 matchOther;                  /* "[" or the escape character */
+  u8 noCase = pInfo->noCase;       /* True if uppercase==lowercase */
+  const u8 *zEscaped = 0;          /* One past the last escaped input char */
   
   /* The GLOB operator does not have an ESCAPE clause.  And LIKE does not
   ** have the matchSet operator.  So we either have to look for one or
@@ -633,7 +639,10 @@ static int patternCompare(
   matchOther = esc ? esc : pInfo->matchSet;
 
   while( (c = sqlite3Utf8Read(&zPattern))!=0 ){
-    if( c==matchAll ){
+    if( c==matchAll ){  /* Match "*" */
+      /* Skip over multiple "*" characters in the pattern.  If there
+      ** are also "?" characters, skip those as well, but consume a
+      ** single character of the input string for each "?" skipped */
       while( (c=sqlite3Utf8Read(&zPattern)) == matchAll
                || c == matchOne ){
         if( c==matchOne && sqlite3Utf8Read(&zString)==0 ){
@@ -641,12 +650,14 @@ static int patternCompare(
         }
       }
       if( c==0 ){
-        return 1;
+        return 1;   /* "*" at the end of the pattern matches */
       }else if( c==matchOther ){
         if( esc ){
           c = sqlite3Utf8Read(&zPattern);
           if( c==0 ) return 0;
         }else{
+          /* "[...]" immediately follows the "*".  We have to do a slow
+          ** recursive search in this case, but it is an unusual case. */
           assert( matchOther<0x80 );  /* '[' is a single-byte character */
           while( *zString
                  && patternCompare(&zPattern[-1],zString,pInfo,esc)==0 ){
@@ -655,39 +666,45 @@ static int patternCompare(
           return *zString!=0;
         }
       }
-      while( (c2 = sqlite3Utf8Read(&zString))!=0 ){
-        if( noCase && c<0x80 ){
-          GlobUpperToLower(c2);
-          GlobUpperToLowerAscii(c);
-          while( c2 != 0 && c2 != c ){
-            do{ c2 = *(zString++); }while( c2>0x7f );
-            GlobUpperToLowerAscii(c2);
-          }
+
+      /* At this point variable c contains the first character of the
+      ** pattern string past the "*".  Search in the input string for the
+      ** first matching character and recursively contine the match from
+      ** that point.
+      **
+      ** For a case-insensitive search, set variable cx to be the same as
+      ** c but in the other case and search the input string for either
+      ** c or cx.
+      */
+      if( c<=0x80 ){
+        u32 cx;
+        if( noCase ){
+          cx = sqlite3Toupper(c);
+          c = sqlite3Tolower(c);
         }else{
-          while( c2 != 0 && c2 != c ){
-            c2 = sqlite3Utf8Read(&zString);
-          }
+          cx = c;
         }
-        if( c2==0 ) return 0;
-        if( patternCompare(zPattern,zString,pInfo,esc) ) return 1;
+        while( (c2 = *(zString++))!=0 ){
+          if( c2!=c && c2!=cx ) continue;
+          if( patternCompare(zPattern,zString,pInfo,esc) ) return 1;
+        }
+      }else{
+        while( (c2 = sqlite3Utf8Read(&zString))!=0 ){
+          if( c2!=c ) continue;
+          if( patternCompare(zPattern,zString,pInfo,esc) ) return 1;
+        }
       }
       return 0;
-    }
-    if( c==matchOne ){
-      if( sqlite3Utf8Read(&zString)==0 ){
-        return 0;
-      }else{
-        continue;
-      }
     }
     if( c==matchOther ){
       if( esc ){
         c = sqlite3Utf8Read(&zPattern);
         if( c==0 ) return 0;
+        zEscaped = zPattern;
       }else{
         u32 prior_c = 0;
-        seen = 0;
-        invert = 0;
+        int seen = 0;
+        int invert = 0;
         c = sqlite3Utf8Read(&zString);
         if( c==0 ) return 0;
         c2 = sqlite3Utf8Read(&zPattern);
@@ -720,10 +737,11 @@ static int patternCompare(
     }
     c2 = sqlite3Utf8Read(&zString);
     if( c==c2 ) continue;
-    if( !noCase ) return 0;
-    GlobUpperToLower(c);
-    GlobUpperToLower(c2);
-    if( c!=c2 ) return 0;
+    if( noCase && c<0x80 && c2<0x80 && sqlite3Tolower(c)==sqlite3Tolower(c2) ){
+      continue;
+    }
+    if( c==matchOne && zPattern!=zEscaped && c2!=0 ) continue;
+    return 0;
   }
   return *zString==0;
 }
