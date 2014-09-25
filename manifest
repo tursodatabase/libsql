@@ -1,5 +1,5 @@
-C Simplifications\sto\sthe\sSQL\sfunction\sand\saggregate\scalling\sprocedures.
-D 2014-09-25T13:17:30.283
+C Minor\scode\sreformatting\sand\scomment\schange,\sto\simprove\sclarity.\nNo\slogic\schanges.
+D 2014-09-25T17:42:41.230
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -289,7 +289,7 @@ F src/update.c 729f6f18fc27740591d085e1172cebe311144bf0
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c 4006c01772bd8d8ac4306d523bbcee41d3e392d8
 F src/vacuum.c 59f03f92bcff57faa6a8ca256eb29ccddfb0614a
-F src/vdbe.c 73eace757ead9fee63576e8c9f5337edb4c8c69d
+F src/vdbe.c e4df7191abdae132b89c57086d0dd1a0d6cb400b
 F src/vdbe.h 09f5b4e3719fa454f252322b1cdab5cf1f361327
 F src/vdbeInt.h bb7f7ecfdead1a2ae0251b59f86f5724838d975c
 F src/vdbeapi.c e9e33b59834e3edc8790209765e069874c269d9d
@@ -1200,7 +1200,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1330c72e172324c68ab49e5bb2ceba985935ae01
-R db6a54c99d97f1320af4a50fd756c282
+P 3467049a1705b49905ea88a5c6becb6fe318f2fa
+R ed3d6d35b7bb71031f12c63341a22b21
 U drh
-Z 1da03df9544819e54ad17b4099a36954
+Z c1b4b9aea98707eadcd6494d5019f9dc

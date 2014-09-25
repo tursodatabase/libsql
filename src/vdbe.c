@@ -4014,8 +4014,7 @@ case OP_NewRowid: {           /* out2-prerelease */
       cnt = 0;
       do{
         sqlite3_randomness(sizeof(v), &v);
-        v &= (MAX_ROWID>>1);
-        v++;
+        v &= (MAX_ROWID>>1); v++;  /* Ensure that v is greater than zero */
       }while(  ((rc = sqlite3BtreeMovetoUnpacked(pC->pCursor, 0, (u64)v,
                                                  0, &res))==SQLITE_OK)
             && (res==0)
