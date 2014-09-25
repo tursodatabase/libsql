@@ -567,10 +567,12 @@ struct compareInfo {
 ** whereas only characters less than 0x80 do in ASCII.
 */
 #if defined(SQLITE_EBCDIC)
-# define sqlite3Utf8Read(A)    (*((*A)++))
-# define GlobUpperToLower(A)   A = sqlite3UpperToLower[A]
+# define sqlite3Utf8Read(A)        (*((*A)++))
+# define GlobUpperToLower(A)       A = sqlite3UpperToLower[A]
+# define GlobUpperToLowerAscii(A)  A = sqlite3UpperToLower[A]
 #else
-# define GlobUpperToLower(A)   if( !((A)&~0x7f) ){ A = sqlite3UpperToLower[A]; }
+# define GlobUpperToLower(A)       if( A<=0x7f ){ A = sqlite3UpperToLower[A]; }
+# define GlobUpperToLowerAscii(A)  A = sqlite3UpperToLower[A]
 #endif
 
 static const struct compareInfo globInfo = { '*', '?', '[', 0 };
@@ -618,10 +620,17 @@ static int patternCompare(
   u32 c, c2;
   int invert;
   int seen;
-  u8 matchOne = pInfo->matchOne;
-  u8 matchAll = pInfo->matchAll;
-  u8 matchSet = pInfo->matchSet;
-  u8 noCase = pInfo->noCase; 
+  u32 matchOne = pInfo->matchOne;
+  u32 matchAll = pInfo->matchAll;
+  u32 matchOther;
+  u8 noCase = pInfo->noCase;
+  
+  /* The GLOB operator does not have an ESCAPE clause.  And LIKE does not
+  ** have the matchSet operator.  So we either have to look for one or
+  ** the other, never both.  Hence the single variable matchOther is used
+  ** to store the one we have to look for.
+  */
+  matchOther = esc ? esc : pInfo->matchSet;
 
   while( (c = sqlite3Utf8Read(&zPattern))!=0 ){
     if( c==matchAll ){
@@ -633,26 +642,26 @@ static int patternCompare(
       }
       if( c==0 ){
         return 1;
-      }else if( c==esc ){
-        c = sqlite3Utf8Read(&zPattern);
-        if( c==0 ){
-          return 0;
+      }else if( c==matchOther ){
+        if( esc ){
+          c = sqlite3Utf8Read(&zPattern);
+          if( c==0 ) return 0;
+        }else{
+          assert( matchOther<0x80 );  /* '[' is a single-byte character */
+          while( *zString
+                 && patternCompare(&zPattern[-1],zString,pInfo,esc)==0 ){
+            SQLITE_SKIP_UTF8(zString);
+          }
+          return *zString!=0;
         }
-      }else if( c==matchSet ){
-        assert( esc==0 );         /* This is GLOB, not LIKE */
-        assert( matchSet<0x80 );  /* '[' is a single-byte character */
-        while( *zString && patternCompare(&zPattern[-1],zString,pInfo,esc)==0 ){
-          SQLITE_SKIP_UTF8(zString);
-        }
-        return *zString!=0;
       }
       while( (c2 = sqlite3Utf8Read(&zString))!=0 ){
-        if( noCase ){
+        if( noCase && c<0x80 ){
           GlobUpperToLower(c2);
-          GlobUpperToLower(c);
+          GlobUpperToLowerAscii(c);
           while( c2 != 0 && c2 != c ){
-            c2 = sqlite3Utf8Read(&zString);
-            GlobUpperToLower(c2);
+            do{ c2 = *(zString++); }while( c2>0x7f );
+            GlobUpperToLowerAscii(c2);
           }
         }else{
           while( c2 != 0 && c2 != c ){
@@ -663,55 +672,58 @@ static int patternCompare(
         if( patternCompare(zPattern,zString,pInfo,esc) ) return 1;
       }
       return 0;
-    }else if( c==matchOne ){
+    }
+    if( c==matchOne ){
       if( sqlite3Utf8Read(&zString)==0 ){
         return 0;
-      }
-    }else if( c==matchSet ){
-      u32 prior_c = 0;
-      assert( esc==0 );    /* This only occurs for GLOB, not LIKE */
-      seen = 0;
-      invert = 0;
-      c = sqlite3Utf8Read(&zString);
-      if( c==0 ) return 0;
-      c2 = sqlite3Utf8Read(&zPattern);
-      if( c2=='^' ){
-        invert = 1;
-        c2 = sqlite3Utf8Read(&zPattern);
-      }
-      if( c2==']' ){
-        if( c==']' ) seen = 1;
-        c2 = sqlite3Utf8Read(&zPattern);
-      }
-      while( c2 && c2!=']' ){
-        if( c2=='-' && zPattern[0]!=']' && zPattern[0]!=0 && prior_c>0 ){
-          c2 = sqlite3Utf8Read(&zPattern);
-          if( c>=prior_c && c<=c2 ) seen = 1;
-          prior_c = 0;
-        }else{
-          if( c==c2 ){
-            seen = 1;
-          }
-          prior_c = c2;
-        }
-        c2 = sqlite3Utf8Read(&zPattern);
-      }
-      if( c2==0 || (seen ^ invert)==0 ){
-        return 0;
-      }
-    }else{
-      c2 = sqlite3Utf8Read(&zString);
-      if( c==esc ){
-        c = sqlite3Utf8Read(&zPattern);
-      }
-      if( noCase ){
-        GlobUpperToLower(c);
-        GlobUpperToLower(c2);
-      }
-      if( c!=c2 ){
-        return 0;
+      }else{
+        continue;
       }
     }
+    if( c==matchOther ){
+      if( esc ){
+        c = sqlite3Utf8Read(&zPattern);
+        if( c==0 ) return 0;
+      }else{
+        u32 prior_c = 0;
+        seen = 0;
+        invert = 0;
+        c = sqlite3Utf8Read(&zString);
+        if( c==0 ) return 0;
+        c2 = sqlite3Utf8Read(&zPattern);
+        if( c2=='^' ){
+          invert = 1;
+          c2 = sqlite3Utf8Read(&zPattern);
+        }
+        if( c2==']' ){
+          if( c==']' ) seen = 1;
+          c2 = sqlite3Utf8Read(&zPattern);
+        }
+        while( c2 && c2!=']' ){
+          if( c2=='-' && zPattern[0]!=']' && zPattern[0]!=0 && prior_c>0 ){
+            c2 = sqlite3Utf8Read(&zPattern);
+            if( c>=prior_c && c<=c2 ) seen = 1;
+            prior_c = 0;
+          }else{
+            if( c==c2 ){
+              seen = 1;
+            }
+            prior_c = c2;
+          }
+          c2 = sqlite3Utf8Read(&zPattern);
+        }
+        if( c2==0 || (seen ^ invert)==0 ){
+          return 0;
+        }
+        continue;
+      }
+    }
+    c2 = sqlite3Utf8Read(&zString);
+    if( c==c2 ) continue;
+    if( !noCase ) return 0;
+    GlobUpperToLower(c);
+    GlobUpperToLower(c2);
+    if( c!=c2 ) return 0;
   }
   return *zString==0;
 }
