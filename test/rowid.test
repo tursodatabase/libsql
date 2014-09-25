@@ -679,9 +679,9 @@ do_test rowid-12.2 {
   save_prng_state
   execsql {
     INSERT INTO t7 VALUES(NULL,'b');
-    SELECT x, y FROM t7;
+    SELECT x, y FROM t7 ORDER BY x;
   }
-} {1 b 9223372036854775807 a}
+} {/\d+ b 9223372036854775807 a/}
 execsql {INSERT INTO t7 VALUES(2,'y');}
 for {set i 1} {$i<100} {incr i} {
   do_test rowid-12.3.$i {
