@@ -715,27 +715,42 @@ static int test_sqlite3changeset_concat(
   Tcl_Obj *CONST objv[]
 ){
   int rc;                         /* Return code from changeset_invert() */
-  void *aLeft;                    /* Input changeset */
-  int nLeft;                      /* Size of buffer aChangeset in bytes */
-  void *aRight;                   /* Input changeset */
-  int nRight;                     /* Size of buffer aChangeset in bytes */
-  void *aOut;                     /* Output changeset */
-  int nOut;                       /* Size of buffer aOut in bytes */
+
+  TestStreamInput sLeft;          /* Input stream */
+  TestStreamInput sRight;         /* Input stream */
+  TestSessionsBlob sOut = {0,0};  /* Output blob */
 
   if( objc!=3 ){
     Tcl_WrongNumArgs(interp, 1, objv, "LEFT RIGHT");
     return TCL_ERROR;
   }
-  aLeft = (void *)Tcl_GetByteArrayFromObj(objv[1], &nLeft);
-  aRight = (void *)Tcl_GetByteArrayFromObj(objv[2], &nRight);
 
-  rc = sqlite3changeset_concat(nLeft, aLeft, nRight, aRight, &nOut, &aOut);
-  if( rc!=SQLITE_OK ){
-    return test_session_error(interp, rc);
+  memset(&sLeft, 0, sizeof(sLeft));
+  memset(&sRight, 0, sizeof(sRight));
+  sLeft.aData = Tcl_GetByteArrayFromObj(objv[1], &sLeft.nData);
+  sRight.aData = Tcl_GetByteArrayFromObj(objv[2], &sRight.nData);
+  sLeft.nStream = test_tcl_integer(interp, SESSION_STREAM_TCL_VAR);
+  sRight.nStream = sLeft.nStream;
+
+  if( sLeft.nStream>0 ){
+    rc = sqlite3changeset_concat_str(
+        testStreamInput, (void*)&sLeft,
+        testStreamInput, (void*)&sRight,
+        testSessionsOutput, (void*)&sOut
+    );
+  }else{
+    rc = sqlite3changeset_concat(
+        sLeft.nData, sLeft.aData, sRight.nData, sRight.aData, &sOut.n, &sOut.p
+    );
   }
-  Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((unsigned char *)aOut, nOut));
-  sqlite3_free(aOut);
-  return TCL_OK;
+
+  if( rc!=SQLITE_OK ){
+    rc = test_session_error(interp, rc);
+  }else{
+    Tcl_SetObjResult(interp,Tcl_NewByteArrayObj((unsigned char*)sOut.p,sOut.n));
+  }
+  sqlite3_free(sOut.p);
+  return rc;
 }
 
 /*

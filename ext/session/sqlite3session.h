@@ -762,6 +762,18 @@ int sqlite3changeset_concat(
 );
 
 /*
+** Streaming verson of sqlite3changeset_concat().
+*/
+int sqlite3changeset_concat_str(
+  int (*xInputA)(void *pIn, void *pData, int *pnData),
+  void *pInA,
+  int (*xInputB)(void *pIn, void *pData, int *pnData),
+  void *pInB,
+  int (*xOutput)(void *pOut, const void *pData, int nData),
+  void *pOut
+);
+
+/*
 ** CAPI3REF: Apply A Changeset To A Database
 **
 ** Apply a changeset to a database. This function attempts to update the
