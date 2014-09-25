@@ -22,7 +22,10 @@
 ** Return the collating function associated with a function.
 */
 static CollSeq *sqlite3GetFuncCollSeq(sqlite3_context *context){
-  return context->pColl;
+  VdbeOp *pOp = &context->pVdbe->aOp[context->iOp-1];
+  assert( pOp->opcode==OP_CollSeq );
+  assert( pOp->p4type==P4_COLLSEQ );
+  return pOp->p4.pColl;
 }
 
 /*

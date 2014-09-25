@@ -272,7 +272,6 @@ struct sqlite3_context {
   Mem *pOut;            /* The return value is stored here */
   FuncDef *pFunc;       /* Pointer to function information */
   Mem *pMem;            /* Memory cell used to store aggregate context */
-  CollSeq *pColl;       /* Collating sequence */
   Vdbe *pVdbe;          /* The VM that owns this context */
   int iOp;              /* Instruction number of OP_Function */
   int isError;          /* Error code returned by the function. */

@@ -1,5 +1,5 @@
-C Simplification\sto\sthe\srandom\srowid\spicking\slogic\sthat\sbegins\srunning\swhen\nthe\smaximum\spossible\srowid\shas\salready\sbeen\sused.
-D 2014-09-25T12:31:28.476
+C Simplifications\sto\sthe\sSQL\sfunction\sand\saggregate\scalling\sprocedures.
+D 2014-09-25T13:17:30.283
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -184,7 +184,7 @@ F src/delete.c fae81cc2eb14b75267d4f47d3cfc9ae02aae726f
 F src/expr.c f32119248996680aa73c5c37bfdd42820804dc17
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c da985ae673efef2c712caef825a5d2edb087ead7
-F src/func.c 727a324e87a3392a47e44568b901d2fb96ba0ed4
+F src/func.c ba47c1671ab3cfdafa6e9d6ee490939ea578adee
 F src/global.c 5110fa12e09729b84eee0191c984ec4008e21937
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
 F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
@@ -289,9 +289,9 @@ F src/update.c 729f6f18fc27740591d085e1172cebe311144bf0
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c 4006c01772bd8d8ac4306d523bbcee41d3e392d8
 F src/vacuum.c 59f03f92bcff57faa6a8ca256eb29ccddfb0614a
-F src/vdbe.c 9fe630d05840aa151a5ba9039901478d9524120b
+F src/vdbe.c 73eace757ead9fee63576e8c9f5337edb4c8c69d
 F src/vdbe.h 09f5b4e3719fa454f252322b1cdab5cf1f361327
-F src/vdbeInt.h f177bed1ec8d4eb5c7089f012aeb95f374745735
+F src/vdbeInt.h bb7f7ecfdead1a2ae0251b59f86f5724838d975c
 F src/vdbeapi.c e9e33b59834e3edc8790209765e069874c269d9d
 F src/vdbeaux.c a05adc3c96abdaf3db14768ddd63132fc9678060
 F src/vdbeblob.c 848238dc73e93e48432991bb5651bf87d865eca4
@@ -1200,7 +1200,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6c8924cacc2b875270770fed2cc3b1884f57a655
-R c9d002c28940b83ace850b74161b9f39
+P 1330c72e172324c68ab49e5bb2ceba985935ae01
+R db6a54c99d97f1320af4a50fd756c282
 U drh
-Z a6a7b4b719a1f0df211ae0686c0976a9
+Z 1da03df9544819e54ad17b4099a36954
