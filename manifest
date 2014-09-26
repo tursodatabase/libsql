@@ -1,5 +1,5 @@
-C If\san\sSQL\sfunction\smakes\sa\srecursive\scall\sto\sdo\san\sINSERT\sinto\sthe\ssame\ndatabase,\smake\ssure\sthat\sthe\slast_insert_rowid()\sfor\sthat\sINSERT\sis\srecorded.
-D 2014-09-26T01:10:02.814
+C Fix\sthe\s"PRAGMA\sintegrity_check"\scommand\sso\sthat\sit\savoids\sformatting\serror\nmessage\scontext\smessages\suntil\sit\sactually\sneeds\sto\sgenerate\san\serror\smessage.\nThis\savoids\smuch\sformatting,\sand\shence\sgreatly\simproves\sthe\sperformance\sof\n"PRAGMA\sintegrity_check"\sin\sthe\scommon\scase\swhen\sthere\sare\sno\serrors.\s\sIt\salso\nmakes\sthe\scode\sa\slittle\ssmaller.
+D 2014-09-26T02:41:05.726
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -172,9 +172,9 @@ F src/auth.c d8abcde53426275dab6243b441256fcd8ccbebb2
 F src/backup.c a31809c65623cc41849b94d368917f8bb66e6a7e
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 49ca66250c7dfa844a4d4cb8272b87420d27d3a5
-F src/btree.c 4d5cdfeaea4a00f796c17af246dd5b48cd525d5e
+F src/btree.c 59f03e421dad3cb6e27cc7d2393d3a7459be4b5e
 F src/btree.h a79aa6a71e7f1055f01052b7f821bd1c2dce95c8
-F src/btreeInt.h 9db0d303b203d18871dc9a1d78a3e1ae4d62c1ef
+F src/btreeInt.h 1bd7957161a1346a914f1f09231610e777a8e58d
 F src/build.c bde83dd5cf812e310a7e5ad2846790a14745bef4
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c 535183afb3c75628b78ce82612931ac7cdf26f14
@@ -1200,7 +1200,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P baeb72a356d73e6f624edacd2986ab766105e177
-R d5c71b678da0df654e28e5676923f229
+P e93aecc090c2a1d3c231bb2bde044886eff0bdf7
+R 32be19747fff5e8f2465eed0f224b45d
 U drh
-Z 33ff9c5d364d8f96a21ad755540365a5
+Z f56b9000203c19d0f3a8172e8374b279

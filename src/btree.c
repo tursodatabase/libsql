@@ -7880,11 +7880,11 @@ Pager *sqlite3BtreePager(Btree *p){
 */
 static void checkAppendMsg(
   IntegrityCk *pCheck,
-  char *zMsg1,
   const char *zFormat,
   ...
 ){
   va_list ap;
+  char zBuf[200];
   if( !pCheck->mxErr ) return;
   pCheck->mxErr--;
   pCheck->nErr++;
@@ -7892,8 +7892,9 @@ static void checkAppendMsg(
   if( pCheck->errMsg.nChar ){
     sqlite3StrAccumAppend(&pCheck->errMsg, "\n", 1);
   }
-  if( zMsg1 ){
-    sqlite3StrAccumAppendAll(&pCheck->errMsg, zMsg1);
+  if( pCheck->zPfx ){
+    sqlite3_snprintf(sizeof(zBuf), zBuf, pCheck->zPfx, pCheck->v1, pCheck->v2);
+    sqlite3StrAccumAppendAll(&pCheck->errMsg, zBuf);
   }
   sqlite3VXPrintf(&pCheck->errMsg, 1, zFormat, ap);
   va_end(ap);
@@ -7931,14 +7932,14 @@ static void setPageReferenced(IntegrityCk *pCheck, Pgno iPg){
 **
 ** Also check that the page number is in bounds.
 */
-static int checkRef(IntegrityCk *pCheck, Pgno iPage, char *zContext){
+static int checkRef(IntegrityCk *pCheck, Pgno iPage){
   if( iPage==0 ) return 1;
   if( iPage>pCheck->nPage ){
-    checkAppendMsg(pCheck, zContext, "invalid page number %d", iPage);
+    checkAppendMsg(pCheck, "invalid page number %d", iPage);
     return 1;
   }
   if( getPageReferenced(pCheck, iPage) ){
-    checkAppendMsg(pCheck, zContext, "2nd reference to page %d", iPage);
+    checkAppendMsg(pCheck, "2nd reference to page %d", iPage);
     return 1;
   }
   setPageReferenced(pCheck, iPage);
@@ -7955,8 +7956,7 @@ static void checkPtrmap(
   IntegrityCk *pCheck,   /* Integrity check context */
   Pgno iChild,           /* Child page number */
   u8 eType,              /* Expected pointer map type */
-  Pgno iParent,          /* Expected pointer map parent page number */
-  char *zContext         /* Context description (used for error msg) */
+  Pgno iParent           /* Expected pointer map parent page number */
 ){
   int rc;
   u8 ePtrmapType;
@@ -7965,12 +7965,12 @@ static void checkPtrmap(
   rc = ptrmapGet(pCheck->pBt, iChild, &ePtrmapType, &iPtrmapParent);
   if( rc!=SQLITE_OK ){
     if( rc==SQLITE_NOMEM || rc==SQLITE_IOERR_NOMEM ) pCheck->mallocFailed = 1;
-    checkAppendMsg(pCheck, zContext, "Failed to read ptrmap key=%d", iChild);
+    checkAppendMsg(pCheck, "Failed to read ptrmap key=%d", iChild);
     return;
   }
 
   if( ePtrmapType!=eType || iPtrmapParent!=iParent ){
-    checkAppendMsg(pCheck, zContext, 
+    checkAppendMsg(pCheck,
       "Bad ptr map entry key=%d expected=(%d,%d) got=(%d,%d)", 
       iChild, eType, iParent, ePtrmapType, iPtrmapParent);
   }
@@ -7985,8 +7985,7 @@ static void checkList(
   IntegrityCk *pCheck,  /* Integrity checking context */
   int isFreeList,       /* True for a freelist.  False for overflow page list */
   int iPage,            /* Page number for first page in the list */
-  int N,                /* Expected number of pages in the list */
-  char *zContext        /* Context for error messages */
+  int N                 /* Expected number of pages in the list */
 ){
   int i;
   int expected = N;
@@ -7995,14 +7994,14 @@ static void checkList(
     DbPage *pOvflPage;
     unsigned char *pOvflData;
     if( iPage<1 ){
-      checkAppendMsg(pCheck, zContext,
+      checkAppendMsg(pCheck,
          "%d of %d pages missing from overflow list starting at %d",
           N+1, expected, iFirst);
       break;
     }
-    if( checkRef(pCheck, iPage, zContext) ) break;
+    if( checkRef(pCheck, iPage) ) break;
     if( sqlite3PagerGet(pCheck->pPager, (Pgno)iPage, &pOvflPage) ){
-      checkAppendMsg(pCheck, zContext, "failed to get page %d", iPage);
+      checkAppendMsg(pCheck, "failed to get page %d", iPage);
       break;
     }
     pOvflData = (unsigned char *)sqlite3PagerGetData(pOvflPage);
@@ -8010,11 +8009,11 @@ static void checkList(
       int n = get4byte(&pOvflData[4]);
 #ifndef SQLITE_OMIT_AUTOVACUUM
       if( pCheck->pBt->autoVacuum ){
-        checkPtrmap(pCheck, iPage, PTRMAP_FREEPAGE, 0, zContext);
+        checkPtrmap(pCheck, iPage, PTRMAP_FREEPAGE, 0);
       }
 #endif
       if( n>(int)pCheck->pBt->usableSize/4-2 ){
-        checkAppendMsg(pCheck, zContext,
+        checkAppendMsg(pCheck,
            "freelist leaf count too big on page %d", iPage);
         N--;
       }else{
@@ -8022,10 +8021,10 @@ static void checkList(
           Pgno iFreePage = get4byte(&pOvflData[8+i*4]);
 #ifndef SQLITE_OMIT_AUTOVACUUM
           if( pCheck->pBt->autoVacuum ){
-            checkPtrmap(pCheck, iFreePage, PTRMAP_FREEPAGE, 0, zContext);
+            checkPtrmap(pCheck, iFreePage, PTRMAP_FREEPAGE, 0);
           }
 #endif
-          checkRef(pCheck, iFreePage, zContext);
+          checkRef(pCheck, iFreePage);
         }
         N -= n;
       }
@@ -8038,7 +8037,7 @@ static void checkList(
       */
       if( pCheck->pBt->autoVacuum && N>0 ){
         i = get4byte(pOvflData);
-        checkPtrmap(pCheck, i, PTRMAP_OVERFLOW2, iPage, zContext);
+        checkPtrmap(pCheck, i, PTRMAP_OVERFLOW2, iPage);
       }
     }
 #endif
@@ -8070,7 +8069,6 @@ static void checkList(
 static int checkTreePage(
   IntegrityCk *pCheck,  /* Context for the sanity check */
   int iPage,            /* Page number of the page to check */
-  char *zParentContext, /* Parent context */
   i64 *pnParentMinKey, 
   i64 *pnParentMaxKey
 ){
@@ -8081,23 +8079,26 @@ static int checkTreePage(
   u8 *data;
   BtShared *pBt;
   int usableSize;
-  char zContext[100];
   char *hit = 0;
   i64 nMinKey = 0;
   i64 nMaxKey = 0;
-
-  sqlite3_snprintf(sizeof(zContext), zContext, "Page %d: ", iPage);
+  const char *saved_zPfx = pCheck->zPfx;
+  int saved_v1 = pCheck->v1;
+  int saved_v2 = pCheck->v2;
 
   /* Check that the page exists
   */
   pBt = pCheck->pBt;
   usableSize = pBt->usableSize;
   if( iPage==0 ) return 0;
-  if( checkRef(pCheck, iPage, zParentContext) ) return 0;
+  if( checkRef(pCheck, iPage) ) return 0;
+  pCheck->zPfx = "Page %d: ";
+  pCheck->v1 = iPage;
   if( (rc = btreeGetPage(pBt, (Pgno)iPage, &pPage, 0))!=0 ){
-    checkAppendMsg(pCheck, zContext,
+    checkAppendMsg(pCheck,
        "unable to get the page. error code=%d", rc);
-    return 0;
+    depth = -1;
+    goto end_of_check;
   }
 
   /* Clear MemPage.isInit to make sure the corruption detection code in
@@ -8105,10 +8106,11 @@ static int checkTreePage(
   pPage->isInit = 0;
   if( (rc = btreeInitPage(pPage))!=0 ){
     assert( rc==SQLITE_CORRUPT );  /* The only possible error from InitPage */
-    checkAppendMsg(pCheck, zContext, 
+    checkAppendMsg(pCheck,
                    "btreeInitPage() returns error code %d", rc);
     releasePage(pPage);
-    return 0;
+    depth = -1;
+    goto end_of_check;
   }
 
   /* Check out all the cells.
@@ -8121,8 +8123,9 @@ static int checkTreePage(
 
     /* Check payload overflow pages
     */
-    sqlite3_snprintf(sizeof(zContext), zContext,
-             "On tree page %d cell %d: ", iPage, i);
+    pCheck->zPfx = "On tree page %d cell %d: ";
+    pCheck->v1 = iPage;
+    pCheck->v2 = i;
     pCell = findCell(pPage,i);
     btreeParseCellPtr(pPage, pCell, &info);
     sz = info.nPayload;
@@ -8132,7 +8135,7 @@ static int checkTreePage(
       if( i==0 ){
         nMinKey = nMaxKey = info.nKey;
       }else if( info.nKey <= nMaxKey ){
-        checkAppendMsg(pCheck, zContext, 
+        checkAppendMsg(pCheck,
            "Rowid %lld out of order (previous was %lld)", info.nKey, nMaxKey);
       }
       nMaxKey = info.nKey;
@@ -8144,10 +8147,10 @@ static int checkTreePage(
       Pgno pgnoOvfl = get4byte(&pCell[info.iOverflow]);
 #ifndef SQLITE_OMIT_AUTOVACUUM
       if( pBt->autoVacuum ){
-        checkPtrmap(pCheck, pgnoOvfl, PTRMAP_OVERFLOW1, iPage, zContext);
+        checkPtrmap(pCheck, pgnoOvfl, PTRMAP_OVERFLOW1, iPage);
       }
 #endif
-      checkList(pCheck, 0, pgnoOvfl, nPage, zContext);
+      checkList(pCheck, 0, pgnoOvfl, nPage);
     }
 
     /* Check sanity of left child page.
@@ -8156,12 +8159,12 @@ static int checkTreePage(
       pgno = get4byte(pCell);
 #ifndef SQLITE_OMIT_AUTOVACUUM
       if( pBt->autoVacuum ){
-        checkPtrmap(pCheck, pgno, PTRMAP_BTREE, iPage, zContext);
+        checkPtrmap(pCheck, pgno, PTRMAP_BTREE, iPage);
       }
 #endif
-      d2 = checkTreePage(pCheck, pgno, zContext, &nMinKey, i==0?NULL:&nMaxKey);
+      d2 = checkTreePage(pCheck, pgno, &nMinKey, i==0?NULL:&nMaxKey);
       if( i>0 && d2!=depth ){
-        checkAppendMsg(pCheck, zContext, "Child page depth differs");
+        checkAppendMsg(pCheck, "Child page depth differs");
       }
       depth = d2;
     }
@@ -8169,37 +8172,39 @@ static int checkTreePage(
 
   if( !pPage->leaf ){
     pgno = get4byte(&pPage->aData[pPage->hdrOffset+8]);
-    sqlite3_snprintf(sizeof(zContext), zContext, 
-                     "On page %d at right child: ", iPage);
+    pCheck->zPfx = "On page %d at right child: ";
+    pCheck->v1 = iPage;
 #ifndef SQLITE_OMIT_AUTOVACUUM
     if( pBt->autoVacuum ){
-      checkPtrmap(pCheck, pgno, PTRMAP_BTREE, iPage, zContext);
+      checkPtrmap(pCheck, pgno, PTRMAP_BTREE, iPage);
     }
 #endif
-    checkTreePage(pCheck, pgno, zContext, NULL, !pPage->nCell?NULL:&nMaxKey);
+    checkTreePage(pCheck, pgno, NULL, !pPage->nCell?NULL:&nMaxKey);
   }
  
   /* For intKey leaf pages, check that the min/max keys are in order
   ** with any left/parent/right pages.
   */
+  pCheck->zPfx = "Page %d: ";
+  pCheck->v1 = iPage;
   if( pPage->leaf && pPage->intKey ){
     /* if we are a left child page */
     if( pnParentMinKey ){
       /* if we are the left most child page */
       if( !pnParentMaxKey ){
         if( nMaxKey > *pnParentMinKey ){
-          checkAppendMsg(pCheck, zContext, 
+          checkAppendMsg(pCheck,
               "Rowid %lld out of order (max larger than parent min of %lld)",
               nMaxKey, *pnParentMinKey);
         }
       }else{
         if( nMinKey <= *pnParentMinKey ){
-          checkAppendMsg(pCheck, zContext, 
+          checkAppendMsg(pCheck,
               "Rowid %lld out of order (min less than parent min of %lld)",
               nMinKey, *pnParentMinKey);
         }
         if( nMaxKey > *pnParentMaxKey ){
-          checkAppendMsg(pCheck, zContext, 
+          checkAppendMsg(pCheck,
               "Rowid %lld out of order (max larger than parent max of %lld)",
               nMaxKey, *pnParentMaxKey);
         }
@@ -8208,7 +8213,7 @@ static int checkTreePage(
     /* else if we're a right child page */
     } else if( pnParentMaxKey ){
       if( nMinKey <= *pnParentMaxKey ){
-        checkAppendMsg(pCheck, zContext, 
+        checkAppendMsg(pCheck,
             "Rowid %lld out of order (min less than parent max of %lld)",
             nMinKey, *pnParentMaxKey);
       }
@@ -8220,6 +8225,7 @@ static int checkTreePage(
   data = pPage->aData;
   hdr = pPage->hdrOffset;
   hit = sqlite3PageMalloc( pBt->pageSize );
+  pCheck->zPfx = 0;
   if( hit==0 ){
     pCheck->mallocFailed = 1;
   }else{
@@ -8237,7 +8243,8 @@ static int checkTreePage(
         size = cellSizePtr(pPage, &data[pc]);
       }
       if( (int)(pc+size-1)>=usableSize ){
-        checkAppendMsg(pCheck, 0, 
+        pCheck->zPfx = 0;
+        checkAppendMsg(pCheck,
             "Corruption detected in cell %d on page %d",i,iPage);
       }else{
         for(j=pc+size-1; j>=pc; j--) hit[j]++;
@@ -8259,19 +8266,24 @@ static int checkTreePage(
       if( hit[i]==0 ){
         cnt++;
       }else if( hit[i]>1 ){
-        checkAppendMsg(pCheck, 0,
+        checkAppendMsg(pCheck,
           "Multiple uses for byte %d of page %d", i, iPage);
         break;
       }
     }
     if( cnt!=data[hdr+7] ){
-      checkAppendMsg(pCheck, 0, 
+      checkAppendMsg(pCheck,
           "Fragmentation of %d bytes reported as %d on page %d",
           cnt, data[hdr+7], iPage);
     }
   }
   sqlite3PageFree(hit);
   releasePage(pPage);
+
+end_of_check:
+  pCheck->zPfx = saved_zPfx;
+  pCheck->v1 = saved_v1;
+  pCheck->v2 = saved_v2;
   return depth+1;
 }
 #endif /* SQLITE_OMIT_INTEGRITY_CHECK */
@@ -8312,6 +8324,9 @@ char *sqlite3BtreeIntegrityCheck(
   sCheck.mxErr = mxErr;
   sCheck.nErr = 0;
   sCheck.mallocFailed = 0;
+  sCheck.zPfx = 0;
+  sCheck.v1 = 0;
+  sCheck.v2 = 0;
   *pnErr = 0;
   if( sCheck.nPage==0 ){
     sqlite3BtreeLeave(p);
@@ -8331,8 +8346,10 @@ char *sqlite3BtreeIntegrityCheck(
 
   /* Check the integrity of the freelist
   */
+  sCheck.zPfx = "Main freelist: ";
   checkList(&sCheck, 1, get4byte(&pBt->pPage1->aData[32]),
-            get4byte(&pBt->pPage1->aData[36]), "Main freelist: ");
+            get4byte(&pBt->pPage1->aData[36]));
+  sCheck.zPfx = 0;
 
   /* Check all the tables.
   */
@@ -8340,10 +8357,12 @@ char *sqlite3BtreeIntegrityCheck(
     if( aRoot[i]==0 ) continue;
 #ifndef SQLITE_OMIT_AUTOVACUUM
     if( pBt->autoVacuum && aRoot[i]>1 ){
-      checkPtrmap(&sCheck, aRoot[i], PTRMAP_ROOTPAGE, 0, 0);
+      checkPtrmap(&sCheck, aRoot[i], PTRMAP_ROOTPAGE, 0);
     }
 #endif
-    checkTreePage(&sCheck, aRoot[i], "List of tree roots: ", NULL, NULL);
+    sCheck.zPfx = "List of tree roots: ";
+    checkTreePage(&sCheck, aRoot[i], NULL, NULL);
+    sCheck.zPfx = 0;
   }
 
   /* Make sure every page in the file is referenced
@@ -8351,7 +8370,7 @@ char *sqlite3BtreeIntegrityCheck(
   for(i=1; i<=sCheck.nPage && sCheck.mxErr; i++){
 #ifdef SQLITE_OMIT_AUTOVACUUM
     if( getPageReferenced(&sCheck, i)==0 ){
-      checkAppendMsg(&sCheck, 0, "Page %d is never used", i);
+      checkAppendMsg(&sCheck, "Page %d is never used", i);
     }
 #else
     /* If the database supports auto-vacuum, make sure no tables contain
@@ -8359,11 +8378,11 @@ char *sqlite3BtreeIntegrityCheck(
     */
     if( getPageReferenced(&sCheck, i)==0 && 
        (PTRMAP_PAGENO(pBt, i)!=i || !pBt->autoVacuum) ){
-      checkAppendMsg(&sCheck, 0, "Page %d is never used", i);
+      checkAppendMsg(&sCheck, "Page %d is never used", i);
     }
     if( getPageReferenced(&sCheck, i)!=0 && 
        (PTRMAP_PAGENO(pBt, i)==i && pBt->autoVacuum) ){
-      checkAppendMsg(&sCheck, 0, "Pointer map page %d is referenced", i);
+      checkAppendMsg(&sCheck, "Pointer map page %d is referenced", i);
     }
 #endif
   }
@@ -8373,7 +8392,7 @@ char *sqlite3BtreeIntegrityCheck(
   ** of the integrity check.
   */
   if( NEVER(nRef != sqlite3PagerRefcount(pBt->pPager)) ){
-    checkAppendMsg(&sCheck, 0, 
+    checkAppendMsg(&sCheck,
       "Outstanding page count goes from %d to %d during this analysis",
       nRef, sqlite3PagerRefcount(pBt->pPager)
     );
