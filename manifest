@@ -1,5 +1,5 @@
-C Minor\scode\sreformatting\sand\scomment\schange,\sto\simprove\sclarity.\nNo\slogic\schanges.
-D 2014-09-25T17:42:41.230
+C If\san\sSQL\sfunction\smakes\sa\srecursive\scall\sto\sdo\san\sINSERT\sinto\sthe\ssame\ndatabase,\smake\ssure\sthat\sthe\slast_insert_rowid()\sfor\sthat\sINSERT\sis\srecorded.
+D 2014-09-26T01:10:02.814
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -289,7 +289,7 @@ F src/update.c 729f6f18fc27740591d085e1172cebe311144bf0
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c 4006c01772bd8d8ac4306d523bbcee41d3e392d8
 F src/vacuum.c 59f03f92bcff57faa6a8ca256eb29ccddfb0614a
-F src/vdbe.c e4df7191abdae132b89c57086d0dd1a0d6cb400b
+F src/vdbe.c 91b7e12bca7b6056574ce28935e3e3f4769ce3c4
 F src/vdbe.h 09f5b4e3719fa454f252322b1cdab5cf1f361327
 F src/vdbeInt.h bb7f7ecfdead1a2ae0251b59f86f5724838d975c
 F src/vdbeapi.c e9e33b59834e3edc8790209765e069874c269d9d
@@ -784,7 +784,7 @@ F test/releasetest.tcl a0df0dfc5e3ee83ade87b9cc96db41b52d590b9e
 F test/resolver01.test 33abf37ff8335e6bf98f2b45a0af3e06996ccd9a
 F test/rollback.test e9504a009a202c3ed711da2e6879ff60c5a4669c
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
-F test/rowid.test 9ffee168c4be901820bf5cf5fcbb2105117d0d45
+F test/rowid.test 742b5741584a8a44fd83e856cc2896688401d645
 F test/rtree.test 0c8d9dd458d6824e59683c19ab2ffa9ef946f798
 F test/run-wordcount.sh 891e89c4c2d16e629cd45951d4ed899ad12afc09
 F test/savepoint.test 51d3900dc071a7c2ad4248578a5925631b476313
@@ -1200,7 +1200,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3467049a1705b49905ea88a5c6becb6fe318f2fa
-R ed3d6d35b7bb71031f12c63341a22b21
+P baeb72a356d73e6f624edacd2986ab766105e177
+R d5c71b678da0df654e28e5676923f229
 U drh
-Z c1b4b9aea98707eadcd6494d5019f9dc
+Z 33ff9c5d364d8f96a21ad755540365a5
