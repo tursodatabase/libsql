@@ -1,5 +1,5 @@
-C Fix\sthe\s"PRAGMA\sintegrity_check"\scommand\sso\sthat\sit\savoids\sformatting\serror\nmessage\scontext\smessages\suntil\sit\sactually\sneeds\sto\sgenerate\san\serror\smessage.\nThis\savoids\smuch\sformatting,\sand\shence\sgreatly\simproves\sthe\sperformance\sof\n"PRAGMA\sintegrity_check"\sin\sthe\scommon\scase\swhen\sthere\sare\sno\serrors.\s\sIt\salso\nmakes\sthe\scode\sa\slittle\ssmaller.
-D 2014-09-26T02:41:05.726
+C Add\san\sassert()\sto\sverify\sthe\slast-row-id\sfor\sthe\sdatabase\sjust\sprior\sto\scalling\sa\sSQL\sfunction.
+D 2014-09-26T18:30:11.093
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -289,7 +289,7 @@ F src/update.c 729f6f18fc27740591d085e1172cebe311144bf0
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c 4006c01772bd8d8ac4306d523bbcee41d3e392d8
 F src/vacuum.c 59f03f92bcff57faa6a8ca256eb29ccddfb0614a
-F src/vdbe.c 91b7e12bca7b6056574ce28935e3e3f4769ce3c4
+F src/vdbe.c 93eeb6f9c3a3084133225a196f220454d71cca10
 F src/vdbe.h 09f5b4e3719fa454f252322b1cdab5cf1f361327
 F src/vdbeInt.h bb7f7ecfdead1a2ae0251b59f86f5724838d975c
 F src/vdbeapi.c e9e33b59834e3edc8790209765e069874c269d9d
@@ -1200,7 +1200,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e93aecc090c2a1d3c231bb2bde044886eff0bdf7
-R 32be19747fff5e8f2465eed0f224b45d
-U drh
-Z f56b9000203c19d0f3a8172e8374b279
+P 83913515830aa850f9e38406f9422d7e88dcab66
+R dc4da31df9102dea4f18af6519657b79
+U mistachkin
+Z 6fd91dd1e10822b3b57f7222d98e1fa9
