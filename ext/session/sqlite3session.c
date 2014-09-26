@@ -597,11 +597,15 @@ static void sessionMergeRecord(
 ** as to point to the next value in the record.
 **
 ** If, when this function is called, *paTwo points to a valid value (i.e.
-** *paTwo[0] is not 0x00 - the "no value" placeholder), a copy of the *paOne
+** *paTwo[0] is not 0x00 - the "no value" placeholder), a copy of the *paTwo
 ** pointer is returned and *pnVal is set to the number of bytes in the 
 ** serialized value. Otherwise, a copy of *paOne is returned and *pnVal
 ** set to the number of bytes in the value at *paOne. If *paOne points
-** to the "no value" placeholder, *pnVal is set to 1.
+** to the "no value" placeholder, *pnVal is set to 1. In other words:
+**
+**   if( *paTwo is valid ) return *paTwo;
+**   return *paOne;
+**
 */
 static u8 *sessionMergeValue(
   u8 **paOne,                     /* IN/OUT: Left-hand buffer pointer */
@@ -3723,9 +3727,14 @@ static int sessionChangeMerge(
       }else if( op1==SQLITE_DELETE ){       /* DELETE + INSERT */
         assert( op2==SQLITE_INSERT );
         pNew->op = SQLITE_UPDATE;
-        if( 0==sessionMergeUpdate(&aCsr, pTab, bPatchset, aExist, 0, aRec, 0) ){
-          sqlite3_free(pNew);
-          pNew = 0;
+        if( bPatchset ){
+          memcpy(aCsr, aRec, nRec);
+          aCsr += nRec;
+        }else{
+          if( 0==sessionMergeUpdate(&aCsr, pTab, bPatchset, aExist, 0,aRec,0) ){
+            sqlite3_free(pNew);
+            pNew = 0;
+          }
         }
       }else if( op2==SQLITE_UPDATE ){       /* UPDATE + UPDATE */
         u8 *a1 = aExist;

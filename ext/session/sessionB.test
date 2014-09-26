@@ -22,11 +22,6 @@ ifcapable !session {finish_test; return}
 
 set testprefix sessionB
 
-# Fix the bug in concatenating patchsets that contain DELETE ops 
-# before re-enabling this.
-finish_test
-return
-
 #
 # 1.*: Test that the blobs returned by the session_patchset() API are 
 #      as expected. Also the sqlite3_changeset_iter functions.
