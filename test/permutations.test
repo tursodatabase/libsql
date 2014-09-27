@@ -938,7 +938,7 @@ test_suite "session_eec" -description {
   sqlite3_extended_result_codes $::dbhandle 1
 }
 
-test_suite "session_str" -description {
+test_suite "session_strm" -description {
   All session module related tests using the streaming APIs.
 } -files [
   glob -nocomplain $::testdir/../ext/session/*.test

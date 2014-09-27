@@ -17,10 +17,12 @@ typedef struct SessionInput SessionInput;
 /*
 ** Minimum chunk size used by streaming versions of functions.
 */
-#ifdef SQLITE_TEST
-#define SESSIONS_STR_CHUNK_SIZE 64
-#else
-#define SESSIONS_STR_CHUNK_SIZE 1024
+#ifndef SESSIONS_STRM_CHUNK_SIZE
+# ifdef SQLITE_TEST
+#   define SESSIONS_STRM_CHUNK_SIZE 64
+# else
+#   define SESSIONS_STRM_CHUNK_SIZE 1024
+# endif
 #endif
 
 /*
@@ -52,7 +54,7 @@ struct SessionBuffer {
 ** An object of this type is used internally as an abstraction for 
 ** input data. Input data may be supplied either as a single large buffer
 ** (e.g. sqlite3changeset_start()) or using a stream function (e.g.
-**  sqlite3changeset_start_str()).
+**  sqlite3changeset_start_strm()).
 */
 struct SessionInput {
   int iNext;                      /* Offset in aData[] of next change */
@@ -1907,12 +1909,12 @@ int sessionGenerateChangeset(
             rc = sqlite3_reset(pSel);
           }
 
-          /* If the buffer is now larger than SESSIONS_STR_CHUNK_SIZE, pass
+          /* If the buffer is now larger than SESSIONS_STRM_CHUNK_SIZE, pass
           ** its contents to the xOutput() callback. */
           if( xOutput 
            && rc==SQLITE_OK 
            && buf.nBuf>nNoop 
-           && buf.nBuf>SESSIONS_STR_CHUNK_SIZE 
+           && buf.nBuf>SESSIONS_STRM_CHUNK_SIZE 
           ){
             rc = xOutput(pOut, (void*)buf.aBuf, buf.nBuf);
             nNoop = -1;
@@ -1964,7 +1966,7 @@ int sqlite3session_changeset(
 /*
 ** Streaming version of sqlite3session_changeset().
 */
-int sqlite3session_changeset_str(
+int sqlite3session_changeset_strm(
   sqlite3_session *pSession,
   int (*xOutput)(void *pOut, const void *pData, int nData),
   void *pOut
@@ -1975,7 +1977,7 @@ int sqlite3session_changeset_str(
 /*
 ** Streaming version of sqlite3session_patchset().
 */
-int sqlite3session_patchset_str(
+int sqlite3session_patchset_strm(
   sqlite3_session *pSession,
   int (*xOutput)(void *pOut, const void *pData, int nData),
   void *pOut
@@ -2044,7 +2046,7 @@ int sqlite3session_isempty(sqlite3_session *pSession){
 }
 
 /*
-** Do the work for either sqlite3changeset_start() or start_str().
+** Do the work for either sqlite3changeset_start() or start_strm().
 */
 int sessionChangesetStart(
   sqlite3_changeset_iter **pp,    /* OUT: Changeset iterator handle */
@@ -2092,7 +2094,7 @@ int sqlite3changeset_start(
 /*
 ** Streaming version of sqlite3changeset_start().
 */
-int sqlite3changeset_start_str(
+int sqlite3changeset_start_strm(
   sqlite3_changeset_iter **pp,    /* OUT: Changeset iterator handle */
   int (*xInput)(void *pIn, void *pData, int *pnData),
   void *pIn
@@ -2111,9 +2113,9 @@ static int sessionInputBuffer(SessionInput *pIn, int nByte){
   int rc = SQLITE_OK;
   if( pIn->xInput ){
     while( !pIn->bEof && (pIn->iNext+nByte)>=pIn->nData && rc==SQLITE_OK ){
-      int nNew = SESSIONS_STR_CHUNK_SIZE;
+      int nNew = SESSIONS_STRM_CHUNK_SIZE;
 
-      if( pIn->iNext>=SESSIONS_STR_CHUNK_SIZE ){
+      if( pIn->iNext>=SESSIONS_STRM_CHUNK_SIZE ){
         int nMove = pIn->buf.nBuf - pIn->iNext;
         memmove(pIn->buf.aBuf, &pIn->buf.aBuf[pIn->iNext], nMove);
         pIn->buf.nBuf -= pIn->iNext;
@@ -2801,7 +2803,7 @@ static int sessionChangesetInvert(
     }
 
     assert( rc==SQLITE_OK );
-    if( xOutput && sOut.nBuf>=SESSIONS_STR_CHUNK_SIZE ){
+    if( xOutput && sOut.nBuf>=SESSIONS_STRM_CHUNK_SIZE ){
       rc = xOutput(pOut, sOut.aBuf, sOut.nBuf);
       sOut.nBuf = 0;
       if( rc!=SQLITE_OK ) goto finished_invert;
@@ -2847,7 +2849,7 @@ int sqlite3changeset_invert(
 /*
 ** Streaming version of sqlite3changeset_invert().
 */
-int sqlite3changeset_invert_str(
+int sqlite3changeset_invert_strm(
   int (*xInput)(void *pIn, void *pData, int *pnData),
   void *pIn,
   int (*xOutput)(void *pOut, const void *pData, int nData),
@@ -3641,7 +3643,7 @@ int sqlite3changeset_apply(
 ** attached to handle "db". Invoke the supplied conflict handler callback
 ** to resolve any conflicts encountered while applying the change.
 */
-int sqlite3changeset_apply_str(
+int sqlite3changeset_apply_strm(
   sqlite3 *db,                    /* Apply change to "main" db of this handle */
   int (*xInput)(void *pIn, void *pData, int *pnData), /* Input function */
   void *pIn,                                          /* First arg for xInput */
@@ -3657,7 +3659,7 @@ int sqlite3changeset_apply_str(
   void *pCtx                      /* First argument passed to xConflict */
 ){
   sqlite3_changeset_iter *pIter;  /* Iterator to skip through changeset */  
-  int rc = sqlite3changeset_start_str(&pIter, xInput, pIn);
+  int rc = sqlite3changeset_start_strm(&pIter, xInput, pIn);
   if( rc==SQLITE_OK ){
     rc = sessionChangesetApply(db, pIter, xFilter, xConflict, pCtx);
   }
@@ -3932,7 +3934,7 @@ int sessionChangesetConcat(
       }
     }
 
-    if( rc==SQLITE_OK && xOutput && buf.nBuf>=SESSIONS_STR_CHUNK_SIZE ){
+    if( rc==SQLITE_OK && xOutput && buf.nBuf>=SESSIONS_STRM_CHUNK_SIZE ){
       rc = xOutput(pOut, buf.aBuf, buf.nBuf);
       buf.nBuf = 0;
     }
@@ -3986,7 +3988,7 @@ int sqlite3changeset_concat(
 /*
 ** Streaming version of sqlite3changeset_concat().
 */
-int sqlite3changeset_concat_str(
+int sqlite3changeset_concat_strm(
   int (*xInputA)(void *pIn, void *pData, int *pnData),
   void *pInA,
   int (*xInputB)(void *pIn, void *pData, int *pnData),
@@ -3998,9 +4000,9 @@ int sqlite3changeset_concat_str(
   sqlite3_changeset_iter *pIter2 = 0;
   int rc;
 
-  rc = sqlite3changeset_start_str(&pIter1, xInputA, pInA);
+  rc = sqlite3changeset_start_strm(&pIter1, xInputA, pInA);
   if( rc==SQLITE_OK ){
-    rc = sqlite3changeset_start_str(&pIter2, xInputB, pInB);
+    rc = sqlite3changeset_start_strm(&pIter2, xInputB, pInB);
   }
   if( rc==SQLITE_OK ){
     rc = sessionChangesetConcat(pIter1, pIter2, xOutput, pOut, 0, 0);

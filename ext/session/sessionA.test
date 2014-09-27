@@ -104,5 +104,3 @@ do_test 3.4 {
 } {x y}
 
 finish_test
-
-

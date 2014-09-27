@@ -89,4 +89,3 @@ do_then_undo 3.2 { UPDATE t3 SET b=b||b WHERE e!='x' }
 do_then_undo 3.3 { UPDATE t3 SET a = 46 }
 
 finish_test
-

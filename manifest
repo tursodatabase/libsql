@@ -1,5 +1,5 @@
-C Merge\srecent\strunk\schanges\s(performance\senhancements)\sinto\sthe\ssessions\nbranch.
-D 2014-09-27T19:51:50.438
+C Change\sthe\snames\sof\sthe\sstream\sinterface\sAPIs\sto\sbe\sof\sthe\sform\n"_strm"\sinstead\sof\s"_str".\s\sIn\sother\swords,\sadded\san\s"m"\sto\sthe\send,\sto\ntry\sto\smake\sit\sclear\sthat\swe\sare\stalking\sabout\sa\s"stream"\sand\snot\sa\s"string.
+D 2014-09-27T20:45:48.295
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd5f245aa8c741bc65845747203c8ce2f3fb6c83
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -150,17 +150,17 @@ F ext/session/session1.test 4653867f32a98ce4bbb4a181aac6debe51ca4dfb
 F ext/session/session2.test 99ca0da7ddb617d42bafd83adccf99f18ae0384b
 F ext/session/session3.test a7a9ce59b8d1e49e2cc23d81421ac485be0eea01
 F ext/session/session4.test a6ed685da7a5293c5d6f99855bcf41dbc352ca84
-F ext/session/session5.test 8fdfaf9dba28a2f1c6b89b06168bdab1fef2d478
+F ext/session/session5.test 716bc6fafd625ce60dfa62ae128971628c1a1169
 F ext/session/session6.test 443789bc2fca12e4f7075cf692c60b8a2bea1a26
-F ext/session/session8.test 7d35947ad329b8966f095d34f9617a9eff52dc65
-F ext/session/session9.test b6dd1086de8c59b6f129923425487791f51c689c
-F ext/session/sessionA.test 5543846eb9ca045217262f5d8c9376ce812e1ba5
-F ext/session/sessionB.test d4ac901b43d4922a17dff08bbaa2f5354487ce4d
-F ext/session/session_common.tcl 1539d8973b2aea0025c133eb0cc4c89fcef541a5
+F ext/session/session8.test 8e194b3f655d861ca36de5d4de53f702751bab3b
+F ext/session/session9.test 5409d90d8141881d08285ed1c2c0d8d10fb92069
+F ext/session/sessionA.test 1feeab0b8e03527f08f2f1defb442da25480138f
+F ext/session/sessionB.test 06961b7c3641151f5d23088250ecad132501113c
+F ext/session/session_common.tcl 9de0451b6a47218fc16b9ed8876b6238a0a3d88d
 F ext/session/sessionfault.test bef044d0952c0d62c31c8d2400be72c8684545cc
-F ext/session/sqlite3session.c 0691b8d7434edb07166828778540bb418a7a68e3
-F ext/session/sqlite3session.h b57009fb88835cc4684376bd3eae0d6ab364968a
-F ext/session/test_session.c 56a4ddd443b571c8d365b03197c032bdaed1443a
+F ext/session/sqlite3session.c 67b8aee718cf34e267f4040d9b945a7a6407b0b2
+F ext/session/sqlite3session.h 16608d29879a0ed3c6be6b7fb18dcdb5c707aaef
+F ext/session/test_session.c a28352e99bc6a83b94e4cce99a7bf25c73d6d489
 F ext/userauth/sqlite3userauth.h 19cb6f0e31316d0ee4afdfb7a85ef9da3333a220
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
@@ -777,7 +777,7 @@ F test/pagesize.test 1dd51367e752e742f58e861e65ed7390603827a0
 F test/pcache.test b09104b03160aca0d968d99e8cd2c5b1921a993d
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
 F test/percentile.test b98fc868d71eb5619d42a1702e9ab91718cbed54
-F test/permutations.test b8ca6c9ecec6f360485a8cb61ef1b8734b31797b
+F test/permutations.test a33230010a3d4ce0c57d586672ccef10a7d1af29
 F test/pragma.test 19d0241a007bcdd77fc2606ec60fc60357e7fc8b
 F test/pragma2.test aea7b3d82c76034a2df2b38a13745172ddc0bc13
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
@@ -833,7 +833,7 @@ F test/selectD.test b0f02a04ef7737decb24e08be2c39b9664b43394
 F test/selectE.test fc02a1eb04c8eb537091482644b7d778ae8759b7
 F test/selectF.test 21c94e6438f76537b72532fa9fd4710cdd455fc3
 F test/server1.test 46803bd3fe8b99b30dbc5ff38ffc756f5c13a118
-F test/session.test 35f9c76809c26bee45d86891c7620b692ef9b8a8
+F test/session.test 78fa2365e93d3663a6e933f86e7afc395adf18be
 F test/shared.test 1da9dbad400cee0d93f252ccf76e1ae007a63746
 F test/shared2.test 03eb4a8d372e290107d34b6ce1809919a698e879
 F test/shared3.test fcd65cb11d189eff5f5c85cc4fad246fb0933108
@@ -1217,7 +1217,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 09985fa6b60a0bf38e23bbccd4d8e1d1cbf66124 d026f0c944ce812732d3595eaa3c5d432a86c7dd
-R 6b80dc3719dfaf6510fd0fc97f44558f
+P 497367cb57345dd37793e5f369b34d12be56172e
+R cc11bbbd763a56bfdd0667ee0dcdded3
 U drh
-Z 29718882bdf5b938c85c12503154fa25
+Z 9e5912d3733f34c1f4a27e9b30386e30

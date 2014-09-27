@@ -285,4 +285,3 @@ do_execsql_test 5.4 {
 } {1 1}
 
 finish_test
-

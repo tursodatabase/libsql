@@ -160,9 +160,9 @@ static int test_session_cmd(
       if( test_tcl_integer(interp, SESSION_STREAM_TCL_VAR) ){
         void *pCtx = (void*)&o;
         if( iSub==7 ){
-          rc = sqlite3session_patchset_str(pSession, testStreamOutput, pCtx);
+          rc = sqlite3session_patchset_strm(pSession, testStreamOutput, pCtx);
         }else{
-          rc = sqlite3session_changeset_str(pSession, testStreamOutput, pCtx);
+          rc = sqlite3session_changeset_strm(pSession, testStreamOutput, pCtx);
         }
       }else{
         if( iSub==7 ){
@@ -626,7 +626,7 @@ static int test_sqlite3changeset_apply(
   }else{
     sStr.aData = (unsigned char*)pChangeset;
     sStr.nData = nChangeset;
-    rc = sqlite3changeset_apply_str(db, testStreamInput, (void*)&sStr,
+    rc = sqlite3changeset_apply_strm(db, testStreamInput, (void*)&sStr,
         (objc==5) ? test_filter_handler : 0, test_conflict_handler, (void *)&ctx
     );
   }
@@ -697,7 +697,7 @@ static int test_sqlite3changeset_invert(
   sIn.aData = Tcl_GetByteArrayFromObj(objv[1], &sIn.nData);
 
   if( sIn.nStream ){
-    rc = sqlite3changeset_invert_str(
+    rc = sqlite3changeset_invert_strm(
         testStreamInput, (void*)&sIn, testStreamOutput, (void*)&sOut
     );
   }else{
@@ -740,7 +740,7 @@ static int test_sqlite3changeset_concat(
   sRight.nStream = sLeft.nStream;
 
   if( sLeft.nStream>0 ){
-    rc = sqlite3changeset_concat_str(
+    rc = sqlite3changeset_concat_strm(
         testStreamInput, (void*)&sLeft,
         testStreamInput, (void*)&sRight,
         testStreamOutput, (void*)&sOut
@@ -801,7 +801,7 @@ static int test_sqlite3session_foreach(
   }else{
     sStr.aData = (unsigned char*)pChangeset;
     sStr.nData = nChangeset;
-    rc = sqlite3changeset_start_str(&pIter, testStreamInput, (void*)&sStr);
+    rc = sqlite3changeset_start_strm(&pIter, testStreamInput, (void*)&sStr);
   }
   if( rc!=SQLITE_OK ){
     return test_session_error(interp, rc);
