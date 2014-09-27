@@ -4359,11 +4359,14 @@ static int whereLoopAddBtreeIndex(
     nIter = pProbe->aiRowLogEst[saved_nEq] - pProbe->aiRowLogEst[saved_nEq+1];
     if( pTerm ){
       /* TUNING:  When estimating skip-scan for a term that is also indexable,
-      ** increase the cost of the skip-scan by 2x, to make it a little less
+      ** multiply the cost of the skip-scan by 2.0, to make it a little less
       ** desirable than the regular index lookup. */
       nIter += 10;  assert( 10==sqlite3LogEst(2) );
     }
     pNew->nOut -= nIter;
+    /* TUNING:  Because uncertainties in the estimates for skip-scan queries,
+    ** add a 1.375 fudge factor to make skip-scan slightly less likely. */
+    nIter += 5;
     whereLoopAddBtreeIndex(pBuilder, pSrc, pProbe, nIter + nInMul);
     pNew->nOut = saved_nOut;
     pNew->u.btree.nEq = saved_nEq;
@@ -4718,9 +4721,17 @@ static int whereLoopAddBtree(
         pNew->nLTerm = 1;
         pNew->aLTerm[0] = pTerm;
         /* TUNING: One-time cost for computing the automatic index is
-        ** approximately 7*N*log2(N) where N is the number of rows in
-        ** the table being indexed. */
-        pNew->rSetup = rLogSize + rSize + 28;  assert( 28==sqlite3LogEst(7) );
+        ** estimated to be X*N*log2(N) where N is the number of rows in
+        ** the table being indexed and where X is 7 (LogEst=28) for normal
+        ** tables or 1.375 (LogEst=4) for views and subqueries.  The value
+        ** of X is smaller for views and subqueries so that the query planner
+        ** will be more aggressive about generating automatic indexes for
+        ** those objects, since there is no opportunity to add schema
+        ** indexes on subqueries and views. */
+        pNew->rSetup = rLogSize + rSize + 4;
+        if( pTab->pSelect==0 && (pTab->tabFlags & TF_Ephemeral)==0 ){
+          pNew->rSetup += 24;
+        }
         ApplyCostMultiplier(pNew->rSetup, pTab->costMult);
         /* TUNING: Each index lookup yields 20 rows in the table.  This
         ** is more than the usual guess of 10 rows, since we have no way

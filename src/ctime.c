@@ -395,7 +395,7 @@ int sqlite3_compileoption_used(const char *zOptName){
   ** linear search is adequate.  No need for a binary search. */
   for(i=0; i<ArraySize(azCompileOpt); i++){
     if( sqlite3StrNICmp(zOptName, azCompileOpt[i], n)==0
-     && sqlite3CtypeMap[(unsigned char)azCompileOpt[i][n]]==0
+     && sqlite3IsIdChar((unsigned char)azCompileOpt[i][n])==0
     ){
       return 1;
     }
