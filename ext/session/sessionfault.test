@@ -30,7 +30,6 @@ do_common_sql {
 faultsim_save_and_close
 db2 close
 
-
 #-------------------------------------------------------------------------
 # Test OOM error handling when collecting and applying a simple changeset.
 #
@@ -234,7 +233,7 @@ set changeset [changeset_from_sql {
 }]
 db close
 
-do_faultsim_test 5 -faults oom* -body {
+do_faultsim_test 5.1 -faults oom* -body {
   set ::inverse [sqlite3changeset_invert $::changeset]
   set {} {}
 } -test {
@@ -247,6 +246,41 @@ do_faultsim_test 5 -faults oom* -body {
         {INSERT t1 0 .X {} {t string i 1}} 
         {UPDATE t1 0 .X {i 20 i 2} {i 4 {} {}}}
     } { lappend y $c }
+    if {$x != $y} { error "changeset no good" }
+  }
+}
+
+catch {db close}
+catch {db2 close}
+forcedelete test.db
+sqlite3 db test.db
+execsql {
+  CREATE TABLE t2(a PRIMARY KEY, b);
+  INSERT INTO t2 VALUES(1, 'abc');
+  INSERT INTO t2 VALUES(2, 'def');
+}
+set changeset [changeset_from_sql {
+  UPDATE t2 SET b = (b || b || b || b);
+  UPDATE t2 SET b = (b || b || b || b);
+  UPDATE t2 SET b = (b || b || b || b);
+  UPDATE t2 SET b = (b || b || b || b);
+}]
+db close
+set abc [string repeat abc 256]
+set def [string repeat def 256]
+
+do_faultsim_test 5.2 -faults oom-tra* -body {
+  set ::inverse [sqlite3changeset_invert $::changeset]
+  set {} {}
+} -test {
+  faultsim_test_result {0 {}} {1 SQLITE_NOMEM}
+  if {$testrc==0} {
+    set x [list]
+    sqlite3session_foreach c $::inverse { lappend x $c }
+    foreach c "
+        {UPDATE t2 0 X. {i 1 t $::abc} {{} {} t abc}}
+        {UPDATE t2 0 X. {i 2 t $::def} {{} {} t def}}
+    " { lappend y $c }
     if {$x != $y} { error "changeset no good" }
   }
 }

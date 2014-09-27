@@ -18,7 +18,7 @@ typedef struct SessionInput SessionInput;
 ** Minimum chunk size used by streaming versions of functions.
 */
 #ifdef SQLITE_TEST
-#define SESSIONS_STR_CHUNK_SIZE 1
+#define SESSIONS_STR_CHUNK_SIZE 64
 #else
 #define SESSIONS_STR_CHUNK_SIZE 1024
 #endif
@@ -1347,7 +1347,7 @@ static void sessionAppendValue(SessionBuffer *p, sqlite3_value *pVal, int *pRc){
   int rc = *pRc;
   if( rc==SQLITE_OK ){
     int nByte = 0;
-    sessionSerializeValue(0, pVal, &nByte);
+    rc = sessionSerializeValue(0, pVal, &nByte);
     sessionBufferGrow(p, nByte, &rc);
     if( rc==SQLITE_OK ){
       rc = sessionSerializeValue(&p->aBuf[p->nBuf], pVal, 0);
@@ -2225,12 +2225,10 @@ static int sessionReadRecord(
       eType = pIn->aData[pIn->iNext++];
     }
 
-    assert( !apOut || apOut[i]==0 );
+    assert( apOut[i]==0 );
     if( eType ){
-      if( apOut ){
-        apOut[i] = sqlite3ValueNew(0);
-        if( !apOut[i] ) rc = SQLITE_NOMEM;
-      }
+      apOut[i] = sqlite3ValueNew(0);
+      if( !apOut[i] ) rc = SQLITE_NOMEM;
     }
 
     if( rc==SQLITE_OK ){
@@ -2239,22 +2237,20 @@ static int sessionReadRecord(
         int nByte;
         pIn->iNext += sessionVarintGet(aVal, &nByte);
         rc = sessionInputBuffer(pIn, nByte);
-        if( apOut && rc==SQLITE_OK ){
+        if( rc==SQLITE_OK ){
           u8 enc = (eType==SQLITE_TEXT ? SQLITE_UTF8 : 0);
           rc = sessionValueSetStr(apOut[i],&pIn->aData[pIn->iNext],nByte,enc);
         }
         pIn->iNext += nByte;
       }
       if( eType==SQLITE_INTEGER || eType==SQLITE_FLOAT ){
-        if( apOut ){
-          sqlite3_int64 v = sessionGetI64(aVal);
-          if( eType==SQLITE_INTEGER ){
-            sqlite3VdbeMemSetInt64(apOut[i], v);
-          }else{
-            double d;
-            memcpy(&d, &v, 8);
-            sqlite3VdbeMemSetDouble(apOut[i], d);
-          }
+        sqlite3_int64 v = sessionGetI64(aVal);
+        if( eType==SQLITE_INTEGER ){
+          sqlite3VdbeMemSetInt64(apOut[i], v);
+        }else{
+          double d;
+          memcpy(&d, &v, 8);
+          sqlite3VdbeMemSetDouble(apOut[i], d);
         }
         pIn->iNext += 8;
       }
@@ -2293,10 +2289,10 @@ static int sessionChangesetBufferTblhdr(SessionInput *pIn, int *pnByte){
     while( (pIn->iNext + nRead)<pIn->nData && pIn->aData[pIn->iNext + nRead] ){
       nRead++;
     }
-    if( pIn->aData[pIn->iNext + nRead]==0 ) break;
+    if( (pIn->iNext + nRead)<pIn->nData ) break;
     rc = sessionInputBuffer(pIn, nRead + 100);
   }
-  if( pnByte ) *pnByte = nRead+1;
+  *pnByte = nRead+1;
   return rc;
 }
 
@@ -2775,7 +2771,7 @@ static int sessionChangesetInvert(
         /* Write the new old.* record. Consists of the PK columns from the
         ** original old.* record, and the other values from the original
         ** new.* record. */
-        for(iCol=0; rc==SQLITE_OK && iCol<nCol; iCol++){
+        for(iCol=0; iCol<nCol; iCol++){
           sqlite3_value *pVal = apVal[iCol + (abPK[iCol] ? 0 : nCol)];
           sessionAppendValue(&sOut, pVal, &rc);
         }
@@ -2783,7 +2779,7 @@ static int sessionChangesetInvert(
         /* Write the new new.* record. Consists of a copy of all values
         ** from the original old.* record, except for the PK columns, which
         ** are set to "undefined". */
-        for(iCol=0; rc==SQLITE_OK && iCol<nCol; iCol++){
+        for(iCol=0; iCol<nCol; iCol++){
           sqlite3_value *pVal = (abPK[iCol] ? 0 : apVal[iCol]);
           sessionAppendValue(&sOut, pVal, &rc);
         }
@@ -3904,6 +3900,8 @@ int sessionChangesetConcat(
   SessionTable *pList = 0;        /* List of SessionTable objects */
   int rc;                         /* Return code */
   int bPatch;                     /* True for a patchset */
+  SessionTable *pTab;
+  SessionBuffer buf = {0, 0, 0};
 
   assert( xOutput==0 || (ppOut==0 && pnOut==0) );
 
@@ -3916,40 +3914,36 @@ int sessionChangesetConcat(
   /* Create the serialized output changeset based on the contents of the
   ** hash tables attached to the SessionTable objects in list pList. 
   */
-  if( rc==SQLITE_OK ){
-    SessionTable *pTab;
-    SessionBuffer buf = {0, 0, 0};
-    for(pTab=pList; pTab && rc==SQLITE_OK; pTab=pTab->pNext){
-      int i;
-      if( pTab->nEntry==0 ) continue;
+  for(pTab=pList; rc==SQLITE_OK && pTab; pTab=pTab->pNext){
+    int i;
+    if( pTab->nEntry==0 ) continue;
 
-      sessionAppendTableHdr(&buf, bPatch, pTab, &rc);
-      for(i=0; i<pTab->nChange; i++){
-        SessionChange *p;
-        for(p=pTab->apChange[i]; p; p=p->pNext){
-          sessionAppendByte(&buf, p->op, &rc);
-          sessionAppendByte(&buf, p->bIndirect, &rc);
-          sessionAppendBlob(&buf, p->aRecord, p->nRecord, &rc);
-        }
-      }
-
-      if( rc==SQLITE_OK && xOutput && buf.nBuf>=SESSIONS_STR_CHUNK_SIZE ){
-        rc = xOutput(pOut, buf.aBuf, buf.nBuf);
-        buf.nBuf = 0;
+    sessionAppendTableHdr(&buf, bPatch, pTab, &rc);
+    for(i=0; i<pTab->nChange; i++){
+      SessionChange *p;
+      for(p=pTab->apChange[i]; p; p=p->pNext){
+        sessionAppendByte(&buf, p->op, &rc);
+        sessionAppendByte(&buf, p->bIndirect, &rc);
+        sessionAppendBlob(&buf, p->aRecord, p->nRecord, &rc);
       }
     }
 
-    if( rc==SQLITE_OK ){
-      if( xOutput ){
-        if( buf.nBuf>0 ) rc = xOutput(pOut, buf.aBuf, buf.nBuf);
-      }else{
-        *ppOut = buf.aBuf;
-        *pnOut = buf.nBuf;
-        buf.aBuf = 0;
-      }
+    if( rc==SQLITE_OK && xOutput && buf.nBuf>=SESSIONS_STR_CHUNK_SIZE ){
+      rc = xOutput(pOut, buf.aBuf, buf.nBuf);
+      buf.nBuf = 0;
     }
-    sqlite3_free(buf.aBuf);
   }
+
+  if( rc==SQLITE_OK ){
+    if( xOutput ){
+      if( buf.nBuf>0 ) rc = xOutput(pOut, buf.aBuf, buf.nBuf);
+    }else{
+      *ppOut = buf.aBuf;
+      *pnOut = buf.nBuf;
+      buf.aBuf = 0;
+    }
+  }
+  sqlite3_free(buf.aBuf);
 
   sessionDeleteTable(pList);
   return rc;

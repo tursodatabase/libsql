@@ -524,4 +524,30 @@ do_test 9.2 {
 do_changeset_test 9.2 S {{UPDATE t7 0 ....X.. {{} {} i 1 {} {} i 1 i 1 {} {} {} {}} {{} {} i 2 {} {} i 2 {} {} {} {} {} {}}}}
 S delete
 catch { db2 close }
+ 
+#-------------------------------------------------------------------------
+# Test a really long table name.
+#
+reset_db
+set tblname [string repeat tblname123 100]
+do_test 10.1.1 {
+  execsql "
+    CREATE TABLE $tblname (a PRIMARY KEY, b);
+    INSERT INTO $tblname VALUES('xyz', 'def');
+  "
+  sqlite3session S db main
+  S attach $tblname
+  execsql " 
+    INSERT INTO $tblname VALUES('uvw', 'abc');
+    DELETE FROM $tblname WHERE a = 'xyz';
+  "
+} {}
+breakpoint
+do_changeset_test 10.1.2 S "
+  {INSERT $tblname 0 X. {} {t uvw t abc}}
+  {DELETE $tblname 0 X. {t xyz t def} {}}
+"
+do_test 10.1.4 { S delete } {}
+
+
 finish_test

@@ -75,7 +75,7 @@ struct TestSessionsBlob {
 };
 typedef struct TestSessionsBlob TestSessionsBlob;
 
-static int testSessionsOutput(
+static int testStreamOutput(
   void *pCtx,
   const void *pData,
   int nData
@@ -160,9 +160,9 @@ static int test_session_cmd(
       if( test_tcl_integer(interp, SESSION_STREAM_TCL_VAR) ){
         void *pCtx = (void*)&o;
         if( iSub==7 ){
-          rc = sqlite3session_patchset_str(pSession, testSessionsOutput, pCtx);
+          rc = sqlite3session_patchset_str(pSession, testStreamOutput, pCtx);
         }else{
-          rc = sqlite3session_changeset_str(pSession, testSessionsOutput, pCtx);
+          rc = sqlite3session_changeset_str(pSession, testStreamOutput, pCtx);
         }
       }else{
         if( iSub==7 ){
@@ -562,6 +562,13 @@ static int testStreamInput(
   int nRem = p->nData - p->iData; /* Bytes of data available */
   int nRet = p->nStream;          /* Bytes actually returned */
 
+  /* Allocate and free some space. There is no point to this, other than
+  ** that it allows the regular OOM fault-injection tests to cause an error
+  ** in this function.  */
+  void *pAlloc = sqlite3_malloc(10);
+  if( pAlloc==0 ) return SQLITE_NOMEM;
+  sqlite3_free(pAlloc);
+
   if( nRet>nReq ) nRet = nReq;
   if( nRet>nRem ) nRet = nRem;
 
@@ -691,7 +698,7 @@ static int test_sqlite3changeset_invert(
 
   if( sIn.nStream ){
     rc = sqlite3changeset_invert_str(
-        testStreamInput, (void*)&sIn, testSessionsOutput, (void*)&sOut
+        testStreamInput, (void*)&sIn, testStreamOutput, (void*)&sOut
     );
   }else{
     rc = sqlite3changeset_invert(sIn.nData, sIn.aData, &sOut.n, &sOut.p);
@@ -736,7 +743,7 @@ static int test_sqlite3changeset_concat(
     rc = sqlite3changeset_concat_str(
         testStreamInput, (void*)&sLeft,
         testStreamInput, (void*)&sRight,
-        testSessionsOutput, (void*)&sOut
+        testStreamOutput, (void*)&sOut
     );
   }else{
     rc = sqlite3changeset_concat(
