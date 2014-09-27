@@ -49,10 +49,10 @@ struct SessionBuffer {
 };
 
 /*
-** An object of this type is used internally as an abstraction for the 
-** input data read by changeset iterators. Input data may be supplied 
-** either as a single large buffer (sqlite3changeset_start()) or using
-** a stream function (sqlite3changeset_start_str()).
+** An object of this type is used internally as an abstraction for 
+** input data. Input data may be supplied either as a single large buffer
+** (e.g. sqlite3changeset_start()) or using a stream function (e.g.
+**  sqlite3changeset_start_str()).
 */
 struct SessionInput {
   int iNext;                      /* Offset in aData[] of next change */
@@ -2173,6 +2173,10 @@ static int sessionValueSetStr(
   int nData,                      /* Size of buffer aData[] in bytes */
   u8 enc                          /* String encoding (0 for blobs) */
 ){
+  /* In theory this code could just pass SQLITE_TRANSIENT as the final
+  ** argument to sqlite3ValueSetStr() and have the copy created 
+  ** automatically. But doing so makes it difficult to detect any OOM
+  ** error. Hence the code to create the copy externally. */
   u8 *aCopy = sqlite3_malloc(nData);
   if( aCopy==0 ) return SQLITE_NOMEM;
   memcpy(aCopy, aData, nData);
@@ -2299,12 +2303,16 @@ static int sessionChangesetBufferTblhdr(SessionInput *pIn, int *pnByte){
 /*
 ** The input pointer currently points to the first byte of the first field
 ** of a record consisting of nCol columns. This function ensures the entire
-** record is buffered.
+** record is buffered. It does not move the input pointer.
+**
+** If successful, SQLITE_OK is returned and *pnByte is set to the size of
+** the record in bytes. Otherwise, an SQLite error code is returned. The
+** final value of *pnByte is undefined in this case.
 */
 static int sessionChangesetBufferRecord(
-  SessionInput *pIn, 
-  int nCol, 
-  int *pnByte
+  SessionInput *pIn,              /* Input data */
+  int nCol,                       /* Number of columns in record */
+  int *pnByte                     /* OUT: Size of record in bytes */
 ){
   int rc = SQLITE_OK;
   int nByte = 0;
@@ -2335,6 +2343,15 @@ static int sessionChangesetBufferRecord(
 **   + number of columns in table (varint)
 **   + array of PK flags (1 byte per column),
 **   + table name (nul terminated).
+**
+** This function decodes the table-header and populates the p->nCol, 
+** p->zTab and p->abPK[] variables accordingly. The p->apValue[] array is 
+** also allocated or resized according to the new value of p->nCol. The
+** input pointer is left pointing to the byte following the table header.
+**
+** If successful, SQLITE_OK is returned. Otherwise, an SQLite error code
+** is returned and the final values of the various fields enumerated above
+** are undefined.
 */
 static int sessionChangesetReadTblhdr(sqlite3_changeset_iter *p){
   int rc;
@@ -3775,7 +3792,7 @@ static int sessionChangeMerge(
 ** Add all changes in the changeset passed via the first two arguments to
 ** hash tables.
 */
-static int sessionAddChangeset(
+static int sessionChangesetToHash(
   sqlite3_changeset_iter *pIter,   /* Iterator to read from */
   SessionTable **ppTabList        /* IN/OUT: List of table objects */
 ){
@@ -3793,15 +3810,6 @@ static int sessionAddChangeset(
     SessionChange *pChange;
     SessionChange *pExist = 0;
     SessionChange **pp;
-
-#if 0
-    assert( bPatchset==0 || bPatchset==1 );
-    assert( pIter->bPatchset==0 || pIter->bPatchset==1 );
-    if( pIter->bPatchset!=bPatchset ){
-      rc = SQLITE_ERROR;
-      break;
-    }
-#endif
 
     sqlite3changeset_op(pIter, &zNew, &nCol, &op, &bIndirect);
     if( !pTab || sqlite3_stricmp(zNew, pTab->zName) ){
@@ -3899,9 +3907,9 @@ int sessionChangesetConcat(
 
   assert( xOutput==0 || (ppOut==0 && pnOut==0) );
 
-  rc = sessionAddChangeset(pLeft, &pList);
+  rc = sessionChangesetToHash(pLeft, &pList);
   if( rc==SQLITE_OK ){
-    rc = sessionAddChangeset(pRight, &pList);
+    rc = sessionChangesetToHash(pRight, &pList);
   }
   bPatch = pLeft->bPatchset || pRight->bPatchset;
 

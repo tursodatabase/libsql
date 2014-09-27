@@ -275,30 +275,6 @@ int sqlite3session_changeset(
 
 
 /*
-** This function is similar to sqlite3session_changeset(), except that instead
-** of storing the output changeset in a buffer obtained from sqlite3_malloc()
-** it invokes the supplied xOutput() callback zero or more times to stream the
-** changeset to the application. This is useful in order to avoid large memory
-** allocations when working with very large changesets.
-**
-** The first parameter passed to each call to the xOutput callback is a copy
-** of the pOut parameter passed to this function. The following two parameters
-** are a pointer to the buffer containing the next chunk of the output changeset
-** and the size of that buffer in bytes.
-**
-** If the data is successfully processed by the xOutput callback, it should
-** return SQLITE_OK. Or, if an error occurs, some other SQLite error code. In
-** this case the sqlite3session_changeset_str() call is abandoned immediately
-** and returns a copy of the xOutput return code.
-*/
-int sqlite3session_changeset_str(
-  sqlite3_session *pSession,
-  int (*xOutput)(void *pOut, const void *pData, int nData),
-  void *pOut
-);
-
-
-/*
 ** CAPI3REF: Generate A Patchset From A Session Object
 **
 ** The differences between a patchset and a changeset are that:
@@ -325,15 +301,6 @@ int sqlite3session_patchset(
   sqlite3_session *pSession,      /* Session object */
   int *pnPatchset,                /* OUT: Size of buffer at *ppChangeset */
   void **ppPatchset               /* OUT: Buffer containing changeset */
-);
-
-/*
-** Streaming version of sqlite3session_patchset().
-*/
-int sqlite3session_patchset_str(
-  sqlite3_session *pSession,
-  int (*xOutput)(void *pOut, const void *pData, int nData),
-  void *pOut
 );
 
 /*
@@ -392,29 +359,6 @@ int sqlite3changeset_start(
   void *pChangeset                /* Pointer to blob containing changeset */
 );
 
-
-/*
-** This function is similar to sqlite3changeset_start(), except that instead
-** of reading data from a single buffer, it requests it one chunk at a time
-** from the application by invoking the supplied xInput() callback. The xInput()
-** callback may be invoked at any time during the lifetime of the iterator.
-**
-** Each time the xInput callback is invoked, the first argument passed is a
-** copy of the third parameter passed to this function. The second argument,
-** pData, points to a buffer (*pnData) bytes in size. Assuming no error occurs
-** the xInput method should copy up to (*pnData) bytes of data into the buffer
-** and set (*pnData) to the actual number of bytes copied before returning
-** SQLITE_OK. If the input is completely exhausted, (*pnData) should be set
-** to zero to indicate this. Or, if an error occurs, an SQLite error code
-** should be returned. In this case the iterator is put into an error state and
-** all subsequent calls to iterator methods return a copy of the xInput error
-** code.
-*/
-int sqlite3changeset_start_str(
-  sqlite3_changeset_iter **pp,
-  int (*xInput)(void *pIn, void *pData, int *pnData),
-  void *pIn
-);
 
 /*
 ** CAPI3REF: Advance A Changeset Iterator
@@ -671,16 +615,6 @@ int sqlite3changeset_invert(
 );
 
 /*
-** Streaming version of sqlite3changeset_invert().
-*/
-int sqlite3changeset_invert_str(
-  int (*xInput)(void *pIn, void *pData, int *pnData),
-  void *pIn,
-  int (*xOutput)(void *pOut, const void *pData, int nData),
-  void *pOut
-);
-
-/*
 ** CAPI3REF: Concatenate Two Changeset Objects
 **
 ** This function is used to concatenate two changesets, A and B, into a 
@@ -759,18 +693,6 @@ int sqlite3changeset_concat(
   void *pB,                       /* Pointer to buffer containing changeset B */
   int *pnOut,                     /* OUT: Number of bytes in output changeset */
   void **ppOut                    /* OUT: Buffer containing output changeset */
-);
-
-/*
-** Streaming verson of sqlite3changeset_concat().
-*/
-int sqlite3changeset_concat_str(
-  int (*xInputA)(void *pIn, void *pData, int *pnData),
-  void *pInA,
-  int (*xInputB)(void *pIn, void *pData, int *pnData),
-  void *pInB,
-  int (*xOutput)(void *pOut, const void *pData, int nData),
-  void *pOut
 );
 
 /*
@@ -925,30 +847,6 @@ int sqlite3changeset_apply(
   void *pCtx                      /* First argument passed to xConflict */
 );
 
-/*
-** This function is similar to sqlite3changeset_apply(), except that instead
-** of reading data from a single buffer, it requests it one chunk at a time
-** from the application by invoking the supplied xInput() callback.
-**
-** See the documentation for sqlite3changeset_start_str() for a description
-** of how the xInput callback should be implemented.
-*/
-int sqlite3changeset_apply_str(
-  sqlite3 *db,                    /* Apply change to "main" db of this handle */
-  int (*xInput)(void *pIn, void *pData, int *pnData), /* Input function */
-  void *pIn,                                          /* First arg for xInput */
-  int(*xFilter)(
-    void *pCtx,                   /* Copy of sixth arg to _apply() */
-    const char *zTab              /* Table name */
-  ),
-  int(*xConflict)(
-    void *pCtx,                   /* Copy of sixth arg to _apply() */
-    int eConflict,                /* DATA, MISSING, CONFLICT, CONSTRAINT */
-    sqlite3_changeset_iter *p     /* Handle describing change and conflict */
-  ),
-  void *pCtx                      /* First argument passed to xConflict */
-);
-
 /* 
 ** CAPI3REF: Constants Passed To The Conflict Handler
 **
@@ -1044,6 +942,141 @@ int sqlite3changeset_apply_str(
 #define SQLITE_CHANGESET_OMIT       0
 #define SQLITE_CHANGESET_REPLACE    1
 #define SQLITE_CHANGESET_ABORT      2
+
+/*
+** CAPI3REF: Streaming Versions of API functions.
+**
+** The six streaming API xxx_str() functions serve similar purposes to the 
+** corresponding non-streaming API functions:
+**
+** <table border=1 style="margin-left:8ex;margin-right:8ex">
+**   <tr><th>Streaming function<th>Non-streaming equivalent</th>
+**   <tr><td>sqlite3changeset_apply_str<td>[sqlite3changeset_apply] 
+**   <tr><td>sqlite3changeset_concat_str<td>[sqlite3changeset_concat] 
+**   <tr><td>sqlite3changeset_invert_str<td>[sqlite3changeset_invert] 
+**   <tr><td>sqlite3changeset_start_str<td>[sqlite3changeset_start] 
+**   <tr><td>sqlite3session_changeset_str<td>[sqlite3session_changeset] 
+**   <tr><td>sqlite3session_patchset_str<td>[sqlite3session_patchset] 
+** </table>
+**
+** Non-streaming functions that accept changesets (or patchsets) as input
+** require that the entire changeset be stored in a single buffer in memory. 
+** Similarly, those that return a changeset or patchset do so by returning 
+** a pointer to a single large buffer allocated using sqlite3_malloc(). 
+** Normally this is convenient. However, if an application running in a 
+** low-memory environment is required to handle very large changesets, the
+** large contiguous memory allocations required can become onerous.
+**
+** In order to avoid this problem, instead of a single large buffer, input
+** is passed to a streaming API functions by way of a callback function that
+** the sessions module invokes to incrementally request input data as it is
+** required. In all cases, a pair of API function parameters such as
+**
+**  <pre>
+**  &nbsp;     int nChangeset,
+**  &nbsp;     void *pChangeset,
+**  </pre>
+**
+** Is replaced by:
+**
+**  <pre>
+**  &nbsp;     int (*xInput)(void *pIn, void *pData, int *pnData),
+**  &nbsp;     void *pIn,
+**  </pre>
+**
+** Each time the xInput callback is invoked by the sessions module, the first
+** argument passed is a copy of the supplied pIn context pointer. The second 
+** argument, pData, points to a buffer (*pnData) bytes in size. Assuming no 
+** error occurs the xInput method should copy up to (*pnData) bytes of data 
+** into the buffer and set (*pnData) to the actual number of bytes copied 
+** before returning SQLITE_OK. If the input is completely exhausted, (*pnData) 
+** should be set to zero to indicate this. Or, if an error occurs, an SQLite 
+** error code should be returned. In all cases, if an xInput callback returns
+** an error, all processing is abandoned and the streaming API function
+** returns a copy of the error code to the caller.
+**
+** In the case of sqlite3changeset_start_str(), the xInput callback may be
+** invoked by the sessions module at any point during the lifetime of the
+** iterator. If such an xInput callback returns an error, the iterator enters
+** an error state, whereby all subsequent calls to iterator functions 
+** immediately fail with the same error code as returned by xInput.
+**
+** Similarly, streaming API functions that return changesets (or patchsets)
+** return them in chunks by way of a callback function instead of via a
+** pointer to a single large buffer. In this case, a pair of parameters such
+** as:
+**
+**  <pre>
+**  &nbsp;     int *pnChangeset,
+**  &nbsp;     void **ppChangeset,
+**  </pre>
+**
+** Is replaced by:
+**
+**  <pre>
+**  &nbsp;     int (*xOutput)(void *pOut, const void *pData, int nData),
+**  &nbsp;     void *pOut
+**  </pre>
+**
+** The xOutput callback is invoked zero or more times to return data to
+** the application. The first parameter passed to each call is a copy of the
+** pOut pointer supplied by the application. The second parameter, pData,
+** points to a buffer nData bytes in size containing the chunk of output
+** data being returned. If the xOutput callback successfully processes the
+** supplied data, it should return SQLITE_OK to indicate success. Otherwise,
+** it should return some other SQLite error code. In this case processing
+** is immediately abandoned and the streaming API function returns a copy
+** of the xOutput error code to the application.
+**
+** The sessions module never invokes an xOutput callback with the third 
+** parameter set to a value less than or equal to zero. Other than this,
+** no guarantees are made as to the size of the chunks of data returned.
+*/
+int sqlite3changeset_apply_str(
+  sqlite3 *db,                    /* Apply change to "main" db of this handle */
+  int (*xInput)(void *pIn, void *pData, int *pnData), /* Input function */
+  void *pIn,                                          /* First arg for xInput */
+  int(*xFilter)(
+    void *pCtx,                   /* Copy of sixth arg to _apply() */
+    const char *zTab              /* Table name */
+  ),
+  int(*xConflict)(
+    void *pCtx,                   /* Copy of sixth arg to _apply() */
+    int eConflict,                /* DATA, MISSING, CONFLICT, CONSTRAINT */
+    sqlite3_changeset_iter *p     /* Handle describing change and conflict */
+  ),
+  void *pCtx                      /* First argument passed to xConflict */
+);
+int sqlite3changeset_concat_str(
+  int (*xInputA)(void *pIn, void *pData, int *pnData),
+  void *pInA,
+  int (*xInputB)(void *pIn, void *pData, int *pnData),
+  void *pInB,
+  int (*xOutput)(void *pOut, const void *pData, int nData),
+  void *pOut
+);
+int sqlite3changeset_invert_str(
+  int (*xInput)(void *pIn, void *pData, int *pnData),
+  void *pIn,
+  int (*xOutput)(void *pOut, const void *pData, int nData),
+  void *pOut
+);
+int sqlite3changeset_start_str(
+  sqlite3_changeset_iter **pp,
+  int (*xInput)(void *pIn, void *pData, int *pnData),
+  void *pIn
+);
+int sqlite3session_changeset_str(
+  sqlite3_session *pSession,
+  int (*xOutput)(void *pOut, const void *pData, int nData),
+  void *pOut
+);
+int sqlite3session_patchset_str(
+  sqlite3_session *pSession,
+  int (*xOutput)(void *pOut, const void *pData, int nData),
+  void *pOut
+);
+
 
 /*
 ** Make sure we can call this stuff from C++.
