@@ -9,8 +9,7 @@
 #
 #***********************************************************************
 #
-# This file tests that the sessions module handles foreign key constraint
-# violations when applying changesets as required.
+# This file tests that filter callbacks work as required.
 #
 
 if {![info exists testdir]} {
@@ -63,6 +62,46 @@ do_test 2.1 {
   } db2
 } {a b e f}
 
+#-------------------------------------------------------------------------
+# Test that filter callbacks passed to sqlite3changeset_apply() are 
+# invoked correctly.
+#
+reset_db
+do_execsql_test 3.1 {
+  CREATE TABLE t1(a PRIMARY KEY, b);
+  CREATE TABLE t2(x PRIMARY KEY, y);
+}
+
+do_test 3.2 {
+  execsql BEGIN
+  set ::cs [changeset_from_sql { 
+    INSERT INTO t1 VALUES(1, 2);
+    INSERT INTO t2 VALUES('x', 'y');
+  }]
+  execsql ROLLBACK
+  set {} {}
+} {}
+
+proc filter {x y} { 
+  return [string equal $x $y] 
+}
+
+do_test 3.3 {
+  sqlite3changeset_apply db $::cs {} [list filter t1]
+  execsql {
+    SELECT * FROM t1;
+    SELECT * FROM t2;
+  }
+} {1 2}
+
+do_test 3.4 {
+  execsql { DELETE FROM t1 }
+  sqlite3changeset_apply db $::cs {} [list filter t2]
+  execsql {
+    SELECT * FROM t1;
+    SELECT * FROM t2;
+  }
+} {x y}
 
 finish_test
 

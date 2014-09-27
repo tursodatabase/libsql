@@ -285,6 +285,38 @@ do_faultsim_test 5.2 -faults oom-tra* -body {
   }
 }
 
+catch {db close}
+catch {db2 close}
+forcedelete test.db
+sqlite3 db test.db
+set abc [string repeat abc 256]
+set def [string repeat def 256]
+execsql "
+  CREATE TABLE t2(a PRIMARY KEY, b);
+  INSERT INTO t2 VALUES(1, '$abc');
+"
+set changeset [changeset_from_sql "
+  INSERT INTO t2 VALUES(2, '$def');
+  DELETE FROM t2 WHERE a = 1;
+"]
+db close
+
+do_faultsim_test 5.3 -faults oom-tra* -body {
+  set ::inverse [sqlite3changeset_invert $::changeset]
+  set {} {}
+} -test {
+  faultsim_test_result {0 {}} {1 SQLITE_NOMEM}
+  if {$testrc==0} {
+    set x [list]
+    sqlite3session_foreach c $::inverse { lappend x $c }
+    foreach c "
+        {INSERT t2 0 X. {} {i 1 t $::abc}}
+        {DELETE t2 0 X. {i 2 t $::def} {}}
+    " { lappend y $c }
+    if {$x != $y} { error "changeset no good" }
+  }
+}
+
 #-------------------------------------------------------------------------
 # Test that OOM errors in sqlite3changeset_concat() are handled correctly.
 #
@@ -515,7 +547,41 @@ do_faultsim_test 10 -faults oom-tra* -prep {
   }
 }
 
+#-------------------------------------------------------------------------
+# Test an OOM with an sqlite3changeset_apply() filter callback.
+#
+reset_db
+do_test 11.prep {
+  execsql {
+    CREATE TABLE t1(a PRIMARY KEY, b);
+    CREATE TABLE t2(x PRIMARY KEY, y);
+    BEGIN;
+  }
 
+  set ::cs [changeset_from_sql { 
+    INSERT INTO t1 VALUES(1, 2);
+    INSERT INTO t2 VALUES('x', 'y');
+  }]
+
+  execsql ROLLBACK
+  set {} {}
+} {}
+
+proc filter {x} { return [string equal t1 $x] } 
+faultsim_save_and_close
+
+do_faultsim_test 11 -faults oom-tra* -prep {
+  faultsim_restore_and_reopen
+} -body {
+  sqlite3changeset_apply db $::cs {} filter
+} -test {
+  faultsim_test_result {0 {}} {1 SQLITE_NOMEM}
+  if {$testrc==0} {
+    if {[db eval {SELECT * FROM t1 UNION ALL SELECT * FROM t2}] != "1 2"} {
+      error "data does not look right"
+    }
+  }
+}
 
 
 finish_test

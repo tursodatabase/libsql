@@ -200,6 +200,7 @@ do_test 3.3 {
 do_test 3.3.1 {
   list [catch {sqlite3changeset_apply db $::ccdel1 conflict_handler} msg] $msg
 } {1 SQLITE_CONSTRAINT}
+
 do_test 3.3.2 {
   list [catch {sqlite3changeset_apply db $::ccdel2 conflict_handler} msg] $msg
 } {1 SQLITE_CONSTRAINT}
@@ -251,4 +252,37 @@ do_catchsql_test 4.3.2 {
 do_catchsql_test 4.3.3 { COMMIT } {0 {}}
 do_catchsql_test 4.3.4 { BEGIN ; COMMIT } {0 {}}
 
+#--------------------------------------------------------------------
+# Test that if a DELETE change cannot be applied due to an 
+# SQLITE_CONSTRAINT error thrown by a trigger program, things do not
+# go awry.
+
+drop_all_tables
+reset_db
+do_execsql_test 5.1 {
+  CREATE TABLE x1(x PRIMARY KEY, y);
+  CREATE TABLE x2(x PRIMARY KEY, y);
+  INSERT INTO x2 VALUES(1, 1);
+  INSERT INTO x1 VALUES(1, 1);
+}
+
+set ::cc [changeset_from_sql { DELETE FROM x1; }]
+
+do_execsql_test 5.2 {
+  INSERT INTO x1 VALUES(1, 1);
+  CREATE TRIGGER tr1 AFTER DELETE ON x1 BEGIN
+    INSERT INTO x2 VALUES(old.x, old.y);
+  END;
+} {}
+
+proc conflict_handler {args} { return "ABORT" }
+do_test 5.3 {
+  list [catch {sqlite3changeset_apply db $::cc conflict_handler} msg] $msg
+} {1 SQLITE_ABORT}
+
+do_execsql_test 5.4 {
+  SELECT * FROM X1;
+} {1 1}
+
 finish_test
+

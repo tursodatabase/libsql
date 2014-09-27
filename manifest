@@ -1,5 +1,5 @@
-C Fix\sa\ssegfault\sin\sthe\sstreaming\sAPI\sfunctions\striggered\sby\sa\svery\slong\stable\sname.
-D 2014-09-27T16:33:09.345
+C Fix\sa\ssegfault\sin\sthe\ssessions\smodule\sthat\scould\sfollow\san\sOOM.
+D 2014-09-27T18:18:32.969
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd5f245aa8c741bc65845747203c8ce2f3fb6c83
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -153,12 +153,12 @@ F ext/session/session4.test a6ed685da7a5293c5d6f99855bcf41dbc352ca84
 F ext/session/session5.test 8fdfaf9dba28a2f1c6b89b06168bdab1fef2d478
 F ext/session/session6.test 443789bc2fca12e4f7075cf692c60b8a2bea1a26
 F ext/session/session8.test 7d35947ad329b8966f095d34f9617a9eff52dc65
-F ext/session/session9.test 776e46785c29c11cda01f5205d0f1e8f8f9a46bf
-F ext/session/sessionA.test eb05c13e4ef1ca8046a3a6dbf2d5f6f5b04a11d4
+F ext/session/session9.test b6dd1086de8c59b6f129923425487791f51c689c
+F ext/session/sessionA.test 5543846eb9ca045217262f5d8c9376ce812e1ba5
 F ext/session/sessionB.test d4ac901b43d4922a17dff08bbaa2f5354487ce4d
 F ext/session/session_common.tcl 1539d8973b2aea0025c133eb0cc4c89fcef541a5
-F ext/session/sessionfault.test cf9758bfb6ccd5db5f09f170667a8cea1ac8afa7
-F ext/session/sqlite3session.c 228cca8fdb6fd07942be097c516f22e39ec39e3c
+F ext/session/sessionfault.test bef044d0952c0d62c31c8d2400be72c8684545cc
+F ext/session/sqlite3session.c 0691b8d7434edb07166828778540bb418a7a68e3
 F ext/session/sqlite3session.h b57009fb88835cc4684376bd3eae0d6ab364968a
 F ext/session/test_session.c 56a4ddd443b571c8d365b03197c032bdaed1443a
 F ext/userauth/sqlite3userauth.h 19cb6f0e31316d0ee4afdfb7a85ef9da3333a220
@@ -1216,7 +1216,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P bfc8bd80f8b225cebc66478448510ce84223ae7d
-R 9ca53892e63f9c31475266a6b3e34d34
+P d2642543eed54da1ac0f757d43dd4d72482eb752
+R 7328e4de54076fa7989cf4f3b00a08d8
 U dan
-Z f7759b84adfee5a6c178fa61db492ce5
+Z 371024a806f6988dfc33105901bfbbae

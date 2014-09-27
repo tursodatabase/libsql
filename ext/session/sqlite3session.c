@@ -3495,6 +3495,10 @@ static int sessionChangesetApply(
       schemaMismatch = (xFilter && (0==xFilter(pCtx, zNew)));
       if( schemaMismatch ){
         zTab = sqlite3_mprintf("%s", zNew);
+        if( zTab==0 ){
+          rc = SQLITE_NOMEM;
+          break;
+        }
         nTab = (int)strlen(zTab);
         sApply.azCol = (const char **)zTab;
       }else{
