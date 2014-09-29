@@ -1,5 +1,5 @@
-C Add\san\sassert()\sto\sverify\sthe\slast-row-id\sfor\sthe\sdatabase\sjust\sprior\sto\scalling\sa\sSQL\sfunction.
-D 2014-09-26T18:30:11.093
+C Ensure\sthat\sthe\sOP_Prev\sopcode\sverifies\sthat\scontent\shas\snot\sbeen\sdeleted\nout\sfrom\sunder\sthe\scursor.\s\sFix\sfor\sticket\s[209d31e3161b9e9ff].
+D 2014-09-29T15:00:28.761
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -172,7 +172,7 @@ F src/auth.c d8abcde53426275dab6243b441256fcd8ccbebb2
 F src/backup.c a31809c65623cc41849b94d368917f8bb66e6a7e
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 49ca66250c7dfa844a4d4cb8272b87420d27d3a5
-F src/btree.c 59f03e421dad3cb6e27cc7d2393d3a7459be4b5e
+F src/btree.c ede8348a7d623257ee6c06ca4796ceaee13b8657
 F src/btree.h a79aa6a71e7f1055f01052b7f821bd1c2dce95c8
 F src/btreeInt.h 1bd7957161a1346a914f1f09231610e777a8e58d
 F src/build.c bde83dd5cf812e310a7e5ad2846790a14745bef4
@@ -469,7 +469,7 @@ F test/enc3.test 90683ad0e6ea587b9d5542ca93568af9a9858c40
 F test/enc4.test c8f1ce3618508fd0909945beb8b8831feef2c020
 F test/eqp.test 85873fa5816c48915c82c4e74cb5c35a5b48160f
 F test/errmsg.test f31592a594b44ee121371d25ddd5d63497bb3401
-F test/eval.test bc269c365ba877554948441e91ad5373f9f91be3
+F test/eval.test a64c9105d6ff163df7cf09d6ac29cdad5922078c
 F test/exclusive.test c7ebbc756eacf544c108b15eed64d7d4e5f86b75
 F test/exclusive2.test 32798111aae78a5deec980eee383213f189df308
 F test/exec.test e949714dc127eaa5ecc7d723efec1ec27118fdd7
@@ -1200,7 +1200,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 83913515830aa850f9e38406f9422d7e88dcab66
-R dc4da31df9102dea4f18af6519657b79
-U mistachkin
-Z 6fd91dd1e10822b3b57f7222d98e1fa9
+P d026f0c944ce812732d3595eaa3c5d432a86c7dd
+R 4bbd3babbb639de348c82ac1e98901ef
+U drh
+Z e609ec38acb2ceba655fca4c2f22f4af
