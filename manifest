@@ -1,5 +1,5 @@
-C Ensure\sthat\sthe\sOP_Prev\sopcode\sverifies\sthat\scontent\shas\snot\sbeen\sdeleted\nout\sfrom\sunder\sthe\scursor.\s\sFix\sfor\sticket\s[209d31e3161b9e9ff].
-D 2014-09-29T15:00:28.761
+C Fix\sthe\sheader\scomment\sin\ssqlite3VdbeDeletePriorOpcode().\s\sNo\schanges\sto\ncode.
+D 2014-09-29T15:42:01.115
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -293,7 +293,7 @@ F src/vdbe.c 93eeb6f9c3a3084133225a196f220454d71cca10
 F src/vdbe.h 09f5b4e3719fa454f252322b1cdab5cf1f361327
 F src/vdbeInt.h bb7f7ecfdead1a2ae0251b59f86f5724838d975c
 F src/vdbeapi.c e9e33b59834e3edc8790209765e069874c269d9d
-F src/vdbeaux.c a05adc3c96abdaf3db14768ddd63132fc9678060
+F src/vdbeaux.c 8e016c6051c013a394f8e8679be1ca60723707bd
 F src/vdbeblob.c 848238dc73e93e48432991bb5651bf87d865eca4
 F src/vdbemem.c 1e105dacf5190fc85a8ec2107c0dcc1884e75099
 F src/vdbesort.c 5c1bacf90578d22b630fbf6ed98ccf60d83435ef
@@ -1200,7 +1200,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d026f0c944ce812732d3595eaa3c5d432a86c7dd
-R 4bbd3babbb639de348c82ac1e98901ef
+P 414f0d6a647a4d040b5463c73c5e15e699d85b4c
+R f6298f1a1c0cd9e9dc9c3dc07f24407e
 U drh
-Z e609ec38acb2ceba655fca4c2f22f4af
+Z 0f82639c06e932d5523a9215bf58cd9c
