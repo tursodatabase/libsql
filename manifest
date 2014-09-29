@@ -1,5 +1,5 @@
-C Fix\sthe\sheader\scomment\sin\ssqlite3VdbeDeletePriorOpcode().\s\sNo\schanges\sto\ncode.
-D 2014-09-29T15:42:01.115
+C Add\sthe\sOPFLAG_MULTICOLUMN\sflat\sto\sthe\sOP_Column\sopcode.\s\sRearrange\sOP_Column\ninstrunctions\sto\stake\sadvantage\sof\sthe\snew\sflag\sfor\sa\ssmall\sperformance\s\nincrease
+D 2014-09-29T18:47:20.017
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -181,7 +181,7 @@ F src/complete.c 535183afb3c75628b78ce82612931ac7cdf26f14
 F src/ctime.c bb434068b5308a857b181c2d204a320ff0d6c638
 F src/date.c 57a7f9ba9f6b4d5268f5e411739066a611f99036
 F src/delete.c fae81cc2eb14b75267d4f47d3cfc9ae02aae726f
-F src/expr.c f32119248996680aa73c5c37bfdd42820804dc17
+F src/expr.c 622ca88bb258292690a550ca0c290ec7b071bed4
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c da985ae673efef2c712caef825a5d2edb087ead7
 F src/func.c ba47c1671ab3cfdafa6e9d6ee490939ea578adee
@@ -227,12 +227,12 @@ F src/printf.c 3a47f526b173813d9a7f4e7044007771ba68cde1
 F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c a3466128b52a86c466e47ac1a19e2174f7b5cf89
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c a83ed8bc2a31c131e3addb6f0488b68334085e7b
+F src/select.c 6e7d7a277307ebee1a284d8811a8a3351ffc39b2
 F src/shell.c dad23987c34faddb061a339da3e92e05ccc6935e
 F src/sqlite.h.in 8b018219ce988913e5977d5de9ab4beb33be23b6
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
-F src/sqliteInt.h 5e09fe04f999223680801ddf8fbae6b60751d613
+F src/sqliteInt.h ba443d9af2cef399e2ec641d44d005212b1476ef
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2e99ef7ef16187e17033d9398dc962ce22dab5cb
@@ -285,15 +285,15 @@ F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 22dded4283dc4b25422f6444cdcb8d6b1ea0b5ff
 F src/tokenize.c cc9016e5007fc5e76789079616d2f26741bcc689
 F src/trigger.c 25571661fdeae8c7f975ff40ffec205520a3f92f
-F src/update.c 729f6f18fc27740591d085e1172cebe311144bf0
+F src/update.c dcc1733c8f9d455a3127e2b151a211fa7f9ef053
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c 4006c01772bd8d8ac4306d523bbcee41d3e392d8
 F src/vacuum.c 59f03f92bcff57faa6a8ca256eb29ccddfb0614a
-F src/vdbe.c 93eeb6f9c3a3084133225a196f220454d71cca10
-F src/vdbe.h 09f5b4e3719fa454f252322b1cdab5cf1f361327
+F src/vdbe.c 89636b004debc955452f6e0f26dfcc13cc96676b
+F src/vdbe.h d5825ae515ab108331739bd4910eb66dd0eb33f0
 F src/vdbeInt.h bb7f7ecfdead1a2ae0251b59f86f5724838d975c
 F src/vdbeapi.c e9e33b59834e3edc8790209765e069874c269d9d
-F src/vdbeaux.c 8e016c6051c013a394f8e8679be1ca60723707bd
+F src/vdbeaux.c f8df1050cb0e5f7d537bda4dc6caa44d44ab87bc
 F src/vdbeblob.c 848238dc73e93e48432991bb5651bf87d865eca4
 F src/vdbemem.c 1e105dacf5190fc85a8ec2107c0dcc1884e75099
 F src/vdbesort.c 5c1bacf90578d22b630fbf6ed98ccf60d83435ef
@@ -1200,7 +1200,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 414f0d6a647a4d040b5463c73c5e15e699d85b4c
-R f6298f1a1c0cd9e9dc9c3dc07f24407e
+P 7fb1626866c2f8dad84c7e6184824be3efd71ca2
+R 58d61b9e8ed6b972c827aa4b2de6a9d8
+T *branch * faster-OP_Column
+T *sym-faster-OP_Column *
+T -sym-trunk *
 U drh
-Z 0f82639c06e932d5523a9215bf58cd9c
+Z bc7d4115a8f75585e68aa7b7bc067fe4

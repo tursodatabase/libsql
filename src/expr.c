@@ -2381,6 +2381,7 @@ void sqlite3ExprCodeGetColumnOfTable(
   }
   if( iCol>=0 ){
     sqlite3ColumnDefault(v, pTab, iCol, regOut);
+    sqlite3VdbeOptimizeColumnOpcodes(v);
   }
 }
 

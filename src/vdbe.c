@@ -2266,9 +2266,11 @@ case OP_Column: {
   u32 avail;         /* Number of bytes of available data */
   u32 t;             /* A type code from the record header */
   u16 fx;            /* pDest->flags value */
+  u8 p5;
   Mem *pReg;         /* PseudoTable input register */
 
   p2 = pOp->p2;
+  p5 = 0;
   assert( pOp->p3>0 && pOp->p3<=(p->nMem-p->nCursor) );
   pDest = &aMem[pOp->p3];
   memAboutToChange(p, pDest);
@@ -2436,22 +2438,32 @@ case OP_Column: {
     }
   }
 
-  /* Extract the content for the p2+1-th column.  Control can only
-  ** reach this point if aOffset[p2], aOffset[p2+1], and pC->aType[p2] are
-  ** all valid.
+  /* At this point, all of the following values are set:
+  **
+  **    p2             Index of column to extract.  pOp->p2.
+  **    pDest          Memory register into which to write result
+  **    pC->aRow       Binary row content from the btree.  Might be incomplete
+  **    pC->szRow      Number of bytes in pC->szRow
+  **    aOffset[p2]    Offset into the binary row where P2-th column starts
+  **    aOffste[p2+1]  Offset into binary row of first byte past P2-th column
+  **    pC->aType[p2]  Datatype of the P2-th column (as stored on disk)
+  **
+  ** Extract the content for column number p2.
   */
+op_column_decode:
   assert( p2<pC->nHdrParsed );
   assert( rc==SQLITE_OK );
   assert( sqlite3VdbeCheckMemInvariants(pDest) );
   if( VdbeMemDynamic(pDest) ) sqlite3VdbeMemSetNull(pDest);
   t = pC->aType[p2];
+  p5 = pOp->p5;
   if( pC->szRow>=aOffset[p2+1] ){
     /* This is the common case where the desired content fits on the original
     ** page - where the content is not on an overflow page */
     sqlite3VdbeSerialGet(pC->aRow+aOffset[p2], t, pDest);
   }else{
     /* This branch happens only when content is on overflow pages */
-    if( ((pOp->p5 & (OPFLAG_LENGTHARG|OPFLAG_TYPEOFARG))!=0
+    if( ((p5 & (OPFLAG_LENGTHARG|OPFLAG_TYPEOFARG))!=0
           && ((t>=12 && (t&1)==0) || (pOp->p5 & OPFLAG_TYPEOFARG)!=0))
      || (len = sqlite3VdbeSerialTypeLen(t))==0
     ){
@@ -2495,6 +2507,23 @@ op_column_out:
 op_column_error:
   UPDATE_MAX_BLOBSIZE(pDest);
   REGISTER_TRACE(pOp->p3, pDest);
+
+  /* If the OPFLAG_MULTICOLUMN bit is set on P5, that means that this
+  ** OP_Column is immediately followed by another OP_Column with the same
+  ** P1 and a P2 that is no larger than the current P2.  In that case, 
+  ** process the following OP_Column as part of this instruction, without
+  ** returning to the main instruction dispatch loop.
+  */
+  if( (p5 & OPFLAG_MULTICOLUMN)!=0 && rc==0 ){
+    pc++;
+    assert( pOp[1].opcode==OP_Column );
+    assert( pOp[1].p1==pOp[0].p1 );
+    assert( pOp[1].p2<=pOp[0].p2 );
+    pOp++;
+    p2 = pOp->p2;
+    pDest = &aMem[pOp->p3];
+    goto op_column_decode;
+  }
   break;
 }
 

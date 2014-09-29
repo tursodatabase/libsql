@@ -706,7 +706,7 @@ static void selectInnerLoop(
   pDest->nSdst = nResultCol;
   regResult = pDest->iSdst;
   if( srcTab>=0 ){
-    for(i=0; i<nResultCol; i++){
+    for(i=nResultCol-1; i>=0; i--){
       sqlite3VdbeAddOp3(v, OP_Column, srcTab, i, regResult+i);
       VdbeComment((v, "%s", pEList->a[i].zName));
     }
@@ -1225,10 +1225,11 @@ static void generateSortTail(
     p5 = 0;
     bSeq = 1;
   }
-  for(i=0; i<nSortData; i++){
+  for(i=nSortData-1; i>=0; i--){
     sqlite3VdbeAddOp3(v, OP_Column, iSortTab, nKey+bSeq+i, regRow+i);
-    if( i==0 ) sqlite3VdbeChangeP5(v, p5);
+    sqlite3VdbeChangeP5(v, p5);
     VdbeComment((v, "%s", aOutEx[i].zName ? aOutEx[i].zName : aOutEx[i].zSpan));
+    p5 = 0;
   }
   switch( eDest ){
     case SRT_Table:

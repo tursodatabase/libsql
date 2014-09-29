@@ -502,6 +502,15 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
         pOp->p4type = P4_ADVANCE;
         break;
       }
+      case OP_Column: {
+        if( pOp[1].opcode==OP_Column
+         && pOp[1].p1==pOp->p1
+         && pOp[1].p2<=pOp->p2 
+        ){
+          pOp->p5 |= OPFLAG_MULTICOLUMN;
+        }
+        break;
+      }
     }
 
     pOp->opflags = sqlite3OpcodeProperty[opcode];
@@ -761,6 +770,30 @@ int sqlite3VdbeDeletePriorOpcode(Vdbe *p, u8 op){
     return 1;
   }else{
     return 0;
+  }
+}
+
+/*
+** When running multiple OP_Column opcodes in a row, it is advantagous
+** to run the one with the largest P2 value (the largest column number)
+** first.  This routine checks the last few OP_Column opcodes and 
+** might reorder them so that a larger P2 value opertion occurs at
+** the start of the list.
+*/
+void sqlite3VdbeOptimizeColumnOpcodes(Vdbe *p){
+  VdbeOp *aOp, tempOp;
+  int i;
+  aOp = p->aOp;
+  i = p->nOp-2;
+  while( i>p->pParse->iFixedOp
+      && aOp[i+1].opcode==OP_Column
+      && aOp[i].opcode==OP_Column
+      && aOp[i].p1==aOp[i+1].p1
+      && aOp[i].p2<aOp[i+1].p2 ){
+    tempOp = aOp[i];
+    aOp[i] = aOp[i+1];
+    aOp[i+1] = tempOp;
+    i--;
   }
 }
 
