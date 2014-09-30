@@ -3642,6 +3642,13 @@ static int flattenSubquery(
   */
   sqlite3SelectDelete(db, pSub1);
 
+#if SELECTTRACE_ENABLED
+  if( sqlite3SelectTrace & 0x100 ){
+    sqlite3DebugPrintf("After flattening:\n");
+    sqlite3TreeViewSelect(0, p, 0);
+  }
+#endif
+
   return 1;
 }
 #endif /* !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW) */
@@ -4649,7 +4656,10 @@ int sqlite3Select(
   memset(&sAggInfo, 0, sizeof(sAggInfo));
 #if SELECTTRACE_ENABLED
   pParse->nSelectIndent++;
-  SELECTTRACE(1,pParse,p, ("begin processing\n"));
+  SELECTTRACE(1,pParse,p, ("begin processing:\n"));
+  if( sqlite3SelectTrace & 0x100 ){
+    sqlite3TreeViewSelect(0, p, 0);
+  }
 #endif
 
   assert( p->pOrderBy==0 || pDest->eDest!=SRT_DistFifo );

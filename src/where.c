@@ -3758,6 +3758,23 @@ static Bitmask codeOneLoopStart(
 
 #ifdef WHERETRACE_ENABLED
 /*
+** Print the content of a WhereTerm object
+*/
+static void whereTermPrint(WhereTerm *pTerm, int iTerm){
+  char zType[4];
+  memcpy(zType, "...", 4);
+  if( pTerm->wtFlags & TERM_VIRTUAL ) zType[0] = 'V';
+  if( pTerm->eOperator & WO_EQUIV  ) zType[1] = 'E';
+  if( ExprHasProperty(pTerm->pExpr, EP_FromJoin) ) zType[2] = 'L';
+  sqlite3DebugPrintf("TERM-%-3d %p %s cursor=%-3d prob=%-3d op=0x%03x\n", iTerm,
+                     pTerm, zType, pTerm->leftCursor, pTerm->truthProb,
+                     pTerm->eOperator);
+  sqlite3TreeViewExpr(0, pTerm->pExpr, 0);
+}
+#endif
+
+#ifdef WHERETRACE_ENABLED
+/*
 ** Print a WhereLoop object for debugging purposes
 */
 static void whereLoopPrint(WhereLoop *p, WhereClause *pWC){
@@ -3798,6 +3815,14 @@ static void whereLoopPrint(WhereLoop *p, WhereClause *pWC){
     sqlite3DebugPrintf(" f %05x N %d", p->wsFlags, p->nLTerm);
   }
   sqlite3DebugPrintf(" cost %d,%d,%d\n", p->rSetup, p->rRun, p->nOut);
+  if( p->nLTerm && (sqlite3WhereTrace & 0x100)!=0 ){
+    int i;
+    for(i=0; i<p->nLTerm; i++){
+      WhereTerm *pTerm = p->aLTerm[i];
+      if( pTerm==0 ) continue;
+      whereTermPrint(pTerm, i);
+    }
+  }
 }
 #endif
 
@@ -6130,6 +6155,16 @@ WhereInfo *sqlite3WhereBegin(
 
   /* Construct the WhereLoop objects */
   WHERETRACE(0xffff,("*** Optimizer Start ***\n"));
+#if defined(WHERETRACE_ENABLED)
+  /* Display all terms of the WHERE clause */
+  if( sqlite3WhereTrace & 0x100 ){
+    int i;
+    for(i=0; i<sWLB.pWC->nTerm; i++){
+      whereTermPrint(&sWLB.pWC->a[i], i);
+    }
+  }
+#endif
+
   if( nTabList!=1 || whereShortCut(&sWLB)==0 ){
     rc = whereLoopAddAll(&sWLB);
     if( rc ) goto whereBeginError;
