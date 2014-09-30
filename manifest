@@ -1,5 +1,5 @@
-C Show\stree\sdiagrams\sof\sdata\sstructures\sin\sthe\sdebugging\soutput\swhen\sthe\s0x100\nbit\sis\sset\son\ssqlite3WhereTrace\sor\ssqlite3SelectTrace.
-D 2014-09-30T13:46:49.195
+C Enhanced\sdebug\soutput\sfor\sOR-logic\sin\sthe\squery\sloop\soptimizer.
+D 2014-09-30T14:14:19.732
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -302,7 +302,7 @@ F src/vtab.c 019dbfd0406a7447c990e1f7bd1dfcdb8895697f
 F src/wal.c 10e7de7ce90865a68153f001a61f1d985cd17983
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
-F src/where.c 5924c54986ec694e0b9e90eca506a930cfc71f6f
+F src/where.c 1d22623f4cc01ad34f4660daae77826550033c58
 F src/whereInt.h 124d970450955a6982e174b07c320ae6d62a595c
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1200,7 +1200,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4ff51325d6b41d0c59e303b573700ec80c51d216
-R 1c3af6544b324d9bf4b577de17e6b173
+P 92e0b4bd4d75e8b000586e51a07b3e181d9af20b
+R ad11511f8b3c0903ec6511fb5cd0e86b
 U drh
-Z e2f1f26ff32680c40b90d9645bff7468
+Z 55bafa322513796a5af056ecffd49293

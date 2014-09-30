@@ -5037,6 +5037,12 @@ static int whereLoopAddOr(WhereLoopBuilder *pBuilder, Bitmask mExtra){
           continue;
         }
         sCur.n = 0;
+#ifdef WHERETRACE_ENABLED
+        if( sqlite3WhereTrace & 0x200 ){
+          sqlite3DebugPrintf("OR-term %d:\n",(int)(pOrTerm-pOrWC->a));
+          sqlite3TreeViewExpr(0, pOrTerm->pExpr, 0);
+        }
+#endif
 #ifndef SQLITE_OMIT_VIRTUALTABLE
         if( IsVirtual(pItem->pTab) ){
           rc = whereLoopAddVirtual(&sSubBuild, mExtra);
