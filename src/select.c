@@ -5417,97 +5417,89 @@ select_end:
   return rc;
 }
 
-#if defined(SQLITE_ENABLE_TREE_EXPLAIN)
+#ifdef SQLITE_DEBUG
 /*
 ** Generate a human-readable description of a the Select object.
 */
-static void explainOneSelect(Vdbe *pVdbe, Select *p){
-  sqlite3ExplainPrintf(pVdbe, "SELECT ");
-  if( p->selFlags & (SF_Distinct|SF_Aggregate) ){
-    if( p->selFlags & SF_Distinct ){
-      sqlite3ExplainPrintf(pVdbe, "DISTINCT ");
-    }
-    if( p->selFlags & SF_Aggregate ){
-      sqlite3ExplainPrintf(pVdbe, "agg_flag ");
-    }
-    sqlite3ExplainNL(pVdbe);
-    sqlite3ExplainPrintf(pVdbe, "   ");
-  }
-  sqlite3ExplainExprList(pVdbe, p->pEList);
-  sqlite3ExplainNL(pVdbe);
+void sqlite3TreeViewSelect(TreeView *pView, const Select *p, u8 moreToFollow){
+  pView = sqlite3TreeViewPush(pView, moreToFollow);
+  sqlite3TreeViewLine(pView, "SELECT%s%s",
+    ((p->selFlags & SF_Distinct) ? " DISTINCT" : ""),
+    ((p->selFlags & SF_Aggregate) ? " agg_flag" : "")
+  );
+  sqlite3TreeViewExprList(pView, p->pEList, 1, "result-set");
   if( p->pSrc && p->pSrc->nSrc ){
     int i;
-    sqlite3ExplainPrintf(pVdbe, "FROM ");
-    sqlite3ExplainPush(pVdbe);
+    pView = sqlite3TreeViewPush(pView, 1);
+    sqlite3TreeViewLine(pView, "FROM");
     for(i=0; i<p->pSrc->nSrc; i++){
       struct SrcList_item *pItem = &p->pSrc->a[i];
-      sqlite3ExplainPrintf(pVdbe, "{%d,*} = ", pItem->iCursor);
-      if( pItem->pSelect ){
-        sqlite3ExplainSelect(pVdbe, pItem->pSelect);
-        if( pItem->pTab ){
-          sqlite3ExplainPrintf(pVdbe, " (tabname=%s)", pItem->pTab->zName);
-        }
+      StrAccum x;
+      char zLine[100];
+      sqlite3StrAccumInit(&x, zLine, sizeof(zLine), 0);
+      sqlite3XPrintf(&x, 0, "{%d,*}", pItem->iCursor);
+      if( pItem->zDatabase ){
+        sqlite3XPrintf(&x, 0, " %s.%s", pItem->zDatabase, pItem->zName);
       }else if( pItem->zName ){
-        sqlite3ExplainPrintf(pVdbe, "%s", pItem->zName);
+        sqlite3XPrintf(&x, 0, " %s", pItem->zName);
+      }
+      if( pItem->pTab ){
+        sqlite3XPrintf(&x, 0, " tabname=%Q", pItem->pTab->zName);
       }
       if( pItem->zAlias ){
-        sqlite3ExplainPrintf(pVdbe, " (AS %s)", pItem->zAlias);
+        sqlite3XPrintf(&x, 0, " (AS %s)", pItem->zAlias);
       }
       if( pItem->jointype & JT_LEFT ){
-        sqlite3ExplainPrintf(pVdbe, " LEFT-JOIN");
+        sqlite3XPrintf(&x, 0, " LEFT-JOIN");
       }
-      sqlite3ExplainNL(pVdbe);
+      sqlite3StrAccumFinish(&x);
+      sqlite3TreeViewItem(pView, zLine, i<p->pSrc->nSrc-1); 
+      if( pItem->pSelect ){
+        sqlite3TreeViewSelect(pView, pItem->pSelect, 0);
+      }
+      sqlite3TreeViewPop(pView);
     }
-    sqlite3ExplainPop(pVdbe);
+    sqlite3TreeViewPop(pView);
   }
   if( p->pWhere ){
-    sqlite3ExplainPrintf(pVdbe, "WHERE ");
-    sqlite3ExplainExpr(pVdbe, p->pWhere);
-    sqlite3ExplainNL(pVdbe);
+    sqlite3TreeViewItem(pView, "WHERE", 1);
+    sqlite3TreeViewExpr(pView, p->pWhere, 0);
+    sqlite3TreeViewPop(pView);
   }
   if( p->pGroupBy ){
-    sqlite3ExplainPrintf(pVdbe, "GROUPBY ");
-    sqlite3ExplainExprList(pVdbe, p->pGroupBy);
-    sqlite3ExplainNL(pVdbe);
+    sqlite3TreeViewExprList(pView, p->pGroupBy, 1, "GROUPBY");
   }
   if( p->pHaving ){
-    sqlite3ExplainPrintf(pVdbe, "HAVING ");
-    sqlite3ExplainExpr(pVdbe, p->pHaving);
-    sqlite3ExplainNL(pVdbe);
+    sqlite3TreeViewItem(pView, "HAVING", 1);
+    sqlite3TreeViewExpr(pView, p->pHaving, 0);
+    sqlite3TreeViewPop(pView);
   }
   if( p->pOrderBy ){
-    sqlite3ExplainPrintf(pVdbe, "ORDERBY ");
-    sqlite3ExplainExprList(pVdbe, p->pOrderBy);
-    sqlite3ExplainNL(pVdbe);
+    sqlite3TreeViewExprList(pView, p->pOrderBy, 1, "ORDERBY");
   }
   if( p->pLimit ){
-    sqlite3ExplainPrintf(pVdbe, "LIMIT ");
-    sqlite3ExplainExpr(pVdbe, p->pLimit);
-    sqlite3ExplainNL(pVdbe);
+    sqlite3TreeViewItem(pView, "LIMIT", 1);
+    sqlite3TreeViewExpr(pView, p->pLimit, 0);
+    sqlite3TreeViewPop(pView);
   }
   if( p->pOffset ){
-    sqlite3ExplainPrintf(pVdbe, "OFFSET ");
-    sqlite3ExplainExpr(pVdbe, p->pOffset);
-    sqlite3ExplainNL(pVdbe);
+    sqlite3TreeViewItem(pView, "OFFSET", 1);
+    sqlite3TreeViewExpr(pView, p->pOffset, 0);
+    sqlite3TreeViewPop(pView);
   }
+  if( p->pPrior ){
+    const char *zOp = "UNION";
+    switch( p->op ){
+      case TK_ALL:         zOp = "UNION ALL";  break;
+      case TK_INTERSECT:   zOp = "INTERSECT";  break;
+      case TK_EXCEPT:      zOp = "EXCEPT";     break;
+    }
+    sqlite3TreeViewItem(pView, zOp, 1);
+    sqlite3TreeViewSelect(pView, p->pPrior, 1);
+    sqlite3TreeViewPop(pView);
+  }
+  sqlite3TreeViewItem(pView, "END-SELECT", 0);
+  sqlite3TreeViewPop(pView);
+  sqlite3TreeViewPop(pView);
 }
-void sqlite3ExplainSelect(Vdbe *pVdbe, Select *p){
-  if( p==0 ){
-    sqlite3ExplainPrintf(pVdbe, "(null-select)");
-    return;
-  }
-  sqlite3ExplainPush(pVdbe);
-  while( p ){
-    explainOneSelect(pVdbe, p);
-    p = p->pNext;
-    if( p==0 ) break;
-    sqlite3ExplainNL(pVdbe);
-    sqlite3ExplainPrintf(pVdbe, "%s\n", selectOpName(p->op));
-  }
-  sqlite3ExplainPrintf(pVdbe, "END");
-  sqlite3ExplainPop(pVdbe);
-}
-
-/* End of the structure debug printing code
-*****************************************************************************/
-#endif /* defined(SQLITE_ENABLE_TREE_EXPLAIN) */
+#endif /* SQLITE_DEBUG */
