@@ -1100,9 +1100,17 @@ void sqlite3TreeViewLine(TreeView *p, const char *zFormat, ...){
   acc.useMalloc = 0;
   if( p ){
     for(i=0; i<p->iLevel && i<sizeof(p->bLine)-1; i++){
-      sqlite3StrAccumAppend(&acc, p->bLine[i] ? "|   " : "    ", 4);
+      if( p->bLine[i] ){
+        sqlite3StrAccumAppend(&acc, "\342\224\202  ", 5);
+      }else{
+        sqlite3StrAccumAppend(&acc, "   ", 3);
+      }
     }
-    sqlite3StrAccumAppend(&acc, p->bLine[i] ? "|-- " : "'-- ", 4);
+    if( p->bLine[i] ){
+      sqlite3StrAccumAppend(&acc, "\342\224\234\342\224\200 ", 7);
+    }else{
+      sqlite3StrAccumAppend(&acc, "\342\224\224\342\224\200 ", 7);
+    }
   }
   va_start(ap, zFormat);
   sqlite3VXPrintf(&acc, 0, zFormat, ap);
