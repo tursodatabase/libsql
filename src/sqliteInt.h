@@ -2936,7 +2936,7 @@ struct With {
 */
 struct TreeView {
   int iLevel;             /* Which level of the tree we are on */
-  u64 mLine;              /* Mask of continuation lines to be drawn */
+  u8  bLine[100];         /* Draw vertical in column i if bLine[i] is true */
 };
 #endif /* SQLITE_DEBUG */
 

@@ -1080,8 +1080,7 @@ TreeView *sqlite3TreeViewPush(TreeView *p, u8 moreToFollow){
     p->iLevel++;
   }
   assert( moreToFollow==0 || moreToFollow==1 );
-  p->mLine &= ~(1<<p->iLevel);
-  p->mLine |= moreToFollow << p->iLevel;
+  if( p->iLevel<sizeof(p->bLine) ) p->bLine[p->iLevel] = moreToFollow;
   return p;
 }
 /* Finished with one layer of the tree */
@@ -1100,10 +1099,10 @@ void sqlite3TreeViewLine(TreeView *p, const char *zFormat, ...){
   sqlite3StrAccumInit(&acc, zBuf, sizeof(zBuf), 0);
   acc.useMalloc = 0;
   if( p ){
-    for(i=0; i<p->iLevel; i++){
-      sqlite3StrAccumAppend(&acc, (p->mLine & (1<<i))!=0 ? "|   " : "    ", 4);
+    for(i=0; i<p->iLevel && i<sizeof(p->bLine)-1; i++){
+      sqlite3StrAccumAppend(&acc, p->bLine[i] ? "|   " : "    ", 4);
     }
-    sqlite3StrAccumAppend(&acc, (p->mLine & (1<<i))!=0 ? "|-- " : "'-- ", 4);
+    sqlite3StrAccumAppend(&acc, p->bLine[i] ? "|-- " : "'-- ", 4);
   }
   va_start(ap, zFormat);
   sqlite3VXPrintf(&acc, 0, zFormat, ap);

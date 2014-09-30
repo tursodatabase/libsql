@@ -5432,15 +5432,24 @@ select_end:
 ** Generate a human-readable description of a the Select object.
 */
 void sqlite3TreeViewSelect(TreeView *pView, const Select *p, u8 moreToFollow){
+  int n = 0;
   pView = sqlite3TreeViewPush(pView, moreToFollow);
   sqlite3TreeViewLine(pView, "SELECT%s%s",
     ((p->selFlags & SF_Distinct) ? " DISTINCT" : ""),
     ((p->selFlags & SF_Aggregate) ? " agg_flag" : "")
   );
-  sqlite3TreeViewExprList(pView, p->pEList, 1, "result-set");
+  if( p->pSrc && p->pSrc->nSrc ) n++;
+  if( p->pWhere ) n++;
+  if( p->pGroupBy ) n++;
+  if( p->pHaving ) n++;
+  if( p->pOrderBy ) n++;
+  if( p->pLimit ) n++;
+  if( p->pOffset ) n++;
+  if( p->pPrior ) n++;
+  sqlite3TreeViewExprList(pView, p->pEList, (n--)>0, "result-set");
   if( p->pSrc && p->pSrc->nSrc ){
     int i;
-    pView = sqlite3TreeViewPush(pView, 1);
+    pView = sqlite3TreeViewPush(pView, (n--)>0);
     sqlite3TreeViewLine(pView, "FROM");
     for(i=0; i<p->pSrc->nSrc; i++){
       struct SrcList_item *pItem = &p->pSrc->a[i];
@@ -5472,28 +5481,28 @@ void sqlite3TreeViewSelect(TreeView *pView, const Select *p, u8 moreToFollow){
     sqlite3TreeViewPop(pView);
   }
   if( p->pWhere ){
-    sqlite3TreeViewItem(pView, "WHERE", 1);
+    sqlite3TreeViewItem(pView, "WHERE", (n--)>0);
     sqlite3TreeViewExpr(pView, p->pWhere, 0);
     sqlite3TreeViewPop(pView);
   }
   if( p->pGroupBy ){
-    sqlite3TreeViewExprList(pView, p->pGroupBy, 1, "GROUPBY");
+    sqlite3TreeViewExprList(pView, p->pGroupBy, (n--)>0, "GROUPBY");
   }
   if( p->pHaving ){
-    sqlite3TreeViewItem(pView, "HAVING", 1);
+    sqlite3TreeViewItem(pView, "HAVING", (n--)>0);
     sqlite3TreeViewExpr(pView, p->pHaving, 0);
     sqlite3TreeViewPop(pView);
   }
   if( p->pOrderBy ){
-    sqlite3TreeViewExprList(pView, p->pOrderBy, 1, "ORDERBY");
+    sqlite3TreeViewExprList(pView, p->pOrderBy, (n--)>0, "ORDERBY");
   }
   if( p->pLimit ){
-    sqlite3TreeViewItem(pView, "LIMIT", 1);
+    sqlite3TreeViewItem(pView, "LIMIT", (n--)>0);
     sqlite3TreeViewExpr(pView, p->pLimit, 0);
     sqlite3TreeViewPop(pView);
   }
   if( p->pOffset ){
-    sqlite3TreeViewItem(pView, "OFFSET", 1);
+    sqlite3TreeViewItem(pView, "OFFSET", (n--)>0);
     sqlite3TreeViewExpr(pView, p->pOffset, 0);
     sqlite3TreeViewPop(pView);
   }
@@ -5504,12 +5513,10 @@ void sqlite3TreeViewSelect(TreeView *pView, const Select *p, u8 moreToFollow){
       case TK_INTERSECT:   zOp = "INTERSECT";  break;
       case TK_EXCEPT:      zOp = "EXCEPT";     break;
     }
-    sqlite3TreeViewItem(pView, zOp, 1);
-    sqlite3TreeViewSelect(pView, p->pPrior, 1);
+    sqlite3TreeViewItem(pView, zOp, (n--)>0);
+    sqlite3TreeViewSelect(pView, p->pPrior, 0);
     sqlite3TreeViewPop(pView);
   }
-  sqlite3TreeViewItem(pView, "END-SELECT", 0);
-  sqlite3TreeViewPop(pView);
   sqlite3TreeViewPop(pView);
 }
 #endif /* SQLITE_DEBUG */
