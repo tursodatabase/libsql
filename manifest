@@ -1,5 +1,5 @@
-C Further\senhancements\sto\sthe\s"wheretrace"\sdebugging\soutput.
-D 2014-09-30T17:03:35.868
+C Enable\sthe\squery\splanner\sto\sdeal\swith\sWHERE\sclauses\sthat\shave\sOR\sterms\nnested\swithin\sAND\sterms\sthat\sare\snested\swithin\sOR\sterms.\s\sAlso\sremove\san\nunused\sfunction\sdeclaration.
+D 2014-09-30T17:31:23.408
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -232,7 +232,7 @@ F src/shell.c 38f627b0885191357f55902a3ac199de90d79715
 F src/sqlite.h.in 159f2cb9eef74b6c99aeeb4c071e7745835f04f6
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
-F src/sqliteInt.h 8242d04760ec2a943a152eba2a006ea121a3eafd
+F src/sqliteInt.h 254797e62264c53184172d98a491aa2b8cd4ad88
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2e99ef7ef16187e17033d9398dc962ce22dab5cb
@@ -302,7 +302,7 @@ F src/vtab.c 019dbfd0406a7447c990e1f7bd1dfcdb8895697f
 F src/wal.c 10e7de7ce90865a68153f001a61f1d985cd17983
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
-F src/where.c a459332dc671138a6997904850ead36d83bfb8e0
+F src/where.c 2f42fe0d19303e0f5ce29aff3afbd3e43cbd6efb
 F src/whereInt.h 124d970450955a6982e174b07c320ae6d62a595c
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1200,7 +1200,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2e375eae473e4a9f2e7870d59e22ba39051ecbce
-R c96a5d9652d91d70c0e54df21653ce3e
+P 670993eb8113f386cb2cb8b1507917f6da3b4d98
+R 1a06ccbab92129ac2bab7054741ffba8
 U drh
-Z 7116ce524f0c5c15e04b43bf011b61b4
+Z 36668dfa98188ac65878a88086fca9b9

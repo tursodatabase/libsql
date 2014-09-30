@@ -3524,8 +3524,9 @@ static Bitmask codeOneLoopStart(
     ** eliminating duplicates from other WHERE clauses, the action for each
     ** sub-WHERE clause is to to invoke the main loop body as a subroutine.
     */
-    wctrlFlags =  WHERE_OMIT_OPEN_CLOSE | WHERE_AND_ONLY |
-                  WHERE_FORCE_TABLE | WHERE_ONETABLE_ONLY;
+    wctrlFlags =  WHERE_OMIT_OPEN_CLOSE
+                | WHERE_FORCE_TABLE
+                | WHERE_ONETABLE_ONLY;
     for(ii=0; ii<pOrWc->nTerm; ii++){
       WhereTerm *pOrTerm = &pOrWc->a[ii];
       if( pOrTerm->leftCursor==iCur || (pOrTerm->eOperator & WO_AND)!=0 ){
@@ -5005,7 +5006,6 @@ static int whereLoopAddOr(WhereLoopBuilder *pBuilder, Bitmask mExtra){
   struct SrcList_item *pItem;
   
   pWC = pBuilder->pWC;
-  if( pWInfo->wctrlFlags & WHERE_AND_ONLY ) return SQLITE_OK;
   pWCEnd = pWC->a + pWC->nTerm;
   pNew = pBuilder->pNew;
   memset(&sSum, 0, sizeof(sSum));
@@ -5057,6 +5057,9 @@ static int whereLoopAddOr(WhereLoopBuilder *pBuilder, Bitmask mExtra){
 #endif
         {
           rc = whereLoopAddBtree(&sSubBuild, mExtra);
+        }
+        if( rc==SQLITE_OK ){
+          rc = whereLoopAddOr(&sSubBuild, mExtra);
         }
         assert( rc==SQLITE_OK || sCur.n==0 );
         if( sCur.n==0 ){
