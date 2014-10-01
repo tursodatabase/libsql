@@ -3236,90 +3236,86 @@ void sqlite3ExprCodeAndCache(Parse *pParse, Expr *pExpr, int target){
   exprToRegister(pExpr, iMem);
 }
 
-#if defined(SQLITE_ENABLE_TREE_EXPLAIN)
+#ifdef SQLITE_DEBUG
 /*
 ** Generate a human-readable explanation of an expression tree.
 */
-void sqlite3ExplainExpr(Vdbe *pOut, Expr *pExpr){
-  int op;                   /* The opcode being coded */
+void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
   const char *zBinOp = 0;   /* Binary operator */
   const char *zUniOp = 0;   /* Unary operator */
+  pView = sqlite3TreeViewPush(pView, moreToFollow);
   if( pExpr==0 ){
-    op = TK_NULL;
-  }else{
-    op = pExpr->op;
+    sqlite3TreeViewLine(pView, "nil");
+    sqlite3TreeViewPop(pView);
+    return;
   }
-  switch( op ){
+  switch( pExpr->op ){
     case TK_AGG_COLUMN: {
-      sqlite3ExplainPrintf(pOut, "AGG{%d:%d}",
+      sqlite3TreeViewLine(pView, "AGG{%d:%d}",
             pExpr->iTable, pExpr->iColumn);
       break;
     }
     case TK_COLUMN: {
       if( pExpr->iTable<0 ){
         /* This only happens when coding check constraints */
-        sqlite3ExplainPrintf(pOut, "COLUMN(%d)", pExpr->iColumn);
+        sqlite3TreeViewLine(pView, "COLUMN(%d)", pExpr->iColumn);
       }else{
-        sqlite3ExplainPrintf(pOut, "{%d:%d}",
+        sqlite3TreeViewLine(pView, "{%d:%d}",
                              pExpr->iTable, pExpr->iColumn);
       }
       break;
     }
     case TK_INTEGER: {
       if( pExpr->flags & EP_IntValue ){
-        sqlite3ExplainPrintf(pOut, "%d", pExpr->u.iValue);
+        sqlite3TreeViewLine(pView, "%d", pExpr->u.iValue);
       }else{
-        sqlite3ExplainPrintf(pOut, "%s", pExpr->u.zToken);
+        sqlite3TreeViewLine(pView, "%s", pExpr->u.zToken);
       }
       break;
     }
 #ifndef SQLITE_OMIT_FLOATING_POINT
     case TK_FLOAT: {
-      sqlite3ExplainPrintf(pOut,"%s", pExpr->u.zToken);
+      sqlite3TreeViewLine(pView,"%s", pExpr->u.zToken);
       break;
     }
 #endif
     case TK_STRING: {
-      sqlite3ExplainPrintf(pOut,"%Q", pExpr->u.zToken);
+      sqlite3TreeViewLine(pView,"%Q", pExpr->u.zToken);
       break;
     }
     case TK_NULL: {
-      sqlite3ExplainPrintf(pOut,"NULL");
+      sqlite3TreeViewLine(pView,"NULL");
       break;
     }
 #ifndef SQLITE_OMIT_BLOB_LITERAL
     case TK_BLOB: {
-      sqlite3ExplainPrintf(pOut,"%s", pExpr->u.zToken);
+      sqlite3TreeViewLine(pView,"%s", pExpr->u.zToken);
       break;
     }
 #endif
     case TK_VARIABLE: {
-      sqlite3ExplainPrintf(pOut,"VARIABLE(%s,%d)",
-                           pExpr->u.zToken, pExpr->iColumn);
+      sqlite3TreeViewLine(pView,"VARIABLE(%s,%d)",
+                          pExpr->u.zToken, pExpr->iColumn);
       break;
     }
     case TK_REGISTER: {
-      sqlite3ExplainPrintf(pOut,"REGISTER(%d)", pExpr->iTable);
+      sqlite3TreeViewLine(pView,"REGISTER(%d)", pExpr->iTable);
       break;
     }
     case TK_AS: {
-      sqlite3ExplainExpr(pOut, pExpr->pLeft);
+      sqlite3TreeViewLine(pView,"AS %Q", pExpr->u.zToken);
+      sqlite3TreeViewExpr(pView, pExpr->pLeft, 0);
+      break;
+    }
+    case TK_ID: {
+      sqlite3TreeViewLine(pView,"ID %Q", pExpr->u.zToken);
       break;
     }
 #ifndef SQLITE_OMIT_CAST
     case TK_CAST: {
       /* Expressions of the form:   CAST(pLeft AS token) */
-      const char *zAff = "unk";
-      switch( sqlite3AffinityType(pExpr->u.zToken, 0) ){
-        case SQLITE_AFF_TEXT:    zAff = "TEXT";     break;
-        case SQLITE_AFF_NONE:    zAff = "NONE";     break;
-        case SQLITE_AFF_NUMERIC: zAff = "NUMERIC";  break;
-        case SQLITE_AFF_INTEGER: zAff = "INTEGER";  break;
-        case SQLITE_AFF_REAL:    zAff = "REAL";     break;
-      }
-      sqlite3ExplainPrintf(pOut, "CAST-%s(", zAff);
-      sqlite3ExplainExpr(pOut, pExpr->pLeft);
-      sqlite3ExplainPrintf(pOut, ")");
+      sqlite3TreeViewLine(pView,"CAST %Q", pExpr->u.zToken);
+      sqlite3TreeViewExpr(pView, pExpr->pLeft, 0);
       break;
     }
 #endif /* SQLITE_OMIT_CAST */
@@ -3352,8 +3348,8 @@ void sqlite3ExplainExpr(Vdbe *pOut, Expr *pExpr){
     case TK_NOTNULL: zUniOp = "NOTNULL"; break;
 
     case TK_COLLATE: {
-      sqlite3ExplainExpr(pOut, pExpr->pLeft);
-      sqlite3ExplainPrintf(pOut,".COLLATE(%s)",pExpr->u.zToken);
+      sqlite3TreeViewLine(pView, "COLLATE %Q", pExpr->u.zToken);
+      sqlite3TreeViewExpr(pView, pExpr->pLeft, 0);
       break;
     }
 
@@ -3365,41 +3361,36 @@ void sqlite3ExplainExpr(Vdbe *pOut, Expr *pExpr){
       }else{
         pFarg = pExpr->x.pList;
       }
-      if( op==TK_AGG_FUNCTION ){
-        sqlite3ExplainPrintf(pOut, "AGG_FUNCTION%d:%s(",
+      if( pExpr->op==TK_AGG_FUNCTION ){
+        sqlite3TreeViewLine(pView, "AGG_FUNCTION%d %Q",
                              pExpr->op2, pExpr->u.zToken);
       }else{
-        sqlite3ExplainPrintf(pOut, "FUNCTION:%s(", pExpr->u.zToken);
+        sqlite3TreeViewLine(pView, "FUNCTION %Q", pExpr->u.zToken);
       }
       if( pFarg ){
-        sqlite3ExplainExprList(pOut, pFarg);
+        sqlite3TreeViewExprList(pView, pFarg, 0, 0);
       }
-      sqlite3ExplainPrintf(pOut, ")");
       break;
     }
 #ifndef SQLITE_OMIT_SUBQUERY
     case TK_EXISTS: {
-      sqlite3ExplainPrintf(pOut, "EXISTS(");
-      sqlite3ExplainSelect(pOut, pExpr->x.pSelect);
-      sqlite3ExplainPrintf(pOut,")");
+      sqlite3TreeViewLine(pView, "EXISTS-expr");
+      sqlite3TreeViewSelect(pView, pExpr->x.pSelect, 0);
       break;
     }
     case TK_SELECT: {
-      sqlite3ExplainPrintf(pOut, "(");
-      sqlite3ExplainSelect(pOut, pExpr->x.pSelect);
-      sqlite3ExplainPrintf(pOut, ")");
+      sqlite3TreeViewLine(pView, "SELECT-expr");
+      sqlite3TreeViewSelect(pView, pExpr->x.pSelect, 0);
       break;
     }
     case TK_IN: {
-      sqlite3ExplainPrintf(pOut, "IN(");
-      sqlite3ExplainExpr(pOut, pExpr->pLeft);
-      sqlite3ExplainPrintf(pOut, ",");
+      sqlite3TreeViewLine(pView, "IN");
+      sqlite3TreeViewExpr(pView, pExpr->pLeft, 1);
       if( ExprHasProperty(pExpr, EP_xIsSelect) ){
-        sqlite3ExplainSelect(pOut, pExpr->x.pSelect);
+        sqlite3TreeViewSelect(pView, pExpr->x.pSelect, 0);
       }else{
-        sqlite3ExplainExprList(pOut, pExpr->x.pList);
+        sqlite3TreeViewExprList(pView, pExpr->x.pList, 0, 0);
       }
-      sqlite3ExplainPrintf(pOut, ")");
       break;
     }
 #endif /* SQLITE_OMIT_SUBQUERY */
@@ -3419,13 +3410,10 @@ void sqlite3ExplainExpr(Vdbe *pOut, Expr *pExpr){
       Expr *pX = pExpr->pLeft;
       Expr *pY = pExpr->x.pList->a[0].pExpr;
       Expr *pZ = pExpr->x.pList->a[1].pExpr;
-      sqlite3ExplainPrintf(pOut, "BETWEEN(");
-      sqlite3ExplainExpr(pOut, pX);
-      sqlite3ExplainPrintf(pOut, ",");
-      sqlite3ExplainExpr(pOut, pY);
-      sqlite3ExplainPrintf(pOut, ",");
-      sqlite3ExplainExpr(pOut, pZ);
-      sqlite3ExplainPrintf(pOut, ")");
+      sqlite3TreeViewLine(pView, "BETWEEN");
+      sqlite3TreeViewExpr(pView, pX, 1);
+      sqlite3TreeViewExpr(pView, pY, 1);
+      sqlite3TreeViewExpr(pView, pZ, 0);
       break;
     }
     case TK_TRIGGER: {
@@ -3436,15 +3424,14 @@ void sqlite3ExplainExpr(Vdbe *pOut, Expr *pExpr){
       ** is set to the column of the pseudo-table to read, or to -1 to
       ** read the rowid field.
       */
-      sqlite3ExplainPrintf(pOut, "%s(%d)", 
+      sqlite3TreeViewLine(pView, "%s(%d)", 
           pExpr->iTable ? "NEW" : "OLD", pExpr->iColumn);
       break;
     }
     case TK_CASE: {
-      sqlite3ExplainPrintf(pOut, "CASE(");
-      sqlite3ExplainExpr(pOut, pExpr->pLeft);
-      sqlite3ExplainPrintf(pOut, ",");
-      sqlite3ExplainExprList(pOut, pExpr->x.pList);
+      sqlite3TreeViewLine(pView, "CASE");
+      sqlite3TreeViewExpr(pView, pExpr->pLeft, 1);
+      sqlite3TreeViewExprList(pView, pExpr->x.pList, 0, 0);
       break;
     }
 #ifndef SQLITE_OMIT_TRIGGER
@@ -3456,55 +3443,57 @@ void sqlite3ExplainExpr(Vdbe *pOut, Expr *pExpr){
         case OE_Fail:       zType = "fail";      break;
         case OE_Ignore:     zType = "ignore";    break;
       }
-      sqlite3ExplainPrintf(pOut, "RAISE-%s(%s)", zType, pExpr->u.zToken);
+      sqlite3TreeViewLine(pView, "RAISE %s(%Q)", zType, pExpr->u.zToken);
       break;
     }
 #endif
+    default: {
+      sqlite3TreeViewLine(pView, "op=%d", pExpr->op);
+      break;
+    }
   }
   if( zBinOp ){
-    sqlite3ExplainPrintf(pOut,"%s(", zBinOp);
-    sqlite3ExplainExpr(pOut, pExpr->pLeft);
-    sqlite3ExplainPrintf(pOut,",");
-    sqlite3ExplainExpr(pOut, pExpr->pRight);
-    sqlite3ExplainPrintf(pOut,")");
+    sqlite3TreeViewLine(pView, "%s", zBinOp);
+    sqlite3TreeViewExpr(pView, pExpr->pLeft, 1);
+    sqlite3TreeViewExpr(pView, pExpr->pRight, 0);
   }else if( zUniOp ){
-    sqlite3ExplainPrintf(pOut,"%s(", zUniOp);
-    sqlite3ExplainExpr(pOut, pExpr->pLeft);
-    sqlite3ExplainPrintf(pOut,")");
+    sqlite3TreeViewLine(pView, "%s", zUniOp);
+    sqlite3TreeViewExpr(pView, pExpr->pLeft, 0);
   }
+  sqlite3TreeViewPop(pView);
 }
-#endif /* defined(SQLITE_ENABLE_TREE_EXPLAIN) */
+#endif /* SQLITE_DEBUG */
 
-#if defined(SQLITE_ENABLE_TREE_EXPLAIN)
+#ifdef SQLITE_DEBUG
 /*
 ** Generate a human-readable explanation of an expression list.
 */
-void sqlite3ExplainExprList(Vdbe *pOut, ExprList *pList){
+void sqlite3TreeViewExprList(
+  TreeView *pView,
+  const ExprList *pList,
+  u8 moreToFollow,
+  const char *zLabel
+){
   int i;
-  if( pList==0 || pList->nExpr==0 ){
-    sqlite3ExplainPrintf(pOut, "(empty-list)");
-    return;
-  }else if( pList->nExpr==1 ){
-    sqlite3ExplainExpr(pOut, pList->a[0].pExpr);
+  pView = sqlite3TreeViewPush(pView, moreToFollow);
+  if( zLabel==0 || zLabel[0]==0 ) zLabel = "LIST";
+  if( pList==0 ){
+    sqlite3TreeViewLine(pView, "%s (empty)", zLabel);
   }else{
-    sqlite3ExplainPush(pOut);
+    sqlite3TreeViewLine(pView, "%s", zLabel);
     for(i=0; i<pList->nExpr; i++){
-      sqlite3ExplainPrintf(pOut, "item[%d] = ", i);
-      sqlite3ExplainPush(pOut);
-      sqlite3ExplainExpr(pOut, pList->a[i].pExpr);
-      sqlite3ExplainPop(pOut);
-      if( pList->a[i].zName ){
+      sqlite3TreeViewExpr(pView, pList->a[i].pExpr, i<pList->nExpr-1);
+#if 0
+     if( pList->a[i].zName ){
         sqlite3ExplainPrintf(pOut, " AS %s", pList->a[i].zName);
       }
       if( pList->a[i].bSpanIsTab ){
         sqlite3ExplainPrintf(pOut, " (%s)", pList->a[i].zSpan);
       }
-      if( i<pList->nExpr-1 ){
-        sqlite3ExplainNL(pOut);
-      }
+#endif
     }
-    sqlite3ExplainPop(pOut);
   }
+  sqlite3TreeViewPop(pView);
 }
 #endif /* SQLITE_DEBUG */
 

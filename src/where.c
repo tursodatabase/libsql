@@ -365,11 +365,6 @@ static int allowedOp(int op){
 }
 
 /*
-** Swap two objects of type TYPE.
-*/
-#define SWAP(TYPE,A,B) {TYPE t=A; A=B; B=t;}
-
-/*
 ** Commute a comparison operator.  Expressions of the form "X op Y"
 ** are converted into "Y op X".
 **
@@ -3529,8 +3524,9 @@ static Bitmask codeOneLoopStart(
     ** eliminating duplicates from other WHERE clauses, the action for each
     ** sub-WHERE clause is to to invoke the main loop body as a subroutine.
     */
-    wctrlFlags =  WHERE_OMIT_OPEN_CLOSE | WHERE_AND_ONLY |
-                  WHERE_FORCE_TABLE | WHERE_ONETABLE_ONLY;
+    wctrlFlags =  WHERE_OMIT_OPEN_CLOSE
+                | WHERE_FORCE_TABLE
+                | WHERE_ONETABLE_ONLY;
     for(ii=0; ii<pOrWc->nTerm; ii++){
       WhereTerm *pOrTerm = &pOrWc->a[ii];
       if( pOrTerm->leftCursor==iCur || (pOrTerm->eOperator & WO_AND)!=0 ){
@@ -3542,6 +3538,7 @@ static Bitmask codeOneLoopStart(
           pOrExpr = pAndExpr;
         }
         /* Loop through table entries that match term pOrTerm. */
+        WHERETRACE(0xffff, ("Subplan for OR-clause:\n"));
         pSubWInfo = sqlite3WhereBegin(pParse, pOrTab, pOrExpr, 0, 0,
                                       wctrlFlags, iCovCur);
         assert( pSubWInfo || pParse->nErr || db->mallocFailed );
@@ -3761,21 +3758,26 @@ static Bitmask codeOneLoopStart(
   return pLevel->notReady;
 }
 
-#if defined(WHERETRACE_ENABLED) && defined(SQLITE_ENABLE_TREE_EXPLAIN)
+#ifdef WHERETRACE_ENABLED
 /*
-** Generate "Explanation" text for a WhereTerm.
+** Print the content of a WhereTerm object
 */
-static void whereExplainTerm(Vdbe *v, WhereTerm *pTerm){
-  char zType[4];
-  memcpy(zType, "...", 4);
-  if( pTerm->wtFlags & TERM_VIRTUAL ) zType[0] = 'V';
-  if( pTerm->eOperator & WO_EQUIV  ) zType[1] = 'E';
-  if( ExprHasProperty(pTerm->pExpr, EP_FromJoin) ) zType[2] = 'L';
-  sqlite3ExplainPrintf(v, "%s ", zType);
-  sqlite3ExplainExpr(v, pTerm->pExpr);
+static void whereTermPrint(WhereTerm *pTerm, int iTerm){
+  if( pTerm==0 ){
+    sqlite3DebugPrintf("TERM-%-3d NULL\n", iTerm);
+  }else{
+    char zType[4];
+    memcpy(zType, "...", 4);
+    if( pTerm->wtFlags & TERM_VIRTUAL ) zType[0] = 'V';
+    if( pTerm->eOperator & WO_EQUIV  ) zType[1] = 'E';
+    if( ExprHasProperty(pTerm->pExpr, EP_FromJoin) ) zType[2] = 'L';
+    sqlite3DebugPrintf("TERM-%-3d %p %s cursor=%-3d prob=%-3d op=0x%03x\n",
+                       iTerm, pTerm, zType, pTerm->leftCursor, pTerm->truthProb,
+                       pTerm->eOperator);
+    sqlite3TreeViewExpr(0, pTerm->pExpr, 0);
+  }
 }
-#endif /* WHERETRACE_ENABLED && SQLITE_ENABLE_TREE_EXPLAIN */
-
+#endif
 
 #ifdef WHERETRACE_ENABLED
 /*
@@ -3819,27 +3821,12 @@ static void whereLoopPrint(WhereLoop *p, WhereClause *pWC){
     sqlite3DebugPrintf(" f %05x N %d", p->wsFlags, p->nLTerm);
   }
   sqlite3DebugPrintf(" cost %d,%d,%d\n", p->rSetup, p->rRun, p->nOut);
-#ifdef SQLITE_ENABLE_TREE_EXPLAIN
-  /* If the 0x100 bit of wheretracing is set, then show all of the constraint
-  ** expressions in the WhereLoop.aLTerm[] array.
-  */
-  if( p->nLTerm && (sqlite3WhereTrace & 0x100)!=0 ){  /* WHERETRACE 0x100 */
+  if( p->nLTerm && (sqlite3WhereTrace & 0x100)!=0 ){
     int i;
-    Vdbe *v = pWInfo->pParse->pVdbe;
-    sqlite3ExplainBegin(v);
     for(i=0; i<p->nLTerm; i++){
-      WhereTerm *pTerm = p->aLTerm[i];
-      if( pTerm==0 ) continue;
-      sqlite3ExplainPrintf(v, "  (%d) #%-2d ", i+1, (int)(pTerm-pWC->a));
-      sqlite3ExplainPush(v);
-      whereExplainTerm(v, pTerm);
-      sqlite3ExplainPop(v);
-      sqlite3ExplainNL(v);
+      whereTermPrint(p->aLTerm[i], i);
     }
-    sqlite3ExplainFinish(v);
-    sqlite3DebugPrintf("%s", sqlite3VdbeExplanation(v));
   }
-#endif
 }
 #endif
 
@@ -5019,7 +5006,6 @@ static int whereLoopAddOr(WhereLoopBuilder *pBuilder, Bitmask mExtra){
   struct SrcList_item *pItem;
   
   pWC = pBuilder->pWC;
-  if( pWInfo->wctrlFlags & WHERE_AND_ONLY ) return SQLITE_OK;
   pWCEnd = pWC->a + pWC->nTerm;
   pNew = pBuilder->pNew;
   memset(&sSum, 0, sizeof(sSum));
@@ -5040,6 +5026,7 @@ static int whereLoopAddOr(WhereLoopBuilder *pBuilder, Bitmask mExtra){
       sSubBuild.pOrderBy = 0;
       sSubBuild.pOrSet = &sCur;
 
+      WHERETRACE(0x200, ("Begin processing OR-clause %p\n", pTerm));
       for(pOrTerm=pOrWC->a; pOrTerm<pOrWCEnd; pOrTerm++){
         if( (pOrTerm->eOperator & WO_AND)!=0 ){
           sSubBuild.pWC = &pOrTerm->u.pAndInfo->wc;
@@ -5054,6 +5041,15 @@ static int whereLoopAddOr(WhereLoopBuilder *pBuilder, Bitmask mExtra){
           continue;
         }
         sCur.n = 0;
+#ifdef WHERETRACE_ENABLED
+        WHERETRACE(0x200, ("OR-term %d of %p has %d subterms:\n", 
+                   (int)(pOrTerm-pOrWC->a), pTerm, sSubBuild.pWC->nTerm));
+        if( sqlite3WhereTrace & 0x400 ){
+          for(i=0; i<sSubBuild.pWC->nTerm; i++){
+            whereTermPrint(&sSubBuild.pWC->a[i], i);
+          }
+        }
+#endif
 #ifndef SQLITE_OMIT_VIRTUALTABLE
         if( IsVirtual(pItem->pTab) ){
           rc = whereLoopAddVirtual(&sSubBuild, mExtra);
@@ -5061,6 +5057,9 @@ static int whereLoopAddOr(WhereLoopBuilder *pBuilder, Bitmask mExtra){
 #endif
         {
           rc = whereLoopAddBtree(&sSubBuild, mExtra);
+        }
+        if( rc==SQLITE_OK ){
+          rc = whereLoopAddOr(&sSubBuild, mExtra);
         }
         assert( rc==SQLITE_OK || sCur.n==0 );
         if( sCur.n==0 ){
@@ -5106,6 +5105,7 @@ static int whereLoopAddOr(WhereLoopBuilder *pBuilder, Bitmask mExtra){
         pNew->prereq = sSum.a[i].prereq;
         rc = whereLoopInsert(pBuilder, pNew);
       }
+      WHERETRACE(0x200, ("End processing OR-clause %p\n", pTerm));
     }
   }
   return rc;
@@ -6172,23 +6172,16 @@ WhereInfo *sqlite3WhereBegin(
 
   /* Construct the WhereLoop objects */
   WHERETRACE(0xffff,("*** Optimizer Start ***\n"));
+#if defined(WHERETRACE_ENABLED)
   /* Display all terms of the WHERE clause */
-#if defined(WHERETRACE_ENABLED) && defined(SQLITE_ENABLE_TREE_EXPLAIN)
   if( sqlite3WhereTrace & 0x100 ){
     int i;
-    Vdbe *v = pParse->pVdbe;
-    sqlite3ExplainBegin(v);
     for(i=0; i<sWLB.pWC->nTerm; i++){
-      sqlite3ExplainPrintf(v, "#%-2d ", i);
-      sqlite3ExplainPush(v);
-      whereExplainTerm(v, &sWLB.pWC->a[i]);
-      sqlite3ExplainPop(v);
-      sqlite3ExplainNL(v);
+      whereTermPrint(&sWLB.pWC->a[i], i);
     }
-    sqlite3ExplainFinish(v);
-    sqlite3DebugPrintf("%s", sqlite3VdbeExplanation(v));
   }
 #endif
+
   if( nTabList!=1 || whereShortCut(&sWLB)==0 ){
     rc = whereLoopAddAll(&sWLB);
     if( rc ) goto whereBeginError;

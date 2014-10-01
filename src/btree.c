@@ -4985,8 +4985,7 @@ static SQLITE_NOINLINE int btreePrevious(BtCursor *pCur, int *pRes){
   assert( (pCur->curFlags & (BTCF_AtLast|BTCF_ValidOvfl|BTCF_ValidNKey))==0 );
   assert( pCur->info.nSize==0 );
   if( pCur->eState!=CURSOR_VALID ){
-    assert( pCur->eState>=CURSOR_REQUIRESEEK );
-    rc = btreeRestoreCursorPosition(pCur);
+    rc = restoreCursorPosition(pCur);
     if( rc!=SQLITE_OK ){
       return rc;
     }
