@@ -1,5 +1,5 @@
-C Avoid\sever\swriting\sbefore\sthe\sstart\sof\san\sallocated\sbuffer\sin\sthe\sDIRECT_OVERFLOW_READ\scode.\sFix\sfor\s[e3a290961a6].
-D 2014-10-01T12:01:10.959
+C Show\sthe\sTK_DOT\soperator\sin\sthe\sTreeView\sdebugging\soutput.\nNo\schanges\sto\sproduction\scode.
+D 2014-10-01T13:17:34.666
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -181,7 +181,7 @@ F src/complete.c 535183afb3c75628b78ce82612931ac7cdf26f14
 F src/ctime.c bb434068b5308a857b181c2d204a320ff0d6c638
 F src/date.c 57a7f9ba9f6b4d5268f5e411739066a611f99036
 F src/delete.c fae81cc2eb14b75267d4f47d3cfc9ae02aae726f
-F src/expr.c 46a8ca93361d09f2ec6d9b7d524751510569d737
+F src/expr.c fc204d08af06437ddaffe5a1b1f1f6f9e1a55d6d
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c da985ae673efef2c712caef825a5d2edb087ead7
 F src/func.c ba47c1671ab3cfdafa6e9d6ee490939ea578adee
@@ -1201,7 +1201,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5ce05757aac80b99c3b2141cd301809f8e28e661
-R 8b86b2d12e4b9100e4b861428290f6cc
-U dan
-Z 9b09f2a5bed05af5296fa69f0721cad2
+P c3c15d20c6913811956a5041c959a56ca4eeb5eb
+R edd47e8e1fee70147349c2e68dee2e83
+U drh
+Z 9e63ea12305cf84dbf6e1aed1e91c8fa
