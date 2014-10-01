@@ -58,6 +58,18 @@ do_test eval-2.2 {
     SELECT * FROM t2
   }
 } {}
+do_test eval-2.3 {
+  execsql {
+    INSERT INTO t2 SELECT x, x+1 FROM t1 WHERE x<5;
+    SELECT x, test_eval('DELETE FROM t2 WHERE x='||x), y FROM t2
+     ORDER BY rowid DESC;
+  }
+} {4 {} {} 3 {} {} 2 {} {} 1 {} {}}
+do_test eval-2.4 {
+  execsql {
+    SELECT * FROM t2
+  }
+} {}
 
 # Modify a row while it is being read.
 #

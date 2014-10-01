@@ -6215,7 +6215,7 @@ int sqlite3_test_control(int op, ...);
 #define SQLITE_TESTCTRL_ISKEYWORD               16
 #define SQLITE_TESTCTRL_SCRATCHMALLOC           17
 #define SQLITE_TESTCTRL_LOCALTIME_FAULT         18
-#define SQLITE_TESTCTRL_EXPLAIN_STMT            19
+#define SQLITE_TESTCTRL_EXPLAIN_STMT            19  /* NOT USED */
 #define SQLITE_TESTCTRL_NEVER_CORRUPT           20
 #define SQLITE_TESTCTRL_VDBE_COVERAGE           21
 #define SQLITE_TESTCTRL_BYTEORDER               22

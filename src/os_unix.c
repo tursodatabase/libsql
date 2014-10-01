@@ -6124,7 +6124,7 @@ static int unixUnfetch(sqlite3_file *fd, i64 iOff, void *p){
 **   *  An I/O method finder function called FINDER that returns a pointer
 **      to the METHOD object in the previous bullet.
 */
-#define IOMETHODS(FINDER, METHOD, VERSION, CLOSE, LOCK, UNLOCK, CKLOCK)      \
+#define IOMETHODS(FINDER, METHOD, VERSION, CLOSE, LOCK, UNLOCK, CKLOCK, SHMMAP) \
 static const sqlite3_io_methods METHOD = {                                   \
    VERSION,                    /* iVersion */                                \
    CLOSE,                      /* xClose */                                  \
@@ -6139,7 +6139,7 @@ static const sqlite3_io_methods METHOD = {                                   \
    unixFileControl,            /* xFileControl */                            \
    unixSectorSize,             /* xSectorSize */                             \
    unixDeviceCharacteristics,  /* xDeviceCapabilities */                     \
-   unixShmMap,                 /* xShmMap */                                 \
+   SHMMAP,                     /* xShmMap */                                 \
    unixShmLock,                /* xShmLock */                                \
    unixShmBarrier,             /* xShmBarrier */                             \
    unixShmUnmap,               /* xShmUnmap */                               \
@@ -6165,7 +6165,8 @@ IOMETHODS(
   unixClose,                /* xClose method */
   unixLock,                 /* xLock method */
   unixUnlock,               /* xUnlock method */
-  unixCheckReservedLock     /* xCheckReservedLock method */
+  unixCheckReservedLock,    /* xCheckReservedLock method */
+  unixShmMap                /* xShmMap method */
 )
 IOMETHODS(
   nolockIoFinder,           /* Finder function name */
@@ -6174,7 +6175,8 @@ IOMETHODS(
   nolockClose,              /* xClose method */
   nolockLock,               /* xLock method */
   nolockUnlock,             /* xUnlock method */
-  nolockCheckReservedLock   /* xCheckReservedLock method */
+  nolockCheckReservedLock,  /* xCheckReservedLock method */
+  0                         /* xShmMap method */
 )
 IOMETHODS(
   dotlockIoFinder,          /* Finder function name */
@@ -6183,7 +6185,8 @@ IOMETHODS(
   dotlockClose,             /* xClose method */
   dotlockLock,              /* xLock method */
   dotlockUnlock,            /* xUnlock method */
-  dotlockCheckReservedLock  /* xCheckReservedLock method */
+  dotlockCheckReservedLock, /* xCheckReservedLock method */
+  0                         /* xShmMap method */
 )
 
 #if SQLITE_ENABLE_LOCKING_STYLE && !OS_VXWORKS
@@ -6194,7 +6197,8 @@ IOMETHODS(
   flockClose,               /* xClose method */
   flockLock,                /* xLock method */
   flockUnlock,              /* xUnlock method */
-  flockCheckReservedLock    /* xCheckReservedLock method */
+  flockCheckReservedLock,   /* xCheckReservedLock method */
+  0                         /* xShmMap method */
 )
 #endif
 
@@ -6206,7 +6210,8 @@ IOMETHODS(
   semClose,                 /* xClose method */
   semLock,                  /* xLock method */
   semUnlock,                /* xUnlock method */
-  semCheckReservedLock      /* xCheckReservedLock method */
+  semCheckReservedLock,     /* xCheckReservedLock method */
+  0                         /* xShmMap method */
 )
 #endif
 
@@ -6218,7 +6223,8 @@ IOMETHODS(
   afpClose,                 /* xClose method */
   afpLock,                  /* xLock method */
   afpUnlock,                /* xUnlock method */
-  afpCheckReservedLock      /* xCheckReservedLock method */
+  afpCheckReservedLock,     /* xCheckReservedLock method */
+  0                         /* xShmMap method */
 )
 #endif
 
@@ -6243,7 +6249,8 @@ IOMETHODS(
   proxyClose,               /* xClose method */
   proxyLock,                /* xLock method */
   proxyUnlock,              /* xUnlock method */
-  proxyCheckReservedLock    /* xCheckReservedLock method */
+  proxyCheckReservedLock,   /* xCheckReservedLock method */
+  0                         /* xShmMap method */
 )
 #endif
 
@@ -6256,7 +6263,8 @@ IOMETHODS(
   unixClose,                 /* xClose method */
   unixLock,                  /* xLock method */
   nfsUnlock,                 /* xUnlock method */
-  unixCheckReservedLock      /* xCheckReservedLock method */
+  unixCheckReservedLock,     /* xCheckReservedLock method */
+  0                          /* xShmMap method */
 )
 #endif
 

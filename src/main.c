@@ -3458,22 +3458,6 @@ int sqlite3_test_control(int op, ...){
       break;
     }
 
-#if defined(SQLITE_ENABLE_TREE_EXPLAIN)
-    /*   sqlite3_test_control(SQLITE_TESTCTRL_EXPLAIN_STMT,
-    **                        sqlite3_stmt*,const char**);
-    **
-    ** If compiled with SQLITE_ENABLE_TREE_EXPLAIN, each sqlite3_stmt holds
-    ** a string that describes the optimized parse tree.  This test-control
-    ** returns a pointer to that string.
-    */
-    case SQLITE_TESTCTRL_EXPLAIN_STMT: {
-      sqlite3_stmt *pStmt = va_arg(ap, sqlite3_stmt*);
-      const char **pzRet = va_arg(ap, const char**);
-      *pzRet = sqlite3VdbeExplanation((Vdbe*)pStmt);
-      break;
-    }
-#endif
-
     /*   sqlite3_test_control(SQLITE_TESTCTRL_NEVER_CORRUPT, int);
     **
     ** Set or clear a flag that indicates that the database file is always well-

@@ -1056,6 +1056,69 @@ void sqlite3DebugPrintf(const char *zFormat, ...){
 }
 #endif
 
+#ifdef SQLITE_DEBUG
+/*************************************************************************
+** Routines for implementing the "TreeView" display of hierarchical
+** data structures for debugging.
+**
+** The main entry points (coded elsewhere) are:
+**     sqlite3TreeViewExpr(0, pExpr, 0);
+**     sqlite3TreeViewExprList(0, pList, 0, 0);
+**     sqlite3TreeViewSelect(0, pSelect, 0);
+** Insert calls to those routines while debugging in order to display
+** a diagram of Expr, ExprList, and Select objects.
+**
+*/
+/* Add a new subitem to the tree.  The moreToFollow flag indicates that this
+** is not the last item in the tree. */
+TreeView *sqlite3TreeViewPush(TreeView *p, u8 moreToFollow){
+  if( p==0 ){
+    p = sqlite3_malloc( sizeof(*p) );
+    if( p==0 ) return 0;
+    memset(p, 0, sizeof(*p));
+  }else{
+    p->iLevel++;
+  }
+  assert( moreToFollow==0 || moreToFollow==1 );
+  if( p->iLevel<sizeof(p->bLine) ) p->bLine[p->iLevel] = moreToFollow;
+  return p;
+}
+/* Finished with one layer of the tree */
+void sqlite3TreeViewPop(TreeView *p){
+  if( p==0 ) return;
+  p->iLevel--;
+  if( p->iLevel<0 ) sqlite3_free(p);
+}
+/* Generate a single line of output for the tree, with a prefix that contains
+** all the appropriate tree lines */
+void sqlite3TreeViewLine(TreeView *p, const char *zFormat, ...){
+  va_list ap;
+  int i;
+  StrAccum acc;
+  char zBuf[500];
+  sqlite3StrAccumInit(&acc, zBuf, sizeof(zBuf), 0);
+  acc.useMalloc = 0;
+  if( p ){
+    for(i=0; i<p->iLevel && i<sizeof(p->bLine)-1; i++){
+      sqlite3StrAccumAppend(&acc, p->bLine[i] ? "|   " : "    ", 4);
+    }
+    sqlite3StrAccumAppend(&acc, p->bLine[i] ? "|-- " : "'-- ", 4);
+  }
+  va_start(ap, zFormat);
+  sqlite3VXPrintf(&acc, 0, zFormat, ap);
+  va_end(ap);
+  if( zBuf[acc.nChar-1]!='\n' ) sqlite3StrAccumAppend(&acc, "\n", 1);
+  sqlite3StrAccumFinish(&acc);
+  fprintf(stdout,"%s", zBuf);
+  fflush(stdout);
+}
+/* Shorthand for starting a new tree item that consists of a single label */
+void sqlite3TreeViewItem(TreeView *p, const char *zLabel, u8 moreToFollow){
+  p = sqlite3TreeViewPush(p, moreToFollow);
+  sqlite3TreeViewLine(p, "%s", zLabel);
+}
+#endif /* SQLITE_DEBUG */
+
 /*
 ** variable-argument wrapper around sqlite3VXPrintf().
 */

@@ -272,7 +272,6 @@ struct sqlite3_context {
   Mem *pOut;            /* The return value is stored here */
   FuncDef *pFunc;       /* Pointer to function information */
   Mem *pMem;            /* Memory cell used to store aggregate context */
-  CollSeq *pColl;       /* Collating sequence */
   Vdbe *pVdbe;          /* The VM that owns this context */
   int iOp;              /* Instruction number of OP_Function */
   int isError;          /* Error code returned by the function. */
@@ -361,10 +360,6 @@ struct Vdbe {
   i64 nStmtDefImmCons;    /* Number of def. imm constraints when stmt started */
   char *zSql;             /* Text of the SQL statement that generated this */
   void *pFree;            /* Free this when deleting the vdbe */
-#ifdef SQLITE_ENABLE_TREE_EXPLAIN
-  Explain *pExplain;      /* The explainer */
-  char *zExplain;         /* Explanation of data structures */
-#endif
   VdbeFrame *pFrame;      /* Parent frame */
   VdbeFrame *pDelFrame;   /* List of frame objects to free on VM reset */
   int nFrame;             /* Number of frames in pFrame list */

@@ -1557,17 +1557,10 @@ case OP_Function: {
   ctx.iOp = pc;
   ctx.pVdbe = p;
   MemSetTypeFlag(ctx.pOut, MEM_Null);
-
   ctx.fErrorOrAux = 0;
-  if( ctx.pFunc->funcFlags & SQLITE_FUNC_NEEDCOLL ){
-    assert( pOp>aOp );
-    assert( pOp[-1].p4type==P4_COLLSEQ );
-    assert( pOp[-1].opcode==OP_CollSeq );
-    ctx.pColl = pOp[-1].p4.pColl;
-  }
-  db->lastRowid = lastRowid;
+  assert( db->lastRowid==lastRowid );
   (*ctx.pFunc->xFunc)(&ctx, n, apVal); /* IMP: R-24505-23230 */
-  lastRowid = db->lastRowid;
+  lastRowid = db->lastRowid;  /* Remember rowid changes made by xFunc */
 
   /* If the function returned an error, throw an exception */
   if( ctx.fErrorOrAux ){
@@ -3287,10 +3280,6 @@ case OP_OpenWrite: {
   assert( OPFLAG_BULKCSR==BTREE_BULKLOAD );
   sqlite3BtreeCursorHints(pCur->pCursor, (pOp->p5 & OPFLAG_BULKCSR));
 
-  /* Since it performs no memory allocation or IO, the only value that
-  ** sqlite3BtreeCursor() may return is SQLITE_OK. */
-  assert( rc==SQLITE_OK );
-
   /* Set the VdbeCursor.isTable variable. Previous versions of
   ** SQLite used to check if the root-page flags were sane at this point
   ** and report database corruption if they were not, but this check has
@@ -4024,25 +4013,14 @@ case OP_NewRowid: {           /* out2-prerelease */
       ** it finds one that is not previously used. */
       assert( pOp->p3==0 );  /* We cannot be in random rowid mode if this is
                              ** an AUTOINCREMENT table. */
-      /* on the first attempt, simply do one more than previous */
-      v = lastRowid;
-      v &= (MAX_ROWID>>1); /* ensure doesn't go negative */
-      v++; /* ensure non-zero */
       cnt = 0;
-      while(   ((rc = sqlite3BtreeMovetoUnpacked(pC->pCursor, 0, (u64)v,
+      do{
+        sqlite3_randomness(sizeof(v), &v);
+        v &= (MAX_ROWID>>1); v++;  /* Ensure that v is greater than zero */
+      }while(  ((rc = sqlite3BtreeMovetoUnpacked(pC->pCursor, 0, (u64)v,
                                                  0, &res))==SQLITE_OK)
             && (res==0)
-            && (++cnt<100)){
-        /* collision - try another random rowid */
-        sqlite3_randomness(sizeof(v), &v);
-        if( cnt<5 ){
-          /* try "small" random rowids for the initial attempts */
-          v &= 0xffffff;
-        }else{
-          v &= (MAX_ROWID>>1); /* ensure doesn't go negative */
-        }
-        v++; /* ensure non-zero */
-      }
+            && (++cnt<100));
       if( rc==SQLITE_OK && res==0 ){
         rc = SQLITE_FULL;   /* IMP: R-38219-53002 */
         goto abort_due_to_error;
@@ -5638,14 +5616,9 @@ case OP_AggStep: {
   sqlite3VdbeMemInit(&t, db, MEM_Null);
   ctx.pOut = &t;
   ctx.isError = 0;
-  ctx.pColl = 0;
+  ctx.pVdbe = p;
+  ctx.iOp = pc;
   ctx.skipFlag = 0;
-  if( ctx.pFunc->funcFlags & SQLITE_FUNC_NEEDCOLL ){
-    assert( pOp>p->aOp );
-    assert( pOp[-1].p4type==P4_COLLSEQ );
-    assert( pOp[-1].opcode==OP_CollSeq );
-    ctx.pColl = pOp[-1].p4.pColl;
-  }
   (ctx.pFunc->xStep)(&ctx, n, apVal); /* IMP: R-24505-23230 */
   if( ctx.isError ){
     sqlite3SetString(&p->zErrMsg, db, "%s", sqlite3_value_text(&t));
