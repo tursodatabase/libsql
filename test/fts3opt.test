@@ -1,0 +1,48 @@
+# 2014 October 2
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this script is testing the FTS3 module.
+#
+# $Id: fts3aa.test,v 1.1 2007/08/20 17:38:42 shess Exp $
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set ::testprefix fts3opt
+
+# If SQLITE_ENABLE_FTS3 is defined, omit this file.
+ifcapable !fts3 {
+  finish_test
+  return
+}
+
+# Test running an 'optimize' in the case where the index contains zero
+# terms (so the result is an empty %_segdir table) but there exists at
+# least one row in the FTS table (i.e. one with no tokens).
+#
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE ft USING fts3;
+  INSERT INTO ft(rowid, content) VALUES(1, 'a b c');
+  INSERT INTO ft(rowid, content) VALUES(2, 'd e f');
+  INSERT INTO ft(rowid, content) VALUES(3, 'g h i');
+  INSERT INTO ft(rowid, content) VALUES(4, '');
+  DELETE FROM ft WHERE rowid=2;
+  DELETE FROM ft WHERE rowid=1;
+  DELETE FROM ft WHERE rowid=3;
+} {}
+
+do_execsql_test 1.1 {
+  INSERT INTO ft(ft) VALUES('optimize');
+  SELECT * FROM ft_segdir;
+} {}
+
+finish_test
+

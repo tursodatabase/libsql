@@ -3007,7 +3007,7 @@ static int fts3SegmentMerge(
         csr.zTerm, csr.nTerm, csr.aDoclist, csr.nDoclist);
   }
   if( rc!=SQLITE_OK ) goto finished;
-  assert( pWriter );
+  assert( pWriter || bIgnoreEmpty );
 
   if( iLevel!=FTS3_SEGCURSOR_PENDING ){
     rc = fts3DeleteSegdir(
@@ -3015,7 +3015,9 @@ static int fts3SegmentMerge(
     );
     if( rc!=SQLITE_OK ) goto finished;
   }
-  rc = fts3SegWriterFlush(p, pWriter, iNewLevel, iIdx);
+  if( pWriter ){
+    rc = fts3SegWriterFlush(p, pWriter, iNewLevel, iIdx);
+  }
 
  finished:
   fts3SegWriterFree(pWriter);

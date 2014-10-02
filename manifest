@@ -1,5 +1,5 @@
-C Avoid\san\sassertion\sfault\sand/or\sfreeing\smemory\swhile\sit\sis\sstill\sin\suse\swhen\nan\serror\soccurs\sduring\svirtual\stable\sconstruction.\sCherrypick\sof\s[a02599ad85d].
-D 2013-03-07T11:03:51.343
+C Fix\sa\ssegfault\sthat\scould\soccur\sif\san\s'optimize'\scommand\swas\sissued\son\san\sFTS\stable\sthat\scontained\sat\sleast\sone\srow\sbut\szero\sterms.
+D 2014-10-02T09:27:08.018
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -72,7 +72,7 @@ F ext/fts3/fts3_tokenizer.h 66dec98e365854b6cd2d54f1a96bb6d428fc5a68
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c 49e36e6ba59f79e6bd6a8bfe434570fe48d20559
 F ext/fts3/fts3_unicode2.c a863f05f758af36777dffc2facc898bc73fec896
-F ext/fts3/fts3_write.c c30c49f3debb9497a07f15cc4c042815e35474ef
+F ext/fts3/fts3_write.c d06519da31fe9cea7700c12644931596047b2e31
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/fts3/tool/fts3view.c 6cfc5b67a5f0e09c0d698f9fd012c784bfaa9197
@@ -488,6 +488,7 @@ F test/fts3first.test dbdedd20914c8d539aa3206c9b34a23775644641
 F test/fts3malloc.test b86ea33db9e8c58c0c2f8027a9fcadaf6a1568be
 F test/fts3matchinfo.test 15edde2c4d373d60449658176af7164d622a62f0
 F test/fts3near.test 2e318ee434d32babd27c167142e2b94ddbab4844
+F test/fts3opt.test be9546b530003059adee419b68c433ddd0f5751b
 F test/fts3prefix.test b36d4f00b128a51e7b386cc013a874246d9d7dc1
 F test/fts3prefix2.test 477ca96e67f60745b7ac931cfa6e9b080c562da5
 F test/fts3query.test ef79d31fdb355d094baec1c1b24b60439a1fb8a2
@@ -1015,7 +1016,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P e890bcde34370079f4da011da39e4ba8224ffab4
-R 3aee953b86407273366f5f75f4c5ca92
+P 760072ceea294fd7d168de28de9e775e545ef30e
+R 56ecebebea5e1827d4efe39f36959536
 U dan
-Z 1435144ed9b3c053d9bb36c7383b5519
+Z bc2abfad5ad37726c5ea48368e0e72a2
