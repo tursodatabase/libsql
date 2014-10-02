@@ -1,5 +1,5 @@
-C Show\sthe\sTK_DOT\soperator\sin\sthe\sTreeView\sdebugging\soutput.\nNo\schanges\sto\sproduction\scode.
-D 2014-10-01T13:17:34.666
+C Avoid\sa\sNULL\spointer\sdeference\swhen\sprocessing\sthe\sIS\soperator\sif\sthe\nright-hand\sside\sis\san\sillegal\s"#ID"\sstyle\svariable.\nFix\sfor\sticket\s[8c32a33a53092c85a15b]
+D 2014-10-02T21:52:35.759
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -217,7 +217,7 @@ F src/os_win.c 0a4042ef35f322e86fa01f6c8884c5e645b911e7
 F src/os_win.h 09e751b20bbc107ffbd46e13555dc73576d88e21
 F src/pager.c caab007743821d96752597c9cfd7351654697b06
 F src/pager.h ffd5607f7b3e4590b415b007a4382f693334d428
-F src/parse.y ce1494308578d2f10a68cd8debc9fc156dda1094
+F src/parse.y 5dfead8aed90cb0c7c1115898ee2266804daff45
 F src/pcache.c 4121a0571c18581ee9f82f086d5e2030051ebd6a
 F src/pcache.h 9b559127b83f84ff76d735c8262f04853be0c59a
 F src/pcache1.c dab8ab930d4a73b99768d881185994f34b80ecaa
@@ -474,7 +474,7 @@ F test/exclusive.test c7ebbc756eacf544c108b15eed64d7d4e5f86b75
 F test/exclusive2.test 32798111aae78a5deec980eee383213f189df308
 F test/exec.test e949714dc127eaa5ecc7d723efec1ec27118fdd7
 F test/exists.test 8f7b27b61c2fbe5822f0a1f899c715d14e416e30
-F test/expr.test 67c9fd6f8f829e239dc8b0f4a08a73c08b09196d
+F test/expr.test c4b9bf0cc60b26862475e19999fbd2609ca8259c
 F test/extension01.test 00d13cec817f331a687a243e0e5a2d87b0e358c9
 F test/fallocate.test 3e979af17dfa7e5e9dda5eba1a696c04fa9d47f7
 F test/filectrl.test 14fa712e42c4cb791e09dfd58a6a03efb47ef13a
@@ -1201,7 +1201,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c3c15d20c6913811956a5041c959a56ca4eeb5eb
-R edd47e8e1fee70147349c2e68dee2e83
+P 07c89940c49a5dca3205a4b6fa8290f23bcb6e10
+R 3ff78086c12aaca80a7d944710785692
 U drh
-Z 9e63ea12305cf84dbf6e1aed1e91c8fa
+Z 3bce8c89e00f85ac67bad3c4bc80b65e
