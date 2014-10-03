@@ -4445,7 +4445,7 @@ typedef void (*sqlite3_destructor_type)(void*);
 ** of the application-defined function to be NULL.
 **
 ** ^The sqlite3_result_text(), sqlite3_result_text16(),
-** sqlite3_result_text16le(), and sqlite3_result_text16be()
+** sqlite3_result_text16le(), and sqlite3_result_text16be() interfaces
 ** set the return value of the application-defined function to be
 ** a text string which is represented as UTF-8, UTF-16 native byte order,
 ** UTF-16 little endian, or UTF-16 big endian, respectively.
