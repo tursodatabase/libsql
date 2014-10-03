@@ -862,11 +862,11 @@ do_createtable_tests 3.2.3 -query {
   3   "INSERT INTO t1 DEFAULT VALUES"               {NULL NULL NULL}
 }
 
-# EVIDENCE-OF: R-62940-43005 An explicit DEFAULT clause may specify that
+# EVIDENCE-OF: R-07343-35026 An explicit DEFAULT clause may specify that
 # the default value is NULL, a string constant, a blob constant, a
-# signed-number, or any constant expression enclosed in parentheses. An
-# explicit default value may also be one of the special case-independent
-# keywords CURRENT_TIME, CURRENT_DATE or CURRENT_TIMESTAMP.
+# signed-number, or any constant expression enclosed in parentheses. A
+# default value may also be one of the special case-independent keywords
+# CURRENT_TIME, CURRENT_DATE or CURRENT_TIMESTAMP.
 #
 do_execsql_test e_createtable-3.3.1 {
   CREATE TABLE t4(
@@ -884,9 +884,9 @@ do_execsql_test e_createtable-3.3.1 {
   );
 } {}
 
-# EVIDENCE-OF: R-36381-62919 For the purposes of the DEFAULT clause, an
-# expression is considered constant provided that it does not contain
-# any sub-queries, column or table references, or string literals
+# EVIDENCE-OF: R-18415-27776 For the purposes of the DEFAULT clause, an
+# expression is considered constant if it does contains no sub-queries,
+# column or table references, bound parameters, or string literals
 # enclosed in double-quotes instead of single-quotes.
 #
 do_createtable_tests 3.4.1 -error {
@@ -896,6 +896,7 @@ do_createtable_tests 3.4.1 -error {
   2   {CREATE TABLE t5(x DEFAULT ( "abc" ))}  {}
   3   {CREATE TABLE t5(x DEFAULT ( 1 IN (SELECT 1) ))}  {}
   4   {CREATE TABLE t5(x DEFAULT ( EXISTS (SELECT 1) ))}  {}
+  5   {CREATE TABLE t5(x DEFAULT ( x!=?1 ))}  {}
 }
 do_createtable_tests 3.4.2 -repair {
   catchsql { DROP TABLE t5 }

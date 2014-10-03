@@ -1,5 +1,5 @@
-C Avoid\sa\sNULL\spointer\sdeference\swhen\sprocessing\sthe\sIS\soperator\sif\sthe\nright-hand\sside\sis\san\sillegal\s"#ID"\sstyle\svariable.\nFix\sfor\sticket\s[8c32a33a53092c85a15b]
-D 2014-10-02T21:52:35.759
+C Update\sto\srequirements\smarks\srelated\sto\schanges\sin\sthe\smemory\sallocation\ninterface\sand\senhancement\sof\sthe\sdocumentation\sregarding\sDEFAULT\sclauses\nin\sCREATE\sTABLE.
+D 2014-10-03T14:54:47.347
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -195,7 +195,7 @@ F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
 F src/loadext.c de741e66e5ddc1598d904d7289239696e40ed994
 F src/main.c 4a507a467cc20979579e4320ca6466b8ed0be268
-F src/malloc.c 5bb99ee1e08ad58e457063cf79ce521db0e24195
+F src/malloc.c 7cf86b4f2310898675d8a962342e5650779dfb3f
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c faf615aafd8be74a71494dfa027c113ea5c6615f
 F src/mem2.c dce31758da87ec2cfa52ba4c5df1aed6e07d8e8f
@@ -448,7 +448,7 @@ F test/descidx3.test 09ddbe3f5295f482d2f8b687cf6db8bad7acd9a2
 F test/diskfull.test 106391384780753ea6896b7b4f005d10e9866b6e
 F test/distinct.test 086e70c765f172e8974e9f83b9ac5ca03c154e77
 F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
-F test/e_createtable.test 181653f6f45e3adde73f8686600ce5ad7515466b
+F test/e_createtable.test c7e67b49e6cf92473c8fb30ab26143e9e2128cf7
 F test/e_delete.test d5186e2f5478b659f16a2c8b66c09892823e542a
 F test/e_droptrigger.test 3cd080807622c13e5bbb61fc9a57bd7754da2412
 F test/e_dropview.test 0c9f7f60989164a70a67a9d9c26d1083bc808306
@@ -1201,7 +1201,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 07c89940c49a5dca3205a4b6fa8290f23bcb6e10
-R 3ff78086c12aaca80a7d944710785692
+P ffe7573636c8057614b02f0a85559e1857fd04e4
+R aa87a5e90d62a634fb6995b4f5b80a7f
 U drh
-Z 3bce8c89e00f85ac67bad3c4bc80b65e
+Z fba6f65828fcf9ec8fdba2a5c0c0fdb8

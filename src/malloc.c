@@ -310,7 +310,7 @@ void *sqlite3Malloc(u64 n){
   }else{
     p = sqlite3GlobalConfig.m.xMalloc((int)n);
   }
-  assert( EIGHT_BYTE_ALIGNMENT(p) );  /* IMP: R-04675-44850 */
+  assert( EIGHT_BYTE_ALIGNMENT(p) );  /* IMP: R-11148-40995 */
   return p;
 }
 
@@ -533,10 +533,10 @@ void *sqlite3Realloc(void *pOld, u64 nBytes){
   int nOld, nNew, nDiff;
   void *pNew;
   if( pOld==0 ){
-    return sqlite3Malloc(nBytes); /* IMP: R-28354-25769 */
+    return sqlite3Malloc(nBytes); /* IMP: R-04300-56712 */
   }
   if( nBytes==0 ){
-    sqlite3_free(pOld); /* IMP: R-31593-10574 */
+    sqlite3_free(pOld); /* IMP: R-26507-47431 */
     return 0;
   }
   if( nBytes>=0x7fffff00 ){
@@ -573,7 +573,7 @@ void *sqlite3Realloc(void *pOld, u64 nBytes){
   }else{
     pNew = sqlite3GlobalConfig.m.xRealloc(pOld, nNew);
   }
-  assert( EIGHT_BYTE_ALIGNMENT(pNew) ); /* IMP: R-04675-44850 */
+  assert( EIGHT_BYTE_ALIGNMENT(pNew) ); /* IMP: R-11148-40995 */
   return pNew;
 }
 
@@ -585,7 +585,7 @@ void *sqlite3_realloc(void *pOld, int n){
 #ifndef SQLITE_OMIT_AUTOINIT
   if( sqlite3_initialize() ) return 0;
 #endif
-  if( n<0 ) n = 0;
+  if( n<0 ) n = 0;  /* IMP: R-26507-47431 */
   return sqlite3Realloc(pOld, n);
 }
 void *sqlite3_realloc64(void *pOld, sqlite3_uint64 n){
