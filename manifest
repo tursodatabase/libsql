@@ -1,5 +1,5 @@
-C Improve\sthe\saccuracy\sof\sthe\sestimates\sused\swhen\ssearching\san\sindex\sfor\svalues\snot\spresent\sin\sany\sstat4\ssamples\sunder\ssome\scircumstances.
-D 2014-10-03T19:16:53.018
+C Fix\sa\sdivision-by-zero\serror\sthat\smight\soccur\sif\sthe\ssqlite_stat1\stable\sis\scorrupt.
+D 2014-10-03T19:29:39.807
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -166,7 +166,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 3d8b83c91651f53472ca17599dae3457b8b89494
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c ba266a779bc7ce10e52e59e7d3dc79fa342e8fdb
-F src/analyze.c 418c2fc20cd36f1acc82456b5bd9baae77dbda78
+F src/analyze.c 8d5a138936dab3436e67ca3a0f6466ad2f18d86b
 F src/attach.c f4e94df2d1826feda65eb0939f7f6f5f923a0ad9
 F src/auth.c d8abcde53426275dab6243b441256fcd8ccbebb2
 F src/backup.c a31809c65623cc41849b94d368917f8bb66e6a7e
@@ -1201,10 +1201,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d2fc322728331ae2d147c8496129df5e3c655eb5
-R 57c99795ca217ceed92eda9a33e89730
-T *branch * stat4-avgeq
-T *sym-stat4-avgeq *
-T -sym-trunk *
+P e6f7f97dbc677c9f01b23142928c3fa7307c2fba
+R d767aa2120b870307998a73a73f29d86
 U dan
-Z 343ac493fd77cb5d6f7bcecf2a2a97e2
+Z 9bc979da9e7cfcf210fc63943ac10f56
