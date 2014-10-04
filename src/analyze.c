@@ -1518,9 +1518,10 @@ static int analysisLoader(void *pData, int argc, char **argv, char **NotUsed){
   if( pIndex ){
     int nCol = pIndex->nKeyCol+1;
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
-    tRowcnt * const aiRowEst = pIndex->aiRowEst = (tRowcnt*)sqlite3DbMallocZero(
-        pInfo->db, sizeof(tRowcnt) * nCol
+    tRowcnt * const aiRowEst = pIndex->aiRowEst = (tRowcnt*)sqlite3MallocZero(
+        sizeof(tRowcnt) * nCol
     );
+    if( aiRowEst==0 ) pInfo->db->mallocFailed = 1;
 #else
     tRowcnt * const aiRowEst = 0;
 #endif
@@ -1869,7 +1870,7 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
   }
   for(i=sqliteHashFirst(&db->aDb[iDb].pSchema->idxHash);i;i=sqliteHashNext(i)){
     Index *pIdx = sqliteHashData(i);
-    sqlite3DbFree(db, pIdx->aiRowEst);
+    sqlite3_free(pIdx->aiRowEst);
     pIdx->aiRowEst = 0;
   }
 #endif
