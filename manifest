@@ -1,5 +1,5 @@
-C Tweaks\sto\sdocumentation\son\ssqlite3_open()\sand\ssqlite3_bind().\s\sNo\scode\schanges.
-D 2014-10-04T19:31:53.403
+C Fix\sa\sharmless\scompiler\swarning\sinside\san\sassert()\sin\sFTS4.
+D 2014-10-06T12:41:57.462
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -78,7 +78,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 2f5e925bdb9d6d3e488c5a981af60cad4f9cdfe7
+F ext/fts3/fts3.c 66f39c425fa834b939d06caeeb14f49e038d443b
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 53d4eca1fb23eab00681fb028fb82eb5705c1e21
 F ext/fts3/fts3_aux.c 5c211e17a64885faeb16b9ba7772f9d5445c2365
@@ -1201,7 +1201,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0f8102d71a0ee828629f037775ad86fe2a544120
-R 9fc77b39bf813ff4a1732fefd3521b90
+P b8f7f19dc06c59de2e194d83e6c052fb7d28c71d
+R 4c5bc018ecacdd56e0a0b436c7d98214
 U drh
-Z 7cb27b268889a7c66aa5ab31d2f83fa7
+Z bf48e2ee6f6966054d7eb786534348de
