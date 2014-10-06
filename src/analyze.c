@@ -1437,7 +1437,7 @@ static void decodeIntArray(
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
   if( z==0 ) z = "";
 #else
-  if( NEVER(z==0) ) z = "";
+  assert( z!=0 );
 #endif
   for(i=0; *z && i<nOut; i++){
     v = 0;
@@ -1446,16 +1446,14 @@ static void decodeIntArray(
       z++;
     }
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
-    if( aOut ){
-      aOut[i] = v;
-    }
+    if( aOut ) aOut[i] = v;
+    if( aLog ) aLog[i] = sqlite3LogEst(v);
 #else
     assert( aOut==0 );
     UNUSED_PARAMETER(aOut);
+    assert( aLog!=0 );
+    aLog[i] = sqlite3LogEst(v);
 #endif
-    if( aLog ){
-      aLog[i] = sqlite3LogEst(v);
-    }
     if( *z==' ' ) z++;
   }
 #ifndef SQLITE_ENABLE_STAT3_OR_STAT4
