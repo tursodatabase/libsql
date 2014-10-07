@@ -994,7 +994,7 @@ int sqlite3VdbeMemFromBtree(
 ** Convert it into a string with encoding enc and return a pointer
 ** to a zero-terminated version of that string.
 */
-SQLITE_NOINLINE const void *valueToText(sqlite3_value* pVal, u8 enc){
+static SQLITE_NOINLINE const void *valueToText(sqlite3_value* pVal, u8 enc){
   assert( pVal!=0 );
   assert( pVal->db==0 || sqlite3_mutex_held(pVal->db->mutex) );
   assert( (enc&3)==(enc&~SQLITE_UTF16_ALIGNED) );

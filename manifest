@@ -1,5 +1,5 @@
-C Enhance\s(and\sfix)\sthe\sMEMTYPE\stags\sassociated\swith\sheap\smemory\sallocations\nwhen\sSQLITE_MEMDEBUG\sis\sused.
-D 2014-10-07T15:46:54.844
+C Restrict\sthe\sscope\sof\sthe\svalueToText()\sroutine.
+D 2014-10-07T16:59:22.085
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -295,7 +295,7 @@ F src/vdbeInt.h 0b97a3190f8fbf460655985a9183019f5a702754
 F src/vdbeapi.c 37a6c6ae284a97bcace365f2f0a225680c0499d9
 F src/vdbeaux.c 5b687d7b5beaaa5b97189edf25cf08c311834933
 F src/vdbeblob.c 848238dc73e93e48432991bb5651bf87d865eca4
-F src/vdbemem.c 1e105dacf5190fc85a8ec2107c0dcc1884e75099
+F src/vdbemem.c ee0c60af8c0f5535c6a06c49a624d87cf70b0573
 F src/vdbesort.c 5c1bacf90578d22b630fbf6ed98ccf60d83435ef
 F src/vdbetrace.c 7e4222955e07dd707a2f360c0eb73452be1cb010
 F src/vtab.c 019dbfd0406a7447c990e1f7bd1dfcdb8895697f
@@ -1202,7 +1202,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 80e1baa5c225c78902e08dbea9d577ff5757847f
-R feb5d8a0d69f5af350e2ea3e74be0e6b
+P ca5b789e33c4e5ce366d8f5372d086442f84e230
+R 0b0659acf5a7c9ad242fd7056973fd11
 U drh
-Z 1e9604671a765b8eca12ebcbe81357fc
+Z 23204866f7082d1eef3090df8e45b47e
