@@ -394,7 +394,7 @@ void sqlite3MemdebugSetType(void *p, u8 eType){
 ** This routine is designed for use within an assert() statement, to
 ** verify the type of an allocation.  For example:
 **
-**     assert( sqlite3MemdebugHasType(p, MEMTYPE_DB) );
+**     assert( sqlite3MemdebugHasType(p, MEMTYPE_HEAP) );
 */
 int sqlite3MemdebugHasType(void *p, u8 eType){
   int rc = 1;
@@ -416,7 +416,7 @@ int sqlite3MemdebugHasType(void *p, u8 eType){
 ** This routine is designed for use within an assert() statement, to
 ** verify the type of an allocation.  For example:
 **
-**     assert( sqlite3MemdebugNoType(p, MEMTYPE_DB) );
+**     assert( sqlite3MemdebugNoType(p, MEMTYPE_LOOKASIDE) );
 */
 int sqlite3MemdebugNoType(void *p, u8 eType){
   int rc = 1;

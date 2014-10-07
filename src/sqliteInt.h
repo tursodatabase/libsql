@@ -3800,10 +3800,9 @@ SQLITE_EXTERN void (*sqlite3IoTrace)(const char*,...);
 # define sqlite3MemdebugNoType(X,Y)   1
 #endif
 #define MEMTYPE_HEAP       0x01  /* General heap allocations */
-#define MEMTYPE_LOOKASIDE  0x02  /* Might have been lookaside memory */
+#define MEMTYPE_LOOKASIDE  0x02  /* Heap that might have been lookaside */
 #define MEMTYPE_SCRATCH    0x04  /* Scratch allocations */
 #define MEMTYPE_PCACHE     0x08  /* Page cache allocations */
-#define MEMTYPE_DB         0x10  /* Uses sqlite3DbMalloc, not sqlite_malloc */
 
 /*
 ** Threading interface

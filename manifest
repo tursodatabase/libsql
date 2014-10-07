@@ -1,5 +1,5 @@
-C Remove\sunreachable\sbranches\sin\sdecodeIntArray()\swhen\scompiling\swithout\nSTAT3\sor\sSTAT4.
-D 2014-10-06T18:33:49.122
+C Enhance\s(and\sfix)\sthe\sMEMTYPE\stags\sassociated\swith\sheap\smemory\sallocations\nwhen\sSQLITE_MEMDEBUG\sis\sused.
+D 2014-10-07T15:46:54.844
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -195,10 +195,10 @@ F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
 F src/loadext.c de741e66e5ddc1598d904d7289239696e40ed994
 F src/main.c bbe872b0ac0007bed0ebe1936fc493b039ad4f51
-F src/malloc.c 7cf86b4f2310898675d8a962342e5650779dfb3f
+F src/malloc.c 3c3ac67969612493d435e14b6832793209afd2ec
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c faf615aafd8be74a71494dfa027c113ea5c6615f
-F src/mem2.c dce31758da87ec2cfa52ba4c5df1aed6e07d8e8f
+F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
 F src/mem3.c 61c9d47b792908c532ca3a62b999cf21795c6534
 F src/mem5.c 61eeb90134f9a5be6c2e68d8daae7628b25953fb
 F src/memjournal.c 3eb2c0b51adbd869cb6a44780323f05fa904dc85
@@ -232,7 +232,7 @@ F src/shell.c 38f627b0885191357f55902a3ac199de90d79715
 F src/sqlite.h.in 4a5e5158c189d2bcd45c7c4607c2c0eb6d25c153
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
-F src/sqliteInt.h 3e4bd1b2288528b6a7f2d52709618572b422ab7e
+F src/sqliteInt.h 6ac5e34a590ad7ea22af91d190bdb212b12107be
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 961d5926e5a8fda611d385ec22c226b8635cd1cb
 F src/table.c 2e99ef7ef16187e17033d9398dc962ce22dab5cb
@@ -1202,7 +1202,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3aff9a9cac7aa994dfdaa0ab5c23ae73a1e820f0
-R 2a9f3a3ac6efdd67ef1666d9c29f8a31
+P 80e1baa5c225c78902e08dbea9d577ff5757847f
+R feb5d8a0d69f5af350e2ea3e74be0e6b
 U drh
-Z 0a50a0d9b770dc9e76964bc37ef2d3c3
+Z 1e9604671a765b8eca12ebcbe81357fc
