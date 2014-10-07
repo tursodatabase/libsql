@@ -1,5 +1,5 @@
-C Restrict\sthe\sscope\sof\sthe\svalueToText()\sroutine.
-D 2014-10-07T16:59:22.085
+C Fix\sthe\scorruptI.test\sscript\sso\sthat\sit\sworks\swith\nSQLITE_ENABLE_OVERSIZE_CELL_CHECK\sand\swith\sSQLITE_DEFAULT_AUTOVACUUM=1.
+D 2014-10-07T20:09:27.561
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -420,7 +420,7 @@ F test/corruptE.test 193b4ca4e927e77c1d5f4f56203ddc998432a7ee
 F test/corruptF.test be9fde98e4c93648f1ba52b74e5318edc8f59fe4
 F test/corruptG.test 1ab3bf97ee7bdba70e0ff3ba2320657df55d1804
 F test/corruptH.test 88ed71a086e13591c917aac6de32750e7c7281cb
-F test/corruptI.test 0afbba50bfae006094cc548b4605f521c1179502
+F test/corruptI.test 221ad8b7f0a9ac6b80fc577e73b5ad8cdea31243
 F test/cost.test 19d314526616ce4473eb4e4e450fcb94499ce318
 F test/count.test 42a251178e32f617eda33f76236a7f79825a50b5
 F test/coveridxscan.test cdb47d01acc4a634a34fd25abe85189e0d0f1e62
@@ -1202,7 +1202,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ca5b789e33c4e5ce366d8f5372d086442f84e230
-R 0b0659acf5a7c9ad242fd7056973fd11
+P 13c962b33df411a0d9ead0bb1969596faa286f79
+R bc98a778a72f51d6ea08f3f2bdc76392
 U drh
-Z 23204866f7082d1eef3090df8e45b47e
+Z 156ceab5010f208eb433cfa9f4253059
