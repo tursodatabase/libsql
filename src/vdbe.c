@@ -4333,7 +4333,8 @@ case OP_RowData: {
       goto too_big;
     }
   }
-  if( sqlite3VdbeMemClearAndResize(pOut, n) ){
+  testcase( n==0 );
+  if( sqlite3VdbeMemClearAndResize(pOut, MAX(n,32)) ){
     goto no_mem;
   }
   pOut->n = n;

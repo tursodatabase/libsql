@@ -1,5 +1,5 @@
-C Fix\sthe\scorruptI.test\sscript\sso\sthat\sit\sworks\swith\nSQLITE_ENABLE_OVERSIZE_CELL_CHECK\sand\swith\sSQLITE_DEFAULT_AUTOVACUUM=1.
-D 2014-10-07T20:09:27.561
+C Make\ssure\sthe\ssqlite3VdbeMemClearAndResize()\sroutine\sis\snever\scalled\swith\sa\nzero\ssize\sparameter,\ssince\sa\ssize\sof\szero\scould\slead\sto\seither\sa\smemory\sleak\nor\san\sassertion\sfault.
+D 2014-10-07T23:02:24.724
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -289,13 +289,13 @@ F src/update.c 729f6f18fc27740591d085e1172cebe311144bf0
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c 4006c01772bd8d8ac4306d523bbcee41d3e392d8
 F src/vacuum.c 59f03f92bcff57faa6a8ca256eb29ccddfb0614a
-F src/vdbe.c 93eeb6f9c3a3084133225a196f220454d71cca10
+F src/vdbe.c e6c964101382d6fb144853b1d5b288158a9aba0e
 F src/vdbe.h 09f5b4e3719fa454f252322b1cdab5cf1f361327
 F src/vdbeInt.h 0b97a3190f8fbf460655985a9183019f5a702754
 F src/vdbeapi.c 37a6c6ae284a97bcace365f2f0a225680c0499d9
 F src/vdbeaux.c 5b687d7b5beaaa5b97189edf25cf08c311834933
 F src/vdbeblob.c 848238dc73e93e48432991bb5651bf87d865eca4
-F src/vdbemem.c ee0c60af8c0f5535c6a06c49a624d87cf70b0573
+F src/vdbemem.c 481327f50d9da330053aa7456702ce46d0a4e70f
 F src/vdbesort.c 5c1bacf90578d22b630fbf6ed98ccf60d83435ef
 F src/vdbetrace.c 7e4222955e07dd707a2f360c0eb73452be1cb010
 F src/vtab.c 019dbfd0406a7447c990e1f7bd1dfcdb8895697f
@@ -1202,7 +1202,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 13c962b33df411a0d9ead0bb1969596faa286f79
-R bc98a778a72f51d6ea08f3f2bdc76392
+P e405b9e4a9ef322d84b20e902234b4f6aa196b1b
+R 59a3e15d0b7c925a5c413304ec5e314b
 U drh
-Z 156ceab5010f208eb433cfa9f4253059
+Z 1de6834c7b78df261ad24af6ce5dedbe
