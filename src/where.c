@@ -2207,16 +2207,22 @@ static int whereRangeScanEst(
         iUpper = a[0] + a[1];
       }
 
+      assert( pLower==0 || (pLower->eOperator & (WO_GT|WO_GE))!=0 );
+      assert( pUpper==0 || (pUpper->eOperator & (WO_LT|WO_LE))!=0 );
+      if( p->pKeyInfo && p->pKeyInfo->aSortOrder[nEq] ){
+        /* The roles of pLower and pUpper are swapped for a DESC index */
+        SWAP(WhereTerm*, pLower, pUpper);
+      }
+
       /* If possible, improve on the iLower estimate using ($P:$L). */
       if( pLower ){
         int bOk;                    /* True if value is extracted from pExpr */
         Expr *pExpr = pLower->pExpr->pRight;
-        assert( (pLower->eOperator & (WO_GT|WO_GE))!=0 );
         rc = sqlite3Stat4ProbeSetValue(pParse, p, &pRec, pExpr, aff, nEq, &bOk);
         if( rc==SQLITE_OK && bOk ){
           tRowcnt iNew;
           whereKeyStats(pParse, p, pRec, 0, a);
-          iNew = a[0] + ((pLower->eOperator & WO_GT) ? a[1] : 0);
+          iNew = a[0] + ((pLower->eOperator & (WO_GT|WO_LE)) ? a[1] : 0);
           if( iNew>iLower ) iLower = iNew;
           nOut--;
           pLower = 0;
@@ -2227,12 +2233,11 @@ static int whereRangeScanEst(
       if( pUpper ){
         int bOk;                    /* True if value is extracted from pExpr */
         Expr *pExpr = pUpper->pExpr->pRight;
-        assert( (pUpper->eOperator & (WO_LT|WO_LE))!=0 );
         rc = sqlite3Stat4ProbeSetValue(pParse, p, &pRec, pExpr, aff, nEq, &bOk);
         if( rc==SQLITE_OK && bOk ){
           tRowcnt iNew;
           whereKeyStats(pParse, p, pRec, 1, a);
-          iNew = a[0] + ((pUpper->eOperator & WO_LE) ? a[1] : 0);
+          iNew = a[0] + ((pUpper->eOperator & (WO_GT|WO_LE)) ? a[1] : 0);
           if( iNew<iUpper ) iUpper = iNew;
           nOut--;
           pUpper = 0;
