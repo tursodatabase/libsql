@@ -1,5 +1,5 @@
-C Fix\sup\stest\scases\sto\saccount\sfor\sthe\snew\sSQLITE_LIMIT_WORKER_THREADS\slimit.
-D 2014-10-08T15:53:21.620
+C Remove\san\salways-true\sbranch\sin\swhereRangeScanEst().\s\sReplace\sit\swith\san\nassert().
+D 2014-10-08T19:33:54.518
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -302,7 +302,7 @@ F src/vtab.c 019dbfd0406a7447c990e1f7bd1dfcdb8895697f
 F src/wal.c 10e7de7ce90865a68153f001a61f1d985cd17983
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
-F src/where.c 982f1ce21355452f2e5cd284359ab141c1eff547
+F src/where.c 6fe21e0f60a449af5d75d00e6d480370464a9a48
 F src/whereInt.h 124d970450955a6982e174b07c320ae6d62a595c
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1203,7 +1203,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P dff0f6422e60a7e2e4efb658aab202a119cfa702
-R 7321f912fc295ac13d3e667e8ae8fde4
+P 6483d426c4c5c772cd49412ea37e0fa7a0378904
+R df1d18db7990f8a7d78a79273193f180
 U drh
-Z a0d7563bd184d766bb67ad4df881d191
+Z 70427f180e63fb554c9a4909a2862788
