@@ -1,5 +1,5 @@
-C Fix\sthe\sSTAT4\srange\sscan\sestimates\sfor\sDESC\sindexes.
-D 2014-10-08T02:53:25.568
+C Remove\ssome\stemporary\scode\sin\smallocA.test\sthat\swas\saccidentally\schecked\sin.
+D 2014-10-08T11:11:24.999
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -692,7 +692,7 @@ F test/malloc6.test 2f039d9821927eacae43e1831f815e157659a151
 F test/malloc7.test 7c68a32942858bc715284856c5507446bba88c3a
 F test/malloc8.test 9b7a3f8cb9cf0b12fff566e80a980b1767bd961d
 F test/malloc9.test 2307c6ee3703b0a21391f3ea92388b4b73f9105e
-F test/mallocA.test c049224adeb0244b8f6eb770c1fa6ac40f9b3518
+F test/mallocA.test 672cd7dedb63771bade3a6f557f851a4ad161d4a
 F test/mallocAll.test 98f1be74bc9f49a858bc4f361fc58e26486798be
 F test/mallocB.test bc475ab850cda896142ab935bbfbc74c24e51ed6
 F test/mallocC.test 3dffe16532f109293ce1ccecd0c31dca55ef08c4
@@ -1203,7 +1203,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P adcb3fed489b580221c7bf2692a60e24248b23a0
-R 50f3751b824cfe9cc6f7ad401beb29e1
-U drh
-Z 07946a58b794ebe5e4cb12afd1dbd645
+P e3fe84005259ef9a6027d25793514cebb2d4e7e0
+R 041f735fd7729856664b7e587c89b3dc
+U dan
+Z 7e47868b81dfec753c3dcd2a3c6c6ccd
