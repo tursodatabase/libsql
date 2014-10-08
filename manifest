@@ -1,5 +1,5 @@
-C Ensure\sthat\sthe\sPager.pTmpSpace\sallocation\sis\scorrect\seven\sif\san\sOOM\serror\noccurs\swhile\sreducing\sthe\spage\ssize.
-D 2014-10-08T13:34:21.522
+C Set\sthe\sconnection-specific\slastRowid\svalue\sbefore\scalling\sany\sSQL\sfunction.
+D 2014-10-08T14:28:31.133
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -289,7 +289,7 @@ F src/update.c 729f6f18fc27740591d085e1172cebe311144bf0
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c 4006c01772bd8d8ac4306d523bbcee41d3e392d8
 F src/vacuum.c 59f03f92bcff57faa6a8ca256eb29ccddfb0614a
-F src/vdbe.c e6c964101382d6fb144853b1d5b288158a9aba0e
+F src/vdbe.c fee8286ff026bb9cf96ce87971b60aba53863b78
 F src/vdbe.h 09f5b4e3719fa454f252322b1cdab5cf1f361327
 F src/vdbeInt.h 0b97a3190f8fbf460655985a9183019f5a702754
 F src/vdbeapi.c 37a6c6ae284a97bcace365f2f0a225680c0499d9
@@ -1203,7 +1203,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P dedd15f7cd13868f3be37646dd30ab7ceac5dea7
-R 4cf08d774ef596973588c752956e991d
+P e4b43967fd9a0b4944be9ab5575bff3678be8ed5
+R 4b3fd8ad675c779547c8afe5951393e2
 U drh
-Z e3bcbea265a57269fe808fe62b242441
+Z c9285a151f73aa9d039cef676eec6a31
