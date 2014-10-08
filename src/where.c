@@ -4139,7 +4139,7 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
     ** than pTemplate, so just ignore pTemplate */
 #if WHERETRACE_ENABLED /* 0x8 */
     if( sqlite3WhereTrace & 0x8 ){
-      sqlite3DebugPrintf("ins-noop: ");
+      sqlite3DebugPrintf("   skip: ");
       whereLoopPrint(pTemplate, pBuilder->pWC);
     }
 #endif
@@ -4155,10 +4155,10 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
 #if WHERETRACE_ENABLED /* 0x8 */
   if( sqlite3WhereTrace & 0x8 ){
     if( p!=0 ){
-      sqlite3DebugPrintf("ins-del:  ");
+      sqlite3DebugPrintf("replace: ");
       whereLoopPrint(p, pBuilder->pWC);
     }
-    sqlite3DebugPrintf("ins-new:  ");
+    sqlite3DebugPrintf("    add: ");
     whereLoopPrint(pTemplate, pBuilder->pWC);
   }
 #endif
@@ -4182,7 +4182,7 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
       *ppTail = pToDel->pNextLoop;
 #if WHERETRACE_ENABLED /* 0x8 */
       if( sqlite3WhereTrace & 0x8 ){
-        sqlite3DebugPrintf("ins-del:  ");
+        sqlite3DebugPrintf(" delete: ");
         whereLoopPrint(pToDel, pBuilder->pWC);
       }
 #endif
