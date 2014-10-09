@@ -6835,6 +6835,14 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno, int isCommit){
 
   return SQLITE_OK;
 }
+
+void sqlite3PagerRekey(DbPage *pPage, Pgno iNew){
+  PgHdr *pPg = (PgHdr*)pPage;
+  assert( pPg->flags & PGHDR_DIRTY );
+  assert( !subjRequiresPage(pPg) );
+  sqlite3PcacheMove(pPg, iNew);
+}
+
 #endif
 
 /*
@@ -7234,5 +7242,6 @@ int sqlite3PagerWalFramesize(Pager *pPager){
   return sqlite3WalFramesize(pPager->pWal);
 }
 #endif
+
 
 #endif /* SQLITE_OMIT_DISKIO */

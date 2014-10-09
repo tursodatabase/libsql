@@ -1,5 +1,5 @@
-C Reduce\sthe\samount\sof\smemcpy()\srequired\sby\sdefragmentPage().
-D 2014-09-27T05:00:25.096
+C Change\sthe\sbalance_nonroot()\sroutine\sto\sreduce\sthe\samount\sof\smemcpy\swork\sthat\stakes\splace.\sThis\sis\sa\swork\sin\sprogress.
+D 2014-10-09T19:35:37.452
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -172,7 +172,7 @@ F src/auth.c d8abcde53426275dab6243b441256fcd8ccbebb2
 F src/backup.c a31809c65623cc41849b94d368917f8bb66e6a7e
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 49ca66250c7dfa844a4d4cb8272b87420d27d3a5
-F src/btree.c 95a942a6ebdb23eb2a5d925526d35169aa6742f6
+F src/btree.c 7b89fde3bffa5b7300e94c4aeb69ccff926ef513
 F src/btree.h a79aa6a71e7f1055f01052b7f821bd1c2dce95c8
 F src/btreeInt.h 1bd7957161a1346a914f1f09231610e777a8e58d
 F src/build.c bde83dd5cf812e310a7e5ad2846790a14745bef4
@@ -215,8 +215,8 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c fb587121840f690101336879adfa6d0b2cd0e8c7
 F src/os_win.c 0a4042ef35f322e86fa01f6c8884c5e645b911e7
 F src/os_win.h 09e751b20bbc107ffbd46e13555dc73576d88e21
-F src/pager.c caab007743821d96752597c9cfd7351654697b06
-F src/pager.h ffd5607f7b3e4590b415b007a4382f693334d428
+F src/pager.c 0abcb0904a78d68b96357f360c6b160bcfc2a3e0
+F src/pager.h 8b6707cb32c788cf36bfc3d63f6d4b4fa689e7c2
 F src/parse.y b98772da2bb5415970085b707203f92569400aa8
 F src/pcache.c 4121a0571c18581ee9f82f086d5e2030051ebd6a
 F src/pcache.h 9b559127b83f84ff76d735c8262f04853be0c59a
@@ -1200,10 +1200,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 83913515830aa850f9e38406f9422d7e88dcab66
-R 66a1e1f00a844450677737824735607d
-T *branch * defrag-opt
-T *sym-defrag-opt *
-T -sym-trunk *
-U drh
-Z f60a1f2e4650c574e91ad245c0c67dee
+P 3edab9957cc7bb90b52fd40b02613c2cb03fc166
+R 5fca1836b5a4d862df24682ecb47d048
+U dan
+Z 8527330c8f275358262176fc962502e2
