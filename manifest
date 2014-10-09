@@ -1,5 +1,5 @@
-C Fix\sa\smemory\sleak\sassociated\swith\sthe\sFTS4\smatchinfo()\sfunction.
-D 2014-10-09T14:00:49.227
+C Add\sa\stest\scase\sfor\sthe\smemory\sleak\sfixed\sby\sthe\sprevious\scheck-in.
+D 2014-10-09T14:10:38.803
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -568,7 +568,7 @@ F test/fts3fault2.test 3198eef2804deea7cac8403e771d9cbcb752d887
 F test/fts3first.test dbdedd20914c8d539aa3206c9b34a23775644641
 F test/fts3join.test 53e66a0c21eb568580674a43b21c059acb26f499
 F test/fts3malloc.test b0e4c133b8d61d4f6d112d8110f8320e9e453ef6
-F test/fts3matchinfo.test ff423e73faab8fc6d7adeefedf74dd8e2b0b14e0
+F test/fts3matchinfo.test 58544fa4d254000fa4e7f494b0a832f7ba61d45e
 F test/fts3near.test 7e3354d46f155a822b59c0e957fd2a70c1d7e905
 F test/fts3prefix.test b36d4f00b128a51e7b386cc013a874246d9d7dc1
 F test/fts3prefix2.test e1f0a822ca661dced7f12ce392e14eaf65609dce
@@ -1203,7 +1203,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 42e48fd3a6a6219d9bd6135d821b38c5157922ba
-R b5e5fdd1e3ce299c36e7187cabf29d23
+P fb8da82411b80a234c6a5481622027815450996a
+R 3f68f640c5da00a278a8bfe99729cf27
 U drh
-Z 0cd30ecf2cac304fdb077fd52d8a3789
+Z d27fedea65c2ff594a69f62bdfd5cd22
