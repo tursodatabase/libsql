@@ -1,5 +1,5 @@
-C Add\sa\stest\scase\sfor\sthe\smemory\sleak\sfixed\sby\sthe\sprevious\scheck-in.
-D 2014-10-09T14:10:38.803
+C Allow\sFTS\stokenizers\sto\schoose\swhether\sor\snot\sto\sconsider\sthe\s"*"\scharacter\spart\sof\stokens\sor\snot.\sThis\srestores\sthe\spre-[e21bf7a2ad]\sbehaviour.\sAlso\sfix\sa\sproblem\scausing\sFTS\sto\sinterpret\stokens\sbeginning\swith\s"*"\scharacters\sas\sEOF.
+D 2014-10-09T15:08:17.615
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -82,7 +82,7 @@ F ext/fts3/fts3.c 8b6cceb3e0be22da26d83a3cec0e0e337e6b8ec6
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 53d4eca1fb23eab00681fb028fb82eb5705c1e21
 F ext/fts3/fts3_aux.c 5c211e17a64885faeb16b9ba7772f9d5445c2365
-F ext/fts3/fts3_expr.c 351395fad6fcb16ecfc61db0861008a70101330c
+F ext/fts3/fts3_expr.c 40123785eaa3ebd4c45c9b23407cc44ac0c49905
 F ext/fts3/fts3_hash.c 29b986e43f4e9dd40110eafa377dc0d63c422c60
 F ext/fts3/fts3_hash.h 39cf6874dc239d6b4e30479b1975fe5b22a3caaf
 F ext/fts3/fts3_icu.c e319e108661147bcca8dd511cd562f33a1ba81b5
@@ -562,7 +562,7 @@ F test/fts3e.test 1f6c6ac9cc8b772ca256e6b22aaeed50c9350851
 F test/fts3expr.test 3401d47b229c4504424caf362cc4ff704cad4162
 F test/fts3expr2.test 18da930352e5693eaa163a3eacf96233b7290d1a
 F test/fts3expr3.test 9e91b8edbcb197bf2e92161aa7696446d96dce5f
-F test/fts3expr4.test 0713d94ab951ed88a8c3629a4889a48c55c4067c
+F test/fts3expr4.test e1be1248566f43c252d4404d52914f1fc4bfa065
 F test/fts3fault.test cb72dccb0a3b9f730f16c5240f3fcb9303eb1660
 F test/fts3fault2.test 3198eef2804deea7cac8403e771d9cbcb752d887
 F test/fts3first.test dbdedd20914c8d539aa3206c9b34a23775644641
@@ -1203,7 +1203,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fb8da82411b80a234c6a5481622027815450996a
-R 3f68f640c5da00a278a8bfe99729cf27
-U drh
-Z d27fedea65c2ff594a69f62bdfd5cd22
+P bae36d544676c90e337381a83f4513b4d925ab05
+R f3cda043ab8d3408ba2f57353f2b5a88
+U dan
+Z 374021995a45280d12595d646a4004c7
