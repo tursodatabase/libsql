@@ -1,5 +1,5 @@
-C Merge\sthe\slatest\strunk\senhancements\sinto\sthe\sapple-osx\sbranch.
-D 2014-10-09T11:27:38.356
+C Record\sthe\serrno\son\sfstat()\sfailures.
+D 2014-10-09T11:40:35.696
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in bf041d20aeed250922fb1ba4bd13d34d3fa470e9
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -215,7 +215,7 @@ F src/os.c 25df79baf4bec87f75a2c4e995d63361b66b918a
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c 318d879a343526a955885e3a1fddfd4bcb6d9a84
+F src/os_unix.c 2af3813fd2df6f5d016d1dfef541d2c9e98fd600
 F src/os_win.c 1f331fe64c399490a0603c64ab321ef600e57213
 F src/os_win.h 09e751b20bbc107ffbd46e13555dc73576d88e21
 F src/pager.c 83e9a7af13a85244903e0c69d213b4852b7fcbb0
@@ -1208,7 +1208,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2078454ac998ccb5e837c4f13d8d8b2f312f4f50 42e48fd3a6a6219d9bd6135d821b38c5157922ba
-R 2e62ccfdcd7917c19ebd0736a2399e76
+P 6fc7207727d50c3039c7a0c6c9151cad6b9d25de
+R f3ae0f9e66e1eb31a93e069920263e6f
 U drh
-Z 6bab209fb14bdb3bb6e9da445e244059
+Z 3a89677246919eb848984a4ee0fb6608

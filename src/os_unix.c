@@ -4104,7 +4104,10 @@ static int fcntlSizeHint(unixFile *pFile, i64 nByte){
     i64 nSize;                    /* Required file size */
     struct stat buf;              /* Used to hold return values of fstat() */
    
-    if( osFstat(pFile->h, &buf) ) return SQLITE_IOERR_FSTAT;
+    if( osFstat(pFile->h, &buf) ){
+      storeLastErrno(pFile, errno);
+      return SQLITE_IOERR_FSTAT;
+    }
 
     nSize = ((nByte+pFile->szChunk-1) / pFile->szChunk) * pFile->szChunk;
     if( nSize>(i64)buf.st_size ){
@@ -4997,6 +5000,7 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
     ** with the same permissions.
     */
     if( osFstat(pDbFd->h, &sStat) && pInode->bProcessLock==0 ){
+      storeLastErrno(pDbFd, errno);
       rc = SQLITE_IOERR_FSTAT;
       goto shm_open_err;
     }
