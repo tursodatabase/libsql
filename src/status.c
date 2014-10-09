@@ -213,7 +213,7 @@ int sqlite3_db_status(
       }
       db->pnBytesFreed = 0;
 
-      *pHighwater = 0;
+      *pHighwater = 0;  /* IMP: R-64479-57858 */
       *pCurrent = nByte;
 
       break;
@@ -238,7 +238,9 @@ int sqlite3_db_status(
           sqlite3PagerCacheStat(pPager, op, resetFlag, &nRet);
         }
       }
-      *pHighwater = 0;
+      *pHighwater = 0; /* IMP: R-42420-56072 */
+                       /* IMP: R-54100-20147 */
+                       /* IMP: R-29431-39229 */
       *pCurrent = nRet;
       break;
     }
@@ -248,7 +250,7 @@ int sqlite3_db_status(
     ** have been satisfied.  The *pHighwater is always set to zero.
     */
     case SQLITE_DBSTATUS_DEFERRED_FKS: {
-      *pHighwater = 0;
+      *pHighwater = 0;  /* IMP: R-11967-56545 */
       *pCurrent = db->nDeferredImmCons>0 || db->nDeferredCons>0;
       break;
     }

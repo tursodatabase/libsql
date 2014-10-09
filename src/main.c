@@ -479,6 +479,11 @@ int sqlite3_config(int op, ...){
       break;
     }
 
+    /* EVIDENCE-OF: R-55548-33817 The compile-time setting for URI filenames
+    ** can be changed at start-time using the
+    ** sqlite3_config(SQLITE_CONFIG_URI,1) or
+    ** sqlite3_config(SQLITE_CONFIG_URI,0) configuration calls.
+    */
     case SQLITE_CONFIG_URI: {
       sqlite3GlobalConfig.bOpenUri = va_arg(ap, int);
       break;
@@ -2258,7 +2263,7 @@ int sqlite3ParseUri(
   assert( *pzErrMsg==0 );
 
   if( ((flags & SQLITE_OPEN_URI) || sqlite3GlobalConfig.bOpenUri) 
-   && nUri>=5 && memcmp(zUri, "file:", 5)==0 
+   && nUri>=5 && memcmp(zUri, "file:", 5)==0 /* IMP: R-57884-37496 */
   ){
     char *zOpt;
     int eState;                   /* Parser state when parsing URI */
@@ -2539,7 +2544,9 @@ static int openDatabase(
   testcase( (1<<(flags&7))==0x02 ); /* READONLY */
   testcase( (1<<(flags&7))==0x04 ); /* READWRITE */
   testcase( (1<<(flags&7))==0x40 ); /* READWRITE | CREATE */
-  if( ((1<<(flags&7)) & 0x46)==0 ) return SQLITE_MISUSE_BKPT;
+  if( ((1<<(flags&7)) & 0x46)==0 ){
+    return SQLITE_MISUSE_BKPT;  /* IMP: R-65497-44594 */
+  }
 
   if( sqlite3GlobalConfig.bCoreMutex==0 ){
     isThreadsafe = 0;

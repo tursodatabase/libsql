@@ -1558,7 +1558,7 @@ case OP_Function: {
   ctx.pVdbe = p;
   MemSetTypeFlag(ctx.pOut, MEM_Null);
   ctx.fErrorOrAux = 0;
-  assert( db->lastRowid==lastRowid );
+  db->lastRowid = lastRowid;
   (*ctx.pFunc->xFunc)(&ctx, n, apVal); /* IMP: R-24505-23230 */
   lastRowid = db->lastRowid;  /* Remember rowid changes made by xFunc */
 
@@ -4333,7 +4333,8 @@ case OP_RowData: {
       goto too_big;
     }
   }
-  if( sqlite3VdbeMemClearAndResize(pOut, n) ){
+  testcase( n==0 );
+  if( sqlite3VdbeMemClearAndResize(pOut, MAX(n,32)) ){
     goto no_mem;
   }
   pOut->n = n;

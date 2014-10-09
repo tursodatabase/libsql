@@ -3630,13 +3630,15 @@ int sqlite3PagerSetPagesize(Pager *pPager, u32 *pPageSize, int nReserve){
 
     if( rc==SQLITE_OK ){
       pager_reset(pPager);
-      sqlite3PageFree(pPager->pTmpSpace);
-      pPager->pTmpSpace = pNew;
       rc = sqlite3PcacheSetPageSize(pPager->pPCache, pageSize);
     }
     if( rc==SQLITE_OK ){
+      sqlite3PageFree(pPager->pTmpSpace);
+      pPager->pTmpSpace = pNew;
       pPager->dbSize = (Pgno)((nByte+pageSize-1)/pageSize);
       pPager->pageSize = pageSize;
+    }else{
+      sqlite3PageFree(pNew);
     }
   }
 

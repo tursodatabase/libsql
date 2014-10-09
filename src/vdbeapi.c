@@ -334,6 +334,7 @@ void sqlite3_result_text64(
 ){
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
   assert( xDel!=SQLITE_DYNAMIC );
+  if( enc==SQLITE_UTF16 ) enc = SQLITE_UTF16NATIVE;
   if( n>0x7fffffff ){
     (void)invokeValueDestructor(z, xDel, pCtx);
   }else{

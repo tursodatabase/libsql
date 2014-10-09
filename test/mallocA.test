@@ -119,8 +119,6 @@ do_execsql_test 7.0 {
   PRAGMA cache_size = 5;
 }
 do_faultsim_test 7 -faults oom-trans* -prep {
-  if {$iFail < 500} { set iFail 2000 }
-  if {$iFail > 1215} { set iFail 2000 }
 } -body {
   execsql {
     WITH r(x,y) AS (

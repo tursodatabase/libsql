@@ -4426,7 +4426,7 @@ static int fts3EvalIncrPhraseNext(
           bMaxSet = 1;
         }
       }
-      assert( rc!=SQLITE_OK || a[p->nToken-1].bIgnore==0 );
+      assert( rc!=SQLITE_OK || (p->nToken>=1 && a[p->nToken-1].bIgnore==0) );
       assert( rc!=SQLITE_OK || bMaxSet );
 
       /* Keep advancing iterators until they all point to the same document */

@@ -1437,7 +1437,7 @@ static void decodeIntArray(
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
   if( z==0 ) z = "";
 #else
-  if( NEVER(z==0) ) z = "";
+  assert( z!=0 );
 #endif
   for(i=0; *z && i<nOut; i++){
     v = 0;
@@ -1446,16 +1446,14 @@ static void decodeIntArray(
       z++;
     }
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
-    if( aOut ){
-      aOut[i] = v;
-    }else
+    if( aOut ) aOut[i] = v;
+    if( aLog ) aLog[i] = sqlite3LogEst(v);
 #else
     assert( aOut==0 );
     UNUSED_PARAMETER(aOut);
+    assert( aLog!=0 );
+    aLog[i] = sqlite3LogEst(v);
 #endif
-    {
-      aLog[i] = sqlite3LogEst(v);
-    }
     if( *z==' ' ) z++;
   }
 #ifndef SQLITE_ENABLE_STAT3_OR_STAT4
@@ -1516,8 +1514,17 @@ static int analysisLoader(void *pData, int argc, char **argv, char **NotUsed){
   z = argv[2];
 
   if( pIndex ){
+    int nCol = pIndex->nKeyCol+1;
+#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
+    tRowcnt * const aiRowEst = pIndex->aiRowEst = (tRowcnt*)sqlite3MallocZero(
+        sizeof(tRowcnt) * nCol
+    );
+    if( aiRowEst==0 ) pInfo->db->mallocFailed = 1;
+#else
+    tRowcnt * const aiRowEst = 0;
+#endif
     pIndex->bUnordered = 0;
-    decodeIntArray((char*)z, pIndex->nKeyCol+1, 0, pIndex->aiRowLogEst, pIndex);
+    decodeIntArray((char*)z, nCol, aiRowEst, pIndex->aiRowLogEst, pIndex);
     if( pIndex->pPartIdxWhere==0 ) pTable->nRowLogEst = pIndex->aiRowLogEst[0];
   }else{
     Index fakeIdx;
@@ -1576,25 +1583,38 @@ static void initAvgEq(Index *pIdx){
       pIdx->aAvgEq[nCol] = 1;
     }
     for(iCol=0; iCol<nCol; iCol++){
+      int nSample = pIdx->nSample;
       int i;                    /* Used to iterate through samples */
       tRowcnt sumEq = 0;        /* Sum of the nEq values */
-      tRowcnt nSum = 0;         /* Number of terms contributing to sumEq */
       tRowcnt avgEq = 0;
-      tRowcnt nDLt = pFinal->anDLt[iCol];
+      tRowcnt nRow;             /* Number of rows in index */
+      i64 nSum100 = 0;          /* Number of terms contributing to sumEq */
+      i64 nDist100;             /* Number of distinct values in index */
+
+      if( pIdx->aiRowEst==0 || pIdx->aiRowEst[iCol+1]==0 ){
+        nRow = pFinal->anLt[iCol];
+        nDist100 = (i64)100 * pFinal->anDLt[iCol];
+        nSample--;
+      }else{
+        nRow = pIdx->aiRowEst[0];
+        nDist100 = ((i64)100 * pIdx->aiRowEst[0]) / pIdx->aiRowEst[iCol+1];
+      }
 
       /* Set nSum to the number of distinct (iCol+1) field prefixes that
-      ** occur in the stat4 table for this index before pFinal. Set
-      ** sumEq to the sum of the nEq values for column iCol for the same
-      ** set (adding the value only once where there exist duplicate 
-      ** prefixes).  */
-      for(i=0; i<(pIdx->nSample-1); i++){
-        if( aSample[i].anDLt[iCol]!=aSample[i+1].anDLt[iCol] ){
+      ** occur in the stat4 table for this index. Set sumEq to the sum of 
+      ** the nEq values for column iCol for the same set (adding the value 
+      ** only once where there exist duplicate prefixes).  */
+      for(i=0; i<nSample; i++){
+        if( i==(pIdx->nSample-1)
+         || aSample[i].anDLt[iCol]!=aSample[i+1].anDLt[iCol] 
+        ){
           sumEq += aSample[i].anEq[iCol];
-          nSum++;
+          nSum100 += 100;
         }
       }
-      if( nDLt>nSum ){
-        avgEq = (pFinal->anLt[iCol] - sumEq)/(nDLt - nSum);
+
+      if( nDist100>nSum100 ){
+        avgEq = ((i64)100 * (nRow - sumEq))/(nDist100 - nSum100);
       }
       if( avgEq==0 ) avgEq = 1;
       pIdx->aAvgEq[iCol] = avgEq;
@@ -1845,6 +1865,11 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
     db->lookaside.bEnabled = 0;
     rc = loadStat4(db, sInfo.zDatabase);
     db->lookaside.bEnabled = lookasideEnabled;
+  }
+  for(i=sqliteHashFirst(&db->aDb[iDb].pSchema->idxHash);i;i=sqliteHashNext(i)){
+    Index *pIdx = sqliteHashData(i);
+    sqlite3_free(pIdx->aiRowEst);
+    pIdx->aiRowEst = 0;
   }
 #endif
 

@@ -31,7 +31,10 @@ int sqlite3VdbeCheckMemInvariants(Mem *p){
   */
   assert( (p->flags & MEM_Dyn)==0 || p->xDel!=0 );
 
-  /* MEM_Dyn may only be set if Mem.szMalloc==0 */
+  /* MEM_Dyn may only be set if Mem.szMalloc==0.  In this way we
+  ** ensure that if Mem.szMalloc>0 then it is safe to do
+  ** Mem.z = Mem.zMalloc without having to check Mem.flags&MEM_Dyn.
+  ** That saves a few cycles in inner loops. */
   assert( (p->flags & MEM_Dyn)==0 || p->szMalloc==0 );
 
   /* Cannot be both MEM_Int and MEM_Real at the same time */
@@ -167,7 +170,8 @@ SQLITE_NOINLINE int sqlite3VdbeMemGrow(Mem *pMem, int n, int bPreserve){
 ** if unable to complete the resizing.
 */
 int sqlite3VdbeMemClearAndResize(Mem *pMem, int szNew){
-  assert( szNew>=0 );
+  assert( szNew>0 );
+  assert( (pMem->flags & MEM_Dyn)==0 || pMem->szMalloc==0 );
   if( pMem->szMalloc<szNew ){
     return sqlite3VdbeMemGrow(pMem, szNew, 0);
   }
@@ -891,7 +895,10 @@ int sqlite3VdbeMemSetStr(
     if( nByte>iLimit ){
       return SQLITE_TOOBIG;
     }
-    if( sqlite3VdbeMemClearAndResize(pMem, nAlloc) ){
+    testcase( nAlloc==0 );
+    testcase( nAlloc==31 );
+    testcase( nAlloc==32 );
+    if( sqlite3VdbeMemClearAndResize(pMem, MAX(nAlloc,32)) ){
       return SQLITE_NOMEM;
     }
     memcpy(pMem->z, z, nAlloc);
@@ -994,7 +1001,7 @@ int sqlite3VdbeMemFromBtree(
 ** Convert it into a string with encoding enc and return a pointer
 ** to a zero-terminated version of that string.
 */
-SQLITE_NOINLINE const void *valueToText(sqlite3_value* pVal, u8 enc){
+static SQLITE_NOINLINE const void *valueToText(sqlite3_value* pVal, u8 enc){
   assert( pVal!=0 );
   assert( pVal->db==0 || sqlite3_mutex_held(pVal->db->mutex) );
   assert( (enc&3)==(enc&~SQLITE_UTF16_ALIGNED) );
