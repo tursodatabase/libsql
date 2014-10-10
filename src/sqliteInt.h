@@ -159,7 +159,7 @@
 */
 #if defined(__GNUC__)
 #  define SQLITE_NOINLINE  __attribute__((noinline))
-#elif defined(_MSC_VER)
+#elif defined(_MSC_VER) && _MSC_VER>=1310
 #  define SQLITE_NOINLINE  __declspec(noinline)
 #else
 #  define SQLITE_NOINLINE
