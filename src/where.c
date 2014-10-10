@@ -5827,12 +5827,19 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
     if( (pWInfo->wctrlFlags & WHERE_SORTBYGROUP)
         && pWInfo->nOBSat==pWInfo->pOrderBy->nExpr
     ){
-      Bitmask notUsed = 0;
-      int nOrder = wherePathSatisfiesOrderBy(pWInfo, pWInfo->pOrderBy, 
-          pFrom, 0, nLoop-1, pFrom->aLoop[nLoop-1], &notUsed
-      );
+      Bitmask revMask = 0;
+      int nOrder;
+      assert( pWInfo->wctrlFlags & WHERE_GROUPBY );
       assert( pWInfo->sorted==0 );
-      pWInfo->sorted = (nOrder==pWInfo->pOrderBy->nExpr);
+      pWInfo->wctrlFlags &= ~WHERE_GROUPBY;
+      nOrder = wherePathSatisfiesOrderBy(pWInfo, pWInfo->pOrderBy, 
+          pFrom, 0, nLoop-1, pFrom->aLoop[nLoop-1], &revMask
+      );
+      pWInfo->wctrlFlags |= WHERE_GROUPBY;
+      if( nOrder==pWInfo->pOrderBy->nExpr ){
+        pWInfo->sorted = 1;
+        pWInfo->revMask = revMask;
+      }
     }
   }
 
