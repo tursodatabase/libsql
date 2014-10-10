@@ -2209,8 +2209,8 @@ static int whereRangeScanEst(
 
       assert( pLower==0 || (pLower->eOperator & (WO_GT|WO_GE))!=0 );
       assert( pUpper==0 || (pUpper->eOperator & (WO_LT|WO_LE))!=0 );
-      assert( p->pKeyInfo!=0 && p->pKeyInfo->aSortOrder!=0 );
-      if( p->pKeyInfo->aSortOrder[nEq] ){
+      assert( p->aSortOrder!=0 );
+      if( p->aSortOrder[nEq] ){
         /* The roles of pLower and pUpper are swapped for a DESC index */
         SWAP(WhereTerm*, pLower, pUpper);
       }
