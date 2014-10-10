@@ -205,6 +205,10 @@ test_expr expr-1.125 {i1=6, i2=NULL} \
 test_expr expr-1.126 {i1=8, i2=8} \
   {CASE WHEN i1 IS NOT i2 THEN 'yes' ELSE 'no' END} no
 
+do_catchsql_test expr-1.127 {
+  SELECT 1 IS #1;
+} {1 {near "#1": syntax error}}
+
 ifcapable floatingpoint {if {[working_64bit_int]} {
   test_expr expr-1.200\
       {i1=9223372036854775806, i2=1} {i1+i2}      9223372036854775807

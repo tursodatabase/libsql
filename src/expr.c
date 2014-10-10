@@ -3339,6 +3339,7 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
     case TK_LSHIFT:  zBinOp = "LSHIFT"; break;
     case TK_RSHIFT:  zBinOp = "RSHIFT"; break;
     case TK_CONCAT:  zBinOp = "CONCAT"; break;
+    case TK_DOT:     zBinOp = "DOT";    break;
 
     case TK_UMINUS:  zUniOp = "UMINUS"; break;
     case TK_UPLUS:   zUniOp = "UPLUS";  break;
