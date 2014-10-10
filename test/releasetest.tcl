@@ -341,6 +341,7 @@ proc process_options {argv} {
   }
 
   if {$config!=""} {
+    if {[llength $config]==1} {lappend config fulltest}
     set ::CONFIGLIST $config
   } else {
     set ::CONFIGLIST $::Platforms($platform)
