@@ -2876,6 +2876,13 @@ static void explainOneScan(
                   pLoop->u.vtab.idxNum, pLoop->u.vtab.idxStr);
     }
 #endif
+#ifdef SQLITE_EXPLAIN_ESTIMATED_ROWS
+    if( pLoop->nOut>=10 ){
+      sqlite3XPrintf(&str, 0, " (~%llu rows)", sqlite3LogEstToInt(pLoop->nOut));
+    }else{
+      sqlite3StrAccumAppend(&str, " (~1 row)", 9);
+    }
+#endif
     zMsg = sqlite3StrAccumFinish(&str);
     sqlite3VdbeAddOp4(v, OP_Explain, iId, iLevel, iFrom, zMsg, P4_DYNAMIC);
   }

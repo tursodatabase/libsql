@@ -1,5 +1,5 @@
-C Simplify\sthe\scode\sused\sto\sgenerate\sthe\stext\sfor\sEXPLAIN\sQUERY\sPLAN.
-D 2014-10-10T15:47:46.266
+C Add\sthe\sestimated\snumber\sof\soutput\srows\sto\sthe\sEXPLAIN\sQUERY\sPLAN\soutput\nif\scompiled\swith\sSQLITE_EXPLAIN_ESTIMATED_ROWS.\s\sThis\sfeature\sis\soff\sby\ndefault\sfor\sthe\stime\sbeing.
+D 2014-10-10T17:20:39.349
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -302,7 +302,7 @@ F src/vtab.c 019dbfd0406a7447c990e1f7bd1dfcdb8895697f
 F src/wal.c 10e7de7ce90865a68153f001a61f1d985cd17983
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
-F src/where.c 23b9e5dd96a51657fb7d81091c28cd84f54dc8a0
+F src/where.c b511252533ca9f70e6adfc0ffd5c82594df137a2
 F src/whereInt.h 124d970450955a6982e174b07c320ae6d62a595c
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1203,7 +1203,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 68e1b4de700b5291f79249a03e1a750c6b2c9ae4
-R 1d64962e74f9e7c1f94f06e344d62c75
+P beea1efc3a49cad08087fcbb18dbce71c873fe57
+R a0896f7681cce645a858136a6e4bda47
 U drh
-Z 5a7fbeb924ed3728c1bc69e5188e226a
+Z 8fddc2c9d3b88cabdf0b2692b84338ef
