@@ -2749,7 +2749,7 @@ static void explainAppendTerm(
 **
 **   "a=? AND b>?"
 */
-void explainIndexRange(StrAccum *pStr, WhereLoop *pLoop, Table *pTab){
+static void explainIndexRange(StrAccum *pStr, WhereLoop *pLoop, Table *pTab){
   Index *pIndex = pLoop->u.btree.pIndex;
   u16 nEq = pLoop->u.btree.nEq;
   u16 nSkip = pLoop->u.btree.nSkip;
