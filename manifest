@@ -1,5 +1,5 @@
-C Add\sthe\sestimated\snumber\sof\soutput\srows\sto\sthe\sEXPLAIN\sQUERY\sPLAN\soutput\nif\scompiled\swith\sSQLITE_EXPLAIN_ESTIMATED_ROWS.\s\sThis\sfeature\sis\soff\sby\ndefault\sfor\sthe\stime\sbeing.
-D 2014-10-10T17:20:39.349
+C Provide\sthe\snew\s"-config\sCONFIG"\soption\sto\sthe\stest/releasetest.tcl\sscript,\nwhich\sallows\sone\sto\srun\sa\ssingle\stest\sconfiguration\sselected\sby\sname.
+D 2014-10-10T17:44:03.334
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -783,7 +783,7 @@ F test/rdonly.test dd30a4858d8e0fbad2304c2bd74a33d4df36412a
 F test/regexp1.test 497ea812f264d12b6198d6e50a76be4a1973a9d8
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
 F test/releasetest.mk 2eced2f9ae701fd0a29e714a241760503ccba25a
-F test/releasetest.tcl a0df0dfc5e3ee83ade87b9cc96db41b52d590b9e
+F test/releasetest.tcl aa7aea9bacd0d76b3d9d5754bb1846d10103af57
 F test/resolver01.test 33abf37ff8335e6bf98f2b45a0af3e06996ccd9a
 F test/rollback.test e9504a009a202c3ed711da2e6879ff60c5a4669c
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
@@ -1203,7 +1203,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P beea1efc3a49cad08087fcbb18dbce71c873fe57
-R a0896f7681cce645a858136a6e4bda47
+P daa8314fba9dc3c4f5e7fbda42c97604fbfc4392
+R d16c504828c83cfa33bdf3d0eaba9ed0
 U drh
-Z 8fddc2c9d3b88cabdf0b2692b84338ef
+Z b39929cd4032458ed60510f729a1a0e8
