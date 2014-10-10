@@ -1,5 +1,5 @@
-C Allow\sFTS\stokenizers\sto\schoose\swhether\sor\snot\sto\sconsider\sthe\s"*"\scharacter\spart\sof\stokens\sor\snot.\sThis\srestores\sthe\spre-[e21bf7a2ad]\sbehaviour.\sAlso\sfix\sa\sproblem\scausing\sFTS\sto\sinterpret\stokens\sbeginning\swith\s"*"\scharacters\sas\sEOF.
-D 2014-10-09T15:08:17.615
+C Cause\sthe\scommand-line\sshell\sto\sreturn\snon-zero\sif\sthe\sfinal\sSQL\sstatement\nis\sincomplete.
+D 2014-10-10T13:08:33.966
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -228,7 +228,7 @@ F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c a3466128b52a86c466e47ac1a19e2174f7b5cf89
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c f11533162b57ed5ed37f549add34cbcdf51f6712
-F src/shell.c 38f627b0885191357f55902a3ac199de90d79715
+F src/shell.c 18ee8bbe9502d8848072dc2eddd1ea09254ba494
 F src/sqlite.h.in 4a5e5158c189d2bcd45c7c4607c2c0eb6d25c153
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
@@ -1203,7 +1203,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P bae36d544676c90e337381a83f4513b4d925ab05
-R f3cda043ab8d3408ba2f57353f2b5a88
-U dan
-Z 374021995a45280d12595d646a4004c7
+P 49dfee7cd1c9ab2901b8a871a6cd00b2ead76801
+R cb2ddf412f0df2d20c53503ae15115d8
+U drh
+Z 473a503ca2f65e4944005f1668696768
