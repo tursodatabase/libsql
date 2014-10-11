@@ -1,5 +1,5 @@
-C Make\ssure\sthat\sa\sGROUP\sBY\sthat\salso\simplements\san\sORDER\sBY\sscans\sthe\stable\nin\sthe\scorrect\sorder.\s\sFix\sfor\sticket\s[ba7cbfaedc7e6].
-D 2014-10-11T02:12:58.777
+C Require\sthe\sSQLITE_ENABLE_RTREE\scompile-time\soption\sin\sspeedtest1.c\sin\sorder\nto\senable\sthe\sR-Tree\stests.
+D 2014-10-11T10:52:54.590
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -860,7 +860,7 @@ F test/speed3.test d32043614c08c53eafdc80f33191d5bd9b920523
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
-F test/speedtest1.c 83f6b3318f7ee60e52b978b5a5e5dd7e83dfb7ee
+F test/speedtest1.c e4e2aa37ff66bad9f414a50a8cb9edfaac65c9e5
 F test/spellfix.test 24f676831acddd2f4056a598fd731a72c6311f49
 F test/sqllimits1.test 9014524e7ab16e2a4976b13397db4c29cc29c6d9
 F test/stat.test 76fd746b85459e812a0193410fb599f0531f22de
@@ -1204,8 +1204,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c5dc83ebded914f07286b7f98d0a50c28c16f609 2a9573962b837973c4959465d8a5f2641d109a5a
-R 6f36f8a6a865ae8ec418dbbf6437f4b9
-T +closed 2a9573962b837973c4959465d8a5f2641d109a5a
+P 7a32fdfd4be2138c0ab00f3dc6f54a70e4e07be4
+R 4281e286fbeeaa18c9716d9bb0cdd63c
 U drh
-Z b85f219ca12b10b385d8fb433d0ee994
+Z 50870d5e316ccf74380338fbaf696334
