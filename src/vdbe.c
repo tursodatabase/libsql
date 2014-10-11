@@ -2332,14 +2332,6 @@ case OP_Column: {
     pC->iHdrOffset = getVarint32(pC->aRow, offset);
     pC->nHdrParsed = 0;
     aOffset[0] = offset;
-    if( avail<offset ){
-      /* pC->aRow does not have to hold the entire row, but it does at least
-      ** need to cover the header of the record.  If pC->aRow does not contain
-      ** the complete header, then set it to zero, forcing the header to be
-      ** dynamically allocated. */
-      pC->aRow = 0;
-      pC->szRow = 0;
-    }
 
     /* Make sure a corrupt database has not given us an oversize header.
     ** Do this now to avoid an oversize memory allocation.
@@ -2354,6 +2346,22 @@ case OP_Column: {
       rc = SQLITE_CORRUPT_BKPT;
       goto op_column_error;
     }
+
+    if( avail<offset ){
+      /* pC->aRow does not have to hold the entire row, but it does at least
+      ** need to cover the header of the record.  If pC->aRow does not contain
+      ** the complete header, then set it to zero, forcing the header to be
+      ** dynamically allocated. */
+      pC->aRow = 0;
+      pC->szRow = 0;
+    }
+
+    /* The following goto is an optimization.  It can be omitted and
+    ** everything will still work.  But OP_Column is measurably faster
+    ** by skipping the subsequent conditional, which is always true.
+    */
+    assert( pC->nHdrParsed<=p2 );         /* Conditional skipped */
+    goto op_column_read_header;
   }
 
   /* Make sure at least the first p2+1 entries of the header have been
@@ -2363,6 +2371,7 @@ case OP_Column: {
     /* If there is more header available for parsing in the record, try
     ** to extract additional fields up through the p2+1-th field 
     */
+    op_column_read_header:
     if( pC->iHdrOffset<aOffset[0] ){
       /* Make sure zData points to enough of the record to cover the header. */
       if( pC->aRow==0 ){
