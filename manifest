@@ -1,5 +1,5 @@
-C Require\sthe\sSQLITE_ENABLE_RTREE\scompile-time\soption\sin\sspeedtest1.c\sin\sorder\nto\senable\sthe\sR-Tree\stests.
-D 2014-10-11T10:52:54.590
+C Simplification\sto\sthe\sinsertCell()\sroutine\sin\sbtree.c,\sresulting\sin\sa\nperformance\sboost\sand\sa\svery\ssmall\ssize\sdecrease.\s\sIt\sturns\sout\sthat\sthe\nextra\swork\sinvolved\sin\ssometimes\savoiding\san\smemcpy()\sof\sthe\sfirst\sfour\sbytes\nof\sa\srecord\stakes\smore\stime\sthan\sjust\sunconditionally\scopying\sthose\nfour\sbytes.
+D 2014-10-11T17:22:55.486
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -172,7 +172,7 @@ F src/auth.c d8abcde53426275dab6243b441256fcd8ccbebb2
 F src/backup.c a31809c65623cc41849b94d368917f8bb66e6a7e
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 49ca66250c7dfa844a4d4cb8272b87420d27d3a5
-F src/btree.c fa00618117fb6bb46c243452c56997c0d22d4fc9
+F src/btree.c 5c0b78c49d00da49a0e8e3d2738900a431df7fca
 F src/btree.h a79aa6a71e7f1055f01052b7f821bd1c2dce95c8
 F src/btreeInt.h 1bd7957161a1346a914f1f09231610e777a8e58d
 F src/build.c 9e5205db9a0c8a1a4ce7379d60a2a34cb0b7339c
@@ -1204,7 +1204,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7a32fdfd4be2138c0ab00f3dc6f54a70e4e07be4
-R 4281e286fbeeaa18c9716d9bb0cdd63c
+P 5d29a033b0f17b0fd74656b28a8367a9a9067f81
+R 8d2ebada6cfcd93628f86065b0703bad
 U drh
-Z 50870d5e316ccf74380338fbaf696334
+Z b915e33ee9cbdc5e832f0d58216a79da
