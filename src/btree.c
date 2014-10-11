@@ -5980,10 +5980,9 @@ static void assemblePage(
 
 static void rebuildPage(
   MemPage *pPg,                   /* Edit this page */
-  int nRemove,                    /* Cells to remove from start of page */
   int nCell,                      /* Final number of cells on page */
-  u8 **apCell,                    /* Array of nCell final cells */
-  u16 *szCell                     /* Array of nCell cell sizes */
+  u8 **apCell,                    /* Array of cells */
+  u16 *szCell                     /* Array of cell sizes */
 ){
   const int hdr = pPg->hdrOffset;          /* Offset of header on pPg */
   u8 * const aData = pPg->aData;           /* Pointer to data for pPg */
@@ -6018,6 +6017,129 @@ static void rebuildPage(
   put2byte(&aData[hdr+3], pPg->nCell);
   put2byte(&aData[hdr+5], pData - aData);
   aData[hdr+7] = 0x00;
+}
+
+static void editPage(
+  MemPage *pPg,                   /* Edit this page */
+  int iOld,                       /* Index of first cell currently on page */
+  int iNew,                       /* Index of new first cell on page */
+  int nNew,                       /* Final number of cells on page */
+  u8 **apCell,                    /* Array of cells */
+  u16 *szCell                     /* Array of cell sizes */
+){
+
+  if( 1 ){
+    u8 * const aData = pPg->aData;
+    const int hdr = pPg->hdrOffset;
+    u8 *pBegin = &pPg->aCellIdx[nNew * 2];
+    int nFree = pPg->nFree;       /* Free bytes on pPg */
+    int nCell = pPg->nCell;       /* Cells stored on pPg */
+    u8 *pData;
+    u8 *pCellptr;
+    int i;
+    int iOldEnd = iOld + pPg->nCell + pPg->nOverflow;
+
+#ifdef SQLITE_DEBUG
+    u8 *pTmp = sqlite3PagerTempSpace(pPg->pBt->pPager);
+    memcpy(pTmp, aData, pPg->pBt->usableSize);
+#endif
+
+    /* Remove cells from the start and end of the page */
+    if( iOld<iNew ){
+      int nShift = 0;
+      for(i=iOld; i<iNew; i++){
+        if( apCell[i]>aData && apCell[i]<&aData[pPg->pBt->usableSize] ){
+          freeSpace(pPg, apCell[i] - aData, szCell[i]);
+          nFree += szCell[i] + 2;
+          nShift++;
+        }
+      }
+      nCell -= nShift;
+      memmove(pPg->aCellIdx, &pPg->aCellIdx[nShift*2], nCell*2);
+    }
+    for(i=iNew+nNew; i<iOldEnd; i++){
+      if( apCell[i]>aData && apCell[i]<&aData[pPg->pBt->usableSize] ){
+        freeSpace(pPg, apCell[i] - aData, szCell[i]);
+        nFree += szCell[i] + 2;
+        nCell--;
+      }
+    }
+    pData = &aData[get2byte(&aData[hdr+5])];
+    if( pData<pBegin ) goto editpage_fail;
+
+    /* Add cells to the start of the page */
+    if( iNew<iOld ){
+      pCellptr = pPg->aCellIdx;
+      memmove(&pCellptr[(iOld-iNew)*2], pCellptr, nCell*2);
+      for(i=iNew; i<iOld; i++){
+        pData -= szCell[i];
+        if( pData<pBegin ) goto editpage_fail;
+        memcpy(pData, apCell[i], szCell[i]);
+        put2byte(pCellptr, (pData - aData));
+        pCellptr += 2;
+        nFree -= (szCell[i] + 2);
+        nCell++;
+      }
+    }
+
+    /* Add any overflow cells */
+    for(i=0; i<pPg->nOverflow; i++){
+      int iCell = (iOld + pPg->aiOvfl[i]) - iNew;
+      if( iCell>=0 && iCell<nNew ){
+        u8 *pCellptr = &pPg->aCellIdx[iCell * 2];
+        int sz = szCell[iCell+iNew];
+        memmove(&pCellptr[2], pCellptr, (nCell - iCell) * 2);
+        pData -= sz;
+        if( pData<pBegin ) goto editpage_fail;
+        memcpy(pData, apCell[iCell+iNew], sz);
+        put2byte(pCellptr, (pData - aData));
+        nFree -= (sz + 2);
+        nCell++;
+      }
+    }
+
+    /* Append cells to the end of the page */
+    pCellptr = &pPg->aCellIdx[nCell*2];
+    for(i=iNew+nCell; i<(iNew+nNew); i++){
+      pData -= szCell[i];
+      if( pData<pBegin ) goto editpage_fail;
+      memcpy(pData, apCell[i], szCell[i]);
+      put2byte(pCellptr, (pData - aData));
+      pCellptr += 2;
+      nFree -= (szCell[i] + 2);
+    }
+
+    pPg->nFree = nFree;
+    pPg->nCell = nNew;
+    pPg->nOverflow = 0;
+
+    put2byte(&aData[hdr+3], pPg->nCell);
+    put2byte(&aData[hdr+5], pData - aData);
+
+#ifdef SQLITE_DEBUG
+    for(i=0; i<nNew; i++){
+      u8 *pCell = apCell[i+iNew];
+      int iOff = get2byte(&pPg->aCellIdx[i*2]);
+      if( pCell>=aData && pCell<&aData[pPg->pBt->usableSize] ){
+        pCell = &pTmp[pCell - aData];
+      }
+      assert( 0==memcmp(pCell, &aData[iOff], szCell[i+iNew]) );
+    }
+#endif
+
+#if 0
+  printf("EDIT\n");
+#endif
+
+    return;
+  }
+
+ editpage_fail:
+#if 0
+  printf("REBUILD\n");
+#endif
+  /* Unable to edit this page. Rebuild it from scratch instead. */
+  rebuildPage(pPg, nNew, &apCell[iNew], &szCell[iNew]);
 }
 
 /*
@@ -6312,6 +6434,7 @@ static int balance_nonroot(
   u8 *pRight;                  /* Location in parent of right-sibling pointer */
   u8 *apDiv[NB-1];             /* Divider cells in pParent */
   int cntNew[NB+2];            /* Index in aCell[] of cell after i-th page */
+  int cntOld[NB+2];            /* Old index in aCell[] after i-th page */
   int szNew[NB+2];             /* Combined size of cells place on i-th page */
   u8 **apCell = 0;             /* All cells begin balanced */
   u16 *szCell;                 /* Local size of all cells in apCell[] */
@@ -6487,6 +6610,7 @@ static int balance_nonroot(
         nCell++;
       }
     }       
+    cntOld[i] = nCell;
     if( i<nOld-1 && !leafData){
       u16 sz = (u16)szNew[i];
       u8 *pTemp;
@@ -6624,6 +6748,7 @@ static int balance_nonroot(
       zeroPage(pNew, pageFlags);
       apNew[i] = pNew;
       nNew++;
+      cntOld[i] = nCell;
 
       /* Set the pointer-map entry for the new sibling page. */
       if( ISAUTOVACUUM ){
@@ -6693,6 +6818,33 @@ static int balance_nonroot(
     ** to the apCell[] index of the first cell that will appear on the
     ** page following this balancing operation.  */
     int iFirst = (i==0 ? 0 : cntNew[i-1] + !leafData);     /* new first cell */
+
+#if 0
+    MemPage *pNew = apNew[i];
+    int iCell;
+    int nCta = 0;
+    int nFree;
+
+    printf("REBUILD %d: %d@%d -> %d@%d", apNew[i]->pgno,
+          pNew->nCell+pNew->nOverflow, j,
+          cntNew[i] - iFirst, iFirst
+    );
+    for(iCell=iFirst; iCell<cntNew[i]; iCell++){
+      if( apCell[iCell]<pNew->aData 
+       || apCell[iCell]>=&pNew->aData[pBt->usableSize] 
+      ){
+        nCta += szCell[iCell];
+      }
+    }
+    nFree = get2byte(&pNew->aData[pNew->hdrOffset+5]);
+    nFree -= (pNew->cellOffset + (cntNew[i] - iFirst) * 2);
+    printf(" cta=%d free=%d\n", nCta, nFree);
+    if( i==(nNew-1) ){
+      printf("-----\n");
+      fflush(stdout);
+    }
+#endif
+
     assert( i<nOld || j==nCell );
     aShiftLeft[i] = j - iFirst;
     j += apNew[i]->nCell + apNew[i]->nOverflow;
@@ -6835,17 +6987,23 @@ static int balance_nonroot(
      && (aShiftLeft[iPg]>=0 || abDone[iPg-1])
      && (aShiftRight[iPg]>=0 || abDone[iPg+1])
     ){
-      MemPage *pNew = apNew[iPg];
-      int iLeft = ((iPg==0) ? 0 : cntNew[iPg-1] + !leafData);
-      rebuildPage(pNew, 
-          aShiftLeft[iPg] < 0 ? (aShiftLeft[iPg]*-1) : 0,
-          cntNew[iPg] - iLeft,
-          &apCell[iLeft],
-          &szCell[iLeft]
-      );
+      int iNew;
+      int iOld;
+      int nNewCell;
+
+      if( iPg==0 ){
+        iNew = iOld = 0;
+        nNewCell = cntNew[0];
+      }else{
+        iOld = iPg<nOld ? (cntOld[iPg-1] + !leafData) : nCell;
+        iNew = cntNew[iPg-1] + !leafData;
+        nNewCell = cntNew[iPg] - iNew;
+      }
+
+      editPage(apNew[iPg], iOld, iNew, nNewCell, apCell, szCell);
       abDone[iPg] = 1;
-      assert( pNew->nOverflow==0 );
-      assert( pNew->nCell==(cntNew[iPg] - (iPg==0?0:cntNew[iPg-1]+!leafData)) );
+      assert( apNew[iPg]->nOverflow==0 );
+      assert( apNew[iPg]->nCell==nNewCell );
     }
   }
   assert( memcmp(abDone, "\01\01\01\01\01", nNew)==0 );
@@ -6869,6 +7027,7 @@ static int balance_nonroot(
     ** is important if the parent page happens to be page 1 of the database
     ** image.  */
     assert( nNew==1 );
+    defragmentPage(apNew[0]);
     assert( apNew[0]->nFree == 
         (get2byte(&apNew[0]->aData[5])-apNew[0]->cellOffset-apNew[0]->nCell*2) 
     );
