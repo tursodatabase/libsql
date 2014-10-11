@@ -2838,9 +2838,7 @@ static void explainOneScan(
       pIdx = pLoop->u.btree.pIndex;
       assert( !(flags&WHERE_AUTO_INDEX) || (flags&WHERE_IDX_ONLY) );
       if( !HasRowid(pItem->pTab) && IsPrimaryKeyIndex(pIdx) ){
-        if( pLoop->u.btree.nEq>0
-         || (pLoop->wsFlags & (WHERE_BTM_LIMIT|WHERE_TOP_LIMIT))!=0
-        ){
+        if( isSearch ){
           zFmt = "PRIMARY KEY";
         }
       }else if( flags & WHERE_AUTO_INDEX ){
