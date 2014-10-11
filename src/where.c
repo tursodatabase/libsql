@@ -5360,7 +5360,7 @@ static i8 wherePathSatisfiesOrderBy(
           isMatch = 1;
           break;
         }
-        if( isMatch && (pWInfo->wctrlFlags & WHERE_GROUPBY)==0 ){
+        if( isMatch && (wctrlFlags & WHERE_GROUPBY)==0 ){
           /* Make sure the sort order is compatible in an ORDER BY clause.
           ** Sort order is irrelevant for a GROUP BY clause. */
           if( revSet ){
@@ -5825,12 +5825,15 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
     if( (pWInfo->wctrlFlags & WHERE_SORTBYGROUP)
         && pWInfo->nOBSat==pWInfo->pOrderBy->nExpr
     ){
-      Bitmask notUsed = 0;
+      Bitmask revMask = 0;
       int nOrder = wherePathSatisfiesOrderBy(pWInfo, pWInfo->pOrderBy, 
-          pFrom, 0, nLoop-1, pFrom->aLoop[nLoop-1], &notUsed
+          pFrom, 0, nLoop-1, pFrom->aLoop[nLoop-1], &revMask
       );
       assert( pWInfo->sorted==0 );
-      pWInfo->sorted = (nOrder==pWInfo->pOrderBy->nExpr);
+      if( nOrder==pWInfo->pOrderBy->nExpr ){
+        pWInfo->sorted = 1;
+        pWInfo->revMask = revMask;
+      }
     }
   }
 

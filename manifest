@@ -1,5 +1,5 @@
-C Remove\san\sunnecessary\sconditional\sfrom\sthe\sEXPLAIN\sQUERY\sPLAN\slogic.
-D 2014-10-11T01:22:16.169
+C Make\ssure\sthat\sa\sGROUP\sBY\sthat\salso\simplements\san\sORDER\sBY\sscans\sthe\stable\nin\sthe\scorrect\sorder.\s\sFix\sfor\sticket\s[ba7cbfaedc7e6].
+D 2014-10-11T02:12:58.777
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -302,7 +302,7 @@ F src/vtab.c 019dbfd0406a7447c990e1f7bd1dfcdb8895697f
 F src/wal.c 10e7de7ce90865a68153f001a61f1d985cd17983
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
-F src/where.c 45202a9a2848848a17b64316fe87bdb5a75f5910
+F src/where.c 2947912f1f3d6a7766fe087fd532a5d688d745b1
 F src/whereInt.h 124d970450955a6982e174b07c320ae6d62a595c
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -933,6 +933,7 @@ F test/tkt-b1d3a2e531.test 8f7576e41ca179289ee1a8fee28386fd8e4b0550
 F test/tkt-b351d95f9.test d14a503c414c5c58fdde3e80f9a3cfef986498c0
 F test/tkt-b72787b1.test a95e8cdad0b98af1853ac7f0afd4ab27b77bf5f3
 F test/tkt-b75a9ca6b0.test 97cc2d5eeaf82799eb42138c0a1ff64370238ce4
+F test/tkt-ba7cbfaedc.test e76d88e572e489ee0d64fe4caf4af18b3d1dc688
 F test/tkt-bd484a090c.test 60460bf946f79a79712b71f202eda501ca99b898
 F test/tkt-bdc6bbbb38.test fc38bb09bdd440e3513a1f5f98fc60a075182d7d
 F test/tkt-c48d99d690.test ba61977d62ab612fc515b3c488a6fbd6464a2447
@@ -1203,7 +1204,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c30124520027f0f860223bf842e2f09db3dafb5f
-R 76a395c9de317da89295170f9596fa71
+P c5dc83ebded914f07286b7f98d0a50c28c16f609 2a9573962b837973c4959465d8a5f2641d109a5a
+R 6f36f8a6a865ae8ec418dbbf6437f4b9
+T +closed 2a9573962b837973c4959465d8a5f2641d109a5a
 U drh
-Z efd3e7a68804083aa9d3740b204464db
+Z b85f219ca12b10b385d8fb433d0ee994
