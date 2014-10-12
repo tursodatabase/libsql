@@ -1,5 +1,5 @@
-C Performance\soptimization\sand\svery\sslight\ssize\sreduction\sfor\sOP_Column.
-D 2014-10-11T23:31:52.159
+C Remove\sthe\sVdbeCursor.lastRowid\scache\sof\sthe\scurrent\srowid,\ssince\smaintaining\nthe\scorrect\scache\svalue\suses\smore\sCPU\scycles\sthan\sjust\srecomputing\sthe\srowid\non\sthe\soccasions\swhen\sit\sis\sactually\sneeded.\s\sReplace\sit\swith\sthe\nVdbeCursor.aOffset\sfield\swhich\sused\sto\sbe\scomputed\sfrom\sVdbeCursor.aType\nwhen\sneeded.\sSaves\s100\sbytes\sof\scode\sspace\sand\sruns\s0.2%\sfaster.
+D 2014-10-12T22:37:22.384
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -289,11 +289,11 @@ F src/update.c 729f6f18fc27740591d085e1172cebe311144bf0
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c 4006c01772bd8d8ac4306d523bbcee41d3e392d8
 F src/vacuum.c 59f03f92bcff57faa6a8ca256eb29ccddfb0614a
-F src/vdbe.c 58c19340f009d29b63d3701bd1871aad03e4c134
+F src/vdbe.c 97c6c50e272ed531bc3af308d5f156cfca0ce4f4
 F src/vdbe.h 09f5b4e3719fa454f252322b1cdab5cf1f361327
-F src/vdbeInt.h 0b97a3190f8fbf460655985a9183019f5a702754
+F src/vdbeInt.h e1173bd72b282633c2ec8f3a2f78b5117229f268
 F src/vdbeapi.c 37a6c6ae284a97bcace365f2f0a225680c0499d9
-F src/vdbeaux.c 5b687d7b5beaaa5b97189edf25cf08c311834933
+F src/vdbeaux.c e223d15ab39c844c04ad19931e8c71966c20c68d
 F src/vdbeblob.c 848238dc73e93e48432991bb5651bf87d865eca4
 F src/vdbemem.c 481327f50d9da330053aa7456702ce46d0a4e70f
 F src/vdbesort.c 5c1bacf90578d22b630fbf6ed98ccf60d83435ef
@@ -1204,7 +1204,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 66de15580d3c289601e67debfe1edee286f4db5f
-R 512122d0d240ac7f0b4d899edd214ecb
+P 869c30e45cc87063be423c650f16b99e8adb3df0
+R d569318d3e6a6b025c49ffecae9bf7d4
 U drh
-Z 7a9b66d8d53ebbf7b4743296d025a097
+Z e6cf351e034f82bffef92232dfc65ffe

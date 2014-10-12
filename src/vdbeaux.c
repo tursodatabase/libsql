@@ -2718,9 +2718,7 @@ static int SQLITE_NOINLINE handleDeferredMoveto(VdbeCursor *p){
   assert( p->isTable );
   rc = sqlite3BtreeMovetoUnpacked(p->pCursor, 0, p->movetoTarget, 0, &res);
   if( rc ) return rc;
-  p->lastRowid = p->movetoTarget;
   if( res!=0 ) return SQLITE_CORRUPT_BKPT;
-  p->rowidIsValid = 1;
 #ifdef SQLITE_TEST
   sqlite3_search_count++;
 #endif

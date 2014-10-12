@@ -214,6 +214,7 @@ static VdbeCursor *allocateCursor(
     memset(pCx, 0, sizeof(VdbeCursor));
     pCx->iDb = iDb;
     pCx->nField = nField;
+    pCx->aOffset = &pCx->aType[nField];
     if( isBtreeCursor ){
       pCx->pCursor = (BtCursor*)
           &pMem->z[ROUND8(sizeof(VdbeCursor))+2*sizeof(u32)*nField];
@@ -2276,7 +2277,7 @@ case OP_Column: {
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
   assert( p2<pC->nField );
-  aOffset = pC->aType + pC->nField;
+  aOffset = pC->aOffset;
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   assert( pC->pVtabCursor==0 ); /* OP_Column never called on virtual table */
 #endif
@@ -3563,7 +3564,6 @@ case OP_SeekGT: {       /* jump, in3 */
       applyNumericAffinity(pIn3, 0);
     }
     iKey = sqlite3VdbeIntValue(pIn3);
-    pC->rowidIsValid = 0;
 
     /* If the P3 value could not be converted into an integer without
     ** loss of information, then special processing is required... */
@@ -3599,12 +3599,9 @@ case OP_SeekGT: {       /* jump, in3 */
       }
     } 
     rc = sqlite3BtreeMovetoUnpacked(pC->pCursor, 0, (u64)iKey, 0, &res);
+    pC->movetoTarget = iKey;  /* Used by OP_Delete */
     if( rc!=SQLITE_OK ){
       goto abort_due_to_error;
-    }
-    if( res==0 ){
-      pC->rowidIsValid = 1;
-      pC->lastRowid = iKey;
     }
   }else{
     nField = pOp->p4.i;
@@ -3635,7 +3632,6 @@ case OP_SeekGT: {       /* jump, in3 */
     if( rc!=SQLITE_OK ){
       goto abort_due_to_error;
     }
-    pC->rowidIsValid = 0;
   }
   pC->deferredMoveto = 0;
   pC->cacheStatus = CACHE_STALE;
@@ -3647,7 +3643,6 @@ case OP_SeekGT: {       /* jump, in3 */
       res = 0;
       rc = sqlite3BtreeNext(pC->pCursor, &res);
       if( rc!=SQLITE_OK ) goto abort_due_to_error;
-      pC->rowidIsValid = 0;
     }else{
       res = 0;
     }
@@ -3657,7 +3652,6 @@ case OP_SeekGT: {       /* jump, in3 */
       res = 0;
       rc = sqlite3BtreePrevious(pC->pCursor, &res);
       if( rc!=SQLITE_OK ) goto abort_due_to_error;
-      pC->rowidIsValid = 0;
     }else{
       /* res might be negative because the table is empty.  Check to
       ** see if this is the case.
@@ -3694,7 +3688,6 @@ case OP_Seek: {    /* in2 */
   pC->nullRow = 0;
   pIn2 = &aMem[pOp->p2];
   pC->movetoTarget = sqlite3VdbeIntValue(pIn2);
-  pC->rowidIsValid = 0;
   pC->deferredMoveto = 1;
   break;
 }
@@ -3880,15 +3873,13 @@ case OP_NotExists: {        /* jump, in3 */
   res = 0;
   iKey = pIn3->u.i;
   rc = sqlite3BtreeMovetoUnpacked(pCrsr, 0, iKey, 0, &res);
-  pC->lastRowid = pIn3->u.i;
-  pC->rowidIsValid = res==0 ?1:0;
+  pC->movetoTarget = iKey;  /* Used by OP_Delete */
   pC->nullRow = 0;
   pC->cacheStatus = CACHE_STALE;
   pC->deferredMoveto = 0;
   VdbeBranchTaken(res!=0,2);
   if( res!=0 ){
     pc = pOp->p2 - 1;
-    assert( pC->rowidIsValid==0 );
   }
   pC->seekResult = res;
   break;
@@ -4036,7 +4027,6 @@ case OP_NewRowid: {           /* out2-prerelease */
       }
       assert( v>0 );  /* EV: R-40812-03570 */
     }
-    pC->rowidIsValid = 0;
     pC->deferredMoveto = 0;
     pC->cacheStatus = CACHE_STALE;
   }
@@ -4141,7 +4131,6 @@ case OP_InsertInt: {
                           pData->z, pData->n, nZero,
                           (pOp->p5 & OPFLAG_APPEND)!=0, seekResult
   );
-  pC->rowidIsValid = 0;
   pC->deferredMoveto = 0;
   pC->cacheStatus = CACHE_STALE;
 
@@ -4178,33 +4167,32 @@ case OP_InsertInt: {
 ** using OP_NotFound prior to invoking this opcode.
 */
 case OP_Delete: {
-  i64 iKey;
   VdbeCursor *pC;
 
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
   assert( pC->pCursor!=0 );  /* Only valid for real tables, no pseudotables */
-  iKey = pC->lastRowid;      /* Only used for the update hook */
-
-  /* The OP_Delete opcode always follows an OP_NotExists or OP_Last or
-  ** OP_Column on the same table without any intervening operations that
-  ** might move or invalidate the cursor.  Hence cursor pC is always pointing
-  ** to the row to be deleted and the sqlite3VdbeCursorMoveto() operation
-  ** below is always a no-op and cannot fail.  We will run it anyhow, though,
-  ** to guard against future changes to the code generator.
-  **/
   assert( pC->deferredMoveto==0 );
-  rc = sqlite3VdbeCursorMoveto(pC);
-  if( NEVER(rc!=SQLITE_OK) ) goto abort_due_to_error;
 
+#ifdef SQLITE_DEBUG
+  /* The seek operation that positioned the cursor prior to OP_Delete will
+  ** have also set the pC->movetoTarget field to the rowid of the row that
+  ** is being deleted */
+  if( pOp->p4.z && pC->isTable ){
+    i64 iKey = 0;
+    sqlite3BtreeKeySize(pC->pCursor, &iKey);
+    assert( pC->movetoTarget==iKey ); 
+  }
+#endif
+ 
   rc = sqlite3BtreeDelete(pC->pCursor);
   pC->cacheStatus = CACHE_STALE;
 
   /* Invoke the update-hook if required. */
   if( rc==SQLITE_OK && db->xUpdateCallback && pOp->p4.z && pC->isTable ){
     db->xUpdateCallback(db->pUpdateArg, SQLITE_DELETE,
-                        db->aDb[pC->iDb].zName, pOp->p4.z, iKey);
+                        db->aDb[pC->iDb].zName, pOp->p4.z, pC->movetoTarget);
     assert( pC->iDb>=0 );
   }
   if( pOp->p2 & OPFLAG_NCHANGE ) p->nChange++;
@@ -4396,12 +4384,8 @@ case OP_Rowid: {                 /* out2-prerelease */
     assert( pC->pCursor!=0 );
     rc = sqlite3VdbeCursorMoveto(pC);
     if( rc ) goto abort_due_to_error;
-    if( pC->rowidIsValid ){
-      v = pC->lastRowid;
-    }else{
-      rc = sqlite3BtreeKeySize(pC->pCursor, &v);
-      assert( rc==SQLITE_OK );  /* Always so because of CursorMoveto() above */
-    }
+    rc = sqlite3BtreeKeySize(pC->pCursor, &v);
+    assert( rc==SQLITE_OK );  /* Always so because of CursorMoveto() above */
   }
   pOut->u.i = v;
   break;
@@ -4420,7 +4404,6 @@ case OP_NullRow: {
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
   pC->nullRow = 1;
-  pC->rowidIsValid = 0;
   pC->cacheStatus = CACHE_STALE;
   if( pC->pCursor ){
     sqlite3BtreeClearCursor(pC->pCursor);
@@ -4454,7 +4437,6 @@ case OP_Last: {        /* jump */
   rc = sqlite3BtreeLast(pCrsr, &res);
   pC->nullRow = (u8)res;
   pC->deferredMoveto = 0;
-  pC->rowidIsValid = 0;
   pC->cacheStatus = CACHE_STALE;
 #ifdef SQLITE_DEBUG
   pC->seekOp = OP_Last;
@@ -4521,7 +4503,6 @@ case OP_Rewind: {        /* jump */
     rc = sqlite3BtreeFirst(pCrsr, &res);
     pC->deferredMoveto = 0;
     pC->cacheStatus = CACHE_STALE;
-    pC->rowidIsValid = 0;
   }
   pC->nullRow = (u8)res;
   assert( pOp->p2>0 && pOp->p2<p->nOp );
@@ -4647,7 +4628,6 @@ next_tail:
   }else{
     pC->nullRow = 1;
   }
-  pC->rowidIsValid = 0;
   goto check_for_interrupt;
 }
 
