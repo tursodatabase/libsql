@@ -4313,16 +4313,20 @@ case OP_RowData: {
   assert( pC->pseudoTableReg==0 );
   assert( pC->pCursor!=0 );
   pCrsr = pC->pCursor;
-  assert( sqlite3BtreeCursorIsValid(pCrsr) );
 
   /* The OP_RowKey and OP_RowData opcodes always follow OP_NotExists or
   ** OP_Rewind/Op_Next with no intervening instructions that might invalidate
-  ** the cursor.  Hence the following sqlite3VdbeCursorMoveto() call is always
-  ** a no-op and can never fail.  But we leave it in place as a safety.
+  ** the cursor.  If this where not the case, on of the following assert()s
+  ** would fail.  Should this ever change (because of changes in the code
+  ** generator) then the fix would be to insert a call to
+  ** sqlite3VdbeCursorMoveto().
   */
   assert( pC->deferredMoveto==0 );
+  assert( sqlite3BtreeCursorIsValid(pCrsr) );
+#if 0  /* Not required due to the previous to assert() statements */
   rc = sqlite3VdbeCursorMoveto(pC);
-  if( NEVER(rc!=SQLITE_OK) ) goto abort_due_to_error;
+  if( rc!=SQLITE_OK ) goto abort_due_to_error;
+#endif
 
   if( pC->isTable==0 ){
     assert( !pC->isTable );
@@ -4391,10 +4395,10 @@ case OP_Rowid: {                 /* out2-prerelease */
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
   }else{
     assert( pC->pCursor!=0 );
-    rc = sqlite3VdbeCursorMoveto(pC);
+    rc = sqlite3VdbeCursorRestore(pC);
     if( rc ) goto abort_due_to_error;
     rc = sqlite3BtreeKeySize(pC->pCursor, &v);
-    assert( rc==SQLITE_OK );  /* Always so because of CursorMoveto() above */
+    assert( rc==SQLITE_OK );  /* Always so because of CursorRestore() above */
   }
   pOut->u.i = v;
   break;
@@ -4752,10 +4756,16 @@ case OP_IdxRowid: {              /* out2-prerelease */
   pCrsr = pC->pCursor;
   assert( pCrsr!=0 );
   pOut->flags = MEM_Null;
-  rc = sqlite3VdbeCursorMoveto(pC);
-  if( NEVER(rc) ) goto abort_due_to_error;
-  assert( pC->deferredMoveto==0 );
   assert( pC->isTable==0 );
+  assert( pC->deferredMoveto==0 );
+
+  /* sqlite3VbeCursorRestore() can only fail if the record has been deleted
+  ** out from under the cursor.  That will never happend for an IdxRowid
+  ** opcode, hence the NEVER() arround the check of the return value.
+  */
+  rc = sqlite3VdbeCursorRestore(pC);
+  if( NEVER(rc!=SQLITE_OK) ) goto abort_due_to_error;
+
   if( !pC->nullRow ){
     rowid = 0;  /* Not needed.  Only used to silence a warning. */
     rc = sqlite3VdbeIdxRowid(db, pCrsr, &rowid);

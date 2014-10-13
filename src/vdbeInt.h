@@ -383,6 +383,7 @@ struct Vdbe {
 void sqlite3VdbeFreeCursor(Vdbe *, VdbeCursor*);
 void sqliteVdbePopStack(Vdbe*,int);
 int sqlite3VdbeCursorMoveto(VdbeCursor*);
+int sqlite3VdbeCursorRestore(VdbeCursor*);
 #if defined(SQLITE_DEBUG) || defined(VDBE_PROFILE)
 void sqlite3VdbePrintOp(FILE*, int, Op*);
 #endif

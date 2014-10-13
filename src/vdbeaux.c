@@ -2745,6 +2745,17 @@ static int SQLITE_NOINLINE handleMovedCursor(VdbeCursor *p){
 }
 
 /*
+** Check to ensure that the cursor is valid.  Restore the cursor
+** if need be.  Return any I/O error from the restore operation.
+*/
+int sqlite3VdbeCursorRestore(VdbeCursor *p){
+  if( sqlite3BtreeCursorHasMoved(p->pCursor) ){
+    return handleMovedCursor(p);
+  }
+  return SQLITE_OK;
+}
+
+/*
 ** Make sure the cursor p is ready to read or write the row to which it
 ** was last positioned.  Return an error code if an OOM fault or I/O error
 ** prevents us from positioning the cursor to its correct position.
@@ -2761,7 +2772,7 @@ int sqlite3VdbeCursorMoveto(VdbeCursor *p){
   if( p->deferredMoveto ){
     return handleDeferredMoveto(p);
   }
-  if( sqlite3BtreeCursorHasMoved(p->pCursor) ){
+  if( p->pCursor && sqlite3BtreeCursorHasMoved(p->pCursor) ){
     return handleMovedCursor(p);
   }
   return SQLITE_OK;

@@ -776,7 +776,7 @@ static int btreeRestoreCursorPosition(BtCursor *pCur){
 ** back to where it ought to be if this routine returns true.
 */
 int sqlite3BtreeCursorHasMoved(BtCursor *pCur){
-  return pCur && pCur->eState!=CURSOR_VALID;
+  return pCur->eState!=CURSOR_VALID;
 }
 
 /*
