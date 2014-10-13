@@ -1,5 +1,5 @@
-C Reduce\sthe\sCPU\sload\simposed\sby\ssqlit3VdbeCursorMoveto()\sby\sfactoring\sout\nsome\sof\sits\sfunctions\sand\sby\savoiding\sunnecessary\scalls.
-D 2014-10-13T16:02:20.134
+C Three\ssmall\soptimizations\sto\svdbeaux.c.
+D 2014-10-13T17:42:05.891
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -293,7 +293,7 @@ F src/vdbe.c cf7c24e531aad047689e4235a66b22526e765e46
 F src/vdbe.h 09f5b4e3719fa454f252322b1cdab5cf1f361327
 F src/vdbeInt.h 90c0ae53382d16a4f77ad5a9c4b3e35278e9e061
 F src/vdbeapi.c 37a6c6ae284a97bcace365f2f0a225680c0499d9
-F src/vdbeaux.c 8d101333912e33ed36201898d839cd560d8e87f4
+F src/vdbeaux.c edbb7a9c8b2a8f7a68ac75c2475edd4040266b76
 F src/vdbeblob.c 848238dc73e93e48432991bb5651bf87d865eca4
 F src/vdbemem.c 481327f50d9da330053aa7456702ce46d0a4e70f
 F src/vdbesort.c 5c1bacf90578d22b630fbf6ed98ccf60d83435ef
@@ -1204,7 +1204,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 20062f49428a2349a2dd705af570c60b499a3eef
-R a5158d9f69a4de7fce20f1a1e7deba5e
+P c2799aece17d347c64217a0e407bb10e50c184a3
+R f9a2ff50dcb19a8595444c5c4cad6f5f
 U drh
-Z 9da431167b91f4974349edc450eddb7a
+Z bf4e3c223808aa3476302aafe1aa8090
