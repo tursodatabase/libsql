@@ -175,7 +175,7 @@ struct Mem {
   /* ShallowCopy only needs to copy the information above */
   char *zMalloc;      /* Space to hold MEM_Str or MEM_Blob if szMalloc>0 */
   int szMalloc;       /* Size of the zMalloc allocation */
-  int iPadding1;      /* Padding for 8-byte alignment */
+  u32 uTemp;          /* Transient storage for serial_type in OP_MakeRecord */
   sqlite3 *db;        /* The associated database connection */
   void (*xDel)(void*);/* Destructor for Mem.z - only valid if MEM_Dyn */
 #ifdef SQLITE_DEBUG
