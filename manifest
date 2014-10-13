@@ -1,5 +1,5 @@
-C Use\sthe\spadding\sword\sin\sthe\sMem\sobject\sas\stemporary\sstorage\sfor\nserial_type\svalue\sin\sOP_Record,\sand\sthus\savoid\sa\sredundant\scomputation\sof\nthe\sserial_type\sfor\seach\scolumn.
-D 2014-10-13T20:12:47.457
+C Optimize\sa\sdatabase\scorruption\stest\sinside\sof\sthe\sOP_Column\sopcode.
+D 2014-10-13T23:39:02.463
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -289,7 +289,7 @@ F src/update.c 729f6f18fc27740591d085e1172cebe311144bf0
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c 4006c01772bd8d8ac4306d523bbcee41d3e392d8
 F src/vacuum.c 59f03f92bcff57faa6a8ca256eb29ccddfb0614a
-F src/vdbe.c 8755e3bb0d7d26b2b156c6f29ddd6b3d32b77df2
+F src/vdbe.c 5ee15a66ce07e0482b92aa29e4dd0c5827a22d79
 F src/vdbe.h 09f5b4e3719fa454f252322b1cdab5cf1f361327
 F src/vdbeInt.h e2a060a55ee18a6ab973353a5e2ec7ee569bf787
 F src/vdbeapi.c 37a6c6ae284a97bcace365f2f0a225680c0499d9
@@ -1204,7 +1204,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 04892f8ba6c55cec4fe37bfe59b6349fd2a40698
-R b0e17ef60b5aa0edd0fe18cf5fe3de58
+P 4b3b65ee5ea61e9b9671ca027940bf02689cb890
+R 42e26b1c48be06a100ad5530a5448c12
 U drh
-Z 6462e46ba313ee1bcf094c3a26197f24
+Z 6b074ae9a762ef61cbe684b68fc815ba

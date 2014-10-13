@@ -2417,15 +2417,16 @@ case OP_Column: {
         sMem.flags = MEM_Null;
       }
   
-      /* If we have read more header data than was contained in the header,
-      ** or if the end of the last field appears to be past the end of the
-      ** record, or if the end of the last field appears to be before the end
-      ** of the record (when all fields present), then we must be dealing 
-      ** with a corrupt database.
+      /* The record is corrupt if any of the following are true:
+      ** (1) the bytes of the header extend past the declared header size
+      **          (zHdr>zEndHdr)
+      ** (2) the entire header was used but not all data was used
+      **          (zHdr==zEndHdr && offset!=pC->payloadSize)
+      ** (3) the end of the data extends beyond the end of the record.
+      **          (offset > pC->payloadSize)
       */
-      if( (zHdr > zEndHdr)
+      if( (zHdr>=zEndHdr && (zHdr>zEndHdr || offset!=pC->payloadSize))
        || (offset > pC->payloadSize)
-       || (zHdr==zEndHdr && offset!=pC->payloadSize)
       ){
         rc = SQLITE_CORRUPT_BKPT;
         goto op_column_error;
