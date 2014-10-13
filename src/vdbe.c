@@ -2239,11 +2239,6 @@ case OP_NotNull: {            /* same as TK_NOTNULL, jump, in1 */
 ** if the P4 argument is a P4_MEM use the value of the P4 argument as
 ** the result.
 **
-** If the OPFLAG_CLEARCACHE bit is set on P5 and P1 is a pseudo-table cursor,
-** then the cache of the cursor is reset prior to extracting the column.
-** The first OP_Column against a pseudo-table after the value of the content
-** register has changed should have this bit set.
-**
 ** If the OPFLAG_LENGTHARG and OPFLAG_TYPEOFARG bits are set on P5 when
 ** the result is guaranteed to only be used as the argument of a length()
 ** or typeof() function, respectively.  The loading of large blobs can be
@@ -2288,8 +2283,7 @@ case OP_Column: {
   /* If the cursor cache is stale, bring it up-to-date */
   rc = sqlite3VdbeCursorMoveto(pC);
   if( rc ) goto abort_due_to_error;
-  assert( (pOp->p5&OPFLAG_CLEARCACHE)==0 || aOp[pc-1].opcode==OP_SorterData );
-  if( pC->cacheStatus!=p->cacheCtr || (pOp->p5&OPFLAG_CLEARCACHE)!=0 ){
+  if( pC->cacheStatus!=p->cacheCtr ){
     if( pC->nullRow ){
       if( pCrsr==0 ){
         assert( pC->pseudoTableReg>0 );
@@ -4304,6 +4298,7 @@ case OP_SorterColumns: {
     if( VdbeMemDynamic(pDest) ) sqlite3VdbeMemSetNull(pDest);
     d += sqlite3VdbeSerialGet(&aKey[d], serial_type, pDest);
     pDest->enc = encoding;
+    Deephemeralize(pDest);
     REGISTER_TRACE((int)(pDest-aMem), pDest);
     pDest++;
   }while( pDest<=pLast );

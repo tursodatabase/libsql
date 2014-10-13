@@ -5142,12 +5142,11 @@ int sqlite3Select(
       sqlite3ExprCacheClear(pParse);
       if( groupBySort ){
         sqlite3VdbeAddOp2(v, OP_SorterData, sAggInfo.sortingIdx, sortOut);
-      }
-      for(j=0; j<pGroupBy->nExpr; j++){
-        if( groupBySort ){
-          sqlite3VdbeAddOp3(v, OP_Column, sortPTab, j, iBMem+j);
-          if( j==0 ) sqlite3VdbeChangeP5(v, OPFLAG_CLEARCACHE);
-        }else{
+        j = pGroupBy->nExpr;
+        sqlite3VdbeAddOp4Int(v, OP_SorterColumns, 0, j, iBMem, sortOut);
+        sqlite3VdbeAddOp1(v, OP_NullRow, sortPTab);
+      }else{
+        for(j=0; j<pGroupBy->nExpr; j++){
           sAggInfo.directMode = 1;
           sqlite3ExprCode(pParse, pGroupBy->a[j].pExpr, iBMem+j);
         }
