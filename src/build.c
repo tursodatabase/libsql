@@ -435,6 +435,9 @@ static void freeIndex(sqlite3 *db, Index *p){
   sqlite3ExprDelete(db, p->pPartIdxWhere);
   sqlite3DbFree(db, p->zColAff);
   if( p->isResized ) sqlite3DbFree(db, p->azColl);
+#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
+  sqlite3_free(p->aiRowEst);
+#endif
   sqlite3DbFree(db, p);
 }
 
@@ -2744,7 +2747,7 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
   }else{
     addr2 = sqlite3VdbeCurrentAddr(v);
   }
-  sqlite3VdbeAddOp2(v, OP_SorterData, iSorter, regRecord);
+  sqlite3VdbeAddOp3(v, OP_SorterData, iSorter, regRecord, iIdx);
   sqlite3VdbeAddOp3(v, OP_IdxInsert, iIdx, regRecord, 1);
   sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
   sqlite3ReleaseTempReg(pParse, regRecord);

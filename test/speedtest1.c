@@ -934,6 +934,7 @@ void testset_cte(void){
 
 }
 
+#ifdef SQLITE_ENABLE_RTREE
 /* Generate two numbers between 1 and mx.  The first number is less than
 ** the second.  Usually the numbers are near each other but can sometimes
 ** be far apart.
@@ -954,7 +955,9 @@ static void twoCoords(
   *pX0 = x0;
   *pX1 = x1;
 }
+#endif
 
+#ifdef SQLITE_ENABLE_RTREE
 /* The following routine is an R-Tree geometry callback.  It returns
 ** true if the object overlaps a slice on the Y coordinate between the
 ** two values given as arguments.  In other words
@@ -974,7 +977,9 @@ static int xsliceGeometryCallback(
   *pRes = aCoord[3]>=p->aParam[0] && aCoord[2]<=p->aParam[1];
   return SQLITE_OK;
 }
+#endif /* SQLITE_ENABLE_RTREE */
 
+#ifdef SQLITE_ENABLE_RTREE
 /*
 ** A testset for the R-Tree virtual table
 */
@@ -1110,6 +1115,7 @@ void testset_rtree(int p1, int p2){
   }
   speedtest1_end_test();
 }
+#endif /* SQLITE_ENABLE_RTREE */
 
 /*
 ** A testset used for debugging speedtest1 itself.
@@ -1329,7 +1335,12 @@ int main(int argc, char **argv){
   }else if( strcmp(zTSet,"cte")==0 ){
     testset_cte();
   }else if( strcmp(zTSet,"rtree")==0 ){
+#ifdef SQLITE_ENABLE_RTREE
     testset_rtree(6, 147);
+#else
+    fatal_error("compile with -DSQLITE_ENABLE_RTREE to enable "
+                "the R-Tree tests\n");
+#endif
   }else{
     fatal_error("unknown testset: \"%s\"\nChoices: main debug1 cte rtree\n",
                  zTSet);

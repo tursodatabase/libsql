@@ -776,7 +776,7 @@ static int btreeRestoreCursorPosition(BtCursor *pCur){
 ** back to where it ought to be if this routine returns true.
 */
 int sqlite3BtreeCursorHasMoved(BtCursor *pCur){
-  return pCur && pCur->eState!=CURSOR_VALID;
+  return pCur->eState!=CURSOR_VALID;
 }
 
 /*
@@ -4029,6 +4029,7 @@ static int accessPayload(
   MemPage *pPage = pCur->apPage[pCur->iPage]; /* Btree page of current entry */
   BtShared *pBt = pCur->pBt;                  /* Btree this cursor belongs to */
 #ifdef SQLITE_DIRECT_OVERFLOW_READ
+  unsigned char * const pBufStart = pBuf;
   int bEnd;                                 /* True if reading to end of data */
 #endif
 
@@ -4156,6 +4157,7 @@ static int accessPayload(
         **   4) there is no open write-transaction, and
         **   5) the database is not a WAL database,
         **   6) all data from the page is being read.
+        **   7) at least 4 bytes have already been read into the output buffer 
         **
         ** then data can be read directly from the database file into the
         ** output buffer, bypassing the page-cache altogether. This speeds
@@ -4167,9 +4169,11 @@ static int accessPayload(
          && pBt->inTransaction==TRANS_READ                     /* (4) */
          && (fd = sqlite3PagerFile(pBt->pPager))->pMethods     /* (3) */
          && pBt->pPage1->aData[19]==0x01                       /* (5) */
+         && &pBuf[-4]>=pBufStart                               /* (7) */
         ){
           u8 aSave[4];
           u8 *aWrite = &pBuf[-4];
+          assert( aWrite>=pBufStart );                         /* hence (7) */
           memcpy(aSave, aWrite, 4);
           rc = sqlite3OsRead(fd, aWrite, a+4, (i64)pBt->pageSize*(nextPage-1));
           nextPage = get4byte(aWrite);
@@ -4992,8 +4996,7 @@ static SQLITE_NOINLINE int btreePrevious(BtCursor *pCur, int *pRes){
   assert( (pCur->curFlags & (BTCF_AtLast|BTCF_ValidOvfl|BTCF_ValidNKey))==0 );
   assert( pCur->info.nSize==0 );
   if( pCur->eState!=CURSOR_VALID ){
-    assert( pCur->eState>=CURSOR_REQUIRESEEK );
-    rc = btreeRestoreCursorPosition(pCur);
+    rc = restoreCursorPosition(pCur);
     if( rc!=SQLITE_OK ){
       return rc;
     }
@@ -5849,11 +5852,6 @@ static void dropCell(MemPage *pPage, int idx, int sz, int *pRC){
 ** in pTemp or the original pCell) and also record its index. 
 ** Allocating a new entry in pPage->aCell[] implies that 
 ** pPage->nOverflow is incremented.
-**
-** If nSkip is non-zero, then do not copy the first nSkip bytes of the
-** cell. The caller will overwrite them after this function returns. If
-** nSkip is non-zero, then pCell may not point to an invalid memory location 
-** (but pCell+nSkip is always valid).
 */
 static void insertCell(
   MemPage *pPage,   /* Page into which we are copying */
@@ -5870,7 +5868,6 @@ static void insertCell(
   int ins;          /* Index in data[] where new cell pointer is inserted */
   int cellOffset;   /* Address of first cell pointer in data[] */
   u8 *data;         /* The content of the whole page */
-  int nSkip = (iChild ? 4 : 0);
 
   if( *pRC ) return;
 
@@ -5888,7 +5885,7 @@ static void insertCell(
   assert( sz==cellSizePtr(pPage, pCell) || (sz==8 && iChild>0) );
   if( pPage->nOverflow || sz+2>pPage->nFree ){
     if( pTemp ){
-      memcpy(pTemp+nSkip, pCell+nSkip, sz-nSkip);
+      memcpy(pTemp, pCell, sz);
       pCell = pTemp;
     }
     if( iChild ){
@@ -5917,7 +5914,7 @@ static void insertCell(
     assert( idx+sz <= (int)pPage->pBt->usableSize );
     pPage->nCell++;
     pPage->nFree -= (u16)(2 + sz);
-    memcpy(&data[idx+nSkip], pCell+nSkip, sz-nSkip);
+    memcpy(&data[idx], pCell, sz);
     if( iChild ){
       put4byte(&data[idx], iChild);
     }

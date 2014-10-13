@@ -73,7 +73,6 @@ struct VdbeCursor {
 #endif
   i8 iDb;               /* Index of cursor database in db->aDb[] (or -1) */
   u8 nullRow;           /* True if pointing to a row with no data */
-  u8 rowidIsValid;      /* True if lastRowid is valid */
   u8 deferredMoveto;    /* A call to sqlite3BtreeMoveto() is needed */
   Bool isEphemeral:1;   /* True for an ephemeral table */
   Bool useRandomRowid:1;/* Generate new record numbers semi-randomly */
@@ -83,7 +82,6 @@ struct VdbeCursor {
   sqlite3_vtab_cursor *pVtabCursor;  /* The cursor for a virtual table */
   i64 seqCount;         /* Sequence counter */
   i64 movetoTarget;     /* Argument to the deferred sqlite3BtreeMoveto() */
-  i64 lastRowid;        /* Rowid being deleted by OP_Delete */
   VdbeSorter *pSorter;  /* Sorter object for OP_SorterOpen cursors */
 
   /* Cached information about the header for the data record that the
@@ -100,6 +98,7 @@ struct VdbeCursor {
   u32 szRow;            /* Byte available in aRow */
   u32 iHdrOffset;       /* Offset to next unparsed byte of the header */
   const u8 *aRow;       /* Data for the current row, if all on one page */
+  u32 *aOffset;         /* Pointer to aType[nField] */
   u32 aType[1];         /* Type values for all entries in the record */
   /* 2*nField extra array elements allocated for aType[], beyond the one
   ** static element declared in the structure.  nField total array slots for
@@ -360,10 +359,6 @@ struct Vdbe {
   i64 nStmtDefImmCons;    /* Number of def. imm constraints when stmt started */
   char *zSql;             /* Text of the SQL statement that generated this */
   void *pFree;            /* Free this when deleting the vdbe */
-#ifdef SQLITE_ENABLE_TREE_EXPLAIN
-  Explain *pExplain;      /* The explainer */
-  char *zExplain;         /* Explanation of data structures */
-#endif
   VdbeFrame *pFrame;      /* Parent frame */
   VdbeFrame *pDelFrame;   /* List of frame objects to free on VM reset */
   int nFrame;             /* Number of frames in pFrame list */
@@ -388,6 +383,7 @@ struct Vdbe {
 void sqlite3VdbeFreeCursor(Vdbe *, VdbeCursor*);
 void sqliteVdbePopStack(Vdbe*,int);
 int sqlite3VdbeCursorMoveto(VdbeCursor*);
+int sqlite3VdbeCursorRestore(VdbeCursor*);
 #if defined(SQLITE_DEBUG) || defined(VDBE_PROFILE)
 void sqlite3VdbePrintOp(FILE*, int, Op*);
 #endif

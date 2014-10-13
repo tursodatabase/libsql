@@ -752,7 +752,8 @@ void sqlite3VdbeChangeToNoop(Vdbe *p, int addr){
 }
 
 /*
-** Remove the last opcode inserted
+** If the last opcode is "op" and it is not a jump destination,
+** then remove it.  Return true if and only if an opcode was removed.
 */
 int sqlite3VdbeDeletePriorOpcode(Vdbe *p, u8 op){
   if( (p->nOp-1)>(p->pParse->iFixedOp) && p->aOp[p->nOp-1].opcode==op ){
@@ -1744,7 +1745,7 @@ void sqlite3VdbeFreeCursor(Vdbe *p, VdbeCursor *pCx){
     sqlite3BtreeCloseCursor(pCx->pCursor);
   }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-  if( pCx->pVtabCursor ){
+  else if( pCx->pVtabCursor ){
     sqlite3_vtab_cursor *pVtabCursor = pCx->pVtabCursor;
     const sqlite3_module *pModule = pVtabCursor->pVtab->pModule;
     p->inVtabMethod = 1;
@@ -1787,9 +1788,10 @@ static void closeAllCursors(Vdbe *p){
     VdbeFrame *pFrame;
     for(pFrame=p->pFrame; pFrame->pParent; pFrame=pFrame->pParent);
     sqlite3VdbeFrameRestore(pFrame);
+    p->pFrame = 0;
+    p->nFrame = 0;
   }
-  p->pFrame = 0;
-  p->nFrame = 0;
+  assert( p->nFrame==0 );
 
   if( p->apCsr ){
     int i;
@@ -1811,7 +1813,7 @@ static void closeAllCursors(Vdbe *p){
   }
 
   /* Delete any auxdata allocations made by the VM */
-  sqlite3VdbeDeleteAuxData(p, -1, 0);
+  if( p->pAuxData ) sqlite3VdbeDeleteAuxData(p, -1, 0);
   assert( p->pAuxData==0 );
 }
 
@@ -2677,10 +2679,6 @@ void sqlite3VdbeClearObject(sqlite3 *db, Vdbe *p){
   sqlite3DbFree(db, p->aColName);
   sqlite3DbFree(db, p->zSql);
   sqlite3DbFree(db, p->pFree);
-#if defined(SQLITE_ENABLE_TREE_EXPLAIN)
-  sqlite3DbFree(db, p->zExplain);
-  sqlite3DbFree(db, p->pExplain);
-#endif
 }
 
 /*
@@ -2721,9 +2719,7 @@ static int SQLITE_NOINLINE handleDeferredMoveto(VdbeCursor *p){
   assert( p->isTable );
   rc = sqlite3BtreeMovetoUnpacked(p->pCursor, 0, p->movetoTarget, 0, &res);
   if( rc ) return rc;
-  p->lastRowid = p->movetoTarget;
   if( res!=0 ) return SQLITE_CORRUPT_BKPT;
-  p->rowidIsValid = 1;
 #ifdef SQLITE_TEST
   sqlite3_search_count++;
 #endif
@@ -2750,6 +2746,17 @@ static int SQLITE_NOINLINE handleMovedCursor(VdbeCursor *p){
 }
 
 /*
+** Check to ensure that the cursor is valid.  Restore the cursor
+** if need be.  Return any I/O error from the restore operation.
+*/
+int sqlite3VdbeCursorRestore(VdbeCursor *p){
+  if( sqlite3BtreeCursorHasMoved(p->pCursor) ){
+    return handleMovedCursor(p);
+  }
+  return SQLITE_OK;
+}
+
+/*
 ** Make sure the cursor p is ready to read or write the row to which it
 ** was last positioned.  Return an error code if an OOM fault or I/O error
 ** prevents us from positioning the cursor to its correct position.
@@ -2766,7 +2773,7 @@ int sqlite3VdbeCursorMoveto(VdbeCursor *p){
   if( p->deferredMoveto ){
     return handleDeferredMoveto(p);
   }
-  if( sqlite3BtreeCursorHasMoved(p->pCursor) ){
+  if( p->pCursor && sqlite3BtreeCursorHasMoved(p->pCursor) ){
     return handleMovedCursor(p);
   }
   return SQLITE_OK;

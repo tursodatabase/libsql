@@ -310,7 +310,7 @@ void *sqlite3Malloc(u64 n){
   }else{
     p = sqlite3GlobalConfig.m.xMalloc((int)n);
   }
-  assert( EIGHT_BYTE_ALIGNMENT(p) );  /* IMP: R-04675-44850 */
+  assert( EIGHT_BYTE_ALIGNMENT(p) );  /* IMP: R-11148-40995 */
   return p;
 }
 
@@ -447,25 +447,27 @@ static int isLookaside(sqlite3 *db, void *p){
 */
 int sqlite3MallocSize(void *p){
   assert( sqlite3MemdebugHasType(p, MEMTYPE_HEAP) );
-  assert( sqlite3MemdebugNoType(p, MEMTYPE_DB) );
   return sqlite3GlobalConfig.m.xSize(p);
 }
 int sqlite3DbMallocSize(sqlite3 *db, void *p){
   if( db==0 ){
+    assert( sqlite3MemdebugNoType(p, ~MEMTYPE_HEAP) );
+    assert( sqlite3MemdebugHasType(p, MEMTYPE_HEAP) );
     return sqlite3MallocSize(p);
   }else{
     assert( sqlite3_mutex_held(db->mutex) );
     if( isLookaside(db, p) ){
       return db->lookaside.sz;
     }else{
-      assert( sqlite3MemdebugHasType(p, MEMTYPE_DB) );
-      assert( sqlite3MemdebugHasType(p, MEMTYPE_LOOKASIDE|MEMTYPE_HEAP) );
-      assert( db!=0 || sqlite3MemdebugNoType(p, MEMTYPE_LOOKASIDE) );
+      assert( sqlite3MemdebugHasType(p, (MEMTYPE_LOOKASIDE|MEMTYPE_HEAP)) );
+      assert( sqlite3MemdebugNoType(p, ~(MEMTYPE_LOOKASIDE|MEMTYPE_HEAP)) );
       return sqlite3GlobalConfig.m.xSize(p);
     }
   }
 }
 sqlite3_uint64 sqlite3_msize(void *p){
+  assert( sqlite3MemdebugNoType(p, ~MEMTYPE_HEAP) );
+  assert( sqlite3MemdebugHasType(p, MEMTYPE_HEAP) );
   return (sqlite3_uint64)sqlite3GlobalConfig.m.xSize(p);
 }
 
@@ -474,8 +476,8 @@ sqlite3_uint64 sqlite3_msize(void *p){
 */
 void sqlite3_free(void *p){
   if( p==0 ) return;  /* IMP: R-49053-54554 */
-  assert( sqlite3MemdebugNoType(p, MEMTYPE_DB) );
   assert( sqlite3MemdebugHasType(p, MEMTYPE_HEAP) );
+  assert( sqlite3MemdebugNoType(p, ~MEMTYPE_HEAP) );
   if( sqlite3GlobalConfig.bMemstat ){
     sqlite3_mutex_enter(mem0.mutex);
     sqlite3StatusAdd(SQLITE_STATUS_MEMORY_USED, -sqlite3MallocSize(p));
@@ -519,8 +521,8 @@ void sqlite3DbFree(sqlite3 *db, void *p){
       return;
     }
   }
-  assert( sqlite3MemdebugHasType(p, MEMTYPE_DB) );
-  assert( sqlite3MemdebugHasType(p, MEMTYPE_LOOKASIDE|MEMTYPE_HEAP) );
+  assert( sqlite3MemdebugHasType(p, (MEMTYPE_LOOKASIDE|MEMTYPE_HEAP)) );
+  assert( sqlite3MemdebugNoType(p, ~(MEMTYPE_LOOKASIDE|MEMTYPE_HEAP)) );
   assert( db!=0 || sqlite3MemdebugNoType(p, MEMTYPE_LOOKASIDE) );
   sqlite3MemdebugSetType(p, MEMTYPE_HEAP);
   sqlite3_free(p);
@@ -532,11 +534,13 @@ void sqlite3DbFree(sqlite3 *db, void *p){
 void *sqlite3Realloc(void *pOld, u64 nBytes){
   int nOld, nNew, nDiff;
   void *pNew;
+  assert( sqlite3MemdebugHasType(pOld, MEMTYPE_HEAP) );
+  assert( sqlite3MemdebugNoType(pOld, ~MEMTYPE_HEAP) );
   if( pOld==0 ){
-    return sqlite3Malloc(nBytes); /* IMP: R-28354-25769 */
+    return sqlite3Malloc(nBytes); /* IMP: R-04300-56712 */
   }
   if( nBytes==0 ){
-    sqlite3_free(pOld); /* IMP: R-31593-10574 */
+    sqlite3_free(pOld); /* IMP: R-26507-47431 */
     return 0;
   }
   if( nBytes>=0x7fffff00 ){
@@ -558,8 +562,6 @@ void *sqlite3Realloc(void *pOld, u64 nBytes){
           mem0.alarmThreshold-nDiff ){
       sqlite3MallocAlarm(nDiff);
     }
-    assert( sqlite3MemdebugHasType(pOld, MEMTYPE_HEAP) );
-    assert( sqlite3MemdebugNoType(pOld, ~MEMTYPE_HEAP) );
     pNew = sqlite3GlobalConfig.m.xRealloc(pOld, nNew);
     if( pNew==0 && mem0.alarmCallback ){
       sqlite3MallocAlarm((int)nBytes);
@@ -573,7 +575,7 @@ void *sqlite3Realloc(void *pOld, u64 nBytes){
   }else{
     pNew = sqlite3GlobalConfig.m.xRealloc(pOld, nNew);
   }
-  assert( EIGHT_BYTE_ALIGNMENT(pNew) ); /* IMP: R-04675-44850 */
+  assert( EIGHT_BYTE_ALIGNMENT(pNew) ); /* IMP: R-11148-40995 */
   return pNew;
 }
 
@@ -585,7 +587,7 @@ void *sqlite3_realloc(void *pOld, int n){
 #ifndef SQLITE_OMIT_AUTOINIT
   if( sqlite3_initialize() ) return 0;
 #endif
-  if( n<0 ) n = 0;
+  if( n<0 ) n = 0;  /* IMP: R-26507-47431 */
   return sqlite3Realloc(pOld, n);
 }
 void *sqlite3_realloc64(void *pOld, sqlite3_uint64 n){
@@ -672,8 +674,8 @@ void *sqlite3DbMallocRaw(sqlite3 *db, u64 n){
   if( !p && db ){
     db->mallocFailed = 1;
   }
-  sqlite3MemdebugSetType(p, MEMTYPE_DB |
-         ((db && db->lookaside.bEnabled) ? MEMTYPE_LOOKASIDE : MEMTYPE_HEAP));
+  sqlite3MemdebugSetType(p, 
+         (db && db->lookaside.bEnabled) ? MEMTYPE_LOOKASIDE : MEMTYPE_HEAP);
   return p;
 }
 
@@ -699,15 +701,14 @@ void *sqlite3DbRealloc(sqlite3 *db, void *p, u64 n){
         sqlite3DbFree(db, p);
       }
     }else{
-      assert( sqlite3MemdebugHasType(p, MEMTYPE_DB) );
-      assert( sqlite3MemdebugHasType(p, MEMTYPE_LOOKASIDE|MEMTYPE_HEAP) );
+      assert( sqlite3MemdebugHasType(p, (MEMTYPE_LOOKASIDE|MEMTYPE_HEAP)) );
+      assert( sqlite3MemdebugNoType(p, ~(MEMTYPE_LOOKASIDE|MEMTYPE_HEAP)) );
       sqlite3MemdebugSetType(p, MEMTYPE_HEAP);
       pNew = sqlite3_realloc64(p, n);
       if( !pNew ){
-        sqlite3MemdebugSetType(p, MEMTYPE_DB|MEMTYPE_HEAP);
         db->mallocFailed = 1;
       }
-      sqlite3MemdebugSetType(pNew, MEMTYPE_DB | 
+      sqlite3MemdebugSetType(pNew,
             (db->lookaside.bEnabled ? MEMTYPE_LOOKASIDE : MEMTYPE_HEAP));
     }
   }

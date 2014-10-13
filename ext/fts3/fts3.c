@@ -3116,6 +3116,7 @@ static int fts3FilterMethod(
   /* In case the cursor has been used before, clear it now. */
   sqlite3_finalize(pCsr->pStmt);
   sqlite3_free(pCsr->aDoclist);
+  sqlite3_free(pCsr->aMatchinfo);
   sqlite3Fts3ExprFree(pCsr->pExpr);
   memset(&pCursor[1], 0, sizeof(Fts3Cursor)-sizeof(sqlite3_vtab_cursor));
 
@@ -4426,7 +4427,7 @@ static int fts3EvalIncrPhraseNext(
           bMaxSet = 1;
         }
       }
-      assert( rc!=SQLITE_OK || a[p->nToken-1].bIgnore==0 );
+      assert( rc!=SQLITE_OK || (p->nToken>=1 && a[p->nToken-1].bIgnore==0) );
       assert( rc!=SQLITE_OK || bMaxSet );
 
       /* Keep advancing iterators until they all point to the same document */

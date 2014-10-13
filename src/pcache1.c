@@ -688,7 +688,7 @@ static SQLITE_NOINLINE PgHdr1 *pcache1FetchStage2(
   if( createFlag==1 && (
         nPinned>=pGroup->mxPinned
      || nPinned>=pCache->n90pct
-     || pcache1UnderMemoryPressure(pCache)
+     || (pcache1UnderMemoryPressure(pCache) && pCache->nRecyclable<nPinned)
   )){
     return 0;
   }

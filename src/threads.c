@@ -105,7 +105,7 @@ int sqlite3ThreadJoin(SQLiteThread *p, void **ppOut){
 
 /* A running thread */
 struct SQLiteThread {
-  uintptr_t tid;           /* The thread handle */
+  void *tid;               /* The thread handle */
   unsigned id;             /* The thread identifier */
   void *(*xTask)(void*);   /* The routine to run as a thread */
   void *pIn;               /* Argument to xTask */
@@ -153,7 +153,7 @@ int sqlite3ThreadCreate(
   }else{
     p->xTask = xTask;
     p->pIn = pIn;
-    p->tid = _beginthreadex(0, 0, sqlite3ThreadProc, p, 0, &p->id);
+    p->tid = (void*)_beginthreadex(0, 0, sqlite3ThreadProc, p, 0, &p->id);
     if( p->tid==0 ){
       memset(p, 0, sizeof(*p));
     }
