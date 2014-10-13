@@ -2288,6 +2288,7 @@ case OP_Column: {
   /* If the cursor cache is stale, bring it up-to-date */
   rc = sqlite3VdbeCursorMoveto(pC);
   if( rc ) goto abort_due_to_error;
+  assert( (pOp->p5&OPFLAG_CLEARCACHE)==0 || aOp[pc-1].opcode==OP_SorterData );
   if( pC->cacheStatus!=p->cacheCtr || (pOp->p5&OPFLAG_CLEARCACHE)!=0 ){
     if( pC->nullRow ){
       if( pCrsr==0 ){
@@ -4251,13 +4252,61 @@ case OP_SorterCompare: {
 ** Write into register P2 the current sorter data for sorter cursor P1.
 */
 case OP_SorterData: {
-  VdbeCursor *pC;
+  VdbeCursor *pC;         /* Sorting cursor defined by P1 */
 
   pOut = &aMem[pOp->p2];
   pC = p->apCsr[pOp->p1];
   assert( isSorter(pC) );
   rc = sqlite3VdbeSorterRowkey(pC, pOut);
   assert( rc!=SQLITE_OK || (pOut->flags & MEM_Blob) );
+  break;
+}
+
+/* Opcode: SorterColumns P1 P2 P3 P4 *
+** Synopsis: r[P3@P2]=decode(r[P4])
+**
+** The P4 register contains a record that has just come out of a sorter.
+** Decode columns P1 through P1+P2-1 into registers P3..P3+P2-1.
+**
+** This opcode is much faster than multiple calls to Column since it 
+** does not need to deal with corrupt record detection or default values
+** or any of the other complications associated with a record read
+** from disk.
+*/
+case OP_SorterColumns: {
+  Mem *pDest;             /* Register P3 output register */
+  Mem *pLast;             /* Register P3+P2-1 */
+  u32 serial_type;        /* Serial type of a column value */
+  u32 idx;                /* Index into the record header */
+  u32 d;                  /* Index into the data of the record */
+  int nSkip;              /* Number of initial columns to skip */
+  const u8 *aKey;         /* Complete text of the record */
+
+  assert( pOp->p4type==P4_INT32 );
+  assert( pOp->p4.i>0 && pOp->p4.i<=(p->nMem - p->nCursor) );
+  assert( pOp->p3>pOp->p4.i || pOp->p3+pOp->p2<=pOp->p4.i );
+  assert( pOp->p1>=0 );
+  assert( pOp->p2>0 );
+  assert( aMem[pOp->p4.i].flags & MEM_Blob );
+  aKey = (const u8*)aMem[pOp->p4.i].z;
+  pDest = &aMem[pOp->p3];
+  pLast = &pDest[pOp->p2-1];
+  idx = getVarint32(aKey, d);
+  nSkip = pOp->p1;
+  while( nSkip-- ){
+    assert( d<=aMem[pOp->p4.i].n );
+    idx += getVarint32(&aKey[idx], serial_type);
+    d += sqlite3VdbeSerialTypeLen(serial_type);
+  }
+  do{
+    assert( d<=aMem[pOp->p4.i].n );
+    idx += getVarint32(&aKey[idx], serial_type);
+    if( VdbeMemDynamic(pDest) ) sqlite3VdbeMemSetNull(pDest);
+    d += sqlite3VdbeSerialGet(&aKey[d], serial_type, pDest);
+    pDest->enc = encoding;
+    REGISTER_TRACE((int)(pDest-aMem), pDest);
+    pDest++;
+  }while( pDest<=pLast );
   break;
 }
 

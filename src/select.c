@@ -1171,7 +1171,6 @@ static void generateSortTail(
   int addrBreak = sqlite3VdbeMakeLabel(v);     /* Jump here to exit loop */
   int addrContinue = sqlite3VdbeMakeLabel(v);  /* Jump here for next cycle */
   int addr;
-  int addrOnce = 0;
   int iTab;
   ExprList *pOrderBy = pSort->pOrderBy;
   int eDest = pDest->eDest;
@@ -1179,11 +1178,8 @@ static void generateSortTail(
   int regRow;
   int regRowid;
   int nKey;
-  int iSortTab;                   /* Sorter cursor to read from */
   int nSortData;                  /* Trailing values to read from sorter */
-  u8 p5;                          /* p5 parameter for 1st OP_Column */
   int i;
-  int bSeq;                       /* True if sorter record includes seq. no. */
 #ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
   struct ExprList_item *aOutEx = p->pEList->a;
 #endif
@@ -1206,29 +1202,18 @@ static void generateSortTail(
   nKey = pOrderBy->nExpr - pSort->nOBSat;
   if( pSort->sortFlags & SORTFLAG_UseSorter ){
     int regSortOut = ++pParse->nMem;
-    iSortTab = pParse->nTab++;
-    if( pSort->labelBkOut ){
-      addrOnce = sqlite3CodeOnce(pParse); VdbeCoverage(v);
-    }
-    sqlite3VdbeAddOp3(v, OP_OpenPseudo, iSortTab, regSortOut, nKey+1+nSortData);
-    if( addrOnce ) sqlite3VdbeJumpHere(v, addrOnce);
     addr = 1 + sqlite3VdbeAddOp2(v, OP_SorterSort, iTab, addrBreak);
     VdbeCoverage(v);
     codeOffset(v, p->iOffset, addrContinue);
     sqlite3VdbeAddOp2(v, OP_SorterData, iTab, regSortOut);
-    p5 = OPFLAG_CLEARCACHE;
-    bSeq = 0;
+    sqlite3VdbeAddOp4Int(v, OP_SorterColumns, nKey, nSortData, regRow, regSortOut);
   }else{
     addr = 1 + sqlite3VdbeAddOp2(v, OP_Sort, iTab, addrBreak); VdbeCoverage(v);
     codeOffset(v, p->iOffset, addrContinue);
-    iSortTab = iTab;
-    p5 = 0;
-    bSeq = 1;
-  }
-  for(i=0; i<nSortData; i++){
-    sqlite3VdbeAddOp3(v, OP_Column, iSortTab, nKey+bSeq+i, regRow+i);
-    if( i==0 ) sqlite3VdbeChangeP5(v, p5);
-    VdbeComment((v, "%s", aOutEx[i].zName ? aOutEx[i].zName : aOutEx[i].zSpan));
+    for(i=0; i<nSortData; i++){
+      sqlite3VdbeAddOp3(v, OP_Column, iTab, nKey+i+1, regRow+i);
+      VdbeComment((v, "%s", aOutEx[i].zName ? aOutEx[i].zName : aOutEx[i].zSpan));
+    }
   }
   switch( eDest ){
     case SRT_Table:
