@@ -1,5 +1,5 @@
-C Remove\sthe\sVdbeCursor.lastRowid\scache\sof\sthe\scurrent\srowid,\ssince\smaintaining\nthe\scorrect\scache\svalue\suses\smore\sCPU\scycles\sthan\sjust\srecomputing\sthe\srowid\non\sthe\soccasions\swhen\sit\sis\sactually\sneeded.\s\sReplace\sit\swith\sthe\nVdbeCursor.aOffset\sfield\swhich\sused\sto\sbe\scomputed\sfrom\sVdbeCursor.aType\nwhen\sneeded.\sSaves\s100\sbytes\sof\scode\sspace\sand\sruns\s0.2%\sfaster.
-D 2014-10-12T22:37:22.384
+C Remove\sthe\sOPFLAG_CLEARCACHE\sflag\sfrom\sOP_Column.\s\sIn\sits\splace,\schange\sthe\nP3\sparameter\sof\sOP_SorterData\sto\sbe\sthe\sindex\sof\sthe\spseudo-table\scursor\swhose\nrecord\sheader\scache\sis\sto\sbe\scleared.\s\sThis\sgives\sa\ssmall\ssize\sreduction\nand\sperformance\sincrease.
+D 2014-10-13T13:00:58.198
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -175,7 +175,7 @@ F src/btmutex.c 49ca66250c7dfa844a4d4cb8272b87420d27d3a5
 F src/btree.c 5c0b78c49d00da49a0e8e3d2738900a431df7fca
 F src/btree.h a79aa6a71e7f1055f01052b7f821bd1c2dce95c8
 F src/btreeInt.h 1bd7957161a1346a914f1f09231610e777a8e58d
-F src/build.c 9e5205db9a0c8a1a4ce7379d60a2a34cb0b7339c
+F src/build.c 9dc2bd94347b878c89627000c92b0c8d97ec2919
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c 535183afb3c75628b78ce82612931ac7cdf26f14
 F src/ctime.c bb434068b5308a857b181c2d204a320ff0d6c638
@@ -227,12 +227,12 @@ F src/printf.c 6b79bbd063dcbadca4cf617a4cde255bcc13ea64
 F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c a3466128b52a86c466e47ac1a19e2174f7b5cf89
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c f11533162b57ed5ed37f549add34cbcdf51f6712
+F src/select.c 428165951748151e87a15295b7357221433e311b
 F src/shell.c 18ee8bbe9502d8848072dc2eddd1ea09254ba494
 F src/sqlite.h.in 4a5e5158c189d2bcd45c7c4607c2c0eb6d25c153
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
-F src/sqliteInt.h c417a25e2369f705b651897a2f1cc8da0e6aa1c4
+F src/sqliteInt.h f7812f74f2d0c6041ef6b91a99c5a45f775dd408
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 961d5926e5a8fda611d385ec22c226b8635cd1cb
 F src/table.c 2e99ef7ef16187e17033d9398dc962ce22dab5cb
@@ -289,7 +289,7 @@ F src/update.c 729f6f18fc27740591d085e1172cebe311144bf0
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c 4006c01772bd8d8ac4306d523bbcee41d3e392d8
 F src/vacuum.c 59f03f92bcff57faa6a8ca256eb29ccddfb0614a
-F src/vdbe.c 97c6c50e272ed531bc3af308d5f156cfca0ce4f4
+F src/vdbe.c 6e07ea132d94b464fa9d28dd7ea85a977524de31
 F src/vdbe.h 09f5b4e3719fa454f252322b1cdab5cf1f361327
 F src/vdbeInt.h e1173bd72b282633c2ec8f3a2f78b5117229f268
 F src/vdbeapi.c 37a6c6ae284a97bcace365f2f0a225680c0499d9
@@ -1204,7 +1204,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 869c30e45cc87063be423c650f16b99e8adb3df0
-R d569318d3e6a6b025c49ffecae9bf7d4
+P 91384a7d727ef0f285cd430e829ba9f3852db50e
+R 398856b8d4cf81a7bc85ff63a35b9f22
 U drh
-Z e6cf351e034f82bffef92232dfc65ffe
+Z cd7cdfd82fa519c77c73eb77000032e4

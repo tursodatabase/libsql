@@ -2288,7 +2288,7 @@ case OP_Column: {
   /* If the cursor cache is stale, bring it up-to-date */
   rc = sqlite3VdbeCursorMoveto(pC);
   if( rc ) goto abort_due_to_error;
-  if( pC->cacheStatus!=p->cacheCtr || (pOp->p5&OPFLAG_CLEARCACHE)!=0 ){
+  if( pC->cacheStatus!=p->cacheCtr ){
     if( pC->nullRow ){
       if( pCrsr==0 ){
         assert( pC->pseudoTableReg>0 );
@@ -4245,10 +4245,17 @@ case OP_SorterCompare: {
   break;
 };
 
-/* Opcode: SorterData P1 P2 * * *
+/* Opcode: SorterData P1 P2 P3 * *
 ** Synopsis: r[P2]=data
 **
 ** Write into register P2 the current sorter data for sorter cursor P1.
+** Then clear the column header cache on cursor P3.
+**
+** This opcode is normally use to move a record out of the sorter and into
+** a register that is the source for a pseudo-table cursor created using
+** OpenPseudo.  That pseudo-table cursor is the one that is identified by
+** parameter P3.  Clearing the P3 column cache as part of this opcode saves
+** us from having to issue a separate NullRow instruction to clear that cache.
 */
 case OP_SorterData: {
   VdbeCursor *pC;
@@ -4258,6 +4265,8 @@ case OP_SorterData: {
   assert( isSorter(pC) );
   rc = sqlite3VdbeSorterRowkey(pC, pOut);
   assert( rc!=SQLITE_OK || (pOut->flags & MEM_Blob) );
+  assert( pOp->p1>=0 && pOp->p1<p->nCursor );
+  p->apCsr[pOp->p3]->cacheStatus = CACHE_STALE;
   break;
 }
 
