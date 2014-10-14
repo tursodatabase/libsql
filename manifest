@@ -1,5 +1,5 @@
-C Optimize\sa\sdatabase\scorruption\stest\sinside\sof\sthe\sOP_Column\sopcode.
-D 2014-10-13T23:39:02.463
+C Make\ssure\snew\ssqlite3_vtab\sobjects\screated\sby\sthe\sxCreate()\svirtual\stable\nmethod\sare\sinitialized\sby\sthe\ssystem,\sin\saccordance\swith\sthe\sdocumentation.
+D 2014-10-14T20:25:43.215
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -298,7 +298,7 @@ F src/vdbeblob.c 848238dc73e93e48432991bb5651bf87d865eca4
 F src/vdbemem.c 481327f50d9da330053aa7456702ce46d0a4e70f
 F src/vdbesort.c 5c1bacf90578d22b630fbf6ed98ccf60d83435ef
 F src/vdbetrace.c 7e4222955e07dd707a2f360c0eb73452be1cb010
-F src/vtab.c 019dbfd0406a7447c990e1f7bd1dfcdb8895697f
+F src/vtab.c cb0c194303fea276b48d7d4b6d970b5a96bde8de
 F src/wal.c 10e7de7ce90865a68153f001a61f1d985cd17983
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
@@ -1204,7 +1204,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4b3b65ee5ea61e9b9671ca027940bf02689cb890
-R 42e26b1c48be06a100ad5530a5448c12
+P 005e5b388a8a97bca6d1f0e06c40d68d92aa1212
+R 69c5ef77aff899ac36ba1309415e232b
 U drh
-Z 6b074ae9a762ef61cbe684b68fc815ba
+Z ba859354cbc6c4d678eb09a46ba9f63b
