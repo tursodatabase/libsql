@@ -1,5 +1,5 @@
-C Merge\strunk\schanges\sinto\sthis\sbranch.
-D 2014-10-13T18:09:13.737
+C Fix\ssome\scode\sduplication\sissues\son\sthis\sbranch.\sAdd\sminor\soptimizations\sto\sthe\snew\scode.
+D 2014-10-14T17:27:04.829
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -172,7 +172,7 @@ F src/auth.c d8abcde53426275dab6243b441256fcd8ccbebb2
 F src/backup.c a31809c65623cc41849b94d368917f8bb66e6a7e
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 49ca66250c7dfa844a4d4cb8272b87420d27d3a5
-F src/btree.c 3d9d1db1d05724346876cf456a850628a9e75331
+F src/btree.c 3c72c5aa96b1a06ea15da24b82c526e6f14010ab
 F src/btree.h a79aa6a71e7f1055f01052b7f821bd1c2dce95c8
 F src/btreeInt.h 1bd7957161a1346a914f1f09231610e777a8e58d
 F src/build.c 9dc2bd94347b878c89627000c92b0c8d97ec2919
@@ -1204,7 +1204,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6594f9b420e2fa642737722ff8521f756ecef227 04892f8ba6c55cec4fe37bfe59b6349fd2a40698
-R 76183a9b7ddeb938a48604dbc4dd8cd6
+P d5b7c5a88dd58de85b3060a1f28b6d96e6e21207
+R ff1ec1f8aba483920a0100e96e95dccf
 U dan
-Z 504cabb1e1fb0c47450f76fec3d8495b
+Z 9c750816a0b42cc370356f0c03af45ae

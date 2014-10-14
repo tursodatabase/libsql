@@ -1225,6 +1225,57 @@ static int defragmentPage(MemPage *pPage){
 }
 
 /*
+** Search the free-list on page pPg for space to store a cell nByte bytes in
+** size. If one can be found, return a pointer to the space and remove it
+** from the free-list.
+**
+** If no suitable space can be found on the free-list, return NULL.
+**
+** This function may detect corruption within pPg. If it does and argument 
+** pRc is non-NULL, then *pRc is set to SQLITE_CORRUPT and NULL is returned.
+** Or, if corruption is detected by pRc is NULL, NULL is returned and the
+** corruption goes unreported.
+*/
+static u8 *pageFindSlot(MemPage *pPg, int nByte, int *pRc){
+  const int hdr = pPg->hdrOffset;
+  u8 * const aData = pPg->aData;
+  int iAddr;
+  int pc;
+  int usableSize = pPg->pBt->usableSize;
+
+  for(iAddr=hdr+1; (pc = get2byte(&aData[iAddr]))>0; iAddr=pc){
+    int size;            /* Size of the free slot */
+    if( pc>usableSize-4 || pc<iAddr+4 ){
+      if( pRc ) *pRc = SQLITE_CORRUPT_BKPT;
+      return 0;
+    }
+    size = get2byte(&aData[pc+2]);
+    if( size>=nByte ){
+      int x = size - nByte;
+      testcase( x==4 );
+      testcase( x==3 );
+      if( x<4 ){
+        if( aData[hdr+7]>=60 ) return 0;
+        /* Remove the slot from the free-list. Update the number of
+        ** fragmented bytes within the page. */
+        memcpy(&aData[iAddr], &aData[pc], 2);
+        aData[hdr+7] += (u8)x;
+      }else if( size+pc > usableSize ){
+        if( pRc ) *pRc = SQLITE_CORRUPT_BKPT;
+        return 0;
+      }else{
+        /* The slot remains on the free-list. Reduce its size to account
+         ** for the portion used by the new allocation. */
+        put2byte(&aData[pc+2], x);
+      }
+      return &aData[pc + x];
+    }
+  }
+
+  return 0;
+}
+
+/*
 ** Allocate nByte bytes of space from within the B-Tree page passed
 ** as the first argument. Write into *pIdx the index into pPage->aData[]
 ** of the first byte of allocated space. Return either SQLITE_OK or
@@ -1274,33 +1325,12 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
   testcase( gap+1==top );
   testcase( gap==top );
   if( gap+2<=top && (data[hdr+1] || data[hdr+2]) ){
-    int pc, addr;
-    for(addr=hdr+1; (pc = get2byte(&data[addr]))>0; addr=pc){
-      int size;            /* Size of the free slot */
-      if( pc>usableSize-4 || pc<addr+4 ){
-        return SQLITE_CORRUPT_BKPT;
-      }
-      size = get2byte(&data[pc+2]);
-      if( size>=nByte ){
-        int x = size - nByte;
-        testcase( x==4 );
-        testcase( x==3 );
-        if( x<4 ){
-          if( data[hdr+7]>=60 ) goto defragment_page;
-          /* Remove the slot from the free-list. Update the number of
-          ** fragmented bytes within the page. */
-          memcpy(&data[addr], &data[pc], 2);
-          data[hdr+7] += (u8)x;
-        }else if( size+pc > usableSize ){
-          return SQLITE_CORRUPT_BKPT;
-        }else{
-          /* The slot remains on the free-list. Reduce its size to account
-          ** for the portion used by the new allocation. */
-          put2byte(&data[pc+2], x);
-        }
-        *pIdx = pc + x;
-        return SQLITE_OK;
-      }
+    int rc = SQLITE_OK;
+    u8 *pSpace = pageFindSlot(pPage, nByte, &rc);
+    if( rc ) return rc;
+    if( pSpace ){
+      *pIdx = pSpace - data;
+      return SQLITE_OK;
     }
   }
 
@@ -1309,7 +1339,6 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
   */
   testcase( gap+2+nByte==top );
   if( gap+2+nByte>top ){
-defragment_page:
     testcase( pPage->nCell==0 );
     rc = defragmentPage(pPage);
     if( rc ) return rc;
@@ -5933,48 +5962,18 @@ static void insertCell(
 }
 
 /*
-** Add a list of cells to a page.  The page should be initially empty.
-** The cells are guaranteed to fit on the page.
+** Array apCell[] contains pointers to nCell b-tree page cells. The 
+** szCell[] array contains the size in bytes of each cell. This function
+** replaces the current contents of page pPg with the contents of the cell
+** array.
+**
+** Some of the cells in apCell[] may currently be stored in pPg. This
+** function works around problems caused by this by making a copy of any 
+** such cells before overwriting the page data.
+**
+** The MemPage.nFree field is invalidated by this function. It is the 
+** responsibility of the caller to set it correctly.
 */
-static void assemblePage(
-  MemPage *pPage,   /* The page to be assembled */
-  int nCell,        /* The number of cells to add to this page */
-  u8 **apCell,      /* Pointers to cell bodies */
-  u16 *aSize        /* Sizes of the cells */
-){
-  int i;            /* Loop counter */
-  u8 *pCellptr;     /* Address of next cell pointer */
-  int cellbody;     /* Address of next cell body */
-  u8 * const data = pPage->aData;             /* Pointer to data for pPage */
-  const int hdr = pPage->hdrOffset;           /* Offset of header on pPage */
-  const int nUsable = pPage->pBt->usableSize; /* Usable size of page */
-
-  assert( pPage->nOverflow==0 );
-  assert( sqlite3_mutex_held(pPage->pBt->mutex) );
-  assert( nCell>=0 && nCell<=(int)MX_CELL(pPage->pBt)
-            && (int)MX_CELL(pPage->pBt)<=10921);
-  assert( sqlite3PagerIswriteable(pPage->pDbPage) );
-
-  /* Check that the page has just been zeroed by zeroPage() */
-  assert( pPage->nCell==0 );
-  assert( get2byteNotZero(&data[hdr+5])==nUsable );
-
-  pCellptr = pPage->aCellIdx;
-  cellbody = nUsable;
-  for(i=0; i<nCell; i++){
-    u16 sz = aSize[i];
-    cellbody -= sz;
-    put2byte(pCellptr, cellbody);
-    pCellptr += 2;
-    memcpy(&data[cellbody], apCell[i], sz);
-  }
-  put2byte(&data[hdr+3], nCell);
-  put2byte(&data[hdr+5], cellbody);
-  pPage->nFree -= (nCell*2 + nUsable - cellbody);
-  pPage->nCell = (u16)nCell;
-}
-
-
 static void rebuildPage(
   MemPage *pPg,                   /* Edit this page */
   int nCell,                      /* Final number of cells on page */
@@ -5992,8 +5991,8 @@ static void rebuildPage(
 
   i = get2byte(&aData[hdr+5]);
   memcpy(&pTmp[i], &aData[i], usableSize - i);
-  pData = &aData[usableSize];
 
+  pData = pEnd;
   for(i=0; i<nCell; i++){
     u8 *pCell = apCell[i];
     if( pCell>aData && pCell<pEnd ){
@@ -6016,57 +6015,49 @@ static void rebuildPage(
   aData[hdr+7] = 0x00;
 }
 
-static u8 *pageFindSlot(MemPage *pPg, int nByte){
-  const int hdr = pPg->hdrOffset;
-  u8 * const aData = pPg->aData;
-  int iAddr;
-  int pc;
-  int usableSize = pPg->pBt->usableSize;
-
-  for(iAddr=hdr+1; (pc = get2byte(&aData[iAddr]))>0; iAddr=pc){
-    int size;            /* Size of the free slot */
-    if( pc>usableSize-4 || pc<iAddr+4 ) return 0;
-    size = get2byte(&aData[pc+2]);
-    if( size>=nByte ){
-      int x = size - nByte;
-      testcase( x==4 );
-      testcase( x==3 );
-      if( x<4 ){
-        if( aData[hdr+7]>=60 ) return 0;
-        /* Remove the slot from the free-list. Update the number of
-         ** fragmented bytes within the page. */
-        memcpy(&aData[iAddr], &aData[pc], 2);
-        aData[hdr+7] += (u8)x;
-      }else if( size+pc > usableSize ){
-        return 0;
-      }else{
-        /* The slot remains on the free-list. Reduce its size to account
-         ** for the portion used by the new allocation. */
-        put2byte(&aData[pc+2], x);
-      }
-      return &aData[pc + x];
-    }
-  }
-
-  return 0;
-}
-
+/*
+** Array apCell[] contains nCell pointers to b-tree cells. Array szCell
+** contains the size in bytes of each such cell. This function attempts to 
+** add the cells stored in the array to page pPg. If it cannot (because 
+** the page needs to be defragmented before the cells will fit), non-zero
+** is returned. Otherwise, if the cells are added successfully, zero is
+** returned.
+**
+** Argument pCellptr points to the first entry in the cell-pointer array
+** (part of page pPg) to populate. After cell apCell[0] is written to the
+** page body, a 16-bit offset is written to pCellptr. And so on, for each
+** cell in the array. It is the responsibility of the caller to ensure
+** that it is safe to overwrite this part of the cell-pointer array.
+**
+** When this function is called, *ppData points to the start of the 
+** content area on page pPg. If the size of the content area is extended,
+** *ppData is updated to point to the new start of the content area
+** before returning.
+**
+** Finally, argument pBegin points to the byte immediately following the
+** end of the space required by this page for the cell-pointer area (for
+** all cells - not just those inserted by the current call). If the content
+** area must be extended to before this point in order to accomodate all
+** cells in apCell[], then the cells do not fit and non-zero is returned.
+*/
 static int pageInsertArray(
-  MemPage *pPg,
-  u8 *pBegin,
-  u8 **ppData, 
-  u8 *pCellptr, 
-  int nCell,
+  MemPage *pPg,                   /* Page to add cells to */
+  u8 *pBegin,                     /* End of cell-pointer array */
+  u8 **ppData,                    /* IN/OUT: Page content -area pointer */
+  u8 *pCellptr,                   /* Pointer to cell-pointer area */
+  int nCell,                      /* Number of cells to add to pPg */
   u8 **apCell,                    /* Array of cells */
   u16 *szCell                     /* Array of cell sizes */
 ){
   int i;
   u8 *aData = pPg->aData;
   u8 *pData = *ppData;
+  const int bFreelist = aData[1] || aData[2];
+  assert( pPg->hdrOffset==0 );    /* Never called on page 1 */
   for(i=0; i<nCell; i++){
     int sz = szCell[i];
     u8 *pSlot;
-    if( (pSlot = pageFindSlot(pPg, sz))==0 ){
+    if( bFreelist==0 || (pSlot = pageFindSlot(pPg, sz, 0))==0 ){
       pData -= sz;
       if( pData<pBegin ) return 1;
       pSlot = pData;
@@ -6079,6 +6070,15 @@ static int pageInsertArray(
   return 0;
 }
 
+/*
+** Array apCell[] contains nCell pointers to b-tree cells. Array szCell 
+** contains the size in bytes of each such cell. This function adds the
+** space associated with each cell in the array that is currently stored 
+** within the body of pPg to the pPg free-list. The cell-pointers and other
+** fields of the page are not updated.
+**
+** This function returns the total number of cells added to the free-list.
+*/
 static int pageFreeArray(
   MemPage *pPg,                   /* Page to edit */
   int nCell,                      /* Cells to delete */
@@ -6110,7 +6110,6 @@ static int pageFreeArray(
   if( pFree ) freeSpace(pPg, pFree - aData, szFree);
   return nRet;
 }
-
 
 /*
 ** The pPg->nFree field is invalid when this function returns. It is the
@@ -6206,15 +6205,8 @@ static void editPage(
   }
 #endif
 
-#if 0
-printf("EDIT\n");
-#endif
-
   return;
  editpage_fail:
-#if 0
-  printf("REBUILD\n");
-#endif
   /* Unable to edit this page. Rebuild it from scratch instead. */
   rebuildPage(pPg, nNew, &apCell[iNew], &szCell[iNew]);
 }
@@ -6288,7 +6280,8 @@ static int balance_quick(MemPage *pParent, MemPage *pPage, u8 *pSpace){
     assert( sqlite3PagerIswriteable(pNew->pDbPage) );
     assert( pPage->aData[0]==(PTF_INTKEY|PTF_LEAFDATA|PTF_LEAF) );
     zeroPage(pNew, PTF_INTKEY|PTF_LEAFDATA|PTF_LEAF);
-    assemblePage(pNew, 1, &pCell, &szCell);
+    rebuildPage(pNew, 1, &pCell, &szCell);
+    pNew->nFree = pBt->usableSize - pNew->cellOffset - 2 - szCell;
 
     /* If this is an auto-vacuum database, update the pointer map
     ** with entries for the new page, and any pointer from the 
@@ -6518,8 +6511,6 @@ static int balance_nonroot(
   u8 *aSpace1;                 /* Space for copies of dividers cells */
   Pgno pgno;                   /* Temp var to store a page number in */
 
-  int aShiftLeft[NB+2];
-  int aShiftRight[NB+2];
   u8 abDone[NB+2];
   Pgno aPgno[NB+2];
   u16 aPgFlags[NB+2];
@@ -6887,49 +6878,6 @@ static int balance_nonroot(
   assert( sqlite3PagerIswriteable(pParent->pDbPage) );
   put4byte(pRight, apNew[nNew-1]->pgno);
 
-  j = 0;
-  for(i=0; i<nNew; i++){
-    /* At this point, "j" is the apCell[] index of the first cell currently
-    ** stored on page apNew[i]. Or, if apNew[i] was not one of the original 
-    ** sibling pages, "j" should be set to nCell. Variable iFirst is set
-    ** to the apCell[] index of the first cell that will appear on the
-    ** page following this balancing operation.  */
-    int iFirst = (i==0 ? 0 : cntNew[i-1] + !leafData);     /* new first cell */
-
-#if 0
-    MemPage *pNew = apNew[i];
-    int iCell;
-    int nCta = 0;
-    int nFree;
-
-    printf("REBUILD %d: %d@%d -> %d@%d", apNew[i]->pgno,
-          pNew->nCell+pNew->nOverflow, j,
-          cntNew[i] - iFirst, iFirst
-    );
-    for(iCell=iFirst; iCell<cntNew[i]; iCell++){
-      if( apCell[iCell]<pNew->aData 
-       || apCell[iCell]>=&pNew->aData[pBt->usableSize] 
-      ){
-        nCta += szCell[iCell];
-      }
-    }
-    nFree = get2byte(&pNew->aData[pNew->hdrOffset+5]);
-    nFree -= (pNew->cellOffset + (cntNew[i] - iFirst) * 2);
-    printf(" cta=%d free=%d\n", nCta, nFree);
-    if( i==(nNew-1) ){
-      printf("-----\n");
-      fflush(stdout);
-    }
-#endif
-
-    assert( i<nOld || j==nCell );
-    aShiftLeft[i] = j - iFirst;
-    j += apNew[i]->nCell + apNew[i]->nOverflow;
-    aShiftRight[i] = cntNew[i] - j;
-    assert( i!=nOld-1 || j==nCell );
-    if( j<nCell ) j += !leafData;
-  }
-
   /* If the sibling pages are not leaves, ensure that the right-child pointer
   ** of the right-most new sibling page is set to the value that was 
   ** originally in the same field of the right-most old sibling page. */
@@ -7047,22 +6995,21 @@ static int balance_nonroot(
   ** is important, as this code needs to avoid disrupting any page from which
   ** cells may still to be read. In practice, this means:
   **
-  **   1) If the aShiftLeft[] entry is less than 0, it is not safe to 
-  **      update the page until the page to the left of the current page
-  **      (apNew[i-1]) has already been updated.
+  **   1) If cells are to be removed from the start of the page and shifted
+  **      to the left-hand sibling, it is not safe to update the page until 
+  **      the left-hand sibling (apNew[i-1]) has already been updated.
   **
-  **   2) If the aShiftRight[] entry is less than 0, it is not safe to 
-  **      update the page until the page to the right of the current page
-  **      (apNew[i+1]) has already been updated.
+  **   2) If cells are to be removed from the end of the page and shifted
+  **      to the right-hand sibling, it is not safe to update the page until 
+  **      the right-hand sibling (apNew[i+1]) has already been updated.
   **
   ** If neither of the above apply, the page is safe to update.
   */
-  assert( aShiftRight[nNew-1]>=0 && aShiftLeft[0]==0 );
   for(i=0; i<nNew*2; i++){
     int iPg = (i>=nNew ? i-nNew : nNew-1-i);
     if( abDone[iPg]==0 
-     && (aShiftLeft[iPg]>=0 || abDone[iPg-1])
-     && (aShiftRight[iPg]>=0 || abDone[iPg+1])
+     && (iPg==0 || cntOld[iPg-1]>=cntNew[iPg-1] || abDone[iPg-1])
+     && (cntNew[iPg]>=cntOld[iPg] || abDone[iPg+1])
     ){
       int iNew;
       int iOld;
