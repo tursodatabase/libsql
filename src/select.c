@@ -1181,7 +1181,6 @@ static void generateSortTail(
   int nKey;
   int iSortTab;                   /* Sorter cursor to read from */
   int nSortData;                  /* Trailing values to read from sorter */
-  u8 p5;                          /* p5 parameter for 1st OP_Column */
   int i;
   int bSeq;                       /* True if sorter record includes seq. no. */
 #ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
@@ -1215,19 +1214,16 @@ static void generateSortTail(
     addr = 1 + sqlite3VdbeAddOp2(v, OP_SorterSort, iTab, addrBreak);
     VdbeCoverage(v);
     codeOffset(v, p->iOffset, addrContinue);
-    sqlite3VdbeAddOp2(v, OP_SorterData, iTab, regSortOut);
-    p5 = OPFLAG_CLEARCACHE;
+    sqlite3VdbeAddOp3(v, OP_SorterData, iTab, regSortOut, iSortTab);
     bSeq = 0;
   }else{
     addr = 1 + sqlite3VdbeAddOp2(v, OP_Sort, iTab, addrBreak); VdbeCoverage(v);
     codeOffset(v, p->iOffset, addrContinue);
     iSortTab = iTab;
-    p5 = 0;
     bSeq = 1;
   }
   for(i=0; i<nSortData; i++){
     sqlite3VdbeAddOp3(v, OP_Column, iSortTab, nKey+bSeq+i, regRow+i);
-    if( i==0 ) sqlite3VdbeChangeP5(v, p5);
     VdbeComment((v, "%s", aOutEx[i].zName ? aOutEx[i].zName : aOutEx[i].zSpan));
   }
   switch( eDest ){
@@ -5156,12 +5152,11 @@ int sqlite3Select(
       addrTopOfLoop = sqlite3VdbeCurrentAddr(v);
       sqlite3ExprCacheClear(pParse);
       if( groupBySort ){
-        sqlite3VdbeAddOp2(v, OP_SorterData, sAggInfo.sortingIdx, sortOut);
+        sqlite3VdbeAddOp3(v, OP_SorterData, sAggInfo.sortingIdx, sortOut,sortPTab);
       }
       for(j=0; j<pGroupBy->nExpr; j++){
         if( groupBySort ){
           sqlite3VdbeAddOp3(v, OP_Column, sortPTab, j, iBMem+j);
-          if( j==0 ) sqlite3VdbeChangeP5(v, OPFLAG_CLEARCACHE);
         }else{
           sAggInfo.directMode = 1;
           sqlite3ExprCode(pParse, pGroupBy->a[j].pExpr, iBMem+j);

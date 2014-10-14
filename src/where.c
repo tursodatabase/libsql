@@ -2209,8 +2209,8 @@ static int whereRangeScanEst(
 
       assert( pLower==0 || (pLower->eOperator & (WO_GT|WO_GE))!=0 );
       assert( pUpper==0 || (pUpper->eOperator & (WO_LT|WO_LE))!=0 );
-      assert( p->pKeyInfo!=0 && p->pKeyInfo->aSortOrder!=0 );
-      if( p->pKeyInfo->aSortOrder[nEq] ){
+      assert( p->aSortOrder!=0 );
+      if( p->aSortOrder[nEq] ){
         /* The roles of pLower and pUpper are swapped for a DESC index */
         SWAP(WhereTerm*, pLower, pUpper);
       }
@@ -2737,9 +2737,8 @@ static void explainAppendTerm(
 
 /*
 ** Argument pLevel describes a strategy for scanning table pTab. This 
-** function returns a pointer to a string buffer containing a description
-** of the subset of table rows scanned by the strategy in the form of an
-** SQL expression. Or, if all rows are scanned, NULL is returned.
+** function appends text to pStr that describes the subset of table
+** rows scanned by the strategy in the form of an SQL expression.
 **
 ** For example, if the query:
 **
@@ -2749,49 +2748,37 @@ static void explainAppendTerm(
 ** string similar to:
 **
 **   "a=? AND b>?"
-**
-** The returned pointer points to memory obtained from sqlite3DbMalloc().
-** It is the responsibility of the caller to free the buffer when it is
-** no longer required.
 */
-static char *explainIndexRange(sqlite3 *db, WhereLoop *pLoop, Table *pTab){
+static void explainIndexRange(StrAccum *pStr, WhereLoop *pLoop, Table *pTab){
   Index *pIndex = pLoop->u.btree.pIndex;
   u16 nEq = pLoop->u.btree.nEq;
   u16 nSkip = pLoop->u.btree.nSkip;
   int i, j;
   Column *aCol = pTab->aCol;
   i16 *aiColumn = pIndex->aiColumn;
-  StrAccum txt;
 
-  if( nEq==0 && (pLoop->wsFlags & (WHERE_BTM_LIMIT|WHERE_TOP_LIMIT))==0 ){
-    return 0;
-  }
-  sqlite3StrAccumInit(&txt, 0, 0, SQLITE_MAX_LENGTH);
-  txt.db = db;
-  sqlite3StrAccumAppend(&txt, " (", 2);
+  if( nEq==0 && (pLoop->wsFlags&(WHERE_BTM_LIMIT|WHERE_TOP_LIMIT))==0 ) return;
+  sqlite3StrAccumAppend(pStr, " (", 2);
   for(i=0; i<nEq; i++){
     char *z = aiColumn[i] < 0 ? "rowid" : aCol[aiColumn[i]].zName;
     if( i>=nSkip ){
-      explainAppendTerm(&txt, i, z, "=");
+      explainAppendTerm(pStr, i, z, "=");
     }else{
-      if( i ) sqlite3StrAccumAppend(&txt, " AND ", 5);
-      sqlite3StrAccumAppend(&txt, "ANY(", 4);
-      sqlite3StrAccumAppendAll(&txt, z);
-      sqlite3StrAccumAppend(&txt, ")", 1);
+      if( i ) sqlite3StrAccumAppend(pStr, " AND ", 5);
+      sqlite3XPrintf(pStr, 0, "ANY(%s)", z);
     }
   }
 
   j = i;
   if( pLoop->wsFlags&WHERE_BTM_LIMIT ){
     char *z = aiColumn[j] < 0 ? "rowid" : aCol[aiColumn[j]].zName;
-    explainAppendTerm(&txt, i++, z, ">");
+    explainAppendTerm(pStr, i++, z, ">");
   }
   if( pLoop->wsFlags&WHERE_TOP_LIMIT ){
     char *z = aiColumn[j] < 0 ? "rowid" : aCol[aiColumn[j]].zName;
-    explainAppendTerm(&txt, i, z, "<");
+    explainAppendTerm(pStr, i, z, "<");
   }
-  sqlite3StrAccumAppend(&txt, ")", 1);
-  return sqlite3StrAccumFinish(&txt);
+  sqlite3StrAccumAppend(pStr, ")", 1);
 }
 
 /*
@@ -2815,11 +2802,13 @@ static void explainOneScan(
     struct SrcList_item *pItem = &pTabList->a[pLevel->iFrom];
     Vdbe *v = pParse->pVdbe;      /* VM being constructed */
     sqlite3 *db = pParse->db;     /* Database handle */
-    char *zMsg;                   /* Text to add to EQP output */
     int iId = pParse->iSelectId;  /* Select id (left-most output column) */
     int isSearch;                 /* True for a SEARCH. False for SCAN. */
     WhereLoop *pLoop;             /* The controlling WhereLoop object */
     u32 flags;                    /* Flags that describe this loop */
+    char *zMsg;                   /* Text to add to EQP output */
+    StrAccum str;                 /* EQP output string */
+    char zBuf[100];               /* Initial space for EQP output string */
 
     pLoop = pLevel->pWLoop;
     flags = pLoop->wsFlags;
@@ -2829,54 +2818,70 @@ static void explainOneScan(
             || ((flags&WHERE_VIRTUALTABLE)==0 && (pLoop->u.btree.nEq>0))
             || (wctrlFlags&(WHERE_ORDERBY_MIN|WHERE_ORDERBY_MAX));
 
-    zMsg = sqlite3MPrintf(db, "%s", isSearch?"SEARCH":"SCAN");
+    sqlite3StrAccumInit(&str, zBuf, sizeof(zBuf), SQLITE_MAX_LENGTH);
+    str.db = db;
+    sqlite3StrAccumAppendAll(&str, isSearch ? "SEARCH" : "SCAN");
     if( pItem->pSelect ){
-      zMsg = sqlite3MAppendf(db, zMsg, "%s SUBQUERY %d", zMsg,pItem->iSelectId);
+      sqlite3XPrintf(&str, 0, " SUBQUERY %d", pItem->iSelectId);
     }else{
-      zMsg = sqlite3MAppendf(db, zMsg, "%s TABLE %s", zMsg, pItem->zName);
+      sqlite3XPrintf(&str, 0, " TABLE %s", pItem->zName);
     }
 
     if( pItem->zAlias ){
-      zMsg = sqlite3MAppendf(db, zMsg, "%s AS %s", zMsg, pItem->zAlias);
+      sqlite3XPrintf(&str, 0, " AS %s", pItem->zAlias);
     }
-    if( (flags & (WHERE_IPK|WHERE_VIRTUALTABLE))==0
-     && ALWAYS(pLoop->u.btree.pIndex!=0)
-    ){
-      const char *zFmt;
-      Index *pIdx = pLoop->u.btree.pIndex;
-      char *zWhere = explainIndexRange(db, pLoop, pItem->pTab);
+    if( (flags & (WHERE_IPK|WHERE_VIRTUALTABLE))==0 ){
+      const char *zFmt = 0;
+      Index *pIdx;
+
+      assert( pLoop->u.btree.pIndex!=0 );
+      pIdx = pLoop->u.btree.pIndex;
       assert( !(flags&WHERE_AUTO_INDEX) || (flags&WHERE_IDX_ONLY) );
       if( !HasRowid(pItem->pTab) && IsPrimaryKeyIndex(pIdx) ){
-        zFmt = zWhere ? "%s USING PRIMARY KEY%.0s%s" : "%s%.0s%s";
+        if( isSearch ){
+          zFmt = "PRIMARY KEY";
+        }
       }else if( flags & WHERE_AUTO_INDEX ){
-        zFmt = "%s USING AUTOMATIC COVERING INDEX%.0s%s";
+        zFmt = "AUTOMATIC COVERING INDEX";
       }else if( flags & WHERE_IDX_ONLY ){
-        zFmt = "%s USING COVERING INDEX %s%s";
+        zFmt = "COVERING INDEX %s";
       }else{
-        zFmt = "%s USING INDEX %s%s";
+        zFmt = "INDEX %s";
       }
-      zMsg = sqlite3MAppendf(db, zMsg, zFmt, zMsg, pIdx->zName, zWhere);
-      sqlite3DbFree(db, zWhere);
+      if( zFmt ){
+        sqlite3StrAccumAppend(&str, " USING ", 7);
+        sqlite3XPrintf(&str, 0, zFmt, pIdx->zName);
+        explainIndexRange(&str, pLoop, pItem->pTab);
+      }
     }else if( (flags & WHERE_IPK)!=0 && (flags & WHERE_CONSTRAINT)!=0 ){
-      zMsg = sqlite3MAppendf(db, zMsg, "%s USING INTEGER PRIMARY KEY", zMsg);
-
+      const char *zRange;
       if( flags&(WHERE_COLUMN_EQ|WHERE_COLUMN_IN) ){
-        zMsg = sqlite3MAppendf(db, zMsg, "%s (rowid=?)", zMsg);
+        zRange = "(rowid=?)";
       }else if( (flags&WHERE_BOTH_LIMIT)==WHERE_BOTH_LIMIT ){
-        zMsg = sqlite3MAppendf(db, zMsg, "%s (rowid>? AND rowid<?)", zMsg);
+        zRange = "(rowid>? AND rowid<?)";
       }else if( flags&WHERE_BTM_LIMIT ){
-        zMsg = sqlite3MAppendf(db, zMsg, "%s (rowid>?)", zMsg);
-      }else if( ALWAYS(flags&WHERE_TOP_LIMIT) ){
-        zMsg = sqlite3MAppendf(db, zMsg, "%s (rowid<?)", zMsg);
+        zRange = "(rowid>?)";
+      }else{
+        assert( flags&WHERE_TOP_LIMIT);
+        zRange = "(rowid<?)";
       }
+      sqlite3StrAccumAppendAll(&str, " USING INTEGER PRIMARY KEY ");
+      sqlite3StrAccumAppendAll(&str, zRange);
     }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
     else if( (flags & WHERE_VIRTUALTABLE)!=0 ){
-      zMsg = sqlite3MAppendf(db, zMsg, "%s VIRTUAL TABLE INDEX %d:%s", zMsg,
+      sqlite3XPrintf(&str, 0, " VIRTUAL TABLE INDEX %d:%s",
                   pLoop->u.vtab.idxNum, pLoop->u.vtab.idxStr);
     }
 #endif
-    zMsg = sqlite3MAppendf(db, zMsg, "%s", zMsg);
+#ifdef SQLITE_EXPLAIN_ESTIMATED_ROWS
+    if( pLoop->nOut>=10 ){
+      sqlite3XPrintf(&str, 0, " (~%llu rows)", sqlite3LogEstToInt(pLoop->nOut));
+    }else{
+      sqlite3StrAccumAppend(&str, " (~1 row)", 9);
+    }
+#endif
+    zMsg = sqlite3StrAccumFinish(&str);
     sqlite3VdbeAddOp4(v, OP_Explain, iId, iLevel, iFrom, zMsg, P4_DYNAMIC);
   }
 }
@@ -5355,7 +5360,7 @@ static i8 wherePathSatisfiesOrderBy(
           isMatch = 1;
           break;
         }
-        if( isMatch && (pWInfo->wctrlFlags & WHERE_GROUPBY)==0 ){
+        if( isMatch && (wctrlFlags & WHERE_GROUPBY)==0 ){
           /* Make sure the sort order is compatible in an ORDER BY clause.
           ** Sort order is irrelevant for a GROUP BY clause. */
           if( revSet ){
@@ -5820,12 +5825,15 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
     if( (pWInfo->wctrlFlags & WHERE_SORTBYGROUP)
         && pWInfo->nOBSat==pWInfo->pOrderBy->nExpr
     ){
-      Bitmask notUsed = 0;
+      Bitmask revMask = 0;
       int nOrder = wherePathSatisfiesOrderBy(pWInfo, pWInfo->pOrderBy, 
-          pFrom, 0, nLoop-1, pFrom->aLoop[nLoop-1], &notUsed
+          pFrom, 0, nLoop-1, pFrom->aLoop[nLoop-1], &revMask
       );
       assert( pWInfo->sorted==0 );
-      pWInfo->sorted = (nOrder==pWInfo->pOrderBy->nExpr);
+      if( nOrder==pWInfo->pOrderBy->nExpr ){
+        pWInfo->sorted = 1;
+        pWInfo->revMask = revMask;
+      }
     }
   }
 

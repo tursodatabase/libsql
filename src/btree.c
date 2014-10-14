@@ -782,7 +782,7 @@ static int btreeRestoreCursorPosition(BtCursor *pCur){
 ** back to where it ought to be if this routine returns true.
 */
 int sqlite3BtreeCursorHasMoved(BtCursor *pCur){
-  return pCur && pCur->eState!=CURSOR_VALID;
+  return pCur->eState!=CURSOR_VALID;
 }
 
 /*
@@ -5872,11 +5872,6 @@ static void dropCell(MemPage *pPage, int idx, int sz, int *pRC){
 ** in pTemp or the original pCell) and also record its index. 
 ** Allocating a new entry in pPage->aCell[] implies that 
 ** pPage->nOverflow is incremented.
-**
-** If nSkip is non-zero, then do not copy the first nSkip bytes of the
-** cell. The caller will overwrite them after this function returns. If
-** nSkip is non-zero, then pCell may not point to an invalid memory location 
-** (but pCell+nSkip is always valid).
 */
 static void insertCell(
   MemPage *pPage,   /* Page into which we are copying */
@@ -5893,7 +5888,6 @@ static void insertCell(
   int ins;          /* Index in data[] where new cell pointer is inserted */
   int cellOffset;   /* Address of first cell pointer in data[] */
   u8 *data;         /* The content of the whole page */
-  int nSkip = (iChild ? 4 : 0);
 
   if( *pRC ) return;
 
@@ -5911,7 +5905,7 @@ static void insertCell(
   assert( sz==cellSizePtr(pPage, pCell) || (sz==8 && iChild>0) );
   if( pPage->nOverflow || sz+2>pPage->nFree ){
     if( pTemp ){
-      memcpy(pTemp+nSkip, pCell+nSkip, sz-nSkip);
+      memcpy(pTemp, pCell, sz);
       pCell = pTemp;
     }
     if( iChild ){
@@ -5940,7 +5934,7 @@ static void insertCell(
     assert( idx+sz <= (int)pPage->pBt->usableSize );
     pPage->nCell++;
     pPage->nFree -= (u16)(2 + sz);
-    memcpy(&data[idx+nSkip], pCell+nSkip, sz-nSkip);
+    memcpy(&data[idx], pCell, sz);
     if( iChild ){
       put4byte(&data[idx], iChild);
     }

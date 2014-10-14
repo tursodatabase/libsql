@@ -433,4 +433,21 @@ do_execsql_test 9.1 {
   SELECT snippet(ft2, '[', ']', '', -1, 1) FROM ft2 WHERE ft2 MATCH 'c';
 } {{[c]} {[c]}}
 
+#---------------------------------------------------------------------------
+# Test for a memory leak
+#
+do_execsql_test 10.1 {
+  DROP TABLE t10;
+  CREATE VIRTUAL TABLE t10 USING fts4(idx, value);
+  INSERT INTO t10 values (1, 'one'),(2, 'two'),(3, 'three');
+  SELECT docId, t10.*
+    FROM t10
+    JOIN (SELECT 1 AS idx UNION SELECT 2 UNION SELECT 3) AS x
+   WHERE t10 MATCH x.idx
+     AND matchinfo(t10) not null
+   GROUP BY docId
+   ORDER BY 1;
+} {1 1 one 2 2 two 3 3 three}
+  
+
 finish_test
