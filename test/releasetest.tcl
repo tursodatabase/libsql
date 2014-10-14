@@ -13,6 +13,7 @@ optional) are:
     -makefile PATH-TO-MAKEFILE           (default "releasetest.mk")
     -platform PLATFORM                   (see below)
     -quick    BOOLEAN                    (default "0")
+    -config   CONFIGNAME                 (Run only CONFIGNAME)
 
 The default value for -makefile is "./releasetest.mk".
 
@@ -292,6 +293,7 @@ proc run_test_suite {name testtarget config} {
 proc process_options {argv} {
   set ::MAKEFILE releasetest.mk                       ;# Default value
   set ::QUICK    0                                    ;# Default value
+  set config {}
   set platform $::tcl_platform(os)-$::tcl_platform(machine)
 
   for {set i 0} {$i < [llength $argv]} {incr i} {
@@ -309,6 +311,11 @@ proc process_options {argv} {
       -quick {
         incr i
         set ::QUICK [lindex $argv $i]
+      }
+
+      -config {
+        incr i
+        set config [lindex $argv $i]
       }
   
       default {
@@ -333,7 +340,12 @@ proc process_options {argv} {
     exit
   }
 
-  set ::CONFIGLIST $::Platforms($platform)
+  if {$config!=""} {
+    if {[llength $config]==1} {lappend config fulltest}
+    set ::CONFIGLIST $config
+  } else {
+    set ::CONFIGLIST $::Platforms($platform)
+  }
   puts "Running the following configurations for $platform:"
   puts "    [string trim $::CONFIGLIST]"
 }

@@ -4006,6 +4006,7 @@ static int process_input(ShellState *p, FILE *in){
   if( nSql ){
     if( !_all_whitespace(zSql) ){
       fprintf(stderr, "Error: incomplete SQL: %s\n", zSql);
+      errCnt++;
     }
     free(zSql);
   }
