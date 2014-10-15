@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\scausing\slock5.test\sto\sfail\sin\smmap-mode.
-D 2014-10-15T14:45:34.650
+C Update\sreleasetest.tcl\sso\sthat\sx86-64\sruns\sa\ssuperset\sof\sthe\sx86\stests.
+D 2014-10-15T15:28:27.041
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -783,7 +783,7 @@ F test/rdonly.test dd30a4858d8e0fbad2304c2bd74a33d4df36412a
 F test/regexp1.test 497ea812f264d12b6198d6e50a76be4a1973a9d8
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
 F test/releasetest.mk 2eced2f9ae701fd0a29e714a241760503ccba25a
-F test/releasetest.tcl 4296b9adbc5992bcd0b0b2876b7651f57c1494f2
+F test/releasetest.tcl a4279c890698584feb2ffc86735857a4e4474180
 F test/resolver01.test 33abf37ff8335e6bf98f2b45a0af3e06996ccd9a
 F test/rollback.test e9504a009a202c3ed711da2e6879ff60c5a4669c
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
@@ -1204,7 +1204,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9386bfca128023583a24303e5f1d832987a49d43
-R d767fb05b1c758bd73ecd7ed19e0f8f8
+P b3e7b446bdb47cf9d7fe43dc37e3b4f8010ee09e
+R d10aa2fd16b5624d36b7172d8913c506
 U dan
-Z deb18f7b499c6ed23800c00a8fad84b5
+Z 50710860f359ce0bbdbe754b3e261318
