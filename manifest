@@ -1,5 +1,5 @@
-C Merge\slatest\strunk\schanges\swith\sthis\sbranch.
-D 2014-10-15T19:37:13.299
+C Fix\sa\sproblem\scausing\ssqlite3changeset_concat()\sto\sfail\sto\sdetect\sattempts\sto\sconcatenate\spatchsets\swhich\schangesets.
+D 2014-10-15T20:02:21.265
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd5f245aa8c741bc65845747203c8ce2f3fb6c83
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -156,9 +156,10 @@ F ext/session/session8.test 8e194b3f655d861ca36de5d4de53f702751bab3b
 F ext/session/session9.test 5409d90d8141881d08285ed1c2c0d8d10fb92069
 F ext/session/sessionA.test 1feeab0b8e03527f08f2f1defb442da25480138f
 F ext/session/sessionB.test 06961b7c3641151f5d23088250ecad132501113c
+F ext/session/sessionC.test 3982f8577b0744c5ce3aaef7cfeb5bd903f17fe4
 F ext/session/session_common.tcl 9de0451b6a47218fc16b9ed8876b6238a0a3d88d
 F ext/session/sessionfault.test bef044d0952c0d62c31c8d2400be72c8684545cc
-F ext/session/sqlite3session.c 67b8aee718cf34e267f4040d9b945a7a6407b0b2
+F ext/session/sqlite3session.c 838050c4c217d2843e4705b14be25d8f0457f155
 F ext/session/sqlite3session.h 16608d29879a0ed3c6be6b7fb18dcdb5c707aaef
 F ext/session/test_session.c a28352e99bc6a83b94e4cce99a7bf25c73d6d489
 F ext/userauth/sqlite3userauth.h 19cb6f0e31316d0ee4afdfb7a85ef9da3333a220
@@ -1221,7 +1222,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 83d4114f2aa404e670ced33511183baacd813a01 3c1e70f4d55bc009ed9ed4cf6d756d7061985851
-R 573bb7e03bcfc05e0f889e571f4f3aa7
+P 1b2824f1d11ac336779372e322aecfb36fb2a31d
+R fa664b8794125d09d3da5d2babd6e792
 U dan
-Z d7531a3919881ed86fbddd665aff411c
+Z 8d94920cff847cf3f9fcffe7f6436f08

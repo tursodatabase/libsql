@@ -3911,11 +3911,17 @@ int sessionChangesetConcat(
 
   assert( xOutput==0 || (ppOut==0 && pnOut==0) );
 
+  assert( pLeft->zTab==0 && pRight->zTab==0 );
   rc = sessionChangesetToHash(pLeft, &pList);
+  assert( pLeft->zTab || pList==0 );
   if( rc==SQLITE_OK ){
     rc = sessionChangesetToHash(pRight, &pList);
   }
   bPatch = pLeft->bPatchset || pRight->bPatchset;
+
+  if( pLeft->zTab && pRight->zTab && pLeft->bPatchset!=pRight->bPatchset ){
+    rc = SQLITE_ERROR;
+  }
 
   /* Create the serialized output changeset based on the contents of the
   ** hash tables attached to the SessionTable objects in list pList. 
