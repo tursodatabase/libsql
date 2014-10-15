@@ -1,5 +1,5 @@
-C Add\sa\sfour-byte\sprefix\sto\sthe\sBtShared.pTmpSpace\sbuffer\sto\savoid\sreading\nbefore\sthe\sbeginning\sof\san\sallocation.
-D 2014-10-15T11:55:51.434
+C Fix\sa\sproblem\scausing\slock5.test\sto\sfail\sin\smmap-mode.
+D 2014-10-15T14:45:34.650
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -677,7 +677,7 @@ F test/lock.test 87af515b0c4cf928576d0f89946d67d7c265dfb4
 F test/lock2.test 5242d8ac4e2d59c403aebff606af449b455aceff
 F test/lock3.test f271375930711ae044080f4fe6d6eda930870d00
 F test/lock4.test e175ae13865bc87680607563bafba21f31a26f12
-F test/lock5.test 5ad6a1f536036ff1be915cfdd41481aeafda3273
+F test/lock5.test c6c5e0ebcb21c61a572870cc86c0cb9f14cede38
 F test/lock6.test ad5b387a3a8096afd3c68a55b9535056431b0cf5
 F test/lock7.test 49f1eaff1cdc491cc5dee3669f3c671d9f172431
 F test/lock_common.tcl 0c270b121d40959fa2f3add382200c27045b3d95
@@ -1204,7 +1204,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4a7b3fa049a9aa0668e318287edd4a78c0588bf8
-R 0eaa9fa075886c1412c89d2319c66fd1
-U drh
-Z fdb81bbd00d8de95e4a04ef38ee80f55
+P 9386bfca128023583a24303e5f1d832987a49d43
+R d767fb05b1c758bd73ecd7ed19e0f8f8
+U dan
+Z deb18f7b499c6ed23800c00a8fad84b5
