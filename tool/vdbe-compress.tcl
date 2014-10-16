@@ -110,6 +110,11 @@ while {![eof stdin]} {
     foreach v $vlist {
       regsub -all "(\[^a-zA-Z0-9>.\])${v}(\\W)" $line "\\1u.$sname.$v\\2" line
       regsub -all "(\[^a-zA-Z0-9>.\])${v}(\\W)" $line "\\1u.$sname.$v\\2" line
+
+      # The expressions above fail to catch instance of variable "abc" in
+      # expressions like (32>abc). The following expression makes those
+      # substitutions.
+      regsub -all "(\[^-\])>${v}(\\W)" $line "\\1>u.$sname.$v\\2" line
     }
     append afterUnion [string trimright $line]\n
   } elseif {$line=="" && [eof stdin]} {

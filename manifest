@@ -1,5 +1,5 @@
-C Update\sreleasetest.tcl\sso\sthat\sx86-64\sruns\sa\ssuperset\sof\sthe\sx86\stests.
-D 2014-10-15T15:28:27.041
+C Update\sthe\svdbe-compress.tcl\sscript\sto\saccount\sfor\sexpressions\sof\sthe\sform\s(123>var),\swhere\s"var"\sshould\sbe\sreplaced\swith\sa\sreference\sto\sa\sunion\smember.
+D 2014-10-16T11:45:14.341
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1199,12 +1199,12 @@ F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
 F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
 F tool/symbols.sh fec58532668296d7c7dc48be9c87f75ccdb5814f
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
-F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
+F tool/vdbe-compress.tcl 5926c71f9c12d2ab73ef35c29376e756eb68361c
 F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b3e7b446bdb47cf9d7fe43dc37e3b4f8010ee09e
-R d10aa2fd16b5624d36b7172d8913c506
+P 3c1e70f4d55bc009ed9ed4cf6d756d7061985851
+R e0f61b3d5f668f3cfe77a35e5da93d93
 U dan
-Z 50710860f359ce0bbdbe754b3e261318
+Z d051f6e18c5411d016dc382904d39726
