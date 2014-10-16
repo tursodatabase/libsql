@@ -1,5 +1,5 @@
-C Update\sthe\svdbe-compress.tcl\sscript\sto\saccount\sfor\sexpressions\sof\sthe\sform\s(123>var),\swhere\s"var"\sshould\sbe\sreplaced\swith\sa\sreference\sto\sa\sunion\smember.
-D 2014-10-16T11:45:14.341
+C Changes\sto\swork\saround\sWin32\sand\sMSVCRT\sAPIs\sthat\sare\snot\spresent\son\sWindows\sCE\s200x.
+D 2014-10-16T18:34:50.284
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -213,7 +213,7 @@ F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c fb587121840f690101336879adfa6d0b2cd0e8c7
-F src/os_win.c 0a4042ef35f322e86fa01f6c8884c5e645b911e7
+F src/os_win.c a019caaae2bcbbc0cc4c39af6e7d7e43d8426053
 F src/os_win.h 09e751b20bbc107ffbd46e13555dc73576d88e21
 F src/pager.c a171cf9dd09c6cb162b262c328d4dfd198e04f80
 F src/pager.h ffd5607f7b3e4590b415b007a4382f693334d428
@@ -282,7 +282,7 @@ F src/test_thread.c 1e133a40b50e9c035b00174035b846e7eef481cb
 F src/test_vfs.c f84075a388527892ff184988f43b69ce69b8083c
 F src/test_vfstrace.c bab9594adc976cbe696ff3970728830b4c5ed698
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
-F src/threads.c 60c9d400abf17ccdc8767cdc6af90b9c5acf58bd
+F src/threads.c 6de09362b657f19ba83e5fa521ee715787ce9fee
 F src/tokenize.c cc9016e5007fc5e76789079616d2f26741bcc689
 F src/trigger.c 25571661fdeae8c7f975ff40ffec205520a3f92f
 F src/update.c 729f6f18fc27740591d085e1172cebe311144bf0
@@ -846,7 +846,7 @@ F test/skipscan3.test ec5bab3f81c7038b43450e7b3062e04a198bdbb5
 F test/skipscan5.test 67817a4b6857c47e0e33ba3e506da6f23ef68de2
 F test/soak.test 0b5b6375c9f4110c828070b826b3b4b0bb65cd5f
 F test/softheap1.test 40562fe6cac6d9827b7b42b86d45aedf12c15e24
-F test/sort.test 15e1d3014abc3f6d4357ed81b93b82117aefd235
+F test/sort.test c4400e7533748f6bd7413851ff148645e82b9e2d
 F test/sort2.test 269f4f50c6e468cc32b302ae7ff0add8338ec6de
 F test/sort3.test 6178ade30810ac9166fcdf14b7065e49c0f534e2
 F test/sort4.test 6c37d85f7cd28d50cce222fcab84ccd771e105cb
@@ -1204,7 +1204,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3c1e70f4d55bc009ed9ed4cf6d756d7061985851
-R e0f61b3d5f668f3cfe77a35e5da93d93
-U dan
-Z d051f6e18c5411d016dc382904d39726
+P 640345d880c6178f8434e3ce40329b7527588843
+R 46582f87dc5791f77f8a445cb47feb38
+U mistachkin
+Z 04c8b48d78aac4913dca1bde0b860300
