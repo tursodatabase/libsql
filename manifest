@@ -1,5 +1,5 @@
-C Changes\sto\swork\saround\sWin32\sand\sMSVCRT\sAPIs\sthat\sare\snot\spresent\son\sWindows\sCE\s200x.
-D 2014-10-16T18:34:50.284
+C Work\saround\sMSVC\snot\sbeing\sable\sto\sdeduce\sthat\sa\slocal\svariable\swas\sinitialized\sin\sa\scalled\sfunction.
+D 2014-10-16T21:39:17.263
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -296,7 +296,7 @@ F src/vdbeapi.c 37a6c6ae284a97bcace365f2f0a225680c0499d9
 F src/vdbeaux.c edbb7a9c8b2a8f7a68ac75c2475edd4040266b76
 F src/vdbeblob.c 848238dc73e93e48432991bb5651bf87d865eca4
 F src/vdbemem.c 31d8eabb0cd78bfeab4e5124c7363c3e9e54db9f
-F src/vdbesort.c 5c1bacf90578d22b630fbf6ed98ccf60d83435ef
+F src/vdbesort.c 975aeffa99acb0991b2f288d30294756bff41438
 F src/vdbetrace.c 7e4222955e07dd707a2f360c0eb73452be1cb010
 F src/vtab.c cb0c194303fea276b48d7d4b6d970b5a96bde8de
 F src/wal.c 10e7de7ce90865a68153f001a61f1d985cd17983
@@ -1204,7 +1204,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 640345d880c6178f8434e3ce40329b7527588843
-R 46582f87dc5791f77f8a445cb47feb38
+P 1418c006e377d7915a50577d4ccb21125b750bae
+R 76bb09f8a8f8bdebeb708f5bb39aa31b
 U mistachkin
-Z 04c8b48d78aac4913dca1bde0b860300
+Z baca4535ffaf8e732b4d2d60c4d0a012

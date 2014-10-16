@@ -2292,7 +2292,7 @@ static int vdbeSorterSetupMerge(VdbeSorter *pSorter){
     assert( pSorter->bUseThreads==0 || pSorter->nTask>1 );
     if( pSorter->bUseThreads ){
       int iTask;
-      PmaReader *pReadr;
+      PmaReader *pReadr = 0;
       SortSubtask *pLast = &pSorter->aTask[pSorter->nTask-1];
       rc = vdbeSortAllocUnpacked(pLast);
       if( rc==SQLITE_OK ){
