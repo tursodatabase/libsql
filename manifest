@@ -1,5 +1,5 @@
-C Version\s3.8.7
-D 2014-10-17T11:24:17.839
+C Fix\sa\s(probably\sharmless)\sbut\sin\sthe\sCSV\soutput\smode\sof\sthe\scommand-line\nshell.
+D 2014-10-17T21:35:05.954
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -228,7 +228,7 @@ F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c a3466128b52a86c466e47ac1a19e2174f7b5cf89
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 428165951748151e87a15295b7357221433e311b
-F src/shell.c 18ee8bbe9502d8848072dc2eddd1ea09254ba494
+F src/shell.c 282f8f5278e0c78eb442217531172ec9e1538796
 F src/sqlite.h.in 4a5e5158c189d2bcd45c7c4607c2c0eb6d25c153
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
@@ -1204,10 +1204,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 06c576c152c4013080c255cbbeb45bf2e298be9f
-R 76bb09f8a8f8bdebeb708f5bb39aa31b
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.8.7 *
+P e4ab094f8afce0817f4074e823fabe59fc29ebb4
+R bacb142e035c538b5014a902fee951f4
 U drh
-Z b2f516d1147acb0e1bf1c700327ee52e
+Z 99accb7d1ae416e10fed302750dd8f99

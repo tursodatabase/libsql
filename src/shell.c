@@ -882,7 +882,7 @@ static int shell_callback(void *pArg, int nArg, char **azArg, char **azCol, int 
         }
         fprintf(p->out,"%s",p->newline);
       }
-      if( azArg>0 ){
+      if( nArg>0 ){
         for(i=0; i<nArg; i++){
           output_csv(p, azArg[i], i<nArg-1);
         }
