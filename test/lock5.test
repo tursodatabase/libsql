@@ -176,6 +176,9 @@ if { [path_is_local "."] } {
   } {1 2}
   do_test lock5-none.5 {
     execsql COMMIT
+  }
+  do_test lock5-none.6 {
+    sqlite3_release_memory 1000000
     execsql {SELECT * FROM t1} db2
   } {1 2}
 

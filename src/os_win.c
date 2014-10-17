@@ -943,7 +943,11 @@ static struct win_syscall {
 #define osWaitForSingleObject ((DWORD(WINAPI*)(HANDLE, \
         DWORD))aSyscall[63].pCurrent)
 
+#if !SQLITE_OS_WINCE
   { "WaitForSingleObjectEx",   (SYSCALL)WaitForSingleObjectEx,   0 },
+#else
+  { "WaitForSingleObjectEx",   (SYSCALL)0,                       0 },
+#endif
 
 #define osWaitForSingleObjectEx ((DWORD(WINAPI*)(HANDLE,DWORD, \
         BOOL))aSyscall[64].pCurrent)
@@ -1286,7 +1290,8 @@ void sqlite3_win32_sleep(DWORD milliseconds){
 #endif
 }
 
-#if SQLITE_MAX_WORKER_THREADS>0 && !SQLITE_OS_WINRT && SQLITE_THREADSAFE>0
+#if SQLITE_MAX_WORKER_THREADS>0 && !SQLITE_OS_WINCE && !SQLITE_OS_WINRT && \
+        SQLITE_THREADSAFE>0
 DWORD sqlite3Win32Wait(HANDLE hObject){
   DWORD rc;
   while( (rc = osWaitForSingleObjectEx(hObject, INFINITE,

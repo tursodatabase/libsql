@@ -2114,7 +2114,8 @@ static int removeFromSharingList(BtShared *pBt){
 
 /*
 ** Make sure pBt->pTmpSpace points to an allocation of 
-** MX_CELL_SIZE(pBt) bytes.
+** MX_CELL_SIZE(pBt) bytes with a 4-byte prefix for a left-child
+** pointer.
 */
 static void allocateTempSpace(BtShared *pBt){
   if( !pBt->pTmpSpace ){
@@ -2129,8 +2130,16 @@ static void allocateTempSpace(BtShared *pBt){
     ** it into a database page. This is not actually a problem, but it
     ** does cause a valgrind error when the 1 or 2 bytes of unitialized 
     ** data is passed to system call write(). So to avoid this error,
-    ** zero the first 4 bytes of temp space here.  */
-    if( pBt->pTmpSpace ) memset(pBt->pTmpSpace, 0, 4);
+    ** zero the first 4 bytes of temp space here.
+    **
+    ** Also:  Provide four bytes of initialized space before the
+    ** beginning of pTmpSpace as an area available to prepend the
+    ** left-child pointer to the beginning of a cell.
+    */
+    if( pBt->pTmpSpace ){
+      memset(pBt->pTmpSpace, 0, 8);
+      pBt->pTmpSpace += 4;
+    }
   }
 }
 
@@ -2138,8 +2147,11 @@ static void allocateTempSpace(BtShared *pBt){
 ** Free the pBt->pTmpSpace allocation
 */
 static void freeTempSpace(BtShared *pBt){
-  sqlite3PageFree( pBt->pTmpSpace);
-  pBt->pTmpSpace = 0;
+  if( pBt->pTmpSpace ){
+    pBt->pTmpSpace -= 4;
+    sqlite3PageFree(pBt->pTmpSpace);
+    pBt->pTmpSpace = 0;
+  }
 }
 
 /*

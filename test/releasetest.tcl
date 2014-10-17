@@ -196,7 +196,8 @@ array set ::Platforms {
     "Device-Two"              test
     "Ftrapv"                  test
     "No-lookaside"            test
-    "Default"                 "threadtest test"
+    "Devkit"                  test
+    "Default"                 "threadtest fulltest"
     "Device-One"              fulltest
   }
   Linux-i686 {
