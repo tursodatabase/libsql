@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\scausing\ssqlite3changeset_concat()\sto\sfail\sto\sdetect\sattempts\sto\sconcatenate\spatchsets\swhich\schangesets.
-D 2014-10-15T20:02:21.265
+C Merge\sall\sversion\s3.8.7\supdates\sfrom\strunk.
+D 2014-10-17T11:53:22.349
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd5f245aa8c741bc65845747203c8ce2f3fb6c83
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -230,7 +230,7 @@ F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c fb587121840f690101336879adfa6d0b2cd0e8c7
-F src/os_win.c 0a4042ef35f322e86fa01f6c8884c5e645b911e7
+F src/os_win.c a019caaae2bcbbc0cc4c39af6e7d7e43d8426053
 F src/os_win.h 09e751b20bbc107ffbd46e13555dc73576d88e21
 F src/pager.c a171cf9dd09c6cb162b262c328d4dfd198e04f80
 F src/pager.h ffd5607f7b3e4590b415b007a4382f693334d428
@@ -299,7 +299,7 @@ F src/test_thread.c 1e133a40b50e9c035b00174035b846e7eef481cb
 F src/test_vfs.c f84075a388527892ff184988f43b69ce69b8083c
 F src/test_vfstrace.c bab9594adc976cbe696ff3970728830b4c5ed698
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
-F src/threads.c 60c9d400abf17ccdc8767cdc6af90b9c5acf58bd
+F src/threads.c 6de09362b657f19ba83e5fa521ee715787ce9fee
 F src/tokenize.c cc9016e5007fc5e76789079616d2f26741bcc689
 F src/trigger.c 25571661fdeae8c7f975ff40ffec205520a3f92f
 F src/update.c b9e5295d3a78e96b7c2978c4f9d224d06880f031
@@ -313,7 +313,7 @@ F src/vdbeapi.c 30a1c991147fdf4334900b5fed8a312ae7678707
 F src/vdbeaux.c 191ea23e5adbe5b6adcb9d31860b9fb890834e24
 F src/vdbeblob.c d65b01f439df63911ac3d7a9a85c15503965f2c3
 F src/vdbemem.c 96e41193b4affd9ebc0eea2fa628879dac88c744
-F src/vdbesort.c 5c1bacf90578d22b630fbf6ed98ccf60d83435ef
+F src/vdbesort.c 975aeffa99acb0991b2f288d30294756bff41438
 F src/vdbetrace.c 7e4222955e07dd707a2f360c0eb73452be1cb010
 F src/vtab.c cb0c194303fea276b48d7d4b6d970b5a96bde8de
 F src/wal.c 10e7de7ce90865a68153f001a61f1d985cd17983
@@ -864,7 +864,7 @@ F test/skipscan3.test ec5bab3f81c7038b43450e7b3062e04a198bdbb5
 F test/skipscan5.test 67817a4b6857c47e0e33ba3e506da6f23ef68de2
 F test/soak.test 0b5b6375c9f4110c828070b826b3b4b0bb65cd5f
 F test/softheap1.test 40562fe6cac6d9827b7b42b86d45aedf12c15e24
-F test/sort.test 15e1d3014abc3f6d4357ed81b93b82117aefd235
+F test/sort.test c4400e7533748f6bd7413851ff148645e82b9e2d
 F test/sort2.test 269f4f50c6e468cc32b302ae7ff0add8338ec6de
 F test/sort3.test 6178ade30810ac9166fcdf14b7065e49c0f534e2
 F test/sort4.test 6c37d85f7cd28d50cce222fcab84ccd771e105cb
@@ -1217,12 +1217,12 @@ F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
 F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
 F tool/symbols.sh c5a617b8c61a0926747a56c65f5671ef8ac0e148
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
-F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
+F tool/vdbe-compress.tcl 5926c71f9c12d2ab73ef35c29376e756eb68361c
 F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1b2824f1d11ac336779372e322aecfb36fb2a31d
-R fa664b8794125d09d3da5d2babd6e792
-U dan
-Z 8d94920cff847cf3f9fcffe7f6436f08
+P 236704a9d1551a50a55bd6e0b6473191a7a7dd21 e4ab094f8afce0817f4074e823fabe59fc29ebb4
+R 94ea0ef4c36ef357c67b389bf2d7aa16
+U drh
+Z bebb5b662648007cddd6eaea9299c843
