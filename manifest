@@ -1,5 +1,5 @@
-C Work\saround\sMSVC\snot\sbeing\sable\sto\sdeduce\sthat\sa\slocal\svariable\swas\sinitialized\sin\sa\scalled\sfunction.
-D 2014-10-16T21:39:17.263
+C Version\s3.8.7
+D 2014-10-17T11:24:17.839
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1204,7 +1204,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1418c006e377d7915a50577d4ccb21125b750bae
+P 06c576c152c4013080c255cbbeb45bf2e298be9f
 R 76bb09f8a8f8bdebeb708f5bb39aa31b
-U mistachkin
-Z baca4535ffaf8e732b4d2d60c4d0a012
+T +bgcolor * #d0c0ff
+T +sym-release *
+T +sym-version-3.8.7 *
+U drh
+Z b2f516d1147acb0e1bf1c700327ee52e
