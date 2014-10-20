@@ -7465,6 +7465,40 @@ int sqlite3_index_writer(
 );
 
 /*
+** Incremental checkpoint API.
+**
+** An incremental checkpoint handle is opened using the sqlite3_ckpt_open()
+** API. To begin a new checkpoint, the second and third arguments should both
+** be passed zero. To resume an earlier checkpoint, the second and third
+** arguments should specify a buffer returned by an earlier call to
+** sqlite3_ckpt_close(). When resuming a checkpoint, if the database or WAL 
+** file has been modified since the checkpoint was suspended, the 
+** sqlite3_ckpt_open() call fails with SQLITE_MISMATCH.
+**
+** Each time sqlite3_ckpt_step() is called on an open checkpoint handle, a
+** single page is copied from the WAL file to the database. If no error 
+** occurs, but the checkpoint is not finished, SQLITE_OK is returned. If the
+** checkpoint has been finished (and so sqlite3_ckpt_step() should not be
+** called again), SQLITE_DONE is returned. Otherwise, if an error occurs,
+** some other SQLite error code is returned.
+**
+** Calling sqlite3_ckpt_close() closes an open checkpoint handle. If the
+** checkpoint has finished and no error has occurred, SQLITE_OK is returned
+** and the two output parameters zeroed. Or, if an error has occurred, an
+** error code is returned and the two output parameters are zeroed. Finally,
+** if the checkpoint is not finished but no error has occurred, SQLITE_OK is
+** returned and the first output variable set to point to a buffer allocated 
+** using sqlite3_malloc() containing the serialized state of the checkpoint. 
+** The contents of this buffer may be passed to a later call to
+** sqlite3_ckpt_open() to restart the checkpoint. The second output variable 
+** is set to the size of the buffer in bytes.
+*/
+typedef struct sqlite3_ckpt sqlite3_ckpt;
+int sqlite3_ckpt_open(sqlite3*, unsigned char *a, int n, sqlite3_ckpt **ppCkpt);
+int sqlite3_ckpt_step(sqlite3_ckpt*);
+int sqlite3_ckpt_close(sqlite3_ckpt*, unsigned char **pa, int *pn);
+
+/*
 ** Undo the hack that converts floating point types to integer for
 ** builds on processors without floating point support.
 */

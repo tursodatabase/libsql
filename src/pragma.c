@@ -900,7 +900,7 @@ void sqlite3Pragma(
     Btree *pBt = pDb->pBt;
     assert( pBt!=0 );
     if( zRight ){
-      int iArg = !!sqlite3Atoi(zRight);
+      int iArg = sqlite3Atoi(zRight);
       if( sqlite3BtreeIsInReadTrans(pBt) ){
         sqlite3ErrorMsg(pParse, 
             "cannot set pager_ota_mode with open transaction"

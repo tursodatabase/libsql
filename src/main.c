@@ -1768,6 +1768,24 @@ int sqlite3_wal_checkpoint_v2(
 #endif
 }
 
+int sqlite3_ckpt_open(
+  sqlite3 *db, 
+  unsigned char *a, int n, 
+  sqlite3_ckpt **ppCkpt
+){
+  Pager *pPager;
+  Btree *pBt;
+  int rc;
+
+  *ppCkpt = 0;
+  sqlite3_mutex_enter(db->mutex);
+  pBt = db->aDb[0].pBt;
+  pPager = sqlite3BtreePager(pBt);
+  rc = sqlite3PagerWalCheckpointStart(db, pPager, a, n, ppCkpt);
+  sqlite3_mutex_leave(db->mutex);
+  return rc;
+}
+
 
 /*
 ** Checkpoint database zDb. If zDb is NULL, or if the buffer zDb points

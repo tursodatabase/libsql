@@ -124,12 +124,12 @@ foreach {tn2 cmd} {1 run_ota 2 step_ota} {
   } {
     reset_db
     execsql $schema
-  
+
     do_test 1.$tn2.$tn.1 {
       create_ota1 ota.db
       $cmd test.db ota.db
     } {SQLITE_DONE}
-    
+
     do_execsql_test 1.$tn2.$tn.2 {
       SELECT * FROM t1 ORDER BY a ASC;
     } {
@@ -137,7 +137,7 @@ foreach {tn2 cmd} {1 run_ota 2 step_ota} {
       2 two three 
       3 {} 8.2
     }
-  
+ 
     do_execsql_test 1.$tn2.$tn.3 { PRAGMA integrity_check } ok
   }
 }

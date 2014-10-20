@@ -375,6 +375,7 @@ do_test wal-7.2 {
 # truncation.
 #
 do_test wal-8.1 {
+breakpoint
   reopen_db
   catch { db close }
   forcedelete test.db test.db-wal

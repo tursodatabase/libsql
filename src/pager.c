@@ -623,6 +623,8 @@ struct PagerSavepoint {
 **   database file has not been modified since it was created, this variable 
 **   is set to 2.
 **
+** noCkptOnClose
+**
 **
 */
 struct Pager {
@@ -7288,12 +7290,24 @@ int sqlite3PagerWalFramesize(Pager *pPager){
 /*
 ** Set or clear the "OTA mode" flag.
 */
-int sqlite3PagerSetOtaMode(Pager *pPager, int bOta){
-  if( pPager->pWal || pPager->eState!=PAGER_OPEN ){
+int sqlite3PagerSetOtaMode(Pager *pPager, int iOta){
+  if( iOta==1 && (pPager->pWal || pPager->eState!=PAGER_OPEN) ){
     return SQLITE_ERROR;
   }
-  pPager->otaMode = 1;
+  pPager->otaMode = iOta;
   return SQLITE_OK;
+}
+
+int sqlite3PagerWalCheckpointStart(
+  sqlite3 *db, 
+  Pager *pPager,
+  u8 *a, int n, 
+  sqlite3_ckpt **ppCkpt
+){
+  return sqlite3WalCheckpointStart(db, pPager->pWal, a, n,
+      pPager->xBusyHandler, pPager->pBusyHandlerArg,
+      pPager->ckptSyncFlags, ppCkpt
+  );
 }
 
 #endif /* SQLITE_OMIT_DISKIO */

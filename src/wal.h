@@ -128,6 +128,15 @@ int sqlite3WalHeapMemory(Wal *pWal);
 
 int sqlite3WalCheckSalt(Wal *pWal, sqlite3_file*);
 
+int sqlite3WalCheckpointStart(sqlite3 *,
+  Wal *pWal,                      /* Wal connection */
+  u8 *aState, int nState,         /* Checkpoint state to restore */
+  int (*xBusy)(void*),            /* Function to call when busy */
+  void *pBusyArg,                 /* Context argument for xBusyHandler */
+  int sync_flags,                 /* Flags to sync db file with (or 0) */
+  sqlite3_ckpt **ppCkpt           /* OUT: Incremental checkpoint object */
+);
+
 #ifdef SQLITE_ENABLE_ZIPVFS
 /* If the WAL file is not empty, return the number of bytes of content
 ** stored in each frame (i.e. the db page-size when the WAL was created).
