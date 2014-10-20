@@ -476,6 +476,11 @@ int sqlite3_config(int op, ...){
       break;
     }
 
+    /* EVIDENCE-OF: R-55548-33817 The compile-time setting for URI filenames
+    ** can be changed at start-time using the
+    ** sqlite3_config(SQLITE_CONFIG_URI,1) or
+    ** sqlite3_config(SQLITE_CONFIG_URI,0) configuration calls.
+    */
     case SQLITE_CONFIG_URI: {
       sqlite3GlobalConfig.bOpenUri = va_arg(ap, int);
       break;
@@ -2231,7 +2236,7 @@ int sqlite3ParseUri(
   assert( *pzErrMsg==0 );
 
   if( ((flags & SQLITE_OPEN_URI) || sqlite3GlobalConfig.bOpenUri) 
-   && nUri>=5 && memcmp(zUri, "file:", 5)==0 
+   && nUri>=5 && memcmp(zUri, "file:", 5)==0 /* IMP: R-57884-37496 */
   ){
     char *zOpt;
     int eState;                   /* Parser state when parsing URI */
@@ -2461,7 +2466,9 @@ static int openDatabase(
   testcase( (1<<(flags&7))==0x02 ); /* READONLY */
   testcase( (1<<(flags&7))==0x04 ); /* READWRITE */
   testcase( (1<<(flags&7))==0x40 ); /* READWRITE | CREATE */
-  if( ((1<<(flags&7)) & 0x46)==0 ) return SQLITE_MISUSE_BKPT;
+  if( ((1<<(flags&7)) & 0x46)==0 ){
+    return SQLITE_MISUSE_BKPT;  /* IMP: R-65497-44594 */
+  }
 
   if( sqlite3GlobalConfig.bCoreMutex==0 ){
     isThreadsafe = 0;
@@ -3344,22 +3351,6 @@ int sqlite3_test_control(int op, ...){
       sqlite3GlobalConfig.bLocaltimeFault = va_arg(ap, int);
       break;
     }
-
-#if defined(SQLITE_ENABLE_TREE_EXPLAIN)
-    /*   sqlite3_test_control(SQLITE_TESTCTRL_EXPLAIN_STMT,
-    **                        sqlite3_stmt*,const char**);
-    **
-    ** If compiled with SQLITE_ENABLE_TREE_EXPLAIN, each sqlite3_stmt holds
-    ** a string that describes the optimized parse tree.  This test-control
-    ** returns a pointer to that string.
-    */
-    case SQLITE_TESTCTRL_EXPLAIN_STMT: {
-      sqlite3_stmt *pStmt = va_arg(ap, sqlite3_stmt*);
-      const char **pzRet = va_arg(ap, const char**);
-      *pzRet = sqlite3VdbeExplanation((Vdbe*)pStmt);
-      break;
-    }
-#endif
 
     /*   sqlite3_test_control(SQLITE_TESTCTRL_NEVER_CORRUPT, int);
     **

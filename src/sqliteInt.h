@@ -47,6 +47,15 @@
 # define _LARGEFILE_SOURCE 1
 #endif
 
+/* Needed for various definitions... */
+#if defined(__GNUC__) && !defined(_GNU_SOURCE)
+# define _GNU_SOURCE
+#endif
+
+#if defined(__OpenBSD__) && !defined(_BSD_SOURCE)
+# define _BSD_SOURCE
+#endif
+
 /*
 ** For MinGW, check to see if we can include the header file containing its
 ** version information, among other things.  Normally, this internal MinGW
@@ -104,15 +113,6 @@
 #pragma warn -spa /* Suspicious pointer arithmetic */
 #endif
 
-/* Needed for various definitions... */
-#ifndef _GNU_SOURCE
-# define _GNU_SOURCE
-#endif
-
-#if defined(__OpenBSD__) && !defined(_BSD_SOURCE)
-# define _BSD_SOURCE
-#endif
-
 /*
 ** Include standard header files as necessary
 */
@@ -159,7 +159,7 @@
 */
 #if defined(__GNUC__)
 #  define SQLITE_NOINLINE  __attribute__((noinline))
-#elif defined(_MSC_VER)
+#elif defined(_MSC_VER) && _MSC_VER>=1310
 #  define SQLITE_NOINLINE  __declspec(noinline)
 #else
 #  define SQLITE_NOINLINE
@@ -470,6 +470,11 @@
 #define MAX(A,B) ((A)>(B)?(A):(B))
 
 /*
+** Swap two objects of type TYPE.
+*/
+#define SWAP(TYPE,A,B) {TYPE t=A; A=B; B=t;}
+
+/*
 ** Check to see if this machine uses EBCDIC.  (Yes, believe it or
 ** not, there are still machines out there that use EBCDIC.)
 */
@@ -707,6 +712,16 @@ extern const int sqlite3one;
 #endif
 
 /*
+** SELECTTRACE_ENABLED will be either 1 or 0 depending on whether or not
+** the Select query generator tracing logic is turned on.
+*/
+#if defined(SQLITE_DEBUG) || defined(SQLITE_ENABLE_SELECTTRACE)
+# define SELECTTRACE_ENABLED 1
+#else
+# define SELECTTRACE_ENABLED 0
+#endif
+
+/*
 ** An instance of the following structure is used to store the busy-handler
 ** callback for a given sqlite handle. 
 **
@@ -845,6 +860,7 @@ typedef struct StrAccum StrAccum;
 typedef struct Table Table;
 typedef struct TableLock TableLock;
 typedef struct Token Token;
+typedef struct TreeView TreeView;
 typedef struct Trigger Trigger;
 typedef struct TriggerPrg TriggerPrg;
 typedef struct TriggerStep TriggerStep;
@@ -1424,18 +1440,18 @@ struct CollSeq {
 ** 't' for SQLITE_AFF_TEXT.  But we can save a little space and improve
 ** the speed a little by numbering the values consecutively.  
 **
-** But rather than start with 0 or 1, we begin with 'a'.  That way,
+** But rather than start with 0 or 1, we begin with 'A'.  That way,
 ** when multiple affinity types are concatenated into a string and
 ** used as the P4 operand, they will be more readable.
 **
 ** Note also that the numeric types are grouped together so that testing
-** for a numeric type is a single comparison.
+** for a numeric type is a single comparison.  And the NONE type is first.
 */
-#define SQLITE_AFF_TEXT     'a'
-#define SQLITE_AFF_NONE     'b'
-#define SQLITE_AFF_NUMERIC  'c'
-#define SQLITE_AFF_INTEGER  'd'
-#define SQLITE_AFF_REAL     'e'
+#define SQLITE_AFF_NONE     'A'
+#define SQLITE_AFF_TEXT     'B'
+#define SQLITE_AFF_NUMERIC  'C'
+#define SQLITE_AFF_INTEGER  'D'
+#define SQLITE_AFF_REAL     'E'
 
 #define sqlite3IsNumericAffinity(X)  ((X)>=SQLITE_AFF_NUMERIC)
 
@@ -1443,7 +1459,7 @@ struct CollSeq {
 ** The SQLITE_AFF_MASK values masks off the significant bits of an
 ** affinity value. 
 */
-#define SQLITE_AFF_MASK     0x67
+#define SQLITE_AFF_MASK     0x47
 
 /*
 ** Additional bit values that can be ORed with an affinity without
@@ -1454,10 +1470,10 @@ struct CollSeq {
 ** operator is NULL.  It is added to certain comparison operators to
 ** prove that the operands are always NOT NULL.
 */
-#define SQLITE_JUMPIFNULL   0x08  /* jumps if either operand is NULL */
-#define SQLITE_STOREP2      0x10  /* Store result in reg[P2] rather than jump */
+#define SQLITE_JUMPIFNULL   0x10  /* jumps if either operand is NULL */
+#define SQLITE_STOREP2      0x20  /* Store result in reg[P2] rather than jump */
 #define SQLITE_NULLEQ       0x80  /* NULL=NULL */
-#define SQLITE_NOTNULL      0x88  /* Assert that operands are never NULL */
+#define SQLITE_NOTNULL      0x90  /* Assert that operands are never NULL */
 
 /*
 ** An object of this type is created for each virtual table present in
@@ -1787,6 +1803,7 @@ struct Index {
   int nSampleCol;          /* Size of IndexSample.anEq[] and so on */
   tRowcnt *aAvgEq;         /* Average nEq values for keys not in aSample */
   IndexSample *aSample;    /* Samples of the left-most key */
+  tRowcnt *aiRowEst;       /* Non-logarithmic stat1 data for this table */
 #endif
 };
 
@@ -2217,7 +2234,7 @@ struct SrcList {
 #define WHERE_OMIT_OPEN_CLOSE  0x0010 /* Table cursors are already open */
 #define WHERE_FORCE_TABLE      0x0020 /* Do not use an index-only search */
 #define WHERE_ONETABLE_ONLY    0x0040 /* Only code the 1st table in pTabList */
-#define WHERE_AND_ONLY         0x0080 /* Don't use indices for OR terms */
+                          /*   0x0080 // not currently used */
 #define WHERE_GROUPBY          0x0100 /* pOrderBy is really a GROUP BY */
 #define WHERE_DISTINCTBY       0x0200 /* pOrderby is really a DISTINCT clause */
 #define WHERE_WANT_DISTINCT    0x0400 /* All output needs to be distinct */
@@ -2302,6 +2319,9 @@ struct Select {
   u8 op;                 /* One of: TK_UNION TK_ALL TK_INTERSECT TK_EXCEPT */
   u16 selFlags;          /* Various SF_* values */
   int iLimit, iOffset;   /* Memory registers holding LIMIT & OFFSET counters */
+#if SELECTTRACE_ENABLED
+  char zSelName[12];     /* Symbolic name of this SELECT use for debugging */
+#endif
   int addrOpenEphm[2];   /* OP_OpenEphem opcodes related to this select */
   u64 nSelectRow;        /* Estimated number of result rows */
   SrcList *pSrc;         /* The FROM clause */
@@ -2560,6 +2580,10 @@ struct Parse {
   int regRowid;        /* Register holding rowid of CREATE TABLE entry */
   int regRoot;         /* Register holding root page number for new objects */
   int nMaxArg;         /* Max args passed to user function by sub-program */
+#if SELECTTRACE_ENABLED
+  int nSelect;         /* Number of SELECT statements seen */
+  int nSelectIndent;   /* How far to indent SELECTTRACE() output */
+#endif
 #ifndef SQLITE_OMIT_SHARED_CACHE
   int nTableLock;        /* Number of locks in aTableLock */
   TableLock *aTableLock; /* Required table locks for shared-cache mode */
@@ -2639,11 +2663,11 @@ struct AuthContext {
 ** Bitfield flags for P5 value in various opcodes.
 */
 #define OPFLAG_NCHANGE       0x01    /* Set to update db->nChange */
+#define OPFLAG_EPHEM         0x01    /* OP_Column: Ephemeral output is ok */
 #define OPFLAG_LASTROWID     0x02    /* Set to update db->lastRowid */
 #define OPFLAG_ISUPDATE      0x04    /* This OP_Insert is an sql UPDATE */
 #define OPFLAG_APPEND        0x08    /* This is likely to be an append */
 #define OPFLAG_USESEEKRESULT 0x10    /* Try to avoid a seek in BtreeInsert() */
-#define OPFLAG_CLEARCACHE    0x20    /* Clear pseudo-table cache in OP_Column */
 #define OPFLAG_LENGTHARG     0x40    /* OP_Column only used for length() */
 #define OPFLAG_TYPEOFARG     0x80    /* OP_Column only used for typeof() */
 #define OPFLAG_BULKCSR       0x01    /* OP_Open** used to open bulk cursor */
@@ -2907,6 +2931,17 @@ struct With {
   } a[1];
 };
 
+#ifdef SQLITE_DEBUG
+/*
+** An instance of the TreeView object is used for printing the content of
+** data structures on sqlite3DebugPrintf() using a tree-like view.
+*/
+struct TreeView {
+  int iLevel;             /* Which level of the tree we are on */
+  u8  bLine[100];         /* Draw vertical in column i if bLine[i] is true */
+};
+#endif /* SQLITE_DEBUG */
+
 /*
 ** Assuming zIn points to the first byte of a UTF-8 character,
 ** advance zIn to point to the first byte of the next UTF-8 character.
@@ -2972,6 +3007,7 @@ int sqlite3CantopenError(int);
 # define sqlite3Isxdigit(x)  isxdigit((unsigned char)(x))
 # define sqlite3Tolower(x)   tolower((unsigned char)(x))
 #endif
+int sqlite3IsIdChar(u8);
 
 /*
 ** Internal function prototypes
@@ -3070,25 +3106,14 @@ char *sqlite3MAppendf(sqlite3*,char*,const char*,...);
   void *sqlite3TestTextToPtr(const char*);
 #endif
 
-/* Output formatting for SQLITE_TESTCTRL_EXPLAIN */
-#if defined(SQLITE_ENABLE_TREE_EXPLAIN)
-  void sqlite3ExplainBegin(Vdbe*);
-  void sqlite3ExplainPrintf(Vdbe*, const char*, ...);
-  void sqlite3ExplainNL(Vdbe*);
-  void sqlite3ExplainPush(Vdbe*);
-  void sqlite3ExplainPop(Vdbe*);
-  void sqlite3ExplainFinish(Vdbe*);
-  void sqlite3ExplainSelect(Vdbe*, Select*);
-  void sqlite3ExplainExpr(Vdbe*, Expr*);
-  void sqlite3ExplainExprList(Vdbe*, ExprList*);
-  const char *sqlite3VdbeExplanation(Vdbe*);
-#else
-# define sqlite3ExplainBegin(X)
-# define sqlite3ExplainSelect(A,B)
-# define sqlite3ExplainExpr(A,B)
-# define sqlite3ExplainExprList(A,B)
-# define sqlite3ExplainFinish(X)
-# define sqlite3VdbeExplanation(X) 0
+#if defined(SQLITE_DEBUG)
+  TreeView *sqlite3TreeViewPush(TreeView*,u8);
+  void sqlite3TreeViewPop(TreeView*);
+  void sqlite3TreeViewLine(TreeView*, const char*, ...);
+  void sqlite3TreeViewItem(TreeView*, const char*, u8);
+  void sqlite3TreeViewExpr(TreeView*, const Expr*, u8);
+  void sqlite3TreeViewExprList(TreeView*, const ExprList*, u8, const char*);
+  void sqlite3TreeViewSelect(TreeView*, const Select*, u8);
 #endif
 
 
@@ -3270,7 +3295,7 @@ void sqlite3CloseSavepoints(sqlite3 *);
 void sqlite3LeaveMutexAndCloseZombie(sqlite3*);
 int sqlite3ExprIsConstant(Expr*);
 int sqlite3ExprIsConstantNotJoin(Expr*);
-int sqlite3ExprIsConstantOrFunction(Expr*);
+int sqlite3ExprIsConstantOrFunction(Expr*, u8);
 int sqlite3ExprIsInteger(Expr*, int*);
 int sqlite3ExprCanBeNull(const Expr*);
 int sqlite3ExprNeedsNoAffinityChange(const Expr*, char);
@@ -3294,6 +3319,11 @@ ExprList *sqlite3ExprListDup(sqlite3*,ExprList*,int);
 SrcList *sqlite3SrcListDup(sqlite3*,SrcList*,int);
 IdList *sqlite3IdListDup(sqlite3*,IdList*);
 Select *sqlite3SelectDup(sqlite3*,Select*,int);
+#if SELECTTRACE_ENABLED
+void sqlite3SelectSetName(Select*,const char*);
+#else
+# define sqlite3SelectSetName(A,B)
+#endif
 void sqlite3FuncDefInsert(FuncDefHash*, FuncDef*);
 FuncDef *sqlite3FindFunction(sqlite3*,const char*,int,int,u8,u8);
 void sqlite3RegisterBuiltinFunctions(sqlite3*);
@@ -3771,10 +3801,9 @@ SQLITE_EXTERN void (*sqlite3IoTrace)(const char*,...);
 # define sqlite3MemdebugNoType(X,Y)   1
 #endif
 #define MEMTYPE_HEAP       0x01  /* General heap allocations */
-#define MEMTYPE_LOOKASIDE  0x02  /* Might have been lookaside memory */
+#define MEMTYPE_LOOKASIDE  0x02  /* Heap that might have been lookaside */
 #define MEMTYPE_SCRATCH    0x04  /* Scratch allocations */
 #define MEMTYPE_PCACHE     0x08  /* Page cache allocations */
-#define MEMTYPE_DB         0x10  /* Uses sqlite3DbMalloc, not sqlite_malloc */
 
 
 /*

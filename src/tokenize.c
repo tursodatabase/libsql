@@ -102,6 +102,7 @@ const char sqlite3IsEbcdicIdChar[] = {
 };
 #define IdChar(C)  (((c=C)>=0x42 && sqlite3IsEbcdicIdChar[c-0x40]))
 #endif
+int sqlite3IsIdChar(u8 c){ return IdChar(c); }
 
 
 /*

@@ -56,13 +56,13 @@ void sqlite3OpenTable(
 **
 **  Character      Column affinity
 **  ------------------------------
-**  'a'            TEXT
-**  'b'            NONE
-**  'c'            NUMERIC
-**  'd'            INTEGER
-**  'e'            REAL
+**  'A'            NONE
+**  'B'            TEXT
+**  'C'            NUMERIC
+**  'D'            INTEGER
+**  'F'            REAL
 **
-** An extra 'd' is appended to the end of the string to cover the
+** An extra 'D' is appended to the end of the string to cover the
 ** rowid that appears as the last column in every index.
 **
 ** Memory for the buffer containing the column index affinity string
@@ -111,11 +111,11 @@ const char *sqlite3IndexAffinityStr(Vdbe *v, Index *pIdx){
 **
 **  Character      Column affinity
 **  ------------------------------
-**  'a'            TEXT
-**  'b'            NONE
-**  'c'            NUMERIC
-**  'd'            INTEGER
-**  'e'            REAL
+**  'A'            NONE
+**  'B'            TEXT
+**  'C'            NUMERIC
+**  'D'            INTEGER
+**  'E'            REAL
 */
 void sqlite3TableAffinity(Vdbe *v, Table *pTab, int iReg){
   int i;

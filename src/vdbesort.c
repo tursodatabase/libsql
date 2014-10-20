@@ -1124,9 +1124,9 @@ void sqlite3VdbeSorterClose(sqlite3 *db, VdbeCursor *pCsr){
 ** the specific VFS implementation.
 */
 static void vdbeSorterExtendFile(sqlite3 *db, sqlite3_file *pFd, i64 nByte){
-  if( nByte<=(i64)(db->nMaxSorterMmap) ){
+  if( nByte<=(i64)(db->nMaxSorterMmap) && pFd->pMethods->iVersion>=3 ){
     int rc = sqlite3OsTruncate(pFd, nByte);
-    if( rc==SQLITE_OK && pFd->pMethods->iVersion>=3 ){
+    if( rc==SQLITE_OK ){
       void *p = 0;
       sqlite3OsFetch(pFd, 0, (int)nByte, &p);
       sqlite3OsUnfetch(pFd, 0, p);
@@ -2292,7 +2292,7 @@ static int vdbeSorterSetupMerge(VdbeSorter *pSorter){
     assert( pSorter->bUseThreads==0 || pSorter->nTask>1 );
     if( pSorter->bUseThreads ){
       int iTask;
-      PmaReader *pReadr;
+      PmaReader *pReadr = 0;
       SortSubtask *pLast = &pSorter->aTask[pSorter->nTask-1];
       rc = vdbeSortAllocUnpacked(pLast);
       if( rc==SQLITE_OK ){
@@ -2461,7 +2461,7 @@ int sqlite3VdbeSorterRowkey(const VdbeCursor *pCsr, Mem *pOut){
   void *pKey; int nKey;           /* Sorter key to copy into pOut */
 
   pKey = vdbeSorterRowkey(pSorter, &nKey);
-  if( sqlite3VdbeMemGrow(pOut, nKey, 0) ){
+  if( sqlite3VdbeMemClearAndResize(pOut, nKey) ){
     return SQLITE_NOMEM;
   }
   pOut->n = nKey;

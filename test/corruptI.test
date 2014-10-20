@@ -75,31 +75,34 @@ do_test 2.2 {
   catchsql { SELECT * FROM r WHERE x >= 10 }
 } {1 {database disk image is malformed}}
 
-reset_db
-
-do_execsql_test 3.1 {
-  PRAGMA page_size = 512;
-  CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
-  WITH s(a, b) AS (
-    SELECT 2, 'abcdefghij'
-    UNION ALL
-    SELECT a+2, b FROM s WHERe a < 40
-  )
-  INSERT INTO t1 SELECT * FROM s;
-} {}
-
-do_test 3.2 {
-  hexio_write test.db [expr 512+3] 0054
-  db close
-  sqlite3 db test.db
-  execsql { INSERT INTO t1 VALUES(5, 'klmnopqrst') }
-  execsql { INSERT INTO t1 VALUES(7, 'klmnopqrst') }
-} {}
-
-db close
-sqlite3 db test.db
-do_catchsql_test 3.2 {
-  INSERT INTO t1 VALUES(9, 'klmnopqrst');
-} {1 {database disk image is malformed}}
-
+if {[db one {SELECT sqlite_compileoption_used('ENABLE_OVERSIZE_CELL_CHECK')}]} {
+  # The following tests only work if OVERSIZE_CELL_CHECK is disabled
+} else {
+  reset_db
+  do_execsql_test 3.1 {
+     PRAGMA auto_vacuum=0;
+     PRAGMA page_size = 512;
+     CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+     WITH s(a, b) AS (
+       SELECT 2, 'abcdefghij'
+       UNION ALL
+       SELECT a+2, b FROM s WHERe a < 40
+     )
+     INSERT INTO t1 SELECT * FROM s;
+   } {}
+   
+   do_test 3.2 {
+     hexio_write test.db [expr 512+3] 0054
+     db close
+     sqlite3 db test.db
+     execsql { INSERT INTO t1 VALUES(5, 'klmnopqrst') }
+     execsql { INSERT INTO t1 VALUES(7, 'klmnopqrst') }
+   } {}
+   
+   db close
+   sqlite3 db test.db
+   do_catchsql_test 3.3 {
+     INSERT INTO t1 VALUES(9, 'klmnopqrst');
+   } {1 {database disk image is malformed}}
+} ;# end-if !defined(ENABLE_OVERSIZE_CELL_CHECK)
 finish_test

@@ -99,4 +99,32 @@ do_execsql_test default-3.3 {
   SELECT * FROM t300;
 } {2147483647 2147483648 9223372036854775807 -2147483647 -2147483648 -9223372036854775808 9.22337203685478e+18 9223372036854775807}
 
+# Do now allow bound parameters in new DEFAULT values. 
+# Silently convert bound parameters to NULL in DEFAULT causes
+# in the sqlite_master table, for backwards compatibility.
+#
+db close
+forcedelete test.db
+sqlite3 db test.db
+do_execsql_test default-4.0 {
+  CREATE TABLE t1(a TEXT, b TEXT DEFAULT(99));
+  PRAGMA writable_schema=ON;
+  UPDATE sqlite_master SET sql='CREATE TABLE t1(a TEXT, b TEXT DEFAULT(:xyz))';
+} {}
+db close 
+sqlite3 db test.db
+do_execsql_test default-4.1 {
+  INSERT INTO t1(a) VALUES('xyzzy');
+  SELECT a, quote(b) FROM t1;
+} {xyzzy NULL}
+do_catchsql_test default-4.2 {
+  CREATE TABLE t2(a TEXT, b TEXT DEFAULT(:xyz));
+} {1 {default value of column [b] is not constant}}
+do_catchsql_test default-4.3 {
+  CREATE TABLE t2(a TEXT, b TEXT DEFAULT(abs(:xyz)));
+} {1 {default value of column [b] is not constant}}
+do_catchsql_test default-4.4 {
+  CREATE TABLE t2(a TEXT, b TEXT DEFAULT(98+coalesce(5,:xyz)));
+} {1 {default value of column [b] is not constant}}
+
 finish_test

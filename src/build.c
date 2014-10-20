@@ -435,6 +435,9 @@ static void freeIndex(sqlite3 *db, Index *p){
   sqlite3ExprDelete(db, p->pPartIdxWhere);
   sqlite3DbFree(db, p->zColAff);
   if( p->isResized ) sqlite3DbFree(db, p->azColl);
+#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
+  sqlite3_free(p->aiRowEst);
+#endif
   sqlite3DbFree(db, p);
 }
 
@@ -1177,7 +1180,7 @@ char sqlite3AffinityType(const char *zIn, u8 *pszEst){
   ** estimate is scaled so that the size of an integer is 1.  */
   if( pszEst ){
     *pszEst = 1;   /* default size is approx 4 bytes */
-    if( aff<=SQLITE_AFF_NONE ){
+    if( aff<SQLITE_AFF_NUMERIC ){
       if( zChar ){
         while( zChar[0] ){
           if( sqlite3Isdigit(zChar[0]) ){
@@ -1236,7 +1239,7 @@ void sqlite3AddDefaultValue(Parse *pParse, ExprSpan *pSpan){
   p = pParse->pNewTable;
   if( p!=0 ){
     pCol = &(p->aCol[p->nCol-1]);
-    if( !sqlite3ExprIsConstantOrFunction(pSpan->pExpr) ){
+    if( !sqlite3ExprIsConstantOrFunction(pSpan->pExpr, db->init.busy) ){
       sqlite3ErrorMsg(pParse, "default value of column [%s] is not constant",
           pCol->zName);
     }else{
@@ -1548,8 +1551,8 @@ static char *createTableStmt(sqlite3 *db, Table *p){
   zStmt[k++] = '(';
   for(pCol=p->aCol, i=0; i<p->nCol; i++, pCol++){
     static const char * const azType[] = {
-        /* SQLITE_AFF_TEXT    */ " TEXT",
         /* SQLITE_AFF_NONE    */ "",
+        /* SQLITE_AFF_TEXT    */ " TEXT",
         /* SQLITE_AFF_NUMERIC */ " NUM",
         /* SQLITE_AFF_INTEGER */ " INT",
         /* SQLITE_AFF_REAL    */ " REAL"
@@ -1561,15 +1564,15 @@ static char *createTableStmt(sqlite3 *db, Table *p){
     k += sqlite3Strlen30(&zStmt[k]);
     zSep = zSep2;
     identPut(zStmt, &k, pCol->zName);
-    assert( pCol->affinity-SQLITE_AFF_TEXT >= 0 );
-    assert( pCol->affinity-SQLITE_AFF_TEXT < ArraySize(azType) );
-    testcase( pCol->affinity==SQLITE_AFF_TEXT );
+    assert( pCol->affinity-SQLITE_AFF_NONE >= 0 );
+    assert( pCol->affinity-SQLITE_AFF_NONE < ArraySize(azType) );
     testcase( pCol->affinity==SQLITE_AFF_NONE );
+    testcase( pCol->affinity==SQLITE_AFF_TEXT );
     testcase( pCol->affinity==SQLITE_AFF_NUMERIC );
     testcase( pCol->affinity==SQLITE_AFF_INTEGER );
     testcase( pCol->affinity==SQLITE_AFF_REAL );
     
-    zType = azType[pCol->affinity - SQLITE_AFF_TEXT];
+    zType = azType[pCol->affinity - SQLITE_AFF_NONE];
     len = sqlite3Strlen30(zType);
     assert( pCol->affinity==SQLITE_AFF_NONE 
             || pCol->affinity==sqlite3AffinityType(zType, 0) );
@@ -2744,7 +2747,7 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
   }else{
     addr2 = sqlite3VdbeCurrentAddr(v);
   }
-  sqlite3VdbeAddOp2(v, OP_SorterData, iSorter, regRecord);
+  sqlite3VdbeAddOp3(v, OP_SorterData, iSorter, regRecord, iIdx);
   sqlite3VdbeAddOp3(v, OP_IdxInsert, iIdx, regRecord, 1);
   sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
   sqlite3ReleaseTempReg(pParse, regRecord);

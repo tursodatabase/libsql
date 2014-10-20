@@ -129,6 +129,13 @@ const unsigned char sqlite3CtypeMap[256] = {
 };
 #endif
 
+/* EVIDENCE-OF: R-02982-34736 In order to maintain full backwards
+** compatibility for legacy applications, the URI filename capability is
+** disabled by default.
+**
+** EVIDENCE-OF: R-38799-08373 URI filenames can be enabled or disabled
+** using the SQLITE_USE_URI=1 or SQLITE_USE_URI=0 compile-time options.
+*/
 #ifndef SQLITE_USE_URI
 # define  SQLITE_USE_URI 0
 #endif

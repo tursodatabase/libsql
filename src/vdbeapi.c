@@ -318,6 +318,7 @@ void sqlite3_result_text64(
 ){
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
   assert( xDel!=SQLITE_DYNAMIC );
+  if( enc==SQLITE_UTF16 ) enc = SQLITE_UTF16NATIVE;
   if( n>0x7fffffff ){
     (void)invokeValueDestructor(z, xDel, pCtx);
   }else{
@@ -665,7 +666,7 @@ static SQLITE_NOINLINE void *createAggContext(sqlite3_context *p, int nByte){
     sqlite3VdbeMemSetNull(pMem);
     pMem->z = 0;
   }else{
-    sqlite3VdbeMemGrow(pMem, nByte, 0);
+    sqlite3VdbeMemClearAndResize(pMem, nByte);
     pMem->flags = MEM_Agg;
     pMem->u.pDef = p->pFunc;
     if( pMem->z ){
@@ -807,9 +808,10 @@ static const Mem *columnNullValue(void){
         /* .flags      = */ MEM_Null,
         /* .enc        = */ 0,
         /* .n          = */ 0,
-        /* .r          = */ (double)0,
         /* .z          = */ 0,
         /* .zMalloc    = */ 0,
+        /* .szMalloc   = */ 0,
+        /* .iPadding1  = */ 0,
         /* .db         = */ 0,
         /* .xDel       = */ 0,
 #ifdef SQLITE_DEBUG
@@ -1272,7 +1274,7 @@ int sqlite3_bind_value(sqlite3_stmt *pStmt, int i, const sqlite3_value *pValue){
       break;
     }
     case SQLITE_FLOAT: {
-      rc = sqlite3_bind_double(pStmt, i, pValue->r);
+      rc = sqlite3_bind_double(pStmt, i, pValue->u.r);
       break;
     }
     case SQLITE_BLOB: {
