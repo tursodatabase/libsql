@@ -22,7 +22,7 @@ pub use transaction::{SqliteTransactionMode,
 
 pub mod types;
 mod transaction;
-#[allow(dead_code,non_snake_case,non_camel_case_types)] mod ffi;
+#[allow(dead_code,non_snake_case,non_camel_case_types)] pub mod ffi;
 
 pub type SqliteResult<T> = Result<T, SqliteError>;
 
