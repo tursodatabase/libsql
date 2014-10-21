@@ -623,9 +623,10 @@ struct PagerSavepoint {
 **   database file has not been modified since it was created, this variable 
 **   is set to 2.
 **
-** noCkptOnClose
-**
-**
+**   It is also possible to use PagerSetOtaMode() to 2 if the database is
+**   already in WAL mode. In this case the only effect is to prevent the
+**   connection from checkpointing the db as part of an sqlite3PagerClose()
+**   call.
 */
 struct Pager {
   sqlite3_vfs *pVfs;          /* OS functions to use for IO */
@@ -7293,13 +7294,20 @@ int sqlite3PagerWalFramesize(Pager *pPager){
 ** Set or clear the "OTA mode" flag.
 */
 int sqlite3PagerSetOtaMode(Pager *pPager, int iOta){
+  assert( iOta==1 || iOta==2 );
   if( iOta==1 && (pPager->pWal || pPager->eState!=PAGER_OPEN) ){
+    return SQLITE_ERROR;
+  }
+  if( iOta==2 && 0==pPager->pWal ){
     return SQLITE_ERROR;
   }
   pPager->otaMode = iOta;
   return SQLITE_OK;
 }
 
+/*
+** Open an incremental checkpoint handle.
+*/
 int sqlite3PagerWalCheckpointStart(
   sqlite3 *db, 
   Pager *pPager,

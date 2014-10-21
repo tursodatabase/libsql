@@ -16,6 +16,9 @@ if {![info exists testdir]} {
 source $testdir/tester.tcl
 set ::testprefix ota1
 
+db close
+sqlite3_shutdown
+sqlite3_config_uri 1
 
 # Create a simple OTA database. That expects to write to a table:
 #
@@ -91,7 +94,19 @@ proc step_ota {target ota} {
   set rc
 }
 
-foreach {tn2 cmd} {1 run_ota 2 step_ota} {
+# Same as [step_ota], except using a URI to open the target db.
+#
+proc step_ota_uri {target ota} {
+  while 1 {
+    sqlite3ota ota file:$target?xyz=123 $ota
+    set rc [ota step]
+    ota close
+    if {$rc != "SQLITE_OK"} break
+  }
+  set rc
+}
+
+foreach {tn2 cmd} {1 run_ota 2 step_ota 3 step_ota_uri} {
   foreach {tn schema} {
     1 {
       CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);

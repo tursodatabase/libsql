@@ -1773,6 +1773,9 @@ int sqlite3_wal_checkpoint_v2(
 #endif
 }
 
+/*
+** Open an incremental checkpoint handle.
+*/
 int sqlite3_ckpt_open(
   sqlite3 *db, 
   unsigned char *a, int n, 

@@ -1,5 +1,5 @@
-C Add\stests\sfor\sanother\sapplication\swriting\sthe\sdatabase\swhile\san\sota\supdate\sis\songoing.
-D 2014-10-21T18:09:58.794
+C Test\sthat\ssqlite3ota_open()\sworks\swith\sURI\spaths.\sFix\ssome\sother\sissues.
+D 2014-10-21T19:35:03.426
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -124,13 +124,13 @@ F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
 F ext/ota/README.txt 78d4a9f78f567d4bf826cf0f02df6254902562ca
 F ext/ota/ota.c c11a85af71dccc45976622fe7a51169a481caa91
-F ext/ota/ota1.test 0c8e5ef3d059bebe7872477381424836326a8e0a
+F ext/ota/ota1.test 98deadd0c67ca634bd3ce30ef063a3bb6534a029
 F ext/ota/ota2.test 4568c2671d19dbde789fb9091d727a2e94880128
 F ext/ota/ota3.test 215dd4a8e238567e0f890a5139b6fdf5494ef311
 F ext/ota/ota4.test 60f897f329a6782ef2f24862640acf3c52e48077
 F ext/ota/ota5.test ad0799daf8923ddebffe75ae8c5504ca90b7fadb
 F ext/ota/ota6.test 82f1f757ec9b2ad07d6de4060b8e3ba8e44dfdd3
-F ext/ota/sqlite3ota.c 2ae05cfc4e45cf847ba5ec79953b9b55bcb9fc8d
+F ext/ota/sqlite3ota.c a8b4fbe2234964238678ed939e035346efbfeff2
 F ext/ota/sqlite3ota.h 7b20abe9247d292429d00f0a5c237ff6e0dc0196
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 57bec53e1a677ab74217fe1f20a58c3a47261d6b
@@ -204,7 +204,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
 F src/loadext.c de741e66e5ddc1598d904d7289239696e40ed994
-F src/main.c d7a31f8c19c27b046cef381369381bba379c3730
+F src/main.c 627406d9cfee49e666d47a265a5cad8ef402f823
 F src/malloc.c 3c3ac67969612493d435e14b6832793209afd2ec
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c faf615aafd8be74a71494dfa027c113ea5c6615f
@@ -225,7 +225,7 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c fb587121840f690101336879adfa6d0b2cd0e8c7
 F src/os_win.c a019caaae2bcbbc0cc4c39af6e7d7e43d8426053
 F src/os_win.h 09e751b20bbc107ffbd46e13555dc73576d88e21
-F src/pager.c 93ad94d62e959c2a4d85de17a5636da174e55533
+F src/pager.c e1e385e03df0abf0743a7eea38c193d327ed396c
 F src/pager.h 997a4aa3bad1638dabe90a0cbb674cc4a7b9c034
 F src/parse.y 5dfead8aed90cb0c7c1115898ee2266804daff45
 F src/pcache.c 4121a0571c18581ee9f82f086d5e2030051ebd6a
@@ -309,7 +309,7 @@ F src/vdbemem.c 31d8eabb0cd78bfeab4e5124c7363c3e9e54db9f
 F src/vdbesort.c 975aeffa99acb0991b2f288d30294756bff41438
 F src/vdbetrace.c 7e4222955e07dd707a2f360c0eb73452be1cb010
 F src/vtab.c cb0c194303fea276b48d7d4b6d970b5a96bde8de
-F src/wal.c a5dbbbd8ceccd5e2187b1e7854f359cb5efb7e3b
+F src/wal.c cbce609ec35e4d170ec0db385880f5f12c9c7fbd
 F src/wal.h 0d3ba0c3f1b4c25796cb213568a84b9f9063f465
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
 F src/where.c 2947912f1f3d6a7766fe087fd532a5d688d745b1
@@ -1102,7 +1102,7 @@ F test/vtabF.test fd5ad376f5a34fe0891df1f3cddb4fe7c3eb077e
 F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test ea8778d5b0df200adef2ca7c00c3c37d4375f772
-F test/wal.test d7bb2feeacb74d26f27ebe519334b95adf22c8ae
+F test/wal.test 885f32b2b390b30b4aa3dbb0e568f8f78d40f5cc
 F test/wal2.test 1f841d2048080d32f552942e333fd99ce541dada
 F test/wal3.test b22eb662bcbc148c5f6d956eaf94b047f7afe9c0
 F test/wal4.test 4744e155cd6299c6bd99d3eab1c82f77db9cdb3c
@@ -1215,7 +1215,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d380a6482a46478ebdf97e08b2fcf78b5d126dde
-R 97e1b4279cf76e9ec95460929d6af6ea
+P 2402baa0027ca65e9a5106b8b9c4e10f40d2cbc3
+R be41b5fa90bd92c9b4cc1682fc718b4c
 U dan
-Z f79fd33fec0991480e954c839234840a
+Z 3c98460b0b6af0c08ea70d54ed77c905

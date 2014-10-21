@@ -781,6 +781,10 @@ static int otaGetUpdateStmt(
   return p->rc;
 }
 
+/*
+** Open the database handle and attach the OTA database as "ota". If an
+** error occurs, leave an error code and message in the OTA handle.
+*/
 static void otaOpenDatabase(sqlite3ota *p){
   assert( p->rc==SQLITE_OK );
   sqlite3_close(p->db);
@@ -828,9 +832,11 @@ static void otaFileSuffix3(const char *zBase, char *z){
 }
 
 /*
-** Move the "*-oal" file corresponding to the target database to the
-** "*-wal" location. If an error occurs, leave an error code and error 
-** message in the ota handle.
+** The OTA handle is currently in OTA_STAGE_OAL state, with a SHARED lock
+** on the database file. This proc moves the *-oal file to the *-wal path,
+** then reopens the database file (this time in vanilla, non-oal, WAL mode).
+** If an error occurs, leave an error code and error message in the ota 
+** handle.
 */
 static void otaMoveOalFile(sqlite3ota *p){
   const char *zBase = sqlite3_db_filename(p->db, "main");
@@ -838,6 +844,7 @@ static void otaMoveOalFile(sqlite3ota *p){
   char *zWal = sqlite3_mprintf("%s-wal", zBase);
   char *zOal = sqlite3_mprintf("%s-oal", zBase);
 
+  assert( p->eStage==OTA_STAGE_OAL );
   assert( p->rc==SQLITE_OK && p->zErrmsg==0 );
   if( zWal==0 || zOal==0 ){
     p->rc = SQLITE_NOMEM;

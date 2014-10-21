@@ -3108,6 +3108,9 @@ int sqlite3_ckpt_close(sqlite3_ckpt *pCkpt, u8 **paState, int *pnState){
   return rc;
 }
 
+/*
+** Open an incremental checkpoint handle.
+*/
 int sqlite3WalCheckpointStart(
   sqlite3 *db,                    /* Database connection */
   Wal *pWal,                      /* Wal connection */
