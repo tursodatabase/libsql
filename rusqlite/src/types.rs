@@ -3,13 +3,14 @@ use std::c_str::{CString};
 use std::mem;
 use std::vec;
 use super::ffi;
+use super::{SqliteResult, SqliteError};
 
 pub trait ToSql {
     unsafe fn bind_parameter(&self, stmt: *mut ffi::sqlite3_stmt, col: c_int) -> c_int;
 }
 
 pub trait FromSql {
-    unsafe fn column_result(stmt: *mut ffi::sqlite3_stmt, col: c_int) -> Self;
+    unsafe fn column_result(stmt: *mut ffi::sqlite3_stmt, col: c_int) -> SqliteResult<Self>;
 }
 
 macro_rules! raw_to_impl(
@@ -74,8 +75,8 @@ impl ToSql for Null {
 macro_rules! raw_from_impl(
     ($t:ty, $f:ident) => (
         impl FromSql for $t {
-            unsafe fn column_result(stmt: *mut ffi::sqlite3_stmt, col: c_int) -> $t {
-                ffi::$f(stmt, col)
+            unsafe fn column_result(stmt: *mut ffi::sqlite3_stmt, col: c_int) -> SqliteResult<$t> {
+                Ok(ffi::$f(stmt, col))
             }
         }
     )
@@ -86,36 +87,37 @@ raw_from_impl!(i64, sqlite3_column_int64)
 raw_from_impl!(c_double, sqlite3_column_double)
 
 impl FromSql for String {
-    unsafe fn column_result(stmt: *mut ffi::sqlite3_stmt, col: c_int) -> String {
+    unsafe fn column_result(stmt: *mut ffi::sqlite3_stmt, col: c_int) -> SqliteResult<String> {
         let c_text = ffi::sqlite3_column_text(stmt, col);
         if c_text.is_null() {
-            "".to_string()
+            Ok("".to_string())
         } else {
             match CString::new(mem::transmute(c_text), false).as_str() {
-                Some(s) => s.to_string(),
-                None => "".to_string(),
+                Some(s) => Ok(s.to_string()),
+                None => Err(SqliteError{ code: ffi::SQLITE_MISMATCH,
+                    message: "Could not convert text to UTF-8".to_string() })
             }
         }
     }
 }
 
 impl FromSql for Vec<u8> {
-    unsafe fn column_result(stmt: *mut ffi::sqlite3_stmt, col: c_int) -> Vec<u8> {
+    unsafe fn column_result(stmt: *mut ffi::sqlite3_stmt, col: c_int) -> SqliteResult<Vec<u8>> {
         let c_blob = ffi::sqlite3_column_blob(stmt, col);
         let len = ffi::sqlite3_column_bytes(stmt, col);
 
         assert!(len >= 0); let len = len as uint;
 
-        vec::raw::from_buf(mem::transmute(c_blob), len)
+        Ok(vec::raw::from_buf(mem::transmute(c_blob), len))
     }
 }
 
 impl<T: FromSql> FromSql for Option<T> {
-    unsafe fn column_result(stmt: *mut ffi::sqlite3_stmt, col: c_int) -> Option<T> {
+    unsafe fn column_result(stmt: *mut ffi::sqlite3_stmt, col: c_int) -> SqliteResult<Option<T>> {
         if ffi::sqlite3_column_type(stmt, col) == ffi::SQLITE_NULL {
-            None
+            Ok(None)
         } else {
-            Some(FromSql::column_result(stmt, col))
+            FromSql::column_result(stmt, col).map(|t| Some(t))
         }
     }
 }

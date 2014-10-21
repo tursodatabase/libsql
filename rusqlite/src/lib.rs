@@ -346,7 +346,7 @@ impl<'stmt> SqliteRow<'stmt> {
                 return Err(SqliteError{ code: ffi::SQLITE_MISUSE,
                     message: "Invalid column index".to_string() });
             }
-            Ok(FromSql::column_result(self.stmt.stmt, idx))
+            FromSql::column_result(self.stmt.stmt, idx)
         }
     }
 }
