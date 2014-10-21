@@ -3994,7 +3994,9 @@ static void whereLoopAdjustCost(const WhereLoop *p, WhereLoop *pTemplate){
     if( (p->wsFlags & WHERE_INDEXED)==0 ) continue;
     if( whereLoopCheaperProperSubset(p, pTemplate) ){
       /* Adjust pTemplate cost downward so that it is cheaper than its 
-      ** subset p */
+      ** subset p.  Except, do not adjust the cost estimate downward for
+      ** a loop that skips more columns. */
+      if( pTemplate->nSkip>p->nSkip ) continue;
       WHERETRACE(0x80,("subset cost adjustment %d,%d to %d,%d\n",
                        pTemplate->rRun, pTemplate->nOut, p->rRun, p->nOut-1));
       pTemplate->rRun = p->rRun;
@@ -4515,12 +4517,6 @@ static int whereLoopAddBtreeIndex(
     pNew->aLTerm[pNew->nLTerm++] = 0;
     pNew->wsFlags |= WHERE_SKIPSCAN;
     nIter = pProbe->aiRowLogEst[saved_nEq] - pProbe->aiRowLogEst[saved_nEq+1];
-    if( pTerm ){
-      /* TUNING:  When estimating skip-scan for a term that is also indexable,
-      ** multiply the cost of the skip-scan by 2.0, to make it a little less
-      ** desirable than the regular index lookup. */
-      nIter += 10;  assert( 10==sqlite3LogEst(2) );
-    }
     pNew->nOut -= nIter;
     /* TUNING:  Because uncertainties in the estimates for skip-scan queries,
     ** add a 1.375 fudge factor to make skip-scan slightly less likely. */
