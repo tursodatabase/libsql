@@ -1,5 +1,5 @@
-C Merge\sversion-3.8.7\schanges\swith\sthis\sbranch.
-D 2014-10-20T16:34:03.980
+C Add\stests\sfor\sanother\sapplication\swriting\sthe\sdatabase\swhile\san\sota\supdate\sis\songoing.
+D 2014-10-21T18:09:58.794
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -122,14 +122,15 @@ F ext/misc/totype.c 4a167594e791abeed95e0a8db028822b5e8fe512
 F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
-F ext/ota/README.txt cb11e39bfeba952ac8896dab860ada9d54731fb8
+F ext/ota/README.txt 78d4a9f78f567d4bf826cf0f02df6254902562ca
 F ext/ota/ota.c c11a85af71dccc45976622fe7a51169a481caa91
 F ext/ota/ota1.test 0c8e5ef3d059bebe7872477381424836326a8e0a
 F ext/ota/ota2.test 4568c2671d19dbde789fb9091d727a2e94880128
 F ext/ota/ota3.test 215dd4a8e238567e0f890a5139b6fdf5494ef311
 F ext/ota/ota4.test 60f897f329a6782ef2f24862640acf3c52e48077
 F ext/ota/ota5.test ad0799daf8923ddebffe75ae8c5504ca90b7fadb
-F ext/ota/sqlite3ota.c 1b4e4cdb05e67982865466f4b0aaea8d3648269c
+F ext/ota/ota6.test 82f1f757ec9b2ad07d6de4060b8e3ba8e44dfdd3
+F ext/ota/sqlite3ota.c 2ae05cfc4e45cf847ba5ec79953b9b55bcb9fc8d
 F ext/ota/sqlite3ota.h 7b20abe9247d292429d00f0a5c237ff6e0dc0196
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 57bec53e1a677ab74217fe1f20a58c3a47261d6b
@@ -1214,7 +1215,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0bf1301aacb3b717b4cc020fbda9fab0bae331c3 19fe4a0a475bd94f491031aea7a183f7c0515cf3
-R 348e09d90bfec6d435f7913d476a2e51
+P d380a6482a46478ebdf97e08b2fcf78b5d126dde
+R 97e1b4279cf76e9ec95460929d6af6ea
 U dan
-Z d6c8c1f51d897af1aed5284afd8b6a66
+Z f79fd33fec0991480e954c839234840a

@@ -19,11 +19,11 @@ SQLite Hacks
   * All non-temporary triggers are disabled.
 
 
-2) PRAGMA pager_ota_mode:
+2) PRAGMA pager_ota_mode=1:
 
-  This pragma sets a flag on the pager associated with the main database only. In
-  a zipvfs system, this pragma is intercepted by zipvfs and the flag is set on
-  the lower level pager only.
+  This pragma sets a flag on the pager associated with the main database only.
+  In a zipvfs system, this pragma is intercepted by zipvfs and the flag is set
+  on the lower level pager only.
 
   The flag can only be set when there is no open transaction and the pager does
   not already have an open WAL file. Attempting to do so is an error.
@@ -36,13 +36,13 @@ SQLite Hacks
   Otherwise, if no WAL file or flags are found, the pager opens the *-oal file
   and uses it as a write-ahead-log with the *-shm data stored in heap-memory.
 
-  The 8-bytes of "salt" at teh start of an *-oal file is a copy of the 8 bytes
+  The 8-bytes of "salt" at the start of an *-oal file is a copy of the 8 bytes
   starting at offset 24 of the database file header (the change counter and the
   number of pages in the file). If the *-oal file already exists when it is
   opened, SQLite checks that the salt still matches the database header fields.
-  If not, it concludes that the database file has been written by a rollback-mode
-  client since the *-oal wa created and an SQLITE_BUSY_SNAPSHOT error is
-  returned. No read-transaction can be opened in this case.
+  If not, it concludes that the database file has been written by a
+  rollback-mode client since the *-oal wa created and an SQLITE_BUSY_SNAPSHOT
+  error is returned. No read-transaction can be opened in this case.
 
   A pager with the pager_ota_mode flag set never runs a checkpoint.
 
@@ -51,13 +51,25 @@ SQLite Hacks
   pager_ota_mode connections. If two or more such connections attempt to write
   simultaneously, the results are undefined.
 
+3) PRAGMA pager_ota_mode=2:
 
-3) sqlite3_index_writer()
+  The pager_ota_mode pragma may also be set to 2 if the main database is open 
+  in WAL mode. This prevents SQLite from checkpointing the wal file as part
+  of sqlite3_close().
+
+  The effects of setting pager_ota_mode=2 if the db is not in WAL mode are
+  undefined.
+
+4) sqlite3_index_writer()
 
   This new API function is used to create VMs that can insert or delete entries
   from individual index b-trees within the database. The VMs apply affinities
   and check that UNIQUE constraints are not violated before updating index
   b-trees.
+
+5) sqlite3_ckpt_open/step/close()
+
+  API for performing (and resuming) incremental checkpoints.
 
 
 The OTA extension

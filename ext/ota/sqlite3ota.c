@@ -1303,29 +1303,35 @@ sqlite3ota *sqlite3ota_open(const char *zTarget, const char *zOta){
     }
     assert( p->rc!=SQLITE_OK || p->eStage!=0 );
 
-    if( p->eStage==OTA_STAGE_OAL ){
-      if( p->rc==SQLITE_OK ){
+    if( p->rc==SQLITE_OK ){
+      if( p->eStage==OTA_STAGE_OAL ){
         const char *zScript =
           "PRAGMA journal_mode=off;"
           "PRAGMA pager_ota_mode=1;"
           "PRAGMA ota_mode=1;"
           "BEGIN IMMEDIATE;"
-          ;
+        ;
         p->rc = sqlite3_exec(p->db, zScript, 0, 0, &p->zErrmsg);
+  
+        /* Point the object iterator at the first object */
+        if( p->rc==SQLITE_OK ){
+          p->rc = otaObjIterFirst(p, &p->objiter);
+        }
+  
+        if( p->rc==SQLITE_OK ){
+          otaLoadTransactionState(p, pState);
+        }
+      }else if( p->eStage==OTA_STAGE_CKPT ){
+        p->rc = sqlite3_ckpt_open(
+            p->db, pState->pCkptState, pState->nCkptState, &p->pCkpt
+        );
+        if( p->rc==SQLITE_MISMATCH ){
+          p->eStage = OTA_STAGE_DONE;
+          p->rc = SQLITE_DONE;
+        }
+      }else if( p->eStage==OTA_STAGE_DONE ){
+        p->rc = SQLITE_DONE;
       }
-
-      /* Point the object iterator at the first object */
-      if( p->rc==SQLITE_OK ){
-        p->rc = otaObjIterFirst(p, &p->objiter);
-      }
-
-      if( p->rc==SQLITE_OK ){
-        otaLoadTransactionState(p, pState);
-      }
-    }else if( p->rc==SQLITE_OK && p->eStage==OTA_STAGE_CKPT ){
-      p->rc = sqlite3_ckpt_open(
-          p->db, pState->pCkptState, pState->nCkptState, &p->pCkpt
-      );
     }
 
     otaFreeState(pState);
