@@ -1,5 +1,5 @@
-C Further\stuning\sof\sthe\scost\sestimates\sfor\sskip-scan\sloops,\sespecially\sfor\scases\nwhen\sskip-scan\sloops\sare\sin\scompetition\swith\sregular\sloops.
-D 2014-10-21T18:16:21.388
+C Call\sfsync()\sright\safter\sftruncate()\swhen\sin\sjournal_mode=TRUNCATE\sand\nwhen\ssynchronous=FULL\sin\sorder\sto\sensure\sthat\stransactions\sare\sdurable\nacross\sa\spower\sloss\sthat\shappens\smoments\safter\sthe\scommit.\s\sProposed\nfix\sfor\s[https://bugzilla.mozilla.org/show_bug.cgi?id=1072773].
+D 2014-10-21T21:56:06.890
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -215,7 +215,7 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c fb587121840f690101336879adfa6d0b2cd0e8c7
 F src/os_win.c a019caaae2bcbbc0cc4c39af6e7d7e43d8426053
 F src/os_win.h 09e751b20bbc107ffbd46e13555dc73576d88e21
-F src/pager.c a171cf9dd09c6cb162b262c328d4dfd198e04f80
+F src/pager.c a98547ad9b1b5dbbc5e7d1c520be041b5d2c0926
 F src/pager.h ffd5607f7b3e4590b415b007a4382f693334d428
 F src/parse.y 5dfead8aed90cb0c7c1115898ee2266804daff45
 F src/pcache.c 4121a0571c18581ee9f82f086d5e2030051ebd6a
@@ -1205,7 +1205,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ec1e942f08548695ff02645b3f3cd6bb2516bc9a
-R 4f5d15d10f268e58d7c047d490bf8adc
+P a27861c28c4791e51d797aa37e9cca806cb58775
+R 1375151e695773da263f40095fae22af
 U drh
-Z 7d7f3f0271fe8b8df2863a2c22053442
+Z be5219411fed69e2fe0e0626925bcd5e
