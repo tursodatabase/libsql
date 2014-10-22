@@ -1764,8 +1764,8 @@ static int walCheckpointFinalize(WalCkpt *p){
     int rc = p->rc;
     Wal *pWal = p->pWal;
 
-    /* If work was completed */
-    if( p->pIter && rc==SQLITE_DONE ){
+    if( rc==SQLITE_DONE ){
+      /* If work was completed */
       rc = SQLITE_OK;
       if( p->mxSafeFrame==walIndexHdr(pWal)->mxFrame ){
         i64 szDb = pWal->hdr.nPage*(i64)p->szPage;
@@ -1779,6 +1779,9 @@ static int walCheckpointFinalize(WalCkpt *p){
         p->pInfo->nBackfill = p->mxSafeFrame;
       }
       p->rc = rc;
+    }else if( rc==SQLITE_OK && p->sync_flags ){
+      /* If work was not completed, but no error has occured. */
+      p->rc = sqlite3OsSync(pWal->pDbFd, p->sync_flags);
     }
 
     /* Release the reader lock held while backfilling */
