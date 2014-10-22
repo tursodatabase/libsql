@@ -1214,7 +1214,7 @@ struct sqlite3 {
 #define SQLITE_SubqCoroutine  0x0100   /* Evaluate subqueries as coroutines */
 #define SQLITE_Transitive     0x0200   /* Transitive constraints */
 #define SQLITE_OmitNoopJoin   0x0400   /* Omit unused tables in joins */
-#define SQLITE_Stat3          0x0800   /* Use the SQLITE_STAT3 table */
+#define SQLITE_Stat34         0x0800   /* Use STAT3 or STAT4 data */
 #define SQLITE_AllOpts        0xffff   /* All optimizations */
 
 /*

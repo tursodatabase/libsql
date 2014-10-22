@@ -1861,7 +1861,7 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
 
   /* Load the statistics from the sqlite_stat4 table. */
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
-  if( rc==SQLITE_OK ){
+  if( rc==SQLITE_OK && OptimizationEnabled(db, SQLITE_Stat34) ){
     int lookasideEnabled = db->lookaside.bEnabled;
     db->lookaside.bEnabled = 0;
     rc = loadStat4(db, sInfo.zDatabase);

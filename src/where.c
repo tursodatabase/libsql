@@ -1350,7 +1350,7 @@ static void exprAnalyze(
   if( pExpr->op==TK_NOTNULL
    && pExpr->pLeft->op==TK_COLUMN
    && pExpr->pLeft->iColumn>=0
-   && OptimizationEnabled(db, SQLITE_Stat3)
+   && OptimizationEnabled(db, SQLITE_Stat34)
   ){
     Expr *pNewExpr;
     Expr *pLeft = pExpr->pLeft;
@@ -2159,7 +2159,6 @@ static int whereRangeScanEst(
 
   if( p->nSample>0
    && nEq<p->nSampleCol
-   && OptimizationEnabled(pParse->db, SQLITE_Stat3) 
   ){
     if( nEq==pBuilder->nRecValid ){
       UnpackedRecord *pRec = pBuilder->pRec;
@@ -4422,7 +4421,6 @@ static int whereLoopAddBtreeIndex(
         if( nInMul==0 
          && pProbe->nSample 
          && pNew->u.btree.nEq<=pProbe->nSampleCol
-         && OptimizationEnabled(db, SQLITE_Stat3) 
          && ((eOp & WO_IN)==0 || !ExprHasProperty(pTerm->pExpr, EP_xIsSelect))
         ){
           Expr *pExpr = pTerm->pExpr;
