@@ -1,5 +1,5 @@
-C Change\sthe\s0x800\sbit\sof\sSQLITE_TESTCTRL_OPTIMIZATIONS\sso\sthat\sit\sdisables\nthe\sloading\sof\sSTAT3\sand\sSTAT4\scontent,\snot\sjust\sthe\susing\sof\sthat\scontent.\nChange\sthe\sinternal\sname\sof\sthat\sbit\sto\sSQLITE_Stat34.
-D 2014-10-22T19:57:16.520
+C Disable\sthe\suse\sof\sstrchrnul()\sunless\sspecifically\senabled\sby\scompile-time\noptions.
+D 2014-10-22T20:07:19.558
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -223,7 +223,7 @@ F src/pcache.h 9b559127b83f84ff76d735c8262f04853be0c59a
 F src/pcache1.c e412cb585f777c840ddce0500eddc5c6043c2bb5
 F src/pragma.c 3f3e959390a10c0131676f0e307acce372777e0f
 F src/prepare.c 6ef0cf2f9274982988ed6b7cab1be23147e94196
-F src/printf.c 6b79bbd063dcbadca4cf617a4cde255bcc13ea64
+F src/printf.c 090fac0f779c93c8a95089a125339686648835e4
 F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c a3466128b52a86c466e47ac1a19e2174f7b5cf89
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
@@ -1205,7 +1205,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3c933bf95f291f7957580d823dce92c981375a5c
-R 3efbbff265eea57d45c364e4606463ea
+P ca3b00c44ec52d209642a5ba9ef82e085fac39db
+R 8aff7924cf3a3f93f4ee99fb545d1f5f
 U drh
-Z b4247f0ab9b19770a6354621b6169ee4
+Z c6210337ac863b7dfe5cbe19c541a0aa
