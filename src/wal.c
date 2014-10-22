@@ -1608,6 +1608,7 @@ static int walIteratorInit(Wal *pWal, WalIterator **pp){
 
   if( rc!=SQLITE_OK ){
     walIteratorFree(p);
+    p = 0;
   }
   *pp = p;
   return rc;

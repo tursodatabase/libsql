@@ -1,0 +1,153 @@
+# 2014 October 22
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+
+if {![info exists testdir]} {
+  set testdir [file join [file dirname [info script]] .. .. test]
+}
+source $testdir/tester.tcl
+source $testdir/malloc_common.tcl
+set ::testprefix otafault
+
+do_test 1.1 {
+  forcedelete ota.db
+  execsql {
+    CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+    CREATE INDEX t1cb ON t1(c, b);
+    INSERT INTO t1 VALUES(1, 1, 1);
+    INSERT INTO t1 VALUES(2, 2, 2);
+    INSERT INTO t1 VALUES(3, 3, 3);
+    CREATE TABLE t2(a PRIMARY KEY, b, c) WITHOUT ROWID;
+    CREATE INDEX t2cb ON t1(c, b);
+    INSERT INTO t2 VALUES('a', 'a', 'a');
+    INSERT INTO t2 VALUES('b', 'b', 'b');
+    INSERT INTO t2 VALUES('c', 'c', 'c');
+
+    ATTACH 'ota.db' AS ota;
+    CREATE TABLE ota.data_t1(a, b, c, ota_control);
+    CREATE TABLE ota.data_t2(a, b, c, ota_control);
+
+    INSERT INTO data_t1 VALUES(2, NULL, NULL, 1);
+    INSERT INTO data_t1 VALUES(3, 'three', NULL, '.x.');
+    INSERT INTO data_t1 VALUES(4, 4, 4, 0);
+
+    INSERT INTO data_t2 VALUES('b', NULL, NULL, 1);
+    INSERT INTO data_t2 VALUES('c', 'see', NULL, '.x.');
+    INSERT INTO data_t2 VALUES('d', 'd', 'd', 0);
+  }
+  db close
+
+  forcecopy test.db test.db.bak
+  forcecopy ota.db ota.db.bak
+} {}
+
+do_faultsim_test 2 -faults oom-trans* -prep {
+  catch { db close }
+  forcedelete test.db-journal test.db-wal ota.db-journal ota.db-wal
+  forcecopy test.db.bak test.db
+  forcecopy ota.db.bak  ota.db
+} -body {
+  sqlite3ota ota test.db ota.db
+  while {[ota step]=="SQLITE_OK"} {}
+  ota close
+} -test {
+  faultsim_test_result {0 SQLITE_DONE} \
+                       {1 {SQLITE_NOMEM - out of memory}} \
+                       {1 SQLITE_NOMEM} \
+                       {1 SQLITE_IOERR_NOMEM} \
+                       {1 {SQLITE_NOMEM - unable to open a temporary database file for storing temporary tables}}
+
+  if {$testrc==0} {
+    sqlite3 db test.db
+    faultsim_integrity_check
+    set res [db eval {
+      SELECT * FROM t1 UNION ALL SELECT * FROM t2;
+    }]
+    set expected [list {*}{
+      1 1 1   3 three 3   4 4 4
+      a a a   c see c     d d d
+    }]
+
+    if {$res != $expected} {
+      puts ""
+      puts "res: $res"
+      puts "exp: $expected"
+      error "data not as expected!"
+    }
+  }
+}
+
+proc copy_if_exists {src target} {
+  if {[file exists $src]} {
+    forcecopy $src $target
+  } else {
+    forcedelete $target
+  }
+}
+
+for {set iStep 0} {$iStep<=21} {incr iStep} {
+
+  forcedelete test.db-journal test.db-wal ota.db-journal ota.db-wal
+
+  copy_if_exists test.db.bak test.db
+  copy_if_exists ota.db.bak ota.db
+
+  sqlite3ota ota test.db ota.db
+  for {set x 0} {$x < $::iStep} {incr x} { ota step }
+  ota close
+
+  copy_if_exists test.db test.db.bak.2
+  copy_if_exists test.db-wal test.db.bak.2-wal
+  copy_if_exists test.db-oal test.db.bak.2-oal
+  copy_if_exists ota.db ota.db.bak.2
+
+  do_faultsim_test 3.$iStep -faults oom-trans* -prep {
+    catch { db close }
+    forcedelete test.db-journal test.db-wal ota.db-journal ota.db-wal
+    copy_if_exists test.db.bak.2 test.db
+    copy_if_exists test.db.bak.2-wal test.db-wal
+    copy_if_exists test.db.bak.2-oal test.db-oal
+    copy_if_exists ota.db.bak.2  ota.db
+  } -body {
+    sqlite3ota ota test.db ota.db
+    while {[ota step] == "SQLITE_OK"} {}
+    ota close
+  } -test {
+    faultsim_test_result {0 SQLITE_DONE} \
+                         {1 {SQLITE_NOMEM - out of memory}} \
+                         {1 SQLITE_NOMEM} \
+                         {1 SQLITE_IOERR_NOMEM} \
+                         {1 {SQLITE_NOMEM - unable to open a temporary database file for storing temporary tables}}
+  
+    if {$testrc==0} {
+      sqlite3 db test.db
+      faultsim_integrity_check
+      set res [db eval {
+        SELECT * FROM t1 UNION ALL SELECT * FROM t2;
+      }]
+      set expected [list {*}{
+        1 1 1   3 three 3   4 4 4
+        a a a   c see c     d d d
+      }]
+  
+      if {$res != $expected} {
+        puts ""
+        puts "res: $res"
+        puts "exp: $expected"
+        error "data not as expected!"
+      }
+    }
+  }
+
+}
+
+finish_test
+

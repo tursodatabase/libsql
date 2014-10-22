@@ -1,5 +1,5 @@
-C Sync\sthe\sdatabase\sfile\sin\ssqlite3_ckpt_close(),\seven\sif\sthe\scheckpoint\shas\snot\sfinished.
-D 2014-10-22T11:30:08.642
+C Add\stests\sto\scheck\serror\shandling\sin\sOTA.
+D 2014-10-22T15:33:12.681
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -130,7 +130,8 @@ F ext/ota/ota3.test 215dd4a8e238567e0f890a5139b6fdf5494ef311
 F ext/ota/ota4.test 60f897f329a6782ef2f24862640acf3c52e48077
 F ext/ota/ota5.test ad0799daf8923ddebffe75ae8c5504ca90b7fadb
 F ext/ota/ota6.test 82f1f757ec9b2ad07d6de4060b8e3ba8e44dfdd3
-F ext/ota/sqlite3ota.c a8b4fbe2234964238678ed939e035346efbfeff2
+F ext/ota/otafault.test be02466863015a583cc0ceb6aca871a5e6f7a71b
+F ext/ota/sqlite3ota.c c7f8cdf55449b5169f79632e78f8e5049abf904c
 F ext/ota/sqlite3ota.h 7b20abe9247d292429d00f0a5c237ff6e0dc0196
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 57bec53e1a677ab74217fe1f20a58c3a47261d6b
@@ -309,7 +310,7 @@ F src/vdbemem.c 31d8eabb0cd78bfeab4e5124c7363c3e9e54db9f
 F src/vdbesort.c 975aeffa99acb0991b2f288d30294756bff41438
 F src/vdbetrace.c 7e4222955e07dd707a2f360c0eb73452be1cb010
 F src/vtab.c cb0c194303fea276b48d7d4b6d970b5a96bde8de
-F src/wal.c 99c5b0a68e525d854d86f93be215e9c2bfb7b194
+F src/wal.c 2787dfceb22d50c45ca51a8f56684516894a135c
 F src/wal.h 0d3ba0c3f1b4c25796cb213568a84b9f9063f465
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
 F src/where.c 2947912f1f3d6a7766fe087fd532a5d688d745b1
@@ -1215,7 +1216,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6fd09854feb46739f42b7e7a5e76680d5f9b8c5a
-R b3f281b9e115a81e4161ab510da7f09d
+P e2729d623c6e9d0b3049049f3f3051bbb479184f
+R f1db06b4abcee6f48965e7da46a3387a
 U dan
-Z 3d20cbfe4cbde996e6770d4067fcc8a6
+Z 87316fa0e6665a6aa049c94bffdd7d8b

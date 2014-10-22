@@ -577,6 +577,10 @@ static char *otaObjIterGetSetlist(
           zList = sqlite3_mprintf("%z%s%s=?%d", 
               zList, zSep, pIter->azTblCol[i], i+1
           );
+          if( zList==0 ){
+            p->rc = SQLITE_NOMEM;
+            break;
+          }
           zSep = ", ";
         }
       }
@@ -1079,8 +1083,10 @@ int sqlite3ota_step(sqlite3ota *p){
       default:
         break;
     }
+    return p->rc;
+  }else{
+    return SQLITE_NOMEM;
   }
-  return p->rc;
 }
 
 static void otaSaveTransactionState(sqlite3ota *p){
@@ -1147,10 +1153,12 @@ static char *otaStrndup(char *zStr, int nStr, int *pRc){
 }
 
 static void otaFreeState(OtaState *p){
-  sqlite3_free(p->zTbl);
-  sqlite3_free(p->zIdx);
-  sqlite3_free(p->pCkptState);
-  sqlite3_free(p);
+  if( p ){
+    sqlite3_free(p->zTbl);
+    sqlite3_free(p->zIdx);
+    sqlite3_free(p->pCkptState);
+    sqlite3_free(p);
+  }
 }
 
 /*
@@ -1298,7 +1306,7 @@ sqlite3ota *sqlite3ota_open(const char *zTarget, const char *zOta){
     if( p->rc==SQLITE_OK ){
       pState = otaLoadState(p);
       assert( pState || p->rc!=SQLITE_OK );
-      if( pState ){
+      if( p->rc==SQLITE_OK ){
         if( pState->eStage==0 ){ 
           otaDeleteOalFile(p);
           p->eStage = 1;
