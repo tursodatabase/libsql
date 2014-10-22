@@ -436,7 +436,7 @@ struct BtShared {
   BtLock *pLock;        /* List of locks held on this shared-btree struct */
   Btree *pWriter;       /* Btree with currently open write transaction */
 #endif
-  u8 *pTmpSpace;        /* BtShared.pageSize bytes of space for tmp use */
+  u8 *pTmpSpace;        /* Temp space sufficient to hold a single cell */
 };
 
 /*
