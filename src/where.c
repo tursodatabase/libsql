@@ -2198,7 +2198,7 @@ static int whereRangeScanEst(
       /* Determine iLower and iUpper using ($P) only. */
       if( nEq==0 ){
         iLower = 0;
-        iUpper = sqlite3LogEstToInt(p->aiRowLogEst[0]);
+        iUpper = p->nRowEst0;
       }else{
         /* Note: this call could be optimized away - since the same values must 
         ** have been requested when testing key $P in whereEqualScanEst().  */
