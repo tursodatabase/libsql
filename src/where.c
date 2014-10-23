@@ -2908,17 +2908,19 @@ static Bitmask codeOneLoopStart(
   WhereLoop *pLoop;    /* The WhereLoop object being coded */
   WhereClause *pWC;    /* Decomposition of the entire WHERE clause */
   WhereTerm *pTerm;               /* A WHERE clause term */
-  Parse *pParse;                  /* Parsing context */
+  Parse *pParse = pWInfo->pParse; /* Parsing context */
   sqlite3 *db;                    /* Database connection */
-  Vdbe *v;                        /* The prepared stmt under constructions */
+  Vdbe *v = pParse->pVdbe;        /* The prepared stmt under constructions */
   struct SrcList_item *pTabItem;  /* FROM clause term being coded */
   int addrBrk;                    /* Jump here to break out of the loop */
   int addrCont;                   /* Jump here to continue with next cycle */
   int iRowidReg = 0;        /* Rowid is stored in this register, if not zero */
   int iReleaseReg = 0;      /* Temp register to free before returning */
+#if defined(SQLITE_DEBUG) && defined(SQLITE_ENABLE_LOOPCOUNTERS)
+  int addrExplain = sqlite3VdbeCurrentAddr(v)-1;
+  int addrTest;             /* Address of non-indexed WHERE clause test */
+#endif
 
-  pParse = pWInfo->pParse;
-  v = pParse->pVdbe;
   pWC = &pWInfo->sWC;
   db = pParse->db;
   pLevel = &pWInfo->a[iLevel];
@@ -3555,6 +3557,7 @@ static Bitmask codeOneLoopStart(
         assert( pSubWInfo || pParse->nErr || db->mallocFailed );
         if( pSubWInfo ){
           WhereLoop *pSubLoop;
+          sqlite3VdbeLoopCounter(v, sqlite3VdbeCurrentAddr(v), -1, -1);
           explainOneScan(
               pParse, pOrTab, &pSubWInfo->a[0], iLevel, pLevel->iFrom, 0
           );
@@ -3688,6 +3691,10 @@ static Bitmask codeOneLoopStart(
     }
   }
 
+#if defined(SQLITE_DEBUG) && defined(SQLITE_ENABLE_LOOPCOUNTERS)
+  addrTest = sqlite3VdbeCurrentAddr(v);
+#endif 
+
   /* Insert code to test every subexpression that can be completely
   ** computed using the current set of tables.
   */
@@ -3764,6 +3771,10 @@ static Bitmask codeOneLoopStart(
       sqlite3ExprIfFalse(pParse, pTerm->pExpr, addrCont, SQLITE_JUMPIFNULL);
       pTerm->wtFlags |= TERM_CODED;
     }
+  }
+
+  if( pParse->pTriggerTab==0 && 0==(pLoop->wsFlags & WHERE_MULTI_OR) ){
+    sqlite3VdbeLoopCounter(v, addrExplain, addrTest, sqlite3VdbeCurrentAddr(v));
   }
 
   return pLevel->notReady;

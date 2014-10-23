@@ -295,6 +295,13 @@ struct Explain {
 */
 typedef unsigned bft;  /* Bit Field Type */
 
+typedef struct LoopCounter LoopCounter;
+struct LoopCounter {
+  int addrExplain;                /* OP_Explain for loop */
+  int addrTest;                   /* Address of non-indexed WHERE term tests */
+  int addrBody;                   /* Address of loop body */
+};
+
 /*
 ** An instance of the virtual machine.  This structure contains the complete
 ** state of the virtual machine.
@@ -367,6 +374,11 @@ struct Vdbe {
   int nOnceFlag;          /* Size of array aOnceFlag[] */
   u8 *aOnceFlag;          /* Flags for OP_Once */
   AuxData *pAuxData;      /* Linked list of auxdata allocations */
+#if defined(SQLITE_DEBUG) && defined(SQLITE_ENABLE_LOOPCOUNTERS)
+  int *anExec;            /* Number of times each op has been executed */
+  int nLoop;              /* Entries in aLoop[] */
+  LoopCounter *aLoop;     /* Loop definitions for sqlite3_stmt_loopcounter() */
+#endif
 };
 
 /*

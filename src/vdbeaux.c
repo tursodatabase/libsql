@@ -597,6 +597,29 @@ int sqlite3VdbeAddOpList(Vdbe *p, int nOp, VdbeOpList const *aOp, int iLineno){
   return addr;
 }
 
+#if defined(SQLITE_DEBUG) && defined(SQLITE_ENABLE_LOOPCOUNTERS)
+void sqlite3VdbeLoopCounter(
+  Vdbe *p, 
+  int addrExplain, 
+  int addrTest, 
+  int addrBody
+){
+  int nByte = (p->nLoop+1) * sizeof(LoopCounter);
+  if( addrTest>=0 ){
+    p->aLoop = (LoopCounter*)sqlite3DbReallocOrFree(p->db, p->aLoop, nByte);
+    p->nLoop++;
+  }
+  if( p->aLoop ){
+    LoopCounter *pNew = &p->aLoop[p->nLoop-1];
+    pNew->addrExplain = addrExplain;
+    if( addrTest>=0 ){
+      pNew->addrTest = addrTest;
+      pNew->addrBody = addrBody;
+    }
+  }
+}
+#endif
+
 /*
 ** Change the value of the P1 operand for a specific instruction.
 ** This routine is useful when a large program is loaded from a
@@ -1702,6 +1725,10 @@ void sqlite3VdbeMakeReady(
     zEnd = &zCsr[nByte];
   }while( nByte && !db->mallocFailed );
 
+#if defined(SQLITE_DEBUG) && defined(SQLITE_ENABLE_LOOPCOUNTERS)
+  p->anExec = (int*)sqlite3DbMallocZero(db, sizeof(int) * p->nOp);
+#endif
+
   p->nCursor = nCursor;
   p->nOnceFlag = nOnce;
   if( p->aVar ){
@@ -2679,6 +2706,10 @@ void sqlite3VdbeClearObject(sqlite3 *db, Vdbe *p){
   sqlite3DbFree(db, p->aColName);
   sqlite3DbFree(db, p->zSql);
   sqlite3DbFree(db, p->pFree);
+#if defined(SQLITE_DEBUG) && defined(SQLITE_ENABLE_LOOPCOUNTERS)
+  sqlite3DbFree(db, p->aLoop);
+  sqlite3DbFree(db, p->anExec);
+#endif
 }
 
 /*

@@ -7406,6 +7406,29 @@ int sqlite3_vtab_on_conflict(sqlite3 *);
 /* #define SQLITE_ABORT 4  // Also an error code */
 #define SQLITE_REPLACE  5
 
+/*
+** This API function is only available if SQLite is compiled with both 
+** SQLITE_DEBUG and SQLITE_ENABLE_LOOPCOUNTERS defined. It is primarily 
+** useful with SELECT statements.
+**
+** Each call returns information corresponding to a single "loop" run as
+** part of the statement. Each loop corresponds to a single "SEARCH" or "SCAN"
+** row that would be returned by EXPLAIN QUERY PLAN on the same SQL statement.
+** The second parameter - idx - determines which loop information is returned
+** regarding. If idx is less than 0 or greater than or equal to the number of
+** loops in the statement, NULL Is returned and the final values of the four
+** output parameters are undefined. Otherwise, the return value points to a
+** string describing the loop in question - the same string as would appear as
+** the fourth column of EXPLAIN QUERY PLAN output. The first two integer output
+** parameters are set to the values that would be returned as the first two
+** columns of the same row of EQP output.
+**
+** The third output parameter is set to the number of rows that were visited
+** by the loop the last time the statement was run. The fourth output parameter
+** is set to the number of rows visited including those excluded by non-indexed
+** WHERE terms.
+*/
+const char *sqlite3_stmt_loopcounter(sqlite3_stmt*, int idx, int*, int*, int*, int*);
 
 
 /*

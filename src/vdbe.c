@@ -606,6 +606,9 @@ int sqlite3VdbeExec(
 #ifdef VDBE_PROFILE
     start = sqlite3Hwtime();
 #endif
+#if defined(SQLITE_DEBUG) && defined(SQLITE_ENABLE_LOOPCOUNTERS)
+    if( p->pFrame==0 ) p->anExec[pc]++;
+#endif
     nVmStep++;
     pOp = &aOp[pc];
 

@@ -282,4 +282,10 @@ void sqlite3VdbeLinkSubProgram(Vdbe *, SubProgram *);
 # define VDBE_OFFSET_LINENO(x) 0
 #endif
 
+#if defined(SQLITE_DEBUG) && defined(SQLITE_ENABLE_LOOPCOUNTERS)
+void sqlite3VdbeLoopCounter(Vdbe*, int addrExplain, int addrTest, int addrBody);
+#else
+# define sqlite3VdbeLoopCounter(a,b,c,d)
+#endif
+
 #endif

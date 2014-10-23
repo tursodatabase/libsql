@@ -482,6 +482,9 @@ static int sqlite3Step(Vdbe *p){
       sqlite3OsCurrentTimeInt64(db->pVfs, &p->startTime);
     }
 #endif
+#if defined(SQLITE_DEBUG) && defined(SQLITE_ENABLE_LOOPCOUNTERS)
+    memset(p->anExec, 0, sizeof(int) * p->nOp);
+#endif
 
     db->nVdbeActive++;
     if( p->readOnly==0 ) db->nVdbeWrite++;
@@ -1454,3 +1457,19 @@ int sqlite3_stmt_status(sqlite3_stmt *pStmt, int op, int resetFlag){
   if( resetFlag ) pVdbe->aCounter[op] = 0;
   return (int)v;
 }
+
+#if defined(SQLITE_DEBUG) && defined(SQLITE_ENABLE_LOOPCOUNTERS)
+const char *sqlite3_stmt_loopcounter(
+    sqlite3_stmt *pStmt, int idx, int *piSub, int *piLoop, int *pnTest, int *pnVisit
+){
+  Vdbe *p = (Vdbe*)pStmt;
+  if( idx>=p->nLoop || idx<0 ) return 0;
+  *piSub = p->aOp[p->aLoop[idx].addrExplain].p1;
+  *piLoop = p->aOp[p->aLoop[idx].addrExplain].p2;
+  *pnTest = p->anExec[ p->aLoop[idx].addrTest ];
+  *pnVisit = p->anExec[ p->aLoop[idx].addrBody ];
+  return p->aOp[p->aLoop[idx].addrExplain].p4.z;
+}
+#endif
+
+

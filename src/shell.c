@@ -457,6 +457,7 @@ struct ShellState {
   int echoOn;            /* True to echo input commands */
   int autoEQP;           /* Run EXPLAIN QUERY PLAN prior to seach SQL stmt */
   int statsOn;           /* True to display memory stats before each finalize */
+  int loopCountersOn;    /* True to display loop counters */
   int outCount;          /* Revert to stdout when reaching zero */
   int cnt;               /* Number of records displayed so far */
   FILE *out;             /* Write results here */
@@ -1089,6 +1090,30 @@ static char *save_err_msg(
   return zErrMsg;
 }
 
+static void display_loop_counters(
+  sqlite3 *db,                /* Database to query */
+  ShellState *pArg            /* Pointer to ShellState */
+){
+#if !defined(SQLITE_DEBUG) || !defined(SQLITE_ENABLE_LOOPCOUNTERS)
+  fprintf(pArg->out, 
+      "No loop counters. "
+      "Rebuild with SQLITE_DEBUG and SQLITE_ENABLE_LOOPCOUNTERS"
+  );
+#else
+  int i;
+  for(i=0; 1; i++){
+    int nTest;
+    int nVisit;
+    int iSub;
+    int iLoop;
+    const char *zLoop;
+    zLoop = sqlite3_stmt_loopcounter(pArg->pStmt, i, &iSub, &iLoop, &nTest, &nVisit);
+    if( zLoop==0 ) break;
+    fprintf(pArg->out, "loop %d.%d: (%d/%d) %s\n", iSub, iLoop, nVisit, nTest, zLoop);
+  }
+#endif
+}
+
 /*
 ** Display memory stats.
 */
@@ -1421,6 +1446,11 @@ static int shell_exec(
       /* print usage stats if stats on */
       if( pArg && pArg->statsOn ){
         display_stats(db, pArg, 0);
+      }
+
+      /* print loop-counters if required */
+      if( pArg && pArg->loopCountersOn ){
+        display_loop_counters(db, pArg);
       }
 
       /* Finalize the statement just executed. If this fails, save a 
@@ -2819,6 +2849,16 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
   }else
 
+  if( c=='l' && strncmp(azArg[0], "loopcounters", n)==0 ){
+    if( nArg==2 ){
+      p->loopCountersOn = booleanValue(azArg[1]);
+    }else{
+      fprintf(stderr, "Usage: .loopcounters on|off\n");
+      rc = 1;
+    }
+  }else
+
+
   if( c=='m' && strncmp(azArg[0], "mode", n)==0 ){
     const char *zMode = nArg>=2 ? azArg[1] : "";
     int n2 = (int)strlen(zMode);
@@ -4140,6 +4180,8 @@ int main(int argc, char **argv){
       data.autoEQP = 1;
     }else if( strcmp(z,"-stats")==0 ){
       data.statsOn = 1;
+    }else if( strcmp(z,"-loopcounters")==0 ){
+      data.loopCountersOn = 1;
     }else if( strcmp(z,"-bail")==0 ){
       bail_on_error = 1;
     }else if( strcmp(z,"-version")==0 ){
