@@ -1,6 +1,6 @@
 use {SqliteResult, SqliteConnection};
 
-pub enum SqliteTransactionMode {
+pub enum SqliteTransactionBehavior {
     SqliteTransactionDeferred,
     SqliteTransactionImmediate,
     SqliteTransactionExclusive,
@@ -15,8 +15,8 @@ pub struct SqliteTransaction<'conn> {
 
 impl<'conn> SqliteTransaction<'conn> {
     pub fn new(conn: &SqliteConnection,
-               mode: SqliteTransactionMode) -> SqliteResult<SqliteTransaction> {
-        let query = match mode {
+               behavior: SqliteTransactionBehavior) -> SqliteResult<SqliteTransaction> {
+        let query = match behavior {
             SqliteTransactionDeferred => "BEGIN DEFERRED",
             SqliteTransactionImmediate => "BEGIN IMMEDIATE",
             SqliteTransactionExclusive => "BEGIN EXCLUSIVE",

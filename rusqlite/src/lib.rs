@@ -15,7 +15,7 @@ use libc::{c_int, c_void, c_char};
 use types::{ToSql, FromSql};
 
 pub use transaction::{SqliteTransaction};
-pub use transaction::{SqliteTransactionMode,
+pub use transaction::{SqliteTransactionBehavior,
                       SqliteTransactionDeferred,
                       SqliteTransactionImmediate,
                       SqliteTransactionExclusive};
@@ -68,9 +68,9 @@ impl SqliteConnection {
         SqliteTransaction::new(self, SqliteTransactionDeferred)
     }
 
-    pub fn transaction_with_mode<'a>(&'a self, mode: SqliteTransactionMode)
+    pub fn transaction_with_behavior<'a>(&'a self, behavior: SqliteTransactionBehavior)
             -> SqliteResult<SqliteTransaction<'a>> {
-        SqliteTransaction::new(self, mode)
+        SqliteTransaction::new(self, behavior)
     }
 
     pub fn execute_batch(&self, sql: &str) -> SqliteResult<()> {
