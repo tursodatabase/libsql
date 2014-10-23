@@ -1,9 +1,13 @@
+extern crate time;
+
 use libc::{c_int, c_double};
 use std::c_str::{CString};
 use std::mem;
 use std::vec;
 use super::ffi;
 use super::{SqliteResult, SqliteError};
+
+const SQLITE_DATETIME_FMT: &'static str = "%Y-%m-%d %H:%M:%S";
 
 pub trait ToSql {
     unsafe fn bind_parameter(&self, stmt: *mut ffi::sqlite3_stmt, col: c_int) -> c_int;
@@ -52,6 +56,13 @@ impl<'a> ToSql for &'a [u8] {
 impl ToSql for Vec<u8> {
     unsafe fn bind_parameter(&self, stmt: *mut ffi::sqlite3_stmt, col: c_int) -> c_int {
         self.as_slice().bind_parameter(stmt, col)
+    }
+}
+
+impl ToSql for time::Timespec {
+    unsafe fn bind_parameter(&self, stmt: *mut ffi::sqlite3_stmt, col: c_int) -> c_int {
+        let time_str = time::at_utc(*self).strftime(SQLITE_DATETIME_FMT).unwrap();
+        time_str.bind_parameter(stmt, col)
     }
 }
 
@@ -112,6 +123,20 @@ impl FromSql for Vec<u8> {
     }
 }
 
+impl FromSql for time::Timespec {
+    unsafe fn column_result(stmt: *mut ffi::sqlite3_stmt,
+                            col: c_int) -> SqliteResult<time::Timespec> {
+        let col_str = FromSql::column_result(stmt, col);
+        col_str.and_then(|txt: String| {
+            time::strptime(txt.as_slice(), SQLITE_DATETIME_FMT).map(|tm| {
+                tm.to_timespec()
+            }).map_err(|parse_error| {
+                SqliteError{ code: ffi::SQLITE_MISMATCH, message: format!("{}", parse_error) }
+            })
+        })
+    }
+}
+
 impl<T: FromSql> FromSql for Option<T> {
     unsafe fn column_result(stmt: *mut ffi::sqlite3_stmt, col: c_int) -> SqliteResult<Option<T>> {
         if ffi::sqlite3_column_type(stmt, col) == ffi::SQLITE_NULL {
@@ -125,6 +150,7 @@ impl<T: FromSql> FromSql for Option<T> {
 #[cfg(test)]
 mod test {
     use SqliteConnection;
+    use super::time;
 
     fn checked_memory_handle() -> SqliteConnection {
         let db = SqliteConnection::open(":memory:").unwrap();
@@ -152,6 +178,17 @@ mod test {
 
         let from: String = db.query_row("SELECT t FROM foo", [], |r| r.unwrap().get(0));
         assert_eq!(from.as_slice(), s);
+    }
+
+    #[test]
+    fn test_timespec() {
+        let db = checked_memory_handle();
+
+        let ts = time::Timespec{sec: 10_000, nsec: 0 };
+        db.execute("INSERT INTO foo(t) VALUES (?)", &[&ts]).unwrap();
+
+        let from: time::Timespec = db.query_row("SELECT t FROM foo", [], |r| r.unwrap().get(0));
+        assert_eq!(from, ts);
     }
 
     #[test]
