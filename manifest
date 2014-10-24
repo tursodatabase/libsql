@@ -1,5 +1,5 @@
-C Merge\slatest\strunk\swith\sthis\sbranch.
-D 2014-10-22T18:42:31.680
+C Fix\ssome\sminor\sformatting\sand\scode\sorganization\sissues.
+D 2014-10-24T16:40:49.448
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -172,7 +172,7 @@ F src/auth.c d8abcde53426275dab6243b441256fcd8ccbebb2
 F src/backup.c a31809c65623cc41849b94d368917f8bb66e6a7e
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 49ca66250c7dfa844a4d4cb8272b87420d27d3a5
-F src/btree.c 37229f3134416f24828af823a3a6f8535923d45b
+F src/btree.c 56381ce7614853ec0e32bb187e85db4da774c7c5
 F src/btree.h a79aa6a71e7f1055f01052b7f821bd1c2dce95c8
 F src/btreeInt.h 026d0129724e8f265fdc60d44ec240cf5a4e6179
 F src/build.c 9dc2bd94347b878c89627000c92b0c8d97ec2919
@@ -215,8 +215,8 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c fb587121840f690101336879adfa6d0b2cd0e8c7
 F src/os_win.c a019caaae2bcbbc0cc4c39af6e7d7e43d8426053
 F src/os_win.h 09e751b20bbc107ffbd46e13555dc73576d88e21
-F src/pager.c 18be49e363106bdb4c982fa27dbee7a8cd297113
-F src/pager.h 8b6707cb32c788cf36bfc3d63f6d4b4fa689e7c2
+F src/pager.c d02833adf331a5913226595306d64731a3da33f6
+F src/pager.h d1eee3c3f741be247ce6d82752a178515fc8578b
 F src/parse.y 5dfead8aed90cb0c7c1115898ee2266804daff45
 F src/pcache.c 4121a0571c18581ee9f82f086d5e2030051ebd6a
 F src/pcache.h 9b559127b83f84ff76d735c8262f04853be0c59a
@@ -1205,7 +1205,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 58d7793bd5d608ba9fc3a2cd44b9d9512e0332ba 3c933bf95f291f7957580d823dce92c981375a5c
-R 738ce949461e4c95ef4d450eb06d976a
+P 854a54c6c21e800b0cd999023014813f7c50b23f
+R b3aec92126a25950ff876c6cdf2fb4df
 U dan
-Z 1bc59f5d05ced43bcf6fa4690adf0fcc
+Z 9e7a15bc5953228881d999c99d9f0682

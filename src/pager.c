@@ -6845,15 +6845,22 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno, int isCommit){
 
   return SQLITE_OK;
 }
+#endif
 
-void sqlite3PagerRekey(DbPage *pPage, Pgno iNew){
+/*
+** The page handle passed as the first argument refers to a dirty page 
+** with a page number other than iNew. This function changes the page's 
+** page number to iNew and sets the value of the PgHdr.flags field to 
+** the value passed as the third parameter.
+*/
+void sqlite3PagerRekey(DbPage *pPage, Pgno iNew, u16 flags){
   PgHdr *pPg = (PgHdr*)pPage;
-  assert( pPg->flags & PGHDR_DIRTY );
+  assert( (flags & PGHDR_DIRTY) && (pPg->flags & PGHDR_DIRTY) );
   assert( !subjRequiresPage(pPg) );
+  assert( pPg->pgno!=iNew );
+  pPg->flags = flags;
   sqlite3PcacheMove(pPg, iNew);
 }
-
-#endif
 
 /*
 ** Return a pointer to the data for the specified page.

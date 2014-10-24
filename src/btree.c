@@ -1233,7 +1233,7 @@ static int defragmentPage(MemPage *pPage){
 **
 ** This function may detect corruption within pPg. If it does and argument 
 ** pRc is non-NULL, then *pRc is set to SQLITE_CORRUPT and NULL is returned.
-** Or, if corruption is detected by pRc is NULL, NULL is returned and the
+** Or, if corruption is detected and pRc is NULL, NULL is returned and the
 ** corruption goes unreported.
 */
 static u8 *pageFindSlot(MemPage *pPg, int nByte, int *pRc){
@@ -6345,7 +6345,7 @@ static int balance_quick(MemPage *pParent, MemPage *pPage, u8 *pSpace){
 }
 #endif /* SQLITE_OMIT_QUICKBALANCE */
 
-#if 1
+#if 0
 /*
 ** This function does not contribute anything to the operation of SQLite.
 ** it is sometimes activated temporarily while debugging code responsible 
@@ -6522,10 +6522,9 @@ static int balance_nonroot(
   u16 *szCell;                 /* Local size of all cells in apCell[] */
   u8 *aSpace1;                 /* Space for copies of dividers cells */
   Pgno pgno;                   /* Temp var to store a page number in */
-
-  u8 abDone[NB+2];
-  Pgno aPgno[NB+2];
-  u16 aPgFlags[NB+2];
+  u8 abDone[NB+2];             /* True after i'th new page is populated */
+  Pgno aPgno[NB+2];            /* Page numbers of new pages before shuffling */
+  u16 aPgFlags[NB+2];          /* flags field of new pages before shuffling */
 
   memset(abDone, 0, sizeof(abDone));
   pBt = pParent->pBt;
@@ -6868,8 +6867,7 @@ static int balance_nonroot(
       }
     }
     if( apNew[i]->pgno!=iMin ){
-      apNew[i]->pDbPage->flags = flags;
-      sqlite3PagerRekey(apNew[i]->pDbPage, iMin);
+      sqlite3PagerRekey(apNew[i]->pDbPage, iMin, flags);
       apNew[i]->pgno = iMin;
     }
   }
@@ -7090,7 +7088,7 @@ static int balance_nonroot(
     freePage(apOld[i], &rc);
   }
 
-#if 1
+#if 0
   if( ISAUTOVACUUM && rc==SQLITE_OK && apNew[0]->isInit ){
     /* The ptrmapCheckPages() contains assert() statements that verify that
     ** all pointer map pages are set correctly. This is helpful while 
