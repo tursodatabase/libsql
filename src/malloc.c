@@ -475,6 +475,9 @@ sqlite3_uint64 sqlite3_msize(void *p){
 ** Free memory previously obtained from sqlite3Malloc().
 */
 void sqlite3_free(void *p){
+#if defined(SQLITE_ENABLE_API_ARMOR) && !defined(SQLITE_OMIT_AUTOINIT)
+  if( sqlite3_initialize() ) return;
+#endif
   if( p==0 ) return;  /* IMP: R-49053-54554 */
   assert( sqlite3MemdebugHasType(p, MEMTYPE_HEAP) );
   assert( sqlite3MemdebugNoType(p, ~MEMTYPE_HEAP) );

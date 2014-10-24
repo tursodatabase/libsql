@@ -138,6 +138,13 @@ sqlite3_backup *sqlite3_backup_init(
 ){
   sqlite3_backup *p;                    /* Value to return */
 
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( !sqlite3SafetyCheckOk(pSrcDb)||!sqlite3SafetyCheckOk(pDestDb) ){
+    (void)SQLITE_MISUSE_BKPT;
+    return 0;
+  }
+#endif
+
   /* Lock the source database handle. The destination database
   ** handle is not locked in this routine, but it is locked in
   ** sqlite3_backup_step(). The user is required to ensure that no
@@ -334,6 +341,9 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage){
   int pgszSrc = 0;    /* Source page size */
   int pgszDest = 0;   /* Destination page size */
 
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( p==0 ) return SQLITE_MISUSE_BKPT;
+#endif
   sqlite3_mutex_enter(p->pSrcDb->mutex);
   sqlite3BtreeEnter(p->pSrc);
   if( p->pDestDb ){
@@ -623,6 +633,12 @@ int sqlite3_backup_finish(sqlite3_backup *p){
 ** call to sqlite3_backup_step().
 */
 int sqlite3_backup_remaining(sqlite3_backup *p){
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( p==0 ){
+    (void)SQLITE_MISUSE_BKPT;
+    return 0;
+  }
+#endif
   return p->nRemaining;
 }
 
@@ -631,6 +647,12 @@ int sqlite3_backup_remaining(sqlite3_backup *p){
 ** recent call to sqlite3_backup_step().
 */
 int sqlite3_backup_pagecount(sqlite3_backup *p){
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( p==0 ){
+    (void)SQLITE_MISUSE_BKPT;
+    return 0;
+  }
+#endif
   return p->nPagecount;
 }
 
