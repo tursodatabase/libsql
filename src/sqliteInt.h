@@ -2892,9 +2892,11 @@ struct Walker {
   void (*xSelectCallback2)(Walker*,Select*);/* Second callback for SELECTs */
   Parse *pParse;                            /* Parser context.  */
   int walkerDepth;                          /* Number of subqueries */
+  u8 eCode;                                 /* A small processing code */
   union {                                   /* Extra data for callback */
     NameContext *pNC;                          /* Naming context */
-    int i;                                     /* Integer value */
+    int n;                                     /* A counter */
+    int iCur;                                  /* A cursor number */
     SrcList *pSrcList;                         /* FROM clause */
     struct SrcCount *pSrcCount;                /* Counting column references */
   } u;
@@ -3295,6 +3297,7 @@ void sqlite3LeaveMutexAndCloseZombie(sqlite3*);
 int sqlite3ExprIsConstant(Expr*);
 int sqlite3ExprIsConstantNotJoin(Expr*);
 int sqlite3ExprIsConstantOrFunction(Expr*, u8);
+int sqlite3ExprIsTableConstant(Expr*,int);
 int sqlite3ExprIsInteger(Expr*, int*);
 int sqlite3ExprCanBeNull(const Expr*);
 int sqlite3ExprNeedsNoAffinityChange(const Expr*, char);

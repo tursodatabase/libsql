@@ -1594,6 +1594,8 @@ static void constructAutomaticIndex(
   Bitmask idxCols;            /* Bitmap of columns used for indexing */
   Bitmask extraCols;          /* Bitmap of additional columns */
   u8 sentWarning = 0;         /* True if a warnning has been issued */
+  Expr *pPartial = 0;         /* Partial Index Expression */
+  int iContinue = 0;          /* Jump here to skip excluded rows */
 
   /* Generate code to skip over the creation and initialization of the
   ** transient index on 2nd and subsequent iterations of the loop. */
@@ -1609,6 +1611,11 @@ static void constructAutomaticIndex(
   pLoop = pLevel->pWLoop;
   idxCols = 0;
   for(pTerm=pWC->a; pTerm<pWCEnd; pTerm++){
+    if( pLoop->prereq==0
+     && sqlite3ExprIsTableConstant(pTerm->pExpr, pSrc->iCursor) ){
+      pPartial = sqlite3ExprAnd(pParse->db, pPartial,
+                                sqlite3ExprDup(pParse->db, pTerm->pExpr, 0));
+    }
     if( termCanDriveIndex(pTerm, pSrc, notReady) ){
       int iCol = pTerm->u.leftColumn;
       Bitmask cMask = iCol>=BMS ? MASKBIT(BMS-1) : MASKBIT(iCol);
@@ -1621,7 +1628,9 @@ static void constructAutomaticIndex(
         sentWarning = 1;
       }
       if( (idxCols & cMask)==0 ){
-        if( whereLoopResize(pParse->db, pLoop, nKeyCol+1) ) return;
+        if( whereLoopResize(pParse->db, pLoop, nKeyCol+1) ){
+          goto end_auto_index_create;
+        }
         pLoop->aLTerm[nKeyCol++] = pTerm;
         idxCols |= cMask;
       }
@@ -1654,7 +1663,7 @@ static void constructAutomaticIndex(
 
   /* Construct the Index object to describe this index */
   pIdx = sqlite3AllocateIndexObject(pParse->db, nKeyCol+1, 0, &zNotUsed);
-  if( pIdx==0 ) return;
+  if( pIdx==0 ) goto end_auto_index_create;
   pLoop->u.btree.pIndex = pIdx;
   pIdx->zName = "auto-index";
   pIdx->pTable = pTable;
@@ -1706,18 +1715,28 @@ static void constructAutomaticIndex(
   VdbeComment((v, "for %s", pTable->zName));
 
   /* Fill the automatic index with content */
+  sqlite3ExprCachePush(pParse);
   addrTop = sqlite3VdbeAddOp1(v, OP_Rewind, pLevel->iTabCur); VdbeCoverage(v);
+  if( pPartial ){
+    iContinue = sqlite3VdbeMakeLabel(v);
+    sqlite3ExprIfFalse(pParse, pPartial, iContinue, SQLITE_JUMPIFNULL);
+  }
   regRecord = sqlite3GetTempReg(pParse);
   sqlite3GenerateIndexKey(pParse, pIdx, pLevel->iTabCur, regRecord, 0, 0, 0, 0);
   sqlite3VdbeAddOp2(v, OP_IdxInsert, pLevel->iIdxCur, regRecord);
   sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
+  if( pPartial ) sqlite3VdbeResolveLabel(v, iContinue);
   sqlite3VdbeAddOp2(v, OP_Next, pLevel->iTabCur, addrTop+1); VdbeCoverage(v);
   sqlite3VdbeChangeP5(v, SQLITE_STMTSTATUS_AUTOINDEX);
   sqlite3VdbeJumpHere(v, addrTop);
   sqlite3ReleaseTempReg(pParse, regRecord);
+  sqlite3ExprCachePop(pParse);
   
   /* Jump here when skipping the initialization */
   sqlite3VdbeJumpHere(v, addrInit);
+
+end_auto_index_create:
+  sqlite3ExprDelete(pParse->db, pPartial);
 }
 #endif /* SQLITE_OMIT_AUTOMATIC_INDEX */
 

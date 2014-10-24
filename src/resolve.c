@@ -28,7 +28,7 @@
 ** is a helper function - a callback for the tree walker.
 */
 static int incrAggDepth(Walker *pWalker, Expr *pExpr){
-  if( pExpr->op==TK_AGG_FUNCTION ) pExpr->op2 += pWalker->u.i;
+  if( pExpr->op==TK_AGG_FUNCTION ) pExpr->op2 += pWalker->u.n;
   return WRC_Continue;
 }
 static void incrAggFunctionDepth(Expr *pExpr, int N){
@@ -36,7 +36,7 @@ static void incrAggFunctionDepth(Expr *pExpr, int N){
     Walker w;
     memset(&w, 0, sizeof(w));
     w.xExprCallback = incrAggDepth;
-    w.u.i = N;
+    w.u.n = N;
     sqlite3WalkExpr(&w, pExpr);
   }
 }
