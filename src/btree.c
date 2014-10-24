@@ -1386,7 +1386,7 @@ static int freeSpace(MemPage *pPage, u16 iStart, u16 iSize){
   assert( pPage->pBt!=0 );
   assert( sqlite3PagerIswriteable(pPage->pDbPage) );
   assert( iStart>=pPage->hdrOffset+6+pPage->childPtrSize );
-  assert( iEnd <= pPage->pBt->usableSize );
+  assert( CORRUPT_DB || iEnd <= pPage->pBt->usableSize );
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
   assert( iSize>=4 );   /* Minimum cell size is 4 */
   assert( iStart<=iLast );
@@ -6065,7 +6065,7 @@ static int pageInsertArray(
   u8 *aData = pPg->aData;
   u8 *pData = *ppData;
   const int bFreelist = aData[1] || aData[2];
-  assert( pPg->hdrOffset==0 );    /* Never called on page 1 */
+  assert( CORRUPT_DB || pPg->hdrOffset==0 );    /* Never called on page 1 */
   for(i=0; i<nCell; i++){
     int sz = szCell[i];
     u8 *pSlot;
@@ -6207,7 +6207,7 @@ static void editPage(
   put2byte(&aData[hdr+5], pData - aData);
 
 #ifdef SQLITE_DEBUG
-  for(i=0; i<nNew; i++){
+  for(i=0; i<nNew && !CORRUPT_DB; i++){
     u8 *pCell = apCell[i+iNew];
     int iOff = get2byte(&pPg->aCellIdx[i*2]);
     if( pCell>=aData && pCell<&aData[pPg->pBt->usableSize] ){
@@ -6866,7 +6866,13 @@ static int balance_nonroot(
         flags = aPgFlags[j];
       }
     }
-    if( apNew[i]->pgno!=iMin ){
+    if( iMin==0 ){
+      /* This case can only occur if aPgno[] contains duplicate page 
+      ** numbers. Which can only happen if the database is corrupt. */
+      assert( CORRUPT_DB );
+      rc = SQLITE_CORRUPT_BKPT;
+      goto balance_cleanup;
+    }else if( apNew[i]->pgno!=iMin ){
       sqlite3PagerRekey(apNew[i]->pDbPage, iMin, flags);
       apNew[i]->pgno = iMin;
     }
