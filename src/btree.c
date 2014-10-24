@@ -6856,25 +6856,19 @@ static int balance_nonroot(
     aPgFlags[i] = apNew[i]->pDbPage->flags;
   }
   for(i=0; i<nNew; i++){
-    Pgno iGt = (i==0 ? 0 : apNew[i-1]->pgno);
-    Pgno iMin = 0;
-    u16 flags = 0;
-    for(j=0; j<nNew; j++){
-      Pgno iPgno = aPgno[j];
-      if( iPgno>iGt && (iMin==0 || iPgno<iMin) ){
-        iMin = iPgno;
-        flags = aPgFlags[j];
-      }
+    int iBest = 0;                /* aPgno[] index of page number to use */
+    Pgno pgno;                    /* Page number to use */
+    for(j=1; j<nNew; j++){
+      if( aPgno[j]<aPgno[iBest] ) iBest = j;
     }
-    if( iMin==0 ){
-      /* This case can only occur if aPgno[] contains duplicate page 
-      ** numbers. Which can only happen if the database is corrupt. */
-      assert( CORRUPT_DB );
-      rc = SQLITE_CORRUPT_BKPT;
-      goto balance_cleanup;
-    }else if( apNew[i]->pgno!=iMin ){
-      sqlite3PagerRekey(apNew[i]->pDbPage, iMin, flags);
-      apNew[i]->pgno = iMin;
+    pgno = aPgno[iBest];
+    aPgno[iBest] = 0xffffffff;
+    if( iBest!=i ){
+      if( iBest>i ){
+        sqlite3PagerRekey(apNew[iBest]->pDbPage, pBt->nPage+iBest+1, 0);
+      }
+      sqlite3PagerRekey(apNew[i]->pDbPage, pgno, aPgFlags[iBest]);
+      apNew[i]->pgno = pgno;
     }
   }
 

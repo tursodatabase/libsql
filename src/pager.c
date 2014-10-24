@@ -6853,10 +6853,7 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno, int isCommit){
 ** page number to iNew and sets the value of the PgHdr.flags field to 
 ** the value passed as the third parameter.
 */
-void sqlite3PagerRekey(DbPage *pPage, Pgno iNew, u16 flags){
-  PgHdr *pPg = (PgHdr*)pPage;
-  assert( (flags & PGHDR_DIRTY) && (pPg->flags & PGHDR_DIRTY) );
-  assert( !subjRequiresPage(pPg) );
+void sqlite3PagerRekey(DbPage *pPg, Pgno iNew, u16 flags){
   assert( pPg->pgno!=iNew );
   pPg->flags = flags;
   sqlite3PcacheMove(pPg, iNew);
