@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_ENABLE_API_ARMOR\scompile-time\soption.\s\sThis\sis\sa\swork\sin\nprogress\sand\sis\snot\syet\scompletely\sfunctional.
-D 2014-10-24T00:35:58.052
+C Fix\stwo\sproblems.\s\sTests\snow\spassing.
+D 2014-10-24T12:37:00.827
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -195,7 +195,7 @@ F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
 F src/loadext.c de741e66e5ddc1598d904d7289239696e40ed994
 F src/main.c 2b882f64580ea72e2d972a5296f9eaa75a353161
-F src/malloc.c 5e02eab3e70cfcc265817f4de008f55e768dca51
+F src/malloc.c 3c3ac67969612493d435e14b6832793209afd2ec
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c faf615aafd8be74a71494dfa027c113ea5c6615f
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
@@ -224,7 +224,7 @@ F src/pcache1.c e412cb585f777c840ddce0500eddc5c6043c2bb5
 F src/pragma.c 3f3e959390a10c0131676f0e307acce372777e0f
 F src/prepare.c b7b7bf020bd4c962f7c8aed5a3c542c7dfe9f9c7
 F src/printf.c c31012ac23e458081df4a32634b60424e0cdfaf3
-F src/random.c 689c95a50b90e7a8b3e6088e33d1d2d4212e6e88
+F src/random.c b8a058131851de1a37801b5587845ee73411c064
 F src/resolve.c a3466128b52a86c466e47ac1a19e2174f7b5cf89
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 428165951748151e87a15295b7357221433e311b
@@ -1205,10 +1205,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9762ad0639cca2fc1ef0573113fb613ce9e7e83e
-R 98ebc598759882f163c17892cc0d9e3e
-T *branch * api-armor
-T *sym-api-armor *
-T -sym-trunk *
+P c297a84bc678f81ffc0aa9139ab73f0ca87c1971
+R 1cc86c78be65c50602286adf14ad3d43
 U drh
-Z 48418cab28475295c0204ad2ebe00aca
+Z 4a2cbf72bfaa58a272d60444a54fd92d
