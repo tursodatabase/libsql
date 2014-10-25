@@ -6099,6 +6099,7 @@ static int pageFreeArray(
 ){
   u8 * const aData = pPg->aData;
   u8 * const pEnd = &aData[pPg->pBt->usableSize];
+  u8 * const pStart = &aData[pPg->hdrOffset + 8 + pPg->childPtrSize];
   int nRet = 0;
   int i;
   u8 *pFree = 0;
@@ -6106,12 +6107,13 @@ static int pageFreeArray(
 
   for(i=0; i<nCell; i++){
     u8 *pCell = apCell[i];
-    if( pCell>aData && pCell<pEnd ){
+    if( pCell>=pStart && pCell<pEnd ){
       int sz = szCell[i];
       if( pFree!=(pCell + sz) ){
         if( pFree ) freeSpace(pPg, pFree - aData, szFree);
         pFree = pCell;
         szFree = sz;
+        if( pFree+sz>pEnd ) return 0;
       }else{
         pFree = pCell;
         szFree += sz;
@@ -6854,6 +6856,18 @@ static int balance_nonroot(
   for(i=0; i<nNew; i++){
     aPgno[i] = apNew[i]->pgno;
     aPgFlags[i] = apNew[i]->pDbPage->flags;
+    for(j=0; j<i; j++){
+      if( aPgno[j]==aPgno[i] ){
+        /* This branch is taken if the set of sibling pages somehow contains
+        ** duplicate entries. This can happen if the database is corrupt. 
+        ** It would be simpler to detect this as part of the loop below, but
+        ** in order to avoid populating the pager cache with two separate
+        ** objects associated with the same page number.  */
+        assert( CORRUPT_DB );
+        rc = SQLITE_CORRUPT_BKPT;
+        goto balance_cleanup;
+      }
+    }
   }
   for(i=0; i<nNew; i++){
     int iBest = 0;                /* aPgno[] index of page number to use */
@@ -7062,12 +7076,14 @@ static int balance_nonroot(
     ** is important if the parent page happens to be page 1 of the database
     ** image.  */
     assert( nNew==1 );
-    defragmentPage(apNew[0]);
-    assert( apNew[0]->nFree == 
-        (get2byte(&apNew[0]->aData[5])-apNew[0]->cellOffset-apNew[0]->nCell*2) 
-    );
-    copyNodeContent(apNew[0], pParent, &rc);
-    freePage(apNew[0], &rc);
+    rc = defragmentPage(apNew[0]);
+    if( rc==SQLITE_OK ){
+      assert( apNew[0]->nFree == 
+          (get2byte(&apNew[0]->aData[5])-apNew[0]->cellOffset-apNew[0]->nCell*2)
+      );
+      copyNodeContent(apNew[0], pParent, &rc);
+      freePage(apNew[0], &rc);
+    }
   }else if( ISAUTOVACUUM && !leafCorrection ){
     /* Fix the pointer map entries associated with the right-child of each
     ** sibling page. All other pointer map entries have already been taken
