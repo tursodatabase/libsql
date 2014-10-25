@@ -1612,6 +1612,7 @@ static void constructAutomaticIndex(
   idxCols = 0;
   for(pTerm=pWC->a; pTerm<pWCEnd; pTerm++){
     if( pLoop->prereq==0
+     && (pTerm->wtFlags & TERM_VIRTUAL)==0
      && sqlite3ExprIsTableConstant(pTerm->pExpr, pSrc->iCursor) ){
       pPartial = sqlite3ExprAnd(pParse->db, pPartial,
                                 sqlite3ExprDup(pParse->db, pTerm->pExpr, 0));
@@ -1720,6 +1721,7 @@ static void constructAutomaticIndex(
   if( pPartial ){
     iContinue = sqlite3VdbeMakeLabel(v);
     sqlite3ExprIfFalse(pParse, pPartial, iContinue, SQLITE_JUMPIFNULL);
+    pLoop->wsFlags |= WHERE_PARTIALIDX;
   }
   regRecord = sqlite3GetTempReg(pParse);
   sqlite3GenerateIndexKey(pParse, pIdx, pLevel->iTabCur, regRecord, 0, 0, 0, 0);
@@ -2865,6 +2867,8 @@ static void explainOneScan(
         if( isSearch ){
           zFmt = "PRIMARY KEY";
         }
+      }else if( flags & WHERE_PARTIALIDX ){
+        zFmt = "AUTOMATIC PARTIAL COVERING INDEX";
       }else if( flags & WHERE_AUTO_INDEX ){
         zFmt = "AUTOMATIC COVERING INDEX";
       }else if( flags & WHERE_IDX_ONLY ){

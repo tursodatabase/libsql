@@ -1,5 +1,5 @@
-C Enhance\sthe\sautomatic\sindex\slogic\sso\sthat\sit\screates\sa\spartial\sindex\swhen\ndoing\sso\sgives\sthe\ssame\sanswer\sfor\sless\swork.
-D 2014-10-24T19:28:09.216
+C Do\snot\suse\svirtual\s(and\shence\sredundant)\sWHERE-clause\sterms\sto\srestrict\sthe\ncontent\sof\sa\sautomatic\spartial\sindex.\s\sShow\swhen\san\sautomatic\spartial\sindex\nis\sused\sin\sthe\sEXPLAIN\sQUERY\sPLAN\soutput.
+D 2014-10-25T12:28:25.871
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -130,7 +130,7 @@ F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
 F ext/rtree/rtree3.test a494da55c30ee0bc9b01a91c80c81b387b22d2dc
 F ext/rtree/rtree4.test c8fe384f60ebd49540a5fecc990041bf452eb6e0
 F ext/rtree/rtree5.test 6a510494f12454bf57ef28f45bc7764ea279431e
-F ext/rtree/rtree6.test 0cfbdf27ee086bf16a3da2c6f2d5b3d6473cb27e
+F ext/rtree/rtree6.test 773a90db2dce6a8353dd0d5b64bca69b29761196
 F ext/rtree/rtree7.test 1fa710b9e6bf997a0c1a537b81be7bb6fded1971
 F ext/rtree/rtree8.test db79c812f9e4a11f9b1f3f9934007884610a713a
 F ext/rtree/rtree9.test d86ebf08ff6328895613ed577dd8a2a37c472c34
@@ -302,8 +302,8 @@ F src/vtab.c cb0c194303fea276b48d7d4b6d970b5a96bde8de
 F src/wal.c 10e7de7ce90865a68153f001a61f1d985cd17983
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
-F src/where.c cc0733c59bd8bf6027d28b7d24b1887f4a870215
-F src/whereInt.h 4b459cdbfc9b01f5f27673a35f9967e4dea917e8
+F src/where.c 3312adfda33a9ca85c8a380a642a1a5905398b06
+F src/whereInt.h 19279cd0664ce1d90b9ad3ef0108cb494acfe455
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test b35b4cd69fc913f90d39a575e171e1116c3a4bb7
@@ -1206,7 +1206,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 401235edf40fcd665eaf426cf5155ac6855e8537
-R def8f7d87d0f5784d9eaab2c56b2a690
+P d95d0313c447f5baeabdb17284d8606331ab7d49
+R 9499438a1fccf595ef80fbd4c31b20b8
 U drh
-Z cb611c4b71e8fc233ea4e1005f56a9e0
+Z cdff8327924b867b12e561826d5fe961
