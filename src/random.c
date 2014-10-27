@@ -57,14 +57,12 @@ void sqlite3_randomness(int N, void *pBuf){
 
 #if SQLITE_THREADSAFE
   mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_PRNG);
-  sqlite3_mutex_enter(mutex);
 #endif
 
+  sqlite3_mutex_enter(mutex);
   if( N<=0 || pBuf==0 ){
     wsdPrng.isInit = 0;
-#if SQLITE_THREADSAFE
     sqlite3_mutex_leave(mutex);
-#endif
     return;
   }
 
