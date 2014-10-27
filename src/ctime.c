@@ -63,6 +63,9 @@ static const char * const azCompileOpt[] = {
 #ifdef SQLITE_DISABLE_LFS
   "DISABLE_LFS",
 #endif
+#ifdef SQLITE_ENABLE_API_ARMOR
+  "ENABLE_API_ARMOR",
+#endif
 #ifdef SQLITE_ENABLE_ATOMIC_WRITE
   "ENABLE_ATOMIC_WRITE",
 #endif
@@ -388,6 +391,13 @@ static const char * const azCompileOpt[] = {
 */
 int sqlite3_compileoption_used(const char *zOptName){
   int i, n;
+
+#ifdef SQLITE_ENABLE_API_ARMORE
+  if( zOptName==0 ){
+    (void)SQLITE_MISUSE_BKPT;
+    return 0;
+  }
+#endif
   if( sqlite3StrNICmp(zOptName, "SQLITE_", 7)==0 ) zOptName += 7;
   n = sqlite3Strlen30(zOptName);
 
