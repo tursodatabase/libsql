@@ -1,5 +1,5 @@
-C Add\stest\sfile\se_wal.test.
-D 2014-10-27T11:25:28.528
+C Optimizations\saimed\sat\sreducing\sthe\snumber\sof\smemcpy()\soperations\srequired\sby\sbalance_nonroot().
+D 2014-10-27T14:26:54.508
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -172,7 +172,7 @@ F src/auth.c d8abcde53426275dab6243b441256fcd8ccbebb2
 F src/backup.c a31809c65623cc41849b94d368917f8bb66e6a7e
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 49ca66250c7dfa844a4d4cb8272b87420d27d3a5
-F src/btree.c 1b1123cba0c65caa0baa51e71b8c089e3167c3ed
+F src/btree.c 9790fb4df51d36861bcbb8cd0a9b41586cbae699
 F src/btree.h a79aa6a71e7f1055f01052b7f821bd1c2dce95c8
 F src/btreeInt.h 026d0129724e8f265fdc60d44ec240cf5a4e6179
 F src/build.c 9dc2bd94347b878c89627000c92b0c8d97ec2919
@@ -215,8 +215,8 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c fb587121840f690101336879adfa6d0b2cd0e8c7
 F src/os_win.c a019caaae2bcbbc0cc4c39af6e7d7e43d8426053
 F src/os_win.h 09e751b20bbc107ffbd46e13555dc73576d88e21
-F src/pager.c a98547ad9b1b5dbbc5e7d1c520be041b5d2c0926
-F src/pager.h ffd5607f7b3e4590b415b007a4382f693334d428
+F src/pager.c 8d97b3633f098fef817656dcbf167ca904511d78
+F src/pager.h d1eee3c3f741be247ce6d82752a178515fc8578b
 F src/parse.y 5dfead8aed90cb0c7c1115898ee2266804daff45
 F src/pcache.c 4121a0571c18581ee9f82f086d5e2030051ebd6a
 F src/pcache.h 9b559127b83f84ff76d735c8262f04853be0c59a
@@ -1207,7 +1207,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0f08924fe0c52a85a103f67bee9809e0f8f884b0
-R 770a2e0b8a993a6006545c850fbc4dd8
+P fc6920b5483eeeb06a474ff399a21afa51dc4859 1f80f8c136ac970dcc7fb2337263dc5922e348c3
+R ed2304a6a2e587056109284e9717f063
 U dan
-Z 70c394a419fcdd8591ee5c3f4c5346c4
+Z 986c15e36469a97fa56839a4b2a55b25
