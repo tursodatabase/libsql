@@ -1,5 +1,5 @@
-C Merge\strunk\swith\sthis\sbranch.
-D 2014-10-27T07:01:04.796
+C If\sa\sfree-slot\sis\sfound\swithin\sa\spage,\sbut\susing\sthat\sfree-slot\swould\sfragment\sthe\spage\sfurther\sand\sthere\sare\salready\sat\sleast\s60\sfragmented\sbytes,\sdegragment\sthe\spage.\sThis\smatches\sthe\sbehaviour\sof\sthe\strunk.
+D 2014-10-27T08:02:16.531
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -172,7 +172,7 @@ F src/auth.c d8abcde53426275dab6243b441256fcd8ccbebb2
 F src/backup.c a31809c65623cc41849b94d368917f8bb66e6a7e
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 49ca66250c7dfa844a4d4cb8272b87420d27d3a5
-F src/btree.c 2639b89f6728f5775044704c7757c0226e071bd1
+F src/btree.c 9790fb4df51d36861bcbb8cd0a9b41586cbae699
 F src/btree.h a79aa6a71e7f1055f01052b7f821bd1c2dce95c8
 F src/btreeInt.h 026d0129724e8f265fdc60d44ec240cf5a4e6179
 F src/build.c 9dc2bd94347b878c89627000c92b0c8d97ec2919
@@ -1206,7 +1206,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1a8cf0a043347772ac54d150d634c32845beee8b 0f08924fe0c52a85a103f67bee9809e0f8f884b0
-R 9858b90cbf912e211c65716d59c94e8a
+P a13df3013bbac4a0d4fce5cef1376c857508c1c5
+R 05f44d14ab419727640258148977021c
 U dan
-Z daf2b363c619dfc32da3ad287a4e25ec
+Z 95c7c43e9818bc003f29ce4926da458f

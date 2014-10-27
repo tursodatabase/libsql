@@ -1235,8 +1235,12 @@ static int defragmentPage(MemPage *pPage){
 ** pRc is non-NULL, then *pRc is set to SQLITE_CORRUPT and NULL is returned.
 ** Or, if corruption is detected and pRc is NULL, NULL is returned and the
 ** corruption goes unreported.
+**
+** If a slot of at least nByte bytes is found but cannot be used because 
+** there are already at least 60 fragmented bytes on the page, return NULL.
+** In this case, if pbDefrag parameter is not NULL, set *pbDefrag to true.
 */
-static u8 *pageFindSlot(MemPage *pPg, int nByte, int *pRc){
+static u8 *pageFindSlot(MemPage *pPg, int nByte, int *pRc, int *pbDefrag){
   const int hdr = pPg->hdrOffset;
   u8 * const aData = pPg->aData;
   int iAddr;
@@ -1255,7 +1259,10 @@ static u8 *pageFindSlot(MemPage *pPg, int nByte, int *pRc){
       testcase( x==4 );
       testcase( x==3 );
       if( x<4 ){
-        if( aData[hdr+7]>=60 ) return 0;
+        if( aData[hdr+7]>=60 ){
+          if( pbDefrag ) *pbDefrag = 1;
+          return 0;
+        }
         /* Remove the slot from the free-list. Update the number of
         ** fragmented bytes within the page. */
         memcpy(&aData[iAddr], &aData[pc], 2);
@@ -1326,8 +1333,10 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
   testcase( gap==top );
   if( gap+2<=top && (data[hdr+1] || data[hdr+2]) ){
     int rc = SQLITE_OK;
-    u8 *pSpace = pageFindSlot(pPage, nByte, &rc);
+    int bDefrag = 0;
+    u8 *pSpace = pageFindSlot(pPage, nByte, &rc, &bDefrag);
     if( rc ) return rc;
+    if( bDefrag ) goto defragment_page;
     if( pSpace ){
       *pIdx = pSpace - data;
       return SQLITE_OK;
@@ -1339,6 +1348,7 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
   */
   testcase( gap+2+nByte==top );
   if( gap+2+nByte>top ){
+ defragment_page:
     testcase( pPage->nCell==0 );
     rc = defragmentPage(pPage);
     if( rc ) return rc;
@@ -6069,7 +6079,7 @@ static int pageInsertArray(
   for(i=0; i<nCell; i++){
     int sz = szCell[i];
     u8 *pSlot;
-    if( bFreelist==0 || (pSlot = pageFindSlot(pPg, sz, 0))==0 ){
+    if( bFreelist==0 || (pSlot = pageFindSlot(pPg, sz, 0, 0))==0 ){
       pData -= sz;
       if( pData<pBegin ) return 1;
       pSlot = pData;
