@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_ENABLE_API_ARMOR\scompile-time\soption\sfor\sextra\sAPI\sparameter\nvalidation.\s\sEnhance\ssqlite3_stricmp(),\ssqlite3_strnicmp(),\sand\nsqlite3_uri_parameter()\sfor\simproved\sNULL\sparameter\shandling.
-D 2014-10-27T18:34:07.031
+C Fix\sa\stypo\sin\sthe\smacro\sname\sof\san\s#ifdef
+D 2014-10-27T19:39:51.561
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -178,7 +178,7 @@ F src/btreeInt.h 026d0129724e8f265fdc60d44ec240cf5a4e6179
 F src/build.c 67bb05b1077e0cdaccb2e36bfcbe7a5df9ed31e8
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c c4ba6e0626bb94bc77a0861735f3382fcf7cc818
-F src/ctime.c dfa83bfebb4201d07b16534acb8a0149592c3a25
+F src/ctime.c df19848891c8a553c80e6f5a035e768280952d1a
 F src/date.c 57a7f9ba9f6b4d5268f5e411739066a611f99036
 F src/delete.c fae81cc2eb14b75267d4f47d3cfc9ae02aae726f
 F src/expr.c 0391a657df4959eaf2a2fd7d77de5ebe750686ee
@@ -1207,8 +1207,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 637246165a14c4808b90d0437e4d43fa5fac659e 1c220b806d56e163842e17038c3331f71861bd9c
-R 78cdca5c720e64c06c4c8ef41bcc31b7
-T +closed 1c220b806d56e163842e17038c3331f71861bd9c
+P ffb9d8144bbc35bf3d929e0e13a663668fff0558
+R 517f6fa1cedd5526f59aa045554cf442
 U drh
-Z 1739c9dd8a9fd2ca84e2afadfbbcea12
+Z d3a8b97f7ef904d82264d3ec79cf2202

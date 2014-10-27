@@ -392,7 +392,7 @@ static const char * const azCompileOpt[] = {
 int sqlite3_compileoption_used(const char *zOptName){
   int i, n;
 
-#ifdef SQLITE_ENABLE_API_ARMORE
+#ifdef SQLITE_ENABLE_API_ARMOR
   if( zOptName==0 ){
     (void)SQLITE_MISUSE_BKPT;
     return 0;
