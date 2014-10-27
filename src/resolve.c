@@ -28,7 +28,7 @@
 ** is a helper function - a callback for the tree walker.
 */
 static int incrAggDepth(Walker *pWalker, Expr *pExpr){
-  if( pExpr->op==TK_AGG_FUNCTION ) pExpr->op2 += pWalker->u.i;
+  if( pExpr->op==TK_AGG_FUNCTION ) pExpr->op2 += pWalker->u.n;
   return WRC_Continue;
 }
 static void incrAggFunctionDepth(Expr *pExpr, int N){
@@ -36,7 +36,7 @@ static void incrAggFunctionDepth(Expr *pExpr, int N){
     Walker w;
     memset(&w, 0, sizeof(w));
     w.xExprCallback = incrAggDepth;
-    w.u.i = N;
+    w.u.n = N;
     sqlite3WalkExpr(&w, pExpr);
   }
 }
@@ -584,7 +584,7 @@ static int exprProbability(Expr *p){
   sqlite3AtoF(p->u.zToken, &r, sqlite3Strlen30(p->u.zToken), SQLITE_UTF8);
   assert( r>=0.0 );
   if( r>1.0 ) return -1;
-  return (int)(r*1000.0);
+  return (int)(r*134217728.0);
 }
 
 /*
@@ -716,7 +716,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
             ** EVIDENCE-OF: R-53436-40973 The likely(X) function is equivalent to
             ** likelihood(X,0.9375). */
             /* TUNING: unlikely() probability is 0.0625.  likely() is 0.9375 */
-            pExpr->iTable = pDef->zName[0]=='u' ? 62 : 938;
+            pExpr->iTable = pDef->zName[0]=='u' ? 8388608 : 125829120;
           }             
         }
 #ifndef SQLITE_OMIT_AUTHORIZATION

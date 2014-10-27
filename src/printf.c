@@ -21,11 +21,7 @@
 ** the glibc version so the glibc version is definitely preferred.
 */
 #if !defined(HAVE_STRCHRNUL)
-# if defined(linux)
-#  define HAVE_STRCHRNUL 1
-# else
-#  define HAVE_STRCHRNUL 0
-# endif
+# define HAVE_STRCHRNUL 0
 #endif
 
 
@@ -227,6 +223,13 @@ void sqlite3VXPrintf(
   PrintfArguments *pArgList = 0; /* Arguments for SQLITE_PRINTF_SQLFUNC */
   char buf[etBUFSIZE];       /* Conversion buffer */
 
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( ap==0 ){
+    (void)SQLITE_MISUSE_BKPT;
+    sqlite3StrAccumReset(pAccum);
+    return;
+  }
+#endif
   bufpt = 0;
   if( bFlags ){
     if( (bArgList = (bFlags & SQLITE_PRINTF_SQLFUNC))!=0 ){
@@ -947,6 +950,13 @@ char *sqlite3_vmprintf(const char *zFormat, va_list ap){
   char *z;
   char zBase[SQLITE_PRINT_BUF_SIZE];
   StrAccum acc;
+
+#ifdef SQLITE_ENABLE_API_ARMOR  
+  if( zFormat==0 ){
+    (void)SQLITE_MISUSE_BKPT;
+    return 0;
+  }
+#endif
 #ifndef SQLITE_OMIT_AUTOINIT
   if( sqlite3_initialize() ) return 0;
 #endif
@@ -989,6 +999,13 @@ char *sqlite3_mprintf(const char *zFormat, ...){
 char *sqlite3_vsnprintf(int n, char *zBuf, const char *zFormat, va_list ap){
   StrAccum acc;
   if( n<=0 ) return zBuf;
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( zBuf==0 || zFormat==0 ) {
+    (void)SQLITE_MISUSE_BKPT;
+    if( zBuf && n>0 ) zBuf[0] = 0;
+    return zBuf;
+  }
+#endif
   sqlite3StrAccumInit(&acc, zBuf, n, 0);
   acc.useMalloc = 0;
   sqlite3VXPrintf(&acc, 0, zFormat, ap);

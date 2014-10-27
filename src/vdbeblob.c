@@ -153,6 +153,11 @@ int sqlite3_blob_open(
   Parse *pParse = 0;
   Incrblob *pBlob = 0;
 
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( !sqlite3SafetyCheckOk(db) || ppBlob==0 || zTable==0 ){
+    return SQLITE_MISUSE_BKPT;
+  }
+#endif
   flags = !!flags;                /* flags = (flags ? 1 : 0); */
   *ppBlob = 0;
 

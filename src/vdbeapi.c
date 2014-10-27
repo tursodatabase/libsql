@@ -982,11 +982,19 @@ static const void *columnName(
   const void *(*xFunc)(Mem*),
   int useType
 ){
-  const void *ret = 0;
-  Vdbe *p = (Vdbe *)pStmt;
+  const void *ret;
+  Vdbe *p;
   int n;
-  sqlite3 *db = p->db;
-  
+  sqlite3 *db;
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( pStmt==0 ){
+    (void)SQLITE_MISUSE_BKPT;
+    return 0;
+  }
+#endif
+  ret = 0;
+  p = (Vdbe *)pStmt;
+  db = p->db;
   assert( db!=0 );
   n = sqlite3_column_count(pStmt);
   if( N<n && N>=0 ){
@@ -1478,6 +1486,12 @@ int sqlite3_stmt_busy(sqlite3_stmt *pStmt){
 */
 sqlite3_stmt *sqlite3_next_stmt(sqlite3 *pDb, sqlite3_stmt *pStmt){
   sqlite3_stmt *pNext;
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( !sqlite3SafetyCheckOk(pDb) ){
+    (void)SQLITE_MISUSE_BKPT;
+    return 0;
+  }
+#endif
   sqlite3_mutex_enter(pDb->mutex);
   if( pStmt==0 ){
     pNext = (sqlite3_stmt*)pDb->pVdbe;
@@ -1493,7 +1507,14 @@ sqlite3_stmt *sqlite3_next_stmt(sqlite3 *pDb, sqlite3_stmt *pStmt){
 */
 int sqlite3_stmt_status(sqlite3_stmt *pStmt, int op, int resetFlag){
   Vdbe *pVdbe = (Vdbe*)pStmt;
-  u32 v = pVdbe->aCounter[op];
+  u32 v;
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( !pStmt ){
+    (void)SQLITE_MISUSE_BKPT;
+    return 0;
+  }
+#endif
+  v = pVdbe->aCounter[op];
   if( resetFlag ) pVdbe->aCounter[op] = 0;
   return (int)v;
 }

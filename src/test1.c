@@ -6485,7 +6485,8 @@ static int optimization_control(
     { "transitive",          SQLITE_Transitive     },
     { "subquery-coroutine",  SQLITE_SubqCoroutine  },
     { "omit-noop-join",      SQLITE_OmitNoopJoin   },
-    { "stat3",               SQLITE_Stat3          },
+    { "stat3",               SQLITE_Stat34         },
+    { "stat4",               SQLITE_Stat34         },
   };
 
   if( objc!=4 ){

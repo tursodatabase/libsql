@@ -175,8 +175,12 @@ static sqlite3_mutex *pthreadMutexAlloc(int iType){
       break;
     }
     default: {
-      assert( iType-2 >= 0 );
-      assert( iType-2 < ArraySize(staticMutexes) );
+#ifdef SQLITE_ENABLE_API_ARMOR
+      if( iType-2<0 || iType-2>=ArraySize(staticMutexes) ){
+        (void)SQLITE_MISUSE_BKPT;
+        return 0;
+      }
+#endif
       p = &staticMutexes[iType-2];
 #if SQLITE_MUTEX_NREF
       p->id = iType;
