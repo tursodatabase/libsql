@@ -459,3 +459,4 @@ struct WhereInfo {
 #define WHERE_AUTO_INDEX   0x00004000  /* Uses an ephemeral index */
 #define WHERE_SKIPSCAN     0x00008000  /* Uses the skip-scan algorithm */
 #define WHERE_UNQ_WANTED   0x00010000  /* WHERE_ONEROW would have been helpful*/
+#define WHERE_PARTIALIDX   0x00020000  /* The automatic index is partial */

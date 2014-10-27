@@ -2751,13 +2751,7 @@ int sqlite3_create_collation(
   void* pCtx,
   int(*xCompare)(void*,int,const void*,int,const void*)
 ){
-  int rc;
-  sqlite3_mutex_enter(db->mutex);
-  assert( !db->mallocFailed );
-  rc = createCollation(db, zName, (u8)enc, pCtx, xCompare, 0);
-  rc = sqlite3ApiExit(db, rc);
-  sqlite3_mutex_leave(db->mutex);
-  return rc;
+  return sqlite3_create_collation_v2(db, zName, enc, pCtx, xCompare, 0);
 }
 
 /*

@@ -225,7 +225,7 @@ static int whereClauseInsert(WhereClause *pWC, Expr *p, u8 wtFlags){
   }
   pTerm = &pWC->a[idx = pWC->nTerm++];
   if( p && ExprHasProperty(p, EP_Unlikely) ){
-    pTerm->truthProb = sqlite3LogEst(p->iTable) - 99;
+    pTerm->truthProb = sqlite3LogEst(p->iTable) - 270;
   }else{
     pTerm->truthProb = 1;
   }
@@ -756,6 +756,15 @@ static void transferJoinMarkings(Expr *pDerived, Expr *pBase){
   }
 }
 
+/*
+** Mark term iChild as being a child of term iParent
+*/
+static void markTermAsChild(WhereClause *pWC, int iChild, int iParent){
+  pWC->a[iChild].iParent = iParent;
+  pWC->a[iChild].truthProb = pWC->a[iParent].truthProb;
+  pWC->a[iParent].nChild++;
+}
+
 #if !defined(SQLITE_OMIT_OR_OPTIMIZATION) && !defined(SQLITE_OMIT_SUBQUERY)
 /*
 ** Analyze a term that consists of two or more OR-connected
@@ -1053,8 +1062,7 @@ static void exprAnalyzeOrTerm(
         testcase( idxNew==0 );
         exprAnalyze(pSrc, pWC, idxNew);
         pTerm = &pWC->a[idxTerm];
-        pWC->a[idxNew].iParent = idxTerm;
-        pTerm->nChild = 1;
+        markTermAsChild(pWC, idxNew, idxTerm);
       }else{
         sqlite3ExprListDelete(db, pList);
       }
@@ -1156,9 +1164,8 @@ static void exprAnalyze(
         idxNew = whereClauseInsert(pWC, pDup, TERM_VIRTUAL|TERM_DYNAMIC);
         if( idxNew==0 ) return;
         pNew = &pWC->a[idxNew];
-        pNew->iParent = idxTerm;
+        markTermAsChild(pWC, idxNew, idxTerm);
         pTerm = &pWC->a[idxTerm];
-        pTerm->nChild = 1;
         pTerm->wtFlags |= TERM_COPIED;
         if( pExpr->op==TK_EQ
          && !ExprHasProperty(pExpr, EP_FromJoin)
@@ -1215,9 +1222,8 @@ static void exprAnalyze(
       testcase( idxNew==0 );
       exprAnalyze(pSrc, pWC, idxNew);
       pTerm = &pWC->a[idxTerm];
-      pWC->a[idxNew].iParent = idxTerm;
+      markTermAsChild(pWC, idxNew, idxTerm);
     }
-    pTerm->nChild = 2;
   }
 #endif /* SQLITE_OMIT_BETWEEN_OPTIMIZATION */
 
@@ -1292,9 +1298,8 @@ static void exprAnalyze(
     exprAnalyze(pSrc, pWC, idxNew2);
     pTerm = &pWC->a[idxTerm];
     if( isComplete ){
-      pWC->a[idxNew1].iParent = idxTerm;
-      pWC->a[idxNew2].iParent = idxTerm;
-      pTerm->nChild = 2;
+      markTermAsChild(pWC, idxNew1, idxTerm);
+      markTermAsChild(pWC, idxNew2, idxTerm);
     }
   }
 #endif /* SQLITE_OMIT_LIKE_OPTIMIZATION */
@@ -1327,9 +1332,8 @@ static void exprAnalyze(
       pNewTerm->leftCursor = pLeft->iTable;
       pNewTerm->u.leftColumn = pLeft->iColumn;
       pNewTerm->eOperator = WO_MATCH;
-      pNewTerm->iParent = idxTerm;
+      markTermAsChild(pWC, idxNew, idxTerm);
       pTerm = &pWC->a[idxTerm];
-      pTerm->nChild = 1;
       pTerm->wtFlags |= TERM_COPIED;
       pNewTerm->prereqAll = pTerm->prereqAll;
     }
@@ -1350,7 +1354,7 @@ static void exprAnalyze(
   if( pExpr->op==TK_NOTNULL
    && pExpr->pLeft->op==TK_COLUMN
    && pExpr->pLeft->iColumn>=0
-   && OptimizationEnabled(db, SQLITE_Stat3)
+   && OptimizationEnabled(db, SQLITE_Stat34)
   ){
     Expr *pNewExpr;
     Expr *pLeft = pExpr->pLeft;
@@ -1369,9 +1373,8 @@ static void exprAnalyze(
       pNewTerm->leftCursor = pLeft->iTable;
       pNewTerm->u.leftColumn = pLeft->iColumn;
       pNewTerm->eOperator = WO_GT;
-      pNewTerm->iParent = idxTerm;
+      markTermAsChild(pWC, idxNew, idxTerm);
       pTerm = &pWC->a[idxTerm];
-      pTerm->nChild = 1;
       pTerm->wtFlags |= TERM_COPIED;
       pNewTerm->prereqAll = pTerm->prereqAll;
     }
@@ -1591,6 +1594,8 @@ static void constructAutomaticIndex(
   Bitmask idxCols;            /* Bitmap of columns used for indexing */
   Bitmask extraCols;          /* Bitmap of additional columns */
   u8 sentWarning = 0;         /* True if a warnning has been issued */
+  Expr *pPartial = 0;         /* Partial Index Expression */
+  int iContinue = 0;          /* Jump here to skip excluded rows */
 
   /* Generate code to skip over the creation and initialization of the
   ** transient index on 2nd and subsequent iterations of the loop. */
@@ -1606,6 +1611,12 @@ static void constructAutomaticIndex(
   pLoop = pLevel->pWLoop;
   idxCols = 0;
   for(pTerm=pWC->a; pTerm<pWCEnd; pTerm++){
+    if( pLoop->prereq==0
+     && (pTerm->wtFlags & TERM_VIRTUAL)==0
+     && sqlite3ExprIsTableConstant(pTerm->pExpr, pSrc->iCursor) ){
+      pPartial = sqlite3ExprAnd(pParse->db, pPartial,
+                                sqlite3ExprDup(pParse->db, pTerm->pExpr, 0));
+    }
     if( termCanDriveIndex(pTerm, pSrc, notReady) ){
       int iCol = pTerm->u.leftColumn;
       Bitmask cMask = iCol>=BMS ? MASKBIT(BMS-1) : MASKBIT(iCol);
@@ -1618,7 +1629,9 @@ static void constructAutomaticIndex(
         sentWarning = 1;
       }
       if( (idxCols & cMask)==0 ){
-        if( whereLoopResize(pParse->db, pLoop, nKeyCol+1) ) return;
+        if( whereLoopResize(pParse->db, pLoop, nKeyCol+1) ){
+          goto end_auto_index_create;
+        }
         pLoop->aLTerm[nKeyCol++] = pTerm;
         idxCols |= cMask;
       }
@@ -1651,7 +1664,7 @@ static void constructAutomaticIndex(
 
   /* Construct the Index object to describe this index */
   pIdx = sqlite3AllocateIndexObject(pParse->db, nKeyCol+1, 0, &zNotUsed);
-  if( pIdx==0 ) return;
+  if( pIdx==0 ) goto end_auto_index_create;
   pLoop->u.btree.pIndex = pIdx;
   pIdx->zName = "auto-index";
   pIdx->pTable = pTable;
@@ -1703,18 +1716,29 @@ static void constructAutomaticIndex(
   VdbeComment((v, "for %s", pTable->zName));
 
   /* Fill the automatic index with content */
+  sqlite3ExprCachePush(pParse);
   addrTop = sqlite3VdbeAddOp1(v, OP_Rewind, pLevel->iTabCur); VdbeCoverage(v);
+  if( pPartial ){
+    iContinue = sqlite3VdbeMakeLabel(v);
+    sqlite3ExprIfFalse(pParse, pPartial, iContinue, SQLITE_JUMPIFNULL);
+    pLoop->wsFlags |= WHERE_PARTIALIDX;
+  }
   regRecord = sqlite3GetTempReg(pParse);
   sqlite3GenerateIndexKey(pParse, pIdx, pLevel->iTabCur, regRecord, 0, 0, 0, 0);
   sqlite3VdbeAddOp2(v, OP_IdxInsert, pLevel->iIdxCur, regRecord);
   sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
+  if( pPartial ) sqlite3VdbeResolveLabel(v, iContinue);
   sqlite3VdbeAddOp2(v, OP_Next, pLevel->iTabCur, addrTop+1); VdbeCoverage(v);
   sqlite3VdbeChangeP5(v, SQLITE_STMTSTATUS_AUTOINDEX);
   sqlite3VdbeJumpHere(v, addrTop);
   sqlite3ReleaseTempReg(pParse, regRecord);
+  sqlite3ExprCachePop(pParse);
   
   /* Jump here when skipping the initialization */
   sqlite3VdbeJumpHere(v, addrInit);
+
+end_auto_index_create:
+  sqlite3ExprDelete(pParse->db, pPartial);
 }
 #endif /* SQLITE_OMIT_AUTOMATIC_INDEX */
 
@@ -2159,7 +2183,6 @@ static int whereRangeScanEst(
 
   if( p->nSample>0
    && nEq<p->nSampleCol
-   && OptimizationEnabled(pParse->db, SQLITE_Stat3) 
   ){
     if( nEq==pBuilder->nRecValid ){
       UnpackedRecord *pRec = pBuilder->pRec;
@@ -2273,12 +2296,15 @@ static int whereRangeScanEst(
   nNew = whereRangeAdjust(pLower, nOut);
   nNew = whereRangeAdjust(pUpper, nNew);
 
-  /* TUNING: If there is both an upper and lower limit, assume the range is
+  /* TUNING: If there is both an upper and lower limit and neither limit
+  ** has an application-defined likelihood(), assume the range is
   ** reduced by an additional 75%. This means that, by default, an open-ended
   ** range query (e.g. col > ?) is assumed to match 1/4 of the rows in the
   ** index. While a closed range (e.g. col BETWEEN ? AND ?) is estimated to
   ** match 1/64 of the index. */ 
-  if( pLower && pUpper ) nNew -= 20;
+  if( pLower && pLower->truthProb>0 && pUpper && pUpper->truthProb>0 ){
+    nNew -= 20;
+  }
 
   nOut -= (pLower!=0) + (pUpper!=0);
   if( nNew<10 ) nNew = 10;
@@ -2841,6 +2867,8 @@ static void explainOneScan(
         if( isSearch ){
           zFmt = "PRIMARY KEY";
         }
+      }else if( flags & WHERE_PARTIALIDX ){
+        zFmt = "AUTOMATIC PARTIAL COVERING INDEX";
       }else if( flags & WHERE_AUTO_INDEX ){
         zFmt = "AUTOMATIC COVERING INDEX";
       }else if( flags & WHERE_IDX_ONLY ){
@@ -4422,7 +4450,6 @@ static int whereLoopAddBtreeIndex(
         if( nInMul==0 
          && pProbe->nSample 
          && pNew->u.btree.nEq<=pProbe->nSampleCol
-         && OptimizationEnabled(db, SQLITE_Stat3) 
          && ((eOp & WO_IN)==0 || !ExprHasProperty(pTerm->pExpr, EP_xIsSelect))
         ){
           Expr *pExpr = pTerm->pExpr;
