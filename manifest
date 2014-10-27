@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarning\sin\san\sassert\sstatement.
-D 2014-10-27T19:42:02.875
+C Fix\scompilation\sissue\swith\sMSVC\sdue\sto\sa\smisplaced\svariable\sdeclaration.
+D 2014-10-27T19:58:29.156
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -224,7 +224,7 @@ F src/pcache1.c e412cb585f777c840ddce0500eddc5c6043c2bb5
 F src/pragma.c 3f3e959390a10c0131676f0e307acce372777e0f
 F src/prepare.c b7b7bf020bd4c962f7c8aed5a3c542c7dfe9f9c7
 F src/printf.c c31012ac23e458081df4a32634b60424e0cdfaf3
-F src/random.c b8a058131851de1a37801b5587845ee73411c064
+F src/random.c f88232b90e308f58f1f8f10894d7a8a750d6f64d
 F src/resolve.c 4965007d6497b6a4d7a6d98751cc39712885f952
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 428165951748151e87a15295b7357221433e311b
@@ -1207,7 +1207,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9646a136e69cf2583965dfc9fac5f056af4cdb62
-R c8728e917d07299237654ca84312b584
+P d33a1ff3aad0bfabf70a98ac338a68f82074e4fe
+R ee98bc34f841b6720302924cb59e4bc2
 U mistachkin
-Z 269b8116d90b241ccd2319871bd381eb
+Z 8119f44960013a2ca52459062580ce07
