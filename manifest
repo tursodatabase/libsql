@@ -1,5 +1,5 @@
-C Remove\sa\ssmall\samount\sof\sunnecessary\s#ifdeffery\sfrom\srandom.c.
-D 2014-10-27T20:14:02.021
+C Add\sspecial\shandling\sfor\sstatic\smutexes\sin\ssqlite3_mutex_alloc()\swhen\sautomatic\scalls\sto\ssqlite3_initialize()\sare\senabled.
+D 2014-10-27T22:06:21.571
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -202,7 +202,7 @@ F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
 F src/mem3.c 61c9d47b792908c532ca3a62b999cf21795c6534
 F src/mem5.c 61eeb90134f9a5be6c2e68d8daae7628b25953fb
 F src/memjournal.c 3eb2c0b51adbd869cb6a44780323f05fa904dc85
-F src/mutex.c 84a073c9a23a8d7bdd2ea832522d1730df18812c
+F src/mutex.c 19bf9acba69ca2f367c3761080f8a9f0cf4670a8
 F src/mutex.h 779d588e3b7756ec3ecf7d78cde1d84aba414f85
 F src/mutex_noop.c f3f09fd7a2eb4287cfc799753ffc30380e7b71a1
 F src/mutex_unix.c 551e2f25f0fa0ee8fd7a43f50fc3d8be00e95dde
@@ -1207,7 +1207,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9588b345d09daaa49d24d7fb6cab732e64e5474e
-R e26f0edef3def3003fae07f43e971e87
-U drh
-Z 3e6e6f10ca8455ff968ead5f51a9fff2
+P 2b9340c8684bc382391e02813e960b3166f24daa
+R f7a6b10545dea42b1d622484e6364982
+U mistachkin
+Z 6b079baac5628ec298fadd129a245092
