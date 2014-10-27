@@ -1,5 +1,5 @@
-C Increase\sthe\sresolution\sof\sthe\ssecond\sparameter\sto\sthe\slikelihood()\sSQL\nfunction\s(the\sprobability\svalue)\sso\sthat\sit\scan\shandle\sprobabilities\nas\ssmall\sas\s0.00000001.\s\sFormerly,\sit\sran\sout\sof\sprecision\sat\s0.001.
-D 2014-10-25T13:42:16.126
+C Add\stest\sfile\se_wal.test.
+D 2014-10-27T11:25:28.528
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -466,6 +466,7 @@ F test/e_select2.test aceb80ab927d46fba5ce7586ebabf23e2bb0604f
 F test/e_update.test 312cb8f5ccfe41515a6bb092f8ea562a9bd54d52
 F test/e_uri.test 5ae33760fb2039c61aa2d90886f1664664173585
 F test/e_vacuum.test 5bfbdc21b65c0abf24398d0ba31dc88d93ca77a9
+F test/e_wal.test 0967f0b8f1dfda871dc7b9b5574198f1f4f7d69a
 F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 83437a79ba1545a55fb549309175c683fb334473
 F test/enc3.test 90683ad0e6ea587b9d5542ca93568af9a9858c40
@@ -1206,7 +1207,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b9ad601eab1d7298d369267eb697c7fa1bc16985
-R 06fd31d9e4c300e561fccc4cf28a702b
-U drh
-Z 628a0c5751868817bd40f1740c611aef
+P 0f08924fe0c52a85a103f67bee9809e0f8f884b0
+R 770a2e0b8a993a6006545c850fbc4dd8
+U dan
+Z 70c394a419fcdd8591ee5c3f4c5346c4
