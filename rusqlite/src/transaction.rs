@@ -115,7 +115,7 @@ mod test {
         }
         {
             let _tx = db.transaction().unwrap();
-            assert_eq!(2i32, db.query_row("SELECT SUM(x) FROM foo", [], |r| r.unwrap().get(0)));
+            assert_eq!(2i32, db.query_row("SELECT SUM(x) FROM foo", [], |r| r.get(0)));
         }
     }
 
@@ -134,7 +134,7 @@ mod test {
         }
         {
             let _tx = db.transaction().unwrap();
-            assert_eq!(2i32, db.query_row("SELECT SUM(x) FROM foo", [], |r| r.unwrap().get(0)));
+            assert_eq!(2i32, db.query_row("SELECT SUM(x) FROM foo", [], |r| r.get(0)));
         }
     }
 
@@ -162,7 +162,7 @@ mod test {
                 }
             }
         }
-        assert_eq!(3i32, db.query_row("SELECT SUM(x) FROM foo", [], |r| r.unwrap().get(0)));
+        assert_eq!(3i32, db.query_row("SELECT SUM(x) FROM foo", [], |r| r.get(0)));
     }
 
     #[bench]

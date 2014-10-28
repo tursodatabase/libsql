@@ -85,9 +85,10 @@ impl SqliteConnection {
         self.db.borrow_mut().last_insert_rowid()
     }
 
-    pub fn query_row<T>(&self, sql: &str, params: &[&ToSql],
-                        f: |SqliteResult<SqliteRow>| -> T) -> T {
-        f(self.prepare(sql).unwrap().query(params).unwrap().next().unwrap())
+    pub fn query_row<T>(&self, sql: &str, params: &[&ToSql], f: |SqliteRow| -> T) -> T {
+        let mut stmt = self.prepare(sql).unwrap();
+        let mut rows = stmt.query(params).unwrap();
+        f(rows.next().expect("Query did not return a row").unwrap())
     }
 
     pub fn prepare<'a>(&'a self, sql: &str) -> SqliteResult<SqliteStatement<'a>> {
@@ -409,7 +410,7 @@ mod test {
         assert_eq!(db.execute("INSERT INTO foo(x) VALUES (?)", &[&1i32]).unwrap(), 1);
         assert_eq!(db.execute("INSERT INTO foo(x) VALUES (?)", &[&2i32]).unwrap(), 1);
 
-        assert_eq!(3i32, db.query_row("SELECT SUM(x) FROM foo", [], |r| r.unwrap().get(0)));
+        assert_eq!(3i32, db.query_row("SELECT SUM(x) FROM foo", [], |r| r.get(0)));
     }
 
     #[test]

@@ -165,7 +165,7 @@ mod test {
         let v1234 = vec![1u8,2,3,4];
         db.execute("INSERT INTO foo(b) VALUES (?)", &[&v1234]).unwrap();
 
-        let v: Vec<u8> = db.query_row("SELECT b FROM foo", [], |r| r.unwrap().get(0));
+        let v: Vec<u8> = db.query_row("SELECT b FROM foo", [], |r| r.get(0));
         assert_eq!(v, v1234);
     }
 
@@ -176,7 +176,7 @@ mod test {
         let s = "hello, world!";
         db.execute("INSERT INTO foo(t) VALUES (?)", &[&s.to_string()]).unwrap();
 
-        let from: String = db.query_row("SELECT t FROM foo", [], |r| r.unwrap().get(0));
+        let from: String = db.query_row("SELECT t FROM foo", [], |r| r.get(0));
         assert_eq!(from.as_slice(), s);
     }
 
@@ -187,7 +187,7 @@ mod test {
         let ts = time::Timespec{sec: 10_000, nsec: 0 };
         db.execute("INSERT INTO foo(t) VALUES (?)", &[&ts]).unwrap();
 
-        let from: time::Timespec = db.query_row("SELECT t FROM foo", [], |r| r.unwrap().get(0));
+        let from: time::Timespec = db.query_row("SELECT t FROM foo", [], |r| r.get(0));
         assert_eq!(from, ts);
     }
 
