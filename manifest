@@ -1,5 +1,5 @@
-C Fix\sa\sfaulty\sassert()\sin\sthe\sDELETE\scode\sgenerator.
-D 2014-10-28T16:19:18.944
+C Fix\sa\scrash\sthat\scould\soccur\sif\sthe\sWHERE\sclause\sof\san\sUPDATE\sstatement\son\sa\sview\sthat\sdoes\snot\sfeature\sa\scolumn\snamed\s"rowid"\scontains\sa\sterm\ssuch\sas\s"rowid=?".
+D 2014-10-28T16:50:10.527
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -285,7 +285,7 @@ F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 6de09362b657f19ba83e5fa521ee715787ce9fee
 F src/tokenize.c cc9016e5007fc5e76789079616d2f26741bcc689
 F src/trigger.c 25571661fdeae8c7f975ff40ffec205520a3f92f
-F src/update.c 729f6f18fc27740591d085e1172cebe311144bf0
+F src/update.c 3c4ecc282accf12d39edb8d524cf089645e55a13
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c 3b627daa45c7308c1e36e3dbaa3f9ce7e5c7fa73
 F src/vacuum.c 59f03f92bcff57faa6a8ca256eb29ccddfb0614a
@@ -1051,7 +1051,7 @@ F test/trigger5.test 619391a3e9fc194081d22cefd830d811e7badf83
 F test/trigger6.test 0e411654f122552da6590f0b4e6f781048a4a9b9
 F test/trigger7.test b39e6dee1debe0ff9c2ef66326668f149f07c9c4
 F test/trigger8.test 30cb0530bd7c4728055420e3f739aa00412eafa4
-F test/trigger9.test 5b0789f1c5c4600961f8e68511b825b87be53e31
+F test/trigger9.test 2226ec795a33b0460ab5cf8891e9054cc7edef41
 F test/triggerA.test fe5597f47ee21bacb4936dc827994ed94161e332
 F test/triggerB.test 56780c031b454abac2340dbb3b71ac5c56c3d7fe
 F test/triggerC.test a68980c5955d62ee24be6f97129d824f199f9a4c
@@ -1207,7 +1207,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 23073a053931de324323f631a6613086786af411
-R 5f4e1ea821e16c5044076b23f1aebe8a
-U drh
-Z 478016a63ef8d014d3b6d95929bf74df
+P 95f8ebdbf87326f23cd38e561ac5632b5367a449
+R c4fade85ca4f95e680190bc9e417c1ff
+U dan
+Z 12d8cc683b13ea652b467efe210b5438
