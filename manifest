@@ -1,12 +1,12 @@
-C Correct\sthe\sdocumentation\son\sthe\smaximum\ssize\sof\sa\sscratch\sallocation.
-D 2014-10-28T00:56:18.775
+C Bump\sthe\sversion\snumber\sto\s3.8.8
+D 2014-10-28T12:35:28.069
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc e31dee24038965fb6269d6d61073fd6b7e331dec
 F Makefile.vxworks 034289efa9d591b04b1a73598623119c306cbba0
 F README.md 64f270c43c38c46de749e419c22f0ae2f4499fe8
-F VERSION 53a0b870e7f16d3b06623c31d233a304c163a6af
+F VERSION d846487aff892625eb8e75960234e7285f0462fe
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 9eb448a552d5c0185cf62c463f9c173cedae3811
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -38,7 +38,7 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 0921066a13130082764ab4ab6456f7b5bebe56de
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure ad59a5f48b3c59a92b5506040a22fbe3f733a9d8 x
+F configure 4343c810cc772571210af75d1a8f7c2eb711d75a x
 F configure.ac 4cf9f60785143fa141b10962ccc885d973792e9a
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 334dbf6621b8fb8790297ec1abf3cfa4621709d1
@@ -1207,7 +1207,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7857d27caa845e5629d94c2e66587dc89016daca
-R cc3ad0fbd146620828bc67546f9cb55d
+P 30f86eb3f9ac88f83ed9e23ea6cd1fccf68e0812
+R 241b510f33643f46040372d1284a7d7b
 U drh
-Z 46e16e5efd8acf1525fc0288e922960d
+Z b060cb081e36e4268c2624adfeebfbc8
