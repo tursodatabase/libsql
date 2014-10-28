@@ -6649,6 +6649,7 @@ static int balance_nonroot(
        nMaxCells*sizeof(u8*)                       /* apCell */
      + nMaxCells*sizeof(u16)                       /* szCell */
      + pBt->pageSize;                              /* aSpace1 */
+  assert( szScratch<=16896 || szScratch<=6*pBt->pageSize );
   apCell = sqlite3ScratchMalloc( szScratch ); 
   if( apCell==0 ){
     rc = SQLITE_NOMEM;

@@ -1,5 +1,5 @@
-C Add\sspecial\shandling\sfor\sstatic\smutexes\sin\ssqlite3_mutex_alloc()\swhen\sautomatic\scalls\sto\ssqlite3_initialize()\sare\senabled.
-D 2014-10-27T22:06:21.571
+C Correct\sthe\sdocumentation\son\sthe\smaximum\ssize\sof\sa\sscratch\sallocation.
+D 2014-10-28T00:56:18.775
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -172,7 +172,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 7f841396adfd47507ff670a471162d2bfcda3136
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 49ca66250c7dfa844a4d4cb8272b87420d27d3a5
-F src/btree.c 0e3262c36b69bed3c5f9260313286a2e8c060ca5
+F src/btree.c 5189881ca403938c5ceddde496b984fef9f40c5a
 F src/btree.h a79aa6a71e7f1055f01052b7f821bd1c2dce95c8
 F src/btreeInt.h 026d0129724e8f265fdc60d44ec240cf5a4e6179
 F src/build.c 67bb05b1077e0cdaccb2e36bfcbe7a5df9ed31e8
@@ -229,7 +229,7 @@ F src/resolve.c 4965007d6497b6a4d7a6d98751cc39712885f952
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 428165951748151e87a15295b7357221433e311b
 F src/shell.c 282f8f5278e0c78eb442217531172ec9e1538796
-F src/sqlite.h.in 4a5e5158c189d2bcd45c7c4607c2c0eb6d25c153
+F src/sqlite.h.in a9f2e5a0e2472c8c7819f3a16074c14b9376608f
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
 F src/sqliteInt.h 90519c3b3e8ee90adfce013234c4bd07275d77b5
@@ -1207,7 +1207,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2b9340c8684bc382391e02813e960b3166f24daa
-R f7a6b10545dea42b1d622484e6364982
-U mistachkin
-Z 6b079baac5628ec298fadd129a245092
+P 7857d27caa845e5629d94c2e66587dc89016daca
+R cc3ad0fbd146620828bc67546f9cb55d
+U drh
+Z 46e16e5efd8acf1525fc0288e922960d

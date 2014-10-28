@@ -1539,10 +1539,14 @@ struct sqlite3_mem_methods {
 ** argument must be a multiple of 16.
 ** The first argument must be a pointer to an 8-byte aligned buffer
 ** of at least sz*N bytes of memory.
-** ^SQLite will use no more than two scratch buffers per thread.  So
-** N should be set to twice the expected maximum number of threads.
-** ^SQLite will never require a scratch buffer that is more than 6
-** times the database page size. ^If SQLite needs needs additional
+** ^SQLite will not use more than two scratch buffers per thread and not
+** more than one scratch buffer per thread when not performing
+** a [checkpoint] in [WAL mode].
+** ^SQLite will never request a scratch buffer that is more than 6
+** times the database page size, except when performing a [checkpoint]
+** in [WAL mode] when the scratch buffer request size is a small fraction
+** of the size of the WAL file.
+** ^If SQLite needs needs additional
 ** scratch memory beyond what is provided by this configuration option, then 
 ** [sqlite3_malloc()] will be used to obtain the memory needed.</dd>
 **
