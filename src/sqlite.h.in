@@ -1926,20 +1926,17 @@ int sqlite3_changes(sqlite3*);
 /*
 ** CAPI3REF: Total Number Of Rows Modified
 **
-** ^This function returns the number of row changes caused by [INSERT],
-** [UPDATE] or [DELETE] statements since the [database connection] was opened.
-** ^(The count returned by sqlite3_total_changes() includes all changes
-** from all [CREATE TRIGGER | trigger] contexts and changes made by
-** [foreign key actions]. However,
-** the count does not include changes used to implement [REPLACE] constraints,
-** rollbacks or [DROP TABLE] commands.  The
-** count does not include rows of views that fire an [INSTEAD OF trigger],
-** though if the INSTEAD OF trigger makes changes of its own, those changes 
-** are counted.)^
-** ^The sqlite3_total_changes() function counts the changes as soon as
-** the statement that makes them is completed (when the statement handle
-** is passed to [sqlite3_reset()] or [sqlite3_finalize()]).
-**
+** ^This function returns the total number of rows inserted, modified or
+** deleted by all [INSERT], [UPDATE] or [DELETE] statements completed
+** since the database connection was opened, including those executed as
+** part of trigger programs. ^Executing any other type of SQL statement
+** does not affect the value returned by sqlite3_total_changes().
+** 
+** ^Changes made as part of [foreign key actions] are included in the
+** count, but those made as part of REPLACE constraint resolution are
+** not. ^Changes to a view that are intercepted by INSTEAD OF triggers 
+** are not counted.
+** 
 ** See also the [sqlite3_changes()] interface, the
 ** [count_changes pragma], and the [total_changes() SQL function].
 **

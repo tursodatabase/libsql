@@ -1,5 +1,5 @@
-C Update\sthe\sdocumentation\son\sthe\ssqlite3_randomness()\sinterface\sto\sconform\nto\senhancements\sassociated\swith\sthe\sSQLITE_ENABLE_API_ARMOR\schange.
-D 2014-10-28T20:35:18.499
+C Add\snew\stest\sfile\se_totalchanges.test,\scontaining\stests\sof\sthe\ssqlite3_total_changes()\sinterface.
+D 2014-10-28T20:49:59.213
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -229,7 +229,7 @@ F src/resolve.c 4965007d6497b6a4d7a6d98751cc39712885f952
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 428165951748151e87a15295b7357221433e311b
 F src/shell.c 282f8f5278e0c78eb442217531172ec9e1538796
-F src/sqlite.h.in 9c8090268644fba8d2b5b594b9d577b3da23905c
+F src/sqlite.h.in 737b7dd0f3f81fe183646d22828b39f85ef3e68c
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
 F src/sqliteInt.h 90519c3b3e8ee90adfce013234c4bd07275d77b5
@@ -464,6 +464,7 @@ F test/e_reindex.test 396b7b4f0a66863b4e95116a67d93b227193e589
 F test/e_resolve.test dcce9308fb13b934ce29591105d031d3e14fbba6
 F test/e_select.test 52692ff3849541e828ad4661fe3773a9b8711763
 F test/e_select2.test aceb80ab927d46fba5ce7586ebabf23e2bb0604f
+F test/e_totalchanges.test b12ee5809d3e63aeb83238dd501a7bca7fd72c10
 F test/e_update.test 312cb8f5ccfe41515a6bb092f8ea562a9bd54d52
 F test/e_uri.test 5ae33760fb2039c61aa2d90886f1664664173585
 F test/e_vacuum.test 5bfbdc21b65c0abf24398d0ba31dc88d93ca77a9
@@ -1208,7 +1209,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 41cdd0c422d61533a94870cb5ad094682956d472
-R d8b973f48f438632851d26e03df40631
-U drh
-Z d1783aa6143d26d5a0a1c09bffad4d99
+P 96e9917c350dfe2069b87860bbb961424ff1105a
+R ff91cb59544b367ee28dfb499ecb1ca4
+U dan
+Z ba0579c9ba051395a01d0b2f40d05365
