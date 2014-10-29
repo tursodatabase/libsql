@@ -1,5 +1,5 @@
-C Call\sfsync()\sright\safter\sftruncate()\swhen\sin\sjournal_mode=TRUNCATE\sand\nwhen\ssynchronous=FULL\sin\sorder\sto\sensure\sthat\stransactions\sare\sdurable\nacross\sa\spower\sloss\sthat\shappens\smoments\safter\sthe\scommit.\s\sProposed\nfix\sfor\s[https://bugzilla.mozilla.org/show_bug.cgi?id=1072773].\nThis\sis\sa\scherrypick\sof\s[3e922208b68563489].
-D 2014-10-29T01:07:21.172
+C In\sthe\sOP_Column\sopcode,\swhen\sextracting\sa\sfield\sthat\sis\spast\sthe\send\sof\na\sshort\srecord\s(because\sthe\srow\swas\soriginally\sinserted\sprior\sto\sALTER\sTABLE\nADD\sCOLUMN)\sthen\smake\ssure\sthe\soutput\sregister\sis\sfully\sNULL\sand\sdoes\snot\ncontain\sleftover\sflags\s(such\sas\sMEM_Ephem)\sfrom\sits\sprevious\suse.\nFix\sfor\sticket\s[43107840f1c02].\s\sThis\sis\sa\scherrypick\sof\ncheck-in\s[24780f8ddc1683fc].
+D 2014-10-29T01:13:58.092
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -289,7 +289,7 @@ F src/update.c 729f6f18fc27740591d085e1172cebe311144bf0
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c 4006c01772bd8d8ac4306d523bbcee41d3e392d8
 F src/vacuum.c 59f03f92bcff57faa6a8ca256eb29ccddfb0614a
-F src/vdbe.c 5ee15a66ce07e0482b92aa29e4dd0c5827a22d79
+F src/vdbe.c 5a1afb571853ddb911d698ac996bc4fd8ddf1eed
 F src/vdbe.h 09f5b4e3719fa454f252322b1cdab5cf1f361327
 F src/vdbeInt.h e2a060a55ee18a6ab973353a5e2ec7ee569bf787
 F src/vdbeapi.c 37a6c6ae284a97bcace365f2f0a225680c0499d9
@@ -1062,7 +1062,7 @@ F test/unique.test 93f8b2ef5ea51b9495f8d6493429b1fd0f465264
 F test/unique2.test 41e7f83c6827605991160a31380148a9fc5f1339
 F test/unixexcl.test cd6c765f75e50e8e2c2ba763149e5d340ea19825
 F test/unordered.test ca7adce0419e4ca0c50f039885e76ed2c531eda8
-F test/update.test 1b6c488a8f993d090b7ee9ad0e234faa161b3aeb
+F test/update.test 6c68446b8a0a33d522a7c72b320934596a2d7d32
 F test/uri.test 23662b7b61958b0f0e47082de7d06341ccf85d5b
 F test/userauth01.test e740a2697a7b40d7c5003a7d7edaee16acd349a9
 F test/utf16align.test 54cd35a27c005a9b6e7815d887718780b6a462ae
@@ -1204,11 +1204,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e4ab094f8afce0817f4074e823fabe59fc29ebb4
-Q +3e922208b68563489c7766abb9afb4885113e7b8
-R dac8a0df55bcef8314fa6cd2a33fc123
-T *branch * branch-3.8.7
-T *sym-branch-3.8.7 *
-T -sym-trunk *
+P a8f9bd1e890434fcffa02fcd2baf8b0fb5d4c9dd
+Q +24780f8ddc1683fc62180e6961dc6bfe1168f4df
+R d684ab06f9952cfb8bd4bb795d206cf9
 U drh
-Z 1e440e6f18a01c290161fa6c4a1f516b
+Z 6a68e4e50056aa43b6faddb91db24dac
