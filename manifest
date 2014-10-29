@@ -1,5 +1,5 @@
-C Version\s3.8.7
-D 2014-10-17T11:24:17.839
+C Call\sfsync()\sright\safter\sftruncate()\swhen\sin\sjournal_mode=TRUNCATE\sand\nwhen\ssynchronous=FULL\sin\sorder\sto\sensure\sthat\stransactions\sare\sdurable\nacross\sa\spower\sloss\sthat\shappens\smoments\safter\sthe\scommit.\s\sProposed\nfix\sfor\s[https://bugzilla.mozilla.org/show_bug.cgi?id=1072773].\nThis\sis\sa\scherrypick\sof\s[3e922208b68563489].
+D 2014-10-29T01:07:21.172
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -215,7 +215,7 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c fb587121840f690101336879adfa6d0b2cd0e8c7
 F src/os_win.c a019caaae2bcbbc0cc4c39af6e7d7e43d8426053
 F src/os_win.h 09e751b20bbc107ffbd46e13555dc73576d88e21
-F src/pager.c a171cf9dd09c6cb162b262c328d4dfd198e04f80
+F src/pager.c a98547ad9b1b5dbbc5e7d1c520be041b5d2c0926
 F src/pager.h ffd5607f7b3e4590b415b007a4382f693334d428
 F src/parse.y 5dfead8aed90cb0c7c1115898ee2266804daff45
 F src/pcache.c 4121a0571c18581ee9f82f086d5e2030051ebd6a
@@ -1204,10 +1204,11 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 06c576c152c4013080c255cbbeb45bf2e298be9f
-R 76bb09f8a8f8bdebeb708f5bb39aa31b
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.8.7 *
+P e4ab094f8afce0817f4074e823fabe59fc29ebb4
+Q +3e922208b68563489c7766abb9afb4885113e7b8
+R dac8a0df55bcef8314fa6cd2a33fc123
+T *branch * branch-3.8.7
+T *sym-branch-3.8.7 *
+T -sym-trunk *
 U drh
-Z b2f516d1147acb0e1bf1c700327ee52e
+Z 1e440e6f18a01c290161fa6c4a1f516b
