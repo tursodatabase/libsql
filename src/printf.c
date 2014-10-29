@@ -21,11 +21,7 @@
 ** the glibc version so the glibc version is definitely preferred.
 */
 #if !defined(HAVE_STRCHRNUL)
-# if defined(linux)
-#  define HAVE_STRCHRNUL 1
-# else
-#  define HAVE_STRCHRNUL 0
-# endif
+# define HAVE_STRCHRNUL 0
 #endif
 
 
