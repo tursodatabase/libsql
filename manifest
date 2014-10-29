@@ -1,5 +1,5 @@
-C In\sthe\sOP_Column\sopcode,\swhen\sextracting\sa\sfield\sthat\sis\spast\sthe\send\sof\na\sshort\srecord\s(because\sthe\srow\swas\soriginally\sinserted\sprior\sto\sALTER\sTABLE\nADD\sCOLUMN)\sthen\smake\ssure\sthe\soutput\sregister\sis\sfully\sNULL\sand\sdoes\snot\ncontain\sleftover\sflags\s(such\sas\sMEM_Ephem)\sfrom\sits\sprevious\suse.\nFix\sfor\sticket\s[43107840f1c02].
-D 2014-10-29T00:58:38.898
+C Fix\sthe\s%c\sformat\scharacter\sin\ssqlite3VXPrintf()\sso\sthat\sit\scorrectly\nhandles\sprecisions\slarger\sthan\s70.
+D 2014-10-29T18:20:18.932
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -223,7 +223,7 @@ F src/pcache.h 9b559127b83f84ff76d735c8262f04853be0c59a
 F src/pcache1.c e412cb585f777c840ddce0500eddc5c6043c2bb5
 F src/pragma.c 3f3e959390a10c0131676f0e307acce372777e0f
 F src/prepare.c b7b7bf020bd4c962f7c8aed5a3c542c7dfe9f9c7
-F src/printf.c c31012ac23e458081df4a32634b60424e0cdfaf3
+F src/printf.c 10a2493593c8e4a538915cd3674bd7a67f70c488
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 4965007d6497b6a4d7a6d98751cc39712885f952
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
@@ -232,7 +232,7 @@ F src/shell.c 282f8f5278e0c78eb442217531172ec9e1538796
 F src/sqlite.h.in 737b7dd0f3f81fe183646d22828b39f85ef3e68c
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
-F src/sqliteInt.h 90519c3b3e8ee90adfce013234c4bd07275d77b5
+F src/sqliteInt.h 4f86ac648ea398c1bb3db036062934cde257ea23
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 81712116e826b0089bb221b018929536b2b5406f
 F src/table.c f142bba7903e93ca8d113a5b8877a108ad1a27dc
@@ -772,7 +772,7 @@ F test/permutations.test cef25f5e8499a15846eccd06785f17f4180407ab
 F test/pragma.test 19d0241a007bcdd77fc2606ec60fc60357e7fc8b
 F test/pragma2.test aea7b3d82c76034a2df2b38a13745172ddc0bc13
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
-F test/printf2.test bed79b4c3e5da08ba88ad637c0bf62586843cfb1
+F test/printf2.test b4acd4bf8734243257f01ddefa17c4fb090acc8a
 F test/progress.test a282973d1d17f08071bc58a77d6b80f2a81c354d
 F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
 F test/queryonly.test 5f653159e0f552f0552d43259890c1089391dcca
@@ -1209,7 +1209,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f84af4adcc34d7a4c72027bf5b038a1a45a4c307
-R c2870e402bb1970025fb678b8c13d710
+P 24780f8ddc1683fc62180e6961dc6bfe1168f4df
+R c12283d048765bdbe52bad70443f70c1
 U drh
-Z 3a55744e14b55dcc32cb71f070af972c
+Z 8aeb3112f50d033e0580c4400e41dd66
