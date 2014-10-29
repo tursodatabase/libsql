@@ -1,5 +1,5 @@
-C Increase\sthe\sversion\snumber\sto\s3.8.7.1
-D 2014-10-29T01:27:43.048
+C Version\s3.8.7.1
+D 2014-10-29T13:59:56.070
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1204,7 +1204,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P cc33e846c8509419f0a1fbfb286807b4c137788d
+P 83afe23e553e802c0947c80d0ffdd120423e7c52
 R 5381895dceb9bc7ad4d425f399561cb7
+T +bgcolor * #d0c0ff
+T +sym-release *
+T +sym-version-3.8.7.1 *
 U drh
-Z 906d83e1887c766ebb0692623bc0209a
+Z e5ce942eb65e60b92fcaefcb5b84039b
