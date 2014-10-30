@@ -6526,7 +6526,7 @@ static int balance_nonroot(
   u8 *apDiv[NB-1];             /* Divider cells in pParent */
   int cntNew[NB+2];            /* Index in aCell[] of cell after i-th page */
   int cntOld[NB+2];            /* Old index in aCell[] after i-th page */
-  int szNew[NB+2];             /* Combined size of cells place on i-th page */
+  int szNew[NB+2];             /* Combined size of cells placed on i-th page */
   u8 **apCell = 0;             /* All cells begin balanced */
   u16 *szCell;                 /* Local size of all cells in apCell[] */
   u8 *aSpace1;                 /* Space for copies of dividers cells */
@@ -6765,9 +6765,10 @@ static int balance_nonroot(
 
   /*
   ** The packing computed by the previous block is biased toward the siblings
-  ** on the left side.  The left siblings are always nearly full, while the
-  ** right-most sibling might be nearly empty.  This block of code attempts
-  ** to adjust the packing of siblings to get a better balance.
+  ** on the left side (siblings with smaller keys). The left siblings are
+  ** always nearly full, while the right-most sibling might be nearly empty.
+  ** The next block of code attempts to adjust the packing of siblings to
+  ** get a better balance.
   **
   ** This adjustment is more than an optimization.  The packing above might
   ** be so out of balance as to be illegal.  For example, the right-most
@@ -6796,18 +6797,14 @@ static int balance_nonroot(
     szNew[i-1] = szLeft;
   }
 
-  /* Either we found one or more cells (cntnew[0])>0) or pPage is
-  ** a virtual root page.  A virtual root page is when the real root
-  ** page is page 1 and we are the only child of that page.
-  **
-  ** UPDATE:  The assert() below is not necessarily true if the database
-  ** file is corrupt.  The corruption will be detected and reported later
-  ** in this procedure so there is no need to act upon it now.
+  /* Sanity check:  For a non-corrupt database file one of the follwing
+  ** must be true:
+  **    (1) We found one or more cells (cntNew[0])>0), or
+  **    (2) pPage is a virtual root page.  A virtual root page is when
+  **        the real root page is page 1 and we are the only child of
+  **        that page.
   */
-#if 0
-  assert( cntNew[0]>0 || (pParent->pgno==1 && pParent->nCell==0) );
-#endif
-
+  assert( cntNew[0]>0 || (pParent->pgno==1 && pParent->nCell==0) || CORRUPT_DB);
   TRACE(("BALANCE: old: %d(nc=%d) %d(nc=%d) %d(nc=%d)\n",
     apOld[0]->pgno, apOld[0]->nCell,
     nOld>=2 ? apOld[1]->pgno : 0, nOld>=2 ? apOld[1]->nCell : 0,
