@@ -1,5 +1,5 @@
-C Fix\sthe\s%c\sformat\scharacter\sin\ssqlite3VXPrintf()\sso\sthat\sit\scorrectly\nhandles\sprecisions\slarger\sthan\s70.
-D 2014-10-29T18:20:18.932
+C Tweaks\sto\scomments\sin\sbtree.c.\s\sMinor\scode\schanges\sto\senhance\stestability.
+D 2014-10-30T20:48:44.305
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -172,7 +172,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 7f841396adfd47507ff670a471162d2bfcda3136
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 49ca66250c7dfa844a4d4cb8272b87420d27d3a5
-F src/btree.c 5189881ca403938c5ceddde496b984fef9f40c5a
+F src/btree.c 8d955d8ef15dd724ea5ef1cb65c17151beaff1e0
 F src/btree.h a79aa6a71e7f1055f01052b7f821bd1c2dce95c8
 F src/btreeInt.h 026d0129724e8f265fdc60d44ec240cf5a4e6179
 F src/build.c 67bb05b1077e0cdaccb2e36bfcbe7a5df9ed31e8
@@ -1209,7 +1209,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 24780f8ddc1683fc62180e6961dc6bfe1168f4df
-R c12283d048765bdbe52bad70443f70c1
+P 08a27440f19b7fc884464832e6105af1bf008172
+R 984c5e022c7b2ce03eb5bed97ff43b89
 U drh
-Z 8aeb3112f50d033e0580c4400e41dd66
+Z 333c45d7dfd79a88b32c00dfbc4028a5

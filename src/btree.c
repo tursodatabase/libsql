@@ -1231,10 +1231,8 @@ static int defragmentPage(MemPage *pPage){
 **
 ** If no suitable space can be found on the free-list, return NULL.
 **
-** This function may detect corruption within pPg. If it does and argument 
-** pRc is non-NULL, then *pRc is set to SQLITE_CORRUPT and NULL is returned.
-** Or, if corruption is detected and pRc is NULL, NULL is returned and the
-** corruption goes unreported.
+** This function may detect corruption within pPg.  If corruption is
+** detected then *pRc is set to SQLITE_CORRUPT and NULL is returned.
 **
 ** If a slot of at least nByte bytes is found but cannot be used because 
 ** there are already at least 60 fragmented bytes on the page, return NULL.
@@ -1250,7 +1248,7 @@ static u8 *pageFindSlot(MemPage *pPg, int nByte, int *pRc, int *pbDefrag){
   for(iAddr=hdr+1; (pc = get2byte(&aData[iAddr]))>0; iAddr=pc){
     int size;            /* Size of the free slot */
     if( pc>usableSize-4 || pc<iAddr+4 ){
-      if( pRc ) *pRc = SQLITE_CORRUPT_BKPT;
+      *pRc = SQLITE_CORRUPT_BKPT;
       return 0;
     }
     size = get2byte(&aData[pc+2]);
@@ -1268,7 +1266,7 @@ static u8 *pageFindSlot(MemPage *pPg, int nByte, int *pRc, int *pbDefrag){
         memcpy(&aData[iAddr], &aData[pc], 2);
         aData[hdr+7] += (u8)x;
       }else if( size+pc > usableSize ){
-        if( pRc ) *pRc = SQLITE_CORRUPT_BKPT;
+        *pRc = SQLITE_CORRUPT_BKPT;
         return 0;
       }else{
         /* The slot remains on the free-list. Reduce its size to account
@@ -6076,8 +6074,9 @@ static int pageInsertArray(
   assert( CORRUPT_DB || pPg->hdrOffset==0 );    /* Never called on page 1 */
   for(i=0; i<nCell; i++){
     int sz = szCell[i];
+    int rc;
     u8 *pSlot;
-    if( bFreelist==0 || (pSlot = pageFindSlot(pPg, sz, 0, 0))==0 ){
+    if( bFreelist==0 || (pSlot = pageFindSlot(pPg, sz, &rc, 0))==0 ){
       pData -= sz;
       if( pData<pBegin ) return 1;
       pSlot = pData;
@@ -6870,8 +6869,9 @@ static int balance_nonroot(
         /* This branch is taken if the set of sibling pages somehow contains
         ** duplicate entries. This can happen if the database is corrupt. 
         ** It would be simpler to detect this as part of the loop below, but
-        ** in order to avoid populating the pager cache with two separate
-        ** objects associated with the same page number.  */
+        ** we do the detection here in order to avoid populating the pager
+        ** cache with two separate objects associated with the same
+        ** page number.  */
         assert( CORRUPT_DB );
         rc = SQLITE_CORRUPT_BKPT;
         goto balance_cleanup;
@@ -6956,7 +6956,7 @@ static int balance_nonroot(
       }
 
       /* Cell pCell is destined for new sibling page pNew. Originally, it
-      ** was either part of sibling page iOld (possibly an overflow page), 
+      ** was either part of sibling page iOld (possibly an overflow cell), 
       ** or else the divider cell to the left of sibling page iOld. So,
       ** if sibling page iOld had the same page number as pNew, and if
       ** pCell really was a part of sibling page iOld (not a divider or
