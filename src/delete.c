@@ -481,7 +481,7 @@ void sqlite3DeleteFrom(
       assert( nKey==nPk );  /* OP_Found will use an unpacked key */
       assert( !IsVirtual(pTab) );
       if( aToOpen[iDataCur-iTabCur] ){
-        assert( pPk!=0 );
+        assert( pPk!=0 || pTab->pSelect!=0 );
         sqlite3VdbeAddOp4Int(v, OP_NotFound, iDataCur, addrBypass, iKey, nKey);
         VdbeCoverage(v);
       }

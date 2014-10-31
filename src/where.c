@@ -1651,7 +1651,7 @@ static void constructAutomaticIndex(
   ** if they go out of sync.
   */
   extraCols = pSrc->colUsed & (~idxCols | MASKBIT(BMS-1));
-  mxBitCol = (pTable->nCol >= BMS-1) ? BMS-1 : pTable->nCol;
+  mxBitCol = MIN(BMS-1,pTable->nCol);
   testcase( pTable->nCol==BMS-1 );
   testcase( pTable->nCol==BMS-2 );
   for(i=0; i<mxBitCol; i++){
@@ -1660,7 +1660,6 @@ static void constructAutomaticIndex(
   if( pSrc->colUsed & MASKBIT(BMS-1) ){
     nKeyCol += pTable->nCol - BMS + 1;
   }
-  pLoop->wsFlags |= WHERE_COLUMN_EQ | WHERE_IDX_ONLY;
 
   /* Construct the Index object to describe this index */
   pIdx = sqlite3AllocateIndexObject(pParse->db, nKeyCol+1, 0, &zNotUsed);

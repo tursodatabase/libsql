@@ -1237,10 +1237,8 @@ static int defragmentPage(MemPage *pPage){
 **
 ** If no suitable space can be found on the free-list, return NULL.
 **
-** This function may detect corruption within pPg. If it does and argument 
-** pRc is non-NULL, then *pRc is set to SQLITE_CORRUPT and NULL is returned.
-** Or, if corruption is detected and pRc is NULL, NULL is returned and the
-** corruption goes unreported.
+** This function may detect corruption within pPg.  If corruption is
+** detected then *pRc is set to SQLITE_CORRUPT and NULL is returned.
 **
 ** If a slot of at least nByte bytes is found but cannot be used because 
 ** there are already at least 60 fragmented bytes on the page, return NULL.
@@ -1256,7 +1254,7 @@ static u8 *pageFindSlot(MemPage *pPg, int nByte, int *pRc, int *pbDefrag){
   for(iAddr=hdr+1; (pc = get2byte(&aData[iAddr]))>0; iAddr=pc){
     int size;            /* Size of the free slot */
     if( pc>usableSize-4 || pc<iAddr+4 ){
-      if( pRc ) *pRc = SQLITE_CORRUPT_BKPT;
+      *pRc = SQLITE_CORRUPT_BKPT;
       return 0;
     }
     size = get2byte(&aData[pc+2]);
@@ -1274,7 +1272,7 @@ static u8 *pageFindSlot(MemPage *pPg, int nByte, int *pRc, int *pbDefrag){
         memcpy(&aData[iAddr], &aData[pc], 2);
         aData[hdr+7] += (u8)x;
       }else if( size+pc > usableSize ){
-        if( pRc ) *pRc = SQLITE_CORRUPT_BKPT;
+        *pRc = SQLITE_CORRUPT_BKPT;
         return 0;
       }else{
         /* The slot remains on the free-list. Reduce its size to account
@@ -1314,7 +1312,7 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
   assert( nByte>=0 );  /* Minimum cell size is 4 */
   assert( pPage->nFree>=nByte );
   assert( pPage->nOverflow==0 );
-  assert( nByte < pPage->pBt->usableSize-8 );
+  assert( nByte < (int)(pPage->pBt->usableSize-8) );
 
   assert( pPage->cellOffset == hdr + 12 - 4*pPage->leaf );
   gap = pPage->cellOffset + 2*pPage->nCell;
@@ -6103,8 +6101,9 @@ static int pageInsertArray(
   assert( CORRUPT_DB || pPg->hdrOffset==0 );    /* Never called on page 1 */
   for(i=0; i<nCell; i++){
     int sz = szCell[i];
+    int rc;
     u8 *pSlot;
-    if( bFreelist==0 || (pSlot = pageFindSlot(pPg, sz, 0, 0))==0 ){
+    if( bFreelist==0 || (pSlot = pageFindSlot(pPg, sz, &rc, 0))==0 ){
       pData -= sz;
       if( pData<pBegin ) return 1;
       pSlot = pData;
@@ -6554,13 +6553,14 @@ static int balance_nonroot(
   u8 *apDiv[NB-1];             /* Divider cells in pParent */
   int cntNew[NB+2];            /* Index in aCell[] of cell after i-th page */
   int cntOld[NB+2];            /* Old index in aCell[] after i-th page */
-  int szNew[NB+2];             /* Combined size of cells place on i-th page */
+  int szNew[NB+2];             /* Combined size of cells placed on i-th page */
   u8 **apCell = 0;             /* All cells begin balanced */
   u16 *szCell;                 /* Local size of all cells in apCell[] */
   u8 *aSpace1;                 /* Space for copies of dividers cells */
   Pgno pgno;                   /* Temp var to store a page number in */
   u8 abDone[NB+2];             /* True after i'th new page is populated */
   Pgno aPgno[NB+2];            /* Page numbers of new pages before shuffling */
+  Pgno aPgOrder[NB+2];         /* Copy of aPgno[] used for sorting pages */
   u16 aPgFlags[NB+2];          /* flags field of new pages before shuffling */
 
   memset(abDone, 0, sizeof(abDone));
@@ -6676,6 +6676,7 @@ static int balance_nonroot(
        nMaxCells*sizeof(u8*)                       /* apCell */
      + nMaxCells*sizeof(u16)                       /* szCell */
      + pBt->pageSize;                              /* aSpace1 */
+  assert( szScratch<=16896 || szScratch<=6*pBt->pageSize );
   apCell = sqlite3ScratchMalloc( szScratch ); 
   if( apCell==0 ){
     rc = SQLITE_NOMEM;
@@ -6792,9 +6793,10 @@ static int balance_nonroot(
 
   /*
   ** The packing computed by the previous block is biased toward the siblings
-  ** on the left side.  The left siblings are always nearly full, while the
-  ** right-most sibling might be nearly empty.  This block of code attempts
-  ** to adjust the packing of siblings to get a better balance.
+  ** on the left side (siblings with smaller keys). The left siblings are
+  ** always nearly full, while the right-most sibling might be nearly empty.
+  ** The next block of code attempts to adjust the packing of siblings to
+  ** get a better balance.
   **
   ** This adjustment is more than an optimization.  The packing above might
   ** be so out of balance as to be illegal.  For example, the right-most
@@ -6823,18 +6825,14 @@ static int balance_nonroot(
     szNew[i-1] = szLeft;
   }
 
-  /* Either we found one or more cells (cntnew[0])>0) or pPage is
-  ** a virtual root page.  A virtual root page is when the real root
-  ** page is page 1 and we are the only child of that page.
-  **
-  ** UPDATE:  The assert() below is not necessarily true if the database
-  ** file is corrupt.  The corruption will be detected and reported later
-  ** in this procedure so there is no need to act upon it now.
+  /* Sanity check:  For a non-corrupt database file one of the follwing
+  ** must be true:
+  **    (1) We found one or more cells (cntNew[0])>0), or
+  **    (2) pPage is a virtual root page.  A virtual root page is when
+  **        the real root page is page 1 and we are the only child of
+  **        that page.
   */
-#if 0
-  assert( cntNew[0]>0 || (pParent->pgno==1 && pParent->nCell==0) );
-#endif
-
+  assert( cntNew[0]>0 || (pParent->pgno==1 && pParent->nCell==0) || CORRUPT_DB);
   TRACE(("BALANCE: old: %d(nc=%d) %d(nc=%d) %d(nc=%d)\n",
     apOld[0]->pgno, apOld[0]->nCell,
     nOld>=2 ? apOld[1]->pgno : 0, nOld>=2 ? apOld[1]->nCell : 0,
@@ -6889,15 +6887,16 @@ static int balance_nonroot(
   ** for large insertions and deletions.
   */
   for(i=0; i<nNew; i++){
-    aPgno[i] = apNew[i]->pgno;
+    aPgOrder[i] = aPgno[i] = apNew[i]->pgno;
     aPgFlags[i] = apNew[i]->pDbPage->flags;
     for(j=0; j<i; j++){
       if( aPgno[j]==aPgno[i] ){
         /* This branch is taken if the set of sibling pages somehow contains
         ** duplicate entries. This can happen if the database is corrupt. 
         ** It would be simpler to detect this as part of the loop below, but
-        ** in order to avoid populating the pager cache with two separate
-        ** objects associated with the same page number.  */
+        ** we do the detection here in order to avoid populating the pager
+        ** cache with two separate objects associated with the same
+        ** page number.  */
         assert( CORRUPT_DB );
         rc = SQLITE_CORRUPT_BKPT;
         goto balance_cleanup;
@@ -6908,10 +6907,10 @@ static int balance_nonroot(
     int iBest = 0;                /* aPgno[] index of page number to use */
     Pgno pgno;                    /* Page number to use */
     for(j=1; j<nNew; j++){
-      if( aPgno[j]<aPgno[iBest] ) iBest = j;
+      if( aPgOrder[j]<aPgOrder[iBest] ) iBest = j;
     }
-    pgno = aPgno[iBest];
-    aPgno[iBest] = 0xffffffff;
+    pgno = aPgOrder[iBest];
+    aPgOrder[iBest] = 0xffffffff;
     if( iBest!=i ){
       if( iBest>i ){
         sqlite3PagerRekey(apNew[iBest]->pDbPage, pBt->nPage+iBest+1, 0);
@@ -6982,7 +6981,7 @@ static int balance_nonroot(
       }
 
       /* Cell pCell is destined for new sibling page pNew. Originally, it
-      ** was either part of sibling page iOld (possibly an overflow page), 
+      ** was either part of sibling page iOld (possibly an overflow cell), 
       ** or else the divider cell to the left of sibling page iOld. So,
       ** if sibling page iOld had the same page number as pNew, and if
       ** pCell really was a part of sibling page iOld (not a divider or
@@ -7054,25 +7053,42 @@ static int balance_nonroot(
   ** is important, as this code needs to avoid disrupting any page from which
   ** cells may still to be read. In practice, this means:
   **
-  **   1) If cells are to be removed from the start of the page and shifted
-  **      to the left-hand sibling, it is not safe to update the page until 
-  **      the left-hand sibling (apNew[i-1]) has already been updated.
+  **  (1) If cells are moving left (from apNew[iPg] to apNew[iPg-1])
+  **      then it is not safe to update page apNew[iPg] until after
+  **      the left-hand sibling apNew[iPg-1] has been updated.
   **
-  **   2) If cells are to be removed from the end of the page and shifted
-  **      to the right-hand sibling, it is not safe to update the page until 
-  **      the right-hand sibling (apNew[i+1]) has already been updated.
+  **  (2) If cells are moving right (from apNew[iPg] to apNew[iPg+1])
+  **      then it is not safe to update page apNew[iPg] until after
+  **      the right-hand sibling apNew[iPg+1] has been updated.
   **
   ** If neither of the above apply, the page is safe to update.
+  **
+  ** The iPg value in the following loop starts at nNew-1 goes down
+  ** to 0, then back up to nNew-1 again, thus making two passes over
+  ** the pages.  On the initial downward pass, only condition (1) above
+  ** needs to be tested because (2) will always be true from the previous
+  ** step.  On the upward pass, both conditions are always true, so the
+  ** upwards pass simply processes pages that were missed on the downward
+  ** pass.
   */
-  for(i=0; i<nNew*2; i++){
-    int iPg = (i>=nNew ? i-nNew : nNew-1-i);
-    if( abDone[iPg]==0 
-     && (iPg==0 || cntOld[iPg-1]>=cntNew[iPg-1] || abDone[iPg-1])
-     && (cntNew[iPg]>=cntOld[iPg] || abDone[iPg+1])
+  for(i=1-nNew; i<nNew; i++){
+    int iPg = i<0 ? -i : i;
+    assert( iPg>=0 && iPg<nNew );
+    if( abDone[iPg] ) continue;         /* Skip pages already processed */
+    if( i>=0                            /* On the upwards pass, or... */
+     || cntOld[iPg-1]>=cntNew[iPg-1]    /* Condition (1) is true */
     ){
       int iNew;
       int iOld;
       int nNewCell;
+
+      /* Verify condition (1):  If cells are moving left, update iPg
+      ** only after iPg-1 has already been updated. */
+      assert( iPg==0 || cntOld[iPg-1]>=cntNew[iPg-1] || abDone[iPg-1] );
+
+      /* Verify condition (2):  If cells are moving right, update iPg
+      ** only after iPg+1 has already been updated. */
+      assert( cntNew[iPg]>=cntOld[iPg] || abDone[iPg+1] );
 
       if( iPg==0 ){
         iNew = iOld = 0;
@@ -7084,12 +7100,14 @@ static int balance_nonroot(
       }
 
       editPage(apNew[iPg], iOld, iNew, nNewCell, apCell, szCell);
-      abDone[iPg] = 1;
+      abDone[iPg]++;
       apNew[iPg]->nFree = usableSpace-szNew[iPg];
       assert( apNew[iPg]->nOverflow==0 );
       assert( apNew[iPg]->nCell==nNewCell );
     }
   }
+
+  /* All pages have been processed exactly once */
   assert( memcmp(abDone, "\01\01\01\01\01", nNew)==0 );
 
   assert( nOld>0 );
@@ -7106,19 +7124,20 @@ static int balance_nonroot(
     ** sets all pointer-map entries corresponding to database image pages 
     ** for which the pointer is stored within the content being copied.
     **
-    ** The second assert below verifies that the child page is defragmented
-    ** (it must be, as it was just reconstructed using assemblePage()). This
-    ** is important if the parent page happens to be page 1 of the database
-    ** image.  */
+    ** It is critical that the child page be defragmented before being
+    ** copied into the parent, because if the parent is page 1 then it will
+    ** by smaller than the child due to the database header, and so all the
+    ** free space needs to be up front.
+    */
     assert( nNew==1 );
     rc = defragmentPage(apNew[0]);
-    if( rc==SQLITE_OK ){
-      assert( apNew[0]->nFree == 
-          (get2byte(&apNew[0]->aData[5])-apNew[0]->cellOffset-apNew[0]->nCell*2)
-      );
-      copyNodeContent(apNew[0], pParent, &rc);
-      freePage(apNew[0], &rc);
-    }
+    testcase( rc!=SQLITE_OK );
+    assert( apNew[0]->nFree == 
+        (get2byte(&apNew[0]->aData[5])-apNew[0]->cellOffset-apNew[0]->nCell*2)
+      || rc!=SQLITE_OK
+    );
+    copyNodeContent(apNew[0], pParent, &rc);
+    freePage(apNew[0], &rc);
   }else if( ISAUTOVACUUM && !leafCorrection ){
     /* Fix the pointer map entries associated with the right-child of each
     ** sibling page. All other pointer map entries have already been taken

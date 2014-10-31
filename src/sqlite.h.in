@@ -1544,10 +1544,14 @@ struct sqlite3_mem_methods {
 ** argument must be a multiple of 16.
 ** The first argument must be a pointer to an 8-byte aligned buffer
 ** of at least sz*N bytes of memory.
-** ^SQLite will use no more than two scratch buffers per thread.  So
-** N should be set to twice the expected maximum number of threads.
-** ^SQLite will never require a scratch buffer that is more than 6
-** times the database page size. ^If SQLite needs needs additional
+** ^SQLite will not use more than two scratch buffers per thread and not
+** more than one scratch buffer per thread when not performing
+** a [checkpoint] in [WAL mode].
+** ^SQLite will never request a scratch buffer that is more than 6
+** times the database page size, except when performing a [checkpoint]
+** in [WAL mode] when the scratch buffer request size is a small fraction
+** of the size of the WAL file.
+** ^If SQLite needs needs additional
 ** scratch memory beyond what is provided by this configuration option, then 
 ** [sqlite3_malloc()] will be used to obtain the memory needed.</dd>
 **
@@ -1875,47 +1879,45 @@ sqlite3_int64 sqlite3_last_insert_rowid(sqlite3*);
 /*
 ** CAPI3REF: Count The Number Of Rows Modified
 **
-** ^This function returns the number of database rows that were changed
-** or inserted or deleted by the most recently completed SQL statement
-** on the [database connection] specified by the first parameter.
-** ^(Only changes that are directly specified by the [INSERT], [UPDATE],
-** or [DELETE] statement are counted.  Auxiliary changes caused by
-** triggers or [foreign key actions] are not counted.)^ Use the
-** [sqlite3_total_changes()] function to find the total number of changes
-** including changes caused by triggers and foreign key actions.
+** ^This function returns the number of rows modified, inserted or
+** deleted by the most recently completed INSERT, UPDATE or DELETE
+** statement on the database connection specified by the only parameter.
+** ^Executing any other type of SQL statement does not modify the value
+** returned by this function.
 **
-** ^Changes to a view that are simulated by an [INSTEAD OF trigger]
-** are not counted.  Only real table changes are counted.
+** ^Only changes made directly by the INSERT, UPDATE or DELETE statement are
+** considered - auxiliary changes caused by [CREATE TRIGGER | triggers], 
+** [foreign key actions] or [REPLACE] constraint resolution are not counted.
+** 
+** Changes to a view that are intercepted by 
+** [INSTEAD OF trigger | INSTEAD OF triggers] are not counted. ^The value 
+** returned by sqlite3_changes() immediately after an INSERT, UPDATE or 
+** DELETE statement run on a view is always zero. Only changes made to real 
+** tables are counted.
 **
-** ^(A "row change" is a change to a single row of a single table
-** caused by an INSERT, DELETE, or UPDATE statement.  Rows that
-** are changed as side effects of [REPLACE] constraint resolution,
-** rollback, ABORT processing, [DROP TABLE], or by any other
-** mechanisms do not count as direct row changes.)^
-**
-** A "trigger context" is a scope of execution that begins and
-** ends with the script of a [CREATE TRIGGER | trigger]. 
-** Most SQL statements are
-** evaluated outside of any trigger.  This is the "top level"
-** trigger context.  If a trigger fires from the top level, a
-** new trigger context is entered for the duration of that one
-** trigger.  Subtriggers create subcontexts for their duration.
-**
-** ^Calling [sqlite3_exec()] or [sqlite3_step()] recursively does
-** not create a new trigger context.
-**
-** ^This function returns the number of direct row changes in the
-** most recent INSERT, UPDATE, or DELETE statement within the same
-** trigger context.
-**
-** ^Thus, when called from the top level, this function returns the
-** number of changes in the most recent INSERT, UPDATE, or DELETE
-** that also occurred at the top level.  ^(Within the body of a trigger,
-** the sqlite3_changes() interface can be called to find the number of
-** changes in the most recently completed INSERT, UPDATE, or DELETE
-** statement within the body of the same trigger.
-** However, the number returned does not include changes
-** caused by subtriggers since those have their own context.)^
+** Things are more complicated if the sqlite3_changes() function is
+** executed while a trigger program is running. This may happen if the
+** program uses the [changes() SQL function], or if some other callback
+** function invokes sqlite3_changes() directly. Essentially:
+** 
+** <ul>
+**   <li> ^(Before entering a trigger program the value returned by
+**        sqlite3_changes() function is saved. After the trigger program 
+**        has finished, the original value is restored.)^
+** 
+**   <li> ^(Within a trigger program each INSERT, UPDATE and DELETE 
+**        statement sets the value returned by sqlite3_changes() 
+**        upon completion as normal. Of course, this value will not include 
+**        any changes performed by sub-triggers, as the sqlite3_changes() 
+**        value will be saved and restored after each sub-trigger has run.)^
+** </ul>
+** 
+** ^This means that if the changes() SQL function (or similar) is used
+** by the first INSERT, UPDATE or DELETE statement within a trigger, it 
+** returns the value as set when the calling statement began executing.
+** ^If it is used by the second or subsequent such statement within a trigger 
+** program, the value returned reflects the number of rows modified by the 
+** previous INSERT, UPDATE or DELETE statement within the same trigger.
 **
 ** See also the [sqlite3_total_changes()] interface, the
 ** [count_changes pragma], and the [changes() SQL function].
@@ -1929,20 +1931,17 @@ int sqlite3_changes(sqlite3*);
 /*
 ** CAPI3REF: Total Number Of Rows Modified
 **
-** ^This function returns the number of row changes caused by [INSERT],
-** [UPDATE] or [DELETE] statements since the [database connection] was opened.
-** ^(The count returned by sqlite3_total_changes() includes all changes
-** from all [CREATE TRIGGER | trigger] contexts and changes made by
-** [foreign key actions]. However,
-** the count does not include changes used to implement [REPLACE] constraints,
-** do rollbacks or ABORT processing, or [DROP TABLE] processing.  The
-** count does not include rows of views that fire an [INSTEAD OF trigger],
-** though if the INSTEAD OF trigger makes changes of its own, those changes 
-** are counted.)^
-** ^The sqlite3_total_changes() function counts the changes as soon as
-** the statement that makes them is completed (when the statement handle
-** is passed to [sqlite3_reset()] or [sqlite3_finalize()]).
-**
+** ^This function returns the total number of rows inserted, modified or
+** deleted by all [INSERT], [UPDATE] or [DELETE] statements completed
+** since the database connection was opened, including those executed as
+** part of trigger programs. ^Executing any other type of SQL statement
+** does not affect the value returned by sqlite3_total_changes().
+** 
+** ^Changes made as part of [foreign key actions] are included in the
+** count, but those made as part of REPLACE constraint resolution are
+** not. ^Changes to a view that are intercepted by INSTEAD OF triggers 
+** are not counted.
+** 
 ** See also the [sqlite3_changes()] interface, the
 ** [count_changes pragma], and the [total_changes() SQL function].
 **
@@ -2420,13 +2419,14 @@ sqlite3_int64 sqlite3_memory_highwater(int resetFlag);
 ** applications to access the same PRNG for other purposes.
 **
 ** ^A call to this routine stores N bytes of randomness into buffer P.
-** ^If N is less than one, then P can be a NULL pointer.
+** ^The P parameter can be a NULL pointer.
 **
 ** ^If this routine has not been previously called or if the previous
-** call had N less than one, then the PRNG is seeded using randomness
-** obtained from the xRandomness method of the default [sqlite3_vfs] object.
-** ^If the previous call to this routine had an N of 1 or more then
-** the pseudo-randomness is generated
+** call had N less than one or a NULL pointer for P, then the PRNG is
+** seeded using randomness obtained from the xRandomness method of
+** the default [sqlite3_vfs] object.
+** ^If the previous call to this routine had an N of 1 or more and a
+** non-NULL P then the pseudo-randomness is generated
 ** internally and without recourse to the [sqlite3_vfs] xRandomness
 ** method.
 */

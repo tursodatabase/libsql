@@ -34,10 +34,6 @@ void sqlite3_randomness(int N, void *pBuf){
   unsigned char t;
   unsigned char *zBuf = pBuf;
 
-#ifndef SQLITE_OMIT_AUTOINIT
-  if( sqlite3_initialize() ) return;
-#endif
-
   /* The "wsdPrng" macro will resolve to the pseudo-random number generator
   ** state vector.  If writable static data is unsupported on the target,
   ** we have to locate the state vector at run-time.  In the more common
@@ -52,10 +48,18 @@ void sqlite3_randomness(int N, void *pBuf){
 #endif
 
 #if SQLITE_THREADSAFE
-  sqlite3_mutex *mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_PRNG);
-  sqlite3_mutex_enter(mutex);
+  sqlite3_mutex *mutex;
 #endif
 
+#ifndef SQLITE_OMIT_AUTOINIT
+  if( sqlite3_initialize() ) return;
+#endif
+
+#if SQLITE_THREADSAFE
+  mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_PRNG);
+#endif
+
+  sqlite3_mutex_enter(mutex);
   if( N<=0 || pBuf==0 ){
     wsdPrng.isInit = 0;
     sqlite3_mutex_leave(mutex);
