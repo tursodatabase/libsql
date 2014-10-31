@@ -7036,8 +7036,10 @@ static int balance_nonroot(
   **
   ** If neither of the above apply, the page is safe to update.
   */
-  for(i=0; i<nNew*2; i++){
-    int iPg = (i>=nNew ? i-nNew : nNew-1-i);
+  for(i=1-nNew; i<nNew; i++){
+    int iPg = i<0 ? -i : i;
+    /* iPg takes values from nNew-1 down to 0 then back up to nNew-1 again */
+    assert( iPg>=0 && iPg<nNew );
     if( abDone[iPg]==0 
      && (iPg==0 || cntOld[iPg-1]>=cntNew[iPg-1] || abDone[iPg-1])
      && (cntNew[iPg]>=cntOld[iPg] || abDone[iPg+1])
