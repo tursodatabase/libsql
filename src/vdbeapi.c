@@ -1475,3 +1475,40 @@ int sqlite3_stmt_status(sqlite3_stmt *pStmt, int op, int resetFlag){
   if( resetFlag ) pVdbe->aCounter[op] = 0;
   return (int)v;
 }
+
+/*
+** Return status data for a single loop within query pStmt.
+*/
+int sqlite3_stmt_scanstatus(
+  sqlite3_stmt *pStmt,
+  int idx,                        /* Index of loop to report on */
+  sqlite3_int64 *pnLoop,          /* OUT: Number of times loop was run */
+  sqlite3_int64 *pnVisit,         /* OUT: Number of rows visited (all loops) */
+  sqlite3_int64 *pnEst,           /* OUT: Number of rows estimated (per loop) */
+  const char **pzName,            /* OUT: Object name (table or index) */
+  const char **pzExplain          /* OUT: EQP string */
+){
+  Vdbe *p = (Vdbe*)pStmt;
+  ExplainArg *pExplain;
+  if( idx<0 || idx>=p->nExplain ) return 1;
+  pExplain = p->apExplain[idx];
+  if( pnLoop ) *pnLoop = pExplain->nLoop;
+  if( pnVisit ) *pnVisit = pExplain->nVisit;
+  if( pnEst ) *pnEst = pExplain->nEst;
+  if( *pzName ) *pzName = pExplain->zName;
+  if( *pzExplain ) *pzExplain = pExplain->zExplain;
+  return 0;
+}
+
+/*
+** Zero all counters associated with the sqlite3_stmt_scanstatus() data.
+*/
+void sqlite3_stmt_scanstatus_reset(sqlite3_stmt *pStmt){
+  Vdbe *p = (Vdbe*)pStmt;
+  int i;
+  for(i=0; i<p->nExplain; i++){
+    p->apExplain[i]->nLoop = 0;
+    p->apExplain[i]->nVisit = 0;
+  }
+}
+

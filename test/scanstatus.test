@@ -1,0 +1,69 @@
+# 2014 November 1
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix scanstatus
+
+do_execsql_test 1.0 {
+  CREATE TABLE t1(a, b);
+  CREATE TABLE t2(x, y);
+  INSERT INTO t1 VALUES(1, 2);
+  INSERT INTO t1 VALUES(3, 4);
+  INSERT INTO t2 VALUES('a', 'b');
+  INSERT INTO t2 VALUES('c', 'd');
+  INSERT INTO t2 VALUES('e', 'f');
+}
+
+proc do_scanstatus_test {tn res} {
+  set stmt [db_last_stmt_ptr db]
+  set idx 0
+  set ret [list]
+  while {1} {
+    set r [sqlite3_stmt_scanstatus $stmt $idx]
+    if {[llength $r]==0} break
+    lappend ret {*}$r
+    incr idx
+  }
+
+  uplevel [list do_test $tn [list set {} $ret] [list {*}$res]]
+}
+
+do_execsql_test 1.1 { SELECT count(*) FROM t1, t2; } 6
+do_scanstatus_test 1.2 {
+  nLoop 1 nVisit 2 nEst 1048576 zName t1 zExplain {SCAN TABLE t1}
+  nLoop 2 nVisit 6 nEst 1048576 zName t2 zExplain {SCAN TABLE t2}
+}
+
+do_execsql_test 1.3 {
+  ANALYZE;
+  SELECT count(*) FROM t1, t2;
+} 6
+do_scanstatus_test 1.4 {
+  nLoop 1 nVisit 2 nEst 2 zName t1 zExplain {SCAN TABLE t1}
+  nLoop 2 nVisit 6 nEst 3 zName t2 zExplain {SCAN TABLE t2}
+}
+
+do_execsql_test 1.5 {
+  ANALYZE;
+  SELECT count(*) FROM t1, t2 WHERE t2.rowid>1;
+} 4
+do_scanstatus_test 1.6 {
+  nLoop 1 nVisit 2 nEst 2 zName t2 zExplain 
+  {SEARCH TABLE t2 USING INTEGER PRIMARY KEY (rowid>?)}
+  nLoop 2 nVisit 4 nEst 2 zName t1 zExplain {SCAN TABLE t1}
+}
+
+
+
+
+finish_test

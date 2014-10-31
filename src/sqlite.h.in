@@ -7407,6 +7407,42 @@ int sqlite3_vtab_on_conflict(sqlite3 *);
 #define SQLITE_REPLACE  5
 
 
+/*
+** Return status data for a single loop within query pStmt.
+**
+** Parameter "idx" identifies the specific loop to retrieve statistics for.
+** Loops are numbered starting from zero. If idx is out of range - less than
+** zero or greater than or equal to the total number of loops used to implement
+** the statement - a non-zero value is returned. In this case the final value
+** of all five output parameters is undefined. Otherwise, if idx is in range,
+** the output parameters are populated and zero returned.
+**
+** Statistics may not be available for all loops in all statements. In cases
+** where there exist loops with no available statistics, this function ignores
+** them completely.
+**
+** This API is only available if the library is built with pre-processor
+** symbol SQLITE_ENABLE_STMT_SCANSTATUS defined.
+*/
+SQLITE_EXPERIMENTAL int sqlite3_stmt_scanstatus(
+  sqlite3_stmt *pStmt,
+  int idx,                        /* Index of loop to report on */
+  sqlite3_int64 *pnLoop,          /* OUT: Number of times loop was run */
+  sqlite3_int64 *pnVisit,         /* OUT: Number of rows visited (all loops) */
+  sqlite3_int64 *pnEst,           /* OUT: Number of rows estimated (per loop) */
+  const char **pzName,            /* OUT: Object name (table or index) */
+  const char **pzExplain          /* OUT: EQP string */
+);
+
+
+/*
+** Zero all sqlite3_stmt_scanstatus() related event counters.
+**
+** This API is only available if the library is built with pre-processor
+** symbol SQLITE_ENABLE_STMT_SCANSTATUS defined.
+*/
+SQLITE_EXPERIMENTAL void sqlite3_stmt_scanstatus_reset(sqlite3_stmt*);
+
 
 /*
 ** Undo the hack that converts floating point types to integer for

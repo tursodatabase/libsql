@@ -2301,6 +2301,75 @@ static int test_stmt_status(
   return TCL_OK;
 }
 
+#ifdef SQLITE_ENABLE_STMT_SCANSTATUS
+/*
+** Usage:  sqlite3_stmt_scanstatus STMT IDX
+*/
+static int test_stmt_scanstatus(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_stmt *pStmt;            /* First argument */
+  int idx;                        /* Second argument */
+
+  const char *zName;
+  const char *zExplain;
+  sqlite3_int64 nLoop;
+  sqlite3_int64 nVisit;
+  sqlite3_int64 nEst;
+  int res;
+
+  if( objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "STMT IDX");
+    return TCL_ERROR;
+  }
+  if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[2], &idx) ) return TCL_ERROR;
+
+  res = sqlite3_stmt_scanstatus(
+      pStmt, idx, &nLoop, &nVisit, &nEst, &zName, &zExplain
+  );
+  if( res==0 ){
+    Tcl_Obj *pRet = Tcl_NewObj();
+    Tcl_ListObjAppendElement(0, pRet, Tcl_NewStringObj("nLoop", -1));
+    Tcl_ListObjAppendElement(0, pRet, Tcl_NewWideIntObj(nLoop));
+    Tcl_ListObjAppendElement(0, pRet, Tcl_NewStringObj("nVisit", -1));
+    Tcl_ListObjAppendElement(0, pRet, Tcl_NewWideIntObj(nVisit));
+    Tcl_ListObjAppendElement(0, pRet, Tcl_NewStringObj("nEst", -1));
+    Tcl_ListObjAppendElement(0, pRet, Tcl_NewWideIntObj(nEst));
+    Tcl_ListObjAppendElement(0, pRet, Tcl_NewStringObj("zName", -1));
+    Tcl_ListObjAppendElement(0, pRet, Tcl_NewStringObj(zName, -1));
+    Tcl_ListObjAppendElement(0, pRet, Tcl_NewStringObj("zExplain", -1));
+    Tcl_ListObjAppendElement(0, pRet, Tcl_NewStringObj(zExplain, -1));
+    Tcl_SetObjResult(interp, pRet);
+  }else{
+    Tcl_ResetResult(interp);
+  }
+  return TCL_OK;
+}
+
+/*
+** Usage:  sqlite3_stmt_scanstatus_reset  STMT
+*/
+static int test_stmt_scanstatus_reset(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_stmt *pStmt;            /* First argument */
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "STMT");
+    return TCL_ERROR;
+  }
+  if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
+  sqlite3_stmt_scanstatus_reset(pStmt);
+  return TCL_OK;
+}
+#endif
+
 /*
 ** Usage:  sqlite3_next_stmt  DB  STMT
 **
@@ -6867,6 +6936,10 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_user_add",          test_user_add,          0 },
      { "sqlite3_user_change",       test_user_change,       0 },
      { "sqlite3_user_delete",       test_user_delete,       0 },
+#endif
+#ifdef SQLITE_ENABLE_STMT_SCANSTATUS
+     { "sqlite3_stmt_scanstatus",       test_stmt_scanstatus,   0 },
+     { "sqlite3_stmt_scanstatus_reset", test_stmt_scanstatus_reset,   0 },
 #endif
 
   };

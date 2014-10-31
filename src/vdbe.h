@@ -25,6 +25,7 @@
 ** of this structure.
 */
 typedef struct Vdbe Vdbe;
+typedef struct ExplainArg ExplainArg;
 
 /*
 ** The names of the following types declared in vdbeInt.h are required
@@ -59,6 +60,7 @@ struct VdbeOp {
     KeyInfo *pKeyInfo;     /* Used when p4type is P4_KEYINFO */
     int *ai;               /* Used when p4type is P4_INTARRAY */
     SubProgram *pProgram;  /* Used when p4type is P4_SUBPROGRAM */
+    ExplainArg *pExplain;  /* Used when p4type is P4_EXPLAIN */
     int (*xAdvance)(BtCursor *, int *);
   } p4;
 #ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
@@ -101,6 +103,19 @@ struct VdbeOpList {
 typedef struct VdbeOpList VdbeOpList;
 
 /*
+** Structure used as the P4 parameter for OP_Explain opcodes.
+*/
+struct ExplainArg {
+  int iCsr;                       /* Cursor number this applies to */
+  i64 nLoop;                      /* Number of times loop has run */
+  i64 nVisit;                     /* Total number of rows visited */
+  i64 nEst;                       /* Estimated number of rows per scan */
+  const char *zName;              /* Name of table/index being scanned */
+  const char *zExplain;           /* EQP text for this loop */
+};
+
+
+/*
 ** Allowed values of VdbeOp.p4type
 */
 #define P4_NOTUSED    0   /* The P4 parameter is not used */
@@ -119,6 +134,7 @@ typedef struct VdbeOpList VdbeOpList;
 #define P4_INTARRAY (-15) /* P4 is a vector of 32-bit integers */
 #define P4_SUBPROGRAM  (-18) /* P4 is a pointer to a SubProgram structure */
 #define P4_ADVANCE  (-19) /* P4 is a pointer to BtreeNext() or BtreePrev() */
+#define P4_EXPLAIN  (-20) /* P4 is a pointer to an instance of ExplainArg */
 
 /* Error message codes for OP_Halt */
 #define P5_ConstraintNotNull 1

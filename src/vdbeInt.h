@@ -83,6 +83,7 @@ struct VdbeCursor {
   i64 seqCount;         /* Sequence counter */
   i64 movetoTarget;     /* Argument to the deferred sqlite3BtreeMoveto() */
   VdbeSorter *pSorter;  /* Sorter object for OP_SorterOpen cursors */
+  ExplainArg *pExplain; /* Object to store seek/visit counts (may be NULL) */
 
   /* Cached information about the header for the data record that the
   ** cursor is currently pointing to.  Only valid if cacheStatus matches
@@ -291,6 +292,7 @@ struct Explain {
   char zBase[100];   /* Initial space */
 };
 
+
 /* A bitfield type for use inside of structures.  Always follow with :N where
 ** N is the number of bits.
 */
@@ -368,6 +370,8 @@ struct Vdbe {
   int nOnceFlag;          /* Size of array aOnceFlag[] */
   u8 *aOnceFlag;          /* Flags for OP_Once */
   AuxData *pAuxData;      /* Linked list of auxdata allocations */
+  ExplainArg **apExplain; /* Array of pointers to P4_EXPLAIN p4 values */
+  int nExplain;           /* Number of entries in array apExplain */
 };
 
 /*

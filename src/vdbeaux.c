@@ -672,6 +672,7 @@ static void freeP4(sqlite3 *db, int p4type, void *p4){
   if( p4 ){
     assert( db );
     switch( p4type ){
+      case P4_EXPLAIN:
       case P4_REAL:
       case P4_INT64:
       case P4_DYNAMIC:
@@ -820,6 +821,13 @@ void sqlite3VdbeChangeP4(Vdbe *p, int addr, const char *zP4, int n){
     pOp->p4type = P4_VTAB;
     sqlite3VtabLock((VTable *)zP4);
     assert( ((VTable *)zP4)->db==p->db );
+  }else if( n==P4_EXPLAIN ){
+    pOp->p4.p = (void*)zP4;
+    pOp->p4type = P4_EXPLAIN;
+    p->apExplain = (ExplainArg**)sqlite3DbReallocOrFree(
+        p->db, p->apExplain, sizeof(ExplainArg*) * p->nExplain + 1
+    );
+    if( p->apExplain ) p->apExplain[p->nExplain++] = (ExplainArg*)zP4;
   }else if( n<0 ){
     pOp->p4.p = (void*)zP4;
     pOp->p4type = (signed char)n;
@@ -1101,6 +1109,10 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
     }
     case P4_ADVANCE: {
       zTemp[0] = 0;
+      break;
+    }
+    case P4_EXPLAIN: {
+      zP4 = (char*)pOp->p4.pExplain->zExplain;
       break;
     }
     default: {
@@ -2685,6 +2697,7 @@ void sqlite3VdbeClearObject(sqlite3 *db, Vdbe *p){
   sqlite3DbFree(db, p->aColName);
   sqlite3DbFree(db, p->zSql);
   sqlite3DbFree(db, p->pFree);
+  sqlite3DbFree(db, p->apExplain);
 }
 
 /*
