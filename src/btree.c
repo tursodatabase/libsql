@@ -7026,27 +7026,42 @@ static int balance_nonroot(
   ** is important, as this code needs to avoid disrupting any page from which
   ** cells may still to be read. In practice, this means:
   **
-  **   1) If cells are to be removed from the start of the page and shifted
-  **      to the left-hand sibling, it is not safe to update the page until 
-  **      the left-hand sibling (apNew[i-1]) has already been updated.
+  **  (1) If cells are moving left (from apNew[iPg] to apNew[iPg-1])
+  **      then it is not safe to update page apNew[iPg] until after
+  **      the left-hand sibling apNew[iPg-1] has been updated.
   **
-  **   2) If cells are to be removed from the end of the page and shifted
-  **      to the right-hand sibling, it is not safe to update the page until 
-  **      the right-hand sibling (apNew[i+1]) has already been updated.
+  **  (2) If cells are moving right (from apNew[iPg] to apNew[iPg+1])
+  **      then it is not safe to update page apNew[iPg] until after
+  **      the right-hand sibling apNew[iPg+1] has been updated.
   **
   ** If neither of the above apply, the page is safe to update.
+  **
+  ** The iPg value in the following loop starts at nNew-1 goes down
+  ** to 0, then back up to nNew-1 again, thus making two passes over
+  ** the pages.  On the initial downward pass, only condition (1) above
+  ** needs to be tested because (2) will always be true from the previous
+  ** step.  On the upward pass, both conditions are always true, so the
+  ** upwards pass simply processes pages that were missed on the downward
+  ** pass.
   */
   for(i=1-nNew; i<nNew; i++){
     int iPg = i<0 ? -i : i;
-    /* iPg takes values from nNew-1 down to 0 then back up to nNew-1 again */
     assert( iPg>=0 && iPg<nNew );
-    if( abDone[iPg]==0 
-     && (iPg==0 || cntOld[iPg-1]>=cntNew[iPg-1] || abDone[iPg-1])
-     && (cntNew[iPg]>=cntOld[iPg] || abDone[iPg+1])
+    if( abDone[iPg] ) continue;         /* Skip pages already processed */
+    if( i>=0                            /* On the upwards pass, or... */
+     || cntOld[iPg-1]>=cntNew[iPg-1]    /* Condition (1) is true */
     ){
       int iNew;
       int iOld;
       int nNewCell;
+
+      /* Verify condition (1):  If cells are moving left, update iPg
+      ** only after iPg-1 has already been updated. */
+      assert( iPg==0 || cntOld[iPg-1]>=cntNew[iPg-1] || abDone[iPg-1] );
+
+      /* Verify condition (2):  If cells are moving right, update iPg
+      ** only after iPg+1 has already been updated. */
+      assert( cntNew[iPg]>=cntOld[iPg] || abDone[iPg+1] );
 
       if( iPg==0 ){
         iNew = iOld = 0;
@@ -7058,12 +7073,14 @@ static int balance_nonroot(
       }
 
       editPage(apNew[iPg], iOld, iNew, nNewCell, apCell, szCell);
-      abDone[iPg] = 1;
+      abDone[iPg]++;
       apNew[iPg]->nFree = usableSpace-szNew[iPg];
       assert( apNew[iPg]->nOverflow==0 );
       assert( apNew[iPg]->nCell==nNewCell );
     }
   }
+
+  /* All pages have been processed exactly once */
   assert( memcmp(abDone, "\01\01\01\01\01", nNew)==0 );
 
   assert( nOld>0 );
