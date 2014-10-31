@@ -1,5 +1,5 @@
-C Simplify\sthe\slogic\sin\sthe\scell\sredistribution\sloop\sof\sbalance_nonroot().\nEnhance\sand\sclarify\scomments\sand\sadd\sassert()\sstatements\sfor\sadditional\nverification\sof\scorrectness.
-D 2014-10-31T14:26:36.417
+C Change\sthe\scommand-line\sshell\sman-page\sto\suse\sthe\s".tr"\stroff\sdirective\ninstead\sof\s".cc"\sfor\sescaping\sthe\sinitial\s"."\scharacters\sin\sthe\s".help"\noutput.
+D 2014-10-31T14:46:51.896
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -163,7 +163,7 @@ F mptest/mptest.c 499a74af4be293b7c1c7c3d40f332b67227dd739
 F mptest/multiwrite01.test 499ad0310da8dff8e8f98d2e272fc2a8aa741b2e
 F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
-F sqlite3.1 3d8b83c91651f53472ca17599dae3457b8b89494
+F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c ba266a779bc7ce10e52e59e7d3dc79fa342e8fdb
 F src/analyze.c afbcca663c3f3625340b8e30d440cd7a97ded6bc
@@ -1210,7 +1210,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2e838db82e533598b3cb00011c04fc0d5a896895
-R 6da135d51be6a673f0389acc80c0dfb3
+P a07078b60007e88adea67bec5f0caf91f707ad78
+R f904ce78baced6aeb6bcb91c631714db
 U drh
-Z 452523febd435385cb08d146713a8a8f
+Z c463256d5d45e3bce4a212ca4dd9f3e4
