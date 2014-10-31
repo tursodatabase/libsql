@@ -1,5 +1,5 @@
-C Improvements\sto\sthe\swording\sof\ssome\scomments.\s\sReinstate\san\sassert()\sthat\nis\sonly\strue\sfor\snon-corrupt\sdatabase\sfiles\sby\sadding\san\s"||\sCORRUPT_DB"\sterm.
-D 2014-10-30T23:14:56.756
+C In\sthe\sbalance_nonroot()\sroutine,\sprotect\sthe\svalues\sin\saPgno[]\sarray\sfrom\nchange\sduring\sthe\spage\ssort,\sso\sthat\saPgno[]\scan\sbe\sused\sto\savoid\sunnecessary\npointer-map\supdates\sfor\sauto_vacuum\sdatabases.
+D 2014-10-31T00:05:23.983
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -172,7 +172,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 7f841396adfd47507ff670a471162d2bfcda3136
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 49ca66250c7dfa844a4d4cb8272b87420d27d3a5
-F src/btree.c 8f7ea96935c3b1db94439204965a6ec1392f7977
+F src/btree.c 88c87803b334807da3150245987139baacea4e6e
 F src/btree.h a79aa6a71e7f1055f01052b7f821bd1c2dce95c8
 F src/btreeInt.h 026d0129724e8f265fdc60d44ec240cf5a4e6179
 F src/build.c 67bb05b1077e0cdaccb2e36bfcbe7a5df9ed31e8
@@ -1209,7 +1209,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c7d9aa3a1ce63e27ec94295601bc89fecf1e4977
-R 230a6673a34b4786200f7ae54e553a63
+P 67adb44838f98805f86aecca634d9a3b07370b9e
+R 882446b4b0e231e5d89ec5bd9f22a940
 U drh
-Z 52f8e66a5796212d2c4dbab1cb7cef14
+Z 021277b745352cb31d525498ae57f1ac

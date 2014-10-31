@@ -6533,6 +6533,7 @@ static int balance_nonroot(
   Pgno pgno;                   /* Temp var to store a page number in */
   u8 abDone[NB+2];             /* True after i'th new page is populated */
   Pgno aPgno[NB+2];            /* Page numbers of new pages before shuffling */
+  Pgno aPgOrder[NB+2];         /* Copy of aPgno[] used for sorting pages */
   u16 aPgFlags[NB+2];          /* flags field of new pages before shuffling */
 
   memset(abDone, 0, sizeof(abDone));
@@ -6859,7 +6860,7 @@ static int balance_nonroot(
   ** for large insertions and deletions.
   */
   for(i=0; i<nNew; i++){
-    aPgno[i] = apNew[i]->pgno;
+    aPgOrder[i] = aPgno[i] = apNew[i]->pgno;
     aPgFlags[i] = apNew[i]->pDbPage->flags;
     for(j=0; j<i; j++){
       if( aPgno[j]==aPgno[i] ){
@@ -6879,10 +6880,10 @@ static int balance_nonroot(
     int iBest = 0;                /* aPgno[] index of page number to use */
     Pgno pgno;                    /* Page number to use */
     for(j=1; j<nNew; j++){
-      if( aPgno[j]<aPgno[iBest] ) iBest = j;
+      if( aPgOrder[j]<aPgOrder[iBest] ) iBest = j;
     }
-    pgno = aPgno[iBest];
-    aPgno[iBest] = 0xffffffff;
+    pgno = aPgOrder[iBest];
+    aPgOrder[iBest] = 0xffffffff;
     if( iBest!=i ){
       if( iBest>i ){
         sqlite3PagerRekey(apNew[iBest]->pDbPage, pBt->nPage+iBest+1, 0);
