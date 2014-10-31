@@ -1773,6 +1773,7 @@ int sqlite3VdbeFrameRestore(VdbeFrame *pFrame){
   v->nCursor = pFrame->nCursor;
   v->db->lastRowid = pFrame->lastRowid;
   v->nChange = pFrame->nChange;
+  v->db->nChange = pFrame->nDbChange;
   return pFrame->pc;
 }
 
@@ -2340,6 +2341,7 @@ int sqlite3VdbeHalt(Vdbe *p){
           sqlite3RollbackAll(db, SQLITE_ABORT_ROLLBACK);
           sqlite3CloseSavepoints(db);
           db->autoCommit = 1;
+          p->nChange = 0;
         }
       }
     }
@@ -2380,6 +2382,7 @@ int sqlite3VdbeHalt(Vdbe *p){
         }else if( rc!=SQLITE_OK ){
           p->rc = rc;
           sqlite3RollbackAll(db, SQLITE_OK);
+          p->nChange = 0;
         }else{
           db->nDeferredCons = 0;
           db->nDeferredImmCons = 0;
@@ -2388,6 +2391,7 @@ int sqlite3VdbeHalt(Vdbe *p){
         }
       }else{
         sqlite3RollbackAll(db, SQLITE_OK);
+        p->nChange = 0;
       }
       db->nStatement = 0;
     }else if( eStatementOp==0 ){
@@ -2399,6 +2403,7 @@ int sqlite3VdbeHalt(Vdbe *p){
         sqlite3RollbackAll(db, SQLITE_ABORT_ROLLBACK);
         sqlite3CloseSavepoints(db);
         db->autoCommit = 1;
+        p->nChange = 0;
       }
     }
   
@@ -2419,6 +2424,7 @@ int sqlite3VdbeHalt(Vdbe *p){
         sqlite3RollbackAll(db, SQLITE_ABORT_ROLLBACK);
         sqlite3CloseSavepoints(db);
         db->autoCommit = 1;
+        p->nChange = 0;
       }
     }
   

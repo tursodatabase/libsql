@@ -21,11 +21,7 @@
 ** the glibc version so the glibc version is definitely preferred.
 */
 #if !defined(HAVE_STRCHRNUL)
-# if defined(linux)
-#  define HAVE_STRCHRNUL 1
-# else
-#  define HAVE_STRCHRNUL 0
-# endif
+# define HAVE_STRCHRNUL 0
 #endif
 
 
@@ -216,7 +212,7 @@ void sqlite3VXPrintf(
   const et_info *infop;      /* Pointer to the appropriate info structure */
   char *zOut;                /* Rendering buffer */
   int nOut;                  /* Size of the rendering buffer */
-  char *zExtra;              /* Malloced memory used by some conversion */
+  char *zExtra = 0;          /* Malloced memory used by some conversion */
 #ifndef SQLITE_OMIT_FLOATING_POINT
   int  exp, e2;              /* exponent of real numbers */
   int nsd;                   /* Number of significant digits returned */
@@ -227,6 +223,13 @@ void sqlite3VXPrintf(
   PrintfArguments *pArgList = 0; /* Arguments for SQLITE_PRINTF_SQLFUNC */
   char buf[etBUFSIZE];       /* Conversion buffer */
 
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( ap==0 ){
+    (void)SQLITE_MISUSE_BKPT;
+    sqlite3StrAccumReset(pAccum);
+    return;
+  }
+#endif
   bufpt = 0;
   if( bFlags ){
     if( (bArgList = (bFlags & SQLITE_PRINTF_SQLFUNC))!=0 ){
@@ -333,7 +336,6 @@ void sqlite3VXPrintf(
         break;
       }
     }
-    zExtra = 0;
 
     /*
     ** At this point, variables are initialized as follows:
@@ -624,13 +626,16 @@ void sqlite3VXPrintf(
         }else{
           c = va_arg(ap,int);
         }
-        buf[0] = (char)c;
-        if( precision>=0 ){
-          for(idx=1; idx<precision; idx++) buf[idx] = (char)c;
-          length = precision;
-        }else{
-          length =1;
+        if( precision>1 ){
+          width -= precision-1;
+          if( width>1 && !flag_leftjustify ){
+            sqlite3AppendChar(pAccum, width-1, ' ');
+            width = 0;
+          }
+          sqlite3AppendChar(pAccum, precision-1, c);
         }
+        length = 1;
+        buf[0] = c;
         bufpt = buf;
         break;
       case etSTRING:
@@ -731,11 +736,14 @@ void sqlite3VXPrintf(
     ** the output.
     */
     width -= length;
-    if( width>0 && !flag_leftjustify ) sqlite3AppendSpace(pAccum, width);
+    if( width>0 && !flag_leftjustify ) sqlite3AppendChar(pAccum, width, ' ');
     sqlite3StrAccumAppend(pAccum, bufpt, length);
-    if( width>0 && flag_leftjustify ) sqlite3AppendSpace(pAccum, width);
+    if( width>0 && flag_leftjustify ) sqlite3AppendChar(pAccum, width, ' ');
 
-    if( zExtra ) sqlite3_free(zExtra);
+    if( zExtra ){
+      sqlite3_free(zExtra);
+      zExtra = 0;
+    }
   }/* End for loop over the format string */
 } /* End of function */
 
@@ -788,11 +796,11 @@ static int sqlite3StrAccumEnlarge(StrAccum *p, int N){
 }
 
 /*
-** Append N space characters to the given string buffer.
+** Append N copies of character c to the given string buffer.
 */
-void sqlite3AppendSpace(StrAccum *p, int N){
+void sqlite3AppendChar(StrAccum *p, int N, char c){
   if( p->nChar+N >= p->nAlloc && (N = sqlite3StrAccumEnlarge(p, N))<=0 ) return;
-  while( (N--)>0 ) p->zText[p->nChar++] = ' ';
+  while( (N--)>0 ) p->zText[p->nChar++] = c;
 }
 
 /*
@@ -947,6 +955,13 @@ char *sqlite3_vmprintf(const char *zFormat, va_list ap){
   char *z;
   char zBase[SQLITE_PRINT_BUF_SIZE];
   StrAccum acc;
+
+#ifdef SQLITE_ENABLE_API_ARMOR  
+  if( zFormat==0 ){
+    (void)SQLITE_MISUSE_BKPT;
+    return 0;
+  }
+#endif
 #ifndef SQLITE_OMIT_AUTOINIT
   if( sqlite3_initialize() ) return 0;
 #endif
@@ -989,6 +1004,13 @@ char *sqlite3_mprintf(const char *zFormat, ...){
 char *sqlite3_vsnprintf(int n, char *zBuf, const char *zFormat, va_list ap){
   StrAccum acc;
   if( n<=0 ) return zBuf;
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( zBuf==0 || zFormat==0 ) {
+    (void)SQLITE_MISUSE_BKPT;
+    if( zBuf && n>0 ) zBuf[0] = 0;
+    return zBuf;
+  }
+#endif
   sqlite3StrAccumInit(&acc, zBuf, n, 0);
   acc.useMalloc = 0;
   sqlite3VXPrintf(&acc, 0, zFormat, ap);

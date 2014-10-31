@@ -1599,6 +1599,7 @@ static void initAvgEq(Index *pIdx){
         nRow = pIdx->aiRowEst[0];
         nDist100 = ((i64)100 * pIdx->aiRowEst[0]) / pIdx->aiRowEst[iCol+1];
       }
+      pIdx->nRowEst0 = nRow;
 
       /* Set nSum to the number of distinct (iCol+1) field prefixes that
       ** occur in the stat4 table for this index. Set sumEq to the sum of 
@@ -1860,7 +1861,7 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
 
   /* Load the statistics from the sqlite_stat4 table. */
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
-  if( rc==SQLITE_OK ){
+  if( rc==SQLITE_OK && OptimizationEnabled(db, SQLITE_Stat34) ){
     int lookasideEnabled = db->lookaside.bEnabled;
     db->lookaside.bEnabled = 0;
     rc = loadStat4(db, sInfo.zDatabase);

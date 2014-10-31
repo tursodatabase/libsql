@@ -72,6 +72,9 @@ int sqlite3_set_authorizer(
   int (*xAuth)(void*,int,const char*,const char*,const char*,const char*),
   void *pArg
 ){
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( !sqlite3SafetyCheckOk(db) ) return SQLITE_MISUSE_BKPT;
+#endif
   sqlite3_mutex_enter(db->mutex);
   db->xAuth = (sqlite3_xauth)xAuth;
   db->pAuthArg = pArg;

@@ -431,8 +431,8 @@ void sqlite3Update(
 
   /* Top of the update loop */
   if( okOnePass ){
-    if( aToOpen[iDataCur-iBaseCur] ){
-      assert( pPk!=0 );
+    if( aToOpen[iDataCur-iBaseCur] && !isView ){
+      assert( pPk );
       sqlite3VdbeAddOp4Int(v, OP_NotFound, iDataCur, labelBreak, regKey, nKey);
       VdbeCoverageNeverTaken(v);
     }
