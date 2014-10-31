@@ -7078,19 +7078,20 @@ static int balance_nonroot(
     ** sets all pointer-map entries corresponding to database image pages 
     ** for which the pointer is stored within the content being copied.
     **
-    ** The second assert below verifies that the child page is defragmented
-    ** (it must be, as it was just reconstructed using assemblePage()). This
-    ** is important if the parent page happens to be page 1 of the database
-    ** image.  */
+    ** It is critical that the child page be defragmented before being
+    ** copied into the parent, because if the parent is page 1 then it will
+    ** by smaller than the child due to the database header, and so all the
+    ** free space needs to be up front.
+    */
     assert( nNew==1 );
     rc = defragmentPage(apNew[0]);
-    if( rc==SQLITE_OK ){
-      assert( apNew[0]->nFree == 
-          (get2byte(&apNew[0]->aData[5])-apNew[0]->cellOffset-apNew[0]->nCell*2)
-      );
-      copyNodeContent(apNew[0], pParent, &rc);
-      freePage(apNew[0], &rc);
-    }
+    testcase( rc!=SQLITE_OK );
+    assert( apNew[0]->nFree == 
+        (get2byte(&apNew[0]->aData[5])-apNew[0]->cellOffset-apNew[0]->nCell*2)
+      || rc!=SQLITE_OK
+    );
+    copyNodeContent(apNew[0], pParent, &rc);
+    freePage(apNew[0], &rc);
   }else if( ISAUTOVACUUM && !leafCorrection ){
     /* Fix the pointer map entries associated with the right-child of each
     ** sibling page. All other pointer map entries have already been taken
