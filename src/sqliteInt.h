@@ -193,10 +193,9 @@
 #endif
 
 /*
-** The SQLITE_DEFAULT_MEMSTATUS macro must be defined as either 0 or 1.
-** It determines whether or not the features related to 
-** SQLITE_CONFIG_MEMSTATUS are available by default or not. This value can
-** be overridden at runtime using the sqlite3_config() API.
+** EVIDENCE-OF: R-25715-37072 Memory allocation statistics are enabled by
+** default unless SQLite is compiled with SQLITE_DEFAULT_MEMSTATUS=0 in
+** which case memory allocation statistics are disabled by default.
 */
 #if !defined(SQLITE_DEFAULT_MEMSTATUS)
 # define SQLITE_DEFAULT_MEMSTATUS 1

@@ -1,5 +1,5 @@
-C Change\sthe\scommand-line\sshell\sman-page\sto\suse\sthe\s".tr"\stroff\sdirective\ninstead\sof\s".cc"\sfor\sescaping\sthe\sinitial\s"."\scharacters\sin\sthe\s".help"\noutput.
-D 2014-10-31T14:46:51.896
+C Add\srequirements\smarks\sand\smake\sminor\stweaks\sto\sdocumentation.
+D 2014-11-01T18:32:18.050
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -194,7 +194,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
 F src/loadext.c de741e66e5ddc1598d904d7289239696e40ed994
-F src/main.c 2b882f64580ea72e2d972a5296f9eaa75a353161
+F src/main.c 5f659bdb14cdba1c3b587b6ed09167c147e308a1
 F src/malloc.c 3c3ac67969612493d435e14b6832793209afd2ec
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c faf615aafd8be74a71494dfa027c113ea5c6615f
@@ -229,10 +229,10 @@ F src/resolve.c 4965007d6497b6a4d7a6d98751cc39712885f952
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 428165951748151e87a15295b7357221433e311b
 F src/shell.c 282f8f5278e0c78eb442217531172ec9e1538796
-F src/sqlite.h.in 737b7dd0f3f81fe183646d22828b39f85ef3e68c
+F src/sqlite.h.in c3c6180be49d91d3b0001a8d3c604684f361adc2
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
-F src/sqliteInt.h 4f86ac648ea398c1bb3db036062934cde257ea23
+F src/sqliteInt.h 8f67ca79e957b8ece7453b8e320b6a996e1b4761
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 81712116e826b0089bb221b018929536b2b5406f
 F src/table.c f142bba7903e93ca8d113a5b8877a108ad1a27dc
@@ -1210,7 +1210,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a07078b60007e88adea67bec5f0caf91f707ad78
-R f904ce78baced6aeb6bcb91c631714db
+P 67f0d469da28c023200239a1f3d0c6cef9ef0e45
+R dbf6a8dc4a878d1b1a7b9b3874ca58fb
 U drh
-Z c463256d5d45e3bce4a212ca4dd9f3e4
+Z 455c35adeade418fab0456b1b175d27f

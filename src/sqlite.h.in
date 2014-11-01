@@ -1532,10 +1532,10 @@ struct sqlite3_mem_methods {
 **
 ** [[SQLITE_CONFIG_SCRATCH]] <dt>SQLITE_CONFIG_SCRATCH</dt>
 ** <dd> ^This option specifies a static memory buffer that SQLite can use for
-** scratch memory.  There are three arguments:  A pointer an 8-byte
+** scratch memory.  ^(There are three arguments:  A pointer an 8-byte
 ** aligned memory buffer from which the scratch allocations will be
 ** drawn, the size of each scratch allocation (sz),
-** and the maximum number of scratch allocations (N).  The sz
+** and the maximum number of scratch allocations (N).)^  The sz
 ** argument must be a multiple of 16.
 ** The first argument must be a pointer to an 8-byte aligned buffer
 ** of at least sz*N bytes of memory.

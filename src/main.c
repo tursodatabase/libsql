@@ -329,15 +329,17 @@ int sqlite3_config(int op, ...){
   switch( op ){
 
     /* Mutex configuration options are only available in a threadsafe
-    ** compile. 
+    ** compile.
     */
-#if defined(SQLITE_THREADSAFE) && SQLITE_THREADSAFE>0
+#if defined(SQLITE_THREADSAFE) && SQLITE_THREADSAFE>0  /* IMP: R-54466-46756 */
     case SQLITE_CONFIG_SINGLETHREAD: {
       /* Disable all mutexing */
       sqlite3GlobalConfig.bCoreMutex = 0;
       sqlite3GlobalConfig.bFullMutex = 0;
       break;
     }
+#endif
+#if defined(SQLITE_THREADSAFE) && SQLITE_THREADSAFE>0 /* IMP: R-20520-54086 */
     case SQLITE_CONFIG_MULTITHREAD: {
       /* Disable mutexing of database connections */
       /* Enable mutexing of core data structures */
@@ -345,24 +347,29 @@ int sqlite3_config(int op, ...){
       sqlite3GlobalConfig.bFullMutex = 0;
       break;
     }
+#endif
+#if defined(SQLITE_THREADSAFE) && SQLITE_THREADSAFE>0 /* IMP: R-59593-21810 */
     case SQLITE_CONFIG_SERIALIZED: {
       /* Enable all mutexing */
       sqlite3GlobalConfig.bCoreMutex = 1;
       sqlite3GlobalConfig.bFullMutex = 1;
       break;
     }
+#endif
+#if defined(SQLITE_THREADSAFE) && SQLITE_THREADSAFE>0 /* IMP: R-63666-48755 */
     case SQLITE_CONFIG_MUTEX: {
       /* Specify an alternative mutex implementation */
       sqlite3GlobalConfig.mutex = *va_arg(ap, sqlite3_mutex_methods*);
       break;
     }
+#endif
+#if defined(SQLITE_THREADSAFE) && SQLITE_THREADSAFE>0 /* IMP: R-14450-37597 */
     case SQLITE_CONFIG_GETMUTEX: {
       /* Retrieve the current mutex implementation */
       *va_arg(ap, sqlite3_mutex_methods*) = sqlite3GlobalConfig.mutex;
       break;
     }
 #endif
-
 
     case SQLITE_CONFIG_MALLOC: {
       /* Specify an alternative malloc implementation */
@@ -377,7 +384,7 @@ int sqlite3_config(int op, ...){
     }
     case SQLITE_CONFIG_MEMSTATUS: {
       /* Enable or disable the malloc status collection */
-      sqlite3GlobalConfig.bMemstat = va_arg(ap, int);
+      sqlite3GlobalConfig.bMemstat = va_arg(ap, int);  /* IMP: R-27464-47829 */
       break;
     }
     case SQLITE_CONFIG_SCRATCH: {
