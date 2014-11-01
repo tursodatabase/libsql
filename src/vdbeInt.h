@@ -83,7 +83,6 @@ struct VdbeCursor {
   i64 seqCount;         /* Sequence counter */
   i64 movetoTarget;     /* Argument to the deferred sqlite3BtreeMoveto() */
   VdbeSorter *pSorter;  /* Sorter object for OP_SorterOpen cursors */
-  ExplainArg *pExplain; /* Object to store seek/visit counts (may be NULL) */
 
   /* Cached information about the header for the data record that the
   ** cursor is currently pointing to.  Only valid if cacheStatus matches
@@ -292,11 +291,19 @@ struct Explain {
   char zBase[100];   /* Initial space */
 };
 
-
 /* A bitfield type for use inside of structures.  Always follow with :N where
 ** N is the number of bits.
 */
 typedef unsigned bft;  /* Bit Field Type */
+
+typedef struct ScanCounter ScanCounter;
+struct ScanCounter {
+  int addrExplain;                /* OP_Explain for loop */
+  int addrLoop;                   /* Address of "loops" counter */
+  int addrVisit;                  /* Address of "rows visited" counter */
+  i64 nEst;                       /* Estimated rows per loop */
+  char *zName;                    /* Name of table or index */
+};
 
 /*
 ** An instance of the virtual machine.  This structure contains the complete
@@ -370,8 +377,11 @@ struct Vdbe {
   int nOnceFlag;          /* Size of array aOnceFlag[] */
   u8 *aOnceFlag;          /* Flags for OP_Once */
   AuxData *pAuxData;      /* Linked list of auxdata allocations */
-  ExplainArg **apExplain; /* Array of pointers to P4_EXPLAIN p4 values */
-  int nExplain;           /* Number of entries in array apExplain */
+#ifdef SQLITE_ENABLE_STMT_SCANSTATUS
+  i64 *anExec;            /* Number of times each op has been executed */
+  int nScan;              /* Entries in aScan[] */
+  ScanCounter *aScan;     /* Scan definitions for sqlite3_stmt_scanstatus() */
+#endif
 };
 
 /*

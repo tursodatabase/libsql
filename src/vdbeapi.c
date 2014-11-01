@@ -1476,6 +1476,7 @@ int sqlite3_stmt_status(sqlite3_stmt *pStmt, int op, int resetFlag){
   return (int)v;
 }
 
+#ifdef SQLITE_ENABLE_STMT_SCANSTATUS
 /*
 ** Return status data for a single loop within query pStmt.
 */
@@ -1489,14 +1490,20 @@ int sqlite3_stmt_scanstatus(
   const char **pzExplain          /* OUT: EQP string */
 ){
   Vdbe *p = (Vdbe*)pStmt;
-  ExplainArg *pExplain;
-  if( idx<0 || idx>=p->nExplain ) return 1;
-  pExplain = p->apExplain[idx];
-  if( pnLoop ) *pnLoop = pExplain->nLoop;
-  if( pnVisit ) *pnVisit = pExplain->nVisit;
-  if( pnEst ) *pnEst = pExplain->nEst;
-  if( *pzName ) *pzName = pExplain->zName;
-  if( *pzExplain ) *pzExplain = pExplain->zExplain;
+  ScanCounter *pScan;
+  if( idx<0 || idx>=p->nScan ) return 1;
+  pScan = &p->aScan[idx];
+  if( pnLoop ) *pnLoop = p->anExec[pScan->addrLoop];
+  if( pnVisit ) *pnVisit = p->anExec[pScan->addrVisit];
+  if( pnEst ) *pnEst = pScan->nEst;
+  if( *pzName ) *pzName = pScan->zName;
+  if( *pzExplain ){
+    if( pScan->addrExplain ){
+      *pzExplain = p->aOp[ pScan->addrExplain ].p4.z;
+    }else{
+      *pzExplain = 0;
+    }
+  }
   return 0;
 }
 
@@ -1505,10 +1512,7 @@ int sqlite3_stmt_scanstatus(
 */
 void sqlite3_stmt_scanstatus_reset(sqlite3_stmt *pStmt){
   Vdbe *p = (Vdbe*)pStmt;
-  int i;
-  for(i=0; i<p->nExplain; i++){
-    p->apExplain[i]->nLoop = 0;
-    p->apExplain[i]->nVisit = 0;
-  }
+  memset(p->anExec, 0, p->nOp * sizeof(i64));
 }
+#endif /* SQLITE_ENABLE_STMT_SCANSTATUS */
 

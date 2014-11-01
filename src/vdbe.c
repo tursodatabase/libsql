@@ -168,18 +168,6 @@ int sqlite3_found_count = 0;
 #define isSorter(x) ((x)->pSorter!=0)
 
 /*
-** The first argument passed to the IncrementExplainCounter() macro must
-** be a non-NULL pointer to an object of type VdbeCursor. The second 
-** argument must be either "nLoop" or "nVisit" (without the double-quotes).
-*/
-#ifdef SQLITE_ENABLE_STMT_SCANSTATUS
-# define IncrementExplainCounter(pCsr, counter) \
-    if( (pCsr)->pExplain ) (pCsr)->pExplain->counter++
-#else
-# define IncrementExplainCounter(pCsr, counter)
-#endif
-
-/*
 ** Allocate VdbeCursor number iCur.  Return a pointer to it.  Return NULL
 ** if we run out of memory.
 */
@@ -620,6 +608,9 @@ int sqlite3VdbeExec(
 #endif
     nVmStep++;
     pOp = &aOp[pc];
+#ifdef SQLITE_ENABLE_STMT_SCANSTATUS
+    if( p->pFrame==0 ) p->anExec[pc]++;
+#endif
 
     /* Only allow tracing if SQLITE_DEBUG is defined.
     */
@@ -3568,7 +3559,6 @@ case OP_SeekGT: {       /* jump, in3 */
 #ifdef SQLITE_DEBUG
   pC->seekOp = pOp->opcode;
 #endif
-  IncrementExplainCounter(pC, nLoop);
   if( pC->isTable ){
     /* The input value in P3 might be of any type: integer, real, string,
     ** blob, or NULL.  But it needs to be an integer before we can do
@@ -3677,8 +3667,6 @@ case OP_SeekGT: {       /* jump, in3 */
   VdbeBranchTaken(res!=0,2);
   if( res ){
     pc = pOp->p2 - 1;
-  }else{
-    IncrementExplainCounter(pC, nVisit);
   }
   break;
 }
@@ -3889,7 +3877,6 @@ case OP_NotExists: {        /* jump, in3 */
   res = 0;
   iKey = pIn3->u.i;
   rc = sqlite3BtreeMovetoUnpacked(pCrsr, 0, iKey, 0, &res);
-  IncrementExplainCounter(pC, nLoop);
   pC->movetoTarget = iKey;  /* Used by OP_Delete */
   pC->nullRow = 0;
   pC->cacheStatus = CACHE_STALE;
@@ -3897,8 +3884,6 @@ case OP_NotExists: {        /* jump, in3 */
   VdbeBranchTaken(res!=0,2);
   if( res!=0 ){
     pc = pOp->p2 - 1;
-  }else{
-    IncrementExplainCounter(pC, nVisit);
   }
   pC->seekResult = res;
   break;
@@ -4467,8 +4452,6 @@ case OP_Last: {        /* jump */
   res = 0;
   assert( pCrsr!=0 );
   rc = sqlite3BtreeLast(pCrsr, &res);
-  IncrementExplainCounter(pC, nLoop);
-  if( res==0 ) IncrementExplainCounter(pC, nVisit);
   pC->nullRow = (u8)res;
   pC->deferredMoveto = 0;
   pC->cacheStatus = CACHE_STALE;
@@ -4538,14 +4521,11 @@ case OP_Rewind: {        /* jump */
     pC->deferredMoveto = 0;
     pC->cacheStatus = CACHE_STALE;
   }
-  IncrementExplainCounter(pC, nLoop);
   pC->nullRow = (u8)res;
   assert( pOp->p2>0 && pOp->p2<p->nOp );
   VdbeBranchTaken(res!=0,2);
   if( res ){
     pc = pOp->p2 - 1;
-  }else{
-    IncrementExplainCounter(pC, nVisit);
   }
   break;
 }
@@ -4656,7 +4636,6 @@ next_tail:
   pC->cacheStatus = CACHE_STALE;
   VdbeBranchTaken(res==0,2);
   if( res==0 ){
-    IncrementExplainCounter(pC, nVisit);
     pC->nullRow = 0;
     pc = pOp->p2 - 1;
     p->aCounter[pOp->p5]++;
@@ -6079,10 +6058,7 @@ case OP_VFilter: {   /* jump */
     VdbeBranchTaken(res!=0,2);
     if( res ){
       pc = pOp->p2 - 1;
-    }else{
-      IncrementExplainCounter(pCur, nVisit);
     }
-    IncrementExplainCounter(pCur, nLoop);
   }
   pCur->nullRow = 0;
 
@@ -6175,7 +6151,6 @@ case OP_VNext: {   /* jump */
   if( !res ){
     /* If there is data, jump to P2 */
     pc = pOp->p2 - 1;
-    IncrementExplainCounter(pCur, nVisit);
   }
   goto check_for_interrupt;
 }
@@ -6374,19 +6349,6 @@ case OP_Init: {          /* jump */
 #endif /* SQLITE_OMIT_TRACE */
   break;
 }
-
-#ifdef SQLITE_ENABLE_STMT_SCANSTATUS
-case OP_Explain: {
-  ExplainArg *pArg;
-  VdbeCursor *pCur;
-  if( pOp->p4type==P4_EXPLAIN && (pArg = pOp->p4.pExplain)->iCsr>=0 ){
-    pArg = pOp->p4.pExplain;
-    pCur = p->apCsr[pArg->iCsr];
-    pCur->pExplain = pArg;
-  }
-  break;
-}
-#endif
 
 
 /* Opcode: Noop * * * * *

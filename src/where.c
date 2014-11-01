@@ -2739,7 +2739,7 @@ static int codeAllEqualityTerms(
   return regBase;
 }
 
-#if !defined(SQLITE_OMIT_EXPLAIN) || defined(SQLITE_ENABLE_STMT_SCANSTATUS)
+#ifndef SQLITE_OMIT_EXPLAIN
 /*
 ** This routine is a helper for explainIndexRange() below
 **
@@ -2812,68 +2812,43 @@ static void explainIndexRange(StrAccum *pStr, WhereLoop *pLoop, Table *pTab){
 ** record is added to the output to describe the table scan strategy in 
 ** pLevel.
 */
-static void explainOneScan(
+static int explainOneScan(
   Parse *pParse,                  /* Parse context */
   SrcList *pTabList,              /* Table list this loop refers to */
-  WhereInfo *pWInfo,              /* WHERE clause this loop belongs to */
+  WhereLevel *pLevel,             /* Scan to write OP_Explain opcode for */
   int iLevel,                     /* Value for "level" column of output */
+  int iFrom,                      /* Value for "from" column of output */
   u16 wctrlFlags                  /* Flags passed to sqlite3WhereBegin() */
 ){
-#if !defined(SQLITE_DEBUG) && !defined(SQLITE_ENABLE_STMT_SCANSTATUS)
+  int ret = 0;
+#ifndef SQLITE_DEBUG
   if( pParse->explain==2 )
 #endif
   {
-    WhereLevel *pLevel = &pWInfo->a[iLevel];
     struct SrcList_item *pItem = &pTabList->a[pLevel->iFrom];
     Vdbe *v = pParse->pVdbe;      /* VM being constructed */
     sqlite3 *db = pParse->db;     /* Database handle */
-#ifdef SQLITE_OMIT_EXPLAIN
-    int iId = 0;                  /* Select id (left-most output column) */
-#else
-    int iId = pParse->iSelectId;   /* Select id (left-most output column) */
-#endif
+    int iId = pParse->iSelectId;  /* Select id (left-most output column) */
     int isSearch;                 /* True for a SEARCH. False for SCAN. */
     WhereLoop *pLoop;             /* The controlling WhereLoop object */
     u32 flags;                    /* Flags that describe this loop */
+    char *zMsg;                   /* Text to add to EQP output */
     StrAccum str;                 /* EQP output string */
     char zBuf[100];               /* Initial space for EQP output string */
-    const char *zObj;
-    ExplainArg *pExplain;
-    i64 nEstRow;                  /* Estimated rows per scan of pLevel */
 
     pLoop = pLevel->pWLoop;
     flags = pLoop->wsFlags;
-    if( (flags&WHERE_MULTI_OR) ) return;
+    if( (flags&WHERE_MULTI_OR) || (wctrlFlags&WHERE_ONETABLE_ONLY) ) return 0;
 
-    sqlite3StrAccumInit(&str, zBuf, sizeof(zBuf), SQLITE_MAX_LENGTH);
-    str.db = db;
-
-    /* Reserve space at the start of the buffer managed by the StrAccum
-    ** object for *pExplain.  */
-    assert( sizeof(*pExplain)<=sizeof(zBuf) );
-    str.nChar = sizeof(*pExplain);
-
-    /* Append the object (table or index) name to the buffer. */
-    if( pItem->pSelect ){
-      zObj = "";
-    }else if( (flags & (WHERE_IPK|WHERE_VIRTUALTABLE))==0 ){
-      zObj = pLoop->u.btree.pIndex->zName;
-    }else{
-      zObj = pItem->zName;
-    }
-    sqlite3StrAccumAppend(&str, zObj, sqlite3Strlen30(zObj)+1);
-
-    /* Append the EQP text to the buffer */
     isSearch = (flags&(WHERE_BTM_LIMIT|WHERE_TOP_LIMIT))!=0
             || ((flags&WHERE_VIRTUALTABLE)==0 && (pLoop->u.btree.nEq>0))
             || (wctrlFlags&(WHERE_ORDERBY_MIN|WHERE_ORDERBY_MAX));
+
+    sqlite3StrAccumInit(&str, zBuf, sizeof(zBuf), SQLITE_MAX_LENGTH);
+    str.db = db;
     sqlite3StrAccumAppendAll(&str, isSearch ? "SEARCH" : "SCAN");
     if( pItem->pSelect ){
-#ifdef SQLITE_OMIT_EXPLAIN
-      sqlite3XPrintf(&str, 0, " SUBQUERY 0");
-#else
       sqlite3XPrintf(&str, 0, " SUBQUERY %d", pItem->iSelectId);
-#endif
     }else{
       sqlite3XPrintf(&str, 0, " TABLE %s", pItem->zName);
     }
@@ -2927,33 +2902,48 @@ static void explainOneScan(
                   pLoop->u.vtab.idxNum, pLoop->u.vtab.idxStr);
     }
 #endif
-    nEstRow = pLoop->nOut>=10 ? sqlite3LogEstToInt(pLoop->nOut) : 1;
 #ifdef SQLITE_EXPLAIN_ESTIMATED_ROWS
-    sqlite3XPrintf(&str, 0, " (~%llu rows)", nEstRow);
-#endif
-    pExplain = (ExplainArg*)sqlite3StrAccumFinish(&str);
-    assert( pExplain || db->mallocFailed );
-    if( pExplain ){
-      memset(pExplain, 0, sizeof(*pExplain));
-      if( pLoop->wsFlags & WHERE_INDEXED ){
-        pExplain->iCsr = pLevel->iIdxCur;
-      }else if( pItem->pSelect==0 ){
-        pExplain->iCsr = pLevel->iTabCur;
-      }else{
-        pExplain->iCsr = -1;
-      }
-      pExplain->nEst = nEstRow;
-      pExplain->zName = (const char*)&pExplain[1];
-      pExplain->zExplain = &pExplain->zName[sqlite3Strlen30(pExplain->zName)+1];
-      pWInfo->iExplain = sqlite3VdbeAddOp4(v, OP_Explain, 
-          iId, iLevel, pLevel->iFrom, (char*)pExplain,P4_EXPLAIN
-      );
+    if( pLoop->nOut>=10 ){
+      sqlite3XPrintf(&str, 0, " (~%llu rows)", sqlite3LogEstToInt(pLoop->nOut));
+    }else{
+      sqlite3StrAccumAppend(&str, " (~1 row)", 9);
     }
+#endif
+    zMsg = sqlite3StrAccumFinish(&str);
+    ret = sqlite3VdbeAddOp4(v, OP_Explain, iId, iLevel, iFrom, zMsg,P4_DYNAMIC);
   }
+  return ret;
 }
 #else
-# define explainOneScan(v,w,x,y,z)
-#endif /* !SQLITE_OMIT_EXPLAIN || SQLITE_ENABLE_STMT_SCANSTATUS */
+# define explainOneScan(u,v,w,x,y,z) 0
+#endif /* SQLITE_OMIT_EXPLAIN */
+
+#ifdef SQLITE_ENABLE_STMT_SCANSTATUS
+static void addScanStatus(
+  Vdbe *v, 
+  SrcList *pSrclist,
+  WhereLevel *pLvl,
+  int addrExplain
+){
+  const char *zObj = 0;
+  i64 nEst = 1;
+  WhereLoop *pLoop = pLvl->pWLoop;
+  if( (pLoop->wsFlags & (WHERE_IPK|WHERE_VIRTUALTABLE))==0 ){
+    zObj = pLoop->u.btree.pIndex->zName;
+  }else{
+    zObj = pSrclist->a[pLvl->iFrom].zName;
+  }
+  if( pLoop->nOut>=10 ){
+    nEst = sqlite3LogEstToInt(pLoop->nOut);
+  }
+  sqlite3VdbeScanCounter(
+      v, addrExplain, pLvl->addrBody, pLvl->addrVisit, nEst, zObj
+  );
+}
+#else
+# define addScanStatus(a, b, c, d)
+#endif
+
 
 
 /*
@@ -3621,14 +3611,10 @@ static Bitmask codeOneLoopStart(
         assert( pSubWInfo || pParse->nErr || db->mallocFailed );
         if( pSubWInfo ){
           WhereLoop *pSubLoop;
-
-          /* If an OP_Explain was added for this sub-loop, fix the P2 and
-          ** P3 parameters to it so that they are relative to the current
-          ** context.  */
-          if( pSubWInfo->iExplain!=0 ){
-            sqlite3VdbeChangeP2(v, pSubWInfo->iExplain, iLevel);
-            sqlite3VdbeChangeP3(v, pSubWInfo->iExplain, pLevel->iFrom);
-          }
+          int addrExplain = explainOneScan(
+              pParse, pOrTab, &pSubWInfo->a[0], iLevel, pLevel->iFrom, 0
+          );
+          addScanStatus(v, pOrTab, &pSubWInfo->a[0], addrExplain);
 
           /* This is the sub-WHERE clause body.  First skip over
           ** duplicate rows from prior sub-WHERE clauses, and record the
@@ -3759,6 +3745,10 @@ static Bitmask codeOneLoopStart(
       pLevel->p5 = SQLITE_STMTSTATUS_FULLSCAN_STEP;
     }
   }
+
+#ifdef SQLITE_ENABLE_STMT_SCANSTATUS
+  pLevel->addrVisit = sqlite3VdbeCurrentAddr(v);
+#endif
 
   /* Insert code to test every subexpression that can be completely
   ** computed using the current set of tables.
@@ -6461,7 +6451,10 @@ WhereInfo *sqlite3WhereBegin(
   */
   notReady = ~(Bitmask)0;
   for(ii=0; ii<nTabList; ii++){
+    int addrExplain;
+    int wsFlags;
     pLevel = &pWInfo->a[ii];
+    wsFlags = pLevel->pWLoop->wsFlags;
 #ifndef SQLITE_OMIT_AUTOMATIC_INDEX
     if( (pLevel->pWLoop->wsFlags & WHERE_AUTO_INDEX)!=0 ){
       constructAutomaticIndex(pParse, &pWInfo->sWC,
@@ -6469,10 +6462,15 @@ WhereInfo *sqlite3WhereBegin(
       if( db->mallocFailed ) goto whereBeginError;
     }
 #endif
-    explainOneScan(pParse, pTabList, pWInfo, ii, wctrlFlags);
+    addrExplain = explainOneScan(
+        pParse, pTabList, pLevel, ii, pLevel->iFrom, wctrlFlags
+    );
     pLevel->addrBody = sqlite3VdbeCurrentAddr(v);
     notReady = codeOneLoopStart(pWInfo, ii, notReady);
     pWInfo->iContinue = pLevel->addrCont;
+    if( (wsFlags&WHERE_MULTI_OR)==0 && (wctrlFlags&WHERE_ONETABLE_ONLY)==0 ){
+      addScanStatus(v, pTabList, pLevel, addrExplain);
+    }
   }
 
   /* Done. */

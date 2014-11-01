@@ -115,7 +115,7 @@ do_execsql_test 2.4.1 {
   SELECT * FROM x1 WHERE j<'two'
 } {4 four 1 one 3 three}
 do_scanstatus_test 2.4.2 {
-  nLoop 1 nVisit 4 nEst 262144 zName x1j 
+  nLoop 1 nVisit 3 nEst 262144 zName x1j 
   zExplain {SEARCH TABLE x1 USING COVERING INDEX x1j (j<?)}
 }
 
@@ -152,7 +152,7 @@ do_execsql_test 2.8.1 {
   SELECT * FROM x2 WHERE i=1 AND j='two'
 }
 do_scanstatus_test 2.8.2 {
-  nLoop 1 nVisit 1 nEst 8 zName x2ij 
+  nLoop 1 nVisit 0 nEst 8 zName x2ij 
   zExplain {SEARCH TABLE x2 USING INDEX x2ij (i=? AND j=?)}
 }
 
@@ -168,7 +168,7 @@ do_execsql_test 2.10.1 {
   SELECT * FROM x2 WHERE i=3 AND j='three'
 } {3 three {3 three}}
 do_scanstatus_test 2.10.2 {
-  nLoop 1 nVisit 2 nEst 8 zName x2ij 
+  nLoop 1 nVisit 1 nEst 8 zName x2ij 
   zExplain {SEARCH TABLE x2 USING INDEX x2ij (i=? AND j=?)}
 }
 
@@ -187,15 +187,48 @@ do_execsql_test 3.1 {
 do_execsql_test 3.2.1 {
   SELECT d FROM a1 WHERE (a=4 OR b=13)
 } {4 13}
-
-do_scanstatus_test 2.4 {
-  nLoop 1 nVisit 2 nEst 10 zName a1a 
+do_scanstatus_test 3.2.2 {
+  nLoop 1 nVisit 1 nEst 10 zName a1a 
   zExplain {SEARCH TABLE a1 USING INDEX a1a (a=?)}
-
-  nLoop 1 nVisit 2 nEst 10 zName a1bc 
+  nLoop 1 nVisit 1 nEst 10 zName a1bc 
   zExplain {SEARCH TABLE a1 USING INDEX a1bc (b=?)}
 }
 
+do_execsql_test 3.2.1 {
+  SELECT count(*) FROM a1 WHERE (a BETWEEN 4 AND 12) OR (b BETWEEN 40 AND 60)
+} {30}
+do_scanstatus_test 3.2.2 {
+  nLoop 1 nVisit 9 nEst 16384 zName a1a 
+  zExplain {SEARCH TABLE a1 USING INDEX a1a (a>? AND a<?)}
+  nLoop 1 nVisit 21 nEst 16384 zName a1bc
+  zExplain {SEARCH TABLE a1 USING INDEX a1bc (b>? AND b<?)}
+}
 
+do_execsql_test 3.3.1 {
+  SELECT count(*) FROM a1 AS x, a1 AS y 
+  WHERE (x.a BETWEEN 4 AND 12) AND (y.b BETWEEN 1 AND 10)
+} {90}
+do_scanstatus_test 3.2.2 {
+  nLoop 1 nVisit 10 nEst 16384 zName a1bc 
+  zExplain {SEARCH TABLE a1 AS y USING COVERING INDEX a1bc (b>? AND b<?)}
+  nLoop 10 nVisit 90 nEst 16384 zName a1a
+  zExplain {SEARCH TABLE a1 AS x USING COVERING INDEX a1a (a>? AND a<?)}
+}
+
+do_execsql_test 3.4.1 {
+  SELECT count(*) FROM a1 WHERE a IN (1, 5, 10, 15);
+} {4}
+do_scanstatus_test 3.4.2 {
+  nLoop 1 nVisit 4 nEst 40 zName a1a 
+  zExplain {SEARCH TABLE a1 USING COVERING INDEX a1a (a=?)}
+}
+
+do_execsql_test 3.4.1 {
+  SELECT count(*) FROM a1 WHERE rowid IN (1, 5, 10, 15);
+} {4}
+do_scanstatus_test 3.4.2 {
+  nLoop 1 nVisit 4 nEst 4 zName a1
+  zExplain {SEARCH TABLE a1 USING INTEGER PRIMARY KEY (rowid=?)}
+}
 
 finish_test

@@ -597,6 +597,34 @@ int sqlite3VdbeAddOpList(Vdbe *p, int nOp, VdbeOpList const *aOp, int iLineno){
   return addr;
 }
 
+#if defined(SQLITE_ENABLE_STMT_SCANSTATUS)
+/*
+** Add an entry to the array of counters managed by sqlite3_stmt_scanstatus().
+*/
+void sqlite3VdbeScanCounter(
+  Vdbe *p,                        /* VM to add scanstatus() to */
+  int addrExplain,                /* Address of OP_Explain (or 0) */
+  int addrLoop,                   /* Address of loop counter */ 
+  int addrVisit,                  /* Address of rows visited counter */
+  i64 nEst,                       /* Estimated number of rows */
+  const char *zName               /* Name of table or index being scanned */
+){
+  int nByte = (p->nScan+1) * sizeof(ScanCounter);
+  ScanCounter *aNew;
+  aNew = (ScanCounter*)sqlite3DbRealloc(p->db, p->aScan, nByte);
+  if( aNew ){
+    ScanCounter *pNew = &aNew[p->nScan++];
+    pNew->addrExplain = addrExplain;
+    pNew->addrLoop = addrLoop;
+    pNew->addrVisit = addrVisit;
+    pNew->nEst = nEst;
+    pNew->zName = sqlite3DbStrDup(p->db, zName);
+    p->aScan = aNew;
+  }
+}
+#endif
+
+
 /*
 ** Change the value of the P1 operand for a specific instruction.
 ** This routine is useful when a large program is loaded from a
@@ -672,7 +700,6 @@ static void freeP4(sqlite3 *db, int p4type, void *p4){
   if( p4 ){
     assert( db );
     switch( p4type ){
-      case P4_EXPLAIN:
       case P4_REAL:
       case P4_INT64:
       case P4_DYNAMIC:
@@ -821,13 +848,6 @@ void sqlite3VdbeChangeP4(Vdbe *p, int addr, const char *zP4, int n){
     pOp->p4type = P4_VTAB;
     sqlite3VtabLock((VTable *)zP4);
     assert( ((VTable *)zP4)->db==p->db );
-  }else if( n==P4_EXPLAIN ){
-    pOp->p4.p = (void*)zP4;
-    pOp->p4type = P4_EXPLAIN;
-    p->apExplain = (ExplainArg**)sqlite3DbReallocOrFree(
-        p->db, p->apExplain, sizeof(ExplainArg*) * p->nExplain + 1
-    );
-    if( p->apExplain ) p->apExplain[p->nExplain++] = (ExplainArg*)zP4;
   }else if( n<0 ){
     pOp->p4.p = (void*)zP4;
     pOp->p4type = (signed char)n;
@@ -1109,10 +1129,6 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
     }
     case P4_ADVANCE: {
       zTemp[0] = 0;
-      break;
-    }
-    case P4_EXPLAIN: {
-      zP4 = (char*)pOp->p4.pExplain->zExplain;
       break;
     }
     default: {
@@ -1713,6 +1729,10 @@ void sqlite3VdbeMakeReady(
     zCsr = p->pFree;
     zEnd = &zCsr[nByte];
   }while( nByte && !db->mallocFailed );
+
+#ifdef SQLITE_ENABLE_STMT_SCANSTATUS
+    p->anExec = (i64*)sqlite3DbMallocZero(db, p->nOp*sizeof(i64));
+#endif
 
   p->nCursor = nCursor;
   p->nOnceFlag = nOnce;
@@ -2697,7 +2717,13 @@ void sqlite3VdbeClearObject(sqlite3 *db, Vdbe *p){
   sqlite3DbFree(db, p->aColName);
   sqlite3DbFree(db, p->zSql);
   sqlite3DbFree(db, p->pFree);
-  sqlite3DbFree(db, p->apExplain);
+#ifdef SQLITE_ENABLE_STMT_SCANSTATUS
+  sqlite3DbFree(db, p->anExec);
+  for(i=0; i<p->nScan; i++){
+    sqlite3DbFree(db, p->aScan[i].zName);
+  }
+  sqlite3DbFree(db, p->aScan);
+#endif
 }
 
 /*
