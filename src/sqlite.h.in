@@ -7408,6 +7408,8 @@ int sqlite3_vtab_on_conflict(sqlite3 *);
 
 
 /*
+** CAPI3REF: Prepared Statement Scan Statuses
+**
 ** Return status data for a single loop within query pStmt.
 **
 ** Parameter "idx" identifies the specific loop to retrieve statistics for.
@@ -7415,7 +7417,25 @@ int sqlite3_vtab_on_conflict(sqlite3 *);
 ** zero or greater than or equal to the total number of loops used to implement
 ** the statement - a non-zero value is returned. In this case the final value
 ** of all five output parameters is undefined. Otherwise, if idx is in range,
-** the output parameters are populated and zero returned.
+** zero is returned and the output parameters set as follows:
+**
+** <ul>
+**   <li> (*pnLoop) is set to the total number of times the loop has been run.
+**   <li> (*pnVisit) is set to the total number of rows visited by the loop.
+**   <li> (*pnEst) is set to the estimate of the number of rows visited
+**        by each run of the loop used by the SQL optimizer. Ideally, this
+**        value should be close to (*pnVisit)/(*pnLoop).
+**   <li> (*pzName) is set to point to a nul-terminated string containing the
+**        name of the index of table used by this loop.
+**   <li> (*pzExplain) is set to point to a nul-terminated string containing 
+**        same text that would be returned for this loop by an EXPLAIN
+**        QUERY PLAN command.
+** </ul>
+**
+** Output parameters *pzName and *pzExplain are set to point to buffers 
+** managed by the statement object. Both of these pointers may be invalidated
+** by any API call on the same statement object, including an sqlite3_step()
+** sqlite3_bind_*() call.
 **
 ** Statistics may not be available for all loops in all statements. In cases
 ** where there exist loops with no available statistics, this function ignores
@@ -7436,6 +7456,8 @@ SQLITE_EXPERIMENTAL int sqlite3_stmt_scanstatus(
 
 
 /*
+** CAPI3REF: Zero Scan-Status Counters
+**
 ** Zero all sqlite3_stmt_scanstatus() related event counters.
 **
 ** This API is only available if the library is built with pre-processor

@@ -1,5 +1,5 @@
-C Add\sthe\sexperimental\ssqlite3_stmt_scanstatus()\sAPI.
-D 2014-10-31T20:11:32.562
+C Minor\sfixes\sand\sdocumentation\simprovements\sfor\ssqlite3_stmt_scanstatus().
+D 2014-11-01T18:08:04.130
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -229,7 +229,7 @@ F src/resolve.c 4965007d6497b6a4d7a6d98751cc39712885f952
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 428165951748151e87a15295b7357221433e311b
 F src/shell.c 282f8f5278e0c78eb442217531172ec9e1538796
-F src/sqlite.h.in 6e90cdb404e4fa8c0eb149ca79c11c6608a97ece
+F src/sqlite.h.in aeba29025ba5fc721a11c1b81ed8745f93029590
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
 F src/sqliteInt.h 4f86ac648ea398c1bb3db036062934cde257ea23
@@ -289,7 +289,7 @@ F src/update.c 3c4ecc282accf12d39edb8d524cf089645e55a13
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c 3b627daa45c7308c1e36e3dbaa3f9ce7e5c7fa73
 F src/vacuum.c 59f03f92bcff57faa6a8ca256eb29ccddfb0614a
-F src/vdbe.c 80329be857cff3c2d6e8c1f594ac689166c44ae7
+F src/vdbe.c 5240bad20ce0b707afee211f0c21a862b54b1e0b
 F src/vdbe.h f8e5388173dbf8408da4ae1dcbf75911caf2253d
 F src/vdbeInt.h 284b2294c188474daa9b5ce2bd0200560cb0940d
 F src/vdbeapi.c 2afa2e162f290879ca9c51e8795a377035f1662a
@@ -302,8 +302,8 @@ F src/vtab.c 2a30791bbd7926b589401bd09c3abb33de563793
 F src/wal.c 10e7de7ce90865a68153f001a61f1d985cd17983
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
-F src/where.c 344beac082f8f4f69ec7c4a669d74294475e5abe
-F src/whereInt.h 19279cd0664ce1d90b9ad3ef0108cb494acfe455
+F src/where.c 636ca646c8f2f53fd66f9ed5c773e84cb0c4b762
+F src/whereInt.h 99d324a8f921d7a40c605a8b197350c3cb18977d
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test b35b4cd69fc913f90d39a575e171e1116c3a4bb7
@@ -801,7 +801,7 @@ F test/savepoint4.test c8f8159ade6d2acd9128be61e1230f1c1edc6cc0
 F test/savepoint5.test 0735db177e0ebbaedc39812c8d065075d563c4fd
 F test/savepoint6.test f41279c5e137139fa5c21485773332c7adb98cd7
 F test/savepoint7.test fbf319a7b2dda089ec5be30a424a0e95f121d423
-F test/scanstatus.test a62dad3311fc51eab1d6977b082738bd2148fe07
+F test/scanstatus.test b4b1780bad243e1576329d05597b99f06886e4d2
 F test/schema.test 8f7999be894260f151adf15c2c7540f1c6d6a481
 F test/schema2.test 906408621ea881fdb496d878b1822572a34e32c5
 F test/schema3.test 1bc1008e1f8cb5654b248c55f27249366eb7ed38
@@ -1211,10 +1211,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 67f0d469da28c023200239a1f3d0c6cef9ef0e45
-R 4c76f3e7b97f67c1dd65bda3a6e96149
-T *branch * scanstatus
-T *sym-scanstatus *
-T -sym-trunk *
+P 6a9bab34aeb6a01b612211a28c140de60a3e883c
+R d964f269915d57cf95d9198c6ba22665
 U dan
-Z 4994ca943ee260eeca8f493b4f59766a
+Z 082decdd6298ff1a2330407f8d406dfb

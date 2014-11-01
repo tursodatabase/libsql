@@ -407,6 +407,7 @@ struct WhereInfo {
   int iTop;                 /* The very beginning of the WHERE loop */
   int iContinue;            /* Jump here to continue with next record */
   int iBreak;               /* Jump here to break out of the loop */
+  int iExplain;             /* Address of OP_Explain (if WHERE_ONETABLE_ONLY) */
   int savedNQueryLoop;      /* pParse->nQueryLoop outside the WHERE loop */
   int aiCurOnePass[2];      /* OP_OpenWrite cursors for the ONEPASS opt */
   WhereMaskSet sMaskSet;    /* Map cursor numbers to bitmasks */

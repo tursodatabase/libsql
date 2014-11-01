@@ -2739,7 +2739,7 @@ static int codeAllEqualityTerms(
   return regBase;
 }
 
-#ifndef SQLITE_OMIT_EXPLAIN
+#if !defined(SQLITE_OMIT_EXPLAIN) || defined(SQLITE_ENABLE_STMT_SCANSTATUS)
 /*
 ** This routine is a helper for explainIndexRange() below
 **
@@ -2815,19 +2815,23 @@ static void explainIndexRange(StrAccum *pStr, WhereLoop *pLoop, Table *pTab){
 static void explainOneScan(
   Parse *pParse,                  /* Parse context */
   SrcList *pTabList,              /* Table list this loop refers to */
-  WhereLevel *pLevel,             /* Scan to write OP_Explain opcode for */
+  WhereInfo *pWInfo,              /* WHERE clause this loop belongs to */
   int iLevel,                     /* Value for "level" column of output */
-  int iFrom,                      /* Value for "from" column of output */
   u16 wctrlFlags                  /* Flags passed to sqlite3WhereBegin() */
 ){
 #if !defined(SQLITE_DEBUG) && !defined(SQLITE_ENABLE_STMT_SCANSTATUS)
   if( pParse->explain==2 )
 #endif
   {
+    WhereLevel *pLevel = &pWInfo->a[iLevel];
     struct SrcList_item *pItem = &pTabList->a[pLevel->iFrom];
     Vdbe *v = pParse->pVdbe;      /* VM being constructed */
     sqlite3 *db = pParse->db;     /* Database handle */
-    int iId = pParse->iSelectId;  /* Select id (left-most output column) */
+#ifdef SQLITE_OMIT_EXPLAIN
+    int iId = 0;                  /* Select id (left-most output column) */
+#else
+    int iId = pParse->iSelectId;   /* Select id (left-most output column) */
+#endif
     int isSearch;                 /* True for a SEARCH. False for SCAN. */
     WhereLoop *pLoop;             /* The controlling WhereLoop object */
     u32 flags;                    /* Flags that describe this loop */
@@ -2839,7 +2843,7 @@ static void explainOneScan(
 
     pLoop = pLevel->pWLoop;
     flags = pLoop->wsFlags;
-    if( (flags&WHERE_MULTI_OR) || (wctrlFlags&WHERE_ONETABLE_ONLY) ) return;
+    if( (flags&WHERE_MULTI_OR) ) return;
 
     sqlite3StrAccumInit(&str, zBuf, sizeof(zBuf), SQLITE_MAX_LENGTH);
     str.db = db;
@@ -2865,7 +2869,11 @@ static void explainOneScan(
             || (wctrlFlags&(WHERE_ORDERBY_MIN|WHERE_ORDERBY_MAX));
     sqlite3StrAccumAppendAll(&str, isSearch ? "SEARCH" : "SCAN");
     if( pItem->pSelect ){
+#ifdef SQLITE_OMIT_EXPLAIN
+      sqlite3XPrintf(&str, 0, " SUBQUERY 0");
+#else
       sqlite3XPrintf(&str, 0, " SUBQUERY %d", pItem->iSelectId);
+#endif
     }else{
       sqlite3XPrintf(&str, 0, " TABLE %s", pItem->zName);
     }
@@ -2937,15 +2945,15 @@ static void explainOneScan(
       pExplain->nEst = nEstRow;
       pExplain->zName = (const char*)&pExplain[1];
       pExplain->zExplain = &pExplain->zName[sqlite3Strlen30(pExplain->zName)+1];
-      sqlite3VdbeAddOp4(v, OP_Explain, 
-          iId, iLevel, iFrom, (char*)pExplain,P4_EXPLAIN
+      pWInfo->iExplain = sqlite3VdbeAddOp4(v, OP_Explain, 
+          iId, iLevel, pLevel->iFrom, (char*)pExplain,P4_EXPLAIN
       );
     }
   }
 }
 #else
-# define explainOneScan(u,v,w,x,y,z)
-#endif /* SQLITE_OMIT_EXPLAIN */
+# define explainOneScan(v,w,x,y,z)
+#endif /* !SQLITE_OMIT_EXPLAIN || SQLITE_ENABLE_STMT_SCANSTATUS */
 
 
 /*
@@ -3613,9 +3621,15 @@ static Bitmask codeOneLoopStart(
         assert( pSubWInfo || pParse->nErr || db->mallocFailed );
         if( pSubWInfo ){
           WhereLoop *pSubLoop;
-          explainOneScan(
-              pParse, pOrTab, &pSubWInfo->a[0], iLevel, pLevel->iFrom, 0
-          );
+
+          /* If an OP_Explain was added for this sub-loop, fix the P2 and
+          ** P3 parameters to it so that they are relative to the current
+          ** context.  */
+          if( pSubWInfo->iExplain!=0 ){
+            sqlite3VdbeChangeP2(v, pSubWInfo->iExplain, iLevel);
+            sqlite3VdbeChangeP3(v, pSubWInfo->iExplain, pLevel->iFrom);
+          }
+
           /* This is the sub-WHERE clause body.  First skip over
           ** duplicate rows from prior sub-WHERE clauses, and record the
           ** rowid (or PRIMARY KEY) for the current row so that the same
@@ -6455,7 +6469,7 @@ WhereInfo *sqlite3WhereBegin(
       if( db->mallocFailed ) goto whereBeginError;
     }
 #endif
-    explainOneScan(pParse, pTabList, pLevel, ii, pLevel->iFrom, wctrlFlags);
+    explainOneScan(pParse, pTabList, pWInfo, ii, wctrlFlags);
     pLevel->addrBody = sqlite3VdbeCurrentAddr(v);
     notReady = codeOneLoopStart(pWInfo, ii, notReady);
     pWInfo->iContinue = pLevel->addrCont;

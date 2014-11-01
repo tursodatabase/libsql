@@ -3889,6 +3889,7 @@ case OP_NotExists: {        /* jump, in3 */
   res = 0;
   iKey = pIn3->u.i;
   rc = sqlite3BtreeMovetoUnpacked(pCrsr, 0, iKey, 0, &res);
+  IncrementExplainCounter(pC, nLoop);
   pC->movetoTarget = iKey;  /* Used by OP_Delete */
   pC->nullRow = 0;
   pC->cacheStatus = CACHE_STALE;
@@ -3896,6 +3897,8 @@ case OP_NotExists: {        /* jump, in3 */
   VdbeBranchTaken(res!=0,2);
   if( res!=0 ){
     pc = pOp->p2 - 1;
+  }else{
+    IncrementExplainCounter(pC, nVisit);
   }
   pC->seekResult = res;
   break;
