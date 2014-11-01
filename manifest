@@ -1,5 +1,5 @@
-C If\sSQLITE_ENABLE_STMT_SCANSTATUS\sis\sdefined,\srecord\sthe\snumber\sof\stimes\seach\sVDBE\sopcode\sis\sexecuted.\sDerive\sthe\svalues\sreturned\sby\ssqlite3_stmt_scanstatus()\sfrom\sthese\srecords\son\sdemand.
-D 2014-11-01T20:38:06.833
+C Minor\sperformance\senhancements\sto\sSQLITE_ENABLE_STMT_SCANSTATUS\scode.
+D 2014-11-01T21:00:04.841
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -289,11 +289,11 @@ F src/update.c 3c4ecc282accf12d39edb8d524cf089645e55a13
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c 3b627daa45c7308c1e36e3dbaa3f9ce7e5c7fa73
 F src/vacuum.c 59f03f92bcff57faa6a8ca256eb29ccddfb0614a
-F src/vdbe.c 69d025732d242d7c97282e6570a4e5eb768ebaff
+F src/vdbe.c ccc626d70659160596d28b4a910b6086da788695
 F src/vdbe.h 7d603b93d128e614ba2600f12a6c541435405522
-F src/vdbeInt.h ee8d44cba5998279039bcd91ebddb6d9a2d463b8
+F src/vdbeInt.h 21570e5ec8b3a385d003e6e20f3a91712b7050e5
 F src/vdbeapi.c 19e433e69fe2b27bfc9337a207b6ebf499f41d03
-F src/vdbeaux.c bad342af7cadb8d3bf2990700a78787d602dcd69
+F src/vdbeaux.c 2887d02721c540b25969d3260d0d3d5668d11583
 F src/vdbeblob.c 8b5442ff0954c44b45cbabbe2e94091a2e16fdef
 F src/vdbemem.c 31d8eabb0cd78bfeab4e5124c7363c3e9e54db9f
 F src/vdbesort.c 975aeffa99acb0991b2f288d30294756bff41438
@@ -302,7 +302,7 @@ F src/vtab.c 2a30791bbd7926b589401bd09c3abb33de563793
 F src/wal.c 10e7de7ce90865a68153f001a61f1d985cd17983
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
-F src/where.c fb404e3db40db61c212ffb39022e885a91252498
+F src/where.c ad4a3bca9070e013ff41e8e63835788bcc43dd1c
 F src/whereInt.h a2bc22f4e3e70eeaa57272f354c288bc3b71b80b
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1211,7 +1211,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8d8cc9608d30bb65fffcfe488e904411cbbc7f41
-R e1e809461d373caeeb0e83f126874426
+P 9ea37422a8cc2fce51bb10508e5e90f40fd4b511
+R 4191876729196c1564c4c28cce5855c1
 U dan
-Z 5d5debb04affeaeb7378f6b538c8f641
+Z 150c277a759b1b656399ef38dfe29c92

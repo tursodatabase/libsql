@@ -132,6 +132,7 @@ struct VdbeFrame {
   Vdbe *v;                /* VM this frame belongs to */
   VdbeFrame *pParent;     /* Parent of this frame, or NULL if parent is main */
   Op *aOp;                /* Program instructions for parent frame */
+  i64 *anExec;            /* Event counters from parent frame */
   Mem *aMem;              /* Array of memory cells for parent frame */
   u8 *aOnceFlag;          /* Array of OP_Once flags for parent frame */
   VdbeCursor **apCsr;     /* Array of Vdbe cursors for parent frame */

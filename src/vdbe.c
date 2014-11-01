@@ -609,7 +609,7 @@ int sqlite3VdbeExec(
     nVmStep++;
     pOp = &aOp[pc];
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
-    if( p->pFrame==0 ) p->anExec[pc]++;
+    if( p->anExec ) p->anExec[pc]++;
 #endif
 
     /* Only allow tracing if SQLITE_DEBUG is defined.
@@ -5409,6 +5409,7 @@ case OP_Program: {        /* jump */
     pFrame->token = pProgram->token;
     pFrame->aOnceFlag = p->aOnceFlag;
     pFrame->nOnceFlag = p->nOnceFlag;
+    pFrame->anExec = p->anExec;
 
     pEnd = &VdbeFrameMem(pFrame)[pFrame->nChildMem];
     for(pMem=VdbeFrameMem(pFrame); pMem!=pEnd; pMem++){
@@ -5437,6 +5438,7 @@ case OP_Program: {        /* jump */
   p->nOp = pProgram->nOp;
   p->aOnceFlag = (u8 *)&p->apCsr[p->nCursor];
   p->nOnceFlag = pProgram->nOnce;
+  p->anExec = 0;
   pc = -1;
   memset(p->aOnceFlag, 0, p->nOnceFlag);
 

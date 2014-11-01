@@ -2821,7 +2821,7 @@ static int explainOneScan(
   u16 wctrlFlags                  /* Flags passed to sqlite3WhereBegin() */
 ){
   int ret = 0;
-#ifndef SQLITE_DEBUG
+#if !defined(SQLITE_DEBUG) && !defined(SQLITE_ENABLE_STMT_SCANSTATUS)
   if( pParse->explain==2 )
 #endif
   {
