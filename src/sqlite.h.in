@@ -7406,54 +7406,75 @@ int sqlite3_vtab_on_conflict(sqlite3 *);
 /* #define SQLITE_ABORT 4  // Also an error code */
 #define SQLITE_REPLACE  5
 
+/* CAPI3REF: Prepared Statement Scan Status Opcodes
+** KEYWORDS: {scanstatus option}
+**
+** The following constants can be used for the T parameter to the
+** [sqlite3_stmt_scanstatus(S,X,T,V)] interface.  Each constant designates a
+** different metric for sqlite3_stmt_scanstatus() to return.
+**
+** <dl>
+** [[SQLITE_SCANSTAT_NLOOP]] <td>SQLITE_SCANSTAT_NLOOP</dt>
+** <dd>The [sqlite3_int64] variable pointed to by the T parameter will be set to the
+** total number of times that the X-th loop has run.</dd>
+**
+** [[SQLITE_SCANSTAT_NVISIT]] <td>SQLITE_SCANSTAT_NVISIT</dt>
+** <dd>The [sqlite3_int64] variable pointed to by the T parameter will be set to the
+** total number of rows visited by the X-th loop.</dd>
+**
+** [[SQLITE_SCANSTAT_EST]] <td>SQLITE_SCANSTAT_EST</dt>
+** <dd>The [sqlite3_int64] variable pointed to by the T parameter will be set to the
+** query planner's estimate for the number of rows visited for each
+** iteration of the X-th loop.  If the query planner's estimate was accurate,
+** then this value should be approximately NVISIT/NLOOP.
+**
+** [[SQLITE_SCANSTAT_NAME]] <td>SQLITE_SCANSTAT_NAME</dt>
+** <dd>The "const char *" variable pointed to by the T parameter will be set to 
+** a zero-terminated UTF-8 string containing the name of the index or table used
+** for the X-th loop.
+**
+** [[SQLITE_SCANSTAT_EXPLAIN]] <td>SQLITE_SCANSTAT_EXPLAIN</dt>
+** <dd>The "const char *" variable pointed to by the T parameter will be set to 
+** a zero-terminated UTF-8 string containing the [EXPLAIN QUERY PLAN] description
+** for the X-th loop.
+** </dl>
+*/
+#define SQLITE_SCANSTAT_NLOOP    0
+#define SQLITE_SCANSTAT_NVISIT   1
+#define SQLITE_SCANSTAT_NEST     2
+#define SQLITE_SCANSTAT_NAME     3
+#define SQLITE_SCANSTAT_EXPLAIN  4
 
 /*
-** CAPI3REF: Prepared Statement Scan Statuses
+** CAPI3REF: Prepared Statement Scan Status
 **
 ** Return status data for a single loop within query pStmt.
 **
+** The "iScanStatusOp" parameter determines which status information to return.
+** The "iScanStatusOp" must be one of the [scanstatus options] or the behavior of
+** this interface is undefined.
+** The requested measurement is written into a variable pointed to by
+** the "pOut" parameter.
 ** Parameter "idx" identifies the specific loop to retrieve statistics for.
 ** Loops are numbered starting from zero. If idx is out of range - less than
 ** zero or greater than or equal to the total number of loops used to implement
-** the statement - a non-zero value is returned. In this case the final value
-** of all five output parameters is undefined. Otherwise, if idx is in range,
-** zero is returned and the output parameters set as follows:
+** the statement - a non-zero value is returned and the variable that pOut
+** points to is unchanged.
 **
-** <ul>
-**   <li> (*pnLoop) is set to the total number of times the loop has been run.
-**   <li> (*pnVisit) is set to the total number of rows visited by the loop.
-**   <li> (*pnEst) is set to the estimate of the number of rows visited
-**        by each run of the loop used by the SQL optimizer. Ideally, this
-**        value should be close to (*pnVisit)/(*pnLoop).
-**   <li> (*pzName) is set to point to a nul-terminated string containing the
-**        name of the index of table used by this loop.
-**   <li> (*pzExplain) is set to point to a nul-terminated string containing 
-**        same text that would be returned for this loop by an EXPLAIN
-**        QUERY PLAN command.
-** </ul>
-**
-** Output parameters *pzName and *pzExplain are set to point to buffers 
-** managed by the statement object. Both of these pointers may be invalidated
-** by any API call on the same statement object, including an sqlite3_step()
-** sqlite3_bind_*() call.
-**
-** Statistics may not be available for all loops in all statements. In cases
-** where there exist loops with no available statistics, this function ignores
-** them completely.
+** Statistics might not be available for all loops in all statements. In cases
+** where there exist loops with no available statistics, this function behaves
+** as if the loop did not exist - it returns non-zero and leave the variable
+** that pOut points to unchanged.
 **
 ** This API is only available if the library is built with pre-processor
-** symbol SQLITE_ENABLE_STMT_SCANSTATUS defined.
+** symbol [SQLITE_ENABLE_STMT_SCANSTATUS] defined.
 */
 SQLITE_EXPERIMENTAL int sqlite3_stmt_scanstatus(
-  sqlite3_stmt *pStmt,
-  int idx,                        /* Index of loop to report on */
-  sqlite3_int64 *pnLoop,          /* OUT: Number of times loop was run */
-  sqlite3_int64 *pnVisit,         /* OUT: Number of rows visited (all loops) */
-  sqlite3_int64 *pnEst,           /* OUT: Number of rows estimated (per loop) */
-  const char **pzName,            /* OUT: Object name (table or index) */
-  const char **pzExplain          /* OUT: EQP string */
-);
-
+  sqlite3_stmt *pStmt,      /* Prepared statement for which info desired */
+  int idx,                  /* Index of loop to report on */
+  int iScanStatusOp,        /* Information desired.  SQLITE_SCANSTAT_* */
+  void *pOut                /* Result written here */
+);     
 
 /*
 ** CAPI3REF: Zero Scan-Status Counters
@@ -7461,7 +7482,7 @@ SQLITE_EXPERIMENTAL int sqlite3_stmt_scanstatus(
 ** Zero all sqlite3_stmt_scanstatus() related event counters.
 **
 ** This API is only available if the library is built with pre-processor
-** symbol SQLITE_ENABLE_STMT_SCANSTATUS defined.
+** symbol [SQLITE_ENABLE_STMT_SCANSTATUS] defined.
 */
 SQLITE_EXPERIMENTAL void sqlite3_stmt_scanstatus_reset(sqlite3_stmt*);
 

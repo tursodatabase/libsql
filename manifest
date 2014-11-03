@@ -1,5 +1,5 @@
-C Add\sfurther\stests.\sFixes\sso\sthat\scompilation\swithout\sENABLE_STMT_SCANSTATUS\sworks.
-D 2014-11-03T15:33:17.869
+C Refactor\sthe\sinterface\sto\smake\sit\smore\seasily\sextensible.
+D 2014-11-03T16:35:55.977
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -229,7 +229,7 @@ F src/resolve.c 4965007d6497b6a4d7a6d98751cc39712885f952
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 428165951748151e87a15295b7357221433e311b
 F src/shell.c 282f8f5278e0c78eb442217531172ec9e1538796
-F src/sqlite.h.in aeba29025ba5fc721a11c1b81ed8745f93029590
+F src/sqlite.h.in a110c6320b3af8d7c0660fa1adbc530b6caa2d95
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
 F src/sqliteInt.h 4f86ac648ea398c1bb3db036062934cde257ea23
@@ -237,7 +237,7 @@ F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 81712116e826b0089bb221b018929536b2b5406f
 F src/table.c f142bba7903e93ca8d113a5b8877a108ad1a27dc
 F src/tclsqlite.c 7cdd4dd3c2a4183483feca260070d73d6e22cd47
-F src/test1.c b53f4da2f386efa5c248716cd4bdc8344a87e952
+F src/test1.c 5890094c09691fe9564cf0f0d5b22d35b3218c47
 F src/test2.c 98049e51a17dc62606a99a9eb95ee477f9996712
 F src/test3.c 1c0e5d6f080b8e33c1ce8b3078e7013fdbcd560c
 F src/test4.c 9b32d22f5f150abe23c1830e2057c4037c45b3df
@@ -292,7 +292,7 @@ F src/vacuum.c 59f03f92bcff57faa6a8ca256eb29ccddfb0614a
 F src/vdbe.c 175a360c56e75ce4eb2b60704fd7c011b93926f5
 F src/vdbe.h d412bd01e89f0d69991b8f46601f96bc169d28f4
 F src/vdbeInt.h 539ba284790e871f98be74a78cbdfcedfae22639
-F src/vdbeapi.c addf446ecade237bebd7e9fe769bdfb9db8d9fb1
+F src/vdbeapi.c 76d62888455e3d3ffeaf70911cefa94e76a4678a
 F src/vdbeaux.c cf6b8152dd22155201d57c216e6266866b61da59
 F src/vdbeblob.c 8b5442ff0954c44b45cbabbe2e94091a2e16fdef
 F src/vdbemem.c 31d8eabb0cd78bfeab4e5124c7363c3e9e54db9f
@@ -1211,7 +1211,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f5313e0c680d9baebefb1cf50ddadedd4418a334
-R b9cde6c71acdc4fef0c5c1ac03d62018
-U dan
-Z f0600457ea98c0c998694790015a9674
+P a2303c719222f1effb51acc6b37930561148c00c
+R cbd06b886fdee03f70c2bf18e1342ca1
+U drh
+Z 0328a60e2b5415c07361c47ade3f21c5

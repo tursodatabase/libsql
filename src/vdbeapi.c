@@ -1481,27 +1481,42 @@ int sqlite3_stmt_status(sqlite3_stmt *pStmt, int op, int resetFlag){
 ** Return status data for a single loop within query pStmt.
 */
 int sqlite3_stmt_scanstatus(
-  sqlite3_stmt *pStmt,
+  sqlite3_stmt *pStmt,            /* Prepared statement being queried */
   int idx,                        /* Index of loop to report on */
-  sqlite3_int64 *pnLoop,          /* OUT: Number of times loop was run */
-  sqlite3_int64 *pnVisit,         /* OUT: Number of rows visited (all loops) */
-  sqlite3_int64 *pnEst,           /* OUT: Number of rows estimated (per loop) */
-  const char **pzName,            /* OUT: Object name (table or index) */
-  const char **pzExplain          /* OUT: EQP string */
+  int iScanStatusOp,              /* Which metric to return */
+  void *pOut                      /* OUT: Write the answer here */
 ){
   Vdbe *p = (Vdbe*)pStmt;
   ScanStatus *pScan;
   if( idx<0 || idx>=p->nScan ) return 1;
   pScan = &p->aScan[idx];
-  if( pnLoop ) *pnLoop = p->anExec[pScan->addrLoop];
-  if( pnVisit ) *pnVisit = p->anExec[pScan->addrVisit];
-  if( pnEst ) *pnEst = pScan->nEst;
-  if( *pzName ) *pzName = pScan->zName;
-  if( *pzExplain ){
-    if( pScan->addrExplain ){
-      *pzExplain = p->aOp[ pScan->addrExplain ].p4.z;
-    }else{
-      *pzExplain = 0;
+  switch( iScanStatusOp ){
+    case SQLITE_SCANSTAT_NLOOP: {
+      *(sqlite3_int64*)pOut = p->anExec[pScan->addrLoop];
+      break;
+    }
+    case SQLITE_SCANSTAT_NVISIT: {
+      *(sqlite3_int64*)pOut = p->anExec[pScan->addrVisit];
+      break;
+    }
+    case SQLITE_SCANSTAT_EST: {
+      *(sqlite3_int64*)pOut = pScan->nEst;
+      break;
+    }
+    case SQLITE_SCANSTAT_NAME: {
+      *(const char**)pOut = pScan->zName
+      break;
+    }
+    case SQLITE_SCANSTAT_EXPLAIN: {
+      if( pScan->addrExplain ){
+        *(const char**)pOut = p->aOp[ pScan->addrExplain ].p4.z;
+      }else{
+        *(const char**)pOut = 0;
+      }
+      break;
+    }
+    default: {
+      return 1;
     }
   }
   return 0;
@@ -1515,4 +1530,3 @@ void sqlite3_stmt_scanstatus_reset(sqlite3_stmt *pStmt){
   memset(p->anExec, 0, p->nOp * sizeof(i64));
 }
 #endif /* SQLITE_ENABLE_STMT_SCANSTATUS */
-

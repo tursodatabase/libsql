@@ -2328,19 +2328,21 @@ static int test_stmt_scanstatus(
   if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
   if( Tcl_GetIntFromObj(interp, objv[2], &idx) ) return TCL_ERROR;
 
-  res = sqlite3_stmt_scanstatus(
-      pStmt, idx, &nLoop, &nVisit, &nEst, &zName, &zExplain
-  );
+  res = sqlite3_stmt_scanstatus(pStmt, idx, SQLITE_SCANSTAT_NLOOP, (void*)&nLoop);
   if( res==0 ){
     Tcl_Obj *pRet = Tcl_NewObj();
     Tcl_ListObjAppendElement(0, pRet, Tcl_NewStringObj("nLoop", -1));
     Tcl_ListObjAppendElement(0, pRet, Tcl_NewWideIntObj(nLoop));
+    sqlite3_stmt_scanstatus(pStmt, idx, SQLITE_SCANSTAT_NVISIT, (void*)&nVisit);
     Tcl_ListObjAppendElement(0, pRet, Tcl_NewStringObj("nVisit", -1));
     Tcl_ListObjAppendElement(0, pRet, Tcl_NewWideIntObj(nVisit));
+    sqlite3_stmt_scanstatus(pStmt, idx, SQLITE_SCANSTAT_EST, (void*)&nEst);
     Tcl_ListObjAppendElement(0, pRet, Tcl_NewStringObj("nEst", -1));
     Tcl_ListObjAppendElement(0, pRet, Tcl_NewWideIntObj(nEst));
+    sqlite3_stmt_scanstatus(pStmt, idx, SQLITE_SCANSTAT_NAME, (void*)&zName);
     Tcl_ListObjAppendElement(0, pRet, Tcl_NewStringObj("zName", -1));
     Tcl_ListObjAppendElement(0, pRet, Tcl_NewStringObj(zName, -1));
+    sqlite3_stmt_scanstatus(pStmt, idx, SQLITE_SCANSTAT_EXPLAIN, (void*)&zExplain);
     Tcl_ListObjAppendElement(0, pRet, Tcl_NewStringObj("zExplain", -1));
     Tcl_ListObjAppendElement(0, pRet, Tcl_NewStringObj(zExplain, -1));
     Tcl_SetObjResult(interp, pRet);
