@@ -786,6 +786,7 @@ static int sqlite3StrAccumEnlarge(StrAccum *p, int N){
       assert( p->zText!=0 || p->nChar==0 );
       if( zOld==0 && p->nChar>0 ) memcpy(zNew, p->zText, p->nChar);
       p->zText = zNew;
+      p->nAlloc = sqlite3DbMallocSize(p->db, zNew);
     }else{
       sqlite3StrAccumReset(p);
       setStrAccumError(p, STRACCUM_NOMEM);
