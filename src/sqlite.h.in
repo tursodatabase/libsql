@@ -7441,7 +7441,7 @@ int sqlite3_vtab_on_conflict(sqlite3 *);
 */
 #define SQLITE_SCANSTAT_NLOOP    0
 #define SQLITE_SCANSTAT_NVISIT   1
-#define SQLITE_SCANSTAT_NEST     2
+#define SQLITE_SCANSTAT_EST      2
 #define SQLITE_SCANSTAT_NAME     3
 #define SQLITE_SCANSTAT_EXPLAIN  4
 

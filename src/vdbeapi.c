@@ -1504,7 +1504,7 @@ int sqlite3_stmt_scanstatus(
       break;
     }
     case SQLITE_SCANSTAT_NAME: {
-      *(const char**)pOut = pScan->zName
+      *(const char**)pOut = pScan->zName;
       break;
     }
     case SQLITE_SCANSTAT_EXPLAIN: {
