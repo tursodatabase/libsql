@@ -2953,7 +2953,7 @@ static void addScanStatus(
   );
 }
 #else
-# define addScanStatus(a, b, c, d)
+# define addScanStatus(a, b, c, d) ((void)d)
 #endif
 
 

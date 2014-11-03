@@ -14,6 +14,11 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix scanstatus
 
+ifcapable !scanstatus {
+  finish_test
+  return
+}
+
 do_execsql_test 1.0 {
   CREATE TABLE t1(a, b);
   CREATE TABLE t2(x, y);
@@ -265,5 +270,129 @@ do_scanstatus_test 4.2.2 {
 
   nLoop 1 nVisit 3 nEst 524288 zName c1 zExplain {SCAN TABLE c1}
 }
+
+#-------------------------------------------------------------------------
+# Further tests of different scan types.
+#
+reset_db
+proc tochar {i} {
+  set alphabet {a b c d e f g h i j k l m n o p q r s t u v w x y z}
+  return [lindex $alphabet [expr $i % [llength $alphabet]]]
+}
+db func tochar tochar
+do_execsql_test 5.0 {
+  CREATE TABLE t1(a PRIMARY KEY, b, c);
+  INSERT INTO t1 VALUES(0, 1, 'a');
+  INSERT INTO t1 VALUES(1, 0, 'b');
+  INSERT INTO t1 VALUES(2, 1, 'c');
+  INSERT INTO t1 VALUES(3, 0, 'd');
+  INSERT INTO t1 VALUES(4, 1, 'e');
+  INSERT INTO t1 VALUES(5, 0, 'a');
+  INSERT INTO t1 VALUES(6, 1, 'b');
+  INSERT INTO t1 VALUES(7, 0, 'c');
+  INSERT INTO t1 VALUES(8, 1, 'd');
+  INSERT INTO t1 VALUES(9, 0, 'e');
+  CREATE INDEX t1bc ON t1(b, c);
+
+  CREATE TABLE t2(x, y);
+  CREATE INDEX t2xy ON t2(x, y);
+  WITH data(i, x, y) AS (
+    SELECT 0, 0, tochar(0) 
+    UNION ALL
+    SELECT i+1, (i+1)%2, tochar(i+1) FROM data WHERE i<500
+  ) INSERT INTO t2 SELECT x, y FROM data;
+
+  CREATE TABLE t3(x, y);
+  INSERT INTO t3 SELECT * FROM t2;
+
+  ANALYZE;
+}
+
+do_execsql_test 5.1.1 {
+  SELECT count(*) FROM t1 WHERE a IN (SELECT b FROM t1 AS ii)
+} {2}
+do_scanstatus_test 5.1.2 { 
+  nLoop 1 nVisit 10 nEst 10 zName t1bc 
+  zExplain {SCAN TABLE t1 AS ii USING COVERING INDEX t1bc}
+  nLoop 1 nVisit 2 nEst 8 zName sqlite_autoindex_t1_1
+  zExplain {SEARCH TABLE t1 USING COVERING INDEX sqlite_autoindex_t1_1 (a=?)}
+}
+
+do_execsql_test 5.2.1 {
+  SELECT count(*) FROM t1 WHERE a IN (0, 1)
+} {2}
+do_scanstatus_test 5.2.2 { 
+  nLoop 1 nVisit 2 nEst 2 zName sqlite_autoindex_t1_1
+  zExplain {SEARCH TABLE t1 USING COVERING INDEX sqlite_autoindex_t1_1 (a=?)}
+}
+
+do_eqp_test 5.3.1 {
+  SELECT count(*) FROM t2 WHERE y = 'j';
+} {0 0 0 {SEARCH TABLE t2 USING COVERING INDEX t2xy (ANY(x) AND y=?)}}
+do_execsql_test 5.3.2 {
+  SELECT count(*) FROM t2 WHERE y = 'j';
+} {19}
+do_scanstatus_test 5.3.3 { 
+  nLoop 1 nVisit 19 nEst 56 zName t2xy zExplain
+  {SEARCH TABLE t2 USING COVERING INDEX t2xy (ANY(x) AND y=?)}
+}
+
+do_eqp_test 5.4.1 {
+  SELECT count(*) FROM t1, t2 WHERE y = c;
+} {
+  0 0 0 {SCAN TABLE t1 USING COVERING INDEX t1bc}
+  0 1 1 {SEARCH TABLE t2 USING COVERING INDEX t2xy (ANY(x) AND y=?)}
+}
+do_execsql_test 5.4.2 {
+  SELECT count(*) FROM t1, t2 WHERE y = c;
+} {200}
+do_scanstatus_test 5.4.3 { 
+  nLoop 1 nVisit 10 nEst 10 zName t1bc 
+  zExplain {SCAN TABLE t1 USING COVERING INDEX t1bc}
+  nLoop 10 nVisit 200 nEst 56 zName t2xy 
+  zExplain {SEARCH TABLE t2 USING COVERING INDEX t2xy (ANY(x) AND y=?)}
+}
+
+do_eqp_test 5.5.1 {
+  SELECT count(*) FROM t1, t3 WHERE y = c;
+} {
+  0 0 1 {SCAN TABLE t3} 
+  0 1 0 {SEARCH TABLE t1 USING AUTOMATIC COVERING INDEX (c=?)}
+}
+do_execsql_test 5.5.2 {
+  SELECT count(*) FROM t1, t3 WHERE y = c;
+} {200}
+do_scanstatus_test 5.5.3 { 
+  nLoop 1 nVisit 501 nEst 480 zName t3 zExplain {SCAN TABLE t3}
+  nLoop 501 nVisit 200 nEst 20 zName auto-index zExplain
+  {SEARCH TABLE t1 USING AUTOMATIC COVERING INDEX (c=?)}
+}
+
+#-------------------------------------------------------------------------
+# Virtual table scans
+#
+ifcapable fts3 {
+  do_execsql_test 6.0 {
+    CREATE VIRTUAL TABLE ft1 USING fts4;
+    INSERT INTO ft1 VALUES('a d c f g h e i f c');
+    INSERT INTO ft1 VALUES('g c h b g b f f f g');
+    INSERT INTO ft1 VALUES('h h c c h f a e d d');
+    INSERT INTO ft1 VALUES('e j i j i e b c f g');
+    INSERT INTO ft1 VALUES('g f b g j c h a d f');
+    INSERT INTO ft1 VALUES('j i a e g f a i a c');
+    INSERT INTO ft1 VALUES('f d g g j j c a h g');
+    INSERT INTO ft1 VALUES('b d h a d j j j b i');
+    INSERT INTO ft1 VALUES('j e a b j e c b c i');
+    INSERT INTO ft1 VALUES('a d e f b j j c g d');
+  }
+  do_execsql_test 6.1.1 {
+    SELECT count(*) FROM ft1 WHERE ft1 MATCH 'd'
+  } {6}
+  do_scanstatus_test 6.1.2 { 
+    nLoop 1 nVisit 6 nEst 24 zName ft1 zExplain 
+    {SCAN TABLE ft1 VIRTUAL TABLE INDEX 3:}
+  }
+}
+
 
 finish_test

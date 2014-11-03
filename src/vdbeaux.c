@@ -1723,7 +1723,9 @@ void sqlite3VdbeMakeReady(
     p->apCsr = allocSpace(p->apCsr, nCursor*sizeof(VdbeCursor*),
                           &zCsr, zEnd, &nByte);
     p->aOnceFlag = allocSpace(p->aOnceFlag, nOnce, &zCsr, zEnd, &nByte);
+#ifdef SQLITE_ENABLE_STMT_SCANSTATUS
     p->anExec = allocSpace(p->anExec, p->nOp*sizeof(i64), &zCsr, zEnd, &nByte);
+#endif
     if( nByte ){
       p->pFree = sqlite3DbMallocZero(db, nByte);
     }
@@ -1791,7 +1793,9 @@ void sqlite3VdbeFreeCursor(Vdbe *p, VdbeCursor *pCx){
 */
 int sqlite3VdbeFrameRestore(VdbeFrame *pFrame){
   Vdbe *v = pFrame->v;
+#ifdef SQLITE_ENABLE_STMT_SCANSTATUS
   v->anExec = pFrame->anExec;
+#endif
   v->aOnceFlag = pFrame->aOnceFlag;
   v->nOnceFlag = pFrame->nOnceFlag;
   v->aOp = pFrame->aOp;

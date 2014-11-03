@@ -5409,7 +5409,9 @@ case OP_Program: {        /* jump */
     pFrame->token = pProgram->token;
     pFrame->aOnceFlag = p->aOnceFlag;
     pFrame->nOnceFlag = p->nOnceFlag;
+#ifdef SQLITE_ENABLE_STMT_SCANSTATUS
     pFrame->anExec = p->anExec;
+#endif
 
     pEnd = &VdbeFrameMem(pFrame)[pFrame->nChildMem];
     for(pMem=VdbeFrameMem(pFrame); pMem!=pEnd; pMem++){
@@ -5438,7 +5440,9 @@ case OP_Program: {        /* jump */
   p->nOp = pProgram->nOp;
   p->aOnceFlag = (u8 *)&p->apCsr[p->nCursor];
   p->nOnceFlag = pProgram->nOnce;
+#ifdef SQLITE_ENABLE_STMT_SCANSTATUS
   p->anExec = 0;
+#endif
   pc = -1;
   memset(p->aOnceFlag, 0, p->nOnceFlag);
 

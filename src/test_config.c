@@ -484,6 +484,12 @@ Tcl_SetVar2(interp, "sqlite_options", "mergesort", "1", TCL_GLOBAL_ONLY);
   Tcl_SetVar2(interp, "sqlite_options", "stat3", "0", TCL_GLOBAL_ONLY);
 #endif
 
+#ifdef SQLITE_ENABLE_STMT_SCANSTATUS
+  Tcl_SetVar2(interp, "sqlite_options", "scanstatus", "1", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "scanstatus", "0", TCL_GLOBAL_ONLY);
+#endif
+
 #if !defined(SQLITE_ENABLE_LOCKING_STYLE)
 #  if defined(__APPLE__)
 #    define SQLITE_ENABLE_LOCKING_STYLE 1
