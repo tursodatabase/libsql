@@ -3641,6 +3641,45 @@ static int db_use_legacy_prepare_cmd(
   Tcl_ResetResult(interp);
   return TCL_OK;
 }
+
+/*
+** Tclcmd: db_last_stmt_ptr DB
+**
+**   If the statement cache associated with database DB is not empty,
+**   return the text representation of the most recently used statement
+**   handle.
+*/
+static int db_last_stmt_ptr(
+  ClientData cd,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  extern int sqlite3TestMakePointerStr(Tcl_Interp*, char*, void*);
+  Tcl_CmdInfo cmdInfo;
+  SqliteDb *pDb;
+  sqlite3_stmt *pStmt = 0;
+  char zBuf[100];
+
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB");
+    return TCL_ERROR;
+  }
+
+  if( !Tcl_GetCommandInfo(interp, Tcl_GetString(objv[1]), &cmdInfo) ){
+    Tcl_AppendResult(interp, "no such db: ", Tcl_GetString(objv[1]), (char*)0);
+    return TCL_ERROR;
+  }
+  pDb = (SqliteDb*)cmdInfo.objClientData;
+
+  if( pDb->stmtList ) pStmt = pDb->stmtList->pStmt;
+  if( sqlite3TestMakePointerStr(interp, zBuf, pStmt) ){
+    return TCL_ERROR;
+  }
+  Tcl_SetResult(interp, zBuf, TCL_VOLATILE);
+
+  return TCL_OK;
+}
 #endif
 
 /*
@@ -3759,6 +3798,9 @@ static void init_all(Tcl_Interp *interp){
     );
     Tcl_CreateObjCommand(
         interp, "db_use_legacy_prepare", db_use_legacy_prepare_cmd, 0, 0
+    );
+    Tcl_CreateObjCommand(
+        interp, "db_last_stmt_ptr", db_last_stmt_ptr, 0, 0
     );
 
 #ifdef SQLITE_SSE
