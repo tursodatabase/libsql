@@ -231,4 +231,39 @@ do_scanstatus_test 3.4.2 {
   zExplain {SEARCH TABLE a1 USING INTEGER PRIMARY KEY (rowid=?)}
 }
 
+#-------------------------------------------------------------------------
+# Test that scanstatus() data is not available for searches performed
+# by triggers.
+#
+# It is available for searches performed as part of FK processing, but 
+# not FK action processing.
+#
+do_execsql_test 4.0 {
+  CREATE TABLE t1(a, b, c);
+  CREATE TABLE t2(x PRIMARY KEY, y, z);
+  CREATE TRIGGER tr1 AFTER INSERT ON t1 BEGIN
+    SELECT * FROM t2 WHERE x BETWEEN 20 AND 40;
+  END;
+  WITH d(x) AS (SELECT 1 UNION ALL SELECT x+1 AS n FROM d WHERE n<=100)
+  INSERT INTO t2 SELECT x, x*2, x*3 FROM d;
+}
+
+do_execsql_test    4.1.1 { INSERT INTO t1 VALUES(1, 2, 3); }
+do_scanstatus_test 4.1.2 { }
+
+do_execsql_test 4.2 {
+  CREATE TABLE p1(x PRIMARY KEY);
+  INSERT INTO p1 VALUES(1), (2), (3), (4);
+  CREATE TABLE c1(y REFERENCES p1);
+  INSERT INTO c1 VALUES(1), (2), (3);
+  PRAGMA foreign_keys=on;
+}
+do_execsql_test    4.2.1 { DELETE FROM p1 WHERE x=4 }
+do_scanstatus_test 4.2.2 { 
+  nLoop 1 nVisit 1 nEst 1 zName sqlite_autoindex_p1_1 
+  zExplain {SEARCH TABLE p1 USING INDEX sqlite_autoindex_p1_1 (x=?)}
+
+  nLoop 1 nVisit 3 nEst 524288 zName c1 zExplain {SCAN TABLE c1}
+}
+
 finish_test

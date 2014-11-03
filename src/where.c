@@ -2808,9 +2808,12 @@ static void explainIndexRange(StrAccum *pStr, WhereLoop *pLoop, Table *pTab){
 
 /*
 ** This function is a no-op unless currently processing an EXPLAIN QUERY PLAN
-** command. If the query being compiled is an EXPLAIN QUERY PLAN, a single
-** record is added to the output to describe the table scan strategy in 
-** pLevel.
+** command, or if either SQLITE_DEBUG or SQLITE_ENABLE_STMT_SCANSTATUS was
+** defined at compile-time. If it is not a no-op, a single OP_Explain opcode 
+** is added to the output to describe the table scan strategy in pLevel.
+**
+** If an OP_Explain opcode is added to the VM, its address is returned.
+** Otherwise, if no OP_Explain is coded, zero is returned.
 */
 static int explainOneScan(
   Parse *pParse,                  /* Parse context */
@@ -2919,11 +2922,20 @@ static int explainOneScan(
 #endif /* SQLITE_OMIT_EXPLAIN */
 
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
+/*
+** Configure the VM passed as the first argument with an
+** sqlite3_stmt_scanstatus() entry corresponding to the scan used to 
+** implement level pLvl. Argument pSrclist is a pointer to the FROM 
+** clause that the scan reads data from.
+**
+** If argument addrExplain is not 0, it must be the address of an 
+** OP_Explain instruction that describes the same loop.
+*/
 static void addScanStatus(
-  Vdbe *v, 
-  SrcList *pSrclist,
-  WhereLevel *pLvl,
-  int addrExplain
+  Vdbe *v,                        /* Vdbe to add scanstatus entry to */
+  SrcList *pSrclist,              /* FROM clause pLvl reads data from */
+  WhereLevel *pLvl,               /* Level to add scanstatus() entry for */
+  int addrExplain                 /* Address of OP_Explain (or 0) */
 ){
   const char *zObj = 0;
   i64 nEst = 1;
@@ -2936,7 +2948,7 @@ static void addScanStatus(
   if( pLoop->nOut>=10 ){
     nEst = sqlite3LogEstToInt(pLoop->nOut);
   }
-  sqlite3VdbeScanCounter(
+  sqlite3VdbeScanStatus(
       v, addrExplain, pLvl->addrBody, pLvl->addrVisit, nEst, zObj
   );
 }

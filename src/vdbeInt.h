@@ -297,8 +297,8 @@ struct Explain {
 */
 typedef unsigned bft;  /* Bit Field Type */
 
-typedef struct ScanCounter ScanCounter;
-struct ScanCounter {
+typedef struct ScanStatus ScanStatus;
+struct ScanStatus {
   int addrExplain;                /* OP_Explain for loop */
   int addrLoop;                   /* Address of "loops" counter */
   int addrVisit;                  /* Address of "rows visited" counter */
@@ -381,7 +381,7 @@ struct Vdbe {
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
   i64 *anExec;            /* Number of times each op has been executed */
   int nScan;              /* Entries in aScan[] */
-  ScanCounter *aScan;     /* Scan definitions for sqlite3_stmt_scanstatus() */
+  ScanStatus *aScan;      /* Scan definitions for sqlite3_stmt_scanstatus() */
 #endif
 };
 

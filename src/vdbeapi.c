@@ -1490,7 +1490,7 @@ int sqlite3_stmt_scanstatus(
   const char **pzExplain          /* OUT: EQP string */
 ){
   Vdbe *p = (Vdbe*)pStmt;
-  ScanCounter *pScan;
+  ScanStatus *pScan;
   if( idx<0 || idx>=p->nScan ) return 1;
   pScan = &p->aScan[idx];
   if( pnLoop ) *pnLoop = p->anExec[pScan->addrLoop];

@@ -601,7 +601,7 @@ int sqlite3VdbeAddOpList(Vdbe *p, int nOp, VdbeOpList const *aOp, int iLineno){
 /*
 ** Add an entry to the array of counters managed by sqlite3_stmt_scanstatus().
 */
-void sqlite3VdbeScanCounter(
+void sqlite3VdbeScanStatus(
   Vdbe *p,                        /* VM to add scanstatus() to */
   int addrExplain,                /* Address of OP_Explain (or 0) */
   int addrLoop,                   /* Address of loop counter */ 
@@ -609,11 +609,11 @@ void sqlite3VdbeScanCounter(
   i64 nEst,                       /* Estimated number of rows */
   const char *zName               /* Name of table or index being scanned */
 ){
-  int nByte = (p->nScan+1) * sizeof(ScanCounter);
-  ScanCounter *aNew;
-  aNew = (ScanCounter*)sqlite3DbRealloc(p->db, p->aScan, nByte);
+  int nByte = (p->nScan+1) * sizeof(ScanStatus);
+  ScanStatus *aNew;
+  aNew = (ScanStatus*)sqlite3DbRealloc(p->db, p->aScan, nByte);
   if( aNew ){
-    ScanCounter *pNew = &aNew[p->nScan++];
+    ScanStatus *pNew = &aNew[p->nScan++];
     pNew->addrExplain = addrExplain;
     pNew->addrLoop = addrLoop;
     pNew->addrVisit = addrVisit;

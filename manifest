@@ -1,5 +1,5 @@
-C Minor\sperformance\senhancements\sto\sSQLITE_ENABLE_STMT_SCANSTATUS\scode.
-D 2014-11-01T21:00:04.841
+C Remove\sunused\svariable\sfrom\sstruct\sWhereInfo.\sAdd\ssome\sexplanatory\scomments\sto\snew\scode.
+D 2014-11-03T11:25:32.305
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -290,10 +290,10 @@ F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c 3b627daa45c7308c1e36e3dbaa3f9ce7e5c7fa73
 F src/vacuum.c 59f03f92bcff57faa6a8ca256eb29ccddfb0614a
 F src/vdbe.c ccc626d70659160596d28b4a910b6086da788695
-F src/vdbe.h 7d603b93d128e614ba2600f12a6c541435405522
-F src/vdbeInt.h 21570e5ec8b3a385d003e6e20f3a91712b7050e5
-F src/vdbeapi.c 19e433e69fe2b27bfc9337a207b6ebf499f41d03
-F src/vdbeaux.c 2887d02721c540b25969d3260d0d3d5668d11583
+F src/vdbe.h d412bd01e89f0d69991b8f46601f96bc169d28f4
+F src/vdbeInt.h 539ba284790e871f98be74a78cbdfcedfae22639
+F src/vdbeapi.c addf446ecade237bebd7e9fe769bdfb9db8d9fb1
+F src/vdbeaux.c 0aeb90cb62d7c07572798b41882838b3d4e55b44
 F src/vdbeblob.c 8b5442ff0954c44b45cbabbe2e94091a2e16fdef
 F src/vdbemem.c 31d8eabb0cd78bfeab4e5124c7363c3e9e54db9f
 F src/vdbesort.c 975aeffa99acb0991b2f288d30294756bff41438
@@ -302,8 +302,8 @@ F src/vtab.c 2a30791bbd7926b589401bd09c3abb33de563793
 F src/wal.c 10e7de7ce90865a68153f001a61f1d985cd17983
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
-F src/where.c ad4a3bca9070e013ff41e8e63835788bcc43dd1c
-F src/whereInt.h a2bc22f4e3e70eeaa57272f354c288bc3b71b80b
+F src/where.c 53dae5ed6133438a9342c17bf3e95e00edbb0556
+F src/whereInt.h d3633e9b592103241b74b0ec76185f3e5b8b62e0
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test b35b4cd69fc913f90d39a575e171e1116c3a4bb7
@@ -801,7 +801,7 @@ F test/savepoint4.test c8f8159ade6d2acd9128be61e1230f1c1edc6cc0
 F test/savepoint5.test 0735db177e0ebbaedc39812c8d065075d563c4fd
 F test/savepoint6.test f41279c5e137139fa5c21485773332c7adb98cd7
 F test/savepoint7.test fbf319a7b2dda089ec5be30a424a0e95f121d423
-F test/scanstatus.test 40c7712c8bc0adc3fb88e0419356880679a3a5fb
+F test/scanstatus.test 0c0baa647e98940d753d40691bf6475345c05cc5
 F test/schema.test 8f7999be894260f151adf15c2c7540f1c6d6a481
 F test/schema2.test 906408621ea881fdb496d878b1822572a34e32c5
 F test/schema3.test 1bc1008e1f8cb5654b248c55f27249366eb7ed38
@@ -1211,7 +1211,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9ea37422a8cc2fce51bb10508e5e90f40fd4b511
-R 4191876729196c1564c4c28cce5855c1
+P f13d6ba8a72d75838c4aaf85326c1129da027f8b
+R 79a96158570090f7f8b0799c9e59db67
 U dan
-Z 150c277a759b1b656399ef38dfe29c92
+Z b85dee7fa48b3d6596e077d675db2dc9
