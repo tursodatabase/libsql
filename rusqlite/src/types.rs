@@ -1,3 +1,57 @@
+//! Traits dealing with SQLite data types.
+//!
+//! SQLite uses a [dynamic type system](https://www.sqlite.org/datatype3.html). Implementations of
+//! the `ToSql` and `FromSql` traits are provided for the basic types that SQLite provides methods
+//! for:
+//!
+//! * C integers and doubles (`c_int` and `c_double`)
+//! * Strings (`String` and `&str`)
+//! * Blobs (`Vec<u8>` and `&[u8]`)
+//!
+//! Additionally, because it is such a common data type, implementations are provided for
+//! `time::Timespec` that use a string for storage (using the same format string,
+//! `"%Y-%m-%d %H:%M:%S"`, as SQLite's builtin
+//! [datetime](https://www.sqlite.org/lang_datefunc.html) function.  Note that this storage
+//! truncates timespecs to the nearest second. If you want different storage for timespecs, you can
+//! use a newtype. For example, to store timespecs as doubles:
+//!
+//! `ToSql` and `FromSql` are also implemented for `Option<T>` where `T` implements `ToSql` or
+//! `FromSql` for the cases where you want to know if a value was NULL (which gets translated to
+//! `None`). If you get a value that was NULL in SQLite but you store it into a non-`Option` value
+//! in Rust, you will get a "sensible" zero value - 0 for numeric types (including timespecs), an
+//! empty string, or an empty vector of bytes.
+//!
+//! ```rust,ignore
+//! extern crate rusqlite;
+//! extern crate libc;
+//!
+//! use rusqlite::types::{FromSql, ToSql};
+//! use rusqlite::{ffi, SqliteResult};
+//! use libc::c_int;
+//! use time;
+//!
+//! pub struct TimespecSql(pub time::Timespec);
+//!
+//! impl FromSql for TimespecSql {
+//!     unsafe fn column_result(stmt: *mut ffi::sqlite3_stmt, col: c_int)
+//!             -> SqliteResult<TimespecSql> {
+//!         let as_f64_result = FromSql::column_result(stmt, col);
+//!         as_f64_result.map(|as_f64: f64| {
+//!             TimespecSql(time::Timespec{ sec: as_f64.trunc() as i64,
+//!                                         nsec: (as_f64.fract() * 1.0e9) as i32 })
+//!         })
+//!     }
+//! }
+//!
+//! impl ToSql for TimespecSql {
+//!     unsafe fn bind_parameter(&self, stmt: *mut ffi::sqlite3_stmt, col: c_int) -> c_int {
+//!         let TimespecSql(ts) = *self;
+//!         let as_f64 = ts.sec as f64 + (ts.nsec as f64) / 1.0e9;
+//!         as_f64.bind_parameter(stmt, col)
+//!     }
+//! }
+//! ```
+
 extern crate time;
 
 use libc::{c_int, c_double};
@@ -9,10 +63,12 @@ use super::{SqliteResult, SqliteError};
 
 const SQLITE_DATETIME_FMT: &'static str = "%Y-%m-%d %H:%M:%S";
 
+/// A trait for types that can be converted into SQLite values.
 pub trait ToSql {
     unsafe fn bind_parameter(&self, stmt: *mut ffi::sqlite3_stmt, col: c_int) -> c_int;
 }
 
+/// A trait for types that can be created from a SQLite value.
 pub trait FromSql {
     unsafe fn column_result(stmt: *mut ffi::sqlite3_stmt, col: c_int) -> SqliteResult<Self>;
 }
@@ -75,6 +131,17 @@ impl<T: ToSql> ToSql for Option<T> {
     }
 }
 
+/// Empty struct that can be used to fill in a query parameter as `NULL`.
+///
+/// ## Example
+///
+/// ```rust,no_run
+/// # use rusqlite::{SqliteConnection, SqliteResult};
+/// # use rusqlite::types::{Null};
+/// fn insert_null(conn: &SqliteConnection) -> SqliteResult<uint> {
+///     conn.execute("INSERT INTO people (name) VALUES (?)", &[&Null])
+/// }
+/// ```
 pub struct Null;
 
 impl ToSql for Null {

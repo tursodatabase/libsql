@@ -1,11 +1,35 @@
 use {SqliteResult, SqliteConnection};
 
+/// Options for transaction behavior. See [BEGIN
+/// TRANSACTION](http://www.sqlite.org/lang_transaction.html) for details.
 pub enum SqliteTransactionBehavior {
     SqliteTransactionDeferred,
     SqliteTransactionImmediate,
     SqliteTransactionExclusive,
 }
 
+/// Represents a transaction on a database connection.
+///
+/// ## Note
+///
+/// Transactions will roll back by default. Use the `set_commit` or `commit` methods to commit the
+/// transaction.
+///
+/// ## Example
+///
+/// ```rust,no_run
+/// # use rusqlite::{SqliteConnection, SqliteResult};
+/// # fn do_queries_part_1(conn: &SqliteConnection) -> SqliteResult<()> { Ok(()) }
+/// # fn do_queries_part_2(conn: &SqliteConnection) -> SqliteResult<()> { Ok(()) }
+/// fn perform_queries(conn: &SqliteConnection) -> SqliteResult<()> {
+///     let tx = try!(conn.transaction());
+///
+///     try!(do_queries_part_1(conn)); // tx causes rollback if this fails
+///     try!(do_queries_part_2(conn)); // tx causes rollback if this fails
+///
+///     tx.commit()
+/// }
+/// ```
 pub struct SqliteTransaction<'conn> {
     conn: &'conn SqliteConnection,
     depth: u32,
@@ -14,6 +38,7 @@ pub struct SqliteTransaction<'conn> {
 }
 
 impl<'conn> SqliteTransaction<'conn> {
+    /// Begin a new transaction. Cannot be nested; see `savepoint` for nested transactions.
     pub fn new(conn: &SqliteConnection,
                behavior: SqliteTransactionBehavior) -> SqliteResult<SqliteTransaction> {
         let query = match behavior {
@@ -26,6 +51,32 @@ impl<'conn> SqliteTransaction<'conn> {
         })
     }
 
+    /// Starts a new [savepoint](http://www.sqlite.org/lang_savepoint.html), allowing nested
+    /// transactions.
+    ///
+    /// ## Note
+    ///
+    /// Just like outer level transactions, savepoint transactions rollback by default.
+    ///
+    /// ## Example
+    ///
+    /// ```rust,no_run
+    /// # use rusqlite::{SqliteConnection, SqliteResult};
+    /// # fn perform_queries_part_1_succeeds(conn: &SqliteConnection) -> bool { true }
+    /// fn perform_queries(conn: &SqliteConnection) -> SqliteResult<()> {
+    ///     let tx = try!(conn.transaction());
+    ///
+    ///     {
+    ///         let sp = try!(tx.savepoint());
+    ///         if perform_queries_part_1_succeeds(conn) {
+    ///             try!(sp.commit());
+    ///         }
+    ///         // otherwise, sp will rollback
+    ///     }
+    ///
+    ///     tx.commit()
+    /// }
+    /// ```
     pub fn savepoint<'a>(&'a self) -> SqliteResult<SqliteTransaction<'a>> {
         self.conn.execute_batch("SAVEPOINT sp").map(|_| {
             SqliteTransaction{
@@ -34,22 +85,27 @@ impl<'conn> SqliteTransaction<'conn> {
         })
     }
 
+    /// Returns whether or not the transaction is currently set to commit.
     pub fn will_commit(&self) -> bool {
         self.commit
     }
 
+    /// Returns whether or not the transaction is currently set to rollback.
     pub fn will_rollback(&self) -> bool {
         !self.commit
     }
 
+    /// Set the transaction to commit at its completion.
     pub fn set_commit(&mut self) {
         self.commit = true
     }
 
+    /// Set the transaction to rollback at its completion.
     pub fn set_rollback(&mut self) {
         self.commit = false
     }
 
+    /// A convenience method which consumes and commits a transaction.
     pub fn commit(mut self) -> SqliteResult<()> {
         self.commit_()
     }
@@ -59,6 +115,7 @@ impl<'conn> SqliteTransaction<'conn> {
         self.conn.execute_batch(if self.depth == 0 { "COMMIT" } else { "RELEASE sp" })
     }
 
+    /// A convenience method which consumes and rolls back a transaction.
     pub fn rollback(mut self) -> SqliteResult<()> {
         self.rollback_()
     }
@@ -68,6 +125,11 @@ impl<'conn> SqliteTransaction<'conn> {
         self.conn.execute_batch(if self.depth == 0 { "ROLLBACK" } else { "ROLLBACK TO sp" })
     }
 
+    /// Consumes the transaction, committing or rolling back according to the current setting
+    /// (see `will_commit`, `will_rollback`).
+    ///
+    /// Functionally equivalent to the `Drop` implementation, but allows callers to see any
+    /// errors that occur.
     pub fn finish(mut self) -> SqliteResult<()> {
         self.finish_()
     }

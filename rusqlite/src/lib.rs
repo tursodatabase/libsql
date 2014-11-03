@@ -1,3 +1,52 @@
+//! Rusqlite is an ergonomic, semi-safe wrapper for using SQLite from Rust. It attempts to expose
+//! an interface similar to [rust-postgres](https://github.com/sfackler/rust-postgres).
+//!
+//! ```rust
+//! extern crate rusqlite;
+//! extern crate time;
+//!
+//! use time::Timespec;
+//! use rusqlite::SqliteConnection;
+//!
+//! #[deriving(Show)]
+//! struct Person {
+//!     id: i32,
+//!     name: String,
+//!     time_created: Timespec,
+//!     data: Option<Vec<u8>>
+//! }
+//!
+//! fn main() {
+//!     let conn = SqliteConnection::open(":memory:").unwrap();
+//!
+//!     conn.execute("CREATE TABLE person (
+//!                   id              INTEGER PRIMARY KEY,
+//!                   name            TEXT NOT NULL,
+//!                   time_created    TEXT NOT NULL,
+//!                   data            BLOB
+//!                   )", []).unwrap();
+//!     let me = Person {
+//!         id: 0,
+//!         name: "Steven".to_string(),
+//!         time_created: time::get_time(),
+//!         data: None
+//!     };
+//!     conn.execute("INSERT INTO person (name, time_created, data)
+//!                   VALUES ($1, $2, $3)",
+//!                  &[&me.name, &me.time_created, &me.data]).unwrap();
+//!
+//!     let mut stmt = conn.prepare("SELECT id, name, time_created, data FROM person").unwrap();
+//!     for row in stmt.query([]).unwrap().map(|row| row.unwrap()) {
+//!         let person = Person {
+//!             id: row.get(0),
+//!             name: row.get(1),
+//!             time_created: row.get(2),
+//!             data: row.get(3)
+//!         };
+//!         println!("Found person {}", person);
+//!     }
+//! }
+//! ```
 #![feature(globs)]
 #![feature(unsafe_destructor)]
 #![feature(macro_rules)]
@@ -22,8 +71,11 @@ pub use transaction::{SqliteTransactionBehavior,
 
 pub mod types;
 mod transaction;
+
+/// Automatically generated FFI bindings (via [bindgen](https://github.com/crabtw/rust-bindgen)).
 #[allow(dead_code,non_snake_case,non_camel_case_types)] pub mod ffi;
 
+/// A typedef of the result returned by many methods.
 pub type SqliteResult<T> = Result<T, SqliteError>;
 
 unsafe fn errmsg_to_string(errmsg: *const c_char) -> String {
@@ -31,9 +83,15 @@ unsafe fn errmsg_to_string(errmsg: *const c_char) -> String {
     c_str.as_str().unwrap_or("Invalid error message encoding").to_string()
 }
 
+/// Encompasses an error result from a call to the SQLite C API.
 #[deriving(Show)]
 pub struct SqliteError {
+    /// The error code returned by a SQLite C API call. See [SQLite Result
+    /// Codes](http://www.sqlite.org/rescode.html) for details.
     pub code: c_int,
+
+    /// The error message provided by [sqlite3_errmsg](http://www.sqlite.org/c3ref/errcode.html),
+    /// if possible, or a generic error message based on `code` otherwise.
     pub message: String,
 }
 
@@ -48,53 +106,170 @@ impl SqliteError {
     }
 }
 
+/// A connection to a SQLite database.
+///
+/// ## Warning
+///
+/// Note that despite the fact that most `SqliteConnection` methods take an immutable reference to
+/// `self`, `SqliteConnection` is NOT threadsafe, and using it from multiple threads may result in
+/// runtime panics or data races. The SQLite connection handle has at least two pieces of internal
+/// state (the last insertion ID and the last error message) that rusqlite uses, but wrapping these
+/// APIs in a safe way from Rust would be too restrictive (for example, you would not be able to
+/// prepare multiple statements at the same time).
 pub struct SqliteConnection {
     db: RefCell<InnerSqliteConnection>,
 }
 
 impl SqliteConnection {
+    /// Open a new connection to a SQLite database.
+    ///
+    /// Use the special path `:memory:` to create an in-memory database.
+    /// `SqliteConnection::open(path)` is equivalent to `SqliteConnection::open_with_flags(path,
+    /// SQLITE_OPEN_READ_WRITE | SQLITE_OPEN_CREATE)`.
     pub fn open(path: &str) -> SqliteResult<SqliteConnection> {
         let flags = SQLITE_OPEN_READ_WRITE | SQLITE_OPEN_CREATE;
         SqliteConnection::open_with_flags(path, flags)
     }
 
+    /// Open a new connection to a SQLite database.
+    ///
+    /// Use the special path `:memory:` to create an in-memory database. See [Opening A New
+    /// Database Connection](http://www.sqlite.org/c3ref/open.html) for a description of valid
+    /// flag combinations.
     pub fn open_with_flags(path: &str, flags: SqliteOpenFlags) -> SqliteResult<SqliteConnection> {
         InnerSqliteConnection::open_with_flags(path, flags).map(|db| {
             SqliteConnection{ db: RefCell::new(db) }
         })
     }
 
+    /// Begin a new transaction with the default behavior (DEFERRED).
+    ///
+    /// The transaction defaults to rolling back when it is dropped. If you want the transaction to
+    /// commit, you must call `commit` or `set_commit`.
+    ///
+    /// ## Example
+    ///
+    /// ```rust,no_run
+    /// # use rusqlite::{SqliteConnection, SqliteResult};
+    /// # fn do_queries_part_1(conn: &SqliteConnection) -> SqliteResult<()> { Ok(()) }
+    /// # fn do_queries_part_2(conn: &SqliteConnection) -> SqliteResult<()> { Ok(()) }
+    /// fn perform_queries(conn: &SqliteConnection) -> SqliteResult<()> {
+    ///     let tx = try!(conn.transaction());
+    ///
+    ///     try!(do_queries_part_1(conn)); // tx causes rollback if this fails
+    ///     try!(do_queries_part_2(conn)); // tx causes rollback if this fails
+    ///
+    ///     tx.commit()
+    /// }
+    /// ```
     pub fn transaction<'a>(&'a self) -> SqliteResult<SqliteTransaction<'a>> {
         SqliteTransaction::new(self, SqliteTransactionDeferred)
     }
 
+    /// Begin a new transaction with a specified behavior.
+    ///
+    /// See `transaction`.
     pub fn transaction_with_behavior<'a>(&'a self, behavior: SqliteTransactionBehavior)
             -> SqliteResult<SqliteTransaction<'a>> {
         SqliteTransaction::new(self, behavior)
     }
 
+    /// Convenience method to run multiple SQL statements (that cannot take any parameters).
+    ///
+    /// Uses [sqlite3_exec](http://www.sqlite.org/c3ref/exec.html) under the hood.
+    ///
+    /// ## Example
+    ///
+    /// ```rust,no_run
+    /// # use rusqlite::{SqliteConnection, SqliteResult};
+    /// fn create_tables(conn: &SqliteConnection) -> SqliteResult<()> {
+    ///     conn.execute_batch("BEGIN;
+    ///                         CREATE TABLE foo(x INTEGER);
+    ///                         CREATE TABLE bar(y TEXT);
+    ///                         COMMIT;")
+    /// }
+    /// ```
     pub fn execute_batch(&self, sql: &str) -> SqliteResult<()> {
         self.db.borrow_mut().execute_batch(sql)
     }
 
+    /// Convenience method to prepare and execute a single SQL statement.
+    ///
+    /// On success, returns the number of rows that were changed or inserted or deleted (via
+    /// `sqlite3_changes`).
+    ///
+    /// ## Example
+    ///
+    /// ```rust,no_run
+    /// # use rusqlite::{SqliteConnection};
+    /// fn update_rows(conn: &SqliteConnection) {
+    ///     match conn.execute("UPDATE foo SET bar = 'baz' WHERE qux = ?", &[&1i32]) {
+    ///         Ok(updated) => println!("{} rows were updated", updated),
+    ///         Err(err) => println!("update failed: {}", err),
+    ///     }
+    /// }
+    /// ```
     pub fn execute(&self, sql: &str, params: &[&ToSql]) -> SqliteResult<uint> {
         self.prepare(sql).and_then(|mut stmt| stmt.execute(params))
     }
 
+    /// Get the SQLite rowid of the most recent successful INSERT.
+    ///
+    /// Uses [sqlite3_last_insert_rowid](https://www.sqlite.org/c3ref/last_insert_rowid.html) under
+    /// the hood.
     pub fn last_insert_rowid(&self) -> i64 {
         self.db.borrow_mut().last_insert_rowid()
     }
 
+    /// Convenience method to execute a query that is expected to return a single row.
+    ///
+    /// ## Example
+    ///
+    /// ```rust,no_run
+    /// # use rusqlite::{SqliteConnection};
+    /// fn preferred_locale(conn: &SqliteConnection) -> String {
+    ///     conn.query_row("SELECT value FROM preferences WHERE name='locale'", [], |row| {
+    ///         row.get(0)
+    ///     })
+    /// }
+    /// ```
+    ///
+    /// ## Failure
+    ///
+    /// Panics if:
+    ///
+    ///   * Preparing the query fails.
+    ///   * Running the query fails (i.e., calling `query` on the prepared statement).
+    ///   * The query does not successfully return at least one row.
+    ///
+    /// If the query returns more than one row, all rows except the first are ignored.
     pub fn query_row<T>(&self, sql: &str, params: &[&ToSql], f: |SqliteRow| -> T) -> T {
         let mut stmt = self.prepare(sql).unwrap();
         let mut rows = stmt.query(params).unwrap();
         f(rows.next().expect("Query did not return a row").unwrap())
     }
 
+    /// Prepare a SQL statement for execution.
+    ///
+    /// ## Example
+    ///
+    /// ```rust,no_run
+    /// # use rusqlite::{SqliteConnection, SqliteResult};
+    /// fn insert_new_people(conn: &SqliteConnection) -> SqliteResult<()> {
+    ///     let mut stmt = try!(conn.prepare("INSERT INTO People (name) VALUES (?)"));
+    ///     try!(stmt.execute(&[&"Joe Smith"]));
+    ///     try!(stmt.execute(&[&"Bob Jones"]));
+    ///     Ok(())
+    /// }
+    /// ```
     pub fn prepare<'a>(&'a self, sql: &str) -> SqliteResult<SqliteStatement<'a>> {
         self.db.borrow_mut().prepare(self, sql)
     }
 
+    /// Close the SQLite connection.
+    ///
+    /// This is functionally equivalent to the `Drop` implementation for `SqliteConnection` except
+    /// that it returns any error encountered to the caller.
     pub fn close(self) -> SqliteResult<()> {
         self.db.borrow_mut().close()
     }
@@ -119,7 +294,10 @@ struct InnerSqliteConnection {
 }
 
 bitflags! {
-    #[repr(C)] flags SqliteOpenFlags: c_int {
+    #[doc = "Flags for opening SQLite database connections."]
+    #[doc = "See [sqlite3_open_v2](http://www.sqlite.org/c3ref/open.html) for details."]
+    #[repr(C)]
+    flags SqliteOpenFlags: c_int {
         const SQLITE_OPEN_READ_ONLY     = 0x00000001,
         const SQLITE_OPEN_READ_WRITE    = 0x00000002,
         const SQLITE_OPEN_CREATE        = 0x00000004,
@@ -211,6 +389,7 @@ impl Drop for InnerSqliteConnection {
     }
 }
 
+/// A prepared statement.
 pub struct SqliteStatement<'conn> {
     conn: &'conn SqliteConnection,
     stmt: *mut ffi::sqlite3_stmt,
@@ -222,6 +401,24 @@ impl<'conn> SqliteStatement<'conn> {
         SqliteStatement{ conn: conn, stmt: stmt, needs_reset: false }
     }
 
+    /// Execute the prepared statement.
+    ///
+    /// On success, returns the number of rows that were changed or inserted or deleted (via
+    /// `sqlite3_changes`).
+    ///
+    /// ## Example
+    ///
+    /// ```rust,no_run
+    /// # use rusqlite::{SqliteConnection, SqliteResult};
+    /// fn update_rows(conn: &SqliteConnection) -> SqliteResult<()> {
+    ///     let mut stmt = try!(conn.prepare("UPDATE foo SET bar = 'baz' WHERE qux = ?"));
+    ///
+    ///     try!(stmt.execute(&[&1i32]));
+    ///     try!(stmt.execute(&[&2i32]));
+    ///
+    ///     Ok(())
+    /// }
+    /// ```
     pub fn execute(&mut self, params: &[&ToSql]) -> SqliteResult<uint> {
         self.reset_if_needed();
 
@@ -243,6 +440,25 @@ impl<'conn> SqliteStatement<'conn> {
         }
     }
 
+    /// Execute the prepared statement, returning an iterator over the resulting rows.
+    ///
+    /// ## Example
+    ///
+    /// ```rust,no_run
+    /// # use rusqlite::{SqliteConnection, SqliteResult};
+    /// fn get_names(conn: &SqliteConnection) -> SqliteResult<Vec<String>> {
+    ///     let mut stmt = try!(conn.prepare("SELECT name FROM people"));
+    ///     let mut rows = try!(stmt.query([]));
+    ///
+    ///     let mut names = Vec::new();
+    ///     for result_row in rows {
+    ///         let row = try!(result_row);
+    ///         names.push(row.get(0));
+    ///     }
+    ///
+    ///     Ok(names)
+    /// }
+    /// ```
     pub fn query<'a>(&'a mut self, params: &[&ToSql]) -> SqliteResult<SqliteRows<'a>> {
         self.reset_if_needed();
 
@@ -258,6 +474,10 @@ impl<'conn> SqliteStatement<'conn> {
         }
     }
 
+    /// Consumes the statement.
+    ///
+    /// Functionally equivalent to the `Drop` implementation, but allows callers to see any errors
+    /// that occur.
     pub fn finalize(mut self) -> SqliteResult<()> {
         self.finalize_()
     }
@@ -290,6 +510,7 @@ impl<'conn> Drop for SqliteStatement<'conn> {
     }
 }
 
+/// An iterator over the resulting rows of a query.
 pub struct SqliteRows<'stmt> {
     stmt: &'stmt SqliteStatement<'stmt>,
     current_row: Rc<Cell<c_int>>,
@@ -326,6 +547,7 @@ impl<'stmt> Iterator<SqliteResult<SqliteRow<'stmt>>> for SqliteRows<'stmt> {
     }
 }
 
+/// A single result row of a query.
 pub struct SqliteRow<'stmt> {
     stmt: &'stmt SqliteStatement<'stmt>,
     current_row: Rc<Cell<c_int>>,
@@ -333,10 +555,44 @@ pub struct SqliteRow<'stmt> {
 }
 
 impl<'stmt> SqliteRow<'stmt> {
+    /// Get the value of a particular column of the result row.
+    ///
+    /// Note that `SqliteRow` falls into the "semi-safe" category of rusqlite. When you are
+    /// retrieving the rows of a query, a row becomes stale once you have requested the next row,
+    /// and the values can no longer be retrieved. In general (when using a loop over the rows, for
+    /// example) this isn't an issue, but it means you cannot do something like this:
+    ///
+    /// ```rust,no_run
+    /// # use rusqlite::{SqliteConnection, SqliteResult};
+    /// fn bad_function_will_panic(conn: &SqliteConnection) -> SqliteResult<i64> {
+    ///     let mut stmt = try!(conn.prepare("SELECT id FROM my_table"));
+    ///     let mut rows = try!(stmt.query([]));
+    ///
+    ///     let row0 = try!(rows.next().unwrap());
+    ///     // row 0 is value now...
+    ///
+    ///     let row1 = try!(rows.next().unwrap());
+    ///     // row 0 is now STALE, and row 1 is valid
+    ///
+    ///     let my_id = row0.get(0); // WILL PANIC because row 0 is stale
+    ///     Ok(my_id)
+    /// }
+    /// ```
+    ///
+    /// ## Failure
+    ///
+    /// Panics if `idx` is outside the range of columns in the returned query or if this row
+    /// is stale.
     pub fn get<T: FromSql>(&self, idx: c_int) -> T {
         self.get_opt(idx).unwrap()
     }
 
+    /// Attempt to get the value of a particular column of the result row.
+    ///
+    /// ## Failure
+    ///
+    /// Returns a `SQLITE_MISUSE`-coded `SqliteError` if `idx` is outside the valid column range
+    /// for this row or if this row is stale.
     pub fn get_opt<T: FromSql>(&self, idx: c_int) -> SqliteResult<T> {
         if self.row_idx != self.current_row.get() {
             return Err(SqliteError{ code: ffi::SQLITE_MISUSE,
