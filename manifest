@@ -1,5 +1,5 @@
-C Add\sthe\sexperimental\ssqlite3_stmt_scanstatus()\sAPI.\sFor\scomparing\sthe\snumber\sof\srows\sactually\svisited\sby\sa\sloop\swith\sthe\sestimate\sused\sby\sthe\squery\splanner.
-D 2014-11-03T16:56:43.943
+C Updates\sto\sthe\ssqlite3_stmt_scanstatus()\sdocumentation.\s\sNo\schanges\sto\scode.
+D 2014-11-03T18:03:00.467
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -229,7 +229,7 @@ F src/resolve.c 4965007d6497b6a4d7a6d98751cc39712885f952
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 428165951748151e87a15295b7357221433e311b
 F src/shell.c 282f8f5278e0c78eb442217531172ec9e1538796
-F src/sqlite.h.in 3b69f7d9b74e2e5d0448dc2f0d2d160517afa253
+F src/sqlite.h.in 11f33a3e968a9637d6fa4ae879b83edd171ac88f
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
 F src/sqliteInt.h 8f67ca79e957b8ece7453b8e320b6a996e1b4761
@@ -1211,7 +1211,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a518bc3318232d652349eb29303ff250aee40459 4c5714ab3dba19513374c7b1478221a0b90b450c
-R ce3f2c2aee62a076b6ed59326c9cde3e
-U dan
-Z cd275722bcaf367ed1a07165e9a16c03
+P ab3b0fc5760c6d428dbe1f974726a7d3526640bc
+R e3e372d3594a5227dc7ce2380d71aae3
+U drh
+Z 7bcc3180ea33e48aa6d0e7855da7bfd4
