@@ -1,5 +1,5 @@
-C When\senlarging\sthe\ssize\sof\sa\sStrAccum\sobject,\suse\ssqlite3DbMallocSize()\sto\nrecord\sthe\sentire\ssize\sof\sthe\sallocation,\snot\sjust\sthe\srequested\ssize.
-D 2014-11-03T13:24:12.668
+C Use\sexponential\sbuffer\ssize\sgrowth\sin\sStrAccum,\sas\slong\sas\sthe\ssize\sdoes\snot\ngrow\sto\slarge,\sto\savoid\sexcess\smemory\sallocation\sresize\soperations.\s\sAlso,\ndocument\sthe\sfact\sthat\ssetting\sscratch\smemory\scauses\sSQLite\sto\stry\sto\savoid\nlarge\smemory\sallocations.
+D 2014-11-03T14:46:29.027
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -223,13 +223,13 @@ F src/pcache.h 9b559127b83f84ff76d735c8262f04853be0c59a
 F src/pcache1.c e412cb585f777c840ddce0500eddc5c6043c2bb5
 F src/pragma.c 3f3e959390a10c0131676f0e307acce372777e0f
 F src/prepare.c b7b7bf020bd4c962f7c8aed5a3c542c7dfe9f9c7
-F src/printf.c ee13daccd49ddf767d057bc98395c9e83d4e2067
+F src/printf.c 9e75a6a0b55bf61cfff7d7e19d89834a1b938236
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 4965007d6497b6a4d7a6d98751cc39712885f952
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 428165951748151e87a15295b7357221433e311b
 F src/shell.c 282f8f5278e0c78eb442217531172ec9e1538796
-F src/sqlite.h.in c3c6180be49d91d3b0001a8d3c604684f361adc2
+F src/sqlite.h.in dd0cb63fb7cb558892afe8253c3279c508c50329
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
 F src/sqliteInt.h 8f67ca79e957b8ece7453b8e320b6a996e1b4761
@@ -296,7 +296,7 @@ F src/vdbeapi.c 02d8afcff710eb35e3d9e49cb677308296b00009
 F src/vdbeaux.c 3d6b2b412ef2193aa4729922dfc5df1efadbf6df
 F src/vdbeblob.c 8b5442ff0954c44b45cbabbe2e94091a2e16fdef
 F src/vdbemem.c 31d8eabb0cd78bfeab4e5124c7363c3e9e54db9f
-F src/vdbesort.c 975aeffa99acb0991b2f288d30294756bff41438
+F src/vdbesort.c daf87ea542df088ac4607660d09976d36b6bd95d
 F src/vdbetrace.c 7e4222955e07dd707a2f360c0eb73452be1cb010
 F src/vtab.c 2a30791bbd7926b589401bd09c3abb33de563793
 F src/wal.c 10e7de7ce90865a68153f001a61f1d985cd17983
@@ -1210,7 +1210,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 49188b2bb53a92b0b0b6aaf8247edeb0c1bcd1f5
-R 041ffec3947ff9e90700478ea54978f5
+P 3dda3c937469ce661d1cd0e8d8963a03e698ee39
+R e2c699e9cb6d832117ea76de0a03f26b
 U drh
-Z 42c888343c3ca87538d56b9b17ae76ab
+Z 91c9a2887aef0ce4f97740bae4c1a9ba

@@ -847,11 +847,9 @@ int sqlite3VdbeSorterInit(
       if( mxCache<SORTER_MIN_WORKING ) mxCache = SORTER_MIN_WORKING;
       pSorter->mxPmaSize = mxCache * pgsz;
 
-      /* If the application has not configure scratch memory using
-      ** SQLITE_CONFIG_SCRATCH then we assume it is OK to do large memory
-      ** allocations.  If scratch memory has been configured, then assume
-      ** large memory allocations should be avoided to prevent heap
-      ** fragmentation.
+      /* EVIDENCE-OF: R-26747-61719 When the application provides any amount of
+      ** scratch memory using SQLITE_CONFIG_SCRATCH, SQLite avoids unnecessary
+      ** large heap allocations.
       */
       if( sqlite3GlobalConfig.pScratch==0 ){
         assert( pSorter->iMemory==0 );
