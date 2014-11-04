@@ -1,5 +1,5 @@
-C For\sthe\sWin32\sVFS,\sallow\smemory\smapped\sfiles\sto\swork\swhen\scompiled\swithout\sWAL\ssupport.
-D 2014-11-04T19:37:22.576
+C Skip\stests\sthat\srequire\sWAL\smode\swhen\sit\sis\snot\senabled.
+D 2014-11-04T19:52:15.610
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -728,7 +728,7 @@ F test/misc5.test 528468b26d03303b1f047146e5eefc941b9069f5
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test edd0b63e2ee29a256900b0514f6fff27e19e9bb2
 F test/misuse.test 3c34719944ba045cc6c188a4852ba04680728912
-F test/mmap1.test 93d167b328255cbe6679fe1e1a23be1b1197d07b
+F test/mmap1.test 1bfd611b9841eafb44f7d83c0788e146d84a33c9
 F test/mmap2.test 9d6dd9ddb4ad2379f29cc78f38ce1e63ed418022
 F test/mmap3.test c92273e16eb8d23c1d55c9815b446bb72ef0512e
 F test/mmapfault.test d4c9eff9cd8c2dc14bc43e71e042f175b0a26fe3
@@ -1211,10 +1211,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d423349d2cd8bc7e04f3d90ca7bab11e1ad86e25
-R c0de55f8c674bc2f58a7f862c94a6470
-T *branch * winMmapNoWal
-T *sym-winMmapNoWal *
-T -sym-trunk *
+P 1fc7e2f3d34e25e7b59aa8b51d10c1e27ab4a527
+R ab0636a3afda48f38dd438546ea79dde
 U mistachkin
-Z 8ecf95ce02a024463c10f127838cfcbc
+Z 673ee028789258ee8d4aa78195cdb56d
