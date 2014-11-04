@@ -10,4 +10,5 @@ script:
     - cargo doc --no-deps
 
 after_script:
+    - mv target/doc .
     - curl http://www.rust-ci.org/artifacts/put?t=$RUSTCI_TOKEN | sh
