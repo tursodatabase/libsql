@@ -100,7 +100,7 @@
 ** The sorter is running in multi-threaded mode if (a) the library was built
 ** with pre-processor symbol SQLITE_MAX_WORKER_THREADS set to a value greater
 ** than zero, and (b) worker threads have been enabled at runtime by calling
-** sqlite3_config(SQLITE_CONFIG_WORKER_THREADS, ...).
+** "PRAGMA threads=N" with some value of N greater than 0.
 **
 ** When Rewind() is called, any data remaining in memory is flushed to a 
 ** final PMA. So at this point the data is stored in some number of sorted
