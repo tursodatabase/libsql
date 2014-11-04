@@ -670,9 +670,6 @@ mod test {
 
         assert!(SqliteConnection::open_with_flags(
                 "file::memory:", SQLITE_OPEN_READ_ONLY|SQLITE_OPEN_URI).is_ok());
-
-        assert!(SqliteConnection::open_with_flags(
-                "/invalid", SQLITE_OPEN_READ_ONLY|SQLITE_OPEN_MEMORY).is_ok());
     }
 
     #[test]
