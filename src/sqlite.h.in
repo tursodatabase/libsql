@@ -1499,25 +1499,27 @@ struct sqlite3_mem_methods {
 ** SQLITE_CONFIG_SERIALIZED configuration option.</dd>
 **
 ** [[SQLITE_CONFIG_MALLOC]] <dt>SQLITE_CONFIG_MALLOC</dt>
-** <dd> ^(This option takes a single argument which is a pointer to an
-** instance of the [sqlite3_mem_methods] structure.  The argument specifies
+** <dd> ^(The SQLITE_CONFIG_MALLOC option takes a single argument which is 
+** a pointer to an instance of the [sqlite3_mem_methods] structure.
+** The argument specifies
 ** alternative low-level memory allocation routines to be used in place of
 ** the memory allocation routines built into SQLite.)^ ^SQLite makes
 ** its own private copy of the content of the [sqlite3_mem_methods] structure
 ** before the [sqlite3_config()] call returns.</dd>
 **
 ** [[SQLITE_CONFIG_GETMALLOC]] <dt>SQLITE_CONFIG_GETMALLOC</dt>
-** <dd> ^(This option takes a single argument which is a pointer to an
-** instance of the [sqlite3_mem_methods] structure.  The [sqlite3_mem_methods]
+** <dd> ^(The SQLITE_CONFIG_GETMALLOC option takes a single argument which
+** is a pointer to an instance of the [sqlite3_mem_methods] structure.
+** The [sqlite3_mem_methods]
 ** structure is filled with the currently defined memory allocation routines.)^
 ** This option can be used to overload the default memory allocation
 ** routines with a wrapper that simulations memory allocation failure or
 ** tracks memory usage, for example. </dd>
 **
 ** [[SQLITE_CONFIG_MEMSTATUS]] <dt>SQLITE_CONFIG_MEMSTATUS</dt>
-** <dd> ^This option takes single argument of type int, interpreted as a 
-** boolean, which enables or disables the collection of memory allocation 
-** statistics. ^(When memory allocation statistics are disabled, the 
+** <dd> ^The SQLITE_CONFIG_MEMSTATUS option takes single argument of type int,
+** interpreted as a boolean, which enables or disables the collection of
+** memory allocation statistics. ^(When memory allocation statistics are disabled, the 
 ** following SQLite interfaces become non-operational:
 **   <ul>
 **   <li> [sqlite3_memory_used()]
@@ -1531,8 +1533,9 @@ struct sqlite3_mem_methods {
 ** </dd>
 **
 ** [[SQLITE_CONFIG_SCRATCH]] <dt>SQLITE_CONFIG_SCRATCH</dt>
-** <dd> ^This option specifies a static memory buffer that SQLite can use for
-** scratch memory.  ^(There are three arguments:  A pointer an 8-byte
+** <dd> ^The SQLITE_CONFIG_SCRATCH option specifies a static memory buffer
+** that SQLite can use for scratch memory.  ^(There are three arguments
+** to SQLITE_CONFIG_SCRATCH:  A pointer an 8-byte
 ** aligned memory buffer from which the scratch allocations will be
 ** drawn, the size of each scratch allocation (sz),
 ** and the maximum number of scratch allocations (N).)^
@@ -1556,12 +1559,13 @@ struct sqlite3_mem_methods {
 ** </dd>
 **
 ** [[SQLITE_CONFIG_PAGECACHE]] <dt>SQLITE_CONFIG_PAGECACHE</dt>
-** <dd> ^This option specifies a static memory buffer that SQLite can use for
-** the database page cache with the default page cache implementation.  
+** <dd> ^The SQLITE_CONFIG_PAGECACHE option specifies a static memory buffer
+** that SQLite can use for the database page cache with the default page
+** cache implementation.  
 ** This configuration should not be used if an application-define page
 ** cache implementation is loaded using the [SQLITE_CONFIG_PCACHE2]
 ** configuration option.
-** ^There are three arguments to this option: A pointer to 8-byte aligned
+** ^There are three arguments to SQLITE_CONFIG_PAGECACHE: A pointer to 8-byte aligned
 ** memory, the size of each page buffer (sz), and the number of pages (N).
 ** The sz argument should be the size of the largest database page
 ** (a power of two between 512 and 32768) plus some extra bytes for each
@@ -1579,10 +1583,11 @@ struct sqlite3_mem_methods {
 ** SQLite goes to [sqlite3_malloc()] for the additional storage space.</dd>
 **
 ** [[SQLITE_CONFIG_HEAP]] <dt>SQLITE_CONFIG_HEAP</dt>
-** <dd> ^This option specifies a static memory buffer that SQLite will use
-** for all of its dynamic memory allocation needs beyond those provided
-** for by [SQLITE_CONFIG_SCRATCH] and [SQLITE_CONFIG_PAGECACHE].
-** ^There are three arguments: An 8-byte aligned pointer to the memory,
+** <dd> ^The SQLITE_CONFIG_HEAP option specifies a static memory buffer 
+** that SQLite will use for all of its dynamic memory allocation needs
+** beyond those provided for by [SQLITE_CONFIG_SCRATCH] and [SQLITE_CONFIG_PAGECACHE].
+** ^There are three arguments to SQLITE_CONFIG_HEAP:
+** An 8-byte aligned pointer to the memory,
 ** the number of bytes in the memory buffer, and the minimum allocation size.
 ** ^If the first pointer (the memory pointer) is NULL, then SQLite reverts
 ** to using its default memory allocator (the system malloc() implementation),
@@ -1596,9 +1601,9 @@ struct sqlite3_mem_methods {
 ** for the minimum allocation size are 2**5 through 2**8.</dd>
 **
 ** [[SQLITE_CONFIG_MUTEX]] <dt>SQLITE_CONFIG_MUTEX</dt>
-** <dd> ^(This option takes a single argument which is a pointer to an
-** instance of the [sqlite3_mutex_methods] structure.  The argument specifies
-** alternative low-level mutex routines to be used in place
+** <dd> ^(The SQLITE_CONFIG_MUTEX option takes a single argument which is a
+** pointer to an instance of the [sqlite3_mutex_methods] structure.
+** The argument specifies alternative low-level mutex routines to be used in place
 ** the mutex routines built into SQLite.)^  ^SQLite makes a copy of the
 ** content of the [sqlite3_mutex_methods] structure before the call to
 ** [sqlite3_config()] returns. ^If SQLite is compiled with
@@ -1608,8 +1613,8 @@ struct sqlite3_mem_methods {
 ** return [SQLITE_ERROR].</dd>
 **
 ** [[SQLITE_CONFIG_GETMUTEX]] <dt>SQLITE_CONFIG_GETMUTEX</dt>
-** <dd> ^(This option takes a single argument which is a pointer to an
-** instance of the [sqlite3_mutex_methods] structure.  The
+** <dd> ^(The SQLITE_CONFIG_GETMUTEX option takes a single argument which
+** is a pointer to an instance of the [sqlite3_mutex_methods] structure.  The
 ** [sqlite3_mutex_methods]
 ** structure is filled with the currently defined mutex routines.)^
 ** This option can be used to overload the default mutex allocation
@@ -1621,24 +1626,24 @@ struct sqlite3_mem_methods {
 ** return [SQLITE_ERROR].</dd>
 **
 ** [[SQLITE_CONFIG_LOOKASIDE]] <dt>SQLITE_CONFIG_LOOKASIDE</dt>
-** <dd> ^(This option takes two arguments that determine the default
-** memory allocation for the lookaside memory allocator on each
-** [database connection].  The first argument is the
+** <dd> ^(The SQLITE_CONFIG_LOOKASIDE option takes two arguments that determine
+** the default size of lookaside memory on each [database connection].
+** The first argument is the
 ** size of each lookaside buffer slot and the second is the number of
-** slots allocated to each database connection.)^  ^(This option sets the
-** <i>default</i> lookaside size. The [SQLITE_DBCONFIG_LOOKASIDE]
-** verb to [sqlite3_db_config()] can be used to change the lookaside
+** slots allocated to each database connection.)^  ^(SQLITE_CONFIG_LOOKASIDE
+** sets the <i>default</i> lookaside size. The [SQLITE_DBCONFIG_LOOKASIDE]
+** option to [sqlite3_db_config()] can be used to change the lookaside
 ** configuration on individual connections.)^ </dd>
 **
 ** [[SQLITE_CONFIG_PCACHE2]] <dt>SQLITE_CONFIG_PCACHE2</dt>
-** <dd> ^(This option takes a single argument which is a pointer to
-** an [sqlite3_pcache_methods2] object.  This object specifies the interface
-** to a custom page cache implementation.)^  ^SQLite makes a copy of the
-** object and uses it for page cache memory allocations.</dd>
+** <dd> ^(The SQLITE_CONFIG_PCACHE2 option takes a single argument which is 
+** a pointer to an [sqlite3_pcache_methods2] object.  This object specifies
+** the interface to a custom page cache implementation.)^
+** ^SQLite makes a copy of the [sqlite3_pcache_methods2] object.</dd>
 **
 ** [[SQLITE_CONFIG_GETPCACHE2]] <dt>SQLITE_CONFIG_GETPCACHE2</dt>
-** <dd> ^(This option takes a single argument which is a pointer to an
-** [sqlite3_pcache_methods2] object.  SQLite copies of the current
+** <dd> ^(The SQLITE_CONFIG_GETPCACHE2 option takes a single argument which
+** is a pointer to an [sqlite3_pcache_methods2] object.  SQLite copies of the current
 ** page cache implementation into that object.)^ </dd>
 **
 ** [[SQLITE_CONFIG_LOG]] <dt>SQLITE_CONFIG_LOG</dt>
@@ -1662,10 +1667,10 @@ struct sqlite3_mem_methods {
 ** function must be threadsafe. </dd>
 **
 ** [[SQLITE_CONFIG_URI]] <dt>SQLITE_CONFIG_URI
-** <dd>^(This option takes a single argument of type int. If non-zero, then
-** URI handling is globally enabled. If the parameter is zero, then URI handling
-** is globally disabled.)^ ^If URI handling is globally enabled, all filenames
-** passed to [sqlite3_open()], [sqlite3_open_v2()], [sqlite3_open16()] or
+** <dd>^(The SQLITE_CONFIG_URI option takes a single argument of type int.
+** If non-zero, then URI handling is globally enabled. If the parameter is zero,
+** then URI handling is globally disabled.)^ ^If URI handling is globally enabled,
+** all filenames passed to [sqlite3_open()], [sqlite3_open_v2()], [sqlite3_open16()] or
 ** specified as part of [ATTACH] commands are interpreted as URIs, regardless
 ** of whether or not the [SQLITE_OPEN_URI] flag is set when the database
 ** connection is opened. ^If it is globally disabled, filenames are
@@ -1675,9 +1680,10 @@ struct sqlite3_mem_methods {
 ** [SQLITE_USE_URI] symbol defined.)^
 **
 ** [[SQLITE_CONFIG_COVERING_INDEX_SCAN]] <dt>SQLITE_CONFIG_COVERING_INDEX_SCAN
-** <dd>^This option takes a single integer argument which is interpreted as
-** a boolean in order to enable or disable the use of covering indices for
-** full table scans in the query optimizer.  ^The default setting is determined
+** <dd>^The SQLITE_CONFIG_COVERING_INDEX_SCAN option takes a single integer
+** argument which is interpreted as a boolean in order to enable or disable
+** the use of covering indices for full table scans in the query optimizer.
+** ^The default setting is determined
 ** by the [SQLITE_ALLOW_COVERING_INDEX_SCAN] compile-time option, or is "on"
 ** if that compile-time option is omitted.
 ** The ability to disable the use of covering indices for full table scans
@@ -1725,17 +1731,17 @@ struct sqlite3_mem_methods {
 **
 ** [[SQLITE_CONFIG_WIN32_HEAPSIZE]]
 ** <dt>SQLITE_CONFIG_WIN32_HEAPSIZE
-** <dd>^This option is only available if SQLite is compiled for Windows
-** with the [SQLITE_WIN32_MALLOC] pre-processor macro defined.
-** SQLITE_CONFIG_WIN32_HEAPSIZE takes a 32-bit unsigned integer value
+** <dd>^The SQLITE_CONFIG_WIN32_HEAPSIZE option is only available if SQLite is
+** compiled for Windows with the [SQLITE_WIN32_MALLOC] pre-processor macro defined.
+** ^SQLITE_CONFIG_WIN32_HEAPSIZE takes a 32-bit unsigned integer value
 ** that specifies the maximum size of the created heap.
 ** </dl>
 **
 ** [[SQLITE_CONFIG_PCACHE_HDRSZ]]
 ** <dt>SQLITE_CONFIG_PCACHE_HDRSZ
-** <dd>^This option takes a single parameter which is a pointer to an integer
-** and writes into that integer the number of extra bytes per page required
-** for each page in [SQLITE_CONFIG_PAGECACHE].  The amount of
+** <dd>^The SQLITE_CONFIG_PCACHE_HDRSZ option takes a single parameter which
+** is a pointer to an integer and writes into that integer the number of extra
+** bytes per page required for each page in [SQLITE_CONFIG_PAGECACHE]. The amount of
 ** extra space required can change depending on the compiler,
 ** target platform, and SQLite version.
 ** </dl>

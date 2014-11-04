@@ -372,38 +372,54 @@ int sqlite3_config(int op, ...){
 #endif
 
     case SQLITE_CONFIG_MALLOC: {
-      /* Specify an alternative malloc implementation */
+      /* EVIDENCE-OF: R-55594-21030 The SQLITE_CONFIG_MALLOC option takes a
+      ** single argument which is a pointer to an instance of the
+      ** sqlite3_mem_methods structure. The argument specifies alternative
+      ** low-level memory allocation routines to be used in place of the memory
+      ** allocation routines built into SQLite. */
       sqlite3GlobalConfig.m = *va_arg(ap, sqlite3_mem_methods*);
       break;
     }
     case SQLITE_CONFIG_GETMALLOC: {
-      /* Retrieve the current malloc() implementation */
+      /* EVIDENCE-OF: R-51213-46414 The SQLITE_CONFIG_GETMALLOC option takes a
+      ** single argument which is a pointer to an instance of the
+      ** sqlite3_mem_methods structure. The sqlite3_mem_methods structure is
+      ** filled with the currently defined memory allocation routines. */
       if( sqlite3GlobalConfig.m.xMalloc==0 ) sqlite3MemSetDefault();
       *va_arg(ap, sqlite3_mem_methods*) = sqlite3GlobalConfig.m;
       break;
     }
     case SQLITE_CONFIG_MEMSTATUS: {
-      /* Enable or disable the malloc status collection */
-      sqlite3GlobalConfig.bMemstat = va_arg(ap, int);  /* IMP: R-27464-47829 */
+      /* EVIDENCE-OF: R-61275-35157 The SQLITE_CONFIG_MEMSTATUS option takes
+      ** single argument of type int, interpreted as a boolean, which enables
+      ** or disables the collection of memory allocation statistics. */
+      sqlite3GlobalConfig.bMemstat = va_arg(ap, int);
       break;
     }
     case SQLITE_CONFIG_SCRATCH: {
-      /* Designate a buffer for scratch memory space */
+      /* EVIDENCE-OF: R-08404-60887 There are three arguments to
+      ** SQLITE_CONFIG_SCRATCH: A pointer an 8-byte aligned memory buffer from
+      ** which the scratch allocations will be drawn, the size of each scratch
+      ** allocation (sz), and the maximum number of scratch allocations (N). */
       sqlite3GlobalConfig.pScratch = va_arg(ap, void*);
       sqlite3GlobalConfig.szScratch = va_arg(ap, int);
       sqlite3GlobalConfig.nScratch = va_arg(ap, int);
       break;
     }
     case SQLITE_CONFIG_PAGECACHE: {
-      /* Designate a buffer for page cache memory space */
+      /* EVIDENCE-OF: R-31408-40510 There are three arguments to
+      ** SQLITE_CONFIG_PAGECACHE: A pointer to 8-byte aligned memory, the size
+      ** of each page buffer (sz), and the number of pages (N). */
       sqlite3GlobalConfig.pPage = va_arg(ap, void*);
       sqlite3GlobalConfig.szPage = va_arg(ap, int);
       sqlite3GlobalConfig.nPage = va_arg(ap, int);
       break;
     }
     case SQLITE_CONFIG_PCACHE_HDRSZ: {
-      /* Return the total size of all headers added to each page
-      ** of the page cache */
+      /* EVIDENCE-OF: R-39100-27317 The SQLITE_CONFIG_PCACHE_HDRSZ option takes
+      ** a single parameter which is a pointer to an integer and writes into
+      ** that integer the number of extra bytes per page required for each page
+      ** in SQLITE_CONFIG_PAGECACHE. */
       *va_arg(ap, int*) = 
           sqlite3HeaderSizeBtree() +
           sqlite3HeaderSizePcache() +
@@ -422,11 +438,18 @@ int sqlite3_config(int op, ...){
     }
 
     case SQLITE_CONFIG_PCACHE2: {
-      /* Specify an alternative page cache implementation */
+      /* EVIDENCE-OF: R-63325-48378 The SQLITE_CONFIG_PCACHE2 option takes a
+      ** single argument which is a pointer to an sqlite3_pcache_methods2
+      ** object. This object specifies the interface to a custom page cache
+      ** implementation. */
       sqlite3GlobalConfig.pcache2 = *va_arg(ap, sqlite3_pcache_methods2*);
       break;
     }
     case SQLITE_CONFIG_GETPCACHE2: {
+      /* EVIDENCE-OF: R-22035-46182 The SQLITE_CONFIG_GETPCACHE2 option takes a
+      ** single argument which is a pointer to an sqlite3_pcache_methods2
+      ** object. SQLite copies of the current page cache implementation into
+      ** that object. */
       if( sqlite3GlobalConfig.pcache2.xInit==0 ){
         sqlite3PCacheSetDefault();
       }
@@ -436,7 +459,9 @@ int sqlite3_config(int op, ...){
 
 #if defined(SQLITE_ENABLE_MEMSYS3) || defined(SQLITE_ENABLE_MEMSYS5)
     case SQLITE_CONFIG_HEAP: {
-      /* Designate a buffer for heap memory space */
+      /* EVIDENCE-OF: R-19854-42126 There are three arguments to
+      ** SQLITE_CONFIG_HEAP: An 8-byte aligned pointer to the memory, the
+      ** number of bytes in the memory buffer, and the minimum allocation size. */
       sqlite3GlobalConfig.pHeap = va_arg(ap, void*);
       sqlite3GlobalConfig.nHeap = va_arg(ap, int);
       sqlite3GlobalConfig.mnReq = va_arg(ap, int);

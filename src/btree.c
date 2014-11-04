@@ -6649,7 +6649,13 @@ static int balance_nonroot(
        nMaxCells*sizeof(u8*)                       /* apCell */
      + nMaxCells*sizeof(u16)                       /* szCell */
      + pBt->pageSize;                              /* aSpace1 */
-  assert( szScratch<=16896 || szScratch<=6*pBt->pageSize );
+
+  /* EVIDENCE-OF: R-37926-08392 SQLite will never request a scratch buffer
+  ** that is more than 6 times the database page size, except when
+  ** performing a checkpoint in WAL mode when the scratch buffer request
+  ** size is a small fraction of the size of the WAL file. */
+  assert( szScratch<=6*pBt->pageSize );
+
   apCell = sqlite3ScratchMalloc( szScratch ); 
   if( apCell==0 ){
     rc = SQLITE_NOMEM;
