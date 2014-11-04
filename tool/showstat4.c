@@ -39,6 +39,7 @@ int main(int argc, char **argv){
   int nSample;
   i64 iVal;
   const char *zSep;
+  int iRow = 0;
 
   if( argc!=2 ){
     fprintf(stderr, "Usage: %s DATABASE-FILE\n", argv[0]);
@@ -60,13 +61,13 @@ int main(int argc, char **argv){
   }
   while( SQLITE_ROW==sqlite3_step(pStmt) ){
     if( zIdx==0 || strcmp(zIdx, (const char*)sqlite3_column_text(pStmt,0))!=0 ){
-      if( zIdx ) printf("\n");
+      if( zIdx ) printf("\n**************************************"
+                        "**************\n\n");
       sqlite3_free(zIdx);
       zIdx = sqlite3_mprintf("%s", sqlite3_column_text(pStmt,0));
-      printf("%s:\n", zIdx);
-    }else{
-      printf("  -----------------------------------------------------------\n");
+      iRow = 0;
     }
+    printf("%s sample %d ------------------------------------\n", zIdx, ++iRow);
     printf("  nEq    = %s\n", sqlite3_column_text(pStmt,1));
     printf("  nLt    = %s\n", sqlite3_column_text(pStmt,2));
     printf("  nDLt   = %s\n", sqlite3_column_text(pStmt,3));
