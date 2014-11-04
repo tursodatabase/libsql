@@ -1,5 +1,5 @@
-C Add\svarious\srequirements\sevidence\smarks\sfor\ssqlite3_config()\soptions.
-D 2014-11-04T17:23:24.610
+C For\sthe\sWin32\sVFS,\sallow\smemory\smapped\sfiles\sto\swork\swhen\scompiled\swithout\sWAL\ssupport.
+D 2014-11-04T19:37:22.576
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -213,7 +213,7 @@ F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c fb587121840f690101336879adfa6d0b2cd0e8c7
-F src/os_win.c a019caaae2bcbbc0cc4c39af6e7d7e43d8426053
+F src/os_win.c a9e500dd963fb1f67d7860e58b5772abe6123862
 F src/os_win.h 09e751b20bbc107ffbd46e13555dc73576d88e21
 F src/pager.c 8d97b3633f098fef817656dcbf167ca904511d78
 F src/pager.h d1eee3c3f741be247ce6d82752a178515fc8578b
@@ -1211,7 +1211,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 391c9b85abcb5ba300fb2e116384639310c69ed2
-R 59d979fd0dabfa4a2d3ae24d9471db8f
-U drh
-Z d72c7362e49ef35f8e5912118c20e6ff
+P d423349d2cd8bc7e04f3d90ca7bab11e1ad86e25
+R c0de55f8c674bc2f58a7f862c94a6470
+T *branch * winMmapNoWal
+T *sym-winMmapNoWal *
+T -sym-trunk *
+U mistachkin
+Z 8ecf95ce02a024463c10f127838cfcbc
