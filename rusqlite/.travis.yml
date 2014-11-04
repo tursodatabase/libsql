@@ -1,0 +1,5 @@
+language: rust
+script:
+    - cargo build
+    - cargo test
+    - cargo doc --no-deps
