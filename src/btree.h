@@ -196,6 +196,7 @@ void sqlite3BtreeClearCursor(BtCursor *);
 int sqlite3BtreeSetVersion(Btree *pBt, int iVersion);
 void sqlite3BtreeCursorHints(BtCursor *, unsigned int mask);
 int sqlite3BtreeIsReadonly(Btree *pBt);
+int sqlite3HeaderSizeBtree(void);
 
 #ifndef NDEBUG
 int sqlite3BtreeCursorIsValid(BtCursor*);

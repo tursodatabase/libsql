@@ -401,6 +401,15 @@ int sqlite3_config(int op, ...){
       sqlite3GlobalConfig.nPage = va_arg(ap, int);
       break;
     }
+    case SQLITE_CONFIG_PCACHE_HDRSZ: {
+      /* Return the total size of all headers added to each page
+      ** of the page cache */
+      *va_arg(ap, int*) = 
+          sqlite3HeaderSizeBtree() +
+          sqlite3HeaderSizePcache() +
+          sqlite3HeaderSizePcache1();
+      break;
+    }
 
     case SQLITE_CONFIG_PCACHE: {
       /* no-op */

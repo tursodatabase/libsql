@@ -1,5 +1,5 @@
-C Updates\sto\sthe\ssqlite3_stmt_scanstatus()\sdocumentation.\s\sNo\schanges\sto\scode.
-D 2014-11-03T18:03:00.467
+C Add\sthe\sSQLITE_CONFIG_PCACHE_HDRSZ\soption\sfor\ssqlite3_config().
+D 2014-11-04T12:11:23.751
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -172,8 +172,8 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 7f841396adfd47507ff670a471162d2bfcda3136
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 49ca66250c7dfa844a4d4cb8272b87420d27d3a5
-F src/btree.c 61d96c2edacc5267fae6e477c24c774cd540d7f0
-F src/btree.h a79aa6a71e7f1055f01052b7f821bd1c2dce95c8
+F src/btree.c 3cc918768d100f0efea62404b8f4e779b8c94731
+F src/btree.h 49b408be9c1cd41249076898e0673711071205d8
 F src/btreeInt.h 026d0129724e8f265fdc60d44ec240cf5a4e6179
 F src/build.c 67bb05b1077e0cdaccb2e36bfcbe7a5df9ed31e8
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
@@ -194,7 +194,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
 F src/loadext.c de741e66e5ddc1598d904d7289239696e40ed994
-F src/main.c 5f659bdb14cdba1c3b587b6ed09167c147e308a1
+F src/main.c 8903165064534858a79ae06615ea7f4b482ad482
 F src/malloc.c 3c3ac67969612493d435e14b6832793209afd2ec
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c faf615aafd8be74a71494dfa027c113ea5c6615f
@@ -218,9 +218,9 @@ F src/os_win.h 09e751b20bbc107ffbd46e13555dc73576d88e21
 F src/pager.c 8d97b3633f098fef817656dcbf167ca904511d78
 F src/pager.h d1eee3c3f741be247ce6d82752a178515fc8578b
 F src/parse.y 5dfead8aed90cb0c7c1115898ee2266804daff45
-F src/pcache.c 4121a0571c18581ee9f82f086d5e2030051ebd6a
-F src/pcache.h 9b559127b83f84ff76d735c8262f04853be0c59a
-F src/pcache1.c e412cb585f777c840ddce0500eddc5c6043c2bb5
+F src/pcache.c ace1b67632deeaa84859b4c16c27711dfb7db3d4
+F src/pcache.h b44658c9c932d203510279439d891a2a83e12ba8
+F src/pcache1.c facbdd3ecc09c8f750089d941305694301328e98
 F src/pragma.c 3f3e959390a10c0131676f0e307acce372777e0f
 F src/prepare.c b7b7bf020bd4c962f7c8aed5a3c542c7dfe9f9c7
 F src/printf.c 9e75a6a0b55bf61cfff7d7e19d89834a1b938236
@@ -229,7 +229,7 @@ F src/resolve.c 4965007d6497b6a4d7a6d98751cc39712885f952
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 428165951748151e87a15295b7357221433e311b
 F src/shell.c 282f8f5278e0c78eb442217531172ec9e1538796
-F src/sqlite.h.in 11f33a3e968a9637d6fa4ae879b83edd171ac88f
+F src/sqlite.h.in 915b5a955dd2f1d3c7e848f721af48ccc47b972b
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
 F src/sqliteInt.h 8f67ca79e957b8ece7453b8e320b6a996e1b4761
@@ -1211,7 +1211,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ab3b0fc5760c6d428dbe1f974726a7d3526640bc
-R e3e372d3594a5227dc7ce2380d71aae3
+P d97c324eb1d870c994911c53fbf84205f4e3e7a1
+R 9efeed3832394f98added1ade80fb8e9
 U drh
-Z 7bcc3180ea33e48aa6d0e7855da7bfd4
+Z 388d5bd03930b5f393bf21b730c0228b

@@ -8965,3 +8965,8 @@ void sqlite3BtreeCursorHints(BtCursor *pCsr, unsigned int mask){
 int sqlite3BtreeIsReadonly(Btree *p){
   return (p->pBt->btsFlags & BTS_READ_ONLY)!=0;
 }
+
+/*
+** Return the size of the header added to each page by this module.
+*/
+int sqlite3HeaderSizeBtree(void){ return sizeof(MemPage); }
