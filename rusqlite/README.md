@@ -3,7 +3,8 @@
 [![Build Status](https://api.travis-ci.org/jgallagher/rusqlite.svg?branch=master)](https://travis-ci.org/jgallagher/rusqlite)
 
 Rusqlite is an ergonomic, semi-safe wrapper for using SQLite from Rust. It attempts to expose
-an interface similar to [rust-postgres](https://github.com/sfackler/rust-postgres).
+an interface similar to [rust-postgres](https://github.com/sfackler/rust-postgres). View the full
+[API documentation](http://www.rust-ci.org/jgallagher/rusqlite/doc/rusqlite/).
 
 ```rust
 extern crate rusqlite;
