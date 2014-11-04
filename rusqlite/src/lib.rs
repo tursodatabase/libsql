@@ -511,6 +511,40 @@ impl<'conn> Drop for SqliteStatement<'conn> {
 }
 
 /// An iterator over the resulting rows of a query.
+///
+/// ## Warning
+///
+/// Due to the way SQLite returns result rows of a query, it is not safe to attempt to get values
+/// from a row after it has become stale (i.e., `next()` has been called again on the `SqliteRows`
+/// iterator). For example:
+///
+/// ```rust,no_run
+/// # use rusqlite::{SqliteConnection, SqliteResult};
+/// fn bad_function_will_panic(conn: &SqliteConnection) -> SqliteResult<i64> {
+///     let mut stmt = try!(conn.prepare("SELECT id FROM my_table"));
+///     let mut rows = try!(stmt.query([]));
+///
+///     let row0 = try!(rows.next().unwrap());
+///     // row 0 is value now...
+///
+///     let row1 = try!(rows.next().unwrap());
+///     // row 0 is now STALE, and row 1 is valid
+///
+///     let my_id = row0.get(0); // WILL PANIC because row 0 is stale
+///     Ok(my_id)
+/// }
+/// ```
+///
+/// Please note that this means some of the methods on `Iterator` are not useful, such as `collect`
+/// (which would result in a collection of rows, only the last of which can safely be used) and
+/// `min`/`max` (which could return a stale row unless the last row happened to be the min or max,
+/// respectively).
+///
+/// This problem could be solved by changing the signature of `next` to tie the lifetime of the
+/// returned row to the lifetime of (a mutable reference to) the result rows handle, but this would
+/// no longer implement `Iterator`, and therefore you would lose access to the majority of
+/// functions which are useful (such as support for `for ... in ...` looping, `map`, `filter`,
+/// etc.).
 pub struct SqliteRows<'stmt> {
     stmt: &'stmt SqliteStatement<'stmt>,
     current_row: Rc<Cell<c_int>>,
