@@ -1297,8 +1297,8 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
   const int hdr = pPage->hdrOffset;    /* Local cache of pPage->hdrOffset */
   u8 * const data = pPage->aData;      /* Local cache of pPage->aData */
   int top;                             /* First byte of cell content area */
+  int rc = SQLITE_OK;                  /* Integer return code */
   int gap;        /* First byte of gap between cell pointers and cell content */
-  int rc;         /* Integer return code */
   
   assert( sqlite3PagerIswriteable(pPage->pDbPage) );
   assert( pPage->pBt );
@@ -1328,13 +1328,13 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
   testcase( gap+1==top );
   testcase( gap==top );
   if( gap+2<=top && (data[hdr+1] || data[hdr+2]) ){
-    int rc = SQLITE_OK;
     int bDefrag = 0;
     u8 *pSpace = pageFindSlot(pPage, nByte, &rc, &bDefrag);
     if( rc ) return rc;
     if( bDefrag ) goto defragment_page;
     if( pSpace ){
-      *pIdx = pSpace - data;
+      assert( pSpace>=data && (pSpace - data)<65536 );
+      *pIdx = (int)(pSpace - data);
       return SQLITE_OK;
     }
   }
@@ -6117,7 +6117,10 @@ static int pageFreeArray(
     if( pCell>=pStart && pCell<pEnd ){
       int sz = szCell[i];
       if( pFree!=(pCell + sz) ){
-        if( pFree ) freeSpace(pPg, pFree - aData, szFree);
+        if( pFree ){
+          assert( pFree>aData && (pFree - aData)<65536 );
+          freeSpace(pPg, (u16)(pFree - aData), szFree);
+        }
         pFree = pCell;
         szFree = sz;
         if( pFree+sz>pEnd ) return 0;
@@ -6128,7 +6131,10 @@ static int pageFreeArray(
       nRet++;
     }
   }
-  if( pFree ) freeSpace(pPg, pFree - aData, szFree);
+  if( pFree ){
+    assert( pFree>aData && (pFree - aData)<65536 );
+    freeSpace(pPg, (u16)(pFree - aData), szFree);
+  }
   return nRet;
 }
 
@@ -6192,7 +6198,7 @@ static void editPage(
   for(i=0; i<pPg->nOverflow; i++){
     int iCell = (iOld + pPg->aiOvfl[i]) - iNew;
     if( iCell>=0 && iCell<nNew ){
-      u8 *pCellptr = &pPg->aCellIdx[iCell * 2];
+      pCellptr = &pPg->aCellIdx[iCell * 2];
       memmove(&pCellptr[2], pCellptr, (nCell - iCell) * 2);
       nCell++;
       if( pageInsertArray(
@@ -6881,7 +6887,6 @@ static int balance_nonroot(
   }
   for(i=0; i<nNew; i++){
     int iBest = 0;                /* aPgno[] index of page number to use */
-    Pgno pgno;                    /* Page number to use */
     for(j=1; j<nNew; j++){
       if( aPgOrder[j]<aPgOrder[iBest] ) iBest = j;
     }

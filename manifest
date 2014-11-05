@@ -1,5 +1,5 @@
-C Change\sthe\squery\splanner\sto\sdo\sa\sbetter\sjob\sof\sestimating\sthe\snumber\srows\nselected\sby\sa\sBETWEEN\soperator\susing\sSTAT4\swhen\sboth\supper\sand\slower\sbounds\nare\scontained\swithin\sthe\ssame\ssample.
-D 2014-11-05T19:26:12.741
+C Fix\sharmless\scompiler\swarnings\sin\sthe\snew\sbalance_nonroot()\sroutine.
+D 2014-11-05T21:21:08.046
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -172,7 +172,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 7f841396adfd47507ff670a471162d2bfcda3136
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 49ca66250c7dfa844a4d4cb8272b87420d27d3a5
-F src/btree.c 11d1262110c2d459b68121833fa3ec6625b1d022
+F src/btree.c 4a126e2066076872ab6f37f9ad116eb5f651cd38
 F src/btree.h 49b408be9c1cd41249076898e0673711071205d8
 F src/btreeInt.h 026d0129724e8f265fdc60d44ec240cf5a4e6179
 F src/build.c 67bb05b1077e0cdaccb2e36bfcbe7a5df9ed31e8
@@ -1211,7 +1211,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 42705fd7d892c4fdfb95fbbb468c99569beece25
-R b31ea7cd782cb3cc21bda8e8c039f16c
+P 2d36be5d9a1cdd4fd2d54fc4eeece32a81cbacc1
+R e9a3ba77188e96b62213debbd39f0d21
 U drh
-Z 7c6a788d1b7b1ae57295ef90b3d9da88
+Z dda139af7d076df31a05d3458397d7d6
