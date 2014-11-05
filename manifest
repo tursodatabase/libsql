@@ -1,5 +1,5 @@
-C Enhance\swhereLoopCheaperProperSubset(X,Y)\sso\sthat\sit\sdoes\snot\sreport\strue\nif\sX\suses\sskip-scan\sless\sthan\sY,\ssince\sin\sthat\scase\sX\smight\ndeserve\sto\sbe\scheaper\seven\sif\sit\sis\sa\sproper\ssubset.
-D 2014-11-05T13:13:13.983
+C Add\sa\stest\scase\sto\scheck\sthat\sthe\sprevious\scommit\sis\seffective.
+D 2014-11-05T14:19:05.905
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -849,7 +849,7 @@ F test/skipscan1.test 7e15e1cc524524e7b2c4595ec85c75501d22f4ff
 F test/skipscan2.test d1d1450952b7275f0b0a3a981f0230532743951a
 F test/skipscan3.test ec5bab3f81c7038b43450e7b3062e04a198bdbb5
 F test/skipscan5.test 67817a4b6857c47e0e33ba3e506da6f23ef68de2
-F test/skipscan6.test 3a891b45d6df266ced861a2ad9d03fca2bc7fcc5
+F test/skipscan6.test 5866039d03a56f5bd0b3d172a012074a1d90a15b
 F test/soak.test 0b5b6375c9f4110c828070b826b3b4b0bb65cd5f
 F test/softheap1.test 40562fe6cac6d9827b7b42b86d45aedf12c15e24
 F test/sort.test c4400e7533748f6bd7413851ff148645e82b9e2d
@@ -1211,7 +1211,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7974c0ed10ffdc960a43fed89845c2bed428958d
-R 418c93fe7ac7140cffa87d5f3271cb48
-U drh
-Z 68c42aaa0a73598a09ed4215a5cfd466
+P c106b755369c1f8546e897ecd2ac56fd09d6e885
+R 27944d6d7573adcf0b31a08e199961ff
+U dan
+Z 1a8729ffc04f45ef7b13c20540a14cbb
