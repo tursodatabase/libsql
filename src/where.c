@@ -1897,7 +1897,6 @@ static int vtabBestIndex(Parse *pParse, Table *pTab, sqlite3_index_info *p){
 }
 #endif /* !defined(SQLITE_OMIT_VIRTUALTABLE) */
 
-
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
 /*
 ** Estimate the location of a particular key among all keys in an
@@ -1906,9 +1905,10 @@ static int vtabBestIndex(Parse *pParse, Table *pTab, sqlite3_index_info *p){
 **    aStat[0]      Est. number of rows less than pVal
 **    aStat[1]      Est. number of rows equal to pVal
 **
-** Return SQLITE_OK on success.
+** Return the index of the sample that is the smallest sample that
+** is greater than or equal to pRec.
 */
-static void whereKeyStats(
+static int whereKeyStats(
   Parse *pParse,              /* Database connection */
   Index *pIdx,                /* Index to consider domain of */
   UnpackedRecord *pRec,       /* Vector of values to consider */
@@ -1990,6 +1990,7 @@ static void whereKeyStats(
     }
     aStat[0] = iLower + iGap;
   }
+  return i;
 }
 #endif /* SQLITE_ENABLE_STAT3_OR_STAT4 */
 
@@ -2140,7 +2141,7 @@ static int whereRangeSkipScanEst(
 ** If either of the upper or lower bound is not present, then NULL is passed in
 ** place of the corresponding WhereTerm.
 **
-** The value in (pBuilder->pNew->u.btree.nEq) is the index of the index
+** The value in (pBuilder->pNew->u.btree.nEq) is the number of the index
 ** column subject to the range constraint. Or, equivalently, the number of
 ** equality constraints optimized by the proposed index scan. For example,
 ** assuming index p is on t1(a, b), and the SQL query is:
@@ -2156,7 +2157,7 @@ static int whereRangeSkipScanEst(
 **
 ** When this function is called, *pnOut is set to the sqlite3LogEst() of the
 ** number of rows that the index scan is expected to visit without 
-** considering the range constraints. If nEq is 0, this is the number of 
+** considering the range constraints. If nEq is 0, then *pnOut is the number of 
 ** rows in the index. Assuming no error occurs, *pnOut is adjusted (reduced)
 ** to account for the range constraints pLower and pUpper.
 ** 
@@ -2180,9 +2181,7 @@ static int whereRangeScanEst(
   Index *p = pLoop->u.btree.pIndex;
   int nEq = pLoop->u.btree.nEq;
 
-  if( p->nSample>0
-   && nEq<p->nSampleCol
-  ){
+  if( p->nSample>0 && nEq<p->nSampleCol ){
     if( nEq==pBuilder->nRecValid ){
       UnpackedRecord *pRec = pBuilder->pRec;
       tRowcnt a[2];
@@ -2198,15 +2197,19 @@ static int whereRangeScanEst(
       ** is not a simple variable or literal value), the lower bound of the
       ** range is $P. Due to a quirk in the way whereKeyStats() works, even
       ** if $L is available, whereKeyStats() is called for both ($P) and 
-      ** ($P:$L) and the larger of the two returned values used.
+      ** ($P:$L) and the larger of the two returned values is used.
       **
       ** Similarly, iUpper is to be set to the estimate of the number of rows
       ** less than the upper bound of the range query. Where the upper bound
       ** is either ($P) or ($P:$U). Again, even if $U is available, both values
       ** of iUpper are requested of whereKeyStats() and the smaller used.
+      **
+      ** The number of rows between the two bounds is then just iUpper-iLower.
       */
-      tRowcnt iLower;
-      tRowcnt iUpper;
+      tRowcnt iLower;     /* Rows less than the lower bound */
+      tRowcnt iUpper;     /* Rows less than the upper bound */
+      int iLwrIdx = -2;   /* aSample[] for the lower bound */
+      int iUprIdx = -1;   /* aSample[] for the upper bound */
 
       if( pRec ){
         testcase( pRec->nField!=pBuilder->nRecValid );
@@ -2244,7 +2247,7 @@ static int whereRangeScanEst(
         rc = sqlite3Stat4ProbeSetValue(pParse, p, &pRec, pExpr, aff, nEq, &bOk);
         if( rc==SQLITE_OK && bOk ){
           tRowcnt iNew;
-          whereKeyStats(pParse, p, pRec, 0, a);
+          iLwrIdx = whereKeyStats(pParse, p, pRec, 0, a);
           iNew = a[0] + ((pLower->eOperator & (WO_GT|WO_LE)) ? a[1] : 0);
           if( iNew>iLower ) iLower = iNew;
           nOut--;
@@ -2259,7 +2262,7 @@ static int whereRangeScanEst(
         rc = sqlite3Stat4ProbeSetValue(pParse, p, &pRec, pExpr, aff, nEq, &bOk);
         if( rc==SQLITE_OK && bOk ){
           tRowcnt iNew;
-          whereKeyStats(pParse, p, pRec, 1, a);
+          iUprIdx = whereKeyStats(pParse, p, pRec, 1, a);
           iNew = a[0] + ((pUpper->eOperator & (WO_GT|WO_LE)) ? a[1] : 0);
           if( iNew<iUpper ) iUpper = iNew;
           nOut--;
@@ -2271,6 +2274,11 @@ static int whereRangeScanEst(
       if( rc==SQLITE_OK ){
         if( iUpper>iLower ){
           nNew = sqlite3LogEst(iUpper - iLower);
+          /* TUNING:  If both iUpper and iLower are derived from the same
+          ** sample, then assume they are 4x more selective.  This brings
+          ** the estimated selectivity more in line with what it would be
+          ** if estimated without the use of STAT3/4 tables. */
+          if( iLwrIdx==iUprIdx ) nNew -= 20;  assert( 20==sqlite3LogEst(4) );
         }else{
           nNew = 10;        assert( 10==sqlite3LogEst(2) );
         }
