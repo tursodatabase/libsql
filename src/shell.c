@@ -457,6 +457,7 @@ struct ShellState {
   int echoOn;            /* True to echo input commands */
   int autoEQP;           /* Run EXPLAIN QUERY PLAN prior to seach SQL stmt */
   int statsOn;           /* True to display memory stats before each finalize */
+  int scanstatsOn;       /* True to display scan stats before each finalize */
   int outCount;          /* Revert to stdout when reaching zero */
   int cnt;               /* Number of records displayed so far */
   FILE *out;             /* Write results here */
@@ -1186,6 +1187,42 @@ static int display_stats(
 }
 
 /*
+** Display scan stats.
+*/
+static void display_scanstats(
+  sqlite3 *db,                    /* Database to query */
+  ShellState *pArg                /* Pointer to ShellState */
+){
+#ifdef SQLITE_ENABLE_STMT_SCANSTATUS
+  int i;
+  fprintf(pArg->out, "-------- scanstats --------\n");
+  for(i=0; 1; i++){
+    sqlite3_stmt *p = pArg->pStmt;
+    sqlite3_int64 nEst, nLoop, nVisit;
+    const char *zExplain;
+    if( sqlite3_stmt_scanstatus(p, i, SQLITE_SCANSTAT_NLOOP, (void*)&nLoop) ){
+      break;
+    }
+    sqlite3_stmt_scanstatus(p, i, SQLITE_SCANSTAT_NVISIT, (void*)&nVisit);
+    sqlite3_stmt_scanstatus(p, i, SQLITE_SCANSTAT_EST, (void*)&nEst);
+    sqlite3_stmt_scanstatus(p, i, SQLITE_SCANSTAT_EXPLAIN, (void*)&zExplain);
+
+    fprintf(pArg->out, "Loop %d: \"%s\"\n", i, zExplain);
+    fprintf(pArg->out, "        nLoop=%-8lld nVisit=%-8lld nEst=%-8lld\n",
+        nLoop, nVisit, nEst
+    );
+  }
+#else
+  fprintf(pArg->out, "-------- scanstats --------\n");
+  fprintf(pArg->out,
+      "sqlite3_stmt_scanstatus() unavailable - "
+      "rebuild with SQLITE_ENABLE_STMT_SCANSTATUS\n"
+  );
+#endif
+  fprintf(pArg->out, "---------------------------\n");
+}
+
+/*
 ** Parameter azArray points to a zero-terminated array of strings. zStr
 ** points to a single nul-terminated string. Return non-zero if zStr
 ** is equal, according to strcmp(), to any of the strings in the array.
@@ -1421,6 +1458,11 @@ static int shell_exec(
       /* print usage stats if stats on */
       if( pArg && pArg->statsOn ){
         display_stats(db, pArg, 0);
+      }
+
+      /* print loop-counters if required */
+      if( pArg && pArg->scanstatsOn ){
+        display_scanstats(db, pArg);
       }
 
       /* Finalize the statement just executed. If this fails, save a 
@@ -3014,6 +3056,16 @@ static int do_meta_command(char *zLine, ShellState *p){
     sqlite3_close(pSrc);
   }else
 
+
+  if( c=='s' && strncmp(azArg[0], "scanstats", n)==0 ){
+    if( nArg==2 ){
+      p->scanstatsOn = booleanValue(azArg[1]);
+    }else{
+      fprintf(stderr, "Usage: .scanstats on|off\n");
+      rc = 1;
+    }
+  }else
+
   if( c=='s' && strncmp(azArg[0], "schema", n)==0 ){
     ShellState data;
     char *zErrMsg = 0;
@@ -4140,6 +4192,8 @@ int main(int argc, char **argv){
       data.autoEQP = 1;
     }else if( strcmp(z,"-stats")==0 ){
       data.statsOn = 1;
+    }else if( strcmp(z,"-scanstats")==0 ){
+      data.scanstatsOn = 1;
     }else if( strcmp(z,"-bail")==0 ){
       bail_on_error = 1;
     }else if( strcmp(z,"-version")==0 ){
