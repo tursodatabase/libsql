@@ -1,5 +1,5 @@
-C Add\sa\stest\scase\sto\scheck\sthat\sthe\sprevious\scommit\sis\seffective.
-D 2014-11-05T14:19:05.905
+C Make\ssure\sthat\sNULL\sresults\sfrom\sOP_Column\sare\sfully\sand\scompletely\sNULL\nand\sdo\snot\shave\sthe\sMEM_Ephem\sbit\sset.\s\sFix\sfor\sticket\s[094d39a4c95ee4].
+D 2014-11-05T15:57:39.984
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -289,7 +289,7 @@ F src/update.c 3c4ecc282accf12d39edb8d524cf089645e55a13
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c 3b627daa45c7308c1e36e3dbaa3f9ce7e5c7fa73
 F src/vacuum.c 59f03f92bcff57faa6a8ca256eb29ccddfb0614a
-F src/vdbe.c 175a360c56e75ce4eb2b60704fd7c011b93926f5
+F src/vdbe.c 3fd4ebd3e87b63175bfd2be747608bae1670b4df
 F src/vdbe.h d412bd01e89f0d69991b8f46601f96bc169d28f4
 F src/vdbeInt.h 539ba284790e871f98be74a78cbdfcedfae22639
 F src/vdbeapi.c 900259bdd85cd66a9f210d8ec08147a9034593bd
@@ -879,7 +879,7 @@ F test/superlock.test 1cde669f68d2dd37d6c9bd35eee1d95491ae3fc2
 F test/sync.test a34cd43e98b7fb84eabbf38f7ed8f7349b3f3d85
 F test/syscall.test d2fdaad713f103ac611fe7ef9b724c7b69f8149c
 F test/sysfault.test fa776e60bf46bdd3ae69f0b73e46ee3977a58ae6
-F test/table.test 2a1d2fa52c531de5915f28023747d9a8c27b6f31
+F test/table.test 06271d61eb13871490d38168433c1ef3dd82bb2a
 F test/tableapi.test 2674633fa95d80da917571ebdd759a14d9819126
 F test/tableopts.test dba698ba97251017b7c80d738c198d39ab747930
 F test/tclsqlite.test 37a61c2da7e3bfe3b8c1a2867199f6b860df5d43
@@ -1211,7 +1211,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c106b755369c1f8546e897ecd2ac56fd09d6e885
-R 27944d6d7573adcf0b31a08e199961ff
-U dan
-Z 1a8729ffc04f45ef7b13c20540a14cbb
+P 948d6e5d07bc14b6de32ec2144c716a5532f894c
+R 4628888308aa60120db393287d665a20
+U drh
+Z e07070b00a71f6116b6f23e15e08fb5e
