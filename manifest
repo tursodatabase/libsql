@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sin\sthe\snew\sbalance_nonroot()\sroutine.
-D 2014-11-05T21:21:08.046
+C Fixes\sto\sthe\sWindows\sVFS\sto\sallow\smemory\smapped\sfiles\sto\swork\swithout\sWAL\ssupport.
+D 2014-11-05T21:34:56.096
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -213,7 +213,7 @@ F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c fb587121840f690101336879adfa6d0b2cd0e8c7
-F src/os_win.c a019caaae2bcbbc0cc4c39af6e7d7e43d8426053
+F src/os_win.c a9e500dd963fb1f67d7860e58b5772abe6123862
 F src/os_win.h 09e751b20bbc107ffbd46e13555dc73576d88e21
 F src/pager.c 8d97b3633f098fef817656dcbf167ca904511d78
 F src/pager.h d1eee3c3f741be247ce6d82752a178515fc8578b
@@ -728,7 +728,7 @@ F test/misc5.test 528468b26d03303b1f047146e5eefc941b9069f5
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test edd0b63e2ee29a256900b0514f6fff27e19e9bb2
 F test/misuse.test 3c34719944ba045cc6c188a4852ba04680728912
-F test/mmap1.test 93d167b328255cbe6679fe1e1a23be1b1197d07b
+F test/mmap1.test 1bfd611b9841eafb44f7d83c0788e146d84a33c9
 F test/mmap2.test 9d6dd9ddb4ad2379f29cc78f38ce1e63ed418022
 F test/mmap3.test c92273e16eb8d23c1d55c9815b446bb72ef0512e
 F test/mmapfault.test d4c9eff9cd8c2dc14bc43e71e042f175b0a26fe3
@@ -1211,7 +1211,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2d36be5d9a1cdd4fd2d54fc4eeece32a81cbacc1
-R e9a3ba77188e96b62213debbd39f0d21
+P 83a1e5db926b3a6d40f4a5cf9a8e6852b9bac9ac 6fc4ead26d19b9348bbda34c3053ae1e066abc32
+R 3ad47b2ac5693ba63ff5c591cf540d89
+T +closed 6fc4ead26d19b9348bbda34c3053ae1e066abc32
 U drh
-Z dda139af7d076df31a05d3458397d7d6
+Z ee3b32335a4c8630acaf81919b28b64e
