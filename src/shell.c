@@ -1209,7 +1209,10 @@ static void display_scanstats(
       }
       sqlite3_stmt_scanstatus(p, i, SQLITE_SCANSTAT_SELECTID, (void*)&iSid);
       if( iSid!=k ) continue;
-      if( n==0 && k>0 ) fprintf(pArg->out, "-------- subquery %d --------\n", k);
+      if( n==0 ){
+        rEstLoop = (double)nLoop;
+        if( k>0 ) fprintf(pArg->out, "-------- subquery %d --------\n", k);
+      }
       n++;
       sqlite3_stmt_scanstatus(p, i, SQLITE_SCANSTAT_NVISIT, (void*)&nVisit);
       sqlite3_stmt_scanstatus(p, i, SQLITE_SCANSTAT_EST, (void*)&rEst);
