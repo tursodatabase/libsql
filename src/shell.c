@@ -1195,21 +1195,24 @@ static void display_scanstats(
 ){
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
   int i;
+  double rEstLoop = 1.0;
   fprintf(pArg->out, "-------- scanstats --------\n");
   for(i=0; 1; i++){
     sqlite3_stmt *p = pArg->pStmt;
-    sqlite3_int64 nEst, nLoop, nVisit;
+    sqlite3_int64 nLoop, nVisit;
+    double rEst;
     const char *zExplain;
     if( sqlite3_stmt_scanstatus(p, i, SQLITE_SCANSTAT_NLOOP, (void*)&nLoop) ){
       break;
     }
     sqlite3_stmt_scanstatus(p, i, SQLITE_SCANSTAT_NVISIT, (void*)&nVisit);
-    sqlite3_stmt_scanstatus(p, i, SQLITE_SCANSTAT_EST, (void*)&nEst);
+    sqlite3_stmt_scanstatus(p, i, SQLITE_SCANSTAT_EST, (void*)&rEst);
     sqlite3_stmt_scanstatus(p, i, SQLITE_SCANSTAT_EXPLAIN, (void*)&zExplain);
 
-    fprintf(pArg->out, "Loop %d: \"%s\"\n", i, zExplain);
-    fprintf(pArg->out, "        nLoop=%-8lld nVisit=%-8lld nEst=%-8lld\n",
-        nLoop, nVisit, nEst
+    fprintf(pArg->out, "Loop %2d: \"%s\"\n", i, zExplain);
+    rEstLoop *= rEst;
+    fprintf(pArg->out, "        nLoop=%-8lld nRow=%-8lld estRow=%-8lld estRow/Loop=%-8g\n",
+        nLoop, nVisit, (sqlite3_int64)rEstLoop, rEst
     );
   }
 #else

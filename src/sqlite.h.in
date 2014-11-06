@@ -7440,13 +7440,15 @@ int sqlite3_vtab_on_conflict(sqlite3 *);
 **
 ** [[SQLITE_SCANSTAT_NVISIT]] <dt>SQLITE_SCANSTAT_NVISIT</dt>
 ** <dd>^The [sqlite3_int64] variable pointed to by the T parameter will be set to the
-** total number of rows visited by the X-th loop.</dd>
+** total number of rows examined by all iterations of the X-th loop.</dd>
 **
 ** [[SQLITE_SCANSTAT_EST]] <dt>SQLITE_SCANSTAT_EST</dt>
-** <dd>^The [sqlite3_int64] variable pointed to by the T parameter will be set to the
-** query planner's estimate for the number of rows visited for each
-** iteration of the X-th loop.  If the query planner's estimate was accurate,
-** then this value should be approximately NVISIT/NLOOP.
+** <dd>^The "double" variable pointed to by the T parameter will be set to the
+** query planner's estimate for the average number of rows output from each
+** iteration of the X-th loop.  If the query planner's estimates was accurate,
+** then this value will approximate the quotient NVISIT/NLOOP and the
+** product of this value for the first N-1 loops will approximate
+** the NLOOP value for the N-th loop.
 **
 ** [[SQLITE_SCANSTAT_NAME]] <dt>SQLITE_SCANSTAT_NAME</dt>
 ** <dd>^The "const char *" variable pointed to by the T parameter will be set to 
