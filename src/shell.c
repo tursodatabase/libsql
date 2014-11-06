@@ -1194,9 +1194,10 @@ static void display_scanstats(
   ShellState *pArg                /* Pointer to ShellState */
 ){
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
-  int i, k, n = 1;
+  int i, k, n, mx;
   fprintf(pArg->out, "-------- scanstats --------\n");
-  for(k=0; n>0; k++){
+  mx = 0;
+  for(k=0; k<=mx; k++){
     double rEstLoop = 1.0;
     for(i=n=0; 1; i++){
       sqlite3_stmt *p = pArg->pStmt;
@@ -1208,10 +1209,11 @@ static void display_scanstats(
         break;
       }
       sqlite3_stmt_scanstatus(p, i, SQLITE_SCANSTAT_SELECTID, (void*)&iSid);
+      if( iSid>mx ) mx = iSid;
       if( iSid!=k ) continue;
       if( n==0 ){
         rEstLoop = (double)nLoop;
-        if( k>0 ) fprintf(pArg->out, "-------- subquery %d --------\n", k);
+        if( k>0 ) fprintf(pArg->out, "-------- subquery %d -------\n", k);
       }
       n++;
       sqlite3_stmt_scanstatus(p, i, SQLITE_SCANSTAT_NVISIT, (void*)&nVisit);
@@ -1224,14 +1226,8 @@ static void display_scanstats(
       );
     }
   }
-#else
-  fprintf(pArg->out, "-------- scanstats --------\n");
-  fprintf(pArg->out,
-      "sqlite3_stmt_scanstatus() unavailable - "
-      "rebuild with SQLITE_ENABLE_STMT_SCANSTATUS\n"
-  );
-#endif
   fprintf(pArg->out, "---------------------------\n");
+#endif
 }
 
 /*
@@ -1687,6 +1683,7 @@ static char zHelp[] =
   ".read FILENAME         Execute SQL in FILENAME\n"
   ".restore ?DB? FILE     Restore content of DB (default \"main\") from FILE\n"
   ".save FILE             Write in-memory database into FILE\n"
+  ".scanstats on|off      Turn sqlite3_stmt_scanstatus() metrics on or off\n"
   ".schema ?TABLE?        Show the CREATE statements\n"
   "                         If TABLE specified, only show tables matching\n"
   "                         LIKE pattern TABLE.\n"
@@ -3072,6 +3069,9 @@ static int do_meta_command(char *zLine, ShellState *p){
   if( c=='s' && strncmp(azArg[0], "scanstats", n)==0 ){
     if( nArg==2 ){
       p->scanstatsOn = booleanValue(azArg[1]);
+#ifndef SQLITE_ENABLE_STMT_SCANSTATUS
+      fprintf(stderr, "Warning: .scanstats not available in this build.\n");
+#endif
     }else{
       fprintf(stderr, "Usage: .scanstats on|off\n");
       rc = 1;
