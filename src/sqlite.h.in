@@ -7447,8 +7447,8 @@ int sqlite3_vtab_on_conflict(sqlite3 *);
 ** query planner's estimate for the average number of rows output from each
 ** iteration of the X-th loop.  If the query planner's estimates was accurate,
 ** then this value will approximate the quotient NVISIT/NLOOP and the
-** product of this value for the first N-1 loops will approximate
-** the NLOOP value for the N-th loop.
+** product of this value for all prior loops with the same SELECTID will
+** be the NLOOP value for the current loop.
 **
 ** [[SQLITE_SCANSTAT_NAME]] <dt>SQLITE_SCANSTAT_NAME</dt>
 ** <dd>^The "const char *" variable pointed to by the T parameter will be set to 
@@ -7459,6 +7459,13 @@ int sqlite3_vtab_on_conflict(sqlite3 *);
 ** <dd>^The "const char *" variable pointed to by the T parameter will be set to 
 ** a zero-terminated UTF-8 string containing the [EXPLAIN QUERY PLAN] description
 ** for the X-th loop.
+**
+** [[SQLITE_SCANSTAT_SELECTID]] <dt>SQLITE_SCANSTAT_SELECT</dt>
+** <dd>^The "int" variable pointed to by the T parameter will be set to the
+** "select-id" for the X-th loop.  The select-id identifies which query or
+** subquery the loop is part of.  The main query has a select-id of zero.
+** The select-id is the same value as is output in the first column
+** of an [EXPLAIN QUERY PLAN] query.
 ** </dl>
 */
 #define SQLITE_SCANSTAT_NLOOP    0
@@ -7466,6 +7473,7 @@ int sqlite3_vtab_on_conflict(sqlite3 *);
 #define SQLITE_SCANSTAT_EST      2
 #define SQLITE_SCANSTAT_NAME     3
 #define SQLITE_SCANSTAT_EXPLAIN  4
+#define SQLITE_SCANSTAT_SELECTID 5
 
 /*
 ** CAPI3REF: Prepared Statement Scan Status

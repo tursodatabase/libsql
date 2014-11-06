@@ -1521,6 +1521,14 @@ int sqlite3_stmt_scanstatus(
       }
       break;
     }
+    case SQLITE_SCANSTAT_SELECTID: {
+      if( pScan->addrExplain ){
+        *(int*)pOut = p->aOp[ pScan->addrExplain ].p1;
+      }else{
+        *(int*)pOut = -1;
+      }
+      break;
+    }
     default: {
       return 1;
     }
