@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_SCANSTAT_SELECTID\smetric.\s\sUse\sit\sto\simprove\sthe\n".stmtscan\son"\soutput\sin\sthe\sshell.
-D 2014-11-06T04:42:20.310
+C Changes\sthe\sformatting\sof\s".scanstats\son"\sin\sthe\sshell\sso\sthat\sthe\sstats\sfor\nsubqueries\sare\sgrouped\stogether\sand\soccur\safter\sthe\smain\squery.
+D 2014-11-06T12:08:21.237
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -228,7 +228,7 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 4965007d6497b6a4d7a6d98751cc39712885f952
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 428165951748151e87a15295b7357221433e311b
-F src/shell.c 74768f90bd0f8880937d52e2eb756655dba0015a
+F src/shell.c 22c7c693f322091b26e9333a8fa50c56e4aba667
 F src/sqlite.h.in 087d30a4c7ec7ae19bcaa03a9db9d6ee7a73b0b3
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
@@ -1211,7 +1211,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f9684000665ae7ef6f89c3773612b8286b8f545a
-R 34f47ade33b56f41a439ae08635a112b
+P 64ad5761a841f71530d41565b9fbe9d19c2d6aff
+R 301cd68395834791ac0b2ebb68f39e69
 U drh
-Z 216d325be8d3eddf6fd433a7ff464585
+Z c6dcae9ced19f9079c51a47717359be1

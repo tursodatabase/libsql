@@ -1194,39 +1194,33 @@ static void display_scanstats(
   ShellState *pArg                /* Pointer to ShellState */
 ){
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
-  int i;
-  double *arEstLoop = 0;
-  int nEstLoop = 0;
+  int i, k, n = 1;
   fprintf(pArg->out, "-------- scanstats --------\n");
-  for(i=0; 1; i++){
-    sqlite3_stmt *p = pArg->pStmt;
-    sqlite3_int64 nLoop, nVisit;
-    double rEst, rLoop;
-    int iSid;
-    const char *zExplain;
-    if( sqlite3_stmt_scanstatus(p, i, SQLITE_SCANSTAT_NLOOP, (void*)&nLoop) ){
-      break;
+  for(k=0; n>0; k++){
+    double rEstLoop = 1.0;
+    for(i=n=0; 1; i++){
+      sqlite3_stmt *p = pArg->pStmt;
+      sqlite3_int64 nLoop, nVisit;
+      double rEst;
+      int iSid;
+      const char *zExplain;
+      if( sqlite3_stmt_scanstatus(p, i, SQLITE_SCANSTAT_NLOOP, (void*)&nLoop) ){
+        break;
+      }
+      sqlite3_stmt_scanstatus(p, i, SQLITE_SCANSTAT_SELECTID, (void*)&iSid);
+      if( iSid!=k ) continue;
+      if( n==0 && k>0 ) fprintf(pArg->out, "-------- subquery %d --------\n", k);
+      n++;
+      sqlite3_stmt_scanstatus(p, i, SQLITE_SCANSTAT_NVISIT, (void*)&nVisit);
+      sqlite3_stmt_scanstatus(p, i, SQLITE_SCANSTAT_EST, (void*)&rEst);
+      sqlite3_stmt_scanstatus(p, i, SQLITE_SCANSTAT_EXPLAIN, (void*)&zExplain);
+      fprintf(pArg->out, "Loop %2d: %s\n", n, zExplain);
+      rEstLoop *= rEst;
+      fprintf(pArg->out, "         nLoop=%-8lld nRow=%-8lld estRow=%-8lld estRow/Loop=%-8g\n",
+          nLoop, nVisit, (sqlite3_int64)rEstLoop, rEst
+      );
     }
-    sqlite3_stmt_scanstatus(p, i, SQLITE_SCANSTAT_NVISIT, (void*)&nVisit);
-    sqlite3_stmt_scanstatus(p, i, SQLITE_SCANSTAT_EST, (void*)&rEst);
-    sqlite3_stmt_scanstatus(p, i, SQLITE_SCANSTAT_EXPLAIN, (void*)&zExplain);
-    sqlite3_stmt_scanstatus(p, i, SQLITE_SCANSTAT_SELECTID, (void*)&iSid);
-    if( iSid>=nEstLoop ){
-      arEstLoop = sqlite3_realloc(arEstLoop, sizeof(arEstLoop[0])*(iSid+1) );
-      while( nEstLoop<=iSid ) arEstLoop[nEstLoop++] = 1.0; 
-    }
-    if( iSid>=0 ){
-      arEstLoop[iSid] *= rEst;
-      rLoop = arEstLoop[iSid];
-    }else{
-      rLoop = rEst;
-    }
-    fprintf(pArg->out, "Loop %2d: \"%s\"\n", i, zExplain);
-    fprintf(pArg->out, "        nLoop=%-8lld nRow=%-8lld estRow=%-8lld estRow/Loop=%-8g\n",
-        nLoop, nVisit, (sqlite3_int64)rLoop, rEst
-    );
   }
-  sqlite3_free(arEstLoop);
 #else
   fprintf(pArg->out, "-------- scanstats --------\n");
   fprintf(pArg->out,
