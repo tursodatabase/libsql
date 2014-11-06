@@ -606,7 +606,7 @@ void sqlite3VdbeScanStatus(
   int addrExplain,                /* Address of OP_Explain (or 0) */
   int addrLoop,                   /* Address of loop counter */ 
   int addrVisit,                  /* Address of rows visited counter */
-  i64 nEst,                       /* Estimated number of rows */
+  LogEst nEst,                    /* Estimated number of output rows */
   const char *zName               /* Name of table or index being scanned */
 ){
   int nByte = (p->nScan+1) * sizeof(ScanStatus);

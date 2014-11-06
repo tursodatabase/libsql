@@ -2946,18 +2946,14 @@ static void addScanStatus(
   int addrExplain                 /* Address of OP_Explain (or 0) */
 ){
   const char *zObj = 0;
-  i64 nEst = 1;
   WhereLoop *pLoop = pLvl->pWLoop;
   if( (pLoop->wsFlags & (WHERE_IPK|WHERE_VIRTUALTABLE))==0 ){
     zObj = pLoop->u.btree.pIndex->zName;
   }else{
     zObj = pSrclist->a[pLvl->iFrom].zName;
   }
-  if( pLoop->nOut>=10 ){
-    nEst = sqlite3LogEstToInt(pLoop->nOut);
-  }
   sqlite3VdbeScanStatus(
-      v, addrExplain, pLvl->addrBody, pLvl->addrVisit, nEst, zObj
+      v, addrExplain, pLvl->addrBody, pLvl->addrVisit, pLoop->nOut, zObj
   );
 }
 #else

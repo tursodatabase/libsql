@@ -1500,7 +1500,13 @@ int sqlite3_stmt_scanstatus(
       break;
     }
     case SQLITE_SCANSTAT_EST: {
-      *(sqlite3_int64*)pOut = pScan->nEst;
+      double r = 1.0;
+      LogEst x = pScan->nEst;
+      while( x<100 ){
+        x += 10;
+        r *= 0.5;
+      }
+      *(double*)pOut = r*sqlite3LogEstToInt(x);
       break;
     }
     case SQLITE_SCANSTAT_NAME: {
@@ -1512,6 +1518,14 @@ int sqlite3_stmt_scanstatus(
         *(const char**)pOut = p->aOp[ pScan->addrExplain ].p4.z;
       }else{
         *(const char**)pOut = 0;
+      }
+      break;
+    }
+    case SQLITE_SCANSTAT_SELECTID: {
+      if( pScan->addrExplain ){
+        *(int*)pOut = p->aOp[ pScan->addrExplain ].p1;
+      }else{
+        *(int*)pOut = -1;
       }
       break;
     }

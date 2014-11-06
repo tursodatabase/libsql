@@ -2318,7 +2318,7 @@ static int test_stmt_scanstatus(
   const char *zExplain;
   sqlite3_int64 nLoop;
   sqlite3_int64 nVisit;
-  sqlite3_int64 nEst;
+  double rEst;
   int res;
 
   if( objc!=3 ){
@@ -2336,9 +2336,9 @@ static int test_stmt_scanstatus(
     sqlite3_stmt_scanstatus(pStmt, idx, SQLITE_SCANSTAT_NVISIT, (void*)&nVisit);
     Tcl_ListObjAppendElement(0, pRet, Tcl_NewStringObj("nVisit", -1));
     Tcl_ListObjAppendElement(0, pRet, Tcl_NewWideIntObj(nVisit));
-    sqlite3_stmt_scanstatus(pStmt, idx, SQLITE_SCANSTAT_EST, (void*)&nEst);
+    sqlite3_stmt_scanstatus(pStmt, idx, SQLITE_SCANSTAT_EST, (void*)&rEst);
     Tcl_ListObjAppendElement(0, pRet, Tcl_NewStringObj("nEst", -1));
-    Tcl_ListObjAppendElement(0, pRet, Tcl_NewWideIntObj(nEst));
+    Tcl_ListObjAppendElement(0, pRet, Tcl_NewDoubleObj(rEst));
     sqlite3_stmt_scanstatus(pStmt, idx, SQLITE_SCANSTAT_NAME, (void*)&zName);
     Tcl_ListObjAppendElement(0, pRet, Tcl_NewStringObj("zName", -1));
     Tcl_ListObjAppendElement(0, pRet, Tcl_NewStringObj(zName, -1));

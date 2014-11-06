@@ -302,7 +302,8 @@ struct ScanStatus {
   int addrExplain;                /* OP_Explain for loop */
   int addrLoop;                   /* Address of "loops" counter */
   int addrVisit;                  /* Address of "rows visited" counter */
-  i64 nEst;                       /* Estimated rows per loop */
+  int iSelectID;                  /* The "Select-ID" for this loop */
+  LogEst nEst;                    /* Estimated output rows per loop */
   char *zName;                    /* Name of table or index */
 };
 

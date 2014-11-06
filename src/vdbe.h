@@ -283,7 +283,7 @@ void sqlite3VdbeLinkSubProgram(Vdbe *, SubProgram *);
 #endif
 
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
-void sqlite3VdbeScanStatus(Vdbe*, int, int, int, i64, const char*);
+void sqlite3VdbeScanStatus(Vdbe*, int, int, int, LogEst, const char*);
 #else
 # define sqlite3VdbeScanStatus(a,b,c,d,e)
 #endif
