@@ -52,7 +52,7 @@ extern "C" {
 /*
 ** These no-op macros are used in front of interfaces to mark those
 ** interfaces as either deprecated or experimental.  New applications
-** should not use deprecated interfaces - they are support for backwards
+** should not use deprecated interfaces - they are supported for backwards
 ** compatibility only.  Application writers should be aware that
 ** experimental interfaces are subject to change in point releases.
 **
