@@ -185,8 +185,7 @@ do_execsql_test without_rowid5-5.9 {
 # EVIDENCE-OF: R-12643-30541 The incremental blob I/O mechanism does not
 # work for WITHOUT ROWID tables.
 #
-# EVIDENCE-OF: R-25760-33257 The sqlite3_blob_open() interface will fail
-# for a WITHOUT ROWID table.
+# EVIDENCE-OF: R-40134-30296 Table zTable is a WITHOUT ROWID table
 #
 do_execsql_test without_rowid5-6.1 {
   CREATE TABLE b1(a INTEGER PRIMARY KEY, b BLOB) WITHOUT ROWID;
