@@ -237,8 +237,8 @@ const Token sqlite3IntTokens[] = {
 **
 ** IMPORTANT:  Changing the pending byte to any value other than
 ** 0x40000000 results in an incompatible database file format!
-** Changing the pending byte during operating results in undefined
-** and dileterious behavior.
+** Changing the pending byte during operation will result in undefined
+** and incorrect behavior.
 */
 #ifndef SQLITE_OMIT_WSD
 int sqlite3PendingByte = 0x40000000;

@@ -94,7 +94,7 @@ static int execExecSql(sqlite3 *db, char **pzErrMsg, const char *zSql){
 ** overwriting the database with the vacuumed content.
 **
 ** Only 1x temporary space and only 1x writes would be required if
-** the copy of step (3) were replace by deleting the original database
+** the copy of step (3) were replaced by deleting the original database
 ** and renaming the transient database as the original.  But that will
 ** not work if other processes are attached to the original database.
 ** And a power loss in between deleting the original and renaming the
