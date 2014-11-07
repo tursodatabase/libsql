@@ -1,5 +1,5 @@
-C Fix\sharmless\stypos\sin\scomments.
-D 2014-11-07T13:24:29.246
+C In\sthe\s".scanstats\son"\soutput\sfrom\sthe\sshell,\sround\sthe\sestRows\svalue\sto\nthe\snearest\sinteger,\srather\sthan\srounding\stoward\szero.
+D 2014-11-07T13:52:44.718
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -228,7 +228,7 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 4965007d6497b6a4d7a6d98751cc39712885f952
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 428165951748151e87a15295b7357221433e311b
-F src/shell.c 48fe276aada42a15722aee2584e6321345ed4609
+F src/shell.c 0500307f63e3675dc4ab21112c6086b4d146fc08
 F src/sqlite.h.in f433227d7f619887a1064913fa66cefa3da4349a
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
@@ -1211,7 +1211,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 402703212a8488f8b571ce170b3b6c7374bd7daa
-R 9f78be6a67e175be94522748bee570f6
+P 94c564da4c2cf5dffe58fdf7a180e9ba4cc3de69
+R bf25c89aa0a2170169c258f353b46c64
 U drh
-Z 1fff294369c9fe8b2c9ed9357ff2fdd6
+Z 9c39d53d1fb35cc72c3ed2e42a4f819b

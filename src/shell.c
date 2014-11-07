@@ -1222,7 +1222,7 @@ static void display_scanstats(
       fprintf(pArg->out, "Loop %2d: %s\n", n, zExplain);
       rEstLoop *= rEst;
       fprintf(pArg->out, "         nLoop=%-8lld nRow=%-8lld estRow=%-8lld estRow/Loop=%-8g\n",
-          nLoop, nVisit, (sqlite3_int64)rEstLoop, rEst
+          nLoop, nVisit, (sqlite3_int64)(rEstLoop+0.5), rEst
       );
     }
   }
