@@ -1582,14 +1582,16 @@ struct sqlite3_mem_methods {
 ** <dd> ^The SQLITE_CONFIG_HEAP option specifies a static memory buffer 
 ** that SQLite will use for all of its dynamic memory allocation needs
 ** beyond those provided for by [SQLITE_CONFIG_SCRATCH] and [SQLITE_CONFIG_PAGECACHE].
+** ^The SQLITE_CONFIG_HEAP option is only available if SQLite is compiled
+** with either [SQLITE_ENABLE_MEMSYS3] or [SQLITE_ENABLE_MEMSYS5] and returns
+** [SQLITE_ERROR] if invoked otherwise.
 ** ^There are three arguments to SQLITE_CONFIG_HEAP:
 ** An 8-byte aligned pointer to the memory,
 ** the number of bytes in the memory buffer, and the minimum allocation size.
 ** ^If the first pointer (the memory pointer) is NULL, then SQLite reverts
 ** to using its default memory allocator (the system malloc() implementation),
 ** undoing any prior invocation of [SQLITE_CONFIG_MALLOC].  ^If the
-** memory pointer is not NULL and either [SQLITE_ENABLE_MEMSYS3] or
-** [SQLITE_ENABLE_MEMSYS5] are defined, then the alternative memory
+** memory pointer is not NULL then the alternative memory
 ** allocator is engaged to handle all of SQLites memory allocation needs.
 ** The first pointer (the memory pointer) must be aligned to an 8-byte
 ** boundary or subsequent behavior of SQLite will be undefined.
@@ -1719,8 +1721,8 @@ struct sqlite3_mem_methods {
 ** ^The default setting can be overridden by each database connection using
 ** either the [PRAGMA mmap_size] command, or by using the
 ** [SQLITE_FCNTL_MMAP_SIZE] file control.  ^(The maximum allowed mmap size
-** cannot be changed at run-time.  Nor may the maximum allowed mmap size
-** exceed the compile-time maximum mmap size set by the
+** will be silently truncated if necessary so that it does not exceed the
+** compile-time maximum mmap size set by the
 ** [SQLITE_MAX_MMAP_SIZE] compile-time option.)^
 ** ^If either argument to this option is negative, then that argument is
 ** changed to its compile-time default.

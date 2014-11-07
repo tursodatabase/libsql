@@ -457,6 +457,9 @@ int sqlite3_config(int op, ...){
       break;
     }
 
+/* EVIDENCE-OF: R-06626-12911 The SQLITE_CONFIG_HEAP option is only
+** available if SQLite is compiled with either SQLITE_ENABLE_MEMSYS3 or
+** SQLITE_ENABLE_MEMSYS5 and returns SQLITE_ERROR if invoked otherwise. */
 #if defined(SQLITE_ENABLE_MEMSYS3) || defined(SQLITE_ENABLE_MEMSYS5)
     case SQLITE_CONFIG_HEAP: {
       /* EVIDENCE-OF: R-19854-42126 There are three arguments to
@@ -474,17 +477,19 @@ int sqlite3_config(int op, ...){
       }
 
       if( sqlite3GlobalConfig.pHeap==0 ){
-        /* If the heap pointer is NULL, then restore the malloc implementation
-        ** back to NULL pointers too.  This will cause the malloc to go
-        ** back to its default implementation when sqlite3_initialize() is
-        ** run.
+        /* EVIDENCE-OF: R-49920-60189 If the first pointer (the memory pointer)
+        ** is NULL, then SQLite reverts to using its default memory allocator
+        ** (the system malloc() implementation), undoing any prior invocation of
+        ** SQLITE_CONFIG_MALLOC.
+        **
+        ** Setting sqlite3GlobalConfig.m to all zeros will cause malloc to
+        ** revert to its default implementation when sqlite3_initialize() is run
         */
         memset(&sqlite3GlobalConfig.m, 0, sizeof(sqlite3GlobalConfig.m));
       }else{
-        /* The heap pointer is not NULL, then install one of the
-        ** mem5.c/mem3.c methods.  The enclosing #if guarantees at
-        ** least one of these methods is currently enabled.
-        */
+        /* EVIDENCE-OF: R-61006-08918 If the memory pointer is not NULL then the
+        ** alternative memory allocator is engaged to handle all of SQLites
+        ** memory allocation needs. */
 #ifdef SQLITE_ENABLE_MEMSYS3
         sqlite3GlobalConfig.m = *sqlite3MemGetMemsys3();
 #endif
@@ -557,7 +562,13 @@ int sqlite3_config(int op, ...){
       sqlite3_int64 szMmap = va_arg(ap, sqlite3_int64);
       sqlite3_int64 mxMmap = va_arg(ap, sqlite3_int64);
       /* EVIDENCE-OF: R-53367-43190 If either argument to this option is
-      ** negative, then that argument is changed to its compile-time default. */
+      ** negative, then that argument is changed to its compile-time default.
+      **
+      ** EVIDENCE-OF: R-34993-45031 The maximum allowed mmap size will be
+      ** silently truncated if necessary so that it does not exceed the
+      ** compile-time maximum mmap size set by the SQLITE_MAX_MMAP_SIZE
+      ** compile-time option.
+      */
       if( mxMmap<0 || mxMmap>SQLITE_MAX_MMAP_SIZE ) mxMmap = SQLITE_MAX_MMAP_SIZE;
       if( szMmap<0 ) szMmap = SQLITE_DEFAULT_MMAP_SIZE;
       if( szMmap>mxMmap) szMmap = mxMmap;
@@ -2389,7 +2400,8 @@ int sqlite3ParseUri(
 
   assert( *pzErrMsg==0 );
 
-  if( ((flags & SQLITE_OPEN_URI) || sqlite3GlobalConfig.bOpenUri) 
+  if( ((flags & SQLITE_OPEN_URI)             /* IMP: R-48725-32206 */
+            || sqlite3GlobalConfig.bOpenUri) /* IMP: R-51689-46548 */
    && nUri>=5 && memcmp(zUri, "file:", 5)==0 /* IMP: R-57884-37496 */
   ){
     char *zOpt;
