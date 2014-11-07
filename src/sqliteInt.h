@@ -562,7 +562,7 @@ typedef INT8_TYPE i8;              /* 1-byte signed integer */
 ** gives a possible range of values of approximately 1.0e986 to 1e-986.
 ** But the allowed values are "grainy".  Not every value is representable.
 ** For example, quantities 16 and 17 are both represented by a LogEst
-** of 40.  However, since LogEst quantaties are suppose to be estimates,
+** of 40.  However, since LogEst quantities are suppose to be estimates,
 ** not exact values, this imprecision is not a problem.
 **
 ** "LogEst" is short for "Logarithmic Estimate".
