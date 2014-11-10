@@ -117,7 +117,7 @@ impl ToSql for Vec<u8> {
 
 impl ToSql for time::Timespec {
     unsafe fn bind_parameter(&self, stmt: *mut ffi::sqlite3_stmt, col: c_int) -> c_int {
-        let time_str = time::at_utc(*self).strftime(SQLITE_DATETIME_FMT).unwrap();
+        let time_str = time::at_utc(*self).strftime(SQLITE_DATETIME_FMT).unwrap().to_string();
         time_str.bind_parameter(stmt, col)
     }
 }
