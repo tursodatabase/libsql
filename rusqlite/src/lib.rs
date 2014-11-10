@@ -1,4 +1,4 @@
-//! Rusqlite is an ergonomic, semi-safe wrapper for using SQLite from Rust. It attempts to expose
+//! Rusqlite is an ergonomic wrapper for using SQLite from Rust. It attempts to expose
 //! an interface similar to [rust-postgres](https://github.com/sfackler/rust-postgres).
 //!
 //! ```rust
@@ -591,10 +591,10 @@ pub struct SqliteRow<'stmt> {
 impl<'stmt> SqliteRow<'stmt> {
     /// Get the value of a particular column of the result row.
     ///
-    /// Note that `SqliteRow` falls into the "semi-safe" category of rusqlite. When you are
+    /// Note that `SqliteRow` can panic at runtime if you use it incorrectly. When you are
     /// retrieving the rows of a query, a row becomes stale once you have requested the next row,
-    /// and the values can no longer be retrieved. In general (when using a loop over the rows, for
-    /// example) this isn't an issue, but it means you cannot do something like this:
+    /// and the values can no longer be retrieved. In general (when using looping over the rows,
+    /// for example) this isn't an issue, but it means you cannot do something like this:
     ///
     /// ```rust,no_run
     /// # use rusqlite::{SqliteConnection, SqliteResult};
