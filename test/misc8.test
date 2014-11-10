@@ -1,0 +1,41 @@
+# 2014-11-10
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.
+# The focus of this script is testing the "eval.c" loadable extension.
+# 
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+load_static_extension db eval
+do_execsql_test misc8-1.0 {
+  CREATE TABLE t1(a,b,c);
+  INSERT INTO t1 VALUES(1,2,3),(4,5,6);
+  SELECT quote(eval('SELECT * FROM t1 ORDER BY a','-abc-'));
+} {'1-abc-2-abc-3-abc-4-abc-5-abc-6'}
+do_execsql_test misc8-1.1 {
+  SELECT quote(eval('SELECT * FROM t1 ORDER BY a'));
+} {{'1 2 3 4 5 6'}}
+do_catchsql_test misc8-1.2 {
+  SELECT quote(eval('SELECT d FROM t1 ORDER BY a'));
+} {1 {no such column: d}}
+do_execsql_test misc8-1.3 {
+  INSERT INTO t1 VALUES(7,null,9);
+  SELECT eval('SELECT * FROM t1 ORDER BY a',',');
+} {1,2,3,4,5,6,7,,9}
+do_catchsql_test misc8-1.4 {
+  BEGIN;
+  INSERT INTO t1 VALUES(10,11,12);
+  SELECT coalesce(b, eval('ROLLBACK')) FROM t1 ORDER BY a;
+} {1 {abort due to ROLLBACK}}
+
+
+finish_test
