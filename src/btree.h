@@ -83,7 +83,7 @@ int sqlite3BtreeBeginTrans(Btree*,int);
 int sqlite3BtreeCommitPhaseOne(Btree*, const char *zMaster);
 int sqlite3BtreeCommitPhaseTwo(Btree*, int);
 int sqlite3BtreeCommit(Btree*);
-int sqlite3BtreeRollback(Btree*,int);
+int sqlite3BtreeRollback(Btree*,int,int);
 int sqlite3BtreeBeginStmt(Btree*,int);
 int sqlite3BtreeCreateTable(Btree*, int*, int flags);
 int sqlite3BtreeIsInTrans(Btree*);
@@ -116,7 +116,7 @@ int sqlite3BtreeIncrVacuum(Btree *);
 int sqlite3BtreeDropTable(Btree*, int, int*);
 int sqlite3BtreeClearTable(Btree*, int, int*);
 int sqlite3BtreeClearTableOfCursor(BtCursor*);
-void sqlite3BtreeTripAllCursors(Btree*, int);
+void sqlite3BtreeTripAllCursors(Btree*, int, int);
 
 void sqlite3BtreeGetMeta(Btree *pBtree, int idx, u32 *pValue);
 int sqlite3BtreeUpdateMeta(Btree*, int idx, u32 value);
