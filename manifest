@@ -1,5 +1,5 @@
-C New\stest\scases\sfor\sdeleting\scontent\sout\sfrom\sunder\sa\sSELECT\sstatement.
-D 2014-11-10T19:16:59.654
+C Add\snew\stest\sfile\se_blobclose.test,\scontaining\stests\sfor\ssqlite3_blob_close().
+D 2014-11-11T12:20:35.141
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a226317fdf3f4c895fb3cfedc355b4d0868ce1fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -230,7 +230,7 @@ F src/resolve.c 4965007d6497b6a4d7a6d98751cc39712885f952
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 428165951748151e87a15295b7357221433e311b
 F src/shell.c bc28d5992109717c87804e2eb1a08a7c8cc7a2fd
-F src/sqlite.h.in 5531c4c69ee0a351c2aa5ad9f3f0f2424a57a9f4
+F src/sqlite.h.in 0e6612f84936cca29166f2c66068e0227a13fdf6
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
 F src/sqliteInt.h 71b0bf1a7fc55b5cb374f7579fd140e730a6e0f4
@@ -453,6 +453,7 @@ F test/descidx3.test 09ddbe3f5295f482d2f8b687cf6db8bad7acd9a2
 F test/diskfull.test 106391384780753ea6896b7b4f005d10e9866b6e
 F test/distinct.test 086e70c765f172e8974e9f83b9ac5ca03c154e77
 F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
+F test/e_blobclose.test df756753f571bc30e42e3a6cba2807576e49e716
 F test/e_blobopen.test 234f960d90235a9b51ec3ca1e062e8541dd558d8
 F test/e_blobwrite.test 615b405f29feb2cfb5a1f03dab7933258294fa26
 F test/e_changes.test fd66105385153dbf21fdb35eb8ef6c3e1eade579
@@ -1216,7 +1217,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1df77e5f1bd82de4dc92fe28359c3e56ab3f9ed4
-R 4b8ad408c58c17649b0e1468e9b897aa
-U drh
-Z 1daa82bfd52bfa0c612ccd059afbb463
+P 8289c3e9b47f7c2a606a88839f6bf615f8904ac2
+R 5495040e5aa9cb71b6dcdaffde6bd935
+U dan
+Z 0fca1fa0cec9033f254d39e73d650ca5

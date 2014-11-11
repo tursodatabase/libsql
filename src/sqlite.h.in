@@ -5754,24 +5754,22 @@ SQLITE_EXPERIMENTAL int sqlite3_blob_reopen(sqlite3_blob *, sqlite3_int64);
 /*
 ** CAPI3REF: Close A BLOB Handle
 **
-** ^Closes an open [BLOB handle].
+** ^This function closes an open [BLOB handle]. ^(The BLOB handle is closed
+** unconditionally.  Even if this routine returns an error code, the 
+** handle is still closed.)^
 **
-** ^Closing a BLOB shall cause the current transaction to commit
-** if there are no other BLOBs, no pending prepared statements, and the
-** database connection is in [autocommit mode].
-** ^If any writes were made to the BLOB, they might be held in cache
-** until the close operation if they will fit.
+** ^If the blob handle being closed was opened for read-write access, and if
+** the database is in auto-commit mode and there are no other open read-write
+** blob handles or active write statements, the current transaction is
+** committed. ^If an error occurs while committing the transaction, an error
+** code is returned and the transaction rolled back.
 **
-** ^(Closing the BLOB often forces the changes
-** out to disk and so if any I/O errors occur, they will likely occur
-** at the time when the BLOB is closed.  Any errors that occur during
-** closing are reported as a non-zero return value.)^
-**
-** ^(The BLOB is closed unconditionally.  Even if this routine returns
-** an error code, the BLOB is still closed.)^
-**
-** ^Calling this routine with a null pointer (such as would be returned
-** by a failed call to [sqlite3_blob_open()]) is a harmless no-op.
+** Calling this function with an argument that is not a NULL pointer or an
+** open blob handle results in undefined behaviour. ^Calling this routine 
+** with a null pointer (such as would be returned by a failed call to 
+** [sqlite3_blob_open()]) is a harmless no-op. ^Otherwise, if this function
+** is passed a valid open blob handle, the values returned by the 
+** sqlite3_errcode() and sqlite3_errmsg() functions are set before returning.
 */
 int sqlite3_blob_close(sqlite3_blob *);
 
