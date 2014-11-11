@@ -38,7 +38,6 @@ proc force_rollback {} {
 db function force_rollback force_rollback
 
 do_test tkt-f7772-1.2 {
-breakpoint
   catchsql {
     BEGIN IMMEDIATE;
     CREATE TABLE xyzzy(abc);

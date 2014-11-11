@@ -1,5 +1,5 @@
-C Add\stests\sfor\ssqlite3_blob_bytes().
-D 2014-11-11T16:11:04.911
+C Remove\ssome\scalls\sto\sthe\s'breakpoint'\stest\scommand.
+D 2014-11-11T19:07:56.372
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a226317fdf3f4c895fb3cfedc355b4d0868ce1fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -384,7 +384,7 @@ F test/capi2.test 011c16da245fdc0106a2785035de6b242c05e738
 F test/capi3.test f0718f4f90d0efdc980119bfbdf1d7f1541ee5ef
 F test/capi3b.test efb2b9cfd127efa84433cd7a2d72ce0454ae0dc4
 F test/capi3c.test fdc0d67a2cb8e8fc400d5b7735e330161ea057a2
-F test/capi3d.test c84af0c49267f9c3fbf4c1c46aa647646023811e
+F test/capi3d.test a82b6321c50a1cfc848e386fa2c851893606f68c
 F test/capi3e.test 3d49c01ef2a1a55f41d73cba2b23b5059ec460fe
 F test/cast.test 4c275cbdc8202d6f9c54a3596701719868ac7dc3
 F test/check.test 5831ddb6f2c687782eaf2e1a07b6e17f24c4f763
@@ -423,7 +423,7 @@ F test/corruptD.test b3c205fac7952b1de645ce44bb02335cd9e3e040
 F test/corruptE.test 193b4ca4e927e77c1d5f4f56203ddc998432a7ee
 F test/corruptF.test be9fde98e4c93648f1ba52b74e5318edc8f59fe4
 F test/corruptG.test 1ab3bf97ee7bdba70e0ff3ba2320657df55d1804
-F test/corruptH.test 88ed71a086e13591c917aac6de32750e7c7281cb
+F test/corruptH.test 5dd4fa98c6c1ed33b178f9e8a48c4fdd3cfc9067
 F test/corruptI.test 221ad8b7f0a9ac6b80fc577e73b5ad8cdea31243
 F test/cost.test 19d314526616ce4473eb4e4e450fcb94499ce318
 F test/count.test 42a251178e32f617eda33f76236a7f79825a50b5
@@ -860,7 +860,7 @@ F test/skipscan6.test 5866039d03a56f5bd0b3d172a012074a1d90a15b
 F test/soak.test 0b5b6375c9f4110c828070b826b3b4b0bb65cd5f
 F test/softheap1.test 40562fe6cac6d9827b7b42b86d45aedf12c15e24
 F test/sort.test c4400e7533748f6bd7413851ff148645e82b9e2d
-F test/sort2.test 269f4f50c6e468cc32b302ae7ff0add8338ec6de
+F test/sort2.test 84a92eebf697feee9c6697746918c7d67373eea1
 F test/sort3.test 6178ade30810ac9166fcdf14b7065e49c0f534e2
 F test/sort4.test 6c37d85f7cd28d50cce222fcab84ccd771e105cb
 F test/sort5.test a448240a42b49239edc00f85d6d7ac7a1b261e1f
@@ -956,7 +956,7 @@ F test/tkt-d635236375.test 9d37e988b47d87505bc9445be0ca447002df5d09
 F test/tkt-d82e3f3721.test bcc0dfba658d15bab30fd4a9320c9e35d214ce30
 F test/tkt-f3e5abed55.test d5a0126118142d13e27f6ce9f4c47096e9321c00
 F test/tkt-f67b41381a.test a23bc124c981662db712167bacd0ed8ad11abac9
-F test/tkt-f777251dc7a.test 6295d235a03c82160549da4841a83dc8e758932f
+F test/tkt-f777251dc7a.test d1a8fc3eefb7a9e64d19ff24d5c8c94c34a632fb
 F test/tkt-f7b4edec.test d998a08ff2b18b7f62edce8e3044317c45efe6c7
 F test/tkt-f973c7ac31.test 28ef85c7f015477916795246d8286aeda39d4ead
 F test/tkt-fa7bf5ec.test 9102dfea58aa371d78969da735f9392c57e2e035
@@ -1218,7 +1218,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b5df5ac0529f7b0d1e880a7f4a307e7d77b7fa6c
-R be9d88d05dd4414f44a05008ae6eba4c
-U dan
-Z 2fc1cd52a3184d003db0d33d71426d71
+P a066a3832a7c6de65c3016e77e49ac00e09db749
+R e8fc41a7f82a02ab8618a341f7ef7735
+U mistachkin
+Z 90417f4c358533080e79b8017b4e7453
