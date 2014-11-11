@@ -74,7 +74,7 @@ fn bad_function_will_panic(conn: &SqliteConnection) -> SqliteResult<i64> {
     let mut rows = try!(stmt.query([]));
 
     let row0 = try!(rows.next().unwrap());
-    // row 0 is value now...
+    // row 0 is valid now...
 
     let row1 = try!(rows.next().unwrap());
     // row 0 is now STALE, and row 1 is valid
