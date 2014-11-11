@@ -597,7 +597,7 @@ int sqlite3_backup_finish(sqlite3_backup *p){
   }
 
   /* If a transaction is still open on the Btree, roll it back. */
-  sqlite3BtreeRollback(p->pDest, SQLITE_OK);
+  sqlite3BtreeRollback(p->pDest, SQLITE_OK, 0);
 
   /* Set the error code of the destination database handle. */
   rc = (p->rc==SQLITE_DONE) ? SQLITE_OK : p->rc;

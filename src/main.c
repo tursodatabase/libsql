@@ -1016,13 +1016,15 @@ void sqlite3LeaveMutexAndCloseZombie(sqlite3 *db){
 
 /*
 ** Rollback all database files.  If tripCode is not SQLITE_OK, then
-** any open cursors are invalidated ("tripped" - as in "tripping a circuit
+** any write cursors are invalidated ("tripped" - as in "tripping a circuit
 ** breaker") and made to return tripCode if there are any further
-** attempts to use that cursor.
+** attempts to use that cursor.  Read cursors remain open and valid
+** but are "saved" in case the table pages are moved around.
 */
 void sqlite3RollbackAll(sqlite3 *db, int tripCode){
   int i;
   int inTrans = 0;
+  int schemaChange;
   assert( sqlite3_mutex_held(db->mutex) );
   sqlite3BeginBenignMalloc();
 
@@ -1033,6 +1035,7 @@ void sqlite3RollbackAll(sqlite3 *db, int tripCode){
   ** the database rollback and schema reset, which can cause false
   ** corruption reports in some cases.  */
   sqlite3BtreeEnterAll(db);
+  schemaChange = (db->flags & SQLITE_InternChanges)!=0 && db->init.busy==0;
 
   for(i=0; i<db->nDb; i++){
     Btree *p = db->aDb[i].pBt;
@@ -1040,7 +1043,7 @@ void sqlite3RollbackAll(sqlite3 *db, int tripCode){
       if( sqlite3BtreeIsInTrans(p) ){
         inTrans = 1;
       }
-      sqlite3BtreeRollback(p, tripCode);
+      sqlite3BtreeRollback(p, tripCode, !schemaChange);
     }
   }
   sqlite3VtabRollback(db);

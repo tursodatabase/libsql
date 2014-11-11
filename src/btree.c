@@ -2171,7 +2171,7 @@ int sqlite3BtreeClose(Btree *p){
   ** The call to sqlite3BtreeRollback() drops any table-locks held by
   ** this handle.
   */
-  sqlite3BtreeRollback(p, SQLITE_OK);
+  sqlite3BtreeRollback(p, SQLITE_OK, 0);
   sqlite3BtreeLeave(p);
 
   /* If there are still other outstanding references to the shared-btree
@@ -3464,27 +3464,28 @@ int sqlite3BtreeCommit(Btree *p){
 
 /*
 ** This routine sets the state to CURSOR_FAULT and the error
-** code to errCode for every cursor on BtShared that pBtree
-** references.
+** code to errCode for every cursor on any BtShared that pBtree
+** references.  Or if the writeOnly flag is set to 1, then only
+** trip write cursors and leave read cursors unchanged.
 **
-** Every cursor is tripped, including cursors that belong
-** to other database connections that happen to be sharing
-** the cache with pBtree.
+** Every cursor is a candidate to be tripped, including cursors
+** that belong to other database connections that happen to be
+** sharing the cache with pBtree.
 **
-** This routine gets called when a rollback occurs.
-** All cursors using the same cache must be tripped
-** to prevent them from trying to use the btree after
-** the rollback.  The rollback may have deleted tables
-** or moved root pages, so it is not sufficient to
-** save the state of the cursor.  The cursor must be
-** invalidated.
+** This routine gets called when a rollback occurs.  The writeOnly
+** flag is set to 1 if the transaction did not make any schema
+** changes, in which case the read cursors can continue operating.
+** If schema changes did occur in the transaction, then both read
+** and write cursors must both be tripped.
 */
-void sqlite3BtreeTripAllCursors(Btree *pBtree, int errCode){
+void sqlite3BtreeTripAllCursors(Btree *pBtree, int errCode, int writeOnly){
   BtCursor *p;
+  assert( (writeOnly==0 || writeOnly==1) && BTCF_WriteFlag==1 );
   if( pBtree==0 ) return;
   sqlite3BtreeEnter(pBtree);
   for(p=pBtree->pBt->pCursor; p; p=p->pNext){
     int i;
+    if( writeOnly && (p->curFlags & BTCF_WriteFlag)==0 ) continue;
     sqlite3BtreeClearCursor(p);
     p->eState = CURSOR_FAULT;
     p->skipNext = errCode;
@@ -3497,27 +3498,32 @@ void sqlite3BtreeTripAllCursors(Btree *pBtree, int errCode){
 }
 
 /*
-** Rollback the transaction in progress.  All cursors will be
-** invalided by this operation.  Any attempt to use a cursor
-** that was open at the beginning of this operation will result
-** in an error.
+** Rollback the transaction in progress.
+**
+** If tripCode is not SQLITE_OK then cursors will be invalidated (tripped).
+** Only write cursors are tripped if writeOnly is true but all cursors are
+** tripped if writeOnly is false.  Any attempt to use
+** a tripped cursor will result in an error.
 **
 ** This will release the write lock on the database file.  If there
 ** are no active cursors, it also releases the read lock.
 */
-int sqlite3BtreeRollback(Btree *p, int tripCode){
+int sqlite3BtreeRollback(Btree *p, int tripCode, int writeOnly){
   int rc;
   BtShared *pBt = p->pBt;
   MemPage *pPage1;
 
+  assert( writeOnly==1 || writeOnly==0 );
+  assert( tripCode==SQLITE_ABORT_ROLLBACK || tripCode==SQLITE_OK );
   sqlite3BtreeEnter(p);
   if( tripCode==SQLITE_OK ){
     rc = tripCode = saveAllCursors(pBt, 0, 0);
+    if( rc ) writeOnly = 0;
   }else{
     rc = SQLITE_OK;
   }
   if( tripCode ){
-    sqlite3BtreeTripAllCursors(p, tripCode);
+    sqlite3BtreeTripAllCursors(p, tripCode, writeOnly);
   }
   btreeIntegrity(p);
 
