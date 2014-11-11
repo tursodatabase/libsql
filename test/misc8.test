@@ -34,8 +34,9 @@ do_execsql_test misc8-1.3 {
 do_catchsql_test misc8-1.4 {
   BEGIN;
   INSERT INTO t1 VALUES(10,11,12);
-  SELECT coalesce(b, eval('ROLLBACK')) FROM t1 ORDER BY a;
-} {1 {abort due to ROLLBACK}}
+  SELECT a, coalesce(b, eval('ROLLBACK; SELECT ''bam'';')), c
+   FROM t1 ORDER BY a;
+} {0 {1 2 3 4 5 6 7 bam 9}}
 do_catchsql_test misc8-1.5 {
   INSERT INTO t1 VALUES(10,11,12);
   SELECT a, coalesce(b, eval('SELECT ''bam''')), c
@@ -47,6 +48,14 @@ do_catchsql_test misc8-1.6 {
     FROM t1
    ORDER BY rowid;
 } {0 {1 2 3 4 5 6 7 bam {}}}
+do_catchsql_test misc8-1.7 {
+  INSERT INTO t1 VALUES(1,2,3),(4,5,6),(7,null,9);
+  BEGIN;
+  CREATE TABLE t2(x);
+  SELECT a, coalesce(b, eval('ROLLBACK; SELECT ''bam''')), c
+    FROM t1
+   ORDER BY rowid;
+} {1 {abort due to ROLLBACK}}
 
 
 finish_test
