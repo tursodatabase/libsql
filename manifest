@@ -1,5 +1,5 @@
-C When\sa\stransaction\sor\ssavepoint\srollback\soccurs,\ssave\sthe\spositions\sof\sall\sopen\sread-cursors\sso\sthat\sthey\scan\sbe\srestored\sfollowing\sthe\srollback\soperation.
-D 2014-11-12T14:56:02.923
+C Add\sfurther\stests\sfor\srollback\soperations\sin\sthe\spresence\sof\songoing\sselects.
+D 2014-11-12T17:45:37.113
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a226317fdf3f4c895fb3cfedc355b4d0868ce1fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -797,7 +797,8 @@ F test/releasetest.mk 2eced2f9ae701fd0a29e714a241760503ccba25a
 F test/releasetest.tcl a4279c890698584feb2ffc86735857a4e4474180
 F test/resolver01.test 33abf37ff8335e6bf98f2b45a0af3e06996ccd9a
 F test/rollback.test 458fe73eb3ffdfdf9f6ba3e9b7350a6220414dea
-F test/rollback2.test 552abaab8e721b6060a727d639896427059e51ec
+F test/rollback2.test fc14cf6d1a2b250d2735ef16124b971bce152f14
+F test/rollbackfault.test 6a004f71087cc399296cffbb5429ea6da655ae65
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
 F test/rowid.test 742b5741584a8a44fd83e856cc2896688401d645
 F test/rtree.test 0c8d9dd458d6824e59683c19ab2ffa9ef946f798
@@ -1219,7 +1220,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1412fcc480799ecbd68d44dd18d5bad40e20ccf1
-R 668a86f911283b47b6c156fecf772681
+P dd03a2802f3f276525f3cef9a93f825dd8606626
+R c0a8c133338658022754212d7071964f
 U dan
-Z cf8e25329461439611751d7913ef3ef9
+Z c8dc7391cf2e61af731936b53ad2fd87
