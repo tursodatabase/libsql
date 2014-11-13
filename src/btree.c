@@ -3472,29 +3472,52 @@ int sqlite3BtreeCommit(Btree *p){
 ** that belong to other database connections that happen to be
 ** sharing the cache with pBtree.
 **
-** This routine gets called when a rollback occurs.  The writeOnly
-** flag is set to 1 if the transaction did not make any schema
-** changes, in which case the read cursors can continue operating.
-** If schema changes did occur in the transaction, then both read
-** and write cursors must both be tripped.
+** This routine gets called when a rollback occurs. If the writeOnly
+** flag is true, then only write-cursors need be tripped - read-only
+** cursors save their current positions so that they may continue 
+** following the rollback. Or, if writeOnly is false, all cursors are 
+** tripped. In general, writeOnly is false if the transaction being
+** rolled back modified the database schema. In this case b-tree root
+** pages may be moved or deleted from the database altogether, making
+** it unsafe for read cursors to continue.
+**
+** If the writeOnly flag is true and an error is encountered while 
+** saving the current position of a read-only cursor, all cursors, 
+** including all read-cursors are tripped.
+**
+** SQLITE_OK is returned if successful, or if an error occurs while
+** saving a cursor position, an SQLite error code.
 */
-void sqlite3BtreeTripAllCursors(Btree *pBtree, int errCode, int writeOnly){
+int sqlite3BtreeTripAllCursors(Btree *pBtree, int errCode, int writeOnly){
   BtCursor *p;
+  int rc = SQLITE_OK;
+
   assert( (writeOnly==0 || writeOnly==1) && BTCF_WriteFlag==1 );
-  if( pBtree==0 ) return;
-  sqlite3BtreeEnter(pBtree);
-  for(p=pBtree->pBt->pCursor; p; p=p->pNext){
-    int i;
-    if( writeOnly && (p->curFlags & BTCF_WriteFlag)==0 ) continue;
-    sqlite3BtreeClearCursor(p);
-    p->eState = CURSOR_FAULT;
-    p->skipNext = errCode;
-    for(i=0; i<=p->iPage; i++){
-      releasePage(p->apPage[i]);
-      p->apPage[i] = 0;
+  if( pBtree ){
+    sqlite3BtreeEnter(pBtree);
+    for(p=pBtree->pBt->pCursor; p; p=p->pNext){
+      int i;
+      if( writeOnly && (p->curFlags & BTCF_WriteFlag)==0 ){
+        if( p->eState==CURSOR_VALID ){
+          int rc = saveCursorPosition(p);
+          if( rc!=SQLITE_OK ){
+            (void)sqlite3BtreeTripAllCursors(pBtree, rc, 0);
+            break;
+          }
+        }
+      }else{
+        sqlite3BtreeClearCursor(p);
+        p->eState = CURSOR_FAULT;
+        p->skipNext = errCode;
+      }
+      for(i=0; i<=p->iPage; i++){
+        releasePage(p->apPage[i]);
+        p->apPage[i] = 0;
+      }
     }
+    sqlite3BtreeLeave(pBtree);
   }
-  sqlite3BtreeLeave(pBtree);
+  return rc;
 }
 
 /*
@@ -3523,7 +3546,9 @@ int sqlite3BtreeRollback(Btree *p, int tripCode, int writeOnly){
     rc = SQLITE_OK;
   }
   if( tripCode ){
-    sqlite3BtreeTripAllCursors(p, tripCode, writeOnly);
+    int rc2 = sqlite3BtreeTripAllCursors(p, tripCode, writeOnly);
+    assert( rc==SQLITE_OK || (writeOnly==0 && rc2==SQLITE_OK) );
+    if( rc2!=SQLITE_OK ) rc = rc2;
   }
   btreeIntegrity(p);
 

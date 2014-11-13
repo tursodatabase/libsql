@@ -1,5 +1,5 @@
-C Fix\sthe\s%c\sformat\scharacter\sin\ssqlite3VXPrintf()\sso\sthat\sit\scorrectly\shandles\sprecisions\slarger\sthan\s70.
-D 2014-11-12T14:12:28.051
+C When\sa\stransaction\sor\ssavepoint\srollback\soccurs,\ssave\sthe\spositions\sof\sall\sopen\sread-cursors\sso\sthat\sthey\scan\sbe\srestored\sfollowing\sthe\srollback\soperation.\s\sCherry-pick\sof\scheck-in\s[dd03a2802f3f27]
+D 2014-11-13T13:42:39.738
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -172,8 +172,8 @@ F src/auth.c d8abcde53426275dab6243b441256fcd8ccbebb2
 F src/backup.c 8cdfeb0c8a6d8bdad3faefae418eb3dc767051b6
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 49ca66250c7dfa844a4d4cb8272b87420d27d3a5
-F src/btree.c 944b84f72fd9048acde31400d89439976bf766b0
-F src/btree.h 97c4d0ef860f151e096e97eef78b87f7b4a8d899
+F src/btree.c 2c15850c5c9a26b10cdf92f9a29c74e299dc3674
+F src/btree.h a4afc6b06f5a1dd2076d15aa168baec44fc0121b
 F src/btreeInt.h 026d0129724e8f265fdc60d44ec240cf5a4e6179
 F src/build.c 9dc2bd94347b878c89627000c92b0c8d97ec2919
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
@@ -289,7 +289,7 @@ F src/update.c 3c4ecc282accf12d39edb8d524cf089645e55a13
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c 4006c01772bd8d8ac4306d523bbcee41d3e392d8
 F src/vacuum.c 59f03f92bcff57faa6a8ca256eb29ccddfb0614a
-F src/vdbe.c 0b4ffa1aeeb7a10fefc6497dd0159bf5d9828464
+F src/vdbe.c a6b604364c7cbb079c083418e7359d1d665f2ef0
 F src/vdbe.h 09f5b4e3719fa454f252322b1cdab5cf1f361327
 F src/vdbeInt.h e2a060a55ee18a6ab973353a5e2ec7ee569bf787
 F src/vdbeapi.c 37a6c6ae284a97bcace365f2f0a225680c0499d9
@@ -786,6 +786,7 @@ F test/releasetest.mk 2eced2f9ae701fd0a29e714a241760503ccba25a
 F test/releasetest.tcl a4279c890698584feb2ffc86735857a4e4474180
 F test/resolver01.test 33abf37ff8335e6bf98f2b45a0af3e06996ccd9a
 F test/rollback.test 458fe73eb3ffdfdf9f6ba3e9b7350a6220414dea
+F test/rollback2.test 552abaab8e721b6060a727d639896427059e51ec
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
 F test/rowid.test 742b5741584a8a44fd83e856cc2896688401d645
 F test/rtree.test 0c8d9dd458d6824e59683c19ab2ffa9ef946f798
@@ -1204,8 +1205,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e1017745e183f5d7429ce787ec2feef946a24f0f
-Q +08a27440f19b7fc884464832e6105af1bf008172
-R 3a2fc5ef3a825f22ce8bbd1b4d69c828
+P 839a6df9f98b90fb593534a62145d9c913540bae
+Q +dd03a2802f3f276525f3cef9a93f825dd8606626
+R 0801523eb21d9763755a3afd3e84ae8b
 U drh
-Z 3e707181121665e3dbca925048596208
+Z 995ce8d43edc83cec464fe7495c36085

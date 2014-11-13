@@ -1,0 +1,74 @@
+# 2014 November 12
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set ::testprefix rollback2
+
+proc int2hex {i} { format %.2X $i }
+db func int2hex int2hex
+
+do_execsql_test 1.0 {
+  SELECT int2hex(0), int2hex(100), int2hex(255)
+} {00 64 FF}
+do_execsql_test 1.1 {
+  CREATE TABLE t1(i, h);
+  CREATE INDEX i1 ON t1(h);
+  WITH data(a, b) AS (
+    SELECT 1, int2hex(1)
+      UNION ALL
+    SELECT a+1, int2hex(a+1) FROM data WHERE a<40
+  )
+  INSERT INTO t1 SELECT * FROM data;
+} {}
+
+
+proc do_rollback_test {tn args} {
+  set A(-setup)    ""
+  set A(-select)   ""
+  set A(-result)   ""
+  set A(-rollback) ROLLBACK
+
+  array set O $args
+  foreach k [array names O] {
+    if {[info exists A($k)]==0} { error "unknown option: $k" }
+    set A($k) $O($k)
+  }
+
+  for {set iRollback 0} 1 {incr iRollback} {
+    catch { db eval ROLLBACK }
+    set res [list]
+    db eval $A(-setup)
+
+    set i 0
+    db eval $A(-select) x {
+      if {$i==$iRollback} { db eval $A(-rollback) }
+      foreach k $x(*) { lappend res $x($k) }
+      incr i
+    }
+
+    do_test $tn.$iRollback [list set {} $res] [list {*}$A(-result)]
+    if {$i < $iRollback} break
+  }
+}
+
+do_rollback_test 2 -setup {
+  BEGIN;
+    DELETE FROM t1 WHERE (i%2)==1;
+} -select {
+  SELECT i FROM t1 WHERE (i%2)==0
+} -result {
+  2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 34 36 38 40
+}
+
+finish_test
+
