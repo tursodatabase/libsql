@@ -1,5 +1,5 @@
-C Have\scalls\sto\ssqlite3_backup_init()\sfail\sif\sthere\sis\salready\sa\sread\sor\sread-write\stransaction\sopen\son\sthe\sdestination\sdatabase.
-D 2014-11-13T14:18:25.531
+C Modify\sthe\sdocumentation\sfor\ssqlite3_backup_init()\sto\sindicate\sthat\sit\swill\sfail\sif\sthere\sis\salready\sa\sread\sor\sread-write\stransaction\sopen\son\sthe\sdestination\sdatabase.
+D 2014-11-13T14:30:56.983
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a226317fdf3f4c895fb3cfedc355b4d0868ce1fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -230,7 +230,7 @@ F src/resolve.c 4965007d6497b6a4d7a6d98751cc39712885f952
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 428165951748151e87a15295b7357221433e311b
 F src/shell.c bc28d5992109717c87804e2eb1a08a7c8cc7a2fd
-F src/sqlite.h.in 0e6612f84936cca29166f2c66068e0227a13fdf6
+F src/sqlite.h.in 0c5c0df7e4e436dfc5592511325bf4a96f6a638d
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
 F src/sqliteInt.h 71b0bf1a7fc55b5cb374f7579fd140e730a6e0f4
@@ -1221,7 +1221,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P eaf3aae014f59c8d37aa20aa31d54cf13f9e86fc
-R cf416376a3614eef6301ba322bd3cc43
+P 169b5505498c0a7ee2b5dbb2ba13c41dfaa7c62f
+R 91cc925fca98dfe2ae31ca6f9eebcf27
 U dan
-Z 499ccc085277a0250fd3c5f22e93f6be
+Z 09c231773b0ef1121faa87d2329ad833

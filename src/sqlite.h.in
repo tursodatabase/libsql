@@ -6848,6 +6848,10 @@ typedef struct sqlite3_backup sqlite3_backup;
 ** must be different or else sqlite3_backup_init(D,N,S,M) will fail with
 ** an error.
 **
+** ^A call to sqlite3_backup_init() will fail, returning SQLITE_ERROR, if 
+** there is already a read or read-write transaction open on the 
+** destination database.
+**
 ** ^If an error occurs within sqlite3_backup_init(D,N,S,M), then NULL is
 ** returned and an error code and error message are stored in the
 ** destination [database connection] D.
