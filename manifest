@@ -1,5 +1,5 @@
-C Add\sfurther\stests\sfor\srollback\soperations\sin\sthe\spresence\sof\songoing\sselects.
-D 2014-11-12T17:45:37.113
+C Have\scalls\sto\ssqlite3_backup_init()\sfail\sif\sthere\sis\salready\sa\sread\sor\sread-write\stransaction\sopen\son\sthe\sdestination\sdatabase.
+D 2014-11-13T14:18:25.531
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a226317fdf3f4c895fb3cfedc355b4d0868ce1fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -170,7 +170,7 @@ F src/alter.c ba266a779bc7ce10e52e59e7d3dc79fa342e8fdb
 F src/analyze.c afbcca663c3f3625340b8e30d440cd7a97ded6bc
 F src/attach.c f4e94df2d1826feda65eb0939f7f6f5f923a0ad9
 F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
-F src/backup.c 86b311af1ad35decd1f2f0cee457d344acb83c3b
+F src/backup.c 7ddee9c7d505e07e959a575b18498f17c71e53ea
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 49ca66250c7dfa844a4d4cb8272b87420d27d3a5
 F src/btree.c d5d991b518fa5bebc64037dfeb98a48051d864d7
@@ -353,9 +353,10 @@ F test/autovacuum.test 941892505d2c0f410a0cb5970dfa1c7c4e5f6e74
 F test/autovacuum_ioerr2.test 8a367b224183ad801e0e24dcb7d1501f45f244b4
 F test/avtrans.test 0252654f4295ddda3b2cce0e894812259e655a85
 F test/backcompat.test 19a1f337c68419b020a7481dd272a472c4ad8ef4
-F test/backup.test c9cdd23a495864b9edf75a9fa66f5cb7e10fcf62
+F test/backup.test b79299a536a4c6d919094786595b95be56d02014
 F test/backup2.test 34986ef926ea522911a51dfdb2f8e99b7b75ebcf
 F test/backup4.test 2a2e4a64388090b152de753fd9e123f28f6a3bd4
+F test/backup5.test ee5da6d7fe5082f5b9b0bbfa31d016f52412a2e4
 F test/backup_ioerr.test 4c3c7147cee85b024ecf6e150e090c32fdbb5135
 F test/backup_malloc.test 7162d604ec2b4683c4b3799a48657fb8b5e2d450
 F test/badutf.test d5360fc31f643d37a973ab0d8b4fb85799c3169f
@@ -1220,7 +1221,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P dd03a2802f3f276525f3cef9a93f825dd8606626
-R c0a8c133338658022754212d7071964f
+P eaf3aae014f59c8d37aa20aa31d54cf13f9e86fc
+R cf416376a3614eef6301ba322bd3cc43
 U dan
-Z c8dc7391cf2e61af731936b53ad2fd87
+Z 499ccc085277a0250fd3c5f22e93f6be
