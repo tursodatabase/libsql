@@ -1,5 +1,5 @@
-C Modify\sthe\sdocumentation\sfor\ssqlite3_backup_init()\sto\sindicate\sthat\sit\swill\sfail\sif\sthere\sis\salready\sa\sread\sor\sread-write\stransaction\sopen\son\sthe\sdestination\sdatabase.
-D 2014-11-13T14:30:56.983
+C Do\snot\sautomatically\sremove\sthe\sDISTINCT\skeyword\sfrom\s"a\sIN\s(SELECT\sDISTINCT\s...)"\sexpressions.\sFix\sfor\s[db87229497].
+D 2014-11-14T15:28:33.929
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a226317fdf3f4c895fb3cfedc355b4d0868ce1fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -182,7 +182,7 @@ F src/complete.c c4ba6e0626bb94bc77a0861735f3382fcf7cc818
 F src/ctime.c df19848891c8a553c80e6f5a035e768280952d1a
 F src/date.c 93594514aae68de117ca4a2a0d6cc63eddf26744
 F src/delete.c 0750b1eb4d96cd3fb2c798599a3a7c85e92f1417
-F src/expr.c 0391a657df4959eaf2a2fd7d77de5ebe750686ee
+F src/expr.c a3ff05db5709d628c23890db862e30f3dd9dc428
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c da985ae673efef2c712caef825a5d2edb087ead7
 F src/func.c ba47c1671ab3cfdafa6e9d6ee490939ea578adee
@@ -627,7 +627,7 @@ F test/in.test 047c4671328e9032ab95666a67021adbbd36e98e
 F test/in2.test 5d4c61d17493c832f7d2d32bef785119e87bde75
 F test/in3.test 3cbf58c87f4052cee3a58b37b6389777505aa0c0
 F test/in4.test d2b38cba404bc4320f4fe1b595b3d163f212c068
-F test/in5.test 99f9a40af01711b06d2d614ecfe96129f334fba3
+F test/in5.test 1de657472fa9ac2924be25c2c959ac5ca1aae554
 F test/incrblob.test e81846d214f3637622620fbde7cd526781cfe328
 F test/incrblob2.test bf4d549aa4a466d7fbe3e3a3693d3861263d5600
 F test/incrblob3.test d8d036fde015d4a159cd3cbae9d29003b37227a4
@@ -1221,7 +1221,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 169b5505498c0a7ee2b5dbb2ba13c41dfaa7c62f
-R 91cc925fca98dfe2ae31ca6f9eebcf27
+P ef03a203351a6002e2b1075139717e4234c816cd
+R bb54553354aa14551393c5e5701542c8
 U dan
-Z 09c231773b0ef1121faa87d2329ad833
+Z f91e19e3f2d1e58cdccd86465c86ab70
