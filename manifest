@@ -1,5 +1,5 @@
-C When\sa\stransaction\sor\ssavepoint\srollback\soccurs,\ssave\sthe\spositions\sof\sall\sopen\sread-cursors\sso\sthat\sthey\scan\sbe\srestored\sfollowing\sthe\srollback\soperation.\s\sCherry-pick\sof\scheck-in\s[dd03a2802f3f27]
-D 2014-11-13T13:42:39.738
+C Do\snot\sautomatically\sremove\sthe\sDISTINCT\skeyword\sfrom\s"a\sIN\s(SELECT\sDISTINCT\s...)"\sexpressions.\sFix\sfor\s[db87229497].
+D 2014-11-14T15:42:23.965
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -181,7 +181,7 @@ F src/complete.c 535183afb3c75628b78ce82612931ac7cdf26f14
 F src/ctime.c bb434068b5308a857b181c2d204a320ff0d6c638
 F src/date.c 57a7f9ba9f6b4d5268f5e411739066a611f99036
 F src/delete.c 0750b1eb4d96cd3fb2c798599a3a7c85e92f1417
-F src/expr.c fc204d08af06437ddaffe5a1b1f1f6f9e1a55d6d
+F src/expr.c 1891cb50510a31e96de8a54579e7d3aef60f0094
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c da985ae673efef2c712caef825a5d2edb087ead7
 F src/func.c ba47c1671ab3cfdafa6e9d6ee490939ea578adee
@@ -616,7 +616,7 @@ F test/in.test 047c4671328e9032ab95666a67021adbbd36e98e
 F test/in2.test 5d4c61d17493c832f7d2d32bef785119e87bde75
 F test/in3.test 3cbf58c87f4052cee3a58b37b6389777505aa0c0
 F test/in4.test d2b38cba404bc4320f4fe1b595b3d163f212c068
-F test/in5.test 99f9a40af01711b06d2d614ecfe96129f334fba3
+F test/in5.test 1de657472fa9ac2924be25c2c959ac5ca1aae554
 F test/incrblob.test e81846d214f3637622620fbde7cd526781cfe328
 F test/incrblob2.test bf4d549aa4a466d7fbe3e3a3693d3861263d5600
 F test/incrblob3.test d8d036fde015d4a159cd3cbae9d29003b37227a4
@@ -1205,8 +1205,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 839a6df9f98b90fb593534a62145d9c913540bae
-Q +dd03a2802f3f276525f3cef9a93f825dd8606626
-R 0801523eb21d9763755a3afd3e84ae8b
+P 402780a9c8df9e7ea898bdca49c1191042fe387a
+Q +55e453aadbb676dda07f0fa537d39ce184ef636c
+R 0bf0d6ff158ba2352191f711d5e9a856
 U drh
-Z 995ce8d43edc83cec464fe7495c36085
+Z fc11fd8e7149b148ee2e3386efe4bde7

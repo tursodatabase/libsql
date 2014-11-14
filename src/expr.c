@@ -1836,7 +1836,6 @@ int sqlite3CodeSubselect(
         assert( (pExpr->iTable&0x0000FFFF)==pExpr->iTable );
         pSelect->iLimit = 0;
         testcase( pSelect->selFlags & SF_Distinct );
-        pSelect->selFlags &= ~SF_Distinct;
         testcase( pKeyInfo==0 ); /* Caused by OOM in sqlite3KeyInfoAlloc() */
         if( sqlite3Select(pParse, pSelect, &dest) ){
           sqlite3KeyInfoUnref(pKeyInfo);
