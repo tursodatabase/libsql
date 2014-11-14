@@ -5,3 +5,6 @@ authors = ["John Gallagher <jgallagher@bignerdranch.com>"]
 
 [lib]
 name = "rusqlite"
+
+[dependencies.time]
+git = "https://github.com/rust-lang/time"
