@@ -1520,20 +1520,22 @@ static char *fts5ExprPrint(Fts5Config *pConfig, Fts5ExprNode *pExpr){
 }
 
 /*
-** The implementation of user-defined scalar function fts5_expr().
+** The implementation of user-defined scalar functions fts5_expr() (bTcl==0)
+** and fts5_expr_tcl() (bTcl!=0).
 */
 static void fts5ExprFunction(
   sqlite3_context *pCtx,          /* Function call context */
   int nArg,                       /* Number of args */
-  sqlite3_value **apVal           /* Function arguments */
+  sqlite3_value **apVal,          /* Function arguments */
+  int bTcl
 ){
+  Fts5Global *pGlobal = (Fts5Global*)sqlite3_user_data(pCtx);
   sqlite3 *db = sqlite3_context_db_handle(pCtx);
   const char *zExpr = 0;
   char *zErr = 0;
   Fts5Expr *pExpr = 0;
   int rc;
   int i;
-  int bTcl = sqlite3_user_data(pCtx)!=0;
 
   const char **azConfig;          /* Array of arguments for Fts5Config */
   const char *zNearsetCmd = "nearset";
@@ -1558,7 +1560,7 @@ static void fts5ExprFunction(
   }
   zExpr = (const char*)sqlite3_value_text(apVal[0]);
 
-  rc = sqlite3Fts5ConfigParse(db, nConfig, azConfig, &pConfig, &zErr);
+  rc = sqlite3Fts5ConfigParse(pGlobal, db, nConfig, azConfig, &pConfig, &zErr);
   if( rc==SQLITE_OK ){
     rc = sqlite3Fts5ExprNew(pConfig, zExpr, &pExpr, &zErr);
   }
@@ -1588,25 +1590,40 @@ static void fts5ExprFunction(
   sqlite3Fts5ExprFree(pExpr);
 }
 
+static void fts5ExprFunctionHr(
+  sqlite3_context *pCtx,          /* Function call context */
+  int nArg,                       /* Number of args */
+  sqlite3_value **apVal           /* Function arguments */
+){
+  fts5ExprFunction(pCtx, nArg, apVal, 0);
+}
+static void fts5ExprFunctionTcl(
+  sqlite3_context *pCtx,          /* Function call context */
+  int nArg,                       /* Number of args */
+  sqlite3_value **apVal           /* Function arguments */
+){
+  fts5ExprFunction(pCtx, nArg, apVal, 1);
+}
+
 /*
 ** This is called during initialization to register the fts5_expr() scalar
 ** UDF with the SQLite handle passed as the only argument.
 */
-int sqlite3Fts5ExprInit(sqlite3 *db){
+int sqlite3Fts5ExprInit(Fts5Global *pGlobal, sqlite3 *db){
   struct Fts5ExprFunc {
     const char *z;
-    void *p;
     void (*x)(sqlite3_context*,int,sqlite3_value**);
   } aFunc[] = {
-    { "fts5_expr", 0, fts5ExprFunction },
-    { "fts5_expr_tcl", (void*)1, fts5ExprFunction },
+    { "fts5_expr", fts5ExprFunctionHr },
+    { "fts5_expr_tcl", fts5ExprFunctionTcl },
   };
   int i;
   int rc = SQLITE_OK;
+  void *pCtx = (void*)pGlobal;
 
   for(i=0; rc==SQLITE_OK && i<(sizeof(aFunc) / sizeof(aFunc[0])); i++){
     struct Fts5ExprFunc *p = &aFunc[i];
-    rc = sqlite3_create_function(db, p->z, -1, SQLITE_UTF8, p->p, p->x, 0, 0);
+    rc = sqlite3_create_function(db, p->z, -1, SQLITE_UTF8, pCtx, p->x, 0, 0);
   }
 
   return rc;

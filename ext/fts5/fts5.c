@@ -23,6 +23,8 @@ typedef struct Fts5Global Fts5Global;
 typedef struct Fts5Auxiliary Fts5Auxiliary;
 typedef struct Fts5Auxdata Fts5Auxdata;
 
+typedef struct Fts5TokenizerModule Fts5TokenizerModule;
+
 /*
 ** NOTES ON TRANSACTIONS: 
 **
@@ -65,9 +67,11 @@ struct Fts5TransactionState {
 ** all registered FTS5 extensions - tokenizers and auxiliary functions.
 */
 struct Fts5Global {
+  fts5_api api;                   /* User visible part of object (see fts5.h) */
   sqlite3 *db;                    /* Associated database connection */ 
   i64 iNextId;                    /* Used to allocate unique cursor ids */
   Fts5Auxiliary *pAux;            /* First in list of all aux. functions */
+  Fts5TokenizerModule *pTok;      /* First in list of all tokenizer modules */
   Fts5Cursor *pCsr;               /* First in list of all open cursors */
 };
 
@@ -83,6 +87,19 @@ struct Fts5Auxiliary {
   fts5_extension_function xFunc;  /* Callback function */
   void (*xDestroy)(void*);        /* Destructor function */
   Fts5Auxiliary *pNext;           /* Next registered auxiliary function */
+};
+
+/*
+** Each tokenizer module registered with the FTS5 module is represented
+** by an object of the following type. All such objects are stored as part
+** of the Fts5Global.pTok list.
+*/
+struct Fts5TokenizerModule {
+  char *zName;                    /* Name of tokenizer */
+  void *pUserData;                /* User pointer passed to xCreate() */
+  fts5_tokenizer x;               /* Tokenizer functions */
+  void (*xDestroy)(void*);        /* Destructor function */
+  Fts5TokenizerModule *pNext;     /* Next registered tokenizer module */
 };
 
 /*
@@ -281,12 +298,14 @@ static int fts5InitVtab(
   sqlite3_vtab **ppVTab,          /* Write the resulting vtab structure here */
   char **pzErr                    /* Write any error message here */
 ){
+  Fts5Global *pGlobal = (Fts5Global*)pAux;
+  const char **azConfig = (const char**)argv;
   int rc;                         /* Return code */
   Fts5Config *pConfig;            /* Results of parsing argc/argv */
   Fts5Table *pTab = 0;            /* New virtual table object */
 
   /* Parse the arguments */
-  rc = sqlite3Fts5ConfigParse(db, argc, (const char**)argv, &pConfig, pzErr);
+  rc = sqlite3Fts5ConfigParse(pGlobal, db, argc, azConfig, &pConfig, pzErr);
   assert( (rc==SQLITE_OK && *pzErr==0) || pConfig==0 );
 
   /* Allocate the new vtab object */
@@ -297,7 +316,7 @@ static int fts5InitVtab(
     }else{
       memset(pTab, 0, sizeof(Fts5Table));
       pTab->pConfig = pConfig;
-      pTab->pGlobal = (Fts5Global*)pAux;
+      pTab->pGlobal = pGlobal;
     }
   }
 
@@ -857,6 +876,10 @@ static int fts5SeekCursor(Fts5Cursor *pCsr){
 ** Argument pVal is the value assigned to column "fts" by the INSERT 
 ** statement. This function returns SQLITE_OK if successful, or an SQLite
 ** error code if an error occurs.
+**
+** The commands implemented by this function are documented in the "Special
+** INSERT Directives" section of the documentation. It should be updated if
+** more commands are added to this function.
 */
 static int fts5SpecialCommand(Fts5Table *pTab, sqlite3_value *pVal){
   const char *z = (const char*)sqlite3_value_text(pVal);
@@ -1387,13 +1410,14 @@ static int fts5RollbackToMethod(sqlite3_vtab *pVtab, int iSavepoint){
 /*
 ** Register a new auxiliary function with global context pGlobal.
 */
-int sqlite3Fts5CreateAux(
-  Fts5Global *pGlobal,            /* Global context (one per db handle) */
+static int fts5CreateAux(
+  fts5_api *pApi,                 /* Global context (one per db handle) */
   const char *zName,              /* Name of new function */
   void *pUserData,                /* User data for aux. function */
   fts5_extension_function xFunc,  /* Aux. function implementation */
   void(*xDestroy)(void*)          /* Destructor for pUserData */
 ){
+  Fts5Global *pGlobal = (Fts5Global*)pApi;
   int rc = sqlite3_overload_function(pGlobal->db, zName, -1);
   if( rc==SQLITE_OK ){
     Fts5Auxiliary *pAux;
@@ -1419,20 +1443,131 @@ int sqlite3Fts5CreateAux(
   return rc;
 }
 
-static void fts5ModuleDestroy(void *pCtx){
-  Fts5Auxiliary *pAux;
-  Fts5Auxiliary *pNext;
-  Fts5Global *pGlobal = (Fts5Global*)pCtx;
-  for(pAux=pGlobal->pAux; pAux; pAux=pNext){
-    pNext = pAux->pNext;
-    if( pAux->xDestroy ){
-      pAux->xDestroy(pAux->pUserData);
+/*
+** Register a new tokenizer. This is the implementation of the 
+** fts5_api.xCreateTokenizer() method.
+*/
+static int fts5CreateTokenizer(
+  fts5_api *pApi,                 /* Global context (one per db handle) */
+  const char *zName,              /* Name of new function */
+  void *pUserData,                /* User data for aux. function */
+  fts5_tokenizer *pTokenizer,     /* Tokenizer implementation */
+  void(*xDestroy)(void*)          /* Destructor for pUserData */
+){
+  Fts5Global *pGlobal = (Fts5Global*)pApi;
+  Fts5TokenizerModule *pNew;
+  int nByte;                      /* Bytes of space to allocate */
+  int rc = SQLITE_OK;
+
+  nByte = sizeof(Fts5TokenizerModule) + strlen(zName) + 1;
+  pNew = (Fts5TokenizerModule*)sqlite3_malloc(nByte);
+  if( pNew ){
+    memset(pNew, 0, nByte);
+    pNew->zName = (char*)&pNew[1];
+    strcpy(pNew->zName, zName);
+    pNew->pUserData = pUserData;
+    pNew->x = *pTokenizer;
+    pNew->xDestroy = xDestroy;
+    pNew->pNext = pGlobal->pTok;
+    pGlobal->pTok = pNew;
+  }else{
+    rc = SQLITE_NOMEM;
+  }
+
+  return rc;
+}
+
+/*
+** Find a tokenizer. This is the implementation of the 
+** fts5_api.xFindTokenizer() method.
+*/
+static int fts5FindTokenizer(
+  fts5_api *pApi,                 /* Global context (one per db handle) */
+  const char *zName,              /* Name of new function */
+  fts5_tokenizer *pTokenizer      /* Populate this object */
+){
+  Fts5Global *pGlobal = (Fts5Global*)pApi;
+  int rc = SQLITE_OK;
+  Fts5TokenizerModule *pTok;
+
+  for(pTok=pGlobal->pTok; pTok; pTok=pTok->pNext){
+    if( sqlite3_stricmp(zName, pTok->zName)==0 ) break;
+  }
+
+  if( pTok ){
+    *pTokenizer = pTok->x;
+  }else{
+    memset(pTokenizer, 0, sizeof(fts5_tokenizer));
+    rc = SQLITE_ERROR;
+  }
+
+  return rc;
+}
+
+int sqlite3Fts5GetTokenizer(
+  Fts5Global *pGlobal, 
+  const char **azArg,
+  int nArg,
+  Fts5Tokenizer **ppTok,
+  fts5_tokenizer **ppTokApi
+){
+  Fts5TokenizerModule *pMod = 0;
+  int rc = SQLITE_OK;
+  if( nArg==0 ){
+    pMod = pGlobal->pTok;
+  }else{
+    for(pMod=pGlobal->pTok; pMod; pMod=pMod->pNext){
+      if( sqlite3_stricmp(azArg[0], pMod->zName)==0 ) break;
     }
+  }
+
+  if( pMod==0 ){
+    rc = SQLITE_ERROR;
+  }else{
+    rc = pMod->x.xCreate(pMod->pUserData, &azArg[1], (nArg?nArg-1:0), ppTok);
+    *ppTokApi = &pMod->x;
+  }
+
+  if( rc!=SQLITE_OK ){
+    *ppTokApi = 0;
+    *ppTok = 0;
+  }
+
+  return rc;
+}
+
+static void fts5ModuleDestroy(void *pCtx){
+  Fts5TokenizerModule *pTok, *pNextTok;
+  Fts5Auxiliary *pAux, *pNextAux;
+  Fts5Global *pGlobal = (Fts5Global*)pCtx;
+
+  for(pAux=pGlobal->pAux; pAux; pAux=pNextAux){
+    pNextAux = pAux->pNext;
+    if( pAux->xDestroy ) pAux->xDestroy(pAux->pUserData);
     sqlite3_free(pAux);
   }
+
+  for(pTok=pGlobal->pTok; pTok; pTok=pNextTok){
+    pNextTok = pTok->pNext;
+    if( pTok->xDestroy ) pTok->xDestroy(pTok->pUserData);
+    sqlite3_free(pTok);
+  }
+
   sqlite3_free(pGlobal);
 }
 
+static void fts5Fts5Func(
+  sqlite3_context *pCtx,          /* Function call context */
+  int nArg,                       /* Number of args */
+  sqlite3_value **apVal           /* Function arguments */
+){
+  Fts5Global *pGlobal = (Fts5Global*)sqlite3_user_data(pCtx);
+  char buf[8];
+  assert( nArg==0 );
+  assert( sizeof(buf)>=sizeof(pGlobal) );
+  memcpy(buf, pGlobal, sizeof(pGlobal));
+  sqlite3_result_blob(pCtx, buf, sizeof(pGlobal), SQLITE_TRANSIENT);
+}
 
 int sqlite3Fts5Init(sqlite3 *db){
   static const sqlite3_module fts5Mod = {
@@ -1471,10 +1606,20 @@ int sqlite3Fts5Init(sqlite3 *db){
     void *p = (void*)pGlobal;
     memset(pGlobal, 0, sizeof(Fts5Global));
     pGlobal->db = db;
+    pGlobal->api.iVersion = 1;
+    pGlobal->api.xCreateFunction = fts5CreateAux;
+    pGlobal->api.xCreateTokenizer = fts5CreateTokenizer;
+    pGlobal->api.xFindTokenizer = fts5FindTokenizer;
     rc = sqlite3_create_module_v2(db, "fts5", &fts5Mod, p, fts5ModuleDestroy);
     if( rc==SQLITE_OK ) rc = sqlite3Fts5IndexInit(db);
-    if( rc==SQLITE_OK ) rc = sqlite3Fts5ExprInit(db);
-    if( rc==SQLITE_OK ) rc = sqlite3Fts5AuxInit(pGlobal);
+    if( rc==SQLITE_OK ) rc = sqlite3Fts5ExprInit(pGlobal, db);
+    if( rc==SQLITE_OK ) rc = sqlite3Fts5AuxInit(&pGlobal->api);
+    if( rc==SQLITE_OK ) rc = sqlite3Fts5TokenizerInit(&pGlobal->api);
+    if( rc==SQLITE_OK ){
+      rc = sqlite3_create_function(
+          db, "fts5", 0, SQLITE_UTF8, p, fts5Fts5Func, 0, 0
+      );
+    }
   }
   return rc;
 }

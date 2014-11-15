@@ -15,6 +15,17 @@
 # is included in the documentation on the web.
 # 
 
+set ::fts5_docs_output ""
+if {[info commands hd_putsnl]==""} {
+  proc output {text} {
+    puts $text
+  }
+} else {
+  proc output {text} {
+    append ::fts5_docs_output $text
+  }
+}
+
 set input_file [file join [file dir [info script]] fts5.h]
 set fd [open $input_file]
 set data [read $fd]
@@ -102,28 +113,28 @@ foreach {hdr docs} $D {
   if {[info exists M($hdr)]} {
     set hdr $M($hdr)
   }
-  puts "<h3><pre>  $hdr</pre></h3>"
+  output "<h style=\"font-size:1.4em;background-color:#EEEEEE;display:block\"><pre>  $hdr</pre></h>"
 
   set mode ""
   set bEmpty 1
   foreach line [split [string trim $docs] "\n"] {
     if {[string trim $line]==""} {
-      if {$mode != ""} {puts "</$mode>"}
+      if {$mode != ""} {output "</$mode>"}
       set mode ""
     } elseif {$mode == ""} {
       if {[regexp {^     } $line]} {
-        set mode code
+        set mode codeblock
       } else {
         set mode p
       }
-      puts "<$mode>"
+      output "<$mode>"
     }
-    puts $line
+    output $line
   }
-  if {$mode != ""} {puts "</$mode>"}
+  if {$mode != ""} {output "</$mode>"}
 }
 
-
+set ::fts5_docs_output
 
 
 

@@ -32,6 +32,23 @@
 #define FTS5_RANK_NAME "rank"
 
 /**************************************************************************
+** Interface to code in fts5.c. 
+*/
+typedef struct Fts5Global Fts5Global;
+
+int sqlite3Fts5GetTokenizer(
+  Fts5Global*, 
+  const char **azArg,
+  int nArg,
+  Fts5Tokenizer**,
+  fts5_tokenizer**
+);
+
+/*
+** End of interface to code in fts5.c.
+**************************************************************************/
+
+/**************************************************************************
 ** Interface to code in fts5_config.c. fts5_config.c contains contains code
 ** to parse the arguments passed to the CREATE VIRTUAL TABLE statement.
 */
@@ -50,10 +67,13 @@ struct Fts5Config {
   char **azCol;                   /* Column names */
   int nPrefix;                    /* Number of prefix indexes */
   int *aPrefix;                   /* Sizes in bytes of nPrefix prefix indexes */
-  sqlite3_tokenizer *pTokenizer;  /* Tokenizer instance for this table */
+  Fts5Tokenizer *pTok;
+  fts5_tokenizer *pTokApi;
 };
 
-int sqlite3Fts5ConfigParse(sqlite3*, int, const char**, Fts5Config**, char**);
+int sqlite3Fts5ConfigParse(
+    Fts5Global*, sqlite3*, int, const char **, Fts5Config**, char**
+);
 void sqlite3Fts5ConfigFree(Fts5Config*);
 
 int sqlite3Fts5ConfigDeclareVtab(Fts5Config *pConfig);
@@ -403,7 +423,7 @@ i64 sqlite3Fts5ExprRowid(Fts5Expr*);
 void sqlite3Fts5ExprFree(Fts5Expr*);
 
 /* Called during startup to register a UDF with SQLite */
-int sqlite3Fts5ExprInit(sqlite3*);
+int sqlite3Fts5ExprInit(Fts5Global*, sqlite3*);
 
 int sqlite3Fts5ExprPhraseCount(Fts5Expr*);
 int sqlite3Fts5ExprPhraseSize(Fts5Expr*, int iPhrase);
@@ -453,30 +473,23 @@ void sqlite3Fts5ParseNear(Fts5Parse *pParse, Fts5Token*);
 **************************************************************************/
 
 
-/**************************************************************************
-** Interface to code in fts5.c. 
-*/
-typedef struct Fts5Global Fts5Global;
-
-int sqlite3Fts5CreateAux(
-    Fts5Global*, 
-    const char*, 
-    void*, 
-    fts5_extension_function, 
-    void(*)(void*)
-);
-/*
-** End of interface to code in fts5.c.
-**************************************************************************/
-
 
 /**************************************************************************
 ** Interface to code in fts5_aux.c. 
 */
 
-int sqlite3Fts5AuxInit(Fts5Global*);
+int sqlite3Fts5AuxInit(fts5_api*);
 /*
 ** End of interface to code in fts5_aux.c.
+**************************************************************************/
+
+/**************************************************************************
+** Interface to code in fts5_tokenizer.c. 
+*/
+
+int sqlite3Fts5TokenizerInit(fts5_api*);
+/*
+** End of interface to code in fts5_tokenizer.c.
 **************************************************************************/
 
 /**************************************************************************

@@ -19,8 +19,8 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix fts5af
 
-# If SQLITE_ENABLE_FTS3 is defined, omit this file.
-ifcapable !fts3 {
+# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+ifcapable !fts5 {
   finish_test
   return
 }
@@ -138,7 +138,7 @@ foreach {tn doc res} {
   3.8 {o o o o o o o X Y} {...o o o o o [X Y]}
 
 } {
-  do_snippet_test 1.$tn $doc "X + Y" $res
+  do_snippet_test 2.$tn $doc "X + Y" $res
 }
 
 finish_test

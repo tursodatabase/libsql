@@ -335,9 +335,11 @@ foreach file {
    fts5.c
    fts5_config.c
    fts5_expr.c
+   fts5_hash.c
    fts5_index.c
    fts5parse.c
    fts5_storage.c
+   fts5_tokenize.c
 
    rtree.c
    icu.c

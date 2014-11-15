@@ -80,6 +80,7 @@ LIBOBJ += fts5_expr.o
 LIBOBJ += fts5_hash.o
 LIBOBJ += fts5_index.o
 LIBOBJ += fts5_storage.o
+LIBOBJ += fts5_tokenize.o
 LIBOBJ += fts5parse.o
 
 
@@ -236,7 +237,8 @@ SRC += \
    $(TOP)/ext/fts5/fts5_hash.c \
    $(TOP)/ext/fts5/fts5_index.c \
    fts5parse.c \
-   $(TOP)/ext/fts5/fts5_storage.c 
+   $(TOP)/ext/fts5/fts5_storage.c \
+   $(TOP)/ext/fts5/fts5_tokenize.c 
 
 
 # Generated source code files
@@ -610,10 +612,15 @@ fts5_index.o:	$(TOP)/ext/fts5/fts5_index.c $(HDR) $(EXTHDR)
 fts5_storage.o:	$(TOP)/ext/fts5/fts5_storage.c $(HDR) $(EXTHDR)
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts5/fts5_storage.c
 
+fts5_tokenize.o:	$(TOP)/ext/fts5/fts5_tokenize.c $(HDR) $(EXTHDR)
+	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts5/fts5_tokenize.c
+
 fts5parse.c:	$(TOP)/ext/fts5/fts5parse.y lemon 
 	cp $(TOP)/ext/fts5/fts5parse.y .
 	rm -f fts5parse.h
 	./lemon $(OPTS) fts5parse.y
+	mv fts5parse.c fts5parse.c.orig
+	cat fts5parse.c.orig | sed 's/yy/fts5yy/g' | sed 's/YY/fts5YY/g' > fts5parse.c
 
 
 # Rules for building test programs and for running tests

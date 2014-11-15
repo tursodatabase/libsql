@@ -17,7 +17,7 @@ source $testdir/tester.tcl
 set testprefix fts5aa
 
 # If SQLITE_ENABLE_FTS3 is defined, omit this file.
-ifcapable !fts3 {
+ifcapable !fts5 {
   finish_test
   return
 }

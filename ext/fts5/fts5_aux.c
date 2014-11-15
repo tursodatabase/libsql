@@ -956,7 +956,7 @@ static void fts5TestFunction(
   sqlite3Fts5BufferFree(&s);
 }
 
-int sqlite3Fts5AuxInit(Fts5Global *pGlobal){
+int sqlite3Fts5AuxInit(fts5_api *pApi){
   struct Builtin {
     const char *zFunc;            /* Function name (nul-terminated) */
     void *pUserData;              /* User-data pointer */
@@ -973,7 +973,7 @@ int sqlite3Fts5AuxInit(Fts5Global *pGlobal){
   int i;                          /* To iterate through builtin functions */
 
   for(i=0; rc==SQLITE_OK && i<sizeof(aBuiltin)/sizeof(aBuiltin[0]); i++){
-    rc = sqlite3Fts5CreateAux(pGlobal, 
+    rc = pApi->xCreateFunction(pApi,
         aBuiltin[i].zFunc,
         aBuiltin[i].pUserData,
         aBuiltin[i].xFunc,

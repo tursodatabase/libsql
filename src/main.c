@@ -19,6 +19,9 @@
 #ifdef SQLITE_ENABLE_FTS3
 # include "fts3.h"
 #endif
+#ifdef SQLITE_ENABLE_FTS5
+int sqlite3Fts5Init(sqlite3*);
+#endif
 #ifdef SQLITE_ENABLE_RTREE
 # include "rtree.h"
 #endif
@@ -2609,7 +2612,12 @@ static int openDatabase(
 #ifdef SQLITE_ENABLE_FTS3
   if( !db->mallocFailed && rc==SQLITE_OK ){
     rc = sqlite3Fts3Init(db);
-    if( rc==SQLITE_OK ) rc = sqlite3Fts5Init(db);
+  }
+#endif
+
+#ifdef SQLITE_ENABLE_FTS5
+  if( !db->mallocFailed && rc==SQLITE_OK ){
+    rc = sqlite3Fts5Init(db);
   }
 #endif
 

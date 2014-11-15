@@ -113,26 +113,15 @@ static char *fts5Strdup(const char *z){
   return sqlite3_mprintf("%s", z);
 }
 
-void sqlite3Fts3SimpleTokenizerModule(sqlite3_tokenizer_module const**);
-
 /*
 ** Allocate an instance of the default tokenizer ("simple") at 
 ** Fts5Config.pTokenizer. Return SQLITE_OK if successful, or an SQLite error
 ** code if an error occurs.
 */
-static int fts5ConfigDefaultTokenizer(Fts5Config *pConfig){
-  const sqlite3_tokenizer_module *pMod; /* Tokenizer module "simple" */
-  sqlite3_tokenizer *pTokenizer;  /* Tokenizer instance */
-  int rc;                         /* Return code */
-
-  sqlite3Fts3SimpleTokenizerModule(&pMod);
-  rc = pMod->xCreate(0, 0, &pTokenizer);
-  if( rc==SQLITE_OK ){
-    pTokenizer->pModule = pMod;
-    pConfig->pTokenizer = pTokenizer;
-  }
-
-  return rc;
+static int fts5ConfigDefaultTokenizer(Fts5Global *pGlobal, Fts5Config *pConfig){
+  return sqlite3Fts5GetTokenizer(
+      pGlobal, 0, 0, &pConfig->pTok, &pConfig->pTokApi
+  );
 }
 
 /*
@@ -148,6 +137,7 @@ static int fts5ConfigDefaultTokenizer(Fts5Config *pConfig){
 ** such error message using sqlite3_free().
 */
 int sqlite3Fts5ConfigParse(
+  Fts5Global *pGlobal,
   sqlite3 *db,
   int nArg,                       /* Number of arguments */
   const char **azArg,             /* Array of nArg CREATE VIRTUAL TABLE args */
@@ -206,8 +196,8 @@ int sqlite3Fts5ConfigParse(
     }
   }
 
-  if( rc==SQLITE_OK && pRet->pTokenizer==0 ){
-    rc = fts5ConfigDefaultTokenizer(pRet);
+  if( rc==SQLITE_OK && pRet->pTok==0 ){
+    rc = fts5ConfigDefaultTokenizer(pGlobal, pRet);
   }
 
   if( rc!=SQLITE_OK ){
@@ -223,8 +213,8 @@ int sqlite3Fts5ConfigParse(
 void sqlite3Fts5ConfigFree(Fts5Config *pConfig){
   if( pConfig ){
     int i;
-    if( pConfig->pTokenizer ){
-      pConfig->pTokenizer->pModule->xDestroy(pConfig->pTokenizer);
+    if( pConfig->pTok && pConfig->pTokApi->xDelete ){
+      pConfig->pTokApi->xDelete(pConfig->pTok);
     }
     sqlite3_free(pConfig->zDb);
     sqlite3_free(pConfig->zName);
@@ -302,27 +292,7 @@ int sqlite3Fts5Tokenize(
   void *pCtx,                     /* Context passed to xToken() */
   int (*xToken)(void*, const char*, int, int, int, int)    /* Callback */
 ){
-  const sqlite3_tokenizer_module *pMod = pConfig->pTokenizer->pModule;
-  sqlite3_tokenizer_cursor *pCsr = 0;
-  int rc;
-
-  rc = pMod->xOpen(pConfig->pTokenizer, pText, nText, &pCsr);
-  assert( rc==SQLITE_OK || pCsr==0 );
-  if( rc==SQLITE_OK ){
-    const char *pToken;           /* Pointer to token buffer */
-    int nToken;                   /* Size of token in bytes */
-    int iStart, iEnd, iPos;       /* Start, end and position of token */
-    pCsr->pTokenizer = pConfig->pTokenizer;
-    for(rc = pMod->xNext(pCsr, &pToken, &nToken, &iStart, &iEnd, &iPos);
-        rc==SQLITE_OK;
-        rc = pMod->xNext(pCsr, &pToken, &nToken, &iStart, &iEnd, &iPos)
-    ){
-      if( (rc = xToken(pCtx, pToken, nToken, iStart, iEnd, iPos)) ) break;
-    }
-    if( rc==SQLITE_DONE ) rc = SQLITE_OK;
-    pMod->xClose(pCsr);
-  }
-  return rc;
+  return pConfig->pTokApi->xTokenize(pConfig->pTok, pCtx, pText, nText, xToken);
 }
 
 
