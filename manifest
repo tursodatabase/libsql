@@ -1,5 +1,5 @@
-C Do\snot\sautomatically\sremove\sthe\sDISTINCT\skeyword\sfrom\s"a\sIN\s(SELECT\sDISTINCT\s...)"\sexpressions.\sFix\sfor\s[db87229497].
-D 2014-11-14T15:28:33.929
+C Adding\sthe\s"noskipscan"\stoken\sto\san\ssqlite_stat1.stat\sfield\sprevents\san\nindex\sfor\sbeing\sused\swith\sthe\sskip-scan\salgorithm.
+D 2014-11-15T19:08:13.305
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a226317fdf3f4c895fb3cfedc355b4d0868ce1fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -167,7 +167,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c ba266a779bc7ce10e52e59e7d3dc79fa342e8fdb
-F src/analyze.c afbcca663c3f3625340b8e30d440cd7a97ded6bc
+F src/analyze.c 951fd859852dfbced4a58b73954f168eeb9d0772
 F src/attach.c f4e94df2d1826feda65eb0939f7f6f5f923a0ad9
 F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 7ddee9c7d505e07e959a575b18498f17c71e53ea
@@ -233,7 +233,7 @@ F src/shell.c bc28d5992109717c87804e2eb1a08a7c8cc7a2fd
 F src/sqlite.h.in 0c5c0df7e4e436dfc5592511325bf4a96f6a638d
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
-F src/sqliteInt.h 71b0bf1a7fc55b5cb374f7579fd140e730a6e0f4
+F src/sqliteInt.h c9e95b8fa9aee30d46387735c5be73fa58886e38
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 81712116e826b0089bb221b018929536b2b5406f
 F src/table.c f142bba7903e93ca8d113a5b8877a108ad1a27dc
@@ -304,7 +304,7 @@ F src/vtab.c 2a30791bbd7926b589401bd09c3abb33de563793
 F src/wal.c fa090966140602f03a621f87d82ee69e66ca63b5
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
-F src/where.c 3862a1173ae2716bde12f1ab3fb649f1d85b05c2
+F src/where.c cb89128d24ddb5fe3ca290166d66968f2dc0c3c8
 F src/whereInt.h d3633e9b592103241b74b0ec76185f3e5b8b62e0
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -855,7 +855,7 @@ F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/show_speedtest1_rtree.tcl 32e6c5f073d7426148a6936a0408f4b5b169aba5
 F test/shrink.test 8c70f62b6e8eb4d54533de6d65bd06b1b9a17868
 F test/sidedelete.test f0ad71abe6233e3b153100f3b8d679b19a488329
-F test/skipscan1.test 7e15e1cc524524e7b2c4595ec85c75501d22f4ff
+F test/skipscan1.test 2ddfe5d168462170c4487f534e2a99fb006b2076
 F test/skipscan2.test d1d1450952b7275f0b0a3a981f0230532743951a
 F test/skipscan3.test ec5bab3f81c7038b43450e7b3062e04a198bdbb5
 F test/skipscan5.test 67817a4b6857c47e0e33ba3e506da6f23ef68de2
@@ -1221,7 +1221,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ef03a203351a6002e2b1075139717e4234c816cd
-R bb54553354aa14551393c5e5701542c8
-U dan
-Z f91e19e3f2d1e58cdccd86465c86ab70
+P 55e453aadbb676dda07f0fa537d39ce184ef636c
+R 59717354988087765927b6c6b6246253
+T *branch * noskipscan-token
+T *sym-noskipscan-token *
+T -sym-trunk *
+U drh
+Z 9d226c4fa6bf82a1f1a22a271191f33c
