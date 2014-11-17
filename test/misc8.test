@@ -58,4 +58,41 @@ do_catchsql_test misc8-1.7 {
 } {1 {abort due to ROLLBACK}}
 
 
+reset_db
+
+proc dbeval {sql} { db eval $sql }
+db func eval dbeval
+
+do_execsql_test misc8-2.1 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b INTEGER) WITHOUT ROWID;
+  CREATE TABLE t2(c INTEGER PRIMARY KEY, d INTEGER, x BLOB);
+  INSERT INTO t1 VALUES(0,0);
+  INSERT INTO t1 VALUES(10,10);
+  INSERT INTO t2 VALUES(1,1,zeroblob(200));
+  INSERT INTO t2 VALUES(2,2,zeroblob(200));
+  INSERT INTO t2 VALUES(3,3,zeroblob(200));
+  INSERT INTO t2 VALUES(4,4,zeroblob(200));
+  INSERT INTO t2 VALUES(5,5,zeroblob(200));
+  INSERT INTO t2 VALUES(6,6,zeroblob(200));
+  INSERT INTO t2 VALUES(7,7,zeroblob(200));
+  INSERT INTO t2 VALUES(8,8,zeroblob(200));
+  INSERT INTO t2 VALUES(9,9,zeroblob(200));
+  INSERT INTO t2 VALUES(10,10,zeroblob(200));
+  SELECT a, c, eval(
+      printf('DELETE FROM t2 WHERE c=%d AND %d>5', a+c, a+c)
+  ) FROM t1, t2;
+} {
+  0 1 {} 10 1 {} 
+  0 2 {} 10 2 {} 
+  0 3 {} 10 3 {} 
+  0 4 {} 10 4 {} 
+  0 5 {} 10 5 {} 
+  0 6 {} 10 {} {} 
+  0 7 {} 10 {} {} 
+  0 8 {} 10 {} {}
+  0 9 {} 10 {} {} 
+  0 10 {} 10 {} {}
+}
+
+
 finish_test

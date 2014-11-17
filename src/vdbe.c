@@ -4408,6 +4408,10 @@ case OP_Rowid: {                 /* out2-prerelease */
     assert( pC->pCursor!=0 );
     rc = sqlite3VdbeCursorRestore(pC);
     if( rc ) goto abort_due_to_error;
+    if( pC->nullRow ){
+      pOut->flags = MEM_Null;
+      break;
+    }
     rc = sqlite3BtreeKeySize(pC->pCursor, &v);
     assert( rc==SQLITE_OK );  /* Always so because of CursorRestore() above */
   }
