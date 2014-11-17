@@ -1,5 +1,5 @@
-C Avoid\scalling\ssqlite3BtreeKeysize()\son\sa\sb-tree\scursor\sin\sSKIPNEXT\sor\sSKIPPREV\sstate.
-D 2014-11-17T19:44:44.917
+C Remove\scode\sfrom\ssqlite3BtreeKeySize()\smade\sunreachable\sby\sthe\sprevious\ncheck-in.
+D 2014-11-17T20:33:07.735
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -172,7 +172,7 @@ F src/auth.c d8abcde53426275dab6243b441256fcd8ccbebb2
 F src/backup.c 8cdfeb0c8a6d8bdad3faefae418eb3dc767051b6
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 49ca66250c7dfa844a4d4cb8272b87420d27d3a5
-F src/btree.c 2087125172421c78fc0c02f953b7d660f2a2598e
+F src/btree.c c961588f01bd95d37b90359220c640f9763a3f58
 F src/btree.h a4afc6b06f5a1dd2076d15aa168baec44fc0121b
 F src/btreeInt.h 3363e18fd76f69a27a870b25221b2345b3fd4d21
 F src/build.c 9dc2bd94347b878c89627000c92b0c8d97ec2919
@@ -1205,8 +1205,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e956e7db057d1112badf5e0671cea95201385b44
-Q +54e7d3fcb1ab21c03ffef1af93ae029a2901098a
-R b1492d8f4cbcc74596556f240b662de2
-U dan
-Z 45bbf8c9451b95c29c15305e9bbd4586
+P 2f2ecb994889acb783616acb7307f8fed962d213
+R 3350d2f69701d38a07608c1007a483bc
+U drh
+Z df1a082a18c57f32c53583132171df67
