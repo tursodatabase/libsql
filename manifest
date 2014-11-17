@@ -1,5 +1,5 @@
-C Add\stests\sto\scheck\serror\shandling\sin\sOTA.
-D 2014-10-22T15:33:12.681
+C Fix\sa\sproblem\swith\sthe\sparameters\sto\san\sOP_Affinity\sin\sone\sof\sthe\sVM\sprograms\sgenerated\sby\ssqlite3_index_writer()\sthat\swas\scausing\san\sOOB\sread.
+D 2014-11-17T15:07:40.515
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -130,6 +130,7 @@ F ext/ota/ota3.test 215dd4a8e238567e0f890a5139b6fdf5494ef311
 F ext/ota/ota4.test 60f897f329a6782ef2f24862640acf3c52e48077
 F ext/ota/ota5.test ad0799daf8923ddebffe75ae8c5504ca90b7fadb
 F ext/ota/ota6.test 82f1f757ec9b2ad07d6de4060b8e3ba8e44dfdd3
+F ext/ota/ota7.test feba6072af04bc4bee192f7576aac60cef6a4727
 F ext/ota/otafault.test be02466863015a583cc0ceb6aca871a5e6f7a71b
 F ext/ota/sqlite3ota.c c7f8cdf55449b5169f79632e78f8e5049abf904c
 F ext/ota/sqlite3ota.h 7b20abe9247d292429d00f0a5c237ff6e0dc0196
@@ -305,7 +306,7 @@ F src/vdbe.h 09f5b4e3719fa454f252322b1cdab5cf1f361327
 F src/vdbeInt.h e2a060a55ee18a6ab973353a5e2ec7ee569bf787
 F src/vdbeapi.c 37a6c6ae284a97bcace365f2f0a225680c0499d9
 F src/vdbeaux.c edbb7a9c8b2a8f7a68ac75c2475edd4040266b76
-F src/vdbeblob.c a8e2c3baa3e7081347c4677185a631bfc43de043
+F src/vdbeblob.c 42b1854c42dc7b7f53c9ff1a4b90d24b2daeee5b
 F src/vdbemem.c 31d8eabb0cd78bfeab4e5124c7363c3e9e54db9f
 F src/vdbesort.c 975aeffa99acb0991b2f288d30294756bff41438
 F src/vdbetrace.c 7e4222955e07dd707a2f360c0eb73452be1cb010
@@ -1216,7 +1217,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e2729d623c6e9d0b3049049f3f3051bbb479184f
-R f1db06b4abcee6f48965e7da46a3387a
+P ec7321ae482a8c4d893851a5edd17d67ef1a448b
+R ebf92f720e516f33caf61cc1f37b716d
 U dan
-Z 87316fa0e6665a6aa049c94bffdd7d8b
+Z c2254e02a36430a8663d836ffe531fb4

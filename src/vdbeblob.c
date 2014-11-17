@@ -610,7 +610,7 @@ int sqlite3_index_writer(
     sqlite3VdbeAddOp2(v, OP_IdxInsert, 0, regRec);
   }else{
     /* Code the IdxDelete to remove the entry from the b-tree index. */
-    sqlite3VdbeAddOp4(v, OP_Affinity, 0, pIdx->nColumn, 0, zAffinity, 0);
+    sqlite3VdbeAddOp4(v, OP_Affinity, 1, pIdx->nColumn, 0, zAffinity, 0);
     sqlite3VdbeAddOp3(v, OP_IdxDelete, 0, 1, pIdx->nColumn);
   }
   sqlite3FinishCoding(pParse);
