@@ -112,6 +112,12 @@ foreach bPersist [list 0 1] {
   }
 }
 
+# When this test was written, an IO error within the UPDATE statement caused
+# a rollback, which tripped all read-cursors, causing the outer SELECT to
+# fail with "abort due to ROLLBACK". Now, the loop continues until the UPDATE
+# is run successfully. At this point the next IO error occurs within the 
+# SELECT - throwing the "disk I/O error" that the test case now expects.
+#
 do_test ioerr2-5 {
   execsql {
     CREATE TABLE t2 AS SELECT * FROM t1;
@@ -130,7 +136,7 @@ do_test ioerr2-5 {
     }
   } msg]
   list $rc $msg
-} {1 {abort due to ROLLBACK}}
+} {1 {disk I/O error}} ;# used to be "{1 {abort due to ROLLBACK}}"
 
 if {$::tcl_platform(platform) == "unix"} {
   # Cause the call to xAccess used by [pragma temp_store_directory] to
