@@ -1781,14 +1781,18 @@ int sqlite3_ckpt_open(
   unsigned char *a, int n, 
   sqlite3_ckpt **ppCkpt
 ){
-  Pager *pPager;
-  Btree *pBt;
+  Pager *pPager = 0;
   int rc;
 
   *ppCkpt = 0;
   sqlite3_mutex_enter(db->mutex);
-  pBt = db->aDb[0].pBt;
-  pPager = sqlite3BtreePager(pBt);
+
+  /* Find the Pager object. */
+  rc = sqlite3_file_control(db,"main",SQLITE_FCNTL_ZIPVFS_PAGER,(void*)&pPager);
+  if( rc!=SQLITE_OK ){
+    pPager = sqlite3BtreePager(db->aDb[0].pBt);
+  }
+
   rc = sqlite3PagerWalCheckpointStart(db, pPager, a, n, ppCkpt);
   sqlite3_mutex_leave(db->mutex);
   return rc;

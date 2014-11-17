@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sthe\sparameters\sto\san\sOP_Affinity\sin\sone\sof\sthe\sVM\sprograms\sgenerated\sby\ssqlite3_index_writer()\sthat\swas\scausing\san\sOOB\sread.
-D 2014-11-17T15:07:40.515
+C Changes\sso\sthat\ssqlite3_ckpt_open()\sworks\swith\szipvfs\sdatabases.
+D 2014-11-17T17:57:06.217
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -206,7 +206,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
 F src/loadext.c de741e66e5ddc1598d904d7289239696e40ed994
-F src/main.c 627406d9cfee49e666d47a265a5cad8ef402f823
+F src/main.c 25088f9f0422ef29a12eb1ff57d12a2aac0f8c05
 F src/malloc.c 3c3ac67969612493d435e14b6832793209afd2ec
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c faf615aafd8be74a71494dfa027c113ea5c6615f
@@ -241,7 +241,7 @@ F src/resolve.c a3466128b52a86c466e47ac1a19e2174f7b5cf89
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 428165951748151e87a15295b7357221433e311b
 F src/shell.c 282f8f5278e0c78eb442217531172ec9e1538796
-F src/sqlite.h.in 5c89ff33315006449119b86b460e0a286758f126
+F src/sqlite.h.in d368351cfb7f98d847ab42c760fbe01ab30d06fd
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
 F src/sqliteInt.h cf72fe02b33f46572c681cc90ad64a5851f10b8f
@@ -1217,7 +1217,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ec7321ae482a8c4d893851a5edd17d67ef1a448b
-R ebf92f720e516f33caf61cc1f37b716d
+P 447b33b34a9836992f5a8d50cd8647a10435c144
+R a385542ae873f1383b1a1f964429fd33
 U dan
-Z c2254e02a36430a8663d836ffe531fb4
+Z a2dd6eb93ee736daa85bc89fdfbf459a

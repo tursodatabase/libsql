@@ -941,6 +941,10 @@ struct sqlite3_io_methods {
 ** pointed to by the pArg argument.  This capability is used during testing
 ** and only needs to be supported when SQLITE_TEST is defined.
 **
+** <li>[[SQLITE_FCNTL_ZIPVFS_PAGER]]
+** The [SQLITE_FCNTL_ZIPVFS_PAGER] opcode is used by the OTA extension when
+** updating a zipvfs database.
+**
 ** </ul>
 */
 #define SQLITE_FCNTL_LOCKSTATE               1
@@ -965,6 +969,7 @@ struct sqlite3_io_methods {
 #define SQLITE_FCNTL_SYNC                   21
 #define SQLITE_FCNTL_COMMIT_PHASETWO        22
 #define SQLITE_FCNTL_WIN32_SET_HANDLE       23
+#define SQLITE_FCNTL_ZIPVFS_PAGER           24
 
 /*
 ** CAPI3REF: Mutex Handle
