@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\ssqlite3TripAllCursors()\sroutine\sthat\sprevents\sit\sfrom\nreporting\serrors.\s\sIt\sis\sunknown\sat\sthis\stime\swhether\sor\snot\sthis\somission\scan\nresult\sin\sany\sincorrect\sresult\sin\san\sactual\squery.
-D 2014-11-17T15:32:47.066
+C When\sa\sSELECT\sstatement\sis\sterminated\sby\sa\sROLLBACK\sTO\soperation,\smake\sthe\nerror\smessage\sbe\s"abort\sdue\sto\sROLLBACK"\srather\sthan\s\n"callback\srequested\squery\sabort".
+D 2014-11-17T17:13:06.964
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -289,7 +289,7 @@ F src/update.c 3c4ecc282accf12d39edb8d524cf089645e55a13
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c 4006c01772bd8d8ac4306d523bbcee41d3e392d8
 F src/vacuum.c 59f03f92bcff57faa6a8ca256eb29ccddfb0614a
-F src/vdbe.c a6b604364c7cbb079c083418e7359d1d665f2ef0
+F src/vdbe.c 3e8f9787d9a5fe24077f7af0baa2d11042471f12
 F src/vdbe.h 09f5b4e3719fa454f252322b1cdab5cf1f361327
 F src/vdbeInt.h e2a060a55ee18a6ab973353a5e2ec7ee569bf787
 F src/vdbeapi.c 37a6c6ae284a97bcace365f2f0a225680c0499d9
@@ -797,7 +797,7 @@ F test/savepoint3.test e328085853b14898d78ceea00dfe7db18bb6a9ec
 F test/savepoint4.test c8f8159ade6d2acd9128be61e1230f1c1edc6cc0
 F test/savepoint5.test 0735db177e0ebbaedc39812c8d065075d563c4fd
 F test/savepoint6.test f41279c5e137139fa5c21485773332c7adb98cd7
-F test/savepoint7.test 1c8f26b1e2a4221b0214e222ce12a97a59918eb2
+F test/savepoint7.test db3db281486c925095f305aad09fe806e5188ff3
 F test/schema.test 8f7999be894260f151adf15c2c7540f1c6d6a481
 F test/schema2.test 906408621ea881fdb496d878b1822572a34e32c5
 F test/schema3.test 1bc1008e1f8cb5654b248c55f27249366eb7ed38
@@ -1205,7 +1205,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P eba171e980fa4491dfee9d7e4df50c87a0ebbf87
-R c97ad964463de041aa0a8f758aac4ee1
+P 42588207ff5451cb785c394633e1ab631fb82f01
+R dfbcaabb48c2f5c435e2c7179a62bd27
 U drh
-Z ed993b1ef595900db9792d9ac234a3c7
+Z c435b7b174ccd5699f4e15dc48114455

@@ -2827,7 +2827,8 @@ case OP_Savepoint: {
         if( p1==SAVEPOINT_ROLLBACK ){
           isSchemaChange = (db->flags & SQLITE_InternChanges)!=0;
           for(ii=0; ii<db->nDb; ii++){
-            rc = sqlite3BtreeTripAllCursors(db->aDb[ii].pBt, SQLITE_ABORT,
+            rc = sqlite3BtreeTripAllCursors(db->aDb[ii].pBt,
+                                       SQLITE_ABORT_ROLLBACK,
                                        isSchemaChange==0);
             if( rc!=SQLITE_OK ) goto abort_due_to_error;
           }
