@@ -651,6 +651,13 @@ void sqlite3PcacheShrink(PCache *pCache){
   sqlite3GlobalConfig.pcache2.xShrink(pCache->pCache);
 }
 
+/*
+** Return the size of the header added by this middleware layer
+** in the page-cache hierarchy.
+*/
+int sqlite3HeaderSizePcache(void){ return sizeof(PgHdr); }
+
+
 #if defined(SQLITE_CHECK_PAGES) || defined(SQLITE_DEBUG)
 /*
 ** For all dirty pages currently in the cache, invoke the specified

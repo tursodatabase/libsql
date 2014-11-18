@@ -160,4 +160,8 @@ void sqlite3PcacheStats(int*,int*,int*,int*);
 
 void sqlite3PCacheSetDefault(void);
 
+/* Return the header size */
+int sqlite3HeaderSizePcache(void);
+int sqlite3HeaderSizePcache1(void);
+
 #endif /* _PCACHE_H_ */

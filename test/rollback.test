@@ -60,11 +60,11 @@ ifcapable conflict {
   #
   do_test rollback-1.5 {
     sqlite3_step $STMT
-  } {SQLITE_ERROR}
+  } {SQLITE_ROW}
 
   # Restart the SELECT statement
   #
-  do_test rollback-1.6 { sqlite3_reset $STMT } {SQLITE_ABORT}
+  do_test rollback-1.6 { sqlite3_reset $STMT } {SQLITE_OK}
 } else {
   do_test rollback-1.6 { sqlite3_reset $STMT } {SQLITE_OK}
 }
