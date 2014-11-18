@@ -273,4 +273,23 @@ do_execsql_test skipscan1-6.3 {
   EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE b=1;
 } {~/ANY/}
 
+# If the sqlite_stat1 entry includes the "noskipscan" token, then never use
+# skipscan with that index.
+#
+do_execsql_test skipscan1-7.1 {
+  UPDATE sqlite_stat1 SET stat='500000 125000 1 sz=100';
+  ANALYZE sqlite_master;
+  EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE b=1;
+} {/ANY/}
+do_execsql_test skipscan1-7.2 {
+  UPDATE sqlite_stat1 SET stat='500000 125000 1 noskipscan sz=100';
+  ANALYZE sqlite_master;
+  EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE b=1;
+} {~/ANY/}
+do_execsql_test skipscan1-7.3 {
+  UPDATE sqlite_stat1 SET stat='500000 125000 1 sz=100 noskipscan';
+  ANALYZE sqlite_master;
+  EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE b=1;
+} {~/ANY/}
+
 finish_test

@@ -1466,6 +1466,8 @@ static void decodeIntArray(
       pIndex->bUnordered = 1;
     }else if( sqlite3_strglob("sz=[0-9]*", z)==0 ){
       pIndex->szIdxRow = sqlite3LogEst(sqlite3Atoi(z+3));
+    }else if( sqlite3_strglob("noskipscan*", z)==0 ){
+      pIndex->noSkipScan = 1;
     }
 #ifdef SQLITE_ENABLE_COSTMULT
     else if( sqlite3_strglob("costmult=[0-9]*",z)==0 ){
