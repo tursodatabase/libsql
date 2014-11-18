@@ -78,7 +78,7 @@ do_test savepoint7-2.1 {
   } msg]
   db eval {RELEASE x1}
   list $rc $msg [db eval {SELECT * FROM t2}]
-} {1 {callback requested query abort} {}}
+} {1 {abort due to ROLLBACK} {}}
 
 do_test savepoint7-2.2 {
   db eval {DELETE FROM t2;}
@@ -93,6 +93,6 @@ do_test savepoint7-2.2 {
     }
   } msg]
   list $rc $msg [db eval {SELECT * FROM t2}]
-} {1 {callback requested query abort} {}}
+} {1 {abort due to ROLLBACK} {}}
 
 finish_test

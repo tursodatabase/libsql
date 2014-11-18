@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\ssqlite3TripAllCursors()\sroutine\sthat\sprevents\sit\sfrom\nreporting\serrors.\s\sIt\sis\sunknown\sat\sthis\stime\swhether\sor\snot\sthis\somission\scan\nresult\sin\sany\sincorrect\sresult\sin\san\sactual\squery.
-D 2014-11-18T20:22:05.030
+C Merge\sin\sall\sthe\sother\sROLLBACK\sfixes\sfrom\sthe\sbranch-3.8.7\sbranch.\s\s\nI\sdon't\sknow\swhy\sI\swas\sdoing\sthem\sone-by-one.
+D 2014-11-18T20:49:30.759
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a226317fdf3f4c895fb3cfedc355b4d0868ce1fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -173,9 +173,9 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 7ddee9c7d505e07e959a575b18498f17c71e53ea
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 49ca66250c7dfa844a4d4cb8272b87420d27d3a5
-F src/btree.c 75edb585cc2c66615e0ea01a48807a7bfae4f2fe
+F src/btree.c b562da29eb370aaac8015026827c2e2fb70ae990
 F src/btree.h e31a3a3ebdedb1caf9bda3ad5dbab3db9b780f6e
-F src/btreeInt.h 026d0129724e8f265fdc60d44ec240cf5a4e6179
+F src/btreeInt.h 3363e18fd76f69a27a870b25221b2345b3fd4d21
 F src/build.c 67bb05b1077e0cdaccb2e36bfcbe7a5df9ed31e8
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c c4ba6e0626bb94bc77a0861735f3382fcf7cc818
@@ -291,7 +291,7 @@ F src/update.c 3c4ecc282accf12d39edb8d524cf089645e55a13
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c 3b627daa45c7308c1e36e3dbaa3f9ce7e5c7fa73
 F src/vacuum.c 9b30ec729337dd012ed88d4c292922c8ef9cf00c
-F src/vdbe.c 5d3991d723f00ef86263f4d494e105faba5a5abd
+F src/vdbe.c 5563459c06c434bc43131044fcf8164654008ebd
 F src/vdbe.h 6fc69d9c5e146302c56e163cb4b31d1ee64a18c3
 F src/vdbeInt.h 9bb69ff2447c34b6ccc58b34ec35b615f86ead78
 F src/vdbeapi.c 07acb615d1e4170e71fc1b0d087f3c53a1ad8e83
@@ -810,7 +810,7 @@ F test/savepoint3.test e328085853b14898d78ceea00dfe7db18bb6a9ec
 F test/savepoint4.test c8f8159ade6d2acd9128be61e1230f1c1edc6cc0
 F test/savepoint5.test 0735db177e0ebbaedc39812c8d065075d563c4fd
 F test/savepoint6.test f41279c5e137139fa5c21485773332c7adb98cd7
-F test/savepoint7.test 1c8f26b1e2a4221b0214e222ce12a97a59918eb2
+F test/savepoint7.test db3db281486c925095f305aad09fe806e5188ff3
 F test/scanstatus.test a6dd739bc4d9638e8f5c2493b518057f2b681655
 F test/schema.test 8f7999be894260f151adf15c2c7540f1c6d6a481
 F test/schema2.test 906408621ea881fdb496d878b1822572a34e32c5
@@ -1221,8 +1221,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P abccda769a3f6b755c3bf70b5fb31a5e16718ef3
-Q +42588207ff5451cb785c394633e1ab631fb82f01
-R be8390e45e84a659cdb889947026b04a
+P 2896f2640ab3e102ee248d20fb68c497817524eb 945a9e687fdfee5f7103d85d131024e85d594ac3
+R 8b4c6ed5b267d5d2bc5845aacffad250
 U drh
-Z 45d41fa50f6cb7c97c28d0b284fe4014
+Z 0fc13d2fc810c826601883122c184fdf

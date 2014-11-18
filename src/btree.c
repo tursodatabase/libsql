@@ -3925,13 +3925,9 @@ int sqlite3BtreeCursorIsValid(BtCursor *pCur){
 */
 int sqlite3BtreeKeySize(BtCursor *pCur, i64 *pSize){
   assert( cursorHoldsMutex(pCur) );
-  assert( pCur->eState==CURSOR_INVALID || pCur->eState==CURSOR_VALID );
-  if( pCur->eState!=CURSOR_VALID ){
-    *pSize = 0;
-  }else{
-    getCellInfo(pCur);
-    *pSize = pCur->info.nKey;
-  }
+  assert( pCur->eState==CURSOR_VALID );
+  getCellInfo(pCur);
+  *pSize = pCur->info.nKey;
   return SQLITE_OK;
 }
 
