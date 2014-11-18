@@ -16,7 +16,7 @@
 ** sqlite3RegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** SQLite processes all times and dates as Julian Day numbers.  The
+** SQLite processes all times and dates as julian day numbers.  The
 ** dates and times are stored as the number of days since noon
 ** in Greenwich on November 24, 4714 B.C. according to the Gregorian
 ** calendar system. 
@@ -31,7 +31,7 @@
 **
 ** The Gregorian calendar system is used for all dates and times,
 ** even those that predate the Gregorian calendar.  Historians usually
-** use the Julian calendar for dates prior to 1582-10-15 and for some
+** use the julian calendar for dates prior to 1582-10-15 and for some
 ** dates afterwards, depending on locale.  Beware of this difference.
 **
 ** The conversion algorithms are implemented based on descriptions
@@ -304,7 +304,7 @@ static int setDateTimeToCurrent(sqlite3_context *context, DateTime *p){
 }
 
 /*
-** Attempt to parse the given string into a Julian Day Number.  Return
+** Attempt to parse the given string into a julian day number.  Return
 ** the number of errors.
 **
 ** The following are acceptable forms for the input string:
@@ -875,7 +875,7 @@ static void dateFunc(
 **   %f  ** fractional seconds  SS.SSS
 **   %H  hour 00-24
 **   %j  day of year 000-366
-**   %J  ** Julian day number
+**   %J  ** julian day number
 **   %m  month 01-12
 **   %M  minute 00-59
 **   %s  seconds since 1970-01-01

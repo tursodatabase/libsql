@@ -141,5 +141,60 @@ do_execsql_test 2.2 {
 } {/INDEX good .bb=. AND aa=. AND dd>. AND dd<../}
 
 
+# Create a table containing 100 rows. Column "a" contains a copy of the
+# rowid value - sequentially increasing integers from 1 to 100. Column
+# "b" contains the value of (a % 5). Columns "c" and "d" both contain
+# constant values (i.e. the same for every row).
+#
+# Then create a second table t2. t2 is the same as t3 except for the
+# order in which the indexes are created.
+#
+do_execsql_test 3.0 {
+  CREATE TABLE t3(a, b, c, d);
+  CREATE INDEX t3_ba ON t3(b, a, c);
+  CREATE INDEX t3_a ON t3(a);
+
+  WITH d(a, b) AS (
+    SELECT 1, 1 
+    UNION ALL
+    SELECT a+1, (a+1) % 5 FROM d WHERE a<100
+  )
+  INSERT INTO t3 SELECT a, b, 'c', 'd' FROM d;
+
+  CREATE TABLE t2(a, b, c, d);
+  CREATE INDEX t2_a ON t2(a);
+  CREATE INDEX t2_ba ON t2(b, a, c);
+  INSERT INTO t2 SELECT * FROM t3;
+
+  ANALYZE;
+  SELECT * FROM sqlite_stat1;
+} {
+  t2 t2_ba   {100 20 1 1}
+  t2 t2_a    {100 1} 
+  t3 t3_a    {100 1} 
+  t3 t3_ba   {100 20 1 1}
+}
+
+# Use index "t3_a", as (a=?) is expected to match only a single row.
+#
+do_eqp_test 3.1 {
+  SELECT * FROM t3 WHERE a = ? AND c = ?
+} {
+  0 0 0 {SEARCH TABLE t3 USING INDEX t3_a (a=?)}
+}
+
+# The same query on table t2. This should use index "t2_a", for the
+# same reason. At one point though, it was mistakenly using a skip-scan.
+#
+do_eqp_test 3.2 {
+  SELECT * FROM t2 WHERE a = ? AND c = ?
+} {
+  0 0 0 {SEARCH TABLE t2 USING INDEX t2_a (a=?)}
+}
+
+finish_test
+
+
+
 
 finish_test

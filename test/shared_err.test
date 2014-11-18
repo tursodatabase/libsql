@@ -446,9 +446,15 @@ do_malloc_test shared_err-8 -tclprep {
   } {1}
   db2 close
 }
+
+# When this test case was written, OOM errors in write statements would 
+# cause transaction rollback, which would trip cursors in other statements,
+# aborting them. This no longer happens.
+#
 do_test shared_malloc-8.X {
   # Test that one or more queries were aborted due to the malloc() failure.
-  expr $::aborted>=1
+  # expr $::aborted>=1
+  expr $::aborted==0
 } {1}
 
 # This test is designed to catch a specific bug that was present during
