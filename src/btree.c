@@ -3541,7 +3541,7 @@ int sqlite3BtreeTripAllCursors(Btree *pBtree, int errCode, int writeOnly){
       int i;
       if( writeOnly && (p->curFlags & BTCF_WriteFlag)==0 ){
         if( p->eState==CURSOR_VALID ){
-          int rc = saveCursorPosition(p);
+          rc = saveCursorPosition(p);
           if( rc!=SQLITE_OK ){
             (void)sqlite3BtreeTripAllCursors(pBtree, rc, 0);
             break;

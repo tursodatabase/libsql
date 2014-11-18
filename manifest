@@ -1,5 +1,5 @@
-C Update\sa\scouple\sof\stest\scases\sto\saccount\sfor\sthe\sfact\sthat\sROLLBACK\sdoes\snot\salways\sabort\sall\srunning\sSELECT\sstatements.
-D 2014-11-18T20:16:27.742
+C Fix\sa\sbug\sin\sthe\ssqlite3TripAllCursors()\sroutine\sthat\sprevents\sit\sfrom\nreporting\serrors.\s\sIt\sis\sunknown\sat\sthis\stime\swhether\sor\snot\sthis\somission\scan\nresult\sin\sany\sincorrect\sresult\sin\san\sactual\squery.
+D 2014-11-18T20:22:05.030
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a226317fdf3f4c895fb3cfedc355b4d0868ce1fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -173,7 +173,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 7ddee9c7d505e07e959a575b18498f17c71e53ea
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 49ca66250c7dfa844a4d4cb8272b87420d27d3a5
-F src/btree.c d5d991b518fa5bebc64037dfeb98a48051d864d7
+F src/btree.c 75edb585cc2c66615e0ea01a48807a7bfae4f2fe
 F src/btree.h e31a3a3ebdedb1caf9bda3ad5dbab3db9b780f6e
 F src/btreeInt.h 026d0129724e8f265fdc60d44ec240cf5a4e6179
 F src/build.c 67bb05b1077e0cdaccb2e36bfcbe7a5df9ed31e8
@@ -1221,8 +1221,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 54e7d3fcb1ab21c03ffef1af93ae029a2901098a
-Q +eba171e980fa4491dfee9d7e4df50c87a0ebbf87
-R 07c45ea3d962860999af22ae8c2af8c8
+P abccda769a3f6b755c3bf70b5fb31a5e16718ef3
+Q +42588207ff5451cb785c394633e1ab631fb82f01
+R be8390e45e84a659cdb889947026b04a
 U drh
-Z f4bad3f3683413628206e5a23517cfd8
+Z 45d41fa50f6cb7c97c28d0b284fe4014
