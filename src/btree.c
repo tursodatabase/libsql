@@ -1247,10 +1247,15 @@ static u8 *pageFindSlot(MemPage *pPg, int nByte, int *pRc, int *pbDefrag){
 
   for(iAddr=hdr+1; (pc = get2byte(&aData[iAddr]))>0; iAddr=pc){
     int size;            /* Size of the free slot */
+    /* EVIDENCE-OF: R-06866-39125 Freeblocks are always connected in order of
+    ** increasing offset. */
     if( pc>usableSize-4 || pc<iAddr+4 ){
       *pRc = SQLITE_CORRUPT_BKPT;
       return 0;
     }
+    /* EVIDENCE-OF: R-22710-53328 The third and fourth bytes of each
+    ** freeblock form a big-endian integer which is the size of the freeblock
+    ** in bytes, including the 4-byte header. */
     size = get2byte(&aData[pc+2]);
     if( size>=nByte ){
       int x = size - nByte;
@@ -1314,6 +1319,11 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
   top = get2byte(&data[hdr+5]);
   if( gap>top ){
     if( top==0 ){
+      /* EVIDENCE-OF: R-29356-02391 If the database uses a 65536-byte page size
+      ** and the reserved space is zero (the usual value for reserved space)
+      ** then the cell content offset of an empty page wants to be 65536.
+      ** However, that integer is too large to be stored in a 2-byte unsigned
+      ** integer, so a value of 0 is used in its place. */
       top = 65536;
     }else{
       return SQLITE_CORRUPT_BKPT;
@@ -1998,6 +2008,9 @@ int sqlite3BtreeOpen(
 #ifdef SQLITE_SECURE_DELETE
     pBt->btsFlags |= BTS_SECURE_DELETE;
 #endif
+    /* EVIDENCE-OF: R-51873-39618 The page size for a database file is
+    ** determined by the 2-byte integer located at an offset of 16 bytes from
+    ** the beginning of the database file. */
     pBt->pageSize = (zDbHeader[16]<<8) | (zDbHeader[17]<<16);
     if( pBt->pageSize<512 || pBt->pageSize>SQLITE_MAX_PAGE_SIZE
          || ((pBt->pageSize-1)&pBt->pageSize)!=0 ){
@@ -2016,6 +2029,9 @@ int sqlite3BtreeOpen(
 #endif
       nReserve = 0;
     }else{
+      /* EVIDENCE-OF: R-37497-42412 The size of the reserved region is
+      ** determined by the one-byte unsigned integer found at an offset of 20
+      ** into the database file header. */
       nReserve = zDbHeader[20];
       pBt->btsFlags |= BTS_PAGESIZE_FIXED;
 #ifndef SQLITE_OMIT_AUTOVACUUM
@@ -2525,6 +2541,9 @@ static int lockBtree(BtShared *pBt){
     u32 usableSize;
     u8 *page1 = pPage1->aData;
     rc = SQLITE_NOTADB;
+    /* EVIDENCE-OF: R-43737-39999 Every valid SQLite database file begins
+    ** with the following 16 bytes (in hex): 53 51 4c 69 74 65 20 66 6f 72 6d
+    ** 61 74 20 33 00. */
     if( memcmp(page1, zMagicHeader, 16)!=0 ){
       goto page1_init_failed;
     }
@@ -2565,15 +2584,21 @@ static int lockBtree(BtShared *pBt){
     }
 #endif
 
-    /* The maximum embedded fraction must be exactly 25%.  And the minimum
-    ** embedded fraction must be 12.5% for both leaf-data and non-leaf-data.
+    /* EVIDENCE-OF: R-15465-20813 The maximum and minimum embedded payload
+    ** fractions and the leaf payload fraction values must be 64, 32, and 32.
+    **
     ** The original design allowed these amounts to vary, but as of
     ** version 3.6.0, we require them to be fixed.
     */
     if( memcmp(&page1[21], "\100\040\040",3)!=0 ){
       goto page1_init_failed;
     }
+    /* EVIDENCE-OF: R-51873-39618 The page size for a database file is
+    ** determined by the 2-byte integer located at an offset of 16 bytes from
+    ** the beginning of the database file. */
     pageSize = (page1[16]<<8) | (page1[17]<<16);
+    /* EVIDENCE-OF: R-25008-21688 The size of a page is a power of two
+    ** between 512 and 65536 inclusive. */
     if( ((pageSize-1)&pageSize)!=0
      || pageSize>SQLITE_MAX_PAGE_SIZE 
      || pageSize<=256 
@@ -2581,6 +2606,13 @@ static int lockBtree(BtShared *pBt){
       goto page1_init_failed;
     }
     assert( (pageSize & 7)==0 );
+    /* EVIDENCE-OF: R-59310-51205 The "reserved space" size in the 1-byte
+    ** integer at offset 20 is the number of bytes of space at the end of
+    ** each page to reserve for extensions. 
+    **
+    ** EVIDENCE-OF: R-37497-42412 The size of the reserved region is
+    ** determined by the one-byte unsigned integer found at an offset of 20
+    ** into the database file header. */
     usableSize = pageSize - page1[20];
     if( (u32)pageSize!=pBt->pageSize ){
       /* After reading the first page of the database assuming a page size
@@ -2601,6 +2633,9 @@ static int lockBtree(BtShared *pBt){
       rc = SQLITE_CORRUPT_BKPT;
       goto page1_init_failed;
     }
+    /* EVIDENCE-OF: R-28312-64704 However, the usable size is not allowed to
+    ** be less than 480. In other words, if the page size is 512, then the
+    ** reserved space size cannot exceed 32. */
     if( usableSize<480 ){
       goto page1_init_failed;
     }
@@ -5178,6 +5213,8 @@ static int allocateBtreePage(
   assert( eMode==BTALLOC_ANY || (nearby>0 && IfNotOmitAV(pBt->autoVacuum)) );
   pPage1 = pBt->pPage1;
   mxPage = btreePagecount(pBt);
+  /* EVIDENCE-OF: R-05119-02637 The 4-byte big-endian integer at offset 36
+  ** stores stores the total number of pages on the freelist. */
   n = get4byte(&pPage1->aData[36]);
   testcase( n==mxPage-1 );
   if( n>=mxPage ){
@@ -5224,8 +5261,14 @@ static int allocateBtreePage(
     do {
       pPrevTrunk = pTrunk;
       if( pPrevTrunk ){
+        /* EVIDENCE-OF: R-01506-11053 The first integer on a freelist trunk page
+        ** is the page number of the next freelist trunk page in the list or
+        ** zero if this is the last freelist trunk page. */
         iTrunk = get4byte(&pPrevTrunk->aData[0]);
       }else{
+        /* EVIDENCE-OF: R-59841-13798 The 4-byte big-endian integer at offset 32
+        ** stores the page number of the first page of the freelist, or zero if
+        ** the freelist is empty. */
         iTrunk = get4byte(&pPage1->aData[32]);
       }
       testcase( iTrunk==mxPage );
@@ -5240,8 +5283,9 @@ static int allocateBtreePage(
       }
       assert( pTrunk!=0 );
       assert( pTrunk->aData!=0 );
-
-      k = get4byte(&pTrunk->aData[4]); /* # of leaves on this trunk page */
+      /* EVIDENCE-OF: R-13523-04394 The second integer on a freelist trunk page
+      ** is the number of leaf page pointers to follow. */
+      k = get4byte(&pTrunk->aData[4]);
       if( k==0 && !searchList ){
         /* The trunk has no leaves and the list is not being searched. 
         ** So extract the trunk page itself and use it as the newly 
@@ -5559,6 +5603,11 @@ static int freePage2(BtShared *pBt, MemPage *pMemPage, Pgno iPage){
       ** for now.  At some point in the future (once everyone has upgraded
       ** to 3.6.0 or later) we should consider fixing the conditional above
       ** to read "usableSize/4-2" instead of "usableSize/4-8".
+      **
+      ** EVIDENCE-OF: R-19920-11576 However, newer versions of SQLite still
+      ** avoid using the last six entries in the freelist trunk page array in
+      ** order that database files created by newer versions of SQLite can be
+      ** read by older versions of SQLite.
       */
       rc = sqlite3PagerWrite(pTrunk->pDbPage);
       if( rc==SQLITE_OK ){
