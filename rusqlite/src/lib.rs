@@ -24,7 +24,7 @@
 //!                   name            TEXT NOT NULL,
 //!                   time_created    TEXT NOT NULL,
 //!                   data            BLOB
-//!                   )", []).unwrap();
+//!                   )", &[]).unwrap();
 //!     let me = Person {
 //!         id: 0,
 //!         name: "Steven".to_string(),
@@ -36,7 +36,7 @@
 //!                  &[&me.name, &me.time_created, &me.data]).unwrap();
 //!
 //!     let mut stmt = conn.prepare("SELECT id, name, time_created, data FROM person").unwrap();
-//!     for row in stmt.query([]).unwrap().map(|row| row.unwrap()) {
+//!     for row in stmt.query(&[]).unwrap().map(|row| row.unwrap()) {
 //!         let person = Person {
 //!             id: row.get(0),
 //!             name: row.get(1),
@@ -228,7 +228,7 @@ impl SqliteConnection {
     /// ```rust,no_run
     /// # use rusqlite::{SqliteConnection};
     /// fn preferred_locale(conn: &SqliteConnection) -> String {
-    ///     conn.query_row("SELECT value FROM preferences WHERE name='locale'", [], |row| {
+    ///     conn.query_row("SELECT value FROM preferences WHERE name='locale'", &[], |row| {
     ///         row.get(0)
     ///     })
     /// }
@@ -448,7 +448,7 @@ impl<'conn> SqliteStatement<'conn> {
     /// # use rusqlite::{SqliteConnection, SqliteResult};
     /// fn get_names(conn: &SqliteConnection) -> SqliteResult<Vec<String>> {
     ///     let mut stmt = try!(conn.prepare("SELECT name FROM people"));
-    ///     let mut rows = try!(stmt.query([]));
+    ///     let mut rows = try!(stmt.query(&[]));
     ///
     ///     let mut names = Vec::new();
     ///     for result_row in rows {
@@ -522,7 +522,7 @@ impl<'conn> Drop for SqliteStatement<'conn> {
 /// # use rusqlite::{SqliteConnection, SqliteResult};
 /// fn bad_function_will_panic(conn: &SqliteConnection) -> SqliteResult<i64> {
 ///     let mut stmt = try!(conn.prepare("SELECT id FROM my_table"));
-///     let mut rows = try!(stmt.query([]));
+///     let mut rows = try!(stmt.query(&[]));
 ///
 ///     let row0 = try!(rows.next().unwrap());
 ///     // row 0 is value now...
@@ -600,7 +600,7 @@ impl<'stmt> SqliteRow<'stmt> {
     /// # use rusqlite::{SqliteConnection, SqliteResult};
     /// fn bad_function_will_panic(conn: &SqliteConnection) -> SqliteResult<i64> {
     ///     let mut stmt = try!(conn.prepare("SELECT id FROM my_table"));
-    ///     let mut rows = try!(stmt.query([]));
+    ///     let mut rows = try!(stmt.query(&[]));
     ///
     ///     let row0 = try!(rows.next().unwrap());
     ///     // row 0 is value now...
@@ -697,7 +697,7 @@ mod test {
         assert_eq!(db.execute("INSERT INTO foo(x) VALUES (?)", &[&1i32]).unwrap(), 1);
         assert_eq!(db.execute("INSERT INTO foo(x) VALUES (?)", &[&2i32]).unwrap(), 1);
 
-        assert_eq!(3i32, db.query_row("SELECT SUM(x) FROM foo", [], |r| r.get(0)));
+        assert_eq!(3i32, db.query_row("SELECT SUM(x) FROM foo", &[], |r| r.get(0)));
     }
 
     #[test]
@@ -762,7 +762,7 @@ mod test {
         db.execute_batch("INSERT INTO foo(x) VALUES(2)").unwrap();
 
         let mut stmt = db.prepare("SELECT x FROM foo ORDER BY x").unwrap();
-        let mut rows = stmt.query([]).unwrap();
+        let mut rows = stmt.query(&[]).unwrap();
         let first = rows.next().unwrap().unwrap();
         let second = rows.next().unwrap().unwrap();
 
@@ -782,7 +782,7 @@ mod test {
 
         let mut stmt = db.prepare("INSERT INTO foo DEFAULT VALUES").unwrap();
         for _ in range(0i, 9) {
-            stmt.execute([]).unwrap();
+            stmt.execute(&[]).unwrap();
         }
         assert_eq!(db.last_insert_rowid(), 10);
     }

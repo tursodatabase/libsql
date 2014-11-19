@@ -1,5 +1,10 @@
 use {SqliteResult, SqliteConnection};
 
+pub use SqliteTransactionBehavior::{
+    SqliteTransactionDeferred,
+    SqliteTransactionImmediate,
+    SqliteTransactionExclusive};
+
 /// Options for transaction behavior. See [BEGIN
 /// TRANSACTION](http://www.sqlite.org/lang_transaction.html) for details.
 pub enum SqliteTransactionBehavior {
@@ -177,7 +182,7 @@ mod test {
         }
         {
             let _tx = db.transaction().unwrap();
-            assert_eq!(2i32, db.query_row("SELECT SUM(x) FROM foo", [], |r| r.get(0)));
+            assert_eq!(2i32, db.query_row("SELECT SUM(x) FROM foo", &[], |r| r.get(0)));
         }
     }
 
@@ -196,7 +201,7 @@ mod test {
         }
         {
             let _tx = db.transaction().unwrap();
-            assert_eq!(2i32, db.query_row("SELECT SUM(x) FROM foo", [], |r| r.get(0)));
+            assert_eq!(2i32, db.query_row("SELECT SUM(x) FROM foo", &[], |r| r.get(0)));
         }
     }
 
@@ -224,7 +229,7 @@ mod test {
                 }
             }
         }
-        assert_eq!(3i32, db.query_row("SELECT SUM(x) FROM foo", [], |r| r.get(0)));
+        assert_eq!(3i32, db.query_row("SELECT SUM(x) FROM foo", &[], |r| r.get(0)));
     }
 
     #[bench]
@@ -235,7 +240,7 @@ mod test {
 
         bencher.iter(|| {
             for _ in range(0i32, 1000) {
-                stmt.execute([]).unwrap();
+                stmt.execute(&[]).unwrap();
             }
         })
     }
@@ -250,7 +255,7 @@ mod test {
             let mut tx = db.transaction().unwrap();
             tx.set_commit();
             for _ in range(0i32, 1000) {
-                stmt.execute([]).unwrap();
+                stmt.execute(&[]).unwrap();
             }
         })
     }
