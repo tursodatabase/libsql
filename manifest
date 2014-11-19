@@ -1,5 +1,5 @@
-C Add\san\sALWAYS\son\san\salways-true\sbranch\sin\swal.c.\nFix\sthe\sANALYZE\scommand\sso\sthat\sit\sresets\sthe\s"unordered"\sand\s"noskipscan"\nflags\son\sindices\swhen\sreloading\sthe\ssqlite_stat1\stable.
-D 2014-11-19T14:05:41.209
+C Completely\sremove\san\sassert()\sthat\shad\spreviously\sbeen\scommented\sout.
+D 2014-11-19T14:31:12.601
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a226317fdf3f4c895fb3cfedc355b4d0868ce1fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -291,7 +291,7 @@ F src/update.c 3c4ecc282accf12d39edb8d524cf089645e55a13
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c 3b627daa45c7308c1e36e3dbaa3f9ce7e5c7fa73
 F src/vacuum.c 9b30ec729337dd012ed88d4c292922c8ef9cf00c
-F src/vdbe.c 5563459c06c434bc43131044fcf8164654008ebd
+F src/vdbe.c 16914136ea1e8b18366868671ddb019159687f47
 F src/vdbe.h 6fc69d9c5e146302c56e163cb4b31d1ee64a18c3
 F src/vdbeInt.h 9bb69ff2447c34b6ccc58b34ec35b615f86ead78
 F src/vdbeapi.c 07acb615d1e4170e71fc1b0d087f3c53a1ad8e83
@@ -1221,7 +1221,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4461bf045d8eecf98478035efcdba3f41c709bc5
-R b83c6fa5464847f6b6472d2244f6f040
+P 9ed97a85feee6593faefa2b54cc4cf9a60f515f9
+R 612c462b22665e254a8e686035c1cd93
 U drh
-Z cd93530e8709a199e7d3e18ae995b78d
+Z cb045903d6d20b681c939d9aa729532d
