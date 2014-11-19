@@ -1438,6 +1438,8 @@ static void decodeIntArray(
   if( z==0 ) z = "";
 #else
   assert( z!=0 );
+  pIndex->bUnordered = 0;
+  pIndex->noSkipScan = 0;
 #endif
   for(i=0; *z && i<nOut; i++){
     v = 0;
