@@ -1,5 +1,5 @@
-C Add\srequirements\smarks\son\sthe\sbuilt-in\scollating\sfunctions.
-D 2014-11-20T19:22:26.830
+C Updates\sto\srequirements\stags\son\sthe\smutex\sdocumentation.
+D 2014-11-20T23:03:42.154
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a226317fdf3f4c895fb3cfedc355b4d0868ce1fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -230,7 +230,7 @@ F src/resolve.c 4965007d6497b6a4d7a6d98751cc39712885f952
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 428165951748151e87a15295b7357221433e311b
 F src/shell.c bc28d5992109717c87804e2eb1a08a7c8cc7a2fd
-F src/sqlite.h.in dfbdcd6e52e7652648d8e7634a7c191fcac8e6ce
+F src/sqlite.h.in c63db0117aeb749ca02b6016dbbbccbbbd9a141d
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
 F src/sqliteInt.h c9e95b8fa9aee30d46387735c5be73fa58886e38
@@ -1221,7 +1221,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ef9fbc08b0a047042deeb2d6007d67028fefb9e2
-R 87fc16da633f081b9c3d6138857b30da
+P 4b608b62ac8d4eafdb76192b3b5db272332a4bfd
+R b10e3d696841d651117121c42237df0a
 U drh
-Z 4f4a01f4cbeff0ca684ca414f4595d57
+Z 5d29b887364b9011d92605ad266bc7f8
