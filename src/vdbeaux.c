@@ -2883,9 +2883,7 @@ u32 sqlite3VdbeSerialType(Mem *pMem, int file_format){
     i64 i = pMem->u.i;
     u64 u;
     if( i<0 ){
-      if( i<(-MAX_6BYTE) ) return 6;
-      /* Previous test prevents:  u = -(-9223372036854775808) */
-      u = -i;
+      u = ~i;
     }else{
       u = i;
     }
