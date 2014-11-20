@@ -1,5 +1,5 @@
-C Add\stests\sfor\sWITHOUT\sROWID\stables\swith\scomposite\sprimary\skeys.
-D 2014-11-17T18:35:30.003
+C Updates\sto\ssupport\szipvfs\sin\spass-through\smode.
+D 2014-11-20T15:11:12.852
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -132,7 +132,7 @@ F ext/ota/ota5.test ad0799daf8923ddebffe75ae8c5504ca90b7fadb
 F ext/ota/ota6.test 82f1f757ec9b2ad07d6de4060b8e3ba8e44dfdd3
 F ext/ota/ota7.test 36e740da2b67cc086ff9f2975d2929b8beaa1016
 F ext/ota/otafault.test be02466863015a583cc0ceb6aca871a5e6f7a71b
-F ext/ota/sqlite3ota.c c7f8cdf55449b5169f79632e78f8e5049abf904c
+F ext/ota/sqlite3ota.c c2b34913954720200f1f33556df25fe55387c531
 F ext/ota/sqlite3ota.h 7b20abe9247d292429d00f0a5c237ff6e0dc0196
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 57bec53e1a677ab74217fe1f20a58c3a47261d6b
@@ -227,13 +227,13 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c fb587121840f690101336879adfa6d0b2cd0e8c7
 F src/os_win.c a019caaae2bcbbc0cc4c39af6e7d7e43d8426053
 F src/os_win.h 09e751b20bbc107ffbd46e13555dc73576d88e21
-F src/pager.c e1e385e03df0abf0743a7eea38c193d327ed396c
+F src/pager.c e5378efabe8479cd8af8194ac71d0bab8bf979f5
 F src/pager.h 997a4aa3bad1638dabe90a0cbb674cc4a7b9c034
 F src/parse.y 5dfead8aed90cb0c7c1115898ee2266804daff45
 F src/pcache.c 4121a0571c18581ee9f82f086d5e2030051ebd6a
 F src/pcache.h 9b559127b83f84ff76d735c8262f04853be0c59a
 F src/pcache1.c e412cb585f777c840ddce0500eddc5c6043c2bb5
-F src/pragma.c 310939bc2fb7e6456edfb4735d004253a4b2505e
+F src/pragma.c 92343541fc50d9fd30eb734f77d43d7636521e7e
 F src/prepare.c 6ef0cf2f9274982988ed6b7cab1be23147e94196
 F src/printf.c 6b79bbd063dcbadca4cf617a4cde255bcc13ea64
 F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
@@ -1217,7 +1217,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P acbed3380d8a35bf2f1ec133540cb5e9fccb9b42
-R 27bbe427f24c751c6dfa08920b459629
+P 712d413d29950b19d4afb18cfcf9d3afb302d0a0
+R 2621b5f3be6f418323e840a9284ff98b
 U dan
-Z 78767b94770b1205744fff578a5ff365
+Z 3bf4b5d8555904656fb3130ef9899e9e

@@ -7298,9 +7298,6 @@ int sqlite3PagerSetOtaMode(Pager *pPager, int iOta){
   if( iOta==1 && (pPager->pWal || pPager->eState!=PAGER_OPEN) ){
     return SQLITE_ERROR;
   }
-  if( iOta==2 && 0==pPager->pWal ){
-    return SQLITE_ERROR;
-  }
   pPager->otaMode = iOta;
   return SQLITE_OK;
 }
@@ -7314,10 +7311,15 @@ int sqlite3PagerWalCheckpointStart(
   u8 *a, int n, 
   sqlite3_ckpt **ppCkpt
 ){
-  return sqlite3WalCheckpointStart(db, pPager->pWal, a, n,
-      pPager->xBusyHandler, pPager->pBusyHandlerArg,
-      pPager->ckptSyncFlags, ppCkpt
-  );
+  if( pPager->pWal==0 ){
+    *ppCkpt = 0;
+    return SQLITE_OK;
+  }else{
+    return sqlite3WalCheckpointStart(db, pPager->pWal, a, n,
+        pPager->xBusyHandler, pPager->pBusyHandlerArg,
+        pPager->ckptSyncFlags, ppCkpt
+    );
+  }
 }
 
 #endif /* SQLITE_OMIT_DISKIO */

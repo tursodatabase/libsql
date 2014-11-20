@@ -901,9 +901,14 @@ void sqlite3Pragma(
     assert( pBt!=0 );
     if( zRight ){
       int iArg = sqlite3Atoi(zRight);
+      Pager *pPager = sqlite3BtreePager(pBt);
       if( sqlite3BtreeIsInReadTrans(pBt) ){
         sqlite3ErrorMsg(pParse, 
             "cannot set pager_ota_mode with open transaction"
+        );
+      }else if( sqlite3PagerWalSupported(pPager)==0 ){
+        sqlite3ErrorMsg(pParse,
+            "cannot set pager_ota_mode without wal support"
         );
       }else if( sqlite3PagerSetOtaMode(sqlite3BtreePager(pBt), iArg) ){
         sqlite3ErrorMsg(pParse, "cannot set pager_ota_mode in wal mode");

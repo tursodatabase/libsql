@@ -1066,7 +1066,10 @@ int sqlite3ota_step(sqlite3ota *p){
           p->rc = sqlite3_ckpt_open(p->db, 0, 0, &p->pCkpt);
         }
         if( p->rc==SQLITE_OK ){
-          if( SQLITE_OK!=sqlite3_ckpt_step(p->pCkpt) ){
+          if( p->pCkpt==0 ){
+            p->eStage = OTA_STAGE_DONE;
+            p->rc = SQLITE_DONE;
+          }else if( SQLITE_OK!=sqlite3_ckpt_step(p->pCkpt) ){
             p->rc = sqlite3_ckpt_close(p->pCkpt, 0, 0);
             p->pCkpt = 0;
             if( p->rc==SQLITE_OK ){
@@ -1340,7 +1343,7 @@ sqlite3ota *sqlite3ota_open(const char *zTarget, const char *zOta){
         p->rc = sqlite3_ckpt_open(
             p->db, pState->pCkptState, pState->nCkptState, &p->pCkpt
         );
-        if( p->rc==SQLITE_MISMATCH ){
+        if( p->rc==SQLITE_MISMATCH || (p->rc==SQLITE_OK && p->pCkpt==0) ){
           p->eStage = OTA_STAGE_DONE;
           p->rc = SQLITE_DONE;
         }
