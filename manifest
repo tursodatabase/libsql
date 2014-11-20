@@ -1,5 +1,5 @@
-C Updates\sto\srequirements\stags\son\sthe\smutex\sdocumentation.
-D 2014-11-20T23:03:42.154
+C Fix\sa\sbenign\stest\serror\son\sPRAGMA\scollation_list\nintroduced\sby\sa\srecent\scheckin.
+D 2014-11-20T23:11:30.405
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a226317fdf3f4c895fb3cfedc355b4d0868ce1fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -777,7 +777,7 @@ F test/pcache.test b09104b03160aca0d968d99e8cd2c5b1921a993d
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
 F test/percentile.test b98fc868d71eb5619d42a1702e9ab91718cbed54
 F test/permutations.test cef25f5e8499a15846eccd06785f17f4180407ab
-F test/pragma.test 19d0241a007bcdd77fc2606ec60fc60357e7fc8b
+F test/pragma.test 49ac8a73c0daa574824538fed28727d1259fe735
 F test/pragma2.test aea7b3d82c76034a2df2b38a13745172ddc0bc13
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
 F test/printf2.test b4acd4bf8734243257f01ddefa17c4fb090acc8a
@@ -1221,7 +1221,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4b608b62ac8d4eafdb76192b3b5db272332a4bfd
-R b10e3d696841d651117121c42237df0a
+P fcf8b7e4c6c3893e2004a28dc9f0f677907b4ba9
+R 97435df5b02a85b2d9795aaf4e4e7c6e
 U drh
-Z 5d29b887364b9011d92605ad266bc7f8
+Z ee8d2a1291f4df2e216b5b6437eb1599
