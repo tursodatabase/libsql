@@ -448,6 +448,22 @@ static int otaObjIterGetCols(sqlite3ota *p, OtaObjIter *pIter){
 }
 
 /*
+** This is a wrapper around "sqlite3_mprintf(zFmt, ...)". If an OOM occurs,
+** an error code is stored in the OTA handle passed as the first argument.
+*/
+static char *otaMPrintfAndCollectError(sqlite3ota *p, const char *zFmt, ...){
+  char *zSql = 0;
+  va_list ap;
+  va_start(ap, zFmt);
+  if( p->rc==SQLITE_OK ){
+    zSql = sqlite3_vmprintf(zFmt, ap);
+    if( zSql==0 ) p->rc = SQLITE_NOMEM;
+  }
+  va_end(ap);
+  return zSql;
+}
+
+/*
 ** This function constructs and returns a pointer to a nul-terminated 
 ** string containing some SQL clause or list based on one or more of the 
 ** column names currently stored in the pIter->azTblCol[] array.
@@ -570,6 +586,7 @@ static void otaBadControlError(sqlite3ota *p){
   p->zErrmsg = sqlite3_mprintf("Invalid ota_control value");
 }
 
+
 static char *otaObjIterGetSetlist(
   sqlite3ota *p,
   OtaObjIter *pIter,
@@ -584,14 +601,17 @@ static char *otaObjIterGetSetlist(
     }else{
       const char *zSep = "";
       for(i=0; i<pIter->nTblCol; i++){
-        if( zMask[i]=='x' ){
-          zList = sqlite3_mprintf("%z%s%s=?%d", 
+        char c = zMask[i];
+        if( c=='x' ){
+          zList = otaMPrintfAndCollectError(p, "%z%s%s=?%d", 
               zList, zSep, pIter->azTblCol[i], i+1
           );
-          if( zList==0 ){
-            p->rc = SQLITE_NOMEM;
-            break;
-          }
+          zSep = ", ";
+        }
+        if( c=='d' ){
+          zList = otaMPrintfAndCollectError(p, "%z%s%s=ota_delta(%s, ?%d)", 
+              zList, zSep, pIter->azTblCol[i], pIter->azTblCol[i], i+1
+          );
           zSep = ", ";
         }
       }
@@ -1390,6 +1410,13 @@ sqlite3ota *sqlite3ota_open(const char *zTarget, const char *zOta){
 }
 
 /*
+** Return the database handle used by pOta.
+*/
+sqlite3 *sqlite3ota_db(sqlite3ota *pOta){
+  return (pOta ? pOta->db : 0);
+}
+
+/*
 ** Close the OTA handle.
 */
 int sqlite3ota_close(sqlite3ota *p, char **pzErrmsg){
@@ -1450,6 +1477,31 @@ sqlite3_int64 sqlite3ota_progress(sqlite3ota *pOta){
 /* From main.c (apparently...) */
 extern const char *sqlite3ErrName(int);
 
+void test_ota_delta(sqlite3_context *pCtx, int nArg, sqlite3_value **apVal){
+  Tcl_Interp *interp = (Tcl_Interp*)sqlite3_user_data(pCtx);
+  Tcl_Obj *pScript;
+  int i;
+
+  pScript = Tcl_NewObj();
+  Tcl_IncrRefCount(pScript);
+  Tcl_ListObjAppendElement(0, pScript, Tcl_NewStringObj("ota_delta", -1));
+  for(i=0; i<nArg; i++){
+    sqlite3_value *pIn = apVal[i];
+    const char *z = (const char*)sqlite3_value_text(pIn);
+    Tcl_ListObjAppendElement(0, pScript, Tcl_NewStringObj(z, -1));
+  }
+
+  if( TCL_OK==Tcl_EvalObjEx(interp, pScript, TCL_GLOBAL_ONLY) ){
+    const char *z = Tcl_GetStringResult(interp);
+    sqlite3_result_text(pCtx, z, -1, SQLITE_TRANSIENT);
+  }else{
+    Tcl_BackgroundError(interp);
+  }
+
+  Tcl_DecrRefCount(pScript);
+}
+
+
 static int test_sqlite3ota_cmd(
   ClientData clientData,
   Tcl_Interp *interp,
@@ -1458,7 +1510,7 @@ static int test_sqlite3ota_cmd(
 ){
   int ret = TCL_OK;
   sqlite3ota *pOta = (sqlite3ota*)clientData;
-  const char *azMethod[] = { "step", "close", 0 };
+  const char *azMethod[] = { "step", "close", "create_ota_delta", 0 };
   int iMethod;
 
   if( objc!=2 ){
@@ -1492,6 +1544,16 @@ static int test_sqlite3ota_cmd(
         }
         ret = TCL_ERROR;
       }
+      break;
+    }
+
+    case 2: /* create_ota_delta */ {
+      sqlite3 *db = sqlite3ota_db(pOta);
+      int rc = sqlite3_create_function(
+          db, "ota_delta", -1, SQLITE_UTF8, (void*)interp, test_ota_delta, 0, 0
+      );
+      Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
+      ret = (rc==SQLITE_OK ? TCL_OK : TCL_ERROR);
       break;
     }
 

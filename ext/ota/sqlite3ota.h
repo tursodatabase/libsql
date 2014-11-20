@@ -132,6 +132,21 @@
 **
 **   INSERT INTO data_t1(a, b, c, ota_control) VALUES(4, NULL, 'usa', '..x');
 **
+** Instead of an 'x' character, characters of the ota_control value specified
+** for UPDATEs may also be set to 'd'. In this case, instead of updating the
+** target table with the value stored in the corresponding data_% column, the
+** user-defined SQL function "ota_delta()" is invoked and the result stored in
+** the target table column. ota_delta() is invoked with two arguments - the
+** original value currently stored in the target table column and the 
+** value specified in the data_xxx table.
+**
+** For example, this row:
+**
+**   INSERT INTO data_t1(a, b, c, ota_control) VALUES(4, NULL, 'usa', '..d');
+**
+** is similar to an UPDATE statement such as: 
+**
+**   UPDATE t1 SET c = ota_delta(c, 'usa') WHERE a = 4;
 **
 ** USAGE
 **
@@ -180,6 +195,25 @@ typedef struct sqlite3ota sqlite3ota;
 ** by a call to sqlite3ota_close().
 */
 sqlite3ota *sqlite3ota_open(const char *zTarget, const char *zOta);
+
+/*
+** Obtain the underlying database handle used by the OTA extension.
+**
+** The only argument passed to this function must be a valid, open, OTA
+** handle. This function returns the database handle used by OTA for all
+** operations on the target and source databases. This may be useful in 
+** two scenarios:
+**
+**   * If the data_xxx tables in the OTA source database are virtual 
+**     tables, or if any of the tables being updated are virtual tables,
+**     the application may need to call sqlite3_create_module() on
+**     the db handle to register the required virtual table implementations.
+**
+**   * If the application uses the "ota_delta()" feature described above,
+**     it must use sqlite3_create_function() or similar to register the
+**     ota_delta() implementation with OTA.
+*/
+sqlite3 *sqlite3ota_db(sqlite3ota*);
 
 /*
 ** Do some work towards applying the OTA update to the target db. 

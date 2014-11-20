@@ -1,5 +1,5 @@
-C Update\sthe\sota\sextension\sso\sthat\sit\scan\sbe\sused\sto\supdate\stables\swith\sexternal\sPRIMARY\sKEY\sindexes.
-D 2014-11-20T17:37:08.997
+C Add\sthe\s"ota_delta()"\sfeature\sfor\sdelta-compressed\supdates.
+D 2014-11-20T19:19:02.502
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -131,9 +131,10 @@ F ext/ota/ota4.test 60f897f329a6782ef2f24862640acf3c52e48077
 F ext/ota/ota5.test ad0799daf8923ddebffe75ae8c5504ca90b7fadb
 F ext/ota/ota6.test 82f1f757ec9b2ad07d6de4060b8e3ba8e44dfdd3
 F ext/ota/ota7.test 1fe2c5761705374530e29f70c39693076028221a
+F ext/ota/ota8.test cd70e63a0c29c45c0906692827deafa34638feda
 F ext/ota/otafault.test be02466863015a583cc0ceb6aca871a5e6f7a71b
-F ext/ota/sqlite3ota.c 2c31a56890e915e13eb5d6ced02325e1f4db7487
-F ext/ota/sqlite3ota.h 7b20abe9247d292429d00f0a5c237ff6e0dc0196
+F ext/ota/sqlite3ota.c edeea10871d1307ff9ee9ccc765ba4031b507509
+F ext/ota/sqlite3ota.h 08b276fc9f56c04cdb454cf7aefa41c29361ed7a
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 57bec53e1a677ab74217fe1f20a58c3a47261d6b
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
@@ -1217,7 +1218,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 556c3de53ad33d11d33ec794345c2100aa76f3e1
-R c3a23811c2315fa65ee1bcdda07f2567
+P 55066a1171cbd3077f5e6c8ceb2745e810d9476e
+R 97efd71a02c88dd0da29f19b3d083930
 U dan
-Z eebecee2ceb200b37a4bd343197c1b04
+Z 1557aa5ff604851a6b4517de0e4ff6aa
