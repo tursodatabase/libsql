@@ -58,6 +58,7 @@ do_execsql_test 1.2 {
 #
 foreach {tn tbl} {
   1 { CREATE TABLE t1(a, b, c, PRIMARY KEY(a, b)) WITHOUT ROWID }
+  2 { CREATE TABLE t1(a, b, c, PRIMARY KEY(a, b)) }
 } {
   reset_db
 

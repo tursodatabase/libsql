@@ -1526,10 +1526,9 @@ void sqlite3Pragma(
         }else if( pPk==0 ){
           k = 1;
         }else{
+          for(k=1; ALWAYS(k<=pTab->nCol) && pPk->aiColumn[k-1]!=i; k++){}
           if( (db->flags & SQLITE_OtaMode) && HasRowid(pTab) ){
-            k = 0;
-          }else{
-            for(k=1; ALWAYS(k<=pTab->nCol) && pPk->aiColumn[k-1]!=i; k++){}
+            k = -1 * k;
           }
         }
         sqlite3VdbeAddOp2(v, OP_Integer, k, 6);

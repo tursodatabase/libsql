@@ -102,6 +102,7 @@ struct OtaObjIter {
   int nTblCol;                    /* Size of azTblCol[] array */
   char **azTblCol;                /* Array of quoted column names */
   unsigned char *abTblPk;         /* Array of flags - true for PK columns */
+  unsigned char bRowid;           /* True for implicit IPK tables */
 
   /* Output variables. zTbl==0 implies EOF. */
   int bCleanup;                   /* True in "cleanup" state */
@@ -225,6 +226,7 @@ static void otaObjIterFreeCols(OtaObjIter *pIter){
   pIter->nTblCol = 0;
   sqlite3_free(pIter->zMask);
   pIter->zMask = 0;
+  pIter->bRowid = 0;
 }
 
 /*
@@ -391,8 +393,8 @@ static int otaMPrintfExec(sqlite3ota *p, const char *zFmt, ...){
 
 /*
 ** If they are not already populated, populate the pIter->azTblCol[],
-** pIter->abTblPk[] and pIter->nTblCol variables according to the table 
-** that the iterator currently points to.
+** pIter->abTblPk[], pIter->nTblCol and pIter->bRowid variables according to
+** the table that the iterator currently points to.
 **
 ** Return SQLITE_OK if successful, or an SQLite error code otherwise. If
 ** an error does occur, an error code and error message are also left in 
@@ -406,6 +408,7 @@ static int otaObjIterGetCols(sqlite3ota *p, OtaObjIter *pIter){
     int bSeenPk = 0;
     int rc2;                      /* sqlite3_finalize() return value */
 
+    assert( pIter->bRowid==0 );
     zSql = sqlite3_mprintf("PRAGMA main.table_info(%Q)", pIter->zTbl);
     p->rc = prepareFreeAndCollectError(p->db, &pStmt, &p->zErrmsg, zSql);
     while( p->rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
@@ -422,8 +425,10 @@ static int otaObjIterGetCols(sqlite3ota *p, OtaObjIter *pIter){
 
       if( p->rc==SQLITE_OK ){
         const char *zName = (const char*)sqlite3_column_text(pStmt, 1);
-        pIter->abTblPk[nCol] = sqlite3_column_int(pStmt, 5);
-        if( pIter->abTblPk[nCol] ) bSeenPk = 1;
+        int iPk = sqlite3_column_int(pStmt, 5);
+        pIter->abTblPk[nCol] = (iPk!=0);
+        if( iPk ) bSeenPk = 1;
+        if( iPk<0 ) pIter->bRowid = 1;
         pIter->azTblCol[nCol] = otaQuoteName(zName);
         if( pIter->azTblCol[nCol]==0 ) p->rc = SQLITE_NOMEM;
         nCol++;
@@ -489,7 +494,8 @@ static char *otaObjIterGetCollist(
     int i;
     for(i=0; i<nCol; i++){
       int iCol = aiCol ? aiCol[i] : i;
-      zList = sqlite3_mprintf("%z%s%s", zList, zSep, pIter->azTblCol[iCol]);
+      char *zCol = (iCol>=0 ? pIter->azTblCol[iCol] : "ota_rowid");
+      zList = sqlite3_mprintf("%z%s%s", zList, zSep, zCol);
       if( zList && azCollate ){
         zList = sqlite3_mprintf("%z COLLATE %Q", zList, azCollate[i]);
       }
@@ -519,6 +525,11 @@ static char *otaObjIterGetOldlist(
         p->rc = SQLITE_NOMEM;
         break;
       }
+    }
+
+    /* For a table with implicit rowids, append "old._rowid_" to the list. */
+    if( pIter->bRowid ){
+      zList = sqlite3_mprintf("%z, %s._rowid_", zList, zObj);
     }
   }
   return zList;
@@ -648,20 +659,29 @@ static int otaObjIterPrepareAll(
       /* Create the SELECT statement to read keys in sorted order */
       zCollist = otaObjIterGetCollist(p, pIter, pIter->nCol, aiCol, azColl);
       if( p->rc==SQLITE_OK ){
-        p->rc = prepareFreeAndCollectError(p->db, &pIter->pSelect, pz,
-            sqlite3_mprintf(
+        char *zSql;
+        if( pIter->bRowid ){
+          zSql = sqlite3_mprintf(
+              "SELECT %s, ota_control FROM ota.'ota_tmp_%q' ORDER BY %s%s",
+              zCollist, pIter->zTbl, 
+              zCollist, zLimit
+          );
+        }else{
+          zSql = sqlite3_mprintf(
               "SELECT %s, ota_control FROM ota.'data_%q' "
               "WHERE typeof(ota_control)='integer' AND ota_control!=1 "
-                "UNION ALL "
+              "UNION ALL "
               "SELECT %s, ota_control FROM ota.'ota_tmp_%q' "
               "ORDER BY %s%s",
               zCollist, pIter->zTbl, 
               zCollist, pIter->zTbl, 
               zCollist, zLimit
-            )
-        );
+          );
+        }
+        p->rc = prepareFreeAndCollectError(p->db, &pIter->pSelect, pz, zSql);
       }
     }else{
+      const char *zOtaRowid = (pIter->bRowid ? ", ota_rowid" : "");
       char *zBindings = otaObjIterGetBindlist(p, pIter->nTblCol);
       char *zWhere = otaObjIterGetWhere(p, pIter);
       char *zOldlist = otaObjIterGetOldlist(p, pIter, "old");
@@ -697,32 +717,43 @@ static int otaObjIterPrepareAll(
         );
       }
 
-      if( p->rc==SQLITE_OK ){
+      /* Create the ota_tmp_xxx table and the triggers to populate it. */
+      otaMPrintfExec(p, 
+          "CREATE TABLE IF NOT EXISTS ota.'ota_tmp_%q' AS "
+          "SELECT *%s FROM ota.'data_%q' WHERE 0;"
+
+          "CREATE TEMP TRIGGER ota_delete_%q BEFORE DELETE ON main.%Q "
+          "BEGIN "
+          "  INSERT INTO 'ota_tmp_%q'(ota_control, %s%s) VALUES(2, %s);"
+          "END;"
+
+          "CREATE TEMP TRIGGER ota_update1_%q BEFORE UPDATE ON main.%Q "
+          "BEGIN "
+          "  INSERT INTO 'ota_tmp_%q'(ota_control, %s%s) VALUES(2, %s);"
+          "END;"
+
+          "CREATE TEMP TRIGGER ota_update2_%q AFTER UPDATE ON main.%Q "
+          "BEGIN "
+          "  INSERT INTO 'ota_tmp_%q'(ota_control, %s%s) VALUES(3, %s);"
+          "END;"
+          , pIter->zTbl, (pIter->bRowid ? ", 0 AS ota_rowid" : ""),
+          pIter->zTbl, 
+          pIter->zTbl, pIter->zTbl, pIter->zTbl, zCollist, zOtaRowid, zOldlist,
+          pIter->zTbl, pIter->zTbl, pIter->zTbl, zCollist, zOtaRowid, zOldlist,
+          pIter->zTbl, pIter->zTbl, pIter->zTbl, zCollist, zOtaRowid, zNewlist
+      );
+      if( pIter->bRowid ){
         otaMPrintfExec(p, 
-            "CREATE TABLE IF NOT EXISTS ota.'ota_tmp_%q' AS "
-            "SELECT * FROM ota.'data_%q' WHERE 0;"
-
-            "CREATE TEMP TRIGGER ota_delete_%q BEFORE DELETE ON main.%Q "
+            "CREATE TEMP TRIGGER ota_insert_%q AFTER INSERT ON main.%Q "
             "BEGIN "
-            "  INSERT INTO 'ota_tmp_%q'(ota_control, %s) VALUES(2, %s);"
+            "  INSERT INTO 'ota_tmp_%q'(ota_control, %s, ota_rowid)"
+            "  VALUES(0, %s);"
             "END;"
-
-            "CREATE TEMP TRIGGER ota_update1_%q BEFORE UPDATE ON main.%Q "
-            "BEGIN "
-            "  INSERT INTO 'ota_tmp_%q'(ota_control, %s) VALUES(2, %s);"
-            "END;"
-
-            "CREATE TEMP TRIGGER ota_update2_%q AFTER UPDATE ON main.%Q "
-            "BEGIN "
-            "  INSERT INTO 'ota_tmp_%q'(ota_control, %s) VALUES(3, %s);"
-            "END;"
-
-            , pIter->zTbl, pIter->zTbl, 
-            pIter->zTbl, pIter->zTbl, pIter->zTbl, zCollist, zOldlist, 
-            pIter->zTbl, pIter->zTbl, pIter->zTbl, zCollist, zOldlist, 
-            pIter->zTbl, pIter->zTbl, pIter->zTbl, zCollist, zNewlist
+            , pIter->zTbl, pIter->zTbl, pIter->zTbl, zCollist, zNewlist
         );
       }
+
+
 
       /* Allocate space required for the zMask field. */
       if( p->rc==SQLITE_OK ){

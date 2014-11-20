@@ -136,6 +136,18 @@ foreach {tn2 cmd} {1 run_ota 2 step_ota 3 step_ota_uri} {
       CREATE INDEX i2 ON t1(c, b);
       CREATE INDEX i3 ON t1(a, b, c, a, b, c);
     }
+
+    8 { 
+      CREATE TABLE t1(a PRIMARY KEY, b, c);
+      CREATE INDEX i1 ON t1(b, c);
+      CREATE INDEX i2 ON t1(c, b);
+      CREATE INDEX i3 ON t1(a, b, c, a, b, c);
+    }
+
+    9 { 
+      CREATE TABLE t1(a, b, c, PRIMARY KEY(a, c));
+      CREATE INDEX i1 ON t1(b);
+    }
   } {
     reset_db
     execsql $schema
@@ -160,6 +172,11 @@ foreach {tn2 cmd} {1 run_ota 2 step_ota 3 step_ota_uri} {
 #-------------------------------------------------------------------------
 # Check that an OTA cannot be applied to a table that has no PK.
 #
+# UPDATE: At one point OTA required that all tables featured either
+# explicit IPK columns or were declared WITHOUT ROWID. This has been
+# relaxed so that external PRIMARY KEYs on tables with automatic rowids
+# are now allowed.
+#
 reset_db
 create_ota1 ota.db
 do_execsql_test 2.1 { CREATE TABLE t1(a, b, c) }
@@ -170,16 +187,15 @@ do_test 2.2 {
 do_test 2.3 {
   list [catch { ota close } msg] $msg
 } {1 {SQLITE_ERROR - table t1 has no PRIMARY KEY}}
-
 reset_db
 do_execsql_test 2.4 { CREATE TABLE t1(a PRIMARY KEY, b, c) }
 do_test 2.5 {
   sqlite3ota ota test.db ota.db
   ota step
-} {SQLITE_ERROR}
+} {SQLITE_OK}
 do_test 2.6 {
   list [catch { ota close } msg] $msg
-} {1 {SQLITE_ERROR - table t1 has no PRIMARY KEY}}
+} {0 SQLITE_OK}
 
 #-------------------------------------------------------------------------
 # Check that if a UNIQUE constraint is violated the current and all 
@@ -195,6 +211,16 @@ foreach {tn errcode errmsg schema} {
 
   2 SQLITE_CONSTRAINT "UNIQUE constraint failed: t1.c" {
     CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c UNIQUE);
+    INSERT INTO t1 VALUES(4, 2, 'three');
+  } 
+
+  3 SQLITE_CONSTRAINT "UNIQUE constraint failed: t1.a" {
+    CREATE TABLE t1(a PRIMARY KEY, b, c);
+    INSERT INTO t1 VALUES(3, 2, 1);
+  } 
+
+  4 SQLITE_CONSTRAINT "UNIQUE constraint failed: t1.c" {
+    CREATE TABLE t1(a PRIMARY KEY, b, c UNIQUE);
     INSERT INTO t1 VALUES(4, 2, 'three');
   } 
 
@@ -238,6 +264,12 @@ foreach {tn2 cmd} {1 run_ota 2 step_ota} {
     }
     4 {
       CREATE TABLE t1(a INT PRIMARY KEY, b, c) WITHOUT ROWID;
+      CREATE INDEX i1 ON t1(b);
+      CREATE INDEX i2 ON t1(c, b);
+      CREATE INDEX i3 ON t1(c, b, c);
+    }
+    5 {
+      CREATE TABLE t1(a INT PRIMARY KEY, b, c);
       CREATE INDEX i1 ON t1(b);
       CREATE INDEX i2 ON t1(c, b);
       CREATE INDEX i3 ON t1(c, b, c);
@@ -286,6 +318,15 @@ foreach {tn2 cmd} {1 run_ota 2 step_ota} {
     }
     3 {
       CREATE TABLE t1(a PRIMARY KEY, b, c, d) WITHOUT ROWID;
+      CREATE INDEX i1 ON t1(d);
+      CREATE INDEX i2 ON t1(d, c);
+      CREATE INDEX i3 ON t1(d, c, b);
+      CREATE INDEX i4 ON t1(b);
+      CREATE INDEX i5 ON t1(c);
+      CREATE INDEX i6 ON t1(c, b);
+    }
+    4 {
+      CREATE TABLE t1(a PRIMARY KEY, b, c, d);
       CREATE INDEX i1 ON t1(d);
       CREATE INDEX i2 ON t1(d, c);
       CREATE INDEX i3 ON t1(d, c, b);
