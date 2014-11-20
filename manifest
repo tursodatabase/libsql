@@ -1,5 +1,5 @@
-C Fix\sthe\sencoding\sof\ssome\sintegers\sto\suse\sthe\sminimum\samount\sof\sspace:\n-128,\s-32768,\s-8388608,\s-217483648,\sand\s-140737488355328.
-D 2014-11-20T02:58:10.344
+C Ensure\sthat\swhen\sthe\snumber\sof\scells\son\sa\spage\sdrops\sto\szero\sthat\sthe\sfreelist\nand\sfragment\scounter\sare\sboth\scleared.\s\sAlso\sadd\sevidence\smarks\scorresponding\nto\sfile-format\sdocumentation.
+D 2014-11-20T15:30:50.141
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a226317fdf3f4c895fb3cfedc355b4d0868ce1fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -173,7 +173,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 7ddee9c7d505e07e959a575b18498f17c71e53ea
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 49ca66250c7dfa844a4d4cb8272b87420d27d3a5
-F src/btree.c d0a7cfc8788ad028c86020637df70c789615196e
+F src/btree.c 4db5e06ca2d1a5437be7075251fa702c76179b0e
 F src/btree.h e31a3a3ebdedb1caf9bda3ad5dbab3db9b780f6e
 F src/btreeInt.h 3363e18fd76f69a27a870b25221b2345b3fd4d21
 F src/build.c 67bb05b1077e0cdaccb2e36bfcbe7a5df9ed31e8
@@ -1221,7 +1221,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9a9627e178a67bbfc85366aaea900e674d22fb53
-R acb3727f628d804856a9646910d389b3
+P 2d7c8da5f16e64eaa7b0c2d66898682ea3d102a0
+R aa709859c03f6b1c53283cb1512cbe99
 U drh
-Z ae13a50368fe7d7b53b7e4276c8588bd
+Z 12bf55f57cbfdde86aed8c230487a6ad
