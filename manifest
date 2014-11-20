@@ -1,5 +1,5 @@
-C Add\snew\srequirements\smarks\sassociated\swith\sthe\sfile\sformat\sdocumentation.\nNo\schanges\sto\scode.
-D 2014-11-19T16:36:25.272
+C Add\ssome\srequirements\smarks\sto\sthe\srecord\sformatting\slogic.\s\sComment\schanges\nonly\s-\sthe\scode\sis\sunaltered.
+D 2014-11-20T02:18:14.206
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a226317fdf3f4c895fb3cfedc355b4d0868ce1fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -291,11 +291,11 @@ F src/update.c 3c4ecc282accf12d39edb8d524cf089645e55a13
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c 3b627daa45c7308c1e36e3dbaa3f9ce7e5c7fa73
 F src/vacuum.c 9b30ec729337dd012ed88d4c292922c8ef9cf00c
-F src/vdbe.c 16914136ea1e8b18366868671ddb019159687f47
+F src/vdbe.c ec1f55acef4864520ca2017b9f0d60c2ac1b8b78
 F src/vdbe.h 6fc69d9c5e146302c56e163cb4b31d1ee64a18c3
 F src/vdbeInt.h 9bb69ff2447c34b6ccc58b34ec35b615f86ead78
 F src/vdbeapi.c 07acb615d1e4170e71fc1b0d087f3c53a1ad8e83
-F src/vdbeaux.c 9b0a251b6dfab349dd6c6efb40062eb7386b26f5
+F src/vdbeaux.c e3ae27459a4eb986d2892de2d7f309d18c9971ef
 F src/vdbeblob.c 4af4bfb71f6df7778397b4a0ebc1879793276778
 F src/vdbemem.c 31d8eabb0cd78bfeab4e5124c7363c3e9e54db9f
 F src/vdbesort.c 87f3923483113d1c95d84640becb4e4946f27d9a
@@ -1221,7 +1221,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 89b3c1c4555c98c633089b21cdd2a1a3a1e751eb
-R 92805b92bb878e3838f25a4f3bef8761
+P 6d00bcca6ed1903fb17275752cab71c14392355b
+R b487443c841a5e8e1bfed86b80cd7f65
 U drh
-Z 529027073b2f32ceeacba058565c65ab
+Z bbc37d068b0ef41277590cc500b3cc54

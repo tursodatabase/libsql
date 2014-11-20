@@ -2636,7 +2636,10 @@ case OP_MakeRecord: {
     nHdr += serial_type<=127 ? 1 : sqlite3VarintLen(serial_type);
   }while( (--pRec)>=pData0 );
 
-  /* Add the initial header varint and total the size */
+  /* EVIDENCE-OF: R-22564-11647 The header begins with a single varint
+  ** which determines the total number of bytes in the header. The varint
+  ** value is the size of the header in bytes including the size varint
+  ** itself. */
   testcase( nHdr==126 );
   testcase( nHdr==127 );
   if( nHdr<=126 ){
@@ -2670,7 +2673,11 @@ case OP_MakeRecord: {
   pRec = pData0;
   do{
     serial_type = pRec->uTemp;
+    /* EVIDENCE-OF: R-06529-47362 Following the size varint are one or more
+    ** additional varints, one per column. */
     i += putVarint32(&zNewRecord[i], serial_type);            /* serial type */
+    /* EVIDENCE-OF: R-64536-51728 The values for each column in the record
+    ** immediately follow the header. */
     j += sqlite3VdbeSerialPut(&zNewRecord[j], pRec, serial_type); /* content */
   }while( (++pRec)<=pLast );
   assert( i==nHdr );
