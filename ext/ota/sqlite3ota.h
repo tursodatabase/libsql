@@ -94,6 +94,18 @@
 **
 ** The order of the columns in the data_% table does not matter.
 **
+** If the target database table is a virtual table, the data_% table should
+** also contain a column named "ota_rowid". This column is mapped to the
+** virtual tables implicit primary key column - "rowid". Virtual tables
+** for which the "rowid" column does not function like a primary key value
+** can not be updated using OTA. For example, if the target db contains:
+**
+**   CREATE VIRTUAL TABLE ft1 USING fts3(a, b);
+**
+** then the OTA database should contain:
+**
+**   CREATE TABLE data_ft1(a, b, ota_rowid, ota_control);
+**
 ** For each row to INSERT into the target database as part of the OTA 
 ** update, the corresponding data_% table should contain a single record
 ** with the "ota_control" column set to contain integer value 0. The
@@ -119,7 +131,7 @@
 ** stored in the corresponding columns of the data_% table row, as should
 ** the new values of all columns being update. The text value in the 
 ** "ota_control" column must contain the same number of characters as
-** there are column in the target database table, and must consist entirely
+** there are columns in the target database table, and must consist entirely
 ** of "x" and "." characters. For each column that is being updated,
 ** the corresponding character is set to "x". For those that remain as
 ** they are, the corresponding character of the ota_control value should
@@ -148,6 +160,18 @@
 **
 **   UPDATE t1 SET c = ota_delta(c, 'usa') WHERE a = 4;
 **
+** If the target database table is a virtual table, the ota_control value
+** should not include a character corresponding to the ota_rowid value.
+** For example, this:
+**
+**   INSERT INTO data_ft1(a, b, ota_rowid, ota_control) 
+**       VALUES(NULL, 'usa', 12, '..d');
+**
+** causes a result similar to:
+**
+**   UPDATE ft1 SET b = 'usa' WHERE rowid = 12;
+**
+**
 ** USAGE
 **
 ** The API declared below allows an application to apply an OTA update 
@@ -156,12 +180,16 @@
 **
 **     1) Opens an OTA handle using the sqlite3ota_open() function.
 **
-**     2) Calls the sqlite3ota_step() function one or more times on
+**     2) Registers any required virtual table modules with the database
+**        handle returned by sqlite3ota_db(). Also, if required, register
+**        the ota_delta() implementation.
+**
+**     3) Calls the sqlite3ota_step() function one or more times on
 **        the new handle. Each call to sqlite3ota_step() performs a single
 **        b-tree operation, so thousands of calls may be required to apply 
 **        a complete update.
 **
-**     3) Calls sqlite3ota_close() to close the OTA update handle. If
+**     4) Calls sqlite3ota_close() to close the OTA update handle. If
 **        sqlite3ota_step() has been called enough times to completely
 **        apply the update to the target database, then it is committed
 **        and made visible to other database clients at this point. 
