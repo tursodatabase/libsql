@@ -12,5 +12,5 @@ license = "MIT"
 [lib]
 name = "rusqlite"
 
-[dependencies.time]
-git = "https://github.com/rust-lang/time"
+[dependencies]
+time = "0.0.3"
