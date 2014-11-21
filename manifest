@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\supdating\svirtual\stables\svia\sota.
-D 2014-11-21T10:46:23.101
+C Changes\sto\scomments\sin\ssqlite3ota.h.
+D 2014-11-21T11:22:11.959
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -135,7 +135,7 @@ F ext/ota/ota8.test cd70e63a0c29c45c0906692827deafa34638feda
 F ext/ota/ota9.test d9ad30ccb4e08f878e382876fe67752309538af9
 F ext/ota/otafault.test be02466863015a583cc0ceb6aca871a5e6f7a71b
 F ext/ota/sqlite3ota.c 07ef7b72358ed422b69a10e4702ab131041e2896
-F ext/ota/sqlite3ota.h 8c09973d27fba7fa34f2d1bf0606d2bd420fe123
+F ext/ota/sqlite3ota.h 04577b00c456aacb99be9c8b55572a6e3ca9aa27
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 57bec53e1a677ab74217fe1f20a58c3a47261d6b
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
@@ -1219,7 +1219,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c64dcd1788f5cc7db197a0ec4ab0981f34a72c6b
-R 5a2fe82c5b487561e46e520bd6653b40
+P 4dfcfe543945aa60a7ac397a3bdb0ac9e20ef7b6
+R ce2cc26848888f59033084d0ff8b06d9
 U dan
-Z b7e67cf183a3b3e32028fa6f7bcf265c
+Z 059883a58f80da6dc602fa5f1d52e4f7

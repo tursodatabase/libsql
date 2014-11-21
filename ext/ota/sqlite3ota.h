@@ -61,11 +61,11 @@
 **
 **   * INSERT statements may not use any default values.
 **
-**   * UPDATE and DELETE statements must identify their target rows by
-**     real PRIMARY KEY values - i.e. INTEGER PRIMARY KEY columns or 
-**     by the PRIMARY KEY columns of WITHOUT ROWID tables.
+**   * Non-virtual tables that do not have declared primary keys may not 
+**     be updated. UPDATE and DELETE statements must identify their target 
+**     rows by PRIMARY KEY values. 
 **
-**   * UPDATE statements may not modify real PRIMARY KEY columns.
+**   * UPDATE statements may not modify PRIMARY KEY columns.
 **
 **   * No triggers will be fired.
 **
