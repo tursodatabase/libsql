@@ -912,7 +912,7 @@ do_test capi3-11.9.3 {
 } 1
 do_test capi3-11.10 {
   sqlite3_step $STMT
-} {SQLITE_ERROR}
+} {SQLITE_ROW}
 ifcapable !autoreset {
   # If SQLITE_OMIT_AUTORESET is defined, then the statement must be
   # reset() before it can be passed to step() again.
@@ -921,11 +921,11 @@ ifcapable !autoreset {
 }
 do_test capi3-11.11 {
   sqlite3_step $STMT
-} {SQLITE_ROW}
+} {SQLITE_DONE}
 do_test capi3-11.12 {
   sqlite3_step $STMT
   sqlite3_step $STMT
-} {SQLITE_DONE}
+} {SQLITE_ROW}
 do_test capi3-11.13 {
   sqlite3_finalize $STMT
 } {SQLITE_OK}

@@ -86,23 +86,23 @@ do_test 2.1 {
 # range.
 # 
 # Test 3.2 is a little unstable. It depends on the planner estimating
-# that (b BETWEEN 50 AND 54) will match more rows than (c BETWEEN
+# that (b BETWEEN 30 AND 34) will match more rows than (c BETWEEN
 # 800000 AND 900000). Which is a pretty close call (50 vs. 32), so
 # the planner could get it wrong with an unlucky set of samples. This
 # case happens to work, but others ("b BETWEEN 40 AND 44" for example) 
 # will fail.
 #
 do_execsql_test 3.0 {
-  SELECT count(*) FROM t1 WHERE b BETWEEN 50 AND 54;
+  SELECT count(*) FROM t1 WHERE b BETWEEN 30 AND 34;
   SELECT count(*) FROM t1 WHERE c BETWEEN 0 AND 100000;
   SELECT count(*) FROM t1 WHERE c BETWEEN 800000 AND 900000;
 } {50 376 32}
 do_test 3.1 {
-  eqp {SELECT * FROM t1 WHERE b BETWEEN 50 AND 54 AND c BETWEEN 0 AND 100000}
+  eqp {SELECT * FROM t1 WHERE b BETWEEN 30 AND 34 AND c BETWEEN 0 AND 100000}
 } {0 0 0 {SEARCH TABLE t1 USING INDEX t1b (b>? AND b<?)}}
 do_test 3.2 {
   eqp {SELECT * FROM t1
-       WHERE b BETWEEN 50 AND 54 AND c BETWEEN 800000 AND 900000}
+       WHERE b BETWEEN 30 AND 34 AND c BETWEEN 800000 AND 900000}
 } {0 0 0 {SEARCH TABLE t1 USING INDEX t1c (c>? AND c<?)}}
 do_test 3.3 {
   eqp {SELECT * FROM t1 WHERE a=100 AND c BETWEEN 0 AND 100000}

@@ -95,5 +95,25 @@ do_execsql_test printf2-2.3 {
   SELECT printf('%s=(%d/%g/%s)',a) FROM t1 ORDER BY a;
 } {-1=(0/0/) 1=(0/0/) 1.5=(0/0/) abc=(0/0/)}
 
+# The precision of the %c conversion causes the character to repeat.
+#
+do_execsql_test printf2-3.1 {
+  SELECT printf('|%110.100c|','*');
+} {{|          ****************************************************************************************************|}}
+do_execsql_test printf2-3.2 {
+  SELECT printf('|%-110.100c|','*');
+} {{|****************************************************************************************************          |}}
+do_execsql_test printf2-3.3 {
+  SELECT printf('|%9.8c|%-9.8c|','*','*');
+} {{| ********|******** |}}
+do_execsql_test printf2-3.4 {
+  SELECT printf('|%8.8c|%-8.8c|','*','*');
+} {|********|********|}
+do_execsql_test printf2-3.5 {
+  SELECT printf('|%7.8c|%-7.8c|','*','*');
+} {|********|********|}
+
+
+
 
 finish_test

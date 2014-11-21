@@ -62,7 +62,6 @@ foreach {tn script} {
   
   do_execsql_test $tn.2.4 { PRAGMA integrity_check } {ok}
   
-  breakpoint
   do_execsql_test $tn.3 {
     PRAGMA cache_size = 5;
     WITH r(x,y) AS (

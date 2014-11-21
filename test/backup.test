@@ -217,6 +217,7 @@ foreach nPagePerStep {1 200} {
           INSERT INTO ${file_dest}.t1 VALUES(1, randstr(1000,1000))
         " $db_dest
       }
+      execsql COMMIT $db_dest
     }
   
     # Backup the source database.

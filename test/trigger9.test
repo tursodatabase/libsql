@@ -32,6 +32,7 @@ ifcapable {!trigger} {
   finish_test
   return
 }
+set ::testprefix trigger9
 
 proc has_rowdata {sql} {
   expr {[lsearch [execsql "explain $sql"] RowData]>=0}
@@ -219,5 +220,37 @@ ifcapable compound {
     }
   } {2}
 }
+
+reset_db
+do_execsql_test 4.1 {
+  CREATE TABLE t1(a, b);
+  CREATE TABLE log(x);
+  INSERT INTO t1 VALUES(1, 2);
+  INSERT INTO t1 VALUES(3, 4);
+  CREATE VIEW v1 AS SELECT a, b FROM t1;
+
+  CREATE TRIGGER tr1 INSTEAD OF DELETE ON v1 BEGIN
+    INSERT INTO log VALUES('delete');
+  END;
+
+  CREATE TRIGGER tr2 INSTEAD OF UPDATE ON v1 BEGIN
+    INSERT INTO log VALUES('update');
+  END;
+
+  CREATE TRIGGER tr3 INSTEAD OF INSERT ON v1 BEGIN
+    INSERT INTO log VALUES('insert');
+  END;
+}
+
+do_execsql_test 4.2 {
+  DELETE FROM v1 WHERE rowid=1;
+} {}
+
+do_execsql_test 4.3 {
+  UPDATE v1 SET a=b WHERE rowid=2;
+} {}
+
+
+
 
 finish_test

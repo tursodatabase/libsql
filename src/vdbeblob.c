@@ -153,6 +153,11 @@ int sqlite3_blob_open(
   Parse *pParse = 0;
   Incrblob *pBlob = 0;
 
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( !sqlite3SafetyCheckOk(db) || ppBlob==0 || zTable==0 ){
+    return SQLITE_MISUSE_BKPT;
+  }
+#endif
   flags = !!flags;                /* flags = (flags ? 1 : 0); */
   *ppBlob = 0;
 
@@ -371,7 +376,6 @@ static int blobReadWrite(
   if( n<0 || iOffset<0 || (iOffset+n)>p->nByte ){
     /* Request is out of range. Return a transient error. */
     rc = SQLITE_ERROR;
-    sqlite3Error(db, SQLITE_ERROR);
   }else if( v==0 ){
     /* If there is no statement handle, then the blob-handle has
     ** already been invalidated. Return SQLITE_ABORT in this case.
@@ -389,10 +393,10 @@ static int blobReadWrite(
       sqlite3VdbeFinalize(v);
       p->pStmt = 0;
     }else{
-      db->errCode = rc;
       v->rc = rc;
     }
   }
+  sqlite3Error(db, rc);
   rc = sqlite3ApiExit(db, rc);
   sqlite3_mutex_leave(db->mutex);
   return rc;

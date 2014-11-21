@@ -981,6 +981,11 @@ void sqlite3PCacheSetDefault(void){
   sqlite3_config(SQLITE_CONFIG_PCACHE2, &defaultMethods);
 }
 
+/*
+** Return the size of the header on each page of this PCACHE implementation.
+*/
+int sqlite3HeaderSizePcache1(void){ return sizeof(PgHdr1); }
+
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
 /*
 ** This function is called to free superfluous dynamically allocated memory

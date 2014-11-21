@@ -282,4 +282,10 @@ void sqlite3VdbeLinkSubProgram(Vdbe *, SubProgram *);
 # define VDBE_OFFSET_LINENO(x) 0
 #endif
 
+#ifdef SQLITE_ENABLE_STMT_SCANSTATUS
+void sqlite3VdbeScanStatus(Vdbe*, int, int, int, LogEst, const char*);
+#else
+# define sqlite3VdbeScanStatus(a,b,c,d,e)
+#endif
+
 #endif

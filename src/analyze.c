@@ -1438,6 +1438,8 @@ static void decodeIntArray(
   if( z==0 ) z = "";
 #else
   assert( z!=0 );
+  pIndex->bUnordered = 0;
+  pIndex->noSkipScan = 0;
 #endif
   for(i=0; *z && i<nOut; i++){
     v = 0;
@@ -1466,6 +1468,8 @@ static void decodeIntArray(
       pIndex->bUnordered = 1;
     }else if( sqlite3_strglob("sz=[0-9]*", z)==0 ){
       pIndex->szIdxRow = sqlite3LogEst(sqlite3Atoi(z+3));
+    }else if( sqlite3_strglob("noskipscan*", z)==0 ){
+      pIndex->noSkipScan = 1;
     }
 #ifdef SQLITE_ENABLE_COSTMULT
     else if( sqlite3_strglob("costmult=[0-9]*",z)==0 ){
@@ -1599,6 +1603,7 @@ static void initAvgEq(Index *pIdx){
         nRow = pIdx->aiRowEst[0];
         nDist100 = ((i64)100 * pIdx->aiRowEst[0]) / pIdx->aiRowEst[iCol+1];
       }
+      pIdx->nRowEst0 = nRow;
 
       /* Set nSum to the number of distinct (iCol+1) field prefixes that
       ** occur in the stat4 table for this index. Set sumEq to the sum of 
@@ -1860,7 +1865,7 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
 
   /* Load the statistics from the sqlite_stat4 table. */
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
-  if( rc==SQLITE_OK ){
+  if( rc==SQLITE_OK && OptimizationEnabled(db, SQLITE_Stat34) ){
     int lookasideEnabled = db->lookaside.bEnabled;
     db->lookaside.bEnabled = 0;
     rc = loadStat4(db, sInfo.zDatabase);

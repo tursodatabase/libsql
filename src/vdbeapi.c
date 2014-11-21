@@ -966,11 +966,19 @@ static const void *columnName(
   const void *(*xFunc)(Mem*),
   int useType
 ){
-  const void *ret = 0;
-  Vdbe *p = (Vdbe *)pStmt;
+  const void *ret;
+  Vdbe *p;
   int n;
-  sqlite3 *db = p->db;
-  
+  sqlite3 *db;
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( pStmt==0 ){
+    (void)SQLITE_MISUSE_BKPT;
+    return 0;
+  }
+#endif
+  ret = 0;
+  p = (Vdbe *)pStmt;
+  db = p->db;
   assert( db!=0 );
   n = sqlite3_column_count(pStmt);
   if( N<n && N>=0 ){
@@ -1435,6 +1443,12 @@ int sqlite3_stmt_busy(sqlite3_stmt *pStmt){
 */
 sqlite3_stmt *sqlite3_next_stmt(sqlite3 *pDb, sqlite3_stmt *pStmt){
   sqlite3_stmt *pNext;
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( !sqlite3SafetyCheckOk(pDb) ){
+    (void)SQLITE_MISUSE_BKPT;
+    return 0;
+  }
+#endif
   sqlite3_mutex_enter(pDb->mutex);
   if( pStmt==0 ){
     pNext = (sqlite3_stmt*)pDb->pVdbe;
@@ -1450,7 +1464,83 @@ sqlite3_stmt *sqlite3_next_stmt(sqlite3 *pDb, sqlite3_stmt *pStmt){
 */
 int sqlite3_stmt_status(sqlite3_stmt *pStmt, int op, int resetFlag){
   Vdbe *pVdbe = (Vdbe*)pStmt;
-  u32 v = pVdbe->aCounter[op];
+  u32 v;
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( !pStmt ){
+    (void)SQLITE_MISUSE_BKPT;
+    return 0;
+  }
+#endif
+  v = pVdbe->aCounter[op];
   if( resetFlag ) pVdbe->aCounter[op] = 0;
   return (int)v;
 }
+
+#ifdef SQLITE_ENABLE_STMT_SCANSTATUS
+/*
+** Return status data for a single loop within query pStmt.
+*/
+int sqlite3_stmt_scanstatus(
+  sqlite3_stmt *pStmt,            /* Prepared statement being queried */
+  int idx,                        /* Index of loop to report on */
+  int iScanStatusOp,              /* Which metric to return */
+  void *pOut                      /* OUT: Write the answer here */
+){
+  Vdbe *p = (Vdbe*)pStmt;
+  ScanStatus *pScan;
+  if( idx<0 || idx>=p->nScan ) return 1;
+  pScan = &p->aScan[idx];
+  switch( iScanStatusOp ){
+    case SQLITE_SCANSTAT_NLOOP: {
+      *(sqlite3_int64*)pOut = p->anExec[pScan->addrLoop];
+      break;
+    }
+    case SQLITE_SCANSTAT_NVISIT: {
+      *(sqlite3_int64*)pOut = p->anExec[pScan->addrVisit];
+      break;
+    }
+    case SQLITE_SCANSTAT_EST: {
+      double r = 1.0;
+      LogEst x = pScan->nEst;
+      while( x<100 ){
+        x += 10;
+        r *= 0.5;
+      }
+      *(double*)pOut = r*sqlite3LogEstToInt(x);
+      break;
+    }
+    case SQLITE_SCANSTAT_NAME: {
+      *(const char**)pOut = pScan->zName;
+      break;
+    }
+    case SQLITE_SCANSTAT_EXPLAIN: {
+      if( pScan->addrExplain ){
+        *(const char**)pOut = p->aOp[ pScan->addrExplain ].p4.z;
+      }else{
+        *(const char**)pOut = 0;
+      }
+      break;
+    }
+    case SQLITE_SCANSTAT_SELECTID: {
+      if( pScan->addrExplain ){
+        *(int*)pOut = p->aOp[ pScan->addrExplain ].p1;
+      }else{
+        *(int*)pOut = -1;
+      }
+      break;
+    }
+    default: {
+      return 1;
+    }
+  }
+  return 0;
+}
+
+/*
+** Zero all counters associated with the sqlite3_stmt_scanstatus() data.
+*/
+void sqlite3_stmt_scanstatus_reset(sqlite3_stmt *pStmt){
+  Vdbe *p = (Vdbe*)pStmt;
+  memset(p->anExec, 0, p->nOp * sizeof(i64));
+}
+#endif /* SQLITE_ENABLE_STMT_SCANSTATUS */
