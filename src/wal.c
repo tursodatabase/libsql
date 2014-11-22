@@ -483,7 +483,14 @@ struct WalIterator {
 };
 
 /*
-** walCheckpoint
+** An object of the following type is used to store state information for
+** an ongoing checkpoint operation. For normal checkpoints, the instance 
+** is allocated on the stack by the walCheckpoint() function. For the special
+** incremental checkpoints performed by OTA clients, it is allocated in
+** heap memory by sqlite3WalCheckpointStart().
+**
+** See the implementations of walCheckpointStart(), walCheckpointStep() and 
+** walCheckpointFinalize() for further details.
 */
 typedef struct WalCkpt WalCkpt;
 struct WalCkpt {
@@ -1642,8 +1649,15 @@ static int walPagesize(Wal *pWal){
   return (pWal->hdr.szPage&0xfe00) + ((pWal->hdr.szPage&0x0001)<<16);
 }
 
+/*
+** Initialize the contents of the WalCkpt object indicated by the final
+** argument and begin a checkpoint operation. The CKPT lock must already
+** be held when this function is called.
+**
+** Return SQLITE_OK if successful or an error code otherwise.
+*/
 static int walCheckpointStart(
-  Wal *pWal, 
+  Wal *pWal,                      /* Wal connection */
   u8 *aBuf,                       /* Page-sized temporary buffer */
   int nBuf,                       /* Size of aBuf[] in bytes */
   int (*xBusy)(void*),            /* Function to call when busy (or NULL) */
@@ -1655,7 +1669,6 @@ static int walCheckpointStart(
   int i;                          /* Iterator variable */
 
   memset(p, 0, sizeof(WalCkpt));
-
   if( pWal->hdr.mxFrame && walPagesize(pWal)!=nBuf ){
     return SQLITE_CORRUPT_BKPT;
   }
@@ -1729,6 +1742,12 @@ static int walCheckpointStart(
   return rc;
 }
 
+/*
+** Attempt to copy the next frame from the wal file to the database file. If
+** there are no more frames to copy to the database file return SQLITE_DONE.
+** If the frame is successfully copied, return SQLITE_OK. Or, if an error
+** occurs, return an SQLite error code.
+*/
 static int walCheckpointStep(WalCkpt *p){
   u32 iDbpage = 0;                /* Next database page to write */
   u32 iFrame = 0;                 /* Wal frame containing data for iDbpage */
@@ -1760,6 +1779,16 @@ static int walCheckpointStep(WalCkpt *p){
   return rc;
 }
 
+/*
+** The current round of checkpointing work using the object indicated by
+** the only argument is now finished. If no error occcurred, this function
+** saves the results to shared memory (i.e. updates the WalCkptInfo.nBackfill
+** variable), and truncates and syncs the database file as required.
+**
+** All dynamic resources currently held by the WalCkpt object are released. 
+** It is the responsibility of the caller to delete the WalCkpt itself if
+** required.
+*/
 static int walCheckpointFinalize(WalCkpt *p){
   if( p->pIter ){
     int rc = p->rc;
@@ -1780,9 +1809,15 @@ static int walCheckpointFinalize(WalCkpt *p){
         p->pInfo->nBackfill = p->mxSafeFrame;
       }
       p->rc = rc;
-    }else if( rc==SQLITE_OK && p->sync_flags ){
-      /* If work was not completed, but no error has occured. */
-      p->rc = sqlite3OsSync(pWal->pDbFd, p->sync_flags);
+    }else{
+#ifdef SQLITE_ENABLE_OTA
+      if( rc==SQLITE_OK && p->sync_flags ){
+        /* If work was not completed, but no error has occured. */
+        p->rc = sqlite3OsSync(pWal->pDbFd, p->sync_flags);
+      }
+#else
+      assert( rc!=SQLITE_OK );
+#endif
     }
 
     /* Release the reader lock held while backfilling */
@@ -1846,7 +1881,6 @@ static int walCheckpoint(
   /* Step the checkpoint object until it reports something other than 
   ** SQLITE_OK.  */
   while( SQLITE_OK==(rc = walCheckpointStep(&sC)) );
-  if( rc==SQLITE_DONE ) rc = SQLITE_OK;
   rc = walCheckpointFinalize(&sC);
 
   /* If this is an SQLITE_CHECKPOINT_RESTART operation, and the entire wal
@@ -1893,8 +1927,8 @@ static void walLimitSize(Wal *pWal, i64 nMax){
 /*
 ** Close a connection to a log file.
 **
-** If parameter zBuf is not NULL, attempt to obtain an exclusive lock 
-** and run a checkpoint.
+** If parameter zBuf is not NULL, also attempt to obtain an exclusive 
+** lock and run a checkpoint.
 */
 int sqlite3WalClose(
   Wal *pWal,                      /* Wal to close */
@@ -1914,7 +1948,10 @@ int sqlite3WalClose(
     **
     ** The EXCLUSIVE lock is not released before returning.
     */
-    if( zBuf ){
+#ifdef SQLITE_ENABLE_OTA
+    if( zBuf )          /* In non-OTA builds, zBuf is always non-NULL */
+#endif
+    {
       rc = sqlite3OsLock(pWal->pDbFd, SQLITE_LOCK_EXCLUSIVE);
       if( rc==SQLITE_OK ){
         if( pWal->exclusiveMode==WAL_NORMAL_MODE ){
@@ -3071,6 +3108,11 @@ int sqlite3WalCheckpoint(
   return (rc==SQLITE_OK && eMode!=eMode2 ? SQLITE_BUSY : rc);
 }
 
+#ifdef SQLITE_ENABLE_OTA
+
+/*
+** Step the checkpoint object passed as the first argument.
+*/
 int sqlite3_ckpt_step(sqlite3_ckpt *pCkpt){
   int rc;
   WalCkpt *p = (WalCkpt*)pCkpt;
@@ -3080,6 +3122,14 @@ int sqlite3_ckpt_step(sqlite3_ckpt *pCkpt){
   return rc;
 }
 
+/*
+** Close the checkpoint object passed as the first argument. If the checkpoint
+** was completed, zero the two output variables. Otherwise, set *paState to
+** point to a buffer containing data that may be passed to a subsequent 
+** call to ckpt_open() to resume the checkpoint. In this case *pnState is
+** set to the size of the buffer in bytes. The buffer should be eventually
+** freed by the caller using sqlite3_free().
+*/
 int sqlite3_ckpt_close(sqlite3_ckpt *pCkpt, u8 **paState, int *pnState){
   int rc;
   WalCkpt *p = (WalCkpt*)pCkpt;
@@ -3192,6 +3242,25 @@ int sqlite3WalCheckpointStart(
   return rc;
 }
 
+/*
+** Unless the wal file is empty, check that the 8 bytes of salt stored in
+** the wal header are identical to those in the buffer indicated by the
+** second argument. If they are not, return SQLITE_BUSY_SNAPSHOT. Otherwise,
+** if the buffers match or the WAL file is empty, return SQLITE_OK.
+*/
+int sqlite3WalCheckSalt(Wal *pWal, sqlite3_file *pFd){
+  int rc = SQLITE_OK;
+  if( pWal->hdr.mxFrame>0 ){
+    u8 aData[16];
+    rc = sqlite3OsRead(pFd, aData, sizeof(aData), 24);
+    if( rc==SQLITE_OK && memcmp(pWal->hdr.aSalt, aData, 8) ){
+      rc = SQLITE_BUSY_SNAPSHOT;
+    }
+  }
+  return rc;
+}
+#endif /* SQLITE_ENABLE_OTA */
+
 /* Return the value to pass to a sqlite3_wal_hook callback, the
 ** number of frames in the WAL at the point of the last commit since
 ** sqlite3WalCallback() was called.  If no commits have occurred since
@@ -3274,24 +3343,6 @@ int sqlite3WalExclusiveMode(Wal *pWal, int op){
 */
 int sqlite3WalHeapMemory(Wal *pWal){
   return (pWal && pWal->exclusiveMode==WAL_HEAPMEMORY_MODE );
-}
-
-/*
-** Unless the wal file is empty, check that the 8 bytes of salt stored in
-** the wal header are identical to those in the buffer indicated by the
-** second argument. If they are not, return SQLITE_BUSY_SNAPSHOT. Otherwise,
-** if the buffers match or the WAL file is empty, return SQLITE_OK.
-*/
-int sqlite3WalCheckSalt(Wal *pWal, sqlite3_file *pFd){
-  int rc = SQLITE_OK;
-  if( pWal->hdr.mxFrame>0 ){
-    u8 aData[16];
-    rc = sqlite3OsRead(pFd, aData, sizeof(aData), 24);
-    if( rc==SQLITE_OK && memcmp(pWal->hdr.aSalt, aData, 8) ){
-      rc = SQLITE_BUSY_SNAPSHOT;
-    }
-  }
-  return rc;
 }
 
 #ifdef SQLITE_ENABLE_ZIPVFS

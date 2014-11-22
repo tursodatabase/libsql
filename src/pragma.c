@@ -310,10 +310,12 @@ static const struct sPragmaNames {
     /* ePragFlag: */ 0,
     /* iArg:      */ 0 },
 #endif
+#if defined(SQLITE_ENABLE_OTA)
   { /* zName:     */ "ota_mode",
     /* ePragTyp:  */ PragTyp_FLAG,
     /* ePragFlag: */ 0,
     /* iArg:      */ SQLITE_OtaMode },
+#endif
 #if !defined(SQLITE_OMIT_PAGER_PRAGMAS)
   { /* zName:     */ "page_count",
     /* ePragTyp:  */ PragTyp_PAGE_COUNT,
@@ -324,10 +326,12 @@ static const struct sPragmaNames {
     /* ePragFlag: */ 0,
     /* iArg:      */ 0 },
 #endif
+#if defined(SQLITE_ENABLE_OTA)
   { /* zName:     */ "pager_ota_mode",
     /* ePragTyp:  */ PragTyp_PAGER_OTA_MODE,
     /* ePragFlag: */ 0,
     /* iArg:      */ 0 },
+#endif
 #if defined(SQLITE_DEBUG)
   { /* zName:     */ "parser_trace",
     /* ePragTyp:  */ PragTyp_PARSER_TRACE,
@@ -481,7 +485,7 @@ static const struct sPragmaNames {
     /* iArg:      */ SQLITE_WriteSchema|SQLITE_RecoveryMode },
 #endif
 };
-/* Number of pragmas: 59 on by default, 72 total. */
+/* Number of pragmas: 57 on by default, 72 total. */
 /* End of the automatically generated pragma table.
 ***************************************************************************/
 
@@ -896,6 +900,7 @@ void sqlite3Pragma(
   ** Other clients see a rollback-mode database on which the pager_ota_mode
   ** client is holding a SHARED lock.
   */
+#ifdef SQLITE_ENABLE_OTA
   case PragTyp_PAGER_OTA_MODE: {
     Btree *pBt = pDb->pBt;
     assert( pBt!=0 );
@@ -916,6 +921,7 @@ void sqlite3Pragma(
     }
     break;
   }
+#endif /* SQLITE_ENABLE_OTA */
 
 #if !defined(SQLITE_OMIT_PAGER_PRAGMAS)
   /*

@@ -11,6 +11,8 @@
 set testdir [file dirname $argv0]
 source $testdir/permutations.test
 
-run_test_suite ota
+ifcapable !ota { finish_test ; return }
 
+run_test_suite ota
 finish_test
+

@@ -17,6 +17,8 @@
 #include <unistd.h>
 
 #include "sqlite3.h"
+
+#if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_OTA)
 #include "sqlite3ota.h"
 
 
@@ -1662,12 +1664,18 @@ static int test_sqlite3ota(
   return TCL_OK;
 }
 
+
 int SqliteOta_Init(Tcl_Interp *interp){ 
   Tcl_CreateObjCommand(interp, "sqlite3ota", test_sqlite3ota, 0, 0);
   return TCL_OK;
 }
-
 #endif                  /* ifdef SQLITE_TEST */
+#else   /* !SQLITE_CORE || SQLITE_ENABLE_OTA */
+# ifdef SQLITE_TEST
+#include <tcl.h>
+int SqliteOta_Init(Tcl_Interp *interp){ return TCL_OK; }
+# endif
+#endif 
 
 
 

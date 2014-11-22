@@ -1960,6 +1960,7 @@ int sqlite3_wal_checkpoint_v2(
 #endif
 }
 
+#ifdef SQLITE_ENABLE_OTA
 /*
 ** Open an incremental checkpoint handle.
 */
@@ -1984,6 +1985,7 @@ int sqlite3_ckpt_open(
   sqlite3_mutex_leave(db->mutex);
   return rc;
 }
+#endif /* SQLITE_ENABLE_OTA */
 
 
 /*

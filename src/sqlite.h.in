@@ -7446,62 +7446,6 @@ int sqlite3_vtab_on_conflict(sqlite3 *);
 #define SQLITE_REPLACE  5
 
 /*
-** Allocate a statement handle that may be used to write directly to an
-** index b-tree. This allows the user to create a corrupt database. Once
-** the statement handle is allocated, it may be used with the same APIs
-** as any statement handle created with sqlite3_prepare().
-**
-** The statement writes to the index specified by parameter zIndex, which
-** must be in the "main" database. If argument bDelete is false, then each
-** time the statement is sqlite3_step()ed, an entry is inserted into the
-** b-tree index. If it is true, then an entry may be deleted (or may not, if 
-** the specified key is not found) each time the statement is 
-** sqlite3_step()ed.
-**
-** If statement compilation is successful, *ppStmt is set to point to the 
-** new statement handle and SQLITE_OK is returned. Otherwise, if an error
-** occurs, *ppStmt is set to NULL and an error code returned. An error
-** message may be left in the database handle in this case.
-**
-** If statement compilation succeeds, output variable *pnCol is set to the
-** total number of columns in the index, including the primary key columns
-** at the end. Variable *paiCol is set to point to an array *pnCol entries 
-** in size. Each entry is the table column index, numbered from zero from left 
-** to right, of the corresponding index column. For example, if:
-**
-**       CREATE TABLE t1(a, b, c, d);
-**       CREATE INDEX i1 ON t1(b, c);
-**
-** then *pnCol is 3 and *paiCol points to an array containing {1, 2, -1}.
-** If table t1 had an explicit INTEGER PRIMARY KEY, then the "-1" in the
-** *paiCol array would be replaced by its column index. Or if:
-**
-**       CREATE TABLE t2(a, b, c, d, PRIMARY KEY(d, c)) WITHOUT ROWID;
-**       CREATE INDEX i2 ON t2(a);
-**
-** then (*pnCol) is 3 and *paiCol points to an array containing {0, 3, 2}.
-**
-** The lifetime of the array is the same as that of the statement handle -
-** it is automatically freed when the statement handle is passed to
-** sqlite3_finalize().
-**
-** The statement has (*pnCol) SQL variables that values may be bound to.
-** They correspond to the values used to create the index key that is
-** inserted or deleted when the statement is stepped.
-**
-** If the index is a UNIQUE index, the usual checking and error codes apply
-** to insert operations.
-*/
-int sqlite3_index_writer(
-  sqlite3 *db, 
-  int bDelete,                    /* Zero for insert, non-zero for delete */
-  const char *zIndex,             /* Index to write to */
-  sqlite3_stmt**,                 /* OUT: New statement handle */
-  const char ***pazColl,          /* OUT: Collation sequences for each column */
-  int **paiCol, int *pnCol        /* OUT: See above */
-);
-
-/*
 ** CAPI3REF: Prepared Statement Scan Status Opcodes
 ** KEYWORDS: {scanstatus options}
 **
@@ -7595,6 +7539,66 @@ SQLITE_EXPERIMENTAL int sqlite3_stmt_scanstatus(
 SQLITE_EXPERIMENTAL void sqlite3_stmt_scanstatus_reset(sqlite3_stmt*);
 
 /*
+** Allocate a statement handle that may be used to write directly to an
+** index b-tree. This allows the user to create a corrupt database. Once
+** the statement handle is allocated, it may be used with the same APIs
+** as any statement handle created with sqlite3_prepare().
+**
+** The statement writes to the index specified by parameter zIndex, which
+** must be in the "main" database. If argument bDelete is false, then each
+** time the statement is sqlite3_step()ed, an entry is inserted into the
+** b-tree index. If it is true, then an entry may be deleted (or may not, if 
+** the specified key is not found) each time the statement is 
+** sqlite3_step()ed.
+**
+** If statement compilation is successful, *ppStmt is set to point to the 
+** new statement handle and SQLITE_OK is returned. Otherwise, if an error
+** occurs, *ppStmt is set to NULL and an error code returned. An error
+** message may be left in the database handle in this case.
+**
+** If statement compilation succeeds, output variable *pnCol is set to the
+** total number of columns in the index, including the primary key columns
+** at the end. Variable *paiCol is set to point to an array *pnCol entries 
+** in size. Each entry is the table column index, numbered from zero from left 
+** to right, of the corresponding index column. For example, if:
+**
+**       CREATE TABLE t1(a, b, c, d);
+**       CREATE INDEX i1 ON t1(b, c);
+**
+** then *pnCol is 3 and *paiCol points to an array containing {1, 2, -1}.
+** If table t1 had an explicit INTEGER PRIMARY KEY, then the "-1" in the
+** *paiCol array would be replaced by its column index. Or if:
+**
+**       CREATE TABLE t2(a, b, c, d, PRIMARY KEY(d, c)) WITHOUT ROWID;
+**       CREATE INDEX i2 ON t2(a);
+**
+** then (*pnCol) is 3 and *paiCol points to an array containing {0, 3, 2}.
+**
+** The lifetime of the array is the same as that of the statement handle -
+** it is automatically freed when the statement handle is passed to
+** sqlite3_finalize().
+**
+** The statement has (*pnCol) SQL variables that values may be bound to.
+** They correspond to the values used to create the index key that is
+** inserted or deleted when the statement is stepped.
+**
+** If the index is a UNIQUE index, the usual checking and error codes apply
+** to insert operations.
+**
+** This API is only available if SQLITE_ENABLE_OTA is defined at compile
+** time. It is intended for use by the OTA extension only. As such, it is 
+** subject to change or removal at any point.
+*/
+int sqlite3_index_writer(
+  sqlite3 *db, 
+  int bDelete,                    /* Zero for insert, non-zero for delete */
+  const char *zIndex,             /* Index to write to */
+  sqlite3_stmt**,                 /* OUT: New statement handle */
+  const char ***pazColl,          /* OUT: Collation sequence for each column */
+  int **paiCol, int *pnCol        /* OUT: See above */
+);
+
+/*
 ** Incremental checkpoint API.
 **
 ** An incremental checkpoint handle is opened using the sqlite3_ckpt_open()
@@ -7622,9 +7626,13 @@ SQLITE_EXPERIMENTAL void sqlite3_stmt_scanstatus_reset(sqlite3_stmt*);
 ** The contents of this buffer may be passed to a later call to
 ** sqlite3_ckpt_open() to restart the checkpoint. The second output variable 
 ** is set to the size of the buffer in bytes.
+**
+** These APIs are only available if SQLITE_ENABLE_OTA is defined at compile
+** time. They are intended for use by the OTA extension only. As such, they 
+** are subject to change or removal at any point.
 */
 typedef struct sqlite3_ckpt sqlite3_ckpt;
-int sqlite3_ckpt_open(sqlite3*, unsigned char *a, int n, sqlite3_ckpt **ppCkpt);
+int sqlite3_ckpt_open(sqlite3*, unsigned char*, int n, sqlite3_ckpt **ppCkpt);
 int sqlite3_ckpt_step(sqlite3_ckpt*);
 int sqlite3_ckpt_close(sqlite3_ckpt*, unsigned char **pa, int *pn);
 

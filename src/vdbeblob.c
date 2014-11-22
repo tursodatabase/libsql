@@ -467,6 +467,11 @@ int sqlite3_blob_reopen(sqlite3_blob *pBlob, sqlite3_int64 iRow){
   return rc;
 }
 
+#ifdef SQLITE_ENABLE_OTA
+/*
+** Allocate and populate the output arrays returned by the 
+** sqlite3_index_writer() function.
+*/
 static int indexWriterOutputVars(
   sqlite3 *db,
   Index *pIdx,
@@ -529,7 +534,10 @@ static int indexWriterOutputVars(
   return SQLITE_OK;
 }
 
-
+/*
+** Prepare and return an SQL statement handle that can be used to write
+** directly to an index b-tree.
+*/
 int sqlite3_index_writer(
   sqlite3 *db, 
   int bDelete,
@@ -634,5 +642,6 @@ index_writer_out:
   sqlite3_mutex_leave(db->mutex);
   return rc;
 }
+#endif /* SQLITE_ENABLE_OTA */
 
 #endif /* #ifndef SQLITE_OMIT_INCRBLOB */

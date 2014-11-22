@@ -50,7 +50,7 @@ void sqlite3DeleteTriggerStep(sqlite3 *db, TriggerStep *pTriggerStep){
 Trigger *sqlite3TriggerList(Parse *pParse, Table *pTab){
   Schema * const pTmpSchema = pParse->db->aDb[1].pSchema;
   Trigger *pList = 0;                  /* List of triggers to return */
-  int bOta = !!(pParse->db->flags & SQLITE_OtaMode);
+  const int bOta = !!(pParse->db->flags & SQLITE_OtaMode);
 
   if( pParse->disableTriggers ){
     return 0;
