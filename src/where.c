@@ -4303,8 +4303,8 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
 ** TODO --> Perhaps this is something that could be improved by better
 ** table statistics.
 **
-** Heuristic 1:  Estimate the truth probability as 6.25%.  The 6.25%
-** value corresponds to 1 in LogEst notation, so this means decrement
+** Heuristic 1:  Estimate the truth probability as 93.75%.  The 93.75%
+** value corresponds to -1 in LogEst notation, so this means decrement
 ** the WhereLoop.nOut field for every such WHERE clause term.
 **
 ** Heuristic 2:  If there exists one or more WHERE clause terms of the
