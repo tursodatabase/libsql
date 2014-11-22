@@ -1,5 +1,5 @@
-C Fix\san\serror\sin\sthe\scomments\sfrom\sthe\sprevious\scheck-in.
-D 2014-11-22T19:52:10.008
+C Always\sreinitialized\sthe\sIndex.bUnordered\sand\sIndex.noSkipscan\sflags\sbefore\nrereading\sthe\ssqlite_stat1\stable,\seven\sif\sSQLITE_ENABLE_STAT4\sis\sdefined.
+D 2014-11-22T21:37:00.608
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a226317fdf3f4c895fb3cfedc355b4d0868ce1fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -167,7 +167,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c ba266a779bc7ce10e52e59e7d3dc79fa342e8fdb
-F src/analyze.c c59f238a39aacece176f8bb7dfece40deb268ee5
+F src/analyze.c f7d774356ba5a14e7ad4fb637681af16875ad88f
 F src/attach.c f4e94df2d1826feda65eb0939f7f6f5f923a0ad9
 F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 7ddee9c7d505e07e959a575b18498f17c71e53ea
@@ -1221,7 +1221,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 221659945c3f78d3b6789bfe8fdeb8d3ee1fa038
-R e42483f1b7bc821fcaab0f4c56777390
+P 9660ce541837ccd8df415641a922274e093056aa
+R b51cb063fe9c06786b358d55d58b3f87
 U drh
-Z edb3988f151b88d75256a46f70366322
+Z 1318c316d07e28b9d1759e5cafc8a50c
