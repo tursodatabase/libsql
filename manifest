@@ -1,5 +1,5 @@
-C Remove\sa\sredundant\stest\scase\s(probably\sa\scopy/paste\serror).\s\sAdd\san\sassert()\nto\swhere.c\sto\sensure\sthat\sautomatic\sindexes\sdo\snot\shave\sthere\soutput\srow\s\ncounts\sadjusted\sdownward\sby\ssupplementary\sconstraints.
-D 2014-11-22T12:22:13.640
+C Deploy\sheuristics\s(well-commented)\sto\sbetter\sestimate\show\smuch\sunindexed\sterms\nin\sthe\sWHERE\sclause\sfilter\sthe\snumber\sof\soutput\srows\sfrom\sa\ssingle\stable.
+D 2014-11-22T18:50:44.269
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a226317fdf3f4c895fb3cfedc355b4d0868ce1fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -304,7 +304,7 @@ F src/vtab.c 2a30791bbd7926b589401bd09c3abb33de563793
 F src/wal.c 486e644b3b8aa5ad066f625bc428aa8ff7001405
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
-F src/where.c 13a9920431358fc4885b31fe13a893d98f813a74
+F src/where.c 33285024c5d96a17901e1beb04798cd8c15d00ae
 F src/whereInt.h d3633e9b592103241b74b0ec76185f3e5b8b62e0
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -811,7 +811,7 @@ F test/savepoint4.test c8f8159ade6d2acd9128be61e1230f1c1edc6cc0
 F test/savepoint5.test 0735db177e0ebbaedc39812c8d065075d563c4fd
 F test/savepoint6.test f41279c5e137139fa5c21485773332c7adb98cd7
 F test/savepoint7.test db3db281486c925095f305aad09fe806e5188ff3
-F test/scanstatus.test a6dd739bc4d9638e8f5c2493b518057f2b681655
+F test/scanstatus.test 5253c219e331318a437f436268e0e82345700285
 F test/schema.test 8f7999be894260f151adf15c2c7540f1c6d6a481
 F test/schema2.test 906408621ea881fdb496d878b1822572a34e32c5
 F test/schema3.test 1bc1008e1f8cb5654b248c55f27249366eb7ed38
@@ -1221,7 +1221,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b1e6c02f8b9a2afaa12ac15a33e3f698c3be27d6
-R e5e0eb3b1af9c334c014cb61507da7b4
+P eea47933493c85a85247ad383bd148b06f627d04
+R c99efa7eb98e96584d3723ffcac72bfb
 U drh
-Z 8955433275197ef8c0924c06e567755e
+Z ec1ff7ab563a777168df83432a271a84

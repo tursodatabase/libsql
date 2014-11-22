@@ -268,7 +268,7 @@ do_scanstatus_test 4.2.2 {
   nLoop 1 nVisit 1 nEst 1.0 zName sqlite_autoindex_p1_1 
   zExplain {SEARCH TABLE p1 USING INDEX sqlite_autoindex_p1_1 (x=?)}
 
-  nLoop 1 nVisit 3 nEst 524288.0 zName c1 zExplain {SCAN TABLE c1}
+  nLoop 1 nVisit 3 nEst 262144.0 zName c1 zExplain {SCAN TABLE c1}
 }
 
 #-------------------------------------------------------------------------
