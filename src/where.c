@@ -4306,6 +4306,7 @@ static void whereLoopOutputAdjust(
   int i, j;
   int nEq = 0;    /* Number of = constraints not within likely()/unlikely() */
 
+  assert( (pLoop->wsFlags & WHERE_AUTO_INDEX)==0 );
   for(i=pWC->nTerm, pTerm=pWC->a; i>0; i--, pTerm++){
     if( (pTerm->wtFlags & TERM_VIRTUAL)!=0 ) break;
     if( (pTerm->prereqAll & pLoop->maskSelf)==0 ) continue;
