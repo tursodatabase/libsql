@@ -165,6 +165,9 @@ struct Fts5Cursor {
   Fts5Auxiliary *pAux;            /* Currently executing extension function */
   Fts5Auxdata *pAuxdata;          /* First in linked list of saved aux-data */
   int *aColumnSize;               /* Values for xColumnSize() */
+
+  int nInstCount;                 /* Number of phrase instances */
+  int *aInst;                     /* 3 integers per phrase instance */
 };
 
 /*
@@ -489,6 +492,18 @@ static int fts5StmtType(int idxNum){
 }
 
 /*
+** This function is called after the cursor passed as the only argument
+** is moved to point at a different row. It clears all cached data 
+** specific to the previous row stored by the cursor object.
+*/
+static void fts5CsrNewrow(Fts5Cursor *pCsr){
+  CsrFlagSet(pCsr, FTS5CSR_REQUIRE_CONTENT | FTS5CSR_REQUIRE_DOCSIZE );
+  sqlite3_free(pCsr->aInst);
+  pCsr->aInst = 0;
+  pCsr->nInstCount = 0;
+}
+
+/*
 ** Close the cursor.  For additional information see the documentation
 ** on the xClose method of the virtual table interface.
 */
@@ -499,6 +514,7 @@ static int fts5CloseMethod(sqlite3_vtab_cursor *pCursor){
   Fts5Auxdata *pData;
   Fts5Auxdata *pNext;
 
+  fts5CsrNewrow(pCsr);
   if( pCsr->pStmt ){
     int eStmt = fts5StmtType(pCsr->idxNum);
     sqlite3Fts5StorageStmtRelease(pTab->pStorage, eStmt, pCsr->pStmt);
@@ -557,7 +573,7 @@ static int fts5SorterNext(Fts5Cursor *pCsr){
     pSorter->aIdx[i] = &aBlob[nBlob] - a;
 
     pSorter->aPoslist = a;
-    CsrFlagSet(pCsr, FTS5CSR_REQUIRE_CONTENT | FTS5CSR_REQUIRE_DOCSIZE );
+    fts5CsrNewrow(pCsr);
   }
 
   return rc;
@@ -583,7 +599,7 @@ static int fts5NextMethod(sqlite3_vtab_cursor *pCursor){
       if( sqlite3Fts5ExprEof(pCsr->pExpr) ){
         CsrFlagSet(pCsr, FTS5CSR_EOF);
       }
-      CsrFlagSet(pCsr, FTS5CSR_REQUIRE_CONTENT | FTS5CSR_REQUIRE_DOCSIZE );
+      fts5CsrNewrow(pCsr);
       break;
 
     case FTS5_PLAN_SPECIAL: {
@@ -666,7 +682,7 @@ static int fts5CursorFirst(Fts5Table *pTab, Fts5Cursor *pCsr, int bAsc){
   if( sqlite3Fts5ExprEof(pCsr->pExpr) ){
     CsrFlagSet(pCsr, FTS5CSR_EOF);
   }
-  CsrFlagSet(pCsr, FTS5CSR_REQUIRE_CONTENT | FTS5CSR_REQUIRE_DOCSIZE );
+  fts5CsrNewrow(pCsr);
   return rc;
 }
 
@@ -1044,6 +1060,104 @@ static int fts5ApiPhraseSize(Fts5Context *pCtx, int iPhrase){
   return sqlite3Fts5ExprPhraseSize(pCsr->pExpr, iPhrase);
 }
 
+static int fts5CsrPoslist(Fts5Cursor *pCsr, int iPhrase, const u8 **pa){
+  int n;
+  if( pCsr->pSorter ){
+    Fts5Sorter *pSorter = pCsr->pSorter;
+    int i1 = (iPhrase==0 ? 0 : pSorter->aIdx[iPhrase-1]);
+    n = pSorter->aIdx[iPhrase] - i1;
+    *pa = &pSorter->aPoslist[i1];
+  }else{
+    n = sqlite3Fts5ExprPoslist(pCsr->pExpr, iPhrase, pa);
+  }
+  return n;
+}
+
+/*
+** Ensure that the Fts5Cursor.nInstCount and aInst[] variables are populated
+** correctly for the current view. Return SQLITE_OK if successful, or an
+** SQLite error code otherwise.
+*/
+static int fts5CacheInstArray(Fts5Cursor *pCsr){
+  int rc = SQLITE_OK;
+  if( pCsr->aInst==0 ){
+    Fts5PoslistReader *aIter;     /* One iterator for each phrase */
+    int nIter;                    /* Number of iterators/phrases */
+    int nByte;
+    
+    nIter = sqlite3Fts5ExprPhraseCount(pCsr->pExpr);
+    nByte = sizeof(Fts5PoslistReader) * nIter;
+    aIter = (Fts5PoslistReader*)sqlite3Fts5MallocZero(&rc, nByte);
+    if( aIter ){
+      Fts5Buffer buf = {0, 0, 0}; /* Build up aInst[] here */
+      int nInst;                  /* Number instances seen so far */
+      int i;
+
+      /* Initialize all iterators */
+      for(i=0; i<nIter; i++){
+        const u8 *a;
+        int n = fts5CsrPoslist(pCsr, i, &a);
+        sqlite3Fts5PoslistReaderInit(-1, a, n, &aIter[i]);
+      }
+
+      while( 1 ){
+        int *aInst;
+        int iBest = -1;
+        for(i=0; i<nIter; i++){
+          if( aIter[i].bEof==0 && (iBest<0 || aIter[i].iPos<iBest) ){
+            iBest = i;
+          }
+        }
+
+        if( iBest<0 ) break;
+        nInst++;
+        if( sqlite3Fts5BufferGrow(&rc, &buf, nInst * sizeof(int) * 3) ) break;
+
+        aInst = &((int*)buf.p)[3 * (nInst-1)];
+        aInst[0] = iBest;
+        aInst[1] = FTS5_POS2COLUMN(aIter[iBest].iPos);
+        aInst[2] = FTS5_POS2OFFSET(aIter[iBest].iPos);
+        sqlite3Fts5PoslistReaderNext(&aIter[iBest]);
+      }
+
+      pCsr->aInst = (int*)buf.p;
+      pCsr->nInstCount = nInst;
+      sqlite3_free(aIter);
+    }
+  }
+  return rc;
+}
+
+static int fts5ApiInstCount(Fts5Context *pCtx, int *pnInst){
+  Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
+  int rc;
+  if( SQLITE_OK==(rc = fts5CacheInstArray(pCsr)) ){
+    *pnInst = pCsr->nInstCount;
+  }
+  return rc;
+}
+
+static int fts5ApiInst(
+  Fts5Context *pCtx, 
+  int iIdx, 
+  int *piPhrase, 
+  int *piCol, 
+  int *piOff
+){
+  Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
+  int rc;
+  if( SQLITE_OK==(rc = fts5CacheInstArray(pCsr)) ){
+    if( iIdx<0 || iIdx>=pCsr->nInstCount ){
+      rc = SQLITE_RANGE;
+    }else{
+      *piPhrase = pCsr->aInst[iIdx*3];
+      *piCol = pCsr->aInst[iIdx*3 + 1];
+      *piOff = pCsr->aInst[iIdx*3 + 2];
+    }
+  }
+  return rc;
+}
+
 static sqlite3_int64 fts5ApiRowid(Fts5Context *pCtx){
   return fts5CursorRowid((Fts5Cursor*)pCtx);
 }
@@ -1088,14 +1202,7 @@ static int fts5ApiPoslist(
 ){
   Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
   const u8 *a; int n;             /* Poslist for phrase iPhrase */
-  if( pCsr->pSorter ){
-    Fts5Sorter *pSorter = pCsr->pSorter;
-    int i1 = (iPhrase==0 ? 0 : pSorter->aIdx[iPhrase-1]);
-    n = pSorter->aIdx[iPhrase] - i1;
-    a = &pSorter->aPoslist[i1];
-  }else{
-    n = sqlite3Fts5ExprPoslist(pCsr->pExpr, iPhrase, &a);
-  }
+  n = fts5CsrPoslist(pCsr, iPhrase, &a);
   return sqlite3Fts5PoslistNext64(a, n, pi, piPos);
 }
 
@@ -1162,6 +1269,8 @@ static const Fts5ExtensionApi sFts5Api = {
   fts5ApiTokenize,
   fts5ApiPhraseCount,
   fts5ApiPhraseSize,
+  fts5ApiInstCount,
+  fts5ApiInst,
   fts5ApiRowid,
   fts5ApiColumnText,
   fts5ApiColumnSize,

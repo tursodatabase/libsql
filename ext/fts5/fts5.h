@@ -70,13 +70,42 @@ typedef void (*fts5_extension_function)(
 **   Returns the number of tokens in phrase iPhrase of the query. Phrases
 **   are numbered starting from zero.
 **
+** xInstCount:
+**   Set *pnInst to the total number of occurrences of all phrases within
+**   the query within the current row. Return SQLITE_OK if successful, or
+**   an error code (i.e. SQLITE_NOMEM) if an error occurs.
+**
+** xInst:
+**   Query for the details of phrase match iIdx within the current row.
+**   Phrase matches are numbered starting from zero, so the iIdx argument
+**   should be greater than or equal to zero and smaller than the value
+**   output by xInstCount().
+**
+**   Returns SQLITE_OK if successful, or an error code (i.e. SQLITE_NOMEM) 
+**   if an error occurs.
+**
 ** xRowid:
 **   Returns the rowid of the current row.
 **
 ** xPoslist:
-**   Iterate through instances of phrase iPhrase in the current row. 
+**   Iterate through phrase instances in the current row. If the iPhrase
+**   argument is 0 or greater, then only instances of phrase iPhrase are
+**   visited. If it is less than 0, instances of all phrases are visited.
 **
-**   At EOF, a non-zero value is returned and output variable iPos set to -1.
+**   At EOF, -1 is returned and output variable iPos set to -1.
+**
+**     </pre>
+**       sqlite3_int64 iPos;
+**       int iPhrase;
+**       int ii = 0;
+**
+**       while( (iPhrase = pFts->xPoslist(pFts, -1, &ii, &iPos) >= 0 ){
+**         int iCol = FTS5_POS2COLUMN(iPos);
+**         int iOff = FTS5_POS2OFFSET(iPos);
+**         // An instance of phrase iPhrase at offset iOff of column iCol.
+**       }
+**     </pre>
+**
 **
 ** xTokenize:
 **   Tokenize text using the tokenizer belonging to the FTS5 table.
@@ -159,6 +188,9 @@ struct Fts5ExtensionApi {
 
   int (*xPhraseCount)(Fts5Context*);
   int (*xPhraseSize)(Fts5Context*, int iPhrase);
+
+  int (*xInstCount)(Fts5Context*, int *pnInst);
+  int (*xInst)(Fts5Context*, int iIdx, int *piPhrase, int *piCol, int *piOff);
 
   sqlite3_int64 (*xRowid)(Fts5Context*);
   int (*xColumnText)(Fts5Context*, int iCol, const char **pz, int *pn);

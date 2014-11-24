@@ -269,7 +269,7 @@ foreach {tn q res} {
     SELECT rowid FROM t8 WHERE t8 MATCH $q ORDER BY +rank DESC;
   } $res
 
-  do_execsql_test 8.3.$tn.3 {
+  do_execsql_test 8.2.$tn.3 {
     SELECT rowid FROM t8 WHERE t8 MATCH $q ORDER BY rank DESC;
   } $res
 }

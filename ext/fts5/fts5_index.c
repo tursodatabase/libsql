@@ -692,7 +692,7 @@ static void *fts5IdxMalloc(Fts5Index *p, int nByte){
   return pRet;
 }
 
-static void *fts5MallocZero(int *pRc, int nByte){
+void *sqlite3Fts5MallocZero(int *pRc, int nByte){
   void *pRet = 0;
   if( *pRc==SQLITE_OK ){
     pRet = sqlite3_malloc(nByte);
@@ -981,7 +981,7 @@ static int fts5StructureDecode(
       sizeof(Fts5Structure) +                    /* Main structure */
       sizeof(Fts5StructureLevel) * (nLevel)      /* aLevel[] array */
   );
-  pRet = (Fts5Structure*)fts5MallocZero(&rc, nByte);
+  pRet = (Fts5Structure*)sqlite3Fts5MallocZero(&rc, nByte);
 
   if( pRet ){
     pRet->nLevel = nLevel;
@@ -995,7 +995,7 @@ static int fts5StructureDecode(
       i += getVarint32(&pData[i], pLvl->nMerge);
       i += getVarint32(&pData[i], nTotal);
       assert( nTotal>=pLvl->nMerge );
-      pLvl->aSeg = (Fts5StructureSegment*)fts5MallocZero(&rc, 
+      pLvl->aSeg = (Fts5StructureSegment*)sqlite3Fts5MallocZero(&rc, 
           nTotal * sizeof(Fts5StructureSegment)
       );
 

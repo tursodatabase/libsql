@@ -14,6 +14,138 @@
 #include "fts5Int.h"
 #include <math.h>
 
+/*************************************************************************
+** Start of highlight() implementation.
+*/
+typedef struct HighlightContext HighlightContext;
+struct HighlightContext {
+  const Fts5ExtensionApi *pApi;   /* API offered by current FTS version */
+  Fts5Context *pFts;              /* First arg to pass to pApi functions */
+  int iInst;                      /* Current phrase instance index */
+  int iStart;                     /* First token of current phrase */
+  int iEnd;                       /* Last token of current phrase */
+
+  const char *zOpen;              /* Opening highlight */
+  const char *zClose;             /* Closing highlight */
+  int iCol;                       /* Column to read from */
+
+  const char *zIn;                /* Input text */
+  int nIn;                        /* Size of input text in bytes */
+  int iOff;                       /* Current offset within zIn[] */
+  char *zOut;                     /* Output value */
+};
+
+static int fts5HighlightAppend(HighlightContext *p, const char *z, int n){
+  if( n<0 ) n = strlen(z);
+  p->zOut = sqlite3_mprintf("%z%.*s", p->zOut, n, z);
+  if( p->zOut==0 ) return SQLITE_NOMEM;
+  return SQLITE_OK;
+}
+
+static int fts5HighlightCb(
+  void *pContext,                 /* Pointer to HighlightContext object */
+  const char *pToken,             /* Buffer containing token */
+  int nToken,                     /* Size of token in bytes */
+  int iStart,                     /* Start offset of token */
+  int iEnd,                       /* End offset of token */
+  int iPos                        /* Position offset of token */
+){
+  HighlightContext *p = (HighlightContext*)pContext;
+  int rc = SQLITE_OK;
+
+  if( iPos==p->iStart ){
+    rc = fts5HighlightAppend(p, &p->zIn[p->iOff], iStart - p->iOff);
+    p->iOff = iStart;
+    if( rc==SQLITE_OK ){
+      rc = fts5HighlightAppend(p, p->zOpen, -1);
+    }
+  }
+  
+  if( rc==SQLITE_OK ){
+    rc = fts5HighlightAppend(p, &p->zIn[p->iOff], iEnd - p->iOff);
+    p->iOff = iEnd;
+  }
+
+  if( rc==SQLITE_OK && iPos==p->iEnd ){
+    int bClose = 1;
+    do{
+      int iP, iPCol, iOff;
+      rc = p->pApi->xInst(p->pFts, ++p->iInst, &iP, &iPCol, &iOff);
+      if( rc==SQLITE_RANGE || iPCol!=p->iCol ){
+        p->iStart = -1;
+        p->iEnd = -1;
+        rc = SQLITE_OK;
+      }else{
+        iEnd = iOff - 1 + p->pApi->xPhraseSize(p->pFts, iP);
+        if( iEnd<=p->iEnd ) continue;
+        if( iOff<=p->iEnd ) bClose = 0;
+        p->iStart = iOff;
+        p->iEnd = iEnd;
+      }
+    }while( 0 );
+
+    if( rc==SQLITE_OK && bClose ){
+      rc = fts5HighlightAppend(p, p->zClose, -1);
+    }
+  }
+
+  return rc;
+}
+
+static void fts5HighlightFunction(
+  const Fts5ExtensionApi *pApi,   /* API offered by current FTS version */
+  Fts5Context *pFts,              /* First arg to pass to pApi functions */
+  sqlite3_context *pCtx,          /* Context for returning result/error */
+  int nVal,                       /* Number of values in apVal[] array */
+  sqlite3_value **apVal           /* Array of trailing arguments */
+){
+  HighlightContext ctx;
+  int rc;
+
+  if( nVal!=3 ){
+    const char *zErr = "wrong number of arguments to function highlight()";
+    sqlite3_result_error(pCtx, zErr, -1);
+    return;
+  }
+  memset(&ctx, 0, sizeof(HighlightContext));
+  ctx.iCol = sqlite3_value_int(apVal[0]);
+  ctx.zOpen = (const char*)sqlite3_value_text(apVal[1]);
+  ctx.zClose = (const char*)sqlite3_value_text(apVal[2]);
+  rc = pApi->xColumnText(pFts, ctx.iCol, &ctx.zIn, &ctx.nIn);
+  ctx.pApi = pApi;
+  ctx.pFts = pFts;
+
+  /* Find the first phrase instance in the right column. */
+  ctx.iStart = -1;
+  ctx.iEnd = -1;
+  while( rc==SQLITE_OK ){
+    int iP, iPCol, iOff;
+    rc = pApi->xInst(pFts, ctx.iInst, &iP, &iPCol, &iOff);
+    if( rc==SQLITE_OK && iPCol==ctx.iCol ){
+      ctx.iStart = iOff;
+      ctx.iEnd = iOff - 1 + pApi->xPhraseSize(pFts, iP);
+      break;
+    }
+    ctx.iInst++;
+  }
+
+  if( rc==SQLITE_OK || rc==SQLITE_RANGE ){
+    rc = pApi->xTokenize(pFts, ctx.zIn, ctx.nIn, (void*)&ctx, fts5HighlightCb);
+  }
+  if( rc==SQLITE_OK ){
+    rc = fts5HighlightAppend(&ctx, &ctx.zIn[ctx.iOff], ctx.nIn - ctx.iOff);
+  }
+
+  if( rc==SQLITE_OK ){
+    sqlite3_result_text(pCtx, (const char*)ctx.zOut, -1, SQLITE_TRANSIENT);
+  }else{
+    sqlite3_result_error_code(pCtx, rc);
+  }
+  sqlite3_free(ctx.zOut);
+}
+/*
+**************************************************************************/
+
 typedef struct SnipPhrase SnipPhrase;
 typedef struct SnipIter SnipIter;
 typedef struct SnippetCtx SnippetCtx;
@@ -797,6 +929,22 @@ static void fts5TestFunction(
   }
 
   /*
+  ** xInst()
+  */
+  if( zReq==0 ) sqlite3Fts5BufferAppendPrintf(&rc, &s, " inst ");
+  if( 0==zReq || 0==sqlite3_stricmp(zReq, "inst") ){
+    int nInst;
+    rc = pApi->xInstCount(pFts, &nInst);
+    for(i=0; rc==SQLITE_OK && i<nInst; i++){
+      int iPhrase, iCol, iOff;
+      rc = pApi->xInst(pFts, i, &iPhrase, &iCol, &iOff);
+      sqlite3Fts5BufferAppendPrintf(&rc, &s, "%s%d.%d.%d",
+          (i==0 ? "" : " "), iPhrase, iCol, iOff
+      );
+    }
+  }
+
+  /*
   ** xPhraseCount()
   */
   if( zReq==0 ) sqlite3Fts5BufferAppendPrintf(&rc, &s, " phrasecount ");
@@ -966,6 +1114,7 @@ int sqlite3Fts5AuxInit(fts5_api *pApi){
     { "bm25debug", (void*)1, fts5Bm25Function,    0 },
     { "snippet",   0, fts5SnippetFunction, 0 },
     { "fts5_test", 0, fts5TestFunction,    0 },
+    { "highlight", 0, fts5HighlightFunction, 0 },
     { "bm25",      0, fts5Bm25Function,    0 },
   };
 

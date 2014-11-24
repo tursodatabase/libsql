@@ -301,6 +301,9 @@ void sqlite3Fts5IndexAutomerge(Fts5Index *p, int nMerge);
 */
 int sqlite3Fts5IndexReads(Fts5Index *p);
 
+/* Malloc utility */
+void *sqlite3Fts5MallocZero(int *pRc, int nByte);
+
 /*
 ** End of interface to code in fts5_index.c.
 **************************************************************************/
