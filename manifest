@@ -1,5 +1,5 @@
-C Always\sreinitialized\sthe\sIndex.bUnordered\sand\sIndex.noSkipscan\sflags\sbefore\nrereading\sthe\ssqlite_stat1\stable,\seven\sif\sSQLITE_ENABLE_STAT4\sis\sdefined.
-D 2014-11-22T21:37:00.608
+C Fix\san\sinteger\soverflow\sbug\sin\svdbesort.c.
+D 2014-11-25T18:59:55.761
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a226317fdf3f4c895fb3cfedc355b4d0868ce1fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -298,7 +298,7 @@ F src/vdbeapi.c 07acb615d1e4170e71fc1b0d087f3c53a1ad8e83
 F src/vdbeaux.c 5ce4f414147a3bc3cbcf00ec57f2606c25791629
 F src/vdbeblob.c 4af4bfb71f6df7778397b4a0ebc1879793276778
 F src/vdbemem.c 31d8eabb0cd78bfeab4e5124c7363c3e9e54db9f
-F src/vdbesort.c 87f3923483113d1c95d84640becb4e4946f27d9a
+F src/vdbesort.c 42c166f7ca78cb643c7f4e4bdfa83c59d363d1a6
 F src/vdbetrace.c 7e4222955e07dd707a2f360c0eb73452be1cb010
 F src/vtab.c 2a30791bbd7926b589401bd09c3abb33de563793
 F src/wal.c 486e644b3b8aa5ad066f625bc428aa8ff7001405
@@ -366,6 +366,7 @@ F test/between.test 34d375fb5ce1ae283ffe82b6b233e9f38e84fc6c
 F test/bigfile.test aa74f4e5db51c8e54a1d9de9fa65d01d1eb20b59
 F test/bigfile2.test 1b489a3a39ae90c7f027b79110d6b4e1dbc71bfc
 F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
+F test/bigsort.test 835478d0ce83bd1e5b05c90571dedd9871a09196
 F test/bind.test 3c7b320969000c441a70952b0b15938fbb66237c
 F test/bindxfer.test efecd12c580c14df5f4ad3b3e83c667744a4f7e0
 F test/bitvec.test 75894a880520164d73b1305c1c3f96882615e142
@@ -776,7 +777,7 @@ F test/pagesize.test 1dd51367e752e742f58e861e65ed7390603827a0
 F test/pcache.test b09104b03160aca0d968d99e8cd2c5b1921a993d
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
 F test/percentile.test b98fc868d71eb5619d42a1702e9ab91718cbed54
-F test/permutations.test cef25f5e8499a15846eccd06785f17f4180407ab
+F test/permutations.test 4e12d43f4639ea8a0e366d9c64e0009afe2eb544
 F test/pragma.test 49ac8a73c0daa574824538fed28727d1259fe735
 F test/pragma2.test aea7b3d82c76034a2df2b38a13745172ddc0bc13
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
@@ -1221,7 +1222,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9660ce541837ccd8df415641a922274e093056aa
-R b51cb063fe9c06786b358d55d58b3f87
-U drh
-Z 1318c316d07e28b9d1759e5cafc8a50c
+P 1e1221fc4823a6bb6fc5d2408732e27aca585de9
+R d9420ee27960cebcc5a5d23852d1a5da
+U dan
+Z 0b92bbab30b87a9f1cf79fdddb96f8d5
