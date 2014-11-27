@@ -1,5 +1,5 @@
-C More\stest\scases\sfor\sthe\sbalancer.
-D 2014-11-27T04:23:19.652
+C Fix\sa\sbuffer\soverread\sduring\scompilation\sof\sCREATE\sVIRTUAL\sTABLE\sstatements\sthat\sfeatured\san\sexplicit\sdatabase\sname\sbut\sno\svirtual\stable\sarguments.\sFor\sexample,\s"CREATE\sVIRTUAL\sTABLE\smain.ft\sUSING\sfts4".
+D 2014-11-27T11:36:36.295
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a226317fdf3f4c895fb3cfedc355b4d0868ce1fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -238,7 +238,7 @@ F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 81712116e826b0089bb221b018929536b2b5406f
 F src/table.c f142bba7903e93ca8d113a5b8877a108ad1a27dc
 F src/tclsqlite.c 0a874655dd39a9875e39c5d3c464db662171d228
-F src/test1.c 6b0469b8e06c77b1de1d3e4a3834cf26edea9cc7
+F src/test1.c a0bce4f47da65b76c80e5f8bf9a5ef174603866a
 F src/test2.c 98049e51a17dc62606a99a9eb95ee477f9996712
 F src/test3.c 1c0e5d6f080b8e33c1ce8b3078e7013fdbcd560c
 F src/test4.c 9b32d22f5f150abe23c1830e2057c4037c45b3df
@@ -300,7 +300,7 @@ F src/vdbeblob.c 4af4bfb71f6df7778397b4a0ebc1879793276778
 F src/vdbemem.c 31d8eabb0cd78bfeab4e5124c7363c3e9e54db9f
 F src/vdbesort.c 42c166f7ca78cb643c7f4e4bdfa83c59d363d1a6
 F src/vdbetrace.c 7e4222955e07dd707a2f360c0eb73452be1cb010
-F src/vtab.c 2a30791bbd7926b589401bd09c3abb33de563793
+F src/vtab.c c08ec66f45919eaa726bf88aa53eb08379d607f9
 F src/wal.c 486e644b3b8aa5ad066f625bc428aa8ff7001405
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
@@ -1091,7 +1091,7 @@ F test/vacuum4.test d3f8ecff345f166911568f397d2432c16d2867d9
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/veryquick.test 57ab846bacf7b90cf4e9a672721ea5c5b669b661
 F test/view.test f311691d696a5cc27e3c1b875cec1b0866b4ccd9
-F test/vtab1.test b631d147b198cfd7903ab5fed028eb2a3d321dc6
+F test/vtab1.test 1cef14310144718812351a61c5cfb4ba8494a171
 F test/vtab2.test 7bcffc050da5c68f4f312e49e443063e2d391c0d
 F test/vtab3.test b45f47d20f225ccc9c28dc915d92740c2dee311e
 F test/vtab4.test 942f8b8280b3ea8a41dae20e7822d065ca1cb275
@@ -1223,7 +1223,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f242394e079dd185aad90f2aee902a5edf27e150
-R dee46347027ae53917346a5c99ff404e
-U drh
-Z 45538c84f085c10577fd84190398d06f
+P 358ea818f7ea5aa55bafaf4057e9fc7a5fd77c11
+R a4b8cae126976a974aa80f7f44ce5b7f
+U dan
+Z 67582253c41fc622f4b8d67b4605ed6a
