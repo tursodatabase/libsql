@@ -106,6 +106,19 @@
 **
 **   CREATE TABLE data_ft1(a, b, ota_rowid, ota_control);
 **
+** All non-hidden columns (i.e. all columns matched by "SELECT *") of the
+** target table must be present in the input table. For virtual tables,
+** hidden columns are optional - they are updated by OTA if present in
+** the input table, or not otherwise. For example, to write to an fts4
+** table with a hidden languageid column such as:
+**
+**   CREATE VIRTUAL TABLE ft1 USING fts4(a, b, languageid='langid');
+**
+** Either of the following input table schemas may be used:
+**
+**   CREATE TABLE data_ft1(a, b, langid, ota_rowid, ota_control);
+**   CREATE TABLE data_ft1(a, b, ota_rowid, ota_control);
+**
 ** For each row to INSERT into the target database as part of the OTA 
 ** update, the corresponding data_% table should contain a single record
 ** with the "ota_control" column set to contain integer value 0. The

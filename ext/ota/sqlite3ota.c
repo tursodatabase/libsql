@@ -223,7 +223,6 @@ static void otaObjIterFreeCols(OtaObjIter *pIter){
     sqlite3_free(pIter->azTblCol[i]);
   }
   sqlite3_free(pIter->azTblCol);
-  sqlite3_free(pIter->abTblPk);
   pIter->azTblCol = 0;
   pIter->abTblPk = 0;
   pIter->nTblCol = 0;
@@ -370,6 +369,24 @@ static char *otaQuoteName(const char *zName){
 }
 
 /*
+** Argument zName points to a column name. Argument zQuoted also points
+** to a column name, but one that has been quoted using otaQuoteName().
+** Return true if the column names are the same, or false otherwise.
+*/
+static int otaMatchName(const char *zName, const char *zQuoted){
+  const char *p = zName;
+  const char *q = &zQuoted[1];
+  while( 1 ){
+    if( *q=='`' ) q++;
+    if( sqlite3_strnicmp(q, p, 1) ) return 0;
+    if( !*q ) break;
+    p++;
+    q++;
+  }
+  return 1;
+}
+
+/*
 ** Argument zFmt is a sqlite3_mprintf() style format string. The trailing
 ** arguments are the usual subsitution values. This function performs
 ** the printf() style substitutions and executes the result as an SQL
@@ -396,21 +413,22 @@ static int otaMPrintfExec(sqlite3ota *p, const char *zFmt, ...){
 }
 
 /*
-** Increase the size of the pIter->azTblCol[] and abTblPk[] arrays so that
+** Allocate and zero the pIter->azTblCol[] and abTblPk[] arrays so that
 ** there is room for at least nCol elements. If an OOM occurs, store an
 ** error code in the OTA handle passed as the first argument.
 */
-static void otaExtendIterArrays(sqlite3ota *p, OtaObjIter *pIter, int nCol){
-  assert( p->rc==SQLITE_OK );
-  if( (nCol % 8)==0 ){
-    unsigned char *abNew;
-    int nByte = sizeof(char*) * (nCol+8);
-    char **azNew = (char**)sqlite3_realloc(pIter->azTblCol, nByte);
-    abNew = (unsigned char*)sqlite3_realloc(pIter->abTblPk, nCol+8);
+static void otaAllocateIterArrays(sqlite3ota *p, OtaObjIter *pIter, int nCol){
+  int nByte = sizeof(char*) * nCol + sizeof(unsigned char*) * nCol;
+  char **azNew;
 
-    if( azNew ) pIter->azTblCol = azNew;
-    if( abNew ) pIter->abTblPk = abNew;
-    if( azNew==0 || abNew==0 ) p->rc = SQLITE_NOMEM;
+  assert( p->rc==SQLITE_OK );
+  azNew = (char**)sqlite3_malloc(nByte);
+  if( azNew ){
+    memset(azNew, 0, nByte);
+    pIter->azTblCol = azNew;
+    pIter->abTblPk = (unsigned char*)&pIter->azTblCol[nCol];
+  }else{
+    p->rc = SQLITE_NOMEM;
   }
 }
 
@@ -451,30 +469,60 @@ static int otaIsVtab(sqlite3ota *p, const char *zTab){
 */
 static int otaObjIterGetCols(sqlite3ota *p, OtaObjIter *pIter){
   if( pIter->azTblCol==0 ){
-    sqlite3_stmt *pStmt;
-    char *zSql;
+    sqlite3_stmt *pStmt = 0;
     int nCol = 0;
     int bSeenPk = 0;
+    int i;                        /* for() loop iterator variable */
     int rc2;                      /* sqlite3_finalize() return value */
 
     assert( pIter->bRowid==0 && pIter->bVtab==0 );
 
-    zSql = sqlite3_mprintf("PRAGMA main.table_info(%Q)", pIter->zTbl);
-    p->rc = prepareFreeAndCollectError(p->db, &pStmt, &p->zErrmsg, zSql);
-    while( p->rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
-      otaExtendIterArrays(p, pIter, nCol);
-      if( p->rc==SQLITE_OK ){
-        const char *zName = (const char*)sqlite3_column_text(pStmt, 1);
-        int iPk = sqlite3_column_int(pStmt, 5);
-        pIter->abTblPk[nCol] = (iPk!=0);
-        if( iPk ) bSeenPk = 1;
-        if( iPk<0 ) pIter->bRowid = 1;
-        pIter->azTblCol[nCol] = otaQuoteName(zName);
-        if( pIter->azTblCol[nCol]==0 ) p->rc = SQLITE_NOMEM;
-        nCol++;
+    /* Populate the azTblCol[] and nTblCol variables based on the columns
+    ** of the input table. Ignore any input table columns that begin with
+    ** "ota_".  */
+    p->rc = prepareFreeAndCollectError(p->db, &pStmt, &p->zErrmsg, 
+        sqlite3_mprintf("SELECT * FROM 'data_%q'", pIter->zTbl)
+    );
+    if( p->rc==SQLITE_OK ){
+      nCol = sqlite3_column_count(pStmt);
+      otaAllocateIterArrays(p, pIter, nCol);
+    }
+    for(i=0; p->rc==SQLITE_OK && i<nCol; i++){
+      const char *zName = (const char*)sqlite3_column_name(pStmt, i);
+      if( sqlite3_strnicmp("ota_", zName, 4) ){
+        char *zCopy = otaQuoteName(zName);
+        pIter->azTblCol[pIter->nTblCol++] = zCopy;
+        if( zCopy==0 ) p->rc = SQLITE_NOMEM;
       }
     }
-    pIter->nTblCol = nCol;
+    sqlite3_finalize(pStmt);
+    pStmt = 0;
+
+    /* Check that all non-HIDDEN columns in the destination table are also
+    ** present in the input table. Populate the abTblPk[] array at the
+    ** same time.  */
+    if( p->rc==SQLITE_OK ){
+      p->rc = prepareFreeAndCollectError(p->db, &pStmt, &p->zErrmsg, 
+          sqlite3_mprintf("PRAGMA main.table_info(%Q)", pIter->zTbl)
+      );
+    }
+    while( p->rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
+      const char *zName = (const char*)sqlite3_column_text(pStmt, 1);
+      for(i=0; i<pIter->nTblCol; i++){
+        if( otaMatchName(zName, pIter->azTblCol[i]) ) break;
+      }
+      if( i==pIter->nTblCol ){
+        p->rc = SQLITE_ERROR;
+        p->zErrmsg = sqlite3_mprintf("column missing from data_%q: %s",
+            pIter->zTbl, zName
+        );
+      }else{
+        int iPk = sqlite3_column_int(pStmt, 5);
+        pIter->abTblPk[i] = (iPk!=0);
+        if( iPk ) bSeenPk = 1;
+        if( iPk<0 ) pIter->bRowid = 1;
+      }
+    }
     rc2 = sqlite3_finalize(pStmt);
     if( p->rc==SQLITE_OK ) p->rc = rc2;
 

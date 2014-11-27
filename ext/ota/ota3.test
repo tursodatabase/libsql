@@ -96,7 +96,7 @@ do_test 2.1 {
   }
   db2 close
   list [catch { run_ota test.db ota.db } msg] $msg
-} {1 {SQLITE_ERROR - no such column: c}}
+} {1 {SQLITE_ERROR - column missing from data_x1: c}}
 
 do_execsql_test 2.2 {
   PRAGMA integrity_check;

@@ -1,5 +1,5 @@
-C Add\sSQLITE_ENABLE_OTA\spre-processor\sdirectives\sso\sthat\sthis\sbranch\smay\sbe\scompiled\swith\sor\swithout\sOTA.
-D 2014-11-22T09:09:50.320
+C Update\sota\sso\sthat\sthe\shidden\scolumns\sof\svirtual\stables\smay\sbe\swritten.
+D 2014-11-27T18:09:46.630
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a226317fdf3f4c895fb3cfedc355b4d0868ce1fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -126,8 +126,9 @@ F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
 F ext/ota/README.txt 78d4a9f78f567d4bf826cf0f02df6254902562ca
 F ext/ota/ota.c c11a85af71dccc45976622fe7a51169a481caa91
 F ext/ota/ota1.test a8f9d89c9b2d381a663bcedaa5dd5952cdbd1231
+F ext/ota/ota10.test ab815dff9cef7248c504f06b888627d236f25e9c
 F ext/ota/ota2.test 4568c2671d19dbde789fb9091d727a2e94880128
-F ext/ota/ota3.test 215dd4a8e238567e0f890a5139b6fdf5494ef311
+F ext/ota/ota3.test 71bd8cc0cf8d7e7d9bb11a1fcc238320a5a9d8c8
 F ext/ota/ota4.test 60f897f329a6782ef2f24862640acf3c52e48077
 F ext/ota/ota5.test ad0799daf8923ddebffe75ae8c5504ca90b7fadb
 F ext/ota/ota6.test 82f1f757ec9b2ad07d6de4060b8e3ba8e44dfdd3
@@ -135,8 +136,8 @@ F ext/ota/ota7.test 1fe2c5761705374530e29f70c39693076028221a
 F ext/ota/ota8.test cd70e63a0c29c45c0906692827deafa34638feda
 F ext/ota/ota9.test d9ad30ccb4e08f878e382876fe67752309538af9
 F ext/ota/otafault.test be02466863015a583cc0ceb6aca871a5e6f7a71b
-F ext/ota/sqlite3ota.c accfada2ab182dc52225e7345f656520a4e8db22
-F ext/ota/sqlite3ota.h 04577b00c456aacb99be9c8b55572a6e3ca9aa27
+F ext/ota/sqlite3ota.c f1e930690ec2bcb72138301ebf05ea2ffd4450de
+F ext/ota/sqlite3ota.h 8dc9c812e61f47f497336a45f820bee88b33a2c5
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 57bec53e1a677ab74217fe1f20a58c3a47261d6b
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
@@ -1236,7 +1237,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7ef44c5b5bd30bcc4ef59ed172b9ce9ac6a843f6
-R a969a1e9314cd2ef179f3839efd0b8ec
+P 600cefdd4d29c1de4d107fa7ddeb76a18edce4f5
+R 19cf180a791a327f1f4fb68723a586ef
 U dan
-Z bba2f4cd69d571c58d439710133b8bb2
+Z 7646a22500cce7c7ef211b057e34ff27
