@@ -1,5 +1,5 @@
-C Fix\san\sinteger\soverflow\sbug\sin\svdbesort.c.
-D 2014-11-25T18:59:55.761
+C Fix\sa\sproblem\sin\sthe\snew\sb-tree\sbalancer\sthat\swas\scausing\scorruption\sof\nthe\sfragmentation\scount.
+D 2014-11-27T03:46:04.203
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a226317fdf3f4c895fb3cfedc355b4d0868ce1fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -173,7 +173,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 7ddee9c7d505e07e959a575b18498f17c71e53ea
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 49ca66250c7dfa844a4d4cb8272b87420d27d3a5
-F src/btree.c 4db5e06ca2d1a5437be7075251fa702c76179b0e
+F src/btree.c c82a514c0622e47141cca05617f5fa17ecbc909f
 F src/btree.h e31a3a3ebdedb1caf9bda3ad5dbab3db9b780f6e
 F src/btreeInt.h 3363e18fd76f69a27a870b25221b2345b3fd4d21
 F src/build.c 67bb05b1077e0cdaccb2e36bfcbe7a5df9ed31e8
@@ -379,6 +379,7 @@ F test/boundary3.tcl 23361e108a125dca9c4080c2feb884fe54d69243
 F test/boundary3.test 56ef82096b4329aca2be74fa1e2b0f762ea0eb45
 F test/boundary4.tcl 0bb4b1a94f4fc5ae59b79b9a2b7a140c405e2983
 F test/boundary4.test 89e02fa66397b8a325d5eb102b5806f961f8ec4b
+F test/btree01.test 717fcf43f66da534671bef795c993e2f9b3b2e3e
 F test/btreefault.test c2bcb542685eea44621275cfedbd8a13f65201e3
 F test/busy.test 76b4887f8b9160ba903c1ac22e8ff406ad6ae2f0
 F test/cache.test 13bc046b26210471ca6f2889aceb1ea52dc717de
@@ -1222,7 +1223,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1e1221fc4823a6bb6fc5d2408732e27aca585de9
-R d9420ee27960cebcc5a5d23852d1a5da
-U dan
-Z 0b92bbab30b87a9f1cf79fdddb96f8d5
+P 623827192532f08b68bc0eb9ed1449e173361f0c
+R 93dc522ced281537ee4ee3dde5b73f25
+U drh
+Z 0ffb28de24b6b45b6e628c5a31b22be7

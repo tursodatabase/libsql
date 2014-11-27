@@ -6257,6 +6257,14 @@ static int pageFreeArray(
 }
 
 /*
+** apCell[] and szCell[] contains pointers to and sizes of all cells in the
+** pages being balanced.  The current page, pPg, has pPg->nCell cells starting
+** with apCell[iOld].  After balancing, this page should hold nNew cells
+** starting at apCell[iNew].
+**
+** This routine makes the necessary adjustments to pPg so that it contains
+** the correct cells after being balanced.
+**
 ** The pPg->nFree field is invalid when this function returns. It is the
 ** responsibility of the caller to set it correctly.
 */
@@ -6297,12 +6305,13 @@ static void editPage(
     );
   }
 
-  pData = &aData[get2byte(&aData[hdr+5])];
+  pData = &aData[get2byteNotZero(&aData[hdr+5])];
   if( pData<pBegin ) goto editpage_fail;
 
   /* Add cells to the start of the page */
   if( iNew<iOld ){
-    int nAdd = iOld-iNew;
+    int nAdd = MIN(nNew,iOld-iNew);
+    assert( (iOld-iNew)<nNew || nCell==0 || CORRUPT_DB );
     pCellptr = pPg->aCellIdx;
     memmove(&pCellptr[nAdd*2], pCellptr, nCell*2);
     if( pageInsertArray(

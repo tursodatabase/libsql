@@ -1,0 +1,34 @@
+# 2014-11-27
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# This file contains test cases for b-tree logic.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix btree01
+
+# The refactoring on the b-tree balance() routine in check-in
+# http://www.sqlite.org/src/info/face33bea1ba3a (2014-10-27)
+# caused the integrity_check on the following SQL to fail.
+#
+do_execsql_test btree01-1.1 {
+  PRAGMA page_size=65536;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b BLOB);
+  WITH RECURSIVE
+     c(i) AS (VALUES(1) UNION ALL SELECT i+1 FROM c WHERE i<30)
+  INSERT INTO t1(a,b) SELECT i, zeroblob(6500) FROM c;
+  UPDATE t1 SET b=zeroblob(3000);
+  UPDATE t1 SET b=zeroblob(64000) WHERE a=2;
+  PRAGMA integrity_check;
+} {ok}
+
+finish_test
