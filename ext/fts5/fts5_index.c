@@ -41,8 +41,6 @@
 **
 */
 
-#define FTS5_DEFAULT_PAGE_SIZE   1000
-
 #define FTS5_WORK_UNIT      64    /* Number of leaf pages in unit of work */
 #define FTS5_MIN_MERGE       4    /* Minimum number of segments to merge */
 #define FTS5_CRISIS_MERGE   16    /* Maximum number of segments to merge */
@@ -290,7 +288,6 @@ typedef struct Fts5StructureSegment Fts5StructureSegment;
 struct Fts5Index {
   Fts5Config *pConfig;            /* Virtual table configuration */
   char *zDataTbl;                 /* Name of %_data table */
-  int pgsz;                       /* Target page size for this index */
   int nMinMerge;                  /* Minimum input segments in a merge */
   int nCrisisMerge;               /* Maximum allowed segments per level */
   int nWorkUnit;                  /* Leaf pages in a "unit" of work */
@@ -2535,12 +2532,15 @@ static int fts5AllocateSegid(Fts5Index *p, Fts5Structure *pStruct){
 ** Discard all data currently cached in the hash-tables.
 */
 static void fts5IndexDiscardData(Fts5Index *p){
-  Fts5Config *pConfig = p->pConfig;
-  int i;
-  for(i=0; i<=pConfig->nPrefix; i++){
-    sqlite3Fts5HashClear(p->apHash[i]);
+  assert( p->apHash || p->nPendingData==0 );
+  if( p->apHash ){
+    Fts5Config *pConfig = p->pConfig;
+    int i;
+    for(i=0; i<=pConfig->nPrefix; i++){
+      sqlite3Fts5HashClear(p->apHash[i]);
+    }
+    p->nPendingData = 0;
   }
-  p->nPendingData = 0;
 }
 
 /*
@@ -2630,7 +2630,7 @@ static void fts5WriteBtreeTerm(
 
     fts5WriteBtreeNEmpty(p, pWriter);
 
-    if( pPage->buf.n>=p->pgsz ){
+    if( pPage->buf.n>=p->pConfig->pgsz ){
       /* pPage will be written to disk. The term will be written into the
       ** parent of pPage.  */
       i64 iRowid = FTS5_SEGMENT_ROWID(
@@ -2761,7 +2761,7 @@ static void fts5WriteAppendTerm(
   pWriter->bFirstRowidInDoclist = 1;
 
   /* If the current leaf page is full, flush it to disk. */
-  if( pPage->buf.n>=p->pgsz ){
+  if( pPage->buf.n>=p->pConfig->pgsz ){
     fts5WriteFlushLeaf(p, pWriter);
     pWriter->bFirstRowidInPage = 1;
   }
@@ -2796,7 +2796,7 @@ static void fts5WriteAppendRowid(
   pWriter->bFirstRowidInDoclist = 0;
   pWriter->bFirstRowidInPage = 0;
 
-  if( pPage->buf.n>=p->pgsz ){
+  if( pPage->buf.n>=p->pConfig->pgsz ){
     fts5WriteFlushLeaf(p, pWriter);
     pWriter->bFirstRowidInPage = 1;
   }
@@ -2809,7 +2809,7 @@ static void fts5WriteAppendPoslistInt(
 ){
   Fts5PageWriter *pPage = &pWriter->aWriter[0];
   fts5BufferAppendVarint(&p->rc, &pPage->buf, iVal);
-  if( pPage->buf.n>=p->pgsz ){
+  if( pPage->buf.n>=p->pConfig->pgsz ){
     fts5WriteFlushLeaf(p, pWriter);
     pWriter->bFirstRowidInPage = 1;
   }
@@ -2825,8 +2825,8 @@ static void fts5WriteAppendPoslistData(
   const u8 *a = aData;
   int n = nData;
   
-  while( p->rc==SQLITE_OK && (pPage->buf.n + n)>=p->pgsz ){
-    int nReq = p->pgsz - pPage->buf.n;
+  while( p->rc==SQLITE_OK && (pPage->buf.n + n)>=p->pConfig->pgsz ){
+    int nReq = p->pConfig->pgsz - pPage->buf.n;
     int nCopy = 0;
     while( nCopy<nReq ){
       i64 dummy;
@@ -3371,7 +3371,6 @@ int sqlite3Fts5IndexOpen(
 
   memset(p, 0, sizeof(Fts5Index));
   p->pConfig = pConfig;
-  p->pgsz = 1000;
   p->nMinMerge = FTS5_MIN_MERGE;
   p->nCrisisMerge = FTS5_CRISIS_MERGE;
   p->nWorkUnit = FTS5_WORK_UNIT;
@@ -3383,7 +3382,7 @@ int sqlite3Fts5IndexOpen(
     int i;
     Fts5Structure s;
     rc = sqlite3Fts5CreateTable(
-        pConfig, "data", "id INTEGER PRIMARY KEY, block BLOB", pzErr
+        pConfig, "data", "id INTEGER PRIMARY KEY, block BLOB", 0, pzErr
     );
     if( rc==SQLITE_OK ){
       memset(&s, 0, sizeof(Fts5Structure));
@@ -3984,13 +3983,6 @@ int sqlite3Fts5IndexInit(sqlite3 *db){
       db, "fts5_decode", 2, SQLITE_UTF8, 0, fts5DecodeFunction, 0, 0
   );
   return rc;
-}
-
-/*
-** Set the target page size for the index object.
-*/
-void sqlite3Fts5IndexPgsz(Fts5Index *p, int pgsz){
-  p->pgsz = pgsz;
 }
 
 /*

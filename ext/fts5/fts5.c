@@ -340,6 +340,11 @@ static int fts5InitVtab(
     rc = sqlite3Fts5ConfigDeclareVtab(pConfig);
   }
 
+  /* Load the contents of %_config */
+  if( rc==SQLITE_OK ){
+    rc = sqlite3Fts5ConfigLoad(pConfig);
+  }
+
   if( rc!=SQLITE_OK ){
     fts5FreeVtab(pTab, 0);
     pTab = 0;
@@ -887,7 +892,8 @@ static int fts5SeekCursor(Fts5Cursor *pCsr){
 ** This function is called to handle an FTS INSERT command. In other words,
 ** an INSERT statement of the form:
 **
-**     INSERT INTO fts(fts) VALUES($pVal)
+**     INSERT INTO fts(fts) VALUES($pCmd)
+**     INSERT INTO fts(fts, rank) VALUES($pCmd, $pVal)
 **
 ** Argument pVal is the value assigned to column "fts" by the INSERT 
 ** statement. This function returns SQLITE_OK if successful, or an SQLite
@@ -897,28 +903,25 @@ static int fts5SeekCursor(Fts5Cursor *pCsr){
 ** INSERT Directives" section of the documentation. It should be updated if
 ** more commands are added to this function.
 */
-static int fts5SpecialCommand(Fts5Table *pTab, sqlite3_value *pVal){
-  const char *z = (const char*)sqlite3_value_text(pVal);
-  int n = sqlite3_value_bytes(pVal);
-  int rc = SQLITE_ERROR;
+static int fts5SpecialCommand(
+  Fts5Table *pTab,                /* Fts5 table object */
+  sqlite3_value *pCmd,            /* Value inserted into special column */
+  sqlite3_value *pVal             /* Value inserted into rowid column */
+){
+  const char *z = (const char*)sqlite3_value_text(pCmd);
+  int rc = SQLITE_OK;
+  int bError = 0;
 
   if( 0==sqlite3_stricmp("integrity-check", z) ){
     rc = sqlite3Fts5StorageIntegrity(pTab->pStorage);
-  }else
-
-  if( n>5 && 0==sqlite3_strnicmp("pgsz=", z, 5) ){
-    int pgsz = atoi(&z[5]);
-    if( pgsz<32 ) pgsz = 32;
-    sqlite3Fts5IndexPgsz(pTab->pIndex, pgsz);
-    rc = SQLITE_OK;
-  }else
-  
-  if( n>10 && 0==sqlite3_strnicmp("automerge=", z, 10) ){
-    int nAutomerge = atoi(&z[10]);
-    sqlite3Fts5IndexAutomerge(pTab->pIndex, nAutomerge);
-    rc = SQLITE_OK;
+  }else{
+    rc = sqlite3Fts5ConfigSetValue(pTab->pConfig, z, pVal, &bError);
+    if( rc==SQLITE_OK && bError ){
+      rc = SQLITE_ERROR;
+    }else{
+      rc = sqlite3Fts5StorageConfigValue(pTab->pStorage, z, pVal);
+    }
   }
-
   return rc;
 }
 
@@ -953,7 +956,9 @@ static int fts5UpdateMethod(
   assert( nArg==1 || nArg==(2 + pConfig->nCol + 2) );
 
   if( nArg>1 && SQLITE_NULL!=sqlite3_value_type(apVal[2 + pConfig->nCol]) ){
-    return fts5SpecialCommand(pTab, apVal[2 + pConfig->nCol]);
+    return fts5SpecialCommand(pTab, 
+        apVal[2 + pConfig->nCol], apVal[2 + pConfig->nCol + 1]
+    );
   }
 
   eType0 = sqlite3_value_type(apVal[0]);
@@ -1104,7 +1109,9 @@ static int fts5CacheInstArray(Fts5Cursor *pCsr){
         int *aInst;
         int iBest = -1;
         for(i=0; i<nIter; i++){
-          if( aIter[i].bEof==0 && (iBest<0 || aIter[i].iPos<iBest) ){
+          if( (aIter[i].bEof==0) 
+           && (iBest<0 || aIter[i].iPos<aIter[iBest].iPos) 
+          ){
             iBest = i;
           }
         }

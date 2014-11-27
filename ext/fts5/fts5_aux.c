@@ -21,6 +21,7 @@ typedef struct HighlightContext HighlightContext;
 struct HighlightContext {
   const Fts5ExtensionApi *pApi;   /* API offered by current FTS version */
   Fts5Context *pFts;              /* First arg to pass to pApi functions */
+  int nInst;                      /* Total number of phrase instances */
   int iInst;                      /* Current phrase instance index */
   int iStart;                     /* First token of current phrase */
   int iEnd;                       /* Last token of current phrase */
@@ -35,57 +36,61 @@ struct HighlightContext {
   char *zOut;                     /* Output value */
 };
 
-static int fts5HighlightAppend(HighlightContext *p, const char *z, int n){
-  if( n<0 ) n = strlen(z);
-  p->zOut = sqlite3_mprintf("%z%.*s", p->zOut, n, z);
-  if( p->zOut==0 ) return SQLITE_NOMEM;
-  return SQLITE_OK;
+/*
+** Append text to the HighlightContext output string - p->zOut. Argument
+** z points to a buffer containing n bytes of text to append. If n is 
+** negative, everything up until the first '\0' is appended to the output.
+*/
+static void fts5HighlightAppend(
+  int *pRc, 
+  HighlightContext *p, 
+  const char *z, int n
+){
+  if( *pRc==SQLITE_OK ){
+    if( n<0 ) n = strlen(z);
+    p->zOut = sqlite3_mprintf("%z%.*s", p->zOut, n, z);
+    if( p->zOut==0 ) *pRc = SQLITE_NOMEM;
+  }
 }
 
 static int fts5HighlightCb(
   void *pContext,                 /* Pointer to HighlightContext object */
   const char *pToken,             /* Buffer containing token */
   int nToken,                     /* Size of token in bytes */
-  int iStart,                     /* Start offset of token */
-  int iEnd,                       /* End offset of token */
+  int iStartOff,                  /* Start offset of token */
+  int iEndOff,                    /* End offset of token */
   int iPos                        /* Position offset of token */
 ){
   HighlightContext *p = (HighlightContext*)pContext;
   int rc = SQLITE_OK;
 
   if( iPos==p->iStart ){
-    rc = fts5HighlightAppend(p, &p->zIn[p->iOff], iStart - p->iOff);
-    p->iOff = iStart;
-    if( rc==SQLITE_OK ){
-      rc = fts5HighlightAppend(p, p->zOpen, -1);
-    }
-  }
-  
-  if( rc==SQLITE_OK ){
-    rc = fts5HighlightAppend(p, &p->zIn[p->iOff], iEnd - p->iOff);
-    p->iOff = iEnd;
+    fts5HighlightAppend(&rc, p, &p->zIn[p->iOff], iStartOff - p->iOff);
+    fts5HighlightAppend(&rc, p, p->zOpen, -1);
+    p->iOff = iStartOff;
   }
 
-  if( rc==SQLITE_OK && iPos==p->iEnd ){
+  if( iPos==p->iEnd ){
     int bClose = 1;
-    do{
+    for(p->iInst++; rc==SQLITE_OK && p->iInst<p->nInst; p->iInst++){
       int iP, iPCol, iOff;
-      rc = p->pApi->xInst(p->pFts, ++p->iInst, &iP, &iPCol, &iOff);
-      if( rc==SQLITE_RANGE || iPCol!=p->iCol ){
-        p->iStart = -1;
-        p->iEnd = -1;
-        rc = SQLITE_OK;
+      rc = p->pApi->xInst(p->pFts, p->iInst, &iP, &iPCol, &iOff);
+      if( iPCol!=p->iCol ){
+        p->iStart = p->iEnd = -1;
       }else{
-        iEnd = iOff - 1 + p->pApi->xPhraseSize(p->pFts, iP);
+        int iEnd = iOff - 1 + p->pApi->xPhraseSize(p->pFts, iP);
         if( iEnd<=p->iEnd ) continue;
         if( iOff<=p->iEnd ) bClose = 0;
         p->iStart = iOff;
         p->iEnd = iEnd;
       }
-    }while( 0 );
+      break;
+    }
 
-    if( rc==SQLITE_OK && bClose ){
-      rc = fts5HighlightAppend(p, p->zClose, -1);
+    if( bClose ){
+      fts5HighlightAppend(&rc, p, &p->zIn[p->iOff], iEndOff - p->iOff);
+      fts5HighlightAppend(&rc, p, p->zClose, -1);
+      p->iOff = iEndOff;
     }
   }
 
@@ -107,34 +112,33 @@ static void fts5HighlightFunction(
     sqlite3_result_error(pCtx, zErr, -1);
     return;
   }
+
   memset(&ctx, 0, sizeof(HighlightContext));
   ctx.iCol = sqlite3_value_int(apVal[0]);
   ctx.zOpen = (const char*)sqlite3_value_text(apVal[1]);
   ctx.zClose = (const char*)sqlite3_value_text(apVal[2]);
-  rc = pApi->xColumnText(pFts, ctx.iCol, &ctx.zIn, &ctx.nIn);
   ctx.pApi = pApi;
   ctx.pFts = pFts;
+  rc = pApi->xColumnText(pFts, ctx.iCol, &ctx.zIn, &ctx.nIn);
+  if( rc==SQLITE_OK ) rc = pApi->xInstCount(pFts, &ctx.nInst);
 
   /* Find the first phrase instance in the right column. */
   ctx.iStart = -1;
   ctx.iEnd = -1;
-  while( rc==SQLITE_OK ){
+  for( ; ctx.iInst<ctx.nInst && rc==SQLITE_OK; ctx.iInst++){
     int iP, iPCol, iOff;
     rc = pApi->xInst(pFts, ctx.iInst, &iP, &iPCol, &iOff);
-    if( rc==SQLITE_OK && iPCol==ctx.iCol ){
+    if( iPCol==ctx.iCol ){
       ctx.iStart = iOff;
       ctx.iEnd = iOff - 1 + pApi->xPhraseSize(pFts, iP);
       break;
     }
-    ctx.iInst++;
   }
 
-  if( rc==SQLITE_OK || rc==SQLITE_RANGE ){
+  if( rc==SQLITE_OK ){
     rc = pApi->xTokenize(pFts, ctx.zIn, ctx.nIn, (void*)&ctx, fts5HighlightCb);
   }
-  if( rc==SQLITE_OK ){
-    rc = fts5HighlightAppend(&ctx, &ctx.zIn[ctx.iOff], ctx.nIn - ctx.iOff);
-  }
+  fts5HighlightAppend(&rc, &ctx, &ctx.zIn[ctx.iOff], ctx.nIn - ctx.iOff);
 
   if( rc==SQLITE_OK ){
     sqlite3_result_text(pCtx, (const char*)ctx.zOut, -1, SQLITE_TRANSIENT);

@@ -28,7 +28,7 @@ ifcapable !fts5 {
 
 do_test 1.0 {
   execsql { CREATE VIRTUAL TABLE t1 USING fts5(a) }
-  execsql { INSERT INTO t1(t1) VALUES('pgsz=128') }
+  execsql { INSERT INTO t1(t1, rowid) VALUES('pgsz', 128) }
   for {set i 1} {$i <= 10000} {incr i} {
     set v {x x x x x x x x x x x x x x x x x x x x}
     if {($i % 2139)==0} {lset v 3 Y ; lappend Y $i}

@@ -15,6 +15,8 @@
 
 #include "fts5Int.h"
 
+#define FTS5_DEFAULT_PAGE_SIZE   1000
+
 /*
 ** Convert an SQL-style quoted string into a normal string by removing
 ** the quote characters.  The conversion is done in-place.  If the
@@ -295,4 +297,65 @@ int sqlite3Fts5Tokenize(
   return pConfig->pTokApi->xTokenize(pConfig->pTok, pCtx, pText, nText, xToken);
 }
 
+int sqlite3Fts5ConfigSetValue(
+  Fts5Config *pConfig, 
+  const char *zKey, 
+  sqlite3_value *pVal,
+  int *pbBadkey
+){
+  int rc = SQLITE_OK;
+  if(      0==sqlite3_stricmp(zKey, "cookie") ){
+    pConfig->iCookie = sqlite3_value_int(pVal);
+  }
+  else if( 0==sqlite3_stricmp(zKey, "pgsz") ){
+    if( SQLITE_INTEGER==sqlite3_value_numeric_type(pVal) ){
+      pConfig->pgsz = sqlite3_value_int(pVal);
+    }else{
+      if( pbBadkey ) *pbBadkey = 1;
+    }
+  }
+  else if( 0==sqlite3_stricmp(zKey, "automerge") ){
+    // todo
+  }
+  else if( 0==sqlite3_stricmp(zKey, "rank") ){
+    // todo
+  }else{
+    if( pbBadkey ) *pbBadkey = 1;
+  }
+  return rc;
+}
+
+/*
+** Load the contents of the %_config table into memory.
+*/
+int sqlite3Fts5ConfigLoad(Fts5Config *pConfig){
+  const char *zSelect = "SELECT k, v FROM %Q.'%q_config'";
+  char *zSql;
+  sqlite3_stmt *p = 0;
+  int rc;
+
+  /* Set default values */
+  pConfig->pgsz = FTS5_DEFAULT_PAGE_SIZE;
+  pConfig->iCookie = 0;
+
+  zSql = sqlite3_mprintf(zSelect, pConfig->zDb, pConfig->zName);
+  if( zSql==0 ){
+    rc = SQLITE_NOMEM;
+  }else{
+    rc = sqlite3_prepare_v2(pConfig->db, zSql, -1, &p, 0);
+    sqlite3_free(zSql);
+  }
+
+  assert( rc==SQLITE_OK || p==0 );
+  if( rc==SQLITE_OK ){
+    while( SQLITE_ROW==sqlite3_step(p) ){
+      const char *zK = (const char*)sqlite3_column_text(p, 0);
+      sqlite3_value *pVal = sqlite3_column_value(p, 1);
+      sqlite3Fts5ConfigSetValue(pConfig, zK, pVal, 0);
+    }
+    rc = sqlite3_finalize(p);
+  }
+
+  return rc;
+}
 

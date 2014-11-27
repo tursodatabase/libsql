@@ -20,7 +20,7 @@ struct Fts5Storage {
   int bTotalsValid;               /* True if nTotalRow/aTotalSize[] are valid */
   i64 nTotalRow;                  /* Total number of rows in FTS table */
   i64 *aTotalSize;                /* Total sizes of each column */ 
-  sqlite3_stmt *aStmt[9];
+  sqlite3_stmt *aStmt[10];
 };
 
 
@@ -42,6 +42,8 @@ struct Fts5Storage {
 #define FTS5_STMT_DELETE_DOCSIZE  7
 
 #define FTS5_STMT_LOOKUP_DOCSIZE  8
+
+#define FTS5_STMT_REPLACE_CONFIG 9
 
 /*
 ** Prepare the two insert statements - Fts5Storage.pInsertContent and
@@ -70,6 +72,8 @@ static int fts5StorageGetStmt(
       "DELETE FROM %Q.'%q_docsize' WHERE id=?",         /* DELETE_DOCSIZE  */
 
       "SELECT sz FROM %Q.'%q_docsize' WHERE id=?",      /* LOOKUP_DOCSIZE  */
+
+      "REPLACE INTO %Q.'%q_config' VALUES(?,?)",        /* REPLACE_CONFIG */
     };
     Fts5Config *pConfig = p->pConfig;
     char *zSql = 0;
@@ -131,11 +135,13 @@ int sqlite3Fts5CreateTable(
   Fts5Config *pConfig,            /* FTS5 configuration */
   const char *zPost,              /* Shadow table to create (e.g. "content") */
   const char *zDefn,              /* Columns etc. for shadow table */
+  int bWithout,                   /* True for without rowid */
   char **pzErr                    /* OUT: Error message */
 ){
   int rc;
-  char *zSql = sqlite3_mprintf("CREATE TABLE %Q.'%q_%q'(%s)",
-      pConfig->zDb, pConfig->zName, zPost, zDefn
+  char *zSql = sqlite3_mprintf("CREATE TABLE %Q.'%q_%q'(%s)%s",
+      pConfig->zDb, pConfig->zName, zPost, zDefn, 
+      (bWithout ? " WITHOUT ROWID" :"")
   );
   if( zSql==0 ){
     rc = SQLITE_NOMEM;
@@ -193,12 +199,17 @@ int sqlite3Fts5StorageOpen(
       for(i=0; i<pConfig->nCol; i++){
         iOff += sprintf(&zDefn[iOff], ", c%d", i);
       }
-      rc = sqlite3Fts5CreateTable(pConfig, "content", zDefn, pzErr);
+      rc = sqlite3Fts5CreateTable(pConfig, "content", zDefn, 0, pzErr);
     }
     sqlite3_free(zDefn);
     if( rc==SQLITE_OK ){
       rc = sqlite3Fts5CreateTable(
-          pConfig, "docsize", "id INTEGER PRIMARY KEY, sz BLOB", pzErr
+          pConfig, "docsize", "id INTEGER PRIMARY KEY, sz BLOB", 0, pzErr
+      );
+    }
+    if( rc==SQLITE_OK ){
+      rc = sqlite3Fts5CreateTable(
+          pConfig, "config", "k PRIMARY KEY, v", 1, pzErr
       );
     }
   }
@@ -225,7 +236,8 @@ int sqlite3Fts5StorageClose(Fts5Storage *p, int bDestroy){
   /* If required, remove the shadow tables from the database */
   if( bDestroy ){
     rc = sqlite3Fts5DropTable(p->pConfig, "content");
-    if( rc==SQLITE_OK ) sqlite3Fts5DropTable(p->pConfig, "docsize");
+    if( rc==SQLITE_OK ) rc = sqlite3Fts5DropTable(p->pConfig, "docsize");
+    if( rc==SQLITE_OK ) rc = sqlite3Fts5DropTable(p->pConfig, "config");
   }
 
   sqlite3_free(p);
@@ -743,4 +755,21 @@ int sqlite3Fts5StorageRollback(Fts5Storage *p){
   p->bTotalsValid = 0;
   return sqlite3Fts5IndexRollback(p->pIndex);
 }
+
+int sqlite3Fts5StorageConfigValue(
+  Fts5Storage *p, 
+  const char *z, 
+  sqlite3_value *pVal
+){
+  sqlite3_stmt *pReplace = 0;
+  int rc = fts5StorageGetStmt(p, FTS5_STMT_REPLACE_CONFIG, &pReplace);
+  if( rc==SQLITE_OK ){
+    sqlite3_bind_text(pReplace, 1, z, -1, SQLITE_TRANSIENT);
+    sqlite3_bind_value(pReplace, 2, pVal);
+    sqlite3_step(pReplace);
+    rc = sqlite3_reset(pReplace);
+  }
+  return rc;
+}
+
 

@@ -58,6 +58,8 @@ typedef struct Fts5Config Fts5Config;
 /*
 ** An instance of the following structure encodes all information that can
 ** be gleaned from the CREATE VIRTUAL TABLE statement.
+**
+** And all information loaded from the %_config table.
 */
 struct Fts5Config {
   sqlite3 *db;                    /* Database handle */
@@ -69,6 +71,10 @@ struct Fts5Config {
   int *aPrefix;                   /* Sizes in bytes of nPrefix prefix indexes */
   Fts5Tokenizer *pTok;
   fts5_tokenizer *pTokApi;
+
+  /* Values loaded from the %_config table */
+  int iCookie;                    /* Incremented when %_config is modified */
+  int pgsz;                       /* Approximate page size used in %_data */
 };
 
 int sqlite3Fts5ConfigParse(
@@ -86,6 +92,12 @@ int sqlite3Fts5Tokenize(
 );
 
 void sqlite3Fts5Dequote(char *z);
+
+/* Load the contents of the %_config table */
+int sqlite3Fts5ConfigLoad(Fts5Config*);
+
+/* Set the value of a single config attribute */
+int sqlite3Fts5ConfigSetValue(Fts5Config*, const char*, sqlite3_value*, int*);
 
 /*
 ** End of interface to code in fts5_config.c.
@@ -286,13 +298,6 @@ int sqlite3Fts5IndexIntegrityCheck(Fts5Index*, u64 cksum);
 */
 int sqlite3Fts5IndexInit(sqlite3*);
 
-/*
-** Set the page size to use when writing. It doesn't matter if this
-** changes mid-transaction, or if inconsistent values are used by 
-** multiple clients.
-*/
-void sqlite3Fts5IndexPgsz(Fts5Index *p, int pgsz);
-
 void sqlite3Fts5IndexAutomerge(Fts5Index *p, int nMerge);
 
 /*
@@ -364,7 +369,7 @@ int sqlite3Fts5StorageOpen(Fts5Config*, Fts5Index*, int, Fts5Storage**, char**);
 int sqlite3Fts5StorageClose(Fts5Storage *p, int bDestroy);
 
 int sqlite3Fts5DropTable(Fts5Config*, const char *zPost);
-int sqlite3Fts5CreateTable(Fts5Config*, const char*, const char*, char **pzErr);
+int sqlite3Fts5CreateTable(Fts5Config*, const char*, const char*, int, char **);
 
 int sqlite3Fts5StorageDelete(Fts5Storage *p, i64);
 int sqlite3Fts5StorageInsert(Fts5Storage *p, sqlite3_value **apVal, int, i64*);
@@ -380,6 +385,8 @@ int sqlite3Fts5StorageRowCount(Fts5Storage *p, i64 *pnRow);
 
 int sqlite3Fts5StorageSync(Fts5Storage *p, int bCommit);
 int sqlite3Fts5StorageRollback(Fts5Storage *p);
+
+int sqlite3Fts5StorageConfigValue(Fts5Storage *p, const char*, sqlite3_value*);
 
 /*
 ** End of interface to code in fts5_storage.c.

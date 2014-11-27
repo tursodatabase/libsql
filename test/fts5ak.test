@@ -106,6 +106,18 @@ do_execsql_test 2.5 {
   {a [b c d e] f g h i j}
 }
 
+do_execsql_test 2.6.1 {
+  SELECT highlight(ft2, 0, '[', ']') FROM ft2 WHERE ft2 MATCH 'f d'
+} {
+  {a b c [d] e [f] g h i j}
+}
+
+do_execsql_test 2.6.2 {
+  SELECT highlight(ft2, 0, '[', ']') FROM ft2 WHERE ft2 MATCH 'd f'
+} {
+  {a b c [d] e [f] g h i j}
+}
+
 
 finish_test
 

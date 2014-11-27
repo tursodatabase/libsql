@@ -55,12 +55,12 @@ foreach {tn match res} {
 foreach {T create} {
   2 {
     CREATE VIRTUAL TABLE t1 USING fts5(a, b);
-    INSERT INTO t1(t1) VALUES('pgsz=32');
+    INSERT INTO t1(t1, rowid) VALUES('pgsz', 32);
   }
   
   3 {
     CREATE VIRTUAL TABLE t1 USING fts5(a, b, prefix=1,2,3,4,5);
-    INSERT INTO t1(t1) VALUES('pgsz=32');
+    INSERT INTO t1(t1, rowid) VALUES('pgsz', 32);
   }
 
 } {
