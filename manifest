@@ -1,5 +1,5 @@
-C Fix\sa\sbuffer\soverread\sduring\scompilation\sof\sCREATE\sVIRTUAL\sTABLE\sstatements\sthat\sfeatured\san\sexplicit\sdatabase\sname\sbut\sno\svirtual\stable\sarguments.\sFor\sexample,\s"CREATE\sVIRTUAL\sTABLE\smain.ft\sUSING\sfts4".
-D 2014-11-27T11:36:36.295
+C Add\sthe\s-end\soption\sto\sthe\scommand-line\sshell,\swhich\sforces\sit\sto\sexit\safter\nreading\sprior\scommand-line\soptions\s(presumably\sincluding\sone\sor\smore\s-cmd\noptions)\sand\swithout\sreading\sstandard\sinput.
+D 2014-11-28T11:54:44.417
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a226317fdf3f4c895fb3cfedc355b4d0868ce1fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -229,7 +229,7 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 4965007d6497b6a4d7a6d98751cc39712885f952
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 428165951748151e87a15295b7357221433e311b
-F src/shell.c bc28d5992109717c87804e2eb1a08a7c8cc7a2fd
+F src/shell.c f49ecad5afcae4c7fa2754a1446848582b105509
 F src/sqlite.h.in c63db0117aeb749ca02b6016dbbbccbbbd9a141d
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
@@ -1223,7 +1223,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 358ea818f7ea5aa55bafaf4057e9fc7a5fd77c11
-R a4b8cae126976a974aa80f7f44ce5b7f
-U dan
-Z 67582253c41fc622f4b8d67b4605ed6a
+P f095cde579e7417306e11b5c1d2dd90b6bb547d5
+R 705c89a250127228fc15e4e2150ad4c0
+U drh
+Z ed3d85af1529a8fcb757b6e7459b553e

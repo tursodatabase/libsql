@@ -3944,6 +3944,7 @@ static const char zOptions[] =
   "   -cmd COMMAND         run \"COMMAND\" before reading stdin\n"
   "   -csv                 set output mode to 'csv'\n"
   "   -echo                print commands before execution\n"
+  "   -end                 Halt.  Useful after one or more -cmd\n"
   "   -init FILENAME       read/process named file\n"
   "   -[no]header          turn headers on or off\n"
 #if defined(SQLITE_ENABLE_MEMSYS3) || defined(SQLITE_ENABLE_MEMSYS5)
@@ -4288,6 +4289,8 @@ int main(int argc, char **argv){
           if( bail_on_error ) return rc;
         }
       }
+    }else if( strcmp(z, "-end")==0 ){
+      return 0;
     }else{
       fprintf(stderr,"%s: Error: unknown option: %s\n", Argv0, z);
       fprintf(stderr,"Use -help for a list of options.\n");
