@@ -85,7 +85,7 @@ foreach {i x y} {
 reset_db
 do_execsql_test 4.0 {
   CREATE VIRTUAL TABLE t1 USING fts5(x,y);
-  INSERT INTO t1(t1, rowid) VALUES('pgsz', 32);
+  INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
 }
 foreach {i x y} {
    1  {g f d b f} {h h e i a}
@@ -109,7 +109,7 @@ foreach {i x y} {
 reset_db
 do_execsql_test 5.0 {
   CREATE VIRTUAL TABLE t1 USING fts5(x,y);
-  INSERT INTO t1(t1, rowid) VALUES('pgsz', 32);
+  INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
 }
 foreach {i x y} {
    1  {dd abc abc abc abcde} {aaa dd ddd ddd aab}
@@ -134,7 +134,7 @@ breakpoint
 reset_db
 do_execsql_test 6.0 {
   CREATE VIRTUAL TABLE t1 USING fts5(x,y);
-  INSERT INTO t1(t1, rowid) VALUES('pgsz', 32);
+  INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
 }
 
 do_execsql_test 6.1 {
@@ -152,7 +152,7 @@ reset_db
 expr srand(0)
 do_execsql_test 7.0 {
   CREATE VIRTUAL TABLE t1 USING fts5(x,y,z);
-  INSERT INTO t1(t1, rowid) VALUES('pgsz', 32);
+  INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
 }
 
 proc doc {} {
@@ -191,7 +191,7 @@ for {set i 1} {$i <= 10} {incr i} {
 reset_db
 do_execsql_test 8.0 {
   CREATE VIRTUAL TABLE t1 USING fts5(x, prefix="1,2,3");
-  INSERT INTO t1(t1, rowid) VALUES('pgsz', 32);
+  INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
 }
 
 do_execsql_test 8.1 {
@@ -208,7 +208,7 @@ expr srand(0)
 
 do_execsql_test 9.0 {
   CREATE VIRTUAL TABLE t1 USING fts5(x,y,z, prefix="1,2,3");
-  INSERT INTO t1(t1, rowid) VALUES('pgsz', 32);
+  INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
 }
 
 proc doc {} {

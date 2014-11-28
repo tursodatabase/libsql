@@ -46,6 +46,24 @@ void sqlite3Fts5BufferAppendVarint(int *pRc, Fts5Buffer *pBuf, i64 iVal){
   pBuf->n += sqlite3PutVarint(&pBuf->p[pBuf->n], iVal);
 }
 
+void sqlite3Fts5Put32(u8 *aBuf, int iVal){
+  aBuf[0] = (iVal>>24) & 0x00FF;
+  aBuf[1] = (iVal>>16) & 0x00FF;
+  aBuf[2] = (iVal>> 8) & 0x00FF;
+  aBuf[3] = (iVal>> 0) & 0x00FF;
+}
+
+int sqlite3Fts5Get32(const u8 *aBuf){
+  return (aBuf[0] << 24) + (aBuf[1] << 16) + (aBuf[2] << 8) + aBuf[3];
+}
+
+void sqlite3Fts5BufferAppend32(int *pRc, Fts5Buffer *pBuf, int iVal){
+  char *a;
+  if( sqlite3Fts5BufferGrow(pRc, pBuf, 4) ) return;
+  sqlite3Fts5Put32(&pBuf->p[pBuf->n], iVal);
+  pBuf->n += 4;
+}
+
 /*
 ** Append buffer nData/pData to buffer pBuf. If an OOM error occurs, set 
 ** the error code in p. If an error has already occurred when this function

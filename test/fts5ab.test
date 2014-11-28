@@ -59,7 +59,7 @@ do_execsql_test 1.6 {
 reset_db
 do_execsql_test 2.1 {
   CREATE VIRTUAL TABLE t1 USING fts5(x);
-  INSERT INTO t1(t1, rowid) VALUES('pgsz', 32);
+  INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
   INSERT INTO t1 VALUES('one');
   INSERT INTO t1 VALUES('two');
   INSERT INTO t1 VALUES('three');
@@ -99,7 +99,7 @@ foreach {tn expr res} {
 reset_db
 do_execsql_test 3.0 {
   CREATE VIRTUAL TABLE t1 USING fts5(a,b);
-  INSERT INTO t1(t1, rowid) VALUES('pgsz', 32);
+  INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
 }
 
 foreach {tn a b} {

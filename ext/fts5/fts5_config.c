@@ -16,6 +16,10 @@
 #include "fts5Int.h"
 
 #define FTS5_DEFAULT_PAGE_SIZE   1000
+#define FTS5_DEFAULT_AUTOMERGE      4
+
+/* Maximum allowed page size */
+#define FTS5_MAX_PAGE_SIZE (128*1024)
 
 /*
 ** Convert an SQL-style quoted string into a normal string by removing
@@ -153,6 +157,7 @@ int sqlite3Fts5ConfigParse(
   if( pRet==0 ) return SQLITE_NOMEM;
   memset(pRet, 0, sizeof(Fts5Config));
   pRet->db = db;
+  pRet->iCookie = -1;
 
   pRet->azCol = (char**)sqlite3_malloc(sizeof(char*) * nArg);
   pRet->zDb = fts5Strdup(azArg[1]);
@@ -307,16 +312,32 @@ int sqlite3Fts5ConfigSetValue(
   if(      0==sqlite3_stricmp(zKey, "cookie") ){
     pConfig->iCookie = sqlite3_value_int(pVal);
   }
+
   else if( 0==sqlite3_stricmp(zKey, "pgsz") ){
+    int pgsz = 0;
     if( SQLITE_INTEGER==sqlite3_value_numeric_type(pVal) ){
-      pConfig->pgsz = sqlite3_value_int(pVal);
-    }else{
+      pgsz = sqlite3_value_int(pVal);
+    }
+    if( pgsz<=0 || pgsz>FTS5_MAX_PAGE_SIZE ){
       if( pbBadkey ) *pbBadkey = 1;
+    }else{
+      pConfig->pgsz = pgsz;
     }
   }
+
   else if( 0==sqlite3_stricmp(zKey, "automerge") ){
-    // todo
+    int nAutomerge = -1;
+    if( SQLITE_INTEGER==sqlite3_value_numeric_type(pVal) ){
+      nAutomerge = sqlite3_value_int(pVal);
+    }
+    if( nAutomerge<0 || nAutomerge>64 ){
+      if( pbBadkey ) *pbBadkey = 1;
+    }else{
+      if( nAutomerge==1 ) nAutomerge = FTS5_DEFAULT_AUTOMERGE;
+      pConfig->nAutomerge = nAutomerge;
+    }
   }
+
   else if( 0==sqlite3_stricmp(zKey, "rank") ){
     // todo
   }else{
@@ -328,7 +349,7 @@ int sqlite3Fts5ConfigSetValue(
 /*
 ** Load the contents of the %_config table into memory.
 */
-int sqlite3Fts5ConfigLoad(Fts5Config *pConfig){
+int sqlite3Fts5ConfigLoad(Fts5Config *pConfig, int iCookie){
   const char *zSelect = "SELECT k, v FROM %Q.'%q_config'";
   char *zSql;
   sqlite3_stmt *p = 0;
@@ -336,7 +357,7 @@ int sqlite3Fts5ConfigLoad(Fts5Config *pConfig){
 
   /* Set default values */
   pConfig->pgsz = FTS5_DEFAULT_PAGE_SIZE;
-  pConfig->iCookie = 0;
+  pConfig->nAutomerge = FTS5_DEFAULT_AUTOMERGE;
 
   zSql = sqlite3_mprintf(zSelect, pConfig->zDb, pConfig->zName);
   if( zSql==0 ){
@@ -356,6 +377,9 @@ int sqlite3Fts5ConfigLoad(Fts5Config *pConfig){
     rc = sqlite3_finalize(p);
   }
 
+  if( rc==SQLITE_OK ){
+    pConfig->iCookie = iCookie;
+  }
   return rc;
 }
 

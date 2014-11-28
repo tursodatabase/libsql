@@ -340,11 +340,6 @@ static int fts5InitVtab(
     rc = sqlite3Fts5ConfigDeclareVtab(pConfig);
   }
 
-  /* Load the contents of %_config */
-  if( rc==SQLITE_OK ){
-    rc = sqlite3Fts5ConfigLoad(pConfig);
-  }
-
   if( rc!=SQLITE_OK ){
     fts5FreeVtab(pTab, 0);
     pTab = 0;

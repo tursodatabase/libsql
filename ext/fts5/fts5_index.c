@@ -42,7 +42,6 @@
 */
 
 #define FTS5_WORK_UNIT      64    /* Number of leaf pages in unit of work */
-#define FTS5_MIN_MERGE       4    /* Minimum number of segments to merge */
 #define FTS5_CRISIS_MERGE   16    /* Maximum number of segments to merge */
 
 #define FTS5_MIN_DLIDX_SIZE  4    /* Add dlidx if this many empty pages */
@@ -61,10 +60,14 @@
 ** 1. Structure Records:
 **
 **   The set of segments that make up an index - the index structure - are
-**   recorded in a single record within the %_data table. The record is a list
-**   of SQLite varints. 
+**   recorded in a single record within the %_data table. The record consists
+**   of a single 32-bit configuration cookie value followed by a list of 
+**   SQLite varints. If the FTS table features more than one index (because
+**   there are one or more prefix indexes), it is guaranteed that all share
+**   the same cookie value.
 **
-**   The record begins with three varints:
+**   Immediately following the configuration cookie, the record begins with
+**   three varints:
 **
 **     + number of levels,
 **     + total number of segments on all levels,
@@ -288,7 +291,6 @@ typedef struct Fts5StructureSegment Fts5StructureSegment;
 struct Fts5Index {
   Fts5Config *pConfig;            /* Virtual table configuration */
   char *zDataTbl;                 /* Name of %_data table */
-  int nMinMerge;                  /* Minimum input segments in a merge */
   int nCrisisMerge;               /* Maximum allowed segments per level */
   int nWorkUnit;                  /* Leaf pages in a "unit" of work */
 
@@ -960,6 +962,7 @@ static void fts5DataRemoveSegment(Fts5Index *p, int iIdx, int iSegid){
 static int fts5StructureDecode(
   const u8 *pData,                /* Buffer containing serialized structure */
   int nData,                      /* Size of buffer pData in bytes */
+  int *piCookie,                  /* Configuration cookie value */
   Fts5Structure **ppOut           /* OUT: Deserialized object */
 ){
   int rc = SQLITE_OK;
@@ -970,9 +973,13 @@ static int fts5StructureDecode(
   int nByte;                      /* Bytes of space to allocate at pRet */
   Fts5Structure *pRet = 0;        /* Structure object to return */
 
+  /* Grab the cookie value */
+  if( piCookie ) *piCookie = sqlite3Fts5Get32(pData);
+  i = 4;
+
   /* Read the total number of levels and segments from the start of the
   ** structure record.  */
-  i = getVarint32(&pData[i], nLevel);
+  i += getVarint32(&pData[i], nLevel);
   i += getVarint32(&pData[i], nSegment);
   nByte = (
       sizeof(Fts5Structure) +                    /* Main structure */
@@ -1083,11 +1090,16 @@ static Fts5Structure *fts5StructureRead(Fts5Index *p, int iIdx){
   Fts5Config *pConfig = p->pConfig;
   Fts5Structure *pRet = 0;        /* Object to return */
   Fts5Data *pData;                /* %_data entry containing structure record */
+  int iCookie;                    /* Configuration cookie */
 
   assert( iIdx<=pConfig->nPrefix );
   pData = fts5DataRead(p, FTS5_STRUCTURE_ROWID(iIdx));
   if( !pData ) return 0;
-  p->rc = fts5StructureDecode(pData->p, pData->n, &pRet);
+  p->rc = fts5StructureDecode(pData->p, pData->n, &iCookie, &pRet);
+
+  if( p->rc==SQLITE_OK && p->pConfig->iCookie!=iCookie ){
+    p->rc = sqlite3Fts5ConfigLoad(p->pConfig, iCookie);
+  }
 
   fts5DataRelease(pData);
   return pRet;
@@ -1129,9 +1141,16 @@ static void fts5StructureWrite(Fts5Index *p, int iIdx, Fts5Structure *pStruct){
   int nSegment;                   /* Total number of segments */
   Fts5Buffer buf;                 /* Buffer to serialize record into */
   int iLvl;                       /* Used to iterate through levels */
+  int iCookie;                    /* Cookie value to store */
 
   nSegment = fts5StructureCountSegments(pStruct);
   memset(&buf, 0, sizeof(Fts5Buffer));
+
+  /* Append the current configuration cookie */
+  iCookie = p->pConfig->iCookie;
+  if( iCookie<0 ) iCookie = 0;
+  fts5BufferAppend32(&p->rc, &buf, iCookie);
+
   fts5BufferAppendVarint(&p->rc, &buf, pStruct->nLevel);
   fts5BufferAppendVarint(&p->rc, &buf, nSegment);
   fts5BufferAppendVarint(&p->rc, &buf, (i64)pStruct->nWriteCounter);
@@ -2825,6 +2844,7 @@ static void fts5WriteAppendPoslistData(
   const u8 *a = aData;
   int n = nData;
   
+  assert( p->pConfig->pgsz>0 );
   while( p->rc==SQLITE_OK && (pPage->buf.n + n)>=p->pConfig->pgsz ){
     int nReq = p->pConfig->pgsz - pPage->buf.n;
     int nCopy = 0;
@@ -3179,7 +3199,11 @@ static void fts5IndexWork(
     }
 #endif
 
-    if( nBest<p->nMinMerge && pStruct->aLevel[iBestLvl].nMerge==0 ) break;
+    if( nBest<p->pConfig->nAutomerge 
+     && pStruct->aLevel[iBestLvl].nMerge==0 
+    ){
+      break;
+    }
     fts5IndexMergeLevel(p, iIdx, &pStruct, iBestLvl, &nRem);
     fts5StructurePromote(p, iBestLvl+1, pStruct);
     assert( nRem==0 || p->rc==SQLITE_OK );
@@ -3293,7 +3317,7 @@ static void fts5FlushOneHash(Fts5Index *p, int iHash, int *pnLeaf){
     }
   }
 
-  if( p->nMinMerge>0 ) fts5IndexWork(p, iHash, &pStruct, pgnoLast);
+  if( p->pConfig->nAutomerge>0 ) fts5IndexWork(p, iHash, &pStruct, pgnoLast);
   fts5IndexCrisisMerge(p, iHash, &pStruct);
   fts5StructureWrite(p, iHash, pStruct);
   fts5StructureRelease(pStruct);
@@ -3371,7 +3395,6 @@ int sqlite3Fts5IndexOpen(
 
   memset(p, 0, sizeof(Fts5Index));
   p->pConfig = pConfig;
-  p->nMinMerge = FTS5_MIN_MERGE;
   p->nCrisisMerge = FTS5_CRISIS_MERGE;
   p->nWorkUnit = FTS5_WORK_UNIT;
   p->nMaxPendingData = 1024*1024;
@@ -3781,6 +3804,11 @@ int sqlite3Fts5IndexIntegrityCheck(Fts5Index *p, u64 cksum){
 }
 
 /*
+** This is part of the fts5_decode() debugging aid.
+**
+** Arguments pBlob/nBlob contain a serialized Fts5Structure object. This
+** function appends a human-readable representation of the same object
+** to the buffer passed as the second argument. 
 */
 static void fts5DecodeStructure(
   int *pRc,                       /* IN/OUT: error code */
@@ -3790,7 +3818,7 @@ static void fts5DecodeStructure(
   int rc;                         /* Return code */
   Fts5Structure *p = 0;           /* Decoded structure object */
 
-  rc = fts5StructureDecode(pBlob, nBlob, &p);
+  rc = fts5StructureDecode(pBlob, nBlob, 0, &p);
   if( rc!=SQLITE_OK ){
     *pRc = rc;
     return;
@@ -3983,19 +4011,6 @@ int sqlite3Fts5IndexInit(sqlite3 *db){
       db, "fts5_decode", 2, SQLITE_UTF8, 0, fts5DecodeFunction, 0, 0
   );
   return rc;
-}
-
-/*
-** Set the minimum number of segments that an auto-merge operation should
-** attempt to merge together. A value of 1 sets the object to use the 
-** compile time default. Zero or less disables auto-merge altogether.
-*/
-void sqlite3Fts5IndexAutomerge(Fts5Index *p, int nMinMerge){
-  if( nMinMerge==1 ){
-    p->nMinMerge = FTS5_MIN_MERGE;
-  }else{
-    p->nMinMerge = nMinMerge;
-  }
 }
 
 /*
@@ -4406,5 +4421,34 @@ int sqlite3Fts5IndexSetAverages(Fts5Index *p, const u8 *pData, int nData){
 */
 int sqlite3Fts5IndexReads(Fts5Index *p){
   return p->nRead;
+}
+
+/*
+** Set the 32-bit cookie value at the start of all structure records to
+** the value passed as the second argument.
+**
+** Return SQLITE_OK if successful, or an SQLite error code if an error
+** occurs.
+*/
+int sqlite3Fts5IndexSetCookie(Fts5Index *p, int iNew){
+  int rc = SQLITE_OK;
+  Fts5Config *pConfig = p->pConfig;
+  u8 aCookie[4];
+  int i;
+
+  sqlite3Fts5Put32(aCookie, iNew);
+  for(i=0; rc==SQLITE_OK && i<=pConfig->nPrefix; i++){
+    sqlite3_blob *pBlob = 0;
+    i64 iRowid = FTS5_STRUCTURE_ROWID(i);
+    rc = sqlite3_blob_open(
+        pConfig->db, pConfig->zDb, p->zDataTbl, "block", iRowid, 1, &pBlob
+    );
+    if( rc==SQLITE_OK ){
+      sqlite3_blob_write(pBlob, aCookie, 4, 0);
+      rc = sqlite3_blob_close(pBlob);
+    }
+  }
+
+  return rc;
 }
 

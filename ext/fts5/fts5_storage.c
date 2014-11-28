@@ -769,6 +769,13 @@ int sqlite3Fts5StorageConfigValue(
     sqlite3_step(pReplace);
     rc = sqlite3_reset(pReplace);
   }
+  if( rc==SQLITE_OK ){
+    int iNew = p->pConfig->iCookie + 1;
+    rc = sqlite3Fts5IndexSetCookie(p->pIndex, iNew);
+    if( rc==SQLITE_OK ){
+      p->pConfig->iCookie = iNew;
+    }
+  }
   return rc;
 }
 

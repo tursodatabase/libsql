@@ -28,7 +28,7 @@ ifcapable !fts5 {
 
 do_test 1.0 {
   execsql { CREATE VIRTUAL TABLE t1 USING fts5(a) }
-  execsql { INSERT INTO t1(t1, rowid) VALUES('pgsz', 128) }
+  execsql { INSERT INTO t1(t1, rank) VALUES('pgsz', 128) }
   for {set i 1} {$i <= 10000} {incr i} {
     set v {x x x x x x x x x x x x x x x x x x x x}
     if {($i % 2139)==0} {lset v 3 Y ; lappend Y $i}
@@ -71,7 +71,7 @@ do_test 1.5 {
   set bwd [execsql_reads {
     SELECT rowid FROM t1 WHERE t1 MATCH 'x' ORDER BY 1 ASC 
   }]
-  expr {$bwd < $fwd + 10}
+  expr {$bwd < $fwd + 12}
 } {1}
 
 foreach {tn q res} "

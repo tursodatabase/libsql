@@ -46,7 +46,7 @@ proc structure {} {
 expr srand(0)
 do_execsql_test 1.0 {
   CREATE VIRTUAL TABLE t1 USING fts5(x);
-  INSERT INTO t1(t1, rowid) VALUES('pgsz', 64);
+  INSERT INTO t1(t1, rank) VALUES('pgsz', 64);
 }
 
 for {set iTest 0} {$iTest < 50000} {incr iTest} {

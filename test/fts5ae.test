@@ -25,7 +25,7 @@ ifcapable !fts5 {
 
 do_execsql_test 1.0 {
   CREATE VIRTUAL TABLE t1 USING fts5(a, b);
-  INSERT INTO t1(t1, rowid) VALUES('pgsz', 32);
+  INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
 }
 
 do_execsql_test 1.1 {

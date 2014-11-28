@@ -60,6 +60,11 @@ typedef struct Fts5Config Fts5Config;
 ** be gleaned from the CREATE VIRTUAL TABLE statement.
 **
 ** And all information loaded from the %_config table.
+**
+** nAutomerge:
+**   The minimum number of segments that an auto-merge operation should
+**   attempt to merge together. A value of 1 sets the object to use the 
+**   compile time default. Zero disables auto-merge altogether.
 */
 struct Fts5Config {
   sqlite3 *db;                    /* Database handle */
@@ -75,6 +80,7 @@ struct Fts5Config {
   /* Values loaded from the %_config table */
   int iCookie;                    /* Incremented when %_config is modified */
   int pgsz;                       /* Approximate page size used in %_data */
+  int nAutomerge;                 /* 'automerge' setting */
 };
 
 int sqlite3Fts5ConfigParse(
@@ -94,7 +100,7 @@ int sqlite3Fts5Tokenize(
 void sqlite3Fts5Dequote(char *z);
 
 /* Load the contents of the %_config table */
-int sqlite3Fts5ConfigLoad(Fts5Config*);
+int sqlite3Fts5ConfigLoad(Fts5Config*, int);
 
 /* Set the value of a single config attribute */
 int sqlite3Fts5ConfigSetValue(Fts5Config*, const char*, sqlite3_value*, int*);
@@ -126,6 +132,7 @@ void sqlite3Fts5BufferZero(Fts5Buffer*);
 void sqlite3Fts5BufferSet(int*, Fts5Buffer*, int, const u8*);
 void sqlite3Fts5BufferAppendPrintf(int *, Fts5Buffer*, char *zFmt, ...);
 void sqlite3Fts5BufferAppendListElem(int*, Fts5Buffer*, const char*, int);
+void sqlite3Fts5BufferAppend32(int*, Fts5Buffer*, int);
 
 #define fts5BufferZero(x)             sqlite3Fts5BufferZero(x)
 #define fts5BufferGrow(a,b,c)         sqlite3Fts5BufferGrow(a,b,c)
@@ -133,6 +140,11 @@ void sqlite3Fts5BufferAppendListElem(int*, Fts5Buffer*, const char*, int);
 #define fts5BufferFree(a)             sqlite3Fts5BufferFree(a)
 #define fts5BufferAppendBlob(a,b,c,d) sqlite3Fts5BufferAppendBlob(a,b,c,d)
 #define fts5BufferSet(a,b,c,d)        sqlite3Fts5BufferSet(a,b,c,d)
+#define fts5BufferAppend32(a,b,c)     sqlite3Fts5BufferAppend32(a,b,c)
+
+/* Write and decode big-endian 32-bit integer values */
+void sqlite3Fts5Put32(u8*, int);
+int sqlite3Fts5Get32(const u8*);
 
 typedef struct Fts5PoslistReader Fts5PoslistReader;
 struct Fts5PoslistReader {
@@ -298,7 +310,7 @@ int sqlite3Fts5IndexIntegrityCheck(Fts5Index*, u64 cksum);
 */
 int sqlite3Fts5IndexInit(sqlite3*);
 
-void sqlite3Fts5IndexAutomerge(Fts5Index *p, int nMerge);
+int sqlite3Fts5IndexSetCookie(Fts5Index*, int);
 
 /*
 ** Return the total number of entries read from the %_data table by 
