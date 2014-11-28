@@ -52,9 +52,9 @@ do_test shell2-1.1.1 {
 # Ticket [f5cb008a65].
 do_test shell2-1.2.1 {
   set rc [catch { eval exec $CLI \":memory:\" \"select 3\" \"select 4\" } msg]
-  list $rc \
-       [regexp {Error: too many options: "select 4"} $msg]
-} {1 1}
+  list $rc $msg
+} {0 {3
+4}}
 
 # Test a problem reported on the mailing list. The shell was at one point
 # returning the generic SQLITE_ERROR message ("SQL error or missing database")

@@ -1,5 +1,5 @@
-C Add\sthe\s-end\soption\sto\sthe\scommand-line\sshell,\swhich\sforces\sit\sto\sexit\safter\nreading\sprior\scommand-line\soptions\s(presumably\sincluding\sone\sor\smore\s-cmd\noptions)\sand\swithout\sreading\sstandard\sinput.
-D 2014-11-28T11:54:44.417
+C Remove\sthe\sill-designed\s"-end"\soption\sfrom\sthe\scommand-line\sshell.\s\sInstead,\nallow\smultiple\sSQL\sor\sdot-commands\sas\scommand-line\sarguments.\s\sAny\s-cmd\ncommands\sare\sprocessed\sfirst,\sfollowed\sby\sother\scommand-line\sarguments,\sfor\nbackwards\scompatibility.
+D 2014-11-28T13:35:03.566
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a226317fdf3f4c895fb3cfedc355b4d0868ce1fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -229,7 +229,7 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 4965007d6497b6a4d7a6d98751cc39712885f952
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 428165951748151e87a15295b7357221433e311b
-F src/shell.c f49ecad5afcae4c7fa2754a1446848582b105509
+F src/shell.c 45d9c9bd7cde07845af957f2d849933b990773cf
 F src/sqlite.h.in c63db0117aeb749ca02b6016dbbbccbbbd9a141d
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
@@ -848,8 +848,8 @@ F test/shared9.test 5f2a8f79b4d6c7d107a01ffa1ed05ae7e6333e21
 F test/sharedA.test 0cdf1a76dfa00e6beee66af5b534b1e8df2720f5
 F test/shared_err.test 2f2aee20db294b9924e81f6ccbe60f19e21e8506
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test d60946b5fde4d85fe06db7331dfe89011f564350
-F test/shell2.test c57da3a381c099b02c813ba156298d5c2f5c93a3
+F test/shell1.test ab6025d941f9c84c5b83412c6b4d8b57f78dfa3a
+F test/shell2.test 12b8bf901b0e3a8ac58cf5c0c63a0a388d4d1862
 F test/shell3.test 5e8545ec72c4413a0e8d4c6be56496e3c257ca29
 F test/shell4.test 8a9c08976291e6c6c808b4d718f4a8b299f339f5
 F test/shell5.test 15a419cc1df21c892ed64f5596ae7a501f2816f2
@@ -1223,7 +1223,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f095cde579e7417306e11b5c1d2dd90b6bb547d5
-R 705c89a250127228fc15e4e2150ad4c0
+P b59397b1f1e32c478b5fa96659cd4300177d39f7
+R 1ff83ec33f372c19416fe00ba6e9161c
 U drh
-Z ed3d85af1529a8fcb757b6e7459b553e
+Z 816c9b1778ea4dbed9ea56de4b3769ca
