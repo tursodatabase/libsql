@@ -39,5 +39,106 @@ do_execsql_test 1.3 {
   SELECT * FROM ft1_config;
 } {pgsz 64}
 
+#--------------------------------------------------------------------------
+# Test the logic for parsing the rank() function definition.
+#
+foreach {tn defn} {
+  1 "fname()"
+  2 "fname(1)"
+  3 "fname(1,2)"
+  4 "fname(null,NULL,nUlL)"
+  5 "  fname    (   null  ,   NULL  ,  nUlL  )  "
+  6 "fname('abc')"
+  7 "fname('a''bc')"
+  8 "fname('''abc')"
+  9 "fname('abc''')"
+
+  7 "fname(  'a''bc'  )"
+  8 "fname('''abc'  )"
+  9 "fname(  'abc''' )"
+
+  10 "fname(X'1234ab')"
+
+  11 "myfunc(1.2)"
+  12 "myfunc(-1.0)"
+  13 "myfunc(.01,'abc')"
+} {
+  do_execsql_test 2.1.$tn {
+    INSERT INTO ft1(ft1, rank) VALUES('rank', $defn);
+  }
+}
+
+foreach {tn defn} {
+  1 ""
+  2 "fname"
+  3 "fname(X'234ab')"
+  4 "myfunc(-1.,'abc')"
+} {
+  do_test 2.2.$tn {
+    catchsql { INSERT INTO ft1(ft1, rank) VALUES('rank', $defn) }
+  } {1 {SQL logic error or missing database}}
+}
+
+#-------------------------------------------------------------------------
+#
+
+do_execsql_test 3.1 {
+  CREATE VIRTUAL TABLE t1 USING fts5(x);
+  INSERT INTO t1 VALUES('q w e r t y');
+  INSERT INTO t1 VALUES('y t r e w q');
+}
+
+proc argtest {cmd args} { return $args }
+sqlite3_fts5_create_function db argtest argtest
+
+do_execsql_test 3.2.1 {
+  SELECT argtest(t1, 123) FROM t1 WHERE t1 MATCH 'q'
+} {123 123}
+
+do_execsql_test 3.2.2 {
+  SELECT argtest(t1, 123, 456) FROM t1 WHERE t1 MATCH 'q'
+} {{123 456} {123 456}}
+
+proc rowidtest {cmd} { $cmd xRowid }
+sqlite3_fts5_create_function db rowidtest rowidtest
+
+do_execsql_test 3.3.1 {
+  SELECT rowidtest(t1) FROM t1 WHERE t1 MATCH 'q'
+} {2 1}
+
+proc insttest {cmd} {
+  set res [list]
+  for {set i 0} {$i < [$cmd xInstCount]} {incr i} {
+    lappend res [$cmd xInst $i]
+  }
+  set res
+}
+sqlite3_fts5_create_function db insttest insttest
+
+do_execsql_test 3.4.1 {
+  SELECT insttest(t1) FROM t1 WHERE t1 MATCH 'q'
+} {
+  {{0 0 5}} 
+  {{0 0 0}}
+}
+
+do_execsql_test 3.4.2 {
+  SELECT insttest(t1) FROM t1 WHERE t1 MATCH 'r+e OR w'
+} {
+  {{0 0 2} {1 0 4}} 
+  {{1 0 1}}
+}
+
+proc coltest {cmd} {
+  list [$cmd xColumnSize 0] [$cmd xColumnText 0]
+}
+sqlite3_fts5_create_function db coltest coltest
+
+do_execsql_test 3.4.1 {
+  SELECT coltest(t1) FROM t1 WHERE t1 MATCH 'q'
+} {
+  {6 {y t r e w q}} {6 {q w e r t y}}
+}
+
 finish_test
 

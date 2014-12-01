@@ -312,7 +312,8 @@ TESTSRC += \
   $(TOP)/ext/misc/spellfix.c \
   $(TOP)/ext/misc/totype.c \
   $(TOP)/ext/misc/wholenumber.c \
-  $(TOP)/ext/misc/vfslog.c
+  $(TOP)/ext/misc/vfslog.c \
+  $(TOP)/ext/fts5/fts5_tcl.c 
 
 
 #TESTSRC += $(TOP)/ext/fts2/fts2_tokenizer.c

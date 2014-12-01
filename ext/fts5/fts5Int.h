@@ -81,6 +81,8 @@ struct Fts5Config {
   int iCookie;                    /* Incremented when %_config is modified */
   int pgsz;                       /* Approximate page size used in %_data */
   int nAutomerge;                 /* 'automerge' setting */
+  char *zRank;                    /* Name of rank function */
+  char *zRankArgs;                /* Arguments to rank function */
 };
 
 int sqlite3Fts5ConfigParse(

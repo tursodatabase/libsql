@@ -898,7 +898,7 @@ static int fts5SeekCursor(Fts5Cursor *pCsr){
 ** INSERT Directives" section of the documentation. It should be updated if
 ** more commands are added to this function.
 */
-static int fts5SpecialCommand(
+static int fts5SpecialInsert(
   Fts5Table *pTab,                /* Fts5 table object */
   sqlite3_value *pCmd,            /* Value inserted into special column */
   sqlite3_value *pVal             /* Value inserted into rowid column */
@@ -911,10 +911,12 @@ static int fts5SpecialCommand(
     rc = sqlite3Fts5StorageIntegrity(pTab->pStorage);
   }else{
     rc = sqlite3Fts5ConfigSetValue(pTab->pConfig, z, pVal, &bError);
-    if( rc==SQLITE_OK && bError ){
-      rc = SQLITE_ERROR;
-    }else{
-      rc = sqlite3Fts5StorageConfigValue(pTab->pStorage, z, pVal);
+    if( rc==SQLITE_OK ){
+      if( bError ){
+        rc = SQLITE_ERROR;
+      }else{
+        rc = sqlite3Fts5StorageConfigValue(pTab->pStorage, z, pVal);
+      }
     }
   }
   return rc;
@@ -951,7 +953,7 @@ static int fts5UpdateMethod(
   assert( nArg==1 || nArg==(2 + pConfig->nCol + 2) );
 
   if( nArg>1 && SQLITE_NULL!=sqlite3_value_type(apVal[2 + pConfig->nCol]) ){
-    return fts5SpecialCommand(pTab, 
+    return fts5SpecialInsert(pTab, 
         apVal[2 + pConfig->nCol], apVal[2 + pConfig->nCol + 1]
     );
   }
@@ -1676,7 +1678,7 @@ static void fts5Fts5Func(
   char buf[8];
   assert( nArg==0 );
   assert( sizeof(buf)>=sizeof(pGlobal) );
-  memcpy(buf, pGlobal, sizeof(pGlobal));
+  memcpy(buf, (void*)&pGlobal, sizeof(pGlobal));
   sqlite3_result_blob(pCtx, buf, sizeof(pGlobal), SQLITE_TRANSIENT);
 }
 

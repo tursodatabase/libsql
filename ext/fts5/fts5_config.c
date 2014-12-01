@@ -230,6 +230,8 @@ void sqlite3Fts5ConfigFree(Fts5Config *pConfig){
     }
     sqlite3_free(pConfig->azCol);
     sqlite3_free(pConfig->aPrefix);
+    sqlite3_free(pConfig->zRank);
+    sqlite3_free(pConfig->zRankArgs);
     sqlite3_free(pConfig);
   }
 }
@@ -302,6 +304,190 @@ int sqlite3Fts5Tokenize(
   return pConfig->pTokApi->xTokenize(pConfig->pTok, pCtx, pText, nText, xToken);
 }
 
+/*
+** Argument pIn points to a character that is part of a nul-terminated 
+** string. Return a pointer to the first character following *pIn in 
+** the string that is not a white-space character.
+*/
+static const char *fts5ConfigSkipWhitespace(const char *pIn){
+  const char *p = pIn;
+  if( p ){
+    while( *p==' ' ){ p++; }
+  }
+  return p;
+}
+
+/*
+** Argument pIn points to a character that is part of a nul-terminated 
+** string. Return a pointer to the first character following *pIn in 
+** the string that is not a "bareword" character.
+*/
+static const char *fts5ConfigSkipBareword(const char *pIn){
+  const char *p = pIn;
+  while( *p      && *p!=' ' && *p!=':' && *p!='!' && *p!='@' 
+      && *p!='#' && *p!='$' && *p!='%' && *p!='^' && *p!='&' 
+      && *p!='*' && *p!='(' && *p!=')' 
+  ){
+    p++;
+  }
+  if( p==pIn ) p = 0;
+  return p;
+}
+
+static int fts5_isdigit(char a){
+  return (a>='0' && a<='9');
+}
+
+
+
+static const char *fts5ConfigSkipLiteral(const char *pIn){
+  const char *p = pIn;
+  if( p ){
+    switch( *p ){
+      case 'n': case 'N':
+        if( sqlite3_strnicmp("null", p, 4)==0 ){
+          p = &p[4];
+        }else{
+          p = 0;
+        }
+        break;
+        
+      case 'x': case 'X':
+        p++;
+        if( *p=='\'' ){
+          p++;
+          while( (*p>='a' && *p<='f') 
+              || (*p>='A' && *p<='F') 
+              || (*p>='0' && *p<='9') 
+          ){
+            p++;
+          }
+          if( *p=='\'' && 0==((p-pIn)%2) ){
+            p++;
+          }else{
+            p = 0;
+          }
+        }else{
+          p = 0;
+        }
+        break;
+
+      case '\'':
+        p++;
+        while( p ){
+          if( *p=='\'' ){
+            p++;
+            if( *p!='\'' ) break;
+          }
+          p++;
+          if( *p==0 ) p = 0;
+        }
+        break;
+
+      default:
+        /* maybe a number */
+        if( *p=='+' || *p=='-' ) p++;
+        while( fts5_isdigit(*p) ) p++;
+
+        /* At this point, if the literal was an integer, the parse is 
+        ** finished. Or, if it is a floating point value, it may continue
+        ** with either a decimal point or an 'E' character. */
+        if( *p=='.' && fts5_isdigit(p[1]) ){
+          p += 2;
+          while( fts5_isdigit(*p) ) p++;
+        }
+
+        break;
+    }
+  }
+
+  return p;
+}
+
+/*
+** Argument pIn points to the first character in what is expected to be
+** a comma-separated list of SQL literals followed by a ')' character.
+** If it actually is this, return a pointer to the ')'. Otherwise, return
+** NULL to indicate a parse error.
+*/
+static const char *fts5ConfigSkipArgs(const char *pIn){
+  const char *p = pIn;
+  
+  while( 1 ){
+    p = fts5ConfigSkipWhitespace(p);
+    p = fts5ConfigSkipLiteral(p);
+    p = fts5ConfigSkipWhitespace(p);
+    if( p==0 || *p==')' ) break;
+    if( *p!=',' ){
+      p = 0;
+      break;
+    }
+    p++;
+  }
+
+  return p;
+}
+
+/*
+** Parameter zIn contains a rank() function specification. The format of 
+** this is:
+**
+**   + Bareword (function name)
+**   + Open parenthesis - "("
+**   + Zero or more SQL literals in a comma separated list
+**   + Close parenthesis - ")"
+*/
+static int fts5ConfigParseRank(
+  const char *zIn,                /* Input string */
+  char **pzRank,                  /* OUT: Rank function name */
+  char **pzRankArgs               /* OUT: Rank function arguments */
+){
+  const char *p = zIn;
+  const char *pRank;
+  char *zRank = 0;
+  char *zRankArgs = 0;
+  int rc = SQLITE_OK;
+
+  *pzRank = 0;
+  *pzRankArgs = 0;
+
+  p = fts5ConfigSkipWhitespace(p);
+  pRank = p;
+  p = fts5ConfigSkipBareword(p);
+
+  if( p ){
+    zRank = sqlite3Fts5MallocZero(&rc, 1 + p - pRank);
+    if( zRank ) memcpy(zRank, pRank, p-pRank);
+  }else{
+    rc = SQLITE_ERROR;
+  }
+
+  if( rc==SQLITE_OK ){
+    p = fts5ConfigSkipWhitespace(p);
+    if( *p!='(' ) rc = SQLITE_ERROR;
+    p++;
+  }
+  if( rc==SQLITE_OK ){
+    const char *pArgs = p;
+    p = fts5ConfigSkipArgs(p);
+    if( p==0 ){
+      rc = SQLITE_ERROR;
+    }else{
+      zRankArgs = sqlite3Fts5MallocZero(&rc, 1 + p - pArgs);
+      if( zRankArgs ) memcpy(zRankArgs, pArgs, p-pArgs);
+    }
+  }
+
+  if( rc!=SQLITE_OK ){
+    sqlite3_free(zRank);
+    assert( zRankArgs==0 );
+  }else{
+    *pzRank = zRank;
+    *pzRankArgs = zRankArgs;
+  }
+  return rc;
+}
+
 int sqlite3Fts5ConfigSetValue(
   Fts5Config *pConfig, 
   const char *zKey, 
@@ -339,7 +525,19 @@ int sqlite3Fts5ConfigSetValue(
   }
 
   else if( 0==sqlite3_stricmp(zKey, "rank") ){
-    // todo
+    const char *zIn = (const char*)sqlite3_value_text(pVal);
+    char *zRank;
+    char *zRankArgs;
+    rc = fts5ConfigParseRank(zIn, &zRank, &zRankArgs);
+    if( rc==SQLITE_OK ){
+      sqlite3_free(pConfig->zRank);
+      sqlite3_free(pConfig->zRankArgs);
+      pConfig->zRank = zRank;
+      pConfig->zRankArgs = zRankArgs;
+    }else if( rc==SQLITE_ERROR ){
+      rc = SQLITE_OK;
+      if( pbBadkey ) *pbBadkey = 1;
+    }
   }else{
     if( pbBadkey ) *pbBadkey = 1;
   }
