@@ -5724,6 +5724,7 @@ case OP_Checkpoint: {
   assert( pOp->p2==SQLITE_CHECKPOINT_PASSIVE
        || pOp->p2==SQLITE_CHECKPOINT_FULL
        || pOp->p2==SQLITE_CHECKPOINT_RESTART
+       || pOp->p2==SQLITE_CHECKPOINT_TRUNCATE
   );
   rc = sqlite3Checkpoint(db, pOp->p1, pOp->p2, &aRes[1], &aRes[2]);
   if( rc==SQLITE_BUSY ){

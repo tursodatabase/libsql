@@ -7291,6 +7291,10 @@ int sqlite3_wal_checkpoint(sqlite3 *db, const char *zDb);
 **   that the next client to write to the database file restarts the log file 
 **   from the beginning. This call blocks database writers while it is running,
 **   but not database readers.
+**
+** <dt>SQLITE_CHECKPOINT_TRUNCATE<dd>
+**   This mode works the same way as SQLITE_CHECKPOINT_RESTART except that,
+**   if successful, it also truncates the log file to zero bytes in size.
 ** </dl>
 **
 ** If pnLog is not NULL, then *pnLog is set to the total number of frames in
@@ -7306,11 +7310,11 @@ int sqlite3_wal_checkpoint(sqlite3 *db, const char *zDb);
 ** lock cannot be obtained and SQLITE_BUSY is returned. Even if there is a 
 ** busy-handler configured, it will not be invoked in this case.
 **
-** The SQLITE_CHECKPOINT_FULL and RESTART modes also obtain the exclusive 
-** "writer" lock on the database file. If the writer lock cannot be obtained
-** immediately, and a busy-handler is configured, it is invoked and the writer
-** lock retried until either the busy-handler returns 0 or the lock is
-** successfully obtained. The busy-handler is also invoked while waiting for
+** The SQLITE_CHECKPOINT_FULL, RESTART and TRUNCATE modes also obtain the 
+** exclusive "writer" lock on the database file. If the writer lock cannot be
+** obtained immediately, and a busy-handler is configured, it is invoked and
+** the writer lock retried until either the busy-handler returns 0 or the lock
+** is successfully obtained. The busy-handler is also invoked while waiting for
 ** database readers as described above. If the busy-handler returns 0 before
 ** the writer lock is obtained or while waiting for database readers, the
 ** checkpoint operation proceeds from that point in the same way as 
@@ -7349,9 +7353,10 @@ int sqlite3_wal_checkpoint_v2(
 ** documentation for additional information about the meaning and use of
 ** each of these values.
 */
-#define SQLITE_CHECKPOINT_PASSIVE 0
-#define SQLITE_CHECKPOINT_FULL    1
-#define SQLITE_CHECKPOINT_RESTART 2
+#define SQLITE_CHECKPOINT_PASSIVE  0
+#define SQLITE_CHECKPOINT_FULL     1
+#define SQLITE_CHECKPOINT_RESTART  2
+#define SQLITE_CHECKPOINT_TRUNCATE 3
 
 /*
 ** CAPI3REF: Virtual Table Interface Configuration

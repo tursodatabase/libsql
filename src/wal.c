@@ -1624,6 +1624,34 @@ static int walPagesize(Wal *pWal){
 }
 
 /*
+** The following is guaranteed when this function is called:
+**
+**   a) the WRITER lock is held,
+**   b) the entire log file has been checkpointed, and
+**   c) any existing readers are reading exclusively from the database
+**      file - there are no readers that may attempt to read a frame from
+**      the log file.
+**
+** This function updates the shared-memory structures so that the next
+** client to write to the database (which may be this one) does so by
+** writing frames into the start of the log file.
+*/
+static void walRestartHdr(Wal *pWal){
+  volatile WalCkptInfo *pInfo = walCkptInfo(pWal);
+  int i;                          /* Loop counter */
+  u32 *aSalt = pWal->hdr.aSalt;   /* Big-endian salt values */
+  pWal->nCkpt++;
+  pWal->hdr.mxFrame = 0;
+  sqlite3Put4byte((u8*)&aSalt[0], 1 + sqlite3Get4byte((u8*)&aSalt[0]));
+  sqlite3_randomness(4, &aSalt[1]);
+  walIndexWriteHdr(pWal);
+  pInfo->nBackfill = 0;
+  pInfo->aReadMark[1] = 0;
+  for(i=2; i<WAL_NREADER; i++) pInfo->aReadMark[i] = READMARK_NOT_USED;
+  assert( pInfo->aReadMark[0]==0 );
+}
+
+/*
 ** Copy as much content as we can from the WAL back into the database file
 ** in response to an sqlite3_wal_checkpoint() request or the equivalent.
 **
@@ -1775,19 +1803,34 @@ static int walCheckpoint(
     rc = SQLITE_OK;
   }
 
-  /* If this is an SQLITE_CHECKPOINT_RESTART operation, and the entire wal
-  ** file has been copied into the database file, then block until all
-  ** readers have finished using the wal file. This ensures that the next
-  ** process to write to the database restarts the wal file.
+  /* If this is an SQLITE_CHECKPOINT_RESTART or TRUNCATE operation, and the
+  ** entire wal file has been copied into the database file, then block 
+  ** until all readers have finished using the wal file. This ensures that 
+  ** the next process to write to the database restarts the wal file.
   */
   if( rc==SQLITE_OK && eMode!=SQLITE_CHECKPOINT_PASSIVE ){
     assert( pWal->writeLock );
     if( pInfo->nBackfill<pWal->hdr.mxFrame ){
       rc = SQLITE_BUSY;
-    }else if( eMode==SQLITE_CHECKPOINT_RESTART ){
+    }else if( eMode>=SQLITE_CHECKPOINT_RESTART ){
       assert( mxSafeFrame==pWal->hdr.mxFrame );
       rc = walBusyLock(pWal, xBusy, pBusyArg, WAL_READ_LOCK(1), WAL_NREADER-1);
       if( rc==SQLITE_OK ){
+        if( eMode==SQLITE_CHECKPOINT_TRUNCATE ){
+          /* If this is a TRUNCATE checkpoint, also truncate the wal file
+          ** to zero bytes in size on disk. 
+          **
+          ** In theory, it might be safe to do this without updating the
+          ** wal-index header in shared memory, as all subsequent reader or
+          ** writer clients should see that the entire log file has been
+          ** checkpointed and behave accordingly. This seems unsafe though,
+          ** as it would leave the system in a state where the contents of
+          ** the wal-index header do not match the contents of the 
+          ** file-system. To avoid this, update the wal-index header to
+          ** indicate that the log file contains zero valid frames.  */
+          walRestartHdr(pWal);
+          rc = sqlite3OsTruncate(pWal->pWalFd, 0);
+        }
         walUnlockExclusive(pWal, WAL_READ_LOCK(1), WAL_NREADER-1);
       }
     }
@@ -2573,7 +2616,6 @@ int sqlite3WalSavepointUndo(Wal *pWal, u32 *aWalData){
   return rc;
 }
 
-
 /*
 ** This function is called just before writing a set of frames to the log
 ** file (see sqlite3WalFrames()). It checks to see if, instead of appending
@@ -2606,20 +2648,8 @@ static int walRestartLog(Wal *pWal){
         ** In theory it would be Ok to update the cache of the header only
         ** at this point. But updating the actual wal-index header is also
         ** safe and means there is no special case for sqlite3WalUndo()
-        ** to handle if this transaction is rolled back.
-        */
-        int i;                    /* Loop counter */
-        u32 *aSalt = pWal->hdr.aSalt;       /* Big-endian salt values */
-
-        pWal->nCkpt++;
-        pWal->hdr.mxFrame = 0;
-        sqlite3Put4byte((u8*)&aSalt[0], 1 + sqlite3Get4byte((u8*)&aSalt[0]));
-        aSalt[1] = salt1;
-        walIndexWriteHdr(pWal);
-        pInfo->nBackfill = 0;
-        pInfo->aReadMark[1] = 0;
-        for(i=2; i<WAL_NREADER; i++) pInfo->aReadMark[i] = READMARK_NOT_USED;
-        assert( pInfo->aReadMark[0]==0 );
+        ** to handle if this transaction is rolled back.  */
+        walRestartHdr(pWal);
         walUnlockExclusive(pWal, WAL_READ_LOCK(1), WAL_NREADER-1);
       }else if( rc!=SQLITE_BUSY ){
         return rc;

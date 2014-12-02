@@ -1,5 +1,5 @@
-C Convert\stwo\sunreachable\sbranches\sinto\sassert()\sstatements.
-D 2014-12-02T16:16:47.791
+C Add\sthe\sSQLITE_CHECKPOINT_TRUNCATE\soption.
+D 2014-12-02T19:04:54.595
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a226317fdf3f4c895fb3cfedc355b4d0868ce1fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -195,7 +195,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
 F src/loadext.c de741e66e5ddc1598d904d7289239696e40ed994
-F src/main.c 54d0f4896cebc61ae5f831937464953780fe5346
+F src/main.c 34b895b5ebfc73cd690dcd9ac6d0eecb28ce729f
 F src/malloc.c 740db54387204c9a2eb67c6d98e68b08e9ef4eab
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c faf615aafd8be74a71494dfa027c113ea5c6615f
@@ -222,7 +222,7 @@ F src/parse.y 5dfead8aed90cb0c7c1115898ee2266804daff45
 F src/pcache.c ace1b67632deeaa84859b4c16c27711dfb7db3d4
 F src/pcache.h b44658c9c932d203510279439d891a2a83e12ba8
 F src/pcache1.c facbdd3ecc09c8f750089d941305694301328e98
-F src/pragma.c 3f3e959390a10c0131676f0e307acce372777e0f
+F src/pragma.c d54cdd40b63d608f2d95b7482c710690e3593a73
 F src/prepare.c b7b7bf020bd4c962f7c8aed5a3c542c7dfe9f9c7
 F src/printf.c 9e75a6a0b55bf61cfff7d7e19d89834a1b938236
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
@@ -230,7 +230,7 @@ F src/resolve.c 4965007d6497b6a4d7a6d98751cc39712885f952
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 428165951748151e87a15295b7357221433e311b
 F src/shell.c 45d9c9bd7cde07845af957f2d849933b990773cf
-F src/sqlite.h.in c63db0117aeb749ca02b6016dbbbccbbbd9a141d
+F src/sqlite.h.in 400bac7dd1294cb902b5eb85feed1689a2623ced
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
 F src/sqliteInt.h c9e95b8fa9aee30d46387735c5be73fa58886e38
@@ -238,7 +238,7 @@ F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 81712116e826b0089bb221b018929536b2b5406f
 F src/table.c f142bba7903e93ca8d113a5b8877a108ad1a27dc
 F src/tclsqlite.c 0a874655dd39a9875e39c5d3c464db662171d228
-F src/test1.c a0bce4f47da65b76c80e5f8bf9a5ef174603866a
+F src/test1.c f5d7ecd3dd663b11f35269fd91f7090db0570903
 F src/test2.c 98049e51a17dc62606a99a9eb95ee477f9996712
 F src/test3.c 1c0e5d6f080b8e33c1ce8b3078e7013fdbcd560c
 F src/test4.c 9b32d22f5f150abe23c1830e2057c4037c45b3df
@@ -291,7 +291,7 @@ F src/update.c 3c4ecc282accf12d39edb8d524cf089645e55a13
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c 3b627daa45c7308c1e36e3dbaa3f9ce7e5c7fa73
 F src/vacuum.c 9b30ec729337dd012ed88d4c292922c8ef9cf00c
-F src/vdbe.c ec1f55acef4864520ca2017b9f0d60c2ac1b8b78
+F src/vdbe.c 60217f3b8ab984b2e2bb9e3965276dd29e5efe5d
 F src/vdbe.h 6fc69d9c5e146302c56e163cb4b31d1ee64a18c3
 F src/vdbeInt.h 9bb69ff2447c34b6ccc58b34ec35b615f86ead78
 F src/vdbeapi.c 07acb615d1e4170e71fc1b0d087f3c53a1ad8e83
@@ -301,7 +301,7 @@ F src/vdbemem.c 31d8eabb0cd78bfeab4e5124c7363c3e9e54db9f
 F src/vdbesort.c 42c166f7ca78cb643c7f4e4bdfa83c59d363d1a6
 F src/vdbetrace.c 7e4222955e07dd707a2f360c0eb73452be1cb010
 F src/vtab.c c08ec66f45919eaa726bf88aa53eb08379d607f9
-F src/wal.c 486e644b3b8aa5ad066f625bc428aa8ff7001405
+F src/wal.c f09818db7ba6e31d7a681eb99f801a7722c731d9
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
 F src/where.c a0b16f9d78321cb340a977287d19f826555c7d3b
@@ -1113,7 +1113,7 @@ F test/wal.test 885f32b2b390b30b4aa3dbb0e568f8f78d40f5cc
 F test/wal2.test 1f841d2048080d32f552942e333fd99ce541dada
 F test/wal3.test b22eb662bcbc148c5f6d956eaf94b047f7afe9c0
 F test/wal4.test 4744e155cd6299c6bd99d3eab1c82f77db9cdb3c
-F test/wal5.test 8f888b50f66b78821e61ed0e233ded5de378224b
+F test/wal5.test 174cc1512e304a7dfa28ac30527e28ea02fc37df
 F test/wal6.test 527581f5527bf9c24394991e2be83000aace5f9e
 F test/wal64k.test 163655ecd2cb8afef4737cac2a40fdd2eeaf20b8
 F test/wal7.test 2ae8f427d240099cc4b2dfef63cff44e2a68a1bd
@@ -1223,7 +1223,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0d04f380e1bd17104b3cf76b64d0cfc79a726606
-R 22214da224af1bd07c2ba4ce527797c4
-U drh
-Z 4469ca4ec037115204af98a9b9e41068
+P 61b31e771430f490fc2c4cef55046debc4a5f4f5
+R 837049ab8d5153c1422981d3f48166e4
+T *branch * checkpoint-truncate
+T *sym-checkpoint-truncate *
+T -sym-trunk *
+U dan
+Z ce82007701b4a39f21164e74e2380c4f
