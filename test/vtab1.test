@@ -1395,4 +1395,46 @@ do_execsql_test 21.3 {
   SELECT * FROM t9v WHERE a=b;
 } {2 2 2}
 
+#-------------------------------------------------------------------------
+# At one point executing a CREATE VIRTUAL TABLE statement that specified 
+# a database name but no virtual table arguments was causing an internal
+# buffer overread. Valgrind would report errors while running the following 
+# tests. Specifically:
+#
+#   CREATE VIRTUAL TABLE t1 USING fts4;          -- Ok - no db name.
+#   CREATE VIRTUAL TABLE main.t1 USING fts4(x);  -- Ok - has vtab arguments.
+#   CREATE VIRTUAL TABLE main.t1 USING fts4;     -- Had the problem. 
+#
+ifcapable fts3 {
+  forcedelete test.db2
+  set nm [string repeat abcdefghij 100]
+  do_execsql_test 22.1 {
+    ATTACH 'test.db2' AS $nm
+  }
+  
+  execsql "SELECT * FROM sqlite_master"
+  do_execsql_test 22.2 "CREATE VIRTUAL TABLE ${nm}.t1 USING fts4"
+  
+  do_test 22.3.1 {
+    set sql "CREATE VIRTUAL TABLE ${nm}.t2 USING fts4"
+    set stmt [sqlite3_prepare_v2 db $sql -1 dummy]
+    sqlite3_step $stmt
+  } {SQLITE_DONE}
+  
+  do_test 22.3.2 {
+    sqlite3_finalize $stmt
+  } {SQLITE_OK}
+  
+  do_test 22.4.1 {
+    set sql "CREATE VIRTUAL TABLE ${nm}.t3 USING fts4"
+    set n [string length $sql]
+    set stmt [sqlite3_prepare db "${sql}xyz" $n dummy]
+    sqlite3_step $stmt
+  } {SQLITE_DONE}
+  
+  do_test 22.4.2 {
+    sqlite3_finalize $stmt
+  } {SQLITE_OK}
+}
+
 finish_test

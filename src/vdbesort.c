@@ -148,6 +148,13 @@
 #endif
 
 /*
+** Hard-coded maximum amount of data to accumulate in memory before flushing
+** to a level 0 PMA. The purpose of this limit is to prevent various integer
+** overflows. 512MiB.
+*/
+#define SQLITE_MAX_MXPMASIZE    (1<<29)
+
+/*
 ** Private objects used by the sorter
 */
 typedef struct MergeEngine MergeEngine;     /* Merge PMAs together */
@@ -845,7 +852,7 @@ int sqlite3VdbeSorterInit(
       pSorter->mnPmaSize = SORTER_MIN_WORKING * pgsz;
       mxCache = db->aDb[0].pSchema->cache_size;
       if( mxCache<SORTER_MIN_WORKING ) mxCache = SORTER_MIN_WORKING;
-      pSorter->mxPmaSize = mxCache * pgsz;
+      pSorter->mxPmaSize = MIN((i64)mxCache*pgsz, SQLITE_MAX_MXPMASIZE);
 
       /* EVIDENCE-OF: R-26747-61719 When the application provides any amount of
       ** scratch memory using SQLITE_CONFIG_SCRATCH, SQLite avoids unnecessary
