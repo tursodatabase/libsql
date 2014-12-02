@@ -1635,15 +1635,19 @@ static int walPagesize(Wal *pWal){
 ** This function updates the shared-memory structures so that the next
 ** client to write to the database (which may be this one) does so by
 ** writing frames into the start of the log file.
+**
+** The value of parameter salt1 is used as the aSalt[1] value in the 
+** new wal-index header. It should be passed a pseudo-random value (i.e. 
+** one obtained from sqlite3_randomness()).
 */
-static void walRestartHdr(Wal *pWal){
+static void walRestartHdr(Wal *pWal, u32 salt1){
   volatile WalCkptInfo *pInfo = walCkptInfo(pWal);
   int i;                          /* Loop counter */
   u32 *aSalt = pWal->hdr.aSalt;   /* Big-endian salt values */
   pWal->nCkpt++;
   pWal->hdr.mxFrame = 0;
   sqlite3Put4byte((u8*)&aSalt[0], 1 + sqlite3Get4byte((u8*)&aSalt[0]));
-  sqlite3_randomness(4, &aSalt[1]);
+  memcpy(&pWal->hdr.aSalt[1], &salt1, 4);
   walIndexWriteHdr(pWal);
   pInfo->nBackfill = 0;
   pInfo->aReadMark[1] = 0;
@@ -1813,6 +1817,8 @@ static int walCheckpoint(
     if( pInfo->nBackfill<pWal->hdr.mxFrame ){
       rc = SQLITE_BUSY;
     }else if( eMode>=SQLITE_CHECKPOINT_RESTART ){
+      u32 salt1;
+      sqlite3_randomness(4, &salt1);
       assert( mxSafeFrame==pWal->hdr.mxFrame );
       rc = walBusyLock(pWal, xBusy, pBusyArg, WAL_READ_LOCK(1), WAL_NREADER-1);
       if( rc==SQLITE_OK ){
@@ -1828,7 +1834,7 @@ static int walCheckpoint(
           ** the wal-index header do not match the contents of the 
           ** file-system. To avoid this, update the wal-index header to
           ** indicate that the log file contains zero valid frames.  */
-          walRestartHdr(pWal);
+          walRestartHdr(pWal, salt1);
           rc = sqlite3OsTruncate(pWal->pWalFd, 0);
         }
         walUnlockExclusive(pWal, WAL_READ_LOCK(1), WAL_NREADER-1);
@@ -2649,7 +2655,7 @@ static int walRestartLog(Wal *pWal){
         ** at this point. But updating the actual wal-index header is also
         ** safe and means there is no special case for sqlite3WalUndo()
         ** to handle if this transaction is rolled back.  */
-        walRestartHdr(pWal);
+        walRestartHdr(pWal, salt1);
         walUnlockExclusive(pWal, WAL_READ_LOCK(1), WAL_NREADER-1);
       }else if( rc!=SQLITE_BUSY ){
         return rc;

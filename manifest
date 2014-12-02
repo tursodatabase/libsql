@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_CHECKPOINT_TRUNCATE\soption.
-D 2014-12-02T19:04:54.595
+C When\sattempting\sto\srestart\sa\swal\sfile,\smake\sany\srequired\scalls\sto\ssqlite3_randomness()\sbefore\swaiting\son\sor\schecking\sfor\swal\sfile\sreaders.\sThis\srestores\sthe\sbehaviour\sexhibited\sby\sthe\strunk.
+D 2014-12-02T19:35:09.278
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a226317fdf3f4c895fb3cfedc355b4d0868ce1fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -301,7 +301,7 @@ F src/vdbemem.c 31d8eabb0cd78bfeab4e5124c7363c3e9e54db9f
 F src/vdbesort.c 42c166f7ca78cb643c7f4e4bdfa83c59d363d1a6
 F src/vdbetrace.c 7e4222955e07dd707a2f360c0eb73452be1cb010
 F src/vtab.c c08ec66f45919eaa726bf88aa53eb08379d607f9
-F src/wal.c f09818db7ba6e31d7a681eb99f801a7722c731d9
+F src/wal.c e396f31038aa01b9de95584b703692716275aedc
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
 F src/where.c a0b16f9d78321cb340a977287d19f826555c7d3b
@@ -1223,10 +1223,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 61b31e771430f490fc2c4cef55046debc4a5f4f5
-R 837049ab8d5153c1422981d3f48166e4
-T *branch * checkpoint-truncate
-T *sym-checkpoint-truncate *
-T -sym-trunk *
+P 8e20a43419e46b6b9d1f60ec7ea420bbfb3ef358
+R 54481572fc28e1041792401f62b71701
 U dan
-Z ce82007701b4a39f21164e74e2380c4f
+Z a7c4df9879a4ca8a80f8224dd87c78e4
