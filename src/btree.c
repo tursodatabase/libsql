@@ -1356,7 +1356,7 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
   testcase( gap+2+nByte==top );
   if( gap+2+nByte>top ){
  defragment_page:
-    testcase( pPage->nCell==0 );
+    assert( pPage->nCell>0 || CORRUPT_DB );
     rc = defragmentPage(pPage);
     if( rc ) return rc;
     top = get2byteNotZero(&data[hdr+5]);
@@ -6416,7 +6416,7 @@ static int balance_quick(MemPage *pParent, MemPage *pPage, u8 *pSpace){
   assert( pPage->nOverflow==1 );
 
   /* This error condition is now caught prior to reaching this function */
-  if( pPage->nCell==0 ) return SQLITE_CORRUPT_BKPT;
+  if( NEVER(pPage->nCell==0) ) return SQLITE_CORRUPT_BKPT;
 
   /* Allocate a new page. This page will become the right-sibling of 
   ** pPage. Make the parent page writable, so that the new divider cell

@@ -1,5 +1,5 @@
-C Work\saround\soverzealous\sNULL\spointer\schecking\sin\smemcpy()\sand\smemset()\sfor\nsome\ssystems.
-D 2014-12-02T13:46:53.642
+C Convert\stwo\sunreachable\sbranches\sinto\sassert()\sstatements.
+D 2014-12-02T16:16:47.791
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a226317fdf3f4c895fb3cfedc355b4d0868ce1fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -173,7 +173,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 7ddee9c7d505e07e959a575b18498f17c71e53ea
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 49ca66250c7dfa844a4d4cb8272b87420d27d3a5
-F src/btree.c c82a514c0622e47141cca05617f5fa17ecbc909f
+F src/btree.c 44b58cd798a32579816ce274e415de262df9843d
 F src/btree.h e31a3a3ebdedb1caf9bda3ad5dbab3db9b780f6e
 F src/btreeInt.h 3363e18fd76f69a27a870b25221b2345b3fd4d21
 F src/build.c 67bb05b1077e0cdaccb2e36bfcbe7a5df9ed31e8
@@ -1223,7 +1223,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 24fa2e9832daaa5d68ee28a00c56c55f97a4da9e
-R 2462364d5d687298c5bd05c143924351
+P 0d04f380e1bd17104b3cf76b64d0cfc79a726606
+R 22214da224af1bd07c2ba4ce527797c4
 U drh
-Z 6348ca916079ca99c53e597a8af8c112
+Z 4469ca4ec037115204af98a9b9e41068
