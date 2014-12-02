@@ -1742,7 +1742,7 @@ void sqlite3VdbeMakeReady(
       p->aVar[n].db = db;
     }
   }
-  if( p->azVar ){
+  if( p->azVar && pParse->nzVar>0 ){
     p->nzVar = pParse->nzVar;
     memcpy(p->azVar, pParse->azVar, p->nzVar*sizeof(p->azVar[0]));
     memset(pParse->azVar, 0, pParse->nzVar*sizeof(pParse->azVar[0]));

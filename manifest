@@ -1,5 +1,5 @@
-C Remove\sthe\sill-designed\s"-end"\soption\sfrom\sthe\scommand-line\sshell.\s\sInstead,\nallow\smultiple\sSQL\sor\sdot-commands\sas\scommand-line\sarguments.\s\sAny\s-cmd\ncommands\sare\sprocessed\sfirst,\sfollowed\sby\sother\scommand-line\sarguments,\sfor\nbackwards\scompatibility.
-D 2014-11-28T13:35:03.566
+C Work\saround\soverzealous\sNULL\spointer\schecking\sin\smemcpy()\sand\smemset()\sfor\nsome\ssystems.
+D 2014-12-02T13:46:53.642
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a226317fdf3f4c895fb3cfedc355b4d0868ce1fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -295,7 +295,7 @@ F src/vdbe.c ec1f55acef4864520ca2017b9f0d60c2ac1b8b78
 F src/vdbe.h 6fc69d9c5e146302c56e163cb4b31d1ee64a18c3
 F src/vdbeInt.h 9bb69ff2447c34b6ccc58b34ec35b615f86ead78
 F src/vdbeapi.c 07acb615d1e4170e71fc1b0d087f3c53a1ad8e83
-F src/vdbeaux.c 5ce4f414147a3bc3cbcf00ec57f2606c25791629
+F src/vdbeaux.c 6f7f39c3fcf0f5923758df8561bb5d843908a553
 F src/vdbeblob.c 4af4bfb71f6df7778397b4a0ebc1879793276778
 F src/vdbemem.c 31d8eabb0cd78bfeab4e5124c7363c3e9e54db9f
 F src/vdbesort.c 42c166f7ca78cb643c7f4e4bdfa83c59d363d1a6
@@ -1223,7 +1223,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b59397b1f1e32c478b5fa96659cd4300177d39f7
-R 1ff83ec33f372c19416fe00ba6e9161c
+P 24fa2e9832daaa5d68ee28a00c56c55f97a4da9e
+R 2462364d5d687298c5bd05c143924351
 U drh
-Z 816c9b1778ea4dbed9ea56de4b3769ca
+Z 6348ca916079ca99c53e597a8af8c112
