@@ -2523,7 +2523,7 @@ int sqlite3WalUndo(Wal *pWal, int (*xUndo)(void *, Pgno), void *pUndoCtx){
     memcpy(&pWal->hdr, (void *)walIndexHdr(pWal), sizeof(WalIndexHdr));
 
     for(iFrame=pWal->hdr.mxFrame+1; 
-        rc==SQLITE_OK && iFrame<=iMax; 
+        ALWAYS(rc==SQLITE_OK) && iFrame<=iMax; 
         iFrame++
     ){
       /* This call cannot fail. Unless the page for which the page number
