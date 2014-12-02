@@ -274,6 +274,5 @@ foreach {tn q res} {
   } $res
 }
 
-
 finish_test
 

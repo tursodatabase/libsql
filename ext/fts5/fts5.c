@@ -157,8 +157,13 @@ struct Fts5Cursor {
   Fts5Sorter *pSorter;            /* Sorter for "ORDER BY rank" queries */
   int csrflags;                   /* Mask of cursor flags (see below) */
   Fts5Cursor *pNext;              /* Next cursor in Fts5Cursor.pCsr list */
-  Fts5Auxiliary *pRank;           /* Rank callback (or NULL) */
   char *zSpecial;                 /* Result of special query */
+
+  /* "rank" function. Populated on demand from vtab.xColumn(). */
+  Fts5Auxiliary *pRank;           /* Rank callback (or NULL) */
+  int nRankArg;                   /* Number of trailing arguments for rank() */
+  sqlite3_value **apRankArg;      /* Array of trailing arguments */
+  sqlite3_stmt *pRankArgStmt;     /* Origin of objects in apRankArg[] */
 
   /* Variables used by auxiliary functions */
   i64 iCsrId;                     /* Cursor id */
@@ -539,6 +544,9 @@ static int fts5CloseMethod(sqlite3_vtab_cursor *pCursor){
   for(pp=&pTab->pGlobal->pCsr; (*pp)!=pCsr; pp=&(*pp)->pNext);
   *pp = pCsr->pNext;
 
+  sqlite3_finalize(pCsr->pRankArgStmt);
+  sqlite3_free(pCsr->apRankArg);
+
   sqlite3_free(pCsr->zSpecial);
   sqlite3_free(pCsr);
   return SQLITE_OK;
@@ -633,6 +641,7 @@ static int fts5CursorFirstSorted(Fts5Table *pTab, Fts5Cursor *pCsr, int bAsc){
   int nByte;
   int rc = SQLITE_OK;
   char *zSql;
+  const char *zRank = pConfig->zRank ? pConfig->zRank : FTS5_DEFAULT_RANK;
   
   nPhrase = sqlite3Fts5ExprPhraseCount(pCsr->pExpr);
   nByte = sizeof(Fts5Sorter) + sizeof(int) * nPhrase;
@@ -648,8 +657,10 @@ static int fts5CursorFirstSorted(Fts5Table *pTab, Fts5Cursor *pCsr, int bAsc){
   ** table, saving it creates a circular reference.
   **
   ** If SQLite a built-in statement cache, this wouldn't be a problem. */
-  zSql = sqlite3_mprintf("SELECT rowid, %s FROM %Q.%Q ORDER BY +%s %s",
-      pConfig->zName, pConfig->zDb, pConfig->zName, FTS5_RANK_NAME,
+  zSql = sqlite3_mprintf("SELECT rowid, rank FROM %Q.%Q ORDER BY %s(%s%s%s) %s",
+      pConfig->zDb, pConfig->zName, zRank, pConfig->zName,
+      (pConfig->zRankArgs ? ", " : ""),
+      (pConfig->zRankArgs ? pConfig->zRankArgs : ""),
       bAsc ? "ASC" : "DESC"
   );
   if( zSql==0 ){
@@ -721,6 +732,74 @@ static int fts5SpecialMatch(
   return rc;
 }
 
+/*
+** Search for an auxiliary function named zName that can be used with table
+** pTab. If one is found, return a pointer to the corresponding Fts5Auxiliary
+** structure. Otherwise, if no such function exists, return NULL.
+*/
+static Fts5Auxiliary *fts5FindAuxiliary(Fts5Table *pTab, const char *zName){
+  Fts5Auxiliary *pAux;
+
+  for(pAux=pTab->pGlobal->pAux; pAux; pAux=pAux->pNext){
+    if( sqlite3_stricmp(zName, pAux->zFunc)==0 ) return pAux;
+  }
+
+  /* No function of the specified name was found. Return 0. */
+  return 0;
+}
+
+
+static int fts5FindRankFunction(Fts5Cursor *pCsr){
+  Fts5Table *pTab = (Fts5Table*)(pCsr->base.pVtab);
+  Fts5Config *pConfig = pTab->pConfig;
+  const char *zRank = pConfig->zRank;
+  int rc = SQLITE_OK;
+  Fts5Auxiliary *pAux;
+
+  if( zRank==0 ) zRank = FTS5_DEFAULT_RANK;
+
+  if( pTab->pConfig->zRankArgs ){
+    char *zSql = sqlite3_mprintf("SELECT %s", pTab->pConfig->zRankArgs);
+    if( zSql==0 ){
+      rc = SQLITE_NOMEM;
+    }else{
+      sqlite3_stmt *pStmt = 0;
+      rc = sqlite3_prepare_v2(pConfig->db, zSql, -1, &pStmt, 0);
+      sqlite3_free(zSql);
+      assert( rc==SQLITE_OK || pCsr->pRankArgStmt==0 );
+      if( rc==SQLITE_OK ){
+        if( SQLITE_ROW==sqlite3_step(pStmt) ){
+          int nByte;
+          pCsr->nRankArg = sqlite3_column_count(pStmt);
+          nByte = sizeof(sqlite3_value*)*pCsr->nRankArg;
+          pCsr->apRankArg = (sqlite3_value**)sqlite3Fts5MallocZero(&rc, nByte);
+          if( rc==SQLITE_OK ){
+            int i;
+            for(i=0; i<pCsr->nRankArg; i++){
+              pCsr->apRankArg[i] = sqlite3_column_value(pStmt, i);
+            }
+          }
+          pCsr->pRankArgStmt = pStmt;
+        }else{
+          rc = sqlite3_finalize(pStmt);
+          assert( rc!=SQLITE_OK );
+        }
+      }
+    }
+  }
+
+  if( rc==SQLITE_OK ){
+    pAux = fts5FindAuxiliary(pTab, zRank);
+    if( pAux==0 ){
+      assert( pTab->base.zErrMsg==0 );
+      pTab->base.zErrMsg = sqlite3_mprintf("no such function: %s", zRank);
+      rc = SQLITE_ERROR;
+    }
+  }
+
+  pCsr->pRank = pAux;
+  return rc;
+}
 
 /*
 ** This is the xFilter interface for the virtual table.  See
@@ -753,7 +832,6 @@ static int fts5FilterMethod(
     ** fts5CursorFirstSorted() above.  */
     assert( FTS5_PLAN(idxNum)==FTS5_PLAN_SCAN );
     pCsr->idxNum = FTS5_PLAN_SOURCE;
-    pCsr->pRank = pTab->pSortCsr->pRank;
     pCsr->pExpr = pTab->pSortCsr->pExpr;
     rc = fts5CursorFirst(pTab, pCsr, bAsc);
   }else{
@@ -769,7 +847,6 @@ static int fts5FilterMethod(
         rc = fts5SpecialMatch(pTab, pCsr, &zExpr[1]);
       }else{
         char **pzErr = &pTab->base.zErrMsg;
-        pCsr->pRank = pTab->pGlobal->pAux;
         rc = sqlite3Fts5ExprNew(pTab->pConfig, zExpr, &pCsr->pExpr, pzErr);
         if( rc==SQLITE_OK ){
           if( ePlan==FTS5_PLAN_MATCH ){
@@ -1092,7 +1169,7 @@ static int fts5CacheInstArray(Fts5Cursor *pCsr){
     aIter = (Fts5PoslistReader*)sqlite3Fts5MallocZero(&rc, nByte);
     if( aIter ){
       Fts5Buffer buf = {0, 0, 0}; /* Build up aInst[] here */
-      int nInst;                  /* Number instances seen so far */
+      int nInst = 0;              /* Number instances seen so far */
       int i;
 
       /* Initialize all iterators */
@@ -1426,19 +1503,23 @@ static int fts5ColumnMethod(
   }else
 
   if( iCol==pConfig->nCol ){
+    /* User is requesting the value of the special column with the same name
+    ** as the table. Return the cursor integer id number. This value is only
+    ** useful in that it may be passed as the first argument to an FTS5
+    ** auxiliary function.  */
+    sqlite3_result_int64(pCtx, pCsr->iCsrId);
+  }else if( iCol==pConfig->nCol+1 ){
+
+    /* The value of the "rank" column. */
     if( FTS5_PLAN(pCsr->idxNum)==FTS5_PLAN_SOURCE ){
       fts5PoslistBlob(pCtx, pCsr);
-    }else{
-      /* User is requesting the value of the special column with the same name
-      ** as the table. Return the cursor integer id number. This value is only
-      ** useful in that it may be passed as the first argument to an FTS5
-      ** auxiliary function.  */
-      sqlite3_result_int64(pCtx, pCsr->iCsrId);
-    }
-  }else if( iCol==pConfig->nCol+1 ){
-    /* The value of the "rank" column. */
-    if( pCsr->pRank ){
-      fts5ApiInvoke(pCsr->pRank, pCsr, pCtx, 0, 0);
+    }else if( 
+        FTS5_PLAN(pCsr->idxNum)==FTS5_PLAN_MATCH
+     || FTS5_PLAN(pCsr->idxNum)==FTS5_PLAN_SORTED_MATCH
+    ){
+      if( pCsr->pRank || SQLITE_OK==(rc = fts5FindRankFunction(pCsr)) ){
+        fts5ApiInvoke(pCsr->pRank, pCsr, pCtx, pCsr->nRankArg, pCsr->apRankArg);
+      }
     }
   }else{
     rc = fts5SeekCursor(pCsr);
@@ -1464,12 +1545,11 @@ static int fts5FindFunctionMethod(
   Fts5Table *pTab = (Fts5Table*)pVtab;
   Fts5Auxiliary *pAux;
 
-  for(pAux=pTab->pGlobal->pAux; pAux; pAux=pAux->pNext){
-    if( sqlite3_stricmp(zName, pAux->zFunc)==0 ){
-      *pxFunc = fts5ApiCallback;
-      *ppArg = (void*)pAux;
-      return 1;
-    }
+  pAux = fts5FindAuxiliary(pTab, zName);
+  if( pAux ){
+    *pxFunc = fts5ApiCallback;
+    *ppArg = (void*)pAux;
+    return 1;
   }
 
   /* No function of the specified name was found. Return 0. */

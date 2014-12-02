@@ -468,11 +468,13 @@ static int fts5ConfigParseRank(
     p++;
   }
   if( rc==SQLITE_OK ){
-    const char *pArgs = p;
+    const char *pArgs; 
+    p = fts5ConfigSkipWhitespace(p);
+    pArgs = p;
     p = fts5ConfigSkipArgs(p);
     if( p==0 ){
       rc = SQLITE_ERROR;
-    }else{
+    }else if( p!=pArgs ){
       zRankArgs = sqlite3Fts5MallocZero(&rc, 1 + p - pArgs);
       if( zRankArgs ) memcpy(zRankArgs, pArgs, p-pArgs);
     }

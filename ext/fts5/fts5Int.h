@@ -27,6 +27,7 @@
 #define FTS5_MAX_PREFIX_INDEXES 31
 
 #define FTS5_DEFAULT_NEARDIST 10
+#define FTS5_DEFAULT_RANK     "bm25"
 
 /* Name of rank column */
 #define FTS5_RANK_NAME "rank"
