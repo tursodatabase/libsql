@@ -29,7 +29,7 @@ fn main() {
                   name            TEXT NOT NULL,
                   time_created    TEXT NOT NULL,
                   data            BLOB
-                  )", []).unwrap();
+                  )", &[]).unwrap();
     let me = Person {
         id: 0,
         name: "Steven".to_string(),
@@ -41,7 +41,7 @@ fn main() {
                  &[&me.name, &me.time_created, &me.data]).unwrap();
 
     let mut stmt = conn.prepare("SELECT id, name, time_created, data FROM person").unwrap();
-    for row in stmt.query([]).unwrap().map(|row| row.unwrap()) {
+    for row in stmt.query(&[]).unwrap().map(|row| row.unwrap()) {
         let person = Person {
             id: row.get(0),
             name: row.get(1),
@@ -71,7 +71,7 @@ will panic if you do so. A specific example that will panic:
 ```rust
 fn bad_function_will_panic(conn: &SqliteConnection) -> SqliteResult<i64> {
     let mut stmt = try!(conn.prepare("SELECT id FROM my_table"));
-    let mut rows = try!(stmt.query([]));
+    let mut rows = try!(stmt.query(&[]));
 
     let row0 = try!(rows.next().unwrap());
     // row 0 is valid now...

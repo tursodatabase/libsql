@@ -57,7 +57,6 @@ extern crate time;
 use libc::{c_int, c_double};
 use std::c_str::{CString};
 use std::mem;
-use std::vec;
 use super::ffi;
 use super::{SqliteResult, SqliteError};
 
@@ -186,7 +185,7 @@ impl FromSql for Vec<u8> {
 
         assert!(len >= 0); let len = len as uint;
 
-        Ok(vec::raw::from_buf(mem::transmute(c_blob), len))
+        Ok(Vec::from_raw_buf(mem::transmute(c_blob), len))
     }
 }
 
