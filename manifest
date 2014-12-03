@@ -1,5 +1,5 @@
-C Simplify\sthe\ssqlite3_wal_checkpoint()\sdocumentation.\s\sAdd\ssome\ssource\scode\nevidence\smarks.
-D 2014-12-03T18:32:47.200
+C Fix\sover-length\scomment\slines\sin\ssqlite.h.in.\s\sNo\schanges\sto\scode.
+D 2014-12-03T19:08:00.822
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a226317fdf3f4c895fb3cfedc355b4d0868ce1fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -230,7 +230,7 @@ F src/resolve.c 4965007d6497b6a4d7a6d98751cc39712885f952
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 428165951748151e87a15295b7357221433e311b
 F src/shell.c 45d9c9bd7cde07845af957f2d849933b990773cf
-F src/sqlite.h.in dd3721b533e9608677203917aa18bb477aede13d
+F src/sqlite.h.in f16487cd0b8f363faf08ad6009d5222e56d78b66
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
 F src/sqliteInt.h c9e95b8fa9aee30d46387735c5be73fa58886e38
@@ -1223,7 +1223,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7d284d047b0677fb4532df5aae06f5bad997f5e9
-R 0867d5ea698016229ebc4122ede6b104
+P 026c44ff2c092b14faa19985dd46873aeb8727dc
+R 4ed5b70763e0743b0e322aa2df0b85da
 U drh
-Z a6f1638a8e5b63a53571b9743845c380
+Z 6507e8b7c8c2131b9414f714dc2b9292
