@@ -7302,12 +7302,14 @@ int sqlite3_wal_checkpoint(sqlite3 *db, const char *zDb);
 ** </dl>
 **
 ** ^If pnLog is not NULL, then *pnLog is set to the total number of frames in
-** the log file before returning or to -1 if the checkpoint could not run because
+** the log file or to -1 if the checkpoint could not run because
 ** of an error or because the database is not in [WAL mode]. ^If pnCkpt is not NULL,
-** then *pnCkpt is set to the total number of checkpointed frames (including any
-** that were already checkpointed before the function was called) or to -1 if the
-** checkpoint could not run due to an error or because the database is not in
-** WAL mode.
+** then *pnCkpt is set to the total number of checkpointed frames in the log file
+** (including any that were already checkpointed before the function was called)
+** or to -1 if the checkpoint could not run due to an error or because the
+** database is not in WAL mode. ^Note that upon successful completion of
+** an SQLITE_CHECKPOINT_TRUNCATE, the log file will have been truncated to
+** zero bytes and so both *pnLog and *pnCkpt will be set to zero.
 **
 ** ^All calls obtain an exclusive "checkpoint" lock on the database file. ^If
 ** any other process is running a checkpoint operation at the same time, the 
@@ -7341,6 +7343,11 @@ int sqlite3_wal_checkpoint(sqlite3 *db, const char *zDb);
 ** mode, SQLITE_OK is returned and both *pnLog and *pnCkpt set to -1. ^If
 ** zDb is not NULL (or a zero length string) and is not the name of any
 ** attached database, SQLITE_ERROR is returned to the caller.
+**
+** ^Unless it returns SQLITE_MISUSE,
+** the sqlite3_wal_checkpoint_v2() interface
+** sets the error information that is queried by
+** [sqlite3_errcode()] and [sqlite3_errmsg()].
 **
 ** ^The [PRAGMA wal_checkpoint] command can be used to invoke this interface
 ** from SQL.
