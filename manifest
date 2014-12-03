@@ -1,5 +1,5 @@
-C Futher\stweaks\sto\sthe\ssqlite3_wal_checkpoint_v2()\sdocumentation.
-D 2014-12-03T16:30:27.252
+C Simplify\sthe\ssqlite3_wal_checkpoint()\sdocumentation.\s\sAdd\ssome\ssource\scode\nevidence\smarks.
+D 2014-12-03T18:32:47.200
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a226317fdf3f4c895fb3cfedc355b4d0868ce1fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -195,7 +195,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
 F src/loadext.c de741e66e5ddc1598d904d7289239696e40ed994
-F src/main.c 34b895b5ebfc73cd690dcd9ac6d0eecb28ce729f
+F src/main.c 84cc0fc4861bd2b06c286b38bf03bce604a0a66a
 F src/malloc.c 740db54387204c9a2eb67c6d98e68b08e9ef4eab
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c faf615aafd8be74a71494dfa027c113ea5c6615f
@@ -230,7 +230,7 @@ F src/resolve.c 4965007d6497b6a4d7a6d98751cc39712885f952
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 428165951748151e87a15295b7357221433e311b
 F src/shell.c 45d9c9bd7cde07845af957f2d849933b990773cf
-F src/sqlite.h.in 8c881e8d225167a878ed7d78a776b372304823a9
+F src/sqlite.h.in dd3721b533e9608677203917aa18bb477aede13d
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
 F src/sqliteInt.h c9e95b8fa9aee30d46387735c5be73fa58886e38
@@ -1223,7 +1223,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1e212d9899387344fd62c7b6fbcc59ea885b6d7c
-R e9765e182534ca03b14c9167cc7abee7
+P 7d284d047b0677fb4532df5aae06f5bad997f5e9
+R 0867d5ea698016229ebc4122ede6b104
 U drh
-Z 0ecdc98d536d1a5e17e6fc5f0fd27d98
+Z a6f1638a8e5b63a53571b9743845c380

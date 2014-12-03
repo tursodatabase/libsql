@@ -7241,22 +7241,21 @@ int sqlite3_wal_autocheckpoint(sqlite3 *db, int N);
 /*
 ** CAPI3REF: Checkpoint a database
 **
-** ^The [sqlite3_wal_checkpoint(D,X)] interface causes database named X
-** on [database connection] D to be [checkpointed].  ^If X is NULL or an
-** empty string, then a checkpoint is run on all databases of
-** connection D.  ^If the database connection D is not in
-** [WAL | write-ahead log mode] then this interface is a harmless no-op.
-** ^The [sqlite3_wal_checkpoint(D,X)] interface initiates a
-** [sqlite3_wal_checkpoint_v2|PASSIVE] checkpoint.
-** Use the [sqlite3_wal_checkpoint_v2()] interface to get a FULL
-** or RESET or TRUNCATE checkpoint.
+** ^(The sqlite3_wal_checkpoint(D,X) is equivalent to
+** [sqlite3_wal_checkpoint_v2](D,X,[SQLITE_CHECKPOINT_PASSIVE],0,0).)^
 **
-** ^The [wal_checkpoint pragma] can be used to invoke this interface
-** from SQL.  ^The [sqlite3_wal_autocheckpoint()] interface and the
-** [wal_autocheckpoint pragma] can be used to cause this interface to be
-** run whenever the WAL reaches a certain size threshold.
+** In brief, sqlite3_wal_checkpoint(D,X) causes the content in the 
+** [write-ahead log] for database X on [database connection] D to be
+** transferred into the database file and for the write-ahead log to
+** be reset.  See the [checkpointing] documentation for addition
+** information.
 **
-** See also: [sqlite3_wal_checkpoint_v2()]
+** This interface used to be the only way to cause a checkpoint to
+** occur.  But then the newer and more powerful [sqlite3_wal_checkpoint_v2()]
+** interface was added.  This interface is retained for backwards
+** compatibility and as a convenience for applications that need to manually
+** start a callback but which do not need the full power (and corresponding
+** complication) of [sqlite3_wal_checkpoint_v2()].
 */
 int sqlite3_wal_checkpoint(sqlite3 *db, const char *zDb);
 
@@ -7272,8 +7271,7 @@ int sqlite3_wal_checkpoint(sqlite3 *db, const char *zDb);
 ** <dt>SQLITE_CHECKPOINT_PASSIVE<dd>
 **   ^Checkpoint as many frames as possible without waiting for any database 
 **   readers or writers to finish, then sync the database file if all frames 
-**   in the log were checkpointed. ^This mode is the same as calling 
-**   [sqlite3_wal_checkpoint()]. ^The [sqlite3_busy_handler|busy-handler callback]
+**   in the log were checkpointed. ^The [sqlite3_busy_handler|busy-handler callback]
 **   is never invoked in the SQLITE_CHECKPOINT_PASSIVE mode.  ^On the other hand,
 **   passive mode might leave the checkpoint unfinished if there are concurrent
 **   readers or writers.
