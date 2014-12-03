@@ -226,21 +226,23 @@ int sqlite3Fts5StorageOpen(
 */
 int sqlite3Fts5StorageClose(Fts5Storage *p, int bDestroy){
   int rc = SQLITE_OK;
-  int i;
+  if( p ){
+    int i;
 
-  /* Finalize all SQL statements */
-  for(i=0; i<ArraySize(p->aStmt); i++){
-    sqlite3_finalize(p->aStmt[i]);
+    /* Finalize all SQL statements */
+    for(i=0; i<ArraySize(p->aStmt); i++){
+      sqlite3_finalize(p->aStmt[i]);
+    }
+
+    /* If required, remove the shadow tables from the database */
+    if( bDestroy ){
+      rc = sqlite3Fts5DropTable(p->pConfig, "content");
+      if( rc==SQLITE_OK ) rc = sqlite3Fts5DropTable(p->pConfig, "docsize");
+      if( rc==SQLITE_OK ) rc = sqlite3Fts5DropTable(p->pConfig, "config");
+    }
+
+    sqlite3_free(p);
   }
-
-  /* If required, remove the shadow tables from the database */
-  if( bDestroy ){
-    rc = sqlite3Fts5DropTable(p->pConfig, "content");
-    if( rc==SQLITE_OK ) rc = sqlite3Fts5DropTable(p->pConfig, "docsize");
-    if( rc==SQLITE_OK ) rc = sqlite3Fts5DropTable(p->pConfig, "config");
-  }
-
-  sqlite3_free(p);
   return rc;
 }
 
@@ -265,8 +267,7 @@ static int fts5StorageInsertCallback(
   Fts5InsertCtx *pCtx = (Fts5InsertCtx*)pContext;
   Fts5Index *pIdx = pCtx->pStorage->pIndex;
   pCtx->szCol = iPos+1;
-  sqlite3Fts5IndexWrite(pIdx, pCtx->iCol, iPos, pToken, nToken);
-  return SQLITE_OK;
+  return sqlite3Fts5IndexWrite(pIdx, pCtx->iCol, iPos, pToken, nToken);
 }
 
 /*
@@ -288,8 +289,8 @@ static int fts5StorageDeleteFromIndex(Fts5Storage *p, i64 iDel){
       Fts5InsertCtx ctx;
       ctx.pStorage = p;
       ctx.iCol = -1;
-      sqlite3Fts5IndexBeginWrite(p->pIndex, iDel);
-      for(iCol=1; iCol<=pConfig->nCol; iCol++){
+      rc = sqlite3Fts5IndexBeginWrite(p->pIndex, iDel);
+      for(iCol=1; rc==SQLITE_OK && iCol<=pConfig->nCol; iCol++){
         rc = sqlite3Fts5Tokenize(pConfig, 
             (const char*)sqlite3_column_text(pSeek, iCol),
             sqlite3_column_bytes(pSeek, iCol),
@@ -475,8 +476,10 @@ int sqlite3Fts5StorageInsert(
   *piRowid = sqlite3_last_insert_rowid(pConfig->db);
 
   /* Add new entries to the FTS index */
-  sqlite3Fts5IndexBeginWrite(p->pIndex, *piRowid);
-  ctx.pStorage = p;
+  if( rc==SQLITE_OK ){
+    rc = sqlite3Fts5IndexBeginWrite(p->pIndex, *piRowid);
+    ctx.pStorage = p;
+  }
   for(ctx.iCol=0; rc==SQLITE_OK && ctx.iCol<pConfig->nCol; ctx.iCol++){
     ctx.szCol = 0;
     rc = sqlite3Fts5Tokenize(pConfig, 

@@ -308,24 +308,19 @@ static int fts5InitVtab(
 ){
   Fts5Global *pGlobal = (Fts5Global*)pAux;
   const char **azConfig = (const char**)argv;
-  int rc;                         /* Return code */
+  int rc = SQLITE_OK;             /* Return code */
   Fts5Config *pConfig;            /* Results of parsing argc/argv */
   Fts5Table *pTab = 0;            /* New virtual table object */
 
-  /* Parse the arguments */
-  rc = sqlite3Fts5ConfigParse(pGlobal, db, argc, azConfig, &pConfig, pzErr);
-  assert( (rc==SQLITE_OK && *pzErr==0) || pConfig==0 );
-
-  /* Allocate the new vtab object */
+  /* Allocate the new vtab object and parse the configuration */
+  pTab = (Fts5Table*)sqlite3Fts5MallocZero(&rc, sizeof(Fts5Table));
   if( rc==SQLITE_OK ){
-    pTab = (Fts5Table*)sqlite3_malloc(sizeof(Fts5Table));
-    if( pTab==0 ){
-      rc = SQLITE_NOMEM;
-    }else{
-      memset(pTab, 0, sizeof(Fts5Table));
-      pTab->pConfig = pConfig;
-      pTab->pGlobal = pGlobal;
-    }
+    rc = sqlite3Fts5ConfigParse(pGlobal, db, argc, azConfig, &pConfig, pzErr);
+    assert( (rc==SQLITE_OK && *pzErr==0) || pConfig==0 );
+  }
+  if( rc==SQLITE_OK ){
+    pTab->pConfig = pConfig;
+    pTab->pGlobal = pGlobal;
   }
 
   /* Open the index sub-system */

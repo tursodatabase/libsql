@@ -115,8 +115,13 @@ static int fts5ConfigParseSpecial(
 **
 ** Return 0 if an OOM error is encountered.
 */
-static char *fts5Strdup(const char *z){
-  return sqlite3_mprintf("%s", z);
+static char *fts5Strdup(int *pRc, const char *z){
+  char *pRet = 0;
+  if( *pRc==SQLITE_OK ){
+    pRet = sqlite3_mprintf("%s", z);
+    if( pRet==0 ) *pRc = SQLITE_NOMEM;
+  }
+  return pRet;
 }
 
 /*
@@ -159,44 +164,41 @@ int sqlite3Fts5ConfigParse(
   pRet->db = db;
   pRet->iCookie = -1;
 
-  pRet->azCol = (char**)sqlite3_malloc(sizeof(char*) * nArg);
-  pRet->zDb = fts5Strdup(azArg[1]);
-  pRet->zName = fts5Strdup(azArg[2]);
-  if( sqlite3_stricmp(pRet->zName, FTS5_RANK_NAME)==0 ){
-    *pzErr = sqlite3_mprintf("reserved fts5 table name: %s", pRet->zName);
-    rc = SQLITE_ERROR;
-  }else if( pRet->azCol==0 || pRet->zDb==0 || pRet->zName==0 ){
-    rc = SQLITE_NOMEM;
-  }else{
-    int i;
-    for(i=3; rc==SQLITE_OK && i<nArg; i++){
-      char *zDup = fts5Strdup(azArg[i]);
-      if( zDup==0 ){
-        rc = SQLITE_NOMEM;
-      }else{
-
-        /* Check if this is a special directive - "cmd=arg" */
-        if( zDup[0]!='"' && zDup[0]!='\'' && zDup[0]!='[' && zDup[0]!='`' ){
-          char *p = zDup;
-          while( *p && *p!='=' ) p++;
-          if( *p ){
-            char *zArg = &p[1];
-            *p = '\0';
-            sqlite3Fts5Dequote(zArg);
-            rc = fts5ConfigParseSpecial(pRet, zDup, zArg, pzErr);
-            sqlite3_free(zDup);
-            zDup = 0;
-          }
-        }
-
-        /* If it is not a special directive, it must be a column name. In
-        ** this case, check that it is not the reserved column name "rank". */
+  pRet->azCol = (char**)sqlite3Fts5MallocZero(&rc, sizeof(char*) * nArg);
+  pRet->zDb = fts5Strdup(&rc, azArg[1]);
+  pRet->zName = fts5Strdup(&rc, azArg[2]);
+  if( rc==SQLITE_OK ){
+    if( sqlite3_stricmp(pRet->zName, FTS5_RANK_NAME)==0 ){
+      *pzErr = sqlite3_mprintf("reserved fts5 table name: %s", pRet->zName);
+      rc = SQLITE_ERROR;
+    }else{
+      int i;
+      for(i=3; rc==SQLITE_OK && i<nArg; i++){
+        char *zDup = fts5Strdup(&rc, azArg[i]);
         if( zDup ){
-          sqlite3Fts5Dequote(zDup);
-          pRet->azCol[pRet->nCol++] = zDup;
-          if( sqlite3_stricmp(zDup, FTS5_RANK_NAME)==0 ){
-            *pzErr = sqlite3_mprintf("reserved fts5 column name: %s", zDup);
-            rc = SQLITE_ERROR;
+          /* Check if this is a special directive - "cmd=arg" */
+          if( zDup[0]!='"' && zDup[0]!='\'' && zDup[0]!='[' && zDup[0]!='`' ){
+            char *p = zDup;
+            while( *p && *p!='=' ) p++;
+            if( *p ){
+              char *zArg = &p[1];
+              *p = '\0';
+              sqlite3Fts5Dequote(zArg);
+              rc = fts5ConfigParseSpecial(pRet, zDup, zArg, pzErr);
+              sqlite3_free(zDup);
+              zDup = 0;
+            }
+          }
+
+          /* If it is not a special directive, it must be a column name. In
+           ** this case, check that it is not the reserved column name "rank". */
+          if( zDup ){
+            sqlite3Fts5Dequote(zDup);
+            pRet->azCol[pRet->nCol++] = zDup;
+            if( sqlite3_stricmp(zDup, FTS5_RANK_NAME)==0 ){
+              *pzErr = sqlite3_mprintf("reserved fts5 column name: %s", zDup);
+              rc = SQLITE_ERROR;
+            }
           }
         }
       }

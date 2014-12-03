@@ -282,4 +282,18 @@ void sqlite3Fts5BufferAppendListElem(
   *pOut = '\0';
 }
 
+void *sqlite3Fts5MallocZero(int *pRc, int nByte){
+  void *pRet = 0;
+  if( *pRc==SQLITE_OK ){
+    pRet = sqlite3_malloc(nByte);
+    if( pRet==0 && nByte>0 ){
+      *pRc = SQLITE_NOMEM;
+    }else{
+      memset(pRet, 0, nByte);
+    }
+  }
+  return pRet;
+}
+
+
 

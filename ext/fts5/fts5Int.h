@@ -187,6 +187,9 @@ int sqlite3Fts5PoslistNext64(
   i64 *piOff                      /* IN/OUT: Current offset */
 );
 
+/* Malloc utility */
+void *sqlite3Fts5MallocZero(int *pRc, int nByte);
+
 /*
 ** End of interface to code in fts5_buffer.c.
 **************************************************************************/
@@ -225,24 +228,25 @@ int sqlite3Fts5IndexClose(Fts5Index *p, int bDestroy);
 ** Open a new iterator to iterate though all docids that match the 
 ** specified token or token prefix.
 */
-Fts5IndexIter *sqlite3Fts5IndexQuery(
+int sqlite3Fts5IndexQuery(
   Fts5Index *p,                   /* FTS index to query */
   const char *pToken, int nToken, /* Token (or prefix) to query for */
-  int flags                       /* Mask of FTS5INDEX_QUERY_X flags */
+  int flags,                      /* Mask of FTS5INDEX_QUERY_X flags */
+  Fts5IndexIter **ppIter
 );
 
 /*
 ** Docid list iteration.
 */
-int  sqlite3Fts5IterEof(Fts5IndexIter*);
-void sqlite3Fts5IterNext(Fts5IndexIter*);
-void sqlite3Fts5IterNextFrom(Fts5IndexIter*, i64 iMatch);
-i64  sqlite3Fts5IterRowid(Fts5IndexIter*);
+int sqlite3Fts5IterEof(Fts5IndexIter*);
+int sqlite3Fts5IterNext(Fts5IndexIter*);
+int sqlite3Fts5IterNextFrom(Fts5IndexIter*, i64 iMatch);
+i64 sqlite3Fts5IterRowid(Fts5IndexIter*);
 
 /*
 ** Obtain the position list that corresponds to the current position.
 */
-const u8 *sqlite3Fts5IterPoslist(Fts5IndexIter*, int *pn);
+int sqlite3Fts5IterPoslist(Fts5IndexIter*, const u8 **pp, int *pn);
 
 /*
 ** Close an iterator opened by sqlite3Fts5IndexQuery().
@@ -259,7 +263,7 @@ void sqlite3Fts5IterClose(Fts5IndexIter*);
 ** unique token in the document with an iCol value less than zero. The iPos
 ** argument is ignored for a delete.
 */
-void sqlite3Fts5IndexWrite(
+int sqlite3Fts5IndexWrite(
   Fts5Index *p,                   /* Index to write to */
   int iCol,                       /* Column token appears in (-ve -> delete) */
   int iPos,                       /* Position of token within column */
@@ -270,7 +274,7 @@ void sqlite3Fts5IndexWrite(
 ** Indicate that subsequent calls to sqlite3Fts5IndexWrite() pertain to
 ** document iDocid.
 */
-void sqlite3Fts5IndexBeginWrite(
+int sqlite3Fts5IndexBeginWrite(
   Fts5Index *p,                   /* Index to write to */
   i64 iDocid                      /* Docid to add or remove data from */
 );
@@ -320,9 +324,6 @@ int sqlite3Fts5IndexSetCookie(Fts5Index*, int);
 ** this connection since it was created.
 */
 int sqlite3Fts5IndexReads(Fts5Index *p);
-
-/* Malloc utility */
-void *sqlite3Fts5MallocZero(int *pRc, int nByte);
 
 /*
 ** End of interface to code in fts5_index.c.
