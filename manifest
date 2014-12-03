@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\sSQLITE_CHECKPOINT_TRUNCATE.
-D 2014-12-02T20:51:52.630
+C Updates\sto\sthe\sdocumentation\sfor\ssqlite3_wal_checkpoint_v2()\sand\srelated\ninterfaces,\sincluding\sadding\smany\srequirements\smarks.
+D 2014-12-03T15:50:09.223
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a226317fdf3f4c895fb3cfedc355b4d0868ce1fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -230,7 +230,7 @@ F src/resolve.c 4965007d6497b6a4d7a6d98751cc39712885f952
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 428165951748151e87a15295b7357221433e311b
 F src/shell.c 45d9c9bd7cde07845af957f2d849933b990773cf
-F src/sqlite.h.in 400bac7dd1294cb902b5eb85feed1689a2623ced
+F src/sqlite.h.in 7d33b94a32b013832b53ad86be543168f87f8eb7
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
 F src/sqliteInt.h c9e95b8fa9aee30d46387735c5be73fa58886e38
@@ -1223,8 +1223,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 61b31e771430f490fc2c4cef55046debc4a5f4f5 6ee08769f0ffbb3d620c66b89180ece7782dc820
-R 54481572fc28e1041792401f62b71701
-T +closed 6ee08769f0ffbb3d620c66b89180ece7782dc820
+P edda2b9e7a15ed486de81b10dd9bacd39c571d3f
+R d436425f6a4681c70264f79cf1bfa41d
 U drh
-Z 2b54bfeee1d348300e5d5565430bbc39
+Z 881f6486595c3b0d62652277de190ac9
