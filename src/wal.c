@@ -1824,8 +1824,10 @@ static int walCheckpoint(
       rc = walBusyLock(pWal, xBusy, pBusyArg, WAL_READ_LOCK(1), WAL_NREADER-1);
       if( rc==SQLITE_OK ){
         if( eMode==SQLITE_CHECKPOINT_TRUNCATE ){
-          /* If this is a TRUNCATE checkpoint, also truncate the wal file
-          ** to zero bytes in size on disk. 
+          /* IMPLEMENTATION-OF: R-44699-57140 This mode works the same way as
+          ** SQLITE_CHECKPOINT_RESTART with the addition that it also
+          ** truncates the log file to zero bytes just prior to a
+          ** successful return.
           **
           ** In theory, it might be safe to do this without updating the
           ** wal-index header in shared memory, as all subsequent reader or

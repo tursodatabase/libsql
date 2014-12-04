@@ -5705,8 +5705,8 @@ case OP_AggFinal: {
 /* Opcode: Checkpoint P1 P2 P3 * *
 **
 ** Checkpoint database P1. This is a no-op if P1 is not currently in
-** WAL mode. Parameter P2 is one of SQLITE_CHECKPOINT_PASSIVE, FULL
-** or RESTART.  Write 1 or 0 into mem[P3] if the checkpoint returns
+** WAL mode. Parameter P2 is one of SQLITE_CHECKPOINT_PASSIVE, FULL,
+** RESTART, or TRUNCATE.  Write 1 or 0 into mem[P3] if the checkpoint returns
 ** SQLITE_BUSY or not, respectively.  Write the number of pages in the
 ** WAL after the checkpoint into mem[P3+1] and the number of pages
 ** in the WAL that have been checkpointed after the checkpoint

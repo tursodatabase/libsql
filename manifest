@@ -1,5 +1,5 @@
-C Add\sevidence\smarks\sand\sassert()s\sused\sas\sevidence\sfor\scheckpoint\srequirements.
-D 2014-12-03T19:25:41.425
+C Add\san\simplementation\smark\sand\sfix\sa\scomment\sdescribing\sthe\sOP_Checkpoint\nopcode.
+D 2014-12-04T04:50:59.682
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a226317fdf3f4c895fb3cfedc355b4d0868ce1fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -291,7 +291,7 @@ F src/update.c 3c4ecc282accf12d39edb8d524cf089645e55a13
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c 3b627daa45c7308c1e36e3dbaa3f9ce7e5c7fa73
 F src/vacuum.c 9b30ec729337dd012ed88d4c292922c8ef9cf00c
-F src/vdbe.c 60217f3b8ab984b2e2bb9e3965276dd29e5efe5d
+F src/vdbe.c 1a9e671c9cfc259e4d2affc71f7df4a4c00a842c
 F src/vdbe.h 6fc69d9c5e146302c56e163cb4b31d1ee64a18c3
 F src/vdbeInt.h 9bb69ff2447c34b6ccc58b34ec35b615f86ead78
 F src/vdbeapi.c 07acb615d1e4170e71fc1b0d087f3c53a1ad8e83
@@ -301,7 +301,7 @@ F src/vdbemem.c 31d8eabb0cd78bfeab4e5124c7363c3e9e54db9f
 F src/vdbesort.c 42c166f7ca78cb643c7f4e4bdfa83c59d363d1a6
 F src/vdbetrace.c 7e4222955e07dd707a2f360c0eb73452be1cb010
 F src/vtab.c c08ec66f45919eaa726bf88aa53eb08379d607f9
-F src/wal.c fc62ec9dc7dfa08dbe08801332230cf28130a159
+F src/wal.c 847692349eb6e1fb8543dbc97e69ddbfa4cc7ea7
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
 F src/where.c a0b16f9d78321cb340a977287d19f826555c7d3b
@@ -1223,7 +1223,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P cbd357fd8c25c9c6043063710a3e2a89ff8b4575
-R bf75abced12e09ba377b1add0a3ea61a
+P b2da8afc7657266fbe8e683c6e50fe18216cbcf3
+R f07d202428c907151b75d8e97783127c
 U drh
-Z 0545aa7eaccc2c8413582324bb7aef19
+Z fc5c85b33aac137327215d4078c65229
