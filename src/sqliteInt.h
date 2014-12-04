@@ -2014,7 +2014,7 @@ struct Expr {
 /*
 ** The following are the meanings of bits in the Expr.flags field.
 */
-#define EP_FromJoin  0x000001 /* Originated in ON or USING clause of a join */
+#define EP_FromJoin  0x000001 /* Originates in ON/USING clause of outer join */
 #define EP_Agg       0x000002 /* Contains one or more aggregate functions */
 #define EP_Resolved  0x000004 /* IDs have been resolved to COLUMNs */
 #define EP_Error     0x000008 /* Expression contains one or more errors */
@@ -2034,6 +2034,7 @@ struct Expr {
 #define EP_NoReduce  0x020000 /* Cannot EXPRDUP_REDUCE this Expr */
 #define EP_Unlikely  0x040000 /* unlikely() or likelihood() function */
 #define EP_Constant  0x080000 /* Node is a constant */
+#define EP_CanBeNull 0x100000 /* Can be null despite NOT NULL constraint */
 
 /*
 ** These macros can be used to test, set, or clear bits in the 

@@ -1,5 +1,5 @@
-C Version\s3.8.7.2.
-D 2014-11-18T20:57:56.794
+C If\sa\stable\sis\sthe\sright\soperand\sof\sa\sLEFT\sJOIN,\sthen\sany\scolumn\sof\sthat\ntable\scan\sbe\sNULL\seven\sif\sthat\scolumn\shas\sa\sNOT\sNULL\sconstraint.\nFix\sfor\sticket\s[6f2222d550f5b0ee7ed].
+D 2014-12-04T16:29:21.076
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -181,7 +181,7 @@ F src/complete.c 535183afb3c75628b78ce82612931ac7cdf26f14
 F src/ctime.c bb434068b5308a857b181c2d204a320ff0d6c638
 F src/date.c 57a7f9ba9f6b4d5268f5e411739066a611f99036
 F src/delete.c 0750b1eb4d96cd3fb2c798599a3a7c85e92f1417
-F src/expr.c 1891cb50510a31e96de8a54579e7d3aef60f0094
+F src/expr.c 6796707fe680aa511568c9f5fc0e0b2d9d3ca57b
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c da985ae673efef2c712caef825a5d2edb087ead7
 F src/func.c ba47c1671ab3cfdafa6e9d6ee490939ea578adee
@@ -225,14 +225,14 @@ F src/pragma.c 3f3e959390a10c0131676f0e307acce372777e0f
 F src/prepare.c 6ef0cf2f9274982988ed6b7cab1be23147e94196
 F src/printf.c d83b573624f3f6bc12b800af7fd55ce90be70659
 F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
-F src/resolve.c a3466128b52a86c466e47ac1a19e2174f7b5cf89
+F src/resolve.c 64e9f612f68d60f8f3fcd23dcee5fc62da3c4c41
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 428165951748151e87a15295b7357221433e311b
 F src/shell.c 18ee8bbe9502d8848072dc2eddd1ea09254ba494
 F src/sqlite.h.in 4a5e5158c189d2bcd45c7c4607c2c0eb6d25c153
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
-F src/sqliteInt.h c97db3c4d20b34c050a801c93451ef18e4f22de1
+F src/sqliteInt.h 474a00de22bfbbb810db22689e3d1e4099d1d921
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 961d5926e5a8fda611d385ec22c226b8635cd1cb
 F src/table.c 2e99ef7ef16187e17033d9398dc962ce22dab5cb
@@ -657,7 +657,7 @@ F test/join.test 52d4d49f86d0cf46926672878c4eaf0da399104a
 F test/join2.test f2171c265e57ee298a27e57e7051d22962f9f324
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
-F test/join5.test 86675fc2919269aa923c84dd00ee4249b97990fe
+F test/join5.test 5df23eba184f159ed9705a954957e765a10c141d
 F test/join6.test cfe6503791ceb0cbb509966740286ec423cbf10b
 F test/journal1.test 69abc726c51b4a0409189f9a85191205297c0577
 F test/journal2.test ae06f566c28552c313ded3fee79a6c69e6d049b1
@@ -1205,10 +1205,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 945a9e687fdfee5f7103d85d131024e85d594ac3
-R 876a331fea8d7e2c7f47a110195c3ecb
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.8.7.2 *
+P 2ab564bf9655b7c7b97ab85cafc8a48329b27f93
+Q +6f6fcbe4736b9468a495c684d5eebc8bfe5c566a
+R a71b6beca65c1cf1c19c7bd2736bb9da
 U drh
-Z 5e45593d4fc6c698f5107e76a586ede2
+Z 8e9d9668bb846b5d8f649e9767762fc0
