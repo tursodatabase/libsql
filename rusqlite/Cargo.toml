@@ -13,4 +13,4 @@ license = "MIT"
 name = "rusqlite"
 
 [dependencies]
-time = "0.0.3"
+time = "~0.1.0"
