@@ -1,5 +1,5 @@
-C If\sa\stable\sis\sthe\sright\soperand\sof\sa\sLEFT\sJOIN,\sthen\sany\scolumn\sof\sthat\ntable\scan\sbe\sNULL\seven\sif\sthat\scolumn\sas\sa\sNOT\sNULL\sconstraint.\nFix\sfor\sticket\s[6f2222d550f5b0ee7ed].
-D 2014-12-04T16:27:17.993
+C Performance\senhancement\sfor\ssingle-table\squeries\swith\smany\sOR-connected\nWHERE\sclause\sterms\sand\smultiple\sindexes\swith\sthe\ssame\sleft-most\scolumns.
+D 2014-12-04T20:24:50.938
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a226317fdf3f4c895fb3cfedc355b4d0868ce1fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -304,7 +304,7 @@ F src/vtab.c c08ec66f45919eaa726bf88aa53eb08379d607f9
 F src/wal.c 847692349eb6e1fb8543dbc97e69ddbfa4cc7ea7
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
-F src/where.c a0b16f9d78321cb340a977287d19f826555c7d3b
+F src/where.c d67fe69dd1bb32ad3d488a8c5bc803a29814f357
 F src/whereInt.h d3633e9b592103241b74b0ec76185f3e5b8b62e0
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1154,7 +1154,7 @@ F test/whereF.test 5b2ba0dbe8074aa13e416b37c753991f0a2492d7
 F test/whereG.test 69f5ec4b15760a8c860f80e2d55525669390aab3
 F test/whereH.test e4b07f7a3c2f5d31195cd33710054c78667573b2
 F test/whereI.test 1d89199697919d4930be05a71e7fe620f114e622
-F test/whereJ.test 63599653dfefe4e74ebb358db753417fe0aa8a49
+F test/whereJ.test 55a3221706a7ab706293f17cc8f96da563bf0767
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/wild001.test bca33f499866f04c24510d74baf1e578d4e44b1c
 F test/win32heap.test ea19770974795cff26e11575e12d422dbd16893c
@@ -1223,7 +1223,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1e2bc484f8e7766a493bfeab04d82e50f37217b8
-R 6261b2c66938591ba7d193856851eb02
+P 6f6fcbe4736b9468a495c684d5eebc8bfe5c566a
+R 5428d48e129f2db3029319e68ae21b70
 U drh
-Z d631884fbd9f9cb654155b89b69f5e28
+Z 008a44be7133b3164f9b1ac313df9791
