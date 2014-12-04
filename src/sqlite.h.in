@@ -1216,7 +1216,7 @@ struct sqlite3_vfs {
 ** </ul>
 **
 ** When unlocking, the same SHARED or EXCLUSIVE flag must be supplied as
-** was given no the corresponding lock.  
+** was given on the corresponding lock.  
 **
 ** The xShmLock method can transition between unlocked and SHARED or
 ** between unlocked and EXCLUSIVE.  It cannot transition between SHARED
