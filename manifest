@@ -1,5 +1,5 @@
-C Performance\senhancement\sfor\ssingle-table\squeries\swith\smany\sOR-connected\nWHERE\sclause\sterms\sand\smultiple\sindexes\swith\sthe\ssame\sleft-most\scolumns.
-D 2014-12-04T20:24:50.938
+C Make\ssure\sthat\sa\sDISTINCT\squery\swith\san\sORDER\sBY\sworks\scorrectly\seven\sif\nit\suses\sa\sdescending\sindex.\s\sFix\sfor\sticket\s[c5ea805691bfc4204b1cb9e].
+D 2014-12-04T21:54:58.307
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a226317fdf3f4c895fb3cfedc355b4d0868ce1fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -228,7 +228,7 @@ F src/printf.c 9e75a6a0b55bf61cfff7d7e19d89834a1b938236
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c f6c46d3434439ab2084618d603e6d6dbeb0d6ada
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c 428165951748151e87a15295b7357221433e311b
+F src/select.c f377fb8a5c73c10678ea74f3400f7913943e3d75
 F src/shell.c 45d9c9bd7cde07845af957f2d849933b990773cf
 F src/sqlite.h.in 6ec654324cb490ea3d8a7be28b8c7d37fe4ad282
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
@@ -454,7 +454,7 @@ F test/descidx1.test 6d03b44c8538fe0eb4924e19fba10cdd8f3c9240
 F test/descidx2.test 9f1a0c83fd57f8667c82310ca21b30a350888b5d
 F test/descidx3.test 09ddbe3f5295f482d2f8b687cf6db8bad7acd9a2
 F test/diskfull.test 106391384780753ea6896b7b4f005d10e9866b6e
-F test/distinct.test 086e70c765f172e8974e9f83b9ac5ca03c154e77
+F test/distinct.test 175d49ee783febaf368192dfe7f5afbc68910230
 F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
 F test/e_blobbytes.test 9bea1d3e2b20f3010b04abba58f6ba172301f49f
 F test/e_blobclose.test df756753f571bc30e42e3a6cba2807576e49e716
@@ -1223,7 +1223,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6f6fcbe4736b9468a495c684d5eebc8bfe5c566a
-R 5428d48e129f2db3029319e68ae21b70
+P 1461d543ac8a3e4a54405067893146c74576bb4e
+R fc5b0159564faa200a156d134ab758df
 U drh
-Z 008a44be7133b3164f9b1ac313df9791
+Z 018f1b0eb45096a13f52fc7d70ef2bc6
