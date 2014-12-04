@@ -320,6 +320,10 @@ static int lookupName(
       if( pMatch ){
         pExpr->iTable = pMatch->iCursor;
         pExpr->pTab = pMatch->pTab;
+        assert( (pMatch->jointype & JT_RIGHT)==0 ); /* RIGHT JOIN not (yet) supported */
+        if( (pMatch->jointype & JT_LEFT)!=0 ){
+          ExprSetProperty(pExpr, EP_CanBeNull);
+        }
         pSchema = pExpr->pTab->pSchema;
       }
     } /* if( pSrcList ) */
