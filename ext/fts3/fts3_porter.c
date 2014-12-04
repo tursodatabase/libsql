@@ -183,7 +183,7 @@ static int isVowel(const char *z){
 ** by a consonant.
 **
 ** In this routine z[] is in reverse order.  So we are really looking
-** for an instance of of a consonant followed by a vowel.
+** for an instance of a consonant followed by a vowel.
 */
 static int m_gt_0(const char *z){
   while( isVowel(z) ){ z++; }

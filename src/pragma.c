@@ -2195,7 +2195,7 @@ void sqlite3Pragma(
 
 #ifndef SQLITE_OMIT_WAL
   /*
-  **   PRAGMA [database.]wal_checkpoint = passive|full|restart
+  **   PRAGMA [database.]wal_checkpoint = passive|full|restart|truncate
   **
   ** Checkpoint the database.
   */
@@ -2207,6 +2207,8 @@ void sqlite3Pragma(
         eMode = SQLITE_CHECKPOINT_FULL;
       }else if( sqlite3StrICmp(zRight, "restart")==0 ){
         eMode = SQLITE_CHECKPOINT_RESTART;
+      }else if( sqlite3StrICmp(zRight, "truncate")==0 ){
+        eMode = SQLITE_CHECKPOINT_TRUNCATE;
       }
     }
     sqlite3VdbeSetNumCols(v, 3);

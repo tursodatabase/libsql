@@ -1414,7 +1414,8 @@ int sqlite3ExprCanBeNull(const Expr *p){
       return 0;
     case TK_COLUMN:
       assert( p->pTab!=0 );
-      return p->iColumn>=0 && p->pTab->aCol[p->iColumn].notNull==0;
+      return ExprHasProperty(p, EP_CanBeNull) ||
+             (p->iColumn>=0 && p->pTab->aCol[p->iColumn].notNull==0);
     default:
       return 1;
   }
