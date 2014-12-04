@@ -4829,7 +4829,7 @@ int sqlite3Select(
   **
   ** is transformed to:
   **
-  **     SELECT xyz FROM ... GROUP BY xyz
+  **     SELECT xyz FROM ... GROUP BY xyz ORDER BY xyz
   **
   ** The second form is preferred as a single index (or temp-table) may be 
   ** used for both the ORDER BY and DISTINCT processing. As originally 
@@ -4842,7 +4842,6 @@ int sqlite3Select(
     p->selFlags &= ~SF_Distinct;
     p->pGroupBy = sqlite3ExprListDup(db, p->pEList, 0);
     pGroupBy = p->pGroupBy;
-    sSort.pOrderBy = 0;
     /* Notice that even thought SF_Distinct has been cleared from p->selFlags,
     ** the sDistinct.isTnct is still set.  Hence, isTnct represents the
     ** original setting of the SF_Distinct flag, not the current setting */

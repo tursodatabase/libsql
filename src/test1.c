@@ -5882,10 +5882,11 @@ static int test_wal_checkpoint_v2(
   int nCkpt = -555;
   Tcl_Obj *pRet;
 
-  const char * aMode[] = { "passive", "full", "restart", 0 };
+  const char * aMode[] = { "passive", "full", "restart", "truncate", 0 };
   assert( SQLITE_CHECKPOINT_PASSIVE==0 );
   assert( SQLITE_CHECKPOINT_FULL==1 );
   assert( SQLITE_CHECKPOINT_RESTART==2 );
+  assert( SQLITE_CHECKPOINT_TRUNCATE==3 );
 
   if( objc!=3 && objc!=4 ){
     Tcl_WrongNumArgs(interp, 1, objv, "DB MODE ?NAME?");

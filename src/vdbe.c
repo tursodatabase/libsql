@@ -5705,8 +5705,8 @@ case OP_AggFinal: {
 /* Opcode: Checkpoint P1 P2 P3 * *
 **
 ** Checkpoint database P1. This is a no-op if P1 is not currently in
-** WAL mode. Parameter P2 is one of SQLITE_CHECKPOINT_PASSIVE, FULL
-** or RESTART.  Write 1 or 0 into mem[P3] if the checkpoint returns
+** WAL mode. Parameter P2 is one of SQLITE_CHECKPOINT_PASSIVE, FULL,
+** RESTART, or TRUNCATE.  Write 1 or 0 into mem[P3] if the checkpoint returns
 ** SQLITE_BUSY or not, respectively.  Write the number of pages in the
 ** WAL after the checkpoint into mem[P3+1] and the number of pages
 ** in the WAL that have been checkpointed after the checkpoint
@@ -5724,6 +5724,7 @@ case OP_Checkpoint: {
   assert( pOp->p2==SQLITE_CHECKPOINT_PASSIVE
        || pOp->p2==SQLITE_CHECKPOINT_FULL
        || pOp->p2==SQLITE_CHECKPOINT_RESTART
+       || pOp->p2==SQLITE_CHECKPOINT_TRUNCATE
   );
   rc = sqlite3Checkpoint(db, pOp->p1, pOp->p2, &aRes[1], &aRes[2]);
   if( rc==SQLITE_BUSY ){

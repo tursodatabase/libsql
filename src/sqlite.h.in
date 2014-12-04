@@ -1221,7 +1221,7 @@ struct sqlite3_vfs {
 ** </ul>
 **
 ** When unlocking, the same SHARED or EXCLUSIVE flag must be supplied as
-** was given no the corresponding lock.  
+** was given on the corresponding lock.  
 **
 ** The xShmLock method can transition between unlocked and SHARED or
 ** between unlocked and EXCLUSIVE.  It cannot transition between SHARED
@@ -1524,8 +1524,8 @@ struct sqlite3_mem_methods {
 ** [[SQLITE_CONFIG_MEMSTATUS]] <dt>SQLITE_CONFIG_MEMSTATUS</dt>
 ** <dd> ^The SQLITE_CONFIG_MEMSTATUS option takes single argument of type int,
 ** interpreted as a boolean, which enables or disables the collection of
-** memory allocation statistics. ^(When memory allocation statistics are disabled, the 
-** following SQLite interfaces become non-operational:
+** memory allocation statistics. ^(When memory allocation statistics are
+** disabled, the following SQLite interfaces become non-operational:
 **   <ul>
 **   <li> [sqlite3_memory_used()]
 **   <li> [sqlite3_memory_highwater()]
@@ -1566,7 +1566,8 @@ struct sqlite3_mem_methods {
 ** This configuration should not be used if an application-define page
 ** cache implementation is loaded using the [SQLITE_CONFIG_PCACHE2]
 ** configuration option.
-** ^There are three arguments to SQLITE_CONFIG_PAGECACHE: A pointer to 8-byte aligned
+** ^There are three arguments to SQLITE_CONFIG_PAGECACHE: A pointer to
+** 8-byte aligned
 ** memory, the size of each page buffer (sz), and the number of pages (N).
 ** The sz argument should be the size of the largest database page
 ** (a power of two between 512 and 32768) plus some extra bytes for each
@@ -1586,7 +1587,8 @@ struct sqlite3_mem_methods {
 ** [[SQLITE_CONFIG_HEAP]] <dt>SQLITE_CONFIG_HEAP</dt>
 ** <dd> ^The SQLITE_CONFIG_HEAP option specifies a static memory buffer 
 ** that SQLite will use for all of its dynamic memory allocation needs
-** beyond those provided for by [SQLITE_CONFIG_SCRATCH] and [SQLITE_CONFIG_PAGECACHE].
+** beyond those provided for by [SQLITE_CONFIG_SCRATCH] and
+** [SQLITE_CONFIG_PAGECACHE].
 ** ^The SQLITE_CONFIG_HEAP option is only available if SQLite is compiled
 ** with either [SQLITE_ENABLE_MEMSYS3] or [SQLITE_ENABLE_MEMSYS5] and returns
 ** [SQLITE_ERROR] if invoked otherwise.
@@ -1606,9 +1608,9 @@ struct sqlite3_mem_methods {
 ** [[SQLITE_CONFIG_MUTEX]] <dt>SQLITE_CONFIG_MUTEX</dt>
 ** <dd> ^(The SQLITE_CONFIG_MUTEX option takes a single argument which is a
 ** pointer to an instance of the [sqlite3_mutex_methods] structure.
-** The argument specifies alternative low-level mutex routines to be used in place
-** the mutex routines built into SQLite.)^  ^SQLite makes a copy of the
-** content of the [sqlite3_mutex_methods] structure before the call to
+** The argument specifies alternative low-level mutex routines to be used
+** in place the mutex routines built into SQLite.)^  ^SQLite makes a copy of
+** the content of the [sqlite3_mutex_methods] structure before the call to
 ** [sqlite3_config()] returns. ^If SQLite is compiled with
 ** the [SQLITE_THREADSAFE | SQLITE_THREADSAFE=0] compile-time option then
 ** the entire mutexing subsystem is omitted from the build and hence calls to
@@ -1646,8 +1648,8 @@ struct sqlite3_mem_methods {
 **
 ** [[SQLITE_CONFIG_GETPCACHE2]] <dt>SQLITE_CONFIG_GETPCACHE2</dt>
 ** <dd> ^(The SQLITE_CONFIG_GETPCACHE2 option takes a single argument which
-** is a pointer to an [sqlite3_pcache_methods2] object.  SQLite copies of the current
-** page cache implementation into that object.)^ </dd>
+** is a pointer to an [sqlite3_pcache_methods2] object.  SQLite copies of
+** the current page cache implementation into that object.)^ </dd>
 **
 ** [[SQLITE_CONFIG_LOG]] <dt>SQLITE_CONFIG_LOG</dt>
 ** <dd> The SQLITE_CONFIG_LOG option is used to configure the SQLite
@@ -1672,8 +1674,9 @@ struct sqlite3_mem_methods {
 ** [[SQLITE_CONFIG_URI]] <dt>SQLITE_CONFIG_URI
 ** <dd>^(The SQLITE_CONFIG_URI option takes a single argument of type int.
 ** If non-zero, then URI handling is globally enabled. If the parameter is zero,
-** then URI handling is globally disabled.)^ ^If URI handling is globally enabled,
-** all filenames passed to [sqlite3_open()], [sqlite3_open_v2()], [sqlite3_open16()] or
+** then URI handling is globally disabled.)^ ^If URI handling is globally
+** enabled, all filenames passed to [sqlite3_open()], [sqlite3_open_v2()],
+** [sqlite3_open16()] or
 ** specified as part of [ATTACH] commands are interpreted as URIs, regardless
 ** of whether or not the [SQLITE_OPEN_URI] flag is set when the database
 ** connection is opened. ^If it is globally disabled, filenames are
@@ -1735,8 +1738,8 @@ struct sqlite3_mem_methods {
 ** [[SQLITE_CONFIG_WIN32_HEAPSIZE]]
 ** <dt>SQLITE_CONFIG_WIN32_HEAPSIZE
 ** <dd>^The SQLITE_CONFIG_WIN32_HEAPSIZE option is only available if SQLite is
-** compiled for Windows with the [SQLITE_WIN32_MALLOC] pre-processor macro defined.
-** ^SQLITE_CONFIG_WIN32_HEAPSIZE takes a 32-bit unsigned integer value
+** compiled for Windows with the [SQLITE_WIN32_MALLOC] pre-processor macro
+** defined. ^SQLITE_CONFIG_WIN32_HEAPSIZE takes a 32-bit unsigned integer value
 ** that specifies the maximum size of the created heap.
 ** </dl>
 **
@@ -1744,8 +1747,8 @@ struct sqlite3_mem_methods {
 ** <dt>SQLITE_CONFIG_PCACHE_HDRSZ
 ** <dd>^The SQLITE_CONFIG_PCACHE_HDRSZ option takes a single parameter which
 ** is a pointer to an integer and writes into that integer the number of extra
-** bytes per page required for each page in [SQLITE_CONFIG_PAGECACHE]. The amount of
-** extra space required can change depending on the compiler,
+** bytes per page required for each page in [SQLITE_CONFIG_PAGECACHE].
+** The amount of extra space required can change depending on the compiler,
 ** target platform, and SQLite version.
 ** </dl>
 */
@@ -2049,6 +2052,7 @@ int sqlite3_complete16(const void *sql);
 
 /*
 ** CAPI3REF: Register A Callback To Handle SQLITE_BUSY Errors
+** KEYWORDS: {busy-handler callback} {busy handler}
 **
 ** ^The sqlite3_busy_handler(D,X,P) routine sets a callback function X
 ** that might be invoked with argument P whenever
@@ -2065,7 +2069,7 @@ int sqlite3_complete16(const void *sql);
 ** ^The first argument to the busy handler is a copy of the void* pointer which
 ** is the third argument to sqlite3_busy_handler().  ^The second argument to
 ** the busy handler callback is the number of times that the busy handler has
-** been invoked for the same locking event.  ^If the
+** been invoked previously for the same locking event.  ^If the
 ** busy callback returns 0, then no additional attempts are made to
 ** access the database and [SQLITE_BUSY] is returned
 ** to the application.
@@ -4520,7 +4524,8 @@ typedef void (*sqlite3_destructor_type)(void*);
 ** the [sqlite3_context] pointer, the results are undefined.
 */
 void sqlite3_result_blob(sqlite3_context*, const void*, int, void(*)(void*));
-void sqlite3_result_blob64(sqlite3_context*,const void*,sqlite3_uint64,void(*)(void*));
+void sqlite3_result_blob64(sqlite3_context*,const void*,
+                           sqlite3_uint64,void(*)(void*));
 void sqlite3_result_double(sqlite3_context*, double);
 void sqlite3_result_error(sqlite3_context*, const char*, int);
 void sqlite3_result_error16(sqlite3_context*, const void*, int);
@@ -7251,97 +7256,114 @@ int sqlite3_wal_autocheckpoint(sqlite3 *db, int N);
 /*
 ** CAPI3REF: Checkpoint a database
 **
-** ^The [sqlite3_wal_checkpoint(D,X)] interface causes database named X
-** on [database connection] D to be [checkpointed].  ^If X is NULL or an
-** empty string, then a checkpoint is run on all databases of
-** connection D.  ^If the database connection D is not in
-** [WAL | write-ahead log mode] then this interface is a harmless no-op.
-** ^The [sqlite3_wal_checkpoint(D,X)] interface initiates a
-** [sqlite3_wal_checkpoint_v2|PASSIVE] checkpoint.
-** Use the [sqlite3_wal_checkpoint_v2()] interface to get a FULL
-** or RESET checkpoint.
+** ^(The sqlite3_wal_checkpoint(D,X) is equivalent to
+** [sqlite3_wal_checkpoint_v2](D,X,[SQLITE_CHECKPOINT_PASSIVE],0,0).)^
 **
-** ^The [wal_checkpoint pragma] can be used to invoke this interface
-** from SQL.  ^The [sqlite3_wal_autocheckpoint()] interface and the
-** [wal_autocheckpoint pragma] can be used to cause this interface to be
-** run whenever the WAL reaches a certain size threshold.
+** In brief, sqlite3_wal_checkpoint(D,X) causes the content in the 
+** [write-ahead log] for database X on [database connection] D to be
+** transferred into the database file and for the write-ahead log to
+** be reset.  See the [checkpointing] documentation for addition
+** information.
 **
-** See also: [sqlite3_wal_checkpoint_v2()]
+** This interface used to be the only way to cause a checkpoint to
+** occur.  But then the newer and more powerful [sqlite3_wal_checkpoint_v2()]
+** interface was added.  This interface is retained for backwards
+** compatibility and as a convenience for applications that need to manually
+** start a callback but which do not need the full power (and corresponding
+** complication) of [sqlite3_wal_checkpoint_v2()].
 */
 int sqlite3_wal_checkpoint(sqlite3 *db, const char *zDb);
 
 /*
 ** CAPI3REF: Checkpoint a database
 **
-** Run a checkpoint operation on WAL database zDb attached to database 
-** handle db. The specific operation is determined by the value of the 
-** eMode parameter:
+** ^(The sqlite3_wal_checkpoint_v2(D,X,M,L,C) interface runs a checkpoint
+** operation on database X of [database connection] D in mode M.  Status
+** information is written back into integers pointed to by L and C.)^
+** ^(The M parameter must be a valid [checkpoint mode]:)^
 **
 ** <dl>
 ** <dt>SQLITE_CHECKPOINT_PASSIVE<dd>
-**   Checkpoint as many frames as possible without waiting for any database 
-**   readers or writers to finish. Sync the db file if all frames in the log
-**   are checkpointed. This mode is the same as calling 
-**   sqlite3_wal_checkpoint(). The [sqlite3_busy_handler|busy-handler callback]
-**   is never invoked.
+**   ^Checkpoint as many frames as possible without waiting for any database 
+**   readers or writers to finish, then sync the database file if all frames 
+**   in the log were checkpointed. ^The [busy-handler callback]
+**   is never invoked in the SQLITE_CHECKPOINT_PASSIVE mode.  
+**   ^On the other hand, passive mode might leave the checkpoint unfinished
+**   if there are concurrent readers or writers.
 **
 ** <dt>SQLITE_CHECKPOINT_FULL<dd>
-**   This mode blocks (it invokes the
+**   ^This mode blocks (it invokes the
 **   [sqlite3_busy_handler|busy-handler callback]) until there is no
 **   database writer and all readers are reading from the most recent database
-**   snapshot. It then checkpoints all frames in the log file and syncs the
-**   database file. This call blocks database writers while it is running,
-**   but not database readers.
+**   snapshot. ^It then checkpoints all frames in the log file and syncs the
+**   database file. ^This mode blocks new database writers while it is pending,
+**   but new database readers are allowed to continue unimpeded.
 **
 ** <dt>SQLITE_CHECKPOINT_RESTART<dd>
-**   This mode works the same way as SQLITE_CHECKPOINT_FULL, except after 
-**   checkpointing the log file it blocks (calls the 
-**   [sqlite3_busy_handler|busy-handler callback])
-**   until all readers are reading from the database file only. This ensures 
-**   that the next client to write to the database file restarts the log file 
-**   from the beginning. This call blocks database writers while it is running,
-**   but not database readers.
+**   ^This mode works the same way as SQLITE_CHECKPOINT_FULL with the addition
+**   that after checkpointing the log file it blocks (calls the 
+**   [busy-handler callback])
+**   until all readers are reading from the database file only. ^This ensures 
+**   that the next writer will restart the log file from the beginning.
+**   ^Like SQLITE_CHECKPOINT_FULL, this mode blocks new
+**   database writer attempts while it is pending, but does not impede readers.
+**
+** <dt>SQLITE_CHECKPOINT_TRUNCATE<dd>
+**   ^This mode works the same way as SQLITE_CHECKPOINT_RESTART with the
+**   addition that it also truncates the log file to zero bytes just prior
+**   to a successful return.
 ** </dl>
 **
-** If pnLog is not NULL, then *pnLog is set to the total number of frames in
-** the log file before returning. If pnCkpt is not NULL, then *pnCkpt is set to
-** the total number of checkpointed frames (including any that were already
-** checkpointed when this function is called). *pnLog and *pnCkpt may be
-** populated even if sqlite3_wal_checkpoint_v2() returns other than SQLITE_OK.
-** If no values are available because of an error, they are both set to -1
-** before returning to communicate this to the caller.
+** ^If pnLog is not NULL, then *pnLog is set to the total number of frames in
+** the log file or to -1 if the checkpoint could not run because
+** of an error or because the database is not in [WAL mode]. ^If pnCkpt is not
+** NULL,then *pnCkpt is set to the total number of checkpointed frames in the
+** log file (including any that were already checkpointed before the function
+** was called) or to -1 if the checkpoint could not run due to an error or
+** because the database is not in WAL mode. ^Note that upon successful
+** completion of an SQLITE_CHECKPOINT_TRUNCATE, the log file will have been
+** truncated to zero bytes and so both *pnLog and *pnCkpt will be set to zero.
 **
-** All calls obtain an exclusive "checkpoint" lock on the database file. If
+** ^All calls obtain an exclusive "checkpoint" lock on the database file. ^If
 ** any other process is running a checkpoint operation at the same time, the 
-** lock cannot be obtained and SQLITE_BUSY is returned. Even if there is a 
+** lock cannot be obtained and SQLITE_BUSY is returned. ^Even if there is a 
 ** busy-handler configured, it will not be invoked in this case.
 **
-** The SQLITE_CHECKPOINT_FULL and RESTART modes also obtain the exclusive 
-** "writer" lock on the database file. If the writer lock cannot be obtained
-** immediately, and a busy-handler is configured, it is invoked and the writer
-** lock retried until either the busy-handler returns 0 or the lock is
-** successfully obtained. The busy-handler is also invoked while waiting for
-** database readers as described above. If the busy-handler returns 0 before
+** ^The SQLITE_CHECKPOINT_FULL, RESTART and TRUNCATE modes also obtain the 
+** exclusive "writer" lock on the database file. ^If the writer lock cannot be
+** obtained immediately, and a busy-handler is configured, it is invoked and
+** the writer lock retried until either the busy-handler returns 0 or the lock
+** is successfully obtained. ^The busy-handler is also invoked while waiting for
+** database readers as described above. ^If the busy-handler returns 0 before
 ** the writer lock is obtained or while waiting for database readers, the
 ** checkpoint operation proceeds from that point in the same way as 
 ** SQLITE_CHECKPOINT_PASSIVE - checkpointing as many frames as possible 
-** without blocking any further. SQLITE_BUSY is returned in this case.
+** without blocking any further. ^SQLITE_BUSY is returned in this case.
 **
-** If parameter zDb is NULL or points to a zero length string, then the
-** specified operation is attempted on all WAL databases. In this case the
-** values written to output parameters *pnLog and *pnCkpt are undefined. If 
+** ^If parameter zDb is NULL or points to a zero length string, then the
+** specified operation is attempted on all WAL databases [attached] to 
+** [database connection] db.  In this case the
+** values written to output parameters *pnLog and *pnCkpt are undefined. ^If 
 ** an SQLITE_BUSY error is encountered when processing one or more of the 
 ** attached WAL databases, the operation is still attempted on any remaining 
-** attached databases and SQLITE_BUSY is returned to the caller. If any other 
+** attached databases and SQLITE_BUSY is returned at the end. ^If any other 
 ** error occurs while processing an attached database, processing is abandoned 
-** and the error code returned to the caller immediately. If no error 
+** and the error code is returned to the caller immediately. ^If no error 
 ** (SQLITE_BUSY or otherwise) is encountered while processing the attached 
 ** databases, SQLITE_OK is returned.
 **
-** If database zDb is the name of an attached database that is not in WAL
-** mode, SQLITE_OK is returned and both *pnLog and *pnCkpt set to -1. If
+** ^If database zDb is the name of an attached database that is not in WAL
+** mode, SQLITE_OK is returned and both *pnLog and *pnCkpt set to -1. ^If
 ** zDb is not NULL (or a zero length string) and is not the name of any
 ** attached database, SQLITE_ERROR is returned to the caller.
+**
+** ^Unless it returns SQLITE_MISUSE,
+** the sqlite3_wal_checkpoint_v2() interface
+** sets the error information that is queried by
+** [sqlite3_errcode()] and [sqlite3_errmsg()].
+**
+** ^The [PRAGMA wal_checkpoint] command can be used to invoke this interface
+** from SQL.
 */
 int sqlite3_wal_checkpoint_v2(
   sqlite3 *db,                    /* Database handle */
@@ -7352,16 +7374,18 @@ int sqlite3_wal_checkpoint_v2(
 );
 
 /*
-** CAPI3REF: Checkpoint operation parameters
+** CAPI3REF: Checkpoint Mode Values
+** KEYWORDS: {checkpoint mode}
 **
-** These constants can be used as the 3rd parameter to
-** [sqlite3_wal_checkpoint_v2()].  See the [sqlite3_wal_checkpoint_v2()]
-** documentation for additional information about the meaning and use of
-** each of these values.
+** These constants define all valid values for the "checkpoint mode" passed
+** as the third parameter to the [sqlite3_wal_checkpoint_v2()] interface.
+** See the [sqlite3_wal_checkpoint_v2()] documentation for details on the
+** meaning of each of these checkpoint modes.
 */
-#define SQLITE_CHECKPOINT_PASSIVE 0
-#define SQLITE_CHECKPOINT_FULL    1
-#define SQLITE_CHECKPOINT_RESTART 2
+#define SQLITE_CHECKPOINT_PASSIVE  0  /* Do as much as possible w/o blocking */
+#define SQLITE_CHECKPOINT_FULL     1  /* Wait for writers, then checkpoint */
+#define SQLITE_CHECKPOINT_RESTART  2  /* Like FULL but wait for for readers */
+#define SQLITE_CHECKPOINT_TRUNCATE 3  /* Like RESTART but also truncate WAL */
 
 /*
 ** CAPI3REF: Virtual Table Interface Configuration
@@ -7460,12 +7484,12 @@ int sqlite3_vtab_on_conflict(sqlite3 *);
 **
 ** <dl>
 ** [[SQLITE_SCANSTAT_NLOOP]] <dt>SQLITE_SCANSTAT_NLOOP</dt>
-** <dd>^The [sqlite3_int64] variable pointed to by the T parameter will be set to the
-** total number of times that the X-th loop has run.</dd>
+** <dd>^The [sqlite3_int64] variable pointed to by the T parameter will be
+** set to the total number of times that the X-th loop has run.</dd>
 **
 ** [[SQLITE_SCANSTAT_NVISIT]] <dt>SQLITE_SCANSTAT_NVISIT</dt>
-** <dd>^The [sqlite3_int64] variable pointed to by the T parameter will be set to the
-** total number of rows examined by all iterations of the X-th loop.</dd>
+** <dd>^The [sqlite3_int64] variable pointed to by the T parameter will be set
+** to the total number of rows examined by all iterations of the X-th loop.</dd>
 **
 ** [[SQLITE_SCANSTAT_EST]] <dt>SQLITE_SCANSTAT_EST</dt>
 ** <dd>^The "double" variable pointed to by the T parameter will be set to the
@@ -7476,14 +7500,14 @@ int sqlite3_vtab_on_conflict(sqlite3 *);
 ** be the NLOOP value for the current loop.
 **
 ** [[SQLITE_SCANSTAT_NAME]] <dt>SQLITE_SCANSTAT_NAME</dt>
-** <dd>^The "const char *" variable pointed to by the T parameter will be set to 
-** a zero-terminated UTF-8 string containing the name of the index or table used
-** for the X-th loop.
+** <dd>^The "const char *" variable pointed to by the T parameter will be set
+** to a zero-terminated UTF-8 string containing the name of the index or table
+** used for the X-th loop.
 **
 ** [[SQLITE_SCANSTAT_EXPLAIN]] <dt>SQLITE_SCANSTAT_EXPLAIN</dt>
-** <dd>^The "const char *" variable pointed to by the T parameter will be set to 
-** a zero-terminated UTF-8 string containing the [EXPLAIN QUERY PLAN] description
-** for the X-th loop.
+** <dd>^The "const char *" variable pointed to by the T parameter will be set
+** to a zero-terminated UTF-8 string containing the [EXPLAIN QUERY PLAN]
+** description for the X-th loop.
 **
 ** [[SQLITE_SCANSTAT_SELECTID]] <dt>SQLITE_SCANSTAT_SELECT</dt>
 ** <dd>^The "int" variable pointed to by the T parameter will be set to the
@@ -7506,8 +7530,8 @@ int sqlite3_vtab_on_conflict(sqlite3 *);
 ** Return status data for a single loop within query pStmt.
 **
 ** The "iScanStatusOp" parameter determines which status information to return.
-** The "iScanStatusOp" must be one of the [scanstatus options] or the behavior of
-** this interface is undefined.
+** The "iScanStatusOp" must be one of the [scanstatus options] or the behavior
+** of this interface is undefined.
 ** ^The requested measurement is written into a variable pointed to by
 ** the "pOut" parameter.
 ** Parameter "idx" identifies the specific loop to retrieve statistics for.

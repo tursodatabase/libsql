@@ -1943,10 +1943,13 @@ int sqlite3_wal_checkpoint_v2(
   if( pnLog ) *pnLog = -1;
   if( pnCkpt ) *pnCkpt = -1;
 
-  assert( SQLITE_CHECKPOINT_FULL>SQLITE_CHECKPOINT_PASSIVE );
-  assert( SQLITE_CHECKPOINT_FULL<SQLITE_CHECKPOINT_RESTART );
-  assert( SQLITE_CHECKPOINT_PASSIVE+2==SQLITE_CHECKPOINT_RESTART );
-  if( eMode<SQLITE_CHECKPOINT_PASSIVE || eMode>SQLITE_CHECKPOINT_RESTART ){
+  assert( SQLITE_CHECKPOINT_PASSIVE==0 );
+  assert( SQLITE_CHECKPOINT_FULL==1 );
+  assert( SQLITE_CHECKPOINT_RESTART==2 );
+  assert( SQLITE_CHECKPOINT_TRUNCATE==3 );
+  if( eMode<SQLITE_CHECKPOINT_PASSIVE || eMode>SQLITE_CHECKPOINT_TRUNCATE ){
+    /* EVIDENCE-OF: R-03996-12088 The M parameter must be a valid checkpoint
+    ** mode: */
     return SQLITE_MISUSE;
   }
 
@@ -1974,7 +1977,9 @@ int sqlite3_wal_checkpoint_v2(
 ** checkpointed.
 */
 int sqlite3_wal_checkpoint(sqlite3 *db, const char *zDb){
-  return sqlite3_wal_checkpoint_v2(db, zDb, SQLITE_CHECKPOINT_PASSIVE, 0, 0);
+  /* EVIDENCE-OF: R-41613-20553 The sqlite3_wal_checkpoint(D,X) is equivalent to
+  ** sqlite3_wal_checkpoint_v2(D,X,SQLITE_CHECKPOINT_PASSIVE,0,0). */
+  return sqlite3_wal_checkpoint_v2(db,zDb,SQLITE_CHECKPOINT_PASSIVE,0,0);
 }
 
 #ifndef SQLITE_OMIT_WAL
