@@ -1,5 +1,5 @@
-C Fix\scomment\stypos\sreported\son\sthe\smailing\slist.\s\sNo\schanges\sto\scode.
-D 2014-12-04T14:01:39.082
+C Clarification\sof\sthe\smeaning\sof\sthe\ssecond\sparameter\sto\sthe\sbusy-handler\ncallback.\s\sNo\schanges\sto\scode.
+D 2014-12-04T15:02:03.058
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a226317fdf3f4c895fb3cfedc355b4d0868ce1fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -230,7 +230,7 @@ F src/resolve.c 4965007d6497b6a4d7a6d98751cc39712885f952
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 428165951748151e87a15295b7357221433e311b
 F src/shell.c 45d9c9bd7cde07845af957f2d849933b990773cf
-F src/sqlite.h.in acc4d70043f508311c6b9df277f7afe43506863c
+F src/sqlite.h.in 6ec654324cb490ea3d8a7be28b8c7d37fe4ad282
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
 F src/sqliteInt.h c9e95b8fa9aee30d46387735c5be73fa58886e38
@@ -1223,7 +1223,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7475b90c558157802b036162376fceacc1b9ab4a
-R 397f3e2a10a22093a2e147bbeaeacc16
+P 93a71c9f058b58d11187293a1e8d5324d0911880
+R 00727a6ee41feaad0f3193ccd0896958
 U drh
-Z d46deb1796c364e4a21ca2d8fe0413fe
+Z c85dc24a7d66e411a436a86d655a083a
