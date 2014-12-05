@@ -1,4 +1,4 @@
-# 2013 May 14
+# 2014-12-05
 #
 # The author disclaims copyright to this source code.  In place of
 # a legal notice, here is a blessing:
@@ -12,6 +12,9 @@
 # Open two database connections on the same database in shared cache
 # mode.  Hold one open while repeatedly closing, reopening, and using
 # the second.
+#
+# This test is designed to demostrate that the fix for ticket
+# [e4a18565a36884b00edf66541f38c693827968ab] works.  
 #
 
 
