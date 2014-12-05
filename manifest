@@ -1,5 +1,5 @@
-C When\sclosing\sa\s(shared-cache)\sdatabase\sconnection,\sbe\ssure\sto\sclear\sout\nall\sKeyInfo\sobjects\scached\son\sIndex\sobjects.\s\nFix\sfor\sticket\s[e4a18565a36884b00edf].
-D 2014-12-05T14:44:57.022
+C The\sKeyInfo\scache\smust\sbe\scleared\sbefore\sclosing\sthe\sbtree,\snot\safter.\nRevised\sfix\sfor\sticket\s[e4a18565a36884b00edf].
+D 2014-12-05T15:31:33.761
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6c4f961fa91d0b4fa121946a19f9e5eac2f2f809
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -195,7 +195,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
 F src/loadext.c de741e66e5ddc1598d904d7289239696e40ed994
-F src/main.c fa9f0e511a64caf66b8e7bb835c55172e7d61527
+F src/main.c e50203613fb77e2f28deb51425ee52b3879e85f8
 F src/malloc.c 740db54387204c9a2eb67c6d98e68b08e9ef4eab
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c faf615aafd8be74a71494dfa027c113ea5c6615f
@@ -1224,7 +1224,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e9955c0e14d13ba1411f013acb4979958dae2516 71f589e3f82a07513425e212072f32748c0732d4
-R 2f7d3cb7a2e1e65c7403b8d51d471007
+P adca7688de20ff40d8ddf2107dfaf92af3873b83
+Q +48529508cfe2f9445a6940222fe5ff7cc92aef78
+R 943a66e258c43484e6287cfb624784df
 U drh
-Z 971c54886e3dd2c38037eed368c93472
+Z 9be13842ba3000b4a28c2a5894f2ade5
