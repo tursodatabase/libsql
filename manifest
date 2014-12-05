@@ -1,5 +1,5 @@
-C Fix\scompiler\swarnings.
-D 2014-12-05T00:32:09.905
+C When\sclosing\sa\s(shared-cache)\sdatabase\sconnection,\sbe\ssure\sto\sclear\sout\sall\nKeyInfo\sobjects\scached\son\sIndex\sobjects.\nProposed\sfix\sfor\sticket\s[e4a18565a36884b00edf].
+D 2014-12-05T05:38:02.138
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6c4f961fa91d0b4fa121946a19f9e5eac2f2f809
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -195,7 +195,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
 F src/loadext.c de741e66e5ddc1598d904d7289239696e40ed994
-F src/main.c 84cc0fc4861bd2b06c286b38bf03bce604a0a66a
+F src/main.c fa9f0e511a64caf66b8e7bb835c55172e7d61527
 F src/malloc.c 740db54387204c9a2eb67c6d98e68b08e9ef4eab
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c faf615aafd8be74a71494dfa027c113ea5c6615f
@@ -1223,7 +1223,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 520c2b838da8b230487c8c66f3ba8e5daa1ca886
-R 2f1363efb358b758f4fe53b98d762c1d
+P e9955c0e14d13ba1411f013acb4979958dae2516
+R 6bcc6e9801f68a90df02ecfc8338dee3
+T *branch * fix-stale-keyinfo-cache
+T *sym-fix-stale-keyinfo-cache *
+T -sym-trunk *
 U drh
-Z 8ac94f0b609313b69c75d4df8f71997e
+Z 0a051974f060a3e4f394579c98ab9920
