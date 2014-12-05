@@ -1,12 +1,12 @@
-C When\sclosing\sa\s(shared-cache)\sdatabase\sconnection,\sbe\ssure\sto\sclear\sout\nall\sKeyInfo\sobjects\scached\son\sIndex\sobjects.\s\nFix\sfor\sticket\s[e4a18565a36884b00edf].
-D 2014-12-05T14:51:22.102
+C Increase\sthe\sversion\snumber\sto\s3.8.7.3.
+D 2014-12-05T14:54:28.400
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc e31dee24038965fb6269d6d61073fd6b7e331dec
 F Makefile.vxworks 034289efa9d591b04b1a73598623119c306cbba0
 F README.md 64f270c43c38c46de749e419c22f0ae2f4499fe8
-F VERSION 3978bf46d1599bc324ae171a99c4e8fca7481822
+F VERSION f7ce2fe949b8b915bf1c451ffcb18160e13ba006
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 9eb448a552d5c0185cf62c463f9c173cedae3811
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -38,7 +38,7 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 0921066a13130082764ab4ab6456f7b5bebe56de
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 135207dac9b9ff35a91cdb17871322c26fa5de73 x
+F configure 3e597ced685571768e370b3b7e04f92412b94e6e x
 F configure.ac 4cf9f60785143fa141b10962ccc885d973792e9a
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 334dbf6621b8fb8790297ec1abf3cfa4621709d1
@@ -1206,8 +1206,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5a80957b04d68cc7e0325873a409d83c1f11b52f
-Q +adca7688de20ff40d8ddf2107dfaf92af3873b83
-R 106128274b13a35e17b9f3549afcd998
+P b7905b8c5fe266f43c99a44c6b9aa4b56b2ba4d1
+R b112ba624d7674e921fd6217334e2c92
 U drh
-Z 8857ccf18a12b54990c2620d9cb5eff5
+Z 821726a8f3aa512d6cdf73b2a14e0313
