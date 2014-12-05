@@ -3679,7 +3679,7 @@ static int test_prepare_v2(
     zCopy = malloc(bytes);
     memcpy(zCopy, zSql, bytes);
   }else{
-    int n = strlen(zSql) + 1;
+    int n = (int)strlen(zSql) + 1;
     zCopy = malloc(n);
     memcpy(zCopy, zSql, n);
   }
