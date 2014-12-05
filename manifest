@@ -1,5 +1,5 @@
-C Fix\sa\sbuffer\soverread\sthat\smight\soccur\sin\sanalyze.c\sif\sSQLITE_ENABLE_STAT4\swas\sdefined.
-D 2014-12-05T20:43:48.762
+C Version\s3.8.7.3
+D 2014-12-05T22:29:24.210
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1206,7 +1206,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 48529508cfe2f9445a6940222fe5ff7cc92aef78
+P 194c90db637ad4197a54be83a665feb2a9c96014
 R 9c03e40230b03e031df69c10ef418c3a
-U dan
-Z 6fc3046bbfc50216164c29da1582b526
+T +bgcolor * #d0c0ff
+T +sym-release *
+T +sym-version-3.8.7.3 *
+U drh
+Z 1696edf186831fdcc944c05ffbed906a
