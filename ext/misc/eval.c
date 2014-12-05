@@ -21,11 +21,11 @@ SQLITE_EXTENSION_INIT1
 ** Structure used to accumulate the output
 */
 struct EvalResult {
-  char *z;            /* Accumulated output */
-  const char *zSep;   /* Separator */
-  int szSep;          /* Size of the separator string */
-  int nAlloc;         /* Number of bytes allocated for z[] */
-  int nUsed;          /* Number of bytes of z[] actually used */
+  char *z;               /* Accumulated output */
+  const char *zSep;      /* Separator */
+  int szSep;             /* Size of the separator string */
+  sqlite3_int64 nAlloc;  /* Number of bytes allocated for z[] */
+  sqlite3_int64 nUsed;   /* Number of bytes of z[] actually used */
 };
 
 /*
@@ -37,10 +37,13 @@ static int callback(void *pCtx, int argc, char **argv, char **colnames){
   for(i=0; i<argc; i++){
     const char *z = argv[i] ? argv[i] : "";
     size_t sz = strlen(z);
-    if( sz+p->nUsed+p->szSep+1 > p->nAlloc ){
+    if( (sqlite3_int64)sz+p->nUsed+p->szSep+1 > p->nAlloc ){
       char *zNew;
       p->nAlloc = p->nAlloc*2 + sz + p->szSep + 1;
-      zNew = sqlite3_realloc(p->z, p->nAlloc);
+      /* Using sqlite3_realloc64() would be better, but it is a recent
+      ** addition and will cause a segfault if loaded by an older version
+      ** of SQLite.  */
+      zNew = p->nAlloc<=0x7fffffff ? sqlite3_realloc(p->z, (int)p->nAlloc) : 0;
       if( zNew==0 ){
         sqlite3_free(p->z);
         memset(p, 0, sizeof(*p));
@@ -93,7 +96,7 @@ static void sqlEvalFunc(
     sqlite3_result_error_nomem(context);
     sqlite3_free(x.z);
   }else{
-    sqlite3_result_text(context, x.z, x.nUsed, sqlite3_free);
+    sqlite3_result_text(context, x.z, (int)x.nUsed, sqlite3_free);
   }
 }
 
