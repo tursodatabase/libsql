@@ -932,7 +932,13 @@ void sqlite3LeaveMutexAndCloseZombie(sqlite3 *db){
     if( pDb->pBt ){
       sqlite3BtreeClose(pDb->pBt);
       pDb->pBt = 0;
-      if( j!=1 ){
+      if( j!=1 && pDb->pSchema ){
+        /* Must clear the KeyInfo cache.  See ticket [e4a18565a36884b00edf] */
+        for(i=sqliteHashFirst(&pDb->pSchema->idxHash); i; i=sqliteHashNext(i)){
+          Index *pIdx = sqliteHashData(i);
+          sqlite3KeyInfoUnref(pIdx->pKeyInfo);
+          pIdx->pKeyInfo = 0;
+        }
         pDb->pSchema = 0;
       }
     }

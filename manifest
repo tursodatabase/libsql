@@ -1,5 +1,5 @@
-C If\sa\stable\sis\sthe\sright\soperand\sof\sa\sLEFT\sJOIN,\sthen\sany\scolumn\sof\sthat\ntable\scan\sbe\sNULL\seven\sif\sthat\scolumn\shas\sa\sNOT\sNULL\sconstraint.\nFix\sfor\sticket\s[6f2222d550f5b0ee7ed].
-D 2014-12-04T16:29:21.076
+C When\sclosing\sa\s(shared-cache)\sdatabase\sconnection,\sbe\ssure\sto\sclear\sout\nall\sKeyInfo\sobjects\scached\son\sIndex\sobjects.\s\nFix\sfor\sticket\s[e4a18565a36884b00edf].
+D 2014-12-05T14:51:22.102
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -194,7 +194,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
 F src/loadext.c de741e66e5ddc1598d904d7289239696e40ed994
-F src/main.c 1bdabb62205af168498a17460bdb7533b2a4a915
+F src/main.c da87f93489c8e71d5b876b60a673b5c50bd3836b
 F src/malloc.c 3c3ac67969612493d435e14b6832793209afd2ec
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c faf615aafd8be74a71494dfa027c113ea5c6615f
@@ -830,6 +830,7 @@ F test/shared7.test a81e99f83e6c51b02ac99c96fb3a2a7b5978c956
 F test/shared8.test 00a07bf5e1337ecf72e94542bdefdc330d7a2538
 F test/shared9.test 5f2a8f79b4d6c7d107a01ffa1ed05ae7e6333e21
 F test/sharedA.test 0cdf1a76dfa00e6beee66af5b534b1e8df2720f5
+F test/sharedB.test 16cc7178e20965d75278f410943109b77b2e645e
 F test/shared_err.test 2f2aee20db294b9924e81f6ccbe60f19e21e8506
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
 F test/shell1.test d60946b5fde4d85fe06db7331dfe89011f564350
@@ -1205,8 +1206,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2ab564bf9655b7c7b97ab85cafc8a48329b27f93
-Q +6f6fcbe4736b9468a495c684d5eebc8bfe5c566a
-R a71b6beca65c1cf1c19c7bd2736bb9da
+P 5a80957b04d68cc7e0325873a409d83c1f11b52f
+Q +adca7688de20ff40d8ddf2107dfaf92af3873b83
+R 106128274b13a35e17b9f3549afcd998
 U drh
-Z 8e9d9668bb846b5d8f649e9767762fc0
+Z 8857ccf18a12b54990c2620d9cb5eff5
