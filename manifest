@@ -1,5 +1,5 @@
-C Fix\sa\sbuffer\soverread\sthat\smight\soccur\sin\sanalyze.c\sif\sSQLITE_ENABLE_STAT4\swas\sdefined.
-D 2014-12-05T21:04:26.713
+C Avoid\sa\spotential\sNULL\spointer\sdeference\sin\sthe\ssqlite3_stmt_scanstatus()\nlogic.
+D 2014-12-05T21:18:19.223
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6c4f961fa91d0b4fa121946a19f9e5eac2f2f809
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -304,7 +304,7 @@ F src/vtab.c c08ec66f45919eaa726bf88aa53eb08379d607f9
 F src/wal.c 847692349eb6e1fb8543dbc97e69ddbfa4cc7ea7
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
-F src/where.c 8877b55e6803eaa856254875bca8d12fff3681cf
+F src/where.c e914fdb9159bb36af4a673193bbda08aaf9e5a73
 F src/whereInt.h d3633e9b592103241b74b0ec76185f3e5b8b62e0
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1225,8 +1225,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e4db3db3a65ecfd4069a40d436aa7a5512d61a30
-Q +194c90db637ad4197a54be83a665feb2a9c96014
-R 4fea4497b1906b35d5aec52d63c738f3
-U dan
-Z 35f7cd6f840ef1a069fd6944a80e996c
+P c1ae1268b9023a771fda98f26bf451c6066fe70b
+R f53c4ff709cb4a78a86ac1697287f29f
+U drh
+Z 2440e7c1515e4798b405fcb66c6b9d26
