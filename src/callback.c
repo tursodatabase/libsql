@@ -102,7 +102,7 @@ CollSeq *sqlite3GetCollSeq(
   if( p && !p->xCmp && synthCollSeq(db, p) ){
     p = 0;
   }
-  assert( !p || p->xCmp );
+  assert( p==0 || (sqlite3ValidCollSeq(p) && p->xCmp!=0) );
   if( p==0 ){
     sqlite3ErrorMsg(pParse, "no such collation sequence: %s", zName);
   }
@@ -186,6 +186,31 @@ static CollSeq *findCollSeqEntry(
   return pColl;
 }
 
+#ifdef SQLITE_DEBUG
+/*
+** The following routine does sanity checking on a CollSeq object and
+** returns 1 if everything looks ok and 0 if the CollSeq object appears
+** to be corrupt.  This routine is used only inside of assert() statements.
+*/
+int sqlite3ValidCollSeq(const CollSeq *p){
+  /* The CollSeq must be one of a triple and the zName field must
+  ** point to the first byte after that triple 
+  */
+  int n = (int)(p->zName - (char*)p)/sizeof(CollSeq);
+  if( n<=0 || n>3 ) return 0;
+
+  /* Check for valid enc values */
+  if( p->enc==SQLITE_UTF8 ) return 1;
+  if( p->enc==SQLITE_UTF16LE ) return 1;
+  if( p->enc==SQLITE_UTF16BE ) return 1;
+  if( p->enc==(SQLITE_UTF16LE|SQLITE_UTF16_ALIGNED) ) return 1;
+  if( p->enc==(SQLITE_UTF16BE|SQLITE_UTF16_ALIGNED) ) return 1;
+
+  /* Otherwise, malformed */
+  return 0;
+}
+#endif /* SQLITE_DEBUG */
+
 /*
 ** Parameter zName points to a UTF-8 encoded string nName bytes long.
 ** Return the CollSeq* pointer for the collation sequence named zName
@@ -215,7 +240,10 @@ CollSeq *sqlite3FindCollSeq(
   }
   assert( SQLITE_UTF8==1 && SQLITE_UTF16LE==2 && SQLITE_UTF16BE==3 );
   assert( enc>=SQLITE_UTF8 && enc<=SQLITE_UTF16BE );
-  if( pColl ) pColl += enc-1;
+  if( pColl ){
+    pColl += enc-1;
+    assert( sqlite3ValidCollSeq(pColl) );
+  }
   return pColl;
 }
 

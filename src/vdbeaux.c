@@ -1054,6 +1054,7 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
         CollSeq *pColl = pKeyInfo->aColl[j];
         const char *zColl = pColl ? pColl->zName : "nil";
         int n = sqlite3Strlen30(zColl);
+        assert( pColl==0 || sqlite3ValidCollSeq(pColl) );
         if( n==6 && memcmp(zColl,"BINARY",6)==0 ){
           zColl = "B";
           n = 1;
@@ -3358,6 +3359,7 @@ static int vdbeCompareMemString(
   const CollSeq *pColl,
   u8 *prcErr                      /* If an OOM occurs, set to SQLITE_NOMEM */
 ){
+  assert( sqlite3ValidCollSeq(pColl) );
   if( pMem1->enc==pColl->enc ){
     /* The strings are already in the correct encoding.  Call the
      ** comparison function directly */
@@ -3473,6 +3475,7 @@ int sqlite3MemCompare(const Mem *pMem1, const Mem *pMem2, const CollSeq *pColl){
     assert( !pColl || pColl->xCmp );
 
     if( pColl ){
+      assert( sqlite3ValidCollSeq(pColl) );
       return vdbeCompareMemString(pMem1, pMem2, pColl, 0);
     }
     /* If a NULL pointer was passed as the collate function, fall through

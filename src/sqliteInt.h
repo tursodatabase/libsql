@@ -3453,6 +3453,9 @@ const char *sqlite3ErrName(int);
 
 const char *sqlite3ErrStr(int);
 int sqlite3ReadSchema(Parse *pParse);
+#if defined(SQLITE_DEBUG)
+int sqlite3ValidCollSeq(const CollSeq*);
+#endif
 CollSeq *sqlite3FindCollSeq(sqlite3*,u8 enc, const char*,int);
 CollSeq *sqlite3LocateCollSeq(Parse *pParse, const char*zName);
 CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr);
