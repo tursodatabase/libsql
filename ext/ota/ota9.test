@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# Test OTA with virtual tables
+# Test OTA with virtual tables. And tables with no PRIMARY KEY declarations.
 #
 
 if {![info exists testdir]} {
@@ -60,6 +60,68 @@ do_execsql_test 1.2.2 { SELECT rowid, * FROM f1 } {
 do_execsql_test 1.2.3 { INSERT INTO f1(f1) VALUES('integrity-check') }
 integrity_check 1.2.4
 
+#-------------------------------------------------------------------------
+# Tables with no PK declaration.
+#
+
+# Run the OTA in file $ota on target database $target until completion.
+#
+proc run_ota {target ota} {
+  sqlite3ota ota $target $ota
+  while { [ota step]=="SQLITE_OK" } {}
+  ota close
+}
+
+foreach {tn idx} {
+  1 { }
+  2 { 
+    CREATE INDEX i1 ON t1(a);
+  }
+  3 { 
+    CREATE INDEX i1 ON t1(b, c);
+    CREATE INDEX i2 ON t1(c, b);
+    CREATE INDEX i3 ON t1(a, a, a, b, b, b, c, c, c);
+  }
+} {
+
+  reset_db
+  do_execsql_test 2.$tn.1 {
+    CREATE TABLE t1(a, b, c);
+    INSERT INTO t1 VALUES(1, 2, 3);
+    INSERT INTO t1 VALUES(4, 5, 6);
+    INSERT INTO t1(rowid, a, b, c) VALUES(-1, 'a', 'b', 'c');
+    INSERT INTO t1(rowid, a, b, c) VALUES(-2, 'd', 'e', 'f');
+  }
+
+  db eval $idx
+  
+  do_test 2.$tn.2 {
+    forcedelete ota.db
+    sqlite3 db2 ota.db
+    db2 eval {
+      CREATE TABLE data_t1(ota_rowid, a, b, c, ota_control);
+      INSERT INTO data_t1 VALUES(3, 'x', 'y', 'z', 0);
+      INSERT INTO data_t1 VALUES(NULL, 'X', 'Y', 'Z', 0);
+      INSERT INTO data_t1 VALUES('1', NULL, NULL, NULL, 1);
+      INSERT INTO data_t1 VALUES(-2, NULL, NULL, 'fff', '..x');
+    }
+    db2 close
+  } {}
+  
+  run_ota test.db ota.db
+  
+  do_execsql_test 2.$tn.3 {
+    SELECT rowid, a, b, c FROM t1 ORDER BY rowid;
+  } {
+    -2 d e fff
+    -1 a b c
+     2 4 5 6
+     3 x y z
+     4 X Y Z
+  }
+  
+  integrity_check 2.$tn.4
+}
 
 
 finish_test

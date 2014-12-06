@@ -177,6 +177,9 @@ foreach {tn2 cmd} {1 run_ota 2 step_ota 3 step_ota_uri} {
 # relaxed so that external PRIMARY KEYs on tables with automatic rowids
 # are now allowed.
 #
+# UPDATE 2: Tables without any PRIMARY KEY declaration are now allowed.
+# However the input table must feature an "ota_rowid" column.
+#
 reset_db
 create_ota1 ota.db
 do_execsql_test 2.1 { CREATE TABLE t1(a, b, c) }
@@ -186,7 +189,7 @@ do_test 2.2 {
 } {SQLITE_ERROR}
 do_test 2.3 {
   list [catch { ota close } msg] $msg
-} {1 {SQLITE_ERROR - table t1 has no PRIMARY KEY}}
+} {1 {SQLITE_ERROR - table data_t1 requires ota_rowid column}}
 reset_db
 do_execsql_test 2.4 { CREATE TABLE t1(a PRIMARY KEY, b, c) }
 do_test 2.5 {

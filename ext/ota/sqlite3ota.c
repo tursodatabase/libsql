@@ -104,8 +104,11 @@ struct OtaObjIter {
   int nTblCol;                    /* Size of azTblCol[] array */
   char **azTblCol;                /* Array of quoted column names */
   unsigned char *abTblPk;         /* Array of flags - true for PK columns */
+  int eType;
+#if 0
   unsigned char bRowid;           /* True for implicit IPK tables */
   unsigned char bVtab;            /* True for a virtual table */
+#endif
 
   /* Output variables. zTbl==0 implies EOF. */
   int bCleanup;                   /* True in "cleanup" state */
@@ -123,6 +126,14 @@ struct OtaObjIter {
   char *zMask;                    /* Copy of update mask used with pUpdate */
   sqlite3_stmt *pUpdate;          /* Last update statement (or NULL) */
 };
+
+/*
+** Values for OtaObjIter.eType
+*/
+#define OTA_PK_REAL     1         /* Table has a real primary key */
+#define OTA_PK_EXTERNAL 2         /* Table has an external primary key index */
+#define OTA_PK_NONE     3         /* Table has no PK (use rowid) */
+#define OTA_PK_VTAB     4         /* Table is a virtual table (use rowid) */
 
 /*
 ** OTA handle.
@@ -228,8 +239,7 @@ static void otaObjIterFreeCols(OtaObjIter *pIter){
   pIter->nTblCol = 0;
   sqlite3_free(pIter->zMask);
   pIter->zMask = 0;
-  pIter->bRowid = 0;
-  pIter->bVtab = 0;
+  pIter->eType = 0;               /* Invalid value */
 }
 
 /*
@@ -471,11 +481,11 @@ static int otaObjIterGetCols(sqlite3ota *p, OtaObjIter *pIter){
   if( pIter->azTblCol==0 ){
     sqlite3_stmt *pStmt = 0;
     int nCol = 0;
-    int bSeenPk = 0;
     int i;                        /* for() loop iterator variable */
     int rc2;                      /* sqlite3_finalize() return value */
+    int bOtaRowid = 0;            /* If input table has column "ota_rowid" */
 
-    assert( pIter->bRowid==0 && pIter->bVtab==0 );
+    assert( pIter->eType==0 );
 
     /* Populate the azTblCol[] and nTblCol variables based on the columns
     ** of the input table. Ignore any input table columns that begin with
@@ -493,6 +503,9 @@ static int otaObjIterGetCols(sqlite3ota *p, OtaObjIter *pIter){
         char *zCopy = otaQuoteName(zName);
         pIter->azTblCol[pIter->nTblCol++] = zCopy;
         if( zCopy==0 ) p->rc = SQLITE_NOMEM;
+      }
+      else if( 0==sqlite3_stricmp("ota_rowid", zName) ){
+        bOtaRowid = 1;
       }
     }
     sqlite3_finalize(pStmt);
@@ -519,20 +532,33 @@ static int otaObjIterGetCols(sqlite3ota *p, OtaObjIter *pIter){
       }else{
         int iPk = sqlite3_column_int(pStmt, 5);
         pIter->abTblPk[i] = (iPk!=0);
-        if( iPk ) bSeenPk = 1;
-        if( iPk<0 ) pIter->bRowid = 1;
+        if( iPk ){
+          pIter->eType = (iPk<0) ? OTA_PK_EXTERNAL : OTA_PK_REAL;
+        }
       }
     }
     rc2 = sqlite3_finalize(pStmt);
     if( p->rc==SQLITE_OK ) p->rc = rc2;
 
-    if( p->rc==SQLITE_OK && bSeenPk==0 ){
-      const char *zTab = pIter->zTbl;
-      if( otaIsVtab(p, zTab) ){
-        pIter->bVtab = 1;
-      }else{
-        p->zErrmsg = sqlite3_mprintf("table %s has no PRIMARY KEY", zTab);
+    if( p->rc==SQLITE_OK ){
+      if( pIter->eType==0 ){
+        /* This must either be a virtual table, or a regular table with no
+        ** PRIMARY KEY declaration whatsoever.  */
+        if( bOtaRowid==0 ){
+          p->rc = SQLITE_ERROR;
+          p->zErrmsg = sqlite3_mprintf(
+              "table data_%q requires ota_rowid column", pIter->zTbl
+          );
+        }else if( otaIsVtab(p, pIter->zTbl) ){
+          pIter->eType = OTA_PK_VTAB;
+        }else{
+          pIter->eType = OTA_PK_NONE;
+        }
+      }else if( bOtaRowid ){
         p->rc = SQLITE_ERROR;
+        p->zErrmsg = sqlite3_mprintf(
+            "table data_%q may not have ota_rowid column", pIter->zTbl
+        );
       }
     }
   }
@@ -618,6 +644,17 @@ static char *otaObjIterGetCollist(
   return zList;
 }
 
+/*
+** Assuming the current table columns are "a", "b" and "c", and the zObj
+** paramter is passed "old", return a string of the form:
+**
+**     "old.a, old.b, old.b"
+**
+** With the column names escaped.
+**
+** For tables with implicit rowids - OTA_PK_EXTERNAL and OTA_PK_NONE, append
+** the text ", old._rowid_" to the returned value.
+*/
 static char *otaObjIterGetOldlist(
   sqlite3ota *p, 
   OtaObjIter *pIter,
@@ -637,21 +674,31 @@ static char *otaObjIterGetOldlist(
     }
 
     /* For a table with implicit rowids, append "old._rowid_" to the list. */
-    if( pIter->bRowid ){
+    if( pIter->eType==OTA_PK_EXTERNAL || pIter->eType==OTA_PK_NONE ){
       zList = sqlite3_mprintf("%z, %s._rowid_", zList, zObj);
     }
   }
   return zList;
 }
 
+/*
+** Return an expression that can be used in a WHERE clause to match the
+** primary key of the current table. For example, if the table is:
+**
+**   CREATE TABLE t1(a, b, c, PRIMARY KEY(b, c));
+**
+** Return the string:
+**
+**   "b = ?1 AND c = ?2"
+*/
 static char *otaObjIterGetWhere(
   sqlite3ota *p, 
   OtaObjIter *pIter
 ){
   char *zList = 0;
   if( p->rc==SQLITE_OK ){
-    if( pIter->bVtab ){
-      zList = otaMPrintfAndCollectError(p, "rowid = ?%d", pIter->nTblCol+1);
+    if( pIter->eType==OTA_PK_VTAB || pIter->eType==OTA_PK_NONE ){
+      zList = otaMPrintfAndCollectError(p, "_rowid_ = ?%d", pIter->nTblCol+1);
     }else{
       const char *zSep = "";
       int i;
@@ -759,7 +806,7 @@ static int otaObjIterPrepareAll(
       int *aiCol;                 /* Column map */
       const char **azColl;        /* Collation sequences */
 
-      assert( pIter->bVtab==0 );
+      assert( pIter->eType!=OTA_PK_VTAB );
 
       /* Create the index writers */
       if( p->rc==SQLITE_OK ){
@@ -777,10 +824,10 @@ static int otaObjIterPrepareAll(
       zCollist = otaObjIterGetCollist(p, pIter, pIter->nCol, aiCol, azColl);
       if( p->rc==SQLITE_OK ){
         char *zSql;
-        if( pIter->bRowid ){
+        if( pIter->eType==OTA_PK_EXTERNAL || pIter->eType==OTA_PK_NONE ){
           zSql = sqlite3_mprintf(
               "SELECT %s, ota_control FROM ota.'ota_tmp_%q' ORDER BY %s%s",
-              zCollist, pIter->zTbl, 
+              zCollist, pIter->zTbl,
               zCollist, zLimit
           );
         }else{
@@ -798,11 +845,13 @@ static int otaObjIterPrepareAll(
         p->rc = prepareFreeAndCollectError(p->db, &pIter->pSelect, pz, zSql);
       }
     }else{
+      int bOtaRowid = (pIter->eType==OTA_PK_VTAB || pIter->eType==OTA_PK_NONE);
       const char *zTbl = pIter->zTbl;
-      char *zBindings = otaObjIterGetBindlist(p, pIter->nTblCol+pIter->bVtab);
       char *zWhere = otaObjIterGetWhere(p, pIter);
       char *zOldlist = otaObjIterGetOldlist(p, pIter, "old");
       char *zNewlist = otaObjIterGetOldlist(p, pIter, "new");
+      char *zBindings = otaObjIterGetBindlist(p, pIter->nTblCol + bOtaRowid);
+
       zCollist = otaObjIterGetCollist(p, pIter, pIter->nTblCol, 0, 0);
       pIter->nCol = pIter->nTblCol;
 
@@ -811,7 +860,7 @@ static int otaObjIterPrepareAll(
         p->rc = prepareFreeAndCollectError(p->db, &pIter->pSelect, pz,
             sqlite3_mprintf(
               "SELECT %s, ota_control%s FROM ota.'data_%q'%s", 
-              zCollist, (pIter->bVtab ? ", ota_rowid" : ""), zTbl, zLimit
+              zCollist, (bOtaRowid ? ", ota_rowid" : ""), zTbl, zLimit
             )
         );
       }
@@ -821,7 +870,7 @@ static int otaObjIterPrepareAll(
         p->rc = prepareFreeAndCollectError(p->db, &pIter->pInsert, pz,
             sqlite3_mprintf(
               "INSERT INTO main.%Q(%s%s) VALUES(%s)", 
-              zTbl, zCollist, (pIter->bVtab ? ", rowid" : ""), zBindings
+              zTbl, zCollist, (bOtaRowid ? ", _rowid_" : ""), zBindings
             )
         );
       }
@@ -835,8 +884,11 @@ static int otaObjIterPrepareAll(
         );
       }
 
-      if( pIter->bVtab==0 ){
-        const char *zOtaRowid = (pIter->bRowid ? ", ota_rowid" : "");
+      if( pIter->eType!=OTA_PK_VTAB ){
+        const char *zOtaRowid = "";
+        if( pIter->eType==OTA_PK_EXTERNAL || pIter->eType==OTA_PK_NONE ){
+          zOtaRowid = ", ota_rowid";
+        }
 
         /* Create the ota_tmp_xxx table and the triggers to populate it. */
         otaMPrintfExec(p, 
@@ -858,12 +910,13 @@ static int otaObjIterPrepareAll(
             "BEGIN "
             "  INSERT INTO 'ota_tmp_%q'(ota_control, %s%s) VALUES(3, %s);"
             "END;"
-            , zTbl, (pIter->bRowid ? ", 0 AS ota_rowid" : ""), zTbl, 
+            , zTbl, (pIter->eType==OTA_PK_EXTERNAL ? ", 0 AS ota_rowid" : "")
+            , zTbl, 
             zTbl, zTbl, zTbl, zCollist, zOtaRowid, zOldlist,
             zTbl, zTbl, zTbl, zCollist, zOtaRowid, zOldlist,
             zTbl, zTbl, zTbl, zCollist, zOtaRowid, zNewlist
         );
-        if( pIter->bRowid ){
+        if( pIter->eType==OTA_PK_EXTERNAL || pIter->eType==OTA_PK_NONE ){
           otaMPrintfExec(p, 
               "CREATE TEMP TRIGGER ota_insert_%q AFTER INSERT ON main.%Q "
               "BEGIN "
@@ -1074,6 +1127,15 @@ static int otaStepType(sqlite3ota *p, const char **pzMask){
   return res;
 }
 
+#ifdef SQLITE_DEBUG
+static void assertColumnName(sqlite3_stmt *pStmt, int iCol, const char *zName){
+  const char *zCol = sqlite3_column_name(pStmt, iCol);
+  assert( 0==sqlite3_stricmp(zName, zCol) );
+}
+#else
+# define assertColumnName(x,y,z)
+#endif
+
 /*
 ** This function does the work for an sqlite3ota_step() call.
 **
@@ -1122,13 +1184,17 @@ static int otaStep(sqlite3ota *p){
         pVal = sqlite3_column_value(pIter->pSelect, i);
         sqlite3_bind_value(pWriter, i+1, pVal);
       }
-      if( pIter->bVtab ){
-        /* For a virtual table, the SELECT statement is:
+      if( pIter->zIdx==0
+       && (pIter->eType==OTA_PK_VTAB || pIter->eType==OTA_PK_NONE) 
+      ){
+        /* For a virtual table, or a table with no primary key, the 
+        ** SELECT statement is:
         **
         **   SELECT <cols>, ota_control, ota_rowid FROM ....
         **
         ** Hence column_value(pIter->nCol+1).
         */
+        assertColumnName(pIter->pSelect, pIter->nCol+1, "ota_rowid");
         pVal = sqlite3_column_value(pIter->pSelect, pIter->nCol+1);
         sqlite3_bind_value(pWriter, pIter->nCol+1, pVal);
       }
@@ -1143,7 +1209,9 @@ static int otaStep(sqlite3ota *p){
           pVal = sqlite3_column_value(pIter->pSelect, i);
           sqlite3_bind_value(pUpdate, i+1, pVal);
         }
-        if( pIter->bVtab ){
+        if( pIter->eType==OTA_PK_VTAB || pIter->eType==OTA_PK_NONE ){
+          /* Bind the ota_rowid value to column _rowid_ */
+          assertColumnName(pIter->pSelect, pIter->nCol+1, "ota_rowid");
           pVal = sqlite3_column_value(pIter->pSelect, pIter->nCol+1);
           sqlite3_bind_value(pUpdate, pIter->nCol+1, pVal);
         }
@@ -1195,7 +1263,7 @@ int sqlite3ota_step(sqlite3ota *p){
             /* Clean up the ota_tmp_xxx table for the previous table. It 
             ** cannot be dropped as there are currently active SQL statements.
             ** But the contents can be deleted.  */
-            if( pIter->bVtab==0 ){
+            if( pIter->eType!=OTA_PK_VTAB ){
               otaMPrintfExec(p, "DELETE FROM ota.'ota_tmp_%q'", pIter->zTbl);
             }
           }else{
