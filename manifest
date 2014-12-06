@@ -1,5 +1,5 @@
-C Fix\sa\s(harmless)\suninitialized\svariable\sreference\sin\sb-tree\sbalancing\sfor\nauto-vacuumed\stables\swith\soverflow\spages.
-D 2014-12-06T02:05:44.178
+C Avoid\saccessing\sa\ssingle\suninitialized\sbyte\swhen\smoving\sa\srare\s3-byte\scell\sfrom\san\sinternal\spage\sto\sa\sleaf.\sThis\swas\snot\sactually\scausing\sa\sproblem,\sjust\sa\svalgrind\swarning.
+D 2014-12-06T14:56:49.956
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6c4f961fa91d0b4fa121946a19f9e5eac2f2f809
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -173,7 +173,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 7ddee9c7d505e07e959a575b18498f17c71e53ea
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 49ca66250c7dfa844a4d4cb8272b87420d27d3a5
-F src/btree.c b17571670289b07a9de2eeb07a0b6f8d3b0e5368
+F src/btree.c 9023963463b0b1876aea1abc6d208d9ffa0228ae
 F src/btree.h e31a3a3ebdedb1caf9bda3ad5dbab3db9b780f6e
 F src/btreeInt.h 3363e18fd76f69a27a870b25221b2345b3fd4d21
 F src/build.c 67bb05b1077e0cdaccb2e36bfcbe7a5df9ed31e8
@@ -1225,7 +1225,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 42d44adc13d52b8dd571c9375eb48298123d5a60
-R e3e823c5583914bbca49308565af7dd0
-U drh
-Z 667f4fff17e87dbc2be9d4c807ff4dab
+P dd1dd4451f468599f7a0c2f7b5ee6125db3bb152
+R fd0e43f358120e3c011052c6be23c038
+U dan
+Z 22968e22e0931f64edb1c44af2aed6b9
