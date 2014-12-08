@@ -1,12 +1,12 @@
-C Add\sa\smissing\smutex\saround\scalls\sto\sclear\sthe\sKeyInfo\scache\swhen\sclosing\na\sdatabase\sconnection.
-D 2014-12-08T17:45:04.713
+C Increase\sthe\sversion\snumber\sto\s3.8.7.4.
+D 2014-12-08T18:02:47.286
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc e31dee24038965fb6269d6d61073fd6b7e331dec
 F Makefile.vxworks 034289efa9d591b04b1a73598623119c306cbba0
 F README.md 64f270c43c38c46de749e419c22f0ae2f4499fe8
-F VERSION f7ce2fe949b8b915bf1c451ffcb18160e13ba006
+F VERSION d7e46e14bd7393d54d19ad900222e5f20d41ea1b
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 9eb448a552d5c0185cf62c463f9c173cedae3811
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -38,7 +38,7 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 0921066a13130082764ab4ab6456f7b5bebe56de
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 3e597ced685571768e370b3b7e04f92412b94e6e x
+F configure 73242776cd6f744c0ecb4dbaa01dd28a7e14c98d x
 F configure.ac 4cf9f60785143fa141b10962ccc885d973792e9a
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 334dbf6621b8fb8790297ec1abf3cfa4621709d1
@@ -1206,7 +1206,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 647e77e853e81a5effeb4c33477910400a67ba86
-R 9494d1f4078e697cfb4435c6e5385f9b
+P 3ddc7e4c7778a6708856776471ded65f78825487
+R 73abb1cfc0438311d6addbc123371521
 U drh
-Z 9ac17512906552af9b61295c55e93944
+Z e423815c02672dff875a4cc1a1f11988
