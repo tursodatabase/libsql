@@ -1,5 +1,5 @@
-C Version\s3.8.7.3
-D 2014-12-05T22:29:24.210
+C Add\sa\smissing\smutex\saround\scalls\sto\sclear\sthe\sKeyInfo\scache\swhen\sclosing\na\sdatabase\sconnection.
+D 2014-12-08T17:45:04.713
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -194,7 +194,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
 F src/loadext.c de741e66e5ddc1598d904d7289239696e40ed994
-F src/main.c aefdbda97a8d88ffeb6c49fd72d5757a7e813594
+F src/main.c b750d8a989b4599b1b886247b47323494e19ac3d
 F src/malloc.c 3c3ac67969612493d435e14b6832793209afd2ec
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c faf615aafd8be74a71494dfa027c113ea5c6615f
@@ -1206,10 +1206,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 194c90db637ad4197a54be83a665feb2a9c96014
-R 9c03e40230b03e031df69c10ef418c3a
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.8.7.3 *
+P 647e77e853e81a5effeb4c33477910400a67ba86
+R 9494d1f4078e697cfb4435c6e5385f9b
 U drh
-Z 1696edf186831fdcc944c05ffbed906a
+Z 9ac17512906552af9b61295c55e93944
