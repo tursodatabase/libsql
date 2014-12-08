@@ -1,5 +1,5 @@
-C Extra\stests\sfor\sthe\sota_rowid\scolumn.
-D 2014-12-08T07:22:34.951
+C Update\scomments\sin\ssqlite3ota.h\sto\sremove\sthe\s"must\shave\sPRIMARY\sKEY"\srestriction.
+D 2014-12-08T07:28:26.753
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a226317fdf3f4c895fb3cfedc355b4d0868ce1fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -137,7 +137,7 @@ F ext/ota/ota8.test cd70e63a0c29c45c0906692827deafa34638feda
 F ext/ota/ota9.test d3eee95dd836824d07a22e5efcdb7bf6e869358b
 F ext/ota/otafault.test be02466863015a583cc0ceb6aca871a5e6f7a71b
 F ext/ota/sqlite3ota.c 84cab0f965144772068ec0183252ae5e5278f0be
-F ext/ota/sqlite3ota.h 8dc9c812e61f47f497336a45f820bee88b33a2c5
+F ext/ota/sqlite3ota.h ce378c0c503f625611713133f9c79704ea4ee7a4
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 57bec53e1a677ab74217fe1f20a58c3a47261d6b
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
@@ -1237,7 +1237,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ba59a7e2ba97244492cbca9247456df0f3f19248
-R 06c52933f7ce4a2123403894b1b52edd
+P 46069393b3141ab198f0fcc4f6c05229f06bf1e8
+R 2ff45547a2c264d0b419c476d87c1792
 U dan
-Z 372aa0d2cbd560795c244eab3953e926
+Z 50a00d12069d2404879b86db79315481

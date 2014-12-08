@@ -61,9 +61,9 @@
 **
 **   * INSERT statements may not use any default values.
 **
-**   * Non-virtual tables that do not have declared primary keys may not 
-**     be updated. UPDATE and DELETE statements must identify their target 
-**     rows by PRIMARY KEY values. 
+**   * UPDATE and DELETE statements must identify their target rows by 
+**     PRIMARY KEY values. If the table being written has no PRIMARY KEY
+**     declaration, affected rows must be identified by rowid.
 **
 **   * UPDATE statements may not modify PRIMARY KEY columns.
 **
@@ -94,17 +94,19 @@
 **
 ** The order of the columns in the data_% table does not matter.
 **
-** If the target database table is a virtual table, the data_% table should
-** also contain a column named "ota_rowid". This column is mapped to the
-** virtual tables implicit primary key column - "rowid". Virtual tables
-** for which the "rowid" column does not function like a primary key value
-** can not be updated using OTA. For example, if the target db contains:
+** If the target database table is a virtual table or a table that has no
+** PRIMARY KEY declaration, the data_% table must also contain a column 
+** named "ota_rowid". This column is mapped to the tables implicit primary 
+** key column - "rowid". Virtual tables for which the "rowid" column does 
+** not function like a primary key value cannot be updated using OTA. For 
+** example, if the target db contains either of the following:
 **
-**   CREATE VIRTUAL TABLE ft1 USING fts3(a, b);
+**   CREATE VIRTUAL TABLE x1 USING fts3(a, b);
+**   CREATE TABLE x1(a, b)
 **
 ** then the OTA database should contain:
 **
-**   CREATE TABLE data_ft1(a, b, ota_rowid, ota_control);
+**   CREATE TABLE data_x1(a, b, ota_rowid, ota_control);
 **
 ** All non-hidden columns (i.e. all columns matched by "SELECT *") of the
 ** target table must be present in the input table. For virtual tables,
@@ -173,12 +175,12 @@
 **
 **   UPDATE t1 SET c = ota_delta(c, 'usa') WHERE a = 4;
 **
-** If the target database table is a virtual table, the ota_control value
-** should not include a character corresponding to the ota_rowid value.
-** For example, this:
+** If the target database table is a virtual table or a table with no PRIMARY
+** KEY, the ota_control value should not include a character corresponding 
+** to the ota_rowid value. For example, this:
 **
 **   INSERT INTO data_ft1(a, b, ota_rowid, ota_control) 
-**       VALUES(NULL, 'usa', 12, '..d');
+**       VALUES(NULL, 'usa', 12, '.x');
 **
 ** causes a result similar to:
 **
