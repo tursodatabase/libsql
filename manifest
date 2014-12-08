@@ -1,5 +1,5 @@
-C Add\sa\smissing\smutex\saround\scalls\sto\sclear\sthe\sKeyInfo\scache\swhen\sclosing\na\sdatabase\sconnection.
-D 2014-12-08T18:08:45.076
+C Add\smissing\smutex\scalls\saround\sa\scall\sto\ssqlite3SchemaGet()\swithin\ssqlite3_open().
+D 2014-12-08T20:20:16.943
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6c4f961fa91d0b4fa121946a19f9e5eac2f2f809
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -195,7 +195,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
 F src/loadext.c de741e66e5ddc1598d904d7289239696e40ed994
-F src/main.c c04c232ad484ca82b5757e564d9c4da6fdeaae55
+F src/main.c 27c102143048802af53a8e55919ea3f6d9072951
 F src/malloc.c 740db54387204c9a2eb67c6d98e68b08e9ef4eab
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c faf615aafd8be74a71494dfa027c113ea5c6615f
@@ -911,7 +911,7 @@ F test/thread2.test f35d2106452b77523b3a2b7d1dcde2e5ee8f9e46
 F test/thread_common.tcl 334639cadcb9f912bf82aa73f49efd5282e6cadd
 F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
 F test/threadtest2.c ace893054fa134af3fc8d6e7cfecddb8e3acefb9
-F test/threadtest3.c 0ed13e09690f6204d7455fac3b0e8ece490f6eef
+F test/threadtest3.c fca8d360b470405ae3ed431b5cb4cdf031f85a74
 F test/tkt-02a8e81d44.test 6c80d9c7514e2a42d4918bf87bf6bc54f379110c
 F test/tkt-26ff0c2d1e.test 888324e751512972c6e0d1a09df740d8f5aaf660
 F test/tkt-2a5629202f.test 0521bd25658428baa26665aa53ffed9367d33af2
@@ -1075,6 +1075,7 @@ F test/triggerC.test a68980c5955d62ee24be6f97129d824f199f9a4c
 F test/triggerD.test 8e7f3921a92a5797d472732108109e44575fa650
 F test/triggerE.test 355e9c5cbaed5cd039a60baad1fb2197caeb8e52
 F test/tt3_checkpoint.c 415eccce672d681b297485fc20f44cdf0eac93af
+F test/tt3_index.c 2e7f3151a0ae522f031e8e2761ca2bda63f4d221
 F test/types.test bf816ce73c7dfcfe26b700c19f97ef4050d194ff
 F test/types2.test 3555aacf8ed8dc883356e59efc314707e6247a84
 F test/types3.test 99e009491a54f4dc02c06bdbc0c5eea56ae3e25a
@@ -1225,8 +1226,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6aeece19a235344be2537e66a3fe08b1febfb5a0
-Q +3ddc7e4c7778a6708856776471ded65f78825487
-R 1221a1e2e1d9363391aee656884338b7
-U drh
-Z 22afcb22dd16de39e36b3c393f026fe6
+P 7047ce32a234484b8ba15311e6560aa74ff692c9
+R 4e003866b87e6ab46d2d338deacb76ac
+U dan
+Z bc6db0f22fd7a4f485084a7efedf6bfd
