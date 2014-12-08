@@ -1,5 +1,5 @@
-C Allow\sthe\sota\sextension\sto\swrite\sto\stables\swith\sno\sPRIMARY\sKEY\sdeclaration.
-D 2014-12-06T19:30:41.673
+C Extra\stests\sfor\sthe\sota_rowid\scolumn.
+D 2014-12-08T07:22:34.951
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a226317fdf3f4c895fb3cfedc355b4d0868ce1fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -125,7 +125,7 @@ F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
 F ext/ota/README.txt 78d4a9f78f567d4bf826cf0f02df6254902562ca
 F ext/ota/ota.c c11a85af71dccc45976622fe7a51169a481caa91
-F ext/ota/ota1.test 64770d76d3dc00c24f9a78ac69e4448708bde985
+F ext/ota/ota1.test d76b9ec77437759e9da0ff4abe9c070bb9f4eae1
 F ext/ota/ota10.test ab815dff9cef7248c504f06b888627d236f25e9c
 F ext/ota/ota2.test 4568c2671d19dbde789fb9091d727a2e94880128
 F ext/ota/ota3.test 71bd8cc0cf8d7e7d9bb11a1fcc238320a5a9d8c8
@@ -1237,7 +1237,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ccee999649d0fa1d48e53847542f4cbe05e3d694
-R 23b9af0814440584d410f9d611aafb5a
+P ba59a7e2ba97244492cbca9247456df0f3f19248
+R 06c52933f7ce4a2123403894b1b52edd
 U dan
-Z b3bc69908e00e34016dd9eb2dbbe05c2
+Z 372aa0d2cbd560795c244eab3953e926

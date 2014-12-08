@@ -363,5 +363,52 @@ foreach {tn2 cmd} {1 run_ota 2 step_ota} {
   }
 }
 
+#-------------------------------------------------------------------------
+# Test some error cases:
+# 
+#   * A virtual table with no ota_rowid column.
+#   * A no-PK table with no ota_rowid column.
+#   * A PK table with an ota_rowid column.
+#
+ifcapable fts3 {
+  foreach {tn schema error} {
+     1 {
+       CREATE TABLE t1(a, b);
+       CREATE TABLE ota.data_t1(a, b, ota_control);
+     } {SQLITE_ERROR - table data_t1 requires ota_rowid column}
+  
+     2 {
+       CREATE VIRTUAL TABLE t1 USING fts4(a, b);
+       CREATE TABLE ota.data_t1(a, b, ota_control);
+     } {SQLITE_ERROR - table data_t1 requires ota_rowid column}
+  
+     3 {
+       CREATE TABLE t1(a PRIMARY KEY, b);
+       CREATE TABLE ota.data_t1(a, b, ota_rowid, ota_control);
+     } {SQLITE_ERROR - table data_t1 may not have ota_rowid column}
+  
+     4 {
+       CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+       CREATE TABLE ota.data_t1(a, b, ota_rowid, ota_control);
+     } {SQLITE_ERROR - table data_t1 may not have ota_rowid column}
+  
+     5 {
+       CREATE TABLE t1(a, b PRIMARY KEY) WITHOUT ROWID;
+       CREATE TABLE ota.data_t1(a, b, ota_rowid, ota_control);
+     } {SQLITE_ERROR - table data_t1 may not have ota_rowid column}
+  
+  } {
+    reset_db
+    forcedelete ota.db
+    execsql { ATTACH 'ota.db' AS ota }
+    execsql $schema
+
+    do_test 6.$tn {
+      list [catch { run_ota test.db ota.db } msg] $msg
+    } [list 1 $error]
+  }
+}
+
+
 finish_test
 
