@@ -2587,7 +2587,9 @@ static int openDatabase(
     sqlite3Error(db, rc);
     goto opendb_out;
   }
+  sqlite3BtreeEnter(db->aDb[0].pBt);
   db->aDb[0].pSchema = sqlite3SchemaGet(db, db->aDb[0].pBt);
+  sqlite3BtreeLeave(db->aDb[0].pBt);
   db->aDb[1].pSchema = sqlite3SchemaGet(db, 0);
 
   /* The default safety_level for the main database is 'full'; for the temp

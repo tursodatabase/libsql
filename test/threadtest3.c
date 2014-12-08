@@ -1394,7 +1394,10 @@ static void dynamic_triggers(int nMs){
   print_and_free_err(&err);
 }
 
+
+
 #include "tt3_checkpoint.c"
+#include "tt3_index.c"
 
 int main(int argc, char **argv){
   struct ThreadTest {
@@ -1414,6 +1417,8 @@ int main(int argc, char **argv){
 
     { checkpoint_starvation_1, "checkpoint_starvation_1", 10000 },
     { checkpoint_starvation_2, "checkpoint_starvation_2", 10000 },
+
+    { create_drop_index_1, "create_drop_index_1", 10000 },
   };
 
   int i;
