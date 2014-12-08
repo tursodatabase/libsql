@@ -4038,10 +4038,12 @@ int main(int argc, char **argv){
   char *zErrMsg = 0;
   ShellState data;
   const char *zInitFile = 0;
-  char *zFirstCmd = 0;
   int i;
   int rc = 0;
   int warnInmemoryDb = 0;
+  int readStdin = 1;
+  int nCmd = 0;
+  char **azCmd = 0;
 
 #if USE_SYSTEM_SQLITE+0!=1
   if( strcmp(sqlite3_sourceid(),SQLITE_SOURCE_ID)!=0 ){
@@ -4061,6 +4063,18 @@ int main(int argc, char **argv){
   signal(SIGINT, interrupt_handler);
 #endif
 
+#ifdef SQLITE_SHELL_DBNAME_PROC
+  {
+    /* If the SQLITE_SHELL_DBNAME_PROC macro is defined, then it is the name
+    ** of a C-function that will provide the name of the database file.  Use
+    ** this compile-time option to embed this shell program in larger
+    ** applications. */
+    extern void SQLITE_SHELL_DBNAME_PROC(const char**);
+    SQLITE_SHELL_DBNAME_PROC(&data.zDbFilename);
+    warnInmemoryDb = 0;
+  }
+#endif
+
   /* Do an initial pass through the command-line argument to locate
   ** the name of the database file, the name of the initialization file,
   ** the size of the alternative malloc heap,
@@ -4072,15 +4086,18 @@ int main(int argc, char **argv){
     if( z[0]!='-' ){
       if( data.zDbFilename==0 ){
         data.zDbFilename = z;
-        continue;
+      }else{
+        /* Excesss arguments are interpreted as SQL (or dot-commands) and
+        ** mean that nothing is read from stdin */
+        readStdin = 0;
+        nCmd++;
+        azCmd = realloc(azCmd, sizeof(azCmd[0])*nCmd);
+        if( azCmd==0 ){
+          fprintf(stderr, "out of memory\n");
+          exit(1);
+        }
+        azCmd[nCmd-1] = z;
       }
-      if( zFirstCmd==0 ){
-        zFirstCmd = z;
-        continue;
-      }
-      fprintf(stderr,"%s: Error: too many options: \"%s\"\n", Argv0, argv[i]);
-      fprintf(stderr,"Use -help for a list of options.\n");
-      return 1;
     }
     if( z[1]=='-' ) z++;
     if( strcmp(z,"-separator")==0
@@ -4170,11 +4187,6 @@ int main(int argc, char **argv){
 #else
     fprintf(stderr,"%s: Error: no database filename specified\n", Argv0);
     return 1;
-#endif
-#ifdef SQLITE_SHELL_DBNAME_PROC
-    { extern void SQLITE_SHELL_DBNAME_PROC(const char**);
-      SQLITE_SHELL_DBNAME_PROC(&data.zDbFilename);
-      warnInmemoryDb = 0; }
 #endif
   }
   data.out = stdout;
@@ -4272,6 +4284,10 @@ int main(int argc, char **argv){
     }else if( strcmp(z,"-help")==0 ){
       usage(1);
     }else if( strcmp(z,"-cmd")==0 ){
+      /* Run commands that follow -cmd first and separately from commands
+      ** that simply appear on the command-line.  This seems goofy.  It would
+      ** be better if all commands ran in the order that they appear.  But
+      ** we retain the goofy behavior for historical compatibility. */
       if( i==argc-1 ) break;
       z = cmdline_option_value(argc,argv,++i);
       if( z[0]=='.' ){
@@ -4295,23 +4311,28 @@ int main(int argc, char **argv){
     }
   }
 
-  if( zFirstCmd ){
-    /* Run just the command that follows the database name
+  if( !readStdin ){
+    /* Run all arguments that do not begin with '-' as if they were separate
+    ** command-line inputs, except for the argToSkip argument which contains
+    ** the database filename.
     */
-    if( zFirstCmd[0]=='.' ){
-      rc = do_meta_command(zFirstCmd, &data);
-      if( rc==2 ) rc = 0;
-    }else{
-      open_db(&data, 0);
-      rc = shell_exec(data.db, zFirstCmd, shell_callback, &data, &zErrMsg);
-      if( zErrMsg!=0 ){
-        fprintf(stderr,"Error: %s\n", zErrMsg);
-        return rc!=0 ? rc : 1;
-      }else if( rc!=0 ){
-        fprintf(stderr,"Error: unable to process SQL \"%s\"\n", zFirstCmd);
-        return rc;
+    for(i=0; i<nCmd; i++){
+      if( azCmd[i][0]=='.' ){
+        rc = do_meta_command(azCmd[i], &data);
+        if( rc ) return rc==2 ? 0 : rc;
+      }else{
+        open_db(&data, 0);
+        rc = shell_exec(data.db, azCmd[i], shell_callback, &data, &zErrMsg);
+        if( zErrMsg!=0 ){
+          fprintf(stderr,"Error: %s\n", zErrMsg);
+          return rc!=0 ? rc : 1;
+        }else if( rc!=0 ){
+          fprintf(stderr,"Error: unable to process SQL: %s\n", azCmd[i]);
+          return rc;
+        }
       }
     }
+    free(azCmd);
   }else{
     /* Run commands received from standard input
     */

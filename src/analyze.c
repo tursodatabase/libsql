@@ -1438,8 +1438,6 @@ static void decodeIntArray(
   if( z==0 ) z = "";
 #else
   assert( z!=0 );
-  pIndex->bUnordered = 0;
-  pIndex->noSkipScan = 0;
 #endif
   for(i=0; *z && i<nOut; i++){
     v = 0;
@@ -1459,25 +1457,28 @@ static void decodeIntArray(
     if( *z==' ' ) z++;
   }
 #ifndef SQLITE_ENABLE_STAT3_OR_STAT4
-  assert( pIndex!=0 );
+  assert( pIndex!=0 ); {
 #else
-  if( pIndex )
+  if( pIndex ){
 #endif
-  while( z[0] ){
-    if( sqlite3_strglob("unordered*", z)==0 ){
-      pIndex->bUnordered = 1;
-    }else if( sqlite3_strglob("sz=[0-9]*", z)==0 ){
-      pIndex->szIdxRow = sqlite3LogEst(sqlite3Atoi(z+3));
-    }else if( sqlite3_strglob("noskipscan*", z)==0 ){
-      pIndex->noSkipScan = 1;
-    }
+    pIndex->bUnordered = 0;
+    pIndex->noSkipScan = 0;
+    while( z[0] ){
+      if( sqlite3_strglob("unordered*", z)==0 ){
+        pIndex->bUnordered = 1;
+      }else if( sqlite3_strglob("sz=[0-9]*", z)==0 ){
+        pIndex->szIdxRow = sqlite3LogEst(sqlite3Atoi(z+3));
+      }else if( sqlite3_strglob("noskipscan*", z)==0 ){
+        pIndex->noSkipScan = 1;
+      }
 #ifdef SQLITE_ENABLE_COSTMULT
-    else if( sqlite3_strglob("costmult=[0-9]*",z)==0 ){
-      pIndex->pTable->costMult = sqlite3LogEst(sqlite3Atoi(z+9));
-    }
+      else if( sqlite3_strglob("costmult=[0-9]*",z)==0 ){
+        pIndex->pTable->costMult = sqlite3LogEst(sqlite3Atoi(z+9));
+      }
 #endif
-    while( z[0]!=0 && z[0]!=' ' ) z++;
-    while( z[0]==' ' ) z++;
+      while( z[0]!=0 && z[0]!=' ' ) z++;
+      while( z[0]==' ' ) z++;
+    }
   }
 }
 
@@ -1595,7 +1596,7 @@ static void initAvgEq(Index *pIdx){
       i64 nSum100 = 0;          /* Number of terms contributing to sumEq */
       i64 nDist100;             /* Number of distinct values in index */
 
-      if( pIdx->aiRowEst==0 || pIdx->aiRowEst[iCol+1]==0 ){
+      if( !pIdx->aiRowEst || iCol>=pIdx->nKeyCol || pIdx->aiRowEst[iCol+1]==0 ){
         nRow = pFinal->anLt[iCol];
         nDist100 = (i64)100 * pFinal->anDLt[iCol];
         nSample--;

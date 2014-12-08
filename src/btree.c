@@ -1357,7 +1357,7 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
   testcase( gap+2+nByte==top );
   if( gap+2+nByte>top ){
  defragment_page:
-    testcase( pPage->nCell==0 );
+    assert( pPage->nCell>0 || CORRUPT_DB );
     rc = defragmentPage(pPage);
     if( rc ) return rc;
     top = get2byteNotZero(&data[hdr+5]);
@@ -6258,6 +6258,14 @@ static int pageFreeArray(
 }
 
 /*
+** apCell[] and szCell[] contains pointers to and sizes of all cells in the
+** pages being balanced.  The current page, pPg, has pPg->nCell cells starting
+** with apCell[iOld].  After balancing, this page should hold nNew cells
+** starting at apCell[iNew].
+**
+** This routine makes the necessary adjustments to pPg so that it contains
+** the correct cells after being balanced.
+**
 ** The pPg->nFree field is invalid when this function returns. It is the
 ** responsibility of the caller to set it correctly.
 */
@@ -6298,12 +6306,13 @@ static void editPage(
     );
   }
 
-  pData = &aData[get2byte(&aData[hdr+5])];
+  pData = &aData[get2byteNotZero(&aData[hdr+5])];
   if( pData<pBegin ) goto editpage_fail;
 
   /* Add cells to the start of the page */
   if( iNew<iOld ){
-    int nAdd = iOld-iNew;
+    int nAdd = MIN(nNew,iOld-iNew);
+    assert( (iOld-iNew)<nNew || nCell==0 || CORRUPT_DB );
     pCellptr = pPg->aCellIdx;
     memmove(&pCellptr[nAdd*2], pCellptr, nCell*2);
     if( pageInsertArray(
@@ -6408,7 +6417,7 @@ static int balance_quick(MemPage *pParent, MemPage *pPage, u8 *pSpace){
   assert( pPage->nOverflow==1 );
 
   /* This error condition is now caught prior to reaching this function */
-  if( pPage->nCell==0 ) return SQLITE_CORRUPT_BKPT;
+  if( NEVER(pPage->nCell==0) ) return SQLITE_CORRUPT_BKPT;
 
   /* Allocate a new page. This page will become the right-sibling of 
   ** pPage. Make the parent page writable, so that the new divider cell
@@ -6851,7 +6860,11 @@ static int balance_nonroot(
       }else{
         assert( leafCorrection==4 );
         if( szCell[nCell]<4 ){
-          /* Do not allow any cells smaller than 4 bytes. */
+          /* Do not allow any cells smaller than 4 bytes. If a smaller cell
+          ** does exist, pad it with 0x00 bytes. */
+          assert( szCell[nCell]==3 );
+          assert( apCell[nCell]==&pTemp[iSpace1-3] );
+          pTemp[iSpace1++] = 0x00;
           szCell[nCell] = 4;
         }
       }
@@ -7086,7 +7099,11 @@ static int balance_nonroot(
       ** if sibling page iOld had the same page number as pNew, and if
       ** pCell really was a part of sibling page iOld (not a divider or
       ** overflow cell), we can skip updating the pointer map entries.  */
-      if( pNew->pgno!=aPgno[iOld] || pCell<aOld || pCell>=&aOld[usableSize] ){
+      if( iOld>=nNew
+       || pNew->pgno!=aPgno[iOld]
+       || pCell<aOld
+       || pCell>=&aOld[usableSize]
+      ){
         if( !leafCorrection ){
           ptrmapPut(pBt, get4byte(pCell), PTRMAP_BTREE, pNew->pgno, &rc);
         }

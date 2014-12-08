@@ -3638,6 +3638,7 @@ static int test_prepare_v2(
 ){
   sqlite3 *db;
   const char *zSql;
+  char *zCopy = 0;                /* malloc() copy of zSql */
   int bytes;
   const char *zTail = 0;
   sqlite3_stmt *pStmt = 0;
@@ -3653,7 +3654,21 @@ static int test_prepare_v2(
   zSql = Tcl_GetString(objv[2]);
   if( Tcl_GetIntFromObj(interp, objv[3], &bytes) ) return TCL_ERROR;
 
-  rc = sqlite3_prepare_v2(db, zSql, bytes, &pStmt, objc>=5 ? &zTail : 0);
+  /* Instead of using zSql directly, make a copy into a buffer obtained
+  ** directly from malloc(). The idea is to make it easier for valgrind
+  ** to spot buffer overreads.  */
+  if( bytes>=0 ){
+    zCopy = malloc(bytes);
+    memcpy(zCopy, zSql, bytes);
+  }else{
+    int n = (int)strlen(zSql) + 1;
+    zCopy = malloc(n);
+    memcpy(zCopy, zSql, n);
+  }
+  rc = sqlite3_prepare_v2(db, zCopy, bytes, &pStmt, objc>=5 ? &zTail : 0);
+  free(zCopy);
+  zTail = &zSql[(zTail - zCopy)];
+
   assert(rc==SQLITE_OK || pStmt==0);
   Tcl_ResetResult(interp);
   if( sqlite3TestErrCode(interp, db, rc) ) return TCL_ERROR;
@@ -5675,10 +5690,11 @@ static int test_wal_checkpoint_v2(
   int nCkpt = -555;
   Tcl_Obj *pRet;
 
-  const char * aMode[] = { "passive", "full", "restart", 0 };
+  const char * aMode[] = { "passive", "full", "restart", "truncate", 0 };
   assert( SQLITE_CHECKPOINT_PASSIVE==0 );
   assert( SQLITE_CHECKPOINT_FULL==1 );
   assert( SQLITE_CHECKPOINT_RESTART==2 );
+  assert( SQLITE_CHECKPOINT_TRUNCATE==3 );
 
   if( objc!=3 && objc!=4 ){
     Tcl_WrongNumArgs(interp, 1, objv, "DB MODE ?NAME?");
@@ -5688,15 +5704,17 @@ static int test_wal_checkpoint_v2(
   if( objc==4 ){
     zDb = Tcl_GetString(objv[3]);
   }
-  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db)
-   || Tcl_GetIndexFromObj(interp, objv[2], aMode, "mode", 0, &eMode) 
-  ){
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) || (
+      TCL_OK!=Tcl_GetIntFromObj(0, objv[2], &eMode)
+   && TCL_OK!=Tcl_GetIndexFromObj(interp, objv[2], aMode, "mode", 0, &eMode) 
+  )){
     return TCL_ERROR;
   }
 
   rc = sqlite3_wal_checkpoint_v2(db, zDb, eMode, &nLog, &nCkpt);
   if( rc!=SQLITE_OK && rc!=SQLITE_BUSY ){
-    Tcl_SetResult(interp, (char *)sqlite3_errmsg(db), TCL_VOLATILE);
+    const char *zErrCode = sqlite3ErrName(rc);
+    Tcl_AppendResult(interp, zErrCode, " - ", (char *)sqlite3_errmsg(db), 0);
     return TCL_ERROR;
   }
 
