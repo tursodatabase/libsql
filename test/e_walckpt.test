@@ -69,9 +69,9 @@ foreach {tn script} {
 
   2 {
     proc checkpoint {db mode args} {
-      set sql "PRAGMA wal_checkpoint"
+      set sql "PRAGMA wal_checkpoint = $mode"
       if {[llength $args] && [lindex $args 0]!=""} {
-        set sql "PRAGMA [lindex $args 0].wal_checkpoint"
+        set sql "PRAGMA [lindex $args 0].wal_checkpoint = $mode"
       }
       set rc [catch { $db eval $sql } msg]
       if {$rc} {
@@ -261,6 +261,204 @@ foreach {tn script} {
   db2 close
   tvfs delete
 
+  proc busy_handler {mode busy_handler_mode n} {
+    incr ::busy_handler_counter
+    switch -- $busy_handler_mode {
+      1 {
+        # Do nothing. Do not block.
+        return 1
+      }
+
+      2 {
+        # Close first the reader, then later the writer.
+        if {$n==5}  { catch {db2 eval commit} }
+        if {$n==10} { catch {db3 eval commit} }
+        return 0
+      }
+
+      3 {
+        # Close first the writer, then later the reader.
+        if {$n==5}  { catch {db2 eval commit} }
+        if {$n==10} { catch {db3 eval commit} }
+        return 0
+      }
+    }
+  }
+
+  foreach {mode busy_handler_mode} { 
+    passive 1
+    full    1
+    full    2
+    full    3
+  } {
+
+    set ::sync_counter 0
+
+    proc tvfs_callback {method args} {
+      set tail [file tail [lindex $args 0]]
+      if {$method == "xSync" && $tail == "test.db"} {
+        incr ::sync_counter
+      }
+
+      if {$method == "xWrite" && $tail=="test.db"} {
+        if {$::write_ok < 0} {
+          set ::write_ok [expr ![catch {db5 eval { BEGIN IMMEDIATE }}]]
+          catch { db5 eval ROLLBACK }
+        }
+        if {$::read_ok < 0} {
+          set ::read_ok [expr ![catch {db5 eval { SELECT * FROM t1 }}]]
+        }
+      }
+    }
+
+    catch { db close }
+    forcedelete test.db
+    testvfs tvfs
+    sqlite3 db test.db -vfs tvfs
+    #tvfs filter xSync
+    tvfs script tvfs_callback
+
+    do_execsql_test $tn.4.$mode.0 {
+      CREATE TABLE t1(a, b);
+      CREATE TABLE t2(a, b);
+      PRAGMA journal_mode = wal;
+      INSERT INTO t1 VALUES(1, 2);
+      INSERT INTO t1 VALUES(3, 4);
+      INSERT INTO t1 VALUES(5, 6);
+    } {wal}
+
+    # Open a reader on the current database snapshot.
+    do_test $tn.4.$mode.1 {
+      sqlite3 db2 test.db -vfs tvfs
+      execsql {
+        BEGIN;
+          SELECT * FROM t1 UNION ALL SELECT * FROM t2;
+      } db2
+    } {1 2 3 4 5 6}
+
+    # Open a writer. Write a transaction. Then begin, but do not commit,
+    # a second transaction.
+    do_test $tn.4.$mode.2 {
+      sqlite3 db3 test.db -vfs tvfs
+      execsql {
+        INSERT INTO t2 VALUES(7, 8);
+        BEGIN;
+          INSERT INTO t2 VALUES(9, 10);
+          SELECT * FROM t1 UNION ALL SELECT * FROM t2;
+      } db3
+    } {1 2 3 4 5 6 7 8 9 10}
+
+    sqlite3 db5 test.db -vfs tvfs
+
+    # Register a busy-handler with connection [db].
+    #
+    db busy [list busy_handler $mode $busy_handler_mode]
+    set ::sync_counter 0
+    set ::busy_handler_counter 0
+    set ::read_ok -1
+    set ::write_ok -1
+    
+    do_test $tn.4.$mode.3 {
+      checkpoint db $mode main
+      set {} {}
+    } {}
+
+    if { $mode=="passive" } {
+      # EVIDENCE-OF: R-16333-64433 Checkpoint as many frames as possible
+      # without waiting for any database readers or writers to finish, then
+      # sync the database file if all frames in the log were checkpointed.
+      #
+      #   "As many frames as possible" means all but the last two transactions
+      #   (the two that write to table t2, of which the scond is unfinished).
+      #   So copying the db file only we see the t1 change, but not the t2
+      #   modifications.
+      #
+      #   The busy handler is not invoked (see below) and the db reader and
+      #   writer are still active - so the checkpointer did not wait for either
+      #   readers or writers. As a result the checkpoint was not finished and
+      #   so the db file is not synced.
+      #
+      # EVIDENCE-OF: R-62920-47450 The busy-handler callback is never invoked
+      # in the SQLITE_CHECKPOINT_PASSIVE mode.
+      #
+      #   It's not. Test case "$tn.4.$mode.6".
+      #
+      do_test $tn.4.$mode.4 {
+        forcecopy test.db abc.db
+        sqlite3 db4 abc.db
+        db4 eval { SELECT * FROM t1 UNION ALL SELECT * FROM t2 }
+      } {1 2 3 4 5 6}
+      do_test $tn.4.$mode.5 { set ::sync_counter } 0
+      do_test $tn.4.$mode.6 { set ::busy_handler_counter } 0
+      db4 close
+  
+      db2 eval COMMIT
+      db3 eval COMMIT
+  
+      # EVIDENCE-OF: R-65499-53765 On the other hand, passive mode might leave
+      # the checkpoint unfinished if there are concurrent readers or writers.
+      #
+      #   The reader and writer have now dropped their locks. And so a 
+      #   checkpoint now is able to checkpoint more frames. Showing that the
+      #   attempt above was left "unfinished".
+      #
+      #   Also, because the checkpoint finishes this time, the db is synced.
+      #   Which is part of R-16333-64433 above.
+      #
+      do_test $tn.4.$mode.7 {
+        checkpoint db $mode main
+        forcecopy test.db abc.db
+        sqlite3 db4 abc.db
+        db4 eval { SELECT * FROM t1 UNION ALL SELECT * FROM t2 }
+      } {1 2 3 4 5 6 7 8 9 10}
+      do_test $tn.4.$mode.6 { set ::sync_counter } 1
+      do_test $tn.4.$mode.7 { set ::busy_handler_counter } 0
+      db4 close
+    }
+
+    if { $mode=="full" } {
+      if {$busy_handler_mode==2 || $busy_handler_mode==3} {
+        # EVIDENCE-OF: R-59171-47567 This mode blocks (it invokes the
+        # busy-handler callback) until there is no database writer and all
+        # readers are reading from the most recent database snapshot.
+        #
+        #   Show that both the reader and writer have finished:
+        #
+        do_test $tn.4.$mode.7 {
+          list [catchsql COMMIT db2] [catchsql COMMIT db3]
+        } [list                                             \
+            {1 {cannot commit - no transaction is active}}  \
+            {1 {cannot commit - no transaction is active}}  \
+        ]
+
+        # EVIDENCE-OF: R-29177-48281 It then checkpoints all frames in the log
+        # file and syncs the database file.
+        #
+        do_test $tn.4.$mode.8 {
+          forcecopy test.db abc.db
+          sqlite3 db4 abc.db
+          db4 eval { SELECT * FROM t1 UNION ALL SELECT * FROM t2 }
+        } {1 2 3 4 5 6 7 8 9 10}
+        do_test $tn.4.$mode.9 { set ::sync_counter } 1
+        db4 close
+
+        # EVIDENCE-OF: R-51867-44713 This mode blocks new database writers
+        # while it is pending, but new database readers are allowed to continue
+        # unimpeded.
+        do_test $tn.4.$mode.10 {
+          list $::write_ok $::read_ok
+        } {0 1}
+
+      }
+    }
+
+    db2 close
+    db3 close
+    db5 close
+  }
+
+  db close
+  tvfs delete
 }
 
 #-----------------------------------------------------------------------
