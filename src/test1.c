@@ -1588,14 +1588,14 @@ static int test_table_column_metadata(
   int primarykey;
   int autoincrement;
 
-  if( objc!=5 ){
+  if( objc!=5 && objc!=4 ){
     Tcl_WrongNumArgs(interp, 1, objv, "DB dbname tblname colname");
     return TCL_ERROR;
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
   zDb = Tcl_GetString(objv[2]);
   zTbl = Tcl_GetString(objv[3]);
-  zCol = Tcl_GetString(objv[4]);
+  zCol = objc==5 ? Tcl_GetString(objv[4]) : 0;
 
   if( strlen(zDb)==0 ) zDb = 0;
 

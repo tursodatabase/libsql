@@ -3188,11 +3188,8 @@ int sqlite3_table_column_metadata(
   }
 
   /* Find the column for which info is requested */
-  if( sqlite3IsRowid(zColumnName) ){
-    iCol = pTab->iPKey;
-    if( iCol>=0 ){
-      pCol = &pTab->aCol[iCol];
-    }
+  if( zColumnName==0 ){
+    /* Query for existance of table only */
   }else{
     for(iCol=0; iCol<pTab->nCol; iCol++){
       pCol = &pTab->aCol[iCol];
@@ -3201,8 +3198,13 @@ int sqlite3_table_column_metadata(
       }
     }
     if( iCol==pTab->nCol ){
-      pTab = 0;
-      goto error_out;
+      if( HasRowid(pTab) && sqlite3IsRowid(zColumnName) ){
+        iCol = pTab->iPKey;
+        pCol = iCol>=0 ? &pTab->aCol[iCol] : 0;
+      }else{
+        pTab = 0;
+        goto error_out;
+      }
     }
   }
 
