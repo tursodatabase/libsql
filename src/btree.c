@@ -6812,7 +6812,7 @@ static int balance_nonroot(
 
   /* EVIDENCE-OF: R-28375-38319 SQLite will never request a scratch buffer
   ** that is more than 6 times the database page size. */
-  assert( szScratch<=6*pBt->pageSize );
+  assert( szScratch<=6*(int)pBt->pageSize );
   apCell = sqlite3ScratchMalloc( szScratch ); 
   if( apCell==0 ){
     rc = SQLITE_NOMEM;
@@ -6886,7 +6886,11 @@ static int balance_nonroot(
       }else{
         assert( leafCorrection==4 );
         if( szCell[nCell]<4 ){
-          /* Do not allow any cells smaller than 4 bytes. */
+          /* Do not allow any cells smaller than 4 bytes. If a smaller cell
+          ** does exist, pad it with 0x00 bytes. */
+          assert( szCell[nCell]==3 );
+          assert( apCell[nCell]==&pTemp[iSpace1-3] );
+          pTemp[iSpace1++] = 0x00;
           szCell[nCell] = 4;
         }
       }
@@ -7121,7 +7125,11 @@ static int balance_nonroot(
       ** if sibling page iOld had the same page number as pNew, and if
       ** pCell really was a part of sibling page iOld (not a divider or
       ** overflow cell), we can skip updating the pointer map entries.  */
-      if( pNew->pgno!=aPgno[iOld] || pCell<aOld || pCell>=&aOld[usableSize] ){
+      if( iOld>=nNew
+       || pNew->pgno!=aPgno[iOld]
+       || pCell<aOld
+       || pCell>=&aOld[usableSize]
+      ){
         if( !leafCorrection ){
           ptrmapPut(pBt, get4byte(pCell), PTRMAP_BTREE, pNew->pgno, &rc);
         }

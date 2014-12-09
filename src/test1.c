@@ -5896,15 +5896,17 @@ static int test_wal_checkpoint_v2(
   if( objc==4 ){
     zDb = Tcl_GetString(objv[3]);
   }
-  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db)
-   || Tcl_GetIndexFromObj(interp, objv[2], aMode, "mode", 0, &eMode) 
-  ){
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) || (
+      TCL_OK!=Tcl_GetIntFromObj(0, objv[2], &eMode)
+   && TCL_OK!=Tcl_GetIndexFromObj(interp, objv[2], aMode, "mode", 0, &eMode) 
+  )){
     return TCL_ERROR;
   }
 
   rc = sqlite3_wal_checkpoint_v2(db, zDb, eMode, &nLog, &nCkpt);
   if( rc!=SQLITE_OK && rc!=SQLITE_BUSY ){
-    Tcl_SetResult(interp, (char *)sqlite3_errmsg(db), TCL_VOLATILE);
+    const char *zErrCode = sqlite3ErrName(rc);
+    Tcl_AppendResult(interp, zErrCode, " - ", (char *)sqlite3_errmsg(db), 0);
     return TCL_ERROR;
   }
 
