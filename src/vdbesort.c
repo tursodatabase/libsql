@@ -450,7 +450,9 @@ struct SorterRecord {
 
 /* The minimum PMA size is set to this value multiplied by the database
 ** page size in bytes.  */
-#define SORTER_MIN_WORKING 10
+#ifndef SQLITE_SORTER_PMASZ
+# define SQLITE_SORTER_PMASZ 250
+#endif
 
 /* Maximum number of PMAs that a single MergeEngine can merge */
 #define SORTER_MAX_MERGE_COUNT 16
@@ -849,9 +851,9 @@ int sqlite3VdbeSorterInit(
     }
 
     if( !sqlite3TempInMemory(db) ){
-      pSorter->mnPmaSize = SORTER_MIN_WORKING * pgsz;
+      pSorter->mnPmaSize = SQLITE_SORTER_PMASZ * pgsz;
       mxCache = db->aDb[0].pSchema->cache_size;
-      if( mxCache<SORTER_MIN_WORKING ) mxCache = SORTER_MIN_WORKING;
+      if( mxCache<SQLITE_SORTER_PMASZ ) mxCache = SQLITE_SORTER_PMASZ;
       pSorter->mxPmaSize = MIN((i64)mxCache*pgsz, SQLITE_MAX_MXPMASIZE);
 
       /* EVIDENCE-OF: R-26747-61719 When the application provides any amount of
