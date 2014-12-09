@@ -1034,11 +1034,13 @@ void sqlite3LeaveMutexAndCloseZombie(sqlite3 *db){
     if( pDb->pBt ){
       if( pDb->pSchema ){
         /* Must clear the KeyInfo cache.  See ticket [e4a18565a36884b00edf] */
+        sqlite3BtreeEnter(pDb->pBt);
         for(i=sqliteHashFirst(&pDb->pSchema->idxHash); i; i=sqliteHashNext(i)){
           Index *pIdx = sqliteHashData(i);
           sqlite3KeyInfoUnref(pIdx->pKeyInfo);
           pIdx->pKeyInfo = 0;
         }
+        sqlite3BtreeLeave(pDb->pBt);
       }
       sqlite3BtreeClose(pDb->pBt);
       pDb->pBt = 0;
@@ -2809,7 +2811,9 @@ static int openDatabase(
     sqlite3Error(db, rc);
     goto opendb_out;
   }
+  sqlite3BtreeEnter(db->aDb[0].pBt);
   db->aDb[0].pSchema = sqlite3SchemaGet(db, db->aDb[0].pBt);
+  sqlite3BtreeLeave(db->aDb[0].pBt);
   db->aDb[1].pSchema = sqlite3SchemaGet(db, 0);
 
   /* The default safety_level for the main database is 'full'; for the temp
