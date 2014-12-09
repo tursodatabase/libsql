@@ -3149,7 +3149,6 @@ void sqlite3_thread_cleanup(void){
 ** Return meta information about a specific column of a database table.
 ** See comment in sqlite3.h (sqlite.h.in) for details.
 */
-#ifdef SQLITE_ENABLE_COLUMN_METADATA
 int sqlite3_table_column_metadata(
   sqlite3 *db,                /* Connection handle */
   const char *zDbName,        /* Database name or NULL */
@@ -3256,7 +3255,6 @@ error_out:
   sqlite3_mutex_leave(db->mutex);
   return rc;
 }
-#endif
 
 /*
 ** Sleep for a little while.  Return the amount of time slept.

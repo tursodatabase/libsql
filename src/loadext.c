@@ -34,7 +34,6 @@
 # define sqlite3_column_table_name16    0
 # define sqlite3_column_origin_name     0
 # define sqlite3_column_origin_name16   0
-# define sqlite3_table_column_metadata  0
 #endif
 
 #ifdef SQLITE_OMIT_AUTHORIZATION

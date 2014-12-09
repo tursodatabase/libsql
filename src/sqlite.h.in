@@ -5207,9 +5207,6 @@ SQLITE_DEPRECATED void sqlite3_soft_heap_limit(int N);
 ** error occurs during this process, or if the requested table or column
 ** cannot be found, an [error code] is returned and an error message left
 ** in the [database connection] (to be retrieved using sqlite3_errmsg()).)^
-**
-** ^This API is only available if the library was compiled with the
-** [SQLITE_ENABLE_COLUMN_METADATA] C-preprocessor symbol defined.
 */
 int sqlite3_table_column_metadata(
   sqlite3 *db,                /* Connection handle */

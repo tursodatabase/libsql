@@ -1569,7 +1569,6 @@ static int test_libversion_number(
 ** Usage: sqlite3_table_column_metadata DB dbname tblname colname
 **
 */
-#ifdef SQLITE_ENABLE_COLUMN_METADATA
 static int test_table_column_metadata(
   ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
@@ -1618,7 +1617,6 @@ static int test_table_column_metadata(
 
   return TCL_OK;
 }
-#endif
 
 #ifndef SQLITE_OMIT_INCRBLOB
 
@@ -6778,9 +6776,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_shared_cache_report", sqlite3BtreeSharedCacheReport, 0},
 #endif
      { "sqlite3_libversion_number", test_libversion_number, 0  },
-#ifdef SQLITE_ENABLE_COLUMN_METADATA
      { "sqlite3_table_column_metadata", test_table_column_metadata, 0  },
-#endif
 #ifndef SQLITE_OMIT_INCRBLOB
      { "sqlite3_blob_reopen", test_blob_reopen, 0  },
 #endif

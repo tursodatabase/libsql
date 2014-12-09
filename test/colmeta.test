@@ -17,11 +17,6 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-ifcapable !columnmetadata {
-  finish_test
-  return
-}
-
 # Set up a schema in the main and temp test databases.
 do_test colmeta-0 {
   execsql {
