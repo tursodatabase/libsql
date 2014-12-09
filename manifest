@@ -1,5 +1,5 @@
-C Add\smissing\smutex\scalls\saround\sa\scall\sto\ssqlite3SchemaGet()\swithin\ssqlite3_open().
-D 2014-12-08T20:23:30.369
+C Version\s3.8.7.4
+D 2014-12-09T01:34:36.054
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1207,8 +1207,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 33c900279f29ebcfc07095f3eda6bf741e0fba19
-Q +45415899545767888d36dcc0bafaf0ef415d94c2
+P 266b3441c6779b255a641bedbff79dd757ed6df5
 R 7238552a405d489ba6d9ae50c24c64c9
-U dan
-Z 274ba313a7b6b90c44d93750437d1e74
+T +bgcolor * #d0c0ff
+T +sym-release *
+T +sym-version-3.8.7.4 *
+U drh
+Z fb3e641b2065fe831499d94119d7b1dd
