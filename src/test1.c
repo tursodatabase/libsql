@@ -5712,6 +5712,7 @@ static int test_wal_checkpoint_v2(
   rc = sqlite3_wal_checkpoint_v2(db, zDb, eMode, &nLog, &nCkpt);
   if( rc!=SQLITE_OK && rc!=SQLITE_BUSY ){
     const char *zErrCode = sqlite3ErrName(rc);
+    Tcl_ResetResult(interp);
     Tcl_AppendResult(interp, zErrCode, " - ", (char *)sqlite3_errmsg(db), 0);
     return TCL_ERROR;
   }
