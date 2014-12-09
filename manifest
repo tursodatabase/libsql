@@ -1,5 +1,5 @@
-C Add\sextra\stests\sto\se_walckpt.test.
-D 2014-12-08T20:29:23.119
+C Fix\sharmless\scompiler\swarning.
+D 2014-12-09T04:26:56.984
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6c4f961fa91d0b4fa121946a19f9e5eac2f2f809
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -173,7 +173,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 7ddee9c7d505e07e959a575b18498f17c71e53ea
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 49ca66250c7dfa844a4d4cb8272b87420d27d3a5
-F src/btree.c 9023963463b0b1876aea1abc6d208d9ffa0228ae
+F src/btree.c ea6692ce58bfba55b12c75d2947fec0906d1ef7a
 F src/btree.h e31a3a3ebdedb1caf9bda3ad5dbab3db9b780f6e
 F src/btreeInt.h 3363e18fd76f69a27a870b25221b2345b3fd4d21
 F src/build.c 67bb05b1077e0cdaccb2e36bfcbe7a5df9ed31e8
@@ -1226,7 +1226,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 45415899545767888d36dcc0bafaf0ef415d94c2
-R 4d0b2e4f612d2fa1f8086c766c614446
-U dan
-Z 31f22aa5ae36276bb2e8d99e02610d8f
+P d6832aa24c8d93b4532a651b86605bd0a0d0aa78
+R 61f069fccea470b5ca359a3a5c90ead2
+U mistachkin
+Z b0538f03992f2ac4a5c753853d936f4f
