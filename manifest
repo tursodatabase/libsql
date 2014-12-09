@@ -1,5 +1,5 @@
-C Increase\sthe\sdefault\sminimum\sPMA\ssize\sfor\smulti-threaded\ssorting\sfrom\s10x\nthe\spage\ssize\sto\s250x\sthe\spage\ssize.\s\sProvide\sthe\sSQLITE_SORTER_PMASZ\ncompile-time\soption\sto\schange\sthis\sdefault.
-D 2014-12-09T14:42:49.215
+C Add\sthe\sSQLITE_REVERSE_UNORDERED_SELECTS\scompile-time\soption\sthat\scauses\sthe\n"PRAGMA\sreverse_unordered_selects"\ssetting\sto\sbe\son\sby\sdefault.
+D 2014-12-09T15:12:11.575
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6c4f961fa91d0b4fa121946a19f9e5eac2f2f809
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -195,7 +195,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
 F src/loadext.c de741e66e5ddc1598d904d7289239696e40ed994
-F src/main.c 27c102143048802af53a8e55919ea3f6d9072951
+F src/main.c 378923ed4cb27ca7486062d07b1e67973c8beca7
 F src/malloc.c 740db54387204c9a2eb67c6d98e68b08e9ef4eab
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c faf615aafd8be74a71494dfa027c113ea5c6615f
@@ -1226,7 +1226,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e97b7a8b4df784d148fefb9554da0f511e351d9f
-R bd26f6a52391b4ad1637a19c173d9967
+P b05340fe3cd5f1676a55023228dc8d1a92de5936
+R 30f0205c6ecccf655d5a50e721435aae
 U drh
-Z c16d1b57c275f469d491c230a3c4e6f8
+Z b3e21bd27e95301a6024ba1e3af7b9e7
