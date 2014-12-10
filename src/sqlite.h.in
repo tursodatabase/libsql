@@ -5152,22 +5152,22 @@ SQLITE_DEPRECATED void sqlite3_soft_heap_limit(int N);
 /*
 ** CAPI3REF: Extract Metadata About A Column Of A Table
 **
-** ^The sqlite3_table_column_metadata(X,D,T,C,....) routine returns
+** ^(The sqlite3_table_column_metadata(X,D,T,C,....) routine returns
 ** information about column C of table T in database D
-** on [database connection] X.  ^The sqlite3_table_column_metadata()
+** on [database connection] X.)^  ^The sqlite3_table_column_metadata()
 ** interface returns SQLITE_OK and fills in the non-NULL pointers in
-** the final five arguments with appropriate vaules if the specified
+** the final five arguments with appropriate values if the specified
 ** column exists.  ^The sqlite3_table_column_metadata() interface returns
 ** SQLITE_ERROR and if the specified column does not exist.
-** If the column-name parameter to sqlite3_table_column_metadata() is a
-** NULL pointer, then the routine simply checks for the existance of the
+** ^If the column-name parameter to sqlite3_table_column_metadata() is a
+** NULL pointer, then this routine simply checks for the existance of the
 ** table and returns SQLITE_OK if the table exists and SQLITE_ERROR if it
 ** does not.
 **
 ** ^The column is identified by the second, third and fourth parameters to
-** this function. ^The second parameter is either the name of the database
+** this function. ^(The second parameter is either the name of the database
 ** (i.e. "main", "temp", or an attached database) containing the specified
-** table or NULL. ^If it is NULL, then all attached databases are searched
+** table or NULL.)^ ^If it is NULL, then all attached databases are searched
 ** for the table using the same algorithm used by the database engine to
 ** resolve unqualified table references.
 **

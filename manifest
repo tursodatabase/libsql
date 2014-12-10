@@ -1,5 +1,5 @@
-C Fix\sthe\ssqlite3_table_column_metadata()\sroutine\sso\sthat\sit\sgives\sthe\scorrect\nanswer\sfor\sthe\s"rowid"\scolumn\sin\sa\sWITHOUT\sROWID\stable.\s\sEnhance\sit\sso\sthat\nit\scan\sbe\sused\sto\scheck\sfor\sthe\sexistence\sof\sa\stable\sby\ssetting\sthe\scolumn\nname\sparameter\sto\sNULL.\s\sThe\sroutine\sis\snow\sincluded\sin\sthe\sbuild\sby\ndefault,\seven\swithout\sthe\sSQLITE_ENABLE_COLUMN_METADATA\scompile-time\soption.
-D 2014-12-09T22:24:42.981
+C Fix\stypos\sin\sthe\sdocumentation\sfor\ssqlite3_table_column_metadata().\nNo\schanges\sto\scode.
+D 2014-12-10T04:58:43.490
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6c4f961fa91d0b4fa121946a19f9e5eac2f2f809
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -230,7 +230,7 @@ F src/resolve.c f6c46d3434439ab2084618d603e6d6dbeb0d6ada
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c f377fb8a5c73c10678ea74f3400f7913943e3d75
 F src/shell.c 45d9c9bd7cde07845af957f2d849933b990773cf
-F src/sqlite.h.in cc237b8aa62348685b36d06f1b6beb10dfea39ae
+F src/sqlite.h.in 6c1ca2ee6949a2232029ecd5391dcf3468bf4114
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
 F src/sqliteInt.h 28049b803b74a7f73242a8226915ea00ebb1309f
@@ -1226,7 +1226,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 84f9581019961efa31297f8be48427b17bcca857
-R 0b640911f896cbfee28a6d7f7893118c
+P cf9be419a16156a9814e1378bb49b780de977343
+R 080e42720ecc05dbe5a6fab44e9bfd04
 U drh
-Z 0a34c44c2738c668de181b5c6607c9d7
+Z 55e0d7a4f974fc615b3f61db59cc799b
