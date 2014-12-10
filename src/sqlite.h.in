@@ -7180,12 +7180,10 @@ void sqlite3_log(int iErrCode, const char *zFormat, ...);
 ** CAPI3REF: Write-Ahead Log Commit Hook
 **
 ** ^The [sqlite3_wal_hook()] function is used to register a callback that
-** will be invoked each time a database connection commits data to a
-** [write-ahead log] (i.e. whenever a transaction is committed in
-** [journal_mode | journal_mode=WAL mode]). 
+** is invoked each time data is committed to a database in wal mode.
 **
-** ^The callback is invoked by SQLite after the commit has taken place and 
-** the associated write-lock on the database released, so the implementation 
+** ^(The callback is invoked by SQLite after the commit has taken place and 
+** the associated write-lock on the database released)^, so the implementation 
 ** may read, write or [checkpoint] the database as required.
 **
 ** ^The first parameter passed to the callback function when it is invoked
