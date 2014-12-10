@@ -168,12 +168,13 @@ do_test 5.2 {
 #
 set ::old_wal_hook 0
 proc my_old_wal_hook {args} { incr ::old_wal_hook ; return 0 }
+db wal_hook my_old_wal_hook
 do_test 6.1.1 {
   execsql { INSERT INTO t1 VALUES(12) }
   set ::old_wal_hook
 } {1}
 do_test 6.1.2 {
-  execsql { PRAGA wal_autocheckpoint = 1000 }
+  execsql { PRAGMA wal_autocheckpoint = 1000 }
   execsql { INSERT INTO t1 VALUES(12) }
   set ::old_wal_hook
 } {1}

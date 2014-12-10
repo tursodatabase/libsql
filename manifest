@@ -1,5 +1,5 @@
-C Add\snew\stest\sfile\se_walhook.test.
-D 2014-12-10T20:29:49.614
+C Fix\sa\stypo\scausing\sa\stest\serror\sin\se_walhook.test.
+D 2014-12-10T20:57:20.700
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6c4f961fa91d0b4fa121946a19f9e5eac2f2f809
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -479,7 +479,7 @@ F test/e_uri.test 5ae33760fb2039c61aa2d90886f1664664173585
 F test/e_vacuum.test 5bfbdc21b65c0abf24398d0ba31dc88d93ca77a9
 F test/e_wal.test 0967f0b8f1dfda871dc7b9b5574198f1f4f7d69a
 F test/e_walckpt.test 3116a98fa0dd9b2c9e493de7c59730adfe436746
-F test/e_walhook.test 9a859599e9a0f354ffcc7c716f7ec699e41f617c
+F test/e_walhook.test da3ea8b3483d1af72190337bda50155a91a4b664
 F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 83437a79ba1545a55fb549309175c683fb334473
 F test/enc3.test 90683ad0e6ea587b9d5542ca93568af9a9858c40
@@ -1227,7 +1227,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P eacb3b7baa910e84f984b8e45695a2a2f5a4c861
-R de56ad0a085434d1b275f3b398c245cd
+P 2eb6d3e4fbe388ef28e4b7b846e9e8a4361517a4
+R 6969ca3627ab2efde502167b1f0ba7a8
 U dan
-Z 076528022e1550b90a78f1e189e33666
+Z dbe3e99b743e5bbd88e69201e8af7d3a
