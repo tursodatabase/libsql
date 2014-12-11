@@ -51,6 +51,13 @@ do_test sqllimits1-1.9 {
 do_test sqllimits1-1.10 {
   sqlite3_limit db SQLITE_LIMIT_VARIABLE_NUMBER -1
 } $SQLITE_MAX_VARIABLE_NUMBER
+do_test sqllimits1-1.11 {
+  sqlite3_limit db SQLITE_LIMIT_TRIGGER_DEPTH -1
+} $SQLITE_MAX_TRIGGER_DEPTH
+do_test sqllimits1-1.12 {
+  sqlite3_limit db SQLITE_LIMIT_WORKER_THREADS 99999
+  sqlite3_limit db SQLITE_LIMIT_WORKER_THREADS -1
+} $SQLITE_MAX_WORKER_THREADS
 
 # Limit parameters out of range.
 #

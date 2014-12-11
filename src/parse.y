@@ -399,9 +399,6 @@ cmd ::= DROP VIEW ifexists(E) fullname(X). {
 cmd ::= select(X).  {
   SelectDest dest = {SRT_Output, 0, 0, 0, 0, 0};
   sqlite3Select(pParse, X, &dest);
-  sqlite3ExplainBegin(pParse->pVdbe);
-  sqlite3ExplainSelect(pParse->pVdbe, X);
-  sqlite3ExplainFinish(pParse->pVdbe);
   sqlite3SelectDelete(pParse->db, X);
 }
 
@@ -459,9 +456,33 @@ multiselect_op(A) ::= UNION(OP).             {A = @OP;}
 multiselect_op(A) ::= UNION ALL.             {A = TK_ALL;}
 multiselect_op(A) ::= EXCEPT|INTERSECT(OP).  {A = @OP;}
 %endif SQLITE_OMIT_COMPOUND_SELECT
-oneselect(A) ::= SELECT distinct(D) selcollist(W) from(X) where_opt(Y)
+oneselect(A) ::= SELECT(S) distinct(D) selcollist(W) from(X) where_opt(Y)
                  groupby_opt(P) having_opt(Q) orderby_opt(Z) limit_opt(L). {
   A = sqlite3SelectNew(pParse,W,X,Y,P,Q,Z,D,L.pLimit,L.pOffset);
+#if SELECTTRACE_ENABLED
+  /* Populate the Select.zSelName[] string that is used to help with
+  ** query planner debugging, to differentiate between multiple Select
+  ** objects in a complex query.
+  **
+  ** If the SELECT keyword is immediately followed by a C-style comment
+  ** then extract the first few alphanumeric characters from within that
+  ** comment to be the zSelName value.  Otherwise, the label is #N where
+  ** is an integer that is incremented with each SELECT statement seen.
+  */
+  if( A!=0 ){
+    const char *z = S.z+6;
+    int i;
+    sqlite3_snprintf(sizeof(A->zSelName), A->zSelName, "#%d",
+                     ++pParse->nSelect);
+    while( z[0]==' ' ) z++;
+    if( z[0]=='/' && z[1]=='*' ){
+      z += 2;
+      while( z[0]==' ' ) z++;
+      for(i=0; sqlite3Isalnum(z[i]); i++){}
+      sqlite3_snprintf(sizeof(A->zSelName), A->zSelName, "%.*s", i, z);
+    }
+  }
+#endif /* SELECTRACE_ENABLED */
 }
 oneselect(A) ::= values(X).    {A = X;}
 
@@ -940,7 +961,7 @@ expr(A) ::= expr(X) NOT NULL(E). {spanUnaryPostfix(&A,pParse,TK_NOTNULL,&X,&E);}
   ** unary TK_ISNULL or TK_NOTNULL expression. */
   static void binaryToUnaryIfNull(Parse *pParse, Expr *pY, Expr *pA, int op){
     sqlite3 *db = pParse->db;
-    if( db->mallocFailed==0 && pY->op==TK_NULL ){
+    if( pY && pA && pY->op==TK_NULL ){
       pA->op = (u8)op;
       sqlite3ExprDelete(db, pA->pRight);
       pA->pRight = 0;

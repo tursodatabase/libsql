@@ -28,7 +28,7 @@
 ** is a helper function - a callback for the tree walker.
 */
 static int incrAggDepth(Walker *pWalker, Expr *pExpr){
-  if( pExpr->op==TK_AGG_FUNCTION ) pExpr->op2 += pWalker->u.i;
+  if( pExpr->op==TK_AGG_FUNCTION ) pExpr->op2 += pWalker->u.n;
   return WRC_Continue;
 }
 static void incrAggFunctionDepth(Expr *pExpr, int N){
@@ -36,7 +36,7 @@ static void incrAggFunctionDepth(Expr *pExpr, int N){
     Walker w;
     memset(&w, 0, sizeof(w));
     w.xExprCallback = incrAggDepth;
-    w.u.i = N;
+    w.u.n = N;
     sqlite3WalkExpr(&w, pExpr);
   }
 }
@@ -320,6 +320,10 @@ static int lookupName(
       if( pMatch ){
         pExpr->iTable = pMatch->iCursor;
         pExpr->pTab = pMatch->pTab;
+        assert( (pMatch->jointype & JT_RIGHT)==0 ); /* RIGHT JOIN not (yet) supported */
+        if( (pMatch->jointype & JT_LEFT)!=0 ){
+          ExprSetProperty(pExpr, EP_CanBeNull);
+        }
         pSchema = pExpr->pTab->pSchema;
       }
     } /* if( pSrcList ) */
@@ -584,7 +588,7 @@ static int exprProbability(Expr *p){
   sqlite3AtoF(p->u.zToken, &r, sqlite3Strlen30(p->u.zToken), SQLITE_UTF8);
   assert( r>=0.0 );
   if( r>1.0 ) return -1;
-  return (int)(r*1000.0);
+  return (int)(r*134217728.0);
 }
 
 /*
@@ -716,12 +720,10 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
             ** EVIDENCE-OF: R-53436-40973 The likely(X) function is equivalent to
             ** likelihood(X,0.9375). */
             /* TUNING: unlikely() probability is 0.0625.  likely() is 0.9375 */
-            pExpr->iTable = pDef->zName[0]=='u' ? 62 : 938;
+            pExpr->iTable = pDef->zName[0]=='u' ? 8388608 : 125829120;
           }             
         }
-      }
 #ifndef SQLITE_OMIT_AUTHORIZATION
-      if( pDef ){
         auth = sqlite3AuthCheck(pParse, SQLITE_FUNCTION, 0, pDef->zName, 0);
         if( auth!=SQLITE_OK ){
           if( auth==SQLITE_DENY ){
@@ -732,9 +734,9 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           pExpr->op = TK_NULL;
           return WRC_Prune;
         }
+#endif
         if( pDef->funcFlags & SQLITE_FUNC_CONSTANT ) ExprSetProperty(pExpr,EP_Constant);
       }
-#endif
       if( is_agg && (pNC->ncFlags & NC_AllowAgg)==0 ){
         sqlite3ErrorMsg(pParse, "misuse of aggregate function %.*s()", nId,zId);
         pNC->nErr++;
@@ -757,7 +759,13 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           pExpr->op2++;
           pNC2 = pNC2->pNext;
         }
-        if( pNC2 ) pNC2->ncFlags |= NC_HasAgg;
+        assert( pDef!=0 );
+        if( pNC2 ){
+          assert( SQLITE_FUNC_MINMAX==NC_MinMaxAgg );
+          testcase( (pDef->funcFlags & SQLITE_FUNC_MINMAX)!=0 );
+          pNC2->ncFlags |= NC_HasAgg | (pDef->funcFlags & SQLITE_FUNC_MINMAX);
+
+        }
         pNC->ncFlags |= NC_AllowAgg;
       }
       /* FIX ME:  Compute pExpr->affinity based on the expected return
@@ -1118,7 +1126,7 @@ static int resolveOrderGroupBy(
 }
 
 /*
-** Resolve names in the SELECT statement p and all of its descendents.
+** Resolve names in the SELECT statement p and all of its descendants.
 */
 static int resolveSelectStep(Walker *pWalker, Select *p){
   NameContext *pOuterNC;  /* Context that contains this SELECT */
@@ -1222,7 +1230,8 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
     assert( (p->selFlags & SF_Aggregate)==0 );
     pGroupBy = p->pGroupBy;
     if( pGroupBy || (sNC.ncFlags & NC_HasAgg)!=0 ){
-      p->selFlags |= SF_Aggregate;
+      assert( NC_MinMaxAgg==SF_MinMaxAgg );
+      p->selFlags |= SF_Aggregate | (sNC.ncFlags&NC_MinMaxAgg);
     }else{
       sNC.ncFlags &= ~NC_AllowAgg;
     }
@@ -1350,7 +1359,7 @@ int sqlite3ResolveExprNames(
   NameContext *pNC,       /* Namespace to resolve expressions in. */
   Expr *pExpr             /* The expression to be analyzed. */
 ){
-  u8 savedHasAgg;
+  u16 savedHasAgg;
   Walker w;
 
   if( pExpr==0 ) return 0;
@@ -1363,8 +1372,8 @@ int sqlite3ResolveExprNames(
     pParse->nHeight += pExpr->nHeight;
   }
 #endif
-  savedHasAgg = pNC->ncFlags & NC_HasAgg;
-  pNC->ncFlags &= ~NC_HasAgg;
+  savedHasAgg = pNC->ncFlags & (NC_HasAgg|NC_MinMaxAgg);
+  pNC->ncFlags &= ~(NC_HasAgg|NC_MinMaxAgg);
   memset(&w, 0, sizeof(w));
   w.xExprCallback = resolveExprStep;
   w.xSelectCallback = resolveSelectStep;
@@ -1379,9 +1388,8 @@ int sqlite3ResolveExprNames(
   }
   if( pNC->ncFlags & NC_HasAgg ){
     ExprSetProperty(pExpr, EP_Agg);
-  }else if( savedHasAgg ){
-    pNC->ncFlags |= NC_HasAgg;
   }
+  pNC->ncFlags |= savedHasAgg;
   return ExprHasProperty(pExpr, EP_Error);
 }
 

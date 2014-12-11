@@ -696,6 +696,12 @@ static int test_memdebug_pending(
   return TCL_OK;
 }
 
+/*
+** The following global variable keeps track of the number of tests
+** that have run.  This variable is only useful when running in the
+** debugger.
+*/
+static int sqlite3_memdebug_title_count = 0;
 
 /*
 ** Usage:    sqlite3_memdebug_settitle TITLE
@@ -713,6 +719,7 @@ static int test_memdebug_settitle(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
+  sqlite3_memdebug_title_count++;
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "TITLE");
     return TCL_ERROR;
@@ -880,7 +887,7 @@ static int test_memdebug_log(
 **
 ** Set the scratch memory buffer using SQLITE_CONFIG_SCRATCH.
 ** The buffer is static and is of limited size.  N might be
-** adjusted downward as needed to accomodate the requested size.
+** adjusted downward as needed to accommodate the requested size.
 ** The revised value of N is returned.
 **
 ** A negative SIZE causes the buffer pointer to be NULL.
@@ -920,7 +927,7 @@ static int test_config_scratch(
 **
 ** Set the page-cache memory buffer using SQLITE_CONFIG_PAGECACHE.
 ** The buffer is static and is of limited size.  N might be
-** adjusted downward as needed to accomodate the requested size.
+** adjusted downward as needed to accommodate the requested size.
 ** The revised value of N is returned.
 **
 ** A negative SIZE causes the buffer pointer to be NULL.
@@ -1252,6 +1259,7 @@ static int test_config_cis(
 
   return TCL_OK;
 }
+
 
 /*
 ** Usage:    sqlite3_dump_memsys3  FILENAME

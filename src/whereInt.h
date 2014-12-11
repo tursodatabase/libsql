@@ -85,6 +85,9 @@ struct WhereLevel {
   } u;
   struct WhereLoop *pWLoop;  /* The selected WhereLoop object */
   Bitmask notReady;          /* FROM entries not usable at this level */
+#ifdef SQLITE_ENABLE_STMT_SCANSTATUS
+  int addrVisit;        /* Address at which row is visited */
+#endif
 };
 
 /*
@@ -115,7 +118,6 @@ struct WhereLoop {
   union {
     struct {               /* Information for internal btree tables */
       u16 nEq;               /* Number of equality constraints */
-      u16 nSkip;             /* Number of initial index columns to skip */
       Index *pIndex;         /* Index used, or NULL */
     } btree;
     struct {               /* Information for virtual tables */
@@ -128,12 +130,13 @@ struct WhereLoop {
   } u;
   u32 wsFlags;          /* WHERE_* flags describing the plan */
   u16 nLTerm;           /* Number of entries in aLTerm[] */
+  u16 nSkip;            /* Number of NULL aLTerm[] entries */
   /**** whereLoopXfer() copies fields above ***********************/
 # define WHERE_LOOP_XFER_SZ offsetof(WhereLoop,nLSlot)
   u16 nLSlot;           /* Number of slots allocated for aLTerm[] */
   WhereTerm **aLTerm;   /* WhereTerms used */
   WhereLoop *pNextLoop; /* Next WhereLoop object in the WhereClause */
-  WhereTerm *aLTermSpace[4];  /* Initial aLTerm[] space */
+  WhereTerm *aLTermSpace[3];  /* Initial aLTerm[] space */
 };
 
 /* This object holds the prerequisites and the cost of running a
@@ -176,7 +179,7 @@ static int whereLoopResize(sqlite3*, WhereLoop*, int);
 ** 1.  Then using those as a basis to compute the N best WherePath objects
 ** of length 2.  And so forth until the length of WherePaths equals the
 ** number of nodes in the FROM clause.  The best (lowest cost) WherePath
-** at the end is the choosen query plan.
+** at the end is the chosen query plan.
 */
 struct WherePath {
   Bitmask maskLoop;     /* Bitmask of all WhereLoop objects in this path */
@@ -459,3 +462,4 @@ struct WhereInfo {
 #define WHERE_AUTO_INDEX   0x00004000  /* Uses an ephemeral index */
 #define WHERE_SKIPSCAN     0x00008000  /* Uses the skip-scan algorithm */
 #define WHERE_UNQ_WANTED   0x00010000  /* WHERE_ONEROW would have been helpful*/
+#define WHERE_PARTIALIDX   0x00020000  /* The automatic index is partial */

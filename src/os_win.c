@@ -34,6 +34,11 @@
  with SQLITE_OMIT_WAL."
 #endif
 
+#if !SQLITE_OS_WINNT && SQLITE_MAX_MMAP_SIZE>0
+#  error "Memory mapped files require support from the Windows NT kernel,\
+ compile with SQLITE_MAX_MMAP_SIZE=0."
+#endif
+
 /*
 ** Are most of the Win32 ANSI APIs available (i.e. with certain exceptions
 ** based on the sub-platform)?
@@ -163,10 +168,11 @@
 
 /*
 ** Do we need to manually define the Win32 file mapping APIs for use with WAL
-** mode (e.g. these APIs are available in the Windows CE SDK; however, they
-** are not present in the header file)?
+** mode or memory mapped files (e.g. these APIs are available in the Windows
+** CE SDK; however, they are not present in the header file)?
 */
-#if SQLITE_WIN32_FILEMAPPING_API && !defined(SQLITE_OMIT_WAL)
+#if SQLITE_WIN32_FILEMAPPING_API && \
+        (!defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0)
 /*
 ** Two of the file mapping APIs are different under WinRT.  Figure out which
 ** set we need.
@@ -194,7 +200,7 @@ WINBASEAPI LPVOID WINAPI MapViewOfFile(HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 ** This file mapping API is common to both Win32 and WinRT.
 */
 WINBASEAPI BOOL WINAPI UnmapViewOfFile(LPCVOID);
-#endif /* SQLITE_WIN32_FILEMAPPING_API && !defined(SQLITE_OMIT_WAL) */
+#endif /* SQLITE_WIN32_FILEMAPPING_API */
 
 /*
 ** Some Microsoft compilers lack this definition.
@@ -487,7 +493,7 @@ static struct win_syscall {
         LPSECURITY_ATTRIBUTES,DWORD,DWORD,HANDLE))aSyscall[5].pCurrent)
 
 #if (!SQLITE_OS_WINRT && defined(SQLITE_WIN32_HAS_ANSI) && \
-        !defined(SQLITE_OMIT_WAL))
+        (!defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0))
   { "CreateFileMappingA",      (SYSCALL)CreateFileMappingA,      0 },
 #else
   { "CreateFileMappingA",      (SYSCALL)0,                       0 },
@@ -497,7 +503,7 @@ static struct win_syscall {
         DWORD,DWORD,DWORD,LPCSTR))aSyscall[6].pCurrent)
 
 #if SQLITE_OS_WINCE || (!SQLITE_OS_WINRT && defined(SQLITE_WIN32_HAS_WIDE) && \
-        !defined(SQLITE_OMIT_WAL))
+        (!defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0))
   { "CreateFileMappingW",      (SYSCALL)CreateFileMappingW,      0 },
 #else
   { "CreateFileMappingW",      (SYSCALL)0,                       0 },
@@ -837,7 +843,8 @@ static struct win_syscall {
         LPOVERLAPPED))aSyscall[48].pCurrent)
 #endif
 
-#if SQLITE_OS_WINCE || (!SQLITE_OS_WINRT && !defined(SQLITE_OMIT_WAL))
+#if SQLITE_OS_WINCE || (!SQLITE_OS_WINRT && \
+        (!defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0))
   { "MapViewOfFile",           (SYSCALL)MapViewOfFile,           0 },
 #else
   { "MapViewOfFile",           (SYSCALL)0,                       0 },
@@ -907,7 +914,7 @@ static struct win_syscall {
 #define osUnlockFileEx ((BOOL(WINAPI*)(HANDLE,DWORD,DWORD,DWORD, \
         LPOVERLAPPED))aSyscall[58].pCurrent)
 
-#if SQLITE_OS_WINCE || !defined(SQLITE_OMIT_WAL)
+#if SQLITE_OS_WINCE || !defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0
   { "UnmapViewOfFile",         (SYSCALL)UnmapViewOfFile,         0 },
 #else
   { "UnmapViewOfFile",         (SYSCALL)0,                       0 },
@@ -943,7 +950,7 @@ static struct win_syscall {
 #define osWaitForSingleObject ((DWORD(WINAPI*)(HANDLE, \
         DWORD))aSyscall[63].pCurrent)
 
-#if SQLITE_OS_WINRT
+#if !SQLITE_OS_WINCE
   { "WaitForSingleObjectEx",   (SYSCALL)WaitForSingleObjectEx,   0 },
 #else
   { "WaitForSingleObjectEx",   (SYSCALL)0,                       0 },
@@ -970,7 +977,7 @@ static struct win_syscall {
 #define osGetFileInformationByHandleEx ((BOOL(WINAPI*)(HANDLE, \
         FILE_INFO_BY_HANDLE_CLASS,LPVOID,DWORD))aSyscall[66].pCurrent)
 
-#if SQLITE_OS_WINRT && !defined(SQLITE_OMIT_WAL)
+#if SQLITE_OS_WINRT && (!defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0)
   { "MapViewOfFileFromApp",    (SYSCALL)MapViewOfFileFromApp,    0 },
 #else
   { "MapViewOfFileFromApp",    (SYSCALL)0,                       0 },
@@ -1034,7 +1041,7 @@ static struct win_syscall {
 
 #define osGetProcessHeap ((HANDLE(WINAPI*)(VOID))aSyscall[74].pCurrent)
 
-#if SQLITE_OS_WINRT && !defined(SQLITE_OMIT_WAL)
+#if SQLITE_OS_WINRT && (!defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0)
   { "CreateFileMappingFromApp", (SYSCALL)CreateFileMappingFromApp, 0 },
 #else
   { "CreateFileMappingFromApp", (SYSCALL)0,                      0 },
@@ -1196,8 +1203,8 @@ int sqlite3_win32_reset_heap(){
   int rc;
   MUTEX_LOGIC( sqlite3_mutex *pMaster; ) /* The main static mutex */
   MUTEX_LOGIC( sqlite3_mutex *pMem; )    /* The memsys static mutex */
-  MUTEX_LOGIC( pMaster = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER); )
-  MUTEX_LOGIC( pMem = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MEM); )
+  MUTEX_LOGIC( pMaster = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER); )
+  MUTEX_LOGIC( pMem = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MEM); )
   sqlite3_mutex_enter(pMaster);
   sqlite3_mutex_enter(pMem);
   winMemAssertMagic();
@@ -1290,6 +1297,16 @@ void sqlite3_win32_sleep(DWORD milliseconds){
 #endif
 }
 
+#if SQLITE_MAX_WORKER_THREADS>0 && !SQLITE_OS_WINCE && !SQLITE_OS_WINRT && \
+        SQLITE_THREADSAFE>0
+DWORD sqlite3Win32Wait(HANDLE hObject){
+  DWORD rc;
+  while( (rc = osWaitForSingleObjectEx(hObject, INFINITE,
+                                       TRUE))==WAIT_IO_COMPLETION ){}
+  return rc;
+}
+#endif
+
 /*
 ** Return true (non-zero) if we are running under WinNT, Win2K, WinXP,
 ** or WinCE.  Return false (zero) for Win95, Win98, or WinME.
@@ -1317,19 +1334,24 @@ void sqlite3_win32_sleep(DWORD milliseconds){
 ** based on the NT kernel.
 */
 int sqlite3_win32_is_nt(void){
-#if defined(SQLITE_WIN32_GETVERSIONEX) && SQLITE_WIN32_GETVERSIONEX
+#if SQLITE_OS_WINRT
+  /*
+  ** NOTE: The WinRT sub-platform is always assumed to be based on the NT
+  **       kernel.
+  */
+  return 1;
+#elif defined(SQLITE_WIN32_GETVERSIONEX) && SQLITE_WIN32_GETVERSIONEX
   if( osInterlockedCompareExchange(&sqlite3_os_type, 0, 0)==0 ){
-#if !SQLITE_OS_WINRT && defined(SQLITE_WIN32_HAS_WIDE) && \
-        defined(NTDDI_VERSION) && NTDDI_VERSION >= NTDDI_WIN8
-    OSVERSIONINFOW sInfo;
-    sInfo.dwOSVersionInfoSize = sizeof(sInfo);
-    osGetVersionExW(&sInfo);
-    osInterlockedCompareExchange(&sqlite3_os_type,
-        (sInfo.dwPlatformId == VER_PLATFORM_WIN32_NT) ? 2 : 1, 0);
-#elif defined(SQLITE_WIN32_HAS_ANSI)
+#if defined(SQLITE_WIN32_HAS_ANSI)
     OSVERSIONINFOA sInfo;
     sInfo.dwOSVersionInfoSize = sizeof(sInfo);
     osGetVersionExA(&sInfo);
+    osInterlockedCompareExchange(&sqlite3_os_type,
+        (sInfo.dwPlatformId == VER_PLATFORM_WIN32_NT) ? 2 : 1, 0);
+#elif defined(SQLITE_WIN32_HAS_WIDE)
+    OSVERSIONINFOW sInfo;
+    sInfo.dwOSVersionInfoSize = sizeof(sInfo);
+    osGetVersionExW(&sInfo);
     osInterlockedCompareExchange(&sqlite3_os_type,
         (sInfo.dwPlatformId == VER_PLATFORM_WIN32_NT) ? 2 : 1, 0);
 #endif
@@ -1338,6 +1360,10 @@ int sqlite3_win32_is_nt(void){
 #elif SQLITE_TEST
   return osInterlockedCompareExchange(&sqlite3_os_type, 2, 2)==2;
 #else
+  /*
+  ** NOTE: All sub-platforms where the GetVersionEx[AW] functions are
+  **       deprecated are always assumed to be based on the NT kernel.
+  */
   return 1;
 #endif
 }
@@ -3114,7 +3140,7 @@ static int winUnlock(sqlite3_file *id, int locktype){
 }
 
 /*
-** If *pArg is inititially negative then this is a query.  Set *pArg to
+** If *pArg is initially negative then this is a query.  Set *pArg to
 ** 1 or 0 depending on whether or not bit mask of pFile->ctrlFlags is set.
 **
 ** If *pArg is 0 or 1, then clear or set the mask bit of pFile->ctrlFlags.
@@ -4128,7 +4154,7 @@ static int winUnfetch(sqlite3_file *fd, i64 iOff, void *p){
   }else{
     /* FIXME:  If Windows truly always prevents truncating or deleting a
     ** file while a mapping is held, then the following winUnmapfile() call
-    ** is unnecessary can can be omitted - potentially improving
+    ** is unnecessary can be omitted - potentially improving
     ** performance.  */
     winUnmapfile(pFd);
   }

@@ -635,6 +635,7 @@ static int DbWalHandler(
   Tcl_Interp *interp = pDb->interp;
   assert(pDb->pWalHook);
 
+  assert( db==pDb->db );
   p = Tcl_DuplicateObj(pDb->pWalHook);
   Tcl_IncrRefCount(p);
   Tcl_ListObjAppendElement(interp, p, Tcl_NewStringObj(zDb, -1));
@@ -760,7 +761,7 @@ static void tclSqlFunc(sqlite3_context *context, int argc, sqlite3_value**argv){
     /* If there are arguments to the function, make a shallow copy of the
     ** script object, lappend the arguments, then evaluate the copy.
     **
-    ** By "shallow" copy, we mean a only the outer list Tcl_Obj is duplicated.
+    ** By "shallow" copy, we mean only the outer list Tcl_Obj is duplicated.
     ** The new Tcl_Obj contains pointers to the original list elements. 
     ** That way, when Tcl_EvalObjv() is run and shimmers the first element
     ** of the list to tclCmdNameType, that alternate representation will
@@ -872,6 +873,9 @@ static int auth_callback(
   const char *zArg2,
   const char *zArg3,
   const char *zArg4
+#ifdef SQLITE_USER_AUTHENTICATION
+  ,const char *zArg5
+#endif
 ){
   const char *zCode;
   Tcl_DString str;
@@ -924,6 +928,9 @@ static int auth_callback(
   Tcl_DStringAppendElement(&str, zArg2 ? zArg2 : "");
   Tcl_DStringAppendElement(&str, zArg3 ? zArg3 : "");
   Tcl_DStringAppendElement(&str, zArg4 ? zArg4 : "");
+#ifdef SQLITE_USER_AUTHENTICATION
+  Tcl_DStringAppendElement(&str, zArg5 ? zArg5 : "");
+#endif  
   rc = Tcl_GlobalEval(pDb->interp, Tcl_DStringValue(&str));
   Tcl_DStringFree(&str);
   zReply = rc==TCL_OK ? Tcl_GetStringResult(pDb->interp) : "SQLITE_DENY";
@@ -1700,8 +1707,11 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
         pDb->zAuth = 0;
       }
       if( pDb->zAuth ){
+        typedef int (*sqlite3_auth_cb)(
+           void*,int,const char*,const char*,
+           const char*,const char*);
         pDb->interp = interp;
-        sqlite3_set_authorizer(pDb->db, auth_callback, pDb);
+        sqlite3_set_authorizer(pDb->db,(sqlite3_auth_cb)auth_callback,pDb);
       }else{
         sqlite3_set_authorizer(pDb->db, 0, 0);
       }
@@ -3632,6 +3642,45 @@ static int db_use_legacy_prepare_cmd(
   Tcl_ResetResult(interp);
   return TCL_OK;
 }
+
+/*
+** Tclcmd: db_last_stmt_ptr DB
+**
+**   If the statement cache associated with database DB is not empty,
+**   return the text representation of the most recently used statement
+**   handle.
+*/
+static int db_last_stmt_ptr(
+  ClientData cd,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  extern int sqlite3TestMakePointerStr(Tcl_Interp*, char*, void*);
+  Tcl_CmdInfo cmdInfo;
+  SqliteDb *pDb;
+  sqlite3_stmt *pStmt = 0;
+  char zBuf[100];
+
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB");
+    return TCL_ERROR;
+  }
+
+  if( !Tcl_GetCommandInfo(interp, Tcl_GetString(objv[1]), &cmdInfo) ){
+    Tcl_AppendResult(interp, "no such db: ", Tcl_GetString(objv[1]), (char*)0);
+    return TCL_ERROR;
+  }
+  pDb = (SqliteDb*)cmdInfo.objClientData;
+
+  if( pDb->stmtList ) pStmt = pDb->stmtList->pStmt;
+  if( sqlite3TestMakePointerStr(interp, zBuf, pStmt) ){
+    return TCL_ERROR;
+  }
+  Tcl_SetResult(interp, zBuf, TCL_VOLATILE);
+
+  return TCL_OK;
+}
 #endif
 
 /*
@@ -3677,6 +3726,7 @@ static void init_all(Tcl_Interp *interp){
     extern int Sqlitetest9_Init(Tcl_Interp*);
     extern int Sqlitetestasync_Init(Tcl_Interp*);
     extern int Sqlitetest_autoext_Init(Tcl_Interp*);
+    extern int Sqlitetest_blob_Init(Tcl_Interp*);
     extern int Sqlitetest_demovfs_Init(Tcl_Interp *);
     extern int Sqlitetest_func_Init(Tcl_Interp*);
     extern int Sqlitetest_hexio_Init(Tcl_Interp*);
@@ -3720,6 +3770,7 @@ static void init_all(Tcl_Interp *interp){
     Sqlitetest9_Init(interp);
     Sqlitetestasync_Init(interp);
     Sqlitetest_autoext_Init(interp);
+    Sqlitetest_blob_Init(interp);
     Sqlitetest_demovfs_Init(interp);
     Sqlitetest_func_Init(interp);
     Sqlitetest_hexio_Init(interp);
@@ -3750,6 +3801,9 @@ static void init_all(Tcl_Interp *interp){
     );
     Tcl_CreateObjCommand(
         interp, "db_use_legacy_prepare", db_use_legacy_prepare_cmd, 0, 0
+    );
+    Tcl_CreateObjCommand(
+        interp, "db_last_stmt_ptr", db_last_stmt_ptr, 0, 0
     );
 
 #ifdef SQLITE_SSE

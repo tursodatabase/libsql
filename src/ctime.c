@@ -63,6 +63,9 @@ static const char * const azCompileOpt[] = {
 #ifdef SQLITE_DISABLE_LFS
   "DISABLE_LFS",
 #endif
+#ifdef SQLITE_ENABLE_API_ARMOR
+  "ENABLE_API_ARMOR",
+#endif
 #ifdef SQLITE_ENABLE_ATOMIC_WRITE
   "ENABLE_ATOMIC_WRITE",
 #endif
@@ -368,6 +371,9 @@ static const char * const azCompileOpt[] = {
 #ifdef SQLITE_USE_ALLOCA
   "USE_ALLOCA",
 #endif
+#ifdef SQLITE_USER_AUTHENTICATION
+  "USER_AUTHENTICATION",
+#endif
 #ifdef SQLITE_WIN32_MALLOC
   "WIN32_MALLOC",
 #endif
@@ -385,6 +391,13 @@ static const char * const azCompileOpt[] = {
 */
 int sqlite3_compileoption_used(const char *zOptName){
   int i, n;
+
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( zOptName==0 ){
+    (void)SQLITE_MISUSE_BKPT;
+    return 0;
+  }
+#endif
   if( sqlite3StrNICmp(zOptName, "SQLITE_", 7)==0 ) zOptName += 7;
   n = sqlite3Strlen30(zOptName);
 
@@ -392,7 +405,7 @@ int sqlite3_compileoption_used(const char *zOptName){
   ** linear search is adequate.  No need for a binary search. */
   for(i=0; i<ArraySize(azCompileOpt); i++){
     if( sqlite3StrNICmp(zOptName, azCompileOpt[i], n)==0
-     && sqlite3CtypeMap[(unsigned char)azCompileOpt[i][n]]==0
+     && sqlite3IsIdChar((unsigned char)azCompileOpt[i][n])==0
     ){
       return 1;
     }

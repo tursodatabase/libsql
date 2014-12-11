@@ -224,48 +224,4 @@ do_execsql_test autoindex2-120 {
 # on t3 and reordering the tables so that t3 was in the outer loop and
 # implementing the ORDER BY clause using a B-Tree.
 
-do_execsql_test autoindex2-120 {
-  EXPLAIN QUERY PLAN
-  SELECT
-     t1_id,
-     t1.did,
-     param2,
-     param3,
-     t1.ptime,
-     t1.trange,
-     t1.exmass,
-     t1.mass,
-     t1.vstatus,
-     type,
-     subtype,
-     t1.deviation,
-     t1.formula,
-     dparam1,
-     reserve1,
-     reserve2,
-     param4,
-     t1.last_operation,
-     t1.admin_uuid,
-     t1.previous_value,
-     t1.job_id,
-     client_did, 
-     t1.last_t1,
-     t1.data_t1,
-     t1.previous_date,
-     param5,
-     param6,
-     mgr_uuid
-  FROM
-     t3,
-     t2,
-     t1
-  WHERE
-     t1.ptime > 1393520400
-     AND param3<>9001
-     AND t3.flg7 = 1
-     AND t1.did = t2.did
-     AND t2.uid = t3.uid
-  ORDER BY t1.ptime desc LIMIT 500;
-} {0 0 2 {SEARCH TABLE t1 USING INDEX t1x1 (ptime>?)} 0 1 1 {SEARCH TABLE t2 USING INDEX t2x0 (did=?)} 0 2 0 {SEARCH TABLE t3 USING INDEX t3x0 (uid=?)}}
-
 finish_test

@@ -155,7 +155,6 @@ do_execsql_test capi3d-4.1 {
 }
 
 do_test capi3d-4.2.1 {
-  breakpoint
   set ::s1 [sqlite3_prepare_v2 db "ROLLBACK" -1 notused]
   sqlite3_step $::s1
 } {SQLITE_DONE}

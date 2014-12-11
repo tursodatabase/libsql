@@ -13,7 +13,7 @@
 ** This file implements the default page cache implementation (the
 ** sqlite3_pcache interface). It also contains part of the implementation
 ** of the SQLITE_CONFIG_PAGECACHE and sqlite3_release_memory() features.
-** If the default page cache implementation is overriden, then neither of
+** If the default page cache implementation is overridden, then neither of
 ** these two features are available.
 */
 
@@ -25,7 +25,7 @@ typedef struct PgFreeslot PgFreeslot;
 typedef struct PGroup PGroup;
 
 /* Each page cache (or PCache) belongs to a PGroup.  A PGroup is a set 
-** of one or more PCaches that are able to recycle each others unpinned
+** of one or more PCaches that are able to recycle each other's unpinned
 ** pages when they are under memory pressure.  A PGroup is an instance of
 ** the following object.
 **
@@ -688,7 +688,7 @@ static SQLITE_NOINLINE PgHdr1 *pcache1FetchStage2(
   if( createFlag==1 && (
         nPinned>=pGroup->mxPinned
      || nPinned>=pCache->n90pct
-     || pcache1UnderMemoryPressure(pCache)
+     || (pcache1UnderMemoryPressure(pCache) && pCache->nRecyclable<nPinned)
   )){
     return 0;
   }
@@ -980,6 +980,11 @@ void sqlite3PCacheSetDefault(void){
   };
   sqlite3_config(SQLITE_CONFIG_PCACHE2, &defaultMethods);
 }
+
+/*
+** Return the size of the header on each page of this PCACHE implementation.
+*/
+int sqlite3HeaderSizePcache1(void){ return sizeof(PgHdr1); }
 
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
 /*

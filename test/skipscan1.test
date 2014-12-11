@@ -245,6 +245,51 @@ do_execsql_test skipscan1-5.3 {
     SELECT xh, loc FROM t5 WHERE loc >= 'M' AND loc < 'N';
 } {/.*COVERING INDEX t5i1 .*/}
 
+# The column used by the skip-scan needs to be sufficiently selective.
+# See the private email from Adi Zaimi to drh@sqlite.org on 2014-09-22.
+#
+db close
+forcedelete test.db
+sqlite3 db test.db
+do_execsql_test skipscan1-6.1 {
+  CREATE TABLE t1(a,b,c,d,e,f,g,h varchar(300));
+  CREATE INDEX t1ab ON t1(a,b);
+  ANALYZE sqlite_master;
+  -- Only two distinct values for the skip-scan column.  Skip-scan is not used.
+  INSERT INTO sqlite_stat1 VALUES('t1','t1ab','500000 250000 125000');
+  ANALYZE sqlite_master;
+  EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE b=1;
+} {~/ANY/}
+do_execsql_test skipscan1-6.2 {
+  -- Four distinct values for the skip-scan column.  Skip-scan is used.
+  UPDATE sqlite_stat1 SET stat='500000 250000 62500';
+  ANALYZE sqlite_master;
+  EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE b=1;
+} {/ANY.a. AND b=/}
+do_execsql_test skipscan1-6.3 {
+  -- Two distinct values for the skip-scan column again.  Skip-scan is not used.
+  UPDATE sqlite_stat1 SET stat='500000 125000 62500';
+  ANALYZE sqlite_master;
+  EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE b=1;
+} {~/ANY/}
 
+# If the sqlite_stat1 entry includes the "noskipscan" token, then never use
+# skipscan with that index.
+#
+do_execsql_test skipscan1-7.1 {
+  UPDATE sqlite_stat1 SET stat='500000 125000 1 sz=100';
+  ANALYZE sqlite_master;
+  EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE b=1;
+} {/ANY/}
+do_execsql_test skipscan1-7.2 {
+  UPDATE sqlite_stat1 SET stat='500000 125000 1 noskipscan sz=100';
+  ANALYZE sqlite_master;
+  EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE b=1;
+} {~/ANY/}
+do_execsql_test skipscan1-7.3 {
+  UPDATE sqlite_stat1 SET stat='500000 125000 1 sz=100 noskipscan';
+  ANALYZE sqlite_master;
+  EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE b=1;
+} {~/ANY/}
 
 finish_test

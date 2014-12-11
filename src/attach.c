@@ -207,6 +207,15 @@ static void attachFunc(
     rc = sqlite3Init(db, &zErrDyn);
     sqlite3BtreeLeaveAll(db);
   }
+#ifdef SQLITE_USER_AUTHENTICATION
+  if( rc==SQLITE_OK ){
+    u8 newAuth = 0;
+    rc = sqlite3UserAuthCheckLogin(db, zName, &newAuth);
+    if( newAuth<db->auth.authLevel ){
+      rc = SQLITE_AUTH_USER;
+    }
+  }
+#endif
   if( rc ){
     int iDb = db->nDb - 1;
     assert( iDb>=2 );

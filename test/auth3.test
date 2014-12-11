@@ -30,7 +30,7 @@ if {[catch {db auth {}} msg]} {
 db cache size 0
 
 db authorizer ::auth
-proc auth {code arg1 arg2 arg3 arg4} {
+proc auth {code arg1 arg2 arg3 arg4 args} {
   if {$code=="SQLITE_DELETE"} {
     return $::authcode
   }

@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** This file contains definitions of global variables and contants.
+** This file contains definitions of global variables and constants.
 */
 #include "sqliteInt.h"
 
@@ -129,10 +129,25 @@ const unsigned char sqlite3CtypeMap[256] = {
 };
 #endif
 
+/* EVIDENCE-OF: R-02982-34736 In order to maintain full backwards
+** compatibility for legacy applications, the URI filename capability is
+** disabled by default.
+**
+** EVIDENCE-OF: R-38799-08373 URI filenames can be enabled or disabled
+** using the SQLITE_USE_URI=1 or SQLITE_USE_URI=0 compile-time options.
+**
+** EVIDENCE-OF: R-43642-56306 By default, URI handling is globally
+** disabled. The default value may be changed by compiling with the
+** SQLITE_USE_URI symbol defined.
+*/
 #ifndef SQLITE_USE_URI
 # define  SQLITE_USE_URI 0
 #endif
 
+/* EVIDENCE-OF: R-38720-18127 The default setting is determined by the
+** SQLITE_ALLOW_COVERING_INDEX_SCAN compile-time option, or is "on" if
+** that compile-time option is omitted.
+*/
 #ifndef SQLITE_ALLOW_COVERING_INDEX_SCAN
 # define SQLITE_ALLOW_COVERING_INDEX_SCAN 1
 #endif
@@ -222,8 +237,8 @@ const Token sqlite3IntTokens[] = {
 **
 ** IMPORTANT:  Changing the pending byte to any value other than
 ** 0x40000000 results in an incompatible database file format!
-** Changing the pending byte during operating results in undefined
-** and dileterious behavior.
+** Changing the pending byte during operation will result in undefined
+** and incorrect behavior.
 */
 #ifndef SQLITE_OMIT_WSD
 int sqlite3PendingByte = 0x40000000;

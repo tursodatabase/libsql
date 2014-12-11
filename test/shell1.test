@@ -45,20 +45,21 @@ do_test shell1-1.1.1 {
   list $rc \
        [regexp {Error: unknown option: -bad} $res]
 } {1 1}
+do_test shell1-1.1.1b {
+  set res [catchcmd "test.db -bad" ""]
+  set rc [lindex $res 0]
+  list $rc \
+       [regexp {Error: unknown option: -bad} $res]
+} {1 1}
 # error on extra options
 do_test shell1-1.1.2 {
-  set res [catchcmd "-bad test.db \"select 3\" \"select 4\"" ""]
-  set rc [lindex $res 0]
-  list $rc \
-       [regexp {Error: too many options: "select 4"} $res]
-} {1 1}
+  catchcmd "test.db \"select 3\" \"select 4\"" ""
+} {0 {3
+4}}
 # error on extra options
 do_test shell1-1.1.3 {
-  set res [catchcmd "-bad FOO test.db BAD" ".quit"]
-  set rc [lindex $res 0]
-  list $rc \
-       [regexp {Error: too many options: "BAD"} $res]
-} {1 1}
+  catchcmd "test.db FOO test.db BAD" ".quit"
+} {1 {Error: near "FOO": syntax error}}
 
 # -help
 do_test shell1-1.2.1 {
@@ -75,11 +76,11 @@ do_test shell1-1.3.1 {
   catchcmd "-init FOO test.db" ""
 } {0 {}}
 do_test shell1-1.3.2 {
-  set res [catchcmd "-init FOO test.db .quit BAD" ""]
-  set rc [lindex $res 0]
-  list $rc \
-       [regexp {Error: too many options: "BAD"} $res]
-} {1 1}
+  catchcmd "-init FOO test.db .quit BAD" ""
+} {0 {}}
+do_test shell1-1.3.3 {
+  catchcmd "-init FOO test.db BAD .quit" ""
+} {1 {Error: near "BAD": syntax error}}
 
 # -echo                print commands before execution
 do_test shell1-1.4.1 {

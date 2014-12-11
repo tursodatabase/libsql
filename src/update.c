@@ -327,7 +327,7 @@ void sqlite3Update(
   }
 
   /* If we are trying to update a view, realize that view into
-  ** a ephemeral table.
+  ** an ephemeral table.
   */
 #if !defined(SQLITE_OMIT_VIEW) && !defined(SQLITE_OMIT_TRIGGER)
   if( isView ){
@@ -431,8 +431,8 @@ void sqlite3Update(
 
   /* Top of the update loop */
   if( okOnePass ){
-    if( aToOpen[iDataCur-iBaseCur] ){
-      assert( pPk!=0 );
+    if( aToOpen[iDataCur-iBaseCur] && !isView ){
+      assert( pPk );
       sqlite3VdbeAddOp4Int(v, OP_NotFound, iDataCur, labelBreak, regKey, nKey);
       VdbeCoverageNeverTaken(v);
     }
@@ -488,7 +488,7 @@ void sqlite3Update(
   }
 
   /* Populate the array of registers beginning at regNew with the new
-  ** row data. This array is used to check constaints, create the new
+  ** row data. This array is used to check constants, create the new
   ** table and index records, and as the values for any new.* references
   ** made by triggers.
   **
@@ -668,7 +668,7 @@ update_cleanup:
   return;
 }
 /* Make sure "isView" and other macros defined above are undefined. Otherwise
-** thely may interfere with compilation of other functions in this file
+** they may interfere with compilation of other functions in this file
 ** (or in another file, if this file becomes part of the amalgamation).  */
 #ifdef isView
  #undef isView
@@ -681,7 +681,7 @@ update_cleanup:
 /*
 ** Generate code for an UPDATE of a virtual table.
 **
-** The strategy is that we create an ephemerial table that contains
+** The strategy is that we create an ephemeral table that contains
 ** for each row to be changed:
 **
 **   (A)  The original rowid of that row.
@@ -689,7 +689,7 @@ update_cleanup:
 **   (C)  The content of every column in the row.
 **
 ** Then we loop over this ephemeral table and for each row in
-** the ephermeral table call VUpdate.
+** the ephemeral table call VUpdate.
 **
 ** When finished, drop the ephemeral table.
 **

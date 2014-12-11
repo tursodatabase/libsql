@@ -17,6 +17,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix autoindex3
 
 # The t1b and t2d indexes are not very selective.  It used to be that
 # the autoindex mechanism would create automatic indexes on t1(b) or
@@ -53,6 +54,39 @@ do_execsql_test autoindex3-130 {
 do_execsql_test autoindex3-140 {
   EXPLAIN QUERY PLAN SELECT * FROM t1, t2 WHERE d IN (5,b) AND x=y;
 } {/AUTO/}
+
+reset_db
+do_execsql_test 210 {
+  CREATE TABLE v(b, d, e);
+  CREATE TABLE u(a, b, c);
+  ANALYZE sqlite_master;
+  INSERT INTO "sqlite_stat1" VALUES('u','uab','40000 400 1');
+  INSERT INTO "sqlite_stat1" VALUES('v','vbde','40000 400 1 1');
+  INSERT INTO "sqlite_stat1" VALUES('v','ve','40000 21');
+
+  CREATE INDEX uab on u(a, b);
+  CREATE INDEX ve on v(e);
+  CREATE INDEX vbde on v(b,d,e);
+
+  DROP TABLE IF EXISTS sqlite_stat4;
+  ANALYZE sqlite_master;
+}
+
+# At one point, SQLite was using the inferior plan:
+#
+#   0|0|1|SEARCH TABLE v USING INDEX ve (e>?)
+#   0|1|0|SEARCH TABLE u USING COVERING INDEX uab (ANY(a) AND b=?)
+#
+# on the basis that the real index "uab" must be better than the automatic
+# index. This is not right - a skip-scan is not necessarily better than an
+# automatic index scan.
+#
+do_eqp_test 220 {
+  select count(*) from u, v where u.b = v.b and v.e > 34;
+} {
+  0 0 1 {SEARCH TABLE v USING INDEX ve (e>?)} 
+  0 1 0 {SEARCH TABLE u USING AUTOMATIC COVERING INDEX (b=?)}
+}
 
 
 finish_test

@@ -1002,6 +1002,26 @@ static int multiplexFileControl(sqlite3_file *pConn, int op, void *pArg){
       /* no-op these */
       rc = SQLITE_OK;
       break;
+    case SQLITE_FCNTL_PRAGMA: {
+      char **aFcntl = (char**)pArg;
+      if( aFcntl[1] && sqlite3_stricmp(aFcntl[1],"multiplex_truncate")==0 ){
+        if( aFcntl[2] && aFcntl[2][0] ){
+          if( sqlite3_stricmp(aFcntl[2], "on")==0
+           || sqlite3_stricmp(aFcntl[2], "1")==0 ){
+            pGroup->bTruncate = 1;
+          }else
+          if( sqlite3_stricmp(aFcntl[2], "off")==0
+           || sqlite3_stricmp(aFcntl[2], "0")==0 ){
+            pGroup->bTruncate = 0;
+          }
+        }
+        aFcntl[0] = sqlite3_mprintf(pGroup->bTruncate ? "on" : "off");
+        rc = SQLITE_OK;
+        break;
+      }
+      /* If the multiplexor does not handle the pragma, pass it through
+      ** into the default case. */
+    }
     default:
       pSubOpen = multiplexSubOpen(pGroup, 0, &rc, NULL, 0);
       if( pSubOpen ){
