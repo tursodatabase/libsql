@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\sthe\sdocumentation\sfor\ssqlite3_threadsafe().
-D 2014-12-11T15:27:04.851
+C Fix\sa\srace\scondition\sto\sdo\swith\svery\slarge\sindex\skeys\sin\sshared-cache\smode.
+D 2014-12-11T16:38:18.086
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6c4f961fa91d0b4fa121946a19f9e5eac2f2f809
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -173,7 +173,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 7ddee9c7d505e07e959a575b18498f17c71e53ea
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 49ca66250c7dfa844a4d4cb8272b87420d27d3a5
-F src/btree.c ea6692ce58bfba55b12c75d2947fec0906d1ef7a
+F src/btree.c ab4b60fcf9920d862ff4d96efb1d605e4e7701a0
 F src/btree.h e31a3a3ebdedb1caf9bda3ad5dbab3db9b780f6e
 F src/btreeInt.h 3363e18fd76f69a27a870b25221b2345b3fd4d21
 F src/build.c 67bb05b1077e0cdaccb2e36bfcbe7a5df9ed31e8
@@ -294,7 +294,7 @@ F src/vacuum.c 9b30ec729337dd012ed88d4c292922c8ef9cf00c
 F src/vdbe.c 1a9e671c9cfc259e4d2affc71f7df4a4c00a842c
 F src/vdbe.h 6fc69d9c5e146302c56e163cb4b31d1ee64a18c3
 F src/vdbeInt.h 9bb69ff2447c34b6ccc58b34ec35b615f86ead78
-F src/vdbeapi.c 07acb615d1e4170e71fc1b0d087f3c53a1ad8e83
+F src/vdbeapi.c f8dd2d33a30938188fc292d524e88a91f2e65887
 F src/vdbeaux.c 6f7f39c3fcf0f5923758df8561bb5d843908a553
 F src/vdbeblob.c 4af4bfb71f6df7778397b4a0ebc1879793276778
 F src/vdbemem.c 31d8eabb0cd78bfeab4e5124c7363c3e9e54db9f
@@ -912,7 +912,7 @@ F test/thread2.test f35d2106452b77523b3a2b7d1dcde2e5ee8f9e46
 F test/thread_common.tcl 334639cadcb9f912bf82aa73f49efd5282e6cadd
 F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
 F test/threadtest2.c ace893054fa134af3fc8d6e7cfecddb8e3acefb9
-F test/threadtest3.c fca8d360b470405ae3ed431b5cb4cdf031f85a74
+F test/threadtest3.c 2b6e07e915c383c250a5b531cf6ef163a3047d7e
 F test/tkt-02a8e81d44.test 6c80d9c7514e2a42d4918bf87bf6bc54f379110c
 F test/tkt-26ff0c2d1e.test 888324e751512972c6e0d1a09df740d8f5aaf660
 F test/tkt-2a5629202f.test 0521bd25658428baa26665aa53ffed9367d33af2
@@ -1076,7 +1076,8 @@ F test/triggerC.test a68980c5955d62ee24be6f97129d824f199f9a4c
 F test/triggerD.test 8e7f3921a92a5797d472732108109e44575fa650
 F test/triggerE.test 355e9c5cbaed5cd039a60baad1fb2197caeb8e52
 F test/tt3_checkpoint.c 415eccce672d681b297485fc20f44cdf0eac93af
-F test/tt3_index.c 2e7f3151a0ae522f031e8e2761ca2bda63f4d221
+F test/tt3_index.c 14f4b0cc3f4c05353e25778cf531c9d6e3b0d27f
+F test/tt3_lookaside1.c 0b5b79ba37f21a1eb849cd4a54eed367f4d4aaaf
 F test/types.test bf816ce73c7dfcfe26b700c19f97ef4050d194ff
 F test/types2.test 3555aacf8ed8dc883356e59efc314707e6247a84
 F test/types3.test 99e009491a54f4dc02c06bdbc0c5eea56ae3e25a
@@ -1227,7 +1228,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d9f916ba09f1a61684b4d59548ab6cf71cdb6a37
-R be485ee74d8699a155e9699a0ceccb5f
-U drh
-Z 8b7cdafef867d0fe5e1164d6f32f45ce
+P 258e747bb7e3a2bc46f932cc2b06c2689d43aeb0
+R 016d1b9c16d412ff926cdf599ae97f64
+U dan
+Z 8da7cca75b292da60a4687ff246cc6b3
