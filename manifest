@@ -1,5 +1,5 @@
-C Fix\sa\stypo\scausing\sa\stest\serror\sin\se_walhook.test.
-D 2014-12-10T20:57:20.700
+C Fix\sa\stypo\sin\sthe\sdocumentation\sfor\ssqlite3_threadsafe().
+D 2014-12-11T15:27:04.851
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6c4f961fa91d0b4fa121946a19f9e5eac2f2f809
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -230,7 +230,7 @@ F src/resolve.c f6c46d3434439ab2084618d603e6d6dbeb0d6ada
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c f377fb8a5c73c10678ea74f3400f7913943e3d75
 F src/shell.c 45d9c9bd7cde07845af957f2d849933b990773cf
-F src/sqlite.h.in 2e699aabd1df6042aff4265cd93bdc8812629f11
+F src/sqlite.h.in 116dc731361549ee3fc79dcebace11b57d24dcfd
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
 F src/sqliteInt.h 28049b803b74a7f73242a8226915ea00ebb1309f
@@ -1227,7 +1227,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2eb6d3e4fbe388ef28e4b7b846e9e8a4361517a4
-R 6969ca3627ab2efde502167b1f0ba7a8
-U dan
-Z dbe3e99b743e5bbd88e69201e8af7d3a
+P d9f916ba09f1a61684b4d59548ab6cf71cdb6a37
+R be485ee74d8699a155e9699a0ceccb5f
+U drh
+Z 8b7cdafef867d0fe5e1164d6f32f45ce
