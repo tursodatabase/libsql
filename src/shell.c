@@ -473,7 +473,6 @@ struct ShellState {
   char *zDestTable;      /* Name of destination table when MODE_Insert */
   char colSeparator[20]; /* Column separator character for several modes */
   char rowSeparator[20]; /* Row separator character for MODE_Ascii */
-  char newline[20];      /* Record separator in MODE_Csv */
   int colWidth[100];     /* Requested width of each column when in column mode*/
   int actualWidth[100];  /* Actual width of each column */
   char nullvalue[20];    /* The text to print when a NULL comes back from

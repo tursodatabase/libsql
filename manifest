@@ -1,5 +1,5 @@
-C Further\ssimplify\sshell\smode\schanges.
-D 2014-12-11T03:20:58.752
+C Remove\san\sunused\sstructure\smember.
+D 2014-12-11T03:25:05.862
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6c4f961fa91d0b4fa121946a19f9e5eac2f2f809
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -229,7 +229,7 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c f6c46d3434439ab2084618d603e6d6dbeb0d6ada
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c f377fb8a5c73c10678ea74f3400f7913943e3d75
-F src/shell.c 4649c6bdfcc72cebffa770f9a47d37b8a9120215
+F src/shell.c d2c9565c39b74fbbafc5e298f46a5dce2712633a
 F src/sqlite.h.in 2e699aabd1df6042aff4265cd93bdc8812629f11
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
@@ -1227,7 +1227,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 66a28f7abaeaf1ebe6e43d856af88ac64b1ff230
-R 96c15ebe6218f037cbb3aa3c87063a4c
+P cf9c6e7eea4cab073e608e6fefdd24be87a8abeb
+R ddc1d3f4245eaeea9a8356078a1ff2c8
 U mistachkin
-Z 166f8db90bdd2987f2d3879c9c0b3446
+Z 68f03e9f12ac1359ea66745b2be1a192
