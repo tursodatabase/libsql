@@ -1,5 +1,5 @@
-C Merge\supdates\sfrom\strunk.
-D 2014-12-11T02:28:42.201
+C Simplify\sand\scleanup\sthe\simplementation\sof\sthe\snew\sASCII\smode\sfor\sthe\sshell.
+D 2014-12-11T03:12:33.799
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6c4f961fa91d0b4fa121946a19f9e5eac2f2f809
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -229,7 +229,7 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c f6c46d3434439ab2084618d603e6d6dbeb0d6ada
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c f377fb8a5c73c10678ea74f3400f7913943e3d75
-F src/shell.c 1c7787d1066d1a858b8a4812663fde0e4a85b755
+F src/shell.c 84359f80c432f8b34f0af4fdee8055c9fc2639a2
 F src/sqlite.h.in 2e699aabd1df6042aff4265cd93bdc8812629f11
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
@@ -851,11 +851,11 @@ F test/sharedA.test 0cdf1a76dfa00e6beee66af5b534b1e8df2720f5
 F test/sharedB.test 16cc7178e20965d75278f410943109b77b2e645e
 F test/shared_err.test 2f2aee20db294b9924e81f6ccbe60f19e21e8506
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test 0d2cece602988da3fa066c00adf19cda0b1306ad
+F test/shell1.test cdeb849acc2c37aada70d084564b0cc0a2c7df08
 F test/shell2.test 12b8bf901b0e3a8ac58cf5c0c63a0a388d4d1862
 F test/shell3.test 5e8545ec72c4413a0e8d4c6be56496e3c257ca29
 F test/shell4.test 8a9c08976291e6c6c808b4d718f4a8b299f339f5
-F test/shell5.test 7dbc03751ceda1e5ce75553dff735a7ef0dea15c
+F test/shell5.test d17a02d2327aadc6c062d5ba16b737d32601b11b
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/show_speedtest1_rtree.tcl 32e6c5f073d7426148a6936a0408f4b5b169aba5
 F test/shrink.test 8c70f62b6e8eb4d54533de6d65bd06b1b9a17868
@@ -1227,7 +1227,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 51f33cf1290cf767c1c6ba0228f4f30e4059c994 d9f916ba09f1a61684b4d59548ab6cf71cdb6a37
-R 15ef4ed782851554150951631e8659fc
+P 5b5d3e4d0d158594c0db05ddbf4d926b65825042
+R 7df644943b04f66f737e7f900957f44a
 U mistachkin
-Z e24780e51cf083f098b96480beceaf1e
+Z bc502efd9af4cfe5719e73721b9180f9

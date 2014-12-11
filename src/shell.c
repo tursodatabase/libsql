@@ -911,13 +911,13 @@ static int shell_callback(
         for(i=0; i<nArg; i++){
           output_csv(p, azCol[i] ? azCol[i] : "", i<nArg-1);
         }
-        fprintf(p->out, "%s", p->newline);
+        fprintf(p->out, "%s", p->rowSeparator);
       }
       if( nArg>0 ){
         for(i=0; i<nArg; i++){
           output_csv(p, azArg[i], i<nArg-1);
         }
-        fprintf(p->out, "%s", p->newline);
+        fprintf(p->out, "%s", p->rowSeparator);
       }
 #if defined(WIN32) || defined(_WIN32)
       fflush(p->out);
@@ -1711,8 +1711,6 @@ static char zHelp[] =
   ".backup ?DB? FILE      Backup DB (default \"main\") to FILE\n"
   ".bail on|off           Stop after hitting an error.  Default OFF\n"
   ".clone NEWDB           Clone data into NEWDB from the existing database\n"
-  ".colseparator STRING   This is an alias for the one argument version of\n"
-  "                         .separator\n"
   ".databases             List names and files of attached databases\n"
   ".dump ?TABLE? ...      Dump the database in an SQL text format\n"
   "                         If TABLE specified, only dump tables matching\n"
@@ -1737,13 +1735,13 @@ static char zHelp[] =
 #endif
   ".log FILE|off          Turn logging on or off.  FILE can be stderr/stdout\n"
   ".mode MODE ?TABLE?     Set output mode where MODE is one of:\n"
-  "                         ascii    Columns/rows delimited with 0x1F and 0x1E\n"
+  "                         ascii    Columns/rows delimited by 0x1F and 0x1E\n"
   "                         csv      Comma-separated values\n"
   "                         column   Left-aligned columns.  (See .width)\n"
   "                         html     HTML <table> code\n"
   "                         insert   SQL insert statements for TABLE\n"
   "                         line     One value per line\n"
-  "                         list     Values delimited by .separator string\n"
+  "                         list     Values delimited by .separator strings\n"
   "                         tabs     Tab-separated values\n"
   "                         tcl      TCL list elements\n"
   ".nullvalue STRING      Use STRING in place of NULL values\n"
@@ -1755,14 +1753,13 @@ static char zHelp[] =
   ".quit                  Exit this program\n"
   ".read FILENAME         Execute SQL in FILENAME\n"
   ".restore ?DB? FILE     Restore content of DB (default \"main\") from FILE\n"
-  ".rowseparator STRING   Change row separator for output mode and .import\n"
   ".save FILE             Write in-memory database into FILE\n"
   ".scanstats on|off      Turn sqlite3_stmt_scanstatus() metrics on or off\n"
   ".schema ?TABLE?        Show the CREATE statements\n"
   "                         If TABLE specified, only show tables matching\n"
   "                         LIKE pattern TABLE.\n"
-  ".separator STRING ?NL? Change column separator for output mode and .import\n"
-  "                         NL is the end-of-line mark for CSV\n"
+  ".separator COL ?ROW?   Change the column separator and optionally the row\n"
+  "                         separator for both the output mode and .import\n"
   ".shell CMD ARGS...     Run CMD ARGS... in a system shell\n"
   ".show                  Show the current values for various settings\n"
   ".stats on|off          Turn stats on or off\n"
@@ -2764,6 +2761,14 @@ static int do_meta_command(char *zLine, ShellState *p){
       fprintf(stderr, "Error: non-null row separator required for import\n");
       return 1;
     }
+    if( nSep==2 && p->mode==MODE_Csv && strcmp(p->rowSeparator, SEP_CrLf)==0 ){
+      /* When importing CSV (only), if the row separator is set to the
+      ** default output row separator, change it to the default input
+      ** row separator.  This avoids having to maintain different input
+      ** and output row separators. */
+      sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Row);
+      nSep = strlen30(p->rowSeparator);
+    }
     if( nSep>1 ){
       fprintf(stderr, "Error: multi-character row separators not allowed"
                       " for import\n");
@@ -3027,9 +3032,8 @@ static int do_meta_command(char *zLine, ShellState *p){
       sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Row);
     }else if( c2=='c' && strncmp(azArg[1],"csv",n2)==0 ){
       p->mode = MODE_Csv;
-      sqlite3_snprintf(sizeof(p->newline), p->newline, SEP_CrLf);
       sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Comma);
-      sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Row);
+      sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_CrLf);
     }else if( c2=='t' && strncmp(azArg[1],"tabs",n2)==0 ){
       p->mode = MODE_List;
       sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Tab);
@@ -3334,29 +3338,9 @@ static int do_meta_command(char *zLine, ShellState *p){
   }else
 #endif
 
-  if( c=='r' && strncmp(azArg[0], "rowseparator", n)==0 ){
-    if( nArg==2 ){
-      sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator,
-                       "%.*s", (int)ArraySize(p->rowSeparator)-1, azArg[1]);
-    }else{
-      fprintf(stderr, "Usage: .rowseparator STRING\n");
-      rc = 1;
-    }
-  }else
-
-  if( c=='c' && strncmp(azArg[0], "colseparator", n)==0 ){
-    if( nArg==2 ){
-      sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator,
-                       "%.*s", (int)ArraySize(p->colSeparator)-1, azArg[1]);
-    }else{
-      fprintf(stderr, "Usage: .colseparator STRING\n");
-      rc = 1;
-    }
-  }else
-
   if( c=='s' && strncmp(azArg[0], "separator", n)==0 ){
     if( nArg<2 || nArg>3 ){
-      fprintf(stderr, "Usage: .separator SEPARATOR ?NEWLINE?\n");
+      fprintf(stderr, "Usage: .separator COL ?ROW?\n");
       rc = 1;
     }
     if( nArg>=2 ){
@@ -3364,8 +3348,8 @@ static int do_meta_command(char *zLine, ShellState *p){
                        "%.*s", (int)ArraySize(p->colSeparator)-1, azArg[1]);
     }
     if( nArg>=3 ){
-      sqlite3_snprintf(sizeof(p->newline), p->newline,
-                       "%.*s", (int)ArraySize(p->newline)-1, azArg[2]);
+      sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator,
+                       "%.*s", (int)ArraySize(p->rowSeparator)-1, azArg[2]);
     }
   }else
 
@@ -3411,9 +3395,6 @@ static int do_meta_command(char *zLine, ShellState *p){
       fprintf(p->out, "\n");
     fprintf(p->out,"%12.12s: ", "rowseparator");
       output_c_string(p->out, p->rowSeparator);
-      fprintf(p->out, "\n");
-    fprintf(p->out,"%12.12s: ", "newline");
-      output_c_string(p->out, p->newline);
       fprintf(p->out, "\n");
     fprintf(p->out,"%12.12s: %s\n","stats", p->statsOn ? "on" : "off");
     fprintf(p->out,"%12.12s: ","width");
@@ -4080,7 +4061,6 @@ static const char zOptions[] =
   "   -ascii               set output mode to 'ascii'\n"
   "   -bail                stop after hitting an error\n"
   "   -batch               force batch I/O\n"
-  "   -colseparator SEP    same as -separator\n"
   "   -column              set output mode to 'column'\n"
   "   -cmd COMMAND         run \"COMMAND\" before reading stdin\n"
   "   -csv                 set output mode to 'csv'\n"
@@ -4100,12 +4080,11 @@ static const char zOptions[] =
 #ifdef SQLITE_ENABLE_MULTIPLEX
   "   -multiplex           enable the multiplexor VFS\n"
 #endif
-  "   -newline SEP         set newline character(s) for CSV\n"
+  "   -newline SEP         set output row separator. Default: '\\n'\n"
   "   -nullvalue TEXT      set text string for NULL values. Default ''\n"
   "   -pagecache SIZE N    use N slots of SZ bytes each for page cache memory\n"
-  "   -rowseparator SEP    set output line separator. Default: '\\n'\n"
   "   -scratch SIZE N      use N slots of SZ bytes each for scratch memory\n"
-  "   -separator SEP       set output field separator. Default: '|'\n"
+  "   -separator SEP       set output column separator. Default: '|'\n"
   "   -stats               print memory stats before each finalize\n"
   "   -version             show SQLite version\n"
   "   -vfs NAME            use NAME as the default VFS\n"
@@ -4134,7 +4113,6 @@ static void main_init(ShellState *data) {
   data->mode = MODE_List;
   memcpy(data->colSeparator,SEP_Column, 2);
   memcpy(data->rowSeparator,SEP_Row, 2);
-  memcpy(data->newline,SEP_CrLf, 3);
   data->showHeader = 0;
   data->shellFlgs = SHFLG_Lookaside;
   sqlite3_config(SQLITE_CONFIG_URI, 1);
@@ -4380,14 +4358,11 @@ int main(int argc, char **argv){
                        SEP_Unit);
       sqlite3_snprintf(sizeof(data.rowSeparator), data.rowSeparator,
                        SEP_Record);
-    }else if( strcmp(z,"-separator")==0 || strcmp(z,"-colseparator")==0 ){
+    }else if( strcmp(z,"-separator")==0 ){
       sqlite3_snprintf(sizeof(data.colSeparator), data.colSeparator,
                        "%s",cmdline_option_value(argc,argv,++i));
-    }else if( strcmp(z,"-rowseparator")==0 ){
-      sqlite3_snprintf(sizeof(data.rowSeparator), data.rowSeparator,
-                       "%s",cmdline_option_value(argc,argv,++i));
     }else if( strcmp(z,"-newline")==0 ){
-      sqlite3_snprintf(sizeof(data.newline), data.newline,
+      sqlite3_snprintf(sizeof(data.rowSeparator), data.rowSeparator,
                        "%s",cmdline_option_value(argc,argv,++i));
     }else if( strcmp(z,"-nullvalue")==0 ){
       sqlite3_snprintf(sizeof(data.nullvalue), data.nullvalue,
