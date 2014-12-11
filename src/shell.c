@@ -475,7 +475,7 @@ struct ShellState {
   char rowSeparator[20]; /* Row separator character for MODE_Ascii */
   int colWidth[100];     /* Requested width of each column when in column mode*/
   int actualWidth[100];  /* Actual width of each column */
-  char nullvalue[20];    /* The text to print when a NULL comes back from
+  char nullValue[20];    /* The text to print when a NULL comes back from
                          ** the database */
   SavedModeInfo normalMode;/* Holds the mode just before .explain ON */
   char outfile[FILENAME_MAX]; /* Filename for *out */
@@ -693,14 +693,14 @@ static const char needCsvQuote[] = {
 
 /*
 ** Output a single term of CSV.  Actually, p->separator is used for
-** the separator, which may or may not be a comma.  p->nullvalue is
+** the separator, which may or may not be a comma.  p->nullValue is
 ** the null value.  Strings are quoted if necessary.  The separator
 ** is only issued if bSep is true.
 */
 static void output_csv(ShellState *p, const char *z, int bSep){
   FILE *out = p->out;
   if( z==0 ){
-    fprintf(out,"%s",p->nullvalue);
+    fprintf(out,"%s",p->nullValue);
   }else{
     int i;
     int nSep = strlen30(p->colSeparator);
@@ -765,7 +765,7 @@ static int shell_callback(
       if( p->cnt++>0 ) fprintf(p->out, "%s", p->rowSeparator);
       for(i=0; i<nArg; i++){
         fprintf(p->out,"%*s = %s%s", w, azCol[i],
-                azArg[i] ? azArg[i] : p->nullvalue, p->rowSeparator);
+                azArg[i] ? azArg[i] : p->nullValue, p->rowSeparator);
       }
       break;
     }
@@ -782,7 +782,7 @@ static int shell_callback(
           if( w==0 ){
             w = strlen30(azCol[i] ? azCol[i] : "");
             if( w<10 ) w = 10;
-            n = strlen30(azArg && azArg[i] ? azArg[i] : p->nullvalue);
+            n = strlen30(azArg && azArg[i] ? azArg[i] : p->nullValue);
             if( w<n ) w = n;
           }
           if( i<ArraySize(p->actualWidth) ){
@@ -832,11 +832,11 @@ static int shell_callback(
         }
         if( w<0 ){
           fprintf(p->out,"%*.*s%s",-w,-w,
-              azArg[i] ? azArg[i] : p->nullvalue,
+              azArg[i] ? azArg[i] : p->nullValue,
               i==nArg-1 ? p->rowSeparator : "  ");
         }else{
           fprintf(p->out,"%-*.*s%s",w,w,
-              azArg[i] ? azArg[i] : p->nullvalue,
+              azArg[i] ? azArg[i] : p->nullValue,
               i==nArg-1 ? p->rowSeparator : "  ");
         }
       }
@@ -853,7 +853,7 @@ static int shell_callback(
       if( azArg==0 ) break;
       for(i=0; i<nArg; i++){
         char *z = azArg[i];
-        if( z==0 ) z = p->nullvalue;
+        if( z==0 ) z = p->nullValue;
         fprintf(p->out, "%s", z);
         if( i<nArg-1 ){
           fprintf(p->out, "%s", p->colSeparator);
@@ -879,7 +879,7 @@ static int shell_callback(
       fprintf(p->out,"<TR>");
       for(i=0; i<nArg; i++){
         fprintf(p->out,"<TD>");
-        output_html_string(p->out, azArg[i] ? azArg[i] : p->nullvalue);
+        output_html_string(p->out, azArg[i] ? azArg[i] : p->nullValue);
         fprintf(p->out,"</TD>\n");
       }
       fprintf(p->out,"</TR>\n");
@@ -895,7 +895,7 @@ static int shell_callback(
       }
       if( azArg==0 ) break;
       for(i=0; i<nArg; i++){
-        output_c_string(p->out, azArg[i] ? azArg[i] : p->nullvalue);
+        output_c_string(p->out, azArg[i] ? azArg[i] : p->nullValue);
         if(i<nArg-1) fprintf(p->out, "%s", p->colSeparator);
       }
       fprintf(p->out, "%s", p->rowSeparator);
@@ -964,7 +964,7 @@ static int shell_callback(
       if( azArg==0 ) break;
       for(i=0; i<nArg; i++){
         if( i>0 ) fprintf(p->out, "%s", p->colSeparator);
-        fprintf(p->out,"%s",azArg[i] ? azArg[i] : p->nullvalue);
+        fprintf(p->out,"%s",azArg[i] ? azArg[i] : p->nullValue);
       }
       fprintf(p->out, "%s", p->rowSeparator);
       break;
@@ -3051,8 +3051,8 @@ static int do_meta_command(char *zLine, ShellState *p){
 
   if( c=='n' && strncmp(azArg[0], "nullvalue", n)==0 ){
     if( nArg==2 ){
-      sqlite3_snprintf(sizeof(p->nullvalue), p->nullvalue,
-                       "%.*s", (int)ArraySize(p->nullvalue)-1, azArg[1]);
+      sqlite3_snprintf(sizeof(p->nullValue), p->nullValue,
+                       "%.*s", (int)ArraySize(p->nullValue)-1, azArg[1]);
     }else{
       fprintf(stderr, "Usage: .nullvalue STRING\n");
       rc = 1;
@@ -3383,7 +3383,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     fprintf(p->out,"%12.12s: %s\n","headers", p->showHeader ? "on" : "off");
     fprintf(p->out,"%12.12s: %s\n","mode", modeDescr[p->mode]);
     fprintf(p->out,"%12.12s: ", "nullvalue");
-      output_c_string(p->out, p->nullvalue);
+      output_c_string(p->out, p->nullValue);
       fprintf(p->out, "\n");
     fprintf(p->out,"%12.12s: %s\n","output",
             strlen30(p->outfile) ? p->outfile : "stdout");
@@ -4362,7 +4362,7 @@ int main(int argc, char **argv){
       sqlite3_snprintf(sizeof(data.rowSeparator), data.rowSeparator,
                        "%s",cmdline_option_value(argc,argv,++i));
     }else if( strcmp(z,"-nullvalue")==0 ){
-      sqlite3_snprintf(sizeof(data.nullvalue), data.nullvalue,
+      sqlite3_snprintf(sizeof(data.nullValue), data.nullValue,
                        "%s",cmdline_option_value(argc,argv,++i));
     }else if( strcmp(z,"-header")==0 ){
       data.showHeader = 1;
