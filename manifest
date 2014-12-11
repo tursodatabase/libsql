@@ -1,5 +1,5 @@
-C Rename\sa\sstructure\smember\sto\simprove\scode\sclarity.
-D 2014-12-11T03:29:14.206
+C Update\sa\scomment.
+D 2014-12-11T04:49:46.125
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6c4f961fa91d0b4fa121946a19f9e5eac2f2f809
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -229,7 +229,7 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c f6c46d3434439ab2084618d603e6d6dbeb0d6ada
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c f377fb8a5c73c10678ea74f3400f7913943e3d75
-F src/shell.c 3628fab3fba6490bebba7fa63989c5c410eba0a5
+F src/shell.c 1b7cb3efc5ae6fe82e36407508c4a6b00d8edde1
 F src/sqlite.h.in 2e699aabd1df6042aff4265cd93bdc8812629f11
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
@@ -1227,7 +1227,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d8404340cb01af440feebd19d291eb7198cfa576
-R 46f56278d908459d592a073dfada5d9c
+P d48eda16ef8a84a93de9c6f38f794aceb4a6ba0d
+R 1034d99337e2b1563f22219c78cd5011
 U mistachkin
-Z d954c642e1623a1d799298570f596d90
+Z 59252e2fe2e00ed3f4f3196b070ae546

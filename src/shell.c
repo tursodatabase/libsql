@@ -692,7 +692,7 @@ static const char needCsvQuote[] = {
 };
 
 /*
-** Output a single term of CSV.  Actually, p->separator is used for
+** Output a single term of CSV.  Actually, p->colSeparator is used for
 ** the separator, which may or may not be a comma.  p->nullValue is
 ** the null value.  Strings are quoted if necessary.  The separator
 ** is only issued if bSep is true.
