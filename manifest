@@ -1,5 +1,5 @@
-C Add\sthe\sthreadtest4.c\stest\sprogram.\s\sNot\syet\sworking.
-D 2014-12-11T19:29:42.156
+C Fix\sa\sbug\sin\sthe\sthreadtest4.c\sprogram.\s\sRemove\sthe\skeyinfo\scache\sas\sit\sprovides\nminimal\sperformance\simprovements,\sand\sthen\sonly\sat\sSQL\spreparation\stime,\snot\nat\sruntime,\sand\sit\shas\sproblems\swith\sdata\sraces\sin\sshared-cache\smode.\s\sWe\smight\nlater\sadd\sthe\skeyinfo\scache\sback\sbut\sonly\senable\sit\swhen\sshared-cache\smode\nis\soff.
+D 2014-12-12T00:20:37.023
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6c4f961fa91d0b4fa121946a19f9e5eac2f2f809
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -176,7 +176,7 @@ F src/btmutex.c 49ca66250c7dfa844a4d4cb8272b87420d27d3a5
 F src/btree.c ea6692ce58bfba55b12c75d2947fec0906d1ef7a
 F src/btree.h e31a3a3ebdedb1caf9bda3ad5dbab3db9b780f6e
 F src/btreeInt.h 3363e18fd76f69a27a870b25221b2345b3fd4d21
-F src/build.c 67bb05b1077e0cdaccb2e36bfcbe7a5df9ed31e8
+F src/build.c 162d84e4833b03f9d07192ef06057b0226f6e543
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c c4ba6e0626bb94bc77a0861735f3382fcf7cc818
 F src/ctime.c df19848891c8a553c80e6f5a035e768280952d1a
@@ -195,7 +195,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
 F src/loadext.c 86bd4e2fccd520b748cba52492ab60c4a770f660
-F src/main.c 4bfb07de96118350a63103380819ff8cbbefc5cd
+F src/main.c 1f40f66165a6609203a5ff7ecb0292b90b302130
 F src/malloc.c 740db54387204c9a2eb67c6d98e68b08e9ef4eab
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c faf615aafd8be74a71494dfa027c113ea5c6615f
@@ -233,7 +233,7 @@ F src/shell.c 45d9c9bd7cde07845af957f2d849933b990773cf
 F src/sqlite.h.in 116dc731361549ee3fc79dcebace11b57d24dcfd
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
-F src/sqliteInt.h 28049b803b74a7f73242a8226915ea00ebb1309f
+F src/sqliteInt.h 073d54f7a631b978b66d50d255c84549fb9e5429
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 81712116e826b0089bb221b018929536b2b5406f
 F src/table.c f142bba7903e93ca8d113a5b8877a108ad1a27dc
@@ -304,7 +304,7 @@ F src/vtab.c c08ec66f45919eaa726bf88aa53eb08379d607f9
 F src/wal.c 847692349eb6e1fb8543dbc97e69ddbfa4cc7ea7
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
-F src/where.c e914fdb9159bb36af4a673193bbda08aaf9e5a73
+F src/where.c d46de821bc604a4fd36fa3928c086950e91aafb1
 F src/whereInt.h d3633e9b592103241b74b0ec76185f3e5b8b62e0
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -913,7 +913,7 @@ F test/thread_common.tcl 334639cadcb9f912bf82aa73f49efd5282e6cadd
 F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
 F test/threadtest2.c ace893054fa134af3fc8d6e7cfecddb8e3acefb9
 F test/threadtest3.c fca8d360b470405ae3ed431b5cb4cdf031f85a74
-F test/threadtest4.c e2bcee459bbd27fa2d55751e9900a4a5a4675cd5
+F test/threadtest4.c 38cb574939d5e0c8bd3baa5eb45def2ac6da4db4
 F test/tkt-02a8e81d44.test 6c80d9c7514e2a42d4918bf87bf6bc54f379110c
 F test/tkt-26ff0c2d1e.test 888324e751512972c6e0d1a09df740d8f5aaf660
 F test/tkt-2a5629202f.test 0521bd25658428baa26665aa53ffed9367d33af2
@@ -1228,10 +1228,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 258e747bb7e3a2bc46f932cc2b06c2689d43aeb0
-R 4bb41891ae2017245bf160d9a28a8371
-T *branch * threadtest4
-T *sym-threadtest4 *
-T -sym-trunk *
+P ec3a74469ca2f0f3fb7d82a05fdac7500354e78f
+R e481d4adf19d880dc699635431f7c379
 U drh
-Z 474616aece6be366bfcf36cb343f9bea
+Z 4073b2f4a4cd5608e79ca3cad9ca9b28

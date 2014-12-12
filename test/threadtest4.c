@@ -301,6 +301,7 @@ static void *worker_thread(void *pArg){
       worker_error(p, "Wrong result: %d", sqlite3_column_int(pStmt,0));
     }
     if( p->nErr ) break;
+    sqlite3_finalize(pStmt);
 
     worker_delete_all_content(p, (p->tid+iOuter)%2);
     worker_close_connection(p);

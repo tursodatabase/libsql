@@ -3941,7 +3941,6 @@ static void whereLoopClearUnion(sqlite3 *db, WhereLoop *p){
       p->u.vtab.idxStr = 0;
     }else if( (p->wsFlags & WHERE_AUTO_INDEX)!=0 && p->u.btree.pIndex!=0 ){
       sqlite3DbFree(db, p->u.btree.pIndex->zColAff);
-      sqlite3KeyInfoUnref(p->u.btree.pIndex->pKeyInfo);
       sqlite3DbFree(db, p->u.btree.pIndex);
       p->u.btree.pIndex = 0;
     }
