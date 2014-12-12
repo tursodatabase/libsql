@@ -305,19 +305,48 @@ static void *worker_thread(void *pArg){
     }else if( sqlite3_column_int(pStmt, 0)!=400 ){
       worker_error(p, "Wrong result: %d", sqlite3_column_int(pStmt,0));
     }
-    if( p->nErr ) break;
     sqlite3_finalize(pStmt);
+    if( p->nErr ) break;
 
     if( ((iOuter+p->tid)%3)==0 ){
       sqlite3_db_release_memory(p->db);
       p->nTest++;
     }
 
+    pthread_mutex_lock(p->pWrMutex);
+    run_sql(p, "BEGIN;");
+    run_sql(p, "UPDATE t1 SET c=NULL WHERE a=55");
+    run_sql(p, "UPDATE t2 SET f=NULL WHERE d=42");
+    run_sql(p, "UPDATE t3 SET z=NULL WHERE x=31");
+    run_sql(p, "ROLLBACK;");
+    p->nTest++;
+    pthread_mutex_unlock(p->pWrMutex);
+
+
     if( iOuter==p->tid ){
       pthread_mutex_lock(p->pWrMutex);
       run_sql(p, "VACUUM");
       pthread_mutex_unlock(p->pWrMutex);
     }
+
+    pStmt = prep_sql(p->db,
+       "SELECT t1.rowid, t2.rowid, t3.rowid"
+       "  FROM t1, t2, t3"
+       " WHERE t1.tid=%d AND t2.tid=%d AND t3.tid=%d"
+       "   AND t1.a<>t2.d AND t2.d<>t3.x"
+       " ORDER BY 1, 2, 3"
+       ,p->tid, p->tid, p->tid);
+    worker_trace(p, "query [%s]", sqlite3_sql(pStmt));
+    for(i=0; i<p->nWorker; i++){
+      rc = sqlite3_step(pStmt);
+      if( rc!=SQLITE_ROW ){
+        worker_error(p, "Failed to step: %s", sqlite3_sql(pStmt));
+        break;
+      }
+      sched_yield();
+    }
+    sqlite3_finalize(pStmt);
+    if( p->nErr ) break;
 
     worker_delete_all_content(p, (p->tid+iOuter)%2);
     worker_close_connection(p);
