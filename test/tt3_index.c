@@ -67,8 +67,8 @@ static void create_drop_index_1(int nMs){
   launch_thread(&err, &threads, create_drop_index_thread, 0);
   launch_thread(&err, &threads, create_drop_index_thread, 0);
   launch_thread(&err, &threads, create_drop_index_thread, 0);
-  sqlite3_enable_shared_cache(0);
 
   join_all_threads(&err, &threads);
+  sqlite3_enable_shared_cache(0);
   print_and_free_err(&err);
 }
