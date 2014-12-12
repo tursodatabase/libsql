@@ -1399,6 +1399,8 @@ static void dynamic_triggers(int nMs){
 #include "tt3_checkpoint.c"
 #include "tt3_index.c"
 #include "tt3_lookaside1.c"
+#include "tt3_vacuum.c"
+#include "tt3_stress.c"
 
 int main(int argc, char **argv){
   struct ThreadTest {
@@ -1420,7 +1422,9 @@ int main(int argc, char **argv){
     { checkpoint_starvation_2, "checkpoint_starvation_2", 10000 },
 
     { create_drop_index_1, "create_drop_index_1", 10000 },
-    { lookaside1, "lookaside1", 10000 },
+    { lookaside1,          "lookaside1", 10000 },
+    { vacuum1,             "vacuum1", 10000 },
+    { stress1,             "stress1", 10000 },
   };
 
   int i;

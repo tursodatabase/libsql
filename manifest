@@ -1,5 +1,5 @@
-C Add\snew\stests\sto\sthe\sthreadtest4.c\sprogram.\s\sFix\sa\slong-standing\sdata\srace\nin\sWAL\smode\sfor\sshared-cache.
-D 2014-12-12T01:27:17.213
+C Add\sextra\stests\sto\sthreadtest3.
+D 2014-12-12T16:39:38.824
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6c4f961fa91d0b4fa121946a19f9e5eac2f2f809
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -152,7 +152,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 084976077a4aa3bd985154b5423e7aed88e4a2e9
+F main.mk 9f8c54fe62b60e0a24a2e65cfc8d2add063dda07
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
 F mkopcodeh.awk c6b3fa301db6ef7ac916b14c60868aeaec1337b5
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
@@ -912,7 +912,7 @@ F test/thread2.test f35d2106452b77523b3a2b7d1dcde2e5ee8f9e46
 F test/thread_common.tcl 334639cadcb9f912bf82aa73f49efd5282e6cadd
 F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
 F test/threadtest2.c ace893054fa134af3fc8d6e7cfecddb8e3acefb9
-F test/threadtest3.c 2b6e07e915c383c250a5b531cf6ef163a3047d7e
+F test/threadtest3.c bef2bde18b4e638b6cf4b119aa2076123ffdc425
 F test/threadtest4.c 1678c340387c19ae28b18e4d8f71d4a989297e46
 F test/tkt-02a8e81d44.test 6c80d9c7514e2a42d4918bf87bf6bc54f379110c
 F test/tkt-26ff0c2d1e.test 888324e751512972c6e0d1a09df740d8f5aaf660
@@ -1077,8 +1077,10 @@ F test/triggerC.test a68980c5955d62ee24be6f97129d824f199f9a4c
 F test/triggerD.test 8e7f3921a92a5797d472732108109e44575fa650
 F test/triggerE.test 355e9c5cbaed5cd039a60baad1fb2197caeb8e52
 F test/tt3_checkpoint.c 415eccce672d681b297485fc20f44cdf0eac93af
-F test/tt3_index.c 14f4b0cc3f4c05353e25778cf531c9d6e3b0d27f
+F test/tt3_index.c 652630e6b6fc7a48adf2ead60de1ef48e1a34569
 F test/tt3_lookaside1.c 0b5b79ba37f21a1eb849cd4a54eed367f4d4aaaf
+F test/tt3_stress.c e003a8486ba990c43dc9b8298f4b266cd10eb1c1
+F test/tt3_vacuum.c 6a66e52e2b39fc0cccb71db5a302411f34d09736
 F test/types.test bf816ce73c7dfcfe26b700c19f97ef4050d194ff
 F test/types2.test 3555aacf8ed8dc883356e59efc314707e6247a84
 F test/types3.test 99e009491a54f4dc02c06bdbc0c5eea56ae3e25a
@@ -1229,7 +1231,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 03c443eaf24413d6faaa91a33575d9dfd3528b5c
-R 7d057661252570fbf3877a000bcb607e
-U drh
-Z 24d2ddd2be9b77d0c401fa6e4cbdad23
+P d8d3e6d04cbb9e3033ad8613e3dbd4ad0b01765a
+R 2ae2d517339c22d48400a669b2098fec
+U dan
+Z 951a78f63dc9b91d226749536e3eb614
