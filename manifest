@@ -1,5 +1,5 @@
-C Remove\sthe\sKeyInfo\scache\s(for\snow\s-\sperhaps\swe\swill\sadd\sit\sback\sin\slater\s-\sor\nmaybe\snot\ssince\sit\sprovides\snegligible\sbenefit\sbut\sadds\sa\slot\sof\scomplexity\nand\sthread-safety\srisk).\s\sAdd\sa\smutex\sto\sATTACH\sto\sdeal\swith\sa\sdata\srace.
-D 2014-12-12T00:52:10.892
+C Add\snew\stests\sto\sthe\sthreadtest4.c\sprogram.\s\sFix\sa\slong-standing\sdata\srace\nin\sWAL\smode\sfor\sshared-cache.
+D 2014-12-12T01:27:17.213
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6c4f961fa91d0b4fa121946a19f9e5eac2f2f809
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -294,7 +294,7 @@ F src/vacuum.c 9b30ec729337dd012ed88d4c292922c8ef9cf00c
 F src/vdbe.c 1a9e671c9cfc259e4d2affc71f7df4a4c00a842c
 F src/vdbe.h 6fc69d9c5e146302c56e163cb4b31d1ee64a18c3
 F src/vdbeInt.h 9bb69ff2447c34b6ccc58b34ec35b615f86ead78
-F src/vdbeapi.c f8dd2d33a30938188fc292d524e88a91f2e65887
+F src/vdbeapi.c 4bc511a46b9839392ae0e90844a71dc96d9dbd71
 F src/vdbeaux.c 6f7f39c3fcf0f5923758df8561bb5d843908a553
 F src/vdbeblob.c 4af4bfb71f6df7778397b4a0ebc1879793276778
 F src/vdbemem.c 31d8eabb0cd78bfeab4e5124c7363c3e9e54db9f
@@ -913,7 +913,7 @@ F test/thread_common.tcl 334639cadcb9f912bf82aa73f49efd5282e6cadd
 F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
 F test/threadtest2.c ace893054fa134af3fc8d6e7cfecddb8e3acefb9
 F test/threadtest3.c 2b6e07e915c383c250a5b531cf6ef163a3047d7e
-F test/threadtest4.c 38cb574939d5e0c8bd3baa5eb45def2ac6da4db4
+F test/threadtest4.c 1678c340387c19ae28b18e4d8f71d4a989297e46
 F test/tkt-02a8e81d44.test 6c80d9c7514e2a42d4918bf87bf6bc54f379110c
 F test/tkt-26ff0c2d1e.test 888324e751512972c6e0d1a09df740d8f5aaf660
 F test/tkt-2a5629202f.test 0521bd25658428baa26665aa53ffed9367d33af2
@@ -1229,8 +1229,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fc157dd7f18c94b7ae5f155e1b4a5d7714b7da8c 6bef7ede2bbf0a51729e1943b0b0c895cb57c718
-R 43ea10bc03cfab6b8cae2a465b94aee2
-T +closed 6bef7ede2bbf0a51729e1943b0b0c895cb57c718
+P 03c443eaf24413d6faaa91a33575d9dfd3528b5c
+R 7d057661252570fbf3877a000bcb607e
 U drh
-Z 6886c071ca5a249d6b983c22ce222f5d
+Z 24d2ddd2be9b77d0c401fa6e4cbdad23

@@ -16,13 +16,17 @@
 ** This test program runs on unix-like systems only.  It uses pthreads.
 ** To compile:
 **
-**     gcc -o tt4 -I. threadtest4.c sqlite3.c -ldl -lpthread
+**     gcc -g -Wall -I. threadtest4.c sqlite3.c -ldl -lpthread
 **
 ** To run:
 **
-**     ./tt4 10
+**     ./a.out 10
 **
-** The argument is the number of threads.
+** The argument is the number of threads.  There are also options, such
+** as -wal and -multithread and -serialized.
+**
+** Consider also compiling with clang instead of gcc and adding the
+** -fsanitize=thread option.
 */
 #include "sqlite3.h"
 #include <pthread.h>
@@ -40,6 +44,7 @@
 typedef struct WorkerInfo WorkerInfo;
 struct WorkerInfo {
   int tid;                    /* Thread ID */
+  int nWorker;                /* Total number of workers */
   unsigned wkrFlags;          /* Flags */
   sqlite3 *mainDb;            /* Database connection of the main thread */
   sqlite3 *db;                /* Database connection of this thread */
@@ -284,7 +289,7 @@ static void *worker_thread(void *pArg){
   sqlite3_stmt *pStmt;
 
   printf("worker %d startup\n", p->tid);  fflush(stdout);
-  for(iOuter=1; iOuter<=4; iOuter++){
+  for(iOuter=1; iOuter<=p->nWorker; iOuter++){
     worker_open_connection(p, iOuter);
     for(i=0; i<4; i++){
       worker_add_content(p, i*100+1, (i+1)*100, (p->tid+iOuter)%3 + 1);
@@ -302,6 +307,17 @@ static void *worker_thread(void *pArg){
     }
     if( p->nErr ) break;
     sqlite3_finalize(pStmt);
+
+    if( ((iOuter+p->tid)%3)==0 ){
+      sqlite3_db_release_memory(p->db);
+      p->nTest++;
+    }
+
+    if( iOuter==p->tid ){
+      pthread_mutex_lock(p->pWrMutex);
+      run_sql(p, "VACUUM");
+      pthread_mutex_unlock(p->pWrMutex);
+    }
 
     worker_delete_all_content(p, (p->tid+iOuter)%2);
     worker_close_connection(p);
@@ -362,6 +378,8 @@ int main(int argc, char **argv){
        "Options:\n"
        "  --serialized\n"
        "  --multithread\n"
+       "  --wal\n"
+       "  --trace\n"
        ,argv[0]
     );
     exit(1);
@@ -406,6 +424,7 @@ int main(int argc, char **argv){
   memset(aInfo, 0, sizeof(*aInfo)*nWorker);
   for(i=0; i<nWorker; i++){
     aInfo[i].tid = i+1;
+    aInfo[i].nWorker = nWorker;
     aInfo[i].wkrFlags = wkrFlags;
     aInfo[i].mainDb = db;
     aInfo[i].pWrMutex = &wrMutex;

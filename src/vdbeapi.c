@@ -400,7 +400,10 @@ static int doWalCallbacks(sqlite3 *db){
   for(i=0; i<db->nDb; i++){
     Btree *pBt = db->aDb[i].pBt;
     if( pBt ){
-      int nEntry = sqlite3PagerWalCallback(sqlite3BtreePager(pBt));
+      int nEntry;
+      sqlite3BtreeEnter(pBt);
+      nEntry = sqlite3PagerWalCallback(sqlite3BtreePager(pBt));
+      sqlite3BtreeLeave(pBt);
       if( db->xWalCallback && nEntry>0 && rc==SQLITE_OK ){
         rc = db->xWalCallback(db->pWalArg, db, db->aDb[i].zName, nEntry);
       }
