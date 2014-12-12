@@ -1784,7 +1784,6 @@ struct Index {
   u8 *aSortOrder;          /* for each column: True==DESC, False==ASC */
   char **azColl;           /* Array of collation sequence names for index */
   Expr *pPartIdxWhere;     /* WHERE clause for partial indices */
-  KeyInfo *pKeyInfo;       /* A KeyInfo object suitable for this index */
   int tnum;                /* DB Page containing root of this index */
   LogEst szIdxRow;         /* Estimated average row size in bytes */
   u16 nKeyCol;             /* Number of columns forming the key */
