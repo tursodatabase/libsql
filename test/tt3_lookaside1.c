@@ -18,7 +18,7 @@
 ** that is suspected to exist at time of writing.
 */
 
-static char *lookaside1_thread_reader(int iTid, int iArg){
+static char *lookaside1_thread_reader(int iTid, void *pArg){
   Error err = {0};                /* Error code and message */
   Sqlite db = {0};                /* SQLite database connection */
 
@@ -43,7 +43,7 @@ static char *lookaside1_thread_reader(int iTid, int iArg){
   return sqlite3_mprintf("ok");
 }
 
-static char *lookaside1_thread_writer(int iTid, int iArg){
+static char *lookaside1_thread_writer(int iTid, void *pArg){
   Error err = {0};                /* Error code and message */
   Sqlite db = {0};                /* SQLite database connection */
 

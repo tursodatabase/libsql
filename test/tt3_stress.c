@@ -17,7 +17,7 @@
 /*
 ** Thread 1. CREATE and DROP a table.
 */
-static char *stress_thread_1(int iTid, int iArg){
+static char *stress_thread_1(int iTid, void *pArg){
   Error err = {0};                /* Error code and message */
   Sqlite db = {0};                /* SQLite database connection */
 
@@ -36,7 +36,7 @@ static char *stress_thread_1(int iTid, int iArg){
 /*
 ** Thread 2. Open and close database connections.
 */
-static char *stress_thread_2(int iTid, int iArg){
+static char *stress_thread_2(int iTid, void *pArg){
   Error err = {0};                /* Error code and message */
   Sqlite db = {0};                /* SQLite database connection */
   while( !timetostop(&err) ){
@@ -52,7 +52,7 @@ static char *stress_thread_2(int iTid, int iArg){
 /*
 ** Thread 3. Attempt many small SELECT statements.
 */
-static char *stress_thread_3(int iTid, int iArg){
+static char *stress_thread_3(int iTid, void *pArg){
   Error err = {0};                /* Error code and message */
   Sqlite db = {0};                /* SQLite database connection */
 
@@ -75,11 +75,13 @@ static char *stress_thread_3(int iTid, int iArg){
 /*
 ** Thread 5. Attempt INSERT statements.
 */
-static char *stress_thread_4(int iTid, int iArg){
+static char *stress_thread_4(int iTid, void *pArg){
   Error err = {0};                /* Error code and message */
   Sqlite db = {0};                /* SQLite database connection */
   int i1 = 0;
   int i2 = 0;
+  int iArg = PTR2INT(pArg);
+
   opendb(&err, &db, "test.db", 0);
   while( !timetostop(&err) ){
     if( iArg ){
@@ -103,9 +105,10 @@ static char *stress_thread_4(int iTid, int iArg){
 /*
 ** Thread 6. Attempt DELETE operations.
 */
-static char *stress_thread_5(int iTid, int iArg){
+static char *stress_thread_5(int iTid, void *pArg){
   Error err = {0};                /* Error code and message */
   Sqlite db = {0};                /* SQLite database connection */
+  int iArg = PTR2INT(pArg);
 
   int i1 = 0;
   int i2 = 0;
@@ -131,12 +134,9 @@ static char *stress_thread_5(int iTid, int iArg){
 
 static void stress1(int nMs){
   Error err = {0};
-  Sqlite db = {0};
   Threadset threads = {0};
 
-
   setstoptime(&err, nMs);
-
   sqlite3_enable_shared_cache(1);
 
   launch_thread(&err, &threads, stress_thread_1, 0);
@@ -152,10 +152,230 @@ static void stress1(int nMs){
   launch_thread(&err, &threads, stress_thread_4, 0);
 
   launch_thread(&err, &threads, stress_thread_5, 0);
-  launch_thread(&err, &threads, stress_thread_5, 1);
+  launch_thread(&err, &threads, stress_thread_5, (void*)1);
 
   join_all_threads(&err, &threads);
   sqlite3_enable_shared_cache(0);
 
   print_and_free_err(&err);
 }
+
+/**************************************************************************
+***************************************************************************
+** Start of test case "stress2"
+*/
+
+
+
+/*
+** 1.  CREATE TABLE statements.
+** 2.  DROP TABLE statements.
+** 3.  Small SELECT statements.
+** 4.  Big SELECT statements.
+** 5.  Small INSERT statements.
+** 6.  Big INSERT statements.
+** 7.  Small UPDATE statements.
+** 8.  Big UPDATE statements.
+** 9.  Small DELETE statements.
+** 10. Big DELETE statements.
+** 11. VACUUM.
+** 14. Integrity-check.
+** 17. Switch the journal mode from delete to wal and back again.
+** 19. Open and close database connections rapidly.
+*/
+
+#define STRESS2_TABCNT 5
+
+static void stress2_workload1(Error *pErr, Sqlite *pDb, int i){
+  int iTab = (i % STRESS2_TABCNT);
+  sql_script_printf(pErr, pDb, 
+      "CREATE TABLE IF NOT EXISTS t%d(x PRIMARY KEY, y, z);", iTab
+  );
+}
+
+static void stress2_workload2(Error *pErr, Sqlite *pDb, int i){
+  int iTab = (i % STRESS2_TABCNT);
+  sql_script_printf(pErr, pDb, "DROP TABLE IF EXISTS t%d;", iTab);
+}
+
+static void stress2_workload3(Error *pErr, Sqlite *pDb, int i){
+  int iTab = (i % STRESS2_TABCNT);
+  sql_script_printf(pErr, pDb, "SELECT * FROM t%d WHERE z = 'small'", iTab);
+}
+
+static void stress2_workload4(Error *pErr, Sqlite *pDb, int i){
+  int iTab = (i % STRESS2_TABCNT);
+  sql_script_printf(pErr, pDb, "SELECT * FROM t%d WHERE z = 'big'", iTab);
+}
+
+static void stress2_workload5(Error *pErr, Sqlite *pDb, int i){
+  int iTab = (i % STRESS2_TABCNT);
+  sql_script_printf(pErr, pDb,
+      "INSERT INTO t%d VALUES(random(), hex(randomblob(57)), 'small');", iTab
+  );
+}
+
+static void stress2_workload6(Error *pErr, Sqlite *pDb, int i){
+  int iTab = (i % STRESS2_TABCNT);
+  sql_script_printf(pErr, pDb,
+      "INSERT INTO t%d VALUES(random(), hex(randomblob(2000)), 'big');", iTab
+  );
+}
+
+static void stress2_workload7(Error *pErr, Sqlite *pDb, int i){
+  int iTab = (i % STRESS2_TABCNT);
+  sql_script_printf(pErr, pDb,
+      "UPDATE t%d SET y = hex(randomblob(57)) "
+      "WHERE (x %% 5)==(%d %% 5) AND z='small';"
+      ,iTab, i
+  );
+}
+static void stress2_workload8(Error *pErr, Sqlite *pDb, int i){
+  int iTab = (i % STRESS2_TABCNT);
+  sql_script_printf(pErr, pDb,
+      "UPDATE t%d SET y = hex(randomblob(2000)) "
+      "WHERE (x %% 5)==(%d %% 5) AND z='big';"
+      ,iTab, i
+  );
+}
+
+static void stress2_workload9(Error *pErr, Sqlite *pDb, int i){
+  int iTab = (i % STRESS2_TABCNT);
+  sql_script_printf(pErr, pDb,
+      "DELETE FROM t%d WHERE (x %% 5)==(%d %% 5) AND z='small';"
+      ,iTab, i
+  );
+}
+static void stress2_workload10(Error *pErr, Sqlite *pDb, int i){
+  int iTab = (i % STRESS2_TABCNT);
+  sql_script_printf(pErr, pDb,
+      "DELETE FROM t%d WHERE (x %% 5)==(%d %% 5) AND z='big';"
+      ,iTab, i
+  );
+}
+
+static void stress2_workload11(Error *pErr, Sqlite *pDb, int i){
+  sql_script(pErr, pDb, "VACUUM");
+}
+
+static void stress2_workload14(Error *pErr, Sqlite *pDb, int i){
+  sql_script(pErr, pDb, "PRAGMA integrity_check");
+}
+
+static void stress2_workload17(Error *pErr, Sqlite *pDb, int i){
+  sql_script_printf(pErr, pDb, 
+      "PRAGMA journal_mode = %q", (i%2) ? "delete" : "wal"
+  );
+}
+
+static char *stress2_workload19(int iTid, void *pArg){
+  Error err = {0};                /* Error code and message */
+  Sqlite db = {0};                /* SQLite database connection */
+  const char *zDb = (const char*)pArg;
+  while( !timetostop(&err) ){
+    opendb(&err, &db, zDb, 0);
+    sql_script(&err, &db, "SELECT * FROM sqlite_master;");
+    clear_error(&err, SQLITE_LOCKED);
+    closedb(&err, &db);
+  }
+  print_and_free_err(&err);
+  return sqlite3_mprintf("ok");
+}
+
+
+typedef struct Stress2Ctx Stress2Ctx;
+struct Stress2Ctx {
+  const char *zDb;
+  void (*xProc)(Error*, Sqlite*, int);
+};
+
+static char *stress2_thread_wrapper(int iTid, void *pArg){
+  Stress2Ctx *pCtx = (Stress2Ctx*)pArg;
+  Error err = {0};                /* Error code and message */
+  Sqlite db = {0};                /* SQLite database connection */
+  int i1 = 0;
+  int i2 = 0;
+
+  opendb(&err, &db, pCtx->zDb, 0);
+  while( !timetostop(&err) ){
+    pCtx->xProc(&err, &db, i1);
+    i2 += (err.rc==SQLITE_OK);
+    clear_error(&err, SQLITE_LOCKED);
+    clear_error(&err, SQLITE_ERROR);
+    i1++;
+  }
+
+  print_and_free_err(&err);
+  return sqlite3_mprintf("ok %d/%d", i2, i1);
+}
+
+static void stress2_launch_thread_loop(
+  Error *pErr,                    /* IN/OUT: Error code */
+  Threadset *pThreads,            /* Thread set */
+  const char *zDb,                /* Database name */
+  void (*x)(Error*,Sqlite*,int)   /* Run this until error or timeout */
+){
+  Stress2Ctx *pCtx = sqlite3_malloc(sizeof(Stress2Ctx));
+  pCtx->zDb = zDb;
+  pCtx->xProc = x;
+  launch_thread(pErr, pThreads, stress2_thread_wrapper, (void*)pCtx);
+}
+
+static void stress2(int nMs){
+  struct Stress2Task {
+    void (*x)(Error*,Sqlite*,int);
+  } aTask[] = {
+    { stress2_workload1 },
+    { stress2_workload2 },
+    { stress2_workload3 },
+    { stress2_workload4 },
+    { stress2_workload5 },
+    { stress2_workload6 },
+    { stress2_workload7 },
+    { stress2_workload8 },
+    { stress2_workload9 },
+    { stress2_workload10 },
+    { stress2_workload11 },
+    { stress2_workload14 },
+    { stress2_workload17 },
+  };
+  const char *azDb[] = {
+    "test.db",
+    "file::memory:?cache=shared"
+  };
+  int j;
+
+  for(j=0; j<sizeof(azDb)/sizeof(azDb[0]); j++){
+    int i;
+    Error err = {0};
+    Sqlite db = {0};
+    Threadset threads = {0};
+    const char *zDb = azDb[j];
+
+    /* To make sure the db file is empty before commencing */
+    opendb(&err, &db, zDb, 1);
+    closedb(&err, &db);
+
+    setstoptime(&err, nMs);
+    sqlite3_enable_shared_cache(1);
+
+    for(i=0; i<sizeof(aTask)/sizeof(aTask[0]); i++){
+      stress2_launch_thread_loop(&err, &threads, zDb, aTask[i].x);
+    }
+    launch_thread(&err, &threads, stress2_workload19, (void*)zDb);
+    launch_thread(&err, &threads, stress2_workload19, (void*)zDb);
+
+    join_all_threads(&err, &threads);
+    sqlite3_enable_shared_cache(0);
+    print_and_free_err(&err);
+    if( j==0 ){
+      printf("Running stress2 (again, with in-memory db) for %d seconds...\n",
+          nMs / 1000
+      );
+    }
+  }
+}
+
+
+
+
