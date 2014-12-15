@@ -1343,6 +1343,7 @@ static char *dynamic_triggers_1(int iTid, void *pArg){
       nDrop++;
     }
   }
+  closedb(&err, &db);
 
   print_and_free_err(&err);
   return sqlite3_mprintf("%d created, %d dropped", nCreate, nDrop);
@@ -1369,6 +1370,7 @@ static char *dynamic_triggers_2(int iTid, void *pArg){
       nDelete++;
     } while( iVal );
   }
+  closedb(&err, &db);
 
   print_and_free_err(&err);
   return sqlite3_mprintf("%d inserts, %d deletes", nInsert, nDelete);
@@ -1393,6 +1395,7 @@ static void dynamic_triggers(int nMs){
       "CREATE TABLE t8(x, y);"
       "CREATE TABLE t9(x, y);"
   );
+  closedb(&err, &db);
 
   setstoptime(&err, nMs);
 
@@ -1446,32 +1449,24 @@ int main(int argc, char **argv){
   };
 
   int i;
-  char *zTest = 0;
-  int nTest = 0;
   int bTestfound = 0;
-  int bPrefix = 0;
-
-  if( argc>2 ) goto usage;
-  if( argc==2 ){
-    zTest = argv[1];
-    nTest = strlen(zTest);
-    if( zTest[nTest-1]=='*' ){
-      nTest--;
-      bPrefix = 1;
-    }
-  }
 
   sqlite3_config(SQLITE_CONFIG_MULTITHREAD);
   sqlite3_config(SQLITE_CONFIG_MULTITHREAD);
 
   for(i=0; i<sizeof(aTest)/sizeof(aTest[0]); i++){
     char const *z = aTest[i].zTest;
-    int n = strlen(z);
-    if( !zTest || ((bPrefix || n==nTest) && 0==strncmp(zTest, z, nTest)) ){
-      printf("Running %s for %d seconds...\n", z, aTest[i].nMs/1000);
-      aTest[i].xTest(aTest[i].nMs);
-      bTestfound++;
+    if( argc>1 ){
+      int iArg;
+      for(iArg=1; iArg<argc; iArg++){
+        if( 0==sqlite3_strglob(argv[iArg], z) ) break;
+      }
+      if( iArg==argc ) continue;
     }
+
+    printf("Running %s for %d seconds...\n", z, aTest[i].nMs/1000);
+    aTest[i].xTest(aTest[i].nMs);
+    bTestfound++;
   }
   if( bTestfound==0 ) goto usage;
 
@@ -1479,7 +1474,7 @@ int main(int argc, char **argv){
   return (nGlobalErr>0 ? 255 : 0);
 
  usage:
-  printf("Usage: %s [testname|testprefix*]\n", argv[0]);
+  printf("Usage: %s [testname|testprefix*]...\n", argv[0]);
   printf("Available tests are:\n");
   for(i=0; i<sizeof(aTest)/sizeof(aTest[0]); i++){
     printf("   %s\n", aTest[i].zTest);

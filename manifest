@@ -1,5 +1,5 @@
-C Further\senhancements\sto\sthreadtest3\sstress\stests.
-D 2014-12-13T17:41:48.275
+C Fix\serrors\sin\sthreadtest3\stests\scaused\sby\searlier\stests\sneglecting\sto\sclose\sdatabase\shandles.
+D 2014-12-15T08:46:17.172
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6c4f961fa91d0b4fa121946a19f9e5eac2f2f809
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -912,7 +912,7 @@ F test/thread2.test f35d2106452b77523b3a2b7d1dcde2e5ee8f9e46
 F test/thread_common.tcl 334639cadcb9f912bf82aa73f49efd5282e6cadd
 F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
 F test/threadtest2.c ace893054fa134af3fc8d6e7cfecddb8e3acefb9
-F test/threadtest3.c 05d67ab8fd4ad82978a96200701a22af35faa097
+F test/threadtest3.c c8629f836331dd4e5d6ef514b6696605cb593135
 F test/threadtest4.c c1e67136ceb6c7ec8184e56ac61db28f96bd2925
 F test/tkt-02a8e81d44.test 6c80d9c7514e2a42d4918bf87bf6bc54f379110c
 F test/tkt-26ff0c2d1e.test 888324e751512972c6e0d1a09df740d8f5aaf660
@@ -1231,7 +1231,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d7bb7ea4ab97ad26f4c84c9b8dc2827010093803
-R 5d62798e848b5017221fa2f718c6fa3d
+P ba772cff602ca7c3c0c91451e701f52a872e7a14
+R ed0c57369d0ec456d80773711d0601f8
 U dan
-Z 748bf95122bf9ac21f60dff7348c8009
+Z bfcc45ad20cf310717047c8b8c88d22b
