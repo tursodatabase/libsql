@@ -5727,6 +5727,43 @@ static int test_wal_checkpoint_v2(
 }
 
 /*
+** tclcmd:  sqlite3_wal_autocheckpoint db VALUE
+*/
+static int test_wal_autocheckpoint(
+  ClientData clientData, /* Unused */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  sqlite3 *db;
+  int rc;
+  int iVal;
+
+
+  if( objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB VALUE");
+    return TCL_ERROR;
+  }
+
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) 
+   || Tcl_GetIntFromObj(0, objv[2], &iVal)
+  ){
+    return TCL_ERROR;
+  }
+
+  rc = sqlite3_wal_autocheckpoint(db, iVal);
+  Tcl_ResetResult(interp);
+  if( rc!=SQLITE_OK ){
+    const char *zErrCode = sqlite3ErrName(rc);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(zErrCode, -1));
+    return TCL_ERROR;
+  }
+
+  return TCL_OK;
+}
+
+
+/*
 ** tclcmd:  test_sqlite3_log ?SCRIPT?
 */
 static struct LogCallback {
@@ -6787,6 +6824,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
 #endif
      { "sqlite3_wal_checkpoint",   test_wal_checkpoint, 0  },
      { "sqlite3_wal_checkpoint_v2",test_wal_checkpoint_v2, 0  },
+     { "sqlite3_wal_autocheckpoint",test_wal_autocheckpoint, 0  },
      { "test_sqlite3_log",         test_sqlite3_log, 0  },
 #ifndef SQLITE_OMIT_EXPLAIN
      { "print_explain_query_plan", test_print_eqp, 0  },
