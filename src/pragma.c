@@ -2096,7 +2096,8 @@ void sqlite3Pragma(
       ){
         for(pEnc=&encnames[0]; pEnc->zName; pEnc++){
           if( 0==sqlite3StrICmp(zRight, pEnc->zName) ){
-            ENC(pParse->db) = pEnc->enc ? pEnc->enc : SQLITE_UTF16NATIVE;
+            SCHEMA_ENC(db) = ENC(db) =
+                pEnc->enc ? pEnc->enc : SQLITE_UTF16NATIVE;
             break;
           }
         }

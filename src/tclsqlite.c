@@ -635,6 +635,7 @@ static int DbWalHandler(
   Tcl_Interp *interp = pDb->interp;
   assert(pDb->pWalHook);
 
+  assert( db==pDb->db );
   p = Tcl_DuplicateObj(pDb->pWalHook);
   Tcl_IncrRefCount(p);
   Tcl_ListObjAppendElement(interp, p, Tcl_NewStringObj(zDb, -1));

@@ -454,9 +454,33 @@ do_execsql_test pragma-3.21 {
 do_execsql_test pragma-3.22 {
   PRAGMA integrity_check(2);
 } {{non-unique entry in index t1a} {NULL value in t1x.a}}
-do_execsql_test pragma-3.21 {
+do_execsql_test pragma-3.23 {
   PRAGMA integrity_check(1);
 } {{non-unique entry in index t1a}}
+
+# PRAGMA integrity check (or more specifically the sqlite3BtreeCount()
+# interface) used to leave index cursors in an inconsistent state
+# which could result in an assertion fault in sqlite3BtreeKey()
+# called from saveCursorPosition() if content is removed from the
+# index while the integrity_check is still running.  This test verifies
+# that problem has been fixed.
+#
+do_test pragma-3.30 {
+  db close
+  delete_file test.db
+  sqlite3 db test.db
+  db eval {
+    CREATE TABLE t1(a,b,c);
+    WITH RECURSIVE
+      c(i) AS (VALUES(1) UNION ALL SELECT i+1 FROM c WHERE i<100)
+    INSERT INTO t1(a,b,c) SELECT i, printf('xyz%08x',i), 2000-i FROM c;
+    CREATE INDEX t1a ON t1(a);
+    CREATE INDEX t1bc ON t1(b,c);
+  }
+  db eval {PRAGMA integrity_check} {
+     db eval {DELETE FROM t1}
+  }
+} {}
 
 # Test modifying the cache_size of an attached database.
 ifcapable pager_pragmas&&attach {

@@ -1069,6 +1069,7 @@ struct sqlite3 {
   int errCode;                  /* Most recent error code (SQLITE_*) */
   int errMask;                  /* & result codes with this before returning */
   u16 dbOptFlags;               /* Flags to enable/disable optimizations */
+  u8 enc;                       /* Text encoding */
   u8 autoCommit;                /* The auto-commit flag. */
   u8 temp_store;                /* 1: file 2: memory 0: default */
   u8 mallocFailed;              /* True if we have seen a malloc failure */
@@ -1170,7 +1171,8 @@ struct sqlite3 {
 /*
 ** A macro to discover the encoding of a database.
 */
-#define ENC(db) ((db)->aDb[0].pSchema->enc)
+#define SCHEMA_ENC(db) ((db)->aDb[0].pSchema->enc)
+#define ENC(db)        ((db)->enc)
 
 /*
 ** Possible values for the sqlite3.flags.
@@ -1794,7 +1796,6 @@ struct Index {
   u8 *aSortOrder;          /* for each column: True==DESC, False==ASC */
   char **azColl;           /* Array of collation sequence names for index */
   Expr *pPartIdxWhere;     /* WHERE clause for partial indices */
-  KeyInfo *pKeyInfo;       /* A KeyInfo object suitable for this index */
   int tnum;                /* DB Page containing root of this index */
   LogEst szIdxRow;         /* Estimated average row size in bytes */
   u16 nKeyCol;             /* Number of columns forming the key */

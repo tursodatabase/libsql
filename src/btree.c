@@ -3940,7 +3940,7 @@ int sqlite3BtreeCloseCursor(BtCursor *pCur){
       releasePage(pCur->apPage[i]);
     }
     unlockBtreeIfUnused(pBt);
-    sqlite3DbFree(pBtree->db, pCur->aOverflow);
+    sqlite3_free(pCur->aOverflow);
     /* sqlite3_free(pCur); */
     sqlite3BtreeLeave(pBtree);
   }
@@ -4235,6 +4235,7 @@ static int accessPayload(
     offset -= pCur->info.nLocal;
   }
 
+
   if( rc==SQLITE_OK && amt>0 ){
     const u32 ovflSize = pBt->usableSize - 4;  /* Bytes content per ovfl page */
     Pgno nextPage;
@@ -4252,8 +4253,8 @@ static int accessPayload(
     if( eOp!=2 && (pCur->curFlags & BTCF_ValidOvfl)==0 ){
       int nOvfl = (pCur->info.nPayload-pCur->info.nLocal+ovflSize-1)/ovflSize;
       if( nOvfl>pCur->nOvflAlloc ){
-        Pgno *aNew = (Pgno*)sqlite3DbRealloc(
-            pCur->pBtree->db, pCur->aOverflow, nOvfl*2*sizeof(Pgno)
+        Pgno *aNew = (Pgno*)sqlite3Realloc(
+            pCur->aOverflow, nOvfl*2*sizeof(Pgno)
         );
         if( aNew==0 ){
           rc = SQLITE_NOMEM;
@@ -4300,6 +4301,7 @@ static int accessPayload(
         */
         assert( eOp!=2 );
         assert( pCur->curFlags & BTCF_ValidOvfl );
+        assert( pCur->pBtree->db==pBt->db );
         if( pCur->aOverflow[iIdx+1] ){
           nextPage = pCur->aOverflow[iIdx+1];
         }else{
@@ -8303,7 +8305,7 @@ int sqlite3BtreeCount(BtCursor *pCur, i64 *pnEntry){
         if( pCur->iPage==0 ){
           /* All pages of the b-tree have been visited. Return successfully. */
           *pnEntry = nEntry;
-          return SQLITE_OK;
+          return moveToRoot(pCur);
         }
         moveToParent(pCur);
       }while ( pCur->aiIdx[pCur->iPage]>=pCur->apPage[pCur->iPage]->nCell );

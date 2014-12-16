@@ -451,7 +451,7 @@ struct SorterRecord {
 /* The minimum PMA size is set to this value multiplied by the database
 ** page size in bytes.  */
 #ifndef SQLITE_SORTER_PMASZ
-# define SQLITE_SORTER_PMASZ 250
+# define SQLITE_SORTER_PMASZ 10
 #endif
 
 /* Maximum number of PMAs that a single MergeEngine can merge */

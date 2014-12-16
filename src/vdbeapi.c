@@ -416,7 +416,10 @@ static int doWalCallbacks(sqlite3 *db){
   for(i=0; i<db->nDb; i++){
     Btree *pBt = db->aDb[i].pBt;
     if( pBt ){
-      int nEntry = sqlite3PagerWalCallback(sqlite3BtreePager(pBt));
+      int nEntry;
+      sqlite3BtreeEnter(pBt);
+      nEntry = sqlite3PagerWalCallback(sqlite3BtreePager(pBt));
+      sqlite3BtreeLeave(pBt);
       if( db->xWalCallback && nEntry>0 && rc==SQLITE_OK ){
         rc = db->xWalCallback(db->pWalArg, db, db->aDb[i].zName, nEntry);
       }
@@ -596,7 +599,6 @@ int sqlite3_step(sqlite3_stmt *pStmt){
     ** sqlite3_errmsg() and sqlite3_errcode().
     */
     const char *zErr = (const char *)sqlite3_value_text(db->pErr); 
-    assert( zErr!=0 || db->mallocFailed );
     sqlite3DbFree(db, v->zErrMsg);
     if( !db->mallocFailed ){
       v->zErrMsg = sqlite3DbStrDup(db, zErr);

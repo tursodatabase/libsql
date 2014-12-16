@@ -66,7 +66,7 @@ static int checkpoint_starvation_walhook(
   return SQLITE_OK;
 }
 
-static char *checkpoint_starvation_reader(int iTid, int iArg){
+static char *checkpoint_starvation_reader(int iTid, void *pArg){
   Error err = {0};
   Sqlite db = {0};
 

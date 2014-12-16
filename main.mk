@@ -612,9 +612,15 @@ test:	testfixture$(EXE) sqlite3$(EXE)
 # threadtest runs a few thread-safety tests that are implemented in C. This
 # target is invoked by the releasetest.tcl script.
 # 
-threadtest3$(EXE): sqlite3.o $(TOP)/test/threadtest3.c $(TOP)/test/tt3_checkpoint.c
-	$(TCCX) -O2 sqlite3.o $(TOP)/test/threadtest3.c \
-		-o threadtest3$(EXE) $(THREADLIB)
+THREADTEST3_SRC = $(TOP)/test/threadtest3.c    \
+                  $(TOP)/test/tt3_checkpoint.c \
+                  $(TOP)/test/tt3_index.c      \
+                  $(TOP)/test/tt3_vacuum.c      \
+                  $(TOP)/test/tt3_stress.c      \
+                  $(TOP)/test/tt3_lookaside1.c
+
+threadtest3$(EXE): sqlite3.o $(THREADTEST3_SRC)
+	$(TCCX) $(TOP)/test/threadtest3.c sqlite3.o -o $@ $(THREADLIB)
 
 threadtest: threadtest3$(EXE)
 	./threadtest3$(EXE)

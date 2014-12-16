@@ -397,9 +397,11 @@ int sqlite3Init(sqlite3 *db, char **pzErrMsg){
   int commit_internal = !(db->flags&SQLITE_InternChanges);
   
   assert( sqlite3_mutex_held(db->mutex) );
+  assert( sqlite3BtreeHoldsMutex(db->aDb[0].pBt) );
   assert( db->init.busy==0 );
   rc = SQLITE_OK;
   db->init.busy = 1;
+  ENC(db) = SCHEMA_ENC(db);
   for(i=0; rc==SQLITE_OK && i<db->nDb; i++){
     if( DbHasProperty(db, i, DB_SchemaLoaded) || i==1 ) continue;
     rc = sqlite3InitOne(db, i, pzErrMsg);
