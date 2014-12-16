@@ -1,5 +1,5 @@
-C Make\ssure\sthe\ssqlite3BtreeCount()\sroutine\sdoes\snot\sleave\sindex\scursors\sin\san\ninconsistent\sstate,\sas\sdoing\sso\smight\sresult\sin\san\sassertion\sfault\sinside\nof\ssqlite3BtreeKey()\scalled\sfrom\ssaveAllCursors()\sif\scontent\sis\sdeleted\sout\nfrom\sunder\sthe\sstatement\sthat\sissued\sthe\ssqlite3BtreeCount()\scall.
-D 2014-12-16T00:08:31.918
+C Enhanced\s"stress2"\stesting\sin\sthe\sthreadtest3.c\stest\sprogram.
+D 2014-12-16T00:20:07.236
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6c4f961fa91d0b4fa121946a19f9e5eac2f2f809
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -913,7 +913,7 @@ F test/thread2.test f35d2106452b77523b3a2b7d1dcde2e5ee8f9e46
 F test/thread_common.tcl 334639cadcb9f912bf82aa73f49efd5282e6cadd
 F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
 F test/threadtest2.c ace893054fa134af3fc8d6e7cfecddb8e3acefb9
-F test/threadtest3.c c8629f836331dd4e5d6ef514b6696605cb593135
+F test/threadtest3.c f8c6595664a4c5ef5f28d97a612386fe14dd1940
 F test/threadtest4.c c1e67136ceb6c7ec8184e56ac61db28f96bd2925
 F test/tkt-02a8e81d44.test 6c80d9c7514e2a42d4918bf87bf6bc54f379110c
 F test/tkt-26ff0c2d1e.test 888324e751512972c6e0d1a09df740d8f5aaf660
@@ -1080,7 +1080,7 @@ F test/triggerE.test 355e9c5cbaed5cd039a60baad1fb2197caeb8e52
 F test/tt3_checkpoint.c 5e63ee65ed5f87176e25a996480cb02c6caec8b4
 F test/tt3_index.c 39eec10a35f57672225be4d182862152896dee4a
 F test/tt3_lookaside1.c 0377e202c3c2a50d688cb65ba203afeda6fafeb9
-F test/tt3_stress.c edbb00ed1516535691040315e97cf32c62df22d0
+F test/tt3_stress.c c57d804716165811d979d4a719e05baccd79277f
 F test/tt3_vacuum.c 1753f45917699c9c1f66b64c717a717c9379f776
 F test/types.test bf816ce73c7dfcfe26b700c19f97ef4050d194ff
 F test/types2.test 3555aacf8ed8dc883356e59efc314707e6247a84
@@ -1232,7 +1232,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 62ef45140cdbff5eeb8bef506db8b78ced3ace94
-R f292d3e817736f788b9a711a02a9af3e
+P 5b1b697040116048e464b3ebab8395fe088e389a 5648af96d8e2521c5b0cca19f1358374d032394d
+R 64bec50dd05bb00af986c569d5edb044
+T +closed 5648af96d8e2521c5b0cca19f1358374d032394d
 U drh
-Z 46e826bbedddd4a807c643712561f79a
+Z 1075019e3631a6f364d3a72648c7dd6d

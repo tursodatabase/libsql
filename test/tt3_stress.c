@@ -124,7 +124,6 @@ static char *stress_thread_5(int iTid, void *pArg){
     i1++;
     if( err.rc ) i2++;
     clear_error(&err, SQLITE_LOCKED);
-    clear_error(&err, SQLITE_ERROR);
   }
   closedb(&err, &db);
   print_and_free_err(&err);
@@ -184,73 +183,66 @@ static void stress1(int nMs){
 ** 19. Open and close database connections rapidly.
 */
 
-#define STRESS2_TABCNT 5
+#define STRESS2_TABCNT 5          /* count1 in SDS test */
+
+#define STRESS2_COUNT2 200        /* count2 in SDS test */
+#define STRESS2_COUNT3  57        /* count2 in SDS test */
 
 static void stress2_workload1(Error *pErr, Sqlite *pDb, int i){
-  int iTab = (i % STRESS2_TABCNT);
+  int iTab = (i % (STRESS2_TABCNT-1)) + 1;
   sql_script_printf(pErr, pDb, 
       "CREATE TABLE IF NOT EXISTS t%d(x PRIMARY KEY, y, z);", iTab
   );
 }
 
 static void stress2_workload2(Error *pErr, Sqlite *pDb, int i){
-  int iTab = (i % STRESS2_TABCNT);
+  int iTab = (i % (STRESS2_TABCNT-1)) + 1;
   sql_script_printf(pErr, pDb, "DROP TABLE IF EXISTS t%d;", iTab);
 }
 
 static void stress2_workload3(Error *pErr, Sqlite *pDb, int i){
-  int iTab = (i % STRESS2_TABCNT);
-  sql_script_printf(pErr, pDb, "SELECT * FROM t%d WHERE z = 'small'", iTab);
+  sql_script(pErr, pDb, "SELECT * FROM t0 WHERE z = 'small'");
 }
 
 static void stress2_workload4(Error *pErr, Sqlite *pDb, int i){
-  int iTab = (i % STRESS2_TABCNT);
-  sql_script_printf(pErr, pDb, "SELECT * FROM t%d WHERE z = 'big'", iTab);
+  sql_script(pErr, pDb, "SELECT * FROM t0 WHERE z = 'big'");
 }
 
 static void stress2_workload5(Error *pErr, Sqlite *pDb, int i){
-  int iTab = (i % STRESS2_TABCNT);
-  sql_script_printf(pErr, pDb,
-      "INSERT INTO t%d VALUES(random(), hex(randomblob(57)), 'small');", iTab
+  sql_script(pErr, pDb,
+      "INSERT INTO t0 VALUES(hex(random()), hex(randomblob(200)), 'small');"
   );
 }
 
 static void stress2_workload6(Error *pErr, Sqlite *pDb, int i){
-  int iTab = (i % STRESS2_TABCNT);
-  sql_script_printf(pErr, pDb,
-      "INSERT INTO t%d VALUES(random(), hex(randomblob(2000)), 'big');", iTab
+  sql_script(pErr, pDb,
+      "INSERT INTO t0 VALUES(hex(random()), hex(randomblob(57)), 'big');"
   );
 }
 
 static void stress2_workload7(Error *pErr, Sqlite *pDb, int i){
-  int iTab = (i % STRESS2_TABCNT);
   sql_script_printf(pErr, pDb,
-      "UPDATE t%d SET y = hex(randomblob(57)) "
-      "WHERE (x %% 5)==(%d %% 5) AND z='small';"
-      ,iTab, i
+      "UPDATE t0 SET y = hex(randomblob(200)) "
+      "WHERE x LIKE hex((%d %% 5)) AND z='small';"
+      ,i
   );
 }
 static void stress2_workload8(Error *pErr, Sqlite *pDb, int i){
-  int iTab = (i % STRESS2_TABCNT);
   sql_script_printf(pErr, pDb,
-      "UPDATE t%d SET y = hex(randomblob(2000)) "
-      "WHERE (x %% 5)==(%d %% 5) AND z='big';"
-      ,iTab, i
+      "UPDATE t0 SET y = hex(randomblob(57)) "
+      "WHERE x LIKE hex(%d %% 5) AND z='big';"
+      ,i
   );
 }
 
 static void stress2_workload9(Error *pErr, Sqlite *pDb, int i){
-  int iTab = (i % STRESS2_TABCNT);
   sql_script_printf(pErr, pDb,
-      "DELETE FROM t%d WHERE (x %% 5)==(%d %% 5) AND z='small';"
-      ,iTab, i
+      "DELETE FROM t0 WHERE x LIKE hex(%d %% 5) AND z='small';", i
   );
 }
 static void stress2_workload10(Error *pErr, Sqlite *pDb, int i){
-  int iTab = (i % STRESS2_TABCNT);
   sql_script_printf(pErr, pDb,
-      "DELETE FROM t%d WHERE (x %% 5)==(%d %% 5) AND z='big';"
-      ,iTab, i
+      "DELETE FROM t0 WHERE x LIKE hex(%d %% 5) AND z='big';", i
   );
 }
 
@@ -296,13 +288,16 @@ static char *stress2_thread_wrapper(int iTid, void *pArg){
   int i1 = 0;
   int i2 = 0;
 
-  opendb(&err, &db, pCtx->zDb, 0);
   while( !timetostop(&err) ){
-    pCtx->xProc(&err, &db, i1);
-    i2 += (err.rc==SQLITE_OK);
-    clear_error(&err, SQLITE_LOCKED);
-    clear_error(&err, SQLITE_ERROR);
-    i1++;
+    int cnt;
+    opendb(&err, &db, pCtx->zDb, 0);
+    for(cnt=0; err.rc==SQLITE_OK && cnt<STRESS2_TABCNT; cnt++){
+      pCtx->xProc(&err, &db, i1);
+      i2 += (err.rc==SQLITE_OK);
+      clear_error(&err, SQLITE_LOCKED);
+      i1++;
+    }
+    closedb(&err, &db);
   }
 
   print_and_free_err(&err);
@@ -339,41 +334,33 @@ static void stress2(int nMs){
     { stress2_workload14 },
     { stress2_workload17 },
   };
-  const char *azDb[] = {
-    "test.db",
-    "file::memory:?cache=shared"
-  };
-  int j;
+  const char *zDb = "test.db";
 
-  for(j=0; j<sizeof(azDb)/sizeof(azDb[0]); j++){
-    int i;
-    Error err = {0};
-    Sqlite db = {0};
-    Threadset threads = {0};
-    const char *zDb = azDb[j];
+  int i;
+  Error err = {0};
+  Sqlite db = {0};
+  Threadset threads = {0};
 
-    /* To make sure the db file is empty before commencing */
-    opendb(&err, &db, zDb, 1);
-    closedb(&err, &db);
+  /* To make sure the db file is empty before commencing */
+  opendb(&err, &db, zDb, 1);
+  sql_script(&err, &db, 
+      "CREATE TABLE IF NOT EXISTS t0(x PRIMARY KEY, y, z);"
+      "CREATE INDEX IF NOT EXISTS i0 ON t0(y);"
+  );
+  closedb(&err, &db);
 
-    setstoptime(&err, nMs);
-    sqlite3_enable_shared_cache(1);
+  setstoptime(&err, nMs);
+  sqlite3_enable_shared_cache(1);
 
-    for(i=0; i<sizeof(aTask)/sizeof(aTask[0]); i++){
-      stress2_launch_thread_loop(&err, &threads, zDb, aTask[i].x);
-    }
-    launch_thread(&err, &threads, stress2_workload19, (void*)zDb);
-    launch_thread(&err, &threads, stress2_workload19, (void*)zDb);
-
-    join_all_threads(&err, &threads);
-    sqlite3_enable_shared_cache(0);
-    print_and_free_err(&err);
-    if( j==0 ){
-      printf("Running stress2 (again, with in-memory db) for %d seconds...\n",
-          nMs / 1000
-      );
-    }
+  for(i=0; i<sizeof(aTask)/sizeof(aTask[0]); i++){
+    stress2_launch_thread_loop(&err, &threads, zDb, aTask[i].x);
   }
+  launch_thread(&err, &threads, stress2_workload19, (void*)zDb);
+  launch_thread(&err, &threads, stress2_workload19, (void*)zDb);
+
+  join_all_threads(&err, &threads);
+  sqlite3_enable_shared_cache(0);
+  print_and_free_err(&err);
 }
 
 
