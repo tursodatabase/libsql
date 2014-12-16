@@ -8278,7 +8278,7 @@ int sqlite3BtreeCount(BtCursor *pCur, i64 *pnEntry){
         if( pCur->iPage==0 ){
           /* All pages of the b-tree have been visited. Return successfully. */
           *pnEntry = nEntry;
-          return SQLITE_OK;
+          return moveToRoot(pCur);
         }
         moveToParent(pCur);
       }while ( pCur->aiIdx[pCur->iPage]>=pCur->apPage[pCur->iPage]->nCell );
