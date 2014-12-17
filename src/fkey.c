@@ -629,9 +629,8 @@ static void fkScanChildren(
   sqlite3ResolveExprNames(&sNameContext, pWhere);
 
   /* Create VDBE to loop through the entries in pSrc that match the WHERE
-  ** clause. If the constraint is not deferred, throw an exception for
-  ** each row found. Otherwise, for deferred constraints, increment the
-  ** deferred constraint counter by nIncr for each row selected.  */
+  ** clause. For each row found, increment either the deferred or immediate
+  ** foreign key constraint counter. */
   pWInfo = sqlite3WhereBegin(pParse, pSrc, pWhere, 0, 0, 0, 0);
   sqlite3VdbeAddOp2(v, OP_FkCounter, pFKey->isDeferred, nIncr);
   if( pWInfo ){
@@ -963,9 +962,9 @@ void sqlite3FkCheck(
       **
       ** If this operation is being performed as part of a trigger program
       ** that is actually a "SET NULL" action belonging to this very 
-      ** foreign key, then omit this scan altogether. As the child keys
+      ** foreign key, then omit this scan altogether. As all child key
       ** values are guaranteed to be NULL, it is not possible for adding
-      ** this row to cause an FK violation. */
+      ** this row to cause an FK violation.  */
       fkLookupParent(pParse, iDb, pTo, pIdx, pFKey, aiCol, regNew, +1, bIgnore);
     }
 
@@ -1015,9 +1014,22 @@ void sqlite3FkCheck(
         int eAction = pFKey->aAction[aChange!=0];
         fkScanChildren(pParse, pSrc, pTab, pIdx, pFKey, aiCol, regOld, 1);
         /* If this is a deferred FK constraint, or a CASCADE or SET NULL
-        ** action applies, do not set the may-abort flag on this statement.
-        ** The flag may be set on this statement for some other reason, but
-        ** not as a result of this FK constraint. */
+        ** action applies, then any foreign key violations caused by
+        ** removing the parent key will be rectified by the action trigger.
+        ** So do not set the "may-abort" flag in this case.
+        **
+        ** Note 1: If the FK is declared "ON UPDATE CASCADE", then the
+        ** may-abort flag will eventually be set on this statement anyway
+        ** (when this function is called as part of processing the UPDATE
+        ** within the action trigger).
+        **
+        ** Note 2: At first glance it may seem like SQLite could simply omit
+        ** all OP_FkCounter related scans when either CASCADE or SET NULL
+        ** applies. The trouble starts if the CASCADE or SET NULL action 
+        ** trigger causes other triggers or action rules attached to the 
+        ** child table to fire. In these cases the fk constraint counters
+        ** might be set incorrectly if any OP_FkCounter related scans are 
+        ** omitted.  */
         if( !pFKey->isDeferred && eAction!=OE_Cascade && eAction!=OE_SetNull ){
           sqlite3MayAbort(pParse);
         }

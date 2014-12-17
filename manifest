@@ -1,5 +1,5 @@
-C Experimental\sopimizations\sto\sspeed\sup\sFK\sconstraint\sCASCADE\sand\sSET\sNULL\saction\sprocessing.
-D 2014-12-16T20:13:30.440
+C Fix\ssome\scomments\sin\sfkey.c.\sAdd\stests\sto\sfkey8.test.
+D 2014-12-17T14:38:45.643
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6c4f961fa91d0b4fa121946a19f9e5eac2f2f809
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -184,7 +184,7 @@ F src/date.c 93594514aae68de117ca4a2a0d6cc63eddf26744
 F src/delete.c 0750b1eb4d96cd3fb2c798599a3a7c85e92f1417
 F src/expr.c 00da3072f362b06f39ce4052baa1d4ce2bb36d1c
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
-F src/fkey.c eab56799b0339b04c258233b0f462b6e9317f90f
+F src/fkey.c e0444b61bed271a76840cbe6182df93a9baa3f12
 F src/func.c 6d3c4ebd72aa7923ce9b110a7dc15f9b8c548430
 F src/global.c 6ded36dda9466fc1c9a3c5492ded81d79bf3977d
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
@@ -504,7 +504,7 @@ F test/fkey4.test 86446017011273aad8f9a99c1a65019e7bd9ca9d
 F test/fkey5.test 8a1fde4e7721ae00b05b3178888833726ca2df8d
 F test/fkey6.test abb59f866c1b44926fd02d1fdd217d831fe04f48
 F test/fkey7.test 72e915890ee4a005daaf3002cb208e8fe973ac13
-F test/fkey8.test 2d58cfb990cdd56b2fbac9f4ae54ee53968b3e06
+F test/fkey8.test 8f08203458321e6c19a263829de4cfc936274ab0
 F test/fkey_malloc.test 594a7ea1fbab553c036c70813cd8bd9407d63749
 F test/format4.test 1f0cac8ff3895e9359ed87e41aaabee982a812eb
 F test/fts-9fd058691.test 78b887e30ae6816df0e1fed6259de4b5a64ad33c
@@ -1233,10 +1233,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ae43539e62e76676a3daf561b629a1b9b4e2d2c9
-R ea6275c5fe67bcf602365c1ede77fced
-T *branch * experimental-fk-actions
-T *sym-experimental-fk-actions *
-T -sym-trunk *
+P 35a20a5f22245c70faa51965951e8cc011defa93
+R c39a2128ba39a16276f2dc7a158fbe28
 U dan
-Z b6352d484674a0d7b3ae6d8d076cd106
+Z 96b8a9e537739194255aed7e579f65ad
