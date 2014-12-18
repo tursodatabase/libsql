@@ -223,7 +223,7 @@ static void fts5CheckTransactionState(Fts5Table *p, int op, int iSavepoint){
       break;
 
     case FTS5_ROLLBACK:
-      assert( p->ts.eState==1 || p->ts.eState==2 );
+      assert( p->ts.eState==1 || p->ts.eState==2 || p->ts.eState==0 );
       p->ts.eState = 0;
       break;
 

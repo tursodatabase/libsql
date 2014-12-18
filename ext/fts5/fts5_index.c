@@ -602,13 +602,14 @@ static u16 fts5GetU16(const u8 *aIn){
 ** the Fts5Index handle passed as the first argument.
 */
 static void *fts5IdxMalloc(Fts5Index *p, int nByte){
-  void *pRet;
-  assert( p->rc==SQLITE_OK );
-  pRet = sqlite3_malloc(nByte);
-  if( pRet==0 ){
-    p->rc = SQLITE_NOMEM;
-  }else{
-    memset(pRet, 0, nByte);
+  void *pRet = 0;
+  if( p->rc==SQLITE_OK ){
+    pRet = sqlite3_malloc(nByte);
+    if( pRet==0 ){
+      p->rc = SQLITE_NOMEM;
+    }else{
+      memset(pRet, 0, nByte);
+    }
   }
   return pRet;
 }
@@ -662,8 +663,9 @@ static int fts5BufferCompare(Fts5Buffer *pLeft, Fts5Buffer *pRight){
 */
 static void fts5CloseReader(Fts5Index *p){
   if( p->pReader ){
-    sqlite3_blob_close(p->pReader);
+    sqlite3_blob *pReader = p->pReader;
     p->pReader = 0;
+    sqlite3_blob_close(pReader);
   }
 }
 
@@ -707,9 +709,10 @@ sqlite3_free(buf.p);
       int nByte = sqlite3_blob_bytes(p->pReader);
       if( pBuf ){
         fts5BufferZero(pBuf);
-        fts5BufferGrow(&rc, pBuf, nByte);
-        rc = sqlite3_blob_read(p->pReader, pBuf->p, nByte, 0);
-        if( rc==SQLITE_OK ) pBuf->n = nByte;
+        if( SQLITE_OK==fts5BufferGrow(&rc, pBuf, nByte) ){
+          rc = sqlite3_blob_read(p->pReader, pBuf->p, nByte, 0);
+          if( rc==SQLITE_OK ) pBuf->n = nByte;
+        }
       }else{
         pRet = (Fts5Data*)fts5IdxMalloc(p, sizeof(Fts5Data) + nByte);
         if( !pRet ) return 0;
@@ -855,6 +858,20 @@ static void fts5DataRemoveSegment(Fts5Index *p, int iIdx, int iSegid){
 }
 
 /*
+** Release a reference to an Fts5Structure object returned by an earlier 
+** call to fts5StructureRead() or fts5StructureDecode().
+*/
+static void fts5StructureRelease(Fts5Structure *pStruct){
+  if( pStruct ){
+    int i;
+    for(i=0; i<pStruct->nLevel; i++){
+      sqlite3_free(pStruct->aLevel[i].aSeg);
+    }
+    sqlite3_free(pStruct);
+  }
+}
+
+/*
 ** Deserialize and return the structure record currently stored in serialized
 ** form within buffer pData/nData.
 **
@@ -918,6 +935,9 @@ static int fts5StructureDecode(
           i += getVarint32(&pData[i], pLvl->aSeg[iSeg].pgnoFirst);
           i += getVarint32(&pData[i], pLvl->aSeg[iSeg].pgnoLast);
         }
+      }else{
+        fts5StructureRelease(pRet);
+        pRet = 0;
       }
     }
   }
@@ -1009,19 +1029,11 @@ static Fts5Structure *fts5StructureRead(Fts5Index *p, int iIdx){
   }
 
   fts5DataRelease(pData);
-  return pRet;
-}
-
-/*
-** Release a reference to an Fts5Structure object returned by an earlier 
-** call to fts5StructureRead() or fts5StructureDecode().
-*/
-static void fts5StructureRelease(Fts5Structure *pStruct){
-  int i;
-  for(i=0; i<pStruct->nLevel; i++){
-    sqlite3_free(pStruct->aLevel[i].aSeg);
+  if( p->rc!=SQLITE_OK ){
+    fts5StructureRelease(pRet);
+    pRet = 0;
   }
-  sqlite3_free(pStruct);
+  return pRet;
 }
 
 /*
@@ -1045,40 +1057,42 @@ static int fts5StructureCountSegments(Fts5Structure *pStruct){
 ** error has already occurred, this function is a no-op.
 */
 static void fts5StructureWrite(Fts5Index *p, int iIdx, Fts5Structure *pStruct){
-  int nSegment;                   /* Total number of segments */
-  Fts5Buffer buf;                 /* Buffer to serialize record into */
-  int iLvl;                       /* Used to iterate through levels */
-  int iCookie;                    /* Cookie value to store */
+  if( p->rc==SQLITE_OK ){
+    int nSegment;                 /* Total number of segments */
+    Fts5Buffer buf;               /* Buffer to serialize record into */
+    int iLvl;                     /* Used to iterate through levels */
+    int iCookie;                  /* Cookie value to store */
 
-  nSegment = fts5StructureCountSegments(pStruct);
-  memset(&buf, 0, sizeof(Fts5Buffer));
+    nSegment = fts5StructureCountSegments(pStruct);
+    memset(&buf, 0, sizeof(Fts5Buffer));
 
-  /* Append the current configuration cookie */
-  iCookie = p->pConfig->iCookie;
-  if( iCookie<0 ) iCookie = 0;
-  fts5BufferAppend32(&p->rc, &buf, iCookie);
+    /* Append the current configuration cookie */
+    iCookie = p->pConfig->iCookie;
+    if( iCookie<0 ) iCookie = 0;
+    fts5BufferAppend32(&p->rc, &buf, iCookie);
 
-  fts5BufferAppendVarint(&p->rc, &buf, pStruct->nLevel);
-  fts5BufferAppendVarint(&p->rc, &buf, nSegment);
-  fts5BufferAppendVarint(&p->rc, &buf, (i64)pStruct->nWriteCounter);
+    fts5BufferAppendVarint(&p->rc, &buf, pStruct->nLevel);
+    fts5BufferAppendVarint(&p->rc, &buf, nSegment);
+    fts5BufferAppendVarint(&p->rc, &buf, (i64)pStruct->nWriteCounter);
 
-  for(iLvl=0; iLvl<pStruct->nLevel; iLvl++){
-    int iSeg;                     /* Used to iterate through segments */
-    Fts5StructureLevel *pLvl = &pStruct->aLevel[iLvl];
-    fts5BufferAppendVarint(&p->rc, &buf, pLvl->nMerge);
-    fts5BufferAppendVarint(&p->rc, &buf, pLvl->nSeg);
-    assert( pLvl->nMerge<=pLvl->nSeg );
+    for(iLvl=0; iLvl<pStruct->nLevel; iLvl++){
+      int iSeg;                     /* Used to iterate through segments */
+      Fts5StructureLevel *pLvl = &pStruct->aLevel[iLvl];
+      fts5BufferAppendVarint(&p->rc, &buf, pLvl->nMerge);
+      fts5BufferAppendVarint(&p->rc, &buf, pLvl->nSeg);
+      assert( pLvl->nMerge<=pLvl->nSeg );
 
-    for(iSeg=0; iSeg<pLvl->nSeg; iSeg++){
-      fts5BufferAppendVarint(&p->rc, &buf, pLvl->aSeg[iSeg].iSegid);
-      fts5BufferAppendVarint(&p->rc, &buf, pLvl->aSeg[iSeg].nHeight);
-      fts5BufferAppendVarint(&p->rc, &buf, pLvl->aSeg[iSeg].pgnoFirst);
-      fts5BufferAppendVarint(&p->rc, &buf, pLvl->aSeg[iSeg].pgnoLast);
+      for(iSeg=0; iSeg<pLvl->nSeg; iSeg++){
+        fts5BufferAppendVarint(&p->rc, &buf, pLvl->aSeg[iSeg].iSegid);
+        fts5BufferAppendVarint(&p->rc, &buf, pLvl->aSeg[iSeg].nHeight);
+        fts5BufferAppendVarint(&p->rc, &buf, pLvl->aSeg[iSeg].pgnoFirst);
+        fts5BufferAppendVarint(&p->rc, &buf, pLvl->aSeg[iSeg].pgnoLast);
+      }
     }
-  }
 
-  fts5DataWrite(p, FTS5_STRUCTURE_ROWID(iIdx), buf.p, buf.n);
-  fts5BufferFree(&buf);
+    fts5DataWrite(p, FTS5_STRUCTURE_ROWID(iIdx), buf.p, buf.n);
+    fts5BufferFree(&buf);
+  }
 }
 
 #if 0
@@ -1864,7 +1878,7 @@ static void fts5SegIterSeekInit(
       res = fts5BufferCompareBlob(&pIter->term, pTerm, nTerm);
       if( res>=0 ) break;
       fts5SegIterNext(p, pIter);
-    }while( pIter->pLeaf );
+    }while( pIter->pLeaf && p->rc==SQLITE_OK );
 
     if( bGe==0 && res ){
       /* Set iterator to point to EOF */
@@ -1873,7 +1887,7 @@ static void fts5SegIterSeekInit(
     }
   }
 
-  if( bGe==0 ){
+  if( p->rc==SQLITE_OK && bGe==0 ){
     pIter->flags |= FTS5_SEGITER_ONETERM;
     if( pIter->pLeaf ){
       if( flags & FTS5INDEX_QUERY_ASC ){
@@ -2422,7 +2436,7 @@ static void fts5IndexDiscardData(Fts5Index *p){
     Fts5Config *pConfig = p->pConfig;
     int i;
     for(i=0; i<=pConfig->nPrefix; i++){
-      sqlite3Fts5HashClear(p->apHash[i]);
+      if( p->apHash[i] ) sqlite3Fts5HashClear(p->apHash[i]);
     }
     p->nPendingData = 0;
   }
@@ -2609,8 +2623,8 @@ static void fts5WriteAppendTerm(
   int nPrefix;                    /* Bytes of prefix compression for term */
   Fts5PageWriter *pPage = &pWriter->aWriter[0];
 
-  assert( pPage->buf.n==0 || pPage->buf.n>4 );
-  if( pPage->buf.n==0 ){
+  assert( pPage==0 || pPage->buf.n==0 || pPage->buf.n>4 );
+  if( pPage && pPage->buf.n==0 ){
     /* Zero the first term and first docid fields */
     static const u8 zero[] = { 0x00, 0x00, 0x00, 0x00 };
     fts5BufferAppendBlob(&p->rc, &pPage->buf, 4, zero);
@@ -2660,30 +2674,32 @@ static void fts5WriteAppendRowid(
   Fts5SegWriter *pWriter,
   i64 iRowid
 ){
-  Fts5PageWriter *pPage = &pWriter->aWriter[0];
+  if( p->rc==SQLITE_OK ){
+    Fts5PageWriter *pPage = &pWriter->aWriter[0];
 
-  /* If this is to be the first docid written to the page, set the 
-  ** docid-pointer in the page-header. Also append a value to the dlidx
-  ** buffer, in case a doclist-index is required.  */
-  if( pWriter->bFirstRowidInPage ){
-    fts5PutU16(pPage->buf.p, pPage->buf.n);
-    fts5WriteDlidxAppend(p, pWriter, iRowid);
-  }
+    /* If this is to be the first docid written to the page, set the 
+    ** docid-pointer in the page-header. Also append a value to the dlidx
+    ** buffer, in case a doclist-index is required.  */
+    if( pWriter->bFirstRowidInPage ){
+      fts5PutU16(pPage->buf.p, pPage->buf.n);
+      fts5WriteDlidxAppend(p, pWriter, iRowid);
+    }
 
-  /* Write the docid. */
-  if( pWriter->bFirstRowidInDoclist || pWriter->bFirstRowidInPage ){
-    fts5BufferAppendVarint(&p->rc, &pPage->buf, iRowid);
-  }else{
-    assert( iRowid<pWriter->iPrevRowid );
-    fts5BufferAppendVarint(&p->rc, &pPage->buf, pWriter->iPrevRowid - iRowid);
-  }
-  pWriter->iPrevRowid = iRowid;
-  pWriter->bFirstRowidInDoclist = 0;
-  pWriter->bFirstRowidInPage = 0;
+    /* Write the docid. */
+    if( pWriter->bFirstRowidInDoclist || pWriter->bFirstRowidInPage ){
+      fts5BufferAppendVarint(&p->rc, &pPage->buf, iRowid);
+    }else{
+      assert( p->rc || iRowid<pWriter->iPrevRowid );
+      fts5BufferAppendVarint(&p->rc, &pPage->buf, pWriter->iPrevRowid - iRowid);
+    }
+    pWriter->iPrevRowid = iRowid;
+    pWriter->bFirstRowidInDoclist = 0;
+    pWriter->bFirstRowidInPage = 0;
 
-  if( pPage->buf.n>=p->pConfig->pgsz ){
-    fts5WriteFlushLeaf(p, pWriter);
-    pWriter->bFirstRowidInPage = 1;
+    if( pPage->buf.n>=p->pConfig->pgsz ){
+      fts5WriteFlushLeaf(p, pWriter);
+      pWriter->bFirstRowidInPage = 1;
+    }
   }
 }
 
@@ -2692,11 +2708,13 @@ static void fts5WriteAppendPoslistInt(
   Fts5SegWriter *pWriter,
   int iVal
 ){
-  Fts5PageWriter *pPage = &pWriter->aWriter[0];
-  fts5BufferAppendVarint(&p->rc, &pPage->buf, iVal);
-  if( pPage->buf.n>=p->pConfig->pgsz ){
-    fts5WriteFlushLeaf(p, pWriter);
-    pWriter->bFirstRowidInPage = 1;
+  if( p->rc==SQLITE_OK ){
+    Fts5PageWriter *pPage = &pWriter->aWriter[0];
+    fts5BufferAppendVarint(&p->rc, &pPage->buf, iVal);
+    if( pPage->buf.n>=p->pConfig->pgsz ){
+      fts5WriteFlushLeaf(p, pWriter);
+      pWriter->bFirstRowidInPage = 1;
+    }
   }
 }
 
@@ -2744,32 +2762,37 @@ static void fts5WriteFinish(
   int *pnLeaf                     /* OUT: Number of leaf pages in b-tree */
 ){
   int i;
-  *pnLeaf = pWriter->aWriter[0].pgno;
-  if( *pnLeaf==1 && pWriter->aWriter[0].buf.n==0 ){
-    *pnLeaf = 0;
-    *pnHeight = 0;
-  }else{
-    fts5WriteFlushLeaf(p, pWriter);
-    if( pWriter->nWriter==1 && pWriter->nEmpty>=FTS5_MIN_DLIDX_SIZE ){
-      fts5WriteBtreeGrow(p, pWriter);
-    }
-    if( pWriter->nWriter>1 ){
-      fts5WriteBtreeNEmpty(p, pWriter);
-    }
-    *pnHeight = pWriter->nWriter;
+  if( p->rc==SQLITE_OK ){
+    *pnLeaf = pWriter->aWriter[0].pgno;
+    if( *pnLeaf==1 && pWriter->aWriter[0].buf.n==0 ){
+      *pnLeaf = 0;
+      *pnHeight = 0;
+    }else{
+      fts5WriteFlushLeaf(p, pWriter);
+      if( pWriter->nWriter==1 && pWriter->nEmpty>=FTS5_MIN_DLIDX_SIZE ){
+        fts5WriteBtreeGrow(p, pWriter);
+      }
+      if( pWriter->nWriter>1 ){
+        fts5WriteBtreeNEmpty(p, pWriter);
+      }
+      *pnHeight = pWriter->nWriter;
 
-    for(i=1; i<pWriter->nWriter; i++){
-      Fts5PageWriter *pPg = &pWriter->aWriter[i];
-      fts5DataWrite(p, 
-          FTS5_SEGMENT_ROWID(pWriter->iIdx, pWriter->iSegid, i, pPg->pgno), 
-          pPg->buf.p, pPg->buf.n
-      );
+      for(i=1; i<pWriter->nWriter; i++){
+        Fts5PageWriter *pPg = &pWriter->aWriter[i];
+        fts5DataWrite(p, 
+            FTS5_SEGMENT_ROWID(pWriter->iIdx, pWriter->iSegid, i, pPg->pgno), 
+            pPg->buf.p, pPg->buf.n
+        );
+      }
     }
   }
   for(i=0; i<pWriter->nWriter; i++){
     Fts5PageWriter *pPg = &pWriter->aWriter[i];
-    fts5BufferFree(&pPg->term);
-    fts5BufferFree(&pPg->buf);
+    assert( pPg || p->rc!=SQLITE_OK );
+    if( pPg ){
+      fts5BufferFree(&pPg->term);
+      fts5BufferFree(&pPg->buf);
+    }
   }
   sqlite3_free(pWriter->aWriter);
   sqlite3Fts5BufferFree(&pWriter->dlidx);
@@ -3025,55 +3048,57 @@ static void fts5IndexWork(
   Fts5Structure **ppStruct,       /* IN/OUT: Current structure of index */
   int nLeaf                       /* Number of output leaves just written */
 ){
-  Fts5Structure *pStruct = *ppStruct;
-  i64 nWrite;                     /* Initial value of write-counter */
-  int nWork;                      /* Number of work-quanta to perform */
-  int nRem;                       /* Number of leaf pages left to write */
+  if( p->rc==SQLITE_OK ){
+    Fts5Structure *pStruct = *ppStruct;
+    i64 nWrite;                   /* Initial value of write-counter */
+    int nWork;                    /* Number of work-quanta to perform */
+    int nRem;                     /* Number of leaf pages left to write */
 
-  /* Update the write-counter. While doing so, set nWork. */
-  nWrite = pStruct->nWriteCounter;
-  nWork = ((nWrite + nLeaf) / p->nWorkUnit) - (nWrite / p->nWorkUnit);
-  pStruct->nWriteCounter += nLeaf;
-  nRem = p->nWorkUnit * nWork * pStruct->nLevel;
+    /* Update the write-counter. While doing so, set nWork. */
+    nWrite = pStruct->nWriteCounter;
+    nWork = ((nWrite + nLeaf) / p->nWorkUnit) - (nWrite / p->nWorkUnit);
+    pStruct->nWriteCounter += nLeaf;
+    nRem = p->nWorkUnit * nWork * pStruct->nLevel;
 
-  while( nRem>0 ){
-    int iLvl;                   /* To iterate through levels */
-    int iBestLvl = 0;           /* Level offering the most input segments */
-    int nBest = 0;              /* Number of input segments on best level */
+    while( nRem>0 ){
+      int iLvl;                   /* To iterate through levels */
+      int iBestLvl = 0;           /* Level offering the most input segments */
+      int nBest = 0;              /* Number of input segments on best level */
 
-    /* Set iBestLvl to the level to read input segments from. */
-    assert( pStruct->nLevel>0 );
-    for(iLvl=0; iLvl<pStruct->nLevel; iLvl++){
-      Fts5StructureLevel *pLvl = &pStruct->aLevel[iLvl];
-      if( pLvl->nMerge ){
-        if( pLvl->nMerge>nBest ){
-          iBestLvl = iLvl;
-          nBest = pLvl->nMerge;
+      /* Set iBestLvl to the level to read input segments from. */
+      assert( pStruct->nLevel>0 );
+      for(iLvl=0; iLvl<pStruct->nLevel; iLvl++){
+        Fts5StructureLevel *pLvl = &pStruct->aLevel[iLvl];
+        if( pLvl->nMerge ){
+          if( pLvl->nMerge>nBest ){
+            iBestLvl = iLvl;
+            nBest = pLvl->nMerge;
+          }
+          break;
         }
-        break;
+        if( pLvl->nSeg>nBest ){
+          nBest = pLvl->nSeg;
+          iBestLvl = iLvl;
+        }
       }
-      if( pLvl->nSeg>nBest ){
-        nBest = pLvl->nSeg;
-        iBestLvl = iLvl;
-      }
-    }
 
-    /* If nBest is still 0, then the index must be empty. */
+      /* If nBest is still 0, then the index must be empty. */
 #ifdef SQLITE_DEBUG
-    for(iLvl=0; nBest==0 && iLvl<pStruct->nLevel; iLvl++){
-      assert( pStruct->aLevel[iLvl].nSeg==0 );
-    }
+      for(iLvl=0; nBest==0 && iLvl<pStruct->nLevel; iLvl++){
+        assert( pStruct->aLevel[iLvl].nSeg==0 );
+      }
 #endif
 
-    if( nBest<p->pConfig->nAutomerge 
-     && pStruct->aLevel[iBestLvl].nMerge==0 
-    ){
-      break;
+      if( nBest<p->pConfig->nAutomerge 
+          && pStruct->aLevel[iBestLvl].nMerge==0 
+        ){
+        break;
+      }
+      fts5IndexMergeLevel(p, iIdx, &pStruct, iBestLvl, &nRem);
+      fts5StructurePromote(p, iBestLvl+1, pStruct);
+      assert( nRem==0 || p->rc==SQLITE_OK );
+      *ppStruct = pStruct;
     }
-    fts5IndexMergeLevel(p, iIdx, &pStruct, iBestLvl, &nRem);
-    fts5StructurePromote(p, iBestLvl+1, pStruct);
-    assert( nRem==0 || p->rc==SQLITE_OK );
-    *ppStruct = pStruct;
   }
 }
 
@@ -3123,17 +3148,17 @@ static int fts5FlushNewEntry(
   int nPoslist
 ){
   Fts5FlushCtx *p = (Fts5FlushCtx*)pCtx;
-  int rc = SQLITE_OK;
+  Fts5Index *pIdx = p->pIdx;
 
   /* Append the rowid itself */
-  fts5WriteAppendRowid(p->pIdx, &p->writer, iRowid);
+  fts5WriteAppendRowid(pIdx, &p->writer, iRowid);
 
   /* Append the size of the position list in bytes */
-  fts5WriteAppendPoslistInt(p->pIdx, &p->writer, nPoslist);
+  fts5WriteAppendPoslistInt(pIdx, &p->writer, nPoslist);
 
   /* And the poslist data */
-  fts5WriteAppendPoslistData(p->pIdx, &p->writer, aPoslist, nPoslist);
-  return rc;
+  fts5WriteAppendPoslistData(pIdx, &p->writer, aPoslist, nPoslist);
+  return pIdx->rc;
 }
 
 /*
@@ -3485,20 +3510,22 @@ static void fts5MultiIterPoslist(
   int bSz,
   Fts5Buffer *pBuf
 ){
-  Fts5ChunkIter iter;
-  Fts5SegIter *pSeg = &pMulti->aSeg[ pMulti->aFirst[1] ];
-  assert( fts5MultiIterEof(p, pMulti)==0 );
-  fts5ChunkIterInit(p, pSeg, &iter);
-  if( fts5ChunkIterEof(p, &iter)==0 ){
-    if( bSz ){
-      fts5BufferAppendVarint(&p->rc, pBuf, iter.nRem);
+  if( p->rc==SQLITE_OK ){
+    Fts5ChunkIter iter;
+    Fts5SegIter *pSeg = &pMulti->aSeg[ pMulti->aFirst[1] ];
+    assert( fts5MultiIterEof(p, pMulti)==0 );
+    fts5ChunkIterInit(p, pSeg, &iter);
+    if( fts5ChunkIterEof(p, &iter)==0 ){
+      if( bSz ){
+        fts5BufferAppendVarint(&p->rc, pBuf, iter.nRem);
+      }
+      while( fts5ChunkIterEof(p, &iter)==0 ){
+        fts5BufferAppendBlob(&p->rc, pBuf, iter.n, iter.p);
+        fts5ChunkIterNext(p, &iter);
+      }
     }
-    while( fts5ChunkIterEof(p, &iter)==0 ){
-      fts5BufferAppendBlob(&p->rc, pBuf, iter.n, iter.p);
-      fts5ChunkIterNext(p, &iter);
-    }
+    fts5ChunkIterRelease(&iter);
   }
-  fts5ChunkIterRelease(&iter);
 }
 
 static void fts5DoclistIterNext(Fts5DoclistIter *pIter){

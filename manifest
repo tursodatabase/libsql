@@ -1,5 +1,5 @@
-C Begin\stesting\sfts5\sOOM\sand\sIO\serror\shandling.
-D 2014-12-03T17:27:35.105
+C Fix\svarious\sproblems\sin\sfts5\srevealed\sby\sfault-injection\stests.
+D 2014-12-18T18:25:48.377
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in b03432313a3aad96c706f8164fb9f5307eaf19f5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -104,15 +104,15 @@ F ext/fts3/unicode/CaseFolding.txt 8c678ca52ecc95e16bc7afc2dbf6fc9ffa05db8c
 F ext/fts3/unicode/UnicodeData.txt cd07314edb62d49fde34debdaf92fa2aa69011e7
 F ext/fts3/unicode/mkunicode.tcl dc6f268eb526710e2c6e496c372471d773d0c368
 F ext/fts5/extract_api_docs.tcl 6320db4a1d0722a4e2069e661381ad75e9889786
-F ext/fts5/fts5.c 1dae34f4a788b5760c52b914d6384d83ee027b35
+F ext/fts5/fts5.c d1c1722eb661da3e8e3a19909958b97beff7d243
 F ext/fts5/fts5.h 72fc1e9995b1ddc254a487b9528614a83bd3dfb6
 F ext/fts5/fts5Int.h 36054b1dfc4881a9b94f945b348ab6cc01c0c7a5
 F ext/fts5/fts5_aux.c 0e3e5fea6bf5772805afe14c95cb5f16e03e4b3f
 F ext/fts5/fts5_buffer.c 1bc5c762bb2e9b4a40b2e8a820a31b809e72eec1
-F ext/fts5/fts5_config.c 17986112dc76e7e39170e08df68f84180f66a9fe
-F ext/fts5/fts5_expr.c 5db50cd4ae9c3764d7daa8388bf406c0bad15039
+F ext/fts5/fts5_config.c 5caeb4e77680d635be25b899f97a29cf26fb45ce
+F ext/fts5/fts5_expr.c 27d3d2deebae277c34ae2bb3d501dd879c442ba5
 F ext/fts5/fts5_hash.c 63fa8379c5f2ac107d47c2b7d9ac04c95ef8a279
-F ext/fts5/fts5_index.c 9233b8b1f519e50d9ec139031032d9211dfcb541
+F ext/fts5/fts5_index.c 13b6d002e10840d8ec525ccd4a2bfc8831ea7a47
 F ext/fts5/fts5_storage.c bfeedb83b095a1018f4f531c3cc3f9099e9f9081
 F ext/fts5/fts5_tcl.c 5272224faf9be129679da5e19d788f0307afc375
 F ext/fts5/fts5_tokenize.c 8360c0d1ae0d4696f3cc13f7c67a2db6011cdc5b
@@ -306,7 +306,7 @@ F src/vdbeblob.c 9205ce9d3b064d9600f8418a897fc88b5687d9ac
 F src/vdbemem.c 6fc77594c60f6155404f3f8d71bf36d1fdeb4447
 F src/vdbesort.c 44441d73b08b3a638dcdb725afffb87c6574ad27
 F src/vdbetrace.c 6f52bc0c51e144b7efdcfb2a8f771167a8816767
-F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
+F src/vtab.c b05a86bed6ee2c7f79edb2cb57b951b220867caf
 F src/wal.c 264df50a1b33124130b23180ded2e2c5663c652a
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 11edb74d587bc87b33ca96a5173e3ec1b8389e45
@@ -612,7 +612,7 @@ F test/fts5aj.test bc3d91bd012c7ca175cdf266c2074920bb5fa5ba
 F test/fts5ak.test e55bb0f3fac1291d32bc9485a3ee55a7d76f4d5f
 F test/fts5al.test 61b067f3b0b61679ab164a8a855882dfd313988d
 F test/fts5ea.test afaf3497b43add578384dc1fd26b0342738abe87
-F test/fts5fault1.test 27cb71251f8f2cd710ce4bdc1f0c29fa5db83be7
+F test/fts5fault1.test 6fef96cf6eccd9b9fc9f4518cc15c4fa9740ef66
 F test/full.test 6b3c8fb43c6beab6b95438c1675374b95fab245d
 F test/func.test ae97561957aba6ca9e3a7b8a13aac41830d701ef
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
@@ -722,7 +722,7 @@ F test/mallocH.test 79b65aed612c9b3ed2dcdaa727c85895fd1bfbdb
 F test/mallocI.test a88c2b9627c8506bf4703d8397420043a786cdb6
 F test/mallocJ.test b5d1839da331d96223e5f458856f8ffe1366f62e
 F test/mallocK.test d79968641d1b70d88f6c01bdb9a7eb4a55582cc9
-F test/malloc_common.tcl 58e54229c4132ef882a11fab6419ec4cd3073589
+F test/malloc_common.tcl dc07e2bbbfc3f8416f4cbddcc139d77eb360d9af
 F test/manydb.test 28385ae2087967aa05c38624cec7d96ec74feb3e
 F test/mem5.test c6460fba403c5703141348cd90de1c294188c68f
 F test/memdb.test fcb5297b321b562084fc79d64d5a12a1cd2b639b
@@ -1208,7 +1208,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b5f5971283b9b2f60c16f9675099855af95012cd
-R cb30a6b5c5f7ea511cc1ede93a5d038a
+P 2037dba62fdd995ad15b642abe499a790f5ffe5c
+R 701ca9549e5d1bd70b92dde1949b5886
 U dan
-Z f7fa77a51653f0fa8e3497900e76f571
+Z d83a5deacda027d17d377616a8122fa0

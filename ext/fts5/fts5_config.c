@@ -74,14 +74,17 @@ static int fts5ConfigParseSpecial(
   char **pzErr                    /* OUT: Error message */
 ){
   if( sqlite3_stricmp(zCmd, "prefix")==0 ){
+    const int nByte = sizeof(int) * FTS5_MAX_PREFIX_INDEXES;
+    int rc = SQLITE_OK;
     char *p;
     if( pConfig->aPrefix ){
       *pzErr = sqlite3_mprintf("multiple prefix=... directives");
-      return SQLITE_ERROR;
+      rc = SQLITE_ERROR;
+    }else{
+      pConfig->aPrefix = sqlite3Fts5MallocZero(&rc, nByte);
     }
-    pConfig->aPrefix = sqlite3_malloc(sizeof(int) * FTS5_MAX_PREFIX_INDEXES);
     p = zArg;
-    while( p[0] ){
+    while( rc==SQLITE_OK && p[0] ){
       int nPre = 0;
       while( p[0]==' ' ) p++;
       while( p[0]>='0' && p[0]<='9' && nPre<1000 ){
@@ -93,16 +96,16 @@ static int fts5ConfigParseSpecial(
         p++;
       }else if( p[0] ){
         *pzErr = sqlite3_mprintf("malformed prefix=... directive");
-        return SQLITE_ERROR;
+        rc = SQLITE_ERROR;
       }
-      if( nPre==0 || nPre>=1000 ){
+      if( rc==SQLITE_OK && (nPre==0 || nPre>=1000) ){
         *pzErr = sqlite3_mprintf("prefix length out of range: %d", nPre);
-        return SQLITE_ERROR;
+        rc = SQLITE_ERROR;
       }
       pConfig->aPrefix[pConfig->nPrefix] = nPre;
       pConfig->nPrefix++;
     }
-    return SQLITE_OK;
+    return rc;
   }
 
   *pzErr = sqlite3_mprintf("unrecognized directive: \"%s\"", zCmd);
@@ -191,7 +194,7 @@ int sqlite3Fts5ConfigParse(
           }
 
           /* If it is not a special directive, it must be a column name. In
-           ** this case, check that it is not the reserved column name "rank". */
+          ** this case, check that it is not the reserved column name "rank". */
           if( zDup ){
             sqlite3Fts5Dequote(zDup);
             pRet->azCol[pRet->nCol++] = zDup;

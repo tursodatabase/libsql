@@ -213,6 +213,7 @@ int sqlite3Fts5ExprNew(
     *ppNew = pNew = sqlite3_malloc(sizeof(Fts5Expr));
     if( pNew==0 ){
       sParse.rc = SQLITE_NOMEM;
+      sqlite3Fts5ParseNodeFree(sParse.pExpr);
     }else{
       pNew->pRoot = sParse.pExpr;
       pNew->pIndex = 0;
@@ -771,7 +772,8 @@ static int fts5ExprNearInitAll(
           (pExpr->bAsc ? FTS5INDEX_QUERY_ASC : 0),
           &pTerm->pIter
       );
-      if( pTerm->pIter && sqlite3Fts5IterEof(pTerm->pIter) ){
+      assert( rc==SQLITE_OK || pTerm->pIter==0 );
+      if( pTerm->pIter==0 || sqlite3Fts5IterEof(pTerm->pIter) ){
         pNode->bEof = 1;
         break;
       }
@@ -1204,24 +1206,29 @@ Fts5ExprPhrase *sqlite3Fts5ParseTerm(
   int rc;                         /* Tokenize return code */
   char *z = 0;
 
+  memset(&sCtx, 0, sizeof(TokenCtx));
+  sCtx.pPhrase = pPhrase;
+
   if( pPhrase==0 ){
     if( (pParse->nPhrase % 8)==0 ){
       int nByte = sizeof(Fts5ExprPhrase*) * (pParse->nPhrase + 8);
       Fts5ExprPhrase **apNew;
       apNew = (Fts5ExprPhrase**)sqlite3_realloc(pParse->apPhrase, nByte);
-      if( apNew==0 ) return 0;
+      if( apNew==0 ){
+        pParse->rc = SQLITE_NOMEM;
+        fts5ExprPhraseFree(pPhrase);
+        return 0;
+      }
       pParse->apPhrase = apNew;
     }
     pParse->nPhrase++;
   }
 
-  pParse->rc = fts5ParseStringFromToken(pToken, &z);
-  if( z==0 ) return 0;
-  sqlite3Fts5Dequote(z);
-
-  memset(&sCtx, 0, sizeof(TokenCtx));
-  sCtx.pPhrase = pPhrase;
-  rc = sqlite3Fts5Tokenize(pConfig, z, strlen(z), &sCtx, fts5ParseTokenize);
+  rc = fts5ParseStringFromToken(pToken, &z);
+  if( rc==SQLITE_OK ){
+    sqlite3Fts5Dequote(z);
+    rc = sqlite3Fts5Tokenize(pConfig, z, strlen(z), &sCtx, fts5ParseTokenize);
+  }
   if( rc ){
     pParse->rc = rc;
     fts5ExprPhraseFree(sCtx.pPhrase);

@@ -23,15 +23,89 @@ ifcapable !fts5 {
   return
 }
 
+# Simple tests:
+#
+#   1: CREATE VIRTUAL TABLE
+#   2: INSERT statement
+#   3: DELETE statement
+#   4: MATCH expressions
+#
+
+if 1 {
+
 faultsim_save_and_close
 do_faultsim_test 1 -prep {
   faultsim_restore_and_reopen
 } -body {
-  execsql { CREATE VIRTUAL TABLE t1 USING fts5(a) }
+  execsql { CREATE VIRTUAL TABLE t1 USING fts5(a, b, prefix='1, 2, 3') }
 } -test {
   faultsim_test_result {0 {}} 
 }
 
+reset_db
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a, b, prefix='1, 2, 3');
+}
+faultsim_save_and_close
+do_faultsim_test 2 -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql { 
+    INSERT INTO t1 VALUES('a b c', 'a bc def ghij klmno');
+  }
+} -test {
+  faultsim_test_result {0 {}} 
+}
 
+reset_db
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a, b, prefix='1, 2, 3');
+  INSERT INTO t1 VALUES('a b c', 'a bc def ghij klmno');
+}
+faultsim_save_and_close
+do_faultsim_test 3 -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql { DELETE FROM t1 }
+} -test {
+  faultsim_test_result {0 {}} 
+}
+
+}
+
+reset_db
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE t2 USING fts5(a, b);
+  INSERT INTO t2 VALUES('m f a jj th q jr ar',   'hj n h h sg j i m');
+  INSERT INTO t2 VALUES('nr s t g od j kf h',    'sb h aq rg op rb n nl');
+  INSERT INTO t2 VALUES('do h h pb p p q fr',    'c rj qs or cr a l i');
+  INSERT INTO t2 VALUES('lk gp t i lq mq qm p',  'h mr g f op ld aj h');
+  INSERT INTO t2 VALUES('ct d sq kc qi k f j',   'sn gh c of g s qt q');
+  INSERT INTO t2 VALUES('d ea d d om mp s ab',   'dm hg l df cm ft pa c');
+  INSERT INTO t2 VALUES('tc dk c jn n t sr ge',  'a a kn bc n i af h');
+  INSERT INTO t2 VALUES('ie ii d i b sa qo rf',  'a h m aq i b m fn');
+  INSERT INTO t2 VALUES('gs r fo a er m h li',   'tm c p gl eb ml q r');
+  INSERT INTO t2 VALUES('k fe fd rd a gi ho kk', 'ng m c r d ml rm r');
+}
+faultsim_save_and_close
+
+foreach {tn expr res} {
+  1 { dk  }           7
+  2 { m f }           1
+  3 { f*  }           {10 9 8 6 5 4 3 1}
+  4 { m OR f }        {10 9 8 5 4 1}
+  5 { sn + gh }       {5}
+  6 { "sn gh" }       {5}
+  7 { NEAR(r a, 5) }  {9}
+} {
+  do_faultsim_test 4.$tn -prep {
+    faultsim_restore_and_reopen
+  } -body "
+    execsql { SELECT rowid FROM t2 WHERE t2 MATCH '$expr' }
+  " -test "
+    faultsim_test_result {[list 0 $res]}
+  "
+}
 
 finish_test
+
