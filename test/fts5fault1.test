@@ -97,6 +97,8 @@ foreach {tn expr res} {
   5 { sn + gh }       {5}
   6 { "sn gh" }       {5}
   7 { NEAR(r a, 5) }  {9}
+  8 { m* f* }         {10 9 8 6 4 1}
+  9 { m* + f* }       {8 1}
 } {
   do_faultsim_test 4.$tn -prep {
     faultsim_restore_and_reopen

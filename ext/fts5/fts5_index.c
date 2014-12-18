@@ -4075,14 +4075,28 @@ int sqlite3Fts5IterNext(Fts5IndexIter *pIter){
 }
 
 /*
+** Move the doclist-iter passed as the first argument to the next 
+** matching rowid that occurs at or after iMatch. The definition of "at 
+** or after" depends on whether this iterator iterates in ascending or 
+** descending rowid order.
+*/
+static void fts5DoclistIterNextFrom(Fts5DoclistIter *p, i64 iMatch){
+  do{
+    i64 iRowid = p->iRowid;
+    if( p->bAsc!=0 && iRowid>=iMatch ) break;
+    if( p->bAsc==0 && iRowid<=iMatch ) break;
+    fts5DoclistIterNext(p);
+  }while( p->aPoslist );
+}
+
+/*
 ** Move to the next matching rowid that occurs at or after iMatch. The
 ** definition of "at or after" depends on whether this iterator iterates
 ** in ascending or descending rowid order.
 */
 int sqlite3Fts5IterNextFrom(Fts5IndexIter *pIter, i64 iMatch){
   if( pIter->pDoclist ){
-    assert( 0 );
-    /* fts5DoclistIterNextFrom(pIter->pDoclist, iMatch); */
+    fts5DoclistIterNextFrom(pIter->pDoclist, iMatch);
   }else{
     fts5MultiIterNextFrom(pIter->pIndex, pIter->pMulti, iMatch);
   }

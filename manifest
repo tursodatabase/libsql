@@ -1,5 +1,5 @@
-C Fix\svarious\sproblems\sin\sfts5\srevealed\sby\sfault-injection\stests.
-D 2014-12-18T18:25:48.377
+C Fix\sa\sproblem\swith\sprefix\squeries\sand\sthe\sAND\soperator.
+D 2014-12-18T20:01:15.691
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in b03432313a3aad96c706f8164fb9f5307eaf19f5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -112,7 +112,7 @@ F ext/fts5/fts5_buffer.c 1bc5c762bb2e9b4a40b2e8a820a31b809e72eec1
 F ext/fts5/fts5_config.c 5caeb4e77680d635be25b899f97a29cf26fb45ce
 F ext/fts5/fts5_expr.c 27d3d2deebae277c34ae2bb3d501dd879c442ba5
 F ext/fts5/fts5_hash.c 63fa8379c5f2ac107d47c2b7d9ac04c95ef8a279
-F ext/fts5/fts5_index.c 13b6d002e10840d8ec525ccd4a2bfc8831ea7a47
+F ext/fts5/fts5_index.c 4a8e8535b4303400ddb5f6fb08152da0d88ebf6f
 F ext/fts5/fts5_storage.c bfeedb83b095a1018f4f531c3cc3f9099e9f9081
 F ext/fts5/fts5_tcl.c 5272224faf9be129679da5e19d788f0307afc375
 F ext/fts5/fts5_tokenize.c 8360c0d1ae0d4696f3cc13f7c67a2db6011cdc5b
@@ -602,7 +602,7 @@ F test/fts4unicode.test 01ec3fe2a7c3cfff3b4c0581b83caa11b33efa36
 F test/fts5aa.test 27c7d3c865e144a0501dcbfbd6d2ae87f77602ea
 F test/fts5ab.test 52f6b9223372ff70b0edb5a3054fbd7bc7fcfefc
 F test/fts5ac.test 60302196b7711176ce872fe2e4c73c75ac2c4038
-F test/fts5ad.test ed60fdafc73d879b42573abcfa6ede7e02e07c19
+F test/fts5ad.test ff518db6b0d7750b51ee6531ffebf82e57094bfd
 F test/fts5ae.test 5de775469d45a2f8218fc89b8d6d5176c226d05e
 F test/fts5af.test d24e3b0f879998ef5f60087272f8ab7b3a8fd4dc
 F test/fts5ag.test 1c6c188d1bdc41b2277db3f4ddfea7d90bf44ceb
@@ -612,7 +612,7 @@ F test/fts5aj.test bc3d91bd012c7ca175cdf266c2074920bb5fa5ba
 F test/fts5ak.test e55bb0f3fac1291d32bc9485a3ee55a7d76f4d5f
 F test/fts5al.test 61b067f3b0b61679ab164a8a855882dfd313988d
 F test/fts5ea.test afaf3497b43add578384dc1fd26b0342738abe87
-F test/fts5fault1.test 6fef96cf6eccd9b9fc9f4518cc15c4fa9740ef66
+F test/fts5fault1.test ba59b6f0897a4fe510c446b98968ec1e8800a56b
 F test/full.test 6b3c8fb43c6beab6b95438c1675374b95fab245d
 F test/func.test ae97561957aba6ca9e3a7b8a13aac41830d701ef
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
@@ -1208,7 +1208,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2037dba62fdd995ad15b642abe499a790f5ffe5c
-R 701ca9549e5d1bd70b92dde1949b5886
+P e358c3de5c916f2c851ab9324ceaae4e4e7a0fbd
+R d93acda5ed1642f2b9a85bcc5fb79da9
 U dan
-Z d83a5deacda027d17d377616a8122fa0
+Z ee6f25fbcb6953dd4dd423bed7e3ab13
