@@ -1,5 +1,5 @@
-C Experimental\s"PRAGMA\sdata_version"\scommand\sfor\sdetecting\swhen\sanother\sprocess\nhas\schanged\sthe\sdatabase\sfile.
-D 2014-12-19T19:28:02.465
+C Adding\stest\scases\sfor\sthe\s"PRAGMA\sdata_version"\scommand.
+D 2014-12-19T20:27:02.112
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6c4f961fa91d0b4fa121946a19f9e5eac2f2f809
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -785,6 +785,7 @@ F test/percentile.test b98fc868d71eb5619d42a1702e9ab91718cbed54
 F test/permutations.test 4e12d43f4639ea8a0e366d9c64e0009afe2eb544
 F test/pragma.test aa16dedfe01c02c8895169012f7dfde9c163f0d5
 F test/pragma2.test aea7b3d82c76034a2df2b38a13745172ddc0bc13
+F test/pragma3.test 117ef9768f6c8d11823de7bbe3231b35c426b013
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
 F test/printf2.test b4acd4bf8734243257f01ddefa17c4fb090acc8a
 F test/progress.test a282973d1d17f08071bc58a77d6b80f2a81c354d
@@ -1233,10 +1234,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P da27a09d1d991583b59997f6cc67efa28ffd9d6a
-R df4854633d0919cb180185852b6a45b5
-T *branch * data_version_pragma
-T *sym-data_version_pragma *
-T -sym-trunk *
+P 43db1f44bce5a0ee50197b95ab0d844540b69d86
+R 2feb9c2cda6af5a5f57185acec7e4041
 U drh
-Z 81defb06f28b03737e8cb7607139b4d9
+Z 8c3ff0ee7ae569dc5dbcf90ed4307270

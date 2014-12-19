@@ -1,0 +1,70 @@
+# 2014-12-19
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.
+#
+# This file implements tests for PRAGMA data_version command.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+do_execsql_test pragma3-100 {
+  PRAGMA data_version;
+} {1}
+do_execsql_test pragma3-101 {
+  PRAGMA temp.data_version;
+} {1}
+
+# Writing is a no-op 
+do_execsql_test pragma3-102 {
+  PRAGMA main.data_version=1234;
+  PRAGMA main.data_version;
+} {1 1}
+
+do_execsql_test pragma3-110 {
+  CREATE TABLE t1(a);
+  INSERT INTO t1 VALUES(100),(200),(300);
+  SELECT * FROM t1;
+  PRAGMA data_version;
+} {100 200 300 1}
+
+sqlite3 db2 test.db
+do_test pragma3-120 {
+  db2 eval {
+    SELECT * FROM t1;
+    PRAGMA data_version;
+  }
+} {100 200 300 1}
+
+do_execsql_test pragma3-130 {
+  INSERT INTO t1 VALUES(400),(500);
+  SELECT * FROM t1;
+  PRAGMA data_version;
+} {100 200 300 400 500 1}
+
+do_test pragma3-140 {
+  db2 eval {
+    SELECT * FROM t1;
+    PRAGMA data_version;
+    UPDATE t1 SET a=a+1;
+    SELECT * FROM t1;
+    PRAGMA data_version;
+  }
+} {100 200 300 400 500 2 101 201 301 401 501 2}
+
+do_execsql_test pragma3-150 {
+  SELECT * FROM t1;
+  PRAGMA data_version;
+} {101 201 301 401 501 2}
+
+
+db2 close
+finish_test
