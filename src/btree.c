@@ -8177,6 +8177,13 @@ int sqlite3BtreeDropTable(Btree *p, int iTable, int *piMoved){
 ** The schema layer numbers meta values differently.  At the schema
 ** layer (and the SetCookie and ReadCookie opcodes) the number of
 ** free pages is not visible.  So Cookie[0] is the same as Meta[1].
+**
+** This routine treats Meta[BTREE_DATA_VERSION] as a special case.  Instead
+** of reading the value out of the header, it instead loads the "DataVersion"
+** from the pager.  The BTREE_DATA_VERSION value is not actually stored in the
+** database file.  It is a number computed by the pager.  But its access
+** pattern is the same as header meta values, and so it is convenient to
+** read it from this routine.
 */
 void sqlite3BtreeGetMeta(Btree *p, int idx, u32 *pMeta){
   BtShared *pBt = p->pBt;
@@ -8187,7 +8194,11 @@ void sqlite3BtreeGetMeta(Btree *p, int idx, u32 *pMeta){
   assert( pBt->pPage1 );
   assert( idx>=0 && idx<=15 );
 
-  *pMeta = get4byte(&pBt->pPage1->aData[36 + idx*4]);
+  if( idx==BTREE_DATA_VERSION ){
+    *pMeta = sqlite3PagerDataVersion(pBt->pPager);
+  }else{
+    *pMeta = get4byte(&pBt->pPage1->aData[36 + idx*4]);
+  }
 
   /* If auto-vacuum is disabled in this build and this is an auto-vacuum
   ** database, mark the database as read-only.  */

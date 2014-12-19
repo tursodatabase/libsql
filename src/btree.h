@@ -19,7 +19,7 @@
 /* TODO: This definition is just included so other modules compile. It
 ** needs to be revisited.
 */
-#define SQLITE_N_BTREE_META 10
+#define SQLITE_N_BTREE_META 16
 
 /*
 ** If defined as non-zero, auto-vacuum is enabled by default. Otherwise
@@ -134,6 +134,11 @@ int sqlite3BtreeNewDb(Btree *p);
 ** For example, the free-page-count field is located at byte offset 36 of
 ** the database file header. The incr-vacuum-flag field is located at
 ** byte offset 64 (== 36+4*7).
+**
+** The BTREE_DATA_VERSION value is not really a value stored in the header.
+** It is a read-only number computed by the pager.  But we merge it with
+** the header value access routines since its access pattern is the same.
+** Call it a "virtual meta value".
 */
 #define BTREE_FREE_PAGE_COUNT     0
 #define BTREE_SCHEMA_VERSION      1
@@ -144,6 +149,7 @@ int sqlite3BtreeNewDb(Btree *p);
 #define BTREE_USER_VERSION        6
 #define BTREE_INCR_VACUUM         7
 #define BTREE_APPLICATION_ID      8
+#define BTREE_DATA_VERSION        15  /* A virtual meta-value */
 
 /*
 ** Values that may be OR'd together to form the second argument of an
