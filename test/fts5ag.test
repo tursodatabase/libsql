@@ -96,9 +96,11 @@ do_test 1.1 {
   set {} {}
 } {}
 
+fts5_aux_test_functions db
+
 proc do_fts5ag_test {tn E} {
-  set q1 {SELECT fts5_test(t1) FROM t1 WHERE t1 MATCH $E ORDER BY rank}
-  set q2 {SELECT fts5_test(t1) FROM t1 WHERE t1 MATCH $E ORDER BY bm25(t1)}
+  set q1 {SELECT fts5_test_all(t1) FROM t1 WHERE t1 MATCH $E ORDER BY rank}
+  set q2 {SELECT fts5_test_all(t1) FROM t1 WHERE t1 MATCH $E ORDER BY bm25(t1)}
 
   set res [execsql $q1]
   set expected [execsql $q2]

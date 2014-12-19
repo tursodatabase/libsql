@@ -139,11 +139,12 @@ do_test 1.1 {
 
 # Usage:
 #
-#   poslist aCol ?-near N? ?-col C? -- phrase1 phrase2...
+#   poslist aCol ?-pc VARNAME? ?-near N? ?-col C? -- phrase1 phrase2...
 #
 proc poslist {aCol args} {
   set O(-near) 10
   set O(-col)  -1
+  set O(-pc)   ""
 
   set nOpt [lsearch -exact $args --]
   if {$nOpt<0} { error "no -- option" }
@@ -151,6 +152,12 @@ proc poslist {aCol args} {
   foreach {k v} [lrange $args 0 [expr $nOpt-1]] {
     if {[info exists O($k)]==0} { error "unrecognized option $k" }
     set O($k) $v
+  }
+
+  if {$O(-pc) == ""} {
+    set counter 0
+  } else {
+    upvar $O(-pc) counter
   }
 
   # Set $phraselist to be a list of phrases. $nPhrase its length.
@@ -197,14 +204,15 @@ proc poslist {aCol args} {
   }
 
   set res [list]
+#puts [array names A]
+
   for {set iPhrase 0} {$iPhrase<$nPhrase} {incr iPhrase} {
-    set plist [list]
     for {set iCol 0} {$iCol < [llength $aCol]} {incr iCol} {
       foreach a $A($iCol,$iPhrase) {
-        lappend plist "$iCol.$a"
+        lappend res "$counter.$iCol.$a"
       }
     }
-    lappend res $plist
+    incr counter
   }
 
     #puts $res
@@ -218,6 +226,17 @@ proc poslist {aCol args} {
 proc nearset {args} {
   set plist [poslist {*}$args]
   return [expr [llength [lindex $plist 0]]>0]
+}
+
+proc instcompare {lhs rhs} {
+  foreach {p1 c1 o1} [split $lhs .] {}
+  foreach {p2 c2 o2} [split $rhs .] {}
+
+  set res [expr $c1 - $c2]
+  if {$res==0} { set res [expr $o1 - $o2] }
+  if {$res==0} { set res [expr $p1 - $p2] }
+
+  return $res
 }
 
 # Argument $expr is an FTS5 match expression designed to be executed against
@@ -247,11 +266,14 @@ proc matchdata {bPos expr {bAsc 0}} {
       if {$bPos} {
         set N [regexp -all -inline {\[nearset [^\]]*\]} $tclexpr]
         set rowres [list]
+        set cnt 0
         foreach phrase $N {
-          set cmd "poslist [string range $phrase 9 end-1]"
+          set arglist [string range $phrase 9 end-1]
+          set cmd "poslist [lindex $arglist 0] -pc cnt [lrange $arglist 1 end]"
           set pos [eval $cmd]
           set rowres [concat $rowres $pos]
         }
+        set rowres [lsort -command instcompare $rowres]
         lappend res [list $id $rowres]
       } else {
         lappend res $id
@@ -272,6 +294,16 @@ proc matchdata {bPos expr {bAsc 0}} {
 # End of test code
 #-------------------------------------------------------------------------
 
+proc fts5_test_poslist {cmd} {
+  set res [list]
+  for {set i 0} {$i < [$cmd xInstCount]} {incr i} {
+    lappend res [string map {{ } .} [$cmd xInst $i]]
+  }
+  set res
+}
+
+sqlite3_fts5_create_function db fts5_test_poslist fts5_test_poslist
+
 #-------------------------------------------------------------------------
 # Test phrase queries.
 #
@@ -291,7 +323,7 @@ foreach {tn phrase} {
   set res [matchdata 1 $expr]
 
   do_execsql_test 1.2.$tn.[llength $res] { 
-    SELECT rowid, fts5_test(xx, 'poslist') FROM xx WHERE xx match $expr
+    SELECT rowid, fts5_test_poslist(xx) FROM xx WHERE xx match $expr
   } $res
 }
 
@@ -313,7 +345,7 @@ foreach {tn expr} {
 } {
   set res [matchdata 1 $expr]
   do_execsql_test 2.$tn.[llength $res] { 
-    SELECT rowid, fts5_test(xx, 'poslist') FROM xx WHERE xx match $expr
+    SELECT rowid, fts5_test_poslist(xx) FROM xx WHERE xx match $expr
   } $res
 }
 
@@ -328,7 +360,7 @@ foreach {tn expr} {
 } {
   set res [matchdata 1 $expr]
   do_execsql_test 3.$tn.[llength $res] { 
-    SELECT rowid, fts5_test(xx, 'poslist') FROM xx WHERE xx match $expr
+    SELECT rowid, fts5_test_poslist(xx) FROM xx WHERE xx match $expr
   } $res
 }
 
@@ -349,12 +381,12 @@ foreach {tn expr} {
 } {
   set res [matchdata 1 $expr]
   do_execsql_test 4.1.$tn.[llength $res] { 
-    SELECT rowid, fts5_test(xx, 'poslist') FROM xx WHERE xx match $expr
+    SELECT rowid, fts5_test_poslist(xx) FROM xx WHERE xx match $expr
   } $res
 }
 
-do_test 4.1  { poslist {{a b c}} -- a } {0.0}
-do_test 4.2  { poslist {{a b c}} -- c } {0.2}
+do_test 4.1  { poslist {{a b c}} -- a } {0.0.0}
+do_test 4.2  { poslist {{a b c}} -- c } {0.0.2}
 
 foreach {tn expr tclexpr} {
   1 {a b} {[N $x -- {a}] && [N $x -- {b}]}

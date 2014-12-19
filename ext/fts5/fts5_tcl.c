@@ -57,6 +57,57 @@ struct F5tApi {
   Fts5Context *pFts;
 };
 
+static int xTokenizeCb(
+  void *pCtx, 
+  const char *zToken, int nToken, 
+  int iStart, int iEnd, int iPos
+){
+  F5tFunction *p = (F5tFunction*)pCtx;
+  Tcl_Obj *pEval = Tcl_DuplicateObj(p->pScript);
+  int rc;
+
+  Tcl_IncrRefCount(pEval);
+  Tcl_ListObjAppendElement(p->interp, pEval, Tcl_NewStringObj(zToken, nToken));
+  Tcl_ListObjAppendElement(p->interp, pEval, Tcl_NewIntObj(iStart));
+  Tcl_ListObjAppendElement(p->interp, pEval, Tcl_NewIntObj(iEnd));
+  Tcl_ListObjAppendElement(p->interp, pEval, Tcl_NewIntObj(iPos));
+
+  rc = Tcl_EvalObjEx(p->interp, pEval, 0);
+  Tcl_DecrRefCount(pEval);
+
+  return rc;
+}
+
+static int xF5tApi(void*, Tcl_Interp*, int, Tcl_Obj *CONST []);
+
+static int xQueryPhraseCb(
+  const Fts5ExtensionApi *pApi, 
+  Fts5Context *pFts, 
+  void *pCtx
+){
+  F5tFunction *p = (F5tFunction*)pCtx;
+  static sqlite3_int64 iCmd = 0;
+  Tcl_Obj *pEval;
+  int rc;
+
+  char zCmd[64];
+  F5tApi sApi;
+
+  sApi.pApi = pApi;
+  sApi.pFts = pFts;
+  sprintf(zCmd, "f5t_2_%lld", iCmd++);
+  Tcl_CreateObjCommand(p->interp, zCmd, xF5tApi, &sApi, 0);
+
+  pEval = Tcl_DuplicateObj(p->pScript);
+  Tcl_IncrRefCount(pEval);
+  Tcl_ListObjAppendElement(p->interp, pEval, Tcl_NewStringObj(zCmd, -1));
+  rc = Tcl_EvalObjEx(p->interp, pEval, 0);
+  Tcl_DecrRefCount(pEval);
+  Tcl_DeleteCommand(p->interp, zCmd);
+
+  return rc;
+}
+
 /*
 **      api sub-command... 
 **
@@ -73,12 +124,21 @@ static int xF5tApi(
     int nArg;
     const char *zMsg;
   } aSub[] = {
-    { "xRowid",      0, "" },
-    { "xInstCount",  0, "" },
-    { "xInst",       1, "IDX" },
-    { "xColumnText", 1, "COL" },
-    { "xColumnSize", 1, "COL" },
+    { "xColumnCount",      0, "" },
+    { "xRowCount",         0, "" },
+    { "xColumnTotalSize",  1, "COL" },
+    { "xTokenize",         2, "TEXT SCRIPT" },
+    { "xPhraseCount",      0, "" },
+    { "xPhraseSize",       1, "PHRASE" },
+    { "xInstCount",        0, "" },
+    { "xInst",             1, "IDX" },
+    { "xRowid",            0, "" },
+    { "xColumnText",       1, "COL" },
+    { "xColumnSize",       1, "COL" },
+    { "xQueryPhrase",      2, "PHRASE SCRIPT" },
+    { 0, 0, 0}
   };
+
   int rc;
   int iSub = 0;
   F5tApi *p = (F5tApi*)clientData;
@@ -97,14 +157,67 @@ static int xF5tApi(
     return TCL_ERROR;
   }
 
+#define CASE(i,str) case i: assert( strcmp(aSub[i].zName, str)==0 );
   switch( iSub ){
-    case 0: { /* xRowid */
-      sqlite3_int64 iRowid = p->pApi->xRowid(p->pFts);
-      Tcl_SetObjResult(interp, Tcl_NewWideIntObj(iRowid));
+    CASE(0, "xColumnCount") {
+      int nCol;
+      nCol = p->pApi->xColumnCount(p->pFts);
+      if( rc==SQLITE_OK ){
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(nCol));
+      }
       break;
     }
-
-    case 1: { /* xInstCount */
+    CASE(1, "xRowCount") {
+      sqlite3_int64 nRow;
+      rc = p->pApi->xRowCount(p->pFts, &nRow);
+      if( rc==SQLITE_OK ){
+        Tcl_SetObjResult(interp, Tcl_NewWideIntObj(nRow));
+      }
+      break;
+    }
+    CASE(2, "xColumnTotalSize") {
+      int iCol;
+      sqlite3_int64 nSize;
+      if( Tcl_GetIntFromObj(interp, objv[2], &iCol) ) return TCL_ERROR;
+      rc = p->pApi->xColumnTotalSize(p->pFts, iCol, &nSize);
+      if( rc==SQLITE_OK ){
+        Tcl_SetObjResult(interp, Tcl_NewWideIntObj(nSize));
+      }
+      break;
+    }
+    CASE(3, "xTokenize") {
+      int nText;
+      char *zText = Tcl_GetStringFromObj(objv[2], &nText);
+      F5tFunction ctx;
+      ctx.interp = interp;
+      ctx.pScript = objv[3];
+      rc = p->pApi->xTokenize(p->pFts, zText, nText, &ctx, xTokenizeCb);
+      if( rc==SQLITE_OK ){
+        Tcl_ResetResult(interp);
+      }
+      return rc;
+    }
+    CASE(4, "xPhraseCount") {
+      int nPhrase;
+      nPhrase = p->pApi->xPhraseCount(p->pFts);
+      if( rc==SQLITE_OK ){
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(nPhrase));
+      }
+      break;
+    }
+    CASE(5, "xPhraseSize") {
+      int iPhrase;
+      int sz;
+      if( Tcl_GetIntFromObj(interp, objv[2], &iPhrase) ){
+        return TCL_ERROR;
+      }
+      sz = p->pApi->xPhraseSize(p->pFts, iPhrase);
+      if( rc==SQLITE_OK ){
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(sz));
+      }
+      break;
+    }
+    CASE(6, "xInstCount") {
       int nInst;
       rc = p->pApi->xInstCount(p->pFts, &nInst);
       if( rc==SQLITE_OK ){
@@ -112,8 +225,7 @@ static int xF5tApi(
       }
       break;
     }
-
-    case 2: { /* xInst */
+    CASE(7, "xInst") {
       int iIdx, ip, ic, io;
       if( Tcl_GetIntFromObj(interp, objv[2], &iIdx) ){
         return TCL_ERROR;
@@ -128,8 +240,12 @@ static int xF5tApi(
       }
       break;
     }
-
-    case 3: { /* xColumnText */
+    CASE(8, "xRowid") {
+      sqlite3_int64 iRowid = p->pApi->xRowid(p->pFts);
+      Tcl_SetObjResult(interp, Tcl_NewWideIntObj(iRowid));
+      break;
+    }
+    CASE(9, "xColumnText") {
       const char *z = 0;
       int n = 0;
       int iCol;
@@ -142,8 +258,7 @@ static int xF5tApi(
       }
       break;
     }
-
-    case 4: { /* xColumnSize */
+    CASE(10, "xColumnSize") {
       int n = 0;
       int iCol;
       if( Tcl_GetIntFromObj(interp, objv[2], &iCol) ){
@@ -155,11 +270,26 @@ static int xF5tApi(
       }
       break;
     }
+    CASE(11, "xQueryPhrase") {
+      int iPhrase;
+      F5tFunction ctx;
+      if( Tcl_GetIntFromObj(interp, objv[2], &iPhrase) ){
+        return TCL_ERROR;
+      }
+      ctx.interp = interp;
+      ctx.pScript = objv[3];
+      rc = p->pApi->xQueryPhrase(p->pFts, iPhrase, &ctx, xQueryPhraseCb);
+      if( rc==SQLITE_OK ){
+        Tcl_ResetResult(interp);
+      }
+      break;
+    }
 
     default: 
       assert( 0 );
       break;
   }
+#undef CASE
 
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, "error in api call", 0);
