@@ -23,18 +23,34 @@ do_execsql_test pragma3-101 {
   PRAGMA temp.data_version;
 } {1}
 
-# Writing is a no-op 
+# Writing to the pragma is a no-op 
 do_execsql_test pragma3-102 {
   PRAGMA main.data_version=1234;
   PRAGMA main.data_version;
 } {1 1}
 
+# EVIDENCE-OF: R-27726-60934 The "PRAGMA data_version" command provides
+# an indication that the database file has been modified.
+#
+# EVIDENCE-OF: R-30058-27547 The integer values returned by two
+# invocations of "PRAGMA data_version" will be different if changes
+# where committed to that database in between the two invocations.
+#
+# EVIDENCE-OF: R-10201-09349 The "PRAGMA data_version" command responses
+# to changes committed by the same database connection, by database
+# connections sharing a cache in shared cache mode, and by completely
+# independent database connections including connections in separate
+# threads and processes.
+#
+# In this test, it response to two separate changes on the same database
+# connection.
+#
 do_execsql_test pragma3-110 {
   CREATE TABLE t1(a);
   INSERT INTO t1 VALUES(100),(200),(300);
   SELECT * FROM t1;
   PRAGMA data_version;
-} {100 200 300 1}
+} {100 200 300 3}
 
 sqlite3 db2 test.db
 do_test pragma3-120 {
@@ -48,8 +64,17 @@ do_execsql_test pragma3-130 {
   INSERT INTO t1 VALUES(400),(500);
   SELECT * FROM t1;
   PRAGMA data_version;
-} {100 200 300 400 500 1}
+} {100 200 300 400 500 4}
 
+# EVIDENCE-OF: R-10201-09349 The "PRAGMA data_version" command responses
+# to changes committed by the same database connection, by database
+# connections sharing a cache in shared cache mode, and by completely
+# independent database connections including connections in separate
+# threads and processes.
+#
+# In these test, it response to changes in a different database connection
+# part of the same process.
+#
 do_test pragma3-140 {
   db2 eval {
     SELECT * FROM t1;
@@ -58,13 +83,76 @@ do_test pragma3-140 {
     SELECT * FROM t1;
     PRAGMA data_version;
   }
-} {100 200 300 400 500 2 101 201 301 401 501 2}
-
+} {100 200 300 400 500 2 101 201 301 401 501 3}
 do_execsql_test pragma3-150 {
   SELECT * FROM t1;
   PRAGMA data_version;
-} {101 201 301 401 501 2}
+} {101 201 301 401 501 5}
 
-
+# EVIDENCE-OF: R-10201-09349 The "PRAGMA data_version" command responses
+# to changes committed by the same database connection, by database
+# connections sharing a cache in shared cache mode, and by completely
+# independent database connections including connections in separate
+# threads and processes.
+#
+# This test verifies behavior when a separate process changes the database
+# file.
+#
+do_test pragma3-200 {
+  set fd [open pragma3.txt wb]
+  puts $fd {
+     sqlite3 db test.db;
+     db eval {DELETE FROM t1 WHERE a>300};
+     db close;
+     exit;
+  }
+  close $fd
+  exec [info nameofexec] pragma3.txt
+  forcedelete pragma3.txt
+  db eval {
+    PRAGMA data_version;
+    SELECT * FROM t1;
+  }
+} {6 101 201}
 db2 close
+db close
+
+# EVIDENCE-OF: R-10201-09349 The "PRAGMA data_version" command responses
+# to changes committed by the same database connection, by database
+# connections sharing a cache in shared cache mode, and by completely
+# independent database connections including connections in separate
+# threads and processes.
+#
+# The next series of tests verifies the behavior for shared-cache
+# database connections.
+#
+ifcapable shared_cache {
+  set ::enable_shared_cache [sqlite3_enable_shared_cache 1]
+  sqlite3 db test.db
+  sqlite3 db2 test.db
+  do_test pragma3-300 {
+    db eval {
+      PRAGMA data_version;
+      CREATE TABLE t3(a,b,c);
+      PRAGMA data_version;
+    }
+  } {1 2}
+  do_test pragma3-310 {
+    db2 eval {
+      PRAGMA data_version;
+      INSERT INTO t3(a,b,c) VALUES('abc','def','ghi');
+      SELECT * FROM t3;
+      PRAGMA data_version;
+    }
+  } {2 abc def ghi 3}
+  do_test pragma3-320 {
+    db eval {
+      PRAGMA data_version;
+      SELECT * FROM t3;
+    }
+  } {3 abc def ghi}
+  db2 close
+  sqlite3_enable_shared_cache $::enable_shared_cache
+}
+
 finish_test
