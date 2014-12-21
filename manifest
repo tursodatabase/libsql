@@ -1,11 +1,11 @@
-C Support\smanually\sdisabling\soverlapped\sfile\sI/O\sfor\sWindows\ssub-platforms\sother\sthan\sWindows\sCE.
-D 2014-12-20T22:21:49.905
+C Fixes\sto\sthe\sREADME.md\sfile.\s\sNo\schanges\sto\scode.
+D 2014-12-21T11:56:02.079
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6c4f961fa91d0b4fa121946a19f9e5eac2f2f809
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc b363b90fe1bfc3b87d190f2f728a126c00d9ce09
 F Makefile.vxworks 034289efa9d591b04b1a73598623119c306cbba0
-F README.md 64f270c43c38c46de749e419c22f0ae2f4499fe8
+F README.md d58e3bebc0a4145e0f2a87994015fdb575a8e866
 F VERSION d846487aff892625eb8e75960234e7285f0462fe
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 9eb448a552d5c0185cf62c463f9c173cedae3811
@@ -1234,7 +1234,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P cb3e4219ac9560d2773b85453aafda54b7c9346f
-R ac9484154ad6b155e9718a0c54a2f6d5
-U mistachkin
-Z f0b985b941d4fc82caba937840400408
+P b9330b887cc8bed2b6b3e6c1b269788e08ccf50d
+R 92e5107af7d9564747f56fe6b5bf8f20
+U drh
+Z 2bbd439edb2e1185c83f3c807f675b2f
