@@ -1,5 +1,5 @@
-C Fixes\sto\sthe\sREADME.md\sfile.\s\sNo\schanges\sto\scode.
-D 2014-12-21T11:56:02.079
+C Redefine\sthe\sway\sPRAGMA\sdata_version\sworks:\s\sIt\scontinues\sto\schange\swhen\nany\sother\sconnection\scommits,\sincluding\sshared-cache\sconnections,\sbut\sdoes\snot\nchange\sif\sthe\slocal\sconnection\scommits.
+D 2014-12-22T18:41:21.243
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6c4f961fa91d0b4fa121946a19f9e5eac2f2f809
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -173,9 +173,9 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 7ddee9c7d505e07e959a575b18498f17c71e53ea
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 49ca66250c7dfa844a4d4cb8272b87420d27d3a5
-F src/btree.c b2b2bd0aa02430fe86bc891295db919fcafb0d64
+F src/btree.c 1de0560426ecde85ff3ea95d7c94261d7652e284
 F src/btree.h 94277c1d30c0b75705974bcc8b0c05e79c03d474
-F src/btreeInt.h 3363e18fd76f69a27a870b25221b2345b3fd4d21
+F src/btreeInt.h a3d0ae1d511365e1a2b76ad10960dbe55c286f34
 F src/build.c 162d84e4833b03f9d07192ef06057b0226f6e543
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c 198a0066ba60ab06fc00fba1998d870a4d575463
@@ -785,7 +785,7 @@ F test/percentile.test b98fc868d71eb5619d42a1702e9ab91718cbed54
 F test/permutations.test 4e12d43f4639ea8a0e366d9c64e0009afe2eb544
 F test/pragma.test aa16dedfe01c02c8895169012f7dfde9c163f0d5
 F test/pragma2.test aea7b3d82c76034a2df2b38a13745172ddc0bc13
-F test/pragma3.test 1935dfdd0082250df4cf4caed52bdfef527c34ff
+F test/pragma3.test 3da08d907ba027c50ede8d6e95418f32898971a5
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
 F test/printf2.test b4acd4bf8734243257f01ddefa17c4fb090acc8a
 F test/progress.test a282973d1d17f08071bc58a77d6b80f2a81c354d
@@ -1234,7 +1234,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b9330b887cc8bed2b6b3e6c1b269788e08ccf50d
-R 92e5107af7d9564747f56fe6b5bf8f20
+P ef4b734d1ff3dbb9c802c60dc1384033fdfd87e5
+R 717423e0d3aaa97f5eb5c0e7357ce13c
 U drh
-Z 2bbd439edb2e1185c83f3c807f675b2f
+Z 78337e4052167193689952903ddb287b
