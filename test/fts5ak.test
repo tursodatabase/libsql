@@ -16,7 +16,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-set testprefix fts5aj
+set testprefix fts5ak
 
 # If SQLITE_ENABLE_FTS5 is defined, omit this file.
 ifcapable !fts5 {
@@ -116,6 +116,27 @@ do_execsql_test 2.6.2 {
   SELECT highlight(ft2, 0, '[', ']') FROM ft2 WHERE ft2 MATCH 'd f'
 } {
   {a b c [d] e [f] g h i j}
+}
+
+#-------------------------------------------------------------------------
+# The example from the docs.
+#
+do_execsql_test 3.1 {
+  -- Assuming this:
+  CREATE VIRTUAL TABLE ft USING fts5(a);
+  INSERT INTO ft VALUES('a b c x c d e');
+  INSERT INTO ft VALUES('a b c c d e');
+  INSERT INTO ft VALUES('a b c d e');
+
+  -- The following SELECT statement returns these three rows:
+  --   '[a b c] x [c d e]'
+  --   '[a b c] [c d e]'
+  --   '[a b c d e]'
+  SELECT highlight(ft, 0, '[', ']') FROM ft WHERE ft MATCH 'a+b+c AND c+d+e';
+} {
+  {[a b c d e]}
+  {[a b c] [c d e]}
+  {[a b c] x [c d e]}
 }
 
 

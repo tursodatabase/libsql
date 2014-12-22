@@ -38,19 +38,19 @@ proc do_snippet_test {tn doc match res} {
   do_execsql_test $tn.1 {
     DELETE FROM t1;
     INSERT INTO t1 VALUES($v1, NULL);
-    SELECT snippet(t1, '[', ']', '...', 7) FROM t1 WHERE t1 MATCH $v2;
+    SELECT snippet(t1, -1, '[', ']', '...', 7) FROM t1 WHERE t1 MATCH $v2;
   } [list $res]
 
   do_execsql_test $tn.2 {
     DELETE FROM t1;
     INSERT INTO t1 VALUES(NULL, $v1);
-    SELECT snippet(t1, '[', ']', '...', 7) FROM t1 WHERE t1 MATCH $v2;
+    SELECT snippet(t1, -1, '[', ']', '...', 7) FROM t1 WHERE t1 MATCH $v2;
   } [list $res]
 
   do_execsql_test $tn.3 {
     DELETE FROM t1;
     INSERT INTO t1 VALUES($v1, NULL);
-    SELECT snippet(t1, '[', ']', '...', 7) FROM t1 WHERE t1 MATCH $v2
+    SELECT snippet(t1, -1, '[', ']', '...', 7) FROM t1 WHERE t1 MATCH $v2
     ORDER BY rank DESC;
   } [list $res]
 

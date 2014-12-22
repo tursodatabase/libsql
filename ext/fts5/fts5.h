@@ -141,9 +141,10 @@ typedef void (*fts5_extension_function)(
 **   future invocation of the same fts5 extension function made as part of
 **   of the same MATCH query using the xGetAuxdata() API.
 **
-**   Each extension function is allocated a single auxiliary data slot per
-**   query. If the extension function is invoked more than once by the SQL
-**   query, then all invocations share a single auxiliary data context.
+**   Each extension function is allocated a single auxiliary data slot for
+**   each FTS query (MATCH expression). If the extension function is invoked 
+**   more than once for a single FTS query, then all invocations share a 
+**   single auxiliary data context.
 **
 **   If there is already an auxiliary data pointer when this function is
 **   invoked, then it is replaced by the new pointer. If an xDelete callback
@@ -152,6 +153,11 @@ typedef void (*fts5_extension_function)(
 **
 **   The xDelete callback, if one is specified, is also invoked on the
 **   auxiliary data pointer after the FTS5 query has finished.
+**
+**   If an error (e.g. an OOM condition) occurs within this function, an
+**   the auxiliary data is set to NULL and an error code returned. If the
+**   xDelete parameter was not NULL, it is invoked on the auxiliary data
+**   pointer before returning.
 **
 **
 ** xGetAuxdata(pFts5, bClear)

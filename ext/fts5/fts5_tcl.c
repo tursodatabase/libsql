@@ -57,6 +57,19 @@ struct F5tApi {
   Fts5Context *pFts;
 };
 
+/*
+** An object of this type is used with the xSetAuxdata() and xGetAuxdata()
+** API test wrappers. The tcl interface allows a single tcl value to be 
+** saved using xSetAuxdata(). Instead of simply storing a pointer to the
+** tcl object, the code in this file wraps it in an sqlite3_malloc'd 
+** instance of the following struct so that if the destructor is not 
+** correctly invoked it will be reported as an SQLite memory leak.
+*/
+typedef struct F5tAuxData F5tAuxData;
+struct F5tAuxData {
+  Tcl_Obj *pObj;
+};
+
 static int xTokenizeCb(
   void *pCtx, 
   const char *zToken, int nToken, 
@@ -108,8 +121,14 @@ static int xQueryPhraseCb(
   return rc;
 }
 
+static void xSetAuxdataDestructor(void *p){
+  F5tAuxData *pData = (F5tAuxData*)p;
+  Tcl_DecrRefCount(pData->pObj);
+  sqlite3_free(pData);
+}
+
 /*
-**      api sub-command... 
+**      api sub-command...
 **
 ** Description...
 */
@@ -136,6 +155,8 @@ static int xF5tApi(
     { "xColumnText",       1, "COL" },
     { "xColumnSize",       1, "COL" },
     { "xQueryPhrase",      2, "PHRASE SCRIPT" },
+    { "xSetAuxdata",       1, "VALUE" },
+    { "xGetAuxdata",       1, "CLEAR" },
     { 0, 0, 0}
   };
 
@@ -281,6 +302,34 @@ static int xF5tApi(
       rc = p->pApi->xQueryPhrase(p->pFts, iPhrase, &ctx, xQueryPhraseCb);
       if( rc==SQLITE_OK ){
         Tcl_ResetResult(interp);
+      }
+      break;
+    }
+    CASE(12, "xSetAuxdata") {
+      F5tAuxData *pData = (F5tAuxData*)sqlite3_malloc(sizeof(F5tAuxData));
+      if( pData==0 ){
+        Tcl_AppendResult(interp, "out of memory", 0);
+        return TCL_ERROR;
+      }
+      pData->pObj = objv[2];
+      Tcl_IncrRefCount(pData->pObj);
+      rc = p->pApi->xSetAuxdata(p->pFts, pData, xSetAuxdataDestructor);
+      break;
+    }
+    CASE(13, "xGetAuxdata") {
+      F5tAuxData *pData;
+      int bClear;
+      if( Tcl_GetBooleanFromObj(interp, objv[2], &bClear) ){
+        return TCL_ERROR;
+      }
+      pData = (F5tAuxData*)p->pApi->xGetAuxdata(p->pFts, bClear);
+      if( pData==0 ){
+        Tcl_ResetResult(interp);
+      }else{
+        Tcl_SetObjResult(interp, pData->pObj);
+        if( bClear ){
+          xSetAuxdataDestructor((void*)pData);
+        }
       }
       break;
     }

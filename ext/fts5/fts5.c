@@ -1300,7 +1300,10 @@ static int fts5ApiSetAuxdata(
     }
   }else{
     pData = (Fts5Auxdata*)sqlite3_malloc(sizeof(Fts5Auxdata));
-    if( pData==0 ) return SQLITE_NOMEM;
+    if( pData==0 ){
+      if( xDelete ) xDelete(pPtr);
+      return SQLITE_NOMEM;
+    }
     memset(pData, 0, sizeof(Fts5Auxdata));
     pData->pAux = pCsr->pAux;
     pData->pNext = pCsr->pAuxdata;
