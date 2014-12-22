@@ -32,8 +32,8 @@ do_execsql_test pragma3-102 {
 # EVIDENCE-OF: R-27726-60934 The "PRAGMA data_version" command provides
 # an indication that the database file has been modified.
 #
-# EVIDENCE-OF: R-25838-33704 The "PRAGMA data_version" value is
-# unchanced for commits made on the same database connection.
+# EVIDENCE-OF: R-47505-58569 The "PRAGMA data_version" value is
+# unchanged for commits made on the same database connection.
 #
 do_execsql_test pragma3-110 {
   PRAGMA data_version;
