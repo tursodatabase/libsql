@@ -6,7 +6,7 @@
 #
 set ::USAGE_MESSAGE {
 This Tcl script is used to test the various configurations required
-before releasing a new version. Supported command line options (all 
+before releasing a new version. Supported command line options (all
 optional) are:
 
     --srcdir   TOP-OF-SQLITE-TREE      (see below)
@@ -14,14 +14,14 @@ optional) are:
     --config   CONFIGNAME              (Run only CONFIGNAME)
     --quick                            (Run "veryquick.test" only)
     --buildonly                        (Just build testfixture - do not run)
-    --dryrun                           (Print what would have happened)      
+    --dryrun                           (Print what would have happened)
     --info                             (Show diagnostic info)
 
 The default value for --srcdir is the parent of the directory holding
 this script.
 
 The script determines the default value for --platform using the
-$tcl_platform(os) and $tcl_platform(machine) variables. Supported 
+$tcl_platform(os) and $tcl_platform(machine) variables. Supported
 platforms are "Linux-x86", "Linux-x86_64" and "Darwin-i386".
 
 Every test begins with a fresh run of the configure script at the top
@@ -132,7 +132,7 @@ array set ::Configs {
     -DSQLITE_DEFAULT_CACHE_SIZE=1000
     -DSQLITE_MAX_LENGTH=2147483645
     -DSQLITE_MAX_VARIABLE_NUMBER=500000
-    -DSQLITE_DEBUG=1 
+    -DSQLITE_DEBUG=1
     -DSQLITE_PREFER_PROXY_LOCKING=1
   }
   "Extra-Robustness" {
@@ -182,6 +182,9 @@ array set ::Platforms {
     "Locking-Style"           test
     "OS-X"                    "threadtest fulltest"
   }
+  "Windows NT-intel" {
+    "Default"                 "threadtest fulltest"
+  }
 }
 
 
@@ -199,7 +202,7 @@ foreach {key value} [array get ::Platforms] {
 }
 
 proc run_test_suite {name testtarget config} {
-  # Tcl variable $opts is used to build up the value used to set the 
+  # Tcl variable $opts is used to build up the value used to set the
   # OPTS Makefile variable. Variable $cflags holds the value for
   # CFLAGS. The makefile will pass OPTS to both gcc and lemon, but
   # CFLAGS is only passed to gcc.
@@ -238,10 +241,9 @@ proc run_test_suite {name testtarget config} {
   set tm1 [clock seconds]
   set origdir [pwd]
   dryrun cd $dir
-  set rc [catch [list dryrun exec $::SRCDIR/configure >& test.log]]
+  set rc [catch [configureCommand]]
   if {!$rc} {
-    set rc [catch [list dryrun exec make clean $testtarget \
-                             CFLAGS=$cflags OPTS=$opts >>& test.log]]
+    set rc [catch [makeCommand $testtarget $cflags $opts]]
   }
   set tm2 [clock seconds]
   dryrun cd $origdir
@@ -259,8 +261,30 @@ proc run_test_suite {name testtarget config} {
   }
 }
 
+# The following procedure returns the "configure" command to be exectued for
+# the current platform, which may be Windows (via MinGW, etc).
+#
+proc configureCommand {} {
+  set result [list dryrun exec]
+  if {$::tcl_platform(platform)=="windows"} {
+    lappend result sh
+  }
+  lappend result $::SRCDIR/configure >& test.log
+}
+
+# The following procedure returns the "make" command to be executed for the
+# specified targets, compiler flags, and options.
+#
+proc makeCommand { targets cflags opts } {
+  set result [list dryrun exec make clean]
+  foreach target $targets {
+    lappend result $target
+  }
+  lappend result CFLAGS=$cflags OPTS=$opts >>& test.log
+}
+
 # The following procedure either prints its arguments (if ::DRYRUN is true)
-# or executes the command of its arguments in the calling context 
+# or executes the command of its arguments in the calling context
 # (if ::DRYRUN is false).
 #
 proc dryrun {args} {
@@ -335,7 +359,7 @@ proc process_options {argv} {
         }
         exit
       }
-  
+
       default {
         puts stderr ""
         puts stderr [string trim $::USAGE_MESSAGE]
