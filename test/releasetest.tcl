@@ -269,7 +269,7 @@ proc configureCommand {} {
   if {$::tcl_platform(platform)=="windows"} {
     lappend result sh
   }
-  lappend result $::SRCDIR/configure >& test.log
+  lappend result $::SRCDIR/configure -enable-load-extension >& test.log
 }
 
 # The following procedure returns the "make" command to be executed for the
