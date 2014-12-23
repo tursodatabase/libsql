@@ -320,10 +320,17 @@ impl InnerSqliteConnection {
                     SqliteError{ code: r,
                                  message: ffi::code_to_str(r).to_string() }
                 } else {
+                    let e = SqliteError::from_handle(db, r);
                     ffi::sqlite3_close(db);
-                    SqliteError::from_handle(db, r)
+                    e
                 };
 
+                return Err(e);
+            }
+            let r = ffi::sqlite3_busy_timeout(db, 5000);
+            if r != ffi::SQLITE_OK {
+                let e = SqliteError::from_handle(db, r);
+                ffi::sqlite3_close(db);
                 return Err(e);
             }
             Ok(InnerSqliteConnection{ db: db })
