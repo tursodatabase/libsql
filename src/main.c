@@ -271,6 +271,13 @@ int sqlite3_initialize(void){
 ** when this routine is invoked, then this routine is a harmless no-op.
 */
 int sqlite3_shutdown(void){
+#ifdef SQLITE_OMIT_WSD
+  int rc = sqlite3_wsd_init(4096, 24);
+  if( rc!=SQLITE_OK ){
+    return rc;
+  }
+#endif
+
   if( sqlite3GlobalConfig.isInit ){
 #ifdef SQLITE_EXTRA_SHUTDOWN
     void SQLITE_EXTRA_SHUTDOWN(void);

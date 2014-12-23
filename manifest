@@ -1,5 +1,5 @@
-C Fix\sa\spotential\ssegfault\sfollowing\sOOM\serror\sin\sthe\stest\sharness.\s\sThe\nSQLite\score\sitself\sis\snot\sat\sfault.
-D 2014-12-23T20:05:19.241
+C Permit\ssqlite3_shutdown()\sto\sbe\scalled\swith\sOMIT_WSD\senabled\sand\swithout\shaving\scalled\ssqlite3_initialize()\sfirst.
+D 2014-12-23T20:42:48.779
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6c4f961fa91d0b4fa121946a19f9e5eac2f2f809
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -195,7 +195,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
 F src/loadext.c 86bd4e2fccd520b748cba52492ab60c4a770f660
-F src/main.c ee498c89735ba7b581fbd58d2ad2e7679a0475b2
+F src/main.c 784f3d613f08d8bfba238a5baa7398770a641de2
 F src/malloc.c 740db54387204c9a2eb67c6d98e68b08e9ef4eab
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c faf615aafd8be74a71494dfa027c113ea5c6615f
@@ -1234,7 +1234,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a08b0c7512287ce5ae3fffe02c092d0eb25b3a25
-R 6f17c6ca29a22c9a696402dcec6c7766
-U drh
-Z 3a6a677c416cfd077a0efd463f488c83
+P 1bb26695ff28a96d740752e327c2e0a0da1d067e
+R 69846a8eed33bdc4ac13d4f2cdf5a199
+U mistachkin
+Z c9331cbf8b5ecd4eca34d95e3015ec1f
