@@ -117,8 +117,8 @@ static int fts5CInstIterInit(
 typedef struct HighlightContext HighlightContext;
 struct HighlightContext {
   CInstIter iter;                 /* Coalesced Instance Iterator */
-  int iRangeStart;
-  int iRangeEnd;
+  int iRangeStart;                /* First token to include */
+  int iRangeEnd;                  /* If non-zero, last token to include */
   const char *zOpen;              /* Opening highlight */
   const char *zClose;             /* Closing highlight */
   const char *zIn;                /* Input text */
@@ -164,7 +164,7 @@ static int fts5HighlightCb(
 
   if( p->iRangeEnd>0 ){
     if( iPos<p->iRangeStart || iPos>p->iRangeEnd ) return SQLITE_OK;
-    if( iPos==p->iRangeStart ) p->iOff = iStartOff;
+    if( p->iRangeStart && iPos==p->iRangeStart ) p->iOff = iStartOff;
   }
 
   if( iPos==p->iter.iStart ){
@@ -239,9 +239,12 @@ static void fts5HighlightFunction(
   sqlite3_free(ctx.zOut);
 }
 /*
+** End of highlight() implementation.
 **************************************************************************/
 
-
+/*
+** Implementation of snippet() function.
+*/
 static void fts5SnippetFunction(
   const Fts5ExtensionApi *pApi,   /* API offered by current FTS version */
   Fts5Context *pFts,              /* First arg to pass to pApi functions */
@@ -260,7 +263,7 @@ static void fts5SnippetFunction(
   unsigned char *aSeen;           /* Array of "seen instance" flags */
   int iBestCol;                   /* Column containing best snippet */
   int iBestStart = 0;             /* First token of best snippet */
-  int iBestLast = nToken;         /* Last token of best snippet */
+  int iBestLast;                  /* Last token of best snippet */
   int nBestScore = 0;             /* Score of best snippet */
   int nColSize;                   /* Total size of iBestCol in tokens */
 
@@ -271,13 +274,13 @@ static void fts5SnippetFunction(
   }
 
   memset(&ctx, 0, sizeof(HighlightContext));
-  rc = pApi->xColumnText(pFts, iCol, &ctx.zIn, &ctx.nIn);
-
   iCol = sqlite3_value_int(apVal[0]);
+  rc = pApi->xColumnText(pFts, iCol, &ctx.zIn, &ctx.nIn);
   ctx.zOpen = (const char*)sqlite3_value_text(apVal[1]);
   ctx.zClose = (const char*)sqlite3_value_text(apVal[2]);
   zEllips = (const char*)sqlite3_value_text(apVal[3]);
   nToken = sqlite3_value_int(apVal[4]);
+  iBestLast = nToken-1;
 
   iBestCol = (iCol>=0 ? iCol : 0);
   nPhrase = pApi->xPhraseCount(pFts);
@@ -363,151 +366,78 @@ static void fts5SnippetFunction(
 
 /************************************************************************/
 
-
 /*
-** Context object passed by fts5GatherTotals() to xQueryPhrase callback
-** fts5GatherCallback().
+** The first time the bm25() function is called for a query, an instance
+** of the following structure is allocated and populated.
 */
-struct Fts5GatherCtx {
-  int nCol;                       /* Number of columns in FTS table */
-  int iPhrase;                    /* Phrase currently under investigation */
-  int *anVal;                     /* Array to populate */
+typedef struct Fts5Bm25Data Fts5Bm25Data;
+struct Fts5Bm25Data {
+  int nPhrase;                    /* Number of phrases in query */
+  double avgdl;                   /* Average number of tokens in each row */
+  double *aIDF;                   /* IDF for each phrase */
+  double *aFreq;                  /* Array used to calculate phrase freq. */
 };
 
 /*
-** Callback used by fts5GatherTotals() with the xQueryPhrase() API.
+** Callback used by fts5Bm25GetData() to count the number of rows in the
+** table matched by each individual phrase within the query.
 */
-static int fts5GatherCallback(
+static int fts5CountCb(
   const Fts5ExtensionApi *pApi, 
   Fts5Context *pFts,
-  void *pUserData                 /* Pointer to Fts5GatherCtx object */
+  void *pUserData                 /* Pointer to sqlite3_int64 variable */
 ){
-  struct Fts5GatherCtx *p = (struct Fts5GatherCtx*)pUserData;
-  int i = 0;
-  int iPrev = -1;
-  i64 iPos = 0;
-
-  while( 0==pApi->xPoslist(pFts, 0, &i, &iPos) ){
-    int iCol = FTS5_POS2COLUMN(iPos);
-    if( iCol!=iPrev ){
-      p->anVal[p->iPhrase * p->nCol + iCol]++;
-      iPrev = iCol;
-    }
-  }
-
+  sqlite3_int64 *pn = (sqlite3_int64*)pUserData;
+  (*pn)++;
   return SQLITE_OK;
 }
 
 /*
-** This function returns a pointer to an array of integers containing entries
-** indicating the number of rows in the table for which each phrase features 
-** at least once in each column.
-**
-** If nCol is the number of matchable columns in the table, and nPhrase is
-** the number of phrases in the query, the array contains a total of
-** (nPhrase*nCol) entries.
-**
-** For phrase iPhrase and column iCol:
-**
-**   anVal[iPhrase * nCol + iCol]
-**
-** is set to the number of rows in the table for which column iCol contains 
-** at least one instance of phrase iPhrase.
+** Set *ppData to point to the Fts5Bm25Data object for the current query. 
+** If the object has not already been allocated, allocate and populate it
+** now.
 */
-static int fts5GatherTotals(
-  const Fts5ExtensionApi *pApi,   /* API offered by current FTS version */
-  Fts5Context *pFts,              /* First arg to pass to pApi functions */
-  int **panVal
+static int fts5Bm25GetData(
+  const Fts5ExtensionApi *pApi, 
+  Fts5Context *pFts,
+  Fts5Bm25Data **ppData           /* OUT: bm25-data object for this query */
 ){
-  int rc = SQLITE_OK;
-  int *anVal = 0;
-  int i;                          /* For iterating through expression phrases */
-  int nPhrase = pApi->xPhraseCount(pFts);
-  int nCol = pApi->xColumnCount(pFts);
-  int nByte = nCol * nPhrase * sizeof(int);
-  struct Fts5GatherCtx sCtx;
-
-  sCtx.nCol = nCol;
-  anVal = sCtx.anVal = (int*)sqlite3_malloc(nByte);
-  if( anVal==0 ){
-    rc = SQLITE_NOMEM;
-  }else{
-    memset(anVal, 0, nByte);
-  }
-
-  for(i=0; i<nPhrase && rc==SQLITE_OK; i++){
-    sCtx.iPhrase = i;
-    rc = pApi->xQueryPhrase(pFts, i, (void*)&sCtx, fts5GatherCallback);
-  }
-
-  if( rc!=SQLITE_OK ){
-    sqlite3_free(anVal);
-    anVal = 0;
-  }
-
-  *panVal = anVal;
-  return rc;
-}
-
-typedef struct Fts5Bm25Context Fts5Bm25Context;
-struct Fts5Bm25Context {
-  int nPhrase;                    /* Number of phrases in query */
-  int nCol;                       /* Number of columns in FTS table */
-  double *aIDF;                   /* Array of IDF values */
-  double *aAvg;                   /* Average size of each column in tokens */
-};
-
-static int fts5Bm25GetContext(
-  const Fts5ExtensionApi *pApi,   /* API offered by current FTS version */
-  Fts5Context *pFts,              /* First arg to pass to pApi functions */
-  Fts5Bm25Context **pp            /* OUT: Context object */
-){
-  Fts5Bm25Context *p;
-  int rc = SQLITE_OK;
+  int rc = SQLITE_OK;             /* Return code */
+  Fts5Bm25Data *p;                /* Object to return */
 
   p = pApi->xGetAuxdata(pFts, 0);
   if( p==0 ){
-    int *anVal = 0;
-    int ic;                       /* For iterating through columns */
-    int ip;                       /* For iterating through phrases */
-    i64 nRow;                     /* Total number of rows in table */
-    int nPhrase = pApi->xPhraseCount(pFts);
-    int nCol = pApi->xColumnCount(pFts);
-    int nByte = sizeof(Fts5Bm25Context) 
-              + sizeof(double) * nPhrase * nCol       /* aIDF[] */
-              + sizeof(double) * nCol;                /* aAvg[] */
+    int nPhrase;                  /* Number of phrases in query */
+    sqlite3_int64 nRow;           /* Number of rows in table */
+    sqlite3_int64 nToken;         /* Number of tokens in table */
+    int nByte;                    /* Bytes of space to allocate */
+    int i;
 
-    p = (Fts5Bm25Context*)sqlite3_malloc(nByte);
+    /* Allocate the Fts5Bm25Data object */
+    nPhrase = pApi->xPhraseCount(pFts);
+    nByte = sizeof(Fts5Bm25Data) + nPhrase*2*sizeof(double);
+    p = (Fts5Bm25Data*)sqlite3_malloc(nByte);
     if( p==0 ){
       rc = SQLITE_NOMEM;
     }else{
       memset(p, 0, nByte);
-      p->aAvg = (double*)&p[1];
-      p->aIDF = (double*)&p->aAvg[nCol];
-      p->nCol = nCol;
       p->nPhrase = nPhrase;
+      p->aIDF = (double*)&p[1];
+      p->aFreq = &p->aIDF[nPhrase];
     }
 
-    if( rc==SQLITE_OK ){
-      rc = pApi->xRowCount(pFts, &nRow); 
-      assert( nRow>0 || rc!=SQLITE_OK );
-      if( nRow<2 ) nRow = 2;
-    }
+    /* Calculate the average document length for this FTS5 table */
+    if( rc==SQLITE_OK ) rc = pApi->xRowCount(pFts, &nRow);
+    if( rc==SQLITE_OK ) rc = pApi->xColumnTotalSize(pFts, -1, &nToken);
+    if( rc==SQLITE_OK ) p->avgdl = (double)nToken  / (double)nRow;
 
-    for(ic=0; rc==SQLITE_OK && ic<nCol; ic++){
-      i64 nToken = 0;
-      rc = pApi->xColumnTotalSize(pFts, ic, &nToken);
-      p->aAvg[ic] = (double)nToken / (double)nRow;
-    }
-
-    if( rc==SQLITE_OK ){
-      rc = fts5GatherTotals(pApi, pFts, &anVal);
-    }
-    for(ic=0; ic<nCol; ic++){
-      for(ip=0; rc==SQLITE_OK && ip<nPhrase; ip++){
-        /* Calculate the IDF (Inverse Document Frequency) for phrase ip
-        ** in column ic. This is done using the standard BM25 formula as
-        ** found on wikipedia:
+    /* Calculate an IDF for each phrase in the query */
+    for(i=0; rc==SQLITE_OK && i<nPhrase; i++){
+      sqlite3_int64 nHit = 0;
+      rc = pApi->xQueryPhrase(pFts, i, (void*)&nHit, fts5CountCb);
+      if( rc==SQLITE_OK ){
+        /* Calculate the IDF (Inverse Document Frequency) for phrase i.
+        ** This is done using the standard BM25 formula as found on wikipedia:
         **
         **   IDF = log( (N - nHit + 0.5) / (nHit + 0.5) )
         **
@@ -519,72 +449,26 @@ static int fts5Bm25GetContext(
         ** negative. Which is undesirable. So the mimimum allowable IDF is
         ** (1e-6) - roughly the same as a term that appears in just over
         ** half of set of 5,000,000 documents.  */
-        int idx = ip * nCol + ic; /* Index in aIDF[] and anVal[] arrays */
-        int nHit = anVal[idx];    /* Number of docs matching "ic: ip" */
-
-        p->aIDF[idx] = log( (0.5 + nRow - nHit) / (0.5 + nHit) );
-        if( p->aIDF[idx]<=0.0 ) p->aIDF[idx] = 1e-6;
-        assert( p->aIDF[idx]>=0.0 );
+        double idf = log( (nRow - nHit + 0.5) / (nHit + 0.5) );
+        if( idf<=0.0 ) idf = 1e-6;
+        p->aIDF[i] = idf;
       }
     }
 
-    sqlite3_free(anVal);
-    if( rc==SQLITE_OK ){
-      rc = pApi->xSetAuxdata(pFts, p, sqlite3_free);
-    }
     if( rc!=SQLITE_OK ){
       sqlite3_free(p);
-      p = 0;
+    }else{
+      rc = pApi->xSetAuxdata(pFts, p, sqlite3_free);
     }
+    if( rc!=SQLITE_OK ) p = 0;
   }
-
-  *pp = p;
+  *ppData = p;
   return rc;
 }
 
-static void fts5Bm25DebugContext(
-  int *pRc,                       /* IN/OUT: Return code */
-  Fts5Buffer *pBuf,               /* Buffer to populate */
-  Fts5Bm25Context *p              /* Context object to decode */
-){
-  int ip;
-  int ic;
-
-  sqlite3Fts5BufferAppendString(pRc, pBuf, "idf ");
-  if( p->nPhrase>1 || p->nCol>1 ){
-    sqlite3Fts5BufferAppendString(pRc, pBuf, "{");
-  }
-  for(ip=0; ip<p->nPhrase; ip++){
-    if( ip>0 ) sqlite3Fts5BufferAppendString(pRc, pBuf, " ");
-    if( p->nCol>1 ) sqlite3Fts5BufferAppendString(pRc, pBuf, "{");
-    for(ic=0; ic<p->nCol; ic++){
-      if( ic>0 ) sqlite3Fts5BufferAppendString(pRc, pBuf, " ");
-      sqlite3Fts5BufferAppendPrintf(pRc, pBuf, "%f", p->aIDF[ip*p->nCol+ic]);
-    }
-    if( p->nCol>1 ) sqlite3Fts5BufferAppendString(pRc, pBuf, "}");
-  }
-  if( p->nPhrase>1 || p->nCol>1 ){
-    sqlite3Fts5BufferAppendString(pRc, pBuf, "}");
-  }
-
-  sqlite3Fts5BufferAppendString(pRc, pBuf, " avgdl ");
-  if( p->nCol>1 ) sqlite3Fts5BufferAppendString(pRc, pBuf, "{");
-  for(ic=0; ic<p->nCol; ic++){
-    if( ic>0 ) sqlite3Fts5BufferAppendString(pRc, pBuf, " ");
-    sqlite3Fts5BufferAppendPrintf(pRc, pBuf, "%f", p->aAvg[ic]);
-  }
-  if( p->nCol>1 ) sqlite3Fts5BufferAppendString(pRc, pBuf, "}");
-}
-
-static void fts5Bm25DebugRow(
-  int *pRc, 
-  Fts5Buffer *pBuf, 
-  Fts5Bm25Context *p, 
-  const Fts5ExtensionApi *pApi, 
-  Fts5Context *pFts
-){
-}
-
+/*
+** Implementation of bm25() function.
+*/
 static void fts5Bm25Function(
   const Fts5ExtensionApi *pApi,   /* API offered by current FTS version */
   Fts5Context *pFts,              /* First arg to pass to pApi functions */
@@ -592,67 +476,53 @@ static void fts5Bm25Function(
   int nVal,                       /* Number of values in apVal[] array */
   sqlite3_value **apVal           /* Array of trailing arguments */
 ){
-  const double k1 = 1.2;
-  const double B = 0.75;
-  int rc = SQLITE_OK;
-  Fts5Bm25Context *p;
+  const double k1 = 1.2;          /* Constant "k1" from BM25 formula */
+  const double b = 0.75;          /* Constant "b" from BM25 formula */
+  int rc = SQLITE_OK;             /* Error code */
+  double score = 0.0;             /* SQL function return value */
+  Fts5Bm25Data *pData;            /* Values allocated/calculated once only */
+  int i;                          /* Iterator variable */
+  int nInst;                      /* Value returned by xInstCount() */
+  double D;                       /* Total number of tokens in row */
+  double *aFreq;                  /* Array of phrase freq. for current row */
 
-  rc = fts5Bm25GetContext(pApi, pFts, &p);
-
+  /* Calculate the phrase frequency (symbol "f(qi,D)" in the documentation)
+  ** for each phrase in the query for the current row. */
+  rc = fts5Bm25GetData(pApi, pFts, &pData);
   if( rc==SQLITE_OK ){
-    /* If the bDebug flag is set, instead of returning a numeric rank, this
-    ** function returns a text value showing how the rank is calculated. */
-    Fts5Buffer debug;
-    int bDebug = (pApi->xUserData(pFts)!=0);
-    memset(&debug, 0, sizeof(Fts5Buffer));
-
-    int ip;
-    double score = 0.0;
-
-    if( bDebug ){
-      fts5Bm25DebugContext(&rc, &debug, p);
-      fts5Bm25DebugRow(&rc, &debug, p, pApi, pFts);
-    }
-
-    for(ip=0; rc==SQLITE_OK && ip<p->nPhrase; ip++){
-      int iPrev = 0;
-      int nHit = 0;
-      int i = 0;
-      i64 iPos = 0;
-
-      while( rc==SQLITE_OK ){
-        int bDone = pApi->xPoslist(pFts, ip, &i, &iPos);
-        int iCol = FTS5_POS2COLUMN(iPos);
-        if( (iCol!=iPrev || bDone) && nHit>0 ){
-          int sz = 0;
-          int idx = ip * p->nCol + iPrev;
-          double bm25;
-          rc = pApi->xColumnSize(pFts, iPrev, &sz);
-
-          bm25 = (p->aIDF[idx] * nHit * (k1+1.0)) /
-            (nHit + k1 * (1.0 - B + B * sz / p->aAvg[iPrev]));
-
-
-          score = score + bm25;
-          nHit = 0;
-        }
-        if( bDone ) break;
-        nHit++;
-        iPrev = iCol;
-      }
-    }
-
+    aFreq = pData->aFreq;
+    memset(aFreq, 0, sizeof(double) * pData->nPhrase);
+    rc = pApi->xInstCount(pFts, &nInst);
+  }
+  for(i=0; rc==SQLITE_OK && i<nInst; i++){
+    int ip; int ic; int io;
+    rc = pApi->xInst(pFts, i, &ip, &ic, &io);
     if( rc==SQLITE_OK ){
-      if( bDebug ){
-        sqlite3_result_text(pCtx, (const char*)debug.p, -1, SQLITE_TRANSIENT);
-      }else{
-        sqlite3_result_double(pCtx, score);
-      }
+      double w = (nVal > ic) ? sqlite3_value_double(apVal[ic]) : 1.0;
+      aFreq[ip] += w;
     }
-    sqlite3_free(debug.p);
   }
 
-  if( rc!=SQLITE_OK ){
+  /* Figure out the total size of the current row in tokens. */
+  if( rc==SQLITE_OK ){
+    int nTok;
+    rc = pApi->xColumnSize(pFts, -1, &nTok);
+    D = (double)nTok;
+  }
+
+  /* Determine the BM25 score for the current row. */
+  for(i=0; rc==SQLITE_OK && i<pData->nPhrase; i++){
+    score += pData->aIDF[i] * (
+      ( aFreq[i] * (k1 + 1.0) ) / 
+      ( aFreq[i] + k1 * (1 - b + b * D / pData->avgdl) )
+    );
+  }
+  
+  /* If no error has occurred, return the calculated score. Otherwise,
+  ** throw an SQL exception.  */
+  if( rc==SQLITE_OK ){
+    sqlite3_result_double(pCtx, score);
+  }else{
     sqlite3_result_error_code(pCtx, rc);
   }
 }
@@ -664,12 +534,10 @@ int sqlite3Fts5AuxInit(fts5_api *pApi){
     fts5_extension_function xFunc;/* Callback function */
     void (*xDestroy)(void*);      /* Destructor function */
   } aBuiltin [] = {
-    { "bm25debug", (void*)1, fts5Bm25Function,    0 },
     { "snippet",   0, fts5SnippetFunction, 0 },
     { "highlight", 0, fts5HighlightFunction, 0 },
     { "bm25",      0, fts5Bm25Function,    0 },
   };
-
   int rc = SQLITE_OK;             /* Return code */
   int i;                          /* To iterate through builtin functions */
 

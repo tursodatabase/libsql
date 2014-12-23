@@ -729,7 +729,17 @@ int sqlite3Fts5StorageDocsize(Fts5Storage *p, i64 iRowid, int *aCol){
 int sqlite3Fts5StorageSize(Fts5Storage *p, int iCol, i64 *pnToken){
   int rc = fts5StorageLoadTotals(p, 0);
   if( rc==SQLITE_OK ){
-    *pnToken = p->aTotalSize[iCol];
+    *pnToken = 0;
+    if( iCol<0 ){
+      int i;
+      for(i=0; i<p->pConfig->nCol; i++){
+        *pnToken += p->aTotalSize[i];
+      }
+    }else if( iCol<p->pConfig->nCol ){
+      *pnToken = p->aTotalSize[iCol];
+    }else{
+      rc = SQLITE_RANGE;
+    }
   }
   return rc;
 }

@@ -48,11 +48,17 @@ typedef void (*fts5_extension_function)(
 **   Return a copy of the context pointer the extension function was 
 **   registered with.
 **
-**
 ** xColumnTotalSize(pFts, iCol, pnToken):
-**   Returns the total number of tokens in column iCol, considering all
-**   rows in the FTS5 table.
+**   If parameter iCol is less than zero, set output variable *pnToken
+**   to the total number of tokens in the FTS5 table. Or, if iCol is
+**   non-negative but less than the number of columns in the table, return
+**   the total number of tokens in column iCol, considering all rows in 
+**   the FTS5 table.
 **
+**   If parameter iCol is greater than or equal to the number of columns
+**   in the table, SQLITE_RANGE is returned. Or, if an error occurs (e.g.
+**   an OOM condition or IO error), an appropriate SQLite error code is 
+**   returned.
 **
 ** xColumnCount:
 **   Returns the number of columns in the FTS5 table.

@@ -1,5 +1,5 @@
-C Fixes\sand\ssimplifications\sfor\sthe\ssnippet()\sand\shighlight()\sfunctions.
-D 2014-12-22T21:01:52.167
+C Fix\sthe\sfts5\sbm25()\sfunction\sso\sthat\sit\smatches\sthe\sdocumentation.
+D 2014-12-23T19:18:34.426
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in b03432313a3aad96c706f8164fb9f5307eaf19f5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -104,16 +104,16 @@ F ext/fts3/unicode/CaseFolding.txt 8c678ca52ecc95e16bc7afc2dbf6fc9ffa05db8c
 F ext/fts3/unicode/UnicodeData.txt cd07314edb62d49fde34debdaf92fa2aa69011e7
 F ext/fts3/unicode/mkunicode.tcl dc6f268eb526710e2c6e496c372471d773d0c368
 F ext/fts5/extract_api_docs.tcl 6320db4a1d0722a4e2069e661381ad75e9889786
-F ext/fts5/fts5.c 8e5af98a1e370a39c8a91ed77f21ad171e5b214c
-F ext/fts5/fts5.h 0a0e97c65ba3b3e82638d7f7742c5d96f2b61535
+F ext/fts5/fts5.c 6dc8a8504d84aef13d922db06faa8fbcf8c11424
+F ext/fts5/fts5.h 7598f4b55b888890650829124717874973c52649
 F ext/fts5/fts5Int.h 36054b1dfc4881a9b94f945b348ab6cc01c0c7a5
-F ext/fts5/fts5_aux.c 6200a3f6d17c491e6c87189eaef7649ee7fe564d
+F ext/fts5/fts5_aux.c 445e54031ff94174673f4f5aac6c064df20a2a6b
 F ext/fts5/fts5_buffer.c 1bc5c762bb2e9b4a40b2e8a820a31b809e72eec1
 F ext/fts5/fts5_config.c 5caeb4e77680d635be25b899f97a29cf26fb45ce
 F ext/fts5/fts5_expr.c 27d3d2deebae277c34ae2bb3d501dd879c442ba5
 F ext/fts5/fts5_hash.c 63fa8379c5f2ac107d47c2b7d9ac04c95ef8a279
 F ext/fts5/fts5_index.c 4a8e8535b4303400ddb5f6fb08152da0d88ebf6f
-F ext/fts5/fts5_storage.c bfeedb83b095a1018f4f531c3cc3f9099e9f9081
+F ext/fts5/fts5_storage.c 13794781977c9a624eb8bd7b9509de241e405853
 F ext/fts5/fts5_tcl.c 4392e74421d24cc37c370732e8b48217cd2c1777
 F ext/fts5/fts5_tokenize.c 8360c0d1ae0d4696f3cc13f7c67a2db6011cdc5b
 F ext/fts5/fts5auxdata.test 3844d0f098441cedf75b9cc96d5e6e94d1a3bef4
@@ -1210,7 +1210,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 67e3ffd950c5347d219a06b33ad51949cffa7d90
-R eaa7ec352adc789c928b49341506e13d
+P ca5d44042aa7461dcc8b700b0763df4df9d4a891
+R 62a7bacc31f6964d59aeb316de8e27d6
 U dan
-Z 1c7bcf3d91cb30ef107cecfef87d0af9
+Z 38f208724902306f1118acd017f9d3d1

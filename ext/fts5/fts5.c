@@ -1262,10 +1262,17 @@ static int fts5ApiColumnSize(Fts5Context *pCtx, int iCol, int *pnToken){
     i64 iRowid = fts5CursorRowid(pCsr);
     rc = sqlite3Fts5StorageDocsize(pTab->pStorage, iRowid, pCsr->aColumnSize);
   }
-  if( iCol>=0 && iCol<pTab->pConfig->nCol ){
+  if( iCol<0 ){
+    int i;
+    *pnToken = 0;
+    for(i=0; i<pTab->pConfig->nCol; i++){
+      *pnToken += pCsr->aColumnSize[i];
+    }
+  }else if( iCol<pTab->pConfig->nCol ){
     *pnToken = pCsr->aColumnSize[iCol];
   }else{
     *pnToken = 0;
+    rc = SQLITE_RANGE;
   }
   return rc;
 }
