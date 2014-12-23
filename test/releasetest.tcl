@@ -233,8 +233,9 @@ proc run_test_suite {name testtarget config} {
 
   dryrun file mkdir $dir
   if {!$::DRYRUN} {
-    set n [string length $name]
-    puts -nonewline "${name}[string repeat . [expr {40-$n}]]"
+    set title ${name}($testtarget)
+    set n [string length $title]
+    puts -nonewline "${title}[string repeat . [expr {54-$n}]]"
     flush stdout
   }
 
@@ -249,9 +250,10 @@ proc run_test_suite {name testtarget config} {
   dryrun cd $origdir
 
   if {!$::DRYRUN} {
-    set minutes [expr {($tm2-$tm1)/60}]
+    set hours [expr {($tm2-$tm2)/3600}]
+    set minutes [expr {(($tm2-$tm1)/60)%60}]
     set seconds [expr {($tm2-$tm1)%60}]
-    set tm [format (%02d:%02d) $minutes $seconds]
+    set tm [format (%02d:%02d:%02d) $hours $minutes $seconds]
     if {$rc} {
       puts " FAIL $tm"
       incr ::NERR
