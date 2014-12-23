@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\san\sevidence\smark\son\sa\stest\sscript.\s\sNo\schanges\sto\scode.
-D 2014-12-22T22:02:20.146
+C Fix\sa\spotential\ssegfault\sfollowing\sOOM\serror\sin\sthe\stest\sharness.\s\sThe\nSQLite\score\sitself\sis\snot\sat\sfault.
+D 2014-12-23T20:05:19.241
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6c4f961fa91d0b4fa121946a19f9e5eac2f2f809
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -238,7 +238,7 @@ F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 81712116e826b0089bb221b018929536b2b5406f
 F src/table.c e7a09215315a978057fb42c640f890160dbcc45e
 F src/tclsqlite.c c6a21c64da1490e14d53cdc2062d1e2e57942622
-F src/test1.c 56e33bf6b1827c6ca7520c189131ddd778fb2267
+F src/test1.c 041c4edf2f9c49a329add297e26ee86a83852f51
 F src/test2.c 98049e51a17dc62606a99a9eb95ee477f9996712
 F src/test3.c 1c0e5d6f080b8e33c1ce8b3078e7013fdbcd560c
 F src/test4.c 9b32d22f5f150abe23c1830e2057c4037c45b3df
@@ -1234,7 +1234,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7a97826f33460f3b4f3890c9cf97116c3355eeda
-R 75921305dcdb8922f71566b00cf9fa0c
+P a08b0c7512287ce5ae3fffe02c092d0eb25b3a25
+R 6f17c6ca29a22c9a696402dcec6c7766
 U drh
-Z 6c9fa3fa92317b5bccccc5c856a1593a
+Z 3a6a677c416cfd077a0efd463f488c83
