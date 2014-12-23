@@ -969,6 +969,13 @@ wordcount$(TEXE):	$(TOP)/test/wordcount.c sqlite3.c
 speedtest1$(TEXE):	$(TOP)/test/wordcount.c sqlite3.lo
 	$(LTLINK) -o $@ $(TOP)/test/speedtest1.c sqlite3.lo $(TLIBS)
 
+# This target will fail if the SQLite amalgamation contains any exported
+# symbols that do not begin with "sqlite3_". It is run as part of the
+# releasetest.tcl script.
+#
+checksymbols: sqlite3.o
+	nm -g --defined-only sqlite3.o | grep -v " sqlite3_" ; test $$? -ne 0
+
 # Standard install and cleanup targets
 #
 lib_install:	libsqlite3.la

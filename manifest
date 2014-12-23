@@ -1,7 +1,7 @@
-C Rework\sthe\stest/releasetest.tcl\sscript\sso\sthat\sit\suses\sthe\sautoconf\smakefile\ninstead\sof\sthe\stest/releasetest.mk\smakefile.\s\sAlso\sadd\soptions\slike\s--dryrun\nand\s--buildonly.\s\sOmit\sthe\s--makefile\soption\sand\sreplace\sit\swith\s--srcdir\nwith\sthe\sdefault\scomputed\srelative\sto\sthe\sreleasetest.tcl\sscript\sitself.
-D 2014-12-23T19:40:51.746
+C Add\sthe\s"checksymbols"\starget\sto\sMakefile.in
+D 2014-12-23T19:52:26.814
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in 6c4f961fa91d0b4fa121946a19f9e5eac2f2f809
+F Makefile.in 37aec21b4fbb469ba42985a4454adf424c84f8e4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc b363b90fe1bfc3b87d190f2f728a126c00d9ce09
 F Makefile.vxworks 034289efa9d591b04b1a73598623119c306cbba0
@@ -1233,10 +1233,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a08b0c7512287ce5ae3fffe02c092d0eb25b3a25
-R d1cf8fd2536e09346a06ad4dd6ebb5ea
-T *branch * releasetest-refactor
-T *sym-releasetest-refactor *
-T -sym-trunk *
+P 7c85e831153f9aef2afaf981d53db38a28091be5
+R c05ea3aeb104c4afb51e4fdc443cf2a6
 U drh
-Z 1d662dddfc70aa251729f355b7103297
+Z 02c9f8fd295b123fa2397cb2b2094ed6
