@@ -80,11 +80,11 @@ macro_rules! raw_to_impl(
             }
         }
     )
-)
+);
 
-raw_to_impl!(c_int, sqlite3_bind_int)
-raw_to_impl!(i64, sqlite3_bind_int64)
-raw_to_impl!(c_double, sqlite3_bind_double)
+raw_to_impl!(c_int, sqlite3_bind_int);
+raw_to_impl!(i64, sqlite3_bind_int64);
+raw_to_impl!(c_double, sqlite3_bind_double);
 
 impl<'a> ToSql for &'a str {
     unsafe fn bind_parameter(&self, stmt: *mut ffi::sqlite3_stmt, col: c_int) -> c_int {
@@ -158,11 +158,11 @@ macro_rules! raw_from_impl(
             }
         }
     )
-)
+);
 
-raw_from_impl!(c_int, sqlite3_column_int)
-raw_from_impl!(i64, sqlite3_column_int64)
-raw_from_impl!(c_double, sqlite3_column_double)
+raw_from_impl!(c_int, sqlite3_column_int);
+raw_from_impl!(i64, sqlite3_column_int64);
+raw_from_impl!(c_double, sqlite3_column_double);
 
 impl FromSql for String {
     unsafe fn column_result(stmt: *mut ffi::sqlite3_stmt, col: c_int) -> SqliteResult<String> {
