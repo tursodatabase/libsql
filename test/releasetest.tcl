@@ -183,7 +183,7 @@ array set ::Platforms {
     "OS-X"                    "threadtest fulltest"
   }
   "Windows NT-intel" {
-    "Default"                 "threadtest fulltest"
+    "Default"                 "fulltestonly"
   }
 }
 
