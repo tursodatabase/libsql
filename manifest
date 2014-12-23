@@ -1,7 +1,7 @@
-C In\sthe\sreleasetest.tcl\sscript,\sshow\sthe\stest\starget\sfor\seach\sconfiguration\nthat\sis\srun.\s\sAnd\sshow\sthe\stime\sin\sHH:MM:SS.
-D 2014-12-23T20:41:13.506
+C Fix\stypo\sin\slibrary\sobject\sfile\sname.
+D 2014-12-23T21:03:09.146
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in c5bad35715abe0ffcb6a11fbafb157de7405d51a
+F Makefile.in 9aaaaf6b5b0e4b42aa909db5165dc042db9bfcd5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc b363b90fe1bfc3b87d190f2f728a126c00d9ce09
 F Makefile.vxworks 034289efa9d591b04b1a73598623119c306cbba0
@@ -1233,7 +1233,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P cb128067faabf0503dff1298ed29934f484f71bb
-R e47d011ee548c05856b81e40855ed9d3
-U drh
-Z 930cf73b25702ad0596e5aa07bf5b1dd
+P 2295e9e0a22220ccb1b9cc2b031c1d8e702a1888
+R a6e41f52bbcb02764e8ea99c7fc0d456
+U mistachkin
+Z 6ab7423cea251d6a6862aa20cc19aa93

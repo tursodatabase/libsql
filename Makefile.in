@@ -973,8 +973,8 @@ speedtest1$(TEXE):	$(TOP)/test/wordcount.c sqlite3.lo
 # symbols that do not begin with "sqlite3_". It is run as part of the
 # releasetest.tcl script.
 #
-checksymbols: sqlite3.o
-	nm -g --defined-only sqlite3.o | grep -v " sqlite3_" ; test $$? -ne 0
+checksymbols: sqlite3.lo
+	nm -g --defined-only sqlite3.lo | grep -v " sqlite3_" ; test $$? -ne 0
 
 # The next two rules are used to support the "threadtest" target. Building
 # threadtest runs a few thread-safety tests that are implemented in C. This
@@ -987,8 +987,8 @@ THREADTEST3_SRC = $(TOP)/test/threadtest3.c    \
                   $(TOP)/test/tt3_stress.c      \
                   $(TOP)/test/tt3_lookaside1.c
 
-threadtest3$(TEXE): sqlite3.o $(THREADTEST3_SRC)
-	$(LTLINK) $(TOP)/test/threadtest3.c sqlite3.o -o $@ $(TLIBS)
+threadtest3$(TEXE): sqlite3.lo $(THREADTEST3_SRC)
+	$(LTLINK) $(TOP)/test/threadtest3.c sqlite3.lo -o $@ $(TLIBS)
 
 threadtest: threadtest3$(TEXE)
 	./threadtest3$(TEXE)
