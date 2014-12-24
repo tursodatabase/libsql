@@ -1,5 +1,5 @@
-C Merge\sthe\snew\sand\simproved\sreleasetest.tcl\sscript\sinto\strunk.\s\sAdd\sa\n"make\sreleasetest"\starget\sto\sthe\sautoconf\smakefile.
-D 2014-12-23T21:17:58.595
+C When\sbuilding\sthe\samalgamation\swith\sSQLITE_ENABLE_IOTRACE\sdefined,\sdo\snot\smark\ssymbol\ssqlite3IoTrace\sas\sstatic.
+D 2014-12-24T17:17:30.707
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c20e37499a3d664a3732257ed042352eba777a4d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -195,7 +195,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
 F src/loadext.c 86bd4e2fccd520b748cba52492ab60c4a770f660
-F src/main.c 784f3d613f08d8bfba238a5baa7398770a641de2
+F src/main.c fa2128ef7d6a3dcd6770b2b1f3c284b696f11a2a
 F src/malloc.c 740db54387204c9a2eb67c6d98e68b08e9ef4eab
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c faf615aafd8be74a71494dfa027c113ea5c6615f
@@ -1200,7 +1200,7 @@ F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkpragmatab.tcl 07a5124cf2dbafa1b375eefcf8ac4227028b0f8b
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 88a1e3b0c769773fb7a9ebb363ffc603a4ac21d8
-F tool/mksqlite3c.tcl e72c0c97fe1a105fa9616483e652949be2199fe6
+F tool/mksqlite3c.tcl e94bdc37b531bba50d421e82efbe3738d0c1e950
 F tool/mksqlite3h.tcl ba24038056f51fde07c0079c41885ab85e2cff12
 F tool/mksqlite3internalh.tcl b6514145a7d5321b47e64e19b8116cc44f973eb1
 F tool/mkvsix.tcl 52a4c613707ac34ae9c226e5ccc69cb948556105
@@ -1233,8 +1233,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3f7dbdb5df38bd4b8cd49d22a23b8412b8d506e5 a010c404b5140104b68087dcbb0698b7a85eef65
-R c03b15cfdf1585f3588eb5fb232886aa
-T +closed a010c404b5140104b68087dcbb0698b7a85eef65
-U drh
-Z 23d8a858cc383cd4bc2fa2df9f7a8bc3
+P 1deb00ec758c6d213da71ef64294cc816e204338
+R 94b7be58e117bbe257a3aeec77eff05b
+U dan
+Z 725f19b25ac60ae68e0c4f9942138bfa
