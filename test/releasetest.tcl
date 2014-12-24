@@ -405,8 +405,8 @@ proc main {argv} {
   process_options $argv
   puts [string repeat * 70]
 
-  set NERR 0
-  set NTEST 0
+  set ::NERR 0
+  set ::NTEST 0
   set STARTTIME [clock seconds]
   foreach {zConfig target} $::CONFIGLIST {
     if {$::QUICK} {set target test}
@@ -436,8 +436,12 @@ proc main {argv} {
   }
 
   set elapsetime [expr {[clock seconds]-$STARTTIME}]
+  set hr [expr {$elapsetime/3600}]
+  set min [expr {($elapsetime/60)%60}]
+  set sec [expr {$elapsetime%60}]
+  set etime [format (%02d:%02d:%02d) $hr $min $sec]
   puts [string repeat * 70]
-  puts "$NERR failures of $NTEST test suites run in $elapsetime seconds"
+  puts "$::NERR failures of $::NTEST test suites run in $etime"
 }
 
 main $argv
