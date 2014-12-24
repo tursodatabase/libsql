@@ -1,5 +1,5 @@
-C When\sbuilding\sthe\samalgamation\swith\sSQLITE_ENABLE_IOTRACE\sdefined,\sdo\snot\smark\ssymbol\ssqlite3IoTrace\sas\sstatic.
-D 2014-12-24T17:17:30.707
+C Fix\sa\sfailing\sassert()\sin\sbalance_nonroot().
+D 2014-12-24T18:11:50.466
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c20e37499a3d664a3732257ed042352eba777a4d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -173,7 +173,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 7ddee9c7d505e07e959a575b18498f17c71e53ea
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 49ca66250c7dfa844a4d4cb8272b87420d27d3a5
-F src/btree.c 1de0560426ecde85ff3ea95d7c94261d7652e284
+F src/btree.c 904d30478685fe0723ad9092fc800a655544c69a
 F src/btree.h 94277c1d30c0b75705974bcc8b0c05e79c03d474
 F src/btreeInt.h a3d0ae1d511365e1a2b76ad10960dbe55c286f34
 F src/build.c 162d84e4833b03f9d07192ef06057b0226f6e543
@@ -1233,7 +1233,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1deb00ec758c6d213da71ef64294cc816e204338
-R 94b7be58e117bbe257a3aeec77eff05b
+P 5b7ca013b7171a6807b15b128e140ce160f526d3
+R b11f421779b35c3a19d382d5b3ba189c
 U dan
-Z 725f19b25ac60ae68e0c4f9942138bfa
+Z 0b37a721b79ad0d2f596c72e79efffa8

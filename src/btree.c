@@ -6865,8 +6865,8 @@ static int balance_nonroot(
           /* Do not allow any cells smaller than 4 bytes. If a smaller cell
           ** does exist, pad it with 0x00 bytes. */
           assert( szCell[nCell]==3 );
-          assert( apCell[nCell]==&pTemp[iSpace1-3] );
-          pTemp[iSpace1++] = 0x00;
+          assert( apCell[nCell]==&aSpace1[iSpace1-3] );
+          aSpace1[iSpace1++] = 0x00;
           szCell[nCell] = 4;
         }
       }
