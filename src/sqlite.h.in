@@ -1565,7 +1565,7 @@ struct sqlite3_mem_methods {
 ** 8-byte aligned
 ** memory, the size of each page buffer (sz), and the number of pages (N).
 ** The sz argument should be the size of the largest database page
-** (a power of two between 512 and 32768) plus some extra bytes for each
+** (a power of two between 512 and 65536) plus some extra bytes for each
 ** page header.  ^The number of extra bytes needed by the page header
 ** can be determined using the [SQLITE_CONFIG_PCACHE_HDRSZ] option 
 ** to [sqlite3_config()].

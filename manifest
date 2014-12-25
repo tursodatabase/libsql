@@ -1,5 +1,5 @@
-C Fix\sthe\serror\scounter\sin\sreleasetest.tcl.\s\sAnd\sreport\sthe\stotal\stime\sin\nHH:MM:SS\sinstead\sof\sjust\sseconds.
-D 2014-12-24T23:35:36.745
+C Update\sthe\sSQLITE_CONFIG_PAGECACHE\sdocumentation\sso\sthat\sthe\smaximum\spage\nsize\sis\scorrectly\sstated\sto\sbe\s65536.
+D 2014-12-25T12:19:56.744
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in c20e37499a3d664a3732257ed042352eba777a4d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -230,7 +230,7 @@ F src/resolve.c f6c46d3434439ab2084618d603e6d6dbeb0d6ada
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c f377fb8a5c73c10678ea74f3400f7913943e3d75
 F src/shell.c 45d9c9bd7cde07845af957f2d849933b990773cf
-F src/sqlite.h.in 116dc731361549ee3fc79dcebace11b57d24dcfd
+F src/sqlite.h.in 47cb601ed2b2ea7f01119e2763185c809d8e82fa
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
 F src/sqliteInt.h d36da9a07130cae13cbfee0986bf20028cb01465
@@ -1233,7 +1233,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e2e323145f66cca31babe1a979db6ef97038b879
-R 5d68ae4c7a1de514625f0040c5883c44
+P 6396f8046242286298fecd1748a6e8e786e6794e
+R 6fef442856f5d39a46d82b3795b528e7
 U drh
-Z 5948198e5a17f619d6c7388ef4763f03
+Z 07073e8eb87986ae3ece689929973238
