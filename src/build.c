@@ -1713,6 +1713,19 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
     pTab->iPKey = -1;
   }else{
     pPk = sqlite3PrimaryKeyIndex(pTab);
+    /*
+    ** Remove all redundant columns from the PRIMARY KEY.  For example, change
+    ** "PRIMARY KEY(a,b,a,b,c,b,c,d)" into just "PRIMARY KEY(a,b,c,d)".  Later
+    ** code assumes the PRIMARY KEY contains no repeated columns.
+    */
+    for(i=j=1; i<pPk->nKeyCol; i++){
+      if( hasColumn(pPk->aiColumn, j, pPk->aiColumn[i]) ){
+        pPk->nColumn--;
+      }else{
+        pPk->aiColumn[j++] = pPk->aiColumn[i];
+      }
+    }
+    pPk->nKeyCol = j;
   }
   pPk->isCovering = 1;
   assert( pPk!=0 );
