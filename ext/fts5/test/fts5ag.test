@@ -12,7 +12,9 @@
 # focus of this script is testing the FTS5 module.
 #
 
-set testdir [file dirname $argv0]
+if {![info exists testdir]} {
+  set testdir [file join [file dirname [info script]] .. .. .. test]
+}
 source $testdir/tester.tcl
 set testprefix fts5ag
 
