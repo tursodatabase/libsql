@@ -208,6 +208,7 @@ foreach {key value} [array get ::Platforms] {
 # one-line error message to show on the output.
 #
 proc count_tests_and_errors {logfile rcVar errmsgVar} {
+  if {$::DRYRUN} return
   upvar 1 $rcVar rc $errmsgVar errmsg
   set fd [open $logfile rb]
   set seen 0
