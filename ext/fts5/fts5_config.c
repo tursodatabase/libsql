@@ -21,6 +21,142 @@
 /* Maximum allowed page size */
 #define FTS5_MAX_PAGE_SIZE (128*1024)
 
+static int fts5_iswhitespace(char x){
+  return (x==' ');
+}
+
+static int fts5_isopenquote(char x){
+  return (x=='"' || x=='\'' || x=='[' || x=='`');
+}
+
+/*
+** Argument pIn points to a character that is part of a nul-terminated 
+** string. Return a pointer to the first character following *pIn in 
+** the string that is not a white-space character.
+*/
+static const char *fts5ConfigSkipWhitespace(const char *pIn){
+  const char *p = pIn;
+  if( p ){
+    while( fts5_iswhitespace(*p) ){ p++; }
+  }
+  return p;
+}
+
+/*
+** Argument pIn points to a character that is part of a nul-terminated 
+** string. Return a pointer to the first character following *pIn in 
+** the string that is not a "bareword" character.
+*/
+static const char *fts5ConfigSkipBareword(const char *pIn){
+  const char *p = pIn;
+  while( *p      && *p!=' ' && *p!=':' && *p!='!' && *p!='@' 
+      && *p!='#' && *p!='$' && *p!='%' && *p!='^' && *p!='&' 
+      && *p!='*' && *p!='(' && *p!=')' && *p!='='
+  ){
+    p++;
+  }
+  if( p==pIn ) p = 0;
+  return p;
+}
+
+static int fts5_isdigit(char a){
+  return (a>='0' && a<='9');
+}
+
+
+
+static const char *fts5ConfigSkipLiteral(const char *pIn){
+  const char *p = pIn;
+  if( p ){
+    switch( *p ){
+      case 'n': case 'N':
+        if( sqlite3_strnicmp("null", p, 4)==0 ){
+          p = &p[4];
+        }else{
+          p = 0;
+        }
+        break;
+        
+      case 'x': case 'X':
+        p++;
+        if( *p=='\'' ){
+          p++;
+          while( (*p>='a' && *p<='f') 
+              || (*p>='A' && *p<='F') 
+              || (*p>='0' && *p<='9') 
+          ){
+            p++;
+          }
+          if( *p=='\'' && 0==((p-pIn)%2) ){
+            p++;
+          }else{
+            p = 0;
+          }
+        }else{
+          p = 0;
+        }
+        break;
+
+      case '\'':
+        p++;
+        while( p ){
+          if( *p=='\'' ){
+            p++;
+            if( *p!='\'' ) break;
+          }
+          p++;
+          if( *p==0 ) p = 0;
+        }
+        break;
+
+      default:
+        /* maybe a number */
+        if( *p=='+' || *p=='-' ) p++;
+        while( fts5_isdigit(*p) ) p++;
+
+        /* At this point, if the literal was an integer, the parse is 
+        ** finished. Or, if it is a floating point value, it may continue
+        ** with either a decimal point or an 'E' character. */
+        if( *p=='.' && fts5_isdigit(p[1]) ){
+          p += 2;
+          while( fts5_isdigit(*p) ) p++;
+        }
+        if( p==pIn ) p = 0;
+
+        break;
+    }
+  }
+
+  return p;
+}
+
+static int fts5Dequote(char *z){
+  char q;
+  int iIn = 1;
+  int iOut = 0;
+  int bRet = 1;
+  q = z[0];
+
+  assert( q=='[' || q=='\'' || q=='"' || q=='`' );
+  if( q=='[' ) q = ']';  
+
+  while( z[iIn] ){
+    if( z[iIn]==q ){
+      if( z[iIn+1]!=q ){
+        if( z[iIn+1]=='\0' ) bRet = 0;
+        break;
+      }
+      z[iOut++] = q;
+      iIn += 2;
+    }else{
+      z[iOut++] = z[iIn++];
+    }
+  }
+  z[iOut] = '\0';
+
+  return bRet;
+}
+
 /*
 ** Convert an SQL-style quoted string into a normal string by removing
 ** the quote characters.  The conversion is done in-place.  If the
@@ -37,25 +173,23 @@
 void sqlite3Fts5Dequote(char *z){
   char quote;                     /* Quote character (if any ) */
 
+  assert( 0==fts5_iswhitespace(z[0]) );
   quote = z[0];
   if( quote=='[' || quote=='\'' || quote=='"' || quote=='`' ){
-    int iIn = 1;                  /* Index of next byte to read from input */
-    int iOut = 0;                 /* Index of next byte to write to output */
-
-    /* If the first byte was a '[', then the close-quote character is a ']' */
-    if( quote=='[' ) quote = ']';  
-
-    while( ALWAYS(z[iIn]) ){
-      if( z[iIn]==quote ){
-        if( z[iIn+1]!=quote ) break;
-        z[iOut++] = quote;
-        iIn += 2;
-      }else{
-        z[iOut++] = z[iIn++];
-      }
-    }
-    z[iOut] = '\0';
+    fts5Dequote(z);
   }
+}
+
+/*
+** Trim any white-space from the right of nul-terminated string z.
+*/
+static char *fts5TrimString(char *z){
+  int n = strlen(z);
+  while( n>0 && fts5_iswhitespace(z[n-1]) ){
+    z[--n] = '\0';
+  }
+  while( fts5_iswhitespace(*z) ) z++;
+  return z;
 }
 
 /*
@@ -68,15 +202,17 @@ void sqlite3Fts5Dequote(char *z){
 ** eventually free any such error message using sqlite3_free().
 */
 static int fts5ConfigParseSpecial(
+  Fts5Global *pGlobal,
   Fts5Config *pConfig,            /* Configuration object to update */
-  char *zCmd,                     /* Special command to parse */
-  char *zArg,                     /* Argument to parse */
+  const char *zCmd,               /* Special command to parse */
+  int nCmd,                       /* Size of zCmd in bytes */
+  const char *zArg,               /* Argument to parse */
   char **pzErr                    /* OUT: Error message */
 ){
-  if( sqlite3_stricmp(zCmd, "prefix")==0 ){
+  if( sqlite3_strnicmp("prefix", zCmd, nCmd)==0 ){
     const int nByte = sizeof(int) * FTS5_MAX_PREFIX_INDEXES;
     int rc = SQLITE_OK;
-    char *p;
+    const char *p;
     if( pConfig->aPrefix ){
       *pzErr = sqlite3_mprintf("multiple prefix=... directives");
       rc = SQLITE_ERROR;
@@ -108,6 +244,53 @@ static int fts5ConfigParseSpecial(
     return rc;
   }
 
+  if( sqlite3_strnicmp("tokenize", zCmd, nCmd)==0 ){
+    int rc = SQLITE_OK;
+    const char *p = (const char*)zArg;
+    int nArg = strlen(zArg) + 1;
+    char **azArg = sqlite3Fts5MallocZero(&rc, sizeof(char*) * nArg);
+    char *pDel = sqlite3Fts5MallocZero(&rc, nArg * 2);
+    char *pSpace = pDel;
+
+    if( azArg && pSpace ){
+      if( pConfig->pTok ){
+        *pzErr = sqlite3_mprintf("multiple tokenize=... directives");
+        rc = SQLITE_ERROR;
+      }else{
+        for(nArg=0; p && *p; nArg++){
+          const char *p2 = fts5ConfigSkipWhitespace(p);
+          if( p2 && *p2=='\'' ){
+            p = fts5ConfigSkipLiteral(p2);
+          }else{
+            p = fts5ConfigSkipBareword(p2);
+          }
+          if( p ){
+            memcpy(pSpace, p2, p-p2);
+            azArg[nArg] = pSpace;
+            sqlite3Fts5Dequote(pSpace);
+            pSpace += (p - p2) + 1;
+            p = fts5ConfigSkipWhitespace(p);
+          }
+        }
+        if( p==0 ){
+          *pzErr = sqlite3_mprintf("parse error in tokenize directive");
+          rc = SQLITE_ERROR;
+        }else{
+          rc = sqlite3Fts5GetTokenizer(pGlobal, 
+              (const char**)azArg, nArg, &pConfig->pTok, &pConfig->pTokApi
+          );
+          if( rc!=SQLITE_OK ){
+            *pzErr = sqlite3_mprintf("error in tokenizer constructor");
+          }
+        }
+      }
+    }
+
+    sqlite3_free(azArg);
+    sqlite3_free(pDel);
+    return rc;
+  }
+
   *pzErr = sqlite3_mprintf("unrecognized directive: \"%s\"", zCmd);
   return SQLITE_ERROR;
 }
@@ -133,6 +316,7 @@ static char *fts5Strdup(int *pRc, const char *z){
 ** code if an error occurs.
 */
 static int fts5ConfigDefaultTokenizer(Fts5Global *pGlobal, Fts5Config *pConfig){
+  assert( pConfig->pTok==0 && pConfig->pTokApi==0 );
   return sqlite3Fts5GetTokenizer(
       pGlobal, 0, 0, &pConfig->pTok, &pConfig->pTokApi
   );
@@ -160,6 +344,7 @@ int sqlite3Fts5ConfigParse(
 ){
   int rc = SQLITE_OK;             /* Return code */
   Fts5Config *pRet;               /* New object to return */
+  int i;
 
   *ppOut = pRet = (Fts5Config*)sqlite3_malloc(sizeof(Fts5Config));
   if( pRet==0 ) return SQLITE_NOMEM;
@@ -170,44 +355,69 @@ int sqlite3Fts5ConfigParse(
   pRet->azCol = (char**)sqlite3Fts5MallocZero(&rc, sizeof(char*) * nArg);
   pRet->zDb = fts5Strdup(&rc, azArg[1]);
   pRet->zName = fts5Strdup(&rc, azArg[2]);
-  if( rc==SQLITE_OK ){
-    if( sqlite3_stricmp(pRet->zName, FTS5_RANK_NAME)==0 ){
-      *pzErr = sqlite3_mprintf("reserved fts5 table name: %s", pRet->zName);
-      rc = SQLITE_ERROR;
-    }else{
-      int i;
-      for(i=3; rc==SQLITE_OK && i<nArg; i++){
-        char *zDup = fts5Strdup(&rc, azArg[i]);
-        if( zDup ){
-          /* Check if this is a special directive - "cmd=arg" */
-          if( zDup[0]!='"' && zDup[0]!='\'' && zDup[0]!='[' && zDup[0]!='`' ){
-            char *p = zDup;
-            while( *p && *p!='=' ) p++;
-            if( *p ){
-              char *zArg = &p[1];
-              *p = '\0';
-              sqlite3Fts5Dequote(zArg);
-              rc = fts5ConfigParseSpecial(pRet, zDup, zArg, pzErr);
-              sqlite3_free(zDup);
-              zDup = 0;
-            }
-          }
+  if( rc==SQLITE_OK && sqlite3_stricmp(pRet->zName, FTS5_RANK_NAME)==0 ){
+    *pzErr = sqlite3_mprintf("reserved fts5 table name: %s", pRet->zName);
+    rc = SQLITE_ERROR;
+  }
 
-          /* If it is not a special directive, it must be a column name. In
-          ** this case, check that it is not the reserved column name "rank". */
-          if( zDup ){
-            sqlite3Fts5Dequote(zDup);
-            pRet->azCol[pRet->nCol++] = zDup;
-            if( sqlite3_stricmp(zDup, FTS5_RANK_NAME)==0 ){
-              *pzErr = sqlite3_mprintf("reserved fts5 column name: %s", zDup);
-              rc = SQLITE_ERROR;
+  for(i=3; rc==SQLITE_OK && i<nArg; i++){
+    char *zDup = fts5Strdup(&rc, azArg[i]);
+    if( zDup ){
+      char *zCol = 0;
+      int bParseError = 0;
+
+      /* Check if this is a quoted column name */
+      if( fts5_isopenquote(zDup[0]) ){
+        bParseError = fts5Dequote(zDup);
+        zCol = zDup;
+      }else{
+        char *z = (char*)fts5ConfigSkipBareword(zDup);
+        if( *z=='\0' ){
+          zCol = zDup;
+        }else{
+          int nCmd = z - zDup;
+          z = (char*)fts5ConfigSkipWhitespace(z);
+          if( *z!='=' ){
+            bParseError = 1;
+          }else{
+            z++;
+            z = fts5TrimString(z);
+            if( fts5_isopenquote(*z) ){
+              if( fts5Dequote(z) ) bParseError = 1;
+            }else{
+              char *z2 = (char*)fts5ConfigSkipBareword(z);
+              if( *z2 ) bParseError = 1;
+            }
+            if( bParseError==0 ){
+              rc = fts5ConfigParseSpecial(pGlobal, pRet, zDup, nCmd, z, pzErr);
             }
           }
         }
       }
+
+      if( bParseError ){
+        assert( *pzErr==0 );
+        *pzErr = sqlite3_mprintf("parse error in \"%s\"", zDup);
+        rc = SQLITE_ERROR;
+      }else if( zCol ){
+        if( 0==sqlite3_stricmp(zCol, FTS5_RANK_NAME) 
+         || 0==sqlite3_stricmp(zCol, FTS5_ROWID_NAME) 
+        ){
+          *pzErr = sqlite3_mprintf("reserved fts5 column name: %s", zCol);
+          rc = SQLITE_ERROR;
+        }else{
+          pRet->azCol[pRet->nCol++] = zCol;
+          zDup = 0;
+        }
+      }
+
+      sqlite3_free(zDup);
     }
   }
 
+  /* If a tokenizer= option was successfully parsed, the tokenizer has
+  ** already been allocated. Otherwise, allocate an instance of the default
+  ** tokenizer (simple) now.  */
   if( rc==SQLITE_OK && pRet->pTok==0 ){
     rc = fts5ConfigDefaultTokenizer(pGlobal, pRet);
   }
@@ -310,106 +520,6 @@ int sqlite3Fts5Tokenize(
 }
 
 /*
-** Argument pIn points to a character that is part of a nul-terminated 
-** string. Return a pointer to the first character following *pIn in 
-** the string that is not a white-space character.
-*/
-static const char *fts5ConfigSkipWhitespace(const char *pIn){
-  const char *p = pIn;
-  if( p ){
-    while( *p==' ' ){ p++; }
-  }
-  return p;
-}
-
-/*
-** Argument pIn points to a character that is part of a nul-terminated 
-** string. Return a pointer to the first character following *pIn in 
-** the string that is not a "bareword" character.
-*/
-static const char *fts5ConfigSkipBareword(const char *pIn){
-  const char *p = pIn;
-  while( *p      && *p!=' ' && *p!=':' && *p!='!' && *p!='@' 
-      && *p!='#' && *p!='$' && *p!='%' && *p!='^' && *p!='&' 
-      && *p!='*' && *p!='(' && *p!=')' 
-  ){
-    p++;
-  }
-  if( p==pIn ) p = 0;
-  return p;
-}
-
-static int fts5_isdigit(char a){
-  return (a>='0' && a<='9');
-}
-
-
-
-static const char *fts5ConfigSkipLiteral(const char *pIn){
-  const char *p = pIn;
-  if( p ){
-    switch( *p ){
-      case 'n': case 'N':
-        if( sqlite3_strnicmp("null", p, 4)==0 ){
-          p = &p[4];
-        }else{
-          p = 0;
-        }
-        break;
-        
-      case 'x': case 'X':
-        p++;
-        if( *p=='\'' ){
-          p++;
-          while( (*p>='a' && *p<='f') 
-              || (*p>='A' && *p<='F') 
-              || (*p>='0' && *p<='9') 
-          ){
-            p++;
-          }
-          if( *p=='\'' && 0==((p-pIn)%2) ){
-            p++;
-          }else{
-            p = 0;
-          }
-        }else{
-          p = 0;
-        }
-        break;
-
-      case '\'':
-        p++;
-        while( p ){
-          if( *p=='\'' ){
-            p++;
-            if( *p!='\'' ) break;
-          }
-          p++;
-          if( *p==0 ) p = 0;
-        }
-        break;
-
-      default:
-        /* maybe a number */
-        if( *p=='+' || *p=='-' ) p++;
-        while( fts5_isdigit(*p) ) p++;
-
-        /* At this point, if the literal was an integer, the parse is 
-        ** finished. Or, if it is a floating point value, it may continue
-        ** with either a decimal point or an 'E' character. */
-        if( *p=='.' && fts5_isdigit(p[1]) ){
-          p += 2;
-          while( fts5_isdigit(*p) ) p++;
-        }
-
-        break;
-    }
-  }
-
-  return p;
-}
-
-/*
 ** Argument pIn points to the first character in what is expected to be
 ** a comma-separated list of SQL literals followed by a ')' character.
 ** If it actually is this, return a pointer to the ')'. Otherwise, return
@@ -476,12 +586,14 @@ static int fts5ConfigParseRank(
     const char *pArgs; 
     p = fts5ConfigSkipWhitespace(p);
     pArgs = p;
-    p = fts5ConfigSkipArgs(p);
-    if( p==0 ){
-      rc = SQLITE_ERROR;
-    }else if( p!=pArgs ){
-      zRankArgs = sqlite3Fts5MallocZero(&rc, 1 + p - pArgs);
-      if( zRankArgs ) memcpy(zRankArgs, pArgs, p-pArgs);
+    if( *p!=')' ){
+      p = fts5ConfigSkipArgs(p);
+      if( p==0 ){
+        rc = SQLITE_ERROR;
+      }else if( p!=pArgs ){
+        zRankArgs = sqlite3Fts5MallocZero(&rc, 1 + p - pArgs);
+        if( zRankArgs ) memcpy(zRankArgs, pArgs, p-pArgs);
+      }
     }
   }
 

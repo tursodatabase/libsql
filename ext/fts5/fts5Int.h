@@ -29,8 +29,9 @@
 #define FTS5_DEFAULT_NEARDIST 10
 #define FTS5_DEFAULT_RANK     "bm25"
 
-/* Name of rank column */
+/* Name of rank and rowid columns */
 #define FTS5_RANK_NAME "rank"
+#define FTS5_ROWID_NAME "rowid"
 
 /**************************************************************************
 ** Interface to code in fts5.c. 
@@ -148,6 +149,9 @@ void sqlite3Fts5BufferAppend32(int*, Fts5Buffer*, int);
 /* Write and decode big-endian 32-bit integer values */
 void sqlite3Fts5Put32(u8*, int);
 int sqlite3Fts5Get32(const u8*);
+
+#define FTS5_POS2COLUMN(iPos) (int)(iPos >> 32)
+#define FTS5_POS2OFFSET(iPos) (int)(iPos & 0xFFFFFFFF)
 
 typedef struct Fts5PoslistReader Fts5PoslistReader;
 struct Fts5PoslistReader {

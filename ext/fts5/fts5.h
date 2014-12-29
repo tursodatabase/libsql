@@ -207,7 +207,6 @@ struct Fts5ExtensionApi {
   sqlite3_int64 (*xRowid)(Fts5Context*);
   int (*xColumnText)(Fts5Context*, int iCol, const char **pz, int *pn);
   int (*xColumnSize)(Fts5Context*, int iCol, int *pnToken);
-  int (*xPoslist)(Fts5Context*, int iPhrase, int *pi, sqlite3_int64 *piPos);
 
   int (*xQueryPhrase)(Fts5Context*, int iPhrase, void *pUserData,
     int(*)(const Fts5ExtensionApi*,Fts5Context*,void*)
@@ -215,9 +214,6 @@ struct Fts5ExtensionApi {
   int (*xSetAuxdata)(Fts5Context*, void *pAux, void(*xDelete)(void*));
   void *(*xGetAuxdata)(Fts5Context*, int bClear);
 };
-
-#define FTS5_POS2COLUMN(iPos) (int)(iPos >> 32)
-#define FTS5_POS2OFFSET(iPos) (int)(iPos & 0xFFFFFFFF)
 
 /* 
 ** CUSTOM AUXILIARY FUNCTIONS
@@ -325,6 +321,7 @@ struct fts5_api {
   int (*xFindTokenizer)(
     fts5_api *pApi,
     const char *zName,
+    void **ppContext,
     fts5_tokenizer *pTokenizer
   );
 

@@ -1277,18 +1277,6 @@ static int fts5ApiColumnSize(Fts5Context *pCtx, int iCol, int *pnToken){
   return rc;
 }
 
-static int fts5ApiPoslist(
-  Fts5Context *pCtx, 
-  int iPhrase, 
-  int *pi, 
-  i64 *piPos 
-){
-  Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
-  const u8 *a; int n;             /* Poslist for phrase iPhrase */
-  n = fts5CsrPoslist(pCsr, iPhrase, &a);
-  return sqlite3Fts5PoslistNext64(a, n, pi, piPos);
-}
-
 static int fts5ApiSetAuxdata(
   Fts5Context *pCtx,              /* Fts5 context */
   void *pPtr,                     /* Pointer to save as auxdata */
@@ -1360,7 +1348,6 @@ static const Fts5ExtensionApi sFts5Api = {
   fts5ApiRowid,
   fts5ApiColumnText,
   fts5ApiColumnSize,
-  fts5ApiPoslist,
   fts5ApiQueryPhrase,
   fts5ApiSetAuxdata,
   fts5ApiGetAuxdata,
@@ -1682,6 +1669,7 @@ static int fts5CreateTokenizer(
 static int fts5FindTokenizer(
   fts5_api *pApi,                 /* Global context (one per db handle) */
   const char *zName,              /* Name of new function */
+  void **ppUserData,
   fts5_tokenizer *pTokenizer      /* Populate this object */
 ){
   Fts5Global *pGlobal = (Fts5Global*)pApi;
@@ -1694,6 +1682,7 @@ static int fts5FindTokenizer(
 
   if( pTok ){
     *pTokenizer = pTok->x;
+    *ppUserData = pTok->pUserData;
   }else{
     memset(pTokenizer, 0, sizeof(fts5_tokenizer));
     rc = SQLITE_ERROR;

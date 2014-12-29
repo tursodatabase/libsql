@@ -12,6 +12,7 @@
 **
 */
 
+#ifdef SQLITE_TEST
 
 #include "fts5.h"
 #include <tcl.h>
@@ -42,8 +43,46 @@ static int f5tDbPointer(Tcl_Interp *interp, Tcl_Obj *pObj, sqlite3 **ppDb){
   }
   return TCL_ERROR;
 }
+
 /* End of code that accesses the SqliteDb struct.
 **************************************************************************/
+
+static int f5tDbAndApi(
+  Tcl_Interp *interp, 
+  Tcl_Obj *pObj, 
+  sqlite3 **ppDb, 
+  fts5_api **ppApi
+){
+  sqlite3 *db = 0;
+  int rc = f5tDbPointer(interp, pObj, &db);
+  if( rc!=TCL_OK ){
+    return TCL_ERROR;
+  }else{
+    sqlite3_stmt *pStmt = 0;
+    fts5_api *pApi = 0;
+
+    rc = sqlite3_prepare_v2(db, "SELECT fts5()", -1, &pStmt, 0);
+    if( rc!=SQLITE_OK ){
+      Tcl_AppendResult(interp, "error: ", sqlite3_errmsg(db), 0);
+      return TCL_ERROR;
+    }
+
+    if( SQLITE_ROW==sqlite3_step(pStmt) ){
+      const void *pPtr = sqlite3_column_blob(pStmt, 0);
+      memcpy((void*)&pApi, pPtr, sizeof(pApi));
+    }
+
+    if( sqlite3_finalize(pStmt)!=SQLITE_OK ){
+      Tcl_AppendResult(interp, "error: ", sqlite3_errmsg(db), 0);
+      return TCL_ERROR;
+    }
+
+    *ppDb = db;
+    *ppApi = pApi;
+  }
+
+  return TCL_OK;
+}
 
 typedef struct F5tFunction F5tFunction;
 struct F5tFunction {
@@ -451,7 +490,6 @@ static int f5tCreateFunction(
   char *zName;
   Tcl_Obj *pScript;
   sqlite3 *db = 0;
-  sqlite3_stmt *pStmt = 0;
   fts5_api *pApi = 0;
   F5tFunction *pCtx = 0;
   int rc;
@@ -460,27 +498,10 @@ static int f5tCreateFunction(
     Tcl_WrongNumArgs(interp, 1, objv, "DB NAME SCRIPT");
     return TCL_ERROR;
   }
-  if( f5tDbPointer(interp, objv[1], &db) ){
-    return TCL_ERROR;
-  }
+  if( f5tDbAndApi(interp, objv[1], &db, &pApi) ) return TCL_ERROR;
+
   zName = Tcl_GetString(objv[2]);
   pScript = objv[3];
-
-  rc = sqlite3_prepare_v2(db, "SELECT fts5()", -1, &pStmt, 0);
-  if( rc!=SQLITE_OK ){
-    Tcl_AppendResult(interp, "error: ", sqlite3_errmsg(db), 0);
-    return TCL_ERROR;
-  }
-
-  if( SQLITE_ROW==sqlite3_step(pStmt) ){
-    const void *pPtr = sqlite3_column_blob(pStmt, 0);
-    memcpy((void*)&pApi, pPtr, sizeof(pApi));
-  }
-  if( sqlite3_finalize(pStmt)!=SQLITE_OK ){
-    Tcl_AppendResult(interp, "error: ", sqlite3_errmsg(db), 0);
-    return TCL_ERROR;
-  }
-
   pCtx = (F5tFunction*)ckalloc(sizeof(F5tFunction));
   pCtx->interp = interp;
   pCtx->pScript = pScript;
@@ -497,6 +518,284 @@ static int f5tCreateFunction(
   return TCL_OK;
 }
 
+static int xTokenizeCb2(
+  void *pCtx, 
+  const char *zToken, int nToken, 
+  int iStart, int iEnd, int iPos
+){
+  Tcl_Obj *pRet = (Tcl_Obj*)pCtx;
+  Tcl_ListObjAppendElement(0, pRet, Tcl_NewStringObj(zToken, nToken));
+  Tcl_ListObjAppendElement(0, pRet, Tcl_NewIntObj(iStart));
+  Tcl_ListObjAppendElement(0, pRet, Tcl_NewIntObj(iEnd));
+  Tcl_ListObjAppendElement(0, pRet, Tcl_NewIntObj(iPos));
+  return SQLITE_OK;
+}
+
+
+/*
+**      sqlite3_fts5_tokenize DB TOKENIZER TEXT
+**
+** Description...
+*/
+static int f5tTokenize(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  char *zName;
+  char *zText;
+  int nText;
+  sqlite3 *db = 0;
+  fts5_api *pApi = 0;
+  Fts5Tokenizer *pTok = 0;
+  fts5_tokenizer tokenizer;
+  Tcl_Obj *pRet = 0;
+  void *pUserdata;
+  int rc;
+
+  if( objc!=4 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB NAME TEXT");
+    return TCL_ERROR;
+  }
+  if( f5tDbAndApi(interp, objv[1], &db, &pApi) ) return TCL_ERROR;
+  zName = Tcl_GetString(objv[2]);
+  zText = Tcl_GetStringFromObj(objv[3], &nText);
+
+  rc = pApi->xFindTokenizer(pApi, zName, &pUserdata, &tokenizer);
+  if( rc!=SQLITE_OK ){
+    Tcl_AppendResult(interp, "no such tokenizer: ", zName, 0);
+    return TCL_ERROR;
+  }
+
+  rc = tokenizer.xCreate(pUserdata, 0, 0, &pTok);
+  if( rc!=SQLITE_OK ){
+    Tcl_AppendResult(interp, "error in tokenizer.xCreate()", 0);
+    return TCL_ERROR;
+  }
+
+  pRet = Tcl_NewObj();
+  Tcl_IncrRefCount(pRet);
+  rc = tokenizer.xTokenize(pTok, pRet, zText, nText, xTokenizeCb2);
+  tokenizer.xDelete(pTok);
+  if( rc!=SQLITE_OK ){
+    Tcl_AppendResult(interp, "error in tokenizer.xTokenize()", 0);
+    Tcl_DecrRefCount(pRet);
+    return TCL_ERROR;
+  }
+
+
+  Tcl_SetObjResult(interp, pRet);
+  Tcl_DecrRefCount(pRet);
+  return TCL_OK;
+}
+
+/*************************************************************************
+** Start of tokenizer wrapper.
+*/
+
+typedef struct F5tTokenizerContext F5tTokenizerContext;
+typedef struct F5tTokenizerCb F5tTokenizerCb;
+typedef struct F5tTokenizerModule F5tTokenizerModule;
+typedef struct F5tTokenizerModule F5tTokenizerInstance;
+
+struct F5tTokenizerContext {
+  void *pCtx;
+  int (*xToken)(void*, const char*, int, int, int, int);
+};
+
+struct F5tTokenizerModule {
+  Tcl_Interp *interp;
+  Tcl_Obj *pScript;
+  F5tTokenizerContext *pContext;
+};
+
+static int f5tTokenizerCreate(
+  void *pCtx, 
+  const char **azArg, 
+  int nArg, 
+  Fts5Tokenizer **ppOut
+){
+  F5tTokenizerModule *pMod = (F5tTokenizerModule*)pCtx;
+  Tcl_Obj *pEval;
+  int rc = TCL_OK;
+  int i;
+
+  pEval = Tcl_DuplicateObj(pMod->pScript);
+  Tcl_IncrRefCount(pEval);
+  for(i=0; rc==TCL_OK && i<nArg; i++){
+    Tcl_Obj *pObj = Tcl_NewStringObj(azArg[i], -1);
+    rc = Tcl_ListObjAppendElement(pMod->interp, pEval, pObj);
+  }
+
+  if( rc==TCL_OK ){
+    rc = Tcl_EvalObjEx(pMod->interp, pEval, TCL_GLOBAL_ONLY);
+  }
+  Tcl_DecrRefCount(pEval);
+
+  if( rc==TCL_OK ){
+    F5tTokenizerInstance *pInst = ckalloc(sizeof(F5tTokenizerInstance));
+    memset(pInst, 0, sizeof(F5tTokenizerInstance));
+    pInst->interp = pMod->interp;
+    pInst->pScript = Tcl_GetObjResult(pMod->interp);
+    pInst->pContext = pMod->pContext;
+    Tcl_IncrRefCount(pInst->pScript);
+    *ppOut = (Fts5Tokenizer*)pInst;
+  }
+
+  return rc;
+}
+
+
+static void f5tTokenizerDelete(Fts5Tokenizer *p){
+  F5tTokenizerInstance *pInst = (F5tTokenizerInstance*)p;
+  Tcl_DecrRefCount(pInst->pScript);
+  ckfree(pInst);
+}
+
+static int f5tTokenizerTokenize(
+  Fts5Tokenizer *p, 
+  void *pCtx,
+  const char *pText, int nText, 
+  int (*xToken)(void*, const char*, int, int, int, int)
+){
+  F5tTokenizerInstance *pInst = (F5tTokenizerInstance*)p;
+  void *pOldCtx;
+  int (*xOldToken)(void*, const char*, int, int, int, int);
+  Tcl_Obj *pEval;
+  int rc;
+
+  pOldCtx = pInst->pContext->pCtx;
+  xOldToken = pInst->pContext->xToken;
+
+  pEval = Tcl_DuplicateObj(pInst->pScript);
+  Tcl_IncrRefCount(pEval);
+  rc = Tcl_ListObjAppendElement(
+      pInst->interp, pEval, Tcl_NewStringObj(pText, nText)
+  );
+  if( rc==TCL_OK ){
+    rc = Tcl_EvalObjEx(pInst->interp, pEval, TCL_GLOBAL_ONLY);
+  }
+  Tcl_DecrRefCount(pEval);
+
+  pInst->pContext->pCtx = pOldCtx;
+  pInst->pContext->xToken = xOldToken;
+  return rc;
+}
+
+extern const char *sqlite3ErrName(int);
+
+/*
+** sqlite3_fts5_token TEXT START END POS
+*/
+static int f5tTokenizerReturn(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  F5tTokenizerContext *p = (F5tTokenizerContext*)clientData;
+  int iStart;
+  int iEnd;
+  int iPos;
+  int nToken;
+  char *zToken;
+  int rc;
+
+  assert( p );
+  if( objc!=5 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "TEXT START END POS");
+    return TCL_ERROR;
+  }
+  if( p->xToken==0 ){
+    Tcl_AppendResult(interp, 
+        "sqlite3_fts5_token may only be used by tokenizer callback", 0
+    );
+    return TCL_ERROR;
+  }
+
+  zToken = Tcl_GetStringFromObj(objv[1], &nToken);
+  if( Tcl_GetIntFromObj(interp, objv[2], &iStart) 
+   || Tcl_GetIntFromObj(interp, objv[3], &iEnd) 
+   || Tcl_GetIntFromObj(interp, objv[4], &iPos) 
+  ){
+    return TCL_ERROR;
+  }
+
+  rc = p->xToken(p->pCtx, zToken, nToken, iStart, iEnd, iPos);
+  Tcl_SetResult(interp, (char*)sqlite3ErrName(rc), TCL_VOLATILE);
+  return TCL_OK;
+}
+
+static void f5tDelTokenizer(void *pCtx){
+  F5tTokenizerModule *pMod = (F5tTokenizerModule*)pCtx;
+  Tcl_DecrRefCount(pMod->pScript);
+  ckfree(pMod);
+}
+
+/*
+**      sqlite3_fts5_create_tokenizer DB NAME SCRIPT
+**
+** Register a tokenizer named NAME implemented by script SCRIPT. When
+** a tokenizer instance is created (fts5_tokenizer.xCreate), any tokenizer
+** arguments are appended to SCRIPT and the result executed.
+**
+** The value returned by (SCRIPT + args) is itself a tcl script. This 
+** script - call it SCRIPT2 - is executed to tokenize text using the
+** tokenizer instance "returned" by SCRIPT. Specifically, to tokenize
+** text SCRIPT2 is invoked with a single argument appended to it - the
+** text to tokenize.
+**
+** SCRIPT2 should invoke the [sqlite3_fts5_token] command once for each
+** token within the tokenized text.
+*/
+static int f5tCreateTokenizer(
+  ClientData clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  F5tTokenizerContext *pContext = (F5tTokenizerContext*)clientData;
+  sqlite3 *db;
+  fts5_api *pApi;
+  char *zName;
+  Tcl_Obj *pScript;
+  fts5_tokenizer t;
+  F5tTokenizerModule *pMod;
+  int rc;
+
+  if( objc!=4 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB NAME SCRIPT");
+    return TCL_ERROR;
+  }
+  if( f5tDbAndApi(interp, objv[1], &db, &pApi) ){
+    return TCL_ERROR;
+  }
+  zName = Tcl_GetString(objv[2]);
+  pScript = objv[3];
+
+  t.xCreate = f5tTokenizerCreate;
+  t.xTokenize = f5tTokenizerTokenize;
+  t.xDelete = f5tTokenizerDelete;
+
+  pMod = (F5tTokenizerModule*)ckalloc(sizeof(F5tTokenizerModule));
+  pMod->interp = interp;
+  pMod->pScript = pScript;
+  pMod->pContext = pContext;
+  Tcl_IncrRefCount(pScript);
+  rc = pApi->xCreateTokenizer(pApi, zName, (void*)pMod, &t, f5tDelTokenizer);
+  if( rc!=SQLITE_OK ){
+    Tcl_AppendResult(interp, "error in fts5_api.xCreateTokenizer()", 0);
+    return TCL_ERROR;
+  }
+
+  return TCL_OK;
+}
+
+static void xF5tFree(ClientData clientData){
+  ckfree(clientData);
+}
+
 /*
 ** Entry point.
 */
@@ -504,17 +803,27 @@ int Fts5tcl_Init(Tcl_Interp *interp){
   static struct Cmd {
     char *zName;
     Tcl_ObjCmdProc *xProc;
-    void *clientData;
+    int bTokenizeCtx;
   } aCmd[] = {
-    { "sqlite3_fts5_create_function", f5tCreateFunction, 0 }
+    { "sqlite3_fts5_create_tokenizer", f5tCreateTokenizer, 1 },
+    { "sqlite3_fts5_token",            f5tTokenizerReturn, 1 },
+    { "sqlite3_fts5_tokenize",         f5tTokenize, 0 },
+    { "sqlite3_fts5_create_function",  f5tCreateFunction, 0 }
   };
   int i;
+  F5tTokenizerContext *pContext;
+
+  pContext = ckalloc(sizeof(F5tTokenizerContext));
+  memset(pContext, 0, sizeof(*pContext));
 
   for(i=0; i<sizeof(aCmd)/sizeof(aCmd[0]); i++){
     struct Cmd *p = &aCmd[i];
-    Tcl_CreateObjCommand(interp, p->zName, p->xProc, p->clientData, 0);
+    void *pCtx = 0;
+    if( p->bTokenizeCtx ) pCtx = (void*)pContext;
+    Tcl_CreateObjCommand(interp, p->zName, p->xProc, pCtx, (i ? 0 : xF5tFree));
   }
 
   return TCL_OK;
 }
 
+#endif

@@ -1,5 +1,5 @@
-C Fix\sthe\sfts5\sbm25()\sfunction\sso\sthat\sit\smatches\sthe\sdocumentation.
-D 2014-12-23T19:18:34.426
+C Fixes\sto\sbuilt-in\stokenizers.
+D 2014-12-29T11:24:46.773
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in b03432313a3aad96c706f8164fb9f5307eaf19f5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -104,20 +104,22 @@ F ext/fts3/unicode/CaseFolding.txt 8c678ca52ecc95e16bc7afc2dbf6fc9ffa05db8c
 F ext/fts3/unicode/UnicodeData.txt cd07314edb62d49fde34debdaf92fa2aa69011e7
 F ext/fts3/unicode/mkunicode.tcl dc6f268eb526710e2c6e496c372471d773d0c368
 F ext/fts5/extract_api_docs.tcl 6320db4a1d0722a4e2069e661381ad75e9889786
-F ext/fts5/fts5.c 6dc8a8504d84aef13d922db06faa8fbcf8c11424
-F ext/fts5/fts5.h 7598f4b55b888890650829124717874973c52649
-F ext/fts5/fts5Int.h 36054b1dfc4881a9b94f945b348ab6cc01c0c7a5
+F ext/fts5/fts5.c 37e124e24e5860f9842e5f3ee22129a786c0fd74
+F ext/fts5/fts5.h 4f9d2c477c0ee1907164642471329a82cb6b203b
+F ext/fts5/fts5Int.h b5dfed6a1b256ff21d11898f14ab337205844469
 F ext/fts5/fts5_aux.c 445e54031ff94174673f4f5aac6c064df20a2a6b
 F ext/fts5/fts5_buffer.c 1bc5c762bb2e9b4a40b2e8a820a31b809e72eec1
-F ext/fts5/fts5_config.c 5caeb4e77680d635be25b899f97a29cf26fb45ce
+F ext/fts5/fts5_config.c 73774e37a99218833b767f96bb5af35ebe43b77c
 F ext/fts5/fts5_expr.c 27d3d2deebae277c34ae2bb3d501dd879c442ba5
 F ext/fts5/fts5_hash.c 63fa8379c5f2ac107d47c2b7d9ac04c95ef8a279
 F ext/fts5/fts5_index.c 4a8e8535b4303400ddb5f6fb08152da0d88ebf6f
 F ext/fts5/fts5_storage.c 13794781977c9a624eb8bd7b9509de241e405853
-F ext/fts5/fts5_tcl.c 4392e74421d24cc37c370732e8b48217cd2c1777
-F ext/fts5/fts5_tokenize.c 8360c0d1ae0d4696f3cc13f7c67a2db6011cdc5b
+F ext/fts5/fts5_tcl.c ce11e46589986b957b89809aabd3936d898d501b
+F ext/fts5/fts5_tokenize.c 5d6e785345b0d87d174fcc0653bfacd0d9fd7f2e
 F ext/fts5/fts5auxdata.test 3844d0f098441cedf75b9cc96d5e6e94d1a3bef4
 F ext/fts5/fts5parse.y 777da8e5819f75c217982c79c29d014c293acac9
+F ext/fts5/fts5porter.test bb0fba17ce825527addec33fdb12b0062aabd588
+F ext/fts5/fts5tokenizer.test 09096cebc17a41650b52eec6e45c9a29923bfdcd w ext/fts5/fts5porter2.test
 F ext/icu/README.txt d9fbbad0c2f647c3fdf715fc9fd64af53aedfc43
 F ext/icu/icu.c d415ccf984defeb9df2c0e1afcfaa2f6dc05eacb
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
@@ -1210,7 +1212,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ca5d44042aa7461dcc8b700b0763df4df9d4a891
-R 62a7bacc31f6964d59aeb316de8e27d6
+P 1ac7a8d0af9a71ddf6a1421033dcb9fa67c6120c
+R c89483d1ebbc9d631471515ddc2ac098
 U dan
-Z 38f208724902306f1118acd017f9d3d1
+Z 32745924be785a3126a9785b730c9992
