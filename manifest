@@ -1,5 +1,5 @@
-C Reinstate\san\sassert()\sby\sadding\san\s"||\sCORRUPT_DB"\sterm.
-D 2014-12-29T11:50:39.465
+C Fix\ssome\srecently\sadded\stests\sso\sthat\sthey\swork\swith\sSQLITE_DEFAULT_AUTOVACUUM=1.
+D 2014-12-29T12:02:31.823
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 40326b6d788007dd5e00587c54adcd2621832bb3
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -478,8 +478,8 @@ F test/e_update.test 312cb8f5ccfe41515a6bb092f8ea562a9bd54d52
 F test/e_uri.test 5ae33760fb2039c61aa2d90886f1664664173585
 F test/e_vacuum.test 5bfbdc21b65c0abf24398d0ba31dc88d93ca77a9
 F test/e_wal.test 0967f0b8f1dfda871dc7b9b5574198f1f4f7d69a
-F test/e_walauto.test eab3bedddbc3fd19795d51e618da41a48e19a3e3
-F test/e_walckpt.test 3116a98fa0dd9b2c9e493de7c59730adfe436746
+F test/e_walauto.test d2dfc6681aade1f1306a8a336f5a258d8b62becd
+F test/e_walckpt.test 65e29b6631e51f210f83e4ff11571e647ba93608
 F test/e_walhook.test da3ea8b3483d1af72190337bda50155a91a4b664
 F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 83437a79ba1545a55fb549309175c683fb334473
@@ -1123,7 +1123,7 @@ F test/wal.test 885f32b2b390b30b4aa3dbb0e568f8f78d40f5cc
 F test/wal2.test 1f841d2048080d32f552942e333fd99ce541dada
 F test/wal3.test b22eb662bcbc148c5f6d956eaf94b047f7afe9c0
 F test/wal4.test 4744e155cd6299c6bd99d3eab1c82f77db9cdb3c
-F test/wal5.test 174cc1512e304a7dfa28ac30527e28ea02fc37df
+F test/wal5.test 11b8658dd4d5448f4604124bebd9b68be5bc3e66
 F test/wal6.test 527581f5527bf9c24394991e2be83000aace5f9e
 F test/wal64k.test 163655ecd2cb8afef4737cac2a40fdd2eeaf20b8
 F test/wal7.test 2ae8f427d240099cc4b2dfef63cff44e2a68a1bd
@@ -1234,7 +1234,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4eda1c746043acbdb7ef3e1f95bf8b01ee976479
-R 110d8f73632ac0551fa4d638f24a9811
-U drh
-Z b99a612326485f12a8c134680408ea8b
+P 95ce20348d9b868a0407adccdb222a0e4c762945
+R 0db2cbd8617dad79686d47ebce6896f7
+U dan
+Z 03a26819b4fc4a14b459978f03e3e164

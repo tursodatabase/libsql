@@ -66,6 +66,7 @@ foreach {tn code} {
   eval $code
 
   reset_db
+  execsql { PRAGMA auto_vacuum = 0 }
   do_execsql_test 1.$tn.0 { PRAGMA journal_mode = WAL } {wal}
   do_execsql_test 1.$tn.1 { CREATE TABLE t1(a, b) }
   set shmfd [open "test.db-shm" rb]
