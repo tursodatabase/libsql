@@ -974,7 +974,8 @@ speedtest1$(TEXE):	$(TOP)/test/wordcount.c sqlite3.lo
 # releasetest.tcl script.
 #
 checksymbols: sqlite3.lo
-	nm -g --defined-only sqlite3.lo | grep -v " sqlite3_" ; test $$? -ne 0
+	nm -g --defined-only sqlite3.o | grep -v " sqlite3_" ; test $$? -ne 0
+	echo '0 errors out of 1 tests'
 
 # The next two rules are used to support the "threadtest" target. Building
 # threadtest runs a few thread-safety tests that are implemented in C. This

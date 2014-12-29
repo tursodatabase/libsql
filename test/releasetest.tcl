@@ -65,7 +65,6 @@ array set ::Configs {
     -DSQLITE_SECURE_DELETE=1
     -DSQLITE_SOUNDEX=1
     -DSQLITE_ENABLE_ATOMIC_WRITE=1
-    -DSQLITE_ENABLE_IOTRACE=1
     -DSQLITE_ENABLE_MEMORY_MANAGEMENT=1
     -DSQLITE_ENABLE_OVERSIZE_CELL_CHECK=1
   }
@@ -201,6 +200,37 @@ foreach {key value} [array get ::Platforms] {
   }
 }
 
+# Open the file $logfile and look for a report on the number of errors
+# and the number of test cases run.  Add these values to the global
+# $::NERRCASE and $::NTESTCASE variables.
+#
+# If any errors occur, then write into $errmsgVar the text of an appropriate
+# one-line error message to show on the output.
+#
+proc count_tests_and_errors {logfile rcVar errmsgVar} {
+  upvar 1 $rcVar rc $errmsgVar errmsg
+  set fd [open $logfile rb]
+  set seen 0
+  while {![eof $fd]} {
+    set line [gets $fd]
+    if {[regexp {^(\d+) errors out of (\d+) tests} $line all nerr ntest]} {
+      incr ::NERRCASE $nerr
+      incr ::NTESTCASE $ntest
+      set seen 1
+      if {$nerr>0} {
+        set rc 1
+        set errmsg $line
+      }
+      break;
+    }
+  }
+  close $fd
+  if {!$seen} {
+    set rc 1
+    set errmsg "Test did not complete"
+  }
+}
+
 proc run_test_suite {name testtarget config} {
   # Tcl variable $opts is used to build up the value used to set the
   # OPTS Makefile variable. Variable $cflags holds the value for
@@ -242,9 +272,11 @@ proc run_test_suite {name testtarget config} {
   set tm1 [clock seconds]
   set origdir [pwd]
   dryrun cd $dir
+  set errmsg {}
   set rc [catch [configureCommand]]
   if {!$rc} {
     set rc [catch [makeCommand $testtarget $cflags $opts]]
+    count_tests_and_errors test.log rc errmsg
   }
   set tm2 [clock seconds]
   dryrun cd $origdir
@@ -257,6 +289,7 @@ proc run_test_suite {name testtarget config} {
     if {$rc} {
       puts " FAIL $tm"
       incr ::NERR
+      if {$errmsg!=""} {puts "     $errmsg"}
     } else {
       puts " Ok   $tm"
     }
@@ -407,6 +440,8 @@ proc main {argv} {
 
   set ::NERR 0
   set ::NTEST 0
+  set ::NTESTCASE 0
+  set ::NERRCASE 0
   set STARTTIME [clock seconds]
   foreach {zConfig target} $::CONFIGLIST {
     if {$::QUICK} {set target test}
@@ -441,7 +476,7 @@ proc main {argv} {
   set sec [expr {$elapsetime%60}]
   set etime [format (%02d:%02d:%02d) $hr $min $sec]
   puts [string repeat * 70]
-  puts "$::NERR failures of $::NTEST test suites run in $etime"
+  puts "$::NERRCASE failures of $::NTESTCASE tests run in $etime"
 }
 
 main $argv
