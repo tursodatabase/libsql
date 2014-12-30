@@ -530,6 +530,11 @@ mptester$(EXE):	sqlite3.c $(TOP)/mptest/mptest.c
 	$(LTLINK) -o $@ -I. $(TOP)/mptest/mptest.c sqlite3.c \
 		$(TLIBS) -rpath "$(libdir)"
 
+mptest:	mptester$(EXE)
+	rm -f mptest1.db
+	./mptester$(EXE) mptest1.db $(TOP)/mptest/crash01.test
+	rm -f mptest2.db
+	./mptester$(EXE) mptest2.db $(TOP)/mptest/multiwrite01.test
 
 # This target creates a directory named "tsrc" and fills it with
 # copies of all of the C source code and header files needed to

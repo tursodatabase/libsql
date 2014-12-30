@@ -158,7 +158,7 @@ array set ::Configs {
 array set ::Platforms {
   Linux-x86_64 {
     "Check-Symbols"           checksymbols
-    "Debug-One"               test
+    "Debug-One"               "mptest test"
     "Secure-Delete"           test
     "Unlock-Notify"           "QUICKTEST_INCLUDE=notify2.test test"
     "Update-Delete-Limit"     test
@@ -178,11 +178,11 @@ array set ::Platforms {
     "Default"                 "threadtest fulltest"
   }
   Darwin-i386 {
-    "Locking-Style"           test
+    "Locking-Style"           "mptest test"
     "OS-X"                    "threadtest fulltest"
   }
   "Windows NT-intel" {
-    "Default"                 "fulltestonly"
+    "Default"                 "mptest fulltestonly"
   }
 }
 
@@ -214,7 +214,7 @@ proc count_tests_and_errors {logfile rcVar errmsgVar} {
   set seen 0
   while {![eof $fd]} {
     set line [gets $fd]
-    if {[regexp {^(\d+) errors out of (\d+) tests} $line all nerr ntest]} {
+    if {[regexp {(\d+) errors out of (\d+) tests} $line all nerr ntest]} {
       incr ::NERRCASE $nerr
       incr ::NTESTCASE $ntest
       set seen 1
@@ -222,7 +222,6 @@ proc count_tests_and_errors {logfile rcVar errmsgVar} {
         set rc 1
         set errmsg $line
       }
-      break;
     }
   }
   close $fd
@@ -457,16 +456,17 @@ proc main {argv} {
     # add it and run veryquick.test.
     if {$target!="checksymbols" && !$::BUILDONLY} {
       set debug_idx [lsearch -glob $config_options -DSQLITE_DEBUG*]
+      set xtarget $target
+      regsub -all {fulltest[a-z]+} $xtarget test xtarget
       if {$debug_idx < 0} {
         incr NTEST
-        run_test_suite "${zConfig}_debug" test [
-          concat $config_options -DSQLITE_DEBUG=1
-        ]
+        append config_options " -DSQLITE_DEBUG=1"
+        run_test_suite "${zConfig}_debug" $xtarget $config_options
       } else {
         incr NTEST
-        run_test_suite "${zConfig}_ndebug" test [
-          lreplace $config_options $debug_idx $debug_idx
-        ]
+        regsub { *-DSQLITE_MEMDEBUG[^ ]* *} $config_options { } config_options
+        regsub { *-DSQLITE_DEBUG[^ ]* *} $config_options { } config_options
+        run_test_suite "${zConfig}_ndebug" $xtarget $config_options
       }
     }
   }

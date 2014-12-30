@@ -1,7 +1,7 @@
-C Ensure\sthat\swhen\sa\sfile\sis\sextended\susing\sFCNTL_SIZE_HINT\sthe\slast\spage\sis\sallocated\son\sdisk,\seven\sif\sthe\sfile\swill\sonly\suse\spart\sof\sit.
-D 2014-12-30T19:58:31.340
+C Add\sthe\s"mptester"\stests\sto\sreleasetest.tcl.
+D 2014-12-30T20:40:32.817
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in 40326b6d788007dd5e00587c54adcd2621832bb3
+F Makefile.in 7cd23e4fc91004a6bd081623e1bc6932e44828c0
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc b363b90fe1bfc3b87d190f2f728a126c00d9ce09
 F Makefile.vxworks 034289efa9d591b04b1a73598623119c306cbba0
@@ -160,7 +160,7 @@ F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test cce8e306d8596d5a2e497e27112dae1f6e5e3538
 F mptest/crash02.subtest f4ef05adcd15d60e5d2bd654204f2c008b519df8
-F mptest/mptest.c 499a74af4be293b7c1c7c3d40f332b67227dd739
+F mptest/mptest.c 24c5f72415df2eab7088ef8c9f99f163aed590c8
 F mptest/multiwrite01.test 499ad0310da8dff8e8f98d2e272fc2a8aa741b2e
 F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
@@ -801,7 +801,7 @@ F test/randexpr1.test eda062a97e60f9c38ae8d806b03b0ddf23d796df
 F test/rdonly.test dd30a4858d8e0fbad2304c2bd74a33d4df36412a
 F test/regexp1.test 497ea812f264d12b6198d6e50a76be4a1973a9d8
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
-F test/releasetest.tcl 3ffd8d99da7a087917f057147053ed35ce1bf90b
+F test/releasetest.tcl 8f35e5073901e48a634a649462fa2e7e522e9dc0
 F test/resolver01.test 33abf37ff8335e6bf98f2b45a0af3e06996ccd9a
 F test/rollback.test 458fe73eb3ffdfdf9f6ba3e9b7350a6220414dea
 F test/rollback2.test fc14cf6d1a2b250d2735ef16124b971bce152f14
@@ -1234,7 +1234,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 98cb56e2401ae7e113b071df8997ba62265821d3
-R 42e94e61b93d775e47b58099deb363fd
-U dan
-Z 6763ecde934c72a96b9e8144b7d09293
+P c7f84717d61197afa9e0ac607c4b349361e6e2b7
+R 0933bc5647d1041ce6d28bf44cb1ff01
+U drh
+Z 8ac9cef8267dc35aa4f2371bf41435dc
