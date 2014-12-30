@@ -1,5 +1,5 @@
-C Fix\sthe\s--dryrun\soption\sin\sreleasetest.tcl.
-D 2014-12-29T19:54:10.833
+C Round\sall\sobject\ssizes\sthat\sgo\sinto\scomputing\sSQLITE_CONFIG_PCACHE_HDRSZ\sup\nto\sa\smultiple\sof\s8\sbytes.
+D 2014-12-30T00:57:29.979
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 40326b6d788007dd5e00587c54adcd2621832bb3
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -173,7 +173,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 7ddee9c7d505e07e959a575b18498f17c71e53ea
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 49ca66250c7dfa844a4d4cb8272b87420d27d3a5
-F src/btree.c 904d30478685fe0723ad9092fc800a655544c69a
+F src/btree.c 4c098bb6e8678e4596983862abf78f7a0fcb807e
 F src/btree.h 94277c1d30c0b75705974bcc8b0c05e79c03d474
 F src/btreeInt.h a3d0ae1d511365e1a2b76ad10960dbe55c286f34
 F src/build.c f5cfd7b32216f695b995bbc7c1a395f6d451d11f
@@ -219,9 +219,9 @@ F src/os_win.h 09e751b20bbc107ffbd46e13555dc73576d88e21
 F src/pager.c 2cbaf886a6157c53a8061ea7e677f81620ff46eb
 F src/pager.h c3476e7c89cdf1c6914e50a11f3714e30b4e0a77
 F src/parse.y 5dfead8aed90cb0c7c1115898ee2266804daff45
-F src/pcache.c ace1b67632deeaa84859b4c16c27711dfb7db3d4
+F src/pcache.c 8ee2ce15c4f49b44e27e8ffb8ce683c5e506e736
 F src/pcache.h b44658c9c932d203510279439d891a2a83e12ba8
-F src/pcache1.c facbdd3ecc09c8f750089d941305694301328e98
+F src/pcache1.c ff599891da0e4993c814eeae3e7e2801f47364f3
 F src/pragma.c bd33aa24456f043bb6f6d32a918bbeed41d8c591
 F src/prepare.c 173a5a499138451b2561614ecb87d78f9f4644b9
 F src/printf.c 9e75a6a0b55bf61cfff7d7e19d89834a1b938236
@@ -1234,7 +1234,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ef0626ab20f753f01090ca8e8a94e8b516eea55e
-R fa81eb180b12cb206ba390f700c75ee2
+P 0f9e549643ab94b0465e6891384dd20506708a8f
+R e296d2763d3effbc9c21b29aae15693b
 U drh
-Z 819655494d4a64bf8e32c2a6559858d5
+Z 2369afc171a95fab3bda365a2e52134d

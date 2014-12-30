@@ -655,7 +655,7 @@ void sqlite3PcacheShrink(PCache *pCache){
 ** Return the size of the header added by this middleware layer
 ** in the page-cache hierarchy.
 */
-int sqlite3HeaderSizePcache(void){ return sizeof(PgHdr); }
+int sqlite3HeaderSizePcache(void){ return ROUND8(sizeof(PgHdr)); }
 
 
 #if defined(SQLITE_CHECK_PAGES) || defined(SQLITE_DEBUG)

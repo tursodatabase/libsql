@@ -984,7 +984,7 @@ void sqlite3PCacheSetDefault(void){
 /*
 ** Return the size of the header on each page of this PCACHE implementation.
 */
-int sqlite3HeaderSizePcache1(void){ return sizeof(PgHdr1); }
+int sqlite3HeaderSizePcache1(void){ return ROUND8(sizeof(PgHdr1)); }
 
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
 /*
