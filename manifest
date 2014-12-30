@@ -1,5 +1,5 @@
-C Round\sall\sobject\ssizes\sthat\sgo\sinto\scomputing\sSQLITE_CONFIG_PCACHE_HDRSZ\sup\nto\sa\smultiple\sof\s8\sbytes.
-D 2014-12-30T00:57:29.979
+C Change\snotify2.test\sto\scheck\sthat\ssqlite3_blocking_step()\suses\sCPU\smore\sefficiently\sthan\ssqlite3_step(),\snot\sthat\sit\sresults\sin\sgreater\soverall\sthroughput\sfor\sany\sspecific\snumber\sof\sthreads.
+D 2014-12-30T12:03:35.117
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 40326b6d788007dd5e00587c54adcd2621832bb3
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -755,7 +755,7 @@ F test/mutex2.test bfeaeac2e73095b2ac32285d2756e3a65e681660
 F test/nan.test e9648b9d007c7045242af35e11a984d4b169443a
 F test/nolock.test 0540dd96f39b8876e3ffdd8814fad0ea425efeee
 F test/notify1.test 669b2b743618efdc18ca4b02f45423d5d2304abf
-F test/notify2.test ce23eb522c9e1fff6443f96376fe67872202061c
+F test/notify2.test 2ecabaa1305083856b7c39cf32816b612740c161
 F test/notify3.test 10ff25cde502e72a92053a2f215d64bece4ef934
 F test/notnull.test f8fcf58669ddba79274daa2770d61dfad8274f62
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
@@ -1234,7 +1234,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0f9e549643ab94b0465e6891384dd20506708a8f
-R e296d2763d3effbc9c21b29aae15693b
-U drh
-Z 2369afc171a95fab3bda365a2e52134d
+P b28ce75f2d3a6343dc20d581dc55afae89ab5efa
+R 05d3fab766dc5317a84b8e8fc66a7683
+U dan
+Z 9e6a15ccef1a8c8d1ccc67c36a60ea41
