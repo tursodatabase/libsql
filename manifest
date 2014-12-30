@@ -1,5 +1,5 @@
-C Fix\sproblems\swith\sthe\s"inmemory_journal"\spermutation.
-D 2014-12-30T18:07:34.789
+C Update\sthe\sthreadtest3\stest\sprogram\sso\sthat\sits\soutput\ssummary\sis\s\ncompatible\swith\sreleasetest.tcl.\s\sIn\sthreadtest3,\sdo\snot\srecord\serrors\nthat\scontain\sthe\sstring\s"no\ssuch\stable"\sas\sbeing\sfatal\serrors,\ssince\sthey\nhappen\ssometimes\sin\sa\srace\scondition\sin\sstress1.
+D 2014-12-30T19:26:07.267
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 40326b6d788007dd5e00587c54adcd2621832bb3
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -914,7 +914,7 @@ F test/thread2.test f35d2106452b77523b3a2b7d1dcde2e5ee8f9e46
 F test/thread_common.tcl 334639cadcb9f912bf82aa73f49efd5282e6cadd
 F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
 F test/threadtest2.c ace893054fa134af3fc8d6e7cfecddb8e3acefb9
-F test/threadtest3.c f8c6595664a4c5ef5f28d97a612386fe14dd1940
+F test/threadtest3.c 66c2693d888f9ed256d54d70dd60f569d92c12cf
 F test/threadtest4.c c1e67136ceb6c7ec8184e56ac61db28f96bd2925
 F test/tkt-02a8e81d44.test 6c80d9c7514e2a42d4918bf87bf6bc54f379110c
 F test/tkt-26ff0c2d1e.test 888324e751512972c6e0d1a09df740d8f5aaf660
@@ -1078,7 +1078,7 @@ F test/triggerB.test 56780c031b454abac2340dbb3b71ac5c56c3d7fe
 F test/triggerC.test a68980c5955d62ee24be6f97129d824f199f9a4c
 F test/triggerD.test 8e7f3921a92a5797d472732108109e44575fa650
 F test/triggerE.test 355e9c5cbaed5cd039a60baad1fb2197caeb8e52
-F test/tt3_checkpoint.c 5e63ee65ed5f87176e25a996480cb02c6caec8b4
+F test/tt3_checkpoint.c 9e75cf7c1c364f52e1c47fd0f14c4340a9db0fe1
 F test/tt3_index.c 39eec10a35f57672225be4d182862152896dee4a
 F test/tt3_lookaside1.c 0377e202c3c2a50d688cb65ba203afeda6fafeb9
 F test/tt3_stress.c c57d804716165811d979d4a719e05baccd79277f
@@ -1234,7 +1234,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 776648412c30dce206f1024ff849c2cb025bb006
-R d8ec23380207a0894ebd8ce1599deb6c
-U dan
-Z 8cab0a0cf2d75b3466c28901d182f0a0
+P 79693f0412ffb0486b974ee6c63b4231cfff5a77
+R 5cf8bac225464c2ed58e93713858c6ef
+U drh
+Z 61949e8b38696d2e4ed6889c396c567f
