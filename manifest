@@ -1,5 +1,5 @@
-C Make\sSQLITE_CONFIG_PCACHE_HDRSZ\saccurate\s(not\san\sover-estimate)\son\s32-bit\nsystems.
-D 2014-12-30T13:04:25.944
+C If\sthe\ssorter\suses\smmap'd\stemp\sfiles,\sensure\sall\spages\sof\sthe\stemp\sfile\shave\sbeen\sallocated\sbefore\sit\sis\saccessed.\sOtherwise,\sa\sdisk-full\scondition\smight\sresult\sin\sa\sSIGBUS\sexception.
+D 2014-12-30T14:40:53.460
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 40326b6d788007dd5e00587c54adcd2621832bb3
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -213,7 +213,7 @@ F src/os.c 8fd25588eeba74068d41102d26810e216999b6c8
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c fb587121840f690101336879adfa6d0b2cd0e8c7
+F src/os_unix.c 7f9ed5f05e4a9eb7275d1216e46d245d0cebfebb
 F src/os_win.c 91d3d08e33ec0258d180d4c8255492f47d15e007
 F src/os_win.h 09e751b20bbc107ffbd46e13555dc73576d88e21
 F src/pager.c 2cbaf886a6157c53a8061ea7e677f81620ff46eb
@@ -298,7 +298,7 @@ F src/vdbeapi.c 4bc511a46b9839392ae0e90844a71dc96d9dbd71
 F src/vdbeaux.c 07ef87c6d4b5abdf13ff33babb10205702fdab0a
 F src/vdbeblob.c 4af4bfb71f6df7778397b4a0ebc1879793276778
 F src/vdbemem.c 31d8eabb0cd78bfeab4e5124c7363c3e9e54db9f
-F src/vdbesort.c c150803a3e98fbc68bd07772cbbd4328a0a7212d
+F src/vdbesort.c 80e40d889ebb536cb7a5ac4c12fa2a4662bc9181
 F src/vdbetrace.c 7e4222955e07dd707a2f360c0eb73452be1cb010
 F src/vtab.c c08ec66f45919eaa726bf88aa53eb08379d607f9
 F src/wal.c 85353539f2d9d0c91ebd057c32525b1e1aa3335e
@@ -1234,7 +1234,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d904d29354a5ed85d33bafe4a7143f3c5ecee790
-R 10e3253f54695b7f7d1030889f62fe40
-U drh
-Z 96098511eaa9438036b4e314651b0800
+P 340b347758e570db3e739b56af0dcf3fc34525be
+R e81d03c815814a7da9c21e19ec0ae799
+U dan
+Z 9955da99fb103f07b93ca8aef676d75e
