@@ -296,7 +296,7 @@ static PgHdr1 *pcache1AllocPage(PCache1 *pCache){
     pPg = 0;
   }
 #else
-  pPg = pcache1Alloc(sizeof(PgHdr1) + pCache->szPage + pCache->szExtra);
+  pPg = pcache1Alloc(ROUND8(sizeof(PgHdr1)) + pCache->szPage + pCache->szExtra);
   p = (PgHdr1 *)&((u8 *)pPg)[pCache->szPage];
 #endif
   pcache1EnterMutex(pCache->pGroup);

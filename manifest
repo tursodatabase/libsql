@@ -1,5 +1,5 @@
-C Change\snotify2.test\sto\scheck\sthat\ssqlite3_blocking_step()\suses\sCPU\smore\sefficiently\sthan\ssqlite3_step(),\snot\sthat\sit\sresults\sin\sgreater\soverall\sthroughput\sfor\sany\sspecific\snumber\sof\sthreads.
-D 2014-12-30T12:03:35.117
+C Make\sSQLITE_CONFIG_PCACHE_HDRSZ\saccurate\s(not\san\sover-estimate)\son\s32-bit\nsystems.
+D 2014-12-30T13:04:25.944
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 40326b6d788007dd5e00587c54adcd2621832bb3
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -219,9 +219,9 @@ F src/os_win.h 09e751b20bbc107ffbd46e13555dc73576d88e21
 F src/pager.c 2cbaf886a6157c53a8061ea7e677f81620ff46eb
 F src/pager.h c3476e7c89cdf1c6914e50a11f3714e30b4e0a77
 F src/parse.y 5dfead8aed90cb0c7c1115898ee2266804daff45
-F src/pcache.c 8ee2ce15c4f49b44e27e8ffb8ce683c5e506e736
+F src/pcache.c b83d160ce81ca101f98f0d27498e6d6bd49f1599
 F src/pcache.h b44658c9c932d203510279439d891a2a83e12ba8
-F src/pcache1.c ff599891da0e4993c814eeae3e7e2801f47364f3
+F src/pcache1.c 1e77432b40b7d3288327d9cdf399dcdfd2b6d3bf
 F src/pragma.c bd33aa24456f043bb6f6d32a918bbeed41d8c591
 F src/prepare.c 173a5a499138451b2561614ecb87d78f9f4644b9
 F src/printf.c 9e75a6a0b55bf61cfff7d7e19d89834a1b938236
@@ -1234,7 +1234,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b28ce75f2d3a6343dc20d581dc55afae89ab5efa
-R 05d3fab766dc5317a84b8e8fc66a7683
-U dan
-Z 9e6a15ccef1a8c8d1ccc67c36a60ea41
+P d904d29354a5ed85d33bafe4a7143f3c5ecee790
+R 10e3253f54695b7f7d1030889f62fe40
+U drh
+Z 96098511eaa9438036b4e314651b0800
