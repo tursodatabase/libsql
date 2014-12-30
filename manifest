@@ -1,5 +1,5 @@
-C If\sthe\ssorter\suses\smmap'd\stemp\sfiles,\sensure\sall\spages\sof\sthe\stemp\sfile\shave\sbeen\sallocated\sbefore\sit\sis\saccessed.\sOtherwise,\sa\sdisk-full\scondition\smight\sresult\sin\sa\sSIGBUS\sexception.
-D 2014-12-30T14:40:53.460
+C Fix\sproblems\swith\sthe\s"inmemory_journal"\spermutation.
+D 2014-12-30T18:07:34.789
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 40326b6d788007dd5e00587c54adcd2621832bb3
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -782,10 +782,10 @@ F test/pagesize.test 1dd51367e752e742f58e861e65ed7390603827a0
 F test/pcache.test b09104b03160aca0d968d99e8cd2c5b1921a993d
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
 F test/percentile.test b98fc868d71eb5619d42a1702e9ab91718cbed54
-F test/permutations.test 4e12d43f4639ea8a0e366d9c64e0009afe2eb544
+F test/permutations.test d408cd2d48e7a61c9c51ae528d94c3c48ce97477
 F test/pragma.test aa16dedfe01c02c8895169012f7dfde9c163f0d5
 F test/pragma2.test aea7b3d82c76034a2df2b38a13745172ddc0bc13
-F test/pragma3.test 4f141da233358783ba443eb685e6739ce0eb1d90
+F test/pragma3.test 0ca2aea1499a7c2dcee235419e520d825dac958d
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
 F test/printf2.test b4acd4bf8734243257f01ddefa17c4fb090acc8a
 F test/progress.test a282973d1d17f08071bc58a77d6b80f2a81c354d
@@ -1234,7 +1234,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 340b347758e570db3e739b56af0dcf3fc34525be
-R e81d03c815814a7da9c21e19ec0ae799
+P 776648412c30dce206f1024ff849c2cb025bb006
+R d8ec23380207a0894ebd8ce1599deb6c
 U dan
-Z 9955da99fb103f07b93ca8aef676d75e
+Z 8cab0a0cf2d75b3466c28901d182f0a0

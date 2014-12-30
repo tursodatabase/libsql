@@ -216,7 +216,12 @@ ifcapable shared_cache {
 
 # Make sure this also works in WAL mode
 #
+# This will not work with the in-memory journal permutation, as opening
+# [db2] switches the journal mode back to "memory"
+#
 ifcapable wal {
+if {[permutation]!="inmemory_journal"} {
+
   sqlite3 db test.db
   db eval {PRAGMA journal_mode=WAL}
   sqlite3 db2 test.db
@@ -241,6 +246,7 @@ ifcapable wal {
     db2 eval {PRAGMA data_version; SELECT * FROM t1;}
   } {3 111 222}
   db2 close
+}
 }
 
 finish_test
