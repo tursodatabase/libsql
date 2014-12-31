@@ -1,5 +1,5 @@
-C Add\sthe\s"mptester"\stests\sto\sreleasetest.tcl.
-D 2014-12-30T20:40:32.817
+C Do\snot\srun\spragma3.test\sas\spart\sof\sthe\smmap\spermutation.
+D 2014-12-31T09:52:15.410
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7cd23e4fc91004a6bd081623e1bc6932e44828c0
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -782,7 +782,7 @@ F test/pagesize.test 1dd51367e752e742f58e861e65ed7390603827a0
 F test/pcache.test b09104b03160aca0d968d99e8cd2c5b1921a993d
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
 F test/percentile.test b98fc868d71eb5619d42a1702e9ab91718cbed54
-F test/permutations.test d408cd2d48e7a61c9c51ae528d94c3c48ce97477
+F test/permutations.test e1c603ec095e29de3d1f1566d704ea270f9c3f89
 F test/pragma.test aa16dedfe01c02c8895169012f7dfde9c163f0d5
 F test/pragma2.test aea7b3d82c76034a2df2b38a13745172ddc0bc13
 F test/pragma3.test 0ca2aea1499a7c2dcee235419e520d825dac958d
@@ -1234,7 +1234,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c7f84717d61197afa9e0ac607c4b349361e6e2b7
-R 0933bc5647d1041ce6d28bf44cb1ff01
-U drh
-Z 8ac9cef8267dc35aa4f2371bf41435dc
+P 93094a68d3a6178779878cbbe0e5e09ef31a323f
+R 568e484006de3cb2669a32ac139fa8fe
+U dan
+Z 9ed2b5eb1c7f4568141d7b75c646d319
