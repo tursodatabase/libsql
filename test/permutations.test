@@ -145,11 +145,7 @@ test_suite "mmap" -prefix "mm-" -description {
 } -presql {
   pragma mmap_size = 268435456;
 } -files [
-  # Do not run pragma3.test, as it depends on the values returned by
-  # "PRAGMA data_version". And if mmap is being used these are often,
-  # but not always, one greater than if it were not.
-  test_set $allquicktests -exclude *malloc* *ioerr* *fault* pragma3.test \
-    -include malloc.test
+  test_set $allquicktests -exclude *malloc* *ioerr* *fault* -include malloc.test
 ]
 
 test_suite "valgrind" -prefix "" -description {
