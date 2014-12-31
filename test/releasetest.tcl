@@ -462,7 +462,7 @@ proc main {argv} {
     if {$target!="checksymbols" && !$::BUILDONLY} {
       set debug_idx [lsearch -glob $config_options -DSQLITE_DEBUG*]
       set xtarget $target
-      regsub -all {fulltest[a-z]+} $xtarget test xtarget
+      regsub -all {fulltest[a-z]*} $xtarget test xtarget
       if {$debug_idx < 0} {
         incr NTEST
         append config_options " -DSQLITE_DEBUG=1"
