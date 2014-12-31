@@ -981,6 +981,7 @@ static void walthread1(int nMs){
       "INSERT INTO t1 VALUES(randomblob(100));"
       "INSERT INTO t1 SELECT md5sum(x) FROM t1;"
   );
+  closedb(&err, &db);
 
   setstoptime(&err, nMs);
   for(i=0; i<WALTHREAD1_NTHREAD; i++){
