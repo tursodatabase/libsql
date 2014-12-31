@@ -1,5 +1,5 @@
 /*
-** 2001 September 15
+** 2011-02-02
 **
 ** The author disclaims copyright to this source code.  In place of
 ** a legal notice, here is a blessing:
@@ -146,5 +146,3 @@ static void checkpoint_starvation_2(int nMs){
   }
   print_and_free_err(&err);
 }
-
-

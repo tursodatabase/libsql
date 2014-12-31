@@ -32,8 +32,8 @@ do_execsql_test pragma3-102 {
 # EVIDENCE-OF: R-27726-60934 The "PRAGMA data_version" command provides
 # an indication that the database file has been modified.
 #
-# EVIDENCE-OF: R-25838-33704 The "PRAGMA data_version" value is
-# unchanced for commits made on the same database connection.
+# EVIDENCE-OF: R-47505-58569 The "PRAGMA data_version" value is
+# unchanged for commits made on the same database connection.
 #
 do_execsql_test pragma3-110 {
   PRAGMA data_version;
@@ -64,6 +64,7 @@ do_execsql_test pragma3-130 {
   COMMIT;
   SELECT * FROM t1;
   PRAGMA data_version;
+  PRAGMA shrink_memory;
 } {1 1 1 100 200 300 400 500 1}
 
 # EVIDENCE-OF: R-63005-41812 The integer values returned by two
@@ -216,7 +217,12 @@ ifcapable shared_cache {
 
 # Make sure this also works in WAL mode
 #
+# This will not work with the in-memory journal permutation, as opening
+# [db2] switches the journal mode back to "memory"
+#
 ifcapable wal {
+if {[permutation]!="inmemory_journal"} {
+
   sqlite3 db test.db
   db eval {PRAGMA journal_mode=WAL}
   sqlite3 db2 test.db
@@ -241,6 +247,7 @@ ifcapable wal {
     db2 eval {PRAGMA data_version; SELECT * FROM t1;}
   } {3 111 222}
   db2 close
+}
 }
 
 finish_test

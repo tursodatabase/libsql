@@ -144,11 +144,15 @@ test_suite "veryquick" -prefix "" -description {
 ]
 
 test_suite "mmap" -prefix "mm-" -description {
-  Similar to veryquick. Except with memory mapping disabled.
+  Similar to veryquick. Except with memory mapping enabled.
 } -presql {
   pragma mmap_size = 268435456;
 } -files [
-  test_set $allquicktests -exclude *malloc* *ioerr* *fault* -include malloc.test
+  # Do not run pragma3.test, as it depends on the values returned by
+  # "PRAGMA data_version". And if mmap is being used these are often,
+  # but not always, one greater than if it were not.
+  test_set $allquicktests -exclude *malloc* *ioerr* *fault* pragma3.test \
+    -include malloc.test
 ]
 
 test_suite "valgrind" -prefix "" -description {
@@ -693,7 +697,7 @@ test_suite "inmemory_journal" -description {
   zerodamage.test
 
   # WAL mode is different.
-  wal* tkt-2d1a5c67d.test backcompat.test
+  wal* tkt-2d1a5c67d.test backcompat.test e_wal*
 }]
 
 ifcapable mem3 {

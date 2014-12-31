@@ -1132,12 +1132,12 @@ void sqlite3VdbeSorterClose(sqlite3 *db, VdbeCursor *pCsr){
 */
 static void vdbeSorterExtendFile(sqlite3 *db, sqlite3_file *pFd, i64 nByte){
   if( nByte<=(i64)(db->nMaxSorterMmap) && pFd->pMethods->iVersion>=3 ){
-    int rc = sqlite3OsTruncate(pFd, nByte);
-    if( rc==SQLITE_OK ){
-      void *p = 0;
-      sqlite3OsFetch(pFd, 0, (int)nByte, &p);
-      sqlite3OsUnfetch(pFd, 0, p);
-    }
+    void *p = 0;
+    int chunksize = 4*1024;
+    sqlite3OsFileControlHint(pFd, SQLITE_FCNTL_CHUNK_SIZE, &chunksize);
+    sqlite3OsFileControlHint(pFd, SQLITE_FCNTL_SIZE_HINT, &nByte);
+    sqlite3OsFetch(pFd, 0, (int)nByte, &p);
+    sqlite3OsUnfetch(pFd, 0, p);
   }
 }
 #else
