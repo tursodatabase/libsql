@@ -1447,27 +1447,31 @@ int main(int argc, char **argv){
     { stress1,             "stress1", 10000 },
     { stress2,             "stress2", 60000 },
   };
-
-  int i;
+  static char *substArgv[] = { 0, "*", 0 };
+  int i, iArg;
   int nTestfound = 0;
 
   sqlite3_config(SQLITE_CONFIG_MULTITHREAD);
-  sqlite3_config(SQLITE_CONFIG_MULTITHREAD);
-
-  for(i=0; i<sizeof(aTest)/sizeof(aTest[0]); i++){
-    char const *z = aTest[i].zTest;
-    if( argc>1 ){
-      int iArg;
-      for(iArg=1; iArg<argc; iArg++){
-        if( 0==sqlite3_strglob(argv[iArg], z) ) break;
-      }
-      if( iArg==argc ) continue;
+  if( argc<2 ){
+    argc = 2;
+    argv = substArgv;
+  }
+  for(iArg=1; iArg<argc; iArg++){
+    for(i=0; i<sizeof(aTest)/sizeof(aTest[0]); i++){
+      if( sqlite3_strglob(argv[iArg],aTest[i].zTest)==0 ) break;
     }
-
-    printf("Running %s for %d seconds...\n", z, aTest[i].nMs/1000);
-    fflush(stdout);
-    aTest[i].xTest(aTest[i].nMs);
-    nTestfound++;
+    if( i>=sizeof(aTest)/sizeof(aTest[0]) ) goto usage;   
+  }
+  for(iArg=1; iArg<argc; iArg++){
+    for(i=0; i<sizeof(aTest)/sizeof(aTest[0]); i++){
+      char const *z = aTest[i].zTest;
+      if( sqlite3_strglob(argv[iArg],z)==0 ){
+        printf("Running %s for %d seconds...\n", z, aTest[i].nMs/1000);
+        fflush(stdout);
+        aTest[i].xTest(aTest[i].nMs);
+        nTestfound++;
+      }
+    }
   }
   if( nTestfound==0 ) goto usage;
 

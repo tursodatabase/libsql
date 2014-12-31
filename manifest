@@ -1,5 +1,5 @@
-C Add\sa\smissing\ssqlite3_close()\scall\sto\sthreadtest3.c.
-D 2014-12-31T18:25:21.460
+C Update\sthe\scommand-line\sparsing\sfor\sthreadtest3\sso\sthat\stests\sare\srun\sin\sthe\norder\sthey\sare\sspecified\son\sthe\scommand-line.
+D 2014-12-31T18:28:59.230
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7cd23e4fc91004a6bd081623e1bc6932e44828c0
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -914,7 +914,7 @@ F test/thread2.test f35d2106452b77523b3a2b7d1dcde2e5ee8f9e46
 F test/thread_common.tcl 334639cadcb9f912bf82aa73f49efd5282e6cadd
 F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
 F test/threadtest2.c ace893054fa134af3fc8d6e7cfecddb8e3acefb9
-F test/threadtest3.c 14aa134981cffb4deefe8acf1154b9fa6b6cdf78
+F test/threadtest3.c 7331b9f7f79e4b22341dc87a4ee7074a8a62ad7f
 F test/threadtest4.c c1e67136ceb6c7ec8184e56ac61db28f96bd2925
 F test/tkt-02a8e81d44.test 6c80d9c7514e2a42d4918bf87bf6bc54f379110c
 F test/tkt-26ff0c2d1e.test 888324e751512972c6e0d1a09df740d8f5aaf660
@@ -1234,7 +1234,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ca2e4a5b22e1dc9ea79f77853e328d401138f747
-R b1064b21ce1900d12ee259ac9e26c073
-U dan
-Z aa685526ef0fa03163cab11b3ca440f6
+P a65a44f3ff851b71c9a79e96b9575c6a7006d2dd
+R f32e62f7b458009e8ff83ca7f7bb9ebe
+U drh
+Z 7baa195e642be2449fd61a3f6b6a2b7e
