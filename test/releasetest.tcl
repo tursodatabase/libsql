@@ -133,6 +133,7 @@ array set ::Configs {
     -DSQLITE_MAX_VARIABLE_NUMBER=500000
     -DSQLITE_DEBUG=1
     -DSQLITE_PREFER_PROXY_LOCKING=1
+    -DSQLITE_ENABLE_API_ARMOR=1
   }
   "Extra-Robustness" {
     -DSQLITE_ENABLE_OVERSIZE_CELL_CHECK=1
@@ -265,7 +266,7 @@ proc run_test_suite {name testtarget config} {
   if {!$::DRYRUN} {
     set title ${name}($testtarget)
     set n [string length $title]
-    puts -nonewline "${title}[string repeat . [expr {54-$n}]]"
+    puts -nonewline "${title}[string repeat . [expr {63-$n}]]"
     flush stdout
   }
 
@@ -436,7 +437,7 @@ proc main {argv} {
 
   # Process any command line options.
   process_options $argv
-  puts [string repeat * 70]
+  puts [string repeat * 79]
 
   set ::NERR 0
   set ::NTEST 0
@@ -476,7 +477,7 @@ proc main {argv} {
   set min [expr {($elapsetime/60)%60}]
   set sec [expr {$elapsetime%60}]
   set etime [format (%02d:%02d:%02d) $hr $min $sec]
-  puts [string repeat * 70]
+  puts [string repeat * 79]
   puts "$::NERRCASE failures of $::NTESTCASE tests run in $etime"
 }
 
