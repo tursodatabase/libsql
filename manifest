@@ -1,5 +1,5 @@
-C Do\srun\spragma3.test\sas\spart\sof\sthe\smmap\spermutation.\sAs\sit\sworks\sas\sof\s[cf48eb608a].
-D 2014-12-31T18:08:46.501
+C Only\srun\swalthread5\sonce\swhen\srunning\sall\stests\sin\sthreadtest3.
+D 2014-12-31T18:10:07.569
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7cd23e4fc91004a6bd081623e1bc6932e44828c0
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -914,7 +914,7 @@ F test/thread2.test f35d2106452b77523b3a2b7d1dcde2e5ee8f9e46
 F test/thread_common.tcl 334639cadcb9f912bf82aa73f49efd5282e6cadd
 F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
 F test/threadtest2.c ace893054fa134af3fc8d6e7cfecddb8e3acefb9
-F test/threadtest3.c 66c2693d888f9ed256d54d70dd60f569d92c12cf
+F test/threadtest3.c 7bbedc9df2b8fb0a3f75c5f2f66941c7f18ce1db
 F test/threadtest4.c c1e67136ceb6c7ec8184e56ac61db28f96bd2925
 F test/tkt-02a8e81d44.test 6c80d9c7514e2a42d4918bf87bf6bc54f379110c
 F test/tkt-26ff0c2d1e.test 888324e751512972c6e0d1a09df740d8f5aaf660
@@ -1234,7 +1234,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a468d96700c05d1a01a745930d13ce89c09ce4fa
-R 2124f8dd0c13e87cf432312e601e89d3
-U dan
-Z 1d23743f5f5d9d87deea6bb5afeffc32
+P 11057e2645d92876fd0fb6d702757408077b7354
+R 977b3277256e94a381a08f38ec63eac7
+U drh
+Z 206269a2c6d9b5759d40a6ff53cbafad

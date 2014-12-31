@@ -1433,7 +1433,6 @@ int main(int argc, char **argv){
     { walthread3, "walthread3", 20000 },
     { walthread4, "walthread4", 20000 },
     { walthread5, "walthread5",  1000 },
-    { walthread5, "walthread5",  1000 },
     
     { cgt_pager_1,      "cgt_pager_1", 0 },
     { dynamic_triggers, "dynamic_triggers", 20000 },
