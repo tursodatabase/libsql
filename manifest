@@ -1,5 +1,5 @@
-C Fix\sa\sfloating-point\sround-off\serror\sproblem\sin\sthe\spercentile.test\smodule.
-D 2014-12-31T20:19:20.731
+C Adjust\sthe\smemsubsys1-5.5\stest\scase\sto\savoid\soccasional\sfalse\spositives.
+D 2014-12-31T20:25:33.588
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7cd23e4fc91004a6bd081623e1bc6932e44828c0
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -727,7 +727,7 @@ F test/manydb.test 28385ae2087967aa05c38624cec7d96ec74feb3e
 F test/mem5.test c6460fba403c5703141348cd90de1c294188c68f
 F test/memdb.test fcb5297b321b562084fc79d64d5a12a1cd2b639b
 F test/memleak.test 10b9c6c57e19fc68c32941495e9ba1c50123f6e2
-F test/memsubsys1.test bf270964ab83bc2da5927960f78304a866fb9a9d
+F test/memsubsys1.test e33072ea2ebbca54104f00bc0b6452295ff6268e
 F test/memsubsys2.test 3a1c1a9de48e5726faa85108b02459fae8cb9ee9
 F test/minmax.test 42fbad0e81afaa6e0de41c960329f2b2c3526efd
 F test/minmax2.test b44bae787fc7b227597b01b0ca5575c7cb54d3bc
@@ -1234,7 +1234,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9d4fe11641043af4e663085e979f637676599da0
-R efe4238b2b9db9ced84ff6eed3896298
+P 456948ea64c6980dab79dac30a538b5a6ab8773d
+R faffc322ba435b37e085a2179210ef63
 U drh
-Z 00ece672f6a64adef12b5a8614c66e28
+Z 4cc37900b3dc79a667b61580e5a01937
