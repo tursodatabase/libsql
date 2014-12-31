@@ -182,6 +182,10 @@ array set ::Platforms {
     "Locking-Style"           "mptest test"
     "OS-X"                    "threadtest fulltest"
   }
+  Darwin-x86_64 {
+    "Locking-Style"           "mptest test"
+    "OS-X"                    "threadtest fulltest"
+  }
   "Windows NT-intel" {
     "Default"                 "mptest fulltestonly"
   }

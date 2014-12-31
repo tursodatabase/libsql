@@ -1,5 +1,5 @@
-C Update\sthe\scommand-line\sparsing\sfor\sthreadtest3\sso\sthat\stests\sare\srun\sin\sthe\norder\sthey\sare\sspecified\son\sthe\scommand-line.
-D 2014-12-31T18:28:59.230
+C Change\sthreadtest3.c\sso\sthat\sSQLITE_SCHEMA\sreturns\sresult\sin\swarnings\nnot\shard\serrors.\s\sAdd\sthe\sDarwin-x86_64\splatform\sto\sreleasetest.tcl.
+D 2014-12-31T18:55:09.661
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7cd23e4fc91004a6bd081623e1bc6932e44828c0
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -801,7 +801,7 @@ F test/randexpr1.test eda062a97e60f9c38ae8d806b03b0ddf23d796df
 F test/rdonly.test dd30a4858d8e0fbad2304c2bd74a33d4df36412a
 F test/regexp1.test 497ea812f264d12b6198d6e50a76be4a1973a9d8
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
-F test/releasetest.tcl fad4402d19b94021a3a9032b7b4a9855bf1ef498
+F test/releasetest.tcl f8845aae7b19f0c5418b27bf7723da84a336d0d5
 F test/resolver01.test 33abf37ff8335e6bf98f2b45a0af3e06996ccd9a
 F test/rollback.test 458fe73eb3ffdfdf9f6ba3e9b7350a6220414dea
 F test/rollback2.test fc14cf6d1a2b250d2735ef16124b971bce152f14
@@ -914,7 +914,7 @@ F test/thread2.test f35d2106452b77523b3a2b7d1dcde2e5ee8f9e46
 F test/thread_common.tcl 334639cadcb9f912bf82aa73f49efd5282e6cadd
 F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
 F test/threadtest2.c ace893054fa134af3fc8d6e7cfecddb8e3acefb9
-F test/threadtest3.c 7331b9f7f79e4b22341dc87a4ee7074a8a62ad7f
+F test/threadtest3.c 9ab4b168681c3a6f70f6c833ba08e0d48dd4af9b
 F test/threadtest4.c c1e67136ceb6c7ec8184e56ac61db28f96bd2925
 F test/tkt-02a8e81d44.test 6c80d9c7514e2a42d4918bf87bf6bc54f379110c
 F test/tkt-26ff0c2d1e.test 888324e751512972c6e0d1a09df740d8f5aaf660
@@ -1234,7 +1234,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a65a44f3ff851b71c9a79e96b9575c6a7006d2dd
-R f32e62f7b458009e8ff83ca7f7bb9ebe
+P f489bc31165f043dc10570e6c1250a292673660e
+R fb381e088e2268612fdb185243c3a797
 U drh
-Z 7baa195e642be2449fd61a3f6b6a2b7e
+Z 09baa910ae3dee28dd8ef1c911c03495

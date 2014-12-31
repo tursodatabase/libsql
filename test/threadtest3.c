@@ -447,8 +447,12 @@ static void free_err(Error *p){
 
 static void print_err(Error *p){
   if( p->rc!=SQLITE_OK ){
-    printf("Error: (%d) \"%s\" at line %d\n", p->rc, p->zErr, p->iLine);
-    if( sqlite3_strglob("* - no such table: *",p->zErr)!=0 ) nGlobalErr++;
+    int isWarn = 0;
+    if( p->rc==SQLITE_SCHEMA ) isWarn = 1;
+    if( sqlite3_strglob("* - no such table: *",p->zErr)==0 ) isWarn = 1;
+    printf("%s: (%d) \"%s\" at line %d\n", isWarn ? "Warning" : "Error",
+            p->rc, p->zErr, p->iLine);
+    if( !isWarn ) nGlobalErr++;
     fflush(stdout);
   }
 }
