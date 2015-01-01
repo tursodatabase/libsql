@@ -1,5 +1,5 @@
-C Fix\san\serror\sin\sthe\scomputation\sof\sthe\snumber\sof\shours\sof\sruntime\sfor\nindividual\stest\sruns\sin\sthe\sreleasetest.tcl\sscript.
-D 2015-01-01T18:54:23.534
+C Enhance\sthe\s"lemon"\sexecutable\sso\sthat\sit\signores\s-f,\s-W,\s-O,\sand\s-I\ncommand-line\soptions.\s\sThis\spermits\smost\sof\sthe\ssame\soptions\sthat\sare\spassed\nto\sthe\scompiler\sto\salso\sbe\sharmlessly\spassed\sto\slemon,\sand\sthus\nsimplifies\smakefiles.
+D 2015-01-01T19:11:22.522
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7cd23e4fc91004a6bd081623e1bc6932e44828c0
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1192,7 +1192,7 @@ F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
-F tool/lemon.c 3ff0fec22f92dfb54e62eeb48772eddffdbeb0d6
+F tool/lemon.c 20f3132a1a150d50b022aa0b1fa26bd46aebf7b5
 F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
 F tool/logest.c eef612f8adf4d0993dafed0416064cf50d5d33c6
 F tool/mkautoconfamal.sh 5dc5010e2e748a9e1bba67baca5956a2c2deda7b
@@ -1234,7 +1234,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 30891c6b8ebe9dfc939f9695bb45a159fbaaf262
-R ff7c096e1b65892104ff528c7034919c
+P e2b0ebe21cd8a63927decb645efd2db80bf88379
+R 5d6dc81c5e6fc0ccf7a552bd6bb1dd01
 U drh
-Z 2f878e885c01058106b8fb811cc67e19
+Z c56b05defbbdeecd31b9d2ca5ed09dfe
