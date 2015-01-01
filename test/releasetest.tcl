@@ -287,7 +287,7 @@ proc run_test_suite {name testtarget config} {
   dryrun cd $origdir
 
   if {!$::DRYRUN} {
-    set hours [expr {($tm2-$tm2)/3600}]
+    set hours [expr {($tm2-$tm1)/3600}]
     set minutes [expr {(($tm2-$tm1)/60)%60}]
     set seconds [expr {($tm2-$tm1)%60}]
     set tm [format (%02d:%02d:%02d) $hours $minutes $seconds]
