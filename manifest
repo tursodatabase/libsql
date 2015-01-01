@@ -1,5 +1,5 @@
-C Fix\sthe\sfkey-7.1\stest\sso\sthat\sit\ssorts\sits\sanswer\sand\shence\salways\sgives\sthe\nsame\sanswer.
-D 2015-01-01T14:06:24.026
+C Fix\stwo\stest\scases\sin\smemsubsys1\sso\sthat\sthey\swork\swith\sthe\smmap\spermutation.
+D 2015-01-01T14:13:45.725
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7cd23e4fc91004a6bd081623e1bc6932e44828c0
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -727,7 +727,7 @@ F test/manydb.test 28385ae2087967aa05c38624cec7d96ec74feb3e
 F test/mem5.test c6460fba403c5703141348cd90de1c294188c68f
 F test/memdb.test fcb5297b321b562084fc79d64d5a12a1cd2b639b
 F test/memleak.test 10b9c6c57e19fc68c32941495e9ba1c50123f6e2
-F test/memsubsys1.test e33072ea2ebbca54104f00bc0b6452295ff6268e
+F test/memsubsys1.test 690d142525a7d31efb638b0d232e25fac3afeb1a
 F test/memsubsys2.test 3a1c1a9de48e5726faa85108b02459fae8cb9ee9
 F test/minmax.test 42fbad0e81afaa6e0de41c960329f2b2c3526efd
 F test/minmax2.test b44bae787fc7b227597b01b0ca5575c7cb54d3bc
@@ -1234,7 +1234,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ec264bdee5ab8047fda9a36af27c8a2c8d964112
-R 8acff839204fa9ef6e40b09dc0daac28
+P 5830c557f7ed048056e2faeb82a8705ee7ecfdd7
+R 9ee216f4d87447d224436bd4fa1652bd
 U drh
-Z e6b9572729fe8b314ffd25cb175a4396
+Z f94d536f9021f3614a2a0370bbcf66ff

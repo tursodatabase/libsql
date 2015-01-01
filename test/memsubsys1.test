@@ -189,7 +189,7 @@ build_test_db memsubsys1-5 {PRAGMA page_size=4096}
 #show_memstats
 do_test memsubsys1-5.3 {
   set pg_used [lindex [sqlite3_status SQLITE_STATUS_PAGECACHE_USED 0] 2]
-} 24
+} {/^2[34]$/}
 do_test memsubsys1-5.4 {
   set maxreq [lindex [sqlite3_status SQLITE_STATUS_MALLOC_SIZE 0] 2]
   expr {$maxreq>4096}
@@ -215,7 +215,7 @@ build_test_db memsubsys1-6 {PRAGMA page_size=4096}
 #show_memstats
 do_test memsubsys1-6.3 {
   set pg_used [lindex [sqlite3_status SQLITE_STATUS_PAGECACHE_USED 0] 2]
-} 24
+} {/^2[34]$/}
 #do_test memsubsys1-6.4 {
 #  set maxreq [lindex [sqlite3_status SQLITE_STATUS_MALLOC_SIZE 0] 2]
 #  expr {$maxreq>4096 && $maxreq<=(4096+$xtra_size)}
