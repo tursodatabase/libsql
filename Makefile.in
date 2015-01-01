@@ -177,7 +177,7 @@ LIBOBJS0 = alter.lo analyze.lo attach.lo auth.lo \
          notify.lo opcodes.lo os.lo os_unix.lo os_win.lo \
          pager.lo parse.lo pcache.lo pcache1.lo pragma.lo prepare.lo printf.lo \
          random.lo resolve.lo rowset.lo rtree.lo select.lo status.lo \
-         table.lo tokenize.lo trigger.lo \
+         table.lo threads.lo tokenize.lo trigger.lo \
          update.lo util.lo vacuum.lo \
          vdbe.lo vdbeapi.lo vdbeaux.lo vdbeblob.lo vdbemem.lo vdbesort.lo \
          vdbetrace.lo wal.lo walker.lo where.lo utf.lo vtab.lo
@@ -263,6 +263,7 @@ SRC = \
   $(TOP)/src/sqliteInt.h \
   $(TOP)/src/sqliteLimit.h \
   $(TOP)/src/table.c \
+  $(TOP)/src/threads.c \
   $(TOP)/src/tclsqlite.c \
   $(TOP)/src/tokenize.c \
   $(TOP)/src/trigger.c \
@@ -358,6 +359,7 @@ TESTSRC = \
   $(TOP)/src/test_autoext.c \
   $(TOP)/src/test_async.c \
   $(TOP)/src/test_backup.c \
+  $(TOP)/src/test_blob.c \
   $(TOP)/src/test_btree.c \
   $(TOP)/src/test_config.c \
   $(TOP)/src/test_demovfs.c \
@@ -393,6 +395,7 @@ TESTSRC = \
 TESTSRC += \
   $(TOP)/ext/misc/amatch.c \
   $(TOP)/ext/misc/closure.c \
+  $(TOP)/ext/misc/eval.c \
   $(TOP)/ext/misc/fileio.c \
   $(TOP)/ext/misc/fuzzer.c \
   $(TOP)/ext/misc/ieee754.c \
@@ -527,6 +530,11 @@ mptester$(EXE):	sqlite3.c $(TOP)/mptest/mptest.c
 	$(LTLINK) -o $@ -I. $(TOP)/mptest/mptest.c sqlite3.c \
 		$(TLIBS) -rpath "$(libdir)"
 
+mptest:	mptester$(EXE)
+	rm -f mptest1.db
+	./mptester$(EXE) mptest1.db $(TOP)/mptest/crash01.test
+	rm -f mptest2.db
+	./mptester$(EXE) mptest2.db $(TOP)/mptest/multiwrite01.test
 
 # This target creates a directory named "tsrc" and fills it with
 # copies of all of the C source code and header files needed to
@@ -737,6 +745,9 @@ status.lo:	$(TOP)/src/status.c $(HDR)
 table.lo:	$(TOP)/src/table.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/table.c
 
+threads.lo:	$(TOP)/src/threads.c $(HDR)
+	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/threads.c
+
 tokenize.lo:	$(TOP)/src/tokenize.c keywordhash.h $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/tokenize.c
 
@@ -939,8 +950,20 @@ sqlite3_analyzer.c: sqlite3.c $(TOP)/src/test_stat.c $(TOP)/src/tclsqlite.c $(TO
 sqlite3_analyzer$(TEXE): sqlite3_analyzer.c
 	$(LTLINK) sqlite3_analyzer.c -o $@ $(LIBTCL) $(TLIBS)
 
-showdb$(TEXE):	$(TOP)/tool/showdb.c sqlite3.c
-	$(LTLINK) -o $@ $(TOP)/tool/showdb.c sqlite3.c $(TLIBS)
+showdb$(TEXE):	$(TOP)/tool/showdb.c sqlite3.lo
+	$(LTLINK) -o $@ $(TOP)/tool/showdb.c sqlite3.lo $(TLIBS)
+
+showstat4$(TEXE):	$(TOP)/tool/showstat4.c sqlite3.lo
+	$(LTLINK) -o $@ $(TOP)/tool/showstat4.c sqlite3.lo $(TLIBS)
+
+showjournal$(TEXE):	$(TOP)/tool/showjournal.c sqlite3.lo
+	$(LTLINK) -o $@ $(TOP)/tool/showjournal.c sqlite3.lo $(TLIBS)
+
+showwal$(TEXE):	$(TOP)/tool/showwal.c sqlite3.lo
+	$(LTLINK) -o $@ $(TOP)/tool/showwal.c sqlite3.lo $(TLIBS)
+
+rollback-test$(TEXE):	$(TOP)/tool/rollback-test.c sqlite3.lo
+	$(LTLINK) -o $@ $(TOP)/tool/rollback-test.c sqlite3.lo $(TLIBS)
 
 LogEst$(TEXE):	$(TOP)/tool/logest.c sqlite3.h
 	$(LTLINK) -I. -o $@ $(TOP)/tool/logest.c
@@ -950,6 +973,34 @@ wordcount$(TEXE):	$(TOP)/test/wordcount.c sqlite3.c
 
 speedtest1$(TEXE):	$(TOP)/test/wordcount.c sqlite3.lo
 	$(LTLINK) -o $@ $(TOP)/test/speedtest1.c sqlite3.lo $(TLIBS)
+
+# This target will fail if the SQLite amalgamation contains any exported
+# symbols that do not begin with "sqlite3_". It is run as part of the
+# releasetest.tcl script.
+#
+checksymbols: sqlite3.lo
+	nm -g --defined-only sqlite3.o | grep -v " sqlite3_" ; test $$? -ne 0
+	echo '0 errors out of 1 tests'
+
+# The next two rules are used to support the "threadtest" target. Building
+# threadtest runs a few thread-safety tests that are implemented in C. This
+# target is invoked by the releasetest.tcl script.
+# 
+THREADTEST3_SRC = $(TOP)/test/threadtest3.c    \
+                  $(TOP)/test/tt3_checkpoint.c \
+                  $(TOP)/test/tt3_index.c      \
+                  $(TOP)/test/tt3_vacuum.c      \
+                  $(TOP)/test/tt3_stress.c      \
+                  $(TOP)/test/tt3_lookaside1.c
+
+threadtest3$(TEXE): sqlite3.lo $(THREADTEST3_SRC)
+	$(LTLINK) $(TOP)/test/threadtest3.c sqlite3.lo -o $@ $(TLIBS)
+
+threadtest: threadtest3$(TEXE)
+	./threadtest3$(TEXE)
+
+releasetest:	
+	$(TCLSH_CMD) $(TOP)/test/releasetest.tcl
 
 # Standard install and cleanup targets
 #
@@ -985,6 +1036,9 @@ clean:
 	rm -rf tsrc .target_source
 	rm -f tclsqlite3$(TEXE)
 	rm -f testfixture$(TEXE) test.db
+	rm -f LogEst$(TEXE) fts3view$(TEXE) rollback-test$(TEXE) showdb$(TEXE)
+	rm -f showjournal$(TEXE) showstat4$(TEXE) showwal$(TEXE) speedtest1$(TEXE)
+	rm -f wordcount$(TEXE)
 	rm -f sqlite3.dll sqlite3.lib sqlite3.exp sqlite3.def
 	rm -f sqlite3.c
 	rm -f sqlite3rc.h

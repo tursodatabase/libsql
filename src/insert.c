@@ -56,13 +56,13 @@ void sqlite3OpenTable(
 **
 **  Character      Column affinity
 **  ------------------------------
-**  'a'            TEXT
-**  'b'            NONE
-**  'c'            NUMERIC
-**  'd'            INTEGER
-**  'e'            REAL
+**  'A'            NONE
+**  'B'            TEXT
+**  'C'            NUMERIC
+**  'D'            INTEGER
+**  'F'            REAL
 **
-** An extra 'd' is appended to the end of the string to cover the
+** An extra 'D' is appended to the end of the string to cover the
 ** rowid that appears as the last column in every index.
 **
 ** Memory for the buffer containing the column index affinity string
@@ -111,11 +111,11 @@ const char *sqlite3IndexAffinityStr(Vdbe *v, Index *pIdx){
 **
 **  Character      Column affinity
 **  ------------------------------
-**  'a'            TEXT
-**  'b'            NONE
-**  'c'            NUMERIC
-**  'd'            INTEGER
-**  'e'            REAL
+**  'A'            NONE
+**  'B'            TEXT
+**  'C'            NUMERIC
+**  'D'            INTEGER
+**  'E'            REAL
 */
 void sqlite3TableAffinity(Vdbe *v, Table *pTab, int iReg){
   int i;
@@ -410,7 +410,7 @@ static int xferOptimization(
 ** The 4th template is used if the insert statement takes its
 ** values from a SELECT but the data is being inserted into a table
 ** that is also read as part of the SELECT.  In the third form,
-** we have to use a intermediate table to store the results of
+** we have to use an intermediate table to store the results of
 ** the select.  The template is like this:
 **
 **         X <- A
@@ -575,7 +575,7 @@ void sqlite3Insert(
   regAutoinc = autoIncBegin(pParse, iDb, pTab);
 
   /* Allocate registers for holding the rowid of the new row,
-  ** the content of the new row, and the assemblied row record.
+  ** the content of the new row, and the assembled row record.
   */
   regRowid = regIns = pParse->nMem+1;
   pParse->nMem += pTab->nCol + 1;
@@ -1027,7 +1027,7 @@ insert_cleanup:
 }
 
 /* Make sure "isView" and other macros defined above are undefined. Otherwise
-** thely may interfere with compilation of other functions in this file
+** they may interfere with compilation of other functions in this file
 ** (or in another file, if this file becomes part of the amalgamation).  */
 #ifdef isView
  #undef isView
@@ -1143,7 +1143,7 @@ void sqlite3GenerateConstraintChecks(
   int ix;              /* Index loop counter */
   int nCol;            /* Number of columns */
   int onError;         /* Conflict resolution strategy */
-  int j1;              /* Addresss of jump instruction */
+  int j1;              /* Address of jump instruction */
   int seenReplace = 0; /* True if REPLACE is used to resolve INT PK conflict */
   int nPkField;        /* Number of fields in PRIMARY KEY. 1 for ROWID tables */
   int ipkTop = 0;      /* Top of the rowid change constraint check */
@@ -1547,7 +1547,7 @@ void sqlite3CompleteInsertion(
   Index *pIdx;        /* An index being inserted or updated */
   u8 pik_flags;       /* flag values passed to the btree insert */
   int regData;        /* Content registers (after the rowid) */
-  int regRec;         /* Register holding assemblied record for the table */
+  int regRec;         /* Register holding assembled record for the table */
   int i;              /* Loop counter */
   u8 bAffinityDone = 0; /* True if OP_Affinity has been run already */
 
@@ -1612,6 +1612,9 @@ void sqlite3CompleteInsertion(
 ** For a WITHOUT ROWID table, *piDataCur will be somewhere in the range
 ** of *piIdxCurs, depending on where the PRIMARY KEY index appears on the
 ** pTab->pIndex list.
+**
+** If pTab is a virtual table, then this routine is a no-op and the
+** *piDataCur and *piIdxCur values are left uninitialized.
 */
 int sqlite3OpenTableAndIndices(
   Parse *pParse,   /* Parsing context */
@@ -1630,9 +1633,9 @@ int sqlite3OpenTableAndIndices(
 
   assert( op==OP_OpenRead || op==OP_OpenWrite );
   if( IsVirtual(pTab) ){
-    assert( aToOpen==0 );
-    *piDataCur = 0;
-    *piIdxCur = 1;
+    /* This routine is a no-op for virtual tables. Leave the output
+    ** variables *piDataCur and *piIdxCur uninitialized so that valgrind
+    ** can detect if they are used by mistake in the caller. */
     return 0;
   }
   iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);
@@ -1669,7 +1672,7 @@ int sqlite3OpenTableAndIndices(
 ** The following global variable is incremented whenever the
 ** transfer optimization is used.  This is used for testing
 ** purposes only - to make sure the transfer optimization really
-** is happening when it is suppose to.
+** is happening when it is supposed to.
 */
 int sqlite3_xferopt_count;
 #endif /* SQLITE_TEST */
@@ -1736,7 +1739,7 @@ static int xferCompatibleIndex(Index *pDest, Index *pSrc){
 **     INSERT INTO tab1 SELECT * FROM tab2;
 **
 ** The xfer optimization transfers raw records from tab2 over to tab1.  
-** Columns are not decoded and reassemblied, which greatly improves
+** Columns are not decoded and reassembled, which greatly improves
 ** performance.  Raw index records are transferred in the same way.
 **
 ** The xfer optimization is only attempted if tab1 and tab2 are compatible.
@@ -1886,7 +1889,7 @@ static int xferOptimization(
     }
   }
   for(pDestIdx=pDest->pIndex; pDestIdx; pDestIdx=pDestIdx->pNext){
-    if( pDestIdx->onError!=OE_None ){
+    if( IsUniqueIndex(pDestIdx) ){
       destHasUniqueIdx = 1;
     }
     for(pSrcIdx=pSrc->pIndex; pSrcIdx; pSrcIdx=pSrcIdx->pNext){

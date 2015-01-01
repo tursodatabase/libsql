@@ -27,6 +27,7 @@ static const char zHelp[] =
   "  --stats             Show statistics at the end\n"
   "  --testset T         Run test-set T\n"
   "  --trace             Turn on SQL tracing\n"
+  "  --threads N         Use up to N threads for sorting\n"
   "  --utf16be           Set text encoding to UTF-16BE\n"
   "  --utf16le           Set text encoding to UTF-16LE\n"
   "  --verify            Run additional verification steps.\n"
@@ -933,6 +934,7 @@ void testset_cte(void){
 
 }
 
+#ifdef SQLITE_ENABLE_RTREE
 /* Generate two numbers between 1 and mx.  The first number is less than
 ** the second.  Usually the numbers are near each other but can sometimes
 ** be far apart.
@@ -953,7 +955,9 @@ static void twoCoords(
   *pX0 = x0;
   *pX1 = x1;
 }
+#endif
 
+#ifdef SQLITE_ENABLE_RTREE
 /* The following routine is an R-Tree geometry callback.  It returns
 ** true if the object overlaps a slice on the Y coordinate between the
 ** two values given as arguments.  In other words
@@ -973,7 +977,9 @@ static int xsliceGeometryCallback(
   *pRes = aCoord[3]>=p->aParam[0] && aCoord[2]<=p->aParam[1];
   return SQLITE_OK;
 }
+#endif /* SQLITE_ENABLE_RTREE */
 
+#ifdef SQLITE_ENABLE_RTREE
 /*
 ** A testset for the R-Tree virtual table
 */
@@ -1109,6 +1115,7 @@ void testset_rtree(int p1, int p2){
   }
   speedtest1_end_test();
 }
+#endif /* SQLITE_ENABLE_RTREE */
 
 /*
 ** A testset used for debugging speedtest1 itself.
@@ -1141,6 +1148,7 @@ int main(int argc, char **argv){
   int nPCache = 0, szPCache = 0;/* --pcache configuration */
   int nScratch = 0, szScratch=0;/* --scratch configuration */
   int showStats = 0;            /* True for --stats */
+  int nThread = 0;              /* --threads value */
   const char *zTSet = "main";   /* Which --testset torun */
   int doTrace = 0;              /* True for --trace */
   const char *zEncoding = 0;    /* --utf16be or --utf16le */
@@ -1225,6 +1233,9 @@ int main(int argc, char **argv){
         zTSet = argv[++i];
       }else if( strcmp(z,"trace")==0 ){
         doTrace = 1;
+      }else if( strcmp(z,"threads")==0 ){
+        if( i>=argc-1 ) fatal_error("missing argument on %s\n", argv[i]);
+        nThread = integerValue(argv[++i]);
       }else if( strcmp(z,"utf16le")==0 ){
         zEncoding = "utf16le";
       }else if( strcmp(z,"utf16be")==0 ){
@@ -1290,6 +1301,7 @@ int main(int argc, char **argv){
   /* Set database connection options */
   sqlite3_create_function(g.db, "random", 0, SQLITE_UTF8, 0, randomFunc, 0, 0);
   if( doTrace ) sqlite3_trace(g.db, traceCallback, 0);
+  speedtest1_exec("PRAGMA threads=%d", nThread);
   if( zKey ){
     speedtest1_exec("PRAGMA key('%s')", zKey);
   }
@@ -1323,7 +1335,12 @@ int main(int argc, char **argv){
   }else if( strcmp(zTSet,"cte")==0 ){
     testset_cte();
   }else if( strcmp(zTSet,"rtree")==0 ){
+#ifdef SQLITE_ENABLE_RTREE
     testset_rtree(6, 147);
+#else
+    fatal_error("compile with -DSQLITE_ENABLE_RTREE to enable "
+                "the R-Tree tests\n");
+#endif
   }else{
     fatal_error("unknown testset: \"%s\"\nChoices: main debug1 cte rtree\n",
                  zTSet);

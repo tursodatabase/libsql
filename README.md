@@ -53,10 +53,10 @@ to the "sqlite3.dll" command line above.  When debugging into the SQLite
 code, adding the "DEBUG=1" argument to one of the above command lines is
 recommended.
 
-SQLite does not require Tcl to run, but a Tcl installation is required
-by the makefiles (including those for MSVC).  SQLite contains a lot of
-generated code and Tcl is used to do much of that code generation.  The
-makefiles also require AWK.
+SQLite does not require [Tcl](http://www.tcl.tk/) to run, but a Tcl installation
+is required by the makefiles (including those for MSVC).  SQLite contains
+a lot of generated code and Tcl is used to do much of that code generation.
+The makefiles also require AWK.
 
 ## Source Code Tour
 
@@ -95,14 +95,14 @@ manually-edited files and automatically-generated files.
 
 The SQLite interface is defined by the **sqlite3.h** header file, which is
 generated from src/sqlite.h.in, ./manifest.uuid, and ./VERSION.  The
-Tcl script at tool/mksqlite3h.tcl does the conversion.  The manifest.uuid
-file contains the SHA1 hash of the particular check-in and is used to generate
-the SQLITE_SOURCE_ID macro.  The VERSION file contains the current SQLite
-version number.  The sqlite3.h header is really just a copy of src/sqlite.h.in
-with the source-id and version number inserted at just the right spots.
-Note that comment text in the sqlite3.h file is used to generate much of
-the SQLite API documentation.  The Tcl scripts used to generate that
-documentation are in a separate source repository.
+[Tcl script](http://www.tcl.tk) at tool/mksqlite3h.tcl does the conversion.
+The manifest.uuid file contains the SHA1 hash of the particular check-in
+and is used to generate the SQLITE\_SOURCE\_ID macro.  The VERSION file
+contains the current SQLite version number.  The sqlite3.h header is really
+just a copy of src/sqlite.h.in with the source-id and version number inserted
+at just the right spots. Note that comment text in the sqlite3.h file is
+used to generate much of the SQLite API documentation.  The Tcl scripts
+used to generate that documentation are in a separate source repository.
 
 The SQL language parser is **parse.c** which is generate from a grammar in
 the src/parse.y file.  The conversion of "parse.y" into "parse.c" is done

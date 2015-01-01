@@ -246,18 +246,29 @@ set pragma_def {
 
   NAME: schema_version
   TYPE: HEADER_VALUE
+  ARG:  BTREE_SCHEMA_VERSION
   IF:   !defined(SQLITE_OMIT_SCHEMA_VERSION_PRAGMAS)
 
   NAME: user_version
   TYPE: HEADER_VALUE
+  ARG:  BTREE_USER_VERSION
+  IF:   !defined(SQLITE_OMIT_SCHEMA_VERSION_PRAGMAS)
+
+  NAME: data_version
+  TYPE: HEADER_VALUE
+  ARG:  BTREE_DATA_VERSION
+  FLAG: ReadOnly
   IF:   !defined(SQLITE_OMIT_SCHEMA_VERSION_PRAGMAS)
 
   NAME: freelist_count
   TYPE: HEADER_VALUE
+  ARG:  BTREE_FREE_PAGE_COUNT
+  FLAG: ReadOnly
   IF:   !defined(SQLITE_OMIT_SCHEMA_VERSION_PRAGMAS)
 
   NAME: application_id
   TYPE: HEADER_VALUE
+  ARG:  BTREE_APPLICATION_ID
   IF:   !defined(SQLITE_OMIT_SCHEMA_VERSION_PRAGMAS)
 
   NAME: compile_options
@@ -294,6 +305,8 @@ set pragma_def {
   IF:   defined(SQLITE_HAS_CODEC) || defined(SQLITE_ENABLE_CEROD)
 
   NAME: soft_heap_limit
+
+  NAME: threads
 }
 fconfigure stdout -translation lf
 set name {}

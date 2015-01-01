@@ -125,6 +125,9 @@ if {$tcl_platform(platform) == "unix"} {
 sqlite3_shutdown
 sqlite3_config_uri 1
 
+# EVIDENCE-OF: R-06842-00595 If the URI contains an authority, then it
+# must be either an empty string or the string "localhost".
+#
 # EVIDENCE-OF: R-17482-00398 If the authority is not an empty string or
 # "localhost", an error is returned to the caller.
 #

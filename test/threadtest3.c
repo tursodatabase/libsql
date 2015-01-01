@@ -1,41 +1,41 @@
-
 /*
+** 2010-07-22
+**
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
+**
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
+**
+*************************************************************************
+**
 ** The code in this file runs a few multi-threaded test cases using the
 ** SQLite library. It can be compiled to an executable on unix using the
 ** following command:
 **
 **   gcc -O2 threadtest3.c sqlite3.c -ldl -lpthread -lm
 **
-** Then run the compiled program. The exit status is non-zero if any tests
-** failed (hopefully there is also some output to stdout to clarify what went
-** wrong).
+** Even though threadtest3.c is the only C source code file mentioned on
+** the compiler command-line, #include macros are used to pull in additional
+** C code files named "tt3_*.c".
 **
-** There are three parts to the code in this file, in the following order:
+** After compiling, run this program with an optional argument telling
+** which test to run.  All tests are run if no argument is given.  The
+** argument can be a glob pattern to match multiple tests.  Examples:
 **
-**   1. Code for the SQL aggregate function md5sum() copied from 
-**      tclsqlite.c in the SQLite distribution. The names of all the 
-**      types and functions in this section begin with "MD5" or "md5".
+**        ./a.out                 -- Run all tests
+**        ./a.out walthread3      -- Run the "walthread3" test
+**        ./a.out 'wal*'          -- Run all of the wal* tests
+**        ./a.out --help          -- List all available tests
 **
-**   2. A set of utility functions that may be used to implement
-**      multi-threaded test cases. These are all called by test code
-**      via macros that help with error reporting. The macros are defined
-**      immediately below this comment.
-**
-**   3. The test code itself. And a main() routine to drive the test 
-**      code.
+** The exit status is non-zero if any test fails.
 */
 
-/*************************************************************************
-** Start of test code/infrastructure interface macros.
-**
-** The following macros constitute the interface between the test
-** programs and the test infrastructure. Test infrastructure code 
-** does not itself use any of these macros. Test code should not
-** call any of the macroname_x() functions directly.
-**
-** See the header comments above the corresponding macroname_x()
-** function for a description of each interface.
+/* 
+** The "Set Error Line" macro.
 */
+#define SEL(e) ((e)->iLine = ((e)->rc ? (e)->iLine : __LINE__))
 
 /* Database functions */
 #define opendb(w,x,y,z)         (SEL(w), opendb_x(w,x,y,z))
@@ -47,10 +47,13 @@
 #define execsql_i64(x,y,...)    (SEL(x), execsql_i64_x(x,y,__VA_ARGS__))
 #define execsql_text(x,y,z,...) (SEL(x), execsql_text_x(x,y,z,__VA_ARGS__))
 #define execsql(x,y,...)        (SEL(x), (void)execsql_i64_x(x,y,__VA_ARGS__))
+#define sql_script_printf(x,y,z,...) (                \
+    SEL(x), sql_script_printf_x(x,y,z,__VA_ARGS__)    \
+) 
 
 /* Thread functions */
-#define launch_thread(w,x,y,z)  (SEL(w), launch_thread_x(w,x,y,z))
-#define join_all_threads(y,z)   (SEL(y), join_all_threads_x(y,z))
+#define launch_thread(w,x,y,z)     (SEL(w), launch_thread_x(w,x,y,z))
+#define join_all_threads(y,z)      (SEL(y), join_all_threads_x(y,z))
 
 /* Timer functions */
 #define setstoptime(y,z)        (SEL(y), setstoptime_x(y,z))
@@ -63,6 +66,9 @@
 /* File-system operations */
 #define filesize(y,z)           (SEL(y), filesize_x(y,z))
 #define filecopy(x,y,z)         (SEL(x), filecopy_x(x,y,z))
+
+#define PTR2INT(x) ((int)((intptr_t)x))
+#define INT2PTR(x) ((void*)((intptr_t)x))
 
 /*
 ** End of test code/infrastructure interface macros.
@@ -115,7 +121,10 @@ struct MD5Context {
   int isInit;
   uint32 buf[4];
   uint32 bits[2];
-  unsigned char in[64];
+  union {
+    unsigned char in[64];
+    uint32 in32[16];
+  } u;
 };
 typedef struct MD5Context MD5Context;
 
@@ -264,7 +273,7 @@ void MD5Update(MD5Context *ctx, const unsigned char *buf, unsigned int len){
   /* Handle any leading odd-sized chunks */
 
   if ( t ) {
-    unsigned char *p = (unsigned char *)ctx->in + t;
+    unsigned char *p = (unsigned char *)ctx->u.in + t;
 
     t = 64-t;
     if (len < t) {
@@ -272,8 +281,8 @@ void MD5Update(MD5Context *ctx, const unsigned char *buf, unsigned int len){
       return;
     }
     memcpy(p, buf, t);
-    byteReverse(ctx->in, 16);
-    MD5Transform(ctx->buf, (uint32 *)ctx->in);
+    byteReverse(ctx->u.in, 16);
+    MD5Transform(ctx->buf, (uint32 *)ctx->u.in);
     buf += t;
     len -= t;
   }
@@ -281,16 +290,16 @@ void MD5Update(MD5Context *ctx, const unsigned char *buf, unsigned int len){
   /* Process data in 64-byte chunks */
 
   while (len >= 64) {
-    memcpy(ctx->in, buf, 64);
-    byteReverse(ctx->in, 16);
-    MD5Transform(ctx->buf, (uint32 *)ctx->in);
+    memcpy(ctx->u.in, buf, 64);
+    byteReverse(ctx->u.in, 16);
+    MD5Transform(ctx->buf, (uint32 *)ctx->u.in);
     buf += 64;
     len -= 64;
   }
 
   /* Handle any remaining bytes of data. */
 
-  memcpy(ctx->in, buf, len);
+  memcpy(ctx->u.in, buf, len);
 }
 
 /*
@@ -306,7 +315,7 @@ static void MD5Final(unsigned char digest[16], MD5Context *ctx){
 
   /* Set the first char of padding to 0x80.  This is safe since there is
      always at least one byte free */
-  p = ctx->in + count;
+  p = ctx->u.in + count;
   *p++ = 0x80;
 
   /* Bytes of padding needed to make 64 bytes */
@@ -316,25 +325,25 @@ static void MD5Final(unsigned char digest[16], MD5Context *ctx){
   if (count < 8) {
     /* Two lots of padding:  Pad the first block to 64 bytes */
     memset(p, 0, count);
-    byteReverse(ctx->in, 16);
-    MD5Transform(ctx->buf, (uint32 *)ctx->in);
+    byteReverse(ctx->u.in, 16);
+    MD5Transform(ctx->buf, (uint32 *)ctx->u.in);
 
     /* Now fill the next block with 56 bytes */
-    memset(ctx->in, 0, 56);
+    memset(ctx->u.in, 0, 56);
   } else {
     /* Pad block to 56 bytes */
     memset(p, 0, count-8);
   }
-  byteReverse(ctx->in, 14);
+  byteReverse(ctx->u.in, 14);
 
   /* Append length in bits and transform */
-  ((uint32 *)ctx->in)[ 14 ] = ctx->bits[0];
-  ((uint32 *)ctx->in)[ 15 ] = ctx->bits[1];
+  ctx->u.in32[14] = ctx->bits[0];
+  ctx->u.in32[15] = ctx->bits[1];
 
-  MD5Transform(ctx->buf, (uint32 *)ctx->in);
+  MD5Transform(ctx->buf, (uint32 *)ctx->u.in);
   byteReverse((unsigned char *)ctx->buf, 4);
   memcpy(digest, ctx->buf, 16);
-  memset(ctx, 0, sizeof(ctx));    /* In case it is sensitive */
+  memset(ctx, 0, sizeof(*ctx));    /* In case it is sensitive */
 }
 
 /*
@@ -382,9 +391,9 @@ static void md5finalize(sqlite3_context *context){
   sqlite3_result_text(context, zBuf, -1, SQLITE_TRANSIENT);
 }
 
-/*************************************************************************
+/*
 ** End of copied md5sum() code.
-*/
+**************************************************************************/
 
 typedef sqlite3_int64 i64;
 
@@ -397,9 +406,6 @@ typedef struct Thread Thread;
 
 /* Total number of errors in this process so far. */
 static int nGlobalErr = 0;
-
-/* Set to true to run in "process" instead of "thread" mode. */
-static int bProcessMode = 0;
 
 struct Error {
   int rc;
@@ -421,10 +427,10 @@ struct Statement {
 
 struct Thread {
   int iTid;                       /* Thread number within test */
-  int iArg;                       /* Integer argument passed by caller */
+  void* pArg;                     /* Pointer argument passed by caller */
 
   pthread_t tid;                  /* Thread id */
-  char *(*xProc)(int, int);       /* Thread main proc */
+  char *(*xProc)(int, void*);     /* Thread main proc */
   Thread *pNext;                  /* Next in this list of threads */
 };
 
@@ -441,8 +447,13 @@ static void free_err(Error *p){
 
 static void print_err(Error *p){
   if( p->rc!=SQLITE_OK ){
-    printf("Error: (%d) \"%s\" at line %d\n", p->rc, p->zErr, p->iLine);
-    nGlobalErr++;
+    int isWarn = 0;
+    if( p->rc==SQLITE_SCHEMA ) isWarn = 1;
+    if( sqlite3_strglob("* - no such table: *",p->zErr)==0 ) isWarn = 1;
+    printf("%s: (%d) \"%s\" at line %d\n", isWarn ? "Warning" : "Error",
+            p->rc, p->zErr, p->iLine);
+    if( !isWarn ) nGlobalErr++;
+    fflush(stdout);
   }
 }
 
@@ -506,8 +517,9 @@ static void opendb_x(
 ){
   if( pErr->rc==SQLITE_OK ){
     int rc;
+    int flags = SQLITE_OPEN_CREATE | SQLITE_OPEN_READWRITE | SQLITE_OPEN_URI;
     if( bDelete ) unlink(zFile);
-    rc = sqlite3_open(zFile, &pDb->db);
+    rc = sqlite3_open_v2(zFile, &pDb->db, flags, 0);
     if( rc ){
       sqlite_error(pErr, pDb, "open");
       sqlite3_close(pDb->db);
@@ -554,6 +566,22 @@ static void sql_script_x(
   if( pErr->rc==SQLITE_OK ){
     pErr->rc = sqlite3_exec(pDb->db, zSql, 0, 0, &pErr->zErr);
   }
+}
+
+static void sql_script_printf_x(
+  Error *pErr,                    /* IN/OUT: Error code */
+  Sqlite *pDb,                    /* Database handle */
+  const char *zFormat,            /* SQL printf format string */
+  ...                             /* Printf args */
+){
+  va_list ap;                     /* ... printf arguments */
+  va_start(ap, zFormat);
+  if( pErr->rc==SQLITE_OK ){
+    char *zSql = sqlite3_vmprintf(zFormat, ap);
+    pErr->rc = sqlite3_exec(pDb->db, zSql, 0, 0, &pErr->zErr);
+    sqlite3_free(zSql);
+  }
+  va_end(ap);
 }
 
 static Statement *getSqlStatement(
@@ -624,11 +652,9 @@ static i64 execsql_i64_x(
   if( pErr->rc==SQLITE_OK ){
     sqlite3_stmt *pStmt;          /* SQL statement to execute */
     va_list ap;                   /* ... arguments */
-    int i;                        /* Used to iterate through parameters */
     va_start(ap, pDb);
     pStmt = getAndBindSqlStatement(pErr, pDb, ap);
     if( pStmt ){
-      int rc;
       int first = 1;
       while( SQLITE_ROW==sqlite3_step(pStmt) ){
         if( first && sqlite3_column_count(pStmt)>0 ){
@@ -663,11 +689,9 @@ static char * execsql_text_x(
   if( pErr->rc==SQLITE_OK ){
     sqlite3_stmt *pStmt;          /* SQL statement to execute */
     va_list ap;                   /* ... arguments */
-    int i;                        /* Used to iterate through parameters */
     va_start(ap, iSlot);
     pStmt = getAndBindSqlStatement(pErr, pDb, ap);
     if( pStmt ){
-      int rc;
       int first = 1;
       while( SQLITE_ROW==sqlite3_step(pStmt) ){
         if( first && sqlite3_column_count(pStmt)>0 ){
@@ -693,14 +717,13 @@ static void integrity_check_x(
 ){
   if( pErr->rc==SQLITE_OK ){
     Statement *pStatement;        /* Statement to execute */
-    int rc;                       /* Return code */
     char *zErr = 0;               /* Integrity check error */
 
     pStatement = getSqlStatement(pErr, pDb, "PRAGMA integrity_check");
     if( pStatement ){
       sqlite3_stmt *pStmt = pStatement->pStmt;
       while( SQLITE_ROW==sqlite3_step(pStmt) ){
-        const char *z = sqlite3_column_text(pStmt, 0);
+        const char *z = (const char*)sqlite3_column_text(pStmt, 0);
         if( strcmp(z, "ok") ){
           if( zErr==0 ){
             zErr = sqlite3_mprintf("%s", z);
@@ -721,14 +744,14 @@ static void integrity_check_x(
 
 static void *launch_thread_main(void *pArg){
   Thread *p = (Thread *)pArg;
-  return (void *)p->xProc(p->iTid, p->iArg);
+  return (void *)p->xProc(p->iTid, p->pArg);
 }
 
 static void launch_thread_x(
   Error *pErr,                    /* IN/OUT: Error code */
   Threadset *pThreads,            /* Thread set */
-  char *(*xProc)(int, int),       /* Proc to run */
-  int iArg                        /* Argument passed to thread proc */
+  char *(*xProc)(int, void*),     /* Proc to run */
+  void *pArg                      /* Argument passed to thread proc */
 ){
   if( pErr->rc==SQLITE_OK ){
     int iTid = ++pThreads->iMaxTid;
@@ -738,7 +761,7 @@ static void launch_thread_x(
     p = (Thread *)sqlite3_malloc(sizeof(Thread));
     memset(p, 0, sizeof(Thread));
     p->iTid = iTid;
-    p->iArg = iArg;
+    p->pArg = pArg;
     p->xProc = xProc;
 
     rc = pthread_create(&p->tid, NULL, launch_thread_main, (void *)p);
@@ -767,6 +790,7 @@ static void join_all_threads_x(
       if( pErr->rc==SQLITE_OK ) system_error(pErr, rc);
     }else{
       printf("Thread %d says: %s\n", p->iTid, (ret==0 ? "..." : (char *)ret));
+      fflush(stdout);
     }
     sqlite3_free(p);
   }
@@ -880,11 +904,6 @@ static int timetostop_x(
   return ret;
 }
 
-/* 
-** The "Set Error Line" macro.
-*/
-#define SEL(e) ((e)->iLine = ((e)->rc ? (e)->iLine : __LINE__))
-
 
 /*************************************************************************
 **************************************************************************
@@ -895,7 +914,7 @@ static int timetostop_x(
 #define WALTHREAD1_NTHREAD  10
 #define WALTHREAD3_NTHREAD  6
 
-static char *walthread1_thread(int iTid, int iArg){
+static char *walthread1_thread(int iTid, void *pArg){
   Error err = {0};                /* Error code and message */
   Sqlite db = {0};                /* SQLite database connection */
   int nIter = 0;                  /* Iterations so far */
@@ -934,7 +953,7 @@ static char *walthread1_thread(int iTid, int iArg){
   return sqlite3_mprintf("%d iterations", nIter);
 }
 
-static char *walthread1_ckpt_thread(int iTid, int iArg){
+static char *walthread1_ckpt_thread(int iTid, void *pArg){
   Error err = {0};                /* Error code and message */
   Sqlite db = {0};                /* SQLite database connection */
   int nCkpt = 0;                  /* Checkpoints so far */
@@ -966,6 +985,7 @@ static void walthread1(int nMs){
       "INSERT INTO t1 VALUES(randomblob(100));"
       "INSERT INTO t1 SELECT md5sum(x) FROM t1;"
   );
+  closedb(&err, &db);
 
   setstoptime(&err, nMs);
   for(i=0; i<WALTHREAD1_NTHREAD; i++){
@@ -977,10 +997,11 @@ static void walthread1(int nMs){
   print_and_free_err(&err);
 }
 
-static char *walthread2_thread(int iTid, int iArg){
+static char *walthread2_thread(int iTid, void *pArg){
   Error err = {0};                /* Error code and message */
   Sqlite db = {0};                /* SQLite database connection */
   int anTrans[2] = {0, 0};        /* Number of WAL and Rollback transactions */
+  int iArg = PTR2INT(pArg);
 
   const char *zJournal = "PRAGMA journal_mode = WAL";
   if( iArg ){ zJournal = "PRAGMA journal_mode = DELETE"; }
@@ -1026,17 +1047,18 @@ static void walthread2(int nMs){
   setstoptime(&err, nMs);
   launch_thread(&err, &threads, walthread2_thread, 0);
   launch_thread(&err, &threads, walthread2_thread, 0);
-  launch_thread(&err, &threads, walthread2_thread, 1);
-  launch_thread(&err, &threads, walthread2_thread, 1);
+  launch_thread(&err, &threads, walthread2_thread, (void*)1);
+  launch_thread(&err, &threads, walthread2_thread, (void*)1);
   join_all_threads(&err, &threads);
 
   print_and_free_err(&err);
 }
 
-static char *walthread3_thread(int iTid, int iArg){
+static char *walthread3_thread(int iTid, void *pArg){
   Error err = {0};                /* Error code and message */
   Sqlite db = {0};                /* SQLite database connection */
   i64 iNextWrite;                 /* Next value this thread will write */
+  int iArg = PTR2INT(pArg);
 
   opendb(&err, &db, "test.db", 0);
   sql_script(&err, &db, "PRAGMA wal_autocheckpoint = 10");
@@ -1087,14 +1109,14 @@ static void walthread3(int nMs){
 
   setstoptime(&err, nMs);
   for(i=0; i<WALTHREAD3_NTHREAD; i++){
-    launch_thread(&err, &threads, walthread3_thread, i);
+    launch_thread(&err, &threads, walthread3_thread, INT2PTR(i));
   }
   join_all_threads(&err, &threads);
 
   print_and_free_err(&err);
 }
 
-static char *walthread4_reader_thread(int iTid, int iArg){
+static char *walthread4_reader_thread(int iTid, void *pArg){
   Error err = {0};                /* Error code and message */
   Sqlite db = {0};                /* SQLite database connection */
 
@@ -1108,7 +1130,7 @@ static char *walthread4_reader_thread(int iTid, int iArg){
   return 0;
 }
 
-static char *walthread4_writer_thread(int iTid, int iArg){
+static char *walthread4_writer_thread(int iTid, void *pArg){
   Error err = {0};                /* Error code and message */
   Sqlite db = {0};                /* SQLite database connection */
   i64 iRow = 1;
@@ -1148,7 +1170,7 @@ static void walthread4(int nMs){
   print_and_free_err(&err);
 }
 
-static char *walthread5_thread(int iTid, int iArg){
+static char *walthread5_thread(int iTid, void *pArg){
   Error err = {0};                /* Error code and message */
   Sqlite db = {0};                /* SQLite database connection */
   i64 nRow;
@@ -1280,7 +1302,7 @@ static void cgt_pager_1(int nMs){
 **   is an attempt to find a bug reported to us.
 */
 
-static char *dynamic_triggers_1(int iTid, int iArg){
+static char *dynamic_triggers_1(int iTid, void *pArg){
   Error err = {0};                /* Error code and message */
   Sqlite db = {0};                /* SQLite database connection */
   int nDrop = 0;
@@ -1326,12 +1348,13 @@ static char *dynamic_triggers_1(int iTid, int iArg){
       nDrop++;
     }
   }
+  closedb(&err, &db);
 
   print_and_free_err(&err);
   return sqlite3_mprintf("%d created, %d dropped", nCreate, nDrop);
 }
 
-static char *dynamic_triggers_2(int iTid, int iArg){
+static char *dynamic_triggers_2(int iTid, void *pArg){
   Error err = {0};                /* Error code and message */
   Sqlite db = {0};                /* SQLite database connection */
   i64 iVal = 0;
@@ -1352,6 +1375,7 @@ static char *dynamic_triggers_2(int iTid, int iArg){
       nDelete++;
     } while( iVal );
   }
+  closedb(&err, &db);
 
   print_and_free_err(&err);
   return sqlite3_mprintf("%d inserts, %d deletes", nInsert, nDelete);
@@ -1376,15 +1400,16 @@ static void dynamic_triggers(int nMs){
       "CREATE TABLE t8(x, y);"
       "CREATE TABLE t9(x, y);"
   );
+  closedb(&err, &db);
 
   setstoptime(&err, nMs);
 
   sqlite3_enable_shared_cache(1);
   launch_thread(&err, &threads, dynamic_triggers_2, 0);
   launch_thread(&err, &threads, dynamic_triggers_2, 0);
-  sqlite3_enable_shared_cache(0);
 
   sleep(2);
+  sqlite3_enable_shared_cache(0);
 
   launch_thread(&err, &threads, dynamic_triggers_2, 0);
   launch_thread(&err, &threads, dynamic_triggers_1, 0);
@@ -1394,19 +1419,24 @@ static void dynamic_triggers(int nMs){
   print_and_free_err(&err);
 }
 
+
+
 #include "tt3_checkpoint.c"
+#include "tt3_index.c"
+#include "tt3_lookaside1.c"
+#include "tt3_vacuum.c"
+#include "tt3_stress.c"
 
 int main(int argc, char **argv){
   struct ThreadTest {
-    void (*xTest)(int);
-    const char *zTest;
-    int nMs;
+    void (*xTest)(int);   /* Routine for running this test */
+    const char *zTest;    /* Name of this test */
+    int nMs;              /* How long to run this test, in milliseconds */
   } aTest[] = {
     { walthread1, "walthread1", 20000 },
     { walthread2, "walthread2", 20000 },
     { walthread3, "walthread3", 20000 },
     { walthread4, "walthread4", 20000 },
-    { walthread5, "walthread5",  1000 },
     { walthread5, "walthread5",  1000 },
     
     { cgt_pager_1,      "cgt_pager_1", 0 },
@@ -1414,42 +1444,46 @@ int main(int argc, char **argv){
 
     { checkpoint_starvation_1, "checkpoint_starvation_1", 10000 },
     { checkpoint_starvation_2, "checkpoint_starvation_2", 10000 },
+
+    { create_drop_index_1, "create_drop_index_1", 10000 },
+    { lookaside1,          "lookaside1", 10000 },
+    { vacuum1,             "vacuum1", 10000 },
+    { stress1,             "stress1", 10000 },
+    { stress2,             "stress2", 60000 },
   };
-
-  int i;
-  char *zTest = 0;
-  int nTest = 0;
-  int bTestfound = 0;
-  int bPrefix = 0;
-
-  if( argc>2 ) goto usage;
-  if( argc==2 ){
-    zTest = argv[1];
-    nTest = strlen(zTest);
-    if( zTest[nTest-1]=='*' ){
-      nTest--;
-      bPrefix = 1;
-    }
-  }
+  static char *substArgv[] = { 0, "*", 0 };
+  int i, iArg;
+  int nTestfound = 0;
 
   sqlite3_config(SQLITE_CONFIG_MULTITHREAD);
-
-  for(i=0; i<sizeof(aTest)/sizeof(aTest[0]); i++){
-    char const *z = aTest[i].zTest;
-    int n = strlen(z);
-    if( !zTest || ((bPrefix || n==nTest) && 0==strncmp(zTest, z, nTest)) ){
-      printf("Running %s for %d seconds...\n", z, aTest[i].nMs/1000);
-      aTest[i].xTest(aTest[i].nMs);
-      bTestfound++;
+  if( argc<2 ){
+    argc = 2;
+    argv = substArgv;
+  }
+  for(iArg=1; iArg<argc; iArg++){
+    for(i=0; i<sizeof(aTest)/sizeof(aTest[0]); i++){
+      if( sqlite3_strglob(argv[iArg],aTest[i].zTest)==0 ) break;
+    }
+    if( i>=sizeof(aTest)/sizeof(aTest[0]) ) goto usage;   
+  }
+  for(iArg=1; iArg<argc; iArg++){
+    for(i=0; i<sizeof(aTest)/sizeof(aTest[0]); i++){
+      char const *z = aTest[i].zTest;
+      if( sqlite3_strglob(argv[iArg],z)==0 ){
+        printf("Running %s for %d seconds...\n", z, aTest[i].nMs/1000);
+        fflush(stdout);
+        aTest[i].xTest(aTest[i].nMs);
+        nTestfound++;
+      }
     }
   }
-  if( bTestfound==0 ) goto usage;
+  if( nTestfound==0 ) goto usage;
 
-  printf("Total of %d errors across all tests\n", nGlobalErr);
+  printf("%d errors out of %d tests\n", nGlobalErr, nTestfound);
   return (nGlobalErr>0 ? 255 : 0);
 
  usage:
-  printf("Usage: %s [testname|testprefix*]\n", argv[0]);
+  printf("Usage: %s [testname|testprefix*]...\n", argv[0]);
   printf("Available tests are:\n");
   for(i=0; i<sizeof(aTest)/sizeof(aTest[0]); i++){
     printf("   %s\n", aTest[i].zTest);
@@ -1457,5 +1491,3 @@ int main(int argc, char **argv){
 
   return 254;
 }
-
-

@@ -38,7 +38,7 @@ static void lockBtreeMutex(Btree *p){
 ** Release the BtShared mutex associated with B-Tree handle p and
 ** clear the p->locked boolean.
 */
-static void unlockBtreeMutex(Btree *p){
+static void SQLITE_NOINLINE unlockBtreeMutex(Btree *p){
   BtShared *pBt = p->pBt;
   assert( p->locked==1 );
   assert( sqlite3_mutex_held(pBt->mutex) );
@@ -48,6 +48,9 @@ static void unlockBtreeMutex(Btree *p){
   sqlite3_mutex_leave(pBt->mutex);
   p->locked = 0;
 }
+
+/* Forward reference */
+static void SQLITE_NOINLINE btreeLockCarefully(Btree *p);
 
 /*
 ** Enter a mutex on the given BTree object.
@@ -66,8 +69,6 @@ static void unlockBtreeMutex(Btree *p){
 ** subsequent Btrees that desire a lock.
 */
 void sqlite3BtreeEnter(Btree *p){
-  Btree *pLater;
-
   /* Some basic sanity checking on the Btree.  The list of Btrees
   ** connected by pNext and pPrev should be in sorted order by
   ** Btree.pBt value. All elements of the list should belong to
@@ -92,9 +93,20 @@ void sqlite3BtreeEnter(Btree *p){
   if( !p->sharable ) return;
   p->wantToLock++;
   if( p->locked ) return;
+  btreeLockCarefully(p);
+}
+
+/* This is a helper function for sqlite3BtreeLock(). By moving
+** complex, but seldom used logic, out of sqlite3BtreeLock() and
+** into this routine, we avoid unnecessary stack pointer changes
+** and thus help the sqlite3BtreeLock() routine to run much faster
+** in the common case.
+*/
+static void SQLITE_NOINLINE btreeLockCarefully(Btree *p){
+  Btree *pLater;
 
   /* In most cases, we should be able to acquire the lock we
-  ** want without having to go throught the ascending lock
+  ** want without having to go through the ascending lock
   ** procedure that follows.  Just be sure not to block.
   */
   if( sqlite3_mutex_try(p->pBt->mutex)==SQLITE_OK ){
@@ -123,6 +135,7 @@ void sqlite3BtreeEnter(Btree *p){
     }
   }
 }
+
 
 /*
 ** Exit the recursive mutex on a Btree.

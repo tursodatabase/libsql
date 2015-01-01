@@ -6,7 +6,13 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+
+#if !defined(_MSC_VER)
 #include <unistd.h>
+#else
+#include <io.h>
+#endif
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -172,7 +178,7 @@ static void print_decode_line(
   int val = aData[ofst];
   char zBuf[100];
   sprintf(zBuf, " %03x: %02x", ofst, aData[ofst]);
-  i = strlen(zBuf);
+  i = (int)strlen(zBuf);
   for(j=1; j<4; j++){
     if( j>=nByte ){
       sprintf(&zBuf[i], "   ");
@@ -180,7 +186,7 @@ static void print_decode_line(
       sprintf(&zBuf[i], " %02x", aData[ofst+j]);
       val = val*256 + aData[ofst+j];
     }
-    i += strlen(&zBuf[i]);
+    i += (int)strlen(&zBuf[i]);
   }
   if( asHex ){
     sprintf(&zBuf[i], "  0x%08x", val);
@@ -273,14 +279,14 @@ static void print_wal_header(Cksum *pCksum){
 /*
 ** Describe cell content.
 */
-static int describeContent(
+static i64 describeContent(
   unsigned char *a,       /* Cell content */
-  int nLocal,             /* Bytes in a[] */
+  i64 nLocal,             /* Bytes in a[] */
   char *zDesc             /* Write description here */
 ){
   int nDesc = 0;
-  int n, i, j;
-  i64 x, v;
+  int n, j;
+  i64 i, x, v;
   const unsigned char *pData;
   const unsigned char *pLimit;
   char sep = ' ';
@@ -320,15 +326,15 @@ static int describeContent(
     }else if( x==9 ){
       sprintf(zDesc, "1");
     }else if( x>=12 ){
-      int size = (x-12)/2;
+      i64 size = (x-12)/2;
       if( (x&1)==0 ){
-        sprintf(zDesc, "blob(%d)", size);
+        sprintf(zDesc, "blob(%lld)", size);
       }else{
-        sprintf(zDesc, "txt(%d)", size);
+        sprintf(zDesc, "txt(%lld)", size);
       }
       pData += size;
     }
-    j = strlen(zDesc);
+    j = (int)strlen(zDesc);
     zDesc += j;
     nDesc += j;
   }
@@ -339,11 +345,11 @@ static int describeContent(
 ** Compute the local payload size given the total payload size and
 ** the page size.
 */
-static int localPayload(i64 nPayload, char cType){
-  int maxLocal;
-  int minLocal;
-  int surplus;
-  int nLocal;
+static i64 localPayload(i64 nPayload, char cType){
+  i64 maxLocal;
+  i64 minLocal;
+  i64 surplus;
+  i64 nLocal;
   if( cType==13 ){
     /* Table leaf */
     maxLocal = pagesize-35;
@@ -370,19 +376,19 @@ static int localPayload(i64 nPayload, char cType){
 **
 ** The return value is the local cell size.
 */
-static int describeCell(
+static i64 describeCell(
   unsigned char cType,    /* Page type */
   unsigned char *a,       /* Cell content */
   int showCellContent,    /* Show cell content if true */
   char **pzDesc           /* Store description here */
 ){
   int i;
-  int nDesc = 0;
+  i64 nDesc = 0;
   int n = 0;
   int leftChild;
   i64 nPayload;
   i64 rowid;
-  int nLocal;
+  i64 nLocal;
   static char zDesc[1000];
   i = 0;
   if( cType<=5 ){
@@ -479,17 +485,17 @@ static void decode_btree_page(
   for(i=0; i<nCell; i++){
     int cofst = iCellPtr + i*2;
     char *zDesc;
-    int n;
+    i64 n;
 
     cofst = a[cofst]*256 + a[cofst+1];
     n = describeCell(a[0], &a[cofst-hdrSize], showCellContent, &zDesc);
     if( showMap ){
       char zBuf[30];
-      memset(&zMap[cofst], '*', n);
+      memset(&zMap[cofst], '*', (size_t)n);
       zMap[cofst] = '[';
       zMap[cofst+n-1] = ']';
       sprintf(zBuf, "%d", i);
-      j = strlen(zBuf);
+      j = (int)strlen(zBuf);
       if( j<=n-2 ) memcpy(&zMap[cofst+1], zBuf, j);
     }
     printf(" %03x: cell[%d] %s\n", cofst, i, zDesc);
@@ -504,7 +510,7 @@ static void decode_btree_page(
 
 int main(int argc, char **argv){
   struct stat sbuf;
-  unsigned char zPgSz[2];
+  unsigned char zPgSz[4];
   if( argc<2 ){
     fprintf(stderr,"Usage: %s FILENAME ?PAGE? ...\n", argv[0]);
     exit(1);
@@ -516,9 +522,9 @@ int main(int argc, char **argv){
   }
   zPgSz[0] = 0;
   zPgSz[1] = 0;
-  lseek(fd, 10, SEEK_SET);
-  read(fd, zPgSz, 2);
-  pagesize = zPgSz[0]*256 + zPgSz[1];
+  lseek(fd, 8, SEEK_SET);
+  read(fd, zPgSz, 4);
+  pagesize = zPgSz[1]*65536 + zPgSz[2]*256 + zPgSz[3];
   if( pagesize==0 ) pagesize = 1024;
   printf("Pagesize: %d\n", pagesize);
   fstat(fd, &sbuf);

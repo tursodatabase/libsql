@@ -68,7 +68,7 @@ void sqlite3PCacheBufferSetup(void *, int sz, int n);
 ** Under memory stress, invoke xStress to try to make pages clean.
 ** Only clean and unpinned pages can be reclaimed.
 */
-void sqlite3PcacheOpen(
+int sqlite3PcacheOpen(
   int szPage,                    /* Size of every page */
   int szExtra,                   /* Extra space associated with each page */
   int bPurgeable,                /* True if pages are on backing store */
@@ -78,7 +78,7 @@ void sqlite3PcacheOpen(
 );
 
 /* Modify the page-size after the cache has been created. */
-void sqlite3PcacheSetPageSize(PCache *, int);
+int sqlite3PcacheSetPageSize(PCache *, int);
 
 /* Return the size in bytes of a PCache object.  Used to preallocate
 ** storage space.
@@ -88,7 +88,9 @@ int sqlite3PcacheSize(void);
 /* One release per successful fetch.  Page is pinned until released.
 ** Reference counted. 
 */
-int sqlite3PcacheFetch(PCache*, Pgno, int createFlag, PgHdr**);
+sqlite3_pcache_page *sqlite3PcacheFetch(PCache*, Pgno, int createFlag);
+int sqlite3PcacheFetchStress(PCache*, Pgno, sqlite3_pcache_page**);
+PgHdr *sqlite3PcacheFetchFinish(PCache*, Pgno, sqlite3_pcache_page *pPage);
 void sqlite3PcacheRelease(PgHdr*);
 
 void sqlite3PcacheDrop(PgHdr*);         /* Remove page from cache */
@@ -157,5 +159,9 @@ void sqlite3PcacheStats(int*,int*,int*,int*);
 #endif
 
 void sqlite3PCacheSetDefault(void);
+
+/* Return the header size */
+int sqlite3HeaderSizePcache(void);
+int sqlite3HeaderSizePcache1(void);
 
 #endif /* _PCACHE_H_ */

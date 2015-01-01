@@ -214,7 +214,7 @@ proc copy_file {filename} {
         }
       } elseif {[regexp {^(SQLITE_EXTERN )?void \(\*sqlite3IoTrace\)} $line]} {
         regsub {^SQLITE_EXTERN } $line {} line
-        puts $out "SQLITE_PRIVATE $line"
+        puts $out $line
       } elseif {[regexp {^void \(\*sqlite3Os} $line]} {
         puts $out "SQLITE_PRIVATE $line"
       } else {
@@ -255,6 +255,7 @@ foreach file {
    malloc.c
    printf.c
    random.c
+   threads.c
    utf.c
    util.c
    hash.c

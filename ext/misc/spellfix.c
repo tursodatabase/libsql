@@ -1893,7 +1893,7 @@ static int spellfix1Init(
   char **pzErr
 ){
   spellfix1_vtab *pNew = 0;
-  const char *zModule = argv[0];
+  /* const char *zModule = argv[0]; // not used */
   const char *zDbName = argv[1];
   const char *zTableName = argv[2];
   int nDbName;
@@ -1947,7 +1947,7 @@ static int spellfix1Init(
       spellfix1DbExec(&rc, db,
          "CREATE INDEX IF NOT EXISTS \"%w\".\"%w_vocab_index_langid_k2\" "
             "ON \"%w_vocab\"(langid,k2);",
-         zDbName, zModule, zTableName
+         zDbName, zTableName, zTableName
       );
     }
     for(i=3; rc==SQLITE_OK && i<argc; i++){
@@ -2736,12 +2736,22 @@ static int spellfix1Update(
       return SQLITE_NOMEM;
     }
     if( sqlite3_value_type(argv[0])==SQLITE_NULL ){
-      spellfix1DbExec(&rc, db,
-             "INSERT INTO \"%w\".\"%w_vocab\"(rank,langid,word,k1,k2) "
-             "VALUES(%d,%d,%Q,%Q,%Q)",
-             p->zDbName, p->zTableName,
-             iRank, iLang, zWord, zK1, zK2
-      );
+      if( sqlite3_value_type(argv[1])==SQLITE_NULL ){
+        spellfix1DbExec(&rc, db,
+               "INSERT INTO \"%w\".\"%w_vocab\"(rank,langid,word,k1,k2) "
+               "VALUES(%d,%d,%Q,%Q,%Q)",
+               p->zDbName, p->zTableName,
+               iRank, iLang, zWord, zK1, zK2
+        );
+      }else{
+        newRowid = sqlite3_value_int64(argv[1]);
+        spellfix1DbExec(&rc, db,
+               "INSERT INTO \"%w\".\"%w_vocab\"(id,rank,langid,word,k1,k2) "
+               "VALUES(%lld,%d,%d,%Q,%Q,%Q)",
+               p->zDbName, p->zTableName,
+               newRowid, iRank, iLang, zWord, zK1, zK2
+        );
+      }
       *pRowid = sqlite3_last_insert_rowid(db);
     }else{
       rowid = sqlite3_value_int64(argv[0]);

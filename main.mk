@@ -46,7 +46,7 @@
 #
 TCCX =  $(TCC) $(OPTS) -I. -I$(TOP)/src -I$(TOP) 
 TCCX += -I$(TOP)/ext/rtree -I$(TOP)/ext/icu -I$(TOP)/ext/fts3
-TCCX += -I$(TOP)/ext/async
+TCCX += -I$(TOP)/ext/async -I$(TOP)/ext/userauth
 TCCX += -I$(TOP)/ext/fts5
 
 # Object files for the SQLite library.
@@ -67,8 +67,8 @@ LIBOBJ+= vdbe.o parse.o \
          notify.o opcodes.o os.o os_unix.o os_win.o \
          pager.o pcache.o pcache1.o pragma.o prepare.o printf.o \
          random.o resolve.o rowset.o rtree.o select.o status.o \
-         table.o tokenize.o trigger.o \
-         update.o util.o vacuum.o \
+         table.o threads.o tokenize.o trigger.o \
+         update.o userauth.o util.o vacuum.o \
          vdbeapi.o vdbeaux.o vdbeblob.o vdbemem.o vdbesort.o \
 	 vdbetrace.o wal.o walker.o where.o utf.o vtab.o
 
@@ -159,6 +159,7 @@ SRC = \
   $(TOP)/src/sqliteLimit.h \
   $(TOP)/src/table.c \
   $(TOP)/src/tclsqlite.c \
+  $(TOP)/src/threads.c \
   $(TOP)/src/tokenize.c \
   $(TOP)/src/trigger.c \
   $(TOP)/src/utf.c \
@@ -226,7 +227,9 @@ SRC += \
   $(TOP)/ext/rtree/sqlite3rtree.h \
   $(TOP)/ext/rtree/rtree.h \
   $(TOP)/ext/rtree/rtree.c
-
+SRC += \
+  $(TOP)/ext/userauth/userauth.c \
+  $(TOP)/ext/userauth/sqlite3userauth.h
 SRC += \
    $(TOP)/ext/fts5/fts5.h \
    $(TOP)/ext/fts5/fts5Int.h \
@@ -270,6 +273,7 @@ TESTSRC = \
   $(TOP)/src/test_autoext.c \
   $(TOP)/src/test_async.c \
   $(TOP)/src/test_backup.c \
+  $(TOP)/src/test_blob.c \
   $(TOP)/src/test_btree.c \
   $(TOP)/src/test_config.c \
   $(TOP)/src/test_demovfs.c \
@@ -304,6 +308,7 @@ TESTSRC = \
 TESTSRC += \
   $(TOP)/ext/misc/amatch.c \
   $(TOP)/ext/misc/closure.c \
+  $(TOP)/ext/misc/eval.c \
   $(TOP)/ext/misc/fileio.c \
   $(TOP)/ext/misc/fuzzer.c \
   $(TOP)/ext/misc/ieee754.c \
@@ -343,6 +348,7 @@ TESTSRC2 = \
   $(TOP)/src/pcache.c \
   $(TOP)/src/pcache1.c \
   $(TOP)/src/select.c \
+  $(TOP)/src/threads.c \
   $(TOP)/src/tokenize.c \
   $(TOP)/src/utf.c \
   $(TOP)/src/util.c \
@@ -406,6 +412,8 @@ EXTHDR += \
 EXTHDR += \
   $(TOP)/ext/fts5/fts5Int.h  \
   $(TOP)/ext/fts5/fts5.h 
+EXTHDR += \
+  $(TOP)/ext/userauth/sqlite3userauth.h
 
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
@@ -590,7 +598,6 @@ fts5.o:	$(TOP)/ext/fts5/fts5.c $(HDR) $(EXTHDR)
 rtree.o:	$(TOP)/ext/rtree/rtree.c $(HDR) $(EXTHDR)
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/rtree/rtree.c
 
-
 # FTS5 things
 #
 fts5_aux.o:	$(TOP)/ext/fts5/fts5_aux.c $(HDR) $(EXTHDR)
@@ -626,6 +633,10 @@ fts5parse.c:	$(TOP)/ext/fts5/fts5parse.y lemon
 	./lemon $(OPTS) fts5parse.y
 	mv fts5parse.c fts5parse.c.orig
 	cat fts5parse.c.orig | sed 's/yy/fts5yy/g' | sed 's/YY/fts5YY/g' > fts5parse.c
+
+
+userauth.o:	$(TOP)/ext/userauth/userauth.c $(HDR) $(EXTHDR)
+	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/userauth/userauth.c
 
 
 # Rules for building test programs and for running tests
@@ -685,9 +696,15 @@ test:	testfixture$(EXE) sqlite3$(EXE)
 # threadtest runs a few thread-safety tests that are implemented in C. This
 # target is invoked by the releasetest.tcl script.
 # 
-threadtest3$(EXE): sqlite3.o $(TOP)/test/threadtest3.c $(TOP)/test/tt3_checkpoint.c
-	$(TCCX) -O2 sqlite3.o $(TOP)/test/threadtest3.c \
-		-o threadtest3$(EXE) $(THREADLIB)
+THREADTEST3_SRC = $(TOP)/test/threadtest3.c    \
+                  $(TOP)/test/tt3_checkpoint.c \
+                  $(TOP)/test/tt3_index.c      \
+                  $(TOP)/test/tt3_vacuum.c      \
+                  $(TOP)/test/tt3_stress.c      \
+                  $(TOP)/test/tt3_lookaside1.c
+
+threadtest3$(EXE): sqlite3.o $(THREADTEST3_SRC)
+	$(TCCX) $(TOP)/test/threadtest3.c sqlite3.o -o $@ $(THREADLIB)
 
 threadtest: threadtest3$(EXE)
 	./threadtest3$(EXE)
@@ -699,9 +716,29 @@ $(TEST_EXTENSION): $(TOP)/src/test_loadext.c
 extensiontest: testfixture$(EXE) $(TEST_EXTENSION)
 	./testfixture$(EXE) $(TOP)/test/loadext.test
 
-showdb$(EXE):	$(TOP)/tool/showdb.c sqlite3.c
+showdb$(EXE):	$(TOP)/tool/showdb.c sqlite3.o
 	$(TCC) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -o showdb$(EXE) \
-		$(TOP)/tool/showdb.c sqlite3.c
+		$(TOP)/tool/showdb.c sqlite3.o $(THREADLIB)
+
+showstat4$(EXE):	$(TOP)/tool/showstat4.c sqlite3.o
+	$(TCC) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -o showstat4$(EXE) \
+		$(TOP)/tool/showstat4.c sqlite3.o $(THREADLIB)
+
+showjournal$(EXE):	$(TOP)/tool/showjournal.c sqlite3.o
+	$(TCC) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -o showjournal$(EXE) \
+		$(TOP)/tool/showjournal.c sqlite3.o $(THREADLIB)
+
+showwal$(EXE):	$(TOP)/tool/showwal.c sqlite3.o
+	$(TCC) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -o showwal$(EXE) \
+		$(TOP)/tool/showwal.c sqlite3.o $(THREADLIB)
+
+fts3view$(EXE):	$(TOP)/ext/fts3/tool/fts3view.c sqlite3.o
+	$(TCC) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -o fts3view$(EXE) \
+		$(TOP)/ext/fts3/tool/fts3view.c sqlite3.o $(THREADLIB)
+
+rollback-test$(EXE):	$(TOP)/tool/rollback-test.c sqlite3.o
+	$(TCC) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -o rollback-test$(EXE) \
+		$(TOP)/tool/rollback-test.c sqlite3.o $(THREADLIB)
 
 LogEst$(EXE):	$(TOP)/tool/logest.c sqlite3.h
 	$(TCC) -o LogEst$(EXE) $(TOP)/tool/logest.c
@@ -749,10 +786,18 @@ clean:
 	rm -f fts3-testfixture fts3-testfixture.exe
 	rm -f testfixture testfixture.exe
 	rm -f threadtest3 threadtest3.exe
+	rm -f LogEst LogEst.exe
+	rm -f fts3view fts3view.exe
+	rm -f rollback-test rollback-test.exe
+	rm -f showdb showdb.exe
+	rm -f showjournal showjournal.exe
+	rm -f showstat4 showstat4.exe
+	rm -f showwal showwal.exe
+	rm -f speedtest1 speedtest1.exe
+	rm -f wordcount wordcount.exe
 	rm -f sqlite3.c sqlite3-*.c fts?amal.c tclsqlite3.c
 	rm -f sqlite3rc.h
 	rm -f shell.c sqlite3ext.h
 	rm -f sqlite3_analyzer sqlite3_analyzer.exe sqlite3_analyzer.c
 	rm -f sqlite-*-output.vsix
 	rm -f mptester mptester.exe
-	rm -f showdb

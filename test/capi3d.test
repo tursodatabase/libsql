@@ -144,4 +144,40 @@ do_test capi3d-3.99 {
   sqlite3_stmt_busy 0
 } {0}
 
+#--------------------------------------------------------------------------
+# Test the sqlite3_stmt_busy() function with ROLLBACK statements.
+#
+reset_db
+
+do_execsql_test capi3d-4.1 {
+  CREATE TABLE t4(x,y);
+  BEGIN;
+}
+
+do_test capi3d-4.2.1 {
+  set ::s1 [sqlite3_prepare_v2 db "ROLLBACK" -1 notused]
+  sqlite3_step $::s1
+} {SQLITE_DONE}
+
+do_test capi3d-4.2.2 {
+  sqlite3_stmt_busy $::s1
+} {1}
+
+do_catchsql_test capi3d-4.2.3 {
+  VACUUM
+} {1 {cannot VACUUM - SQL statements in progress}}
+
+do_test capi3d-4.2.4 {
+  sqlite3_reset $::s1
+} {SQLITE_OK}
+
+do_catchsql_test capi3d-4.2.5 {
+  VACUUM
+} {0 {}}
+
+do_test capi3d-4.2.6 {
+  sqlite3_finalize $::s1
+} {SQLITE_OK}
+
+
 finish_test

@@ -64,7 +64,7 @@ static int findNextHostParameter(const char *zSql, int *pnToken){
 ** ALGORITHM:  Scan the input string looking for host parameters in any of
 ** these forms:  ?, ?N, $A, @A, :A.  Take care to avoid text within
 ** string literals, quoted identifier names, and comments.  For text forms,
-** the host parameter index is found by scanning the perpared
+** the host parameter index is found by scanning the prepared
 ** statement for the corresponding OP_Variable opcode.  Once the host
 ** parameter index is known, locate the value in p->aVar[].  Then render
 ** the value as a literal in place of the host parameter name.
@@ -127,7 +127,7 @@ char *sqlite3VdbeExpandSql(
       }else if( pVar->flags & MEM_Int ){
         sqlite3XPrintf(&out, 0, "%lld", pVar->u.i);
       }else if( pVar->flags & MEM_Real ){
-        sqlite3XPrintf(&out, 0, "%!.15g", pVar->r);
+        sqlite3XPrintf(&out, 0, "%!.15g", pVar->u.r);
       }else if( pVar->flags & MEM_Str ){
         int nOut;  /* Number of bytes of the string text to include in output */
 #ifndef SQLITE_OMIT_UTF16
@@ -183,118 +183,3 @@ char *sqlite3VdbeExpandSql(
 }
 
 #endif /* #ifndef SQLITE_OMIT_TRACE */
-
-/*****************************************************************************
-** The following code implements the data-structure explaining logic
-** for the Vdbe.
-*/
-
-#if defined(SQLITE_ENABLE_TREE_EXPLAIN)
-
-/*
-** Allocate a new Explain object
-*/
-void sqlite3ExplainBegin(Vdbe *pVdbe){
-  if( pVdbe ){
-    Explain *p;
-    sqlite3BeginBenignMalloc();
-    p = (Explain *)sqlite3MallocZero( sizeof(Explain) );
-    if( p ){
-      p->pVdbe = pVdbe;
-      sqlite3_free(pVdbe->pExplain);
-      pVdbe->pExplain = p;
-      sqlite3StrAccumInit(&p->str, p->zBase, sizeof(p->zBase),
-                          SQLITE_MAX_LENGTH);
-      p->str.useMalloc = 2;
-    }else{
-      sqlite3EndBenignMalloc();
-    }
-  }
-}
-
-/*
-** Return true if the Explain ends with a new-line.
-*/
-static int endsWithNL(Explain *p){
-  return p && p->str.zText && p->str.nChar
-           && p->str.zText[p->str.nChar-1]=='\n';
-}
-    
-/*
-** Append text to the indentation
-*/
-void sqlite3ExplainPrintf(Vdbe *pVdbe, const char *zFormat, ...){
-  Explain *p;
-  if( pVdbe && (p = pVdbe->pExplain)!=0 ){
-    va_list ap;
-    if( p->nIndent && endsWithNL(p) ){
-      int n = p->nIndent;
-      if( n>ArraySize(p->aIndent) ) n = ArraySize(p->aIndent);
-      sqlite3AppendSpace(&p->str, p->aIndent[n-1]);
-    }   
-    va_start(ap, zFormat);
-    sqlite3VXPrintf(&p->str, SQLITE_PRINTF_INTERNAL, zFormat, ap);
-    va_end(ap);
-  }
-}
-
-/*
-** Append a '\n' if there is not already one.
-*/
-void sqlite3ExplainNL(Vdbe *pVdbe){
-  Explain *p;
-  if( pVdbe && (p = pVdbe->pExplain)!=0 && !endsWithNL(p) ){
-    sqlite3StrAccumAppend(&p->str, "\n", 1);
-  }
-}
-
-/*
-** Push a new indentation level.  Subsequent lines will be indented
-** so that they begin at the current cursor position.
-*/
-void sqlite3ExplainPush(Vdbe *pVdbe){
-  Explain *p;
-  if( pVdbe && (p = pVdbe->pExplain)!=0 ){
-    if( p->str.zText && p->nIndent<ArraySize(p->aIndent) ){
-      const char *z = p->str.zText;
-      int i = p->str.nChar-1;
-      int x;
-      while( i>=0 && z[i]!='\n' ){ i--; }
-      x = (p->str.nChar - 1) - i;
-      if( p->nIndent && x<p->aIndent[p->nIndent-1] ){
-        x = p->aIndent[p->nIndent-1];
-      }
-      p->aIndent[p->nIndent] = x;
-    }
-    p->nIndent++;
-  }
-}
-
-/*
-** Pop the indentation stack by one level.
-*/
-void sqlite3ExplainPop(Vdbe *p){
-  if( p && p->pExplain ) p->pExplain->nIndent--;
-}
-
-/*
-** Free the indentation structure
-*/
-void sqlite3ExplainFinish(Vdbe *pVdbe){
-  if( pVdbe && pVdbe->pExplain ){
-    sqlite3_free(pVdbe->zExplain);
-    sqlite3ExplainNL(pVdbe);
-    pVdbe->zExplain = sqlite3StrAccumFinish(&pVdbe->pExplain->str);
-    sqlite3_free(pVdbe->pExplain);
-    pVdbe->pExplain = 0;
-    sqlite3EndBenignMalloc();
-  }
-}
-
-/*
-** Return the explanation of a virtual machine.
-*/
-const char *sqlite3VdbeExplanation(Vdbe *pVdbe){
-  return (pVdbe && pVdbe->zExplain) ? pVdbe->zExplain : 0;
-}
-#endif /* defined(SQLITE_DEBUG) */

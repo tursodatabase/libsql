@@ -108,11 +108,12 @@ WIN32HEAP = 0
 # levels.  Currently, the recognized values for DEBUG are:
 #
 # 0 == NDEBUG: Disables assert() and other runtime diagnostics.
-# 1 == Disables NDEBUG and all optimizations and then enables PDBs.
-# 2 == SQLITE_DEBUG: Enables various diagnostics messages and code.
-# 3 == SQLITE_WIN32_MALLOC_VALIDATE: Validate the Win32 native heap per call.
-# 4 == SQLITE_DEBUG_OS_TRACE: Enables output from the OSTRACE() macros.
-# 5 == SQLITE_ENABLE_IOTRACE: Enables output from the IOTRACE() macros.
+# 1 == SQLITE_ENABLE_API_ARMOR: extra attempts to detect misuse of the API.
+# 2 == Disables NDEBUG and all optimizations and then enables PDBs.
+# 3 == SQLITE_DEBUG: Enables various diagnostics messages and code.
+# 4 == SQLITE_WIN32_MALLOC_VALIDATE: Validate the Win32 native heap per call.
+# 5 == SQLITE_DEBUG_OS_TRACE: Enables output from the OSTRACE() macros.
+# 6 == SQLITE_ENABLE_IOTRACE: Enables output from the IOTRACE() macros.
 #
 !IFNDEF DEBUG
 DEBUG = 0
@@ -280,7 +281,7 @@ RCC = $(RCC) -DWINAPI_FAMILY=WINAPI_FAMILY_APP
 # MSVC runtime library.
 #
 !IF $(FOR_WINRT)!=0 || $(USE_CRT_DLL)!=0
-!IF $(DEBUG)>0
+!IF $(DEBUG)>1
 TCC = $(TCC) -MDd
 BCC = $(BCC) -MDd
 !ELSE
@@ -288,7 +289,7 @@ TCC = $(TCC) -MD
 BCC = $(BCC) -MD
 !ENDIF
 !ELSE
-!IF $(DEBUG)>0
+!IF $(DEBUG)>1
 TCC = $(TCC) -MTd
 BCC = $(BCC) -MTd
 !ELSE
@@ -313,7 +314,7 @@ RCC = $(RCC) -I$(TOP)\ext\rtree
 # options are necessary in order to allow debugging symbols to
 # work correctly with Visual Studio when using the amalgamation.
 #
-!IF $(DEBUG)>0
+!IF $(DEBUG)>1
 MKSQLITE3C_ARGS = --linemacros
 !ELSE
 MKSQLITE3C_ARGS =
@@ -329,17 +330,22 @@ BCC = $(BCC) -DNDEBUG
 RCC = $(RCC) -DNDEBUG
 !ENDIF
 
-!IF $(DEBUG)>1
+!IF $(DEBUG)>0
+TCC = $(TCC) -DSQLITE_ENABLE_API_ARMOR
+RCC = $(RCC) -DSQLITE_ENABLE_API_ARMOR
+!ENDIF
+
+!IF $(DEBUG)>2
 TCC = $(TCC) -DSQLITE_DEBUG
 RCC = $(RCC) -DSQLITE_DEBUG
 !ENDIF
 
-!IF $(DEBUG)>3
+!IF $(DEBUG)>4
 TCC = $(TCC) -DSQLITE_DEBUG_OS_TRACE=1
 RCC = $(RCC) -DSQLITE_DEBUG_OS_TRACE=1
 !ENDIF
 
-!IF $(DEBUG)>4
+!IF $(DEBUG)>5
 TCC = $(TCC) -DSQLITE_ENABLE_IOTRACE
 RCC = $(RCC) -DSQLITE_ENABLE_IOTRACE
 !ENDIF
@@ -371,7 +377,7 @@ RCC = $(RCC) -DSQLITE_WIN32_MALLOC=1
 
 # Validate the heap on every call into the native Win32 heap subsystem?
 #
-!IF $(DEBUG)>2
+!IF $(DEBUG)>3
 TCC = $(TCC) -DSQLITE_WIN32_MALLOC_VALIDATE=1
 RCC = $(RCC) -DSQLITE_WIN32_MALLOC_VALIDATE=1
 !ENDIF
@@ -482,7 +488,7 @@ RCC = $(RCC) $(OPTS)
 
 # If compiling for debugging, add some defines.
 #
-!IF $(DEBUG)>0
+!IF $(DEBUG)>1
 TCC = $(TCC) -D_DEBUG
 BCC = $(BCC) -D_DEBUG
 RCC = $(RCC) -D_DEBUG
@@ -491,7 +497,7 @@ RCC = $(RCC) -D_DEBUG
 # If optimizations are enabled or disabled (either implicitly or
 # explicitly), add the necessary flags.
 #
-!IF $(DEBUG)>0 || $(OPTIMIZATIONS)==0
+!IF $(DEBUG)>1 || $(OPTIMIZATIONS)==0
 TCC = $(TCC) -Od
 BCC = $(BCC) -Od
 !ELSEIF $(OPTIMIZATIONS)>=3
@@ -507,7 +513,7 @@ BCC = $(BCC) -O1
 
 # If symbols are enabled (or compiling for debugging), enable PDBs.
 #
-!IF $(DEBUG)>0 || $(SYMBOLS)!=0
+!IF $(DEBUG)>1 || $(SYMBOLS)!=0
 TCC = $(TCC) -Zi
 BCC = $(BCC) -Zi
 !ENDIF
@@ -592,7 +598,7 @@ LTLINKOPTS = $(LTLINKOPTS) /NODEFAULTLIB:kernel32.lib /NODEFAULTLIB:ole32.lib
 
 # If either debugging or symbols are enabled, enable PDBs.
 #
-!IF $(DEBUG)>0 || $(SYMBOLS)!=0
+!IF $(DEBUG)>1 || $(SYMBOLS)!=0
 LDFLAGS = /DEBUG
 !ENDIF
 
@@ -636,7 +642,7 @@ LIBOBJS0 = vdbe.lo parse.lo alter.lo analyze.lo attach.lo auth.lo \
          notify.lo opcodes.lo os.lo os_unix.lo os_win.lo \
          pager.lo pcache.lo pcache1.lo pragma.lo prepare.lo printf.lo \
          random.lo resolve.lo rowset.lo rtree.lo select.lo status.lo \
-         table.lo tokenize.lo trigger.lo \
+         table.lo threads.lo tokenize.lo trigger.lo \
          update.lo util.lo vacuum.lo \
          vdbeapi.lo vdbeaux.lo vdbeblob.lo vdbemem.lo vdbesort.lo \
          vdbetrace.lo wal.lo walker.lo where.lo utf.lo vtab.lo
@@ -733,6 +739,7 @@ SRC = \
   $(TOP)\src\sqliteInt.h \
   $(TOP)\src\sqliteLimit.h \
   $(TOP)\src\table.c \
+  $(TOP)\src\threads.c \
   $(TOP)\src\tclsqlite.c \
   $(TOP)\src\tokenize.c \
   $(TOP)\src\trigger.c \
@@ -827,6 +834,7 @@ TESTSRC = \
   $(TOP)\src\test_autoext.c \
   $(TOP)\src\test_async.c \
   $(TOP)\src\test_backup.c \
+  $(TOP)\src\test_blob.c \
   $(TOP)\src\test_btree.c \
   $(TOP)\src\test_config.c \
   $(TOP)\src\test_demovfs.c \
@@ -862,6 +870,7 @@ TESTSRC = \
 TESTEXT = \
   $(TOP)\ext\misc\amatch.c \
   $(TOP)\ext\misc\closure.c \
+  $(TOP)\ext\misc\eval.c \
   $(TOP)\ext\misc\fileio.c \
   $(TOP)\ext\misc\fuzzer.c \
   $(TOP)\ext\misc\ieee754.c \
@@ -1216,6 +1225,9 @@ status.lo:	$(TOP)\src\status.c $(HDR)
 table.lo:	$(TOP)\src\table.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)\src\table.c
 
+threads.lo:	$(TOP)\src\threads.c $(HDR)
+	$(LTCOMPILE) -c $(TOP)\src\threads.c
+
 tokenize.lo:	$(TOP)\src\tokenize.c keywordhash.h $(HDR)
 	$(LTCOMPILE) -c $(TOP)\src\tokenize.c
 
@@ -1435,6 +1447,26 @@ showdb.exe:	$(TOP)\tool\showdb.c $(SQLITE3C)
 	$(LTLINK) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -Fe$@ \
 		$(TOP)\tool\showdb.c $(SQLITE3C)
 
+showstat4.exe:	$(TOP)\tool\showstat4.c $(SQLITE3C)
+	$(LTLINK) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -Fe$@ \
+		$(TOP)\tool\showstat4.c $(SQLITE3C)
+
+showjournal.exe:	$(TOP)\tool\showjournal.c $(SQLITE3C)
+	$(LTLINK) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -Fe$@ \
+		$(TOP)\tool\showjournal.c $(SQLITE3C)
+
+showwal.exe:	$(TOP)\tool\showwal.c $(SQLITE3C)
+	$(LTLINK) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -Fe$@ \
+		$(TOP)\tool\showwal.c $(SQLITE3C)
+
+fts3view.exe:	$(TOP)\ext\fts3\tool\fts3view.c $(SQLITE3C)
+	$(LTLINK) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -Fe$@ \
+		$(TOP)\ext\fts3\tool\fts3view.c $(SQLITE3C)
+
+rollback-test.exe:	$(TOP)\tool\rollback-test.c $(SQLITE3C)
+	$(LTLINK) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -Fe$@ \
+		$(TOP)\tool\rollback-test.c $(SQLITE3C)
+
 LogEst.exe:	$(TOP)\tool\logest.c sqlite3.h
 	$(LTLINK) -Fe$@ $(TOP)\tool\LogEst.c
 
@@ -1463,6 +1495,9 @@ clean:
 	del /Q tclsqlite3.exe tclsqlite3.exp
 	del /Q testloadext.dll testloadext.exp
 	del /Q testfixture.exe testfixture.exp test.db
+	del /Q LogEst.exe fts3view.exe rollback-test.exe showdb.exe
+	del /Q showjournal.exe showstat4.exe showwal.exe speedtest1.exe
+	del /Q wordcount.exe
 	del /Q sqlite3.dll sqlite3.lib sqlite3.exp sqlite3.def
 	del /Q sqlite3.c sqlite3-*.c
 	del /Q sqlite3rc.h

@@ -1621,7 +1621,7 @@ ifcapable auth {
     }
   } {}
 
-  proc auth {args} {eval lappend ::authargs $args ; return SQLITE_OK}
+  proc auth {args} {eval lappend ::authargs [lrange $args 0 4]; return SQLITE_OK}
   db auth auth
 
   # An insert on the parent table must read the child key of any deferred

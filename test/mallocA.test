@@ -25,7 +25,6 @@ if {!$MEMDEBUG} {
    return
 }
 
-
 # Construct a test database
 #
 forcedelete test.db.bu
@@ -115,6 +114,26 @@ ifcapable stat3 {
     faultsim_test_result [list 0 {1 2}]
   }
 }
+
+do_execsql_test 7.0 {
+  PRAGMA cache_size = 5;
+}
+do_faultsim_test 7 -faults oom-trans* -prep {
+} -body {
+  execsql {
+    WITH r(x,y) AS (
+      SELECT 1, randomblob(100)
+      UNION ALL
+      SELECT x+1, randomblob(100) FROM r
+      LIMIT 1000
+    )
+    SELECT count(x), length(y) FROM r GROUP BY (x%5)
+  }
+} -test {
+  set res [list 200 100 200 100 200 100 200 100 200 100]
+  faultsim_test_result [list 0 $res]
+}
+
 
 # Ensure that no file descriptors were leaked.
 do_test malloc-99.X {

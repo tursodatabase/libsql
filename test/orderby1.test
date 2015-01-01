@@ -481,5 +481,19 @@ do_execsql_test 6.0 {
   FROM abc;
 } {hardware hardware hardware}
 
+# Here is a test for a query-planner problem reported on the SQLite
+# mailing list on 2014-09-18 by "Merike".  Beginning with version 3.8.0,
+# a separate sort was being used rather than using the single-column
+# index.  This was due to an oversight in the indexMightHelpWithOrderby()
+# routine in where.c.
+#
+do_execsql_test 7.0 {
+  CREATE TABLE t7(a,b);
+  CREATE INDEX t7a ON t7(a);
+  CREATE INDEX t7ab ON t7(a,b);
+  EXPLAIN QUERY PLAN
+  SELECT * FROM t7 WHERE a=?1 ORDER BY rowid;
+} {~/ORDER BY/}
+
 
 finish_test

@@ -90,7 +90,7 @@ void sqlite3MaterializeView(
   Parse *pParse,       /* Parsing context */
   Table *pView,        /* View definition */
   Expr *pWhere,        /* Optional WHERE clause to be added */
-  int iCur             /* Cursor number for ephemerial table */
+  int iCur             /* Cursor number for ephemeral table */
 ){
   SelectDest dest;
   Select *pSel;
@@ -248,7 +248,7 @@ void sqlite3DeleteFrom(
   int addrBypass = 0;    /* Address of jump over the delete logic */
   int addrLoop = 0;      /* Top of the delete loop */
   int addrDelete = 0;    /* Jump directly to the delete logic */
-  int addrEphOpen = 0;   /* Instruction to open the Ephermeral table */
+  int addrEphOpen = 0;   /* Instruction to open the Ephemeral table */
  
 #ifndef SQLITE_OMIT_TRIGGER
   int isView;                  /* True if attempting to delete from a view */
@@ -328,7 +328,7 @@ void sqlite3DeleteFrom(
   sqlite3BeginWriteOperation(pParse, 1, iDb);
 
   /* If we are trying to delete from a view, realize that view into
-  ** a ephemeral table.
+  ** an ephemeral table.
   */
 #if !defined(SQLITE_OMIT_VIEW) && !defined(SQLITE_OMIT_TRIGGER)
   if( isView ){
@@ -382,7 +382,7 @@ void sqlite3DeleteFrom(
       iRowSet = ++pParse->nMem;
       sqlite3VdbeAddOp2(v, OP_Null, 0, iRowSet);
     }else{
-      /* For a WITHOUT ROWID table, create an ephermeral table used to
+      /* For a WITHOUT ROWID table, create an ephemeral table used to
       ** hold all primary keys for rows to be deleted. */
       pPk = sqlite3PrimaryKeyIndex(pTab);
       assert( pPk!=0 );
@@ -466,10 +466,11 @@ void sqlite3DeleteFrom(
     ** triggers.
     */
     if( !isView ){
+      testcase( IsVirtual(pTab) );
       sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenWrite, iTabCur, aToOpen,
                                  &iDataCur, &iIdxCur);
-      assert( pPk || iDataCur==iTabCur );
-      assert( pPk || iIdxCur==iDataCur+1 );
+      assert( pPk || IsVirtual(pTab) || iDataCur==iTabCur );
+      assert( pPk || IsVirtual(pTab) || iIdxCur==iDataCur+1 );
     }
   
     /* Set up a loop over the rowids/primary-keys that were found in the
@@ -477,9 +478,10 @@ void sqlite3DeleteFrom(
     */
     if( okOnePass ){
       /* Just one row.  Hence the top-of-loop is a no-op */
-      assert( nKey==nPk ); /* OP_Found will use an unpacked key */
+      assert( nKey==nPk );  /* OP_Found will use an unpacked key */
+      assert( !IsVirtual(pTab) );
       if( aToOpen[iDataCur-iTabCur] ){
-        assert( pPk!=0 );
+        assert( pPk!=0 || pTab->pSelect!=0 );
         sqlite3VdbeAddOp4Int(v, OP_NotFound, iDataCur, addrBypass, iKey, nKey);
         VdbeCoverage(v);
       }
@@ -555,7 +557,7 @@ delete_from_cleanup:
   return;
 }
 /* Make sure "isView" and other macros defined above are undefined. Otherwise
-** thely may interfere with compilation of other functions in this file
+** they may interfere with compilation of other functions in this file
 ** (or in another file, if this file becomes part of the amalgamation).  */
 #ifdef isView
  #undef isView
