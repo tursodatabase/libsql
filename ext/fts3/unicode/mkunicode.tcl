@@ -732,8 +732,12 @@ proc print_fileheader {} {
 */
   }]
   puts ""
-  puts "#if defined(SQLITE_ENABLE_FTS4_UNICODE61)"
-  puts "#if defined(SQLITE_ENABLE_FTS3) || defined(SQLITE_ENABLE_FTS4)"
+  if {$::generate_fts5_code} {
+    puts "#if defined(SQLITE_ENABLE_FTS5)"
+  } else {
+    puts "#if defined(SQLITE_ENABLE_FTS4_UNICODE61)"
+    puts "#if defined(SQLITE_ENABLE_FTS3) || defined(SQLITE_ENABLE_FTS4)"
+  }
   puts ""
   puts "#include <assert.h>"
   puts ""
@@ -760,22 +764,38 @@ proc print_test_main {} {
 # our liking.
 #
 proc usage {} {
-  puts -nonewline stderr "Usage: $::argv0 ?-test? "
+  puts -nonewline stderr "Usage: $::argv0 ?-test? ?-fts5? "
   puts            stderr "<CaseFolding.txt file> <UnicodeData.txt file>"
   exit 1
 }
-if {[llength $argv]!=2 && [llength $argv]!=3} usage
-if {[llength $argv]==3 && [lindex $argv 0]!="-test"} usage
+if {[llength $argv]<2} usage
 set unicodedata.txt [lindex $argv end]
 set casefolding.txt [lindex $argv end-1]
-set generate_test_code [expr {[llength $argv]==3}]
+
+set generate_test_code 0
+set generate_fts5_code 0
+set function_prefix "sqlite3Fts"
+for {set i 0} {$i < [llength $argv]-2} {incr i} {
+  switch -- [lindex $argv $i] {
+    -test {
+      set generate_test_code 1
+    }
+    -fts5 {
+      set function_prefix sqlite3Fts5
+      set generate_fts5_code 1
+    }
+    default {
+      usage
+    }
+  }
+}
 
 print_fileheader
 
 # Print the isalnum() function to stdout.
 #
 set lRange [an_load_separator_ranges]
-print_isalnum sqlite3FtsUnicodeIsalnum $lRange
+print_isalnum ${function_prefix}UnicodeIsalnum $lRange
 
 # Leave a gap between the two generated C functions.
 #
@@ -790,22 +810,26 @@ set mappings [rd_load_unicodedata_text ${unicodedata.txt}]
 print_rd $mappings
 puts ""
 puts ""
-print_isdiacritic sqlite3FtsUnicodeIsdiacritic $mappings
+print_isdiacritic ${function_prefix}UnicodeIsdiacritic $mappings
 puts ""
 puts ""
 
 # Print the fold() function to stdout.
 #
-print_fold sqlite3FtsUnicodeFold
+print_fold ${function_prefix}UnicodeFold
 
 # Print the test routines and main() function to stdout, if -test 
 # was specified.
 #
 if {$::generate_test_code} {
-  print_test_isalnum sqlite3FtsUnicodeIsalnum $lRange
-  print_fold_test sqlite3FtsUnicodeFold $mappings
+  print_test_isalnum ${function_prefix}UnicodeIsalnum $lRange
+  print_fold_test ${function_prefix}UnicodeFold $mappings
   print_test_main 
 }
 
-puts "#endif /* defined(SQLITE_ENABLE_FTS3) || defined(SQLITE_ENABLE_FTS4) */"
-puts "#endif /* !defined(SQLITE_ENABLE_FTS4_UNICODE61) */"
+if {$generate_fts5_code} {
+  puts "#endif /* defined(SQLITE_ENABLE_FTS5) */"
+} else {
+  puts "#endif /* defined(SQLITE_ENABLE_FTS3) || defined(SQLITE_ENABLE_FTS4) */"
+  puts "#endif /* !defined(SQLITE_ENABLE_FTS4_UNICODE61) */"
+}

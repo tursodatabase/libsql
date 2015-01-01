@@ -81,6 +81,7 @@ LIBOBJ += fts5_hash.o
 LIBOBJ += fts5_index.o
 LIBOBJ += fts5_storage.o
 LIBOBJ += fts5_tokenize.o
+LIBOBJ += fts5_unicode2.o
 LIBOBJ += fts5parse.o
 
 
@@ -615,6 +616,9 @@ fts5_storage.o:	$(TOP)/ext/fts5/fts5_storage.c $(HDR) $(EXTHDR)
 
 fts5_tokenize.o:	$(TOP)/ext/fts5/fts5_tokenize.c $(HDR) $(EXTHDR)
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts5/fts5_tokenize.c
+
+fts5_unicode2.o:	$(TOP)/ext/fts5/fts5_unicode2.c $(HDR) $(EXTHDR)
+	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts5/fts5_unicode2.c
 
 fts5parse.c:	$(TOP)/ext/fts5/fts5parse.y lemon 
 	cp $(TOP)/ext/fts5/fts5parse.y .

@@ -1,0 +1,39 @@
+# 2014 Dec 20
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# Tests focusing on the fts5 tokenizers
+#
+
+if {![info exists testdir]} {
+  set testdir [file join [file dirname [info script]] .. .. .. test]
+}
+source $testdir/tester.tcl
+set testprefix fts5unicode
+
+proc tokenize_test {tn tokenizer input output} {
+  uplevel [list do_test $tn [subst -nocommands {
+    set ret {}
+    foreach {z s e p} [sqlite3_fts5_tokenize db {$tokenizer} {$input}] {
+      lappend ret [set z]
+    }
+    set ret
+  }] [list {*}$output]]
+}
+
+foreach {tn t} {1 simple 2 unicode61} {
+  tokenize_test 1.$tn.0 $t {A B C D} {a b c d}
+  tokenize_test 1.$tn.1 $t {May you share freely,} {may you share freely}
+  tokenize_test 1.$tn.2 $t {..May...you.shAre.freely} {may you share freely}
+  tokenize_test 1.$tn.3 $t {} {}
+}
+
+finish_test
+

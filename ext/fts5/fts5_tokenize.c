@@ -15,6 +15,9 @@
 #include <string.h>
 #include <assert.h>
 
+/**************************************************************************
+** Start of unicode61 tokenizer implementation.
+*/
 
 /*
 ** Create a "simple" tokenizer.
@@ -69,7 +72,7 @@ static int fts5SimpleTokenize(
   const char *pText, int nText,
   int (*xToken)(void*, const char*, int nToken, int iStart, int iEnd, int iPos)
 ){
-  int rc;
+  int rc = SQLITE_OK;
   int ie;
   int is = 0;
   int iPos = 0;
@@ -78,7 +81,7 @@ static int fts5SimpleTokenize(
   int nFold = sizeof(aFold);
   char *pFold = aFold;
 
-  do {
+  while( is<nText && rc==SQLITE_OK ){
     int nByte;
 
     /* Skip any leading divider characters. */
@@ -110,10 +113,279 @@ static int fts5SimpleTokenize(
     rc = xToken(pCtx, pFold, nByte, is, ie, iPos);
     iPos++;
     is = ie+1;
-  }while( is<nText && rc==SQLITE_OK );
+  }
   
   if( pFold!=aFold ) sqlite3_free(pFold);
   if( rc==SQLITE_DONE ) rc = SQLITE_OK;
+  return rc;
+}
+
+/**************************************************************************
+** Start of unicode61 tokenizer implementation.
+*/
+
+/*
+** Functions in fts5_unicode2.c. 
+*/
+int sqlite3Fts5UnicodeIsalnum(int c);
+int sqlite3Fts5UnicodeIsdiacritic(int c);
+int sqlite3Fts5UnicodeFold(int c, int bRemoveDiacritic);
+
+
+/*
+** The following two macros - READ_UTF8 and WRITE_UTF8 - have been copied
+** from the sqlite3 source file utf.c. If this file is compiled as part
+** of the amalgamation, they are not required.
+*/
+#ifndef SQLITE_AMALGAMATION
+
+static const unsigned char sqlite3Utf8Trans1[] = {
+  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+  0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+  0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+  0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f,
+  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+  0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+  0x00, 0x01, 0x02, 0x03, 0x00, 0x01, 0x00, 0x00,
+};
+
+#define READ_UTF8(zIn, zTerm, c)                           \
+  c = *(zIn++);                                            \
+  if( c>=0xc0 ){                                           \
+    c = sqlite3Utf8Trans1[c-0xc0];                         \
+    while( zIn!=zTerm && (*zIn & 0xc0)==0x80 ){            \
+      c = (c<<6) + (0x3f & *(zIn++));                      \
+    }                                                      \
+    if( c<0x80                                             \
+        || (c&0xFFFFF800)==0xD800                          \
+        || (c&0xFFFFFFFE)==0xFFFE ){  c = 0xFFFD; }        \
+  }
+
+#define WRITE_UTF8(zOut, c) {                          \
+  if( c<0x00080 ){                                     \
+    *zOut++ = (unsigned char)(c&0xFF);                 \
+  }                                                    \
+  else if( c<0x00800 ){                                \
+    *zOut++ = 0xC0 + (unsigned char)((c>>6)&0x1F);     \
+    *zOut++ = 0x80 + (unsigned char)(c & 0x3F);        \
+  }                                                    \
+  else if( c<0x10000 ){                                \
+    *zOut++ = 0xE0 + (unsigned char)((c>>12)&0x0F);    \
+    *zOut++ = 0x80 + (unsigned char)((c>>6) & 0x3F);   \
+    *zOut++ = 0x80 + (unsigned char)(c & 0x3F);        \
+  }else{                                               \
+    *zOut++ = 0xF0 + (unsigned char)((c>>18) & 0x07);  \
+    *zOut++ = 0x80 + (unsigned char)((c>>12) & 0x3F);  \
+    *zOut++ = 0x80 + (unsigned char)((c>>6) & 0x3F);   \
+    *zOut++ = 0x80 + (unsigned char)(c & 0x3F);        \
+  }                                                    \
+}
+
+#endif /* ifndef SQLITE_AMALGAMATION */
+
+typedef struct Unicode61Tokenizer Unicode61Tokenizer;
+struct Unicode61Tokenizer {
+  int bRemoveDiacritic;           /* True if remove_diacritics=1 is set */
+  int nException;
+  int *aiException;
+};
+
+static int fts5UnicodeAddExceptions(
+  Unicode61Tokenizer *p,          /* Tokenizer object */
+  const char *z,                  /* Characters to treat as exceptions */
+  int bTokenChars                 /* 1 for 'tokenchars', 0 for 'separators' */
+){
+  int rc = SQLITE_OK;
+  int n = strlen(z);
+  int *aNew;
+
+  if( n>0 ){
+    aNew = (int*)sqlite3_realloc(p->aiException, (n+p->nException)*sizeof(int));
+    if( aNew ){
+      int nNew = p->nException;
+      const unsigned char *zCsr = (const unsigned char*)z;
+      const unsigned char *zTerm = (const unsigned char*)&z[n];
+      while( zCsr<zTerm ){
+        int iCode;
+        int bToken;
+        READ_UTF8(zCsr, zTerm, iCode);
+        bToken = sqlite3Fts5UnicodeIsalnum(iCode);
+        assert( (bToken==0 || bToken==1) ); 
+        assert( (bTokenChars==0 || bTokenChars==1) );
+        if( bToken!=bTokenChars && sqlite3Fts5UnicodeIsdiacritic(iCode)==0 ){
+          int i;
+          for(i=0; i<nNew; i++){
+            if( aNew[i]>iCode ) break;
+          }
+          memmove(&aNew[i+1], &aNew[i], (nNew-i)*sizeof(int));
+          aNew[i] = iCode;
+          nNew++;
+        }
+      }
+      p->aiException = aNew;
+      p->nException = nNew;
+    }else{
+      rc = SQLITE_NOMEM;
+    }
+  }
+
+  return rc;
+}
+
+/*
+** Return true if the p->aiException[] array contains the value iCode.
+*/
+static int fts5UnicodeIsException(Unicode61Tokenizer *p, int iCode){
+  if( p->nException>0 ){
+    int *a = p->aiException;
+    int iLo = 0;
+    int iHi = p->nException-1;
+
+    while( iHi>=iLo ){
+      int iTest = (iHi + iLo) / 2;
+      if( iCode==a[iTest] ){
+        return 1;
+      }else if( iCode>a[iTest] ){
+        iLo = iTest+1;
+      }else{
+        iHi = iTest-1;
+      }
+    }
+  }
+
+  return 0;
+}
+
+/*
+** Create a "unicode61" tokenizer.
+*/
+static int fts5UnicodeCreate(
+  void *pCtx, 
+  const char **azArg, int nArg,
+  Fts5Tokenizer **ppOut
+){
+  int rc = SQLITE_OK;             /* Return code */
+  Unicode61Tokenizer *p = 0;      /* New tokenizer object */ 
+
+  if( nArg%2 ){
+    rc = SQLITE_ERROR;
+  }else{
+    p = (Unicode61Tokenizer*)sqlite3_malloc(sizeof(Unicode61Tokenizer));
+    if( p ){
+      int i;
+      memset(p, 0, sizeof(Unicode61Tokenizer));
+      p->bRemoveDiacritic = 1;
+      for(i=0; rc==SQLITE_OK && i<nArg; i+=2){
+        const char *zArg = azArg[i+1];
+        if( 0==sqlite3_stricmp(azArg[i], "remove_diacritics") ){
+          if( (zArg[0]!='0' && zArg[0]!='1') || zArg[1] ){
+            rc = SQLITE_ERROR;
+          }
+          p->bRemoveDiacritic = (zArg[0]=='1');
+        }else
+        if( 0==sqlite3_stricmp(azArg[i], "tokenchars") ){
+          rc = fts5UnicodeAddExceptions(p, zArg, 1);
+        }else
+        if( 0==sqlite3_stricmp(azArg[i], "separators") ){
+          rc = fts5UnicodeAddExceptions(p, zArg, 0);
+        }else{
+          rc = SQLITE_ERROR;
+        }
+      }
+    }else{
+      rc = SQLITE_NOMEM;
+    }
+    *ppOut = (Fts5Tokenizer*)p;
+  }
+  return rc;
+}
+
+/*
+** Delete a "unicode61" tokenizer.
+*/
+static void fts5UnicodeDelete(Fts5Tokenizer *pTok){
+  Unicode61Tokenizer *p = (Unicode61Tokenizer*)pTok;
+  sqlite3_free(p->aiException);
+  sqlite3_free(p);
+  return;
+}
+
+/*
+** Return true if, for the purposes of tokenizing with the tokenizer
+** passed as the first argument, codepoint iCode is considered a token 
+** character (not a separator).
+*/
+static int fts5UnicodeIsAlnum(Unicode61Tokenizer *p, int iCode){
+  assert( (sqlite3Fts5UnicodeIsalnum(iCode) & 0xFFFFFFFE)==0 );
+  return sqlite3Fts5UnicodeIsalnum(iCode) ^ fts5UnicodeIsException(p, iCode);
+}
+
+/*
+** Tokenize some text using a unicode61 tokenizer.
+*/
+static int fts5UnicodeTokenize(
+  Fts5Tokenizer *pTokenizer,
+  void *pCtx,
+  const char *pText, int nText,
+  int (*xToken)(void*, const char*, int nToken, int iStart, int iEnd, int iPos)
+){
+  Unicode61Tokenizer *p = (Unicode61Tokenizer*)pTokenizer;
+  const unsigned char *zInput = (const unsigned char*)pText;
+  const unsigned char *zTerm = &zInput[nText];
+  const unsigned char *z = zInput;
+  int rc = SQLITE_OK;
+  int nBuf = 0;
+  unsigned char *zBuf = 0;
+  unsigned char *zOut = 0;
+  int iPos = 0;
+
+  while( rc==SQLITE_OK && z<zTerm ){
+    int iCode;
+    int bAlnum;
+    const unsigned char *zStart;
+    const unsigned char *zCode;
+
+    if( zOut==zBuf ) zStart = z;
+    zCode = z;
+    READ_UTF8(z, zTerm, iCode);
+    bAlnum = fts5UnicodeIsAlnum(p, iCode);
+    if( bAlnum==0 && zOut>zBuf ){
+      bAlnum = sqlite3Fts5UnicodeIsdiacritic(iCode);
+    }
+
+    if( bAlnum ){
+      int iOut;
+
+      /* Grow the output buffer if required */
+      while( (zOut-zBuf)+4>=nBuf ){
+        unsigned char *zNew;
+        nBuf = (nBuf ? nBuf*2 : 128);
+        zNew = sqlite3_realloc(zBuf, nBuf);
+        if( zNew==0 ){
+          rc = SQLITE_NOMEM;
+          goto tokenize_finished;
+        }else{
+          zOut = &zNew[zOut-zBuf];
+          zBuf = zNew;
+        }
+      }
+
+      /* Write the new character to it */
+      iOut = sqlite3Fts5UnicodeFold(iCode, p->bRemoveDiacritic);
+      if( iOut ) WRITE_UTF8(zOut, iOut);
+    }
+
+    if( zOut>zBuf && (bAlnum==0 || z>=zTerm) ){
+      int ie = (bAlnum ? z : zCode) - zInput;
+      rc = xToken(pCtx, (const char*)zBuf, zOut-zBuf, zStart-zInput, ie, iPos);
+      zOut = zBuf;
+      iPos++;
+    }
+  }
+
+ tokenize_finished:
+  sqlite3_free(zBuf);
   return rc;
 }
 
@@ -477,8 +749,9 @@ int sqlite3Fts5TokenizerInit(fts5_api *pApi){
     const char *zName;
     fts5_tokenizer x;
   } aBuiltin[] = {
-    { "porter",  { fts5PorterCreate, fts5PorterDelete, fts5PorterTokenize } },
-    { "simple",  { fts5SimpleCreate, fts5SimpleDelete, fts5SimpleTokenize } }
+    { "porter",    {fts5PorterCreate, fts5PorterDelete, fts5PorterTokenize }},
+    { "unicode61", {fts5UnicodeCreate, fts5UnicodeDelete, fts5UnicodeTokenize}},
+    { "simple",    {fts5SimpleCreate, fts5SimpleDelete, fts5SimpleTokenize }}
   };
   
   int rc = SQLITE_OK;             /* Return code */

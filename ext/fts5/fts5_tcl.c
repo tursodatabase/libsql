@@ -518,16 +518,31 @@ static int f5tCreateFunction(
   return TCL_OK;
 }
 
+typedef struct F5tTokenizeCtx F5tTokenizeCtx;
+struct F5tTokenizeCtx {
+  Tcl_Obj *pRet;
+  int bSubst;
+  const char *zInput;
+};
+
 static int xTokenizeCb2(
   void *pCtx, 
   const char *zToken, int nToken, 
   int iStart, int iEnd, int iPos
 ){
-  Tcl_Obj *pRet = (Tcl_Obj*)pCtx;
-  Tcl_ListObjAppendElement(0, pRet, Tcl_NewStringObj(zToken, nToken));
-  Tcl_ListObjAppendElement(0, pRet, Tcl_NewIntObj(iStart));
-  Tcl_ListObjAppendElement(0, pRet, Tcl_NewIntObj(iEnd));
-  Tcl_ListObjAppendElement(0, pRet, Tcl_NewIntObj(iPos));
+  F5tTokenizeCtx *p = (F5tTokenizeCtx*)pCtx;
+  if( p->bSubst ){
+    Tcl_ListObjAppendElement(0, p->pRet, Tcl_NewIntObj(iPos));
+    Tcl_ListObjAppendElement(0, p->pRet, Tcl_NewStringObj(zToken, nToken));
+    Tcl_ListObjAppendElement(
+        0, p->pRet, Tcl_NewStringObj(&p->zInput[iStart], iEnd-iStart)
+    );
+  }else{
+    Tcl_ListObjAppendElement(0, p->pRet, Tcl_NewStringObj(zToken, nToken));
+    Tcl_ListObjAppendElement(0, p->pRet, Tcl_NewIntObj(iStart));
+    Tcl_ListObjAppendElement(0, p->pRet, Tcl_NewIntObj(iEnd));
+    Tcl_ListObjAppendElement(0, p->pRet, Tcl_NewIntObj(iPos));
+  }
   return SQLITE_OK;
 }
 
@@ -543,7 +558,6 @@ static int f5tTokenize(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-  char *zName;
   char *zText;
   int nText;
   sqlite3 *db = 0;
@@ -554,21 +568,39 @@ static int f5tTokenize(
   void *pUserdata;
   int rc;
 
-  if( objc!=4 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "DB NAME TEXT");
+  int nArg;
+  const char **azArg;
+  F5tTokenizeCtx ctx;
+
+  if( objc!=4 && objc!=5 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "?-subst? DB NAME TEXT");
     return TCL_ERROR;
   }
-  if( f5tDbAndApi(interp, objv[1], &db, &pApi) ) return TCL_ERROR;
-  zName = Tcl_GetString(objv[2]);
-  zText = Tcl_GetStringFromObj(objv[3], &nText);
+  if( objc==5 ){
+    char *zOpt = Tcl_GetString(objv[1]);
+    if( strcmp("-subst", zOpt) ){
+      Tcl_AppendResult(interp, "unrecognized option: ", zOpt, 0);
+      return TCL_ERROR;
+    }
+  }
+  if( f5tDbAndApi(interp, objv[objc-3], &db, &pApi) ) return TCL_ERROR;
+  if( Tcl_SplitList(interp, Tcl_GetString(objv[objc-2]), &nArg, &azArg) ){
+    return TCL_ERROR;
+  }
+  if( nArg==0 ){
+    Tcl_AppendResult(interp, "no such tokenizer: ", 0);
+    Tcl_Free((void*)azArg);
+    return TCL_ERROR;
+  }
+  zText = Tcl_GetStringFromObj(objv[objc-1], &nText);
 
-  rc = pApi->xFindTokenizer(pApi, zName, &pUserdata, &tokenizer);
+  rc = pApi->xFindTokenizer(pApi, azArg[0], &pUserdata, &tokenizer);
   if( rc!=SQLITE_OK ){
-    Tcl_AppendResult(interp, "no such tokenizer: ", zName, 0);
+    Tcl_AppendResult(interp, "no such tokenizer: ", azArg[0], 0);
     return TCL_ERROR;
   }
 
-  rc = tokenizer.xCreate(pUserdata, 0, 0, &pTok);
+  rc = tokenizer.xCreate(pUserdata, &azArg[1], nArg-1, &pTok);
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, "error in tokenizer.xCreate()", 0);
     return TCL_ERROR;
@@ -576,7 +608,10 @@ static int f5tTokenize(
 
   pRet = Tcl_NewObj();
   Tcl_IncrRefCount(pRet);
-  rc = tokenizer.xTokenize(pTok, pRet, zText, nText, xTokenizeCb2);
+  ctx.bSubst = (objc==5);
+  ctx.pRet = pRet;
+  ctx.zInput = zText;
+  rc = tokenizer.xTokenize(pTok, (void*)&ctx, zText, nText, xTokenizeCb2);
   tokenizer.xDelete(pTok);
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, "error in tokenizer.xTokenize()", 0);
@@ -585,6 +620,7 @@ static int f5tTokenize(
   }
 
 
+  Tcl_Free((void*)azArg);
   Tcl_SetObjResult(interp, pRet);
   Tcl_DecrRefCount(pRet);
   return TCL_OK;
