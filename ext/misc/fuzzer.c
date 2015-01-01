@@ -342,7 +342,8 @@ static int fuzzerLoadOneRule(
       rc = SQLITE_NOMEM;
     }else{
       memset(pRule, 0, sizeof(*pRule));
-      pRule->zFrom = &pRule->zTo[nTo+1];
+      pRule->zFrom = pRule->zTo;
+      pRule->zFrom += nTo + 1;
       pRule->nFrom = nFrom;
       memcpy(pRule->zFrom, zFrom, nFrom+1);
       memcpy(pRule->zTo, zTo, nTo+1);

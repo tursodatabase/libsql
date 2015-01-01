@@ -118,6 +118,11 @@ set allquicktests [test_set $alltests -exclude {
 if {[info exists ::env(QUICKTEST_INCLUDE)]} {
   set allquicktests [concat $allquicktests $::env(QUICKTEST_INCLUDE)]
 }
+if {[info exists ::env(QUICKTEST_OMIT)]} {
+  foreach x [split $::env(QUICKTEST_OMIT) ,] {
+    regsub -all \\y$x\\y $allquicktests {} allquicktests
+  }
+}
 
 #############################################################################
 # Start of tests

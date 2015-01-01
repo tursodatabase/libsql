@@ -648,12 +648,12 @@ static int echoRowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){
 ** indeed the hash of the supplied idxStr.
 */
 static int hashString(const char *zString){
-  int val = 0;
+  u32 val = 0;
   int ii;
   for(ii=0; zString[ii]; ii++){
     val = (val << 3) + (int)zString[ii];
   }
-  return val;
+  return (int)(val&0x7fffffff);
 }
 
 /* 

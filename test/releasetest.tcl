@@ -37,10 +37,9 @@ array set ::Configs {
     -DSQLITE_MAX_ATTACHED=125
     -DSQLITE_TCL_DEFAULT_FULLMUTEX=1
   }
-  "Clang-Sanitize" {
+  "Sanitize" {
     CC=clang -fsanitize=undefined
-    -DSQLITE_MAX_ATTACHED=125
-    -DSQLITE_TCL_DEFAULT_FULLMUTEX=1
+    -DSQLITE_ENABLE_STAT4
   }
   "Unlock-Notify" {
     -O2
@@ -72,6 +71,7 @@ array set ::Configs {
     -DSQLITE_ENABLE_ATOMIC_WRITE=1
     -DSQLITE_ENABLE_MEMORY_MANAGEMENT=1
     -DSQLITE_ENABLE_OVERSIZE_CELL_CHECK=1
+    -DSQLITE_ENABLE_STAT4
   }
   "Debug-One" {
     -O2
@@ -84,6 +84,7 @@ array set ::Configs {
     -DSQLITE_ENABLE_MEMSYS5=1
     -DSQLITE_ENABLE_MEMSYS3=1
     -DSQLITE_ENABLE_COLUMN_METADATA=1
+    -DSQLITE_ENABLE_STAT4
   }
   "Device-One" {
     -O2
@@ -172,7 +173,7 @@ array set ::Platforms {
     "Extra-Robustness"        test
     "Device-Two"              test
     "Ftrapv"                  test
-    "Clang-Sanitize"          test
+    "Sanitize"                {QUICKTEST_OMIT=func4.test,nan.test test}
     "No-lookaside"            test
     "Devkit"                  test
     "Default"                 "threadtest fulltest"
@@ -233,6 +234,13 @@ proc count_tests_and_errors {logfile rcVar errmsgVar} {
       if {$nerr>0} {
         set rc 1
         set errmsg $line
+      }
+    }
+    if {[regexp {runtime error: +(.*)} $line all msg]} {
+      incr ::NERRCASE
+      if {$rc==0} {
+        set rc 1
+        set errmsg $msg
       }
     }
   }
