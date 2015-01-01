@@ -22,11 +22,15 @@ TOP = @srcdir@
 #
 BCC = @BUILD_CC@ @BUILD_CFLAGS@
 
-# C Compile and options for use in building executables that 
+# TCC is the C Compile and options for use in building executables that 
 # will run on the target platform.  (BCC and TCC are usually the
-# same unless your are cross-compiling.)
+# same unless your are cross-compiling.)  Separate CC and CFLAGS macros
+# are provide so that these aspects of the build process can be changed
+# on the "make" command-line.  Ex:  "make CC=clang CFLAGS=-fsanitize=undefined"
 #
-TCC = @CC@ @CPPFLAGS@ @CFLAGS@ -I. -I${TOP}/src -I${TOP}/ext/rtree
+CC = @CC@
+CFLAGS = @CPPFLAGS@ @CFLAGS@
+TCC = $(CC) $(CFLAGS) -I. -I${TOP}/src -I${TOP}/ext/rtree
 
 # Define this for the autoconf-based build, so that the code knows it can
 # include the generated config.h

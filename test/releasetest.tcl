@@ -34,7 +34,12 @@ array set ::Configs {
   }
   "Ftrapv" {
     -O2 -ftrapv
-    -DSQLITE_MAX_ATTACHED=55
+    -DSQLITE_MAX_ATTACHED=125
+    -DSQLITE_TCL_DEFAULT_FULLMUTEX=1
+  }
+  "Clang-Sanitize" {
+    CC=clang -fsanitize=undefined
+    -DSQLITE_MAX_ATTACHED=125
     -DSQLITE_TCL_DEFAULT_FULLMUTEX=1
   }
   "Unlock-Notify" {
@@ -119,6 +124,7 @@ array set ::Configs {
     -DSQLITE_ENABLE_LOCKING_STYLE=1
   }
   "OS-X" {
+    -O1   # Avoid a compiler bug in gcc 4.2.1 build 5658
     -DSQLITE_OMIT_LOAD_EXTENSION=1
     -DSQLITE_DEFAULT_MEMSTATUS=0
     -DSQLITE_THREADSAFE=2
@@ -166,6 +172,7 @@ array set ::Platforms {
     "Extra-Robustness"        test
     "Device-Two"              test
     "Ftrapv"                  test
+    "Clang-Sanitize"          test
     "No-lookaside"            test
     "Devkit"                  test
     "Default"                 "threadtest fulltest"
@@ -244,9 +251,12 @@ proc run_test_suite {name testtarget config} {
   #
   set cflags "-g"
   set opts ""
+  regsub -all {#[^\n]*\n} $config \n config
   foreach arg $config {
     if {[string match -D* $arg]} {
       lappend opts $arg
+    } elseif {[string match CC=* $arg]} {
+      lappend testtarget $arg
     } else {
       lappend cflags $arg
     }
