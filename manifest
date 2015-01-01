@@ -1,5 +1,5 @@
-C Fix\sto\sreleasetest.tcl:\s\sWhen\sdoing\sthe\ssecondary\s_debug\sruns,\sconvert\n"fulltest"\sto\sjust\s"test".
-D 2014-12-31T20:35:11.375
+C Fix\sthe\sfkey-7.1\stest\sso\sthat\sit\ssorts\sits\sanswer\sand\shence\salways\sgives\sthe\nsame\sanswer.
+D 2015-01-01T14:06:24.026
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7cd23e4fc91004a6bd081623e1bc6932e44828c0
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -501,7 +501,7 @@ F test/fkey1.test e1d1fa84cde579185ea01358436839703e415a5b
 F test/fkey2.test 1db212cda86b0d3ce72714001f7b6381c321341c
 F test/fkey3.test 76d475c80b84ee7a5d062e56ccb6ea68882e2b49
 F test/fkey4.test 86446017011273aad8f9a99c1a65019e7bd9ca9d
-F test/fkey5.test 8a1fde4e7721ae00b05b3178888833726ca2df8d
+F test/fkey5.test 488601fbda8350619b3029487e56830447056fd2
 F test/fkey6.test abb59f866c1b44926fd02d1fdd217d831fe04f48
 F test/fkey7.test 72e915890ee4a005daaf3002cb208e8fe973ac13
 F test/fkey8.test 8f08203458321e6c19a263829de4cfc936274ab0
@@ -1234,7 +1234,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 432413187f41061a08ecff2697ce85c935fa6fa8
-R eab92cc42f1c6f3a82dbafd90384e659
+P ec264bdee5ab8047fda9a36af27c8a2c8d964112
+R 8acff839204fa9ef6e40b09dc0daac28
 U drh
-Z efe20f1bf1699435938e7d67d2cf6478
+Z e6b9572729fe8b314ffd25cb175a4396
