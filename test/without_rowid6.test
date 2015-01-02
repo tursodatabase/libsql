@@ -1,0 +1,41 @@
+# 2014-12-28
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# Verify that WITHOUT ROWID tables work correctly when the PRIMARY KEY
+# has redundant columns.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+do_execsql_test without_rowid6-100 {
+  CREATE TABLE t1(a,b,c,d,e, PRIMARY KEY(a,b,c,a,b,c,d,a,b,c)) WITHOUT ROWID;
+  CREATE INDEX t1a ON t1(b, b);
+  WITH RECURSIVE
+    c(i) AS (VALUES(1) UNION ALL SELECT i+1 FROM c WHERE i<1000)
+  INSERT INTO t1(a,b,c,d,e) SELECT i, i+1000, printf('x%dy',i), 0, 0 FROM c;
+  ANALYZE;
+} {}
+do_execsql_test without_rowid6-110 {
+  SELECT c FROM t1 WHERE a=123;
+} {x123y}
+do_execsql_test without_rowid6-120 {
+  SELECT c FROM t1 WHERE b=1123;
+} {x123y}
+do_execsql_test without_rowid6-130 {
+  SELECT c FROM t1 ORDER BY a DESC LIMIT 5;
+} {x1000y x999y x998y x997y x996y}
+do_execsql_test without_rowid6-140 {
+  SELECT c FROM t1 ORDER BY b LIMIT 5;
+} {x1y x2y x3y x4y x5y}
+
+
+finish_test

@@ -196,7 +196,8 @@ int sqlite3PcacheSetPageSize(PCache *pCache, int szPage){
   if( pCache->szPage ){
     sqlite3_pcache *pNew;
     pNew = sqlite3GlobalConfig.pcache2.xCreate(
-                szPage, pCache->szExtra + sizeof(PgHdr), pCache->bPurgeable
+                szPage, pCache->szExtra + ROUND8(sizeof(PgHdr)),
+                pCache->bPurgeable
     );
     if( pNew==0 ) return SQLITE_NOMEM;
     sqlite3GlobalConfig.pcache2.xCachesize(pNew, numberOfCachePages(pCache));
@@ -655,7 +656,7 @@ void sqlite3PcacheShrink(PCache *pCache){
 ** Return the size of the header added by this middleware layer
 ** in the page-cache hierarchy.
 */
-int sqlite3HeaderSizePcache(void){ return sizeof(PgHdr); }
+int sqlite3HeaderSizePcache(void){ return ROUND8(sizeof(PgHdr)); }
 
 
 #if defined(SQLITE_CHECK_PAGES) || defined(SQLITE_DEBUG)

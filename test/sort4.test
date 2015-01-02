@@ -17,6 +17,12 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix sort4
+db close
+sqlite3_shutdown
+sqlite3_config_pmasz 10
+sqlite3_initialize
+sqlite3 db test.db
+
 
 # Configure the sorter to use 3 background threads.
 db eval {PRAGMA threads=3}

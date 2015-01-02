@@ -1395,7 +1395,7 @@ int main(int argc, char **argv){
   maybeClose(g.pLog);
   maybeClose(g.pErrLog);
   if( iClient==0 ){
-    printf("Summary: %d errors in %d tests\n", g.nError, g.nTest);
+    printf("Summary: %d errors out of %d tests\n", g.nError, g.nTest);
   }
   return g.nError>0;
 }

@@ -154,6 +154,12 @@ static const struct sPragmaNames {
     /* ePragFlag: */ 0,
     /* iArg:      */ 0 },
 #endif
+#if !defined(SQLITE_OMIT_SCHEMA_VERSION_PRAGMAS)
+  { /* zName:     */ "data_version",
+    /* ePragTyp:  */ PragTyp_HEADER_VALUE,
+    /* ePragFlag: */ PragFlag_ReadOnly,
+    /* iArg:      */ BTREE_DATA_VERSION },
+#endif
 #if !defined(SQLITE_OMIT_SCHEMA_PRAGMAS)
   { /* zName:     */ "database_list",
     /* ePragTyp:  */ PragTyp_DATABASE_LIST,
@@ -471,7 +477,7 @@ static const struct sPragmaNames {
     /* iArg:      */ SQLITE_WriteSchema|SQLITE_RecoveryMode },
 #endif
 };
-/* Number of pragmas: 57 on by default, 70 total. */
+/* Number of pragmas: 58 on by default, 71 total. */
 /* End of the automatically generated pragma table.
 ***************************************************************************/
 
