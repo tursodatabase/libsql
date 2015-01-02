@@ -66,9 +66,10 @@ foreach {tn code} {
   eval $code
 
   reset_db
+  execsql { PRAGMA auto_vacuum = 0 }
   do_execsql_test 1.$tn.0 { PRAGMA journal_mode = WAL } {wal}
   do_execsql_test 1.$tn.1 { CREATE TABLE t1(a, b) }
-  set shmfd [open "test.db-shm"]
+  set shmfd [open "test.db-shm" rb]
 
   # EVIDENCE-OF: R-41531-51083 Every new database connection defaults to
   # having the auto-checkpoint enabled with a threshold of 1000 or

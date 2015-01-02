@@ -65,7 +65,7 @@ int sqlite3_threadsafe(void){ return SQLITE_THREADSAFE; }
 ** I/O active are written using this function.  These messages
 ** are intended for debugging activity only.
 */
-void (*sqlite3IoTrace)(const char*, ...) = 0;
+/* not-private */ void (*sqlite3IoTrace)(const char*, ...) = 0;
 #endif
 
 /*
@@ -274,6 +274,13 @@ int sqlite3_initialize(void){
 ** when this routine is invoked, then this routine is a harmless no-op.
 */
 int sqlite3_shutdown(void){
+#ifdef SQLITE_OMIT_WSD
+  int rc = sqlite3_wsd_init(4096, 24);
+  if( rc!=SQLITE_OK ){
+    return rc;
+  }
+#endif
+
   if( sqlite3GlobalConfig.isInit ){
 #ifdef SQLITE_EXTRA_SHUTDOWN
     void SQLITE_EXTRA_SHUTDOWN(void);
@@ -589,6 +596,11 @@ int sqlite3_config(int op, ...){
       break;
     }
 #endif
+
+    case SQLITE_CONFIG_PMASZ: {
+      sqlite3GlobalConfig.szPma = va_arg(ap, unsigned int);
+      break;
+    }
 
     default: {
       rc = SQLITE_ERROR;
@@ -3790,13 +3802,14 @@ Btree *sqlite3DbNameToBtree(sqlite3 *db, const char *zDbName){
 ** connection.
 */
 const char *sqlite3_db_filename(sqlite3 *db, const char *zDbName){
+  Btree *pBt;
 #ifdef SQLITE_ENABLE_API_ARMOR
   if( !sqlite3SafetyCheckOk(db) ){
     (void)SQLITE_MISUSE_BKPT;
     return 0;
   }
 #endif
-  Btree *pBt = sqlite3DbNameToBtree(db, zDbName);
+  pBt = sqlite3DbNameToBtree(db, zDbName);
   return pBt ? sqlite3BtreeGetFilename(pBt) : 0;
 }
 
@@ -3805,13 +3818,14 @@ const char *sqlite3_db_filename(sqlite3 *db, const char *zDbName){
 ** no such database exists.
 */
 int sqlite3_db_readonly(sqlite3 *db, const char *zDbName){
+  Btree *pBt;
 #ifdef SQLITE_ENABLE_API_ARMOR
   if( !sqlite3SafetyCheckOk(db) ){
     (void)SQLITE_MISUSE_BKPT;
     return -1;
   }
 #endif
-  Btree *pBt = sqlite3DbNameToBtree(db, zDbName);
+  pBt = sqlite3DbNameToBtree(db, zDbName);
   return pBt ? sqlite3BtreeIsReadonly(pBt) : -1;
 }
 

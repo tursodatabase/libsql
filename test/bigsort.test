@@ -20,6 +20,15 @@ set testprefix bigsort
 # loop if the product was also an integer multiple of 2^32, or 
 # inefficiency otherwise.
 #
+# This test causes thrashing on machines with smaller amounts of
+# memory.  Make sure the host has at least 8GB available before running
+# this test.
+#
+if {[catch {exec free | grep Mem:} out] || [lindex $out 1]<8000000} {
+  finish_test
+  return
+}
+
 do_execsql_test 1.0 {
   PRAGMA page_size = 1024;
   CREATE TABLE t1(a, b);
@@ -39,5 +48,3 @@ do_execsql_test 1.1 {
 
 
 finish_test
-
-

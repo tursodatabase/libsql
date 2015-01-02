@@ -1,41 +1,41 @@
-
 /*
+** 2010-07-22
+**
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
+**
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
+**
+*************************************************************************
+**
 ** The code in this file runs a few multi-threaded test cases using the
 ** SQLite library. It can be compiled to an executable on unix using the
 ** following command:
 **
 **   gcc -O2 threadtest3.c sqlite3.c -ldl -lpthread -lm
 **
-** Then run the compiled program. The exit status is non-zero if any tests
-** failed (hopefully there is also some output to stdout to clarify what went
-** wrong).
+** Even though threadtest3.c is the only C source code file mentioned on
+** the compiler command-line, #include macros are used to pull in additional
+** C code files named "tt3_*.c".
 **
-** There are three parts to the code in this file, in the following order:
+** After compiling, run this program with an optional argument telling
+** which test to run.  All tests are run if no argument is given.  The
+** argument can be a glob pattern to match multiple tests.  Examples:
 **
-**   1. Code for the SQL aggregate function md5sum() copied from 
-**      tclsqlite.c in the SQLite distribution. The names of all the 
-**      types and functions in this section begin with "MD5" or "md5".
+**        ./a.out                 -- Run all tests
+**        ./a.out walthread3      -- Run the "walthread3" test
+**        ./a.out 'wal*'          -- Run all of the wal* tests
+**        ./a.out --help          -- List all available tests
 **
-**   2. A set of utility functions that may be used to implement
-**      multi-threaded test cases. These are all called by test code
-**      via macros that help with error reporting. The macros are defined
-**      immediately below this comment.
-**
-**   3. The test code itself. And a main() routine to drive the test 
-**      code.
+** The exit status is non-zero if any test fails.
 */
 
-/*************************************************************************
-** Start of test code/infrastructure interface macros.
-**
-** The following macros constitute the interface between the test
-** programs and the test infrastructure. Test infrastructure code 
-** does not itself use any of these macros. Test code should not
-** call any of the macroname_x() functions directly.
-**
-** See the header comments above the corresponding macroname_x()
-** function for a description of each interface.
+/* 
+** The "Set Error Line" macro.
 */
+#define SEL(e) ((e)->iLine = ((e)->rc ? (e)->iLine : __LINE__))
 
 /* Database functions */
 #define opendb(w,x,y,z)         (SEL(w), opendb_x(w,x,y,z))
@@ -391,9 +391,9 @@ static void md5finalize(sqlite3_context *context){
   sqlite3_result_text(context, zBuf, -1, SQLITE_TRANSIENT);
 }
 
-/*************************************************************************
+/*
 ** End of copied md5sum() code.
-*/
+**************************************************************************/
 
 typedef sqlite3_int64 i64;
 
@@ -447,8 +447,13 @@ static void free_err(Error *p){
 
 static void print_err(Error *p){
   if( p->rc!=SQLITE_OK ){
-    printf("Error: (%d) \"%s\" at line %d\n", p->rc, p->zErr, p->iLine);
-    nGlobalErr++;
+    int isWarn = 0;
+    if( p->rc==SQLITE_SCHEMA ) isWarn = 1;
+    if( sqlite3_strglob("* - no such table: *",p->zErr)==0 ) isWarn = 1;
+    printf("%s: (%d) \"%s\" at line %d\n", isWarn ? "Warning" : "Error",
+            p->rc, p->zErr, p->iLine);
+    if( !isWarn ) nGlobalErr++;
+    fflush(stdout);
   }
 }
 
@@ -785,6 +790,7 @@ static void join_all_threads_x(
       if( pErr->rc==SQLITE_OK ) system_error(pErr, rc);
     }else{
       printf("Thread %d says: %s\n", p->iTid, (ret==0 ? "..." : (char *)ret));
+      fflush(stdout);
     }
     sqlite3_free(p);
   }
@@ -898,11 +904,6 @@ static int timetostop_x(
   return ret;
 }
 
-/* 
-** The "Set Error Line" macro.
-*/
-#define SEL(e) ((e)->iLine = ((e)->rc ? (e)->iLine : __LINE__))
-
 
 /*************************************************************************
 **************************************************************************
@@ -984,6 +985,7 @@ static void walthread1(int nMs){
       "INSERT INTO t1 VALUES(randomblob(100));"
       "INSERT INTO t1 SELECT md5sum(x) FROM t1;"
   );
+  closedb(&err, &db);
 
   setstoptime(&err, nMs);
   for(i=0; i<WALTHREAD1_NTHREAD; i++){
@@ -1427,15 +1429,14 @@ static void dynamic_triggers(int nMs){
 
 int main(int argc, char **argv){
   struct ThreadTest {
-    void (*xTest)(int);
-    const char *zTest;
-    int nMs;
+    void (*xTest)(int);   /* Routine for running this test */
+    const char *zTest;    /* Name of this test */
+    int nMs;              /* How long to run this test, in milliseconds */
   } aTest[] = {
     { walthread1, "walthread1", 20000 },
     { walthread2, "walthread2", 20000 },
     { walthread3, "walthread3", 20000 },
     { walthread4, "walthread4", 20000 },
-    { walthread5, "walthread5",  1000 },
     { walthread5, "walthread5",  1000 },
     
     { cgt_pager_1,      "cgt_pager_1", 0 },
@@ -1450,30 +1451,35 @@ int main(int argc, char **argv){
     { stress1,             "stress1", 10000 },
     { stress2,             "stress2", 60000 },
   };
-
-  int i;
-  int bTestfound = 0;
+  static char *substArgv[] = { 0, "*", 0 };
+  int i, iArg;
+  int nTestfound = 0;
 
   sqlite3_config(SQLITE_CONFIG_MULTITHREAD);
-  sqlite3_config(SQLITE_CONFIG_MULTITHREAD);
-
-  for(i=0; i<sizeof(aTest)/sizeof(aTest[0]); i++){
-    char const *z = aTest[i].zTest;
-    if( argc>1 ){
-      int iArg;
-      for(iArg=1; iArg<argc; iArg++){
-        if( 0==sqlite3_strglob(argv[iArg], z) ) break;
-      }
-      if( iArg==argc ) continue;
-    }
-
-    printf("Running %s for %d seconds...\n", z, aTest[i].nMs/1000);
-    aTest[i].xTest(aTest[i].nMs);
-    bTestfound++;
+  if( argc<2 ){
+    argc = 2;
+    argv = substArgv;
   }
-  if( bTestfound==0 ) goto usage;
+  for(iArg=1; iArg<argc; iArg++){
+    for(i=0; i<sizeof(aTest)/sizeof(aTest[0]); i++){
+      if( sqlite3_strglob(argv[iArg],aTest[i].zTest)==0 ) break;
+    }
+    if( i>=sizeof(aTest)/sizeof(aTest[0]) ) goto usage;   
+  }
+  for(iArg=1; iArg<argc; iArg++){
+    for(i=0; i<sizeof(aTest)/sizeof(aTest[0]); i++){
+      char const *z = aTest[i].zTest;
+      if( sqlite3_strglob(argv[iArg],z)==0 ){
+        printf("Running %s for %d seconds...\n", z, aTest[i].nMs/1000);
+        fflush(stdout);
+        aTest[i].xTest(aTest[i].nMs);
+        nTestfound++;
+      }
+    }
+  }
+  if( nTestfound==0 ) goto usage;
 
-  printf("Total of %d errors across all tests\n", nGlobalErr);
+  printf("%d errors out of %d tests\n", nGlobalErr, nTestfound);
   return (nGlobalErr>0 ? 255 : 0);
 
  usage:
@@ -1485,5 +1491,3 @@ int main(int argc, char **argv){
 
   return 254;
 }
-
-

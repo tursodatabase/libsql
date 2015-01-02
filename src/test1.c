@@ -3688,7 +3688,7 @@ static int test_prepare_v2(
   assert(rc==SQLITE_OK || pStmt==0);
   Tcl_ResetResult(interp);
   if( sqlite3TestErrCode(interp, db, rc) ) return TCL_ERROR;
-  if( zTail && objc>=5 ){
+  if( rc==SQLITE_OK && zTail && objc>=5 ){
     if( bytes>=0 ){
       bytes = bytes - (int)(zTail-zSql);
     }

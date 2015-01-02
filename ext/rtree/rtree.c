@@ -1183,7 +1183,7 @@ static RtreeSearchPoint *rtreeEnqueue(
   pNew = pCur->aPoint + i;
   pNew->rScore = rScore;
   pNew->iLevel = iLevel;
-  assert( iLevel>=0 && iLevel<=RTREE_MAX_DEPTH );
+  assert( iLevel<=RTREE_MAX_DEPTH );
   while( i>0 ){
     RtreeSearchPoint *pParent;
     j = (i-1)/2;

@@ -118,6 +118,11 @@ set allquicktests [test_set $alltests -exclude {
 if {[info exists ::env(QUICKTEST_INCLUDE)]} {
   set allquicktests [concat $allquicktests $::env(QUICKTEST_INCLUDE)]
 }
+if {[info exists ::env(QUICKTEST_OMIT)]} {
+  foreach x [split $::env(QUICKTEST_OMIT) ,] {
+    regsub -all \\y$x\\y $allquicktests {} allquicktests
+  }
+}
 
 #############################################################################
 # Start of tests
@@ -141,7 +146,7 @@ test_suite "veryquick" -prefix "" -description {
 ]
 
 test_suite "mmap" -prefix "mm-" -description {
-  Similar to veryquick. Except with memory mapping disabled.
+  Similar to veryquick. Except with memory mapping enabled.
 } -presql {
   pragma mmap_size = 268435456;
 } -files [
@@ -690,7 +695,7 @@ test_suite "inmemory_journal" -description {
   zerodamage.test
 
   # WAL mode is different.
-  wal* tkt-2d1a5c67d.test backcompat.test
+  wal* tkt-2d1a5c67d.test backcompat.test e_wal*
 }]
 
 ifcapable mem3 {

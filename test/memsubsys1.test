@@ -182,20 +182,20 @@ do_test memsubsys1-4.6 {
   set s_used [lindex [sqlite3_status SQLITE_STATUS_SCRATCH_USED 0] 2]
 } 1
 
-# Test 5:  Activate both PAGECACHE and SCRATCH.  But make the page size
+# Test 5:  Activate both PAGECACHE and SCRATCH.  But make the page size is
 # such that the SCRATCH allocations are too small.
 #
 db close
 sqlite3_shutdown
 sqlite3_config_pagecache [expr 4096+$xtra_size] 24
-sqlite3_config_scratch 6000 2
+sqlite3_config_scratch 4000 2
 sqlite3_initialize
 reset_highwater_marks
 build_test_db memsubsys1-5 {PRAGMA page_size=4096}
 #show_memstats
 do_test memsubsys1-5.3 {
   set pg_used [lindex [sqlite3_status SQLITE_STATUS_PAGECACHE_USED 0] 2]
-} 24
+} {/^2[34]$/}
 set msize [sqlite3_status SQLITE_STATUS_MALLOC_SIZE 0]
 if {[lindex $msize 2]!=0} {
   do_test memsubsys1-5.4 {
@@ -224,7 +224,7 @@ build_test_db memsubsys1-6 {PRAGMA page_size=4096}
 #show_memstats
 do_test memsubsys1-6.3 {
   set pg_used [lindex [sqlite3_status SQLITE_STATUS_PAGECACHE_USED 0] 2]
-} 24
+} {/^2[34]$/}
 #do_test memsubsys1-6.4 {
 #  set maxreq [lindex [sqlite3_status SQLITE_STATUS_MALLOC_SIZE 0] 2]
 #  expr {$maxreq>4096 && $maxreq<=(4096+$xtra_size)}

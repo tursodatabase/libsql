@@ -374,9 +374,10 @@ foreach {testprefix do_wal_checkpoint} {
     code2 $do_wal_checkpoint
     code3 $do_wal_checkpoint
 
-    do_test 3.$tn.1 {
+    do_test 4.$tn.1 {
       sql1 {
         PRAGMA page_size = 1024;
+        PRAGMA auto_vacuum = 0;
         PRAGMA journal_mode = WAL;
         PRAGMA synchronous = normal;
         CREATE TABLE t1(x, y);
@@ -387,14 +388,14 @@ foreach {testprefix do_wal_checkpoint} {
       file size test.db-wal
     } [wal_file_size 8 1024]
 
-    do_test 3.$tn.2 { do_wal_checkpoint db -mode truncate } {0 0 0}
-    do_test 3.$tn.3 { file size test.db-wal } 0
+    do_test 4.$tn.2 { do_wal_checkpoint db -mode truncate } {0 0 0}
+    do_test 4.$tn.3 { file size test.db-wal } 0
 
-    do_test 3.$tn.4 {
+    do_test 4.$tn.4 {
       sql2 { SELECT * FROM t1 }
     } {1 2 3 4}
 
-    do_test 3.$tn.5 {
+    do_test 4.$tn.5 {
       sql2 { INSERT INTO t1 VALUES('a', 'b') }
       file size test.db-wal
     } [wal_file_size 2 1024]

@@ -22,11 +22,15 @@ TOP = @srcdir@
 #
 BCC = @BUILD_CC@ @BUILD_CFLAGS@
 
-# C Compile and options for use in building executables that 
+# TCC is the C Compile and options for use in building executables that 
 # will run on the target platform.  (BCC and TCC are usually the
-# same unless your are cross-compiling.)
+# same unless your are cross-compiling.)  Separate CC and CFLAGS macros
+# are provide so that these aspects of the build process can be changed
+# on the "make" command-line.  Ex:  "make CC=clang CFLAGS=-fsanitize=undefined"
 #
-TCC = @CC@ @CPPFLAGS@ @CFLAGS@ -I. -I${TOP}/src -I${TOP}/ext/rtree
+CC = @CC@
+CFLAGS = @CPPFLAGS@ @CFLAGS@
+TCC = $(CC) $(CFLAGS) -I. -I${TOP}/src -I${TOP}/ext/rtree
 
 # Define this for the autoconf-based build, so that the code knows it can
 # include the generated config.h
@@ -543,6 +547,11 @@ mptester$(EXE):	sqlite3.c $(TOP)/mptest/mptest.c
 	$(LTLINK) -o $@ -I. $(TOP)/mptest/mptest.c sqlite3.c \
 		$(TLIBS) -rpath "$(libdir)"
 
+mptest:	mptester$(EXE)
+	rm -f mptest1.db
+	./mptester$(EXE) mptest1.db $(TOP)/mptest/crash01.test
+	rm -f mptest2.db
+	./mptester$(EXE) mptest2.db $(TOP)/mptest/multiwrite01.test
 
 # This target creates a directory named "tsrc" and fills it with
 # copies of all of the C source code and header files needed to
@@ -981,6 +990,34 @@ wordcount$(TEXE):	$(TOP)/test/wordcount.c sqlite3.c
 
 speedtest1$(TEXE):	$(TOP)/test/wordcount.c sqlite3.lo
 	$(LTLINK) -o $@ $(TOP)/test/speedtest1.c sqlite3.lo $(TLIBS)
+
+# This target will fail if the SQLite amalgamation contains any exported
+# symbols that do not begin with "sqlite3_". It is run as part of the
+# releasetest.tcl script.
+#
+checksymbols: sqlite3.lo
+	nm -g --defined-only sqlite3.o | grep -v " sqlite3_" ; test $$? -ne 0
+	echo '0 errors out of 1 tests'
+
+# The next two rules are used to support the "threadtest" target. Building
+# threadtest runs a few thread-safety tests that are implemented in C. This
+# target is invoked by the releasetest.tcl script.
+# 
+THREADTEST3_SRC = $(TOP)/test/threadtest3.c    \
+                  $(TOP)/test/tt3_checkpoint.c \
+                  $(TOP)/test/tt3_index.c      \
+                  $(TOP)/test/tt3_vacuum.c      \
+                  $(TOP)/test/tt3_stress.c      \
+                  $(TOP)/test/tt3_lookaside1.c
+
+threadtest3$(TEXE): sqlite3.lo $(THREADTEST3_SRC)
+	$(LTLINK) $(TOP)/test/threadtest3.c sqlite3.lo -o $@ $(TLIBS)
+
+threadtest: threadtest3$(TEXE)
+	./threadtest3$(TEXE)
+
+releasetest:	
+	$(TCLSH_CMD) $(TOP)/test/releasetest.tcl
 
 # Standard install and cleanup targets
 #
