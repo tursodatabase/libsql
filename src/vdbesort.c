@@ -152,7 +152,7 @@
 ** to a level 0 PMA. The purpose of this limit is to prevent various integer
 ** overflows. 512MiB.
 */
-#define SQLITE_MAX_MXPMASIZE    (1<<29)
+#define SQLITE_MAX_PMASZ    (1<<29)
 
 /*
 ** Private objects used by the sorter
@@ -448,11 +448,6 @@ struct SorterRecord {
 */
 #define SRVAL(p) ((void*)((SorterRecord*)(p) + 1))
 
-/* The minimum PMA size is set to this value multiplied by the database
-** page size in bytes.  */
-#ifndef SQLITE_SORTER_PMASZ
-# define SQLITE_SORTER_PMASZ 10
-#endif
 
 /* Maximum number of PMAs that a single MergeEngine can merge */
 #define SORTER_MAX_MERGE_COUNT 16
@@ -851,10 +846,11 @@ int sqlite3VdbeSorterInit(
     }
 
     if( !sqlite3TempInMemory(db) ){
-      pSorter->mnPmaSize = SQLITE_SORTER_PMASZ * pgsz;
+      u32 szPma = sqlite3GlobalConfig.szPma;
+      pSorter->mnPmaSize = szPma * pgsz;
       mxCache = db->aDb[0].pSchema->cache_size;
-      if( mxCache<SQLITE_SORTER_PMASZ ) mxCache = SQLITE_SORTER_PMASZ;
-      pSorter->mxPmaSize = MIN((i64)mxCache*pgsz, SQLITE_MAX_MXPMASIZE);
+      if( mxCache<szPma ) mxCache = szPma;
+      pSorter->mxPmaSize = MIN((i64)mxCache*pgsz, SQLITE_MAX_PMASZ);
 
       /* EVIDENCE-OF: R-26747-61719 When the application provides any amount of
       ** scratch memory using SQLITE_CONFIG_SCRATCH, SQLite avoids unnecessary
