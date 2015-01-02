@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_CONFIG_PMASZ\sstart-time\soption.
-D 2015-01-02T15:55:29.645
+C Fix\sa\sharmless\scompiler\swarning.
+D 2015-01-02T21:54:32.064
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 335e2d3ff0f2455eacbfa3075fc37495e3321410
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -298,7 +298,7 @@ F src/vdbeapi.c 4bc511a46b9839392ae0e90844a71dc96d9dbd71
 F src/vdbeaux.c 07ef87c6d4b5abdf13ff33babb10205702fdab0a
 F src/vdbeblob.c 4af4bfb71f6df7778397b4a0ebc1879793276778
 F src/vdbemem.c 31d8eabb0cd78bfeab4e5124c7363c3e9e54db9f
-F src/vdbesort.c fc1aa0d1a8b539bf3a272945d02c9f9ede93039b
+F src/vdbesort.c 560bdfd9eb3ae3205196e0d64ccd1de925caa6c7
 F src/vdbetrace.c 7e4222955e07dd707a2f360c0eb73452be1cb010
 F src/vtab.c c08ec66f45919eaa726bf88aa53eb08379d607f9
 F src/wal.c 85353539f2d9d0c91ebd057c32525b1e1aa3335e
@@ -1234,7 +1234,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2835e79a0afec6e4d449ac9340afec068c2d4c11
-R 382d23526375da181cc875b46066d9ad
+P acb0d1e8324f19da3d4d577d58748848de1bcef7
+R d42b2335f1c6a43df94caae9f8ce1686
 U drh
-Z bc81c476960284f7c54d9feff6b6453a
+Z 834db2bdaa5aa08321cd4ddc946d3c7f

@@ -849,7 +849,7 @@ int sqlite3VdbeSorterInit(
       u32 szPma = sqlite3GlobalConfig.szPma;
       pSorter->mnPmaSize = szPma * pgsz;
       mxCache = db->aDb[0].pSchema->cache_size;
-      if( mxCache<szPma ) mxCache = szPma;
+      if( mxCache<(int)szPma ) mxCache = (int)szPma;
       pSorter->mxPmaSize = MIN((i64)mxCache*pgsz, SQLITE_MAX_PMASZ);
 
       /* EVIDENCE-OF: R-26747-61719 When the application provides any amount of
