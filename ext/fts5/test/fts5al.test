@@ -178,6 +178,23 @@ do_execsql_test 4.1.1 {
 }
 
 do_execsql_test 4.1.2 {
+  SELECT rowid, rank FROM t2 
+  WHERE t2 MATCH 'a' AND rank MATCH 'firstinst()' 
+  ORDER BY rowid ASC
+} {
+  1 0 2 4 3 6   5  103
+  6 9 7 0 9 102 10 8
+}
+
+do_execsql_test 4.1.3 {
+  SELECT rowid, rank FROM t2 
+  WHERE t2 MATCH 'a' AND rank MATCH 'firstinst()'
+  ORDER BY rank DESC
+} {
+  5 103  9 102  6 9  10 8  3 6  2 4  7 0  1 0 
+}
+
+do_execsql_test 4.1.4 {
   INSERT INTO t2(t2, rank) VALUES('rank', 'firstinst()');
   SELECT rowid, rank FROM t2 WHERE t2 MATCH 'a' ORDER BY rowid ASC
 } {
@@ -185,13 +202,13 @@ do_execsql_test 4.1.2 {
   6 9 7 0 9 102 10 8
 }
 
-do_execsql_test 4.1.3 {
+do_execsql_test 4.1.5 {
   SELECT rowid, rank FROM t2 WHERE t2 MATCH 'a' ORDER BY rank DESC
 } {
   5 103  9 102  6 9  10 8  3 6  2 4  7 0  1 0 
 }
 
-do_execsql_test 4.1.4 {
+do_execsql_test 4.1.6 {
   INSERT INTO t2(t2, rank) VALUES('rank', 'firstinst (    ) ');
   SELECT rowid, rank FROM t2 WHERE t2 MATCH 'a' ORDER BY rank DESC
 } {
@@ -216,6 +233,42 @@ do_execsql_test 4.2.2 {
   10 121
 }
 
+do_execsql_test 4.2.3 {
+  SELECT rowid, rank FROM t2 
+  WHERE t2 MATCH 'o + q + g' AND rank MATCH 'rowidplus(112)'
+} {
+  10 122
+}
+
+proc rowidmod {cmd imod} { 
+  expr [$cmd xRowid] % $imod
+}
+sqlite3_fts5_create_function db rowidmod rowidmod
+do_execsql_test 4.3.1 {
+  CREATE VIRTUAL TABLE t3 USING fts5(x);
+  INSERT INTO t3 VALUES('a one');
+  INSERT INTO t3 VALUES('a two');
+  INSERT INTO t3 VALUES('a three');
+  INSERT INTO t3 VALUES('a four');
+  INSERT INTO t3 VALUES('a five');
+  INSERT INTO t3(t3, rank) VALUES('rank', 'bm25()');
+}
+breakpoint
+
+do_execsql_test 4.3.2 {
+  SELECT * FROM t3
+  WHERE t3 MATCH 'a' AND rank MATCH 'rowidmod(4)' 
+  ORDER BY rank ASC
+} {
+  {a four} {a five} {a one} {a two} {a three}
+}
+do_execsql_test 4.3.3 {
+  SELECT *, rank FROM t3
+  WHERE t3 MATCH 'a' AND rank MATCH 'rowidmod(3)' 
+  ORDER BY rank ASC
+} {
+  {a three} 0 {a four} 1 {a one} 1 {a five} 2 {a two} 2
+}
 
 
 finish_test

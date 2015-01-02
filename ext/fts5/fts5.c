@@ -160,6 +160,8 @@ struct Fts5Cursor {
   char *zSpecial;                 /* Result of special query */
 
   /* "rank" function. Populated on demand from vtab.xColumn(). */
+  char *zRank;                    /* Custom rank function */
+  char *zRankArgs;                /* Custom rank function args */
   Fts5Auxiliary *pRank;           /* Rank callback (or NULL) */
   int nRankArg;                   /* Number of trailing arguments for rank() */
   sqlite3_value **apRankArg;      /* Array of trailing arguments */
@@ -181,6 +183,7 @@ struct Fts5Cursor {
 #define FTS5CSR_REQUIRE_CONTENT   0x01
 #define FTS5CSR_REQUIRE_DOCSIZE   0x02
 #define FTS5CSR_EOF               0x04
+#define FTS5CSR_FREE_ZRANK        0x08
 
 /*
 ** Macros to Set(), Clear() and Test() cursor flags.
@@ -418,6 +421,7 @@ static int fts5BestIndexMethod(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
   Fts5Config *pConfig = pTab->pConfig;
   int iCons;
   int ePlan = FTS5_PLAN_SCAN;
+  int iRankMatch;
 
   iCons = fts5FindConstraint(pInfo,SQLITE_INDEX_CONSTRAINT_MATCH,pConfig->nCol);
   if( iCons>=0 ){
@@ -452,6 +456,14 @@ static int fts5BestIndexMethod(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
     if( pInfo->orderByConsumed ){
       ePlan |= pInfo->aOrderBy[0].desc ? FTS5_ORDER_DESC : FTS5_ORDER_ASC;
     }
+  }
+
+  iRankMatch = fts5FindConstraint(
+      pInfo, SQLITE_INDEX_CONSTRAINT_MATCH, pConfig->nCol+1
+  );
+  if( iRankMatch>=0 ){
+    pInfo->aConstraintUsage[iRankMatch].argvIndex = 1 + (iCons>=0);
+    pInfo->aConstraintUsage[iRankMatch].omit = 1;
   }
    
   pInfo->idxNum = ePlan;
@@ -543,6 +555,10 @@ static int fts5CloseMethod(sqlite3_vtab_cursor *pCursor){
   sqlite3_free(pCsr->apRankArg);
 
   sqlite3_free(pCsr->zSpecial);
+  if( CsrFlagTest(pCsr, FTS5CSR_FREE_ZRANK) ){
+    sqlite3_free(pCsr->zRank);
+    sqlite3_free(pCsr->zRankArgs);
+  }
   sqlite3_free(pCsr);
   return SQLITE_OK;
 }
@@ -636,7 +652,8 @@ static int fts5CursorFirstSorted(Fts5Table *pTab, Fts5Cursor *pCsr, int bAsc){
   int nByte;
   int rc = SQLITE_OK;
   char *zSql;
-  const char *zRank = pConfig->zRank ? pConfig->zRank : FTS5_DEFAULT_RANK;
+  const char *zRank = pCsr->zRank;
+  const char *zRankArgs = pCsr->zRankArgs;
   
   nPhrase = sqlite3Fts5ExprPhraseCount(pCsr->pExpr);
   nByte = sizeof(Fts5Sorter) + sizeof(int) * nPhrase;
@@ -654,8 +671,8 @@ static int fts5CursorFirstSorted(Fts5Table *pTab, Fts5Cursor *pCsr, int bAsc){
   ** If SQLite a built-in statement cache, this wouldn't be a problem. */
   zSql = sqlite3_mprintf("SELECT rowid, rank FROM %Q.%Q ORDER BY %s(%s%s%s) %s",
       pConfig->zDb, pConfig->zName, zRank, pConfig->zName,
-      (pConfig->zRankArgs ? ", " : ""),
-      (pConfig->zRankArgs ? pConfig->zRankArgs : ""),
+      (zRankArgs ? ", " : ""),
+      (zRankArgs ? zRankArgs : ""),
       bAsc ? "ASC" : "DESC"
   );
   if( zSql==0 ){
@@ -747,14 +764,13 @@ static Fts5Auxiliary *fts5FindAuxiliary(Fts5Table *pTab, const char *zName){
 static int fts5FindRankFunction(Fts5Cursor *pCsr){
   Fts5Table *pTab = (Fts5Table*)(pCsr->base.pVtab);
   Fts5Config *pConfig = pTab->pConfig;
-  const char *zRank = pConfig->zRank;
   int rc = SQLITE_OK;
   Fts5Auxiliary *pAux;
+  const char *zRank = pCsr->zRank;
+  const char *zRankArgs = pCsr->zRankArgs;
 
-  if( zRank==0 ) zRank = FTS5_DEFAULT_RANK;
-
-  if( pTab->pConfig->zRankArgs ){
-    char *zSql = sqlite3_mprintf("SELECT %s", pTab->pConfig->zRankArgs);
+  if( zRankArgs ){
+    char *zSql = sqlite3_mprintf("SELECT %s", zRankArgs);
     if( zSql==0 ){
       rc = SQLITE_NOMEM;
     }else{
@@ -796,10 +812,50 @@ static int fts5FindRankFunction(Fts5Cursor *pCsr){
   return rc;
 }
 
+
+static int fts5CursorParseRank(
+  Fts5Config *pConfig,
+  Fts5Cursor *pCsr, 
+  sqlite3_value *pRank
+){
+  int rc = SQLITE_OK;
+  if( pRank ){
+    const char *z = (const char*)sqlite3_value_text(pRank);
+    char *zRank = 0;
+    char *zRankArgs = 0;
+
+    rc = sqlite3Fts5ConfigParseRank(z, &zRank, &zRankArgs);
+    if( rc==SQLITE_OK ){
+      pCsr->zRank = zRank;
+      pCsr->zRankArgs = zRankArgs;
+      CsrFlagSet(pCsr, FTS5CSR_FREE_ZRANK);
+    }else if( rc==SQLITE_ERROR ){
+      pCsr->base.pVtab->zErrMsg = sqlite3_mprintf(
+          "parse error in rank function: %s", z
+      );
+    }
+  }else{
+    if( pConfig->zRank ){
+      pCsr->zRank = (char*)pConfig->zRank;
+      pCsr->zRankArgs = (char*)pConfig->zRankArgs;
+    }else{
+      pCsr->zRank = (char*)FTS5_DEFAULT_RANK;
+      pCsr->zRankArgs = 0;
+    }
+  }
+  return rc;
+}
+
 /*
 ** This is the xFilter interface for the virtual table.  See
 ** the virtual table xFilter method documentation for additional
 ** information.
+** 
+** There are three possible query strategies:
+**
+**   1. Full-text search using a MATCH operator.
+**   2. A by-rowid lookup.
+**   3. A full-table scan.
 */
 static int fts5FilterMethod(
   sqlite3_vtab_cursor *pCursor,   /* The cursor used for this query */
@@ -813,10 +869,13 @@ static int fts5FilterMethod(
   int bAsc = ((idxNum & FTS5_ORDER_ASC) ? 1 : 0);
   int rc = SQLITE_OK;
 
+  assert( nVal<=2 );
   assert( pCsr->pStmt==0 );
   assert( pCsr->pExpr==0 );
   assert( pCsr->csrflags==0 );
   assert( pCsr->pRank==0 );
+  assert( pCsr->zRank==0 );
+  assert( pCsr->zRankArgs==0 );
 
   if( pTab->pSortCsr ){
     /* If pSortCsr is non-NULL, then this call is being made as part of 
@@ -835,19 +894,22 @@ static int fts5FilterMethod(
     if( ePlan==FTS5_PLAN_MATCH || ePlan==FTS5_PLAN_SORTED_MATCH ){
       const char *zExpr = (const char*)sqlite3_value_text(apVal[0]);
 
-      if( zExpr[0]=='*' ){
-        /* The user has issued a query of the form "MATCH '*...'". This
-        ** indicates that the MATCH expression is not a full text query,
-        ** but a request for an internal parameter.  */
-        rc = fts5SpecialMatch(pTab, pCsr, &zExpr[1]);
-      }else{
-        char **pzErr = &pTab->base.zErrMsg;
-        rc = sqlite3Fts5ExprNew(pTab->pConfig, zExpr, &pCsr->pExpr, pzErr);
-        if( rc==SQLITE_OK ){
-          if( ePlan==FTS5_PLAN_MATCH ){
-            rc = fts5CursorFirst(pTab, pCsr, bAsc);
-          }else{
-            rc = fts5CursorFirstSorted(pTab, pCsr, bAsc);
+      rc = fts5CursorParseRank(pTab->pConfig, pCsr, (nVal==2 ? apVal[1] : 0));
+      if( rc==SQLITE_OK ){
+        if( zExpr[0]=='*' ){
+          /* The user has issued a query of the form "MATCH '*...'". This
+          ** indicates that the MATCH expression is not a full text query,
+          ** but a request for an internal parameter.  */
+          rc = fts5SpecialMatch(pTab, pCsr, &zExpr[1]);
+        }else{
+          char **pzErr = &pTab->base.zErrMsg;
+          rc = sqlite3Fts5ExprNew(pTab->pConfig, zExpr, &pCsr->pExpr, pzErr);
+          if( rc==SQLITE_OK ){
+            if( ePlan==FTS5_PLAN_MATCH ){
+              rc = fts5CursorFirst(pTab, pCsr, bAsc);
+            }else{
+              rc = fts5CursorFirstSorted(pTab, pCsr, bAsc);
+            }
           }
         }
       }

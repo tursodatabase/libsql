@@ -552,7 +552,7 @@ static const char *fts5ConfigSkipArgs(const char *pIn){
 **   + Zero or more SQL literals in a comma separated list
 **   + Close parenthesis - ")"
 */
-static int fts5ConfigParseRank(
+int sqlite3Fts5ConfigParseRank(
   const char *zIn,                /* Input string */
   char **pzRank,                  /* OUT: Rank function name */
   char **pzRankArgs               /* OUT: Rank function arguments */
@@ -647,7 +647,7 @@ int sqlite3Fts5ConfigSetValue(
     const char *zIn = (const char*)sqlite3_value_text(pVal);
     char *zRank;
     char *zRankArgs;
-    rc = fts5ConfigParseRank(zIn, &zRank, &zRankArgs);
+    rc = sqlite3Fts5ConfigParseRank(zIn, &zRank, &zRankArgs);
     if( rc==SQLITE_OK ){
       sqlite3_free(pConfig->zRank);
       sqlite3_free(pConfig->zRankArgs);

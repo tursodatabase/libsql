@@ -109,6 +109,8 @@ int sqlite3Fts5ConfigLoad(Fts5Config*, int);
 /* Set the value of a single config attribute */
 int sqlite3Fts5ConfigSetValue(Fts5Config*, const char*, sqlite3_value*, int*);
 
+int sqlite3Fts5ConfigParseRank(const char*, char**, char**);
+
 /*
 ** End of interface to code in fts5_config.c.
 **************************************************************************/
