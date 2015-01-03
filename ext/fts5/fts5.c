@@ -1056,6 +1056,20 @@ static int fts5SpecialInsert(
   return rc;
 }
 
+static int fts5SpecialDelete(
+  Fts5Table *pTab, 
+  sqlite3_value **apVal, 
+  sqlite3_int64 *piRowid
+){
+  int rc = SQLITE_OK;
+  int eType1 = sqlite3_value_type(apVal[1]);
+  if( eType1==SQLITE_INTEGER ){
+    sqlite3_int64 iDel = sqlite3_value_int64(apVal[1]);
+    rc = sqlite3Fts5StorageSpecialDelete(pTab->pStorage, iDel, &apVal[2]);
+  }
+  return rc;
+}
+
 /* 
 ** This function is the implementation of the xUpdate callback used by 
 ** FTS3 virtual tables. It is invoked by SQLite each time a row is to be
@@ -1086,17 +1100,25 @@ static int fts5UpdateMethod(
   */
   assert( nArg==1 || nArg==(2 + pConfig->nCol + 2) );
 
-  if( nArg>1 && SQLITE_NULL!=sqlite3_value_type(apVal[2 + pConfig->nCol]) ){
-    return fts5SpecialInsert(pTab, 
-        apVal[2 + pConfig->nCol], apVal[2 + pConfig->nCol + 1]
-    );
+  if( nArg>1 ){
+    sqlite3_value *pCmd = sqlite3_value_type(apVal[2 + pConfig->nCol]);
+    if( SQLITE_NULL!=sqlite3_value_type(pCmd) ){
+      const char *z = sqlite3_value_text(pCmd);
+      if( pConfig->bExternalContent && sqlite3_stricmp("delete", z) ){
+        return fts5SpecialDelete(pTab, apVal, pRowid);
+      }else{
+        return fts5SpecialInsert(pTab, pCmd, apVal[2 + pConfig->nCol + 1]);
+      }
+    }
   }
 
   eType0 = sqlite3_value_type(apVal[0]);
   eConflict = sqlite3_vtab_on_conflict(pConfig->db);
 
   assert( eType0==SQLITE_INTEGER || eType0==SQLITE_NULL );
-  if( eType0==SQLITE_INTEGER ){
+  assert( pVtab->zErrMsg==0 );
+
+  if( rc==SQLITE_OK && eType0==SQLITE_INTEGER ){
     i64 iDel = sqlite3_value_int64(apVal[0]);    /* Rowid to delete */
     rc = sqlite3Fts5StorageDelete(pTab->pStorage, iDel);
   }

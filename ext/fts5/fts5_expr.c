@@ -1041,19 +1041,24 @@ i64 sqlite3Fts5ExprRowid(Fts5Expr *p){
 ** It is the responsibility of the caller to eventually free the returned
 ** buffer using sqlite3_free(). If an OOM error occurs, NULL is returned. 
 */
-static char *fts5Strndup(const char *pIn, int nIn){
-  char *zRet = (char*)sqlite3_malloc(nIn+1);
-  if( zRet ){
-    memcpy(zRet, pIn, nIn);
-    zRet[nIn] = '\0';
+static char *fts5Strndup(int *pRc, const char *pIn, int nIn){
+  char *zRet = 0;
+  if( *pRc==SQLITE_OK ){
+    zRet = (char*)sqlite3_malloc(nIn+1);
+    if( zRet ){
+      memcpy(zRet, pIn, nIn);
+      zRet[nIn] = '\0';
+    }else{
+      *pRc = SQLITE_NOMEM;
+    }
   }
   return zRet;
 }
 
 static int fts5ParseStringFromToken(Fts5Token *pToken, char **pz){
-  *pz = fts5Strndup(pToken->p, pToken->n);
-  if( *pz==0 ) return SQLITE_NOMEM;
-  return SQLITE_OK;
+  int rc = SQLITE_OK;
+  *pz = fts5Strndup(&rc, pToken->p, pToken->n);
+  return rc;
 }
 
 /*
@@ -1139,6 +1144,7 @@ static int fts5ParseTokenize(
   int iEnd,                       /* End offset of token */
   int iPos                        /* Position offset of token */
 ){
+  int rc = SQLITE_OK;
   const int SZALLOC = 8;
   TokenCtx *pCtx = (TokenCtx*)pContext;
   Fts5ExprPhrase *pPhrase = pCtx->pPhrase;
@@ -1159,9 +1165,9 @@ static int fts5ParseTokenize(
 
   pTerm = &pPhrase->aTerm[pPhrase->nTerm++];
   memset(pTerm, 0, sizeof(Fts5ExprTerm));
-  pTerm->zTerm = fts5Strndup(pToken, nToken);
+  pTerm->zTerm = fts5Strndup(&rc, pToken, nToken);
 
-  return pTerm->zTerm ? SQLITE_OK : SQLITE_NOMEM;
+  return rc;
 }
 
 

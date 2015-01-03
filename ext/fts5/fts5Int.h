@@ -76,6 +76,9 @@ struct Fts5Config {
   char **azCol;                   /* Column names */
   int nPrefix;                    /* Number of prefix indexes */
   int *aPrefix;                   /* Sizes in bytes of nPrefix prefix indexes */
+  int bExternalContent;           /* Content is external */
+  char *zContent;                 /* "content=" option value (or NULL) */ 
+  char *zContentRowid;            /* "content_rowid=" option value (or NULL) */ 
   Fts5Tokenizer *pTok;
   fts5_tokenizer *pTokApi;
 
@@ -409,6 +412,8 @@ int sqlite3Fts5StorageSync(Fts5Storage *p, int bCommit);
 int sqlite3Fts5StorageRollback(Fts5Storage *p);
 
 int sqlite3Fts5StorageConfigValue(Fts5Storage *p, const char*, sqlite3_value*);
+
+int sqlite3Fts5StorageSpecialDelete(Fts5Storage *p, i64 iDel, sqlite3_value**);
 
 /*
 ** End of interface to code in fts5_storage.c.

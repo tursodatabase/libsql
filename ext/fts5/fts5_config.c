@@ -193,6 +193,47 @@ static char *fts5TrimString(char *z){
 }
 
 /*
+** Duplicate the string passed as the only argument into a buffer allocated
+** by sqlite3_malloc().
+**
+** Return 0 if an OOM error is encountered.
+*/
+static char *fts5Strdup(int *pRc, const char *z){
+  char *pRet = 0;
+  if( *pRc==SQLITE_OK ){
+    pRet = sqlite3_mprintf("%s", z);
+    if( pRet==0 ) *pRc = SQLITE_NOMEM;
+  }
+  return pRet;
+}
+
+/*
+** Argument z points to a nul-terminated string containing an SQL identifier.
+** This function returns a copy of the identifier enclosed in backtick 
+** quotes.
+*/
+static char *fts5EscapeName(int *pRc, const char *z){
+  char *pRet = 0;
+  if( *pRc==SQLITE_OK ){
+    int n = strlen(z);
+    pRet = (char*)sqlite3_malloc(2 * 2*n + 1);
+    if( pRet==0 ){
+      *pRc = SQLITE_NOMEM;
+    }else{
+      int i;
+      char *p = pRet;
+      for(i=0; i<n; i++){
+        if( z[i]=='`' ) *p++ = '`';
+        *p++ = z[i];
+      }
+      *p++ = '`';
+      *p++ = '\0';
+    }
+  }
+  return pRet;
+}
+
+/*
 ** Parse the "special" CREATE VIRTUAL TABLE directive and update
 ** configuration object pConfig as appropriate.
 **
@@ -291,23 +332,32 @@ static int fts5ConfigParseSpecial(
     return rc;
   }
 
+  if( sqlite3_strnicmp("content", zCmd, nCmd)==0 ){
+    int rc = SQLITE_OK;
+    if( pConfig->zContent ){
+      *pzErr = sqlite3_mprintf("multiple content=... directives");
+      rc = SQLITE_ERROR;
+    }else{
+      pConfig->zContent = sqlite3_mprintf("%Q.%Q", pConfig->zDb, zArg);
+      pConfig->bExternalContent = 1;
+      if( pConfig->zContent==0 ) rc = SQLITE_NOMEM;
+    }
+    return rc;
+  }
+
+  if( sqlite3_strnicmp("content_rowid", zCmd, nCmd)==0 ){
+    int rc = SQLITE_OK;
+    if( pConfig->zContentRowid ){
+      *pzErr = sqlite3_mprintf("multiple content_rowid=... directives");
+      rc = SQLITE_ERROR;
+    }else{
+      pConfig->zContentRowid = fts5EscapeName(&rc, zArg);
+    }
+    return rc;
+  }
+
   *pzErr = sqlite3_mprintf("unrecognized directive: \"%s\"", zCmd);
   return SQLITE_ERROR;
-}
-
-/*
-** Duplicate the string passed as the only argument into a buffer allocated
-** by sqlite3_malloc().
-**
-** Return 0 if an OOM error is encountered.
-*/
-static char *fts5Strdup(int *pRc, const char *z){
-  char *pRet = 0;
-  if( *pRc==SQLITE_OK ){
-    pRet = sqlite3_mprintf("%s", z);
-    if( pRet==0 ) *pRc = SQLITE_NOMEM;
-  }
-  return pRet;
 }
 
 /*
@@ -422,6 +472,20 @@ int sqlite3Fts5ConfigParse(
     rc = fts5ConfigDefaultTokenizer(pGlobal, pRet);
   }
 
+  /* If no zContent option was specified, fill in the default values. */
+  if( rc==SQLITE_OK && pRet->zContent==0 ){
+    pRet->zContent = sqlite3_mprintf("%Q.'%q_content'", pRet->zDb, pRet->zName);
+    if( pRet->zContent==0 ){
+      rc = SQLITE_NOMEM;
+    }else{
+      sqlite3_free(pRet->zContentRowid);
+      pRet->zContentRowid = 0;
+    }
+  }
+  if( rc==SQLITE_OK && pRet->zContentRowid==0 ){
+    pRet->zContentRowid = fts5Strdup(&rc, "rowid");
+  }
+
   if( rc!=SQLITE_OK ){
     sqlite3Fts5ConfigFree(pRet);
     *ppOut = 0;
@@ -447,6 +511,8 @@ void sqlite3Fts5ConfigFree(Fts5Config *pConfig){
     sqlite3_free(pConfig->aPrefix);
     sqlite3_free(pConfig->zRank);
     sqlite3_free(pConfig->zRankArgs);
+    sqlite3_free(pConfig->zContent);
+    sqlite3_free(pConfig->zContentRowid);
     sqlite3_free(pConfig);
   }
 }

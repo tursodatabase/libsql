@@ -1,5 +1,5 @@
-C Allow\sthe\srank\scolumn\sto\sbe\sremapped\son\sa\sper-query\sbasis\sby\sincluding\sa\sterm\ssimilar\sto\s"rank\smatch\s'bm25(10,2)'"\sin\sa\swhere\sclause.
-D 2015-01-02T14:55:22.175
+C Add\ssupport\sfor\sexternal\scontent\stables\sto\sfts5.
+D 2015-01-03T20:44:58.134
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7cd23e4fc91004a6bd081623e1bc6932e44828c0
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -104,16 +104,16 @@ F ext/fts3/unicode/CaseFolding.txt 8c678ca52ecc95e16bc7afc2dbf6fc9ffa05db8c
 F ext/fts3/unicode/UnicodeData.txt cd07314edb62d49fde34debdaf92fa2aa69011e7
 F ext/fts3/unicode/mkunicode.tcl 4199cb887040ee3c3cd59a5171ddb0566904586e
 F ext/fts5/extract_api_docs.tcl 6320db4a1d0722a4e2069e661381ad75e9889786
-F ext/fts5/fts5.c a80283dca24506f1c748fffbba8d87ae4d348b50
+F ext/fts5/fts5.c 16177d7f81af1852cf7f477b5ae119215ad6044a
 F ext/fts5/fts5.h 4f9d2c477c0ee1907164642471329a82cb6b203b
-F ext/fts5/fts5Int.h b5d7970b851d2b4f1745cd2d5c95216c9847aef2
+F ext/fts5/fts5Int.h 8062dc2363c863dc8a5b2e5651cb8c966bd6c4cb
 F ext/fts5/fts5_aux.c 445e54031ff94174673f4f5aac6c064df20a2a6b
 F ext/fts5/fts5_buffer.c 1bc5c762bb2e9b4a40b2e8a820a31b809e72eec1
-F ext/fts5/fts5_config.c 74a860e10c5583831f04d0088c4a49a3c6eca43d
-F ext/fts5/fts5_expr.c 27d3d2deebae277c34ae2bb3d501dd879c442ba5
+F ext/fts5/fts5_config.c 16d647c7bfe50d4e823267188e12e2d001d655e0
+F ext/fts5/fts5_expr.c 317093f00a2ccdaaee0a5290f9f228c600189c41
 F ext/fts5/fts5_hash.c 63fa8379c5f2ac107d47c2b7d9ac04c95ef8a279
 F ext/fts5/fts5_index.c 4a8e8535b4303400ddb5f6fb08152da0d88ebf6f
-F ext/fts5/fts5_storage.c 13794781977c9a624eb8bd7b9509de241e405853
+F ext/fts5/fts5_storage.c b95fcca70f94656854e7afcfbb9896455f6b034d
 F ext/fts5/fts5_tcl.c 664e710e2bbeed505cb91848772ca7538623a67f
 F ext/fts5/fts5_tokenize.c 5a0ad46408d09bcda2bf0addb5af42fdb75ebabb
 F ext/fts5/fts5_unicode2.c 9c7dd640d1f014bf5c3ee029759adfbb4d7e95a9
@@ -1270,7 +1270,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4b3651677e7132c4c45605bc1f216fc08ef31198
-R 691df06fdaf9c3542bb10cf702e4a0f8
+P 1cd15a1759004d5d321056905dbb6acff20dc7d9
+R d21eb6bee3b06e51f22d32d1e0bd7016
 U dan
-Z 12262406c5f3f18d2ab88add956e21a6
+Z e88e77f44b464406d3184a89736eaa7d
