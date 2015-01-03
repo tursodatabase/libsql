@@ -259,6 +259,8 @@ proc run_test_suite {name testtarget config} {
   #
   set cflags "-g"
   set opts ""
+  set title ${name}($testtarget)
+
   regsub -all {#[^\n]*\n} $config \n config
   foreach arg $config {
     if {[string match -D* $arg]} {
@@ -286,7 +288,6 @@ proc run_test_suite {name testtarget config} {
 
   dryrun file mkdir $dir
   if {!$::DRYRUN} {
-    set title ${name}($testtarget)
     set n [string length $title]
     puts -nonewline "${title}[string repeat . [expr {63-$n}]]"
     flush stdout
