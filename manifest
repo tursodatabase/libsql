@@ -1,5 +1,5 @@
-C Remove\ssome\sneedless\srecursion\sfrom\scompound\sSELECT\sprocessing.
-D 2015-01-05T15:48:45.607
+C Towards\sgetting\sINSERT\sstatements\sto\sexcept\smany\sVALUE\sterms\s(more\sthan\nthe\slimit\simposed\sby\sSQLITE_LIMIT_COMPOUND_SELECT).\s\sThis\scheck-in\ssegfaults\non\sa\sstack\soverflow.\s\sAnd\sit\sis\sslow.
+D 2015-01-05T16:27:43.075
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 335e2d3ff0f2455eacbfa3075fc37495e3321410
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -218,7 +218,7 @@ F src/os_win.c 91d3d08e33ec0258d180d4c8255492f47d15e007
 F src/os_win.h 09e751b20bbc107ffbd46e13555dc73576d88e21
 F src/pager.c 4120a49ecd37697e28f5ed807f470b9c0b88410c
 F src/pager.h c3476e7c89cdf1c6914e50a11f3714e30b4e0a77
-F src/parse.y 5dfead8aed90cb0c7c1115898ee2266804daff45
+F src/parse.y 075cad65e0393df1362b87e5cd766220b880f3a7
 F src/pcache.c b83d160ce81ca101f98f0d27498e6d6bd49f1599
 F src/pcache.h b44658c9c932d203510279439d891a2a83e12ba8
 F src/pcache1.c 1e77432b40b7d3288327d9cdf399dcdfd2b6d3bf
@@ -840,6 +840,7 @@ F test/selectC.test 871fb55d884d3de5943c4057ebd22c2459e71977
 F test/selectD.test b0f02a04ef7737decb24e08be2c39b9664b43394
 F test/selectE.test fc02a1eb04c8eb537091482644b7d778ae8759b7
 F test/selectF.test 21c94e6438f76537b72532fa9fd4710cdd455fc3
+F test/selectG.test 6425730374fb1ebf9897b64db5a2c2550eff6ee7
 F test/server1.test 46803bd3fe8b99b30dbc5ff38ffc756f5c13a118
 F test/shared.test 1da9dbad400cee0d93f252ccf76e1ae007a63746
 F test/shared2.test 03eb4a8d372e290107d34b6ce1809919a698e879
@@ -1234,7 +1235,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 23d4c07eb81db5a5c6beb56b5820f0b6501f1fb6
-R 11413a03283b5c5b28fd422ab566eba3
+P fe677d13f03e24fa667efc0c2e7f5bbb99521791
+R 54acf3852000e5cc7341ca33524e221b
+T *branch * many-VALUEs
+T *sym-many-VALUEs *
+T -sym-trunk *
 U drh
-Z 4fbaf4abfb36941c7ce4c15be9a07b21
+Z 9fc3f9e17e26a0964cf77234a16c2176
