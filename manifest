@@ -1,5 +1,5 @@
-C In\sreleasetest.tcl,\somit\sthe\sCC=clang\stext\sfrom\sthe\slabel\son\sSanitize\stests,\nso\sthat\sthe\slabel\sfits\son\san\s80-character\sline.
-D 2015-01-03T18:59:17.732
+C Remove\ssome\sneedless\srecursion\sfrom\scompound\sSELECT\sprocessing.
+D 2015-01-05T15:48:45.607
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 335e2d3ff0f2455eacbfa3075fc37495e3321410
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -228,7 +228,7 @@ F src/printf.c 9e75a6a0b55bf61cfff7d7e19d89834a1b938236
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c f6c46d3434439ab2084618d603e6d6dbeb0d6ada
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c f377fb8a5c73c10678ea74f3400f7913943e3d75
+F src/select.c 28cf616a8791ff154be86bd9a3f888440f618e78
 F src/shell.c 45d9c9bd7cde07845af957f2d849933b990773cf
 F src/sqlite.h.in ed799ff5c814227c7957eb4f4a217f67fdc0da48
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
@@ -1234,7 +1234,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e0de580726a0ed35565783ed14440ef9bcdc3a3d
-R f6cee47d01cb42bf3184c460b0355569
+P 23d4c07eb81db5a5c6beb56b5820f0b6501f1fb6
+R 11413a03283b5c5b28fd422ab566eba3
 U drh
-Z f9858d5c3468a9943c6533c5ebc7e99c
+Z 4fbaf4abfb36941c7ce4c15be9a07b21
