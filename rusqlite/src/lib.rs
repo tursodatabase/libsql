@@ -58,7 +58,7 @@ use std::ptr;
 use std::fmt;
 use std::rc::{Rc};
 use std::cell::{RefCell, Cell};
-use std::c_str::{CString};
+use std::c_str::{CString, ToCStr};
 use libc::{c_int, c_void, c_char};
 
 use types::{ToSql, FromSql};

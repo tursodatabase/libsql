@@ -55,7 +55,7 @@
 extern crate time;
 
 use libc::{c_int, c_double};
-use std::c_str::{CString};
+use std::c_str::{CString, ToCStr};
 use std::mem;
 use super::ffi;
 use super::{SqliteResult, SqliteError};
