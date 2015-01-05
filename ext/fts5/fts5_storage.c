@@ -54,7 +54,8 @@ struct Fts5Storage {
 static int fts5StorageGetStmt(
   Fts5Storage *p,                 /* Storage handle */
   int eStmt,                      /* FTS5_STMT_XXX constant */
-  sqlite3_stmt **ppStmt           /* OUT: Prepared statement handle */
+  sqlite3_stmt **ppStmt,          /* OUT: Prepared statement handle */
+  char **pzErrMsg                 /* OUT: Error message (if any) */
 ){
   int rc = SQLITE_OK;
 
@@ -117,6 +118,9 @@ static int fts5StorageGetStmt(
     }else{
       rc = sqlite3_prepare_v2(pC->db, zSql, -1, &p->aStmt[eStmt], 0);
       sqlite3_free(zSql);
+      if( rc!=SQLITE_OK && pzErrMsg ){
+        *pzErrMsg = sqlite3_mprintf("%s", sqlite3_errmsg(pC->db));
+      }
     }
   }
 
@@ -205,7 +209,7 @@ int sqlite3Fts5StorageOpen(
   p->pIndex = pIndex;
 
   if( bCreate ){
-    if( pConfig->bExternalContent==0 ){
+    if( pConfig->eContent==FTS5_CONTENT_NORMAL ){
       char *zDefn = sqlite3_malloc(32 + pConfig->nCol * 10);
       if( zDefn==0 ){
         rc = SQLITE_NOMEM;
@@ -254,7 +258,9 @@ int sqlite3Fts5StorageClose(Fts5Storage *p, int bDestroy){
 
     /* If required, remove the shadow tables from the database */
     if( bDestroy ){
-      rc = sqlite3Fts5DropTable(p->pConfig, "content");
+      if( p->pConfig->eContent==FTS5_CONTENT_NORMAL ){
+        rc = sqlite3Fts5DropTable(p->pConfig, "content");
+      }
       if( rc==SQLITE_OK ) rc = sqlite3Fts5DropTable(p->pConfig, "docsize");
       if( rc==SQLITE_OK ) rc = sqlite3Fts5DropTable(p->pConfig, "config");
     }
@@ -298,7 +304,7 @@ static int fts5StorageDeleteFromIndex(Fts5Storage *p, i64 iDel){
   sqlite3_stmt *pSeek;            /* SELECT to read row iDel from %_data */
   int rc;                         /* Return code */
 
-  rc = fts5StorageGetStmt(p, FTS5_STMT_LOOKUP, &pSeek);
+  rc = fts5StorageGetStmt(p, FTS5_STMT_LOOKUP, &pSeek, 0);
   if( rc==SQLITE_OK ){
     int rc2;
     sqlite3_bind_int64(pSeek, 1, iDel);
@@ -338,7 +344,7 @@ static int fts5StorageInsertDocsize(
   Fts5Buffer *pBuf                /* sz value */
 ){
   sqlite3_stmt *pReplace = 0;
-  int rc = fts5StorageGetStmt(p, FTS5_STMT_REPLACE_DOCSIZE, &pReplace);
+  int rc = fts5StorageGetStmt(p, FTS5_STMT_REPLACE_DOCSIZE, &pReplace, 0);
   if( rc==SQLITE_OK ){
     sqlite3_bind_int64(pReplace, 1, iRowid);
     sqlite3_bind_blob(pReplace, 2, pBuf->p, pBuf->n, SQLITE_STATIC);
@@ -424,7 +430,7 @@ int sqlite3Fts5StorageDelete(Fts5Storage *p, i64 iDel){
 
   /* Delete the %_docsize record */
   if( rc==SQLITE_OK ){
-    rc = fts5StorageGetStmt(p, FTS5_STMT_DELETE_DOCSIZE, &pDel);
+    rc = fts5StorageGetStmt(p, FTS5_STMT_DELETE_DOCSIZE, &pDel, 0);
   }
   if( rc==SQLITE_OK ){
     sqlite3_bind_int64(pDel, 1, iDel);
@@ -434,7 +440,7 @@ int sqlite3Fts5StorageDelete(Fts5Storage *p, i64 iDel){
 
   /* Delete the %_content record */
   if( rc==SQLITE_OK ){
-    rc = fts5StorageGetStmt(p, FTS5_STMT_DELETE_CONTENT, &pDel);
+    rc = fts5StorageGetStmt(p, FTS5_STMT_DELETE_CONTENT, &pDel, 0);
   }
   if( rc==SQLITE_OK ){
     sqlite3_bind_int64(pDel, 1, iDel);
@@ -459,7 +465,7 @@ int sqlite3Fts5StorageSpecialDelete(
   int rc;
   sqlite3_stmt *pDel;
 
-  assert( p->pConfig->bExternalContent );
+  assert( p->pConfig->eContent!=FTS5_CONTENT_NORMAL );
   rc = fts5StorageLoadTotals(p, 1);
 
   /* Delete the index records */
@@ -477,14 +483,14 @@ int sqlite3Fts5StorageSpecialDelete(
         (void*)&ctx,
         fts5StorageInsertCallback
       );
-      p->aTotalSize[iCol-1] -= (i64)ctx.szCol;
+      p->aTotalSize[iCol] -= (i64)ctx.szCol;
     }
     p->nTotalRow--;
   }
 
   /* Delete the %_docsize record */
   if( rc==SQLITE_OK ){
-    rc = fts5StorageGetStmt(p, FTS5_STMT_DELETE_DOCSIZE, &pDel);
+    rc = fts5StorageGetStmt(p, FTS5_STMT_DELETE_DOCSIZE, &pDel, 0);
   }
   if( rc==SQLITE_OK ){
     sqlite3_bind_int64(pDel, 1, iDel);
@@ -509,7 +515,7 @@ int sqlite3Fts5StorageSpecialDelete(
 */
 static int fts5StorageNewRowid(Fts5Storage *p, i64 *piRowid){
   sqlite3_stmt *pReplace = 0;
-  int rc = fts5StorageGetStmt(p, FTS5_STMT_REPLACE_DOCSIZE, &pReplace);
+  int rc = fts5StorageGetStmt(p, FTS5_STMT_REPLACE_DOCSIZE, &pReplace, 0);
   if( rc==SQLITE_OK ){
     sqlite3_bind_null(pReplace, 1);
     sqlite3_bind_null(pReplace, 2);
@@ -543,8 +549,8 @@ int sqlite3Fts5StorageInsert(
   rc = fts5StorageLoadTotals(p, 1);
 
   /* Insert the new row into the %_content table. */
-  if( rc==SQLITE_OK && pConfig->bExternalContent==0 ){
-    if( pConfig->bExternalContent ){
+  if( rc==SQLITE_OK ){
+    if( pConfig->eContent!=FTS5_CONTENT_NORMAL ){
       if( sqlite3_value_type(apVal[1])==SQLITE_INTEGER ){
         *piRowid = sqlite3_value_int64(apVal[1]);
       }else{
@@ -560,7 +566,7 @@ int sqlite3Fts5StorageInsert(
         eStmt = FTS5_STMT_INSERT_CONTENT;
       }
       if( rc==SQLITE_OK ){
-        rc = fts5StorageGetStmt(p, eStmt, &pInsert);
+        rc = fts5StorageGetStmt(p, eStmt, &pInsert, 0);
       }
       for(i=1; rc==SQLITE_OK && i<=pConfig->nCol+1; i++){
         rc = sqlite3_bind_value(pInsert, i, apVal[i]);
@@ -682,7 +688,7 @@ int sqlite3Fts5StorageIntegrity(Fts5Storage *p){
 
   /* Generate the expected index checksum based on the contents of the
   ** %_content table. This block stores the checksum in ctx.cksum. */
-  rc = fts5StorageGetStmt(p, FTS5_STMT_SCAN_ASC, &pScan);
+  rc = fts5StorageGetStmt(p, FTS5_STMT_SCAN_ASC, &pScan, 0);
   if( rc==SQLITE_OK ){
     int rc2;
     while( SQLITE_ROW==sqlite3_step(pScan) ){
@@ -745,13 +751,18 @@ int sqlite3Fts5StorageIntegrity(Fts5Storage *p){
 ** Obtain an SQLite statement handle that may be used to read data from the
 ** %_content table.
 */
-int sqlite3Fts5StorageStmt(Fts5Storage *p, int eStmt, sqlite3_stmt **pp){
+int sqlite3Fts5StorageStmt(
+  Fts5Storage *p, 
+  int eStmt, 
+  sqlite3_stmt **pp, 
+  char **pzErrMsg
+){
   int rc;
   assert( eStmt==FTS5_STMT_SCAN_ASC 
        || eStmt==FTS5_STMT_SCAN_DESC
        || eStmt==FTS5_STMT_LOOKUP
   );
-  rc = fts5StorageGetStmt(p, eStmt, pp);
+  rc = fts5StorageGetStmt(p, eStmt, pp, pzErrMsg);
   if( rc==SQLITE_OK ){
     assert( p->aStmt[eStmt]==*pp );
     p->aStmt[eStmt] = 0;
@@ -805,7 +816,7 @@ static int fts5StorageDecodeSizeArray(
 int sqlite3Fts5StorageDocsize(Fts5Storage *p, i64 iRowid, int *aCol){
   int nCol = p->pConfig->nCol;
   sqlite3_stmt *pLookup = 0;
-  int rc = fts5StorageGetStmt(p, FTS5_STMT_LOOKUP_DOCSIZE, &pLookup);
+  int rc = fts5StorageGetStmt(p, FTS5_STMT_LOOKUP_DOCSIZE, &pLookup, 0);
   if( rc==SQLITE_OK ){
     int bCorrupt = 1;
     sqlite3_bind_int64(pLookup, 1, iRowid);
@@ -873,7 +884,7 @@ int sqlite3Fts5StorageConfigValue(
   sqlite3_value *pVal
 ){
   sqlite3_stmt *pReplace = 0;
-  int rc = fts5StorageGetStmt(p, FTS5_STMT_REPLACE_CONFIG, &pReplace);
+  int rc = fts5StorageGetStmt(p, FTS5_STMT_REPLACE_CONFIG, &pReplace, 0);
   if( rc==SQLITE_OK ){
     sqlite3_bind_text(pReplace, 1, z, -1, SQLITE_TRANSIENT);
     sqlite3_bind_value(pReplace, 2, pVal);

@@ -334,12 +334,19 @@ static int fts5ConfigParseSpecial(
 
   if( sqlite3_strnicmp("content", zCmd, nCmd)==0 ){
     int rc = SQLITE_OK;
-    if( pConfig->zContent ){
+    if( pConfig->eContent!=FTS5_CONTENT_NORMAL ){
       *pzErr = sqlite3_mprintf("multiple content=... directives");
       rc = SQLITE_ERROR;
     }else{
-      pConfig->zContent = sqlite3_mprintf("%Q.%Q", pConfig->zDb, zArg);
-      pConfig->bExternalContent = 1;
+      if( zArg[0] ){
+        pConfig->eContent = FTS5_CONTENT_EXTERNAL;
+        pConfig->zContent = sqlite3_mprintf("%Q.%Q", pConfig->zDb, zArg);
+      }else{
+        pConfig->eContent = FTS5_CONTENT_NONE;
+        pConfig->zContent = sqlite3_mprintf(
+            "%Q.'%q_docsize'", pConfig->zDb, pConfig->zName
+        );
+      }
       if( pConfig->zContent==0 ) rc = SQLITE_NOMEM;
     }
     return rc;
@@ -473,7 +480,7 @@ int sqlite3Fts5ConfigParse(
   }
 
   /* If no zContent option was specified, fill in the default values. */
-  if( rc==SQLITE_OK && pRet->zContent==0 ){
+  if( rc==SQLITE_OK && pRet->eContent==FTS5_CONTENT_NORMAL ){
     pRet->zContent = sqlite3_mprintf("%Q.'%q_content'", pRet->zDb, pRet->zName);
     if( pRet->zContent==0 ){
       rc = SQLITE_NOMEM;

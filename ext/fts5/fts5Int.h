@@ -76,9 +76,9 @@ struct Fts5Config {
   char **azCol;                   /* Column names */
   int nPrefix;                    /* Number of prefix indexes */
   int *aPrefix;                   /* Sizes in bytes of nPrefix prefix indexes */
-  int bExternalContent;           /* Content is external */
-  char *zContent;                 /* "content=" option value (or NULL) */ 
-  char *zContentRowid;            /* "content_rowid=" option value (or NULL) */ 
+  int eContent;                   /* An FTS5_CONTENT value */
+  char *zContent;                 /* content table */ 
+  char *zContentRowid;            /* "content_rowid=" option value */ 
   Fts5Tokenizer *pTok;
   fts5_tokenizer *pTokApi;
 
@@ -89,6 +89,12 @@ struct Fts5Config {
   char *zRank;                    /* Name of rank function */
   char *zRankArgs;                /* Arguments to rank function */
 };
+
+#define FTS5_CONTENT_NORMAL   0
+#define FTS5_CONTENT_NONE     1
+#define FTS5_CONTENT_EXTERNAL 2
+
+
 
 int sqlite3Fts5ConfigParse(
     Fts5Global*, sqlite3*, int, const char **, Fts5Config**, char**
@@ -401,7 +407,7 @@ int sqlite3Fts5StorageInsert(Fts5Storage *p, sqlite3_value **apVal, int, i64*);
 
 int sqlite3Fts5StorageIntegrity(Fts5Storage *p);
 
-int sqlite3Fts5StorageStmt(Fts5Storage *p, int eStmt, sqlite3_stmt **);
+int sqlite3Fts5StorageStmt(Fts5Storage *p, int eStmt, sqlite3_stmt**, char**);
 void sqlite3Fts5StorageStmtRelease(Fts5Storage *p, int eStmt, sqlite3_stmt*);
 
 int sqlite3Fts5StorageDocsize(Fts5Storage *p, i64 iRowid, int *aCol);

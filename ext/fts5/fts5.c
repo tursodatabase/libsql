@@ -256,6 +256,12 @@ static void fts5CheckTransactionState(Fts5Table *p, int op, int iSavepoint){
 # define fts5CheckTransactionState(x,y,z)
 #endif
 
+/*
+** Return true if pTab is a contentless table.
+*/
+static int fts5IsContentless(Fts5Table *pTab){
+  return pTab->pConfig->eContent==FTS5_CONTENT_NONE;
+}
 
 /*
 ** Close a virtual table handle opened by fts5InitVtab(). If the bDestroy
@@ -917,7 +923,9 @@ static int fts5FilterMethod(
       /* This is either a full-table scan (ePlan==FTS5_PLAN_SCAN) or a lookup
       ** by rowid (ePlan==FTS5_PLAN_ROWID).  */
       int eStmt = fts5StmtType(idxNum);
-      rc = sqlite3Fts5StorageStmt(pTab->pStorage, eStmt, &pCsr->pStmt);
+      rc = sqlite3Fts5StorageStmt(
+          pTab->pStorage, eStmt, &pCsr->pStmt, &pTab->base.zErrMsg
+      );
       if( rc==SQLITE_OK ){
         if( ePlan==FTS5_PLAN_ROWID ){
           sqlite3_bind_value(pCsr->pStmt, 1, apVal[0]);
@@ -995,7 +1003,9 @@ static int fts5SeekCursor(Fts5Cursor *pCsr){
   if( pCsr->pStmt==0 ){
     Fts5Table *pTab = (Fts5Table*)(pCsr->base.pVtab);
     int eStmt = fts5StmtType(pCsr->idxNum);
-    rc = sqlite3Fts5StorageStmt(pTab->pStorage, eStmt, &pCsr->pStmt);
+    rc = sqlite3Fts5StorageStmt(
+        pTab->pStorage, eStmt, &pCsr->pStmt, &pTab->base.zErrMsg
+    );
     assert( CsrFlagTest(pCsr, FTS5CSR_REQUIRE_CONTENT) );
   }
 
@@ -1100,18 +1110,6 @@ static int fts5UpdateMethod(
   */
   assert( nArg==1 || nArg==(2 + pConfig->nCol + 2) );
 
-  if( nArg>1 ){
-    sqlite3_value *pCmd = sqlite3_value_type(apVal[2 + pConfig->nCol]);
-    if( SQLITE_NULL!=sqlite3_value_type(pCmd) ){
-      const char *z = sqlite3_value_text(pCmd);
-      if( pConfig->bExternalContent && sqlite3_stricmp("delete", z) ){
-        return fts5SpecialDelete(pTab, apVal, pRowid);
-      }else{
-        return fts5SpecialInsert(pTab, pCmd, apVal[2 + pConfig->nCol + 1]);
-      }
-    }
-  }
-
   eType0 = sqlite3_value_type(apVal[0]);
   eConflict = sqlite3_vtab_on_conflict(pConfig->db);
 
@@ -1119,9 +1117,30 @@ static int fts5UpdateMethod(
   assert( pVtab->zErrMsg==0 );
 
   if( rc==SQLITE_OK && eType0==SQLITE_INTEGER ){
-    i64 iDel = sqlite3_value_int64(apVal[0]);    /* Rowid to delete */
-    rc = sqlite3Fts5StorageDelete(pTab->pStorage, iDel);
+    if( fts5IsContentless(pTab) ){
+      pTab->base.zErrMsg = sqlite3_mprintf(
+          "cannot %s contentless fts5 table: %s", 
+          (nArg>1 ? "UPDATE" : "DELETE from"), pConfig->zName
+      );
+      rc = SQLITE_ERROR;
+    }else{
+      i64 iDel = sqlite3_value_int64(apVal[0]);  /* Rowid to delete */
+      rc = sqlite3Fts5StorageDelete(pTab->pStorage, iDel);
+    }
+  }else if( nArg>1 ){
+    sqlite3_value *pCmd = apVal[2 + pConfig->nCol];
+    if( SQLITE_NULL!=sqlite3_value_type(pCmd) ){
+      const char *z = sqlite3_value_text(pCmd);
+      if( pConfig->eContent!=FTS5_CONTENT_NORMAL 
+       && 0==sqlite3_stricmp("delete", z) 
+      ){
+        return fts5SpecialDelete(pTab, apVal, pRowid);
+      }else{
+        return fts5SpecialInsert(pTab, pCmd, apVal[2 + pConfig->nCol + 1]);
+      }
+    }
   }
+
 
   if( rc==SQLITE_OK && nArg>1 ){
     rc = sqlite3Fts5StorageInsert(pTab->pStorage, apVal, eConflict, pRowid);
@@ -1328,11 +1347,17 @@ static int fts5ApiColumnText(
   const char **pz, 
   int *pn
 ){
+  int rc = SQLITE_OK;
   Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
-  int rc = fts5SeekCursor(pCsr);
-  if( rc==SQLITE_OK ){
-    *pz = (const char*)sqlite3_column_text(pCsr->pStmt, iCol+1);
-    *pn = sqlite3_column_bytes(pCsr->pStmt, iCol+1);
+  if( fts5IsContentless((Fts5Table*)(pCsr->base.pVtab)) ){
+    *pz = 0;
+    *pn = 0;
+  }else{
+    rc = fts5SeekCursor(pCsr);
+    if( rc==SQLITE_OK ){
+      *pz = (const char*)sqlite3_column_text(pCsr->pStmt, iCol+1);
+      *pn = sqlite3_column_bytes(pCsr->pStmt, iCol+1);
+    }
   }
   return rc;
 }
@@ -1566,7 +1591,8 @@ static int fts5ColumnMethod(
   sqlite3_context *pCtx,          /* Context for sqlite3_result_xxx() calls */
   int iCol                        /* Index of column to read value from */
 ){
-  Fts5Config *pConfig = ((Fts5Table*)(pCursor->pVtab))->pConfig;
+  Fts5Table *pTab = (Fts5Table*)(pCursor->pVtab);
+  Fts5Config *pConfig = pTab->pConfig;
   Fts5Cursor *pCsr = (Fts5Cursor*)pCursor;
   int rc = SQLITE_OK;
   
@@ -1597,7 +1623,7 @@ static int fts5ColumnMethod(
         fts5ApiInvoke(pCsr->pRank, pCsr, pCtx, pCsr->nRankArg, pCsr->apRankArg);
       }
     }
-  }else{
+  }else if( !fts5IsContentless(pTab) ){
     rc = fts5SeekCursor(pCsr);
     if( rc==SQLITE_OK ){
       sqlite3_result_value(pCtx, sqlite3_column_value(pCsr->pStmt, iCol+1));

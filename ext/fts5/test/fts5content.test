@@ -1,0 +1,99 @@
+# 2014 Dec 20
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+#
+
+if {![info exists testdir]} {
+  set testdir [file join [file dirname [info script]] .. .. .. test]
+}
+source $testdir/tester.tcl
+set testprefix fts5content
+
+do_execsql_test 1.1 {
+  CREATE VIRTUAL TABLE f1 USING fts5(a, b, content='');
+  INSERT INTO f1(rowid, a, b) VALUES(1, 'one',   'o n e');
+  INSERT INTO f1(rowid, a, b) VALUES(2, 'two',   't w o');
+  INSERT INTO f1(rowid, a, b) VALUES(3, 'three', 't h r e e');
+}
+
+do_execsql_test 1.2 {
+  SELECT rowid FROM f1 WHERE f1 MATCH 'o';
+} {2 1}
+
+do_execsql_test 1.3 {
+  INSERT INTO f1(a, b) VALUES('four',   'f o u r');
+  SELECT rowid FROM f1 WHERE f1 MATCH 'o';
+} {4 2 1}
+
+do_execsql_test 1.4 {
+  SELECT rowid, a, b FROM f1 WHERE f1 MATCH 'o';
+} {4 {} {} 2 {} {} 1 {} {}}
+
+do_execsql_test 1.5 {
+  SELECT rowid, highlight(f1, 0, '[', ']') FROM f1 WHERE f1 MATCH 'o';
+} {4 {} 2 {} 1 {}}
+
+do_execsql_test 1.6 {
+  SELECT rowid, highlight(f1, 0, '[', ']') IS NULL FROM f1 WHERE f1 MATCH 'o';
+} {4 1 2 1 1 1}
+
+do_execsql_test 1.7 {
+  SELECT rowid, snippet(f1, -1, '[', ']', '...', 5) IS NULL 
+  FROM f1 WHERE f1 MATCH 'o';
+} {4 1 2 1 1 1}
+
+do_execsql_test 1.8 {
+  SELECT rowid, snippet(f1, 1, '[', ']', '...', 5) IS NULL 
+  FROM f1 WHERE f1 MATCH 'o';
+} {4 1 2 1 1 1}
+
+do_execsql_test 1.9 {
+  SELECT rowid FROM f1;
+} {4 3 2 1}
+
+do_execsql_test 1.10 {
+  SELECT * FROM f1;
+} {{} {}  {} {}  {} {}  {} {}}
+
+do_execsql_test 1.11 {
+  SELECT rowid, a, b FROM f1 ORDER BY rowid ASC;
+} {1 {} {}  2 {} {}  3 {} {}  4 {} {}}
+
+do_execsql_test 1.12 {
+  SELECT a IS NULL FROM f1;
+} {1 1 1 1}
+
+do_catchsql_test 1.13 {
+  DELETE FROM f1 WHERE rowid = 2;
+} {1 {cannot DELETE from contentless fts5 table: f1}}
+
+do_catchsql_test 1.14 {
+  UPDATE f1 SET a = 'a b c' WHERE rowid = 2;
+} {1 {cannot UPDATE contentless fts5 table: f1}}
+
+do_execsql_test 1.15 {
+  INSERT INTO f1(f1, rowid, a, b) VALUES('delete', 2, 'two', 't w o');
+} {}
+
+db eval { SELECT fts5_decode(id, block) AS d FROM f1_data } { puts $d }
+
+breakpoint
+do_execsql_test 1.16 {
+  SELECT rowid FROM f1 WHERE f1 MATCH 'o';
+} {4 1}
+do_execsql_test 1.17 {
+  SELECT rowid FROM f1;
+} {4 3 1}
+
+
+
+
+finish_test

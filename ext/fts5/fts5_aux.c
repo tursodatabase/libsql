@@ -222,21 +222,23 @@ static void fts5HighlightFunction(
   ctx.zClose = (const char*)sqlite3_value_text(apVal[2]);
   rc = pApi->xColumnText(pFts, iCol, &ctx.zIn, &ctx.nIn);
 
-  if( rc==SQLITE_OK ){
-    rc = fts5CInstIterInit(pApi, pFts, iCol, &ctx.iter);
-  }
+  if( ctx.zIn ){
+    if( rc==SQLITE_OK ){
+      rc = fts5CInstIterInit(pApi, pFts, iCol, &ctx.iter);
+    }
 
-  if( rc==SQLITE_OK ){
-    rc = pApi->xTokenize(pFts, ctx.zIn, ctx.nIn, (void*)&ctx, fts5HighlightCb);
-  }
-  fts5HighlightAppend(&rc, &ctx, &ctx.zIn[ctx.iOff], ctx.nIn - ctx.iOff);
+    if( rc==SQLITE_OK ){
+      rc = pApi->xTokenize(pFts, ctx.zIn, ctx.nIn, (void*)&ctx,fts5HighlightCb);
+    }
+    fts5HighlightAppend(&rc, &ctx, &ctx.zIn[ctx.iOff], ctx.nIn - ctx.iOff);
 
-  if( rc==SQLITE_OK ){
-    sqlite3_result_text(pCtx, (const char*)ctx.zOut, -1, SQLITE_TRANSIENT);
-  }else{
-    sqlite3_result_error_code(pCtx, rc);
+    if( rc==SQLITE_OK ){
+      sqlite3_result_text(pCtx, (const char*)ctx.zOut, -1, SQLITE_TRANSIENT);
+    }else{
+      sqlite3_result_error_code(pCtx, rc);
+    }
+    sqlite3_free(ctx.zOut);
   }
-  sqlite3_free(ctx.zOut);
 }
 /*
 ** End of highlight() implementation.
@@ -275,7 +277,6 @@ static void fts5SnippetFunction(
 
   memset(&ctx, 0, sizeof(HighlightContext));
   iCol = sqlite3_value_int(apVal[0]);
-  rc = pApi->xColumnText(pFts, iCol, &ctx.zIn, &ctx.nIn);
   ctx.zOpen = (const char*)sqlite3_value_text(apVal[1]);
   ctx.zClose = (const char*)sqlite3_value_text(apVal[2]);
   zEllips = (const char*)sqlite3_value_text(apVal[3]);
@@ -328,39 +329,41 @@ static void fts5SnippetFunction(
   if( rc==SQLITE_OK ){
     rc = pApi->xColumnText(pFts, iBestCol, &ctx.zIn, &ctx.nIn);
   }
-  if( rc==SQLITE_OK ){
-    rc = fts5CInstIterInit(pApi, pFts, iBestCol, &ctx.iter);
-  }
+  if( ctx.zIn ){
+    if( rc==SQLITE_OK ){
+      rc = fts5CInstIterInit(pApi, pFts, iBestCol, &ctx.iter);
+    }
 
-  if( (iBestStart+nToken-1)>iBestLast ){
-    iBestStart -= (iBestStart+nToken-1-iBestLast) / 2;
-  }
-  if( iBestStart+nToken>nColSize ){
-    iBestStart = nColSize - nToken;
-  }
-  if( iBestStart<0 ) iBestStart = 0;
+    if( (iBestStart+nToken-1)>iBestLast ){
+      iBestStart -= (iBestStart+nToken-1-iBestLast) / 2;
+    }
+    if( iBestStart+nToken>nColSize ){
+      iBestStart = nColSize - nToken;
+    }
+    if( iBestStart<0 ) iBestStart = 0;
 
-  ctx.iRangeStart = iBestStart;
-  ctx.iRangeEnd = iBestStart + nToken - 1;
+    ctx.iRangeStart = iBestStart;
+    ctx.iRangeEnd = iBestStart + nToken - 1;
 
-  if( iBestStart>0 ){
-    fts5HighlightAppend(&rc, &ctx, zEllips, -1);
-  }
-  if( rc==SQLITE_OK ){
-    rc = pApi->xTokenize(pFts, ctx.zIn, ctx.nIn, (void*)&ctx, fts5HighlightCb);
-  }
-  if( ctx.iRangeEnd>=(nColSize-1) ){
-    fts5HighlightAppend(&rc, &ctx, &ctx.zIn[ctx.iOff], ctx.nIn - ctx.iOff);
-  }else{
-    fts5HighlightAppend(&rc, &ctx, zEllips, -1);
-  }
+    if( iBestStart>0 ){
+      fts5HighlightAppend(&rc, &ctx, zEllips, -1);
+    }
+    if( rc==SQLITE_OK ){
+      rc = pApi->xTokenize(pFts, ctx.zIn, ctx.nIn, (void*)&ctx,fts5HighlightCb);
+    }
+    if( ctx.iRangeEnd>=(nColSize-1) ){
+      fts5HighlightAppend(&rc, &ctx, &ctx.zIn[ctx.iOff], ctx.nIn - ctx.iOff);
+    }else{
+      fts5HighlightAppend(&rc, &ctx, zEllips, -1);
+    }
 
-  if( rc==SQLITE_OK ){
-    sqlite3_result_text(pCtx, (const char*)ctx.zOut, -1, SQLITE_TRANSIENT);
-  }else{
-    sqlite3_result_error_code(pCtx, rc);
+    if( rc==SQLITE_OK ){
+      sqlite3_result_text(pCtx, (const char*)ctx.zOut, -1, SQLITE_TRANSIENT);
+    }else{
+      sqlite3_result_error_code(pCtx, rc);
+    }
+    sqlite3_free(ctx.zOut);
   }
-  sqlite3_free(ctx.zOut);
   sqlite3_free(aSeen);
 }
 
