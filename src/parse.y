@@ -415,14 +415,18 @@ select(A) ::= with(W) selectnowith(X). {
     int cnt = 0, mxSelect;
     p->pWith = W;
     if( p->pPrior ){
+      u16 allValues = SF_Values;
       pNext = 0;
       for(pLoop=p; pLoop; pNext=pLoop, pLoop=pLoop->pPrior, cnt++){
         pLoop->pNext = pNext;
         pLoop->selFlags |= SF_Compound;
+        allValues &= pLoop->selFlags;
       }
-      if( (p->selFlags & SF_Values)==0
-       && (mxSelect = pParse->db->aLimit[SQLITE_LIMIT_COMPOUND_SELECT])>0
-       && cnt>mxSelect
+      if( allValues ){
+        p->selFlags |= SF_AllValues;
+      }else if(
+        (mxSelect = pParse->db->aLimit[SQLITE_LIMIT_COMPOUND_SELECT])>0
+        && cnt>mxSelect
       ){
         sqlite3ErrorMsg(pParse, "too many terms in compound SELECT");
       }

@@ -1,5 +1,5 @@
-C Towards\sgetting\sINSERT\sstatements\sto\sexcept\smany\sVALUE\sterms\s(more\sthan\nthe\slimit\simposed\sby\sSQLITE_LIMIT_COMPOUND_SELECT).\s\sThis\scheck-in\ssegfaults\non\sa\sstack\soverflow.\s\sAnd\sit\sis\sslow.
-D 2015-01-05T16:27:43.075
+C Handle\scompound-select\sstatements\soriginating\sfrom\sVALUES\sclauses\sas\sa\nspecial\scase\sthat\sdoes\snot\suse\srecursion.
+D 2015-01-05T19:16:42.892
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 335e2d3ff0f2455eacbfa3075fc37495e3321410
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -218,7 +218,7 @@ F src/os_win.c 91d3d08e33ec0258d180d4c8255492f47d15e007
 F src/os_win.h 09e751b20bbc107ffbd46e13555dc73576d88e21
 F src/pager.c 4120a49ecd37697e28f5ed807f470b9c0b88410c
 F src/pager.h c3476e7c89cdf1c6914e50a11f3714e30b4e0a77
-F src/parse.y 075cad65e0393df1362b87e5cd766220b880f3a7
+F src/parse.y c5d0d964f9ac023e8154cad512e54b0b6058e086
 F src/pcache.c b83d160ce81ca101f98f0d27498e6d6bd49f1599
 F src/pcache.h b44658c9c932d203510279439d891a2a83e12ba8
 F src/pcache1.c 1e77432b40b7d3288327d9cdf399dcdfd2b6d3bf
@@ -228,12 +228,12 @@ F src/printf.c 9e75a6a0b55bf61cfff7d7e19d89834a1b938236
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c f6c46d3434439ab2084618d603e6d6dbeb0d6ada
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c 28cf616a8791ff154be86bd9a3f888440f618e78
+F src/select.c 4776e16d19296f0f93ecd9431dca8bc3e3182714
 F src/shell.c 45d9c9bd7cde07845af957f2d849933b990773cf
 F src/sqlite.h.in ed799ff5c814227c7957eb4f4a217f67fdc0da48
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
-F src/sqliteInt.h 3e0079855cb7b3c85dffac5bcbb1cd712ac62e65
+F src/sqliteInt.h 5d5716d8b33a61606c6ee10112f4b6df56f42725
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 81712116e826b0089bb221b018929536b2b5406f
 F src/table.c e7a09215315a978057fb42c640f890160dbcc45e
@@ -1235,10 +1235,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fe677d13f03e24fa667efc0c2e7f5bbb99521791
-R 54acf3852000e5cc7341ca33524e221b
-T *branch * many-VALUEs
-T *sym-many-VALUEs *
-T -sym-trunk *
+P c9d65f739ad56f016c676e79aa39080be3fe868a
+R 382474f6cec467234b3ff04ac38978b4
 U drh
-Z 9fc3f9e17e26a0964cf77234a16c2176
+Z 33ab3e676dc0271c6784ea259fd00ed6
