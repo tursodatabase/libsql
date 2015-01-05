@@ -50,6 +50,7 @@
 #![feature(globs)]
 #![feature(unsafe_destructor)]
 #![feature(macro_rules)]
+#![feature(associated_types)]
 
 extern crate libc;
 
@@ -564,7 +565,9 @@ impl<'stmt> SqliteRows<'stmt> {
     }
 }
 
-impl<'stmt> Iterator<SqliteResult<SqliteRow<'stmt>>> for SqliteRows<'stmt> {
+impl<'stmt> Iterator for SqliteRows<'stmt> {
+    type Item = SqliteResult<SqliteRow<'stmt>>;
+
     fn next(&mut self) -> Option<SqliteResult<SqliteRow<'stmt>>> {
         if self.failed {
             return None;
