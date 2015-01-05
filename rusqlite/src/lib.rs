@@ -8,7 +8,7 @@
 //! use time::Timespec;
 //! use rusqlite::SqliteConnection;
 //!
-//! #[deriving(Show)]
+//! #[derive(Show)]
 //! struct Person {
 //!     id: i32,
 //!     name: String,
@@ -84,7 +84,7 @@ unsafe fn errmsg_to_string(errmsg: *const c_char) -> String {
 }
 
 /// Encompasses an error result from a call to the SQLite C API.
-#[deriving(Show)]
+#[derive(Show)]
 pub struct SqliteError {
     /// The error code returned by a SQLite C API call. See [SQLite Result
     /// Codes](http://www.sqlite.org/rescode.html) for details.
