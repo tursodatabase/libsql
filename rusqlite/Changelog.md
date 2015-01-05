@@ -1,3 +1,7 @@
+# Version 0.0.4 (2014-01-05)
+
+* Updates to track latest rustc changes.
+
 # Version 0.0.3 (2014-12-23)
 
 * Updates to track latest rustc changes.
