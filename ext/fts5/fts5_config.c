@@ -364,7 +364,7 @@ static int fts5ConfigParseSpecial(
     return rc;
   }
 
-  *pzErr = sqlite3_mprintf("unrecognized directive: \"%s\"", zCmd);
+  *pzErr = sqlite3_mprintf("unrecognized option: \"%.*s\"", nCmd, zCmd);
   return SQLITE_ERROR;
 }
 
@@ -588,7 +588,7 @@ int sqlite3Fts5Tokenize(
   Fts5Config *pConfig,            /* FTS5 Configuration object */
   const char *pText, int nText,   /* Text to tokenize */
   void *pCtx,                     /* Context passed to xToken() */
-  int (*xToken)(void*, const char*, int, int, int, int)    /* Callback */
+  int (*xToken)(void*, const char*, int, int, int)    /* Callback */
 ){
   return pConfig->pTokApi->xTokenize(pConfig->pTok, pCtx, pText, nText, xToken);
 }

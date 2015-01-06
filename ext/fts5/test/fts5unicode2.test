@@ -14,10 +14,7 @@
 # This is a modified copy of FTS4 test file "fts4_unicode.test".
 #
 
-if {![info exists testdir]} {
-  set testdir [file join [file dirname [info script]] .. .. .. test]
-}
-source $testdir/tester.tcl
+source [file join [file dirname [info script]] fts5_common.tcl]
 set testprefix fts5unicode2
 
 proc do_unicode_token_test {tn input res} {
@@ -41,37 +38,37 @@ proc do_unicode_token_test3 {tn args} {
   ] [list {*}$res]]
 }
 
-do_unicode_token_test 1.0 {a B c D} {0 a a 1 b B 2 c c 3 d D}
+do_unicode_token_test 1.0 {a B c D} {a a b B c c d D}
 
 do_unicode_token_test 1.1 "\uC4 \uD6 \uDC" \
-    "0 \uE4 \uC4 1 \uF6 \uD6 2 \uFC \uDC"
+    "\uE4 \uC4 \uF6 \uD6 \uFC \uDC"
 
 do_unicode_token_test 1.2 "x\uC4x x\uD6x x\uDCx" \
-    "0 x\uE4x x\uC4x 1 x\uF6x x\uD6x 2 x\uFCx x\uDCx"
+    "x\uE4x x\uC4x x\uF6x x\uD6x x\uFCx x\uDCx"
 
 # 0x00DF is a small "sharp s". 0x1E9E is a capital sharp s.
-do_unicode_token_test 1.3 "\uDF" "0 \uDF \uDF"
-do_unicode_token_test 1.4 "\u1E9E" "0 \uDF \u1E9E"
+do_unicode_token_test 1.3 "\uDF" "\uDF \uDF"
+do_unicode_token_test 1.4 "\u1E9E" "\uDF \u1E9E"
 
 do_unicode_token_test 1.5 "The quick brown fox" {
-  0 the The 1 quick quick 2 brown brown 3 fox fox
+  the The quick quick brown brown fox fox
 }
 do_unicode_token_test 1.6 "The\u00bfquick\u224ebrown\u2263fox" {
-  0 the The 1 quick quick 2 brown brown 3 fox fox
+  the The quick quick brown brown fox fox
 }
 
-do_unicode_token_test2 1.7  {a B c D} {0 a a 1 b B 2 c c 3 d D}
-do_unicode_token_test2 1.8  "\uC4 \uD6 \uDC" "0 a \uC4 1 o \uD6 2 u \uDC"
+do_unicode_token_test2 1.7  {a B c D} {a a b B c c d D}
+do_unicode_token_test2 1.8  "\uC4 \uD6 \uDC" "a \uC4 o \uD6 u \uDC"
 
 do_unicode_token_test2 1.9  "x\uC4x x\uD6x x\uDCx" \
-    "0 xax x\uC4x 1 xox x\uD6x 2 xux x\uDCx"
+    "xax x\uC4x xox x\uD6x xux x\uDCx"
 
 # Check that diacritics are removed if remove_diacritics=1 is specified.
 # And that they do not break tokens.
-do_unicode_token_test2 1.10 "xx\u0301xx" "0 xxxx xx\u301xx"
+do_unicode_token_test2 1.10 "xx\u0301xx" "xxxx xx\u301xx"
 
 # Title-case mappings work
-do_unicode_token_test 1.11 "\u01c5" "0 \u01c6 \u01c5"
+do_unicode_token_test 1.11 "\u01c5" "\u01c6 \u01c5"
 
 #-------------------------------------------------------------------------
 #
@@ -263,45 +260,45 @@ breakpoint
 do_unicode_token_test3 5.1 {tokenchars {}} {
   sqlite3_reset sqlite3_column_int
 } {
-  0 sqlite3 sqlite3 
-  1 reset reset 
-  2 sqlite3 sqlite3 
-  3 column column 
-  4 int int
+  sqlite3 sqlite3 
+  reset reset 
+  sqlite3 sqlite3 
+  column column 
+  int int
 }
 
 do_unicode_token_test3 5.2 {tokenchars _} {
   sqlite3_reset sqlite3_column_int
 } {
-  0 sqlite3_reset sqlite3_reset 
-  1 sqlite3_column_int sqlite3_column_int
+  sqlite3_reset sqlite3_reset 
+  sqlite3_column_int sqlite3_column_int
 }
 
 do_unicode_token_test3 5.3 {separators xyz} {
   Laotianxhorseyrunszfast
 } {
-  0 laotian Laotian
-  1 horse horse
-  2 runs runs
-  3 fast fast
+  laotian Laotian
+  horse horse
+  runs runs
+  fast fast
 }
 
 do_unicode_token_test3 5.4 {tokenchars xyz} {
   Laotianxhorseyrunszfast
 } {
-  0 laotianxhorseyrunszfast Laotianxhorseyrunszfast
+  laotianxhorseyrunszfast Laotianxhorseyrunszfast
 }
 
 do_unicode_token_test3 5.5 {tokenchars _} {separators zyx} {
   sqlite3_resetxsqlite3_column_intyhonda_phantom
 } {
-  0 sqlite3_reset sqlite3_reset 
-  1 sqlite3_column_int sqlite3_column_int
-  2 honda_phantom honda_phantom
+  sqlite3_reset sqlite3_reset 
+  sqlite3_column_int sqlite3_column_int
+  honda_phantom honda_phantom
 }
 
 do_unicode_token_test3 5.6 "separators \u05D1" "abc\u05D1def" {
-  0 abc abc 1 def def
+  abc abc def def
 }
 
 do_unicode_token_test3 5.7                             \
@@ -309,38 +306,37 @@ do_unicode_token_test3 5.7                             \
   "separators \u05D0\u05D1\u05D2"                      \
   "\u2444fre\u2445sh\u05D0water\u05D2fish.\u2445timer" \
   [list                                                \
-    0 \u2444fre\u2445sh \u2444fre\u2445sh              \
-    1 water water                                      \
-    2 fish fish                                        \
-    3 \u2445timer \u2445timer                          \
+    \u2444fre\u2445sh \u2444fre\u2445sh              \
+    water water                                      \
+    fish fish                                        \
+    \u2445timer \u2445timer                          \
   ]
 
 # Check that it is not possible to add a standalone diacritic codepoint 
 # to either separators or tokenchars.
 do_unicode_token_test3 5.8 "separators \u0301" \
   "hello\u0301world \u0301helloworld"          \
-  "0 helloworld hello\u0301world 1 helloworld helloworld"
+  "helloworld hello\u0301world helloworld helloworld"
 
 do_unicode_token_test3 5.9 "tokenchars \u0301" \
   "hello\u0301world \u0301helloworld"          \
-  "0 helloworld hello\u0301world 1 helloworld helloworld"
+  "helloworld hello\u0301world helloworld helloworld"
 
 do_unicode_token_test3 5.10 "separators \u0301" \
   "remove_diacritics 0"                        \
   "hello\u0301world \u0301helloworld"          \
-  "0 hello\u0301world hello\u0301world 1 helloworld helloworld"
+  "hello\u0301world hello\u0301world helloworld helloworld"
 
 do_unicode_token_test3 5.11 "tokenchars \u0301" \
   "remove_diacritics 0"                         \
   "hello\u0301world \u0301helloworld"           \
-  "0 hello\u0301world hello\u0301world 1 helloworld helloworld"
-
+  "hello\u0301world hello\u0301world helloworld helloworld"
 
 #-------------------------------------------------------------------------
 
 proc do_tokenize {tokenizer txt} {
   set res [list]
-  foreach {a b c} [sqlite3_fts5_tokenize -subst db $tokenizer $txt] {
+  foreach {b c} [sqlite3_fts5_tokenize -subst db $tokenizer $txt] {
     lappend res $b
   }
   set res
@@ -391,6 +387,7 @@ foreach T $tokenizers {
   do_isspace_test 6.$T.23 $T   {8287 12288}
 }
 
+
 #-------------------------------------------------------------------------
 # Test that the private use ranges are treated as alphanumeric.
 #
@@ -398,8 +395,8 @@ foreach {tn1 c} {
   1 \ue000 2 \ue001 3 \uf000 4 \uf8fe 5 \uf8ff
 } {
   foreach {tn2 config res} {
-    1 ""             "0 hello*world hello*world"
-    2 "separators *" "0 hello hello 1 world world"
+    1 ""             "hello*world hello*world"
+    2 "separators *" "hello hello world world"
   } {
     set config [string map [list * $c] $config]
     set input  [string map [list * $c] "hello*world"]

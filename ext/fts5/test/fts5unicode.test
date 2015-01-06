@@ -12,16 +12,13 @@
 # Tests focusing on the fts5 tokenizers
 #
 
-if {![info exists testdir]} {
-  set testdir [file join [file dirname [info script]] .. .. .. test]
-}
-source $testdir/tester.tcl
+source [file join [file dirname [info script]] fts5_common.tcl]
 set testprefix fts5unicode
 
 proc tokenize_test {tn tokenizer input output} {
   uplevel [list do_test $tn [subst -nocommands {
     set ret {}
-    foreach {z s e p} [sqlite3_fts5_tokenize db {$tokenizer} {$input}] {
+    foreach {z s e} [sqlite3_fts5_tokenize db {$tokenizer} {$input}] {
       lappend ret [set z]
     }
     set ret

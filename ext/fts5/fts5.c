@@ -1130,7 +1130,7 @@ static int fts5UpdateMethod(
   }else if( nArg>1 ){
     sqlite3_value *pCmd = apVal[2 + pConfig->nCol];
     if( SQLITE_NULL!=sqlite3_value_type(pCmd) ){
-      const char *z = sqlite3_value_text(pCmd);
+      const char *z = (const char*)sqlite3_value_text(pCmd);
       if( pConfig->eContent!=FTS5_CONTENT_NORMAL 
        && 0==sqlite3_stricmp("delete", z) 
       ){
@@ -1220,7 +1220,7 @@ static int fts5ApiTokenize(
   Fts5Context *pCtx, 
   const char *pText, int nText, 
   void *pUserData,
-  int (*xToken)(void*, const char*, int, int, int, int)
+  int (*xToken)(void*, const char*, int, int, int)
 ){
   Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
   Fts5Table *pTab = (Fts5Table*)(pCsr->base.pVtab);

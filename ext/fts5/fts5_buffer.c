@@ -58,7 +58,6 @@ int sqlite3Fts5Get32(const u8 *aBuf){
 }
 
 void sqlite3Fts5BufferAppend32(int *pRc, Fts5Buffer *pBuf, int iVal){
-  char *a;
   if( sqlite3Fts5BufferGrow(pRc, pBuf, 4) ) return;
   sqlite3Fts5Put32(&pBuf->p[pBuf->n], iVal);
   pBuf->n += 4;

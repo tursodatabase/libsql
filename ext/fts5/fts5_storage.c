@@ -282,12 +282,11 @@ static int fts5StorageInsertCallback(
   const char *pToken,             /* Buffer containing token */
   int nToken,                     /* Size of token in bytes */
   int iStart,                     /* Start offset of token */
-  int iEnd,                       /* End offset of token */
-  int iPos                        /* Position offset of token */
+  int iEnd                        /* End offset of token */
 ){
   Fts5InsertCtx *pCtx = (Fts5InsertCtx*)pContext;
   Fts5Index *pIdx = pCtx->pStorage->pIndex;
-  pCtx->szCol = iPos+1;
+  int iPos = pCtx->szCol++;
   return sqlite3Fts5IndexWrite(pIdx, pCtx->iCol, iPos, pToken, nToken);
 }
 
@@ -312,6 +311,7 @@ static int fts5StorageDeleteFromIndex(Fts5Storage *p, i64 iDel){
       ctx.iCol = -1;
       rc = sqlite3Fts5IndexBeginWrite(p->pIndex, iDel);
       for(iCol=1; rc==SQLITE_OK && iCol<=pConfig->nCol; iCol++){
+        ctx.szCol = 0;
         rc = sqlite3Fts5Tokenize(pConfig, 
             (const char*)sqlite3_column_text(pSeek, iCol),
             sqlite3_column_bytes(pSeek, iCol),
@@ -474,6 +474,7 @@ int sqlite3Fts5StorageSpecialDelete(
 
     rc = sqlite3Fts5IndexBeginWrite(p->pIndex, iDel);
     for(iCol=0; rc==SQLITE_OK && iCol<pConfig->nCol; iCol++){
+      ctx.szCol = 0;
       rc = sqlite3Fts5Tokenize(pConfig, 
         (const char*)sqlite3_value_text(apVal[iCol]),
         sqlite3_value_bytes(apVal[iCol]),
@@ -651,14 +652,13 @@ static int fts5StorageIntegrityCallback(
   const char *pToken,             /* Buffer containing token */
   int nToken,                     /* Size of token in bytes */
   int iStart,                     /* Start offset of token */
-  int iEnd,                       /* End offset of token */
-  int iPos                        /* Position offset of token */
+  int iEnd                        /* End offset of token */
 ){
   Fts5IntegrityCtx *pCtx = (Fts5IntegrityCtx*)pContext;
+  int iPos = pCtx->szCol++;
   pCtx->cksum ^= sqlite3Fts5IndexCksum(
       pCtx->pConfig, pCtx->iRowid, pCtx->iCol, iPos, pToken, nToken
   );
-  pCtx->szCol = iPos+1;
   return SQLITE_OK;
 }
 
@@ -695,6 +695,7 @@ int sqlite3Fts5StorageIntegrity(Fts5Storage *p){
       rc = sqlite3Fts5StorageDocsize(p, ctx.iRowid, aColSize);
       for(i=0; rc==SQLITE_OK && i<pConfig->nCol; i++){
         ctx.iCol = i;
+        ctx.szCol = 0;
         rc = sqlite3Fts5Tokenize(
             pConfig, 
             (const char*)sqlite3_column_text(pScan, i+1),

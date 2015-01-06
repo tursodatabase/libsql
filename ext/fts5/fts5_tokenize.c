@@ -16,27 +16,8 @@
 #include <assert.h>
 
 /**************************************************************************
-** Start of unicode61 tokenizer implementation.
+** Start of simple tokenizer implementation.
 */
-
-/*
-** Create a "simple" tokenizer.
-*/
-static int fts5SimpleCreate(
-  void *pCtx, 
-  const char **azArg, int nArg,
-  Fts5Tokenizer **ppOut
-){
-  *ppOut = 0;
-  return SQLITE_OK;
-}
-
-/*
-** Delete a "simple" tokenizer.
-*/
-static void fts5SimpleDelete(Fts5Tokenizer *p){
-  return;
-}
 
 /*
 ** For tokenizers with no "unicode" modifier, the set of token characters
@@ -52,6 +33,69 @@ static unsigned char aSimpleTokenChar[128] = {
   0, 1, 1, 1, 1, 1, 1, 1,   1, 1, 1, 1, 1, 1, 1, 1,   /* 0x60..0x6F */
   1, 1, 1, 1, 1, 1, 1, 1,   1, 1, 1, 0, 0, 0, 0, 0,   /* 0x70..0x7F */
 };
+
+typedef struct SimpleTokenizer SimpleTokenizer;
+struct SimpleTokenizer {
+  unsigned char aTokenChar[128];
+};
+
+static void fts5SimpleAddExceptions(
+  SimpleTokenizer *p, 
+  const char *zArg, 
+  int bTokenChars
+){
+  int i;
+  for(i=0; zArg[i]; i++){
+    if( (zArg[i] & 0x80)==0 ){
+      p->aTokenChar[(int)zArg[i]] = (unsigned char)bTokenChars;
+    }
+  }
+}
+
+/*
+** Create a "simple" tokenizer.
+*/
+static int fts5SimpleCreate(
+  void *pCtx, 
+  const char **azArg, int nArg,
+  Fts5Tokenizer **ppOut
+){
+  int rc = SQLITE_OK;
+  SimpleTokenizer *p = 0;
+  if( nArg%2 ){
+    rc = SQLITE_ERROR;
+  }else{
+    p = sqlite3_malloc(sizeof(SimpleTokenizer));
+    if( p==0 ){
+      rc = SQLITE_NOMEM;
+    }else{
+      int i;
+      memset(p, 0, sizeof(SimpleTokenizer));
+      memcpy(p->aTokenChar, aSimpleTokenChar, sizeof(aSimpleTokenChar));
+      for(i=0; rc==SQLITE_OK && i<nArg; i+=2){
+        const char *zArg = azArg[i+1];
+        if( 0==sqlite3_stricmp(azArg[i], "tokenchars") ){
+          fts5SimpleAddExceptions(p, zArg, 1);
+        }else
+        if( 0==sqlite3_stricmp(azArg[i], "separators") ){
+          fts5SimpleAddExceptions(p, zArg, 0);
+        }else{
+          rc = SQLITE_ERROR;
+        }
+      }
+    }
+  }
+
+  *ppOut = (Fts5Tokenizer*)p;
+  return rc;
+}
+
+/*
+** Delete a "simple" tokenizer.
+*/
+static void fts5SimpleDelete(Fts5Tokenizer *p){
+  sqlite3_free(p);
+}
 
 
 static void simpleFold(char *aOut, const char *aIn, int nByte){
@@ -70,29 +114,30 @@ static int fts5SimpleTokenize(
   Fts5Tokenizer *pTokenizer,
   void *pCtx,
   const char *pText, int nText,
-  int (*xToken)(void*, const char*, int nToken, int iStart, int iEnd, int iPos)
+  int (*xToken)(void*, const char*, int nToken, int iStart, int iEnd)
 ){
+  SimpleTokenizer *p = (SimpleTokenizer*)pTokenizer;
   int rc = SQLITE_OK;
   int ie;
   int is = 0;
-  int iPos = 0;
 
   char aFold[64];
   int nFold = sizeof(aFold);
   char *pFold = aFold;
+  unsigned char *a = p->aTokenChar;
 
   while( is<nText && rc==SQLITE_OK ){
     int nByte;
 
     /* Skip any leading divider characters. */
-    while( is<nText && ((pText[is]&0x80) || aSimpleTokenChar[pText[is]]==0 ) ){
+    while( is<nText && ((pText[is]&0x80) || a[(int)pText[is]]==0) ){
       is++;
     }
     if( is==nText ) break;
 
     /* Count the token characters */
     ie = is+1;
-    while( ie<nText && ((pText[ie]&0x80)==0 && aSimpleTokenChar[pText[ie]] ) ){
+    while( ie<nText && ((pText[ie]&0x80)==0 && a[(int)pText[ie]] ) ){
       ie++;
     }
 
@@ -110,8 +155,7 @@ static int fts5SimpleTokenize(
     simpleFold(pFold, &pText[is], nByte);
 
     /* Invoke the token callback */
-    rc = xToken(pCtx, pFold, nByte, is, ie, iPos);
-    iPos++;
+    rc = xToken(pCtx, pFold, nByte, is, ie);
     is = ie+1;
   }
   
@@ -328,7 +372,7 @@ static int fts5UnicodeTokenize(
   Fts5Tokenizer *pTokenizer,
   void *pCtx,
   const char *pText, int nText,
-  int (*xToken)(void*, const char*, int nToken, int iStart, int iEnd, int iPos)
+  int (*xToken)(void*, const char*, int nToken, int iStart, int iEnd)
 ){
   Unicode61Tokenizer *p = (Unicode61Tokenizer*)pTokenizer;
   const unsigned char *zInput = (const unsigned char*)pText;
@@ -338,7 +382,6 @@ static int fts5UnicodeTokenize(
   int nBuf = 0;
   unsigned char *zBuf = 0;
   unsigned char *zOut = 0;
-  int iPos = 0;
 
   while( rc==SQLITE_OK && z<zTerm ){
     int iCode;
@@ -378,9 +421,8 @@ static int fts5UnicodeTokenize(
 
     if( zOut>zBuf && (bAlnum==0 || z>=zTerm) ){
       int ie = (bAlnum ? z : zCode) - zInput;
-      rc = xToken(pCtx, (const char*)zBuf, zOut-zBuf, zStart-zInput, ie, iPos);
+      rc = xToken(pCtx, (const char*)zBuf, zOut-zBuf, zStart-zInput, ie);
       zOut = zBuf;
-      iPos++;
     }
   }
 
@@ -390,7 +432,7 @@ static int fts5UnicodeTokenize(
 }
 
 /**************************************************************************
-** Start of porter2 stemmer implementation.
+** Start of porter stemmer implementation.
 */
 
 /* Any tokens larger than this (in bytes) are passed through without
@@ -452,7 +494,7 @@ static int fts5PorterCreate(
 typedef struct PorterContext PorterContext;
 struct PorterContext {
   void *pCtx;
-  int (*xToken)(void*, const char*, int, int, int, int);
+  int (*xToken)(void*, const char*, int, int, int);
   char *aBuf;
 };
 
@@ -469,7 +511,6 @@ static int fts5PorterApply(char *aBuf, int *pnBuf, PorterRule *aRule){
   int ret = -1;
   int nBuf = *pnBuf;
   PorterRule *p;
-
 
   for(p=aRule; p->zSuffix; p++){
     assert( strlen(p->zSuffix)==p->nSuffix );
@@ -577,8 +618,7 @@ static int fts5PorterCb(
   const char *pToken, 
   int nToken, 
   int iStart, 
-  int iEnd, 
-  int iPos
+  int iEnd
 ){
   PorterContext *p = (PorterContext*)pCtx;
 
@@ -716,10 +756,10 @@ static int fts5PorterCb(
     nBuf--;
   }
 
-  return p->xToken(p->pCtx, aBuf, nBuf, iStart, iEnd, iPos);
+  return p->xToken(p->pCtx, aBuf, nBuf, iStart, iEnd);
 
  pass_through:
-  return p->xToken(p->pCtx, pToken, nToken, iStart, iEnd, iPos);
+  return p->xToken(p->pCtx, pToken, nToken, iStart, iEnd);
 }
 
 /*
@@ -729,7 +769,7 @@ static int fts5PorterTokenize(
   Fts5Tokenizer *pTokenizer,
   void *pCtx,
   const char *pText, int nText,
-  int (*xToken)(void*, const char*, int nToken, int iStart, int iEnd, int iPos)
+  int (*xToken)(void*, const char*, int nToken, int iStart, int iEnd)
 ){
   PorterTokenizer *p = (PorterTokenizer*)pTokenizer;
   PorterContext sCtx;

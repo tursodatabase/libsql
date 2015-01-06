@@ -1921,4 +1921,3 @@ database_never_corrupt
 
 source $testdir/thread_common.tcl
 source $testdir/malloc_common.tcl
-source $testdir/fts5_common.tcl

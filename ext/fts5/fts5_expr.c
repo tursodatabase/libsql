@@ -457,9 +457,11 @@ static int fts5LookaheadReaderInit(
   return fts5LookaheadReaderNext(p);
 }
 
+#if 0
 static int fts5LookaheadReaderEof(Fts5LookaheadReader *p){
   return (p->iPos==FTS5_LOOKAHEAD_EOF);
 }
+#endif
 
 typedef struct Fts5NearTrimmer Fts5NearTrimmer;
 struct Fts5NearTrimmer {
@@ -1141,8 +1143,7 @@ static int fts5ParseTokenize(
   const char *pToken,             /* Buffer containing token */
   int nToken,                     /* Size of token in bytes */
   int iStart,                     /* Start offset of token */
-  int iEnd,                       /* End offset of token */
-  int iPos                        /* Position offset of token */
+  int iEnd                        /* End offset of token */
 ){
   int rc = SQLITE_OK;
   const int SZALLOC = 8;

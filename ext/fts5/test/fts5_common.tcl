@@ -10,7 +10,10 @@
 #***********************************************************************
 #
 
-
+if {![info exists testdir]} {
+  set testdir [file join [file dirname [info script]] .. .. .. test]
+}
+source $testdir/tester.tcl
 
 
 proc fts5_test_poslist {cmd} {
@@ -45,7 +48,7 @@ proc fts5_test_columntotalsize {cmd} {
   set res
 }
 
-proc test_append_token {varname token iStart iEnd iPos} {
+proc test_append_token {varname token iStart iEnd} {
   upvar $varname var
   lappend var $token
 }

@@ -195,7 +195,7 @@ struct Fts5ExtensionApi {
   int (*xTokenize)(Fts5Context*, 
     const char *pText, int nText, /* Text to tokenize */
     void *pCtx,                   /* Context passed to xToken() */
-    int (*xToken)(void*, const char*, int, int, int, int)    /* Callback */
+    int (*xToken)(void*, const char*, int, int, int)       /* Callback */
   );
 
   int (*xPhraseCount)(Fts5Context*);
@@ -291,8 +291,7 @@ struct fts5_tokenizer {
         const char *pToken, /* Pointer to buffer containing token */
         int nToken,         /* Size of token in bytes */
         int iStart,         /* Byte offset of token within input text */
-        int iEnd,           /* Byte offset of end of token within input text */
-        int iPos            /* Position of token in input (first token is 0) */
+        int iEnd            /* Byte offset of end of token within input text */
       )
   );
 };

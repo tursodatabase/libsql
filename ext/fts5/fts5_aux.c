@@ -47,13 +47,6 @@ struct CInstIter {
 };
 
 /*
-** Return non-zero if the iterator is at EOF, or zero otherwise.
-*/
-static int fts5CInstIterEof(CInstIter *pIter){
-  return (pIter->iStart < 0);
-}
-
-/*
 ** Advance the iterator to the next coalesced phrase instance. Return
 ** an SQLite error code if an error occurs, or SQLITE_OK otherwise.
 */
@@ -117,6 +110,7 @@ static int fts5CInstIterInit(
 typedef struct HighlightContext HighlightContext;
 struct HighlightContext {
   CInstIter iter;                 /* Coalesced Instance Iterator */
+  int iPos;                       /* Current token offset in zIn[] */
   int iRangeStart;                /* First token to include */
   int iRangeEnd;                  /* If non-zero, last token to include */
   const char *zOpen;              /* Opening highlight */
@@ -156,11 +150,11 @@ static int fts5HighlightCb(
   const char *pToken,             /* Buffer containing token */
   int nToken,                     /* Size of token in bytes */
   int iStartOff,                  /* Start offset of token */
-  int iEndOff,                    /* End offset of token */
-  int iPos                        /* Position offset of token */
+  int iEndOff                     /* End offset of token */
 ){
   HighlightContext *p = (HighlightContext*)pContext;
   int rc = SQLITE_OK;
+  int iPos = p->iPos++;
 
   if( p->iRangeEnd>0 ){
     if( iPos<p->iRangeStart || iPos>p->iRangeEnd ) return SQLITE_OK;

@@ -112,7 +112,7 @@ struct F5tAuxData {
 static int xTokenizeCb(
   void *pCtx, 
   const char *zToken, int nToken, 
-  int iStart, int iEnd, int iPos
+  int iStart, int iEnd
 ){
   F5tFunction *p = (F5tFunction*)pCtx;
   Tcl_Obj *pEval = Tcl_DuplicateObj(p->pScript);
@@ -122,7 +122,6 @@ static int xTokenizeCb(
   Tcl_ListObjAppendElement(p->interp, pEval, Tcl_NewStringObj(zToken, nToken));
   Tcl_ListObjAppendElement(p->interp, pEval, Tcl_NewIntObj(iStart));
   Tcl_ListObjAppendElement(p->interp, pEval, Tcl_NewIntObj(iEnd));
-  Tcl_ListObjAppendElement(p->interp, pEval, Tcl_NewIntObj(iPos));
 
   rc = Tcl_EvalObjEx(p->interp, pEval, 0);
   Tcl_DecrRefCount(pEval);
@@ -528,11 +527,10 @@ struct F5tTokenizeCtx {
 static int xTokenizeCb2(
   void *pCtx, 
   const char *zToken, int nToken, 
-  int iStart, int iEnd, int iPos
+  int iStart, int iEnd
 ){
   F5tTokenizeCtx *p = (F5tTokenizeCtx*)pCtx;
   if( p->bSubst ){
-    Tcl_ListObjAppendElement(0, p->pRet, Tcl_NewIntObj(iPos));
     Tcl_ListObjAppendElement(0, p->pRet, Tcl_NewStringObj(zToken, nToken));
     Tcl_ListObjAppendElement(
         0, p->pRet, Tcl_NewStringObj(&p->zInput[iStart], iEnd-iStart)
@@ -541,7 +539,6 @@ static int xTokenizeCb2(
     Tcl_ListObjAppendElement(0, p->pRet, Tcl_NewStringObj(zToken, nToken));
     Tcl_ListObjAppendElement(0, p->pRet, Tcl_NewIntObj(iStart));
     Tcl_ListObjAppendElement(0, p->pRet, Tcl_NewIntObj(iEnd));
-    Tcl_ListObjAppendElement(0, p->pRet, Tcl_NewIntObj(iPos));
   }
   return SQLITE_OK;
 }
@@ -637,7 +634,7 @@ typedef struct F5tTokenizerModule F5tTokenizerInstance;
 
 struct F5tTokenizerContext {
   void *pCtx;
-  int (*xToken)(void*, const char*, int, int, int, int);
+  int (*xToken)(void*, const char*, int, int, int);
 };
 
 struct F5tTokenizerModule {
@@ -693,11 +690,11 @@ static int f5tTokenizerTokenize(
   Fts5Tokenizer *p, 
   void *pCtx,
   const char *pText, int nText, 
-  int (*xToken)(void*, const char*, int, int, int, int)
+  int (*xToken)(void*, const char*, int, int, int)
 ){
   F5tTokenizerInstance *pInst = (F5tTokenizerInstance*)p;
   void *pOldCtx;
-  int (*xOldToken)(void*, const char*, int, int, int, int);
+  int (*xOldToken)(void*, const char*, int, int, int);
   Tcl_Obj *pEval;
   int rc;
 
@@ -733,14 +730,13 @@ static int f5tTokenizerReturn(
   F5tTokenizerContext *p = (F5tTokenizerContext*)clientData;
   int iStart;
   int iEnd;
-  int iPos;
   int nToken;
   char *zToken;
   int rc;
 
   assert( p );
-  if( objc!=5 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "TEXT START END POS");
+  if( objc!=4 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "TEXT START END");
     return TCL_ERROR;
   }
   if( p->xToken==0 ){
@@ -753,12 +749,11 @@ static int f5tTokenizerReturn(
   zToken = Tcl_GetStringFromObj(objv[1], &nToken);
   if( Tcl_GetIntFromObj(interp, objv[2], &iStart) 
    || Tcl_GetIntFromObj(interp, objv[3], &iEnd) 
-   || Tcl_GetIntFromObj(interp, objv[4], &iPos) 
   ){
     return TCL_ERROR;
   }
 
-  rc = p->xToken(p->pCtx, zToken, nToken, iStart, iEnd, iPos);
+  rc = p->xToken(p->pCtx, zToken, nToken, iStart, iEnd);
   Tcl_SetResult(interp, (char*)sqlite3ErrName(rc), TCL_VOLATILE);
   return TCL_OK;
 }

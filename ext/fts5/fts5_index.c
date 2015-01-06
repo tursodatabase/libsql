@@ -842,12 +842,14 @@ static void fts5DataDelete(Fts5Index *p, i64 iFirst, i64 iLast){
 ** And discard any cached reads. This function is called at the end of
 ** a read transaction or when any sub-transaction is rolled back.
 */
+#if 0
 static void fts5DataReset(Fts5Index *p){
   if( p->pReader ){
     sqlite3_blob_close(p->pReader);
     p->pReader = 0;
   }
 }
+#endif
 
 /*
 ** Remove all records associated with segment iSegid in index iIdx.
