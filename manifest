@@ -1,5 +1,5 @@
-C Enhance\s"INSERT\sINTO\s...\sVALUES"\sso\sthat\sthe\snumber\sof\srows\sin\sthe\sVALUES\sclause\nis\snot\slimited\sby\sSQLITE_LIMIT_COMPOUND_SELECT,\sand\sso\sthat\sthe\sstack\sdepth\nis\sconstant\sregardless\sof\sthe\snumber\sof\srows\sin\sVALUES.
-D 2015-01-05T20:13:49.895
+C Improved\sand\smore\srigorous\stest\sof\slarge\sVALUES\sclauses.
+D 2015-01-06T16:53:49.824
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 335e2d3ff0f2455eacbfa3075fc37495e3321410
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -840,7 +840,7 @@ F test/selectC.test 871fb55d884d3de5943c4057ebd22c2459e71977
 F test/selectD.test b0f02a04ef7737decb24e08be2c39b9664b43394
 F test/selectE.test fc02a1eb04c8eb537091482644b7d778ae8759b7
 F test/selectF.test 21c94e6438f76537b72532fa9fd4710cdd455fc3
-F test/selectG.test 6425730374fb1ebf9897b64db5a2c2550eff6ee7
+F test/selectG.test e8600e379589e85e9fefd2fe4d44a4cdd63f6982
 F test/server1.test 46803bd3fe8b99b30dbc5ff38ffc756f5c13a118
 F test/shared.test 1da9dbad400cee0d93f252ccf76e1ae007a63746
 F test/shared2.test 03eb4a8d372e290107d34b6ce1809919a698e879
@@ -1235,8 +1235,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fe677d13f03e24fa667efc0c2e7f5bbb99521791 ee30fb35217f3429ee89aaad7c19f29710420e4c
-R 7d358a2d55ab9540987f678e54c3928e
-T +closed ee30fb35217f3429ee89aaad7c19f29710420e4c
+P e1c4a359aacfce97eb1652624789e71981e0d263
+R e91ef90a16bba44cf708262fb6cb820b
 U drh
-Z cdc7cc4706725ec9fb1dc2fba8453ff0
+Z 19b2f03fd6d61f381622fb62b54f6f32
