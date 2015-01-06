@@ -303,5 +303,26 @@ do_test 12.3 {
   string is integer $res
 } {1}
 
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 13.1 {
+  CREATE VIRTUAL TABLE t1 USING fts5(x);
+  INSERT INTO t1(rowid, x) VALUES(1, 'o n e'), (2, 't w o');
+} {}
+
+do_execsql_test 13.2 {
+  SELECT rowid FROM t1 WHERE t1 MATCH 'o';
+} {2 1}
+
+do_execsql_test 13.4 {
+  DELETE FROM t1 WHERE rowid=2;
+} {}
+
+do_execsql_test 13.5 {
+  SELECT rowid FROM t1 WHERE t1 MATCH 'o';
+} {1}
+
 finish_test
+
 

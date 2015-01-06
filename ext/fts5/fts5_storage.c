@@ -62,8 +62,8 @@ static int fts5StorageGetStmt(
   assert( eStmt>=0 && eStmt<ArraySize(p->aStmt) );
   if( p->aStmt[eStmt]==0 ){
     const char *azStmt[] = {
-      "SELECT * FROM %s ORDER BY id ASC",               /* SCAN_ASC */
-      "SELECT * FROM %s ORDER BY id DESC",              /* SCAN_DESC */
+      "SELECT * FROM %s ORDER BY %s ASC",               /* SCAN_ASC */
+      "SELECT * FROM %s ORDER BY %s DESC",              /* SCAN_DESC */
       "SELECT * FROM %s WHERE %s=?",                    /* LOOKUP  */
 
       "INSERT INTO %Q.'%q_content' VALUES(%s)",         /* INSERT_CONTENT  */
@@ -82,9 +82,6 @@ static int fts5StorageGetStmt(
     switch( eStmt ){
       case FTS5_STMT_SCAN_ASC:
       case FTS5_STMT_SCAN_DESC:
-        zSql = sqlite3_mprintf(azStmt[eStmt], pC->zContent);
-        break;
-
       case FTS5_STMT_LOOKUP:
         zSql = sqlite3_mprintf(azStmt[eStmt], pC->zContent, pC->zContentRowid);
         break;
@@ -725,7 +722,7 @@ int sqlite3Fts5StorageIntegrity(Fts5Storage *p){
 
   /* Check that the %_docsize and %_content tables contain the expected
   ** number of rows.  */
-  if( rc==SQLITE_OK ){
+  if( rc==SQLITE_OK && pConfig->eContent==FTS5_CONTENT_NORMAL ){
     i64 nRow;
     rc = fts5StorageCount(p, "content", &nRow);
     if( rc==SQLITE_OK && nRow!=p->nTotalRow ) rc = SQLITE_CORRUPT_VTAB;

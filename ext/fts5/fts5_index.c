@@ -406,6 +406,7 @@ struct Fts5SegWriter {
 struct Fts5MultiSegIter {
   int nSeg;                       /* Size of aSeg[] array */
   int bRev;                       /* True to iterate in reverse order */
+  int bSkipEmpty;                 /* True to skip deleted entries */
   Fts5SegIter *aSeg;              /* Array of segment iterators */
   u16 *aFirst;                    /* Current merge state (see above) */
 };
@@ -1602,6 +1603,33 @@ static void fts5SegIterReverseNewPage(Fts5Index *p, Fts5SegIter *pIter){
 }
 
 /*
+** Return true if the iterator passed as the second argument currently
+** points to a delete marker. A delete marker is an entry with a 0 byte
+** position-list.
+*/
+static int fts5SegIterIsDelete(
+  Fts5Index *p,                   /* FTS5 backend object */
+  Fts5SegIter *pIter              /* Iterator to advance */
+){
+  int bRet = 0;
+  Fts5Data *pLeaf = pIter->pLeaf;
+  if( p->rc==SQLITE_OK && pLeaf ){
+    if( pIter->iLeafOffset<pLeaf->n ){
+      bRet = (pLeaf->p[pIter->iLeafOffset]==0x00);
+    }else{
+      Fts5Data *pNew = fts5DataRead(p, FTS5_SEGMENT_ROWID(
+            pIter->iIdx, pIter->pSeg->iSegid, 0, pIter->iLeafPgno
+      ));
+      if( pNew ){
+        bRet = (pNew->p[4]==0x00);
+        fts5DataRelease(pNew);
+      }
+    }
+  }
+  return bRet;
+}
+
+/*
 ** Advance iterator pIter to the next entry. 
 **
 ** If an error occurs, Fts5Index.rc is set to an appropriate error code. It 
@@ -2094,14 +2122,20 @@ static void fts5MultiIterNext(
   i64 iFrom                       /* Advance at least as far as this */
 ){
   if( p->rc==SQLITE_OK ){
-    int iFirst = pIter->aFirst[1];
-    Fts5SegIter *pSeg = &pIter->aSeg[iFirst];
-    if( bFrom && pSeg->pDlidx ){
-      fts5SegIterNextFrom(p, pSeg, iFrom);
-    }else{
-      fts5SegIterNext(p, pSeg);
-    }
-    fts5MultiIterAdvanced(p, pIter, iFirst, 1);
+    int bUseFrom = bFrom;
+    do {
+      int iFirst = pIter->aFirst[1];
+      Fts5SegIter *pSeg = &pIter->aSeg[iFirst];
+      if( bUseFrom && pSeg->pDlidx ){
+        fts5SegIterNextFrom(p, pSeg, iFrom);
+      }else{
+        fts5SegIterNext(p, pSeg);
+      }
+      fts5MultiIterAdvanced(p, pIter, iFirst, 1);
+      bUseFrom = 0;
+    }while( pIter->bSkipEmpty 
+         && fts5SegIterIsDelete(p, &pIter->aSeg[pIter->aFirst[1]])
+    );
   }
 }
 
@@ -2120,6 +2154,7 @@ static void fts5MultiIterNew(
   Fts5Index *p,                   /* FTS5 backend to iterate within */
   Fts5Structure *pStruct,         /* Structure of specific index */
   int iIdx,                       /* Config.aHash[] index of FTS index */
+  int bSkipEmpty,
   int flags,                      /* True for >= */
   const u8 *pTerm, int nTerm,     /* Term to seek to (or NULL/0) */
   int iLevel,                     /* Level to iterate (-1 for all) */
@@ -2152,6 +2187,7 @@ static void fts5MultiIterNew(
   pNew->aSeg = (Fts5SegIter*)&pNew[1];
   pNew->aFirst = (u16*)&pNew->aSeg[nSlot];
   pNew->bRev = (0!=(flags & FTS5INDEX_QUERY_ASC));
+  pNew->bSkipEmpty = bSkipEmpty;
 
   /* Initialize each of the component segment iterators. */
   if( iLevel<0 ){
@@ -2186,6 +2222,12 @@ static void fts5MultiIterNew(
         fts5SegIterNext(p, &pNew->aSeg[iEq]);
         fts5MultiIterAdvanced(p, pNew, iEq, iIter);
       }
+    }
+
+    if( pNew->bSkipEmpty 
+     && fts5SegIterIsDelete(p, &pNew->aSeg[pNew->aFirst[1]]) 
+    ){
+      fts5MultiIterNext(p, pNew, 0, 0);
     }
   }else{
     fts5MultiIterFree(p, pNew);
@@ -2958,7 +3000,7 @@ fprintf(stdout, "merging %d segments from level %d!", nInput, iLvl);
 fflush(stdout);
 #endif
 
-  for(fts5MultiIterNew(p, pStruct, iIdx, 0, 0, 0, iLvl, nInput, &pIter);
+  for(fts5MultiIterNew(p, pStruct, iIdx, 0, 0, 0, 0, iLvl, nInput, &pIter);
       fts5MultiIterEof(p, pIter)==0;
       fts5MultiIterNext(p, pIter, 0, 0)
   ){
@@ -3689,7 +3731,7 @@ static void fts5SetupPrefixIter(
     Fts5Buffer doclist;
 
     memset(&doclist, 0, sizeof(doclist));
-    for(fts5MultiIterNew(p, pStruct, 0, 1, pToken, nToken, -1, 0, &p1);
+    for(fts5MultiIterNew(p, pStruct, 0, 1, 1, pToken, nToken, -1, 0, &p1);
         fts5MultiIterEof(p, p1)==0;
         fts5MultiIterNext(p, p1, 0, 0)
     ){
@@ -3770,7 +3812,7 @@ int sqlite3Fts5IndexIntegrityCheck(Fts5Index *p, u64 cksum){
   for(iIdx=0; iIdx<=pConfig->nPrefix; iIdx++){
     Fts5MultiSegIter *pIter;
     Fts5Structure *pStruct = fts5StructureRead(p, iIdx);
-    for(fts5MultiIterNew(p, pStruct, iIdx, 0, 0, 0, -1, 0, &pIter);
+    for(fts5MultiIterNew(p, pStruct, iIdx, 0, 0, 0, 0, -1, 0, &pIter);
         fts5MultiIterEof(p, pIter)==0;
         fts5MultiIterNext(p, pIter, 0, 0)
     ){
@@ -4031,7 +4073,7 @@ int sqlite3Fts5IndexQuery(
       pRet->pStruct = fts5StructureRead(p, iIdx);
       if( pRet->pStruct ){
         fts5MultiIterNew(p, pRet->pStruct, 
-            iIdx, flags, (const u8*)pToken, nToken, -1, 0, &pRet->pMulti
+            iIdx, 1, flags, (const u8*)pToken, nToken, -1, 0, &pRet->pMulti
         );
       }
     }else{

@@ -216,12 +216,13 @@ static char *fts5EscapeName(int *pRc, const char *z){
   char *pRet = 0;
   if( *pRc==SQLITE_OK ){
     int n = strlen(z);
-    pRet = (char*)sqlite3_malloc(2 * 2*n + 1);
+    pRet = (char*)sqlite3_malloc(2 + 2*n + 1);
     if( pRet==0 ){
       *pRc = SQLITE_NOMEM;
     }else{
       int i;
       char *p = pRet;
+      *p++ = '`';
       for(i=0; i<n; i++){
         if( z[i]=='`' ) *p++ = '`';
         *p++ = z[i];
