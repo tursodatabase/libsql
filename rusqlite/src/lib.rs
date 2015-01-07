@@ -56,7 +56,9 @@ use std::ptr;
 use std::fmt;
 use std::rc::{Rc};
 use std::cell::{RefCell, Cell};
-use std::c_str::{CString, ToCStr};
+use std::ffi::{CString};
+use std::ffi as std_ffi;
+use std::str;
 use libc::{c_int, c_void, c_char};
 
 use types::{ToSql, FromSql};
@@ -77,8 +79,9 @@ mod transaction;
 pub type SqliteResult<T> = Result<T, SqliteError>;
 
 unsafe fn errmsg_to_string(errmsg: *const c_char) -> String {
-    let c_str = CString::new(errmsg, false);
-    c_str.as_str().unwrap_or("Invalid error message encoding").to_string()
+    let c_slice = std_ffi::c_str_to_bytes(&errmsg);
+    let utf8_str = str::from_utf8(c_slice);
+    utf8_str.unwrap_or("Invalid string encoding").to_string()
 }
 
 /// Encompasses an error result from a call to the SQLite C API.
@@ -311,9 +314,10 @@ bitflags! {
 
 impl InnerSqliteConnection {
     fn open_with_flags(path: &str, flags: SqliteOpenFlags) -> SqliteResult<InnerSqliteConnection> {
-        path.with_c_str(|c_path| unsafe {
+        let c_path = CString::from_slice(path.as_bytes());
+        unsafe {
             let mut db: *mut ffi::sqlite3 = mem::uninitialized();
-            let r = ffi::sqlite3_open_v2(c_path, &mut db, flags.bits(), ptr::null());
+            let r = ffi::sqlite3_open_v2(c_path.as_ptr(), &mut db, flags.bits(), ptr::null());
             if r != ffi::SQLITE_OK {
                 let e = if db.is_null() {
                     SqliteError{ code: r,
@@ -333,7 +337,7 @@ impl InnerSqliteConnection {
                 return Err(e);
             }
             Ok(InnerSqliteConnection{ db: db })
-        })
+        }
     }
 
     fn decode_result(&mut self, code: c_int) -> SqliteResult<()> {
@@ -351,9 +355,10 @@ impl InnerSqliteConnection {
     }
 
     fn execute_batch(&mut self, sql: &str) -> SqliteResult<()> {
-        sql.with_c_str(|c_sql| unsafe {
+        let c_sql = CString::from_slice(sql.as_bytes());
+        unsafe {
             let mut errmsg: *mut c_char = mem::uninitialized();
-            let r = ffi::sqlite3_exec(self.db, c_sql, None, ptr::null_mut(), &mut errmsg);
+            let r = ffi::sqlite3_exec(self.db, c_sql.as_ptr(), None, ptr::null_mut(), &mut errmsg);
             if r == ffi::SQLITE_OK {
                 Ok(())
             } else {
@@ -361,7 +366,7 @@ impl InnerSqliteConnection {
                 ffi::sqlite3_free(errmsg as *mut c_void);
                 Err(SqliteError{ code: r, message: message })
             }
-        })
+        }
     }
 
     fn last_insert_rowid(&self) -> i64 {
@@ -374,10 +379,12 @@ impl InnerSqliteConnection {
                    conn: &'a SqliteConnection,
                    sql: &str) -> SqliteResult<SqliteStatement<'a>> {
         let mut c_stmt: *mut ffi::sqlite3_stmt = unsafe { mem::uninitialized() };
-        let r = sql.with_c_str(|c_sql| unsafe {
+        let c_sql = CString::from_slice(sql.as_bytes());
+        let r = unsafe {
             let len_with_nul = (sql.len() + 1) as c_int;
-            ffi::sqlite3_prepare_v2(self.db, c_sql, len_with_nul, &mut c_stmt, ptr::null_mut())
-        });
+            ffi::sqlite3_prepare_v2(self.db, c_sql.as_ptr(), len_with_nul, &mut c_stmt,
+                                    ptr::null_mut())
+        };
         self.decode_result(r).map(|_| {
             SqliteStatement::new(conn, c_stmt)
         })
