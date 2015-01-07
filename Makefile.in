@@ -30,7 +30,7 @@ BCC = @BUILD_CC@ @BUILD_CFLAGS@
 #
 CC = @CC@
 CFLAGS = @CPPFLAGS@ @CFLAGS@
-TCC = $(CC) $(CFLAGS) -I. -I${TOP}/src -I${TOP}/ext/rtree
+TCC = $(CC) $(CFLAGS) -I. -I${TOP}/src -I${TOP}/ext/rtree -I${TOP}/ext/fts3
 
 # Define this for the autoconf-based build, so that the code knows it can
 # include the generated config.h

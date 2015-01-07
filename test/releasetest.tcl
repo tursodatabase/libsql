@@ -31,6 +31,7 @@ of the SQLite source tree.
 array set ::Configs {
   "Default" {
     -O2
+    --disable-amalgamation
   }
   "Ftrapv" {
     -O2 -ftrapv
@@ -74,6 +75,7 @@ array set ::Configs {
     -DSQLITE_ENABLE_STAT4
   }
   "Debug-One" {
+    --disable-shared
     -O2
     -DSQLITE_DEBUG=1
     -DSQLITE_MEMDEBUG=1
@@ -272,6 +274,7 @@ proc run_test_suite {name testtarget config} {
   set cflags "-g"
   set opts ""
   set title ${name}($testtarget)
+  set configOpts ""
 
   regsub -all {#[^\n]*\n} $config \n config
   foreach arg $config {
@@ -279,6 +282,8 @@ proc run_test_suite {name testtarget config} {
       lappend opts $arg
     } elseif {[string match CC=* $arg]} {
       lappend testtarget $arg
+    } elseif {[regexp {^--(enable|disable)-} $arg]} {
+      lappend configOpts $arg
     } else {
       lappend cflags $arg
     }
@@ -298,26 +303,27 @@ proc run_test_suite {name testtarget config} {
     append opts " -DSQLITE_OS_UNIX=1"
   }
 
-  dryrun file mkdir $dir
-  if {!$::DRYRUN} {
+  if {!$::TRACE} {
     set n [string length $title]
     puts -nonewline "${title}[string repeat . [expr {63-$n}]]"
     flush stdout
   }
 
+  set rc 0
   set tm1 [clock seconds]
   set origdir [pwd]
-  dryrun cd $dir
+  trace_cmd file mkdir $dir
+  trace_cmd cd $dir
   set errmsg {}
-  set rc [catch [configureCommand]]
+  set rc [catch [configureCommand $configOpts]]
   if {!$rc} {
     set rc [catch [makeCommand $testtarget $cflags $opts]]
     count_tests_and_errors test.log rc errmsg
   }
+  trace_cmd cd $origdir
   set tm2 [clock seconds]
-  dryrun cd $origdir
 
-  if {!$::DRYRUN} {
+  if {!$::TRACE} {
     set hours [expr {($tm2-$tm1)/3600}]
     set minutes [expr {(($tm2-$tm1)/60)%60}]
     set seconds [expr {($tm2-$tm1)%60}]
@@ -335,33 +341,36 @@ proc run_test_suite {name testtarget config} {
 # The following procedure returns the "configure" command to be exectued for
 # the current platform, which may be Windows (via MinGW, etc).
 #
-proc configureCommand {} {
-  set result [list dryrun exec]
+proc configureCommand {opts} {
+  set result [list trace_cmd exec]
   if {$::tcl_platform(platform)=="windows"} {
     lappend result sh
   }
-  lappend result $::SRCDIR/configure --enable-load-extension >& test.log
+  lappend result $::SRCDIR/configure --enable-load-extension
+  foreach x $opts {lappend result $x}
+  lappend result >& test.log
 }
 
 # The following procedure returns the "make" command to be executed for the
 # specified targets, compiler flags, and options.
 #
 proc makeCommand { targets cflags opts } {
-  set result [list dryrun exec make clean]
+  set result [list trace_cmd exec make clean]
   foreach target $targets {
     lappend result $target
   }
   lappend result CFLAGS=$cflags OPTS=$opts >>& test.log
 }
 
-# The following procedure either prints its arguments (if ::DRYRUN is true)
-# or executes the command of its arguments in the calling context
-# (if ::DRYRUN is false).
+# The following procedure prints its arguments if ::TRACE is true.
+# And it executes the command of its arguments in the calling context
+# if ::DRYRUN is false.
 #
-proc dryrun {args} {
-  if {$::DRYRUN} {
+proc trace_cmd {args} {
+  if {$::TRACE} {
     puts $args
-  } else {
+  }
+  if {!$::DRYRUN} {
     uplevel 1 $args
   }
 }
@@ -378,6 +387,7 @@ proc process_options {argv} {
   set ::BUILDONLY 0
   set ::DRYRUN    0
   set ::EXEC      exec
+  set ::TRACE     0
   set config {}
   set platform $::tcl_platform(os)-$::tcl_platform(machine)
 
@@ -412,6 +422,10 @@ proc process_options {argv} {
         set ::DRYRUN 1
       }
 
+      -trace {
+        set ::TRACE 1
+      }
+
       -info {
         puts "Command-line Options:"
         puts "   --srcdir $::SRCDIR"
@@ -420,6 +434,7 @@ proc process_options {argv} {
         if {$::QUICK}     {puts "   --quick"}
         if {$::BUILDONLY} {puts "   --buildonly"}
         if {$::DRYRUN}    {puts "   --dryrun"}
+        if {$::TRACE}     {puts "   --trace"}
         puts "\nAvailable --platform options:"
         foreach y [lsort [array names ::Platforms]] {
           puts "   [list $y]"
