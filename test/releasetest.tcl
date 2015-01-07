@@ -155,11 +155,15 @@ array set ::Configs {
     -DSQLITE_DISABLE_FTS4_DEFERRED
     -DSQLITE_ENABLE_RTREE
   }
-
   "No-lookaside" {
     -DSQLITE_TEST_REALLOC_STRESS=1
     -DSQLITE_OMIT_LOOKASIDE=1
     -DHAVE_USLEEP=1
+  }
+  "Valgrind" {
+    -DSQLITE_ENABLE_STAT4
+    -DSQLITE_ENABLE_FTS4
+    -DSQLITE_ENABLE_RTREE
   }
 }
 
@@ -172,10 +176,11 @@ array set ::Platforms {
     "Update-Delete-Limit"     test
     "Extra-Robustness"        test
     "Device-Two"              test
-    "Ftrapv"                  test
-    "Sanitize"                {QUICKTEST_OMIT=func4.test,nan.test test}
     "No-lookaside"            test
     "Devkit"                  test
+    "Ftrapv"                  test
+    "Sanitize"                {QUICKTEST_OMIT=func4.test,nan.test test}
+    "Valgrind"                valgrindtest
     "Default"                 "threadtest fulltest"
     "Device-One"              fulltest
   }
@@ -241,6 +246,13 @@ proc count_tests_and_errors {logfile rcVar errmsgVar} {
       if {$rc==0} {
         set rc 1
         set errmsg $msg
+      }
+    }
+    if {[regexp {ERROR SUMMARY: (\d+) errors.*} $line all cnt] && $cnt>0} {
+      incr ::NERRCASE
+      if {$rc==0} {
+        set rc 1
+        set errmsg $all
       }
     }
   }
@@ -328,7 +340,7 @@ proc configureCommand {} {
   if {$::tcl_platform(platform)=="windows"} {
     lappend result sh
   }
-  lappend result $::SRCDIR/configure -enable-load-extension >& test.log
+  lappend result $::SRCDIR/configure --enable-load-extension >& test.log
 }
 
 # The following procedure returns the "make" command to be executed for the
@@ -478,7 +490,7 @@ proc main {argv} {
     # If the configuration included the SQLITE_DEBUG option, then remove
     # it and run veryquick.test. If it did not include the SQLITE_DEBUG option
     # add it and run veryquick.test.
-    if {$target!="checksymbols" && !$::BUILDONLY} {
+    if {$target!="checksymbols" && $target!="valgrindtest" && !$::BUILDONLY} {
       set debug_idx [lsearch -glob $config_options -DSQLITE_DEBUG*]
       set xtarget $target
       regsub -all {fulltest[a-z]*} $xtarget test xtarget

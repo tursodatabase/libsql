@@ -943,6 +943,9 @@ fulltestonly:	testfixture$(TEXE) sqlite3$(TEXE)
 test:	testfixture$(TEXE) sqlite3$(TEXE)
 	./testfixture$(TEXE) $(TOP)/test/veryquick.test
 
+valgrindtest:	testfixture sqlite3
+	valgrind -v ./testfixture $(TOP)/test/permutations.test valgrind
+
 sqlite3_analyzer.c: sqlite3.c $(TOP)/src/test_stat.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl
 	echo "#define TCLSH 2" > $@
 	cat sqlite3.c $(TOP)/src/test_stat.c $(TOP)/src/tclsqlite.c >> $@
