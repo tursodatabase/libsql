@@ -1,3 +1,7 @@
+# Version 0.0.5 (2014-01-07)
+
+* Updates to track latest rustc changes (closure syntax).
+
 # Version 0.0.4 (2014-01-05)
 
 * Updates to track latest rustc changes.
