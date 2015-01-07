@@ -125,22 +125,37 @@ static int fts5StorageGetStmt(
   return rc;
 }
 
+
+static int fts5ExecPrintf(
+  sqlite3 *db,
+  char **pzErr,
+  const char *zFormat,
+  ...
+){
+  int rc;
+  va_list ap;                     /* ... printf arguments */
+  va_start(ap, zFormat);
+  char *zSql = sqlite3_vmprintf(zFormat, ap);
+
+  if( zSql==0 ){
+    rc = SQLITE_NOMEM;
+  }else{
+    rc = sqlite3_exec(db, zSql, 0, 0, pzErr);
+    sqlite3_free(zSql);
+  }
+
+  va_end(ap);
+  return rc;
+}
+
 /*
 ** Drop the shadow table with the postfix zPost (e.g. "content"). Return
 ** SQLITE_OK if successful or an SQLite error code otherwise.
 */
 int sqlite3Fts5DropTable(Fts5Config *pConfig, const char *zPost){
-  int rc;
-  char *zSql = sqlite3_mprintf("DROP TABLE IF EXISTS %Q.'%q_%q'",
+  return fts5ExecPrintf(pConfig->db, 0, "DROP TABLE IF EXISTS %Q.'%q_%q'",
       pConfig->zDb, pConfig->zName, zPost
   );
-  if( zSql==0 ){
-    rc = SQLITE_NOMEM;
-  }else{
-    rc = sqlite3_exec(pConfig->db, zSql, 0, 0, 0);
-    sqlite3_free(zSql);
-  }
-  return rc;
 }
 
 /*
@@ -155,25 +170,19 @@ int sqlite3Fts5CreateTable(
   char **pzErr                    /* OUT: Error message */
 ){
   int rc;
-  char *zSql = sqlite3_mprintf("CREATE TABLE %Q.'%q_%q'(%s)%s",
-      pConfig->zDb, pConfig->zName, zPost, zDefn, 
-      (bWithout ? " WITHOUT ROWID" :"")
+  char *zErr = 0;
+
+  rc = fts5ExecPrintf(pConfig->db, &zErr, "CREATE TABLE %Q.'%q_%q'(%s)%s",
+      pConfig->zDb, pConfig->zName, zPost, zDefn, bWithout?" WITHOUT ROWID":""
   );
-  if( zSql==0 ){
-    rc = SQLITE_NOMEM;
-  }else{
-    char *zErr = 0;
-    assert( *pzErr==0 );
-    rc = sqlite3_exec(pConfig->db, zSql, 0, 0, &zErr);
-    if( zErr ){
-      *pzErr = sqlite3_mprintf(
-          "fts5: error creating shadow table %q_%s: %s", 
-          pConfig->zName, zPost, zErr
-      );
-      sqlite3_free(zErr);
-    }
-    sqlite3_free(zSql);
+  if( zErr ){
+    *pzErr = sqlite3_mprintf(
+        "fts5: error creating shadow table %q_%s: %s", 
+        pConfig->zName, zPost, zErr
+    );
+    sqlite3_free(zErr);
   }
+
   return rc;
 }
 
@@ -462,7 +471,7 @@ int sqlite3Fts5StorageSpecialDelete(
   int rc;
   sqlite3_stmt *pDel;
 
-  assert( p->pConfig->eContent!=FTS5_CONTENT_NORMAL );
+  assert( pConfig->eContent!=FTS5_CONTENT_NORMAL );
   rc = fts5StorageLoadTotals(p, 1);
 
   /* Delete the index records */
@@ -502,7 +511,78 @@ int sqlite3Fts5StorageSpecialDelete(
   }
 
   return rc;
+}
 
+/*
+** Delete all entries in the FTS5 index.
+*/
+int sqlite3Fts5StorageDeleteAll(Fts5Storage *p){
+  Fts5Config *pConfig = p->pConfig;
+  int rc;
+
+  /* Delete the contents of the %_data and %_docsize tables. */
+  rc = fts5ExecPrintf(pConfig->db, 0,
+      "DELETE FROM %Q.'%q_data';"
+      "DELETE FROM %Q.'%q_docsize';",
+      pConfig->zDb, pConfig->zName,
+      pConfig->zDb, pConfig->zName
+  );
+
+  /* Reinitialize the %_data table. This call creates the initial structure
+  ** and averages records.  */
+  if( rc==SQLITE_OK ){
+    rc = sqlite3Fts5IndexReinit(p->pIndex);
+  }
+  return rc;
+}
+
+int sqlite3Fts5StorageRebuild(Fts5Storage *p){
+  Fts5Buffer buf = {0,0,0};
+  Fts5Config *pConfig = p->pConfig;
+  sqlite3_stmt *pScan = 0;
+  Fts5InsertCtx ctx;
+  int rc;
+
+  memset(&ctx, 0, sizeof(Fts5InsertCtx));
+  ctx.pStorage = p;
+  rc = sqlite3Fts5StorageDeleteAll(p);
+  if( rc==SQLITE_OK ){
+    rc = fts5StorageLoadTotals(p, 1);
+  }
+
+  if( rc==SQLITE_OK ){
+    rc = fts5StorageGetStmt(p, FTS5_STMT_SCAN_ASC, &pScan, 0);
+  }
+
+  while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pScan) ){
+    i64 iRowid = sqlite3_column_int64(pScan, 0);
+
+    sqlite3Fts5BufferZero(&buf);
+    rc = sqlite3Fts5IndexBeginWrite(p->pIndex, iRowid);
+    for(ctx.iCol=0; rc==SQLITE_OK && ctx.iCol<pConfig->nCol; ctx.iCol++){
+      ctx.szCol = 0;
+      rc = sqlite3Fts5Tokenize(pConfig, 
+          (const char*)sqlite3_column_text(pScan, ctx.iCol+1),
+          sqlite3_column_bytes(pScan, ctx.iCol+1),
+          (void*)&ctx,
+          fts5StorageInsertCallback
+      );
+      sqlite3Fts5BufferAppendVarint(&rc, &buf, ctx.szCol);
+      p->aTotalSize[ctx.iCol] += (i64)ctx.szCol;
+    }
+    p->nTotalRow++;
+
+    if( rc==SQLITE_OK ){
+      rc = fts5StorageInsertDocsize(p, iRowid, &buf);
+    }
+  }
+  sqlite3_free(buf.p);
+
+  /* Write the averages record */
+  if( rc==SQLITE_OK ){
+    rc = fts5StorageSaveTotals(p);
+  }
+  return rc;
 }
 
 /*

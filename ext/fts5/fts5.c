@@ -1027,6 +1027,15 @@ static int fts5SeekCursor(Fts5Cursor *pCsr){
   return rc;
 }
 
+static void fts5SetVtabError(Fts5Table *p, const char *zFormat, ...){
+  int rc;
+  va_list ap;                     /* ... printf arguments */
+  va_start(ap, zFormat);
+  assert( p->base.zErrMsg==0 );
+  p->base.zErrMsg = sqlite3_vmprintf(zFormat, ap);
+  va_end(ap);
+}
+
 /*
 ** This function is called to handle an FTS INSERT command. In other words,
 ** an INSERT statement of the form:
@@ -1047,11 +1056,31 @@ static int fts5SpecialInsert(
   sqlite3_value *pCmd,            /* Value inserted into special column */
   sqlite3_value *pVal             /* Value inserted into rowid column */
 ){
+  Fts5Config *pConfig = pTab->pConfig;
   const char *z = (const char*)sqlite3_value_text(pCmd);
   int rc = SQLITE_OK;
   int bError = 0;
 
-  if( 0==sqlite3_stricmp("integrity-check", z) ){
+  if( 0==sqlite3_stricmp("delete-all", z) ){
+    if( pConfig->eContent==FTS5_CONTENT_NORMAL ){
+      fts5SetVtabError(pTab, 
+          "'delete-all' may only be used with a "
+          "contentless or external content fts5 table"
+      );
+      rc = SQLITE_ERROR;
+    }else{
+      rc = sqlite3Fts5StorageDeleteAll(pTab->pStorage);
+    }
+  }else if( 0==sqlite3_stricmp("rebuild", z) ){
+    if( pConfig->eContent==FTS5_CONTENT_NONE ){
+      fts5SetVtabError(pTab, 
+          "'rebuild' may not be used with a contentless fts5 table"
+      );
+      rc = SQLITE_ERROR;
+    }else{
+      rc = sqlite3Fts5StorageRebuild(pTab->pStorage);
+    }
+  }else if( 0==sqlite3_stricmp("integrity-check", z) ){
     rc = sqlite3Fts5StorageIntegrity(pTab->pStorage);
   }else{
     rc = sqlite3Fts5ConfigSetValue(pTab->pConfig, z, pVal, &bError);

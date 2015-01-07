@@ -3900,6 +3900,26 @@ int sqlite3Fts5IndexRollback(Fts5Index *p){
 }
 
 /*
+** The %_data table is completely empty when this function is called. This
+** function populates it with the initial structure objects for each index,
+** and the initial version of the "averages" record (a zero-byte blob).
+*/
+int sqlite3Fts5IndexReinit(Fts5Index *p){
+  int i;
+  Fts5Structure s;
+
+  memset(&s, 0, sizeof(Fts5Structure));
+  for(i=0; i<p->pConfig->nPrefix+1; i++){
+    fts5StructureWrite(p, i, &s);
+  }
+  if( p->rc==SQLITE_OK ){
+    p->rc = sqlite3Fts5IndexSetAverages(p, (const u8*)"", 0);
+  }
+
+  return fts5IndexReturn(p);
+}
+
+/*
 ** Open a new Fts5Index handle. If the bCreate argument is true, create
 ** and initialize the underlying %_data table.
 **
@@ -3927,20 +3947,11 @@ int sqlite3Fts5IndexOpen(
   if( p->zDataTbl==0 ){
     rc = SQLITE_NOMEM;
   }else if( bCreate ){
-    int i;
-    Fts5Structure s;
     rc = sqlite3Fts5CreateTable(
         pConfig, "data", "id INTEGER PRIMARY KEY, block BLOB", 0, pzErr
     );
     if( rc==SQLITE_OK ){
-      memset(&s, 0, sizeof(Fts5Structure));
-      for(i=0; i<pConfig->nPrefix+1; i++){
-        fts5StructureWrite(p, i, &s);
-      }
-      rc = p->rc;
-    }
-    if( rc==SQLITE_OK ){
-      rc = sqlite3Fts5IndexSetAverages(p, (const u8*)"", 0);
+      rc = sqlite3Fts5IndexReinit(p);
     }
   }
 

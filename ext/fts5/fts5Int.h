@@ -340,6 +340,8 @@ int sqlite3Fts5IndexSetCookie(Fts5Index*, int);
 */
 int sqlite3Fts5IndexReads(Fts5Index *p);
 
+int sqlite3Fts5IndexReinit(Fts5Index *p);
+
 /*
 ** End of interface to code in fts5_index.c.
 **************************************************************************/
@@ -420,6 +422,9 @@ int sqlite3Fts5StorageRollback(Fts5Storage *p);
 int sqlite3Fts5StorageConfigValue(Fts5Storage *p, const char*, sqlite3_value*);
 
 int sqlite3Fts5StorageSpecialDelete(Fts5Storage *p, i64 iDel, sqlite3_value**);
+
+int sqlite3Fts5StorageDeleteAll(Fts5Storage *p);
+int sqlite3Fts5StorageRebuild(Fts5Storage *p);
 
 /*
 ** End of interface to code in fts5_storage.c.

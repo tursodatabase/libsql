@@ -144,6 +144,47 @@ do_execsql_test 2.7 {
   WHERE fts_idx MATCH 't AND x';
 } {{[t] h r e e [x] y z}}
 
+#-------------------------------------------------------------------------
+# Quick tests of the 'delete-all' command.
+#
+do_execsql_test 3.1 {
+  CREATE VIRTUAL TABLE t3 USING fts5(x, content='');
+  INSERT INTO t3 VALUES('a b c');
+  INSERT INTO t3 VALUES('d e f');
+}
+
+do_execsql_test 3.2 {
+  SELECT count(*) FROM t3_docsize;
+  SELECT count(*) FROM t3_data;
+} {2 4}
+
+do_execsql_test 3.3 {
+  INSERT INTO t3(t3) VALUES('delete-all');
+  SELECT count(*) FROM t3_docsize;
+  SELECT count(*) FROM t3_data;
+} {0 2}
+
+do_execsql_test 3.4 {
+  INSERT INTO t3 VALUES('a b c');
+  INSERT INTO t3 VALUES('d e f');
+  SELECT rowid FROM t3 WHERE t3 MATCH 'e';
+} {2}
+
+do_execsql_test 3.5 {
+  SELECT rowid FROM t3 WHERE t3 MATCH 'c';
+} {1}
+
+do_execsql_test 3.6 {
+  SELECT count(*) FROM t3_docsize;
+  SELECT count(*) FROM t3_data;
+} {2 4}
+
+do_execsql_test 3.7 {
+  CREATE VIRTUAL TABLE t4 USING fts5(x);
+} {}
+do_catchsql_test 3.8 {
+  INSERT INTO t4(t4) VALUES('delete-all');
+} {1 {'delete-all' may only be used with a contentless or external content fts5 table}}
 
 finish_test
 

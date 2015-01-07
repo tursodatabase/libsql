@@ -93,29 +93,8 @@ typedef void (*fts5_extension_function)(
 ** xRowid:
 **   Returns the rowid of the current row.
 **
-** xPoslist:
-**   Iterate through phrase instances in the current row. If the iPhrase
-**   argument is 0 or greater, then only instances of phrase iPhrase are
-**   visited. If it is less than 0, instances of all phrases are visited.
-**
-**   At EOF, -1 is returned and output variable iPos set to -1.
-**
-**     </pre>
-**       sqlite3_int64 iPos;
-**       int iPhrase;
-**       int ii = 0;
-**
-**       while( (iPhrase = pFts->xPoslist(pFts, -1, &ii, &iPos) >= 0 ){
-**         int iCol = FTS5_POS2COLUMN(iPos);
-**         int iOff = FTS5_POS2OFFSET(iPos);
-**         // An instance of phrase iPhrase at offset iOff of column iCol.
-**       }
-**     </pre>
-**
-**
 ** xTokenize:
 **   Tokenize text using the tokenizer belonging to the FTS5 table.
-**
 **
 ** xQueryPhrase(pFts5, iPhrase, pUserData, xCallback):
 **   This API function is used to query the FTS table for phrase iPhrase
