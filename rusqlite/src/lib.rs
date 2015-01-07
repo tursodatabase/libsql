@@ -47,10 +47,7 @@
 //!     }
 //! }
 //! ```
-#![feature(globs)]
 #![feature(unsafe_destructor)]
-#![feature(macro_rules)]
-#![feature(associated_types)]
 
 extern crate libc;
 
