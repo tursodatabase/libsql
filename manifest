@@ -1,5 +1,5 @@
-C In\sreleasetest.tcl,\schange\sthe\s--dryrun\soption\sto\swork\sas\sit\sdoes\sin\nmultitest.tcl\sof\sTH3.\s\sAdd\sthe\snew\s--trace\soption\sthat\swork\slike\sthe\s--dryrun\noption\sused\sto\swork.\s\sAdd\sthe\sability\sto\sspecify\sadditional\sconfigure-script\noptions\sin\sthe\sConfig\sarray,\sand\screate\sconfigurations\sthat\suse\n--disable-shared\sand\s--disable-amalgamation\sfor\stesting.
-D 2015-01-07T14:41:18.624
+C Fix\sthreads-enabled\sbuilds\son\sWindows\swhen\sthe\samalgamation\sis\snot\sin\suse.
+D 2015-01-07T18:11:29.002
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 93b5a564234f87ded60df9bc196f163bb9d7ff44
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -284,7 +284,7 @@ F src/test_thread.c 1e133a40b50e9c035b00174035b846e7eef481cb
 F src/test_vfs.c f84075a388527892ff184988f43b69ce69b8083c
 F src/test_vfstrace.c bab9594adc976cbe696ff3970728830b4c5ed698
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
-F src/threads.c 6de09362b657f19ba83e5fa521ee715787ce9fee
+F src/threads.c 2fb3ea4d70d5acf68b539c2489b4adace61cc01b
 F src/tokenize.c e00458c9938072b0ea711c850b8dcf4ddcb5fe18
 F src/trigger.c 25571661fdeae8c7f975ff40ffec205520a3f92f
 F src/update.c 3c4ecc282accf12d39edb8d524cf089645e55a13
@@ -1235,7 +1235,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4b6df035561add4e304fb56dd70ae4d413d6bd5d
-R 7d9365389be9392e1fae2ffe15873ec9
-U drh
-Z d0f9eda3b9de9b98c9c5ee62f0202409
+P be17ef03f1d74187f7d3b5d72a12fc00db513c8e
+R c017e1263e3a1543e8b0c9af20b82a8a
+U mistachkin
+Z 825ab427837e393aa1593ac0c51b1252
