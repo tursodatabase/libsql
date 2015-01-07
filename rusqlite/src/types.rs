@@ -54,9 +54,11 @@
 
 extern crate time;
 
-use libc::{c_int, c_double};
-use std::c_str::{CString, ToCStr};
+use libc::{c_int, c_double, c_char};
+use std::ffi as std_ffi;
+use std::ffi::{CString};
 use std::mem;
+use std::str;
 use super::ffi;
 use super::{SqliteResult, SqliteError};
 
@@ -88,9 +90,8 @@ raw_to_impl!(c_double, sqlite3_bind_double);
 
 impl<'a> ToSql for &'a str {
     unsafe fn bind_parameter(&self, stmt: *mut ffi::sqlite3_stmt, col: c_int) -> c_int {
-        self.with_c_str(|c_str| {
-            ffi::sqlite3_bind_text(stmt, col, c_str, -1, Some(ffi::SQLITE_TRANSIENT()))
-        })
+        let c_str = CString::from_slice(self.as_bytes());
+        ffi::sqlite3_bind_text(stmt, col, c_str.as_ptr(), -1, Some(ffi::SQLITE_TRANSIENT()))
     }
 }
 
@@ -170,11 +171,12 @@ impl FromSql for String {
         if c_text.is_null() {
             Ok("".to_string())
         } else {
-            match CString::new(mem::transmute(c_text), false).as_str() {
-                Some(s) => Ok(s.to_string()),
-                None => Err(SqliteError{ code: ffi::SQLITE_MISMATCH,
-                    message: "Could not convert text to UTF-8".to_string() })
-            }
+            let c_text = c_text as *const c_char;
+            let c_slice = std_ffi::c_str_to_bytes(&c_text);
+            let utf8_str = str::from_utf8(c_slice);
+            utf8_str
+                .map(|s| { s.to_string() })
+                .map_err(|e| { SqliteError{code: 0, message: e.to_string()} })
         }
     }
 }
