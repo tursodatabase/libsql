@@ -41,6 +41,7 @@
 **
 */
 
+#define FTS5_OPT_WORK_UNIT  1000  /* Number of leaf pages per optimize step */
 #define FTS5_WORK_UNIT      64    /* Number of leaf pages in unit of work */
 #define FTS5_CRISIS_MERGE   16    /* Maximum number of segments to merge */
 
@@ -3164,6 +3165,12 @@ static void fts5IndexCrisisMerge(
   *ppStruct = pStruct;
 }
 
+static int fts5IndexReturn(Fts5Index *p){
+  int rc = p->rc;
+  p->rc = SQLITE_OK;
+  return rc;
+}
+
 typedef struct Fts5FlushCtx Fts5FlushCtx;
 struct Fts5FlushCtx {
   Fts5Index *pIdx;
@@ -3276,6 +3283,66 @@ static void fts5IndexFlush(Fts5Index *p){
   }
   p->nPendingData = 0;
 }
+
+
+int sqlite3Fts5IndexOptimize(Fts5Index *p){
+  Fts5Config *pConfig = p->pConfig;
+  int i;
+
+  fts5IndexFlush(p);
+  for(i=0; i<=pConfig->nPrefix; i++){
+    Fts5Structure *pStruct = fts5StructureRead(p, i);
+    Fts5Structure *pNew = 0;
+    int nSeg = 0;
+    if( pStruct ){
+      nSeg = fts5StructureCountSegments(pStruct);
+      if( nSeg>1 ){
+        int nByte = sizeof(Fts5Structure);
+        nByte += (pStruct->nLevel+1) * sizeof(Fts5StructureLevel);
+        pNew = (Fts5Structure*)sqlite3Fts5MallocZero(&p->rc, nByte);
+      }
+    }
+    if( pNew ){
+      Fts5StructureLevel *pLvl;
+      int nByte = nSeg * sizeof(Fts5StructureSegment);
+      pNew->nLevel = pStruct->nLevel+1;
+      pNew->nWriteCounter = pStruct->nWriteCounter;
+      pLvl = &pNew->aLevel[pStruct->nLevel];
+      pLvl->aSeg = (Fts5StructureSegment*)sqlite3Fts5MallocZero(&p->rc, nByte);
+      if( pLvl->aSeg ){
+        int iLvl, iSeg;
+        int iSegOut = 0;
+        for(iLvl=0; iLvl<pStruct->nLevel; iLvl++){
+          for(iSeg=0; iSeg<pStruct->aLevel[iLvl].nSeg; iSeg++){
+            pLvl->aSeg[iSegOut] = pStruct->aLevel[iLvl].aSeg[iSeg];
+            iSegOut++;
+          }
+        }
+        pLvl->nSeg = nSeg;
+      }else{
+        sqlite3_free(pNew);
+        pNew = 0;
+      }
+    }
+
+    if( pNew ){
+      int iLvl = pNew->nLevel-1;
+      while( p->rc==SQLITE_OK && pNew->aLevel[iLvl].nSeg>0 ){
+        int nRem = FTS5_OPT_WORK_UNIT;
+        fts5IndexMergeLevel(p, i, &pNew, iLvl, &nRem);
+      }
+
+      fts5StructureWrite(p, i, pNew);
+      fts5StructureRelease(pNew);
+    }
+
+    fts5StructureRelease(pStruct);
+  }
+
+  return fts5IndexReturn(p); 
+}
+
+
 
 /*
 ** Return a simple checksum value based on the arguments.
@@ -3786,12 +3853,6 @@ static void fts5SetupPrefixIter(
 
   fts5StructureRelease(pStruct);
   sqlite3_free(aBuf);
-}
-
-static int fts5IndexReturn(Fts5Index *p){
-  int rc = p->rc;
-  p->rc = SQLITE_OK;
-  return rc;
 }
 
 /*
