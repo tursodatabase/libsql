@@ -1,6 +1,7 @@
 # Version 0.0.5 (2014-01-07)
 
 * Updates to track latest rustc changes (closure syntax).
+* Updates to track latest rust stdlib changes (`std::c_str` -> `std::ffi`).
 
 # Version 0.0.4 (2014-01-05)
 
