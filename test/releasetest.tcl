@@ -394,7 +394,7 @@ proc process_options {argv} {
   for {set i 0} {$i < [llength $argv]} {incr i} {
     set x [lindex $argv $i]
     if {[regexp {^--[a-z]} $x]} {set x [string range $x 1 end]}
-    switch -- $x {
+    switch -glob -- $x {
       -srcdir {
         incr i
         set ::SRCDIR [file normalize [lindex $argv $i]]
@@ -445,6 +445,13 @@ proc process_options {argv} {
         }
         exit
       }
+      -g -
+      -D* -
+      -enable-* -
+      -disable-* -
+      *=* {
+        lappend ::EXTRACONFIG [lindex $argv $i]
+      }
 
       default {
         puts stderr ""
@@ -486,6 +493,7 @@ proc process_options {argv} {
 proc main {argv} {
 
   # Process any command line options.
+  set ::EXTRACONFIG {}
   process_options $argv
   puts [string repeat * 79]
 
@@ -497,7 +505,7 @@ proc main {argv} {
   foreach {zConfig target} $::CONFIGLIST {
     if {$::QUICK} {set target test}
     if {$::BUILDONLY} {set target testfixture}
-    set config_options $::Configs($zConfig)
+    set config_options [concat $::Configs($zConfig) $::EXTRACONFIG]
 
     incr NTEST
     run_test_suite $zConfig $target $config_options
