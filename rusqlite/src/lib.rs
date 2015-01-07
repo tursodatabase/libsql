@@ -244,7 +244,8 @@ impl SqliteConnection {
     ///   * The query does not successfully return at least one row.
     ///
     /// If the query returns more than one row, all rows except the first are ignored.
-    pub fn query_row<T>(&self, sql: &str, params: &[&ToSql], f: |SqliteRow| -> T) -> T {
+    pub fn query_row<T, F>(&self, sql: &str, params: &[&ToSql], f: F) -> T
+                           where F: FnOnce(SqliteRow) -> T {
         let mut stmt = self.prepare(sql).unwrap();
         let mut rows = stmt.query(params).unwrap();
         f(rows.next().expect("Query did not return a row").unwrap())
