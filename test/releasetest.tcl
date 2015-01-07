@@ -31,7 +31,7 @@ of the SQLite source tree.
 array set ::Configs {
   "Default" {
     -O2
-    --disable-amalgamation
+    --disable-amalgamation  --disable-shared
   }
   "Ftrapv" {
     -O2 -ftrapv
