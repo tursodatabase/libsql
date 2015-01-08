@@ -1,7 +1,7 @@
-C In\sreleasetest.tcl:\n(1)\sAdd\sthe\sFailure-Detection\splatform.\n(2)\sRe-add\sthe\s--disable-shared\sargument\son\sDefault\sthat\swas\smistakenly\n\s\s\s\sremoved\sby\sthe\sprevious\scommit.\n(3)\sRemove\sthe\s-ftrapv\stests,\sas\swe\sread\sthat\s-ftrapv\sdoes\snot\swork\sin\sGCC.
-D 2015-01-08T02:15:11.082
+C Fix\sthe\sextension\stags\son\sthe\s"smoketest"\smakefile\starget\sfor\sWindows.
+D 2015-01-08T02:28:02.318
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in f1c9525dccb991ad3095a7f8778b4ae869851130
+F Makefile.in c93eb4b0258e78a7dacfddd328e52827be2c3773
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc b363b90fe1bfc3b87d190f2f728a126c00d9ce09
 F Makefile.vxworks 034289efa9d591b04b1a73598623119c306cbba0
@@ -1235,7 +1235,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e7e7bc1d9a5c19571e7d87ad345b98c27a826fbd
-R c0ba3022e15ea8eeed124c3c8db015b7
+P 1f2fb77781a93427a2348f821b66dba7310c49b8
+R 8a1de20d0981a3624bba5e9b9b14f4fc
 U drh
-Z 35451ec031f31c61639c4f2be05cb417
+Z 06dcf0afe5114ee85b427e54261705d7

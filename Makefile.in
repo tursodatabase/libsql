@@ -958,8 +958,8 @@ valgrindtest:	testfixture$(TEXE) sqlite3$(TEXE)
 # the 60s-era electronics testing:  "Turn it on and see if smoke
 # comes out."
 #
-smoketest:	testfixture$(TEXT) sqlite3$(TEXT)
-	./testfixture$(TEXT) $(TOP)/test/main.test
+smoketest:	testfixture$(TEXE)
+	./testfixture$(TEXE) $(TOP)/test/main.test
 
 sqlite3_analyzer.c: sqlite3.c $(TOP)/src/test_stat.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl
 	echo "#define TCLSH 2" > $@
