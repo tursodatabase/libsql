@@ -261,6 +261,8 @@ static int test_io_trace(
 **
 ** Returns true if the program was compiled using clang with the 
 ** -fsanitize=address switch on the command line. False otherwise.
+**
+** Also return true if the OMIT_MISUSE environment variable exists.
 */
 static int clang_sanitize_address(
   void *NotUsed,
@@ -274,6 +276,7 @@ static int clang_sanitize_address(
   res = 1;
 # endif
 #endif
+  if( res==0 && getenv("OMIT_MISUSE")!=0 ) res = 1;
   Tcl_SetObjResult(interp, Tcl_NewIntObj(res));
   return TCL_OK;
 }
