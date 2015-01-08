@@ -514,5 +514,11 @@ if {$::tcl_platform(platform)=="unix"
     } {1 {no such vfs: async}}
   }
 }
+
+# Print the version number so that it can be picked up by releasetest.tcl.
+#
+puts [db one {SELECT 'VERSION: ' ||
+                  sqlite_version() || ' ' ||
+                  sqlite_source_id();}]
     
 finish_test

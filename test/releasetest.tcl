@@ -13,6 +13,7 @@ optional) are:
     --platform PLATFORM                (see below)
     --config   CONFIGNAME              (Run only CONFIGNAME)
     --quick                            (Run "veryquick.test" only)
+    --veryquick                        (Run "make smoketest" only)
     --buildonly                        (Just build testfixture - do not run)
     --dryrun                           (Print what would have happened)
     --info                             (Show diagnostic info)
@@ -31,7 +32,7 @@ of the SQLite source tree.
 array set ::Configs {
   "Default" {
     -O2
-    --disable-amalgamation  --disable-shared
+    --disable-amalgamation
   }
   "Ftrapv" {
     -O2 -ftrapv
@@ -257,6 +258,15 @@ proc count_tests_and_errors {logfile rcVar errmsgVar} {
         set errmsg $all
       }
     }
+    if {[regexp {^VERSION: 3\.\d+.\d+} $line]} {
+      set v [string range $line 9 end]
+      if {$::SQLITE_VERSION eq ""} {
+        set ::SQLITE_VERSION $v
+      } elseif {$::SQLITE_VERSION ne $v} {
+        set rc 1
+        set errmsg "version conflict: {$::SQLITE_VERSION} vs. {$v}"
+      }
+    }
   }
   close $fd
   if {!$seen} {
@@ -408,6 +418,9 @@ proc process_options {argv} {
       -quick {
         set ::QUICK 1
       }
+      -veryquick {
+        set ::QUICK 2
+      }
 
       -config {
         incr i
@@ -447,6 +460,7 @@ proc process_options {argv} {
       }
       -g -
       -D* -
+      -O* -
       -enable-* -
       -disable-* -
       *=* {
@@ -484,7 +498,10 @@ proc process_options {argv} {
   puts -nonewline "Flags:"
   if {$::DRYRUN} {puts -nonewline " --dryrun"}
   if {$::BUILDONLY} {puts -nonewline " --buildonly"}
-  if {$::QUICK} {puts -nonewline " --quick"}
+  switch -- $::QUICK {
+     1 {puts -nonewline " --quick"}
+     2 {puts -nonewline " --veryquick"}
+  }
   puts ""
 }
 
@@ -501,10 +518,16 @@ proc main {argv} {
   set ::NTEST 0
   set ::NTESTCASE 0
   set ::NERRCASE 0
+  set ::SQLITE_VERSION {}
   set STARTTIME [clock seconds]
   foreach {zConfig target} $::CONFIGLIST {
-    if {$::QUICK} {set target test}
-    if {$::BUILDONLY} {set target testfixture}
+    if {$target ne "checksymbols"} {
+      switch -- $::QUICK {
+         1 {set target test}
+         2 {set target smoketest}
+      }
+      if {$::BUILDONLY} {set target testfixture}
+    }
     set config_options [concat $::Configs($zConfig) $::EXTRACONFIG]
 
     incr NTEST
@@ -513,7 +536,8 @@ proc main {argv} {
     # If the configuration included the SQLITE_DEBUG option, then remove
     # it and run veryquick.test. If it did not include the SQLITE_DEBUG option
     # add it and run veryquick.test.
-    if {$target!="checksymbols" && $target!="valgrindtest" && !$::BUILDONLY} {
+    if {$target!="checksymbols" && $target!="valgrindtest"
+           && !$::BUILDONLY && $::QUICK<2} {
       set debug_idx [lsearch -glob $config_options -DSQLITE_DEBUG*]
       set xtarget $target
       regsub -all {fulltest[a-z]*} $xtarget test xtarget
@@ -536,7 +560,10 @@ proc main {argv} {
   set sec [expr {$elapsetime%60}]
   set etime [format (%02d:%02d:%02d) $hr $min $sec]
   puts [string repeat * 79]
-  puts "$::NERRCASE failures of $::NTESTCASE tests run in $etime"
+  puts "$::NERRCASE failures out of $::NTESTCASE tests in $etime"
+  if {$::SQLITE_VERSION ne ""} {
+    puts "SQLite $::SQLITE_VERSION"
+  }
 }
 
 main $argv
