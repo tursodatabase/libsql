@@ -32,12 +32,7 @@ of the SQLite source tree.
 array set ::Configs {
   "Default" {
     -O2
-    --disable-amalgamation
-  }
-  "Ftrapv" {
-    -O2 -ftrapv
-    -DSQLITE_MAX_ATTACHED=125
-    -DSQLITE_TCL_DEFAULT_FULLMUTEX=1
+    --disable-amalgamation --disable-shared
   }
   "Sanitize" {
     CC=clang -fsanitize=undefined
@@ -88,6 +83,7 @@ array set ::Configs {
     -DSQLITE_ENABLE_MEMSYS3=1
     -DSQLITE_ENABLE_COLUMN_METADATA=1
     -DSQLITE_ENABLE_STAT4
+    -DSQLITE_MAX_ATTACHED=125
   }
   "Device-One" {
     -O2
@@ -168,6 +164,9 @@ array set ::Configs {
     -DSQLITE_ENABLE_FTS4
     -DSQLITE_ENABLE_RTREE
   }
+  Fail0 {-O0}
+  Fail2 {-O0}
+  Fail3 {-O0}
 }
 
 array set ::Platforms {
@@ -181,7 +180,6 @@ array set ::Platforms {
     "Device-Two"              test
     "No-lookaside"            test
     "Devkit"                  test
-    "Ftrapv"                  test
     "Sanitize"                {QUICKTEST_OMIT=func4.test,nan.test test}
     "Valgrind"                valgrindtest
     "Default"                 "threadtest fulltest"
@@ -204,6 +202,12 @@ array set ::Platforms {
   }
   "Windows NT-intel" {
     "Default"                 "mptest fulltestonly"
+  }
+  Failure-Detection {
+    Fail0     "TEST_FAILURE=0 test"
+    Sanitize  "TEST_FAILURE=1 test"
+    Fail2     "TEST_FAILURE=2 valgrindtest"
+    Fail3     "TEST_FAILURE=3 valgrindtest"
   }
 }
 
