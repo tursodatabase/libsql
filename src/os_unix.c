@@ -1671,7 +1671,7 @@ static void verifyDbFile(unixFile *pFile){
     return;
   }
   if( fileHasMoved(pFile) ){
-    sqlite3_log(SQLITE_WARNING, "file renamed while open: %s", pFile->zPath);
+    sqlite3_log(SQLITE_WARNING, "file renamed while open: [%s]", pFile->zPath);
     pFile->ctrlFlags |= UNIXFILE_WARNED;
     return;
   }
@@ -4130,6 +4130,7 @@ static int fcntlSizeHint(unixFile *pFile, i64 nByte){
       ** that do not have a real fallocate() call.
       */
       int nBlk = buf.st_blksize;  /* File-system block size */
+      int nWrite = 0;             /* Number of bytes written by seekAndWrite */
       i64 iWrite;                 /* Next offset to write to */
 
       if( robust_ftruncate(pFile->h, nSize) ){
@@ -4141,11 +4142,11 @@ static int fcntlSizeHint(unixFile *pFile, i64 nByte){
       assert( (iWrite/nBlk)==((buf.st_size+nBlk-1)/nBlk) );
       assert( ((iWrite+1)%nBlk)==0 );
       for(/*no-op*/; iWrite<nSize; iWrite+=nBlk ){
-        int nWrite = seekAndWrite(pFile, iWrite, "", 1);
+        nWrite = seekAndWrite(pFile, iWrite, "", 1);
         if( nWrite!=1 ) return SQLITE_IOERR_WRITE;
       }
-      if( nSize%nBlk ){
-        int nWrite = seekAndWrite(pFile, nSize-1, "", 1);
+      if( nWrite==0 || (nSize%nBlk) ){
+        nWrite = seekAndWrite(pFile, nSize-1, "", 1);
         if( nWrite!=1 ) return SQLITE_IOERR_WRITE;
       }
 #endif

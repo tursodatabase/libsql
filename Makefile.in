@@ -30,7 +30,7 @@ BCC = @BUILD_CC@ @BUILD_CFLAGS@
 #
 CC = @CC@
 CFLAGS = @CPPFLAGS@ @CFLAGS@
-TCC = $(CC) $(CFLAGS) -I. -I${TOP}/src -I${TOP}/ext/rtree
+TCC = $(CC) $(CFLAGS) -I. -I${TOP}/src -I${TOP}/ext/rtree -I${TOP}/ext/fts3
 
 # Define this for the autoconf-based build, so that the code knows it can
 # include the generated config.h
@@ -943,18 +943,36 @@ testfixture$(TEXE):	$(TESTFIXTURE_SRC)
 	$(LTLINK) -DSQLITE_NO_SYNC=1 $(TEMP_STORE) $(TESTFIXTURE_FLAGS) \
 		-o $@ $(TESTFIXTURE_SRC) $(LIBTCL) $(TLIBS)
 
-
+# A very detailed test running most or all test cases
 fulltest:	testfixture$(TEXE) sqlite3$(TEXE)
 	./testfixture$(TEXE) $(TOP)/test/all.test
 
+# Really really long testing
 soaktest:	testfixture$(TEXE) sqlite3$(TEXE)
 	./testfixture$(TEXE) $(TOP)/test/all.test -soak=1
 
+# Do extra testing but not aeverything.
 fulltestonly:	testfixture$(TEXE) sqlite3$(TEXE)
 	./testfixture$(TEXE) $(TOP)/test/full.test
 
+# This is the common case.  Run many tests but not those that take
+# a really long time.
+#
 test:	testfixture$(TEXE) sqlite3$(TEXE)
 	./testfixture$(TEXE) $(TOP)/test/veryquick.test
+
+# Run a test using valgrind.  This can take a really long time
+# because valgrind is so much slower than a native machine.
+#
+valgrindtest:	testfixture$(TEXE) sqlite3$(TEXE)
+	OMIT_MISUSE=1 valgrind -v ./testfixture$(TEXE) $(TOP)/test/permutations.test valgrind
+
+# A very fast test that checks basic sanity.  The name comes from
+# the 60s-era electronics testing:  "Turn it on and see if smoke
+# comes out."
+#
+smoketest:	testfixture$(TEXE)
+	./testfixture$(TEXE) $(TOP)/test/main.test
 
 sqlite3_analyzer.c: sqlite3.c $(TOP)/src/test_stat.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl
 	echo "#define TCLSH 2" > $@

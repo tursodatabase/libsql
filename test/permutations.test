@@ -124,6 +124,14 @@ if {[info exists ::env(QUICKTEST_OMIT)]} {
   }
 }
 
+# If the TEST_FAILURE environment variable is set, it means that we what to
+# deliberately provoke test failures in order to test the test infrastructure.
+# Only the main.test module is needed for this.
+#
+if {[info exists ::env(TEST_FAILURE)]} {
+  set allquicktests main.test
+}
+
 #############################################################################
 # Start of tests
 #
