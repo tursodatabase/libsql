@@ -252,13 +252,17 @@ do_test fkey5-6.5 {
 } {c12 1 p4 0 c12 3 p4 0 c12 6 p4 0}
 
 do_test fkey5-7.1 {
+  set res {}
   db eval {
     INSERT OR IGNORE INTO c13 SELECT * FROM c12;
     INSERT OR IGNORE INTO C14 SELECT * FROM c12;
     DELETE FROM c12;
     PRAGMA foreign_key_check;
+  } {
+    lappend res [list $table $rowid $fkid $parent]
   }
-} {c14 1 p4 0 c14 3 p4 0 c14 6 p4 0 c13 1 p3 0 c13 2 p3 0 c13 3 p3 0 c13 4 p3 0 c13 5 p3 0 c13 6 p3 0}
+  lsort $res
+} {{c13 1 0 p3} {c13 2 0 p3} {c13 3 0 p3} {c13 4 0 p3} {c13 5 0 p3} {c13 6 0 p3} {c14 1 0 p4} {c14 3 0 p4} {c14 6 0 p4}}
 do_test fkey5-7.2 {
   db eval {
     PRAGMA foreign_key_check(c14);

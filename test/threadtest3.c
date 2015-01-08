@@ -447,8 +447,12 @@ static void free_err(Error *p){
 
 static void print_err(Error *p){
   if( p->rc!=SQLITE_OK ){
-    printf("Error: (%d) \"%s\" at line %d\n", p->rc, p->zErr, p->iLine);
-    if( sqlite3_strglob("* - no such table: *",p->zErr)!=0 ) nGlobalErr++;
+    int isWarn = 0;
+    if( p->rc==SQLITE_SCHEMA ) isWarn = 1;
+    if( sqlite3_strglob("* - no such table: *",p->zErr)==0 ) isWarn = 1;
+    printf("%s: (%d) \"%s\" at line %d\n", isWarn ? "Warning" : "Error",
+            p->rc, p->zErr, p->iLine);
+    if( !isWarn ) nGlobalErr++;
     fflush(stdout);
   }
 }
@@ -981,6 +985,7 @@ static void walthread1(int nMs){
       "INSERT INTO t1 VALUES(randomblob(100));"
       "INSERT INTO t1 SELECT md5sum(x) FROM t1;"
   );
+  closedb(&err, &db);
 
   setstoptime(&err, nMs);
   for(i=0; i<WALTHREAD1_NTHREAD; i++){
@@ -1433,7 +1438,6 @@ int main(int argc, char **argv){
     { walthread3, "walthread3", 20000 },
     { walthread4, "walthread4", 20000 },
     { walthread5, "walthread5",  1000 },
-    { walthread5, "walthread5",  1000 },
     
     { cgt_pager_1,      "cgt_pager_1", 0 },
     { dynamic_triggers, "dynamic_triggers", 20000 },
@@ -1447,27 +1451,31 @@ int main(int argc, char **argv){
     { stress1,             "stress1", 10000 },
     { stress2,             "stress2", 60000 },
   };
-
-  int i;
+  static char *substArgv[] = { 0, "*", 0 };
+  int i, iArg;
   int nTestfound = 0;
 
   sqlite3_config(SQLITE_CONFIG_MULTITHREAD);
-  sqlite3_config(SQLITE_CONFIG_MULTITHREAD);
-
-  for(i=0; i<sizeof(aTest)/sizeof(aTest[0]); i++){
-    char const *z = aTest[i].zTest;
-    if( argc>1 ){
-      int iArg;
-      for(iArg=1; iArg<argc; iArg++){
-        if( 0==sqlite3_strglob(argv[iArg], z) ) break;
-      }
-      if( iArg==argc ) continue;
+  if( argc<2 ){
+    argc = 2;
+    argv = substArgv;
+  }
+  for(iArg=1; iArg<argc; iArg++){
+    for(i=0; i<sizeof(aTest)/sizeof(aTest[0]); i++){
+      if( sqlite3_strglob(argv[iArg],aTest[i].zTest)==0 ) break;
     }
-
-    printf("Running %s for %d seconds...\n", z, aTest[i].nMs/1000);
-    fflush(stdout);
-    aTest[i].xTest(aTest[i].nMs);
-    nTestfound++;
+    if( i>=sizeof(aTest)/sizeof(aTest[0]) ) goto usage;   
+  }
+  for(iArg=1; iArg<argc; iArg++){
+    for(i=0; i<sizeof(aTest)/sizeof(aTest[0]); i++){
+      char const *z = aTest[i].zTest;
+      if( sqlite3_strglob(argv[iArg],z)==0 ){
+        printf("Running %s for %d seconds...\n", z, aTest[i].nMs/1000);
+        fflush(stdout);
+        aTest[i].xTest(aTest[i].nMs);
+        nTestfound++;
+      }
+    }
   }
   if( nTestfound==0 ) goto usage;
 

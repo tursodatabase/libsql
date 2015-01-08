@@ -17,6 +17,12 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix sortfault
+db close
+sqlite3_shutdown
+sqlite3_config_pmasz 10
+sqlite3_initialize
+sqlite3 db test.db
+
 
 do_execsql_test 1.0 {
   PRAGMA cache_size = 5;

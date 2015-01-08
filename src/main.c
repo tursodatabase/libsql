@@ -594,6 +594,11 @@ int sqlite3_config(int op, ...){
     }
 #endif
 
+    case SQLITE_CONFIG_PMASZ: {
+      sqlite3GlobalConfig.szPma = va_arg(ap, unsigned int);
+      break;
+    }
+
     default: {
       rc = SQLITE_ERROR;
       break;
