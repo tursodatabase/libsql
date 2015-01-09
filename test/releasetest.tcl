@@ -169,6 +169,7 @@ array set ::Configs {
   Fail0 {-O0}
   Fail2 {-O0}
   Fail3 {-O0}
+  Fail4 {-O0}
 }
 
 array set ::Platforms {
@@ -210,6 +211,7 @@ array set ::Platforms {
     Sanitize  "TEST_FAILURE=1 test"
     Fail2     "TEST_FAILURE=2 valgrindtest"
     Fail3     "TEST_FAILURE=3 valgrindtest"
+    Fail4     "TEST_FAILURE=4 test"
   }
 }
 
@@ -278,6 +280,9 @@ proc count_tests_and_errors {logfile rcVar errmsgVar} {
   if {!$seen} {
     set rc 1
     set errmsg "Test did not complete"
+    if {[file readable core]} {
+      append errmsg " - core file exists"
+    }
   }
 }
 
@@ -331,6 +336,7 @@ proc run_test_suite {name testtarget config} {
   trace_cmd file mkdir $dir
   trace_cmd cd $dir
   set errmsg {}
+  catch {file delete core}
   set rc [catch [configureCommand $configOpts]]
   if {!$rc} {
     set rc [catch [makeCommand $testtarget $cflags $opts]]

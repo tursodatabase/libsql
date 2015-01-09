@@ -1,5 +1,5 @@
-C Add\sSQLITE_ENABLE_STMT_SCANSTATUS\sto\sthe\sUpdate-Delete-Limit\sconfiguration\nin\sthe\sreleasetest.tcl\sscript.
-D 2015-01-09T20:00:21.586
+C Change\sthe\stestfixture\sbinary\sso\sthat\sit\sexplicitly\senabled\score\sfiles\s\non\sa\scrash\s(on\sunix).\s\sAdd\sa\stest\scase\sto\sverify\sthat\sthis\sworks.
+D 2015-01-09T21:54:58.894
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in b40b4c2a3a187c41ee657d3f0e0e0dfe8fd860b5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -237,8 +237,8 @@ F src/sqliteInt.h 5d5716d8b33a61606c6ee10112f4b6df56f42725
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 81712116e826b0089bb221b018929536b2b5406f
 F src/table.c e7a09215315a978057fb42c640f890160dbcc45e
-F src/tclsqlite.c c6a21c64da1490e14d53cdc2062d1e2e57942622
-F src/test1.c 460d39e7abbcd0c61c9788c06e0d925f4d1e6a22
+F src/tclsqlite.c b1d0a181a9f8e8dae960370518a3450db93a6a8c
+F src/test1.c 163cff8c4ebdda512e3b055716e3cc7f0e563a44
 F src/test2.c 98049e51a17dc62606a99a9eb95ee477f9996712
 F src/test3.c 1c0e5d6f080b8e33c1ce8b3078e7013fdbcd560c
 F src/test4.c 9b32d22f5f150abe23c1830e2057c4037c45b3df
@@ -801,7 +801,7 @@ F test/randexpr1.test eda062a97e60f9c38ae8d806b03b0ddf23d796df
 F test/rdonly.test dd30a4858d8e0fbad2304c2bd74a33d4df36412a
 F test/regexp1.test 497ea812f264d12b6198d6e50a76be4a1973a9d8
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
-F test/releasetest.tcl 58ede36fff67c0799e44995f2b025f8854773c0a
+F test/releasetest.tcl c7a6647a96745dff41c08a80064e16da48177c43
 F test/resolver01.test 33abf37ff8335e6bf98f2b45a0af3e06996ccd9a
 F test/rollback.test 458fe73eb3ffdfdf9f6ba3e9b7350a6220414dea
 F test/rollback2.test fc14cf6d1a2b250d2735ef16124b971bce152f14
@@ -1235,7 +1235,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 88a7a967116a48aeb5fa7014613c0134b1b47bb3
-R 366d7baead37fb35af2c9724ea29fa87
+P c70d5edaf6327cb18df5285c3fc21b610f3d3294
+R 521b82eb1167efbcde785d8c3ea7771d
 U drh
-Z 19a0bf2d773a4306e8c2ab9a5efe117f
+Z a63c757fcfd64e46bc375106b9e33672

@@ -3813,6 +3813,11 @@ static void init_all(Tcl_Interp *interp){
 #endif
 }
 
+/* Needed for the setrlimit() system call on unix */
+#if defined(unix)
+#include <sys/resource.h>
+#endif
+
 #define TCLSH_MAIN main   /* Needed to fake out mktclapp */
 int TCLSH_MAIN(int argc, char **argv){
   Tcl_Interp *interp;
@@ -3825,6 +3830,17 @@ int TCLSH_MAIN(int argc, char **argv){
     fgetc(stdin);
   }
 #endif
+
+  /* Since the primary use case for this binary is testing of SQLite,
+  ** be sure to generate core files if we crash */
+#if defined(SQLITE_TEST) && defined(unix)
+  { struct rlimit x;
+    getrlimit(RLIMIT_CORE, &x);
+    x.rlim_cur = x.rlim_max;
+    setrlimit(RLIMIT_CORE, &x);
+  }
+#endif /* SQLITE_TEST && unix */
+
 
   /* Call sqlite3_shutdown() once before doing anything else. This is to
   ** test that sqlite3_shutdown() can be safely called by a process before

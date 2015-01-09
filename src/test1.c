@@ -6618,6 +6618,7 @@ static int test_user_delete(
 **       1          Overflow a signed integer
 **       2          Jump based on an uninitialized variable
 **       3          Read after free
+**       4          Panic
 */
 static int test_bad_behavior(
   ClientData clientData, /* Pointer to an integer containing zero */
@@ -6654,6 +6655,10 @@ static int test_bad_behavior(
       for(j=0; j<10; j++) a[j] = j;
       free(a);
       Tcl_SetObjResult(interp, Tcl_NewIntObj(a[i]));
+      break;
+    }
+    case 4: {
+      Tcl_Panic("Deliberate panic");
       break;
     }
   }
