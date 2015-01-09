@@ -1,5 +1,5 @@
-C Remove\san\sunused\spreprocessor\smacro\sfrom\spcache.c.
-D 2015-01-09T19:45:28.380
+C Add\sSQLITE_ENABLE_STMT_SCANSTATUS\sto\sthe\sUpdate-Delete-Limit\sconfiguration\nin\sthe\sreleasetest.tcl\sscript.
+D 2015-01-09T20:00:21.586
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in b40b4c2a3a187c41ee657d3f0e0e0dfe8fd860b5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -801,7 +801,7 @@ F test/randexpr1.test eda062a97e60f9c38ae8d806b03b0ddf23d796df
 F test/rdonly.test dd30a4858d8e0fbad2304c2bd74a33d4df36412a
 F test/regexp1.test 497ea812f264d12b6198d6e50a76be4a1973a9d8
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
-F test/releasetest.tcl 1e68ec50478dce13b374904668fb7e09409371fb
+F test/releasetest.tcl 58ede36fff67c0799e44995f2b025f8854773c0a
 F test/resolver01.test 33abf37ff8335e6bf98f2b45a0af3e06996ccd9a
 F test/rollback.test 458fe73eb3ffdfdf9f6ba3e9b7350a6220414dea
 F test/rollback2.test fc14cf6d1a2b250d2735ef16124b971bce152f14
@@ -1235,7 +1235,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9309c9bc08c3cd5a96ada76544b11cae8e480c7a
-R f6f554b5a802a4e92e3eab21f211953f
+P 88a7a967116a48aeb5fa7014613c0134b1b47bb3
+R 366d7baead37fb35af2c9724ea29fa87
 U drh
-Z 8f6247c72b9adb2b1ac832e2c95df43e
+Z 19a0bf2d773a4306e8c2ab9a5efe117f
