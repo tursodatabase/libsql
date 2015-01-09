@@ -1,5 +1,5 @@
-C Add\sthe\s"ascii"\smode\sto\sthe\scommand-line\sshell.
-D 2015-01-09T00:38:06.225
+C Fix\sthree\scrash\sproblems\sdiscovered\sby\safl-fuzz.\nTicket\s[a59ae93ee990a55].
+D 2015-01-09T01:27:29.636
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in b40b4c2a3a187c41ee657d3f0e0e0dfe8fd860b5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -180,9 +180,9 @@ F src/build.c f5cfd7b32216f695b995bbc7c1a395f6d451d11f
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c 198a0066ba60ab06fc00fba1998d870a4d575463
 F src/ctime.c df19848891c8a553c80e6f5a035e768280952d1a
-F src/date.c 93594514aae68de117ca4a2a0d6cc63eddf26744
+F src/date.c 53cedb541686b30eb5495753f0b622909a928780
 F src/delete.c 0750b1eb4d96cd3fb2c798599a3a7c85e92f1417
-F src/expr.c 00da3072f362b06f39ce4052baa1d4ce2bb36d1c
+F src/expr.c 7be80f7dc337329a24df45c2f3bdb2ea3b64c90e
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c e0444b61bed271a76840cbe6182df93a9baa3f12
 F src/func.c 6d3c4ebd72aa7923ce9b110a7dc15f9b8c548430
@@ -619,7 +619,7 @@ F test/func4.test 6beacdfcb0e18c358e6c2dcacf1b65d1fa80955f
 F test/func5.test cdd224400bc3e48d891827cc913a57051a426fa4
 F test/fuzz-oss1.test 4912e528ec9cf2f42134456933659d371c9e0d74
 F test/fuzz.test 96083052bf5765e4518c1ba686ce2bab785670d1
-F test/fuzz2.test 207d0f9d06db3eaf47a6b7bfc835b8e2fc397167
+F test/fuzz2.test b34fe575aa10292135421ff4bf315de4cde7824a
 F test/fuzz3.test efd384b896c647b61a2c1848ba70d42aad60a7b3
 F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
 F test/fuzz_malloc.test 328f70aaca63adf29b4c6f06505ed0cf57ca7c26
@@ -1235,8 +1235,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 662932a69a0f69b7227cc05b75a9f1637a3862f4 ea99f4b29afb98dd474d96889c934763f5636891
-R 3f8d7ef6dd5f06bcfd99bf945267e110
-T +closed ea99f4b29afb98dd474d96889c934763f5636891
+P e1518a9478e1ce1ebd98894335e64c953064367f
+R 0672c0c00968fffbda70996e37c442f8
 U drh
-Z 1642395151124fe3b880675afbc572b4
+Z 8756c3c12d1aed88e2c7a41409182fc3
