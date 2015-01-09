@@ -1,5 +1,5 @@
-C Fix\sthree\scrash\sproblems\sdiscovered\sby\safl-fuzz.\nTicket\s[a59ae93ee990a55].
-D 2015-01-09T01:27:29.636
+C Improvements\sto\sthe\ssqlite3_stmt_scanstatus()\sdocumentation.\s\sNo\schanges\nto\scode.
+D 2015-01-09T19:36:36.557
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in b40b4c2a3a187c41ee657d3f0e0e0dfe8fd860b5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -230,7 +230,7 @@ F src/resolve.c f6c46d3434439ab2084618d603e6d6dbeb0d6ada
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c e4c38c75e36f28aed80a69a725d888751bfd53df
 F src/shell.c 1b7cb3efc5ae6fe82e36407508c4a6b00d8edde1
-F src/sqlite.h.in ed799ff5c814227c7957eb4f4a217f67fdc0da48
+F src/sqlite.h.in 9dfc99d6533d36d6a549c4f3f01cacc8be956ada
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
 F src/sqliteInt.h 5d5716d8b33a61606c6ee10112f4b6df56f42725
@@ -1235,7 +1235,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e1518a9478e1ce1ebd98894335e64c953064367f
-R 0672c0c00968fffbda70996e37c442f8
+P fe5788633131281a0f27c5b75993ce2ff958bfeb
+R 968521e641f3d87d432aac13f78240cc
 U drh
-Z 8756c3c12d1aed88e2c7a41409182fc3
+Z aa8a1778082346ce604633a8e2db1126
