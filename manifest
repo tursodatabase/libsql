@@ -1,5 +1,5 @@
-C Improvements\sto\sthe\ssqlite3_stmt_scanstatus()\sdocumentation.\s\sNo\schanges\nto\scode.
-D 2015-01-09T19:36:36.557
+C Remove\san\sunused\spreprocessor\smacro\sfrom\spcache.c.
+D 2015-01-09T19:45:28.380
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in b40b4c2a3a187c41ee657d3f0e0e0dfe8fd860b5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -219,7 +219,7 @@ F src/os_win.h 09e751b20bbc107ffbd46e13555dc73576d88e21
 F src/pager.c 4120a49ecd37697e28f5ed807f470b9c0b88410c
 F src/pager.h c3476e7c89cdf1c6914e50a11f3714e30b4e0a77
 F src/parse.y c5d0d964f9ac023e8154cad512e54b0b6058e086
-F src/pcache.c b83d160ce81ca101f98f0d27498e6d6bd49f1599
+F src/pcache.c d210cf90d04365a74f85d21374dded65af67b0cb
 F src/pcache.h b44658c9c932d203510279439d891a2a83e12ba8
 F src/pcache1.c 1e77432b40b7d3288327d9cdf399dcdfd2b6d3bf
 F src/pragma.c bd33aa24456f043bb6f6d32a918bbeed41d8c591
@@ -1235,7 +1235,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fe5788633131281a0f27c5b75993ce2ff958bfeb
-R 968521e641f3d87d432aac13f78240cc
+P 9309c9bc08c3cd5a96ada76544b11cae8e480c7a
+R f6f554b5a802a4e92e3eab21f211953f
 U drh
-Z aa8a1778082346ce604633a8e2db1126
+Z 8f6247c72b9adb2b1ac832e2c95df43e
