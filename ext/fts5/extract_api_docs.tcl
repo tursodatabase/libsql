@@ -17,14 +17,17 @@
 
 set ::fts5_docs_output ""
 if {[info commands hd_putsnl]==""} {
+  if {[llength $argv]>0} { set ::extract_api_docs_mode [lindex $argv 0] }
   proc output {text} {
     puts $text
   }
 } else {
   proc output {text} {
-    append ::fts5_docs_output $text
+    append ::fts5_docs_output "$text\n"
   }
 }
+if {[info exists ::extract_api_docs_mode]==0} {set ::extract_api_docs_mode api}
+
 
 set input_file [file join [file dir [info script]] fts5.h]
 set fd [open $input_file]
@@ -41,7 +44,7 @@ close $fd
 proc get_struct_members {data} {
 
   # Extract the structure definition from the fts5.h file.
-  regexp "struct Fts5ExtensionApi {(.*)};" $data -> defn
+  regexp "struct Fts5ExtensionApi {(.*?)};" $data -> defn
 
   # Remove all comments from the structure definition
   regsub -all {/[*].*?[*]/} $defn {} defn2
@@ -95,44 +98,136 @@ proc get_struct_docs {data names} {
   set res
 }
 
-# Initialize global array M as a map from Fts5StructureApi member name
-# to member definition. i.e.
-#
-#   iVersion  -> {int iVersion}
-#   xUserData -> {void *(*xUserData)(Fts5Context*)}
-#   ...
-#
-array set M [get_struct_members $data]
+proc get_tokenizer_docs {data} {
+  regexp {(xCreate:.*?)[*]/} $data -> docs
 
-# Initialize global list D as a map from section name to documentation
-# text. Most (all?) section names are structure member names.
-#
-set D [get_struct_docs $data [array names M]]
-
-foreach {hdr docs} $D {
-  if {[info exists M($hdr)]} {
-    set hdr $M($hdr)
-  }
-  output "<h style=\"font-size:1.4em;background-color:#EEEEEE;display:block\"><pre>  $hdr</pre></h>"
-
-  set mode ""
-  set bEmpty 1
+  set res "<dl>\n"
   foreach line [split [string trim $docs] "\n"] {
-    if {[string trim $line]==""} {
-      if {$mode != ""} {output "</$mode>"}
-      set mode ""
-    } elseif {$mode == ""} {
-      if {[regexp {^     } $line]} {
-        set mode codeblock
-      } else {
-        set mode p
-      }
-      output "<$mode>"
+    regexp {[*][*](.*)} $line -> line
+    if {[regexp {^ ?x.*:} $line]} {
+      append res "<dt><b>$line</b></dt><dd><p style=margin-top:0>\n"
+      continue
     }
-    output $line
+    if {[string trim $line] == ""} {
+      append res "<p>\n"
+    } else {
+      append res "$line\n"
+    }
   }
-  if {$mode != ""} {output "</$mode>"}
+  append res "</dl>\n"
+
+  set res
 }
+
+proc get_api_docs {data} {
+  # Initialize global array M as a map from Fts5StructureApi member name
+  # to member definition. i.e.
+  #
+  #   iVersion  -> {int iVersion}
+  #   xUserData -> {void *(*xUserData)(Fts5Context*)}
+  #   ...
+  #
+  array set M [get_struct_members $data]
+  
+  # Initialize global list D as a map from section name to documentation
+  # text. Most (all?) section names are structure member names.
+  #
+  set D [get_struct_docs $data [array names M]]
+  
+  foreach {sub docs} $D {
+    if {[info exists M($sub)]} {
+      set hdr $M($sub)
+      set link " id=$sub"
+    } else {
+      set link ""
+    }
+
+    output "<hr color=#eeeee style=\"margin:1em 8.4ex 0 8.4ex;\"$link>"
+    set style "padding-left:6ex;font-size:1.4em;display:block"
+    output "<h style=\"$style\"><pre>$hdr</pre></h>"
+  
+    set mode ""
+    set bEmpty 1
+    foreach line [split [string trim $docs] "\n"] {
+      if {[string trim $line]==""} {
+        if {$mode != ""} {output "</$mode>"}
+        set mode ""
+      } elseif {$mode == ""} {
+        if {[regexp {^     } $line]} {
+          set mode codeblock
+        } else {
+          set mode p
+        }
+        output "<$mode>"
+      }
+      output $line
+    }
+    if {$mode != ""} {output "</$mode>"}
+  }
+}
+
+proc get_fts5_struct {data start end} {
+  set res ""
+  set bOut 0
+  foreach line [split $data "\n"] {
+    if {$bOut==0} {
+      if {[regexp $start $line]} {
+        set bOut 1
+      }
+    }
+
+    if {$bOut} {
+      append res "$line\n"
+    }
+
+    if {$bOut} {
+      if {[regexp $end $line]} {
+        set bOut 0
+      }
+    }
+  }
+
+  set map [list /* <i>/* */ */</i>]
+  string map $map $res
+}
+
+proc main {data} {
+  switch $::extract_api_docs_mode {
+    fts5_api {
+      output [get_fts5_struct $data "typedef struct fts5_api" "^\};"]
+    }
+
+    fts5_tokenizer {
+      output [get_fts5_struct $data "typedef struct Fts5Tokenizer" "^\};"]
+    }
+
+    fts5_extension {
+      output [get_fts5_struct $data "typedef.*Fts5ExtensionApi" "^.;"]
+    }
+
+    Fts5ExtensionApi {
+      set struct [get_fts5_struct $data "^struct Fts5ExtensionApi" "^.;"]
+      set map [list]
+      foreach {k v} [get_struct_members $data] {
+        if {[string match x* $k]==0} continue
+        lappend map $k "<a href=#$k>$k</a>"
+      }
+      output [string map $map $struct]
+    }
+
+    api {
+      get_api_docs $data
+    }
+
+    tokenizer_api {
+      output [get_tokenizer_docs $data]
+    }
+
+    default {
+    }
+  }
+}
+main $data
 
 set ::fts5_docs_output
 

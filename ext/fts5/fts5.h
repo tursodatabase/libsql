@@ -100,7 +100,7 @@ typedef void (*fts5_extension_function)(
 **   This API function is used to query the FTS table for phrase iPhrase
 **   of the current query. Specifically, a query equivalent to:
 **
-**       ... FROM ftstable WHERE ftstable MATCH $p ORDER BY DESC
+**       ... FROM ftstable WHERE ftstable MATCH $p ORDER BY rowid DESC
 **
 **   with $p set to a phrase equivalent to the phrase iPhrase of the
 **   current query is executed. For each row visited, the callback function
@@ -212,10 +212,11 @@ struct Fts5ExtensionApi {
 **
 **   The first argument passed to this function is a copy of the (void*)
 **   pointer provided by the application when the fts5_tokenizer object
-**   was registered with SQLite. The second and third arguments are an
-**   array of nul-terminated strings containing the tokenizer arguments,
-**   if any, specified as part of the CREATE VIRTUAL TABLE statement used
-**   to create the fts5 table.
+**   was registered with FTS5 (the third argument to xCreateTokenizer()). 
+**   The second and third arguments are an array of nul-terminated strings
+**   containing the tokenizer arguments, if any, specified following the
+**   tokenizer name as part of the CREATE VIRTUAL TABLE statement used
+**   to create the FTS5 table.
 **
 **   The final argument is an output variable. If successful, (*ppOut) 
 **   should be set to point to the new tokenizer handle and SQLITE_OK
@@ -240,12 +241,10 @@ struct Fts5ExtensionApi {
 **   are a pointer to a buffer containing the token text, and the size of
 **   the token in bytes. The 4th and 5th arguments are the byte offsets of
 **   the first byte of and first byte immediately following the text from 
-**   which the token is derived within the input. The final argument is the
-**   token position - the total number of tokens that appear before this one 
-**   in the input buffer.
+**   which the token is derived within the input.
 **
-**   The xToken() callback must be invoked with non-decreasing values of
-**   the iPos parameter.
+**   FTS5 assumes the xToken() callback is invoked for each token in the 
+**   order that they occur within the input text.
 **
 **   If an xToken() callback returns any value other than SQLITE_OK, then
 **   the tokenization should be abandoned and the xTokenize() method should
@@ -256,9 +255,8 @@ struct Fts5ExtensionApi {
 **   SQLITE_OK or SQLITE_DONE.
 **
 */
-typedef struct fts5_tokenizer fts5_tokenizer;
 typedef struct Fts5Tokenizer Fts5Tokenizer;
-
+typedef struct fts5_tokenizer fts5_tokenizer;
 struct fts5_tokenizer {
   int (*xCreate)(void*, const char **azArg, int nArg, Fts5Tokenizer **ppOut);
   void (*xDelete)(Fts5Tokenizer*);

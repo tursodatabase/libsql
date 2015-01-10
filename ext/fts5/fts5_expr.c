@@ -703,7 +703,7 @@ static int fts5ExprNearNextRowidMatch(
 */
 static int fts5ExprNearNextMatch(
   Fts5Expr *pExpr,                /* Expression that pNear is a part of */
-  Fts5ExprNode *pNode,
+  Fts5ExprNode *pNode,            /* The "NEAR" node (FTS5_STRING) */
   int bFromValid,
   i64 iFrom
 ){
@@ -716,6 +716,9 @@ static int fts5ExprNearNextMatch(
     rc = fts5ExprNearNextRowidMatch(pExpr, pNode, bFromValid, iFrom);
     if( pNode->bEof || rc!=SQLITE_OK ) break;
 
+    /* Check that each phrase in the nearset matches the current row.
+    ** Populate the pPhrase->poslist buffers at the same time. If any
+    ** phrase is not a match, break out of the loop early.  */
     for(i=0; rc==SQLITE_OK && i<pNear->nPhrase; i++){
       Fts5ExprPhrase *pPhrase = pNear->apPhrase[i];
       if( pPhrase->nTerm>1 || pNear->iCol>=0 ){
