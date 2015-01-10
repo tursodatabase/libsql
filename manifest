@@ -1,5 +1,5 @@
-C Improvements\sto\scompile-time-option\shygiene.\s\sUse\s"#if\sOPTION"\sinstead\sof\n"#ifdef\sOPTION"\sin\scases\swhere\sthat\smakes\ssense,\sso\sthat\s-DOPTION=0\swill\swork.\nAdd\sthe\s"Have-Not"\sconfiguration\sin\sreleasetest.tcl\swhich\sdisables\sall\sof\nthe\s"HAVE_component"\scompile-time\soptions.
-D 2015-01-10T16:49:23.031
+C Make\suse\sof\sthe\sfdatasync()\sinterface\sif\sthe\sHAVE_FDATASYNC\smacro\sis\strue.
+D 2015-01-10T18:02:45.534
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 876093578650b28af50a20c819993ee779885adb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -213,7 +213,7 @@ F src/os.c 8fd25588eeba74068d41102d26810e216999b6c8
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c 949cdedc74dbf3c17f2c9743064ce307026f871e
+F src/os_unix.c aefeaf915aaef9f81aa2645e0d5d06fa1bd83beb
 F src/os_win.c 91d3d08e33ec0258d180d4c8255492f47d15e007
 F src/os_win.h 09e751b20bbc107ffbd46e13555dc73576d88e21
 F src/pager.c 4120a49ecd37697e28f5ed807f470b9c0b88410c
@@ -1235,7 +1235,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d6f8c899d8f1bf66a2234e0eb91b259dd64eed31
-R b95d8ce08215c7ec2a42770b5c7b6593
+P 9e92a5ed5aaba20461ed4ce8359d6e34e7773d68
+R 83eb40a0e552094b8653559c8de84718
 U drh
-Z 921820c75b1deafea4774745e8ce3c77
+Z 928cfbe3ecee3b0dfe5377d27df29516
