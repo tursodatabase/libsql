@@ -1,7 +1,7 @@
-C Change\sthe\stestfixture\sbinary\sso\sthat\sit\sexplicitly\senabled\score\sfiles\s\non\sa\scrash\s(on\sunix).\s\sAdd\sa\stest\scase\sto\sverify\sthat\sthis\sworks.
-D 2015-01-09T21:54:58.894
+C Autoconf\sconfigure\sscript\supdates:\s\s(1)\sremove\sthe\slong-obsolete\n--enable-cross-thread-connections\soption.\s\s(2)\sremove\sthe\s--with-hints=\soptions.\n(3)\sExtension\sloading\sis\senabled\sby\sdefault.\s\s(4)\sCheck\sfor\sstrchrnull()\n(5)\sUpdate\sthe\s--help\stext.
+D 2015-01-10T14:27:17.510
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in b40b4c2a3a187c41ee657d3f0e0e0dfe8fd860b5
+F Makefile.in 876093578650b28af50a20c819993ee779885adb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc b363b90fe1bfc3b87d190f2f728a126c00d9ce09
 F Makefile.vxworks 034289efa9d591b04b1a73598623119c306cbba0
@@ -36,10 +36,10 @@ F autoconf/tea/win/makefile.vc f89d0184d0eee5f7e356ea407964dcd139939928
 F autoconf/tea/win/nmakehlp.c 2070e086f39866b353a482d3a14dedaf26196506
 F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
-F config.h.in 0921066a13130082764ab4ab6456f7b5bebe56de
+F config.h.in 3e31d7366de5d76ecde79417c34fb469c8fd963d
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 4343c810cc772571210af75d1a8f7c2eb711d75a x
-F configure.ac 4cf9f60785143fa141b10962ccc885d973792e9a
+F configure cc8ccb52cba371fef29990f1e33695c25fdcaf86 x
+F configure.ac 1d3ece7d3830eb92aaa3933628d0515998d68aa5
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 334dbf6621b8fb8790297ec1abf3cfa4621709d1
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
@@ -1235,7 +1235,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c70d5edaf6327cb18df5285c3fc21b610f3d3294
-R 521b82eb1167efbcde785d8c3ea7771d
+P 90f422ed81311d7ab2a90a381d36cba9c20227fc
+R c5a4ce14614667baa6ac385b32cb8bb4
 U drh
-Z a63c757fcfd64e46bc375106b9e33672
+Z 991825883a98cc750918a7830191009b

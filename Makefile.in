@@ -41,7 +41,7 @@ TCC += -D_HAVE_SQLITE_CONFIG_H -DBUILD_sqlite
 # Omitting the define will cause extra debugging code to be inserted and
 # includes extra comments when "EXPLAIN stmt" is used.
 #
-TCC += @TARGET_DEBUG@ @XTHREADCONNECT@
+TCC += @TARGET_DEBUG@
 
 # Compiler options needed for programs that use the TCL library.
 #
