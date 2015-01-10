@@ -29,7 +29,14 @@ Every test begins with a fresh run of the configure script at the top
 of the SQLite source tree.
 }
 
-array set ::Configs {
+# Omit comments (text between # and \n) in a long multi-line string.
+#
+proc strip_comments {in} {
+  regsub -all {#[^\n]*\n} $in {} out
+  return $out
+}
+
+array set ::Configs [strip_comments {
   "Default" {
     -O2
     --disable-amalgamation --disable-shared
@@ -166,13 +173,19 @@ array set ::Configs {
     -DSQLITE_ENABLE_FTS4
     -DSQLITE_ENABLE_RTREE
   }
+
+  # The next group of configurations are used only by the
+  # Failure-Detection platform.  They are all the same, but we need
+  # different names for them all so that they results appear in separate
+  # subdirectories.
+  #
   Fail0 {-O0}
   Fail2 {-O0}
   Fail3 {-O0}
   Fail4 {-O0}
-}
+}]
 
-array set ::Platforms {
+array set ::Platforms [strip_comments {
   Linux-x86_64 {
     "Check-Symbols"           checksymbols
     "Debug-One"               "mptest test"
@@ -206,6 +219,11 @@ array set ::Platforms {
   "Windows NT-intel" {
     "Default"                 "mptest fulltestonly"
   }
+
+  # The Failure-Detection platform runs various tests that deliberately
+  # fail.  This is used as a test of this script to verify that this script
+  # correctly identifies failures.
+  #
   Failure-Detection {
     Fail0     "TEST_FAILURE=0 test"
     Sanitize  "TEST_FAILURE=1 test"
@@ -213,7 +231,7 @@ array set ::Platforms {
     Fail3     "TEST_FAILURE=3 valgrindtest"
     Fail4     "TEST_FAILURE=4 test"
   }
-}
+}]
 
 
 # End of configuration section.
