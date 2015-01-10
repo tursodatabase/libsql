@@ -1,5 +1,5 @@
-C Make\suse\sof\sthe\sfdatasync()\sinterface\sif\sthe\sHAVE_FDATASYNC\smacro\sis\strue.
-D 2015-01-10T18:02:45.534
+C Add\sdetection\sof\sthe\sisnan()\slibrary\sfunction\sto\sthe\sconfigure\sscript.\s\sMake\nthe\scode\sresponsive\sto\sthe\sHAVE_ISNAN\sconfiguration\soption.
+D 2015-01-10T18:22:06.081
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 876093578650b28af50a20c819993ee779885adb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -36,10 +36,10 @@ F autoconf/tea/win/makefile.vc f89d0184d0eee5f7e356ea407964dcd139939928
 F autoconf/tea/win/nmakehlp.c 2070e086f39866b353a482d3a14dedaf26196506
 F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
-F config.h.in 3e31d7366de5d76ecde79417c34fb469c8fd963d
+F config.h.in 42b71ad3fe21c9e88fa59e8458ca1a6bc72eb0c0
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure cc8ccb52cba371fef29990f1e33695c25fdcaf86 x
-F configure.ac 1d3ece7d3830eb92aaa3933628d0515998d68aa5
+F configure f0438487966ab02dd0357c4ad27f1082e70a4b34 x
+F configure.ac 0c94d28b0a839fd0f35ccebded2ea4aed4424d65
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 334dbf6621b8fb8790297ec1abf3cfa4621709d1
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
@@ -801,7 +801,7 @@ F test/randexpr1.test eda062a97e60f9c38ae8d806b03b0ddf23d796df
 F test/rdonly.test dd30a4858d8e0fbad2304c2bd74a33d4df36412a
 F test/regexp1.test 497ea812f264d12b6198d6e50a76be4a1973a9d8
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
-F test/releasetest.tcl b40c2e3eb7931b925e38d1d18a51fe4a55fc77c2
+F test/releasetest.tcl 13f401c10dd4fe1a2fb811ae6ed27fd7d1300d3c
 F test/resolver01.test 33abf37ff8335e6bf98f2b45a0af3e06996ccd9a
 F test/rollback.test 458fe73eb3ffdfdf9f6ba3e9b7350a6220414dea
 F test/rollback2.test fc14cf6d1a2b250d2735ef16124b971bce152f14
@@ -1235,7 +1235,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9e92a5ed5aaba20461ed4ce8359d6e34e7773d68
-R 83eb40a0e552094b8653559c8de84718
+P 694228e4632c2999efa47ecb49f679c177db02e5
+R 332805e27e3ffd90d9186edc59ab2f6e
 U drh
-Z 928cfbe3ecee3b0dfe5377d27df29516
+Z 73760a179fa08b38d3fe890bfb333a58

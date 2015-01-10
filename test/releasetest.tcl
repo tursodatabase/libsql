@@ -51,6 +51,7 @@ array set ::Configs [strip_comments {
     # these support services.
     -DHAVE_FDATASYNC=0
     -DHAVE_GMTIME_R=0
+    -DHAVE_ISNAN=0
     -DHAVE_LOCALTIME_R=0
     -DHAVE_LOCALTIME_S=0
     -DHAVE_MALLOC_USABLE_SIZE=0

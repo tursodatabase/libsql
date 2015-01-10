@@ -12139,7 +12139,8 @@ done
 
 
 
-for ac_func in usleep fdatasync localtime_r gmtime_r localtime_s utime malloc_usable_size strchrnul
+
+for ac_func in fdatasync gmtime_r isnan localtime_r localtime_s malloc_usabel_size strchrnul usleep utime
 do
 as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 { $as_echo "$as_me:$LINENO: checking for $ac_func" >&5
