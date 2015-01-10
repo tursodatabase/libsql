@@ -45,6 +45,19 @@ array set ::Configs [strip_comments {
     CC=clang -fsanitize=undefined
     -DSQLITE_ENABLE_STAT4
   }
+  "Have-Not" {
+    # The "Have-Not" configuration sets all possible -UHAVE_feature options
+    # in order to verify that the code works even on platforms that lack
+    # these support services.
+    -DHAVE_FDATASYNC=0
+    -DHAVE_GMTIME_R=0
+    -DHAVE_LOCALTIME_R=0
+    -DHAVE_LOCALTIME_S=0
+    -DHAVE_MALLOC_USABLE_SIZE=0
+    -DHAVE_STRCHRNUL=0
+    -DHAVE_USLEEP=0
+    -DHAVE_UTIME=0
+  }
   "Unlock-Notify" {
     -O2
     -DSQLITE_ENABLE_UNLOCK_NOTIFY
@@ -189,6 +202,7 @@ array set ::Platforms [strip_comments {
   Linux-x86_64 {
     "Check-Symbols"           checksymbols
     "Debug-One"               "mptest test"
+    "Have-Not"                test
     "Secure-Delete"           test
     "Unlock-Notify"           "QUICKTEST_INCLUDE=notify2.test test"
     "Update-Delete-Limit"     test
@@ -203,6 +217,7 @@ array set ::Platforms [strip_comments {
   }
   Linux-i686 {
     "Devkit"                  test
+    "Have-Not"                test
     "Unlock-Notify"           "QUICKTEST_INCLUDE=notify2.test test"
     "Device-One"              test
     "Device-Two"              test
@@ -210,14 +225,17 @@ array set ::Platforms [strip_comments {
   }
   Darwin-i386 {
     "Locking-Style"           "mptest test"
+    "Have-Not"                test
     "OS-X"                    "threadtest fulltest"
   }
   Darwin-x86_64 {
     "Locking-Style"           "mptest test"
+    "Have-Not"                test
     "OS-X"                    "threadtest fulltest"
   }
   "Windows NT-intel" {
     "Default"                 "mptest fulltestonly"
+    "Have-Not"                test
   }
 
   # The Failure-Detection platform runs various tests that deliberately
@@ -317,9 +335,9 @@ proc run_test_suite {name testtarget config} {
 
   regsub -all {#[^\n]*\n} $config \n config
   foreach arg $config {
-    if {[string match -D* $arg]} {
+    if {[regexp {^-[UD]} $arg]} {
       lappend opts $arg
-    } elseif {[string match CC=* $arg]} {
+    } elseif {[regexp {^[A-Z]+=} $arg]} {
       lappend testtarget $arg
     } elseif {[regexp {^--(enable|disable)-} $arg]} {
       lappend configOpts $arg

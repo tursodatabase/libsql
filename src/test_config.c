@@ -41,7 +41,7 @@
 ** procedures use this to determine when tests should be omitted.
 */
 static void set_options(Tcl_Interp *interp){
-#ifdef HAVE_MALLOC_USABLE_SIZE
+#if HAVE_MALLOC_USABLE_SIZE
   Tcl_SetVar2(interp, "sqlite_options", "malloc_usable_size", "1",
               TCL_GLOBAL_ONLY);
 #else
