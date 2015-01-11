@@ -42,7 +42,7 @@ pub const SQLITE_NULL : c_int = 5;
 pub type SqliteDestructor = extern "C" fn(*mut c_void);
 
 pub fn SQLITE_TRANSIENT() -> SqliteDestructor {
-    unsafe { mem::transmute(-1i) }
+    unsafe { mem::transmute(-1is) }
 }
 
 pub fn code_to_str(code: c_int) -> &'static str {

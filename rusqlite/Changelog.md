@@ -1,3 +1,8 @@
+# Version 0.0.6 (2014-01-10)
+
+* Updates to track latest rustc changes (1.0.0-alpha).
+* Add `query_row_safe`, a `SqliteResult`-returning variant of `query_row`.
+
 # Version 0.0.5 (2014-01-07)
 
 * Updates to track latest rustc changes (closure syntax).
