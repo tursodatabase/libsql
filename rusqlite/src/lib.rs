@@ -259,6 +259,35 @@ impl SqliteConnection {
         f(rows.next().expect("Query did not return a row").unwrap())
     }
 
+    /// Convenience method to execute a query that is expected to return a single row.
+    ///
+    /// ## Example
+    ///
+    /// ```rust,no_run
+    /// # use rusqlite::{SqliteResult,SqliteConnection};
+    /// fn preferred_locale(conn: &SqliteConnection) -> SqliteResult<String> {
+    ///     conn.query_row_safe("SELECT value FROM preferences WHERE name='locale'", &[], |row| {
+    ///         row.get(0)
+    ///     })
+    /// }
+    /// ```
+    ///
+    /// If the query returns more than one row, all rows except the first are ignored.
+    pub fn query_row_safe<T, F>(&self, sql: &str, params: &[&ToSql], f: F) -> SqliteResult<T>
+                                where F: FnOnce(SqliteRow) -> T {
+        let mut stmt = try!(self.prepare(sql));
+        let mut rows = try!(stmt.query(params));
+
+        if let Some(row) = rows.next() {
+            row.map(f)
+        } else {
+            Err(SqliteError{
+                code: ffi::SQLITE_NOTICE,
+                message: "Query did not return a row".to_string(),
+            })
+        }
+    }
+
     /// Prepare a SQL statement for execution.
     ///
     /// ## Example
@@ -766,6 +795,33 @@ mod test {
             let v: Vec<i32> = rows.map(|r| r.unwrap().get(0)).collect();
             assert_eq!(v.as_slice(), [2i32, 1].as_slice());
         }
+    }
+
+    #[test]
+    fn test_query_row_safe() {
+        let db = checked_memory_handle();
+        let sql = "BEGIN;
+                   CREATE TABLE foo(x INTEGER);
+                   INSERT INTO foo VALUES(1);
+                   INSERT INTO foo VALUES(2);
+                   INSERT INTO foo VALUES(3);
+                   INSERT INTO foo VALUES(4);
+                   END;";
+        db.execute_batch(sql).unwrap();
+
+        assert_eq!(10i64, db.query_row_safe("SELECT SUM(x) FROM foo", &[], |r| {
+            r.get::<i64>(0)
+        }).unwrap());
+
+        let result = db.query_row_safe("SELECT x FROM foo WHERE x > 5", &[], |r| r.get::<i64>(0));
+        let error = result.unwrap_err();
+
+        assert!(error.code == ffi::SQLITE_NOTICE);
+        assert!(error.message.as_slice() == "Query did not return a row");
+
+        let bad_query_result = db.query_row_safe("NOT A PROPER QUERY; test123", &[], |_| ());
+
+        assert!(bad_query_result.is_err());
     }
 
     #[test]
