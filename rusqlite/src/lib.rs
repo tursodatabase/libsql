@@ -96,6 +96,12 @@ pub struct SqliteError {
     pub message: String,
 }
 
+impl fmt::String for SqliteError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        write!(f, "SqliteError( code: {}, message: {} )", self.code, self.message)
+    }
+}
+
 impl SqliteError {
     fn from_handle(db: *mut ffi::Struct_sqlite3, code: c_int) -> SqliteError {
         let message = if db.is_null() {
