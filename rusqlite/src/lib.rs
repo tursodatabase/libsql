@@ -43,7 +43,7 @@
 //!             time_created: row.get(2),
 //!             data: row.get(3)
 //!         };
-//!         println!("Found person {}", person);
+//!         println!("Found person {:?}", person);
 //!     }
 //! }
 //! ```
@@ -511,7 +511,7 @@ impl<'conn> SqliteStatement<'conn> {
 
 impl<'conn> fmt::Show for SqliteStatement<'conn> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Statement( conn: {}, stmt: {} )", self.conn, self.stmt)
+        write!(f, "Statement( conn: {:?}, stmt: {:?} )", self.conn, self.stmt)
     }
 }
 
