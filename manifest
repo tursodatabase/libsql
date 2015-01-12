@@ -1,9 +1,9 @@
-C Silence\ssome\sharmless\suninitialized\slocal\svariable\swarnings.
-D 2015-01-12T19:59:12.988
+C Add\stwo\smore\sclasses\sof\sharmless\sMSVC\scompiler\swarnings.
+D 2015-01-12T20:20:26.134
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 9efcdb5c6025caea362cdfc38817451170fc6344
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 42ce34934c4e1c957f194bd76992aa9008c2daa5
+F Makefile.msc 4c057774e6138b9023fc16ec05639ddd3329b152
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md d58e3bebc0a4145e0f2a87994015fdb575a8e866
 F VERSION d846487aff892625eb8e75960234e7285f0462fe
@@ -203,7 +203,7 @@ F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
 F src/mem3.c 61c9d47b792908c532ca3a62b999cf21795c6534
 F src/mem5.c 61eeb90134f9a5be6c2e68d8daae7628b25953fb
 F src/memjournal.c 3eb2c0b51adbd869cb6a44780323f05fa904dc85
-F src/msvc.h 9dc7aedcf4f19696f2e5aac148a654ed0ddcaf35
+F src/msvc.h e78002098966e39b2fd9915bd70b7bc3ec8398b7
 F src/mutex.c 19bf9acba69ca2f367c3761080f8a9f0cf4670a8
 F src/mutex.h 779d588e3b7756ec3ecf7d78cde1d84aba414f85
 F src/mutex_noop.c f3f09fd7a2eb4287cfc799753ffc30380e7b71a1
@@ -1236,7 +1236,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 923fd66031ed1876bc63c3a038f0b8e33678184e
-R 0a4111785ad71573d9bb58b14a50ee38
+P 44375a34e59d1b0f0d765a99dcc7e6f30a4be7f7
+R 501ee21f088e015683ae00565ce9a69c
 U mistachkin
-Z 81d2738afee83f71ddaa23bd06d31603
+Z bd3651b366d9527562493f67b56ed79e
