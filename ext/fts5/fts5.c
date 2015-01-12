@@ -72,6 +72,7 @@ struct Fts5Global {
   i64 iNextId;                    /* Used to allocate unique cursor ids */
   Fts5Auxiliary *pAux;            /* First in list of all aux. functions */
   Fts5TokenizerModule *pTok;      /* First in list of all tokenizer modules */
+  Fts5TokenizerModule *pDfltTok;  /* Default tokenizer module */
   Fts5Cursor *pCsr;               /* First in list of all open cursors */
 };
 
@@ -771,7 +772,7 @@ static int fts5FindRankFunction(Fts5Cursor *pCsr){
   Fts5Table *pTab = (Fts5Table*)(pCsr->base.pVtab);
   Fts5Config *pConfig = pTab->pConfig;
   int rc = SQLITE_OK;
-  Fts5Auxiliary *pAux;
+  Fts5Auxiliary *pAux = 0;
   const char *zRank = pCsr->zRank;
   const char *zRankArgs = pCsr->zRankArgs;
 
@@ -1028,7 +1029,6 @@ static int fts5SeekCursor(Fts5Cursor *pCsr){
 }
 
 static void fts5SetVtabError(Fts5Table *p, const char *zFormat, ...){
-  int rc;
   va_list ap;                     /* ... printf arguments */
   va_start(ap, zFormat);
   assert( p->base.zErrMsg==0 );
@@ -1796,6 +1796,9 @@ static int fts5CreateTokenizer(
     pNew->xDestroy = xDestroy;
     pNew->pNext = pGlobal->pTok;
     pGlobal->pTok = pNew;
+    if( pNew->pNext==0 ){
+      pGlobal->pDfltTok = pNew;
+    }
   }else{
     rc = SQLITE_NOMEM;
   }
@@ -1817,8 +1820,12 @@ static int fts5FindTokenizer(
   int rc = SQLITE_OK;
   Fts5TokenizerModule *pTok;
 
-  for(pTok=pGlobal->pTok; pTok; pTok=pTok->pNext){
-    if( sqlite3_stricmp(zName, pTok->zName)==0 ) break;
+  if( zName==0 ){
+    pTok = pGlobal->pDfltTok;
+  }else{
+    for(pTok=pGlobal->pTok; pTok; pTok=pTok->pNext){
+      if( sqlite3_stricmp(zName, pTok->zName)==0 ) break;
+    }
   }
 
   if( pTok ){
@@ -1841,8 +1848,9 @@ int sqlite3Fts5GetTokenizer(
 ){
   Fts5TokenizerModule *pMod = 0;
   int rc = SQLITE_OK;
+
   if( nArg==0 ){
-    pMod = pGlobal->pTok;
+    pMod = pGlobal->pDfltTok;
   }else{
     for(pMod=pGlobal->pTok; pMod; pMod=pMod->pNext){
       if( sqlite3_stricmp(azArg[0], pMod->zName)==0 ) break;

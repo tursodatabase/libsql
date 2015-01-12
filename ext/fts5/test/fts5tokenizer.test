@@ -33,7 +33,7 @@ do_execsql_test 1.3 {
   DROP TABLE ft1;
 }
 do_execsql_test 1.4 {
-  CREATE VIRTUAL TABLE ft1 USING fts5(x, tokenize = 'porter simple');
+  CREATE VIRTUAL TABLE ft1 USING fts5(x, tokenize = 'porter ascii');
   DROP TABLE ft1;
 }
 
@@ -75,7 +75,7 @@ do_catchsql_test 4.2 {
 #-------------------------------------------------------------------------
 # Test the "separators" and "tokenchars" options a bit.
 #
-foreach {tn tokenizer} {1 simple 2 unicode61} {
+foreach {tn tokenizer} {1 ascii 2 unicode61} {
   reset_db
   set T "$tokenizer tokenchars ',.:' separators 'xyz'"
   execsql "CREATE VIRTUAL TABLE t1 USING fts5(x, tokenize = \"$T\")"
