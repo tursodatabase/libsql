@@ -20,8 +20,7 @@
 #pragma warning(disable : 4127)
 #pragma warning(disable : 4232)
 #pragma warning(disable : 4244)
-/* #pragma warning(disable : 4701) */
 #pragma warning(disable : 4706)
-#endif
+#endif /* defined(_MSC_VER) */
 
 #endif /* _MSVC_H_ */
