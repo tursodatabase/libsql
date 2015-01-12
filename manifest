@@ -1,5 +1,5 @@
-C Work\sin\sprogress\son\sfixing\sharmless\scompiler\swarnings\swhen\susing\s-W4\sand\sMSVC.
-D 2015-01-12T18:02:52.080
+C Fix\scomments\sand\sadd\sanother\sdisabled\swarning\sfor\sMSVC.
+D 2015-01-12T18:27:31.115
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 33a180534a9ba2cf80f5f87e8288c26423d0a8d1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -203,7 +203,7 @@ F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
 F src/mem3.c 61c9d47b792908c532ca3a62b999cf21795c6534
 F src/mem5.c 61eeb90134f9a5be6c2e68d8daae7628b25953fb
 F src/memjournal.c 3eb2c0b51adbd869cb6a44780323f05fa904dc85
-F src/msvc.h e77df50d66fe9d2845c1692bd415f10ed2da7ea6
+F src/msvc.h f9a7b17a5fbc4ddaca0339128e56aed20256d309
 F src/mutex.c 19bf9acba69ca2f367c3761080f8a9f0cf4670a8
 F src/mutex.h 779d588e3b7756ec3ecf7d78cde1d84aba414f85
 F src/mutex_noop.c f3f09fd7a2eb4287cfc799753ffc30380e7b71a1
@@ -1236,10 +1236,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c70d5edaf6327cb18df5285c3fc21b610f3d3294
-R 88ff3b896a4782d7ebc798cf681238f7
-T *branch * msvcW4
-T *sym-msvcW4 *
-T -sym-trunk *
+P 856dd245ce037f93d5ae2ddeb4fdf949c1e5c8e9
+R 306d1e512e997bee8bd0c70d96704bbe
 U mistachkin
-Z 8d2294254b24b7823d46df8b0b6fe494
+Z 37adac17acc7ab7c754a712018c43649

@@ -10,7 +10,7 @@
 **
 ******************************************************************************
 **
-** This file contains code that is specific to Windows.
+** This file contains code that is specific to MSVC.
 */
 #ifndef _MSVC_H_
 #define _MSVC_H_
@@ -21,7 +21,7 @@
 #pragma warning(disable : 4232)
 #pragma warning(disable : 4244)
 /* #pragma warning(disable : 4701) */
-/* #pragma warning(disable : 4706) */
+#pragma warning(disable : 4706)
 #endif
 
 #endif /* _MSVC_H_ */
