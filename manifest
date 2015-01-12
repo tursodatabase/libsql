@@ -1,5 +1,5 @@
-C Add\stwo\smore\sclasses\sof\sharmless\sMSVC\scompiler\swarnings.
-D 2015-01-12T20:20:26.134
+C Fix\sharmless\scompiler\swarning\sin\san\sassert()\sstatement.
+D 2015-01-12T20:25:33.360
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 9efcdb5c6025caea362cdfc38817451170fc6344
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -262,7 +262,7 @@ F src/test_hexio.c abfdecb6fa58c354623978efceb088ca18e379cd
 F src/test_init.c 66b33120ffe9cd853b5a905ec850d51151337b32
 F src/test_intarray.c 6c610a21ab8edde85a3a2c7f2b069244ecf4d834
 F src/test_intarray.h 9dc57417fb65bc7835cc18548852cc08cc062202
-F src/test_journal.c de3402cbd600b55b6bac74663135b7a4e159ff66
+F src/test_journal.c 5360fbe1d1e4416ca36290562fd5a2e3f70f32aa
 F src/test_loadext.c a5251f956ab6af21e138dc1f9c0399394a510cb4
 F src/test_malloc.c b9495384e74923aefde8311de974bf9b0f5ba570
 F src/test_multiplex.c 72c0ad1e97af3d6d19975bbd81813072b40c7290
@@ -1236,7 +1236,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 44375a34e59d1b0f0d765a99dcc7e6f30a4be7f7
-R 501ee21f088e015683ae00565ce9a69c
+P de30d5b053b8e004418c81945d626cfad315d6ba
+R 79278f99b3f4d9aaeb5b2b5be8f618ce
 U mistachkin
-Z bd3651b366d9527562493f67b56ed79e
+Z 02f72f6c4a80a1aa451e44b57450d7f3
