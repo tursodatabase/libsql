@@ -1,5 +1,5 @@
-C Fix\scomments\sand\sadd\sanother\sdisabled\swarning\sfor\sMSVC.
-D 2015-01-12T18:27:31.115
+C Fix\ssome\sharmless\scompiler\swarnings.
+D 2015-01-12T18:38:02.224
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 33a180534a9ba2cf80f5f87e8288c26423d0a8d1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -78,7 +78,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 8b6cceb3e0be22da26d83a3cec0e0e337e6b8ec6
+F ext/fts3/fts3.c 5c464816508e40feb3c61f1f5566551764698fc8
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 53d4eca1fb23eab00681fb028fb82eb5705c1e21
 F ext/fts3/fts3_aux.c 5c211e17a64885faeb16b9ba7772f9d5445c2365
@@ -90,13 +90,13 @@ F ext/fts3/fts3_porter.c 3565faf04b626cddf85f03825e86056a4562c009
 F ext/fts3/fts3_snippet.c 51beb5c1498176fd9caccaf1c75b55cb803a985a
 F ext/fts3/fts3_term.c a521f75132f9a495bdca1bdd45949b3191c52763
 F ext/fts3/fts3_test.c 8a3a78c4458b2d7c631fcf4b152a5cd656fa7038
-F ext/fts3/fts3_tokenize_vtab.c 011170fe9eba5ff062f1a31d3188e00267716706
+F ext/fts3/fts3_tokenize_vtab.c becc661223db7898b213f9e8a23d75bac02408c9
 F ext/fts3/fts3_tokenizer.c bbdc731bc91338050675c6d1da9ab82147391e16
 F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c a93f5edc0aff44ef8b06d7cb55b52026541ca145
 F ext/fts3/fts3_unicode2.c c3d01968d497bd7001e7dc774ba75b372738c057
-F ext/fts3/fts3_write.c 8260388626516a7005d06a9dce94f9e55c6c2a41
+F ext/fts3/fts3_write.c 9b3a32cbecf40a1f41cb08c00df8c066c23c7a25
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/fts3/tool/fts3view.c 3986531f2fc0ceca0c89c31ec7d0589b6adb19d6
@@ -181,7 +181,7 @@ F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c 198a0066ba60ab06fc00fba1998d870a4d575463
 F src/ctime.c df19848891c8a553c80e6f5a035e768280952d1a
 F src/date.c 53cedb541686b30eb5495753f0b622909a928780
-F src/delete.c 0750b1eb4d96cd3fb2c798599a3a7c85e92f1417
+F src/delete.c bd1a91ddd247ce13004075251e0b7fe2bf9925ef
 F src/expr.c 7be80f7dc337329a24df45c2f3bdb2ea3b64c90e
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c e0444b61bed271a76840cbe6182df93a9baa3f12
@@ -195,7 +195,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
 F src/loadext.c 86bd4e2fccd520b748cba52492ab60c4a770f660
-F src/main.c b0a7f3f9ff70106b7735f38c602d1b3ca56eb065
+F src/main.c c82bc2650f64edfaf9c103342d0f8c58665213d4
 F src/malloc.c 740db54387204c9a2eb67c6d98e68b08e9ef4eab
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c faf615aafd8be74a71494dfa027c113ea5c6615f
@@ -223,7 +223,7 @@ F src/parse.y c5d0d964f9ac023e8154cad512e54b0b6058e086
 F src/pcache.c d210cf90d04365a74f85d21374dded65af67b0cb
 F src/pcache.h b44658c9c932d203510279439d891a2a83e12ba8
 F src/pcache1.c 1e77432b40b7d3288327d9cdf399dcdfd2b6d3bf
-F src/pragma.c bd33aa24456f043bb6f6d32a918bbeed41d8c591
+F src/pragma.c ba149bbbc90783f84815636c509ced8eac11bbcf
 F src/prepare.c 173a5a499138451b2561614ecb87d78f9f4644b9
 F src/printf.c 9e75a6a0b55bf61cfff7d7e19d89834a1b938236
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
@@ -1236,7 +1236,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 856dd245ce037f93d5ae2ddeb4fdf949c1e5c8e9
-R 306d1e512e997bee8bd0c70d96704bbe
+P 43b6b4cc051e5a801a992c56d2c82abcdcf45cec
+R bba3af3a356e680f16cb17ee14d2767c
 U mistachkin
-Z 37adac17acc7ab7c754a712018c43649
+Z d67b74d2cb1318ffa320cad7c97c91ba

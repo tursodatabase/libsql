@@ -3140,7 +3140,7 @@ int sqlite3_table_column_metadata(
   char *zErrMsg = 0;
   Table *pTab = 0;
   Column *pCol = 0;
-  int iCol;
+  int iCol = 0;
 
   char const *zDataType = 0;
   char const *zCollSeq = 0;
