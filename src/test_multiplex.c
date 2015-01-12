@@ -535,7 +535,7 @@ static int multiplexOpen(
     /* assign pointers to extra space allocated */
     memset(pGroup, 0, sz);
     pMultiplexOpen->pGroup = pGroup;
-    pGroup->bEnabled = -1;
+    pGroup->bEnabled = (unsigned char)-1;
     pGroup->bTruncate = sqlite3_uri_boolean(zUri, "truncate", 
                                    (flags & SQLITE_OPEN_MAIN_DB)==0);
     pGroup->szChunk = (int)sqlite3_uri_int64(zUri, "chunksize",

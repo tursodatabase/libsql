@@ -28,7 +28,8 @@ USE_FULLWARN = 0
 #
 !IFNDEF NO_WARN
 !IF $(USE_FULLWARN)!=0
-NO_WARN = -wd4054 -wd4055 -wd4100 -wd4210 -wd4702
+NO_WARN = -wd4054 -wd4055 -wd4100 -wd4127 -wd4152 -wd4189 -wd4206 -wd4210
+NO_WARN = $(NO_WARN) -wd4232 -wd4244 -wd4702 -wd4706
 !ENDIF
 !ENDIF
 
@@ -274,7 +275,7 @@ NLTLIBPATHS = "/LIBPATH:$(NCRTLIBPATH)" "/LIBPATH:$(NSDKLIBPATH)"
 # same unless your are cross-compiling.)
 #
 !IF $(USE_FULLWARN)!=0
-TCC = $(CC) -W4
+TCC = $(CC) -W4 -DINCLUDE_MSVC_H=1
 !ELSE
 TCC = $(CC) -W3
 !ENDIF
@@ -1017,8 +1018,7 @@ libtclsqlite3.lib:	tclsqlite.lo libsqlite3.lib
 	$(LTLIB) $(LTLIBOPTS) $(LTLIBPATHS) /OUT:$@ tclsqlite.lo libsqlite3.lib $(LIBTCL:tcl=tclstub) $(TLIBS)
 
 sqlite3.exe:	$(TOP)\src\shell.c libsqlite3.lib $(LIBRESOBJS) sqlite3.h
-	$(LTLINK) $(READLINE_FLAGS) \
-		-DINCLUDE_MSVC_H=1 $(TOP)\src\shell.c \
+	$(LTLINK) $(READLINE_FLAGS) $(TOP)\src\shell.c \
 		/link $(LTLINKOPTS) $(LTLIBPATHS) libsqlite3.lib $(LIBRESOBJS) $(LIBREADLINE) $(LTLIBS) $(TLIBS)
 
 mptester.exe:	$(TOP)\mptest\mptest.c libsqlite3.lib $(LIBRESOBJS) sqlite3.h
@@ -1422,7 +1422,8 @@ rtree.lo:	$(TOP)\ext\rtree\rtree.c $(HDR) $(EXTHDR)
 # hidden when the library is built via the amalgamation).
 #
 TESTFIXTURE_FLAGS = -DTCLSH=1 -DSQLITE_TEST=1 -DSQLITE_CRASH_TEST=1
-TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_SERVER=1 -DSQLITE_PRIVATE="" -DSQLITE_CORE
+TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_SERVER=1 -DSQLITE_PRIVATE=""
+TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_CORE $(NO_WARN)
 
 TESTFIXTURE_SRC0 = $(TESTEXT) $(TESTSRC2) libsqlite3.lib
 TESTFIXTURE_SRC1 = $(TESTEXT) $(SQLITE3C)

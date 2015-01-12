@@ -25,6 +25,14 @@
 **                        hundreds of new commands used for testing
 **                        SQLite.  This option implies -DSQLITE_TCLMD5.
 */
+
+/*
+** If requested, include the SQLite compiler options file for MSVC.
+*/
+#if defined(INCLUDE_MSVC_H)
+#include "msvc.h"
+#endif
+
 #include "tcl.h"
 #include <errno.h>
 
@@ -3102,7 +3110,7 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
 ** The EXTERN macros are required by TCL in order to work on windows.
 */
 EXTERN int Sqlite3_Init(Tcl_Interp *interp){
-  int rc = Tcl_InitStubs(interp, "8.4", 0)==0 ? TCL_ERROR : TCL_OK;
+  int rc = Tcl_InitStubs(interp, "8.4", 0) ? TCL_OK : TCL_ERROR;
   if( rc==TCL_OK ){
     Tcl_CreateObjCommand(interp, "sqlite3", (Tcl_ObjCmdProc*)DbMain, 0, 0);
 #ifndef SQLITE_3_SUFFIX_ONLY
