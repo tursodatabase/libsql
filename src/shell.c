@@ -18,6 +18,13 @@
 #endif
 
 /*
+** If requested, include the SQLite compiler options file for MSVC.
+*/
+#if defined(INCLUDE_MSVC_H)
+#include "msvc.h"
+#endif
+
+/*
 ** Enable large-file support for fopen() and friends on unix.
 */
 #ifndef SQLITE_DISABLE_LFS

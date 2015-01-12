@@ -253,6 +253,7 @@ SRC = \
   $(TOP)/src/mem3.c \
   $(TOP)/src/mem5.c \
   $(TOP)/src/memjournal.c \
+  $(TOP)/src/msvc.h \
   $(TOP)/src/mutex.c \
   $(TOP)/src/mutex.h \
   $(TOP)/src/mutex_noop.c \
@@ -414,6 +415,7 @@ HDR = \
    $(TOP)/src/hash.h \
    $(TOP)/src/hwtime.h \
    keywordhash.h \
+   $(TOP)/src/msvc.h \
    $(TOP)/src/mutex.h \
    opcodes.h \
    $(TOP)/src/os.h \

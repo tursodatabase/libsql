@@ -1,10 +1,10 @@
-C Add\sSQLITE_ENABLE_STMT_SCANSTATUS\sto\sthe\sUpdate-Delete-Limit\sconfiguration\nin\sthe\sreleasetest.tcl\sscript.
-D 2015-01-09T20:00:21.586
+C Work\sin\sprogress\son\sfixing\sharmless\scompiler\swarnings\swhen\susing\s-W4\sand\sMSVC.
+D 2015-01-12T18:02:52.080
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in b40b4c2a3a187c41ee657d3f0e0e0dfe8fd860b5
+F Makefile.in 33a180534a9ba2cf80f5f87e8288c26423d0a8d1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc b363b90fe1bfc3b87d190f2f728a126c00d9ce09
-F Makefile.vxworks 034289efa9d591b04b1a73598623119c306cbba0
+F Makefile.msc 2ed20e3ee252eb85dea357940a2e5e5649f9dd86
+F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md d58e3bebc0a4145e0f2a87994015fdb575a8e866
 F VERSION d846487aff892625eb8e75960234e7285f0462fe
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -152,7 +152,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 9f8c54fe62b60e0a24a2e65cfc8d2add063dda07
+F main.mk 1d0cf88b6e89249608677215ad36e4f8a231accc
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
 F mkopcodeh.awk c6b3fa301db6ef7ac916b14c60868aeaec1337b5
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
@@ -203,6 +203,7 @@ F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
 F src/mem3.c 61c9d47b792908c532ca3a62b999cf21795c6534
 F src/mem5.c 61eeb90134f9a5be6c2e68d8daae7628b25953fb
 F src/memjournal.c 3eb2c0b51adbd869cb6a44780323f05fa904dc85
+F src/msvc.h e77df50d66fe9d2845c1692bd415f10ed2da7ea6
 F src/mutex.c 19bf9acba69ca2f367c3761080f8a9f0cf4670a8
 F src/mutex.h 779d588e3b7756ec3ecf7d78cde1d84aba414f85
 F src/mutex_noop.c f3f09fd7a2eb4287cfc799753ffc30380e7b71a1
@@ -229,11 +230,11 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c f6c46d3434439ab2084618d603e6d6dbeb0d6ada
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c e4c38c75e36f28aed80a69a725d888751bfd53df
-F src/shell.c 1b7cb3efc5ae6fe82e36407508c4a6b00d8edde1
+F src/shell.c 0cebd04b204051652e969773af70feb42cf9bc2b
 F src/sqlite.h.in 9dfc99d6533d36d6a549c4f3f01cacc8be956ada
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
-F src/sqliteInt.h 5d5716d8b33a61606c6ee10112f4b6df56f42725
+F src/sqliteInt.h f25fe9df72dfee0eedfde4bacd0f02077d557631
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 81712116e826b0089bb221b018929536b2b5406f
 F src/table.c e7a09215315a978057fb42c640f890160dbcc45e
@@ -1193,7 +1194,7 @@ F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
-F tool/lemon.c 20f3132a1a150d50b022aa0b1fa26bd46aebf7b5
+F tool/lemon.c 1864c4fe4a72b1bb28f1792b60504804fe82c5d2
 F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
 F tool/logest.c eef612f8adf4d0993dafed0416064cf50d5d33c6
 F tool/mkautoconfamal.sh 5dc5010e2e748a9e1bba67baca5956a2c2deda7b
@@ -1201,10 +1202,10 @@ F tool/mkkeywordhash.c dfff09dbbfaf950e89af294f48f902181b144670
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkpragmatab.tcl 07a5124cf2dbafa1b375eefcf8ac4227028b0f8b
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
-F tool/mksqlite3c-noext.tcl 88a1e3b0c769773fb7a9ebb363ffc603a4ac21d8
-F tool/mksqlite3c.tcl e94bdc37b531bba50d421e82efbe3738d0c1e950
+F tool/mksqlite3c-noext.tcl 9ef48e1748dce7b844f67e2450ff9dfeb0fb4ab5
+F tool/mksqlite3c.tcl cfde806851c413db7689b9cb74a4eeb92539c601
 F tool/mksqlite3h.tcl ba24038056f51fde07c0079c41885ab85e2cff12
-F tool/mksqlite3internalh.tcl b6514145a7d5321b47e64e19b8116cc44f973eb1
+F tool/mksqlite3internalh.tcl eb994013e833359137eb53a55acdad0b5ae1049b
 F tool/mkvsix.tcl 52a4c613707ac34ae9c226e5ccc69cb948556105
 F tool/offsets.c fe4262fdfa378e8f5499a42136d17bf3b98f6091
 F tool/omittest.tcl 34d7ac01fe4fd18e3637f64abe12c40eca0f6b97
@@ -1235,7 +1236,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 88a7a967116a48aeb5fa7014613c0134b1b47bb3
-R 366d7baead37fb35af2c9724ea29fa87
-U drh
-Z 19a0bf2d773a4306e8c2ab9a5efe117f
+P c70d5edaf6327cb18df5285c3fc21b610f3d3294
+R 88ff3b896a4782d7ebc798cf681238f7
+T *branch * msvcW4
+T *sym-msvcW4 *
+T -sym-trunk *
+U mistachkin
+Z 8d2294254b24b7823d46df8b0b6fe494
