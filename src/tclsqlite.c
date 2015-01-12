@@ -1093,10 +1093,10 @@ static int dbPrepareAndBind(
   SqlPreparedStmt **ppPreStmt     /* OUT: Object used to cache statement */
 ){
   const char *zSql = zIn;         /* Pointer to first SQL statement in zIn */
-  sqlite3_stmt *pStmt;            /* Prepared statement object */
+  sqlite3_stmt *pStmt = 0;        /* Prepared statement object */
   SqlPreparedStmt *pPreStmt;      /* Pointer to cached statement */
   int nSql;                       /* Length of zSql in bytes */
-  int nVar;                       /* Number of variables in statement */
+  int nVar = 0;                   /* Number of variables in statement */
   int iParm = 0;                  /* Next free entry in apParm */
   char c;
   int i;

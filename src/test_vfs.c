@@ -421,7 +421,7 @@ static int tvfsSync(sqlite3_file *pFile, int flags){
   Testvfs *p = (Testvfs *)pFd->pVfs->pAppData;
 
   if( p->pScript && p->mask&TESTVFS_SYNC_MASK ){
-    char *zFlags;
+    char *zFlags = 0;
 
     switch( flags ){
       case SQLITE_SYNC_NORMAL:
@@ -1225,7 +1225,7 @@ static int testvfs_obj_cmd(
     case CMD_CANTOPENERR:
     case CMD_IOERR:
     case CMD_FULLERR: {
-      TestFaultInject *pTest;
+      TestFaultInject *pTest = 0;
       int iRet;
 
       switch( aSubcmd[i].eCmd ){

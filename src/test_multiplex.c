@@ -406,7 +406,7 @@ static void multiplexControlFunc(
 ){
   int rc = SQLITE_OK;
   sqlite3 *db = sqlite3_context_db_handle(context);
-  int op;
+  int op = 0;
   int iVal;
 
   if( !db || argc!=2 ){ 
