@@ -567,7 +567,7 @@ static int test_get_table_printf(
   Tcl_DString str;
   int rc;
   char *zErr = 0;
-  int nRow, nCol;
+  int nRow = 0, nCol = 0;
   char **aResult;
   int i;
   char zBuf[30];
@@ -2120,7 +2120,7 @@ static int test_stmt_status(
   Tcl_Obj *CONST objv[]
 ){
   int iValue;
-  int i, op, resetFlag;
+  int i, op = 0, resetFlag;
   const char *zOpName;
   sqlite3_stmt *pStmt;
 
@@ -3098,7 +3098,7 @@ static int test_bind_double(
 ){
   sqlite3_stmt *pStmt;
   int idx;
-  double value;
+  double value = 0;
   int rc;
   const char *zVal;
   int i;
@@ -5458,7 +5458,7 @@ static int test_limit(
     { "SQLITE_LIMIT_TOOSMALL",            -1,                               },
     { "SQLITE_LIMIT_TOOBIG",              SQLITE_LIMIT_WORKER_THREADS+1     },
   };
-  int i, id;
+  int i, id = 0;
   int val;
   const char *zId;
 

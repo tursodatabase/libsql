@@ -777,11 +777,11 @@ static int echoBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
   sqlite3_stmt *pStmt = 0;
   Tcl_Interp *interp = pVtab->interp;
 
-  int nRow;
+  int nRow = 0;
   int useIdx = 0;
   int rc = SQLITE_OK;
   int useCost = 0;
-  double cost;
+  double cost = 0;
   int isIgnoreUsable = 0;
   if( Tcl_GetVar(interp, "echo_module_ignore_usable", TCL_GLOBAL_ONLY) ){
     isIgnoreUsable = 1;
@@ -927,7 +927,7 @@ int echoUpdate(
   sqlite3 *db = pVtab->db;
   int rc = SQLITE_OK;
 
-  sqlite3_stmt *pStmt;
+  sqlite3_stmt *pStmt = 0;
   char *z = 0;               /* SQL statement to execute */
   int bindArgZero = 0;       /* True to bind apData[0] to sql var no. nData */
   int bindArgOne = 0;        /* True to bind apData[1] to sql var no. 1 */
