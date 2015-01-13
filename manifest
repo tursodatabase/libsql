@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\swhen\susing\s-W4\swith\sMSVC.
-D 2015-01-12T21:43:00.602
+C Fix\sthe\se_walauto.test\stest\smodule\sso\sthat\sit\sworks\son\sboth\slittle-endian\sand\nbig-ending\smachines.
+D 2015-01-13T01:12:43.817
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 9efcdb5c6025caea362cdfc38817451170fc6344
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -479,7 +479,7 @@ F test/e_update.test 312cb8f5ccfe41515a6bb092f8ea562a9bd54d52
 F test/e_uri.test 5ae33760fb2039c61aa2d90886f1664664173585
 F test/e_vacuum.test 5bfbdc21b65c0abf24398d0ba31dc88d93ca77a9
 F test/e_wal.test 0967f0b8f1dfda871dc7b9b5574198f1f4f7d69a
-F test/e_walauto.test d2dfc6681aade1f1306a8a336f5a258d8b62becd
+F test/e_walauto.test ca70cf75c07a6cb1874ced101dd426da76625649
 F test/e_walckpt.test 65e29b6631e51f210f83e4ff11571e647ba93608
 F test/e_walhook.test da3ea8b3483d1af72190337bda50155a91a4b664
 F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
@@ -1236,7 +1236,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 11e81ac2a7c917f7c9afc218d104d9870daf9668 bdbeed01ddc60a4ab322621fc118cc4767660fd3
-R 79278f99b3f4d9aaeb5b2b5be8f618ce
-U mistachkin
-Z 24816da0c39ded9b418b6d7a785804dc
+P e693e11d1b9265974c32bddba873ea30a4d0b708
+R 5f43a97405384c08e7d2695a40688554
+U drh
+Z 3c1c71c98fb9cbeb713c59bb71069029
