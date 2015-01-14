@@ -398,7 +398,7 @@ static amatch_avl *amatchAvlInsert(amatch_avl **ppHead, amatch_avl *pNew){
 */
 static void amatchAvlRemove(amatch_avl **ppHead, amatch_avl *pOld){
   amatch_avl **ppParent;
-  amatch_avl *pBalance;
+  amatch_avl *pBalance = 0;
   /* assert( amatchAvlSearch(*ppHead, pOld->zKey)==pOld ); */
   ppParent = amatchAvlFromPtr(pOld, ppHead);
   if( pOld->pBefore==0 && pOld->pAfter==0 ){

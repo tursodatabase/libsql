@@ -2442,7 +2442,7 @@ to follow the previous rule.");
       if( x[0]=='{' || x[0]=='\"' || isalnum(x[0]) ){
         const char *zOld, *zNew;
         char *zBuf, *z;
-        int nOld, n, nLine, nNew, nBack;
+        int nOld, n, nLine = 0, nNew, nBack;
         int addLineMacro;
         char zLine[50];
         zNew = x;
@@ -2641,7 +2641,7 @@ void Parse(struct lemon *gp)
   struct pstate ps;
   FILE *fp;
   char *filebuf;
-  int filesize;
+  unsigned int filesize;
   int lineno;
   int c;
   char *cp, *nextcp;
@@ -2775,7 +2775,7 @@ void Parse(struct lemon *gp)
     c = *cp;
     *cp = 0;                        /* Null terminate the token */
     parseonetoken(&ps);             /* Parse the token */
-    *cp = c;                        /* Restore the buffer */
+    *cp = (char)c;                  /* Restore the buffer */
     cp = nextcp;
   }
   free(filebuf);                    /* Release the buffer after parsing */
@@ -3398,7 +3398,7 @@ PRIVATE char *append_str(const char *zText, int n, int p1, int p2){
       zText++;
       n--;
     }else{
-      z[used++] = c;
+      z[used++] = (char)c;
     }
   }
   z[used] = 0;

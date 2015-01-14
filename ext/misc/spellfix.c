@@ -356,7 +356,7 @@ static int substituteCost(char cPrev, char cFrom, char cTo){
 static int editdist1(const char *zA, const char *zB, int *pnMatch){
   int nA, nB;            /* Number of characters in zA[] and zB[] */
   int xA, xB;            /* Loop counters for zA[] and zB[] */
-  char cA, cB;           /* Current character of zA and zB */
+  char cA = 0, cB;       /* Current character of zA and zB */
   char cAprev, cBprev;   /* Previous character of zA and zB */
   char cAnext, cBnext;   /* Next character in zA and zB */
   int d;                 /* North-west cost value */

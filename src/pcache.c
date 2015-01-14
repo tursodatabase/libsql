@@ -31,18 +31,6 @@ struct PCache {
   PgHdr *pPage1;                      /* Reference to page 1 */
 };
 
-/*
-** Some of the assert() macros in this code are too expensive to run
-** even during normal debugging.  Use them only rarely on long-running
-** tests.  Enable the expensive asserts using the
-** -DSQLITE_ENABLE_EXPENSIVE_ASSERT=1 compile-time option.
-*/
-#ifdef SQLITE_ENABLE_EXPENSIVE_ASSERT
-# define expensive_assert(X)  assert(X)
-#else
-# define expensive_assert(X)
-#endif
-
 /********************************** Linked List Management ********************/
 
 /* Allowed values for second argument to pcacheManageDirtyList() */

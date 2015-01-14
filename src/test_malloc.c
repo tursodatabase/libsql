@@ -1338,7 +1338,7 @@ static int test_status(
   Tcl_Obj *CONST objv[]
 ){
   int rc, iValue, mxValue;
-  int i, op, resetFlag;
+  int i, op = 0, resetFlag;
   const char *zOpName;
   static const struct {
     const char *zName;
@@ -1395,7 +1395,7 @@ static int test_db_status(
   Tcl_Obj *CONST objv[]
 ){
   int rc, iValue, mxValue;
-  int i, op, resetFlag;
+  int i, op = 0, resetFlag;
   const char *zOpName;
   sqlite3 *db;
   extern int getDbPointer(Tcl_Interp*, const char*, sqlite3**);

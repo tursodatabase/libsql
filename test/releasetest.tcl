@@ -29,7 +29,14 @@ Every test begins with a fresh run of the configure script at the top
 of the SQLite source tree.
 }
 
-array set ::Configs {
+# Omit comments (text between # and \n) in a long multi-line string.
+#
+proc strip_comments {in} {
+  regsub -all {#[^\n]*\n} $in {} out
+  return $out
+}
+
+array set ::Configs [strip_comments {
   "Default" {
     -O2
     --disable-amalgamation --disable-shared
@@ -37,6 +44,20 @@ array set ::Configs {
   "Sanitize" {
     CC=clang -fsanitize=undefined
     -DSQLITE_ENABLE_STAT4
+  }
+  "Have-Not" {
+    # The "Have-Not" configuration sets all possible -UHAVE_feature options
+    # in order to verify that the code works even on platforms that lack
+    # these support services.
+    -DHAVE_FDATASYNC=0
+    -DHAVE_GMTIME_R=0
+    -DHAVE_ISNAN=0
+    -DHAVE_LOCALTIME_R=0
+    -DHAVE_LOCALTIME_S=0
+    -DHAVE_MALLOC_USABLE_SIZE=0
+    -DHAVE_STRCHRNUL=0
+    -DHAVE_USLEEP=0
+    -DHAVE_UTIME=0
   }
   "Unlock-Notify" {
     -O2
@@ -53,6 +74,7 @@ array set ::Configs {
     -O2
     -DSQLITE_DEFAULT_FILE_FORMAT=4
     -DSQLITE_ENABLE_UPDATE_DELETE_LIMIT=1
+    -DSQLITE_ENABLE_STMT_SCANSTATUS
   }
   "Check-Symbols" {
     -DSQLITE_MEMDEBUG=1
@@ -69,6 +91,7 @@ array set ::Configs {
     -DSQLITE_ENABLE_MEMORY_MANAGEMENT=1
     -DSQLITE_ENABLE_OVERSIZE_CELL_CHECK=1
     -DSQLITE_ENABLE_STAT4
+    -DSQLITE_ENABLE_STMT_SCANSTATUS
   }
   "Debug-One" {
     --disable-shared
@@ -164,15 +187,23 @@ array set ::Configs {
     -DSQLITE_ENABLE_FTS4
     -DSQLITE_ENABLE_RTREE
   }
+
+  # The next group of configurations are used only by the
+  # Failure-Detection platform.  They are all the same, but we need
+  # different names for them all so that they results appear in separate
+  # subdirectories.
+  #
   Fail0 {-O0}
   Fail2 {-O0}
   Fail3 {-O0}
-}
+  Fail4 {-O0}
+}]
 
-array set ::Platforms {
+array set ::Platforms [strip_comments {
   Linux-x86_64 {
     "Check-Symbols"           checksymbols
     "Debug-One"               "mptest test"
+    "Have-Not"                test
     "Secure-Delete"           test
     "Unlock-Notify"           "QUICKTEST_INCLUDE=notify2.test test"
     "Update-Delete-Limit"     test
@@ -187,6 +218,7 @@ array set ::Platforms {
   }
   Linux-i686 {
     "Devkit"                  test
+    "Have-Not"                test
     "Unlock-Notify"           "QUICKTEST_INCLUDE=notify2.test test"
     "Device-One"              test
     "Device-Two"              test
@@ -194,22 +226,31 @@ array set ::Platforms {
   }
   Darwin-i386 {
     "Locking-Style"           "mptest test"
+    "Have-Not"                test
     "OS-X"                    "threadtest fulltest"
   }
   Darwin-x86_64 {
     "Locking-Style"           "mptest test"
+    "Have-Not"                test
     "OS-X"                    "threadtest fulltest"
   }
   "Windows NT-intel" {
     "Default"                 "mptest fulltestonly"
+    "Have-Not"                test
   }
+
+  # The Failure-Detection platform runs various tests that deliberately
+  # fail.  This is used as a test of this script to verify that this script
+  # correctly identifies failures.
+  #
   Failure-Detection {
     Fail0     "TEST_FAILURE=0 test"
     Sanitize  "TEST_FAILURE=1 test"
     Fail2     "TEST_FAILURE=2 valgrindtest"
     Fail3     "TEST_FAILURE=3 valgrindtest"
+    Fail4     "TEST_FAILURE=4 test"
   }
-}
+}]
 
 
 # End of configuration section.
@@ -276,6 +317,9 @@ proc count_tests_and_errors {logfile rcVar errmsgVar} {
   if {!$seen} {
     set rc 1
     set errmsg "Test did not complete"
+    if {[file readable core]} {
+      append errmsg " - core file exists"
+    }
   }
 }
 
@@ -292,9 +336,9 @@ proc run_test_suite {name testtarget config} {
 
   regsub -all {#[^\n]*\n} $config \n config
   foreach arg $config {
-    if {[string match -D* $arg]} {
+    if {[regexp {^-[UD]} $arg]} {
       lappend opts $arg
-    } elseif {[string match CC=* $arg]} {
+    } elseif {[regexp {^[A-Z]+=} $arg]} {
       lappend testtarget $arg
     } elseif {[regexp {^--(enable|disable)-} $arg]} {
       lappend configOpts $arg
@@ -329,6 +373,7 @@ proc run_test_suite {name testtarget config} {
   trace_cmd file mkdir $dir
   trace_cmd cd $dir
   set errmsg {}
+  catch {file delete core}
   set rc [catch [configureCommand $configOpts]]
   if {!$rc} {
     set rc [catch [makeCommand $testtarget $cflags $opts]]

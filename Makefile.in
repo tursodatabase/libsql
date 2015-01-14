@@ -42,7 +42,7 @@ TCC += -D_HAVE_SQLITE_CONFIG_H -DBUILD_sqlite
 # Omitting the define will cause extra debugging code to be inserted and
 # includes extra comments when "EXPLAIN stmt" is used.
 #
-TCC += @TARGET_DEBUG@ @XTHREADCONNECT@
+TCC += @TARGET_DEBUG@
 
 # Compiler options needed for programs that use the TCL library.
 #
@@ -237,6 +237,7 @@ SRC = \
   $(TOP)/src/mem3.c \
   $(TOP)/src/mem5.c \
   $(TOP)/src/memjournal.c \
+  $(TOP)/src/msvc.h \
   $(TOP)/src/mutex.c \
   $(TOP)/src/mutex.h \
   $(TOP)/src/mutex_noop.c \
@@ -472,6 +473,7 @@ HDR = \
    $(TOP)/src/hash.h \
    $(TOP)/src/hwtime.h \
    keywordhash.h \
+   $(TOP)/src/msvc.h \
    $(TOP)/src/mutex.h \
    opcodes.h \
    $(TOP)/src/os.h \
