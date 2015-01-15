@@ -1,7 +1,7 @@
-C Simplify\ssome\scode\sin\srtree,\sto\savoid\sconfusing\sthe\soptimizer\sin\sGCC\son\nsome\smacs:\ngcc\sversion\s4.2.1\s(Based\son\sApple\sInc.\sbuild\s5658)\s(LLVM\sbuild\s2335.15.00).\nPrior\sto\sthese\schanges,\scompiling\swith\s-O3\swould\scause\sincorrect\scode\sto\nbe\sgenerated.\s\sThe\schange\sto\sthe\snodeGetCell()\sroutine\sis\skey.\s\sThe\sother\nchanges\sare\smerely\scosmetic\sdetails\sdiscovered\swhile\sbug\shunting.
-D 2015-01-13T21:26:17.584
+C Makefile\senhancements:\s\s(1)\sRename\sautoconf/tea/configure.in\sto\nautoconf/tea/configure.ac\sso\sthat\sit\sworks\swith\sthe\slatest\sversions\sof\nautoconf.\s\s(2)\sAdd\sthe\s"amalgamation-tarball"\stargets\sto\sMakefile.in\sand\nmain.mk\s(renamed\sfrom\s"dist"\sin\sthe\slatter\scase).\s\s(3)\sUpdate\sthe\nREADME.first\sfile\sin\sautoconf/\s\s(4)\sThe\sTOP\smacro\nin\sMakefile.in\sis\snow\san\sabsolute\srather\sthan\sa\srelative\spath.
+D 2015-01-15T15:47:06.739
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in 9efcdb5c6025caea362cdfc38817451170fc6344
+F Makefile.in 5407a688f4d77a05c18a8142be8ae5a2829dd610
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc 4c057774e6138b9023fc16ec05639ddd3329b152
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
@@ -15,7 +15,7 @@ F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am 8fc2972d92769cf20ab8e4a73ea901b84d69bf44
 F autoconf/README 14458f1046c118efa721aadec5f227e876d3cd38
-F autoconf/README.first 47dd53221023b18c836ab00dba6e00bd86132453
+F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/config.guess 94cc57e2a3fdb9c235b362ace86d77e89d188cad x
 F autoconf/config.sub 1efb390a8fb4bfafd74783a15a8fb5311c84300e x
 F autoconf/configure.ac ba3e99ba1a8171d0682b68443517088fc5d6f13a
@@ -26,7 +26,7 @@ F autoconf/missing d7c9981a81af13370d4ed152b24c0a82b7028585 x
 F autoconf/tea/Makefile.in d55bcc63832caf0309c2ff80358756116618cfca
 F autoconf/tea/README 3e9a3c060f29a44344ab50aec506f4db903fb873
 F autoconf/tea/aclocal.m4 52c47aac44ce0ddb1f918b6993e8beb8eee88f43
-F autoconf/tea/configure.in 93d43c79e936fb16556e22498177d7e8571efa04
+F autoconf/tea/configure.ac 93d43c79e936fb16556e22498177d7e8571efa04 w autoconf/tea/configure.in
 F autoconf/tea/doc/sqlite3.n e1fe45d4f5286ee3d0ccc877aca2a0def488e9bb
 F autoconf/tea/license.terms 13bd403c9610fd2b76ece0ab50c4c5eda933d523
 F autoconf/tea/pkgIndex.tcl.in 3ef61715cf1c7bdcff56947ffadb26bc991ca39d
@@ -152,7 +152,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 1d0cf88b6e89249608677215ad36e4f8a231accc
+F main.mk e392561ffe17fc4dad945eef852400d5bf2911a0
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
 F mkopcodeh.awk c6b3fa301db6ef7ac916b14c60868aeaec1337b5
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
@@ -1197,7 +1197,7 @@ F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/lemon.c 1864c4fe4a72b1bb28f1792b60504804fe82c5d2
 F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
 F tool/logest.c eef612f8adf4d0993dafed0416064cf50d5d33c6
-F tool/mkautoconfamal.sh 5dc5010e2e748a9e1bba67baca5956a2c2deda7b
+F tool/mkautoconfamal.sh d1a2da0e15b2ed33d60af35c7e9d483f13a8eb9f
 F tool/mkkeywordhash.c dfff09dbbfaf950e89af294f48f902181b144670
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkpragmatab.tcl 07a5124cf2dbafa1b375eefcf8ac4227028b0f8b
@@ -1236,7 +1236,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5682db7b871689b9ee764afe070736f378e8ae1b
-R dfd426dd4e5c9bb35969866ff363968f
+P 882181ff9dd75f32db266db6e476671021fc567b
+R 338e02c689a6b5ce1e561c2a708ea7aa
 U drh
-Z bd5f3f08ebc84ee22d9c4c92ffb9e94c
+Z 729b1ea048cd675b3de67a43437130ca
