@@ -709,7 +709,7 @@ checksymbols: sqlite3.o
 
 # Build the amalgamation-autoconf package.
 #
-dist: sqlite3.c
+amalgamation-tarball: sqlite3.c
 	TOP=$(TOP) sh $(TOP)/tool/mkautoconfamal.sh
 
 

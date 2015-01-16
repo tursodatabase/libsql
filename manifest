@@ -1,7 +1,7 @@
-C Merge\strunk\s3.8.8\sbeta\schanges\sinto\sthe\ssessions\sbranch
-D 2015-01-14T17:16:23.588
+C Merge\sall\s3.8.8\schanges\sinto\sthe\ssessions\sbranch.
+D 2015-01-16T12:44:52.039
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in d187860ec4d0ea7b9b7ac38b12681bf9784d9ed0
+F Makefile.in 198c0ac8962bd72275f99dc0cb0a3089b2bed497
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc 8f8be3042579d7c0140b3c5cf6b2cf81959ac5c1
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
@@ -15,7 +15,7 @@ F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am 8fc2972d92769cf20ab8e4a73ea901b84d69bf44
 F autoconf/README 14458f1046c118efa721aadec5f227e876d3cd38
-F autoconf/README.first 47dd53221023b18c836ab00dba6e00bd86132453
+F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/config.guess 94cc57e2a3fdb9c235b362ace86d77e89d188cad x
 F autoconf/config.sub 1efb390a8fb4bfafd74783a15a8fb5311c84300e x
 F autoconf/configure.ac ba3e99ba1a8171d0682b68443517088fc5d6f13a
@@ -26,7 +26,7 @@ F autoconf/missing d7c9981a81af13370d4ed152b24c0a82b7028585 x
 F autoconf/tea/Makefile.in d55bcc63832caf0309c2ff80358756116618cfca
 F autoconf/tea/README 3e9a3c060f29a44344ab50aec506f4db903fb873
 F autoconf/tea/aclocal.m4 52c47aac44ce0ddb1f918b6993e8beb8eee88f43
-F autoconf/tea/configure.in 93d43c79e936fb16556e22498177d7e8571efa04
+F autoconf/tea/configure.ac 93d43c79e936fb16556e22498177d7e8571efa04 w autoconf/tea/configure.in
 F autoconf/tea/doc/sqlite3.n e1fe45d4f5286ee3d0ccc877aca2a0def488e9bb
 F autoconf/tea/license.terms 13bd403c9610fd2b76ece0ab50c4c5eda933d523
 F autoconf/tea/pkgIndex.tcl.in 3ef61715cf1c7bdcff56947ffadb26bc991ca39d
@@ -38,8 +38,8 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 42b71ad3fe21c9e88fa59e8458ca1a6bc72eb0c0
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure f0438487966ab02dd0357c4ad27f1082e70a4b34 x
-F configure.ac 0c94d28b0a839fd0f35ccebded2ea4aed4424d65
+F configure b2882796ddebd33ac4e9d4ccf5c5ca11888fc30e x
+F configure.ac 6a8d145aea6d81f0b90013340780e43ed74fd5f4
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 334dbf6621b8fb8790297ec1abf3cfa4621709d1
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
@@ -169,7 +169,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk aa64e621e7e4b6a5db6186236d1c9c6522204cdd
+F main.mk 1cdd98cfcf1e771b339efb0dced91480e15313f3
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
 F mkopcodeh.awk c6b3fa301db6ef7ac916b14c60868aeaec1337b5
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
@@ -1215,7 +1215,7 @@ F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/lemon.c 1864c4fe4a72b1bb28f1792b60504804fe82c5d2
 F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
 F tool/logest.c eef612f8adf4d0993dafed0416064cf50d5d33c6
-F tool/mkautoconfamal.sh 5dc5010e2e748a9e1bba67baca5956a2c2deda7b
+F tool/mkautoconfamal.sh d1a2da0e15b2ed33d60af35c7e9d483f13a8eb9f
 F tool/mkkeywordhash.c dfff09dbbfaf950e89af294f48f902181b144670
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkpragmatab.tcl 07a5124cf2dbafa1b375eefcf8ac4227028b0f8b
@@ -1254,7 +1254,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5a2dec55bfadc328b430a5231a037b37831a5530 882181ff9dd75f32db266db6e476671021fc567b
-R e4745f2aa60be4c3617dfbe8a7fd6de6
+P 0ba124540b5b2a9ceda0f4f4a46e6be54edad813 7d68a42face3ab14ed88407d4331872f5b243fdf
+R 0819766cc49a8e68b0078048450bbb01
 U drh
-Z d901122b20adc39db7da73d5e36efc01
+Z 6b9aa66fea16fe35a684677c7f0c81fc
