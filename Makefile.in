@@ -15,7 +15,7 @@
 # The toplevel directory of the source tree.  This is the directory
 # that contains this "Makefile.in" and the "configure.in" script.
 #
-TOP = @srcdir@
+TOP = @abs_srcdir@
 
 # C Compiler and options for use in building executables that
 # will run on the platform that is doing the build.
@@ -41,7 +41,7 @@ TCC += -D_HAVE_SQLITE_CONFIG_H -DBUILD_sqlite
 # Omitting the define will cause extra debugging code to be inserted and
 # includes extra comments when "EXPLAIN stmt" is used.
 #
-TCC += @TARGET_DEBUG@ @XTHREADCONNECT@
+TCC += @TARGET_DEBUG@
 
 # Compiler options needed for programs that use the TCL library.
 #
@@ -234,6 +234,7 @@ SRC = \
   $(TOP)/src/mem3.c \
   $(TOP)/src/mem5.c \
   $(TOP)/src/memjournal.c \
+  $(TOP)/src/msvc.h \
   $(TOP)/src/mutex.c \
   $(TOP)/src/mutex.h \
   $(TOP)/src/mutex_noop.c \
@@ -466,6 +467,7 @@ HDR = \
    $(TOP)/src/hash.h \
    $(TOP)/src/hwtime.h \
    keywordhash.h \
+   $(TOP)/src/msvc.h \
    $(TOP)/src/mutex.h \
    opcodes.h \
    $(TOP)/src/os.h \
@@ -1016,6 +1018,11 @@ speedtest1$(TEXE):	$(TOP)/test/wordcount.c sqlite3.lo
 checksymbols: sqlite3.lo
 	nm -g --defined-only sqlite3.o | grep -v " sqlite3_" ; test $$? -ne 0
 	echo '0 errors out of 1 tests'
+
+# Build the amalgamation-autoconf package.
+#
+amalgamation-tarball: sqlite3.c
+	TOP=$(TOP) sh $(TOP)/tool/mkautoconfamal.sh
 
 # The next two rules are used to support the "threadtest" target. Building
 # threadtest runs a few thread-safety tests that are implemented in C. This

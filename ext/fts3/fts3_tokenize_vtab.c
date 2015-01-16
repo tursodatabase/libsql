@@ -163,7 +163,7 @@ static int fts3tokConnectMethod(
   sqlite3_vtab **ppVtab,          /* OUT: New sqlite3_vtab object */
   char **pzErr                    /* OUT: sqlite3_malloc'd error message */
 ){
-  Fts3tokTable *pTab;
+  Fts3tokTable *pTab = 0;
   const sqlite3_tokenizer_module *pMod = 0;
   sqlite3_tokenizer *pTok = 0;
   int rc;

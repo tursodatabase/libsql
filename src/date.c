@@ -412,8 +412,9 @@ static void clearYMD_HMS_TZ(DateTime *p){
 ** already, check for an MSVC build environment that provides 
 ** localtime_s().
 */
-#if !defined(HAVE_LOCALTIME_R) && !defined(HAVE_LOCALTIME_S) && \
-     defined(_MSC_VER) && defined(_CRT_INSECURE_DEPRECATE)
+#if !HAVE_LOCALTIME_R && !HAVE_LOCALTIME_S \
+    && defined(_MSC_VER) && defined(_CRT_INSECURE_DEPRECATE)
+#undef  HAVE_LOCALTIME_S
 #define HAVE_LOCALTIME_S 1
 #endif
 
@@ -433,8 +434,7 @@ static void clearYMD_HMS_TZ(DateTime *p){
 */
 static int osLocaltime(time_t *t, struct tm *pTm){
   int rc;
-#if (!defined(HAVE_LOCALTIME_R) || !HAVE_LOCALTIME_R) \
-      && (!defined(HAVE_LOCALTIME_S) || !HAVE_LOCALTIME_S)
+#if !HAVE_LOCALTIME_R && !HAVE_LOCALTIME_S
   struct tm *pX;
 #if SQLITE_THREADSAFE>0
   sqlite3_mutex *mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER);
@@ -451,7 +451,7 @@ static int osLocaltime(time_t *t, struct tm *pTm){
 #ifndef SQLITE_OMIT_BUILTIN_TEST
   if( sqlite3GlobalConfig.bLocaltimeFault ) return 1;
 #endif
-#if defined(HAVE_LOCALTIME_R) && HAVE_LOCALTIME_R
+#if HAVE_LOCALTIME_R
   rc = localtime_r(t, pTm)==0;
 #else
   rc = localtime_s(pTm, t);
@@ -895,8 +895,10 @@ static void strftimeFunc(
   size_t i,j;
   char *z;
   sqlite3 *db;
-  const char *zFmt = (const char*)sqlite3_value_text(argv[0]);
+  const char *zFmt;
   char zBuf[100];
+  if( argc==0 ) return;
+  zFmt = (const char*)sqlite3_value_text(argv[0]);
   if( zFmt==0 || isDate(context, argc-1, argv+1, &x) ) return;
   db = sqlite3_context_db_handle(context);
   for(i=0, n=1; zFmt[i]; i++, n++){
@@ -1090,7 +1092,7 @@ static void currentTimeFunc(
   iT = sqlite3StmtCurrentTime(context);
   if( iT<=0 ) return;
   t = iT/1000 - 10000*(sqlite3_int64)21086676;
-#ifdef HAVE_GMTIME_R
+#if HAVE_GMTIME_R
   pTm = gmtime_r(&t, &sNow);
 #else
   sqlite3_mutex_enter(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER));

@@ -207,10 +207,10 @@ do_test shell1-2.2.4 {
 } {0 {}}
 do_test shell1-2.2.5 {
   catchcmd "test.db" ".mode \"insert FOO"
-} {1 {Error: mode should be one of: column csv html insert line list tabs tcl}}
+} {1 {Error: mode should be one of: ascii column csv html insert line list tabs tcl}}
 do_test shell1-2.2.6 {
   catchcmd "test.db" ".mode \'insert FOO"
-} {1 {Error: mode should be one of: column csv html insert line list tabs tcl}}
+} {1 {Error: mode should be one of: ascii column csv html insert line list tabs tcl}}
 
 # check multiple tokens, and quoted tokens
 do_test shell1-2.3.1 {
@@ -238,7 +238,7 @@ do_test shell1-2.3.7 {
 # check quoted args are unquoted
 do_test shell1-2.4.1 {
   catchcmd "test.db" ".mode FOO"
-} {1 {Error: mode should be one of: column csv html insert line list tabs tcl}}
+} {1 {Error: mode should be one of: ascii column csv html insert line list tabs tcl}}
 do_test shell1-2.4.2 {
   catchcmd "test.db" ".mode csv"
 } {0 {}}
@@ -421,20 +421,21 @@ do_test shell1-3.12.3 {
 } {1 {Usage: .indices ?LIKE-PATTERN?}}
 
 # .mode MODE ?TABLE?     Set output mode where MODE is one of:
+#                          ascii    Columns/rows delimited by 0x1F and 0x1E
 #                          csv      Comma-separated values
 #                          column   Left-aligned columns.  (See .width)
 #                          html     HTML <table> code
 #                          insert   SQL insert statements for TABLE
 #                          line     One value per line
-#                          list     Values delimited by .separator string
+#                          list     Values delimited by .separator strings
 #                          tabs     Tab-separated values
 #                          tcl      TCL list elements
 do_test shell1-3.13.1 {
   catchcmd "test.db" ".mode"
-} {1 {Error: mode should be one of: column csv html insert line list tabs tcl}}
+} {1 {Error: mode should be one of: ascii column csv html insert line list tabs tcl}}
 do_test shell1-3.13.2 {
   catchcmd "test.db" ".mode FOO"
-} {1 {Error: mode should be one of: column csv html insert line list tabs tcl}}
+} {1 {Error: mode should be one of: ascii column csv html insert line list tabs tcl}}
 do_test shell1-3.13.3 {
   catchcmd "test.db" ".mode csv"
 } {0 {}}
@@ -467,10 +468,10 @@ do_test shell1-3.13.11 {
 # don't allow partial mode type matches
 do_test shell1-3.13.12 {
   catchcmd "test.db" ".mode l"
-} {1 {Error: mode should be one of: column csv html insert line list tabs tcl}}
+} {1 {Error: mode should be one of: ascii column csv html insert line list tabs tcl}}
 do_test shell1-3.13.13 {
   catchcmd "test.db" ".mode li"
-} {1 {Error: mode should be one of: column csv html insert line list tabs tcl}}
+} {1 {Error: mode should be one of: ascii column csv html insert line list tabs tcl}}
 do_test shell1-3.13.14 {
   catchcmd "test.db" ".mode lin"
 } {0 {}}
@@ -586,10 +587,10 @@ CREATE VIEW v2 AS SELECT x+1 AS y FROM t1;
 CREATE VIEW v1 AS SELECT y+1 FROM v2;}}
 db eval {DROP VIEW v1; DROP VIEW v2; DROP TABLE t1;}
 
-# .separator STRING      Change separator used by output mode and .import
+# .separator STRING  Change column separator used by output and .import
 do_test shell1-3.22.1 {
   catchcmd "test.db" ".separator"
-} {1 {Usage: .separator SEPARATOR ?NEWLINE?}}
+} {1 {Usage: .separator COL ?ROW?}}
 do_test shell1-3.22.2 {
   catchcmd "test.db" ".separator FOO"
 } {0 {}}
@@ -599,7 +600,7 @@ do_test shell1-3.22.3 {
 do_test shell1-3.22.4 {
   # too many arguments
   catchcmd "test.db" ".separator FOO BAD BAD2"
-} {1 {Usage: .separator SEPARATOR ?NEWLINE?}}
+} {1 {Usage: .separator COL ?ROW?}}
 
 # .show                  Show the current values for various settings
 do_test shell1-3.23.1 {
@@ -610,10 +611,11 @@ do_test shell1-3.23.1 {
        [regexp {mode:} $res] \
        [regexp {nullvalue:} $res] \
        [regexp {output:} $res] \
-       [regexp {separator:} $res] \
+       [regexp {colseparator:} $res] \
+       [regexp {rowseparator:} $res] \
        [regexp {stats:} $res] \
        [regexp {width:} $res]
-} {1 1 1 1 1 1 1 1 1}
+} {1 1 1 1 1 1 1 1 1 1}
 do_test shell1-3.23.2 {
   # too many arguments
   catchcmd "test.db" ".show BAD"

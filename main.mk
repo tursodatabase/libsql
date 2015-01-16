@@ -112,6 +112,7 @@ SRC = \
   $(TOP)/src/mem3.c \
   $(TOP)/src/mem5.c \
   $(TOP)/src/memjournal.c \
+  $(TOP)/src/msvc.h \
   $(TOP)/src/mutex.c \
   $(TOP)/src/mutex.h \
   $(TOP)/src/mutex_noop.c \
@@ -347,6 +348,7 @@ HDR = \
    $(TOP)/src/hash.h \
    $(TOP)/src/hwtime.h \
    keywordhash.h \
+   $(TOP)/src/msvc.h \
    $(TOP)/src/mutex.h \
    opcodes.h \
    $(TOP)/src/os.h \
@@ -675,7 +677,7 @@ checksymbols: sqlite3.o
 
 # Build the amalgamation-autoconf package.
 #
-dist: sqlite3.c
+amalgamation-tarball: sqlite3.c
 	TOP=$(TOP) sh $(TOP)/tool/mkautoconfamal.sh
 
 

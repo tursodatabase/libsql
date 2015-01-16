@@ -165,7 +165,9 @@ test_suite "valgrind" -prefix "" -description {
   Run the "veryquick" test suite with a couple of multi-process tests (that
   fail under valgrind) omitted.
 } -files [
-  test_set $allquicktests -exclude *malloc* *ioerr* *fault* wal.test atof1.test
+  test_set $allquicktests -exclude *malloc* *ioerr* *fault* wal.test \
+              shell*.test crash8.test atof1.test selectG.test \
+              tkt-fc62af4523.test
 ] -initialize {
   set ::G(valgrind) 1
 } -shutdown {

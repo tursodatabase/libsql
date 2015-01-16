@@ -409,7 +409,9 @@ static int openTransaction(jt_file *pMain, jt_file *pJournal){
         if( iOff==PENDING_BYTE ) continue;
         rc = sqlite3OsRead(pMain->pReal, aData, pMain->nPagesize, iOff);
         pMain->aCksum[ii] = genCksum(aData, pMain->nPagesize);
-        if( ii+1==pMain->nPage && rc==SQLITE_IOERR_SHORT_READ ) rc = SQLITE_OK;
+        if( ii+1==(int)pMain->nPage && rc==SQLITE_IOERR_SHORT_READ ){
+          rc = SQLITE_OK;
+        }
       }
     }
 
@@ -550,7 +552,8 @@ static int jtWrite(
       */
     }else{
       u32 pgno = (u32)(iOfst/p->nPagesize + 1);
-      assert( (iAmt==1||iAmt==p->nPagesize) && ((iOfst+iAmt)%p->nPagesize)==0 );
+      assert( (iAmt==1||iAmt==(int)p->nPagesize) &&
+              ((iOfst+iAmt)%p->nPagesize)==0 );
       assert( pgno<=p->nPage || p->nSync>0 );
       assert( pgno>p->nPage || sqlite3BitvecTest(p->pWritable, pgno) );
     }

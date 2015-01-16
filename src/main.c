@@ -1357,7 +1357,7 @@ static int sqliteDefaultBusyCallback(
  void *ptr,               /* Database connection */
  int count                /* Number of times table has been busy */
 ){
-#if SQLITE_OS_WIN || (defined(HAVE_USLEEP) && HAVE_USLEEP)
+#if SQLITE_OS_WIN || HAVE_USLEEP
   static const u8 delays[] =
      { 1, 2, 5, 10, 15, 20, 25, 25,  25,  50,  50, 100 };
   static const u8 totals[] =
@@ -3262,7 +3262,7 @@ int sqlite3_table_column_metadata(
   char *zErrMsg = 0;
   Table *pTab = 0;
   Column *pCol = 0;
-  int iCol;
+  int iCol = 0;
 
   char const *zDataType = 0;
   char const *zCollSeq = 0;

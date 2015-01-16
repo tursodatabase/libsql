@@ -3823,8 +3823,8 @@ case OP_Found: {        /* jump, in3 */
     /* For the OP_NoConflict opcode, take the jump if any of the
     ** input fields are NULL, since any key with a NULL will not
     ** conflict */
-    for(ii=0; ii<r.nField; ii++){
-      if( r.aMem[ii].flags & MEM_Null ){
+    for(ii=0; ii<pIdxKey->nField; ii++){
+      if( pIdxKey->aMem[ii].flags & MEM_Null ){
         pc = pOp->p2 - 1; VdbeBranchTaken(1,2);
         break;
       }

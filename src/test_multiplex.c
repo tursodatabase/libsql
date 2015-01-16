@@ -406,7 +406,7 @@ static void multiplexControlFunc(
 ){
   int rc = SQLITE_OK;
   sqlite3 *db = sqlite3_context_db_handle(context);
-  int op;
+  int op = 0;
   int iVal;
 
   if( !db || argc!=2 ){ 
@@ -535,7 +535,7 @@ static int multiplexOpen(
     /* assign pointers to extra space allocated */
     memset(pGroup, 0, sz);
     pMultiplexOpen->pGroup = pGroup;
-    pGroup->bEnabled = -1;
+    pGroup->bEnabled = (unsigned char)-1;
     pGroup->bTruncate = sqlite3_uri_boolean(zUri, "truncate", 
                                    (flags & SQLITE_OPEN_MAIN_DB)==0);
     pGroup->szChunk = (int)sqlite3_uri_int64(zUri, "chunksize",

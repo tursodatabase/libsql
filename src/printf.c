@@ -15,17 +15,6 @@
 #include "sqliteInt.h"
 
 /*
-** If the strchrnul() library function is available, then set
-** HAVE_STRCHRNUL.  If that routine is not available, this module
-** will supply its own.  The built-in version is slower than
-** the glibc version so the glibc version is definitely preferred.
-*/
-#if !defined(HAVE_STRCHRNUL)
-# define HAVE_STRCHRNUL 0
-#endif
-
-
-/*
 ** Conversion types fall into various categories as defined by the
 ** following enumeration.
 */

@@ -55,7 +55,7 @@ do_test shell5-1.1.3 {
 # .separator STRING      Change separator used by output mode and .import
 do_test shell5-1.2.1 {
   catchcmd "test.db" ".separator"
-} {1 {Usage: .separator SEPARATOR ?NEWLINE?}}
+} {1 {Usage: .separator COL ?ROW?}}
 do_test shell5-1.2.2 {
   catchcmd "test.db" ".separator ONE"
 } {0 {}}
@@ -65,12 +65,18 @@ do_test shell5-1.2.3 {
 do_test shell5-1.2.4 {
   # too many arguments
   catchcmd "test.db" ".separator ONE TWO THREE"
-} {1 {Usage: .separator SEPARATOR ?NEWLINE?}}
+} {1 {Usage: .separator COL ?ROW?}}
 
-# separator should default to "|"
-do_test shell5-1.3.1 {
+# column separator should default to "|"
+do_test shell5-1.3.1.1 {
   set res [catchcmd "test.db" ".show"]
-  list [regexp {separator: \"\|\"} $res]
+  list [regexp {colseparator: \"\|\"} $res]
+} {1}
+
+# row separator should default to "\n"
+do_test shell5-1.3.1.2 {
+  set res [catchcmd "test.db" ".show"]
+  list [regexp {rowseparator: \"\\n\"} $res]
 } {1}
 
 # set separator to different value.
@@ -372,5 +378,31 @@ CREATE TABLE t4(a, b);
   db eval { SELECT * FROM t4 }
 } {xy\" hello one 2 {} {}}
 
+#----------------------------------------------------------------------------
+# Tests for the shell "ascii" import/export mode.
+#
+do_test shell5-3.1 {
+  set fd [open shell5.csv w]
+  fconfigure $fd -encoding binary -translation binary
+  puts -nonewline $fd "\"test 1\"\x1F,test 2\r\n\x1E"
+  puts -nonewline $fd "test 3\x1Ftest 4\n"
+  close $fd
+  catchcmd test.db {
+.mode ascii
+CREATE TABLE t5(a, b);
+.import shell5.csv t5
+  }
+  db eval { SELECT * FROM t5 }
+} "\{\"test 1\"} \{,test 2\r\n\} \{test 3\} \{test 4\n\}"
+
+do_test shell5-3.2 {
+  set x [catchcmd test.db {
+.mode ascii
+SELECT * FROM t5;
+  }]
+  # Handle platform end-of-line differences
+  regsub -all {[\n\r]?\n} $x <EOL> x
+  set x
+} "0 \{\"test 1\"\x1F,test 2<EOL>\x1Etest 3\x1Ftest 4<EOL>\x1E\}"
 
 finish_test
