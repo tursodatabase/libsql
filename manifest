@@ -1,5 +1,5 @@
-C Version\s3.8.8
-D 2015-01-16T12:08:06.393
+C Fix\sa\sharmless\scompiler\swarning\sthe\sVFS\sfor\sWindows.
+D 2015-01-17T15:26:28.724
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5407a688f4d77a05c18a8142be8ae5a2829dd610
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -215,7 +215,7 @@ F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c aefeaf915aaef9f81aa2645e0d5d06fa1bd83beb
-F src/os_win.c 91d3d08e33ec0258d180d4c8255492f47d15e007
+F src/os_win.c a5ac9e249ed0ca33de6de27898a08d313effc40c
 F src/os_win.h 09e751b20bbc107ffbd46e13555dc73576d88e21
 F src/pager.c 4120a49ecd37697e28f5ed807f470b9c0b88410c
 F src/pager.h c3476e7c89cdf1c6914e50a11f3714e30b4e0a77
@@ -1236,10 +1236,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8f45217cbafef2297cdcec3fd69f4371dfb83922
-R 933466cd8ec4e35d692da3aefe1a6703
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.8.8 *
+P 7d68a42face3ab14ed88407d4331872f5b243fdf cab46fb737ed3fc29dc8517f07bcfc72936df2b8
+R 09c0fda2a74fde3bf50886f176d10583
+T +closed cab46fb737ed3fc29dc8517f07bcfc72936df2b8
 U drh
-Z bb546801ed90d1803572e32e58b772a4
+Z 7ac57dd8af4bfddd779870b304f0eb12
