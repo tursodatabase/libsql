@@ -343,6 +343,8 @@ int sqlite3Fts5IndexReads(Fts5Index *p);
 int sqlite3Fts5IndexReinit(Fts5Index *p);
 int sqlite3Fts5IndexOptimize(Fts5Index *p);
 
+int sqlite3Fts5IndexLoadConfig(Fts5Index *p);
+
 /*
 ** End of interface to code in fts5_index.c.
 **************************************************************************/

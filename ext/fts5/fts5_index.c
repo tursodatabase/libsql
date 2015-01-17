@@ -4368,6 +4368,13 @@ int sqlite3Fts5IndexSetCookie(Fts5Index *p, int iNew){
   return rc;
 }
 
+int sqlite3Fts5IndexLoadConfig(Fts5Index *p){
+  Fts5Structure *pStruct;
+  pStruct = fts5StructureRead(p, 0);
+  fts5StructureRelease(pStruct);
+  return fts5IndexReturn(p);
+}
+
 /*************************************************************************
 **************************************************************************
 ** Below this point is the implementation of the fts5_decode() scalar

@@ -1085,7 +1085,10 @@ static int fts5SpecialInsert(
   }else if( 0==sqlite3_stricmp("integrity-check", z) ){
     rc = sqlite3Fts5StorageIntegrity(pTab->pStorage);
   }else{
-    rc = sqlite3Fts5ConfigSetValue(pTab->pConfig, z, pVal, &bError);
+    rc = sqlite3Fts5IndexLoadConfig(pTab->pIndex);
+    if( rc==SQLITE_OK ){
+      rc = sqlite3Fts5ConfigSetValue(pTab->pConfig, z, pVal, &bError);
+    }
     if( rc==SQLITE_OK ){
       if( bError ){
         rc = SQLITE_ERROR;
