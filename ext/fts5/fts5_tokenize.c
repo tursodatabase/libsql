@@ -443,6 +443,7 @@ static int fts5UnicodeTokenize(
           rc = SQLITE_NOMEM;
           goto tokenize_done;
         }
+        zOut = &aFold[zOut - p->aFold];
         memcpy(aFold, p->aFold, nFold);
         sqlite3_free(p->aFold);
         p->aFold = aFold;
@@ -528,7 +529,7 @@ static int fts5PorterCreate(
   pRet = (PorterTokenizer*)sqlite3_malloc(sizeof(PorterTokenizer));
   if( pRet ){
     memset(pRet, 0, sizeof(PorterTokenizer));
-    rc = pApi->xFindTokenizer(pApi, "ascii", &pUserdata, &pRet->tokenizer);
+    rc = pApi->xFindTokenizer(pApi, "unicode61", &pUserdata, &pRet->tokenizer);
   }else{
     rc = SQLITE_NOMEM;
   }
@@ -666,6 +667,448 @@ static int fts5Porter_Vowel(char *zStem, int nStem){
   return 0;
 }
 
+
+/**************************************************************************
+***************************************************************************
+** GENERATED CODE STARTS HERE (mkportersteps.tcl)
+*/
+
+static int fts5PorterStep4(char *aBuf, int *pnBuf){
+  int ret = 0;
+  int nBuf = *pnBuf;
+  switch( aBuf[nBuf-2] ){
+    
+    case 'a': 
+      if( nBuf>2 && 0==memcmp("al", &aBuf[nBuf-2], 2) ){
+        if( fts5Porter_MGt1(aBuf, nBuf-2) ){
+          *pnBuf = nBuf - 2;
+        }
+      }
+      break;
+  
+    case 'c': 
+      if( nBuf>4 && 0==memcmp("ance", &aBuf[nBuf-4], 4) ){
+        if( fts5Porter_MGt1(aBuf, nBuf-4) ){
+          *pnBuf = nBuf - 4;
+        }
+      }else if( nBuf>4 && 0==memcmp("ence", &aBuf[nBuf-4], 4) ){
+        if( fts5Porter_MGt1(aBuf, nBuf-4) ){
+          *pnBuf = nBuf - 4;
+        }
+      }
+      break;
+  
+    case 'e': 
+      if( nBuf>2 && 0==memcmp("er", &aBuf[nBuf-2], 2) ){
+        if( fts5Porter_MGt1(aBuf, nBuf-2) ){
+          *pnBuf = nBuf - 2;
+        }
+      }
+      break;
+  
+    case 'i': 
+      if( nBuf>2 && 0==memcmp("ic", &aBuf[nBuf-2], 2) ){
+        if( fts5Porter_MGt1(aBuf, nBuf-2) ){
+          *pnBuf = nBuf - 2;
+        }
+      }
+      break;
+  
+    case 'l': 
+      if( nBuf>4 && 0==memcmp("able", &aBuf[nBuf-4], 4) ){
+        if( fts5Porter_MGt1(aBuf, nBuf-4) ){
+          *pnBuf = nBuf - 4;
+        }
+      }else if( nBuf>4 && 0==memcmp("ible", &aBuf[nBuf-4], 4) ){
+        if( fts5Porter_MGt1(aBuf, nBuf-4) ){
+          *pnBuf = nBuf - 4;
+        }
+      }
+      break;
+  
+    case 'n': 
+      if( nBuf>3 && 0==memcmp("ant", &aBuf[nBuf-3], 3) ){
+        if( fts5Porter_MGt1(aBuf, nBuf-3) ){
+          *pnBuf = nBuf - 3;
+        }
+      }else if( nBuf>5 && 0==memcmp("ement", &aBuf[nBuf-5], 5) ){
+        if( fts5Porter_MGt1(aBuf, nBuf-5) ){
+          *pnBuf = nBuf - 5;
+        }
+      }else if( nBuf>4 && 0==memcmp("ment", &aBuf[nBuf-4], 4) ){
+        if( fts5Porter_MGt1(aBuf, nBuf-4) ){
+          *pnBuf = nBuf - 4;
+        }
+      }else if( nBuf>3 && 0==memcmp("ent", &aBuf[nBuf-3], 3) ){
+        if( fts5Porter_MGt1(aBuf, nBuf-3) ){
+          *pnBuf = nBuf - 3;
+        }
+      }
+      break;
+  
+    case 'o': 
+      if( nBuf>3 && 0==memcmp("ion", &aBuf[nBuf-3], 3) ){
+        if( fts5Porter_MGt1_and_S_or_T(aBuf, nBuf-3) ){
+          *pnBuf = nBuf - 3;
+        }
+      }else if( nBuf>2 && 0==memcmp("ou", &aBuf[nBuf-2], 2) ){
+        if( fts5Porter_MGt1(aBuf, nBuf-2) ){
+          *pnBuf = nBuf - 2;
+        }
+      }
+      break;
+  
+    case 's': 
+      if( nBuf>3 && 0==memcmp("ism", &aBuf[nBuf-3], 3) ){
+        if( fts5Porter_MGt1(aBuf, nBuf-3) ){
+          *pnBuf = nBuf - 3;
+        }
+      }
+      break;
+  
+    case 't': 
+      if( nBuf>3 && 0==memcmp("ate", &aBuf[nBuf-3], 3) ){
+        if( fts5Porter_MGt1(aBuf, nBuf-3) ){
+          *pnBuf = nBuf - 3;
+        }
+      }else if( nBuf>3 && 0==memcmp("iti", &aBuf[nBuf-3], 3) ){
+        if( fts5Porter_MGt1(aBuf, nBuf-3) ){
+          *pnBuf = nBuf - 3;
+        }
+      }
+      break;
+  
+    case 'u': 
+      if( nBuf>3 && 0==memcmp("ous", &aBuf[nBuf-3], 3) ){
+        if( fts5Porter_MGt1(aBuf, nBuf-3) ){
+          *pnBuf = nBuf - 3;
+        }
+      }
+      break;
+  
+    case 'v': 
+      if( nBuf>3 && 0==memcmp("ive", &aBuf[nBuf-3], 3) ){
+        if( fts5Porter_MGt1(aBuf, nBuf-3) ){
+          *pnBuf = nBuf - 3;
+        }
+      }
+      break;
+  
+    case 'z': 
+      if( nBuf>3 && 0==memcmp("ize", &aBuf[nBuf-3], 3) ){
+        if( fts5Porter_MGt1(aBuf, nBuf-3) ){
+          *pnBuf = nBuf - 3;
+        }
+      }
+      break;
+  
+  }
+  return ret;
+}
+  
+
+static int fts5PorterStep1B2(char *aBuf, int *pnBuf){
+  int ret = 0;
+  int nBuf = *pnBuf;
+  switch( aBuf[nBuf-2] ){
+    
+    case 'a': 
+      if( nBuf>2 && 0==memcmp("at", &aBuf[nBuf-2], 2) ){
+        memcpy(&aBuf[nBuf-2], "ate", 3);
+        *pnBuf = nBuf - 2 + 3;
+        ret = 1;
+      }
+      break;
+  
+    case 'b': 
+      if( nBuf>2 && 0==memcmp("bl", &aBuf[nBuf-2], 2) ){
+        memcpy(&aBuf[nBuf-2], "ble", 3);
+        *pnBuf = nBuf - 2 + 3;
+        ret = 1;
+      }
+      break;
+  
+    case 'i': 
+      if( nBuf>2 && 0==memcmp("iz", &aBuf[nBuf-2], 2) ){
+        memcpy(&aBuf[nBuf-2], "ize", 3);
+        *pnBuf = nBuf - 2 + 3;
+        ret = 1;
+      }
+      break;
+  
+  }
+  return ret;
+}
+  
+
+static int fts5PorterStep2(char *aBuf, int *pnBuf){
+  int ret = 0;
+  int nBuf = *pnBuf;
+  switch( aBuf[nBuf-2] ){
+    
+    case 'a': 
+      if( nBuf>7 && 0==memcmp("ational", &aBuf[nBuf-7], 7) ){
+        if( fts5Porter_MGt0(aBuf, nBuf-7) ){
+          memcpy(&aBuf[nBuf-7], "ate", 3);
+          *pnBuf = nBuf - 7 + 3;
+        }
+      }else if( nBuf>6 && 0==memcmp("tional", &aBuf[nBuf-6], 6) ){
+        if( fts5Porter_MGt0(aBuf, nBuf-6) ){
+          memcpy(&aBuf[nBuf-6], "tion", 4);
+          *pnBuf = nBuf - 6 + 4;
+        }
+      }
+      break;
+  
+    case 'c': 
+      if( nBuf>4 && 0==memcmp("enci", &aBuf[nBuf-4], 4) ){
+        if( fts5Porter_MGt0(aBuf, nBuf-4) ){
+          memcpy(&aBuf[nBuf-4], "ence", 4);
+          *pnBuf = nBuf - 4 + 4;
+        }
+      }else if( nBuf>4 && 0==memcmp("anci", &aBuf[nBuf-4], 4) ){
+        if( fts5Porter_MGt0(aBuf, nBuf-4) ){
+          memcpy(&aBuf[nBuf-4], "ance", 4);
+          *pnBuf = nBuf - 4 + 4;
+        }
+      }
+      break;
+  
+    case 'e': 
+      if( nBuf>4 && 0==memcmp("izer", &aBuf[nBuf-4], 4) ){
+        if( fts5Porter_MGt0(aBuf, nBuf-4) ){
+          memcpy(&aBuf[nBuf-4], "ize", 3);
+          *pnBuf = nBuf - 4 + 3;
+        }
+      }
+      break;
+  
+    case 'g': 
+      if( nBuf>4 && 0==memcmp("logi", &aBuf[nBuf-4], 4) ){
+        if( fts5Porter_MGt0(aBuf, nBuf-4) ){
+          memcpy(&aBuf[nBuf-4], "log", 3);
+          *pnBuf = nBuf - 4 + 3;
+        }
+      }
+      break;
+  
+    case 'l': 
+      if( nBuf>3 && 0==memcmp("bli", &aBuf[nBuf-3], 3) ){
+        if( fts5Porter_MGt0(aBuf, nBuf-3) ){
+          memcpy(&aBuf[nBuf-3], "ble", 3);
+          *pnBuf = nBuf - 3 + 3;
+        }
+      }else if( nBuf>4 && 0==memcmp("alli", &aBuf[nBuf-4], 4) ){
+        if( fts5Porter_MGt0(aBuf, nBuf-4) ){
+          memcpy(&aBuf[nBuf-4], "al", 2);
+          *pnBuf = nBuf - 4 + 2;
+        }
+      }else if( nBuf>5 && 0==memcmp("entli", &aBuf[nBuf-5], 5) ){
+        if( fts5Porter_MGt0(aBuf, nBuf-5) ){
+          memcpy(&aBuf[nBuf-5], "ent", 3);
+          *pnBuf = nBuf - 5 + 3;
+        }
+      }else if( nBuf>3 && 0==memcmp("eli", &aBuf[nBuf-3], 3) ){
+        if( fts5Porter_MGt0(aBuf, nBuf-3) ){
+          memcpy(&aBuf[nBuf-3], "e", 1);
+          *pnBuf = nBuf - 3 + 1;
+        }
+      }else if( nBuf>5 && 0==memcmp("ousli", &aBuf[nBuf-5], 5) ){
+        if( fts5Porter_MGt0(aBuf, nBuf-5) ){
+          memcpy(&aBuf[nBuf-5], "ous", 3);
+          *pnBuf = nBuf - 5 + 3;
+        }
+      }
+      break;
+  
+    case 'o': 
+      if( nBuf>7 && 0==memcmp("ization", &aBuf[nBuf-7], 7) ){
+        if( fts5Porter_MGt0(aBuf, nBuf-7) ){
+          memcpy(&aBuf[nBuf-7], "ize", 3);
+          *pnBuf = nBuf - 7 + 3;
+        }
+      }else if( nBuf>5 && 0==memcmp("ation", &aBuf[nBuf-5], 5) ){
+        if( fts5Porter_MGt0(aBuf, nBuf-5) ){
+          memcpy(&aBuf[nBuf-5], "ate", 3);
+          *pnBuf = nBuf - 5 + 3;
+        }
+      }else if( nBuf>4 && 0==memcmp("ator", &aBuf[nBuf-4], 4) ){
+        if( fts5Porter_MGt0(aBuf, nBuf-4) ){
+          memcpy(&aBuf[nBuf-4], "ate", 3);
+          *pnBuf = nBuf - 4 + 3;
+        }
+      }
+      break;
+  
+    case 's': 
+      if( nBuf>5 && 0==memcmp("alism", &aBuf[nBuf-5], 5) ){
+        if( fts5Porter_MGt0(aBuf, nBuf-5) ){
+          memcpy(&aBuf[nBuf-5], "al", 2);
+          *pnBuf = nBuf - 5 + 2;
+        }
+      }else if( nBuf>7 && 0==memcmp("iveness", &aBuf[nBuf-7], 7) ){
+        if( fts5Porter_MGt0(aBuf, nBuf-7) ){
+          memcpy(&aBuf[nBuf-7], "ive", 3);
+          *pnBuf = nBuf - 7 + 3;
+        }
+      }else if( nBuf>7 && 0==memcmp("fulness", &aBuf[nBuf-7], 7) ){
+        if( fts5Porter_MGt0(aBuf, nBuf-7) ){
+          memcpy(&aBuf[nBuf-7], "ful", 3);
+          *pnBuf = nBuf - 7 + 3;
+        }
+      }else if( nBuf>7 && 0==memcmp("ousness", &aBuf[nBuf-7], 7) ){
+        if( fts5Porter_MGt0(aBuf, nBuf-7) ){
+          memcpy(&aBuf[nBuf-7], "ous", 3);
+          *pnBuf = nBuf - 7 + 3;
+        }
+      }
+      break;
+  
+    case 't': 
+      if( nBuf>5 && 0==memcmp("aliti", &aBuf[nBuf-5], 5) ){
+        if( fts5Porter_MGt0(aBuf, nBuf-5) ){
+          memcpy(&aBuf[nBuf-5], "al", 2);
+          *pnBuf = nBuf - 5 + 2;
+        }
+      }else if( nBuf>5 && 0==memcmp("iviti", &aBuf[nBuf-5], 5) ){
+        if( fts5Porter_MGt0(aBuf, nBuf-5) ){
+          memcpy(&aBuf[nBuf-5], "ive", 3);
+          *pnBuf = nBuf - 5 + 3;
+        }
+      }else if( nBuf>6 && 0==memcmp("biliti", &aBuf[nBuf-6], 6) ){
+        if( fts5Porter_MGt0(aBuf, nBuf-6) ){
+          memcpy(&aBuf[nBuf-6], "ble", 3);
+          *pnBuf = nBuf - 6 + 3;
+        }
+      }
+      break;
+  
+  }
+  return ret;
+}
+  
+
+static int fts5PorterStep3(char *aBuf, int *pnBuf){
+  int ret = 0;
+  int nBuf = *pnBuf;
+  switch( aBuf[nBuf-2] ){
+    
+    case 'a': 
+      if( nBuf>4 && 0==memcmp("ical", &aBuf[nBuf-4], 4) ){
+        if( fts5Porter_MGt0(aBuf, nBuf-4) ){
+          memcpy(&aBuf[nBuf-4], "ic", 2);
+          *pnBuf = nBuf - 4 + 2;
+        }
+      }
+      break;
+  
+    case 's': 
+      if( nBuf>4 && 0==memcmp("ness", &aBuf[nBuf-4], 4) ){
+        if( fts5Porter_MGt0(aBuf, nBuf-4) ){
+          *pnBuf = nBuf - 4;
+        }
+      }
+      break;
+  
+    case 't': 
+      if( nBuf>5 && 0==memcmp("icate", &aBuf[nBuf-5], 5) ){
+        if( fts5Porter_MGt0(aBuf, nBuf-5) ){
+          memcpy(&aBuf[nBuf-5], "ic", 2);
+          *pnBuf = nBuf - 5 + 2;
+        }
+      }else if( nBuf>5 && 0==memcmp("iciti", &aBuf[nBuf-5], 5) ){
+        if( fts5Porter_MGt0(aBuf, nBuf-5) ){
+          memcpy(&aBuf[nBuf-5], "ic", 2);
+          *pnBuf = nBuf - 5 + 2;
+        }
+      }
+      break;
+  
+    case 'u': 
+      if( nBuf>3 && 0==memcmp("ful", &aBuf[nBuf-3], 3) ){
+        if( fts5Porter_MGt0(aBuf, nBuf-3) ){
+          *pnBuf = nBuf - 3;
+        }
+      }
+      break;
+  
+    case 'v': 
+      if( nBuf>5 && 0==memcmp("ative", &aBuf[nBuf-5], 5) ){
+        if( fts5Porter_MGt0(aBuf, nBuf-5) ){
+          *pnBuf = nBuf - 5;
+        }
+      }
+      break;
+  
+    case 'z': 
+      if( nBuf>5 && 0==memcmp("alize", &aBuf[nBuf-5], 5) ){
+        if( fts5Porter_MGt0(aBuf, nBuf-5) ){
+          memcpy(&aBuf[nBuf-5], "al", 2);
+          *pnBuf = nBuf - 5 + 2;
+        }
+      }
+      break;
+  
+  }
+  return ret;
+}
+  
+
+static int fts5PorterStep1B(char *aBuf, int *pnBuf){
+  int ret = 0;
+  int nBuf = *pnBuf;
+  switch( aBuf[nBuf-2] ){
+    
+    case 'e': 
+      if( nBuf>3 && 0==memcmp("eed", &aBuf[nBuf-3], 3) ){
+        if( fts5Porter_MGt0(aBuf, nBuf-3) ){
+          memcpy(&aBuf[nBuf-3], "ee", 2);
+          *pnBuf = nBuf - 3 + 2;
+        }
+      }else if( nBuf>2 && 0==memcmp("ed", &aBuf[nBuf-2], 2) ){
+        if( fts5Porter_Vowel(aBuf, nBuf-2) ){
+          *pnBuf = nBuf - 2;
+          ret = 1;
+        }
+      }
+      break;
+  
+    case 'n': 
+      if( nBuf>3 && 0==memcmp("ing", &aBuf[nBuf-3], 3) ){
+        if( fts5Porter_Vowel(aBuf, nBuf-3) ){
+          *pnBuf = nBuf - 3;
+          ret = 1;
+        }
+      }
+      break;
+  
+  }
+  return ret;
+}
+  
+/* 
+** GENERATED CODE ENDS HERE (mkportersteps.tcl)
+***************************************************************************
+**************************************************************************/
+
+static void fts5PorterStep1A(char *aBuf, int *pnBuf){
+  int nBuf = *pnBuf;
+  if( aBuf[nBuf-1]=='s' ){
+    if( aBuf[nBuf-2]=='e' ){
+      if( (nBuf>4 && aBuf[nBuf-4]=='s' && aBuf[nBuf-3]=='s') 
+       || (nBuf>3 && aBuf[nBuf-3]=='i' )
+      ){
+        *pnBuf = nBuf-2;
+      }else{
+        *pnBuf = nBuf-1;
+      }
+    }
+    else if( aBuf[nBuf-2]!='s' ){
+      *pnBuf = nBuf-1;
+    }
+  }
+}
+
 static int fts5PorterCb(
   void *pCtx, 
   const char *pToken, 
@@ -675,96 +1118,8 @@ static int fts5PorterCb(
 ){
   PorterContext *p = (PorterContext*)pCtx;
 
-  PorterRule aStep1A[] = {
-    { "sses", 4,  0, "ss", 2 },
-    { "ies",  3,  0, "i",  1  },
-    { "ss",   2,  0, "ss", 2 },
-    { "s",    1,  0, "",   0 },
-    { 0, 0, 0, 0 }
-  };
-
-  PorterRule aStep1B[] = {
-    { "eed", 3,  fts5Porter_MGt0,  "ee", 2 },
-    { "ed",  2,  fts5Porter_Vowel, "",   0 },
-    { "ing", 3,  fts5Porter_Vowel, "",   0 },
-    { 0, 0, 0, 0 }
-  };
-
-  PorterRule aStep1B2[] = {
-    { "at", 2,  0, "ate", 3 },
-    { "bl", 2,  0, "ble", 3 },
-    { "iz", 2,  0, "ize", 3 },
-    { 0, 0, 0, 0 }
-  };
-
-  PorterRule aStep1C[] = {
-    { "y",  1,  fts5Porter_Vowel, "i", 1 },
-    { 0, 0, 0, 0 }
-  };
-
-  PorterRule aStep2[] = {
-    { "ational", 7, fts5Porter_MGt0, "ate", 3}, 
-    { "tional", 6, fts5Porter_MGt0, "tion", 4}, 
-    { "enci", 4, fts5Porter_MGt0, "ence", 4}, 
-    { "anci", 4, fts5Porter_MGt0, "ance", 4}, 
-    { "izer", 4, fts5Porter_MGt0, "ize", 3}, 
-    { "logi", 4, fts5Porter_MGt0, "log", 3},     /* added post 1979 */
-    { "bli", 3, fts5Porter_MGt0, "ble", 3},      /* modified post 1979 */
-    { "alli", 4, fts5Porter_MGt0, "al", 2}, 
-    { "entli", 5, fts5Porter_MGt0, "ent", 3}, 
-    { "eli", 3, fts5Porter_MGt0, "e", 1}, 
-    { "ousli", 5, fts5Porter_MGt0, "ous", 3}, 
-    { "ization", 7, fts5Porter_MGt0, "ize", 3}, 
-    { "ation", 5, fts5Porter_MGt0, "ate", 3}, 
-    { "ator", 4, fts5Porter_MGt0, "ate", 3}, 
-    { "alism", 5, fts5Porter_MGt0, "al", 2}, 
-    { "iveness", 7, fts5Porter_MGt0, "ive", 3}, 
-    { "fulness", 7, fts5Porter_MGt0, "ful", 3}, 
-    { "ousness", 7, fts5Porter_MGt0, "ous", 3}, 
-    { "aliti", 5, fts5Porter_MGt0, "al", 2}, 
-    { "iviti", 5, fts5Porter_MGt0, "ive", 3}, 
-    { "biliti", 6, fts5Porter_MGt0, "ble", 3}, 
-    { 0, 0, 0, 0 }
-  };
-
-  PorterRule aStep3[] = {
-    { "icate", 5, fts5Porter_MGt0, "ic", 2}, 
-    { "ative", 5, fts5Porter_MGt0, "", 0}, 
-    { "alize", 5, fts5Porter_MGt0, "al", 2}, 
-    { "iciti", 5, fts5Porter_MGt0, "ic", 2}, 
-    { "ical", 4, fts5Porter_MGt0, "ic", 2}, 
-    { "ful", 3, fts5Porter_MGt0, "", 0}, 
-    { "ness", 4, fts5Porter_MGt0, "", 0}, 
-    { 0, 0, 0, 0 }
-  };
-
-  PorterRule aStep4[] = {
-    { "al", 2, fts5Porter_MGt1, "", 0}, 
-    { "ance", 4, fts5Porter_MGt1, "", 0}, 
-    { "ence", 4, fts5Porter_MGt1, "", 0}, 
-    { "er", 2, fts5Porter_MGt1, "", 0}, 
-    { "ic", 2, fts5Porter_MGt1, "", 0}, 
-    { "able", 4, fts5Porter_MGt1, "", 0}, 
-    { "ible", 4, fts5Porter_MGt1, "", 0}, 
-    { "ant", 3, fts5Porter_MGt1, "", 0}, 
-    { "ement", 5, fts5Porter_MGt1, "", 0}, 
-    { "ment", 4, fts5Porter_MGt1, "", 0}, 
-    { "ent", 3, fts5Porter_MGt1, "", 0}, 
-    { "ion", 3, fts5Porter_MGt1_and_S_or_T, "", 0}, 
-    { "ou", 2, fts5Porter_MGt1, "", 0}, 
-    { "ism", 3, fts5Porter_MGt1, "", 0}, 
-    { "ate", 3, fts5Porter_MGt1, "", 0}, 
-    { "iti", 3, fts5Porter_MGt1, "", 0}, 
-    { "ous", 3, fts5Porter_MGt1, "", 0}, 
-    { "ive", 3, fts5Porter_MGt1, "", 0}, 
-    { "ize", 3, fts5Porter_MGt1, "", 0}, 
-    { 0, 0, 0, 0 }
-  };
-
-
   char *aBuf;
   int nBuf;
-  int n;
 
   if( nToken>FTS5_PORTER_MAX_TOKEN || nToken<3 ) goto pass_through;
   aBuf = p->aBuf;
@@ -772,10 +1127,9 @@ static int fts5PorterCb(
   memcpy(aBuf, pToken, nBuf);
 
   /* Step 1. */
-  fts5PorterApply(aBuf, &nBuf, aStep1A);
-  n = fts5PorterApply(aBuf, &nBuf, aStep1B);
-  if( n==1 || n==2 ){
-    if( fts5PorterApply(aBuf, &nBuf, aStep1B2)<0 ){
+  fts5PorterStep1A(aBuf, &nBuf);
+  if( fts5PorterStep1B(aBuf, &nBuf) ){
+    if( fts5PorterStep1B2(aBuf, &nBuf)==0 ){
       char c = aBuf[nBuf-1];
       if( fts5PorterIsVowel(c, 0)==0 
        && c!='l' && c!='s' && c!='z' && c==aBuf[nBuf-2] 
@@ -786,12 +1140,16 @@ static int fts5PorterCb(
       }
     }
   }
-  fts5PorterApply(aBuf, &nBuf, aStep1C);
+
+  /* Step 1C. */
+  if( aBuf[nBuf-1]=='y' && fts5Porter_Vowel(aBuf, nBuf-1) ){
+    aBuf[nBuf-1] = 'i';
+  }
 
   /* Steps 2 through 4. */
-  fts5PorterApply(aBuf, &nBuf, aStep2);
-  fts5PorterApply(aBuf, &nBuf, aStep3);
-  fts5PorterApply(aBuf, &nBuf, aStep4);
+  fts5PorterStep2(aBuf, &nBuf);
+  fts5PorterStep3(aBuf, &nBuf);
+  fts5PorterStep4(aBuf, &nBuf);
 
   /* Step 5a. */
   if( nBuf>0 && aBuf[nBuf-1]=='e' ){
