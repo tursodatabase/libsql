@@ -4176,6 +4176,9 @@ int main(int argc, char **argv){
     exit(1);
   }
 #endif
+#if defined(WIN32) || defined(_WIN32)
+  _setmode(0, _O_BINARY);
+#endif
   Argv0 = argv[0];
   main_init(&data);
   stdin_is_interactive = isatty(0);
