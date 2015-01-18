@@ -824,11 +824,12 @@ do_test shell1-5.0 {
   #
   for {set i 1} {$i < 256} {incr i} {
     #
-    # NOTE: Due to how the Tcl [exec] command works on Windows (i.e. where
-    #       it treats command channels opened for it as textual ones), the
-    #       carriage-return and end-of-file characters cannot be used here.
+    # NOTE: Due to how the Tcl [exec] command works (i.e. where it treats
+    #       command channels opened for it as textual ones), the carriage
+    #       return character (and on Windows, the end-of-file character)
+    #       cannot be used here.
     #
-    if {$tcl_platform(platform)=="windows" && ($i == 0x0D || $i == 0x1A)} {
+    if {$i==0x0D || ($tcl_platform(platform)=="windows" && $i==0x1A)} {
       continue
     }
     set hex [format %02X $i]
