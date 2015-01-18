@@ -746,6 +746,22 @@ static void interrupt_handler(int NotUsed){
 }
 #endif
 
+#if defined(WIN32) || defined(_WIN32)
+/*
+** This routine is used to adjust the file translation mode for the output
+** file.  It is only used on Windows.
+*/
+static void enable_binary_output(
+  ShellState *p,
+  int enable
+){
+  fflush(p->out);
+  _setmode(_fileno(p->out), enable ? _O_BINARY : _O_TEXT);
+}
+#else
+#define enable_binary_output(p,e)
+#endif
+
 /*
 ** This is the callback routine that the shell
 ** invokes for each row of a query result.
@@ -908,10 +924,7 @@ static int shell_callback(
       break;
     }
     case MODE_Csv: {
-#if defined(WIN32) || defined(_WIN32)
-      fflush(p->out);
-      _setmode(_fileno(p->out), _O_BINARY);
-#endif
+      enable_binary_output(p, 1);
       if( p->cnt++==0 && p->showHeader ){
         for(i=0; i<nArg; i++){
           output_csv(p, azCol[i] ? azCol[i] : "", i<nArg-1);
@@ -924,10 +937,7 @@ static int shell_callback(
         }
         fprintf(p->out, "%s", p->rowSeparator);
       }
-#if defined(WIN32) || defined(_WIN32)
-      fflush(p->out);
-      _setmode(_fileno(p->out), _O_TEXT);
-#endif
+      enable_binary_output(p, 0);
       break;
     }
     case MODE_Insert: {
@@ -1715,6 +1725,7 @@ static int run_schema_dump_query(
 static char zHelp[] =
   ".backup ?DB? FILE      Backup DB (default \"main\") to FILE\n"
   ".bail on|off           Stop after hitting an error.  Default OFF\n"
+  ".binary on|off         Turn binary output on or off.  Default OFF\n"
   ".clone NEWDB           Clone data into NEWDB from the existing database\n"
   ".databases             List names and files of attached databases\n"
   ".dump ?TABLE? ...      Dump the database in an SQL text format\n"
@@ -1875,12 +1886,18 @@ static void open_db(ShellState *p, int keepAlive){
 /*
 ** Do C-language style dequoting.
 **
+**    \a    -> alarm
+**    \b    -> backspace
 **    \t    -> tab
 **    \n    -> newline
+**    \v    -> vertical tab
+**    \f    -> form feed
 **    \r    -> carriage return
+**    \s    -> space
 **    \"    -> "
-**    \NNN  -> ascii character NNN in octal
+**    \'    -> '
 **    \\    -> backslash
+**    \NNN  -> ascii character NNN in octal
 */
 static void resolve_backslashes(char *z){
   int i, j;
@@ -1889,12 +1906,24 @@ static void resolve_backslashes(char *z){
   for(i=j=0; (c = z[i])!=0; i++, j++){
     if( c=='\\' ){
       c = z[++i];
-      if( c=='n' ){
-        c = '\n';
+      if( c=='a' ){
+        c = '\a';
+      }else if( c=='b' ){
+        c = '\b';
       }else if( c=='t' ){
         c = '\t';
+      }else if( c=='n' ){
+        c = '\n';
+      }else if( c=='v' ){
+        c = '\v';
+      }else if( c=='f' ){
+        c = '\f';
       }else if( c=='r' ){
         c = '\r';
+      }else if( c=='"' ){
+        c = '"';
+      }else if( c=='\'' ){
+        c = '\'';
       }else if( c=='\\' ){
         c = '\\';
       }else if( c>='0' && c<='7' ){
@@ -2513,6 +2542,15 @@ static int do_meta_command(char *zLine, ShellState *p){
       bail_on_error = booleanValue(azArg[1]);
     }else{
       fprintf(stderr, "Usage: .bail on|off\n");
+      rc = 1;
+    }
+  }else
+
+  if( c=='b' && n>=3 && strncmp(azArg[0], "binary", n)==0 ){
+    if( nArg==2 ){
+      enable_binary_output(p, booleanValue(azArg[1]));
+    }else{
+      fprintf(stderr, "Usage: .binary on|off\n");
       rc = 1;
     }
   }else
@@ -4177,7 +4215,7 @@ int main(int argc, char **argv){
   }
 #endif
 #if defined(WIN32) || defined(_WIN32)
-  _setmode(0, _O_BINARY);
+  _setmode(_fileno(stdin), _O_BINARY);
 #endif
   Argv0 = argv[0];
   main_init(&data);

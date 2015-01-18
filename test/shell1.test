@@ -815,4 +815,37 @@ do_test shell1-4.6 {
 ";"
 "$"} 7}
 
+# Test using arbitrary byte data with the shell via standard input/output.
+#
+do_test shell1-5.0 {
+  #
+  # NOTE: Skip NUL byte because it appears to be incompatible with command
+  #       shell argument parsing.
+  #
+  for {set i 1} {$i < 256} {incr i} {
+    #
+    # NOTE: Due to how the Tcl [exec] command works on Windows (i.e. where
+    #       it treats command channels opened for it as textual ones), the
+    #       carriage-return and end-of-file characters cannot be used here.
+    #
+    if {$tcl_platform(platform)=="windows" && ($i == 0x0D || $i == 0x1A)} {
+      continue
+    }
+    set hex [format %02X $i]
+    set char [subst \\x$hex]; set oldChar $char
+    set char [string map [list \
+        \a \\a \b \\b \t \\t \n \\n \v \\v \f \\f \r \\r \
+        " " "\" \"" \" \\\" ' \"'\" \\ \\\\] $char]
+    set x [catchcmdex test.db ".print $char\r\n"]
+    set code [lindex $x 0]
+    set res [lindex $x 1]
+    if {$code ne "0"} {
+      error "failed with error: $res"
+    }
+    if {$res ne "$oldChar\n"} {
+      error "failed with byte $hex mismatch"
+    }
+  }
+} {}
+
 finish_test
