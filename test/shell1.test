@@ -834,9 +834,32 @@ do_test shell1-5.0 {
     }
     set hex [format %02X $i]
     set char [subst \\x$hex]; set oldChar $char
-    set char [string map [list \
-        \a \\a \b \\b \t \\t \n \\n \v \\v \f \\f \r \\r \
-        " " "\" \"" \" \\\" ' \"'\" \\ \\\\] $char]
+    set escapes [list]
+    if {$tcl_platform(platform)=="windows"} {
+      #
+      # NOTE: On Windows, we need to escape all the whitespace characters,
+      #       the alarm (\a) character, and those with special meaning to
+      #       the SQLite shell itself.
+      #
+      set escapes [list \
+          \a \\a \b \\b \t \\t \n \\n \v \\v \f \\f \r \\r \
+          " " "\" \"" \" \\\" ' \"'\" \\ \\\\]
+    } else {
+      #
+      # NOTE: On Unix, we need to escape most of the whitespace characters
+      #       and those with special meaning to the SQLite shell itself.
+      #       The alarm (\a), backspace (\b), and carriage-return (\r)
+      #       characters do not appear to require escaping on Unix.  For
+      #       the alarm and backspace characters, this is probably due to
+      #       differences in the command shell.  For the carriage-return,
+      #       it is probably due to differences in how Tcl handles command
+      #       channel end-of-line translations.
+      #
+      set escapes [list \
+          \t \\t \n \\n \v \\v \f \\f \
+          " " "\" \"" \" \\\" ' \"'\" \\ \\\\]
+    }
+    set char [string map $escapes $char]
     set x [catchcmdex test.db ".print $char\r\n"]
     set code [lindex $x 0]
     set res [lindex $x 1]
