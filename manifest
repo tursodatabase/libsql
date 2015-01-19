@@ -1,5 +1,5 @@
-C Make\ssure\sthat\sthe\sKeyInfo.nXField\svalue\sof\sephermeral\stables\sused\sfor\nORDER\sBY\sand\sGROUP\sBY\sis\sset\scorrectly,\sso\sthat\sthe\scorrect\scomparison\nfunction\scan\sbe\schoosen\sby\ssqlite3VdbeFindCompare().
-D 2015-01-19T20:59:34.124
+C There\sare\sasserts\sin\splace\snow\sthat\swill\sprevent\sa\srecurrence\sof\nticket\s[f97c4637102a3ae7].\s\sNevertheless,\sit\sis\sgood\sto\sadd\ssome\ntest\scases\sas\swell.
+D 2015-01-19T21:10:53.444
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5407a688f4d77a05c18a8142be8ae5a2829dd610
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -769,6 +769,7 @@ F test/orderby4.test 4d39bfbaaa3ae64d026ca2ff166353d2edca4ba4
 F test/orderby5.test 8f08a54836d21fb7c70245360751aedd1c2286fb
 F test/orderby6.test 8b38138ab0972588240b3fca0985d2e400432859
 F test/orderby7.test 3d1383d52ade5b9eb3a173b3147fdd296f0202da
+F test/orderby8.test 23ef1a5d72bd3adcc2f65561c654295d1b8047bd
 F test/oserror.test 14fec2796c2b6fe431c7823750e8a18a761176d7
 F test/ovfl.test 4f7ca651cba5c059a12d8c67dddd49bec5747799
 F test/pager1.test 1acbdb14c5952a72dd43129cabdbf69aaa3ed1fa
@@ -1236,7 +1237,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 38868f845e1ad4d61354ab1ad39dd19e3e07c7fd
-R 13f159f0ffd29d3a96e72fa52e241602
+P c16bae5e699b851f4ca8414c5dfa5370b18f69f0
+R e27a2655369428e59f07848a6b54ddd6
 U drh
-Z 00bba407ebbd95d365912cac0942941c
+Z e964ea280030c93ae7b89ddabdb22c13
