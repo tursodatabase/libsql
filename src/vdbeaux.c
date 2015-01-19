@@ -3760,7 +3760,9 @@ static int vdbeRecordCompareInt(
   i64 v = pPKey2->aMem[0].u.i;
   i64 lhs;
 
-  assert( (*(u8*)pKey1)<=0x3F || CORRUPT_DB );
+  if( ((const u8*)pKey1)[0]>=64 ){
+    return vdbeRecordCompareWithSkip(nKey1, pKey1, pPKey2, 0);
+  }
   switch( serial_type ){
     case 1: { /* 1-byte signed integer */
       lhs = ONE_BYTE_INT(aKey);
@@ -3847,6 +3849,9 @@ static int vdbeRecordCompareString(
   int serial_type;
   int res;
 
+  if( aKey1[0]>=64 ){
+    return vdbeRecordCompareWithSkip(nKey1, pKey1, pPKey2, 0);
+  }
   getVarint32(&aKey1[1], serial_type);
   if( serial_type<12 ){
     res = pPKey2->r1;      /* (pKey1/nKey1) is a number or a null */
@@ -3898,40 +3903,24 @@ static int vdbeRecordCompareString(
 ** as the only argument.
 */
 RecordCompare sqlite3VdbeFindCompare(UnpackedRecord *p){
-  /* varintRecordCompareInt() and varintRecordCompareString() both assume
-  ** that the size-of-header varint that occurs at the start of each record
-  ** fits in a single byte (i.e. is 127 or less). varintRecordCompareInt()
-  ** also assumes that it is safe to overread a buffer by at least the 
-  ** maximum possible legal header size plus 8 bytes. Because there is
-  ** guaranteed to be at least 74 (but not 136) bytes of padding following each
-  ** buffer passed to varintRecordCompareInt() this makes it convenient to
-  ** limit the size of the header to 64 bytes in cases where the first field
-  ** is an integer.
-  **
-  ** The easiest way to enforce this limit is to consider only records with
-  ** 13 fields or less. If the first field is an integer, the maximum legal
-  ** header size is (12*5 + 1 + 1) bytes.  */
-  if( (p->pKeyInfo->nField + p->pKeyInfo->nXField)<=13 ){
-    int flags = p->aMem[0].flags;
-    if( p->pKeyInfo->aSortOrder[0] ){
-      p->r1 = 1;
-      p->r2 = -1;
-    }else{
-      p->r1 = -1;
-      p->r2 = 1;
-    }
-    if( (flags & MEM_Int) ){
-      return vdbeRecordCompareInt;
-    }
-    testcase( flags & MEM_Real );
-    testcase( flags & MEM_Null );
-    testcase( flags & MEM_Blob );
-    if( (flags & (MEM_Real|MEM_Null|MEM_Blob))==0 && p->pKeyInfo->aColl[0]==0 ){
-      assert( flags & MEM_Str );
-      return vdbeRecordCompareString;
-    }
+  int flags = p->aMem[0].flags;
+  if( p->pKeyInfo->aSortOrder[0] ){
+    p->r1 = 1;
+    p->r2 = -1;
+  }else{
+    p->r1 = -1;
+    p->r2 = 1;
   }
-
+  if( (flags & MEM_Int) ){
+    return vdbeRecordCompareInt;
+  }
+  testcase( flags & MEM_Real );
+  testcase( flags & MEM_Null );
+  testcase( flags & MEM_Blob );
+  if( (flags & (MEM_Real|MEM_Null|MEM_Blob))==0 && p->pKeyInfo->aColl[0]==0 ){
+    assert( flags & MEM_Str );
+    return vdbeRecordCompareString;
+  }
   return sqlite3VdbeRecordCompare;
 }
 
