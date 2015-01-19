@@ -1,5 +1,5 @@
-C Fix\scompilation\son\sCygwin\swhen\sSQLITE_MAX_WORKER_THREADS\sis\sgreater\sthan\szero.
-D 2015-01-19T20:05:53.508
+C Ensure\sthat\sthe\sKeyInfo.nXField\svalue\sfor\sephemeral\stables\sused\sto\simplement\nORDER\sBY\sor\sGROUP\sBY\sclauses\sis\sset\scorrectly,\sso\sthat\sthe\nsqlite3VdbeFindCompare()\sroutine\scan\schoose\sthe\scorrect\scomparison\sfunction.\nAdd\sassert()\sstatements\sto\sthe\shigh-speed\scomparison\sfunctions\sto\sdetect\ncases\swhere\sthey\sare\sinappropriately\schosen.\nFix\sfor\sticket\s[f97c4637102a3ae72b7911].
+D 2015-01-19T21:36:05.317
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5407a688f4d77a05c18a8142be8ae5a2829dd610
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -229,7 +229,7 @@ F src/printf.c ea82bcb1b83273b4c67177c233c1f78c81fc42f9
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c f6c46d3434439ab2084618d603e6d6dbeb0d6ada
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c e4c38c75e36f28aed80a69a725d888751bfd53df
+F src/select.c bc02e8b084891af5a3b428faa9cf367aff887d1a
 F src/shell.c d2d3b46701e44369dd314bd6817541c60e2c39ea
 F src/sqlite.h.in 9dfc99d6533d36d6a549c4f3f01cacc8be956ada
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
@@ -296,7 +296,7 @@ F src/vdbe.c ddfc977981cd6324668aa6b114045eb1c677421a
 F src/vdbe.h 6fc69d9c5e146302c56e163cb4b31d1ee64a18c3
 F src/vdbeInt.h 9bb69ff2447c34b6ccc58b34ec35b615f86ead78
 F src/vdbeapi.c 4bc511a46b9839392ae0e90844a71dc96d9dbd71
-F src/vdbeaux.c 07ef87c6d4b5abdf13ff33babb10205702fdab0a
+F src/vdbeaux.c f06d38c71d7f533348c09869d69fd1b647042a5b
 F src/vdbeblob.c 4af4bfb71f6df7778397b4a0ebc1879793276778
 F src/vdbemem.c 31d8eabb0cd78bfeab4e5124c7363c3e9e54db9f
 F src/vdbesort.c 6d64c5448b64851b99931ede980addc3af70d5e2
@@ -769,6 +769,7 @@ F test/orderby4.test 4d39bfbaaa3ae64d026ca2ff166353d2edca4ba4
 F test/orderby5.test 8f08a54836d21fb7c70245360751aedd1c2286fb
 F test/orderby6.test 8b38138ab0972588240b3fca0985d2e400432859
 F test/orderby7.test 3d1383d52ade5b9eb3a173b3147fdd296f0202da
+F test/orderby8.test 23ef1a5d72bd3adcc2f65561c654295d1b8047bd
 F test/oserror.test 14fec2796c2b6fe431c7823750e8a18a761176d7
 F test/ovfl.test 4f7ca651cba5c059a12d8c67dddd49bec5747799
 F test/pager1.test 1acbdb14c5952a72dd43129cabdbf69aaa3ed1fa
@@ -1236,7 +1237,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 824328f9833d01fc155a9d0265ef41d338cf1ffb
-R 46d0fc0085c932a30f59bac1bd145cf7
-U mistachkin
-Z 998ddd7b1750b28ed4b199120a25244e
+P 2037442c582e51d85967bc911ea4a412eb4da573 e02959b9a0e1bacdd3939548d4434c042aacc2e6
+R 5021170f2a6880b445a702735148b9c6
+T +closed e02959b9a0e1bacdd3939548d4434c042aacc2e6
+U drh
+Z b76cf3617d76194e2b83c38054737fb3
