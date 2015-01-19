@@ -768,22 +768,6 @@ static void interrupt_handler(int NotUsed){
 }
 #endif
 
-#if defined(WIN32) || defined(_WIN32)
-/*
-** This routine is used to adjust the file translation mode for the output
-** file.  It is only used on Windows.
-*/
-static void enable_binary_output(
-  ShellState *p,
-  int enable
-){
-  fflush(p->out);
-  _setmode(_fileno(p->out), enable ? _O_BINARY : _O_TEXT);
-}
-#else
-#define enable_binary_output(p,e)
-#endif
-
 /*
 ** This is the callback routine that the shell
 ** invokes for each row of a query result.
@@ -2570,7 +2554,11 @@ static int do_meta_command(char *zLine, ShellState *p){
 
   if( c=='b' && n>=3 && strncmp(azArg[0], "binary", n)==0 ){
     if( nArg==2 ){
-      enable_binary_output(p, booleanValue(azArg[1]));
+      if( booleanValue(azArg[1]) ){
+        setBinaryMode(p->out);
+      }else{
+        setTextMode(p->out);
+      }
     }else{
       fprintf(stderr, "Usage: .binary on|off\n");
       rc = 1;
