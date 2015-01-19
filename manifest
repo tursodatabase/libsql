@@ -1,5 +1,5 @@
-C An\salternative\sway\sof\simplementing\sthe\sassert()\sthat\sverifies\sthe\srelative\nvalues\sof\sKeyInfo.nField+KeyInfo.nXField\sand\sthe\snumber\sof\scolumns\sin\sa\srecord.\nThis\sversion\sof\sthe\sassert()\sonly\sfires\swhen\sthe\shigh-speed\scomparison\nroutines\sare\sused\s-\swhich\sis\sto\ssay\sit\sonly\sfires\swhen\sthe\sconstraint\nactually\smatters.
-D 2015-01-19T19:48:52.667
+C Fix\sthe\sassert()\sof\sthe\sprevious\scheck-in\sso\sthat\sit\sworks\seven\swhen\ncompiled\swithout\sSQLITE_DEBUG.
+D 2015-01-19T20:57:19.823
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5407a688f4d77a05c18a8142be8ae5a2829dd610
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -296,7 +296,7 @@ F src/vdbe.c ddfc977981cd6324668aa6b114045eb1c677421a
 F src/vdbe.h 6fc69d9c5e146302c56e163cb4b31d1ee64a18c3
 F src/vdbeInt.h 9bb69ff2447c34b6ccc58b34ec35b615f86ead78
 F src/vdbeapi.c 4bc511a46b9839392ae0e90844a71dc96d9dbd71
-F src/vdbeaux.c d22d71f5928f0170061b6509b72832d307fb581e
+F src/vdbeaux.c f06d38c71d7f533348c09869d69fd1b647042a5b
 F src/vdbeblob.c 4af4bfb71f6df7778397b4a0ebc1879793276778
 F src/vdbemem.c 31d8eabb0cd78bfeab4e5124c7363c3e9e54db9f
 F src/vdbesort.c 6d64c5448b64851b99931ede980addc3af70d5e2
@@ -1236,10 +1236,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 824328f9833d01fc155a9d0265ef41d338cf1ffb
-R 62f359e43ad9aa835c85ab2bfc9c70b0
-T *branch * tkt-f97c4637
-T *sym-tkt-f97c4637 *
-T -sym-trunk *
+P bf744b4908b096f301565f6a4ea8d56667c1d76a
+R 41daf6b428d707d4f33647380c4cfa49
 U drh
-Z e1e735a41c0bcd1d69846f2fcc6f5b85
+Z 452da4f6a59c3f1fc4c567af0e6571ad

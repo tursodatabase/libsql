@@ -3380,6 +3380,8 @@ static void vdbeAssertFieldCountWithinLimits(
   }
   assert( nField <= pKeyInfo->nField+pKeyInfo->nXField );
 }
+#else
+# define vdbeAssertFieldCountWithinLimits(A,B,C)
 #endif
 
 /*
