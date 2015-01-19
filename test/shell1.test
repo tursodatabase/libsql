@@ -860,7 +860,7 @@ do_test shell1-5.0 {
           " " "\" \"" \" \\\" ' \"'\" \\ \\\\]
     }
     set char [string map $escapes $char]
-    set x [catchcmdex test.db ".print $char\r\n"]
+    set x [catchcmdex test.db ".print $char\n"]
     set code [lindex $x 0]
     set res [lindex $x 1]
     if {$code ne "0"} {
