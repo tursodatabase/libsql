@@ -208,7 +208,7 @@ int sqlite3Fts5ExprNew(
   }while( sParse.rc==SQLITE_OK && t!=FTS5_EOF );
   sqlite3Fts5ParserFree(pEngine, fts5ParseFree);
 
-  assert( sParse.pExpr==0 || (sParse.rc==SQLITE_OK && sParse.zErr==0) );
+  assert( sParse.rc!=SQLITE_OK || sParse.zErr==0 );
   if( sParse.rc==SQLITE_OK ){
     *ppNew = pNew = sqlite3_malloc(sizeof(Fts5Expr));
     if( pNew==0 ){
@@ -1011,10 +1011,12 @@ static int fts5ExprNodeFirst(Fts5Expr *pExpr, Fts5ExprNode *pNode){
 ** is not considered an error if the query does not match any documents.
 */
 int sqlite3Fts5ExprFirst(Fts5Expr *p, Fts5Index *pIdx, int bAsc){
-  int rc;
-  p->pIndex = pIdx;
-  p->bAsc = bAsc;
-  rc = fts5ExprNodeFirst(p, p->pRoot);
+  int rc = SQLITE_OK;
+  if( p->pRoot ){
+    p->pIndex = pIdx;
+    p->bAsc = bAsc;
+    rc = fts5ExprNodeFirst(p, p->pRoot);
+  }
   return rc;
 }
 
@@ -1031,7 +1033,7 @@ int sqlite3Fts5ExprNext(Fts5Expr *p){
 }
 
 int sqlite3Fts5ExprEof(Fts5Expr *p){
-  return p->pRoot->bEof;
+  return (p->pRoot==0 || p->pRoot->bEof);
 }
 
 i64 sqlite3Fts5ExprRowid(Fts5Expr *p){
@@ -1101,6 +1103,9 @@ Fts5ExprNearset *sqlite3Fts5ParseNearset(
   Fts5ExprNearset *pRet = 0;
 
   if( pParse->rc==SQLITE_OK ){
+    if( pPhrase==0 ){
+      return pNear;
+    }
     if( pNear==0 ){
       int nByte = sizeof(Fts5ExprNearset) + SZALLOC * sizeof(Fts5ExprPhrase*);
       pRet = sqlite3_malloc(nByte);
@@ -1207,7 +1212,7 @@ void sqlite3Fts5ParseFinished(Fts5Parse *pParse, Fts5ExprNode *p){
 */
 Fts5ExprPhrase *sqlite3Fts5ParseTerm(
   Fts5Parse *pParse,              /* Parse context */
-  Fts5ExprPhrase *pPhrase,        /* Phrase to append to */
+  Fts5ExprPhrase *pAppend,        /* Phrase to append to */
   Fts5Token *pToken,              /* String to tokenize */
   int bPrefix                     /* True if there is a trailing "*" */
 ){
@@ -1217,39 +1222,40 @@ Fts5ExprPhrase *sqlite3Fts5ParseTerm(
   char *z = 0;
 
   memset(&sCtx, 0, sizeof(TokenCtx));
-  sCtx.pPhrase = pPhrase;
-
-  if( pPhrase==0 ){
-    if( (pParse->nPhrase % 8)==0 ){
-      int nByte = sizeof(Fts5ExprPhrase*) * (pParse->nPhrase + 8);
-      Fts5ExprPhrase **apNew;
-      apNew = (Fts5ExprPhrase**)sqlite3_realloc(pParse->apPhrase, nByte);
-      if( apNew==0 ){
-        pParse->rc = SQLITE_NOMEM;
-        fts5ExprPhraseFree(pPhrase);
-        return 0;
-      }
-      pParse->apPhrase = apNew;
-    }
-    pParse->nPhrase++;
-  }
+  sCtx.pPhrase = pAppend;
 
   rc = fts5ParseStringFromToken(pToken, &z);
   if( rc==SQLITE_OK ){
     sqlite3Fts5Dequote(z);
     rc = sqlite3Fts5Tokenize(pConfig, z, strlen(z), &sCtx, fts5ParseTokenize);
   }
+  sqlite3_free(z);
   if( rc ){
     pParse->rc = rc;
     fts5ExprPhraseFree(sCtx.pPhrase);
     sCtx.pPhrase = 0;
-  }else if( sCtx.pPhrase->nTerm>0 ){
+  }else if( sCtx.pPhrase ){
+
+    if( pAppend==0 ){
+      if( (pParse->nPhrase % 8)==0 ){
+        int nByte = sizeof(Fts5ExprPhrase*) * (pParse->nPhrase + 8);
+        Fts5ExprPhrase **apNew;
+        apNew = (Fts5ExprPhrase**)sqlite3_realloc(pParse->apPhrase, nByte);
+        if( apNew==0 ){
+          pParse->rc = SQLITE_NOMEM;
+          fts5ExprPhraseFree(sCtx.pPhrase);
+          return 0;
+        }
+        pParse->apPhrase = apNew;
+      }
+      pParse->nPhrase++;
+    }
+
+    pParse->apPhrase[pParse->nPhrase-1] = sCtx.pPhrase;
+    assert( sCtx.pPhrase->nTerm>0 );
     sCtx.pPhrase->aTerm[sCtx.pPhrase->nTerm-1].bPrefix = bPrefix;
   }
 
-
-  pParse->apPhrase[pParse->nPhrase-1] = sCtx.pPhrase;
-  sqlite3_free(z);
   return sCtx.pPhrase;
 }
 
@@ -1331,9 +1337,12 @@ Fts5ExprNode *sqlite3Fts5ParseNode(
   Fts5ExprNode *pRet = 0;
 
   if( pParse->rc==SQLITE_OK ){
-    assert( (eType!=FTS5_STRING && pLeft  && pRight  && !pNear)
-        || (eType==FTS5_STRING && !pLeft && !pRight && pNear)
+    assert( (eType!=FTS5_STRING && !pNear)
+        || (eType==FTS5_STRING && !pLeft && !pRight)
     );
+    if( eType==FTS5_STRING && pNear==0 ) return 0;
+    if( eType!=FTS5_STRING && pLeft==0 ) return pRight;
+    if( eType!=FTS5_STRING && pRight==0 ) return pLeft;
     pRet = (Fts5ExprNode*)sqlite3_malloc(sizeof(Fts5ExprNode));
     if( pRet==0 ){
       pParse->rc = SQLITE_NOMEM;
@@ -1589,7 +1598,9 @@ static void fts5ExprFunction(
   }
   if( rc==SQLITE_OK ){
     char *zText;
-    if( bTcl ){
+    if( pExpr->pRoot==0 ){
+      zText = sqlite3_mprintf("");
+    }else if( bTcl ){
       zText = fts5ExprPrintTcl(pConfig, zNearsetCmd, pExpr->pRoot);
     }else{
       zText = fts5ExprPrint(pConfig, pExpr->pRoot);

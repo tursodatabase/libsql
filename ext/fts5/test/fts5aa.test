@@ -21,6 +21,8 @@ ifcapable !fts5 {
   return
 }
 
+if 0 {
+
 do_execsql_test 1.0 {
   CREATE VIRTUAL TABLE t1 USING fts5(a, b, c);
   SELECT name, sql FROM sqlite_master;
@@ -300,6 +302,8 @@ do_test 12.3 {
   string is integer $res
 } {1}
 
+}
+
 #-------------------------------------------------------------------------
 #
 reset_db
@@ -319,6 +323,10 @@ do_execsql_test 13.4 {
 do_execsql_test 13.5 {
   SELECT rowid FROM t1 WHERE t1 MATCH 'o';
 } {1}
+
+do_execsql_test 13.6 {
+  SELECT rowid FROM t1 WHERE t1 MATCH '.';
+} {}
 
 finish_test
 
