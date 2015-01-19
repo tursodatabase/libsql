@@ -74,4 +74,15 @@
 # define SQLITE_WIN32_VOLATILE volatile
 #endif
 
+/*
+** For some Windows sub-platforms, the _beginthreadex() / _endthreadex()
+** functions are not available (e.g. those not using MSVC, Cygwin, etc).
+*/
+#if SQLITE_OS_WIN && !SQLITE_OS_WINCE && !SQLITE_OS_WINRT && \
+    SQLITE_THREADSAFE>0 && !defined(__CYGWIN__)
+# define SQLITE_OS_WIN_THREADS 1
+#else
+# define SQLITE_OS_WIN_THREADS 0
+#endif
+
 #endif /* _OS_WIN_H_ */
