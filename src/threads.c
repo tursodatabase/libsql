@@ -101,7 +101,7 @@ int sqlite3ThreadJoin(SQLiteThread *p, void **ppOut){
 
 
 /********************************* Win32 Threads ****************************/
-#if SQLITE_OS_WIN && !SQLITE_OS_WINCE && !SQLITE_OS_WINRT && SQLITE_THREADSAFE>0
+#if SQLITE_OS_WIN_THREADS
 
 #define SQLITE_THREADS_IMPLEMENTED 1  /* Prevent the single-thread code below */
 #include <process.h>
@@ -194,7 +194,7 @@ int sqlite3ThreadJoin(SQLiteThread *p, void **ppOut){
   return (rc==WAIT_OBJECT_0) ? SQLITE_OK : SQLITE_ERROR;
 }
 
-#endif /* SQLITE_OS_WIN && !SQLITE_OS_WINCE && !SQLITE_OS_WINRT */
+#endif /* SQLITE_OS_WIN_THREADS */
 /******************************** End Win32 Threads *************************/
 
 
