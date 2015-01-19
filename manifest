@@ -1,5 +1,5 @@
-C Fix\sthe\sassert()\sof\sthe\sprevious\scheck-in\sso\sthat\sit\sworks\seven\swhen\ncompiled\swithout\sSQLITE_DEBUG.
-D 2015-01-19T20:57:19.823
+C Make\ssure\sthat\sthe\sKeyInfo.nXField\svalue\sof\sephermeral\stables\sused\sfor\nORDER\sBY\sand\sGROUP\sBY\sis\sset\scorrectly,\sso\sthat\sthe\scorrect\scomparison\nfunction\scan\sbe\schoosen\sby\ssqlite3VdbeFindCompare().
+D 2015-01-19T20:59:34.124
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5407a688f4d77a05c18a8142be8ae5a2829dd610
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -229,7 +229,7 @@ F src/printf.c ea82bcb1b83273b4c67177c233c1f78c81fc42f9
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c f6c46d3434439ab2084618d603e6d6dbeb0d6ada
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c e4c38c75e36f28aed80a69a725d888751bfd53df
+F src/select.c bc02e8b084891af5a3b428faa9cf367aff887d1a
 F src/shell.c d2d3b46701e44369dd314bd6817541c60e2c39ea
 F src/sqlite.h.in 9dfc99d6533d36d6a549c4f3f01cacc8be956ada
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
@@ -1236,7 +1236,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P bf744b4908b096f301565f6a4ea8d56667c1d76a
-R 41daf6b428d707d4f33647380c4cfa49
+P 38868f845e1ad4d61354ab1ad39dd19e3e07c7fd
+R 13f159f0ffd29d3a96e72fa52e241602
 U drh
-Z 452da4f6a59c3f1fc4c567af0e6571ad
+Z 00bba407ebbd95d365912cac0942941c
