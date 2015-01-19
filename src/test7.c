@@ -315,7 +315,7 @@ static int tcl_client_argc(
     return TCL_ERROR;
   }
   client_wait(&threadset[i]);
-  sprintf(zBuf, "%d", threadset[i].argc);
+  sqlite3_snprintf(sizeof(zBuf), zBuf, "%d", threadset[i].argc);
   Tcl_AppendResult(interp, zBuf, 0);
   return TCL_OK;
 }

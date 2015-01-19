@@ -106,6 +106,26 @@ extern int pclose(FILE*);
 #define IsDigit(X)  isdigit((unsigned char)X)
 #define ToLower(X)  (char)tolower((unsigned char)X)
 
+/* On Windows, we normally run with output mode of TEXT so that \n characters
+** are automatically translated into \r\n.  However, this behavior needs
+** to be disabled in some cases (ex: when generating CSV output and when
+** rendering quoted strings that contain \n characters).  The following
+** routines take care of that.
+*/
+#if defined(_WIN32) || defined(WIN32)
+static setBinaryMode(FILE *out){
+  fflush(out);
+  _setmode(_fileno(out), _O_BINARY);
+}
+static setTextMode(FILE *out){
+  fflush(out);
+  _setmode(_fileno(out), _O_TEXT);
+}
+#else
+# define setBinaryMode(X)
+# define setTextMode(X)
+#endif
+
 
 /* True if the timer is enabled */
 static int enableTimer = 0;
@@ -584,6 +604,7 @@ static void output_hex_blob(FILE *out, const void *pBlob, int nBlob){
 static void output_quoted_string(FILE *out, const char *z){
   int i;
   int nSingle = 0;
+  setBinaryMode(out);
   for(i=0; z[i]; i++){
     if( z[i]=='\'' ) nSingle++;
   }
@@ -606,6 +627,7 @@ static void output_quoted_string(FILE *out, const char *z){
     }
     fprintf(out,"'");
   }
+  setTextMode(out);
 }
 
 /*
@@ -924,7 +946,7 @@ static int shell_callback(
       break;
     }
     case MODE_Csv: {
-      enable_binary_output(p, 1);
+      setBinaryMode(p->out);
       if( p->cnt++==0 && p->showHeader ){
         for(i=0; i<nArg; i++){
           output_csv(p, azCol[i] ? azCol[i] : "", i<nArg-1);
@@ -937,7 +959,7 @@ static int shell_callback(
         }
         fprintf(p->out, "%s", p->rowSeparator);
       }
-      enable_binary_output(p, 0);
+      setTextMode(p->out);
       break;
     }
     case MODE_Insert: {
@@ -4214,9 +4236,7 @@ int main(int argc, char **argv){
     exit(1);
   }
 #endif
-#if defined(WIN32) || defined(_WIN32)
-  _setmode(_fileno(stdin), _O_BINARY);
-#endif
+  setBinaryMode(stdin);
   Argv0 = argv[0];
   main_init(&data);
   stdin_is_interactive = isatty(0);
