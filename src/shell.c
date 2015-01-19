@@ -3535,6 +3535,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       { "iskeyword",             SQLITE_TESTCTRL_ISKEYWORD              },
       { "scratchmalloc",         SQLITE_TESTCTRL_SCRATCHMALLOC          },
       { "byteorder",             SQLITE_TESTCTRL_BYTEORDER              },
+      { "never_corrupt",         SQLITE_TESTCTRL_NEVER_CORRUPT          },
     };
     int testctrl = -1;
     int rc = 0;
@@ -3601,7 +3602,8 @@ static int do_meta_command(char *zLine, ShellState *p){
           
         /* sqlite3_test_control(int, int) */
         case SQLITE_TESTCTRL_ASSERT:              
-        case SQLITE_TESTCTRL_ALWAYS:              
+        case SQLITE_TESTCTRL_ALWAYS:      
+        case SQLITE_TESTCTRL_NEVER_CORRUPT:        
           if( nArg==3 ){
             int opt = booleanValue(azArg[2]);        
             rc = sqlite3_test_control(testctrl, opt);
