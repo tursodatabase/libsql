@@ -206,8 +206,8 @@ static int getColumnNames(
     zSpace = (char *)(&aCol[nCol]);
     for(ii=0; ii<nCol; ii++){
       aCol[ii] = zSpace;
-      zSpace += sprintf(zSpace, "%s", sqlite3_column_name(pStmt, ii));
-      zSpace++;
+      sqlite3_snprintf(nBytes, zSpace, "%s", sqlite3_column_name(pStmt,ii));
+      zSpace += (int)strlen(zSpace) + 1;
     }
     assert( (zSpace-nBytes)==(char *)aCol );
   }
