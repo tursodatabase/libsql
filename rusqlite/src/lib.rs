@@ -52,6 +52,7 @@
 #![allow(unstable)]
 
 extern crate libc;
+#[macro_use] extern crate rustc_bitflags;
 
 use std::mem;
 use std::ptr;
