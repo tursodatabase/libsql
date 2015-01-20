@@ -708,25 +708,28 @@ sqlite3_free(buf.p);
     }
 
     if( rc==SQLITE_OK ){
+      u8 *aOut;                   /* Read blob data into this buffer */
       int nByte = sqlite3_blob_bytes(p->pReader);
       if( pBuf ){
         fts5BufferZero(pBuf);
-        if( SQLITE_OK==fts5BufferGrow(&rc, pBuf, nByte) ){
-          rc = sqlite3_blob_read(p->pReader, pBuf->p, nByte, 0);
-          if( rc==SQLITE_OK ) pBuf->n = nByte;
-        }
+        fts5BufferGrow(&rc, pBuf, nByte);
+        aOut = pBuf->p;
+        pBuf->n = nByte;
       }else{
-        pRet = (Fts5Data*)fts5IdxMalloc(p, sizeof(Fts5Data) + nByte);
-        if( !pRet ) return 0;
-
-        pRet->n = nByte;
-        pRet->p = (u8*)&pRet[1];
-        pRet->nRef = 1;
-        rc = sqlite3_blob_read(p->pReader, pRet->p, nByte, 0);
-        if( rc!=SQLITE_OK ){
-          sqlite3_free(pRet);
-          pRet = 0;
+        pRet = (Fts5Data*)sqlite3Fts5MallocZero(&rc, nByte+sizeof(Fts5Data));
+        if( pRet ){
+          pRet->n = nByte;
+          aOut = pRet->p = (u8*)&pRet[1];
+          pRet->nRef = 1;
         }
+      }
+
+      if( rc==SQLITE_OK ){
+        rc = sqlite3_blob_read(p->pReader, aOut, nByte, 0);
+      }
+      if( rc!=SQLITE_OK ){
+        sqlite3_free(pRet);
+        pRet = 0;
       }
     }
     p->rc = rc;
@@ -2981,6 +2984,7 @@ static void fts5IndexMergeLevel(
       pStruct = *ppStruct;
     }
     fts5StructureExtendLevel(&p->rc, pStruct, iLvl+1, 1, 0);
+    if( p->rc ) return;
     pLvl = &pStruct->aLevel[iLvl];
     pLvlOut = &pStruct->aLevel[iLvl+1];
 

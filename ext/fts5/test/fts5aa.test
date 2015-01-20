@@ -21,8 +21,6 @@ ifcapable !fts5 {
   return
 }
 
-if 0 {
-
 do_execsql_test 1.0 {
   CREATE VIRTUAL TABLE t1 USING fts5(a, b, c);
   SELECT name, sql FROM sqlite_master;
@@ -301,8 +299,6 @@ do_test 12.3 {
   set res [db one { SELECT t2 FROM t2 WHERE t2 MATCH '* reads ' }]
   string is integer $res
 } {1}
-
-}
 
 #-------------------------------------------------------------------------
 #

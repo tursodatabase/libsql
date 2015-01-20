@@ -29,6 +29,7 @@ ifcapable !fts5 {
 #   3: DELETE statement
 #   4: MATCH expressions
 #
+#
 
 if 1 {
 
@@ -70,8 +71,6 @@ do_faultsim_test 3 -prep {
   faultsim_test_result {0 {}} 
 }
 
-}
-
 reset_db
 do_execsql_test 4.0 {
   CREATE VIRTUAL TABLE t2 USING fts5(a, b);
@@ -106,6 +105,117 @@ foreach {tn expr res} {
   " -test "
     faultsim_test_result {[list 0 $res]}
   "
+}
+
+#-------------------------------------------------------------------------
+# The following tests use a larger database populated with random data.
+#
+# The database page size is set to 512 bytes and the FTS5 page size left
+# at the default 1000 bytes. This means that reading a node may require
+# pulling an overflow page from disk, which is an extra opportunity for
+# an error to occur.
+#
+reset_db
+do_execsql_test 5.0.1 { 
+  PRAGMA main.page_size = 512;
+  CREATE VIRTUAL TABLE x1 USING fts5(a, b);
+  PRAGMA main.page_size;
+} {512}
+
+proc rnddoc {n} {
+  set map [list 0 a  1 b  2 c  3 d  4 e  5 f  6 g  7 h  8 i  9 j]
+  set doc [list]
+  for {set i 0} {$i < $n} {incr i} {
+    lappend doc [string map $map [format %.3d [expr int(rand()*1000)]]]
+  }
+  set doc
+}
+db func rnddoc rnddoc
+
+do_execsql_test 5.0.2 {
+  WITH r(a, b) AS (
+    SELECT rnddoc(6), rnddoc(6) UNION ALL
+    SELECT rnddoc(6), rnddoc(6) FROM r
+  )
+  INSERT INTO x1 SELECT * FROM r LIMIT 10000;
+}
+
+set res [db one {
+  SELECT count(*) FROM x1 WHERE x1.a LIKE '%abc%' OR x1.b LIKE '%abc%'}
+]
+
+do_faultsim_test 5.1 -faults oom* -body {
+  execsql { SELECT count(*) FROM x1 WHERE x1 MATCH 'abc' }
+} -test {
+  faultsim_test_result [list 0 $::res]
+}
+do_faultsim_test 5.2 -faults oom* -body {
+  execsql { SELECT count(*) FROM x1 WHERE x1 MATCH 'abcd' }
+} -test {
+  faultsim_test_result [list 0 0]
+}
+
+proc test_astar {a b} {
+  return [expr { [regexp {a[^ ][^ ]} $a] || [regexp {a[^ ][^ ]} $b] }]
+}
+db func test_astar test_astar
+
+set res [db one { SELECT count(*) FROM x1 WHERE test_astar(a, b) } ]
+do_faultsim_test 5.3 -faults oom* -body {
+  execsql { SELECT count(*) FROM x1 WHERE x1 MATCH 'a*' }
+} -test {
+  faultsim_test_result [list 0 $::res]
+}
+
+do_faultsim_test 5.4 -faults oom* -prep {
+  db close
+  sqlite3 db test.db
+} -body {
+  execsql { INSERT INTO x1 VALUES('a b c d', 'e f g h') }
+} -test {
+  faultsim_test_result [list 0 {}]
+}
+
+}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 6.0 {
+  CREATE VIRTUAL TABLE x1 USING fts5(x);
+  INSERT INTO x1(x1, rank) VALUES('automerge', 0);
+
+  INSERT INTO x1 VALUES('a b c'); -- 1
+  INSERT INTO x1 VALUES('a b c'); -- 2
+  INSERT INTO x1 VALUES('a b c'); -- 3
+  INSERT INTO x1 VALUES('a b c'); -- 4
+  INSERT INTO x1 VALUES('a b c'); -- 5
+  INSERT INTO x1 VALUES('a b c'); -- 6
+  INSERT INTO x1 VALUES('a b c'); -- 7
+  INSERT INTO x1 VALUES('a b c'); -- 8
+  INSERT INTO x1 VALUES('a b c'); -- 9
+  INSERT INTO x1 VALUES('a b c'); -- 10
+  INSERT INTO x1 VALUES('a b c'); -- 11
+  INSERT INTO x1 VALUES('a b c'); -- 12
+  INSERT INTO x1 VALUES('a b c'); -- 13
+  INSERT INTO x1 VALUES('a b c'); -- 14
+  INSERT INTO x1 VALUES('a b c'); -- 15
+
+  SELECT count(*) FROM x1_data;
+} {17}
+
+faultsim_save_and_close
+
+do_faultsim_test 6.1 -faults oom-tr* -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql { INSERT INTO x1 VALUES('d e f') }
+} -test {
+  faultsim_test_result [list 0 {}]
+  if {$testrc==0} {
+    set nCnt [db one {SELECT count(*) FROM x1_data}]
+    if {$nCnt!=3} { error "expected 3 entries but there are $nCnt" }
+  }
 }
 
 finish_test
