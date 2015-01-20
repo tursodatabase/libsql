@@ -1,14 +1,18 @@
-# Version 0.0.6 (2014-01-10)
+# Version 0.0.7 (2015-01-20)
+
+* Use external bitflags from crates.io.
+
+# Version 0.0.6 (2015-01-10)
 
 * Updates to track latest rustc changes (1.0.0-alpha).
 * Add `query_row_safe`, a `SqliteResult`-returning variant of `query_row`.
 
-# Version 0.0.5 (2014-01-07)
+# Version 0.0.5 (2015-01-07)
 
 * Updates to track latest rustc changes (closure syntax).
 * Updates to track latest rust stdlib changes (`std::c_str` -> `std::ffi`).
 
-# Version 0.0.4 (2014-01-05)
+# Version 0.0.4 (2015-01-05)
 
 * Updates to track latest rustc changes.
 
