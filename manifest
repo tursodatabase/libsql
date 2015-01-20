@@ -1,5 +1,5 @@
-C Ensure\sthat\sthe\sKeyInfo.nXField\svalue\sfor\sephemeral\stables\sused\sto\simplement\nORDER\sBY\sor\sGROUP\sBY\sclauses\sis\sset\scorrectly,\sso\sthat\sthe\nsqlite3VdbeFindCompare()\sroutine\scan\schoose\sthe\scorrect\scomparison\sfunction.\nAdd\sassert()\sstatements\sto\sthe\shigh-speed\scomparison\sfunctions\sto\sdetect\ncases\swhere\sthey\sare\sinappropriately\schosen.\nFix\sfor\sticket\s[f97c4637102a3ae72b7911].
-D 2015-01-19T21:36:05.317
+C Fix\sanother\sinstance\sof\san\sincorrect\svalue\sfor\sKeyInfo.nXField\son\sa\nsorting\sindex.\s\sTicket\s[f97c4637102a3ae72b79].
+D 2015-01-20T03:04:29.620
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5407a688f4d77a05c18a8142be8ae5a2829dd610
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -229,7 +229,7 @@ F src/printf.c ea82bcb1b83273b4c67177c233c1f78c81fc42f9
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c f6c46d3434439ab2084618d603e6d6dbeb0d6ada
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c bc02e8b084891af5a3b428faa9cf367aff887d1a
+F src/select.c a4e8fda24c8eab2682a058bdda0d5d68cfe3919c
 F src/shell.c d2d3b46701e44369dd314bd6817541c60e2c39ea
 F src/sqlite.h.in 9dfc99d6533d36d6a549c4f3f01cacc8be956ada
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
@@ -1237,8 +1237,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2037442c582e51d85967bc911ea4a412eb4da573 e02959b9a0e1bacdd3939548d4434c042aacc2e6
-R 5021170f2a6880b445a702735148b9c6
-T +closed e02959b9a0e1bacdd3939548d4434c042aacc2e6
+P f7201bb0cdc9e1425c68599b32434de2231dca36
+Q +dc711db44ec424a7850231a39088229c23238f1b
+R 62321acc2f9c598a0f3d605f6dbddb80
 U drh
-Z b76cf3617d76194e2b83c38054737fb3
+Z 8cb1f44c22f57ba114489669ef914874
