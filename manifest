@@ -1,9 +1,9 @@
-C Fix\sanother\sinstance\sof\san\sincorrect\svalue\sfor\sKeyInfo.nXField\son\sa\nsorting\sindex.\s\sTicket\s[f97c4637102a3ae72b79].
-D 2015-01-20T03:04:29.620
+C Enhancements\sto\sentropy\sgeneration\sfor\sthe\sWin32\sVFS.
+D 2015-01-21T00:48:46.472
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5407a688f4d77a05c18a8142be8ae5a2829dd610
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 4c057774e6138b9023fc16ec05639ddd3329b152
+F Makefile.msc 2b1cb8881bdefcb0a8ed41c34c81cfa630374222
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md d58e3bebc0a4145e0f2a87994015fdb575a8e866
 F VERSION d846487aff892625eb8e75960234e7285f0462fe
@@ -215,7 +215,7 @@ F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c aefeaf915aaef9f81aa2645e0d5d06fa1bd83beb
-F src/os_win.c a5ac9e249ed0ca33de6de27898a08d313effc40c
+F src/os_win.c 8223e7db5b7c4a81d8b161098ac3959400434cdb
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 4120a49ecd37697e28f5ed807f470b9c0b88410c
 F src/pager.h c3476e7c89cdf1c6914e50a11f3714e30b4e0a77
@@ -1237,8 +1237,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f7201bb0cdc9e1425c68599b32434de2231dca36
-Q +dc711db44ec424a7850231a39088229c23238f1b
-R 62321acc2f9c598a0f3d605f6dbddb80
-U drh
-Z 8cb1f44c22f57ba114489669ef914874
+P 0077f64510f9b9ce90032df2696cb242d097ab84
+R 621342f470a9e0b129cd54918ae375f4
+U mistachkin
+Z 66078f9f30e92a431d6c7bd5ea435d81

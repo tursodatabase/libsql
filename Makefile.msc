@@ -59,6 +59,12 @@ USE_ICU = 0
 USE_CRT_DLL = 0
 !ENDIF
 
+# Set this non-0 to link to the RPCRT4 library.
+#
+!IFNDEF USE_RPCRT4_LIB
+USE_RPCRT4_LIB = 0
+!ENDIF
+
 # Set this non-0 to generate assembly code listings for the source code
 # files.
 #
@@ -501,6 +507,12 @@ RCC = $(RCC) -DSQLITE_TEMP_STORE=1
 #
 REQ_FEATURE_FLAGS = $(REQ_FEATURE_FLAGS) -DSQLITE_MAX_TRIGGER_DEPTH=100
 
+# If we are linking to the RPCRT4 library, enable features that need it.
+#
+!IF $(USE_RPCRT4_LIB)!=0
+REQ_FEATURE_FLAGS = $(REQ_FEATURE_FLAGS) -DSQLITE_WIN32_USE_UUID=1
+!ENDIF
+
 # Add the required and optional SQLite compilation options into the command
 # lines used to invoke the MSVC code and resource compilers.
 #
@@ -563,6 +575,12 @@ LTCOMPILE = $(TCC) -Fo$@
 LTRCOMPILE = $(RCC) -r
 LTLIB = lib.exe
 LTLINK = $(TCC) -Fe$@
+
+# If requested, link to the RPCRT4 library.
+#
+!IF $(USE_RPCRT4_LIB)!=0
+LTLINK = $(LTLINK) rpcrt4.lib
+!ENDIF
 
 # If a platform was set, force the linker to target that.
 # Note that the vcvars*.bat family of batch files typically
