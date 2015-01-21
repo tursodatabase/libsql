@@ -1,5 +1,5 @@
-C Enhancements\sto\sentropy\sgeneration\sfor\sthe\sWin32\sVFS.
-D 2015-01-21T00:48:46.472
+C Fix\sharmless\scompiler\swarning\sseen\swith\sMSVC.
+D 2015-01-21T00:51:08.964
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5407a688f4d77a05c18a8142be8ae5a2829dd610
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -296,7 +296,7 @@ F src/vdbe.c ddfc977981cd6324668aa6b114045eb1c677421a
 F src/vdbe.h 6fc69d9c5e146302c56e163cb4b31d1ee64a18c3
 F src/vdbeInt.h 9bb69ff2447c34b6ccc58b34ec35b615f86ead78
 F src/vdbeapi.c 4bc511a46b9839392ae0e90844a71dc96d9dbd71
-F src/vdbeaux.c f06d38c71d7f533348c09869d69fd1b647042a5b
+F src/vdbeaux.c 97911edb61074b871ec4aa2d6bb779071643dee5
 F src/vdbeblob.c 4af4bfb71f6df7778397b4a0ebc1879793276778
 F src/vdbemem.c 31d8eabb0cd78bfeab4e5124c7363c3e9e54db9f
 F src/vdbesort.c 6d64c5448b64851b99931ede980addc3af70d5e2
@@ -1237,7 +1237,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0077f64510f9b9ce90032df2696cb242d097ab84
-R 621342f470a9e0b129cd54918ae375f4
+P 26190b3c63e18f3116deeb59a58d9b5de48e8eea
+R 17b31e2924f2250d0d9a55276496f8b8
 U mistachkin
-Z 66078f9f30e92a431d6c7bd5ea435d81
+Z cec7ce423a7eb7a21c54da9ee537419d
