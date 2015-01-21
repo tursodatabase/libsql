@@ -310,7 +310,7 @@ static int page_get(
 ){
   Pager *pPager;
   char zBuf[100];
-  DbPage *pPage;
+  DbPage *pPage = 0;
   int pgno;
   int rc;
   if( argc!=3 ){

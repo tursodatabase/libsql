@@ -421,7 +421,7 @@ static int tvfsSync(sqlite3_file *pFile, int flags){
   Testvfs *p = (Testvfs *)pFd->pVfs->pAppData;
 
   if( p->pScript && p->mask&TESTVFS_SYNC_MASK ){
-    char *zFlags;
+    char *zFlags = 0;
 
     switch( flags ){
       case SQLITE_SYNC_NORMAL:
@@ -823,11 +823,12 @@ static int tvfsShmOpen(sqlite3_file *pFile){
     if( 0==strcmp(pFd->zFilename, pBuffer->zFile) ) break;
   }
   if( !pBuffer ){
-    int nByte = sizeof(TestvfsBuffer) + (int)strlen(pFd->zFilename) + 1;
+    int szName = (int)strlen(pFd->zFilename);
+    int nByte = sizeof(TestvfsBuffer) + szName + 1;
     pBuffer = (TestvfsBuffer *)ckalloc(nByte);
     memset(pBuffer, 0, nByte);
     pBuffer->zFile = (char *)&pBuffer[1];
-    strcpy(pBuffer->zFile, pFd->zFilename);
+    memcpy(pBuffer->zFile, pFd->zFilename, szName+1);
     pBuffer->pNext = p->pBuffer;
     p->pBuffer = pBuffer;
   }
@@ -1225,7 +1226,7 @@ static int testvfs_obj_cmd(
     case CMD_CANTOPENERR:
     case CMD_IOERR:
     case CMD_FULLERR: {
-      TestFaultInject *pTest;
+      TestFaultInject *pTest = 0;
       int iRet;
 
       switch( aSubcmd[i].eCmd ){

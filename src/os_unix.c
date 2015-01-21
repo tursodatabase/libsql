@@ -3386,9 +3386,9 @@ int sqlite3_fullsync_count = 0;
 ** We do not trust systems to provide a working fdatasync().  Some do.
 ** Others do no.  To be safe, we will stick with the (slightly slower)
 ** fsync(). If you know that your system does support fdatasync() correctly,
-** then simply compile with -Dfdatasync=fdatasync
+** then simply compile with -Dfdatasync=fdatasync or -DHAVE_FDATASYNC
 */
-#if !defined(fdatasync)
+#if !defined(fdatasync) && !HAVE_FDATASYNC
 # define fdatasync fsync
 #endif
 
@@ -3717,6 +3717,7 @@ static int fcntlSizeHint(unixFile *pFile, i64 nByte){
       ** that do not have a real fallocate() call.
       */
       int nBlk = buf.st_blksize;  /* File-system block size */
+      int nWrite = 0;             /* Number of bytes written by seekAndWrite */
       i64 iWrite;                 /* Next offset to write to */
 
       iWrite = ((buf.st_size + 2*nBlk - 1)/nBlk)*nBlk-1;
@@ -3724,11 +3725,11 @@ static int fcntlSizeHint(unixFile *pFile, i64 nByte){
       assert( (iWrite/nBlk)==((buf.st_size+nBlk-1)/nBlk) );
       assert( ((iWrite+1)%nBlk)==0 );
       for(/*no-op*/; iWrite<nSize; iWrite+=nBlk ){
-        int nWrite = seekAndWrite(pFile, iWrite, "", 1);
+        nWrite = seekAndWrite(pFile, iWrite, "", 1);
         if( nWrite!=1 ) return SQLITE_IOERR_WRITE;
       }
-      if( nSize%nBlk ){
-        int nWrite = seekAndWrite(pFile, nSize-1, "", 1);
+      if( nWrite==0 || (nSize%nBlk) ){
+        nWrite = seekAndWrite(pFile, nSize-1, "", 1);
         if( nWrite!=1 ) return SQLITE_IOERR_WRITE;
       }
 #endif

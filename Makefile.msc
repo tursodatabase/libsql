@@ -16,6 +16,23 @@ TOP = .
 USE_AMALGAMATION = 1
 !ENDIF
 
+# Set this non-0 to enable full warnings (-W4, etc) when compiling.
+#
+!IFNDEF USE_FULLWARN
+USE_FULLWARN = 0
+!ENDIF
+
+# If necessary, create a list of harmless compiler warnings to disable when
+# compiling the build tools.  For the SQLite source code itself, warnings,
+# if any, will be disabled from within it.
+#
+!IFNDEF NO_WARN
+!IF $(USE_FULLWARN)!=0
+NO_WARN = -wd4054 -wd4055 -wd4100 -wd4127 -wd4152 -wd4189 -wd4206 -wd4210
+NO_WARN = $(NO_WARN) -wd4232 -wd4244 -wd4305 -wd4306 -wd4702 -wd4706
+!ENDIF
+!ENDIF
+
 # Set this non-0 to use the library paths and other options necessary for
 # Windows Phone 8.1.
 #
@@ -232,7 +249,11 @@ NSDKLIBPATH = $(NSDKLIBPATH:\\=\)
 # C compiler and options for use in building executables that
 # will run on the platform that is doing the build.
 #
+!IF $(USE_FULLWARN)!=0
+BCC = $(NCC) -W4
+!ELSE
 BCC = $(NCC) -W3
+!ENDIF
 
 # Check if assembly code listings should be generated for the source
 # code files to be compiled.
@@ -253,7 +274,13 @@ NLTLIBPATHS = "/LIBPATH:$(NCRTLIBPATH)" "/LIBPATH:$(NSDKLIBPATH)"
 # will run on the target platform.  (BCC and TCC are usually the
 # same unless your are cross-compiling.)
 #
-TCC = $(CC) -W3 -DSQLITE_OS_WIN=1 -I. -I$(TOP) -I$(TOP)\src -fp:precise
+!IF $(USE_FULLWARN)!=0
+TCC = $(CC) -W4 -DINCLUDE_MSVC_H=1
+!ELSE
+TCC = $(CC) -W3
+!ENDIF
+
+TCC = $(TCC) -DSQLITE_OS_WIN=1 -I. -I$(TOP) -I$(TOP)\src -fp:precise
 RCC = $(RC) -DSQLITE_OS_WIN=1 -I$(TOP) -I$(TOP)\src
 
 # Check if assembly code listings should be generated for the source
@@ -706,6 +733,7 @@ SRC = \
   $(TOP)\src\mem3.c \
   $(TOP)\src\mem5.c \
   $(TOP)\src\memjournal.c \
+  $(TOP)\src\msvc.h \
   $(TOP)\src\mutex.c \
   $(TOP)\src\mutex.h \
   $(TOP)\src\mutex_noop.c \
@@ -938,6 +966,7 @@ HDR = \
    $(TOP)\src\hash.h \
    $(TOP)\src\hwtime.h \
    keywordhash.h \
+   $(TOP)\src\msvc.h \
    $(TOP)\src\mutex.h \
    opcodes.h \
    $(TOP)\src\os.h \
@@ -989,8 +1018,7 @@ libtclsqlite3.lib:	tclsqlite.lo libsqlite3.lib
 	$(LTLIB) $(LTLIBOPTS) $(LTLIBPATHS) /OUT:$@ tclsqlite.lo libsqlite3.lib $(LIBTCL:tcl=tclstub) $(TLIBS)
 
 sqlite3.exe:	$(TOP)\src\shell.c libsqlite3.lib $(LIBRESOBJS) sqlite3.h
-	$(LTLINK) $(READLINE_FLAGS) \
-		$(TOP)\src\shell.c \
+	$(LTLINK) $(READLINE_FLAGS) $(TOP)\src\shell.c \
 		/link $(LTLINKOPTS) $(LTLIBPATHS) libsqlite3.lib $(LIBRESOBJS) $(LIBREADLINE) $(LTLIBS) $(TLIBS)
 
 mptester.exe:	$(TOP)\mptest\mptest.c libsqlite3.lib $(LIBRESOBJS) sqlite3.h
@@ -1040,7 +1068,8 @@ lempar.c:	$(TOP)\src\lempar.c
 	copy $(TOP)\src\lempar.c .
 
 lemon.exe:	$(TOP)\tool\lemon.c lempar.c
-	$(BCC) -Daccess=_access -Fe$@ $(TOP)\tool\lemon.c /link $(NLTLINKOPTS) $(NLTLIBPATHS)
+	$(BCC) $(NO_WARN) -Daccess=_access \
+		-Fe$@ $(TOP)\tool\lemon.c /link $(NLTLINKOPTS) $(NLTLIBPATHS)
 
 # Rules to build individual *.lo files from generated *.c files. This
 # applies to:
@@ -1311,7 +1340,8 @@ sqlite3.h:	$(TOP)\src\sqlite.h.in $(TOP)\manifest.uuid $(TOP)\VERSION
 	$(TCLSH_CMD) $(TOP)\tool\mksqlite3h.tcl $(TOP:\=/) > sqlite3.h
 
 mkkeywordhash.exe:	$(TOP)\tool\mkkeywordhash.c
-	$(BCC) -Fe$@ $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS) $(OPTS) $(TOP)\tool\mkkeywordhash.c /link $(NLTLINKOPTS) $(NLTLIBPATHS)
+	$(BCC) $(NO_WARN) -Fe$@ $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS) $(OPTS) \
+		$(TOP)\tool\mkkeywordhash.c /link $(NLTLINKOPTS) $(NLTLIBPATHS)
 
 keywordhash.h:	$(TOP)\tool\mkkeywordhash.c mkkeywordhash.exe
 	.\mkkeywordhash.exe > keywordhash.h
@@ -1392,7 +1422,8 @@ rtree.lo:	$(TOP)\ext\rtree\rtree.c $(HDR) $(EXTHDR)
 # hidden when the library is built via the amalgamation).
 #
 TESTFIXTURE_FLAGS = -DTCLSH=1 -DSQLITE_TEST=1 -DSQLITE_CRASH_TEST=1
-TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_SERVER=1 -DSQLITE_PRIVATE="" -DSQLITE_CORE
+TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_SERVER=1 -DSQLITE_PRIVATE=""
+TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_CORE $(NO_WARN)
 
 TESTFIXTURE_SRC0 = $(TESTEXT) $(TESTSRC2) libsqlite3.lib
 TESTFIXTURE_SRC1 = $(TESTEXT) $(SQLITE3C)

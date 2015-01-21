@@ -206,8 +206,8 @@ static int getColumnNames(
     zSpace = (char *)(&aCol[nCol]);
     for(ii=0; ii<nCol; ii++){
       aCol[ii] = zSpace;
-      zSpace += sprintf(zSpace, "%s", sqlite3_column_name(pStmt, ii));
-      zSpace++;
+      sqlite3_snprintf(nBytes, zSpace, "%s", sqlite3_column_name(pStmt,ii));
+      zSpace += (int)strlen(zSpace) + 1;
     }
     assert( (zSpace-nBytes)==(char *)aCol );
   }
@@ -648,12 +648,12 @@ static int echoRowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){
 ** indeed the hash of the supplied idxStr.
 */
 static int hashString(const char *zString){
-  int val = 0;
+  u32 val = 0;
   int ii;
   for(ii=0; zString[ii]; ii++){
     val = (val << 3) + (int)zString[ii];
   }
-  return val;
+  return (int)(val&0x7fffffff);
 }
 
 /* 
@@ -777,11 +777,11 @@ static int echoBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
   sqlite3_stmt *pStmt = 0;
   Tcl_Interp *interp = pVtab->interp;
 
-  int nRow;
+  int nRow = 0;
   int useIdx = 0;
   int rc = SQLITE_OK;
   int useCost = 0;
-  double cost;
+  double cost = 0;
   int isIgnoreUsable = 0;
   if( Tcl_GetVar(interp, "echo_module_ignore_usable", TCL_GLOBAL_ONLY) ){
     isIgnoreUsable = 1;
@@ -927,7 +927,7 @@ int echoUpdate(
   sqlite3 *db = pVtab->db;
   int rc = SQLITE_OK;
 
-  sqlite3_stmt *pStmt;
+  sqlite3_stmt *pStmt = 0;
   char *z = 0;               /* SQL statement to execute */
   int bindArgZero = 0;       /* True to bind apData[0] to sql var no. nData */
   int bindArgOne = 0;        /* True to bind apData[1] to sql var no. 1 */

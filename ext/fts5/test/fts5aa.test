@@ -21,6 +21,8 @@ ifcapable !fts5 {
   return
 }
 
+if 1 {
+
 do_execsql_test 1.0 {
   CREATE VIRTUAL TABLE t1 USING fts5(a, b, c);
   SELECT name, sql FROM sqlite_master;
@@ -323,6 +325,49 @@ do_execsql_test 13.5 {
 do_execsql_test 13.6 {
   SELECT rowid FROM t1 WHERE t1 MATCH '.';
 } {}
+
+}
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 14.1 {
+  CREATE VIRTUAL TABLE t1 USING fts5(x, y);
+  INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
+  WITH d(x,y) AS (
+    SELECT NULL, 'xyz xyz xyz xyz xyz xyz'
+    UNION ALL 
+    SELECT NULL, 'xyz xyz xyz xyz xyz xyz' FROM d
+  )
+  INSERT INTO t1 SELECT * FROM d LIMIT 200;
+}
+
+do_test 14.2 {
+  set nRow 0
+  db eval { SELECT * FROM t1 WHERE t1 MATCH 'xyz' } {
+    db eval {
+      BEGIN;
+        CREATE TABLE t2(a, b);
+      ROLLBACK;
+    }
+    incr nRow
+  }
+  set nRow
+} {200}
+
+do_test 14.3 {
+  set nRow 0
+  db eval { BEGIN; }
+  db eval { SELECT * FROM t1 WHERE t1 MATCH 'xyz' } {
+    db eval {
+      SAVEPOINT aaa;
+        CREATE TABLE t2(a, b);
+      ROLLBACK TO aaa;
+      RELEASE aaa;
+    }
+    incr nRow
+  }
+  set nRow
+} {200}
 
 finish_test
 

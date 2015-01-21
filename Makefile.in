@@ -15,18 +15,22 @@
 # The toplevel directory of the source tree.  This is the directory
 # that contains this "Makefile.in" and the "configure.in" script.
 #
-TOP = @srcdir@
+TOP = @abs_srcdir@
 
 # C Compiler and options for use in building executables that
 # will run on the platform that is doing the build.
 #
 BCC = @BUILD_CC@ @BUILD_CFLAGS@
 
-# C Compile and options for use in building executables that 
+# TCC is the C Compile and options for use in building executables that 
 # will run on the target platform.  (BCC and TCC are usually the
-# same unless your are cross-compiling.)
+# same unless your are cross-compiling.)  Separate CC and CFLAGS macros
+# are provide so that these aspects of the build process can be changed
+# on the "make" command-line.  Ex:  "make CC=clang CFLAGS=-fsanitize=undefined"
 #
-TCC = @CC@ @CPPFLAGS@ @CFLAGS@ -I. -I${TOP}/src -I${TOP}/ext/rtree
+CC = @CC@
+CFLAGS = @CPPFLAGS@ @CFLAGS@
+TCC = $(CC) $(CFLAGS) -I. -I${TOP}/src -I${TOP}/ext/rtree -I${TOP}/ext/fts3
 
 # Define this for the autoconf-based build, so that the code knows it can
 # include the generated config.h
@@ -37,7 +41,7 @@ TCC += -D_HAVE_SQLITE_CONFIG_H -DBUILD_sqlite
 # Omitting the define will cause extra debugging code to be inserted and
 # includes extra comments when "EXPLAIN stmt" is used.
 #
-TCC += @TARGET_DEBUG@ @XTHREADCONNECT@
+TCC += @TARGET_DEBUG@
 
 # Compiler options needed for programs that use the TCL library.
 #
@@ -230,6 +234,7 @@ SRC = \
   $(TOP)/src/mem3.c \
   $(TOP)/src/mem5.c \
   $(TOP)/src/memjournal.c \
+  $(TOP)/src/msvc.h \
   $(TOP)/src/mutex.c \
   $(TOP)/src/mutex.h \
   $(TOP)/src/mutex_noop.c \
@@ -459,6 +464,7 @@ HDR = \
    $(TOP)/src/hash.h \
    $(TOP)/src/hwtime.h \
    keywordhash.h \
+   $(TOP)/src/msvc.h \
    $(TOP)/src/mutex.h \
    opcodes.h \
    $(TOP)/src/os.h \
@@ -926,18 +932,36 @@ testfixture$(TEXE):	$(TESTFIXTURE_SRC)
 	$(LTLINK) -DSQLITE_NO_SYNC=1 $(TEMP_STORE) $(TESTFIXTURE_FLAGS) \
 		-o $@ $(TESTFIXTURE_SRC) $(LIBTCL) $(TLIBS)
 
-
+# A very detailed test running most or all test cases
 fulltest:	testfixture$(TEXE) sqlite3$(TEXE)
 	./testfixture$(TEXE) $(TOP)/test/all.test
 
+# Really really long testing
 soaktest:	testfixture$(TEXE) sqlite3$(TEXE)
 	./testfixture$(TEXE) $(TOP)/test/all.test -soak=1
 
+# Do extra testing but not aeverything.
 fulltestonly:	testfixture$(TEXE) sqlite3$(TEXE)
 	./testfixture$(TEXE) $(TOP)/test/full.test
 
+# This is the common case.  Run many tests but not those that take
+# a really long time.
+#
 test:	testfixture$(TEXE) sqlite3$(TEXE)
 	./testfixture$(TEXE) $(TOP)/test/veryquick.test
+
+# Run a test using valgrind.  This can take a really long time
+# because valgrind is so much slower than a native machine.
+#
+valgrindtest:	testfixture$(TEXE) sqlite3$(TEXE)
+	OMIT_MISUSE=1 valgrind -v ./testfixture$(TEXE) $(TOP)/test/permutations.test valgrind
+
+# A very fast test that checks basic sanity.  The name comes from
+# the 60s-era electronics testing:  "Turn it on and see if smoke
+# comes out."
+#
+smoketest:	testfixture$(TEXE)
+	./testfixture$(TEXE) $(TOP)/test/main.test
 
 sqlite3_analyzer.c: sqlite3.c $(TOP)/src/test_stat.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl
 	echo "#define TCLSH 2" > $@
@@ -981,6 +1005,11 @@ speedtest1$(TEXE):	$(TOP)/test/wordcount.c sqlite3.lo
 checksymbols: sqlite3.lo
 	nm -g --defined-only sqlite3.o | grep -v " sqlite3_" ; test $$? -ne 0
 	echo '0 errors out of 1 tests'
+
+# Build the amalgamation-autoconf package.
+#
+amalgamation-tarball: sqlite3.c
+	TOP=$(TOP) sh $(TOP)/tool/mkautoconfamal.sh
 
 # The next two rules are used to support the "threadtest" target. Building
 # threadtest runs a few thread-safety tests that are implemented in C. This

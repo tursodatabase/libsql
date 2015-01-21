@@ -18,12 +18,12 @@ set testprefix e_walauto
 
 proc read_nbackfill {} {
   seek $::shmfd 96
-  binary scan [read $::shmfd 4] i nBackfill
+  binary scan [read $::shmfd 4] n nBackfill
   set nBackfill
 }
 proc read_mxframe {} {
   seek $::shmfd 16
-  binary scan [read $::shmfd 4] i mxFrame
+  binary scan [read $::shmfd 4] n mxFrame
   set mxFrame
 }
 

@@ -369,13 +369,12 @@ static int readInt16(u8 *p){
   return (p[0]<<8) + p[1];
 }
 static void readCoord(u8 *p, RtreeCoord *pCoord){
-  u32 i = (
+  pCoord->u = (
     (((u32)p[0]) << 24) + 
     (((u32)p[1]) << 16) + 
     (((u32)p[2]) <<  8) + 
     (((u32)p[3]) <<  0)
   );
-  *(u32 *)pCoord = i;
 }
 static i64 readInt64(u8 *p){
   return (
@@ -404,7 +403,7 @@ static int writeCoord(u8 *p, RtreeCoord *pCoord){
   u32 i;
   assert( sizeof(RtreeCoord)==4 );
   assert( sizeof(u32)==4 );
-  i = *(u32 *)pCoord;
+  i = pCoord->u;
   p[0] = (i>>24)&0xFF;
   p[1] = (i>>16)&0xFF;
   p[2] = (i>> 8)&0xFF;
@@ -735,14 +734,13 @@ static void nodeGetCell(
   RtreeCell *pCell             /* OUT: Write the cell contents here */
 ){
   u8 *pData;
-  u8 *pEnd;
   RtreeCoord *pCoord;
+  int ii;
   pCell->iRowid = nodeGetRowid(pRtree, pNode, iCell);
   pData = pNode->zData + (12 + pRtree->nBytesPerCell*iCell);
-  pEnd = pData + pRtree->nDim*8;
   pCoord = pCell->aCoord;
-  for(; pData<pEnd; pData+=4, pCoord++){
-    readCoord(pData, pCoord);
+  for(ii=0; ii<pRtree->nDim*2; ii++){
+    readCoord(&pData[ii*4], &pCoord[ii]);
   }
 }
 
@@ -1182,7 +1180,7 @@ static RtreeSearchPoint *rtreeEnqueue(
   pNew = pCur->aPoint + i;
   pNew->rScore = rScore;
   pNew->iLevel = iLevel;
-  assert( iLevel>=0 && iLevel<=RTREE_MAX_DEPTH );
+  assert( iLevel<=RTREE_MAX_DEPTH );
   while( i>0 ){
     RtreeSearchPoint *pParent;
     j = (i-1)/2;
@@ -2805,6 +2803,8 @@ static int rtreeUpdate(
 
   rtreeReference(pRtree);
   assert(nData>=1);
+
+  cell.iRowid = 0;  /* Used only to suppress a compiler warning */
 
   /* Constraint handling. A write operation on an r-tree table may return
   ** SQLITE_CONSTRAINT for two reasons:
