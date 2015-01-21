@@ -1056,10 +1056,11 @@ static Fts5Structure *fts5StructureRead(Fts5Index *p, int iIdx){
 */
 static int fts5StructureCountSegments(Fts5Structure *pStruct){
   int nSegment = 0;               /* Total number of segments */
-  int iLvl;                       /* Used to iterate through levels */
-
-  for(iLvl=0; iLvl<pStruct->nLevel; iLvl++){
-    nSegment += pStruct->aLevel[iLvl].nSeg;
+  if( pStruct ){
+    int iLvl;                     /* Used to iterate through levels */
+    for(iLvl=0; iLvl<pStruct->nLevel; iLvl++){
+      nSegment += pStruct->aLevel[iLvl].nSeg;
+    }
   }
 
   return nSegment;
@@ -3882,7 +3883,6 @@ static void fts5SetupPrefixIter(
 int sqlite3Fts5IndexIntegrityCheck(Fts5Index *p, u64 cksum){
   Fts5Config *pConfig = p->pConfig;
   int iIdx;                       /* Used to iterate through indexes */
-  int rc;                         /* Return code */
   u64 cksum2 = 0;                 /* Checksum based on contents of indexes */
 
   /* Check that the checksum of the index matches the argument checksum */
@@ -3915,11 +3915,10 @@ int sqlite3Fts5IndexIntegrityCheck(Fts5Index *p, u64 cksum){
     fts5MultiIterFree(p, pIter);
     fts5StructureRelease(pStruct);
   }
-  rc = p->rc;
-  if( rc==SQLITE_OK && cksum!=cksum2 ) rc = FTS5_CORRUPT;
+  if( p->rc==SQLITE_OK && cksum!=cksum2 ) p->rc = FTS5_CORRUPT;
 
   /* Check that the internal nodes of each segment match the leaves */
-  for(iIdx=0; rc==SQLITE_OK && iIdx<=pConfig->nPrefix; iIdx++){
+  for(iIdx=0; p->rc==SQLITE_OK && iIdx<=pConfig->nPrefix; iIdx++){
     Fts5Structure *pStruct = fts5StructureRead(p, iIdx);
     if( pStruct ){
       int iLvl, iSeg;
@@ -3931,10 +3930,9 @@ int sqlite3Fts5IndexIntegrityCheck(Fts5Index *p, u64 cksum){
       }
     }
     fts5StructureRelease(pStruct);
-    rc = p->rc;
   }
 
-  return rc;
+  return fts5IndexReturn(p);
 }
 
 

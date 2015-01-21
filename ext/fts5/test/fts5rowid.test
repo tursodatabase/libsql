@@ -151,5 +151,33 @@ do_execsql_test 4.2 {
   SELECT count(fts5_decode(rowid, block)) FROM x3_data;
 } $res
 
+#-------------------------------------------------------------------------
+# Position lists with large values.
+#
+set strlist [list \
+  "[string repeat {w } 400]a"  \
+  "[string repeat {x } 400]a"  \
+  "[string repeat {y } 400]a"  \
+  "[string repeat {z } 400]a"  \
+]
+do_test 5.0 {
+  execsql {
+    BEGIN;
+    CREATE VIRTUAL TABLE x4 USING fts5(a);
+    INSERT INTO x4(x4, rank) VALUES('pgsz', 32);
+  }
+  foreach str $strlist { execsql { INSERT INTO x4 VALUES($str) } }
+  execsql COMMIT
+} {}
+
+do_execsql_test 5.1 {
+  SELECT rowid FROM x4 WHERE x4 MATCH 'a'
+} {4 3 2 1}
+
+set res [db one {SELECT count(*) FROM x4_data}]
+do_execsql_test 5.2 {
+  SELECT count(fts5_decode(rowid, block)) FROM x4_data;
+} $res
+
 finish_test
 

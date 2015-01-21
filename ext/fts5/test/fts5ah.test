@@ -28,16 +28,24 @@ ifcapable !fts5 {
 do_test 1.0 {
   execsql { CREATE VIRTUAL TABLE t1 USING fts5(a) }
   execsql { INSERT INTO t1(t1, rank) VALUES('pgsz', 128) }
+  set v {w w w w w w w w w w w w w w w w w w w w}
+  execsql { INSERT INTO t1(rowid, a) VALUES(0, $v) }
   for {set i 1} {$i <= 10000} {incr i} {
     set v {x x x x x x x x x x x x x x x x x x x x}
     if {($i % 2139)==0} {lset v 3 Y ; lappend Y $i}
     if {($i % 1577)==0} {lset v 5 W ; lappend W $i}
     execsql { INSERT INTO t1 VALUES($v) }
   }
+  set v {w w w w w w w w w w w w w w w w w w w w}
+  execsql { INSERT INTO t1 VALUES($v) }
 } {}
 
-do_execsql_test 1.1 {
+do_execsql_test 1.1.1 {
   SELECT rowid FROM t1 WHERE t1 MATCH 'x AND w'
+} [lsort -integer -decr $W]
+
+do_execsql_test 1.1.2 {
+  SELECT rowid FROM t1 WHERE t1 MATCH 'x* AND w*'
 } [lsort -integer -decr $W]
 
 do_execsql_test 1.2 {

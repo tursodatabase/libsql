@@ -706,10 +706,12 @@ static int fts5StorageCount(Fts5Storage *p, const char *zSuffix, i64 *pnRow){
   }else{
     sqlite3_stmt *pCnt = 0;
     rc = sqlite3_prepare_v2(pConfig->db, zSql, -1, &pCnt, 0);
-    if( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pCnt) ){
-      *pnRow = sqlite3_column_int64(pCnt, 0);
+    if( rc==SQLITE_OK ){
+      if( SQLITE_ROW==sqlite3_step(pCnt) ){
+        *pnRow = sqlite3_column_int64(pCnt, 0);
+      }
+      rc = sqlite3_finalize(pCnt);
     }
-    rc = sqlite3_finalize(pCnt);
   }
 
   sqlite3_free(zSql);
@@ -968,7 +970,7 @@ int sqlite3Fts5StorageConfigValue(
   sqlite3_stmt *pReplace = 0;
   int rc = fts5StorageGetStmt(p, FTS5_STMT_REPLACE_CONFIG, &pReplace, 0);
   if( rc==SQLITE_OK ){
-    sqlite3_bind_text(pReplace, 1, z, -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(pReplace, 1, z, -1, SQLITE_STATIC);
     sqlite3_bind_value(pReplace, 2, pVal);
     sqlite3_step(pReplace);
     rc = sqlite3_reset(pReplace);

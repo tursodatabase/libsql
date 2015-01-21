@@ -369,6 +369,16 @@ do_test 14.3 {
   set nRow
 } {200}
 
+do_execsql_test 15.0 {
+  INSERT INTO t1(t1) VALUES('integrity-check');
+}
+do_execsql_test 15.1 {
+  UPDATE t1_content SET c1 = 'xyz xyz xyz xyz xyz abc' WHERE rowid = 1;
+}
+do_catchsql_test 15.2 {
+  INSERT INTO t1(t1) VALUES('integrity-check');
+} {1 {database disk image is malformed}}
+
 finish_test
 
 

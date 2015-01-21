@@ -31,7 +31,7 @@ ifcapable !fts5 {
 #
 #
 
-if 0 {
+if 1 {
 
 faultsim_save_and_close
 do_faultsim_test 1 -prep {
@@ -107,8 +107,6 @@ foreach {tn expr res} {
   "
 }
 
-
-}
 
 #-------------------------------------------------------------------------
 # The following tests use a larger database populated with random data.
@@ -212,7 +210,7 @@ do_faultsim_test 5.5.4 -faults oom* -body {
   faultsim_test_result [list 0 1]
 }
 
-finish_test
+}
 
 #-------------------------------------------------------------------------
 #
@@ -253,6 +251,31 @@ do_faultsim_test 6.1 -faults oom* -prep {
     if {$nCnt!=3} { error "expected 3 entries but there are $nCnt" }
   }
 }
+
+do_faultsim_test 6.2 -faults oom* -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql { INSERT INTO x1(x1, rank) VALUES('pgsz', 32) }
+} -test {
+  faultsim_test_result [list 0 {}]
+}
+
+do_faultsim_test 6.3 -faults oom-* -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql { INSERT INTO x1(x1) VALUES('integrity-check') }
+} -test {
+  faultsim_test_result [list 0 {}]
+}
+
+do_faultsim_test 6.4 -faults oom-* -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql { INSERT INTO x1(x1) VALUES('optimize') }
+} -test {
+  faultsim_test_result [list 0 {}]
+}
+
 
 #-------------------------------------------------------------------------
 do_faultsim_test 7.0 -faults oom* -prep {
