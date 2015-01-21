@@ -2256,7 +2256,8 @@ void sqlite3ExprCacheStore(Parse *pParse, int iTab, int iCol, int iReg){
   int idxLru;
   struct yColCache *p;
 
-  assert( iReg>0 );  /* Register numbers are always positive */
+  /* Unless an error has occurred, register numbers are always positive. */
+  assert( iReg>0 || pParse->nErr || pParse->db->mallocFailed );
   assert( iCol>=-1 && iCol<32768 );  /* Finite column numbers */
 
   /* The SQLITE_ColumnCache flag disables the column cache.  This is used

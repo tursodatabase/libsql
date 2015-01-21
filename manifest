@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarning\sseen\swith\sMSVC.
-D 2015-01-21T00:51:08.964
+C Fix\san\sassert()\sthat\smay\sfail\sfollowing\san\sOOM\serror.
+D 2015-01-21T17:00:57.118
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5407a688f4d77a05c18a8142be8ae5a2829dd610
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -182,7 +182,7 @@ F src/complete.c 198a0066ba60ab06fc00fba1998d870a4d575463
 F src/ctime.c 98f89724adc891a1a4c655bee04e33e716e05887
 F src/date.c e4d50b3283696836ec1036b695ead9a19e37a5ac
 F src/delete.c bd1a91ddd247ce13004075251e0b7fe2bf9925ef
-F src/expr.c 7be80f7dc337329a24df45c2f3bdb2ea3b64c90e
+F src/expr.c 33a4518b2c786903cb185dbdc66e071ac38d467e
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c e0444b61bed271a76840cbe6182df93a9baa3f12
 F src/func.c 6d3c4ebd72aa7923ce9b110a7dc15f9b8c548430
@@ -721,7 +721,7 @@ F test/mallocG.test 0ff91b65c50bdaba680fb75d87fe4ad35bb7934f
 F test/mallocH.test 79b65aed612c9b3ed2dcdaa727c85895fd1bfbdb
 F test/mallocI.test a88c2b9627c8506bf4703d8397420043a786cdb6
 F test/mallocJ.test b5d1839da331d96223e5f458856f8ffe1366f62e
-F test/mallocK.test 3cff7c0f64735f6883bacdd294e45a6ed5714817
+F test/mallocK.test 223cc80c870c80d4a9c2014e94133efdf0123f82
 F test/mallocL.test 252ddc7eb4fbf75364eab17b938816085ff1fc17
 F test/malloc_common.tcl 3663f9001ce3e29bbaa9677ffe15cd468e3ec7e3
 F test/manydb.test 28385ae2087967aa05c38624cec7d96ec74feb3e
@@ -1237,7 +1237,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 26190b3c63e18f3116deeb59a58d9b5de48e8eea
-R 17b31e2924f2250d0d9a55276496f8b8
-U mistachkin
-Z cec7ce423a7eb7a21c54da9ee537419d
+P 78c2e62bb4c529595aaaf2e1f5f26387ad977b1b
+R fadddb94e3f078ed8e5664ef5ad11fc1
+U dan
+Z 211832fccf702756128a6ea4845193da
