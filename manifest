@@ -1,5 +1,5 @@
-C Merge\strunk\schanges\swith\sthis\sbranch.
-D 2015-01-21T17:20:21.383
+C Fix\san\sfts5\sissue\swith\sloading\sdoclist-indexes\sfor\sa\sterm\sthat\sis\sthe\slast\sthing\son\sits\sleaf\spage.
+D 2015-01-21T18:23:25.625
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5407a688f4d77a05c18a8142be8ae5a2829dd610
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -112,7 +112,7 @@ F ext/fts5/fts5_buffer.c 32dd3c950392346ca69a0f1803501766c5c954f9
 F ext/fts5/fts5_config.c 33534ca25198cc62c54ff7d285d455c57ad19399
 F ext/fts5/fts5_expr.c 8a0e643768666dc2bffe74104141274809699808
 F ext/fts5/fts5_hash.c 63fa8379c5f2ac107d47c2b7d9ac04c95ef8a279
-F ext/fts5/fts5_index.c 49e470a6380e572d2e7dcce48399f6dc294d7247
+F ext/fts5/fts5_index.c 7decfde6535f73c50acb009e41946ade38e9c1b7
 F ext/fts5/fts5_storage.c 8bc9e5b6654e1545e9513def277ef3f025921664
 F ext/fts5/fts5_tcl.c 1293fac2bb26903fd3d5cdee59c5885ba7e620d5
 F ext/fts5/fts5_tokenize.c 7c61d5c35c3449597bdeaa54dd48afe26852c7b0
@@ -142,7 +142,7 @@ F ext/fts5/test/fts5optimize.test 0028c90a7817d3e576d1148fc8dff17d89054e54
 F ext/fts5/test/fts5porter.test 50322599823cb8080a99f0ec0c39f7d0c12bcb5e
 F ext/fts5/test/fts5prefix.test 4610dfba4460d92f23a8014874a46493f1be77b5
 F ext/fts5/test/fts5rebuild.test 2a5e98205393487b4a732c8290999af7c0b907b4
-F ext/fts5/test/fts5rowid.test 44f90d91538f037470f6a438f21bfe65916129f4
+F ext/fts5/test/fts5rowid.test bdff2ee094bf66bd163e0cdfb36a7fc7715a12d3
 F ext/fts5/test/fts5tokenizer.test b34ae592db66f6e89546d791ce1f905ba0b3395c
 F ext/fts5/test/fts5unicode.test 79b3e34eb29ce4929628aa514a40cb467fdabe4d
 F ext/fts5/test/fts5unicode2.test 64a5267fd6082fcb46439892ebd0cbaa5c38acee
@@ -1282,7 +1282,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 09dabb3b9e140eec6cfda83bcb86b6b9f5cf54b6 5f592359d6d41708da3b3ac9d987a1631bfa3d88
-R 8c898c775e75cc6f7d7e1cf6ea13418f
+P f8699a1a3b0f3bb612aff87a2729f912d709c534
+R 17960da1ca932a330a75bf04374dfc20
 U dan
-Z fd361ca13b44b2a851b6664735786aee
+Z c1930a6e112ceedd9aced2b05e742853

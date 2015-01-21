@@ -120,5 +120,36 @@ do_execsql_test 3.2 {
   SELECT count(fts5_decode(rowid, block)) FROM x2_data;
 } $res
 
+#-------------------------------------------------------------------------
+# Leaf pages with no terms or rowids at all.
+#
+set strlist [list \
+  "[string repeat {w } 400]"  \
+  "[string repeat {x } 400]"  \
+  "[string repeat {y } 400]"  \
+  "[string repeat {z } 400]"  \
+]
+do_test 4.0 {
+  execsql {
+    BEGIN;
+    CREATE VIRTUAL TABLE x3 USING fts5(a);
+    INSERT INTO x3(x3, rank) VALUES('pgsz', 32);
+  }
+  foreach str $strlist { execsql { INSERT INTO x3 VALUES($str) } }
+  execsql COMMIT
+} {}
+
+for {set tn 0} {$tn<[llength $strlist]} {incr tn} {
+  set str [lindex $strlist $tn]
+  do_execsql_test 4.1.$tn {
+    SELECT rowid FROM x3 WHERE x3 MATCH $str
+  } [expr $tn+1]
+}
+
+set res [db one {SELECT count(*) FROM x3_data}]
+do_execsql_test 4.2 {
+  SELECT count(fts5_decode(rowid, block)) FROM x3_data;
+} $res
+
 finish_test
 

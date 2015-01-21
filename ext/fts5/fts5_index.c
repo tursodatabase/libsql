@@ -1825,7 +1825,7 @@ static void fts5SegIterReverse(Fts5Index *p, int iIdx, Fts5SegIter *pIter){
 ** (pIter->pDlidx).
 */
 static void fts5SegIterLoadDlidx(Fts5Index *p, int iIdx, Fts5SegIter *pIter){
-  int iSegid = pIter->pSeg->iSegid;
+  int iSeg = pIter->pSeg->iSegid;
   int bRev = (pIter->flags & FTS5_SEGITER_REVERSE);
   Fts5Data *pLeaf = pIter->pLeaf; /* Current leaf data */
   int iOff = pIter->iLeafOffset;  /* Byte offset within current leaf */
@@ -1836,21 +1836,23 @@ static void fts5SegIterLoadDlidx(Fts5Index *p, int iIdx, Fts5SegIter *pIter){
   /* Check if the current doclist ends on this page. If it does, return
   ** early without loading the doclist-index (as it belongs to a different
   ** term. */
-  while( iOff<pLeaf->n ){
-    i64 iDelta;
-    int nPoslist;
+  if( pIter->iTermLeafPgno==pIter->iLeafPgno ){
+    while( iOff<pLeaf->n ){
+      i64 iDelta;
+      int nPoslist;
 
-    /* iOff is currently the offset of the size field of a position list. */
-    iOff += getVarint32(&pLeaf->p[iOff], nPoslist);
-    iOff += nPoslist;
+      /* iOff is currently the offset of the size field of a position list. */
+      iOff += getVarint32(&pLeaf->p[iOff], nPoslist);
+      iOff += nPoslist;
 
-    if( iOff<pLeaf->n ){
-      iOff += getVarint(&pLeaf->p[iOff], (u64*)&iDelta);
-      if( iDelta==0 ) return;
+      if( iOff<pLeaf->n ){
+        iOff += getVarint(&pLeaf->p[iOff], (u64*)&iDelta);
+        if( iDelta==0 ) return;
+      }
     }
   }
 
-  fts5DlidxIterInit(p, bRev, iIdx, iSegid, pIter->iLeafPgno, &pIter->pDlidx);
+  fts5DlidxIterInit(p, bRev, iIdx, iSeg, pIter->iTermLeafPgno, &pIter->pDlidx);
 }
 
 /*
