@@ -31,7 +31,7 @@ ifcapable !fts5 {
 #
 #
 
-if 1 {
+if 0 {
 
 faultsim_save_and_close
 do_faultsim_test 1 -prep {
@@ -107,6 +107,9 @@ foreach {tn expr res} {
   "
 }
 
+
+}
+
 #-------------------------------------------------------------------------
 # The following tests use a larger database populated with random data.
 #
@@ -176,7 +179,40 @@ do_faultsim_test 5.4 -faults oom* -prep {
   faultsim_test_result [list 0 {}]
 }
 
+do_faultsim_test 5.5.1 -faults oom* -body {
+  execsql { 
+    SELECT count(fts5_decode(rowid, block)) FROM x1_data WHERE rowid=1
+  }
+} -test {
+  faultsim_test_result [list 0 1]
 }
+do_faultsim_test 5.5.2 -faults oom* -body {
+  execsql { 
+    SELECT count(fts5_decode(rowid, block)) FROM x1_data WHERE rowid=10
+  }
+} -test {
+  faultsim_test_result [list 0 1]
+}
+do_faultsim_test 5.5.3 -faults oom* -body {
+  execsql { 
+    SELECT count(fts5_decode(rowid, block)) FROM x1_data WHERE rowid = (
+      SELECT min(rowid) FROM x1_data WHERE rowid>20
+    )
+  }
+} -test {
+  faultsim_test_result [list 0 1]
+}
+do_faultsim_test 5.5.4 -faults oom* -body {
+  execsql { 
+    SELECT count(fts5_decode(rowid, block)) FROM x1_data WHERE rowid = (
+      SELECT max(rowid) FROM x1_data 
+    )
+  }
+} -test {
+  faultsim_test_result [list 0 1]
+}
+
+finish_test
 
 #-------------------------------------------------------------------------
 #
@@ -206,7 +242,7 @@ do_execsql_test 6.0 {
 
 faultsim_save_and_close
 
-do_faultsim_test 6.1 -faults oom-tr* -prep {
+do_faultsim_test 6.1 -faults oom* -prep {
   faultsim_restore_and_reopen
 } -body {
   execsql { INSERT INTO x1 VALUES('d e f') }
@@ -217,6 +253,16 @@ do_faultsim_test 6.1 -faults oom-tr* -prep {
     if {$nCnt!=3} { error "expected 3 entries but there are $nCnt" }
   }
 }
+
+#-------------------------------------------------------------------------
+do_faultsim_test 7.0 -faults oom* -prep {
+  catch { db close }
+} -body {
+  sqlite3 db test.db
+} -test {
+  faultsim_test_result [list 0 {}] [list 1 {}]
+}
+
 
 finish_test
 

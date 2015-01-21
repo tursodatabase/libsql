@@ -264,6 +264,13 @@ static int fts5Corrupt() { return SQLITE_CORRUPT_VTAB; }
 #endif
 
 
+/*
+** Each time a blob is read from the %_data table, it is padded with this
+** many zero bytes. This makes it easier to decode the various record formats
+** without overreading if the records are corrupt.
+*/
+#define FTS5_DATA_ZERO_PADDING 8
+
 typedef struct Fts5BtreeIter Fts5BtreeIter;
 typedef struct Fts5BtreeIterLevel Fts5BtreeIterLevel;
 typedef struct Fts5ChunkIter Fts5ChunkIter;
@@ -716,7 +723,8 @@ sqlite3_free(buf.p);
         aOut = pBuf->p;
         pBuf->n = nByte;
       }else{
-        pRet = (Fts5Data*)sqlite3Fts5MallocZero(&rc, nByte+sizeof(Fts5Data));
+        int nSpace = nByte + FTS5_DATA_ZERO_PADDING;
+        pRet = (Fts5Data*)sqlite3Fts5MallocZero(&rc, nSpace+sizeof(Fts5Data));
         if( pRet ){
           pRet->n = nByte;
           aOut = pRet->p = (u8*)&pRet[1];
@@ -4539,15 +4547,22 @@ static void fts5DecodeFunction(
 ){
   i64 iRowid;                     /* Rowid for record being decoded */
   int iIdx,iSegid,iHeight,iPgno;  /* Rowid components */
-  const u8 *a; int n;             /* Record to decode */
+  const u8 *aBlob; int n;         /* Record to decode */
+  u8 *a = 0;
   Fts5Buffer s;                   /* Build up text to return here */
   int rc = SQLITE_OK;             /* Return code */
+  int nSpace = 0;
 
   assert( nArg==2 );
   memset(&s, 0, sizeof(Fts5Buffer));
   iRowid = sqlite3_value_int64(apVal[0]);
   n = sqlite3_value_bytes(apVal[1]);
-  a = sqlite3_value_blob(apVal[1]);
+  aBlob = sqlite3_value_blob(apVal[1]);
+
+  nSpace = n + FTS5_DATA_ZERO_PADDING;
+  a = (u8*)sqlite3Fts5MallocZero(&rc, nSpace);
+  if( a==0 ) goto decode_out;
+  memcpy(a, aBlob, n);
   fts5DecodeRowid(iRowid, &iIdx, &iSegid, &iHeight, &iPgno);
 
   fts5DebugRowid(&rc, &s, iRowid);
@@ -4587,8 +4602,13 @@ static void fts5DecodeFunction(
       int iOff;
       int nKeep = 0;
 
-      iRowidOff = fts5GetU16(&a[0]);
-      iTermOff = fts5GetU16(&a[2]);
+      if( n>=4 ){
+        iRowidOff = fts5GetU16(&a[0]);
+        iTermOff = fts5GetU16(&a[2]);
+      }else{
+        sqlite3Fts5BufferSet(&rc, &s, 8, (const u8*)"corrupt");
+        goto decode_out;
+      }
 
       if( iRowidOff ){
         iOff = iRowidOff;
@@ -4642,6 +4662,8 @@ static void fts5DecodeFunction(
     }
   }
   
+ decode_out:
+  sqlite3_free(a);
   if( rc==SQLITE_OK ){
     sqlite3_result_text(pCtx, (const char*)s.p, s.n, SQLITE_TRANSIENT);
   }else{
@@ -4693,7 +4715,7 @@ static void fts5RowidFunction(
     }else {
       sqlite3_result_error(pCtx, 
         "first arg to fts5_rowid() must be 'segment' "
-        "or 'start-of-index' ..."
+        "or 'start-of-index'"
         , -1
       );
     }
