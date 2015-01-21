@@ -3373,7 +3373,8 @@ static void vdbeAssertFieldCountWithinLimits(
 
   if( CORRUPT_DB ) return;
   idx = getVarint32(aKey, szHdr);
-  assert( szHdr<=nKey );
+  assert( nKey>=0 );
+  assert( szHdr<=(u32)nKey );
   while( idx<szHdr ){
     idx += getVarint32(aKey+idx, notUsed);
     nField++;

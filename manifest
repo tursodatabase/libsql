@@ -1,9 +1,9 @@
-C Add\sfurther\stests\sfor\sfts5\sbackend.
-D 2015-01-21T16:10:59.815
+C Merge\strunk\schanges\swith\sthis\sbranch.
+D 2015-01-21T17:20:21.383
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5407a688f4d77a05c18a8142be8ae5a2829dd610
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 4c057774e6138b9023fc16ec05639ddd3329b152
+F Makefile.msc 2b1cb8881bdefcb0a8ed41c34c81cfa630374222
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md d58e3bebc0a4145e0f2a87994015fdb575a8e866
 F VERSION d846487aff892625eb8e75960234e7285f0462fe
@@ -226,7 +226,7 @@ F src/complete.c 198a0066ba60ab06fc00fba1998d870a4d575463
 F src/ctime.c 98f89724adc891a1a4c655bee04e33e716e05887
 F src/date.c e4d50b3283696836ec1036b695ead9a19e37a5ac
 F src/delete.c bd1a91ddd247ce13004075251e0b7fe2bf9925ef
-F src/expr.c 7be80f7dc337329a24df45c2f3bdb2ea3b64c90e
+F src/expr.c 33a4518b2c786903cb185dbdc66e071ac38d467e
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c e0444b61bed271a76840cbe6182df93a9baa3f12
 F src/func.c 6d3c4ebd72aa7923ce9b110a7dc15f9b8c548430
@@ -259,7 +259,7 @@ F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c aefeaf915aaef9f81aa2645e0d5d06fa1bd83beb
-F src/os_win.c a5ac9e249ed0ca33de6de27898a08d313effc40c
+F src/os_win.c 8223e7db5b7c4a81d8b161098ac3959400434cdb
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 4120a49ecd37697e28f5ed807f470b9c0b88410c
 F src/pager.h c3476e7c89cdf1c6914e50a11f3714e30b4e0a77
@@ -340,7 +340,7 @@ F src/vdbe.c ddfc977981cd6324668aa6b114045eb1c677421a
 F src/vdbe.h 6fc69d9c5e146302c56e163cb4b31d1ee64a18c3
 F src/vdbeInt.h 9bb69ff2447c34b6ccc58b34ec35b615f86ead78
 F src/vdbeapi.c 4bc511a46b9839392ae0e90844a71dc96d9dbd71
-F src/vdbeaux.c f06d38c71d7f533348c09869d69fd1b647042a5b
+F src/vdbeaux.c 97911edb61074b871ec4aa2d6bb779071643dee5
 F src/vdbeblob.c 4af4bfb71f6df7778397b4a0ebc1879793276778
 F src/vdbemem.c 31d8eabb0cd78bfeab4e5124c7363c3e9e54db9f
 F src/vdbesort.c 6d64c5448b64851b99931ede980addc3af70d5e2
@@ -765,7 +765,7 @@ F test/mallocG.test 0ff91b65c50bdaba680fb75d87fe4ad35bb7934f
 F test/mallocH.test 79b65aed612c9b3ed2dcdaa727c85895fd1bfbdb
 F test/mallocI.test a88c2b9627c8506bf4703d8397420043a786cdb6
 F test/mallocJ.test b5d1839da331d96223e5f458856f8ffe1366f62e
-F test/mallocK.test 3cff7c0f64735f6883bacdd294e45a6ed5714817
+F test/mallocK.test 223cc80c870c80d4a9c2014e94133efdf0123f82
 F test/mallocL.test 252ddc7eb4fbf75364eab17b938816085ff1fc17
 F test/malloc_common.tcl a644f12e2da20ddfabb8bd077ec610a44113450e
 F test/manydb.test 28385ae2087967aa05c38624cec7d96ec74feb3e
@@ -1282,7 +1282,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b3348b1e07e168b156636a29fc8c6d6afb3129c2
-R 7d4ce350ba9859353b62d149a7c21faf
+P 09dabb3b9e140eec6cfda83bcb86b6b9f5cf54b6 5f592359d6d41708da3b3ac9d987a1631bfa3d88
+R 8c898c775e75cc6f7d7e1cf6ea13418f
 U dan
-Z 7c0fe174f4df11b7c7390d0e1d1bdddb
+Z fd361ca13b44b2a851b6664735786aee

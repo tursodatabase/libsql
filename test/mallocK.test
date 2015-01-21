@@ -134,5 +134,15 @@ do_faultsim_test 6 -faults oom* -body {
   faultsim_test_result {0 {12 13 14 15}} 
 }
 
+do_execsql_test 7.1 {
+  CREATE TABLE x1(a INTEGER PRIMARY KEY, b);
+}
+do_faultsim_test 7.2 -faults oom* -body {
+  execsql { SELECT * FROM x1 WHERE a = (SELECT 1) }
+} -test {
+  faultsim_test_result [list 0 {}]
+}
+
+
 finish_test
 
