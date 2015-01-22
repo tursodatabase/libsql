@@ -1,5 +1,5 @@
-C Change\sthe\sundocumented\s".selecttrace"\scommand\sin\sthe\sshell\sto\saccept\nan\sinteger\sbitmask\srather\sthan\sa\sboolean.
-D 2015-01-22T11:29:25.197
+C Make\ssure\serrors\sin\sthe\sFROM\sclause\sof\sa\sSELECT\scause\sanalysis\sto\sabort\nand\sunwind\sthe\sstack\sbefore\sthose\serrors\shave\sa\schance\sto\smischief\nin\sthe\s"*"\scolumn-name\swildcard\sexpander.\sFix\sfor\sticket\s[32b63d542433ca67].
+D 2015-01-22T12:00:17.073
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5407a688f4d77a05c18a8142be8ae5a2829dd610
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -229,7 +229,7 @@ F src/printf.c ea82bcb1b83273b4c67177c233c1f78c81fc42f9
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c f6c46d3434439ab2084618d603e6d6dbeb0d6ada
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c a4e8fda24c8eab2682a058bdda0d5d68cfe3919c
+F src/select.c 1f2087523007c42900ffcbdeaef06a23ad9329fc
 F src/shell.c acdf311a7a6ed5d84454f9b13488a76fd57dbb72
 F src/sqlite.h.in 9dfc99d6533d36d6a549c4f3f01cacc8be956ada
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
@@ -620,7 +620,7 @@ F test/func4.test 6beacdfcb0e18c358e6c2dcacf1b65d1fa80955f
 F test/func5.test cdd224400bc3e48d891827cc913a57051a426fa4
 F test/fuzz-oss1.test 4912e528ec9cf2f42134456933659d371c9e0d74
 F test/fuzz.test 96083052bf5765e4518c1ba686ce2bab785670d1
-F test/fuzz2.test b34fe575aa10292135421ff4bf315de4cde7824a
+F test/fuzz2.test 76dc35b32b6d6f965259508508abce75a6c4d7e1
 F test/fuzz3.test efd384b896c647b61a2c1848ba70d42aad60a7b3
 F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
 F test/fuzz_malloc.test 328f70aaca63adf29b4c6f06505ed0cf57ca7c26
@@ -1237,7 +1237,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5f592359d6d41708da3b3ac9d987a1631bfa3d88
-R 06bf50be530a04b67e63b7751053876a
+P bd63bf882c5a925f921adc9cf7425d2e7950f0b2
+R cd80a044c23c0a2610d13740733ffe7d
 U drh
-Z 7005abb8b52570698504c401137e57e1
+Z ca1958b398bcc4529c59936be19170f3
