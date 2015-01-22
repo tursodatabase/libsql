@@ -114,4 +114,21 @@ proc fts5_aux_test_functions {db} {
   }
 }
 
+proc fts5_level_segs {tbl} {
+  set sql "SELECT fts5_decode(rowid,block) aS r FROM ${tbl}_data WHERE rowid=10"
+  set ret [list]
+  foreach L [lrange [db one $sql] 1 end] {
+    lappend ret [expr [llength $L] - 2]
+  }
+  set ret
+} 
+
+proc fts5_rnddoc {n} {
+  set map [list 0 a  1 b  2 c  3 d  4 e  5 f  6 g  7 h  8 i  9 j]
+  set doc [list]
+  for {set i 0} {$i < $n} {incr i} {
+    lappend doc "x[string map $map [format %.3d [expr int(rand()*1000)]]]"
+  }
+  set doc
+}
 

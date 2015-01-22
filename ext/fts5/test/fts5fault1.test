@@ -210,8 +210,6 @@ do_faultsim_test 5.5.4 -faults oom* -body {
   faultsim_test_result [list 0 1]
 }
 
-}
-
 #-------------------------------------------------------------------------
 #
 reset_db
@@ -276,8 +274,8 @@ do_faultsim_test 6.4 -faults oom-* -prep {
   faultsim_test_result [list 0 {}]
 }
 
-
 #-------------------------------------------------------------------------
+#
 do_faultsim_test 7.0 -faults oom* -prep {
   catch { db close }
 } -body {
@@ -285,6 +283,74 @@ do_faultsim_test 7.0 -faults oom* -prep {
 } -test {
   faultsim_test_result [list 0 {}] [list 1 {}]
 }
+
+#-------------------------------------------------------------------------
+# A prefix query against a large document set.
+#
+proc rnddoc {n} {
+  set map [list 0 a  1 b  2 c  3 d  4 e  5 f  6 g  7 h  8 i  9 j]
+  set doc [list]
+  for {set i 0} {$i < $n} {incr i} {
+    lappend doc "x[string map $map [format %.3d [expr int(rand()*1000)]]]"
+  }
+  set doc
+}
+
+reset_db
+db func rnddoc rnddoc
+
+do_test 8.0 {
+  execsql { CREATE VIRTUAL TABLE x1 USING fts5(a) }
+  set ::res [list]
+  for {set i 100} {$i>0} {incr i -1} {
+    execsql { INSERT INTO x1 VALUES( rnddoc(50) ) }
+    lappend ::res $i
+  }
+} {}
+
+do_faultsim_test 8.1 -faults oom* -prep {
+} -body {
+  execsql { 
+    SELECT rowid FROM x1 WHERE x1 MATCH 'x*'
+  }
+} -test {
+  faultsim_test_result [list 0 $::res]
+}
+
+}
+
+#-------------------------------------------------------------------------
+# Segment promotion.
+#
+do_test 9.0 {
+  reset_db
+  db func rnddoc fts5_rnddoc
+  execsql {
+    CREATE VIRTUAL TABLE s2 USING fts5(x);
+    INSERT INTO s2(s2, rank) VALUES('pgsz', 32);
+    INSERT INTO s2(s2, rank) VALUES('automerge', 0);
+  }
+
+  for {set i 1} {$i <= 16} {incr i} {
+    execsql { INSERT INTO s2 VALUES(rnddoc(5)) }
+  }
+  fts5_level_segs s2
+} {0 1}
+faultsim_save_and_close
+
+do_faultsim_test 9.1 -faults oom-* -prep {
+  faultsim_restore_and_reopen
+  db func rnddoc fts5_rnddoc
+} -body {
+  execsql { INSERT INTO s2 VALUES(rnddoc(160)) }
+} -test {
+  faultsim_test_result {0 {}}
+  if {$testrc==0} {
+    set ls [fts5_level_segs s2]
+    if {$ls != "2 0"} { error "fts5_level_segs says {$ls}" }
+  }
+}
+
 
 
 finish_test

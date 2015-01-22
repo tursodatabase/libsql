@@ -111,11 +111,14 @@ void sqlite3Fts5HashFree(Fts5Hash *pHash){
 void sqlite3Fts5HashClear(Fts5Hash *pHash){
   int i;
   for(i=0; i<pHash->nSlot; i++){
-    if( pHash->aSlot[i] ){
-      sqlite3_free(pHash->aSlot[i]);
-      pHash->aSlot[i] = 0;
+    Fts5HashEntry *pNext;
+    Fts5HashEntry *pSlot;
+    for(pSlot=pHash->aSlot[i]; pSlot; pSlot=pNext){
+      pNext = pSlot->pNext;
+      sqlite3_free(pSlot);
     }
   }
+  memset(pHash->aSlot, 0, pHash->nSlot * sizeof(Fts5HashEntry*));
   pHash->nEntry = 0;
 }
 

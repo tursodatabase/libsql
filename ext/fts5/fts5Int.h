@@ -345,6 +345,9 @@ int sqlite3Fts5IndexOptimize(Fts5Index *p);
 
 int sqlite3Fts5IndexLoadConfig(Fts5Index *p);
 
+int sqlite3Fts5GetVarint32(const unsigned char *p, u32 *v);
+#define fts5GetVarint32(a,b) sqlite3Fts5GetVarint32(a,(u32*)&b)
+
 /*
 ** End of interface to code in fts5_index.c.
 **************************************************************************/

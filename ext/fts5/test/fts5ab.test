@@ -149,5 +149,90 @@ foreach {tn expr res} {
   } $res
 }
 
+#-------------------------------------------------------------------------
+# Documents with more than 2M tokens.
+#
+
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE s1 USING fts5(x);
+}
+foreach {tn doc} [list \
+  1 [string repeat {a x } 1500000]       \
+  2 "[string repeat {a a } 1500000] x"   \
+] {
+  do_execsql_test 4.$tn { INSERT INTO s1 VALUES($doc) }
+}
+
+do_execsql_test 4.3 {
+  SELECT rowid FROM s1 WHERE s1 MATCH 'x'
+} {2 1}
+
+do_execsql_test 4.4 {
+  SELECT rowid FROM s1 WHERE s1 MATCH '"a x"'
+} {2 1}
+
+#-------------------------------------------------------------------------
+# Check that a special case of segment promotion works. The case is where
+# a new segment is written to level L, but the oldest segment within level
+# (L-2) is larger than it.
+#
+do_execsql_test 5.0 {
+  CREATE VIRTUAL TABLE s2 USING fts5(x);
+  INSERT INTO s2(s2, rank) VALUES('pgsz', 32);
+  INSERT INTO s2(s2, rank) VALUES('automerge', 0);
+}
+
+proc rnddoc {n} {
+  set map [list 0 a  1 b  2 c  3 d  4 e  5 f  6 g  7 h  8 i  9 j]
+  set doc [list]
+  for {set i 0} {$i < $n} {incr i} {
+    lappend doc [string map $map [format %.3d [expr int(rand()*1000)]]]
+  }
+  set doc
+}
+db func rnddoc rnddoc
+
+do_test 5.1 {
+  for {set i 1} {$i <= 65} {incr i} {
+    execsql { INSERT INTO s2 VALUES(rnddoc(10)) }
+  }
+  for {set i 1} {$i <= 63} {incr i} {
+    execsql { DELETE FROM s2 WHERE rowid = $i }
+  }
+  fts5_level_segs s2
+} {0 8}
+
+do_test 5.2 {
+  execsql {
+    INSERT INTO s2(s2, rank) VALUES('automerge', 8);
+  }
+  for {set i 0} {$i < 7} {incr i} {
+    execsql { INSERT INTO s2 VALUES(rnddoc(50)) }
+  }
+  fts5_level_segs s2
+} {8 0 0}
+
+# Test also the other type of segment promotion - when a new segment is written
+# that is larger than segments immediately following it.
+do_test 5.3 {
+  execsql {
+    DROP TABLE s2;
+    CREATE VIRTUAL TABLE s2 USING fts5(x);
+    INSERT INTO s2(s2, rank) VALUES('pgsz', 32);
+    INSERT INTO s2(s2, rank) VALUES('automerge', 0);
+  }
+
+  for {set i 1} {$i <= 16} {incr i} {
+    execsql { INSERT INTO s2 VALUES(rnddoc(5)) }
+  }
+  fts5_level_segs s2
+} {0 1}
+
+do_test 5.4 {
+  execsql { INSERT INTO s2 VALUES(rnddoc(160)) }
+  fts5_level_segs s2
+} {2 0}
+
 
 finish_test
+
