@@ -86,6 +86,7 @@ struct Fts5Config {
   int iCookie;                    /* Incremented when %_config is modified */
   int pgsz;                       /* Approximate page size used in %_data */
   int nAutomerge;                 /* 'automerge' setting */
+  int nCrisisMerge;               /* Maximum allowed segments per level */
   char *zRank;                    /* Name of rank function */
   char *zRankArgs;                /* Arguments to rank function */
 };

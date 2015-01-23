@@ -43,7 +43,6 @@
 
 #define FTS5_OPT_WORK_UNIT  1000  /* Number of leaf pages per optimize step */
 #define FTS5_WORK_UNIT      64    /* Number of leaf pages in unit of work */
-#define FTS5_CRISIS_MERGE   16    /* Maximum number of segments to merge */
 
 #define FTS5_MIN_DLIDX_SIZE  4    /* Add dlidx if this many empty pages */
 
@@ -293,7 +292,6 @@ typedef struct Fts5StructureSegment Fts5StructureSegment;
 struct Fts5Index {
   Fts5Config *pConfig;            /* Virtual table configuration */
   char *zDataTbl;                 /* Name of %_data table */
-  int nCrisisMerge;               /* Maximum allowed segments per level */
   int nWorkUnit;                  /* Leaf pages in a "unit" of work */
 
   /*
@@ -1105,8 +1103,8 @@ static Fts5Structure *fts5StructureRead(Fts5Index *p, int iIdx){
   if( !pData ) return 0;
   p->rc = fts5StructureDecode(pData->p, pData->n, &iCookie, &pRet);
 
-  if( p->rc==SQLITE_OK && p->pConfig->iCookie!=iCookie ){
-    p->rc = sqlite3Fts5ConfigLoad(p->pConfig, iCookie);
+  if( p->rc==SQLITE_OK && pConfig->iCookie!=iCookie ){
+    p->rc = sqlite3Fts5ConfigLoad(pConfig, iCookie);
   }
 
   fts5DataRelease(pData);
@@ -1250,7 +1248,6 @@ static void fts5StructurePromote(
     int iPromote = -1;
     int szPromote;                /* Promote anything this size or smaller */
     Fts5StructureSegment *pSeg;   /* Segment just written */
-    Fts5StructureLevel *pTst;
     int szSeg;                    /* Size of segment just written */
 
 
@@ -1259,11 +1256,11 @@ static void fts5StructurePromote(
 
     /* Check for condition (a) */
     for(iTst=iLvl-1; iTst>=0 && pStruct->aLevel[iTst].nSeg==0; iTst--);
-    pTst = &pStruct->aLevel[iTst];
-    assert( pTst->nMerge==0 );
     if( iTst>=0 ){
       int i;
       int szMax = 0;
+      Fts5StructureLevel *pTst = &pStruct->aLevel[iTst];
+      assert( pTst->nMerge==0 );
       for(i=0; i<pTst->nSeg; i++){
         int sz = pTst->aSeg[i].pgnoLast - pTst->aSeg[i].pgnoFirst + 1;
         if( sz>szMax ) szMax = sz;
@@ -2484,28 +2481,6 @@ static int fts5PosIterEof(Fts5Index *p, Fts5PosIter *pIter){
 }
 
 /*
-** Add an entry for (iRowid/iCol/iPos) to the doclist for (pToken/nToken)
-** in hash table for index iIdx. If iIdx is zero, this is the main terms 
-** index. Values of 1 and greater for iIdx are prefix indexes.
-**
-** If an OOM error is encountered, set the Fts5Index.rc error code 
-** accordingly.
-*/
-static void fts5AddTermToHash(
-  Fts5Index *p,                   /* Index object to write to */
-  int iIdx,                       /* Entry in p->aHash[] to update */
-  int iCol,                       /* Column token appears in (-ve -> delete) */
-  int iPos,                       /* Position of token within column */
-  const char *pToken, int nToken  /* Token to add or remove to or from index */
-){
-  if( p->rc==SQLITE_OK ){
-    p->rc = sqlite3Fts5HashWrite(
-        p->apHash[iIdx], p->iWriteRowid, iCol, iPos, pToken, nToken
-    );
-  }
-}
-
-/*
 ** Allocate a new segment-id for the structure pStruct.
 **
 ** If an error has already occurred, this function is a no-op. 0 is 
@@ -3228,7 +3203,7 @@ static void fts5IndexCrisisMerge(
   int iLvl = 0;
   while( p->rc==SQLITE_OK 
       && iLvl<pStruct->nLevel
-      && pStruct->aLevel[iLvl].nSeg>=p->nCrisisMerge 
+      && pStruct->aLevel[iLvl].nSeg>=p->pConfig->nCrisisMerge 
   ){
     fts5IndexMergeLevel(p, iIdx, &pStruct, iLvl, 0);
     fts5StructurePromote(p, iLvl+1, pStruct);
@@ -4000,6 +3975,29 @@ int sqlite3Fts5IndexIntegrityCheck(Fts5Index *p, u64 cksum){
 */
 int sqlite3Fts5IndexBeginWrite(Fts5Index *p, i64 iRowid){
   assert( p->rc==SQLITE_OK );
+
+  /* Allocate hash tables if they have not already been allocated */
+  if( p->apHash==0 ){
+    int i;
+    int rc = SQLITE_OK;
+    int nHash = p->pConfig->nPrefix + 1;
+    Fts5Hash **apNew;
+
+    apNew = (Fts5Hash**)sqlite3Fts5MallocZero(&rc, sizeof(Fts5Hash*)*nHash);
+    for(i=0; rc==SQLITE_OK && i<nHash; i++){
+      rc = sqlite3Fts5HashNew(&apNew[i], &p->nPendingData);
+    }
+    if( rc==SQLITE_OK ){
+      p->apHash = apNew;
+    }else{
+      for(i=0; i<nHash; i++){
+        sqlite3Fts5HashFree(apNew[i]);
+      }
+      sqlite3_free(apNew);
+      return rc;
+    }
+  }
+
   if( iRowid<=p->iWriteRowid || (p->nPendingData > p->nMaxPendingData) ){
     fts5IndexFlush(p);
   }
@@ -4071,7 +4069,6 @@ int sqlite3Fts5IndexOpen(
 
   memset(p, 0, sizeof(Fts5Index));
   p->pConfig = pConfig;
-  p->nCrisisMerge = FTS5_CRISIS_MERGE;
   p->nWorkUnit = FTS5_WORK_UNIT;
   p->nMaxPendingData = 1024*1024;
   p->zDataTbl = sqlite3_mprintf("%s_data", pConfig->zName);
@@ -4196,29 +4193,26 @@ int sqlite3Fts5IndexWrite(
   const char *pToken, int nToken  /* Token to add or remove to or from index */
 ){
   int i;                          /* Used to iterate through indexes */
+  int rc;                         /* Return code */
   Fts5Config *pConfig = p->pConfig;
-  assert( p->rc==SQLITE_OK );
 
-  /* Allocate hash tables if they have not already been allocated */
-  if( p->apHash==0 ){
-    int nHash = pConfig->nPrefix + 1;
-    p->apHash = (Fts5Hash**)fts5IdxMalloc(p, sizeof(Fts5Hash*) * nHash);
-    for(i=0; p->rc==SQLITE_OK && i<nHash; i++){
-      p->rc = sqlite3Fts5HashNew(&p->apHash[i], &p->nPendingData);
-    }
-  }
+  assert( p->rc==SQLITE_OK );
 
   /* Add the new token to the main terms hash table. And to each of the
   ** prefix hash tables that it is large enough for. */
-  fts5AddTermToHash(p, 0, iCol, iPos, pToken, nToken);
-  for(i=0; i<pConfig->nPrefix; i++){
+  rc = sqlite3Fts5HashWrite(
+      p->apHash[0], p->iWriteRowid, iCol, iPos, pToken, nToken
+  );
+  for(i=0; i<pConfig->nPrefix && rc==SQLITE_OK; i++){
     int nByte = fts5IndexCharlenToBytelen(pToken, nToken, pConfig->aPrefix[i]);
     if( nByte ){
-      fts5AddTermToHash(p, i+1, iCol, iPos, pToken, nByte);
+      rc = sqlite3Fts5HashWrite(
+          p->apHash[i+1], p->iWriteRowid, iCol, iPos, pToken, nByte
+      );
     }
   }
 
-  return fts5IndexReturn(p);
+  return rc;
 }
 
 /*

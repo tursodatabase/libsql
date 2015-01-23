@@ -17,6 +17,7 @@
 
 #define FTS5_DEFAULT_PAGE_SIZE   1000
 #define FTS5_DEFAULT_AUTOMERGE      4
+#define FTS5_DEFAULT_CRISISMERGE   16
 
 /* Maximum allowed page size */
 #define FTS5_MAX_PAGE_SIZE (128*1024)
@@ -717,6 +718,19 @@ int sqlite3Fts5ConfigSetValue(
     }
   }
 
+  else if( 0==sqlite3_stricmp(zKey, "crisismerge") ){
+    int nCrisisMerge = -1;
+    if( SQLITE_INTEGER==sqlite3_value_numeric_type(pVal) ){
+      nCrisisMerge = sqlite3_value_int(pVal);
+    }
+    if( nCrisisMerge<0 ){
+      if( pbBadkey ) *pbBadkey = 1;
+    }else{
+      if( nCrisisMerge<=1 ) nCrisisMerge = FTS5_DEFAULT_CRISISMERGE;
+      pConfig->nCrisisMerge = nCrisisMerge;
+    }
+  }
+
   else if( 0==sqlite3_stricmp(zKey, "rank") ){
     const char *zIn = (const char*)sqlite3_value_text(pVal);
     char *zRank;
@@ -749,6 +763,7 @@ int sqlite3Fts5ConfigLoad(Fts5Config *pConfig, int iCookie){
   /* Set default values */
   pConfig->pgsz = FTS5_DEFAULT_PAGE_SIZE;
   pConfig->nAutomerge = FTS5_DEFAULT_AUTOMERGE;
+  pConfig->nCrisisMerge = FTS5_DEFAULT_CRISISMERGE;
 
   zSql = sqlite3_mprintf(zSelect, pConfig->zDb, pConfig->zName);
   if( zSql==0 ){

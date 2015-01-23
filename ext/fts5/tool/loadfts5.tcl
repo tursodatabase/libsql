@@ -29,6 +29,7 @@ proc usage {} {
   puts stderr "  -porter      (use porter tokenizer)"
   puts stderr "  -limit N     (load no more than N documents)"
   puts stderr "  -automerge N (set the automerge parameter to N)"
+  puts stderr "  -crisismerge N (set the crisismerge parameter to N)"
   exit 1
 }
 
@@ -36,6 +37,7 @@ set O(vtab)       fts5
 set O(tok)        ""
 set O(limit)      0
 set O(automerge)  -1
+set O(crisismerge)  -1
 
 if {[llength $argv]<2} usage
 set nOpt [expr {[llength $argv]-2}]
@@ -64,6 +66,11 @@ for {set i 0} {$i < $nOpt} {incr i} {
       set O(automerge) [lindex $argv $i]
     }
 
+    -crisismerge {
+      if { [incr i]>=$nOpt } usage
+      set O(crisismerge) [lindex $argv $i]
+    }
+
     default {
       usage
     }
@@ -80,6 +87,12 @@ db transaction {
       db eval { INSERT INTO t1(t1, rank) VALUES('automerge', $O(automerge)) }
     } else {
       db eval { INSERT INTO t1(t1) VALUES('automerge=' || $O(automerge)) }
+    }
+  }
+  if {$O(crisismerge)>=0} {
+    if {$O(vtab) == "fts5"} {
+      db eval {INSERT INTO t1(t1, rank) VALUES('crisismerge', $O(crisismerge))}
+    } else {
     }
   }
   load_hierachy [lindex $argv end]

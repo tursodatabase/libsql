@@ -1,5 +1,5 @@
-C Add\sfurther\stests\sand\sfixes\sfor\sfts5.
-D 2015-01-22T19:13:08.439
+C Remove\ssome\sredundant\scode\sfrom\sfts5.
+D 2015-01-23T06:50:33.338
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5407a688f4d77a05c18a8142be8ae5a2829dd610
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -106,13 +106,13 @@ F ext/fts3/unicode/mkunicode.tcl 4199cb887040ee3c3cd59a5171ddb0566904586e
 F ext/fts5/extract_api_docs.tcl 55a6d648d516f35d9a1e580ac00de27154e1904a
 F ext/fts5/fts5.c 0ba5a8f27e1aa4deab82f0fc295d55f67dfe7f34
 F ext/fts5/fts5.h f931954065693898d26c51f23f1d27200184a69a
-F ext/fts5/fts5Int.h 99da8551098bb23fd94d0aa3f4ae1a411ee630b4
+F ext/fts5/fts5Int.h da4ad7558c2284fdf3297f907e2c5454a2237e15
 F ext/fts5/fts5_aux.c 549aef152b0fd46020f5595d861b1fd60b3f9b4f
 F ext/fts5/fts5_buffer.c 32dd3c950392346ca69a0f1803501766c5c954f9
-F ext/fts5/fts5_config.c 33534ca25198cc62c54ff7d285d455c57ad19399
+F ext/fts5/fts5_config.c e3421a76c2abd33a05ac09df0c97c64952d1e700
 F ext/fts5/fts5_expr.c 8a0e643768666dc2bffe74104141274809699808
 F ext/fts5/fts5_hash.c 7a87f9f2eae2216c710064821fa0621ac6a8ce7b
-F ext/fts5/fts5_index.c ee7b141adde3dbdaa56f1e198c06a0786d298126
+F ext/fts5/fts5_index.c 604e346f7a04b87f11090b91a80afa50bc74f88b
 F ext/fts5/fts5_storage.c d56722960982d0c48ba1b88d9001fefed8cff1a4
 F ext/fts5/fts5_tcl.c 1293fac2bb26903fd3d5cdee59c5885ba7e620d5
 F ext/fts5/fts5_tokenize.c 7c61d5c35c3449597bdeaa54dd48afe26852c7b0
@@ -146,7 +146,7 @@ F ext/fts5/test/fts5rowid.test db482328fe9bf78bb6a09f2dbf055e2caeaac00a
 F ext/fts5/test/fts5tokenizer.test b34ae592db66f6e89546d791ce1f905ba0b3395c
 F ext/fts5/test/fts5unicode.test 79b3e34eb29ce4929628aa514a40cb467fdabe4d
 F ext/fts5/test/fts5unicode2.test 64a5267fd6082fcb46439892ebd0cbaa5c38acee
-F ext/fts5/tool/loadfts5.tcl 17c9771fb225b6b7ddd02a698fc7f320eadd7b15
+F ext/fts5/tool/loadfts5.tcl 0d39b916550097a3b714060bfc1164a4a9b73f4c
 F ext/icu/README.txt d9fbbad0c2f647c3fdf715fc9fd64af53aedfc43
 F ext/icu/icu.c d415ccf984defeb9df2c0e1afcfaa2f6dc05eacb
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
@@ -1282,7 +1282,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c020a291ed293a66d21c5885e50a7fee04aa6366
-R 244beb886a9d1f5f10328b67a9ad3f5b
+P 5b295897153e9b26cd0d2e7ea112a4d461d0a665
+R 02a6ea9937d0b3e40d0a3982c5f888d6
 U dan
-Z 4d510e0e441ea9491ac2e8425faae5c2
+Z 8b5a907ba25d2b7d394f8c2162c154cb
