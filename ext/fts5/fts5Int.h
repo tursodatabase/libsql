@@ -33,6 +33,13 @@
 #define FTS5_RANK_NAME "rank"
 #define FTS5_ROWID_NAME "rowid"
 
+#ifdef SQLITE_DEBUG
+# define FTS5_CORRUPT sqlite3Fts5Corrupt()
+int sqlite3Fts5Corrupt(void);
+#else
+# define FTS5_CORRUPT SQLITE_CORRUPT_VTAB
+#endif
+
 /**************************************************************************
 ** Interface to code in fts5.c. 
 */

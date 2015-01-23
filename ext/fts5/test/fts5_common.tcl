@@ -123,6 +123,20 @@ proc fts5_level_segs {tbl} {
   set ret
 } 
 
+proc fts5_level_segids {tbl} {
+  set sql "SELECT fts5_decode(rowid,block) aS r FROM ${tbl}_data WHERE rowid=10"
+  set ret [list]
+  foreach L [lrange [db one $sql] 1 end] {
+    set lvl [list]
+    foreach S [lrange $L 2 end] {
+      regexp {id=([1234567890]*)} $S -> segid
+      lappend lvl $segid
+    }
+    lappend ret $lvl
+  }
+  set ret
+}
+
 proc fts5_rnddoc {n} {
   set map [list 0 a  1 b  2 c  3 d  4 e  5 f  6 g  7 h  8 i  9 j]
   set doc [list]

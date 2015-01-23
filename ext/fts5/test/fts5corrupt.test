@@ -1,0 +1,75 @@
+# 2014 Dec 20
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+set testprefix fts5corrupt
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(x);
+  INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
+}
+
+do_test 1.1 {
+  db transaction {
+    for {set i 1} {$i < 200} {incr i} {
+      set doc [list [string repeat x $i] [string repeat y $i]]
+      execsql { INSERT INTO t1(rowid, x) VALUES($i, $doc) }
+    }
+  }
+  fts5_level_segs t1
+} {1}
+db_save
+
+do_execsql_test 1.2 { INSERT INTO t1(t1) VALUES('integrity-check') }
+set segid [lindex [fts5_level_segids t1] 0]
+
+do_test 1.3 {
+  execsql {
+    DELETE FROM t1_data WHERE rowid = fts5_rowid('segment', 0, $segid, 0, 4);
+  }
+  catchsql { INSERT INTO t1(t1) VALUES('integrity-check') }
+} {1 {SQL logic error or missing database}}
+
+do_test 1.4 {
+  db_restore_and_reopen
+  execsql {
+    UPDATE t1_data set block = X'00000000' || substr(block, 5) WHERE
+    rowid = fts5_rowid('segment', 0, $segid, 0, 4);
+  }
+  catchsql { INSERT INTO t1(t1) VALUES('integrity-check') }
+} {1 {database disk image is malformed}}
+
+db_restore_and_reopen
+#db eval {SELECT rowid, fts5_decode(rowid, block) aS r FROM t1_data} {puts $r}
+
+
+
+#--------------------------------------------------------------------
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE t2 USING fts5(x);
+  INSERT INTO t2(t2, rank) VALUES('pgsz', 32);
+}
+do_test 2.1 {
+  db transaction {
+    for {set i 0} {$i < 20} {incr i} {
+      execsql { INSERT INTO t2 VALUES('xxxxxxxxxx') }
+    }
+    for {set i 0} {$i < 20} {incr i} {
+      execsql { INSERT INTO t2 VALUES('xxxxxxxxxzzzz') }
+    }
+  }
+} {}
+db eval {SELECT rowid, fts5_decode(rowid, block) aS r FROM t2_data} {puts $r}
+
+finish_test
+

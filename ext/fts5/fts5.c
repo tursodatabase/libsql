@@ -1021,7 +1021,7 @@ static int fts5SeekCursor(Fts5Cursor *pCsr){
     }else{
       rc = sqlite3_reset(pCsr->pStmt);
       if( rc==SQLITE_OK ){
-        rc = SQLITE_CORRUPT_VTAB;
+        rc = FTS5_CORRUPT;
       }
     }
   }

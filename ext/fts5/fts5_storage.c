@@ -789,7 +789,7 @@ int sqlite3Fts5StorageIntegrity(Fts5Storage *p){
             (void*)&ctx,
             fts5StorageIntegrityCallback
         );
-        if( ctx.szCol!=aColSize[i] ) rc = SQLITE_CORRUPT_VTAB;
+        if( ctx.szCol!=aColSize[i] ) rc = FTS5_CORRUPT;
         aTotalSize[i] += ctx.szCol;
       }
       if( rc!=SQLITE_OK ) break;
@@ -803,7 +803,7 @@ int sqlite3Fts5StorageIntegrity(Fts5Storage *p){
     int i;
     rc = fts5StorageLoadTotals(p, 0);
     for(i=0; rc==SQLITE_OK && i<pConfig->nCol; i++){
-      if( p->aTotalSize[i]!=aTotalSize[i] ) rc = SQLITE_CORRUPT_VTAB;
+      if( p->aTotalSize[i]!=aTotalSize[i] ) rc = FTS5_CORRUPT;
     }
   }
 
@@ -812,12 +812,12 @@ int sqlite3Fts5StorageIntegrity(Fts5Storage *p){
   if( rc==SQLITE_OK && pConfig->eContent==FTS5_CONTENT_NORMAL ){
     i64 nRow;
     rc = fts5StorageCount(p, "content", &nRow);
-    if( rc==SQLITE_OK && nRow!=p->nTotalRow ) rc = SQLITE_CORRUPT_VTAB;
+    if( rc==SQLITE_OK && nRow!=p->nTotalRow ) rc = FTS5_CORRUPT;
   }
   if( rc==SQLITE_OK ){
     i64 nRow;
     rc = fts5StorageCount(p, "docsize", &nRow);
-    if( rc==SQLITE_OK && nRow!=p->nTotalRow ) rc = SQLITE_CORRUPT_VTAB;
+    if( rc==SQLITE_OK && nRow!=p->nTotalRow ) rc = FTS5_CORRUPT;
   }
 
   /* Pass the expected checksum down to the FTS index module. It will
@@ -913,7 +913,7 @@ int sqlite3Fts5StorageDocsize(Fts5Storage *p, i64 iRowid, int *aCol){
     }
     rc = sqlite3_reset(pLookup);
     if( bCorrupt && rc==SQLITE_OK ){
-      rc = SQLITE_CORRUPT_VTAB;
+      rc = FTS5_CORRUPT;
     }
   }
   return rc;

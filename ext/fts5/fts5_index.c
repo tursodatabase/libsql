@@ -256,10 +256,7 @@
         FTS5_SEGMENT_ROWID(idx, segid, FTS5_SEGMENT_MAX_HEIGHT, pgno)
 
 #ifdef SQLITE_DEBUG
-static int fts5Corrupt() { return SQLITE_CORRUPT_VTAB; }
-# define FTS5_CORRUPT fts5Corrupt()
-#else
-# define FTS5_CORRUPT SQLITE_CORRUPT_VTAB
+int sqlite3Fts5Corrupt() { return SQLITE_CORRUPT_VTAB; }
 #endif
 
 
@@ -373,7 +370,7 @@ struct Fts5Structure {
 struct Fts5PageWriter {
   int pgno;                       /* Page number for this page */
   Fts5Buffer buf;                 /* Buffer containing page data */
-  Fts5Buffer term;                /* Buffer containing previous term on page */
+  Fts5Buffer term;              /* Buffer containing previous term on page */
 };
 struct Fts5SegWriter {
   int iIdx;                       /* Index to write to */
@@ -383,6 +380,7 @@ struct Fts5SegWriter {
   i64 iPrevRowid;                 /* Previous docid written to current leaf */
   u8 bFirstRowidInDoclist;        /* True if next rowid is first in doclist */
   u8 bFirstRowidInPage;           /* True if next rowid is first in page */
+  u8 bFirstTermInPage;            /* True if next term will be first in leaf */
   int nLeafWritten;               /* Number of leaf pages written */
   int nEmpty;                     /* Number of contiguous term-less nodes */
   Fts5Buffer dlidx;               /* Doclist index */
@@ -2677,7 +2675,7 @@ static void fts5WriteFlushLeaf(Fts5Index *p, Fts5SegWriter *pWriter){
   Fts5PageWriter *pPage = &pWriter->aWriter[0];
   i64 iRowid;
 
-  if( pPage->term.n==0 ){
+  if( pWriter->bFirstTermInPage ){
     /* No term was written to this page. */
     assert( 0==fts5GetU16(&pPage->buf.p[2]) );
     fts5WriteBtreeNoTerm(p, pWriter);
@@ -2689,12 +2687,14 @@ static void fts5WriteFlushLeaf(Fts5Index *p, Fts5SegWriter *pWriter){
 
   /* Initialize the next page. */
   fts5BufferZero(&pPage->buf);
-  fts5BufferZero(&pPage->term);
   fts5BufferAppendBlob(&p->rc, &pPage->buf, 4, zero);
   pPage->pgno++;
 
   /* Increase the leaves written counter */
   pWriter->nLeafWritten++;
+
+  /* The new leaf holds no terms */
+  pWriter->bFirstTermInPage = 1;
 }
 
 /*
@@ -2717,23 +2717,38 @@ static void fts5WriteAppendTerm(
     /* Zero the first term and first docid fields */
     static const u8 zero[] = { 0x00, 0x00, 0x00, 0x00 };
     fts5BufferAppendBlob(&p->rc, &pPage->buf, 4, zero);
-    assert( pPage->term.n==0 );
+    assert( pWriter->bFirstTermInPage );
   }
   if( p->rc ) return;
   
-  if( pPage->term.n==0 ){
+  if( pWriter->bFirstTermInPage ){
     /* Update the "first term" field of the page header. */
     assert( pPage->buf.p[2]==0 && pPage->buf.p[3]==0 );
     fts5PutU16(&pPage->buf.p[2], pPage->buf.n);
     nPrefix = 0;
-    if( pWriter->aWriter[0].pgno!=1 ){
-      fts5WriteBtreeTerm(p, pWriter, nTerm, pTerm);
+    if( pPage->pgno!=1 ){
+      /* This is the first term on a leaf that is not the leftmost leaf in
+      ** the segment b-tree. In this case it is necessary to add a term to
+      ** the b-tree hierarchy that is (a) larger than the largest term 
+      ** already written to the segment and (b) smaller than or equal to
+      ** this term. In other words, a prefix of (pTerm/nTerm) that is one
+      ** byte longer than the longest prefix (pTerm/nTerm) shares with the
+      ** previous term. 
+      **
+      ** Usually, the previous term is available in pPage->term. The exception
+      ** is if this is the first term written in an incremental-merge step.
+      ** In this case the previous term is not available, so just write a
+      ** copy of (pTerm/nTerm) into the parent node. This is slightly
+      ** inefficient, but still correct.  */
+      int n = nTerm;
+      if( pPage->term.n ){
+        n = 1 + fts5PrefixCompress(pPage->term.n, pPage->term.p, nTerm, pTerm);
+      }
+      fts5WriteBtreeTerm(p, pWriter, n, pTerm);
       pPage = &pWriter->aWriter[0];
     }
   }else{
-    nPrefix = fts5PrefixCompress(
-        pPage->term.n, pPage->term.p, nTerm, pTerm
-    );
+    nPrefix = fts5PrefixCompress(pPage->term.n, pPage->term.p, nTerm, pTerm);
     fts5BufferAppendVarint(&p->rc, &pPage->buf, nPrefix);
   }
 
@@ -2744,6 +2759,7 @@ static void fts5WriteAppendTerm(
 
   /* Update the Fts5PageWriter.term field. */
   fts5BufferSet(&p->rc, &pPage->term, nTerm, pTerm);
+  pWriter->bFirstTermInPage = 0;
 
   pWriter->bFirstRowidInPage = 0;
   pWriter->bFirstRowidInDoclist = 1;
@@ -2900,6 +2916,7 @@ static void fts5WriteInit(
   if( pWriter->aWriter==0 ) return;
   pWriter->nWriter = 1;
   pWriter->aWriter[0].pgno = 1;
+  pWriter->bFirstTermInPage = 1;
 }
 
 static void fts5WriteInitForAppend(
@@ -2937,6 +2954,8 @@ static void fts5WriteInitForAppend(
       pWriter->nEmpty = pSeg->pgnoLast-1;
     }
     assert( (pgno+pWriter->nEmpty)==pSeg->pgnoLast );
+    pWriter->bFirstTermInPage = 1;
+    assert( pWriter->aWriter[0].term.n==0 );
   }
 }
 
@@ -3918,6 +3937,21 @@ int sqlite3Fts5IndexIntegrityCheck(Fts5Index *p, u64 cksum){
   int iIdx;                       /* Used to iterate through indexes */
   u64 cksum2 = 0;                 /* Checksum based on contents of indexes */
 
+  /* Check that the internal nodes of each segment match the leaves */
+  for(iIdx=0; p->rc==SQLITE_OK && iIdx<=pConfig->nPrefix; iIdx++){
+    Fts5Structure *pStruct = fts5StructureRead(p, iIdx);
+    if( pStruct ){
+      int iLvl, iSeg;
+      for(iLvl=0; iLvl<pStruct->nLevel; iLvl++){
+        for(iSeg=0; iSeg<pStruct->aLevel[iLvl].nSeg; iSeg++){
+          Fts5StructureSegment *pSeg = &pStruct->aLevel[iLvl].aSeg[iSeg];
+          fts5IndexIntegrityCheckSegment(p, iIdx, pSeg);
+        }
+      }
+    }
+    fts5StructureRelease(pStruct);
+  }
+
   /* Check that the checksum of the index matches the argument checksum */
   for(iIdx=0; iIdx<=pConfig->nPrefix; iIdx++){
     Fts5MultiSegIter *pIter;
@@ -3950,21 +3984,6 @@ int sqlite3Fts5IndexIntegrityCheck(Fts5Index *p, u64 cksum){
   }
   if( p->rc==SQLITE_OK && cksum!=cksum2 ) p->rc = FTS5_CORRUPT;
 
-  /* Check that the internal nodes of each segment match the leaves */
-  for(iIdx=0; p->rc==SQLITE_OK && iIdx<=pConfig->nPrefix; iIdx++){
-    Fts5Structure *pStruct = fts5StructureRead(p, iIdx);
-    if( pStruct ){
-      int iLvl, iSeg;
-      for(iLvl=0; iLvl<pStruct->nLevel; iLvl++){
-        for(iSeg=0; iSeg<pStruct->aLevel[iLvl].nSeg; iSeg++){
-          Fts5StructureSegment *pSeg = &pStruct->aLevel[iLvl].aSeg[iSeg];
-          fts5IndexIntegrityCheckSegment(p, iIdx, pSeg);
-        }
-      }
-    }
-    fts5StructureRelease(pStruct);
-  }
-
   return fts5IndexReturn(p);
 }
 
@@ -3990,10 +4009,12 @@ int sqlite3Fts5IndexBeginWrite(Fts5Index *p, i64 iRowid){
     if( rc==SQLITE_OK ){
       p->apHash = apNew;
     }else{
-      for(i=0; i<nHash; i++){
-        sqlite3Fts5HashFree(apNew[i]);
+      if( apNew ){
+        for(i=0; i<nHash; i++){
+          sqlite3Fts5HashFree(apNew[i]);
+        }
+        sqlite3_free(apNew);
       }
-      sqlite3_free(apNew);
       return rc;
     }
   }
