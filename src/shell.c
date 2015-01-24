@@ -4195,6 +4195,7 @@ int main(int argc, char **argv){
   }
 #endif
   setBinaryMode(stdin);
+  setvbuf(stderr, 0, _IONBF, 0); /* Make sure stderr is unbuffered */
   Argv0 = argv[0];
   main_init(&data);
   stdin_is_interactive = isatty(0);

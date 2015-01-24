@@ -1,5 +1,5 @@
-C Make\ssure\serrors\sin\sthe\sFROM\sclause\sof\sa\sSELECT\scause\sanalysis\sto\sabort\nand\sunwind\sthe\sstack\sbefore\sthose\serrors\shave\sa\schance\sto\smischief\nin\sthe\s"*"\scolumn-name\swildcard\sexpander.\sFix\sfor\sticket\s[32b63d542433ca67].
-D 2015-01-22T12:00:17.073
+C In\sthe\scommand-line\sshell,\smake\ssure\sstderr\sis\sunbuffered\sso\sthat\sit\s\nautomatically\sflushes.\s\sThis\shas\salways\sbeen\sthe\scase\salready\sfor\sunix\sand\non\sWindows\swhen\sthe\soutput\sis\sa\sconsole,\sbut\sapparently\swas\snot\sthe\scase\non\sWindows\swhen\sthe\soutput\swas\sa\spipe.
+D 2015-01-24T12:12:57.403
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5407a688f4d77a05c18a8142be8ae5a2829dd610
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -230,7 +230,7 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c f6c46d3434439ab2084618d603e6d6dbeb0d6ada
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 1f2087523007c42900ffcbdeaef06a23ad9329fc
-F src/shell.c acdf311a7a6ed5d84454f9b13488a76fd57dbb72
+F src/shell.c 37c6d97399121f2d58b556e0c23d6226b7f55c70
 F src/sqlite.h.in 9dfc99d6533d36d6a549c4f3f01cacc8be956ada
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
@@ -1237,7 +1237,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P bd63bf882c5a925f921adc9cf7425d2e7950f0b2
-R cd80a044c23c0a2610d13740733ffe7d
+P 9e6eae660a02303fd140dac5fbff82364f4120cd
+R 87737ca6086b9b567816a3eff7fb8992
 U drh
-Z ca1958b398bcc4529c59936be19170f3
+Z c8a695af526558b07717da2883c990d4
