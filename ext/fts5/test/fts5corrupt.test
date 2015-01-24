@@ -53,23 +53,22 @@ db_restore_and_reopen
 #db eval {SELECT rowid, fts5_decode(rowid, block) aS r FROM t1_data} {puts $r}
 
 
-
 #--------------------------------------------------------------------
+#
 do_execsql_test 2.0 {
   CREATE VIRTUAL TABLE t2 USING fts5(x);
-  INSERT INTO t2(t2, rank) VALUES('pgsz', 32);
+  INSERT INTO t2(t2, rank) VALUES('pgsz', 64);
 }
+db func rnddoc fts5_rnddoc
 do_test 2.1 {
-  db transaction {
-    for {set i 0} {$i < 20} {incr i} {
-      execsql { INSERT INTO t2 VALUES('xxxxxxxxxx') }
-    }
-    for {set i 0} {$i < 20} {incr i} {
-      execsql { INSERT INTO t2 VALUES('xxxxxxxxxzzzz') }
-    }
+  for {set i 0} {$i < 500} {incr i} {
+    execsql { INSERT INTO t2 VALUES(rnddoc(50)) }
+    execsql { INSERT INTO t2(t2) VALUES('integrity-check') }
   }
 } {}
-db eval {SELECT rowid, fts5_decode(rowid, block) aS r FROM t2_data} {puts $r}
+
+#--------------------------------------------------------------------
+#
 
 finish_test
 

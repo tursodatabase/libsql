@@ -172,7 +172,7 @@ do_test 5.0 {
 
 do_execsql_test 5.1 {
   SELECT rowid FROM x4 WHERE x4 MATCH 'a'
-} {4 3 2 1}
+} {1 2 3 4}
 
 set res [db one {SELECT count(*) FROM x4_data}]
 do_execsql_test 5.2 {

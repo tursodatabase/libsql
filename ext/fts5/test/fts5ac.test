@@ -134,6 +134,7 @@ do_test 1.1 {
   foreach {id x y} $data {
     execsql { INSERT INTO xx(rowid, x, y) VALUES($id, $x, $y) }
   }
+  execsql { INSERT INTO xx(xx) VALUES('integrity-check') }
 } {}
 
 # Usage:
@@ -253,7 +254,7 @@ proc instcompare {lhs rhs} {
 # where each <phrase X matches> element is a list of phrase matches in the
 # same form as returned by auxiliary scalar function fts5_test().
 #
-proc matchdata {bPos expr {bAsc 0}} {
+proc matchdata {bPos expr {bAsc 1}} {
 
   set tclexpr [db one {SELECT fts5_expr_tcl($expr, 'nearset $cols', 'x', 'y')}]
   set res [list]
@@ -307,6 +308,8 @@ sqlite3_fts5_create_function db fts5_test_poslist fts5_test_poslist
 # Test phrase queries.
 #
 foreach {tn phrase} {
+  8 "c"
+
   1 "o"
   2 "b q"
   3 "e a e"
@@ -400,8 +403,8 @@ do_execsql_test 6.integrity {
 }
 #db eval {SELECT rowid, fts5_decode(rowid, block) aS r FROM xx_data} {puts $r}
 foreach {bAsc sql} {
-  0 {SELECT rowid FROM xx WHERE xx MATCH $expr}
-  1 {SELECT rowid FROM xx WHERE xx MATCH $expr ORDER BY rowid ASC}
+  1 {SELECT rowid FROM xx WHERE xx MATCH $expr}
+  0 {SELECT rowid FROM xx WHERE xx MATCH $expr ORDER BY rowid DESC}
 } {
   foreach {tn expr} {
     0.1 x

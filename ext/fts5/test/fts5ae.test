@@ -109,8 +109,8 @@ do_execsql_test 3.3 {
   SELECT rowid, fts5_test_poslist(t3) 
   FROM t3 WHERE t3 MATCH 'a OR b AND c';
 } {
-  3 0.0.5 
   1 {0.0.6 1.0.9 0.0.10 0.0.12 1.0.15 2.1.2}
+  3 0.0.5 
 }
 
 #-------------------------------------------------------------------------
@@ -190,8 +190,8 @@ do_execsql_test 6.1 {
 do_execsql_test 6.2 {
   SELECT rowid, fts5_test_tokenize(t6) FROM t6 WHERE t6 MATCH 't*'
 } {
-  2 {{horatio than are} {dreamt of in your philosophy}}
   1 {{there are more} {things in heaven and earth}}
+  2 {{horatio than are} {dreamt of in your philosophy}}
 }
 
 #-------------------------------------------------------------------------

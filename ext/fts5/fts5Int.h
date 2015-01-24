@@ -229,7 +229,7 @@ typedef struct Fts5IndexIter Fts5IndexIter;
 ** Values used as part of the flags argument passed to IndexQuery().
 */
 #define FTS5INDEX_QUERY_PREFIX 0x0001       /* Prefix query */
-#define FTS5INDEX_QUERY_ASC    0x0002       /* Docs in ascending rowid order */
+#define FTS5INDEX_QUERY_DESC    0x0002      /* Docs in descending rowid order */
 
 /*
 ** Create/destroy an Fts5Index object.
@@ -365,6 +365,13 @@ int sqlite3Fts5GetVarint32(const unsigned char *p, u32 *v);
 */
 typedef struct Fts5Hash Fts5Hash;
 
+typedef struct Fts5Data Fts5Data;
+struct Fts5Data {
+  u8 *p;                          /* Pointer to buffer containing record */
+  int n;                          /* Size of record in bytes */
+  int nRef;                       /* Ref count */
+};
+
 /*
 ** Create a hash table, free a hash table.
 */
@@ -395,6 +402,11 @@ int sqlite3Fts5HashIterate(
   int (*xTermDone)(void*)
 );
 
+int sqlite3Fts5HashQuery(
+  Fts5Hash*,                      /* Hash table to query */
+  const char *pTerm, int nTerm,   /* Query term */
+  Fts5Data **ppData               /* OUT: Query result */
+);
 
 
 /*
@@ -470,7 +482,7 @@ int sqlite3Fts5ExprNew(
 );
 
 /*
-** for(rc = sqlite3Fts5ExprFirst(pExpr, pIdx, bAsc);
+** for(rc = sqlite3Fts5ExprFirst(pExpr, pIdx, bDesc);
 **     rc==SQLITE_OK && 0==sqlite3Fts5ExprEof(pExpr);
 **     rc = sqlite3Fts5ExprNext(pExpr)
 ** ){
@@ -478,7 +490,7 @@ int sqlite3Fts5ExprNew(
 **   i64 iRowid = sqlite3Fts5ExprRowid(pExpr);
 ** }
 */
-int sqlite3Fts5ExprFirst(Fts5Expr*, Fts5Index *pIdx, int bAsc);
+int sqlite3Fts5ExprFirst(Fts5Expr*, Fts5Index *pIdx, int bDesc);
 int sqlite3Fts5ExprNext(Fts5Expr*);
 int sqlite3Fts5ExprEof(Fts5Expr*);
 i64 sqlite3Fts5ExprRowid(Fts5Expr*);

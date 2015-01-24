@@ -32,7 +32,7 @@ void sqlite3Fts5Parser(void*, int, Fts5Token, Fts5Parse*);
 struct Fts5Expr {
   Fts5Index *pIndex;
   Fts5ExprNode *pRoot;
-  int bAsc;
+  int bDesc;                      /* Iterate in descending docid order */
   int nPhrase;                    /* Number of phrases in expression */
   Fts5ExprPhrase **apExprPhrase;  /* Pointers to phrase objects */
 };
@@ -600,9 +600,9 @@ static int fts5ExprNearAdvanceAll(
 }
 
 /*
-** Advance iterator pIter until it points to a value equal to or smaller
-** than the initial value of *piMin. If this means the iterator points
-** to a value smaller than *piMin, update *piMin to the new smallest value.
+** Advance iterator pIter until it points to a value equal to or laster
+** than the initial value of *piLast. If this means the iterator points
+** to a value laster than *piLast, update *piLast to the new lastest value.
 **
 ** If the iterator reaches EOF, set *pbEof to true before returning. If
 ** an error occurs, set *pRc to an error code. If either *pbEof or *pRc
@@ -610,7 +610,7 @@ static int fts5ExprNearAdvanceAll(
 */
 static int fts5ExprAdvanceto(
   Fts5IndexIter *pIter,           /* Iterator to advance */
-  int bAsc,                       /* True if iterator is "rowid ASC" */
+  int bDesc,                      /* True if iterator is "rowid DESC" */
   i64 *piLast,                    /* IN/OUT: Lastest rowid seen so far */
   int *pRc,                       /* OUT: Error code */
   int *pbEof                      /* OUT: Set to true if EOF */
@@ -619,14 +619,14 @@ static int fts5ExprAdvanceto(
   i64 iRowid;
 
   iRowid = sqlite3Fts5IterRowid(pIter);
-  if( (bAsc==0 && iRowid>iLast) || (bAsc && iRowid<iLast) ){
+  if( (bDesc==0 && iLast>iRowid) || (bDesc && iLast<iRowid) ){
     sqlite3Fts5IterNextFrom(pIter, iLast);
     if( sqlite3Fts5IterEof(pIter) ){
       *pbEof = 1;
       return 1;
     }
     iRowid = sqlite3Fts5IterRowid(pIter);
-    assert( (bAsc==0 && iRowid<=iLast) || (bAsc==1 && iRowid>=iLast) );
+    assert( (bDesc==0 && iRowid>=iLast) || (bDesc==1 && iRowid<=iLast) );
   }
   *piLast = iRowid;
 
@@ -656,12 +656,13 @@ static int fts5ExprNearNextRowidMatch(
   i64 iLast;                      /* Lastest rowid any iterator points to */
   int bMatch;                     /* True if all terms are at the same rowid */
 
-  /* Set iLast, the lastest rowid any iterator points to. If the iterator
-  ** skips through rowids in the default descending order, this means the
-  ** minimum rowid. Or, if the iterator is "ORDER BY rowid ASC", then it
-  ** means the maximum rowid.  */
+  /* Initialize iLast, the "lastest" rowid any iterator points to. If the
+  ** iterator skips through rowids in the default ascending order, this means
+  ** the maximum rowid. Or, if the iterator is "ORDER BY rowid DESC", then it
+  ** means the minimum rowid.  */
   iLast = sqlite3Fts5IterRowid(pNear->apPhrase[0]->aTerm[0].pIter);
-  if( bFromValid && (iFrom>iLast)==(pExpr->bAsc!=0) ){
+  if( bFromValid && (iFrom>iLast)==(pExpr->bDesc==0) ){
+    assert( pExpr->bDesc || iFrom>=iLast );
     iLast = iFrom;
   }
 
@@ -673,7 +674,7 @@ static int fts5ExprNearNextRowidMatch(
         Fts5IndexIter *pIter = pPhrase->aTerm[j].pIter;
         i64 iRowid = sqlite3Fts5IterRowid(pIter);
         if( iRowid!=iLast ) bMatch = 0;
-        if( fts5ExprAdvanceto(pIter, pExpr->bAsc, &iLast, &rc, &pNode->bEof) ){
+        if( fts5ExprAdvanceto(pIter, pExpr->bDesc, &iLast, &rc, &pNode->bEof) ){
           return rc;
         }
       }
@@ -774,7 +775,7 @@ static int fts5ExprNearInitAll(
       rc = sqlite3Fts5IndexQuery(
           pExpr->pIndex, pTerm->zTerm, strlen(pTerm->zTerm),
           (pTerm->bPrefix ? FTS5INDEX_QUERY_PREFIX : 0) |
-          (pExpr->bAsc ? FTS5INDEX_QUERY_ASC : 0),
+          (pExpr->bDesc ? FTS5INDEX_QUERY_DESC : 0),
           &pTerm->pIter
       );
       assert( rc==SQLITE_OK || pTerm->pIter==0 );
@@ -810,7 +811,7 @@ static int fts5NodeCompare(
 ){
   if( p2->bEof ) return -1;
   if( p1->bEof ) return +1;
-  if( pExpr->bAsc ){
+  if( pExpr->bDesc==0 ){
     if( p1->iRowid<p2->iRowid ) return -1;
     return (p1->iRowid > p2->iRowid);
   }else{
@@ -911,18 +912,17 @@ static int fts5ExprNodeNextMatch(
         Fts5ExprNode *p1 = pNode->pLeft;
         Fts5ExprNode *p2 = pNode->pRight;
 
-
         while( p1->bEof==0 && p2->bEof==0 && p2->iRowid!=p1->iRowid ){
           Fts5ExprNode *pAdv;
-          assert( pExpr->bAsc==0 || pExpr->bAsc==1 );
-          if( pExpr->bAsc==(p1->iRowid < p2->iRowid) ){
+          assert( pExpr->bDesc==0 || pExpr->bDesc==1 );
+          if( pExpr->bDesc==(p1->iRowid > p2->iRowid) ){
             pAdv = p1;
-            if( bFromValid==0 || pExpr->bAsc==(p2->iRowid > iFrom) ){
+            if( bFromValid==0 || pExpr->bDesc==(p2->iRowid < iFrom) ){
               iFrom = p2->iRowid;
             }
           }else{
             pAdv = p2;
-            if( bFromValid==0 || pExpr->bAsc==(p1->iRowid > iFrom) ){
+            if( bFromValid==0 || pExpr->bDesc==(p1->iRowid < iFrom) ){
               iFrom = p1->iRowid;
             }
           }
@@ -1003,18 +1003,18 @@ static int fts5ExprNodeFirst(Fts5Expr *pExpr, Fts5ExprNode *pNode){
 
 /*
 ** Begin iterating through the set of documents in index pIdx matched by
-** the MATCH expression passed as the first argument. If the "bAsc" parameter
-** is passed a non-zero value, iteration is in ascending rowid order. Or,
-** if it is zero, in descending order.
+** the MATCH expression passed as the first argument. If the "bDesc" parameter
+** is passed a non-zero value, iteration is in descending rowid order. Or,
+** if it is zero, in ascending order.
 **
 ** Return SQLITE_OK if successful, or an SQLite error code otherwise. It
 ** is not considered an error if the query does not match any documents.
 */
-int sqlite3Fts5ExprFirst(Fts5Expr *p, Fts5Index *pIdx, int bAsc){
+int sqlite3Fts5ExprFirst(Fts5Expr *p, Fts5Index *pIdx, int bDesc){
   int rc = SQLITE_OK;
   if( p->pRoot ){
     p->pIndex = pIdx;
-    p->bAsc = bAsc;
+    p->bDesc = bDesc;
     rc = fts5ExprNodeFirst(p, p->pRoot);
   }
   return rc;

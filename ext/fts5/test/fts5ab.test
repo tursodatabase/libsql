@@ -30,11 +30,11 @@ do_execsql_test 1.0 {
 }
 
 do_execsql_test 1.1 {
-  SELECT * FROM t1;
+  SELECT * FROM t1 ORDER BY rowid DESC;
 } { forty five {one two} {three four} hello world }
 
 do_execsql_test 1.2 {
-  SELECT rowid FROM t1;
+  SELECT rowid FROM t1 ORDER BY rowid DESC;
 } {45 2 1}
 
 do_execsql_test 1.3 {
@@ -90,7 +90,12 @@ foreach {tn expr res} {
   9  y    {6}
   10 z    {6}
 } {
-  do_execsql_test 2.7.$tn { SELECT rowid FROM t1 WHERE t1 MATCH $expr } $res
+  do_execsql_test 2.7.$tn.1 { 
+    SELECT rowid FROM t1 WHERE t1 MATCH $expr ORDER BY rowid DESC
+  } $res
+  do_execsql_test 2.7.$tn.2 { 
+    SELECT rowid FROM t1 WHERE t1 MATCH $expr ORDER BY rowid ASC
+  } [lsort -integer $res]
 }
 
 #-------------------------------------------------------------------------
@@ -127,7 +132,7 @@ foreach {tn expr res} {
   7 {"abashing abases abasement abaft abashing"} {8}
 } {
   do_execsql_test 3.2.$tn {
-    SELECT rowid FROM t1 WHERE t1 MATCH $expr
+    SELECT rowid FROM t1 WHERE t1 MATCH $expr ORDER BY rowid DESC
   } $res
 }
 
@@ -145,7 +150,7 @@ foreach {tn expr res} {
   7 {"abashing abases abasement abaft abashing"} {8}
 } {
   do_execsql_test 3.4.$tn {
-    SELECT rowid FROM t1 WHERE t1 MATCH $expr ORDER BY rowid ASC
+    SELECT rowid FROM t1 WHERE t1 MATCH $expr
   } $res
 }
 
@@ -165,11 +170,11 @@ foreach {tn doc} [list \
 
 do_execsql_test 4.3 {
   SELECT rowid FROM s1 WHERE s1 MATCH 'x'
-} {2 1}
+} {1 2}
 
 do_execsql_test 4.4 {
   SELECT rowid FROM s1 WHERE s1 MATCH '"a x"'
-} {2 1}
+} {1 2}
 
 #-------------------------------------------------------------------------
 # Check that a special case of segment promotion works. The case is where
@@ -233,6 +238,23 @@ do_test 5.4 {
   fts5_level_segs s2
 } {2 0}
 
+#-------------------------------------------------------------------------
+#
+do_execsql_test 6.0 {
+  CREATE VIRTUAL TABLE s3 USING fts5(x);
+  BEGIN;
+    INSERT INTO s3 VALUES('a b c');
+    INSERT INTO s3 VALUES('A B C');
+}
+
+do_execsql_test 6.1 {
+  SELECT rowid FROM s3 WHERE s3 MATCH 'a'
+} {2 1}
+
+do_execsql_test 6.2 {
+  COMMIT;
+  SELECT rowid FROM s3 WHERE s3 MATCH 'a'
+} {2 1}
 
 finish_test
 

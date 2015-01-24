@@ -90,13 +90,13 @@ faultsim_save_and_close
 foreach {tn expr res} {
   1 { dk  }           7
   2 { m f }           1
-  3 { f*  }           {10 9 8 6 5 4 3 1}
-  4 { m OR f }        {10 9 8 5 4 1}
+  3 { f*  }           {1 3 4 5 6 8 9 10}
+  4 { m OR f }        {1 4 5 8 9 10}
   5 { sn + gh }       {5}
   6 { "sn gh" }       {5}
   7 { NEAR(r a, 5) }  {9}
-  8 { m* f* }         {10 9 8 6 4 1}
-  9 { m* + f* }       {8 1}
+  8 { m* f* }         {1 4 6 8 9 10}
+  9 { m* + f* }       {1 8}
 } {
   do_faultsim_test 4.$tn -prep {
     faultsim_restore_and_reopen
@@ -302,7 +302,7 @@ db func rnddoc rnddoc
 do_test 8.0 {
   execsql { CREATE VIRTUAL TABLE x1 USING fts5(a) }
   set ::res [list]
-  for {set i 100} {$i>0} {incr i -1} {
+  for {set i 1} {$i<100} {incr i 1} {
     execsql { INSERT INTO x1 VALUES( rnddoc(50) ) }
     lappend ::res $i
   }

@@ -505,7 +505,7 @@ static int fts5OpenMethod(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCsr){
 
 static int fts5StmtType(int idxNum){
   if( FTS5_PLAN(idxNum)==FTS5_PLAN_SCAN ){
-    return (idxNum&FTS5_ORDER_ASC) ? FTS5_STMT_SCAN_ASC : FTS5_STMT_SCAN_DESC;
+    return (idxNum&FTS5_ORDER_DESC) ? FTS5_STMT_SCAN_DESC : FTS5_STMT_SCAN_ASC;
   }
   return FTS5_STMT_LOOKUP;
 }
@@ -652,7 +652,7 @@ static int fts5NextMethod(sqlite3_vtab_cursor *pCursor){
   return rc;
 }
 
-static int fts5CursorFirstSorted(Fts5Table *pTab, Fts5Cursor *pCsr, int bAsc){
+static int fts5CursorFirstSorted(Fts5Table *pTab, Fts5Cursor *pCsr, int bDesc){
   Fts5Config *pConfig = pTab->pConfig;
   Fts5Sorter *pSorter;
   int nPhrase;
@@ -680,7 +680,7 @@ static int fts5CursorFirstSorted(Fts5Table *pTab, Fts5Cursor *pCsr, int bAsc){
       pConfig->zDb, pConfig->zName, zRank, pConfig->zName,
       (zRankArgs ? ", " : ""),
       (zRankArgs ? zRankArgs : ""),
-      bAsc ? "ASC" : "DESC"
+      bDesc ? "DESC" : "ASC"
   );
   if( zSql==0 ){
     rc = SQLITE_NOMEM;
@@ -706,9 +706,9 @@ static int fts5CursorFirstSorted(Fts5Table *pTab, Fts5Cursor *pCsr, int bAsc){
   return rc;
 }
 
-static int fts5CursorFirst(Fts5Table *pTab, Fts5Cursor *pCsr, int bAsc){
+static int fts5CursorFirst(Fts5Table *pTab, Fts5Cursor *pCsr, int bDesc){
   int rc;
-  rc = sqlite3Fts5ExprFirst(pCsr->pExpr, pTab->pIndex, bAsc);
+  rc = sqlite3Fts5ExprFirst(pCsr->pExpr, pTab->pIndex, bDesc);
   if( sqlite3Fts5ExprEof(pCsr->pExpr) ){
     CsrFlagSet(pCsr, FTS5CSR_EOF);
   }
@@ -873,7 +873,7 @@ static int fts5FilterMethod(
 ){
   Fts5Table *pTab = (Fts5Table*)(pCursor->pVtab);
   Fts5Cursor *pCsr = (Fts5Cursor*)pCursor;
-  int bAsc = ((idxNum & FTS5_ORDER_ASC) ? 1 : 0);
+  int bDesc = ((idxNum & FTS5_ORDER_DESC) ? 1 : 0);
   int rc = SQLITE_OK;
 
   assert( nVal<=2 );
@@ -894,7 +894,7 @@ static int fts5FilterMethod(
     assert( FTS5_PLAN(idxNum)==FTS5_PLAN_SCAN );
     pCsr->idxNum = FTS5_PLAN_SOURCE;
     pCsr->pExpr = pTab->pSortCsr->pExpr;
-    rc = fts5CursorFirst(pTab, pCsr, bAsc);
+    rc = fts5CursorFirst(pTab, pCsr, bDesc);
   }else{
     int ePlan = FTS5_PLAN(idxNum);
     pCsr->idxNum = idxNum;
@@ -913,9 +913,9 @@ static int fts5FilterMethod(
           rc = sqlite3Fts5ExprNew(pTab->pConfig, zExpr, &pCsr->pExpr, pzErr);
           if( rc==SQLITE_OK ){
             if( ePlan==FTS5_PLAN_MATCH ){
-              rc = fts5CursorFirst(pTab, pCsr, bAsc);
+              rc = fts5CursorFirst(pTab, pCsr, bDesc);
             }else{
-              rc = fts5CursorFirstSorted(pTab, pCsr, bAsc);
+              rc = fts5CursorFirstSorted(pTab, pCsr, bDesc);
             }
           }
         }
