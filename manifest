@@ -1,5 +1,5 @@
-C In\sthe\scommand-line\sshell,\smake\ssure\sstderr\sis\sunbuffered\sso\sthat\sit\s\nautomatically\sflushes.\s\sThis\shas\salways\sbeen\sthe\scase\salready\sfor\sunix\sand\non\sWindows\swhen\sthe\soutput\sis\sa\sconsole,\sbut\sapparently\swas\snot\sthe\scase\non\sWindows\swhen\sthe\soutput\swas\sa\spipe.
-D 2015-01-24T12:12:57.403
+C The\sva_list\sargument\scannot\stake\son\sa\sNULL\svalue\sand\scannot\sbe\scompared\swith\nNULL\son\ssome\splatforms\s(ex:\sARM).\s\sSo\sdo\snot\sattempt\sto\sdo\sso.
+D 2015-01-25T20:19:53.843
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5407a688f4d77a05c18a8142be8ae5a2829dd610
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -225,7 +225,7 @@ F src/pcache.h b44658c9c932d203510279439d891a2a83e12ba8
 F src/pcache1.c 1e77432b40b7d3288327d9cdf399dcdfd2b6d3bf
 F src/pragma.c ba149bbbc90783f84815636c509ced8eac11bbcf
 F src/prepare.c 173a5a499138451b2561614ecb87d78f9f4644b9
-F src/printf.c ea82bcb1b83273b4c67177c233c1f78c81fc42f9
+F src/printf.c 05edc41450d0eb2c05ef7db113bf32742ae65325
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c f6c46d3434439ab2084618d603e6d6dbeb0d6ada
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
@@ -1237,7 +1237,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9e6eae660a02303fd140dac5fbff82364f4120cd
-R 87737ca6086b9b567816a3eff7fb8992
+P 2a9ea9b4a7d6904efb2112e32efe84123dfa75d7
+R c61f1e2c587edb0aaed1944a39bd65a6
 U drh
-Z c8a695af526558b07717da2883c990d4
+Z 4e92b2f1fb46383d9f32b9035c98c869
