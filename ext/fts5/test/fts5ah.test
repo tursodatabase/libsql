@@ -42,15 +42,15 @@ do_test 1.0 {
 
 do_execsql_test 1.1.1 {
   SELECT rowid FROM t1 WHERE t1 MATCH 'x AND w'
-} [lsort -integer -decr $W]
+} [lsort -integer -incr $W]
 
 do_execsql_test 1.1.2 {
   SELECT rowid FROM t1 WHERE t1 MATCH 'x* AND w*'
-} [lsort -integer -decr $W]
+} [lsort -integer -incr $W]
 
 do_execsql_test 1.2 {
   SELECT rowid FROM t1 WHERE t1 MATCH 'y AND x'
-} [lsort -integer -decr $Y]
+} [lsort -integer -incr $Y]
 
 do_execsql_test 1.3 {
   INSERT INTO t1(t1) VALUES('integrity-check');
@@ -98,8 +98,8 @@ foreach {tn q res} "
     expr {$n < ($nReadX / 10)}
   } {1}
 
-  do_execsql_test 1.6.$tn.3 $q [lsort -int -decr $res]
-  do_execsql_test 1.6.$tn.4 "$q ORDER BY rowid ASC" [lsort -int -incr $res]
+  do_execsql_test 1.6.$tn.3 $q [lsort -int -incr $res]
+  do_execsql_test 1.6.$tn.4 "$q ORDER BY rowid DESC" [lsort -int -decr $res]
 }
 
 #db eval {SELECT rowid, fts5_decode(rowid, block) aS r FROM t1_data} {puts $r}

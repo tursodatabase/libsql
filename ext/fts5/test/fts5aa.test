@@ -185,9 +185,10 @@ for {set i 1} {$i <= 10} {incr i} {
     }
     execsql { INSERT INTO t1(t1) VALUES('integrity-check'); }
   } {}
-  if {$i==2} break
+#  if {$i==1} break
 }
 #db eval {SELECT rowid, fts5_decode(rowid, block) aS r FROM t1_data} {puts $r}
+#exit
 
 #-------------------------------------------------------------------------
 #

@@ -304,12 +304,11 @@ proc fts5_test_poslist {cmd} {
 
 sqlite3_fts5_create_function db fts5_test_poslist fts5_test_poslist
 
+
 #-------------------------------------------------------------------------
 # Test phrase queries.
 #
 foreach {tn phrase} {
-  8 "c"
-
   1 "o"
   2 "b q"
   3 "e a e"

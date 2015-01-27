@@ -44,7 +44,7 @@
 #define FTS5_OPT_WORK_UNIT  1000  /* Number of leaf pages per optimize step */
 #define FTS5_WORK_UNIT      64    /* Number of leaf pages in unit of work */
 
-#define FTS5_MIN_DLIDX_SIZE 4000  /* Add dlidx if this many empty pages */
+#define FTS5_MIN_DLIDX_SIZE 4     /* Add dlidx if this many empty pages */
 
 /*
 ** Details:
@@ -192,11 +192,15 @@
 **
 ** 5. Segment doclist indexes:
 **
-**   A list of varints - the first docid on each page (starting with the
-**   first termless page) of the doclist. First element in the list is a
-**   literal docid. Each docid thereafter is a (negative) delta. If there
-**   are no docids at all on a page, a 0x00 byte takes the place of the
-**   delta value.
+**   A list of varints. If the first termless page contains at least one
+**   docid, the list begins with that docid as a varint followed by the
+**   value 1 (0x01). Or, if the first termless page contains no docids,
+**   a varint containing the last docid stored on the term page followed
+**   by a 0 (0x00) value.
+**
+**   For each subsequent page in the doclist, either a 0x00 byte if the
+**   page contains no terms, or a delta-encoded docid (always +ve) 
+**   representing the first docid on the page otherwise.
 */
 
 /*
@@ -373,7 +377,7 @@ struct Fts5SegWriter {
   u8 bFirstTermInPage;            /* True if next term will be first in leaf */
   int nLeafWritten;               /* Number of leaf pages written */
   int nEmpty;                     /* Number of contiguous term-less nodes */
-  Fts5Buffer dlidx;               /* Doclist index */
+  Fts5Buffer cdlidx;               /* Doclist index */
   i64 iDlidxPrev;                 /* Previous rowid appended to dlidx */
   int bDlidxPrevValid;            /* True if iDlidxPrev is valid */
 };
@@ -1335,28 +1339,42 @@ static void fts5NodeIterFree(Fts5NodeIter *pIter){
 **
 **   pData: pointer to doclist-index record, 
 **   iLeafPgno: page number that this doclist-index is associated with.
+**
+** When this function is called pIter->iLeafPgno is the page number the
+** doclist is associated with (the one featuring the term).
 */
 static int fts5DlidxIterFirst(Fts5DlidxIter *pIter){
   Fts5Data *pData = pIter->pData;
   int i;
+  int bPresent;
 
   assert( pIter->pData );
   assert( pIter->iLeafPgno>0 );
 
-  /* Count the number of leading 0x00 bytes. Then set iLeafPgno. */
-  for(i=0; i<pData->n; i++){ 
-    if( pData->p[i] ) break;
+  /* Read the first rowid value. And the "present" flag that follows it. */
+  pIter->iOff += getVarint(&pData->p[0], (u64*)&pIter->iRowid);
+  bPresent = pData->p[pIter->iOff++];
+  if( bPresent ){
+    i = 0;
+  }else{
+    /* Count the number of leading 0x00 bytes. */
+    for(i=1; pIter->iOff<pData->n; i++){ 
+      if( pData->p[pIter->iOff] ) break;
+      pIter->iOff++;
+    }
+
+    /* Unless we are already at the end of the doclist-index, load the first
+    ** rowid value.  */
+    if( pIter->iOff<pData->n ){
+      i64 iVal;
+      pIter->iOff += getVarint(&pData->p[pIter->iOff], (u64*)&iVal);
+      pIter->iRowid += iVal;
+    }else{
+      pIter->bEof = 1;
+    }
   }
   pIter->iLeafPgno += (i+1);
-  pIter->iOff = i;
 
-  /* Unless we are already at the end of the doclist-index, load the first
-  ** rowid value.  */
-  if( pIter->iOff<pData->n ){
-    pIter->iOff += getVarint(&pData->p[pIter->iOff], (u64*)&pIter->iRowid);
-  }else{
-    pIter->bEof = 1;
-  }
   pIter->iFirstOff = pIter->iOff;
   return pIter->bEof;
 }
@@ -1376,7 +1394,7 @@ static int fts5DlidxIterNext(Fts5DlidxIter *pIter){
     i64 iVal;
     pIter->iLeafPgno += (iOff - pIter->iOff) + 1;
     iOff += getVarint(&pData->p[iOff], (u64*)&iVal);
-    pIter->iRowid -= iVal;
+    pIter->iRowid += iVal;
     pIter->iOff = iOff;
   }else{
     pIter->bEof = 1;
@@ -1417,7 +1435,7 @@ static int fts5DlidxIterPrev(Fts5DlidxIter *pIter){
     }
 
     getVarint(&a[iOff], (u64*)&iVal);
-    pIter->iRowid += iVal;
+    pIter->iRowid -= iVal;
     pIter->iLeafPgno--;
 
     while( iOff>pIter->iFirstOff 
@@ -1432,18 +1450,15 @@ static int fts5DlidxIterPrev(Fts5DlidxIter *pIter){
   return pIter->bEof;
 }
 
-static void fts5DlidxIterInit(
+static void fts5DlidxIterInitFromData(
   Fts5Index *p,                   /* Fts5 Backend to iterate within */
   int bRev,                       /* True for ORDER BY ASC */
-  int iIdx, int iSegid,           /* Segment iSegid within index iIdx */
-  int iLeafPgno,                  /* Leaf page number to load dlidx for */
+  int iLeafPgno,                  /* Leaf page number dlidx is for */
+  Fts5Data *pDlidx,               /* Leaf index data */
   Fts5DlidxIter **ppIter          /* OUT: Populated iterator */
 ){
   Fts5DlidxIter *pIter = *ppIter;
-  Fts5Data *pDlidx;
 
-  pDlidx = fts5DataRead(p, FTS5_DOCLIST_IDX_ROWID(iIdx, iSegid, iLeafPgno));
-  if( pDlidx==0 ) return;
   if( pIter==0 ){
     *ppIter = pIter = (Fts5DlidxIter*)fts5IdxMalloc(p, sizeof(Fts5DlidxIter));
     if( pIter==0 ){ 
@@ -1461,6 +1476,19 @@ static void fts5DlidxIterInit(
   }else{
     fts5DlidxIterLast(pIter);
   }
+}
+
+static void fts5DlidxIterInit(
+  Fts5Index *p,                   /* Fts5 Backend to iterate within */
+  int bRev,                       /* True for ORDER BY ASC */
+  int iIdx, int iSegid,           /* Segment iSegid within index iIdx */
+  int iLeafPgno,                  /* Leaf page number to load dlidx for */
+  Fts5DlidxIter **ppIter          /* OUT: Populated iterator */
+){
+  Fts5Data *pDlidx;
+  pDlidx = fts5DataRead(p, FTS5_DOCLIST_IDX_ROWID(iIdx, iSegid, iLeafPgno));
+  if( pDlidx==0 ) return;
+  fts5DlidxIterInitFromData(p, bRev, iLeafPgno, pDlidx, ppIter);
 }
 
 /*
@@ -2104,7 +2132,7 @@ static void fts5SegIterNextFrom(
   assert( pIter->pLeaf );
 
   if( bRev==0 ){
-    while( fts5DlidxIterEof(p, pDlidx)==0 && iMatch<pDlidx->iRowid ){
+    while( fts5DlidxIterEof(p, pDlidx)==0 && iMatch>pDlidx->iRowid ){
       iLeafPgno = pDlidx->iLeafPgno;
       fts5DlidxIterNext(pDlidx);
     }
@@ -2114,8 +2142,8 @@ static void fts5SegIterNextFrom(
       bMove = 0;
     }
   }else{
-    assert( iMatch>pIter->iRowid );
-    while( fts5DlidxIterEof(p, pDlidx)==0 && iMatch>pDlidx->iRowid ){
+    assert( iMatch<pIter->iRowid );
+    while( fts5DlidxIterEof(p, pDlidx)==0 && iMatch<pDlidx->iRowid ){
       fts5DlidxIterPrev(pDlidx);
     }
     iLeafPgno = pDlidx->iLeafPgno;
@@ -2132,8 +2160,8 @@ static void fts5SegIterNextFrom(
   while( 1 ){
     if( bMove ) fts5SegIterNext(p, pIter);
     if( pIter->pLeaf==0 ) break;
-    if( bRev==0 && pIter->iRowid<=iMatch ) break;
-    if( bRev!=0 && pIter->iRowid>=iMatch ) break;
+    if( bRev==0 && pIter->iRowid>=iMatch ) break;
+    if( bRev!=0 && pIter->iRowid<=iMatch ) break;
     bMove = 1;
   }
 }
@@ -2551,8 +2579,8 @@ static void fts5WriteBtreeNEmpty(Fts5Index *p, Fts5SegWriter *pWriter){
           pWriter->iIdx, pWriter->iSegid, 
           pWriter->aWriter[0].pgno - 1 - pWriter->nEmpty
       );
-      assert( pWriter->dlidx.n>0 );
-      fts5DataWrite(p, iKey, pWriter->dlidx.p, pWriter->dlidx.n);
+      assert( pWriter->cdlidx.n>0 );
+      fts5DataWrite(p, iKey, pWriter->cdlidx.p, pWriter->cdlidx.n);
       bFlag = 1;
     }
     fts5BufferAppendVarint(&p->rc, &pPg->buf, bFlag);
@@ -2562,7 +2590,7 @@ static void fts5WriteBtreeNEmpty(Fts5Index *p, Fts5SegWriter *pWriter){
 
   /* Whether or not it was written to disk, zero the doclist index at this
   ** point */
-  sqlite3Fts5BufferZero(&pWriter->dlidx);
+  sqlite3Fts5BufferZero(&pWriter->cdlidx);
   pWriter->bDlidxPrevValid = 0;
 }
 
@@ -2643,7 +2671,13 @@ static void fts5WriteBtreeNoTerm(
   if( pWriter->bFirstRowidInPage ){
     /* No rowids on this page. Append an 0x00 byte to the current 
     ** doclist-index */
-    sqlite3Fts5BufferAppendVarint(&p->rc, &pWriter->dlidx, 0);
+    if( pWriter->bDlidxPrevValid==0 ){
+      i64 iRowid = pWriter->iPrevRowid;
+      sqlite3Fts5BufferAppendVarint(&p->rc, &pWriter->cdlidx, iRowid);
+      pWriter->bDlidxPrevValid = 1;
+      pWriter->iDlidxPrev = iRowid;
+    }
+    sqlite3Fts5BufferAppendVarint(&p->rc, &pWriter->cdlidx, 0);
   }
   pWriter->nEmpty++;
 }
@@ -2659,11 +2693,12 @@ static void fts5WriteDlidxAppend(
 ){
   i64 iVal;
   if( pWriter->bDlidxPrevValid ){
-    iVal = pWriter->iDlidxPrev - iRowid;
+    iVal = iRowid - pWriter->iDlidxPrev;
   }else{
-    iVal = iRowid;
+    sqlite3Fts5BufferAppendVarint(&p->rc, &pWriter->cdlidx, iRowid);
+    iVal = 1;
   }
-  sqlite3Fts5BufferAppendVarint(&p->rc, &pWriter->dlidx, iVal);
+  sqlite3Fts5BufferAppendVarint(&p->rc, &pWriter->cdlidx, iVal);
   pWriter->bDlidxPrevValid = 1;
   pWriter->iDlidxPrev = iRowid;
 }
@@ -2898,7 +2933,7 @@ static void fts5WriteFinish(
     }
   }
   sqlite3_free(pWriter->aWriter);
-  sqlite3Fts5BufferFree(&pWriter->dlidx);
+  sqlite3Fts5BufferFree(&pWriter->cdlidx);
 }
 
 static void fts5WriteInit(
@@ -3661,7 +3696,7 @@ static void fts5IndexIntegrityCheckSegment(
       }
 
       fts5DlidxIterFree(pDlidx);
-      fts5DlidxIterTestReverse(p, iIdx, iSegid, iter.iLeaf);
+      // fts5DlidxIterTestReverse(p, iIdx, iSegid, iter.iLeaf);
     }
   }
 
@@ -4638,25 +4673,23 @@ static void fts5DecodeFunction(
 
   fts5DebugRowid(&rc, &s, iRowid);
   if( iHeight==FTS5_SEGMENT_MAX_HEIGHT ){
-    int i = 0;
-    i64 iPrev;
-    if( n>0 ){
-      i = getVarint(&a[i], (u64*)&iPrev);
-      sqlite3Fts5BufferAppendPrintf(&rc, &s, " %lld", iPrev);
-    }
-    while( i<n ){
-      i64 iVal;
-      i += getVarint(&a[i], (u64*)&iVal);
-      if( iVal==0 ){
-        sqlite3Fts5BufferAppendPrintf(&rc, &s, " x");
-      }else{
-        iPrev = iPrev - iVal;
-        sqlite3Fts5BufferAppendPrintf(&rc, &s, " %lld", iPrev);
-      }
-    }
+    Fts5Data dlidx;
+    Fts5DlidxIter iter;
 
-  }else
-  if( iSegid==0 ){
+    dlidx.p = a;
+    dlidx.n = n;
+    dlidx.nRef = 2;
+
+    memset(&iter, 0, sizeof(Fts5DlidxIter));
+    iter.pData = &dlidx;
+    iter.iLeafPgno = iPgno;
+
+    for(fts5DlidxIterFirst(&iter); iter.bEof==0; fts5DlidxIterNext(&iter)){
+      sqlite3Fts5BufferAppendPrintf(&rc, &s, 
+          " %d(%lld)", iter.iLeafPgno, iter.iRowid
+      );
+    }
+  }else if( iSegid==0 ){
     if( iRowid==FTS5_AVERAGES_ROWID ){
       /* todo */
     }else{
