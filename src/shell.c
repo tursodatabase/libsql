@@ -113,11 +113,11 @@ extern int pclose(FILE*);
 ** routines take care of that.
 */
 #if defined(_WIN32) || defined(WIN32)
-static setBinaryMode(FILE *out){
+static void setBinaryMode(FILE *out){
   fflush(out);
   _setmode(_fileno(out), _O_BINARY);
 }
-static setTextMode(FILE *out){
+static void setTextMode(FILE *out){
   fflush(out);
   _setmode(_fileno(out), _O_TEXT);
 }

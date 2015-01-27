@@ -5656,7 +5656,6 @@ int sqlite3Fts3EvalPhrasePoslist(
   if( iDocid!=pCsr->iPrevId || pExpr->bEof ){
     int rc = SQLITE_OK;
     int bDescDoclist = pTab->bDescIdx;      /* For DOCID_CMP macro */
-    int iMul;                     /* +1 if csr dir matches index dir, else -1 */
     int bOr = 0;
     u8 bEof = 0;
     u8 bTreeEof = 0;
