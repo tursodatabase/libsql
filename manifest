@@ -1,5 +1,5 @@
-C Merge\sin\sall\schanges\sfrom\strunk.
-D 2015-01-28T12:00:40.078
+C Correctly\sdetect\serrors\sreturned\sby\swalCheckpointStart()\sdue\sto\sOOM.
+D 2015-01-28T12:27:35.926
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5407a688f4d77a05c18a8142be8ae5a2829dd610
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -26,7 +26,7 @@ F autoconf/missing d7c9981a81af13370d4ed152b24c0a82b7028585 x
 F autoconf/tea/Makefile.in d55bcc63832caf0309c2ff80358756116618cfca
 F autoconf/tea/README 3e9a3c060f29a44344ab50aec506f4db903fb873
 F autoconf/tea/aclocal.m4 52c47aac44ce0ddb1f918b6993e8beb8eee88f43
-F autoconf/tea/configure.ac 93d43c79e936fb16556e22498177d7e8571efa04 w autoconf/tea/configure.in
+F autoconf/tea/configure.ac 93d43c79e936fb16556e22498177d7e8571efa04
 F autoconf/tea/doc/sqlite3.n e1fe45d4f5286ee3d0ccc877aca2a0def488e9bb
 F autoconf/tea/license.terms 13bd403c9610fd2b76ece0ab50c4c5eda933d523
 F autoconf/tea/pkgIndex.tcl.in 3ef61715cf1c7bdcff56947ffadb26bc991ca39d
@@ -317,7 +317,7 @@ F src/vdbemem.c 31d8eabb0cd78bfeab4e5124c7363c3e9e54db9f
 F src/vdbesort.c 6d64c5448b64851b99931ede980addc3af70d5e2
 F src/vdbetrace.c 7e4222955e07dd707a2f360c0eb73452be1cb010
 F src/vtab.c c08ec66f45919eaa726bf88aa53eb08379d607f9
-F src/wal.c 0d9591fdec673f8402cc604b81dfeec4a150b3d0
+F src/wal.c e4779a5ce3b0cd01ebf17f92b1fab618181ce4cf
 F src/wal.h 0d3ba0c3f1b4c25796cb213568a84b9f9063f465
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
 F src/where.c d46de821bc604a4fd36fa3928c086950e91aafb1
@@ -1253,7 +1253,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 69a312ad3fe5b39bc394b9ce958cb63d734518c7 e7d2ec048c88237c124fbe598f8f7e950d43d90f
-R 8ac69e11eda6b72259b7582e363c58d6
+P 17c69be80542c5f84e21d60df3edc49422b087d9
+R 0f7f7a39f5a064489a7f2265717c296f
 U drh
-Z a99a35d018da82adaec9a86ad728c987
+Z a4be37c8322775eddaaa905b716d3639

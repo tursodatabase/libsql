@@ -1909,8 +1909,7 @@ static int walCheckpoint(
   assert( eMode!=SQLITE_CHECKPOINT_PASSIVE || xBusy==0 );
 
   rc = walCheckpointStart(pWal, zBuf, nBuf, xBusy, pBusyArg, sync_flags, &sC);
-  if( sC.pIter==0 ) goto walcheckpoint_out;
-  assert( rc==SQLITE_OK );
+  if( sC.pIter==0 || rc!=SQLITE_OK ) goto walcheckpoint_out;
 
   /* Step the checkpoint object until it reports something other than 
   ** SQLITE_OK.  */
