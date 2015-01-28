@@ -1824,6 +1824,8 @@ static int walCheckpointFinalize(WalCkpt *p){
     walUnlockExclusive(pWal, WAL_READ_LOCK(0), 1);
     walIteratorFree(p->pIter);
     p->pIter = 0;
+  }else if( p->rc==SQLITE_DONE ){
+    p->rc = SQLITE_OK;
   }
 
   return p->rc;
@@ -1909,7 +1911,7 @@ static int walCheckpoint(
   assert( eMode!=SQLITE_CHECKPOINT_PASSIVE || xBusy==0 );
 
   rc = walCheckpointStart(pWal, zBuf, nBuf, xBusy, pBusyArg, sync_flags, &sC);
-  if( sC.pIter==0 || rc!=SQLITE_OK ) goto walcheckpoint_out;
+  if( rc!=SQLITE_OK ) goto walcheckpoint_out;
 
   /* Step the checkpoint object until it reports something other than 
   ** SQLITE_OK.  */

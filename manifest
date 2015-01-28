@@ -1,5 +1,5 @@
-C Correctly\sdetect\serrors\sreturned\sby\swalCheckpointStart()\sdue\sto\sOOM.
-D 2015-01-28T12:27:35.926
+C When\sa\s"full",\s"restart"\sor\s"truncate"\scheckpoint\sis\sattempted,\sreturn\sSQLITE_BUSY\sif\sa\sreader\sprevents\sthe\scheckpointer\sfrom\scopying\sany\sframes\sat\sall\sinto\sthe\sdatabase\sfile.
+D 2015-01-28T15:30:03.968
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5407a688f4d77a05c18a8142be8ae5a2829dd610
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -317,7 +317,7 @@ F src/vdbemem.c 31d8eabb0cd78bfeab4e5124c7363c3e9e54db9f
 F src/vdbesort.c 6d64c5448b64851b99931ede980addc3af70d5e2
 F src/vdbetrace.c 7e4222955e07dd707a2f360c0eb73452be1cb010
 F src/vtab.c c08ec66f45919eaa726bf88aa53eb08379d607f9
-F src/wal.c e4779a5ce3b0cd01ebf17f92b1fab618181ce4cf
+F src/wal.c 4d1a785a9e90b715b5f5e0ae62bd61fe953265c4
 F src/wal.h 0d3ba0c3f1b4c25796cb213568a84b9f9063f465
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
 F src/where.c d46de821bc604a4fd36fa3928c086950e91aafb1
@@ -1253,7 +1253,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 17c69be80542c5f84e21d60df3edc49422b087d9
-R 0f7f7a39f5a064489a7f2265717c296f
-U drh
-Z a4be37c8322775eddaaa905b716d3639
+P 8e878c20238ecf60e5d98d088a955e834ffd35c1
+R e292091de00d2dc719cd8b0d6e22bcff
+U dan
+Z f2e16431401ec30e3df3be2f77db3946
