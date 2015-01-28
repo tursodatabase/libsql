@@ -2529,7 +2529,7 @@ int sqlite3WalFindFrame(
     for(iKey=walHash(pgno); aHash[iKey]; iKey=walNextHash(iKey)){
       u32 iFrame = aHash[iKey] + iZero;
       if( iFrame<=iLast && aPgno[aHash[iKey]]==pgno ){
-        /* assert( iFrame>iRead ); -- not true if there is corruption */
+        assert( iFrame>iRead || CORRUPT_DB );
         iRead = iFrame;
       }
       if( (nCollide--)==0 ){
@@ -3295,6 +3295,7 @@ int sqlite3WalCheckpointStart(
   *ppCkpt = (sqlite3_ckpt*)p;
   return rc;
 }
+#endif /* SQLITE_ENABLE_OTA */
 
 /*
 ** Unless the wal file is empty, check that the 8 bytes of salt stored in
@@ -3313,7 +3314,6 @@ int sqlite3WalCheckSalt(Wal *pWal, sqlite3_file *pFd){
   }
   return rc;
 }
-#endif /* SQLITE_ENABLE_OTA */
 
 /* Return the value to pass to a sqlite3_wal_hook callback, the
 ** number of frames in the WAL at the point of the last commit since

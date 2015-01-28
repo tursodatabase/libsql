@@ -16,6 +16,23 @@ TOP = .
 USE_AMALGAMATION = 1
 !ENDIF
 
+# Set this non-0 to enable full warnings (-W4, etc) when compiling.
+#
+!IFNDEF USE_FULLWARN
+USE_FULLWARN = 0
+!ENDIF
+
+# If necessary, create a list of harmless compiler warnings to disable when
+# compiling the build tools.  For the SQLite source code itself, warnings,
+# if any, will be disabled from within it.
+#
+!IFNDEF NO_WARN
+!IF $(USE_FULLWARN)!=0
+NO_WARN = -wd4054 -wd4055 -wd4100 -wd4127 -wd4152 -wd4189 -wd4206 -wd4210
+NO_WARN = $(NO_WARN) -wd4232 -wd4244 -wd4305 -wd4306 -wd4702 -wd4706
+!ENDIF
+!ENDIF
+
 # Set this non-0 to use the library paths and other options necessary for
 # Windows Phone 8.1.
 #
@@ -40,6 +57,12 @@ USE_ICU = 0
 #
 !IFNDEF USE_CRT_DLL
 USE_CRT_DLL = 0
+!ENDIF
+
+# Set this non-0 to link to the RPCRT4 library.
+#
+!IFNDEF USE_RPCRT4_LIB
+USE_RPCRT4_LIB = 0
 !ENDIF
 
 # Set this non-0 to generate assembly code listings for the source code
@@ -108,11 +131,12 @@ WIN32HEAP = 0
 # levels.  Currently, the recognized values for DEBUG are:
 #
 # 0 == NDEBUG: Disables assert() and other runtime diagnostics.
-# 1 == Disables NDEBUG and all optimizations and then enables PDBs.
-# 2 == SQLITE_DEBUG: Enables various diagnostics messages and code.
-# 3 == SQLITE_WIN32_MALLOC_VALIDATE: Validate the Win32 native heap per call.
-# 4 == SQLITE_DEBUG_OS_TRACE: Enables output from the OSTRACE() macros.
-# 5 == SQLITE_ENABLE_IOTRACE: Enables output from the IOTRACE() macros.
+# 1 == SQLITE_ENABLE_API_ARMOR: extra attempts to detect misuse of the API.
+# 2 == Disables NDEBUG and all optimizations and then enables PDBs.
+# 3 == SQLITE_DEBUG: Enables various diagnostics messages and code.
+# 4 == SQLITE_WIN32_MALLOC_VALIDATE: Validate the Win32 native heap per call.
+# 5 == SQLITE_DEBUG_OS_TRACE: Enables output from the OSTRACE() macros.
+# 6 == SQLITE_ENABLE_IOTRACE: Enables output from the IOTRACE() macros.
 #
 !IFNDEF DEBUG
 DEBUG = 0
@@ -231,7 +255,11 @@ NSDKLIBPATH = $(NSDKLIBPATH:\\=\)
 # C compiler and options for use in building executables that
 # will run on the platform that is doing the build.
 #
+!IF $(USE_FULLWARN)!=0
+BCC = $(NCC) -W4
+!ELSE
 BCC = $(NCC) -W3
+!ENDIF
 
 # Check if assembly code listings should be generated for the source
 # code files to be compiled.
@@ -252,7 +280,13 @@ NLTLIBPATHS = "/LIBPATH:$(NCRTLIBPATH)" "/LIBPATH:$(NSDKLIBPATH)"
 # will run on the target platform.  (BCC and TCC are usually the
 # same unless your are cross-compiling.)
 #
-TCC = $(CC) -W3 -DSQLITE_OS_WIN=1 -I. -I$(TOP) -I$(TOP)\src -fp:precise
+!IF $(USE_FULLWARN)!=0
+TCC = $(CC) -W4 -DINCLUDE_MSVC_H=1
+!ELSE
+TCC = $(CC) -W3
+!ENDIF
+
+TCC = $(TCC) -DSQLITE_OS_WIN=1 -I. -I$(TOP) -I$(TOP)\src -fp:precise
 RCC = $(RC) -DSQLITE_OS_WIN=1 -I$(TOP) -I$(TOP)\src
 
 # Check if assembly code listings should be generated for the source
@@ -280,7 +314,7 @@ RCC = $(RCC) -DWINAPI_FAMILY=WINAPI_FAMILY_APP
 # MSVC runtime library.
 #
 !IF $(FOR_WINRT)!=0 || $(USE_CRT_DLL)!=0
-!IF $(DEBUG)>0
+!IF $(DEBUG)>1
 TCC = $(TCC) -MDd
 BCC = $(BCC) -MDd
 !ELSE
@@ -288,7 +322,7 @@ TCC = $(TCC) -MD
 BCC = $(BCC) -MD
 !ENDIF
 !ELSE
-!IF $(DEBUG)>0
+!IF $(DEBUG)>1
 TCC = $(TCC) -MTd
 BCC = $(BCC) -MTd
 !ELSE
@@ -313,7 +347,7 @@ RCC = $(RCC) -I$(TOP)\ext\rtree
 # options are necessary in order to allow debugging symbols to
 # work correctly with Visual Studio when using the amalgamation.
 #
-!IF $(DEBUG)>0
+!IF $(DEBUG)>1
 MKSQLITE3C_ARGS = --linemacros
 !ELSE
 MKSQLITE3C_ARGS =
@@ -329,17 +363,22 @@ BCC = $(BCC) -DNDEBUG
 RCC = $(RCC) -DNDEBUG
 !ENDIF
 
-!IF $(DEBUG)>1
+!IF $(DEBUG)>0
+TCC = $(TCC) -DSQLITE_ENABLE_API_ARMOR
+RCC = $(RCC) -DSQLITE_ENABLE_API_ARMOR
+!ENDIF
+
+!IF $(DEBUG)>2
 TCC = $(TCC) -DSQLITE_DEBUG
 RCC = $(RCC) -DSQLITE_DEBUG
 !ENDIF
 
-!IF $(DEBUG)>3
+!IF $(DEBUG)>4
 TCC = $(TCC) -DSQLITE_DEBUG_OS_TRACE=1
 RCC = $(RCC) -DSQLITE_DEBUG_OS_TRACE=1
 !ENDIF
 
-!IF $(DEBUG)>4
+!IF $(DEBUG)>5
 TCC = $(TCC) -DSQLITE_ENABLE_IOTRACE
 RCC = $(RCC) -DSQLITE_ENABLE_IOTRACE
 !ENDIF
@@ -371,7 +410,7 @@ RCC = $(RCC) -DSQLITE_WIN32_MALLOC=1
 
 # Validate the heap on every call into the native Win32 heap subsystem?
 #
-!IF $(DEBUG)>2
+!IF $(DEBUG)>3
 TCC = $(TCC) -DSQLITE_WIN32_MALLOC_VALIDATE=1
 RCC = $(RCC) -DSQLITE_WIN32_MALLOC_VALIDATE=1
 !ENDIF
@@ -468,6 +507,12 @@ RCC = $(RCC) -DSQLITE_TEMP_STORE=1
 #
 REQ_FEATURE_FLAGS = $(REQ_FEATURE_FLAGS) -DSQLITE_MAX_TRIGGER_DEPTH=100
 
+# If we are linking to the RPCRT4 library, enable features that need it.
+#
+!IF $(USE_RPCRT4_LIB)!=0
+REQ_FEATURE_FLAGS = $(REQ_FEATURE_FLAGS) -DSQLITE_WIN32_USE_UUID=1
+!ENDIF
+
 # Add the required and optional SQLite compilation options into the command
 # lines used to invoke the MSVC code and resource compilers.
 #
@@ -482,7 +527,7 @@ RCC = $(RCC) $(OPTS)
 
 # If compiling for debugging, add some defines.
 #
-!IF $(DEBUG)>0
+!IF $(DEBUG)>1
 TCC = $(TCC) -D_DEBUG
 BCC = $(BCC) -D_DEBUG
 RCC = $(RCC) -D_DEBUG
@@ -491,7 +536,7 @@ RCC = $(RCC) -D_DEBUG
 # If optimizations are enabled or disabled (either implicitly or
 # explicitly), add the necessary flags.
 #
-!IF $(DEBUG)>0 || $(OPTIMIZATIONS)==0
+!IF $(DEBUG)>1 || $(OPTIMIZATIONS)==0
 TCC = $(TCC) -Od
 BCC = $(BCC) -Od
 !ELSEIF $(OPTIMIZATIONS)>=3
@@ -507,7 +552,7 @@ BCC = $(BCC) -O1
 
 # If symbols are enabled (or compiling for debugging), enable PDBs.
 #
-!IF $(DEBUG)>0 || $(SYMBOLS)!=0
+!IF $(DEBUG)>1 || $(SYMBOLS)!=0
 TCC = $(TCC) -Zi
 BCC = $(BCC) -Zi
 !ENDIF
@@ -530,6 +575,12 @@ LTCOMPILE = $(TCC) -Fo$@
 LTRCOMPILE = $(RCC) -r
 LTLIB = lib.exe
 LTLINK = $(TCC) -Fe$@
+
+# If requested, link to the RPCRT4 library.
+#
+!IF $(USE_RPCRT4_LIB)!=0
+LTLINK = $(LTLINK) rpcrt4.lib
+!ENDIF
 
 # If a platform was set, force the linker to target that.
 # Note that the vcvars*.bat family of batch files typically
@@ -592,7 +643,7 @@ LTLINKOPTS = $(LTLINKOPTS) /NODEFAULTLIB:kernel32.lib /NODEFAULTLIB:ole32.lib
 
 # If either debugging or symbols are enabled, enable PDBs.
 #
-!IF $(DEBUG)>0 || $(SYMBOLS)!=0
+!IF $(DEBUG)>1 || $(SYMBOLS)!=0
 LDFLAGS = /DEBUG
 !ENDIF
 
@@ -700,6 +751,7 @@ SRC = \
   $(TOP)\src\mem3.c \
   $(TOP)\src\mem5.c \
   $(TOP)\src\memjournal.c \
+  $(TOP)\src\msvc.h \
   $(TOP)\src\mutex.c \
   $(TOP)\src\mutex.h \
   $(TOP)\src\mutex_noop.c \
@@ -932,6 +984,7 @@ HDR = \
    $(TOP)\src\hash.h \
    $(TOP)\src\hwtime.h \
    keywordhash.h \
+   $(TOP)\src\msvc.h \
    $(TOP)\src\mutex.h \
    opcodes.h \
    $(TOP)\src\os.h \
@@ -983,8 +1036,7 @@ libtclsqlite3.lib:	tclsqlite.lo libsqlite3.lib
 	$(LTLIB) $(LTLIBOPTS) $(LTLIBPATHS) /OUT:$@ tclsqlite.lo libsqlite3.lib $(LIBTCL:tcl=tclstub) $(TLIBS)
 
 sqlite3.exe:	$(TOP)\src\shell.c libsqlite3.lib $(LIBRESOBJS) sqlite3.h
-	$(LTLINK) $(READLINE_FLAGS) \
-		$(TOP)\src\shell.c \
+	$(LTLINK) $(READLINE_FLAGS) $(TOP)\src\shell.c \
 		/link $(LTLINKOPTS) $(LTLIBPATHS) libsqlite3.lib $(LIBRESOBJS) $(LIBREADLINE) $(LTLIBS) $(TLIBS)
 
 mptester.exe:	$(TOP)\mptest\mptest.c libsqlite3.lib $(LIBRESOBJS) sqlite3.h
@@ -1034,7 +1086,8 @@ lempar.c:	$(TOP)\src\lempar.c
 	copy $(TOP)\src\lempar.c .
 
 lemon.exe:	$(TOP)\tool\lemon.c lempar.c
-	$(BCC) -Daccess=_access -Fe$@ $(TOP)\tool\lemon.c /link $(NLTLINKOPTS) $(NLTLIBPATHS)
+	$(BCC) $(NO_WARN) -Daccess=_access \
+		-Fe$@ $(TOP)\tool\lemon.c /link $(NLTLINKOPTS) $(NLTLIBPATHS)
 
 # Rules to build individual *.lo files from generated *.c files. This
 # applies to:
@@ -1305,7 +1358,8 @@ sqlite3.h:	$(TOP)\src\sqlite.h.in $(TOP)\manifest.uuid $(TOP)\VERSION
 	$(TCLSH_CMD) $(TOP)\tool\mksqlite3h.tcl $(TOP:\=/) > sqlite3.h
 
 mkkeywordhash.exe:	$(TOP)\tool\mkkeywordhash.c
-	$(BCC) -Fe$@ $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS) $(OPTS) $(TOP)\tool\mkkeywordhash.c /link $(NLTLINKOPTS) $(NLTLIBPATHS)
+	$(BCC) $(NO_WARN) -Fe$@ $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS) $(OPTS) \
+		$(TOP)\tool\mkkeywordhash.c /link $(NLTLINKOPTS) $(NLTLIBPATHS)
 
 keywordhash.h:	$(TOP)\tool\mkkeywordhash.c mkkeywordhash.exe
 	.\mkkeywordhash.exe > keywordhash.h
@@ -1386,7 +1440,8 @@ rtree.lo:	$(TOP)\ext\rtree\rtree.c $(HDR) $(EXTHDR)
 # hidden when the library is built via the amalgamation).
 #
 TESTFIXTURE_FLAGS = -DTCLSH=1 -DSQLITE_TEST=1 -DSQLITE_CRASH_TEST=1
-TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_SERVER=1 -DSQLITE_PRIVATE="" -DSQLITE_CORE
+TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_SERVER=1 -DSQLITE_PRIVATE=""
+TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_CORE $(NO_WARN)
 
 TESTFIXTURE_SRC0 = $(TESTEXT) $(TESTSRC2) libsqlite3.lib
 TESTFIXTURE_SRC1 = $(TESTEXT) $(SQLITE3C)

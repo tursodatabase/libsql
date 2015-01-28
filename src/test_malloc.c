@@ -1260,6 +1260,34 @@ static int test_config_cis(
   return TCL_OK;
 }
 
+/*
+** Usage:    sqlite3_config_pmasz  INTEGER
+**
+** Set the minimum PMA size.
+*/
+static int test_config_pmasz(
+  void * clientData, 
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int rc;
+  int iPmaSz;
+
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "BOOL");
+    return TCL_ERROR;
+  }
+  if( Tcl_GetIntFromObj(interp, objv[1], &iPmaSz) ){
+    return TCL_ERROR;
+  }
+
+  rc = sqlite3_config(SQLITE_CONFIG_PMASZ, iPmaSz);
+  Tcl_SetResult(interp, (char *)sqlite3ErrName(rc), TCL_VOLATILE);
+
+  return TCL_OK;
+}
+
 
 /*
 ** Usage:    sqlite3_dump_memsys3  FILENAME
@@ -1310,7 +1338,7 @@ static int test_status(
   Tcl_Obj *CONST objv[]
 ){
   int rc, iValue, mxValue;
-  int i, op, resetFlag;
+  int i, op = 0, resetFlag;
   const char *zOpName;
   static const struct {
     const char *zName;
@@ -1367,7 +1395,7 @@ static int test_db_status(
   Tcl_Obj *CONST objv[]
 ){
   int rc, iValue, mxValue;
-  int i, op, resetFlag;
+  int i, op = 0, resetFlag;
   const char *zOpName;
   sqlite3 *db;
   extern int getDbPointer(Tcl_Interp*, const char*, sqlite3**);
@@ -1514,6 +1542,7 @@ int Sqlitetest_malloc_Init(Tcl_Interp *interp){
      { "sqlite3_config_error",       test_config_error             ,0 },
      { "sqlite3_config_uri",         test_config_uri               ,0 },
      { "sqlite3_config_cis",         test_config_cis               ,0 },
+     { "sqlite3_config_pmasz",       test_config_pmasz             ,0 },
      { "sqlite3_db_config_lookaside",test_db_config_lookaside      ,0 },
      { "sqlite3_dump_memsys3",       test_dump_memsys3             ,3 },
      { "sqlite3_dump_memsys5",       test_dump_memsys3             ,5 },

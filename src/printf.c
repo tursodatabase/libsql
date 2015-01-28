@@ -15,17 +15,6 @@
 #include "sqliteInt.h"
 
 /*
-** If the strchrnul() library function is available, then set
-** HAVE_STRCHRNUL.  If that routine is not available, this module
-** will supply its own.  The built-in version is slower than
-** the glibc version so the glibc version is definitely preferred.
-*/
-#if !defined(HAVE_STRCHRNUL)
-# define HAVE_STRCHRNUL 0
-#endif
-
-
-/*
 ** Conversion types fall into various categories as defined by the
 ** following enumeration.
 */
@@ -223,13 +212,6 @@ void sqlite3VXPrintf(
   PrintfArguments *pArgList = 0; /* Arguments for SQLITE_PRINTF_SQLFUNC */
   char buf[etBUFSIZE];       /* Conversion buffer */
 
-#ifdef SQLITE_ENABLE_API_ARMOR
-  if( ap==0 ){
-    (void)SQLITE_MISUSE_BKPT;
-    sqlite3StrAccumReset(pAccum);
-    return;
-  }
-#endif
   bufpt = 0;
   if( bFlags ){
     if( (bArgList = (bFlags & SQLITE_PRINTF_SQLFUNC))!=0 ){

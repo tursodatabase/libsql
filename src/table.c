@@ -127,7 +127,7 @@ int sqlite3_get_table(
   TabResult res;
 
 #ifdef SQLITE_ENABLE_API_ARMOR
-  if( pazResult==0 ) return SQLITE_MISUSE_BKPT;
+  if( !sqlite3SafetyCheckOk(db) || pazResult==0 ) return SQLITE_MISUSE_BKPT;
 #endif
   *pazResult = 0;
   if( pnColumn ) *pnColumn = 0;

@@ -96,6 +96,7 @@ foreach hdr {
    hash.h
    hwtime.h
    keywordhash.h
+   msvc.h
    mutex.h
    opcodes.h
    os_common.h

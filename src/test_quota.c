@@ -889,7 +889,7 @@ int sqlite3_quota_set(
 ** management, update its size.
 */
 int sqlite3_quota_file(const char *zFilename){
-  char *zFull;
+  char *zFull = 0;
   sqlite3_file *fd;
   int rc;
   int outFlags = 0;

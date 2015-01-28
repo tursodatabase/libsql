@@ -1497,10 +1497,12 @@ int main(int argc, char **argv)
     {OPT_FLAG, "b", (char*)&basisflag, "Print only the basis in report."},
     {OPT_FLAG, "c", (char*)&compress, "Don't compress the action table."},
     {OPT_FSTR, "D", (char*)handle_D_option, "Define an %ifdef macro."},
-    {OPT_FSTR, "T", (char*)handle_T_option, "Specify a template file."},
+    {OPT_FSTR, "f", 0, "Ignored.  (Placeholder for -f compiler options.)"},
     {OPT_FLAG, "g", (char*)&rpflag, "Print grammar without actions."},
+    {OPT_FSTR, "I", 0, "Ignored.  (Placeholder for '-I' compiler options.)"},
     {OPT_FLAG, "m", (char*)&mhflag, "Output a makeheaders compatible file."},
     {OPT_FLAG, "l", (char*)&nolinenosflag, "Do not print #line statements."},
+    {OPT_FSTR, "O", 0, "Ignored.  (Placeholder for '-O' compiler options.)"},
     {OPT_FLAG, "p", (char*)&showPrecedenceConflict,
                     "Show conflicts resolved by precedence rules"},
     {OPT_FLAG, "q", (char*)&quiet, "(Quiet) Don't print the report file."},
@@ -1508,6 +1510,8 @@ int main(int argc, char **argv)
     {OPT_FLAG, "s", (char*)&statistics,
                                    "Print parser stats to standard output."},
     {OPT_FLAG, "x", (char*)&version, "Print the version number."},
+    {OPT_FSTR, "T", (char*)handle_T_option, "Specify a template file."},
+    {OPT_FSTR, "W", 0, "Ignored.  (Placeholder for '-W' compiler options.)"},
     {OPT_FLAG,0,0,0}
   };
   int i;
@@ -1812,6 +1816,8 @@ static int handleflags(int i, FILE *err)
       errline(i,1,err);
     }
     errcnt++;
+  }else if( op[j].arg==0 ){
+    /* Ignore this option */
   }else if( op[j].type==OPT_FLAG ){
     *((int*)op[j].arg) = v;
   }else if( op[j].type==OPT_FFLAG ){
@@ -2001,17 +2007,17 @@ void OptPrint(){
         break;
       case OPT_INT:
       case OPT_FINT:
-        fprintf(errstream,"  %s=<integer>%*s  %s\n",op[i].label,
+        fprintf(errstream,"  -%s<integer>%*s  %s\n",op[i].label,
           (int)(max-lemonStrlen(op[i].label)-9),"",op[i].message);
         break;
       case OPT_DBL:
       case OPT_FDBL:
-        fprintf(errstream,"  %s=<real>%*s  %s\n",op[i].label,
+        fprintf(errstream,"  -%s<real>%*s  %s\n",op[i].label,
           (int)(max-lemonStrlen(op[i].label)-6),"",op[i].message);
         break;
       case OPT_STR:
       case OPT_FSTR:
-        fprintf(errstream,"  %s=<string>%*s  %s\n",op[i].label,
+        fprintf(errstream,"  -%s<string>%*s  %s\n",op[i].label,
           (int)(max-lemonStrlen(op[i].label)-8),"",op[i].message);
         break;
     }
@@ -2436,7 +2442,7 @@ to follow the previous rule.");
       if( x[0]=='{' || x[0]=='\"' || isalnum(x[0]) ){
         const char *zOld, *zNew;
         char *zBuf, *z;
-        int nOld, n, nLine, nNew, nBack;
+        int nOld, n, nLine = 0, nNew, nBack;
         int addLineMacro;
         char zLine[50];
         zNew = x;
@@ -2635,7 +2641,7 @@ void Parse(struct lemon *gp)
   struct pstate ps;
   FILE *fp;
   char *filebuf;
-  int filesize;
+  unsigned int filesize;
   int lineno;
   int c;
   char *cp, *nextcp;
@@ -2769,7 +2775,7 @@ void Parse(struct lemon *gp)
     c = *cp;
     *cp = 0;                        /* Null terminate the token */
     parseonetoken(&ps);             /* Parse the token */
-    *cp = c;                        /* Restore the buffer */
+    *cp = (char)c;                  /* Restore the buffer */
     cp = nextcp;
   }
   free(filebuf);                    /* Release the buffer after parsing */
@@ -3392,7 +3398,7 @@ PRIVATE char *append_str(const char *zText, int n, int p1, int p2){
       zText++;
       n--;
     }else{
-      z[used++] = c;
+      z[used++] = (char)c;
     }
   }
   z[used] = 0;

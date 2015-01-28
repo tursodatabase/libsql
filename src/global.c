@@ -152,6 +152,13 @@ const unsigned char sqlite3CtypeMap[256] = {
 # define SQLITE_ALLOW_COVERING_INDEX_SCAN 1
 #endif
 
+/* The minimum PMA size is set to this value multiplied by the database
+** page size in bytes.
+*/
+#ifndef SQLITE_SORTER_PMASZ
+# define SQLITE_SORTER_PMASZ 250
+#endif
+
 /*
 ** The following singleton contains the global configuration for
 ** the SQLite library.
@@ -182,6 +189,7 @@ SQLITE_WSD struct Sqlite3Config sqlite3Config = {
    0,                         /* nPage */
    0,                         /* mxParserStack */
    0,                         /* sharedCacheEnabled */
+   SQLITE_SORTER_PMASZ,       /* szPma */
    /* All the rest should always be initialized to zero */
    0,                         /* isInit */
    0,                         /* inProgress */
