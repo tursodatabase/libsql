@@ -606,6 +606,7 @@ int sqlite3_index_writer(
   /* If this is a rowid table, check that the rowid field is an integer. */
   if( HasRowid(pTab) ){
     sqlite3VdbeAddOp2(v, OP_MustBeInt, pIdx->nColumn, 0);
+    VdbeCoverageNeverTaken(v);
   }
 
   if( bDelete==0 ){
@@ -614,6 +615,7 @@ int sqlite3_index_writer(
     /* If this is a UNIQUE index, check the constraint. */
     if( pIdx->onError ){
       int addr = sqlite3VdbeAddOp4Int(v, OP_NoConflict, 0, 0, 1, pIdx->nKeyCol);
+      VdbeCoverage(v);
       sqlite3UniqueConstraint(pParse, SQLITE_ABORT, pIdx);
       sqlite3VdbeJumpHere(v, addr);
     }

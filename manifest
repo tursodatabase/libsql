@@ -1,5 +1,5 @@
-C When\sa\s"full",\s"restart"\sor\s"truncate"\scheckpoint\sis\sattempted,\sreturn\sSQLITE_BUSY\sif\sa\sreader\sprevents\sthe\scheckpointer\sfrom\scopying\sany\sframes\sat\sall\sinto\sthe\sdatabase\sfile.
-D 2015-01-28T15:30:03.968
+C Add\smissing\sVdbeCoverage()\smacros\sto\sthe\ssqlite3_index_writer()\simplementation.
+D 2015-01-28T20:37:03.629
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5407a688f4d77a05c18a8142be8ae5a2829dd610
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -312,7 +312,7 @@ F src/vdbe.h 6fc69d9c5e146302c56e163cb4b31d1ee64a18c3
 F src/vdbeInt.h 9bb69ff2447c34b6ccc58b34ec35b615f86ead78
 F src/vdbeapi.c 4bc511a46b9839392ae0e90844a71dc96d9dbd71
 F src/vdbeaux.c 97911edb61074b871ec4aa2d6bb779071643dee5
-F src/vdbeblob.c 317c71482ed73b0966db2d1c4e20839be3e9fe79
+F src/vdbeblob.c ad7787440295e43c12248dc48cde4b13e5df4ca0
 F src/vdbemem.c 31d8eabb0cd78bfeab4e5124c7363c3e9e54db9f
 F src/vdbesort.c 6d64c5448b64851b99931ede980addc3af70d5e2
 F src/vdbetrace.c 7e4222955e07dd707a2f360c0eb73452be1cb010
@@ -1253,7 +1253,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8e878c20238ecf60e5d98d088a955e834ffd35c1
-R e292091de00d2dc719cd8b0d6e22bcff
-U dan
-Z f2e16431401ec30e3df3be2f77db3946
+P f270004016ef20f1963e0f1ad32e76bcbaeb6798
+R b0398084d8fe2aeca2bc9ad972629a75
+U drh
+Z 8d857ec25793e6618479325cb81d1be3
