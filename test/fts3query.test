@@ -208,5 +208,77 @@ do_select_tests 6.2 {
   {{ZZZthe hand XXXgesturesYYY (called beatsZZZ}}
 }
 
+# Test some range queries on the rowid field.
+# 
+do_execsql_test 7.1 {
+  CREATE VIRTUAL TABLE ft4 USING fts4(x);
+  CREATE TABLE t4(x);
+}
+
+set SMALLINT -9223372036854775808
+set LARGEINT  9223372036854775807
+do_test 7.2 {
+  db transaction {
+    foreach {iFirst nEntry} [subst {
+      0                      100
+      $SMALLINT              100
+      [expr $LARGEINT - 99]  100
+    }] {
+      for {set i 0} {$i < $nEntry} {incr i} {
+        set iRowid [expr $i + $iFirst]
+        execsql {
+          INSERT INTO ft4(rowid, x) VALUES($iRowid, 'x y z');
+          INSERT INTO  t4(rowid, x) VALUES($iRowid, 'x y z');
+        }
+      }
+    }
+  }
+} {}
+
+foreach {tn iFirst iLast} [subst {
+  1   5 10
+  2   $SMALLINT [expr $SMALLINT+5]
+  3   $SMALLINT [expr $SMALLINT+50]
+  4   [expr $LARGEINT-5] $LARGEINT
+  5   $LARGEINT $LARGEINT
+  6   $SMALLINT $LARGEINT
+  7   $SMALLINT $SMALLINT
+  8   $LARGEINT $SMALLINT
+}] {
+  set res [db eval { 
+    SELECT rowid FROM t4 WHERE rowid BETWEEN $iFirst AND $iLast 
+  } ]
+
+  do_execsql_test 7.2.$tn.1.[llength $res] {
+    SELECT rowid FROM ft4 WHERE rowid BETWEEN $iFirst AND $iLast
+  } $res
+  do_execsql_test 7.2.$tn.2.[llength $res] {
+    SELECT rowid FROM ft4 WHERE rowid BETWEEN $iFirst AND $iLast
+    ORDER BY rowid DESC
+  } [lsort -decr -integer $res]
+}
+
+foreach ii [db eval {SELECT rowid FROM t4}] {
+  set res1 [db eval {SELECT rowid FROM t4 WHERE rowid > $ii}]
+  set res2 [db eval {SELECT rowid FROM t4 WHERE rowid < $ii}]
+
+  do_execsql_test 7.3.$ii.1 {
+    SELECT rowid FROM ft4 WHERE rowid > $ii
+  } $res1
+
+  do_execsql_test 7.3.$ii.2 {
+    SELECT rowid FROM ft4 WHERE rowid < $ii
+  } $res2
+
+  do_execsql_test 7.3.$ii.3 {
+    SELECT rowid FROM ft4 WHERE rowid > $ii ORDER BY rowid DESC
+  } [lsort -integer -decr $res1]
+
+  do_execsql_test 7.3.$ii.4 {
+    SELECT rowid FROM ft4 WHERE rowid < $ii ORDER BY rowid DESC
+  } [lsort -integer -decr $res2]
+}
 
 finish_test
+
+

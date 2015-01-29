@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings.
-D 2015-01-27T21:24:33.191
+C Optimize\srange\sconstraints\son\sthe\srowid\scolumn\sof\sfts3/4\stables\seven\sif\sthere\sis\sno\sMATCH\sclause\sin\sthe\squery.
+D 2015-01-29T11:52:22.452
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5407a688f4d77a05c18a8142be8ae5a2829dd610
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -78,7 +78,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 3b2f792afc04d01d387455932428c8f9ae861cc5
+F ext/fts3/fts3.c 56a78f7e65e9e59bd0e75a1e10ce406f62034ca8
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 394858c12a17740f7a1f6bd372c4606d4425a8d1
 F ext/fts3/fts3_aux.c 5c211e17a64885faeb16b9ba7772f9d5445c2365
@@ -590,7 +590,7 @@ F test/fts3matchinfo.test 58544fa4d254000fa4e7f494b0a832f7ba61d45e
 F test/fts3near.test 7e3354d46f155a822b59c0e957fd2a70c1d7e905
 F test/fts3prefix.test b36d4f00b128a51e7b386cc013a874246d9d7dc1
 F test/fts3prefix2.test e1f0a822ca661dced7f12ce392e14eaf65609dce
-F test/fts3query.test 4fefd43ff24993bc2c9b2778f2bec0cc7629e7ed
+F test/fts3query.test d81ffb0ab1d4e1a2a330b8eb1e160b60603f4745
 F test/fts3rnd.test 1320d8826a845e38a96e769562bf83d7a92a15d0
 F test/fts3shared.test 57e26a801f21027b7530da77db54286a6fe4997e
 F test/fts3snippet.test 03c2f3be7d3b7c8bb105ed237f204833392bd57f
@@ -1237,7 +1237,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P adc9283dd9bc3a6463f8c4fe23dd58a3712c349d
-R 57729c2b510493b06603a65c6ea41133
-U mistachkin
-Z 7155fc25674fe331bcb8023f01301b6b
+P e7d2ec048c88237c124fbe598f8f7e950d43d90f
+R e192a378398ddf2aeb616257a71bd844
+U dan
+Z 0e830c66fc49965a9a24bd9be18f84a6
