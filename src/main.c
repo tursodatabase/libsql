@@ -3597,6 +3597,18 @@ int sqlite3_test_control(int op, ...){
       if( sqlite3GlobalConfig.isInit==0 ) rc = SQLITE_ERROR;
       break;
     }
+
+    /*   sqlite3_test_control(SQLITE_TESTCTRL_INITMODE, db, busy, iDb, newTnum);
+    **
+    ** Set the db->init.busy, db->init.iDb, and db->init.tnum fields.
+    */
+    case SQLITE_TESTCTRL_INITMODE: {
+      sqlite3 *db = va_arg(ap, sqlite3*);
+      db->init.busy = va_arg(ap,int);
+      db->init.iDb = va_arg(ap,int);
+      db->init.newTnum = va_arg(ap,int);
+      break;
+    }
   }
   va_end(ap);
 #endif /* SQLITE_OMIT_BUILTIN_TEST */

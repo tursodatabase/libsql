@@ -1,5 +1,5 @@
-C Optimize\srange\sconstraints\son\sthe\srowid\scolumn\sof\sfts3/4\stables\seven\sif\sthere\sis\sno\sMATCH\sclause\sin\sthe\squery.
-D 2015-01-29T11:52:22.452
+C Add\sthe\sINITMODE\stest-control.
+D 2015-01-29T17:54:52.194
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5407a688f4d77a05c18a8142be8ae5a2829dd610
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -195,7 +195,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
 F src/loadext.c 86bd4e2fccd520b748cba52492ab60c4a770f660
-F src/main.c 05bf368c934cc73d02906030846eb4d1818c10f7
+F src/main.c b0a41ca397083b137b98e6abb829c21611665d07
 F src/malloc.c 740db54387204c9a2eb67c6d98e68b08e9ef4eab
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c abe6ee469b6c5a35c7f22bfeb9c9bac664a1c987
@@ -230,8 +230,8 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c f6c46d3434439ab2084618d603e6d6dbeb0d6ada
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 1f2087523007c42900ffcbdeaef06a23ad9329fc
-F src/shell.c efd35900484377d2159189968c3445afefee3e41
-F src/sqlite.h.in 9dfc99d6533d36d6a549c4f3f01cacc8be956ada
+F src/shell.c ed7cf7c29fb1a23d47179affc89cb447868fc976
+F src/sqlite.h.in 6910064681444efb5c467472499b56bb6bcee0f4
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
 F src/sqliteInt.h eaf210295b551d4e40e622aec1b2261c0b28f844
@@ -1237,7 +1237,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e7d2ec048c88237c124fbe598f8f7e950d43d90f
-R e192a378398ddf2aeb616257a71bd844
-U dan
-Z 0e830c66fc49965a9a24bd9be18f84a6
+P 85dc12625d300fe48f3c096f54ebcb8b6ef4e30a
+R fe787287eb356b79eb9ba31c0e138e4f
+T *branch * initmode-testctrl
+T *sym-initmode-testctrl *
+T -sym-trunk *
+U drh
+Z e02e8497217bad1b69deabc72f8cd27d
