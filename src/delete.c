@@ -247,7 +247,6 @@ void sqlite3DeleteFrom(
   int iRowSet = 0;       /* Register for rowset of rows to delete */
   int addrBypass = 0;    /* Address of jump over the delete logic */
   int addrLoop = 0;      /* Top of the delete loop */
-  int addrDelete = 0;    /* Jump directly to the delete logic */
   int addrEphOpen = 0;   /* Instruction to open the Ephemeral table */
  
 #ifndef SQLITE_OMIT_TRIGGER
@@ -437,7 +436,6 @@ void sqlite3DeleteFrom(
       if( aiCurOnePass[0]>=0 ) aToOpen[aiCurOnePass[0]-iTabCur] = 0;
       if( aiCurOnePass[1]>=0 ) aToOpen[aiCurOnePass[1]-iTabCur] = 0;
       if( addrEphOpen ) sqlite3VdbeChangeToNoop(v, addrEphOpen);
-      addrDelete = sqlite3VdbeAddOp0(v, OP_Goto); /* Jump to DELETE logic */
     }else if( pPk ){
       /* Construct a composite key for the row to be deleted and remember it */
       iKey = ++pParse->nMem;
@@ -451,13 +449,11 @@ void sqlite3DeleteFrom(
       sqlite3VdbeAddOp2(v, OP_RowSetAdd, iRowSet, iKey);
     }
   
-    /* End of the WHERE loop */
-    sqlite3WhereEnd(pWInfo);
+    /* End of the WHERE loop. */
     if( okOnePass ){
-      /* Bypass the delete logic below if the WHERE loop found zero rows */
       addrBypass = sqlite3VdbeMakeLabel(v);
-      sqlite3VdbeAddOp2(v, OP_Goto, 0, addrBypass);
-      sqlite3VdbeJumpHere(v, addrDelete);
+    }else{
+      sqlite3WhereEnd(pWInfo);
     }
   
     /* Unless this is a view, open cursors for the table we are 
@@ -513,6 +509,7 @@ void sqlite3DeleteFrom(
   
     /* End of the loop over all rowids/primary-keys. */
     if( okOnePass ){
+      sqlite3WhereEnd(pWInfo);
       sqlite3VdbeResolveLabel(v, addrBypass);
     }else if( pPk ){
       sqlite3VdbeAddOp2(v, OP_Next, iEphCur, addrLoop+1); VdbeCoverage(v);

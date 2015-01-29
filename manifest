@@ -1,5 +1,5 @@
-C Avoid\soverlength\scommand\slines\sin\sMakefile.msc\swhen\susing\sTOP=\swith\sa\slarge\ndirectory\sname.
-D 2015-01-29T14:48:36.055
+C Improvements\sto\sthe\sDELETE\scode\sgenerator\sfor\sthe\sone-pass\scase.\s\sAvoid\nsome\sOP_Goto\sinstructions.\s\sRead\scontent\sfrom\sthe\sindex\scursor\sif\sthe\nindex\scursor\sis\svalid\sand\swas\sused\sto\slocate\sthe\srow\sthat\sis\sto\sbe\sdeleted.
+D 2015-01-29T15:53:19.350
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5407a688f4d77a05c18a8142be8ae5a2829dd610
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -181,7 +181,7 @@ F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c 198a0066ba60ab06fc00fba1998d870a4d575463
 F src/ctime.c 98f89724adc891a1a4c655bee04e33e716e05887
 F src/date.c e4d50b3283696836ec1036b695ead9a19e37a5ac
-F src/delete.c 250aa3cfd37efd5e660abf0ed061356c1f97acea
+F src/delete.c 66c10f83d3b0f37282f5b91f8a9192f4ce4a82c2
 F src/expr.c abe930897ccafae3819fd2855cbc1b00c262fd12
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c e0444b61bed271a76840cbe6182df93a9baa3f12
@@ -292,7 +292,7 @@ F src/update.c 3c4ecc282accf12d39edb8d524cf089645e55a13
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c 98a7627ca48ad3265b6940915a1d08355eb3fc7e
 F src/vacuum.c 9b30ec729337dd012ed88d4c292922c8ef9cf00c
-F src/vdbe.c ddfc977981cd6324668aa6b114045eb1c677421a
+F src/vdbe.c 55f4db96c3d2bee17c66f244e4fc51fb0f09fed2
 F src/vdbe.h 6fc69d9c5e146302c56e163cb4b31d1ee64a18c3
 F src/vdbeInt.h 9bb69ff2447c34b6ccc58b34ec35b615f86ead78
 F src/vdbeapi.c 4bc511a46b9839392ae0e90844a71dc96d9dbd71
@@ -1237,7 +1237,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2305411097c4985b61c5faf4361c4da8414101f2
-R 3630050c6c1dd97fb4a47db3b5491230
+P 0cdd59bf36aa4c2cad9a15bb7237643fb4222d55
+R 139902d9a4e02d98a72f3dedb9a073bc
 U drh
-Z 6afbf0e41cb02db92c3354378ab76211
+Z ea315405c3cfce5f5aed8dbe7ead251e
