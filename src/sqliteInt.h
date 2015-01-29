@@ -1077,6 +1077,7 @@ struct sqlite3 {
   u8 vtabOnConflict;            /* Value to return for s3_vtab_on_conflict() */
   u8 isTransactionSavepoint;    /* True if the outermost savepoint is a TS */
   int nextPagesize;             /* Pagesize after VACUUM if >0 */
+  int onlyWritableBtree;        /* Do not write to any other b-tree */
   u32 magic;                    /* Magic number for detect library misuse */
   int nChange;                  /* Value returned by sqlite3_changes() */
   int nTotalChange;             /* Value returned by sqlite3_total_changes() */
@@ -1165,6 +1166,13 @@ struct sqlite3 {
   sqlite3_userauth auth;        /* User authentication information */
 #endif
 };
+
+/*
+** This macro returns true if the only_writable_btree pragma is turned
+** on and is set to a btree root node other than N.
+*/
+#define WRITE_RESTRICT(db,N) ((db)->onlyWritableBtree>0 && \
+                              (db)->onlyWritableBtree!=(N))
 
 /*
 ** A macro to discover the encoding of a database.

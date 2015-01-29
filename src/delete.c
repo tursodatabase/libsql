@@ -674,9 +674,11 @@ void sqlite3GenerateRowDelete(
   ** fire the INSTEAD OF triggers).  */ 
   if( pTab->pSelect==0 ){
     sqlite3GenerateRowIndexDelete(pParse, pTab, iDataCur, iIdxCur, 0);
-    sqlite3VdbeAddOp2(v, OP_Delete, iDataCur, (count?OPFLAG_NCHANGE:0));
-    if( count ){
-      sqlite3VdbeChangeP4(v, -1, pTab->zName, P4_TRANSIENT);
+    if( !WRITE_RESTRICT(pParse->db, pTab->tnum) ){
+      sqlite3VdbeAddOp2(v, OP_Delete, iDataCur, (count?OPFLAG_NCHANGE:0));
+      if( count ){
+        sqlite3VdbeChangeP4(v, -1, pTab->zName, P4_TRANSIENT);
+      }
     }
   }
 
@@ -736,6 +738,7 @@ void sqlite3GenerateRowIndexDelete(
     assert( iIdxCur+i!=iDataCur || pPk==pIdx );
     if( aRegIdx!=0 && aRegIdx[i]==0 ) continue;
     if( pIdx==pPk ) continue;
+    if( WRITE_RESTRICT(pParse->db, pIdx->tnum) ) continue;
     VdbeModuleComment((v, "GenRowIdxDel for %s", pIdx->zName));
     r1 = sqlite3GenerateIndexKey(pParse, pIdx, iDataCur, 0, 1,
                                  &iPartIdxLabel, pPrior, r1);

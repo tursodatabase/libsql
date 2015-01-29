@@ -725,6 +725,11 @@ int sqlite3_db_config(sqlite3 *db, int op, ...){
       rc = setupLookaside(db, pBuf, sz, cnt);
       break;
     }
+    case SQLITE_DBCONFIG_WRITABLE_BTREE: {
+      db->onlyWritableBtree = va_arg(ap,int);
+      rc = SQLITE_OK;
+      break;
+    }
     default: {
       static const struct {
         int op;      /* The opcode */

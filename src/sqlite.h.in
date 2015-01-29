@@ -1840,11 +1840,20 @@ struct sqlite3_mem_methods {
 ** following this call.  The second parameter may be a NULL pointer, in
 ** which case the trigger setting is not reported back. </dd>
 **
+** <dt>SQLITE_DBCONFIG_WRITABLE_BTREE</dt>
+** <dd> ^This option is used to disable INSERT and DELETE operations
+** against all attached b-trees, except for b-trees that have a 
+** particular root page. 
+** There must be one additional integer argument which is the root page
+** that is allowed to be written.  If the argument is zero, then
+** writing is allowed to all b-trees, as is normally the case.
+**
 ** </dl>
 */
 #define SQLITE_DBCONFIG_LOOKASIDE       1001  /* void* int int */
 #define SQLITE_DBCONFIG_ENABLE_FKEY     1002  /* int int* */
 #define SQLITE_DBCONFIG_ENABLE_TRIGGER  1003  /* int int* */
+#define SQLITE_DBCONFIG_WRITABLE_BTREE  1004  /* int */
 
 
 /*

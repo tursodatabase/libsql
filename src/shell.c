@@ -2568,6 +2568,52 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
   }else
 
+  if( c=='d' && n>1 && strncmp(azArg[0], "dbconfig", n)==0 ){
+    int nHit = 0, x;
+    open_db(p, 0);
+    if( nArg>=2 ){
+      n = (int)strlen(azArg[1]);
+      if( strncmp(azArg[1], "writable_btree",n)==0 ){
+        if( nArg!=3 ){
+          fprintf(stderr, "Usage: .dbconfig writable_btree N\n");
+          rc = 1;
+        }else{
+          sqlite3_db_config(p->db, SQLITE_DBCONFIG_WRITABLE_BTREE,
+                            integerValue(azArg[2]));
+        }
+        nHit = 1;
+      }else
+      if( strncmp(azArg[1], "enable_fkey",n)==0 ){
+        if( nArg!=3 ){
+          fprintf(stderr, "Usage: .dbconfig enable_fkey (1|0|-1)\n");
+          rc = 1;
+        }else{
+          sqlite3_db_config(p->db, SQLITE_DBCONFIG_ENABLE_FKEY,
+                            integerValue(azArg[2]), &x);
+          printf("result: %d\n", x);
+        }
+        nHit = 1;
+      }else
+      if( strncmp(azArg[1], "enable_trigger",n)==0 ){
+        if( nArg!=3 ){
+          fprintf(stderr, "Usage: .dbconfig enable_trigger (1|0|-1)\n");
+          rc = 1;
+        }else{
+          sqlite3_db_config(p->db, SQLITE_DBCONFIG_ENABLE_TRIGGER,
+                            integerValue(azArg[2]), &x);
+          printf("result: %d\n", x);
+        }
+        nHit = 1;
+      }
+    }
+    if( nHit==0 ){
+      fprintf(stderr, "Usage: .dbconfig COMMAND ARGS...\n");
+      fprintf(stderr, 
+        "COMMAND is one of: writable_btree enable_fkey enable_trigger\n");
+      rc = 1;
+    }    
+  }else
+
   if( c=='d' && strncmp(azArg[0], "dump", n)==0 ){
     open_db(p, 0);
     /* When playing back a "dump", the content might appear in an order

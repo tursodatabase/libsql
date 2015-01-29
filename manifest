@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings.
-D 2015-01-27T21:24:33.191
+C Experimental\ssqlite_db_config()\ssetting\sto\sdisable\swriting\sto\sall\sbtrees\s\nexcept\sfor\sone\sbtree\swith\sa\sparticular\sroot\spage.
+D 2015-01-29T02:26:40.456
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5407a688f4d77a05c18a8142be8ae5a2829dd610
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -181,7 +181,7 @@ F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c 198a0066ba60ab06fc00fba1998d870a4d575463
 F src/ctime.c 98f89724adc891a1a4c655bee04e33e716e05887
 F src/date.c e4d50b3283696836ec1036b695ead9a19e37a5ac
-F src/delete.c bd1a91ddd247ce13004075251e0b7fe2bf9925ef
+F src/delete.c 250aa3cfd37efd5e660abf0ed061356c1f97acea
 F src/expr.c abe930897ccafae3819fd2855cbc1b00c262fd12
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c e0444b61bed271a76840cbe6182df93a9baa3f12
@@ -190,12 +190,12 @@ F src/global.c 12561d70a1b25f67b21154622bb1723426724f75
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
 F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c 5b9243a33726008cc4132897d2be371db12a13be
+F src/insert.c 57b087ad5c7580bd62b807dcdbd70c54b2bb4228
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
 F src/loadext.c 86bd4e2fccd520b748cba52492ab60c4a770f660
-F src/main.c 05bf368c934cc73d02906030846eb4d1818c10f7
+F src/main.c 6a6688cf02372c744f8a67e7b396d53f378e49a2
 F src/malloc.c 740db54387204c9a2eb67c6d98e68b08e9ef4eab
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c abe6ee469b6c5a35c7f22bfeb9c9bac664a1c987
@@ -230,11 +230,11 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c f6c46d3434439ab2084618d603e6d6dbeb0d6ada
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 1f2087523007c42900ffcbdeaef06a23ad9329fc
-F src/shell.c efd35900484377d2159189968c3445afefee3e41
-F src/sqlite.h.in 9dfc99d6533d36d6a549c4f3f01cacc8be956ada
+F src/shell.c ff4dafe42c9d282b06cbcaf0c285c553d7d5daa1
+F src/sqlite.h.in 7e7ce8ea342d59f109dcf3185374ebe1a6c0e4dd
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
-F src/sqliteInt.h eaf210295b551d4e40e622aec1b2261c0b28f844
+F src/sqliteInt.h d70bca4e33ee931a545172679a3013e15528c3bd
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 81712116e826b0089bb221b018929536b2b5406f
 F src/table.c e7a09215315a978057fb42c640f890160dbcc45e
@@ -1237,7 +1237,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P adc9283dd9bc3a6463f8c4fe23dd58a3712c349d
-R 57729c2b510493b06603a65c6ea41133
-U mistachkin
-Z 7155fc25674fe331bcb8023f01301b6b
+P e7d2ec048c88237c124fbe598f8f7e950d43d90f
+R 32287aaaa29e1c7ae3cede33e9d09a0f
+T *branch * one-writable-btree
+T *sym-one-writable-btree *
+T -sym-trunk *
+U drh
+Z f4cb1a3bf874e800356effffac85d8d8

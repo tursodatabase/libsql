@@ -1366,6 +1366,7 @@ void sqlite3GenerateConstraintChecks(
     int addrUniqueOk;    /* Jump here if the UNIQUE constraint is satisfied */
 
     if( aRegIdx[ix]==0 ) continue;  /* Skip indices that do not change */
+    if( WRITE_RESTRICT(db, pIdx->tnum) ) continue;
     if( bAffinityDone==0 ){
       sqlite3TableAffinity(v, pTab, regNewData+1);
       bAffinityDone = 1;
@@ -1545,6 +1546,7 @@ void sqlite3CompleteInsertion(
 ){
   Vdbe *v;            /* Prepared statements under construction */
   Index *pIdx;        /* An index being inserted or updated */
+  sqlite3 *db;
   u8 pik_flags;       /* flag values passed to the btree insert */
   int regData;        /* Content registers (after the rowid) */
   int regRec;         /* Register holding assembled record for the table */
@@ -1554,8 +1556,10 @@ void sqlite3CompleteInsertion(
   v = sqlite3GetVdbe(pParse);
   assert( v!=0 );
   assert( pTab->pSelect==0 );  /* This table is not a VIEW */
+  db = pParse->db;
   for(i=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
     if( aRegIdx[i]==0 ) continue;
+    if( WRITE_RESTRICT(db, pIdx->tnum) ) continue;
     bAffinityDone = 1;
     if( pIdx->pPartIdxWhere ){
       sqlite3VdbeAddOp2(v, OP_IsNull, aRegIdx[i], sqlite3VdbeCurrentAddr(v)+2);
@@ -1571,6 +1575,7 @@ void sqlite3CompleteInsertion(
     if( pik_flags )  sqlite3VdbeChangeP5(v, pik_flags);
   }
   if( !HasRowid(pTab) ) return;
+  if( WRITE_RESTRICT(db, pTab->tnum) ) return;
   regData = regNewData + 1;
   regRec = sqlite3GetTempReg(pParse);
   sqlite3VdbeAddOp3(v, OP_MakeRecord, regData, pTab->nCol, regRec);
