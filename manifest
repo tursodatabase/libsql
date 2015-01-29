@@ -1,9 +1,9 @@
-C Optimize\srange\sconstraints\son\sthe\srowid\scolumn\sof\sfts3/4\stables\seven\sif\sthere\sis\sno\sMATCH\sclause\sin\sthe\squery.
-D 2015-01-29T11:52:22.452
+C Split\sup\sthe\sSRC\svariable\sin\sMakefile.msc\sto\savoid\sover-long\scmd.exe\scommands\swhen\sTOP\sis\sset\sto\sa\slong\spathname.
+D 2015-01-29T18:38:05.899
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5407a688f4d77a05c18a8142be8ae5a2829dd610
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 2b1cb8881bdefcb0a8ed41c34c81cfa630374222
+F Makefile.msc 1edfd7dd45d98a04f9a2fa81a01c49faeb628578
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md d58e3bebc0a4145e0f2a87994015fdb575a8e866
 F VERSION d846487aff892625eb8e75960234e7285f0462fe
@@ -1237,7 +1237,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e7d2ec048c88237c124fbe598f8f7e950d43d90f
-R e192a378398ddf2aeb616257a71bd844
-U dan
-Z 0e830c66fc49965a9a24bd9be18f84a6
+P 85dc12625d300fe48f3c096f54ebcb8b6ef4e30a
+R 30ab1d1acabeef9590cca414845b1919
+U drh
+Z 4d0075f03968634835018469d0d0c906
