@@ -1,12 +1,12 @@
-C Ensure\sthat\s"PRAGMA\swal_checkpoint\s=\sTRUNCATE|FULL|RESTART"\sblock\son\sother\sconnections\sand\struncate\sthe\swal\sfile\sas\srequired\seven\sif\sthe\sentire\swal\sfile\shas\salready\sbeen\scheckpointed.\s\sCherry-pick\sfrom\strunk.
-D 2015-01-29T19:59:05.488
+C Bump\sthe\sversion\snumber\sto\s3.8.8.2
+D 2015-01-29T20:01:14.429
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5407a688f4d77a05c18a8142be8ae5a2829dd610
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc 4c057774e6138b9023fc16ec05639ddd3329b152
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md d58e3bebc0a4145e0f2a87994015fdb575a8e866
-F VERSION 4eb31a5ea79a8101e48a8c4af4f5b8c041dfbc29
+F VERSION a05a52aa5448b582332a4535122f17ceb24cc4b2
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 9eb448a552d5c0185cf62c463f9c173cedae3811
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -38,7 +38,7 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 42b71ad3fe21c9e88fa59e8458ca1a6bc72eb0c0
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure c04f219d71cb4f15c36cf0edeefa5b7ff1a230f6 x
+F configure 17db6ce60c72e6783cfc1d9cee92a5dcaf78ace3 x
 F configure.ac 6a8d145aea6d81f0b90013340780e43ed74fd5f4
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 334dbf6621b8fb8790297ec1abf3cfa4621709d1
@@ -1237,8 +1237,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f73337e3e289915a76ca96e7a05a1a8d4e890d55
-Q +53429689d4fcf472edbc89cc50b5e69ba3270634
-R 61205cf50bec6f8b1776ef245eb49d6c
+P 18610617aff622d5212b5fb589b46542a205417a
+R 3b32bcdf30e0da5dd5726061c31ea643
 U drh
-Z 0f18019ea43784381f1ce106f2a0d664
+Z 25966f8d42e20245021148558285a22e
