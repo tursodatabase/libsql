@@ -1966,6 +1966,7 @@ int sqlite3_wal_checkpoint_v2(
     rc = SQLITE_ERROR;
     sqlite3ErrorWithMsg(db, SQLITE_ERROR, "unknown database: %s", zDb);
   }else{
+    db->busyHandler.nBusy = 0;
     rc = sqlite3Checkpoint(db, iDb, eMode, pnLog, pnCkpt);
     sqlite3Error(db, rc);
   }
