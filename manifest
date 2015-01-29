@@ -1,5 +1,5 @@
-C Split\sup\sthe\sSRC\svariable\sin\sMakefile.msc\sto\savoid\sover-long\scmd.exe\scommands\swhen\sTOP\sis\sset\sto\sa\slong\spathname.
-D 2015-01-29T18:38:05.899
+C Ensure\sthat\s"PRAGMA\swal_checkpoint\s=\sTRUNCATE|FULL|RESTART"\sblock\son\sother\sconnections\sand\struncate\sthe\sdatabase\sfile\sas\srequired\seven\sif\sthe\sentire\swal\sfile\shas\salready\sbeen\scheckpointed.
+D 2015-01-29T19:12:12.112
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5407a688f4d77a05c18a8142be8ae5a2829dd610
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -195,7 +195,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
 F src/loadext.c 86bd4e2fccd520b748cba52492ab60c4a770f660
-F src/main.c 05bf368c934cc73d02906030846eb4d1818c10f7
+F src/main.c 341fcc5601a8ca84389fa32bcf5a857f65af8dd0
 F src/malloc.c 740db54387204c9a2eb67c6d98e68b08e9ef4eab
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c abe6ee469b6c5a35c7f22bfeb9c9bac664a1c987
@@ -302,7 +302,7 @@ F src/vdbemem.c 31d8eabb0cd78bfeab4e5124c7363c3e9e54db9f
 F src/vdbesort.c 6d64c5448b64851b99931ede980addc3af70d5e2
 F src/vdbetrace.c 7e4222955e07dd707a2f360c0eb73452be1cb010
 F src/vtab.c c08ec66f45919eaa726bf88aa53eb08379d607f9
-F src/wal.c 85353539f2d9d0c91ebd057c32525b1e1aa3335e
+F src/wal.c 39303f2c9db02a4e422cd8eb2c8760420c6a51fe
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
 F src/where.c d46de821bc604a4fd36fa3928c086950e91aafb1
@@ -1126,7 +1126,7 @@ F test/wal.test 885f32b2b390b30b4aa3dbb0e568f8f78d40f5cc
 F test/wal2.test 1f841d2048080d32f552942e333fd99ce541dada
 F test/wal3.test b22eb662bcbc148c5f6d956eaf94b047f7afe9c0
 F test/wal4.test 4744e155cd6299c6bd99d3eab1c82f77db9cdb3c
-F test/wal5.test 11b8658dd4d5448f4604124bebd9b68be5bc3e66
+F test/wal5.test dba8f5f5de95178bc40521d6edf153b2e2829917
 F test/wal6.test 527581f5527bf9c24394991e2be83000aace5f9e
 F test/wal64k.test 163655ecd2cb8afef4737cac2a40fdd2eeaf20b8
 F test/wal7.test 2ae8f427d240099cc4b2dfef63cff44e2a68a1bd
@@ -1237,7 +1237,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 85dc12625d300fe48f3c096f54ebcb8b6ef4e30a
-R 30ab1d1acabeef9590cca414845b1919
-U drh
-Z 4d0075f03968634835018469d0d0c906
+P 7d70ac65c16f08832a1f0fc4dec0f62a17cbcc85
+R 73adf612681872a358f9dbc8b22308b4
+U dan
+Z 0d0ede6d5c4b5d769c9edb317c2eb34b
