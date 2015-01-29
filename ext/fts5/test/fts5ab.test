@@ -247,14 +247,21 @@ do_execsql_test 6.0 {
     INSERT INTO s3 VALUES('A B C');
 }
 
-do_execsql_test 6.1 {
+do_execsql_test 6.1.1 {
   SELECT rowid FROM s3 WHERE s3 MATCH 'a'
+} {1 2}
+
+do_execsql_test 6.1.2 {
+  SELECT rowid FROM s3 WHERE s3 MATCH 'a' ORDER BY rowid DESC
 } {2 1}
 
 do_execsql_test 6.2 {
   COMMIT;
+}
+
+do_execsql_test 6.3 {
   SELECT rowid FROM s3 WHERE s3 MATCH 'a'
-} {2 1}
+} {1 2}
 
 finish_test
 

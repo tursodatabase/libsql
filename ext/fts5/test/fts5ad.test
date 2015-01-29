@@ -62,6 +62,18 @@ foreach {T create} {
     INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
   }
 
+  4 {
+    CREATE VIRTUAL TABLE t1 USING fts5(a, b);
+    INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
+    BEGIN;
+  }
+  
+  5 {
+    CREATE VIRTUAL TABLE t1 USING fts5(a, b, prefix=1,2,3,4,5);
+    INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
+    BEGIN;
+  }
+
 } {
 
   do_test $T.1 { 
@@ -194,8 +206,8 @@ foreach {T create} {
   }
   
   foreach {bAsc sql} {
-    1 {SELECT rowid FROM t1 WHERE t1 MATCH $prefix}
     0 {SELECT rowid FROM t1 WHERE t1 MATCH $prefix ORDER BY rowid DESC}
+    1 {SELECT rowid FROM t1 WHERE t1 MATCH $prefix}
   } {
     foreach {tn prefix} {
       1  {a*} 2 {ab*} 3 {abc*} 4 {abcd*} 5 {abcde*} 
@@ -211,9 +223,12 @@ foreach {T create} {
         set res [lsort -integer -increasing $res]
       }
       set n [llength $res]
+      if {$T==5} breakpoint 
       do_execsql_test $T.$bAsc.$tn.$n $sql $res
     }
   }
+
+  catchsql COMMIT
 }
 
 finish_test

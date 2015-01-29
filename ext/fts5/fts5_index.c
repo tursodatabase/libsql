@@ -274,6 +274,7 @@ int sqlite3Fts5Corrupt() { return SQLITE_CORRUPT_VTAB; }
 typedef struct Fts5BtreeIter Fts5BtreeIter;
 typedef struct Fts5BtreeIterLevel Fts5BtreeIterLevel;
 typedef struct Fts5ChunkIter Fts5ChunkIter;
+typedef struct Fts5Data Fts5Data;
 typedef struct Fts5DlidxIter Fts5DlidxIter;
 typedef struct Fts5MultiSegIter Fts5MultiSegIter;
 typedef struct Fts5NodeIter Fts5NodeIter;
@@ -285,6 +286,12 @@ typedef struct Fts5SegWriter Fts5SegWriter;
 typedef struct Fts5Structure Fts5Structure;
 typedef struct Fts5StructureLevel Fts5StructureLevel;
 typedef struct Fts5StructureSegment Fts5StructureSegment;
+
+struct Fts5Data {
+  u8 *p;                          /* Pointer to buffer containing record */
+  int n;                          /* Size of record in bytes */
+  int nRef;                       /* Ref count */
+};
 
 /*
 ** One object per %_data table.
@@ -1514,7 +1521,7 @@ static void fts5SegIterNextPage(
   Fts5SegIter *pIter              /* Iterator to advance to next page */
 ){
   Fts5StructureSegment *pSeg = pIter->pSeg;
-  if( pIter->pLeaf ) fts5DataRelease(pIter->pLeaf);
+  fts5DataRelease(pIter->pLeaf);
   pIter->iLeafPgno++;
   if( pIter->iLeafPgno<=pSeg->pgnoLast ){
     pIter->pLeaf = fts5DataRead(p, 
@@ -1775,6 +1782,26 @@ static void fts5SegIterNext(
         }else{
           pIter->iRowid += iDelta;
         }
+      }else if( pIter->pSeg==0 ){
+        const char *pList = 0;
+        const char *zTerm;
+        int nList;
+        if( 0==(pIter->flags & FTS5_SEGITER_ONETERM) ){
+          sqlite3Fts5HashScanNext(p->apHash[0]);
+          sqlite3Fts5HashScanEntry(p->apHash[0], &zTerm, &pList, &nList);
+        }
+        if( pList==0 ){
+          fts5DataRelease(pIter->pLeaf);
+          pIter->pLeaf = 0;
+        }else{
+          pIter->pLeaf->p = (u8*)pList;
+          pIter->pLeaf->n = nList;
+          sqlite3Fts5BufferSet(&p->rc, &pIter->term, strlen(zTerm), (u8*)zTerm);
+          pIter->iLeafOffset = getVarint((u8*)pList, (u64*)&pIter->iRowid);
+          if( pIter->flags & FTS5_SEGITER_REVERSE ){
+            fts5SegIterReverseInitPage(p, pIter);
+          }
+        }
       }else{
         iOff = 0;
         /* Next entry is not on the current page */
@@ -2014,6 +2041,58 @@ static void fts5SegIterSeekInit(
       if( flags & FTS5INDEX_QUERY_DESC ){
         fts5SegIterReverse(p, iIdx, pIter);
       }
+    }
+  }
+}
+
+/*
+** Initialize the object pIter to point to term pTerm/nTerm within the
+** in-memory hash table iIdx. If there is no such term in the table, the 
+** iterator is set to EOF.
+**
+** If an error occurs, Fts5Index.rc is set to an appropriate error code. If 
+** an error has already occurred when this function is called, it is a no-op.
+*/
+static void fts5SegIterHashInit(
+  Fts5Index *p,                   /* FTS5 backend */
+  int iIdx,                       /* Config.aHash[] index of FTS index */
+  const u8 *pTerm, int nTerm,     /* Term to seek to */
+  int flags,                      /* Mask of FTS5INDEX_XXX flags */
+  Fts5SegIter *pIter              /* Object to populate */
+){
+  Fts5Hash *pHash = p->apHash[iIdx];
+  const char *pList = 0;
+  int nList = 0;
+  const u8 *z = 0;
+  int n = 0;
+
+  assert( pHash );
+
+  if( pTerm==0 || (iIdx==0 && (flags & FTS5INDEX_QUERY_PREFIX)) ){
+    sqlite3Fts5HashScanInit(pHash, (const char*)pTerm, nTerm);
+    sqlite3Fts5HashScanEntry(pHash, (const char**)&z, &pList, &nList);
+    n = (z ? strlen((const char*)z) : 0);
+  }else{
+    pIter->flags |= FTS5_SEGITER_ONETERM;
+    sqlite3Fts5HashQuery(pHash, (const char*)pTerm, nTerm, &pList, &nList);
+    z = pTerm;
+    n = nTerm;
+  }
+
+  if( pList ){
+    Fts5Data *pLeaf;
+    sqlite3Fts5BufferSet(&p->rc, &pIter->term, n, z);
+    pLeaf = fts5IdxMalloc(p, sizeof(Fts5Data));
+    if( pLeaf==0 ) return;
+    pLeaf->nRef = 1;
+    pLeaf->p = (u8*)pList;
+    pLeaf->n = nList;
+    pIter->pLeaf = pLeaf;
+    pIter->iLeafOffset = getVarint(pLeaf->p, (u64*)&pIter->iRowid);
+
+    if( flags & FTS5INDEX_QUERY_DESC ){
+      pIter->flags |= FTS5_SEGITER_REVERSE;
+      fts5SegIterReverseInitPage(p, pIter);
     }
   }
 }
@@ -2261,6 +2340,7 @@ static void fts5MultiIterNew(
   /* Allocate space for the new multi-seg-iterator. */
   if( iLevel<0 ){
     nSeg = fts5StructureCountSegments(pStruct);
+    nSeg += (p->apHash ? 1 : 0);
   }else{
     nSeg = MIN(pStruct->aLevel[iLevel].nSeg, nSegment);
   }
@@ -2280,6 +2360,11 @@ static void fts5MultiIterNew(
   /* Initialize each of the component segment iterators. */
   if( iLevel<0 ){
     Fts5StructureLevel *pEnd = &pStruct->aLevel[pStruct->nLevel];
+    if( p->apHash ){
+      /* Add a segment iterator for the current contents of the hash table. */
+      Fts5SegIter *pIter = &pNew->aSeg[iIter++];
+      fts5SegIterHashInit(p, iIdx, pTerm, nTerm, flags, pIter);
+    }
     for(pLvl=&pStruct->aLevel[0]; pLvl<pEnd; pLvl++){
       for(iSeg=pLvl->nSeg-1; iSeg>=0; iSeg--){
         Fts5StructureSegment *pSeg = &pLvl->aSeg[iSeg];
@@ -2406,13 +2491,19 @@ static void fts5ChunkIterInit(
   Fts5SegIter *pSeg,              /* Segment iterator to read poslist from */
   Fts5ChunkIter *pIter            /* Initialize this object */
 ){
-  int iId = pSeg->pSeg->iSegid;
-  i64 rowid = FTS5_SEGMENT_ROWID(pSeg->iIdx, iId, 0, pSeg->iLeafPgno);
   Fts5Data *pLeaf = pSeg->pLeaf;
   int iOff = pSeg->iLeafOffset;
 
   memset(pIter, 0, sizeof(*pIter));
-  pIter->iLeafRowid = rowid;
+  /* If Fts5SegIter.pSeg is NULL, then this iterator iterates through data
+  ** currently stored in a hash table. In this case there is no leaf-rowid
+  ** to calculate.  */
+  if( pSeg->pSeg ){
+    int iId = pSeg->pSeg->iSegid;
+    i64 rowid = FTS5_SEGMENT_ROWID(pSeg->iIdx, iId, 0, pSeg->iLeafPgno);
+    pIter->iLeafRowid = rowid;
+  }
+
   if( iOff<pLeaf->n ){
     fts5DataReference(pLeaf);
     pIter->pLeaf = pLeaf;
@@ -3100,6 +3191,7 @@ fprintf(stdout, "merging %d segments from level %d!", nInput, iLvl);
 fflush(stdout);
 #endif
 
+  assert( iLvl>=0 );
   for(fts5MultiIterNew(p, pStruct, iIdx, 0, 0, 0, 0, iLvl, nInput, &pIter);
       fts5MultiIterEof(p, pIter)==0;
       fts5MultiIterNext(p, pIter, 0, 0)

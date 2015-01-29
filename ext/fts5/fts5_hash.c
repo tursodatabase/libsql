@@ -27,6 +27,7 @@ struct Fts5Hash {
   int *pnByte;                    /* Pointer to bytes counter */
   int nEntry;                     /* Number of entries currently in hash */
   int nSlot;                      /* Size of aSlot[] array */
+  Fts5HashEntry *pScan;           /* Current ordered scan item */
   Fts5HashEntry **aSlot;          /* Array of hash slots */
 };
 
@@ -52,7 +53,8 @@ struct Fts5Hash {
 **   Bytes of data written since iRowidOff.
 */
 struct Fts5HashEntry {
-  Fts5HashEntry *pNext;           /* Next hash entry with same hash-key */
+  Fts5HashEntry *pHashNext;       /* Next hash entry with same hash-key */
+  Fts5HashEntry *pScanNext;       /* Next entry in sorted order */
   
   int nAlloc;                     /* Total size of allocation */
   int iSzPoslist;                 /* Offset of space for 4-byte poslist size */
@@ -124,7 +126,7 @@ void sqlite3Fts5HashClear(Fts5Hash *pHash){
     Fts5HashEntry *pNext;
     Fts5HashEntry *pSlot;
     for(pSlot=pHash->aSlot[i]; pSlot; pSlot=pNext){
-      pNext = pSlot->pNext;
+      pNext = pSlot->pHashNext;
       sqlite3_free(pSlot);
     }
   }
@@ -158,9 +160,9 @@ static int fts5HashResize(Fts5Hash *pHash){
     while( apOld[i] ){
       int iHash;
       Fts5HashEntry *p = apOld[i];
-      apOld[i] = p->pNext;
+      apOld[i] = p->pHashNext;
       iHash = fts5HashKey(nNew, p->zKey, strlen(p->zKey));
-      p->pNext = apNew[iHash];
+      p->pHashNext = apNew[iHash];
       apNew[iHash] = p;
     }
   }
@@ -184,7 +186,7 @@ int sqlite3Fts5HashWrite(
   int nIncr = 0;                  /* Amount to increment (*pHash->pnByte) by */
 
   /* Attempt to locate an existing hash entry */
-  for(p=pHash->aSlot[iHash]; p; p=p->pNext){
+  for(p=pHash->aSlot[iHash]; p; p=p->pHashNext){
     if( memcmp(p->zKey, pToken, nToken)==0 && p->zKey[nToken]==0 ) break;
   }
 
@@ -210,7 +212,7 @@ int sqlite3Fts5HashWrite(
     p->iSzPoslist = p->nData;
     p->nData += 4;
     p->iRowid = iRowid;
-    p->pNext = pHash->aSlot[iHash];
+    p->pHashNext = pHash->aSlot[iHash];
     pHash->aSlot[iHash] = p;
     pHash->nEntry++;
     nIncr += p->nData;
@@ -232,7 +234,7 @@ int sqlite3Fts5HashWrite(
     pNew = (Fts5HashEntry*)sqlite3_realloc(p, nNew);
     if( pNew==0 ) return SQLITE_NOMEM;
     pNew->nAlloc = nNew;
-    for(pp=&pHash->aSlot[iHash]; *pp!=p; pp=&(*pp)->pNext);
+    for(pp=&pHash->aSlot[iHash]; *pp!=p; pp=&(*pp)->pHashNext);
     *pp = pNew;
     p = pNew;
   }
@@ -301,13 +303,13 @@ static Fts5HashEntry *fts5HashEntryMerge(
       if( ((u8)p1->zKey[i])>((u8)p2->zKey[i]) ){
         /* p2 is smaller */
         *ppOut = p2;
-        ppOut = &p2->pNext;
-        p2 = p2->pNext;
+        ppOut = &p2->pScanNext;
+        p2 = p2->pScanNext;
       }else{
         /* p1 is smaller */
         *ppOut = p1;
-        ppOut = &p1->pNext;
-        p1 = p1->pNext;
+        ppOut = &p1->pScanNext;
+        p1 = p1->pScanNext;
       }
       *ppOut = 0;
     }
@@ -322,7 +324,11 @@ static Fts5HashEntry *fts5HashEntryMerge(
 ** the responsibility of the caller to free the elements of the returned
 ** list.
 */
-static int fts5HashEntrySort(Fts5Hash *pHash, Fts5HashEntry **ppSorted){
+static int fts5HashEntrySort(
+  Fts5Hash *pHash, 
+  const char *pTerm, int nTerm,   /* Query prefix, if any */
+  Fts5HashEntry **ppSorted
+){
   const int nMergeSlot = 32;
   Fts5HashEntry **ap;
   Fts5HashEntry *pList;
@@ -335,15 +341,17 @@ static int fts5HashEntrySort(Fts5Hash *pHash, Fts5HashEntry **ppSorted){
   memset(ap, 0, sizeof(Fts5HashEntry*) * nMergeSlot);
 
   for(iSlot=0; iSlot<pHash->nSlot; iSlot++){
-    while( pHash->aSlot[iSlot] ){
-      Fts5HashEntry *pEntry = pHash->aSlot[iSlot];
-      pHash->aSlot[iSlot] = pEntry->pNext;
-      pEntry->pNext = 0;
-      for(i=0; ap[i]; i++){
-        pEntry = fts5HashEntryMerge(pEntry, ap[i]);
-        ap[i] = 0;
+    Fts5HashEntry *pIter;
+    for(pIter=pHash->aSlot[iSlot]; pIter; pIter=pIter->pHashNext){
+      if( pTerm==0 || 0==memcmp(pIter->zKey, pTerm, nTerm) ){
+        Fts5HashEntry *pEntry = pIter;
+        pEntry->pScanNext = 0;
+        for(i=0; ap[i]; i++){
+          pEntry = fts5HashEntryMerge(pEntry, ap[i]);
+          ap[i] = 0;
+        }
+        ap[i] = pEntry;
       }
-      ap[i] = pEntry;
     }
   }
 
@@ -368,10 +376,11 @@ int sqlite3Fts5HashIterate(
   Fts5HashEntry *pList;
   int rc;
 
-  rc = fts5HashEntrySort(pHash, &pList);
+  rc = fts5HashEntrySort(pHash, 0, 0, &pList);
   if( rc==SQLITE_OK ){
+    memset(pHash->aSlot, 0, sizeof(Fts5HashEntry*) * pHash->nSlot);
     while( pList ){
-      Fts5HashEntry *pNext = pList->pNext;
+      Fts5HashEntry *pNext = pList->pScanNext;
       if( rc==SQLITE_OK ){
         const int nSz = pList->nData - pList->iSzPoslist - 4;
         const int nKey = strlen(pList->zKey);
@@ -404,5 +413,72 @@ int sqlite3Fts5HashIterate(
     }
   }
   return rc;
+}
+
+/*
+** Query the hash table for a doclist associated with term pTerm/nTerm.
+*/
+int sqlite3Fts5HashQuery(
+  Fts5Hash *pHash,                /* Hash table to query */
+  const char *pTerm, int nTerm,   /* Query term */
+  const char **ppDoclist,         /* OUT: Pointer to doclist for pTerm */
+  int *pnDoclist                  /* OUT: Size of doclist in bytes */
+){
+  unsigned int iHash = fts5HashKey(pHash->nSlot, pTerm, nTerm);
+  Fts5HashEntry *p;
+
+  for(p=pHash->aSlot[iHash]; p; p=p->pHashNext){
+    if( memcmp(p->zKey, pTerm, nTerm)==0 && p->zKey[nTerm]==0 ) break;
+  }
+
+  if( p ){
+    u8 *pPtr = (u8*)p;
+    fts5Put4ByteVarint(&pPtr[p->iSzPoslist], p->nData - p->iSzPoslist - 4);
+    *ppDoclist = &p->zKey[nTerm+1];
+    *pnDoclist = p->nData - (sizeof(*p) + nTerm + 1);
+  }else{
+    *ppDoclist = 0;
+    *pnDoclist = 0;
+  }
+
+  return SQLITE_OK;
+}
+
+void sqlite3Fts5HashScanInit(
+  Fts5Hash *p,                    /* Hash table to query */
+  const char *pTerm, int nTerm    /* Query prefix */
+){
+  fts5HashEntrySort(p, pTerm, nTerm, &p->pScan);
+}
+
+void sqlite3Fts5HashScanNext(Fts5Hash *p){
+  if( p->pScan ){
+    p->pScan = p->pScan->pScanNext;
+  }
+}
+
+int sqlite3Fts5HashScanEof(Fts5Hash *p){
+  return (p->pScan==0);
+}
+
+void sqlite3Fts5HashScanEntry(
+  Fts5Hash *pHash,
+  const char **pzTerm,            /* OUT: term (nul-terminated) */
+  const char **ppDoclist,         /* OUT: pointer to doclist */
+  int *pnDoclist                  /* OUT: size of doclist in bytes */
+){
+  Fts5HashEntry *p;
+  if( (p = pHash->pScan) ){
+    u8 *pPtr = (u8*)p;
+    int nTerm = strlen(p->zKey);
+    fts5Put4ByteVarint(&pPtr[p->iSzPoslist], p->nData - p->iSzPoslist - 4);
+    *pzTerm = p->zKey;
+    *ppDoclist = &p->zKey[nTerm+1];
+    *pnDoclist = p->nData - (sizeof(*p) + nTerm + 1);
+  }else{
+    *pzTerm = 0;
+    *ppDoclist = 0;
+    *pnDoclist = 0;
+  }
 }
 
