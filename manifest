@@ -1,5 +1,5 @@
-C Ensure\sthat\s"PRAGMA\swal_checkpoint\s=\sTRUNCATE|FULL|RESTART"\sblock\son\sother\sconnections\sand\struncate\sthe\sdatabase\sfile\sas\srequired\seven\sif\sthe\sentire\swal\sfile\shas\salready\sbeen\scheckpointed.
-D 2015-01-29T19:12:12.112
+C Fix\ssome\sduplicated\stest\snames.
+D 2015-01-29T19:27:31.114
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5407a688f4d77a05c18a8142be8ae5a2829dd610
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1126,7 +1126,7 @@ F test/wal.test 885f32b2b390b30b4aa3dbb0e568f8f78d40f5cc
 F test/wal2.test 1f841d2048080d32f552942e333fd99ce541dada
 F test/wal3.test b22eb662bcbc148c5f6d956eaf94b047f7afe9c0
 F test/wal4.test 4744e155cd6299c6bd99d3eab1c82f77db9cdb3c
-F test/wal5.test dba8f5f5de95178bc40521d6edf153b2e2829917
+F test/wal5.test 88b5d9a6a3d1532497ee9f4296f010d66f07e33c
 F test/wal6.test 527581f5527bf9c24394991e2be83000aace5f9e
 F test/wal64k.test 163655ecd2cb8afef4737cac2a40fdd2eeaf20b8
 F test/wal7.test 2ae8f427d240099cc4b2dfef63cff44e2a68a1bd
@@ -1237,7 +1237,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7d70ac65c16f08832a1f0fc4dec0f62a17cbcc85
-R 73adf612681872a358f9dbc8b22308b4
-U dan
-Z 0d0ede6d5c4b5d769c9edb317c2eb34b
+P 53429689d4fcf472edbc89cc50b5e69ba3270634
+R 5b41e9df20f2feb8a0c6b2313c845804
+U mistachkin
+Z 0e7b28947abc40f4a90f6b77b2bfb10f

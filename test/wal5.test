@@ -457,18 +457,18 @@ foreach {testprefix do_wal_checkpoint} {
     } {1 2 3 4 5 6 7 8 9 10}
 
     proc xBusyHandler {n} { return 1 }
-    do_test 5.$tn.14 { do_wal_checkpoint db -mode truncate } {1 4 4}
-    do_test 5.$tn.15 { file size test.db-wal } [wal_file_size 4 1024]
+    do_test 5.$tn.15 { do_wal_checkpoint db -mode truncate } {1 4 4}
+    do_test 5.$tn.16 { file size test.db-wal } [wal_file_size 4 1024]
 
-    do_test 5.$tn.16 { do_wal_checkpoint db -mode restart } {1 4 4}
+    do_test 5.$tn.17 { do_wal_checkpoint db -mode restart } {1 4 4}
 
     proc xBusyHandler {n} { sql2 { COMMIT } ; return 0 }
     db busy xBusyHandler
-    do_test 5.$tn.17 { do_wal_checkpoint db -mode restart } {0 4 4}
-    do_test 5.$tn.18 { file size test.db-wal } [wal_file_size 4 1024]
+    do_test 5.$tn.18 { do_wal_checkpoint db -mode restart } {0 4 4}
+    do_test 5.$tn.19 { file size test.db-wal } [wal_file_size 4 1024]
 
-    do_test 5.$tn.19 { do_wal_checkpoint db -mode truncate } {0 0 0}
-    do_test 5.$tn.20 { file size test.db-wal } 0
+    do_test 5.$tn.20 { do_wal_checkpoint db -mode truncate } {0 0 0}
+    do_test 5.$tn.21 { file size test.db-wal } 0
   }
 
 }
