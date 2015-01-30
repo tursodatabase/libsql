@@ -1,5 +1,5 @@
-C Added\sSQLITE_TESTCTRL_INITMODE\sfor\simproved\stestability.
-D 2015-01-30T15:52:26.210
+C Change\sSQLITE_TESTCTRL_INITMODE\sto\sSQLITE_TESTCTRL_IMPOSTER.\s\sRevise\sthe\sorder\nof\sparameters.\s\sGive\sit\sthe\sability\sto\sreset\sthe\sschema\sparse\stable\sso\sthat\nimposter\stables\scan\sbe\serased.
+D 2015-01-30T20:59:27.457
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5407a688f4d77a05c18a8142be8ae5a2829dd610
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -173,10 +173,10 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 7ddee9c7d505e07e959a575b18498f17c71e53ea
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 49ca66250c7dfa844a4d4cb8272b87420d27d3a5
-F src/btree.c 4c098bb6e8678e4596983862abf78f7a0fcb807e
+F src/btree.c 2a1245df0356a229bcd0fd87a8536b5067f16e82
 F src/btree.h 94277c1d30c0b75705974bcc8b0c05e79c03d474
 F src/btreeInt.h a3d0ae1d511365e1a2b76ad10960dbe55c286f34
-F src/build.c f5cfd7b32216f695b995bbc7c1a395f6d451d11f
+F src/build.c eefaa4f1d86bc3c08023a61fdd1e695b47796975
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c 198a0066ba60ab06fc00fba1998d870a4d575463
 F src/ctime.c 98f89724adc891a1a4c655bee04e33e716e05887
@@ -195,7 +195,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
 F src/loadext.c 86bd4e2fccd520b748cba52492ab60c4a770f660
-F src/main.c 81ddebf2feb9cbd8c8ea160cdd979503f645d505
+F src/main.c ce38ddcedf33e5530b0e6c592809bb8822a6e8d0
 F src/malloc.c 740db54387204c9a2eb67c6d98e68b08e9ef4eab
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c abe6ee469b6c5a35c7f22bfeb9c9bac664a1c987
@@ -230,16 +230,16 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c f6c46d3434439ab2084618d603e6d6dbeb0d6ada
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 1f2087523007c42900ffcbdeaef06a23ad9329fc
-F src/shell.c ed7cf7c29fb1a23d47179affc89cb447868fc976
-F src/sqlite.h.in 6910064681444efb5c467472499b56bb6bcee0f4
+F src/shell.c 22b4406b0b59efd14b3b351a5809dda517df6d30
+F src/sqlite.h.in 54678c21401909f72b221344dd560d285a1ba5eb
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
-F src/sqliteInt.h eaf210295b551d4e40e622aec1b2261c0b28f844
+F src/sqliteInt.h c4e05f7489cd300f856e2283d5e61302ce826471
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 81712116e826b0089bb221b018929536b2b5406f
 F src/table.c e7a09215315a978057fb42c640f890160dbcc45e
 F src/tclsqlite.c b8014393a96a9781bb635c8b1f52fc9b77a2bfcf
-F src/test1.c 5dcdade99e77b7b9f7760106c80a83cf50f10e1e
+F src/test1.c 90fbedce75330d48d99eadb7d5f4223e86969585
 F src/test2.c 577961fe48961b2f2e5c8b56ee50c3f459d3359d
 F src/test3.c 64d2afdd68feac1bb5e2ffb8226c8c639f798622
 F src/test4.c d168f83cc78d02e8d35567bb5630e40dcd85ac1e
@@ -630,6 +630,7 @@ F test/genesis.tcl 1e2e2e8e5cc4058549a154ff1892fe5c9de19f98
 F test/hexlit.test f9ecde8145bfc2341573473256c74ae37a200497
 F test/hook.test 162d7cef7a2d2b04839fe14402934e6a1b79442f
 F test/icu.test 70df4faca133254c042d02ae342c0a141f2663f4
+F test/imposter1.test c3f1db2d3db2c24611a6596a3fc0ffc14f1466c8 w test/initmode.test
 F test/in.test 047c4671328e9032ab95666a67021adbbd36e98e
 F test/in2.test 5d4c61d17493c832f7d2d32bef785119e87bde75
 F test/in3.test 3cbf58c87f4052cee3a58b37b6389777505aa0c0
@@ -655,7 +656,6 @@ F test/index7.test 917cf1e1c7439bb155abbeabec511b28945e157b
 F test/indexedby.test b2f22f3e693a53813aa3f50b812eb609ba6df1ec
 F test/indexfault.test 31d4ab9a7d2f6e9616933eb079722362a883eb1d
 F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
-F test/initmode.test 38bbaefeb47e034a162856e664a0da3b95e6999b
 F test/insert.test 38742b5e9601c8f8d76e9b7555f7270288c2d371
 F test/insert2.test 4f3a04d168c728ed5ec2c88842e772606c7ce435
 F test/insert3.test 1b7db95a03ad9c5013fdf7d6722b6cd66ee55e30
@@ -1238,8 +1238,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1797158db2a818134c5cba1578f69ed85948b980 3a6e2afe408d2b0c8166d00def2048568169d87a
-R 4fa14bf275b60ddd661b9bd3fb0ea0dd
-T +closed 3a6e2afe408d2b0c8166d00def2048568169d87a
+P 98e029134dc1300d3ecb48b41b5107ec69ba85db
+R ae5f14ccaf584de0786e4614152020d2
 U drh
-Z b68a5e615b7688be627f33067b9af11c
+Z c23d2e36f9e88e779a131b19c0ee1b9b
