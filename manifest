@@ -1,5 +1,5 @@
-C Add\sthe\sINITMODE\stest-control.
-D 2015-01-29T17:54:52.194
+C Add\sa\sfew\ssimple\stest\scases\sfor\sSQLITE_TESTCTRL_INITMODE\s-\scases\swhich\nalso\stest\sPRAGMA\sintegrity_check.
+D 2015-01-30T15:40:15.485
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5407a688f4d77a05c18a8142be8ae5a2829dd610
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -239,7 +239,7 @@ F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 81712116e826b0089bb221b018929536b2b5406f
 F src/table.c e7a09215315a978057fb42c640f890160dbcc45e
 F src/tclsqlite.c b8014393a96a9781bb635c8b1f52fc9b77a2bfcf
-F src/test1.c 00a74fbc6604e1bcd240726a9ff8d0cc123374e7
+F src/test1.c 5dcdade99e77b7b9f7760106c80a83cf50f10e1e
 F src/test2.c 577961fe48961b2f2e5c8b56ee50c3f459d3359d
 F src/test3.c 64d2afdd68feac1bb5e2ffb8226c8c639f798622
 F src/test4.c d168f83cc78d02e8d35567bb5630e40dcd85ac1e
@@ -655,6 +655,7 @@ F test/index7.test 917cf1e1c7439bb155abbeabec511b28945e157b
 F test/indexedby.test b2f22f3e693a53813aa3f50b812eb609ba6df1ec
 F test/indexfault.test 31d4ab9a7d2f6e9616933eb079722362a883eb1d
 F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
+F test/initmode.test 38bbaefeb47e034a162856e664a0da3b95e6999b
 F test/insert.test 38742b5e9601c8f8d76e9b7555f7270288c2d371
 F test/insert2.test 4f3a04d168c728ed5ec2c88842e772606c7ce435
 F test/insert3.test 1b7db95a03ad9c5013fdf7d6722b6cd66ee55e30
@@ -1237,10 +1238,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 85dc12625d300fe48f3c096f54ebcb8b6ef4e30a
-R fe787287eb356b79eb9ba31c0e138e4f
-T *branch * initmode-testctrl
-T *sym-initmode-testctrl *
-T -sym-trunk *
+P 5940af8e7872209ce41feb958643b23f7e55d258
+R 47cbd38aaccdc229ecba207f260cbca2
 U drh
-Z e02e8497217bad1b69deabc72f8cd27d
+Z f10513d756c3deb9c12d56e187b46090
