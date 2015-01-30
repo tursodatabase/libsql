@@ -3536,7 +3536,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       { "scratchmalloc",         SQLITE_TESTCTRL_SCRATCHMALLOC          },
       { "byteorder",             SQLITE_TESTCTRL_BYTEORDER              },
       { "never_corrupt",         SQLITE_TESTCTRL_NEVER_CORRUPT          },
-      { "initmode",              SQLITE_TESTCTRL_INITMODE               },
+      { "imposter",              SQLITE_TESTCTRL_IMPOSTER               },
     };
     int testctrl = -1;
     int rc = 0;
@@ -3629,14 +3629,14 @@ static int do_meta_command(char *zLine, ShellState *p){
           break;
 #endif
 
-        case SQLITE_TESTCTRL_INITMODE:
+        case SQLITE_TESTCTRL_IMPOSTER:
           if( nArg==5 ){
             rc = sqlite3_test_control(testctrl, p->db, 
-                          integerValue(azArg[2]),
+                          azArg[2],
                           integerValue(azArg[3]),
                           integerValue(azArg[4]));
           }else{
-            fprintf(stderr,"Usage: .testctrl initmode fBusy iDb newTnum\n");
+            fprintf(stderr,"Usage: .testctrl initmode dbName onoff tnum\n");
             rc = 1;
           }
           break;
