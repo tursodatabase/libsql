@@ -1966,6 +1966,7 @@ int sqlite3_wal_checkpoint_v2(
     rc = SQLITE_ERROR;
     sqlite3ErrorWithMsg(db, SQLITE_ERROR, "unknown database: %s", zDb);
   }else{
+    db->busyHandler.nBusy = 0;
     rc = sqlite3Checkpoint(db, iDb, eMode, pnLog, pnCkpt);
     sqlite3Error(db, rc);
   }
@@ -3622,6 +3623,18 @@ int sqlite3_test_control(int op, ...){
     */
     case SQLITE_TESTCTRL_ISINIT: {
       if( sqlite3GlobalConfig.isInit==0 ) rc = SQLITE_ERROR;
+      break;
+    }
+
+    /*   sqlite3_test_control(SQLITE_TESTCTRL_INITMODE, db, busy, iDb, newTnum);
+    **
+    ** Set the db->init.busy, db->init.iDb, and db->init.tnum fields.
+    */
+    case SQLITE_TESTCTRL_INITMODE: {
+      sqlite3 *db = va_arg(ap, sqlite3*);
+      db->init.busy = va_arg(ap,int);
+      db->init.iDb = va_arg(ap,int);
+      db->init.newTnum = va_arg(ap,int);
       break;
     }
   }

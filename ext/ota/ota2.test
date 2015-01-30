@@ -31,7 +31,7 @@ do_execsql_test 1.2 {
   SELECT * FROM t1;
 } {1 2 3 4 5 6}
 
-do_test 1.3 { glob test.db* } {test.db test.db-oal}
+do_test 1.3 { lsort [glob test.db*] } {test.db test.db-oal}
 
 do_test 1.4 {
   sqlite3 db2 test.db
@@ -72,4 +72,3 @@ do_test 1.10 {
 
 
 finish_test
-

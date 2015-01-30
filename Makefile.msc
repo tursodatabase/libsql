@@ -714,7 +714,7 @@ LIBRESOBJS =
 
 # All of the source code files.
 #
-SRC = \
+SRC1 = \
   $(TOP)\src\alter.c \
   $(TOP)\src\analyze.c \
   $(TOP)\src\attach.c \
@@ -764,7 +764,8 @@ SRC = \
   $(TOP)\src\os_setup.h \
   $(TOP)\src\os_unix.c \
   $(TOP)\src\os_win.c \
-  $(TOP)\src\os_win.h \
+  $(TOP)\src\os_win.h
+SRC2 = \
   $(TOP)\src\pager.c \
   $(TOP)\src\pager.h \
   $(TOP)\src\parse.y \
@@ -811,15 +812,14 @@ SRC = \
 
 # Source code for extensions
 #
-SRC = $(SRC) \
+SRC3 = \
   $(TOP)\ext\fts1\fts1.c \
   $(TOP)\ext\fts1\fts1.h \
   $(TOP)\ext\fts1\fts1_hash.c \
   $(TOP)\ext\fts1\fts1_hash.h \
   $(TOP)\ext\fts1\fts1_porter.c \
   $(TOP)\ext\fts1\fts1_tokenizer.h \
-  $(TOP)\ext\fts1\fts1_tokenizer1.c
-SRC = $(SRC) \
+  $(TOP)\ext\fts1\fts1_tokenizer1.c \
   $(TOP)\ext\fts2\fts2.c \
   $(TOP)\ext\fts2\fts2.h \
   $(TOP)\ext\fts2\fts2_hash.c \
@@ -829,7 +829,7 @@ SRC = $(SRC) \
   $(TOP)\ext\fts2\fts2_tokenizer.h \
   $(TOP)\ext\fts2\fts2_tokenizer.c \
   $(TOP)\ext\fts2\fts2_tokenizer1.c
-SRC = $(SRC) \
+SRC4 = \
   $(TOP)\ext\fts3\fts3.c \
   $(TOP)\ext\fts3\fts3.h \
   $(TOP)\ext\fts3\fts3Int.h \
@@ -846,24 +846,26 @@ SRC = $(SRC) \
   $(TOP)\ext\fts3\fts3_tokenize_vtab.c \
   $(TOP)\ext\fts3\fts3_unicode.c \
   $(TOP)\ext\fts3\fts3_unicode2.c \
-  $(TOP)\ext\fts3\fts3_write.c
-SRC = $(SRC) \
+  $(TOP)\ext\fts3\fts3_write.c \
   $(TOP)\ext\icu\sqliteicu.h \
-  $(TOP)\ext\icu\icu.c
-SRC = $(SRC) \
+  $(TOP)\ext\icu\icu.c \
   $(TOP)\ext\rtree\rtree.h \
   $(TOP)\ext\rtree\rtree.c
 
 
 # Generated source code files
 #
-SRC = $(SRC) \
+SRC5 = \
   keywordhash.h \
   opcodes.c \
   opcodes.h \
   parse.c \
   parse.h \
   sqlite3.h
+
+# All source code files.
+#
+SRC = $(SRC1) $(SRC2) $(SRC3) $(SRC4) $(SRC5)
 
 # Source code to the test files.
 #
@@ -1052,7 +1054,11 @@ mptester.exe:	$(TOP)\mptest\mptest.c libsqlite3.lib $(LIBRESOBJS) sqlite3.h
 .target_source:	$(SRC) $(TOP)\tool\vdbe-compress.tcl
 	-rmdir /S/Q tsrc
 	-mkdir tsrc
-	for %i in ($(SRC)) do copy /Y %i tsrc
+	for %i in ($(SRC1)) do copy /Y %i tsrc
+	for %i in ($(SRC2)) do copy /Y %i tsrc
+	for %i in ($(SRC3)) do copy /Y %i tsrc
+	for %i in ($(SRC4)) do copy /Y %i tsrc
+	for %i in ($(SRC5)) do copy /Y %i tsrc
 	del /Q tsrc\sqlite.h.in tsrc\parse.y
 	$(TCLSH_CMD) $(TOP)\tool\vdbe-compress.tcl $(OPTS) < tsrc\vdbe.c > vdbe.new
 	move vdbe.new tsrc\vdbe.c
