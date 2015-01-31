@@ -77,6 +77,17 @@ static void fts5Put4ByteVarint(u8 *a, int iVal){
   a[3] = (0x7F & (u8)(iVal));
 }
 
+static int fts5Get4ByteVarint(u8 *a, int *pnVarint){
+  int iRet = ((int)(a[0] & 0x7F) << 21) + ((int)(a[1] & 0x7F) << 14)
+       + ((int)(a[2] & 0x7F) <<  7) + ((int)(a[3]));
+  *pnVarint = (
+      (iRet & 0xFFFFFF80)==0 ? 1 : 
+      (iRet & 0xFFFFC000)==0 ? 2 :
+      (iRet & 0xFFE00000)==0 ? 3 : 4
+  );
+  return iRet;
+}
+
 /*
 ** Allocate a new hash table.
 */
@@ -398,10 +409,12 @@ int sqlite3Fts5HashIterate(
         while( rc==SQLITE_OK && iOff<pList->nData ){
           i64 iDelta;             /* Rowid delta value */
           int nPoslist;           /* Size of position list in bytes */
+          int nVarint;
           iOff += getVarint(&pPtr[iOff], (u64*)&iDelta);
           iRowid += iDelta;
-          iOff += fts5GetVarint32(&pPtr[iOff], nPoslist);
-          rc = xEntry(pCtx, iRowid, &pPtr[iOff], nPoslist);
+          nPoslist = fts5Get4ByteVarint(&pPtr[iOff], &nVarint);
+          iOff += 4;
+          rc = xEntry(pCtx, iRowid, &pPtr[iOff-nVarint], nPoslist+nVarint);
           iOff += nPoslist;
         }
 

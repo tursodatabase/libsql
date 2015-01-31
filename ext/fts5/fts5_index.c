@@ -3392,11 +3392,16 @@ static int fts5FlushNewEntry(
   Fts5FlushCtx *p = (Fts5FlushCtx*)pCtx;
   Fts5Index *pIdx = p->pIdx;
 
+#ifdef SQLITE_DEBUG
+  /* The poslist-size varint should already be at the start of the 
+  ** aPoslist/nPoslist buffer. This assert verifies that. */
+  int n, i;
+  i = fts5GetVarint32(aPoslist, n);
+  assert( nPoslist==(n+i) );
+#endif
+
   /* Append the rowid itself */
   fts5WriteAppendRowid(pIdx, &p->writer, iRowid);
-
-  /* Append the size of the position list in bytes */
-  fts5WriteAppendPoslistInt(pIdx, &p->writer, nPoslist);
 
   /* And the poslist data */
   fts5WriteAppendPoslistData(pIdx, &p->writer, aPoslist, nPoslist);

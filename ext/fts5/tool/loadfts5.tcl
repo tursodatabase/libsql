@@ -8,6 +8,8 @@ proc loadfile {f} {
 }
 
 set ::nRow 0
+set ::nRowPerDot 1000
+
 proc load_hierachy {dir} {
   foreach f [glob -nocomplain -dir $dir *] {
     if {$::O(limit) && $::nRow>=$::O(limit)} break
@@ -16,6 +18,13 @@ proc load_hierachy {dir} {
     } else {
       db eval { INSERT INTO t1 VALUES($f, loadfile($f)) }
       incr ::nRow
+
+      if {($::nRow % $::nRowPerDot)==0} {
+        puts -nonewline .
+        if {($::nRow % (65*$::nRowPerDot))==0} { puts "" }
+        flush stdout
+      }
+
     }
   }
 }
@@ -81,7 +90,9 @@ sqlite3 db [lindex $argv end-1]
 db func loadfile loadfile
 
 db transaction {
-  db eval "CREATE VIRTUAL TABLE t1 USING $O(vtab) (path, content$O(tok))"
+  catch {
+    db eval "CREATE VIRTUAL TABLE t1 USING $O(vtab) (path, content$O(tok))"
+  }
   if {$O(automerge)>=0} {
     if {$O(vtab) == "fts5"} {
       db eval { INSERT INTO t1(t1, rank) VALUES('automerge', $O(automerge)) }
