@@ -1,5 +1,5 @@
-C Merge\sin\ssupport\sfor\sthe\sindex_xinfo\spragma.
-D 2015-01-31T02:34:23.039
+C Have\sota\suse\simposter\stables\sto\swrite\sto\sindexes\sinstead\sof\sthe\ssqlite3_index_writer()\sinterface.\sThe\serror\shandling\sin\sthis\sversion\sis\sbroken\sin\sa\sfew\ssmall\sways.
+D 2015-01-31T20:42:04.027
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5407a688f4d77a05c18a8142be8ae5a2829dd610
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -135,8 +135,8 @@ F ext/ota/ota6.test 82f1f757ec9b2ad07d6de4060b8e3ba8e44dfdd3
 F ext/ota/ota7.test 1fe2c5761705374530e29f70c39693076028221a
 F ext/ota/ota8.test cd70e63a0c29c45c0906692827deafa34638feda
 F ext/ota/ota9.test d3eee95dd836824d07a22e5efcdb7bf6e869358b
-F ext/ota/otafault.test be02466863015a583cc0ceb6aca871a5e6f7a71b
-F ext/ota/sqlite3ota.c 84cab0f965144772068ec0183252ae5e5278f0be
+F ext/ota/otafault.test 508ba87c83d632670ac0f94371a465d4bb4d49dd
+F ext/ota/sqlite3ota.c 975ccfe032ee81ee39368ed5e9cb33cbb6edc603
 F ext/ota/sqlite3ota.h ce378c0c503f625611713133f9c79704ea4ee7a4
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 14e6239434d4e3f65d3e90320713f26aa24e167f
@@ -210,7 +210,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
 F src/loadext.c 86bd4e2fccd520b748cba52492ab60c4a770f660
-F src/main.c d6c5fd51a719fcdcf1cc9ef08349dbd4454cf2f3
+F src/main.c c4cb192ebf0bcc975648ae05ac40bc1f40018c52
 F src/malloc.c 740db54387204c9a2eb67c6d98e68b08e9ef4eab
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c abe6ee469b6c5a35c7f22bfeb9c9bac664a1c987
@@ -1254,7 +1254,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3ed6eb2fab5d95709ef392170339e6dd5ba13971 30f51d7b3b292191e8351223242e708bb7f3dfa6
-R 50758dde054ce12d446bde117108ee7b
-U drh
-Z ec35f224c29e962e36a2b69233e35843
+P f9b6dc77021ee421bffd5697d5d337d3bbd07eb9
+R 907483269529ba471a525b7f8d05bc2e
+U dan
+Z 87f206a3330dd276f74650f9e68af8ed

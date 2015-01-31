@@ -3644,12 +3644,14 @@ int sqlite3_test_control(int op, ...){
     */
     case SQLITE_TESTCTRL_IMPOSTER: {
       sqlite3 *db = va_arg(ap, sqlite3*);
+      sqlite3_mutex_enter(db->mutex);
       db->init.iDb = sqlite3FindDbName(db, va_arg(ap,const char*));
       db->init.busy = db->init.imposterTable = va_arg(ap,int);
       db->init.newTnum = va_arg(ap,int);
       if( db->init.busy==0 && db->init.newTnum>0 ){
         sqlite3ResetAllSchemasOfConnection(db);
       }
+      sqlite3_mutex_leave(db->mutex);
       break;
     }
   }

@@ -64,7 +64,6 @@ do_faultsim_test 2 -faults oom-trans* -prep {
                        {1 SQLITE_NOMEM} \
                        {1 SQLITE_IOERR_NOMEM} \
                        {1 {SQLITE_NOMEM - unable to open a temporary database file for storing temporary tables}}
-
   if {$testrc==0} {
     sqlite3 db test.db
     faultsim_integrity_check

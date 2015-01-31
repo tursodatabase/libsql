@@ -96,24 +96,23 @@ struct OtaState {
 **
 **     * the table itself, 
 **     * each index of the table (zero or more points to visit), and
-**     * a special "cleanup table" point.
+**     * a special "cleanup table" state.
 */
 struct OtaObjIter {
   sqlite3_stmt *pTblIter;         /* Iterate through tables */
   sqlite3_stmt *pIdxIter;         /* Index iterator */
   int nTblCol;                    /* Size of azTblCol[] array */
   char **azTblCol;                /* Array of quoted column names */
+  char **azTblType;               /* Array of column types */
   unsigned char *abTblPk;         /* Array of flags - true for PK columns */
   int eType;
-#if 0
-  unsigned char bRowid;           /* True for implicit IPK tables */
-  unsigned char bVtab;            /* True for a virtual table */
-#endif
 
   /* Output variables. zTbl==0 implies EOF. */
   int bCleanup;                   /* True in "cleanup" state */
   const char *zTbl;               /* Name of target db table */
   const char *zIdx;               /* Name of target db index (or null) */
+  int tnum;                       /* Root page of index (not table) */
+  int bUnique;                    /* Current index is unique */
   int iVisit;                     /* Number of points visited, incl. current */
 
   /* Statements created by otaObjIterPrepareAll() */
@@ -232,9 +231,11 @@ static void otaObjIterFreeCols(OtaObjIter *pIter){
   int i;
   for(i=0; i<pIter->nTblCol; i++){
     sqlite3_free(pIter->azTblCol[i]);
+    sqlite3_free(pIter->azTblType[i]);
   }
   sqlite3_free(pIter->azTblCol);
   pIter->azTblCol = 0;
+  pIter->azTblType = 0;
   pIter->abTblPk = 0;
   pIter->nTblCol = 0;
   sqlite3_free(pIter->zMask);
@@ -307,6 +308,8 @@ static int otaObjIterNext(sqlite3ota *p, OtaObjIter *pIter){
         pIter->zIdx = 0;
       }else{
         pIter->zIdx = (const char*)sqlite3_column_text(pIter->pIdxIter, 0);
+        pIter->tnum = sqlite3_column_int(pIter->pIdxIter, 1);
+        pIter->bUnique = sqlite3_column_int(pIter->pIdxIter, 2);
         rc = SQLITE_OK;
       }
     }
@@ -339,8 +342,9 @@ static int otaObjIterFirst(sqlite3ota *p, OtaObjIter *pIter){
 
   if( rc==SQLITE_OK ){
     rc = prepareAndCollectError(p->db, &pIter->pIdxIter, &p->zErrmsg,
-        "SELECT name FROM main.sqlite_master "
-        "WHERE type='index' AND tbl_name = ?"
+        "SELECT name, rootpage, sql IS NULL OR substr(8, 6)=='UNIQUE' "
+        "  FROM main.sqlite_master "
+        "  WHERE type='index' AND tbl_name = ?"
     );
   }
 
@@ -428,7 +432,7 @@ static int otaMPrintfExec(sqlite3ota *p, const char *zFmt, ...){
 ** error code in the OTA handle passed as the first argument.
 */
 static void otaAllocateIterArrays(sqlite3ota *p, OtaObjIter *pIter, int nCol){
-  int nByte = sizeof(char*) * nCol + sizeof(unsigned char*) * nCol;
+  int nByte = sizeof(char*) * nCol * 2 + sizeof(unsigned char*) * nCol;
   char **azNew;
 
   assert( p->rc==SQLITE_OK );
@@ -436,11 +440,31 @@ static void otaAllocateIterArrays(sqlite3ota *p, OtaObjIter *pIter, int nCol){
   if( azNew ){
     memset(azNew, 0, nByte);
     pIter->azTblCol = azNew;
-    pIter->abTblPk = (unsigned char*)&pIter->azTblCol[nCol];
+    pIter->azTblType = &azNew[nCol];
+    pIter->abTblPk = (unsigned char*)&pIter->azTblType[nCol];
   }else{
     p->rc = SQLITE_NOMEM;
   }
 }
+
+static char *otaStrndup(const char *zStr, int nStr, int *pRc){
+  char *zRet = 0;
+  assert( *pRc==SQLITE_OK );
+
+  if( zStr ){
+    int nCopy = nStr;
+    if( nCopy<0 ) nCopy = strlen(zStr) + 1;
+    zRet = (char*)sqlite3_malloc(nCopy);
+    if( zRet ){
+      memcpy(zRet, zStr, nCopy);
+    }else{
+      *pRc = SQLITE_NOMEM;
+    }
+  }
+
+  return zRet;
+}
+
 
 /*
 ** Return true if zTab is the name of a virtual table within the target
@@ -531,6 +555,8 @@ static int otaObjIterGetCols(sqlite3ota *p, OtaObjIter *pIter){
         );
       }else{
         int iPk = sqlite3_column_int(pStmt, 5);
+        const char *zType = (const char*)sqlite3_column_text(pStmt, 2);
+        pIter->azTblType[i] = otaStrndup(zType, -1, &p->rc);
         pIter->abTblPk[i] = (iPk!=0);
         if( iPk ){
           pIter->eType = (iPk<0) ? OTA_PK_EXTERNAL : OTA_PK_REAL;
@@ -642,6 +668,115 @@ static char *otaObjIterGetCollist(
     }
   }
   return zList;
+}
+
+/*
+** This function is used to create a SELECT list (the list of SQL 
+** expressions that follows a SELECT keyword) for a SELECT statement 
+** used to read from an ota_xxx table while updating the index object
+** currently indicated by the iterator object passed as the second 
+** argument. A "PRAGMA index_xinfo = <idxname>" statement is used to
+** obtain the required information.
+**
+** If the index is of the following form:
+**
+**   CREATE INDEX i1 ON t1(c, b COLLATE nocase);
+**
+** and "t1" is a table with an explicit INTEGER PRIMARY KEY column 
+** "ipk", the returned string is:
+**
+**   "`c` COLLATE 'BINARY', `b` COLLATE 'NOCASE', `ipk` COLLATE 'BINARY'"
+**
+** As well as the returned string, three other malloc'd strings are 
+** returned via output parameters. As follows:
+**
+**   pzImposterCols: ...
+**   pzImposterPk: ...
+**   pzWhere: ...
+*/
+static char *otaObjIterGetIndexCols(
+  sqlite3ota *p,                  /* OTA object */
+  OtaObjIter *pIter,              /* Object iterator for column names */
+  char **pzImposterCols,          /* OUT: Columns for imposter table */
+  char **pzImposterPk,            /* OUT: Imposter PK clause */
+  char **pzWhere,                 /* OUT: WHERE clause */
+  int *pnBind                     /* OUT: Total number of columns */
+){
+  int rc = p->rc;                 /* Error code */
+  int rc2;                        /* sqlite3_finalize() return code */
+  char *zRet = 0;                 /* String to return */
+  char *zImpCols = 0;             /* String to return via *pzImposterCols */
+  char *zImpPK = 0;               /* String to return via *pzImposterPK */
+  char *zWhere = 0;               /* String to return via *pzWhere */
+  int nBind = 0;                  /* Value to return via *pnBind */
+  const char *zComma = "";        /* Set to ", " later on */
+  const char *zAnd = "";          /* Set to " AND " later on */
+  sqlite3_stmt *pXInfo = 0;       /* PRAGMA index_xinfo = ? */
+
+  if( rc==SQLITE_OK ){
+    assert( p->zErrmsg==0 );
+    rc = prepareFreeAndCollectError(p->db, &pXInfo, &p->zErrmsg,
+        sqlite3_mprintf("PRAGMA main.index_xinfo = %Q", pIter->zIdx)
+    );
+  }
+
+  while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pXInfo) ){
+    const char *zCollate = (const char*)sqlite3_column_text(pXInfo, 4);
+    int iCid = sqlite3_column_int(pXInfo, 1);
+    const char *zCol;
+    const char *zType;
+
+    if( iCid<0 ){
+      /* An integer primary key. If the table has an explicit IPK, use
+      ** its name. Otherwise, use "ota_rowid".  */
+      if( pIter->eType==OTA_PK_REAL ){
+        int i;
+        for(i=0; i<pIter->nTblCol && pIter->abTblPk[i]==0; i++);
+        assert( i<pIter->nTblCol );
+        zCol = pIter->azTblCol[i];
+      }else{
+        zCol = "ota_rowid";
+      }
+      zType = "INTEGER";
+    }else{
+      zCol = pIter->azTblCol[iCid];
+      zType = pIter->azTblType[iCid];
+    }
+
+    zRet = sqlite3_mprintf("%z%s%s COLLATE %Q", zRet, zComma, zCol, zCollate);
+    if( pIter->bUnique==0 || sqlite3_column_int(pXInfo, 5) ){
+      zImpPK = sqlite3_mprintf("%z%sc%d", zImpPK, zComma, nBind);
+    }
+    zImpCols = sqlite3_mprintf(
+        "%z%sc%d %s COLLATE %Q", zImpCols, zComma, nBind, zType, zCollate
+    );
+    zWhere = sqlite3_mprintf("%z%sc%d IS ?", zWhere, zAnd, nBind);
+    if( zRet==0 || zImpPK==0 || zImpCols==0 || zWhere==0 ) rc = SQLITE_NOMEM;
+    zComma = ", ";
+    zAnd = " AND ";
+    nBind++;
+  }
+
+  rc2 = sqlite3_finalize(pXInfo);
+  if( rc==SQLITE_OK ) rc = rc2;
+
+  if( rc!=SQLITE_OK ){
+    sqlite3_free(zRet);
+    sqlite3_free(zImpCols);
+    sqlite3_free(zImpPK);
+    sqlite3_free(zWhere);
+    zRet = 0;
+    zImpCols = 0;
+    zImpPK = 0;
+    zWhere = 0;
+    p->rc = rc;
+  }
+
+  *pzImposterCols = zImpCols;
+  *pzImposterPk = zImpPK;
+  *pzWhere = zWhere;
+  *pnBind = nBind;
+  return zRet;
 }
 
 /*
@@ -792,6 +927,7 @@ static int otaObjIterPrepareAll(
 ){
   assert( pIter->bCleanup==0 );
   if( pIter->pSelect==0 && otaObjIterGetCols(p, pIter)==SQLITE_OK ){
+    const int tnum = pIter->tnum;
     char *zCollist = 0;           /* List of indexed columns */
     char **pz = &p->zErrmsg;
     const char *zIdx = pIter->zIdx;
@@ -803,25 +939,43 @@ static int otaObjIterPrepareAll(
     }
 
     if( zIdx ){
-      int *aiCol;                 /* Column map */
-      const char **azColl;        /* Collation sequences */
+      char *zImposterCols = 0;
+      char *zImposterPK = 0;
+      char *zWhere = 0;
+      char *zBind = 0;
+      int nBind = 0;
 
       assert( pIter->eType!=OTA_PK_VTAB );
+      zCollist = otaObjIterGetIndexCols(
+          p, pIter, &zImposterCols, &zImposterPK, &zWhere, &nBind
+      );
+      zBind = otaObjIterGetBindlist(p, nBind);
 
-      /* Create the index writers */
+      /* Create the imposter table used to write to this index. */
+      sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, p->db, "main", 0, 1);
+      sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, p->db, "main", 1, tnum);
+      otaMPrintfExec(p, 
+          "CREATE TABLE ota_imposter( %s, PRIMARY KEY( %s ) ) WITHOUT ROWID",
+          zImposterCols, zImposterPK
+      );
+      sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, p->db, "main", 0, 0);
+
+      /* Create the statement to insert index entries */
+      pIter->nCol = nBind;
       if( p->rc==SQLITE_OK ){
-        p->rc = sqlite3_index_writer(
-            p->db, 0, zIdx, &pIter->pInsert, &azColl, &aiCol, &pIter->nCol
+        p->rc = prepareFreeAndCollectError(p->db, &pIter->pInsert, &p->zErrmsg,
+          sqlite3_mprintf("INSERT INTO ota_imposter VALUES(%s)", zBind)
         );
       }
+
+      /* And to delete index entries */
       if( p->rc==SQLITE_OK ){
-        p->rc = sqlite3_index_writer(
-            p->db, 1, zIdx, &pIter->pDelete, &azColl, &aiCol, &pIter->nCol
+        p->rc = prepareFreeAndCollectError(p->db, &pIter->pDelete, &p->zErrmsg,
+          sqlite3_mprintf("DELETE FROM ota_imposter WHERE %s", zWhere)
         );
       }
 
       /* Create the SELECT statement to read keys in sorted order */
-      zCollist = otaObjIterGetCollist(p, pIter, pIter->nCol, aiCol, azColl);
       if( p->rc==SQLITE_OK ){
         char *zSql;
         if( pIter->eType==OTA_PK_EXTERNAL || pIter->eType==OTA_PK_NONE ){
@@ -844,6 +998,11 @@ static int otaObjIterPrepareAll(
         }
         p->rc = prepareFreeAndCollectError(p->db, &pIter->pSelect, pz, zSql);
       }
+
+      sqlite3_free(zImposterCols);
+      sqlite3_free(zImposterPK);
+      sqlite3_free(zWhere);
+      sqlite3_free(zBind);
     }else{
       int bOtaRowid = (pIter->eType==OTA_PK_VTAB || pIter->eType==OTA_PK_NONE);
       const char *zTbl = pIter->zTbl;
@@ -1205,7 +1364,7 @@ static int otaStep(sqlite3ota *p){
       sqlite3_stmt *pUpdate = 0;
       otaGetUpdateStmt(p, pIter, zMask, &pUpdate);
       if( pUpdate ){
-        for(i=0; i<pIter->nCol; i++){
+        for(i=0; p->rc==SQLITE_OK && i<pIter->nCol; i++){
           pVal = sqlite3_column_value(pIter->pSelect, i);
           sqlite3_bind_value(pUpdate, i+1, pVal);
         }
@@ -1373,24 +1532,6 @@ static void otaSaveTransactionState(sqlite3ota *p){
   if( rc!=SQLITE_OK ){
     p->rc = rc;
   }
-}
-
-static char *otaStrndup(char *zStr, int nStr, int *pRc){
-  char *zRet = 0;
-  assert( *pRc==SQLITE_OK );
-
-  if( zStr ){
-    int nCopy = nStr;
-    if( nCopy<0 ) nCopy = strlen(zStr) + 1;
-    zRet = (char*)sqlite3_malloc(nCopy);
-    if( zRet ){
-      memcpy(zRet, zStr, nCopy);
-    }else{
-      *pRc = SQLITE_NOMEM;
-    }
-  }
-
-  return zRet;
 }
 
 static void otaFreeState(OtaState *p){
@@ -1740,6 +1881,7 @@ static int test_sqlite3ota_cmd(
           db, "ota_delta", -1, SQLITE_UTF8, (void*)interp, test_ota_delta, 0, 0
       );
       Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
+      sqlite3_exec(db, "PRAGMA vdbe_trace = 1", 0, 0, 0);
       ret = (rc==SQLITE_OK ? TCL_OK : TCL_ERROR);
       break;
     }
