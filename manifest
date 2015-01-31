@@ -1,5 +1,5 @@
-C Change\sSQLITE_TESTCTRL_INITMODE\sto\sSQLITE_TESTCTRL_IMPOSTER.\s\sRevise\sthe\sorder\nof\sparameters.\s\sGive\sit\sthe\sability\sto\sreset\sthe\sschema\sparse\stable\sso\sthat\nimposter\stables\scan\sbe\serased.
-D 2015-01-30T20:59:27.457
+C Add\sthe\s"index_xinfo"\spragma.\s\sAdd\snew\scolumns\sto\sthe\s"index_info"\sand\n"index_list"\spragmas.
+D 2015-01-31T02:00:01.018
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5407a688f4d77a05c18a8142be8ae5a2829dd610
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -223,7 +223,7 @@ F src/parse.y c5d0d964f9ac023e8154cad512e54b0b6058e086
 F src/pcache.c d210cf90d04365a74f85d21374dded65af67b0cb
 F src/pcache.h b44658c9c932d203510279439d891a2a83e12ba8
 F src/pcache1.c 1e77432b40b7d3288327d9cdf399dcdfd2b6d3bf
-F src/pragma.c ba149bbbc90783f84815636c509ced8eac11bbcf
+F src/pragma.c f4d0326361cc875ecd9c92100c5b17363a6a671a
 F src/prepare.c 173a5a499138451b2561614ecb87d78f9f4644b9
 F src/printf.c 05edc41450d0eb2c05ef7db113bf32742ae65325
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
@@ -630,7 +630,7 @@ F test/genesis.tcl 1e2e2e8e5cc4058549a154ff1892fe5c9de19f98
 F test/hexlit.test f9ecde8145bfc2341573473256c74ae37a200497
 F test/hook.test 162d7cef7a2d2b04839fe14402934e6a1b79442f
 F test/icu.test 70df4faca133254c042d02ae342c0a141f2663f4
-F test/imposter1.test c3f1db2d3db2c24611a6596a3fc0ffc14f1466c8 w test/initmode.test
+F test/imposter1.test c3f1db2d3db2c24611a6596a3fc0ffc14f1466c8
 F test/in.test 047c4671328e9032ab95666a67021adbbd36e98e
 F test/in2.test 5d4c61d17493c832f7d2d32bef785119e87bde75
 F test/in3.test 3cbf58c87f4052cee3a58b37b6389777505aa0c0
@@ -786,7 +786,7 @@ F test/pcache.test b09104b03160aca0d968d99e8cd2c5b1921a993d
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
 F test/permutations.test f9cc1dd987986c9d4949211c7a4ed55ec9aecba1
-F test/pragma.test aa16dedfe01c02c8895169012f7dfde9c163f0d5
+F test/pragma.test 66776f48f533c7248d04c1473deb3ebb792daacd
 F test/pragma2.test aea7b3d82c76034a2df2b38a13745172ddc0bc13
 F test/pragma3.test 6f849ccffeee7e496d2f2b5e74152306c0b8757c
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
@@ -1202,7 +1202,7 @@ F tool/logest.c eef612f8adf4d0993dafed0416064cf50d5d33c6
 F tool/mkautoconfamal.sh d1a2da0e15b2ed33d60af35c7e9d483f13a8eb9f
 F tool/mkkeywordhash.c dfff09dbbfaf950e89af294f48f902181b144670
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
-F tool/mkpragmatab.tcl 07a5124cf2dbafa1b375eefcf8ac4227028b0f8b
+F tool/mkpragmatab.tcl 4a3b465f0a800d22ca419daad34389c6a44858c2
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 9ef48e1748dce7b844f67e2450ff9dfeb0fb4ab5
 F tool/mksqlite3c.tcl cfde806851c413db7689b9cb74a4eeb92539c601
@@ -1238,7 +1238,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 98e029134dc1300d3ecb48b41b5107ec69ba85db
-R ae5f14ccaf584de0786e4614152020d2
+P 42d5601739c90434e5adfda8fa99ef7b903877db
+R 6dd4b55c378d1f90a678654a5a3c72aa
+T *branch * index_xinfo
+T *sym-index_xinfo *
+T -sym-trunk *
 U drh
-Z c23d2e36f9e88e779a131b19c0ee1b9b
+Z 111ada8400958c014924f86391246d25
