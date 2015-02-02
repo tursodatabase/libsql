@@ -1,5 +1,5 @@
-C Break\sout\sthe\s(script-generated)\spragma\sparsing\stables\sinto\sa\sseparate\sfile,\npragma.h,\sto\smake\sediting\seasier.
-D 2015-02-02T21:34:54.408
+C Add\san\sexperimental\spragma\s"PRAGMA\spreload;"\sthat\spreloads\sthe\spcache\swith\nthe\sentire\sdatabase\sfile.
+D 2015-02-02T22:19:05.803
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cbe64ed4d90a19062b804f7fbd319080f851b004
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -223,8 +223,8 @@ F src/parse.y c5d0d964f9ac023e8154cad512e54b0b6058e086
 F src/pcache.c d210cf90d04365a74f85d21374dded65af67b0cb
 F src/pcache.h b44658c9c932d203510279439d891a2a83e12ba8
 F src/pcache1.c 1e77432b40b7d3288327d9cdf399dcdfd2b6d3bf
-F src/pragma.c 58044728a29a0240d14a850c3870e5ac3da436b2
-F src/pragma.h 28804eae1286aab6f2ffa3682dc0b06b58c51834
+F src/pragma.c a5b397bd62def3b4b1f670b512ca11a1d2805b29
+F src/pragma.h 32eb95f87ccb49e7eec028d6e981b8cc2e0fa65c
 F src/prepare.c 173a5a499138451b2561614ecb87d78f9f4644b9
 F src/printf.c 05edc41450d0eb2c05ef7db113bf32742ae65325
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
@@ -1203,7 +1203,7 @@ F tool/logest.c eef612f8adf4d0993dafed0416064cf50d5d33c6
 F tool/mkautoconfamal.sh d1a2da0e15b2ed33d60af35c7e9d483f13a8eb9f
 F tool/mkkeywordhash.c dfff09dbbfaf950e89af294f48f902181b144670
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
-F tool/mkpragmatab.tcl 4b4e91f6b8fc45596686798b918999e923b91fc7
+F tool/mkpragmatab.tcl 848a74446f372451cd4d3a60a3d9aee29c258f1e
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 9ef48e1748dce7b844f67e2450ff9dfeb0fb4ab5
 F tool/mksqlite3c.tcl 6b8e572a90eb4e0086e3ba90d88b76c085919863
@@ -1239,7 +1239,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 42d5601739c90434e5adfda8fa99ef7b903877db
-R ad79dcf7ddc97ee53618558cb6690870
+P 32c0325bcb083fe3f0f0cfe999d00f754e15299e
+R ccc9897517b2c20b95a8eb47a0bf1dbc
+T *branch * preload-pragma
+T *sym-preload-pragma *
+T -sym-trunk *
 U drh
-Z 0fdc8db6e22e6c93e424fbfcfceed021
+Z 4ac85c2d90b0f57362188f2ac4ef8b13

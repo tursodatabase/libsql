@@ -28,23 +28,24 @@
 #define PragTyp_PAGE_COUNT                    22
 #define PragTyp_MMAP_SIZE                     23
 #define PragTyp_PAGE_SIZE                     24
-#define PragTyp_SECURE_DELETE                 25
-#define PragTyp_SHRINK_MEMORY                 26
-#define PragTyp_SOFT_HEAP_LIMIT               27
-#define PragTyp_STATS                         28
-#define PragTyp_SYNCHRONOUS                   29
-#define PragTyp_TABLE_INFO                    30
-#define PragTyp_TEMP_STORE                    31
-#define PragTyp_TEMP_STORE_DIRECTORY          32
-#define PragTyp_THREADS                       33
-#define PragTyp_WAL_AUTOCHECKPOINT            34
-#define PragTyp_WAL_CHECKPOINT                35
-#define PragTyp_ACTIVATE_EXTENSIONS           36
-#define PragTyp_HEXKEY                        37
-#define PragTyp_KEY                           38
-#define PragTyp_REKEY                         39
-#define PragTyp_LOCK_STATUS                   40
-#define PragTyp_PARSER_TRACE                  41
+#define PragTyp_PRELOAD                       25
+#define PragTyp_SECURE_DELETE                 26
+#define PragTyp_SHRINK_MEMORY                 27
+#define PragTyp_SOFT_HEAP_LIMIT               28
+#define PragTyp_STATS                         29
+#define PragTyp_SYNCHRONOUS                   30
+#define PragTyp_TABLE_INFO                    31
+#define PragTyp_TEMP_STORE                    32
+#define PragTyp_TEMP_STORE_DIRECTORY          33
+#define PragTyp_THREADS                       34
+#define PragTyp_WAL_AUTOCHECKPOINT            35
+#define PragTyp_WAL_CHECKPOINT                36
+#define PragTyp_ACTIVATE_EXTENSIONS           37
+#define PragTyp_HEXKEY                        38
+#define PragTyp_KEY                           39
+#define PragTyp_REKEY                         40
+#define PragTyp_LOCK_STATUS                   41
+#define PragTyp_PARSER_TRACE                  42
 #define PragFlag_NeedSchema           0x01
 #define PragFlag_ReadOnly             0x02
 static const struct sPragmaNames {
@@ -305,6 +306,10 @@ static const struct sPragmaNames {
     /* ePragFlag: */ 0,
     /* iArg:      */ 0 },
 #endif
+  { /* zName:     */ "preload",
+    /* ePragTyp:  */ PragTyp_PRELOAD,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ 0 },
 #if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
   { /* zName:     */ "query_only",
     /* ePragTyp:  */ PragTyp_FLAG,
@@ -452,4 +457,4 @@ static const struct sPragmaNames {
     /* iArg:      */ SQLITE_WriteSchema|SQLITE_RecoveryMode },
 #endif
 };
-/* Number of pragmas: 58 on by default, 71 total. */
+/* Number of pragmas: 59 on by default, 72 total. */

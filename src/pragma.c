@@ -1343,6 +1343,28 @@ void sqlite3Pragma(
   }
   break;
 
+  /* Try to load the entire database file into the pcache.
+  */
+  case PragTyp_PRELOAD: {
+    Pager *pPager = sqlite3BtreePager(pDb->pBt);
+    Pgno i, nPage;
+    int rc = SQLITE_OK;
+    DbPage *pPage, *pPage0 = 0;
+    if( pPager
+     && sqlite3PagerSharedLock(pPager)==SQLITE_OK
+     && sqlite3PagerGet(pPager, 1, &pPage0)==SQLITE_OK
+    ){
+      sqlite3PagerPagecount(pPager, (int*)&nPage);
+      for(i=2; rc==SQLITE_OK && i<=nPage; i++){
+        rc = sqlite3PagerGet(pPager, i, &pPage);
+        sqlite3PagerUnref(pPage);
+      }
+      if( rc ) sqlite3ErrorMsg(pParse, "preload failed");
+    }
+    sqlite3PagerUnref(pPage0);
+    break;
+  }
+
 #ifndef SQLITE_INTEGRITY_CHECK_ERROR_MAX
 # define SQLITE_INTEGRITY_CHECK_ERROR_MAX 100
 #endif
