@@ -113,11 +113,11 @@ extern int pclose(FILE*);
 ** routines take care of that.
 */
 #if defined(_WIN32) || defined(WIN32)
-static setBinaryMode(FILE *out){
+static void setBinaryMode(FILE *out){
   fflush(out);
   _setmode(_fileno(out), _O_BINARY);
 }
-static setTextMode(FILE *out){
+static void setTextMode(FILE *out){
   fflush(out);
   _setmode(_fileno(out), _O_TEXT);
 }
@@ -3329,7 +3329,7 @@ static int do_meta_command(char *zLine, ShellState *p){
 #if defined(SQLITE_DEBUG) && defined(SQLITE_ENABLE_SELECTTRACE)
   if( c=='s' && n==11 && strncmp(azArg[0], "selecttrace", n)==0 ){
     extern int sqlite3SelectTrace;
-    sqlite3SelectTrace = nArg>=2 ? booleanValue(azArg[1]) : 0xff;
+    sqlite3SelectTrace = integerValue(azArg[1]);
   }else
 #endif
 
@@ -3536,6 +3536,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       { "scratchmalloc",         SQLITE_TESTCTRL_SCRATCHMALLOC          },
       { "byteorder",             SQLITE_TESTCTRL_BYTEORDER              },
       { "never_corrupt",         SQLITE_TESTCTRL_NEVER_CORRUPT          },
+      { "imposter",              SQLITE_TESTCTRL_IMPOSTER               },
     };
     int testctrl = -1;
     int rc = 0;
@@ -3627,6 +3628,18 @@ static int do_meta_command(char *zLine, ShellState *p){
           }
           break;
 #endif
+
+        case SQLITE_TESTCTRL_IMPOSTER:
+          if( nArg==5 ){
+            rc = sqlite3_test_control(testctrl, p->db, 
+                          azArg[2],
+                          integerValue(azArg[3]),
+                          integerValue(azArg[4]));
+          }else{
+            fprintf(stderr,"Usage: .testctrl initmode dbName onoff tnum\n");
+            rc = 1;
+          }
+          break;
 
         case SQLITE_TESTCTRL_BITVEC_TEST:         
         case SQLITE_TESTCTRL_FAULT_INSTALL:       
@@ -4195,6 +4208,7 @@ int main(int argc, char **argv){
   }
 #endif
   setBinaryMode(stdin);
+  setvbuf(stderr, 0, _IONBF, 0); /* Make sure stderr is unbuffered */
   Argv0 = argv[0];
   main_init(&data);
   stdin_is_interactive = isatty(0);

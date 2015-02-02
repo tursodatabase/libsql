@@ -621,4 +621,14 @@ do_test misc1-19.2 {
   set fault_callbacks
 } {0}
 
+# 2015-01-26:  Valgrind-detected over-read.
+# Reported on sqlite-users@sqlite.org by Michal Zalewski.  Found by afl-fuzz
+# presumably.
+#
+do_execsql_test misc1-20.1 {
+  CREATE TABLE t0(x INTEGER DEFAULT(0==0) NOT NULL);
+  REPLACE INTO t0(x) VALUES('');
+  SELECT rowid, quote(x) FROM t0;
+} {1 ''}
+
 finish_test

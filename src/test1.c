@@ -5914,7 +5914,8 @@ static int test_test_control(
     int i;
   } aVerb[] = {
     { "SQLITE_TESTCTRL_LOCALTIME_FAULT", SQLITE_TESTCTRL_LOCALTIME_FAULT }, 
-    { "SQLITE_TESTCTRL_SORTER_MMAP", SQLITE_TESTCTRL_SORTER_MMAP }, 
+    { "SQLITE_TESTCTRL_SORTER_MMAP",     SQLITE_TESTCTRL_SORTER_MMAP     }, 
+    { "SQLITE_TESTCTRL_IMPOSTER",        SQLITE_TESTCTRL_IMPOSTER        },
   };
   int iVerb;
   int iFlag;
@@ -5953,6 +5954,22 @@ static int test_test_control(
       if( getDbPointer(interp, Tcl_GetString(objv[2]), &db) ) return TCL_ERROR;
       if( Tcl_GetIntFromObj(interp, objv[3], &val) ) return TCL_ERROR;
       sqlite3_test_control(SQLITE_TESTCTRL_SORTER_MMAP, db, val);
+      break;
+    }
+
+    case SQLITE_TESTCTRL_IMPOSTER: {
+      int onOff, tnum;
+      const char *zDbName;
+      sqlite3 *db;
+      if( objc!=6 ){
+        Tcl_WrongNumArgs(interp, 2, objv, "DB dbName onOff tnum");
+        return TCL_ERROR;
+      }
+      if( getDbPointer(interp, Tcl_GetString(objv[2]), &db) ) return TCL_ERROR;
+      zDbName = Tcl_GetString(objv[3]);
+      if( Tcl_GetIntFromObj(interp, objv[4], &onOff) ) return TCL_ERROR;
+      if( Tcl_GetIntFromObj(interp, objv[5], &tnum) ) return TCL_ERROR;
+      sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, db, zDbName, onOff, tnum);
       break;
     }
   }
