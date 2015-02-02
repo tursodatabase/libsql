@@ -117,7 +117,7 @@ proc print_rd {map} {
   puts "** E\"). The resuls of passing a codepoint that corresponds to an"
   puts "** uppercase letter are undefined."
   puts "*/"
-  puts "static int remove_diacritic(int c)\{"
+  puts "static int ${::remove_diacritic}(int c)\{"
   puts "  unsigned short aDia\[\] = \{"
   puts -nonewline "        0, "
   set i 1
@@ -626,7 +626,7 @@ proc print_fold {zFunc} {
   tl_print_table_footer toggle
   tl_print_ioff_table $liOff
 
-  puts {
+  puts [subst -nocommands {
   int ret = c;
 
   assert( c>=0 );
@@ -659,9 +659,9 @@ proc print_fold {zFunc} {
       }
     }
 
-    if( bRemoveDiacritic ) ret = remove_diacritic(ret);
+    if( bRemoveDiacritic ) ret = ${::remove_diacritic}(ret);
   }
-  }
+  }]
 
   foreach entry $lHigh {
     tl_print_if_entry $entry
@@ -772,6 +772,7 @@ if {[llength $argv]<2} usage
 set unicodedata.txt [lindex $argv end]
 set casefolding.txt [lindex $argv end-1]
 
+set remove_diacritic remove_diacritic
 set generate_test_code 0
 set generate_fts5_code 0
 set function_prefix "sqlite3Fts"
@@ -783,6 +784,7 @@ for {set i 0} {$i < [llength $argv]-2} {incr i} {
     -fts5 {
       set function_prefix sqlite3Fts5
       set generate_fts5_code 1
+      set remove_diacritic fts5_remove_diacritic
     }
     default {
       usage

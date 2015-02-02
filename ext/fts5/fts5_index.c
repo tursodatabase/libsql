@@ -3793,7 +3793,7 @@ static void fts5IndexIntegrityCheckSegment(
       }
 
       fts5DlidxIterFree(pDlidx);
-      // fts5DlidxIterTestReverse(p, iIdx, iSegid, iter.iLeaf);
+      fts5DlidxIterTestReverse(p, iIdx, iSegid, iter.iLeaf);
     }
   }
 

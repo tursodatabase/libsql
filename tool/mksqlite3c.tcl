@@ -342,6 +342,7 @@ foreach file {
    fts5parse.c
    fts5_storage.c
    fts5_tokenize.c
+   fts5_unicode2.c
 
    rtree.c
    icu.c

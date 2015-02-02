@@ -243,7 +243,8 @@ SRC += \
    $(TOP)/ext/fts5/fts5_index.c \
    fts5parse.c \
    $(TOP)/ext/fts5/fts5_storage.c \
-   $(TOP)/ext/fts5/fts5_tokenize.c 
+   $(TOP)/ext/fts5/fts5_tokenize.c \
+   $(TOP)/ext/fts5/fts5_unicode2.c 
 
 
 # Generated source code files
@@ -634,7 +635,8 @@ fts5parse.c:	$(TOP)/ext/fts5/fts5parse.y lemon
 	rm -f fts5parse.h
 	./lemon $(OPTS) fts5parse.y
 	mv fts5parse.c fts5parse.c.orig
-	cat fts5parse.c.orig | sed 's/yy/fts5yy/g' | sed 's/YY/fts5YY/g' > fts5parse.c
+	cat fts5parse.c.orig | sed 's/yy/fts5yy/g' | sed 's/YY/fts5YY/g' \
+		| sed 's/TOKEN/FTS5TOKEN/g' > fts5parse.c
 
 
 userauth.o:	$(TOP)/ext/userauth/userauth.c $(HDR) $(EXTHDR)

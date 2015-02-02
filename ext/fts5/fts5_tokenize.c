@@ -561,6 +561,7 @@ struct PorterRule {
   int nOutput;
 };
 
+#if 0
 static int fts5PorterApply(char *aBuf, int *pnBuf, PorterRule *aRule){
   int ret = -1;
   int nBuf = *pnBuf;
@@ -584,6 +585,7 @@ static int fts5PorterApply(char *aBuf, int *pnBuf, PorterRule *aRule){
 
   return ret;
 }
+#endif
 
 static int fts5PorterIsVowel(char c, int bYIsVowel){
   return (

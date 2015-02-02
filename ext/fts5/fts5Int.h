@@ -16,7 +16,6 @@
 
 #include "fts5.h"
 #include "sqliteInt.h"
-#include "fts3_tokenizer.h"
 
 
 /*
