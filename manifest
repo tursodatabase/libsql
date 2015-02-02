@@ -1,5 +1,5 @@
-C Fix\ssome\sproblems\swith\sbuilding\sfts5\sand\sfts3\stogether\susing\sthe\samalgamation.
-D 2015-02-02T11:32:20.159
+C Ensure\sgenerated\sheader\sfile\sfts5parse.h\sis\sincluded\sin\ssqlite3.c.
+D 2015-02-02T11:58:21.261
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5407a688f4d77a05c18a8142be8ae5a2829dd610
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -197,7 +197,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk e3b4499dc6c442e5bba2474ef9f7fd83f859a2cf
+F main.mk f53de1926f080336a0eb0f4807f122c5ee63aae3
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
 F mkopcodeh.awk c6b3fa301db6ef7ac916b14c60868aeaec1337b5
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
@@ -1251,7 +1251,7 @@ F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkpragmatab.tcl 07a5124cf2dbafa1b375eefcf8ac4227028b0f8b
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 9ef48e1748dce7b844f67e2450ff9dfeb0fb4ab5
-F tool/mksqlite3c.tcl d04425b480c822c637524f5f058672182fbed2b0
+F tool/mksqlite3c.tcl ce1e8a27ecf2d20194325237a3bba6b40e7eed3b
 F tool/mksqlite3h.tcl ba24038056f51fde07c0079c41885ab85e2cff12
 F tool/mksqlite3internalh.tcl eb994013e833359137eb53a55acdad0b5ae1049b
 F tool/mkvsix.tcl 52a4c613707ac34ae9c226e5ccc69cb948556105
@@ -1284,7 +1284,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 76212f2c9a3c3ff0e238d6dad776938c6af674e6
-R 6b8af163b7b0fb43dcbdad20d71a2bdf
+P fb10bbb9f9c4481e6043d323a3018a4ec68eb0ff
+R 5aa72f287ea58e03f6201c3554f79f11
 U dan
-Z 3017212b5b79cafa2f215942f5826316
+Z faf1a2c366b2fc1b07a53967e5d081da

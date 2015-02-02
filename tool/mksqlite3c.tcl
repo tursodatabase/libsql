@@ -99,6 +99,7 @@ foreach hdr {
    fts3_tokenizer.h
    fts5.h
    fts5Int.h
+   fts5parse.h
    hash.h
    hwtime.h
    keywordhash.h

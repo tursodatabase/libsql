@@ -241,7 +241,7 @@ SRC += \
    $(TOP)/ext/fts5/fts5_expr.c \
    $(TOP)/ext/fts5/fts5_hash.c \
    $(TOP)/ext/fts5/fts5_index.c \
-   fts5parse.c \
+   fts5parse.c fts5parse.h \
    $(TOP)/ext/fts5/fts5_storage.c \
    $(TOP)/ext/fts5/fts5_tokenize.c \
    $(TOP)/ext/fts5/fts5_unicode2.c 
@@ -414,6 +414,7 @@ EXTHDR += \
   $(TOP)/ext/icu/sqliteicu.h
 EXTHDR += \
   $(TOP)/ext/fts5/fts5Int.h  \
+  fts5parse.h                \
   $(TOP)/ext/fts5/fts5.h 
 EXTHDR += \
   $(TOP)/ext/userauth/sqlite3userauth.h
