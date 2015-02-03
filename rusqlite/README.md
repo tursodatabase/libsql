@@ -13,7 +13,7 @@ extern crate time;
 use time::Timespec;
 use rusqlite::SqliteConnection;
 
-#[derive(Show)]
+#[derive(Debug)]
 struct Person {
     id: i32,
     name: String,
