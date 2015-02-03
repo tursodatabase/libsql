@@ -730,9 +730,6 @@ void sqlite3GenerateRowIndexDelete(
   Vdbe *v;           /* The prepared statement under construction */
   Index *pPk;        /* PRIMARY KEY index, or NULL for rowid tables */
 
-  /* Skip this if we are in OTA mode */
-  if( pParse->db->flags & SQLITE_OtaMode ) return;
-
   v = pParse->pVdbe;
   pPk = HasRowid(pTab) ? 0 : sqlite3PrimaryKeyIndex(pTab);
   for(i=0, pIdx=pTab->pIndex; pIdx; i++, pIdx=pIdx->pNext){

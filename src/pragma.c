@@ -320,14 +320,6 @@ static const struct sPragmaNames {
     /* ePragTyp:  */ PragTyp_MMAP_SIZE,
     /* ePragFlag: */ 0,
     /* iArg:      */ 0 },
-#endif
-#if defined(SQLITE_ENABLE_OTA)
-  { /* zName:     */ "ota_mode",
-    /* ePragTyp:  */ PragTyp_FLAG,
-    /* ePragFlag: */ 0,
-    /* iArg:      */ SQLITE_OtaMode },
-#endif
-#if !defined(SQLITE_OMIT_PAGER_PRAGMAS)
   { /* zName:     */ "page_count",
     /* ePragTyp:  */ PragTyp_PAGE_COUNT,
     /* ePragFlag: */ PragFlag_NeedSchema,
@@ -496,7 +488,7 @@ static const struct sPragmaNames {
     /* iArg:      */ SQLITE_WriteSchema|SQLITE_RecoveryMode },
 #endif
 };
-/* Number of pragmas: 59 on by default, 74 total. */
+/* Number of pragmas: 59 on by default, 73 total. */
 /* End of the automatically generated pragma table.
 ***************************************************************************/
 
@@ -1545,9 +1537,6 @@ void sqlite3Pragma(
           k = 1;
         }else{
           for(k=1; ALWAYS(k<=pTab->nCol) && pPk->aiColumn[k-1]!=i; k++){}
-          if( (db->flags & SQLITE_OtaMode) && HasRowid(pTab) ){
-            k = -1 * k;
-          }
         }
         sqlite3VdbeAddOp2(v, OP_Integer, k, 6);
         sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 6);

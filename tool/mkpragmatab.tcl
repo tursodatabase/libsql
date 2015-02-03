@@ -318,11 +318,6 @@ set pragma_def {
 
   NAME: pager_ota_mode
   IF:   defined(SQLITE_ENABLE_OTA)
-
-  NAME: ota_mode
-  TYPE: FLAG
-  ARG:  SQLITE_OtaMode
-  IF:   defined(SQLITE_ENABLE_OTA)
 }
 fconfigure stdout -translation lf
 set name {}

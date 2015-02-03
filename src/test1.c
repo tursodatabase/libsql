@@ -6922,11 +6922,11 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_user_change",       test_user_change,       0 },
      { "sqlite3_user_delete",       test_user_delete,       0 },
 #endif
-
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
      { "sqlite3_stmt_scanstatus",       test_stmt_scanstatus,   0 },
      { "sqlite3_stmt_scanstatus_reset", test_stmt_scanstatus_reset,   0 },
 #endif
+
   };
 
   static int bitmask_size = sizeof(Bitmask)*8;

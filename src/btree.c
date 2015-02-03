@@ -151,8 +151,7 @@ static int hasSharedCacheTableLock(
   ** and has the read-uncommitted flag set, then no lock is required. 
   ** Return true immediately.
   */
-  if( (pBtree->db->flags & SQLITE_OtaMode)
-   || (pBtree->sharable==0)
+  if( (pBtree->sharable==0)
    || (eLockType==READ_LOCK && (pBtree->db->flags & SQLITE_ReadUncommitted))
   ){
     return 1;

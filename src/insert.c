@@ -1365,10 +1365,6 @@ void sqlite3GenerateConstraintChecks(
     int iThisCur;        /* Cursor for this UNIQUE index */
     int addrUniqueOk;    /* Jump here if the UNIQUE constraint is satisfied */
 
-    /* If the "ota_mode" flag is set, ignore all indexes except the PK 
-    ** index of WITHOUT ROWID tables.  */
-    if( (db->flags & SQLITE_OtaMode) && pIdx!=pPk) continue;
-
     if( aRegIdx[ix]==0 ) continue;  /* Skip indices that do not change */
     if( bAffinityDone==0 ){
       sqlite3TableAffinity(v, pTab, regNewData+1);
@@ -1560,15 +1556,6 @@ void sqlite3CompleteInsertion(
   assert( pTab->pSelect==0 );  /* This table is not a VIEW */
   for(i=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
     if( aRegIdx[i]==0 ) continue;
-
-    /* If the "ota_mode" flag is set, ignore all indexes except the PK 
-    ** index of WITHOUT ROWID tables.  */
-    if( (pParse->db->flags & SQLITE_OtaMode) 
-     && (HasRowid(pTab) || pIdx->idxType!=SQLITE_IDXTYPE_PRIMARYKEY) 
-    ){
-      continue;
-    }
-
     bAffinityDone = 1;
     if( pIdx->pPartIdxWhere ){
       sqlite3VdbeAddOp2(v, OP_IsNull, aRegIdx[i], sqlite3VdbeCurrentAddr(v)+2);
