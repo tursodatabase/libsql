@@ -148,6 +148,39 @@ foreach {tn2 cmd} {1 run_ota 2 step_ota 3 step_ota_uri} {
       CREATE TABLE t1(a, b, c, PRIMARY KEY(a, c));
       CREATE INDEX i1 ON t1(b);
     }
+
+    10 { 
+      CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+      CREATE INDEX i1 ON t1(b DESC);
+    }
+
+    11 { 
+      CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+      CREATE INDEX i1 ON t1(b DESC, a ASC, c DESC);
+    }
+
+    12 { 
+      CREATE TABLE t1(a INT PRIMARY KEY DESC, b, c) WITHOUT ROWID; 
+    }
+
+    13 { 
+      CREATE TABLE t1(a INT, b, c, PRIMARY KEY(a DESC)) WITHOUT ROWID; 
+    }
+
+    14 { 
+      CREATE TABLE t1(a, b, c, PRIMARY KEY(a DESC, c)) WITHOUT ROWID;
+      CREATE INDEX i1 ON t1(b);
+    }
+
+    15 { 
+      CREATE TABLE t1(a, b, c, PRIMARY KEY(a, c DESC)) WITHOUT ROWID;
+      CREATE INDEX i1 ON t1(b);
+    }
+
+    16 { 
+      CREATE TABLE t1(a, b, c, PRIMARY KEY(c DESC, a)) WITHOUT ROWID;
+      CREATE INDEX i1 ON t1(b DESC, c, a);
+    }
   } {
     reset_db
     execsql $schema
@@ -157,15 +190,23 @@ foreach {tn2 cmd} {1 run_ota 2 step_ota 3 step_ota_uri} {
       $cmd test.db ota.db
     } {SQLITE_DONE}
 
-    do_execsql_test 1.$tn2.$tn.2 {
-      SELECT * FROM t1 ORDER BY a ASC;
-    } {
+    do_execsql_test 1.$tn2.$tn.2 { SELECT * FROM t1 ORDER BY a ASC } {
       1 2 3 
       2 two three 
       3 {} 8.2
     }
+    do_execsql_test 1.$tn2.$tn.3 { SELECT * FROM t1 ORDER BY b ASC } {
+      3 {} 8.2
+      1 2 3 
+      2 two three 
+    }
+    do_execsql_test 1.$tn2.$tn.4 { SELECT * FROM t1 ORDER BY c ASC } {
+      1 2 3 
+      3 {} 8.2
+      2 two three 
+    }
  
-    do_execsql_test 1.$tn2.$tn.3 { PRAGMA integrity_check } ok
+    do_execsql_test 1.$tn2.$tn.5 { PRAGMA integrity_check } ok
   }
 }
 
@@ -273,6 +314,19 @@ foreach {tn2 cmd} {1 run_ota 2 step_ota} {
     }
     5 {
       CREATE TABLE t1(a INT PRIMARY KEY, b, c);
+      CREATE INDEX i1 ON t1(b);
+      CREATE INDEX i2 ON t1(c, b);
+      CREATE INDEX i3 ON t1(c, b, c);
+    }
+
+    6 {
+      CREATE TABLE t1(a INT PRIMARY KEY DESC, b, c);
+      CREATE INDEX i1 ON t1(b DESC);
+      CREATE INDEX i2 ON t1(c, b);
+      CREATE INDEX i3 ON t1(c DESC, b, c);
+    }
+    7 {
+      CREATE TABLE t1(a INT PRIMARY KEY DESC, b, c) WITHOUT ROWID;
       CREATE INDEX i1 ON t1(b);
       CREATE INDEX i2 ON t1(c, b);
       CREATE INDEX i3 ON t1(c, b, c);

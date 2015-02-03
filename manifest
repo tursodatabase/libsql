@@ -1,5 +1,5 @@
-C Remove\s"PRAGMA\sota_mode".
-D 2015-02-03T15:56:08.271
+C Fix\ssome\sproblems\ssurrounding\sWITHOUT\sROWID\stables\swith\sDESC\sprimary\skey\sindexes\n.
+D 2015-02-03T18:43:42.428
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5407a688f4d77a05c18a8142be8ae5a2829dd610
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -125,7 +125,7 @@ F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
 F ext/ota/README.txt 78d4a9f78f567d4bf826cf0f02df6254902562ca
 F ext/ota/ota.c c11a85af71dccc45976622fe7a51169a481caa91
-F ext/ota/ota1.test d76b9ec77437759e9da0ff4abe9c070bb9f4eae1
+F ext/ota/ota1.test 719854e444dff2ead58ff6b62d8315954bd7762a
 F ext/ota/ota10.test ab815dff9cef7248c504f06b888627d236f25e9c
 F ext/ota/ota2.test 2829bc08ffbb71b605392a68fedfd554763356a7
 F ext/ota/ota3.test a77efbce7723332eb688d2b28bf18204fc9614d7
@@ -136,7 +136,7 @@ F ext/ota/ota7.test 1fe2c5761705374530e29f70c39693076028221a
 F ext/ota/ota8.test cd70e63a0c29c45c0906692827deafa34638feda
 F ext/ota/ota9.test d3eee95dd836824d07a22e5efcdb7bf6e869358b
 F ext/ota/otafault.test 508ba87c83d632670ac0f94371a465d4bb4d49dd
-F ext/ota/sqlite3ota.c 52c91eec41b8fbb5ed12a8f0a2159bc5ec16498f
+F ext/ota/sqlite3ota.c de2e605697871de02fd9ea717a57c00bf022a27e
 F ext/ota/sqlite3ota.h ce378c0c503f625611713133f9c79704ea4ee7a4
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 14e6239434d4e3f65d3e90320713f26aa24e167f
@@ -238,7 +238,7 @@ F src/parse.y c5d0d964f9ac023e8154cad512e54b0b6058e086
 F src/pcache.c d210cf90d04365a74f85d21374dded65af67b0cb
 F src/pcache.h b44658c9c932d203510279439d891a2a83e12ba8
 F src/pcache1.c 1e77432b40b7d3288327d9cdf399dcdfd2b6d3bf
-F src/pragma.c 26fc55619109828c9b7add4cfa8a961b6f4c456d
+F src/pragma.c e39954ff47e287f88bdf9e9adb123da029e83d9f
 F src/prepare.c 173a5a499138451b2561614ecb87d78f9f4644b9
 F src/printf.c 05edc41450d0eb2c05ef7db113bf32742ae65325
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
@@ -1254,7 +1254,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P cdaeab467f6aa3217be161377a9b78a4eec37093
-R 2703aba199c695992db82956950982ca
+P 1c111447a07687c30ed4ad5a6c27a169c85b7ea6
+R 544935f49f95af3db3c849fcc1fc392c
 U dan
-Z fae9dc4e5e5c1a2d2a162b422a05ccf9
+Z 5f7217c8a4b7a144888c5aa7b5260598

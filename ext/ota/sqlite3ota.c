@@ -645,8 +645,9 @@ static char *otaObjIterGetIndexCols(
   }
 
   while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pXInfo) ){
-    const char *zCollate = (const char*)sqlite3_column_text(pXInfo, 4);
     int iCid = sqlite3_column_int(pXInfo, 1);
+    int bDesc = sqlite3_column_int(pXInfo, 3);
+    const char *zCollate = (const char*)sqlite3_column_text(pXInfo, 4);
     const char *zCol;
     const char *zType;
 
@@ -669,7 +670,8 @@ static char *otaObjIterGetIndexCols(
 
     zRet = sqlite3_mprintf("%z%s\"%w\" COLLATE %Q", zRet, zCom, zCol, zCollate);
     if( pIter->bUnique==0 || sqlite3_column_int(pXInfo, 5) ){
-      zImpPK = sqlite3_mprintf("%z%sc%d", zImpPK, zCom, nBind);
+      const char *zOrder = (bDesc ? " DESC" : "");
+      zImpPK = sqlite3_mprintf("%z%sc%d%s", zImpPK, zCom, nBind, zOrder);
     }
     zImpCols = sqlite3_mprintf(
         "%z%sc%d %s COLLATE %Q", zImpCols, zCom, nBind, zType, zCollate
@@ -840,6 +842,46 @@ static char *otaObjIterGetBindlist(sqlite3ota *p, int nBind){
 }
 
 /*
+** The iterator currently points to a table (not index) of type 
+** OTA_PK_WITHOUT_ROWID. This function creates the PRIMARY KEY 
+** declaration for the corresponding imposter table. For example,
+** if the iterator points to a table created as:
+**
+**   CREATE TABLE t1(a, b, c, PRIMARY KEY(b, a DESC)) WITHOUT ROWID
+**
+** this function returns:
+**
+**   PRIMARY KEY("b", "a" DESC)
+*/
+static char *otaWithoutRowidPK(sqlite3ota *p, OtaObjIter *pIter){
+  char *z = 0;
+  assert( pIter->zIdx==0 );
+  if( p->rc==SQLITE_OK ){
+    const char *zSep = "PRIMARY KEY(";
+    sqlite3_stmt *pXInfo = 0;     /* PRAGMA index_xinfo = (pIter->zTbl) */
+    int rc;                       /* sqlite3_finalize() return code */
+
+    p->rc = prepareFreeAndCollectError(p->db, &pXInfo, &p->zErrmsg,
+        sqlite3_mprintf("PRAGMA main.index_xinfo = %Q", pIter->zTbl)
+    );
+    while( p->rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pXInfo) ){
+      if( sqlite3_column_int(pXInfo, 5) ){
+        /* int iCid = sqlite3_column_int(pXInfo, 0); */
+        const char *zCol = (const char*)sqlite3_column_text(pXInfo, 2);
+        const char *zDesc = sqlite3_column_int(pXInfo, 3) ? " DESC" : "";
+        z = otaMPrintfAndCollectError(p, "%z%s\"%w\"%s", z, zSep, zCol, zDesc);
+        zSep = ", ";
+      }
+    }
+    z = otaMPrintfAndCollectError(p, "%z)", z);
+
+    rc = sqlite3_finalize(pXInfo);
+    if( p->rc==SQLITE_OK ) p->rc = rc;
+  }
+  return z;
+}
+
+/*
 ** If an error has already occurred when this function is called, it 
 ** immediately returns zero (without doing any work). Or, if an error
 ** occurs during the execution of this function, it sets the error code
@@ -876,30 +918,31 @@ static void otaCreateImposterTable(sqlite3ota *p, OtaObjIter *pIter){
     sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, p->db, "main", 0, 1);
 
     for(iCol=0; p->rc==SQLITE_OK && iCol<pIter->nTblCol; iCol++){
+      const char *zPk = "";
       int iDataCol = pIter->aiTblOrder[iCol];
       const char *zCol = pIter->azTblCol[iDataCol];
       const char *zColl = 0;
+
       p->rc = sqlite3_table_column_metadata(
           p->db, "main", pIter->zTbl, zCol, 0, &zColl, 0, 0, 0
       );
-      zSql = otaMPrintfAndCollectError(p, "%z%s\"%w\" %s COLLATE %s", 
-          zSql, zComma, zCol, pIter->azTblType[iDataCol], zColl
+
+      if( pIter->eType==OTA_PK_IPK && pIter->abTblPk[iCol] ){
+        /* If the target table column is an "INTEGER PRIMARY KEY", add
+        ** "PRIMARY KEY" to the imposter table column declaration. */
+        zPk = "PRIMARY KEY ";
+      }
+      zSql = otaMPrintfAndCollectError(p, "%z%s\"%w\" %s %sCOLLATE %s", 
+          zSql, zComma, zCol, pIter->azTblType[iDataCol], zPk, zColl
       );
       zComma = ", ";
     }
 
-    if( pIter->eType==OTA_PK_IPK || pIter->eType==OTA_PK_WITHOUT_ROWID ){
-      zSql = otaMPrintfAndCollectError(p, "%z, PRIMARY KEY(", zSql);
-      zComma = "";
-      for(iCol=0; iCol<pIter->nTblCol; iCol++){
-        if( pIter->abTblPk[iCol] ){
-          zSql = otaMPrintfAndCollectError(p, "%z%s\"%w\"", 
-              zSql, zComma, pIter->azTblCol[iCol]
-          );
-          zComma = ", ";
-        }
+    if( pIter->eType==OTA_PK_WITHOUT_ROWID ){
+      char *zPk = otaWithoutRowidPK(p, pIter);
+      if( zPk ){
+        zSql = otaMPrintfAndCollectError(p, "%z, %z", zSql, zPk);
       }
-      zSql = otaMPrintfAndCollectError(p, "%z)", zSql);
     }
 
     zSql = otaMPrintfAndCollectError(p, "CREATE TABLE ota_imposter(%z)%s", 
