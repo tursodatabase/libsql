@@ -110,6 +110,7 @@ foreach hdr {
    pager.h
    parse.h
    pcache.h
+   pragma.h
    rtree.h
    sqlite3ext.h
    sqlite3.h

@@ -1743,6 +1743,7 @@ do_test 23.2a {
   db2 eval {SELECT cid, name, "desc", coll, "key", '|' FROM out ORDER BY seqno}
 } {2 c 0 BINARY 1 | 3 d 0 BINARY 1 | 1 b 0 BINARY 1 |}
 do_test 23.2b {
+breakpoint;
   capture_pragma db2 out {PRAGMA index_xinfo(i2)}
   db2 eval {SELECT cid, name, "desc", coll, "key", '|' FROM out ORDER BY seqno}
 } {2 c 0 BINARY 1 | 3 d 0 BINARY 1 | 1 b 0 BINARY 1 | -1 {} 0 BINARY 0 |}
