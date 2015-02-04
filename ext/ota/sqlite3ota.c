@@ -118,7 +118,8 @@ struct OtaObjIter {
   int bCleanup;                   /* True in "cleanup" state */
   const char *zTbl;               /* Name of target db table */
   const char *zIdx;               /* Name of target db index (or null) */
-  int tnum;                       /* Root page of index (not table) */
+  int iTnum;                      /* Root page of current object */
+  int iPkTnum;                    /* If eType==EXTERNAL, root of PK index */
   int bUnique;                    /* Current index is unique */
   int iVisit;                     /* Number of points visited, incl. current */
 
@@ -320,7 +321,7 @@ static int otaObjIterNext(sqlite3ota *p, OtaObjIter *pIter){
           pIter->zTbl = 0;
         }else{
           pIter->zTbl = (const char*)sqlite3_column_text(pIter->pTblIter, 0);
-          pIter->tnum = sqlite3_column_int(pIter->pTblIter, 1);
+          pIter->iTnum = sqlite3_column_int(pIter->pTblIter, 1);
           rc = SQLITE_OK;
         }
       }else{
@@ -334,7 +335,7 @@ static int otaObjIterNext(sqlite3ota *p, OtaObjIter *pIter){
           pIter->zIdx = 0;
         }else{
           pIter->zIdx = (const char*)sqlite3_column_text(pIter->pIdxIter, 0);
-          pIter->tnum = sqlite3_column_int(pIter->pIdxIter, 1);
+          pIter->iTnum = sqlite3_column_int(pIter->pIdxIter, 1);
           pIter->bUnique = sqlite3_column_int(pIter->pIdxIter, 2);
           rc = SQLITE_OK;
         }
@@ -470,7 +471,8 @@ static int otaObjIterCacheTableInfo(sqlite3ota *p, OtaObjIter *pIter){
     /* Figure out the type of table this step will deal with. */
     assert( pIter->eType==0 );
     sqlite3_test_control(
-        SQLITE_TESTCTRL_TBLTYPE, p->db, "main", pIter->zTbl, &pIter->eType
+        SQLITE_TESTCTRL_TBLTYPE, p->db, "main", pIter->zTbl, &pIter->eType,
+        &pIter->iPkTnum
     );
     assert( pIter->eType==OTA_PK_NONE || pIter->eType==OTA_PK_IPK 
          || pIter->eType==OTA_PK_EXTERNAL || pIter->eType==OTA_PK_WITHOUT_ROWID
@@ -761,6 +763,19 @@ static char *otaObjIterGetWhere(
   char *zList = 0;
   if( pIter->eType==OTA_PK_VTAB || pIter->eType==OTA_PK_NONE ){
     zList = otaMPrintf(p, "_rowid_ = ?%d", pIter->nTblCol+1);
+  }else if( pIter->eType==OTA_PK_EXTERNAL ){
+    const char *zSep = "";
+    int i;
+    for(i=0; i<pIter->nTblCol; i++){
+      if( pIter->abTblPk[i] ){
+        zList = otaMPrintf(p, "%z%sc%d=?%d", zList, zSep, i, i+1);
+        zSep = " AND ";
+      }
+    }
+    zList = otaMPrintf(p, 
+        "_rowid_ = (SELECT id FROM ota_imposter2 WHERE %z)", zList
+    );
+
   }else{
     const char *zSep = "";
     int i;
@@ -879,6 +894,75 @@ static char *otaWithoutRowidPK(sqlite3ota *p, OtaObjIter *pIter){
   return z;
 }
 
+static void otaCreateImposterTable2(sqlite3ota *p, OtaObjIter *pIter){
+  if( p->rc==SQLITE_OK && pIter->eType==OTA_PK_EXTERNAL ){
+    int tnum = pIter->iPkTnum;    /* Root page of PK index */
+    sqlite3_stmt *pQuery = 0;     /* SELECT name ... WHERE rootpage = $tnum */
+    const char *zIdx = 0;         /* Name of PK index */
+    sqlite3_stmt *pXInfo = 0;     /* PRAGMA main.index_xinfo = $zIdx */
+    int rc;
+
+    const char *zComma = "";
+
+    char *zCols = 0;              /* Used to build up list of table cols */
+    char *zPk = 0;                /* Used to build up table PK declaration */
+    char *zSql = 0;               /* CREATE TABLE statement */
+
+    /* Figure out the name of the primary key index for the current table.
+    ** This is needed for the argument to "PRAGMA index_xinfo". Set
+    ** zIdx to point to a nul-terminated string containing this name. */
+    p->rc = prepareAndCollectError(p->db, &pQuery, &p->zErrmsg, 
+        "SELECT name FROM sqlite_master WHERE rootpage = ?"
+    );
+    if( p->rc==SQLITE_OK ){
+      sqlite3_bind_int(pQuery, 1, tnum);
+      if( SQLITE_ROW==sqlite3_step(pQuery) ){
+        zIdx = (const char*)sqlite3_column_text(pQuery, 0);
+      }
+      if( zIdx==0 ){
+        p->rc = SQLITE_CORRUPT;
+      }
+    }
+    assert( (zIdx==0)==(p->rc!=SQLITE_OK) );
+
+    if( p->rc==SQLITE_OK ){
+      p->rc = prepareFreeAndCollectError(p->db, &pXInfo, &p->zErrmsg,
+          sqlite3_mprintf("PRAGMA main.index_xinfo = %Q", zIdx)
+      );
+    }
+    sqlite3_finalize(pQuery);
+
+    while( p->rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pXInfo) ){
+      int bKey = sqlite3_column_int(pXInfo, 5);
+      if( bKey ){
+        int iCid = sqlite3_column_int(pXInfo, 1);
+        int bDesc = sqlite3_column_int(pXInfo, 3);
+        const char *zCollate = (const char*)sqlite3_column_text(pXInfo, 4);
+        zCols = otaMPrintf(p, "%z%sc%d %s COLLATE %s", zCols, zComma, 
+            iCid, pIter->azTblType[iCid], zCollate
+        );
+        zPk = otaMPrintf(p, "%z%sc%d%s", zPk, zComma, iCid, bDesc?" DESC":"");
+        zComma = ", ";
+      }
+    }
+    zCols = otaMPrintf(p, "%z, id INTEGER", zCols);
+    rc = sqlite3_finalize(pXInfo);
+    if( p->rc==SQLITE_OK ) p->rc = rc;
+
+    zSql = otaMPrintf(p, 
+        "CREATE TABLE ota_imposter2(%z, PRIMARY KEY(%z)) WITHOUT ROWID", 
+        zCols, zPk
+    );
+    assert( (zSql==0)==(p->rc!=SQLITE_OK) );
+    if( zSql ){
+      sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, p->db, "main", 1, tnum);
+      p->rc = sqlite3_exec(p->db, zSql, 0, 0, &p->zErrmsg);
+      sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, p->db, "main", 0, 0);
+    }
+    sqlite3_free(zSql);
+  }
+}
+
 /*
 ** If an error has already occurred when this function is called, it 
 ** immediately returns zero (without doing any work). Or, if an error
@@ -905,11 +989,13 @@ static char *otaWithoutRowidPK(sqlite3ota *p, OtaObjIter *pIter){
 **     No imposters required. 
 **
 **   OTA_PK_EXTERNAL:
-**     Two imposters are required (TODO!!)
+**     Two imposters are required. The first has the same schema as the
+**     target database table, with no PRIMARY KEY or UNIQUE clauses. The
+**     second is used to access the PK b-tree index on disk.
 */
 static void otaCreateImposterTable(sqlite3ota *p, OtaObjIter *pIter){
   if( p->rc==SQLITE_OK && pIter->eType!=OTA_PK_VTAB ){
-    int tnum = pIter->tnum;
+    int tnum = pIter->iTnum;
     const char *zComma = "";
     char *zSql = 0;
     int iCol;
@@ -966,7 +1052,7 @@ static int otaObjIterPrepareAll(
 ){
   assert( pIter->bCleanup==0 );
   if( pIter->pSelect==0 && otaObjIterCacheTableInfo(p, pIter)==SQLITE_OK ){
-    const int tnum = pIter->tnum;
+    const int tnum = pIter->iTnum;
     char *zCollist = 0;           /* List of indexed columns */
     char **pz = &p->zErrmsg;
     const char *zIdx = pIter->zIdx;
@@ -1067,6 +1153,7 @@ static int otaObjIterPrepareAll(
 
       /* Create the imposter table or tables (if required). */
       otaCreateImposterTable(p, pIter);
+      otaCreateImposterTable2(p, pIter);
       zWrite = (pIter->eType==OTA_PK_VTAB ? zTbl : "ota_imposter");
 
       /* Create the INSERT statement to write to the target PK b-tree */
@@ -1941,7 +2028,6 @@ static int test_sqlite3ota_cmd(
           db, "ota_delta", -1, SQLITE_UTF8, (void*)interp, test_ota_delta, 0, 0
       );
       Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
-      sqlite3_exec(db, "PRAGMA vdbe_trace = 1", 0, 0, 0);
       ret = (rc==SQLITE_OK ? TCL_OK : TCL_ERROR);
       break;
     }
