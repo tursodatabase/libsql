@@ -1,5 +1,5 @@
-C Avoid\sa\slinear\sscan\sof\sthe\sentire\stable\swhen\sota\supdates\sor\sdeletes\sa\srow\sfrom\sa\stable\swith\san\sexternal\sprimary\skey\sindex.
-D 2015-02-04T16:32:47.267
+C Fix\sthe\serror\smessages\sreturned\sby\sota\sif\san\supdate\sviolates\sa\sunique\sconstraint.
+D 2015-02-04T19:20:42.631
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5407a688f4d77a05c18a8142be8ae5a2829dd610
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -136,7 +136,7 @@ F ext/ota/ota7.test 1fe2c5761705374530e29f70c39693076028221a
 F ext/ota/ota8.test cd70e63a0c29c45c0906692827deafa34638feda
 F ext/ota/ota9.test d3eee95dd836824d07a22e5efcdb7bf6e869358b
 F ext/ota/otafault.test 508ba87c83d632670ac0f94371a465d4bb4d49dd
-F ext/ota/sqlite3ota.c 8d1f7f1643b85bd442cc99a919b1bbbac5b1d785
+F ext/ota/sqlite3ota.c 41df903106a0107aa70068090b263c93a502da72
 F ext/ota/sqlite3ota.h ce378c0c503f625611713133f9c79704ea4ee7a4
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 14e6239434d4e3f65d3e90320713f26aa24e167f
@@ -1254,7 +1254,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0d5415f26427d0af89663c5a3e944e488143b648
-R f9a2d13b5d717bd34c88d8b13812d5f5
+P 1db198ccca1e5c5a922cefe3daeff8d2e5d3a7f7
+R d14aafac71cb07666d32346674c8200d
 U dan
-Z 54797f4495fbc966460447f60ea02156
+Z f2b3565f17adbd359615b6fecd58bae9
