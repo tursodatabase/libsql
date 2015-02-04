@@ -12,7 +12,7 @@ static const char zHelp[] =
   "  --explain           Like --sqlonly but with added EXPLAIN keywords\n"
   "  --heap SZ MIN       Memory allocator uses SZ bytes & min allocation MIN\n"
   "  --incrvacuum        Enable incremenatal vacuum mode\n"
-  "  --journalmode M     Set the journal_mode to MODE\n"
+  "  --journal M         Set the journal_mode to M\n"
   "  --key KEY           Set the encryption key to KEY\n"
   "  --lookaside N SZ    Configure lookaside for N slots of SZ bytes each\n"
   "  --nosync            Set PRAGMA synchronous=OFF\n"

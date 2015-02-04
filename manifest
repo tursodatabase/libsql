@@ -1,9 +1,9 @@
-C Fix\sthe\serror\smessages\sreturned\sby\sota\sif\san\supdate\sviolates\sa\sunique\sconstraint.
-D 2015-02-04T19:20:42.631
+C Merge\sall\schanges\sfrom\sindex_xinfo,\sincluding\sthe\smove\sof\sthe\spragma\stable\ninto\sthe\sseparate\spragma.h\sfile.
+D 2015-02-04T23:51:59.867
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in 5407a688f4d77a05c18a8142be8ae5a2829dd610
+F Makefile.in 6b9e7677829aa94b9f30949656e27312aefb9a46
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 1edfd7dd45d98a04f9a2fa81a01c49faeb628578
+F Makefile.msc fc6b0b233b5621f3e56298e4d6a0b3f6c936c520
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md d58e3bebc0a4145e0f2a87994015fdb575a8e866
 F VERSION d846487aff892625eb8e75960234e7285f0462fe
@@ -167,7 +167,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 9d3b0b164e5e1eda8af9ac60520c315699dccbc3
+F main.mk 1de9f345052b7cf631e3323b42bd35064cdfcf0a
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
 F mkopcodeh.awk c6b3fa301db6ef7ac916b14c60868aeaec1337b5
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
@@ -238,7 +238,8 @@ F src/parse.y c5d0d964f9ac023e8154cad512e54b0b6058e086
 F src/pcache.c d210cf90d04365a74f85d21374dded65af67b0cb
 F src/pcache.h b44658c9c932d203510279439d891a2a83e12ba8
 F src/pcache1.c 1e77432b40b7d3288327d9cdf399dcdfd2b6d3bf
-F src/pragma.c e39954ff47e287f88bdf9e9adb123da029e83d9f
+F src/pragma.c 6e376554d9574416559101369fad2207c1e73299
+F src/pragma.h d2f776d719d156544638fe3f87f9627d8e16222f
 F src/prepare.c 173a5a499138451b2561614ecb87d78f9f4644b9
 F src/printf.c 05edc41450d0eb2c05ef7db113bf32742ae65325
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
@@ -903,7 +904,7 @@ F test/speed3.test d32043614c08c53eafdc80f33191d5bd9b920523
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
-F test/speedtest1.c e4e2aa37ff66bad9f414a50a8cb9edfaac65c9e5
+F test/speedtest1.c 2b416dca3a155fcaa849540b2e7fc1df12896c23
 F test/spellfix.test 24f676831acddd2f4056a598fd731a72c6311f49
 F test/sqllimits1.test 9014524e7ab16e2a4976b13397db4c29cc29c6d9
 F test/stat.test 76fd746b85459e812a0193410fb599f0531f22de
@@ -1218,10 +1219,10 @@ F tool/logest.c eef612f8adf4d0993dafed0416064cf50d5d33c6
 F tool/mkautoconfamal.sh d1a2da0e15b2ed33d60af35c7e9d483f13a8eb9f
 F tool/mkkeywordhash.c dfff09dbbfaf950e89af294f48f902181b144670
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
-F tool/mkpragmatab.tcl aea392b69f8e72715760629cd50411d37bc85de4
+F tool/mkpragmatab.tcl a5cb9b20ad7abb2ffd519c85f1f8f99bcbfa6823
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 9ef48e1748dce7b844f67e2450ff9dfeb0fb4ab5
-F tool/mksqlite3c.tcl cfde806851c413db7689b9cb74a4eeb92539c601
+F tool/mksqlite3c.tcl 6b8e572a90eb4e0086e3ba90d88b76c085919863
 F tool/mksqlite3h.tcl ba24038056f51fde07c0079c41885ab85e2cff12
 F tool/mksqlite3internalh.tcl eb994013e833359137eb53a55acdad0b5ae1049b
 F tool/mkvsix.tcl 52a4c613707ac34ae9c226e5ccc69cb948556105
@@ -1254,7 +1255,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1db198ccca1e5c5a922cefe3daeff8d2e5d3a7f7
-R d14aafac71cb07666d32346674c8200d
-U dan
-Z f2b3565f17adbd359615b6fecd58bae9
+P c4845a3b591723ff60b7b1da198f44908c12bdfc 3af19f84446ba5fc1ed754d0d73f6a6d7fb2f365
+R f8693fbefe5770ef46252d8013588714
+U drh
+Z 86d4960217df24559dfd1328c13955b1
