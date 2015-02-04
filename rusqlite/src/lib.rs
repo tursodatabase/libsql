@@ -49,6 +49,7 @@
 //! }
 //! ```
 #![feature(unsafe_destructor, core, std_misc, libc, rustc_private, collections, hash)]
+#![cfg_attr(test, feature(test))]
 
 extern crate libc;
 #[macro_use] extern crate rustc_bitflags;
