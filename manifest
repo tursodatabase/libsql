@@ -1,5 +1,5 @@
-C Fix\ssome\sproblems\ssurrounding\sWITHOUT\sROWID\stables\swith\sDESC\sprimary\skey\sindexes\n.
-D 2015-02-03T18:43:42.428
+C Fix\sa\smemory\sleak\sthat\scould\sfollow\san\sOOM\serror\sin\sota.
+D 2015-02-04T11:08:47.037
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5407a688f4d77a05c18a8142be8ae5a2829dd610
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -136,7 +136,7 @@ F ext/ota/ota7.test 1fe2c5761705374530e29f70c39693076028221a
 F ext/ota/ota8.test cd70e63a0c29c45c0906692827deafa34638feda
 F ext/ota/ota9.test d3eee95dd836824d07a22e5efcdb7bf6e869358b
 F ext/ota/otafault.test 508ba87c83d632670ac0f94371a465d4bb4d49dd
-F ext/ota/sqlite3ota.c de2e605697871de02fd9ea717a57c00bf022a27e
+F ext/ota/sqlite3ota.c d8910eb0f88d8641fd14c3aa7497d06cb9007745
 F ext/ota/sqlite3ota.h ce378c0c503f625611713133f9c79704ea4ee7a4
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 14e6239434d4e3f65d3e90320713f26aa24e167f
@@ -1254,7 +1254,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1c111447a07687c30ed4ad5a6c27a169c85b7ea6
-R 544935f49f95af3db3c849fcc1fc392c
+P a21fefb79a161e6bb057ae4f6ba554f659706ac1
+R d3231c518b6e7b2eec719e82b7a1a42f
 U dan
-Z 5f7217c8a4b7a144888c5aa7b5260598
+Z 7434d64dd874abe2fbb928ef046bb349
