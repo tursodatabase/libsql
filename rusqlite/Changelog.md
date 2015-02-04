@@ -1,3 +1,7 @@
+# Version 0.0.8 (2015-02-04)
+
+* Updates to track latest rustc changes.
+
 # Version 0.0.7 (2015-01-20)
 
 * Use external bitflags from crates.io.
