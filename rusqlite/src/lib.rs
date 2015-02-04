@@ -9,7 +9,7 @@
 //! use time::Timespec;
 //! use rusqlite::SqliteConnection;
 //!
-//! #[derive(Show)]
+//! #[derive(Debug)]
 //! struct Person {
 //!     id: i32,
 //!     name: String,
@@ -48,8 +48,7 @@
 //!     }
 //! }
 //! ```
-#![feature(unsafe_destructor)]
-#![allow(unstable)]
+#![feature(unsafe_destructor, core, std_misc, libc, rustc_private, collections, hash)]
 
 extern crate libc;
 #[macro_use] extern crate rustc_bitflags;
@@ -88,7 +87,7 @@ unsafe fn errmsg_to_string(errmsg: *const c_char) -> String {
 }
 
 /// Encompasses an error result from a call to the SQLite C API.
-#[derive(Show)]
+#[derive(Debug)]
 pub struct SqliteError {
     /// The error code returned by a SQLite C API call. See [SQLite Result
     /// Codes](http://www.sqlite.org/rescode.html) for details.
@@ -99,7 +98,7 @@ pub struct SqliteError {
     pub message: String,
 }
 
-impl fmt::String for SqliteError {
+impl fmt::Display for SqliteError {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         write!(f, "SqliteError( code: {}, message: {} )", self.code, self.message)
     }
@@ -323,7 +322,7 @@ impl SqliteConnection {
     }
 }
 
-impl fmt::Show for SqliteConnection {
+impl fmt::Debug for SqliteConnection {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "SqliteConnection()")
     }
@@ -547,7 +546,7 @@ impl<'conn> SqliteStatement<'conn> {
     }
 }
 
-impl<'conn> fmt::Show for SqliteStatement<'conn> {
+impl<'conn> fmt::Debug for SqliteStatement<'conn> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Statement( conn: {:?}, stmt: {:?} )", self.conn, self.stmt)
     }
