@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\sthe\s--help\soutput\sfor\sspeedtest1.\s\sFix\sa\sdependency\serror\nin\sthe\sMakefile.in\sfor\sspeedtest1.
-D 2015-02-03T19:20:03.925
+C Fix\sa\smissing\smutex\sin\sSQLITE_TESTCTRL_IMPOSTER.
+D 2015-02-04T20:56:49.607
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6b9e7677829aa94b9f30949656e27312aefb9a46
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -195,7 +195,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
 F src/loadext.c 86bd4e2fccd520b748cba52492ab60c4a770f660
-F src/main.c ce38ddcedf33e5530b0e6c592809bb8822a6e8d0
+F src/main.c 17e3a37374f3c13e27311773c30720b61584f5b9
 F src/malloc.c 740db54387204c9a2eb67c6d98e68b08e9ef4eab
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c abe6ee469b6c5a35c7f22bfeb9c9bac664a1c987
@@ -1239,7 +1239,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 32c0325bcb083fe3f0f0cfe999d00f754e15299e
-R bad15cd9a09e70db326718a2b46f4f15
+P f30a057aeeac2b863493b6325325b075a76b9d21
+R 7062d08c73f32c9ecf1fbd0a908460e5
 U drh
-Z 7d911e25922695ad0d97d7880d37d5b6
+Z 50e6879801fe010f0d0350ec5e4483dd
