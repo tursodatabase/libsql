@@ -129,7 +129,6 @@ do_execsql_test 4.1 {
   INSERT INTO t2 VALUES(10, 10, 10);
   INSERT INTO t3 VALUES(10, 10, 10);
   INSERT INTO t4 VALUES(10, 10);
-
 }
 
 foreach {tn error ota} {
@@ -142,9 +141,11 @@ foreach {tn error ota} {
   4 {SQLITE_CONSTRAINT - NOT NULL constraint failed: t2.c} {
     INSERT INTO data_t2 VALUES(1, 'abc', NULL, 0);
   }
+
   5 {SQLITE_MISMATCH - datatype mismatch} {
     INSERT INTO data_t3 VALUES(1, 'abc', NULL, 0);
   }
+
   6 {SQLITE_CONSTRAINT - NOT NULL constraint failed: t4.b} {
     INSERT INTO data_t4 VALUES('a', NULL, 0);
   }
@@ -157,6 +158,10 @@ foreach {tn error ota} {
   9  {SQLITE_CONSTRAINT - NOT NULL constraint failed: t3.b} {
     INSERT INTO data_t3 VALUES(10, NULL, 10, '.x.');
   }
+
+  10 {SQLITE_MISMATCH - datatype mismatch} {
+    INSERT INTO data_t3 VALUES(1, 'abc', 'text', 0);
+  }
 } {
   set ota "
     CREATE TABLE data_t2(a, b, c, ota_control);
@@ -164,11 +169,19 @@ foreach {tn error ota} {
     CREATE TABLE data_t4(a, b, ota_control);
     $ota
   "
-  do_test 4.$tn {
+  do_test 4.2.$tn {
     list [catch { apply_ota $ota } msg] $msg
   } [list 1 $error]
 }
 
+do_test 4.3 {
+  set ota {
+    CREATE TABLE data_t3(a, b, c, ota_control);
+    INSERT INTO data_t3 VALUES(1, 'abc', '5', 0);
+    INSERT INTO data_t3 VALUES(1, 'abc', '-6.0', 0);
+  }
+  list [catch { apply_ota $ota } msg] $msg
+} {0 SQLITE_DONE}
 
 
 finish_test

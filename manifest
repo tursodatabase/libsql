@@ -1,5 +1,5 @@
-C Prevent\sota\supdates\sfrom\sviolating\sNOT\sNULL\sconstraints.\sAdd\sa\scomment\sto\sthe\s"limitations"\ssection\sof\ssqlite3ota.h\ssaying\sthat\sCHECK\sconstraints\sare\snot\senforced.
-D 2015-02-05T17:36:30.528
+C Change\sa\scomment\sin\ssqlite3ota.h\sto\smake\sit\sclear\sthat\sit\sis\snot\spossible\sto\sinsert\sa\sNULL\svalue\sinto\san\sINTEGER\sPRIMARY\sKEY\scolumn\susing\sota.
+D 2015-02-05T17:46:19.663
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6b9e7677829aa94b9f30949656e27312aefb9a46
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -126,7 +126,7 @@ F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
 F ext/ota/README.txt 78d4a9f78f567d4bf826cf0f02df6254902562ca
 F ext/ota/ota.c c11a85af71dccc45976622fe7a51169a481caa91
 F ext/ota/ota1.test 719854e444dff2ead58ff6b62d8315954bd7762a
-F ext/ota/ota10.test 69bded736f5dd1e07b96e5c51c081e2fd051cb12
+F ext/ota/ota10.test 85e0f6e7964db5007590c1b299e75211ed4240d4
 F ext/ota/ota2.test 2829bc08ffbb71b605392a68fedfd554763356a7
 F ext/ota/ota3.test a77efbce7723332eb688d2b28bf18204fc9614d7
 F ext/ota/ota4.test 82434aa39c9acca6cd6317f6b0ab07b0ec6c2e7d
@@ -137,7 +137,7 @@ F ext/ota/ota8.test cd70e63a0c29c45c0906692827deafa34638feda
 F ext/ota/ota9.test d3eee95dd836824d07a22e5efcdb7bf6e869358b
 F ext/ota/otafault.test 508ba87c83d632670ac0f94371a465d4bb4d49dd
 F ext/ota/sqlite3ota.c 6f4f4e07d48ad51b745a5d30ba601a6895fd15ba
-F ext/ota/sqlite3ota.h 22423135fcdf7b242af8039b2ebf8437685e87c9
+F ext/ota/sqlite3ota.h b4c54c7df5d223f2ee40efa5ba363188daa3ad37
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 14e6239434d4e3f65d3e90320713f26aa24e167f
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
@@ -1255,7 +1255,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 50ecdfc443b51e3569c6add2fba5132f959c61cb
-R 39225d5cd1d4a3167fd9b3981c9a3ddd
+P 74e073dd604142212f3d3e1931065d124daabd80
+R e48869d5f9b5af46af5b0a2d65cd95eb
 U dan
-Z 95e5525c749de3fda07c16abd9286707
+Z 20d9f4ca66bd6d3a4217ce480de94529

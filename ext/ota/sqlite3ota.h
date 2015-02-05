@@ -129,10 +129,9 @@
 ** other columns should be set to the values that make up the new record 
 ** to insert. 
 **
-** If the target database table has an INTEGER PRIMARY KEY and there are
-** one or more auxiliary indexes, it is not possible to insert a NULL value
-** into the IPK column. Attempting to do so results in an SQLITE_MISMATCH
-** error.
+** If the target database table has an INTEGER PRIMARY KEY, it is not 
+** possible to insert a NULL value into the IPK column. Attempting to 
+** do so results in an SQLITE_MISMATCH error.
 **
 ** For each row to DELETE from the target database as part of the OTA 
 ** update, the corresponding data_% table should contain a single record
