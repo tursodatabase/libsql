@@ -137,12 +137,14 @@ struct OtaObjIter {
 /*
 ** Values for OtaObjIter.eType
 **
+**     0: Table does not exist (error)
 **     1: Table has an implicit rowid.
 **     2: Table has an explicit IPK column.
 **     3: Table has an external PK index.
 **     4: Table is WITHOUT ROWID.
 **     5: Table is a virtual table.
 */
+#define OTA_PK_NOTABLE        0
 #define OTA_PK_NONE           1
 #define OTA_PK_IPK            2
 #define OTA_PK_EXTERNAL       3
@@ -449,6 +451,127 @@ static char *otaStrndup(const char *zStr, int nStr, int *pRc){
   return zRet;
 }
 
+/* Determine the type of a table.
+**
+**   peType is of type (int*), a pointer to an output parameter of type
+**   (int). This call sets the output parameter as follows, depending
+**   on the type of the table specified by parameters dbName and zTbl.
+**
+**     OTA_PK_NOTABLE:       No such table.
+**     OTA_PK_NONE:          Table has an implicit rowid.
+**     OTA_PK_IPK:           Table has an explicit IPK column.
+**     OTA_PK_EXTERNAL:      Table has an external PK index.
+**     OTA_PK_WITHOUT_ROWID: Table is WITHOUT ROWID.
+**     OTA_PK_VTAB:          Table is a virtual table.
+**
+**   Argument *piPk is also of type (int*), and also points to an output
+**   parameter. Unless the table has an external primary key index 
+**   (i.e. unless *peType is set to 3), then *piPk is set to zero. Or,
+**   if the table does have an external primary key index, then *piPk
+**   is set to the root page number of the primary key index before
+**   returning.
+**
+** ALGORITHM:
+**
+**   if( no entry exists in sqlite_master ){
+**     return OTA_PK_NOTABLE
+**   }else if( sql for the entry starts with "CREATE VIRTUAL" ){
+**     return OTA_PK_VTAB
+**   }else if( "PRAGMA index_list()" for the table contains a "pk" index ){
+**     if( the index that is the pk exists in sqlite_master ){
+**       *piPK = rootpage of that index.
+**       return OTA_PK_EXTERNAL
+**     }else{
+**       return OTA_PK_WITHOUT_ROWID
+**     }
+**   }else if( "PRAGMA table_info()" lists one or more "pk" columns ){
+**     return OTA_PK_IPK
+**   }else{
+**     return OTA_PK_NONE
+**   }
+*/
+static int otaTableType(
+  sqlite3 *db,
+  const char *zTab,
+  int *peType,
+  int *piPk
+){
+  sqlite3_stmt *pStmt = 0;
+  int rc = SQLITE_OK;
+  int rc2;
+  char *zSql = 0;
+
+  *peType = OTA_PK_NOTABLE;
+  *piPk = 0;
+  zSql = sqlite3_mprintf(
+          "SELECT (sql LIKE 'create virtual%%')"
+          "  FROM main.sqlite_master"
+          " WHERE name=%Q", zTab);
+  if( zSql==0 ) return SQLITE_NOMEM;
+  rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
+  sqlite3_free(zSql);
+  zSql = 0;
+  if( pStmt==0 ) goto otaTableType_end;
+  if( sqlite3_step(pStmt)!=SQLITE_ROW ){
+     goto otaTableType_end;                    /* no such table */
+  }
+  if( sqlite3_column_int(pStmt,0) ){
+    *peType = OTA_PK_VTAB;                     /* virtual table */
+    goto otaTableType_end;
+  }
+  rc = sqlite3_finalize(pStmt);
+  if( rc ) return rc;
+  zSql = sqlite3_mprintf("PRAGMA index_list=%Q",zTab);
+  if( zSql==0 ) return SQLITE_NOMEM;
+  rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
+  sqlite3_free(zSql);
+  zSql = 0;
+  if( pStmt==0 ) goto otaTableType_end;
+  while( sqlite3_step(pStmt)==SQLITE_ROW ){
+    const unsigned char *zOrig = sqlite3_column_text(pStmt,3);
+    if( zOrig && zOrig[0]=='p' ){
+      zSql = sqlite3_mprintf("SELECT rootpage FROM main.sqlite_master"
+                             " WHERE name=%Q", sqlite3_column_text(pStmt,1));
+      if( zSql==0 ){ rc = SQLITE_NOMEM; goto otaTableType_end; }
+      break;
+    }
+  }
+  rc = sqlite3_finalize(pStmt);
+  pStmt = 0;
+  if( rc ) return rc;
+  if( zSql ){
+    rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
+    sqlite3_free(zSql);
+    zSql = 0;
+    if( pStmt==0 ) goto otaTableType_end;
+    if( sqlite3_step(pStmt)==SQLITE_ROW ){
+      *piPk = sqlite3_column_int(pStmt, 0);
+      *peType = OTA_PK_EXTERNAL;             /* external PK index */
+    }else{
+      *peType = OTA_PK_WITHOUT_ROWID;        /* WITHOUT ROWID table */
+    }
+  }else{
+    zSql = sqlite3_mprintf("PRAGMA table_info=%Q", zTab);
+    if( zSql==0 ) return SQLITE_NOMEM;
+    rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
+    sqlite3_free(zSql);
+    zSql = 0;
+    if( pStmt==0 ) goto otaTableType_end;
+    *peType = OTA_PK_NONE;                   /* (default) implicit ROWID */
+    while( sqlite3_step(pStmt)==SQLITE_ROW ){
+      if( sqlite3_column_int(pStmt,5)>0 ){
+        *peType = OTA_PK_IPK;                /* explicit IPK column */
+        break;
+      }
+    }
+  }
+
+otaTableType_end:
+  sqlite3_free(zSql);
+  rc2 = sqlite3_finalize(pStmt);
+  return rc ? rc : rc2;
+}
+
 
 /*
 ** If they are not already populated, populate the pIter->azTblCol[],
@@ -470,10 +593,9 @@ static int otaObjIterCacheTableInfo(sqlite3ota *p, OtaObjIter *pIter){
 
     /* Figure out the type of table this step will deal with. */
     assert( pIter->eType==0 );
-    sqlite3_test_control(
-        SQLITE_TESTCTRL_TBLTYPE, p->db, "main", pIter->zTbl, &pIter->eType,
-        &pIter->iPkTnum
-    );
+    p->rc = otaTableType(p->db, pIter->zTbl, &pIter->eType, &pIter->iPkTnum);
+    if( p->rc ) return p->rc;
+
     assert( pIter->eType==OTA_PK_NONE || pIter->eType==OTA_PK_IPK 
          || pIter->eType==OTA_PK_EXTERNAL || pIter->eType==OTA_PK_WITHOUT_ROWID
          || pIter->eType==OTA_PK_VTAB
@@ -2105,7 +2227,4 @@ int SqliteOta_Init(Tcl_Interp *interp){
 #include <tcl.h>
 int SqliteOta_Init(Tcl_Interp *interp){ return TCL_OK; }
 # endif
-#endif 
-
-
-
+#endif

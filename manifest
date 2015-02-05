@@ -1,5 +1,5 @@
-C Merge\sall\schanges\sfrom\sindex_xinfo,\sincluding\sthe\smove\sof\sthe\spragma\stable\ninto\sthe\sseparate\spragma.h\sfile.
-D 2015-02-04T23:51:59.867
+C Figure\sout\sthe\sprimary-key\stype\sof\sa\stable\susing\squeries\sof\ssqlite_master\nand\sthe\stable_info\sand\sindex_list\spragmas,\sobviating\sthe\sneed\sfor\nSQLITE_TESTCTRL_TBLTYPE.
+D 2015-02-05T01:49:31.187
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6b9e7677829aa94b9f30949656e27312aefb9a46
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -136,7 +136,7 @@ F ext/ota/ota7.test 1fe2c5761705374530e29f70c39693076028221a
 F ext/ota/ota8.test cd70e63a0c29c45c0906692827deafa34638feda
 F ext/ota/ota9.test d3eee95dd836824d07a22e5efcdb7bf6e869358b
 F ext/ota/otafault.test 508ba87c83d632670ac0f94371a465d4bb4d49dd
-F ext/ota/sqlite3ota.c 41df903106a0107aa70068090b263c93a502da72
+F ext/ota/sqlite3ota.c 0721c7dae5d16624d708ec13ad372c4738f2a23b
 F ext/ota/sqlite3ota.h ce378c0c503f625611713133f9c79704ea4ee7a4
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 14e6239434d4e3f65d3e90320713f26aa24e167f
@@ -210,7 +210,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
 F src/loadext.c 86bd4e2fccd520b748cba52492ab60c4a770f660
-F src/main.c 893ca8955539f5dcff8c798b508e94a6d08b6d99
+F src/main.c c4cb192ebf0bcc975648ae05ac40bc1f40018c52
 F src/malloc.c 740db54387204c9a2eb67c6d98e68b08e9ef4eab
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c abe6ee469b6c5a35c7f22bfeb9c9bac664a1c987
@@ -247,7 +247,7 @@ F src/resolve.c f6c46d3434439ab2084618d603e6d6dbeb0d6ada
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 1f2087523007c42900ffcbdeaef06a23ad9329fc
 F src/shell.c 22b4406b0b59efd14b3b351a5809dda517df6d30
-F src/sqlite.h.in 8913937ba11415bf369818431700adf3a921fb18
+F src/sqlite.h.in 4807b024e8d257af774cde0cf178f721ff2406ec
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
 F src/sqliteInt.h 57f8f45028598cc2877fc08ac03b402242242c68
@@ -1255,7 +1255,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c4845a3b591723ff60b7b1da198f44908c12bdfc 3af19f84446ba5fc1ed754d0d73f6a6d7fb2f365
-R f8693fbefe5770ef46252d8013588714
+P 21e95d28a51e56b45a9d4166475972535e53f954
+R 20b83842609fc0bd353b0fba0ba7b9e9
 U drh
-Z 86d4960217df24559dfd1328c13955b1
+Z ce11446a64cadc5d0eb91c8707e9ad41

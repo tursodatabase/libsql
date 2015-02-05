@@ -3654,59 +3654,6 @@ int sqlite3_test_control(int op, ...){
       sqlite3_mutex_leave(db->mutex);
       break;
     }
-
-    /* sqlite3_test_control(TESTCTRL_TBLTYPE, db, dbName, zTbl, peType, piPk)
-    **
-    **   peType is of type (int*), a pointer to an output parameter of type
-    **   (int). This call sets the output parameter as follows, depending
-    **   on the type of the table specified by parameters dbName and zTbl.
-    **
-    **     0: No such table.
-    **     1: Table has an implicit rowid.
-    **     2: Table has an explicit IPK column.
-    **     3: Table has an external PK index.
-    **     4: Table is WITHOUT ROWID.
-    **     5: Table is a virtual table.
-    **
-    **   Argument *piPk is also of type (int*), and also points to an output
-    **   parameter. Unless the table has an external primary key index 
-    **   (i.e. unless *peType is set to 3), then *piPk is set to zero. Or,
-    **   if the table does have an external primary key index, then *piPk
-    **   is set to the root page number of the primary key index before
-    **   returning.
-    */
-    case SQLITE_TESTCTRL_TBLTYPE: {
-      sqlite3 *db = va_arg(ap, sqlite3*);
-      const char *zDb = va_arg(ap, const char*);
-      const char *zTab = va_arg(ap, const char*);
-      int *peType = va_arg(ap, int*);
-      int *piPk = va_arg(ap, int*);
-      Table *pTab;
-      *piPk = 0;
-      sqlite3_mutex_enter(db->mutex);
-      sqlite3BtreeEnterAll(db);
-      pTab = sqlite3FindTable(db, zTab, zDb);
-      if( pTab==0 ){
-        *peType = 0;
-      }else if( IsVirtual(pTab) ){
-        *peType = 5;
-      }else if( HasRowid(pTab)==0 ){
-        *peType = 4;
-      }else if( pTab->iPKey>=0 ){
-        *peType = 2;
-      }else{
-        Index *pPk = sqlite3PrimaryKeyIndex(pTab);
-        if( pPk ){
-          *peType = 3;
-          *piPk = pPk->tnum;
-        }else{
-          *peType = 1;
-        }
-      }
-      sqlite3BtreeLeaveAll(db);
-      sqlite3_mutex_leave(db->mutex);
-      break;
-    }
   }
   va_end(ap);
 #endif /* SQLITE_OMIT_BUILTIN_TEST */
