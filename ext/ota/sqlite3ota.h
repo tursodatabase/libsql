@@ -71,6 +71,8 @@
 **
 **   * No foreign key violations are detected or reported.
 **
+**   * CHECK constraints are not enforced.
+**
 **   * No constraint handling mode except for "OR ROLLBACK" is supported.
 **
 **

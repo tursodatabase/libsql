@@ -112,6 +112,7 @@ struct OtaObjIter {
   char **azTblType;               /* Array of target column types */
   int *aiSrcOrder;                /* src table col -> target table col */
   unsigned char *abTblPk;         /* Array of flags, set on target PK columns */
+  unsigned char *abNotNull;       /* Array of flags, set on NOT NULL columns */
   int eType;                      /* Table type - an OTA_PK_XXX value */
 
   /* Output variables. zTbl==0 implies EOF. */
@@ -255,6 +256,7 @@ static void otaObjIterFreeCols(OtaObjIter *pIter){
   pIter->azTblType = 0;
   pIter->aiSrcOrder = 0;
   pIter->abTblPk = 0;
+  pIter->abNotNull = 0;
   pIter->nTblCol = 0;
   sqlite3_free(pIter->zMask);
   pIter->zMask = 0;
@@ -417,7 +419,7 @@ static int otaMPrintfExec(sqlite3ota *p, const char *zFmt, ...){
 ** error code in the OTA handle passed as the first argument.
 */
 static void otaAllocateIterArrays(sqlite3ota *p, OtaObjIter *pIter, int nCol){
-  int nByte = (sizeof(char*) * 2 + sizeof(int) + sizeof(unsigned char)) * nCol;
+  int nByte = (2*sizeof(char*) + sizeof(int) + 2*sizeof(unsigned char)) * nCol;
   char **azNew;
 
   assert( p->rc==SQLITE_OK );
@@ -428,6 +430,7 @@ static void otaAllocateIterArrays(sqlite3ota *p, OtaObjIter *pIter, int nCol){
     pIter->azTblType = &azNew[nCol];
     pIter->aiSrcOrder = (int*)&pIter->azTblType[nCol];
     pIter->abTblPk = (unsigned char*)&pIter->aiSrcOrder[nCol];
+    pIter->abNotNull = (unsigned char*)&pIter->abTblPk[nCol];
   }else{
     p->rc = SQLITE_NOMEM;
   }
@@ -655,6 +658,7 @@ static int otaObjIterCacheTableInfo(sqlite3ota *p, OtaObjIter *pIter){
         );
       }else{
         int iPk = sqlite3_column_int(pStmt, 5);
+        int bNotNull = sqlite3_column_int(pStmt, 3);
         const char *zType = (const char*)sqlite3_column_text(pStmt, 2);
 
         if( i!=iOrder ){
@@ -664,6 +668,7 @@ static int otaObjIterCacheTableInfo(sqlite3ota *p, OtaObjIter *pIter){
 
         pIter->azTblType[iOrder] = otaStrndup(zType, -1, &p->rc);
         pIter->abTblPk[iOrder] = (iPk!=0);
+        pIter->abNotNull[iOrder] = (unsigned char)bNotNull || (iPk!=0);
         iOrder++;
       }
     }
@@ -1141,8 +1146,9 @@ static void otaCreateImposterTable(sqlite3ota *p, OtaObjIter *pIter){
         ** "PRIMARY KEY" to the imposter table column declaration. */
         zPk = "PRIMARY KEY ";
       }
-      zSql = otaMPrintf(p, "%z%s\"%w\" %s %sCOLLATE %s", 
-          zSql, zComma, zCol, pIter->azTblType[iCol], zPk, zColl
+      zSql = otaMPrintf(p, "%z%s\"%w\" %s %sCOLLATE %s%s", 
+          zSql, zComma, zCol, pIter->azTblType[iCol], zPk, zColl,
+          (pIter->abNotNull[iCol] ? " NOT NULL" : "")
       );
       zComma = ", ";
     }
