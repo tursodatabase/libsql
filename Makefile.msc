@@ -59,6 +59,12 @@ USE_ICU = 0
 USE_CRT_DLL = 0
 !ENDIF
 
+# Set this non-0 to link to the RPCRT4 library.
+#
+!IFNDEF USE_RPCRT4_LIB
+USE_RPCRT4_LIB = 0
+!ENDIF
+
 # Set this non-0 to generate assembly code listings for the source code
 # files.
 #
@@ -501,6 +507,12 @@ RCC = $(RCC) -DSQLITE_TEMP_STORE=1
 #
 REQ_FEATURE_FLAGS = $(REQ_FEATURE_FLAGS) -DSQLITE_MAX_TRIGGER_DEPTH=100
 
+# If we are linking to the RPCRT4 library, enable features that need it.
+#
+!IF $(USE_RPCRT4_LIB)!=0
+REQ_FEATURE_FLAGS = $(REQ_FEATURE_FLAGS) -DSQLITE_WIN32_USE_UUID=1
+!ENDIF
+
 # Add the required and optional SQLite compilation options into the command
 # lines used to invoke the MSVC code and resource compilers.
 #
@@ -563,6 +575,12 @@ LTCOMPILE = $(TCC) -Fo$@
 LTRCOMPILE = $(RCC) -r
 LTLIB = lib.exe
 LTLINK = $(TCC) -Fe$@
+
+# If requested, link to the RPCRT4 library.
+#
+!IF $(USE_RPCRT4_LIB)!=0
+LTLINK = $(LTLINK) rpcrt4.lib
+!ENDIF
 
 # If a platform was set, force the linker to target that.
 # Note that the vcvars*.bat family of batch files typically
@@ -696,7 +714,7 @@ LIBRESOBJS =
 
 # All of the source code files.
 #
-SRC = \
+SRC1 = \
   $(TOP)\src\alter.c \
   $(TOP)\src\analyze.c \
   $(TOP)\src\attach.c \
@@ -746,7 +764,8 @@ SRC = \
   $(TOP)\src\os_setup.h \
   $(TOP)\src\os_unix.c \
   $(TOP)\src\os_win.c \
-  $(TOP)\src\os_win.h \
+  $(TOP)\src\os_win.h
+SRC2 = \
   $(TOP)\src\pager.c \
   $(TOP)\src\pager.h \
   $(TOP)\src\parse.y \
@@ -754,6 +773,7 @@ SRC = \
   $(TOP)\src\pcache.h \
   $(TOP)\src\pcache1.c \
   $(TOP)\src\pragma.c \
+  $(TOP)\src\pragma.h \
   $(TOP)\src\prepare.c \
   $(TOP)\src\printf.c \
   $(TOP)\src\random.c \
@@ -793,15 +813,14 @@ SRC = \
 
 # Source code for extensions
 #
-SRC = $(SRC) \
+SRC3 = \
   $(TOP)\ext\fts1\fts1.c \
   $(TOP)\ext\fts1\fts1.h \
   $(TOP)\ext\fts1\fts1_hash.c \
   $(TOP)\ext\fts1\fts1_hash.h \
   $(TOP)\ext\fts1\fts1_porter.c \
   $(TOP)\ext\fts1\fts1_tokenizer.h \
-  $(TOP)\ext\fts1\fts1_tokenizer1.c
-SRC = $(SRC) \
+  $(TOP)\ext\fts1\fts1_tokenizer1.c \
   $(TOP)\ext\fts2\fts2.c \
   $(TOP)\ext\fts2\fts2.h \
   $(TOP)\ext\fts2\fts2_hash.c \
@@ -811,7 +830,7 @@ SRC = $(SRC) \
   $(TOP)\ext\fts2\fts2_tokenizer.h \
   $(TOP)\ext\fts2\fts2_tokenizer.c \
   $(TOP)\ext\fts2\fts2_tokenizer1.c
-SRC = $(SRC) \
+SRC4 = \
   $(TOP)\ext\fts3\fts3.c \
   $(TOP)\ext\fts3\fts3.h \
   $(TOP)\ext\fts3\fts3Int.h \
@@ -828,24 +847,26 @@ SRC = $(SRC) \
   $(TOP)\ext\fts3\fts3_tokenize_vtab.c \
   $(TOP)\ext\fts3\fts3_unicode.c \
   $(TOP)\ext\fts3\fts3_unicode2.c \
-  $(TOP)\ext\fts3\fts3_write.c
-SRC = $(SRC) \
+  $(TOP)\ext\fts3\fts3_write.c \
   $(TOP)\ext\icu\sqliteicu.h \
-  $(TOP)\ext\icu\icu.c
-SRC = $(SRC) \
+  $(TOP)\ext\icu\icu.c \
   $(TOP)\ext\rtree\rtree.h \
   $(TOP)\ext\rtree\rtree.c
 
 
 # Generated source code files
 #
-SRC = $(SRC) \
+SRC5 = \
   keywordhash.h \
   opcodes.c \
   opcodes.h \
   parse.c \
   parse.h \
   sqlite3.h
+
+# All source code files.
+#
+SRC = $(SRC1) $(SRC2) $(SRC3) $(SRC4) $(SRC5)
 
 # Source code to the test files.
 #
@@ -976,6 +997,7 @@ HDR = \
    $(TOP)\src\pager.h \
    $(TOP)\src\pcache.h \
    parse.h \
+   $(TOP)\src\pragma.h \
    sqlite3.h \
    $(TOP)\src\sqlite3ext.h \
    $(TOP)\src\sqliteInt.h \
@@ -1034,7 +1056,11 @@ mptester.exe:	$(TOP)\mptest\mptest.c libsqlite3.lib $(LIBRESOBJS) sqlite3.h
 .target_source:	$(SRC) $(TOP)\tool\vdbe-compress.tcl
 	-rmdir /S/Q tsrc
 	-mkdir tsrc
-	for %i in ($(SRC)) do copy /Y %i tsrc
+	for %i in ($(SRC1)) do copy /Y %i tsrc
+	for %i in ($(SRC2)) do copy /Y %i tsrc
+	for %i in ($(SRC3)) do copy /Y %i tsrc
+	for %i in ($(SRC4)) do copy /Y %i tsrc
+	for %i in ($(SRC5)) do copy /Y %i tsrc
 	del /Q tsrc\sqlite.h.in tsrc\parse.y
 	$(TCLSH_CMD) $(TOP)\tool\vdbe-compress.tcl $(OPTS) < tsrc\vdbe.c > vdbe.new
 	move vdbe.new tsrc\vdbe.c

@@ -1066,6 +1066,23 @@ static struct win_syscall {
         SQLITE_WIN32_VOLATILE*, LONG,LONG))aSyscall[76].pCurrent)
 #endif /* defined(InterlockedCompareExchange) */
 
+#if !SQLITE_OS_WINCE && !SQLITE_OS_WINRT && SQLITE_WIN32_USE_UUID
+  { "UuidCreate",               (SYSCALL)UuidCreate,             0 },
+#else
+  { "UuidCreate",               (SYSCALL)0,                      0 },
+#endif
+
+#define osUuidCreate ((RPC_STATUS(RPC_ENTRY*)(UUID*))aSyscall[77].pCurrent)
+
+#if !SQLITE_OS_WINCE && !SQLITE_OS_WINRT && SQLITE_WIN32_USE_UUID
+  { "UuidCreateSequential",     (SYSCALL)UuidCreateSequential,   0 },
+#else
+  { "UuidCreateSequential",     (SYSCALL)0,                      0 },
+#endif
+
+#define osUuidCreateSequential \
+        ((RPC_STATUS(RPC_ENTRY*)(UUID*))aSyscall[78].pCurrent)
+
 }; /* End of the overrideable system calls */
 
 /*
@@ -3823,16 +3840,16 @@ static int winShmMap(
   void volatile **pp              /* OUT: Mapped memory */
 ){
   winFile *pDbFd = (winFile*)fd;
-  winShm *p = pDbFd->pShm;
+  winShm *pShm = pDbFd->pShm;
   winShmNode *pShmNode;
   int rc = SQLITE_OK;
 
-  if( !p ){
+  if( !pShm ){
     rc = winOpenSharedMemory(pDbFd);
     if( rc!=SQLITE_OK ) return rc;
-    p = pDbFd->pShm;
+    pShm = pDbFd->pShm;
   }
-  pShmNode = p->pShmNode;
+  pShmNode = pShm->pShmNode;
 
   sqlite3_mutex_enter(pShmNode->mutex);
   assert( szRegion==pShmNode->szRegion || pShmNode->nRegion==0 );
@@ -5354,6 +5371,22 @@ static int winRandomness(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
     n += sizeof(i);
   }
 #endif
+#if !SQLITE_OS_WINCE && !SQLITE_OS_WINRT && SQLITE_WIN32_USE_UUID
+  if( sizeof(UUID)<=nBuf-n ){
+    UUID id;
+    memset(&id, 0, sizeof(UUID));
+    osUuidCreate(&id);
+    memcpy(zBuf, &id, sizeof(UUID));
+    n += sizeof(UUID);
+  }
+  if( sizeof(UUID)<=nBuf-n ){
+    UUID id;
+    memset(&id, 0, sizeof(UUID));
+    osUuidCreateSequential(&id);
+    memcpy(zBuf, &id, sizeof(UUID));
+    n += sizeof(UUID);
+  }
+#endif
   return n;
 }
 
@@ -5531,7 +5564,7 @@ int sqlite3_os_init(void){
 
   /* Double-check that the aSyscall[] array has been constructed
   ** correctly.  See ticket [bb3a86e890c8e96ab] */
-  assert( ArraySize(aSyscall)==77 );
+  assert( ArraySize(aSyscall)==79 );
 
   /* get memory map allocation granularity */
   memset(&winSysInfo, 0, sizeof(SYSTEM_INFO));

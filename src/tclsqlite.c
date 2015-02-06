@@ -661,9 +661,9 @@ static int DbWalHandler(
 #if defined(SQLITE_TEST) && defined(SQLITE_ENABLE_UNLOCK_NOTIFY)
 static void setTestUnlockNotifyVars(Tcl_Interp *interp, int iArg, int nArg){
   char zBuf[64];
-  sprintf(zBuf, "%d", iArg);
+  sqlite3_snprintf(sizeof(zBuf), zBuf, "%d", iArg);
   Tcl_SetVar(interp, "sqlite_unlock_notify_arg", zBuf, TCL_GLOBAL_ONLY);
-  sprintf(zBuf, "%d", nArg);
+  sqlite3_snprintf(sizeof(zBuf), zBuf, "%d", nArg);
   Tcl_SetVar(interp, "sqlite_unlock_notify_argcount", zBuf, TCL_GLOBAL_ONLY);
 }
 #else
@@ -3429,7 +3429,7 @@ static void MD5DigestToBase10x8(unsigned char digest[16], char zDigest[50]){
   for(i=j=0; i<16; i+=2){
     x = digest[i]*256 + digest[i+1];
     if( i>0 ) zDigest[j++] = '-';
-    sprintf(&zDigest[j], "%05u", x);
+    sqlite3_snprintf(16-j, &zDigest[j], "%05u", x);
     j += 5;
   }
   zDigest[j] = 0;

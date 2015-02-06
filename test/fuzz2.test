@@ -125,5 +125,15 @@ do_test fuzz2-6.4b {
   db eval {SELECT quote(t) FROM t0} 
 } {NULL}
 
+# Another test case discovered by Michal Zalewski, this on on 2015-01-22.
+# Ticket 32b63d542433ca6757cd695aca42addf8ed67aa6
+#
+do_test fuzz2-7.1 {
+  catchsql {select e.*,0 from(s,(L))e;}
+} {1 {no such table: s}}
+do_test fuzz2-7.2 {
+  catchsql {SELECT c.* FROM (a,b) AS c}
+} {1 {no such table: a}}
+
 
 finish_test

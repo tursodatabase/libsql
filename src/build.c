@@ -1731,11 +1731,14 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
   assert( pPk!=0 );
   nPk = pPk->nKeyCol;
 
-  /* Make sure every column of the PRIMARY KEY is NOT NULL */
-  for(i=0; i<nPk; i++){
-    pTab->aCol[pPk->aiColumn[i]].notNull = 1;
+  /* Make sure every column of the PRIMARY KEY is NOT NULL.  (Except,
+  ** do not enforce this for imposter tables.) */
+  if( !db->init.imposterTable ){
+    for(i=0; i<nPk; i++){
+      pTab->aCol[pPk->aiColumn[i]].notNull = 1;
+    }
+    pPk->uniqNotNull = 1;
   }
-  pPk->uniqNotNull = 1;
 
   /* The root page of the PRIMARY KEY is the table root page */
   pPk->tnum = pTab->tnum;

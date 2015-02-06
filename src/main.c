@@ -1973,6 +1973,7 @@ int sqlite3_wal_checkpoint_v2(
     rc = SQLITE_ERROR;
     sqlite3ErrorWithMsg(db, SQLITE_ERROR, "unknown database: %s", zDb);
   }else{
+    db->busyHandler.nBusy = 0;
     rc = sqlite3Checkpoint(db, iDb, eMode, pnLog, pnCkpt);
     sqlite3Error(db, rc);
   }
@@ -3726,6 +3727,35 @@ int sqlite3_test_control(int op, ...){
     */
     case SQLITE_TESTCTRL_ISINIT: {
       if( sqlite3GlobalConfig.isInit==0 ) rc = SQLITE_ERROR;
+      break;
+    }
+
+    /*   sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, db, dbName, onOff, tnum);
+    **
+    ** This test control is used to create imposter tables.  "db" is a pointer
+    ** to the database connection.  dbName is the database name (ex: "main" or
+    ** "temp") which will receive the imposter.  "onOff" turns imposter mode on
+    ** or off.  "tnum" is the root page of the b-tree to which the imposter
+    ** table should connect.
+    **
+    ** Enable imposter mode only when the schema has already been parsed.  Then
+    ** run a single CREATE TABLE statement to construct the imposter table in the
+    ** parsed schema.  Then turn imposter mode back off again.
+    **
+    ** If onOff==0 and tnum>0 then reset the schema for all databases, causing
+    ** the schema to be reparsed the next time it is needed.  This has the
+    ** effect of erasing all imposter tables.
+    */
+    case SQLITE_TESTCTRL_IMPOSTER: {
+      sqlite3 *db = va_arg(ap, sqlite3*);
+      sqlite3_mutex_enter(db->mutex);
+      db->init.iDb = sqlite3FindDbName(db, va_arg(ap,const char*));
+      db->init.busy = db->init.imposterTable = va_arg(ap,int);
+      db->init.newTnum = va_arg(ap,int);
+      if( db->init.busy==0 && db->init.newTnum>0 ){
+        sqlite3ResetAllSchemasOfConnection(db);
+      }
+      sqlite3_mutex_leave(db->mutex);
       break;
     }
   }

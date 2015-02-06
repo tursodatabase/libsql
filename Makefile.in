@@ -255,6 +255,7 @@ SRC = \
   $(TOP)/src/pcache.h \
   $(TOP)/src/pcache1.c \
   $(TOP)/src/pragma.c \
+  $(TOP)/src/pragma.h \
   $(TOP)/src/prepare.c \
   $(TOP)/src/printf.c \
   $(TOP)/src/random.c \
@@ -477,6 +478,7 @@ HDR = \
    $(TOP)/src/pager.h \
    $(TOP)/src/pcache.h \
    parse.h  \
+   $(TOP)/src/pragma.h \
    sqlite3.h  \
    $(TOP)/src/sqlite3ext.h \
    $(TOP)/src/sqliteInt.h  \
@@ -1008,7 +1010,7 @@ LogEst$(TEXE):	$(TOP)/tool/logest.c sqlite3.h
 wordcount$(TEXE):	$(TOP)/test/wordcount.c sqlite3.c
 	$(LTLINK) -o $@ $(TOP)/test/wordcount.c sqlite3.c $(TLIBS)
 
-speedtest1$(TEXE):	$(TOP)/test/wordcount.c sqlite3.lo
+speedtest1$(TEXE):	$(TOP)/test/speedtest1.c sqlite3.lo
 	$(LTLINK) -o $@ $(TOP)/test/speedtest1.c sqlite3.lo $(TLIBS)
 
 # This target will fail if the SQLite amalgamation contains any exported

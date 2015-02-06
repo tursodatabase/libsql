@@ -133,6 +133,7 @@ SRC = \
   $(TOP)/src/pcache.h \
   $(TOP)/src/pcache1.c \
   $(TOP)/src/pragma.c \
+  $(TOP)/src/pragma.h \
   $(TOP)/src/prepare.c \
   $(TOP)/src/printf.c \
   $(TOP)/src/random.c \
@@ -358,6 +359,7 @@ HDR = \
    $(TOP)/src/pager.h \
    $(TOP)/src/pcache.h \
    parse.h  \
+   $(TOP)/src/pragma.h \
    sqlite3.h  \
    $(TOP)/src/sqlite3ext.h \
    $(TOP)/src/sqliteInt.h  \

@@ -823,11 +823,12 @@ static int tvfsShmOpen(sqlite3_file *pFile){
     if( 0==strcmp(pFd->zFilename, pBuffer->zFile) ) break;
   }
   if( !pBuffer ){
-    int nByte = sizeof(TestvfsBuffer) + (int)strlen(pFd->zFilename) + 1;
+    int szName = (int)strlen(pFd->zFilename);
+    int nByte = sizeof(TestvfsBuffer) + szName + 1;
     pBuffer = (TestvfsBuffer *)ckalloc(nByte);
     memset(pBuffer, 0, nByte);
     pBuffer->zFile = (char *)&pBuffer[1];
-    strcpy(pBuffer->zFile, pFd->zFilename);
+    memcpy(pBuffer->zFile, pFd->zFilename, szName+1);
     pBuffer->pNext = p->pBuffer;
     p->pBuffer = pBuffer;
   }

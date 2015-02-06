@@ -212,13 +212,6 @@ void sqlite3VXPrintf(
   PrintfArguments *pArgList = 0; /* Arguments for SQLITE_PRINTF_SQLFUNC */
   char buf[etBUFSIZE];       /* Conversion buffer */
 
-#ifdef SQLITE_ENABLE_API_ARMOR
-  if( ap==0 ){
-    (void)SQLITE_MISUSE_BKPT;
-    sqlite3StrAccumReset(pAccum);
-    return;
-  }
-#endif
   bufpt = 0;
   if( bFlags ){
     if( (bArgList = (bFlags & SQLITE_PRINTF_SQLFUNC))!=0 ){
