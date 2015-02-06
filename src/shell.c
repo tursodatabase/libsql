@@ -1748,6 +1748,7 @@ static char zHelp[] =
   ".indices ?TABLE?       Show names of all indices\n"
   "                         If TABLE specified, only show indices for tables\n"
   "                         matching LIKE pattern TABLE.\n"
+  ".info                  Show status information about the database\n"
 #ifdef SQLITE_ENABLE_IOTRACE
   ".iotrace FILE          Enable I/O diagnostic logging to FILE\n"
 #endif
@@ -2427,6 +2428,97 @@ static void output_reset(ShellState *p){
 }
 
 /*
+** Run an SQL command and return the single integer result.
+*/
+static int db_int(ShellState *p, const char *zSql){
+  sqlite3_stmt *pStmt;
+  int res = 0;
+  sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
+  if( pStmt && sqlite3_step(pStmt)==SQLITE_ROW ){
+    res = sqlite3_column_int(pStmt,0);
+  }
+  sqlite3_finalize(pStmt);
+  return res;
+}
+
+/*
+** Convert a 2-byte or 4-byte big-endian integer into a native integer
+*/
+unsigned int get2byteInt(unsigned char *a){
+  return (a[0]<<8) + a[1];
+}
+unsigned int get4byteInt(unsigned char *a){
+  return (a[0]<<24) + (a[1]<<16) + (a[2]<<8) + a[3];
+}
+
+/*
+** Implementation of the ".info" command.
+**
+** Return 1 on error, 2 to exit, and 0 otherwise.
+*/
+static int shell_info_command(ShellState *p){
+  sqlite3_file *pFile;
+  int i;    
+  unsigned char aHdr[100];
+  static const struct { const char *zName; int ofst; } aField[] = {
+     { "file change counter:",  24  },
+     { "database page count:",  28  },
+     { "freelist page count:",  36  },
+     { "schema cookie:",        40  },
+     { "schema format:",        44  },
+     { "default cache size:",   48  },
+     { "autovacuum top root:",  52  },
+     { "incremental vacuum:",   64  },
+     { "text encoding:",        56  },
+     { "user version:",         60  },
+     { "application id:",       68  },
+     { "software version:",     96  },
+  };
+  open_db(p, 0);
+  if( p->db==0 ) return 1;
+  sqlite3_file_control(p->db, "main", SQLITE_FCNTL_FILE_POINTER, &pFile);
+  if( pFile==0 || pFile->pMethods==0 || pFile->pMethods->xRead==0 ){
+    return 1;
+  }
+  i = pFile->pMethods->xRead(pFile, aHdr, 100, 0);
+  if( i!=SQLITE_OK ){
+    fprintf(stderr, "unable to read database header\n");
+    return 1;
+  }
+  i = get2byteInt(aHdr+16);
+  if( i==1 ) i = 65536;
+  fprintf(p->out, "%-20s %d\n", "database page size:", i);
+  fprintf(p->out, "%-20s %d\n", "write format:", aHdr[18]);
+  fprintf(p->out, "%-20s %d\n", "read format:", aHdr[19]);
+  fprintf(p->out, "%-20s %d\n", "reserved bytes:", aHdr[20]);
+  for(i=0; i<sizeof(aField)/sizeof(aField[0]); i++){
+    int ofst = aField[i].ofst;
+    unsigned int val = get4byteInt(aHdr + ofst);
+    fprintf(p->out, "%-20s %u", aField[i].zName, val);
+    switch( ofst ){
+      case 56: {
+        if( val==1 ) fprintf(p->out, " (utf8)"); 
+        if( val==2 ) fprintf(p->out, " (utf16le)"); 
+        if( val==3 ) fprintf(p->out, " (utf16be)"); 
+      }
+    }
+    fprintf(p->out, "\n");
+  }
+  fprintf(p->out, "%-20s %d\n", "number of tables:",
+          db_int(p, "SELECT count(*) FROM sqlite_master WHERE type='table'"));
+  fprintf(p->out, "%-20s %d\n", "number of indexes:",
+          db_int(p, "SELECT count(*) FROM sqlite_master WHERE type='index'"));
+  fprintf(p->out, "%-20s %d\n", "number of triggers:",
+          db_int(p, "SELECT count(*) FROM sqlite_master WHERE type='trigger'"));
+  fprintf(p->out, "%-20s %d\n", "number of views:",
+          db_int(p, "SELECT count(*) FROM sqlite_master WHERE type='view'"));
+  fprintf(p->out, "%-20s %d\n", "schema size:",
+          db_int(p, "SELECT total(length(sql)) FROM sqlite_master"));
+  return 0;
+}
+
+
+/*
 ** If an input line begins with "." then invoke this routine to
 ** process that line.
 **
@@ -2978,6 +3070,10 @@ static int do_meta_command(char *zLine, ShellState *p){
       fprintf(stderr,"Error: querying sqlite_master and sqlite_temp_master\n");
       rc = 1;
     }
+  }else
+
+  if( c=='i' && strncmp(azArg[0], "info", n)==0 ){
+    rc = shell_info_command(p);
   }else
 
 #ifdef SQLITE_ENABLE_IOTRACE
