@@ -445,18 +445,21 @@ static int btree_varint_test(
     char zErr[200];
     n1 = putVarint(zBuf, in);
     if( n1>9 || n1<1 ){
-      sprintf(zErr, "putVarint returned %d - should be between 1 and 9", n1);
+      sqlite3_snprintf(sizeof(zErr), zErr,
+         "putVarint returned %d - should be between 1 and 9", n1);
       Tcl_AppendResult(interp, zErr, 0);
       return TCL_ERROR;
     }
     n2 = getVarint(zBuf, &out);
     if( n1!=n2 ){
-      sprintf(zErr, "putVarint returned %d and getVarint returned %d", n1, n2);
+      sqlite3_snprintf(sizeof(zErr), zErr,
+          "putVarint returned %d and getVarint returned %d", n1, n2);
       Tcl_AppendResult(interp, zErr, 0);
       return TCL_ERROR;
     }
     if( in!=out ){
-      sprintf(zErr, "Wrote 0x%016llx and got back 0x%016llx", in, out);
+      sqlite3_snprintf(sizeof(zErr), zErr,
+          "Wrote 0x%016llx and got back 0x%016llx", in, out);
       Tcl_AppendResult(interp, zErr, 0);
       return TCL_ERROR;
     }
@@ -465,13 +468,15 @@ static int btree_varint_test(
       n2 = getVarint32(zBuf, out32);
       out = out32;
       if( n1!=n2 ){
-        sprintf(zErr, "putVarint returned %d and GetVarint32 returned %d", 
+        sqlite3_snprintf(sizeof(zErr), zErr,
+          "putVarint returned %d and GetVarint32 returned %d", 
                   n1, n2);
         Tcl_AppendResult(interp, zErr, 0);
         return TCL_ERROR;
       }
       if( in!=out ){
-        sprintf(zErr, "Wrote 0x%016llx and got back 0x%016llx from GetVarint32",
+        sqlite3_snprintf(sizeof(zErr), zErr,
+          "Wrote 0x%016llx and got back 0x%016llx from GetVarint32",
             in, out);
         Tcl_AppendResult(interp, zErr, 0);
         return TCL_ERROR;

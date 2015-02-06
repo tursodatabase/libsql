@@ -3351,6 +3351,42 @@ debugCompareEnd:
 }
 #endif
 
+#if SQLITE_DEBUG
+/*
+** Count the number of fields (a.k.a. columns) in the record given by
+** pKey,nKey.  The verify that this count is less than or equal to the
+** limit given by pKeyInfo->nField + pKeyInfo->nXField.
+**
+** If this constraint is not satisfied, it means that the high-speed
+** vdbeRecordCompareInt() and vdbeRecordCompareString() routines will
+** not work correctly.  If this assert() ever fires, it probably means
+** that the KeyInfo.nField or KeyInfo.nXField values were computed
+** incorrectly.
+*/
+static void vdbeAssertFieldCountWithinLimits(
+  int nKey, const void *pKey,   /* The record to verify */ 
+  const KeyInfo *pKeyInfo       /* Compare size with this KeyInfo */
+){
+  int nField = 0;
+  u32 szHdr;
+  u32 idx;
+  u32 notUsed;
+  const unsigned char *aKey = (const unsigned char*)pKey;
+
+  if( CORRUPT_DB ) return;
+  idx = getVarint32(aKey, szHdr);
+  assert( nKey>=0 );
+  assert( szHdr<=(u32)nKey );
+  while( idx<szHdr ){
+    idx += getVarint32(aKey+idx, notUsed);
+    nField++;
+  }
+  assert( nField <= pKeyInfo->nField+pKeyInfo->nXField );
+}
+#else
+# define vdbeAssertFieldCountWithinLimits(A,B,C)
+#endif
+
 /*
 ** Both *pMem1 and *pMem2 contain string values. Compare the two values
 ** using the collation sequence pColl. As usual, return a negative , zero
@@ -3762,6 +3798,7 @@ static int vdbeRecordCompareInt(
   i64 v = pPKey2->aMem[0].u.i;
   i64 lhs;
 
+  vdbeAssertFieldCountWithinLimits(nKey1, pKey1, pPKey2->pKeyInfo);
   assert( (*(u8*)pKey1)<=0x3F || CORRUPT_DB );
   switch( serial_type ){
     case 1: { /* 1-byte signed integer */
@@ -3849,6 +3886,7 @@ static int vdbeRecordCompareString(
   int serial_type;
   int res;
 
+  vdbeAssertFieldCountWithinLimits(nKey1, pKey1, pPKey2->pKeyInfo);
   getVarint32(&aKey1[1], serial_type);
   if( serial_type<12 ){
     res = pPKey2->r1;      /* (pKey1/nKey1) is a number or a null */

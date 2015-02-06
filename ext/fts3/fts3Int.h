@@ -375,6 +375,11 @@ struct Fts3Phrase {
   int bIncr;                 /* True if doclist is loaded incrementally */
   int iDoclistToken;
 
+  /* Used by sqlite3Fts3EvalPhrasePoslist() if this is a descendent of an
+  ** OR condition.  */
+  char *pOrPoslist;
+  i64 iOrDocid;
+
   /* Variables below this point are populated by fts3_expr.c when parsing 
   ** a MATCH expression. Everything above is part of the evaluation phase. 
   */

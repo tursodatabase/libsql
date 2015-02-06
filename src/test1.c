@@ -94,10 +94,7 @@ static int get_sqlite_pointer(
     return TCL_ERROR;
   }
   p = (struct SqliteDb*)cmdInfo.objClientData;
-  sprintf(zBuf, "%p", p->db);
-  if( strncmp(zBuf,"0x",2) ){
-    sprintf(zBuf, "0x%p", p->db);
-  }
+  sqlite3_snprintf(sizeof(zBuf), zBuf, "%p", p->db);
   Tcl_AppendResult(interp, zBuf, 0);
   return TCL_OK;
 }
@@ -145,7 +142,8 @@ int sqlite3TestErrCode(Tcl_Interp *interp, sqlite3 *db, int rc){
    && sqlite3_errcode(db)!=rc ){
     char zBuf[200];
     int r2 = sqlite3_errcode(db);
-    sprintf(zBuf, "error code %s (%d) does not match sqlite3_errcode %s (%d)",
+    sqlite3_snprintf(sizeof(zBuf), zBuf,
+       "error code %s (%d) does not match sqlite3_errcode %s (%d)",
        t1ErrorName(rc), rc, t1ErrorName(r2), r2);
     Tcl_ResetResult(interp);
     Tcl_AppendResult(interp, zBuf, 0);
@@ -310,7 +308,7 @@ static int test_exec_printf(
   zSql = sqlite3_mprintf(argv[2], argv[3]);
   rc = sqlite3_exec(db, zSql, exec_printf_cb, &str, &zErr);
   sqlite3_free(zSql);
-  sprintf(zBuf, "%d", rc);
+  sqlite3_snprintf(sizeof(zBuf), zBuf, "%d", rc);
   Tcl_AppendElement(interp, zBuf);
   Tcl_AppendElement(interp, rc==SQLITE_OK ? Tcl_DStringValue(&str) : zErr);
   Tcl_DStringFree(&str);
@@ -357,7 +355,7 @@ static int test_exec_hex(
   zSql[i] = 0;
   Tcl_DStringInit(&str);
   rc = sqlite3_exec(db, zSql, exec_printf_cb, &str, &zErr);
-  sprintf(zBuf, "%d", rc);
+  sqlite3_snprintf(sizeof(zBuf), zBuf, "%d", rc);
   Tcl_AppendElement(interp, zBuf);
   Tcl_AppendElement(interp, rc==SQLITE_OK ? Tcl_DStringValue(&str) : zErr);
   Tcl_DStringFree(&str);
@@ -442,7 +440,7 @@ static int test_exec(
   zSql[j] = 0;
   rc = sqlite3_exec(db, zSql, exec_printf_cb, &str, &zErr);
   sqlite3_free(zSql);
-  sprintf(zBuf, "%d", rc);
+  sqlite3_snprintf(sizeof(zBuf), zBuf, "%d", rc);
   Tcl_AppendElement(interp, zBuf);
   Tcl_AppendElement(interp, rc==SQLITE_OK ? Tcl_DStringValue(&str) : zErr);
   Tcl_DStringFree(&str);
@@ -591,13 +589,13 @@ static int test_get_table_printf(
     resCount = (nRow+1)*nCol;
   }
   sqlite3_free(zSql);
-  sprintf(zBuf, "%d", rc);
+  sqlite3_snprintf(sizeof(zBuf), zBuf, "%d", rc);
   Tcl_AppendElement(interp, zBuf);
   if( rc==SQLITE_OK ){
     if( argc==4 ){
-      sprintf(zBuf, "%d", nRow);
+      sqlite3_snprintf(sizeof(zBuf), zBuf, "%d", nRow);
       Tcl_AppendElement(interp, zBuf);
-      sprintf(zBuf, "%d", nCol);
+      sqlite3_snprintf(sizeof(zBuf), zBuf, "%d", nCol);
       Tcl_AppendElement(interp, zBuf);
     }
     for(i=0; i<resCount; i++){
@@ -634,7 +632,7 @@ static int test_last_rowid(
     return TCL_ERROR;
   }
   if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
-  sprintf(zBuf, "%lld", sqlite3_last_insert_rowid(db));
+  sqlite3_snprintf(sizeof(zBuf), zBuf, "%lld", sqlite3_last_insert_rowid(db));
   Tcl_AppendResult(interp, zBuf, 0);
   return SQLITE_OK;
 }
@@ -774,7 +772,7 @@ static void hex8Func(sqlite3_context *p, int argc, sqlite3_value **argv){
   char zBuf[200];
   z = sqlite3_value_text(argv[0]);
   for(i=0; i<sizeof(zBuf)/2 - 2 && z[i]; i++){
-    sprintf(&zBuf[i*2], "%02x", z[i]&0xff);
+    sqlite3_snprintf(sizeof(zBuf)-i*2, &zBuf[i*2], "%02x", z[i]);
   }
   zBuf[i*2] = 0;
   sqlite3_result_text(p, (char*)zBuf, -1, SQLITE_TRANSIENT);
@@ -786,7 +784,7 @@ static void hex16Func(sqlite3_context *p, int argc, sqlite3_value **argv){
   char zBuf[400];
   z = sqlite3_value_text16(argv[0]);
   for(i=0; i<sizeof(zBuf)/4 - 4 && z[i]; i++){
-    sprintf(&zBuf[i*4], "%04x", z[i]&0xff);
+    sqlite3_snprintf(sizeof(zBuf)-i*4, &zBuf[i*4],"%04x", z[i]&0xff);
   }
   zBuf[i*4] = 0;
   sqlite3_result_text(p, (char*)zBuf, -1, SQLITE_TRANSIENT);
@@ -2497,7 +2495,7 @@ static int test_bind(
   if( sqlite3TestErrCode(interp, StmtToDb(pStmt), rc) ) return TCL_ERROR;
   if( rc ){
     char zBuf[50];
-    sprintf(zBuf, "(%d) ", rc);
+    sqlite3_snprintf(sizeof(zBuf), zBuf, "(%d) ", rc);
     Tcl_AppendResult(interp, zBuf, sqlite3ErrStr(rc), 0);
     return TCL_ERROR;
   }
@@ -3611,7 +3609,7 @@ static int test_prepare(
   }
   if( rc!=SQLITE_OK ){
     assert( pStmt==0 );
-    sprintf(zBuf, "(%d) ", rc);
+    sqlite3_snprintf(sizeof(zBuf), zBuf, "(%d) ", rc);
     Tcl_AppendResult(interp, zBuf, sqlite3_errmsg(db), 0);
     return TCL_ERROR;
   }
@@ -3681,7 +3679,7 @@ static int test_prepare_v2(
   }
   if( rc!=SQLITE_OK ){
     assert( pStmt==0 );
-    sprintf(zBuf, "(%d) ", rc);
+    sqlite3_snprintf(sizeof(zBuf), zBuf, "(%d) ", rc);
     Tcl_AppendResult(interp, zBuf, sqlite3_errmsg(db), 0);
     return TCL_ERROR;
   }
@@ -3722,7 +3720,7 @@ static int test_prepare_tkt3134(
   if( sqlite3TestErrCode(interp, db, rc) ) return TCL_ERROR;
   if( rc!=SQLITE_OK ){
     assert( pStmt==0 );
-    sprintf(zBuf, "(%d) ", rc);
+    sqlite3_snprintf(sizeof(zBuf), zBuf, "(%d) ", rc);
     Tcl_AppendResult(interp, zBuf, sqlite3_errmsg(db), 0);
     return TCL_ERROR;
   }
@@ -4537,7 +4535,7 @@ static int get_autocommit(
     return TCL_ERROR;
   }
   if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
-  sprintf(zBuf, "%d", sqlite3_get_autocommit(db));
+  sqlite3_snprintf(sizeof(zBuf), zBuf, "%d", sqlite3_get_autocommit(db));
   Tcl_AppendResult(interp, zBuf, 0);
   return TCL_OK;
 }
@@ -5173,7 +5171,7 @@ static int file_control_lockproxy_test(
       Tcl_AppendResult(interp, "PWD too big", (void*)0);
       return TCL_ERROR;
     }
-    sprintf(proxyPath, "%s/test.proxy", zPwd);
+    sqlite3_snprintf(sizeof(proxyPath), proxyPath, "%s/test.proxy", zPwd);
     rc = sqlite3_file_control(db, NULL, SQLITE_SET_LOCKPROXYFILE, proxyPath);
     if( rc ){
       Tcl_SetObjResult(interp, Tcl_NewIntObj(rc)); 
@@ -5916,7 +5914,8 @@ static int test_test_control(
     int i;
   } aVerb[] = {
     { "SQLITE_TESTCTRL_LOCALTIME_FAULT", SQLITE_TESTCTRL_LOCALTIME_FAULT }, 
-    { "SQLITE_TESTCTRL_SORTER_MMAP", SQLITE_TESTCTRL_SORTER_MMAP }, 
+    { "SQLITE_TESTCTRL_SORTER_MMAP",     SQLITE_TESTCTRL_SORTER_MMAP     }, 
+    { "SQLITE_TESTCTRL_IMPOSTER",        SQLITE_TESTCTRL_IMPOSTER        },
   };
   int iVerb;
   int iFlag;
@@ -5957,6 +5956,22 @@ static int test_test_control(
       sqlite3_test_control(SQLITE_TESTCTRL_SORTER_MMAP, db, val);
       break;
     }
+
+    case SQLITE_TESTCTRL_IMPOSTER: {
+      int onOff, tnum;
+      const char *zDbName;
+      sqlite3 *db;
+      if( objc!=6 ){
+        Tcl_WrongNumArgs(interp, 2, objv, "DB dbName onOff tnum");
+        return TCL_ERROR;
+      }
+      if( getDbPointer(interp, Tcl_GetString(objv[2]), &db) ) return TCL_ERROR;
+      zDbName = Tcl_GetString(objv[3]);
+      if( Tcl_GetIntFromObj(interp, objv[4], &onOff) ) return TCL_ERROR;
+      if( Tcl_GetIntFromObj(interp, objv[5], &tnum) ) return TCL_ERROR;
+      sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, db, zDbName, onOff, tnum);
+      break;
+    }
   }
 
   Tcl_ResetResult(interp);
@@ -5978,7 +5993,8 @@ static int test_getrusage(
   memset(&r, 0, sizeof(r));
   getrusage(RUSAGE_SELF, &r);
 
-  sprintf(buf, "ru_utime=%d.%06d ru_stime=%d.%06d ru_minflt=%d ru_majflt=%d", 
+  sqlite3_snprintf(sizeof(buf), buf,
+    "ru_utime=%d.%06d ru_stime=%d.%06d ru_minflt=%d ru_majflt=%d", 
     (int)r.ru_utime.tv_sec, (int)r.ru_utime.tv_usec, 
     (int)r.ru_stime.tv_sec, (int)r.ru_stime.tv_usec, 
     (int)r.ru_minflt, (int)r.ru_majflt

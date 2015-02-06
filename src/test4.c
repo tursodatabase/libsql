@@ -270,7 +270,7 @@ static int tcl_thread_argc(
     return TCL_ERROR;
   }
   thread_wait(&threadset[i]);
-  sprintf(zBuf, "%d", threadset[i].argc);
+  sqlite3_snprintf(sizeof(zBuf), zBuf, "%d", threadset[i].argc);
   Tcl_AppendResult(interp, zBuf, 0);
   return TCL_OK;
 }
