@@ -1119,10 +1119,6 @@ void sqlite3Pragma(
     Index *pIdx;
     Table *pTab;
     pIdx = sqlite3FindIndex(db, zRight, zDb);
-    if( pIdx==0 ){
-      pTab = sqlite3FindTable(db, zRight, zDb);
-      if( pTab && !HasRowid(pTab) ) pIdx = sqlite3PrimaryKeyIndex(pTab);
-    }
     if( pIdx ){
       int i;
       int mx = pPragma->iArg ? pIdx->nColumn : pIdx->nKeyCol;

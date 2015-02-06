@@ -1,5 +1,5 @@
-C Change\sa\scomment\sin\ssqlite3ota.h\sto\smake\sit\sclear\sthat\sit\sis\snot\spossible\sto\sinsert\sa\sNULL\svalue\sinto\san\sINTEGER\sPRIMARY\sKEY\scolumn\susing\sota.
-D 2015-02-05T17:46:19.663
+C Revise\sthe\sway\sthat\sthe\sindex\sstructure\sfor\sa\sWITHOUT\sROWID\stable\sis\ndiscovered.
+D 2015-02-06T00:31:45.481
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6b9e7677829aa94b9f30949656e27312aefb9a46
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -136,7 +136,7 @@ F ext/ota/ota7.test 1fe2c5761705374530e29f70c39693076028221a
 F ext/ota/ota8.test cd70e63a0c29c45c0906692827deafa34638feda
 F ext/ota/ota9.test d3eee95dd836824d07a22e5efcdb7bf6e869358b
 F ext/ota/otafault.test 508ba87c83d632670ac0f94371a465d4bb4d49dd
-F ext/ota/sqlite3ota.c 6f4f4e07d48ad51b745a5d30ba601a6895fd15ba
+F ext/ota/sqlite3ota.c bf417242a191617841cc1ab0815071b49444c9c8
 F ext/ota/sqlite3ota.h b4c54c7df5d223f2ee40efa5ba363188daa3ad37
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 14e6239434d4e3f65d3e90320713f26aa24e167f
@@ -238,7 +238,7 @@ F src/parse.y c5d0d964f9ac023e8154cad512e54b0b6058e086
 F src/pcache.c d210cf90d04365a74f85d21374dded65af67b0cb
 F src/pcache.h b44658c9c932d203510279439d891a2a83e12ba8
 F src/pcache1.c 1e77432b40b7d3288327d9cdf399dcdfd2b6d3bf
-F src/pragma.c 6e376554d9574416559101369fad2207c1e73299
+F src/pragma.c 8042d2b202140c49ffccb267aaa2012b50e337e4
 F src/pragma.h d2f776d719d156544638fe3f87f9627d8e16222f
 F src/prepare.c 173a5a499138451b2561614ecb87d78f9f4644b9
 F src/printf.c 05edc41450d0eb2c05ef7db113bf32742ae65325
@@ -1255,7 +1255,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 74e073dd604142212f3d3e1931065d124daabd80
-R e48869d5f9b5af46af5b0a2d65cd95eb
-U dan
-Z 20d9f4ca66bd6d3a4217ce480de94529
+P a5e86bea4ad51bbb988a2a2215961706894f4a02
+R cf9fe799f99a90eb0a6f043505cb4c1a
+U drh
+Z c0c25c22927eb0667b2fe51c91fe6714

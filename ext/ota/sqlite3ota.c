@@ -1002,13 +1002,26 @@ static char *otaWithoutRowidPK(sqlite3ota *p, OtaObjIter *pIter){
   assert( pIter->zIdx==0 );
   if( p->rc==SQLITE_OK ){
     const char *zSep = "PRIMARY KEY(";
-    sqlite3_stmt *pXInfo = 0;     /* PRAGMA index_xinfo = (pIter->zTbl) */
+    sqlite3_stmt *pXList = 0;     /* PRAGMA index_list = (pIter->zTbl) */
+    sqlite3_stmt *pXInfo = 0;     /* PRAGMA index_xinfo = <pk-index> */
     int rc;                       /* sqlite3_finalize() return code */
 
-    p->rc = prepareFreeAndCollectError(p->db, &pXInfo, &p->zErrmsg,
-        sqlite3_mprintf("PRAGMA main.index_xinfo = %Q", pIter->zTbl)
+   
+    p->rc = prepareFreeAndCollectError(p->db, &pXList, &p->zErrmsg,
+        sqlite3_mprintf("PRAGMA main.index_list = %Q", pIter->zTbl)
     );
-    while( p->rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pXInfo) ){
+    while( p->rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pXList) ){
+      const char *zOrig = (const char*)sqlite3_column_text(pXList,3);
+      if( zOrig && strcmp(zOrig,"pk")==0 ){
+        p->rc = prepareFreeAndCollectError(p->db, &pXInfo, &p->zErrmsg,
+          sqlite3_mprintf("PRAGMA main.index_xinfo = %Q",
+                           sqlite3_column_text(pXList,1))
+        );
+        break;
+      }
+    }
+    sqlite3_finalize(pXList);
+    while( p->rc==SQLITE_OK && pXInfo && SQLITE_ROW==sqlite3_step(pXInfo) ){
       if( sqlite3_column_int(pXInfo, 5) ){
         /* int iCid = sqlite3_column_int(pXInfo, 0); */
         const char *zCol = (const char*)sqlite3_column_text(pXInfo, 2);
