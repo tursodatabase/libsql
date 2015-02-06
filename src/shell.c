@@ -1733,6 +1733,7 @@ static char zHelp[] =
   ".bail on|off           Stop after hitting an error.  Default OFF\n"
   ".clone NEWDB           Clone data into NEWDB from the existing database\n"
   ".databases             List names and files of attached databases\n"
+  ".dbinfo ?DB?           Show status information about the database\n"
   ".dump ?TABLE? ...      Dump the database in an SQL text format\n"
   "                         If TABLE specified, only dump tables matching\n"
   "                         LIKE pattern TABLE.\n"
@@ -1745,10 +1746,9 @@ static char zHelp[] =
   ".headers on|off        Turn display of headers on or off\n"
   ".help                  Show this message\n"
   ".import FILE TABLE     Import data from FILE into TABLE\n"
-  ".indices ?TABLE?       Show names of all indices\n"
-  "                         If TABLE specified, only show indices for tables\n"
+  ".indexes ?TABLE?       Show names of all indexes\n"
+  "                         If TABLE specified, only show indexes for tables\n"
   "                         matching LIKE pattern TABLE.\n"
-  ".info                  Show status information about the database\n"
 #ifdef SQLITE_ENABLE_IOTRACE
   ".iotrace FILE          Enable I/O diagnostic logging to FILE\n"
 #endif
@@ -2456,10 +2456,7 @@ unsigned int get4byteInt(unsigned char *a){
 **
 ** Return 1 on error, 2 to exit, and 0 otherwise.
 */
-static int shell_info_command(ShellState *p){
-  sqlite3_file *pFile;
-  int i;    
-  unsigned char aHdr[100];
+static int shell_dbinfo_command(ShellState *p, int nArg, char **azArg){
   static const struct { const char *zName; int ofst; } aField[] = {
      { "file change counter:",  24  },
      { "database page count:",  28  },
@@ -2474,9 +2471,26 @@ static int shell_info_command(ShellState *p){
      { "application id:",       68  },
      { "software version:",     96  },
   };
+  static const struct { const char *zName; const char *zSql; } aQuery[] = {
+     { "number of tables:",
+       "SELECT count(*) FROM %s WHERE type='table'" },
+     { "number of indexes:",
+       "SELECT count(*) FROM %s WHERE type='index'" },
+     { "number of triggers:",
+       "SELECT count(*) FROM %s WHERE type='trigger'" },
+     { "number of views:",
+       "SELECT count(*) FROM %s WHERE type='view'" },
+     { "schema size:",
+       "SELECT total(length(sql)) FROM %s" },
+  };
+  sqlite3_file *pFile;
+  int i;
+  char *zSchemaTab;
+  char *zDb = nArg>=2 ? azArg[1] : "main";
+  unsigned char aHdr[100];
   open_db(p, 0);
   if( p->db==0 ) return 1;
-  sqlite3_file_control(p->db, "main", SQLITE_FCNTL_FILE_POINTER, &pFile);
+  sqlite3_file_control(p->db, zDb, SQLITE_FCNTL_FILE_POINTER, &pFile);
   if( pFile==0 || pFile->pMethods==0 || pFile->pMethods->xRead==0 ){
     return 1;
   }
@@ -2504,16 +2518,20 @@ static int shell_info_command(ShellState *p){
     }
     fprintf(p->out, "\n");
   }
-  fprintf(p->out, "%-20s %d\n", "number of tables:",
-          db_int(p, "SELECT count(*) FROM sqlite_master WHERE type='table'"));
-  fprintf(p->out, "%-20s %d\n", "number of indexes:",
-          db_int(p, "SELECT count(*) FROM sqlite_master WHERE type='index'"));
-  fprintf(p->out, "%-20s %d\n", "number of triggers:",
-          db_int(p, "SELECT count(*) FROM sqlite_master WHERE type='trigger'"));
-  fprintf(p->out, "%-20s %d\n", "number of views:",
-          db_int(p, "SELECT count(*) FROM sqlite_master WHERE type='view'"));
-  fprintf(p->out, "%-20s %d\n", "schema size:",
-          db_int(p, "SELECT total(length(sql)) FROM sqlite_master"));
+  if( zDb==0 ){
+    zSchemaTab = sqlite3_mprintf("main.sqlite_master");
+  }else if( strcmp(zDb,"temp")==0 ){
+    zSchemaTab = sqlite3_mprintf("%s", "sqlite_temp_master");
+  }else{
+    zSchemaTab = sqlite3_mprintf("\"%w\".sqlite_master", zDb);
+  }
+  for(i=0; i<sizeof(aQuery)/sizeof(aQuery[0]); i++){
+    char *zSql = sqlite3_mprintf(aQuery[i].zSql, zSchemaTab);
+    int val = db_int(p, zSql);
+    sqlite3_free(zSql);
+    fprintf(p->out, "%-20s %d\n", aQuery[i].zName, val);
+  }
+  sqlite3_free(zSchemaTab);
   return 0;
 }
 
@@ -2658,6 +2676,10 @@ static int do_meta_command(char *zLine, ShellState *p){
       sqlite3_free(zErrMsg);
       rc = 1;
     }
+  }else
+
+  if( c=='d' && strncmp(azArg[0], "dbinfo", n)==0 ){
+    rc = shell_dbinfo_command(p, nArg, azArg);
   }else
 
   if( c=='d' && strncmp(azArg[0], "dump", n)==0 ){
@@ -3028,7 +3050,8 @@ static int do_meta_command(char *zLine, ShellState *p){
     if( needCommit ) sqlite3_exec(db, "COMMIT", 0, 0, 0);
   }else
 
-  if( c=='i' && strncmp(azArg[0], "indices", n)==0 ){
+  if( c=='i' && (strncmp(azArg[0], "indices", n)==0
+                 || strncmp(azArg[0], "indexes", n)==0) ){
     ShellState data;
     char *zErrMsg = 0;
     open_db(p, 0);
@@ -3058,7 +3081,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       );
       zShellStatic = 0;
     }else{
-      fprintf(stderr, "Usage: .indices ?LIKE-PATTERN?\n");
+      fprintf(stderr, "Usage: .indexes ?LIKE-PATTERN?\n");
       rc = 1;
       goto meta_command_exit;
     }
@@ -3070,10 +3093,6 @@ static int do_meta_command(char *zLine, ShellState *p){
       fprintf(stderr,"Error: querying sqlite_master and sqlite_temp_master\n");
       rc = 1;
     }
-  }else
-
-  if( c=='i' && strncmp(azArg[0], "info", n)==0 ){
-    rc = shell_info_command(p);
   }else
 
 #ifdef SQLITE_ENABLE_IOTRACE

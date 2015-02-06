@@ -1,5 +1,5 @@
-C Add\sthe\s".info"\scommand\sto\sthe\sshell.
-D 2015-02-06T14:19:44.541
+C Change\sthe\sname\sof\s".info"\sto\s".dbinfo"\sand\sadd\san\soptional\ssecond\sargument\nwhich\sis\sthe\sATTACH-ed\sDB\sabout\swhich\sinformation\sis\sprovided.\s\sProvide\n".indexes"\sas\san\salternative\sname\sto\sthe\slegacy\s".indices"\scommand.
+D 2015-02-06T14:51:13.355
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6b9e7677829aa94b9f30949656e27312aefb9a46
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -231,7 +231,7 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c f6c46d3434439ab2084618d603e6d6dbeb0d6ada
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 1f2087523007c42900ffcbdeaef06a23ad9329fc
-F src/shell.c bb60212d7dc9698e97128b9599db31a946f9b09e
+F src/shell.c 82c25508dac802b32198af6f5256ca1597c6a1af
 F src/sqlite.h.in 54678c21401909f72b221344dd560d285a1ba5eb
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
@@ -858,7 +858,7 @@ F test/sharedA.test 0cdf1a76dfa00e6beee66af5b534b1e8df2720f5
 F test/sharedB.test 16cc7178e20965d75278f410943109b77b2e645e
 F test/shared_err.test 2f2aee20db294b9924e81f6ccbe60f19e21e8506
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test cdeb849acc2c37aada70d084564b0cc0a2c7df08
+F test/shell1.test ca88b14a8fc8b1f3543a24e519d019585ac9c903
 F test/shell2.test 12b8bf901b0e3a8ac58cf5c0c63a0a388d4d1862
 F test/shell3.test 5e8545ec72c4413a0e8d4c6be56496e3c257ca29
 F test/shell4.test 8a9c08976291e6c6c808b4d718f4a8b299f339f5
@@ -1239,7 +1239,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2743846cdba572f616f56d310633703b8b50959e
-R d4e7fe78c9cdff1cd20452301eb37621
+P 0a3100a7f264ffce6078c35e341f2f0af6c09fbb
+R a582dddcff23f4b3aa0ab625ed7ba566
 U drh
-Z c6460a2ceed946b50a764986e8bd6e0e
+Z 91c27780af6a4d5e0c7b8a8aa90c189d
