@@ -236,6 +236,10 @@ static const struct sPragmaNames {
     /* ePragTyp:  */ PragTyp_INDEX_LIST,
     /* ePragFlag: */ PragFlag_NeedSchema,
     /* iArg:      */ 0 },
+  { /* zName:     */ "index_xinfo",
+    /* ePragTyp:  */ PragTyp_INDEX_INFO,
+    /* ePragFlag: */ PragFlag_NeedSchema,
+    /* iArg:      */ 1 },
 #endif
 #if !defined(SQLITE_OMIT_INTEGRITY_CHECK)
   { /* zName:     */ "integrity_check",
@@ -452,4 +456,4 @@ static const struct sPragmaNames {
     /* iArg:      */ SQLITE_WriteSchema|SQLITE_RecoveryMode },
 #endif
 };
-/* Number of pragmas: 58 on by default, 71 total. */
+/* Number of pragmas: 59 on by default, 72 total. */

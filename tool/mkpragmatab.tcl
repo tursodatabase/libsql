@@ -205,6 +205,14 @@ set pragma_def {
   IF:   !defined(SQLITE_OMIT_SCHEMA_PRAGMAS)
 
   NAME: index_info
+  TYPE: INDEX_INFO
+  ARG:  0
+  FLAG: NeedSchema
+  IF:   !defined(SQLITE_OMIT_SCHEMA_PRAGMAS)
+
+  NAME: index_xinfo
+  TYPE: INDEX_INFO
+  ARG:  1
   FLAG: NeedSchema
   IF:   !defined(SQLITE_OMIT_SCHEMA_PRAGMAS)
 

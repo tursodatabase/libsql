@@ -1,5 +1,5 @@
-C Fix\sa\smissing\smutex\sin\sSQLITE_TESTCTRL_IMPOSTER.
-D 2015-02-04T20:56:49.607
+C Add\sthe\sindex_xinfo\spragma\swhich\sgives\sinformation\sabout\sthe\sfields\sthat\nreference\sthe\stable\sPRIMARY\sKEY\sin\saddition\sto\sthe\sindex\skey\sfields.\nAdd\sextra\scolumns\s"desc",\s"coll",\sand\s"key"\sto\sthe\sindex_info\sand\sindex_xinfo\npragmas.\s\sAdd\sthe\s"origin"\sand\s"partial"\scolumns\sto\sthe\sindex_list\spragma.
+D 2015-02-06T01:07:15.913
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6b9e7677829aa94b9f30949656e27312aefb9a46
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -223,8 +223,8 @@ F src/parse.y c5d0d964f9ac023e8154cad512e54b0b6058e086
 F src/pcache.c d210cf90d04365a74f85d21374dded65af67b0cb
 F src/pcache.h b44658c9c932d203510279439d891a2a83e12ba8
 F src/pcache1.c 1e77432b40b7d3288327d9cdf399dcdfd2b6d3bf
-F src/pragma.c 58044728a29a0240d14a850c3870e5ac3da436b2
-F src/pragma.h 28804eae1286aab6f2ffa3682dc0b06b58c51834
+F src/pragma.c ea0be138a99784b14e87bd4522fea40e7b979e9c
+F src/pragma.h 09c89bca58e9a44de2116cc8272b8d454657129f
 F src/prepare.c 173a5a499138451b2561614ecb87d78f9f4644b9
 F src/printf.c 05edc41450d0eb2c05ef7db113bf32742ae65325
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
@@ -787,7 +787,7 @@ F test/pcache.test b09104b03160aca0d968d99e8cd2c5b1921a993d
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
 F test/permutations.test f9cc1dd987986c9d4949211c7a4ed55ec9aecba1
-F test/pragma.test aa16dedfe01c02c8895169012f7dfde9c163f0d5
+F test/pragma.test 6cf0f0ce4618e841457aa42745afda55ddbc95fe
 F test/pragma2.test aea7b3d82c76034a2df2b38a13745172ddc0bc13
 F test/pragma3.test 6f849ccffeee7e496d2f2b5e74152306c0b8757c
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
@@ -1203,7 +1203,7 @@ F tool/logest.c eef612f8adf4d0993dafed0416064cf50d5d33c6
 F tool/mkautoconfamal.sh d1a2da0e15b2ed33d60af35c7e9d483f13a8eb9f
 F tool/mkkeywordhash.c dfff09dbbfaf950e89af294f48f902181b144670
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
-F tool/mkpragmatab.tcl 4b4e91f6b8fc45596686798b918999e923b91fc7
+F tool/mkpragmatab.tcl 94f196c9961e0ca3513e29f57125a3197808be2d
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 9ef48e1748dce7b844f67e2450ff9dfeb0fb4ab5
 F tool/mksqlite3c.tcl 6b8e572a90eb4e0086e3ba90d88b76c085919863
@@ -1239,7 +1239,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f30a057aeeac2b863493b6325325b075a76b9d21
-R 7062d08c73f32c9ecf1fbd0a908460e5
+P 71691c4be54b9ac6a35e35013f939b7d6fd4e6b8 3af19f84446ba5fc1ed754d0d73f6a6d7fb2f365
+R 378ae50354305236538b7809f97882cb
+T +closed 3af19f84446ba5fc1ed754d0d73f6a6d7fb2f365
 U drh
-Z 50e6879801fe010f0d0350ec5e4483dd
+Z 9e4d57322f408f6027b92b8bd8c22512
