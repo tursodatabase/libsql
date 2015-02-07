@@ -2153,14 +2153,35 @@ sqlite3_int64 sqlite3ota_progress(sqlite3ota *pOta){
 ** Beginning of OTA VFS shim methods. The VFS shim modifies the behaviour
 ** of a standard VFS in the following ways:
 **
-**   TODO
+**   1. Whenever the first page of an OTA target database file is read or 
+**      written, the value of the change-counter cookie is stored in
+**      sqlite3ota.iCookie. This ensures that, so long as a read transaction
+**      is held on the db file, the value of sqlite3ota.iCookie matches
+**      that stored on disk.
+**
+**   2. When the ota handle is in OTA_STAGE_OAL or OTA_STAGE_CKPT state, all
+**      EXCLUSIVE lock attempts on the target database fail. This prevents
+**      sqlite3_close() from running an automatic checkpoint. Until the
+**      ota handle reaches OTA_STAGE_DONE - at that point the automatic
+**      checkpoint may be required to delete the *-wal file.
+**
+**   3. In OTA_STAGE_OAL, the *-shm file is stored in memory. All xShmLock()
+**      calls are noops.
+**
+**   4. In OTA_STAGE_OAL mode, when SQLite calls xAccess() to check if a
+**      *-wal file associated with the target database exists, the following
+**      special handling applies:
+**
+**        a) if the *-wal file does exist, return SQLITE_CANTOPEN. An OTA
+**           target database may not be in wal mode already.
+**
+**        b) if the *-wal file does not exist, set the output parameter to
+**           non-zero (to tell SQLite that it does exist) anyway.
+**
+**   5. In OTA_STAGE_OAL mode, if SQLite tries to open a *-wal file 
+**      associated with a target database, open the corresponding *-oal file
+**      instead.
 */
-
-#if 0
-#define OTA_FILE_VANILLA    0
-#define OTA_FILE_TARGET_DB  1
-#define OTA_FILE_TARGET_WAL 2
-#endif
 
 typedef struct ota_file ota_file;
 typedef struct ota_vfs ota_vfs;

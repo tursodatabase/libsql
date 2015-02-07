@@ -1,5 +1,5 @@
-C Remove\s"PRAGMA\spager_ota_mode".
-D 2015-02-07T19:17:36.157
+C Add\scomments\sto\sexplain\sthe\srole\sof\sthe\sota\svfs.
+D 2015-02-07T20:20:32.171
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6b9e7677829aa94b9f30949656e27312aefb9a46
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -134,7 +134,7 @@ F ext/ota/ota7.test 1fe2c5761705374530e29f70c39693076028221a
 F ext/ota/ota8.test cd70e63a0c29c45c0906692827deafa34638feda
 F ext/ota/ota9.test d3eee95dd836824d07a22e5efcdb7bf6e869358b
 F ext/ota/otafault.test 508ba87c83d632670ac0f94371a465d4bb4d49dd
-F ext/ota/sqlite3ota.c 7015400382d1d6655626046f2c1763634dd8a168
+F ext/ota/sqlite3ota.c a5cea44e3d186ae53c1a0dbdc1c3ca73e9d1dc62
 F ext/ota/sqlite3ota.h b4c54c7df5d223f2ee40efa5ba363188daa3ad37
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 14e6239434d4e3f65d3e90320713f26aa24e167f
@@ -1253,10 +1253,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c3931db560ab4a2601c7f7318fb02c8d5e6862b1
-R 8cb076bc2c2cc0b3b28786011832c69d
-T *branch * ota-update-no-pager_ota_mode
-T *sym-ota-update-no-pager_ota_mode *
-T -sym-ota-update *
+P 8ac58e46782bd6b81c06fdf1cb5b316b8a4e1ddf
+R f5474ed197582e342ea21c91b796b802
 U dan
-Z b552e61eecb5b9b2a0bf7b3905abae17
+Z 4e62cdaf7cd09d75059d0dc1ee3d7cb0
