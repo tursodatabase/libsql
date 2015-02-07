@@ -315,9 +315,6 @@ set pragma_def {
   NAME: soft_heap_limit
 
   NAME: threads
-
-  NAME: pager_ota_mode
-  IF:   defined(SQLITE_ENABLE_OTA)
 }
 
 # Open the output file

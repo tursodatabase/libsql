@@ -1,5 +1,5 @@
-C Merge\sthe\scommand-line\sshell\senhancements\sfrom\strunk.
-D 2015-02-06T15:03:45.342
+C Remove\s"PRAGMA\spager_ota_mode".
+D 2015-02-07T19:17:36.157
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6b9e7677829aa94b9f30949656e27312aefb9a46
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -123,20 +123,18 @@ F ext/misc/totype.c 4a167594e791abeed95e0a8db028822b5e8fe512
 F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
-F ext/ota/README.txt 78d4a9f78f567d4bf826cf0f02df6254902562ca
+F ext/ota/README.txt 2ce4ffbb0aaa6731b041c27a7359f9a5f1c69152
 F ext/ota/ota.c c11a85af71dccc45976622fe7a51169a481caa91
-F ext/ota/ota1.test 719854e444dff2ead58ff6b62d8315954bd7762a
+F ext/ota/ota1.test e6b64d6ffb23dcae72386da153626b40566a69e9
 F ext/ota/ota10.test 85e0f6e7964db5007590c1b299e75211ed4240d4
-F ext/ota/ota2.test 2829bc08ffbb71b605392a68fedfd554763356a7
 F ext/ota/ota3.test a77efbce7723332eb688d2b28bf18204fc9614d7
-F ext/ota/ota4.test 82434aa39c9acca6cd6317f6b0ab07b0ec6c2e7d
 F ext/ota/ota5.test ad0799daf8923ddebffe75ae8c5504ca90b7fadb
-F ext/ota/ota6.test 82f1f757ec9b2ad07d6de4060b8e3ba8e44dfdd3
+F ext/ota/ota6.test 1fbba5fd46e3e0bfa5ae1d0caf9da27d15cb7cdf
 F ext/ota/ota7.test 1fe2c5761705374530e29f70c39693076028221a
 F ext/ota/ota8.test cd70e63a0c29c45c0906692827deafa34638feda
 F ext/ota/ota9.test d3eee95dd836824d07a22e5efcdb7bf6e869358b
 F ext/ota/otafault.test 508ba87c83d632670ac0f94371a465d4bb4d49dd
-F ext/ota/sqlite3ota.c bf417242a191617841cc1ab0815071b49444c9c8
+F ext/ota/sqlite3ota.c 7015400382d1d6655626046f2c1763634dd8a168
 F ext/ota/sqlite3ota.h b4c54c7df5d223f2ee40efa5ba363188daa3ad37
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 14e6239434d4e3f65d3e90320713f26aa24e167f
@@ -232,14 +230,14 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c aefeaf915aaef9f81aa2645e0d5d06fa1bd83beb
 F src/os_win.c 8223e7db5b7c4a81d8b161098ac3959400434cdb
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
-F src/pager.c 90b164ac8fefed940cd50fad6938cd18b55af8f3
-F src/pager.h 19d83e2782fe978976cb1acf474d09d9a6124ac3
+F src/pager.c 46bc7849b02c51e13f0165fa6d6faa452e91a957
+F src/pager.h 20954a3fa1bbf05d39063d94e789ad9efd15e5d1
 F src/parse.y c5d0d964f9ac023e8154cad512e54b0b6058e086
 F src/pcache.c d210cf90d04365a74f85d21374dded65af67b0cb
 F src/pcache.h b44658c9c932d203510279439d891a2a83e12ba8
 F src/pcache1.c 1e77432b40b7d3288327d9cdf399dcdfd2b6d3bf
-F src/pragma.c 8042d2b202140c49ffccb267aaa2012b50e337e4
-F src/pragma.h d2f776d719d156544638fe3f87f9627d8e16222f
+F src/pragma.c ea0be138a99784b14e87bd4522fea40e7b979e9c
+F src/pragma.h 09c89bca58e9a44de2116cc8272b8d454657129f
 F src/prepare.c 173a5a499138451b2561614ecb87d78f9f4644b9
 F src/printf.c 05edc41450d0eb2c05ef7db113bf32742ae65325
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
@@ -318,7 +316,7 @@ F src/vdbemem.c 31d8eabb0cd78bfeab4e5124c7363c3e9e54db9f
 F src/vdbesort.c 6d64c5448b64851b99931ede980addc3af70d5e2
 F src/vdbetrace.c 7e4222955e07dd707a2f360c0eb73452be1cb010
 F src/vtab.c c08ec66f45919eaa726bf88aa53eb08379d607f9
-F src/wal.c 735d081f736fd7fecbf8f2aa213484e641ba35ff
+F src/wal.c 7a8a4e7a40d693d44dbfc4d1f2bcb7e2b620f530
 F src/wal.h 0d3ba0c3f1b4c25796cb213568a84b9f9063f465
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
 F src/where.c d46de821bc604a4fd36fa3928c086950e91aafb1
@@ -1219,7 +1217,7 @@ F tool/logest.c eef612f8adf4d0993dafed0416064cf50d5d33c6
 F tool/mkautoconfamal.sh d1a2da0e15b2ed33d60af35c7e9d483f13a8eb9f
 F tool/mkkeywordhash.c dfff09dbbfaf950e89af294f48f902181b144670
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
-F tool/mkpragmatab.tcl a5cb9b20ad7abb2ffd519c85f1f8f99bcbfa6823
+F tool/mkpragmatab.tcl 94f196c9961e0ca3513e29f57125a3197808be2d
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 9ef48e1748dce7b844f67e2450ff9dfeb0fb4ab5
 F tool/mksqlite3c.tcl 6b8e572a90eb4e0086e3ba90d88b76c085919863
@@ -1255,7 +1253,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7f10a0eaf1fedfa020cbd7019ec9342ffdc3b9b0 0f65a7e2e09f801b66897479d501607caeae4abf
-R 1ef390b8e8775fda79ba88277a4a2044
-U drh
-Z f716caa3559c7f56ae8a7035846f96fb
+P c3931db560ab4a2601c7f7318fb02c8d5e6862b1
+R 8cb076bc2c2cc0b3b28786011832c69d
+T *branch * ota-update-no-pager_ota_mode
+T *sym-ota-update-no-pager_ota_mode *
+T -sym-ota-update *
+U dan
+Z b552e61eecb5b9b2a0bf7b3905abae17

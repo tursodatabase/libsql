@@ -187,6 +187,7 @@ foreach {tn2 cmd} {1 run_ota 2 step_ota 3 step_ota_uri} {
 
     do_test 1.$tn2.$tn.1 {
       create_ota1 ota.db
+      breakpoint
       $cmd test.db ota.db
     } {SQLITE_DONE}
 

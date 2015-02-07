@@ -642,9 +642,6 @@ struct Pager {
   u8 noLock;                  /* Do not lock (except in WAL mode) */
   u8 readOnly;                /* True for a read-only database */
   u8 memDb;                   /* True to inhibit all file I/O */
-#ifdef SQLITE_ENABLE_OTA
-  u8 otaMode;                 /* Non-zero if in ota_mode */
-#endif
 
   /**************************************************************************
   ** The following block contains those class members that change during
@@ -719,16 +716,6 @@ struct Pager {
   char *zWal;                 /* File name for write-ahead log */
 #endif
 };
-
-/*
-** Return the value of the pager otaMode flag (0, 1 or 2). Or, if
-** SQLITE_ENABLE_OTA is not defined, return constant value 0.
-*/
-#ifdef SQLITE_ENABLE_OTA
-# define PagerOtaMode(pPager) ((pPager)->otaMode)
-#else
-# define PagerOtaMode(pPager) 0
-#endif
 
 /*
 ** Indexes for use with Pager.aStat[]. The Pager.aStat[] array contains
@@ -2052,7 +2039,7 @@ static int pager_end_transaction(Pager *pPager, int hasMaster, int bCommit){
     if( rc==SQLITE_NOTFOUND ) rc = SQLITE_OK;
   }
 
-  if( !pPager->exclusiveMode && !PagerOtaMode(pPager)
+  if( !pPager->exclusiveMode
    && (!pagerUseWal(pPager) || sqlite3WalExclusiveMode(pPager->pWal, 0))
   ){
     rc2 = pagerUnlockDb(pPager, SHARED_LOCK);
@@ -4007,9 +3994,7 @@ int sqlite3PagerClose(Pager *pPager){
   /* pPager->errCode = 0; */
   pPager->exclusiveMode = 0;
 #ifndef SQLITE_OMIT_WAL
-  sqlite3WalClose(pPager->pWal, 
-      pPager->ckptSyncFlags, pPager->pageSize, (PagerOtaMode(pPager)?0:pTmp)
-  );
+  sqlite3WalClose(pPager->pWal, pPager->ckptSyncFlags, pPager->pageSize, pTmp);
   pPager->pWal = 0;
 #endif
   pager_reset(pPager);
@@ -5210,11 +5195,6 @@ int sqlite3PagerSharedLock(Pager *pPager){
     ** mode. Otherwise, the following function call is a no-op.
     */
     rc = pagerOpenWalIfPresent(pPager);
-    if( rc==SQLITE_OK && PagerOtaMode(pPager) ){
-      int nWal = sqlite3Strlen30(pPager->zWal);
-      pPager->zWal[nWal-3] = 'o';
-      rc = pagerOpenWalInternal(pPager, 0);
-    }
 
 #ifndef SQLITE_OMIT_WAL
     assert( pPager->pWal==0 || rc==SQLITE_OK );
@@ -5224,17 +5204,6 @@ int sqlite3PagerSharedLock(Pager *pPager){
   if( pagerUseWal(pPager) ){
     assert( rc==SQLITE_OK );
     rc = pagerBeginReadTransaction(pPager);
-    if( rc==SQLITE_OK && PagerOtaMode(pPager)==1 ){
-      rc = sqlite3WalCheckSalt(pPager->pWal, pPager->fd);
-      if( rc!=SQLITE_OK ){
-        sqlite3WalClose(pPager->pWal, 0, 0, 0);
-        pPager->pWal = 0;
-      }else{
-#ifdef SQLITE_ENABLE_OTA
-        pPager->otaMode = 2;
-#endif
-      }
-    }
   }
 
   if( pPager->eState==PAGER_OPEN && rc==SQLITE_OK ){
@@ -7129,7 +7098,7 @@ void sqlite3PagerClearCache(Pager *pPager){
 */
 int sqlite3PagerCheckpoint(Pager *pPager, int eMode, int *pnLog, int *pnCkpt){
   int rc = SQLITE_OK;
-  if( pPager->pWal && PagerOtaMode(pPager)==0 ){
+  if( pPager->pWal ){
     rc = sqlite3WalCheckpoint(pPager->pWal, eMode,
         (eMode==SQLITE_CHECKPOINT_PASSIVE ? 0 : pPager->xBusyHandler),
         pPager->pBusyHandlerArg,
@@ -7197,7 +7166,7 @@ static int pagerOpenWal(Pager *pPager){
   */
   if( rc==SQLITE_OK ){
     rc = sqlite3WalOpen(pPager->pVfs,
-        pPager->fd, pPager->zWal, pPager->exclusiveMode || PagerOtaMode(pPager),
+        pPager->fd, pPager->zWal, pPager->exclusiveMode,
         pPager->journalSizeLimit, &pPager->pWal
     );
   }
@@ -7263,7 +7232,6 @@ int sqlite3PagerOpenWal(
   Pager *pPager,                  /* Pager object */
   int *pbOpen                     /* OUT: Set to true if call is a no-op */
 ){
-  if( PagerOtaMode(pPager) ) return SQLITE_CANTOPEN_BKPT;
   return pagerOpenWalInternal(pPager, pbOpen);
 }
 
@@ -7313,20 +7281,6 @@ int sqlite3PagerCloseWal(Pager *pPager){
   return rc;
 }
 
-/*
-** This function is called by the wal.c module to obtain the 8 bytes of 
-** "salt" written into the wal file header. In OTA mode, this is a copy
-** of bytes 24-31 of the database file. In non-OTA mode, it is 8 bytes
-** of pseudo-random data.
-*/
-void sqlite3PagerWalSalt(Pager *pPager, u32 *aSalt){
-  if( PagerOtaMode(pPager) ){
-    memcpy(aSalt, pPager->dbFileVers, 8);
-  }else{
-    sqlite3_randomness(8, aSalt);
-  }
-}
-
 #endif /* !SQLITE_OMIT_WAL */
 
 #ifdef SQLITE_ENABLE_ZIPVFS
@@ -7344,17 +7298,6 @@ int sqlite3PagerWalFramesize(Pager *pPager){
 #endif
 
 #ifdef SQLITE_ENABLE_OTA
-/*
-** Set or clear the "OTA mode" flag.
-*/
-int sqlite3PagerSetOtaMode(Pager *pPager, int iOta){
-  assert( iOta==1 || iOta==2 );
-  if( iOta==1 && (pPager->pWal || pPager->eState!=PAGER_OPEN) ){
-    return SQLITE_ERROR;
-  }
-  pPager->otaMode = iOta;
-  return SQLITE_OK;
-}
 
 /*
 ** Open an incremental checkpoint handle.
