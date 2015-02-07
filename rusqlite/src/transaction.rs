@@ -163,7 +163,7 @@ mod test {
     use SqliteConnection;
 
     fn checked_memory_handle() -> SqliteConnection {
-        let db = SqliteConnection::open(":memory:").unwrap();
+        let db = SqliteConnection::open_in_memory().unwrap();
         db.execute_batch("CREATE TABLE foo (x INTEGER)").unwrap();
         db
     }
