@@ -3194,7 +3194,10 @@ static void substSelect(
 **
 **   (1)  The subquery and the outer query do not both use aggregates.
 **
-**   (2)  The subquery is not an aggregate or the outer query is not a join.
+**   (2)  The subquery is not an aggregate or (2a) the outer query is not a join
+**        and (2b) the outer query does not use subqueries other than the one
+**        FROM-clause subquery that is a candidate for flattening.  (2b is
+**        due to ticket [2f7170d73bf9abf80] from 2015-02-09.)
 **
 **   (3)  The subquery is not the right operand of a left outer join
 **        (Originally ticket #306.  Strengthened by ticket #3300)
@@ -3331,8 +3334,17 @@ static int flattenSubquery(
   iParent = pSubitem->iCursor;
   pSub = pSubitem->pSelect;
   assert( pSub!=0 );
-  if( isAgg && subqueryIsAgg ) return 0;                 /* Restriction (1)  */
-  if( subqueryIsAgg && pSrc->nSrc>1 ) return 0;          /* Restriction (2)  */
+  if( subqueryIsAgg ){
+    if( isAgg ) return 0;                                /* Restriction (1)   */
+    if( pSrc->nSrc>1 ) return 0;                         /* Restriction (2a)  */
+    if( (p->pWhere && ExprHasProperty(p->pWhere,EP_Subquery))
+     || (sqlite3ExprListFlags(p->pEList) & EP_Subquery)!=0
+     || (sqlite3ExprListFlags(p->pOrderBy) & EP_Subquery)!=0
+    ){
+      return 0;                                          /* Restriction (2b)  */
+    }
+  }
+    
   pSubSrc = pSub->pSrc;
   assert( pSubSrc );
   /* Prior to version 3.1.2, when LIMIT and OFFSET had to be simple constants,
