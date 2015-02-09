@@ -300,5 +300,21 @@ int sqlite3ota_close(sqlite3ota *pOta, char **pzErrmsg);
 */
 sqlite3_int64 sqlite3ota_progress(sqlite3ota *pOta);
 
+/*
+** Create an OTA VFS named zName. Use existing VFS zParent to interact
+** with the file-system.
+*/
+int sqlite3ota_create_vfs(const char *zName, const char *zParent);
+
+/*
+** Deregister and destroy an OTA vfs previously created by 
+** sqlite3ota_create_vfs().
+**
+** VFS objects are not reference counted. If a VFS object is destroyed
+** before all database handles that use it have been closed, the results 
+** are undefined.
+*/
+void sqlite3ota_destroy_vfs(const char *zName);
+
 #endif /* _SQLITE3OTA_H */
 

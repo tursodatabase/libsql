@@ -98,7 +98,7 @@ proc step_ota {target ota} {
 #
 proc step_ota_uri {target ota} {
   while 1 {
-    sqlite3ota ota file:$target?xyz=123 $ota
+    sqlite3ota ota file:$target?xyz=&abc=123 $ota
     set rc [ota step]
     ota close
     if {$rc != "SQLITE_OK"} break

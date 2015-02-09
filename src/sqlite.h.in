@@ -970,6 +970,7 @@ struct sqlite3_io_methods {
 #define SQLITE_FCNTL_COMMIT_PHASETWO        22
 #define SQLITE_FCNTL_WIN32_SET_HANDLE       23
 #define SQLITE_FCNTL_ZIPVFS_PAGER           24
+#define SQLITE_FCNTL_OTA                    25
 
 /*
 ** CAPI3REF: Mutex Handle
