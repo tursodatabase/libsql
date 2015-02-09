@@ -1078,7 +1078,7 @@ expr(A) ::= expr(W) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
       A.pExpr = sqlite3PExpr(pParse, TK_IN, X.pExpr, 0, 0);
       if( A.pExpr ){
         A.pExpr->x.pList = Y;
-        sqlite3ExprSetHeight(pParse, A.pExpr);
+        sqlite3ExprSetHeightAndFlags(pParse, A.pExpr);
       }else{
         sqlite3ExprListDelete(pParse->db, Y);
       }
@@ -1092,7 +1092,7 @@ expr(A) ::= expr(W) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
     if( A.pExpr ){
       A.pExpr->x.pSelect = X;
       ExprSetProperty(A.pExpr, EP_xIsSelect|EP_Subquery);
-      sqlite3ExprSetHeight(pParse, A.pExpr);
+      sqlite3ExprSetHeightAndFlags(pParse, A.pExpr);
     }else{
       sqlite3SelectDelete(pParse->db, X);
     }
@@ -1104,7 +1104,7 @@ expr(A) ::= expr(W) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
     if( A.pExpr ){
       A.pExpr->x.pSelect = Y;
       ExprSetProperty(A.pExpr, EP_xIsSelect|EP_Subquery);
-      sqlite3ExprSetHeight(pParse, A.pExpr);
+      sqlite3ExprSetHeightAndFlags(pParse, A.pExpr);
     }else{
       sqlite3SelectDelete(pParse->db, Y);
     }
@@ -1118,7 +1118,7 @@ expr(A) ::= expr(W) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
     if( A.pExpr ){
       A.pExpr->x.pSelect = sqlite3SelectNew(pParse, 0,pSrc,0,0,0,0,0,0,0);
       ExprSetProperty(A.pExpr, EP_xIsSelect|EP_Subquery);
-      sqlite3ExprSetHeight(pParse, A.pExpr);
+      sqlite3ExprSetHeightAndFlags(pParse, A.pExpr);
     }else{
       sqlite3SrcListDelete(pParse->db, pSrc);
     }
@@ -1131,7 +1131,7 @@ expr(A) ::= expr(W) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
     if( p ){
       p->x.pSelect = Y;
       ExprSetProperty(p, EP_xIsSelect|EP_Subquery);
-      sqlite3ExprSetHeight(pParse, p);
+      sqlite3ExprSetHeightAndFlags(pParse, p);
     }else{
       sqlite3SelectDelete(pParse->db, Y);
     }
@@ -1145,7 +1145,7 @@ expr(A) ::= CASE(C) case_operand(X) case_exprlist(Y) case_else(Z) END(E). {
   A.pExpr = sqlite3PExpr(pParse, TK_CASE, X, 0, 0);
   if( A.pExpr ){
     A.pExpr->x.pList = Z ? sqlite3ExprListAppend(pParse,Y,Z) : Y;
-    sqlite3ExprSetHeight(pParse, A.pExpr);
+    sqlite3ExprSetHeightAndFlags(pParse, A.pExpr);
   }else{
     sqlite3ExprListDelete(pParse->db, Y);
     sqlite3ExprDelete(pParse->db, Z);

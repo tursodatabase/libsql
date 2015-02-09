@@ -13,7 +13,9 @@
 # focus of this script is making sure collations pass through the
 # unary + operator.
 #
-# $Id: collate8.test,v 1.2 2008/08/25 12:14:09 drh Exp $
+# 2015-02-09:  Added tests to make sure COLLATE passes through function
+# calls.  Ticket [ca0d20b6cdddec5e81b8d66f89c46a5583b5f6f6].
+#
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -121,5 +123,35 @@ do_test collate8-2.8 {
     SELECT a COLLATE nocase AS x FROM t2 WHERE 'abc'=x COLLATE binary;
   }
 } {abc}
+
+# Make sure the COLLATE operator perculates up through function calls
+# and other Expr structures that use the Expr.x.pList field.
+#
+do_execsql_test collate8-3.1 {
+  SELECT 'abc'==('ABC'||'') COLLATE nocase;
+  SELECT 'abc'==('ABC'||'' COLLATE nocase);
+  SELECT 'abc'==('ABC'||('' COLLATE nocase));
+  SELECT 'abc'==('ABC'||upper('' COLLATE nocase));
+} {1 1 1 1}
+do_execsql_test collate8-3.2 {
+  SELECT 'abc'==('ABC'||max('' COLLATE nocase,'' COLLATE binary));
+} {1}
+
+# The COLLATE binary is on the left and so takes precedence
+do_execsql_test collate8-3.3 {
+  SELECT 'abc'==('ABC'||max('' COLLATE binary,'' COLLATE nocase));
+} {0}
+
+do_execsql_test collate8-3.4 {
+  SELECT 'abc'==('ABC'||CASE WHEN 1-1=2 THEN '' COLLATE nocase
+                                        ELSE '' COLLATE binary END);
+  SELECT 'abc'==('ABC'||CASE WHEN 1+1=2 THEN '' COLLATE nocase
+                                        ELSE '' COLLATE binary END);
+} {1 1}
+do_execsql_test collate8-3.5 {
+  SELECT 'abc'==('ABC'||CASE WHEN 1=2 THEN '' COLLATE binary
+                                      ELSE '' COLLATE nocase END);
+} {0}
+
 
 finish_test

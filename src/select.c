@@ -3338,8 +3338,8 @@ static int flattenSubquery(
     if( isAgg ) return 0;                                /* Restriction (1)   */
     if( pSrc->nSrc>1 ) return 0;                         /* Restriction (2a)  */
     if( (p->pWhere && ExprHasProperty(p->pWhere,EP_Subquery))
-     || sqlite3AnyExprListHasProperty(p->pEList,EP_Subquery)
-     || sqlite3AnyExprListHasProperty(p->pOrderBy,EP_Subquery)
+     || (sqlite3ExprListFlags(p->pEList) & EP_Subquery)!=0
+     || (sqlite3ExprListFlags(p->pOrderBy) & EP_Subquery)!=0
     ){
       return 0;                                          /* Restriction (2b)  */
     }
