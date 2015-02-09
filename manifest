@@ -1,5 +1,5 @@
-C Propagate\sthe\sCOLLATE\soperator\supward\sthrough\sfunction\scalls.\nInitial\sfix\sfor\sticket\s[ca0d20b6cdddec5e8].
-D 2015-02-09T16:09:34.923
+C Add\stest\scases\sfor\sthe\squery\sflattener\sfix\sfor\nticket\s[2f7170d73bf9abf8].
+D 2015-02-09T16:34:33.249
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6b9e7677829aa94b9f30949656e27312aefb9a46
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -834,7 +834,7 @@ F test/select2.test 352480e0e9c66eda9c3044e412abdf5be0215b56
 F test/select3.test 2ce595f8fb8e2ac10071d3b4e424cadd4634a054
 F test/select4.test 8c5a60d439e2df824aed56223566877a883c5c84
 F test/select5.test e758b8ef94f69b111df4cb819008856655dcd535
-F test/select6.test e76bd10a56988f15726c097a5d5a7966fe82d3b2
+F test/select6.test 39eac4a5c03650b2b473c532882273283ee8b7a0
 F test/select7.test 7fd2ef598cfabb6b9ff6ac13973b91d0527df49d
 F test/select8.test 391de11bdd52339c30580dabbbbe97e3e9a3c79d
 F test/select9.test aebc2bb0c3bc44606125033cbcaac2c8d1f33a95
@@ -1239,7 +1239,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0b7d65e3fda676d193347cb782854c28a48252af
-R 0fcf0b67c1cdaee9bbc7c2fe09760751
+P c053448a55f9d030e8ffe88cf4fc14ada7f6ec19
+R 2d5172d7784b0dfa3e9c983c86806f6a
 U drh
-Z d2e1dd3a2a5ed2929029c668f1fd20a5
+Z 7fd9b7cb5d6f8f4f67ff4b5b0cf25a38
