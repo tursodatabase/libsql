@@ -490,11 +490,11 @@ void sqlite3ExprAttachSubtrees(
   }else{
     if( pRight ){
       pRoot->pRight = pRight;
-      pRoot->flags |= EP_Collate & pRight->flags;
+      pRoot->flags |= EP_Propagate & pRight->flags;
     }
     if( pLeft ){
       pRoot->pLeft = pLeft;
-      pRoot->flags |= EP_Collate & pLeft->flags;
+      pRoot->flags |= EP_Propagate & pLeft->flags;
     }
     exprSetHeight(pRoot);
   }
@@ -1207,6 +1207,19 @@ void sqlite3ExprListDelete(sqlite3 *db, ExprList *pList){
   }
   sqlite3DbFree(db, pList->a);
   sqlite3DbFree(db, pList);
+}
+
+/*
+** Return TRUE if any expression in ExprList has any of the EP_*
+** properties given by "m"
+*/
+int sqlite3AnyExprListHasProperty(const ExprList *pList, u32 m){
+  int i;
+  if( pList==0 ) return 0;
+  for(i=0; i<pList->nExpr; i++){
+    if( ExprHasProperty(pList->a[i].pExpr, m) ) return 1;
+  }
+  return 0;
 }
 
 /*

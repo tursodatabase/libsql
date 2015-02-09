@@ -1091,7 +1091,7 @@ expr(A) ::= expr(W) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
     A.pExpr = sqlite3PExpr(pParse, TK_SELECT, 0, 0, 0);
     if( A.pExpr ){
       A.pExpr->x.pSelect = X;
-      ExprSetProperty(A.pExpr, EP_xIsSelect);
+      ExprSetProperty(A.pExpr, EP_xIsSelect|EP_Subquery);
       sqlite3ExprSetHeight(pParse, A.pExpr);
     }else{
       sqlite3SelectDelete(pParse->db, X);
@@ -1103,7 +1103,7 @@ expr(A) ::= expr(W) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
     A.pExpr = sqlite3PExpr(pParse, TK_IN, X.pExpr, 0, 0);
     if( A.pExpr ){
       A.pExpr->x.pSelect = Y;
-      ExprSetProperty(A.pExpr, EP_xIsSelect);
+      ExprSetProperty(A.pExpr, EP_xIsSelect|EP_Subquery);
       sqlite3ExprSetHeight(pParse, A.pExpr);
     }else{
       sqlite3SelectDelete(pParse->db, Y);
@@ -1117,7 +1117,7 @@ expr(A) ::= expr(W) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
     A.pExpr = sqlite3PExpr(pParse, TK_IN, X.pExpr, 0, 0);
     if( A.pExpr ){
       A.pExpr->x.pSelect = sqlite3SelectNew(pParse, 0,pSrc,0,0,0,0,0,0,0);
-      ExprSetProperty(A.pExpr, EP_xIsSelect);
+      ExprSetProperty(A.pExpr, EP_xIsSelect|EP_Subquery);
       sqlite3ExprSetHeight(pParse, A.pExpr);
     }else{
       sqlite3SrcListDelete(pParse->db, pSrc);
@@ -1130,7 +1130,7 @@ expr(A) ::= expr(W) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
     Expr *p = A.pExpr = sqlite3PExpr(pParse, TK_EXISTS, 0, 0, 0);
     if( p ){
       p->x.pSelect = Y;
-      ExprSetProperty(p, EP_xIsSelect);
+      ExprSetProperty(p, EP_xIsSelect|EP_Subquery);
       sqlite3ExprSetHeight(pParse, p);
     }else{
       sqlite3SelectDelete(pParse->db, Y);
