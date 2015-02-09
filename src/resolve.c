@@ -740,7 +740,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         }
 #endif
         if( pDef->funcFlags & SQLITE_FUNC_CONSTANT ){
-          ExprSetProperty(pExpr,EP_Constant);
+          ExprSetProperty(pExpr,EP_ConstFunc);
         }
       }
       if( is_agg && (pNC->ncFlags & NC_AllowAgg)==0 ){
