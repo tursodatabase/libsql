@@ -1,5 +1,5 @@
-C Fix\sover-length\ssource\scode\slines\sin\sresolver.c.\s\sNo\slogic\schanges.
-D 2015-02-09T10:20:19.068
+C In\sselecttrace\smode\s0x100,\sshow\sa\scomplete\sparse-tree\sboth\sbefore\sand\safter\nquery\sflattening.\s\sThis\sis\sa\schange\sto\sdebugging\scode\sonly.
+D 2015-02-09T11:54:41.074
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6b9e7677829aa94b9f30949656e27312aefb9a46
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -230,7 +230,7 @@ F src/printf.c 05edc41450d0eb2c05ef7db113bf32742ae65325
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 4ebd1064bded2556a8856c6f00fe2b9642f6efc3
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c 1f2087523007c42900ffcbdeaef06a23ad9329fc
+F src/select.c 6ea3518b8863ec631c0481ba03dc283ea9140747
 F src/shell.c 82c25508dac802b32198af6f5256ca1597c6a1af
 F src/sqlite.h.in 54678c21401909f72b221344dd560d285a1ba5eb
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
@@ -1239,7 +1239,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5df02f50f8348dfde4fc15126abc7b7ef7803e69
-R a6e72909415716c47fbdc8c9892a4441
+P c12edb85076d0832e3a0abbbba4d07f3cb5d7f0e
+R 592949bfa9cc2e6e32d5144cda2bc252
 U drh
-Z da26ece2df8d0d323ede5e0a841cad93
+Z 15610b55190883b540f12ad788effd4f

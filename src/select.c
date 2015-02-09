@@ -3444,6 +3444,13 @@ static int flattenSubquery(
   /***** If we reach this point, flattening is permitted. *****/
   SELECTTRACE(1,pParse,p,("flatten %s.%p from term %d\n",
                    pSub->zSelName, pSub, iFrom));
+#if SELECTTRACE_ENABLED
+  if( sqlite3SelectTrace & 0x100 ){
+    sqlite3DebugPrintf("Befor flattening:\n");
+    sqlite3TreeViewSelect(0, p, 0);
+  }
+#endif
+
 
   /* Authorize the subquery */
   pParse->zAuthContext = pSubitem->zName;
