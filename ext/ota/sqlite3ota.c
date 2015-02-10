@@ -75,7 +75,6 @@
 #define OTA_STATE_COOKIE      7
 
 #define OTA_STAGE_OAL         1
-#define OTA_STAGE_COPY        2
 #define OTA_STAGE_CKPT        3
 #define OTA_STAGE_DONE        4
 
@@ -175,7 +174,6 @@ struct sqlite3ota {
   sqlite3_ckpt *pCkpt;            /* Incr-checkpoint handle */
   ota_file *pTargetFd;            /* File handle open on target db */
   const char *zVfsName;           /* Name of automatically created ota vfs */
-  unsigned int iCookie;
 };
 
 struct ota_vfs {
@@ -190,6 +188,8 @@ struct ota_file {
   sqlite3_file *pReal;            /* Underlying file handle */
   ota_vfs *pOtaVfs;               /* Pointer to the ota_vfs object */
   sqlite3ota *pOta;               /* Pointer to ota object (ota target only) */
+  int openFlags;                  /* Flags this file was opened with */
+  unsigned int iCookie;           /* Cookie value for main db files */
 
   int nShm;                       /* Number of entries in apShm[] array */
   char **apShm;                   /* Array of mmap'd *-shm regions */
@@ -1469,6 +1469,10 @@ static int otaGetUpdateStmt(
   return p->rc;
 }
 
+static void otaSqlTrace(void *pCtx, const char *zSql){
+  /* printf("SQL: %s\n", zSql); */
+}
+
 /*
 ** Open the database handle and attach the OTA database as "ota". If an
 ** error occurs, leave an error code and message in the OTA handle.
@@ -1482,15 +1486,18 @@ static void otaOpenDatabase(sqlite3ota *p){
   if( p->rc ){
     p->zErrmsg = sqlite3_mprintf("%s", sqlite3_errmsg(p->db));
   }else{
+    otaMPrintfExec(p, "ATTACH %Q AS ota", p->zOta);
+    /*   sqlite3_trace(p->db, otaSqlTrace, 0); */
+
     /* Mark the database file just opened as an OTA target database. If 
     ** this call returns SQLITE_NOTFOUND, then the OTA vfs is not in use.
     ** This is an error.  */
-    p->rc = sqlite3_file_control(p->db, "main", SQLITE_FCNTL_OTA, (void*)p);
-    if( p->rc==SQLITE_NOTFOUND ){
-      p->rc = SQLITE_ERROR;
-      p->zErrmsg = sqlite3_mprintf("ota vfs not found");
-    }else{
-      otaMPrintfExec(p, "ATTACH %Q AS ota", p->zOta);
+    if( p->rc==SQLITE_OK ){
+      p->rc = sqlite3_file_control(p->db, "main", SQLITE_FCNTL_OTA, (void*)p);
+      if( p->rc==SQLITE_NOTFOUND ){
+        p->rc = SQLITE_ERROR;
+        p->zErrmsg = sqlite3_mprintf("ota vfs not found");
+      }
     }
   }
 }
@@ -1855,7 +1862,7 @@ static void otaSaveTransactionState(sqlite3ota *p){
         OTA_STATE_ROW, p->nStep, 
         OTA_STATE_PROGRESS, p->nProgress,
         OTA_STATE_CKPT,
-        OTA_STATE_COOKIE, (sqlite3_int64)p->iCookie
+        OTA_STATE_COOKIE, (sqlite3_int64)p->pTargetFd->iCookie
       )
   );
   assert( pInsert==0 || rc==SQLITE_OK );
@@ -1902,7 +1909,7 @@ static void otaFreeState(OtaState *p){
 static OtaState *otaLoadState(sqlite3ota *p){
   const char *zSelect = "SELECT k, v FROM ota.ota_state";
   OtaState *pRet = 0;
-  sqlite3_stmt *pStmt;
+  sqlite3_stmt *pStmt = 0;
   int rc;
   int rc2;
 
@@ -1920,7 +1927,6 @@ static OtaState *otaLoadState(sqlite3ota *p){
       case OTA_STATE_STAGE:
         pRet->eStage = sqlite3_column_int(pStmt, 1);
         if( pRet->eStage!=OTA_STAGE_OAL
-         && pRet->eStage!=OTA_STAGE_COPY
          && pRet->eStage!=OTA_STAGE_CKPT
         ){
           p->rc = SQLITE_CORRUPT;
@@ -1956,7 +1962,7 @@ static OtaState *otaLoadState(sqlite3ota *p){
         ** committed in rollback mode) currently stored on page 1 of the 
         ** database file. */
         if( pRet->eStage==OTA_STAGE_OAL 
-         && p->iCookie!=(unsigned int)sqlite3_column_int64(pStmt, 1) 
+         && p->pTargetFd->iCookie!=(unsigned int)sqlite3_column_int64(pStmt, 1) 
         ){
           rc = SQLITE_BUSY;
           p->zErrmsg = sqlite3_mprintf("database modified during ota update");
@@ -2257,10 +2263,8 @@ static int otaVfsRead(
 ){
   ota_file *p = (ota_file*)pFile;
   int rc = p->pReal->pMethods->xRead(p->pReal, zBuf, iAmt, iOfst);
-  if( rc==SQLITE_OK && p->pOta && iOfst==0 ){
-    unsigned char *pBuf = (unsigned char*)zBuf;
-    assert( iAmt>=100 );
-    p->pOta->iCookie = otaGetU32(&pBuf[24]);
+  if( rc==SQLITE_OK && iOfst==0 && (p->openFlags & SQLITE_OPEN_MAIN_DB) ){
+    p->iCookie = otaGetU32((unsigned char*)&zBuf[24]);
   }
   return rc;
 }
@@ -2276,10 +2280,8 @@ static int otaVfsWrite(
 ){
   ota_file *p = (ota_file*)pFile;
   int rc = p->pReal->pMethods->xWrite(p->pReal, zBuf, iAmt, iOfst);
-  if( rc==SQLITE_OK && p->pOta && iOfst==0 ){
-    unsigned char *pBuf = (unsigned char*)zBuf;
-    assert( iAmt>=100 );
-    p->pOta->iCookie = otaGetU32(&pBuf[24]);
+  if( rc==SQLITE_OK && iOfst==0 && (p->openFlags & SQLITE_OPEN_MAIN_DB) ){
+    p->iCookie = otaGetU32((unsigned char*)&zBuf[24]);
   }
   return rc;
 }
@@ -2404,11 +2406,11 @@ static int otaVfsShmLock(sqlite3_file *pFile, int ofst, int n, int flags){
   int rc = SQLITE_OK;
 
 #ifdef SQLITE_AMALGAMATION
-    assert( WAL_WRITE_CKPT==1 );
+    assert( WAL_CKPT_LOCK==1 );
 #endif
 
   if( p->pOta && p->pOta->eStage==OTA_STAGE_OAL ){
-    /* Magic number 1 is the WAL_WRITE_CKPT lock. Preventing SQLite from
+    /* Magic number 1 is the WAL_CKPT_LOCK lock. Preventing SQLite from
     ** taking this lock also prevents any checkpoints from occurring. 
     ** todo: really, it's not clear why this might occur, as 
     ** wal_autocheckpoint ought to be turned off.  */
@@ -2452,6 +2454,7 @@ static int otaVfsShmMap(
       if( pNew==0 ){
         rc = SQLITE_NOMEM;
       }else{
+        memset(pNew, 0, szRegion);
         p->apShm[iRegion] = pNew;
       }
     }
@@ -2527,6 +2530,7 @@ static int otaVfsOpen(
   memset(pFd, 0, sizeof(ota_file));
   pFd->pReal = (sqlite3_file*)&pFd[1];
   pFd->pOtaVfs = pOtaVfs;
+  pFd->openFlags = flags;
   if( zName ){
     if( flags & SQLITE_OPEN_MAIN_DB ){
       /* A main database has just been opened. The following block sets

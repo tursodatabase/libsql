@@ -219,6 +219,9 @@ SRC += \
 SRC += \
   $(TOP)/ext/userauth/userauth.c \
   $(TOP)/ext/userauth/sqlite3userauth.h
+SRC += \
+  $(TOP)/ext/ota/sqlite3ota.c \
+  $(TOP)/ext/ota/sqlite3ota.h
 
 # Generated source code files
 #
