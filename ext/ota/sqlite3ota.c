@@ -2350,13 +2350,34 @@ static int otaVfsCheckReservedLock(sqlite3_file *pFile, int *pResOut){
 */
 static int otaVfsFileControl(sqlite3_file *pFile, int op, void *pArg){
   ota_file *p = (ota_file *)pFile;
+  int (*xControl)(sqlite3_file*,int,void*) = p->pReal->pMethods->xFileControl;
+
   if( op==SQLITE_FCNTL_OTA ){
+    int rc;
     sqlite3ota *pOta = (sqlite3ota*)pArg;
-    pOta->pTargetFd = p;
-    p->pOta = pOta;
-    return SQLITE_OK;
+
+    /* First try to find another OTA vfs lower down in the vfs stack. If
+    ** one is found, this vfs will operate in pass-through mode. The lower
+    ** level vfs will do the special OTA handling.  */
+    rc = xControl(p->pReal, op, pArg);
+
+    if( rc==SQLITE_NOTFOUND ){
+      /* Now search for a zipvfs instance lower down in the VFS stack. If
+      ** one is found, this is an error.  */
+      void *dummy = 0;
+      rc = xControl(p->pReal, SQLITE_FCNTL_ZIPVFS_PAGER, &dummy);
+      if( rc==SQLITE_OK ){
+        rc = SQLITE_ERROR;
+        pOta->zErrmsg = sqlite3_mprintf("ota/zipvfs setup error");
+      }else if( rc==SQLITE_NOTFOUND ){
+        pOta->pTargetFd = p;
+        p->pOta = pOta;
+        rc = SQLITE_OK;
+      }
+    }
+    return rc;
   }
-  return p->pReal->pMethods->xFileControl(p->pReal, op, pArg);
+  return xControl(p->pReal, op, pArg);
 }
 
 /*
@@ -2896,9 +2917,76 @@ static int test_sqlite3ota(
   return TCL_OK;
 }
 
+/*
+** Tclcmd: sqlite3ota_create_vfs ?-default? NAME PARENT
+*/
+static int test_sqlite3ota_create_vfs(
+  ClientData clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  const char *zName;
+  const char *zParent;
+  int rc;
+
+  if( objc!=3 && objc!=4 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "?-default? NAME PARENT");
+    return TCL_ERROR;
+  }
+
+  zName = Tcl_GetString(objv[objc-2]);
+  zParent = Tcl_GetString(objv[objc-1]);
+  if( zParent[0]=='\0' ) zParent = 0;
+
+  rc = sqlite3ota_create_vfs(zName, zParent);
+  if( rc!=SQLITE_OK ){
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
+    return TCL_ERROR;
+  }else if( objc==4 ){
+    sqlite3_vfs *pVfs = sqlite3_vfs_find(zName);
+    sqlite3_vfs_register(pVfs, 1);
+  }
+
+  Tcl_ResetResult(interp);
+  return TCL_OK;
+}
+
+/*
+** Tclcmd: sqlite3ota_destroy_vfs NAME
+*/
+static int test_sqlite3ota_destroy_vfs(
+  ClientData clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  const char *zName;
+
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "NAME");
+    return TCL_ERROR;
+  }
+
+  zName = Tcl_GetString(objv[1]);
+  sqlite3ota_destroy_vfs(zName);
+  return TCL_OK;
+}
+
 
 int SqliteOta_Init(Tcl_Interp *interp){ 
-  Tcl_CreateObjCommand(interp, "sqlite3ota", test_sqlite3ota, 0, 0);
+  static struct {
+     char *zName;
+     Tcl_ObjCmdProc *xProc;
+  } aObjCmd[] = {
+    { "sqlite3ota", test_sqlite3ota },
+    { "sqlite3ota_create_vfs", test_sqlite3ota_create_vfs },
+    { "sqlite3ota_destroy_vfs", test_sqlite3ota_destroy_vfs },
+  };
+  int i;
+  for(i=0; i<sizeof(aObjCmd)/sizeof(aObjCmd[0]); i++){
+    Tcl_CreateObjCommand(interp, aObjCmd[i].zName, aObjCmd[i].xProc, 0, 0);
+  }
   return TCL_OK;
 }
 #endif                  /* ifdef SQLITE_TEST */
