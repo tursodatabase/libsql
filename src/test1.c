@@ -6928,7 +6928,6 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
 #endif
 
   };
-
   static int bitmask_size = sizeof(Bitmask)*8;
   int i;
   extern int sqlite3_sync_count, sqlite3_fullsync_count;

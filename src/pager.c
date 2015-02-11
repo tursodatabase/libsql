@@ -615,18 +615,6 @@ struct PagerSavepoint {
 **   is set to zero in all other states. In PAGER_ERROR state, Pager.errCode 
 **   is always set to SQLITE_FULL, SQLITE_IOERR or one of the SQLITE_IOERR_XXX 
 **   sub-codes.
-**
-** otaMode
-**   This variable is normally 0. It is set to 1 by the PagerSetOtaMode()
-**   function - as a result of a "PRAGMA pager_ota_mode=1" command. Once 
-**   the *-oal file has been opened and it has been determined that the 
-**   database file has not been modified since it was created, this variable 
-**   is set to 2.
-**
-**   It is also possible to use PagerSetOtaMode() to 2 if the database is
-**   already in WAL mode. In this case the only effect is to prevent the
-**   connection from checkpointing the db as part of an sqlite3PagerClose()
-**   call.
 */
 struct Pager {
   sqlite3_vfs *pVfs;          /* OS functions to use for IO */
@@ -837,8 +825,6 @@ static int pagerUseWal(Pager *pPager){
 # define pagerOpenWalIfPresent(z) SQLITE_OK
 # define pagerBeginReadTransaction(z) SQLITE_OK
 #endif
-
-static int pagerOpenWalInternal(Pager*, int*);
 
 #ifndef NDEBUG 
 /*
@@ -2039,7 +2025,7 @@ static int pager_end_transaction(Pager *pPager, int hasMaster, int bCommit){
     if( rc==SQLITE_NOTFOUND ) rc = SQLITE_OK;
   }
 
-  if( !pPager->exclusiveMode
+  if( !pPager->exclusiveMode 
    && (!pagerUseWal(pPager) || sqlite3WalExclusiveMode(pPager->pWal, 0))
   ){
     rc2 = pagerUnlockDb(pPager, SHARED_LOCK);
@@ -7175,15 +7161,23 @@ static int pagerOpenWal(Pager *pPager){
   return rc;
 }
 
+
 /*
-** Open the WAL file if it is not open. If it is already open, set *pbOpen
-** to 1 before returning. Return SQLITE_OK if successful, or an SQLite error
-** code otherwise.
+** The caller must be holding a SHARED lock on the database file to call
+** this function.
 **
-** The difference between this function and sqlite3PagerOpenWal() is that
-** PagerOpenWal() does not open the WAL file if the pager is in OTA mode.
+** If the pager passed as the first argument is open on a real database
+** file (not a temp file or an in-memory database), and the WAL file
+** is not already open, make an attempt to open it now. If successful,
+** return SQLITE_OK. If an error occurs or the VFS used by the pager does 
+** not support the xShmXXX() methods, return an error code. *pbOpen is
+** not modified in either case.
+**
+** If the pager is open on a temp-file (or in-memory database), or if
+** the WAL file is already open, set *pbOpen to 1 and return SQLITE_OK
+** without doing anything.
 */
-static int pagerOpenWalInternal(
+int sqlite3PagerOpenWal(
   Pager *pPager,                  /* Pager object */
   int *pbOpen                     /* OUT: Set to true if call is a no-op */
 ){
@@ -7211,28 +7205,6 @@ static int pagerOpenWalInternal(
   }
 
   return rc;
-}
-
-/*
-** The caller must be holding a SHARED lock on the database file to call
-** this function.
-**
-** If the pager passed as the first argument is open on a real database
-** file (not a temp file or an in-memory database), and the WAL file
-** is not already open, make an attempt to open it now. If successful,
-** return SQLITE_OK. If an error occurs or the VFS used by the pager does 
-** not support the xShmXXX() methods, return an error code. *pbOpen is
-** not modified in either case.
-**
-** If the pager is open on a temp-file (or in-memory database), or if
-** the WAL file is already open, set *pbOpen to 1 and return SQLITE_OK
-** without doing anything.
-*/
-int sqlite3PagerOpenWal(
-  Pager *pPager,                  /* Pager object */
-  int *pbOpen                     /* OUT: Set to true if call is a no-op */
-){
-  return pagerOpenWalInternal(pPager, pbOpen);
 }
 
 /*

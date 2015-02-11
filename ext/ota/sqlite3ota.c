@@ -2197,11 +2197,11 @@ sqlite3_int64 sqlite3ota_progress(sqlite3ota *pOta){
 ** Beginning of OTA VFS shim methods. The VFS shim modifies the behaviour
 ** of a standard VFS in the following ways:
 **
-**   1. Whenever the first page of an OTA target database file is read or 
+**   1. Whenever the first page of a main database file is read or 
 **      written, the value of the change-counter cookie is stored in
-**      sqlite3ota.iCookie. This ensures that, so long as a read transaction
-**      is held on the db file, the value of sqlite3ota.iCookie matches
-**      that stored on disk.
+**      ota_file.iCookie. Similarly, the value of the "write-version"
+**      database header field is stored in ota_file.iWriteVer. This ensures
+**      that the values are always trustworthy within an open transaction.
 **
 **   2. When the ota handle is in OTA_STAGE_OAL or OTA_STAGE_CKPT state, all
 **      EXCLUSIVE lock attempts on the target database fail. This prevents
@@ -2210,7 +2210,7 @@ sqlite3_int64 sqlite3ota_progress(sqlite3ota *pOta){
 **      checkpoint may be required to delete the *-wal file.
 **
 **   3. In OTA_STAGE_OAL, the *-shm file is stored in memory. All xShmLock()
-**      calls are noops.
+**      calls are noops. This is just an optimization.
 **
 **   4. In OTA_STAGE_OAL mode, when SQLite calls xAccess() to check if a
 **      *-wal file associated with the target database exists, the following
@@ -2243,6 +2243,7 @@ static int otaVfsClose(sqlite3_file *pFile){
   p->apShm = 0;
   sqlite3_free(p->zDel);
 
+  /* Close the underlying file handle */
   rc = p->pReal->pMethods->xClose(p->pReal);
   return rc;
 }
