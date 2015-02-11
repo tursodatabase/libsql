@@ -98,7 +98,7 @@ proc step_ota {target ota} {
 #
 proc step_ota_uri {target ota} {
   while 1 {
-    sqlite3ota ota file:$target?xyz=123 $ota
+    sqlite3ota ota file:$target?xyz=&abc=123 $ota
     set rc [ota step]
     ota close
     if {$rc != "SQLITE_OK"} break
@@ -106,361 +106,376 @@ proc step_ota_uri {target ota} {
   set rc
 }
 
-foreach {tn2 cmd} {1 run_ota 2 step_ota 3 step_ota_uri} {
-  foreach {tn schema} {
-    1 {
-      CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
-    }
-    2 { 
-      CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
-      CREATE INDEX i1 ON t1(b);
-    }
-    3 { 
-      CREATE TABLE t1(a PRIMARY KEY, b, c) WITHOUT ROWID;
-    }
-    4 { 
-      CREATE TABLE t1(a PRIMARY KEY, b, c) WITHOUT ROWID;
-      CREATE INDEX i1 ON t1(b);
-    }
-    5 { 
-      CREATE TABLE t1(a, b, c, PRIMARY KEY(a, c)) WITHOUT ROWID;
-      CREATE INDEX i1 ON t1(b);
-    }
-    6 { 
-      CREATE TABLE t1(a, b, c, PRIMARY KEY(c)) WITHOUT ROWID;
-      CREATE INDEX i1 ON t1(b, a);
-    }
-    7 { 
-      CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
-      CREATE INDEX i1 ON t1(b, c);
-      CREATE INDEX i2 ON t1(c, b);
-      CREATE INDEX i3 ON t1(a, b, c, a, b, c);
-    }
-
-    8 { 
-      CREATE TABLE t1(a PRIMARY KEY, b, c);
-      CREATE INDEX i1 ON t1(b, c);
-      CREATE INDEX i2 ON t1(c, b);
-      CREATE INDEX i3 ON t1(a, b, c, a, b, c);
-    }
-
-    9 { 
-      CREATE TABLE t1(a, b, c, PRIMARY KEY(a, c));
-      CREATE INDEX i1 ON t1(b);
-    }
-
-    10 { 
-      CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
-      CREATE INDEX i1 ON t1(b DESC);
-    }
-
-    11 { 
-      CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
-      CREATE INDEX i1 ON t1(b DESC, a ASC, c DESC);
-    }
-
-    12 { 
-      CREATE TABLE t1(a INT PRIMARY KEY DESC, b, c) WITHOUT ROWID; 
-    }
-
-    13 { 
-      CREATE TABLE t1(a INT, b, c, PRIMARY KEY(a DESC)) WITHOUT ROWID; 
-    }
-
-    14 { 
-      CREATE TABLE t1(a, b, c, PRIMARY KEY(a DESC, c)) WITHOUT ROWID;
-      CREATE INDEX i1 ON t1(b);
-    }
-
-    15 { 
-      CREATE TABLE t1(a, b, c, PRIMARY KEY(a, c DESC)) WITHOUT ROWID;
-      CREATE INDEX i1 ON t1(b);
-    }
-
-    16 { 
-      CREATE TABLE t1(a, b, c, PRIMARY KEY(c DESC, a)) WITHOUT ROWID;
-      CREATE INDEX i1 ON t1(b DESC, c, a);
-    }
+foreach {tn3 create_vfs destroy_vfs} {
+  1 {} {}
+  2 {
+    sqlite3ota_create_vfs -default myota ""
   } {
-    reset_db
-    execsql $schema
-
-    do_test 1.$tn2.$tn.1 {
-      create_ota1 ota.db
-      $cmd test.db ota.db
-    } {SQLITE_DONE}
-
-    do_execsql_test 1.$tn2.$tn.2 { SELECT * FROM t1 ORDER BY a ASC } {
-      1 2 3 
-      2 two three 
-      3 {} 8.2
-    }
-    do_execsql_test 1.$tn2.$tn.3 { SELECT * FROM t1 ORDER BY b ASC } {
-      3 {} 8.2
-      1 2 3 
-      2 two three 
-    }
-    do_execsql_test 1.$tn2.$tn.4 { SELECT * FROM t1 ORDER BY c ASC } {
-      1 2 3 
-      3 {} 8.2
-      2 two three 
-    }
- 
-    do_execsql_test 1.$tn2.$tn.5 { PRAGMA integrity_check } ok
+    sqlite3ota_destroy_vfs myota
   }
-}
-
-#-------------------------------------------------------------------------
-# Check that an OTA cannot be applied to a table that has no PK.
-#
-# UPDATE: At one point OTA required that all tables featured either
-# explicit IPK columns or were declared WITHOUT ROWID. This has been
-# relaxed so that external PRIMARY KEYs on tables with automatic rowids
-# are now allowed.
-#
-# UPDATE 2: Tables without any PRIMARY KEY declaration are now allowed.
-# However the input table must feature an "ota_rowid" column.
-#
-reset_db
-create_ota1 ota.db
-do_execsql_test 2.1 { CREATE TABLE t1(a, b, c) }
-do_test 2.2 {
-  sqlite3ota ota test.db ota.db
-  ota step
-} {SQLITE_ERROR}
-do_test 2.3 {
-  list [catch { ota close } msg] $msg
-} {1 {SQLITE_ERROR - table data_t1 requires ota_rowid column}}
-reset_db
-do_execsql_test 2.4 { CREATE TABLE t1(a PRIMARY KEY, b, c) }
-do_test 2.5 {
-  sqlite3ota ota test.db ota.db
-  ota step
-} {SQLITE_OK}
-do_test 2.6 {
-  list [catch { ota close } msg] $msg
-} {0 SQLITE_OK}
-
-#-------------------------------------------------------------------------
-# Check that if a UNIQUE constraint is violated the current and all 
-# subsequent [ota step] calls return SQLITE_CONSTRAINT. And that the OTA 
-# transaction is rolled back by the [ota close] that deletes the ota 
-# handle.
-#
-foreach {tn errcode errmsg schema} {
-  1 SQLITE_CONSTRAINT "UNIQUE constraint failed: t1.a" {
-    CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
-    INSERT INTO t1 VALUES(3, 2, 1);
-  } 
-
-  2 SQLITE_CONSTRAINT "UNIQUE constraint failed: t1.c" {
-    CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c UNIQUE);
-    INSERT INTO t1 VALUES(4, 2, 'three');
-  } 
-
-  3 SQLITE_CONSTRAINT "UNIQUE constraint failed: t1.a" {
-    CREATE TABLE t1(a PRIMARY KEY, b, c);
-    INSERT INTO t1 VALUES(3, 2, 1);
-  } 
-
-  4 SQLITE_CONSTRAINT "UNIQUE constraint failed: t1.c" {
-    CREATE TABLE t1(a PRIMARY KEY, b, c UNIQUE);
-    INSERT INTO t1 VALUES(4, 2, 'three');
-  } 
-
 } {
+
+  eval $create_vfs
+
+  foreach {tn2 cmd} {1 run_ota 2 step_ota 3 step_ota_uri} {
+    foreach {tn schema} {
+      1 {
+        CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+      }
+      2 { 
+        CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+        CREATE INDEX i1 ON t1(b);
+      }
+      3 { 
+        CREATE TABLE t1(a PRIMARY KEY, b, c) WITHOUT ROWID;
+      }
+      4 { 
+        CREATE TABLE t1(a PRIMARY KEY, b, c) WITHOUT ROWID;
+        CREATE INDEX i1 ON t1(b);
+      }
+      5 { 
+        CREATE TABLE t1(a, b, c, PRIMARY KEY(a, c)) WITHOUT ROWID;
+        CREATE INDEX i1 ON t1(b);
+      }
+      6 { 
+        CREATE TABLE t1(a, b, c, PRIMARY KEY(c)) WITHOUT ROWID;
+        CREATE INDEX i1 ON t1(b, a);
+      }
+      7 { 
+        CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+        CREATE INDEX i1 ON t1(b, c);
+        CREATE INDEX i2 ON t1(c, b);
+        CREATE INDEX i3 ON t1(a, b, c, a, b, c);
+      }
+
+      8 { 
+        CREATE TABLE t1(a PRIMARY KEY, b, c);
+        CREATE INDEX i1 ON t1(b, c);
+        CREATE INDEX i2 ON t1(c, b);
+        CREATE INDEX i3 ON t1(a, b, c, a, b, c);
+      }
+
+      9 { 
+        CREATE TABLE t1(a, b, c, PRIMARY KEY(a, c));
+        CREATE INDEX i1 ON t1(b);
+      }
+
+      10 { 
+        CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+        CREATE INDEX i1 ON t1(b DESC);
+      }
+
+      11 { 
+        CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+        CREATE INDEX i1 ON t1(b DESC, a ASC, c DESC);
+      }
+
+      12 { 
+        CREATE TABLE t1(a INT PRIMARY KEY DESC, b, c) WITHOUT ROWID; 
+      }
+
+      13 { 
+        CREATE TABLE t1(a INT, b, c, PRIMARY KEY(a DESC)) WITHOUT ROWID; 
+      }
+
+      14 { 
+        CREATE TABLE t1(a, b, c, PRIMARY KEY(a DESC, c)) WITHOUT ROWID;
+        CREATE INDEX i1 ON t1(b);
+      }
+
+      15 { 
+        CREATE TABLE t1(a, b, c, PRIMARY KEY(a, c DESC)) WITHOUT ROWID;
+        CREATE INDEX i1 ON t1(b);
+      }
+
+      16 { 
+        CREATE TABLE t1(a, b, c, PRIMARY KEY(c DESC, a)) WITHOUT ROWID;
+        CREATE INDEX i1 ON t1(b DESC, c, a);
+      }
+    } {
+      reset_db
+      execsql $schema
+
+      do_test $tn3.1.$tn2.$tn.1 {
+        create_ota1 ota.db
+        breakpoint
+        $cmd test.db ota.db
+      } {SQLITE_DONE}
+
+      do_execsql_test $tn3.1.$tn2.$tn.2 { SELECT * FROM t1 ORDER BY a ASC } {
+        1 2 3 
+        2 two three 
+        3 {} 8.2
+      }
+      do_execsql_test $tn3.1.$tn2.$tn.3 { SELECT * FROM t1 ORDER BY b ASC } {
+        3 {} 8.2
+        1 2 3 
+        2 two three 
+      }
+      do_execsql_test $tn3.1.$tn2.$tn.4 { SELECT * FROM t1 ORDER BY c ASC } {
+        1 2 3 
+        3 {} 8.2
+        2 two three 
+      }
+   
+      do_execsql_test $tn3.1.$tn2.$tn.5 { PRAGMA integrity_check } ok
+    }
+  }
+
+  #-------------------------------------------------------------------------
+  # Check that an OTA cannot be applied to a table that has no PK.
+  #
+  # UPDATE: At one point OTA required that all tables featured either
+  # explicit IPK columns or were declared WITHOUT ROWID. This has been
+  # relaxed so that external PRIMARY KEYs on tables with automatic rowids
+  # are now allowed.
+  #
+  # UPDATE 2: Tables without any PRIMARY KEY declaration are now allowed.
+  # However the input table must feature an "ota_rowid" column.
+  #
   reset_db
-  execsql $schema
-  set cksum [dbcksum db main]
-
-  do_test 3.$tn.1 {
-    create_ota1 ota.db
+  create_ota1 ota.db
+  do_execsql_test $tn3.2.1 { CREATE TABLE t1(a, b, c) }
+  do_test $tn3.2.2 {
     sqlite3ota ota test.db ota.db
-    while {[set res [ota step]]=="SQLITE_OK"} {}
-    set res
-  } $errcode
-
-  do_test 3.$tn.2 { ota step } $errcode
-
-  do_test 3.$tn.3 { 
+    ota step
+  } {SQLITE_ERROR}
+  do_test $tn3.2.3 {
     list [catch { ota close } msg] $msg
-  } [list 1 "$errcode - $errmsg"]
+  } {1 {SQLITE_ERROR - table data_t1 requires ota_rowid column}}
+  reset_db
+  do_execsql_test $tn3.2.4 { CREATE TABLE t1(a PRIMARY KEY, b, c) }
+  do_test $tn3.2.5 {
+    sqlite3ota ota test.db ota.db
+    ota step
+  } {SQLITE_OK}
+  do_test $tn3.2.6 {
+    list [catch { ota close } msg] $msg
+  } {0 SQLITE_OK}
 
-  do_test 3.$tn.4 { dbcksum db main } $cksum
-}
+  #-------------------------------------------------------------------------
+  # Check that if a UNIQUE constraint is violated the current and all 
+  # subsequent [ota step] calls return SQLITE_CONSTRAINT. And that the OTA 
+  # transaction is rolled back by the [ota close] that deletes the ota 
+  # handle.
+  #
+  foreach {tn errcode errmsg schema} {
+    1 SQLITE_CONSTRAINT "UNIQUE constraint failed: t1.a" {
+      CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+      INSERT INTO t1 VALUES(3, 2, 1);
+    } 
 
-#-------------------------------------------------------------------------
-#
-foreach {tn2 cmd} {1 run_ota 2 step_ota} {
-  foreach {tn schema} {
-    1 {
-      CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
-    }
-    2 {
-      CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
-      CREATE INDEX i1 ON t1(b);
-    }
-    3 {
-      CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
-      CREATE INDEX i1 ON t1(b);
-      CREATE INDEX i2 ON t1(c, b);
-      CREATE INDEX i3 ON t1(c, b, c);
-    }
-    4 {
-      CREATE TABLE t1(a INT PRIMARY KEY, b, c) WITHOUT ROWID;
-      CREATE INDEX i1 ON t1(b);
-      CREATE INDEX i2 ON t1(c, b);
-      CREATE INDEX i3 ON t1(c, b, c);
-    }
-    5 {
-      CREATE TABLE t1(a INT PRIMARY KEY, b, c);
-      CREATE INDEX i1 ON t1(b);
-      CREATE INDEX i2 ON t1(c, b);
-      CREATE INDEX i3 ON t1(c, b, c);
-    }
+    2 SQLITE_CONSTRAINT "UNIQUE constraint failed: t1.c" {
+      CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c UNIQUE);
+      INSERT INTO t1 VALUES(4, 2, 'three');
+    } 
 
-    6 {
-      CREATE TABLE t1(a INT PRIMARY KEY DESC, b, c);
-      CREATE INDEX i1 ON t1(b DESC);
-      CREATE INDEX i2 ON t1(c, b);
-      CREATE INDEX i3 ON t1(c DESC, b, c);
-    }
-    7 {
-      CREATE TABLE t1(a INT PRIMARY KEY DESC, b, c) WITHOUT ROWID;
-      CREATE INDEX i1 ON t1(b);
-      CREATE INDEX i2 ON t1(c, b);
-      CREATE INDEX i3 ON t1(c, b, c);
-    }
+    3 SQLITE_CONSTRAINT "UNIQUE constraint failed: t1.a" {
+      CREATE TABLE t1(a PRIMARY KEY, b, c);
+      INSERT INTO t1 VALUES(3, 2, 1);
+    } 
+
+    4 SQLITE_CONSTRAINT "UNIQUE constraint failed: t1.c" {
+      CREATE TABLE t1(a PRIMARY KEY, b, c UNIQUE);
+      INSERT INTO t1 VALUES(4, 2, 'three');
+    } 
+
   } {
     reset_db
     execsql $schema
-    execsql {
-      INSERT INTO t1 VALUES(2, 'hello', 'world');
-      INSERT INTO t1 VALUES(4, 'hello', 'planet');
-      INSERT INTO t1 VALUES(6, 'hello', 'xyz');
-    }
-  
-    do_test 4.$tn2.$tn.1 {
-      create_ota4 ota.db
-      $cmd test.db ota.db
-    } {SQLITE_DONE}
-    
-    do_execsql_test 4.$tn2.$tn.2 {
-      SELECT * FROM t1 ORDER BY a ASC;
+    set cksum [dbcksum db main]
+
+    do_test $tn3.3.$tn.1 {
+      create_ota1 ota.db
+      sqlite3ota ota test.db ota.db
+      while {[set res [ota step]]=="SQLITE_OK"} {}
+      set res
+    } $errcode
+
+    do_test $tn3.3.$tn.2 { ota step } $errcode
+
+    do_test $tn3.3.$tn.3 { 
+      list [catch { ota close } msg] $msg
+    } [list 1 "$errcode - $errmsg"]
+
+    do_test $tn3.3.$tn.4 { dbcksum db main } $cksum
+  }
+
+  #-------------------------------------------------------------------------
+  #
+  foreach {tn2 cmd} {1 run_ota 2 step_ota} {
+    foreach {tn schema} {
+      1 {
+        CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+      }
+      2 {
+        CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+        CREATE INDEX i1 ON t1(b);
+      }
+      3 {
+        CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+        CREATE INDEX i1 ON t1(b);
+        CREATE INDEX i2 ON t1(c, b);
+        CREATE INDEX i3 ON t1(c, b, c);
+      }
+      4 {
+        CREATE TABLE t1(a INT PRIMARY KEY, b, c) WITHOUT ROWID;
+        CREATE INDEX i1 ON t1(b);
+        CREATE INDEX i2 ON t1(c, b);
+        CREATE INDEX i3 ON t1(c, b, c);
+      }
+      5 {
+        CREATE TABLE t1(a INT PRIMARY KEY, b, c);
+        CREATE INDEX i1 ON t1(b);
+        CREATE INDEX i2 ON t1(c, b);
+        CREATE INDEX i3 ON t1(c, b, c);
+      }
+
+      6 {
+        CREATE TABLE t1(a INT PRIMARY KEY DESC, b, c);
+        CREATE INDEX i1 ON t1(b DESC);
+        CREATE INDEX i2 ON t1(c, b);
+        CREATE INDEX i3 ON t1(c DESC, b, c);
+      }
+      7 {
+        CREATE TABLE t1(a INT PRIMARY KEY DESC, b, c) WITHOUT ROWID;
+        CREATE INDEX i1 ON t1(b);
+        CREATE INDEX i2 ON t1(c, b);
+        CREATE INDEX i3 ON t1(c, b, c);
+      }
     } {
-      1 2 3 
-      3 8 9
-      6 hello xyz
-    }
-  
-    do_execsql_test 4.$tn2.$tn.3 { PRAGMA integrity_check } ok
-  }
-}
-
-#-------------------------------------------------------------------------
-#
-foreach {tn2 cmd} {1 run_ota 2 step_ota} {
-  foreach {tn schema} {
-    1 {
-      CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c, d);
-    }
-    2 {
-      CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c, d);
-      CREATE INDEX i1 ON t1(d);
-      CREATE INDEX i2 ON t1(d, c);
-      CREATE INDEX i3 ON t1(d, c, b);
-      CREATE INDEX i4 ON t1(b);
-      CREATE INDEX i5 ON t1(c);
-      CREATE INDEX i6 ON t1(c, b);
-    }
-    3 {
-      CREATE TABLE t1(a PRIMARY KEY, b, c, d) WITHOUT ROWID;
-      CREATE INDEX i1 ON t1(d);
-      CREATE INDEX i2 ON t1(d, c);
-      CREATE INDEX i3 ON t1(d, c, b);
-      CREATE INDEX i4 ON t1(b);
-      CREATE INDEX i5 ON t1(c);
-      CREATE INDEX i6 ON t1(c, b);
-    }
-    4 {
-      CREATE TABLE t1(a PRIMARY KEY, b, c, d);
-      CREATE INDEX i1 ON t1(d);
-      CREATE INDEX i2 ON t1(d, c);
-      CREATE INDEX i3 ON t1(d, c, b);
-      CREATE INDEX i4 ON t1(b);
-      CREATE INDEX i5 ON t1(c);
-      CREATE INDEX i6 ON t1(c, b);
-    }
-  } {
-    reset_db
-    execsql $schema
-    execsql {
-      INSERT INTO t1 VALUES(1, 2, 3, 4);
-      INSERT INTO t1 VALUES(2, 5, 6, 7);
-      INSERT INTO t1 VALUES(3, 8, 9, 10);
-    }
-  
-    do_test 5.$tn2.$tn.1 {
-      create_ota5 ota.db
-      $cmd test.db ota.db
-    } {SQLITE_DONE}
+      reset_db
+      execsql $schema
+      execsql {
+        INSERT INTO t1 VALUES(2, 'hello', 'world');
+        INSERT INTO t1 VALUES(4, 'hello', 'planet');
+        INSERT INTO t1 VALUES(6, 'hello', 'xyz');
+      }
     
-    do_execsql_test 5.$tn2.$tn.2 {
-      SELECT * FROM t1 ORDER BY a ASC;
-    } {
-      1 2 3 5
-      2 5 10 5
-      3 11 9 10
+      do_test $tn3.4.$tn2.$tn.1 {
+        create_ota4 ota.db
+        $cmd test.db ota.db
+      } {SQLITE_DONE}
+      
+      do_execsql_test $tn3.4.$tn2.$tn.2 {
+        SELECT * FROM t1 ORDER BY a ASC;
+      } {
+        1 2 3 
+        3 8 9
+        6 hello xyz
+      }
+    
+      do_execsql_test $tn3.4.$tn2.$tn.3 { PRAGMA integrity_check } ok
     }
-  
-    do_execsql_test 5.$tn2.$tn.3 { PRAGMA integrity_check } ok
   }
-}
 
-#-------------------------------------------------------------------------
-# Test some error cases:
-# 
-#   * A virtual table with no ota_rowid column.
-#   * A no-PK table with no ota_rowid column.
-#   * A PK table with an ota_rowid column.
-#
-ifcapable fts3 {
-  foreach {tn schema error} {
-     1 {
-       CREATE TABLE t1(a, b);
-       CREATE TABLE ota.data_t1(a, b, ota_control);
-     } {SQLITE_ERROR - table data_t1 requires ota_rowid column}
-  
-     2 {
-       CREATE VIRTUAL TABLE t1 USING fts4(a, b);
-       CREATE TABLE ota.data_t1(a, b, ota_control);
-     } {SQLITE_ERROR - table data_t1 requires ota_rowid column}
-  
-     3 {
-       CREATE TABLE t1(a PRIMARY KEY, b);
-       CREATE TABLE ota.data_t1(a, b, ota_rowid, ota_control);
-     } {SQLITE_ERROR - table data_t1 may not have ota_rowid column}
-  
-     4 {
-       CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
-       CREATE TABLE ota.data_t1(a, b, ota_rowid, ota_control);
-     } {SQLITE_ERROR - table data_t1 may not have ota_rowid column}
-  
-     5 {
-       CREATE TABLE t1(a, b PRIMARY KEY) WITHOUT ROWID;
-       CREATE TABLE ota.data_t1(a, b, ota_rowid, ota_control);
-     } {SQLITE_ERROR - table data_t1 may not have ota_rowid column}
-  
-  } {
-    reset_db
-    forcedelete ota.db
-    execsql { ATTACH 'ota.db' AS ota }
-    execsql $schema
-
-    do_test 6.$tn {
-      list [catch { run_ota test.db ota.db } msg] $msg
-    } [list 1 $error]
+  #-------------------------------------------------------------------------
+  #
+  foreach {tn2 cmd} {1 run_ota 2 step_ota} {
+    foreach {tn schema} {
+      1 {
+        CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c, d);
+      }
+      2 {
+        CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c, d);
+        CREATE INDEX i1 ON t1(d);
+        CREATE INDEX i2 ON t1(d, c);
+        CREATE INDEX i3 ON t1(d, c, b);
+        CREATE INDEX i4 ON t1(b);
+        CREATE INDEX i5 ON t1(c);
+        CREATE INDEX i6 ON t1(c, b);
+      }
+      3 {
+        CREATE TABLE t1(a PRIMARY KEY, b, c, d) WITHOUT ROWID;
+        CREATE INDEX i1 ON t1(d);
+        CREATE INDEX i2 ON t1(d, c);
+        CREATE INDEX i3 ON t1(d, c, b);
+        CREATE INDEX i4 ON t1(b);
+        CREATE INDEX i5 ON t1(c);
+        CREATE INDEX i6 ON t1(c, b);
+      }
+      4 {
+        CREATE TABLE t1(a PRIMARY KEY, b, c, d);
+        CREATE INDEX i1 ON t1(d);
+        CREATE INDEX i2 ON t1(d, c);
+        CREATE INDEX i3 ON t1(d, c, b);
+        CREATE INDEX i4 ON t1(b);
+        CREATE INDEX i5 ON t1(c);
+        CREATE INDEX i6 ON t1(c, b);
+      }
+    } {
+      reset_db
+      execsql $schema
+      execsql {
+        INSERT INTO t1 VALUES(1, 2, 3, 4);
+        INSERT INTO t1 VALUES(2, 5, 6, 7);
+        INSERT INTO t1 VALUES(3, 8, 9, 10);
+      }
+    
+      do_test $tn3.5.$tn2.$tn.1 {
+        create_ota5 ota.db
+        $cmd test.db ota.db
+      } {SQLITE_DONE}
+      
+      do_execsql_test $tn3.5.$tn2.$tn.2 {
+        SELECT * FROM t1 ORDER BY a ASC;
+      } {
+        1 2 3 5
+        2 5 10 5
+        3 11 9 10
+      }
+    
+      do_execsql_test $tn3.5.$tn2.$tn.3 { PRAGMA integrity_check } ok
+    }
   }
+
+  #-------------------------------------------------------------------------
+  # Test some error cases:
+  # 
+  #   * A virtual table with no ota_rowid column.
+  #   * A no-PK table with no ota_rowid column.
+  #   * A PK table with an ota_rowid column.
+  #
+  ifcapable fts3 {
+    foreach {tn schema error} {
+       1 {
+         CREATE TABLE t1(a, b);
+         CREATE TABLE ota.data_t1(a, b, ota_control);
+       } {SQLITE_ERROR - table data_t1 requires ota_rowid column}
+    
+       2 {
+         CREATE VIRTUAL TABLE t1 USING fts4(a, b);
+         CREATE TABLE ota.data_t1(a, b, ota_control);
+       } {SQLITE_ERROR - table data_t1 requires ota_rowid column}
+    
+       3 {
+         CREATE TABLE t1(a PRIMARY KEY, b);
+         CREATE TABLE ota.data_t1(a, b, ota_rowid, ota_control);
+       } {SQLITE_ERROR - table data_t1 may not have ota_rowid column}
+    
+       4 {
+         CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+         CREATE TABLE ota.data_t1(a, b, ota_rowid, ota_control);
+       } {SQLITE_ERROR - table data_t1 may not have ota_rowid column}
+    
+       5 {
+         CREATE TABLE t1(a, b PRIMARY KEY) WITHOUT ROWID;
+         CREATE TABLE ota.data_t1(a, b, ota_rowid, ota_control);
+       } {SQLITE_ERROR - table data_t1 may not have ota_rowid column}
+    
+    } {
+      reset_db
+      forcedelete ota.db
+      execsql { ATTACH 'ota.db' AS ota }
+      execsql $schema
+
+      do_test $tn3.6.$tn {
+        list [catch { run_ota test.db ota.db } msg] $msg
+      } [list 1 $error]
+    }
+  }
+
+  eval $destroy_vfs
 }
 
 

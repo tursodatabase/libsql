@@ -5,21 +5,8 @@ User documentation is in sqlite3ota.h.
 SQLite Hacks
 ------------
 
-1) PRAGMA ota_mode:
 
-  This is a new flag pragma. If the flag is set:
-
-  * INSERT/DELETE/UPDATE commands are prevented from updating any but the main
-    b-tree for each table (the PK index for WITHOUT ROWID tables or the 
-    rowid b-tree for others).
-
-  * The above statements do not check UNIQUE constraints - except those enforced
-    by the main b-tree.
-
-  * All non-temporary triggers are disabled.
-
-
-2) PRAGMA pager_ota_mode=1:
+1) PRAGMA pager_ota_mode=1:
 
   This pragma sets a flag on the pager associated with the main database only.
   In a zipvfs system, this pragma is intercepted by zipvfs and the flag is set
@@ -51,7 +38,7 @@ SQLite Hacks
   pager_ota_mode connections. If two or more such connections attempt to write
   simultaneously, the results are undefined.
 
-3) PRAGMA pager_ota_mode=2:
+2) PRAGMA pager_ota_mode=2:
 
   The pager_ota_mode pragma may also be set to 2 if the main database is open 
   in WAL mode. This prevents SQLite from checkpointing the wal file as part
@@ -60,14 +47,7 @@ SQLite Hacks
   The effects of setting pager_ota_mode=2 if the db is not in WAL mode are
   undefined.
 
-4) sqlite3_index_writer()
-
-  This new API function is used to create VMs that can insert or delete entries
-  from individual index b-trees within the database. The VMs apply affinities
-  and check that UNIQUE constraints are not violated before updating index
-  b-trees.
-
-5) sqlite3_ckpt_open/step/close()
+3) sqlite3_ckpt_open/step/close()
 
   API for performing (and resuming) incremental checkpoints.
 

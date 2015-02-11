@@ -62,6 +62,9 @@
 **   Valid if STAGE==3. The blob to pass to sqlite3ckpt_start() to resume
 **   the incremental checkpoint.
 **
+** OTA_STATE_COOKIE:
+**   Valid if STAGE==1. The current change-counter cookie value in the 
+**   target db file.
 */
 #define OTA_STATE_STAGE       1
 #define OTA_STATE_TBL         2
@@ -69,9 +72,9 @@
 #define OTA_STATE_ROW         4
 #define OTA_STATE_PROGRESS    5
 #define OTA_STATE_CKPT        6
+#define OTA_STATE_COOKIE      7
 
 #define OTA_STAGE_OAL         1
-#define OTA_STAGE_COPY        2
 #define OTA_STAGE_CKPT        3
 #define OTA_STAGE_DONE        4
 
@@ -81,6 +84,8 @@
 
 typedef struct OtaState OtaState;
 typedef struct OtaObjIter OtaObjIter;
+typedef struct ota_vfs ota_vfs;
+typedef struct ota_file ota_file;
 
 /*
 ** A structure to store values read from the ota_state table in memory.
@@ -152,6 +157,7 @@ struct OtaObjIter {
 #define OTA_PK_WITHOUT_ROWID  4
 #define OTA_PK_VTAB           5
 
+
 /*
 ** OTA handle.
 */
@@ -166,7 +172,36 @@ struct sqlite3ota {
   int nProgress;                  /* Rows processed for all objects */
   OtaObjIter objiter;             /* Iterator for skipping through tbl/idx */
   sqlite3_ckpt *pCkpt;            /* Incr-checkpoint handle */
+  ota_file *pTargetFd;            /* File handle open on target db */
+  const char *zVfsName;           /* Name of automatically created ota vfs */
 };
+
+struct ota_vfs {
+  sqlite3_vfs base;             /* ota VFS shim methods */
+  sqlite3_vfs *pRealVfs;        /* Underlying VFS */
+  sqlite3_mutex *mutex;
+  const char *zOtaWal;
+};
+
+struct ota_file {
+  sqlite3_file base;              /* sqlite3_file methods */
+  sqlite3_file *pReal;            /* Underlying file handle */
+  ota_vfs *pOtaVfs;               /* Pointer to the ota_vfs object */
+  sqlite3ota *pOta;               /* Pointer to ota object (ota target only) */
+
+  int openFlags;                  /* Flags this file was opened with */
+  unsigned int iCookie;           /* Cookie value for main db files */
+  unsigned char iWriteVer;        /* "write-version" value for main db files */
+
+  int nShm;                       /* Number of entries in apShm[] array */
+  char **apShm;                   /* Array of mmap'd *-shm regions */
+  const char *zWal;               /* Wal filename for this db file */
+  char *zDel;                     /* Delete this when closing file */
+};
+
+
+static void otaCreateVfs(sqlite3ota*, const char*);
+static void otaDeleteVfs(sqlite3ota*);
 
 /*
 ** Prepare the SQL statement in buffer zSql against database handle db.
@@ -413,6 +448,20 @@ static int otaMPrintfExec(sqlite3ota *p, const char *zFmt, ...){
   return p->rc;
 }
 
+static void *otaMalloc(sqlite3ota *p, int nByte){
+  void *pRet = 0;
+  if( p->rc==SQLITE_OK ){
+    pRet = sqlite3_malloc(nByte);
+    if( pRet==0 ){
+      p->rc = SQLITE_NOMEM;
+    }else{
+      memset(pRet, 0, nByte);
+    }
+  }
+  return pRet;
+}
+
+
 /*
 ** Allocate and zero the pIter->azTblCol[] and abTblPk[] arrays so that
 ** there is room for at least nCol elements. If an OOM occurs, store an
@@ -422,17 +471,13 @@ static void otaAllocateIterArrays(sqlite3ota *p, OtaObjIter *pIter, int nCol){
   int nByte = (2*sizeof(char*) + sizeof(int) + 2*sizeof(unsigned char)) * nCol;
   char **azNew;
 
-  assert( p->rc==SQLITE_OK );
-  azNew = (char**)sqlite3_malloc(nByte);
+  azNew = (char**)otaMalloc(p, nByte);
   if( azNew ){
-    memset(azNew, 0, nByte);
     pIter->azTblCol = azNew;
     pIter->azTblType = &azNew[nCol];
     pIter->aiSrcOrder = (int*)&pIter->azTblType[nCol];
     pIter->abTblPk = (unsigned char*)&pIter->aiSrcOrder[nCol];
     pIter->abNotNull = (unsigned char*)&pIter->abTblPk[nCol];
-  }else{
-    p->rc = SQLITE_NOMEM;
   }
 }
 
@@ -969,17 +1014,14 @@ static char *otaObjIterGetSetlist(
 
 static char *otaObjIterGetBindlist(sqlite3ota *p, int nBind){
   char *zRet = 0;
-  if( p->rc==SQLITE_OK ){
-    int nByte = nBind*2 + 1;
-    zRet = sqlite3_malloc(nByte);
-    if( zRet==0 ){
-      p->rc = SQLITE_NOMEM;
-    }else{
-      int i;
-      for(i=0; i<nBind; i++){
-        zRet[i*2] = '?';
-        zRet[i*2+1] = (i+1==nBind) ? '\0' : ',';
-      }
+  int nByte = nBind*2 + 1;
+
+  zRet = (char*)otaMalloc(p, nByte);
+  if( zRet ){
+    int i;
+    for(i=0; i<nBind; i++){
+      zRet[i*2] = '?';
+      zRet[i*2+1] = (i+1==nBind) ? '\0' : ',';
     }
   }
   return zRet;
@@ -1434,15 +1476,27 @@ static int otaGetUpdateStmt(
 ** error occurs, leave an error code and message in the OTA handle.
 */
 static void otaOpenDatabase(sqlite3ota *p){
+  int flags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE;
   assert( p->rc==SQLITE_OK );
-  sqlite3_close(p->db);
-  p->db = 0;
+  assert( p->db==0 );
 
-  p->rc = sqlite3_open(p->zTarget, &p->db);
+  p->rc = sqlite3_open_v2(p->zTarget, &p->db, flags, p->zVfsName);
   if( p->rc ){
     p->zErrmsg = sqlite3_mprintf("%s", sqlite3_errmsg(p->db));
+  }else{
+    otaMPrintfExec(p, "ATTACH %Q AS ota", p->zOta);
+
+    /* Mark the database file just opened as an OTA target database. If 
+    ** this call returns SQLITE_NOTFOUND, then the OTA vfs is not in use.
+    ** This is an error.  */
+    if( p->rc==SQLITE_OK ){
+      p->rc = sqlite3_file_control(p->db, "main", SQLITE_FCNTL_OTA, (void*)p);
+      if( p->rc==SQLITE_NOTFOUND ){
+        p->rc = SQLITE_ERROR;
+        p->zErrmsg = sqlite3_mprintf("ota vfs not found");
+      }
+    }
   }
-  otaMPrintfExec(p, "ATTACH %Q AS ota", p->zOta);
 }
 
 /*
@@ -1506,8 +1560,10 @@ static void otaMoveOalFile(sqlite3ota *p){
 
     /* Re-open the databases. */
     otaObjIterFinalize(&p->objiter);
-    otaOpenDatabase(p);
+    sqlite3_close(p->db);
+    p->db = 0;
     p->eStage = OTA_STAGE_CKPT;
+    otaOpenDatabase(p);
   }
 
   sqlite3_free(zWal);
@@ -1795,13 +1851,15 @@ static void otaSaveTransactionState(sqlite3ota *p){
         "(%d, %Q), "
         "(%d, %d), "
         "(%d, %lld), "
-        "(%d, ?) ",
+        "(%d, ?), "
+        "(%d, %lld) ",
         OTA_STATE_STAGE, p->eStage,
         OTA_STATE_TBL, p->objiter.zTbl, 
         OTA_STATE_IDX, p->objiter.zIdx, 
         OTA_STATE_ROW, p->nStep, 
         OTA_STATE_PROGRESS, p->nProgress,
-        OTA_STATE_CKPT
+        OTA_STATE_CKPT,
+        OTA_STATE_COOKIE, (sqlite3_int64)p->pTargetFd->iCookie
       )
   );
   assert( pInsert==0 || rc==SQLITE_OK );
@@ -1848,7 +1906,7 @@ static void otaFreeState(OtaState *p){
 static OtaState *otaLoadState(sqlite3ota *p){
   const char *zSelect = "SELECT k, v FROM ota.ota_state";
   OtaState *pRet = 0;
-  sqlite3_stmt *pStmt;
+  sqlite3_stmt *pStmt = 0;
   int rc;
   int rc2;
 
@@ -1866,7 +1924,6 @@ static OtaState *otaLoadState(sqlite3ota *p){
       case OTA_STATE_STAGE:
         pRet->eStage = sqlite3_column_int(pStmt, 1);
         if( pRet->eStage!=OTA_STAGE_OAL
-         && pRet->eStage!=OTA_STAGE_COPY
          && pRet->eStage!=OTA_STAGE_CKPT
         ){
           p->rc = SQLITE_CORRUPT;
@@ -1894,6 +1951,19 @@ static OtaState *otaLoadState(sqlite3ota *p){
         pRet->pCkptState = (unsigned char*)otaStrndup(
             (char*)sqlite3_column_blob(pStmt, 1), pRet->nCkptState, &rc
         );
+        break;
+
+      case OTA_STATE_COOKIE:
+        /* At this point (p->iCookie) contains the value of the change-counter
+        ** cookie (the thing that gets incremented when a transaction is 
+        ** committed in rollback mode) currently stored on page 1 of the 
+        ** database file. */
+        if( pRet->eStage==OTA_STAGE_OAL 
+         && p->pTargetFd->iCookie!=(unsigned int)sqlite3_column_int64(pStmt, 1) 
+        ){
+          rc = SQLITE_BUSY;
+          p->zErrmsg = sqlite3_mprintf("database modified during ota update");
+        }
         break;
 
       default:
@@ -1965,17 +2035,27 @@ sqlite3ota *sqlite3ota_open(const char *zTarget, const char *zOta){
   if( p ){
     OtaState *pState = 0;
 
-    /* Open the target database */
+    /* Create the custom VFS */
     memset(p, 0, sizeof(sqlite3ota));
-    p->zTarget = (char*)&p[1];
-    memcpy(p->zTarget, zTarget, nTarget+1);
-    p->zOta = &p->zTarget[nTarget+1];
-    memcpy(p->zOta, zOta, nOta+1);
-    otaOpenDatabase(p);
+    otaCreateVfs(p, 0);
+
+    /* Open the target database */
+    if( p->rc==SQLITE_OK ){
+      p->zTarget = (char*)&p[1];
+      memcpy(p->zTarget, zTarget, nTarget+1);
+      p->zOta = &p->zTarget[nTarget+1];
+      memcpy(p->zOta, zOta, nOta+1);
+      otaOpenDatabase(p);
+    }
 
     /* If it has not already been created, create the ota_state table */
     if( p->rc==SQLITE_OK ){
       p->rc = sqlite3_exec(p->db, OTA_CREATE_STATE, 0, 0, &p->zErrmsg);
+    }
+
+    if( p->rc==SQLITE_OK && p->pTargetFd->iWriteVer>1 ){
+      p->rc = SQLITE_ERROR;
+      p->zErrmsg = sqlite3_mprintf("cannot update wal mode database");
     }
 
     if( p->rc==SQLITE_OK ){
@@ -1995,12 +2075,14 @@ sqlite3ota *sqlite3ota_open(const char *zTarget, const char *zOta){
 
     if( p->rc==SQLITE_OK ){
       if( p->eStage==OTA_STAGE_OAL ){
-        const char *zScript =
-          "PRAGMA journal_mode=off;"
-          "PRAGMA pager_ota_mode=1;"
-          "BEGIN IMMEDIATE;"
-        ;
-        p->rc = sqlite3_exec(p->db, zScript, 0, 0, &p->zErrmsg);
+        ota_vfs *pOtaVfs = p->pTargetFd->pOtaVfs;
+
+        sqlite3_mutex_enter(pOtaVfs->mutex);
+        assert( pOtaVfs->zOtaWal==0 );
+        pOtaVfs->zOtaWal = p->pTargetFd->zWal;
+        p->rc = sqlite3_exec(p->db, "BEGIN IMMEDIATE", 0, 0, &p->zErrmsg);
+        pOtaVfs->zOtaWal = 0;
+        sqlite3_mutex_leave(pOtaVfs->mutex);
   
         /* Point the object iterator at the first object */
         if( p->rc==SQLITE_OK ){
@@ -2081,13 +2163,10 @@ int sqlite3ota_close(sqlite3ota *p, char **pzErrmsg){
       p->rc = sqlite3_exec(p->db, "COMMIT", 0, 0, &p->zErrmsg);
     }
 
-    if( p->rc==SQLITE_OK && p->eStage==OTA_STAGE_CKPT ){
-      p->rc = sqlite3_exec(p->db, "PRAGMA pager_ota_mode=2", 0, 0, &p->zErrmsg);
-    }
-
-    /* Close the open database handle */
+    /* Close the open database handle and VFS object. */
     if( p->pCkpt ) sqlite3_ckpt_close(p->pCkpt, 0, 0);
     sqlite3_close(p->db);
+    otaDeleteVfs(p);
 
     otaEditErrmsg(p);
     rc = p->rc;
@@ -2107,6 +2186,624 @@ int sqlite3ota_close(sqlite3ota *p, char **pzErrmsg){
 */
 sqlite3_int64 sqlite3ota_progress(sqlite3ota *pOta){
   return pOta->nProgress;
+}
+
+/**************************************************************************
+** Beginning of OTA VFS shim methods. The VFS shim modifies the behaviour
+** of a standard VFS in the following ways:
+**
+**   1. Whenever the first page of a main database file is read or 
+**      written, the value of the change-counter cookie is stored in
+**      ota_file.iCookie. Similarly, the value of the "write-version"
+**      database header field is stored in ota_file.iWriteVer. This ensures
+**      that the values are always trustworthy within an open transaction.
+**
+**   2. When the ota handle is in OTA_STAGE_OAL or OTA_STAGE_CKPT state, all
+**      EXCLUSIVE lock attempts on the target database fail. This prevents
+**      sqlite3_close() from running an automatic checkpoint. Until the
+**      ota handle reaches OTA_STAGE_DONE - at that point the automatic
+**      checkpoint may be required to delete the *-wal file.
+**
+**   3. In OTA_STAGE_OAL, the *-shm file is stored in memory. All xShmLock()
+**      calls are noops. This is just an optimization.
+**
+**   4. In OTA_STAGE_OAL mode, when SQLite calls xAccess() to check if a
+**      *-wal file associated with the target database exists, the following
+**      special handling applies:
+**
+**        a) if the *-wal file does exist, return SQLITE_CANTOPEN. An OTA
+**           target database may not be in wal mode already.
+**
+**        b) if the *-wal file does not exist, set the output parameter to
+**           non-zero (to tell SQLite that it does exist) anyway.
+**
+**   5. In OTA_STAGE_OAL mode, if SQLite tries to open a *-wal file 
+**      associated with a target database, open the corresponding *-oal file
+**      instead.
+*/
+
+/*
+** Close an ota file.
+*/
+static int otaVfsClose(sqlite3_file *pFile){
+  ota_file *p = (ota_file*)pFile;
+  int rc;
+  int i;
+
+  /* Free the contents of the apShm[] array. And the array itself. */
+  for(i=0; i<p->nShm; i++){
+    sqlite3_free(p->apShm[i]);
+  }
+  sqlite3_free(p->apShm);
+  p->apShm = 0;
+  sqlite3_free(p->zDel);
+
+  /* Close the underlying file handle */
+  rc = p->pReal->pMethods->xClose(p->pReal);
+  return rc;
+}
+
+
+/*
+** Read and return an unsigned 32-bit big-endian integer from the buffer 
+** passed as the only argument.
+*/
+static unsigned int otaGetU32(unsigned char *aBuf){
+  return ((unsigned int)aBuf[0] << 24)
+       + ((unsigned int)aBuf[1] << 16)
+       + ((unsigned int)aBuf[2] <<  8)
+       + ((unsigned int)aBuf[3]);
+}
+
+/*
+** Read data from an otaVfs-file.
+*/
+static int otaVfsRead(
+  sqlite3_file *pFile, 
+  void *zBuf, 
+  int iAmt, 
+  sqlite_int64 iOfst
+){
+  ota_file *p = (ota_file*)pFile;
+  int rc = p->pReal->pMethods->xRead(p->pReal, zBuf, iAmt, iOfst);
+  if( rc==SQLITE_OK && iOfst==0 && (p->openFlags & SQLITE_OPEN_MAIN_DB) ){
+    /* These look like magic numbers. But they are stable, as they are part
+    ** of the definition of the SQLite file format, which may not change. */
+    unsigned char *pBuf = (unsigned char*)zBuf;
+    p->iCookie = otaGetU32(&pBuf[24]);
+    p->iWriteVer = pBuf[19];
+  }
+  return rc;
+}
+
+/*
+** Write data to an otaVfs-file.
+*/
+static int otaVfsWrite(
+  sqlite3_file *pFile, 
+  const void *zBuf, 
+  int iAmt, 
+  sqlite_int64 iOfst
+){
+  ota_file *p = (ota_file*)pFile;
+  int rc = p->pReal->pMethods->xWrite(p->pReal, zBuf, iAmt, iOfst);
+  if( rc==SQLITE_OK && iOfst==0 && (p->openFlags & SQLITE_OPEN_MAIN_DB) ){
+    /* These look like magic numbers. But they are stable, as they are part
+    ** of the definition of the SQLite file format, which may not change. */
+    unsigned char *pBuf = (unsigned char*)zBuf;
+    p->iCookie = otaGetU32(&pBuf[24]);
+    p->iWriteVer = pBuf[19];
+  }
+  return rc;
+}
+
+/*
+** Truncate an otaVfs-file.
+*/
+static int otaVfsTruncate(sqlite3_file *pFile, sqlite_int64 size){
+  ota_file *p = (ota_file*)pFile;
+  return p->pReal->pMethods->xTruncate(p->pReal, size);
+}
+
+/*
+** Sync an otaVfs-file.
+*/
+static int otaVfsSync(sqlite3_file *pFile, int flags){
+  ota_file *p = (ota_file *)pFile;
+  return p->pReal->pMethods->xSync(p->pReal, flags);
+}
+
+/*
+** Return the current file-size of an otaVfs-file.
+*/
+static int otaVfsFileSize(sqlite3_file *pFile, sqlite_int64 *pSize){
+  ota_file *p = (ota_file *)pFile;
+  return p->pReal->pMethods->xFileSize(p->pReal, pSize);
+}
+
+/*
+** Lock an otaVfs-file.
+*/
+static int otaVfsLock(sqlite3_file *pFile, int eLock){
+  ota_file *p = (ota_file*)pFile;
+  sqlite3ota *pOta = p->pOta;
+  int rc = SQLITE_OK;
+
+  if( pOta && eLock==SQLITE_LOCK_EXCLUSIVE
+   && (pOta->eStage==OTA_STAGE_OAL || pOta->eStage==OTA_STAGE_CKPT) 
+  ){
+    /* Do not allow EXCLUSIVE locks. Preventing SQLite from taking this 
+    ** prevents it from checkpointing the database from sqlite3_close(). */
+    rc = SQLITE_BUSY;
+  }else{
+    rc = p->pReal->pMethods->xLock(p->pReal, eLock);
+  }
+
+  return rc;
+}
+
+/*
+** Unlock an otaVfs-file.
+*/
+static int otaVfsUnlock(sqlite3_file *pFile, int eLock){
+  ota_file *p = (ota_file *)pFile;
+  return p->pReal->pMethods->xUnlock(p->pReal, eLock);
+}
+
+/*
+** Check if another file-handle holds a RESERVED lock on an otaVfs-file.
+*/
+static int otaVfsCheckReservedLock(sqlite3_file *pFile, int *pResOut){
+  ota_file *p = (ota_file *)pFile;
+  return p->pReal->pMethods->xCheckReservedLock(p->pReal, pResOut);
+}
+
+/*
+** File control method. For custom operations on an otaVfs-file.
+*/
+static int otaVfsFileControl(sqlite3_file *pFile, int op, void *pArg){
+  ota_file *p = (ota_file *)pFile;
+  int (*xControl)(sqlite3_file*,int,void*) = p->pReal->pMethods->xFileControl;
+
+  if( op==SQLITE_FCNTL_OTA ){
+    int rc;
+    sqlite3ota *pOta = (sqlite3ota*)pArg;
+
+    /* First try to find another OTA vfs lower down in the vfs stack. If
+    ** one is found, this vfs will operate in pass-through mode. The lower
+    ** level vfs will do the special OTA handling.  */
+    rc = xControl(p->pReal, op, pArg);
+
+    if( rc==SQLITE_NOTFOUND ){
+      /* Now search for a zipvfs instance lower down in the VFS stack. If
+      ** one is found, this is an error.  */
+      void *dummy = 0;
+      rc = xControl(p->pReal, SQLITE_FCNTL_ZIPVFS_PAGER, &dummy);
+      if( rc==SQLITE_OK ){
+        rc = SQLITE_ERROR;
+        pOta->zErrmsg = sqlite3_mprintf("ota/zipvfs setup error");
+      }else if( rc==SQLITE_NOTFOUND ){
+        pOta->pTargetFd = p;
+        p->pOta = pOta;
+        rc = SQLITE_OK;
+      }
+    }
+    return rc;
+  }
+  return xControl(p->pReal, op, pArg);
+}
+
+/*
+** Return the sector-size in bytes for an otaVfs-file.
+*/
+static int otaVfsSectorSize(sqlite3_file *pFile){
+  ota_file *p = (ota_file *)pFile;
+  return p->pReal->pMethods->xSectorSize(p->pReal);
+}
+
+/*
+** Return the device characteristic flags supported by an otaVfs-file.
+*/
+static int otaVfsDeviceCharacteristics(sqlite3_file *pFile){
+  ota_file *p = (ota_file *)pFile;
+  return p->pReal->pMethods->xDeviceCharacteristics(p->pReal);
+}
+
+/*
+** Shared-memory methods are all pass-thrus.
+*/
+static int otaVfsShmLock(sqlite3_file *pFile, int ofst, int n, int flags){
+  ota_file *p = (ota_file*)pFile;
+  int rc = SQLITE_OK;
+
+#ifdef SQLITE_AMALGAMATION
+    assert( WAL_CKPT_LOCK==1 );
+#endif
+
+  if( p->pOta && p->pOta->eStage==OTA_STAGE_OAL ){
+    /* Magic number 1 is the WAL_CKPT_LOCK lock. Preventing SQLite from
+    ** taking this lock also prevents any checkpoints from occurring. 
+    ** todo: really, it's not clear why this might occur, as 
+    ** wal_autocheckpoint ought to be turned off.  */
+    if( ofst==1 && n==1 ) rc = SQLITE_BUSY;
+  }else{
+    assert( p->nShm==0 );
+    rc = p->pReal->pMethods->xShmLock(p->pReal, ofst, n, flags);
+  }
+
+  return rc;
+}
+
+static int otaVfsShmMap(
+  sqlite3_file *pFile, 
+  int iRegion, 
+  int szRegion, 
+  int isWrite, 
+  void volatile **pp
+){
+  ota_file *p = (ota_file*)pFile;
+  int rc = SQLITE_OK;
+
+  /* If not in OTA_STAGE_OAL, allow this call to pass through. Or, if this
+  ** ota is in the OTA_STAGE_OAL state, use heap memory for *-shm space 
+  ** instead of a file on disk.  */
+  if( p->pOta && p->pOta->eStage==OTA_STAGE_OAL ){
+    if( iRegion<=p->nShm ){
+      int nByte = (iRegion+1) * sizeof(char*);
+      char **apNew = (char**)sqlite3_realloc(p->apShm, nByte);
+      if( apNew==0 ){
+        rc = SQLITE_NOMEM;
+      }else{
+        memset(&apNew[p->nShm], 0, sizeof(char*) * (1 + iRegion - p->nShm));
+        p->apShm = apNew;
+        p->nShm = iRegion+1;
+      }
+    }
+
+    if( rc==SQLITE_OK && p->apShm[iRegion]==0 ){
+      char *pNew = (char*)sqlite3_malloc(szRegion);
+      if( pNew==0 ){
+        rc = SQLITE_NOMEM;
+      }else{
+        memset(pNew, 0, szRegion);
+        p->apShm[iRegion] = pNew;
+      }
+    }
+
+    if( rc==SQLITE_OK ){
+      *pp = p->apShm[iRegion];
+    }else{
+      *pp = 0;
+    }
+  }else{
+    assert( p->apShm==0 );
+    rc = p->pReal->pMethods->xShmMap(p->pReal, iRegion, szRegion, isWrite, pp);
+  }
+
+  return rc;
+}
+
+/*
+** Memory barrier.
+*/
+static void otaVfsShmBarrier(sqlite3_file *pFile){
+  ota_file *p = (ota_file *)pFile;
+  p->pReal->pMethods->xShmBarrier(p->pReal);
+}
+
+static int otaVfsShmUnmap(sqlite3_file *pFile, int delFlag){
+  ota_file *p = (ota_file*)pFile;
+  int rc = SQLITE_OK;
+
+  if( p->pOta && p->pOta->eStage==OTA_STAGE_OAL ){
+    /* no-op */
+  }else{
+    rc = p->pReal->pMethods->xShmUnmap(p->pReal, delFlag);
+  }
+  return rc;
+}
+
+/*
+** Open an ota file handle.
+*/
+static int otaVfsOpen(
+  sqlite3_vfs *pVfs,
+  const char *zName,
+  sqlite3_file *pFile,
+  int flags,
+  int *pOutFlags
+){
+  static sqlite3_io_methods otavfs_io_methods = {
+    2,                            /* iVersion */
+    otaVfsClose,                  /* xClose */
+    otaVfsRead,                   /* xRead */
+    otaVfsWrite,                  /* xWrite */
+    otaVfsTruncate,               /* xTruncate */
+    otaVfsSync,                   /* xSync */
+    otaVfsFileSize,               /* xFileSize */
+    otaVfsLock,                   /* xLock */
+    otaVfsUnlock,                 /* xUnlock */
+    otaVfsCheckReservedLock,      /* xCheckReservedLock */
+    otaVfsFileControl,            /* xFileControl */
+    otaVfsSectorSize,             /* xSectorSize */
+    otaVfsDeviceCharacteristics,  /* xDeviceCharacteristics */
+    otaVfsShmMap,                 /* xShmMap */
+    otaVfsShmLock,                /* xShmLock */
+    otaVfsShmBarrier,             /* xShmBarrier */
+    otaVfsShmUnmap                /* xShmUnmap */
+  };
+  ota_vfs *pOtaVfs = (ota_vfs*)pVfs;
+  sqlite3_vfs *pRealVfs = pOtaVfs->pRealVfs;
+  ota_file *pFd = (ota_file *)pFile;
+  int rc = SQLITE_OK;
+  const char *zOpen = zName;
+
+  memset(pFd, 0, sizeof(ota_file));
+  pFd->pReal = (sqlite3_file*)&pFd[1];
+  pFd->pOtaVfs = pOtaVfs;
+  pFd->openFlags = flags;
+  if( zName ){
+    if( flags & SQLITE_OPEN_MAIN_DB ){
+      /* A main database has just been opened. The following block sets
+      ** (pFd->zWal) to point to a buffer owned by SQLite that contains
+      ** the name of the *-wal file this db connection will use. SQLite
+      ** happens to pass a pointer to this buffer when using xAccess()
+      ** or xOpen() to operate on the *-wal file.  */
+      int n = strlen(zName);
+      const char *z = &zName[n];
+      if( flags & SQLITE_OPEN_URI ){
+        int odd = 0;
+        while( 1 ){
+          if( z[0]==0 ){
+            odd = 1 - odd;
+            if( odd && z[1]==0 ) break;
+          }
+          z++;
+        }
+        z += 2;
+      }else{
+        while( *z==0 ) z++;
+      }
+      z += (n + 8 + 1);
+      pFd->zWal = z;
+    }
+    else if( (flags & SQLITE_OPEN_WAL) && zName==pOtaVfs->zOtaWal ){
+      char *zCopy = otaStrndup(zName, -1, &rc);
+      if( zCopy ){
+        int nCopy = strlen(zCopy);
+        zCopy[nCopy-3] = 'o';
+        zOpen = (const char*)(pFd->zDel = zCopy);
+      }
+    }
+  }
+
+  if( rc==SQLITE_OK ){
+    rc = pRealVfs->xOpen(pRealVfs, zOpen, pFd->pReal, flags, pOutFlags);
+  }
+  if( pFd->pReal->pMethods ){
+    pFile->pMethods = &otavfs_io_methods;
+  }
+
+  return rc;
+}
+
+/*
+** Delete the file located at zPath.
+*/
+static int otaVfsDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
+  sqlite3_vfs *pRealVfs = ((ota_vfs*)pVfs)->pRealVfs;
+  return pRealVfs->xDelete(pRealVfs, zPath, dirSync);
+}
+
+/*
+** Test for access permissions. Return true if the requested permission
+** is available, or false otherwise.
+*/
+static int otaVfsAccess(
+  sqlite3_vfs *pVfs, 
+  const char *zPath, 
+  int flags, 
+  int *pResOut
+){
+  ota_vfs *pOtaVfs = (ota_vfs*)pVfs;
+  sqlite3_vfs *pRealVfs = pOtaVfs->pRealVfs;
+  int rc;
+
+  rc = pRealVfs->xAccess(pRealVfs, zPath, flags, pResOut);
+
+  if( rc==SQLITE_OK && flags==SQLITE_ACCESS_EXISTS && pOtaVfs->zOtaWal==zPath ){
+    if( *pResOut ){
+      rc = SQLITE_CANTOPEN;
+    }else{
+      *pResOut = 1;
+    }
+  }
+
+  return rc;
+}
+
+/*
+** Populate buffer zOut with the full canonical pathname corresponding
+** to the pathname in zPath. zOut is guaranteed to point to a buffer
+** of at least (DEVSYM_MAX_PATHNAME+1) bytes.
+*/
+static int otaVfsFullPathname(
+  sqlite3_vfs *pVfs, 
+  const char *zPath, 
+  int nOut, 
+  char *zOut
+){
+  sqlite3_vfs *pRealVfs = ((ota_vfs*)pVfs)->pRealVfs;
+  return pRealVfs->xFullPathname(pRealVfs, zPath, nOut, zOut);
+}
+
+#ifndef SQLITE_OMIT_LOAD_EXTENSION
+/*
+** Open the dynamic library located at zPath and return a handle.
+*/
+static void *otaVfsDlOpen(sqlite3_vfs *pVfs, const char *zPath){
+  sqlite3_vfs *pRealVfs = ((ota_vfs*)pVfs)->pRealVfs;
+  return pRealVfs->xDlOpen(pRealVfs, zPath);
+}
+
+/*
+** Populate the buffer zErrMsg (size nByte bytes) with a human readable
+** utf-8 string describing the most recent error encountered associated 
+** with dynamic libraries.
+*/
+static void otaVfsDlError(sqlite3_vfs *pVfs, int nByte, char *zErrMsg){
+  sqlite3_vfs *pRealVfs = ((ota_vfs*)pVfs)->pRealVfs;
+  pRealVfs->xDlError(pRealVfs, nByte, zErrMsg);
+}
+
+/*
+** Return a pointer to the symbol zSymbol in the dynamic library pHandle.
+*/
+static void (*otaVfsDlSym(
+  sqlite3_vfs *pVfs, 
+  void *pArg, 
+  const char *zSym
+))(void){
+  sqlite3_vfs *pRealVfs = ((ota_vfs*)pVfs)->pRealVfs;
+  return pRealVfs->xDlSym(pRealVfs, pArg, zSym);
+}
+
+/*
+** Close the dynamic library handle pHandle.
+*/
+static void otaVfsDlClose(sqlite3_vfs *pVfs, void *pHandle){
+  sqlite3_vfs *pRealVfs = ((ota_vfs*)pVfs)->pRealVfs;
+  return pRealVfs->xDlClose(pRealVfs, pHandle);
+}
+#endif /* SQLITE_OMIT_LOAD_EXTENSION */
+
+/*
+** Populate the buffer pointed to by zBufOut with nByte bytes of 
+** random data.
+*/
+static int otaVfsRandomness(sqlite3_vfs *pVfs, int nByte, char *zBufOut){
+  sqlite3_vfs *pRealVfs = ((ota_vfs*)pVfs)->pRealVfs;
+  return pRealVfs->xRandomness(pRealVfs, nByte, zBufOut);
+}
+
+/*
+** Sleep for nMicro microseconds. Return the number of microseconds 
+** actually slept.
+*/
+static int otaVfsSleep(sqlite3_vfs *pVfs, int nMicro){
+  sqlite3_vfs *pRealVfs = ((ota_vfs*)pVfs)->pRealVfs;
+  return pRealVfs->xSleep(pRealVfs, nMicro);
+}
+
+/*
+** Return the current time as a Julian Day number in *pTimeOut.
+*/
+static int otaVfsCurrentTime(sqlite3_vfs *pVfs, double *pTimeOut){
+  sqlite3_vfs *pRealVfs = ((ota_vfs*)pVfs)->pRealVfs;
+  return pRealVfs->xCurrentTime(pRealVfs, pTimeOut);
+}
+
+static int otaVfsGetLastError(sqlite3_vfs *pVfs, int a, char *b){
+  return 0;
+}
+
+void sqlite3ota_destroy_vfs(const char *zName){
+  sqlite3_vfs *pVfs = sqlite3_vfs_find(zName);
+  if( pVfs ){
+    sqlite3_vfs_unregister(pVfs);
+    sqlite3_free(pVfs);
+  }
+}
+
+int sqlite3ota_create_vfs(const char *zName, const char *zParent){
+
+  /* Template for VFS */
+  static sqlite3_vfs vfs_template = {
+    1,                            /* iVersion */
+    0,                            /* szOsFile */
+    0,                            /* mxPathname */
+    0,                            /* pNext */
+    0,                            /* zName */
+    0,                            /* pAppData */
+    otaVfsOpen,                   /* xOpen */
+    otaVfsDelete,                 /* xDelete */
+    otaVfsAccess,                 /* xAccess */
+    otaVfsFullPathname,           /* xFullPathname */
+
+    otaVfsDlOpen,                 /* xDlOpen */
+    otaVfsDlError,                /* xDlError */
+    otaVfsDlSym,                  /* xDlSym */
+    otaVfsDlClose,                /* xDlClose */
+
+    otaVfsRandomness,             /* xRandomness */
+    otaVfsSleep,                  /* xSleep */
+    otaVfsCurrentTime,            /* xCurrentTime */
+    otaVfsGetLastError,           /* xGetLastError */
+    0,                            /* xCurrentTimeInt64 (version 2) */
+    0, 0, 0                       /* Unimplemented version 3 methods */
+  };
+
+  sqlite3_vfs *pParent;           /* Parent VFS */
+  ota_vfs *pNew = 0;              /* Newly allocated VFS */
+  int nName;
+  int rc = SQLITE_OK;
+
+  nName = strlen(zName);
+  pParent = sqlite3_vfs_find(zParent);
+  if( pParent==0 ){
+    rc = SQLITE_NOTFOUND;
+  }else{
+    int nByte = sizeof(ota_vfs) + nName + 1;
+    pNew = (ota_vfs*)sqlite3_malloc(nByte);
+    if( pNew==0 ){
+      rc = SQLITE_NOMEM;
+    }else{
+      memset(pNew, 0, nByte);
+    }
+  }
+
+  if( rc==SQLITE_OK ){
+    char *zSpace;
+    memcpy(&pNew->base, &vfs_template, sizeof(sqlite3_vfs));
+    pNew->base.mxPathname = pParent->mxPathname;
+    pNew->base.szOsFile = sizeof(ota_file) + pParent->szOsFile;
+    pNew->pRealVfs = pParent;
+
+    pNew->base.zName = (const char*)(zSpace = (char*)&pNew[1]);
+    memcpy(zSpace, zName, nName);
+
+    /* Register the new VFS (not as the default) */
+    rc = sqlite3_vfs_register(&pNew->base, 0);
+    if( rc ){
+      sqlite3_free(pNew);
+    }
+  }
+
+  return rc;
+}
+
+static void otaCreateVfs(sqlite3ota *p, const char *zParent){
+  int rnd;
+  char zRnd[64];
+
+  assert( p->rc==SQLITE_OK );
+  sqlite3_randomness(sizeof(int), (void*)&rnd);
+  sprintf(zRnd, "ota_vfs_%d", rnd);
+  p->rc = sqlite3ota_create_vfs(zRnd, zParent);
+  if( p->rc==SQLITE_NOTFOUND ){
+    p->zErrmsg = sqlite3_mprintf("no such vfs: %s", zParent);
+  }else if( p->rc==SQLITE_OK ){
+    sqlite3_vfs *pVfs = sqlite3_vfs_find(zRnd);
+    assert( pVfs );
+    p->zVfsName = pVfs->zName;
+  }
+}
+
+static void otaDeleteVfs(sqlite3ota *p){
+  if( p->zVfsName ){
+    sqlite3ota_destroy_vfs(p->zVfsName);
+    p->zVfsName = 0;
+  }
 }
 
 
@@ -2235,9 +2932,76 @@ static int test_sqlite3ota(
   return TCL_OK;
 }
 
+/*
+** Tclcmd: sqlite3ota_create_vfs ?-default? NAME PARENT
+*/
+static int test_sqlite3ota_create_vfs(
+  ClientData clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  const char *zName;
+  const char *zParent;
+  int rc;
+
+  if( objc!=3 && objc!=4 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "?-default? NAME PARENT");
+    return TCL_ERROR;
+  }
+
+  zName = Tcl_GetString(objv[objc-2]);
+  zParent = Tcl_GetString(objv[objc-1]);
+  if( zParent[0]=='\0' ) zParent = 0;
+
+  rc = sqlite3ota_create_vfs(zName, zParent);
+  if( rc!=SQLITE_OK ){
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
+    return TCL_ERROR;
+  }else if( objc==4 ){
+    sqlite3_vfs *pVfs = sqlite3_vfs_find(zName);
+    sqlite3_vfs_register(pVfs, 1);
+  }
+
+  Tcl_ResetResult(interp);
+  return TCL_OK;
+}
+
+/*
+** Tclcmd: sqlite3ota_destroy_vfs NAME
+*/
+static int test_sqlite3ota_destroy_vfs(
+  ClientData clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  const char *zName;
+
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "NAME");
+    return TCL_ERROR;
+  }
+
+  zName = Tcl_GetString(objv[1]);
+  sqlite3ota_destroy_vfs(zName);
+  return TCL_OK;
+}
+
 
 int SqliteOta_Init(Tcl_Interp *interp){ 
-  Tcl_CreateObjCommand(interp, "sqlite3ota", test_sqlite3ota, 0, 0);
+  static struct {
+     char *zName;
+     Tcl_ObjCmdProc *xProc;
+  } aObjCmd[] = {
+    { "sqlite3ota", test_sqlite3ota },
+    { "sqlite3ota_create_vfs", test_sqlite3ota_create_vfs },
+    { "sqlite3ota_destroy_vfs", test_sqlite3ota_destroy_vfs },
+  };
+  int i;
+  for(i=0; i<sizeof(aObjCmd)/sizeof(aObjCmd[0]); i++){
+    Tcl_CreateObjCommand(interp, aObjCmd[i].zName, aObjCmd[i].xProc, 0, 0);
+  }
   return TCL_OK;
 }
 #endif                  /* ifdef SQLITE_TEST */

@@ -237,6 +237,15 @@ typedef struct sqlite3ota sqlite3ota;
 ** Argument zTarget is the path to the target database. Argument zOta is
 ** the path to the OTA database. Each call to this function must be matched
 ** by a call to sqlite3ota_close().
+**
+** By default, OTA uses the default VFS to access the files on disk. To
+** use a VFS other than the default, an SQLite "file:" URI containing a
+** "vfs=..." option may be passed as the zTarget option.
+**
+** IMPORTANT NOTE FOR ZIPVFS USERS: The OTA extension works with all of
+** SQLite's built-in VFSs, including the multiplexor VFS. However it does
+** not work out of the box with zipvfs. Refer to the comment describing
+** the zipvfs_create_vfs() API below for details on using OTA with zipvfs.
 */
 sqlite3ota *sqlite3ota_open(const char *zTarget, const char *zOta);
 
@@ -276,8 +285,8 @@ int sqlite3ota_step(sqlite3ota *pOta);
 /*
 ** Close an OTA handle. 
 **
-** If the OTA update has been completely applied, commit it to the target 
-** database. Otherwise, assuming no error has occurred, save the current 
+** If the OTA update has been completely applied, commit it to the target
+** database. Otherwise, assuming no error has occurred, save the current
 ** state of the OTA update appliation to the OTA database.
 **
 ** If an error has already occurred as part of an sqlite3ota_step()
@@ -299,6 +308,51 @@ int sqlite3ota_close(sqlite3ota *pOta, char **pzErrmsg);
 ** current OTA update was started.
 */
 sqlite3_int64 sqlite3ota_progress(sqlite3ota *pOta);
+
+/*
+** Part of the OTA implementation uses a custom VFS object. Usually, this
+** object is created and deleted automatically by OTA. 
+**
+** The exception is for applications that also use zipvfs. In this case,
+** the custom VFS must be explicitly created by the user before the OTA
+** handle is opened. The OTA VFS should be installed so that the zipvfs
+** VFS uses the OTA VFS, which in turn uses any other VFS layers in use 
+** (for example multiplexor) to access the file-system. For example,
+** to assemble an OTA enabled VFS stack that uses both zipvfs and 
+** multiplexor (error checking omitted):
+**
+**     // Create a VFS named "multiplexor" (not the default).
+**     sqlite3_multiplex_initialize(zVfsName, 0);
+**
+**     // Create an ota VFS named "ota" that uses multiplexor.
+**     sqlite3ota_create_vfs("ota", "multiplexor");
+**
+**     // Create a zipvfs VFS named "zipvfs" that uses ota. 
+**     zipvfs_create_vfs_v3("zipvfs", "ota", 0, xCompressorAlgorithmDetector);
+**
+**     // Make zipvfs the default VFS.
+**     sqlite3_vfs_register(sqlite3_vfs_find("zipvfs"), 1);
+**
+** Because the default VFS created above includes a OTA functionality, it
+** may be used by OTA clients. Attempting to use OTA with a zipvfs VFS stack
+** that does not include the OTA layer results in an error.
+**
+** The overhead of adding the "ota" VFS to the system is negligible for 
+** non-OTA users. There is no harm in an application accessing the 
+** file-system via "ota" all the time, even if it only uses OTA functionality 
+** occasionally.
+*/
+int sqlite3ota_create_vfs(const char *zName, const char *zParent);
+
+/*
+** Deregister and destroy an OTA vfs created by an earlier call to
+** sqlite3ota_create_vfs().
+**
+** VFS objects are not reference counted. If a VFS object is destroyed
+** before all database handles that use it have been closed, the results
+** are undefined.
+*/
+void sqlite3ota_destroy_vfs(const char *zName);
 
 #endif /* _SQLITE3OTA_H */
 
