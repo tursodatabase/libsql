@@ -1,5 +1,5 @@
-C Further\stweaks\sto\swork\swith\szipvfs.
-D 2015-02-10T20:00:38.125
+C Ensure\sthat\san\serror\sis\sreported\sif\san\sattempt\sis\smade\sto\supdate\sa\swal\smode\sdatabase\svia\sota.
+D 2015-02-11T16:25:27.816
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6b9e7677829aa94b9f30949656e27312aefb9a46
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -133,8 +133,9 @@ F ext/ota/ota6.test 1fbba5fd46e3e0bfa5ae1d0caf9da27d15cb7cdf
 F ext/ota/ota7.test 1fe2c5761705374530e29f70c39693076028221a
 F ext/ota/ota8.test cd70e63a0c29c45c0906692827deafa34638feda
 F ext/ota/ota9.test d3eee95dd836824d07a22e5efcdb7bf6e869358b
+F ext/ota/otaA.test 95566a8d193113867b960eadf85b310937f2fe03
 F ext/ota/otafault.test 508ba87c83d632670ac0f94371a465d4bb4d49dd
-F ext/ota/sqlite3ota.c 1f96966839c57e6a6f4ca8e8a771b23fbf79b8f6
+F ext/ota/sqlite3ota.c 7400075206e6cb8cbb32fc7268cb2fcf6321ea66
 F ext/ota/sqlite3ota.h 1cc7201086fe65a36957740381485a24738c4077
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 14e6239434d4e3f65d3e90320713f26aa24e167f
@@ -1253,7 +1254,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e729668168f00325459bc2e9b515aa95e57f2754
-R 245c10d0f1613c672374bc7bdeb81ab9
+P 0f152416be792457c52417aeb531ac860d12a5bd
+R d9bfc5d0f25bbcabd7abf7a0a51ab0ed
 U dan
-Z 8b6e26dd39381b8c315cf4c234f64cec
+Z 85c9979bf4d433f3d16c5b8b0ec7a03f

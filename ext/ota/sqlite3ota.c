@@ -188,8 +188,10 @@ struct ota_file {
   sqlite3_file *pReal;            /* Underlying file handle */
   ota_vfs *pOtaVfs;               /* Pointer to the ota_vfs object */
   sqlite3ota *pOta;               /* Pointer to ota object (ota target only) */
+
   int openFlags;                  /* Flags this file was opened with */
   unsigned int iCookie;           /* Cookie value for main db files */
+  unsigned char iWriteVer;        /* "write-version" value for main db files */
 
   int nShm;                       /* Number of entries in apShm[] array */
   char **apShm;                   /* Array of mmap'd *-shm regions */
@@ -2056,6 +2058,11 @@ sqlite3ota *sqlite3ota_open(const char *zTarget, const char *zOta){
       p->rc = sqlite3_exec(p->db, OTA_CREATE_STATE, 0, 0, &p->zErrmsg);
     }
 
+    if( p->rc==SQLITE_OK && p->pTargetFd->iWriteVer>1 ){
+      p->rc = SQLITE_ERROR;
+      p->zErrmsg = sqlite3_mprintf("cannot update wal mode database");
+    }
+
     if( p->rc==SQLITE_OK ){
       pState = otaLoadState(p);
       assert( pState || p->rc!=SQLITE_OK );
@@ -2264,7 +2271,11 @@ static int otaVfsRead(
   ota_file *p = (ota_file*)pFile;
   int rc = p->pReal->pMethods->xRead(p->pReal, zBuf, iAmt, iOfst);
   if( rc==SQLITE_OK && iOfst==0 && (p->openFlags & SQLITE_OPEN_MAIN_DB) ){
-    p->iCookie = otaGetU32((unsigned char*)&zBuf[24]);
+    /* These look like magic numbers. But they are stable, as they are part
+    ** of the definition of the SQLite file format, which may not change. */
+    unsigned char *pBuf = (unsigned char*)zBuf;
+    p->iCookie = otaGetU32(&pBuf[24]);
+    p->iWriteVer = pBuf[19];
   }
   return rc;
 }
@@ -2281,7 +2292,11 @@ static int otaVfsWrite(
   ota_file *p = (ota_file*)pFile;
   int rc = p->pReal->pMethods->xWrite(p->pReal, zBuf, iAmt, iOfst);
   if( rc==SQLITE_OK && iOfst==0 && (p->openFlags & SQLITE_OPEN_MAIN_DB) ){
-    p->iCookie = otaGetU32((unsigned char*)&zBuf[24]);
+    /* These look like magic numbers. But they are stable, as they are part
+    ** of the definition of the SQLite file format, which may not change. */
+    unsigned char *pBuf = (unsigned char*)zBuf;
+    p->iCookie = otaGetU32(&pBuf[24]);
+    p->iWriteVer = pBuf[19];
   }
   return rc;
 }
