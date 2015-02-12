@@ -442,37 +442,39 @@ static int fts3BestSnippet(
   sIter.nSnippet = nSnippet;
   sIter.nPhrase = nList;
   sIter.iCurrent = -1;
-  (void)fts3ExprIterate(pCsr->pExpr, fts3SnippetFindPositions, (void *)&sIter);
+  rc = fts3ExprIterate(pCsr->pExpr, fts3SnippetFindPositions, (void *)&sIter);
+  if( rc==SQLITE_OK ){
 
-  /* Set the *pmSeen output variable. */
-  for(i=0; i<nList; i++){
-    if( sIter.aPhrase[i].pHead ){
-      *pmSeen |= (u64)1 << i;
+    /* Set the *pmSeen output variable. */
+    for(i=0; i<nList; i++){
+      if( sIter.aPhrase[i].pHead ){
+        *pmSeen |= (u64)1 << i;
+      }
     }
-  }
 
-  /* Loop through all candidate snippets. Store the best snippet in 
-  ** *pFragment. Store its associated 'score' in iBestScore.
-  */
-  pFragment->iCol = iCol;
-  while( !fts3SnippetNextCandidate(&sIter) ){
-    int iPos;
-    int iScore;
-    u64 mCover;
-    u64 mHighlight;
-    fts3SnippetDetails(&sIter, mCovered, &iPos, &iScore, &mCover, &mHighlight);
-    assert( iScore>=0 );
-    if( iScore>iBestScore ){
-      pFragment->iPos = iPos;
-      pFragment->hlmask = mHighlight;
-      pFragment->covered = mCover;
-      iBestScore = iScore;
+    /* Loop through all candidate snippets. Store the best snippet in 
+     ** *pFragment. Store its associated 'score' in iBestScore.
+     */
+    pFragment->iCol = iCol;
+    while( !fts3SnippetNextCandidate(&sIter) ){
+      int iPos;
+      int iScore;
+      u64 mCover;
+      u64 mHighlite;
+      fts3SnippetDetails(&sIter, mCovered, &iPos, &iScore, &mCover,&mHighlite);
+      assert( iScore>=0 );
+      if( iScore>iBestScore ){
+        pFragment->iPos = iPos;
+        pFragment->hlmask = mHighlite;
+        pFragment->covered = mCover;
+        iBestScore = iScore;
+      }
     }
-  }
 
+    *piScore = iBestScore;
+  }
   sqlite3_free(sIter.aPhrase);
-  *piScore = iBestScore;
-  return SQLITE_OK;
+  return rc;
 }
 
 
