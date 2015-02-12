@@ -1,5 +1,5 @@
-C Propagate\sCOLLATE\soperators\supward\sthrough\sfunction\scalls\sand\sCASE\soperations.\nAnd\sdo\snot\sflatten\san\saggregate\ssubquery\sinto\sa\squery\sthat\suses\sother\nsubqueries.\s\sFixes\sfor\stickets\s[ca0d20b6cdddec5]\sand\n[2f7170d73bf9],\srespectively.
-D 2015-02-09T18:28:03.590
+C For\sthe\sshell\s'.import'\scommand,\smake\ssure\sthe\slast\scolumn\svalue\spresent\sis\sconsidered\sbefore\sNULL\sfilling\sany\smissing\sones.
+D 2015-02-12T22:45:25.976
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6b9e7677829aa94b9f30949656e27312aefb9a46
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -231,7 +231,7 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c f4d79e31ffa5820c2e3d1740baa5e9b190425f2b
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c e46cef4c224549b439384c88fc7f57ba064dad54
-F src/shell.c 82c25508dac802b32198af6f5256ca1597c6a1af
+F src/shell.c 6276582ee4e9114e0bb0795772414caaf21c0f8e
 F src/sqlite.h.in 54678c21401909f72b221344dd560d285a1ba5eb
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
@@ -862,7 +862,7 @@ F test/shell1.test ca88b14a8fc8b1f3543a24e519d019585ac9c903
 F test/shell2.test 12b8bf901b0e3a8ac58cf5c0c63a0a388d4d1862
 F test/shell3.test 5e8545ec72c4413a0e8d4c6be56496e3c257ca29
 F test/shell4.test 8a9c08976291e6c6c808b4d718f4a8b299f339f5
-F test/shell5.test 81aba4793fa7441b1300daae1aec4f7e4b5741c1
+F test/shell5.test c04e9f9f948305706b88377c464c7f08ce7479f9
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/show_speedtest1_rtree.tcl 32e6c5f073d7426148a6936a0408f4b5b169aba5
 F test/shrink.test 8c70f62b6e8eb4d54533de6d65bd06b1b9a17868
@@ -1239,8 +1239,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 937e0fe7008c0f76b6a584180df9a9457166a0b1 dd8f7f7511639a1baa41a6ff2e359dc6f1e66943
-R eaedb0adeed807300663dae355946d49
-T +closed dd8f7f7511639a1baa41a6ff2e359dc6f1e66943
-U drh
-Z 20be3d681a1333c92b781a8eb61382fe
+P 24e78b8d65734a6a8ae21a20542cd1839e756fb1
+R 5a56d277a5a92f00ac805dba68a851da
+U mistachkin
+Z bd61b6f3a5ec40c1d25c581a9db673bd
