@@ -1421,7 +1421,7 @@ int sqlite3_busy_handler(
   void *pArg
 ){
 #ifdef SQLITE_ENABLE_API_ARMOR
-  if( !sqlite3SafetyCheckOk(db) ) return SQLITE_MISUSE;
+  if( !sqlite3SafetyCheckOk(db) ) return SQLITE_MISUSE_BKPT;
 #endif
   sqlite3_mutex_enter(db->mutex);
   db->busyHandler.xFunc = xBusy;
@@ -3264,12 +3264,18 @@ int sqlite3_table_column_metadata(
   Table *pTab = 0;
   Column *pCol = 0;
   int iCol = 0;
-
   char const *zDataType = 0;
   char const *zCollSeq = 0;
   int notnull = 0;
   int primarykey = 0;
   int autoinc = 0;
+
+
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( !sqlite3SafetyCheckOk(db) || zTableName==0 ){
+    return SQLITE_MISUSE_BKPT;
+  }
+#endif
 
   /* Ensure the database schema has been loaded */
   sqlite3_mutex_enter(db->mutex);

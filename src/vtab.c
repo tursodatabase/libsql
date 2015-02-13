@@ -710,7 +710,9 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
   char *zErr = 0;
 
 #ifdef SQLITE_ENABLE_API_ARMOR
-  if( !sqlite3SafetyCheckOk(db) ) return SQLITE_MISUSE_BKPT;
+  if( !sqlite3SafetyCheckOk(db) || zCreateTable==0 ){
+    return SQLITE_MISUSE_BKPT;
+  }
 #endif
   sqlite3_mutex_enter(db->mutex);
   if( !db->pVtabCtx || !(pTab = db->pVtabCtx->pTab) ){
