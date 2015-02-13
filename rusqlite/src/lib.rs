@@ -311,7 +311,8 @@ impl SqliteConnection {
     /// This is functionally equivalent to the `Drop` implementation for `SqliteConnection` except
     /// that it returns any error encountered to the caller.
     pub fn close(self) -> SqliteResult<()> {
-        self.db.borrow_mut().close()
+        let mut db = self.db.borrow_mut();
+        db.close()
     }
 
     fn decode_result(&self, code: c_int) -> SqliteResult<()> {
