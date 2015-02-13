@@ -108,7 +108,7 @@ impl fmt::Display for SqliteError {
 
 impl error::Error for SqliteError {
     fn description(&self) -> &str {
-        ffi::code_to_str(self.code)
+        self.message.as_slice()
     }
 }
 
