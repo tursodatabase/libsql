@@ -1,5 +1,5 @@
-C For\sthe\sshell\s'.import'\scommand,\smake\ssure\sthe\slast\scolumn\svalue\spresent\sis\sconsidered\sbefore\sNULL\sfilling\sany\smissing\sones.
-D 2015-02-12T22:45:25.976
+C Make\ssure\sthe\sprepared\sstatement\sauto-resets\son\sextended\serror\scodes\nof\sSQLITE_BUSY\sand\sSQLITE_LOCKED\seven\swhen\scompiled\susing\nSQLITE_OMIT_AUTORESET.
+D 2015-02-13T12:05:56.027
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6b9e7677829aa94b9f30949656e27312aefb9a46
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -295,8 +295,8 @@ F src/util.c 98a7627ca48ad3265b6940915a1d08355eb3fc7e
 F src/vacuum.c 9b30ec729337dd012ed88d4c292922c8ef9cf00c
 F src/vdbe.c ddfc977981cd6324668aa6b114045eb1c677421a
 F src/vdbe.h 6fc69d9c5e146302c56e163cb4b31d1ee64a18c3
-F src/vdbeInt.h 9bb69ff2447c34b6ccc58b34ec35b615f86ead78
-F src/vdbeapi.c 4bc511a46b9839392ae0e90844a71dc96d9dbd71
+F src/vdbeInt.h bb56fd199d8af1a2c1b9639ee2f70724b4338e3a
+F src/vdbeapi.c 3d88089b10f71750b019a806224f0277d371a072
 F src/vdbeaux.c 97911edb61074b871ec4aa2d6bb779071643dee5
 F src/vdbeblob.c 4f2e8e075d238392df98c5e03a64342465b03f90
 F src/vdbemem.c 31d8eabb0cd78bfeab4e5124c7363c3e9e54db9f
@@ -1239,7 +1239,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 24e78b8d65734a6a8ae21a20542cd1839e756fb1
-R 5a56d277a5a92f00ac805dba68a851da
-U mistachkin
-Z bd61b6f3a5ec40c1d25c581a9db673bd
+P 9c5bcad1f7d04c16f3ec7fc483280059ae93961b
+R af13864c4a0da0631b5572a97e90dd3a
+U drh
+Z e7512897192b3651fafc4db87dc1b0b1
