@@ -405,4 +405,34 @@ SELECT * FROM t5;
   set x
 } "0 \{\"test 1\"\x1F,test 2<EOL>\x1Etest 3\x1Ftest 4<EOL>\x1E\}"
 
+do_test shell5-4.1 {
+  forcedelete shell5.csv
+  set fd [open shell5.csv w]
+  puts $fd "1,2,3"
+  puts $fd "4,5"
+  puts $fd "6,7,8"
+  close $fd
+  catchcmd test.db [string trim {
+.mode csv
+CREATE TABLE t6(a, b, c);
+.import shell5.csv t6
+  }]
+  db eval { SELECT * FROM t6 ORDER BY a }
+} {1 2 3 4 5 {} 6 7 8}
+
+do_test shell5-4.2 {
+  forcedelete shell5.csv
+  set fd [open shell5.csv w]
+  puts $fd "1,2,3"
+  puts $fd "4,5"
+  puts $fd "6,7,8,9"
+  close $fd
+  catchcmd test.db [string trim {
+.mode csv
+CREATE TABLE t7(a, b, c);
+.import shell5.csv t7
+  }]
+  db eval { SELECT * FROM t7 ORDER BY a }
+} {1 2 3 4 5 {} 6 7 8}
+
 finish_test

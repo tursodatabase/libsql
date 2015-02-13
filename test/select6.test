@@ -557,5 +557,61 @@ do_catchsql_test 10.8 {
   )
 } $err
 
+# 2015-02-09 Ticket [2f7170d73bf9abf80339187aa3677dce3dbcd5ca]
+# "misuse of aggregate" error if aggregate column from FROM
+# subquery is used in correlated subquery 
+#
+do_execsql_test 11.1 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(w INT, x INT);
+  INSERT INTO t1(w,x)
+   VALUES(1,10),(2,20),(3,30),
+         (2,21),(3,31),
+         (3,32);
+  CREATE INDEX t1wx ON t1(w,x);
+
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t2(w INT, y VARCHAR(8));
+  INSERT INTO t2(w,y) VALUES(1,'one'),(2,'two'),(3,'three'),(4,'four');
+  CREATE INDEX t2wy ON t2(w,y);
+
+  SELECT cnt, xyz, (SELECT y FROM t2 WHERE w=cnt), '|'
+    FROM (SELECT count(*) AS cnt, w AS xyz FROM t1 GROUP BY 2)
+   ORDER BY cnt, xyz;
+} {1 1 one | 2 2 two | 3 3 three |}
+do_execsql_test 11.2 {
+  SELECT cnt, xyz, lower((SELECT y FROM t2 WHERE w=cnt)), '|'
+    FROM (SELECT count(*) AS cnt, w AS xyz FROM t1 GROUP BY 2)
+   ORDER BY cnt, xyz;
+} {1 1 one | 2 2 two | 3 3 three |}
+do_execsql_test 11.3 {
+  SELECT cnt, xyz, '|'
+    FROM (SELECT count(*) AS cnt, w AS xyz FROM t1 GROUP BY 2)
+   WHERE (SELECT y FROM t2 WHERE w=cnt)!='two'
+   ORDER BY cnt, xyz;
+} {1 1 | 3 3 |}
+do_execsql_test 11.4 {
+  SELECT cnt, xyz, '|'
+    FROM (SELECT count(*) AS cnt, w AS xyz FROM t1 GROUP BY 2)
+   ORDER BY lower((SELECT y FROM t2 WHERE w=cnt));
+} {1 1 | 3 3 | 2 2 |}
+do_execsql_test 11.5 {
+  SELECT cnt, xyz, 
+         CASE WHEN (SELECT y FROM t2 WHERE w=cnt)=='two'
+              THEN 'aaa' ELSE 'bbb'
+          END, '|'
+    FROM (SELECT count(*) AS cnt, w AS xyz FROM t1 GROUP BY 2)
+   ORDER BY +cnt;
+} {1 1 bbb | 2 2 aaa | 3 3 bbb |}
+
+do_execsql_test 11.100 {
+  DROP TABLE t1;
+  DROP TABLE t2;
+  CREATE TABLE t1(x);
+  CREATE TABLE t2(y, z);
+  SELECT ( SELECT y FROM t2 WHERE z = cnt )
+    FROM ( SELECT count(*) AS cnt FROM t1 );
+} {{}}
+
 
 finish_test

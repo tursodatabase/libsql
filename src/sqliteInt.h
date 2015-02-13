@@ -2054,8 +2054,14 @@ struct Expr {
 #define EP_MemToken  0x010000 /* Need to sqlite3DbFree() Expr.zToken */
 #define EP_NoReduce  0x020000 /* Cannot EXPRDUP_REDUCE this Expr */
 #define EP_Unlikely  0x040000 /* unlikely() or likelihood() function */
-#define EP_Constant  0x080000 /* Node is a constant */
+#define EP_ConstFunc 0x080000 /* Node is a SQLITE_FUNC_CONSTANT function */
 #define EP_CanBeNull 0x100000 /* Can be null despite NOT NULL constraint */
+#define EP_Subquery  0x200000 /* Tree contains a TK_SELECT operator */
+
+/*
+** Combinations of two or more EP_* flags
+*/
+#define EP_Propagate (EP_Collate|EP_Subquery) /* Propagate these bits up tree */
 
 /*
 ** These macros can be used to test, set, or clear bits in the 
@@ -3163,6 +3169,7 @@ ExprList *sqlite3ExprListAppend(Parse*,ExprList*,Expr*);
 void sqlite3ExprListSetName(Parse*,ExprList*,Token*,int);
 void sqlite3ExprListSetSpan(Parse*,ExprList*,ExprSpan*);
 void sqlite3ExprListDelete(sqlite3*, ExprList*);
+u32 sqlite3ExprListFlags(const ExprList*);
 int sqlite3Init(sqlite3*, char**);
 int sqlite3InitCallback(void*, int, char**, char**);
 void sqlite3Pragma(Parse*,Token*,Token*,Token*,int);
@@ -3746,12 +3753,11 @@ void sqlite3MemJournalOpen(sqlite3_file *);
 int sqlite3MemJournalSize(void);
 int sqlite3IsMemJournal(sqlite3_file *);
 
+void sqlite3ExprSetHeightAndFlags(Parse *pParse, Expr *p);
 #if SQLITE_MAX_EXPR_DEPTH>0
-  void sqlite3ExprSetHeight(Parse *pParse, Expr *p);
   int sqlite3SelectExprHeight(Select *);
   int sqlite3ExprCheckHeight(Parse*, int);
 #else
-  #define sqlite3ExprSetHeight(x,y)
   #define sqlite3SelectExprHeight(x) 0
   #define sqlite3ExprCheckHeight(x,y)
 #endif

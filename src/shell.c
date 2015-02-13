@@ -3021,7 +3021,7 @@ static int do_meta_command(char *zLine, ShellState *p){
           fprintf(stderr, "%s:%d: expected %d columns but found %d - "
                           "filling the rest with NULL\n",
                           sCtx.zFile, startLine, nCol, i+1);
-          i++;
+          i += 2;
           while( i<=nCol ){ sqlite3_bind_null(pStmt, i); i++; }
         }
       }
