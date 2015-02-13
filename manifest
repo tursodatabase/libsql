@@ -1,5 +1,5 @@
-C Make\ssure\sthe\sprepared\sstatement\sauto-resets\son\sextended\serror\scodes\nof\sSQLITE_BUSY\sand\sSQLITE_LOCKED\seven\swhen\scompiled\susing\nSQLITE_OMIT_AUTORESET.
-D 2015-02-13T12:05:56.027
+C Improvements\sto\sSQLITE_ENABLE_API_ARMOR.
+D 2015-02-13T16:36:14.430
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6b9e7677829aa94b9f30949656e27312aefb9a46
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -176,7 +176,7 @@ F src/btmutex.c 49ca66250c7dfa844a4d4cb8272b87420d27d3a5
 F src/btree.c 2a1245df0356a229bcd0fd87a8536b5067f16e82
 F src/btree.h 94277c1d30c0b75705974bcc8b0c05e79c03d474
 F src/btreeInt.h a3d0ae1d511365e1a2b76ad10960dbe55c286f34
-F src/build.c eefaa4f1d86bc3c08023a61fdd1e695b47796975
+F src/build.c ba45ebd02904e84d98839a6ea74c3eb948596587
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c 198a0066ba60ab06fc00fba1998d870a4d575463
 F src/ctime.c 98f89724adc891a1a4c655bee04e33e716e05887
@@ -195,7 +195,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
 F src/loadext.c 86bd4e2fccd520b748cba52492ab60c4a770f660
-F src/main.c 17e3a37374f3c13e27311773c30720b61584f5b9
+F src/main.c 3780c966059a5fcb0afa42fd89e3b74ec1f72b9e
 F src/malloc.c 740db54387204c9a2eb67c6d98e68b08e9ef4eab
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c abe6ee469b6c5a35c7f22bfeb9c9bac664a1c987
@@ -206,9 +206,9 @@ F src/memjournal.c 3eb2c0b51adbd869cb6a44780323f05fa904dc85
 F src/msvc.h e78002098966e39b2fd9915bd70b7bc3ec8398b7
 F src/mutex.c 19bf9acba69ca2f367c3761080f8a9f0cf4670a8
 F src/mutex.h 779d588e3b7756ec3ecf7d78cde1d84aba414f85
-F src/mutex_noop.c f3f09fd7a2eb4287cfc799753ffc30380e7b71a1
-F src/mutex_unix.c 551e2f25f0fa0ee8fd7a43f50fc3d8be00e95dde
-F src/mutex_w32.c df48fe07562a45c5c927c45b8d5873a27f98bbb0
+F src/mutex_noop.c 529bab0743c3321c940f32c3464de494fd38cfa9
+F src/mutex_unix.c 5cf676464bd19e0a866297515d146e8bf1669dfb
+F src/mutex_w32.c a6f0b84068db2cbd96a94f23c622aeb875c57dff
 F src/notify.c 9711a7575036f0d3040ba61bc6e217f13a9888e7
 F src/os.c 8fd25588eeba74068d41102d26810e216999b6c8
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
@@ -226,7 +226,7 @@ F src/pcache1.c 1e77432b40b7d3288327d9cdf399dcdfd2b6d3bf
 F src/pragma.c ea0be138a99784b14e87bd4522fea40e7b979e9c
 F src/pragma.h 09c89bca58e9a44de2116cc8272b8d454657129f
 F src/prepare.c 173a5a499138451b2561614ecb87d78f9f4644b9
-F src/printf.c 05edc41450d0eb2c05ef7db113bf32742ae65325
+F src/printf.c 8da9a2687a396daa19860f4dc90975d319304744
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c f4d79e31ffa5820c2e3d1740baa5e9b190425f2b
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
@@ -287,7 +287,7 @@ F src/test_vfs.c 5a14c63da9579ba148138c1fb233100f2eb58ebb
 F src/test_vfstrace.c bab9594adc976cbe696ff3970728830b4c5ed698
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 6bbcc9fe50c917864d48287b4792d46d6e873481
-F src/tokenize.c e00458c9938072b0ea711c850b8dcf4ddcb5fe18
+F src/tokenize.c 05e52378c46efbc1fd63cbbbf7f3c555f840f4bf
 F src/trigger.c 25571661fdeae8c7f975ff40ffec205520a3f92f
 F src/update.c 3c4ecc282accf12d39edb8d524cf089645e55a13
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
@@ -302,7 +302,7 @@ F src/vdbeblob.c 4f2e8e075d238392df98c5e03a64342465b03f90
 F src/vdbemem.c 31d8eabb0cd78bfeab4e5124c7363c3e9e54db9f
 F src/vdbesort.c 6d64c5448b64851b99931ede980addc3af70d5e2
 F src/vdbetrace.c 7e4222955e07dd707a2f360c0eb73452be1cb010
-F src/vtab.c c08ec66f45919eaa726bf88aa53eb08379d607f9
+F src/vtab.c 699f2b8d509cfe379c33dde33827875d5b030e01
 F src/wal.c 39303f2c9db02a4e422cd8eb2c8760420c6a51fe
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
@@ -1239,7 +1239,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9c5bcad1f7d04c16f3ec7fc483280059ae93961b
-R af13864c4a0da0631b5572a97e90dd3a
+P 3c6ca414879feb1f5d31d5fd95a1737530aca624
+R f6208f1be504ea76c76eb647c7a3e38c
 U drh
-Z e7512897192b3651fafc4db87dc1b0b1
+Z 5fa0aaf45cc565051b14e7b2d21a11e0
