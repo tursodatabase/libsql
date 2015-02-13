@@ -1,3 +1,8 @@
+# Version 0.0.9 (2015-02-13)
+
+* Updates to track latest rustc changes.
+* Implement standard `Error` trait for `SqliteError`.
+
 # Version 0.0.8 (2015-02-04)
 
 * Updates to track latest rustc changes.
