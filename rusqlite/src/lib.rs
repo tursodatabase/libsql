@@ -57,6 +57,7 @@ extern crate libc;
 use std::mem;
 use std::ptr;
 use std::fmt;
+use std::error;
 use std::rc::{Rc};
 use std::cell::{RefCell, Cell};
 use std::ffi::{CString};
@@ -100,8 +101,14 @@ pub struct SqliteError {
 }
 
 impl fmt::Display for SqliteError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        write!(f, "SqliteError( code: {}, message: {} )", self.code, self.message)
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{} (SQLite error {})", self.message, self.code)
+    }
+}
+
+impl error::Error for SqliteError {
+    fn description(&self) -> &str {
+        ffi::code_to_str(self.code)
     }
 }
 
