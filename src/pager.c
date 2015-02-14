@@ -5181,7 +5181,6 @@ int sqlite3PagerSharedLock(Pager *pPager){
     ** mode. Otherwise, the following function call is a no-op.
     */
     rc = pagerOpenWalIfPresent(pPager);
-
 #ifndef SQLITE_OMIT_WAL
     assert( pPager->pWal==0 || rc==SQLITE_OK );
 #endif
@@ -7269,27 +7268,5 @@ int sqlite3PagerWalFramesize(Pager *pPager){
 }
 #endif
 
-#ifdef SQLITE_ENABLE_OTA
-
-/*
-** Open an incremental checkpoint handle.
-*/
-int sqlite3PagerWalCheckpointStart(
-  sqlite3 *db, 
-  Pager *pPager,
-  u8 *a, int n, 
-  sqlite3_ckpt **ppCkpt
-){
-  if( pPager->pWal==0 ){
-    *ppCkpt = 0;
-    return SQLITE_OK;
-  }else{
-    return sqlite3WalCheckpointStart(db, pPager->pWal, a, n,
-        pPager->xBusyHandler, pPager->pBusyHandlerArg,
-        pPager->ckptSyncFlags, ppCkpt
-    );
-  }
-}
-#endif /* !SQLITE_ENABLE_OTA */
 
 #endif /* SQLITE_OMIT_DISKIO */

@@ -198,7 +198,6 @@ foreach {tn3 create_vfs destroy_vfs} {
 
       do_test $tn3.1.$tn2.$tn.1 {
         create_ota1 ota.db
-        breakpoint
         $cmd test.db ota.db
       } {SQLITE_DONE}
 
@@ -475,6 +474,7 @@ foreach {tn3 create_vfs destroy_vfs} {
     }
   }
 
+  catch { db close }
   eval $destroy_vfs
 }
 

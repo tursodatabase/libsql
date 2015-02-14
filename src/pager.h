@@ -210,6 +210,4 @@ void *sqlite3PagerCodec(DbPage *);
 # define enable_simulated_io_errors()
 #endif
 
-int sqlite3PagerWalCheckpointStart(sqlite3*, Pager*, u8*, int, sqlite3_ckpt**);
-
 #endif /* _PAGER_H_ */

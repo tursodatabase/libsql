@@ -1976,33 +1976,6 @@ int sqlite3_wal_checkpoint_v2(
 #endif
 }
 
-#ifdef SQLITE_ENABLE_OTA
-/*
-** Open an incremental checkpoint handle.
-*/
-int sqlite3_ckpt_open(
-  sqlite3 *db, 
-  unsigned char *a, int n, 
-  sqlite3_ckpt **ppCkpt
-){
-  Pager *pPager = 0;
-  int rc;
-
-  *ppCkpt = 0;
-  sqlite3_mutex_enter(db->mutex);
-
-  /* Find the Pager object. */
-  rc = sqlite3_file_control(db,"main",SQLITE_FCNTL_ZIPVFS_PAGER,(void*)&pPager);
-  if( rc!=SQLITE_OK ){
-    pPager = sqlite3BtreePager(db->aDb[0].pBt);
-  }
-
-  rc = sqlite3PagerWalCheckpointStart(db, pPager, a, n, ppCkpt);
-  sqlite3_mutex_leave(db->mutex);
-  return rc;
-}
-#endif /* SQLITE_ENABLE_OTA */
-
 
 /*
 ** Checkpoint database zDb. If zDb is NULL, or if the buffer zDb points
