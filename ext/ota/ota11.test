@@ -71,7 +71,6 @@ do_test 2.2 {
   file exists test.db-wal
 } {1}
 
-breakpoint
 do_test 2.3 {
   sqlite3ota ota test.db ota.db
   ota step
@@ -80,6 +79,87 @@ do_test 2.3 {
 do_test 2.4 {
   list [catch {ota close} msg] $msg
 } {1 {SQLITE_ERROR - cannot update wal mode database}}
+
+#--------------------------------------------------------------------
+# Test a constraint violation message with an unusual table name. 
+# Specifically, one for which the first character is a codepoint
+# smaller than 30 (character '0').
+#
+reset_db
+do_execsql_test 3.1 {
+  CREATE TABLE "(t1)"(a PRIMARY KEY, b, c);
+  INSERT INTO "(t1)" VALUES(1, 2, 3);
+  INSERT INTO "(t1)" VALUES(4, 5, 6);
+}
+db close
+
+do_test 3.2 {
+  forcedelete ota.db
+  sqlite3 dbo ota.db
+  dbo eval {
+    CREATE TABLE "data_(t1)"(a, b, c, ota_control);
+    INSERT INTO "data_(t1)" VALUES(4, 8, 9, 0);
+  }
+  dbo close
+
+  sqlite3ota ota test.db ota.db
+  ota step
+  ota step
+} {SQLITE_CONSTRAINT}
+
+do_test 3.3 {
+  list [catch {ota close} msg] $msg
+} {1 {SQLITE_CONSTRAINT - UNIQUE constraint failed: (t1).a}}
+
+#--------------------------------------------------------------------
+# Check that once an OTA update has been applied, attempting to apply
+# it a second time is a no-op (as the state stored in the OTA database is
+# "all steps completed").
+#
+reset_db
+do_execsql_test 4.1 {
+  CREATE TABLE "(t1)"(a, b, c, PRIMARY KEY(c, b, a));
+  INSERT INTO "(t1)" VALUES(1, 2, 3);
+  INSERT INTO "(t1)" VALUES(4, 5, 6);
+}
+db close
+
+do_test 4.2 {
+  forcedelete ota.db
+  sqlite3 dbo ota.db
+  dbo eval {
+    CREATE TABLE "data_(t1)"(a, b, c, ota_control);
+    INSERT INTO "data_(t1)" VALUES(7, 8, 9, 0);
+    INSERT INTO "data_(t1)" VALUES(1, 2, 3, 1);
+  }
+  dbo close
+
+  sqlite3ota ota test.db ota.db
+  while {[ota step]=="SQLITE_OK"} { }
+  ota close
+} {SQLITE_DONE}
+
+do_test 4.3 {
+  sqlite3ota ota test.db ota.db
+  ota step
+} {SQLITE_DONE}
+
+do_test 4.4 {
+  ota close
+} {SQLITE_DONE}
+
+# Also, check that an invalid state value in the ota_state table is
+# detected and reported as corruption.
+do_test 4.5 {
+  sqlite3 dbo ota.db
+  dbo eval { UPDATE ota_state SET v = -1 WHERE k = 1 }
+  dbo close
+  sqlite3ota ota test.db ota.db
+  ota step
+} {SQLITE_CORRUPT}
+do_test 4.6 {
+  list [catch {ota close} msg] $msg
+} {1 SQLITE_CORRUPT}
 
 finish_test
 

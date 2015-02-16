@@ -394,22 +394,25 @@ static int otaObjIterNext(sqlite3ota *p, OtaObjIter *pIter){
         }else{
           pIter->zTbl = (const char*)sqlite3_column_text(pIter->pTblIter, 0);
           pIter->iTnum = sqlite3_column_int(pIter->pTblIter, 1);
-          rc = SQLITE_OK;
+          rc = pIter->zTbl ? SQLITE_OK : SQLITE_NOMEM;
         }
       }else{
         if( pIter->zIdx==0 ){
-          sqlite3_bind_text(pIter->pIdxIter, 1, pIter->zTbl, -1, SQLITE_STATIC);
+          sqlite3_stmt *pIdx = pIter->pIdxIter;
+          rc = sqlite3_bind_text(pIdx, 1, pIter->zTbl, -1, SQLITE_STATIC);
         }
-        rc = sqlite3_step(pIter->pIdxIter);
-        if( rc!=SQLITE_ROW ){
-          rc = sqlite3_reset(pIter->pIdxIter);
-          pIter->bCleanup = 1;
-          pIter->zIdx = 0;
-        }else{
-          pIter->zIdx = (const char*)sqlite3_column_text(pIter->pIdxIter, 0);
-          pIter->iTnum = sqlite3_column_int(pIter->pIdxIter, 1);
-          pIter->bUnique = sqlite3_column_int(pIter->pIdxIter, 2);
-          rc = SQLITE_OK;
+        if( rc==SQLITE_OK ){
+          rc = sqlite3_step(pIter->pIdxIter);
+          if( rc!=SQLITE_ROW ){
+            rc = sqlite3_reset(pIter->pIdxIter);
+            pIter->bCleanup = 1;
+            pIter->zIdx = 0;
+          }else{
+            pIter->zIdx = (const char*)sqlite3_column_text(pIter->pIdxIter, 0);
+            pIter->iTnum = sqlite3_column_int(pIter->pIdxIter, 1);
+            pIter->bUnique = sqlite3_column_int(pIter->pIdxIter, 2);
+            rc = pIter->zIdx ? SQLITE_OK : SQLITE_NOMEM;
+          }
         }
       }
     }
@@ -725,6 +728,7 @@ static int otaObjIterCacheTableInfo(sqlite3ota *p, OtaObjIter *pIter){
     }
     while( p->rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
       const char *zName = (const char*)sqlite3_column_text(pStmt, 1);
+      if( zName==0 ) break;  /* An OOM - finalize() below returns S_NOMEM */
       for(i=iOrder; i<pIter->nTblCol; i++){
         if( 0==strcmp(zName, pIter->azTblCol[i]) ) break;
       }
@@ -863,7 +867,7 @@ static char *otaObjIterGetIndexCols(
       ** its name. Otherwise, use "ota_rowid".  */
       if( pIter->eType==OTA_PK_IPK ){
         int i;
-        for(i=0; i<pIter->nTblCol && pIter->abTblPk[i]==0; i++);
+        for(i=0; pIter->abTblPk[i]==0; i++);
         assert( i<pIter->nTblCol );
         zCol = pIter->azTblCol[i];
       }else{
@@ -1007,7 +1011,7 @@ static char *otaObjIterGetWhere(
 */
 static void otaBadControlError(sqlite3ota *p){
   p->rc = SQLITE_ERROR;
-  p->zErrmsg = sqlite3_mprintf("Invalid ota_control value");
+  p->zErrmsg = sqlite3_mprintf("invalid ota_control value");
 }
 
 
@@ -1086,15 +1090,19 @@ static char *otaWithoutRowidPK(sqlite3ota *p, OtaObjIter *pIter){
     );
     while( p->rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pXList) ){
       const char *zOrig = (const char*)sqlite3_column_text(pXList,3);
-      if( zOrig && strcmp(zOrig,"pk")==0 ){
-        p->rc = prepareFreeAndCollectError(p->db, &pXInfo, &p->zErrmsg,
-          sqlite3_mprintf("PRAGMA main.index_xinfo = %Q",
-                           sqlite3_column_text(pXList,1))
-        );
+      if( zOrig && strcmp(zOrig, "pk")==0 ){
+        const char *zIdx = (const char*)sqlite3_column_text(pXList,1);
+        if( zIdx ){
+          p->rc = prepareFreeAndCollectError(p->db, &pXInfo, &p->zErrmsg,
+              sqlite3_mprintf("PRAGMA main.index_xinfo = %Q", zIdx)
+          );
+        }
         break;
       }
     }
-    sqlite3_finalize(pXList);
+    rc = sqlite3_finalize(pXList);
+    if( p->rc==SQLITE_OK ) p->rc = rc;
+
     while( p->rc==SQLITE_OK && pXInfo && SQLITE_ROW==sqlite3_step(pXInfo) ){
       if( sqlite3_column_int(pXInfo, 5) ){
         /* int iCid = sqlite3_column_int(pXInfo, 0); */
@@ -1105,7 +1113,6 @@ static char *otaWithoutRowidPK(sqlite3ota *p, OtaObjIter *pIter){
       }
     }
     z = otaMPrintf(p, "%z)", z);
-
     rc = sqlite3_finalize(pXInfo);
     if( p->rc==SQLITE_OK ) p->rc = rc;
   }
@@ -1730,10 +1737,17 @@ static int otaStepType(sqlite3ota *p, const char **pzMask){
       break;
     }
 
-    case SQLITE_TEXT:
-      *pzMask = (const char*)sqlite3_column_text(p->objiter.pSelect, iCol);
+    case SQLITE_TEXT: {
+      const unsigned char *z = sqlite3_column_text(p->objiter.pSelect, iCol);
+      if( z==0 ){
+        p->rc = SQLITE_NOMEM;
+      }else{
+        *pzMask = (const char*)z;
+      }
       res = OTA_UPDATE;
+
       break;
+    }
 
     default:
       break;
@@ -1813,7 +1827,9 @@ static int otaStep(sqlite3ota *p){
         }
 
         pVal = sqlite3_column_value(pIter->pSelect, i);
-        sqlite3_bind_value(pWriter, i+1, pVal);
+        p->rc = sqlite3_bind_value(pWriter, i+1, pVal);
+        if( p->rc==SQLITE_RANGE ) p->rc = SQLITE_OK;
+        if( p->rc ) goto step_out;
       }
       if( pIter->zIdx==0
        && (pIter->eType==OTA_PK_VTAB || pIter->eType==OTA_PK_NONE) 
@@ -1827,27 +1843,36 @@ static int otaStep(sqlite3ota *p){
         */
         assertColumnName(pIter->pSelect, pIter->nCol+1, "ota_rowid");
         pVal = sqlite3_column_value(pIter->pSelect, pIter->nCol+1);
-        sqlite3_bind_value(pWriter, pIter->nCol+1, pVal);
+        p->rc = sqlite3_bind_value(pWriter, pIter->nCol+1, pVal);
       }
-      sqlite3_step(pWriter);
-      p->rc = resetAndCollectError(pWriter, &p->zErrmsg);
+      if( p->rc==SQLITE_OK ){
+        sqlite3_step(pWriter);
+        p->rc = resetAndCollectError(pWriter, &p->zErrmsg);
+      }
     }else if( eType==OTA_UPDATE ){
       sqlite3_value *pVal;
       sqlite3_stmt *pUpdate = 0;
       otaGetUpdateStmt(p, pIter, zMask, &pUpdate);
       if( pUpdate ){
         for(i=0; p->rc==SQLITE_OK && i<pIter->nCol; i++){
+          char c = zMask[pIter->aiSrcOrder[i]];
           pVal = sqlite3_column_value(pIter->pSelect, i);
-          sqlite3_bind_value(pUpdate, i+1, pVal);
+          if( pIter->abTblPk[i] || c=='x' || c=='d' ){
+            p->rc = sqlite3_bind_value(pUpdate, i+1, pVal);
+          }
         }
-        if( pIter->eType==OTA_PK_VTAB || pIter->eType==OTA_PK_NONE ){
+        if( p->rc==SQLITE_OK 
+         && (pIter->eType==OTA_PK_VTAB || pIter->eType==OTA_PK_NONE) 
+        ){
           /* Bind the ota_rowid value to column _rowid_ */
           assertColumnName(pIter->pSelect, pIter->nCol+1, "ota_rowid");
           pVal = sqlite3_column_value(pIter->pSelect, pIter->nCol+1);
-          sqlite3_bind_value(pUpdate, pIter->nCol+1, pVal);
+          p->rc = sqlite3_bind_value(pUpdate, pIter->nCol+1, pVal);
         }
-        sqlite3_step(pUpdate);
-        p->rc = resetAndCollectError(pUpdate, &p->zErrmsg);
+        if( p->rc==SQLITE_OK ){
+          sqlite3_step(pUpdate);
+          p->rc = resetAndCollectError(pUpdate, &p->zErrmsg);
+        }
       }
     }else{
       /* no-op */
@@ -2179,18 +2204,6 @@ sqlite3ota *sqlite3ota_open(const char *zTarget, const char *zOta){
       p->rc = sqlite3_exec(p->db, OTA_CREATE_STATE, 0, 0, &p->zErrmsg);
     }
 
-    /* Check that this is not a wal mode database. If it is, it cannot be
-    ** updated. There is also a check for a live *-wal file in otaVfsAccess()
-    ** function, on the off chance that the target is a wal database for
-    ** which the first page of the db file has been overwritten by garbage
-    ** during an earlier failed checkpoint.  */
-#if 0
-    if( p->rc==SQLITE_OK && p->pTargetFd->iWriteVer>1 ){
-      p->rc = SQLITE_ERROR;
-      p->zErrmsg = sqlite3_mprintf("cannot update wal mode database");
-    }
-#endif
-
     if( p->rc==SQLITE_OK ){
       pState = otaLoadState(p);
       assert( pState || p->rc!=SQLITE_OK );
@@ -2209,6 +2222,9 @@ sqlite3ota *sqlite3ota_open(const char *zTarget, const char *zOta){
 
     if( p->rc==SQLITE_OK ){
       if( p->eStage==OTA_STAGE_OAL ){
+
+        /* Check that this is not a wal mode database. If it is, it cannot 
+        ** be updated.  */
         if( p->pTargetFd->pWalFd ){
           p->rc = SQLITE_ERROR;
           p->zErrmsg = sqlite3_mprintf("cannot update wal mode database");
@@ -2243,6 +2259,8 @@ sqlite3ota *sqlite3ota_open(const char *zTarget, const char *zOta){
         p->nStep = pState->nRow;
       }else if( p->eStage==OTA_STAGE_DONE ){
         p->rc = SQLITE_DONE;
+      }else{
+        p->rc = SQLITE_CORRUPT;
       }
     }
 
@@ -2418,10 +2436,8 @@ static int otaVfsRead(
   ota_file *p = (ota_file*)pFile;
   int rc;
 
-  if( p->pOta 
-   && p->pOta->eStage==OTA_STAGE_CAPTURE
-   && (p->openFlags & SQLITE_OPEN_WAL) 
-  ){
+  if( p->pOta && p->pOta->eStage==OTA_STAGE_CAPTURE ){
+    assert( p->openFlags & SQLITE_OPEN_WAL );
     rc = otaCaptureWalRead(p->pOta, iOfst, iAmt);
   }else{
     rc = p->pReal->pMethods->xRead(p->pReal, zBuf, iAmt, iOfst);
@@ -2447,10 +2463,8 @@ static int otaVfsWrite(
 ){
   ota_file *p = (ota_file*)pFile;
   int rc;
-  if( p->pOta 
-   && p->pOta->eStage==OTA_STAGE_CAPTURE
-   && (p->openFlags & SQLITE_OPEN_MAIN_DB)
-  ){
+  if( p->pOta && p->pOta->eStage==OTA_STAGE_CAPTURE ){
+    assert( p->openFlags & SQLITE_OPEN_MAIN_DB );
     rc = otaCaptureDbWrite(p->pOta, iOfst);
   }else{
     rc = p->pReal->pMethods->xWrite(p->pReal, zBuf, iAmt, iOfst);

@@ -20,6 +20,7 @@ set ::testprefix otafault
 do_test 1.1 {
   forcedelete ota.db
   execsql {
+    PRAGMA encoding = utf16;
     CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
     CREATE INDEX t1cb ON t1(c, b);
     INSERT INTO t1 VALUES(1, 1, 1);
@@ -49,40 +50,68 @@ do_test 1.1 {
   forcecopy ota.db ota.db.bak
 } {}
 
-do_faultsim_test 2 -faults oom-trans* -prep {
-  catch { db close }
-  forcedelete test.db-journal test.db-wal ota.db-journal ota.db-wal
-  forcecopy test.db.bak test.db
-  forcecopy ota.db.bak  ota.db
-} -body {
-  sqlite3ota ota test.db ota.db
-  while {[ota step]=="SQLITE_OK"} {}
-  ota close
-} -test {
-  faultsim_test_result {0 SQLITE_DONE} \
-                       {1 {SQLITE_NOMEM - out of memory}} \
-                       {1 SQLITE_NOMEM} \
-                       {1 SQLITE_IOERR_NOMEM} \
-                       {1 {SQLITE_NOMEM - unable to open a temporary database file for storing temporary tables}}
-  if {$testrc==0} {
-    sqlite3 db test.db
-    faultsim_integrity_check
-    set res [db eval {
-      SELECT * FROM t1 UNION ALL SELECT * FROM t2;
-    }]
-    set expected [list {*}{
-      1 1 1   3 three 3   4 4 4
-      a a a   c see c     d d d
-    }]
+sqlite3_shutdown
+set lookaside_config [sqlite3_config_lookaside 0 0]
+sqlite3_initialize
+autoinstall_test_functions
 
-    if {$res != $expected} {
-      puts ""
-      puts "res: $res"
-      puts "exp: $expected"
-      error "data not as expected!"
+foreach {tn f reslist} {
+  1 oom-tra*  {
+    {0 SQLITE_DONE} 
+    {1 {SQLITE_NOMEM - out of memory}} 
+    {1 SQLITE_NOMEM} 
+    {1 SQLITE_IOERR_NOMEM} 
+    {1 {SQLITE_NOMEM - unable to open a temporary database file for storing temporary tables}}
+  }
+  2 ioerr-*  {
+    {0 SQLITE_DONE} 
+    {1 {SQLITE_IOERR - disk I/O error}}
+    {1 SQLITE_IOERR}
+    {1 SQLITE_IOERR_WRITE}
+    {1 SQLITE_IOERR_READ}
+    {1 SQLITE_IOERR_FSYNC}
+    {1 {SQLITE_ERROR - SQL logic error or missing database}}
+    {1 {SQLITE_ERROR - unable to open database: ota.db}}
+    {1 {SQLITE_IOERR - unable to open database: ota.db}}
+  }
+} {
+  do_faultsim_test 2 -faults $::f -prep {
+    catch { db close }
+    forcedelete test.db-journal test.db-wal ota.db-journal ota.db-wal
+    forcecopy test.db.bak test.db
+    forcecopy ota.db.bak  ota.db
+  } -body {
+    sqlite3ota ota test.db ota.db
+    while {[ota step]=="SQLITE_OK"} {}
+    ota close
+  } -test {
+    faultsim_test_result {*}$::reslist
+    if {$testrc==0} {
+      sqlite3 db test.db
+      faultsim_integrity_check
+      set res [db eval {
+        SELECT * FROM t1 UNION ALL SELECT * FROM t2;
+      }]
+      set expected [list {*}{
+        1 1 1   3 three 3   4 4 4
+        a a a   c see c     d d d
+      }]
+  
+      if {$res != $expected} {
+        puts ""
+        puts "res: $res"
+        puts "exp: $expected"
+        error "data not as expected!"
+      }
     }
   }
 }
+
+catch {db close}
+sqlite3_shutdown
+sqlite3_config_lookaside {*}$lookaside_config
+sqlite3_initialize
+autoinstall_test_functions
 
 proc copy_if_exists {src target} {
   if {[file exists $src]} {

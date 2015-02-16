@@ -56,6 +56,26 @@ proc create_ota4 {filename} {
   ota1 close
   return $filename
 }
+#
+# Create a simple OTA database. That expects to write to a table:
+#
+#   CREATE TABLE t1(c, b, '(a)' INTEGER PRIMARY KEY);
+#
+# This OTA includes both insert and delete operations.
+#
+proc create_ota4b {filename} {
+  forcedelete $filename
+  sqlite3 ota1 $filename  
+  ota1 eval {
+    CREATE TABLE data_t1(c, b, '(a)', ota_control);
+    INSERT INTO data_t1 VALUES(3, 2, 1, 0);
+    INSERT INTO data_t1 VALUES(5, NULL, 2, 1);
+    INSERT INTO data_t1 VALUES(9, 8, 3, 0);
+    INSERT INTO data_t1 VALUES(11, NULL, 4, 1);
+  }
+  ota1 close
+  return $filename
+}
 
 # Create a simple OTA database. That expects to write to a table:
 #
@@ -368,6 +388,44 @@ foreach {tn3 create_vfs destroy_vfs} {
     }
   }
 
+  foreach {tn2 cmd} {1 run_ota 2 step_ota} {
+    foreach {tn schema} {
+      1 {
+        CREATE TABLE t1(c, b, '(a)' INTEGER PRIMARY KEY);
+        CREATE INDEX i1 ON t1(c, b);
+      }
+      2 {
+        CREATE TABLE t1(c, b, '(a)' PRIMARY KEY);
+      }
+      3 {
+        CREATE TABLE t1(c, b, '(a)' PRIMARY KEY) WITHOUT ROWID;
+      }
+    } {
+      reset_db
+      execsql $schema
+      execsql {
+        INSERT INTO t1('(a)', b, c) VALUES(2, 'hello', 'world');
+        INSERT INTO t1('(a)', b, c) VALUES(4, 'hello', 'planet');
+        INSERT INTO t1('(a)', b, c) VALUES(6, 'hello', 'xyz');
+      }
+    
+      do_test $tn3.4.$tn2.$tn.1 {
+        create_ota4b ota.db
+        $cmd test.db ota.db
+      } {SQLITE_DONE}
+      
+      do_execsql_test $tn3.4.$tn2.$tn.2 {
+        SELECT * FROM t1 ORDER BY "(a)" ASC;
+      } {
+        3 2 1
+        9 8 3
+        xyz hello 6
+      }
+    
+      do_execsql_test $tn3.4.$tn2.$tn.3 { PRAGMA integrity_check } ok
+    }
+  }
+
   #-------------------------------------------------------------------------
   #
   foreach {tn2 cmd} {1 run_ota 2 step_ota} {
@@ -435,6 +493,8 @@ foreach {tn3 create_vfs destroy_vfs} {
   #   * A no-PK table with no ota_rowid column.
   #   * A PK table with an ota_rowid column.
   #
+  #   6: An update string of the wrong length
+  #
   ifcapable fts3 {
     foreach {tn schema error} {
        1 {
@@ -461,6 +521,12 @@ foreach {tn3 create_vfs destroy_vfs} {
          CREATE TABLE t1(a, b PRIMARY KEY) WITHOUT ROWID;
          CREATE TABLE ota.data_t1(a, b, ota_rowid, ota_control);
        } {SQLITE_ERROR - table data_t1 may not have ota_rowid column}
+
+       6 {
+         CREATE TABLE t1(a, b PRIMARY KEY) WITHOUT ROWID;
+         CREATE TABLE ota.data_t1(a, b, ota_control);
+         INSERT INTO ota.data_t1 VALUES(1, 2, 'x.x');
+       } {SQLITE_ERROR - invalid ota_control value}
     
     } {
       reset_db
