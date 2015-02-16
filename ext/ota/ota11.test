@@ -1,0 +1,85 @@
+# 2015 February 16
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+
+if {![info exists testdir]} {
+  set testdir [file join [file dirname [info script]] .. .. test]
+}
+source $testdir/tester.tcl
+set ::testprefix ota11
+
+
+#--------------------------------------------------------------------
+# Test that the xAccess() method of an ota vfs handles queries other
+# than SQLITE_ACCESS_EXISTS correctly. The test code below causes
+# SQLite to call xAccess(SQLITE_ACCESS_READWRITE) on the directory
+# path argument passed to "PRAGMA temp_store_directory".
+#
+do_test 1.1 {
+  sqlite3ota_create_vfs -default ota ""
+  reset_db
+  catchsql { PRAGMA temp_store_directory = '/no/such/directory' }
+} {1 {not a writable directory}}
+
+do_test 1.2 {
+  catchsql " PRAGMA temp_store_directory = '[pwd]' "
+} {0 {}}
+
+do_test 1.3 {
+  catchsql " PRAGMA temp_store_directory = '' "
+} {0 {}}
+
+do_test 1.4 {
+  db close
+  sqlite3ota_destroy_vfs ota
+} {}
+
+#--------------------------------------------------------------------
+# Try to trick ota into operating on a database opened in wal mode.
+#
+reset_db
+do_execsql_test 2.1 {
+  CREATE TABLE t1(a PRIMARY KEY, b, c);
+  INSERT INTO t1 VALUES(1, 2, 3);
+  PRAGMA journal_mode = 'wal';
+  CREATE TABLE t2(d PRIMARY KEY, e, f);
+} {wal}
+
+do_test 2.2 {
+  db_save 
+  db close
+
+  forcedelete ota.db
+  sqlite3 dbo ota.db
+  dbo eval {
+    CREATE TABLE data_t1(a, b, c, ota_control);
+    INSERT INTO data_t1 VALUES(4, 5, 6, 0);
+    INSERT INTO data_t1 VALUES(7, 8, 9, 0);
+  }
+  dbo close
+
+  db_restore 
+  hexio_write test.db 18 0101
+  file exists test.db-wal
+} {1}
+
+breakpoint
+do_test 2.3 {
+  sqlite3ota ota test.db ota.db
+  ota step
+} {SQLITE_ERROR}
+
+do_test 2.4 {
+  list [catch {ota close} msg] $msg
+} {1 {SQLITE_ERROR - cannot update wal mode database}}
+
+finish_test
+

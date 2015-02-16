@@ -113,6 +113,7 @@ struct OtaState {
   i64 iWalCksum;
   int nRow;
   i64 nProgress;
+  u32 iCookie;
 };
 
 /*
@@ -234,9 +235,6 @@ struct ota_file {
   ota_file *pMainNext;            /* Next MAIN_DB file */
 };
 
-
-static void otaCreateVfs(sqlite3ota*, const char*);
-static void otaDeleteVfs(sqlite3ota*);
 
 /*
 ** Prepare the SQL statement in buffer zSql against database handle db.
@@ -2069,16 +2067,7 @@ static OtaState *otaLoadState(sqlite3ota *p){
         break;
 
       case OTA_STATE_COOKIE:
-        /* At this point (p->iCookie) contains the value of the change-counter
-        ** cookie (the thing that gets incremented when a transaction is 
-        ** committed in rollback mode) currently stored on page 1 of the 
-        ** database file. */
-        if( pRet->eStage==OTA_STAGE_OAL 
-         && p->pTargetFd->iCookie!=(u32)sqlite3_column_int64(pStmt, 1) 
-        ){
-          rc = SQLITE_BUSY;
-          p->zErrmsg = sqlite3_mprintf("database modified during ota update");
-        }
+        pRet->iCookie = (u32)sqlite3_column_int64(pStmt, 1);
         break;
 
       default:
@@ -2138,6 +2127,28 @@ static void otaDeleteOalFile(sqlite3ota *p){
   sqlite3_free(zOal);
 }
 
+static void otaCreateVfs(sqlite3ota *p){
+  int rnd;
+  char zRnd[64];
+
+  assert( p->rc==SQLITE_OK );
+  sqlite3_randomness(sizeof(int), (void*)&rnd);
+  sprintf(zRnd, "ota_vfs_%d", rnd);
+  p->rc = sqlite3ota_create_vfs(zRnd, 0);
+  if( p->rc==SQLITE_OK ){
+    sqlite3_vfs *pVfs = sqlite3_vfs_find(zRnd);
+    assert( pVfs );
+    p->zVfsName = pVfs->zName;
+  }
+}
+
+static void otaDeleteVfs(sqlite3ota *p){
+  if( p->zVfsName ){
+    sqlite3ota_destroy_vfs(p->zVfsName);
+    p->zVfsName = 0;
+  }
+}
+
 /*
 ** Open and return a new OTA handle. 
 */
@@ -2152,7 +2163,7 @@ sqlite3ota *sqlite3ota_open(const char *zTarget, const char *zOta){
 
     /* Create the custom VFS. */
     memset(p, 0, sizeof(sqlite3ota));
-    otaCreateVfs(p, 0);
+    otaCreateVfs(p);
 
     /* Open the target database */
     if( p->rc==SQLITE_OK ){
@@ -2173,15 +2184,18 @@ sqlite3ota *sqlite3ota_open(const char *zTarget, const char *zOta){
     ** function, on the off chance that the target is a wal database for
     ** which the first page of the db file has been overwritten by garbage
     ** during an earlier failed checkpoint.  */
+#if 0
     if( p->rc==SQLITE_OK && p->pTargetFd->iWriteVer>1 ){
       p->rc = SQLITE_ERROR;
       p->zErrmsg = sqlite3_mprintf("cannot update wal mode database");
     }
+#endif
 
     if( p->rc==SQLITE_OK ){
       pState = otaLoadState(p);
       assert( pState || p->rc!=SQLITE_OK );
       if( p->rc==SQLITE_OK ){
+
         if( pState->eStage==0 ){ 
           otaDeleteOalFile(p);
           p->eStage = OTA_STAGE_OAL;
@@ -2195,6 +2209,21 @@ sqlite3ota *sqlite3ota_open(const char *zTarget, const char *zOta){
 
     if( p->rc==SQLITE_OK ){
       if( p->eStage==OTA_STAGE_OAL ){
+        if( p->pTargetFd->pWalFd ){
+          p->rc = SQLITE_ERROR;
+          p->zErrmsg = sqlite3_mprintf("cannot update wal mode database");
+        }
+
+        /* At this point (pTargetFd->iCookie) contains the value of the
+        ** change-counter cookie (the thing that gets incremented when a 
+        ** transaction is committed in rollback mode) currently stored on 
+        ** page 1 of the database file. */
+        else if( pState->eStage==OTA_STAGE_OAL 
+         && p->pTargetFd->iCookie!=pState->iCookie 
+        ){
+          p->rc = SQLITE_BUSY;
+          p->zErrmsg = sqlite3_mprintf("database modified during ota update");
+        }
 
         /* Open the transaction */
         if( p->rc==SQLITE_OK ){
@@ -2357,6 +2386,7 @@ static int otaVfsClose(sqlite3_file *pFile){
     for(pp=&p->pOtaVfs->pMain; *pp!=p; pp=&((*pp)->pMainNext));
     *pp = p->pMainNext;
     sqlite3_mutex_leave(p->pOtaVfs->mutex);
+    p->pReal->pMethods->xShmUnmap(p->pReal, 0);
   }
 
   /* Close the underlying file handle */
@@ -2911,7 +2941,7 @@ static int otaVfsGetLastError(sqlite3_vfs *pVfs, int a, char *b){
 
 void sqlite3ota_destroy_vfs(const char *zName){
   sqlite3_vfs *pVfs = sqlite3_vfs_find(zName);
-  if( pVfs ){
+  if( pVfs && pVfs->xOpen==otaVfsOpen ){
     sqlite3_vfs_unregister(pVfs);
     sqlite3_free(pVfs);
   }
@@ -2945,67 +2975,41 @@ int sqlite3ota_create_vfs(const char *zName, const char *zParent){
     0, 0, 0                       /* Unimplemented version 3 methods */
   };
 
-  sqlite3_vfs *pParent;           /* Parent VFS */
   ota_vfs *pNew = 0;              /* Newly allocated VFS */
   int nName;
   int rc = SQLITE_OK;
 
+  int nByte;
   nName = strlen(zName);
-  pParent = sqlite3_vfs_find(zParent);
-  if( pParent==0 ){
-    rc = SQLITE_NOTFOUND;
+  nByte = sizeof(ota_vfs) + nName + 1;
+  pNew = (ota_vfs*)sqlite3_malloc(nByte);
+  if( pNew==0 ){
+    rc = SQLITE_NOMEM;
   }else{
-    int nByte = sizeof(ota_vfs) + nName + 1;
-    pNew = (ota_vfs*)sqlite3_malloc(nByte);
-    if( pNew==0 ){
-      rc = SQLITE_NOMEM;
+    sqlite3_vfs *pParent;           /* Parent VFS */
+    memset(pNew, 0, nByte);
+    pParent = sqlite3_vfs_find(zParent);
+    if( pParent==0 ){
+      rc = SQLITE_NOTFOUND;
     }else{
-      memset(pNew, 0, nByte);
+      char *zSpace;
+      memcpy(&pNew->base, &vfs_template, sizeof(sqlite3_vfs));
+      pNew->base.mxPathname = pParent->mxPathname;
+      pNew->base.szOsFile = sizeof(ota_file) + pParent->szOsFile;
+      pNew->pRealVfs = pParent;
+
+      pNew->base.zName = (const char*)(zSpace = (char*)&pNew[1]);
+      memcpy(zSpace, zName, nName);
+
+      /* Register the new VFS (not as the default) */
+      rc = sqlite3_vfs_register(&pNew->base, 0);
     }
   }
 
-  if( rc==SQLITE_OK ){
-    char *zSpace;
-    memcpy(&pNew->base, &vfs_template, sizeof(sqlite3_vfs));
-    pNew->base.mxPathname = pParent->mxPathname;
-    pNew->base.szOsFile = sizeof(ota_file) + pParent->szOsFile;
-    pNew->pRealVfs = pParent;
-
-    pNew->base.zName = (const char*)(zSpace = (char*)&pNew[1]);
-    memcpy(zSpace, zName, nName);
-
-    /* Register the new VFS (not as the default) */
-    rc = sqlite3_vfs_register(&pNew->base, 0);
-    if( rc ){
-      sqlite3_free(pNew);
-    }
+  if( rc!=SQLITE_OK ){
+    sqlite3_free(pNew);
   }
-
   return rc;
-}
-
-static void otaCreateVfs(sqlite3ota *p, const char *zParent){
-  int rnd;
-  char zRnd[64];
-
-  assert( p->rc==SQLITE_OK );
-  sqlite3_randomness(sizeof(int), (void*)&rnd);
-  sprintf(zRnd, "ota_vfs_%d", rnd);
-  p->rc = sqlite3ota_create_vfs(zRnd, zParent);
-  if( p->rc==SQLITE_NOTFOUND ){
-    p->zErrmsg = sqlite3_mprintf("no such vfs: %s", zParent);
-  }else if( p->rc==SQLITE_OK ){
-    sqlite3_vfs *pVfs = sqlite3_vfs_find(zRnd);
-    assert( pVfs );
-    p->zVfsName = pVfs->zName;
-  }
-}
-
-static void otaDeleteVfs(sqlite3ota *p){
-  if( p->zVfsName ){
-    sqlite3ota_destroy_vfs(p->zVfsName);
-    p->zVfsName = 0;
-  }
 }
 
 

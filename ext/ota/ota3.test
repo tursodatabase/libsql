@@ -135,5 +135,23 @@ do_execsql_test 2.5 {
   PRAGMA integrity_check;
 } {ok}
 
+
+#-------------------------------------------------------------------------
+# Test that sqlite3ota_create_vfs() returns an error if the requested 
+# parent VFS is unknown.
+#
+# And that nothing disasterous happens if a VFS name passed to
+# sqlite3ota_destroy_vfs() is unknown or not an OTA vfs.
+#
+do_test 3.1 {
+  list [catch {sqlite3ota_create_vfs xyz nosuchparent} msg] $msg
+} {1 SQLITE_NOTFOUND}
+
+do_test 3.2 {
+  sqlite3ota_destroy_vfs nosuchvfs
+  sqlite3ota_destroy_vfs unix
+  sqlite3ota_destroy_vfs win32
+} {}
+
 finish_test
 
