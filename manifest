@@ -1,5 +1,5 @@
-C Change\sthe\sway\sthe\s"incremental\scheckpoint"\sfunction\sof\sOTA\sworks\sin\sorder\sto\sreduce\sthe\seffect\son\sthe\sSQLite\score\scode.
-D 2015-02-14T18:58:22.415
+C Move\stcl\stest\scode\sfrom\ssqlite3ota.c\sto\snew\sfile\sext/ota/test_ota.c.
+D 2015-02-16T06:27:37.241
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6b9e7677829aa94b9f30949656e27312aefb9a46
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -135,8 +135,9 @@ F ext/ota/ota8.test cd70e63a0c29c45c0906692827deafa34638feda
 F ext/ota/ota9.test d3eee95dd836824d07a22e5efcdb7bf6e869358b
 F ext/ota/otaA.test 95566a8d193113867b960eadf85b310937f2fe03
 F ext/ota/otafault.test 508ba87c83d632670ac0f94371a465d4bb4d49dd
-F ext/ota/sqlite3ota.c 0cf2a1b5ac7009050159a39d938f1334ce7072b8
+F ext/ota/sqlite3ota.c 79874bc6f31a514aebd17ab24d31e7c567e6225e
 F ext/ota/sqlite3ota.h 1cc7201086fe65a36957740381485a24738c4077
+F ext/ota/test_ota.c 5dd58e4e6eb3ae7b471566616d44b701971bce88
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 14e6239434d4e3f65d3e90320713f26aa24e167f
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
@@ -166,7 +167,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 57c115aba023c1988564edb80ac87c3e07472b05
+F main.mk 00070461df537e8e0ece33cf05caf3d536c28802
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
 F mkopcodeh.awk c6b3fa301db6ef7ac916b14c60868aeaec1337b5
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
@@ -1254,7 +1255,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 71887cd9b38def398d48eaf0ec34eeac3c7c5177
-R 9f9fcb7ec94597bb519ead7cc6d77d1b
+P b64a11a754dc56f3406d3b703531ebe9e4af4908
+R 8813c4f37af98778b18f1d2e1e748912
 U dan
-Z b1cfeba62f30a42f6b3ffd27f7078fc0
+Z ac67e9a36714c8c694cc168f5b99c0ce

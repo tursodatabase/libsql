@@ -65,7 +65,7 @@ LIBOBJ+= vdbe.o parse.o \
          mutex.o mutex_noop.o mutex_unix.o mutex_w32.o \
          notify.o opcodes.o os.o os_unix.o os_win.o \
          pager.o pcache.o pcache1.o pragma.o prepare.o printf.o \
-         random.o resolve.o rowset.o rtree.o select.o status.o \
+         random.o resolve.o rowset.o rtree.o select.o sqlite3ota.o status.o \
          table.o threads.o tokenize.o trigger.o \
          update.o userauth.o util.o vacuum.o \
          vdbeapi.o vdbeaux.o vdbeblob.o vdbemem.o vdbesort.o \
@@ -341,7 +341,7 @@ TESTSRC2 = \
   $(TOP)/ext/fts3/fts3_tokenizer.c \
   $(TOP)/ext/fts3/fts3_write.c \
   $(TOP)/ext/async/sqlite3async.c \
-  $(TOP)/ext/ota/sqlite3ota.c
+  $(TOP)/ext/ota/test_ota.c
 
 # Header files used by all library source files.
 #
@@ -574,6 +574,9 @@ rtree.o:	$(TOP)/ext/rtree/rtree.c $(HDR) $(EXTHDR)
 
 userauth.o:	$(TOP)/ext/userauth/userauth.c $(HDR) $(EXTHDR)
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/userauth/userauth.c
+
+sqlite3ota.o:	$(TOP)/ext/ota/sqlite3ota.c $(HDR) $(EXTHDR)
+	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/ota/sqlite3ota.c
 
 
 # Rules for building test programs and for running tests
