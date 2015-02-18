@@ -45,7 +45,7 @@ proc setup_test {} {
 # file is being generated. Once this has happened, the update cannot be
 # progressed.
 #
-for {set nStep 1} {$nStep < 7} {incr nStep} {
+for {set nStep 1} {$nStep < 8} {incr nStep} {
   do_test 1.$nStep.1 {
     setup_test
     sqlite3ota ota test.db ota.db
@@ -68,12 +68,11 @@ for {set nStep 1} {$nStep < 7} {incr nStep} {
   } {1 {SQLITE_BUSY - database modified during ota update}}
 }
 
-
 # Test the outcome of some other client writing the db after the *-oal
 # file has been copied to the *-wal path. Once this has happened, any
 # other client writing to the db causes OTA to consider its job finished.
 #
-for {set nStep 7} {$nStep < 20} {incr nStep} {
+for {set nStep 8} {$nStep < 20} {incr nStep} {
   do_test 1.$nStep.1 {
     setup_test
     sqlite3ota ota test.db ota.db

@@ -26,6 +26,10 @@ proc run_ota {target ota} {
 }
 
 forcedelete test.db-oal ota.db
+db close
+sqlite3_shutdown
+sqlite3_config_uri 1
+reset_db
 
 #--------------------------------------------------------------------
 # Test that for an OTA to be applied, no corruption results if the
@@ -127,7 +131,6 @@ do_test 2.4 {
     INSERT INTO data_x2 VALUES(1, 'a', 2, 3, 0);
   }
   db2 close
-  breakpoint
   list [catch { run_ota test.db ota.db } msg] $msg
 } {1 SQLITE_ERROR}
 
@@ -153,5 +156,20 @@ do_test 3.2 {
   sqlite3ota_destroy_vfs win32
 } {}
 
+#-------------------------------------------------------------------------
+# Test that it is an error to specify an explicit VFS that does not 
+# include ota VFS functionality.
+#
+do_test 4.1 {
+  testvfs tvfs
+  sqlite3ota ota file:test.db?vfs=tvfs ota.db 
+  list [catch { ota step } msg] $msg
+} {0 SQLITE_ERROR}
+do_test 4.2 {
+  list [catch { ota close } msg] $msg
+} {1 {SQLITE_ERROR - ota vfs not found}}
+tvfs delete
+
 finish_test
+
 
