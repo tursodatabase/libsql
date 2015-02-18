@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sOTA\supdates\sin\sthe\spresence\sof\sdatabase\sreaders.
-D 2015-02-18T17:40:05.856
+C Add\sota\stests\sto\sincrease\scode\scoverage.\sFix\ssome\sminor\sissues\sin\serror\shandling\swithin\sthe\sota\scode.
+D 2015-02-18T20:16:15.838
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6b9e7677829aa94b9f30949656e27312aefb9a46
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -125,18 +125,18 @@ F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
 F ext/ota/README.txt 2ce4ffbb0aaa6731b041c27a7359f9a5f1c69152
 F ext/ota/ota.c c11a85af71dccc45976622fe7a51169a481caa91
-F ext/ota/ota1.test 88a47987dc12780c23d9efbeb0e9416c838eb1f6
+F ext/ota/ota1.test ba408c5e777c320ef72f328e20cd2ae2a8888cda
 F ext/ota/ota10.test 85e0f6e7964db5007590c1b299e75211ed4240d4
-F ext/ota/ota11.test 0a0c56b9474f82097018a8f399172417737c64c9
-F ext/ota/ota3.test 59fc88cf9749156c8a0b3ed9210b72a6af3f29d0
+F ext/ota/ota11.test 2f606cd2b4af260a86b549e91b9f395450fc75cb
+F ext/ota/ota3.test 1f12eba0b69ef12a45e5c17bb1bebd13211663e7
 F ext/ota/ota5.test ad0799daf8923ddebffe75ae8c5504ca90b7fadb
 F ext/ota/ota6.test 3bde7f69a894748b27206b6753462ec3b75b6bb6
 F ext/ota/ota7.test 1fe2c5761705374530e29f70c39693076028221a
 F ext/ota/ota8.test cd70e63a0c29c45c0906692827deafa34638feda
 F ext/ota/ota9.test d3eee95dd836824d07a22e5efcdb7bf6e869358b
 F ext/ota/otaA.test ef4bfa8cfd4ed814ae86f7457b64aa2f18c90171
-F ext/ota/otafault.test c17e0297b4d2b83115fa733b614cf4883cd826f2
-F ext/ota/sqlite3ota.c f04e79519f275ae932ad3573a089e2ef08552a78
+F ext/ota/otafault.test 8c43586c2b96ca16bbce00b5d7e7d67316126db8
+F ext/ota/sqlite3ota.c 981bbfae01063fa176a2851e4564f89cc53efe96
 F ext/ota/sqlite3ota.h 1cc7201086fe65a36957740381485a24738c4077
 F ext/ota/test_ota.c 5dd58e4e6eb3ae7b471566616d44b701971bce88
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
@@ -1256,7 +1256,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a438fa6c9ad2fb1d78ac747172d07455d6381387
-R 4b928e3e4481330de038aee8bbb8f63e
+P 144bb29ffcbfe96dc10c0224113e73a80e89314b
+R 651c92e3909a9521816fc3a304b913d3
 U dan
-Z 71e8a5928d01f269472bf7adff7d46be
+Z 24ae6a68f15f30a6afab37fb8335827c

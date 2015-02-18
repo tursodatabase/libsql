@@ -148,18 +148,51 @@ do_test 4.4 {
   ota close
 } {SQLITE_DONE}
 
-# Also, check that an invalid state value in the ota_state table is
-# detected and reported as corruption.
-do_test 4.5 {
+do_test 4.5.1 {
   sqlite3 dbo ota.db
-  dbo eval { UPDATE ota_state SET v = -1 WHERE k = 1 }
+  dbo eval { INSERT INTO ota_state VALUES(100, 100) }
   dbo close
   sqlite3ota ota test.db ota.db
   ota step
 } {SQLITE_CORRUPT}
-do_test 4.6 {
+do_test 4.5.2 {
   list [catch {ota close} msg] $msg
 } {1 SQLITE_CORRUPT}
+do_test 4.5.3 {
+  sqlite3 dbo ota.db
+  dbo eval { DELETE FROM ota_state WHERE k = 100 }
+  dbo close 
+} {}
+
+# Also, check that an invalid state value in the ota_state table is
+# detected and reported as corruption.
+do_test 4.6.1 {
+  sqlite3 dbo ota.db
+  dbo eval { UPDATE ota_state SET v = v*-1 WHERE k = 1 }
+  dbo close
+  sqlite3ota ota test.db ota.db
+  ota step
+} {SQLITE_CORRUPT}
+do_test 4.6.2 {
+  list [catch {ota close} msg] $msg
+} {1 SQLITE_CORRUPT}
+do_test 4.6.3 {
+  sqlite3 dbo ota.db
+  dbo eval { UPDATE ota_state SET v = v*-1 WHERE k = 1 }
+  dbo close 
+} {}
+
+do_test 4.7.1 {
+  sqlite3 dbo ota.db
+  dbo eval { UPDATE ota_state SET v = 1 WHERE k = 1 }
+  dbo eval { UPDATE ota_state SET v = 'nosuchtable' WHERE k = 2 }
+  dbo close
+  sqlite3ota ota test.db ota.db
+  ota step
+} {SQLITE_ERROR}
+do_test 4.7.2 {
+  list [catch {ota close} msg] $msg
+} {1 {SQLITE_ERROR - ota_state mismatch error}}
 
 finish_test
 

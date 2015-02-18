@@ -527,6 +527,24 @@ foreach {tn3 create_vfs destroy_vfs} {
          CREATE TABLE ota.data_t1(a, b, ota_control);
          INSERT INTO ota.data_t1 VALUES(1, 2, 'x.x');
        } {SQLITE_ERROR - invalid ota_control value}
+
+       7 {
+         CREATE TABLE t1(a, b PRIMARY KEY) WITHOUT ROWID;
+         CREATE TABLE ota.data_t1(a, b, ota_control);
+         INSERT INTO ota.data_t1 VALUES(1, 2, NULL);
+       } {SQLITE_ERROR - invalid ota_control value}
+
+       8 {
+         CREATE TABLE t1(a, b PRIMARY KEY) WITHOUT ROWID;
+         CREATE TABLE ota.data_t1(a, b, ota_control);
+         INSERT INTO ota.data_t1 VALUES(1, 2, 4);
+       } {SQLITE_ERROR - invalid ota_control value}
+
+       9 {
+         CREATE TABLE t1(a, b PRIMARY KEY) WITHOUT ROWID;
+         CREATE TABLE ota.data_t1(a, b, ota_control);
+         INSERT INTO ota.data_t1 VALUES(1, 2, 2);
+       } {SQLITE_ERROR - invalid ota_control value}
     
     } {
       reset_db

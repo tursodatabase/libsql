@@ -84,6 +84,17 @@ foreach {tn2 setup sql expect} {
     SELECT * FROM t1 ORDER BY a;
   } {A Z C G H I}
 
+  5 {
+    CREATE TABLE t1(a, b, c);
+    CREATE INDEX t1c ON t1(c, b);
+
+    CREATE TABLE ota.data_t1(a, b, c, ota_rowid, ota_control);
+    INSERT INTO data_t1 VALUES('a', 'b', 'c', 1, 0);
+    INSERT INTO data_t1 VALUES('d', 'e', 'f', '2', 0);
+  } {
+    SELECT * FROM t1 ORDER BY a;
+  } {a b c d e f}
+
 } {
   catch {db close}
   forcedelete ota.db test.db
@@ -117,6 +128,12 @@ foreach {tn2 setup sql expect} {
       {1 {SQLITE_ERROR - SQL logic error or missing database}}
       {1 {SQLITE_ERROR - unable to open database: ota.db}}
       {1 {SQLITE_IOERR - unable to open database: ota.db}}
+    }
+
+    3 shmerr-*  {
+      {0 SQLITE_DONE} 
+      {1 {SQLITE_IOERR - disk I/O error}}
+      {1 SQLITE_IOERR}
     }
   } {
 

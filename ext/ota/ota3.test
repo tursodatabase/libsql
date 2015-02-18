@@ -170,6 +170,36 @@ do_test 4.2 {
 } {1 {SQLITE_ERROR - ota vfs not found}}
 tvfs delete
 
+#-------------------------------------------------------------------------
+# Test a large ota update to ensure that wal_autocheckpoint does not get
+# in the way.
+#
+forcedelete ota.db
+reset_db
+do_execsql_test 5.1 {
+  CREATE TABLE x1(a, b, c, PRIMARY KEY(a)) WITHOUT ROWID;
+  CREATE INDEX i1 ON x1(a);
+
+  ATTACH 'ota.db' AS ota;
+  CREATE TABLE ota.data_x1(a, b, c, ota_control);
+  WITH s(a, b, c) AS (
+    SELECT randomblob(300), randomblob(300), 1
+    UNION ALL
+    SELECT randomblob(300), randomblob(300), c+1 FROM s WHERE c<2000
+  )
+  INSERT INTO data_x1 SELECT a, b, c, 0 FROM s;
+}
+
+do_test 5.2 {
+  sqlite3ota ota test.db ota.db
+  while {[ota step]=="SQLITE_OK" && [file exists test.db-wal]==0} {}
+  ota close
+} {SQLITE_OK}
+
+do_test 5.3 {
+  expr {[file size test.db-wal] > (1024 * 1200)}
+} 1
+
 finish_test
 
 

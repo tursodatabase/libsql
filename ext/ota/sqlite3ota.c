@@ -1640,7 +1640,8 @@ static int otaCaptureWalRead(sqlite3ota *pOta, i64 iOff, int iAmt){
   u32 iFrame;
 
   if( pOta->mLock!=mReq ){
-    return SQLITE_BUSY;
+    pOta->rc = SQLITE_BUSY;
+    return SQLITE_INTERNAL;
   }
 
   pOta->pgsz = iAmt;
@@ -1667,18 +1668,17 @@ static int otaCaptureDbWrite(sqlite3ota *pOta, i64 iOff){
 }
 
 static void otaCheckpointFrame(sqlite3ota *p, OtaFrame *pFrame){
-  if( p->rc==SQLITE_OK ){
-    sqlite3_file *pWal = p->pTargetFd->pWalFd->pReal;
-    sqlite3_file *pDb = p->pTargetFd->pReal;
-    i64 iOff;
+  sqlite3_file *pWal = p->pTargetFd->pWalFd->pReal;
+  sqlite3_file *pDb = p->pTargetFd->pReal;
+  i64 iOff;
 
-    iOff = (i64)(pFrame->iWalFrame-1) * (p->pgsz + 24) + 32 + 24;
-    p->rc = pWal->pMethods->xRead(pWal, p->aBuf, p->pgsz, iOff);
-    if( p->rc ) return;
+  assert( p->rc==SQLITE_OK );
+  iOff = (i64)(pFrame->iWalFrame-1) * (p->pgsz + 24) + 32 + 24;
+  p->rc = pWal->pMethods->xRead(pWal, p->aBuf, p->pgsz, iOff);
+  if( p->rc ) return;
 
-    iOff = (i64)(pFrame->iDbPage-1) * p->pgsz;
-    p->rc = pDb->pMethods->xWrite(pDb, p->aBuf, p->pgsz, iOff);
-  }
+  iOff = (i64)(pFrame->iDbPage-1) * p->pgsz;
+  p->rc = pDb->pMethods->xWrite(pDb, p->aBuf, p->pgsz, iOff);
 }
 
 
@@ -1686,12 +1686,11 @@ static void otaCheckpointFrame(sqlite3ota *p, OtaFrame *pFrame){
 ** Take an EXCLUSIVE lock on the database file.
 */
 static void otaLockDatabase(sqlite3ota *p){
+  sqlite3_file *pReal = p->pTargetFd->pReal;
+  assert( p->rc==SQLITE_OK );
+  p->rc = pReal->pMethods->xLock(pReal, SQLITE_LOCK_SHARED);
   if( p->rc==SQLITE_OK ){
-    sqlite3_file *pReal = p->pTargetFd->pReal;
-    p->rc = pReal->pMethods->xLock(pReal, SQLITE_LOCK_SHARED);
-    if( p->rc==SQLITE_OK ){
-      p->rc = pReal->pMethods->xLock(pReal, SQLITE_LOCK_EXCLUSIVE);
-    }
+    p->rc = pReal->pMethods->xLock(pReal, SQLITE_LOCK_EXCLUSIVE);
   }
 }
 
@@ -1860,13 +1859,12 @@ static int otaStep(sqlite3ota *p){
           goto step_out;
         }
 
-        if( eType==SQLITE_DELETE && pIter->zIdx==0 && pIter->abTblPk[i]==0 ){
+        if( eType==OTA_DELETE && pIter->abTblPk[i]==0 ){
           continue;
         }
 
         pVal = sqlite3_column_value(pIter->pSelect, i);
         p->rc = sqlite3_bind_value(pWriter, i+1, pVal);
-        if( p->rc==SQLITE_RANGE ) p->rc = SQLITE_OK;
         if( p->rc ) goto step_out;
       }
       if( pIter->zIdx==0
@@ -1887,9 +1885,10 @@ static int otaStep(sqlite3ota *p){
         sqlite3_step(pWriter);
         p->rc = resetAndCollectError(pWriter, &p->zErrmsg);
       }
-    }else if( eType==OTA_UPDATE ){
+    }else{
       sqlite3_value *pVal;
       sqlite3_stmt *pUpdate = 0;
+      assert( eType==OTA_UPDATE );
       otaGetUpdateStmt(p, pIter, zMask, &pUpdate);
       if( pUpdate ){
         for(i=0; p->rc==SQLITE_OK && i<pIter->nCol; i++){
@@ -1912,9 +1911,6 @@ static int otaStep(sqlite3ota *p){
           p->rc = resetAndCollectError(pUpdate, &p->zErrmsg);
         }
       }
-    }else{
-      /* no-op */
-      assert( eType==OTA_DELETE && pIter->zIdx );
     }
   }
 
@@ -1994,7 +1990,7 @@ int sqlite3ota_step(sqlite3ota *p){
     switch( p->eStage ){
       case OTA_STAGE_OAL: {
         OtaObjIter *pIter = &p->objiter;
-        while( p && p->rc==SQLITE_OK && pIter->zTbl ){
+        while( p->rc==SQLITE_OK && pIter->zTbl ){
 
           if( pIter->bCleanup ){
             /* Clean up the ota_tmp_xxx table for the previous table. It 
@@ -2022,7 +2018,8 @@ int sqlite3ota_step(sqlite3ota *p){
           otaObjIterNext(p, pIter);
         }
 
-        if( p->rc==SQLITE_OK && pIter->zTbl==0 ){
+        if( p->rc==SQLITE_OK ){
+          assert( pIter->zTbl==0 );
           otaSaveState(p, OTA_STAGE_MOVE);
           otaIncrSchemaCookie(p);
           if( p->rc==SQLITE_OK ){
@@ -2042,32 +2039,33 @@ int sqlite3ota_step(sqlite3ota *p){
       }
 
       case OTA_STAGE_CKPT: {
-        if( p->nStep>=p->nFrame ){
-          sqlite3_file *pDb = p->pTargetFd->pReal;
-
-          /* Sync the db file */
-          p->rc = pDb->pMethods->xSync(pDb, SQLITE_SYNC_NORMAL);
-
-          /* Update nBackfill */
-          if( p->rc==SQLITE_OK ){
-            void volatile *ptr;
-            p->rc = pDb->pMethods->xShmMap(pDb, 0, 32*1024, 0, &ptr);
+        if( p->rc==SQLITE_OK ){
+          if( p->nStep>=p->nFrame ){
+            sqlite3_file *pDb = p->pTargetFd->pReal;
+  
+            /* Sync the db file */
+            p->rc = pDb->pMethods->xSync(pDb, SQLITE_SYNC_NORMAL);
+  
+            /* Update nBackfill */
             if( p->rc==SQLITE_OK ){
-              ((u32*)ptr)[12] = p->iMaxFrame;
+              void volatile *ptr;
+              p->rc = pDb->pMethods->xShmMap(pDb, 0, 32*1024, 0, &ptr);
+              if( p->rc==SQLITE_OK ){
+                ((u32*)ptr)[12] = p->iMaxFrame;
+              }
             }
+  
+            if( p->rc==SQLITE_OK ){
+              p->eStage = OTA_STAGE_DONE;
+              p->rc = SQLITE_DONE;
+            }
+          }else{
+            OtaFrame *pFrame = &p->aFrame[p->nStep];
+            otaCheckpointFrame(p, pFrame);
+            p->nStep++;
           }
-
-          if( p->rc==SQLITE_OK ){
-            p->eStage = OTA_STAGE_DONE;
-            p->rc = SQLITE_DONE;
-          }
-        }else{
-          OtaFrame *pFrame = &p->aFrame[p->nStep];
-          otaCheckpointFrame(p, pFrame);
-          p->nStep++;
+          p->nProgress++;
         }
-
-        p->nProgress++;
         break;
       }
 
@@ -2169,13 +2167,13 @@ static void otaLoadTransactionState(sqlite3ota *p, OtaState *pState){
     int rc = SQLITE_OK;
 
     while( rc==SQLITE_OK && pIter->zTbl && (pIter->bCleanup 
-       || otaStrCompare(pIter->zTbl, pState->zTbl) 
        || otaStrCompare(pIter->zIdx, pState->zIdx)
+       || otaStrCompare(pIter->zTbl, pState->zTbl) 
     )){
-      rc = otaObjIterNext(p, &p->objiter);
+      rc = otaObjIterNext(p, pIter);
     }
 
-    if( rc==SQLITE_OK && !p->objiter.zTbl ){
+    if( rc==SQLITE_OK && !pIter->zTbl ){
       rc = SQLITE_ERROR;
       p->zErrmsg = sqlite3_mprintf("ota_state mismatch error");
     }
@@ -2293,9 +2291,7 @@ sqlite3ota *sqlite3ota_open(const char *zTarget, const char *zOta){
       if( p->eStage==OTA_STAGE_OAL ){
 
         /* Open the transaction */
-        if( p->rc==SQLITE_OK ){
-          p->rc = sqlite3_exec(p->db, "BEGIN IMMEDIATE", 0, 0, &p->zErrmsg);
-        }
+        p->rc = sqlite3_exec(p->db, "BEGIN IMMEDIATE", 0, 0, &p->zErrmsg);
   
         /* Point the object iterator at the first object */
         if( p->rc==SQLITE_OK ){
