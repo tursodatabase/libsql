@@ -1,5 +1,5 @@
-C First\ssmall\ssteps\stoward\sbrining\strunk\sand\sapple-osx\scloser\stogether.
-D 2015-02-19T00:29:11.820
+C Move\sthe\sos_unix.c\sfile\scloser\sto\sapple-osx.
+D 2015-02-19T02:43:02.884
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6b9e7677829aa94b9f30949656e27312aefb9a46
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -214,7 +214,7 @@ F src/os.c 8fd25588eeba74068d41102d26810e216999b6c8
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c aefeaf915aaef9f81aa2645e0d5d06fa1bd83beb
+F src/os_unix.c 9922c8f5b2e32c0f0be2292feca5f72d88f6a833
 F src/os_win.c 8223e7db5b7c4a81d8b161098ac3959400434cdb
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 4120a49ecd37697e28f5ed807f470b9c0b88410c
@@ -1239,7 +1239,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 823ad40ccb5b51aaa0d5a48da63b465df9d0649a
-R 89f0ec75057f909c87616e4bd9a4303a
+P 28284ccc0d7301503f6d2d7bee9093738d52e331
+R de5d87b1cb4f744ff7cb90b036adcd40
 U drh
-Z a5ec369c1615e4ac0e151fe8f03569e6
+Z 45842533d15e073070e1f1a9e9241135
