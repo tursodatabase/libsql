@@ -9,6 +9,75 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
+**
+**
+** OVERVIEW 
+**
+**  The OTA extension requires that the OTA update be packaged as an
+**  SQLite database. The tables it expects to find are described in
+**  sqlite3ota.h.  Essentially, for each table xyz in the target database
+**  that the user wishes to write to, a corresponding data_xyz table is
+**  created in the OTA database and populated with one row for each row to
+**  update, insert or delete from the target table.
+** 
+**  The update proceeds in three stages:
+** 
+**  1) The database is updated. The modified database pages are written
+**     to a *-oal file. A *-oal file is just like a *-wal file, except
+**     that it is named "<database>-oal" instead of "<database>-wal".
+**     Because regular SQLite clients do not look for file named
+**     "<database>-oal", they go on using the original database in
+**     rollback mode while the *-oal file is being generated.
+** 
+**     During this stage OTA does not update the database by writing
+**     directly to the target tables. Instead it creates "imposter"
+**     tables using the SQLITE_TESTCTRL_IMPOSTER interface that it uses
+**     to update each b-tree individually. All updates required by each
+**     b-tree are completed before moving on to the next, and all
+**     updates are done in sorted key order.
+** 
+**  2) The "<database>-oal" file is moved to the equivalent "<database>-wal"
+**     location using a call to rename(2). Before doing this the OTA
+**     module takes an EXCLUSIVE lock on the database file, ensuring
+**     that there are no other active readers.
+** 
+**     Once the EXCLUSIVE lock is released, any other database readers
+**     detect the new *-wal file and read the database in wal mode. At
+**     this point they see the new version of the database - including
+**     the updates made as part of the OTA update.
+** 
+**  3) The new *-wal file is checkpointed. This proceeds in the same way 
+**     as a regular database checkpoint, except that a single frame is
+**     checkpointed each time sqlite3ota_step() is called. If the OTA
+**     handle is closed before the entire *-wal file is checkpointed,
+**     the checkpoint progress is saved in the OTA database and the
+**     checkpoint can be resumed by another OTA client at some point in
+**     the future.
+**
+** POTENTIAL PROBLEMS
+** 
+**  The rename() call might not be portable. And OTA is not currently
+**  syncing the directory after renaming the file.
+**
+**  When state is saved, any commit to the *-oal file and the commit to
+**  the OTA update database are not atomic. So if the power fails at the
+**  wrong moment they might get out of sync. As the main database will be
+**  committed before the OTA update database this will likely either just
+**  pass unnoticed, or result in SQLITE_CONSTRAINT errors (due to UNIQUE
+**  constraint violations).
+**
+**  If some client does modify the target database mid OTA update, or some
+**  other error occurs, the OTA extension will keep throwing errors. It's
+**  not really clear how to get out of this state. The system could just
+**  by delete the OTA update database and *-oal file and have the device
+**  download the update again and start over.
+**
+**  At present, for an UPDATE, both the new.* and old.* records are
+**  collected in the ota_xyz table. And for both UPDATEs and DELETEs all
+**  fields are collected.  This means we're probably writing a lot more
+**  data to disk when saving the state of an ongoing update to the OTA
+**  update database than is strictly necessary.
+** 
 */
 
 #include <assert.h>
@@ -2403,34 +2472,59 @@ sqlite3_int64 sqlite3ota_progress(sqlite3ota *pOta){
 ** Beginning of OTA VFS shim methods. The VFS shim modifies the behaviour
 ** of a standard VFS in the following ways:
 **
-**   1. Whenever the first page of a main database file is read or 
-**      written, the value of the change-counter cookie is stored in
-**      ota_file.iCookie. Similarly, the value of the "write-version"
-**      database header field is stored in ota_file.iWriteVer. This ensures
-**      that the values are always trustworthy within an open transaction.
+** 1. Whenever the first page of a main database file is read or 
+**    written, the value of the change-counter cookie is stored in
+**    ota_file.iCookie. Similarly, the value of the "write-version"
+**    database header field is stored in ota_file.iWriteVer. This ensures
+**    that the values are always trustworthy within an open transaction.
 **
-**   2. When the ota handle is in OTA_STAGE_OAL or OTA_STAGE_CKPT state, all
-**      EXCLUSIVE lock attempts on the target database fail. This prevents
-**      sqlite3_close() from running an automatic checkpoint. Until the
-**      ota handle reaches OTA_STAGE_DONE - at that point the automatic
-**      checkpoint may be required to delete the *-wal file.
+** 2. Whenever an SQLITE_OPEN_WAL file is opened, the (ota_file.pWalFd)
+**    member variable of the associated database file descriptor is set
+**    to point to the new file. A mutex protected linked list of all main 
+**    db fds opened using a particular OTA VFS is maintained at 
+**    ota_vfs.pMain to facilitate this.
 **
-**   3. In OTA_STAGE_OAL, the *-shm file is stored in memory. All xShmLock()
-**      calls are noops. This is just an optimization.
+** 3. Using a new file-control "SQLITE_FCNTL_OTA", a main db ota_file 
+**    object can be marked as the target database of an OTA update. This
+**    turns on the following extra special behaviour:
 **
-**   4. In OTA_STAGE_OAL mode, when SQLite calls xAccess() to check if a
-**      *-wal file associated with the target database exists, the following
-**      special handling applies:
+** 3a. If xAccess() is called to check if there exists a *-wal file 
+**     associated with an OTA target database currently in OTA_STAGE_OAL
+**     stage (preparing the *-oal file), the following special handling
+**     applies:
 **
-**        a) if the *-wal file does exist, return SQLITE_CANTOPEN. An OTA
-**           target database may not be in wal mode already.
+**      * if the *-wal file does exist, return SQLITE_CANTOPEN. An OTA
+**        target database may not be in wal mode already.
 **
-**        b) if the *-wal file does not exist, set the output parameter to
-**           non-zero (to tell SQLite that it does exist) anyway.
+**      * if the *-wal file does not exist, set the output parameter to
+**        non-zero (to tell SQLite that it does exist) anyway.
 **
-**   5. In OTA_STAGE_OAL mode, if SQLite tries to open a *-wal file 
-**      associated with a target database, open the corresponding *-oal file
-**      instead.
+**     Then, when xOpen() is called to open the *-wal file associated with
+**     the OTA target in OTA_STAGE_OAL stage, instead of opening the *-wal
+**     file, the ota vfs opens the corresponding *-oal file instead. 
+**
+** 3b. The *-shm pages returned by xShmMap() for a target db file in
+**     OTA_STAGE_OAL mode are actually stored in heap memory. This is to
+**     avoid creating a *-shm file on disk. Additionally, xShmLock() calls
+**     are no-ops on target database files in OTA_STAGE_OAL mode. This is
+**     because assert() statements in some VFS implementations fail if 
+**     xShmLock() is called before xShmMap().
+**
+** 3c. If an EXCLUSIVE lock is attempted on a target database file in any
+**     mode except OTA_STAGE_DONE (all work completed and checkpointed), it 
+**     fails with an SQLITE_BUSY error. This is to stop OTA connections
+**     from automatically checkpointing a *-wal (or *-oal) file from within
+**     sqlite3_close().
+**
+** 3d. In OTA_STAGE_CAPTURE mode, all xRead() calls on the wal file, and
+**     all xWrite() calls on the target database file perform no IO. 
+**     Instead the frame and page numbers that would be read and written
+**     are recorded. Additionally, successful attempts to obtain exclusive
+**     xShmLock() WRITER, CHECKPOINTER and READ0 locks on the target 
+**     database file are recorded. xShmLock() calls to unlock the same
+**     locks are no-ops (so that once obtained, these locks are never
+**     relinquished). Finally, calls to xSync() on the target database
+**     file fail with SQLITE_INTERNAL errors.
 */
 
 /*

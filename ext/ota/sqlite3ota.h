@@ -24,9 +24,9 @@
 ** containing the entry being inserted or deleted must be modified. If the
 ** working set of leaves is larger than the available cache memory, then a 
 ** single leaf that is modified more than once as part of the transaction 
-** may be loaded from or written to the persistent media more than once. 
+** may be loaded from or written to the persistent media multiple times.
 ** Additionally, because the index updates are likely to be applied in
-** random order, access to pages within the databse is also likely to be in 
+** random order, access to pages within the database is also likely to be in 
 ** random order, which is itself quite inefficient.
 **
 ** One way to improve the situation is to sort the operations on each index
@@ -40,10 +40,10 @@
 ** Additionally, this extension allows the work involved in writing the 
 ** large transaction to be broken down into sub-transactions performed 
 ** sequentially by separate processes. This is useful if the system cannot 
-** guarantee that a single update process may run for long enough to apply 
-** the entire update, for example because the update is running on a mobile
-** device that is frequently rebooted. Even after the writer process has 
-** committed one or more sub-transactions, other database clients continue
+** guarantee that a single update process will run for long enough to apply 
+** the entire update, for example because the update is being applied on a 
+** mobile device that is frequently rebooted. Even after the writer process 
+** has committed one or more sub-transactions, other database clients continue
 ** to read from the original database snapshot. In other words, partially 
 ** applied transactions are not visible to other clients. 
 **
@@ -62,8 +62,8 @@
 **   * INSERT statements may not use any default values.
 **
 **   * UPDATE and DELETE statements must identify their target rows by 
-**     PRIMARY KEY values. If the table being written has no PRIMARY KEY
-**     declaration, affected rows must be identified by rowid.
+**     PRIMARY KEY values. If the table being written has no PRIMARY KEY,
+**     affected rows must be identified by rowid.
 **
 **   * UPDATE statements may not modify PRIMARY KEY columns.
 **
@@ -148,11 +148,11 @@
 ** the new values of all columns being update. The text value in the 
 ** "ota_control" column must contain the same number of characters as
 ** there are columns in the target database table, and must consist entirely
-** of "x" and "." characters. For each column that is being updated,
-** the corresponding character is set to "x". For those that remain as
-** they are, the corresponding character of the ota_control value should
-** be set to ".". For example, given the tables above, the update 
-** statement:
+** of 'x' and '.' characters (or in some special cases 'd' - see below). For 
+** each column that is being updated, the corresponding character is set to
+** 'x'. For those that remain as they are, the corresponding character of the
+** ota_control value should be set to '.'. For example, given the tables 
+** above, the update statement:
 **
 **   UPDATE t1 SET c = 'usa' WHERE a = 4;
 **
@@ -207,10 +207,10 @@
 **
 **     4) Calls sqlite3ota_close() to close the OTA update handle. If
 **        sqlite3ota_step() has been called enough times to completely
-**        apply the update to the target database, then it is committed
-**        and made visible to other database clients at this point. 
-**        Otherwise, the state of the OTA update application is saved
-**        in the OTA database for later resumption.
+**        apply the update to the target database, then the OTA database
+**        is marked as fully applied. Otherwise, the state of the OTA 
+**        update application is saved in the OTA database for later 
+**        resumption.
 **
 ** See comments below for more detail on APIs.
 **
@@ -285,9 +285,9 @@ int sqlite3ota_step(sqlite3ota *pOta);
 /*
 ** Close an OTA handle. 
 **
-** If the OTA update has been completely applied, commit it to the target
-** database. Otherwise, assuming no error has occurred, save the current
-** state of the OTA update appliation to the OTA database.
+** If the OTA update has been completely applied, mark the OTA database
+** as fully applied. Otherwise, assuming no error has occurred, save the
+** current state of the OTA update appliation to the OTA database.
 **
 ** If an error has already occurred as part of an sqlite3ota_step()
 ** or sqlite3ota_open() call, or if one occurs within this function, an
