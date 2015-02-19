@@ -365,6 +365,9 @@ void sqlite3_result_zeroblob(sqlite3_context *pCtx, int n){
 void sqlite3_result_error_code(sqlite3_context *pCtx, int errCode){
   pCtx->isError = errCode;
   pCtx->fErrorOrAux = 1;
+#ifdef SQLITE_DEBUG
+  pCtx->pVdbe->rcApp = errCode;
+#endif
   if( pCtx->pOut->flags & MEM_Null ){
     sqlite3VdbeMemSetStr(pCtx->pOut, sqlite3ErrStr(errCode), -1, 
                          SQLITE_UTF8, SQLITE_STATIC);
@@ -445,7 +448,7 @@ static int sqlite3Step(Vdbe *p){
     ** or SQLITE_BUSY error.
     */
 #ifdef SQLITE_OMIT_AUTORESET
-    if( p->rc==SQLITE_BUSY || p->rc==SQLITE_LOCKED ){
+    if( (rc = p->rc&0xff)==SQLITE_BUSY || rc==SQLITE_LOCKED ){
       sqlite3_reset((sqlite3_stmt*)p);
     }else{
       return SQLITE_MISUSE_BKPT;
@@ -491,6 +494,9 @@ static int sqlite3Step(Vdbe *p){
     if( p->bIsReader ) db->nVdbeRead++;
     p->pc = 0;
   }
+#ifdef SQLITE_DEBUG
+  p->rcApp = SQLITE_OK;
+#endif
 #ifndef SQLITE_OMIT_EXPLAIN
   if( p->explain ){
     rc = sqlite3VdbeList(p);
@@ -535,7 +541,7 @@ end_of_step:
   assert( rc==SQLITE_ROW  || rc==SQLITE_DONE   || rc==SQLITE_ERROR 
        || rc==SQLITE_BUSY || rc==SQLITE_MISUSE
   );
-  assert( p->rc!=SQLITE_ROW && p->rc!=SQLITE_DONE );
+  assert( (p->rc!=SQLITE_ROW && p->rc!=SQLITE_DONE) || p->rc==p->rcApp );
   if( p->isPrepareV2 && rc!=SQLITE_ROW && rc!=SQLITE_DONE ){
     /* If this statement was prepared using sqlite3_prepare_v2(), and an
     ** error has occurred, then return the error code in p->rc to the

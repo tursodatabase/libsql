@@ -291,6 +291,14 @@ static void substrFunc(
       }
     }
   }
+#ifdef SQLITE_SUBSTR_COMPATIBILITY
+  /* If SUBSTR_COMPATIBILITY is defined then substr(X,0,N) work the same as
+  ** as substr(X,1,N) - it returns the first N characters of X.  This
+  ** is essentially a back-out of the bug-fix in check-in [5fc125d362df4b8]
+  ** from 2009-02-02 for compatibility of applications that exploited the
+  ** old buggy behavior. */
+  if( p1==0 ) p1 = 1; /* <rdar://problem/6778339> */
+#endif
   if( argc==3 ){
     p2 = sqlite3_value_int(argv[2]);
     if( p2<0 ){
