@@ -200,6 +200,8 @@ do_test 5.3 {
   expr {[file size test.db-wal] > (1024 * 1200)}
 } 1
 
+do_test 6.1 { sqlite3ota_internal_test } {}
+
 finish_test
 
 

@@ -195,6 +195,30 @@ static int test_sqlite3ota_destroy_vfs(
   return TCL_OK;
 }
 
+/*
+** Tclcmd: sqlite3ota_internal_test
+*/
+static int test_sqlite3ota_internal_test(
+  ClientData clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3 *db;
+
+  if( objc!=1 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "");
+    return TCL_ERROR;
+  }
+
+  db = sqlite3ota_db(0);
+  if( db!=0 ){
+    Tcl_AppendResult(interp, "sqlite3ota_db(0)!=0", 0);
+    return TCL_ERROR;
+  }
+
+  return TCL_OK;
+}
 
 int SqliteOta_Init(Tcl_Interp *interp){ 
   static struct {
@@ -204,6 +228,7 @@ int SqliteOta_Init(Tcl_Interp *interp){
     { "sqlite3ota", test_sqlite3ota },
     { "sqlite3ota_create_vfs", test_sqlite3ota_create_vfs },
     { "sqlite3ota_destroy_vfs", test_sqlite3ota_destroy_vfs },
+    { "sqlite3ota_internal_test", test_sqlite3ota_internal_test },
   };
   int i;
   for(i=0; i<sizeof(aObjCmd)/sizeof(aObjCmd[0]); i++){

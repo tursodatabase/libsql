@@ -1930,6 +1930,11 @@ static void otaIncrSchemaCookie(sqlite3ota *p){
         "PRAGMA schema_version"
     );
     if( p->rc==SQLITE_OK ){
+      /* Coverage: it may be that this sqlite3_step() cannot fail. There
+      ** is already a transaction open, so the prepared statement cannot
+      ** throw an SQLITE_SCHEMA exception. The only database page the
+      ** statement reads is page 1, which is guaranteed to be in the cache.
+      ** And no memory allocations are required.  */
       if( SQLITE_ROW==sqlite3_step(pStmt) ){
         iCookie = sqlite3_column_int(pStmt, 0);
       }
