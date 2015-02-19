@@ -46,9 +46,6 @@
 #include "sqliteInt.h"
 #if SQLITE_OS_UNIX              /* This file is used on unix only */
 
-#include "btreeInt.h"           /* Use by Apple extensions only */
-
-
 /*
 ** There are various methods for file locking used for concurrency
 ** control:
@@ -103,10 +100,6 @@
 #if SQLITE_ENABLE_LOCKING_STYLE || OS_VXWORKS
 # include <sys/ioctl.h>
 # include <uuid/uuid.h>
-# if defined(__APPLE__) && ((__MAC_OS_X_VERSION_MIN_REQUIRED > 1050) || \
-                            (__IPHONE_OS_VERSION_MIN_REQUIRED > 2000))
-#  define HAVE_GETHOSTUUID 1
-# endif
 # if OS_VXWORKS
 #  include <semaphore.h>
 #  include <limits.h>
@@ -1473,6 +1466,10 @@ static void robust_close(unixFile *pFile, int h, int lineno){
   }
 }
 
+/*
+** Set the pFile->lastErrno.  Do this in a subroutine as that provides a convenient
+** place to set a breakpoint.
+*/
 static void storeLastErrno(unixFile *pFile, int error){
   pFile->lastErrno = error;
 }
@@ -1671,7 +1668,7 @@ static void verifyDbFile(unixFile *pFile){
     return;
   }
   if( fileHasMoved(pFile) ){
-    sqlite3_log(SQLITE_WARNING, "file renamed while open: [%s]", pFile->zPath);
+    sqlite3_log(SQLITE_WARNING, "file renamed while open: %s", pFile->zPath);
     pFile->ctrlFlags |= UNIXFILE_WARNED;
     return;
   }
@@ -2384,15 +2381,15 @@ static int nolockClose(sqlite3_file *id) {
   unixEnterMutex();
   
   /* unixFile.pInode is always valid here. Otherwise, a different close
-   ** routine (e.g. nolockClose()) would be called instead.
-   */
+  ** routine (e.g. nolockClose()) would be called instead.
+  */
   assert( pFile->pInode->nLock>0 || pFile->pInode->bProcessLock==0 );
   if( ALWAYS(pFile->pInode) && pFile->pInode->nLock ){
     /* If there are outstanding locks, do not actually close the file just
-     ** yet because that would clear those locks.  Instead, add the file
-     ** descriptor to pInode->pUnused list.  It will be automatically closed 
-     ** when the last lock is cleared.
-     */
+    ** yet because that would clear those locks.  Instead, add the file
+    ** descriptor to pInode->pUnused list.  It will be automatically closed 
+    ** when the last lock is cleared.
+    */
     setPendingFd(pFile);
   }
   releaseInodeInfo(pFile);
@@ -3613,6 +3610,7 @@ static int unixRead(
     /* lastErrno set by seekAndRead */
     return SQLITE_IOERR_READ;
   }else{
+    storeLastErrno(pFile, 0);   /* not a system error */
     /* Unread parts of the buffer must be zero-filled */
     memset(&((char*)pBuf)[got], 0, amt-got);
     return SQLITE_IOERR_SHORT_READ;
@@ -3753,6 +3751,7 @@ static int unixWrite(
       /* lastErrno set by seekAndWrite */
       return SQLITE_IOERR_WRITE;
     }else{
+      storeLastErrno(pFile, 0); /* not a system error */
       return SQLITE_FULL;
     }
   }
@@ -4158,7 +4157,7 @@ static int fcntlSizeHint(unixFile *pFile, i64 nByte){
     int rc;
     if( pFile->szChunk<=0 ){
       if( robust_ftruncate(pFile->h, nByte) ){
-        pFile->lastErrno = errno;
+        storeLastErrno(pFile, errno);
         return unixLogError(SQLITE_IOERR_TRUNCATE, "ftruncate", pFile->zPath);
       }
     }
@@ -4175,7 +4174,7 @@ static int fcntlSizeHint(unixFile *pFile, i64 nByte){
 #if (SQLITE_ENABLE_APPLE_SPI>0) && defined(__APPLE__)
 #include "sqlite3_private.h"
 #include <copyfile.h>
-static int getDbPathForUnixFile(unixFile *pFile, char *dbPath);
+static int proxyGetDbPathForUnixFile(unixFile *pFile, char *dbPath);
 #endif
 
 #if SQLITE_ENABLE_LOCKING_STYLE
@@ -5001,7 +5000,9 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
   pShmNode = pInode->pShmNode;
   if( pShmNode==0 ){
     struct stat sStat;                 /* fstat() info for database file */
+#ifndef SQLITE_SHM_DIRECTORY
     const char *zBasePath = pDbFd->zPath;
+#endif
 
     /* Call fstat() to figure out the permissions on the database file. If
     ** a new *-shm file is created, an attempt will be made to create it
@@ -5013,10 +5014,11 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
       goto shm_open_err;
     }
 
-#if defined(__APPLE__) && SQLITE_ENABLE_LOCKING_STYLE
+#if defined(__APPLE__) && SQLITE_ENABLE_LOCKING_STYLE \
+      && !defined(SQLITE_SHM_DIRECTORY)
     /* If pDbFd is configured with proxy locking mode, use the local 
-     ** lock file path to determine the -shm file path
-     */
+    ** lock file path to determine the -shm file path
+    */
     if( isProxyLockingMode(pDbFd) ){
       zBasePath = proxySharedMemoryBasePath(pDbFd);
       if( !zBasePath ){
@@ -5446,7 +5448,7 @@ static int unixShmUnmap(
   if( pShmNode->nRef==0 ){
     if( deleteFlag && pShmNode->h>=0 ) {
       if (deleteFlag == 1) { 
-        unlink(pShmNode->zFilename);
+        osUnlink(pShmNode->zFilename);
       } else if (deleteFlag == 2) {
         /* ftruncate(pShmNode->h, 32 * 1024); */
       }
@@ -6566,7 +6568,7 @@ static int fillInUnixFile(
   }
 #endif
   
-  pNew->lastErrno = 0;
+  storeLastErrno(pNew, 0);
 #if OS_VXWORKS
   if( rc!=SQLITE_OK ){
     if( h>=0 ) robust_close(pNew, h, __LINE__);
@@ -7500,9 +7502,10 @@ static int unixGetLastError(sqlite3_vfs *NotUsed, int NotUsed2, char *NotUsed3){
 **
 ** C APIs
 **
-**  sqlite3_file_control(db, dbname, SQLITE_SET_LOCKPROXYFILE,
+**  sqlite3_file_control(db, dbname, SQLITE_FCNTL_SET_LOCKPROXYFILE,
 **                       <proxy_path> | ":auto:");
-**  sqlite3_file_control(db, dbname, SQLITE_GET_LOCKPROXYFILE, &<proxy_path>);
+**  sqlite3_file_control(db, dbname, SQLITE_FCNTL_GET_LOCKPROXYFILE,
+**                       &<proxy_path>);
 **
 **
 ** SQL pragmas
@@ -7595,7 +7598,7 @@ static int unixGetLastError(sqlite3_vfs *NotUsed, int NotUsed2, char *NotUsed3){
 ** setting the environment variable SQLITE_FORCE_PROXY_LOCKING to 1 will
 ** force proxy locking to be used for every database file opened, and 0
 ** will force automatic proxy locking to be disabled for all database
-** files (explicitly calling the SQLITE_SET_LOCKPROXYFILE pragma or
+** files (explicitly calling the SQLITE_FCNTL_SET_LOCKPROXYFILE pragma or
 ** sqlite_file_control API is not affected by SQLITE_FORCE_PROXY_LOCKING).
 */
 
@@ -7832,10 +7835,10 @@ extern int gethostuuid(uuid_t id, const struct timespec *wait);
 static int proxyGetHostID(unsigned char *pHostID, int *pError){
   assert(PROXY_HOSTIDLEN == sizeof(uuid_t));
   memset(pHostID, 0, PROXY_HOSTIDLEN);
-#if HAVE_GETHOSTUUID
+# if defined(__APPLE__) && ((__MAC_OS_X_VERSION_MIN_REQUIRED > 1050) || \
+                            (__IPHONE_OS_VERSION_MIN_REQUIRED > 2000))
   {
     struct timespec timeout = {1, 0}; /* 1 sec timeout */
-    
     if( gethostuuid(pHostID, &timeout) ){
       int err = errno;
       if( pError ){
@@ -8354,7 +8357,7 @@ static int switchLockProxyPath(unixFile *pFile, const char *path) {
 ** This routine find the filename associated with pFile and writes it
 ** int dbPath.
 */
-static int getDbPathForUnixFile(unixFile *pFile, char *dbPath){
+static int proxyGetDbPathForUnixFile(unixFile *pFile, char *dbPath){
 #if defined(__APPLE__)
   if( pFile->pMethod == &afpIoMethods ){
     /* afp style keeps a reference to the db path in the filePath field 
@@ -8394,7 +8397,7 @@ static int proxyTransformUnixFile(unixFile *pFile, const char *path) {
   if( pFile->eFileLock!=NO_LOCK ){
     return SQLITE_BUSY;
   }
-  getDbPathForUnixFile(pFile, dbPath);
+  proxyGetDbPathForUnixFile(pFile, dbPath);
   if( !path || path[0]=='\0' || !strcmp(path, ":auto:") ){
     lockPath=NULL;
   }else{
@@ -8477,7 +8480,7 @@ static int proxyTransformUnixFile(unixFile *pFile, const char *path) {
 */
 static int proxyFileControl(sqlite3_file *id, int op, void *pArg){
   switch( op ){
-    case SQLITE_GET_LOCKPROXYFILE: {
+    case SQLITE_FCNTL_GET_LOCKPROXYFILE: {
       unixFile *pFile = (unixFile*)id;
       if( isProxyLockingMode(pFile) ){
         proxyLockingContext *pCtx = (proxyLockingContext*)pFile->lockingContext;
@@ -8492,7 +8495,7 @@ static int proxyFileControl(sqlite3_file *id, int op, void *pArg){
       }
       return SQLITE_OK;
     }
-    case SQLITE_SET_LOCKPROXYFILE: {
+    case SQLITE_FCNTL_SET_LOCKPROXYFILE: {
       unixFile *pFile = (unixFile*)id;
       int rc = SQLITE_OK;
       int isProxyStyle = isProxyLockingMode(pFile);

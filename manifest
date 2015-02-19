@@ -1,5 +1,5 @@
-C Enhancements\sto\sSQLITE_ENABLE_API_ARMOR\smerged\sfrom\strunk.
-D 2015-02-13T16:42:49.659
+C Move\sthe\sos_unix.c\sfile\scloser\sto\strunk.
+D 2015-02-19T02:43:19.628
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1f1fce0d47e29ffae67c92834d0e6e1c699743e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -217,7 +217,7 @@ F src/os.c 5822c2b843a77219bba1e28887cdc816b27ca29d
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c 06e10d7aaf6b06947d9da35b38ff05000bf5058f
+F src/os_unix.c 56b0830336d47860be19610d057548c6303733c8
 F src/os_win.c 1d1ef630b3e3859b7399952909e10d3a4d43fc77
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 694caffb16891a96608193968d7c9a8fa9a71240
@@ -1244,7 +1244,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b2449d67768f4d3d83877d9c45e5b4b17bb6a551 823ad40ccb5b51aaa0d5a48da63b465df9d0649a
-R 34fbf0e66795550d51489fb09903ffef
+P 5147b94ae6dc3e1bae5c506563347880c3a302b1
+R 6b3cfa6d91c403080a3780789432dd25
 U drh
-Z ba17bdddc836de1631382089bbd63eae
+Z 90d307cc802c08c29ee77dea9a89c868
