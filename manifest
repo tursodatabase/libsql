@@ -1,5 +1,5 @@
-C Move\sthe\sos_unix.c\sfile\scloser\sto\strunk.
-D 2015-02-19T02:43:19.628
+C Incremental\smerge\sto\sprevent\sa\shuge\spileup\sof\smerge\sconflicts\sresulting\nfrom\sediting\sthe\ssame\scode\sin\stwo\sdifferent\sbranches.
+D 2015-02-19T15:56:27.502
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1f1fce0d47e29ffae67c92834d0e6e1c699743e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -188,7 +188,7 @@ F src/delete.c 37964e6c1d73ff49cbea9ff690c9605fb15f600e
 F src/expr.c 3ef111b88ae2941b84b6b6ea4be8d501ba1af0cb
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c e0444b61bed271a76840cbe6182df93a9baa3f12
-F src/func.c e331a645ae437de0089d9789f678073a114c804d
+F src/func.c f7f0f44b0a2cb568a9c42b1b07e613380ee0b9c6
 F src/global.c 12561d70a1b25f67b21154622bb1723426724f75
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
 F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
@@ -217,7 +217,7 @@ F src/os.c 5822c2b843a77219bba1e28887cdc816b27ca29d
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c 56b0830336d47860be19610d057548c6303733c8
+F src/os_unix.c e9666eb40f1dd211c362b08d595790acc7a02a62
 F src/os_win.c 1d1ef630b3e3859b7399952909e10d3a4d43fc77
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 694caffb16891a96608193968d7c9a8fa9a71240
@@ -235,7 +235,7 @@ F src/resolve.c f4d79e31ffa5820c2e3d1740baa5e9b190425f2b
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 66c2fce5d5a413915c2c3d989e2bc00e5e905f00
 F src/shell.c 6276582ee4e9114e0bb0795772414caaf21c0f8e
-F src/sqlite.h.in 886a2a306f811f06ede879493731dfe991224a6e
+F src/sqlite.h.in 6983c500b35cceeb8058292f593a18797e0c5cca
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3_private.h a81a9c5f97c095cc3e86914a05f8fabe0011f4a1
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
@@ -259,7 +259,7 @@ F src/test_backup.c 2e6e6a081870150f20c526a2e9d0d29cda47d803
 F src/test_blob.c 1f2e3e25255b731c4fcf15ee7990d06347cb6c09
 F src/test_btree.c 2e9978eca99a9a4bfa8cae949efb00886860a64f
 F src/test_config.c 90441a025b77cf7831dab8ed94b3692115ed965a
-F src/test_demovfs.c 69b2085076654ebc18014cbc6386f04409c959a9
+F src/test_demovfs.c 0de72c2c89551629f58486fde5734b7d90758852
 F src/test_devsym.c e7498904e72ba7491d142d5c83b476c4e76993bc
 F src/test_fs.c ced436e3d4b8e4681328409b8081051ce614e28f
 F src/test_func.c 14e543ae4d905ee31dc322b2f8d31bfac1769d45
@@ -1244,7 +1244,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5147b94ae6dc3e1bae5c506563347880c3a302b1
-R 6b3cfa6d91c403080a3780789432dd25
+P 57d7024007c2a71bf6cb875b1f1daf26924d188e 81f242e338d6122e27aad86986bfd140012c6582
+R 788417e399f877a510499bdc109cf276
 U drh
-Z 90d307cc802c08c29ee77dea9a89c868
+Z 8131997588d15bedfe4c84b3279820f9

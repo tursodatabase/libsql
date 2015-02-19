@@ -3545,7 +3545,7 @@ static int seekAndRead(unixFile *id, sqlite3_int64 offset, void *pBuf, int cnt){
     if( got<0 ){
       if( errno==EINTR ){ got = 1; continue; }
       prior = 0;
-      storeLastErrno((unixFile*)id, errno);
+      storeLastErrno((unixFile*)id,  errno);
       break;
     }else if( got>0 ){
       cnt -= got;
@@ -5453,7 +5453,6 @@ static int unixShmUnmap(
         /* ftruncate(pShmNode->h, 32 * 1024); */
       }
     }
-    
     unixShmPurge(pDbFd);
   }
   unixLeaveMutex();
