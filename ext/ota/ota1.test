@@ -100,7 +100,10 @@ proc create_ota5 {filename} {
 #
 proc run_ota {target ota} {
   sqlite3ota ota $target $ota
-  while { [ota step]=="SQLITE_OK" } {}
+  while 1 {
+    set rc [ota step]
+    if {$rc!="SQLITE_OK"} break
+  }
   ota close
 }
 

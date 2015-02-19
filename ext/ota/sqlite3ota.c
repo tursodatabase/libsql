@@ -103,12 +103,12 @@
 ** keys mapped to values as follows:
 **
 ** OTA_STATE_STAGE:
-**   May be set to integer values 1, 2 or 3. As follows:
-**       0: Nothing at all has been done.
+**   May be set to integer values 1, 2, 4 or 5. As follows:
 **       1: the *-ota file is currently under construction.
 **       2: the *-ota file has been constructed, but not yet moved 
 **          to the *-wal path.
-**       3: the checkpoint is underway.
+**       4: the checkpoint is underway.
+**       5: the ota update has been checkpointed.
 **
 ** OTA_STATE_TBL:
 **   Only valid if STAGE==1. The target database name of the table 
@@ -128,8 +128,11 @@
 **   ota update.
 **
 ** OTA_STATE_CKPT:
-**   Valid if STAGE==3. The blob to pass to sqlite3ckpt_start() to resume
-**   the incremental checkpoint.
+**   Valid if STAGE==4. The 64-bit checksum associated with the wal-index
+**   header created by recovering the *-wal file. This is used to detect
+**   cases when another client appends frames to the *-wal file in the
+**   middle of an incremental checkpoint (an incremental checkpoint cannot
+**   be continued if this happens).
 **
 ** OTA_STATE_COOKIE:
 **   Valid if STAGE==1. The current change-counter cookie value in the 
@@ -153,8 +156,9 @@
 #define OTA_CREATE_STATE "CREATE TABLE IF NOT EXISTS ota.ota_state"        \
                              "(k INTEGER PRIMARY KEY, v)"
 
-typedef struct OtaState OtaState;
+typedef struct OtaFrame OtaFrame;
 typedef struct OtaObjIter OtaObjIter;
+typedef struct OtaState OtaState;
 typedef struct ota_vfs ota_vfs;
 typedef struct ota_file ota_file;
 
@@ -213,7 +217,6 @@ struct OtaObjIter {
   int iTnum;                      /* Root page of current object */
   int iPkTnum;                    /* If eType==EXTERNAL, root of PK index */
   int bUnique;                    /* Current index is unique */
-  int iVisit;                     /* Number of points visited, incl. current */
 
   /* Statements created by otaObjIterPrepareAll() */
   int nCol;                       /* Number of columns in current object */
@@ -244,7 +247,21 @@ struct OtaObjIter {
 #define OTA_PK_VTAB           5
 
 
-typedef struct OtaFrame OtaFrame;
+/*
+** Within the OTA_STAGE_OAL stage, each call to sqlite3ota_step() performs
+** one of the following operations.
+*/
+#define OTA_INSERT     1          /* Insert on a main table b-tree */
+#define OTA_DELETE     2          /* Delete a row from a main table b-tree */
+#define OTA_IDX_DELETE 3          /* Delete a row from an aux. index b-tree */
+#define OTA_IDX_INSERT 4          /* Insert on an aux. index b-tree */
+#define OTA_UPDATE     5          /* Update a row in a main table b-tree */
+
+
+/*
+** A single step of an incremental checkpoint - frame iWalFrame of the wal
+** file should be copied to page iDbPage of the database file.
+*/
 struct OtaFrame {
   u32 iDbPage;
   u32 iWalFrame;
@@ -279,6 +296,9 @@ struct sqlite3ota {
   i64 iWalCksum;
 };
 
+/*
+** An ota VFS is implemented using an instance of this structure.
+*/
 struct ota_vfs {
   sqlite3_vfs base;               /* ota VFS shim methods */
   sqlite3_vfs *pRealVfs;          /* Underlying VFS */
@@ -286,6 +306,10 @@ struct ota_vfs {
   ota_file *pMain;                /* Linked list of main db files */
 };
 
+/*
+** Each file opened by an ota VFS is represented by an instance of
+** the following structure.
+*/
 struct ota_file {
   sqlite3_file base;              /* sqlite3_file methods */
   sqlite3_file *pReal;            /* Underlying file handle */
@@ -459,7 +483,7 @@ static int otaObjIterNext(sqlite3ota *p, OtaObjIter *pIter){
         pIter->bCleanup = 0;
         rc = sqlite3_step(pIter->pTblIter);
         if( rc!=SQLITE_ROW ){
-          rc = sqlite3_reset(pIter->pTblIter);
+          rc = resetAndCollectError(pIter->pTblIter, &p->zErrmsg);
           pIter->zTbl = 0;
         }else{
           pIter->zTbl = (const char*)sqlite3_column_text(pIter->pTblIter, 0);
@@ -474,7 +498,7 @@ static int otaObjIterNext(sqlite3ota *p, OtaObjIter *pIter){
         if( rc==SQLITE_OK ){
           rc = sqlite3_step(pIter->pIdxIter);
           if( rc!=SQLITE_ROW ){
-            rc = sqlite3_reset(pIter->pIdxIter);
+            rc = resetAndCollectError(pIter->pIdxIter, &p->zErrmsg);
             pIter->bCleanup = 1;
             pIter->zIdx = 0;
           }else{
@@ -492,7 +516,6 @@ static int otaObjIterNext(sqlite3ota *p, OtaObjIter *pIter){
     otaObjIterFinalize(pIter);
     p->rc = rc;
   }
-  pIter->iVisit++;
   return rc;
 }
 
@@ -529,6 +552,30 @@ static int otaObjIterFirst(sqlite3ota *p, OtaObjIter *pIter){
 }
 
 /*
+** This is a wrapper around "sqlite3_mprintf(zFmt, ...)". If an OOM occurs,
+** an error code is stored in the OTA handle passed as the first argument.
+**
+** If an error has already occurred (p->rc is already set to something other
+** than SQLITE_OK), then this function returns NULL without modifying the
+** stored error code. In this case it still calls sqlite3_free() on any 
+** printf() parameters associated with %z conversions.
+*/
+static char *otaMPrintf(sqlite3ota *p, const char *zFmt, ...){
+  char *zSql = 0;
+  va_list ap;
+  va_start(ap, zFmt);
+  zSql = sqlite3_vmprintf(zFmt, ap);
+  if( p->rc==SQLITE_OK ){
+    if( zSql==0 ) p->rc = SQLITE_NOMEM;
+  }else{
+    sqlite3_free(zSql);
+    zSql = 0;
+  }
+  va_end(ap);
+  return zSql;
+}
+
+/*
 ** Argument zFmt is a sqlite3_mprintf() style format string. The trailing
 ** arguments are the usual subsitution values. This function performs
 ** the printf() style substitutions and executes the result as an SQL
@@ -541,19 +588,29 @@ static int otaObjIterFirst(sqlite3ota *p, OtaObjIter *pIter){
 static int otaMPrintfExec(sqlite3ota *p, const char *zFmt, ...){
   va_list ap;
   va_start(ap, zFmt);
+  char *zSql = sqlite3_vmprintf(zFmt, ap);
   if( p->rc==SQLITE_OK ){
-    char *zSql = sqlite3_vmprintf(zFmt, ap);
     if( zSql==0 ){
       p->rc = SQLITE_NOMEM;
     }else{
       p->rc = sqlite3_exec(p->db, zSql, 0, 0, &p->zErrmsg);
-      sqlite3_free(zSql);
     }
   }
+  sqlite3_free(zSql);
   va_end(ap);
   return p->rc;
 }
 
+/*
+** Attempt to allocate and return a pointer to a zeroed block of nByte 
+** bytes. 
+**
+** If an error (i.e. an OOM condition) occurs, return NULL and leave an 
+** error code in the ota handle passed as the first argument. Or, if an 
+** error has already occurred when this function is called, return NULL 
+** immediately without attempting the allocation or modifying the stored
+** error code.
+*/
 static void *otaMalloc(sqlite3ota *p, int nByte){
   void *pRet = 0;
   if( p->rc==SQLITE_OK ){
@@ -587,6 +644,16 @@ static void otaAllocateIterArrays(sqlite3ota *p, OtaObjIter *pIter, int nCol){
   }
 }
 
+/*
+** The first argument must be a nul-terminated string. This function
+** returns a copy of the string in memory obtained from sqlite3_malloc().
+** It is the responsibility of the caller to eventually free this memory
+** using sqlite3_free().
+**
+** If an OOM condition is encountered when attempting to allocate memory,
+** output variable (*pRc) is set to SQLITE_NOMEM before returning. Otherwise,
+** if the allocation succeeds, (*pRc) is left unchanged.
+*/
 static char *otaStrndup(const char *zStr, int *pRc){
   char *zRet = 0;
 
@@ -602,6 +669,22 @@ static char *otaStrndup(const char *zStr, int *pRc){
   }
 
   return zRet;
+}
+
+/*
+** Finalize the statement passed as the second argument.
+**
+** If the sqlite3_finalize() call indicates that an error occurs, and the
+** ota handle error code is not already set, set the error code and error
+** message accordingly.
+*/
+static void otaFinalize(sqlite3ota *p, sqlite3_stmt *pStmt){
+  sqlite3 *db = sqlite3_db_handle(pStmt);
+  int rc = sqlite3_finalize(pStmt);
+  if( p->rc==SQLITE_OK && rc!=SQLITE_OK ){
+    p->rc = rc;
+    p->zErrmsg = sqlite3_mprintf("%s", sqlite3_errmsg(db));
+  }
 }
 
 /* Determine the type of a table.
@@ -716,8 +799,7 @@ static void otaTableType(
 otaTableType_end: {
     int i;
     for(i=0; i<sizeof(aStmt)/sizeof(aStmt[0]); i++){
-      int rc2 = sqlite3_finalize(aStmt[i]);
-      if( p->rc==SQLITE_OK ) p->rc = rc2;
+      otaFinalize(p, aStmt[i]);
     }
   }
 }
@@ -737,7 +819,6 @@ static int otaObjIterCacheTableInfo(sqlite3ota *p, OtaObjIter *pIter){
     sqlite3_stmt *pStmt = 0;
     int nCol = 0;
     int i;                        /* for() loop iterator variable */
-    int rc2;                      /* sqlite3_finalize() return value */
     int bOtaRowid = 0;            /* If input table has column "ota_rowid" */
     int iOrder = 0;
 
@@ -821,35 +902,10 @@ static int otaObjIterCacheTableInfo(sqlite3ota *p, OtaObjIter *pIter){
       }
     }
 
-    rc2 = sqlite3_finalize(pStmt);
-    if( p->rc==SQLITE_OK ) p->rc = rc2;
+    otaFinalize(p, pStmt);
   }
 
   return p->rc;
-}
-
-/*
-** This is a wrapper around "sqlite3_mprintf(zFmt, ...)". If an OOM occurs,
-** an error code is stored in the OTA handle passed as the first argument.
-**
-** If an error has already occurred (p->rc is already set to something other
-** than SQLITE_OK), then this function returns NULL without modifying the
-** stored error code. In this case it still calls sqlite3_free() on any 
-** printf() parameters associated with %z conversions.
-*/
-static char *otaMPrintf(sqlite3ota *p, const char *zFmt, ...){
-  char *zSql = 0;
-  va_list ap;
-  va_start(ap, zFmt);
-  zSql = sqlite3_vmprintf(zFmt, ap);
-  if( p->rc==SQLITE_OK ){
-    if( zSql==0 ) p->rc = SQLITE_NOMEM;
-  }else{
-    sqlite3_free(zSql);
-    zSql = 0;
-  }
-  va_end(ap);
-  return zSql;
 }
 
 /*
@@ -1082,6 +1138,23 @@ static void otaBadControlError(sqlite3ota *p){
 }
 
 
+/*
+** Return a nul-terminated string containing the comma separated list of
+** assignments that should be included following the "SET" keyword of
+** an UPDATE statement used to update the table object that the iterator
+** passed as the second argument currently points to if the ota_control
+** column of the data_xxx table entry is set to zMask.
+**
+** The memory for the returned string is obtained from sqlite3_malloc().
+** It is the responsibility of the caller to eventually free it using
+** sqlite3_free(). 
+**
+** If an OOM error is encountered when allocating space for the new
+** string, an error code is left in the ota handle passed as the first
+** argument and NULL is returned. Or, if an error has already occurred
+** when this function is called, NULL is returned immediately, without
+** attempting the allocation or modifying the stored error code.
+*/
 static char *otaObjIterGetSetlist(
   sqlite3ota *p,
   OtaObjIter *pIter,
@@ -1115,6 +1188,21 @@ static char *otaObjIterGetSetlist(
   return zList;
 }
 
+/*
+** Return a nul-terminated string consisting of nByte comma separated
+** "?" expressions. For example, if nByte is 3, return a pointer to
+** a buffer containing the string "?,?,?".
+**
+** The memory for the returned string is obtained from sqlite3_malloc().
+** It is the responsibility of the caller to eventually free it using
+** sqlite3_free(). 
+**
+** If an OOM error is encountered when allocating space for the new
+** string, an error code is left in the ota handle passed as the first
+** argument and NULL is returned. Or, if an error has already occurred
+** when this function is called, NULL is returned immediately, without
+** attempting the allocation or modifying the stored error code.
+*/
 static char *otaObjIterGetBindlist(sqlite3ota *p, int nBind){
   char *zRet = 0;
   int nByte = nBind*2 + 1;
@@ -1149,8 +1237,6 @@ static char *otaWithoutRowidPK(sqlite3ota *p, OtaObjIter *pIter){
     const char *zSep = "PRIMARY KEY(";
     sqlite3_stmt *pXList = 0;     /* PRAGMA index_list = (pIter->zTbl) */
     sqlite3_stmt *pXInfo = 0;     /* PRAGMA index_xinfo = <pk-index> */
-    int rc;                       /* sqlite3_finalize() return code */
-
    
     p->rc = prepareFreeAndCollectError(p->db, &pXList, &p->zErrmsg,
         sqlite3_mprintf("PRAGMA main.index_list = %Q", pIter->zTbl)
@@ -1167,8 +1253,7 @@ static char *otaWithoutRowidPK(sqlite3ota *p, OtaObjIter *pIter){
         break;
       }
     }
-    rc = sqlite3_finalize(pXList);
-    if( p->rc==SQLITE_OK ) p->rc = rc;
+    otaFinalize(p, pXList);
 
     while( p->rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pXInfo) ){
       if( sqlite3_column_int(pXInfo, 5) ){
@@ -1180,15 +1265,9 @@ static char *otaWithoutRowidPK(sqlite3ota *p, OtaObjIter *pIter){
       }
     }
     z = otaMPrintf(p, "%z)", z);
-    rc = sqlite3_finalize(pXInfo);
-    if( p->rc==SQLITE_OK ) p->rc = rc;
+    otaFinalize(p, pXInfo);
   }
   return z;
-}
-
-static void otaFinalize(sqlite3ota *p, sqlite3_stmt *pStmt){
-  int rc = sqlite3_finalize(pStmt);
-  if( p->rc==SQLITE_OK ) p->rc = rc;
 }
 
 /*
@@ -1216,13 +1295,9 @@ static void otaCreateImposterTable2(sqlite3ota *p, OtaObjIter *pIter){
     sqlite3_stmt *pQuery = 0;     /* SELECT name ... WHERE rootpage = $tnum */
     const char *zIdx = 0;         /* Name of PK index */
     sqlite3_stmt *pXInfo = 0;     /* PRAGMA main.index_xinfo = $zIdx */
-    int rc;
-
     const char *zComma = "";
-
     char *zCols = 0;              /* Used to build up list of table cols */
     char *zPk = 0;                /* Used to build up table PK declaration */
-    char *zSql = 0;               /* CREATE TABLE statement */
 
     /* Figure out the name of the primary key index for the current table.
     ** This is needed for the argument to "PRAGMA index_xinfo". Set
@@ -1257,20 +1332,14 @@ static void otaCreateImposterTable2(sqlite3ota *p, OtaObjIter *pIter){
       }
     }
     zCols = otaMPrintf(p, "%z, id INTEGER", zCols);
-    rc = sqlite3_finalize(pXInfo);
-    if( p->rc==SQLITE_OK ) p->rc = rc;
+    otaFinalize(p, pXInfo);
 
-    zSql = otaMPrintf(p, 
+    sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, p->db, "main", 1, tnum);
+    otaMPrintfExec(p, 
         "CREATE TABLE ota_imposter2(%z, PRIMARY KEY(%z)) WITHOUT ROWID", 
         zCols, zPk
     );
-    assert( (zSql==0)==(p->rc!=SQLITE_OK) );
-    if( zSql ){
-      sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, p->db, "main", 1, tnum);
-      p->rc = sqlite3_exec(p->db, zSql, 0, 0, &p->zErrmsg);
-      sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, p->db, "main", 0, 0);
-    }
-    sqlite3_free(zSql);
+    sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, p->db, "main", 0, 0);
   }
 }
 
@@ -1283,26 +1352,16 @@ static void otaCreateImposterTable2(sqlite3ota *p, OtaObjIter *pIter){
 **
 ** The iterator passed as the second argument is guaranteed to point to
 ** a table (not an index) when this function is called. This function
-** attempts to create any imposter tables required to write to the main
+** attempts to create any imposter table required to write to the main
 ** table b-tree of the table before returning. Non-zero is returned if
-** imposter tables are created, or zero otherwise.
+** an imposter table are created, or zero otherwise.
 **
-** The required imposter tables depend on the type of table that the
-** iterator currently points to.
-**
-**   OTA_PK_NONE, OTA_PK_IPK, OTA_PK_WITHOUT_ROWID:
-**     A single imposter table is required. With the same schema as
-**     the actual target table (less any UNIQUE constraints). More
-**     precisely, the "same schema" means the same columns, types, collation
-**     sequences and primary key declaration.
-**
-**   OTA_PK_VTAB:
-**     No imposters required. 
-**
-**   OTA_PK_EXTERNAL:
-**     Two imposters are required. The first has the same schema as the
-**     target database table, with no PRIMARY KEY or UNIQUE clauses. The
-**     second is used to access the PK b-tree index on disk.
+** An imposter table is required in all cases except OTA_PK_VTAB. Only
+** virtual tables are written to directly. The imposter table has the 
+** same schema as the actual target table (less any UNIQUE constraints). 
+** More precisely, the "same schema" means the same columns, types, 
+** collation sequences. For tables that do not have an external PRIMARY
+** KEY, it also means the same PRIMARY KEY declaration.
 */
 static void otaCreateImposterTable(sqlite3ota *p, OtaObjIter *pIter){
   if( p->rc==SQLITE_OK && pIter->eType!=OTA_PK_VTAB ){
@@ -1340,16 +1399,12 @@ static void otaCreateImposterTable(sqlite3ota *p, OtaObjIter *pIter){
       }
     }
 
-    zSql = otaMPrintf(p, "CREATE TABLE \"ota_imp_%w\"(%z)%s", 
+    sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, p->db, "main", 1, tnum);
+    otaMPrintfExec(p, "CREATE TABLE \"ota_imp_%w\"(%z)%s", 
         pIter->zTbl, zSql, 
         (pIter->eType==OTA_PK_WITHOUT_ROWID ? " WITHOUT ROWID" : "")
     );
-    if( p->rc==SQLITE_OK ){
-      sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, p->db, "main", 1, tnum);
-      p->rc = sqlite3_exec(p->db, zSql, 0, 0, &p->zErrmsg);
-      sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, p->db, "main", 0, 0);
-    }
-    sqlite3_free(zSql);
+    sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, p->db, "main", 0, 0);
   }
 }
 
@@ -1547,17 +1602,17 @@ static int otaObjIterPrepareAll(
   return p->rc;
 }
 
-#define OTA_INSERT     1
-#define OTA_DELETE     2
-#define OTA_IDX_DELETE 3
-#define OTA_IDX_INSERT 4
-#define OTA_UPDATE     5
-
+/*
+** Set output variable *ppStmt to point to an UPDATE statement that may
+** be used to update the imposter table for the main table b-tree of the
+** table object that pIter currently points to, assuming that the 
+** ota_control column of the data_xyz table contains zMask.
+*/
 static int otaGetUpdateStmt(
-  sqlite3ota *p, 
-  OtaObjIter *pIter, 
-  const char *zMask,
-  sqlite3_stmt **ppStmt
+  sqlite3ota *p,                  /* OTA handle */
+  OtaObjIter *pIter,              /* Object iterator */
+  const char *zMask,              /* ota_control value ('x.x.') */
+  sqlite3_stmt **ppStmt           /* OUT: UPDATE statement handle */
 ){
   if( pIter->pUpdate && strcmp(zMask, pIter->zMask)==0 ){
     *ppStmt = pIter->pUpdate;
@@ -2007,7 +2062,7 @@ static void otaIncrSchemaCookie(sqlite3ota *p){
       if( SQLITE_ROW==sqlite3_step(pStmt) ){
         iCookie = sqlite3_column_int(pStmt, 0);
       }
-      p->rc = sqlite3_finalize(pStmt);
+      otaFinalize(p, pStmt);
     }
     if( p->rc==SQLITE_OK ){
       otaMPrintfExec(p, "PRAGMA schema_version = %d", iCookie+1);
@@ -2039,19 +2094,14 @@ static void otaSaveState(sqlite3ota *p, int eStage){
           OTA_STATE_CKPT, p->iWalCksum,
           OTA_STATE_COOKIE, (i64)p->pTargetFd->iCookie
           )
-        );
+    );
     assert( pInsert==0 || rc==SQLITE_OK );
 
     if( rc==SQLITE_OK ){
       sqlite3_step(pInsert);
       rc = sqlite3_finalize(pInsert);
-    }else{
-      sqlite3_finalize(pInsert);
     }
-
-    if( rc!=SQLITE_OK ){
-      p->rc = rc;
-    }
+    if( rc!=SQLITE_OK ) p->rc = rc;
   }
 }
 
@@ -3103,6 +3153,7 @@ static int otaVfsGetLastError(sqlite3_vfs *pVfs, int a, char *b){
 void sqlite3ota_destroy_vfs(const char *zName){
   sqlite3_vfs *pVfs = sqlite3_vfs_find(zName);
   if( pVfs && pVfs->xOpen==otaVfsOpen ){
+    sqlite3_mutex_free(((ota_vfs*)pVfs)->mutex);
     sqlite3_vfs_unregister(pVfs);
     sqlite3_free(pVfs);
   }
@@ -3158,18 +3209,24 @@ int sqlite3ota_create_vfs(const char *zName, const char *zParent){
       pNew->base.mxPathname = pParent->mxPathname;
       pNew->base.szOsFile = sizeof(ota_file) + pParent->szOsFile;
       pNew->pRealVfs = pParent;
-
       pNew->base.zName = (const char*)(zSpace = (char*)&pNew[1]);
       memcpy(zSpace, zName, nName);
 
-      /* Register the new VFS (not as the default) */
-      rc = sqlite3_vfs_register(&pNew->base, 0);
+      /* Allocate the mutex and register the new VFS (not as the default) */
+      pNew->mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_RECURSIVE);
+      if( pNew->mutex==0 ){
+        rc = SQLITE_NOMEM;
+      }else{
+        rc = sqlite3_vfs_register(&pNew->base, 0);
+      }
+    }
+
+    if( rc!=SQLITE_OK ){
+      sqlite3_mutex_free(pNew->mutex);
+      sqlite3_free(pNew);
     }
   }
 
-  if( rc!=SQLITE_OK ){
-    sqlite3_free(pNew);
-  }
   return rc;
 }
 
