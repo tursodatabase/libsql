@@ -310,6 +310,10 @@ int sqlite3ota_close(sqlite3ota *pOta, char **pzErrmsg);
 sqlite3_int64 sqlite3ota_progress(sqlite3ota *pOta);
 
 /*
+** Create an OTA VFS named zName that accesses the underlying file-system
+** via existing VFS zParent. The new object is registered as a non-default
+** VFS with SQLite before returning.
+**
 ** Part of the OTA implementation uses a custom VFS object. Usually, this
 ** object is created and deleted automatically by OTA. 
 **

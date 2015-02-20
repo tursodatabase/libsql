@@ -284,8 +284,8 @@ struct sqlite3ota {
   ota_file *pTargetFd;            /* File handle open on target db */
 
   /* The following state variables are used as part of the incremental
-  ** checkpoint stage (eStage==OTA_STAGE_CKPT). See function otaSetupCkpt()
-  ** for details.  */
+  ** checkpoint stage (eStage==OTA_STAGE_CKPT). See comments surrounding
+  ** function otaSetupCheckpoint() for details.  */
   u32 iMaxFrame;                  /* Largest iWalFrame value in aFrame[] */
   u32 mLock;
   int nFrame;                     /* Entries in aFrame[] array */
@@ -1730,8 +1730,27 @@ static i64 otaShmChecksum(sqlite3ota *p){
   return iRet;
 }
 
+/*
+** This function is called as part of initializing or reinitializing an
+** incremental checkpoint. 
+**
+** It populates the sqlite3ota.aFrame[] array with the set of 
+** (wal frame -> db page) copy operations required to checkpoint the 
+** current wal file, and obtains the set of shm locks required to safely 
+** perform the copy operations directly on the file-system.
+**
+** If argument pState is not NULL, then the incremental checkpoint is
+** being resumed. In this case, if the checksum of the wal-index-header
+** following recovery is not the same as the checksum saved in the OtaState
+** object, then the ota handle is set to DONE state. This occurs if some
+** other client appends a transaction to the wal file in the middle of
+** an incremental checkpoint.
+*/
 static void otaSetupCheckpoint(sqlite3ota *p, OtaState *pState){
 
+  /* If pState is NULL, then the wal file may not have been opened and
+  ** recovered. Running a read-statement here to ensure that doing so
+  ** does not interfere with the "capture" process below.  */
   if( pState==0 ){
     p->eStage = 0;
     if( p->rc==SQLITE_OK ){
@@ -1739,6 +1758,34 @@ static void otaSetupCheckpoint(sqlite3ota *p, OtaState *pState){
     }
   }
 
+  /* Assuming no error has occurred, run a "restart" checkpoint with the
+  ** sqlite3ota.eStage variable set to CAPTURE. This turns on the following
+  ** special behaviour in the ota VFS:
+  **
+  **   * If the exclusive shm WRITER or READ0 lock cannot be obtained,
+  **     the checkpoint fails with SQLITE_BUSY (normally SQLite would
+  **     proceed with running a passive checkpoint instead of failing).
+  **
+  **   * Attempts to read from the *-wal file or write to the database file
+  **     do not perform any IO. Instead, the frame/page combinations that
+  **     would be read/written are recorded in the sqlite3ota.aFrame[]
+  **     array.
+  **
+  **   * Calls to xShmLock(UNLOCK) to release the exclusive shm WRITER, 
+  **     READ0 and CHECKPOINT locks taken as part of the checkpoint are
+  **     no-ops. These locks will not be released until the connection
+  **     is closed.
+  **
+  **   * Attempting to xSync() the database file causes an SQLITE_INTERNAL 
+  **     error.
+  **
+  ** As a result, unless an error (i.e. OOM or SQLITE_BUSY) occurs, the
+  ** checkpoint below fails with SQLITE_INTERNAL, and leaves the aFrame[]
+  ** array populated with a set of (frame -> page) mappings. Because the 
+  ** WRITER, CHECKPOINT and READ0 locks are still held, it is safe to copy 
+  ** data from the wal file into the database file according to the 
+  ** contents of aFrame[].
+  */
   if( p->rc==SQLITE_OK ){
     int rc2;
     p->eStage = OTA_STAGE_CAPTURE;
@@ -1748,7 +1795,7 @@ static void otaSetupCheckpoint(sqlite3ota *p, OtaState *pState){
 
   if( p->rc==SQLITE_OK ){
     p->eStage = OTA_STAGE_CKPT;
-    p->nStep = 0;
+    p->nStep = (pState ? pState->nRow : 0);
     p->aBuf = otaMalloc(p, p->pgsz);
     p->iWalCksum = otaShmChecksum(p);
   }
@@ -1759,6 +1806,11 @@ static void otaSetupCheckpoint(sqlite3ota *p, OtaState *pState){
   }
 }
 
+/*
+** Called when iAmt bytes are read from offset iOff of the wal file while
+** the ota object is in capture mode. Record the frame number of the frame
+** being read in the aFrame[] array.
+*/
 static int otaCaptureWalRead(sqlite3ota *pOta, i64 iOff, int iAmt){
   const u32 mReq = (1<<WAL_LOCK_WRITE)|(1<<WAL_LOCK_CKPT)|(1<<WAL_LOCK_READ0);
   u32 iFrame;
@@ -1786,11 +1838,21 @@ static int otaCaptureWalRead(sqlite3ota *pOta, i64 iOff, int iAmt){
   return SQLITE_OK;
 }
 
+/*
+** Called when a page of data is written to offset iOff of the database
+** file while the ota handle is in capture mode. Record the page number 
+** of the page being written in the aFrame[] array.
+*/
 static int otaCaptureDbWrite(sqlite3ota *pOta, i64 iOff){
   pOta->aFrame[pOta->nFrame-1].iDbPage = (u32)(iOff / pOta->pgsz) + 1;
   return SQLITE_OK;
 }
 
+/*
+** This is called as part of an incremental checkpoint operation. Copy
+** a single frame of data from the wal file into the database file, as
+** indicated by the OtaFrame object.
+*/
 static void otaCheckpointFrame(sqlite3ota *p, OtaFrame *pFrame){
   sqlite3_file *pWal = p->pTargetFd->pWalFd->pReal;
   sqlite3_file *pDb = p->pTargetFd->pReal;
@@ -1921,6 +1983,9 @@ static int otaStepType(sqlite3ota *p, const char **pzMask){
 }
 
 #ifdef SQLITE_DEBUG
+/*
+** Assert that column iCol of statement pStmt is named zName.
+*/
 static void assertColumnName(sqlite3_stmt *pStmt, int iCol, const char *zName){
   const char *zCol = sqlite3_column_name(pStmt, iCol);
   assert( 0==sqlite3_stricmp(zName, zCol) );
@@ -2070,6 +2135,11 @@ static void otaIncrSchemaCookie(sqlite3ota *p){
   }
 }
 
+/*
+** Update the contents of the ota_state table within the ota database. The
+** value stored in the OTA_STATE_STAGE column is eStage. All other values
+** are determined by inspecting the ota handle passed as the first argument.
+*/
 static void otaSaveState(sqlite3ota *p, int eStage){
   if( p->rc==SQLITE_OK || p->rc==SQLITE_DONE ){
     sqlite3_stmt *pInsert = 0;
@@ -2202,6 +2272,9 @@ int sqlite3ota_step(sqlite3ota *p){
   }
 }
 
+/*
+** Free an OtaState object allocated by otaLoadState().
+*/
 static void otaFreeState(OtaState *p){
   if( p ){
     sqlite3_free(p->zTbl);
@@ -2278,13 +2351,28 @@ static OtaState *otaLoadState(sqlite3ota *p){
   return pRet;
 }
 
+/*
+** Compare strings z1 and z2, returning 0 if they are identical, or non-zero
+** otherwise. Either or both argument may be NULL. Two NULL values are
+** considered equal, and NULL is considered distinct from all other values.
+*/
 static int otaStrCompare(const char *z1, const char *z2){
   if( z1==0 && z2==0 ) return 0;
   if( z1==0 || z2==0 ) return 1;
   return (sqlite3_stricmp(z1, z2)!=0);
 }
 
-static void otaLoadTransactionState(sqlite3ota *p, OtaState *pState){
+/*
+** This function is called as part of sqlite3ota_open() when initializing
+** an ota handle in OAL stage. If the ota update has not started (i.e.
+** the ota_state table was empty) it is a no-op. Otherwise, it arranges
+** things so that the next call to sqlite3ota_step() continues on from
+** where the previous ota handle left off.
+**
+** If an error occurs, an error code and error message are left in the
+** ota handle passed as the first argument.
+*/
+static void otaSetupOal(sqlite3ota *p, OtaState *pState){
   assert( p->rc==SQLITE_OK );
   if( pState->zTbl ){
     OtaObjIter *pIter = &p->objiter;
@@ -2323,6 +2411,12 @@ static void otaDeleteOalFile(sqlite3ota *p){
   sqlite3_free(zOal);
 }
 
+/*
+** Allocate a private ota VFS for the ota handle passed as the only
+** argument. This VFS will be used unless the call to sqlite3ota_open()
+** specified a URI with a vfs=? option in place of a target database
+** file name.
+*/
 static void otaCreateVfs(sqlite3ota *p){
   int rnd;
   char zRnd[64];
@@ -2338,6 +2432,10 @@ static void otaCreateVfs(sqlite3ota *p){
   }
 }
 
+/*
+** Destroy the private VFS created for the ota handle passed as the only
+** argument by an earlier call to otaCreateVfs().
+*/
 static void otaDeleteVfs(sqlite3ota *p){
   if( p->zVfsName ){
     sqlite3ota_destroy_vfs(p->zVfsName);
@@ -2423,13 +2521,12 @@ sqlite3ota *sqlite3ota_open(const char *zTarget, const char *zOta){
         }
   
         if( p->rc==SQLITE_OK ){
-          otaLoadTransactionState(p, pState);
+          otaSetupOal(p, pState);
         }
       }else if( p->eStage==OTA_STAGE_MOVE ){
         /* no-op */
       }else if( p->eStage==OTA_STAGE_CKPT ){
         otaSetupCheckpoint(p, pState);
-        p->nStep = pState->nRow;
       }else if( p->eStage==OTA_STAGE_DONE ){
         p->rc = SQLITE_DONE;
       }else{
@@ -2794,7 +2891,7 @@ static int otaVfsDeviceCharacteristics(sqlite3_file *pFile){
 }
 
 /*
-** Shared-memory methods are all pass-thrus.
+** Take or release a shared-memory lock.
 */
 static int otaVfsShmLock(sqlite3_file *pFile, int ofst, int n, int flags){
   ota_file *p = (ota_file*)pFile;
@@ -2832,6 +2929,9 @@ static int otaVfsShmLock(sqlite3_file *pFile, int ofst, int n, int flags){
   return rc;
 }
 
+/*
+** Obtain a pointer to a mapping of a single 32KiB page of the *-shm file.
+*/
 static int otaVfsShmMap(
   sqlite3_file *pFile, 
   int iRegion, 
@@ -2891,6 +2991,9 @@ static void otaVfsShmBarrier(sqlite3_file *pFile){
   p->pReal->pMethods->xShmBarrier(p->pReal);
 }
 
+/*
+** The xShmUnmap method.
+*/
 static int otaVfsShmUnmap(sqlite3_file *pFile, int delFlag){
   ota_file *p = (ota_file*)pFile;
   int rc = SQLITE_OK;
@@ -2905,6 +3008,12 @@ static int otaVfsShmUnmap(sqlite3_file *pFile, int delFlag){
   return rc;
 }
 
+/*
+** Given that zWal points to a buffer containing a wal file name passed to 
+** either the xOpen() or xAccess() VFS method, return a pointer to the
+** file-handle opened by the same database connection on the corresponding
+** database file.
+*/
 static ota_file *otaFindMaindb(ota_vfs *pOtaVfs, const char *zWal){
   ota_file *pDb;
   sqlite3_mutex_enter(pOtaVfs->mutex);
@@ -3146,10 +3255,17 @@ static int otaVfsCurrentTime(sqlite3_vfs *pVfs, double *pTimeOut){
   return pRealVfs->xCurrentTime(pRealVfs, pTimeOut);
 }
 
+/*
+** No-op.
+*/
 static int otaVfsGetLastError(sqlite3_vfs *pVfs, int a, char *b){
   return 0;
 }
 
+/*
+** Deregister and destroy an OTA vfs created by an earlier call to
+** sqlite3ota_create_vfs().
+*/
 void sqlite3ota_destroy_vfs(const char *zName){
   sqlite3_vfs *pVfs = sqlite3_vfs_find(zName);
   if( pVfs && pVfs->xOpen==otaVfsOpen ){
@@ -3159,6 +3275,11 @@ void sqlite3ota_destroy_vfs(const char *zName){
   }
 }
 
+/*
+** Create an OTA VFS named zName that accesses the underlying file-system
+** via existing VFS zParent. The new object is registered as a non-default
+** VFS with SQLite before returning.
+*/
 int sqlite3ota_create_vfs(const char *zName, const char *zParent){
 
   /* Template for VFS */
