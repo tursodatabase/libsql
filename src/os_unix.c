@@ -3260,9 +3260,9 @@ static int seekAndWriteFd(
   TIMER_START;
 
 #if defined(USE_PREAD)
-  do{ rc = osPwrite(fd, pBuf, nBuf, iOff); }while( rc<0 && errno==EINTR );
+  do{ rc = (int)osPwrite(fd, pBuf, nBuf, iOff); }while( rc<0 && errno==EINTR );
 #elif defined(USE_PREAD64)
-  do{ rc = osPwrite64(fd, pBuf, nBuf, iOff);}while( rc<0 && errno==EINTR);
+  do{ rc = (int)osPwrite64(fd, pBuf, nBuf, iOff);}while( rc<0 && errno==EINTR);
 #else
   do{
     i64 iSeek = lseek(fd, iOff, SEEK_SET);

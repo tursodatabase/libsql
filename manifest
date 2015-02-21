@@ -1,5 +1,5 @@
-C Fix\sover-length\ssource\scode\slines\sin\sos_unix.c.
-D 2015-02-21T00:49:00.792
+C Fix\sa\scompiler\swarning\sassociated\swith\sUSE_PREAD64.
+D 2015-02-21T00:56:05.294
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6b9e7677829aa94b9f30949656e27312aefb9a46
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -214,7 +214,7 @@ F src/os.c 8fd25588eeba74068d41102d26810e216999b6c8
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c 77e169d82b1bc679df00a3a59eb8ee2b5547c1a1
+F src/os_unix.c c06b1b263d52e14473ccc619422af6b64570a3b8
 F src/os_win.c 8223e7db5b7c4a81d8b161098ac3959400434cdb
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 4120a49ecd37697e28f5ed807f470b9c0b88410c
@@ -1239,7 +1239,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 28c2b726285ea88b334acfd6390a057d2d244838
-R 40164bdb5e6758b7e802bc3a998c4356
+P 7560a9fa50236ecaa0617f1ab5bb5662f4a61c72
+R afd779aaccfbda112c52de91ea006a71
 U drh
-Z d7418837f1bb2d2284bd9d06bcf9bb52
+Z 8991d0e22753a2d2a931885c01f739fa
