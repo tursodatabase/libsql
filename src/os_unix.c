@@ -254,7 +254,7 @@ static int randomnessPid = 0;
 #define UNIXFILE_DELETE      0x20     /* Delete on close */
 #define UNIXFILE_URI         0x40     /* Filename might have query parameters */
 #define UNIXFILE_NOLOCK      0x80     /* Do no file locking */
-#define UNIXFILE_WARNED    0x0100     /* verifyDbFile() warnings have been issued */
+#define UNIXFILE_WARNED    0x0100     /* verifyDbFile() warnings issued */
 
 /*
 ** Include code that is common to all os_*.c files
@@ -717,9 +717,9 @@ static int lockTrace(int fd, int op, struct flock *p){
 /*
 ** Retry ftruncate() calls that fail due to EINTR
 **
-** All calls to ftruncate() within this file should be made through this wrapper.
-** On the Android platform, bypassing the logic below could lead to a corrupt
-** database.
+** All calls to ftruncate() within this file should be made through
+** this wrapper.  On the Android platform, bypassing the logic below
+** could lead to a corrupt database.
 */
 static int robust_ftruncate(int h, sqlite3_int64 sz){
   int rc;
@@ -1179,8 +1179,8 @@ static void robust_close(unixFile *pFile, int h, int lineno){
 }
 
 /*
-** Set the pFile->lastErrno.  Do this in a subroutine as that provides a convenient
-** place to set a breakpoint.
+** Set the pFile->lastErrno.  Do this in a subroutine as that provides
+** a convenient place to set a breakpoint.
 */
 static void storeLastErrno(unixFile *pFile, int error){
   pFile->lastErrno = error;
@@ -4969,7 +4969,7 @@ static int unixUnfetch(sqlite3_file *fd, i64 iOff, void *p){
 **   *  An I/O method finder function called FINDER that returns a pointer
 **      to the METHOD object in the previous bullet.
 */
-#define IOMETHODS(FINDER, METHOD, VERSION, CLOSE, LOCK, UNLOCK, CKLOCK, SHMMAP) \
+#define IOMETHODS(FINDER,METHOD,VERSION,CLOSE,LOCK,UNLOCK,CKLOCK,SHMMAP)     \
 static const sqlite3_io_methods METHOD = {                                   \
    VERSION,                    /* iVersion */                                \
    CLOSE,                      /* xClose */                                  \
@@ -6766,7 +6766,7 @@ static int proxyConchLock(unixFile *pFile, uuid_t myHostID, int lockType){
       if( 0==proxyBreakConchLock(pFile, myHostID) ){
         rc = SQLITE_OK;
         if( lockType==EXCLUSIVE_LOCK ){
-          rc = conchFile->pMethod->xLock((sqlite3_file*)conchFile, SHARED_LOCK);          
+          rc = conchFile->pMethod->xLock((sqlite3_file*)conchFile, SHARED_LOCK);
         }
         if( !rc ){
           rc = conchFile->pMethod->xLock((sqlite3_file*)conchFile, lockType);
