@@ -995,7 +995,7 @@ char *sqlite3_vsnprintf(int n, char *zBuf, const char *zFormat, va_list ap){
 #ifdef SQLITE_ENABLE_API_ARMOR
   if( zBuf==0 || zFormat==0 ) {
     (void)SQLITE_MISUSE_BKPT;
-    if( zBuf && n>0 ) zBuf[0] = 0;
+    if( zBuf ) zBuf[0] = 0;
     return zBuf;
   }
 #endif

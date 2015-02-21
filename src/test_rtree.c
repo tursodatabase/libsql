@@ -13,7 +13,7 @@
 ** is not included in the SQLite library. 
 */
 
-#include <sqlite3.h>
+#include "sqlite3.h"
 #include <tcl.h>
 
 /* Solely for the UNUSED_PARAMETER() macro. */

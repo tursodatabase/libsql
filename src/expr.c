@@ -146,10 +146,25 @@ CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr){
       break;
     }
     if( p->flags & EP_Collate ){
-      if( ALWAYS(p->pLeft) && (p->pLeft->flags & EP_Collate)!=0 ){
+      if( p->pLeft && (p->pLeft->flags & EP_Collate)!=0 ){
         p = p->pLeft;
       }else{
-        p = p->pRight;
+        Expr *pNext  = p->pRight;
+        /* The Expr.x union is never used at the same time as Expr.pRight */
+        assert( p->x.pList==0 || p->pRight==0 );
+        /* p->flags holds EP_Collate and p->pLeft->flags does not.  And
+        ** p->x.pSelect cannot.  So if p->x.pLeft exists, it must hold at
+        ** least one EP_Collate. Thus the following two ALWAYS. */
+        if( p->x.pList!=0 && ALWAYS(!ExprHasProperty(p, EP_xIsSelect)) ){
+          int i;
+          for(i=0; ALWAYS(i<p->x.pList->nExpr); i++){
+            if( ExprHasProperty(p->x.pList->a[i].pExpr, EP_Collate) ){
+              pNext = p->x.pList->a[i].pExpr;
+              break;
+            }
+          }
+        }
+        p = pNext;
       }
     }else{
       break;
@@ -355,6 +370,9 @@ static void heightOfSelect(Select *p, int *pnHeight){
 ** Expr.pSelect member has a height of 1. Any other expression
 ** has a height equal to the maximum height of any other 
 ** referenced Expr plus one.
+**
+** Also propagate EP_Propagate flags up from Expr.x.pList to Expr.flags,
+** if appropriate.
 */
 static void exprSetHeight(Expr *p){
   int nHeight = 0;
@@ -362,8 +380,9 @@ static void exprSetHeight(Expr *p){
   heightOfExpr(p->pRight, &nHeight);
   if( ExprHasProperty(p, EP_xIsSelect) ){
     heightOfSelect(p->x.pSelect, &nHeight);
-  }else{
+  }else if( p->x.pList ){
     heightOfExprList(p->x.pList, &nHeight);
+    p->flags |= EP_Propagate & sqlite3ExprListFlags(p->x.pList);
   }
   p->nHeight = nHeight + 1;
 }
@@ -372,8 +391,11 @@ static void exprSetHeight(Expr *p){
 ** Set the Expr.nHeight variable using the exprSetHeight() function. If
 ** the height is greater than the maximum allowed expression depth,
 ** leave an error in pParse.
+**
+** Also propagate all EP_Propagate flags from the Expr.x.pList into
+** Expr.flags. 
 */
-void sqlite3ExprSetHeight(Parse *pParse, Expr *p){
+void sqlite3ExprSetHeightAndFlags(Parse *pParse, Expr *p){
   exprSetHeight(p);
   sqlite3ExprCheckHeight(pParse, p->nHeight);
 }
@@ -387,8 +409,17 @@ int sqlite3SelectExprHeight(Select *p){
   heightOfSelect(p, &nHeight);
   return nHeight;
 }
-#else
-  #define exprSetHeight(y)
+#else /* ABOVE:  Height enforcement enabled.  BELOW: Height enforcement off */
+/*
+** Propagate all EP_Propagate flags from the Expr.x.pList into
+** Expr.flags. 
+*/
+void sqlite3ExprSetHeightAndFlags(Parse *pParse, Expr *p){
+  if( p && p->x.pList && !ExprHasProperty(p, EP_xIsSelect) ){
+    p->flags |= EP_Propagate & sqlite3ExprListFlags(p->x.pList);
+  }
+}
+#define exprSetHeight(y)
 #endif /* SQLITE_MAX_EXPR_DEPTH>0 */
 
 /*
@@ -490,11 +521,11 @@ void sqlite3ExprAttachSubtrees(
   }else{
     if( pRight ){
       pRoot->pRight = pRight;
-      pRoot->flags |= EP_Collate & pRight->flags;
+      pRoot->flags |= EP_Propagate & pRight->flags;
     }
     if( pLeft ){
       pRoot->pLeft = pLeft;
-      pRoot->flags |= EP_Collate & pLeft->flags;
+      pRoot->flags |= EP_Propagate & pLeft->flags;
     }
     exprSetHeight(pRoot);
   }
@@ -594,7 +625,7 @@ Expr *sqlite3ExprFunction(Parse *pParse, ExprList *pList, Token *pToken){
   }
   pNew->x.pList = pList;
   assert( !ExprHasProperty(pNew, EP_xIsSelect) );
-  sqlite3ExprSetHeight(pParse, pNew);
+  sqlite3ExprSetHeightAndFlags(pParse, pNew);
   return pNew;
 }
 
@@ -1210,6 +1241,21 @@ void sqlite3ExprListDelete(sqlite3 *db, ExprList *pList){
 }
 
 /*
+** Return the bitwise-OR of all Expr.flags fields in the given
+** ExprList.
+*/
+u32 sqlite3ExprListFlags(const ExprList *pList){
+  int i;
+  u32 m = 0;
+  if( pList ){
+    for(i=0; i<pList->nExpr; i++){
+       m |= pList->a[i].pExpr->flags;
+    }
+  }
+  return m;
+}
+
+/*
 ** These routines are Walker callbacks used to check expressions to
 ** see if they are "constant" for some definition of constant.  The
 ** Walker.eCode value determines the type of "constant" we are looking
@@ -1249,7 +1295,7 @@ static int exprNodeIsConstant(Walker *pWalker, Expr *pExpr){
     ** and either pWalker->eCode==4 or 5 or the function has the
     ** SQLITE_FUNC_CONST flag. */
     case TK_FUNCTION:
-      if( pWalker->eCode>=4 || ExprHasProperty(pExpr,EP_Constant) ){
+      if( pWalker->eCode>=4 || ExprHasProperty(pExpr,EP_ConstFunc) ){
         return WRC_Continue;
       }else{
         pWalker->eCode = 0;

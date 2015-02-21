@@ -4,6 +4,24 @@
 #
 
 if {[catch {
+
+# Argument $tname is the name of a table within the database opened by
+# database handle [db]. Return true if it is a WITHOUT ROWID table, or
+# false otherwise.
+#
+proc is_without_rowid {tname} {
+  set t [string map {' ''} $tname]
+  db eval "PRAGMA index_list = '$t'" o {
+    if {$o(origin) == "pk"} {
+      set n $o(name)
+      if {0==[db one { SELECT count(*) FROM sqlite_master WHERE name=$n }]} {
+        return 1
+      }
+    }
+  }
+  return 0
+}
+
 # Get the name of the database to analyze
 #
 proc usage {} {
@@ -167,20 +185,21 @@ set sql { SELECT name, tbl_name FROM sqlite_master WHERE rootpage>0 }
 foreach {name tblname} [concat sqlite_master sqlite_master [db eval $sql]] {
 
   set is_index [expr {$name!=$tblname}]
+  set idx_btree [expr {$is_index || [is_without_rowid $name]}]
   db eval {
     SELECT 
       sum(ncell) AS nentry,
-      sum(isleaf(pagetype, $is_index) * ncell) AS leaf_entries,
+      sum(isleaf(pagetype, $idx_btree) * ncell) AS leaf_entries,
       sum(payload) AS payload,
-      sum(isoverflow(pagetype, $is_index) * payload) AS ovfl_payload,
+      sum(isoverflow(pagetype, $idx_btree) * payload) AS ovfl_payload,
       sum(path LIKE '%+000000') AS ovfl_cnt,
       max(mx_payload) AS mx_payload,
-      sum(isinternal(pagetype, $is_index)) AS int_pages,
-      sum(isleaf(pagetype, $is_index)) AS leaf_pages,
-      sum(isoverflow(pagetype, $is_index)) AS ovfl_pages,
-      sum(isinternal(pagetype, $is_index) * unused) AS int_unused,
-      sum(isleaf(pagetype, $is_index) * unused) AS leaf_unused,
-      sum(isoverflow(pagetype, $is_index) * unused) AS ovfl_unused,
+      sum(isinternal(pagetype, $idx_btree)) AS int_pages,
+      sum(isleaf(pagetype, $idx_btree)) AS leaf_pages,
+      sum(isoverflow(pagetype, $idx_btree)) AS ovfl_pages,
+      sum(isinternal(pagetype, $idx_btree) * unused) AS int_unused,
+      sum(isleaf(pagetype, $idx_btree) * unused) AS leaf_unused,
+      sum(isoverflow(pagetype, $idx_btree) * unused) AS ovfl_unused,
       sum(pgsize) AS compressed_size
     FROM temp.dbstat WHERE name = $name
   } break
