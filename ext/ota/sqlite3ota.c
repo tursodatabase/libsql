@@ -137,6 +137,9 @@
 ** OTA_STATE_COOKIE:
 **   Valid if STAGE==1. The current change-counter cookie value in the 
 **   target db file.
+**
+** OTA_STATE_OALSZ:
+**   Valid if STAGE==1. The size in bytes of the *-oal file.
 */
 #define OTA_STATE_STAGE       1
 #define OTA_STATE_TBL         2
@@ -145,6 +148,7 @@
 #define OTA_STATE_PROGRESS    5
 #define OTA_STATE_CKPT        6
 #define OTA_STATE_COOKIE      7
+#define OTA_STATE_OALSZ       8
 
 #define OTA_STAGE_OAL         1
 #define OTA_STAGE_MOVE        2
@@ -153,7 +157,7 @@
 #define OTA_STAGE_DONE        5
 
 
-#define OTA_CREATE_STATE "CREATE TABLE IF NOT EXISTS ota.ota_state"        \
+#define OTA_CREATE_STATE "CREATE TABLE IF NOT EXISTS ota_state"        \
                              "(k INTEGER PRIMARY KEY, v)"
 
 typedef struct OtaFrame OtaFrame;
@@ -188,6 +192,7 @@ struct OtaState {
   int nRow;
   i64 nProgress;
   u32 iCookie;
+  i64 iOalSz;
 };
 
 /*
@@ -223,6 +228,7 @@ struct OtaObjIter {
   sqlite3_stmt *pSelect;          /* Source data */
   sqlite3_stmt *pInsert;          /* Statement for INSERT operations */
   sqlite3_stmt *pDelete;          /* Statement for DELETE ops */
+  sqlite3_stmt *pTmpInsert;       /* Insert into ota_tmp_$zTbl */
 
   /* Last UPDATE used (for PK b-tree updates only), or NULL. */
   char *zMask;                    /* Copy of update mask used with pUpdate */
@@ -272,7 +278,8 @@ struct OtaFrame {
 */
 struct sqlite3ota {
   int eStage;                     /* Value of OTA_STATE_STAGE field */
-  sqlite3 *db;                    /* "main" -> target db, "ota" -> ota db */
+  sqlite3 *dbMain;                /* target database handle */
+  sqlite3 *dbOta;                 /* ota database handle */
   char *zTarget;                  /* Path to target db */
   char *zOta;                     /* Path to ota db */
   int rc;                         /* Value returned by last ota_step() call */
@@ -282,6 +289,7 @@ struct sqlite3ota {
   OtaObjIter objiter;             /* Iterator for skipping through tbl/idx */
   const char *zVfsName;           /* Name of automatically created ota vfs */
   ota_file *pTargetFd;            /* File handle open on target db */
+  i64 iOalSz;
 
   /* The following state variables are used as part of the incremental
   ** checkpoint stage (eStage==OTA_STAGE_CKPT). See comments surrounding
@@ -434,10 +442,12 @@ static void otaObjIterClearStatements(OtaObjIter *pIter){
   sqlite3_finalize(pIter->pInsert);
   sqlite3_finalize(pIter->pDelete);
   sqlite3_finalize(pIter->pUpdate);
+  sqlite3_finalize(pIter->pTmpInsert);
   pIter->pSelect = 0;
   pIter->pInsert = 0;
   pIter->pDelete = 0;
   pIter->pUpdate = 0;
+  pIter->pTmpInsert = 0;
   pIter->nCol = 0;
 }
 
@@ -468,7 +478,7 @@ static int otaObjIterNext(sqlite3ota *p, OtaObjIter *pIter){
     /* Free any SQLite statements used while processing the previous object */ 
     otaObjIterClearStatements(pIter);
     if( pIter->zIdx==0 ){
-      rc = sqlite3_exec(p->db, 
+      rc = sqlite3_exec(p->dbMain,
           "DROP TRIGGER IF EXISTS temp.ota_insert_tr;"
           "DROP TRIGGER IF EXISTS temp.ota_update1_tr;"
           "DROP TRIGGER IF EXISTS temp.ota_update2_tr;"
@@ -487,7 +497,6 @@ static int otaObjIterNext(sqlite3ota *p, OtaObjIter *pIter){
           pIter->zTbl = 0;
         }else{
           pIter->zTbl = (const char*)sqlite3_column_text(pIter->pTblIter, 0);
-          pIter->iTnum = sqlite3_column_int(pIter->pTblIter, 1);
           rc = pIter->zTbl ? SQLITE_OK : SQLITE_NOMEM;
         }
       }else{
@@ -531,15 +540,13 @@ static int otaObjIterFirst(sqlite3ota *p, OtaObjIter *pIter){
   int rc;
   memset(pIter, 0, sizeof(OtaObjIter));
 
-  rc = prepareAndCollectError(p->db, &pIter->pTblIter, &p->zErrmsg, 
-      "SELECT substr(a.name, 6), b.rootpage FROM ota.sqlite_master AS a "
-      "LEFT JOIN main.sqlite_master AS b ON "
-      "(substr(a.name, 6)==b.name) "
-      "WHERE a.type='table' AND a.name LIKE 'data_%'"
+  rc = prepareAndCollectError(p->dbOta, &pIter->pTblIter, &p->zErrmsg, 
+      "SELECT substr(name, 6) FROM sqlite_master "
+      "WHERE type='table' AND name LIKE 'data_%'"
   );
 
   if( rc==SQLITE_OK ){
-    rc = prepareAndCollectError(p->db, &pIter->pIdxIter, &p->zErrmsg,
+    rc = prepareAndCollectError(p->dbMain, &pIter->pIdxIter, &p->zErrmsg,
         "SELECT name, rootpage, sql IS NULL OR substr(8, 6)=='UNIQUE' "
         "  FROM main.sqlite_master "
         "  WHERE type='index' AND tbl_name = ?"
@@ -585,7 +592,7 @@ static char *otaMPrintf(sqlite3ota *p, const char *zFmt, ...){
 ** OTA handle. If an error has already occurred when this function is
 ** called, it is a no-op.
 */
-static int otaMPrintfExec(sqlite3ota *p, const char *zFmt, ...){
+static int otaMPrintfExec(sqlite3ota *p, sqlite3 *db, const char *zFmt, ...){
   va_list ap;
   va_start(ap, zFmt);
   char *zSql = sqlite3_vmprintf(zFmt, ap);
@@ -593,7 +600,7 @@ static int otaMPrintfExec(sqlite3ota *p, const char *zFmt, ...){
     if( zSql==0 ){
       p->rc = SQLITE_NOMEM;
     }else{
-      p->rc = sqlite3_exec(p->db, zSql, 0, 0, &p->zErrmsg);
+      p->rc = sqlite3_exec(db, zSql, 0, 0, &p->zErrmsg);
     }
   }
   sqlite3_free(zSql);
@@ -730,6 +737,7 @@ static void otaTableType(
   sqlite3ota *p,
   const char *zTab,
   int *peType,
+  int *piTnum,
   int *piPk
 ){
   /*
@@ -744,9 +752,9 @@ static void otaTableType(
   *piPk = 0;
 
   assert( p->rc==SQLITE_OK );
-  p->rc = prepareFreeAndCollectError(p->db, &aStmt[0], &p->zErrmsg, 
+  p->rc = prepareFreeAndCollectError(p->dbMain, &aStmt[0], &p->zErrmsg, 
     sqlite3_mprintf(
-          "SELECT (sql LIKE 'create virtual%%')"
+          "SELECT (sql LIKE 'create virtual%%'), rootpage"
           "  FROM sqlite_master"
           " WHERE name=%Q", zTab
   ));
@@ -758,8 +766,9 @@ static void otaTableType(
     *peType = OTA_PK_VTAB;                     /* virtual table */
     goto otaTableType_end;
   }
+  *piTnum = sqlite3_column_int(aStmt[0], 1);
 
-  p->rc = prepareFreeAndCollectError(p->db, &aStmt[1], &p->zErrmsg, 
+  p->rc = prepareFreeAndCollectError(p->dbMain, &aStmt[1], &p->zErrmsg, 
     sqlite3_mprintf("PRAGMA index_list=%Q",zTab)
   );
   if( p->rc ) goto otaTableType_end;
@@ -767,7 +776,7 @@ static void otaTableType(
     const u8 *zOrig = sqlite3_column_text(aStmt[1], 3);
     const u8 *zIdx = sqlite3_column_text(aStmt[1], 1);
     if( zOrig && zIdx && zOrig[0]=='p' ){
-      p->rc = prepareFreeAndCollectError(p->db, &aStmt[2], &p->zErrmsg, 
+      p->rc = prepareFreeAndCollectError(p->dbMain, &aStmt[2], &p->zErrmsg, 
           sqlite3_mprintf(
             "SELECT rootpage FROM sqlite_master WHERE name = %Q", zIdx
       ));
@@ -783,7 +792,7 @@ static void otaTableType(
     }
   }
 
-  p->rc = prepareFreeAndCollectError(p->db, &aStmt[3], &p->zErrmsg, 
+  p->rc = prepareFreeAndCollectError(p->dbMain, &aStmt[3], &p->zErrmsg, 
     sqlite3_mprintf("PRAGMA table_info=%Q",zTab)
   );
   if( p->rc==SQLITE_OK ){
@@ -821,11 +830,13 @@ static int otaObjIterCacheTableInfo(sqlite3ota *p, OtaObjIter *pIter){
     int i;                        /* for() loop iterator variable */
     int bOtaRowid = 0;            /* If input table has column "ota_rowid" */
     int iOrder = 0;
+    int iTnum = 0;
 
     /* Figure out the type of table this step will deal with. */
     assert( pIter->eType==0 );
-    otaTableType(p, pIter->zTbl, &pIter->eType, &pIter->iPkTnum);
+    otaTableType(p, pIter->zTbl, &pIter->eType, &iTnum, &pIter->iPkTnum);
     if( p->rc ) return p->rc;
+    if( pIter->zIdx==0 ) pIter->iTnum = iTnum;
 
     assert( pIter->eType==OTA_PK_NONE || pIter->eType==OTA_PK_IPK 
          || pIter->eType==OTA_PK_EXTERNAL || pIter->eType==OTA_PK_WITHOUT_ROWID
@@ -835,7 +846,7 @@ static int otaObjIterCacheTableInfo(sqlite3ota *p, OtaObjIter *pIter){
     /* Populate the azTblCol[] and nTblCol variables based on the columns
     ** of the input table. Ignore any input table columns that begin with
     ** "ota_".  */
-    p->rc = prepareFreeAndCollectError(p->db, &pStmt, &p->zErrmsg, 
+    p->rc = prepareFreeAndCollectError(p->dbOta, &pStmt, &p->zErrmsg, 
         sqlite3_mprintf("SELECT * FROM 'data_%q'", pIter->zTbl)
     );
     if( p->rc==SQLITE_OK ){
@@ -870,8 +881,8 @@ static int otaObjIterCacheTableInfo(sqlite3ota *p, OtaObjIter *pIter){
     ** present in the input table. Populate the abTblPk[], azTblType[] and
     ** aiTblOrder[] arrays at the same time.  */
     if( p->rc==SQLITE_OK ){
-      p->rc = prepareFreeAndCollectError(p->db, &pStmt, &p->zErrmsg, 
-          sqlite3_mprintf("PRAGMA main.table_info(%Q)", pIter->zTbl)
+      p->rc = prepareFreeAndCollectError(p->dbMain, &pStmt, &p->zErrmsg, 
+          sqlite3_mprintf("PRAGMA table_info(%Q)", pIter->zTbl)
       );
     }
     while( p->rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
@@ -973,7 +984,7 @@ static char *otaObjIterGetIndexCols(
 
   if( rc==SQLITE_OK ){
     assert( p->zErrmsg==0 );
-    rc = prepareFreeAndCollectError(p->db, &pXInfo, &p->zErrmsg,
+    rc = prepareFreeAndCollectError(p->dbMain, &pXInfo, &p->zErrmsg,
         sqlite3_mprintf("PRAGMA main.index_xinfo = %Q", pIter->zIdx)
     );
   }
@@ -1238,7 +1249,7 @@ static char *otaWithoutRowidPK(sqlite3ota *p, OtaObjIter *pIter){
     sqlite3_stmt *pXList = 0;     /* PRAGMA index_list = (pIter->zTbl) */
     sqlite3_stmt *pXInfo = 0;     /* PRAGMA index_xinfo = <pk-index> */
    
-    p->rc = prepareFreeAndCollectError(p->db, &pXList, &p->zErrmsg,
+    p->rc = prepareFreeAndCollectError(p->dbMain, &pXList, &p->zErrmsg,
         sqlite3_mprintf("PRAGMA main.index_list = %Q", pIter->zTbl)
     );
     while( p->rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pXList) ){
@@ -1246,7 +1257,7 @@ static char *otaWithoutRowidPK(sqlite3ota *p, OtaObjIter *pIter){
       if( zOrig && strcmp(zOrig, "pk")==0 ){
         const char *zIdx = (const char*)sqlite3_column_text(pXList,1);
         if( zIdx ){
-          p->rc = prepareFreeAndCollectError(p->db, &pXInfo, &p->zErrmsg,
+          p->rc = prepareFreeAndCollectError(p->dbMain, &pXInfo, &p->zErrmsg,
               sqlite3_mprintf("PRAGMA main.index_xinfo = %Q", zIdx)
           );
         }
@@ -1302,7 +1313,7 @@ static void otaCreateImposterTable2(sqlite3ota *p, OtaObjIter *pIter){
     /* Figure out the name of the primary key index for the current table.
     ** This is needed for the argument to "PRAGMA index_xinfo". Set
     ** zIdx to point to a nul-terminated string containing this name. */
-    p->rc = prepareAndCollectError(p->db, &pQuery, &p->zErrmsg, 
+    p->rc = prepareAndCollectError(p->dbMain, &pQuery, &p->zErrmsg, 
         "SELECT name FROM sqlite_master WHERE rootpage = ?"
     );
     if( p->rc==SQLITE_OK ){
@@ -1312,7 +1323,7 @@ static void otaCreateImposterTable2(sqlite3ota *p, OtaObjIter *pIter){
       }
     }
     if( zIdx ){
-      p->rc = prepareFreeAndCollectError(p->db, &pXInfo, &p->zErrmsg,
+      p->rc = prepareFreeAndCollectError(p->dbMain, &pXInfo, &p->zErrmsg,
           sqlite3_mprintf("PRAGMA main.index_xinfo = %Q", zIdx)
       );
     }
@@ -1334,12 +1345,12 @@ static void otaCreateImposterTable2(sqlite3ota *p, OtaObjIter *pIter){
     zCols = otaMPrintf(p, "%z, id INTEGER", zCols);
     otaFinalize(p, pXInfo);
 
-    sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, p->db, "main", 1, tnum);
-    otaMPrintfExec(p, 
+    sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, p->dbMain, "main", 1, tnum);
+    otaMPrintfExec(p, p->dbMain,
         "CREATE TABLE ota_imposter2(%z, PRIMARY KEY(%z)) WITHOUT ROWID", 
         zCols, zPk
     );
-    sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, p->db, "main", 0, 0);
+    sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, p->dbMain, "main", 0, 0);
   }
 }
 
@@ -1369,7 +1380,7 @@ static void otaCreateImposterTable(sqlite3ota *p, OtaObjIter *pIter){
     const char *zComma = "";
     char *zSql = 0;
     int iCol;
-    sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, p->db, "main", 0, 1);
+    sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, p->dbMain, "main", 0, 1);
 
     for(iCol=0; p->rc==SQLITE_OK && iCol<pIter->nTblCol; iCol++){
       const char *zPk = "";
@@ -1377,7 +1388,7 @@ static void otaCreateImposterTable(sqlite3ota *p, OtaObjIter *pIter){
       const char *zColl = 0;
 
       p->rc = sqlite3_table_column_metadata(
-          p->db, "main", pIter->zTbl, zCol, 0, &zColl, 0, 0, 0
+          p->dbMain, "main", pIter->zTbl, zCol, 0, &zColl, 0, 0, 0
       );
 
       if( pIter->eType==OTA_PK_IPK && pIter->abTblPk[iCol] ){
@@ -1399,12 +1410,63 @@ static void otaCreateImposterTable(sqlite3ota *p, OtaObjIter *pIter){
       }
     }
 
-    sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, p->db, "main", 1, tnum);
-    otaMPrintfExec(p, "CREATE TABLE \"ota_imp_%w\"(%z)%s", 
+    sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, p->dbMain, "main", 1, tnum);
+    otaMPrintfExec(p, p->dbMain, "CREATE TABLE \"ota_imp_%w\"(%z)%s", 
         pIter->zTbl, zSql, 
         (pIter->eType==OTA_PK_WITHOUT_ROWID ? " WITHOUT ROWID" : "")
     );
-    sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, p->db, "main", 0, 0);
+    sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, p->dbMain, "main", 0, 0);
+  }
+}
+
+/*
+** Prepare a statement used to insert rows into the "ota_tmp_xxx" table.
+** Specifically a statement of the form:
+**
+**     INSERT INTO ota_tmp_xxx VALUES(?, ?, ? ...);
+**
+** The number of bound variables is equal to the number of columns in
+** the target table, plus one (for the ota_control column), plus one more 
+** (for the ota_rowid column) if the target table is an implicit IPK or 
+** virtual table.
+*/
+static void otaObjIterPrepareTmpInsert(
+  sqlite3ota *p, 
+  OtaObjIter *pIter,
+  const char *zCollist,
+  const char *zOtaRowid
+){
+  int bOtaRowid = (pIter->eType==OTA_PK_EXTERNAL || pIter->eType==OTA_PK_NONE);
+  char *zBind = otaObjIterGetBindlist(p, pIter->nTblCol + 1 + bOtaRowid);
+  if( zBind ){
+    assert( pIter->pTmpInsert==0 );
+    p->rc = prepareFreeAndCollectError(
+        p->dbOta, &pIter->pTmpInsert, &p->zErrmsg, sqlite3_mprintf(
+          "INSERT INTO 'ota_tmp_%q'(ota_control,%s%s) VALUES(%z)", 
+          pIter->zTbl, zCollist, zOtaRowid, zBind
+    ));
+  }
+}
+
+static void otaTmpInsertFunc(
+  sqlite3_context *pCtx, 
+  int nVal,
+  sqlite3_value **apVal
+){
+  sqlite3ota *p = sqlite3_user_data(pCtx);
+  int rc = SQLITE_OK;
+  int i;
+
+  for(i=0; rc==SQLITE_OK && i<nVal; i++){
+    rc = sqlite3_bind_value(p->objiter.pTmpInsert, i+1, apVal[i]);
+  }
+  if( rc==SQLITE_OK ){
+    sqlite3_step(p->objiter.pTmpInsert);
+    rc = sqlite3_reset(p->objiter.pTmpInsert);
+  }
+
+  if( rc!=SQLITE_OK ){
+    sqlite3_result_error_code(pCtx, rc);
   }
 }
 
@@ -1446,25 +1508,27 @@ static int otaObjIterPrepareAll(
       zBind = otaObjIterGetBindlist(p, nBind);
 
       /* Create the imposter table used to write to this index. */
-      sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, p->db, "main", 0, 1);
-      sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, p->db, "main", 1, tnum);
-      otaMPrintfExec(p, 
+      sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, p->dbMain, "main", 0, 1);
+      sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, p->dbMain, "main", 1,tnum);
+      otaMPrintfExec(p, p->dbMain,
           "CREATE TABLE \"ota_imp_%w\"( %s, PRIMARY KEY( %s ) ) WITHOUT ROWID",
           zTbl, zImposterCols, zImposterPK
       );
-      sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, p->db, "main", 0, 0);
+      sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, p->dbMain, "main", 0, 0);
 
       /* Create the statement to insert index entries */
       pIter->nCol = nBind;
       if( p->rc==SQLITE_OK ){
-        p->rc = prepareFreeAndCollectError(p->db, &pIter->pInsert, &p->zErrmsg,
+        p->rc = prepareFreeAndCollectError(
+            p->dbMain, &pIter->pInsert, &p->zErrmsg,
           sqlite3_mprintf("INSERT INTO \"ota_imp_%w\" VALUES(%s)", zTbl, zBind)
         );
       }
 
       /* And to delete index entries */
       if( p->rc==SQLITE_OK ){
-        p->rc = prepareFreeAndCollectError(p->db, &pIter->pDelete, &p->zErrmsg,
+        p->rc = prepareFreeAndCollectError(
+            p->dbMain, &pIter->pDelete, &p->zErrmsg,
           sqlite3_mprintf("DELETE FROM \"ota_imp_%w\" WHERE %s", zTbl, zWhere)
         );
       }
@@ -1474,23 +1538,23 @@ static int otaObjIterPrepareAll(
         char *zSql;
         if( pIter->eType==OTA_PK_EXTERNAL || pIter->eType==OTA_PK_NONE ){
           zSql = sqlite3_mprintf(
-              "SELECT %s, ota_control FROM ota.'ota_tmp_%q' ORDER BY %s%s",
+              "SELECT %s, ota_control FROM 'ota_tmp_%q' ORDER BY %s%s",
               zCollist, pIter->zTbl,
               zCollist, zLimit
           );
         }else{
           zSql = sqlite3_mprintf(
-              "SELECT %s, ota_control FROM ota.'data_%q' "
+              "SELECT %s, ota_control FROM 'data_%q' "
               "WHERE typeof(ota_control)='integer' AND ota_control!=1 "
               "UNION ALL "
-              "SELECT %s, ota_control FROM ota.'ota_tmp_%q' "
+              "SELECT %s, ota_control FROM 'ota_tmp_%q' "
               "ORDER BY %s%s",
               zCollist, pIter->zTbl, 
               zCollist, pIter->zTbl, 
               zCollist, zLimit
           );
         }
-        p->rc = prepareFreeAndCollectError(p->db, &pIter->pSelect, pz, zSql);
+        p->rc = prepareFreeAndCollectError(p->dbOta, &pIter->pSelect, pz, zSql);
       }
 
       sqlite3_free(zImposterCols);
@@ -1512,9 +1576,9 @@ static int otaObjIterPrepareAll(
 
       /* Create the SELECT statement to read keys from data_xxx */
       if( p->rc==SQLITE_OK ){
-        p->rc = prepareFreeAndCollectError(p->db, &pIter->pSelect, pz,
+        p->rc = prepareFreeAndCollectError(p->dbOta, &pIter->pSelect, pz,
             sqlite3_mprintf(
-              "SELECT %s, ota_control%s FROM ota.'data_%q'%s", 
+              "SELECT %s, ota_control%s FROM 'data_%q'%s", 
               zCollist, (bOtaRowid ? ", ota_rowid" : ""), zTbl, zLimit
             )
         );
@@ -1527,9 +1591,9 @@ static int otaObjIterPrepareAll(
 
       /* Create the INSERT statement to write to the target PK b-tree */
       if( p->rc==SQLITE_OK ){
-        p->rc = prepareFreeAndCollectError(p->db, &pIter->pInsert, pz,
+        p->rc = prepareFreeAndCollectError(p->dbMain, &pIter->pInsert, pz,
             sqlite3_mprintf(
-              "INSERT INTO main.\"%s%w\"(%s%s) VALUES(%s)", 
+              "INSERT INTO \"%s%w\"(%s%s) VALUES(%s)", 
               zWrite, zTbl, zCollist, (bOtaRowid ? ", _rowid_" : ""), zBindings
             )
         );
@@ -1537,9 +1601,9 @@ static int otaObjIterPrepareAll(
 
       /* Create the DELETE statement to write to the target PK b-tree */
       if( p->rc==SQLITE_OK ){
-        p->rc = prepareFreeAndCollectError(p->db, &pIter->pDelete, pz,
+        p->rc = prepareFreeAndCollectError(p->dbMain, &pIter->pDelete, pz,
             sqlite3_mprintf(
-              "DELETE FROM main.\"%s%w\" WHERE %s", zWrite, zTbl, zWhere
+              "DELETE FROM \"%s%w\" WHERE %s", zWrite, zTbl, zWhere
             )
         );
       }
@@ -1551,40 +1615,44 @@ static int otaObjIterPrepareAll(
         }
 
         /* Create the ota_tmp_xxx table and the triggers to populate it. */
-        otaMPrintfExec(p, 
-            "CREATE TABLE IF NOT EXISTS ota.'ota_tmp_%q' AS "
-            "SELECT *%s FROM ota.'data_%q' WHERE 0;"
+        otaMPrintfExec(p, p->dbOta,
+            "CREATE TABLE IF NOT EXISTS 'ota_tmp_%q' AS "
+            "SELECT *%s FROM 'data_%q' WHERE 0;"
+            , zTbl, (pIter->eType==OTA_PK_EXTERNAL ? ", 0 AS ota_rowid" : "")
+            , zTbl
+        );
 
+        otaMPrintfExec(p, p->dbMain,
             "CREATE TEMP TRIGGER ota_delete_tr BEFORE DELETE ON \"%s%w\" "
             "BEGIN "
-            "  INSERT INTO 'ota_tmp_%q'(ota_control, %s%s) VALUES(2, %s);"
+            "  SELECT ota_tmp_insert(2, %s);"
             "END;"
 
             "CREATE TEMP TRIGGER ota_update1_tr BEFORE UPDATE ON \"%s%w\" "
             "BEGIN "
-            "  INSERT INTO 'ota_tmp_%q'(ota_control, %s%s) VALUES(2, %s);"
+            "  SELECT ota_tmp_insert(2, %s);"
             "END;"
 
             "CREATE TEMP TRIGGER ota_update2_tr AFTER UPDATE ON \"%s%w\" "
             "BEGIN "
-            "  INSERT INTO 'ota_tmp_%q'(ota_control, %s%s) VALUES(3, %s);"
-            "END;"
-            , zTbl, (pIter->eType==OTA_PK_EXTERNAL ? ", 0 AS ota_rowid" : "")
-            , zTbl, 
-            zWrite, zTbl, zTbl, zCollist, zOtaRowid, zOldlist,
-            zWrite, zTbl, zTbl, zCollist, zOtaRowid, zOldlist,
-            zWrite, zTbl, zTbl, zCollist, zOtaRowid, zNewlist
+            "  SELECT ota_tmp_insert(3, %s);"
+            "END;",
+            zWrite, zTbl, zOldlist,
+            zWrite, zTbl, zOldlist,
+            zWrite, zTbl, zNewlist
         );
+
         if( pIter->eType==OTA_PK_EXTERNAL || pIter->eType==OTA_PK_NONE ){
-          otaMPrintfExec(p, 
+          otaMPrintfExec(p, p->dbMain,
               "CREATE TEMP TRIGGER ota_insert_tr AFTER INSERT ON \"%s%w\" "
               "BEGIN "
-              "  INSERT INTO 'ota_tmp_%q'(ota_control, %s, ota_rowid)"
-              "  VALUES(0, %s);"
+              "  SELECT ota_tmp_insert(0, %s);"
               "END;",
-              zWrite, zTbl, zTbl, zCollist, zNewlist
+              zWrite, zTbl, zNewlist
           );
         }
+
+        otaObjIterPrepareTmpInsert(p, pIter, zCollist, zOtaRowid);
       }
 
       /* Allocate space required for the zMask field. */
@@ -1630,7 +1698,7 @@ static int otaGetUpdateStmt(
           zPrefix, pIter->zTbl, zSet, zWhere
       );
       p->rc = prepareFreeAndCollectError(
-          p->db, &pIter->pUpdate, &p->zErrmsg, zUpdate
+          p->dbMain, &pIter->pUpdate, &p->zErrmsg, zUpdate
       );
       *ppStmt = pIter->pUpdate;
     }
@@ -1643,36 +1711,53 @@ static int otaGetUpdateStmt(
   return p->rc;
 }
 
+static sqlite3 *otaOpenDbhandle(sqlite3ota *p, const char *zName){
+  sqlite3 *db = 0;
+  if( p->rc==SQLITE_OK ){
+    const int flags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE;
+    p->rc = sqlite3_open_v2(zName, &db, flags, p->zVfsName);
+    if( p->rc ){
+      p->zErrmsg = sqlite3_mprintf("%s", sqlite3_errmsg(db));
+      sqlite3_close(db);
+      db = 0;
+    }
+  }
+  return db;
+}
+
 /*
 ** Open the database handle and attach the OTA database as "ota". If an
 ** error occurs, leave an error code and message in the OTA handle.
 */
 static void otaOpenDatabase(sqlite3ota *p){
-  int flags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE;
   assert( p->rc==SQLITE_OK );
-  assert( p->db==0 );
+  assert( p->dbMain==0 && p->dbOta==0 );
 
   p->eStage = 0;
-  p->rc = sqlite3_open_v2(p->zTarget, &p->db, flags, p->zVfsName);
-  if( p->rc ){
-    p->zErrmsg = sqlite3_mprintf("%s", sqlite3_errmsg(p->db));
-  }else{
-    p->rc = sqlite3_file_control(p->db, "main", SQLITE_FCNTL_OTA, (void*)p);
-    if( p->rc==SQLITE_OK ){
-      otaMPrintfExec(p, "ATTACH %Q AS ota", p->zOta);
-    }
+  p->dbMain = otaOpenDbhandle(p, p->zTarget);
+  p->dbOta = otaOpenDbhandle(p, p->zOta);
 
-    /* Mark the database file just opened as an OTA target database. If 
-    ** this call returns SQLITE_NOTFOUND, then the OTA vfs is not in use.
-    ** This is an error.  */
-    if( p->rc==SQLITE_OK ){
-      p->rc = sqlite3_file_control(p->db, "main", SQLITE_FCNTL_OTA, (void*)p);
-    }
+  if( p->rc==SQLITE_OK ){
+    p->rc = sqlite3_create_function(p->dbMain, 
+        "ota_tmp_insert", -1, SQLITE_UTF8, (void*)p, otaTmpInsertFunc, 0, 0
+    );
+  }
 
-    if( p->rc==SQLITE_NOTFOUND ){
-      p->rc = SQLITE_ERROR;
-      p->zErrmsg = sqlite3_mprintf("ota vfs not found");
-    }
+  if( p->rc==SQLITE_OK ){
+    p->rc = sqlite3_file_control(p->dbMain, "main", SQLITE_FCNTL_OTA, (void*)p);
+  }
+  otaMPrintfExec(p, p->dbMain, "SELECT * FROM sqlite_master");
+
+  /* Mark the database file just opened as an OTA target database. If 
+  ** this call returns SQLITE_NOTFOUND, then the OTA vfs is not in use.
+  ** This is an error.  */
+  if( p->rc==SQLITE_OK ){
+    p->rc = sqlite3_file_control(p->dbMain, "main", SQLITE_FCNTL_OTA, (void*)p);
+  }
+
+  if( p->rc==SQLITE_NOTFOUND ){
+    p->rc = SQLITE_ERROR;
+    p->zErrmsg = sqlite3_mprintf("ota vfs not found");
   }
 }
 
@@ -1754,7 +1839,7 @@ static void otaSetupCheckpoint(sqlite3ota *p, OtaState *pState){
   if( pState==0 ){
     p->eStage = 0;
     if( p->rc==SQLITE_OK ){
-      p->rc = sqlite3_exec(p->db, "SELECT * FROM sqlite_master", 0, 0, 0);
+      p->rc = sqlite3_exec(p->dbMain, "SELECT * FROM sqlite_master", 0, 0, 0);
     }
   }
 
@@ -1789,7 +1874,7 @@ static void otaSetupCheckpoint(sqlite3ota *p, OtaState *pState){
   if( p->rc==SQLITE_OK ){
     int rc2;
     p->eStage = OTA_STAGE_CAPTURE;
-    rc2 = sqlite3_exec(p->db, "PRAGMA main.wal_checkpoint=restart", 0, 0, 0);
+    rc2 = sqlite3_exec(p->dbMain, "PRAGMA main.wal_checkpoint=restart", 0, 0,0);
     if( rc2!=SQLITE_INTERNAL ) p->rc = rc2;
   }
 
@@ -1888,7 +1973,7 @@ static void otaLockDatabase(sqlite3ota *p){
 ** handle.
 */
 static void otaMoveOalFile(sqlite3ota *p){
-  const char *zBase = sqlite3_db_filename(p->db, "main");
+  const char *zBase = sqlite3_db_filename(p->dbMain, "main");
 
   char *zWal = sqlite3_mprintf("%s-wal", zBase);
   char *zOal = sqlite3_mprintf("%s-oal", zBase);
@@ -1913,8 +1998,10 @@ static void otaMoveOalFile(sqlite3ota *p){
 
       /* Re-open the databases. */
       otaObjIterFinalize(&p->objiter);
-      sqlite3_close(p->db);
-      p->db = 0;
+      sqlite3_close(p->dbMain);
+      sqlite3_close(p->dbOta);
+      p->dbMain = 0;
+      p->dbOta = 0;
       otaOpenDatabase(p);
       otaSetupCheckpoint(p, 0);
     }
@@ -2108,14 +2195,14 @@ static int otaStep(sqlite3ota *p){
 }
 
 /*
-** Increment the schema cookie of the main database opened by p->db.
+** Increment the schema cookie of the main database opened by p->dbMain.
 */
 static void otaIncrSchemaCookie(sqlite3ota *p){
   if( p->rc==SQLITE_OK ){
     int iCookie = 1000000;
     sqlite3_stmt *pStmt;
 
-    p->rc = prepareAndCollectError(p->db, &pStmt, &p->zErrmsg, 
+    p->rc = prepareAndCollectError(p->dbMain, &pStmt, &p->zErrmsg, 
         "PRAGMA schema_version"
     );
     if( p->rc==SQLITE_OK ){
@@ -2130,7 +2217,7 @@ static void otaIncrSchemaCookie(sqlite3ota *p){
       otaFinalize(p, pStmt);
     }
     if( p->rc==SQLITE_OK ){
-      otaMPrintfExec(p, "PRAGMA schema_version = %d", iCookie+1);
+      otaMPrintfExec(p, p->dbMain, "PRAGMA schema_version = %d", iCookie+1);
     }
   }
 }
@@ -2146,13 +2233,14 @@ static void otaSaveState(sqlite3ota *p, int eStage){
     int rc;
 
     assert( p->zErrmsg==0 );
-    rc = prepareFreeAndCollectError(p->db, &pInsert, &p->zErrmsg, 
+    rc = prepareFreeAndCollectError(p->dbOta, &pInsert, &p->zErrmsg, 
         sqlite3_mprintf(
-          "INSERT OR REPLACE INTO ota.ota_state(k, v) VALUES "
+          "INSERT OR REPLACE INTO ota_state(k, v) VALUES "
           "(%d, %d), "
           "(%d, %Q), "
           "(%d, %Q), "
           "(%d, %d), "
+          "(%d, %lld), "
           "(%d, %lld), "
           "(%d, %lld), "
           "(%d, %lld) ",
@@ -2162,8 +2250,9 @@ static void otaSaveState(sqlite3ota *p, int eStage){
           OTA_STATE_ROW, p->nStep, 
           OTA_STATE_PROGRESS, p->nProgress,
           OTA_STATE_CKPT, p->iWalCksum,
-          OTA_STATE_COOKIE, (i64)p->pTargetFd->iCookie
-          )
+          OTA_STATE_COOKIE, (i64)p->pTargetFd->iCookie,
+          OTA_STATE_OALSZ, p->iOalSz
+      )
     );
     assert( pInsert==0 || rc==SQLITE_OK );
 
@@ -2191,7 +2280,8 @@ int sqlite3ota_step(sqlite3ota *p){
             ** cannot be dropped as there are currently active SQL statements.
             ** But the contents can be deleted.  */
             if( pIter->eType!=OTA_PK_VTAB ){
-              otaMPrintfExec(p, "DELETE FROM ota.'ota_tmp_%q'", pIter->zTbl);
+              const char *zTbl = pIter->zTbl;
+              otaMPrintfExec(p, p->dbOta, "DELETE FROM 'ota_tmp_%q'", zTbl);
             }
           }else{
             otaObjIterPrepareAll(p, pIter, 0);
@@ -2217,7 +2307,10 @@ int sqlite3ota_step(sqlite3ota *p){
           otaSaveState(p, OTA_STAGE_MOVE);
           otaIncrSchemaCookie(p);
           if( p->rc==SQLITE_OK ){
-            p->rc = sqlite3_exec(p->db, "COMMIT", 0, 0, &p->zErrmsg);
+            p->rc = sqlite3_exec(p->dbMain, "COMMIT", 0, 0, &p->zErrmsg);
+          }
+          if( p->rc==SQLITE_OK ){
+            p->rc = sqlite3_exec(p->dbOta, "COMMIT", 0, 0, &p->zErrmsg);
           }
           p->eStage = OTA_STAGE_MOVE;
         }
@@ -2293,7 +2386,7 @@ static void otaFreeState(OtaState *p){
 ** and return NULL.
 */
 static OtaState *otaLoadState(sqlite3ota *p){
-  const char *zSelect = "SELECT k, v FROM ota.ota_state";
+  const char *zSelect = "SELECT k, v FROM ota_state";
   OtaState *pRet = 0;
   sqlite3_stmt *pStmt = 0;
   int rc;
@@ -2302,7 +2395,7 @@ static OtaState *otaLoadState(sqlite3ota *p){
   pRet = (OtaState*)otaMalloc(p, sizeof(OtaState));
   if( pRet==0 ) return 0;
 
-  rc = prepareAndCollectError(p->db, &pStmt, &p->zErrmsg, zSelect);
+  rc = prepareAndCollectError(p->dbOta, &pStmt, &p->zErrmsg, zSelect);
   while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
     switch( sqlite3_column_int(pStmt, 0) ){
       case OTA_STATE_STAGE:
@@ -2337,6 +2430,10 @@ static OtaState *otaLoadState(sqlite3ota *p){
 
       case OTA_STATE_COOKIE:
         pRet->iCookie = (u32)sqlite3_column_int64(pStmt, 1);
+        break;
+
+      case OTA_STATE_OALSZ:
+        pRet->iOalSz = (u32)sqlite3_column_int64(pStmt, 1);
         break;
 
       default:
@@ -2470,7 +2567,7 @@ sqlite3ota *sqlite3ota_open(const char *zTarget, const char *zOta){
 
     /* If it has not already been created, create the ota_state table */
     if( p->rc==SQLITE_OK ){
-      p->rc = sqlite3_exec(p->db, OTA_CREATE_STATE, 0, 0, &p->zErrmsg);
+      p->rc = sqlite3_exec(p->dbOta, OTA_CREATE_STATE, 0, 0, &p->zErrmsg);
     }
 
     if( p->rc==SQLITE_OK ){
@@ -2485,6 +2582,7 @@ sqlite3ota *sqlite3ota_open(const char *zTarget, const char *zOta){
           p->eStage = pState->eStage;
         }
         p->nProgress = pState->nProgress;
+        p->iOalSz = pState->iOalSz;
       }
     }
     assert( p->rc!=SQLITE_OK || p->eStage!=0 );
@@ -2512,8 +2610,13 @@ sqlite3ota *sqlite3ota_open(const char *zTarget, const char *zOta){
     if( p->rc==SQLITE_OK ){
       if( p->eStage==OTA_STAGE_OAL ){
 
-        /* Open the transaction */
-        p->rc = sqlite3_exec(p->db, "BEGIN IMMEDIATE", 0, 0, &p->zErrmsg);
+        /* Open transactions both databases. The *-oal file is opened or
+        ** created at this point. */
+        p->rc = sqlite3_exec(p->dbMain, "BEGIN IMMEDIATE", 0, 0, &p->zErrmsg);
+        if( p->rc==SQLITE_OK ){
+          p->rc = sqlite3_exec(p->dbOta, "BEGIN IMMEDIATE", 0, 0, &p->zErrmsg);
+        }
+        assert( p->rc!=SQLITE_OK || p->pTargetFd->pWalFd );
   
         /* Point the object iterator at the first object */
         if( p->rc==SQLITE_OK ){
@@ -2544,7 +2647,7 @@ sqlite3ota *sqlite3ota_open(const char *zTarget, const char *zOta){
 ** Return the database handle used by pOta.
 */
 sqlite3 *sqlite3ota_db(sqlite3ota *pOta){
-  return (pOta ? pOta->db : 0);
+  return (pOta ? pOta->dbMain : 0);
 }
 
 
@@ -2575,22 +2678,23 @@ int sqlite3ota_close(sqlite3ota *p, char **pzErrmsg){
   int rc;
   if( p ){
 
-    /* If the update has not been fully applied, save the state in 
-    ** the ota db. If successful, this call also commits the open 
-    ** transaction on the ota db. */
-    assert( p->rc!=SQLITE_ROW );
+    /* Commit the transaction to the *-oal file. */
+    if( p->rc==SQLITE_OK && p->eStage==OTA_STAGE_OAL ){
+      p->rc = sqlite3_exec(p->dbMain, "COMMIT", 0, 0, &p->zErrmsg);
+    }
+
     otaSaveState(p, p->eStage);
+
+    if( p->rc==SQLITE_OK && p->eStage==OTA_STAGE_OAL ){
+      p->rc = sqlite3_exec(p->dbOta, "COMMIT", 0, 0, &p->zErrmsg);
+    }
 
     /* Close any open statement handles. */
     otaObjIterFinalize(&p->objiter);
 
-    /* Commit the transaction to the *-oal file. */
-    if( p->rc==SQLITE_OK && p->eStage==OTA_STAGE_OAL ){
-      p->rc = sqlite3_exec(p->db, "COMMIT", 0, 0, &p->zErrmsg);
-    }
-
     /* Close the open database handle and VFS object. */
-    sqlite3_close(p->db);
+    sqlite3_close(p->dbMain);
+    sqlite3_close(p->dbOta);
     otaDeleteVfs(p);
     sqlite3_free(p->aBuf);
     sqlite3_free(p->aFrame);
@@ -2726,13 +2830,22 @@ static int otaVfsRead(
   sqlite_int64 iOfst
 ){
   ota_file *p = (ota_file*)pFile;
+  sqlite3ota *pOta = p->pOta;
   int rc;
 
-  if( p->pOta && p->pOta->eStage==OTA_STAGE_CAPTURE ){
+  if( pOta && pOta->eStage==OTA_STAGE_CAPTURE ){
     assert( p->openFlags & SQLITE_OPEN_WAL );
     rc = otaCaptureWalRead(p->pOta, iOfst, iAmt);
   }else{
-    rc = p->pReal->pMethods->xRead(p->pReal, zBuf, iAmt, iOfst);
+    if( pOta && pOta->eStage==OTA_STAGE_OAL 
+     && (p->openFlags & SQLITE_OPEN_WAL) 
+     && iOfst>=pOta->iOalSz 
+    ){
+      rc = SQLITE_OK;
+      memset(zBuf, 0, iAmt);
+    }else{
+      rc = p->pReal->pMethods->xRead(p->pReal, zBuf, iAmt, iOfst);
+    }
     if( rc==SQLITE_OK && iOfst==0 && (p->openFlags & SQLITE_OPEN_MAIN_DB) ){
       /* These look like magic numbers. But they are stable, as they are part
        ** of the definition of the SQLite file format, which may not change. */
@@ -2754,11 +2867,19 @@ static int otaVfsWrite(
   sqlite_int64 iOfst
 ){
   ota_file *p = (ota_file*)pFile;
+  sqlite3ota *pOta = p->pOta;
   int rc;
-  if( p->pOta && p->pOta->eStage==OTA_STAGE_CAPTURE ){
+
+  if( pOta && pOta->eStage==OTA_STAGE_CAPTURE ){
     assert( p->openFlags & SQLITE_OPEN_MAIN_DB );
     rc = otaCaptureDbWrite(p->pOta, iOfst);
   }else{
+    if( pOta && pOta->eStage==OTA_STAGE_OAL 
+     && (p->openFlags & SQLITE_OPEN_WAL) 
+     && iOfst>=pOta->iOalSz
+    ){
+      pOta->iOalSz = iAmt + iOfst;
+    }
     rc = p->pReal->pMethods->xWrite(p->pReal, zBuf, iAmt, iOfst);
     if( rc==SQLITE_OK && iOfst==0 && (p->openFlags & SQLITE_OPEN_MAIN_DB) ){
       /* These look like magic numbers. But they are stable, as they are part

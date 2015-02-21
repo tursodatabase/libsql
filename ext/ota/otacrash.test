@@ -1,0 +1,71 @@
+# 2014 October 22
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+
+if {![info exists testdir]} {
+  set testdir [file join [file dirname [info script]] .. .. test]
+}
+source $testdir/tester.tcl
+set ::testprefix otacrash
+
+# Set up a target database and an ota update database. The target
+# db is the usual "test.db", the ota db is "test.db2".
+#
+forcedelete test.db2
+do_execsql_test 1.0 {
+  CREATE TABLE t1(a, b, c, PRIMARY KEY(a), UNIQUE(b));
+  INSERT INTO t1 VALUES(1, 2, 3);
+  INSERT INTO t1 VALUES(4, 5, 6);
+  INSERT INTO t1 VALUES(7, 8, 9);
+
+  ATTACH 'test.db2' AS ota;
+  CREATE TABLE ota.data_t1(a, b, c, ota_control);
+  INSERT INTO data_t1 VALUES(10, 11, 12, 0);
+  INSERT INTO data_t1 VALUES(13, 14, 15, 0);
+  INSERT INTO data_t1 VALUES(4, NULL, NULL, 1);
+  INSERT INTO data_t1 VALUES(1, NULL, 100, '..x');
+}
+db_save_and_close
+
+
+for {set i 0} {$i < 10} {incr i} {
+  forcedelete test.db2 test.db2-journal test.db test.db-oal test.db-wal
+  db_restore
+  do_test 2.$i.1 {
+    crashsql -file test.db2 -delay 3 -tclbody {
+
+      sqlite3ota ota test.db file:test.db2?vfs=crash
+      ota step
+      ota close
+
+      sqlite3ota ota test.db file:test.db2?vfs=crash
+      ota step
+      ota step
+      ota close
+    } {}
+  } {1 {child process exited abnormally}}
+
+  do_test 2.$i.2 {
+    sqlite3ota ota test.db test.db2
+    while {[ota step]=="SQLITE_OK"} {}
+    ota close
+  } {SQLITE_DONE}
+
+  sqlite3 db test.db
+  do_execsql_test 2.$i.3 {
+    SELECT * FROM t1;
+  } {1 2 100  7 8 9  10 11 12  13 14 15}
+  do_execsql_test 2.$i.4 { PRAGMA integrity_check } {ok}
+  db close
+}
+
+finish_test
+
