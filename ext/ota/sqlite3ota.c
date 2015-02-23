@@ -2587,24 +2587,26 @@ sqlite3ota *sqlite3ota_open(const char *zTarget, const char *zOta){
     }
     assert( p->rc!=SQLITE_OK || p->eStage!=0 );
 
-    if( p->rc==SQLITE_OK 
-     && (p->eStage==OTA_STAGE_OAL || p->eStage==OTA_STAGE_MOVE)
-    ){   
-      /* Check that this is not a wal mode database. If it is, it cannot 
-      ** be updated.  */
-      if( p->pTargetFd->pWalFd ){
+    if( p->rc==SQLITE_OK && p->pTargetFd->pWalFd ){
+      if( p->eStage==OTA_STAGE_OAL ){
         p->rc = SQLITE_ERROR;
         p->zErrmsg = sqlite3_mprintf("cannot update wal mode database");
+      }else if( p->eStage==OTA_STAGE_MOVE ){
+        p->eStage = OTA_STAGE_CKPT;
+        p->nStep = 0;
       }
+    }
 
+    if( p->rc==SQLITE_OK
+     && (p->eStage==OTA_STAGE_OAL || p->eStage==OTA_STAGE_MOVE)
+     && pState->eStage!=0 && p->pTargetFd->iCookie!=pState->iCookie
+    ){   
       /* At this point (pTargetFd->iCookie) contains the value of the
       ** change-counter cookie (the thing that gets incremented when a 
       ** transaction is committed in rollback mode) currently stored on 
       ** page 1 of the database file. */
-      else if( pState->eStage!=0 && p->pTargetFd->iCookie!=pState->iCookie ){
-        p->rc = SQLITE_BUSY;
-        p->zErrmsg = sqlite3_mprintf("database modified during ota update");
-      }
+      p->rc = SQLITE_BUSY;
+      p->zErrmsg = sqlite3_mprintf("database modified during ota update");
     }
 
     if( p->rc==SQLITE_OK ){
