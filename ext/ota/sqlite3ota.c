@@ -2985,7 +2985,7 @@ static int otaVfsFileControl(sqlite3_file *pFile, int op, void *pArg){
       /* Now search for a zipvfs instance lower down in the VFS stack. If
       ** one is found, this is an error.  */
       void *dummy = 0;
-      rc = xControl(p->pReal, SQLITE_FCNTL_ZIPVFS_PAGER, &dummy);
+      rc = xControl(p->pReal, SQLITE_FCNTL_ZIPVFS, &dummy);
       if( rc==SQLITE_OK ){
         rc = SQLITE_ERROR;
         pOta->zErrmsg = sqlite3_mprintf("ota/zipvfs setup error");

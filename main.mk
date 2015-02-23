@@ -239,6 +239,7 @@ SRC += \
 TESTSRC = \
   $(TOP)/ext/fts3/fts3_term.c \
   $(TOP)/ext/fts3/fts3_test.c \
+  $(TOP)/ext/ota/test_ota.c \
   $(TOP)/src/test1.c \
   $(TOP)/src/test2.c \
   $(TOP)/src/test3.c \
@@ -340,8 +341,7 @@ TESTSRC2 = \
   $(TOP)/ext/fts3/fts3_expr.c \
   $(TOP)/ext/fts3/fts3_tokenizer.c \
   $(TOP)/ext/fts3/fts3_write.c \
-  $(TOP)/ext/async/sqlite3async.c \
-  $(TOP)/ext/ota/test_ota.c
+  $(TOP)/ext/async/sqlite3async.c 
 
 # Header files used by all library source files.
 #
