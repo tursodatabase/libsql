@@ -1,5 +1,5 @@
-C Merge\slatest\strunk\schanges\swith\sthis\sbranch.
-D 2015-02-23T16:17:46.425
+C Fix\sbuilding\swith\sENABLE_OTA\sand\sOMIT_LOAD_EXTENSION.
+D 2015-02-23T20:09:50.667
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6b9e7677829aa94b9f30949656e27312aefb9a46
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -138,7 +138,7 @@ F ext/ota/otaA.test ef4bfa8cfd4ed814ae86f7457b64aa2f18c90171
 F ext/ota/otacrash.test a078d34e2edbcedac5f894e3e7d08d452a327007
 F ext/ota/otafault.test 8c43586c2b96ca16bbce00b5d7e7d67316126db8
 F ext/ota/otafault2.test fa202a98ca221faec318f3e5c5f39485b1256561
-F ext/ota/sqlite3ota.c e060a4cb49280ee86fc60055ed5de4b3bf56c892
+F ext/ota/sqlite3ota.c f0ee6872b833c14c02101affc42e2f29ede54fec
 F ext/ota/sqlite3ota.h 4cd82fbac9cbea89bd51edace3ec5c57866c02e3
 F ext/ota/test_ota.c e34c801c665d64b4b9e00b71f1acf8c652404b2b
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
@@ -1225,7 +1225,7 @@ F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkpragmatab.tcl 94f196c9961e0ca3513e29f57125a3197808be2d
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 9ef48e1748dce7b844f67e2450ff9dfeb0fb4ab5
-F tool/mksqlite3c.tcl d8b0b0cc5f0e912058c9300f052769c62404d2d9
+F tool/mksqlite3c.tcl 262e7e3d39df25af10c8aef2163f3a0cc133814c
 F tool/mksqlite3h.tcl ba24038056f51fde07c0079c41885ab85e2cff12
 F tool/mksqlite3internalh.tcl eb994013e833359137eb53a55acdad0b5ae1049b
 F tool/mkvsix.tcl 52a4c613707ac34ae9c226e5ccc69cb948556105
@@ -1258,7 +1258,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f7865b942834dd2f6b865336e08ba1adbf20612a f8917ba4d917bc762b3b252466ab72a8a70dc0d8
-R 330b1846f73876f19a54b99531a8e2fe
+P e5ca79d2d3c066252b0baa4f76ddbe0ee3b14cb6
+R c11026f8d0bac71d4a6d53daefc54b0f
 U dan
-Z d8008c2bc531990fbe4786aa324b64a7
+Z 863e052e94b6482f04408621173e9f42

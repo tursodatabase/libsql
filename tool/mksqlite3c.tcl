@@ -195,7 +195,7 @@ proc copy_file {filename} {
       if {[regexp $declpattern $line all funcname]} {
         # Add the SQLITE_PRIVATE or SQLITE_API keyword before functions.
         # so that linkage can be modified at compile-time.
-        if {[regexp {^sqlite3_} $funcname]} {
+        if {[regexp {^sqlite3(_|ota_)} $funcname]} {
           puts $out "SQLITE_API $line"
         } else {
           puts $out "SQLITE_PRIVATE $line"

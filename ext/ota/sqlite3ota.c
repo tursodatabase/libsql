@@ -3422,10 +3422,14 @@ int sqlite3ota_create_vfs(const char *zName, const char *zParent){
     otaVfsAccess,                 /* xAccess */
     otaVfsFullPathname,           /* xFullPathname */
 
+#ifndef SQLITE_OMIT_LOAD_EXTENSION
     otaVfsDlOpen,                 /* xDlOpen */
     otaVfsDlError,                /* xDlError */
     otaVfsDlSym,                  /* xDlSym */
     otaVfsDlClose,                /* xDlClose */
+#else
+    0, 0, 0, 0,
+#endif
 
     otaVfsRandomness,             /* xRandomness */
     otaVfsSleep,                  /* xSleep */
