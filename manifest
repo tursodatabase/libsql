@@ -1,5 +1,5 @@
-C Improve\stests\sfor\sresuming\sota\supdates\sfollowing\spower\sfailures.\sFix\sa\sproblem\srevealed\sby\sthe\ssame.
-D 2015-02-23T12:22:55.407
+C Update\sthe\ssqlite3ota_db()\sAPI\sto\saccount\sfor\sthe\sfact\sthat\seach\sOTA\shandle\snow\suses\stwo\sSQLite\sdatabase\shandles.
+D 2015-02-23T15:02:13.758
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6b9e7677829aa94b9f30949656e27312aefb9a46
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -138,9 +138,9 @@ F ext/ota/otaA.test ef4bfa8cfd4ed814ae86f7457b64aa2f18c90171
 F ext/ota/otacrash.test a078d34e2edbcedac5f894e3e7d08d452a327007
 F ext/ota/otafault.test 8c43586c2b96ca16bbce00b5d7e7d67316126db8
 F ext/ota/otafault2.test fa202a98ca221faec318f3e5c5f39485b1256561
-F ext/ota/sqlite3ota.c 7949ecd5b100da558a073bc7800971e3da822fb2
-F ext/ota/sqlite3ota.h 052d87068751810a9dfba1a48954271501bb728f
-F ext/ota/test_ota.c 9ec6ea945282f65f67f0e0468dad79a489818f44
+F ext/ota/sqlite3ota.c fa63725a85c1208c9e469efc3df18798a12c1cd5
+F ext/ota/sqlite3ota.h 4cd82fbac9cbea89bd51edace3ec5c57866c02e3
+F ext/ota/test_ota.c e34c801c665d64b4b9e00b71f1acf8c652404b2b
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 14e6239434d4e3f65d3e90320713f26aa24e167f
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
@@ -1258,7 +1258,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6d5ed70d0dbabe9c2ab2f2dba47747d17d937781
-R 4c48a15e3fb052167c1c2cb6db2c19fe
+P 1cb675e5392f179516d8e7a52760922a6c7df4d0
+R a9177f7d92fc75d9eccc7912836972e5
 U dan
-Z 4ecb7af4e3b45df7793dc31c4cb806df
+Z 89f5d620618d356804404be134f86324

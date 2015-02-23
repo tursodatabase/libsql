@@ -250,23 +250,30 @@ typedef struct sqlite3ota sqlite3ota;
 sqlite3ota *sqlite3ota_open(const char *zTarget, const char *zOta);
 
 /*
-** Obtain the underlying database handle used by the OTA extension.
+** Internally, each OTA connection uses a separate SQLite database 
+** connection to access the target and ota update databases. This
+** API allows the application direct access to these database handles.
 **
-** The only argument passed to this function must be a valid, open, OTA
-** handle. This function returns the database handle used by OTA for all
-** operations on the target and source databases. This may be useful in 
-** two scenarios:
+** The first argument passed to this function must be a valid, open, OTA
+** handle. The second argument should be passed zero to access the target
+** database handle, or non-zero to access the ota update database handle.
+** Accessing the underlying database handles may be useful in the
+** following scenarios:
+**
+**   * If any target tables are virtual tables, it may be necessary to
+**     call sqlite3_create_module() on the target database handle to 
+**     register the required virtual table implementations.
 **
 **   * If the data_xxx tables in the OTA source database are virtual 
-**     tables, or if any of the tables being updated are virtual tables,
-**     the application may need to call sqlite3_create_module() on
-**     the db handle to register the required virtual table implementations.
+**     tables, the application may need to call sqlite3_create_module() on
+**     the ota update db handle to any required virtual table
+**     implementations.
 **
 **   * If the application uses the "ota_delta()" feature described above,
 **     it must use sqlite3_create_function() or similar to register the
-**     ota_delta() implementation with OTA.
+**     ota_delta() implementation with the target database handle.
 */
-sqlite3 *sqlite3ota_db(sqlite3ota*);
+sqlite3 *sqlite3ota_db(sqlite3ota*, int bOta);
 
 /*
 ** Do some work towards applying the OTA update to the target db. 

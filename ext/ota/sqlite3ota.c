@@ -2648,8 +2648,12 @@ sqlite3ota *sqlite3ota_open(const char *zTarget, const char *zOta){
 /*
 ** Return the database handle used by pOta.
 */
-sqlite3 *sqlite3ota_db(sqlite3ota *pOta){
-  return (pOta ? pOta->dbMain : 0);
+sqlite3 *sqlite3ota_db(sqlite3ota *pOta, int bOta){
+  sqlite3 *db = 0;
+  if( pOta ){
+    db = (bOta ? pOta->dbOta : pOta->dbMain);
+  }
+  return db;
 }
 
 

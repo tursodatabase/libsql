@@ -94,7 +94,7 @@ static int test_sqlite3ota_cmd(
     }
 
     case 2: /* create_ota_delta */ {
-      sqlite3 *db = sqlite3ota_db(pOta);
+      sqlite3 *db = sqlite3ota_db(pOta, 0);
       int rc = sqlite3_create_function(
           db, "ota_delta", -1, SQLITE_UTF8, (void*)interp, test_ota_delta, 0, 0
       );
@@ -211,9 +211,9 @@ static int test_sqlite3ota_internal_test(
     return TCL_ERROR;
   }
 
-  db = sqlite3ota_db(0);
+  db = sqlite3ota_db(0, 0);
   if( db!=0 ){
-    Tcl_AppendResult(interp, "sqlite3ota_db(0)!=0", 0);
+    Tcl_AppendResult(interp, "sqlite3ota_db(0, 0)!=0", 0);
     return TCL_ERROR;
   }
 
