@@ -1,4 +1,10 @@
+#![feature(libc)]
+#![allow(non_snake_case)]
+
+extern crate libc;
+
 pub use self::bindgen::*;
+
 use std::mem;
 use libc::{c_int, c_void};
 

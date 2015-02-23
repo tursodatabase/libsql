@@ -52,6 +52,7 @@
 #![cfg_attr(test, feature(test))]
 
 extern crate libc;
+extern crate "libsqlite3-sys" as ffi;
 #[macro_use] extern crate rustc_bitflags;
 
 use std::mem;
@@ -75,9 +76,6 @@ pub use transaction::{SqliteTransactionBehavior,
 
 pub mod types;
 mod transaction;
-
-/// Automatically generated FFI bindings (via [bindgen](https://github.com/crabtw/rust-bindgen)).
-#[allow(dead_code,non_snake_case,non_camel_case_types)] pub mod ffi;
 
 /// A typedef of the result returned by many methods.
 pub type SqliteResult<T> = Result<T, SqliteError>;
@@ -705,6 +703,7 @@ impl<'stmt> SqliteRow<'stmt> {
 
 #[cfg(test)]
 mod test {
+    extern crate "libsqlite3-sys" as ffi;
     use super::*;
 
     fn checked_memory_handle() -> SqliteConnection {

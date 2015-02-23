@@ -15,3 +15,6 @@ name = "rusqlite"
 [dependencies]
 time = "~0.1.0"
 bitflags = "~0.1"
+
+[dependencies.libsqlite3-sys]
+path = "libsqlite3-sys"
