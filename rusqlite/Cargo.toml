@@ -12,6 +12,9 @@ license = "MIT"
 [lib]
 name = "rusqlite"
 
+[features]
+load_extension = ["libsqlite3-sys/load_extension"]
+
 [dependencies]
 time = "~0.1.0"
 bitflags = "~0.1"
