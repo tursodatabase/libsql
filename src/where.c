@@ -4695,7 +4695,11 @@ static int whereUsablePartialIndex(int iTab, WhereClause *pWC, Expr *pWhere){
   int i;
   WhereTerm *pTerm;
   for(i=0, pTerm=pWC->a; i<pWC->nTerm; i++, pTerm++){
-    if( sqlite3ExprImpliesExpr(pTerm->pExpr, pWhere, iTab) ) return 1;
+    if( sqlite3ExprImpliesExpr(pTerm->pExpr, pWhere, iTab)
+     && !ExprHasProperty(pTerm->pExpr, EP_FromJoin)
+    ){
+      return 1;
+    }
   }
   return 0;
 }
