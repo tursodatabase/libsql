@@ -1,5 +1,5 @@
-C Update\sdocument\son\ssqlite3_mprintf()\sand\srelated\sfunctions.\s\sDiscuss\sthe\n%w\sformat\sand\spoint\sout\sthat\sobscure\sANSI-C\sformats\sare\snot\ssupported.\nNo\schanges\sto\scode.
-D 2015-02-21T15:42:57.800
+C Make\ssure\spartial\sindexes\sare\snot\squalified\sincorrectly\sby\sa\sconstraint\sthat\nis\sinside\sthe\sON\sclause\sof\sa\sLEFT\sJOIN.\s\sFix\sfor\sticket\s[2326c258d02ead33].
+D 2015-02-24T20:04:59.149
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6b9e7677829aa94b9f30949656e27312aefb9a46
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -306,7 +306,7 @@ F src/vtab.c 699f2b8d509cfe379c33dde33827875d5b030e01
 F src/wal.c 39303f2c9db02a4e422cd8eb2c8760420c6a51fe
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
-F src/where.c d46de821bc604a4fd36fa3928c086950e91aafb1
+F src/where.c 88509f19a64a36e1c22a1dbdac74ee1a62d99dc3
 F src/whereInt.h d3633e9b592103241b74b0ec76185f3e5b8b62e0
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -350,7 +350,7 @@ F test/autoinc.test c58912526998a39e11f66b533e23cfabea7f25b7
 F test/autoindex1.test 6ff78b94f43a59616c06c11c55b12935173506d7
 F test/autoindex2.test af7e595c6864cc6ef5fc38d5db579a3e34940cb8
 F test/autoindex3.test a3be0d1a53a7d2edff208a5e442312957047e972
-F test/autoindex4.test fc807f9efd158bec60f5dfdf34ebe46fb274612d
+F test/autoindex4.test 49d3cd791a9baa16fb461d7ea3de80d019a819cf
 F test/autovacuum.test 941892505d2c0f410a0cb5970dfa1c7c4e5f6e74
 F test/autovacuum_ioerr2.test 8a367b224183ad801e0e24dcb7d1501f45f244b4
 F test/avtrans.test 0252654f4295ddda3b2cce0e894812259e655a85
@@ -652,7 +652,7 @@ F test/index2.test ee83c6b5e3173a3d7137140d945d9a5d4fdfb9d6
 F test/index3.test 55a90cff99834305e8141df7afaef39674b57062
 F test/index4.test ab92e736d5946840236cd61ac3191f91a7856bf6
 F test/index5.test 25b0b451aceed4ac5f7d49f856f6de7257470b3e
-F test/index6.test fb370966ac3cd0989053dd5385757b5c3e24ab6a
+F test/index6.test c56852451b574ad5b2a1789e566e62e6ab244f42
 F test/index7.test 917cf1e1c7439bb155abbeabec511b28945e157b
 F test/indexedby.test b2f22f3e693a53813aa3f50b812eb609ba6df1ec
 F test/indexfault.test 31d4ab9a7d2f6e9616933eb079722362a883eb1d
@@ -1239,7 +1239,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c299e55a661c04f71ab43cb8aed04f8ece6e0567
-R dda772aafb6dee5a528cc1c5d5a14dc2
+P f8917ba4d917bc762b3b252466ab72a8a70dc0d8 c6399958a17e8b7c1798a9240fb06bffc774b332
+R 65a9e61b66b400145ad4b4adbab491c4
+T +closed c6399958a17e8b7c1798a9240fb06bffc774b332
 U drh
-Z 75f83919b9b483315b93f05f4ef8627c
+Z 128fd4816e28956dbfeb54d3b3932fdf
