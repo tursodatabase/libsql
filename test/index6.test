@@ -296,4 +296,35 @@ do_execsql_test index6-7.4 {
   SELECT * FROM t7a JOIN t7b ON (x=99) ORDER BY x;
 } {/USING COVERING INDEX t7ax/}
 
+
+do_execsql_test index6-8.0 {
+  CREATE TABLE t8a(a,b);
+  CREATE TABLE t8b(x,y);
+  CREATE INDEX i8c ON t8b(y) WHERE x = 'value';
+
+  INSERT INTO t8a VALUES(1, 'one');
+  INSERT INTO t8a VALUES(2, 'two');
+  INSERT INTO t8a VALUES(3, 'three');
+
+  INSERT INTO t8b VALUES('value', 1);
+  INSERT INTO t8b VALUES('dummy', 2);
+  INSERT INTO t8b VALUES('value', 3);
+  INSERT INTO t8b VALUES('dummy', 4);
+} {}
+
+do_eqp_test index6-8.1 {
+  SELECT * FROM t8a LEFT JOIN t8b ON (x = 'value' AND y = a)
+} {
+  0 0 0 {SCAN TABLE t8a} 
+  0 1 1 {SEARCH TABLE t8b USING INDEX i8c (y=?)}
+}
+
+do_execsql_test index6-8.2 {
+  SELECT * FROM t8a LEFT JOIN t8b ON (x = 'value' AND y = a)
+} {
+  1 one value 1 
+  2 two {} {} 
+  3 three value 3
+}
+
 finish_test

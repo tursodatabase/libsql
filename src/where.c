@@ -1614,7 +1614,8 @@ static void constructAutomaticIndex(
   for(pTerm=pWC->a; pTerm<pWCEnd; pTerm++){
     if( pLoop->prereq==0
      && (pTerm->wtFlags & TERM_VIRTUAL)==0
-     && !ExprHasProperty(pTerm->pExpr, EP_FromJoin)
+     && (!ExprHasProperty(pTerm->pExpr, EP_FromJoin)
+      || pTerm->pExpr->iRightJoinTable==pSrc->iCursor)
      && sqlite3ExprIsTableConstant(pTerm->pExpr, pSrc->iCursor) ){
       pPartial = sqlite3ExprAnd(pParse->db, pPartial,
                                 sqlite3ExprDup(pParse->db, pTerm->pExpr, 0));
@@ -4695,8 +4696,9 @@ static int whereUsablePartialIndex(int iTab, WhereClause *pWC, Expr *pWhere){
   int i;
   WhereTerm *pTerm;
   for(i=0, pTerm=pWC->a; i<pWC->nTerm; i++, pTerm++){
-    if( sqlite3ExprImpliesExpr(pTerm->pExpr, pWhere, iTab)
-     && !ExprHasProperty(pTerm->pExpr, EP_FromJoin)
+    Expr *pExpr = pTerm->pExpr;
+    if( sqlite3ExprImpliesExpr(pExpr, pWhere, iTab) 
+     && (!ExprHasProperty(pExpr, EP_FromJoin) || pExpr->iRightJoinTable==iTab)
     ){
       return 1;
     }
