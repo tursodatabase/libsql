@@ -1,3 +1,11 @@
+# Version 0.0.10 (2015-02-23)
+
+* BREAKING CHANGE: `open` now expects a `Path` rather than a `str`. There is a separate
+  `open_in_memory` constructor for opening in-memory databases.
+* Added the ability to load SQLite extensions. This is behind the `load_extension` Cargo feature,
+  because not all builds of sqlite3 include this ability. Notably the default libsqlite3 that
+	ships with OS X 10.10 does not support extensions.
+
 # Version 0.0.9 (2015-02-13)
 
 * Updates to track latest rustc changes.
