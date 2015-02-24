@@ -267,5 +267,33 @@ do_execsql_test index6-6.2 {
   PRAGMA integrity_check;
 } {ok}
 
+# Test case for ticket [2326c258d02ead33d69faa63de8f4686b9b1b9d9] on
+# 2015-02-24.  Any use of a partial index qualifying constraint inside
+# the ON clause of a LEFT JOIN was causing incorrect results for all
+# versions of SQLite 3.8.0 through 3.8.8.
+#
+do_execsql_test index6-7.0 {
+  CREATE TABLE t7a(x);
+  CREATE TABLE t7b(y);
+  INSERT INTO t7a(x) VALUES(1);
+  CREATE INDEX t7ax ON t7a(x) WHERE x=99;
+  PRAGMA automatic_index=OFF;
+  SELECT * FROM t7a LEFT JOIN t7b ON (x=99) ORDER BY x;
+} {1 {}}
+do_execsql_test index6-7.1 {
+  INSERT INTO t7b(y) VALUES(2);
+  SELECT * FROM t7a JOIN t7b ON (x=99) ORDER BY x;
+} {}
+do_execsql_test index6-7.2 {
+  INSERT INTO t7a(x) VALUES(99);
+  SELECT * FROM t7a LEFT JOIN t7b ON (x=99) ORDER BY x;
+} {1 {} 99 2}
+do_execsql_test index6-7.3 {
+  SELECT * FROM t7a JOIN t7b ON (x=99) ORDER BY x;
+} {99 2}
+do_execsql_test index6-7.4 {
+  EXPLAIN QUERY PLAN
+  SELECT * FROM t7a JOIN t7b ON (x=99) ORDER BY x;
+} {/USING COVERING INDEX t7ax/}
 
 finish_test
