@@ -18,7 +18,7 @@
 //! }
 //!
 //! fn main() {
-//!     let conn = SqliteConnection::open(":memory:").unwrap();
+//!     let conn = SqliteConnection::open_in_memory().unwrap();
 //!
 //!     conn.execute("CREATE TABLE person (
 //!                   id              INTEGER PRIMARY KEY,
@@ -156,21 +156,38 @@ pub struct SqliteConnection {
 impl SqliteConnection {
     /// Open a new connection to a SQLite database.
     ///
-    /// Use the special path `:memory:` to create an in-memory database.
     /// `SqliteConnection::open(path)` is equivalent to `SqliteConnection::open_with_flags(path,
     /// SQLITE_OPEN_READ_WRITE | SQLITE_OPEN_CREATE)`.
-    pub fn open(path: &str) -> SqliteResult<SqliteConnection> {
+    pub fn open(path: &Path) -> SqliteResult<SqliteConnection> {
         let flags = SQLITE_OPEN_READ_WRITE | SQLITE_OPEN_CREATE;
         SqliteConnection::open_with_flags(path, flags)
     }
 
+    /// Open a new connection to an in-memory SQLite database.
+    pub fn open_in_memory() -> SqliteResult<SqliteConnection> {
+        let flags = SQLITE_OPEN_READ_WRITE | SQLITE_OPEN_CREATE;
+        SqliteConnection::open_in_memory_with_flags(flags)
+    }
+
     /// Open a new connection to a SQLite database.
     ///
-    /// Use the special path `:memory:` to create an in-memory database. See [Opening A New
     /// Database Connection](http://www.sqlite.org/c3ref/open.html) for a description of valid
     /// flag combinations.
-    pub fn open_with_flags(path: &str, flags: SqliteOpenFlags) -> SqliteResult<SqliteConnection> {
-        InnerSqliteConnection::open_with_flags(path, flags).map(|db| {
+    pub fn open_with_flags(path: &Path, flags: SqliteOpenFlags)
+            -> SqliteResult<SqliteConnection> {
+        let c_path = try!(path_to_cstring(path));
+        InnerSqliteConnection::open_with_flags(&c_path, flags).map(|db| {
+            SqliteConnection{ db: RefCell::new(db) }
+        })
+    }
+
+    /// Open a new connection to an in-memory SQLite database.
+    ///
+    /// Database Connection](http://www.sqlite.org/c3ref/open.html) for a description of valid
+    /// flag combinations.
+    pub fn open_in_memory_with_flags(flags: SqliteOpenFlags) -> SqliteResult<SqliteConnection> {
+        let c_memory = try!(str_to_cstring(":memory:"));
+        InnerSqliteConnection::open_with_flags(&c_memory, flags).map(|db| {
             SqliteConnection{ db: RefCell::new(db) }
         })
     }
@@ -424,8 +441,8 @@ bitflags! {
 }
 
 impl InnerSqliteConnection {
-    fn open_with_flags(path: &str, flags: SqliteOpenFlags) -> SqliteResult<InnerSqliteConnection> {
-        let c_path = try!(str_to_cstring(path));
+    fn open_with_flags(c_path: &CString, flags: SqliteOpenFlags)
+            -> SqliteResult<InnerSqliteConnection> {
         unsafe {
             let mut db: *mut ffi::sqlite3 = mem::uninitialized();
             let r = ffi::sqlite3_open_v2(c_path.as_ptr(), &mut db, flags.bits(), ptr::null());
@@ -799,12 +816,12 @@ mod test {
     use super::*;
 
     fn checked_memory_handle() -> SqliteConnection {
-        SqliteConnection::open(":memory:").unwrap()
+        SqliteConnection::open_in_memory().unwrap()
     }
 
     #[test]
     fn test_open() {
-        assert!(SqliteConnection::open(":memory:").is_ok());
+        assert!(SqliteConnection::open_in_memory().is_ok());
 
         let db = checked_memory_handle();
         assert!(db.close().is_ok());
@@ -817,11 +834,8 @@ mod test {
             SQLITE_OPEN_READ_ONLY | SQLITE_OPEN_READ_WRITE,
             SQLITE_OPEN_READ_ONLY | SQLITE_OPEN_CREATE,
         ].iter() {
-            assert!(SqliteConnection::open_with_flags(":memory:", *bad_flags).is_err());
+            assert!(SqliteConnection::open_in_memory_with_flags(*bad_flags).is_err());
         }
-
-        assert!(SqliteConnection::open_with_flags(
-                "file::memory:", SQLITE_OPEN_READ_ONLY|SQLITE_OPEN_URI).is_ok());
     }
 
     #[test]
