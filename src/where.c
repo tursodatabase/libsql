@@ -1614,6 +1614,7 @@ static void constructAutomaticIndex(
   for(pTerm=pWC->a; pTerm<pWCEnd; pTerm++){
     if( pLoop->prereq==0
      && (pTerm->wtFlags & TERM_VIRTUAL)==0
+     && !ExprHasProperty(pTerm->pExpr, EP_FromJoin)
      && sqlite3ExprIsTableConstant(pTerm->pExpr, pSrc->iCursor) ){
       pPartial = sqlite3ExprAnd(pParse->db, pPartial,
                                 sqlite3ExprDup(pParse->db, pTerm->pExpr, 0));
