@@ -48,21 +48,21 @@
 //!     }
 //! }
 //! ```
-#![feature(unsafe_destructor, core, std_misc, libc, rustc_private, collections, hash)]
+#![feature(unsafe_destructor, core, std_misc, path, libc, rustc_private, collections)]
 #![cfg_attr(test, feature(test))]
 
 extern crate libc;
+extern crate "libsqlite3-sys" as ffi;
 #[macro_use] extern crate rustc_bitflags;
 
 use std::mem;
-use std::path;
 use std::ptr;
 use std::fmt;
+use std::path::{Path};
+use std::error;
 use std::rc::{Rc};
 use std::cell::{RefCell, Cell};
-use std::ffi::{CString, AsOsStr};
-use std::os::unix::{OsStrExt};
-use std::ffi as std_ffi;
+use std::ffi::{CStr, CString};
 use std::str;
 use libc::{c_int, c_void, c_char};
 
@@ -74,17 +74,17 @@ pub use transaction::{SqliteTransactionBehavior,
                       SqliteTransactionImmediate,
                       SqliteTransactionExclusive};
 
+#[cfg(feature = "load_extension")] pub use load_extension_guard::{SqliteLoadExtensionGuard};
+
 pub mod types;
 mod transaction;
-
-/// Automatically generated FFI bindings (via [bindgen](https://github.com/crabtw/rust-bindgen)).
-#[allow(dead_code,non_snake_case,non_camel_case_types)] pub mod ffi;
+#[cfg(feature = "load_extension")] mod load_extension_guard;
 
 /// A typedef of the result returned by many methods.
 pub type SqliteResult<T> = Result<T, SqliteError>;
 
 unsafe fn errmsg_to_string(errmsg: *const c_char) -> String {
-    let c_slice = std_ffi::c_str_to_bytes(&errmsg);
+    let c_slice = CStr::from_ptr(errmsg).to_bytes();
     let utf8_str = str::from_utf8(c_slice);
     utf8_str.unwrap_or("Invalid string encoding").to_string()
 }
@@ -102,8 +102,14 @@ pub struct SqliteError {
 }
 
 impl fmt::Display for SqliteError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        write!(f, "SqliteError( code: {}, message: {} )", self.code, self.message)
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{} (SQLite error {})", self.message, self.code)
+    }
+}
+
+impl error::Error for SqliteError {
+    fn description(&self) -> &str {
+        self.message.as_slice()
     }
 }
 
@@ -116,6 +122,21 @@ impl SqliteError {
         };
         SqliteError{ code: code, message: message }
     }
+}
+
+fn str_to_cstring(s: &str) -> SqliteResult<CString> {
+    CString::new(s).map_err(|_| SqliteError{
+        code: ffi::SQLITE_MISUSE,
+        message: "Could not convert path to C-combatible string".to_string()
+    })
+}
+
+fn path_to_cstring(p: &Path) -> SqliteResult<CString> {
+    let s = try!(p.to_str().ok_or(SqliteError{
+        code: ffi::SQLITE_MISUSE,
+        message: "Could not convert path to UTF-8 string".to_string()
+    }));
+    str_to_cstring(s)
 }
 
 /// A connection to a SQLite database.
@@ -137,7 +158,7 @@ impl SqliteConnection {
     ///
     /// `SqliteConnection::open(path)` is equivalent to `SqliteConnection::open_with_flags(path,
     /// SQLITE_OPEN_READ_WRITE | SQLITE_OPEN_CREATE)`.
-    pub fn open(path: &path::Path) -> SqliteResult<SqliteConnection> {
+    pub fn open(path: &Path) -> SqliteResult<SqliteConnection> {
         let flags = SQLITE_OPEN_READ_WRITE | SQLITE_OPEN_CREATE;
         SqliteConnection::open_with_flags(path, flags)
     }
@@ -152,9 +173,10 @@ impl SqliteConnection {
     ///
     /// Database Connection](http://www.sqlite.org/c3ref/open.html) for a description of valid
     /// flag combinations.
-    pub fn open_with_flags(path: &path::Path, flags: SqliteOpenFlags)
+    pub fn open_with_flags(path: &Path, flags: SqliteOpenFlags)
             -> SqliteResult<SqliteConnection> {
-        InnerSqliteConnection::open_with_flags(path.as_os_str().as_byte_slice(), flags).map(|db| {
+        let c_path = try!(path_to_cstring(path));
+        InnerSqliteConnection::open_with_flags(&c_path, flags).map(|db| {
             SqliteConnection{ db: RefCell::new(db) }
         })
     }
@@ -164,7 +186,8 @@ impl SqliteConnection {
     /// Database Connection](http://www.sqlite.org/c3ref/open.html) for a description of valid
     /// flag combinations.
     pub fn open_in_memory_with_flags(flags: SqliteOpenFlags) -> SqliteResult<SqliteConnection> {
-        InnerSqliteConnection::open_with_flags(":memory:".as_bytes(), flags).map(|db| {
+        let c_memory = try!(str_to_cstring(":memory:"));
+        InnerSqliteConnection::open_with_flags(&c_memory, flags).map(|db| {
             SqliteConnection{ db: RefCell::new(db) }
         })
     }
@@ -328,7 +351,57 @@ impl SqliteConnection {
     /// This is functionally equivalent to the `Drop` implementation for `SqliteConnection` except
     /// that it returns any error encountered to the caller.
     pub fn close(self) -> SqliteResult<()> {
-        self.db.borrow_mut().close()
+        let mut db = self.db.borrow_mut();
+        db.close()
+    }
+
+    /// Enable loading of SQLite extensions. Strongly consider using `SqliteLoadExtensionGuard`
+    /// instead of this function.
+    ///
+    /// ## Example
+    ///
+    /// ```rust,no_run
+    /// # use rusqlite::{SqliteConnection, SqliteResult};
+    /// # use std::path::{Path};
+    /// fn load_my_extension(conn: &SqliteConnection) -> SqliteResult<()> {
+    ///     try!(conn.load_extension_enable());
+    ///     try!(conn.load_extension(Path::new("my_sqlite_extension"), None));
+    ///     conn.load_extension_disable()
+    /// }
+    /// ```
+    #[cfg(feature = "load_extension")]
+    pub fn load_extension_enable(&self) -> SqliteResult<()> {
+        self.db.borrow_mut().enable_load_extension(1)
+    }
+
+    /// Disable loading of SQLite extensions.
+    ///
+    /// See `load_extension_enable` for an example.
+    #[cfg(feature = "load_extension")]
+    pub fn load_extension_disable(&self) -> SqliteResult<()> {
+        self.db.borrow_mut().enable_load_extension(0)
+    }
+
+    /// Load the SQLite extension at `dylib_path`. `dylib_path` is passed through to
+    /// `sqlite3_load_extension`, which may attempt OS-specific modifications if the file
+    /// cannot be loaded directly.
+    ///
+    /// If `entry_point` is `None`, SQLite will attempt to find the entry point. If it is not
+    /// `None`, the entry point will be passed through to `sqlite3_load_extension`.
+    ///
+    /// ## Example
+    ///
+    /// ```rust,no_run
+    /// # use rusqlite::{SqliteConnection, SqliteResult, SqliteLoadExtensionGuard};
+    /// # use std::path::{Path};
+    /// fn load_my_extension(conn: &SqliteConnection) -> SqliteResult<()> {
+    ///     let _guard = try!(SqliteLoadExtensionGuard::new(conn));
+    ///
+    ///     conn.load_extension(Path::new("my_sqlite_extension"), None)
+    /// }
+    #[cfg(feature = "load_extension")]
+    pub fn load_extension(&self, dylib_path: &Path, entry_point: Option<&str>) -> SqliteResult<()> {
+        self.db.borrow_mut().load_extension(dylib_path, entry_point)
     }
 
     fn decode_result(&self, code: c_int) -> SqliteResult<()> {
@@ -368,9 +441,8 @@ bitflags! {
 }
 
 impl InnerSqliteConnection {
-    fn open_with_flags(path: &[u8], flags: SqliteOpenFlags)
+    fn open_with_flags(c_path: &CString, flags: SqliteOpenFlags)
             -> SqliteResult<InnerSqliteConnection> {
-        let c_path = CString::from_slice(path);
         unsafe {
             let mut db: *mut ffi::sqlite3 = mem::uninitialized();
             let r = ffi::sqlite3_open_v2(c_path.as_ptr(), &mut db, flags.bits(), ptr::null());
@@ -404,6 +476,16 @@ impl InnerSqliteConnection {
         }
     }
 
+    unsafe fn decode_result_with_errmsg(&self, code: c_int, errmsg: *mut c_char) -> SqliteResult<()> {
+        if code == ffi::SQLITE_OK {
+            Ok(())
+        } else {
+            let message = errmsg_to_string(&*errmsg);
+            ffi::sqlite3_free(errmsg as *mut c_void);
+            Err(SqliteError{ code: code, message: message })
+        }
+    }
+
     fn close(&mut self) -> SqliteResult<()> {
         let r = unsafe { ffi::sqlite3_close(self.db) };
         self.db = ptr::null_mut();
@@ -411,17 +493,32 @@ impl InnerSqliteConnection {
     }
 
     fn execute_batch(&mut self, sql: &str) -> SqliteResult<()> {
-        let c_sql = CString::from_slice(sql.as_bytes());
+        let c_sql = try!(str_to_cstring(sql));
         unsafe {
             let mut errmsg: *mut c_char = mem::uninitialized();
             let r = ffi::sqlite3_exec(self.db, c_sql.as_ptr(), None, ptr::null_mut(), &mut errmsg);
-            if r == ffi::SQLITE_OK {
-                Ok(())
+            self.decode_result_with_errmsg(r, errmsg)
+        }
+    }
+
+    #[cfg(feature = "load_extension")]
+    fn enable_load_extension(&mut self, onoff: c_int) -> SqliteResult<()> {
+        let r = unsafe { ffi::sqlite3_enable_load_extension(self.db, onoff) };
+        self.decode_result(r)
+    }
+
+    #[cfg(feature = "load_extension")]
+    fn load_extension(&self, dylib_path: &Path, entry_point: Option<&str>) -> SqliteResult<()> {
+        let dylib_str = try!(path_to_cstring(dylib_path));
+        unsafe {
+            let mut errmsg: *mut c_char = mem::uninitialized();
+            let r = if let Some(entry_point) = entry_point {
+                let c_entry = try!(str_to_cstring(entry_point));
+                ffi::sqlite3_load_extension(self.db, dylib_str.as_ptr(), c_entry.as_ptr(), &mut errmsg)
             } else {
-                let message = errmsg_to_string(&*errmsg);
-                ffi::sqlite3_free(errmsg as *mut c_void);
-                Err(SqliteError{ code: r, message: message })
-            }
+                ffi::sqlite3_load_extension(self.db, dylib_str.as_ptr(), ptr::null(), &mut errmsg)
+            };
+            self.decode_result_with_errmsg(r, errmsg)
         }
     }
 
@@ -435,7 +532,7 @@ impl InnerSqliteConnection {
                    conn: &'a SqliteConnection,
                    sql: &str) -> SqliteResult<SqliteStatement<'a>> {
         let mut c_stmt: *mut ffi::sqlite3_stmt = unsafe { mem::uninitialized() };
-        let c_sql = CString::from_slice(sql.as_bytes());
+        let c_sql = try!(str_to_cstring(sql));
         let r = unsafe {
             let len_with_nul = (sql.len() + 1) as c_int;
             ffi::sqlite3_prepare_v2(self.db, c_sql.as_ptr(), len_with_nul, &mut c_stmt,
@@ -715,6 +812,7 @@ impl<'stmt> SqliteRow<'stmt> {
 
 #[cfg(test)]
 mod test {
+    extern crate "libsqlite3-sys" as ffi;
     use super::*;
 
     fn checked_memory_handle() -> SqliteConnection {
