@@ -1,0 +1,14 @@
+[package]
+name = "libsqlite3-sys"
+version = "0.0.9"
+authors = ["John Gallagher <jgallagher@bignerdranch.com>"]
+description = "Native bindings to the libsqlite3 library"
+license = "MIT"
+links = "sqlite3"
+build = "build.rs"
+
+[features]
+load_extension = []
+
+[build-dependencies]
+pkg-config = "~0.2"
