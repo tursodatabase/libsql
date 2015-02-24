@@ -74,8 +74,11 @@ pub use transaction::{SqliteTransactionBehavior,
                       SqliteTransactionImmediate,
                       SqliteTransactionExclusive};
 
+#[cfg(feature = "load_extension")] pub use load_extension_guard::{SqliteLoadExtensionGuard};
+
 pub mod types;
 mod transaction;
+#[cfg(feature = "load_extension")] mod load_extension_guard;
 
 /// A typedef of the result returned by many methods.
 pub type SqliteResult<T> = Result<T, SqliteError>;
@@ -335,7 +338,8 @@ impl SqliteConnection {
         db.close()
     }
 
-    /// Enable loading of SQLite extensions.
+    /// Enable loading of SQLite extensions. Strongly consider using `SqliteLoadExtensionGuard`
+    /// instead of this function.
     ///
     /// ## Example
     ///
@@ -367,6 +371,17 @@ impl SqliteConnection {
     ///
     /// If `entry_point` is `None`, SQLite will attempt to find the entry point. If it is not
     /// `None`, the entry point will be passed through to `sqlite3_load_extension`.
+    ///
+    /// ## Example
+    ///
+    /// ```rust,no_run
+    /// # use rusqlite::{SqliteConnection, SqliteResult, SqliteLoadExtensionGuard};
+    /// # use std::path::{Path};
+    /// fn load_my_extension(conn: &SqliteConnection) -> SqliteResult<()> {
+    ///     let _guard = try!(SqliteLoadExtensionGuard::new(conn));
+    ///
+    ///     conn.load_extension(Path::new("my_sqlite_extension"), None)
+    /// }
     #[cfg(feature = "load_extension")]
     pub fn load_extension(&self, dylib_path: &Path, entry_point: Option<&str>) -> SqliteResult<()> {
         self.db.borrow_mut().load_extension(dylib_path, entry_point)
