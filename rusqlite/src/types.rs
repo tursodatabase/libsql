@@ -55,12 +55,11 @@
 extern crate time;
 
 use libc::{c_int, c_double, c_char};
-use std::ffi as std_ffi;
-use std::ffi::{CString};
+use std::ffi::{CStr};
 use std::mem;
 use std::str;
 use super::ffi;
-use super::{SqliteResult, SqliteError};
+use super::{SqliteResult, SqliteError, str_to_cstring};
 
 const SQLITE_DATETIME_FMT: &'static str = "%Y-%m-%d %H:%M:%S";
 
@@ -90,8 +89,11 @@ raw_to_impl!(c_double, sqlite3_bind_double);
 
 impl<'a> ToSql for &'a str {
     unsafe fn bind_parameter(&self, stmt: *mut ffi::sqlite3_stmt, col: c_int) -> c_int {
-        let c_str = CString::from_slice(self.as_bytes());
-        ffi::sqlite3_bind_text(stmt, col, c_str.as_ptr(), -1, Some(ffi::SQLITE_TRANSIENT()))
+        if let Ok(c_str) = str_to_cstring(self) {
+            ffi::sqlite3_bind_text(stmt, col, c_str.as_ptr(), -1, Some(ffi::SQLITE_TRANSIENT()))
+        } else {
+            ffi::SQLITE_MISUSE
+        }
     }
 }
 
@@ -177,8 +179,7 @@ impl FromSql for String {
         if c_text.is_null() {
             Ok("".to_string())
         } else {
-            let c_text = c_text as *const c_char;
-            let c_slice = std_ffi::c_str_to_bytes(&c_text);
+            let c_slice = CStr::from_ptr(c_text as *const c_char).to_bytes();
             let utf8_str = str::from_utf8(c_slice);
             utf8_str
                 .map(|s| { s.to_string() })

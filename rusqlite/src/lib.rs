@@ -48,7 +48,7 @@
 //!     }
 //! }
 //! ```
-#![feature(unsafe_destructor, core, std_misc, path, libc, rustc_private, collections, hash)]
+#![feature(unsafe_destructor, core, std_misc, path, libc, rustc_private, collections)]
 #![cfg_attr(test, feature(test))]
 
 extern crate libc;
@@ -425,7 +425,7 @@ bitflags! {
 
 impl InnerSqliteConnection {
     fn open_with_flags(path: &str, flags: SqliteOpenFlags) -> SqliteResult<InnerSqliteConnection> {
-        let c_path = CString::from_slice(path.as_bytes());
+        let c_path = try!(str_to_cstring(path));
         unsafe {
             let mut db: *mut ffi::sqlite3 = mem::uninitialized();
             let r = ffi::sqlite3_open_v2(c_path.as_ptr(), &mut db, flags.bits(), ptr::null());
@@ -476,7 +476,7 @@ impl InnerSqliteConnection {
     }
 
     fn execute_batch(&mut self, sql: &str) -> SqliteResult<()> {
-        let c_sql = CString::from_slice(sql.as_bytes());
+        let c_sql = try!(str_to_cstring(sql));
         unsafe {
             let mut errmsg: *mut c_char = mem::uninitialized();
             let r = ffi::sqlite3_exec(self.db, c_sql.as_ptr(), None, ptr::null_mut(), &mut errmsg);
@@ -515,7 +515,7 @@ impl InnerSqliteConnection {
                    conn: &'a SqliteConnection,
                    sql: &str) -> SqliteResult<SqliteStatement<'a>> {
         let mut c_stmt: *mut ffi::sqlite3_stmt = unsafe { mem::uninitialized() };
-        let c_sql = CString::from_slice(sql.as_bytes());
+        let c_sql = try!(str_to_cstring(sql));
         let r = unsafe {
             let len_with_nul = (sql.len() + 1) as c_int;
             ffi::sqlite3_prepare_v2(self.db, c_sql.as_ptr(), len_with_nul, &mut c_stmt,
