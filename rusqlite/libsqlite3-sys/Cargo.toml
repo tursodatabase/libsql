@@ -7,5 +7,8 @@ license = "MIT"
 links = "sqlite3"
 build = "build.rs"
 
+[features]
+load_extension = []
+
 [build-dependencies]
 pkg-config = "~0.2"
