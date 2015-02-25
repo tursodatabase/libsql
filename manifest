@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\slinenoise\sto\sshell.c.
-D 2015-02-25T12:52:33.414
+C Version\s3.8.8.3
+D 2015-02-25T13:29:11.692
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5407a688f4d77a05c18a8142be8ae5a2829dd610
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1237,8 +1237,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9d94ac6a8b7a2721c15745184b3bb09b15a82503
-Q +f7f2598c376a27a86acc21578779c03d0016cd30
+P ec27ab0eb3a1ee08a73dda23d2a0f9fb70962745
 R 7a9d6545656b7d4fe08d198e32a78d62
-U dan
-Z 406db8ece5d64719b20ccce96a0051b7
+T +bgcolor * #d0c0ff
+T +sym-release *
+T +sym-version-3.8.8.3 *
+U drh
+Z 9dbdbd01efd2c5089344e2a1709c163b
