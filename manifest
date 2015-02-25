@@ -1,5 +1,5 @@
-C When\scleaning\swith\sMSVC,\sprevent\ssuperfluous\soutput\sregarding\s'missing'\sfiles\sand\sdirectories.
-D 2015-02-25T01:06:08.853
+C Add\ssupport\sfor\slinenoise\sto\sshell.c.
+D 2015-02-25T10:54:53.924
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6b9e7677829aa94b9f30949656e27312aefb9a46
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -231,7 +231,7 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c f4d79e31ffa5820c2e3d1740baa5e9b190425f2b
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c e46cef4c224549b439384c88fc7f57ba064dad54
-F src/shell.c 6276582ee4e9114e0bb0795772414caaf21c0f8e
+F src/shell.c f06cca68a3f07e03d35d2f879375967169db6a61
 F src/sqlite.h.in 86cddbfdb3155967858c1469108813bcc08eda21
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
@@ -1239,7 +1239,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3af300bf6f5bee0b51a4c1ac1dc3879771378bff
-R 8787792779793757c506c3a0c170c525
-U mistachkin
-Z 74a7e954f31f0d389c5ddd5c11bb86cc
+P 034c16bd24ddca363946a4b8751418469d890d2a
+R 39a5a9d65bc63648e34cb80c3dc9dec4
+T *branch * linenoise
+T *sym-linenoise *
+T -sym-trunk *
+U dan
+Z 309f98e10b08754fd0af3602fd92a078
