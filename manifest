@@ -1,5 +1,5 @@
-C Prevent\spartial\sindexes\son\sthe\stable\son\sthe\sleft\shand\sside\sof\sa\sLEFT\sJOIN\sfrom\sbeing\sincorrectly\squalified\sby\sa\sconstraint\sin\sthe\sON\sclause\sof\sthe\sjoin.\sThis\srelaxes\sthe\srule\sintroduced\sby\sthe\sprevious\scommit\s(as\sthe\spartial\sindexes\son\sthe\stable\son\sthe\srhs\sof\sthe\sLEFT\sJOIN\smay\snow\sbe\squalified\sby\sterms\swithin\sthe\sON\sclause).
-D 2015-02-24T20:10:49.082
+C Remove\san\salways-false\sconditional\sfrom\sconstructAutomaticIndex().\s\sPut\san\nassert()\sin\sits\splace\sto\sprove\sthat\sthe\sconditional\sis\salways\sfalse.
+D 2015-02-25T00:24:41.524
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6b9e7677829aa94b9f30949656e27312aefb9a46
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -306,7 +306,7 @@ F src/vtab.c 699f2b8d509cfe379c33dde33827875d5b030e01
 F src/wal.c 39303f2c9db02a4e422cd8eb2c8760420c6a51fe
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
-F src/where.c 294423cf9a3c46377c3e246338ff2a38365ad922
+F src/where.c a50d5082b0fecd2bcf1725cdd012732d9d1e9d5c
 F src/whereInt.h d3633e9b592103241b74b0ec76185f3e5b8b62e0
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1239,7 +1239,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 491cfe9b3f87f5fcc579f953745012cea8d64db7
-R ca86a79194d1da36938ef90c0f8f3a89
-U dan
-Z 37d3633be74b06dd46fb3d2721885844
+P 1d6fb43a576d335d2717e94d28385178c23c81a1
+R 3a88db56d427fb7fb84c3827bb156d55
+U drh
+Z d1736e186e6b8e2f484863856fdaa011
