@@ -184,6 +184,23 @@ static int fts5HashResize(Fts5Hash *pHash){
   return SQLITE_OK;
 }
 
+static void fts5HashAddPoslistSize(Fts5HashEntry *p){
+  if( p->iSzPoslist ){
+    u8 *pPtr = (u8*)p;
+    int nSz = p->nData - p->iSzPoslist - 1;
+
+    if( nSz<=127 ){
+      pPtr[p->iSzPoslist] = nSz;
+    }else{
+      int nByte = sqlite3Fts5GetVarintLen((u32)nSz);
+      memmove(&pPtr[p->iSzPoslist + nByte], &pPtr[p->iSzPoslist + 1], nSz);
+      sqlite3PutVarint(&pPtr[p->iSzPoslist], nSz);
+      p->nData += (nByte-1);
+    }
+    p->iSzPoslist = 0;
+  }
+}
+
 int sqlite3Fts5HashWrite(
   Fts5Hash *pHash,
   i64 iRowid,                     /* Rowid for this entry */
@@ -221,7 +238,7 @@ int sqlite3Fts5HashWrite(
     p->nData = nToken + 1 + sizeof(Fts5HashEntry);
     p->nData += sqlite3PutVarint(&((u8*)p)[p->nData], iRowid);
     p->iSzPoslist = p->nData;
-    p->nData += 4;
+    p->nData += 1;
     p->iRowid = iRowid;
     p->pHashNext = pHash->aSlot[iHash];
     pHash->aSlot[iHash] = p;
@@ -233,7 +250,7 @@ int sqlite3Fts5HashWrite(
   ** is:
   **
   **     + 9 bytes for a new rowid,
-  **     + 4 bytes reserved for the "poslist size" varint.
+  **     + 4 byte reserved for the "poslist size" varint.
   **     + 1 byte for a "new column" byte,
   **     + 3 bytes for a new column number (16-bit max) as a varint,
   **     + 5 bytes for the new position offset (32-bit max).
@@ -255,11 +272,10 @@ int sqlite3Fts5HashWrite(
   /* If this is a new rowid, append the 4-byte size field for the previous
   ** entry, and the new rowid for this entry.  */
   if( iRowid!=p->iRowid ){
-    assert( p->iSzPoslist>0 );
-    fts5Put4ByteVarint(&pPtr[p->iSzPoslist], p->nData - p->iSzPoslist - 4);
+    fts5HashAddPoslistSize(p);
     p->nData += sqlite3PutVarint(&pPtr[p->nData], iRowid - p->iRowid);
     p->iSzPoslist = p->nData;
-    p->nData += 4;
+    p->nData += 1;
     p->iCol = 0;
     p->iPos = 0;
     p->iRowid = iRowid;
@@ -393,14 +409,13 @@ int sqlite3Fts5HashIterate(
     while( pList ){
       Fts5HashEntry *pNext = pList->pScanNext;
       if( rc==SQLITE_OK ){
-        const int nSz = pList->nData - pList->iSzPoslist - 4;
         const int nKey = strlen(pList->zKey);
         i64 iRowid = 0;
         u8 *pPtr = (u8*)pList;
         int iOff = sizeof(Fts5HashEntry) + nKey + 1;
 
         /* Fill in the final poslist size field */
-        fts5Put4ByteVarint(&pPtr[pList->iSzPoslist], nSz);
+        fts5HashAddPoslistSize(pList);
         
         /* Issue the new-term callback */
         rc = xTerm(pCtx, pList->zKey, nKey);
@@ -412,10 +427,9 @@ int sqlite3Fts5HashIterate(
           int nVarint;
           iOff += getVarint(&pPtr[iOff], (u64*)&iDelta);
           iRowid += iDelta;
-          nPoslist = fts5Get4ByteVarint(&pPtr[iOff], &nVarint);
-          iOff += 4;
-          rc = xEntry(pCtx, iRowid, &pPtr[iOff-nVarint], nPoslist+nVarint);
-          iOff += nPoslist;
+          nVarint = fts5GetVarint32(&pPtr[iOff], nPoslist);
+          rc = xEntry(pCtx, iRowid, &pPtr[iOff], nPoslist+nVarint);
+          iOff += nVarint+nPoslist;
         }
 
         /* Issue the term-done callback */
@@ -445,8 +459,7 @@ int sqlite3Fts5HashQuery(
   }
 
   if( p ){
-    u8 *pPtr = (u8*)p;
-    fts5Put4ByteVarint(&pPtr[p->iSzPoslist], p->nData - p->iSzPoslist - 4);
+    fts5HashAddPoslistSize(p);
     *ppDoclist = &p->zKey[nTerm+1];
     *pnDoclist = p->nData - (sizeof(*p) + nTerm + 1);
   }else{
@@ -482,9 +495,8 @@ void sqlite3Fts5HashScanEntry(
 ){
   Fts5HashEntry *p;
   if( (p = pHash->pScan) ){
-    u8 *pPtr = (u8*)p;
     int nTerm = strlen(p->zKey);
-    fts5Put4ByteVarint(&pPtr[p->iSzPoslist], p->nData - p->iSzPoslist - 4);
+    fts5HashAddPoslistSize(p);
     *pzTerm = p->zKey;
     *ppDoclist = &p->zKey[nTerm+1];
     *pnDoclist = p->nData - (sizeof(*p) + nTerm + 1);

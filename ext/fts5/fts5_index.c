@@ -371,7 +371,7 @@ struct Fts5Structure {
 struct Fts5PageWriter {
   int pgno;                       /* Page number for this page */
   Fts5Buffer buf;                 /* Buffer containing page data */
-  Fts5Buffer term;              /* Buffer containing previous term on page */
+  Fts5Buffer term;                /* Buffer containing previous term on page */
 };
 struct Fts5SegWriter {
   int iIdx;                       /* Index to write to */
@@ -665,6 +665,14 @@ int sqlite3Fts5GetVarint32(const unsigned char *p, u32 *v){
     assert( n>3 && n<=9 );
     return n;
   }
+}
+
+int sqlite3Fts5GetVarintLen(u32 iVal){
+  if( iVal<(1 << 7 ) ) return 1;
+  if( iVal<(1 << 14) ) return 2;
+  if( iVal<(1 << 21) ) return 3;
+  if( iVal<(1 << 28) ) return 4;
+  return 5;
 }
 
 /*

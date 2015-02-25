@@ -36,6 +36,7 @@ proc usage {} {
   puts stderr "  -fts4        (use fts4 instead of fts5)"
   puts stderr "  -fts5        (use fts5)"
   puts stderr "  -porter      (use porter tokenizer)"
+  puts stderr "  -delete      (delete the database file before starting)"
   puts stderr "  -limit N     (load no more than N documents)"
   puts stderr "  -automerge N (set the automerge parameter to N)"
   puts stderr "  -crisismerge N (set the crisismerge parameter to N)"
@@ -45,6 +46,7 @@ proc usage {} {
 set O(vtab)       fts5
 set O(tok)        ""
 set O(limit)      0
+set O(delete)     0
 set O(automerge)  -1
 set O(crisismerge)  -1
 
@@ -63,6 +65,10 @@ for {set i 0} {$i < $nOpt} {incr i} {
 
     -porter {
       set O(tok) ", tokenize=porter"
+    }
+
+    -delete {
+      set O(delete) 1
     }
 
     -limit {
@@ -86,7 +92,9 @@ for {set i 0} {$i < $nOpt} {incr i} {
   }
 }
 
-sqlite3 db [lindex $argv end-1]
+set dbfile [lindex $argv end-1]
+if {$O(delete)} { file delete -force $dbfile }
+sqlite3 db $dbfile
 db func loadfile loadfile
 
 db transaction {
