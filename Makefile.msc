@@ -1536,32 +1536,32 @@ speedtest1.exe:	$(TOP)\test\speedtest1.c $(SQLITE3C)
 		$(TOP)\test\speedtest1.c $(SQLITE3C)
 
 clean:
-	del /Q *.lo *.ilk *.lib *.obj *.pdb sqlite3.exe libsqlite3.lib
-	del /Q *.cod *.da *.bb *.bbg gmon.out
-	del /Q sqlite3.h opcodes.c opcodes.h
-	del /Q lemon.* lempar.c parse.*
-	del /Q mkkeywordhash.* keywordhash.h
-	del /Q notasharedlib.*
-	-rmdir /Q/S .deps
-	-rmdir /Q/S .libs
-	-rmdir /Q/S quota2a
-	-rmdir /Q/S quota2b
-	-rmdir /Q/S quota2c
-	-rmdir /Q/S tsrc
-	del /Q .target_source
-	del /Q tclsqlite3.exe tclsqlite3.exp
-	del /Q testloadext.dll testloadext.exp
-	del /Q testfixture.exe testfixture.exp test.db
-	del /Q LogEst.exe fts3view.exe rollback-test.exe showdb.exe
-	del /Q showjournal.exe showstat4.exe showwal.exe speedtest1.exe
-	del /Q wordcount.exe
-	del /Q sqlite3.dll sqlite3.lib sqlite3.exp sqlite3.def
-	del /Q sqlite3.c sqlite3-*.c
-	del /Q sqlite3rc.h
-	del /Q shell.c sqlite3ext.h
-	del /Q sqlite3_analyzer.exe sqlite3_analyzer.exp sqlite3_analyzer.c
-	del /Q sqlite-*-output.vsix
-	del /Q mptester.exe
+	del /Q *.lo *.ilk *.lib *.obj *.pdb sqlite3.exe libsqlite3.lib 2>NUL
+	del /Q *.cod *.da *.bb *.bbg gmon.out 2>NUL
+	del /Q sqlite3.h opcodes.c opcodes.h 2>NUL
+	del /Q lemon.* lempar.c parse.* 2>NUL
+	del /Q mkkeywordhash.* keywordhash.h 2>NUL
+	del /Q notasharedlib.* 2>NUL
+	-rmdir /Q/S .deps 2>NUL
+	-rmdir /Q/S .libs 2>NUL
+	-rmdir /Q/S quota2a 2>NUL
+	-rmdir /Q/S quota2b 2>NUL
+	-rmdir /Q/S quota2c 2>NUL
+	-rmdir /Q/S tsrc 2>NUL
+	del /Q .target_source 2>NUL
+	del /Q tclsqlite3.exe tclsqlite3.exp 2>NUL
+	del /Q testloadext.dll testloadext.exp 2>NUL
+	del /Q testfixture.exe testfixture.exp test.db 2>NUL
+	del /Q LogEst.exe fts3view.exe rollback-test.exe showdb.exe 2>NUL
+	del /Q showjournal.exe showstat4.exe showwal.exe speedtest1.exe 2>NUL
+	del /Q wordcount.exe 2>NUL
+	del /Q sqlite3.dll sqlite3.lib sqlite3.exp sqlite3.def 2>NUL
+	del /Q sqlite3.c sqlite3-*.c 2>NUL
+	del /Q sqlite3rc.h 2>NUL
+	del /Q shell.c sqlite3ext.h 2>NUL
+	del /Q sqlite3_analyzer.exe sqlite3_analyzer.exp sqlite3_analyzer.c 2>NUL
+	del /Q sqlite-*-output.vsix 2>NUL
+	del /Q mptester.exe 2>NUL
 
 # Dynamic link library section.
 #

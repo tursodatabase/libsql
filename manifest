@@ -1,9 +1,9 @@
-C Remove\san\salways-false\sconditional\sfrom\sconstructAutomaticIndex().\s\sPut\san\nassert()\sin\sits\splace\sto\sprove\sthat\sthe\sconditional\sis\salways\sfalse.
-D 2015-02-25T00:24:41.524
+C When\scleaning\swith\sMSVC,\sprevent\ssuperfluous\soutput\sregarding\s'missing'\sfiles\sand\sdirectories.
+D 2015-02-25T01:06:08.853
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6b9e7677829aa94b9f30949656e27312aefb9a46
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc fc6b0b233b5621f3e56298e4d6a0b3f6c936c520
+F Makefile.msc edbe2e2a9d27a4a56bd2891808a7c013bc322f6e
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md d58e3bebc0a4145e0f2a87994015fdb575a8e866
 F VERSION d846487aff892625eb8e75960234e7285f0462fe
@@ -1239,7 +1239,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1d6fb43a576d335d2717e94d28385178c23c81a1
-R 3a88db56d427fb7fb84c3827bb156d55
-U drh
-Z d1736e186e6b8e2f484863856fdaa011
+P 3af300bf6f5bee0b51a4c1ac1dc3879771378bff
+R 8787792779793757c506c3a0c170c525
+U mistachkin
+Z 74a7e954f31f0d389c5ddd5c11bb86cc
