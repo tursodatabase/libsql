@@ -1,5 +1,5 @@
-C Merge\sall\srecent\strunk\schanges\sinto\sthe\ssessions\sbranch.
-D 2015-02-21T15:13:50.198
+C Merge\sthe\slatest\strunk\sfixes\sinto\sthe\ssessions\sbranch.
+D 2015-02-25T14:02:53.832
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e63f98067fef9d9112380e3aec9881f56d49f77e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -248,8 +248,8 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c f4d79e31ffa5820c2e3d1740baa5e9b190425f2b
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c e46cef4c224549b439384c88fc7f57ba064dad54
-F src/shell.c 75e9d6dc85586c4a8e52f3be44c3a23dd3ef8d0d
-F src/sqlite.h.in e26cf36c3dc7099d6fcef864e362ee26261cc082
+F src/shell.c f21e2cec006b04d4d871209016286157279d70e0
+F src/sqlite.h.in 763e178cf0e47056a0abc572a42eacb5d1164196
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
 F src/sqliteInt.h 1e1c08093c57dbd7c5d0b6d945f1c1d039f1128e
@@ -323,7 +323,7 @@ F src/vtab.c 699f2b8d509cfe379c33dde33827875d5b030e01
 F src/wal.c 39303f2c9db02a4e422cd8eb2c8760420c6a51fe
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
-F src/where.c d46de821bc604a4fd36fa3928c086950e91aafb1
+F src/where.c a50d5082b0fecd2bcf1725cdd012732d9d1e9d5c
 F src/whereInt.h d3633e9b592103241b74b0ec76185f3e5b8b62e0
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -367,7 +367,7 @@ F test/autoinc.test c58912526998a39e11f66b533e23cfabea7f25b7
 F test/autoindex1.test 6ff78b94f43a59616c06c11c55b12935173506d7
 F test/autoindex2.test af7e595c6864cc6ef5fc38d5db579a3e34940cb8
 F test/autoindex3.test a3be0d1a53a7d2edff208a5e442312957047e972
-F test/autoindex4.test fc807f9efd158bec60f5dfdf34ebe46fb274612d
+F test/autoindex4.test 49d3cd791a9baa16fb461d7ea3de80d019a819cf
 F test/autovacuum.test 941892505d2c0f410a0cb5970dfa1c7c4e5f6e74
 F test/autovacuum_ioerr2.test 8a367b224183ad801e0e24dcb7d1501f45f244b4
 F test/avtrans.test 0252654f4295ddda3b2cce0e894812259e655a85
@@ -669,7 +669,7 @@ F test/index2.test ee83c6b5e3173a3d7137140d945d9a5d4fdfb9d6
 F test/index3.test 55a90cff99834305e8141df7afaef39674b57062
 F test/index4.test ab92e736d5946840236cd61ac3191f91a7856bf6
 F test/index5.test 25b0b451aceed4ac5f7d49f856f6de7257470b3e
-F test/index6.test fb370966ac3cd0989053dd5385757b5c3e24ab6a
+F test/index6.test 3ae54e53c53f2adcacda269237d8e52bdb05a481
 F test/index7.test 917cf1e1c7439bb155abbeabec511b28945e157b
 F test/indexedby.test b2f22f3e693a53813aa3f50b812eb609ba6df1ec
 F test/indexfault.test 31d4ab9a7d2f6e9616933eb079722362a883eb1d
@@ -1257,7 +1257,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ae7eef117f28a5dae7a05805f2d31ac532a9fcc5 c299e55a661c04f71ab43cb8aed04f8ece6e0567
-R b7f8fa563aa6e3bf4b2e063495f61f72
+P f36bb5fa5c5e3430808fe35d58f45559a216d341 03bbb947192b0c28d960604eae12e5fc2fa6e74e
+R fea8faac07d1963bbee76d04f5507233
 U drh
-Z 87039a26f4b6e7975795e319beedb047
+Z 94f89bcaf784abbabd110bdd6f219892
