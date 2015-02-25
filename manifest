@@ -1,5 +1,5 @@
-C Make\ssure\spartial\sindexes\sare\snot\squalified\sincorrectly\sby\sa\sconstraint\sthat\nis\sinside\sthe\sON\sclause\sof\sa\sLEFT\sJOIN.\s\sFix\sfor\sticket\s[2326c258d02ead33].\nCherry-pick\sfrom\s[491cfe9b3f87f].
-D 2015-02-24T20:12:57.079
+C Add\ssupport\sfor\slinenoise\sto\sshell.c.
+D 2015-02-25T12:52:33.414
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5407a688f4d77a05c18a8142be8ae5a2829dd610
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -230,7 +230,7 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c f6c46d3434439ab2084618d603e6d6dbeb0d6ada
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c a4e8fda24c8eab2682a058bdda0d5d68cfe3919c
-F src/shell.c 5b8e786a7c8eec87fa3f2ea615b337d2d99e284c
+F src/shell.c ee1a80bf2b0e9e0c2b93db8f0f82b841289b2641
 F src/sqlite.h.in 9dfc99d6533d36d6a549c4f3f01cacc8be956ada
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
@@ -1237,8 +1237,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a92afe7d8cc7d0e84d843c8ea7ef714994c3585c
-Q +491cfe9b3f87f5fcc579f953745012cea8d64db7
-R e6b4de7ecd23615c982ef0db9e9401c6
-U drh
-Z 41a907f033a9b3020b069f727af1463b
+P 9d94ac6a8b7a2721c15745184b3bb09b15a82503
+Q +f7f2598c376a27a86acc21578779c03d0016cd30
+R 7a9d6545656b7d4fe08d198e32a78d62
+U dan
+Z 406db8ece5d64719b20ccce96a0051b7
