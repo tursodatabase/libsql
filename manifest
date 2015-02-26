@@ -1,5 +1,5 @@
-C Fix\sa\sreal\sbug\s(in\stest\scode)\sthat\swas\sintroduced\swhile\strying\sto\seliminate\nharmless\scompiler\swarnings\sfrom\sOpenBSD\s(see\scheck-in\s[10321910990195878c]).
-D 2015-02-26T16:32:33.621
+C Update\sa\srequirements\smark\sto\sreflect\sa\schange\sof\swording\sin\sthe\sdocumentation.\nNo\schanges\sto\scode.
+D 2015-02-26T16:40:41.460
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6b9e7677829aa94b9f30949656e27312aefb9a46
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -479,7 +479,7 @@ F test/e_totalchanges.test b12ee5809d3e63aeb83238dd501a7bca7fd72c10
 F test/e_update.test 312cb8f5ccfe41515a6bb092f8ea562a9bd54d52
 F test/e_uri.test 5ae33760fb2039c61aa2d90886f1664664173585
 F test/e_vacuum.test 5bfbdc21b65c0abf24398d0ba31dc88d93ca77a9
-F test/e_wal.test 0967f0b8f1dfda871dc7b9b5574198f1f4f7d69a
+F test/e_wal.test ae9a593207a77d711443ee69ffe081fda9243625
 F test/e_walauto.test ca70cf75c07a6cb1874ced101dd426da76625649
 F test/e_walckpt.test 65e29b6631e51f210f83e4ff11571e647ba93608
 F test/e_walhook.test da3ea8b3483d1af72190337bda50155a91a4b664
@@ -1239,7 +1239,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4bee8295e36fb61f903210b6d052ee9b8fb3b6d0
-R b2eab9c50d96affd3b5f18c0bbfa30e2
+P a62ba58c737656fae620d9cdaaae299104ac06f6
+R 10478383687ae87f2012aeaa926b3297
 U drh
-Z aab122678a648eda2debfa9adc01f9ac
+Z ebf66855f11c3f65a39c6b4bb93adf68

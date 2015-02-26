@@ -200,10 +200,11 @@ do_test 3.4.2 {
 db close
 
 
-# EVIDENCE-OF: R-22428-28959 To prevent older versions of SQLite from
-# trying to recover a WAL-mode database (and making matters worse) the
-# database file format version numbers (bytes 18 and 19 in the database
-# header) are increased from 1 to 2 in WAL mode.
+# EVIDENCE-OF: R-45540-25505 To prevent older versions of SQLite (prior
+# to version 3.7.0, 2010-07-22) from trying to recover a WAL-mode
+# database (and making matters worse) the database file format version
+# numbers (bytes 18 and 19 in the database header) are increased from 1
+# to 2 in WAL mode.
 #
 reset_db
 do_execsql_test 4.1.1 { CREATE TABLE t1(x, y) }
