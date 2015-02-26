@@ -1183,6 +1183,7 @@ static void fts5StructureWrite(Fts5Index *p, int iIdx, Fts5Structure *pStruct){
 }
 
 #if 0
+static void fts5DebugStructure(int*,Fts5Buffer*,Fts5Structure*);
 static void fts5PrintStructure(const char *zCaption, Fts5Structure *pStruct){
   int rc = SQLITE_OK;
   Fts5Buffer buf;
@@ -1201,8 +1202,9 @@ static int fts5SegmentSize(Fts5StructureSegment *pSeg){
 }
 
 /*
-** Return a copy of index structure pStruct. Except, promote as many segments
-** as possible to level iPromote. If an OOM occurs, NULL is returned.
+** Return a copy of index structure pStruct. Except, promote as many 
+** segments as possible to level iPromote. If an OOM occurs, NULL is 
+** returned.
 */
 static void fts5StructurePromoteTo(
   Fts5Index *p,
@@ -1213,17 +1215,19 @@ static void fts5StructurePromoteTo(
   int il, is;
   Fts5StructureLevel *pOut = &pStruct->aLevel[iPromote];
 
-  for(il=iPromote+1; il<pStruct->nLevel; il++){
-    Fts5StructureLevel *pLvl = &pStruct->aLevel[il];
-    if( pLvl->nMerge ) return;
-    for(is=pLvl->nSeg-1; is>=0; is--){
-      int sz = fts5SegmentSize(&pLvl->aSeg[is]);
-      if( sz>szPromote ) return;
-      fts5StructureExtendLevel(&p->rc, pStruct, iPromote, 1, 1);
-      if( p->rc ) return;
-      memcpy(pOut->aSeg, &pLvl->aSeg[is], sizeof(Fts5StructureSegment));
-      pOut->nSeg++;
-      pLvl->nSeg--;
+  if( pOut->nMerge==0 ){
+    for(il=iPromote+1; il<pStruct->nLevel; il++){
+      Fts5StructureLevel *pLvl = &pStruct->aLevel[il];
+      if( pLvl->nMerge ) return;
+      for(is=pLvl->nSeg-1; is>=0; is--){
+        int sz = fts5SegmentSize(&pLvl->aSeg[is]);
+        if( sz>szPromote ) return;
+        fts5StructureExtendLevel(&p->rc, pStruct, iPromote, 1, 1);
+        if( p->rc ) return;
+        memcpy(pOut->aSeg, &pLvl->aSeg[is], sizeof(Fts5StructureSegment));
+        pOut->nSeg++;
+        pLvl->nSeg--;
+      }
     }
   }
 }
@@ -3343,6 +3347,7 @@ static void fts5IndexWork(
       }
       *ppStruct = pStruct;
     }
+
   }
 }
 
@@ -3463,6 +3468,7 @@ static void fts5FlushOneHash(Fts5Index *p, int iHash, int *pnLeaf){
     }
     fts5StructurePromote(p, 0, pStruct);
   }
+
 
   if( p->pConfig->nAutomerge>0 ) fts5IndexWork(p, iHash, &pStruct, pgnoLast);
   fts5IndexCrisisMerge(p, iHash, &pStruct);
