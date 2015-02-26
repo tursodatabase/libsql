@@ -113,7 +113,7 @@
 **         poslist: first poslist
 **         zero-or-more {
 **           varint:  rowid delta (always > 0)
-**           poslist: first poslist
+**           poslist: next poslist
 **         }
 **         0x00 byte
 **
@@ -2677,7 +2677,7 @@ static void fts5WriteBtreeNEmpty(Fts5Index *p, Fts5SegWriter *pWriter){
     int bFlag = 0;
     Fts5PageWriter *pPg;
     pPg = &pWriter->aWriter[1];
-    if( pWriter->nEmpty>=FTS5_MIN_DLIDX_SIZE ){
+    if( pWriter->nEmpty>=FTS5_MIN_DLIDX_SIZE && pWriter->cdlidx.n ){
       i64 iKey = FTS5_DOCLIST_IDX_ROWID(
           pWriter->iIdx, pWriter->iSegid, 
           pWriter->aWriter[0].pgno - 1 - pWriter->nEmpty
@@ -3004,12 +3004,15 @@ static void fts5WriteFinish(
 ){
   int i;
   if( p->rc==SQLITE_OK ){
-    *pnLeaf = pWriter->aWriter[0].pgno;
-    if( *pnLeaf==1 && pWriter->aWriter[0].buf.n==0 ){
+    Fts5PageWriter *pLeaf = &pWriter->aWriter[0];
+    if( pLeaf->pgno==1 && pLeaf->buf.n==0 ){
       *pnLeaf = 0;
       *pnHeight = 0;
     }else{
-      fts5WriteFlushLeaf(p, pWriter);
+      if( pLeaf->buf.n>4 ){
+        fts5WriteFlushLeaf(p, pWriter);
+      }
+      *pnLeaf = pLeaf->pgno-1;
       if( pWriter->nWriter==1 && pWriter->nEmpty>=FTS5_MIN_DLIDX_SIZE ){
         fts5WriteBtreeGrow(p, pWriter);
       }
@@ -3381,44 +3384,20 @@ struct Fts5FlushCtx {
   Fts5SegWriter writer; 
 };
 
-static int fts5FlushNewTerm(void *pCtx, const char *zTerm, int nTerm){
-  Fts5FlushCtx *p = (Fts5FlushCtx*)pCtx;
-  int rc = SQLITE_OK;
-  fts5WriteAppendTerm(p->pIdx, &p->writer, nTerm, (const u8*)zTerm);
-  return rc;
-}
-
-static int fts5FlushTermDone(void *pCtx){
-  Fts5FlushCtx *p = (Fts5FlushCtx*)pCtx;
-  int rc = SQLITE_OK;
-  /* Write the doclist terminator */
-  fts5WriteAppendZerobyte(p->pIdx, &p->writer);
-  return rc;
-}
-
-static int fts5FlushNewEntry(
-  void *pCtx, 
-  i64 iRowid, 
-  const u8 *aPoslist, 
-  int nPoslist
-){
-  Fts5FlushCtx *p = (Fts5FlushCtx*)pCtx;
-  Fts5Index *pIdx = p->pIdx;
-
-#ifdef SQLITE_DEBUG
-  /* The poslist-size varint should already be at the start of the 
-  ** aPoslist/nPoslist buffer. This assert verifies that. */
-  int n, i;
-  i = fts5GetVarint32(aPoslist, n);
-  assert( nPoslist==(n+i) );
-#endif
-
-  /* Append the rowid itself */
-  fts5WriteAppendRowid(pIdx, &p->writer, iRowid);
-
-  /* And the poslist data */
-  fts5WriteAppendPoslistData(pIdx, &p->writer, aPoslist, nPoslist);
-  return pIdx->rc;
+/*
+** Buffer aBuf[] contains a list of varints, all small enough to fit
+** in a 32-bit integer. Return the size of the largest prefix of this 
+** list nMax bytes or less in size.
+*/
+static int fts5PoslistPrefix(const u8 *aBuf, int nMax){
+  int ret = 0;
+  while( 1 ){
+    u32 dummy;
+    int i = fts5GetVarint32(&aBuf[ret], dummy);
+    if( (ret + i) > nMax ) break;
+    ret += i;
+  }
+  return ret;
 }
 
 /*
@@ -3429,6 +3408,7 @@ static int fts5FlushNewEntry(
 ** already occurred, this function is a no-op.
 */
 static void fts5FlushOneHash(Fts5Index *p, int iHash, int *pnLeaf){
+  Fts5Hash *pHash = p->apHash[iHash];
   Fts5Structure *pStruct;
   int iSegid;
   int pgnoLast = 0;                 /* Last leaf page number in segment */
@@ -3439,19 +3419,127 @@ static void fts5FlushOneHash(Fts5Index *p, int iHash, int *pnLeaf){
   iSegid = fts5AllocateSegid(p, pStruct);
 
   if( iSegid ){
+    const int pgsz = p->pConfig->pgsz;
+
     Fts5StructureSegment *pSeg;   /* New segment within pStruct */
     int nHeight;                  /* Height of new segment b-tree */
-    int rc;
-    Fts5FlushCtx ctx;
+    Fts5Buffer *pBuf;             /* Buffer in which to assemble leaf page */
 
-    fts5WriteInit(p, &ctx.writer, iHash, iSegid);
-    ctx.pIdx = p;
+    Fts5SegWriter writer;
+    fts5WriteInit(p, &writer, iHash, iSegid);
 
-    rc = sqlite3Fts5HashIterate( p->apHash[iHash], (void*)&ctx, 
-        fts5FlushNewTerm, fts5FlushNewEntry, fts5FlushTermDone
-    );
-    if( p->rc==SQLITE_OK ) p->rc = rc;
-    fts5WriteFinish(p, &ctx.writer, &nHeight, &pgnoLast);
+    /* Pre-allocate the buffer used to assemble leaf pages to the target
+    ** page size.  */
+    assert( pgsz>0 );
+    pBuf = &writer.aWriter[0].buf;
+    fts5BufferGrow(&p->rc, pBuf, pgsz + 20);
+
+    /* Begin scanning through hash table entries. */
+    if( p->rc==SQLITE_OK ){
+      memset(pBuf->p, 0, 4);
+      pBuf->n = 4;
+      sqlite3Fts5HashScanInit(pHash, 0, 0);
+    }
+
+    while( 0==sqlite3Fts5HashScanEof(pHash) ){
+      const char *zTerm;
+      int nTerm;
+      const u8 *pDoclist;
+      int nDoclist;
+
+      sqlite3Fts5HashScanEntry(pHash, &zTerm,(const char**)&pDoclist,&nDoclist);
+      nTerm = strlen(zTerm);
+
+      /* Decide if the term fits on the current leaf. If not, flush it
+      ** to disk.  */
+      if( (pBuf->n + nTerm + 2) > pgsz ){
+        fts5WriteFlushLeaf(p, &writer);
+        pBuf = &writer.aWriter[0].buf;
+        if( (nTerm + 32) > pBuf->nSpace ){
+          fts5BufferGrow(&p->rc, pBuf, nTerm + 32 - pBuf->n);
+        }
+      }
+
+      /* Write the term to the leaf. And push it up into the b-tree hierarchy */
+      if( writer.bFirstTermInPage==0 ){
+        pBuf->n += sqlite3PutVarint(&pBuf->p[pBuf->n], 0);
+      }else{
+        fts5PutU16(&pBuf->p[2], pBuf->n);
+        writer.bFirstTermInPage = 0;
+        if( writer.aWriter[0].pgno!=1 ){
+          fts5WriteBtreeTerm(p, &writer, nTerm, (const u8*)zTerm);
+          pBuf = &writer.aWriter[0].buf;
+        }
+      }
+      pBuf->n += sqlite3PutVarint(&pBuf->p[pBuf->n], nTerm);
+      fts5BufferAppendBlob(&p->rc, pBuf, nTerm, (const u8*)zTerm);
+
+      if( pgsz>=(pBuf->n + nDoclist + 1) ){
+        /* The entire doclist will fit on the current leaf. */
+        fts5BufferAppendBlob(&p->rc, pBuf, nDoclist, pDoclist);
+      }else{
+        i64 iRowid = 0;
+        i64 iDelta = 0;
+        int iOff = 0;
+        int bFirstDocid = 0;
+
+        /* The entire doclist will not fit on this leaf. The following 
+        ** loop iterates through the poslists that make up the current 
+        ** doclist.  */
+        while( iOff<nDoclist ){
+          u32 nPos;
+          int nCopy;
+          iOff += getVarint(&pDoclist[iOff], (u64*)&iDelta);
+          nCopy = fts5GetVarint32(&pDoclist[iOff], nPos);
+          nCopy += nPos;
+          iRowid += iDelta;
+          
+          if( bFirstDocid ){
+            fts5PutU16(&pBuf->p[0], pBuf->n);   /* first docid on page */
+            pBuf->n += sqlite3PutVarint(&pBuf->p[pBuf->n], iRowid);
+            bFirstDocid = 0;
+          }else{
+            pBuf->n += sqlite3PutVarint(&pBuf->p[pBuf->n], iDelta);
+          }
+          assert( pBuf->n<=pBuf->nSpace );
+
+          if( (pBuf->n + nCopy) <= pgsz ){
+            /* The entire poslist will fit on the current leaf. So copy
+            ** it in one go. */
+            fts5BufferAppendBlob(&p->rc, pBuf, nCopy, &pDoclist[iOff]);
+          }else{
+            /* The entire poslist will not fit on this leaf. So it needs
+            ** to be broken into sections. The only qualification being
+            ** that each varint must be stored contiguously.  */
+            const u8 *pPoslist = &pDoclist[iOff];
+            int iPos = 0;
+            while( 1 ){
+              int nSpace = pgsz - pBuf->n;
+              int n;
+              if( (nCopy - iPos)<=nSpace ){
+                n = nCopy - iPos;
+              }else{
+                n = fts5PoslistPrefix(&pPoslist[iPos], nSpace);
+              }
+              fts5BufferAppendBlob(&p->rc, pBuf, n, &pPoslist[iPos]);
+              iPos += n;
+              if( iPos>=nCopy ) break;
+              fts5WriteFlushLeaf(p, &writer);
+              pBuf = &writer.aWriter[0].buf;
+            }
+            bFirstDocid = 1;
+          }
+          assert( pBuf->n<=pgsz );
+          iOff += nCopy;
+        }
+      }
+
+      pBuf->p[pBuf->n++] = '\0';
+      assert( pBuf->n<=pBuf->nSpace );
+      sqlite3Fts5HashScanNext(pHash);
+    }
+    sqlite3Fts5HashClear(pHash);
+    fts5WriteFinish(p, &writer, &nHeight, &pgnoLast);
 
     /* Update the Fts5Structure. It is written back to the database by the
     ** fts5StructureRelease() call below.  */

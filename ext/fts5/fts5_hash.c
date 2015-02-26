@@ -393,55 +393,6 @@ static int fts5HashEntrySort(
   return SQLITE_OK;
 }
 
-int sqlite3Fts5HashIterate(
-  Fts5Hash *pHash,
-  void *pCtx,
-  int (*xTerm)(void*, const char*, int),
-  int (*xEntry)(void*, i64, const u8*, int),
-  int (*xTermDone)(void*)
-){
-  Fts5HashEntry *pList;
-  int rc;
-
-  rc = fts5HashEntrySort(pHash, 0, 0, &pList);
-  if( rc==SQLITE_OK ){
-    memset(pHash->aSlot, 0, sizeof(Fts5HashEntry*) * pHash->nSlot);
-    while( pList ){
-      Fts5HashEntry *pNext = pList->pScanNext;
-      if( rc==SQLITE_OK ){
-        const int nKey = strlen(pList->zKey);
-        i64 iRowid = 0;
-        u8 *pPtr = (u8*)pList;
-        int iOff = sizeof(Fts5HashEntry) + nKey + 1;
-
-        /* Fill in the final poslist size field */
-        fts5HashAddPoslistSize(pList);
-        
-        /* Issue the new-term callback */
-        rc = xTerm(pCtx, pList->zKey, nKey);
-
-        /* Issue the xEntry callbacks */
-        while( rc==SQLITE_OK && iOff<pList->nData ){
-          i64 iDelta;             /* Rowid delta value */
-          int nPoslist;           /* Size of position list in bytes */
-          int nVarint;
-          iOff += getVarint(&pPtr[iOff], (u64*)&iDelta);
-          iRowid += iDelta;
-          nVarint = fts5GetVarint32(&pPtr[iOff], nPoslist);
-          rc = xEntry(pCtx, iRowid, &pPtr[iOff], nPoslist+nVarint);
-          iOff += nVarint+nPoslist;
-        }
-
-        /* Issue the term-done callback */
-        if( rc==SQLITE_OK ) rc = xTermDone(pCtx);
-      }
-      sqlite3_free(pList);
-      pList = pNext;
-    }
-  }
-  return rc;
-}
-
 /*
 ** Query the hash table for a doclist associated with term pTerm/nTerm.
 */
@@ -478,9 +429,8 @@ void sqlite3Fts5HashScanInit(
 }
 
 void sqlite3Fts5HashScanNext(Fts5Hash *p){
-  if( p->pScan ){
-    p->pScan = p->pScan->pScanNext;
-  }
+  Fts5HashEntry *pScan = p->pScan;
+  if( pScan ) p->pScan = pScan->pScanNext;
 }
 
 int sqlite3Fts5HashScanEof(Fts5Hash *p){
