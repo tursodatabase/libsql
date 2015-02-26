@@ -1,5 +1,5 @@
-C Simplifications\sto\sthe\sdescription\sof\sthe\snByte\sparameter\sto\ssqlite3_prepare()\nand\sfriends.
-D 2015-02-26T02:33:52.248
+C In\sthe\scommand-line\sshell,\schange\sthe\sunits\son\sthe\s".width"\sseparate\sfrom\nbytes\sto\scharacters.
+D 2015-02-26T14:27:16.982
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6b9e7677829aa94b9f30949656e27312aefb9a46
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -231,7 +231,7 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c f4d79e31ffa5820c2e3d1740baa5e9b190425f2b
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c e46cef4c224549b439384c88fc7f57ba064dad54
-F src/shell.c f06cca68a3f07e03d35d2f879375967169db6a61
+F src/shell.c c8a769c563b41b16196dfef675b008ba543a492f
 F src/sqlite.h.in 62d3997824038cc32335b04aaa18cc8f4c19e9be
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
@@ -1239,7 +1239,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6d132e7a224ee68b5cefe9222944aac5760ffc20
-R 32aba763c92a19bba8ed1b93e2ee7564
+P 4bee8295e36fb61f903210b6d052ee9b8fb3b6d0
+R 143a1a32cdae3a721c8dd7822db13dda
+T *branch * cli-char-width
+T *sym-cli-char-width *
+T -sym-trunk *
 U drh
-Z b332eede7bc32b2767cceb08a9880768
+Z 9e05d9065c7895cfbe90dd1f0cc9db4d

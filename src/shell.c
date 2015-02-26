@@ -789,6 +789,48 @@ static void interrupt_handler(int NotUsed){
 #endif
 
 /*
+** Return the length of a string in characters.  Multibyte UTF8 characters
+** count as a single character.
+*/
+static int strlenChar(const char *z){
+  int n = 0;
+  while( *z ){
+    if( (0xc0&*(z++))!=0x80 ) n++;
+  }
+  return n;
+}
+
+/*
+** Print abs(w) characters of string "z" on FILE "out".
+**
+** w is in units of characters, not bytes!
+**
+** The output is always exactly abs(w) characters wide.  If z contains
+** more than abs(w) characters, it is truncated.  If z contains fewer
+** than abs(w) characters it is padded with spaces.  Spaces are added
+** on the right if w>0 (left justification) or on the left if w<0
+** (right justification).
+*/
+static void outputFixedWidth(FILE *out, int w, const char *z){
+  int n = strlenChar(z);
+  int absw = w<0 ? -w : w;
+  int i;
+
+  if( n<=absw ){
+    if( w<0 ) for(i=absw-n; i>0; i--) putc(' ', out);
+    fputs(z, out);
+    if( w>0 ) for(i=absw-n; i>0; i--) putc(' ', out);
+  }else{
+    for(i=n=0; z[i]; i++){
+      if( (z[i]&0xc0)==0x80 ) continue;
+      if( n==absw ) break;
+      n++;
+    }
+    fwrite(z, 1, i, out);
+  }
+}
+
+/*
 ** This is the callback routine that the shell
 ** invokes for each row of a query result.
 */
@@ -828,22 +870,17 @@ static int shell_callback(
             w = 0;
           }
           if( w==0 ){
-            w = strlen30(azCol[i] ? azCol[i] : "");
+            w = strlenChar(azCol[i] ? azCol[i] : "");
             if( w<10 ) w = 10;
-            n = strlen30(azArg && azArg[i] ? azArg[i] : p->nullValue);
+            n = strlenChar(azArg && azArg[i] ? azArg[i] : p->nullValue);
             if( w<n ) w = n;
           }
           if( i<ArraySize(p->actualWidth) ){
             p->actualWidth[i] = w;
           }
           if( p->showHeader ){
-            if( w<0 ){
-              fprintf(p->out,"%*.*s%s",-w,-w,azCol[i],
-                      i==nArg-1 ? p->rowSeparator : "  ");
-            }else{
-              fprintf(p->out,"%-*.*s%s",w,w,azCol[i],
-                      i==nArg-1 ? p->rowSeparator : "  ");
-            }
+            outputFixedWidth(p->out, w, azCol[i]);
+            fprintf(p->out, "%s", i==nArg-1 ? p->rowSeparator : "  ");
           }
         }
         if( p->showHeader ){
@@ -870,7 +907,7 @@ static int shell_callback(
            w = 10;
         }
         if( p->mode==MODE_Explain && azArg[i] && strlen30(azArg[i])>w ){
-          w = strlen30(azArg[i]);
+          w = strlenChar(azArg[i]);
         }
         if( i==1 && p->aiIndent && p->pStmt ){
           if( p->iIndent<p->nIndent ){
@@ -878,15 +915,8 @@ static int shell_callback(
           }
           p->iIndent++;
         }
-        if( w<0 ){
-          fprintf(p->out,"%*.*s%s",-w,-w,
-              azArg[i] ? azArg[i] : p->nullValue,
-              i==nArg-1 ? p->rowSeparator : "  ");
-        }else{
-          fprintf(p->out,"%-*.*s%s",w,w,
-              azArg[i] ? azArg[i] : p->nullValue,
-              i==nArg-1 ? p->rowSeparator : "  ");
-        }
+        outputFixedWidth(p->out, w, azArg[i] ? azArg[i] : p->nullValue);
+        fprintf(p->out, "%s", i==nArg-1 ? p->rowSeparator : "  ");
       }
       break;
     }
