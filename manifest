@@ -1,5 +1,5 @@
-C Simplifications\sto\sthe\sdescription\sof\sthe\snByte\sparameter\sto\ssqlite3_prepare()\nand\sfriends.
-D 2015-02-26T02:33:52.248
+C Fix\sa\sreal\sbug\s(in\stest\scode)\sthat\swas\sintroduced\swhile\strying\sto\seliminate\nharmless\scompiler\swarnings\sfrom\sOpenBSD\s(see\scheck-in\s[10321910990195878c]).
+D 2015-02-26T16:32:33.621
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6b9e7677829aa94b9f30949656e27312aefb9a46
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -239,7 +239,7 @@ F src/sqliteInt.h 57a405ae6d2ed10fff52de376d18f21e04d96609
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 81712116e826b0089bb221b018929536b2b5406f
 F src/table.c e7a09215315a978057fb42c640f890160dbcc45e
-F src/tclsqlite.c b8014393a96a9781bb635c8b1f52fc9b77a2bfcf
+F src/tclsqlite.c b290774586f022e16e04ba8ed2f0b8edd86b5b77
 F src/test1.c 90fbedce75330d48d99eadb7d5f4223e86969585
 F src/test2.c 577961fe48961b2f2e5c8b56ee50c3f459d3359d
 F src/test3.c 64d2afdd68feac1bb5e2ffb8226c8c639f798622
@@ -1239,7 +1239,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6d132e7a224ee68b5cefe9222944aac5760ffc20
-R 32aba763c92a19bba8ed1b93e2ee7564
+P 4bee8295e36fb61f903210b6d052ee9b8fb3b6d0
+R b2eab9c50d96affd3b5f18c0bbfa30e2
 U drh
-Z b332eede7bc32b2767cceb08a9880768
+Z aab122678a648eda2debfa9adc01f9ac

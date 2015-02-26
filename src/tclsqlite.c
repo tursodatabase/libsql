@@ -3429,7 +3429,7 @@ static void MD5DigestToBase10x8(unsigned char digest[16], char zDigest[50]){
   for(i=j=0; i<16; i+=2){
     x = digest[i]*256 + digest[i+1];
     if( i>0 ) zDigest[j++] = '-';
-    sqlite3_snprintf(16-j, &zDigest[j], "%05u", x);
+    sqlite3_snprintf(50-j, &zDigest[j], "%05u", x);
     j += 5;
   }
   zDigest[j] = 0;
