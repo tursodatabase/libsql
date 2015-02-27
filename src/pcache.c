@@ -114,12 +114,20 @@ static void pcacheUnpin(PgHdr *p){
 }
 
 /*
-** Compute the number of pages of cache requested.
+** Compute the number of pages of cache requested.  p->szCache is the
+** cache size requested by the "PRAGMA cache_size" statement.
+**
+**
 */
 static int numberOfCachePages(PCache *p){
   if( p->szCache>=0 ){
+    /* IMPLEMENTATION-OF: R-42059-47211 If the argument N is positive then the
+    ** suggested cache size is set to N. */
     return p->szCache;
   }else{
+    /* IMPLEMENTATION-OF: R-61436-13639 If the argument N is negative, then
+    ** the number of cache pages is adjusted to use approximately abs(N*1024)
+    ** bytes of memory. */
     return (int)((-1024*(i64)p->szCache)/(p->szPage+p->szExtra));
   }
 }

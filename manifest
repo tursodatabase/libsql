@@ -1,5 +1,5 @@
-C New\srequirements\smarks\sand\sa\sfew\snew\stest\scases\sto\sgo\swith\sthem.\s\sNo\schanges\nto\scode.
-D 2015-02-27T20:28:08.104
+C Remove\sall\sreferences\sto\sSQLITE_DEFAULT_TEMP_CACHE_SIZE.\s\sAdd\srequirements\nmarks\srelated\sto\scache_size\schanging.
+D 2015-02-27T21:53:35.613
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6b9e7677829aa94b9f30949656e27312aefb9a46
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -220,7 +220,7 @@ F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 4120a49ecd37697e28f5ed807f470b9c0b88410c
 F src/pager.h c3476e7c89cdf1c6914e50a11f3714e30b4e0a77
 F src/parse.y 0f8e7d60f0ab3cb53d270adef69259ac307d83a8
-F src/pcache.c d210cf90d04365a74f85d21374dded65af67b0cb
+F src/pcache.c 10539fb959849ad6efff80050541cab3d25089d4
 F src/pcache.h b44658c9c932d203510279439d891a2a83e12ba8
 F src/pcache1.c 1e77432b40b7d3288327d9cdf399dcdfd2b6d3bf
 F src/pragma.c ea0be138a99784b14e87bd4522fea40e7b979e9c
@@ -236,7 +236,7 @@ F src/sqlite.h.in 62d3997824038cc32335b04aaa18cc8f4c19e9be
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
 F src/sqliteInt.h 57a405ae6d2ed10fff52de376d18f21e04d96609
-F src/sqliteLimit.h a3bf51a7484db35a7b1d0634a8a8788cccd4e986
+F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c 81712116e826b0089bb221b018929536b2b5406f
 F src/table.c e7a09215315a978057fb42c640f890160dbcc45e
 F src/tclsqlite.c b290774586f022e16e04ba8ed2f0b8edd86b5b77
@@ -254,7 +254,7 @@ F src/test_autoext.c dea8a01a7153b9adc97bd26161e4226329546e12
 F src/test_backup.c 2e6e6a081870150f20c526a2e9d0d29cda47d803
 F src/test_blob.c 1f2e3e25255b731c4fcf15ee7990d06347cb6c09
 F src/test_btree.c 2e9978eca99a9a4bfa8cae949efb00886860a64f
-F src/test_config.c e7b2e1634324d746aa5e1c7e0929470e8be27953
+F src/test_config.c c2d3ff6c129d50183900c7eff14158ff7e9b3f03
 F src/test_demovfs.c 0de72c2c89551629f58486fde5734b7d90758852
 F src/test_devsym.c e7498904e72ba7491d142d5c83b476c4e76993bc
 F src/test_fs.c ced436e3d4b8e4681328409b8081051ce614e28f
@@ -1239,7 +1239,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d70b0fd4c94f2b70cf31c2ab9ef7a2fb2e71c182
-R 5e6d1ff7a404da4f62d2b00fe21c4e92
+P 8c2b29d9acb92d47f4deec21a7c2dca52db63345
+R 5f8145ea43512db7c8608bf7ec930759
 U drh
-Z 7d013f116627badc7b6152666136f166
+Z 93d3230e7c0b0c9e7f5924677c91b2f3
