@@ -1,5 +1,5 @@
-C Add\sa\scouple\sof\srequirements\smarks.
-D 2015-02-27T00:33:15.390
+C New\srequirements\smarks\sand\sa\sfew\snew\stest\scases\sto\sgo\swith\sthem.\s\sNo\schanges\nto\scode.
+D 2015-02-27T20:28:08.104
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6b9e7677829aa94b9f30949656e27312aefb9a46
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -236,7 +236,7 @@ F src/sqlite.h.in 62d3997824038cc32335b04aaa18cc8f4c19e9be
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
 F src/sqliteInt.h 57a405ae6d2ed10fff52de376d18f21e04d96609
-F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
+F src/sqliteLimit.h a3bf51a7484db35a7b1d0634a8a8788cccd4e986
 F src/status.c 81712116e826b0089bb221b018929536b2b5406f
 F src/table.c e7a09215315a978057fb42c640f890160dbcc45e
 F src/tclsqlite.c b290774586f022e16e04ba8ed2f0b8edd86b5b77
@@ -347,7 +347,7 @@ F test/auth.test 855233ef26eb3601b6886567ea4e326c72959360
 F test/auth2.test 264c6af53cad9aba5218c68bbe18036e39007bfa
 F test/auth3.test 5cfa94ed90c6617c42b7ba4b133fd79678b251c7
 F test/autoinc.test c58912526998a39e11f66b533e23cfabea7f25b7
-F test/autoindex1.test 6ff78b94f43a59616c06c11c55b12935173506d7
+F test/autoindex1.test 7008c9f604141fdabe31b7bb95b5ff31b518251f
 F test/autoindex2.test af7e595c6864cc6ef5fc38d5db579a3e34940cb8
 F test/autoindex3.test a3be0d1a53a7d2edff208a5e442312957047e972
 F test/autoindex4.test 49d3cd791a9baa16fb461d7ea3de80d019a819cf
@@ -503,7 +503,7 @@ F test/fkey1.test e1d1fa84cde579185ea01358436839703e415a5b
 F test/fkey2.test 1db212cda86b0d3ce72714001f7b6381c321341c
 F test/fkey3.test 76d475c80b84ee7a5d062e56ccb6ea68882e2b49
 F test/fkey4.test 86446017011273aad8f9a99c1a65019e7bd9ca9d
-F test/fkey5.test 488601fbda8350619b3029487e56830447056fd2
+F test/fkey5.test 56bcb5a6e8b725b17febc267fb041a6695e86853
 F test/fkey6.test abb59f866c1b44926fd02d1fdd217d831fe04f48
 F test/fkey7.test 72e915890ee4a005daaf3002cb208e8fe973ac13
 F test/fkey8.test 8f08203458321e6c19a263829de4cfc936274ab0
@@ -693,7 +693,7 @@ F test/like2.test 3b2ee13149ba4a8a60b59756f4e5d345573852da
 F test/limit.test 3d7df19c35ac672a11f7de406cd3205d592babbb
 F test/loadext.test 648cb95f324d1775c54a55c12271b2d1156b633b
 F test/loadext2.test 0408380b57adca04004247179837a18e866a74f7
-F test/lock.test 87af515b0c4cf928576d0f89946d67d7c265dfb4
+F test/lock.test b984ab9034e7389be0d863fe4e64cbbc4d2028f5
 F test/lock2.test 5242d8ac4e2d59c403aebff606af449b455aceff
 F test/lock3.test f271375930711ae044080f4fe6d6eda930870d00
 F test/lock4.test e175ae13865bc87680607563bafba21f31a26f12
@@ -787,8 +787,8 @@ F test/pcache.test b09104b03160aca0d968d99e8cd2c5b1921a993d
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
 F test/permutations.test f9cc1dd987986c9d4949211c7a4ed55ec9aecba1
-F test/pragma.test 6cf0f0ce4618e841457aa42745afda55ddbc95fe
-F test/pragma2.test aea7b3d82c76034a2df2b38a13745172ddc0bc13
+F test/pragma.test a6187e24d55ddad2b2af46022e473a605a260f27
+F test/pragma2.test f624a496a95ee878e81e59961eade66d5c00c028
 F test/pragma3.test 6f849ccffeee7e496d2f2b5e74152306c0b8757c
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
 F test/printf2.test b4acd4bf8734243257f01ddefa17c4fb090acc8a
@@ -1239,7 +1239,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3bc34fd427d9d7819cd9740237b1f5d4180341fa
-R ea56360259f5f37b0ed4591b0dd003bd
+P d70b0fd4c94f2b70cf31c2ab9ef7a2fb2e71c182
+R 5e6d1ff7a404da4f62d2b00fe21c4e92
 U drh
-Z c0882f7c7d1c49cd54726f112c10b39e
+Z 7d013f116627badc7b6152666136f166

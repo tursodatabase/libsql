@@ -83,7 +83,11 @@ delete_file test.db test.db-journal
 delete_file test3.db test3.db-journal
 sqlite3 db test.db; set DB [sqlite3_connection_pointer db]
 
-
+# EVIDENCE-OF: R-24197-42751 PRAGMA database.cache_size; PRAGMA
+# database.cache_size = pages; PRAGMA database.cache_size = -kibibytes;
+# Query or change the suggested maximum number of database disk pages
+# that SQLite will hold in memory at once per open database file.
+#
 ifcapable pager_pragmas {
 set DFLT_CACHE_SZ [db one {PRAGMA default_cache_size}]
 set TEMP_CACHE_SZ [db one {PRAGMA temp.default_cache_size}]
@@ -95,6 +99,8 @@ do_test pragma-1.1 {
   }
 } [list $DFLT_CACHE_SZ $DFLT_CACHE_SZ 2]
 do_test pragma-1.2 {
+  # EVIDENCE-OF: R-42059-47211 If the argument N is positive then the
+  # suggested cache size is set to N.
   execsql {
     PRAGMA synchronous=OFF;
     PRAGMA cache_size=1234;
