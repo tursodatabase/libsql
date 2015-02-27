@@ -1,5 +1,5 @@
-C Fix\ssuffix\sand\sprefix\scompression\sof\sterms\sin\stop-level\sfts5\ssegments.\sAnd\sa\scrash\sthat\scould\sfollow\san\sOOM\scondition.
-D 2015-02-27T07:23:26.074
+C Further\sminor\soptimizations\sto\sflushing\sfts5\sdata\sto\sdisk.
+D 2015-02-27T09:41:10.812
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5407a688f4d77a05c18a8142be8ae5a2829dd610
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -112,7 +112,7 @@ F ext/fts5/fts5_buffer.c b92ba0eb67532d174934087f93716caf9a2168c7
 F ext/fts5/fts5_config.c e3421a76c2abd33a05ac09df0c97c64952d1e700
 F ext/fts5/fts5_expr.c eee52c9df84eade48eaa3f50c8876f44b552ff9b
 F ext/fts5/fts5_hash.c 63ad0066ec83525f0dad5b416d9db6e06f7d39ac
-F ext/fts5/fts5_index.c 14549572551b60d99413f9bd2043ed2be004a328
+F ext/fts5/fts5_index.c deb7a5b73ca79b297cb32ce604015d13ad4a129e
 F ext/fts5/fts5_storage.c f7c12c9f454b2a525827b3d85fd222789236f548
 F ext/fts5/fts5_tcl.c 1293fac2bb26903fd3d5cdee59c5885ba7e620d5
 F ext/fts5/fts5_tokenize.c 0d108148c26132448487926fe683425002aee369
@@ -1284,7 +1284,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8e3ca6323a2beab5f04250e24ae15b159d2aa0ac
-R f04df10b48e4ca5c813b34f1122b4215
+P bb104b3646c6f07ed002be7360b08433ee7980d4
+R 7d2aff01dcb4baccf8d2147c84edd80c
 U dan
-Z 4695fccf9ba60f7f53ddc85dbb7a72b7
+Z 8659a7b4b1b02ada86d180379ab48889

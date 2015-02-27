@@ -3401,6 +3401,12 @@ static int fts5PoslistPrefix(const u8 *aBuf, int nMax){
   return ret;
 }
 
+#define fts5BufferSafeAppendBlob(pBuf, pBlob, nBlob) { \
+  assert( pBuf->nSpace>=(pBuf->n+nBlob) );             \
+  memcpy(&pBuf->p[pBuf->n], pBlob, nBlob);             \
+  pBuf->n += nBlob;                                    \
+}
+
 /*
 ** Flush the contents of in-memory hash table iHash to a new level-0 
 ** segment on disk. Also update the corresponding structure record.
@@ -3460,6 +3466,7 @@ static void fts5FlushOneHash(Fts5Index *p, int iHash, int *pnLeaf){
         pBuf = &writer.aWriter[0].buf;
         if( (nTerm + 32) > pBuf->nSpace ){
           fts5BufferGrow(&p->rc, pBuf, nTerm + 32 - pBuf->n);
+          if( p->rc ) break;
         }
       }
 
@@ -3480,13 +3487,11 @@ static void fts5FlushOneHash(Fts5Index *p, int iHash, int *pnLeaf){
         nSuffix = nTerm;
       }
       pBuf->n += sqlite3PutVarint(&pBuf->p[pBuf->n], nSuffix);
-      fts5BufferAppendBlob(&p->rc, pBuf, 
-          nSuffix, (const u8*)&zTerm[nTerm-nSuffix]
-      );
+      fts5BufferSafeAppendBlob(pBuf, (const u8*)&zTerm[nTerm-nSuffix], nSuffix);
 
       if( pgsz>=(pBuf->n + nDoclist + 1) ){
         /* The entire doclist will fit on the current leaf. */
-        fts5BufferAppendBlob(&p->rc, pBuf, nDoclist, pDoclist);
+        fts5BufferSafeAppendBlob(pBuf, pDoclist, nDoclist);
       }else{
         i64 iRowid = 0;
         i64 iDelta = 0;
@@ -3516,7 +3521,7 @@ static void fts5FlushOneHash(Fts5Index *p, int iHash, int *pnLeaf){
           if( (pBuf->n + nCopy) <= pgsz ){
             /* The entire poslist will fit on the current leaf. So copy
             ** it in one go. */
-            fts5BufferAppendBlob(&p->rc, pBuf, nCopy, &pDoclist[iOff]);
+            fts5BufferSafeAppendBlob(pBuf, &pDoclist[iOff], nCopy);
           }else{
             /* The entire poslist will not fit on this leaf. So it needs
             ** to be broken into sections. The only qualification being
@@ -3531,7 +3536,7 @@ static void fts5FlushOneHash(Fts5Index *p, int iHash, int *pnLeaf){
               }else{
                 n = fts5PoslistPrefix(&pPoslist[iPos], nSpace);
               }
-              fts5BufferAppendBlob(&p->rc, pBuf, n, &pPoslist[iPos]);
+              fts5BufferSafeAppendBlob(pBuf, &pPoslist[iPos], n);
               iPos += n;
               if( iPos>=nCopy ) break;
               fts5WriteFlushLeaf(p, &writer);
