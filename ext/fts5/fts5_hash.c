@@ -421,11 +421,11 @@ int sqlite3Fts5HashQuery(
   return SQLITE_OK;
 }
 
-void sqlite3Fts5HashScanInit(
+int sqlite3Fts5HashScanInit(
   Fts5Hash *p,                    /* Hash table to query */
   const char *pTerm, int nTerm    /* Query prefix */
 ){
-  fts5HashEntrySort(p, pTerm, nTerm, &p->pScan);
+  return fts5HashEntrySort(p, pTerm, nTerm, &p->pScan);
 }
 
 void sqlite3Fts5HashScanNext(Fts5Hash *p){

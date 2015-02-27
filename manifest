@@ -1,5 +1,5 @@
-C Optimize\scopying\sdata\sfrom\sfts5\sin-memory\shash\stables\sto\stop\slevel\ssegments.
-D 2015-02-26T20:49:09.566
+C Fix\ssuffix\sand\sprefix\scompression\sof\sterms\sin\stop-level\sfts5\ssegments.\sAnd\sa\scrash\sthat\scould\sfollow\san\sOOM\scondition.
+D 2015-02-27T07:23:26.074
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5407a688f4d77a05c18a8142be8ae5a2829dd610
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -106,13 +106,13 @@ F ext/fts3/unicode/mkunicode.tcl 159c1194da0bc72f51b3c2eb71022568006dc5ad
 F ext/fts5/extract_api_docs.tcl 55a6d648d516f35d9a1e580ac00de27154e1904a
 F ext/fts5/fts5.c f2e899fba27ca33c8897635752c4c83a40dcb18d
 F ext/fts5/fts5.h f931954065693898d26c51f23f1d27200184a69a
-F ext/fts5/fts5Int.h 7c2af493177b0e4e0290b869f19cd6d1d671d5ac
+F ext/fts5/fts5Int.h 5c8efea3d0a1ccc70194225f8c402a1732ed5ad5
 F ext/fts5/fts5_aux.c 549aef152b0fd46020f5595d861b1fd60b3f9b4f
 F ext/fts5/fts5_buffer.c b92ba0eb67532d174934087f93716caf9a2168c7
 F ext/fts5/fts5_config.c e3421a76c2abd33a05ac09df0c97c64952d1e700
 F ext/fts5/fts5_expr.c eee52c9df84eade48eaa3f50c8876f44b552ff9b
-F ext/fts5/fts5_hash.c 323099a445bf8f608af069e2d8ff4bb93db9904c
-F ext/fts5/fts5_index.c 7a9de0c033a8f702f8e3659a23c2ea31bbbb789b
+F ext/fts5/fts5_hash.c 63ad0066ec83525f0dad5b416d9db6e06f7d39ac
+F ext/fts5/fts5_index.c 14549572551b60d99413f9bd2043ed2be004a328
 F ext/fts5/fts5_storage.c f7c12c9f454b2a525827b3d85fd222789236f548
 F ext/fts5/fts5_tcl.c 1293fac2bb26903fd3d5cdee59c5885ba7e620d5
 F ext/fts5/fts5_tokenize.c 0d108148c26132448487926fe683425002aee369
@@ -1284,7 +1284,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 208e3cb6b6dc8c7d824b64dec2034004c9fcbba5
-R 2ae35fa8ad1fd2b74f86acf33cc74d9f
+P 8e3ca6323a2beab5f04250e24ae15b159d2aa0ac
+R f04df10b48e4ca5c813b34f1122b4215
 U dan
-Z 84061e5477aeb4ed2552f0a9aa275eda
+Z 4695fccf9ba60f7f53ddc85dbb7a72b7

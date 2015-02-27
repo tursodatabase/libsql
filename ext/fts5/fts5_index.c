@@ -2079,9 +2079,10 @@ static void fts5SegIterHashInit(
   int n = 0;
 
   assert( pHash );
+  assert( p->rc==SQLITE_OK );
 
   if( pTerm==0 || (iIdx==0 && (flags & FTS5INDEX_QUERY_PREFIX)) ){
-    sqlite3Fts5HashScanInit(pHash, (const char*)pTerm, nTerm);
+    p->rc = sqlite3Fts5HashScanInit(pHash, (const char*)pTerm, nTerm);
     sqlite3Fts5HashScanEntry(pHash, (const char**)&z, &pList, &nList);
     n = (z ? strlen((const char*)z) : 0);
   }else{
@@ -3424,6 +3425,7 @@ static void fts5FlushOneHash(Fts5Index *p, int iHash, int *pnLeaf){
     Fts5StructureSegment *pSeg;   /* New segment within pStruct */
     int nHeight;                  /* Height of new segment b-tree */
     Fts5Buffer *pBuf;             /* Buffer in which to assemble leaf page */
+    const char *zPrev = 0;
 
     Fts5SegWriter writer;
     fts5WriteInit(p, &writer, iHash, iSegid);
@@ -3438,14 +3440,15 @@ static void fts5FlushOneHash(Fts5Index *p, int iHash, int *pnLeaf){
     if( p->rc==SQLITE_OK ){
       memset(pBuf->p, 0, 4);
       pBuf->n = 4;
-      sqlite3Fts5HashScanInit(pHash, 0, 0);
+      p->rc = sqlite3Fts5HashScanInit(pHash, 0, 0);
     }
 
-    while( 0==sqlite3Fts5HashScanEof(pHash) ){
+    while( p->rc==SQLITE_OK && 0==sqlite3Fts5HashScanEof(pHash) ){
       const char *zTerm;
       int nTerm;
       const u8 *pDoclist;
       int nDoclist;
+      int nSuffix;                /* Size of term suffix */
 
       sqlite3Fts5HashScanEntry(pHash, &zTerm,(const char**)&pDoclist,&nDoclist);
       nTerm = strlen(zTerm);
@@ -3462,17 +3465,24 @@ static void fts5FlushOneHash(Fts5Index *p, int iHash, int *pnLeaf){
 
       /* Write the term to the leaf. And push it up into the b-tree hierarchy */
       if( writer.bFirstTermInPage==0 ){
-        pBuf->n += sqlite3PutVarint(&pBuf->p[pBuf->n], 0);
+        int nPre = fts5PrefixCompress(nTerm, zPrev, nTerm, zTerm);
+        pBuf->n += sqlite3PutVarint(&pBuf->p[pBuf->n], nPre);
+        nSuffix = nTerm - nPre;
       }else{
         fts5PutU16(&pBuf->p[2], pBuf->n);
         writer.bFirstTermInPage = 0;
         if( writer.aWriter[0].pgno!=1 ){
-          fts5WriteBtreeTerm(p, &writer, nTerm, (const u8*)zTerm);
+          int nPre = fts5PrefixCompress(nTerm, zPrev, nTerm, zTerm);
+          fts5WriteBtreeTerm(p, &writer, nPre+1, (const u8*)zTerm);
           pBuf = &writer.aWriter[0].buf;
+          assert( nPre<nTerm );
         }
+        nSuffix = nTerm;
       }
-      pBuf->n += sqlite3PutVarint(&pBuf->p[pBuf->n], nTerm);
-      fts5BufferAppendBlob(&p->rc, pBuf, nTerm, (const u8*)zTerm);
+      pBuf->n += sqlite3PutVarint(&pBuf->p[pBuf->n], nSuffix);
+      fts5BufferAppendBlob(&p->rc, pBuf, 
+          nSuffix, (const u8*)&zTerm[nTerm-nSuffix]
+      );
 
       if( pgsz>=(pBuf->n + nDoclist + 1) ){
         /* The entire doclist will fit on the current leaf. */
@@ -3536,6 +3546,7 @@ static void fts5FlushOneHash(Fts5Index *p, int iHash, int *pnLeaf){
 
       pBuf->p[pBuf->n++] = '\0';
       assert( pBuf->n<=pBuf->nSpace );
+      zPrev = zTerm;
       sqlite3Fts5HashScanNext(pHash);
     }
     sqlite3Fts5HashClear(pHash);

@@ -400,7 +400,7 @@ int sqlite3Fts5HashQuery(
   int *pnDoclist                  /* OUT: Size of doclist in bytes */
 );
 
-void sqlite3Fts5HashScanInit(
+int sqlite3Fts5HashScanInit(
   Fts5Hash*,                      /* Hash table to query */
   const char *pTerm, int nTerm    /* Query prefix */
 );
