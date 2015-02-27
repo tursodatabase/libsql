@@ -40,8 +40,10 @@
 */
 struct sqlite3_mutex {
   pthread_mutex_t mutex;     /* Mutex controlling the lock */
-#if SQLITE_MUTEX_NREF
+#if SQLITE_MUTEX_NREF || defined(SQLITE_ENABLE_API_ARMOR)
   int id;                    /* Mutex type */
+#endif
+#if SQLITE_MUTEX_NREF
   volatile int nRef;         /* Number of entrances */
   volatile pthread_t owner;  /* Thread that is within this mutex */
   int trace;                 /* True to trace changes */
@@ -158,18 +160,12 @@ static sqlite3_mutex *pthreadMutexAlloc(int iType){
         pthread_mutex_init(&p->mutex, &recursiveAttr);
         pthread_mutexattr_destroy(&recursiveAttr);
 #endif
-#if SQLITE_MUTEX_NREF
-        p->id = iType;
-#endif
       }
       break;
     }
     case SQLITE_MUTEX_FAST: {
       p = sqlite3MallocZero( sizeof(*p) );
       if( p ){
-#if SQLITE_MUTEX_NREF
-        p->id = iType;
-#endif
         pthread_mutex_init(&p->mutex, 0);
       }
       break;
@@ -182,12 +178,12 @@ static sqlite3_mutex *pthreadMutexAlloc(int iType){
       }
 #endif
       p = &staticMutexes[iType-2];
-#if SQLITE_MUTEX_NREF
-      p->id = iType;
-#endif
       break;
     }
   }
+#if SQLITE_MUTEX_NREF || defined(SQLITE_ENABLE_API_ARMOR)
+  if( p ) p->id = iType;
+#endif
   return p;
 }
 
@@ -199,9 +195,18 @@ static sqlite3_mutex *pthreadMutexAlloc(int iType){
 */
 static void pthreadMutexFree(sqlite3_mutex *p){
   assert( p->nRef==0 );
-  assert( p->id==SQLITE_MUTEX_FAST || p->id==SQLITE_MUTEX_RECURSIVE );
-  pthread_mutex_destroy(&p->mutex);
-  sqlite3_free(p);
+#if SQLITE_ENABLE_API_ARMOR
+  if( p->id==SQLITE_MUTEX_FAST || p->id==SQLITE_MUTEX_RECURSIVE )
+#endif
+  {
+    pthread_mutex_destroy(&p->mutex);
+    sqlite3_free(p);
+  }
+#ifdef SQLITE_ENABLE_API_ARMOR
+  else{
+    (void)SQLITE_MISUSE_BKPT;
+  }
+#endif
 }
 
 /*

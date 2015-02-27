@@ -308,10 +308,6 @@ Table *sqlite3FindTable(sqlite3 *db, const char *zName, const char *zDatabase){
   Table *p = 0;
   int i;
 
-#ifdef SQLITE_ENABLE_API_ARMOR
-  if( !sqlite3SafetyCheckOk(db) || zName==0 ) return 0;
-#endif
-
   /* All mutexes are required for schema access.  Make sure we hold them. */
   assert( zDatabase!=0 || sqlite3BtreeHoldsAllMutexes(db) );
 #if SQLITE_USER_AUTHENTICATION
@@ -1731,11 +1727,14 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
   assert( pPk!=0 );
   nPk = pPk->nKeyCol;
 
-  /* Make sure every column of the PRIMARY KEY is NOT NULL */
-  for(i=0; i<nPk; i++){
-    pTab->aCol[pPk->aiColumn[i]].notNull = 1;
+  /* Make sure every column of the PRIMARY KEY is NOT NULL.  (Except,
+  ** do not enforce this for imposter tables.) */
+  if( !db->init.imposterTable ){
+    for(i=0; i<nPk; i++){
+      pTab->aCol[pPk->aiColumn[i]].notNull = 1;
+    }
+    pPk->uniqNotNull = 1;
   }
-  pPk->uniqNotNull = 1;
 
   /* The root page of the PRIMARY KEY is the table root page */
   pPk->tnum = pTab->tnum;

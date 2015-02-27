@@ -1612,11 +1612,16 @@ static void constructAutomaticIndex(
   pLoop = pLevel->pWLoop;
   idxCols = 0;
   for(pTerm=pWC->a; pTerm<pWCEnd; pTerm++){
+    Expr *pExpr = pTerm->pExpr;
+    assert( !ExprHasProperty(pExpr, EP_FromJoin)    /* prereq always non-zero */
+         || pExpr->iRightJoinTable!=pSrc->iCursor   /*   for the right-hand   */
+         || pLoop->prereq!=0 );                     /*   table of a LEFT JOIN */
     if( pLoop->prereq==0
      && (pTerm->wtFlags & TERM_VIRTUAL)==0
-     && sqlite3ExprIsTableConstant(pTerm->pExpr, pSrc->iCursor) ){
+     && !ExprHasProperty(pExpr, EP_FromJoin)
+     && sqlite3ExprIsTableConstant(pExpr, pSrc->iCursor) ){
       pPartial = sqlite3ExprAnd(pParse->db, pPartial,
-                                sqlite3ExprDup(pParse->db, pTerm->pExpr, 0));
+                                sqlite3ExprDup(pParse->db, pExpr, 0));
     }
     if( termCanDriveIndex(pTerm, pSrc, notReady) ){
       int iCol = pTerm->u.leftColumn;
@@ -4694,7 +4699,12 @@ static int whereUsablePartialIndex(int iTab, WhereClause *pWC, Expr *pWhere){
   int i;
   WhereTerm *pTerm;
   for(i=0, pTerm=pWC->a; i<pWC->nTerm; i++, pTerm++){
-    if( sqlite3ExprImpliesExpr(pTerm->pExpr, pWhere, iTab) ) return 1;
+    Expr *pExpr = pTerm->pExpr;
+    if( sqlite3ExprImpliesExpr(pExpr, pWhere, iTab) 
+     && (!ExprHasProperty(pExpr, EP_FromJoin) || pExpr->iRightJoinTable==iTab)
+    ){
+      return 1;
+    }
   }
   return 0;
 }

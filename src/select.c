@@ -543,7 +543,9 @@ static void pushOntoSorter(
     pKI = pOp->p4.pKeyInfo;
     memset(pKI->aSortOrder, 0, pKI->nField); /* Makes OP_Jump below testable */
     sqlite3VdbeChangeP4(v, -1, (char*)pKI, P4_KEYINFO);
-    pOp->p4.pKeyInfo = keyInfoFromExprList(pParse, pSort->pOrderBy, nOBSat, 1);
+    testcase( pKI->nXField>2 );
+    pOp->p4.pKeyInfo = keyInfoFromExprList(pParse, pSort->pOrderBy, nOBSat,
+                                           pKI->nXField-1);
     addrJmp = sqlite3VdbeCurrentAddr(v);
     sqlite3VdbeAddOp3(v, OP_Jump, addrJmp+1, 0, addrJmp+1); VdbeCoverage(v);
     pSort->labelBkOut = sqlite3VdbeMakeLabel(v);
@@ -1054,7 +1056,7 @@ static KeyInfo *keyInfoFromExprList(
   int i;
 
   nExpr = pList->nExpr;
-  pInfo = sqlite3KeyInfoAlloc(db, nExpr+nExtra-iStart, 1);
+  pInfo = sqlite3KeyInfoAlloc(db, nExpr-iStart, nExtra+1);
   if( pInfo ){
     assert( sqlite3KeyInfoIsWriteable(pInfo) );
     for(i=iStart, pItem=pList->a+iStart; i<nExpr; i++, pItem++){
@@ -3192,7 +3194,10 @@ static void substSelect(
 **
 **   (1)  The subquery and the outer query do not both use aggregates.
 **
-**   (2)  The subquery is not an aggregate or the outer query is not a join.
+**   (2)  The subquery is not an aggregate or (2a) the outer query is not a join
+**        and (2b) the outer query does not use subqueries other than the one
+**        FROM-clause subquery that is a candidate for flattening.  (2b is
+**        due to ticket [2f7170d73bf9abf80] from 2015-02-09.)
 **
 **   (3)  The subquery is not the right operand of a left outer join
 **        (Originally ticket #306.  Strengthened by ticket #3300)
@@ -3329,8 +3334,17 @@ static int flattenSubquery(
   iParent = pSubitem->iCursor;
   pSub = pSubitem->pSelect;
   assert( pSub!=0 );
-  if( isAgg && subqueryIsAgg ) return 0;                 /* Restriction (1)  */
-  if( subqueryIsAgg && pSrc->nSrc>1 ) return 0;          /* Restriction (2)  */
+  if( subqueryIsAgg ){
+    if( isAgg ) return 0;                                /* Restriction (1)   */
+    if( pSrc->nSrc>1 ) return 0;                         /* Restriction (2a)  */
+    if( (p->pWhere && ExprHasProperty(p->pWhere,EP_Subquery))
+     || (sqlite3ExprListFlags(p->pEList) & EP_Subquery)!=0
+     || (sqlite3ExprListFlags(p->pOrderBy) & EP_Subquery)!=0
+    ){
+      return 0;                                          /* Restriction (2b)  */
+    }
+  }
+    
   pSubSrc = pSub->pSrc;
   assert( pSubSrc );
   /* Prior to version 3.1.2, when LIMIT and OFFSET had to be simple constants,
@@ -4151,7 +4165,7 @@ static int selectExpander(Walker *pWalker, Select *p){
       /* A sub-query in the FROM clause of a SELECT */
       assert( pSel!=0 );
       assert( pFrom->pTab==0 );
-      sqlite3WalkSelect(pWalker, pSel);
+      if( sqlite3WalkSelect(pWalker, pSel) ) return WRC_Abort;
       pFrom->pTab = pTab = sqlite3DbMallocZero(db, sizeof(Table));
       if( pTab==0 ) return WRC_Abort;
       pTab->nRef = 1;
@@ -4750,6 +4764,13 @@ int sqlite3Select(
   }
   isAgg = (p->selFlags & SF_Aggregate)!=0;
   assert( pEList!=0 );
+#if SELECTTRACE_ENABLED
+  if( sqlite3SelectTrace & 0x100 ){
+    SELECTTRACE(0x100,pParse,p, ("after name resolution:\n"));
+    sqlite3TreeViewSelect(0, p, 0);
+  }
+#endif
+
 
   /* Begin generating code.
   */
@@ -4924,7 +4945,7 @@ int sqlite3Select(
   */
   if( sSort.pOrderBy ){
     KeyInfo *pKeyInfo;
-    pKeyInfo = keyInfoFromExprList(pParse, sSort.pOrderBy, 0, 0);
+    pKeyInfo = keyInfoFromExprList(pParse, sSort.pOrderBy, 0, pEList->nExpr);
     sSort.iECursor = pParse->nTab++;
     sSort.addrSortIndex =
       sqlite3VdbeAddOp4(v, OP_OpenEphemeral,
@@ -5098,7 +5119,7 @@ int sqlite3Select(
       ** will be converted into a Noop.  
       */
       sAggInfo.sortingIdx = pParse->nTab++;
-      pKeyInfo = keyInfoFromExprList(pParse, pGroupBy, 0, 0);
+      pKeyInfo = keyInfoFromExprList(pParse, pGroupBy, 0, sAggInfo.nColumn);
       addrSortingIdx = sqlite3VdbeAddOp4(v, OP_SorterOpen, 
           sAggInfo.sortingIdx, sAggInfo.nSortingColumn, 
           0, (char*)pKeyInfo, P4_KEYINFO);
@@ -5495,9 +5516,9 @@ select_end:
 void sqlite3TreeViewSelect(TreeView *pView, const Select *p, u8 moreToFollow){
   int n = 0;
   pView = sqlite3TreeViewPush(pView, moreToFollow);
-  sqlite3TreeViewLine(pView, "SELECT%s%s",
+  sqlite3TreeViewLine(pView, "SELECT%s%s (0x%p)",
     ((p->selFlags & SF_Distinct) ? " DISTINCT" : ""),
-    ((p->selFlags & SF_Aggregate) ? " agg_flag" : "")
+    ((p->selFlags & SF_Aggregate) ? " agg_flag" : ""), p
   );
   if( p->pSrc && p->pSrc->nSrc ) n++;
   if( p->pWhere ) n++;
