@@ -4189,7 +4189,7 @@ static char *find_home_dir(void){
 **
 ** Returns the number of errors.
 */
-static int process_sqliterc(
+static void process_sqliterc(
   ShellState *p,                  /* Configuration data */
   const char *sqliterc_override   /* Name of config file. NULL to use default */
 ){
@@ -4197,15 +4197,13 @@ static int process_sqliterc(
   const char *sqliterc = sqliterc_override;
   char *zBuf = 0;
   FILE *in = NULL;
-  int rc = 0;
 
   if (sqliterc == NULL) {
     home_dir = find_home_dir();
     if( home_dir==0 ){
-#if !defined(__RTP__) && !defined(_WRS_KERNEL)
-      fprintf(stderr,"%s: Error: cannot locate your home directory\n", Argv0);
-#endif
-      return 1;
+      fprintf(stderr, "-- warning: cannot find home directory;"
+                      " cannot read ~/.sqliterc\n");
+      return;
     }
     sqlite3_initialize();
     zBuf = sqlite3_mprintf("%s/.sqliterc",home_dir);
@@ -4216,11 +4214,10 @@ static int process_sqliterc(
     if( stdin_is_interactive ){
       fprintf(stderr,"-- Loading resources from %s\n",sqliterc);
     }
-    rc = process_input(p,in);
+    process_input(p,in);
     fclose(in);
   }
   sqlite3_free(zBuf);
-  return rc;
 }
 
 /*
@@ -4496,10 +4493,7 @@ int main(int argc, char **argv){
   ** is given on the command line, look for a file named ~/.sqliterc and
   ** try to process it.
   */
-  rc = process_sqliterc(&data,zInitFile);
-  if( rc>0 ){
-    return rc;
-  }
+  process_sqliterc(&data,zInitFile);
 
   /* Make a second pass through the command-line argument and set
   ** options.  This second pass is delayed until after the initialization
