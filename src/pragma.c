@@ -1802,8 +1802,9 @@ void sqlite3Pragma(
   /*
   **  PRAGMA shrink_memory
   **
-  ** This pragma attempts to free as much memory as possible from the
-  ** current database connection.
+  ** IMPLEMENTATION-OF: R-23445-46109 This pragma causes the database
+  ** connection on which it is invoked to free up as much memory as it
+  ** can, by calling sqlite3_db_release_memory().
   */
   case PragTyp_SHRINK_MEMORY: {
     sqlite3_db_release_memory(db);
@@ -1832,8 +1833,12 @@ void sqlite3Pragma(
   **   PRAGMA soft_heap_limit
   **   PRAGMA soft_heap_limit = N
   **
-  ** Call sqlite3_soft_heap_limit64(N).  Return the result.  If N is omitted,
-  ** use -1.
+  ** IMPLEMENTATION-OF: R-26343-45930 This pragma invokes the
+  ** sqlite3_soft_heap_limit64() interface with the argument N, if N is
+  ** specified and is a non-negative integer.
+  ** IMPLEMENTATION-OF: R-64451-07163 The soft_heap_limit pragma always
+  ** returns the same integer that would be returned by the
+  ** sqlite3_soft_heap_limit64(-1) C-language function.
   */
   case PragTyp_SOFT_HEAP_LIMIT: {
     sqlite3_int64 N;

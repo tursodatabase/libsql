@@ -1316,18 +1316,23 @@ ifcapable pager_pragmas {
   db close
   forcedelete test.db
   sqlite3 db test.db
-
+ 
+  # EVIDENCE-OF: R-13905-26312 PRAGMA database.page_count; Return the
+  # total number of pages in the database file.
+  #
   do_test pragma-14.1 {
     execsql { pragma auto_vacuum = 0 }
-    execsql { pragma page_count }
-  } {0}
+    execsql { pragma page_count; pragma main.page_count }
+  } {0 0}
 
   do_test pragma-14.2 {
     execsql { 
       CREATE TABLE abc(a, b, c);
       PRAGMA page_count;
+      PRAGMA main.page_count;
+      PRAGMA temp.page_count;
     }
-  } {2}
+  } {2 2 0}
   do_test pragma-14.2uc {
     execsql {pragma PAGE_COUNT}
   } {2}

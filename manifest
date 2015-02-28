@@ -1,5 +1,5 @@
-C Remove\sall\sreferences\sto\sSQLITE_DEFAULT_TEMP_CACHE_SIZE.\s\sAdd\srequirements\nmarks\srelated\sto\scache_size\schanging.
-D 2015-02-27T21:53:35.613
+C More\stest\scases\sand\srequirements\smarks\sfor\spragmas.
+D 2015-02-28T01:04:27.551
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6b9e7677829aa94b9f30949656e27312aefb9a46
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -223,7 +223,7 @@ F src/parse.y 0f8e7d60f0ab3cb53d270adef69259ac307d83a8
 F src/pcache.c 10539fb959849ad6efff80050541cab3d25089d4
 F src/pcache.h b44658c9c932d203510279439d891a2a83e12ba8
 F src/pcache1.c 1e77432b40b7d3288327d9cdf399dcdfd2b6d3bf
-F src/pragma.c ea0be138a99784b14e87bd4522fea40e7b979e9c
+F src/pragma.c d1abcc070698e5853205dc1d1cd3f01845c1804b
 F src/pragma.h 09c89bca58e9a44de2116cc8272b8d454657129f
 F src/prepare.c 173a5a499138451b2561614ecb87d78f9f4644b9
 F src/printf.c 8da9a2687a396daa19860f4dc90975d319304744
@@ -293,7 +293,7 @@ F src/update.c 3c4ecc282accf12d39edb8d524cf089645e55a13
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c 98a7627ca48ad3265b6940915a1d08355eb3fc7e
 F src/vacuum.c 9460b9de7b2d4e34b0d374894aa6c8a0632be8ec
-F src/vdbe.c ddfc977981cd6324668aa6b114045eb1c677421a
+F src/vdbe.c 991e9b2c38cdc987ed214249b3c72ea73a06fb2e
 F src/vdbe.h 6fc69d9c5e146302c56e163cb4b31d1ee64a18c3
 F src/vdbeInt.h bb56fd199d8af1a2c1b9639ee2f70724b4338e3a
 F src/vdbeapi.c dac0d0d8009a8aa549cd77d9c29da44c0344f0c4
@@ -787,7 +787,7 @@ F test/pcache.test b09104b03160aca0d968d99e8cd2c5b1921a993d
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
 F test/permutations.test f9cc1dd987986c9d4949211c7a4ed55ec9aecba1
-F test/pragma.test a6187e24d55ddad2b2af46022e473a605a260f27
+F test/pragma.test 64f11ec7f4100e873c67e888a56c33d395cb75d6
 F test/pragma2.test f624a496a95ee878e81e59961eade66d5c00c028
 F test/pragma3.test 6f849ccffeee7e496d2f2b5e74152306c0b8757c
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
@@ -873,7 +873,7 @@ F test/skipscan3.test ec5bab3f81c7038b43450e7b3062e04a198bdbb5
 F test/skipscan5.test 67817a4b6857c47e0e33ba3e506da6f23ef68de2
 F test/skipscan6.test 5866039d03a56f5bd0b3d172a012074a1d90a15b
 F test/soak.test 0b5b6375c9f4110c828070b826b3b4b0bb65cd5f
-F test/softheap1.test 40562fe6cac6d9827b7b42b86d45aedf12c15e24
+F test/softheap1.test 843cd84db9891b2d01b9ab64cef3e9020f98d087
 F test/sort.test 3f492e5b7be1d3f756728d2ff6edf4f6091e84cb
 F test/sort2.test 37afbc03f5559f2eb0f18940b55d38dfbb5172ac
 F test/sort3.test 6178ade30810ac9166fcdf14b7065e49c0f534e2
@@ -1239,7 +1239,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8c2b29d9acb92d47f4deec21a7c2dca52db63345
-R 5f8145ea43512db7c8608bf7ec930759
+P 766ad65025a9d5815300978e6e349f5af5db6012
+R 8204e8f9043c535de0f2497c8e561323
 U drh
-Z 93d3230e7c0b0c9e7f5924677c91b2f3
+Z a56e97eeca3c59d6452815bc1cc7253f
