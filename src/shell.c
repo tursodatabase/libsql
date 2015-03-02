@@ -25,6 +25,13 @@
 #endif
 
 /*
+** No support for loadable extensions in VxWorks.
+*/
+#if defined(_WRS_KERNEL) && !SQLITE_OMIT_LOAD_EXTENSION
+# define SQLITE_OMIT_LOAD_EXTENSION 1
+#endif
+
+/*
 ** Enable large-file support for fopen() and friends on unix.
 */
 #ifndef SQLITE_DISABLE_LFS
@@ -107,10 +114,15 @@
 */
 extern int isatty(int);
 
-/* popen and pclose are not C89 functions and so are sometimes omitted from
-** the <stdio.h> header */
-extern FILE *popen(const char*,const char*);
-extern int pclose(FILE*);
+#if !defined(__RTP__) && !defined(_WRS_KERNEL)
+  /* popen and pclose are not C89 functions and so are sometimes omitted from
+  ** the <stdio.h> header */
+  extern FILE *popen(const char*,const char*);
+  extern int pclose(FILE*);
+#else
+# define SQLITE_OMIT_POPEN 1
+#endif
+
 #endif
 
 #if defined(_WIN32_WCE)
@@ -2439,7 +2451,9 @@ static void tryToClone(ShellState *p, const char *zNewDb){
 */
 static void output_reset(ShellState *p){
   if( p->outfile[0]=='|' ){
+#ifndef SQLITE_OMIT_POPEN
     pclose(p->out);
+#endif
   }else{
     output_file_close(p->out);
   }
@@ -2932,9 +2946,14 @@ static int do_meta_command(char *zLine, ShellState *p){
     sCtx.zFile = zFile;
     sCtx.nLine = 1;
     if( sCtx.zFile[0]=='|' ){
+#ifdef SQLITE_OMIT_POPEN
+      fprintf(stderr, "Error: pipes are not supporte in this OS\n");
+      return 1;
+#else
       sCtx.in = popen(sCtx.zFile+1, "r");
       sCtx.zFile = "<pipe>";
       xCloser = pclose;
+#endif
     }else{
       sCtx.in = fopen(sCtx.zFile, "rb");
       xCloser = fclose;
@@ -3257,6 +3276,11 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
     output_reset(p);
     if( zFile[0]=='|' ){
+#ifdef SQLITE_OMIT_POPEN
+      fprintf(stderr,"Error: pipes are not supported in this OS\n");
+      rc = 1;
+      p->out = stdout;
+#else
       p->out = popen(zFile + 1, "w");
       if( p->out==0 ){
         fprintf(stderr,"Error: cannot open pipe \"%s\"\n", zFile + 1);
@@ -3265,6 +3289,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       }else{
         sqlite3_snprintf(sizeof(p->outfile), p->outfile, "%s", zFile);
       }
+#endif
     }else{
       p->out = output_file_open(zFile);
       if( p->out==0 ){

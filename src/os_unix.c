@@ -72,18 +72,6 @@
 #endif
 
 /*
-** Define the OS_VXWORKS pre-processor macro to 1 if building on 
-** vxworks, or 0 otherwise.
-*/
-#ifndef OS_VXWORKS
-#  if defined(__RTP__) || defined(_WRS_KERNEL)
-#    define OS_VXWORKS 1
-#  else
-#    define OS_VXWORKS 0
-#  endif
-#endif
-
-/*
 ** standard include files.
 */
 #include <sys/types.h>
@@ -237,7 +225,7 @@ struct unixFile {
 ** method was called.  If xOpen() is called from a different process id,
 ** indicating that a fork() has occurred, the PRNG will be reset.
 */
-static int randomnessPid = 0;
+static pid_t randomnessPid = 0;
 
 /*
 ** Allowed values for the unixFile.ctrlFlags bitmask:
@@ -2456,7 +2444,7 @@ static int flockClose(sqlite3_file *id) {
 ** to a non-zero value otherwise *pResOut is set to zero.  The return value
 ** is set to SQLITE_OK unless an I/O error occurs during lock checking.
 */
-static int semCheckReservedLock(sqlite3_file *id, int *pResOut) {
+static int semXCheckReservedLock(sqlite3_file *id, int *pResOut) {
   int rc = SQLITE_OK;
   int reserved = 0;
   unixFile *pFile = (unixFile*)id;
@@ -2523,7 +2511,7 @@ static int semCheckReservedLock(sqlite3_file *id, int *pResOut) {
 ** This routine will only increase a lock.  Use the sqlite3OsUnlock()
 ** routine to lower a locking level.
 */
-static int semLock(sqlite3_file *id, int eFileLock) {
+static int semXLock(sqlite3_file *id, int eFileLock) {
   unixFile *pFile = (unixFile*)id;
   sem_t *pSem = pFile->pInode->pSem;
   int rc = SQLITE_OK;
@@ -2556,7 +2544,7 @@ static int semLock(sqlite3_file *id, int eFileLock) {
 ** If the locking level of the file descriptor is already at or below
 ** the requested locking level, this routine is a no-op.
 */
-static int semUnlock(sqlite3_file *id, int eFileLock) {
+static int semXUnlock(sqlite3_file *id, int eFileLock) {
   unixFile *pFile = (unixFile*)id;
   sem_t *pSem = pFile->pInode->pSem;
 
@@ -2593,10 +2581,10 @@ static int semUnlock(sqlite3_file *id, int eFileLock) {
 /*
  ** Close a file.
  */
-static int semClose(sqlite3_file *id) {
+static int semXClose(sqlite3_file *id) {
   if( id ){
     unixFile *pFile = (unixFile*)id;
-    semUnlock(id, NO_LOCK);
+    semXUnlock(id, NO_LOCK);
     assert( pFile );
     unixEnterMutex();
     releaseInodeInfo(pFile);
@@ -4002,7 +3990,9 @@ static int unixDeviceCharacteristics(sqlite3_file *id){
 ** Instead, it should be called via macro osGetpagesize().
 */
 static int unixGetpagesize(void){
-#if defined(_BSD_SOURCE)
+#if OS_VXWORKS
+  return 1024;
+#elif defined(_BSD_SOURCE)
   return getpagesize();
 #else
   return (int)sysconf(_SC_PAGESIZE);
@@ -5052,10 +5042,10 @@ IOMETHODS(
   semIoFinder,              /* Finder function name */
   semIoMethods,             /* sqlite3_io_methods object name */
   1,                        /* shared memory is disabled */
-  semClose,                 /* xClose method */
-  semLock,                  /* xLock method */
-  semUnlock,                /* xUnlock method */
-  semCheckReservedLock,     /* xCheckReservedLock method */
+  semXClose,                /* xClose method */
+  semXLock,                 /* xLock method */
+  semXUnlock,               /* xUnlock method */
+  semXCheckReservedLock,    /* xCheckReservedLock method */
   0                         /* xShmMap method */
 )
 #endif

@@ -24,6 +24,11 @@
 #include "msvc.h"
 
 /*
+** Special setup for VxWorks
+*/
+#include "vxworks.h"
+
+/*
 ** These #defines should enable >2GB file support on POSIX if the
 ** underlying operating system supports it.  If the OS lacks
 ** large file support, or if the OS is windows, these should be no-ops.
