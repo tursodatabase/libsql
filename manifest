@@ -1,5 +1,5 @@
-C In\sthe\scommand-line\sshell,\sthe\sinability\sto\sread\s~/.sqliterc\sis\sno\slonger\na\sfatal\serror.\s\sA\swarning\sis\sissued,\sbut\sprocessing\scontinues.
-D 2015-02-28T14:03:35.210
+C Ensure\sthat\sautomatic\sindexes\sare\s*not*\sconsidered\swhen\sdoing\sthe\sthe\ssubqueries\nof\sthe\sOR-optimization.
+D 2015-03-02T17:25:00.374
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6b9e7677829aa94b9f30949656e27312aefb9a46
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -235,7 +235,7 @@ F src/shell.c a552c1ffc33aac6ab9246c55938835434130432d
 F src/sqlite.h.in 62d3997824038cc32335b04aaa18cc8f4c19e9be
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
-F src/sqliteInt.h 57a405ae6d2ed10fff52de376d18f21e04d96609
+F src/sqliteInt.h 14e1648f616c1136949a80cd3e3baeca89663cfd
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c 81712116e826b0089bb221b018929536b2b5406f
 F src/table.c e7a09215315a978057fb42c640f890160dbcc45e
@@ -306,7 +306,7 @@ F src/vtab.c 699f2b8d509cfe379c33dde33827875d5b030e01
 F src/wal.c 39303f2c9db02a4e422cd8eb2c8760420c6a51fe
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
-F src/where.c a50d5082b0fecd2bcf1725cdd012732d9d1e9d5c
+F src/where.c c1b3706929fe918966227f3b91ff433a825037fd
 F src/whereInt.h d3633e9b592103241b74b0ec76185f3e5b8b62e0
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1239,7 +1239,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fc51037cd97063069620213a62efdeff5d898706
-R 6857d3f3463c24fa73a9fc0de2ae11e8
+P 6bf6246306e6fd490766c0a05932be52a0ed66f2
+R 769a7b9588243a9203c45ee90503a7f0
 U drh
-Z b9ffbe353e645ecee0849e3fef86b4ab
+Z 06079288f464b37dcc72ce54dc75845f
