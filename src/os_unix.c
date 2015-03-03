@@ -85,18 +85,19 @@
 # include <sys/mman.h>
 #endif
 
-#if SQLITE_ENABLE_LOCKING_STYLE || OS_VXWORKS
+#if SQLITE_ENABLE_LOCKING_STYLE
 # include <sys/ioctl.h>
-# if OS_VXWORKS
-#  include <semaphore.h>
-#  include <limits.h>
-# else
-#  include <sys/file.h>
-#  include <sys/param.h>
-# endif
+# include <sys/file.h>
+# include <sys/param.h>
 #endif /* SQLITE_ENABLE_LOCKING_STYLE */
 
-#if defined(__APPLE__) || (SQLITE_ENABLE_LOCKING_STYLE && !OS_VXWORKS)
+#if OS_VXWORKS
+# include <sys/ioctl.h>
+# include <semaphore.h>
+# include <limits.h>
+#endif /* OS_VXWORKS */
+
+#if defined(__APPLE__) || SQLITE_ENABLE_LOCKING_STYLE
 # include <sys/mount.h>
 #endif
 
@@ -377,7 +378,7 @@ static struct unix_syscall {
   { "read",         (sqlite3_syscall_ptr)read,       0  },
 #define osRead      ((ssize_t(*)(int,void*,size_t))aSyscall[8].pCurrent)
 
-#if defined(USE_PREAD) || (SQLITE_ENABLE_LOCKING_STYLE && !OS_VXWORKS)
+#if defined(USE_PREAD) || SQLITE_ENABLE_LOCKING_STYLE
   { "pread",        (sqlite3_syscall_ptr)pread,      0  },
 #else
   { "pread",        (sqlite3_syscall_ptr)0,          0  },
@@ -394,7 +395,7 @@ static struct unix_syscall {
   { "write",        (sqlite3_syscall_ptr)write,      0  },
 #define osWrite     ((ssize_t(*)(int,const void*,size_t))aSyscall[11].pCurrent)
 
-#if defined(USE_PREAD) || (SQLITE_ENABLE_LOCKING_STYLE && !OS_VXWORKS)
+#if defined(USE_PREAD) || SQLITE_ENABLE_LOCKING_STYLE
   { "pwrite",       (sqlite3_syscall_ptr)pwrite,     0  },
 #else
   { "pwrite",       (sqlite3_syscall_ptr)0,          0  },
@@ -2232,10 +2233,9 @@ static int dotlockClose(sqlite3_file *id) {
 ** still works when you do this, but concurrency is reduced since
 ** only a single process can be reading the database at a time.
 **
-** Omit this section if SQLITE_ENABLE_LOCKING_STYLE is turned off or if
-** compiling for VXWORKS.
+** Omit this section if SQLITE_ENABLE_LOCKING_STYLE is turned off
 */
-#if SQLITE_ENABLE_LOCKING_STYLE && !OS_VXWORKS
+#if SQLITE_ENABLE_LOCKING_STYLE
 
 /*
 ** Retry flock() calls that fail with EINTR
@@ -5029,7 +5029,7 @@ IOMETHODS(
   0                         /* xShmMap method */
 )
 
-#if SQLITE_ENABLE_LOCKING_STYLE && !OS_VXWORKS
+#if SQLITE_ENABLE_LOCKING_STYLE
 IOMETHODS(
   flockIoFinder,            /* Finder function name */
   flockIoMethods,           /* sqlite3_io_methods object name */
@@ -5174,15 +5174,13 @@ static const sqlite3_io_methods
 
 #endif /* defined(__APPLE__) && SQLITE_ENABLE_LOCKING_STYLE */
 
-#if OS_VXWORKS && SQLITE_ENABLE_LOCKING_STYLE
-/* 
-** This "finder" function attempts to determine the best locking strategy 
-** for the database file "filePath".  It then returns the sqlite3_io_methods
-** object that implements that strategy.
-**
-** This is for VXWorks only.
+#if OS_VXWORKS
+/*
+** This "finder" function for VxWorks checks to see if posix advisory
+** locking works.  If it does, then that is what is used.  If it does not
+** work, then fallback to named semaphore locking.
 */
-static const sqlite3_io_methods *autolockIoFinderImpl(
+static const sqlite3_io_methods *vxworksIoFinderImpl(
   const char *filePath,    /* name of the database file */
   unixFile *pNew           /* the open file object */
 ){
@@ -5208,9 +5206,9 @@ static const sqlite3_io_methods *autolockIoFinderImpl(
   }
 }
 static const sqlite3_io_methods 
-  *(*const autolockIoFinder)(const char*,unixFile*) = autolockIoFinderImpl;
+  *(*const vxworksIoFinder)(const char*,unixFile*) = vxworksIoFinderImpl;
 
-#endif /* OS_VXWORKS && SQLITE_ENABLE_LOCKING_STYLE */
+#endif /* OS_VXWORKS */
 
 /*
 ** An abstract type for a pointer to an IO method finder function:
@@ -7493,8 +7491,10 @@ int sqlite3_os_init(void){
   ** array cannot be const.
   */
   static sqlite3_vfs aVfs[] = {
-#if SQLITE_ENABLE_LOCKING_STYLE && (OS_VXWORKS || defined(__APPLE__))
+#if SQLITE_ENABLE_LOCKING_STYLE && defined(__APPLE__)
     UNIXVFS("unix",          autolockIoFinder ),
+#elif OS_VXWORKS
+    UNIXVFS("unix",          vxworksIoFinder ),
 #else
     UNIXVFS("unix",          posixIoFinder ),
 #endif
@@ -7504,11 +7504,11 @@ int sqlite3_os_init(void){
 #if OS_VXWORKS
     UNIXVFS("unix-namedsem", semIoFinder ),
 #endif
-#if SQLITE_ENABLE_LOCKING_STYLE
+#if SQLITE_ENABLE_LOCKING_STYLE || OS_VXWORKS
     UNIXVFS("unix-posix",    posixIoFinder ),
-#if !OS_VXWORKS
-    UNIXVFS("unix-flock",    flockIoFinder ),
 #endif
+#if SQLITE_ENABLE_LOCKING_STYLE
+    UNIXVFS("unix-flock",    flockIoFinder ),
 #endif
 #if SQLITE_ENABLE_LOCKING_STYLE && defined(__APPLE__)
     UNIXVFS("unix-afp",      afpIoFinder ),
