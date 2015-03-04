@@ -12,6 +12,9 @@
 **
 */
 
+#ifdef SQLITE_ENABLE_FTS5
+
+
 #include "fts5Int.h"
 
 typedef struct Fts5HashEntry Fts5HashEntry;
@@ -457,3 +460,4 @@ void sqlite3Fts5HashScanEntry(
   }
 }
 
+#endif /* SQLITE_ENABLE_FTS5 */

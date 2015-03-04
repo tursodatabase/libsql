@@ -12,6 +12,9 @@
 **
 */
 
+#ifdef SQLITE_ENABLE_FTS5
+
+
 #include "fts5Int.h"
 #include "fts5parse.h"
 
@@ -1695,3 +1698,4 @@ int sqlite3Fts5ExprPoslist(Fts5Expr *pExpr, int iPhrase, const u8 **pa){
   return 0;
 }
 
+#endif /* SQLITE_ENABLE_FTS5 */

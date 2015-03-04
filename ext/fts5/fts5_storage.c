@@ -12,6 +12,9 @@
 **
 */
 
+#ifdef SQLITE_ENABLE_FTS5
+
+
 #include "fts5Int.h"
 
 struct Fts5Storage {
@@ -986,3 +989,4 @@ int sqlite3Fts5StorageConfigValue(
 }
 
 
+#endif /* SQLITE_ENABLE_FTS5 */

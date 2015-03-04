@@ -16,6 +16,8 @@
 ** the interface defined in fts5Int.h.
 */
 
+#ifdef SQLITE_ENABLE_FTS5
+
 #include "fts5Int.h"
 
 /*
@@ -448,8 +450,8 @@ struct Fts5MultiSegIter {
 **
 **   FTS5_SEGITER_REVERSE:
 **     This flag is only ever set if FTS5_SEGITER_ONETERM is also set. If
-**     it is set, iterate through docids in ascending order instead of the
-**     default descending order.
+**     it is set, iterate through docids in descending order instead of the
+**     default ascending order.
 **
 ** iRowidOffset/nRowidOffset/aRowidOffset:
 **     These are used if the FTS5_SEGITER_REVERSE flag is set.
@@ -5060,3 +5062,4 @@ int sqlite3Fts5IndexInit(sqlite3 *db){
   return rc;
 }
 
+#endif /* SQLITE_ENABLE_FTS5 */

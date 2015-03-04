@@ -13,6 +13,7 @@
 ** This is an SQLite module implementing full-text search.
 */
 
+#if defined(SQLITE_ENABLE_FTS5)
 
 #include "fts5Int.h"
 
@@ -1962,5 +1963,6 @@ int sqlite3Fts5Init(sqlite3 *db){
   }
   return rc;
 }
+#endif /* defined(SQLITE_ENABLE_FTS5) */
 
 

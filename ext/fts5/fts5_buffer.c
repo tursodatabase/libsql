@@ -12,6 +12,7 @@
 */
 
 
+#ifdef SQLITE_ENABLE_FTS5
 
 #include "fts5Int.h"
 
@@ -294,6 +295,5 @@ void *sqlite3Fts5MallocZero(int *pRc, int nByte){
   }
   return pRet;
 }
-
-
+#endif /* SQLITE_ENABLE_FTS5 */
 

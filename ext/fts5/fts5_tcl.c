@@ -12,10 +12,13 @@
 **
 */
 
+
 #ifdef SQLITE_TEST
+#include <tcl.h>
+
+#ifdef SQLITE_ENABLE_FTS5
 
 #include "fts5.h"
-#include <tcl.h>
 #include <string.h>
 #include <assert.h>
 
@@ -856,5 +859,9 @@ int Fts5tcl_Init(Tcl_Interp *interp){
 
   return TCL_OK;
 }
-
-#endif
+#else  /* SQLITE_ENABLE_FTS5 */
+int Fts5tcl_Init(Tcl_Interp *interp){
+  return TCL_OK;
+}
+#endif /* SQLITE_ENABLE_FTS5 */
+#endif /* SQLITE_TEST */
