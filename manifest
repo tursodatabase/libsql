@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarning.
-D 2015-03-04T20:18:55.349
+C New\srequirements\smarks\son\sINSERT\sand\sINDEXED\sBY\sand\son\ssome\ssqlite3_config()\noptions.
+D 2015-03-04T23:14:14.129
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f643d6968dfc0b82d2e546a0525a39079f9e928
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -195,7 +195,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
 F src/loadext.c 86bd4e2fccd520b748cba52492ab60c4a770f660
-F src/main.c 6facbb3214a492d09022ac8414dc83d07d5d5f41
+F src/main.c fa997fa27d95febc16d57095299384b667a7f762
 F src/malloc.c 740db54387204c9a2eb67c6d98e68b08e9ef4eab
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c abe6ee469b6c5a35c7f22bfeb9c9bac664a1c987
@@ -471,7 +471,7 @@ F test/e_dropview.test 0c9f7f60989164a70a67a9d9c26d1083bc808306
 F test/e_expr.test 8f5fdd7261e2d746813b0c6a1c0e34824ad3c5ad
 F test/e_fkey.test a1783fe1f759e1990e6a11adfcf0702dac4d0707
 F test/e_fts3.test 5c02288842e4f941896fd44afdef564dd5fc1459
-F test/e_insert.test 7b2fa9cd1456f83474d6c5d27db3abaeb8be2023
+F test/e_insert.test 0e63edc037afe738bb81a626a676811ed7862c90
 F test/e_reindex.test 396b7b4f0a66863b4e95116a67d93b227193e589
 F test/e_resolve.test dcce9308fb13b934ce29591105d031d3e14fbba6
 F test/e_select.test 52692ff3849541e828ad4661fe3773a9b8711763
@@ -655,7 +655,7 @@ F test/index4.test ab92e736d5946840236cd61ac3191f91a7856bf6
 F test/index5.test 25b0b451aceed4ac5f7d49f856f6de7257470b3e
 F test/index6.test 3ae54e53c53f2adcacda269237d8e52bdb05a481
 F test/index7.test 917cf1e1c7439bb155abbeabec511b28945e157b
-F test/indexedby.test b2f22f3e693a53813aa3f50b812eb609ba6df1ec
+F test/indexedby.test 5f527a78bae74c61b8046ae3037f9dfb0bf0c353
 F test/indexfault.test 31d4ab9a7d2f6e9616933eb079722362a883eb1d
 F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
 F test/insert.test 38742b5e9601c8f8d76e9b7555f7270288c2d371
@@ -1240,7 +1240,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 04a59d6f7ecbf769bd127a9071348b51ce8463f8
-R eb7760e5f73fea42d82f7f1da509727f
-U mistachkin
-Z c6ab24c8fd379ad2586877483b56d26f
+P 580dae4615353d73c7d096107571bd60fec5b0f2
+R 83bea64f65ae4623fef6afe49023010e
+U drh
+Z 9817df219f494c0715d6d5afc55f3ce5
