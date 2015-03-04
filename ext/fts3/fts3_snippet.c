@@ -1253,7 +1253,7 @@ void sqlite3Fts3Snippet(
       */
       for(iRead=0; iRead<pTab->nColumn; iRead++){
         SnippetFragment sF = {0, 0, 0, 0};
-        int iS;
+        int iS = 0;
         if( iCol>=0 && iRead!=iCol ) continue;
 
         /* Find the best snippet of nFToken tokens in column iRead. */
