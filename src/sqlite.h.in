@@ -1742,7 +1742,6 @@ struct sqlite3_mem_methods {
 ** compiled for Windows with the [SQLITE_WIN32_MALLOC] pre-processor macro
 ** defined. ^SQLITE_CONFIG_WIN32_HEAPSIZE takes a 32-bit unsigned integer value
 ** that specifies the maximum size of the created heap.
-** </dl>
 **
 ** [[SQLITE_CONFIG_PCACHE_HDRSZ]]
 ** <dt>SQLITE_CONFIG_PCACHE_HDRSZ
