@@ -1,5 +1,5 @@
-C Remove\sa\ssurplus\s&lt;/dl&gt;\smark\sin\sthe\sdocumentation.\s\sNo\schanges\sto\scode.
-D 2015-03-04T15:25:03.791
+C Refinement\sto\sthe\swording\sof\sthe\sdocumentation\son\sdepreciated\sfunctions.
+D 2015-03-04T15:35:07.522
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f643d6968dfc0b82d2e546a0525a39079f9e928
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -232,7 +232,7 @@ F src/resolve.c f4d79e31ffa5820c2e3d1740baa5e9b190425f2b
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c e46cef4c224549b439384c88fc7f57ba064dad54
 F src/shell.c cce82ca26392578a4a1ee927dfe55ea3411c7c92
-F src/sqlite.h.in 884b08c9902c037083893fbe3b0d7b27fd1f0fd5
+F src/sqlite.h.in 6ef96b67f33911454cf9deff72036abdcf98ea71
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
 F src/sqliteInt.h fae682c2b4dfbe489b134d74521c41c088f16ab1
@@ -1240,7 +1240,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ac8c7ca3db14ec19be1f19cfaf14b47fdda0c9ef
-R cd7064c91421e3d1e88aaf5356f37db1
+P 5450e4650b2dedf3626bbe5a64b680dbd4011173
+R 56547922ea4d7b893e96d2de0edeed04
 U drh
-Z 47f3a860dbaf86244f09252ac6904f50
+Z 4776ec7c4b1dc2fec453c5541ed697ae

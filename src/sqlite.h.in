@@ -4217,8 +4217,8 @@ int sqlite3_create_function_v2(
 ** These functions are [deprecated].  In order to maintain
 ** backwards compatibility with older code, these functions continue 
 ** to be supported.  However, new applications should avoid
-** the use of these functions.  To help encourage people to avoid
-** using these functions, we are not going to tell you what they do.
+** the use of these functions.  To encourage programmers to avoid
+** these functions, we will not explain what they do.
 */
 #ifndef SQLITE_OMIT_DEPRECATED
 SQLITE_DEPRECATED int sqlite3_aggregate_count(sqlite3_context*);
