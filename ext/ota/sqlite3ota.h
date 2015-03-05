@@ -333,7 +333,7 @@ sqlite3_int64 sqlite3ota_progress(sqlite3ota *pOta);
 ** multiplexor (error checking omitted):
 **
 **     // Create a VFS named "multiplexor" (not the default).
-**     sqlite3_multiplex_initialize(zVfsName, 0);
+**     sqlite3_multiplex_initialize("multiplexor", 0);
 **
 **     // Create an ota VFS named "ota" that uses multiplexor.
 **     sqlite3ota_create_vfs("ota", "multiplexor");
