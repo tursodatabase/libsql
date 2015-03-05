@@ -1077,17 +1077,27 @@ void sqlite3Pragma(
     pIdx = sqlite3FindIndex(db, zRight, zDb);
     if( pIdx ){
       int i;
-      int mx = pPragma->iArg ? pIdx->nColumn : pIdx->nKeyCol;
+      int mx;
+      if( pPragma->iArg ){
+        /* PRAGMA index_xinfo (newer version with more rows and columns) */
+        mx = pIdx->nColumn;
+        pParse->nMem = 6;
+      }else{
+        /* PRAGMA index_info (legacy version) */
+        mx = pIdx->nKeyCol;
+        pParse->nMem = 3;
+      }
       pTab = pIdx->pTable;
-      sqlite3VdbeSetNumCols(v, 6);
-      pParse->nMem = 6;
+      sqlite3VdbeSetNumCols(v, pParse->nMem);
       sqlite3CodeVerifySchema(pParse, iDb);
       sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "seqno", SQLITE_STATIC);
       sqlite3VdbeSetColName(v, 1, COLNAME_NAME, "cid", SQLITE_STATIC);
       sqlite3VdbeSetColName(v, 2, COLNAME_NAME, "name", SQLITE_STATIC);
-      sqlite3VdbeSetColName(v, 3, COLNAME_NAME, "desc", SQLITE_STATIC);
-      sqlite3VdbeSetColName(v, 4, COLNAME_NAME, "coll", SQLITE_STATIC);
-      sqlite3VdbeSetColName(v, 5, COLNAME_NAME, "key", SQLITE_STATIC);
+      if( pPragma->iArg ){
+        sqlite3VdbeSetColName(v, 3, COLNAME_NAME, "desc", SQLITE_STATIC);
+        sqlite3VdbeSetColName(v, 4, COLNAME_NAME, "coll", SQLITE_STATIC);
+        sqlite3VdbeSetColName(v, 5, COLNAME_NAME, "key", SQLITE_STATIC);
+      }
       for(i=0; i<mx; i++){
         i16 cnum = pIdx->aiColumn[i];
         sqlite3VdbeAddOp2(v, OP_Integer, i, 1);
@@ -1097,10 +1107,12 @@ void sqlite3Pragma(
         }else{
           sqlite3VdbeAddOp4(v, OP_String8, 0, 3, 0, pTab->aCol[cnum].zName, 0);
         }
-        sqlite3VdbeAddOp2(v, OP_Integer, pIdx->aSortOrder[i], 4);
-        sqlite3VdbeAddOp4(v, OP_String8, 0, 5, 0, pIdx->azColl[i], 0);
-        sqlite3VdbeAddOp2(v, OP_Integer, i<pIdx->nKeyCol, 6);
-        sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 6);
+        if( pPragma->iArg ){
+          sqlite3VdbeAddOp2(v, OP_Integer, pIdx->aSortOrder[i], 4);
+          sqlite3VdbeAddOp4(v, OP_String8, 0, 5, 0, pIdx->azColl[i], 0);
+          sqlite3VdbeAddOp2(v, OP_Integer, i<pIdx->nKeyCol, 6);
+        }
+        sqlite3VdbeAddOp2(v, OP_ResultRow, 1, pParse->nMem);
       }
     }
   }
