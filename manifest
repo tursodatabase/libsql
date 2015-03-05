@@ -1,5 +1,5 @@
-C Revert\s"PRAGMA\sindex_info"\sto\soutput\sonly\sthree\scolumns,\sfor\scomplete\ncompatibility\swith\sprior\sversions.\s\sThe\snew\s"PRAGMA\sindex_xinfo"\scan\sbe\nused\sto\sget\sthe\sextra\sinformation\sin\s4th,\s5th,\sand\s6th\scolumns.
-D 2015-03-05T14:29:02.994
+C New\stest\scases\sand\srequirements\smarks\sfor\sPRAGMA\sindex_info,\sindex_xinfo,\nand\sindex_list.
+D 2015-03-05T15:34:15.760
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f643d6968dfc0b82d2e546a0525a39079f9e928
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -654,7 +654,7 @@ F test/index3.test 55a90cff99834305e8141df7afaef39674b57062
 F test/index4.test ab92e736d5946840236cd61ac3191f91a7856bf6
 F test/index5.test 25b0b451aceed4ac5f7d49f856f6de7257470b3e
 F test/index6.test 3ae54e53c53f2adcacda269237d8e52bdb05a481
-F test/index7.test 917cf1e1c7439bb155abbeabec511b28945e157b
+F test/index7.test 3d54dce09344c4530ea39a458aa304da044c887a
 F test/indexedby.test 5f527a78bae74c61b8046ae3037f9dfb0bf0c353
 F test/indexfault.test 31d4ab9a7d2f6e9616933eb079722362a883eb1d
 F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
@@ -788,7 +788,7 @@ F test/pcache.test b09104b03160aca0d968d99e8cd2c5b1921a993d
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
 F test/permutations.test f9cc1dd987986c9d4949211c7a4ed55ec9aecba1
-F test/pragma.test 6929a762e8b09f2f29644bc2a330c2265eb44083
+F test/pragma.test ad99d05e411c7687302124be56f3b362204be041
 F test/pragma2.test f624a496a95ee878e81e59961eade66d5c00c028
 F test/pragma3.test 6f849ccffeee7e496d2f2b5e74152306c0b8757c
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
@@ -1240,7 +1240,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e7991bc510f63f3594603a91f6f3b32e94d90e72
-R 0612eee82e15bf764eabd621fde6a161
+P fc543c2c5ced30a7dc3a05b0c1ad80fdc838df8e
+R db9f4f2755acee2cbbb8badacd04c339
 U drh
-Z b1026128d0af596b6f509b65a6cc3523
+Z 2b5470d505e73b65c2166edb9eeee198
