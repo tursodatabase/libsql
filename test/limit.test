@@ -251,6 +251,12 @@ do_test limit-6.8 {
 # Make sure LIMIT works well with compound SELECT statements.
 # Ticket #393
 #
+# EVIDENCE-OF: R-13512-64012 In a compound SELECT, only the last or
+# right-most simple SELECT may contain a LIMIT clause.
+#
+# EVIDENCE-OF: R-03782-50113 In a compound SELECT, the LIMIT clause
+# applies to the entire compound, not just the final SELECT.
+#
 ifcapable compound {
 do_test limit-7.1.1 {
   catchsql {
