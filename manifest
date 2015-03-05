@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\ssqlite3ota.h.
-D 2015-03-05T13:43:21.466
+C Add\scomments\sto\ssqlite3ota.h\sto\smake\sit\sclear\sthat\spassing\sNULL\sin\splace\sof\sa\sparent\sVFS\sname\sto\ssqlite3ota_create_vfs()\scauses\sthe\snew\sVFS\sto\suse\sthe\ssystem\sdefault\sas\sits\sparent.
+D 2015-03-05T14:07:25.199
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6b9e7677829aa94b9f30949656e27312aefb9a46
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -139,7 +139,7 @@ F ext/ota/otacrash.test a078d34e2edbcedac5f894e3e7d08d452a327007
 F ext/ota/otafault.test 8c43586c2b96ca16bbce00b5d7e7d67316126db8
 F ext/ota/otafault2.test fa202a98ca221faec318f3e5c5f39485b1256561
 F ext/ota/sqlite3ota.c f0ee6872b833c14c02101affc42e2f29ede54fec
-F ext/ota/sqlite3ota.h 62ffca87ae0015f2b97bbb5f25feba0280dd42e9
+F ext/ota/sqlite3ota.h d85a579448f5cb2cf042c63abefd1a440c46c962
 F ext/ota/test_ota.c e34c801c665d64b4b9e00b71f1acf8c652404b2b
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 14e6239434d4e3f65d3e90320713f26aa24e167f
@@ -1258,7 +1258,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d6d21ff55228d3ffe6cdbb5755645b147806a1da
-R 096b8c3fcef62782bdfa6cd3c57ba69b
+P 04087dec4c3db5f322eca289585525b7267ed4f8
+R 1c3da4ddcbca798e150df95ec9fb5930
 U dan
-Z 18c7b61a87dea891bead975838708a9c
+Z 394f4029bb7037e7ee9a54787f07d0e0

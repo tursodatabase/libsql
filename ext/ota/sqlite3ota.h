@@ -318,8 +318,10 @@ sqlite3_int64 sqlite3ota_progress(sqlite3ota *pOta);
 
 /*
 ** Create an OTA VFS named zName that accesses the underlying file-system
-** via existing VFS zParent. The new object is registered as a non-default
-** VFS with SQLite before returning.
+** via existing VFS zParent. Or, if the zParent parameter is passed NULL, 
+** then the new OTA VFS uses the default system VFS to access the file-system.
+** The new object is registered as a non-default VFS with SQLite before 
+** returning.
 **
 ** Part of the OTA implementation uses a custom VFS object. Usually, this
 ** object is created and deleted automatically by OTA. 
@@ -335,10 +337,13 @@ sqlite3_int64 sqlite3ota_progress(sqlite3ota *pOta);
 **     // Create a VFS named "multiplexor" (not the default).
 **     sqlite3_multiplex_initialize("multiplexor", 0);
 **
-**     // Create an ota VFS named "ota" that uses multiplexor.
+**     // Create an ota VFS named "ota" that uses multiplexor. If the
+**     // second argument were replaced with NULL, the "ota" VFS would
+**     // access the file-system via the system default VFS, bypassing the
+**     // multiplexor.
 **     sqlite3ota_create_vfs("ota", "multiplexor");
 **
-**     // Create a zipvfs VFS named "zipvfs" that uses ota. 
+**     // Create a zipvfs VFS named "zipvfs" that uses ota.
 **     zipvfs_create_vfs_v3("zipvfs", "ota", 0, xCompressorAlgorithmDetector);
 **
 **     // Make zipvfs the default VFS.
