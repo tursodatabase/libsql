@@ -44,7 +44,21 @@ void usage(const char *zArgv0){
 
 void report_default_vfs(){
   sqlite3_vfs *pVfs = sqlite3_vfs_find(0);
-  fprintf(stdout, "using vfs \"%s\"\n", pVfs->zName);
+  fprintf(stdout, "default vfs is \"%s\"\n", pVfs->zName);
+}
+
+void report_ota_vfs(sqlite3ota *pOta){
+  if( pOta ){
+    sqlite3 *db = sqlite3ota_db(pOta, 0);
+    char *zName = 0;
+    sqlite3_file_control(db, "main", SQLITE_FCNTL_VFSNAME, &zName);
+    if( zName ){
+      fprintf(stdout, "using vfs \"%s\"\n", zName);
+    }else{
+      fprintf(stdout, "vfs name not available\n");
+    }
+    sqlite3_free(zName);
+  }
 }
 
 int main(int argc, char **argv){
@@ -76,6 +90,7 @@ int main(int argc, char **argv){
   ** or an error occurs. Or, if nStep is greater than zero, call
   ** sqlite3ota_step() a maximum of nStep times.  */
   pOta = sqlite3ota_open(zTarget, zOta);
+  report_ota_vfs(pOta);
   for(i=0; (nStep<=0 || i<nStep) && sqlite3ota_step(pOta)==SQLITE_OK; i++);
   nProgress = sqlite3ota_progress(pOta);
   rc = sqlite3ota_close(pOta, &zErrmsg);

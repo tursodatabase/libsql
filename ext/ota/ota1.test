@@ -548,7 +548,18 @@ foreach {tn3 create_vfs destroy_vfs} {
          CREATE TABLE ota.data_t1(a, b, ota_control);
          INSERT INTO ota.data_t1 VALUES(1, 2, 2);
        } {SQLITE_ERROR - invalid ota_control value}
-    
+
+       10 {
+         CREATE TABLE t2(a, b);
+         CREATE TABLE ota.data_t1(a, b, ota_control);
+         INSERT INTO ota.data_t1 VALUES(1, 2, 2);
+       } {SQLITE_ERROR - no such table: t1}
+
+       11 {
+         CREATE TABLE ota.data_t2(a, b, ota_control);
+         INSERT INTO ota.data_t2 VALUES(1, 2, 2);
+       } {SQLITE_ERROR - no such table: t2}
+
     } {
       reset_db
       forcedelete ota.db
@@ -560,6 +571,14 @@ foreach {tn3 create_vfs destroy_vfs} {
       } [list 1 $error]
     }
   }
+
+  # Test that an OTA database containing no input tables is handled
+  # correctly.
+  reset_db
+  forcedelete ota.db
+  do_test $tn3.7 {
+    list [catch { run_ota test.db ota.db } msg] $msg
+  } {0 SQLITE_DONE}
 
   catch { db close }
   eval $destroy_vfs

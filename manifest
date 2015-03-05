@@ -1,5 +1,5 @@
-C Add\scomments\sto\ssqlite3ota.h\sto\smake\sit\sclear\sthat\spassing\sNULL\sin\splace\sof\sa\sparent\sVFS\sname\sto\ssqlite3ota_create_vfs()\scauses\sthe\snew\sVFS\sto\suse\sthe\ssystem\sdefault\sas\sits\sparent.
-D 2015-03-05T14:07:25.199
+C Fix\ssome\sproblems\swith\sOTA\sand\sempty\starget\sdatabases,\sor\starget\sdatabases\swith\sthe\swrong\sset\sof\stables.\sAlso\sadd\sSQLITE_FCNTL_VFSNAME\ssupport\sto\sthe\sOTA\sVFS.
+D 2015-03-05T16:21:20.067
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6b9e7677829aa94b9f30949656e27312aefb9a46
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -123,8 +123,8 @@ F ext/misc/totype.c 4a167594e791abeed95e0a8db028822b5e8fe512
 F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
-F ext/ota/ota.c c11a85af71dccc45976622fe7a51169a481caa91
-F ext/ota/ota1.test 66cf5cb7fb1b2fcf74b9ec3fca2b5bf0286ae330
+F ext/ota/ota.c feb0a11f720a8f30d2bebb835bba3c131a725685
+F ext/ota/ota1.test 1684d4a1c4137190368ee5fd31c91b223172ed89
 F ext/ota/ota10.test 85e0f6e7964db5007590c1b299e75211ed4240d4
 F ext/ota/ota11.test 2f606cd2b4af260a86b549e91b9f395450fc75cb
 F ext/ota/ota12.test 0dff44474de448fb4b0b28c20da63273a4149abb
@@ -138,8 +138,8 @@ F ext/ota/otaA.test ef4bfa8cfd4ed814ae86f7457b64aa2f18c90171
 F ext/ota/otacrash.test a078d34e2edbcedac5f894e3e7d08d452a327007
 F ext/ota/otafault.test 8c43586c2b96ca16bbce00b5d7e7d67316126db8
 F ext/ota/otafault2.test fa202a98ca221faec318f3e5c5f39485b1256561
-F ext/ota/sqlite3ota.c f0ee6872b833c14c02101affc42e2f29ede54fec
-F ext/ota/sqlite3ota.h d85a579448f5cb2cf042c63abefd1a440c46c962
+F ext/ota/sqlite3ota.c 252a59574d1a6e9085d5d884a5c168db0e1f28e5
+F ext/ota/sqlite3ota.h 5fec920aa2a9744be40c07da32dbe0b94a217e0f
 F ext/ota/test_ota.c e34c801c665d64b4b9e00b71f1acf8c652404b2b
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 14e6239434d4e3f65d3e90320713f26aa24e167f
@@ -170,7 +170,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk aac7f4bf0da24bd23faf1847d83f6b959e5a1635
+F main.mk 584d60a533f4301ec660d54a6057970a7ee913c3
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
 F mkopcodeh.awk c6b3fa301db6ef7ac916b14c60868aeaec1337b5
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
@@ -907,7 +907,7 @@ F test/speed3.test d32043614c08c53eafdc80f33191d5bd9b920523
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
-F test/speedtest1.c 2b416dca3a155fcaa849540b2e7fc1df12896c23
+F test/speedtest1.c 9f1b745c24886cced3f70ffc666300152a39013c
 F test/spellfix.test 24f676831acddd2f4056a598fd731a72c6311f49
 F test/sqllimits1.test 9014524e7ab16e2a4976b13397db4c29cc29c6d9
 F test/stat.test 76fd746b85459e812a0193410fb599f0531f22de
@@ -1258,7 +1258,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 04087dec4c3db5f322eca289585525b7267ed4f8
-R 1c3da4ddcbca798e150df95ec9fb5930
+P 158c1a48818a9abc001b9ea547167c2624a7bad3
+R 7821567dbf824c3a63e6bcb2750b28bb
 U dan
-Z 394f4029bb7037e7ee9a54787f07d0e0
+Z 8ad790ee74643fcdb7735e278f227f09

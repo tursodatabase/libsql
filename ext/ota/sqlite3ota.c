@@ -835,6 +835,10 @@ static int otaObjIterCacheTableInfo(sqlite3ota *p, OtaObjIter *pIter){
     /* Figure out the type of table this step will deal with. */
     assert( pIter->eType==0 );
     otaTableType(p, pIter->zTbl, &pIter->eType, &iTnum, &pIter->iPkTnum);
+    if( p->rc==SQLITE_OK && pIter->eType==OTA_PK_NOTABLE ){
+      p->rc = SQLITE_ERROR;
+      p->zErrmsg = sqlite3_mprintf("no such table: %s", pIter->zTbl);
+    }
     if( p->rc ) return p->rc;
     if( pIter->zIdx==0 ) pIter->iTnum = iTnum;
 
@@ -2618,16 +2622,22 @@ sqlite3ota *sqlite3ota_open(const char *zTarget, const char *zOta){
         if( p->rc==SQLITE_OK ){
           p->rc = sqlite3_exec(p->dbOta, "BEGIN IMMEDIATE", 0, 0, &p->zErrmsg);
         }
-        assert( p->rc!=SQLITE_OK || p->pTargetFd->pWalFd );
   
         /* Point the object iterator at the first object */
         if( p->rc==SQLITE_OK ){
           p->rc = otaObjIterFirst(p, &p->objiter);
         }
-  
+
+        /* If the OTA database contains no data_xxx tables, declare the OTA
+        ** update finished.  */
+        if( p->rc==SQLITE_OK && p->objiter.zTbl==0 ){
+          p->rc = SQLITE_DONE;
+        }
+
         if( p->rc==SQLITE_OK ){
           otaSetupOal(p, pState);
         }
+
       }else if( p->eStage==OTA_STAGE_MOVE ){
         /* no-op */
       }else if( p->eStage==OTA_STAGE_CKPT ){
@@ -2970,10 +2980,10 @@ static int otaVfsCheckReservedLock(sqlite3_file *pFile, int *pResOut){
 static int otaVfsFileControl(sqlite3_file *pFile, int op, void *pArg){
   ota_file *p = (ota_file *)pFile;
   int (*xControl)(sqlite3_file*,int,void*) = p->pReal->pMethods->xFileControl;
+  int rc;
 
   assert( p->openFlags & (SQLITE_OPEN_MAIN_DB|SQLITE_OPEN_TEMP_DB) );
   if( op==SQLITE_FCNTL_OTA ){
-    int rc;
     sqlite3ota *pOta = (sqlite3ota*)pArg;
 
     /* First try to find another OTA vfs lower down in the vfs stack. If
@@ -2998,7 +3008,17 @@ static int otaVfsFileControl(sqlite3_file *pFile, int op, void *pArg){
     }
     return rc;
   }
-  return xControl(p->pReal, op, pArg);
+
+  rc = xControl(p->pReal, op, pArg);
+  if( rc==SQLITE_OK && op==SQLITE_FCNTL_VFSNAME ){
+    ota_vfs *pOtaVfs = p->pOtaVfs;
+    char *zIn = *(char**)pArg;
+    char *zOut = sqlite3_mprintf("ota(%s)/%z", pOtaVfs->base.zName, zIn);
+    *(char**)pArg = zOut;
+    if( zOut==0 ) rc = SQLITE_NOMEM;
+  }
+
+  return rc;
 }
 
 /*
