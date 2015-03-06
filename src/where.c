@@ -202,7 +202,7 @@ static void whereClauseClear(WhereClause *pWC){
 ** calling this routine.  Such pointers may be reinitialized by referencing
 ** the pWC->a[] array.
 */
-static int whereClauseInsert(WhereClause *pWC, Expr *p, u8 wtFlags){
+static int whereClauseInsert(WhereClause *pWC, Expr *p, u16 wtFlags){
   WhereTerm *pTerm;
   int idx;
   testcase( wtFlags & TERM_VIRTUAL );
@@ -627,7 +627,11 @@ static void exprAnalyzeAll(
 ** so and false if not.
 **
 ** In order for the operator to be optimizible, the RHS must be a string
-** literal that does not begin with a wildcard.  
+** literal that does not begin with a wildcard.  The LHS must be a column
+** that may only be NULL, a string, or a BLOB, never a number. (This means
+** that virtual tables cannot participate in the LIKE optimization.)  If the
+** collating sequence for the column on the LHS must be appropriate for
+** the operator.
 */
 static int isLikeOrGlob(
   Parse *pParse,    /* Parsing and code generating context */
@@ -656,7 +660,7 @@ static int isLikeOrGlob(
   pLeft = pList->a[1].pExpr;
   if( pLeft->op!=TK_COLUMN 
    || sqlite3ExprAffinity(pLeft)!=SQLITE_AFF_TEXT 
-   || IsVirtual(pLeft->pTab)
+   || IsVirtual(pLeft->pTab)  /* Value might be numeric */
   ){
     /* IMP: R-02065-49465 The left-hand side of the LIKE or GLOB operator must
     ** be the name of an indexed column with TEXT affinity. */
@@ -1286,7 +1290,8 @@ static void exprAnalyze(
            sqlite3ExprAddCollateToken(pParse,pNewExpr1,&sCollSeqName),
            pStr1, 0);
     transferJoinMarkings(pNewExpr1, pExpr);
-    idxNew1 = whereClauseInsert(pWC, pNewExpr1, TERM_VIRTUAL|TERM_DYNAMIC);
+    idxNew1 = whereClauseInsert(pWC, pNewExpr1, 
+                                TERM_LIKEOPT|TERM_VIRTUAL|TERM_DYNAMIC);
     testcase( idxNew1==0 );
     exprAnalyze(pSrc, pWC, idxNew1);
     pNewExpr2 = sqlite3ExprDup(db, pLeft, 0);
@@ -1294,7 +1299,8 @@ static void exprAnalyze(
            sqlite3ExprAddCollateToken(pParse,pNewExpr2,&sCollSeqName),
            pStr2, 0);
     transferJoinMarkings(pNewExpr2, pExpr);
-    idxNew2 = whereClauseInsert(pWC, pNewExpr2, TERM_VIRTUAL|TERM_DYNAMIC);
+    idxNew2 = whereClauseInsert(pWC, pNewExpr2,
+                                TERM_LIKEOPT|TERM_VIRTUAL|TERM_DYNAMIC);
     testcase( idxNew2==0 );
     exprAnalyze(pSrc, pWC, idxNew2);
     pTerm = &pWC->a[idxTerm];
@@ -2966,7 +2972,21 @@ static void addScanStatus(
 # define addScanStatus(a, b, c, d) ((void)d)
 #endif
 
-
+/*
+** Look at the last instruction coded.  If that instruction is OP_String8
+** and if pLoop->iLikeRepCntr is non-zero, then change the P3 to be
+** pLoop->iLikeRepCntr and set P5.
+**
+** This is part of the LIKE optimization.  FIXME:  Explain in more detail
+*/
+static void whereLikeOptimizationStringFixup(Vdbe *v, WhereLevel *pLevel){
+  VdbeOp *pOp;
+  pOp = sqlite3VdbeGetOp(v, -1);
+  if( pLevel->iLikeRepCntr && ALWAYS(pOp->opcode==OP_String8) ){
+    pOp->p3 = pLevel->iLikeRepCntr;
+    pOp->p5 = 1;
+  }
+}
 
 /*
 ** Generate code for the start of the iLevel-th loop in the WHERE clause
@@ -3300,6 +3320,14 @@ static Bitmask codeOneLoopStart(
     if( pLoop->wsFlags & WHERE_TOP_LIMIT ){
       pRangeEnd = pLoop->aLTerm[j++];
       nExtraReg = 1;
+      if( pRangeStart
+       && (pRangeStart->wtFlags & TERM_LIKEOPT)!=0
+       && (pRangeEnd->wtFlags & TERM_LIKEOPT)!=0
+      ){
+        pLevel->iLikeRepCntr = ++pParse->nMem;
+        sqlite3VdbeAddOp2(v, OP_Integer, 0, pLevel->iLikeRepCntr);
+        pLevel->addrLikeRep = sqlite3VdbeCurrentAddr(v);
+      }
       if( pRangeStart==0
        && (j = pIdx->aiColumn[nEq])>=0 
        && pIdx->pTable->aCol[j].notNull==0
@@ -3342,6 +3370,7 @@ static Bitmask codeOneLoopStart(
     if( pRangeStart ){
       Expr *pRight = pRangeStart->pExpr->pRight;
       sqlite3ExprCode(pParse, pRight, regBase+nEq);
+      whereLikeOptimizationStringFixup(v, pLevel);
       if( (pRangeStart->wtFlags & TERM_VNULL)==0
        && sqlite3ExprCanBeNull(pRight)
       ){
@@ -3387,6 +3416,7 @@ static Bitmask codeOneLoopStart(
       Expr *pRight = pRangeEnd->pExpr->pRight;
       sqlite3ExprCacheRemove(pParse, regBase+nEq, 1);
       sqlite3ExprCode(pParse, pRight, regBase+nEq);
+      whereLikeOptimizationStringFixup(v, pLevel);
       if( (pRangeEnd->wtFlags & TERM_VNULL)==0
        && sqlite3ExprCanBeNull(pRight)
       ){
@@ -6594,6 +6624,13 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       VdbeComment((v, "next skip-scan on %s", pLoop->u.btree.pIndex->zName));
       sqlite3VdbeJumpHere(v, pLevel->addrSkip);
       sqlite3VdbeJumpHere(v, pLevel->addrSkip-2);
+    }
+    if( pLevel->addrLikeRep ){
+      addr = sqlite3VdbeAddOp1(v, OP_IfPos, pLevel->iLikeRepCntr);
+      VdbeCoverage(v);
+      sqlite3VdbeAddOp2(v, OP_AddImm, pLevel->iLikeRepCntr, 1);
+      sqlite3VdbeAddOp2(v, OP_Goto, 0, pLevel->addrLikeRep);
+      sqlite3VdbeJumpHere(v, addr);
     }
     if( pLevel->iLeftJoin ){
       addr = sqlite3VdbeAddOp1(v, OP_IfPos, pLevel->iLeftJoin); VdbeCoverage(v);
