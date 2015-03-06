@@ -749,7 +749,7 @@ ifcapable like_opt&&!icu {
     count {
       SELECT a FROM t10 WHERE f LIKE '12%' ORDER BY +a;
     }
-  } {12 123 scan 3 like 0}
+  } {12 123 scan 4 like 0}
   do_test like-10.6 {
     count {
       SELECT a FROM t10 WHERE a LIKE '12%' ORDER BY +a;
@@ -790,7 +790,7 @@ ifcapable like_opt&&!icu {
     count {
       SELECT a FROM t10b WHERE f GLOB '12*' ORDER BY +a;
     }
-  } {12 123 scan 3 like 0}
+  } {12 123 scan 4 like 0}
   do_test like-10.15 {
     count {
       SELECT a FROM t10b WHERE a GLOB '12*' ORDER BY +a;

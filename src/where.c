@@ -1109,7 +1109,7 @@ static void exprAnalyze(
   Bitmask extraRight = 0;          /* Extra dependencies on LEFT JOIN */
   Expr *pStr1 = 0;                 /* RHS of LIKE/GLOB operator */
   int isComplete = 0;              /* RHS of LIKE/GLOB ends with wildcard */
-  int noCase = 0;                  /* LIKE/GLOB distinguishes case */
+  int noCase = 0;                  /* uppercase equivalent to lowercase */
   int op;                          /* Top-level operator.  pExpr->op */
   Parse *pParse = pWInfo->pParse;  /* Parsing context */
   sqlite3 *db = pParse->db;        /* Database connection */
@@ -1247,12 +1247,15 @@ static void exprAnalyze(
   /* Add constraints to reduce the search space on a LIKE or GLOB
   ** operator.
   **
-  ** A like pattern of the form "x LIKE 'abc%'" is changed into constraints
+  ** A like pattern of the form "x LIKE 'aBc%'" is changed into constraints
   **
-  **          x>='abc' AND x<'abd' AND x LIKE 'abc%'
+  **          x>='ABC' AND x<'abd' AND x LIKE 'aBc%'
   **
   ** The last character of the prefix "abc" is incremented to form the
-  ** termination condition "abd".
+  ** termination condition "abd".  If case is not significant (the default
+  ** for LIKE) then the lower-bound is made all uppercase and the upper-
+  ** bound is made all lowercase so that the bounds also work when comparing
+  ** BLOBs.
   */
   if( pWC->op==TK_AND 
    && isLikeOrGlob(pParse, pExpr, &pStr1, &isComplete, &noCase)
@@ -1266,7 +1269,6 @@ static void exprAnalyze(
     Token sCollSeqName;  /* Name of collating sequence */
     const u16 wtFlags = TERM_LIKEOPT | TERM_VIRTUAL | TERM_DYNAMIC;
 
-    pTerm->wtFlags |= TERM_LIKE;
     pLeft = pExpr->x.pList->a[1].pExpr;
     pStr2 = sqlite3ExprDup(db, pStr1, 0);
 
@@ -1277,6 +1279,7 @@ static void exprAnalyze(
     if( noCase && !pParse->db->mallocFailed ){
       int i;
       char c;
+      pTerm->wtFlags |= TERM_LIKE;
       for(i=0; (c = pStr1->u.zToken[i])!=0; i++){
         pStr1->u.zToken[i] = sqlite3Toupper(c);
         pStr2->u.zToken[i] = sqlite3Tolower(c);
@@ -2502,6 +2505,12 @@ static int whereInScanEst(
 ** and child2 terms were added by the LIKE optimization.  If both of
 ** the virtual child terms are valid, then testing of the parent can be 
 ** skipped.
+**
+** Usually the parent term is marked as TERM_CODED.  But if the parent
+** term was originally TERM_LIKE, then the parent gets TERM_LIKECOND instead.
+** The TERM_LIKECOND marking indicates that the term should be coded inside
+** a conditional such that is only evaluated on the second pass of a
+** LIKE-optimization loop, when scanning BLOBs instead of strings.
 */
 static void disableTerm(WhereLevel *pLevel, WhereTerm *pTerm){
   int nLoop = 0;

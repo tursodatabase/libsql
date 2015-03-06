@@ -1,5 +1,5 @@
-C Fix\sthe\sLIKE\soptimization\seven\swhen\scomparing\smixed-case\sBLOBs.
-D 2015-03-06T19:47:38.505
+C Test\scases\sadded.\s\sComments\sfixed.\s\sProposed\ssolution\sfor\nticket\s[05f43be8fdda9fbd9].
+D 2015-03-06T20:49:52.770
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f643d6968dfc0b82d2e546a0525a39079f9e928
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -293,7 +293,7 @@ F src/update.c 3c4ecc282accf12d39edb8d524cf089645e55a13
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c 98a7627ca48ad3265b6940915a1d08355eb3fc7e
 F src/vacuum.c 9460b9de7b2d4e34b0d374894aa6c8a0632be8ec
-F src/vdbe.c 6bee3b85a2f013a8fdc496996089d3b6bedfb525
+F src/vdbe.c c9f4ad2c62bccebed38b1fd253064ed2a2c659ae
 F src/vdbe.h 6fc69d9c5e146302c56e163cb4b31d1ee64a18c3
 F src/vdbeInt.h bb56fd199d8af1a2c1b9639ee2f70724b4338e3a
 F src/vdbeapi.c dac0d0d8009a8aa549cd77d9c29da44c0344f0c4
@@ -307,7 +307,7 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 39303f2c9db02a4e422cd8eb2c8760420c6a51fe
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
-F src/where.c cace7eef1838ea22f549e824236eaaa4195b83e6
+F src/where.c 8cd4fc29addda0945b28b1f849a7998e3749d8b9
 F src/whereInt.h cbe4aa57326998d89e7698ca65bb7c28541d483c
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -321,7 +321,7 @@ F test/alter4.test c461150723ac957f3b2214aa0b11552cd72023ec
 F test/altermalloc.test e81ac9657ed25c6c5bb09bebfa5a047cd8e4acfc
 F test/amatch1.test b5ae7065f042b7f4c1c922933f4700add50cdb9f
 F test/analyze.test 1772936d66471c65221e437b6d1999c3a03166c4
-F test/analyze3.test bf41f0f680dd1e0d44eed5e769531e93a5320275
+F test/analyze3.test 75b9e42ea1e4edc919250450dc5762186965d4e6
 F test/analyze4.test eff2df19b8dd84529966420f29ea52edc6b56213
 F test/analyze5.test 765c4e284aa69ca172772aa940946f55629bc8c4
 F test/analyze6.test f1c552ce39cca4ec922a7e4e0e5d0203d6b3281f
@@ -689,8 +689,9 @@ F test/jrnlmode3.test 556b447a05be0e0963f4311e95ab1632b11c9eaa
 F test/keyword1.test 37ef6bba5d2ed5b07ecdd6810571de2956599dff
 F test/lastinsert.test 42e948fd6442f07d60acbd15d33fb86473e0ef63
 F test/laststmtchanges.test ae613f53819206b3222771828d024154d51db200
-F test/like.test e191e536d0fcd722a6b965e7cd1ee0bfd12a5991
+F test/like.test 4f2a71d36a536233727f71995fef900756705e56
 F test/like2.test 3b2ee13149ba4a8a60b59756f4e5d345573852da
+F test/like3.test 9c85587224f739c81b51d8cdd2727c11ec678526
 F test/limit.test 0c99a27a87b14c646a9d583c7c89fd06c352663e
 F test/loadext.test 648cb95f324d1775c54a55c12271b2d1156b633b
 F test/loadext2.test 0408380b57adca04004247179837a18e866a74f7
@@ -1158,7 +1159,7 @@ F test/where4.test d8420ceeb8323a41ceff1f1841fc528e824e1ecf
 F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
 F test/where6.test 5da5a98cec820d488e82708301b96cb8c18a258b
 F test/where7.test 5a4b0abc207d71da4deecd734ad8579e8dd40aa8
-F test/where8.test 806f1dcec4088be2b826b33f757fe6e17c3236a1
+F test/where8.test 2eafe74e01cc10355985874e1ff868ac03dbae5e
 F test/where8m.test da346596e19d54f0aba35ebade032a7c47d79739
 F test/where9.test 729c3ba9b47e8f9f1aab96bae7dad2a524f1d1a2
 F test/whereA.test 4d253178d135ec46d1671e440cd8f2b916aa6e6b
@@ -1240,7 +1241,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5757e803cb5759b476bbc6453c58340089611420
-R 1a18426c5e280ce5513288eef4bf379e
+P a58aafdb4e1422b6a8ffc07a67984928bbedf919
+R d75eaf03976986bf457292a7b369e1ff
 U drh
-Z 4902bd060fa099614e1fc5278ee9e5b6
+Z 9b58e75e5227e2cbfcfb68532871937f

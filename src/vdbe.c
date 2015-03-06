@@ -1053,9 +1053,9 @@ case OP_String8: {         /* same as TK_STRING, out2-prerelease */
 ** The string value P4 of length P1 (bytes) is stored in register P2.
 **
 ** If P5!=0 and the content of register P3 is greater than zero, then
-** the datatype of the register P2 is convert to BLOB.  The content is
-** the same string text, it is merely interpreted as a BLOB as if it
-** had been CAST.  
+** the datatype of the register P2 is converted to BLOB.  The content is
+** the same sequence of bytes, it is merely interpreted as a BLOB instead
+** of a string, as if it had been CAST.
 */
 case OP_String: {          /* out2-prerelease */
   assert( pOp->p4.z!=0 );
