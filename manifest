@@ -1,5 +1,5 @@
-C The\sLIKE\soptimization\smust\sbe\sapplied\stwice,\sonce\sfor\sstrings\sand\sa\ssecond\ntime\sfor\sBLOBs.\s\sTicket\s[05f43be8fdda9f].\s\sThis\scheck-in\sis\sa\sproof-of-concept\nof\show\sthat\smight\sbe\sdone.
-D 2015-03-06T16:45:16.543
+C Fix\sthe\sLIKE\soptimization\seven\swhen\scomparing\smixed-case\sBLOBs.
+D 2015-03-06T19:47:38.505
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f643d6968dfc0b82d2e546a0525a39079f9e928
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -307,8 +307,8 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 39303f2c9db02a4e422cd8eb2c8760420c6a51fe
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
-F src/where.c b7e82341d2570ac8a051e133cfc44c7eec79a30e
-F src/whereInt.h 0ba6257f2a44acd6262f259d5147cd01c52cc45b
+F src/where.c cace7eef1838ea22f549e824236eaaa4195b83e6
+F src/whereInt.h cbe4aa57326998d89e7698ca65bb7c28541d483c
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test b35b4cd69fc913f90d39a575e171e1116c3a4bb7
@@ -1240,10 +1240,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8c1e85aab9e0d90726057e25e2ea0663341c070f
-R db06eec232964b57030b876196612d14
-T *branch * like-opt-fix
-T *sym-like-opt-fix *
-T -sym-trunk *
+P 5757e803cb5759b476bbc6453c58340089611420
+R 1a18426c5e280ce5513288eef4bf379e
 U drh
-Z 9b71822fa0ca3d1b398ae4d623871060
+Z 4902bd060fa099614e1fc5278ee9e5b6
