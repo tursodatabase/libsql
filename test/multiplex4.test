@@ -59,6 +59,14 @@ do_test multiplex4-1.1 {
   multiplex_file_list mx4test
 } {mx4test.db}
 
+# NB:  The PRAGMA multiplex_truncate command is implemented using the
+# SQLITE_FCNTL_PRAGMA file-control...
+#
+# EVIDENCE-OF: R-12238-55120 Whenever a PRAGMA statement is parsed, an
+# SQLITE_FCNTL_PRAGMA file control is sent to the open sqlite3_file
+# object corresponding to the database file to which the pragma
+# statement refers.
+#
 do_test multiplex4-1.2 {
   db eval {PRAGMA multiplex_truncate}
 } {on}
@@ -83,6 +91,16 @@ do_test multiplex4-1.8 {
 do_test multiplex4-1.9 {
   db eval {PRAGMA multiplex_truncate=0}
 } {off}
+
+# EVIDENCE-OF: R-26188-08449 If the SQLITE_FCNTL_PRAGMA file control
+# returns SQLITE_OK, then the parser assumes that the VFS has handled
+# the PRAGMA itself and the parser generates a no-op prepared statement
+# if result string is NULL, or that returns a copy of the result string
+# if the string is non-NULL.
+#
+do_test multiplex4-1.9-explain {
+  db eval {EXPLAIN PRAGMA multiplex_truncate=0;}
+} {/String8 \d \d \d off/}
 
 do_test multiplex4-1.10 {
   db eval {

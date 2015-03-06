@@ -32,6 +32,11 @@ do_test rdonly-1.1 {
     SELECT * FROM t1;
   }
 } {1}
+
+# EVIDENCE-OF: R-29639-16887 The sqlite3_db_readonly(D,N) interface
+# returns 1 if the database N of connection D is read-only, 0 if it is
+# read/write, or -1 if N is not the name of a database on connection D.
+#
 do_test rdonly-1.1.1 {
   sqlite3_db_readonly db main
 } {0}

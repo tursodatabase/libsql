@@ -317,6 +317,17 @@ void sqlite3Pragma(
   /* Send an SQLITE_FCNTL_PRAGMA file-control to the underlying VFS
   ** connection.  If it returns SQLITE_OK, then assume that the VFS
   ** handled the pragma and generate a no-op prepared statement.
+  **
+  ** IMPLEMENTATION-OF: R-12238-55120 Whenever a PRAGMA statement is parsed,
+  ** an SQLITE_FCNTL_PRAGMA file control is sent to the open sqlite3_file
+  ** object corresponding to the database file to which the pragma
+  ** statement refers.
+  **
+  ** IMPLEMENTATION-OF: R-29875-31678 The argument to the SQLITE_FCNTL_PRAGMA
+  ** file control is an array of pointers to strings (char**) in which the
+  ** second element of the array is the name of the pragma and the third
+  ** element is the argument to the pragma or NULL if the pragma has no
+  ** argument.
   */
   aFcntl[0] = 0;
   aFcntl[1] = zLeft;
