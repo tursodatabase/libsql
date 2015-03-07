@@ -380,7 +380,7 @@ static int fts5HashEntrySort(
 int sqlite3Fts5HashQuery(
   Fts5Hash *pHash,                /* Hash table to query */
   const char *pTerm, int nTerm,   /* Query term */
-  const char **ppDoclist,         /* OUT: Pointer to doclist for pTerm */
+  const u8 **ppDoclist,           /* OUT: Pointer to doclist for pTerm */
   int *pnDoclist                  /* OUT: Size of doclist in bytes */
 ){
   unsigned int iHash = fts5HashKey(pHash->nSlot, pTerm, nTerm);
@@ -392,7 +392,7 @@ int sqlite3Fts5HashQuery(
 
   if( p ){
     fts5HashAddPoslistSize(p);
-    *ppDoclist = &p->zKey[nTerm+1];
+    *ppDoclist = (const u8*)&p->zKey[nTerm+1];
     *pnDoclist = p->nData - (sizeof(*p) + nTerm + 1);
   }else{
     *ppDoclist = 0;
@@ -421,7 +421,7 @@ int sqlite3Fts5HashScanEof(Fts5Hash *p){
 void sqlite3Fts5HashScanEntry(
   Fts5Hash *pHash,
   const char **pzTerm,            /* OUT: term (nul-terminated) */
-  const char **ppDoclist,         /* OUT: pointer to doclist */
+  const u8 **ppDoclist,           /* OUT: pointer to doclist */
   int *pnDoclist                  /* OUT: size of doclist in bytes */
 ){
   Fts5HashEntry *p;
@@ -429,7 +429,7 @@ void sqlite3Fts5HashScanEntry(
     int nTerm = strlen(p->zKey);
     fts5HashAddPoslistSize(p);
     *pzTerm = p->zKey;
-    *ppDoclist = &p->zKey[nTerm+1];
+    *ppDoclist = (const u8*)&p->zKey[nTerm+1];
     *pnDoclist = p->nData - (sizeof(*p) + nTerm + 1);
   }else{
     *pzTerm = 0;

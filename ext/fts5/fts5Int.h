@@ -396,7 +396,7 @@ int sqlite3Fts5HashIterate(
 int sqlite3Fts5HashQuery(
   Fts5Hash*,                      /* Hash table to query */
   const char *pTerm, int nTerm,   /* Query term */
-  const char **ppDoclist,         /* OUT: Pointer to doclist for pTerm */
+  const u8 **ppDoclist,           /* OUT: Pointer to doclist for pTerm */
   int *pnDoclist                  /* OUT: Size of doclist in bytes */
 );
 
@@ -408,7 +408,7 @@ void sqlite3Fts5HashScanNext(Fts5Hash*);
 int sqlite3Fts5HashScanEof(Fts5Hash*);
 void sqlite3Fts5HashScanEntry(Fts5Hash *,
   const char **pzTerm,            /* OUT: term (nul-terminated) */
-  const char **ppDoclist,         /* OUT: pointer to doclist */
+  const u8 **ppDoclist,           /* OUT: pointer to doclist */
   int *pnDoclist                  /* OUT: size of doclist in bytes */
 );
 
