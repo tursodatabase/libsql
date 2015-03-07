@@ -3370,7 +3370,11 @@ static Bitmask codeOneLoopStart(
        && (pRangeEnd->wtFlags & TERM_LIKEOPT)!=0
       ){
         pLevel->iLikeRepCntr = ++pParse->nMem;
-        sqlite3VdbeAddOp2(v, OP_Integer, 0, pLevel->iLikeRepCntr);
+        testcase( bRev );
+        testcase( pIdx->aSortOrder[nEq]==SQLITE_SO_DESC );
+        sqlite3VdbeAddOp2(v, OP_Integer,
+                          bRev ^ (pIdx->aSortOrder[nEq]==SQLITE_SO_DESC),
+                          pLevel->iLikeRepCntr);
         VdbeComment((v, "LIKE loop counter"));
         pLevel->addrLikeRep = sqlite3VdbeCurrentAddr(v);
       }
@@ -3401,9 +3405,11 @@ static Bitmask codeOneLoopStart(
     ){
       SWAP(WhereTerm *, pRangeEnd, pRangeStart);
       SWAP(u8, bSeekPastNull, bStopAtNull);
+#if 0
       if( pLevel->addrLikeRep ){
         sqlite3VdbeChangeP1(v, pLevel->addrLikeRep-1, 1);
       }
+#endif
     }
 
     testcase( pRangeStart && (pRangeStart->eOperator & WO_LE)!=0 );
@@ -6682,9 +6688,13 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       sqlite3VdbeJumpHere(v, pLevel->addrSkip-2);
     }
     if( pLevel->addrLikeRep ){
-      sqlite3VdbeAddOp2(v,
-           pLevel->op==OP_Prev ? OP_DecrJumpZero : OP_JumpZeroIncr,
-           pLevel->iLikeRepCntr, pLevel->addrLikeRep);
+      int op;
+      if( sqlite3VdbeGetOp(v, pLevel->addrLikeRep-1)->p1 ){
+        op = OP_DecrJumpZero;
+      }else{
+        op = OP_JumpZeroIncr;
+      }
+      sqlite3VdbeAddOp2(v, op, pLevel->iLikeRepCntr, pLevel->addrLikeRep);
       VdbeCoverage(v);
     }
     if( pLevel->iLeftJoin ){
