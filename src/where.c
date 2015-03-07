@@ -3405,11 +3405,6 @@ static Bitmask codeOneLoopStart(
     ){
       SWAP(WhereTerm *, pRangeEnd, pRangeStart);
       SWAP(u8, bSeekPastNull, bStopAtNull);
-#if 0
-      if( pLevel->addrLikeRep ){
-        sqlite3VdbeChangeP1(v, pLevel->addrLikeRep-1, 1);
-      }
-#endif
     }
 
     testcase( pRangeStart && (pRangeStart->eOperator & WO_LE)!=0 );
