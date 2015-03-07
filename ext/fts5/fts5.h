@@ -100,7 +100,7 @@ typedef void (*fts5_extension_function)(
 **   This API function is used to query the FTS table for phrase iPhrase
 **   of the current query. Specifically, a query equivalent to:
 **
-**       ... FROM ftstable WHERE ftstable MATCH $p ORDER BY rowid DESC
+**       ... FROM ftstable WHERE ftstable MATCH $p ORDER BY rowid
 **
 **   with $p set to a phrase equivalent to the phrase iPhrase of the
 **   current query is executed. For each row visited, the callback function

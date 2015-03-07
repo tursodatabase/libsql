@@ -520,7 +520,7 @@ static void fts5Bm25Function(
   /* If no error has occurred, return the calculated score. Otherwise,
   ** throw an SQL exception.  */
   if( rc==SQLITE_OK ){
-    sqlite3_result_double(pCtx, score);
+    sqlite3_result_double(pCtx, -1.0 * score);
   }else{
     sqlite3_result_error_code(pCtx, rc);
   }

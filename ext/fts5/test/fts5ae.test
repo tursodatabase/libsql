@@ -265,15 +265,15 @@ foreach {tn q res} {
   6 {j AND (h OR i)} {5 6}
 } {
   do_execsql_test 8.2.$tn.1 {
-    SELECT rowid FROM t8 WHERE t8 MATCH $q ORDER BY bm25(t8) DESC;
+    SELECT rowid FROM t8 WHERE t8 MATCH $q ORDER BY bm25(t8);
   } $res
 
   do_execsql_test 8.2.$tn.2 {
-    SELECT rowid FROM t8 WHERE t8 MATCH $q ORDER BY +rank DESC;
+    SELECT rowid FROM t8 WHERE t8 MATCH $q ORDER BY +rank;
   } $res
 
   do_execsql_test 8.2.$tn.3 {
-    SELECT rowid FROM t8 WHERE t8 MATCH $q ORDER BY rank DESC;
+    SELECT rowid FROM t8 WHERE t8 MATCH $q ORDER BY rank;
   } $res
 }
 

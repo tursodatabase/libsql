@@ -70,28 +70,6 @@ struct Fts5HashEntry {
 };
 
 /*
-** Format value iVal as a 4-byte varint and write it to buffer a[]. 4 bytes
-** are used even if the value could fit in a smaller amount of space. 
-*/
-static void fts5Put4ByteVarint(u8 *a, int iVal){
-  a[0] = (0x80 | (u8)(iVal >> 21));
-  a[1] = (0x80 | (u8)(iVal >> 14));
-  a[2] = (0x80 | (u8)(iVal >>  7));
-  a[3] = (0x7F & (u8)(iVal));
-}
-
-static int fts5Get4ByteVarint(u8 *a, int *pnVarint){
-  int iRet = ((int)(a[0] & 0x7F) << 21) + ((int)(a[1] & 0x7F) << 14)
-       + ((int)(a[2] & 0x7F) <<  7) + ((int)(a[3]));
-  *pnVarint = (
-      (iRet & 0xFFFFFF80)==0 ? 1 : 
-      (iRet & 0xFFFFC000)==0 ? 2 :
-      (iRet & 0xFFE00000)==0 ? 3 : 4
-  );
-  return iRet;
-}
-
-/*
 ** Allocate a new hash table.
 */
 int sqlite3Fts5HashNew(Fts5Hash **ppNew, int *pnByte){
