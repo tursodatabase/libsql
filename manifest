@@ -1,5 +1,5 @@
-C Remove\ssome\scode\sthat\sis\scommented\sout.
-D 2015-03-07T03:02:38.737
+C New\stest\scases\sfor\sLIKE\sand\sGLOB\swith\sBLOB\sleft-hand\sside\svalues.
+D 2015-03-07T12:58:52.057
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f643d6968dfc0b82d2e546a0525a39079f9e928
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -691,7 +691,7 @@ F test/lastinsert.test 42e948fd6442f07d60acbd15d33fb86473e0ef63
 F test/laststmtchanges.test ae613f53819206b3222771828d024154d51db200
 F test/like.test 4f2a71d36a536233727f71995fef900756705e56
 F test/like2.test 3b2ee13149ba4a8a60b59756f4e5d345573852da
-F test/like3.test 2fd1fd45cf7169093206e0d1d848e616df98ed46
+F test/like3.test 7b0525a39e4f25c4fd113de7e2e28eb712dcdedf
 F test/limit.test 0c99a27a87b14c646a9d583c7c89fd06c352663e
 F test/loadext.test 648cb95f324d1775c54a55c12271b2d1156b633b
 F test/loadext2.test 0408380b57adca04004247179837a18e866a74f7
@@ -1241,7 +1241,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 564b8fe79475d7584a21078e6098840b8ce6a6e1
-R fde0ab8284854a8bdb2fb2edfcc14f2f
+P 55ff429177acfdab056a16a67361a5381115c6c7
+R 2fc7830b1fa14938513120a1368ba854
 U drh
-Z 7743073cc3ebbf2511c96fb7b06cce37
+Z b3a1ad10fdcf5eac37975294f3354efc
