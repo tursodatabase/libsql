@@ -3024,12 +3024,17 @@ static void addScanStatus(
 ** bound string contants to blobs.  This routine makes the necessary changes
 ** to the OP_String opcodes for that to happen.
 */
-static void whereLikeOptimizationStringFixup(Vdbe *v, WhereLevel *pLevel){
-  VdbeOp *pOp;
-  pOp = sqlite3VdbeGetOp(v, -1);
-  if( pLevel->iLikeRepCntr && pOp->opcode==OP_String8 ){
-    pOp->p3 = pLevel->iLikeRepCntr;
-    pOp->p5 = 1;
+static void whereLikeOptimizationStringFixup(
+  Vdbe *v,                /* prepared statement under construction */
+  WhereLevel *pLevel,     /* The loop that contains the LIKE operator */
+  WhereTerm *pTerm        /* The upper or lower bound just coded */
+){
+  if( pTerm->wtFlags & TERM_LIKEOPT ){
+    VdbeOp *pOp = sqlite3VdbeGetOp(v, -1);
+    if( pLevel->iLikeRepCntr && pOp->opcode==OP_String8 ){
+      pOp->p3 = pLevel->iLikeRepCntr;
+      pOp->p5 = 1;
+    }
   }
 }
 
@@ -3365,9 +3370,8 @@ static Bitmask codeOneLoopStart(
     if( pLoop->wsFlags & WHERE_TOP_LIMIT ){
       pRangeEnd = pLoop->aLTerm[j++];
       nExtraReg = 1;
-      if( pRangeStart
-       && (pRangeStart->wtFlags & TERM_LIKEOPT)!=0
-       && (pRangeEnd->wtFlags & TERM_LIKEOPT)!=0
+      if( (pRangeStart && (pRangeStart->wtFlags & TERM_LIKEOPT)!=0)
+       || (pRangeEnd->wtFlags & TERM_LIKEOPT)!=0
       ){
         pLevel->iLikeRepCntr = ++pParse->nMem;
         testcase( bRev );
@@ -3420,7 +3424,7 @@ static Bitmask codeOneLoopStart(
     if( pRangeStart ){
       Expr *pRight = pRangeStart->pExpr->pRight;
       sqlite3ExprCode(pParse, pRight, regBase+nEq);
-      whereLikeOptimizationStringFixup(v, pLevel);
+      whereLikeOptimizationStringFixup(v, pLevel, pRangeStart);
       if( (pRangeStart->wtFlags & TERM_VNULL)==0
        && sqlite3ExprCanBeNull(pRight)
       ){
@@ -3466,7 +3470,7 @@ static Bitmask codeOneLoopStart(
       Expr *pRight = pRangeEnd->pExpr->pRight;
       sqlite3ExprCacheRemove(pParse, regBase+nEq, 1);
       sqlite3ExprCode(pParse, pRight, regBase+nEq);
-      whereLikeOptimizationStringFixup(v, pLevel);
+      whereLikeOptimizationStringFixup(v, pLevel, pRangeEnd);
       if( (pRangeEnd->wtFlags & TERM_VNULL)==0
        && sqlite3ExprCanBeNull(pRight)
       ){
