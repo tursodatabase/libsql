@@ -5585,10 +5585,12 @@ case OP_MemMax: {        /* in2 */
 /* Opcode: IfPos P1 P2 * * *
 ** Synopsis: if r[P1]>0 goto P2
 **
-** If the value of register P1 is 1 or greater, jump to P2.
+** Register P1 must contain an integer.
+** If the value of register P1 is 1 or greater, jump to P2 and
+** add the literal value P3 to register P1.
 **
-** It is illegal to use this instruction on a register that does
-** not contain an integer.  An assertion fault will result if you try.
+** If the initial value of register P1 is less than 1, then the
+** value is unchanged and control passes through to the next instruction.
 */
 case OP_IfPos: {        /* jump, in1 */
   pIn1 = &aMem[pOp->p1];
@@ -5617,18 +5619,54 @@ case OP_IfNeg: {        /* jump, in1 */
   break;
 }
 
-/* Opcode: IfZero P1 P2 P3 * *
-** Synopsis: r[P1]+=P3, if r[P1]==0 goto P2
+/* Opcode: IfNotZero P1 P2 P3 * *
+** Synopsis: if r[P1]!=0 then r[P1]+=P3, goto P2
 **
-** The register P1 must contain an integer.  Add literal P3 to the
-** value in register P1.  If the result is exactly 0, jump to P2. 
+** Register P1 must contain an integer.  If the content of register P1 is
+** initially nonzero, then add P3 to P1 and jump to P2.  If register P1 is
+** initially zero, leave it unchanged and fall through.
 */
-case OP_IfZero: {        /* jump, in1 */
+case OP_IfNotZero: {        /* jump, in1 */
   pIn1 = &aMem[pOp->p1];
   assert( pIn1->flags&MEM_Int );
-  pIn1->u.i += pOp->p3;
+  VdbeBranchTaken(pIn1->u.i<0, 2);
+  if( pIn1->u.i ){
+     pIn1->u.i += pOp->p3;
+     pc = pOp->p2 - 1;
+  }
+  break;
+}
+
+/* Opcode: DecrJumpZero P1 P2 * * *
+** Synopsis: if (--r[P1])==0 goto P2
+**
+** Register P1 must hold an integer.  Decrement the value in register P1
+** then jump to P2 if the new value is exactly zero.
+*/
+case OP_DecrJumpZero: {      /* jump, in1 */
+  pIn1 = &aMem[pOp->p1];
+  assert( pIn1->flags&MEM_Int );
+  pIn1->u.i--;
   VdbeBranchTaken(pIn1->u.i==0, 2);
   if( pIn1->u.i==0 ){
+     pc = pOp->p2 - 1;
+  }
+  break;
+}
+
+
+/* Opcode: JumpZeroIncr P1 P2 * * *
+** Synopsis: if (r[P1]++)==0 ) goto P2
+**
+** The register P1 must contain an integer.  If register P1 is initially
+** zero, then jump to P2.  Increment register P1 regardless of whether or
+** not the jump is taken.
+*/
+case OP_JumpZeroIncr: {        /* jump, in1 */
+  pIn1 = &aMem[pOp->p1];
+  assert( pIn1->flags&MEM_Int );
+  VdbeBranchTaken(pIn1->u.i==0, 2);
+  if( (pIn1->u.i++)==0 ){
      pc = pOp->p2 - 1;
   }
   break;

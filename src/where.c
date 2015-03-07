@@ -3017,12 +3017,17 @@ static void addScanStatus(
 ** and if pLoop->iLikeRepCntr is non-zero, then change the P3 to be
 ** pLoop->iLikeRepCntr and set P5.
 **
-** This is part of the LIKE optimization.  FIXME:  Explain in more detail
+** The LIKE optimization trys to evaluate "x LIKE 'abc%'" as a range
+** expression: "x>='ABC' AND x<'abd'".  But this requires that the range
+** scan loop run twice, once for strings and a second time for BLOBs.
+** The OP_String opcodes on the second pass convert the upper and lower
+** bound string contants to blobs.  This routine makes the necessary changes
+** to the OP_String opcodes for that to happen.
 */
 static void whereLikeOptimizationStringFixup(Vdbe *v, WhereLevel *pLevel){
   VdbeOp *pOp;
   pOp = sqlite3VdbeGetOp(v, -1);
-  if( pLevel->iLikeRepCntr && ALWAYS(pOp->opcode==OP_String8) ){
+  if( pLevel->iLikeRepCntr && pOp->opcode==OP_String8 ){
     pOp->p3 = pLevel->iLikeRepCntr;
     pOp->p5 = 1;
   }
@@ -3366,6 +3371,7 @@ static Bitmask codeOneLoopStart(
       ){
         pLevel->iLikeRepCntr = ++pParse->nMem;
         sqlite3VdbeAddOp2(v, OP_Integer, 0, pLevel->iLikeRepCntr);
+        VdbeComment((v, "LIKE loop counter"));
         pLevel->addrLikeRep = sqlite3VdbeCurrentAddr(v);
       }
       if( pRangeStart==0
@@ -3395,6 +3401,9 @@ static Bitmask codeOneLoopStart(
     ){
       SWAP(WhereTerm *, pRangeEnd, pRangeStart);
       SWAP(u8, bSeekPastNull, bStopAtNull);
+      if( pLevel->addrLikeRep ){
+        sqlite3VdbeChangeP1(v, pLevel->addrLikeRep-1, 1);
+      }
     }
 
     testcase( pRangeStart && (pRangeStart->eOperator & WO_LE)!=0 );
@@ -3864,7 +3873,7 @@ static Bitmask codeOneLoopStart(
     }
     if( pTerm->wtFlags & TERM_LIKECOND ){
       assert( pLevel->iLikeRepCntr>0 );
-      skipLikeAddr = sqlite3VdbeAddOp1(v, OP_IfZero, pLevel->iLikeRepCntr);
+      skipLikeAddr = sqlite3VdbeAddOp1(v, OP_IfNot, pLevel->iLikeRepCntr);
       VdbeCoverage(v);
     }
     sqlite3ExprIfFalse(pParse, pE, addrCont, SQLITE_JUMPIFNULL);
@@ -6673,11 +6682,10 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       sqlite3VdbeJumpHere(v, pLevel->addrSkip-2);
     }
     if( pLevel->addrLikeRep ){
-      addr = sqlite3VdbeAddOp1(v, OP_IfPos, pLevel->iLikeRepCntr);
+      sqlite3VdbeAddOp2(v,
+           pLevel->op==OP_Prev ? OP_DecrJumpZero : OP_JumpZeroIncr,
+           pLevel->iLikeRepCntr, pLevel->addrLikeRep);
       VdbeCoverage(v);
-      sqlite3VdbeAddOp2(v, OP_AddImm, pLevel->iLikeRepCntr, 1);
-      sqlite3VdbeAddOp2(v, OP_Goto, 0, pLevel->addrLikeRep);
-      sqlite3VdbeJumpHere(v, addr);
     }
     if( pLevel->iLeftJoin ){
       addr = sqlite3VdbeAddOp1(v, OP_IfPos, pLevel->iLeftJoin); VdbeCoverage(v);
