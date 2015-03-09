@@ -3013,8 +3013,8 @@ static void addScanStatus(
 #endif
 
 /*
-** Look at the last instruction coded.  If that instruction is OP_String8
-** and if pLoop->iLikeRepCntr is non-zero, then change the P3 to be
+** If the most recently coded instruction is a constant range contraint
+** that originated from the LIKE optimization, then change the P3 to be
 ** pLoop->iLikeRepCntr and set P5.
 **
 ** The LIKE optimization trys to evaluate "x LIKE 'abc%'" as a range
@@ -3030,11 +3030,14 @@ static void whereLikeOptimizationStringFixup(
   WhereTerm *pTerm        /* The upper or lower bound just coded */
 ){
   if( pTerm->wtFlags & TERM_LIKEOPT ){
-    VdbeOp *pOp = sqlite3VdbeGetOp(v, -1);
-    if( pLevel->iLikeRepCntr && pOp->opcode==OP_String8 ){
-      pOp->p3 = pLevel->iLikeRepCntr;
-      pOp->p5 = 1;
-    }
+    VdbeOp *pOp;
+    assert( pLevel->iLikeRepCntr>0 );
+    pOp = sqlite3VdbeGetOp(v, -1);
+    assert( pOp!=0 );
+    assert( pOp->opcode==OP_String8 
+            || pTerm->pWC->pWInfo->pParse->db->mallocFailed );
+    pOp->p3 = pLevel->iLikeRepCntr;
+    pOp->p5 = 1;
   }
 }
 
@@ -3370,9 +3373,9 @@ static Bitmask codeOneLoopStart(
     if( pLoop->wsFlags & WHERE_TOP_LIMIT ){
       pRangeEnd = pLoop->aLTerm[j++];
       nExtraReg = 1;
-      if( (pRangeStart && (pRangeStart->wtFlags & TERM_LIKEOPT)!=0)
-       || (pRangeEnd->wtFlags & TERM_LIKEOPT)!=0
-      ){
+      if( (pRangeEnd->wtFlags & TERM_LIKEOPT)!=0 ){
+        assert( pRangeStart!=0 );
+        assert( pRangeStart->wtFlags & TERM_LIKEOPT );
         pLevel->iLikeRepCntr = ++pParse->nMem;
         testcase( bRev );
         testcase( pIdx->aSortOrder[nEq]==SQLITE_SO_DESC );
@@ -4547,6 +4550,10 @@ static int whereLoopAddBtreeIndex(
     }
     if( pTerm->prereqRight & pNew->maskSelf ) continue;
 
+    /* Do not allow the upper bound of a LIKE optimization range constraint
+    ** to mix with a lower range bound from some other source */
+    if( pTerm->wtFlags & TERM_LIKEOPT && pTerm->eOperator==WO_LT ) continue;
+
     pNew->wsFlags = saved_wsFlags;
     pNew->u.btree.nEq = saved_nEq;
     pNew->nLTerm = saved_nLTerm;
@@ -4590,6 +4597,17 @@ static int whereLoopAddBtreeIndex(
       pNew->wsFlags |= WHERE_COLUMN_RANGE|WHERE_BTM_LIMIT;
       pBtm = pTerm;
       pTop = 0;
+      if( pTerm->wtFlags & TERM_LIKEOPT ){
+        /* Make sure that range contraints that come from the LIKE
+        ** optimization are always used in pairs. */
+        pTop = &pTerm[1];
+        assert( (pTop-(pTerm->pWC->a))<pTerm->pWC->nTerm );
+        assert( pTop->wtFlags & TERM_LIKEOPT );
+        assert( pTop->eOperator==WO_LT );
+        if( whereLoopResize(db, pNew, pNew->nLTerm+1) ) break; /* OOM */
+        pNew->aLTerm[pNew->nLTerm++] = pTop;
+        pNew->wsFlags |= WHERE_TOP_LIMIT;
+      }
     }else{
       assert( eOp & (WO_LT|WO_LE) );
       testcase( eOp & WO_LT );
