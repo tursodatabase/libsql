@@ -105,6 +105,10 @@ ifcapable subquery {
     }
   } {0 1 2 2 3 3 3 3}
 }
+
+# EVIDENCE-OF: R-02644-22131 In a compound SELECT statement, only the
+# last or right-most simple SELECT may have an ORDER BY clause.
+#
 do_test select4-1.3 {
   set v [catch {execsql {
     SELECT DISTINCT log FROM t1 ORDER BY log

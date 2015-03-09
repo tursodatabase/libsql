@@ -1650,6 +1650,11 @@ void sqlite3RegisterLikeFunctions(sqlite3 *db, int caseSensitive){
 ** then set aWc[0] through aWc[2] to the wildcard characters and
 ** return TRUE.  If the function is not a LIKE-style function then
 ** return FALSE.
+**
+** *pIsNocase is set to true if uppercase and lowercase are equivalent for
+** the function (default for LIKE).  If the function makes the distinction
+** between uppercase and lowercase (as does GLOB) then *pIsNocase is set to
+** false.
 */
 int sqlite3IsLikeFunction(sqlite3 *db, Expr *pExpr, int *pIsNocase, char *aWc){
   FuncDef *pDef;

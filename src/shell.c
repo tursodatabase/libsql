@@ -25,6 +25,13 @@
 #endif
 
 /*
+** No support for loadable extensions in VxWorks.
+*/
+#if defined(_WRS_KERNEL) && !SQLITE_OMIT_LOAD_EXTENSION
+# define SQLITE_OMIT_LOAD_EXTENSION 1
+#endif
+
+/*
 ** Enable large-file support for fopen() and friends on unix.
 */
 #ifndef SQLITE_DISABLE_LFS
@@ -59,17 +66,37 @@
 # include <readline/readline.h>
 # include <readline/history.h>
 #endif
+
 #if HAVE_EDITLINE
-# undef HAVE_READLINE
-# define HAVE_READLINE 1
 # include <editline/readline.h>
 #endif
-#if !HAVE_READLINE
-# define add_history(X)
-# define read_history(X)
-# define write_history(X)
-# define stifle_history(X)
+
+#if HAVE_EDITLINE || HAVE_READLINE
+
+# define shell_add_history(X) add_history(X)
+# define shell_read_history(X) read_history(X)
+# define shell_write_history(X) write_history(X)
+# define shell_stifle_history(X) stifle_history(X)
+# define shell_readline(X) readline(X)
+
+#elif HAVE_LINENOISE
+
+# include "linenoise.h"
+# define shell_add_history(X) linenoiseHistoryAdd(X)
+# define shell_read_history(X) linenoiseHistoryLoad(X)
+# define shell_write_history(X) linenoiseHistorySave(X)
+# define shell_stifle_history(X) linenoiseHistorySetMaxLen(X)
+# define shell_readline(X) linenoise(X)
+
+#else
+
+# define shell_read_history(X) 
+# define shell_write_history(X)
+# define shell_stifle_history(X)
+
+# define SHELL_USE_LOCAL_GETLINE 1
 #endif
+
 
 #if defined(_WIN32) || defined(WIN32)
 # include <io.h>
@@ -87,10 +114,15 @@
 */
 extern int isatty(int);
 
-/* popen and pclose are not C89 functions and so are sometimes omitted from
-** the <stdio.h> header */
-extern FILE *popen(const char*,const char*);
-extern int pclose(FILE*);
+#if !defined(__RTP__) && !defined(_WRS_KERNEL)
+  /* popen and pclose are not C89 functions and so are sometimes omitted from
+  ** the <stdio.h> header */
+  extern FILE *popen(const char*,const char*);
+  extern int pclose(FILE*);
+#else
+# define SQLITE_OMIT_POPEN 1
+#endif
+
 #endif
 
 #if defined(_WIN32_WCE)
@@ -145,10 +177,18 @@ static sqlite3_int64 timeOfDay(void){
   return t;
 }
 
-#if !defined(_WIN32) && !defined(WIN32) && !defined(_WRS_KERNEL) \
- && !defined(__minux)
+#if !defined(_WIN32) && !defined(WIN32) && !defined(__minux)
 #include <sys/time.h>
 #include <sys/resource.h>
+
+/* VxWorks does not support getrusage() as far as we can determine */
+#if defined(_WRS_KERNEL) || defined(__RTP__)
+struct rusage {
+  struct timeval ru_utime; /* user CPU time used */
+  struct timeval ru_stime; /* system CPU time used */
+};
+#define getrusage(A,B) memset(B,0,sizeof(*B))
+#endif
 
 /* Saved resource information for the beginning of an operation */
 static struct rusage sBegin;  /* CPU time at start */
@@ -175,8 +215,8 @@ static double timeDiff(struct timeval *pStart, struct timeval *pEnd){
 */
 static void endTimer(void){
   if( enableTimer ){
-    struct rusage sEnd;
     sqlite3_int64 iEnd = timeOfDay();
+    struct rusage sEnd;
     getrusage(RUSAGE_SELF, &sEnd);
     printf("Run Time: real %.3f user %f sys %f\n",
        (iEnd - iBegin)*0.001,
@@ -451,14 +491,14 @@ static char *one_input_line(FILE *in, char *zPrior, int isContinuation){
     zResult = local_getline(zPrior, in);
   }else{
     zPrompt = isContinuation ? continuePrompt : mainPrompt;
-#if HAVE_READLINE
-    free(zPrior);
-    zResult = readline(zPrompt);
-    if( zResult && *zResult ) add_history(zResult);
-#else
+#if SHELL_USE_LOCAL_GETLINE
     printf("%s", zPrompt);
     fflush(stdout);
     zResult = local_getline(zPrior, stdin);
+#else
+    free(zPrior);
+    zResult = shell_readline(zPrompt);
+    if( zResult && *zResult ) shell_add_history(zResult);
 #endif
   }
   return zResult;
@@ -2419,7 +2459,9 @@ static void tryToClone(ShellState *p, const char *zNewDb){
 */
 static void output_reset(ShellState *p){
   if( p->outfile[0]=='|' ){
+#ifndef SQLITE_OMIT_POPEN
     pclose(p->out);
+#endif
   }else{
     output_file_close(p->out);
   }
@@ -2912,9 +2954,14 @@ static int do_meta_command(char *zLine, ShellState *p){
     sCtx.zFile = zFile;
     sCtx.nLine = 1;
     if( sCtx.zFile[0]=='|' ){
+#ifdef SQLITE_OMIT_POPEN
+      fprintf(stderr, "Error: pipes are not supporte in this OS\n");
+      return 1;
+#else
       sCtx.in = popen(sCtx.zFile+1, "r");
       sCtx.zFile = "<pipe>";
       xCloser = pclose;
+#endif
     }else{
       sCtx.in = fopen(sCtx.zFile, "rb");
       xCloser = fclose;
@@ -3237,6 +3284,11 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
     output_reset(p);
     if( zFile[0]=='|' ){
+#ifdef SQLITE_OMIT_POPEN
+      fprintf(stderr,"Error: pipes are not supported in this OS\n");
+      rc = 1;
+      p->out = stdout;
+#else
       p->out = popen(zFile + 1, "w");
       if( p->out==0 ){
         fprintf(stderr,"Error: cannot open pipe \"%s\"\n", zFile + 1);
@@ -3245,6 +3297,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       }else{
         sqlite3_snprintf(sizeof(p->outfile), p->outfile, "%s", zFile);
       }
+#endif
     }else{
       p->out = output_file_open(zFile);
       if( p->out==0 ){
@@ -4169,7 +4222,7 @@ static char *find_home_dir(void){
 **
 ** Returns the number of errors.
 */
-static int process_sqliterc(
+static void process_sqliterc(
   ShellState *p,                  /* Configuration data */
   const char *sqliterc_override   /* Name of config file. NULL to use default */
 ){
@@ -4177,15 +4230,13 @@ static int process_sqliterc(
   const char *sqliterc = sqliterc_override;
   char *zBuf = 0;
   FILE *in = NULL;
-  int rc = 0;
 
   if (sqliterc == NULL) {
     home_dir = find_home_dir();
     if( home_dir==0 ){
-#if !defined(__RTP__) && !defined(_WRS_KERNEL)
-      fprintf(stderr,"%s: Error: cannot locate your home directory\n", Argv0);
-#endif
-      return 1;
+      fprintf(stderr, "-- warning: cannot find home directory;"
+                      " cannot read ~/.sqliterc\n");
+      return;
     }
     sqlite3_initialize();
     zBuf = sqlite3_mprintf("%s/.sqliterc",home_dir);
@@ -4196,11 +4247,10 @@ static int process_sqliterc(
     if( stdin_is_interactive ){
       fprintf(stderr,"-- Loading resources from %s\n",sqliterc);
     }
-    rc = process_input(p,in);
+    process_input(p,in);
     fclose(in);
   }
   sqlite3_free(zBuf);
-  return rc;
 }
 
 /*
@@ -4476,10 +4526,7 @@ int main(int argc, char **argv){
   ** is given on the command line, look for a file named ~/.sqliterc and
   ** try to process it.
   */
-  rc = process_sqliterc(&data,zInitFile);
-  if( rc>0 ){
-    return rc;
-  }
+  process_sqliterc(&data,zInitFile);
 
   /* Make a second pass through the command-line argument and set
   ** options.  This second pass is delayed until after the initialization
@@ -4636,13 +4683,11 @@ int main(int argc, char **argv){
           sqlite3_snprintf(nHistory, zHistory,"%s/.sqlite_history", zHome);
         }
       }
-#if HAVE_READLINE
-      if( zHistory ) read_history(zHistory);
-#endif
+      if( zHistory ) shell_read_history(zHistory);
       rc = process_input(&data, 0);
       if( zHistory ){
-        stifle_history(100);
-        write_history(zHistory);
+        shell_stifle_history(100);
+        shell_write_history(zHistory);
         free(zHistory);
       }
     }else{

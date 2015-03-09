@@ -452,9 +452,21 @@ proc check_data {STMT test types ints doubles strings} {
 # types
 do_test $test.1 {
   set types [list]
-  foreach i $idxlist {lappend types [sqlite3_column_type $STMT $i]}
+  foreach i $idxlist {
+    set x [sqlite3_column_type $STMT $i]
+    # EVIDENCE-OF: R-12793-43283 Every value in SQLite has one of five
+    # fundamental datatypes: 64-bit signed integer 64-bit IEEE floating
+    # point number string BLOB NULL
+    if {[lsearch {INTEGER FLOAT TEXT BLOB NULL} $x]<0} {
+      set types ERROR
+      break
+    } else {
+      lappend types $x
+    }
+  }
   set types
 } $types
+ 
 
 # Integers
 do_test $test.2 {
