@@ -202,7 +202,7 @@ static void whereClauseClear(WhereClause *pWC){
 ** calling this routine.  Such pointers may be reinitialized by referencing
 ** the pWC->a[] array.
 */
-static int whereClauseInsert(WhereClause *pWC, Expr *p, u8 wtFlags){
+static int whereClauseInsert(WhereClause *pWC, Expr *p, u16 wtFlags){
   WhereTerm *pTerm;
   int idx;
   testcase( wtFlags & TERM_VIRTUAL );
@@ -627,7 +627,11 @@ static void exprAnalyzeAll(
 ** so and false if not.
 **
 ** In order for the operator to be optimizible, the RHS must be a string
-** literal that does not begin with a wildcard.  
+** literal that does not begin with a wildcard.  The LHS must be a column
+** that may only be NULL, a string, or a BLOB, never a number. (This means
+** that virtual tables cannot participate in the LIKE optimization.)  If the
+** collating sequence for the column on the LHS must be appropriate for
+** the operator.
 */
 static int isLikeOrGlob(
   Parse *pParse,    /* Parsing and code generating context */
@@ -656,7 +660,7 @@ static int isLikeOrGlob(
   pLeft = pList->a[1].pExpr;
   if( pLeft->op!=TK_COLUMN 
    || sqlite3ExprAffinity(pLeft)!=SQLITE_AFF_TEXT 
-   || IsVirtual(pLeft->pTab)
+   || IsVirtual(pLeft->pTab)  /* Value might be numeric */
   ){
     /* IMP: R-02065-49465 The left-hand side of the LIKE or GLOB operator must
     ** be the name of an indexed column with TEXT affinity. */
@@ -1105,7 +1109,7 @@ static void exprAnalyze(
   Bitmask extraRight = 0;          /* Extra dependencies on LEFT JOIN */
   Expr *pStr1 = 0;                 /* RHS of LIKE/GLOB operator */
   int isComplete = 0;              /* RHS of LIKE/GLOB ends with wildcard */
-  int noCase = 0;                  /* LIKE/GLOB distinguishes case */
+  int noCase = 0;                  /* uppercase equivalent to lowercase */
   int op;                          /* Top-level operator.  pExpr->op */
   Parse *pParse = pWInfo->pParse;  /* Parsing context */
   sqlite3 *db = pParse->db;        /* Database connection */
@@ -1243,12 +1247,15 @@ static void exprAnalyze(
   /* Add constraints to reduce the search space on a LIKE or GLOB
   ** operator.
   **
-  ** A like pattern of the form "x LIKE 'abc%'" is changed into constraints
+  ** A like pattern of the form "x LIKE 'aBc%'" is changed into constraints
   **
-  **          x>='abc' AND x<'abd' AND x LIKE 'abc%'
+  **          x>='ABC' AND x<'abd' AND x LIKE 'aBc%'
   **
   ** The last character of the prefix "abc" is incremented to form the
-  ** termination condition "abd".
+  ** termination condition "abd".  If case is not significant (the default
+  ** for LIKE) then the lower-bound is made all uppercase and the upper-
+  ** bound is made all lowercase so that the bounds also work when comparing
+  ** BLOBs.
   */
   if( pWC->op==TK_AND 
    && isLikeOrGlob(pParse, pExpr, &pStr1, &isComplete, &noCase)
@@ -1260,9 +1267,25 @@ static void exprAnalyze(
     int idxNew1;
     int idxNew2;
     Token sCollSeqName;  /* Name of collating sequence */
+    const u16 wtFlags = TERM_LIKEOPT | TERM_VIRTUAL | TERM_DYNAMIC;
 
     pLeft = pExpr->x.pList->a[1].pExpr;
     pStr2 = sqlite3ExprDup(db, pStr1, 0);
+
+    /* Convert the lower bound to upper-case and the upper bound to
+    ** lower-case (upper-case is less than lower-case in ASCII) so that
+    ** the range constraints also work for BLOBs
+    */
+    if( noCase && !pParse->db->mallocFailed ){
+      int i;
+      char c;
+      pTerm->wtFlags |= TERM_LIKE;
+      for(i=0; (c = pStr1->u.zToken[i])!=0; i++){
+        pStr1->u.zToken[i] = sqlite3Toupper(c);
+        pStr2->u.zToken[i] = sqlite3Tolower(c);
+      }
+    }
+
     if( !db->mallocFailed ){
       u8 c, *pC;       /* Last character before the first wildcard */
       pC = (u8*)&pStr2->u.zToken[sqlite3Strlen30(pStr2->u.zToken)-1];
@@ -1282,11 +1305,11 @@ static void exprAnalyze(
     sCollSeqName.z = noCase ? "NOCASE" : "BINARY";
     sCollSeqName.n = 6;
     pNewExpr1 = sqlite3ExprDup(db, pLeft, 0);
-    pNewExpr1 = sqlite3PExpr(pParse, TK_GE, 
+    pNewExpr1 = sqlite3PExpr(pParse, TK_GE,
            sqlite3ExprAddCollateToken(pParse,pNewExpr1,&sCollSeqName),
            pStr1, 0);
     transferJoinMarkings(pNewExpr1, pExpr);
-    idxNew1 = whereClauseInsert(pWC, pNewExpr1, TERM_VIRTUAL|TERM_DYNAMIC);
+    idxNew1 = whereClauseInsert(pWC, pNewExpr1, wtFlags);
     testcase( idxNew1==0 );
     exprAnalyze(pSrc, pWC, idxNew1);
     pNewExpr2 = sqlite3ExprDup(db, pLeft, 0);
@@ -1294,7 +1317,7 @@ static void exprAnalyze(
            sqlite3ExprAddCollateToken(pParse,pNewExpr2,&sCollSeqName),
            pStr2, 0);
     transferJoinMarkings(pNewExpr2, pExpr);
-    idxNew2 = whereClauseInsert(pWC, pNewExpr2, TERM_VIRTUAL|TERM_DYNAMIC);
+    idxNew2 = whereClauseInsert(pWC, pNewExpr2, wtFlags);
     testcase( idxNew2==0 );
     exprAnalyze(pSrc, pWC, idxNew2);
     pTerm = &pWC->a[idxTerm];
@@ -2469,20 +2492,43 @@ static int whereInScanEst(
 ** but joins might run a little slower.  The trick is to disable as much
 ** as we can without disabling too much.  If we disabled in (1), we'd get
 ** the wrong answer.  See ticket #813.
+**
+** If all the children of a term are disabled, then that term is also
+** automatically disabled.  In this way, terms get disabled if derived
+** virtual terms are tested first.  For example:
+**
+**      x GLOB 'abc*' AND x>='abc' AND x<'acd'
+**      \___________/     \______/     \_____/
+**         parent          child1       child2
+**
+** Only the parent term was in the original WHERE clause.  The child1
+** and child2 terms were added by the LIKE optimization.  If both of
+** the virtual child terms are valid, then testing of the parent can be 
+** skipped.
+**
+** Usually the parent term is marked as TERM_CODED.  But if the parent
+** term was originally TERM_LIKE, then the parent gets TERM_LIKECOND instead.
+** The TERM_LIKECOND marking indicates that the term should be coded inside
+** a conditional such that is only evaluated on the second pass of a
+** LIKE-optimization loop, when scanning BLOBs instead of strings.
 */
 static void disableTerm(WhereLevel *pLevel, WhereTerm *pTerm){
-  if( pTerm
+  int nLoop = 0;
+  while( pTerm
       && (pTerm->wtFlags & TERM_CODED)==0
       && (pLevel->iLeftJoin==0 || ExprHasProperty(pTerm->pExpr, EP_FromJoin))
       && (pLevel->notReady & pTerm->prereqAll)==0
   ){
-    pTerm->wtFlags |= TERM_CODED;
-    if( pTerm->iParent>=0 ){
-      WhereTerm *pOther = &pTerm->pWC->a[pTerm->iParent];
-      if( (--pOther->nChild)==0 ){
-        disableTerm(pLevel, pOther);
-      }
+    if( nLoop && (pTerm->wtFlags & TERM_LIKE)!=0 ){
+      pTerm->wtFlags |= TERM_LIKECOND;
+    }else{
+      pTerm->wtFlags |= TERM_CODED;
     }
+    if( pTerm->iParent<0 ) break;
+    pTerm = &pTerm->pWC->a[pTerm->iParent];
+    pTerm->nChild--;
+    if( pTerm->nChild!=0 ) break;
+    nLoop++;
   }
 }
 
@@ -2966,7 +3012,34 @@ static void addScanStatus(
 # define addScanStatus(a, b, c, d) ((void)d)
 #endif
 
-
+/*
+** If the most recently coded instruction is a constant range contraint
+** that originated from the LIKE optimization, then change the P3 to be
+** pLoop->iLikeRepCntr and set P5.
+**
+** The LIKE optimization trys to evaluate "x LIKE 'abc%'" as a range
+** expression: "x>='ABC' AND x<'abd'".  But this requires that the range
+** scan loop run twice, once for strings and a second time for BLOBs.
+** The OP_String opcodes on the second pass convert the upper and lower
+** bound string contants to blobs.  This routine makes the necessary changes
+** to the OP_String opcodes for that to happen.
+*/
+static void whereLikeOptimizationStringFixup(
+  Vdbe *v,                /* prepared statement under construction */
+  WhereLevel *pLevel,     /* The loop that contains the LIKE operator */
+  WhereTerm *pTerm        /* The upper or lower bound just coded */
+){
+  if( pTerm->wtFlags & TERM_LIKEOPT ){
+    VdbeOp *pOp;
+    assert( pLevel->iLikeRepCntr>0 );
+    pOp = sqlite3VdbeGetOp(v, -1);
+    assert( pOp!=0 );
+    assert( pOp->opcode==OP_String8 
+            || pTerm->pWC->pWInfo->pParse->db->mallocFailed );
+    pOp->p3 = pLevel->iLikeRepCntr;
+    pOp->p5 = 1;
+  }
+}
 
 /*
 ** Generate code for the start of the iLevel-th loop in the WHERE clause
@@ -3296,10 +3369,25 @@ static Bitmask codeOneLoopStart(
     if( pLoop->wsFlags & WHERE_BTM_LIMIT ){
       pRangeStart = pLoop->aLTerm[j++];
       nExtraReg = 1;
+      /* Like optimization range constraints always occur in pairs */
+      assert( (pRangeStart->wtFlags & TERM_LIKEOPT)==0 || 
+              (pLoop->wsFlags & WHERE_TOP_LIMIT)!=0 );
     }
     if( pLoop->wsFlags & WHERE_TOP_LIMIT ){
       pRangeEnd = pLoop->aLTerm[j++];
       nExtraReg = 1;
+      if( (pRangeEnd->wtFlags & TERM_LIKEOPT)!=0 ){
+        assert( pRangeStart!=0 );                     /* LIKE opt constraints */
+        assert( pRangeStart->wtFlags & TERM_LIKEOPT );   /* occur in pairs */
+        pLevel->iLikeRepCntr = ++pParse->nMem;
+        testcase( bRev );
+        testcase( pIdx->aSortOrder[nEq]==SQLITE_SO_DESC );
+        sqlite3VdbeAddOp2(v, OP_Integer,
+                          bRev ^ (pIdx->aSortOrder[nEq]==SQLITE_SO_DESC),
+                          pLevel->iLikeRepCntr);
+        VdbeComment((v, "LIKE loop counter"));
+        pLevel->addrLikeRep = sqlite3VdbeCurrentAddr(v);
+      }
       if( pRangeStart==0
        && (j = pIdx->aiColumn[nEq])>=0 
        && pIdx->pTable->aCol[j].notNull==0
@@ -3342,6 +3430,7 @@ static Bitmask codeOneLoopStart(
     if( pRangeStart ){
       Expr *pRight = pRangeStart->pExpr->pRight;
       sqlite3ExprCode(pParse, pRight, regBase+nEq);
+      whereLikeOptimizationStringFixup(v, pLevel, pRangeStart);
       if( (pRangeStart->wtFlags & TERM_VNULL)==0
        && sqlite3ExprCanBeNull(pRight)
       ){
@@ -3387,6 +3476,7 @@ static Bitmask codeOneLoopStart(
       Expr *pRight = pRangeEnd->pExpr->pRight;
       sqlite3ExprCacheRemove(pParse, regBase+nEq, 1);
       sqlite3ExprCode(pParse, pRight, regBase+nEq);
+      whereLikeOptimizationStringFixup(v, pLevel, pRangeEnd);
       if( (pRangeEnd->wtFlags & TERM_VNULL)==0
        && sqlite3ExprCanBeNull(pRight)
       ){
@@ -3614,7 +3704,8 @@ static Bitmask codeOneLoopStart(
     */
     wctrlFlags =  WHERE_OMIT_OPEN_CLOSE
                 | WHERE_FORCE_TABLE
-                | WHERE_ONETABLE_ONLY;
+                | WHERE_ONETABLE_ONLY
+                | WHERE_NO_AUTOINDEX;
     for(ii=0; ii<pOrWc->nTerm; ii++){
       WhereTerm *pOrTerm = &pOrWc->a[ii];
       if( pOrTerm->leftCursor==iCur || (pOrTerm->eOperator & WO_AND)!=0 ){
@@ -3776,6 +3867,7 @@ static Bitmask codeOneLoopStart(
   */
   for(pTerm=pWC->a, j=pWC->nTerm; j>0; j--, pTerm++){
     Expr *pE;
+    int skipLikeAddr = 0;
     testcase( pTerm->wtFlags & TERM_VIRTUAL );
     testcase( pTerm->wtFlags & TERM_CODED );
     if( pTerm->wtFlags & (TERM_VIRTUAL|TERM_CODED) ) continue;
@@ -3790,7 +3882,13 @@ static Bitmask codeOneLoopStart(
     if( pLevel->iLeftJoin && !ExprHasProperty(pE, EP_FromJoin) ){
       continue;
     }
+    if( pTerm->wtFlags & TERM_LIKECOND ){
+      assert( pLevel->iLikeRepCntr>0 );
+      skipLikeAddr = sqlite3VdbeAddOp1(v, OP_IfNot, pLevel->iLikeRepCntr);
+      VdbeCoverage(v);
+    }
     sqlite3ExprIfFalse(pParse, pE, addrCont, SQLITE_JUMPIFNULL);
+    if( skipLikeAddr ) sqlite3VdbeJumpHere(v, skipLikeAddr);
     pTerm->wtFlags |= TERM_CODED;
   }
 
@@ -4455,6 +4553,10 @@ static int whereLoopAddBtreeIndex(
     }
     if( pTerm->prereqRight & pNew->maskSelf ) continue;
 
+    /* Do not allow the upper bound of a LIKE optimization range constraint
+    ** to mix with a lower range bound from some other source */
+    if( pTerm->wtFlags & TERM_LIKEOPT && pTerm->eOperator==WO_LT ) continue;
+
     pNew->wsFlags = saved_wsFlags;
     pNew->u.btree.nEq = saved_nEq;
     pNew->nLTerm = saved_nLTerm;
@@ -4498,6 +4600,17 @@ static int whereLoopAddBtreeIndex(
       pNew->wsFlags |= WHERE_COLUMN_RANGE|WHERE_BTM_LIMIT;
       pBtm = pTerm;
       pTop = 0;
+      if( pTerm->wtFlags & TERM_LIKEOPT ){
+        /* Range contraints that come from the LIKE optimization are
+        ** always used in pairs. */
+        pTop = &pTerm[1];
+        assert( (pTop-(pTerm->pWC->a))<pTerm->pWC->nTerm );
+        assert( pTop->wtFlags & TERM_LIKEOPT );
+        assert( pTop->eOperator==WO_LT );
+        if( whereLoopResize(db, pNew, pNew->nLTerm+1) ) break; /* OOM */
+        pNew->aLTerm[pNew->nLTerm++] = pTop;
+        pNew->wsFlags |= WHERE_TOP_LIMIT;
+      }
     }else{
       assert( eOp & (WO_LT|WO_LE) );
       testcase( eOp & WO_LT );
@@ -4808,6 +4921,7 @@ static int whereLoopAddBtree(
 #ifndef SQLITE_OMIT_AUTOMATIC_INDEX
   /* Automatic indexes */
   if( !pBuilder->pOrSet
+   && (pWInfo->wctrlFlags & WHERE_NO_AUTOINDEX)==0
    && (pWInfo->pParse->db->flags & SQLITE_AutoIndex)!=0
    && pSrc->pIndex==0
    && !pSrc->viaCoroutine
@@ -6592,6 +6706,16 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       VdbeComment((v, "next skip-scan on %s", pLoop->u.btree.pIndex->zName));
       sqlite3VdbeJumpHere(v, pLevel->addrSkip);
       sqlite3VdbeJumpHere(v, pLevel->addrSkip-2);
+    }
+    if( pLevel->addrLikeRep ){
+      int op;
+      if( sqlite3VdbeGetOp(v, pLevel->addrLikeRep-1)->p1 ){
+        op = OP_DecrJumpZero;
+      }else{
+        op = OP_JumpZeroIncr;
+      }
+      sqlite3VdbeAddOp2(v, op, pLevel->iLikeRepCntr, pLevel->addrLikeRep);
+      VdbeCoverage(v);
     }
     if( pLevel->iLeftJoin ){
       addr = sqlite3VdbeAddOp1(v, OP_IfPos, pLevel->iLeftJoin); VdbeCoverage(v);

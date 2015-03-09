@@ -25,7 +25,20 @@ sqlite3 db test.db
 
 
 # Configure the sorter to use 3 background threads.
-db eval {PRAGMA threads=3}
+#
+# EVIDENCE-OF: R-19249-32353 SQLITE_LIMIT_WORKER_THREADS The maximum
+# number of auxiliary worker threads that a single prepared statement
+# may start.
+#
+do_test sort4-init001 {
+  db eval {PRAGMA threads=5}
+  sqlite3_limit db SQLITE_LIMIT_WORKER_THREADS -1
+} {5}
+do_test sort4-init002 {
+  sqlite3_limit db SQLITE_LIMIT_WORKER_THREADS 3
+  db eval {PRAGMA threads}
+} {3}
+
 
 # Minimum number of seconds to run for. If the value is 0, each test
 # is run exactly once. Otherwise, tests are repeated until the timeout

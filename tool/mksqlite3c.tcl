@@ -120,6 +120,7 @@ foreach hdr {
    sqliteLimit.h
    vdbe.h
    vdbeInt.h
+   vxworks.h
    wal.h
    whereInt.h
 } {
