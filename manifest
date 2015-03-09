@@ -1,5 +1,5 @@
-C Increase\sthe\sversion\snumber\sto\s3.8.9
-D 2015-03-09T10:40:48.276
+C Fix\sthe\sLIKE\soptimization\sso\sthat\sit\sworks\seven\sif\sthere\sare\sadditional\nrange\scontraints\son\sthe\scolumn\sthat\sis\ssubject\sto\sthe\sLIKE\sor\sGLOB.
+D 2015-03-09T13:01:02.136
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f643d6968dfc0b82d2e546a0525a39079f9e928
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -307,7 +307,7 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 39303f2c9db02a4e422cd8eb2c8760420c6a51fe
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
-F src/where.c 84104123394d38aa530f4e3e12b4ac7efcd7fe19
+F src/where.c eb141b075776e9864d38f279333e2472a8653202
 F src/whereInt.h cbe4aa57326998d89e7698ca65bb7c28541d483c
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1241,7 +1241,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 74cb0b032fcf598537fae04412771450124ae712
-R 9ac10056eb6a3c9d151b86baaf6f566f
+P e5da5e7d5dc5a3438ced23f1ee83e695abc29c45 0e02dc94fd1bb891d0edd1e34b57e923b17712a7
+R c1700660b0fab033a6359aa8c00c1b69
+T +closed 0e02dc94fd1bb891d0edd1e34b57e923b17712a7
 U drh
-Z 5dfd706dc4ee17c10393dacc3c9444b2
+Z 0d4bf9b628bd332a63a01f9a77a070c3
