@@ -194,8 +194,8 @@ static sqlite3_mutex *winMutexAlloc(int iType){
     case SQLITE_MUTEX_RECURSIVE: {
       p = sqlite3MallocZero( sizeof(*p) );
       if( p ){
-#ifdef SQLITE_DEBUG
         p->id = iType;
+#ifdef SQLITE_DEBUG
 #ifdef SQLITE_WIN32_MUTEX_TRACE_DYNAMIC
         p->trace = 1;
 #endif
@@ -216,8 +216,8 @@ static sqlite3_mutex *winMutexAlloc(int iType){
       }
 #endif
       p = &winMutex_staticMutexes[iType-2];
-#ifdef SQLITE_DEBUG
       p->id = iType;
+#ifdef SQLITE_DEBUG
 #ifdef SQLITE_WIN32_MUTEX_TRACE_STATIC
       p->trace = 1;
 #endif

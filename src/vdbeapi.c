@@ -186,6 +186,10 @@ const void *sqlite3_value_text16le(sqlite3_value *pVal){
   return sqlite3ValueText(pVal, SQLITE_UTF16LE);
 }
 #endif /* SQLITE_OMIT_UTF16 */
+/* EVIDENCE-OF: R-12793-43283 Every value in SQLite has one of five
+** fundamental datatypes: 64-bit signed integer 64-bit IEEE floating
+** point number string BLOB NULL
+*/
 int sqlite3_value_type(sqlite3_value* pVal){
   static const u8 aType[] = {
      SQLITE_BLOB,     /* 0x00 */

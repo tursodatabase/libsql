@@ -165,6 +165,7 @@ SRC = \
   $(TOP)/src/vdbetrace.c \
   $(TOP)/src/vdbeInt.h \
   $(TOP)/src/vtab.c \
+  $(TOP)/src/vxworks.h \
   $(TOP)/src/wal.c \
   $(TOP)/src/wal.h \
   $(TOP)/src/walker.c \
@@ -366,6 +367,7 @@ HDR = \
    $(TOP)/src/sqliteLimit.h \
    $(TOP)/src/vdbe.h \
    $(TOP)/src/vdbeInt.h \
+   $(TOP)/src/vxworks.h \
    $(TOP)/src/whereInt.h
 
 # Header files used by extensions

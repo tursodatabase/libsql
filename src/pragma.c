@@ -317,6 +317,17 @@ void sqlite3Pragma(
   /* Send an SQLITE_FCNTL_PRAGMA file-control to the underlying VFS
   ** connection.  If it returns SQLITE_OK, then assume that the VFS
   ** handled the pragma and generate a no-op prepared statement.
+  **
+  ** IMPLEMENTATION-OF: R-12238-55120 Whenever a PRAGMA statement is parsed,
+  ** an SQLITE_FCNTL_PRAGMA file control is sent to the open sqlite3_file
+  ** object corresponding to the database file to which the pragma
+  ** statement refers.
+  **
+  ** IMPLEMENTATION-OF: R-29875-31678 The argument to the SQLITE_FCNTL_PRAGMA
+  ** file control is an array of pointers to strings (char**) in which the
+  ** second element of the array is the name of the pragma and the third
+  ** element is the argument to the pragma or NULL if the pragma has no
+  ** argument.
   */
   aFcntl[0] = 0;
   aFcntl[1] = zLeft;
@@ -1093,17 +1104,27 @@ void sqlite3Pragma(
     pIdx = sqlite3FindIndex(db, zRight, zDb);
     if( pIdx ){
       int i;
-      int mx = pPragma->iArg ? pIdx->nColumn : pIdx->nKeyCol;
+      int mx;
+      if( pPragma->iArg ){
+        /* PRAGMA index_xinfo (newer version with more rows and columns) */
+        mx = pIdx->nColumn;
+        pParse->nMem = 6;
+      }else{
+        /* PRAGMA index_info (legacy version) */
+        mx = pIdx->nKeyCol;
+        pParse->nMem = 3;
+      }
       pTab = pIdx->pTable;
-      sqlite3VdbeSetNumCols(v, 6);
-      pParse->nMem = 6;
+      sqlite3VdbeSetNumCols(v, pParse->nMem);
       sqlite3CodeVerifySchema(pParse, iDb);
       sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "seqno", SQLITE_STATIC);
       sqlite3VdbeSetColName(v, 1, COLNAME_NAME, "cid", SQLITE_STATIC);
       sqlite3VdbeSetColName(v, 2, COLNAME_NAME, "name", SQLITE_STATIC);
-      sqlite3VdbeSetColName(v, 3, COLNAME_NAME, "desc", SQLITE_STATIC);
-      sqlite3VdbeSetColName(v, 4, COLNAME_NAME, "coll", SQLITE_STATIC);
-      sqlite3VdbeSetColName(v, 5, COLNAME_NAME, "key", SQLITE_STATIC);
+      if( pPragma->iArg ){
+        sqlite3VdbeSetColName(v, 3, COLNAME_NAME, "desc", SQLITE_STATIC);
+        sqlite3VdbeSetColName(v, 4, COLNAME_NAME, "coll", SQLITE_STATIC);
+        sqlite3VdbeSetColName(v, 5, COLNAME_NAME, "key", SQLITE_STATIC);
+      }
       for(i=0; i<mx; i++){
         i16 cnum = pIdx->aiColumn[i];
         sqlite3VdbeAddOp2(v, OP_Integer, i, 1);
@@ -1113,10 +1134,12 @@ void sqlite3Pragma(
         }else{
           sqlite3VdbeAddOp4(v, OP_String8, 0, 3, 0, pTab->aCol[cnum].zName, 0);
         }
-        sqlite3VdbeAddOp2(v, OP_Integer, pIdx->aSortOrder[i], 4);
-        sqlite3VdbeAddOp4(v, OP_String8, 0, 5, 0, pIdx->azColl[i], 0);
-        sqlite3VdbeAddOp2(v, OP_Integer, i<pIdx->nKeyCol, 6);
-        sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 6);
+        if( pPragma->iArg ){
+          sqlite3VdbeAddOp2(v, OP_Integer, pIdx->aSortOrder[i], 4);
+          sqlite3VdbeAddOp4(v, OP_String8, 0, 5, 0, pIdx->azColl[i], 0);
+          sqlite3VdbeAddOp2(v, OP_Integer, i<pIdx->nKeyCol, 6);
+        }
+        sqlite3VdbeAddOp2(v, OP_ResultRow, 1, pParse->nMem);
       }
     }
   }
@@ -1818,8 +1841,9 @@ void sqlite3Pragma(
   /*
   **  PRAGMA shrink_memory
   **
-  ** This pragma attempts to free as much memory as possible from the
-  ** current database connection.
+  ** IMPLEMENTATION-OF: R-23445-46109 This pragma causes the database
+  ** connection on which it is invoked to free up as much memory as it
+  ** can, by calling sqlite3_db_release_memory().
   */
   case PragTyp_SHRINK_MEMORY: {
     sqlite3_db_release_memory(db);
@@ -1848,8 +1872,12 @@ void sqlite3Pragma(
   **   PRAGMA soft_heap_limit
   **   PRAGMA soft_heap_limit = N
   **
-  ** Call sqlite3_soft_heap_limit64(N).  Return the result.  If N is omitted,
-  ** use -1.
+  ** IMPLEMENTATION-OF: R-26343-45930 This pragma invokes the
+  ** sqlite3_soft_heap_limit64() interface with the argument N, if N is
+  ** specified and is a non-negative integer.
+  ** IMPLEMENTATION-OF: R-64451-07163 The soft_heap_limit pragma always
+  ** returns the same integer that would be returned by the
+  ** sqlite3_soft_heap_limit64(-1) C-language function.
   */
   case PragTyp_SOFT_HEAP_LIMIT: {
     sqlite3_int64 N;
