@@ -48,7 +48,7 @@
 //!     }
 //! }
 //! ```
-#![feature(unsafe_destructor, core, std_misc, path, libc, rustc_private, collections)]
+#![feature(unsafe_destructor, core, path, libc, rustc_private, collections)]
 #![cfg_attr(test, feature(test))]
 
 extern crate libc;
