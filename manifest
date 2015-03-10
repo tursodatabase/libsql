@@ -1,5 +1,5 @@
-C Revise\stest\scases\sin\smalloc5.test\sto\saccommodate\svarying\sallocation\nsizes\sreturned\sby\ssome\ssystem\smalloc()\simplementations.
-D 2015-03-10T13:50:18.414
+C Fix\san\sincrblob2\stest\scase\sso\sthat\sit\sworks\son\s32-bit\ssystems.
+D 2015-03-10T15:34:47.080
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f643d6968dfc0b82d2e546a0525a39079f9e928
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -639,7 +639,7 @@ F test/in3.test 3cbf58c87f4052cee3a58b37b6389777505aa0c0
 F test/in4.test d2b38cba404bc4320f4fe1b595b3d163f212c068
 F test/in5.test 1de657472fa9ac2924be25c2c959ac5ca1aae554
 F test/incrblob.test e81846d214f3637622620fbde7cd526781cfe328
-F test/incrblob2.test 0d8821730a84f90af78a9dd547fe7a2480a06240
+F test/incrblob2.test a5ce5ed1d0b01e2ed347245a21170372528af0a5
 F test/incrblob3.test d8d036fde015d4a159cd3cbae9d29003b37227a4
 F test/incrblob4.test f26502a5697893e5acea268c910f16478c2f0fab
 F test/incrblob_err.test af1f12ba60d220c9752073ff2bda2ad59e88960d
@@ -1241,7 +1241,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 984c3fd5261619fb542a5a95dab37707b5d79dbf
-R 755476faee751a04385de321ff0c4db7
+P fbae6bafd74d8da9c72be5f562a62f80b01cc846
+R f19e7f30be378d3111028d8dd74f6a7d
 U drh
-Z d102bfa9bbfc74e74ac15b539033106b
+Z 0ddafeebdf23c7d95a3d79f2f7b9a23f
