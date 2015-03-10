@@ -1,5 +1,5 @@
-C Fix\sthe\sLIKE\soptimization\sso\sthat\sit\sworks\seven\sif\sthere\sare\sadditional\nrange\scontraints\son\sthe\scolumn\sthat\sis\ssubject\sto\sthe\sLIKE\sor\sGLOB.
-D 2015-03-09T13:01:02.136
+C Revise\stest\scases\sin\smalloc5.test\sto\saccommodate\svarying\sallocation\nsizes\sreturned\sby\ssome\ssystem\smalloc()\simplementations.
+D 2015-03-10T13:50:18.414
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f643d6968dfc0b82d2e546a0525a39079f9e928
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -709,7 +709,7 @@ F test/make-where7.tcl 05c16b5d4f5d6512881dfec560cb793915932ef9
 F test/malloc.test 96939d2d1a6f39667bbebe5bc27c6525f2ab614e
 F test/malloc3.test e3b32c724b5a124b57cb0ed177f675249ad0c66a
 F test/malloc4.test 957337613002b7058a85116493a262f679f3a261
-F test/malloc5.test fafce0aa9157060445cd1a56ad50fc79d82f28c3
+F test/malloc5.test 79182b8bffd6d62f77b1a5a8ba8e6bf0e5053b8e
 F test/malloc6.test 2f039d9821927eacae43e1831f815e157659a151
 F test/malloc7.test 7c68a32942858bc715284856c5507446bba88c3a
 F test/malloc8.test 9b7a3f8cb9cf0b12fff566e80a980b1767bd961d
@@ -1241,8 +1241,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e5da5e7d5dc5a3438ced23f1ee83e695abc29c45 0e02dc94fd1bb891d0edd1e34b57e923b17712a7
-R c1700660b0fab033a6359aa8c00c1b69
-T +closed 0e02dc94fd1bb891d0edd1e34b57e923b17712a7
+P 984c3fd5261619fb542a5a95dab37707b5d79dbf
+R 755476faee751a04385de321ff0c4db7
 U drh
-Z 0d4bf9b628bd332a63a01f9a77a070c3
+Z d102bfa9bbfc74e74ac15b539033106b
