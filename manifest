@@ -1,5 +1,5 @@
-C Fix\ssome\scompiler\swarnings\scaused\sby\ssigned/unsigned\spointer\sconversions.
-D 2015-03-07T15:46:41.341
+C Avoid\sredundant\sstring\scomparisons\swhile\smerging\sfts5\ssegment\sb-trees.
+D 2015-03-10T19:24:30.225
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5407a688f4d77a05c18a8142be8ae5a2829dd610
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -112,7 +112,7 @@ F ext/fts5/fts5_buffer.c 29f79841bf6eef5220eef41b122419b1bcb07b06
 F ext/fts5/fts5_config.c 0847facc8914f57ea4452c43ce109200dc65e894
 F ext/fts5/fts5_expr.c 5215137efab527577d36bdf9e44bfc2ec3e1be98
 F ext/fts5/fts5_hash.c 9959b5408f649487d4b0ee081416f37dc3cd8cdd
-F ext/fts5/fts5_index.c 3eb8db82d08386d6777faeb4ff45ee998b3d9a81
+F ext/fts5/fts5_index.c b00f7147f9660e66d9d1a8149d4faea3a06cd48e
 F ext/fts5/fts5_storage.c ac0f0937059c8d4f38a1f13aa5f2c2cd7edf3e0d
 F ext/fts5/fts5_tcl.c 617b6bb96545be8d9045de6967c688cd9cd15541
 F ext/fts5/fts5_tokenize.c c3fe30914f7722941ea9e0092c07ab5ae87112e4
@@ -1284,7 +1284,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3ee7b5a9f987c269251620ae7cc0fc7876b58ee5
-R 2a14dede3733f8ccd7d343d89b036f09
+P cccee7b5b1e84523f1c549d3052fd170e32bde80
+R 3da0db5a8a88c2deea54e98a4c62e146
 U dan
-Z b868027a203766c0d15e29e2b4da678d
+Z f8fc1108495d7cd86a621708029f2995

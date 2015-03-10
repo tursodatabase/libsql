@@ -410,12 +410,19 @@ struct Fts5SegWriter {
 ** aFirst[1] contains the index in aSeg[] of the iterator that points to
 ** the smallest key overall. aFirst[0] is unused. 
 */
+
+typedef struct Fts5CResult Fts5CResult;
+struct Fts5CResult {
+  u16 iFirst;                     /* aSeg[] index of firstest iterator */
+  u8 bTermEq;                     /* True if the terms are equal */
+};
+
 struct Fts5MultiSegIter {
   int nSeg;                       /* Size of aSeg[] array */
   int bRev;                       /* True to iterate in reverse order */
   int bSkipEmpty;                 /* True to skip deleted entries */
   Fts5SegIter *aSeg;              /* Array of segment iterators */
-  u16 *aFirst;                    /* Current merge state (see above) */
+  Fts5CResult *aFirst;            /* Current merge state (see above) */
 };
 
 /*
@@ -1744,8 +1751,10 @@ static int fts5SegIterIsDelete(
 */
 static void fts5SegIterNext(
   Fts5Index *p,                   /* FTS5 backend object */
-  Fts5SegIter *pIter              /* Iterator to advance */
+  Fts5SegIter *pIter,             /* Iterator to advance */
+  int *pbNewTerm                  /* OUT: Set for new term */
 ){
+  assert( pbNewTerm==0 || *pbNewTerm==0 );
   if( p->rc==SQLITE_OK ){
     if( pIter->flags & FTS5_SEGITER_REVERSE ){
       if( pIter->iRowidOffset>0 ){
@@ -1841,6 +1850,7 @@ static void fts5SegIterNext(
           pIter->pLeaf = 0;
         }else{
           fts5SegIterLoadTerm(p, pIter, nKeep);
+          if( pbNewTerm ) *pbNewTerm = 1;
         }
       }
     }
@@ -2033,7 +2043,7 @@ static void fts5SegIterSeekInit(
     do {
       res = fts5BufferCompareBlob(&pIter->term, pTerm, nTerm);
       if( res>=0 ) break;
-      fts5SegIterNext(p, pIter);
+      fts5SegIterNext(p, pIter, 0);
     }while( pIter->pLeaf && p->rc==SQLITE_OK );
 
     if( bGe==0 && res ){
@@ -2123,6 +2133,79 @@ static void fts5SegIterClear(Fts5SegIter *pIter){
   memset(pIter, 0, sizeof(Fts5SegIter));
 }
 
+#ifdef SQLITE_DEBUG
+
+/*
+** This function is used as part of the big assert() procedure implemented by
+** fts5AssertMultiIterSetup(). It ensures that the result currently stored
+** in *pRes is the correct result of comparing the current positions of the
+** two iterators.
+*/
+static void fts5AssertComparisonResult(
+  Fts5MultiSegIter *pIter, 
+  Fts5SegIter *p1,
+  Fts5SegIter *p2,
+  Fts5CResult *pRes
+){
+  int i1 = p1 - pIter->aSeg;
+  int i2 = p2 - pIter->aSeg;
+
+  if( p1->pLeaf || p2->pLeaf ){
+    if( p1->pLeaf==0 ){
+      assert( pRes->iFirst==i2 );
+    }else if( p2->pLeaf==0 ){
+      assert( pRes->iFirst==i1 );
+    }else{
+      int nMin = MIN(p1->term.n, p2->term.n);
+      int res = memcmp(p1->term.p, p2->term.p, nMin);
+      if( res==0 ) res = p1->term.n - p2->term.n;
+
+      if( res==0 ){
+        assert( pRes->bTermEq==1 );
+        assert( p1->iRowid!=p2->iRowid );
+        res = ((p1->iRowid > p2->iRowid)==pIter->bRev) ? -1 : 1;
+      }else{
+        assert( pRes->bTermEq==0 );
+      }
+
+      if( res<0 ){
+        assert( pRes->iFirst==i1 );
+      }else{
+        assert( pRes->iFirst==i2 );
+      }
+    }
+  }
+}
+
+/*
+** This function is a no-op unless SQLITE_DEBUG is defined when this module
+** is compiled. In that case, this function is essentially an assert() 
+** statement used to verify that the contents of the pIter->aFirst[] array
+** are correct.
+*/
+static void fts5AssertMultiIterSetup(Fts5Index *p, Fts5MultiSegIter *pIter){
+  if( p->rc==SQLITE_OK ){
+    int i;
+    for(i=0; i<pIter->nSeg; i+=2){
+      Fts5SegIter *p1 = &pIter->aSeg[i];
+      Fts5SegIter *p2 = &pIter->aSeg[i+1];
+      Fts5CResult *pRes = &pIter->aFirst[(pIter->nSeg + i) / 2];
+      fts5AssertComparisonResult(pIter, p1, p2, pRes);
+    }
+
+    for(i=1; i<(pIter->nSeg / 2); i+=2){
+      Fts5CResult *pRes = &pIter->aFirst[i];
+      Fts5SegIter *p1 = &pIter->aSeg[ pIter->aFirst[i*2].iFirst ];
+      Fts5SegIter *p2 = &pIter->aSeg[ pIter->aFirst[i*2+1].iFirst ];
+
+      fts5AssertComparisonResult(pIter, p1, p2, pRes);
+    }
+  }
+}
+#else
+# define fts5AssertMultiIterSetup(x,y)
+#endif
+
 /*
 ** Do the comparison necessary to populate pIter->aFirst[iOut].
 **
@@ -2137,6 +2220,7 @@ static int fts5MultiIterDoCompare(Fts5MultiSegIter *pIter, int iOut){
   int iRes;
   Fts5SegIter *p1;                /* Left-hand Fts5SegIter */
   Fts5SegIter *p2;                /* Right-hand Fts5SegIter */
+  Fts5CResult *pRes = &pIter->aFirst[iOut];
 
   assert( iOut<pIter->nSeg && iOut>0 );
   assert( pIter->bRev==0 || pIter->bRev==1 );
@@ -2145,12 +2229,13 @@ static int fts5MultiIterDoCompare(Fts5MultiSegIter *pIter, int iOut){
     i1 = (iOut - pIter->nSeg/2) * 2;
     i2 = i1 + 1;
   }else{
-    i1 = pIter->aFirst[iOut*2];
-    i2 = pIter->aFirst[iOut*2+1];
+    i1 = pIter->aFirst[iOut*2].iFirst;
+    i2 = pIter->aFirst[iOut*2+1].iFirst;
   }
   p1 = &pIter->aSeg[i1];
   p2 = &pIter->aSeg[i2];
 
+  pRes->bTermEq = 0;
   if( p1->pLeaf==0 ){           /* If p1 is at EOF */
     iRes = i2;
   }else if( p2->pLeaf==0 ){     /* If p2 is at EOF */
@@ -2160,6 +2245,7 @@ static int fts5MultiIterDoCompare(Fts5MultiSegIter *pIter, int iOut){
     if( res==0 ){
       assert( i2>i1 );
       assert( i2!=0 );
+      pRes->bTermEq = 1;
       if( p1->iRowid==p2->iRowid ) return i2;
       res = ((p1->iRowid > p2->iRowid)==pIter->bRev) ? -1 : +1;
     }
@@ -2171,7 +2257,7 @@ static int fts5MultiIterDoCompare(Fts5MultiSegIter *pIter, int iOut){
     }
   }
 
-  pIter->aFirst[iOut] = iRes;
+  pRes->iFirst = iRes;
   return 0;
 }
 
@@ -2252,7 +2338,7 @@ static void fts5SegIterNextFrom(
   }
 
   while( 1 ){
-    if( bMove ) fts5SegIterNext(p, pIter);
+    if( bMove ) fts5SegIterNext(p, pIter, 0);
     if( pIter->pLeaf==0 ) break;
     if( bRev==0 && pIter->iRowid>=iMatch ) break;
     if( bRev!=0 && pIter->iRowid<=iMatch ) break;
@@ -2284,10 +2370,41 @@ static void fts5MultiIterAdvanced(
   for(i=(pIter->nSeg+iChanged)/2; i>=iMinset && p->rc==SQLITE_OK; i=i/2){
     int iEq;
     if( (iEq = fts5MultiIterDoCompare(pIter, i)) ){
-      fts5SegIterNext(p, &pIter->aSeg[iEq]);
+      fts5SegIterNext(p, &pIter->aSeg[iEq], 0);
       i = pIter->nSeg + iEq;
     }
   }
+}
+
+static int fts5MultiIterAdvanceRowid(
+  Fts5Index *p,                   /* FTS5 backend to iterate within */
+  Fts5MultiSegIter *pIter,        /* Iterator to update aFirst[] array for */
+  int iChanged                    /* Index of sub-iterator just advanced */
+){
+  int i;
+  Fts5SegIter *pNew = &pIter->aSeg[iChanged];
+  Fts5SegIter *pOther = &pIter->aSeg[iChanged ^ 0x0001];
+
+  for(i=(pIter->nSeg+iChanged)/2; p->rc==SQLITE_OK; i=i/2){
+    Fts5CResult *pRes = &pIter->aFirst[i];
+
+    assert( pNew->pLeaf );
+    assert( pRes->bTermEq==0 || pOther->pLeaf );
+    
+    if( pRes->bTermEq ){
+      if( pNew->iRowid==pOther->iRowid ){
+        return 1;
+      }else if( (pOther->iRowid>pNew->iRowid)==pIter->bRev ){
+        pNew = pOther;
+      }
+    }
+    pRes->iFirst = (pNew - pIter->aSeg);
+    if( i==1 ) break;
+
+    pOther = &pIter->aSeg[ pIter->aFirst[i ^ 0x0001].iFirst ];
+  }
+
+  return 0;
 }
 
 /*
@@ -2306,17 +2423,25 @@ static void fts5MultiIterNext(
   if( p->rc==SQLITE_OK ){
     int bUseFrom = bFrom;
     do {
-      int iFirst = pIter->aFirst[1];
+      int iFirst = pIter->aFirst[1].iFirst;
+      int bNewTerm = 0;
       Fts5SegIter *pSeg = &pIter->aSeg[iFirst];
       if( bUseFrom && pSeg->pDlidx ){
         fts5SegIterNextFrom(p, pSeg, iFrom);
       }else{
-        fts5SegIterNext(p, pSeg);
+        fts5SegIterNext(p, pSeg, &bNewTerm);
       }
-      fts5MultiIterAdvanced(p, pIter, iFirst, 1);
+
+      if( pSeg->pLeaf==0 || bNewTerm 
+       || fts5MultiIterAdvanceRowid(p, pIter, iFirst)
+      ){
+        fts5MultiIterAdvanced(p, pIter, iFirst, 1);
+      }
+      fts5AssertMultiIterSetup(p, pIter);
+
       bUseFrom = 0;
     }while( pIter->bSkipEmpty 
-         && fts5SegIterIsDelete(p, &pIter->aSeg[pIter->aFirst[1]])
+         && fts5SegIterIsDelete(p, &pIter->aSeg[pIter->aFirst[1].iFirst])
     );
   }
 }
@@ -2336,7 +2461,7 @@ static void fts5MultiIterNew(
   Fts5Index *p,                   /* FTS5 backend to iterate within */
   Fts5Structure *pStruct,         /* Structure of specific index */
   int iIdx,                       /* Config.aHash[] index of FTS index */
-  int bSkipEmpty,
+  int bSkipEmpty,                 /* True to ignore delete-keys */
   int flags,                      /* True for >= */
   const u8 *pTerm, int nTerm,     /* Term to seek to (or NULL/0) */
   int iLevel,                     /* Level to iterate (-1 for all) */
@@ -2363,12 +2488,12 @@ static void fts5MultiIterNew(
   *ppOut = pNew = fts5IdxMalloc(p, 
       sizeof(Fts5MultiSegIter) +          /* pNew */
       sizeof(Fts5SegIter) * nSlot +       /* pNew->aSeg[] */
-      sizeof(u16) * nSlot                 /* pNew->aFirst[] */
+      sizeof(Fts5CResult) * nSlot         /* pNew->aFirst[] */
   );
   if( pNew==0 ) return;
   pNew->nSeg = nSlot;
   pNew->aSeg = (Fts5SegIter*)&pNew[1];
-  pNew->aFirst = (u16*)&pNew->aSeg[nSlot];
+  pNew->aFirst = (Fts5CResult*)&pNew->aSeg[nSlot];
   pNew->bRev = (0!=(flags & FTS5INDEX_QUERY_DESC));
   pNew->bSkipEmpty = bSkipEmpty;
 
@@ -2407,13 +2532,14 @@ static void fts5MultiIterNew(
     for(iIter=nSlot-1; iIter>0; iIter--){
       int iEq;
       if( (iEq = fts5MultiIterDoCompare(pNew, iIter)) ){
-        fts5SegIterNext(p, &pNew->aSeg[iEq]);
+        fts5SegIterNext(p, &pNew->aSeg[iEq], 0);
         fts5MultiIterAdvanced(p, pNew, iEq, iIter);
       }
     }
+    fts5AssertMultiIterSetup(p, pNew);
 
     if( pNew->bSkipEmpty 
-     && fts5SegIterIsDelete(p, &pNew->aSeg[pNew->aFirst[1]]) 
+     && fts5SegIterIsDelete(p, &pNew->aSeg[pNew->aFirst[1].iFirst]) 
     ){
       fts5MultiIterNext(p, pNew, 0, 0);
     }
@@ -2428,7 +2554,7 @@ static void fts5MultiIterNew(
 ** False otherwise.
 */
 static int fts5MultiIterEof(Fts5Index *p, Fts5MultiSegIter *pIter){
-  return (p->rc || pIter->aSeg[ pIter->aFirst[1] ].pLeaf==0);
+  return (p->rc || pIter->aSeg[ pIter->aFirst[1].iFirst ].pLeaf==0);
 }
 
 /*
@@ -2437,8 +2563,8 @@ static int fts5MultiIterEof(Fts5Index *p, Fts5MultiSegIter *pIter){
 ** results are undefined.
 */
 static i64 fts5MultiIterRowid(Fts5MultiSegIter *pIter){
-  assert( pIter->aSeg[ pIter->aFirst[1] ].pLeaf );
-  return pIter->aSeg[ pIter->aFirst[1] ].iRowid;
+  assert( pIter->aSeg[ pIter->aFirst[1].iFirst ].pLeaf );
+  return pIter->aSeg[ pIter->aFirst[1].iFirst ].iRowid;
 }
 
 /*
@@ -2464,7 +2590,7 @@ static void fts5MultiIterNextFrom(
 ** entry that the iterator currently points to.
 */
 static const u8 *fts5MultiIterTerm(Fts5MultiSegIter *pIter, int *pn){
-  Fts5SegIter *p = &pIter->aSeg[ pIter->aFirst[1] ];
+  Fts5SegIter *p = &pIter->aSeg[ pIter->aFirst[1].iFirst ];
   *pn = p->term.n;
   return p->term.p;
 }
@@ -2593,7 +2719,7 @@ static void fts5PosIterInit(
   Fts5PosIter *pIter              /* Initialize this object */
 ){
   if( p->rc==SQLITE_OK ){
-    Fts5SegIter *pSeg = &pMulti->aSeg[ pMulti->aFirst[1] ];
+    Fts5SegIter *pSeg = &pMulti->aSeg[ pMulti->aFirst[1].iFirst ];
     memset(pIter, 0, sizeof(*pIter));
     fts5ChunkIterInit(p, pSeg, &pIter->chunk);
     if( fts5ChunkIterEof(p, &pIter->chunk)==0 ){
@@ -3214,7 +3340,7 @@ fflush(stdout);
       fts5MultiIterEof(p, pIter)==0;
       fts5MultiIterNext(p, pIter, 0, 0)
   ){
-    Fts5SegIter *pSeg = &pIter->aSeg[ pIter->aFirst[1] ];
+    Fts5SegIter *pSeg = &pIter->aSeg[ pIter->aFirst[1].iFirst ];
     Fts5ChunkIter sPos;           /* Used to iterate through position list */
 
     /* If the segment being written is the oldest in the entire index and
@@ -3940,7 +4066,7 @@ static void fts5MultiIterPoslist(
 ){
   if( p->rc==SQLITE_OK ){
     Fts5ChunkIter iter;
-    Fts5SegIter *pSeg = &pMulti->aSeg[ pMulti->aFirst[1] ];
+    Fts5SegIter *pSeg = &pMulti->aSeg[ pMulti->aFirst[1].iFirst ];
     assert( fts5MultiIterEof(p, pMulti)==0 );
     fts5ChunkIterInit(p, pSeg, &iter);
     if( fts5ChunkIterEof(p, &iter)==0 ){
