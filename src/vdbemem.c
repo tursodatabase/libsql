@@ -1135,6 +1135,128 @@ static sqlite3_value *valueNew(sqlite3 *db, struct ValueNewStat4Ctx *p){
 }
 
 /*
+** The expression object indicated by the second argument is guaranteed
+** to be a scalar SQL function. If
+**
+**   * all function arguments are SQL literals,
+**   * the SQLITE_FUNC_CONSTANT function flag is set,
+**   * the SQLITE_FUNC_NEEDCOLL function flag is not set, and
+**   * this routine is being invoked as part of examining stat4 data,
+**     not as part of handling a default value on a column created using
+**     ALTER TABLE ADD COLUMN, 
+**
+** then this routine attempts to invoke the SQL function. Assuming no
+** error occurs, output parameter (*ppVal) is set to point to a value 
+** object containing the result before returning SQLITE_OK.
+**
+** Affinity aff is applied to the result of the function before returning.
+** If the result is a text value, the sqlite3_value object uses encoding 
+** enc.
+**
+** If the conditions above are not met, this function returns SQLITE_OK
+** and sets (*ppVal) to NULL. Or, if an error occurs, (*ppVal) is set to
+** NULL and an SQLite error code returned.
+*/
+#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
+static int valueFromFunction(
+  sqlite3 *db,                    /* The database connection */
+  Expr *p,                        /* The expression to evaluate */
+  u8 enc,                         /* Encoding to use */
+  u8 aff,                         /* Affinity to use */
+  sqlite3_value **ppVal,          /* Write the new value here */
+  struct ValueNewStat4Ctx *pCtx   /* Second argument for valueNew() */
+){
+  sqlite3_context ctx;            /* Context object for function invocation */
+  sqlite3_value **apVal = 0;      /* Function arguments */
+  int nVal = 0;                   /* Size of apVal[] array */
+  FuncDef *pFunc = 0;             /* Function definition */
+  sqlite3_value *pVal = 0;        /* New value */
+  int rc = SQLITE_OK;             /* Return code */
+  int nName;                      /* Size of function name in bytes */
+  ExprList *pList;                /* Function arguments */
+  int i;                          /* Iterator variable */
+
+  /* If pCtx==0, then this is probably being called to to obtain an 
+  ** sqlite3_value object for the default value of a column. In that case
+  ** function expressions are not supported. Function expressions are
+  ** only supported when extracting values to compare with sqlite_stat4 
+  ** records.
+  **
+  ** It may also be that this function expression is an argument passed
+  ** to another function expression. As in "f2(...)" within the query:
+  **
+  **   SELECT * FROM tbl WHERE tbl.c = f1(0, f2(...), 1);
+  **
+  ** For now, extracting the value of "f1(...)" is not supported either.
+  */
+  if( pCtx==0 ) return SQLITE_OK;
+  
+  assert( (p->flags & (EP_TokenOnly|EP_Reduced))==0 );
+  pList = p->x.pList;
+  if( pList ) nVal = pList->nExpr;
+  nName = sqlite3Strlen30(p->u.zToken);
+  pFunc = sqlite3FindFunction(db, p->u.zToken, nName, nVal, enc, 0);
+  assert( pFunc );
+  if( (pFunc->funcFlags & SQLITE_FUNC_CONSTANT)==0 
+   || (pFunc->funcFlags & SQLITE_FUNC_NEEDCOLL)
+  ){
+    return SQLITE_OK;
+  }
+
+  if( pList ){
+    apVal = (sqlite3_value**)sqlite3DbMallocZero(db, sizeof(apVal[0]) * nVal);
+    if( apVal==0 ){
+      rc = SQLITE_NOMEM;
+      goto value_from_function_out;
+    }
+    for(i=0; i<nVal; i++){
+      rc = sqlite3ValueFromExpr(db, pList->a[i].pExpr, enc, aff, &apVal[i]);
+      if( apVal[i]==0 ) goto value_from_function_out;
+      assert( rc==SQLITE_OK );
+    }
+  }
+
+  pVal = valueNew(db, pCtx);
+  if( pVal==0 ){
+    rc = SQLITE_NOMEM;
+    goto value_from_function_out;
+  }
+
+  memset(&ctx, 0, sizeof(ctx));
+  ctx.pOut = pVal;
+  ctx.pFunc = pFunc;
+  pFunc->xFunc(&ctx, nVal, apVal);
+  if( ctx.isError ){
+    rc = ctx.isError;
+    sqlite3ErrorMsg(pCtx->pParse, "%s", sqlite3_value_text(pVal));
+  }else{
+    sqlite3ValueApplyAffinity(pVal, aff, SQLITE_UTF8);
+    if( rc==SQLITE_OK ){
+      rc = sqlite3VdbeChangeEncoding(pVal, enc);
+    }
+    if( rc==SQLITE_OK && sqlite3VdbeMemTooBig(pVal) ){
+      rc = SQLITE_TOOBIG;
+    }
+  }
+
+ value_from_function_out:
+  if( rc!=SQLITE_OK ){
+    if( pCtx==0 ) sqlite3ValueFree(pVal);
+    pVal = 0;
+  }
+  for(i=0; i<nVal; i++){
+    sqlite3ValueFree(apVal[i]);
+  }
+  sqlite3DbFree(db, apVal);
+
+  *ppVal = pVal;
+  return rc;
+}
+#else
+# define valueFromFunction(a,b,c,d,e,f) SQLITE_OK
+#endif /* defined(SQLITE_ENABLE_STAT3_OR_STAT4) */
+
+/*
 ** Extract a value from the supplied expression in the manner described
 ** above sqlite3ValueFromExpr(). Allocate the sqlite3_value object
 ** using valueNew().
@@ -1241,6 +1363,10 @@ static int valueFromExpr(
                          0, SQLITE_DYNAMIC);
   }
 #endif
+
+  else if( op==TK_FUNCTION ){
+    rc = valueFromFunction(db, pExpr, enc, affinity, &pVal, pCtx);
+  }
 
   *ppVal = pVal;
   return rc;

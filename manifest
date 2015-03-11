@@ -1,5 +1,5 @@
-C Expand\sthe\smulti-process\stest\scases\sto\srepeat\seach\scase\s20\stimes\sand\nto\srepeat\stests\susing\sdifferent\sjournal\smodes.
-D 2015-03-11T14:34:38.239
+C Allow\sthe\squery\splanner\sto\sevaluate\sdeterministic\sscalar\sSQL\sfunctions\sused\sin\sWHERE\sconstraints\sif\sall\sarguments\sare\sSQL\sliterals\sin\sorder\sto\scompare\sthe\sresults\swith\ssqlite_stat4\ssample\sdata.
+D 2015-03-11T20:06:40.904
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -296,10 +296,10 @@ F src/vacuum.c 9460b9de7b2d4e34b0d374894aa6c8a0632be8ec
 F src/vdbe.c 94cbc2115075b1a562a2a702c29ba48e74f85d34
 F src/vdbe.h 6fc69d9c5e146302c56e163cb4b31d1ee64a18c3
 F src/vdbeInt.h bb56fd199d8af1a2c1b9639ee2f70724b4338e3a
-F src/vdbeapi.c dac0d0d8009a8aa549cd77d9c29da44c0344f0c4
+F src/vdbeapi.c 5c207659c8a57c12c3f77a8fb97544e032fc2f14
 F src/vdbeaux.c 97911edb61074b871ec4aa2d6bb779071643dee5
 F src/vdbeblob.c 4f2e8e075d238392df98c5e03a64342465b03f90
-F src/vdbemem.c 31d8eabb0cd78bfeab4e5124c7363c3e9e54db9f
+F src/vdbemem.c 8572106eb3b64ad6e02698c0fb312ccb47bb5c9e
 F src/vdbesort.c 6d64c5448b64851b99931ede980addc3af70d5e2
 F src/vdbetrace.c 7e4222955e07dd707a2f360c0eb73452be1cb010
 F src/vtab.c 699f2b8d509cfe379c33dde33827875d5b030e01
@@ -333,6 +333,7 @@ F test/analyzeB.test 8bf35ee0a548aea831bf56762cb8e7fdb1db083d
 F test/analyzeC.test 555a6cc388b9818b6eda6df816f01ce0a75d3a93
 F test/analyzeD.test 08f9d0bee4e118a66fff3a32d02dbe0ee0a2b594
 F test/analyzeE.test 8684e8ac5722fb97c251887ad97e5d496a98af1d
+F test/analyzeF.test 299a47183c648d8ad92671f313def8fd7cb09875
 F test/async.test 1d0e056ba1bb9729283a0f22718d3a25e82c277b
 F test/async2.test c0a9bd20816d7d6a2ceca7b8c03d3d69c28ffb8b
 F test/async3.test d73a062002376d7edc1fe3edff493edbec1fc2f7
@@ -1241,7 +1242,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8d0b11c96e15556dd65ced05708a832aef134e69
-R 2327229d01e481a57e92de598065db5c
-U drh
-Z cd1fd5866edba6a7b1ae8e17fb546b84
+P a2715b049a86555990abccc7aa363c524ddb9982
+R 8289f5b5a84378b5cf3294cc8646b1fb
+T *branch * stat4-function
+T *sym-stat4-function *
+T -sym-trunk *
+U dan
+Z a4cf4e61f3250d5413e8887a5d5cd094

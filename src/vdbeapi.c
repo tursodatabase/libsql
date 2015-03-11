@@ -637,12 +637,13 @@ sqlite3 *sqlite3_context_db_handle(sqlite3_context *p){
 */
 sqlite3_int64 sqlite3StmtCurrentTime(sqlite3_context *p){
   Vdbe *v = p->pVdbe;
+  sqlite3_int64 iTime = 0;
   int rc;
-  if( v->iCurrentTime==0 ){
-    rc = sqlite3OsCurrentTimeInt64(p->pOut->db->pVfs, &v->iCurrentTime);
-    if( rc ) v->iCurrentTime = 0;
-  }
-  return v->iCurrentTime;
+  if( v && v->iCurrentTime ) return v->iCurrentTime;
+  rc = sqlite3OsCurrentTimeInt64(p->pOut->db->pVfs, &iTime);
+  if( rc ) return 0;
+  if( v ) v->iCurrentTime = iTime;
+  return iTime;
 }
 
 /*
@@ -712,6 +713,7 @@ void *sqlite3_get_auxdata(sqlite3_context *pCtx, int iArg){
   AuxData *pAuxData;
 
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
+  if( pCtx->pVdbe==0 ) return 0;
   for(pAuxData=pCtx->pVdbe->pAuxData; pAuxData; pAuxData=pAuxData->pNext){
     if( pAuxData->iOp==pCtx->iOp && pAuxData->iArg==iArg ) break;
   }
@@ -735,6 +737,7 @@ void sqlite3_set_auxdata(
 
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
   if( iArg<0 ) goto failed;
+  if( pVdbe==0 ) goto failed;
 
   for(pAuxData=pVdbe->pAuxData; pAuxData; pAuxData=pAuxData->pNext){
     if( pAuxData->iOp==pCtx->iOp && pAuxData->iArg==iArg ) break;
