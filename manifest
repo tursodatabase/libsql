@@ -1,5 +1,5 @@
-C Allow\sthe\squery\splanner\sto\sevaluate\sdeterministic\sscalar\sSQL\sfunctions\sused\sin\sWHERE\sconstraints\sif\sall\sarguments\sare\sSQL\sliterals\sin\sorder\sto\scompare\sthe\sresults\swith\ssqlite_stat4\ssample\sdata.
-D 2015-03-11T20:06:40.904
+C Allow\sthe\sdefault\svalue\sfor\scolumns\sadded\susing\sALTER\sTABLE\sADD\sCOLUMN\sto\sbe\sa\sfunction\sin\sexisting\sschemas\sloaded\sfrom\sdisk.\sBut\sprevent\sthis\sversion\sof\sSQLite\sfrom\sbeing\sused\sto\screate\ssuch\sa\scolumn.
+D 2015-03-11T20:59:42.115
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -166,7 +166,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c ba266a779bc7ce10e52e59e7d3dc79fa342e8fdb
+F src/alter.c 809313ddb2dea2a8cdd2d0da944d6a859e3657dc
 F src/analyze.c 91540f835163d5369ccbae78e2e6c74d0dd53c1d
 F src/attach.c 880f9b8641a829c563e52dd13c452ce457ae4dd8
 F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
@@ -299,7 +299,7 @@ F src/vdbeInt.h bb56fd199d8af1a2c1b9639ee2f70724b4338e3a
 F src/vdbeapi.c 5c207659c8a57c12c3f77a8fb97544e032fc2f14
 F src/vdbeaux.c 97911edb61074b871ec4aa2d6bb779071643dee5
 F src/vdbeblob.c 4f2e8e075d238392df98c5e03a64342465b03f90
-F src/vdbemem.c 8572106eb3b64ad6e02698c0fb312ccb47bb5c9e
+F src/vdbemem.c 85dd9cb7a98717ad821d388c10053da2fe66f0f7
 F src/vdbesort.c 6d64c5448b64851b99931ede980addc3af70d5e2
 F src/vdbetrace.c 7e4222955e07dd707a2f360c0eb73452be1cb010
 F src/vtab.c 699f2b8d509cfe379c33dde33827875d5b030e01
@@ -1242,10 +1242,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a2715b049a86555990abccc7aa363c524ddb9982
-R 8289f5b5a84378b5cf3294cc8646b1fb
-T *branch * stat4-function
-T *sym-stat4-function *
-T -sym-trunk *
+P b7f1fc26d24012e1e7c7f6b3cc0b84ad2b02b8ad
+R 3e606265a1ac491b0b1ab16052f58807
 U dan
-Z a4cf4e61f3250d5413e8887a5d5cd094
+Z 8153e0e591b223bdb869dacd2f48bbd5

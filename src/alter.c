@@ -690,7 +690,9 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
   */
   if( pDflt ){
     sqlite3_value *pVal = 0;
-    if( sqlite3ValueFromExpr(db, pDflt, SQLITE_UTF8, SQLITE_AFF_NONE, &pVal) ){
+    if( pDflt->op!=TK_FUNCTION
+     && sqlite3ValueFromExpr(db, pDflt, SQLITE_UTF8, SQLITE_AFF_NONE, &pVal) 
+    ){
       db->mallocFailed = 1;
       return;
     }

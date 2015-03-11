@@ -1139,11 +1139,8 @@ static sqlite3_value *valueNew(sqlite3 *db, struct ValueNewStat4Ctx *p){
 ** to be a scalar SQL function. If
 **
 **   * all function arguments are SQL literals,
-**   * the SQLITE_FUNC_CONSTANT function flag is set,
-**   * the SQLITE_FUNC_NEEDCOLL function flag is not set, and
-**   * this routine is being invoked as part of examining stat4 data,
-**     not as part of handling a default value on a column created using
-**     ALTER TABLE ADD COLUMN, 
+**   * the SQLITE_FUNC_CONSTANT function flag is set, and
+**   * the SQLITE_FUNC_NEEDCOLL function flag is not set,
 **
 ** then this routine attempts to invoke the SQL function. Assuming no
 ** error occurs, output parameter (*ppVal) is set to point to a value 
@@ -1173,27 +1170,13 @@ static int valueFromFunction(
   sqlite3_value *pVal = 0;        /* New value */
   int rc = SQLITE_OK;             /* Return code */
   int nName;                      /* Size of function name in bytes */
-  ExprList *pList;                /* Function arguments */
+  ExprList *pList = 0;            /* Function arguments */
   int i;                          /* Iterator variable */
 
-  /* If pCtx==0, then this is probably being called to to obtain an 
-  ** sqlite3_value object for the default value of a column. In that case
-  ** function expressions are not supported. Function expressions are
-  ** only supported when extracting values to compare with sqlite_stat4 
-  ** records.
-  **
-  ** It may also be that this function expression is an argument passed
-  ** to another function expression. As in "f2(...)" within the query:
-  **
-  **   SELECT * FROM tbl WHERE tbl.c = f1(0, f2(...), 1);
-  **
-  ** For now, extracting the value of "f1(...)" is not supported either.
-  */
-  if( pCtx==0 ) return SQLITE_OK;
-  
-  assert( (p->flags & (EP_TokenOnly|EP_Reduced))==0 );
-  pList = p->x.pList;
-  if( pList ) nVal = pList->nExpr;
+  if( (p->flags & EP_TokenOnly)==0 ){
+    pList = p->x.pList;
+    if( pList ) nVal = pList->nExpr;
+  }
   nName = sqlite3Strlen30(p->u.zToken);
   pFunc = sqlite3FindFunction(db, p->u.zToken, nName, nVal, enc, 0);
   assert( pFunc );
@@ -1228,7 +1211,7 @@ static int valueFromFunction(
   pFunc->xFunc(&ctx, nVal, apVal);
   if( ctx.isError ){
     rc = ctx.isError;
-    sqlite3ErrorMsg(pCtx->pParse, "%s", sqlite3_value_text(pVal));
+    if( pCtx ) sqlite3ErrorMsg(pCtx->pParse, "%s", sqlite3_value_text(pVal));
   }else{
     sqlite3ValueApplyAffinity(pVal, aff, SQLITE_UTF8);
     if( rc==SQLITE_OK ){
