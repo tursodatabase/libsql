@@ -404,6 +404,7 @@ static int fts5UnicodeTokenize(
   /* Output buffer */
   char *aFold = p->aFold;
   int nFold = p->nFold;
+  const char *pEnd = &aFold[nFold-6];
 
   /* Each iteration of this loop gobbles up a contiguous run of separators,
   ** then the next token.  */
@@ -439,7 +440,7 @@ static int fts5UnicodeTokenize(
 
       /* Grow the output buffer so that there is sufficient space to fit the
       ** largest possible utf-8 character.  */
-      if( (zOut-aFold)+6>nFold ){
+      if( zOut>pEnd ){
         aFold = sqlite3_malloc(nFold*2);
         if( aFold==0 ){
           rc = SQLITE_NOMEM;
@@ -450,6 +451,7 @@ static int fts5UnicodeTokenize(
         sqlite3_free(p->aFold);
         p->aFold = aFold;
         p->nFold = nFold = nFold*2;
+        pEnd = &aFold[nFold-6];
       }
 
       if( *zCsr & 0x80 ){

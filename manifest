@@ -1,5 +1,5 @@
-C Avoid\sredundant\sstring\scomparisons\swhile\smerging\sfts5\ssegment\sb-trees.
-D 2015-03-10T19:24:30.225
+C Add\san\soptimization\sto\sthe\sfts5\sunicode\stokenizer\scode.
+D 2015-03-11T14:51:39.375
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5407a688f4d77a05c18a8142be8ae5a2829dd610
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -115,7 +115,7 @@ F ext/fts5/fts5_hash.c 9959b5408f649487d4b0ee081416f37dc3cd8cdd
 F ext/fts5/fts5_index.c b00f7147f9660e66d9d1a8149d4faea3a06cd48e
 F ext/fts5/fts5_storage.c ac0f0937059c8d4f38a1f13aa5f2c2cd7edf3e0d
 F ext/fts5/fts5_tcl.c 617b6bb96545be8d9045de6967c688cd9cd15541
-F ext/fts5/fts5_tokenize.c c3fe30914f7722941ea9e0092c07ab5ae87112e4
+F ext/fts5/fts5_tokenize.c c07f2c2f749282c1dbbf46bde1f6d7095c740b8b
 F ext/fts5/fts5_unicode2.c f74f53316377068812a1fa5a37819e6b8124631d
 F ext/fts5/fts5parse.y 777da8e5819f75c217982c79c29d014c293acac9
 F ext/fts5/mkportersteps.tcl 5acf962d2e0074f701620bb5308155fa1e4a63ba
@@ -1284,7 +1284,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P cccee7b5b1e84523f1c549d3052fd170e32bde80
-R 3da0db5a8a88c2deea54e98a4c62e146
+P 5c46820d9b4aae791a8704b69145bd81f1e6780d
+R 3ab21807b5c69b091448271467250abb
 U dan
-Z f8fc1108495d7cd86a621708029f2995
+Z 588a6ddf00bd9c069b244e50951b58e0
