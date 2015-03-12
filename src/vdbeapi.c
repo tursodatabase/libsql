@@ -641,15 +641,14 @@ sqlite3 *sqlite3_context_db_handle(sqlite3_context *p){
 */
 sqlite3_int64 sqlite3StmtCurrentTime(sqlite3_context *p){
   int rc;
-  sqlite3_int64 iTime = 0;
 #ifndef SQLITE_ENABLE_STAT3_OR_STAT4
-  sqlite3_int64 *piTime = &iTime;
+  sqlite3_int64 *piTime = &p->pVdbe->iCurrentTime;
   assert( p->pVdbe!=0 );
 #else
+  sqlite3_int64 iTime = 0;
   sqlite3_int64 *piTime = p->pVdbe!=0 ? &p->pVdbe->iCurrentTime : &iTime;
-  if( *piTime==0 )
 #endif
-  {
+  if( *piTime==0 ){
     rc = sqlite3OsCurrentTimeInt64(p->pOut->db->pVfs, piTime);
     if( rc ) *piTime = 0;
   }
