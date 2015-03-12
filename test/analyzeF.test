@@ -1,0 +1,78 @@
+# 2015-03-12
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# Test that deterministic scalar functions passed constant arguments
+# are used with stat4 data.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set ::testprefix analyzeF
+
+ifcapable {!stat4} {
+  finish_test
+  return
+}
+
+proc isqrt {i} { expr { int(sqrt($i)) } }
+db func isqrt isqrt
+
+do_execsql_test 1.0 {
+  CREATE TABLE t1(x INTEGER, y INTEGER);
+  WITH data(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM data
+  )
+  INSERT INTO t1 SELECT isqrt(i), isqrt(i) FROM data LIMIT 400;
+  CREATE INDEX t1x ON t1(x);
+  CREATE INDEX t1y ON t1(y);
+  ANALYZE;
+}
+
+proc str {a} { return $a }
+db func str str
+
+# Note: tests 7 to 12 might be unstable - as they assume SQLite will
+# prefer the expression to the right of the AND clause. Which of
+# course could change.
+#
+# Note 2: tests 9 and 10 depend on the tcl interface creating functions
+# without the SQLITE_DETERMINISTIC flag set.
+#
+foreach {tn where idx} {
+  1 "x = 4 AND y = 19"     {t1x (x=?)}
+  2 "x = 19 AND y = 4"     {t1y (y=?)}
+  3 "x = '4' AND y = '19'" {t1x (x=?)}
+  4 "x = '19' AND y = '4'" {t1y (y=?)}
+  5 "x = substr('5195', 2, 2) AND y = substr('145', 2, 1)" {t1y (y=?)}
+  6 "x = substr('145', 2, 1) AND y = substr('5195', 2, 2)" {t1x (x=?)}
+
+  7  "x = substr('5195', 2, 2+0) AND y = substr('145', 2, 1+0)" {t1y (y=?)}
+  8  "x = substr('145', 2, 1+0) AND y = substr('5195', 2, 2+0)" {t1y (y=?)}
+
+  9  "x = str('19') AND y = str('4')" {t1y (y=?)}
+  10 "x = str('4') AND y = str('19')" {t1y (y=?)}
+
+  11 "x = nullif('19', 0) AND y = nullif('4', 0)" {t1y (y=?)}
+  12 "x = nullif('4', 0) AND y = nullif('19', 0)" {t1y (y=?)}
+} {
+  set res "0 0 0 {SEARCH TABLE t1 USING INDEX $idx}"
+  do_eqp_test 1.$tn "SELECT * FROM t1 WHERE $where" $res
+}
+
+do_catchsql_test 2.1 {
+  SELECT * FROM t1 WHERE x = substr('145', 2, 1) AND y = func(1, 2, 3)
+} {1 {no such function: func}}
+do_catchsql_test 2.2 {
+  UPDATE t1 SET y=y+1 WHERE x = substr('145', 2, 1) AND y = func(1, 2, 3)
+} {1 {no such function: func}}
+
+
+finish_test
+
