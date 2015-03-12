@@ -1,6 +1,6 @@
 [package]
 name = "libsqlite3-sys"
-version = "0.0.9"
+version = "0.0.10"
 authors = ["John Gallagher <jgallagher@bignerdranch.com>"]
 repository = "https://github.com/jgallagher/rusqlite"
 description = "Native bindings to the libsqlite3 library"
@@ -12,4 +12,4 @@ build = "build.rs"
 load_extension = []
 
 [build-dependencies]
-pkg-config = "~0.2"
+pkg-config = "~0.3"
