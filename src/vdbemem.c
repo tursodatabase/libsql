@@ -1194,8 +1194,7 @@ static int valueFromFunction(
     }
     for(i=0; i<nVal; i++){
       rc = sqlite3ValueFromExpr(db, pList->a[i].pExpr, enc, aff, &apVal[i]);
-      if( apVal[i]==0 ) goto value_from_function_out;
-      assert( rc==SQLITE_OK );
+      if( apVal[i]==0 || rc!=SQLITE_OK ) goto value_from_function_out;
     }
   }
 
@@ -1227,10 +1226,12 @@ static int valueFromFunction(
     if( pCtx==0 ) sqlite3ValueFree(pVal);
     pVal = 0;
   }
-  for(i=0; i<nVal; i++){
-    sqlite3ValueFree(apVal[i]);
+  if( apVal ){
+    for(i=0; i<nVal; i++){
+      sqlite3ValueFree(apVal[i]);
+    }
+    sqlite3DbFree(db, apVal);
   }
-  sqlite3DbFree(db, apVal);
 
   *ppVal = pVal;
   return rc;

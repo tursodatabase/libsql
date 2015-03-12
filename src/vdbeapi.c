@@ -633,17 +633,27 @@ sqlite3 *sqlite3_context_db_handle(sqlite3_context *p){
 }
 
 /*
-** Return the current time for a statement
+** Return the current time for a statement.  If the current time
+** is requested more than once within the same run of a single prepared
+** statement, the exact same time is returned for each invocation regardless
+** of the amount of time that elapses between invocations.  In other words,
+** the time returned is always the time of the first call.
 */
 sqlite3_int64 sqlite3StmtCurrentTime(sqlite3_context *p){
-  Vdbe *v = p->pVdbe;
-  sqlite3_int64 iTime = 0;
   int rc;
-  if( v && v->iCurrentTime ) return v->iCurrentTime;
-  rc = sqlite3OsCurrentTimeInt64(p->pOut->db->pVfs, &iTime);
-  if( rc ) return 0;
-  if( v ) v->iCurrentTime = iTime;
-  return iTime;
+  sqlite3_int64 iTime = 0;
+#ifndef SQLITE_ENABLE_STAT3_OR_STAT4
+  sqlite3_int64 *piTime = &iTime;
+  assert( p->pVdbe!=0 );
+#else
+  sqlite3_int64 *piTime = p->pVdbe!=0 ? &p->pVdbe->iCurrentTime : &iTime;
+  if( *piTime==0 )
+#endif
+  {
+    rc = sqlite3OsCurrentTimeInt64(p->pOut->db->pVfs, piTime);
+    if( rc ) *piTime = 0;
+  }
+  return *piTime;
 }
 
 /*
@@ -713,7 +723,11 @@ void *sqlite3_get_auxdata(sqlite3_context *pCtx, int iArg){
   AuxData *pAuxData;
 
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
+#if SQLITE_ENABLE_STAT3_OR_STAT4
   if( pCtx->pVdbe==0 ) return 0;
+#else
+  assert( pCtx->pVdbe!=0 );
+#endif
   for(pAuxData=pCtx->pVdbe->pAuxData; pAuxData; pAuxData=pAuxData->pNext){
     if( pAuxData->iOp==pCtx->iOp && pAuxData->iArg==iArg ) break;
   }
@@ -737,7 +751,11 @@ void sqlite3_set_auxdata(
 
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
   if( iArg<0 ) goto failed;
+#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
   if( pVdbe==0 ) goto failed;
+#else
+  assert( pVdbe!=0 );
+#endif
 
   for(pAuxData=pVdbe->pAuxData; pAuxData; pAuxData=pAuxData->pNext){
     if( pAuxData->iOp==pCtx->iOp && pAuxData->iArg==iArg ) break;
