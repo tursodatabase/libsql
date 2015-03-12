@@ -1517,7 +1517,7 @@ arithmetic_result_is_null:
 **
 ** The interface used by the implementation of the aforementioned functions
 ** to retrieve the collation sequence set by this opcode is not available
-** publicly, only to user functions defined in func.c.
+** publicly.  Only built-in functions have access to this feature.
 */
 case OP_CollSeq: {
   assert( pOp->p4type==P4_COLLSEQ );

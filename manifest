@@ -1,5 +1,5 @@
-C Expand\sthe\smulti-process\stest\scases\sto\srepeat\seach\scase\s20\stimes\sand\nto\srepeat\stests\susing\sdifferent\sjournal\smodes.
-D 2015-03-11T14:34:38.239
+C Improve\sthe\stext\son\sone\sof\sthe\sopcode\sdocumentation\scomments\sin\svdbe.c.
+D 2015-03-12T05:08:34.697
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -293,7 +293,7 @@ F src/update.c 3c4ecc282accf12d39edb8d524cf089645e55a13
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c 98a7627ca48ad3265b6940915a1d08355eb3fc7e
 F src/vacuum.c 9460b9de7b2d4e34b0d374894aa6c8a0632be8ec
-F src/vdbe.c 94cbc2115075b1a562a2a702c29ba48e74f85d34
+F src/vdbe.c a2725107658fd9572637e8e09d46dcfe851edb96
 F src/vdbe.h 6fc69d9c5e146302c56e163cb4b31d1ee64a18c3
 F src/vdbeInt.h bb56fd199d8af1a2c1b9639ee2f70724b4338e3a
 F src/vdbeapi.c dac0d0d8009a8aa549cd77d9c29da44c0344f0c4
@@ -1241,7 +1241,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8d0b11c96e15556dd65ced05708a832aef134e69
-R 2327229d01e481a57e92de598065db5c
+P a2715b049a86555990abccc7aa363c524ddb9982
+R 1bec88e395839df1ba1894bf7660872a
 U drh
-Z cd1fd5866edba6a7b1ae8e17fb546b84
+Z 0eea53c05ab1bdce3a6e00e90246f492
