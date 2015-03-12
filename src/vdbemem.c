@@ -1090,7 +1090,7 @@ struct ValueNewStat4Ctx {
 ** Otherwise, if the second argument is non-zero, then this function is 
 ** being called indirectly by sqlite3Stat4ProbeSetValue(). If it has not
 ** already been allocated, allocate the UnpackedRecord structure that 
-** that function will return to its caller here. Then return a pointer 
+** that function will return to its caller here. Then return a pointer to
 ** an sqlite3_value within the UnpackedRecord.a[] array.
 */
 static sqlite3_value *valueNew(sqlite3 *db, struct ValueNewStat4Ctx *p){
@@ -1173,10 +1173,10 @@ static int valueFromFunction(
   ExprList *pList = 0;            /* Function arguments */
   int i;                          /* Iterator variable */
 
-  if( (p->flags & EP_TokenOnly)==0 ){
-    pList = p->x.pList;
-    if( pList ) nVal = pList->nExpr;
-  }
+  assert( pCtx!=0 );
+  assert( (p->flags & EP_TokenOnly)==0 );
+  pList = p->x.pList;
+  if( pList ) nVal = pList->nExpr;
   nName = sqlite3Strlen30(p->u.zToken);
   pFunc = sqlite3FindFunction(db, p->u.zToken, nName, nVal, enc, 0);
   assert( pFunc );
@@ -1210,15 +1210,12 @@ static int valueFromFunction(
   pFunc->xFunc(&ctx, nVal, apVal);
   if( ctx.isError ){
     rc = ctx.isError;
-    if( pCtx ){
-      sqlite3ErrorMsg(pCtx->pParse, "%s", sqlite3_value_text(pVal));
-      pCtx->pParse->rc = rc;
-    }
+    sqlite3ErrorMsg(pCtx->pParse, "%s", sqlite3_value_text(pVal));
+    pCtx->pParse->rc = rc;
   }else{
     sqlite3ValueApplyAffinity(pVal, aff, SQLITE_UTF8);
-    if( rc==SQLITE_OK ){
-      rc = sqlite3VdbeChangeEncoding(pVal, enc);
-    }
+    assert( rc==SQLITE_OK );
+    rc = sqlite3VdbeChangeEncoding(pVal, enc);
     if( rc==SQLITE_OK && sqlite3VdbeMemTooBig(pVal) ){
       rc = SQLITE_TOOBIG;
     }
@@ -1226,7 +1223,6 @@ static int valueFromFunction(
 
  value_from_function_out:
   if( rc!=SQLITE_OK ){
-    if( pCtx==0 ) sqlite3ValueFree(pVal);
     pVal = 0;
   }
   if( apVal ){
@@ -1274,6 +1270,12 @@ static int valueFromExpr(
   }
   while( (op = pExpr->op)==TK_UPLUS ) pExpr = pExpr->pLeft;
   if( NEVER(op==TK_REGISTER) ) op = pExpr->op2;
+
+  /* Compressed expressions only appear when parsing the DEFAULT clause
+  ** on a table column definition, and hence only when pCtx==0.  This
+  ** check ensures that an EP_TokenOnly expression is never passed down
+  ** into valueFromFunction(). */
+  assert( (pExpr->flags & EP_TokenOnly)==0 || pCtx==0 );
 
   if( op==TK_CAST ){
     u8 aff = sqlite3AffinityType(pExpr->u.zToken,0);
@@ -1351,7 +1353,7 @@ static int valueFromExpr(
   }
 #endif
 
-  else if( op==TK_FUNCTION ){
+  else if( op==TK_FUNCTION && pCtx!=0 ){
     rc = valueFromFunction(db, pExpr, enc, affinity, &pVal, pCtx);
   }
 

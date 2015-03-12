@@ -1,5 +1,5 @@
-C If\san\serror\soccurs\sin\sthe\scompile-time\sevaluation\sof\san\sapplication-defined\nfunction,\sthen\spropagate\sback\sout\sthe\sexact\serror\scode,\snot\sjust\sthe\ngeneric\sSQLITE_ERROR.
-D 2015-03-12T18:38:51.338
+C Always\sdisallow\sfunctions\sas\sthe\sDEFAULT\sof\sa\scolumn.\s\sAdd\sassert()s\sand
+D 2015-03-12T21:02:36.947
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -166,7 +166,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c 809313ddb2dea2a8cdd2d0da944d6a859e3657dc
+F src/alter.c d23d6b6991f66b383934f137fd4384d93fb98c81
 F src/analyze.c 91540f835163d5369ccbae78e2e6c74d0dd53c1d
 F src/attach.c 880f9b8641a829c563e52dd13c452ce457ae4dd8
 F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
@@ -296,10 +296,10 @@ F src/vacuum.c 9460b9de7b2d4e34b0d374894aa6c8a0632be8ec
 F src/vdbe.c 94cbc2115075b1a562a2a702c29ba48e74f85d34
 F src/vdbe.h 6fc69d9c5e146302c56e163cb4b31d1ee64a18c3
 F src/vdbeInt.h bb56fd199d8af1a2c1b9639ee2f70724b4338e3a
-F src/vdbeapi.c da6551c9a9b9272f9cf7c776a09302ce9ca691d3
+F src/vdbeapi.c 1295402cabda4473ddee24955c8f7039514497e4
 F src/vdbeaux.c 97911edb61074b871ec4aa2d6bb779071643dee5
 F src/vdbeblob.c 4f2e8e075d238392df98c5e03a64342465b03f90
-F src/vdbemem.c 981fa5ac239d6a646b5720779844d991277dcd07
+F src/vdbemem.c d52fa9f3bcf75d27d7b7846d81ee7898829c763d
 F src/vdbesort.c 6d64c5448b64851b99931ede980addc3af70d5e2
 F src/vdbetrace.c 7e4222955e07dd707a2f360c0eb73452be1cb010
 F src/vtab.c 699f2b8d509cfe379c33dde33827875d5b030e01
@@ -1242,7 +1242,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8fb6bd9be59d6b04e922d7b246aaefd4851539b6
-R 46972b8481418c9af660c8cf08bd0f3b
+P 93f42586cc9db63c5a4599ce06630e60204a5bc9
+R b3d39823270cf35170812e8663c1c07d
 U drh
-Z f07316ba19973dffcb9b3c2ed85bb043
+Z b97bd037eac2f46713c8bf83215d5d81

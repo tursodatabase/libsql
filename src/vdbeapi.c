@@ -370,7 +370,7 @@ void sqlite3_result_error_code(sqlite3_context *pCtx, int errCode){
   pCtx->isError = errCode;
   pCtx->fErrorOrAux = 1;
 #ifdef SQLITE_DEBUG
-  pCtx->pVdbe->rcApp = errCode;
+  if( pCtx->pVdbe ) pCtx->pVdbe->rcApp = errCode;
 #endif
   if( pCtx->pOut->flags & MEM_Null ){
     sqlite3VdbeMemSetStr(pCtx->pOut, sqlite3ErrStr(errCode), -1, 
