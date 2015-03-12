@@ -12,4 +12,4 @@ build = "build.rs"
 load_extension = []
 
 [build-dependencies]
-pkg-config = "~0.2"
+pkg-config = "~0.3"
