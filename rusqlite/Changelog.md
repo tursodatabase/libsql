@@ -1,3 +1,9 @@
+# Version 0.0.11 (2015-03-12)
+
+* Reexport `sqlite3_stmt` from `libsqlite3-sys` for easier `impl`-ing of `ToSql` and `FromSql`.
+* Updates to track latest rustc changes.
+* Update dependency versions.
+
 # Version 0.0.10 (2015-02-23)
 
 * BREAKING CHANGE: `open` now expects a `Path` rather than a `str`. There is a separate
