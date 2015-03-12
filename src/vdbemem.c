@@ -1210,7 +1210,10 @@ static int valueFromFunction(
   pFunc->xFunc(&ctx, nVal, apVal);
   if( ctx.isError ){
     rc = ctx.isError;
-    if( pCtx ) sqlite3ErrorMsg(pCtx->pParse, "%s", sqlite3_value_text(pVal));
+    if( pCtx ){
+      sqlite3ErrorMsg(pCtx->pParse, "%s", sqlite3_value_text(pVal));
+      pCtx->pParse->rc = rc;
+    }
   }else{
     sqlite3ValueApplyAffinity(pVal, aff, SQLITE_UTF8);
     if( rc==SQLITE_OK ){

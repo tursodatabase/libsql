@@ -1,5 +1,5 @@
-C The\svalueFromFunction()\sroutine\sis\sbetter\sable\sto\shandle\sOOM\serrors.\nOmit\sunreachable\sbranches.
-D 2015-03-12T06:46:52.204
+C If\san\serror\soccurs\sin\sthe\scompile-time\sevaluation\sof\san\sapplication-defined\nfunction,\sthen\spropagate\sback\sout\sthe\sexact\serror\scode,\snot\sjust\sthe\ngeneric\sSQLITE_ERROR.
+D 2015-03-12T18:38:51.338
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -299,7 +299,7 @@ F src/vdbeInt.h bb56fd199d8af1a2c1b9639ee2f70724b4338e3a
 F src/vdbeapi.c da6551c9a9b9272f9cf7c776a09302ce9ca691d3
 F src/vdbeaux.c 97911edb61074b871ec4aa2d6bb779071643dee5
 F src/vdbeblob.c 4f2e8e075d238392df98c5e03a64342465b03f90
-F src/vdbemem.c ba461e1aa9a3b2ef0507748057dd1ab9b850ea45
+F src/vdbemem.c 981fa5ac239d6a646b5720779844d991277dcd07
 F src/vdbesort.c 6d64c5448b64851b99931ede980addc3af70d5e2
 F src/vdbetrace.c 7e4222955e07dd707a2f360c0eb73452be1cb010
 F src/vtab.c 699f2b8d509cfe379c33dde33827875d5b030e01
@@ -1242,7 +1242,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ff868e22ca0393eaac417872a4c10738f0d7d970
-R 116c507ff65f2736c7022117ecad1fa2
+P 8fb6bd9be59d6b04e922d7b246aaefd4851539b6
+R 46972b8481418c9af660c8cf08bd0f3b
 U drh
-Z e8a2ef91ffc822055ee072f19f53dce6
+Z f07316ba19973dffcb9b3c2ed85bb043
