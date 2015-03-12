@@ -25,15 +25,15 @@
 //! extern crate rusqlite;
 //! extern crate libc;
 //!
-//! use rusqlite::types::{FromSql, ToSql};
-//! use rusqlite::{ffi, SqliteResult};
+//! use rusqlite::types::{FromSql, ToSql, sqlite3_stmt};
+//! use rusqlite::{SqliteResult};
 //! use libc::c_int;
 //! use time;
 //!
 //! pub struct TimespecSql(pub time::Timespec);
 //!
 //! impl FromSql for TimespecSql {
-//!     unsafe fn column_result(stmt: *mut ffi::sqlite3_stmt, col: c_int)
+//!     unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int)
 //!             -> SqliteResult<TimespecSql> {
 //!         let as_f64_result = FromSql::column_result(stmt, col);
 //!         as_f64_result.map(|as_f64: f64| {
@@ -44,7 +44,7 @@
 //! }
 //!
 //! impl ToSql for TimespecSql {
-//!     unsafe fn bind_parameter(&self, stmt: *mut ffi::sqlite3_stmt, col: c_int) -> c_int {
+//!     unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
 //!         let TimespecSql(ts) = *self;
 //!         let as_f64 = ts.sec as f64 + (ts.nsec as f64) / 1.0e9;
 //!         as_f64.bind_parameter(stmt, col)
@@ -61,22 +61,24 @@ use std::str;
 use super::ffi;
 use super::{SqliteResult, SqliteError, str_to_cstring};
 
+pub use ffi::sqlite3_stmt as sqlite3_stmt;
+
 const SQLITE_DATETIME_FMT: &'static str = "%Y-%m-%d %H:%M:%S";
 
 /// A trait for types that can be converted into SQLite values.
 pub trait ToSql {
-    unsafe fn bind_parameter(&self, stmt: *mut ffi::sqlite3_stmt, col: c_int) -> c_int;
+    unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int;
 }
 
 /// A trait for types that can be created from a SQLite value.
 pub trait FromSql {
-    unsafe fn column_result(stmt: *mut ffi::sqlite3_stmt, col: c_int) -> SqliteResult<Self>;
+    unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> SqliteResult<Self>;
 }
 
 macro_rules! raw_to_impl(
     ($t:ty, $f:ident) => (
         impl ToSql for $t {
-            unsafe fn bind_parameter(&self, stmt: *mut ffi::sqlite3_stmt, col: c_int) -> c_int {
+            unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
                 ffi::$f(stmt, col, *self)
             }
         }
@@ -88,7 +90,7 @@ raw_to_impl!(i64, sqlite3_bind_int64);
 raw_to_impl!(c_double, sqlite3_bind_double);
 
 impl<'a> ToSql for &'a str {
-    unsafe fn bind_parameter(&self, stmt: *mut ffi::sqlite3_stmt, col: c_int) -> c_int {
+    unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
         match str_to_cstring(self) {
             Ok(c_str) => ffi::sqlite3_bind_text(stmt, col, c_str.as_ptr(), -1,
                                                 Some(ffi::SQLITE_TRANSIENT())),
@@ -98,13 +100,13 @@ impl<'a> ToSql for &'a str {
 }
 
 impl ToSql for String {
-    unsafe fn bind_parameter(&self, stmt: *mut ffi::sqlite3_stmt, col: c_int) -> c_int {
+    unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
         self.as_slice().bind_parameter(stmt, col)
     }
 }
 
 impl<'a> ToSql for &'a [u8] {
-    unsafe fn bind_parameter(&self, stmt: *mut ffi::sqlite3_stmt, col: c_int) -> c_int {
+    unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
         ffi::sqlite3_bind_blob(
             stmt, col, mem::transmute(self.as_ptr()), self.len() as c_int,
             Some(ffi::SQLITE_TRANSIENT()))
@@ -112,20 +114,20 @@ impl<'a> ToSql for &'a [u8] {
 }
 
 impl ToSql for Vec<u8> {
-    unsafe fn bind_parameter(&self, stmt: *mut ffi::sqlite3_stmt, col: c_int) -> c_int {
+    unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
         self.as_slice().bind_parameter(stmt, col)
     }
 }
 
 impl ToSql for time::Timespec {
-    unsafe fn bind_parameter(&self, stmt: *mut ffi::sqlite3_stmt, col: c_int) -> c_int {
+    unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
         let time_str = time::at_utc(*self).strftime(SQLITE_DATETIME_FMT).unwrap().to_string();
         time_str.bind_parameter(stmt, col)
     }
 }
 
 impl<T: ToSql> ToSql for Option<T> {
-    unsafe fn bind_parameter(&self, stmt: *mut ffi::sqlite3_stmt, col: c_int) -> c_int {
+    unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
         match *self {
             None => ffi::sqlite3_bind_null(stmt, col),
             Some(ref t) => t.bind_parameter(stmt, col),
@@ -154,7 +156,7 @@ impl<T: ToSql> ToSql for Option<T> {
 pub struct Null;
 
 impl ToSql for Null {
-    unsafe fn bind_parameter(&self, stmt: *mut ffi::sqlite3_stmt, col: c_int) -> c_int {
+    unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
         ffi::sqlite3_bind_null(stmt, col)
     }
 }
@@ -162,7 +164,7 @@ impl ToSql for Null {
 macro_rules! raw_from_impl(
     ($t:ty, $f:ident) => (
         impl FromSql for $t {
-            unsafe fn column_result(stmt: *mut ffi::sqlite3_stmt, col: c_int) -> SqliteResult<$t> {
+            unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> SqliteResult<$t> {
                 Ok(ffi::$f(stmt, col))
             }
         }
@@ -174,7 +176,7 @@ raw_from_impl!(i64, sqlite3_column_int64);
 raw_from_impl!(c_double, sqlite3_column_double);
 
 impl FromSql for String {
-    unsafe fn column_result(stmt: *mut ffi::sqlite3_stmt, col: c_int) -> SqliteResult<String> {
+    unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> SqliteResult<String> {
         let c_text = ffi::sqlite3_column_text(stmt, col);
         if c_text.is_null() {
             Ok("".to_string())
@@ -189,7 +191,7 @@ impl FromSql for String {
 }
 
 impl FromSql for Vec<u8> {
-    unsafe fn column_result(stmt: *mut ffi::sqlite3_stmt, col: c_int) -> SqliteResult<Vec<u8>> {
+    unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> SqliteResult<Vec<u8>> {
         let c_blob = ffi::sqlite3_column_blob(stmt, col);
         let len = ffi::sqlite3_column_bytes(stmt, col);
 
@@ -200,7 +202,7 @@ impl FromSql for Vec<u8> {
 }
 
 impl FromSql for time::Timespec {
-    unsafe fn column_result(stmt: *mut ffi::sqlite3_stmt,
+    unsafe fn column_result(stmt: *mut sqlite3_stmt,
                             col: c_int) -> SqliteResult<time::Timespec> {
         let col_str = FromSql::column_result(stmt, col);
         col_str.and_then(|txt: String| {
@@ -214,7 +216,7 @@ impl FromSql for time::Timespec {
 }
 
 impl<T: FromSql> FromSql for Option<T> {
-    unsafe fn column_result(stmt: *mut ffi::sqlite3_stmt, col: c_int) -> SqliteResult<Option<T>> {
+    unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> SqliteResult<Option<T>> {
         if ffi::sqlite3_column_type(stmt, col) == ffi::SQLITE_NULL {
             Ok(None)
         } else {
