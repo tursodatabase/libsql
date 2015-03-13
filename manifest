@@ -1,5 +1,5 @@
-C Fix\sthe\s"now"\soption\sfor\sdate-time\sfunctions\sfor\scases\swhen\sSTAT4\sis\sdisabled.
-D 2015-03-12T23:48:27.096
+C Remove\sdebugging\slogic\saccidently\sincluded\sin\sthe\sprevious\scheck-in.
+D 2015-03-13T00:11:09.762
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -448,7 +448,7 @@ F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/createtab.test b5de160630b209c4b8925bdcbbaf48cc90b67fe8
 F test/cse.test 277350a26264495e86b1785f34d2d0c8600e021c
 F test/ctime.test 7bd009071e242aac4f18521581536b652b789a47
-F test/date.test 6b7c1261805155be2c6a3ee073529ff75bc773f0
+F test/date.test 42973251b9429f2c41b77eb98a7b0b0ba2d3b2c0
 F test/dbstatus.test 8de104bb5606f19537d23cd553b41349b5ab1204
 F test/dbstatus2.test 10418e62b3db5dca070f0c3eef3ea13946f339c2
 F test/default.test 0cb49b1c315a0d81c81d775e407f66906a2a604d
@@ -1243,7 +1243,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0f250957cd82be63e44eb99be6cc10760f4fdfc4
-R d3144e9ce0f6932ade646e074c4a6fee
+P 3ac1f6a3cf1a8fd3ab1ca96b2564c13c4b8d2234
+R f96af88025cc91d1b5a757f614ed39bf
 U drh
-Z 40daa56c14064d43d4b007995d358cfd
+Z e7218e6f8a6b14017f98ae01eb2e9668

@@ -540,7 +540,7 @@ proc sleeper {} {after 100}
 do_test date-15.1 {
   db func sleeper sleeper
   db eval {
-     SELECT c, a, c - a FROM (SELECT julianday('now') AS a,
+     SELECT c - a FROM (SELECT julianday('now') AS a,
                                sleeper(), julianday('now') AS c);
   }
 } {0.0}
