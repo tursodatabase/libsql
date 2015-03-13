@@ -1204,6 +1204,7 @@ static int valueFromFunction(
     goto value_from_function_out;
   }
 
+  assert( pCtx->pParse->rc==SQLITE_OK );
   memset(&ctx, 0, sizeof(ctx));
   ctx.pOut = pVal;
   ctx.pFunc = pFunc;
@@ -1211,15 +1212,16 @@ static int valueFromFunction(
   if( ctx.isError ){
     rc = ctx.isError;
     sqlite3ErrorMsg(pCtx->pParse, "%s", sqlite3_value_text(pVal));
-    pCtx->pParse->rc = rc;
   }else{
     sqlite3ValueApplyAffinity(pVal, aff, SQLITE_UTF8);
     assert( rc==SQLITE_OK );
     rc = sqlite3VdbeChangeEncoding(pVal, enc);
     if( rc==SQLITE_OK && sqlite3VdbeMemTooBig(pVal) ){
       rc = SQLITE_TOOBIG;
+      pCtx->pParse->nErr++;
     }
   }
+  pCtx->pParse->rc = rc;
 
  value_from_function_out:
   if( rc!=SQLITE_OK ){

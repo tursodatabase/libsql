@@ -66,6 +66,8 @@ foreach {tn where idx} {
   do_eqp_test 1.$tn "SELECT * FROM t1 WHERE $where" $res
 }
 
+# Test that functions that do not exist - "func()" - do not cause an error.
+#
 do_catchsql_test 2.1 {
   SELECT * FROM t1 WHERE x = substr('145', 2, 1) AND y = func(1, 2, 3)
 } {1 {no such function: func}}
@@ -74,5 +76,52 @@ do_catchsql_test 2.2 {
 } {1 {no such function: func}}
 
 
+# Check that functions that accept zero arguments do not cause problems.
+#
+proc ret {x} { return $x }
+
+db func det4 -deterministic [list ret 4]
+db func nondet4 [list ret 4]
+db func det19 -deterministic [list ret 19]
+db func nondet19 [list ret 19]
+
+foreach {tn where idx} {
+  1 "x = det4() AND y = det19()"     {t1x (x=?)}
+  2 "x = det19() AND y = det4()"     {t1y (y=?)}
+
+  3 "x = nondet4() AND y = nondet19()"     {t1y (y=?)}
+  4 "x = nondet19() AND y = nondet4()"     {t1y (y=?)}
+} {
+  set res "0 0 0 {SEARCH TABLE t1 USING INDEX $idx}"
+  do_eqp_test 3.$tn "SELECT * FROM t1 WHERE $where" $res
+}
+
+
+execsql { DELETE FROM t1 }
+
+proc throw_error {err} { error $err }
+db func error -deterministic throw_error
+do_catchsql_test 4.1 {
+  SELECT * FROM t1 WHERE x = error('error one') AND y = 4;
+} {1 {error one}}
+
+do_catchsql_test 4.2 {
+  SELECT * FROM t1 WHERE x = zeroblob(2000000000) AND y = 4;
+} {1 {string or blob too big}}
+
+sqlite3_limit db SQLITE_LIMIT_LENGTH 1000000
+proc dstr {} { return [string repeat x 1100000] }
+db func dstr -deterministic dstr
+do_catchsql_test 4.3 {
+  SELECT * FROM t1 WHERE x = dstr() AND y = 11;
+} {1 {string or blob too big}}
+
+do_catchsql_test 4.4 {
+  SELECT * FROM t1 WHERE x = test_zeroblob(1100000) AND y = 4;
+} {1 {string or blob too big}}
+
+
 finish_test
+
+
 

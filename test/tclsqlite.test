@@ -118,7 +118,7 @@ do_test tcl-1.14 {
 do_test tcl-1.15 {
   set v [catch {db function} msg]
   lappend v $msg
-} {1 {wrong # args: should be "db function NAME [-argcount N] SCRIPT"}}
+} {1 {wrong # args: should be "db function NAME ?SWITCHES? SCRIPT"}}
 do_test tcl-1.16 {
   set v [catch {db last_insert_rowid xyz} msg]
   lappend v $msg
