@@ -1134,4 +1134,67 @@ ifcapable stat4&&cte {
   }
 }
 
+#-------------------------------------------------------------------------
+# Check that a problem in they way stat4 data is used has been 
+# resolved (see below).
+#
+reset_db
+do_test 26.1 {
+  db transaction {
+    execsql { 
+      CREATE TABLE t1(x, y, z);
+      CREATE INDEX t1xy ON t1(x, y);
+      CREATE INDEX t1z ON t1(z);
+    }
+    for {set i 0} {$i < 10000} {incr i} {
+      execsql { INSERT INTO t1(x, y) VALUES($i, $i) }
+    }
+    for {set i 0} {$i < 10} {incr i} {
+      execsql {
+        WITH cnt(x) AS (SELECT 1 UNION ALL SELECT x+1 FROM cnt WHERE x<100)
+        INSERT INTO t1(x, y) SELECT 10000+$i, x FROM cnt;
+        INSERT INTO t1(x, y) SELECT 10000+$i, 100;
+      }
+    }
+    execsql {
+      UPDATE t1 SET z = rowid / 20;
+      ANALYZE;
+    }
+  }
+} {}
+
+do_execsql_test 26.2 {
+  SELECT count(*) FROM t1 WHERE x = 10000 AND y < 50;
+} {49}
+do_execsql_test 26.3 {
+  SELECT count(*) FROM t1 WHERE z = 444;
+} {20}
+
+# The analyzer knows that any (z=?) expression matches 20 rows. So it
+# will use index "t1z" if the estimate of hits for (x=10000 AND y<50)
+# is greater than 20 rows.
+#
+# And it should be. The analyzer has a stat4 sample as follows:
+#
+#   sample=(x=10000, y=100) nLt=(10000 10099)
+#
+# There should be no other samples that start with (x=10000). So it knows 
+# that (x=10000 AND y<50) must match somewhere between 0 and 99 rows, but
+# know more than that. Guessing less than 20 is therefore unreasonable.
+#
+# At one point though, due to a problem in whereKeyStats(), the planner was
+# estimating that (x=10000 AND y<50) would match only 2 rows.
+#
+do_eqp_test 26.4 {
+  SELECT * FROM t1 WHERE x = 10000 AND y < 50 AND z = 444;
+} {
+  0 0 0 {SEARCH TABLE t1 USING INDEX t1z (z=?)}
+}
+
+
+
+
 finish_test
+
+
+
