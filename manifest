@@ -1,5 +1,5 @@
-C Add\stests\sto\sensure\s"PRAGMA\sincremental_vacuum"\sand\s"PRAGMA\sauto_vacuum\s=\sincremental"\shandle\scorrupt\sdatabases\scorrectly.
-D 2015-03-13T15:44:36.085
+C Use\s#ifdef\sto\somit\scode\sthat\sis\sonly\sused\sfor\sSTAT3\sand\sSTAT4.
+D 2015-03-16T13:48:23.259
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -299,7 +299,7 @@ F src/vdbeInt.h bb56fd199d8af1a2c1b9639ee2f70724b4338e3a
 F src/vdbeapi.c 583d56b129dd27f12bed518270de9ebe521e6a75
 F src/vdbeaux.c 97911edb61074b871ec4aa2d6bb779071643dee5
 F src/vdbeblob.c 4f2e8e075d238392df98c5e03a64342465b03f90
-F src/vdbemem.c 78aef62d0298e15485cb5a429c912c9c3ed054b8
+F src/vdbemem.c c0dc81285b7571b0a31c40f17846fe2397ec1cd9
 F src/vdbesort.c 6d64c5448b64851b99931ede980addc3af70d5e2
 F src/vdbetrace.c 7e4222955e07dd707a2f360c0eb73452be1cb010
 F src/vtab.c 699f2b8d509cfe379c33dde33827875d5b030e01
@@ -1244,7 +1244,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5aa522dcb9bfa18d49683f7cc889516984e2bcd2
-R a79445283a8ae7c7f85ae571d23bc239
-U dan
-Z d6c136b9ed1be16533c60706d0427e82
+P 1c2166cb2a387a0856f41b399c3648bf8c5fce73
+R e7f2404f34b97aa8b45ff522e4adb3b6
+U drh
+Z 2ec6c684a2b78379b1dfd597c8ec878e

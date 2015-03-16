@@ -1355,9 +1355,11 @@ static int valueFromExpr(
   }
 #endif
 
+#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
   else if( op==TK_FUNCTION && pCtx!=0 ){
     rc = valueFromFunction(db, pExpr, enc, affinity, &pVal, pCtx);
   }
+#endif
 
   *ppVal = pVal;
   return rc;
