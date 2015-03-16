@@ -1,5 +1,5 @@
-C When\sestimating\sthe\snumber\sof\srows\svisited\sby\sa\srange\sscan\sfor\swhich\sthe\skeys\sconsist\sof\smore\sthan\sone\sfield,\sconsider\sprefixes\sof\sstat4\ssamples\sas\swell\sas\sthe\sfull\ssamples.
-D 2015-03-14T18:59:58.801
+C Another\stest\scase\sfor\sthe\splanner\schange\son\sthis\sbranch.
+D 2015-03-16T09:21:30.738
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -327,7 +327,7 @@ F test/analyze5.test 765c4e284aa69ca172772aa940946f55629bc8c4
 F test/analyze6.test f1c552ce39cca4ec922a7e4e0e5d0203d6b3281f
 F test/analyze7.test bb1409afc9e8629e414387ef048b8e0e3e0bdc4f
 F test/analyze8.test c05a461d0a6b05991106467d0c47480f2e709c82
-F test/analyze9.test 2f6cfeae1fcc61cc531bd19f68e1e28fb6edafbf
+F test/analyze9.test 3dd9e203fad353ec8027b18a6d9a92af59f4e727
 F test/analyzeA.test 3335697f6700c7052295cfd0067fc5b2aacddf9a
 F test/analyzeB.test 8bf35ee0a548aea831bf56762cb8e7fdb1db083d
 F test/analyzeC.test 555a6cc388b9818b6eda6df816f01ce0a75d3a93
@@ -1244,10 +1244,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1c2166cb2a387a0856f41b399c3648bf8c5fce73
-R f0473fc546184f7826d3d60610130f49
-T *branch * stat4-change
-T *sym-stat4-change *
-T -sym-trunk *
+P e1caf93c9ad0ee15d42030af95619f212d3fcf9d
+R de6873e674f8f1bad7ecb0349d34590a
 U dan
-Z e2a2579617ea31b6dadba1e9a71ba744
+Z 76e12c27217f9a3f485e4cb06238c66e
