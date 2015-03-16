@@ -6001,10 +6001,10 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
 
   /* Seed the search with a single WherePath containing zero WhereLoops.
   **
-  ** TUNING: Do not let the number of iterations go above 25.  If the cost
-  ** of computing an automatic index is not paid back within the first 25
+  ** TUNING: Do not let the number of iterations go above 28.  If the cost
+  ** of computing an automatic index is not paid back within the first 28
   ** rows, then do not use the automatic index. */
-  aFrom[0].nRow = MIN(pParse->nQueryLoop, 46);  assert( 46==sqlite3LogEst(25) );
+  aFrom[0].nRow = MIN(pParse->nQueryLoop, 48);  assert( 48==sqlite3LogEst(28) );
   nFrom = 1;
   assert( aFrom[0].isOrdered==0 );
   if( nOrderBy ){
