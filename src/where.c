@@ -792,7 +792,7 @@ static WhereTerm *whereNthSubterm(WhereTerm *pTerm, int N){
 ** If these two terms are both of the form:  "A op B" with the same
 ** A and B values but different operators and if the operators are
 ** compatible (if one is = and the other is <, for example) then
-** add a new virtual term to pWC that is the combination of the
+** add a new virtual AND term to pWC that is the combination of the
 ** two.
 **
 ** Some examples:
@@ -884,9 +884,13 @@ static void whereCombineDisjuncts(
 **
 ** CASE 2:
 **
-** If there is a two-way OR and one side has x>A and the other side
-** has x=A (for the same x and A) then add a new virtual term to the
-** WHERE clause of the form "x>=A".
+** If there are exactly two disjuncts one side has x>A and the other side
+** has x=A (for the same x and A) then add a new virtual conjunct term to the
+** WHERE clause of the form "x>=A".  Example:
+**
+**      x>A OR (x=A AND y>B)    adds:    x>=A
+**
+** The added conjunct can sometimes be helpful in query planning.
 **
 ** CASE 3:
 **

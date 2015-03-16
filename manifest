@@ -1,5 +1,5 @@
-C When\sa\sWHERE\sclause\scontains\sdisjuncts\swith\sthe\ssame\soperands,\stry\sto\ncombine\sthem\sinto\sa\ssingle\soperator.\s\sExample:\s\s(x=A\sOR\sx&gt;A)\sbecomes\n(x&gt;=A).
-D 2015-03-16T12:13:31.967
+C Improved\scomments.\s\sNo\scode\schanges.
+D 2015-03-16T13:12:34.265
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -307,7 +307,7 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 39303f2c9db02a4e422cd8eb2c8760420c6a51fe
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
-F src/where.c b879a02e59c27f1447224fa2e79a7f2c7c345fd5
+F src/where.c 235b1f50ab851867dc2efc967824d1db571d68ac
 F src/whereInt.h cbe4aa57326998d89e7698ca65bb7c28541d483c
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1245,10 +1245,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1c2166cb2a387a0856f41b399c3648bf8c5fce73
-R 298b36c87aaf9227b23b4ea3e9cfdff1
-T *branch * combine-disjuncts
-T *sym-combine-disjuncts *
-T -sym-trunk *
+P 7a3097689d17625fb0dfc4372712f375f3bdb9a1
+R 8bbcc33deef1379ead8ffcee920df4a8
 U drh
-Z 6e64b74890b4611813f6eecbfdcaf110
+Z 9d40483b0a6890b27f9ba16787ef6d6d
