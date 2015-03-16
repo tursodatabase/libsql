@@ -770,6 +770,79 @@ static void markTermAsChild(WhereClause *pWC, int iChild, int iParent){
   pWC->a[iParent].nChild++;
 }
 
+/*
+** Return the N-th AND-connected subterm of pTerm.  Or if pTerm is not
+** a conjunction, then return just pTerm when N==0.  If N is exceeds
+** the number of available subterms, return NULL.
+*/
+static WhereTerm *whereNthSubterm(WhereTerm *pTerm, int N){
+  if( pTerm->eOperator!=WO_AND ){
+    return N==0 ? pTerm : 0;
+  }
+  if( N<pTerm->u.pAndInfo->wc.nTerm ){
+    return &pTerm->u.pAndInfo->wc.a[N];
+  }
+  return 0;
+}
+
+/*
+** Subterms pOne and pTwo are contained within WHERE clause pWC.  The
+** two subterms are in disjunction - they are OR-ed together.
+**
+** If these two terms are both of the form:  "A op B" with the same
+** A and B values but different operators and if the operators are
+** compatible (if one is = and the other is <, for example) then
+** add a new virtual term to pWC that is the combination of the
+** two.
+**
+** Some examples:
+**
+**    x<y OR x=y    -->     x<=y
+**    x=y OR x=y    -->     x=y
+**    x<=y OR x<y   -->     x<=y
+**
+** The following is NOT generated:
+**
+**    x<y OR x>y    -->     x!=y     
+*/
+static void whereCombineDisjuncts(
+  SrcList *pSrc,         /* the FROM clause */
+  WhereClause *pWC,      /* The complete WHERE clause */
+  WhereTerm *pOne,       /* First disjunct */
+  WhereTerm *pTwo        /* Second disjunct */
+){
+  u16 eOp = pOne->eOperator | pTwo->eOperator;
+  sqlite3 *db;           /* Database connection (for malloc) */
+  Expr *pNew;            /* New virtual expression */
+  int op;                /* Operator for the combined expression */
+  int idxNew;            /* Index in pWC of the next virtual term */
+
+  if( (pOne->eOperator & (WO_EQ|WO_LT|WO_LE|WO_GT|WO_GE))==0 ) return;
+  if( (pTwo->eOperator & (WO_EQ|WO_LT|WO_LE|WO_GT|WO_GE))==0 ) return;
+  if( (eOp & (WO_EQ|WO_LT|WO_LE))!=eOp
+   && (eOp & (WO_EQ|WO_GT|WO_GE))!=eOp ) return;
+  assert( pOne->pExpr->pLeft!=0 && pOne->pExpr->pRight!=0 );
+  assert( pTwo->pExpr->pLeft!=0 && pTwo->pExpr->pRight!=0 );
+  if( sqlite3ExprCompare(pOne->pExpr->pLeft, pTwo->pExpr->pLeft, -1) ) return;
+  if( sqlite3ExprCompare(pOne->pExpr->pRight, pTwo->pExpr->pRight, -1) )return;
+  /* If we reach this point, it means the two subterms can be combined */
+  if( (eOp & (eOp-1))!=0 ){
+    if( eOp & (WO_LT|WO_LE) ){
+      eOp = WO_LE;
+    }else{
+      assert( eOp & (WO_GT|WO_GE) );
+      eOp = WO_GE;
+    }
+  }
+  db = pWC->pWInfo->pParse->db;
+  pNew = sqlite3ExprDup(db, pOne->pExpr, 0);
+  if( pNew==0 ) return;
+  for(op=TK_EQ; eOp!=(WO_EQ<<(op-TK_EQ)); op++){ assert( op<TK_GE ); }
+  pNew->op = op;
+  idxNew = whereClauseInsert(pWC, pNew, TERM_VIRTUAL|TERM_DYNAMIC);
+  exprAnalyze(pSrc, pWC, idxNew);
+}
+
 #if !defined(SQLITE_OMIT_OR_OPTIMIZATION) && !defined(SQLITE_OMIT_SUBQUERY)
 /*
 ** Analyze a term that consists of two or more OR-connected
@@ -794,6 +867,7 @@ static void markTermAsChild(WhereClause *pWC, int iChild, int iParent){
 **     (C)     t1.x=t2.y OR (t1.x=t2.z AND t1.y=15)
 **     (D)     x=expr1 OR (y>11 AND y<22 AND z LIKE '*hello*')
 **     (E)     (p.a=1 AND q.b=2 AND r.c=3) OR (p.x=4 AND q.y=5 AND r.z=6)
+**     (F)     x>A OR (x=A AND y>=B)
 **
 ** CASE 1:
 **
@@ -809,6 +883,12 @@ static void markTermAsChild(WhereClause *pWC, int iChild, int iParent){
 **      x IN (expr1,expr2,expr3)
 **
 ** CASE 2:
+**
+** If there is a two-way OR and one side has x>A and the other side
+** has x=A (for the same x and A) then add a new virtual term to the
+** WHERE clause of the form "x>=A".
+**
+** CASE 3:
 **
 ** If all subterms are indexable by a single table T, then set
 **
@@ -936,11 +1016,25 @@ static void exprAnalyzeOrTerm(
   }
 
   /*
-  ** Record the set of tables that satisfy case 2.  The set might be
+  ** Record the set of tables that satisfy case 3.  The set might be
   ** empty.
   */
   pOrInfo->indexable = indexable;
   pTerm->eOperator = indexable==0 ? 0 : WO_OR;
+
+  /* For a two-way OR, attempt to implementation case 2.
+  */
+  if( indexable && pOrWc->nTerm==2 ){
+    int iOne = 0;
+    WhereTerm *pOne;
+    while( (pOne = whereNthSubterm(&pOrWc->a[0],iOne++))!=0 ){
+      int iTwo = 0;
+      WhereTerm *pTwo;
+      while( (pTwo = whereNthSubterm(&pOrWc->a[1],iTwo++))!=0 ){
+        whereCombineDisjuncts(pSrc, pWC, pOne, pTwo);
+      }
+    }
+  }
 
   /*
   ** chngToIN holds a set of tables that *might* satisfy case 1.  But
@@ -1071,7 +1165,7 @@ static void exprAnalyzeOrTerm(
       }else{
         sqlite3ExprListDelete(db, pList);
       }
-      pTerm->eOperator = WO_NOOP;  /* case 1 trumps case 2 */
+      pTerm->eOperator = WO_NOOP;  /* case 1 trumps case 3 */
     }
   }
 }
