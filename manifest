@@ -1,5 +1,5 @@
-C Modify\sthe\sfts3query.test\sscript\sso\sthat\sit\sworks\seven\swhen\stestfixture\sis\nbuilt\susing\sa\sversion\sof\sTCL\sthat\sis\sunable\sto\ssort\sthe\ninteger\s-9223372036854775808
-D 2015-03-16T17:07:09.229
+C When\sthe\sWHERE\sclause\scontains\stwo\sOR-connected\sterms\swith\sidentical\noperands\sbut\sdifferent\soperators,\stry\sto\scombine\sthem\sinto\sa\ssingle\sterm.\nExample:\s\s(X=A\sOR\sX&gt;A)\sbecomes\s(X&gt;=A).
+D 2015-03-16T17:48:12.769
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -307,7 +307,7 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 39303f2c9db02a4e422cd8eb2c8760420c6a51fe
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
-F src/where.c 5a4e4ab378dbddeca59ad283c61aa67c6e56a913
+F src/where.c 5ca2899f280c4259a07816f4395d0bea368cfbd7
 F src/whereInt.h cbe4aa57326998d89e7698ca65bb7c28541d483c
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1175,6 +1175,7 @@ F test/whereG.test 69f5ec4b15760a8c860f80e2d55525669390aab3
 F test/whereH.test e4b07f7a3c2f5d31195cd33710054c78667573b2
 F test/whereI.test 1d89199697919d4930be05a71e7fe620f114e622
 F test/whereJ.test 55a3221706a7ab706293f17cc8f96da563bf0767
+F test/whereK.test 78fb50c74c9a91efc97a1daa39bcf7b8b68d8bff
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/wild001.test bca33f499866f04c24510d74baf1e578d4e44b1c
 F test/win32heap.test ea19770974795cff26e11575e12d422dbd16893c
@@ -1244,7 +1245,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 018d7671402a0f8103d1306641655b69f9fa235d
-R 781e204d7688b0ad2593ede4825cc937
+P f61fd24b4d3b686911ea578f77612309099f0cc6 23f71a26386ff2aff9800fe96cec1dc9c805b5b6
+R 0810c9b992d63ac661e729a83d3536b4
+T +closed 23f71a26386ff2aff9800fe96cec1dc9c805b5b6
 U drh
-Z 1bc9733af443d0b92b43469552bb99df
+Z f335a12b6cd889ae802417698f792d1a
