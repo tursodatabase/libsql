@@ -1,5 +1,5 @@
-C Transient\slocks\sin\sWAL\smode\scan\snow\sblock\sin\sorder\sto\sresolve\spriority\ninversions.
-D 2015-03-17T16:59:57.519
+C Also\smerge\sthe\sWAL\sblocking\slock\stests\sthat\swere\ssomehow\smissed\son\sthe\nprevious\scheck-in.
+D 2015-03-17T17:08:35.872
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -283,7 +283,7 @@ F src/test_superlock.c 06797157176eb7085027d9dd278c0d7a105e3ec9
 F src/test_syscall.c 2e21ca7f7dc54a028f1967b63f1e76155c356f9b
 F src/test_tclvar.c f4dc67d5f780707210d6bb0eb6016a431c04c7fa
 F src/test_thread.c af391ec03d23486dffbcc250b7e58e073f172af9
-F src/test_vfs.c 5a14c63da9579ba148138c1fb233100f2eb58ebb
+F src/test_vfs.c b7e6831e6fcf04c5090accff30640ec5c9630739
 F src/test_vfstrace.c bab9594adc976cbe696ff3970728830b4c5ed698
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 6bbcc9fe50c917864d48287b4792d46d6e873481
@@ -705,7 +705,7 @@ F test/lock4.test e175ae13865bc87680607563bafba21f31a26f12
 F test/lock5.test c6c5e0ebcb21c61a572870cc86c0cb9f14cede38
 F test/lock6.test ad5b387a3a8096afd3c68a55b9535056431b0cf5
 F test/lock7.test 49f1eaff1cdc491cc5dee3669f3c671d9f172431
-F test/lock_common.tcl 0c270b121d40959fa2f3add382200c27045b3d95
+F test/lock_common.tcl 7ffb45accf6ee91c736df9bafe0806a44358f035
 F test/lookaside.test 93f07bac140c5bb1d49f3892d2684decafdc7af2
 F test/main.test 16131264ea0c2b93b95201f0c92958e85f2ba11a
 F test/make-where7.tcl 05c16b5d4f5d6512881dfec560cb793915932ef9
@@ -1142,6 +1142,7 @@ F test/wal9.test 378e76a9ad09cd9bee06c172ad3547b0129a6750
 F test/wal_common.tcl a98f17fba96206122eff624db0ab13ec377be4fe
 F test/walbak.test b9f68e39646375c2b877be906babcc15d38b4877
 F test/walbig.test f437473a16cfb314867c6b5d1dbcd519e73e3434
+F test/walblock.test f1290524714232c109fb0b14db28f14d81c3ddd0
 F test/walcksum.test 9afeb96240296c08c72fc524d199c912cfe34daa
 F test/walcrash.test 451d79e528add5c42764cea74aa2750754171b25
 F test/walcrash2.test a0edab4e5390f03b99a790de89aad15d6ec70b36
@@ -1245,7 +1246,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ab832336f4a28193c4d2b61e833564822a7b86a8 c6e6d5f4e06c3ac0bfb620c0c728fbc7230c4a02
-R e9615c177cbff927553c4cf3589d469c
+P ec2f46de531ec8ef91981b19b48ab64db7727264 e22dde187eb0b389d6d93e2e39a26fd0f4e6196e
+R 35d1aacb5b2efba4948b8dccdeab808c
+T +closed e22dde187eb0b389d6d93e2e39a26fd0f4e6196e
 U drh
-Z 0b12e1121ffbe338a20dac08008c6f99
+Z 7357efe8421db7654a103c304e504696
