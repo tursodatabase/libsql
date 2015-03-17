@@ -573,6 +573,9 @@ static int multiplexOpen(
       rc = pSubOpen->pMethods->xFileSize(pSubOpen, &sz);
       if( rc==SQLITE_OK && zName ){
         int bExists;
+        if( flags & SQLITE_OPEN_MASTER_JOURNAL ){
+          pGroup->bEnabled = 0;
+        }else
         if( sz==0 ){
           if( flags & SQLITE_OPEN_MAIN_JOURNAL ){
             /* If opening a main journal file and the first chunk is zero
