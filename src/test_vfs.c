@@ -967,15 +967,14 @@ static void tvfsShmBarrier(sqlite3_file *pFile){
   TestvfsFd *pFd = tvfsGetFd(pFile);
   Testvfs *p = (Testvfs *)(pFd->pVfs->pAppData);
 
+  if( p->pScript && p->mask&TESTVFS_SHMBARRIER_MASK ){
+    const char *z = pFd->pShm ? pFd->pShm->zFile : "";
+    tvfsExecTcl(p, "xShmBarrier", Tcl_NewStringObj(z, -1), pFd->pShmId, 0, 0);
+  }
+
   if( p->isFullshm ){
     sqlite3OsShmBarrier(pFd->pReal);
     return;
-  }
-
-  if( p->pScript && p->mask&TESTVFS_SHMBARRIER_MASK ){
-    tvfsExecTcl(p, "xShmBarrier", 
-        Tcl_NewStringObj(pFd->pShm->zFile, -1), pFd->pShmId, 0, 0
-    );
   }
 }
 
@@ -1532,7 +1531,7 @@ static int testvfs_cmd(
   return TCL_OK;
 
  bad_args:
-  Tcl_WrongNumArgs(interp, 1, objv, "VFSNAME ?-noshm BOOL? ?-default BOOL? ?-mxpathname INT? ?-szosfile INT? ?-iversion INT?");
+  Tcl_WrongNumArgs(interp, 1, objv, "VFSNAME ?-noshm BOOL? ?-fullshm BOOL? ?-default BOOL? ?-mxpathname INT? ?-szosfile INT? ?-iversion INT?");
   return TCL_ERROR;
 }
 

@@ -32,6 +32,7 @@
 --end
 --wait 1
 --task 2
+  DROP TABLE IF EXISTS t2;
   CREATE TABLE t2(a INTEGER PRIMARY KEY, b);
   INSERT INTO t2 SELECT a, b FROM t1;
   UPDATE t1 SET b='x'||a||'y';
@@ -46,6 +47,7 @@
   --match 29 28 27 26 25
 --end
 --task 3
+  DROP TABLE IF EXISTS t3;
   CREATE TABLE t3(a INTEGER PRIMARY KEY, b);
   INSERT INTO t3 SELECT a, b FROM t1;
   UPDATE t1 SET b='x'||a||'y';
@@ -60,6 +62,7 @@
   --match 29 28 27 26 25
 --end
 --task 4
+  DROP TABLE IF EXISTS t4;
   CREATE TABLE t4(a INTEGER PRIMARY KEY, b);
   INSERT INTO t4 SELECT a, b FROM t1;
   UPDATE t1 SET b='x'||a||'y';
@@ -74,6 +77,7 @@
   --match 29 28 27 26 25
 --end
 --task 5
+  DROP TABLE IF EXISTS t5;
   CREATE TABLE t5(a INTEGER PRIMARY KEY, b);
   INSERT INTO t5 SELECT a, b FROM t1;
   UPDATE t1 SET b='x'||a||'y';

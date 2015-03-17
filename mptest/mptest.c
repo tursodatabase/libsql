@@ -1262,6 +1262,9 @@ int main(int argc, char **argv){
   int taskId;
   const char *zTrace;
   const char *zCOption;
+  const char *zJMode;
+  const char *zNRep;
+  int nRep = 1, iRep;
 
   g.argv0 = argv[0];
   g.iTrace = 1;
@@ -1277,6 +1280,10 @@ int main(int argc, char **argv){
   }
   n = argc-2;
   sqlite3_snprintf(sizeof(g.zName), g.zName, "%05d.mptest", GETPID());
+  zJMode = findOption(argv+2, &n, "journalmode", 1);
+  zNRep = findOption(argv+2, &n, "repeat", 1);
+  if( zNRep ) nRep = atoi(zNRep);
+  if( nRep<1 ) nRep = 1;
   g.zVfs = findOption(argv+2, &n, "vfs", 1);
   zClient = findOption(argv+2, &n, "client", 1);
   g.zErrLog = findOption(argv+2, &n, "errlog", 1);
@@ -1348,7 +1355,11 @@ int main(int argc, char **argv){
       fatalError("missing script filename");
     }
     if( n>1 ) unrecognizedArguments(argv[0], n, argv+2);
+    if( zJMode ) runSql("PRAGMA journal_mode=%Q;", zJMode);
     runSql(
+      "DROP TABLE IF EXISTS task;\n"
+      "DROP TABLE IF EXISTS counters;\n"
+      "DROP TABLE IF EXISTS client;\n"
       "CREATE TABLE task(\n"
       "  id INTEGER PRIMARY KEY,\n"
       "  name TEXT,\n"
@@ -1364,10 +1375,12 @@ int main(int argc, char **argv){
       "CREATE TABLE client(id INTEGER PRIMARY KEY, wantHalt);\n"
     );
     zScript = readFile(argv[2]);
-    if( g.iTrace ) logMessage("begin script [%s]\n", argv[2]);
-    runScript(0, 0, zScript, argv[2]);
+    for(iRep=1; iRep<=nRep; iRep++){
+      if( g.iTrace ) logMessage("begin script [%s] cycle %d\n", argv[2], iRep);
+      runScript(0, 0, zScript, argv[2]);
+      if( g.iTrace ) logMessage("end script [%s] cycle %d\n", argv[2], iRep);
+    }
     sqlite3_free(zScript);
-    if( g.iTrace ) logMessage("end script [%s]\n", argv[2]);
     waitForClient(0, 2000, "during shutdown...\n");
     trySql("UPDATE client SET wantHalt=1");
     sqlite3_sleep(10);
@@ -1391,7 +1404,7 @@ int main(int argc, char **argv){
     }
     sqlite3_finalize(pStmt);
   }
-  sqlite3_close(g.db);  
+  sqlite3_close(g.db);
   maybeClose(g.pLog);
   maybeClose(g.pErrLog);
   if( iClient==0 ){
