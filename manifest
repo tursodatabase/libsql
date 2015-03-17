@@ -1,5 +1,5 @@
-C Also\smerge\sthe\sWAL\sblocking\slock\stests\sthat\swere\ssomehow\smissed\son\sthe\nprevious\scheck-in.
-D 2015-03-17T17:08:35.872
+C Clarify\sthe\sdocumentation\son\ssqlite3_errcode().\s\sNo\schanges\sto\scode.
+D 2015-03-17T20:39:11.595
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -232,7 +232,7 @@ F src/resolve.c f4d79e31ffa5820c2e3d1740baa5e9b190425f2b
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 94e016b6733b1d39a2f4c8d431155b4c2897d907
 F src/shell.c cce82ca26392578a4a1ee927dfe55ea3411c7c92
-F src/sqlite.h.in ce547ac4df17e8d996679f7a385911b3a0c52d48
+F src/sqlite.h.in 2d48e05677d0f9b06b7757662eef3cebea02d837
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
 F src/sqliteInt.h fae682c2b4dfbe489b134d74521c41c088f16ab1
@@ -1246,8 +1246,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ec2f46de531ec8ef91981b19b48ab64db7727264 e22dde187eb0b389d6d93e2e39a26fd0f4e6196e
-R 35d1aacb5b2efba4948b8dccdeab808c
-T +closed e22dde187eb0b389d6d93e2e39a26fd0f4e6196e
+P 7214dab7443d35c105904dd69635c1f8b45b2fc8
+R 2fa9dda445b6fbb66c03820d7f35f5b9
 U drh
-Z 7357efe8421db7654a103c304e504696
+Z b0621e44776b9609d48318da3b5f6489
