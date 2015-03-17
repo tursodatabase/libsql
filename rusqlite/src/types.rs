@@ -192,12 +192,13 @@ impl FromSql for String {
 
 impl FromSql for Vec<u8> {
     unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> SqliteResult<Vec<u8>> {
+        use std::slice::from_raw_parts;
         let c_blob = ffi::sqlite3_column_blob(stmt, col);
         let len = ffi::sqlite3_column_bytes(stmt, col);
 
         assert!(len >= 0); let len = len as usize;
 
-        Ok(Vec::from_raw_buf(mem::transmute(c_blob), len))
+        Ok(from_raw_parts(mem::transmute(c_blob), len).to_vec())
     }
 }
 
