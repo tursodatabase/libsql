@@ -240,7 +240,7 @@ mod test {
         let mut stmt = db.prepare("INSERT INTO foo VALUES(1)").unwrap();
 
         bencher.iter(|| {
-            for _ in range(0i32, 1000) {
+            for _ in 0i32 .. 1000 {
                 stmt.execute(&[]).unwrap();
             }
         })
@@ -255,7 +255,7 @@ mod test {
         bencher.iter(|| {
             let mut tx = db.transaction().unwrap();
             tx.set_commit();
-            for _ in range(0i32, 1000) {
+            for _ in 0i32 .. 1000 {
                 stmt.execute(&[]).unwrap();
             }
         })

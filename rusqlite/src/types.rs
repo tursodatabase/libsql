@@ -101,7 +101,7 @@ impl<'a> ToSql for &'a str {
 
 impl ToSql for String {
     unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
-        self.as_slice().bind_parameter(stmt, col)
+        (&self[..]).bind_parameter(stmt, col)
     }
 }
 
@@ -115,7 +115,7 @@ impl<'a> ToSql for &'a [u8] {
 
 impl ToSql for Vec<u8> {
     unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
-        self.as_slice().bind_parameter(stmt, col)
+        (&self[..]).bind_parameter(stmt, col)
     }
 }
 
@@ -207,7 +207,7 @@ impl FromSql for time::Timespec {
                             col: c_int) -> SqliteResult<time::Timespec> {
         let col_str = FromSql::column_result(stmt, col);
         col_str.and_then(|txt: String| {
-            time::strptime(txt.as_slice(), SQLITE_DATETIME_FMT).map(|tm| {
+            time::strptime(&txt, SQLITE_DATETIME_FMT).map(|tm| {
                 tm.to_timespec()
             }).map_err(|parse_error| {
                 SqliteError{ code: ffi::SQLITE_MISMATCH, message: format!("{}", parse_error) }
@@ -256,7 +256,7 @@ mod test {
         db.execute("INSERT INTO foo(t) VALUES (?)", &[&s.to_string()]).unwrap();
 
         let from: String = db.query_row("SELECT t FROM foo", &[], |r| r.get(0));
-        assert_eq!(from.as_slice(), s);
+        assert_eq!(from, s);
     }
 
     #[test]
@@ -286,7 +286,7 @@ mod test {
         let row1 = rows.next().unwrap().unwrap();
         let s1: Option<String> = row1.get(0);
         let b1: Option<Vec<u8>> = row1.get(1);
-        assert_eq!(s.unwrap(), s1.unwrap().as_slice());
+        assert_eq!(s.unwrap(), s1.unwrap());
         assert!(b1.is_none());
 
         let row2 = rows.next().unwrap().unwrap();
