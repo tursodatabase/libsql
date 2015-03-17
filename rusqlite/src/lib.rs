@@ -48,12 +48,12 @@
 //!     }
 //! }
 //! ```
-#![feature(unsafe_destructor, core, libc, rustc_private)]
+#![feature(unsafe_destructor, core, libc)]
 #![cfg_attr(test, feature(test))]
 
 extern crate libc;
 extern crate "libsqlite3-sys" as ffi;
-#[macro_use] extern crate rustc_bitflags;
+#[macro_use] extern crate bitflags;
 
 use std::mem;
 use std::ptr;
