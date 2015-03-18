@@ -1,5 +1,5 @@
-C Merge\srecent\strunk\senhancements\sinto\sthe\sota-update\sbranch.
-D 2015-03-09T13:24:46.462
+C Clarify\sthat\sOTA\sis\sunable\sto\supdate\sor\sdelete\srows\swith\sNULL\svalues\sin\sprimary\skey\sfields.
+D 2015-03-18T19:04:40.018
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f643d6968dfc0b82d2e546a0525a39079f9e928
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -139,7 +139,7 @@ F ext/ota/otacrash.test a078d34e2edbcedac5f894e3e7d08d452a327007
 F ext/ota/otafault.test 8c43586c2b96ca16bbce00b5d7e7d67316126db8
 F ext/ota/otafault2.test fa202a98ca221faec318f3e5c5f39485b1256561
 F ext/ota/sqlite3ota.c 252a59574d1a6e9085d5d884a5c168db0e1f28e5
-F ext/ota/sqlite3ota.h 5fec920aa2a9744be40c07da32dbe0b94a217e0f
+F ext/ota/sqlite3ota.h f1a9dd98b00fa622c7e2eb68e580ee02e194c4d6
 F ext/ota/test_ota.c e34c801c665d64b4b9e00b71f1acf8c652404b2b
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 14e6239434d4e3f65d3e90320713f26aa24e167f
@@ -1260,7 +1260,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 46119e8d8e391d8dea844352521b58415f7365b1 984c3fd5261619fb542a5a95dab37707b5d79dbf
-R cedac19b028b57bfd6e4b6a8dc32f35d
-U drh
-Z a1b922ecd928e4798569ef4c1738d815
+P 5489cb68921f62f10d832adbc4d19ea8c6c5da50
+R ca30e53e82893df5e57d16fcd6b31c80
+U dan
+Z c06907a568937b6ba3fe4165dc01a3f0

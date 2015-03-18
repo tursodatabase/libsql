@@ -62,8 +62,9 @@
 **   * INSERT statements may not use any default values.
 **
 **   * UPDATE and DELETE statements must identify their target rows by 
-**     PRIMARY KEY values. If the table being written has no PRIMARY KEY,
-**     affected rows must be identified by rowid.
+**     non-NULL PRIMARY KEY values. Rows with NULL values stored in PRIMARY
+**     KEY fields may not be updated or deleted. If the table being written 
+**     has no PRIMARY KEY, affected rows must be identified by rowid.
 **
 **   * UPDATE statements may not modify PRIMARY KEY columns.
 **
