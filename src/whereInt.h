@@ -440,8 +440,9 @@ struct WhereInfo {
 #define WO_AND    0x200       /* Two or more AND-connected terms */
 #define WO_EQUIV  0x400       /* Of the form A==B, both columns */
 #define WO_NOOP   0x800       /* This term does not restrict search space */
+#define WO_IS     0x1000      /* The IS operator */
 
-#define WO_ALL    0xfff       /* Mask of all possible WO_* values */
+#define WO_ALL    0x1fff      /* Mask of all possible WO_* values */
 #define WO_SINGLE 0x0ff       /* Mask of all non-compound WO_* values */
 
 /*

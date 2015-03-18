@@ -1,5 +1,5 @@
-C Clarify\sthat\sOTA\sis\sunable\sto\supdate\sor\sdelete\srows\swith\sNULL\svalues\sin\sprimary\skey\sfields.
-D 2015-03-18T19:04:40.018
+C Allow\swhereShortCut()\sto\suse\sthe\sPRIMARY\sKEY\sindex\sof\sa\sWITHOUT\sROWID\stable\sto\soptimize\sa\svector\sof\s"IS"\soperators\sin\sa\sWHERE\sclause.
+D 2015-03-18T20:03:27.026
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f643d6968dfc0b82d2e546a0525a39079f9e928
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -124,7 +124,7 @@ F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
 F ext/ota/ota.c feb0a11f720a8f30d2bebb835bba3c131a725685
-F ext/ota/ota1.test 1684d4a1c4137190368ee5fd31c91b223172ed89
+F ext/ota/ota1.test 960418e4171a989426f8b1ad8ee31770e0f94fb8
 F ext/ota/ota10.test 85e0f6e7964db5007590c1b299e75211ed4240d4
 F ext/ota/ota11.test 2f606cd2b4af260a86b549e91b9f395450fc75cb
 F ext/ota/ota12.test 0dff44474de448fb4b0b28c20da63273a4149abb
@@ -325,8 +325,8 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 39303f2c9db02a4e422cd8eb2c8760420c6a51fe
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
-F src/where.c eb141b075776e9864d38f279333e2472a8653202
-F src/whereInt.h cbe4aa57326998d89e7698ca65bb7c28541d483c
+F src/where.c 67c115096fac6c286ab517939d368cfb12ed0d2d
+F src/whereInt.h c1fd5690f91d9551c0c42aa44205248bbd3f7650
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test b35b4cd69fc913f90d39a575e171e1116c3a4bb7
@@ -1191,6 +1191,7 @@ F test/whereG.test 69f5ec4b15760a8c860f80e2d55525669390aab3
 F test/whereH.test e4b07f7a3c2f5d31195cd33710054c78667573b2
 F test/whereI.test 1d89199697919d4930be05a71e7fe620f114e622
 F test/whereJ.test 55a3221706a7ab706293f17cc8f96da563bf0767
+F test/whereK.test 424caa7391ca5c41484a37cc4a13dc9ed6243bee
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/wild001.test bca33f499866f04c24510d74baf1e578d4e44b1c
 F test/win32heap.test ea19770974795cff26e11575e12d422dbd16893c
@@ -1260,7 +1261,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5489cb68921f62f10d832adbc4d19ea8c6c5da50
-R ca30e53e82893df5e57d16fcd6b31c80
+P 2e7c1e0a0d128d9bac119692b2505b5ed0abe87a
+R fd8b7ec489c2b24931575fb551b9bcda
 U dan
-Z c06907a568937b6ba3fe4165dc01a3f0
+Z 501dc9071dd532eb126e9e20f313175e

@@ -579,6 +579,32 @@ foreach {tn3 create_vfs destroy_vfs} {
   do_test $tn3.7 {
     list [catch { run_ota test.db ota.db } msg] $msg
   } {0 SQLITE_DONE}
+  
+  # Test that OTA can update indexes containing NULL values.
+  #
+  reset_db
+  forcedelete ota.db
+  do_execsql_test $tn3.8.1 {
+    CREATE TABLE t1(a PRIMARY KEY, b, c);
+    CREATE INDEX i1 ON t1(b, c);
+    INSERT INTO t1 VALUES(1, 1, NULL);
+    INSERT INTO t1 VALUES(2, NULL, 2);
+    INSERT INTO t1 VALUES(3, NULL, NULL);
+
+    ATTACH 'ota.db' AS ota;
+    CREATE TABLE ota.data_t1(a, b, c, ota_control);
+    INSERT INTO data_t1 VALUES(1, NULL, NULL, 1);
+    INSERT INTO data_t1 VALUES(3, NULL, NULL, 1);
+  } {}
+
+  do_test $tn3.8.2 {
+    list [catch { run_ota test.db ota.db } msg] $msg
+  } {0 SQLITE_DONE}
+
+  do_execsql_test $tn3.8.3 {
+    SELECT * FROM t1
+  } {2 {} 2}
+  do_execsql_test $tn3.8.4 { PRAGMA integrity_check } {ok}
 
   catch { db close }
   eval $destroy_vfs

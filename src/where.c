@@ -362,7 +362,7 @@ static int allowedOp(int op){
   assert( TK_LT>TK_EQ && TK_LT<TK_GE );
   assert( TK_LE>TK_EQ && TK_LE<TK_GE );
   assert( TK_GE==TK_EQ+4 );
-  return op==TK_IN || (op>=TK_EQ && op<=TK_GE) || op==TK_ISNULL;
+  return op==TK_IN || (op>=TK_EQ && op<=TK_GE) || op==TK_ISNULL || op==TK_IS;
 }
 
 /*
@@ -415,6 +415,8 @@ static u16 operatorMask(int op){
     c = WO_IN;
   }else if( op==TK_ISNULL ){
     c = WO_ISNULL;
+  }else if( op==TK_IS ){
+    c = WO_IS;
   }else{
     assert( (WO_EQ<<(op-TK_EQ)) < 0x7fff );
     c = (u16)(WO_EQ<<(op-TK_EQ));
@@ -2596,7 +2598,7 @@ static int codeEqualityTerm(
   int iReg;                  /* Register holding results */
 
   assert( iTarget>0 );
-  if( pX->op==TK_EQ ){
+  if( pX->op==TK_EQ || pX->op==TK_IS ){
     iReg = sqlite3ExprCodeTarget(pParse, pX->pRight, iTarget);
   }else if( pX->op==TK_ISNULL ){
     iReg = iTarget;
@@ -2781,7 +2783,7 @@ static int codeAllEqualityTerms(
     testcase( pTerm->eOperator & WO_IN );
     if( (pTerm->eOperator & (WO_ISNULL|WO_IN))==0 ){
       Expr *pRight = pTerm->pExpr->pRight;
-      if( sqlite3ExprCanBeNull(pRight) ){
+      if( sqlite3ExprCanBeNull(pRight) && pTerm->eOperator!=WO_IS ){
         sqlite3VdbeAddOp2(v, OP_IsNull, regBase+j, pLevel->addrBrk);
         VdbeCoverage(v);
       }
@@ -6112,13 +6114,15 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
     pLoop->rRun = 33;  /* 33==sqlite3LogEst(10) */
   }else{
     for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+      u32 mask = WO_EQ;
       assert( pLoop->aLTermSpace==pLoop->aLTerm );
       if( !IsUniqueIndex(pIdx)
        || pIdx->pPartIdxWhere!=0 
        || pIdx->nKeyCol>ArraySize(pLoop->aLTermSpace) 
       ) continue;
+      if( HasRowid(pTab)==0 && IsPrimaryKeyIndex(pIdx) ) mask |= WO_IS;
       for(j=0; j<pIdx->nKeyCol; j++){
-        pTerm = findTerm(pWC, iCur, pIdx->aiColumn[j], 0, WO_EQ, pIdx);
+        pTerm = findTerm(pWC, iCur, pIdx->aiColumn[j], 0, mask, pIdx);
         if( pTerm==0 ) break;
         pLoop->aLTerm[j] = pTerm;
       }
