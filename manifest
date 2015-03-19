@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\serror\shandling\sin\sthe\s".trace"\scommand\sof\sthe\scommand-line\sshell.
-D 2015-03-19T13:30:41.360
+C Fix\stypo\sin\sshell\serror\smessage.
+D 2015-03-19T14:48:38.750
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -231,7 +231,7 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c f4d79e31ffa5820c2e3d1740baa5e9b190425f2b
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 94e016b6733b1d39a2f4c8d431155b4c2897d907
-F src/shell.c 3e8fc22bc1cd63fe595c84a880bd6184deb6c87b
+F src/shell.c d1ecce877f899abc97cabdf6a0b8323b8c5a0b69
 F src/sqlite.h.in 2d48e05677d0f9b06b7757662eef3cebea02d837
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
@@ -1246,7 +1246,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 49ea2cded4a76596f85419c820cdaf4a1751d7ac
-R df8b9299e9511ef4e1117da2a3444343
-U drh
-Z 8cda5daec6a5d1c3721d0a7774b9a78e
+P 6a48b5d794e891fdd167547c76835d677eb5e31d
+R 979a11eba248fa38fa514a9555cd703f
+U mistachkin
+Z dce5b986584646110a469a810e885660

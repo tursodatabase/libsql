@@ -2955,7 +2955,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     sCtx.nLine = 1;
     if( sCtx.zFile[0]=='|' ){
 #ifdef SQLITE_OMIT_POPEN
-      fprintf(stderr, "Error: pipes are not supporte in this OS\n");
+      fprintf(stderr, "Error: pipes are not supported in this OS\n");
       return 1;
 #else
       sCtx.in = popen(sCtx.zFile+1, "r");
