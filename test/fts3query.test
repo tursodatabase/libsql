@@ -252,15 +252,21 @@ foreach {tn iFirst iLast} [subst {
   do_execsql_test 7.2.$tn.1.[llength $res] {
     SELECT rowid FROM ft4 WHERE rowid BETWEEN $iFirst AND $iLast
   } $res
+  set res [db eval { 
+    SELECT rowid FROM t4 WHERE rowid BETWEEN $iFirst AND $iLast 
+     ORDER BY +rowid DESC
+  } ]
   do_execsql_test 7.2.$tn.2.[llength $res] {
     SELECT rowid FROM ft4 WHERE rowid BETWEEN $iFirst AND $iLast
     ORDER BY rowid DESC
-  } [lsort -decr -integer $res]
+  } $res
 }
 
 foreach ii [db eval {SELECT rowid FROM t4}] {
   set res1 [db eval {SELECT rowid FROM t4 WHERE rowid > $ii}]
   set res2 [db eval {SELECT rowid FROM t4 WHERE rowid < $ii}]
+  set res1s [db eval {SELECT rowid FROM t4 WHERE rowid > $ii ORDER BY +rowid DESC}]
+  set res2s [db eval {SELECT rowid FROM t4 WHERE rowid < $ii ORDER BY +rowid DESC}]
 
   do_execsql_test 7.3.$ii.1 {
     SELECT rowid FROM ft4 WHERE rowid > $ii
@@ -272,13 +278,11 @@ foreach ii [db eval {SELECT rowid FROM t4}] {
 
   do_execsql_test 7.3.$ii.3 {
     SELECT rowid FROM ft4 WHERE rowid > $ii ORDER BY rowid DESC
-  } [lsort -integer -decr $res1]
+  } $res1s
 
   do_execsql_test 7.3.$ii.4 {
     SELECT rowid FROM ft4 WHERE rowid < $ii ORDER BY rowid DESC
-  } [lsort -integer -decr $res2]
+  } $res2s
 }
 
 finish_test
-
-

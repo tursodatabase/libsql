@@ -281,35 +281,35 @@ do_eqp_test analyze3-2.3 {
 
 do_test analyze3-2.4 {
   sf_execsql { SELECT count(*) FROM t1 WHERE b LIKE 'a%' }
-} {101 0 100}
+} {102 0 100}
 do_test analyze3-2.5 {
   sf_execsql { SELECT count(*) FROM t1 WHERE b LIKE '%a' }
 } {999 999 100}
 
-do_test analyze3-2.4 {
+do_test analyze3-2.6 {
   set like "a%"
   sf_execsql { SELECT count(*) FROM t1 WHERE b LIKE $like }
-} {101 0 100}
-do_test analyze3-2.5 {
+} {102 0 100}
+do_test analyze3-2.7 {
   set like "%a"
   sf_execsql { SELECT count(*) FROM t1 WHERE b LIKE $like }
 } {999 999 100}
-do_test analyze3-2.6 {
+do_test analyze3-2.8 {
   set like "a"
   sf_execsql { SELECT count(*) FROM t1 WHERE b LIKE $like }
-} {101 0 0}
-do_test analyze3-2.7 {
+} {102 0 0}
+do_test analyze3-2.9 {
   set like "ab"
   sf_execsql { SELECT count(*) FROM t1 WHERE b LIKE $like }
-} {11 0 0}
-do_test analyze3-2.8 {
+} {12 0 0}
+do_test analyze3-2.10 {
   set like "abc"
   sf_execsql { SELECT count(*) FROM t1 WHERE b LIKE $like }
-} {2 0 1}
-do_test analyze3-2.9 {
+} {3 0 1}
+do_test analyze3-2.11 {
   set like "a_c"
   sf_execsql { SELECT count(*) FROM t1 WHERE b LIKE $like }
-} {101 0 10}
+} {102 0 10}
 
 
 #-------------------------------------------------------------------------

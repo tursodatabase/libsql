@@ -2320,34 +2320,49 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   }
 
   /*
-  **     $db function NAME [-argcount N] SCRIPT
+  **     $db function NAME [-argcount N] [-deterministic] SCRIPT
   **
   ** Create a new SQL function called NAME.  Whenever that function is
   ** called, invoke SCRIPT to evaluate the function.
   */
   case DB_FUNCTION: {
+    int flags = SQLITE_UTF8;
     SqlFunc *pFunc;
     Tcl_Obj *pScript;
     char *zName;
     int nArg = -1;
-    if( objc==6 ){
-      const char *z = Tcl_GetString(objv[3]);
+    int i;
+    if( objc<4 ){
+      Tcl_WrongNumArgs(interp, 2, objv, "NAME ?SWITCHES? SCRIPT");
+      return TCL_ERROR;
+    }
+    for(i=3; i<(objc-1); i++){
+      const char *z = Tcl_GetString(objv[i]);
       int n = strlen30(z);
       if( n>2 && strncmp(z, "-argcount",n)==0 ){
-        if( Tcl_GetIntFromObj(interp, objv[4], &nArg) ) return TCL_ERROR;
+        if( i==(objc-2) ){
+          Tcl_AppendResult(interp, "option requires an argument: ", z, 0);
+          return TCL_ERROR;
+        }
+        if( Tcl_GetIntFromObj(interp, objv[i+1], &nArg) ) return TCL_ERROR;
         if( nArg<0 ){
           Tcl_AppendResult(interp, "number of arguments must be non-negative",
                            (char*)0);
           return TCL_ERROR;
         }
+        i++;
+      }else
+      if( n>2 && strncmp(z, "-deterministic",n)==0 ){
+        flags |= SQLITE_DETERMINISTIC;
+      }else{
+        Tcl_AppendResult(interp, "bad option \"", z, 
+            "\": must be -argcount or -deterministic", 0
+        );
+        return TCL_ERROR;
       }
-      pScript = objv[5];
-    }else if( objc!=4 ){
-      Tcl_WrongNumArgs(interp, 2, objv, "NAME [-argcount N] SCRIPT");
-      return TCL_ERROR;
-    }else{
-      pScript = objv[3];
     }
+
+    pScript = objv[objc-1];
     zName = Tcl_GetStringFromObj(objv[2], 0);
     pFunc = findSqlFunc(pDb, zName);
     if( pFunc==0 ) return TCL_ERROR;
@@ -2357,7 +2372,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     pFunc->pScript = pScript;
     Tcl_IncrRefCount(pScript);
     pFunc->useEvalObjv = safeToUseEvalObjv(interp, pScript);
-    rc = sqlite3_create_function(pDb->db, zName, nArg, SQLITE_UTF8,
+    rc = sqlite3_create_function(pDb->db, zName, nArg, flags,
         pFunc, tclSqlFunc, 0, 0);
     if( rc!=SQLITE_OK ){
       rc = TCL_ERROR;
