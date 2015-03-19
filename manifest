@@ -1,5 +1,5 @@
-C Silently\signore\sany\sattempt\sto\sadd\sa\sprefix\sindex\sfor\sprefixes\szero\sbytes\sin\ssize\sto\san\sfts3/4\stable.\sOr\sany\sprefix\sindex\ssize\sso\slarge\sthat\sit\soverflows\sa\s32-bit\ssigned\sinteger.
-D 2015-03-19T15:52:07.001
+C Fix\san\sFTS3/4\sproblem\swith\shandling\sempty\stokenizer\sdeclarations\s(e.g.\s"CREATE\sVIRTUAL\sTABLE\st(tokenize=);").
+D 2015-03-19T16:25:42.953
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -91,7 +91,7 @@ F ext/fts3/fts3_snippet.c 52c2dcf410b1f9af5a44d81a2cf8c68ed1cb5283
 F ext/fts3/fts3_term.c a521f75132f9a495bdca1bdd45949b3191c52763
 F ext/fts3/fts3_test.c 8a3a78c4458b2d7c631fcf4b152a5cd656fa7038
 F ext/fts3/fts3_tokenize_vtab.c becc661223db7898b213f9e8a23d75bac02408c9
-F ext/fts3/fts3_tokenizer.c bbdc731bc91338050675c6d1da9ab82147391e16
+F ext/fts3/fts3_tokenizer.c 0f9e6e01de1e1fe2e79074e3cf70ed1b1ea848b7
 F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c a93f5edc0aff44ef8b06d7cb55b52026541ca145
@@ -564,7 +564,7 @@ F test/fts3al.test 07d64326e79bbdbab20ee87fc3328fbf01641c9f
 F test/fts3am.test 218aa6ba0dfc50c7c16b2022aac5c6be593d08d8
 F test/fts3an.test a49ccadc07a2f7d646ec1b81bc09da2d85a85b18
 F test/fts3ao.test 3e4e3d5e75c076520341d0bdf4eb17c00e8cbde2
-F test/fts3atoken.test fca30fd86db9241d571c637751e9a8a2f50f1451
+F test/fts3atoken.test 95c721d71acb141eb754701b15a8e60bb6eb4263
 F test/fts3auto.test b981fea19b132b4e6878f50d7c1f369b28f68eb9
 F test/fts3aux1.test f8f287a4a73f381f8fa15b6a70f36245f903d221
 F test/fts3aux2.test 7ae2b2c13aefdf4169279a27a5f51780ce57f6ba
@@ -592,7 +592,7 @@ F test/fts3join.test 53e66a0c21eb568580674a43b21c059acb26f499
 F test/fts3malloc.test b0e4c133b8d61d4f6d112d8110f8320e9e453ef6
 F test/fts3matchinfo.test 58544fa4d254000fa4e7f494b0a832f7ba61d45e
 F test/fts3near.test 7e3354d46f155a822b59c0e957fd2a70c1d7e905
-F test/fts3prefix.test 6bd3fc277769a373f90e96c04f8747bee823e4c5
+F test/fts3prefix.test 9f68e3598a139c23ec47d09299420e0fc4c72a83
 F test/fts3prefix2.test e1f0a822ca661dced7f12ce392e14eaf65609dce
 F test/fts3query.test c838b18f2b859e15fd31c64be3d79ef1556803ca
 F test/fts3rnd.test 1320d8826a845e38a96e769562bf83d7a92a15d0
@@ -1246,7 +1246,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 31f54d7b0798e70da6a60b8ea3c5d9e35dce164c
-R c1ccfd4d897c82c68f9b103e55f1a682
+P ad4b19d2ac0889a23fe3b0fd844286efc10cdd82
+R c1e92c20bf07c55ca3aab820a2e7d65e
 U dan
-Z 54b08ba960445bb515e6d618d815d203
+Z b1c155f5360e29835532ab6770165b81
