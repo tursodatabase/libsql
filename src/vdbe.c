@@ -6021,7 +6021,10 @@ case OP_VCreate: {
   rc = sqlite3VdbeMemCopy(&sMem, &aMem[pOp->p2]);
   if( rc==SQLITE_OK ){
     const char *zTab = (const char*)sqlite3_value_text(&sMem);
-    rc = sqlite3VtabCallCreate(db, pOp->p1, zTab, &p->zErrMsg);
+    assert( zTab || db->mallocFailed );
+    if( zTab ){
+      rc = sqlite3VtabCallCreate(db, pOp->p1, zTab, &p->zErrMsg);
+    }
   }
   sqlite3VdbeMemRelease(&sMem);
   break;
