@@ -1,5 +1,5 @@
-C Fix\stypo\sin\sshell\serror\smessage.
-D 2015-03-19T14:48:38.750
+C Add\san\sassert()\sto\scheck\sthat\sthe\sdatabase\smutex\sis\sheld\sin\ssqlite3BtreeLeave().
+D 2015-03-19T15:04:23.924
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -172,7 +172,7 @@ F src/attach.c 880f9b8641a829c563e52dd13c452ce457ae4dd8
 F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c ff743689c4d6c5cb55ad42ed9d174b2b3e71f1e3
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
-F src/btmutex.c 49ca66250c7dfa844a4d4cb8272b87420d27d3a5
+F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
 F src/btree.c a31ac00e30fb7bb49e90e48ce29ef8a61591be96
 F src/btree.h 9cbbb92aab22ef8b50493c40aa3f8de87c43a2fb
 F src/btreeInt.h 2bfefc01875d8da066504c233ec259fcb3b2ef72
@@ -1246,7 +1246,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6a48b5d794e891fdd167547c76835d677eb5e31d
-R 979a11eba248fa38fa514a9555cd703f
-U mistachkin
-Z dce5b986584646110a469a810e885660
+P 775a02d597549567a0634483525664643064b3fd
+R 7c7590b732697332c465fefcb5f1507b
+U dan
+Z 8ffeef564642b88e4dec32c8c3ec74e6

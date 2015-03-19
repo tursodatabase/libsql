@@ -141,6 +141,7 @@ static void SQLITE_NOINLINE btreeLockCarefully(Btree *p){
 ** Exit the recursive mutex on a Btree.
 */
 void sqlite3BtreeLeave(Btree *p){
+  assert( sqlite3_mutex_held(p->db->mutex) );
   if( p->sharable ){
     assert( p->wantToLock>0 );
     p->wantToLock--;
