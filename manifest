@@ -1,5 +1,5 @@
-C Add\sanother\ssqlite3FaultSim()\sto\sthe\smulti-threaded\ssorter\slogic\sto\nimprove\stestability.
-D 2015-03-18T16:00:44.998
+C Fix\sa\sbug\sin\serror\shandling\sin\sthe\s".trace"\scommand\sof\sthe\scommand-line\sshell.
+D 2015-03-19T13:30:41.360
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -231,7 +231,7 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c f4d79e31ffa5820c2e3d1740baa5e9b190425f2b
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 94e016b6733b1d39a2f4c8d431155b4c2897d907
-F src/shell.c cce82ca26392578a4a1ee927dfe55ea3411c7c92
+F src/shell.c 3e8fc22bc1cd63fe595c84a880bd6184deb6c87b
 F src/sqlite.h.in 2d48e05677d0f9b06b7757662eef3cebea02d837
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
@@ -866,7 +866,7 @@ F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
 F test/shell1.test ca88b14a8fc8b1f3543a24e519d019585ac9c903
 F test/shell2.test 12b8bf901b0e3a8ac58cf5c0c63a0a388d4d1862
 F test/shell3.test 5e8545ec72c4413a0e8d4c6be56496e3c257ca29
-F test/shell4.test 8a9c08976291e6c6c808b4d718f4a8b299f339f5
+F test/shell4.test 4cd3bd50200bf2efd6a74175d98da65aa86daf26
 F test/shell5.test c04e9f9f948305706b88377c464c7f08ce7479f9
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/show_speedtest1_rtree.tcl 32e6c5f073d7426148a6936a0408f4b5b169aba5
@@ -1246,7 +1246,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2c0e0d87fb418d684fba1c83d9fd8e4e96588c54
-R 58ae90a14e230c20fd6999f0bc3305de
+P 49ea2cded4a76596f85419c820cdaf4a1751d7ac
+R df8b9299e9511ef4e1117da2a3444343
 U drh
-Z 224b0621dbed3257af56f4d91f4f2bf9
+Z 8cda5daec6a5d1c3721d0a7774b9a78e

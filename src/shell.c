@@ -3841,12 +3841,12 @@ static int do_meta_command(char *zLine, ShellState *p){
   
   if( c=='t' && strncmp(azArg[0], "trace", n)==0 ){
     open_db(p, 0);
-    output_file_close(p->traceOut);
     if( nArg!=2 ){
       fprintf(stderr, "Usage: .trace FILE|off\n");
       rc = 1;
       goto meta_command_exit;
     }
+    output_file_close(p->traceOut);
     p->traceOut = output_file_open(azArg[1]);
 #if !defined(SQLITE_OMIT_TRACE) && !defined(SQLITE_OMIT_FLOATING_POINT)
     if( p->traceOut==0 ){
