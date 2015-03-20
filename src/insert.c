@@ -340,6 +340,23 @@ static int xferOptimization(
 );
 
 /*
+** Return the conflict handling mode that should be used for index pIdx
+** if the statement specified conflict mode overrideError.
+**
+** If the index is not a UNIQUE index, then the conflict handling mode is
+** always OE_None. Otherwise, it is one of OE_Abort, OE_Rollback, OE_Fail, 
+** OE_Ignore or OE_Replace.
+*/
+static u8 idxConflictMode(Index *pIdx, u8 overrideError){
+  u8 ret = pIdx->onError;
+  if( ret!=OE_None ){
+    if( overrideError!=OE_Default ) ret = overrideError;
+    if( ret==OE_Default ) ret = OE_Abort;
+  }
+  return ret;
+}
+
+/*
 ** This routine is called to handle SQL of the following forms:
 **
 **    insert into TABLE (IDLIST) values(EXPRLIST)
@@ -451,6 +468,7 @@ void sqlite3Insert(
   int nHidden = 0;      /* Number of hidden columns if TABLE is virtual */
   int iDataCur = 0;     /* VDBE cursor that is the main data repository */
   int iIdxCur = 0;      /* First index cursor */
+  int iSortCur = 0;     /* First sorter cursor (for INSERT INTO ... SELECT) */
   int ipkColumn = -1;   /* Column that is the INTEGER PRIMARY KEY */
   int endOfLoop;        /* Label for the end of the insertion loop */
   int srcTab = 0;       /* Data comes from this temporary cursor if >=0 */
@@ -755,6 +773,40 @@ void sqlite3Insert(
     for(i=0; i<nIdx; i++){
       aRegIdx[i] = ++pParse->nMem;
     }
+
+    /* If this is an INSERT INTO ... SELECT statement on a non-virtual table,
+    ** check if it is possible to defer updating any indexes until after
+    ** all rows have been processed. If it is, the index keys can be sorted
+    ** before they are inserted into the index b-tree, which is more efficient
+    ** for large inserts. It is possible to defer updating the indexes if:
+    **
+    **    * there are no triggers to fire, and
+    **    * no foreign key processing to perform, and
+    **    * the on-conflict mode used for all UNIQUE indexes is either 
+    **      ROLLBACK or ABORT.
+    */
+    if( pSelect 
+     && !IsVirtual(pTab) 
+     && pTrigger==0 
+     && 0==sqlite3FkRequired(pParse, pTab, 0, 0) 
+    ){
+      for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+        u8 oe = idxConflictMode(pIdx, onError);
+        if( oe==OE_Fail || oe==OE_Replace || oe==OE_Ignore ) break;
+        assert( oe==OE_None||oe==OE_Abort||oe==OE_Rollback );
+      }
+      if( pIdx==0 ){
+        /* This statement can sort the set of new keys for each index before
+        ** writing them into the b-tree on disk. So open a sorter for each
+        ** index on the table. */
+        iSortCur = pParse->nTab;
+        for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+          sqlite3VdbeAddOp1(v, OP_SorterOpen, pParse->nTab++);
+          sqlite3VdbeSetP4KeyInfo(pParse, pIdx);
+        }
+        assert( iSortCur>0 );
+      }
+    }
   }
 
   /* This is the top of the main insertion loop */
@@ -956,12 +1008,20 @@ void sqlite3Insert(
 #endif
     {
       int isReplace;    /* Set to true if constraints may cause a replace */
+      int iIdxBase = iIdxCur;
+      int op = OP_IdxInsert;
       sqlite3GenerateConstraintChecks(pParse, pTab, aRegIdx, iDataCur, iIdxCur,
-          regIns, 0, ipkColumn>=0, onError, endOfLoop, &isReplace
+          regIns, 0, ipkColumn>=0, onError, endOfLoop, iSortCur!=0, &isReplace
       );
+      if( iSortCur ){
+        iIdxBase = iSortCur;
+        isReplace = 1;
+        op = OP_SorterInsert;
+      }
       sqlite3FkCheck(pParse, pTab, 0, regIns, 0, 0);
-      sqlite3CompleteInsertion(pParse, pTab, iDataCur, iIdxCur,
-                               regIns, aRegIdx, 0, appendFlag, isReplace==0);
+      sqlite3CompleteInsertion(pParse, pTab, 
+          iDataCur, iIdxBase, regIns, op, aRegIdx, 0, appendFlag, isReplace==0
+      );
     }
   }
 
@@ -991,6 +1051,31 @@ void sqlite3Insert(
   }
 
   if( !IsVirtual(pTab) && !isView ){
+    /* If new index keys were written into sorter objects instead of
+    ** directly to the index b-trees, copy them from the sorters into the
+    ** indexes now. And close all the sorters. */
+    if( iSortCur ){
+      int iTmp = sqlite3GetTempReg(pParse);
+      for(idx=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, idx++){
+        int oe = idxConflictMode(pIdx, onError);
+        int iCur = iSortCur + idx;
+        int iIdx = iIdxCur + idx;
+        int addr = sqlite3VdbeAddOp1(v, OP_SorterSort, iCur);
+        sqlite3VdbeAddOp3(v, OP_SorterData, iCur, iTmp, iIdx);
+        if( oe!=OE_None ){
+          int nField = -1 * pIdx->nKeyCol;
+          int jmp = sqlite3VdbeCurrentAddr(v)+2;
+          sqlite3VdbeAddOp4Int(v, OP_NoConflict, iIdx, jmp, iTmp, nField);
+          sqlite3UniqueConstraint(pParse, oe, pIdx);
+        }
+        sqlite3VdbeAddOp2(v, OP_IdxInsert, iIdx, iTmp); 
+        sqlite3VdbeAddOp2(v, OP_SorterNext, iCur, addr+1); VdbeCoverage(v);
+        sqlite3VdbeJumpHere(v, addr);
+        sqlite3VdbeAddOp1(v, OP_Close, iCur);
+      }
+      sqlite3ReleaseTempReg(pParse, iTmp);
+    }
+
     /* Close all tables opened */
     if( iDataCur<iIdxCur ) sqlite3VdbeAddOp1(v, OP_Close, iDataCur);
     for(idx=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, idx++){
@@ -1133,6 +1218,7 @@ void sqlite3GenerateConstraintChecks(
   u8 pkChng,           /* Non-zero if the rowid or PRIMARY KEY changed */
   u8 overrideError,    /* Override onError to this if not OE_Default */
   int ignoreDest,      /* Jump to this label on an OE_Ignore resolution */
+  int ignoreUnique,    /* Do not enforce UNIQUE constraints */
   int *pbMayReplace    /* OUT: Set to true if constraint may cause a replace */
 ){
   Vdbe *v;             /* VDBE under constrution */
@@ -1413,16 +1499,11 @@ void sqlite3GenerateConstraintChecks(
     }
 
     /* Find out what action to take in case there is a uniqueness conflict */
-    onError = pIdx->onError;
-    if( onError==OE_None ){ 
+    onError = idxConflictMode(pIdx, overrideError);
+    if( onError==OE_None || ignoreUnique ){ 
       sqlite3ReleaseTempRange(pParse, regIdx, pIdx->nColumn);
       sqlite3VdbeResolveLabel(v, addrUniqueOk);
       continue;  /* pIdx is not a UNIQUE index */
-    }
-    if( overrideError!=OE_Default ){
-      onError = overrideError;
-    }else if( onError==OE_Default ){
-      onError = OE_Abort;
     }
     
     /* Check to see if the new index entry will be unique */
@@ -1538,6 +1619,7 @@ void sqlite3CompleteInsertion(
   int iDataCur,       /* Cursor of the canonical data source */
   int iIdxCur,        /* First index cursor */
   int regNewData,     /* Range of content */
+  int idxop,          /* Opcode to use to write to "indexes" */
   int *aRegIdx,       /* Register used by each index.  0 for unused indices */
   int isUpdate,       /* True for UPDATE, False for INSERT */
   int appendBias,     /* True if this is likely to be an append */
@@ -1551,6 +1633,8 @@ void sqlite3CompleteInsertion(
   int i;              /* Loop counter */
   u8 bAffinityDone = 0; /* True if OP_Affinity has been run already */
 
+  assert( idxop==OP_IdxInsert || idxop==OP_SorterInsert );
+
   v = sqlite3GetVdbe(pParse);
   assert( v!=0 );
   assert( pTab->pSelect==0 );  /* This table is not a VIEW */
@@ -1561,7 +1645,7 @@ void sqlite3CompleteInsertion(
       sqlite3VdbeAddOp2(v, OP_IsNull, aRegIdx[i], sqlite3VdbeCurrentAddr(v)+2);
       VdbeCoverage(v);
     }
-    sqlite3VdbeAddOp2(v, OP_IdxInsert, iIdxCur+i, aRegIdx[i]);
+    sqlite3VdbeAddOp2(v, idxop, iIdxCur+i, aRegIdx[i]);
     pik_flags = 0;
     if( useSeekResult ) pik_flags = OPFLAG_USESEEKRESULT;
     if( IsPrimaryKeyIndex(pIdx) && !HasRowid(pTab) ){

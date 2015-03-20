@@ -29,16 +29,16 @@ proc create_db {{sql ""}} {
     execsql {
       CREATE TABLE t1(a PRIMARY KEY, b UNIQUE);
       INSERT INTO t1 VALUES(1, randomblob(400));
-      INSERT INTO t1 SELECT a+1,  randomblob(400) FROM t1;
-      INSERT INTO t1 SELECT a+2,  randomblob(400) FROM t1;
-      INSERT INTO t1 SELECT a+4,  randomblob(400) FROM t1;
-      INSERT INTO t1 SELECT a+8,  randomblob(400) FROM t1;
-      INSERT INTO t1 SELECT a+16, randomblob(400) FROM t1;
-      INSERT INTO t1 SELECT a+32, randomblob(400) FROM t1;
-      INSERT INTO t1 SELECT a+64, randomblob(400) FROM t1;
+      INSERT OR FAIL INTO t1 SELECT a+1,  randomblob(400) FROM t1;
+      INSERT OR FAIL INTO t1 SELECT a+2,  randomblob(400) FROM t1;
+      INSERT OR FAIL INTO t1 SELECT a+4,  randomblob(400) FROM t1;
+      INSERT OR FAIL INTO t1 SELECT a+8,  randomblob(400) FROM t1;
+      INSERT OR FAIL INTO t1 SELECT a+16, randomblob(400) FROM t1;
+      INSERT OR FAIL INTO t1 SELECT a+32, randomblob(400) FROM t1;
+      INSERT OR FAIL INTO t1 SELECT a+64, randomblob(400) FROM t1;
 
       CREATE TABLE t2(a PRIMARY KEY, b UNIQUE);
-      INSERT INTO t2 SELECT * FROM t1;
+      INSERT OR FAIL INTO t2 SELECT * FROM t1;
     }
   }
 
@@ -127,7 +127,7 @@ ifcapable vtab&&compound {
   register_dbstat_vtab db
   do_execsql_test e_vacuum-1.2.1 {
     DELETE FROM t1 WHERE a%2;
-    INSERT INTO t1 SELECT b, a FROM t2 WHERE a%2;
+    INSERT OR REPLACE INTO t1 SELECT b, a FROM t2 WHERE a%2;
     UPDATE t1 SET b=randomblob(600) WHERE (a%2)==0;
   } {}
   

@@ -567,7 +567,7 @@ void sqlite3Update(
     /* Do constraint checks. */
     assert( regOldRowid>0 );
     sqlite3GenerateConstraintChecks(pParse, pTab, aRegIdx, iDataCur, iIdxCur,
-        regNewRowid, regOldRowid, chngKey, onError, labelContinue, &bReplace);
+        regNewRowid, regOldRowid, chngKey, onError, labelContinue, 0,&bReplace);
 
     /* Do FK constraint checks. */
     if( hasFK ){
@@ -599,7 +599,7 @@ void sqlite3Update(
   
     /* Insert the new index entries and the new record. */
     sqlite3CompleteInsertion(pParse, pTab, iDataCur, iIdxCur,
-                             regNewRowid, aRegIdx, 1, 0, 0);
+                             regNewRowid, OP_IdxInsert, aRegIdx, 1, 0, 0);
 
     /* Do any ON CASCADE, SET NULL or SET DEFAULT operations required to
     ** handle rows (possibly in other tables) that refer via a foreign key

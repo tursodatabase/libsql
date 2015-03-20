@@ -164,7 +164,7 @@ int sqlite3_found_count = 0;
    if( ((P)->flags&MEM_Ephem)!=0 \
        && sqlite3VdbeMemMakeWriteable(P) ){ goto no_mem;}
 
-/* Return true if the cursor was opened using the OP_OpenSorter opcode. */
+/* Return true if the cursor was opened using the OP_SorterOpen opcode. */
 #define isSorter(x) ((x)->pSorter!=0)
 
 /*
@@ -3769,7 +3769,8 @@ case OP_Seek: {    /* in2 */
 **
 ** If P4==0 then register P3 holds a blob constructed by MakeRecord.  If
 ** P4>0 then register P3 is the first of P4 registers that form an unpacked
-** record.
+** record. If P4<0, then P3 holds a blob constructed by MakeRecord, but
+** only the first |P4| fields should be considered.
 ** 
 ** Cursor P1 is on an index btree.  If the record identified by P3 and P4
 ** contains any NULL value, jump immediately to P2.  If all terms of the
@@ -3834,6 +3835,9 @@ case OP_Found: {        /* jump, in3 */
     assert( pIn3->flags & MEM_Blob );
     ExpandBlob(pIn3);
     sqlite3VdbeRecordUnpack(pC->pKeyInfo, pIn3->n, pIn3->z, pIdxKey);
+    if( pOp->p4.i<0 ){
+      pIdxKey->nField = pOp->p4.i * -1;
+    }
   }
   pIdxKey->default_rc = 0;
   if( pOp->opcode==OP_NoConflict ){
@@ -3848,7 +3852,7 @@ case OP_Found: {        /* jump, in3 */
     }
   }
   rc = sqlite3BtreeMovetoUnpacked(pC->pCursor, pIdxKey, 0, 0, &res);
-  if( pOp->p4.i==0 ){
+  if( pOp->p4.i<=0 ){
     sqlite3DbFree(db, pFree);
   }
   if( rc!=SQLITE_OK ){

@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\scausing\scollation\ssequence\snames\sto\sbe\sdequoted\smultiple\stimes\sunder\ssome\scircumstances.
-D 2015-03-20T08:43:59.683
+C Where\spossible\sinsert\sthe\sset\sof\snew\skeys\sfor\seach\sindex\sin\ssorted\sorder\swithin\s"INSERT\sINTO\s...\sSELECT"\sstatements.
+D 2015-03-20T20:30:26.758
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -190,7 +190,7 @@ F src/global.c 4f77cadbc5427d00139ba43d0f3979804cbb700e
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
 F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c 5b9243a33726008cc4132897d2be371db12a13be
+F src/insert.c 9e5d41e7001a6f62e7ea8d76966892a34b003c6b
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
@@ -235,7 +235,7 @@ F src/shell.c d1ecce877f899abc97cabdf6a0b8323b8c5a0b69
 F src/sqlite.h.in 2d48e05677d0f9b06b7757662eef3cebea02d837
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
-F src/sqliteInt.h 0f36b72dbaee2306cd4df055e5e6125b3d7a2420
+F src/sqliteInt.h 07402857442948cc95c3a2f98a405cd9b118658b
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c 81712116e826b0089bb221b018929536b2b5406f
 F src/table.c e7a09215315a978057fb42c640f890160dbcc45e
@@ -289,11 +289,11 @@ F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 6bbcc9fe50c917864d48287b4792d46d6e873481
 F src/tokenize.c 05e52378c46efbc1fd63cbbbf7f3c555f840f4bf
 F src/trigger.c 25571661fdeae8c7f975ff40ffec205520a3f92f
-F src/update.c 3c4ecc282accf12d39edb8d524cf089645e55a13
+F src/update.c 250cefb96cfc7ca8f86f92ecf6b6b6c7e289daf7
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c 98a7627ca48ad3265b6940915a1d08355eb3fc7e
 F src/vacuum.c 9460b9de7b2d4e34b0d374894aa6c8a0632be8ec
-F src/vdbe.c b32dc2efe94a2c31ab4584066d47af2b56391f39
+F src/vdbe.c f50f3663b8a88e39609b944776b811106f999a74
 F src/vdbe.h 6fc69d9c5e146302c56e163cb4b31d1ee64a18c3
 F src/vdbeInt.h bb56fd199d8af1a2c1b9639ee2f70724b4338e3a
 F src/vdbeapi.c 583d56b129dd27f12bed518270de9ebe521e6a75
@@ -481,7 +481,7 @@ F test/e_select2.test aceb80ab927d46fba5ce7586ebabf23e2bb0604f
 F test/e_totalchanges.test b12ee5809d3e63aeb83238dd501a7bca7fd72c10
 F test/e_update.test 312cb8f5ccfe41515a6bb092f8ea562a9bd54d52
 F test/e_uri.test 5ae33760fb2039c61aa2d90886f1664664173585
-F test/e_vacuum.test 5bfbdc21b65c0abf24398d0ba31dc88d93ca77a9
+F test/e_vacuum.test a83cbb0b1f52cfda735909609f9f6422d1655bc3
 F test/e_wal.test ae9a593207a77d711443ee69ffe081fda9243625
 F test/e_walauto.test ca70cf75c07a6cb1874ced101dd426da76625649
 F test/e_walckpt.test 65e29b6631e51f210f83e4ff11571e647ba93608
@@ -666,6 +666,7 @@ F test/insert2.test 4f3a04d168c728ed5ec2c88842e772606c7ce435
 F test/insert3.test 1b7db95a03ad9c5013fdf7d6722b6cd66ee55e30
 F test/insert4.test 4791662c50518bdd37d394cae9a7a8014e845bb3
 F test/insert5.test 394f96728d1258f406fe5f5aeb0aaf29487c39a6
+F test/insert6.test a855a23aea575a540232abbd68664184287aac77
 F test/instr.test 737bbf80685232033f3abedc6ae92f75860b5dd2
 F test/intarray.test 066b7d7ac38d25bf96f87f1b017bfc687551cdd4
 F test/interrupt.test dfe9a67a94b0b2d8f70545ba1a6cca10780d71cc
@@ -896,7 +897,7 @@ F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
 F test/speedtest1.c 2b416dca3a155fcaa849540b2e7fc1df12896c23
 F test/spellfix.test 24f676831acddd2f4056a598fd731a72c6311f49
 F test/sqllimits1.test e05786eaed7950ff6a2d00031d001d8a26131e68
-F test/stat.test 76fd746b85459e812a0193410fb599f0531f22de
+F test/stat.test 2120916b1e79d6041b53888d53a0e58db4d0b003
 F test/stmt.test 25d64e3dbf9a3ce89558667d7f39d966fe2a71b9
 F test/subquery.test 666fdecceac258f5fd84bed09a64e49d9f37edd9
 F test/subquery2.test 438f8a7da1457277b22e4176510f7659b286995f
@@ -1129,7 +1130,7 @@ F test/vtabF.test fd5ad376f5a34fe0891df1f3cddb4fe7c3eb077e
 F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test ea8778d5b0df200adef2ca7c00c3c37d4375f772
-F test/wal.test 885f32b2b390b30b4aa3dbb0e568f8f78d40f5cc
+F test/wal.test d4b6ab9c5449af3f28ff070649cd18784ff71f32
 F test/wal2.test 1f841d2048080d32f552942e333fd99ce541dada
 F test/wal3.test b22eb662bcbc148c5f6d956eaf94b047f7afe9c0
 F test/wal4.test 4744e155cd6299c6bd99d3eab1c82f77db9cdb3c
@@ -1246,7 +1247,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b74cb0a92bba69f8ea705adf4695d03ea4470984
-R 0d4dc41d235c1c2ad9a38ee6dff0fe2f
+P eddc05e7bb31fae74daa86e0504a3478b99fa0f2
+R a72a78e4c229b46f08cda5f8e6da7f3d
+T *branch * insert-select-opt
+T *sym-insert-select-opt *
+T -sym-trunk *
 U dan
-Z 56b5996883845a15ff92eed0154203c2
+Z ce2c6acfee6969d3739af7eba6d8fa6c

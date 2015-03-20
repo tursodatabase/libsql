@@ -695,10 +695,10 @@ do_test wal-11.3 {
 do_test wal-11.4 {
   execsql { 
     BEGIN;
-      INSERT INTO t1 SELECT blob(900) FROM t1;   -- 2
-      INSERT INTO t1 SELECT blob(900) FROM t1;   -- 4
-      INSERT INTO t1 SELECT blob(900) FROM t1;   -- 8
-      INSERT INTO t1 SELECT blob(900) FROM t1;   -- 16
+      INSERT OR FAIL INTO t1 SELECT blob(900) FROM t1;   -- 2
+      INSERT OR FAIL INTO t1 SELECT blob(900) FROM t1;   -- 4
+      INSERT OR FAIL INTO t1 SELECT blob(900) FROM t1;   -- 8
+      INSERT OR FAIL INTO t1 SELECT blob(900) FROM t1;   -- 16
   }
   list [expr [file size test.db]/1024] [file size test.db-wal]
 } [list 3 [wal_file_size 32 1024]]
@@ -734,7 +734,7 @@ do_test wal-11.10 {
   execsql {
     PRAGMA cache_size = 10;
     BEGIN;
-      INSERT INTO t1 SELECT blob(900) FROM t1;   -- 32
+      INSERT OR FAIL INTO t1 SELECT blob(900) FROM t1;   -- 32
       SELECT count(*) FROM t1;
   }
   list [expr [file size test.db]/1024] [file size test.db-wal]
