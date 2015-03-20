@@ -3235,7 +3235,14 @@ case OP_SetCookie: {       /* in3 */
 ** See also OpenRead.
 */
 case OP_ReopenIdx: {
+  int nField;
+  KeyInfo *pKeyInfo;
+  int p2;
+  int iDb;
+  int wrFlag;
+  Btree *pX;
   VdbeCursor *pCur;
+  Db *pDb;
 
   assert( pOp->p5==0 || pOp->p5==OPFLAG_SEEKEQ );
   assert( pOp->p4type==P4_KEYINFO );
@@ -3246,17 +3253,8 @@ case OP_ReopenIdx: {
   }
   /* If the cursor is not currently open or is open on a different
   ** index, then fall through into OP_OpenRead to force a reopen */
-}
 case OP_OpenRead:
-case OP_OpenWrite: {
-  int nField;
-  KeyInfo *pKeyInfo;
-  int p2;
-  int iDb;
-  int wrFlag;
-  Btree *pX;
-  VdbeCursor *pCur;
-  Db *pDb;
+case OP_OpenWrite:
 
   assert( (pOp->p5&(OPFLAG_P2ISREG|OPFLAG_BULKCSR|OPFLAG_SEEKEQ))==pOp->p5 );
   assert( pOp->opcode==OP_OpenWrite || pOp->p5==0 || pOp->p5==OPFLAG_SEEKEQ );
