@@ -1364,7 +1364,7 @@ static void exprAnalyze(
     Expr *pNewExpr2;
     int idxNew1;
     int idxNew2;
-    Token sCollSeqName;  /* Name of collating sequence */
+    const char *zCollSeqName;     /* Name of collating sequence */
     const u16 wtFlags = TERM_LIKEOPT | TERM_VIRTUAL | TERM_DYNAMIC;
 
     pLeft = pExpr->x.pList->a[1].pExpr;
@@ -1400,11 +1400,10 @@ static void exprAnalyze(
       }
       *pC = c + 1;
     }
-    sCollSeqName.z = noCase ? "NOCASE" : "BINARY";
-    sCollSeqName.n = 6;
+    zCollSeqName = noCase ? "NOCASE" : "BINARY";
     pNewExpr1 = sqlite3ExprDup(db, pLeft, 0);
     pNewExpr1 = sqlite3PExpr(pParse, TK_GE,
-           sqlite3ExprAddCollateToken(pParse,pNewExpr1,&sCollSeqName),
+           sqlite3ExprAddCollateString(pParse,pNewExpr1,zCollSeqName),
            pStr1, 0);
     transferJoinMarkings(pNewExpr1, pExpr);
     idxNew1 = whereClauseInsert(pWC, pNewExpr1, wtFlags);
@@ -1412,7 +1411,7 @@ static void exprAnalyze(
     exprAnalyze(pSrc, pWC, idxNew1);
     pNewExpr2 = sqlite3ExprDup(db, pLeft, 0);
     pNewExpr2 = sqlite3PExpr(pParse, TK_LT,
-           sqlite3ExprAddCollateToken(pParse,pNewExpr2,&sCollSeqName),
+           sqlite3ExprAddCollateString(pParse,pNewExpr2,zCollSeqName),
            pStr2, 0);
     transferJoinMarkings(pNewExpr2, pExpr);
     idxNew2 = whereClauseInsert(pWC, pNewExpr2, wtFlags);
@@ -6802,6 +6801,12 @@ WhereInfo *sqlite3WhereBegin(
       if( op ){
         sqlite3VdbeAddOp3(v, op, iIndexCur, pIx->tnum, iDb);
         sqlite3VdbeSetP4KeyInfo(pParse, pIx);
+        if( (pLoop->wsFlags & WHERE_CONSTRAINT)!=0
+         && (pLoop->wsFlags & (WHERE_COLUMN_RANGE|WHERE_SKIPSCAN))==0
+         && (pWInfo->wctrlFlags&WHERE_ORDERBY_MIN)==0
+        ){
+          sqlite3VdbeChangeP5(v, OPFLAG_SEEKEQ); /* Hint to COMDB2 */
+        }
         VdbeComment((v, "%s", pIx->zName));
       }
     }
