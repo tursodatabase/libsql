@@ -786,6 +786,7 @@ void sqlite3Insert(
     **      including INTEGER PRIMARY KEYs, is either ROLLBACK or ABORT.
     */
     if( pSelect 
+     && 0==(pSelect->selFlags & SF_Values)
      && onError!=OE_Fail && onError!=OE_Replace && onError!=OE_Ignore
      && !IsVirtual(pTab) 
      && pTrigger==0 
