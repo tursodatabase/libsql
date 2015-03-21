@@ -1,5 +1,5 @@
-C Add\sa\smissing\s"ifcapable\sfts3"\sto\sa\stest\scase\sin\svtab2.test.
-D 2015-03-21T10:53:01.184
+C Avoid\san\sinteger\soverflow\sin\sfts3\scausing\sgcc\s4.7.1\swith\s-O2\sto\sbehave\scounter-intuitively\s(perhaps\sbecause\sthe\sbehaviour\sis\sundefined).\sAdd\san\s"ifcapable\strace"\sto\sa\stest\sin\sshell4.test.
+D 2015-03-21T12:22:51.140
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -78,7 +78,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 022915f30538b40b584c5abb27cae47d07cb3465
+F ext/fts3/fts3.c e2c7e61d676ce7b9383d1078c9774a2f22947d57
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 394858c12a17740f7a1f6bd372c4606d4425a8d1
 F ext/fts3/fts3_aux.c 5c211e17a64885faeb16b9ba7772f9d5445c2365
@@ -866,7 +866,7 @@ F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
 F test/shell1.test ca88b14a8fc8b1f3543a24e519d019585ac9c903
 F test/shell2.test 12b8bf901b0e3a8ac58cf5c0c63a0a388d4d1862
 F test/shell3.test 5e8545ec72c4413a0e8d4c6be56496e3c257ca29
-F test/shell4.test 4cd3bd50200bf2efd6a74175d98da65aa86daf26
+F test/shell4.test ddf0a99044e2245a87fc17423e3aaa1445b3243b
 F test/shell5.test c04e9f9f948305706b88377c464c7f08ce7479f9
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/show_speedtest1_rtree.tcl 32e6c5f073d7426148a6936a0408f4b5b169aba5
@@ -1246,7 +1246,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b11d1793a06a44931edcbf12a615b49794d53a62
-R 55729177793663a0c48c1beb22d1dc2b
+P d845b0f69093178517d66e1fc5060e8f62c681c7
+R 7a07a789329b4f516d02a691b70e458c
 U dan
-Z c52b93c6a8110abb696022d137cc00a4
+Z 3ae65dad7900f82b42a270fbfd21fd80
