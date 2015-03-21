@@ -1,5 +1,5 @@
-C Remove\san\sunreachable\sbranch\sfrom\sthe\sOP_VCreate\sopcode\s(merge\saccidental\sfork\sin\strunk).
-D 2015-03-21T12:25:23.115
+C Fix\sthe\sblocking\sWAL\slock\sso\sthat\sit\sworks\sand\sso\sthat\sit\scompiles\son\sa\sMac.
+D 2015-03-21T16:36:03.990
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -214,7 +214,7 @@ F src/os.c 8fd25588eeba74068d41102d26810e216999b6c8
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c cc903ecc6ebda90ef703d043ddaa7f33de0cab0f
+F src/os_unix.c e68c8e77e47ce38865ebf8e1a0e877ac955f469c
 F src/os_win.c 8223e7db5b7c4a81d8b161098ac3959400434cdb
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 4120a49ecd37697e28f5ed807f470b9c0b88410c
@@ -1246,7 +1246,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e3e234649616f20610abce9ae9da1c572d3a4377 5fca41a3811766b48f5f23d5d49cc4e6e79fa867
-R f330fb6722b7e402dae00a81353077df
-U dan
-Z 1c256b7cca05bea8c4676944e04ddeb4
+P 2fbfec62fc03d42ee240dfefaa0aeb59a3f04d88
+R 5a3409f8ffa9923877231407f3215215
+U drh
+Z 15a1523db948e8ebecc44c81b8244965
