@@ -1,5 +1,5 @@
-C Add\smore\scomments\sto\sthe\sMSVC\sbatch\sbuild\stool.
-D 2015-03-21T22:23:46.412
+C Fix\sharmless\scompiler\swarnings\swith\sMSVC\swhen\sassert()\sand\sSQLITE_MEMDEBUG\sare\sboth\senabled.
+D 2015-03-21T23:38:59.970
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -196,7 +196,7 @@ F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
 F src/loadext.c 86bd4e2fccd520b748cba52492ab60c4a770f660
 F src/main.c fa997fa27d95febc16d57095299384b667a7f762
-F src/malloc.c 740db54387204c9a2eb67c6d98e68b08e9ef4eab
+F src/malloc.c 13f3f1cdc0c9990c79cefaf0ceba24da983ce8cd
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c abe6ee469b6c5a35c7f22bfeb9c9bac664a1c987
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
@@ -1246,7 +1246,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 041484ff91fd4615368ccb2257ab50acc2cd4fea
-R b4cd923d8d74f09bebb5c4ffebc6ac77
+P 03522da37821958c647d49bf8189a5affa3f6720
+R ec24cc7ca49e734053f58e4e5ed37882
 U mistachkin
-Z 35bbc2e7e7719fcfdf895530fad162a8
+Z e2c3eeafcd54988dc26d14970176c977
