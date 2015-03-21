@@ -1,5 +1,5 @@
-C Add\sa\smissing\s"int"\son\sa\sconstant\sdeclaration.
-D 2015-03-21T20:50:58.948
+C Do\snot\sinvoke\sa\sC\spreprocessor\smacro\swith\san\sempty\sargument,\sas\s(reportedly)\nsome\sversions\sof\sGCC\sare\sunable\sto\sdeal\swith\sthat.
+D 2015-03-21T20:59:43.779
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -214,7 +214,7 @@ F src/os.c 8fd25588eeba74068d41102d26810e216999b6c8
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c e68c8e77e47ce38865ebf8e1a0e877ac955f469c
+F src/os_unix.c a4dadbc2da41599e99093e91e276c38c17a73b89
 F src/os_win.c 8223e7db5b7c4a81d8b161098ac3959400434cdb
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 4120a49ecd37697e28f5ed807f470b9c0b88410c
@@ -1246,7 +1246,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6d0989695b486275824c14d5f88357267c1e8104
-R f4c5c38b537072acd0ef8cbe1e26c753
+P 235157de5113ac4c750e36a498e2a1f1cf461751
+R 4027cff60803cc3b440b57484c5f02d8
 U drh
-Z c60ff55e80e06532c78f97fe504967fd
+Z 5a82a26aab899b185210ad558ba95050
