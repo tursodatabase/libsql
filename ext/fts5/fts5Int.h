@@ -242,7 +242,7 @@ int sqlite3Fts5IndexClose(Fts5Index *p, int bDestroy);
 **   0==sqlite3Fts5IterEof(pIter);
 **   sqlite3Fts5IterNext(pIter)
 ** ){
-**   i64 iDocid = sqlite3Fts5IndexDocid(pIter);
+**   i64 iRowid = sqlite3Fts5IterRowid(pIter);
 ** }
 */
 

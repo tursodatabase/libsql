@@ -4312,6 +4312,8 @@ int sqlite3Fts5IndexIntegrityCheck(Fts5Index *p, u64 cksum){
   Fts5Config *pConfig = p->pConfig;
   int iIdx;                       /* Used to iterate through indexes */
   u64 cksum2 = 0;                 /* Checksum based on contents of indexes */
+  u64 cksum3 = 0;                 /* Checksum based on contents of indexes */
+  Fts5Buffer term = {0,0,0};      /* Buffer used to hold most recent term */
 
   /* Check that the internal nodes of each segment match the leaves */
   for(iIdx=0; p->rc==SQLITE_OK && iIdx<=pConfig->nPrefix; iIdx++){
@@ -4328,7 +4330,19 @@ int sqlite3Fts5IndexIntegrityCheck(Fts5Index *p, u64 cksum){
     fts5StructureRelease(pStruct);
   }
 
-  /* Check that the checksum of the index matches the argument checksum */
+  /* The cksum argument passed to this function is a checksum calculated
+  ** based on all expected entries in the FTS index (including prefix index
+  ** entries). This block checks that a checksum calculated based on the
+  ** actual contents of FTS index is identical.
+  **
+  ** Two versions of the same checksum are calculated. The first (stack
+  ** variable cksum2) based on entries extracted from the full-text index
+  ** while doing a linear scan of each individual index in turn. 
+  **
+  ** As each term visited by the linear scans, a separate query for the
+  ** same term is performed. cksum3 is calculated based on the entries
+  ** extracted by these queries.
+  */
   for(iIdx=0; iIdx<=pConfig->nPrefix; iIdx++){
     Fts5MultiSegIter *pIter;
     Fts5Structure *pStruct = fts5StructureRead(p, iIdx);
@@ -4341,25 +4355,50 @@ int sqlite3Fts5IndexIntegrityCheck(Fts5Index *p, u64 cksum){
       i64 iRowid = fts5MultiIterRowid(pIter);
       char *z = (char*)fts5MultiIterTerm(pIter, &n);
 
+      /* Update cksum2 with the entries associated with the current term
+      ** and rowid.  */
       for(fts5PosIterInit(p, pIter, &sPos);
           fts5PosIterEof(p, &sPos)==0;
           fts5PosIterNext(p, &sPos)
       ){
         cksum2 ^= fts5IndexEntryCksum(iRowid, sPos.iCol, sPos.iPos, z, n);
-#if 0
-        fprintf(stdout, "rowid=%d ", (int)iRowid);
-        fprintf(stdout, "term=%.*s ", n, z);
-        fprintf(stdout, "col=%d ", sPos.iCol);
-        fprintf(stdout, "off=%d\n", sPos.iPos);
-        fflush(stdout);
-#endif
+      }
+
+      /* If this is a new term, query for it. Update cksum3 with the results. */
+      if( p->rc==SQLITE_OK && (term.n!=n || memcmp(term.p, z, n)) ){
+        Fts5IndexIter *pIdxIter = 0;
+        int flags = (iIdx==0 ? 0 : FTS5INDEX_QUERY_PREFIX);
+        int rc = sqlite3Fts5IndexQuery(p, z, n, flags, &pIdxIter);
+        while( rc==SQLITE_OK && 0==sqlite3Fts5IterEof(pIdxIter) ){
+          const u8 *pPos;
+          int nPos;
+          i64 rowid = sqlite3Fts5IterRowid(pIdxIter);
+          rc = sqlite3Fts5IterPoslist(pIdxIter, &pPos, &nPos);
+          if( rc==SQLITE_OK ){
+            Fts5PoslistReader sReader;
+            for(sqlite3Fts5PoslistReaderInit(-1, pPos, nPos, &sReader);
+                sReader.bEof==0;
+                sqlite3Fts5PoslistReaderNext(&sReader)
+            ){
+              int iCol = FTS5_POS2COLUMN(sReader.iPos);
+              int iOff = FTS5_POS2OFFSET(sReader.iPos);
+              cksum3 ^= fts5IndexEntryCksum(rowid, iCol, iOff, z, n);
+            }
+            rc = sqlite3Fts5IterNext(pIdxIter);
+          }
+        }
+        sqlite3Fts5IterClose(pIdxIter);
+        fts5BufferSet(&rc, &term, n, (const u8*)z);
+        p->rc = rc;
       }
     }
     fts5MultiIterFree(p, pIter);
     fts5StructureRelease(pStruct);
   }
   if( p->rc==SQLITE_OK && cksum!=cksum2 ) p->rc = FTS5_CORRUPT;
+  if( p->rc==SQLITE_OK && cksum!=cksum3 ) p->rc = FTS5_CORRUPT;
 
+  fts5BufferFree(&term);
   return fts5IndexReturn(p);
 }
 
