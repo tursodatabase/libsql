@@ -1,5 +1,5 @@
-C If\sa\scolumn\sis\sboth\sUNIQUE\sand\sa\sPRIMARY\sKEY,\smake\ssure\sthe\sPRIMARY\sKEY\ndesignation\stakes\sprecedence.
-D 2015-03-21T02:58:20.771
+C Correctly\sdetect\sthe\serror\sof\shaving\sa\s"*"\swildcard\son\sa\sSELECT\swithout\na\sFROM\sclause\son\sthe\sleft-hand\sside\sof\sa\srecursive\sCTE.
+D 2015-03-21T03:18:22.783
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -230,7 +230,7 @@ F src/printf.c 8da9a2687a396daa19860f4dc90975d319304744
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c f4d79e31ffa5820c2e3d1740baa5e9b190425f2b
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c 94e016b6733b1d39a2f4c8d431155b4c2897d907
+F src/select.c 72ffb62e2879956302140e9f6e6ae88aee36b0e5
 F src/shell.c 9c1589c8271c04c02d23cdbc2c07bb40752fa9eb
 F src/sqlite.h.in c7c9111477b76c82c46bf851b619df4dd35cc095
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
@@ -1182,7 +1182,7 @@ F test/wild001.test bca33f499866f04c24510d74baf1e578d4e44b1c
 F test/win32heap.test ea19770974795cff26e11575e12d422dbd16893c
 F test/win32lock.test 71642fa56e9b06e5cfffe6bad67cb8c1eb2c555a
 F test/win32longpath.test 169c75a3b2e43481f4a62122510210c67b08f26d
-F test/with1.test 268081a6b14817a262ced4d0ee34d4d2a1dd2068
+F test/with1.test 9df5cd8a62148b3d9ef8597aea563e3863018bcd
 F test/with2.test ee227a663586aa09771cafd4fa269c5217eaf775
 F test/withM.test e97f2a8c506ab3ea9eab94e6f6072f6cc924c991
 F test/without_rowid1.test 7862e605753c8d25329f665fa09072e842183151
@@ -1246,7 +1246,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 880d2513a0fb084fae82080401b108fb13e61478
-R 705f61dec20eb9df7c2db39aa0eef35e
+P d871a7921722bb0fef6d51e1110a9703ddff78c8
+R abf39ccde1b147748baa7108926922a2
 U drh
-Z 19c081d9e2a5c29193a61d5955352cbc
+Z f5732dddfb21185ad5af5f2eb0f9450a
