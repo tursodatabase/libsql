@@ -50,6 +50,13 @@ extern "C" {
 #endif
 
 /*
+** Add the ability to override 'cdecl'
+*/
+#ifndef SQLITE_CDECL
+# define SQLITE_CDECL
+#endif
+
+/*
 ** These no-op macros are used in front of interfaces to mark those
 ** interfaces as either deprecated or experimental.  New applications
 ** should not use deprecated interfaces - they are supported for backwards

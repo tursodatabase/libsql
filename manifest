@@ -1,9 +1,9 @@
-C Provide\sthe\sBTREE_SEEK_EQ\shint\sto\sthe\sb-tree\slayer.
-D 2015-03-20T16:54:29.996
+C Improvements\sto\sthe\sMSVC\sbuild.\s\sFix\sharmless\scompiler\swarnings.\s\sEnable\suse\sof\s'stdcall'.
+D 2015-03-21T02:22:37.291
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 529e61cd9d29a3934758b4b3a0bb649b6c653481
+F Makefile.msc e8614ec3a5f84c92bc70eaf99a2d6cb622494706
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md d58e3bebc0a4145e0f2a87994015fdb575a8e866
 F VERSION 319eb1ced4b4d17a67730f2b7b85f15c1346cb60
@@ -96,10 +96,10 @@ F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c a93f5edc0aff44ef8b06d7cb55b52026541ca145
 F ext/fts3/fts3_unicode2.c c3d01968d497bd7001e7dc774ba75b372738c057
-F ext/fts3/fts3_write.c 9b3a32cbecf40a1f41cb08c00df8c066c23c7a25
+F ext/fts3/fts3_write.c 7104ec015474ee61a8a570349b925f35c6b0a294
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
-F ext/fts3/tool/fts3view.c 3986531f2fc0ceca0c89c31ec7d0589b6adb19d6
+F ext/fts3/tool/fts3view.c 8e53d0190a7b3443764bbd32ad47be2bd852026d
 F ext/fts3/unicode/CaseFolding.txt 8c678ca52ecc95e16bc7afc2dbf6fc9ffa05db8c
 F ext/fts3/unicode/UnicodeData.txt cd07314edb62d49fde34debdaf92fa2aa69011e7
 F ext/fts3/unicode/mkunicode.tcl a2567f9d6ad6779879a2e394c120ad8718557e65
@@ -160,7 +160,7 @@ F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
 F mptest/crash02.subtest f4ef05adcd15d60e5d2bd654204f2c008b519df8
-F mptest/mptest.c 0c0c82c1d9aea0b1a60ef9456a04c35ab1106622
+F mptest/mptest.c 1e464f41f1bbc6578d6925043da56170f83aea96
 F mptest/multiwrite01.test dab5c5f8f9534971efce679152c5146da265222d
 F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
@@ -231,8 +231,8 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c f4d79e31ffa5820c2e3d1740baa5e9b190425f2b
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 94e016b6733b1d39a2f4c8d431155b4c2897d907
-F src/shell.c d1ecce877f899abc97cabdf6a0b8323b8c5a0b69
-F src/sqlite.h.in 2d48e05677d0f9b06b7757662eef3cebea02d837
+F src/shell.c 9c1589c8271c04c02d23cdbc2c07bb40752fa9eb
+F src/sqlite.h.in c7c9111477b76c82c46bf851b619df4dd35cc095
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
 F src/sqliteInt.h f2300529f3592323a98fd7acccec63d0e9082dc5
@@ -1194,7 +1194,7 @@ F test/without_rowid6.test deddb78ef539c355bddec00cdfaea6c56efd8b3f
 F test/wordcount.c 9915e06cb33d8ca8109b8700791afe80d305afda
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
 F test/zerodamage.test cf6748bad89553cc1632be51a6f54e487e4039ac
-F tool/build-all-msvc.bat a0534c971b86fe95f1983f445db5b896d3394818 x
+F tool/build-all-msvc.bat 62785b25bf7ea82dc016b3233a896151c786cfbb x
 F tool/build-shell.sh 950f47c6174f1eea171319438b93ba67ff5bf367
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
@@ -1223,7 +1223,7 @@ F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/pagesig.c ff0ca355fd3c2398e933da5e22439bbff89b803b
 F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
-F tool/showdb.c bd073a78bce714a0e42d92ea474b3eb8cb53be5d
+F tool/showdb.c 63cdef19e7fbca0c164b096ef8aef3bb9e9dd222
 F tool/showjournal.c 053eb1cc774710c6890b7dd6293300cc297b16a5
 F tool/showstat4.c 9515faa8ec176599d4a8288293ba8ec61f7b728a
 F tool/showwal.c 85cb36d4fe3e93e2fbd63e786e0d1ce42d0c4fad
@@ -1246,8 +1246,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P eddc05e7bb31fae74daa86e0504a3478b99fa0f2 78df0ce13d4f35226f2571bd7de78484ccbee4bb
-R 05881cbceea02fa7c850b941dd3796f0
-T +closed 78df0ce13d4f35226f2571bd7de78484ccbee4bb
-U drh
-Z 56e9c50c3a6de45bb59df03b69a9852f
+P 3c367004dab0a1a24d955482c97b0f2d84129ab6
+R 80f691e361888d14a716e1419942fc85
+U mistachkin
+Z 872c461d0c616b6e0a705e4083626167

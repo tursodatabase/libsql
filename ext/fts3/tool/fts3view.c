@@ -504,7 +504,7 @@ static void showSegdirMap(sqlite3 *db, const char *zTab){
                        sqlite3_column_int64(pStmt,5));
       printf("  root   %9s\n", rtag);
       if( iLEnd>iStart ){
-        sqlite3_int64 iLower, iPrev, iX;
+        sqlite3_int64 iLower, iPrev = 0, iX;
         if( iLEnd+1<=iEnd ){
           sqlite3_bind_int64(pStmt2, 1, iLEnd+1);
           sqlite3_bind_int64(pStmt2, 2, iEnd);
@@ -548,7 +548,7 @@ static void decodeSegment(
   const unsigned char *aData,   /* Content to print */
   int nData                     /* Number of bytes of content */
 ){
-  sqlite3_int64 iChild;
+  sqlite3_int64 iChild = 0;
   sqlite3_int64 iPrefix;
   sqlite3_int64 nTerm;
   sqlite3_int64 n;
