@@ -6037,15 +6037,20 @@ case OP_VBegin: {
 */
 case OP_VCreate: {
   Mem sMem;          /* For storing the record being decoded */
+  const char *zTab;  /* Name of the virtual table */
+
   memset(&sMem, 0, sizeof(sMem));
   sMem.db = db;
+  /* Because P2 is always a static string, it is impossible for the
+  ** sqlite3VdbeMemCopy() to fail */
+  assert( (aMem[pOp->p2].flags & MEM_Str)!=0 );
+  assert( (aMem[pOp->p2].flags & MEM_Static)!=0 );
   rc = sqlite3VdbeMemCopy(&sMem, &aMem[pOp->p2]);
-  if( rc==SQLITE_OK ){
-    const char *zTab = (const char*)sqlite3_value_text(&sMem);
-    assert( zTab || db->mallocFailed );
-    if( zTab ){
-      rc = sqlite3VtabCallCreate(db, pOp->p1, zTab, &p->zErrMsg);
-    }
+  assert( rc==SQLITE_OK );
+  zTab = (const char*)sqlite3_value_text(&sMem);
+  assert( zTab || db->mallocFailed );
+  if( zTab ){
+    rc = sqlite3VtabCallCreate(db, pOp->p1, zTab, &p->zErrMsg);
   }
   sqlite3VdbeMemRelease(&sMem);
   break;

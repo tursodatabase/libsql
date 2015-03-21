@@ -135,18 +135,20 @@ do_test vtab2-4.5 {
 
 #-------------------------------------------------------------------------
 #
-reset_db
-do_execsql_test 5.1 {
-  PRAGMA encoding='UTF16';
+ifcapable fts3 {
+  reset_db
+  do_execsql_test 5.1 {
+    PRAGMA encoding='UTF16';
+  }
+
+  do_test 5.2 {
+    sqlite3_exec_hex db { CREATE VIRTUAL TABLE %C8 USING fts3 }
+  } {0 {}}
+
+  do_test 5.3 {
+    sqlite3_exec_hex db { CREATE VIRTUAL TABLE %C9 USING s }
+  } {/1 {malformed database schema.* already exists}/}
 }
-
-do_test 5.2 {
-  sqlite3_exec_hex db { CREATE VIRTUAL TABLE %C8 USING fts3 }
-} {0 {}}
-
-do_test 5.3 {
-  sqlite3_exec_hex db { CREATE VIRTUAL TABLE %C9 USING s }
-} {/1 {malformed database schema.* already exists}/}
 
 
 

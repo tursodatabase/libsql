@@ -910,11 +910,16 @@ static char *fts3WriteExprList(Fts3Table *p, const char *zFunc, int *pRc){
 ** This function is used when parsing the "prefix=" FTS4 parameter.
 */
 static int fts3GobbleInt(const char **pp, int *pnOut){
+  const MAX_NPREFIX = 10000000;
   const char *p;                  /* Iterator pointer */
   int nInt = 0;                   /* Output value */
 
   for(p=*pp; p[0]>='0' && p[0]<='9'; p++){
     nInt = nInt * 10 + (p[0] - '0');
+    if( nInt>MAX_NPREFIX ){
+      nInt = 0;
+      break;
+    }
   }
   if( p==*pp ) return SQLITE_ERROR;
   *pnOut = nInt;
@@ -966,9 +971,10 @@ static int fts3PrefixParameter(
     const char *p = zParam;
     int i;
     for(i=1; i<nIndex; i++){
-      int nPrefix;
+      int nPrefix = 0;
       if( fts3GobbleInt(&p, &nPrefix) ) return SQLITE_ERROR;
-      if( nPrefix<=0 ){
+      assert( nPrefix>=0 );
+      if( nPrefix==0 ){
         nIndex--;
         i--;
       }else{
