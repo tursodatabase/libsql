@@ -1,9 +1,9 @@
-C Improvements\sto\sthe\sMSVC\sbuild.\s\sFix\sharmless\scompiler\swarnings.\s\sEnable\suse\sof\s'stdcall'.
-D 2015-03-21T02:22:37.291
+C Remove\ssuperfluous\sdefine\sfrom\sthe\sMSVC\smakefile.
+D 2015-03-21T02:25:29.401
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc e8614ec3a5f84c92bc70eaf99a2d6cb622494706
+F Makefile.msc cd626b52ebeec0e2c0dd929243bdd25b0df19a71
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md d58e3bebc0a4145e0f2a87994015fdb575a8e866
 F VERSION 319eb1ced4b4d17a67730f2b7b85f15c1346cb60
@@ -1246,7 +1246,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3c367004dab0a1a24d955482c97b0f2d84129ab6
-R 80f691e361888d14a716e1419942fc85
+P 737630b87314283b2c38790ace9d25ec05f81f4a
+R bbf7713d7bc160a26b464271593d133d
 U mistachkin
-Z 872c461d0c616b6e0a705e4083626167
+Z d79979d0d3fded9d4339ee09acdaf62b
