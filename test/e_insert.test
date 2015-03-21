@@ -348,9 +348,9 @@ do_insert_tests e_insert-3.2 {
     6.2    "SELECT * FROM a1"                  {{} {} {} {}}
 }
 
-# EVIDENCE-OF: R-46928-50290 The optional conflict-clause allows the
-# specification of an alternative constraint conflict resolution
-# algorithm to use during this one INSERT command.
+# EVIDENCE-OF: R-03235-45250 The "REPLACE" and "INSERT OR action" forms
+# specify an alternative constraint conflict resolution algorithm to use
+# during this one INSERT command.
 #
 # EVIDENCE-OF: R-23110-47146 the parser allows the use of the single
 # keyword REPLACE as an alias for "INSERT OR REPLACE".

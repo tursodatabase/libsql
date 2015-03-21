@@ -573,6 +573,9 @@ static int multiplexOpen(
       rc = pSubOpen->pMethods->xFileSize(pSubOpen, &sz);
       if( rc==SQLITE_OK && zName ){
         int bExists;
+        if( flags & SQLITE_OPEN_MASTER_JOURNAL ){
+          pGroup->bEnabled = 0;
+        }else
         if( sz==0 ){
           if( flags & SQLITE_OPEN_MAIN_JOURNAL ){
             /* If opening a main journal file and the first chunk is zero
@@ -1004,6 +1007,13 @@ static int multiplexFileControl(sqlite3_file *pConn, int op, void *pArg){
       break;
     case SQLITE_FCNTL_PRAGMA: {
       char **aFcntl = (char**)pArg;
+      /*
+      ** EVIDENCE-OF: R-29875-31678 The argument to the SQLITE_FCNTL_PRAGMA
+      ** file control is an array of pointers to strings (char**) in which the
+      ** second element of the array is the name of the pragma and the third
+      ** element is the argument to the pragma or NULL if the pragma has no
+      ** argument.
+      */
       if( aFcntl[1] && sqlite3_stricmp(aFcntl[1],"multiplex_truncate")==0 ){
         if( aFcntl[2] && aFcntl[2][0] ){
           if( sqlite3_stricmp(aFcntl[2], "on")==0
@@ -1015,6 +1025,12 @@ static int multiplexFileControl(sqlite3_file *pConn, int op, void *pArg){
             pGroup->bTruncate = 0;
           }
         }
+        /* EVIDENCE-OF: R-27806-26076 The handler for an SQLITE_FCNTL_PRAGMA
+        ** file control can optionally make the first element of the char**
+        ** argument point to a string obtained from sqlite3_mprintf() or the
+        ** equivalent and that string will become the result of the pragma
+        ** or the error message if the pragma fails.
+        */
         aFcntl[0] = sqlite3_mprintf(pGroup->bTruncate ? "on" : "off");
         rc = SQLITE_OK;
         break;

@@ -188,8 +188,10 @@ ifcapable wal {
     execsql { 
       PRAGMA journal_mode = WAL;
       PRAGMA incremental_vacuum(1);
-      PRAGMA wal_checkpoint;
     }
+  } {wal}
+  do_test 4.2.1 {
+    execsql { PRAGMA wal_checkpoint }
     file size test.db-wal
   } [expr {32+2*(512+24)}]
 

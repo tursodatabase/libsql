@@ -406,19 +406,22 @@ do_test shell1-3.11.3 {
   catchcmd "test.db" ".import FOO BAR BAD"
 } {1 {Usage: .import FILE TABLE}}
 
-# .indices ?TABLE?       Show names of all indices
-#                          If TABLE specified, only show indices for tables
+# .indexes ?TABLE?       Show names of all indexes
+#                          If TABLE specified, only show indexes for tables
 #                          matching LIKE pattern TABLE.
 do_test shell1-3.12.1 {
-  catchcmd "test.db" ".indices"
+  catchcmd "test.db" ".indexes"
 } {0 {}}
 do_test shell1-3.12.2 {
+  catchcmd "test.db" ".indexes FOO"
+} {0 {}}
+do_test shell1-3.12.2-legacy {
   catchcmd "test.db" ".indices FOO"
 } {0 {}}
 do_test shell1-3.12.3 {
   # too many arguments
-  catchcmd "test.db" ".indices FOO BAD"
-} {1 {Usage: .indices ?LIKE-PATTERN?}}
+  catchcmd "test.db" ".indexes FOO BAD"
+} {1 {Usage: .indexes ?LIKE-PATTERN?}}
 
 # .mode MODE ?TABLE?     Set output mode where MODE is one of:
 #                          ascii    Columns/rows delimited by 0x1F and 0x1E

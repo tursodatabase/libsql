@@ -301,8 +301,11 @@ static int statDecodePage(Btree *pBt, StatPage *p){
 
   if( p->nCell ){
     int i;                        /* Used to iterate through cells */
-    int nUsable = szPage - sqlite3BtreeGetReserve(pBt);
+    int nUsable;                  /* Usable bytes per page */
 
+    sqlite3BtreeEnter(pBt);
+    nUsable = szPage - sqlite3BtreeGetReserveNoMutex(pBt);
+    sqlite3BtreeLeave(pBt);
     p->aCell = sqlite3_malloc((p->nCell+1) * sizeof(StatCell));
     memset(p->aCell, 0, (p->nCell+1) * sizeof(StatCell));
 
@@ -425,7 +428,11 @@ statNextRestart:
     while( p->iCell<p->nCell ){
       StatCell *pCell = &p->aCell[p->iCell];
       if( pCell->iOvfl<pCell->nOvfl ){
-        int nUsable = sqlite3BtreeGetPageSize(pBt)-sqlite3BtreeGetReserve(pBt);
+        int nUsable;
+        sqlite3BtreeEnter(pBt);
+        nUsable = sqlite3BtreeGetPageSize(pBt) - 
+                        sqlite3BtreeGetReserveNoMutex(pBt);
+        sqlite3BtreeLeave(pBt);
         pCsr->zName = (char *)sqlite3_column_text(pCsr->pStmt, 0);
         pCsr->iPageno = pCell->aOvfl[pCell->iOvfl];
         pCsr->zPagetype = "overflow";

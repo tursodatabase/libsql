@@ -255,6 +255,7 @@ SRC = \
   $(TOP)/src/pcache.h \
   $(TOP)/src/pcache1.c \
   $(TOP)/src/pragma.c \
+  $(TOP)/src/pragma.h \
   $(TOP)/src/prepare.c \
   $(TOP)/src/printf.c \
   $(TOP)/src/random.c \
@@ -286,6 +287,7 @@ SRC = \
   $(TOP)/src/vdbetrace.c \
   $(TOP)/src/vdbeInt.h \
   $(TOP)/src/vtab.c \
+  $(TOP)/src/vxworks.h \
   $(TOP)/src/wal.c \
   $(TOP)/src/wal.h \
   $(TOP)/src/walker.c \
@@ -474,12 +476,14 @@ HDR = \
    $(TOP)/src/pager.h \
    $(TOP)/src/pcache.h \
    parse.h  \
+   $(TOP)/src/pragma.h \
    sqlite3.h  \
    $(TOP)/src/sqlite3ext.h \
    $(TOP)/src/sqliteInt.h  \
    $(TOP)/src/sqliteLimit.h \
    $(TOP)/src/vdbe.h \
    $(TOP)/src/vdbeInt.h \
+   $(TOP)/src/vxworks.h \
    $(TOP)/src/whereInt.h \
    config.h
 
@@ -536,11 +540,19 @@ mptester$(EXE):	sqlite3.c $(TOP)/mptest/mptest.c
 	$(LTLINK) -o $@ -I. $(TOP)/mptest/mptest.c sqlite3.c \
 		$(TLIBS) -rpath "$(libdir)"
 
+MPTEST1=./mptester$(EXE) mptest.db $(TOP)/mptest/crash01.test --repeat 20
+MPTEST2=./mptester$(EXE) mptest.db $(TOP)/mptest/multiwrite01.test --repeat 20
 mptest:	mptester$(EXE)
-	rm -f mptest1.db
-	./mptester$(EXE) mptest1.db $(TOP)/mptest/crash01.test
-	rm -f mptest2.db
-	./mptester$(EXE) mptest2.db $(TOP)/mptest/multiwrite01.test
+	rm -f mptest.db
+	$(MPTEST1) --journalmode DELETE
+	$(MPTEST2) --journalmode WAL
+	$(MPTEST1) --journalmode WAL
+	$(MPTEST2) --journalmode PERSIST
+	$(MPTEST1) --journalmode PERSIST
+	$(MPTEST2) --journalmode TRUNCATE
+	$(MPTEST1) --journalmode TRUNCATE
+	$(MPTEST2) --journalmode DELETE
+
 
 # This target creates a directory named "tsrc" and fills it with
 # copies of all of the C source code and header files needed to
@@ -995,7 +1007,7 @@ LogEst$(TEXE):	$(TOP)/tool/logest.c sqlite3.h
 wordcount$(TEXE):	$(TOP)/test/wordcount.c sqlite3.c
 	$(LTLINK) -o $@ $(TOP)/test/wordcount.c sqlite3.c $(TLIBS)
 
-speedtest1$(TEXE):	$(TOP)/test/wordcount.c sqlite3.lo
+speedtest1$(TEXE):	$(TOP)/test/speedtest1.c sqlite3.lo
 	$(LTLINK) -o $@ $(TOP)/test/speedtest1.c sqlite3.lo $(TLIBS)
 
 # This target will fail if the SQLite amalgamation contains any exported
