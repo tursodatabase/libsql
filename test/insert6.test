@@ -80,8 +80,7 @@ foreach {tn nSort schema} {
 # The following test cases check that the sorters are disabled if any
 # of the following are true:
 #
-#   2.1: There are one or more UNIQUE constraints or indexes and the 
-#        statement specifies "ON CONFLICT FAIL", "IGNORE" or "REPLACE".
+#   2.1: The statement specifies "ON CONFLICT FAIL", "IGNORE" or "REPLACE".
 #
 #   2.2: The statement does not explicitly specify a conflict mode and 
 #        there are one or more PRIMARY KEY or UNIQUE constraints with 
@@ -104,17 +103,17 @@ do_execsql_test 2.1.1 {
   CREATE TABLE x4(a PRIMARY KEY, b, c) WITHOUT ROWID;
 }
 
-do_test 2.1.2 { sorter_count { INSERT OR REPLACE INTO x1 SELECT * FROM t2 } } 1
+do_test 2.1.2 { sorter_count { INSERT OR REPLACE INTO x1 SELECT * FROM t2 } } 0
 do_test 2.1.3 { sorter_count { INSERT OR REPLACE INTO x2 SELECT * FROM t2 } } 0
 do_test 2.1.4 { sorter_count { INSERT OR REPLACE INTO x3 SELECT * FROM t2 } } 0
 do_test 2.1.5 { sorter_count { INSERT OR REPLACE INTO x4 SELECT * FROM t2 } } 0
 
-do_test 2.1.6 { sorter_count { INSERT OR IGNORE INTO x1 SELECT * FROM t2 } } 1
+do_test 2.1.6 { sorter_count { INSERT OR IGNORE INTO x1 SELECT * FROM t2 } } 0
 do_test 2.1.7 { sorter_count { INSERT OR IGNORE INTO x2 SELECT * FROM t2 } } 0
 do_test 2.1.8 { sorter_count { INSERT OR IGNORE INTO x3 SELECT * FROM t2 } } 0
 do_test 2.1.9 { sorter_count { INSERT OR IGNORE INTO x4 SELECT * FROM t2 } } 0
 
-do_test 2.1.10 { sorter_count { INSERT OR FAIL INTO x1 SELECT * FROM t2 } } 1
+do_test 2.1.10 { sorter_count { INSERT OR FAIL INTO x1 SELECT * FROM t2 } } 0
 do_test 2.1.11 { sorter_count { INSERT OR FAIL INTO x2 SELECT * FROM t2 } } 0
 do_test 2.1.12 { sorter_count { INSERT OR FAIL INTO x3 SELECT * FROM t2 } } 0
 do_test 2.1.13 { sorter_count { INSERT OR FAIL INTO x4 SELECT * FROM t2 } } 0
@@ -382,6 +381,29 @@ do_insert6_4_test 4.6 {
   INSERT INTO src 
   SELECT hex(randomblob(50)) FROM cnt;
 }
+
+#-------------------------------------------------------------------------
+# At one point the sorters were used for INSERT statements that specify
+# "OR FAIL", "REPLACE" or "IGNORE" if there were no PRIMARY KEY or
+# UNIQUE indexes. This is incorrect, as all such tables have an implicit
+# IPK column. So using the sorters can cause corruption. This test checks
+# that that problem no longer exists.
+#
+reset_db
+do_execsql_test 5.1 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+  CREATE INDEX t1b ON t1(b);
+  INSERT INTO t1 VALUES(1, 2, 3);
+  INSERT INTO t1 VALUES(4, 5, 6);
+}
+
+do_catchsql_test 5.2 {
+  INSERT OR FAIL INTO t1 
+  SELECT 2, 'x', 'x' UNION ALL SELECT 3, 'x', 'x' UNION ALL SELECT 4, 'x', 'x';
+} {1 {UNIQUE constraint failed: t1.a}}
+
+integrity_check 5.3
+
 
 finish_test
 

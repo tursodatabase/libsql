@@ -1,5 +1,5 @@
-C Where\spossible\sinsert\sthe\sset\sof\snew\skeys\sfor\seach\sindex\sin\ssorted\sorder\swithin\s"INSERT\sINTO\s...\sSELECT"\sstatements.
-D 2015-03-20T20:30:26.758
+C Disable\sthe\ssorter\soptimization\sused\sby\sINSERT\sINTO\sSELECT\sstatements\sif\sthe\sstatement\sexplicitly\sspecifies\sREPLACE,\sIGNORE\sor\sFAIL\sconflict\shandling.
+D 2015-03-21T07:03:55.769
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -190,7 +190,7 @@ F src/global.c 4f77cadbc5427d00139ba43d0f3979804cbb700e
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
 F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c 9e5d41e7001a6f62e7ea8d76966892a34b003c6b
+F src/insert.c 004d1f12366be4b07cec2c61fd632cca917b1c0d
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
@@ -666,7 +666,7 @@ F test/insert2.test 4f3a04d168c728ed5ec2c88842e772606c7ce435
 F test/insert3.test 1b7db95a03ad9c5013fdf7d6722b6cd66ee55e30
 F test/insert4.test 4791662c50518bdd37d394cae9a7a8014e845bb3
 F test/insert5.test 394f96728d1258f406fe5f5aeb0aaf29487c39a6
-F test/insert6.test a855a23aea575a540232abbd68664184287aac77
+F test/insert6.test d75c3869f1d8249d54e67774e7a811391e8d2a9e
 F test/instr.test 737bbf80685232033f3abedc6ae92f75860b5dd2
 F test/intarray.test 066b7d7ac38d25bf96f87f1b017bfc687551cdd4
 F test/interrupt.test dfe9a67a94b0b2d8f70545ba1a6cca10780d71cc
@@ -1247,10 +1247,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P eddc05e7bb31fae74daa86e0504a3478b99fa0f2
-R a72a78e4c229b46f08cda5f8e6da7f3d
-T *branch * insert-select-opt
-T *sym-insert-select-opt *
-T -sym-trunk *
+P 0a7f2051b2cc9b4e060fd6081587502124e16c9e
+R 12c0ae072dce7a1a3217ff6d1ecb09c8
 U dan
-Z ce2c6acfee6969d3739af7eba6d8fa6c
+Z 5e5cc540ee592a20a0076ae277f0733e

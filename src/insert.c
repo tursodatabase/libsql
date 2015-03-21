@@ -782,10 +782,11 @@ void sqlite3Insert(
     **
     **    * there are no triggers to fire, and
     **    * no foreign key processing to perform, and
-    **    * the on-conflict mode used for all UNIQUE indexes is either 
-    **      ROLLBACK or ABORT.
+    **    * the on-conflict mode used for all UNIQUE and PRIMARY KEY indexes, 
+    **      including INTEGER PRIMARY KEYs, is either ROLLBACK or ABORT.
     */
     if( pSelect 
+     && onError!=OE_Fail && onError!=OE_Replace && onError!=OE_Ignore
      && !IsVirtual(pTab) 
      && pTrigger==0 
      && 0==sqlite3FkRequired(pParse, pTab, 0, 0) 
@@ -793,7 +794,7 @@ void sqlite3Insert(
       for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
         u8 oe = idxConflictMode(pIdx, onError);
         if( oe==OE_Fail || oe==OE_Replace || oe==OE_Ignore ) break;
-        assert( oe==OE_None||oe==OE_Abort||oe==OE_Rollback );
+        assert( oe==OE_None || oe==OE_Abort || oe==OE_Rollback );
       }
       if( pIdx==0 ){
         /* This statement can sort the set of new keys for each index before
