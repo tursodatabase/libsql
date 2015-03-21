@@ -1,5 +1,5 @@
-C Correctly\sdetect\sthe\serror\sof\shaving\sa\s"*"\swildcard\son\sa\sSELECT\swithout\na\sFROM\sclause\son\sthe\sleft-hand\sside\sof\sa\srecursive\sCTE.
-D 2015-03-21T03:18:22.783
+C Add\sa\smissing\s"ifcapable\sfts3"\sto\sa\stest\scase\sin\svtab2.test.
+D 2015-03-21T10:53:01.184
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1112,7 +1112,7 @@ F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/veryquick.test 57ab846bacf7b90cf4e9a672721ea5c5b669b661
 F test/view.test f311691d696a5cc27e3c1b875cec1b0866b4ccd9
 F test/vtab1.test 1cef14310144718812351a61c5cfb4ba8494a171
-F test/vtab2.test 366256bee644d034cbe078fbe1ec5bbe6b13fe42
+F test/vtab2.test 3644649aa8d1daac57fd541f6a5f914cac59203e
 F test/vtab3.test b45f47d20f225ccc9c28dc915d92740c2dee311e
 F test/vtab4.test 942f8b8280b3ea8a41dae20e7822d065ca1cb275
 F test/vtab5.test 889f444970393c73f1e077e2bdc5d845e157a391
@@ -1246,7 +1246,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d871a7921722bb0fef6d51e1110a9703ddff78c8
-R abf39ccde1b147748baa7108926922a2
-U drh
-Z f5732dddfb21185ad5af5f2eb0f9450a
+P b11d1793a06a44931edcbf12a615b49794d53a62
+R 55729177793663a0c48c1beb22d1dc2b
+U dan
+Z c52b93c6a8110abb696022d137cc00a4
