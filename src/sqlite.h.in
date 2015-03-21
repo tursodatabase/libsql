@@ -50,6 +50,13 @@ extern "C" {
 #endif
 
 /*
+** Add the ability to override 'cdecl'
+*/
+#ifndef SQLITE_CDECL
+# define SQLITE_CDECL
+#endif
+
+/*
 ** These no-op macros are used in front of interfaces to mark those
 ** interfaces as either deprecated or experimental.  New applications
 ** should not use deprecated interfaces - they are supported for backwards
@@ -3001,11 +3008,13 @@ sqlite3_int64 sqlite3_uri_int64(const char*, const char*, sqlite3_int64);
 /*
 ** CAPI3REF: Error Codes And Messages
 **
-** ^The sqlite3_errcode() interface returns the numeric [result code] or
-** [extended result code] for the most recent failed sqlite3_* API call
-** associated with a [database connection]. If a prior API call failed
-** but the most recent API call succeeded, the return value from
-** sqlite3_errcode() is undefined.  ^The sqlite3_extended_errcode()
+** ^If the most recent sqlite3_* API call associated with 
+** [database connection] D failed, then the sqlite3_errcode(D) interface
+** returns the numeric [result code] or [extended result code] for that
+** API call.
+** If the most recent API call was successful,
+** then the return value from sqlite3_errcode() is undefined.
+** ^The sqlite3_extended_errcode()
 ** interface is the same except that it always returns the 
 ** [extended result code] even when extended result codes are
 ** disabled.
