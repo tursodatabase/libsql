@@ -1,5 +1,5 @@
-C Fix\sthe\sblocking\sWAL\slock\sso\sthat\sit\sworks\sand\sso\sthat\sit\scompiles\son\sa\sMac.
-D 2015-03-21T16:36:03.990
+C Change\swalblock.test\sto\sblock\san\sexternal\sprocess\sfor\s10\sseconds,\snot\s5.\s5\sseconds\sis\snot\slong\senough\sto\stell\sthe\sdifference\sbetween\sa\sblocking\slock\sand\sa\sseries\sof\sretries.
+D 2015-03-21T16:40:24.176
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1142,7 +1142,7 @@ F test/wal9.test 378e76a9ad09cd9bee06c172ad3547b0129a6750
 F test/wal_common.tcl a98f17fba96206122eff624db0ab13ec377be4fe
 F test/walbak.test b9f68e39646375c2b877be906babcc15d38b4877
 F test/walbig.test f437473a16cfb314867c6b5d1dbcd519e73e3434
-F test/walblock.test f1290524714232c109fb0b14db28f14d81c3ddd0
+F test/walblock.test ffc761cd467a93ccd8cd998a23be2f21b95a83b1
 F test/walcksum.test 9afeb96240296c08c72fc524d199c912cfe34daa
 F test/walcrash.test 451d79e528add5c42764cea74aa2750754171b25
 F test/walcrash2.test a0edab4e5390f03b99a790de89aad15d6ec70b36
@@ -1246,7 +1246,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2fbfec62fc03d42ee240dfefaa0aeb59a3f04d88
-R 5a3409f8ffa9923877231407f3215215
-U drh
-Z 15a1523db948e8ebecc44c81b8244965
+P 67d69d21de32816894be53e4b446656d4174eb0d
+R fd1744ba13eb7ca730963f1f28c9bbe1
+U dan
+Z 766817d70f1d0d42f94e17731574ace5
