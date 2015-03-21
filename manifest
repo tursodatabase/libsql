@@ -1,5 +1,5 @@
-C Avoid\sa\ssegfault\sif\sNULL\sis\spassed\sas\sthe\sfirst\sargument\sto\sSQL\sscalar\sfunction\sfts3_tokenizer().
-D 2015-03-21T19:35:09.439
+C Add\sa\smissing\s"int"\son\sa\sconstant\sdeclaration.
+D 2015-03-21T20:50:58.948
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -78,7 +78,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c e2c7e61d676ce7b9383d1078c9774a2f22947d57
+F ext/fts3/fts3.c 2a1cf23133d0c75ce296d17440c44115f8413ec7
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 394858c12a17740f7a1f6bd372c4606d4425a8d1
 F ext/fts3/fts3_aux.c 5c211e17a64885faeb16b9ba7772f9d5445c2365
@@ -1246,7 +1246,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 717335fcdb15430ed977cbc98d30345b71728b66
-R 9a44cfc186a78e5b971a0e9f8c3b76c2
-U dan
-Z 068927d1dd3aa367e2b9f4f743992531
+P 6d0989695b486275824c14d5f88357267c1e8104
+R f4c5c38b537072acd0ef8cbe1e26c753
+U drh
+Z c60ff55e80e06532c78f97fe504967fd
