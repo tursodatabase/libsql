@@ -321,7 +321,7 @@ FOR %%P IN (%PLATFORMS%) DO (
       %_AECHO% Building the %%B configuration for platform %%P with name %%D...
 
       IF /I "%%B" == "Debug" (
-        SET DEBUG=2
+        SET DEBUG=3
         SET MEMDEBUG=1
       ) ELSE (
         CALL :fn_UnsetVariable DEBUG
