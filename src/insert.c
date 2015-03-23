@@ -1071,6 +1071,7 @@ void sqlite3Insert(
           sqlite3UniqueConstraint(pParse, oe, pIdx);
         }
         sqlite3VdbeAddOp2(v, OP_IdxInsert, iIdx, iTmp); 
+        if( oe!=OE_None ) sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
         sqlite3VdbeAddOp2(v, OP_SorterNext, iCur, addr+1); VdbeCoverage(v);
         sqlite3VdbeJumpHere(v, addr);
         sqlite3VdbeAddOp1(v, OP_Close, iCur);

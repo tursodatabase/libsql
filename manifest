@@ -1,5 +1,5 @@
-C Do\snot\suse\ssorters\sfor\sINSERT\sstatements\sthat\sinsert\smultiple\srows\susing\sthe\sVALUES\sclause.
-D 2015-03-21T15:26:42.797
+C Set\sthe\sOPFLAG_SEEKRESULT\scorrectly\sin\s"INSERT\sINTO\s...\sSELECT"\sstatements.
+D 2015-03-23T14:39:19.308
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -190,7 +190,7 @@ F src/global.c 4f77cadbc5427d00139ba43d0f3979804cbb700e
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
 F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c 9073db4b72ac7e8caf25cab3f49397a0469abdcc
+F src/insert.c 9f92c04e9bc6056ffd6129767749f2f16d5cd309
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
@@ -1247,7 +1247,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9affe7f3f9ccb4fd93d428d6c1c2370b09ad0383
-R 9ef0aead9ff0deadb11db08c0257fc6f
+P 93e28ea1ef41f274c5685f3bbb93a4d9ad44c880
+R 1bdebd59fc5ce3db34d12811b57c9be3
 U dan
-Z a6ed9796bd7e5025b34dc9f9110907bc
+Z 351e859f90f619b0b703977dae1c4d34
