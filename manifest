@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_PTRSIZE\smacro.\s\sUse\sit\sto\shelp\ssqlite3_status()\srun\sfaster\non\s32-bit\ssystems.
-D 2015-03-23T18:52:56.780
+C Fix\sa\snon-C89\svariable\sdeclaration\sthat\scauses\sproblems\sfor\sMSVC.
+D 2015-03-23T19:16:30.885
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -237,7 +237,7 @@ F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
 F src/sqliteInt.h e22a2bfbeed55ed3addff5e0ef34366e93ad0874
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
-F src/status.c 8ccd03e35ac98e44b3df51cbc94a81119c6ab0dd
+F src/status.c 2e5c86866ff2f30988ce10ddbaa7ba2eaf6d4146
 F src/table.c e7a09215315a978057fb42c640f890160dbcc45e
 F src/tclsqlite.c fa72a7c5278662357c105ba7925c1d0972506ff9
 F src/test1.c 90fbedce75330d48d99eadb7d5f4223e86969585
@@ -1246,7 +1246,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1ce8e8fa4b866aafa12b1da0eb4d02321af9293e
-R 0b9a82d5d161d745ba0c858230f2a6bc
+P c742bd6047bc6d0319a5a8c31d97f6b9229507f6
+R 7eaa072c7f96e653ea839c906764b0b8
 U drh
-Z e9a2419ecec514dae3eef3cef6e74ea6
+Z 211fd8daf94b9f843731a45e101ebe58

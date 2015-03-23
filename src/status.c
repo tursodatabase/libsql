@@ -132,8 +132,8 @@ int sqlite3_status64(
   sqlite3_int64 *pHighwater,
   int resetFlag
 ){
-  wsdStatInit;
   sqlite3_mutex *pMutex;
+  wsdStatInit;
   if( op<0 || op>=ArraySize(wsdStat.nowValue) ){
     return SQLITE_MISUSE_BKPT;
   }
