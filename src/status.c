@@ -21,8 +21,13 @@
 */
 typedef struct sqlite3StatType sqlite3StatType;
 static SQLITE_WSD struct sqlite3StatType {
+#if SQLITE_PTRSIZE>4
   sqlite3_int64 nowValue[10];         /* Current value */
   sqlite3_int64 mxValue[10];          /* Maximum value */
+#else
+  u32 nowValue[10];                   /* Current value */
+  u32 mxValue[10];                    /* Maximum value */
+#endif
 } sqlite3Stat = { {0,}, {0,} };
 
 /*
@@ -152,8 +157,10 @@ int sqlite3_status(int op, int *pCurrent, int *pHighwater, int resetFlag){
   if( pCurrent==0 || pHighwater==0 ) return SQLITE_MISUSE_BKPT;
 #endif
   rc = sqlite3_status64(op, &iCur, &iHwtr, resetFlag);
-  *pCurrent = (int)iCur;
-  *pHighwater = (int)iHwtr;
+  if( rc==0 ){
+    *pCurrent = (int)iCur;
+    *pHighwater = (int)iHwtr;
+  }
   return rc;
 }
 

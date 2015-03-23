@@ -595,6 +595,20 @@ typedef INT8_TYPE i8;              /* 1-byte signed integer */
 typedef INT16_TYPE LogEst;
 
 /*
+** Set the SQLITE_PTRSIZE macro to the number of bytes in a pointer
+*/
+#ifndef SQLITE_PTRSIZE
+# if defined(__SIZEOF_POINTER__)
+#   define SQLITE_PTRSIZE __SIZEOF_POINTER__
+# elif defined(i386)     || defined(__i386__)   || defined(_M_IX86) ||    \
+       defined(_M_ARM)   || defined(__arm__)    || defined(__x86)
+#   define SQLITE_PTRSIZE 4
+# else
+#   define SQLITE_PTRSIZE 8
+# endif
+#endif
+
+/*
 ** Macros to determine whether the machine is big or little endian,
 ** and whether or not that determination is run-time or compile-time.
 **
