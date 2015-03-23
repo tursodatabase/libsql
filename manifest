@@ -1,5 +1,5 @@
-C Allow\swhereShortCut()\sto\suse\sthe\sPRIMARY\sKEY\sindex\sof\sa\sWITHOUT\sROWID\stable\sto\soptimize\sa\svector\sof\s"IS"\soperators\sin\sa\sWHERE\sclause.
-D 2015-03-18T20:03:27.026
+C Fix\sa\sbroken\sassert()\sin\sthe\sota\smodule.
+D 2015-03-23T17:10:51.066
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f643d6968dfc0b82d2e546a0525a39079f9e928
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -138,7 +138,7 @@ F ext/ota/otaA.test ef4bfa8cfd4ed814ae86f7457b64aa2f18c90171
 F ext/ota/otacrash.test a078d34e2edbcedac5f894e3e7d08d452a327007
 F ext/ota/otafault.test 8c43586c2b96ca16bbce00b5d7e7d67316126db8
 F ext/ota/otafault2.test fa202a98ca221faec318f3e5c5f39485b1256561
-F ext/ota/sqlite3ota.c 252a59574d1a6e9085d5d884a5c168db0e1f28e5
+F ext/ota/sqlite3ota.c 1d3b605c27622efdc288a3ac94ab199d1c8b5ea0
 F ext/ota/sqlite3ota.h f1a9dd98b00fa622c7e2eb68e580ee02e194c4d6
 F ext/ota/test_ota.c e34c801c665d64b4b9e00b71f1acf8c652404b2b
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
@@ -1261,7 +1261,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2e7c1e0a0d128d9bac119692b2505b5ed0abe87a
-R fd8b7ec489c2b24931575fb551b9bcda
+P 52e73eeca063bb30092ce600068bf487641399a0
+R a9aebe9b51af54f1535cb011847cd5d2
 U dan
-Z 501dc9071dd532eb126e9e20f313175e
+Z 141e2fc0ed2825bfcd2784386daf5cbd
