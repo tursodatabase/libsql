@@ -195,7 +195,6 @@ void sqlite3PCacheBufferSetup(void *pBuf, int sz, int n){
 static void *pcache1Alloc(int nByte){
   void *p = 0;
   assert( sqlite3_mutex_notheld(pcache1.grp.mutex) );
-  sqlite3StatusSet(SQLITE_STATUS_PAGECACHE_SIZE, nByte);
   if( nByte<=pcache1.szSlot ){
     sqlite3_mutex_enter(pcache1.mutex);
     p = (PgHdr1 *)pcache1.pFree;
@@ -204,7 +203,8 @@ static void *pcache1Alloc(int nByte){
       pcache1.nFreeSlot--;
       pcache1.bUnderPressure = pcache1.nFreeSlot<pcache1.nReserve;
       assert( pcache1.nFreeSlot>=0 );
-      sqlite3StatusAdd(SQLITE_STATUS_PAGECACHE_USED, 1);
+      sqlite3StatusSet(SQLITE_STATUS_PAGECACHE_SIZE, nByte);
+      sqlite3StatusUp(SQLITE_STATUS_PAGECACHE_USED, 1);
     }
     sqlite3_mutex_leave(pcache1.mutex);
   }
@@ -217,7 +217,8 @@ static void *pcache1Alloc(int nByte){
     if( p ){
       int sz = sqlite3MallocSize(p);
       sqlite3_mutex_enter(pcache1.mutex);
-      sqlite3StatusAdd(SQLITE_STATUS_PAGECACHE_OVERFLOW, sz);
+      sqlite3StatusSet(SQLITE_STATUS_PAGECACHE_SIZE, nByte);
+      sqlite3StatusUp(SQLITE_STATUS_PAGECACHE_OVERFLOW, sz);
       sqlite3_mutex_leave(pcache1.mutex);
     }
 #endif
@@ -235,7 +236,7 @@ static int pcache1Free(void *p){
   if( p>=pcache1.pStart && p<pcache1.pEnd ){
     PgFreeslot *pSlot;
     sqlite3_mutex_enter(pcache1.mutex);
-    sqlite3StatusAdd(SQLITE_STATUS_PAGECACHE_USED, -1);
+    sqlite3StatusDown(SQLITE_STATUS_PAGECACHE_USED, 1);
     pSlot = (PgFreeslot*)p;
     pSlot->pNext = pcache1.pFree;
     pcache1.pFree = pSlot;
@@ -249,7 +250,7 @@ static int pcache1Free(void *p){
     nFreed = sqlite3MallocSize(p);
 #ifndef SQLITE_DISABLE_PAGECACHE_OVERFLOW_STATS
     sqlite3_mutex_enter(pcache1.mutex);
-    sqlite3StatusAdd(SQLITE_STATUS_PAGECACHE_OVERFLOW, -nFreed);
+    sqlite3StatusDown(SQLITE_STATUS_PAGECACHE_OVERFLOW, nFreed);
     sqlite3_mutex_leave(pcache1.mutex);
 #endif
     sqlite3_free(p);
@@ -985,6 +986,14 @@ void sqlite3PCacheSetDefault(void){
 ** Return the size of the header on each page of this PCACHE implementation.
 */
 int sqlite3HeaderSizePcache1(void){ return ROUND8(sizeof(PgHdr1)); }
+
+/*
+** Return the global mutex used by this PCACHE implementation.  The
+** sqlite3_status() routine needs access to this mutex.
+*/
+sqlite3_mutex *sqlite3Pcache1Mutex(void){
+  return pcache1.mutex;
+}
 
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
 /*

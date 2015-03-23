@@ -3097,9 +3097,14 @@ const sqlite3_mem_methods *sqlite3MemGetMemsys5(void);
   int sqlite3MutexEnd(void);
 #endif
 
-int sqlite3StatusValue(int);
-void sqlite3StatusAdd(int, int);
+sqlite3_int64 sqlite3StatusValue(int);
+void sqlite3StatusUp(int, int);
+void sqlite3StatusDown(int, int);
 void sqlite3StatusSet(int, int);
+
+/* Access to mutexes used by sqlite3_status() */
+sqlite3_mutex *sqlite3Pcache1Mutex(void);
+sqlite3_mutex *sqlite3MallocMutex(void);
 
 #ifndef SQLITE_OMIT_FLOATING_POINT
   int sqlite3IsNaN(double);
