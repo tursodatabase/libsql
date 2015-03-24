@@ -361,6 +361,8 @@ PRAGMA integrity_check(10);
    WHERE t4.b GLOB 'x4?y' AND t3.b=('x'||(t4.a+5)||'y')
    ORDER BY t3.a LIMIT 7
   --match 45 46 47 48 49 50 51
+  PRAGMA integrity_check;
+  --match ok
 --end
 --task 5
   SELECT t1.a FROM t1, t2
@@ -371,6 +373,8 @@ PRAGMA integrity_check(10);
    WHERE t4.b GLOB 'x4?y' AND t3.b=('x'||(t4.a+5)||'y')
    ORDER BY t3.a LIMIT 7
   --match 45 46 47 48 49 50 51
+  PRAGMA integrity_check;
+  --match ok
 --end
 --task 3
   SELECT t1.a FROM t1, t2
@@ -381,6 +385,8 @@ PRAGMA integrity_check(10);
    WHERE t4.b GLOB 'x4?y' AND t3.b=('x'||(t4.a+5)||'y')
    ORDER BY t3.a LIMIT 7
   --match 45 46 47 48 49 50 51
+  PRAGMA integrity_check;
+  --match ok
 --end
 --task 2
   SELECT t1.a FROM t1, t2
@@ -391,6 +397,8 @@ PRAGMA integrity_check(10);
    WHERE t4.b GLOB 'x4?y' AND t3.b=('x'||(t4.a+5)||'y')
    ORDER BY t3.a LIMIT 7
   --match 45 46 47 48 49 50 51
+  PRAGMA integrity_check;
+  --match ok
 --end
 --task 4
   SELECT t1.a FROM t1, t2
@@ -401,5 +409,7 @@ PRAGMA integrity_check(10);
    WHERE t4.b GLOB 'x4?y' AND t3.b=('x'||(t4.a+5)||'y')
    ORDER BY t3.a LIMIT 7
   --match 45 46 47 48 49 50 51
+  PRAGMA integrity_check;
+  --match ok
 --end
 --wait all

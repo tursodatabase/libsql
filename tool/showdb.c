@@ -375,7 +375,7 @@ static void decodeCell(
   int szPgHdr,            /* Size of the page header.  0 or 100 */
   int ofst                /* Cell begins at a[ofst] */
 ){
-  int i, j;
+  int i, j = 0;
   int leftChild;
   i64 k;
   i64 nPayload;

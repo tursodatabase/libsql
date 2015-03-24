@@ -186,10 +186,32 @@ ifcapable icu {
   } {}
 }
 
-
 do_test fts3token-internal {
   execsql { SELECT fts3_tokenizer_internal_test() }
 } {ok}
+
+#-------------------------------------------------------------------------
+# Test empty tokenizer names.
+#
+do_catchsql_test 6.1.1 {
+  CREATE VIRTUAL TABLE t3 USING fts4(tokenize="");
+} {1 {unknown tokenizer: }}
+do_catchsql_test 6.1.2 {
+  CREATE VIRTUAL TABLE t3 USING fts4(tokenize=);
+} {1 {unknown tokenizer: }}
+do_catchsql_test 6.1.3 {
+  CREATE VIRTUAL TABLE t3 USING fts4(tokenize="   ");
+} {1 {unknown tokenizer:    }}
+
+do_catchsql_test 6.2.1 {
+  SELECT fts3_tokenizer(NULL);
+} {1 {unknown tokenizer: }}
+do_catchsql_test 6.2.2 {
+  SELECT fts3_tokenizer(NULL, X'1234567812345678');
+} {1 {argument type mismatch}}
+do_catchsql_test 6.2.3 {
+  SELECT fts3_tokenizer(NULL, X'12345678');
+} {1 {argument type mismatch}}
 
 
 finish_test

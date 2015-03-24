@@ -50,6 +50,13 @@ extern "C" {
 #endif
 
 /*
+** Add the ability to override 'cdecl'
+*/
+#ifndef SQLITE_CDECL
+# define SQLITE_CDECL
+#endif
+
+/*
 ** These no-op macros are used in front of interfaces to mark those
 ** interfaces as either deprecated or experimental.  New applications
 ** should not use deprecated interfaces - they are supported for backwards
@@ -945,10 +952,16 @@ struct sqlite3_io_methods {
 ** pointed to by the pArg argument.  This capability is used during testing
 ** and only needs to be supported when SQLITE_TEST is defined.
 **
+* <li>[[SQLITE_FCNTL_WAL_BLOCK]]
+** The [SQLITE_FCNTL_WAL_BLOCK] is a signal to the VFS layer that it might
+** be advantageous to block on the next WAL lock if the lock is not immediately
+** available.  The WAL subsystem issues this signal during rare
+** circumstances in order to fix a problem with priority inversion.
+** Applications should <em>not</em> use this file-control.
+**
 ** <li>[[SQLITE_FCNTL_ZIPVFS]]
 ** The [SQLITE_FCNTL_ZIPVFS] opcode is implemented by zipvfs only. All other
 ** VFS should return SQLITE_NOTFOUND for this opcode.
-**
 ** </ul>
 */
 #define SQLITE_FCNTL_LOCKSTATE               1
@@ -973,8 +986,9 @@ struct sqlite3_io_methods {
 #define SQLITE_FCNTL_SYNC                   21
 #define SQLITE_FCNTL_COMMIT_PHASETWO        22
 #define SQLITE_FCNTL_WIN32_SET_HANDLE       23
-#define SQLITE_FCNTL_ZIPVFS                 24
-#define SQLITE_FCNTL_OTA                    25
+#define SQLITE_FCNTL_WAL_BLOCK              24
+#define SQLITE_FCNTL_ZIPVFS                 25
+#define SQLITE_FCNTL_OTA                    26
 
 /* deprecated names */
 #define SQLITE_GET_LOCKPROXYFILE      SQLITE_FCNTL_GET_LOCKPROXYFILE
@@ -1541,7 +1555,7 @@ struct sqlite3_mem_methods {
 **   <li> [sqlite3_memory_used()]
 **   <li> [sqlite3_memory_highwater()]
 **   <li> [sqlite3_soft_heap_limit64()]
-**   <li> [sqlite3_status()]
+**   <li> [sqlite3_status64()]
 **   </ul>)^
 ** ^Memory allocation statistics are enabled by default unless SQLite is
 ** compiled with [SQLITE_DEFAULT_MEMSTATUS]=0 in which case memory
@@ -2998,11 +3012,13 @@ sqlite3_int64 sqlite3_uri_int64(const char*, const char*, sqlite3_int64);
 /*
 ** CAPI3REF: Error Codes And Messages
 **
-** ^The sqlite3_errcode() interface returns the numeric [result code] or
-** [extended result code] for the most recent failed sqlite3_* API call
-** associated with a [database connection]. If a prior API call failed
-** but the most recent API call succeeded, the return value from
-** sqlite3_errcode() is undefined.  ^The sqlite3_extended_errcode()
+** ^If the most recent sqlite3_* API call associated with 
+** [database connection] D failed, then the sqlite3_errcode(D) interface
+** returns the numeric [result code] or [extended result code] for that
+** API call.
+** If the most recent API call was successful,
+** then the return value from sqlite3_errcode() is undefined.
+** ^The sqlite3_extended_errcode()
 ** interface is the same except that it always returns the 
 ** [extended result code] even when extended result codes are
 ** disabled.
@@ -5616,7 +5632,7 @@ int sqlite3_create_module_v2(
 */
 struct sqlite3_vtab {
   const sqlite3_module *pModule;  /* The module for this virtual table */
-  int nRef;                       /* NO LONGER USED */
+  int nRef;                       /* Number of open cursors */
   char *zErrMsg;                  /* Error message from sqlite3_mprintf() */
   /* Virtual table implementations will typically add additional fields */
 };
@@ -6294,7 +6310,7 @@ int sqlite3_test_control(int op, ...);
 /*
 ** CAPI3REF: SQLite Runtime Status
 **
-** ^This interface is used to retrieve runtime status information
+** ^These interfaces are used to retrieve runtime status information
 ** about the performance of SQLite, and optionally to reset various
 ** highwater marks.  ^The first argument is an integer code for
 ** the specific parameter to measure.  ^(Recognized integer codes
@@ -6308,19 +6324,22 @@ int sqlite3_test_control(int op, ...);
 ** ^(Other parameters record only the highwater mark and not the current
 ** value.  For these latter parameters nothing is written into *pCurrent.)^
 **
-** ^The sqlite3_status() routine returns SQLITE_OK on success and a
-** non-zero [error code] on failure.
+** ^The sqlite3_status() and sqlite3_status64() routines return
+** SQLITE_OK on success and a non-zero [error code] on failure.
 **
-** This routine is threadsafe but is not atomic.  This routine can be
-** called while other threads are running the same or different SQLite
-** interfaces.  However the values returned in *pCurrent and
-** *pHighwater reflect the status of SQLite at different points in time
-** and it is possible that another thread might change the parameter
-** in between the times when *pCurrent and *pHighwater are written.
+** If either the current value or the highwater mark is too large to
+** be represented by a 32-bit integer, then the values returned by
+** sqlite3_status() are undefined.
 **
 ** See also: [sqlite3_db_status()]
 */
 int sqlite3_status(int op, int *pCurrent, int *pHighwater, int resetFlag);
+int sqlite3_status64(
+  int op,
+  sqlite3_int64 *pCurrent,
+  sqlite3_int64 *pHighwater,
+  int resetFlag
+);
 
 
 /*

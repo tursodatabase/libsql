@@ -4035,7 +4035,7 @@ static int withExpand(
     for(pLeft=pSel; pLeft->pPrior; pLeft=pLeft->pPrior);
     pEList = pLeft->pEList;
     if( pCte->pCols ){
-      if( pEList->nExpr!=pCte->pCols->nExpr ){
+      if( pEList && pEList->nExpr!=pCte->pCols->nExpr ){
         sqlite3ErrorMsg(pParse, "table %s has %d values for %d columns",
             pCte->zName, pEList->nExpr, pCte->pCols->nExpr
         );

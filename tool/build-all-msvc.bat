@@ -58,6 +58,9 @@ IF NOT DEFINED _AECHO (SET _AECHO=REM)
 IF NOT DEFINED _CECHO (SET _CECHO=REM)
 IF NOT DEFINED _VECHO (SET _VECHO=REM)
 
+SET REDIRECT=^>
+IF DEFINED __ECHO SET REDIRECT=^^^>
+
 %_AECHO% Running %0 %*
 
 REM SET DFLAGS=/L
@@ -318,7 +321,18 @@ FOR %%P IN (%PLATFORMS%) DO (
       %_AECHO% Building the %%B configuration for platform %%P with name %%D...
 
       IF /I "%%B" == "Debug" (
-        SET DEBUG=2
+        REM
+        REM NOTE: Using this level for the DEBUG environment variable should
+        REM       disable all compiler optimizations and prevent use of the
+        REM       NDEBUG define.  Additionally, both SQLITE_ENABLE_API_ARMOR
+        REM       and SQLITE_DEBUG defines should be enabled.
+        REM
+        SET DEBUG=3
+
+        REM
+        REM NOTE: Setting this to non-zero should enable the SQLITE_MEMDEBUG
+        REM       define.
+        REM
         SET MEMDEBUG=1
       ) ELSE (
         CALL :fn_UnsetVariable DEBUG
@@ -420,11 +434,11 @@ FOR %%P IN (%PLATFORMS%) DO (
         ) ELSE (
           REM
           REM NOTE: Even when the cleaning step has been disabled, we still
-          REM       need to remove the build output for the files we are
+          REM       need to remove the build output for all the files we are
           REM       specifically wanting to build for each platform.
           REM
-          %_AECHO% Cleaning final output files only...
-          %__ECHO% DEL /Q *.lo sqlite3.dll sqlite3.lib sqlite3.pdb
+          %_AECHO% Cleaning final core library output files only...
+          %__ECHO% DEL /Q *.lo sqlite3.dll sqlite3.lib sqlite3.pdb 2%REDIRECT% NUL
         )
 
         REM
@@ -474,6 +488,64 @@ FOR %%P IN (%PLATFORMS%) DO (
           IF ERRORLEVEL 1 (
             ECHO Failed to copy "sqlite3.pdb" to "%BINARYDIRECTORY%\%%B\%%D\".
             GOTO errors
+          )
+        )
+
+        REM
+        REM NOTE: If requested, also build the shell executable.
+        REM
+        IF DEFINED BUILD_ALL_SHELL (
+          REM
+          REM NOTE: If necessary, make sure any previous build output for the
+          REM       shell executable is deleted.
+          REM
+          IF DEFINED NOCLEAN (
+            REM
+            REM NOTE: Even when the cleaning step has been disabled, we still
+            REM       need to remove the build output for all the files we are
+            REM       specifically wanting to build for each platform.
+            REM
+            %_AECHO% Cleaning final shell executable output files only...
+            %__ECHO% DEL /Q sqlite3.exe sqlite3sh.pdb 2%REDIRECT% NUL
+          )
+
+          REM
+          REM NOTE: Call NMAKE with the MSVC makefile to build the "sqlite3.exe"
+          REM       binary.  The x86 compiler will be used to compile the native
+          REM       command line tools needed during the build process itself.
+          REM       Also, disable looking for and/or linking to the native Tcl
+          REM       runtime library.
+          REM
+          %__ECHO% %NMAKE_CMD% sqlite3.exe XCOMPILE=1 USE_NATIVE_LIBPATHS=1 NO_TCL=1 %NMAKE_ARGS%
+
+          IF ERRORLEVEL 1 (
+            ECHO Failed to build %%B "sqlite3.exe" for platform %%P.
+            GOTO errors
+          )
+
+          REM
+          REM NOTE: Copy the "sqlite3.exe" file to the appropriate directory
+          REM       for the build and platform beneath the binary directory.
+          REM
+          %__ECHO% XCOPY sqlite3.exe "%BINARYDIRECTORY%\%%B\%%D\" %FFLAGS% %DFLAGS%
+
+          IF ERRORLEVEL 1 (
+            ECHO Failed to copy "sqlite3.exe" to "%BINARYDIRECTORY%\%%B\%%D\".
+            GOTO errors
+          )
+
+          REM
+          REM NOTE: Copy the "sqlite3sh.pdb" file to the appropriate directory
+          REM       for the build and platform beneath the binary directory
+          REM       unless we are prevented from doing so.
+          REM
+          IF NOT DEFINED NOSYMBOLS (
+            %__ECHO% XCOPY sqlite3sh.pdb "%BINARYDIRECTORY%\%%B\%%D\" %FFLAGS% %DFLAGS%
+
+            IF ERRORLEVEL 1 (
+              ECHO Failed to copy "sqlite3sh.pdb" to "%BINARYDIRECTORY%\%%B\%%D\".
+              GOTO errors
+            )
           )
         )
       )

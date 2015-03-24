@@ -788,9 +788,10 @@ static void walUnlockShared(Wal *pWal, int lockIdx){
                          SQLITE_SHM_UNLOCK | SQLITE_SHM_SHARED);
   WALTRACE(("WAL%p: release SHARED-%s\n", pWal, walLockName(lockIdx)));
 }
-static int walLockExclusive(Wal *pWal, int lockIdx, int n){
+static int walLockExclusive(Wal *pWal, int lockIdx, int n, int fBlock){
   int rc;
   if( pWal->exclusiveMode ) return SQLITE_OK;
+  if( fBlock ) sqlite3OsFileControl(pWal->pDbFd, SQLITE_FCNTL_WAL_BLOCK, 0);
   rc = sqlite3OsShmLock(pWal->pDbFd, lockIdx, n,
                         SQLITE_SHM_LOCK | SQLITE_SHM_EXCLUSIVE);
   WALTRACE(("WAL%p: acquire EXCLUSIVE-%s cnt=%d %s\n", pWal,
@@ -1076,7 +1077,7 @@ static int walIndexRecover(Wal *pWal){
   assert( pWal->writeLock );
   iLock = WAL_ALL_BUT_WRITE + pWal->ckptLock;
   nLock = SQLITE_SHM_NLOCK - iLock;
-  rc = walLockExclusive(pWal, iLock, nLock);
+  rc = walLockExclusive(pWal, iLock, nLock, 0);
   if( rc ){
     return rc;
   }
@@ -1610,7 +1611,7 @@ static int walBusyLock(
 ){
   int rc;
   do {
-    rc = walLockExclusive(pWal, lockIdx, n);
+    rc = walLockExclusive(pWal, lockIdx, n, 0);
   }while( xBusy && rc==SQLITE_BUSY && xBusy(pBusyArg) );
   return rc;
 }
@@ -2043,7 +2044,7 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
         walUnlockShared(pWal, WAL_WRITE_LOCK);
         rc = SQLITE_READONLY_RECOVERY;
       }
-    }else if( SQLITE_OK==(rc = walLockExclusive(pWal, WAL_WRITE_LOCK, 1)) ){
+    }else if( SQLITE_OK==(rc = walLockExclusive(pWal, WAL_WRITE_LOCK, 1, 1)) ){
       pWal->writeLock = 1;
       if( SQLITE_OK==(rc = walIndexPage(pWal, 0, &page0)) ){
         badHdr = walIndexTryHdr(pWal, pChanged);
@@ -2249,7 +2250,7 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
      && (mxReadMark<pWal->hdr.mxFrame || mxI==0)
     ){
       for(i=1; i<WAL_NREADER; i++){
-        rc = walLockExclusive(pWal, WAL_READ_LOCK(i), 1);
+        rc = walLockExclusive(pWal, WAL_READ_LOCK(i), 1, 0);
         if( rc==SQLITE_OK ){
           mxReadMark = pInfo->aReadMark[i] = pWal->hdr.mxFrame;
           mxI = i;
@@ -2505,7 +2506,7 @@ int sqlite3WalBeginWriteTransaction(Wal *pWal){
   /* Only one writer allowed at a time.  Get the write lock.  Return
   ** SQLITE_BUSY if unable.
   */
-  rc = walLockExclusive(pWal, WAL_WRITE_LOCK, 1);
+  rc = walLockExclusive(pWal, WAL_WRITE_LOCK, 1, 0);
   if( rc ){
     return rc;
   }
@@ -2650,7 +2651,7 @@ static int walRestartLog(Wal *pWal){
     if( pInfo->nBackfill>0 ){
       u32 salt1;
       sqlite3_randomness(4, &salt1);
-      rc = walLockExclusive(pWal, WAL_READ_LOCK(1), WAL_NREADER-1);
+      rc = walLockExclusive(pWal, WAL_READ_LOCK(1), WAL_NREADER-1, 0);
       if( rc==SQLITE_OK ){
         /* If all readers are using WAL_READ_LOCK(0) (in other words if no
         ** readers are currently using the WAL), then the transactions
@@ -2975,7 +2976,7 @@ int sqlite3WalCheckpoint(
 
   /* IMPLEMENTATION-OF: R-62028-47212 All calls obtain an exclusive 
   ** "checkpoint" lock on the database file. */
-  rc = walLockExclusive(pWal, WAL_CKPT_LOCK, 1);
+  rc = walLockExclusive(pWal, WAL_CKPT_LOCK, 1, 0);
   if( rc ){
     /* EVIDENCE-OF: R-10421-19736 If any other process is running a
     ** checkpoint operation at the same time, the lock cannot be obtained and

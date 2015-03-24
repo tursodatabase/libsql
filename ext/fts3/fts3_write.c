@@ -1625,7 +1625,10 @@ int sqlite3Fts3SegReaderNew(
 ** an array of pending terms by term. This occurs as part of flushing
 ** the contents of the pending-terms hash table to the database.
 */
-static int fts3CompareElemByTerm(const void *lhs, const void *rhs){
+static int SQLITE_CDECL fts3CompareElemByTerm(
+  const void *lhs,
+  const void *rhs
+){
   char *z1 = fts3HashKey(*(Fts3HashElem **)lhs);
   char *z2 = fts3HashKey(*(Fts3HashElem **)rhs);
   int n1 = fts3HashKeysize(*(Fts3HashElem **)lhs);

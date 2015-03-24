@@ -248,6 +248,7 @@ static pid_t randomnessPid = 0;
 #define UNIXFILE_URI         0x40     /* Filename might have query parameters */
 #define UNIXFILE_NOLOCK      0x80     /* Do no file locking */
 #define UNIXFILE_WARNED    0x0100     /* verifyDbFile() warnings issued */
+#define UNIXFILE_BLOCK     0x0200     /* Next SHM lock might block */
 
 /*
 ** Include code that is common to all os_*.c files
@@ -1535,7 +1536,7 @@ static int unixLock(sqlite3_file *id, int eFileLock){
   OSTRACE(("LOCK    %d %s was %s(%s,%d) pid=%d (unix)\n", pFile->h,
       azFileLock(eFileLock), azFileLock(pFile->eFileLock),
       azFileLock(pFile->pInode->eFileLock), pFile->pInode->nShared,
-      osGetpid()));
+      osGetpid(0)));
 
   /* If there is already a lock of this type or more restrictive on the
   ** unixFile, do nothing. Don't use the end_lock: exit path, as
@@ -1743,7 +1744,7 @@ static int posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
   assert( pFile );
   OSTRACE(("UNLOCK  %d %d was %d(%d,%d) pid=%d (unix)\n", pFile->h, eFileLock,
       pFile->eFileLock, pFile->pInode->eFileLock, pFile->pInode->nShared,
-      osGetpid()));
+      osGetpid(0)));
 
   assert( eFileLock<=SHARED_LOCK );
   if( pFile->eFileLock<=eFileLock ){
@@ -2170,7 +2171,7 @@ static int dotlockUnlock(sqlite3_file *id, int eFileLock) {
 
   assert( pFile );
   OSTRACE(("UNLOCK  %d %d was %d pid=%d (dotlock)\n", pFile->h, eFileLock,
-           pFile->eFileLock, osGetpid()));
+           pFile->eFileLock, osGetpid(0)));
   assert( eFileLock<=SHARED_LOCK );
   
   /* no-op if possible */
@@ -2388,7 +2389,7 @@ static int flockUnlock(sqlite3_file *id, int eFileLock) {
   
   assert( pFile );
   OSTRACE(("UNLOCK  %d %d was %d pid=%d (flock)\n", pFile->h, eFileLock,
-           pFile->eFileLock, osGetpid()));
+           pFile->eFileLock, osGetpid(0)));
   assert( eFileLock<=SHARED_LOCK );
   
   /* no-op if possible */
@@ -2556,7 +2557,7 @@ static int semXUnlock(sqlite3_file *id, int eFileLock) {
   assert( pFile );
   assert( pSem );
   OSTRACE(("UNLOCK  %d %d was %d pid=%d (sem)\n", pFile->h, eFileLock,
-           pFile->eFileLock, osGetpid()));
+           pFile->eFileLock, osGetpid(0)));
   assert( eFileLock<=SHARED_LOCK );
   
   /* no-op if possible */
@@ -2770,7 +2771,7 @@ static int afpLock(sqlite3_file *id, int eFileLock){
   assert( pFile );
   OSTRACE(("LOCK    %d %s was %s(%s,%d) pid=%d (afp)\n", pFile->h,
            azFileLock(eFileLock), azFileLock(pFile->eFileLock),
-           azFileLock(pInode->eFileLock), pInode->nShared , osGetpid()));
+           azFileLock(pInode->eFileLock), pInode->nShared , osGetpid(0)));
 
   /* If there is already a lock of this type or more restrictive on the
   ** unixFile, do nothing. Don't use the afp_end_lock: exit path, as
@@ -2956,7 +2957,7 @@ static int afpUnlock(sqlite3_file *id, int eFileLock) {
   assert( pFile );
   OSTRACE(("UNLOCK  %d %d was %d(%d,%d) pid=%d (afp)\n", pFile->h, eFileLock,
            pFile->eFileLock, pFile->pInode->eFileLock, pFile->pInode->nShared,
-           osGetpid()));
+           osGetpid(0)));
 
   assert( eFileLock<=SHARED_LOCK );
   if( pFile->eFileLock<=eFileLock ){
@@ -3781,6 +3782,10 @@ static int unixGetTempname(int nBuf, char *zBuf);
 static int unixFileControl(sqlite3_file *id, int op, void *pArg){
   unixFile *pFile = (unixFile*)id;
   switch( op ){
+    case SQLITE_FCNTL_WAL_BLOCK: {
+      pFile->ctrlFlags |= UNIXFILE_BLOCK;
+      return SQLITE_OK;
+    }
     case SQLITE_FCNTL_LOCKSTATE: {
       *(int*)pArg = pFile->eFileLock;
       return SQLITE_OK;
@@ -4090,15 +4095,17 @@ struct unixShm {
 ** otherwise.
 */
 static int unixShmSystemLock(
-  unixShmNode *pShmNode, /* Apply locks to this open shared-memory segment */
+  unixFile *pFile,       /* Open connection to the WAL file */
   int lockType,          /* F_UNLCK, F_RDLCK, or F_WRLCK */
   int ofst,              /* First byte of the locking range */
   int n                  /* Number of bytes to lock */
 ){
-  struct flock f;       /* The posix advisory locking structure */
-  int rc = SQLITE_OK;   /* Result code form fcntl() */
+  unixShmNode *pShmNode; /* Apply locks to this open shared-memory segment */
+  struct flock f;        /* The posix advisory locking structure */
+  int rc = SQLITE_OK;    /* Result code form fcntl() */
 
   /* Access to the unixShmNode object is serialized by the caller */
+  pShmNode = pFile->pInode->pShmNode;
   assert( sqlite3_mutex_held(pShmNode->mutex) || pShmNode->nRef==0 );
 
   /* Shared locks never span more than one byte */
@@ -4108,6 +4115,7 @@ static int unixShmSystemLock(
   assert( n>=1 && n<SQLITE_SHM_NLOCK );
 
   if( pShmNode->h>=0 ){
+    int lkType;
     /* Initialize the locking parameters */
     memset(&f, 0, sizeof(f));
     f.l_type = lockType;
@@ -4115,8 +4123,10 @@ static int unixShmSystemLock(
     f.l_start = ofst;
     f.l_len = n;
 
-    rc = osFcntl(pShmNode->h, F_SETLK, &f);
+    lkType = (pFile->ctrlFlags & UNIXFILE_BLOCK)!=0 ? F_SETLKW : F_SETLK;
+    rc = osFcntl(pShmNode->h, lkType, &f);
     rc = (rc!=(-1)) ? SQLITE_OK : SQLITE_BUSY;
+    pFile->ctrlFlags &= ~UNIXFILE_BLOCK;
   }
 
   /* Update the global lock state and do debug tracing */
@@ -4326,13 +4336,13 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
       ** If not, truncate the file to zero length. 
       */
       rc = SQLITE_OK;
-      if( unixShmSystemLock(pShmNode, F_WRLCK, UNIX_SHM_DMS, 1)==SQLITE_OK ){
+      if( unixShmSystemLock(pDbFd, F_WRLCK, UNIX_SHM_DMS, 1)==SQLITE_OK ){
         if( robust_ftruncate(pShmNode->h, 0) ){
           rc = unixLogError(SQLITE_IOERR_SHMOPEN, "ftruncate", zShmFilename);
         }
       }
       if( rc==SQLITE_OK ){
-        rc = unixShmSystemLock(pShmNode, F_RDLCK, UNIX_SHM_DMS, 1);
+        rc = unixShmSystemLock(pDbFd, F_RDLCK, UNIX_SHM_DMS, 1);
       }
       if( rc ) goto shm_open_err;
     }
@@ -4564,7 +4574,7 @@ static int unixShmLock(
 
     /* Unlock the system-level locks */
     if( (mask & allMask)==0 ){
-      rc = unixShmSystemLock(pShmNode, F_UNLCK, ofst+UNIX_SHM_BASE, n);
+      rc = unixShmSystemLock(pDbFd, F_UNLCK, ofst+UNIX_SHM_BASE, n);
     }else{
       rc = SQLITE_OK;
     }
@@ -4592,7 +4602,7 @@ static int unixShmLock(
     /* Get shared locks at the system level, if necessary */
     if( rc==SQLITE_OK ){
       if( (allShared & mask)==0 ){
-        rc = unixShmSystemLock(pShmNode, F_RDLCK, ofst+UNIX_SHM_BASE, n);
+        rc = unixShmSystemLock(pDbFd, F_RDLCK, ofst+UNIX_SHM_BASE, n);
       }else{
         rc = SQLITE_OK;
       }
@@ -4617,7 +4627,7 @@ static int unixShmLock(
     ** also mark the local connection as being locked.
     */
     if( rc==SQLITE_OK ){
-      rc = unixShmSystemLock(pShmNode, F_WRLCK, ofst+UNIX_SHM_BASE, n);
+      rc = unixShmSystemLock(pDbFd, F_WRLCK, ofst+UNIX_SHM_BASE, n);
       if( rc==SQLITE_OK ){
         assert( (p->sharedMask & mask)==0 );
         p->exclMask |= mask;
@@ -4626,7 +4636,7 @@ static int unixShmLock(
   }
   sqlite3_mutex_leave(pShmNode->mutex);
   OSTRACE(("SHM-LOCK shmid-%d, pid-%d got %03x,%03x\n",
-           p->id, osGetpid(), p->sharedMask, p->exclMask));
+           p->id, osGetpid(0), p->sharedMask, p->exclMask));
   return rc;
 }
 
@@ -5721,8 +5731,8 @@ static int unixOpen(
   ** the same instant might all reset the PRNG.  But multiple resets
   ** are harmless.
   */
-  if( randomnessPid!=osGetpid() ){
-    randomnessPid = osGetpid();
+  if( randomnessPid!=osGetpid(0) ){
+    randomnessPid = osGetpid(0);
     sqlite3_randomness(0,0);
   }
 
@@ -6113,7 +6123,7 @@ static int unixRandomness(sqlite3_vfs *NotUsed, int nBuf, char *zBuf){
   ** tests repeatable.
   */
   memset(zBuf, 0, nBuf);
-  randomnessPid = osGetpid();  
+  randomnessPid = osGetpid(0);  
 #if !defined(SQLITE_TEST)
   {
     int fd, got;
@@ -6434,7 +6444,7 @@ static int proxyGetLockPath(const char *dbPath, char *lPath, size_t maxLen){
   {
     if( !confstr(_CS_DARWIN_USER_TEMP_DIR, lPath, maxLen) ){
       OSTRACE(("GETLOCKPATH  failed %s errno=%d pid=%d\n",
-               lPath, errno, osGetpid()));
+               lPath, errno, osGetpid(0)));
       return SQLITE_IOERR_LOCK;
     }
     len = strlcat(lPath, "sqliteplocks", maxLen);    
@@ -6456,7 +6466,7 @@ static int proxyGetLockPath(const char *dbPath, char *lPath, size_t maxLen){
   }
   lPath[i+len]='\0';
   strlcat(lPath, ":auto:", maxLen);
-  OSTRACE(("GETLOCKPATH  proxy lock path=%s pid=%d\n", lPath, osGetpid()));
+  OSTRACE(("GETLOCKPATH  proxy lock path=%s pid=%d\n", lPath, osGetpid(0)));
   return SQLITE_OK;
 }
 
@@ -6483,7 +6493,7 @@ static int proxyCreateLockPath(const char *lockPath){
           if( err!=EEXIST ) {
             OSTRACE(("CREATELOCKPATH  FAILED creating %s, "
                      "'%s' proxy lock path=%s pid=%d\n",
-                     buf, strerror(err), lockPath, osGetpid()));
+                     buf, strerror(err), lockPath, osGetpid(0)));
             return err;
           }
         }
@@ -6492,7 +6502,7 @@ static int proxyCreateLockPath(const char *lockPath){
     }
     buf[i] = lockPath[i];
   }
-  OSTRACE(("CREATELOCKPATH  proxy lock path=%s pid=%d\n", lockPath, osGetpid()));
+  OSTRACE(("CREATELOCKPATH  proxy lock path=%s pid=%d\n", lockPath, osGetpid(0)));
   return 0;
 }
 
@@ -6798,7 +6808,7 @@ static int proxyTakeConch(unixFile *pFile){
     
     OSTRACE(("TAKECONCH  %d for %s pid=%d\n", conchFile->h,
              (pCtx->lockProxyPath ? pCtx->lockProxyPath : ":auto:"),
-             osGetpid()));
+             osGetpid(0)));
 
     rc = proxyGetHostID(myHostID, &pError);
     if( (rc&0xff)==SQLITE_IOERR ){
@@ -7008,7 +7018,7 @@ static int proxyReleaseConch(unixFile *pFile){
   conchFile = pCtx->conchFile;
   OSTRACE(("RELEASECONCH  %d for %s pid=%d\n", conchFile->h,
            (pCtx->lockProxyPath ? pCtx->lockProxyPath : ":auto:"), 
-           osGetpid()));
+           osGetpid(0)));
   if( pCtx->conchHeld>0 ){
     rc = conchFile->pMethod->xUnlock((sqlite3_file*)conchFile, NO_LOCK);
   }
@@ -7150,7 +7160,7 @@ static int proxyTransformUnixFile(unixFile *pFile, const char *path) {
   }
   
   OSTRACE(("TRANSPROXY  %d for %s pid=%d\n", pFile->h,
-           (lockPath ? lockPath : ":auto:"), osGetpid()));
+           (lockPath ? lockPath : ":auto:"), osGetpid(0)));
 
   pCtx = sqlite3_malloc( sizeof(*pCtx) );
   if( pCtx==0 ){
