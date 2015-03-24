@@ -148,6 +148,7 @@ int sqlite3_status64(
     wsdStat.mxValue[op] = wsdStat.nowValue[op];
   }
   sqlite3_mutex_leave(pMutex);
+  (void)pMutex;  /* Prevent warning when SQLITE_THREADSAFE=0 */
   return SQLITE_OK;
 }
 int sqlite3_status(int op, int *pCurrent, int *pHighwater, int resetFlag){
