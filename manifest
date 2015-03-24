@@ -1,5 +1,5 @@
-C Suppress\sa\scompiler\swarning\sthat\swas\sappearing\swith\sSQLITE_THREADSAFE=0.
-D 2015-03-24T18:19:39.691
+C Fix\sa\scouple\scomment\stypos\sin\sa\stool\sscript.\s\sNo\schanges\sto\scode.
+D 2015-03-24T21:34:53.280
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1212,7 +1212,7 @@ F tool/mkkeywordhash.c dfff09dbbfaf950e89af294f48f902181b144670
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkpragmatab.tcl 94f196c9961e0ca3513e29f57125a3197808be2d
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
-F tool/mksqlite3c-noext.tcl 9ef48e1748dce7b844f67e2450ff9dfeb0fb4ab5
+F tool/mksqlite3c-noext.tcl f8a6223bebc9e3e9dc2700484c602f159b84c8aa
 F tool/mksqlite3c.tcl 95ab31eda659e7ffb091e04bd83178f260d8edfd
 F tool/mksqlite3h.tcl ba24038056f51fde07c0079c41885ab85e2cff12
 F tool/mksqlite3internalh.tcl eb994013e833359137eb53a55acdad0b5ae1049b
@@ -1246,7 +1246,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P cbeb9a1aed8ce3fb569a7717ad03c7c058b68de6
-R 1df40f85f677c47017b13b63b82a97b5
-U drh
-Z 408df2ac27dc537c38335d50565b918f
+P 436314b5728c9413f9ac2d837e1c19364f31be72
+R 8395df004ed39c3d4f3903ab69f7e9ed
+U mistachkin
+Z b92e1717d71c68278e3b78541d6aeae8
