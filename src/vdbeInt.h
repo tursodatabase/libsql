@@ -313,14 +313,6 @@ struct ScanStatus {
 **
 ** The "sqlite3_stmt" structure pointer that is returned by sqlite3_prepare()
 ** is really a pointer to an instance of this structure.
-**
-** The Vdbe.inVtabMethod variable is set to non-zero for the duration of
-** any virtual table method invocations made by the vdbe program. It is
-** set to 2 for xDestroy method calls and 1 for all other methods. This
-** variable is used for two purposes: to allow xDestroy methods to execute
-** "DROP TABLE" statements and to prevent some nasty side effects of
-** malloc failure when SQLite is invoked recursively by a virtual table 
-** method function.
 */
 struct Vdbe {
   sqlite3 *db;            /* The database connection that owns this statement */
@@ -351,7 +343,6 @@ struct Vdbe {
   u8 errorAction;         /* Recovery action to do in case of an error */
   u8 minWriteFileFormat;  /* Minimum file format for writable database files */
   bft explain:2;          /* True if EXPLAIN present on SQL command */
-  bft inVtabMethod:2;     /* See comments above */
   bft changeCntOn:1;      /* True to update the change-counter */
   bft expired:1;          /* True if the VM needs to be recompiled */
   bft runOnlyOnce:1;      /* Automatically expire on reset */
