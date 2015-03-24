@@ -6081,6 +6081,7 @@ case OP_VOpen: {
     pCur = allocateCursor(p, pOp->p1, 0, -1, 0);
     if( pCur ){
       pCur->pVtabCursor = pVtabCursor;
+      pVtab->nRef++;
     }else{
       db->mallocFailed = 1;
       pModule->xClose(pVtabCursor);

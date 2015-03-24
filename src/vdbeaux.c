@@ -1782,6 +1782,8 @@ void sqlite3VdbeFreeCursor(Vdbe *p, VdbeCursor *pCx){
   else if( pCx->pVtabCursor ){
     sqlite3_vtab_cursor *pVtabCursor = pCx->pVtabCursor;
     const sqlite3_module *pModule = pVtabCursor->pVtab->pModule;
+    assert( pVtabCursor->pVtab->nRef>0 );
+    pVtabCursor->pVtab->nRef--;
     pModule->xClose(pVtabCursor);
   }
 #endif

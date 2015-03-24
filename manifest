@@ -1,5 +1,5 @@
-C Replace\sthe\sVdbe.inVtabMethod\sfield\swith\sthe\ssqlite3.nVDestroy\scounter.
-D 2015-03-24T12:51:52.656
+C Prevent\sa\svirtual\stable\sfrom\sbeing\sdestroyed\swhile\sit\sis\sin\suse.
+D 2015-03-24T13:32:53.812
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -232,7 +232,7 @@ F src/resolve.c f4d79e31ffa5820c2e3d1740baa5e9b190425f2b
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 72ffb62e2879956302140e9f6e6ae88aee36b0e5
 F src/shell.c 3ae1e53878d2804fe77b8c8f1f6ca287a0e5d80e
-F src/sqlite.h.in df180ecc3215e4b87dbd536507869511bec88841
+F src/sqlite.h.in 2f9606a682af372415ce9d1f244183c5cc8385aa
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
 F src/sqliteInt.h bedf15914c09bfb5fe3ec4e3f211a4a6fc42cd33
@@ -293,16 +293,16 @@ F src/update.c 3c4ecc282accf12d39edb8d524cf089645e55a13
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c 98a7627ca48ad3265b6940915a1d08355eb3fc7e
 F src/vacuum.c 9460b9de7b2d4e34b0d374894aa6c8a0632be8ec
-F src/vdbe.c 884faa91c44023891d0992311fd0feed0df060fc
+F src/vdbe.c 1524e1db29a85d8e376d0f4ef2109c5296dcd83b
 F src/vdbe.h 6fc69d9c5e146302c56e163cb4b31d1ee64a18c3
 F src/vdbeInt.h 9cbaa84f53ddd2d09a0cf61a94337a3a035d08a0
 F src/vdbeapi.c 583d56b129dd27f12bed518270de9ebe521e6a75
-F src/vdbeaux.c d62823d72b8f69a3e64deb03c30e959af285e488
+F src/vdbeaux.c 741cccd410f75f6dcd9dde66c1e0601c956a42ae
 F src/vdbeblob.c 4f2e8e075d238392df98c5e03a64342465b03f90
 F src/vdbemem.c c0dc81285b7571b0a31c40f17846fe2397ec1cd9
 F src/vdbesort.c 919717d7599fa31d343ec28bffd0f9e91a4ff5f6
 F src/vdbetrace.c 7e4222955e07dd707a2f360c0eb73452be1cb010
-F src/vtab.c 1680f58978ae014a331d99b4c87316d079056c5e
+F src/vtab.c 62d49237bd8f3be4863815a39387b0f9897fa5e1
 F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 878c8e1a51cb2ec45c395d26b7d5cd9e1a098e4a
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
@@ -1246,10 +1246,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0ee2d38deb35aefc55395e86984a9a773caf6218
-R 8a156978483ce9f9262ab29d0045e64e
-T *branch * nVDestroy
-T *sym-nVDestroy *
-T -sym-trunk *
+P 9faefb96272967e731e83ef516a8c1e1b876391b
+R 281e744f7b786f4abb8205e460d3cd79
 U drh
-Z 795f6417c17436a4fbd09f9a73f096f4
+Z 8d74d67cd7bcd5c907dded9ec155ff27
