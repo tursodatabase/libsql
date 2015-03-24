@@ -1,5 +1,5 @@
-C More\sdefenses\sagainst\svirtual\stable\sbeing\sdeleted\sout\sfrom\sunder\sa\srunning\nstatement.
-D 2015-03-24T14:05:50.045
+C Add\stests\sto\scheck\sthat\sattempting\sto\sDROP\sa\svirtual\stable\swhile\sit\sis\suse\sdoes\snot\scause\sproblems.
+D 2015-03-24T14:57:21.959
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1111,7 +1111,7 @@ F test/vacuum4.test d3f8ecff345f166911568f397d2432c16d2867d9
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/veryquick.test 57ab846bacf7b90cf4e9a672721ea5c5b669b661
 F test/view.test f311691d696a5cc27e3c1b875cec1b0866b4ccd9
-F test/vtab1.test 1cef14310144718812351a61c5cfb4ba8494a171
+F test/vtab1.test c9dc2a73e93331d70b37ce4b246ef6dc18412fef
 F test/vtab2.test 3644649aa8d1daac57fd541f6a5f914cac59203e
 F test/vtab3.test b45f47d20f225ccc9c28dc915d92740c2dee311e
 F test/vtab4.test 942f8b8280b3ea8a41dae20e7822d065ca1cb275
@@ -1246,7 +1246,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fba674c083286dabb37fed9357b67593b56ed3a5
-R 6651e18da796c17c1ca503ba6b1b311c
-U drh
-Z 91702967a80a94e761fcc487487cb422
+P 116c99823022c017946b6088878a2d46759deb6e
+R 791eb1db9d6d4dcf9879622b22bdbc4e
+U dan
+Z 5721bb8cdc400d9869a3df977b6ecfb6
