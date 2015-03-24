@@ -27,7 +27,7 @@
 /*
 ** No support for loadable extensions in VxWorks.
 */
-#if defined(_WRS_KERNEL) && !SQLITE_OMIT_LOAD_EXTENSION
+#if (defined(__RTP__) || defined(_WRS_KERNEL)) && !SQLITE_OMIT_LOAD_EXTENSION
 # define SQLITE_OMIT_LOAD_EXTENSION 1
 #endif
 

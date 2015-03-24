@@ -321,7 +321,18 @@ FOR %%P IN (%PLATFORMS%) DO (
       %_AECHO% Building the %%B configuration for platform %%P with name %%D...
 
       IF /I "%%B" == "Debug" (
-        SET DEBUG=2
+        REM
+        REM NOTE: Using this level for the DEBUG environment variable should
+        REM       disable all compiler optimizations and prevent use of the
+        REM       NDEBUG define.  Additionally, both SQLITE_ENABLE_API_ARMOR
+        REM       and SQLITE_DEBUG defines should be enabled.
+        REM
+        SET DEBUG=3
+
+        REM
+        REM NOTE: Setting this to non-zero should enable the SQLITE_MEMDEBUG
+        REM       define.
+        REM
         SET MEMDEBUG=1
       ) ELSE (
         CALL :fn_UnsetVariable DEBUG
