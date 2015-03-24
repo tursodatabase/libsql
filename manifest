@@ -1,5 +1,5 @@
-C Prevent\sa\svirtual\stable\sfrom\sbeing\sdestroyed\swhile\sit\sis\sin\suse.
-D 2015-03-24T13:32:53.812
+C More\sdefenses\sagainst\svirtual\stable\sbeing\sdeleted\sout\sfrom\sunder\sa\srunning\nstatement.
+D 2015-03-24T14:05:50.045
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -293,11 +293,11 @@ F src/update.c 3c4ecc282accf12d39edb8d524cf089645e55a13
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c 98a7627ca48ad3265b6940915a1d08355eb3fc7e
 F src/vacuum.c 9460b9de7b2d4e34b0d374894aa6c8a0632be8ec
-F src/vdbe.c 1524e1db29a85d8e376d0f4ef2109c5296dcd83b
+F src/vdbe.c bbfede5a8a6908b3ddcd55fdb0b2301288dd4754
 F src/vdbe.h 6fc69d9c5e146302c56e163cb4b31d1ee64a18c3
 F src/vdbeInt.h 9cbaa84f53ddd2d09a0cf61a94337a3a035d08a0
 F src/vdbeapi.c 583d56b129dd27f12bed518270de9ebe521e6a75
-F src/vdbeaux.c 741cccd410f75f6dcd9dde66c1e0601c956a42ae
+F src/vdbeaux.c 056eefd33ef4457240b6d3156a96201579face0a
 F src/vdbeblob.c 4f2e8e075d238392df98c5e03a64342465b03f90
 F src/vdbemem.c c0dc81285b7571b0a31c40f17846fe2397ec1cd9
 F src/vdbesort.c 919717d7599fa31d343ec28bffd0f9e91a4ff5f6
@@ -1246,7 +1246,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9faefb96272967e731e83ef516a8c1e1b876391b
-R 281e744f7b786f4abb8205e460d3cd79
+P fba674c083286dabb37fed9357b67593b56ed3a5
+R 6651e18da796c17c1ca503ba6b1b311c
 U drh
-Z 8d74d67cd7bcd5c907dded9ec155ff27
+Z 91702967a80a94e761fcc487487cb422

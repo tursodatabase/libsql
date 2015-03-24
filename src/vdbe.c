@@ -6063,14 +6063,17 @@ case OP_VOpen: {
   VdbeCursor *pCur;
   sqlite3_vtab_cursor *pVtabCursor;
   sqlite3_vtab *pVtab;
-  sqlite3_module *pModule;
+  const sqlite3_module *pModule;
 
   assert( p->bIsReader );
   pCur = 0;
   pVtabCursor = 0;
   pVtab = pOp->p4.pVtab->pVtab;
-  pModule = (sqlite3_module *)pVtab->pModule;
-  assert(pVtab && pModule);
+  if( pVtab==0 || NEVER(pVtab->pModule==0) ){
+    rc = SQLITE_LOCKED;
+    break;
+  }
+  pModule = pVtab->pModule;
   rc = pModule->xOpen(pVtab, &pVtabCursor);
   sqlite3VtabImportErrmsg(p, pVtab);
   if( SQLITE_OK==rc ){
@@ -6312,7 +6315,7 @@ case OP_VRename: {
 */
 case OP_VUpdate: {
   sqlite3_vtab *pVtab;
-  sqlite3_module *pModule;
+  const sqlite3_module *pModule;
   int nArg;
   int i;
   sqlite_int64 rowid;
@@ -6324,7 +6327,11 @@ case OP_VUpdate: {
   );
   assert( p->readOnly==0 );
   pVtab = pOp->p4.pVtab->pVtab;
-  pModule = (sqlite3_module *)pVtab->pModule;
+  if( pVtab==0 || NEVER(pVtab->pModule==0) ){
+    rc = SQLITE_LOCKED;
+    break;
+  }
+  pModule = pVtab->pModule;
   nArg = pOp->p2;
   assert( pOp->p4type==P4_VTAB );
   if( ALWAYS(pModule->xUpdate) ){
