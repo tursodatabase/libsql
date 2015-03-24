@@ -1,3 +1,7 @@
+# Version 0.0.12 (2015-03-24)
+
+* Updates to track rustc stabilization.
+
 # Version 0.0.11 (2015-03-12)
 
 * Reexport `sqlite3_stmt` from `libsqlite3-sys` for easier `impl`-ing of `ToSql` and `FromSql`.

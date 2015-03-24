@@ -48,12 +48,12 @@
 //!     }
 //! }
 //! ```
-#![feature(unsafe_destructor, core, path, libc, rustc_private, collections)]
+#![feature(unsafe_destructor, core, libc)]
 #![cfg_attr(test, feature(test))]
 
 extern crate libc;
 extern crate "libsqlite3-sys" as ffi;
-#[macro_use] extern crate rustc_bitflags;
+#[macro_use] extern crate bitflags;
 
 use std::mem;
 use std::ptr;
@@ -109,7 +109,7 @@ impl fmt::Display for SqliteError {
 
 impl error::Error for SqliteError {
     fn description(&self) -> &str {
-        self.message.as_slice()
+        &self.message
     }
 }
 
@@ -900,13 +900,13 @@ mod test {
             let rows = query.query(&[&4i32]).unwrap();
             let v: Vec<i32> = rows.map(|r| r.unwrap().get(0)).collect();
 
-            assert_eq!(v.as_slice(), [3i32, 2, 1].as_slice());
+            assert_eq!(v, [3i32, 2, 1]);
         }
 
         {
             let rows = query.query(&[&3i32]).unwrap();
             let v: Vec<i32> = rows.map(|r| r.unwrap().get(0)).collect();
-            assert_eq!(v.as_slice(), [2i32, 1].as_slice());
+            assert_eq!(v, [2i32, 1]);
         }
     }
 
@@ -930,7 +930,7 @@ mod test {
         let error = result.unwrap_err();
 
         assert!(error.code == ffi::SQLITE_NOTICE);
-        assert!(error.message.as_slice() == "Query did not return a row");
+        assert!(error.message == "Query did not return a row");
 
         let bad_query_result = db.query_row_safe("NOT A PROPER QUERY; test123", &[], |_| ());
 
@@ -943,7 +943,7 @@ mod test {
         db.execute_batch("CREATE TABLE foo(x INTEGER);").unwrap();
 
         let err = db.prepare("SELECT * FROM does_not_exist").unwrap_err();
-        assert!(err.message.as_slice().contains("does_not_exist"));
+        assert!(err.message.contains("does_not_exist"));
     }
 
     #[test]
@@ -961,7 +961,7 @@ mod test {
         assert_eq!(2i32, second.get(0));
 
         let result = first.get_opt::<i32>(0);
-        assert!(result.unwrap_err().message.as_slice().contains("advancing to next row"));
+        assert!(result.unwrap_err().message.contains("advancing to next row"));
     }
 
     #[test]
@@ -973,7 +973,7 @@ mod test {
         assert_eq!(db.last_insert_rowid(), 1);
 
         let mut stmt = db.prepare("INSERT INTO foo DEFAULT VALUES").unwrap();
-        for _ in range(0i32, 9) {
+        for _ in 0i32 .. 9 {
             stmt.execute(&[]).unwrap();
         }
         assert_eq!(db.last_insert_rowid(), 10);
