@@ -13,7 +13,6 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc1.test,v 1.42 2007/11/05 14:58:23 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -630,5 +629,14 @@ do_execsql_test misc1-20.1 {
   REPLACE INTO t0(x) VALUES('');
   SELECT rowid, quote(x) FROM t0;
 } {1 ''}
+
+# 2015-03-22: NULL pointer dereference after a syntax error
+#
+do_catchsql_test misc1-21.1 {
+  select''like''like''like#0;
+} {1 {near "#0": syntax error}}
+do_catchsql_test misc1-21.2 {
+  VALUES(0,0x0MATCH#0;
+} {1 {near ";": syntax error}}
 
 finish_test

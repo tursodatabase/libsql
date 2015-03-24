@@ -92,9 +92,9 @@ proc barrier_callback {method args} {
   set ::out ""
   testfixture $::C { db eval { SELECT * FROM t1 } } {set ::out}
 
-  do_test "1.2.2.(blocking 5 seconds)" { 
+  do_test "1.2.2.(blocking 10 seconds)" { 
     set ::continue 0
-    after 5000 {set ::continue 1}
+    after 10000 {set ::continue 1}
     vwait ::continue
     set ::out 
   } {}
