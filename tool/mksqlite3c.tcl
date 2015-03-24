@@ -80,15 +80,6 @@ if {$addstatic} {
   puts $out \
 {#ifndef SQLITE_PRIVATE
 # define SQLITE_PRIVATE static
-#endif
-#ifndef SQLITE_API
-# define SQLITE_API
-#endif
-#ifndef SQLITE_CDECL
-# define SQLITE_CDECL
-#endif
-#ifndef SQLITE_STDCALL
-# define SQLITE_STDCALL
 #endif}
 }
 

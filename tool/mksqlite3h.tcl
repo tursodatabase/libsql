@@ -102,25 +102,7 @@ foreach file $filelist {
     regsub -- --VERS--           $line $zVersion line
     regsub -- --VERSION-NUMBER-- $line $nVersion line
     regsub -- --SOURCE-ID--      $line "$zDate $zUuid" line
-  
-    if {[regexp {define SQLITE_EXTERN extern} $line]} {
-      puts $line
-      puts [gets $in]
-      puts ""
-      puts "#ifndef SQLITE_API"
-      puts "# define SQLITE_API"
-      puts "#endif"
-      puts ""
-      puts "#ifndef SQLITE_CDECL"
-      puts "# define SQLITE_CDECL"
-      puts "#endif"
-      puts ""
-      puts "#ifndef SQLITE_STDCALL"
-      puts "# define SQLITE_STDCALL"
-      puts "#endif"
-      set line ""
-    }
-  
+
     if {[regexp $varpattern $line] && ![regexp {^ *typedef} $line]} {
       set line "SQLITE_API $line"
     } else {
