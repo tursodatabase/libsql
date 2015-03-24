@@ -1,5 +1,5 @@
-C Add\sSQLITE_STDCALL\sand\sSQLITE_CDECL\smacros\son\spublic\sfunction\sdefinitions.
-D 2015-03-24T21:27:27.369
+C Update\sthe\s'mksqlite3c-noext'\stool\sas\swell.
+D 2015-03-24T21:52:12.248
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1212,7 +1212,7 @@ F tool/mkkeywordhash.c dfff09dbbfaf950e89af294f48f902181b144670
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkpragmatab.tcl 94f196c9961e0ca3513e29f57125a3197808be2d
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
-F tool/mksqlite3c-noext.tcl 9ef48e1748dce7b844f67e2450ff9dfeb0fb4ab5
+F tool/mksqlite3c-noext.tcl 46dad185f91829a25b10291b244d2440ad4a88f4
 F tool/mksqlite3c.tcl ab2cfb2191f1edaea0e72b6ad3bc3f71aa61a6b9
 F tool/mksqlite3h.tcl c02e391f595bf91528341ffaa53e5084d8b595ce
 F tool/mksqlite3internalh.tcl eb994013e833359137eb53a55acdad0b5ae1049b
@@ -1246,10 +1246,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 436314b5728c9413f9ac2d837e1c19364f31be72
-R 887ef727abd3a9965cbccad906bf79e4
-T *branch * stdcall
-T *sym-stdcall *
-T -sym-trunk *
+P 242f09d4d1c92ee9058857a5e780442f4b7bad55
+R 4e80129117aa4b372475de5cd1490c7f
 U mistachkin
-Z cb11de2c68ebf434af7cc941e8219588
+Z 6bcda5d8184063ac5fc3f1cb05a00dcd
