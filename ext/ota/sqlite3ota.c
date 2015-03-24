@@ -203,6 +203,13 @@ struct OtaState {
 **     * the table itself, 
 **     * each index of the table (zero or more points to visit), and
 **     * a special "cleanup table" state.
+**
+** abIndexed:
+**   If the table has no indexes on it, abIndexed is set to NULL. Otherwise,
+**   it points to an array of flags nTblCol elements in size. The flag is
+**   set for each column that is either a part of the PK or a part of an
+**   index. Or clear otherwise.
+**   
 */
 struct OtaObjIter {
   sqlite3_stmt *pTblIter;         /* Iterate through tables */
@@ -213,6 +220,7 @@ struct OtaObjIter {
   int *aiSrcOrder;                /* src table col -> target table col */
   u8 *abTblPk;                    /* Array of flags, set on target PK columns */
   u8 *abNotNull;                  /* Array of flags, set on NOT NULL columns */
+  u8 *abIndexed;                  /* Array of flags, set on indexed & PK cols */
   int eType;                      /* Table type - an OTA_PK_XXX value */
 
   /* Output variables. zTbl==0 implies EOF. */
@@ -638,7 +646,7 @@ static void *otaMalloc(sqlite3ota *p, int nByte){
 ** error code in the OTA handle passed as the first argument.
 */
 static void otaAllocateIterArrays(sqlite3ota *p, OtaObjIter *pIter, int nCol){
-  int nByte = (2*sizeof(char*) + sizeof(int) + 2*sizeof(u8)) * nCol;
+  int nByte = (2*sizeof(char*) + sizeof(int) + 3*sizeof(u8)) * nCol;
   char **azNew;
 
   azNew = (char**)otaMalloc(p, nByte);
@@ -648,6 +656,7 @@ static void otaAllocateIterArrays(sqlite3ota *p, OtaObjIter *pIter, int nCol){
     pIter->aiSrcOrder = (int*)&pIter->azTblType[nCol];
     pIter->abTblPk = (u8*)&pIter->aiSrcOrder[nCol];
     pIter->abNotNull = (u8*)&pIter->abTblPk[nCol];
+    pIter->abIndexed = (u8*)&pIter->abNotNull[nCol];
   }
 }
 
@@ -813,6 +822,40 @@ otaTableType_end: {
   }
 }
 
+/*
+** This is a helper function for otaObjIterCacheTableInfo(). It populates
+** the pIter->abIndexed[] array.
+*/
+static void otaObjIterCacheIndexedCols(sqlite3ota *p, OtaObjIter *pIter){
+  sqlite3_stmt *pList = 0;
+  int bIndex = 0;
+
+  if( p->rc==SQLITE_OK ){
+    memcpy(pIter->abIndexed, pIter->abTblPk, sizeof(u8)*pIter->nTblCol);
+    p->rc = prepareFreeAndCollectError(p->dbMain, &pList, &p->zErrmsg,
+        sqlite3_mprintf("PRAGMA main.index_list = %Q", pIter->zTbl)
+    );
+  }
+
+  while( p->rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pList) ){
+    const char *zIdx = (const char*)sqlite3_column_text(pList, 1);
+    sqlite3_stmt *pXInfo = 0;
+    if( zIdx==0 ) break;
+    p->rc = prepareFreeAndCollectError(p->dbMain, &pXInfo, &p->zErrmsg,
+        sqlite3_mprintf("PRAGMA main.index_xinfo = %Q", zIdx)
+    );
+    while( p->rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pXInfo) ){
+      int iCid = sqlite3_column_int(pXInfo, 1);
+      if( iCid>=0 ) pIter->abIndexed[iCid] = 1;
+    }
+    otaFinalize(p, pXInfo);
+    bIndex = 1;
+  }
+
+  otaFinalize(p, pList);
+  if( bIndex==0 ) pIter->abIndexed = 0;
+}
+
 
 /*
 ** If they are not already populated, populate the pIter->azTblCol[],
@@ -918,6 +961,8 @@ static int otaObjIterCacheTableInfo(sqlite3ota *p, OtaObjIter *pIter){
     }
 
     otaFinalize(p, pStmt);
+    otaObjIterCacheIndexedCols(p, pIter);
+    assert( pIter->eType!=OTA_PK_VTAB || pIter->abIndexed==0 );
   }
 
   return p->rc;
@@ -946,10 +991,10 @@ static char *otaObjIterGetCollist(
 /*
 ** This function is used to create a SELECT list (the list of SQL 
 ** expressions that follows a SELECT keyword) for a SELECT statement 
-** used to read from an ota_xxx table while updating the index object
-** currently indicated by the iterator object passed as the second 
-** argument. A "PRAGMA index_xinfo = <idxname>" statement is used to
-** obtain the required information.
+** used to read from an data_xxx or ota_tmp_xxx table while updating the 
+** index object currently indicated by the iterator object passed as the 
+** second argument. A "PRAGMA index_xinfo = <idxname>" statement is used 
+** to obtain the required information.
 **
 ** If the index is of the following form:
 **
@@ -1075,12 +1120,16 @@ static char *otaObjIterGetOldlist(
   const char *zObj
 ){
   char *zList = 0;
-  if( p->rc==SQLITE_OK ){
+  if( p->rc==SQLITE_OK && pIter->abIndexed ){
     const char *zS = "";
     int i;
     for(i=0; i<pIter->nTblCol; i++){
-      const char *zCol = pIter->azTblCol[i];
-      zList = sqlite3_mprintf("%z%s%s.\"%w\"", zList, zS, zObj, zCol);
+      if( pIter->abIndexed[i] ){
+        const char *zCol = pIter->azTblCol[i];
+        zList = sqlite3_mprintf("%z%s%s.\"%w\"", zList, zS, zObj, zCol);
+      }else{
+        zList = sqlite3_mprintf("%z%sNULL", zList, zS);
+      }
       zS = ", ";
       if( zList==0 ){
         p->rc = SQLITE_NOMEM;
@@ -1612,7 +1661,7 @@ static int otaObjIterPrepareAll(
         );
       }
 
-      if( pIter->eType!=OTA_PK_VTAB ){
+      if( pIter->abIndexed ){
         const char *zOtaRowid = "";
         if( pIter->eType==OTA_PK_EXTERNAL || pIter->eType==OTA_PK_NONE ){
           zOtaRowid = ", ota_rowid";
@@ -2283,7 +2332,7 @@ int sqlite3ota_step(sqlite3ota *p){
             /* Clean up the ota_tmp_xxx table for the previous table. It 
             ** cannot be dropped as there are currently active SQL statements.
             ** But the contents can be deleted.  */
-            if( pIter->eType!=OTA_PK_VTAB ){
+            if( pIter->abIndexed ){
               const char *zTbl = pIter->zTbl;
               otaMPrintfExec(p, p->dbOta, "DELETE FROM 'ota_tmp_%q'", zTbl);
             }
