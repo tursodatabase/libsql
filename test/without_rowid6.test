@@ -37,5 +37,81 @@ do_execsql_test without_rowid6-140 {
   SELECT c FROM t1 ORDER BY b LIMIT 5;
 } {x1y x2y x3y x4y x5y}
 
+# Column t1.b starts out as a unique index, but that index is
+# subsequently converted into a PRIMARY KEY.
+#
+do_execsql_test without_rowid6-200 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(
+    a UNIQUE,
+    b UNIQUE,
+    c UNIQUE,
+    PRIMARY KEY(b)
+  ) WITHOUT ROWID;
+  INSERT INTO t1(a,b,c) VALUES(1,8,3),(4,5,6),(7,2,9);
+  SELECT a FROM t1 WHERE b>3 ORDER BY b;
+} {4 1}
+do_execsql_test without_rowid6-210 {
+  EXPLAIN QUERY PLAN
+  SELECT a FROM t1 WHERE b>3 ORDER BY b;
+} {/SEARCH TABLE t1 USING PRIMARY KEY .b>../}
+do_execsql_test without_rowid6-220 {
+  PRAGMA index_list(t1);
+} {/sqlite_autoindex_t1_2 1 pk/}
+
+do_execsql_test without_rowid6-300 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(
+    a UNIQUE,
+    b PRIMARY KEY,
+    c UNIQUE,
+    UNIQUE(b)
+  ) WITHOUT ROWID;
+  INSERT INTO t1(a,b,c) VALUES(1,8,3),(4,5,6),(7,2,9);
+  SELECT a FROM t1 WHERE b>3 ORDER BY b;
+} {4 1}
+do_execsql_test without_rowid6-310 {
+  EXPLAIN QUERY PLAN
+  SELECT a FROM t1 WHERE b>3 ORDER BY b;
+} {/SEARCH TABLE t1 USING PRIMARY KEY .b>../}
+do_execsql_test without_rowid6-320 {
+  PRAGMA index_list(t1);
+} {/sqlite_autoindex_t1_2 1 pk/}
+
+do_execsql_test without_rowid6-400 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(
+    a UNIQUE,
+    b UNIQUE PRIMARY KEY,
+    c UNIQUE
+  ) WITHOUT ROWID;
+  INSERT INTO t1(a,b,c) VALUES(1,8,3),(4,5,6),(7,2,9);
+  SELECT a FROM t1 WHERE b>3 ORDER BY b;
+} {4 1}
+do_execsql_test without_rowid6-410 {
+  EXPLAIN QUERY PLAN
+  SELECT a FROM t1 WHERE b>3 ORDER BY b;
+} {/SEARCH TABLE t1 USING PRIMARY KEY .b>../}
+do_execsql_test without_rowid6-420 {
+  PRAGMA index_list(t1);
+} {/sqlite_autoindex_t1_2 1 pk/}
+
+do_execsql_test without_rowid6-500 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a,b,c,
+    UNIQUE(b,c),
+    PRIMARY KEY(b,c)
+  ) WITHOUT ROWID;
+  INSERT INTO t1(a,b,c) VALUES(1,8,3),(4,5,6),(7,2,9);
+  SELECT a FROM t1 WHERE b>3 ORDER BY b;
+} {4 1}
+do_execsql_test without_rowid6-510 {
+  EXPLAIN QUERY PLAN
+  SELECT a FROM t1 WHERE b>3 ORDER BY b;
+} {/SEARCH TABLE t1 USING PRIMARY KEY .b>../}
+do_execsql_test without_rowid6-520 {
+  PRAGMA index_list(t1);
+} {/sqlite_autoindex_t1_1 1 pk/}
+
 
 finish_test
