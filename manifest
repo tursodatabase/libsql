@@ -1,9 +1,9 @@
-C Fix\sa\scouple\scomment\stypos\sin\sa\stool\sscript.\s\sNo\schanges\sto\scode.
-D 2015-03-24T21:34:53.280
+C Add\sSQLITE_STDCALL\sand\sSQLITE_CDECL\smacros\son\spublic\sfunction\sdefinitions.
+D 2015-03-24T22:00:26.504
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc cd626b52ebeec0e2c0dd929243bdd25b0df19a71
+F Makefile.msc 3481e2dd260968742c715542db178c2bdd5db99f
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md d58e3bebc0a4145e0f2a87994015fdb575a8e866
 F VERSION 319eb1ced4b4d17a67730f2b7b85f15c1346cb60
@@ -232,7 +232,7 @@ F src/resolve.c f4d79e31ffa5820c2e3d1740baa5e9b190425f2b
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 72ffb62e2879956302140e9f6e6ae88aee36b0e5
 F src/shell.c 3ae1e53878d2804fe77b8c8f1f6ca287a0e5d80e
-F src/sqlite.h.in 2f9606a682af372415ce9d1f244183c5cc8385aa
+F src/sqlite.h.in 278602140d49575e8708e643161f4263e428a02a
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
 F src/sqliteInt.h bedf15914c09bfb5fe3ec4e3f211a4a6fc42cd33
@@ -1212,9 +1212,9 @@ F tool/mkkeywordhash.c dfff09dbbfaf950e89af294f48f902181b144670
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkpragmatab.tcl 94f196c9961e0ca3513e29f57125a3197808be2d
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
-F tool/mksqlite3c-noext.tcl f8a6223bebc9e3e9dc2700484c602f159b84c8aa
-F tool/mksqlite3c.tcl 95ab31eda659e7ffb091e04bd83178f260d8edfd
-F tool/mksqlite3h.tcl ba24038056f51fde07c0079c41885ab85e2cff12
+F tool/mksqlite3c-noext.tcl 69bae8ce4aa52d2ff82d4a8a856bf283ec035b2e
+F tool/mksqlite3c.tcl 52a3352f7aa15f1db851e45ac3a5e2173d6fe93c
+F tool/mksqlite3h.tcl 44730d586c9031638cdd2eb443b801c0d2dbd9f8
 F tool/mksqlite3internalh.tcl eb994013e833359137eb53a55acdad0b5ae1049b
 F tool/mkvsix.tcl 52a4c613707ac34ae9c226e5ccc69cb948556105
 F tool/offsets.c fe4262fdfa378e8f5499a42136d17bf3b98f6091
@@ -1246,7 +1246,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 436314b5728c9413f9ac2d837e1c19364f31be72
-R 8395df004ed39c3d4f3903ab69f7e9ed
+P 83421af67063825981f6051eb415944d90e9b2f6 e826cd7db6b3ab010533d81a759794c2470343d2
+R 00893342a7c77a3a3db8feef49e96714
+T +closed e826cd7db6b3ab010533d81a759794c2470343d2
 U mistachkin
-Z b92e1717d71c68278e3b78541d6aeae8
+Z 1978375717c0fca1b1a377840034ad4e

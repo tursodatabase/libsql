@@ -43,17 +43,19 @@ extern "C" {
 
 
 /*
-** Add the ability to override 'extern'
+** Provide the ability to override linkage features of the interface.
 */
 #ifndef SQLITE_EXTERN
 # define SQLITE_EXTERN extern
 #endif
-
-/*
-** Add the ability to override 'cdecl'
-*/
+#ifndef SQLITE_API
+# define SQLITE_API
+#endif
 #ifndef SQLITE_CDECL
 # define SQLITE_CDECL
+#endif
+#ifndef SQLITE_STDCALL
+# define SQLITE_STDCALL
 #endif
 
 /*
