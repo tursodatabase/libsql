@@ -1,5 +1,5 @@
-C More\sdefenses\sagainst\svirtual\stable\sbeing\sdeleted\sout\sfrom\sunder\sa\srunning\nstatement.
-D 2015-03-24T14:05:50.045
+C Simplify\sthe\sEXPLAIN\soutput\sof\svirtual\stable\sP4\sparameters\sto\sonly\sshow\sthe\npointer\sto\sthe\ssqlite3_vtab\sobject\sand\somit\sthe\ssqlite3_module\sobject.
+D 2015-03-24T14:57:02.437
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -297,7 +297,7 @@ F src/vdbe.c bbfede5a8a6908b3ddcd55fdb0b2301288dd4754
 F src/vdbe.h 6fc69d9c5e146302c56e163cb4b31d1ee64a18c3
 F src/vdbeInt.h 9cbaa84f53ddd2d09a0cf61a94337a3a035d08a0
 F src/vdbeapi.c 583d56b129dd27f12bed518270de9ebe521e6a75
-F src/vdbeaux.c 056eefd33ef4457240b6d3156a96201579face0a
+F src/vdbeaux.c 413dc496248ac18eb0c19e35e86bb1ffd47b8907
 F src/vdbeblob.c 4f2e8e075d238392df98c5e03a64342465b03f90
 F src/vdbemem.c c0dc81285b7571b0a31c40f17846fe2397ec1cd9
 F src/vdbesort.c 919717d7599fa31d343ec28bffd0f9e91a4ff5f6
@@ -1246,7 +1246,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fba674c083286dabb37fed9357b67593b56ed3a5
-R 6651e18da796c17c1ca503ba6b1b311c
+P 116c99823022c017946b6088878a2d46759deb6e
+R 5f471e8babb874f26a1b4c65b62f02f6
 U drh
-Z 91702967a80a94e761fcc487487cb422
+Z ffb5a79aea5fc49ed872d8dd5ea0b00b
