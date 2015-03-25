@@ -1,5 +1,5 @@
-C Add\sSQLITE_STDCALL\sand\sSQLITE_CDECL\smacros\son\spublic\sfunction\sdefinitions.
-D 2015-03-24T22:00:26.504
+C Add\stwo\snew\sassert()s\sto\sthe\ssqlite3BtreeDataSize()\smethod.
+D 2015-03-25T12:05:49.756
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -173,7 +173,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c ff743689c4d6c5cb55ad42ed9d174b2b3e71f1e3
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c 3e320cac836546c905bd90007074d887980aa70e
+F src/btree.c 8d92800add6e237c883b286845d8159911acdf54
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 2bfefc01875d8da066504c233ec259fcb3b2ef72
 F src/build.c 0419bba592c22f6d00e6d57a2ca7136720d02c1a
@@ -1246,8 +1246,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 83421af67063825981f6051eb415944d90e9b2f6 e826cd7db6b3ab010533d81a759794c2470343d2
-R 00893342a7c77a3a3db8feef49e96714
-T +closed e826cd7db6b3ab010533d81a759794c2470343d2
-U mistachkin
-Z 1978375717c0fca1b1a377840034ad4e
+P cae3239aa58b4f7016fc9dcac3966fe6ef833879
+R 9d1846f3cd769389c238477907eb38ab
+U drh
+Z 681e7b9df0d47c3c796413431bb9a3b2
