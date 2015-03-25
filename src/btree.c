@@ -600,10 +600,15 @@ static void btreeReleaseAllCursorPages(BtCursor *pCur){
 static int saveCursorPosition(BtCursor *pCur){
   int rc;
 
-  assert( CURSOR_VALID==pCur->eState );
+  assert( CURSOR_VALID==pCur->eState || CURSOR_SKIPNEXT==pCur->eState );
   assert( 0==pCur->pKey );
   assert( cursorHoldsMutex(pCur) );
 
+  if( pCur->eState==CURSOR_SKIPNEXT ){
+    pCur->eState = CURSOR_VALID;
+  }else{
+    pCur->skipNext = 0;
+  }
   rc = sqlite3BtreeKeySize(pCur, &pCur->nKey);
   assert( rc==SQLITE_OK );  /* KeySize() cannot fail */
 
@@ -674,7 +679,7 @@ static int SQLITE_NOINLINE saveCursorsOnList(
 ){
   do{
     if( p!=pExcept && (0==iRoot || p->pgnoRoot==iRoot) ){
-      if( p->eState==CURSOR_VALID ){
+      if( p->eState==CURSOR_VALID || p->eState==CURSOR_SKIPNEXT ){
         int rc = saveCursorPosition(p);
         if( SQLITE_OK!=rc ){
           return rc;
@@ -746,17 +751,19 @@ static int btreeMoveto(
 */
 static int btreeRestoreCursorPosition(BtCursor *pCur){
   int rc;
+  int skipNext;
   assert( cursorHoldsMutex(pCur) );
   assert( pCur->eState>=CURSOR_REQUIRESEEK );
   if( pCur->eState==CURSOR_FAULT ){
     return pCur->skipNext;
   }
   pCur->eState = CURSOR_INVALID;
-  rc = btreeMoveto(pCur, pCur->pKey, pCur->nKey, 0, &pCur->skipNext);
+  rc = btreeMoveto(pCur, pCur->pKey, pCur->nKey, 0, &skipNext);
   if( rc==SQLITE_OK ){
     sqlite3_free(pCur->pKey);
     pCur->pKey = 0;
     assert( pCur->eState==CURSOR_VALID || pCur->eState==CURSOR_INVALID );
+    pCur->skipNext |= skipNext;
     if( pCur->skipNext && pCur->eState==CURSOR_VALID ){
       pCur->eState = CURSOR_SKIPNEXT;
     }
@@ -808,7 +815,7 @@ int sqlite3BtreeCursorRestore(BtCursor *pCur, int *pDifferentRow){
     *pDifferentRow = 1;
     return rc;
   }
-  if( pCur->eState!=CURSOR_VALID || NEVER(pCur->skipNext!=0) ){
+  if( pCur->eState!=CURSOR_VALID || pCur->skipNext!=0 ){
     *pDifferentRow = 1;
   }else{
     *pDifferentRow = 0;
@@ -3625,7 +3632,7 @@ int sqlite3BtreeTripAllCursors(Btree *pBtree, int errCode, int writeOnly){
     for(p=pBtree->pBt->pCursor; p; p=p->pNext){
       int i;
       if( writeOnly && (p->curFlags & BTCF_WriteFlag)==0 ){
-        if( p->eState==CURSOR_VALID ){
+        if( p->eState==CURSOR_VALID || p->eState==CURSOR_SKIPNEXT ){
           rc = saveCursorPosition(p);
           if( rc!=SQLITE_OK ){
             (void)sqlite3BtreeTripAllCursors(pBtree, rc, 0);

@@ -1,5 +1,5 @@
-C Reactivate\san\solder\sassert()\s(adding\san\s"||\sCORRUPT_DB"\sterm)\sand\sadd\sa\nnew\sassert()\sin\sbtree.c.
-D 2015-03-25T13:06:54.837
+C Fix\sthe\ssaveCursorPosition()\sroutine\sin\sbtree.c\sso\sthat\sit\sworks\ncorrectly\sfor\sa\seState=CURSOR_SKIPNEXT\scursor.
+D 2015-03-25T17:35:01.825
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -173,7 +173,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c ff743689c4d6c5cb55ad42ed9d174b2b3e71f1e3
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c 3634c2ee748bbbb2488cdca9dc8fc8c7bdc2f66f
+F src/btree.c 933ab4ad883546193f5fd55f840299165adb8069
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 2bfefc01875d8da066504c233ec259fcb3b2ef72
 F src/build.c 0419bba592c22f6d00e6d57a2ca7136720d02c1a
@@ -384,6 +384,7 @@ F test/boundary3.test 56ef82096b4329aca2be74fa1e2b0f762ea0eb45
 F test/boundary4.tcl 0bb4b1a94f4fc5ae59b79b9a2b7a140c405e2983
 F test/boundary4.test 89e02fa66397b8a325d5eb102b5806f961f8ec4b
 F test/btree01.test e08b3613540145b353f20c81cb18ead54ff12e0f
+F test/btree02.test fe69453d474d8154d19b904157ff1db4812fed99
 F test/btreefault.test c2bcb542685eea44621275cfedbd8a13f65201e3
 F test/busy.test 76b4887f8b9160ba903c1ac22e8ff406ad6ae2f0
 F test/cache.test 13bc046b26210471ca6f2889aceb1ea52dc717de
@@ -1246,7 +1247,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 42d1793d6516e285a8925bbfd96b3d3375603d15
-R 90535e28cf02760b75aa0324ce2f944c
+P 1e96520ac1d12ca83f019a60482efa0a074f2f94
+R 0d2b32f8ac05ffe0443a79d106bd4efe
 U drh
-Z 7ee968129b9c07925188972da6333faa
+Z 2f58ba8b67469927a3c7d533210b0ef3
