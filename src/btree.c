@@ -815,9 +815,10 @@ int sqlite3BtreeCursorRestore(BtCursor *pCur, int *pDifferentRow){
     *pDifferentRow = 1;
     return rc;
   }
-  if( pCur->eState!=CURSOR_VALID || pCur->skipNext!=0 ){
+  if( pCur->eState!=CURSOR_VALID ){
     *pDifferentRow = 1;
   }else{
+    assert( pCur->skipNext==0 );
     *pDifferentRow = 0;
   }
   return SQLITE_OK;
