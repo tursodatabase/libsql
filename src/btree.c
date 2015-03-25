@@ -4511,7 +4511,7 @@ static int moveToChild(BtCursor *pCur, u32 newPgno){
   return SQLITE_OK;
 }
 
-#if 0
+#if SQLITE_DEBUG
 /*
 ** Page pParent is an internal (non-leaf) tree page. This function 
 ** asserts that page number iChild is the left-child if the iIdx'th
@@ -4520,6 +4520,8 @@ static int moveToChild(BtCursor *pCur, u32 newPgno){
 ** the page.
 */
 static void assertParentIndex(MemPage *pParent, int iIdx, Pgno iChild){
+  if( CORRUPT_DB ) return;  /* The conditions tested below might not be true
+                            ** in a corrupt database */
   assert( iIdx<=pParent->nCell );
   if( iIdx==pParent->nCell ){
     assert( get4byte(&pParent->aData[pParent->hdrOffset+8])==iChild );
@@ -4544,19 +4546,11 @@ static void moveToParent(BtCursor *pCur){
   assert( pCur->eState==CURSOR_VALID );
   assert( pCur->iPage>0 );
   assert( pCur->apPage[pCur->iPage] );
-
-  /* UPDATE: It is actually possible for the condition tested by the assert
-  ** below to be untrue if the database file is corrupt. This can occur if
-  ** one cursor has modified page pParent while a reference to it is held 
-  ** by a second cursor. Which can only happen if a single page is linked
-  ** into more than one b-tree structure in a corrupt database.  */
-#if 0
   assertParentIndex(
     pCur->apPage[pCur->iPage-1], 
     pCur->aiIdx[pCur->iPage-1], 
     pCur->apPage[pCur->iPage]->pgno
   );
-#endif
   testcase( pCur->aiIdx[pCur->iPage-1] > pCur->apPage[pCur->iPage-1]->nCell );
 
   releasePage(pCur->apPage[pCur->iPage]);
@@ -7504,6 +7498,7 @@ static int balance(BtCursor *pCur){
       /* The next iteration of the do-loop balances the parent page. */
       releasePage(pPage);
       pCur->iPage--;
+      assert( pCur->iPage>=0 );
     }
   }while( rc==SQLITE_OK );
 

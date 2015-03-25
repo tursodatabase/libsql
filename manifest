@@ -1,5 +1,5 @@
-C Add\stwo\snew\sassert()s\sto\sthe\ssqlite3BtreeDataSize()\smethod.
-D 2015-03-25T12:05:49.756
+C Reactivate\san\solder\sassert()\s(adding\san\s"||\sCORRUPT_DB"\sterm)\sand\sadd\sa\nnew\sassert()\sin\sbtree.c.
+D 2015-03-25T13:06:54.837
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -173,7 +173,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c ff743689c4d6c5cb55ad42ed9d174b2b3e71f1e3
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c 8d92800add6e237c883b286845d8159911acdf54
+F src/btree.c 3634c2ee748bbbb2488cdca9dc8fc8c7bdc2f66f
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 2bfefc01875d8da066504c233ec259fcb3b2ef72
 F src/build.c 0419bba592c22f6d00e6d57a2ca7136720d02c1a
@@ -1246,7 +1246,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P cae3239aa58b4f7016fc9dcac3966fe6ef833879
-R 9d1846f3cd769389c238477907eb38ab
+P 42d1793d6516e285a8925bbfd96b3d3375603d15
+R 90535e28cf02760b75aa0324ce2f944c
 U drh
-Z 681e7b9df0d47c3c796413431bb9a3b2
+Z 7ee968129b9c07925188972da6333faa
