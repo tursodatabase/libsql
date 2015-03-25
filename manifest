@@ -1,9 +1,9 @@
-C Version\s3.8.8.3
-D 2015-02-25T13:29:11.692
+C Backport\sthe\s'stdcall'\srelated\senhancements\sfrom\strunk.
+D 2015-03-25T00:09:44.052
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5407a688f4d77a05c18a8142be8ae5a2829dd610
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 4c057774e6138b9023fc16ec05639ddd3329b152
+F Makefile.msc 417530abef2e2a63b35dfc3ae49e5bbd967eac87
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md d58e3bebc0a4145e0f2a87994015fdb575a8e866
 F VERSION 0de46a30a2d0a7a6a686fd35186fbad0ac06ff71
@@ -96,7 +96,7 @@ F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c a93f5edc0aff44ef8b06d7cb55b52026541ca145
 F ext/fts3/fts3_unicode2.c c3d01968d497bd7001e7dc774ba75b372738c057
-F ext/fts3/fts3_write.c 9b3a32cbecf40a1f41cb08c00df8c066c23c7a25
+F ext/fts3/fts3_write.c 5dc59cb435ed5b1f72459e5544f6854a928112e7
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/fts3/tool/fts3view.c 3986531f2fc0ceca0c89c31ec7d0589b6adb19d6
@@ -230,8 +230,8 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c f6c46d3434439ab2084618d603e6d6dbeb0d6ada
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c a4e8fda24c8eab2682a058bdda0d5d68cfe3919c
-F src/shell.c ee1a80bf2b0e9e0c2b93db8f0f82b841289b2641
-F src/sqlite.h.in 9dfc99d6533d36d6a549c4f3f01cacc8be956ada
+F src/shell.c 786d96e055595d598e936e63622e82f87255dac8
+F src/sqlite.h.in eb8ab2878a39c650e9cf44dfc7b05b5a00b3c5cf
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
 F src/sqliteInt.h eaf210295b551d4e40e622aec1b2261c0b28f844
@@ -1185,7 +1185,7 @@ F test/without_rowid6.test deddb78ef539c355bddec00cdfaea6c56efd8b3f
 F test/wordcount.c 9915e06cb33d8ca8109b8700791afe80d305afda
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
 F test/zerodamage.test cf6748bad89553cc1632be51a6f54e487e4039ac
-F tool/build-all-msvc.bat a0534c971b86fe95f1983f445db5b896d3394818 x
+F tool/build-all-msvc.bat 72e05bc8deca39a547884485c086b915f50a91ed x
 F tool/build-shell.sh 950f47c6174f1eea171319438b93ba67ff5bf367
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
@@ -1203,9 +1203,9 @@ F tool/mkkeywordhash.c dfff09dbbfaf950e89af294f48f902181b144670
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkpragmatab.tcl 07a5124cf2dbafa1b375eefcf8ac4227028b0f8b
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
-F tool/mksqlite3c-noext.tcl 9ef48e1748dce7b844f67e2450ff9dfeb0fb4ab5
-F tool/mksqlite3c.tcl cfde806851c413db7689b9cb74a4eeb92539c601
-F tool/mksqlite3h.tcl ba24038056f51fde07c0079c41885ab85e2cff12
+F tool/mksqlite3c-noext.tcl 98e112237c36c31d8e054c6fa7bbba207850b6d6
+F tool/mksqlite3c.tcl 5f57fd1d01f78a37549fb99ae4f6543d69141dcf
+F tool/mksqlite3h.tcl 44730d586c9031638cdd2eb443b801c0d2dbd9f8
 F tool/mksqlite3internalh.tcl eb994013e833359137eb53a55acdad0b5ae1049b
 F tool/mkvsix.tcl 52a4c613707ac34ae9c226e5ccc69cb948556105
 F tool/offsets.c fe4262fdfa378e8f5499a42136d17bf3b98f6091
@@ -1237,10 +1237,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ec27ab0eb3a1ee08a73dda23d2a0f9fb70962745
-R 7a9d6545656b7d4fe08d198e32a78d62
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.8.8.3 *
-U drh
-Z 9dbdbd01efd2c5089344e2a1709c163b
+P 9d6c1880fb75660bbabd693175579529785f8a6b
+R 04e924db808653f423bb10222a2f5af0
+T *branch * stdcall
+T *sym-stdcall *
+T -sym-branch-3.8.8 *
+U mistachkin
+Z 651b023c24d6c190166dc0205066f55f

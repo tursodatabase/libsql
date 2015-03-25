@@ -2106,7 +2106,7 @@ static void import_append_char(ImportCtx *p, int c){
 **      EOF on end-of-file.
 **   +  Report syntax errors on stderr
 */
-static char *csv_read_one_field(ImportCtx *p){
+static char *SQLITE_CDECL csv_read_one_field(ImportCtx *p){
   int c;
   int cSep = p->cColSep;
   int rSep = p->cRowSep;
@@ -2180,7 +2180,7 @@ static char *csv_read_one_field(ImportCtx *p){
 **      EOF on end-of-file.
 **   +  Report syntax errors on stderr
 */
-static char *ascii_read_one_field(ImportCtx *p){
+static char *SQLITE_CDECL ascii_read_one_field(ImportCtx *p){
   int c;
   int cSep = p->cColSep;
   int rSep = p->cRowSep;
@@ -2759,8 +2759,8 @@ static int do_meta_command(char *zLine, ShellState *p){
     int nSep;                   /* Number of bytes in p->colSeparator[] */
     char *zSql;                 /* An SQL statement */
     ImportCtx sCtx;             /* Reader context */
-    char *(*xRead)(ImportCtx*); /* Procedure to read one value */
-    int (*xCloser)(FILE*);      /* Procedure to close th3 connection */
+    char *(SQLITE_CDECL *xRead)(ImportCtx*); /* Func to read one value */
+    int (SQLITE_CDECL *xCloser)(FILE*);      /* Func to close file */
 
     if( nArg!=3 ){
       fprintf(stderr, "Usage: .import FILE TABLE\n");
@@ -4178,7 +4178,7 @@ static char *cmdline_option_value(int argc, char **argv, int i){
   return argv[i];
 }
 
-int main(int argc, char **argv){
+int SQLITE_CDECL main(int argc, char **argv){
   char *zErrMsg = 0;
   ShellState data;
   const char *zInitFile = 0;
