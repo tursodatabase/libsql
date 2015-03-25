@@ -58,6 +58,20 @@ do_execsql_test 1.4.2 { SELECT v FROM t1 WHERE w = '4' AND x IS 4 } {d}
 do_eqp_test 1.5.1 { SELECT b FROM t3 WHERE a IS ? } {/SCAN TABLE/}
 do_eqp_test 1.5.2 { SELECT b FROM t3 WHERE a = ? } {/SEARCH TABLE/}
 
+#-------------------------------------------------------------------------
+# Check that this works with PRIMARY KEY indexes that have large numbers
+# of columns.
+
+do_execsql_test 2.1.1 {
+  CREATE TABLE x1(a, b, c, d, e, f, g, h, i,
+    PRIMARY KEY(a, b, c, d, e, f, g)
+  ) WITHOUT ROWID;
+}
+do_eqp_test 2.1.2 { 
+  SELECT i FROM x1 WHERE 
+  a IS ? AND b IS ? AND c IS ? AND d IS ? AND e IS ? AND f IS ? AND g IS ?
+} {/SEARCH TABLE/}
+
 finish_test
 
 

@@ -1,5 +1,5 @@
-C Merge\sthe\slatest\strunk\schanges\sinto\sthis\sbranch.
-D 2015-03-24T18:21:41.611
+C Extend\s[52e73eec]\sso\sthat\sthe\sIS\soptimization\smay\sbe\sused\son\sprimary\skeys\swith\smore\sthan\s3\scolumns.
+D 2015-03-25T15:23:00.648
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -325,8 +325,8 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 878c8e1a51cb2ec45c395d26b7d5cd9e1a098e4a
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
-F src/where.c d336e91893370787853733e177d4dcd4db0a0283
-F src/whereInt.h c1fd5690f91d9551c0c42aa44205248bbd3f7650
+F src/where.c bc7276b6e7d4d50055e17cba1d495f804737f872
+F src/whereInt.h 1fca2f8c649f0ee38fd52332659d0e7deb11d428
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test b35b4cd69fc913f90d39a575e171e1116c3a4bb7
@@ -1195,7 +1195,7 @@ F test/whereG.test 69f5ec4b15760a8c860f80e2d55525669390aab3
 F test/whereH.test e4b07f7a3c2f5d31195cd33710054c78667573b2
 F test/whereI.test 1d89199697919d4930be05a71e7fe620f114e622
 F test/whereJ.test 55a3221706a7ab706293f17cc8f96da563bf0767
-F test/whereK.test 424caa7391ca5c41484a37cc4a13dc9ed6243bee
+F test/whereK.test 868fed1646f1e720720ec1eb99fc2c4d562c5a85
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/wild001.test bca33f499866f04c24510d74baf1e578d4e44b1c
 F test/win32heap.test ea19770974795cff26e11575e12d422dbd16893c
@@ -1265,7 +1265,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6326fd3249bee267da0172f8afd1e7b3f71521b9 cbeb9a1aed8ce3fb569a7717ad03c7c058b68de6
-R 1fefa9d8d8de814a981dd2146a1968d2
+P 9d9b6c883b4f7d69c615cedfb59a2385aac47b74
+R 563e539a9aa7beed43e32c4d3d14e4ca
 U dan
-Z 463c60d6ebf3658e4a29b2b71d7b17dd
+Z d4cd9fd543e406f0ec30b86742c8ca7d

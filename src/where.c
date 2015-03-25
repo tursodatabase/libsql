@@ -4310,6 +4310,9 @@ static void whereInfoFree(sqlite3 *db, WhereInfo *pWInfo){
       pWInfo->pLoops = p->pNextLoop;
       whereLoopDelete(db, p);
     }
+    if( pWInfo->bShortcut ){
+      whereLoopClear(db, pWInfo->a[0].pWLoop);
+    }
     sqlite3DbFree(db, pWInfo);
   }
 }
@@ -5560,7 +5563,6 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
 
   /* Loop over the tables in the join, from left to right */
   pNew = pBuilder->pNew;
-  whereLoopInit(pNew);
   for(iTab=0, pItem=pTabList->a; iTab<nTabList; iTab++, pItem++){
     pNew->iTab = iTab;
     pNew->maskSelf = getMask(&pWInfo->sMaskSet, pItem->iCursor);
@@ -6276,7 +6278,7 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
 ** no-frills query planner.  Return zero if this query needs the 
 ** general-purpose query planner.
 */
-static int whereShortCut(WhereLoopBuilder *pBuilder){
+static int whereShortCut(sqlite3 *db, WhereLoopBuilder *pBuilder){
   WhereInfo *pWInfo;
   struct SrcList_item *pItem;
   WhereClause *pWC;
@@ -6311,11 +6313,14 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
     for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
       u32 mask = WO_EQ;
       assert( pLoop->aLTermSpace==pLoop->aLTerm );
+      if( HasRowid(pTab)==0 && IsPrimaryKeyIndex(pIdx) ){
+        mask |= WO_IS;
+        if( whereLoopResize(db, pLoop, pIdx->nKeyCol) ) return 1;
+      }else
       if( !IsUniqueIndex(pIdx)
        || pIdx->pPartIdxWhere!=0 
        || pIdx->nKeyCol>ArraySize(pLoop->aLTermSpace) 
       ) continue;
-      if( HasRowid(pTab)==0 && IsPrimaryKeyIndex(pIdx) ) mask |= WO_IS;
       for(j=0; j<pIdx->nKeyCol; j++){
         pTerm = findTerm(pWC, iCur, pIdx->aiColumn[j], 0, mask, pIdx);
         if( pTerm==0 ) break;
@@ -6347,6 +6352,7 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
 #ifdef SQLITE_DEBUG
     pLoop->cId = '0';
 #endif
+    pWInfo->bShortcut = 1;
     return 1;
   }
   return 0;
@@ -6617,7 +6623,7 @@ WhereInfo *sqlite3WhereBegin(
   }
 #endif
 
-  if( nTabList!=1 || whereShortCut(&sWLB)==0 ){
+  if( nTabList!=1 || whereShortCut(db, &sWLB)==0 ){
     rc = whereLoopAddAll(&sWLB);
     if( rc ) goto whereBeginError;
   
