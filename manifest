@@ -1,5 +1,5 @@
-C Avoid\sleaving\sthe\smalloc\ssubsystem\sin\sa\spartially\sinitialized\sstate\sif\nthe\slow-level\sinitialization\scallback\sfails.
-D 2015-03-26T17:04:23.798
+C Revise\sWin32\slocking\stest\sto\saccount\sfor\srecent\slog\smessage\schanges.
+D 2015-03-26T18:24:26.716
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1181,7 +1181,7 @@ F test/whereK.test f8e3cf26a8513ecc7f514f54df9f0572c046c42b
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/wild001.test bca33f499866f04c24510d74baf1e578d4e44b1c
 F test/win32heap.test ea19770974795cff26e11575e12d422dbd16893c
-F test/win32lock.test 71642fa56e9b06e5cfffe6bad67cb8c1eb2c555a
+F test/win32lock.test fbf107c91d8f5512be5a5b87c4c42ab9fdd54972
 F test/win32longpath.test 169c75a3b2e43481f4a62122510210c67b08f26d
 F test/with1.test 9df5cd8a62148b3d9ef8597aea563e3863018bcd
 F test/with2.test ee227a663586aa09771cafd4fa269c5217eaf775
@@ -1247,7 +1247,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b5da0d93cd1a3c0917399af3775a32327b883c8e
-R 9e8f7450055b4cee99317e6c8db6583a
-U drh
-Z af5a15dd737e6e7d08dff92682723060
+P 3e872011ff5e27738c282f46d2b5803d94fe4b76
+R 72196f1f01590aeab1e66e07214515fd
+U mistachkin
+Z 13c90271975eca10437167897808ec14
