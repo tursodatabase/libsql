@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\scompiler\swarning\sin\sFTS3.
-D 2015-03-26T14:29:51.209
+C Provide\ssource\scode\sline\snumbers\sfor\serrors\sin\sthe\sWindows\sVFS\sgenerated\nby\sthe\swinLogIoerr()\sroutine.
+D 2015-03-26T15:27:32.905
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -215,7 +215,7 @@ F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c a4dadbc2da41599e99093e91e276c38c17a73b89
-F src/os_win.c 8223e7db5b7c4a81d8b161098ac3959400434cdb
+F src/os_win.c f65255fdc30c90bab195989776797e98dc89d709
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 4120a49ecd37697e28f5ed807f470b9c0b88410c
 F src/pager.h c3476e7c89cdf1c6914e50a11f3714e30b4e0a77
@@ -1247,7 +1247,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fb076b28c36975ff2e41440f22fe5de115c195da
-R 8441601541e00ddcb253d7949a1f1256
+P 1688f60c08cc9270948402d98a2333382aa32681
+R 24f2e5bf8513d160bb9262017e93ddbd
 U drh
-Z efb1de4d37ca897d2a6769bd7d529518
+Z d3e192564f0add8f7dcb502142bd9b66

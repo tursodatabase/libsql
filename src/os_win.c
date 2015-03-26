@@ -1966,11 +1966,11 @@ static int winRetryIoerr(int *pnRetry, DWORD *pError){
 /*
 ** Log a I/O error retry episode.
 */
-static void winLogIoerr(int nRetry){
+static void winLogIoerr(int nRetry, int lineno){
   if( nRetry ){
     sqlite3_log(SQLITE_IOERR,
-      "delayed %dms for lock/sharing conflict",
-      winIoerrRetryDelay*nRetry*(nRetry+1)/2
+      "delayed %dms for lock/sharing conflict at line %d",
+      winIoerrRetryDelay*nRetry*(nRetry+1)/2, lineno
     );
   }
 }
@@ -2548,7 +2548,7 @@ static int winRead(
     return winLogError(SQLITE_IOERR_READ, pFile->lastErrno,
                        "winRead", pFile->zPath);
   }
-  winLogIoerr(nRetry);
+  winLogIoerr(nRetry, __LINE__);
   if( nRead<(DWORD)amt ){
     /* Unread parts of the buffer must be zero-filled */
     memset(&((char*)pBuf)[nRead], 0, amt-nRead);
@@ -2659,7 +2659,7 @@ static int winWrite(
     return winLogError(SQLITE_IOERR_WRITE, pFile->lastErrno,
                        "winWrite2", pFile->zPath);
   }else{
-    winLogIoerr(nRetry);
+    winLogIoerr(nRetry, __LINE__);
   }
   OSTRACE(("WRITE file=%p, rc=SQLITE_OK\n", pFile->h));
   return SQLITE_OK;
@@ -4752,7 +4752,7 @@ static int winOpen(
     }
   }
 #endif
-  winLogIoerr(cnt);
+  winLogIoerr(cnt, __LINE__);
 
   OSTRACE(("OPEN file=%p, name=%s, access=%lx, rc=%s\n", h, zUtf8Name,
            dwDesiredAccess, (h==INVALID_HANDLE_VALUE) ? "failed" : "ok"));
@@ -4936,7 +4936,7 @@ static int winDelete(
   if( rc && rc!=SQLITE_IOERR_DELETE_NOENT ){
     rc = winLogError(SQLITE_IOERR_DELETE, lastErrno, "winDelete", zFilename);
   }else{
-    winLogIoerr(cnt);
+    winLogIoerr(cnt, __LINE__);
   }
   sqlite3_free(zConverted);
   OSTRACE(("DELETE name=%s, rc=%s\n", zFilename, sqlite3ErrName(rc)));
@@ -4986,7 +4986,7 @@ static int winAccess(
         attr = sAttrData.dwFileAttributes;
       }
     }else{
-      winLogIoerr(cnt);
+      winLogIoerr(cnt, __LINE__);
       if( lastErrno!=ERROR_FILE_NOT_FOUND && lastErrno!=ERROR_PATH_NOT_FOUND ){
         sqlite3_free(zConverted);
         return winLogError(SQLITE_IOERR_ACCESS, lastErrno, "winAccess",
