@@ -1,3 +1,7 @@
+# Version 0.0.13 (2015-03-26)
+
+* Updates to track rustc nightly.
+
 # Version 0.0.12 (2015-03-24)
 
 * Updates to track rustc stabilization.

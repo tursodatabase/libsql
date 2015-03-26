@@ -52,7 +52,7 @@
 #![cfg_attr(test, feature(test))]
 
 extern crate libc;
-extern crate "libsqlite3-sys" as ffi;
+extern crate libsqlite3_sys as ffi;
 #[macro_use] extern crate bitflags;
 
 use std::mem;
@@ -811,7 +811,7 @@ impl<'stmt> SqliteRow<'stmt> {
 
 #[cfg(test)]
 mod test {
-    extern crate "libsqlite3-sys" as ffi;
+    extern crate libsqlite3_sys as ffi;
     use super::*;
 
     fn checked_memory_handle() -> SqliteConnection {
