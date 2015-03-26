@@ -298,6 +298,7 @@ struct SortSubtask {
   UnpackedRecord *pUnpacked;      /* Space to unpack a record */
   SorterList list;                /* List for thread to write to a PMA */
   int nPMA;                       /* Number of PMAs currently in file */
+  RecordCompare xCompare;         /* Compare function to use */
   SorterFile file;                /* Temp file for level-0 PMAs */
   SorterFile file2;               /* Space for other PMAs */
 };
@@ -328,8 +329,12 @@ struct VdbeSorter {
   u8 bUseThreads;                 /* True to use background threads */
   u8 iPrev;                       /* Previous thread used to flush PMA */
   u8 nTask;                       /* Size of aTask[] array */
+  u8 typeMask;
   SortSubtask aTask[1];           /* One or more subtasks */
 };
+
+#define SORTER_TYPE_INTEGER 0x01
+#define SORTER_TYPE_TEXT    0x02
 
 /*
 ** An instance of the following object is used to read records out of a
@@ -765,7 +770,7 @@ static int vdbeSorterCompare(
   if( pKey2 ){
     sqlite3VdbeRecordUnpack(pTask->pSorter->pKeyInfo, nKey2, pKey2, r2);
   }
-  return sqlite3VdbeRecordCompare(nKey1, pKey1, r2);
+  return pTask->xCompare(nKey1, pKey1, r2);
 }
 
 /*
@@ -835,9 +840,13 @@ int sqlite3VdbeSorterInit(
     pSorter->pKeyInfo = pKeyInfo = (KeyInfo*)((u8*)pSorter + sz);
     memcpy(pKeyInfo, pCsr->pKeyInfo, szKeyInfo);
     pKeyInfo->db = 0;
-    if( nField && nWorker==0 ) pKeyInfo->nField = nField;
+    if( nField && nWorker==0 ){
+      pKeyInfo->nXField += (pKeyInfo->nField - nField);
+      pKeyInfo->nField = nField;
+    }
     pSorter->pgsz = pgsz = sqlite3BtreeGetPageSize(db->aDb[0].pBt);
     pSorter->nTask = nWorker + 1;
+    pSorter->iPrev = nWorker-1;
     pSorter->bUseThreads = (pSorter->nTask>1);
     pSorter->db = db;
     for(i=0; i<pSorter->nTask; i++){
@@ -862,6 +871,10 @@ int sqlite3VdbeSorterInit(
         pSorter->list.aMemory = (u8*)sqlite3Malloc(pgsz);
         if( !pSorter->list.aMemory ) rc = SQLITE_NOMEM;
       }
+    }
+
+    if( (pKeyInfo->nField+pKeyInfo->nXField)<13 && pKeyInfo->aColl[0]==0 ){
+      pSorter->typeMask = SORTER_TYPE_INTEGER | SORTER_TYPE_TEXT;
     }
   }
 
@@ -1182,6 +1195,13 @@ static int vdbeSortAllocUnpacked(SortSubtask *pTask){
     if( pFree==0 ) return SQLITE_NOMEM;
     pTask->pUnpacked->nField = pTask->pSorter->pKeyInfo->nField;
     pTask->pUnpacked->errCode = 0;
+    if( pTask->pSorter->pKeyInfo->aSortOrder[0] ){
+      pTask->pUnpacked->r1 = 1;
+      pTask->pUnpacked->r2 = -1;
+    }else{
+      pTask->pUnpacked->r1 = -1;
+      pTask->pUnpacked->r2 = 1;
+    }
   }
   return SQLITE_OK;
 }
@@ -1235,12 +1255,20 @@ static int vdbeSorterSort(SortSubtask *pTask, SorterList *pList){
   rc = vdbeSortAllocUnpacked(pTask);
   if( rc!=SQLITE_OK ) return rc;
 
+  p = pList->pList;
+  if( pTask->pSorter->typeMask==0 ){
+    pTask->xCompare = sqlite3VdbeRecordCompare;
+  }else{
+    UnpackedRecord *pRec = pTask->pUnpacked;
+    sqlite3VdbeRecordUnpack(pTask->pSorter->pKeyInfo, p->nVal, SRVAL(p), pRec);
+    pTask->xCompare = sqlite3VdbeFindCompare(pRec);
+  }
+
   aSlot = (SorterRecord **)sqlite3MallocZero(64 * sizeof(SorterRecord *));
   if( !aSlot ){
     return SQLITE_NOMEM;
   }
 
-  p = pList->pList;
   while( p ){
     SorterRecord *pNext;
     if( pList->aMemory ){
@@ -1602,6 +1630,16 @@ int sqlite3VdbeSorterWrite(
   int bFlush;                     /* True to flush contents of memory to PMA */
   int nReq;                       /* Bytes of memory required */
   int nPMA;                       /* Bytes of PMA space required */
+  int t;                          /* serial type of first record field */
+
+  getVarint32((const u8*)&pVal->z[1], t);
+  if( t>0 && t<10 && t!=7 ){
+    pSorter->typeMask &= SORTER_TYPE_INTEGER;
+  }else if( t & 0x01 ){
+    pSorter->typeMask &= SORTER_TYPE_TEXT;
+  }else{
+    pSorter->typeMask = 0;
+  }
 
   assert( pSorter );
 
@@ -2288,6 +2326,13 @@ static int vdbeSorterSetupMerge(VdbeSorter *pSorter){
   MergeEngine *pMain = 0;
 #if SQLITE_MAX_WORKER_THREADS
   sqlite3 *db = pTask0->pSorter->db;
+  RecordCompare xCompare = (pSorter->typeMask==0 ? 
+      sqlite3VdbeRecordCompare : pSorter->aTask[0].xCompare
+  );
+  int i;
+  for(i=0; i<pSorter->nTask; i++){
+    pSorter->aTask[i].xCompare = xCompare;
+  }
 #endif
 
   rc = vdbeSorterMergeTreeBuild(pSorter, &pMain);

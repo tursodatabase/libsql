@@ -63,7 +63,7 @@ close $in
 # Set up patterns for recognizing API declarations.
 #
 set varpattern {^[a-zA-Z][a-zA-Z_0-9 *]+sqlite3_[_a-zA-Z0-9]+(\[|;| =)}
-set declpattern {^ *[a-zA-Z][a-zA-Z_0-9 ]+ \**sqlite3_[_a-zA-Z0-9]+\(}
+set declpattern {^ *([a-zA-Z][a-zA-Z_0-9 ]+ \**)(sqlite3_[_a-zA-Z0-9]+)(\(.*)$}
 
 # Force the output to use unix line endings, even on Windows.
 fconfigure stdout -translation lf
@@ -72,6 +72,19 @@ set filelist [subst {
   $TOP/src/sqlite.h.in
   $TOP/ext/rtree/sqlite3rtree.h
 }]
+
+# These are the functions that accept a variable number of arguments.  They
+# always need to use the "cdecl" calling convention even when another calling
+# convention (e.g. "stcall") is being used for the rest of the library.
+set cdecllist {
+  sqlite3_config
+  sqlite3_db_config
+  sqlite3_log
+  sqlite3_mprintf
+  sqlite3_snprintf
+  sqlite3_test_control
+  sqlite3_vtab_config
+}
 
 # Process the source files.
 #
@@ -89,21 +102,23 @@ foreach file $filelist {
     regsub -- --VERS--           $line $zVersion line
     regsub -- --VERSION-NUMBER-- $line $nVersion line
     regsub -- --SOURCE-ID--      $line "$zDate $zUuid" line
-  
-    if {[regexp {define SQLITE_EXTERN extern} $line]} {
-      puts $line
-      puts [gets $in]
-      puts ""
-      puts "#ifndef SQLITE_API"
-      puts "# define SQLITE_API"
-      puts "#endif"
-      set line ""
-    }
-  
-    if {([regexp $varpattern $line] && ![regexp {^ *typedef} $line])
-     || ([regexp $declpattern $line])
-    } {
+
+    if {[regexp $varpattern $line] && ![regexp {^ *typedef} $line]} {
       set line "SQLITE_API $line"
+    } else {
+      if {[regexp $declpattern $line all rettype funcname rest]} {
+        set line SQLITE_API
+        append line " " [string trim $rettype]
+        if {[string index $rettype end] ne "*"} {
+          append line " "
+        }
+        if {[lsearch -exact $cdecllist $funcname] >= 0} {
+          append line SQLITE_CDECL
+        } else {
+          append line SQLITE_STDCALL
+        }
+        append line " " $funcname $rest
+      }
     }
     puts $line
   }
