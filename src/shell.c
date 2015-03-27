@@ -3803,9 +3803,9 @@ static int do_meta_command(char *zLine, ShellState *p){
                           azArg[2],
                           integerValue(azArg[3]),
                           integerValue(azArg[4]));
+            fprintf(p->out, "%d (0x%08x)\n", rc, rc);
           }else{
-            fprintf(stderr,"Usage: .testctrl initmode dbName onoff tnum\n");
-            rc = 1;
+            fprintf(stderr,"Usage: .testctrl imposter dbName onoff tnum\n");
           }
           break;
 
