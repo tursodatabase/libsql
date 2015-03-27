@@ -1,5 +1,5 @@
-C In\sthe\sMSVC\sMakefile,\smake\sthe\sDYNAMIC_SHELL\soption\swork\swithout\sUSE_STDCALL.
-D 2015-03-27T00:19:31.300
+C Using\sMSVC,\sget\sthe\ssqlite3IoTrace\svariable\sworking\swith\sthe\sUSE_STDCALL\sand/or\sDYNAMIC_SHELL\soptions.
+D 2015-03-27T00:21:52.785
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -195,7 +195,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
 F src/loadext.c 86bd4e2fccd520b748cba52492ab60c4a770f660
-F src/main.c 569d45ba9eb4fbdd631d53f440bcdb4a35ab1505
+F src/main.c 40e333960d53f7d50ee8ce09d40431c87ea653f2
 F src/malloc.c 6a370b83d54e4bbf6f94021221c2a311cff26a18
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c abe6ee469b6c5a35c7f22bfeb9c9bac664a1c987
@@ -231,11 +231,11 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c f4d79e31ffa5820c2e3d1740baa5e9b190425f2b
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 72ffb62e2879956302140e9f6e6ae88aee36b0e5
-F src/shell.c 3ae1e53878d2804fe77b8c8f1f6ca287a0e5d80e
+F src/shell.c f21e91ab78e7b681e5c3c8d7f7a5b92f5583ed7a
 F src/sqlite.h.in 278602140d49575e8708e643161f4263e428a02a
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
-F src/sqliteInt.h bedf15914c09bfb5fe3ec4e3f211a4a6fc42cd33
+F src/sqliteInt.h d02d2b85cb02a38bc442cf9302ec8209baf6771d
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c f266ad8a2892d659b74f0f50cb6a88b6e7c12179
 F src/table.c e7a09215315a978057fb42c640f890160dbcc45e
@@ -1247,7 +1247,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1bc76339e8542770bff7829a3dd346680950c0a5
-R 0d57eafd4468edd6e6285fb5978d1b4c
+P 25b46a9c7e03a84bee2ffddc6d7fd6ae280e9d7b
+R a3ab1f66556079c5bd7cf506cd3f9f92
 U mistachkin
-Z 9f68da42d0682346a204d1bd4bb0b359
+Z 0ec554b2258cca84ae33b3fc6f4637d7
