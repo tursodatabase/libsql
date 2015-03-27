@@ -1,9 +1,9 @@
-C Revise\sWin32\slocking\stest\sto\saccount\sfor\srecent\slog\smessage\schanges.
-D 2015-03-26T18:24:26.716
+C In\sthe\sMSVC\sMakefile,\smake\sthe\sDYNAMIC_SHELL\soption\swork\swithout\sUSE_STDCALL.
+D 2015-03-27T00:19:31.300
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 3481e2dd260968742c715542db178c2bdd5db99f
+F Makefile.msc 23e6eaa84569829c3e7f409513caa136e5bcaf2a
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md d58e3bebc0a4145e0f2a87994015fdb575a8e866
 F VERSION 319eb1ced4b4d17a67730f2b7b85f15c1346cb60
@@ -1247,7 +1247,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3e872011ff5e27738c282f46d2b5803d94fe4b76
-R 72196f1f01590aeab1e66e07214515fd
+P 1bc76339e8542770bff7829a3dd346680950c0a5
+R 0d57eafd4468edd6e6285fb5978d1b4c
 U mistachkin
-Z 13c90271975eca10437167897808ec14
+Z 9f68da42d0682346a204d1bd4bb0b359
