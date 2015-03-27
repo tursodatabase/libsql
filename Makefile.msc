@@ -331,7 +331,7 @@ SHELL_CCONV_OPTS =
 # These are additional compiler options used for the core library.
 #
 !IFNDEF CORE_COMPILE_OPTS
-!IF $(USE_STDCALL)!=0
+!IF $(DYNAMIC_SHELL)!=0
 CORE_COMPILE_OPTS = $(CORE_CCONV_OPTS) -DSQLITE_API=__declspec(dllexport)
 !ELSE
 CORE_COMPILE_OPTS = $(CORE_CCONV_OPTS)
@@ -342,7 +342,7 @@ CORE_COMPILE_OPTS = $(CORE_CCONV_OPTS)
 # when linking.
 #
 !IFNDEF CORE_LINK_DEP
-!IF $(USE_STDCALL)!=0
+!IF $(DYNAMIC_SHELL)!=0
 CORE_LINK_DEP =
 !ELSE
 CORE_LINK_DEP = sqlite3.def
@@ -352,7 +352,7 @@ CORE_LINK_DEP = sqlite3.def
 # These are additional linker options used for the core library.
 #
 !IFNDEF CORE_LINK_OPTS
-!IF $(USE_STDCALL)!=0
+!IF $(DYNAMIC_SHELL)!=0
 CORE_LINK_OPTS =
 !ELSE
 CORE_LINK_OPTS = /DEF:sqlite3.def
