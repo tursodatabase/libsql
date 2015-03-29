@@ -1,3 +1,7 @@
+# Version 0.0.14
+
+* Remove unneeded features (also involves switching to `libc` crate).
+
 # Version 0.0.13 (2015-03-26)
 
 * Updates to track rustc nightly.

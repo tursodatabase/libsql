@@ -48,7 +48,7 @@
 //!     }
 //! }
 //! ```
-#![feature(unsafe_destructor, libc)]
+#![feature(unsafe_destructor)]
 #![cfg_attr(test, feature(test))]
 
 extern crate libc;
