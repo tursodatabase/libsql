@@ -48,7 +48,7 @@
 //!     }
 //! }
 //! ```
-#![feature(unsafe_destructor)]
+#![feature(unsafe_destructor, unique)]
 #![cfg_attr(test, feature(test))]
 
 extern crate libc;
@@ -56,7 +56,7 @@ extern crate libsqlite3_sys as ffi;
 #[macro_use] extern crate bitflags;
 
 use std::mem;
-use std::ptr;
+use std::ptr::{self, Unique};
 use std::fmt;
 use std::path::{Path};
 use std::error;
@@ -419,7 +419,7 @@ impl fmt::Debug for SqliteConnection {
 }
 
 struct InnerSqliteConnection {
-    db: *mut ffi::Struct_sqlite3,
+    db: Unique<ffi::Struct_sqlite3>,
 }
 
 bitflags! {
@@ -463,15 +463,19 @@ impl InnerSqliteConnection {
                 ffi::sqlite3_close(db);
                 return Err(e);
             }
-            Ok(InnerSqliteConnection{ db: db })
+            Ok(InnerSqliteConnection{ db: Unique::new(db) })
         }
+    }
+
+    fn db(&self) -> *mut ffi::Struct_sqlite3 {
+        unsafe {self.db.get() as *const _ as *mut _}
     }
 
     fn decode_result(&mut self, code: c_int) -> SqliteResult<()> {
         if code == ffi::SQLITE_OK {
             Ok(())
         } else {
-            Err(SqliteError::from_handle(self.db, code))
+            Err(SqliteError::from_handle(self.db(), code))
         }
     }
 
@@ -486,16 +490,18 @@ impl InnerSqliteConnection {
     }
 
     fn close(&mut self) -> SqliteResult<()> {
-        let r = unsafe { ffi::sqlite3_close(self.db) };
-        self.db = ptr::null_mut();
-        self.decode_result(r)
+        unsafe {
+            let r = ffi::sqlite3_close(self.db());
+            self.db = Unique::new(ptr::null_mut());
+            self.decode_result(r)
+        }
     }
 
     fn execute_batch(&mut self, sql: &str) -> SqliteResult<()> {
         let c_sql = try!(str_to_cstring(sql));
         unsafe {
             let mut errmsg: *mut c_char = mem::uninitialized();
-            let r = ffi::sqlite3_exec(self.db, c_sql.as_ptr(), None, ptr::null_mut(), &mut errmsg);
+            let r = ffi::sqlite3_exec(self.db(), c_sql.as_ptr(), None, ptr::null_mut(), &mut errmsg);
             self.decode_result_with_errmsg(r, errmsg)
         }
     }
@@ -523,7 +529,7 @@ impl InnerSqliteConnection {
 
     fn last_insert_rowid(&self) -> i64 {
         unsafe {
-            ffi::sqlite3_last_insert_rowid(self.db)
+            ffi::sqlite3_last_insert_rowid(self.db())
         }
     }
 
@@ -534,7 +540,7 @@ impl InnerSqliteConnection {
         let c_sql = try!(str_to_cstring(sql));
         let r = unsafe {
             let len_with_nul = (sql.len() + 1) as c_int;
-            ffi::sqlite3_prepare_v2(self.db, c_sql.as_ptr(), len_with_nul, &mut c_stmt,
+            ffi::sqlite3_prepare_v2(self.db(), c_sql.as_ptr(), len_with_nul, &mut c_stmt,
                                     ptr::null_mut())
         };
         self.decode_result(r).map(|_| {
@@ -543,7 +549,7 @@ impl InnerSqliteConnection {
     }
 
     fn changes(&mut self) -> c_int {
-        unsafe{ ffi::sqlite3_changes(self.db) }
+        unsafe{ ffi::sqlite3_changes(self.db()) }
     }
 }
 
@@ -813,6 +819,14 @@ impl<'stmt> SqliteRow<'stmt> {
 mod test {
     extern crate libsqlite3_sys as ffi;
     use super::*;
+
+    // this function is never called, but is still type checked; in
+    // particular, calls with specific instantiations will require
+    // that those types are `Send`.
+    #[allow(dead_code, unconditional_recursion)]
+    fn ensure_send<T: Send>() {
+        ensure_send::<SqliteConnection>();
+    }
 
     fn checked_memory_handle() -> SqliteConnection {
         SqliteConnection::open_in_memory().unwrap()
