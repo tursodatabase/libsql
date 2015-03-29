@@ -1,3 +1,7 @@
+# Version 0.0.15
+
+* Make SqliteConnection `Send`.
+
 # Version 0.0.14
 
 * Remove unneeded features (also involves switching to `libc` crate).
