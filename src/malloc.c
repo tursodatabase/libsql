@@ -162,6 +162,7 @@ void sqlite3_soft_heap_limit(int n){
 ** Initialize the memory allocation subsystem.
 */
 int sqlite3MallocInit(void){
+  int rc;
   if( sqlite3GlobalConfig.m.xMalloc==0 ){
     sqlite3MemSetDefault();
   }
@@ -197,7 +198,9 @@ int sqlite3MallocInit(void){
     sqlite3GlobalConfig.szPage = 0;
     sqlite3GlobalConfig.nPage = 0;
   }
-  return sqlite3GlobalConfig.m.xInit(sqlite3GlobalConfig.m.pAppData);
+  rc = sqlite3GlobalConfig.m.xInit(sqlite3GlobalConfig.m.pAppData);
+  if( rc!=SQLITE_OK ) memset(&mem0, 0, sizeof(mem0));
+  return rc;
 }
 
 /*

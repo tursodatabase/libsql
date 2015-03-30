@@ -17,13 +17,13 @@
 # After the "tsrc" directory has been created and populated, run
 # this script:
 #
-#      tclsh mksqlite3c.tcl
+#      tclsh mksqlite3c-noext.tcl
 #
 # The amalgamated SQLite code will be written into sqlite3.c
 #
 
 # Begin by reading the "sqlite3.h" header file.  Extract the version number
-# from in this file.  The versioon number is needed to generate the header
+# from in this file.  The version number is needed to generate the header
 # comment of the amalgamation.
 #
 if {[lsearch $argv --nostatic]>=0} {
@@ -80,9 +80,6 @@ if {$addstatic} {
   puts $out \
 {#ifndef SQLITE_PRIVATE
 # define SQLITE_PRIVATE static
-#endif
-#ifndef SQLITE_API
-# define SQLITE_API
 #endif}
 }
 
@@ -106,6 +103,7 @@ foreach hdr {
    pager.h
    parse.h
    pcache.h
+   pragma.h
    sqlite3ext.h
    sqlite3.h
    sqliteicu.h
@@ -113,11 +111,30 @@ foreach hdr {
    sqliteLimit.h
    vdbe.h
    vdbeInt.h
+   vxworks.h
    wal.h
+   whereInt.h
 } {
   set available_hdr($hdr) 1
 }
 set available_hdr(sqliteInt.h) 0
+
+# These headers should be copied into the amalgamation without modifying any
+# of their function declarations or definitions.
+set varonly_hdr(sqlite3.h) 1
+
+# These are the functions that accept a variable number of arguments.  They
+# always need to use the "cdecl" calling convention even when another calling
+# convention (e.g. "stcall") is being used for the rest of the library.
+set cdecllist {
+  sqlite3_config
+  sqlite3_db_config
+  sqlite3_log
+  sqlite3_mprintf
+  sqlite3_snprintf
+  sqlite3_test_control
+  sqlite3_vtab_config
+}
 
 # 78 stars used for comment formatting.
 set s78 \
@@ -135,21 +152,21 @@ proc section_comment {text} {
 
 # Read the source file named $filename and write it into the
 # sqlite3.c output file.  If any #include statements are seen,
-# process them approprately.
+# process them appropriately.
 #
 proc copy_file {filename} {
-  global seen_hdr available_hdr out addstatic linemacros
+  global seen_hdr available_hdr varonly_hdr cdecllist out addstatic linemacros
   set ln 0
   set tail [file tail $filename]
   section_comment "Begin file $tail"
   if {$linemacros} {puts $out "#line 1 \"$filename\""}
   set in [open $filename r]
   set varpattern {^[a-zA-Z][a-zA-Z_0-9 *]+(sqlite3[_a-zA-Z0-9]+)(\[|;| =)}
-  set declpattern {[a-zA-Z][a-zA-Z_0-9 ]+ \**(sqlite3[_a-zA-Z0-9]+)\(}
+  set declpattern {([a-zA-Z][a-zA-Z_0-9 ]+ \**)(sqlite3[_a-zA-Z0-9]+)(\(.*)}
   if {[file extension $filename]==".h"} {
     set declpattern " *$declpattern"
   }
-  set declpattern ^$declpattern
+  set declpattern ^$declpattern\$
   while {![eof $in]} {
     set line [gets $in]
     incr ln
@@ -165,42 +182,67 @@ proc copy_file {filename} {
           if {$linemacros} {puts $out "#line [expr {$ln+1}] \"$filename\""}
         }
       } elseif {![info exists seen_hdr($hdr)]} {
-        set seen_hdr($hdr) 1
+        if {![regexp {/\*\s+amalgamator:\s+dontcache\s+\*/} $line]} {
+          set seen_hdr($hdr) 1
+        }
+        puts $out $line
+      } elseif {[regexp {/\*\s+amalgamator:\s+keep\s+\*/} $line]} {
+        # This include file must be kept because there was a "keep"
+        # directive inside of a line comment.
         puts $out $line
       } else {
-        puts $out "/* $line */"
+        # Comment out the entire line, replacing any nested comment
+        # begin/end markers with the harmless substring "**".
+        puts $out "/* [string map [list /* ** */ **] $line] */"
       }
     } elseif {[regexp {^#ifdef __cplusplus} $line]} {
       puts $out "#if 0"
     } elseif {!$linemacros && [regexp {^#line} $line]} {
       # Skip #line directives.
     } elseif {$addstatic && ![regexp {^(static|typedef)} $line]} {
-      regsub {^SQLITE_API } $line {} line
-      if {[regexp $declpattern $line all funcname]} {
+      # Skip adding the SQLITE_PRIVATE or SQLITE_API keyword before
+      # functions if this header file does not need it.
+      if {![info exists varonly_hdr($tail)]
+       && [regexp $declpattern $line all rettype funcname rest]} {
+        regsub {^SQLITE_API } $line {} line
         # Add the SQLITE_PRIVATE or SQLITE_API keyword before functions.
         # so that linkage can be modified at compile-time.
         if {[regexp {^sqlite3_} $funcname]} {
-          puts $out "SQLITE_API $line"
+          set line SQLITE_API
+          append line " " [string trim $rettype]
+          if {[string index $rettype end] ne "*"} {
+            append line " "
+          }
+          if {[lsearch -exact $cdecllist $funcname] >= 0} {
+            append line SQLITE_CDECL
+          } else {
+            append line SQLITE_STDCALL
+          }
+          append line " " $funcname $rest
+          puts $out $line
         } else {
           puts $out "SQLITE_PRIVATE $line"
         }
       } elseif {[regexp $varpattern $line all varname]} {
-        # Add the SQLITE_PRIVATE before variable declarations or
-        # definitions for internal use
-        if {![regexp {^sqlite3_} $varname]} {
-          regsub {^extern } $line {} line
-          puts $out "SQLITE_PRIVATE $line"
-        } else {
-          if {[regexp {const char sqlite3_version\[\];} $line]} {
-            set line {const char sqlite3_version[] = SQLITE_VERSION;}
+          # Add the SQLITE_PRIVATE before variable declarations or
+          # definitions for internal use
+          regsub {^SQLITE_API } $line {} line
+          if {![regexp {^sqlite3_} $varname]} {
+            regsub {^extern } $line {} line
+            puts $out "SQLITE_PRIVATE $line"
+          } else {
+            if {[regexp {const char sqlite3_version\[\];} $line]} {
+              set line {const char sqlite3_version[] = SQLITE_VERSION;}
+            }
+            regsub {^SQLITE_EXTERN } $line {} line
+            puts $out "SQLITE_API $line"
           }
-          regsub {^SQLITE_EXTERN } $line {} line
-          puts $out "SQLITE_API $line"
-        }
       } elseif {[regexp {^(SQLITE_EXTERN )?void \(\*sqlite3IoTrace\)} $line]} {
+        regsub {^SQLITE_API } $line {} line
         regsub {^SQLITE_EXTERN } $line {} line
-        puts $out "SQLITE_PRIVATE $line"
+        puts $out $line
       } elseif {[regexp {^void \(\*sqlite3Os} $line]} {
+        regsub {^SQLITE_API } $line {} line
         puts $out "SQLITE_PRIVATE $line"
       } else {
         puts $out $line
