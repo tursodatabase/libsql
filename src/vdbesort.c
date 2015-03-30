@@ -1305,13 +1305,6 @@ static int vdbeSortAllocUnpacked(SortSubtask *pTask){
     if( pFree==0 ) return SQLITE_NOMEM;
     pTask->pUnpacked->nField = pTask->pSorter->pKeyInfo->nField;
     pTask->pUnpacked->errCode = 0;
-    if( pTask->pSorter->pKeyInfo->aSortOrder[0] ){
-      pTask->pUnpacked->r1 = 1;
-      pTask->pUnpacked->r2 = -1;
-    }else{
-      pTask->pUnpacked->r1 = -1;
-      pTask->pUnpacked->r2 = 1;
-    }
   }
   return SQLITE_OK;
 }
