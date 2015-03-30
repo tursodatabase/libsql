@@ -1,5 +1,5 @@
-C Remove\ssome\sunnecessary\scode\sfrom\svdbesort.c.
-D 2015-03-30T09:58:38.613
+C Improve\sperformance\sof\smulti-field\ssorts\swhere\sthe\sfirst\sfield\shas\sa\slow\scardinality.
+D 2015-03-30T12:06:26.995
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -294,13 +294,13 @@ F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c 98a7627ca48ad3265b6940915a1d08355eb3fc7e
 F src/vacuum.c 9460b9de7b2d4e34b0d374894aa6c8a0632be8ec
 F src/vdbe.c bbfede5a8a6908b3ddcd55fdb0b2301288dd4754
-F src/vdbe.h 6fc69d9c5e146302c56e163cb4b31d1ee64a18c3
+F src/vdbe.h 7e538ecf47dccb307ea2d087c3ddc2dd8d70e79d
 F src/vdbeInt.h 9cbaa84f53ddd2d09a0cf61a94337a3a035d08a0
 F src/vdbeapi.c 583d56b129dd27f12bed518270de9ebe521e6a75
-F src/vdbeaux.c 413dc496248ac18eb0c19e35e86bb1ffd47b8907
+F src/vdbeaux.c a20504ae52392459fa08402fda3f195f19d7c79d
 F src/vdbeblob.c 4f2e8e075d238392df98c5e03a64342465b03f90
 F src/vdbemem.c c0dc81285b7571b0a31c40f17846fe2397ec1cd9
-F src/vdbesort.c f283b28d9d1bbaf9c4467c1275ab2146ed868ec9
+F src/vdbesort.c 7b3684665ea51d642b0e664fa4d0b0d08d61d80c
 F src/vdbetrace.c 7e4222955e07dd707a2f360c0eb73452be1cb010
 F src/vtab.c 62d49237bd8f3be4863815a39387b0f9897fa5e1
 F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
@@ -1247,7 +1247,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 24fe9f25d64ee516633fed1ae7ebc21554aa69ca
-R 7cd5cef35d63d5a82a586382f49d8e50
+P b58191e91736b1d978db4127f22867dfe2302f7c
+R ce44a3d54ad53a02b61fed80311cecef
 U dan
-Z 51fc974a93f39baea754c6fb429251e1
+Z 8753c6822202b0898d8492105ecdb751

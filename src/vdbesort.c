@@ -750,6 +750,25 @@ static int vdbePmaReaderInit(
 }
 
 /*
+** A version of vdbeSorterCompare() that assumes that it has already been
+** determined that the first field of key1 is equal to the first field of 
+** key2.
+*/
+static int vdbeSorterCompareTail(
+  SortSubtask *pTask,             /* Subtask context (for pKeyInfo) */
+  int *pbKey2Cached,              /* True if pTask->pUnpacked is pKey2 */
+  const void *pKey1, int nKey1,   /* Left side of comparison */
+  const void *pKey2, int nKey2    /* Right side of comparison */
+){
+  UnpackedRecord *r2 = pTask->pUnpacked;
+  if( *pbKey2Cached==0 ){
+    sqlite3VdbeRecordUnpack(pTask->pSorter->pKeyInfo, nKey2, pKey2, r2);
+    *pbKey2Cached = 1;
+  }
+  return sqlite3VdbeRecordCompareWithSkip(nKey1, pKey1, r2, 1);
+}
+
+/*
 ** Compare key1 (buffer pKey1, size nKey1 bytes) with key2 (buffer pKey2, 
 ** size nKey2 bytes). Use (pTask->pKeyInfo) for the collation sequences
 ** used by the comparison. Return the result of the comparison.
@@ -805,7 +824,9 @@ static int vdbeSorterCompareText(
 
   if( res==0 ){
     if( pTask->pSorter->pKeyInfo->nField>1 ){
-      res = vdbeSorterCompare(pTask, pbKey2Cached, pKey1, nKey1, pKey2, nKey2);
+      res = vdbeSorterCompareTail(
+          pTask, pbKey2Cached, pKey1, nKey1, pKey2, nKey2
+      );
     }
   }else{
     if( pTask->pSorter->pKeyInfo->aSortOrder[0] ){
@@ -872,7 +893,9 @@ static int vdbeSorterCompareInt(
 
   if( res==0 ){
     if( pTask->pSorter->pKeyInfo->nField>1 ){
-      res = vdbeSorterCompare(pTask, pbKey2Cached, pKey1, nKey1, pKey2, nKey2);
+      res = vdbeSorterCompareTail(
+          pTask, pbKey2Cached, pKey1, nKey1, pKey2, nKey2
+      );
     }
   }else if( pTask->pSorter->pKeyInfo->aSortOrder[0] ){
     res = res * -1;
