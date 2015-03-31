@@ -1,5 +1,5 @@
-C Testing\senhancements\son\sWindows.
-D 2015-03-31T17:45:44.088
+C Path\shandling\sportability\senhancements\sfor\smptester.
+D 2015-03-31T17:58:13.315
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 00d12636df7a5b08af09116bcd6c7bfd49b8b3b4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -160,7 +160,7 @@ F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
 F mptest/crash02.subtest f4ef05adcd15d60e5d2bd654204f2c008b519df8
-F mptest/mptest.c 5360b7a1fd85e3b39daa03d98a81eaa4096a93f5
+F mptest/mptest.c d1e8ff5488bda5ff51407d6e86b4f6e8de7ff443
 F mptest/multiwrite01.test dab5c5f8f9534971efce679152c5146da265222d
 F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
@@ -1248,10 +1248,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5d533eee049e63b3700f5ef7c28c588afccde57a
-R 9184ed6faa90f29bd59d243ded83d06c
-T *branch * winTest
-T *sym-winTest *
-T -sym-trunk *
+P 9cc70eee2e365dd390210f436b893b9d80a19b04
+R be2bc38a728d3b9a8c390950640aab4e
 U mistachkin
-Z fd6cc612eddf1c1ec4736ef8e7fda9d3
+Z 01af2fb4ec1ab808dcf4522c94181a8f

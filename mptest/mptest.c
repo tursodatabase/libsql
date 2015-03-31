@@ -53,6 +53,13 @@
 # define GETPID getpid
 #endif
 
+/* The directory separator character(s) */
+#if defined(_WIN32)
+# define isDirSep(c) (((c) == '/') || ((c) == '\\'))
+#else
+# define isDirSep(c) ((c) == '/')
+#endif
+
 /* Mark a parameter as unused to suppress compiler warnings */
 #define UNUSED_PARAMETER(x)  (void)x
 
@@ -824,7 +831,7 @@ static void waitForClient(int iClient, int iTimeout, char *zErrPrefix){
 */
 static char *filenameTail(char *z){
   int i, j;
-  for(i=j=0; z[i]; i++) if( z[i]=='/' ) j = i+1;
+  for(i=j=0; z[i]; i++) if( isDirSep(z[i]) ) j = i+1;
   return z+j;
 }
 
@@ -1021,9 +1028,9 @@ static void runScript(
       char *zNewFile, *zNewScript;
       char *zToDel = 0;
       zNewFile = azArg[0];
-      if( zNewFile[0]!='/' ){
+      if( !isDirSep(zNewFile[0]) ){
         int k;
-        for(k=(int)strlen(zFilename)-1; k>=0 && zFilename[k]!='/'; k--){}
+        for(k=(int)strlen(zFilename)-1; k>=0 && !isDirSep(zFilename[k]); k--){}
         if( k>0 ){
           zNewFile = zToDel = sqlite3_mprintf("%.*s/%s", k,zFilename,zNewFile);
         }
@@ -1231,7 +1238,7 @@ static void usage(const char *argv0){
   int i;
   const char *zTail = argv0;
   for(i=0; argv0[i]; i++){
-    if( argv0[i]=='/' ) zTail = argv0+i+1;
+    if( isDirSep(argv0[i]) ) zTail = argv0+i+1;
   }
   fprintf(stderr,"Usage: %s DATABASE ?OPTIONS? ?SCRIPT?\n", zTail);
   exit(1);
