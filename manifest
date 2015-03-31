@@ -1,5 +1,5 @@
-C Additional\slogging\sinformation\soutput\sby\smptester.
-D 2015-03-31T14:18:29.822
+C Fix\sthe\scorruptJ.test\scase\sso\sthat\sit\sworks\swith\sand\swithout\nSQLITE_SECURE_DELETE.
+D 2015-03-31T14:31:41.936
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -433,7 +433,7 @@ F test/corruptF.test be9fde98e4c93648f1ba52b74e5318edc8f59fe4
 F test/corruptG.test 1ab3bf97ee7bdba70e0ff3ba2320657df55d1804
 F test/corruptH.test 5dd4fa98c6c1ed33b178f9e8a48c4fdd3cfc9067
 F test/corruptI.test 221ad8b7f0a9ac6b80fc577e73b5ad8cdea31243
-F test/corruptJ.test 8f584eb97b88e7b160d03edfe2f814c64e56b4ac
+F test/corruptJ.test 9e29e7a81ee3b6ac50f77ea7a9e2f3fa03f32d91
 F test/cost.test 19d314526616ce4473eb4e4e450fcb94499ce318
 F test/count.test 42a251178e32f617eda33f76236a7f79825a50b5
 F test/coveridxscan.test cdb47d01acc4a634a34fd25abe85189e0d0f1e62
@@ -1248,7 +1248,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1e814e0bd116ad5a05ab9f0ebed7e21b23ed0681
-R bfc4505f6e856cbd418142922d77fee6
+P 0cbbf6e4571ffef102c0e515f29166f2f2022126
+R 855ca787fb7bd1ab9ab088557a4f09bc
 U drh
-Z 6eef793d1a736aa92f954ef3555b0150
+Z 3d4ee993730e7b33e6803497c50a3fdc
