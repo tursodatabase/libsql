@@ -3415,7 +3415,7 @@ struct winShmNode {
   int nRef;                  /* Number of winShm objects pointing to this */
   winShm *pFirst;            /* All winShm objects pointing to this */
   winShmNode *pNext;         /* Next in list of all winShmNode objects */
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(SQLITE_WIN32_HAS_OS_TRACE)
   u8 nextShmId;              /* Next available winShm.id value */
 #endif
 };
@@ -3637,7 +3637,7 @@ static int winOpenSharedMemory(winFile *pDbFd){
 
   /* Make the new connection a child of the winShmNode */
   p->pShmNode = pShmNode;
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(SQLITE_WIN32_HAS_OS_TRACE)
   p->id = pShmNode->nextShmId++;
 #endif
   pShmNode->nRef++;

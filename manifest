@@ -1,5 +1,5 @@
-C Build\sfixes\sfor\sOSTRACE\senhancements.
-D 2015-03-31T19:06:46.659
+C Set\sthe\swinShm.id\smember\swhen\sit\sis\sgoing\sto\sbe\straced.
+D 2015-03-31T19:17:44.993
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 00d12636df7a5b08af09116bcd6c7bfd49b8b3b4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -215,7 +215,7 @@ F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h 4fccbf81ef328c9ac231211de379e753b1365313
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c a4dadbc2da41599e99093e91e276c38c17a73b89
-F src/os_win.c 6c4752b58c0b795ef9c2ea667b7ea0966937a796
+F src/os_win.c 87ae49ff973c3e01fff4cd002e1bbc135a63107e
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 4120a49ecd37697e28f5ed807f470b9c0b88410c
 F src/pager.h c3476e7c89cdf1c6914e50a11f3714e30b4e0a77
@@ -1248,7 +1248,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c8694657bdc5d0917d8fe78fd3937d8e9cd9d04b
-R 7fff6ef631e32e4acabaf29648c7d2ea
+P f79c236fc537ecee1ea7448a3e3216a2415561a1
+R c0e6ffe8bce6c29d87c8228cd21b6e7e
 U mistachkin
-Z 26798f0cab8ceff11e56a6de19170f96
+Z c7f453d4a005311b5f674545bd39b5a8
