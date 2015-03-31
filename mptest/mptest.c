@@ -1327,6 +1327,17 @@ int SQLITE_CDECL main(int argc, char **argv){
   }
   rc = sqlite3_open_v2(g.zDbFile, &g.db, openFlags, g.zVfs);
   if( rc ) fatalError("cannot open [%s]", g.zDbFile);
+  if( zJMode ){
+#if defined(_WIN32)
+    if( sqlite3_stricmp(zJMode,"persist")==0
+     || sqlite3_stricmp(zJMode,"truncate")==0
+    ){
+      printf("Changing journal mode to DELETE from %s", zJMode);
+      zJMode = "DELETE";
+    }
+#endif
+    runSql("PRAGMA journal_mode=%Q;", zJMode);
+  }
   sqlite3_enable_load_extension(g.db, 1);
   sqlite3_busy_handler(g.db, busyHandler, 0);
   sqlite3_create_function(g.db, "vfsname", 0, SQLITE_UTF8, 0,
@@ -1358,7 +1369,6 @@ int SQLITE_CDECL main(int argc, char **argv){
       fatalError("missing script filename");
     }
     if( n>1 ) unrecognizedArguments(argv[0], n, argv+2);
-    if( zJMode ) runSql("PRAGMA journal_mode=%Q;", zJMode);
     runSql(
       "DROP TABLE IF EXISTS task;\n"
       "DROP TABLE IF EXISTS counters;\n"
