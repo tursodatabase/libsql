@@ -1,5 +1,5 @@
-C Fix\sthe\scorruptJ.test\scase\sso\sthat\sit\sworks\swith\sand\swithout\nSQLITE_SECURE_DELETE.
-D 2015-03-31T14:31:41.936
+C Fix\sharmless\scompiler\swarnings\sin\slemon.c
+D 2015-03-31T15:15:48.726
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1206,7 +1206,7 @@ F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
-F tool/lemon.c 1864c4fe4a72b1bb28f1792b60504804fe82c5d2
+F tool/lemon.c ae5f61e3b164d35955777b20d6febcbaf0950702
 F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
 F tool/logest.c eef612f8adf4d0993dafed0416064cf50d5d33c6
 F tool/mkautoconfamal.sh d1a2da0e15b2ed33d60af35c7e9d483f13a8eb9f
@@ -1248,7 +1248,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0cbbf6e4571ffef102c0e515f29166f2f2022126
-R 855ca787fb7bd1ab9ab088557a4f09bc
+P 0c0ecfd68573957553b966229a67bfcd10ce4b99
+R f295c13e7a998be1a5a78140716d3389
 U drh
-Z 3d4ee993730e7b33e6803497c50a3fdc
+Z 1c953be9eacdcbbbb1c665e7b3932b7e
