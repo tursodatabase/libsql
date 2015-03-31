@@ -1,5 +1,5 @@
-C Fix\sconfigure.ac\sand\sMakefile.in\sso\sthat\sthey\sgenerate\spkgIndex.tcl\scorrectly.
-D 2015-03-31T17:01:52.572
+C Change\sthe\ssqlite3_log()\smessage\sgenerated\son\sa\sretry\safter\sdelay\sin\sos_win\nto\sbe\san\sSQLITE_NOTICE\sinstead\sof\sSQLITE_IOERR.
+D 2015-03-31T17:32:06.290
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 00d12636df7a5b08af09116bcd6c7bfd49b8b3b4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -215,7 +215,7 @@ F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c a4dadbc2da41599e99093e91e276c38c17a73b89
-F src/os_win.c 865ba15878eded98bb29a97ac898f2a799dc481a
+F src/os_win.c 23c2d1fab9b44e728e7d3ac0c82d5ac2a96de290
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 4120a49ecd37697e28f5ed807f470b9c0b88410c
 F src/pager.h c3476e7c89cdf1c6914e50a11f3714e30b4e0a77
@@ -1248,7 +1248,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7244ea59ede8aa2c7d1dc2c85268e12ddd452e27
-R 975c1f85d87faa80fd42aac5b24ed9ba
+P 3deff25249c59b7fc1b6eb65dda39736955679c6
+R 5464b14f38d360ccc6fa7360d378f7df
 U drh
-Z 016bf5cf61fe366d051895307d7b2ae3
+Z f2a2061ec6a7f778916e1fed0b96d2ff
