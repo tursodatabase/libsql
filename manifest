@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sin\slemon.c
-D 2015-03-31T15:15:48.726
+C Handle\svery\slarge\sURI\spathnames\sfor\sin-memory\sshared-cache\sdatabases.
+D 2015-03-31T16:33:08.816
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -173,7 +173,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c ff743689c4d6c5cb55ad42ed9d174b2b3e71f1e3
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c e565971caa0265d3cabc8b15d7017899a7814051
+F src/btree.c 525f19f01d5976dbc12e83e7339e41488de79183
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 2bfefc01875d8da066504c233ec259fcb3b2ef72
 F src/build.c 0419bba592c22f6d00e6d57a2ca7136720d02c1a
@@ -340,7 +340,7 @@ F test/async3.test d73a062002376d7edc1fe3edff493edbec1fc2f7
 F test/async4.test 1787e3952128aa10238bf39945126de7ca23685a
 F test/async5.test 383ab533fdb9f7ad228cc99ee66e1acb34cc0dc0
 F test/atof1.test 08a61df9365c341f334a65f4348897312d8f3db7
-F test/attach.test 0d112b7713611fdf0340260192749737135fda5f
+F test/attach.test 437107943f14d131cf5efc2ae5305a94d7cb1d58
 F test/attach2.test 0ec5defa340363de6cd50fd595046465e9aaba2d
 F test/attach3.test 359eb65d00102cdfcef6fa4e81dc1648f8f80b27
 F test/attach4.test 53bf502f17647c6d6c5add46dda6bac8b6f4665c
@@ -1248,7 +1248,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0c0ecfd68573957553b966229a67bfcd10ce4b99
-R f295c13e7a998be1a5a78140716d3389
+P bbe7dcda689a25860f2104804f00ba0a720c1372
+R 6f0e4814d1e4f882b35ba2b9dccc56cc
 U drh
-Z 1c953be9eacdcbbbb1c665e7b3932b7e
+Z d85481fb8858c2d74f205f2246e5afa6
