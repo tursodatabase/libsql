@@ -1,9 +1,9 @@
-C Handle\svery\slarge\sURI\spathnames\sfor\sin-memory\sshared-cache\sdatabases.
-D 2015-03-31T16:33:08.816
+C Minor\stweaks\sto\sthe\sMSVC\sMakefile.
+D 2015-03-31T16:42:16.959
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc d7e2bcf6634197e69628e632d441646a84bfdca8
+F Makefile.msc a8d817fa486d8c88dfbd19ae6a6567d9d350de39
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md d58e3bebc0a4145e0f2a87994015fdb575a8e866
 F VERSION 319eb1ced4b4d17a67730f2b7b85f15c1346cb60
@@ -1248,7 +1248,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P bbe7dcda689a25860f2104804f00ba0a720c1372
-R 6f0e4814d1e4f882b35ba2b9dccc56cc
-U drh
-Z d85481fb8858c2d74f205f2246e5afa6
+P 586a94e85bc13700a2093734711c1367fa814b8c
+R dda30a84a02345c3ad5a29c2256cdbe0
+U mistachkin
+Z 140263b8fa48f28f6823c13e70219b7f
