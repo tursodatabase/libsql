@@ -1,7 +1,7 @@
-C Minor\stweaks\sto\sthe\sMSVC\sMakefile.
-D 2015-03-31T16:42:16.959
+C Fix\sconfigure.ac\sand\sMakefile.in\sso\sthat\sthey\sgenerate\spkgIndex.tcl\scorrectly.
+D 2015-03-31T17:01:52.572
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
+F Makefile.in 00d12636df7a5b08af09116bcd6c7bfd49b8b3b4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc a8d817fa486d8c88dfbd19ae6a6567d9d350de39
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
@@ -38,8 +38,8 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 42b71ad3fe21c9e88fa59e8458ca1a6bc72eb0c0
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 613b220c2f2c7adcd50eb5ee4144ab581a150b47 x
-F configure.ac 6a8d145aea6d81f0b90013340780e43ed74fd5f4
+F configure 8b18c2378805a1d8aaca85d293671f450dd3c723 x
+F configure.ac 0b775d383c536bbaafc1e46dd3cbb81a7ea11aeb
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 334dbf6621b8fb8790297ec1abf3cfa4621709d1
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
@@ -1248,7 +1248,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 586a94e85bc13700a2093734711c1367fa814b8c
-R dda30a84a02345c3ad5a29c2256cdbe0
-U mistachkin
-Z 140263b8fa48f28f6823c13e70219b7f
+P 7244ea59ede8aa2c7d1dc2c85268e12ddd452e27
+R 975c1f85d87faa80fd42aac5b24ed9ba
+U drh
+Z 016bf5cf61fe366d051895307d7b2ae3
