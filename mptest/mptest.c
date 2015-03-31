@@ -1312,6 +1312,9 @@ int SQLITE_CDECL main(int argc, char **argv){
                      GETPID(), iClient);
   }else{
     if( g.iTrace>0 ){
+      printf("BEGIN: %s", argv[0]);
+      for(i=1; i<argc; i++) printf(" %s", argv[i]);
+      printf("\n");
       printf("With SQLite " SQLITE_VERSION " " SQLITE_SOURCE_ID "\n" );
       for(i=0; (zCOption = sqlite3_compileoption_get(i))!=0; i++){
         printf("-DSQLITE_%s\n", zCOption);
@@ -1409,6 +1412,9 @@ int SQLITE_CDECL main(int argc, char **argv){
   maybeClose(g.pErrLog);
   if( iClient==0 ){
     printf("Summary: %d errors out of %d tests\n", g.nError, g.nTest);
+    printf("END: %s", argv[0]);
+    for(i=1; i<argc; i++) printf(" %s", argv[i]);
+    printf("\n");
   }
   return g.nError>0;
 }

@@ -1,5 +1,5 @@
-C Add\sthe\s"mptest"\starget\sto\sMakefile.msc
-D 2015-03-31T13:46:13.387
+C Additional\slogging\sinformation\soutput\sby\smptester.
+D 2015-03-31T14:18:29.822
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -160,7 +160,7 @@ F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
 F mptest/crash02.subtest f4ef05adcd15d60e5d2bd654204f2c008b519df8
-F mptest/mptest.c 1e464f41f1bbc6578d6925043da56170f83aea96
+F mptest/mptest.c 4691e08e1fc114edd8e1875f88393718f70ba480
 F mptest/multiwrite01.test dab5c5f8f9534971efce679152c5146da265222d
 F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
@@ -1248,7 +1248,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 02e3c88fbf6abdcf3975fb0fb71972b0ab30da30
-R d91812f133db0a587c3c0ca8a4eb33d5
+P 1e814e0bd116ad5a05ab9f0ebed7e21b23ed0681
+R bfc4505f6e856cbd418142922d77fee6
 U drh
-Z 3c6ff9ce8b6355a815c81088cec6c2b3
+Z 6eef793d1a736aa92f954ef3555b0150
