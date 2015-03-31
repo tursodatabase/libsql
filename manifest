@@ -1,5 +1,5 @@
-C Path\sportability\senhancements\sfor\smptester.exe.
-D 2015-03-31T18:18:53.022
+C Build\sfixes\sfor\sOSTRACE\senhancements.
+D 2015-03-31T19:06:46.659
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 00d12636df7a5b08af09116bcd6c7bfd49b8b3b4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -195,7 +195,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
 F src/loadext.c 86bd4e2fccd520b748cba52492ab60c4a770f660
-F src/main.c 1cc847aae38c804427f155441c1b73c3f9144c9a
+F src/main.c cc3ac7793d38cb3e7e185edbc1f53ca311621a3a
 F src/malloc.c 6a370b83d54e4bbf6f94021221c2a311cff26a18
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c abe6ee469b6c5a35c7f22bfeb9c9bac664a1c987
@@ -212,10 +212,10 @@ F src/mutex_w32.c 61660ada28d8308ad190f444c2170c4f2a590c2f
 F src/notify.c 9711a7575036f0d3040ba61bc6e217f13a9888e7
 F src/os.c 8fd25588eeba74068d41102d26810e216999b6c8
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
-F src/os_common.h 75309c5996a3d201d59ccde946caef1651f206e2
+F src/os_common.h 4fccbf81ef328c9ac231211de379e753b1365313
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c a4dadbc2da41599e99093e91e276c38c17a73b89
-F src/os_win.c 23c2d1fab9b44e728e7d3ac0c82d5ac2a96de290
+F src/os_win.c 6c4752b58c0b795ef9c2ea667b7ea0966937a796
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 4120a49ecd37697e28f5ed807f470b9c0b88410c
 F src/pager.h c3476e7c89cdf1c6914e50a11f3714e30b4e0a77
@@ -226,7 +226,7 @@ F src/pcache1.c 69d137620a305f814398bd29a0c998038c0695e9
 F src/pragma.c ac4f3f856b4234e85f55b0f069698a4766011100
 F src/pragma.h 09c89bca58e9a44de2116cc8272b8d454657129f
 F src/prepare.c 173a5a499138451b2561614ecb87d78f9f4644b9
-F src/printf.c 8da9a2687a396daa19860f4dc90975d319304744
+F src/printf.c 8fff88d299f00e114e1a5afc90aa4c8744bf8877
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c f4d79e31ffa5820c2e3d1740baa5e9b190425f2b
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
@@ -235,7 +235,7 @@ F src/shell.c 84a1593bd86aaa14f4da8a8f9b16fbc239d262aa
 F src/sqlite.h.in 278602140d49575e8708e643161f4263e428a02a
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
-F src/sqliteInt.h b54a3815ab5a353aac0e6f94c02c51a065fa7fab
+F src/sqliteInt.h 75e86ef580cae23a36c4acfc2f664f528f8aee91
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c f266ad8a2892d659b74f0f50cb6a88b6e7c12179
 F src/table.c e7a09215315a978057fb42c640f890160dbcc45e
@@ -1248,8 +1248,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ea697e6d9ff1f4d77774589a02ba4a18feafbf03 da49634b331812fa4d6e33d72c9661aeab203ae8
-R 126147c160c4bad0e1b7fe3417e6316b
-T +closed da49634b331812fa4d6e33d72c9661aeab203ae8
-U drh
-Z 3bf817d5b936af30f76c04f3a5290142
+P c8694657bdc5d0917d8fe78fd3937d8e9cd9d04b
+R 7fff6ef631e32e4acabaf29648c7d2ea
+U mistachkin
+Z 26798f0cab8ceff11e56a6de19170f96
