@@ -1335,10 +1335,11 @@ int SQLITE_CDECL main(int argc, char **argv){
                           evalFunc, 0, 0);
   g.iTimeout = DEFAULT_TIMEOUT;
   if( g.bSqlTrace ) sqlite3_trace(g.db, sqlTraceCallback, 0);
-  if( !g.bSync ) trySql("PRAGMA synchronous=OFF");
   if( iClient>0 ){
     if( n>0 ) unrecognizedArguments(argv[0], n, argv+2);
     if( g.iTrace ) logMessage("start-client");
+    if( !g.bSync ) trySql("PRAGMA synchronous=OFF");
+    if( zJMode ) runSql("PRAGMA journal_mode=%Q;", zJMode);
     while(1){
       char *zTaskName = 0;
       rc = startScript(iClient, &zScript, &taskId, &zTaskName);
@@ -1358,6 +1359,7 @@ int SQLITE_CDECL main(int argc, char **argv){
       fatalError("missing script filename");
     }
     if( n>1 ) unrecognizedArguments(argv[0], n, argv+2);
+    if( !g.bSync ) trySql("PRAGMA synchronous=OFF");
     if( zJMode ) runSql("PRAGMA journal_mode=%Q;", zJMode);
     runSql(
       "DROP TABLE IF EXISTS task;\n"

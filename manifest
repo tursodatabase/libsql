@@ -1,9 +1,9 @@
-C Change\sthe\ssqlite3_log()\smessage\sgenerated\son\sa\sretry\safter\sdelay\sin\sos_win\nto\sbe\san\sSQLITE_NOTICE\sinstead\sof\sSQLITE_IOERR.
-D 2015-03-31T17:32:06.290
+C Testing\senhancements\son\sWindows.
+D 2015-03-31T17:45:44.088
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 00d12636df7a5b08af09116bcd6c7bfd49b8b3b4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc a8d817fa486d8c88dfbd19ae6a6567d9d350de39
+F Makefile.msc c3744ee851d76d2be0ff247f5a89a74c88f2ece2
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md d58e3bebc0a4145e0f2a87994015fdb575a8e866
 F VERSION 319eb1ced4b4d17a67730f2b7b85f15c1346cb60
@@ -160,7 +160,7 @@ F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
 F mptest/crash02.subtest f4ef05adcd15d60e5d2bd654204f2c008b519df8
-F mptest/mptest.c 4691e08e1fc114edd8e1875f88393718f70ba480
+F mptest/mptest.c 5360b7a1fd85e3b39daa03d98a81eaa4096a93f5
 F mptest/multiwrite01.test dab5c5f8f9534971efce679152c5146da265222d
 F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
@@ -195,7 +195,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
 F src/loadext.c 86bd4e2fccd520b748cba52492ab60c4a770f660
-F src/main.c 40e333960d53f7d50ee8ce09d40431c87ea653f2
+F src/main.c 1cc847aae38c804427f155441c1b73c3f9144c9a
 F src/malloc.c 6a370b83d54e4bbf6f94021221c2a311cff26a18
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c abe6ee469b6c5a35c7f22bfeb9c9bac664a1c987
@@ -212,7 +212,7 @@ F src/mutex_w32.c 61660ada28d8308ad190f444c2170c4f2a590c2f
 F src/notify.c 9711a7575036f0d3040ba61bc6e217f13a9888e7
 F src/os.c 8fd25588eeba74068d41102d26810e216999b6c8
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
-F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
+F src/os_common.h 75309c5996a3d201d59ccde946caef1651f206e2
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c a4dadbc2da41599e99093e91e276c38c17a73b89
 F src/os_win.c 23c2d1fab9b44e728e7d3ac0c82d5ac2a96de290
@@ -235,7 +235,7 @@ F src/shell.c 84a1593bd86aaa14f4da8a8f9b16fbc239d262aa
 F src/sqlite.h.in 278602140d49575e8708e643161f4263e428a02a
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
-F src/sqliteInt.h d02d2b85cb02a38bc442cf9302ec8209baf6771d
+F src/sqliteInt.h b54a3815ab5a353aac0e6f94c02c51a065fa7fab
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c f266ad8a2892d659b74f0f50cb6a88b6e7c12179
 F src/table.c e7a09215315a978057fb42c640f890160dbcc45e
@@ -1248,7 +1248,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3deff25249c59b7fc1b6eb65dda39736955679c6
-R 5464b14f38d360ccc6fa7360d378f7df
-U drh
-Z f2a2061ec6a7f778916e1fed0b96d2ff
+P 5d533eee049e63b3700f5ef7c28c588afccde57a
+R 9184ed6faa90f29bd59d243ded83d06c
+T *branch * winTest
+T *sym-winTest *
+T -sym-trunk *
+U mistachkin
+Z fd6cc612eddf1c1ec4736ef8e7fda9d3
