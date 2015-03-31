@@ -1,5 +1,5 @@
-C Add\sthe\s"mptest"\starget\sto\smain.mk.\s\sChange\sTRUNCATE\sand\sPERSIST\sto\sDELETE\nfor\smptest.c\son\sWindows\sbecause\sof\sproblems\strying\sto\sdelete\sthe\sjournal.
-D 2015-03-31T18:05:49.317
+C On\swindows,\sflush\sthe\smapping\sview\swhen\ssyncing\scontent\sto\sdisk.
+D 2015-03-31T19:40:05.313
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 00d12636df7a5b08af09116bcd6c7bfd49b8b3b4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -215,7 +215,7 @@ F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c a4dadbc2da41599e99093e91e276c38c17a73b89
-F src/os_win.c 23c2d1fab9b44e728e7d3ac0c82d5ac2a96de290
+F src/os_win.c 03d27be3a20048ef52a648d5f0a15f5edda9f2a3
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 4120a49ecd37697e28f5ed807f470b9c0b88410c
 F src/pager.h c3476e7c89cdf1c6914e50a11f3714e30b4e0a77
@@ -1248,7 +1248,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5d533eee049e63b3700f5ef7c28c588afccde57a
-R 9e646d8c9c851fc471bfbde27cfe2ec7
+P ea697e6d9ff1f4d77774589a02ba4a18feafbf03 45acf6a85150839d591316418dad59ae20ce3aa4
+R 00dcdcdf447a25afe74cb2a2ac195e0b
+T +closed 45acf6a85150839d591316418dad59ae20ce3aa4
 U drh
-Z 7401f8256f1a048a9f3296d27a2e41e1
+Z e131d4f6392434ebe038899ef79bd289
