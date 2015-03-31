@@ -1,9 +1,9 @@
-C Ensure\sthat\scomparison\soperators\sdo\snot\smess\sup\sthe\sMEM_Dyn\sflag\son\sregisters\nwhen\sreverting\saffinity\schanges.
-D 2015-03-31T11:42:23.599
+C Add\sthe\s"mptest"\starget\sto\sMakefile.msc
+D 2015-03-31T13:46:13.387
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 23e6eaa84569829c3e7f409513caa136e5bcaf2a
+F Makefile.msc d7e2bcf6634197e69628e632d441646a84bfdca8
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md d58e3bebc0a4145e0f2a87994015fdb575a8e866
 F VERSION 319eb1ced4b4d17a67730f2b7b85f15c1346cb60
@@ -1248,7 +1248,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 395bb3e677a6551b06ba96fc58c393132b93d1e8
-R 32fb3cc594bfc0fa1b6de17fb4714420
+P 02e3c88fbf6abdcf3975fb0fb71972b0ab30da30
+R d91812f133db0a587c3c0ca8a4eb33d5
 U drh
-Z 6c9b38c06aabdc797714a509c4f32228
+Z 3c6ff9ce8b6355a815c81088cec6c2b3
