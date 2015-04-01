@@ -74,7 +74,7 @@ do_test 2.2 {
 do_test 2.2b {
   hexio_write test.db [expr {9*1024+391}] 00000002
   sqlite3 db test.db
-  catchsql { DROP TABLE t1 }
-} {0 {}}
+  catchsql { PRAGMA secure_delete=ON; DROP TABLE t1; }
+} {1 {database disk image is malformed}}
 
 finish_test
