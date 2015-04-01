@@ -7980,28 +7980,29 @@ static int clearDatabasePage(
   int i;
   int hdr;
   u16 szCell;
-  u8 hasChildren;
 
   assert( sqlite3_mutex_held(pBt->mutex) );
   if( pgno>btreePagecount(pBt) ){
     return SQLITE_CORRUPT_BKPT;
   }
-
   rc = getAndInitPage(pBt, pgno, &pPage, 0);
   if( rc ) return rc;
-  hasChildren = !pPage->leaf;
-  pPage->leaf = 1;  /* Block looping if the database is corrupt */
+  if( pPage->bBusy ){
+    rc = SQLITE_CORRUPT_BKPT;
+    goto cleardatabasepage_out;
+  }
+  pPage->bBusy = 1;
   hdr = pPage->hdrOffset;
   for(i=0; i<pPage->nCell; i++){
     pCell = findCell(pPage, i);
-    if( hasChildren ){
+    if( !pPage->leaf ){
       rc = clearDatabasePage(pBt, get4byte(pCell), 1, pnChange);
       if( rc ) goto cleardatabasepage_out;
     }
     rc = clearCell(pPage, pCell, &szCell);
     if( rc ) goto cleardatabasepage_out;
   }
-  if( hasChildren ){
+  if( !pPage->leaf ){
     rc = clearDatabasePage(pBt, get4byte(&pPage->aData[hdr+8]), 1, pnChange);
     if( rc ) goto cleardatabasepage_out;
   }else if( pnChange ){
@@ -8015,6 +8016,7 @@ static int clearDatabasePage(
   }
 
 cleardatabasepage_out:
+  pPage->bBusy = 0;
   releasePage(pPage);
   return rc;
 }
