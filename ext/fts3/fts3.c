@@ -1108,7 +1108,7 @@ static int fts3InitVtab(
   const char **aCol;              /* Array of column names */
   sqlite3_tokenizer *pTokenizer = 0;        /* Tokenizer for this table */
 
-  int nIndex;                     /* Size of aIndex[] array */
+  int nIndex = 0;                 /* Size of aIndex[] array */
   struct Fts3Index *aIndex = 0;   /* Array of indexes for this table */
 
   /* The results of parsing supported FTS4 key=value options: */

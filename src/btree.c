@@ -1959,16 +1959,18 @@ int sqlite3BtreeOpen(
   */
   if( isTempDb==0 && (isMemdb==0 || (vfsFlags&SQLITE_OPEN_URI)!=0) ){
     if( vfsFlags & SQLITE_OPEN_SHAREDCACHE ){
+      int nFilename = sqlite3Strlen30(zFilename)+1;
       int nFullPathname = pVfs->mxPathname+1;
-      char *zFullPathname = sqlite3Malloc(nFullPathname);
+      char *zFullPathname = sqlite3Malloc(MAX(nFullPathname,nFilename));
       MUTEX_LOGIC( sqlite3_mutex *mutexShared; )
+
       p->sharable = 1;
       if( !zFullPathname ){
         sqlite3_free(p);
         return SQLITE_NOMEM;
       }
       if( isMemdb ){
-        memcpy(zFullPathname, zFilename, sqlite3Strlen30(zFilename)+1);
+        memcpy(zFullPathname, zFilename, nFilename);
       }else{
         rc = sqlite3OsFullPathname(pVfs, zFilename,
                                    nFullPathname, zFullPathname);
@@ -7983,9 +7985,13 @@ static int clearDatabasePage(
   if( pgno>btreePagecount(pBt) ){
     return SQLITE_CORRUPT_BKPT;
   }
-
   rc = getAndInitPage(pBt, pgno, &pPage, 0);
   if( rc ) return rc;
+  if( pPage->bBusy ){
+    rc = SQLITE_CORRUPT_BKPT;
+    goto cleardatabasepage_out;
+  }
+  pPage->bBusy = 1;
   hdr = pPage->hdrOffset;
   for(i=0; i<pPage->nCell; i++){
     pCell = findCell(pPage, i);
@@ -8010,6 +8016,7 @@ static int clearDatabasePage(
   }
 
 cleardatabasepage_out:
+  pPage->bBusy = 0;
   releasePage(pPage);
   return rc;
 }
