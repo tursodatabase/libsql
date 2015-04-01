@@ -1194,7 +1194,8 @@ void sqlite3RollbackAll(sqlite3 *db, int tripCode){
 ** Return a static string containing the name corresponding to the error code
 ** specified in the argument.
 */
-#if (defined(SQLITE_DEBUG) && SQLITE_OS_WIN) || defined(SQLITE_TEST)
+#if (defined(SQLITE_DEBUG) && SQLITE_OS_WIN) || \
+    (defined(SQLITE_TEST) || defined(SQLITE_FORCE_OS_TRACE))
 const char *sqlite3ErrName(int rc){
   const char *zName = 0;
   int i, origRc = rc;
