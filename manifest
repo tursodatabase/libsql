@@ -1,5 +1,5 @@
-C Improved\sdetection\sand\ssuppression\sof\sendless\sloops\sin\sclearDatabasePage().
-D 2015-04-01T13:21:33.901
+C Disable\se_walauto.test\son\sOpenBSD,\sas\sit\srequires\sa\scoherent\scache.
+D 2015-04-02T15:24:53.782
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 00d12636df7a5b08af09116bcd6c7bfd49b8b3b4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -485,7 +485,7 @@ F test/e_update.test 312cb8f5ccfe41515a6bb092f8ea562a9bd54d52
 F test/e_uri.test 5ae33760fb2039c61aa2d90886f1664664173585
 F test/e_vacuum.test 5bfbdc21b65c0abf24398d0ba31dc88d93ca77a9
 F test/e_wal.test ae9a593207a77d711443ee69ffe081fda9243625
-F test/e_walauto.test ca70cf75c07a6cb1874ced101dd426da76625649
+F test/e_walauto.test 6544af03423abc61b53cfb976839385ddc2a0a70
 F test/e_walckpt.test 65e29b6631e51f210f83e4ff11571e647ba93608
 F test/e_walhook.test da3ea8b3483d1af72190337bda50155a91a4b664
 F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
@@ -1248,7 +1248,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a828e73dc1ae50189bdf73f60caeb7308738ad7a
-R 9ae26e7b05df4833a239ec9186729882
-U drh
-Z b113a7338e765a6278a4e0ffd57f1cf8
+P 30011ad2f55cfcacaf23a58ebcc17b17a7b9355e
+R 0b149500fabb905b0771216875924384
+U dan
+Z 259e8553f23f2ead0f4917d2e8d05aa6
