@@ -29,12 +29,12 @@
 # error "The MEMORY_DEBUG macro is obsolete.  Use SQLITE_DEBUG instead."
 #endif
 
+/*
+** Declarations used for tracing the operating system interfaces.
+*/
 #if (defined(SQLITE_DEBUG) && SQLITE_OS_WIN) || \
     (defined(SQLITE_TEST) || defined(SQLITE_FORCE_OS_TRACE))
-# ifndef SQLITE_DEBUG_OS_TRACE
-#   define SQLITE_DEBUG_OS_TRACE 0
-# endif
-  int sqlite3OSTrace = SQLITE_DEBUG_OS_TRACE;
+  extern int sqlite3OSTrace;
 # define OSTRACE(X)          if( sqlite3OSTrace ) sqlite3DebugPrintf X
 #else
 # define OSTRACE(X)

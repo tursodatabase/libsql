@@ -55,6 +55,19 @@ int sqlite3_libversion_number(void){ return SQLITE_VERSION_NUMBER; }
 */
 int sqlite3_threadsafe(void){ return SQLITE_THREADSAFE; }
 
+/*
+** When compiling the test fixture or with debugging enabled (on Win32),
+** this variable being set to non-zero will cause OSTRACE macros to emit
+** extra diagnostic information.
+*/
+#if (defined(SQLITE_DEBUG) && SQLITE_OS_WIN) || \
+    (defined(SQLITE_TEST) || defined(SQLITE_FORCE_OS_TRACE))
+# ifndef SQLITE_DEBUG_OS_TRACE
+#   define SQLITE_DEBUG_OS_TRACE 0
+# endif
+  int sqlite3OSTrace = SQLITE_DEBUG_OS_TRACE;
+#endif
+
 #if !defined(SQLITE_OMIT_TRACE) && defined(SQLITE_ENABLE_IOTRACE)
 /*
 ** If the following function pointer is not NULL and if

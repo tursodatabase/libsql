@@ -1,5 +1,5 @@
-C Improved\stracing\sand\sdebugging\ssupport\son\swindows.
-D 2015-04-01T01:26:12.429
+C Fix\sbuild\swith\sOSTRACE\senabled\son\sWindows\swhen\sbuilding\susing\sseparate\ssource\sfiles.
+D 2015-04-02T17:46:52.559
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 00d12636df7a5b08af09116bcd6c7bfd49b8b3b4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -195,7 +195,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
 F src/loadext.c 86bd4e2fccd520b748cba52492ab60c4a770f660
-F src/main.c cc3ac7793d38cb3e7e185edbc1f53ca311621a3a
+F src/main.c 1ce947628ff241608fd4a122976fa29d36b8838f
 F src/malloc.c 6a370b83d54e4bbf6f94021221c2a311cff26a18
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c abe6ee469b6c5a35c7f22bfeb9c9bac664a1c987
@@ -212,7 +212,7 @@ F src/mutex_w32.c 61660ada28d8308ad190f444c2170c4f2a590c2f
 F src/notify.c 9711a7575036f0d3040ba61bc6e217f13a9888e7
 F src/os.c 8fd25588eeba74068d41102d26810e216999b6c8
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
-F src/os_common.h 4fccbf81ef328c9ac231211de379e753b1365313
+F src/os_common.h 05c8d05b4f1bce4262c9e2e74ab10c2d0dec964a
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c a4dadbc2da41599e99093e91e276c38c17a73b89
 F src/os_win.c eeb317cd504f39ef2dbcf50eb228bc9dd301d024
@@ -1248,8 +1248,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a828e73dc1ae50189bdf73f60caeb7308738ad7a fa7916b67efbc44e6f115bb0d32d8b92fd0acf3c
-R 7fa87c853794881c54344291c71c3804
-T +closed fa7916b67efbc44e6f115bb0d32d8b92fd0acf3c
-U drh
-Z ed8d955d5896e461a30bebb3cc60c312
+P 5c965a71b957fdb0310ac1af9bf2fc3b418af668
+R a13de84916db5713aa965bbf949c399f
+U mistachkin
+Z d93e90a8dd0c05d351cfea868c3bfa91
