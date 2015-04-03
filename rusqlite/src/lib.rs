@@ -48,15 +48,12 @@
 //!     }
 //! }
 //! ```
-#![feature(unique)]
-#![cfg_attr(test, feature(test))]
-
 extern crate libc;
 extern crate libsqlite3_sys as ffi;
 #[macro_use] extern crate bitflags;
 
 use std::mem;
-use std::ptr::{self, Unique};
+use std::ptr;
 use std::fmt;
 use std::path::{Path};
 use std::error;
@@ -152,6 +149,8 @@ fn path_to_cstring(p: &Path) -> SqliteResult<CString> {
 pub struct SqliteConnection {
     db: RefCell<InnerSqliteConnection>,
 }
+
+unsafe impl Send for SqliteConnection {}
 
 impl SqliteConnection {
     /// Open a new connection to a SQLite database.
@@ -419,7 +418,7 @@ impl fmt::Debug for SqliteConnection {
 }
 
 struct InnerSqliteConnection {
-    db: Unique<ffi::Struct_sqlite3>,
+    db: *mut ffi::Struct_sqlite3,
 }
 
 bitflags! {
@@ -463,12 +462,12 @@ impl InnerSqliteConnection {
                 ffi::sqlite3_close(db);
                 return Err(e);
             }
-            Ok(InnerSqliteConnection{ db: Unique::new(db) })
+            Ok(InnerSqliteConnection{ db: db })
         }
     }
 
     fn db(&self) -> *mut ffi::Struct_sqlite3 {
-        unsafe {self.db.get() as *const _ as *mut _}
+        self.db
     }
 
     fn decode_result(&mut self, code: c_int) -> SqliteResult<()> {
@@ -492,7 +491,7 @@ impl InnerSqliteConnection {
     fn close(&mut self) -> SqliteResult<()> {
         unsafe {
             let r = ffi::sqlite3_close(self.db());
-            self.db = Unique::new(ptr::null_mut());
+            self.db = ptr::null_mut();
             self.decode_result(r)
         }
     }

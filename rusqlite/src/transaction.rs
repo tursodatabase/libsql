@@ -158,7 +158,6 @@ impl<'conn> Drop for SqliteTransaction<'conn> {
 
 #[cfg(test)]
 mod test {
-    extern crate test;
     use SqliteConnection;
 
     fn checked_memory_handle() -> SqliteConnection {
@@ -230,33 +229,5 @@ mod test {
             }
         }
         assert_eq!(3i32, db.query_row("SELECT SUM(x) FROM foo", &[], |r| r.get(0)));
-    }
-
-    #[bench]
-    fn test_no_transaction_insert(bencher: &mut test::Bencher) {
-        let db = checked_memory_handle();
-
-        let mut stmt = db.prepare("INSERT INTO foo VALUES(1)").unwrap();
-
-        bencher.iter(|| {
-            for _ in 0i32 .. 1000 {
-                stmt.execute(&[]).unwrap();
-            }
-        })
-    }
-
-    #[bench]
-    fn test_transaction_insert(bencher: &mut test::Bencher) {
-        let db = checked_memory_handle();
-
-        let mut stmt = db.prepare("INSERT INTO foo VALUES(1)").unwrap();
-
-        bencher.iter(|| {
-            let mut tx = db.transaction().unwrap();
-            tx.set_commit();
-            for _ in 0i32 .. 1000 {
-                stmt.execute(&[]).unwrap();
-            }
-        })
     }
 }
