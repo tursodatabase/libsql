@@ -1,5 +1,5 @@
-C Add\ssource\scode\sto\sthe\s"showlocks"\sutility\sprogram\sin\sthe\stool/\ssubdirectory.
-D 2015-04-03T18:33:40.031
+C Disable\sthe\sSQLITE_FCNTL_WAL_BLOCK\sfeature\sfor\snow.\s\sIt\sneeds\smore\swork\sand\nis\snot\syet\sready\sfor\srelease.
+D 2015-04-03T20:33:33.240
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 00d12636df7a5b08af09116bcd6c7bfd49b8b3b4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -214,7 +214,7 @@ F src/os.c 8fd25588eeba74068d41102d26810e216999b6c8
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c a4dadbc2da41599e99093e91e276c38c17a73b89
+F src/os_unix.c 25b80a3d167da44226a2084dc9e89a6cb1f02e2e
 F src/os_win.c 03d27be3a20048ef52a648d5f0a15f5edda9f2a3
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 4120a49ecd37697e28f5ed807f470b9c0b88410c
@@ -1144,7 +1144,7 @@ F test/wal9.test 378e76a9ad09cd9bee06c172ad3547b0129a6750
 F test/wal_common.tcl a98f17fba96206122eff624db0ab13ec377be4fe
 F test/walbak.test b9f68e39646375c2b877be906babcc15d38b4877
 F test/walbig.test f437473a16cfb314867c6b5d1dbcd519e73e3434
-F test/walblock.test ffc761cd467a93ccd8cd998a23be2f21b95a83b1
+F test/walblock.test be48f3a75eff0b4456209f26b3ce186c2015497d
 F test/walcksum.test 9afeb96240296c08c72fc524d199c912cfe34daa
 F test/walcrash.test 451d79e528add5c42764cea74aa2750754171b25
 F test/walcrash2.test a0edab4e5390f03b99a790de89aad15d6ec70b36
@@ -1249,7 +1249,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 90701227085b8b8eb10a8eebe8d55f38b4778574
-R f70ddacff9e1db6211fe7e92067ecf89
+P 6868cc66d2be67b7f03776c982962ffa4b30de11
+R f821ca69e41f19033ce555eacc91c4ed
 U drh
-Z 4cde991c3d8a79a805d8a208c5613c13
+Z 7ec9ecc18bf834ba571fcbb8e1e49df1

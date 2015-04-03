@@ -15,6 +15,7 @@ source $testdir/tester.tcl
 source $testdir/lock_common.tcl
 source $testdir/wal_common.tcl
 
+finish_test; return;    #  Feature currently not implemented.
 ifcapable !wal {finish_test ; return }
 if {$::tcl_platform(platform)!="unix"} { finish_test ; return }
 set testprefix walblock
@@ -111,7 +112,3 @@ do_test "1.2.3.(blocking 0.5 seconds)" {
 
 
 finish_test
-
-
-
-
