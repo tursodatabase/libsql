@@ -1,5 +1,5 @@
-C Disable\se_walauto.test\son\sOpenBSD,\sas\sit\srequires\sa\scoherent\scache.
-D 2015-04-02T15:24:53.782
+C Add\ssource\scode\sto\sthe\s"showlocks"\sutility\sprogram\sin\sthe\stool/\ssubdirectory.
+D 2015-04-03T18:33:40.031
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 00d12636df7a5b08af09116bcd6c7bfd49b8b3b4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1227,6 +1227,7 @@ F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
 F tool/showdb.c 63cdef19e7fbca0c164b096ef8aef3bb9e9dd222
 F tool/showjournal.c 053eb1cc774710c6890b7dd6293300cc297b16a5
+F tool/showlocks.c 9920bcc64f58378ff1118caead34147201f48c68
 F tool/showstat4.c 9515faa8ec176599d4a8288293ba8ec61f7b728a
 F tool/showwal.c 85cb36d4fe3e93e2fbd63e786e0d1ce42d0c4fad
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
@@ -1248,7 +1249,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 30011ad2f55cfcacaf23a58ebcc17b17a7b9355e
-R 0b149500fabb905b0771216875924384
-U dan
-Z 259e8553f23f2ead0f4917d2e8d05aa6
+P 90701227085b8b8eb10a8eebe8d55f38b4778574
+R f70ddacff9e1db6211fe7e92067ecf89
+U drh
+Z 4cde991c3d8a79a805d8a208c5613c13
