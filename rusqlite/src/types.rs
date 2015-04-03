@@ -152,7 +152,7 @@ impl<T: ToSql> ToSql for Option<T> {
 ///     conn.execute("INSERT INTO people (name) VALUES (?)", &[&Null])
 /// }
 /// ```
-#[derive(Copy)]
+#[derive(Copy,Clone)]
 pub struct Null;
 
 impl ToSql for Null {

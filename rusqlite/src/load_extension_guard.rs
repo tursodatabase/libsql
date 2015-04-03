@@ -25,7 +25,6 @@ impl<'conn> SqliteLoadExtensionGuard<'conn> {
     }
 }
 
-#[unsafe_destructor]
 #[allow(unused_must_use)]
 impl<'conn> Drop for SqliteLoadExtensionGuard<'conn> {
     fn drop(&mut self) {

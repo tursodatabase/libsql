@@ -48,7 +48,7 @@
 //!     }
 //! }
 //! ```
-#![feature(unsafe_destructor, unique)]
+#![feature(unique)]
 #![cfg_attr(test, feature(test))]
 
 extern crate libc;
@@ -673,7 +673,6 @@ impl<'conn> fmt::Debug for SqliteStatement<'conn> {
     }
 }
 
-#[unsafe_destructor]
 impl<'conn> Drop for SqliteStatement<'conn> {
     #[allow(unused_must_use)]
     fn drop(&mut self) {

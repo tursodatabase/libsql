@@ -1,7 +1,6 @@
 #![allow(raw_pointer_derive, non_snake_case, non_camel_case_types)]
 /* Running `target/bindgen /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk/usr/include/sqlite3.h -I/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/6.0/include` */
 
-#[derive(Copy)]
 pub enum Struct_sqlite3 { }
 pub type sqlite3 = Struct_sqlite3;
 pub type sqlite_int64 = ::libc::c_longlong;
@@ -16,13 +15,11 @@ pub type sqlite3_callback =
                               -> ::libc::c_int>;
 pub type sqlite3_file = Struct_sqlite3_file;
 #[repr(C)]
-#[derive(Copy)]
 pub struct Struct_sqlite3_file {
     pub pMethods: *const Struct_sqlite3_io_methods,
 }
 pub type sqlite3_io_methods = Struct_sqlite3_io_methods;
 #[repr(C)]
-#[derive(Copy)]
 pub struct Struct_sqlite3_io_methods {
     pub iVersion: ::libc::c_int,
     pub xClose: ::std::option::Option<extern "C" fn(arg1: *mut sqlite3_file)
@@ -97,13 +94,11 @@ pub struct Struct_sqlite3_io_methods {
                                               deleteFlag: ::libc::c_int)
                                              -> ::libc::c_int>,
 }
-#[derive(Copy)]
 pub enum Struct_sqlite3_mutex { }
 pub type sqlite3_mutex = Struct_sqlite3_mutex;
 pub type sqlite3_vfs = Struct_sqlite3_vfs;
 pub type sqlite3_syscall_ptr = ::std::option::Option<extern "C" fn()>;
 #[repr(C)]
-#[derive(Copy)]
 pub struct Struct_sqlite3_vfs {
     pub iVersion: ::libc::c_int,
     pub szOsFile: ::libc::c_int,
@@ -196,7 +191,6 @@ pub struct Struct_sqlite3_vfs {
 }
 pub type sqlite3_mem_methods = Struct_sqlite3_mem_methods;
 #[repr(C)]
-#[derive(Copy)]
 pub struct Struct_sqlite3_mem_methods {
     pub xMalloc: ::std::option::Option<extern "C" fn(arg1: ::libc::c_int)
                                            -> *mut ::libc::c_void>,
@@ -216,13 +210,10 @@ pub struct Struct_sqlite3_mem_methods {
                                              (arg1: *mut ::libc::c_void)>,
     pub pAppData: *mut ::libc::c_void,
 }
-#[derive(Copy)]
 pub enum Struct_sqlite3_stmt { }
 pub type sqlite3_stmt = Struct_sqlite3_stmt;
-#[derive(Copy)]
 pub enum Struct_Mem { }
 pub type sqlite3_value = Struct_Mem;
-#[derive(Copy)]
 pub enum Struct_sqlite3_context { }
 pub type sqlite3_context = Struct_sqlite3_context;
 pub type sqlite3_destructor_type =
@@ -232,7 +223,6 @@ pub type sqlite3_index_info = Struct_sqlite3_index_info;
 pub type sqlite3_vtab_cursor = Struct_sqlite3_vtab_cursor;
 pub type sqlite3_module = Struct_sqlite3_module;
 #[repr(C)]
-#[derive(Copy)]
 pub struct Struct_sqlite3_module {
     pub iVersion: ::libc::c_int,
     pub xCreate: ::std::option::Option<extern "C" fn
@@ -342,7 +332,6 @@ pub struct Struct_sqlite3_module {
                                                -> ::libc::c_int>,
 }
 #[repr(C)]
-#[derive(Copy)]
 pub struct Struct_sqlite3_index_info {
     pub nConstraint: ::libc::c_int,
     pub aConstraint: *mut Struct_sqlite3_index_constraint,
@@ -356,7 +345,6 @@ pub struct Struct_sqlite3_index_info {
     pub estimatedCost: ::libc::c_double,
 }
 #[repr(C)]
-#[derive(Copy)]
 pub struct Struct_sqlite3_index_constraint {
     pub iColumn: ::libc::c_int,
     pub op: ::libc::c_uchar,
@@ -364,35 +352,29 @@ pub struct Struct_sqlite3_index_constraint {
     pub iTermOffset: ::libc::c_int,
 }
 #[repr(C)]
-#[derive(Copy)]
 pub struct Struct_sqlite3_index_orderby {
     pub iColumn: ::libc::c_int,
     pub desc: ::libc::c_uchar,
 }
 #[repr(C)]
-#[derive(Copy)]
 pub struct Struct_sqlite3_index_constraint_usage {
     pub argvIndex: ::libc::c_int,
     pub omit: ::libc::c_uchar,
 }
 #[repr(C)]
-#[derive(Copy)]
 pub struct Struct_sqlite3_vtab {
     pub pModule: *const sqlite3_module,
     pub nRef: ::libc::c_int,
     pub zErrMsg: *mut ::libc::c_char,
 }
 #[repr(C)]
-#[derive(Copy)]
 pub struct Struct_sqlite3_vtab_cursor {
     pub pVtab: *mut sqlite3_vtab,
 }
-#[derive(Copy)]
 pub enum Struct_sqlite3_blob { }
 pub type sqlite3_blob = Struct_sqlite3_blob;
 pub type sqlite3_mutex_methods = Struct_sqlite3_mutex_methods;
 #[repr(C)]
-#[derive(Copy)]
 pub struct Struct_sqlite3_mutex_methods {
     pub xMutexInit: ::std::option::Option<extern "C" fn() -> ::libc::c_int>,
     pub xMutexEnd: ::std::option::Option<extern "C" fn() -> ::libc::c_int>,
@@ -414,19 +396,16 @@ pub struct Struct_sqlite3_mutex_methods {
                                                  (arg1: *mut sqlite3_mutex)
                                                  -> ::libc::c_int>,
 }
-#[derive(Copy)]
 pub enum Struct_sqlite3_pcache { }
 pub type sqlite3_pcache = Struct_sqlite3_pcache;
 pub type sqlite3_pcache_page = Struct_sqlite3_pcache_page;
 #[repr(C)]
-#[derive(Copy)]
 pub struct Struct_sqlite3_pcache_page {
     pub pBuf: *mut ::libc::c_void,
     pub pExtra: *mut ::libc::c_void,
 }
 pub type sqlite3_pcache_methods2 = Struct_sqlite3_pcache_methods2;
 #[repr(C)]
-#[derive(Copy)]
 pub struct Struct_sqlite3_pcache_methods2 {
     pub iVersion: ::libc::c_int,
     pub pArg: *mut ::libc::c_void,
@@ -469,7 +448,6 @@ pub struct Struct_sqlite3_pcache_methods2 {
 }
 pub type sqlite3_pcache_methods = Struct_sqlite3_pcache_methods;
 #[repr(C)]
-#[derive(Copy)]
 pub struct Struct_sqlite3_pcache_methods {
     pub pArg: *mut ::libc::c_void,
     pub xInit: ::std::option::Option<extern "C" fn(arg1: *mut ::libc::c_void)
@@ -506,12 +484,10 @@ pub struct Struct_sqlite3_pcache_methods {
     pub xDestroy: ::std::option::Option<extern "C" fn
                                             (arg1: *mut sqlite3_pcache)>,
 }
-#[derive(Copy)]
 pub enum Struct_sqlite3_backup { }
 pub type sqlite3_backup = Struct_sqlite3_backup;
 pub type sqlite3_rtree_geometry = Struct_sqlite3_rtree_geometry;
 #[repr(C)]
-#[derive(Copy)]
 pub struct Struct_sqlite3_rtree_geometry {
     pub pContext: *mut ::libc::c_void,
     pub nParam: ::libc::c_int,

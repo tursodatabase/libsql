@@ -7,7 +7,7 @@ pub use SqliteTransactionBehavior::{
 
 /// Options for transaction behavior. See [BEGIN
 /// TRANSACTION](http://www.sqlite.org/lang_transaction.html) for details.
-#[derive(Copy)]
+#[derive(Copy,Clone)]
 pub enum SqliteTransactionBehavior {
     SqliteTransactionDeferred,
     SqliteTransactionImmediate,
@@ -149,7 +149,6 @@ impl<'conn> SqliteTransaction<'conn> {
     }
 }
 
-#[unsafe_destructor]
 #[allow(unused_must_use)]
 impl<'conn> Drop for SqliteTransaction<'conn> {
     fn drop(&mut self) {

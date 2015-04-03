@@ -1,3 +1,7 @@
+# Version 0.0.16
+
+* Updates to track rustc nightly.
+
 # Version 0.0.15
 
 * Make SqliteConnection `Send`.
