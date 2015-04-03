@@ -1,3 +1,9 @@
+# Version 0.0.17 (2015-04-03)
+
+* Publish version that builds on stable rust (beta). This version lives on the
+  `stable` branch. Development continues on `master` and still requires a nightly
+  version of Rust.
+
 # Version 0.0.16
 
 * Updates to track rustc nightly.
