@@ -1608,6 +1608,9 @@ queryplantest:	testfixture.exe sqlite3.exe
 test:	testfixture.exe sqlite3.exe
 	.\testfixture.exe $(TOP)\test\veryquick.test
 
+smoketest:	testfixture.exe
+	.\testfixture.exe $(TOP)\test\main.test
+
 sqlite3_analyzer.c: $(SQLITE3C) $(TOP)\src\test_stat.c $(TOP)\src\tclsqlite.c $(TOP)\tool\spaceanal.tcl
 	copy $(SQLITE3C) + $(TOP)\src\test_stat.c + $(TOP)\src\tclsqlite.c $@
 	echo static const char *tclsh_main_loop(void){ >> $@
