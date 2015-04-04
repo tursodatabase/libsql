@@ -1,5 +1,5 @@
-C Disable\sthe\sSQLITE_FCNTL_WAL_BLOCK\sfeature\sfor\snow.\s\sIt\sneeds\smore\swork\sand\nis\snot\syet\sready\sfor\srelease.
-D 2015-04-03T20:33:33.240
+C Fix\sa\sproblem\swith\sresolving\sORDER\sBY\sclauses\sthat\sfeature\sCOLLATE\sclauses\sattached\sto\scompound\sSELECT\sstatements.
+D 2015-04-04T16:49:04.697
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 00d12636df7a5b08af09116bcd6c7bfd49b8b3b4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -228,14 +228,14 @@ F src/pragma.h 09c89bca58e9a44de2116cc8272b8d454657129f
 F src/prepare.c 173a5a499138451b2561614ecb87d78f9f4644b9
 F src/printf.c 8da9a2687a396daa19860f4dc90975d319304744
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
-F src/resolve.c f4d79e31ffa5820c2e3d1740baa5e9b190425f2b
+F src/resolve.c 41aa91af56d960e9414ce1d7c17cfb68e0d1c6cb
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c 72ffb62e2879956302140e9f6e6ae88aee36b0e5
+F src/select.c c28c52e353287434fac8473e56ee4be848d12c9d
 F src/shell.c 84a1593bd86aaa14f4da8a8f9b16fbc239d262aa
 F src/sqlite.h.in 278602140d49575e8708e643161f4263e428a02a
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
-F src/sqliteInt.h d02d2b85cb02a38bc442cf9302ec8209baf6771d
+F src/sqliteInt.h 107b02ed6c64162b653acc2368e982de529e14f6
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c f266ad8a2892d659b74f0f50cb6a88b6e7c12179
 F src/table.c e7a09215315a978057fb42c640f890160dbcc45e
@@ -845,7 +845,7 @@ F test/select6.test 39eac4a5c03650b2b473c532882273283ee8b7a0
 F test/select7.test 7fd2ef598cfabb6b9ff6ac13973b91d0527df49d
 F test/select8.test 391de11bdd52339c30580dabbbbe97e3e9a3c79d
 F test/select9.test aebc2bb0c3bc44606125033cbcaac2c8d1f33a95
-F test/selectA.test 64b88a80271c1710966e50e633380696b60a12a4
+F test/selectA.test e452bdb975f488ea46d091382a9185b5853ed2c7
 F test/selectB.test 954e4e49cf1f896d61794e440669e03a27ceea25
 F test/selectC.test 871fb55d884d3de5943c4057ebd22c2459e71977
 F test/selectD.test b0f02a04ef7737decb24e08be2c39b9664b43394
@@ -1249,7 +1249,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6868cc66d2be67b7f03776c982962ffa4b30de11
-R f821ca69e41f19033ce555eacc91c4ed
-U drh
-Z 7ec9ecc18bf834ba571fcbb8e1e49df1
+P 4ae9a3acc4eeeb7998769eb856c97c2233476f72 427b50fba7362e5b447e79d39050f25ed2ef10af
+R 0a683c8bd67cbd2be5ea29e95266b636
+U dan
+Z c9ac74415bdb7893d918eacf5a95862c
