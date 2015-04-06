@@ -1,5 +1,5 @@
-C Merge\sin\sthe\s3.8.5\srelease\schanges\sand\sthe\sFTS\sintegrity-check\sfix.
-D 2014-06-05T12:53:41.995
+C Detect\sand\ssuppress\san\sendless\sloops\sin\sclearDatabasePage()\sthat\smight\sresult\nfrom\sa\scorrupt\sdatabase\sfile.\s\sThis\sis\san\sedited\scherry-pick\sfrom\n[30011ad2f55c]\sand\s[395bb3e677a].
+D 2015-04-06T22:05:23.198
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 444faa7b5c5b3189fa674ff42be94d87a37eba9d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -168,9 +168,9 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c a729e63cf5cd1829507cb7b8e89f99b95141bb53
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c c25678d7908d02edb1e9f7fdf9c6c8ce58f384e6
+F src/btree.c 02064f49cd18e8d6ca0218fce6542218fded1128
 F src/btree.h 4245a349bfe09611d7ff887dbc3a80cee8b7955a
-F src/btreeInt.h cf180d86b2e9e418f638d65baa425c4c69c0e0e3
+F src/btreeInt.h 53a774709449d704ef72f69fa5ccba17e2acb67a
 F src/build.c 927e39b6aaf872c7b28f154f6acfeb9a05a72442
 F src/callback.c 174e3c8656bc29f91d710ab61550d16eea34be98
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
@@ -413,6 +413,7 @@ F test/corruptF.test be9fde98e4c93648f1ba52b74e5318edc8f59fe4
 F test/corruptG.test 1ab3bf97ee7bdba70e0ff3ba2320657df55d1804
 F test/corruptH.test 88ed71a086e13591c917aac6de32750e7c7281cb
 F test/corruptI.test b3e4203d420490fc3d3062711597bc1dea06a789
+F test/corruptJ.test e78438baca4f2a24b2547a0e16fb462b99f42522
 F test/cost.test 19d314526616ce4473eb4e4e450fcb94499ce318
 F test/count.test 42a251178e32f617eda33f76236a7f79825a50b5
 F test/coveridxscan.test cdb47d01acc4a634a34fd25abe85189e0d0f1e62
@@ -1178,7 +1179,11 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b9fad4490c437a2c49cf86cc1c068433d6d2866b 7123bb2605216396f65db5d156431b3613f313b5
-R 2d60ed1c1f6422e4ada671a141ef9856
+P 2dbdfa51703bade30b66730191e4fb286edc500b
+Q +30011ad2f55cfcacaf23a58ebcc17b17a7b9355e
+R a188aa4f8674af97d2feb2b619f358d4
+T *branch * apple-osx-385
+T *sym-apple-osx-385 *
+T -sym-apple-osx *
 U drh
-Z ae31fcbcc5589199902d82aecc34d93c
+Z a19b281a5eeb2a70fceb026d7028201f
