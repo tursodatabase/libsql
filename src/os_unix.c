@@ -3783,7 +3783,7 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
   unixFile *pFile = (unixFile*)id;
   switch( op ){
     case SQLITE_FCNTL_WAL_BLOCK: {
-      pFile->ctrlFlags |= UNIXFILE_BLOCK;
+      /* pFile->ctrlFlags |= UNIXFILE_BLOCK; // Deferred feature */
       return SQLITE_OK;
     }
     case SQLITE_FCNTL_LOCKSTATE: {
