@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sresolving\sORDER\sBY\sclauses\sthat\sfeature\sCOLLATE\sclauses\sattached\sto\scompound\sSELECT\sstatements.
-D 2015-04-04T16:49:04.697
+C Fix\sa\sproblem\swith\sfts3\sprefix\sterms\swithin\sphrase\squeries\son\s"order=DESC"\stables\swith\sa\smix\sof\snegative\sand\spositive\srowids.
+D 2015-04-06T09:05:29.052
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 00d12636df7a5b08af09116bcd6c7bfd49b8b3b4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -78,7 +78,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c d3f6f0e95d366f3c2028d916c36a0844bf805840
+F ext/fts3/fts3.c 23bd9d37a777342f5c22a648e9b4b005dde9e58f
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 394858c12a17740f7a1f6bd372c4606d4425a8d1
 F ext/fts3/fts3_aux.c 5c211e17a64885faeb16b9ba7772f9d5445c2365
@@ -594,7 +594,7 @@ F test/fts3join.test 53e66a0c21eb568580674a43b21c059acb26f499
 F test/fts3malloc.test b0e4c133b8d61d4f6d112d8110f8320e9e453ef6
 F test/fts3matchinfo.test 58544fa4d254000fa4e7f494b0a832f7ba61d45e
 F test/fts3near.test 7e3354d46f155a822b59c0e957fd2a70c1d7e905
-F test/fts3prefix.test 9f68e3598a139c23ec47d09299420e0fc4c72a83
+F test/fts3prefix.test fa794eaab0bdae466494947b0b153d7844478ab2
 F test/fts3prefix2.test e1f0a822ca661dced7f12ce392e14eaf65609dce
 F test/fts3query.test c838b18f2b859e15fd31c64be3d79ef1556803ca
 F test/fts3rnd.test 1320d8826a845e38a96e769562bf83d7a92a15d0
@@ -1249,7 +1249,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4ae9a3acc4eeeb7998769eb856c97c2233476f72 427b50fba7362e5b447e79d39050f25ed2ef10af
-R 0a683c8bd67cbd2be5ea29e95266b636
+P edc1de2a588fd50c0049bb2be76d3f6783443165
+R a8252a4468bea13d638722c58d3ce9cc
+T *branch * fts3-prefix-query-fix
+T *sym-fts3-prefix-query-fix *
+T -sym-trunk *
 U dan
-Z c9ac74415bdb7893d918eacf5a95862c
+Z 7c1c374a4c4efe674ae583b0f9d983d2
