@@ -1,5 +1,5 @@
-C Merge\sobscure\sproblem\sfixes\sfrom\strunk.
-D 2015-04-06T12:08:24.946
+C Merge\sprintf()\swidth\sand\sprecision\soverflow\sfixes\sfrom\strunk.
+D 2015-04-07T23:10:44.364
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3083cf0c2bc6618e532b9478ce735bb512322985
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -243,7 +243,7 @@ F src/pcache1.c 69d137620a305f814398bd29a0c998038c0695e9
 F src/pragma.c ac4f3f856b4234e85f55b0f069698a4766011100
 F src/pragma.h 09c89bca58e9a44de2116cc8272b8d454657129f
 F src/prepare.c 173a5a499138451b2561614ecb87d78f9f4644b9
-F src/printf.c 8da9a2687a396daa19860f4dc90975d319304744
+F src/printf.c 8ae1fa9d30c1200a9268a390ba9e9cea9197b27a
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 41aa91af56d960e9414ce1d7c17cfb68e0d1c6cb
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
@@ -814,7 +814,7 @@ F test/permutations.test e5e9f708879336e10095ded8d61966007f4a2c5c
 F test/pragma.test ad99d05e411c7687302124be56f3b362204be041
 F test/pragma2.test f624a496a95ee878e81e59961eade66d5c00c028
 F test/pragma3.test 6f849ccffeee7e496d2f2b5e74152306c0b8757c
-F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
+F test/printf.test b3ff34e73d59124140eaf89f7672e21bc2ca5fcc
 F test/printf2.test b4acd4bf8734243257f01ddefa17c4fb090acc8a
 F test/progress.test a282973d1d17f08071bc58a77d6b80f2a81c354d
 F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
@@ -1267,7 +1267,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P aea439bdc6d4d3a8568423171abf381843188826 3ad829e50faca538db3abb2afb898b5521550c5c
-R 6129dbea29890bb446b2e1739ab50b2e
+P 271c110bcf5bf2ea7e113dd01dec876a08e3c047 8e4ac2ce24415926247961b00a62425ae85d6ffb
+R e52a83cd9a76eb22e0a9f49afec82395
 U drh
-Z 721c9e42efa32f899b87a4468b9be4bf
+Z 65d91c87ac07196da2d7921b7b9389b5
