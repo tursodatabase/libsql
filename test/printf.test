@@ -483,7 +483,7 @@ do_test printf-1.17.3 {
 } {abd: 1 1}
 do_test printf-1.17.4 {
   sqlite3_mprintf_int {abd: %.2147483648d %x %x} 1 1 1
-} {abd: 1 1 1}
+} {/.*/}
 do_test printf-2.1.1.1 {
   sqlite3_mprintf_double {abc: (%*.*f) :xyz} 1 1 0.001
 } {abc: (0.0) :xyz}
@@ -3489,7 +3489,7 @@ do_test printf-3.8 {
 } {1 A String: (This is the string)}
 do_test printf-3.9 {
   sqlite3_mprintf_str {%d A String: (%.*s)} 1 -2147483648 {This is the string}
-} {1 A String: ()}
+} {1 A String: (This is the string)}
 do_test snprintf-3.11 {
   sqlite3_snprintf_str 2 {x%d %d %s} 10 10 {This is the string}
 } {x}
@@ -3710,8 +3710,8 @@ do_test printf-13.6 {
   sqlite3_mprintf_hexdouble %.20f fff8000000000000
 } {NaN}
 do_test printf-13.7 {
-  sqlite3_mprintf_hexdouble %3000000000.10000f 4693b8b5b5056e17
-} "100000000000000000000000000000000.[string repeat 0 10000]"
+  sqlite3_mprintf_hexdouble %2147483648.10000f 4693b8b5b5056e17
+} {/100000000000000000000000000000000.00/}
 
 do_test printf-14.1 {
   sqlite3_mprintf_str {abc-%y-123} 0 0 {not used}

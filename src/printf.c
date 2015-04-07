@@ -261,16 +261,18 @@ void sqlite3VXPrintf(
       }
       if( width<0 ){
         flag_leftjustify = 1;
-        width = -width;
+        width = width >= -2147483647 ? -width : 0;
       }
       c = *++fmt;
     }else{
+      unsigned wx = 0;
       while( c>='0' && c<='9' ){
-        width = width*10 + c - '0';
+        wx = wx*10 + c - '0';
         c = *++fmt;
       }
+      testcase( wx>0x7fffffff );
+      width = wx & 0x7fffffff;
     }
-    if( width<0 ) width = 0; /* force to non-negative after int overflow */
 
     /* Get the precision */
     if( c=='.' ){
@@ -283,18 +285,18 @@ void sqlite3VXPrintf(
           precision = va_arg(ap,int);
         }
         c = *++fmt;
+        if( precision<0 ){
+          precision = precision >= -2147483647 ? -precision : -1;
+        }
       }else{
+        unsigned px = 0;
         while( c>='0' && c<='9' ){
-          precision = precision*10 + c - '0';
+          px = px*10 + c - '0';
           c = *++fmt;
         }
+        testcase( px>0x7fffffff );
+        precision = px & 0x7fffffff;
       }
-
-      /* If a negative precision has been specified, use its absolute value
-      ** instead. This is (probably) not standard printf() behaviour, but
-      ** it is what sqlite3_mprintf() and friends have always done. If the
-      ** precision specified is -2147483648, use 0. */
-      if( precision<0 ) precision = (-precision) & 0x7fffffff;
     }else{
       precision = -1;
     }

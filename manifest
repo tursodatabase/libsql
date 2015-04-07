@@ -1,5 +1,5 @@
-C Another\schange\sto\savoid\sa\sproblem\scaused\sby\sinteger\soverflow\sin\sthe\sprintf()\scode.
-D 2015-04-07T14:38:57.638
+C Avoid\ssigned\sinteger\soverflow\swhen\sconverting\soversized\sin-line\sinteger\nwidths\sand\sprecisions\sin\sprintf().
+D 2015-04-07T15:39:29.937
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 00d12636df7a5b08af09116bcd6c7bfd49b8b3b4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -226,7 +226,7 @@ F src/pcache1.c 69d137620a305f814398bd29a0c998038c0695e9
 F src/pragma.c ac4f3f856b4234e85f55b0f069698a4766011100
 F src/pragma.h 09c89bca58e9a44de2116cc8272b8d454657129f
 F src/prepare.c 173a5a499138451b2561614ecb87d78f9f4644b9
-F src/printf.c 62f93b9276807b053e9c9625b48f4843ef82e978
+F src/printf.c 8ae1fa9d30c1200a9268a390ba9e9cea9197b27a
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 41aa91af56d960e9414ce1d7c17cfb68e0d1c6cb
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
@@ -797,7 +797,7 @@ F test/permutations.test f9cc1dd987986c9d4949211c7a4ed55ec9aecba1
 F test/pragma.test ad99d05e411c7687302124be56f3b362204be041
 F test/pragma2.test f624a496a95ee878e81e59961eade66d5c00c028
 F test/pragma3.test 6f849ccffeee7e496d2f2b5e74152306c0b8757c
-F test/printf.test b38d5d81a8cc20a040667c9acad68ddf5b18ccdd
+F test/printf.test b3ff34e73d59124140eaf89f7672e21bc2ca5fcc
 F test/printf2.test b4acd4bf8734243257f01ddefa17c4fb090acc8a
 F test/progress.test a282973d1d17f08071bc58a77d6b80f2a81c354d
 F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
@@ -1249,7 +1249,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5ce4e7d7651e5c72a59f03f7aeb366291e62ab57
-R d822c3498c99ae588b224a89f4618062
-U dan
-Z d5717f1cffb0747ad695b3c7e862b042
+P 95625ef3adc3c408d67e70f877f390445fbb8292
+R 5875861747bb686954783d9ce4259b86
+U drh
+Z e5281cee406ead55e17262e5bdbb2163
