@@ -390,6 +390,7 @@ void sqlite3VXPrintf(
         if( precision<etBUFSIZE-10 ){
           nOut = etBUFSIZE;
           zOut = buf;
+          if( precision<0 ) precision = 0;
         }else{
           nOut = precision + 10;
           zOut = zExtra = sqlite3Malloc( nOut );
@@ -450,6 +451,7 @@ void sqlite3VXPrintf(
           else                         prefix = 0;
         }
         if( xtype==etGENERIC && precision>0 ) precision--;
+        testcase( precision>0xfff );
         for(idx=precision&0xfff, rounder=0.5; idx>0; idx--, rounder*=0.1){}
         if( xtype==etFLOAT ) realvalue += rounder;
         /* Normalize realvalue to within 10.0 > realvalue >= 1.0 */
@@ -739,7 +741,7 @@ void sqlite3VXPrintf(
 */
 static int sqlite3StrAccumEnlarge(StrAccum *p, int N){
   char *zNew;
-  assert( p->nChar+N >= p->nAlloc ); /* Only called if really needed */
+  assert( p->nChar+(i64)N >= p->nAlloc ); /* Only called if really needed */
   if( p->accError ){
     testcase(p->accError==STRACCUM_TOOBIG);
     testcase(p->accError==STRACCUM_NOMEM);
@@ -788,7 +790,10 @@ static int sqlite3StrAccumEnlarge(StrAccum *p, int N){
 ** Append N copies of character c to the given string buffer.
 */
 void sqlite3AppendChar(StrAccum *p, int N, char c){
-  if( p->nChar+N >= p->nAlloc && (N = sqlite3StrAccumEnlarge(p, N))<=0 ) return;
+  testcase( p->nChar + (i64)N > 0x7fffffff );
+  if( p->nChar+(i64)N >= p->nAlloc && (N = sqlite3StrAccumEnlarge(p, N))<=0 ){
+    return;
+  }
   while( (N--)>0 ) p->zText[p->nChar++] = c;
 }
 
