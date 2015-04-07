@@ -796,7 +796,7 @@ INSERT INTO t3 VALUES(6,X'807f');}}
 
 # Test the output of ".mode insert" with headers
 #
-do_test shell1-4.2.3 {
+do_test shell1-4.2.4 {
   catchcmd test.db ".mode insert t3\n.headers on\nselect * from t3;"
 } {0 {INSERT INTO t3(x,y) VALUES(1,NULL);
 INSERT INTO t3(x,y) VALUES(2,'');

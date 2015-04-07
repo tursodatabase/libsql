@@ -1,5 +1,5 @@
-C Enhance\sthe\sshell\sexport\sto\ssupport\semitting\scolumn\snames\sin\s'insert'\smode\swhen\sheaders\sare\senabled.
-D 2015-04-07T21:16:40.811
+C Correct\stypo\sin\snew\stest\snumbering.
+D 2015-04-07T21:17:53.161
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -863,7 +863,7 @@ F test/sharedA.test 0cdf1a76dfa00e6beee66af5b534b1e8df2720f5
 F test/sharedB.test 16cc7178e20965d75278f410943109b77b2e645e
 F test/shared_err.test 2f2aee20db294b9924e81f6ccbe60f19e21e8506
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test 9520d19c70cf2db8900646fdfff7b2289486f3bc
+F test/shell1.test ce5e744870387164703bf2dee2cc9753e4a71513
 F test/shell2.test 12b8bf901b0e3a8ac58cf5c0c63a0a388d4d1862
 F test/shell3.test 5e8545ec72c4413a0e8d4c6be56496e3c257ca29
 F test/shell4.test 4cd3bd50200bf2efd6a74175d98da65aa86daf26
@@ -1246,7 +1246,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 441a00e70d8c0a3d09b7f283a65a2918791ad1bb
-R fad5114d2005637cb8cd6f4cdfea439c
+P 6e504cd00b148b5acca73f039a20b8acc85dc2f0
+R 1543524725d791d58111400fab5dcb85
 U mistachkin
-Z ca14d500328ad187c33b777b4a807652
+Z 8c1a6c6dddcfd14d8dad2e92c405b1ee
