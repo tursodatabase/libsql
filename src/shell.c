@@ -989,7 +989,16 @@ static int shell_callback(
     case MODE_Insert: {
       p->cnt++;
       if( azArg==0 ) break;
-      fprintf(p->out,"INSERT INTO %s VALUES(",p->zDestTable);
+      fprintf(p->out,"INSERT INTO %s",p->zDestTable);
+      if( p->showHeader ){
+        fprintf(p->out,"(");
+        for(i=0; i<nArg; i++){
+          char *zSep = i>0 ? ",": "";
+          fprintf(p->out, "%s%s", zSep, azCol[i]);
+        }
+        fprintf(p->out,")");
+      }
+      fprintf(p->out," VALUES(");
       for(i=0; i<nArg; i++){
         char *zSep = i>0 ? ",": "";
         if( (azArg[i]==0) || (aiType && aiType[i]==SQLITE_NULL) ){

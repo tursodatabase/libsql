@@ -738,6 +738,9 @@ do_test shell1-4.1 {
     PRAGMA encoding=UTF16;
     CREATE TABLE t1(x);
     INSERT INTO t1 VALUES(null), (''), (1), (2.25), ('hello'), (x'807f');
+    CREATE TABLE t3(x,y);
+    INSERT INTO t3 VALUES(1,null), (2,''), (3,1),
+                         (4,2.25), (5,'hello'), (6,x'807f');
   }
   catchcmd test.db {.dump}
 } {0 {PRAGMA foreign_keys=OFF;
@@ -749,11 +752,18 @@ INSERT INTO "t1" VALUES(1);
 INSERT INTO "t1" VALUES(2.25);
 INSERT INTO "t1" VALUES('hello');
 INSERT INTO "t1" VALUES(X'807F');
+CREATE TABLE t3(x,y);
+INSERT INTO "t3" VALUES(1,NULL);
+INSERT INTO "t3" VALUES(2,'');
+INSERT INTO "t3" VALUES(3,1);
+INSERT INTO "t3" VALUES(4,2.25);
+INSERT INTO "t3" VALUES(5,'hello');
+INSERT INTO "t3" VALUES(6,X'807F');
 COMMIT;}}
 
 # Test the output of ".mode insert"
 #
-do_test shell1-4.2 {
+do_test shell1-4.2.1 {
   catchcmd test.db ".mode insert t1\nselect * from t1;"
 } {0 {INSERT INTO t1 VALUES(NULL);
 INSERT INTO t1 VALUES('');
@@ -761,6 +771,39 @@ INSERT INTO t1 VALUES(1);
 INSERT INTO t1 VALUES(2.25);
 INSERT INTO t1 VALUES('hello');
 INSERT INTO t1 VALUES(X'807f');}}
+
+# Test the output of ".mode insert" with headers
+#
+do_test shell1-4.2.2 {
+  catchcmd test.db ".mode insert t1\n.headers on\nselect * from t1;"
+} {0 {INSERT INTO t1(x) VALUES(NULL);
+INSERT INTO t1(x) VALUES('');
+INSERT INTO t1(x) VALUES(1);
+INSERT INTO t1(x) VALUES(2.25);
+INSERT INTO t1(x) VALUES('hello');
+INSERT INTO t1(x) VALUES(X'807f');}}
+
+# Test the output of ".mode insert"
+#
+do_test shell1-4.2.3 {
+  catchcmd test.db ".mode insert t3\nselect * from t3;"
+} {0 {INSERT INTO t3 VALUES(1,NULL);
+INSERT INTO t3 VALUES(2,'');
+INSERT INTO t3 VALUES(3,1);
+INSERT INTO t3 VALUES(4,2.25);
+INSERT INTO t3 VALUES(5,'hello');
+INSERT INTO t3 VALUES(6,X'807f');}}
+
+# Test the output of ".mode insert" with headers
+#
+do_test shell1-4.2.3 {
+  catchcmd test.db ".mode insert t3\n.headers on\nselect * from t3;"
+} {0 {INSERT INTO t3(x,y) VALUES(1,NULL);
+INSERT INTO t3(x,y) VALUES(2,'');
+INSERT INTO t3(x,y) VALUES(3,1);
+INSERT INTO t3(x,y) VALUES(4,2.25);
+INSERT INTO t3(x,y) VALUES(5,'hello');
+INSERT INTO t3(x,y) VALUES(6,X'807f');}}
 
 # Test the output of ".mode tcl"
 #
