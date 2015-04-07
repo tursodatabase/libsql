@@ -27,7 +27,7 @@
 /*
 ** No support for loadable extensions in VxWorks.
 */
-#if defined(_WRS_KERNEL) && !SQLITE_OMIT_LOAD_EXTENSION
+#if (defined(__RTP__) || defined(_WRS_KERNEL)) && !SQLITE_OMIT_LOAD_EXTENSION
 # define SQLITE_OMIT_LOAD_EXTENSION 1
 #endif
 
@@ -370,7 +370,7 @@ static FILE *iotrace = 0;
 ** is written to iotrace.
 */
 #ifdef SQLITE_ENABLE_IOTRACE
-static void iotracePrintf(const char *zFormat, ...){
+static void SQLITE_CDECL iotracePrintf(const char *zFormat, ...){
   va_list ap;
   char *z;
   if( iotrace==0 ) return;
@@ -3185,7 +3185,7 @@ static int do_meta_command(char *zLine, ShellState *p){
 
 #ifdef SQLITE_ENABLE_IOTRACE
   if( c=='i' && strncmp(azArg[0], "iotrace", n)==0 ){
-    extern void (*sqlite3IoTrace)(const char*, ...);
+    SQLITE_API extern void (SQLITE_CDECL *sqlite3IoTrace)(const char*, ...);
     if( iotrace && iotrace!=stdout ) fclose(iotrace);
     iotrace = 0;
     if( nArg<2 ){
@@ -3844,9 +3844,9 @@ static int do_meta_command(char *zLine, ShellState *p){
                           azArg[2],
                           integerValue(azArg[3]),
                           integerValue(azArg[4]));
+            fprintf(p->out, "%d (0x%08x)\n", rc, rc);
           }else{
-            fprintf(stderr,"Usage: .testctrl initmode dbName onoff tnum\n");
-            rc = 1;
+            fprintf(stderr,"Usage: .testctrl imposter dbName onoff tnum\n");
           }
           break;
 

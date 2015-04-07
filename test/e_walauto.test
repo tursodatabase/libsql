@@ -15,6 +15,14 @@ source $testdir/tester.tcl
 source $testdir/wal_common.tcl
 set testprefix e_walauto
 
+# Do not run this test on OpenBSD, as it depends on read() and mmap both
+# accessing the same coherent view of the "test.db-shm" file. This doesn't
+# work on OpenBSD.
+#
+if {$tcl_platform(os) == "OpenBSD"} {
+  finish_test
+  return
+}
 
 proc read_nbackfill {} {
   seek $::shmfd 96

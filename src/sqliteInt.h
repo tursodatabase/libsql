@@ -595,6 +595,20 @@ typedef INT8_TYPE i8;              /* 1-byte signed integer */
 typedef INT16_TYPE LogEst;
 
 /*
+** Set the SQLITE_PTRSIZE macro to the number of bytes in a pointer
+*/
+#ifndef SQLITE_PTRSIZE
+# if defined(__SIZEOF_POINTER__)
+#   define SQLITE_PTRSIZE __SIZEOF_POINTER__
+# elif defined(i386)     || defined(__i386__)   || defined(_M_IX86) ||    \
+       defined(_M_ARM)   || defined(__arm__)    || defined(__x86)
+#   define SQLITE_PTRSIZE 4
+# else
+#   define SQLITE_PTRSIZE 8
+# endif
+#endif
+
+/*
 ** Macros to determine whether the machine is big or little endian,
 ** and whether or not that determination is run-time or compile-time.
 **
@@ -1098,6 +1112,7 @@ struct sqlite3 {
   int nVdbeRead;                /* Number of active VDBEs that read or write */
   int nVdbeWrite;               /* Number of active VDBEs that read and write */
   int nVdbeExec;                /* Number of nested calls to VdbeExec() */
+  int nVDestroy;                /* Number of active OP_VDestroy operations */
   int nExtension;               /* Number of loaded extensions */
   void **aExtension;            /* Array of shared library handles */
   void (*xTrace)(void*,const char*);        /* Trace function */
@@ -2374,6 +2389,7 @@ struct Select {
 #define SF_MaybeConvert    0x0400  /* Need convertCompoundSelectToSubquery() */
 #define SF_Recursive       0x0800  /* The recursive part of a recursive CTE */
 #define SF_MinMaxAgg       0x1000  /* Aggregate containing min() or max() */
+#define SF_Converted       0x2000  /* By convertCompoundSelectToSubquery() */
 
 
 /*
@@ -3097,9 +3113,14 @@ const sqlite3_mem_methods *sqlite3MemGetMemsys5(void);
   int sqlite3MutexEnd(void);
 #endif
 
-int sqlite3StatusValue(int);
-void sqlite3StatusAdd(int, int);
+sqlite3_int64 sqlite3StatusValue(int);
+void sqlite3StatusUp(int, int);
+void sqlite3StatusDown(int, int);
 void sqlite3StatusSet(int, int);
+
+/* Access to mutexes used by sqlite3_status() */
+sqlite3_mutex *sqlite3Pcache1Mutex(void);
+sqlite3_mutex *sqlite3MallocMutex(void);
 
 #ifndef SQLITE_OMIT_FLOATING_POINT
   int sqlite3IsNaN(double);
@@ -3783,7 +3804,7 @@ void sqlite3Put4byte(u8*, u32);
 #ifdef SQLITE_ENABLE_IOTRACE
 # define IOTRACE(A)  if( sqlite3IoTrace ){ sqlite3IoTrace A; }
   void sqlite3VdbeIOTraceSql(Vdbe*);
-SQLITE_EXTERN void (*sqlite3IoTrace)(const char*,...);
+SQLITE_API SQLITE_EXTERN void (SQLITE_CDECL *sqlite3IoTrace)(const char*,...);
 #else
 # define IOTRACE(A)
 # define sqlite3VdbeIOTraceSql(X)

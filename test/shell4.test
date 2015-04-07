@@ -122,6 +122,7 @@ do_test shell4-2.2 {
 do_test shell4-2.3 {
   catchcmd ":memory:" ".trace stdout\n.trace\n.trace off\n.dump\n"
 } {/^1 {PRAGMA.*Usage:.*}$/}
+ifcapable trace {
 do_test shell4-2.4 {
   catchcmd ":memory:" ".trace stdout\nCREATE TABLE t1(x);SELECT * FROM t1;"
 } {0 {CREATE TABLE t1(x);
@@ -129,6 +130,7 @@ SELECT * FROM t1;}}
 do_test shell4-2.5 {
   catchcmd ":memory:" "CREATE TABLE t1(x);\n.trace stdout\nSELECT * FROM t1;"
 } {0 {SELECT * FROM t1;}}
+}
 
 
 finish_test

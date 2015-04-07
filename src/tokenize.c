@@ -459,9 +459,11 @@ abort_parse:
     sqlite3Parser(pEngine, 0, pParse->sLastToken, pParse);
   }
 #ifdef YYTRACKMAXSTACKDEPTH
+  sqlite3_mutex_enter(sqlite3MallocMutex());
   sqlite3StatusSet(SQLITE_STATUS_PARSER_STACK,
       sqlite3ParserStackPeak(pEngine)
   );
+  sqlite3_mutex_leave(sqlite3MallocMutex());
 #endif /* YYDEBUG */
   sqlite3ParserFree(pEngine, sqlite3_free);
   db->lookaside.bEnabled = enableLookaside;

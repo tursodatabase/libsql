@@ -827,5 +827,20 @@ WITH RECURSIVE
 SELECT x FROM t1 EXCEPT SELECT y FROM t2 ORDER BY 1;
 } {2 4 8 10 14 16 20}
 
+# 2015-03-21
+# Column wildcards on the LHS of a recursive table expression
+#
+do_catchsql_test 13.1 {
+  WITH RECURSIVE c(i) AS (SELECT * UNION ALL SELECT i+1 FROM c WHERE i<10)
+  SELECT i FROM c;
+} {1 {no tables specified}}
+do_catchsql_test 13.2 {
+  WITH RECURSIVE c(i) AS (SELECT 5,* UNION ALL SELECT i+1 FROM c WHERE i<10)
+  SELECT i FROM c;
+} {1 {no tables specified}}
+do_catchsql_test 13.3 {
+  WITH RECURSIVE c(i,j) AS (SELECT 5,* UNION ALL SELECT i+1,11 FROM c WHERE i<10)
+  SELECT i FROM c;
+} {1 {table c has 1 values for 2 columns}}
 
 finish_test
