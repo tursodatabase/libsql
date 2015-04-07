@@ -270,6 +270,8 @@ void sqlite3VXPrintf(
         c = *++fmt;
       }
     }
+    if( width<0 ) width = 0; /* force to non-negative after int overflow */
+
     /* Get the precision */
     if( c=='.' ){
       precision = 0;
@@ -280,7 +282,6 @@ void sqlite3VXPrintf(
         }else{
           precision = va_arg(ap,int);
         }
-        if( precision<0 ) precision = -precision;
         c = *++fmt;
       }else{
         while( c>='0' && c<='9' ){
@@ -288,6 +289,12 @@ void sqlite3VXPrintf(
           c = *++fmt;
         }
       }
+
+      /* If a negative precision has been specified, use its absolute value
+      ** instead. This is (probably) not standard printf() behaviour, but
+      ** it is what sqlite3_mprintf() and friends have always done. If the
+      ** precision specified is -2147483648, use 0. */
+      if( precision<0 ) precision = (-precision) & 0x7fffffff;
     }else{
       precision = -1;
     }
@@ -390,7 +397,6 @@ void sqlite3VXPrintf(
         if( precision<etBUFSIZE-10 ){
           nOut = etBUFSIZE;
           zOut = buf;
-          if( precision<0 ) precision = 0;
         }else{
           nOut = precision + 10;
           zOut = zExtra = sqlite3Malloc( nOut );
