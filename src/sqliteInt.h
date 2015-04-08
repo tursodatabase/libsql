@@ -2399,6 +2399,7 @@ struct Select {
 #define SF_MaybeConvert    0x0400  /* Need convertCompoundSelectToSubquery() */
 #define SF_Recursive       0x0800  /* The recursive part of a recursive CTE */
 #define SF_MinMaxAgg       0x1000  /* Aggregate containing min() or max() */
+#define SF_Converted       0x2000  /* By convertCompoundSelectToSubquery() */
 
 
 /*
