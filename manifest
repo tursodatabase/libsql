@@ -1,5 +1,5 @@
-C Merge\sprintf()\swidth\sand\sprecision\soverflow\sfixes\sfrom\strunk.
-D 2015-04-07T23:10:44.364
+C Add\sexperimental\sAPI\ssqlite3session_diff().
+D 2015-04-08T16:01:12.482
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3083cf0c2bc6618e532b9478ce735bb512322985
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -148,7 +148,7 @@ F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F ext/session/changeset.c 4ccbaa4531944c24584bf6a61ba3a39c62b6267a
 F ext/session/session1.test 4653867f32a98ce4bbb4a181aac6debe51ca4dfb
-F ext/session/session2.test 99ca0da7ddb617d42bafd83adccf99f18ae0384b
+F ext/session/session2.test a95a2d270b32638c1acba7cb9c81856712d469ac
 F ext/session/session3.test a7a9ce59b8d1e49e2cc23d81421ac485be0eea01
 F ext/session/session4.test a6ed685da7a5293c5d6f99855bcf41dbc352ca84
 F ext/session/session5.test 716bc6fafd625ce60dfa62ae128971628c1a1169
@@ -158,11 +158,12 @@ F ext/session/session9.test 5409d90d8141881d08285ed1c2c0d8d10fb92069
 F ext/session/sessionA.test 1feeab0b8e03527f08f2f1defb442da25480138f
 F ext/session/sessionB.test 06961b7c3641151f5d23088250ecad132501113c
 F ext/session/sessionC.test 3982f8577b0744c5ce3aaef7cfeb5bd903f17fe4
+F ext/session/sessionD.test 95903bd6a23dadbda7e192f730dd7dedd2d369ef
 F ext/session/session_common.tcl 9de0451b6a47218fc16b9ed8876b6238a0a3d88d
 F ext/session/sessionfault.test bef044d0952c0d62c31c8d2400be72c8684545cc
-F ext/session/sqlite3session.c 838050c4c217d2843e4705b14be25d8f0457f155
-F ext/session/sqlite3session.h 16608d29879a0ed3c6be6b7fb18dcdb5c707aaef
-F ext/session/test_session.c a28352e99bc6a83b94e4cce99a7bf25c73d6d489
+F ext/session/sqlite3session.c 3fcf2efe81c90602db76b1da33538895034eef66
+F ext/session/sqlite3session.h d9ebd8d4c5791aafdf18165575c7f2223c09279b
+F ext/session/test_session.c 037fc25340a918eb2195972fed439d7adf7b5db9
 F ext/userauth/sqlite3userauth.h 19cb6f0e31316d0ee4afdfb7a85ef9da3333a220
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
@@ -1267,7 +1268,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 271c110bcf5bf2ea7e113dd01dec876a08e3c047 8e4ac2ce24415926247961b00a62425ae85d6ffb
-R e52a83cd9a76eb22e0a9f49afec82395
-U drh
-Z 65d91c87ac07196da2d7921b7b9389b5
+P aeca95ac77f6f320a916f7e3c5a7a588ef4a20c8
+R 5c3cbffcff665bc16c7e835a4d990399
+T *branch * sessions-diff
+T *sym-sessions-diff *
+T -sym-sessions *
+U dan
+Z b513e16008d3799dcac5a3d5f415d7d8
