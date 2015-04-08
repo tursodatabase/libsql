@@ -1,5 +1,5 @@
-C Avoid\ssigned\sinteger\soverflow\swhen\sconverting\soversized\sin-line\sinteger\nwidths\sand\sprecisions\sin\sprintf().
-D 2015-04-07T15:39:29.937
+C Version\s3.8.9
+D 2015-04-08T12:16:33.323
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 00d12636df7a5b08af09116bcd6c7bfd49b8b3b4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1249,7 +1249,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 95625ef3adc3c408d67e70f877f390445fbb8292
+P 8e4ac2ce24415926247961b00a62425ae85d6ffb
 R 5875861747bb686954783d9ce4259b86
+T +bgcolor * #d0c0ff
+T +sym-release *
+T +sym-version-3.8.9 *
 U drh
-Z e5281cee406ead55e17262e5bdbb2163
+Z 05045ab8d5dbbaefca88cc23b8dca09c
