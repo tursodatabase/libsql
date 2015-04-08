@@ -1375,4 +1375,64 @@ do_execsql_test 4.2.2 {
 } {/2 . 3 . 4 . 5 . 6 . 7 ./}
 
 
+proc strip_rnd {explain} {
+  regexp -all {sqlite_sq_[0123456789ABCDEF]*} $explain sqlite_sq
+}
+
+proc do_same_test {tn q1 args} {
+  set r2 [strip_rnd [db eval "EXPLAIN $q1"]]
+  set i 1
+  foreach q $args {
+    set tst [subst -nocommands {strip_rnd [db eval "EXPLAIN $q"]}]
+    uplevel do_test $tn.$i [list $tst] [list $r2]
+    incr i
+  }
+}
+
+do_execsql_test 5.0 {
+  CREATE TABLE t8(a, b);
+  CREATE TABLE t9(c, d);
+} {}
+
+do_same_test 5.1 {
+  SELECT a, b FROM t8 INTERSECT SELECT c, d FROM t9 ORDER BY a;
+} {
+  SELECT a, b FROM t8 INTERSECT SELECT c, d FROM t9 ORDER BY t8.a;
+} {
+  SELECT a, b FROM t8 INTERSECT SELECT c, d FROM t9 ORDER BY 1;
+} {
+  SELECT a, b FROM t8 INTERSECT SELECT c, d FROM t9 ORDER BY c;
+} {
+  SELECT a, b FROM t8 INTERSECT SELECT c, d FROM t9 ORDER BY t9.c;
+}
+
+do_same_test 5.2 {
+  SELECT a, b FROM t8 UNION SELECT c, d FROM t9 ORDER BY a COLLATE NOCASE
+} {
+  SELECT a, b FROM t8 UNION SELECT c, d FROM t9 ORDER BY t8.a COLLATE NOCASE
+} {
+  SELECT a, b FROM t8 UNION SELECT c, d FROM t9 ORDER BY 1 COLLATE NOCASE
+} {
+  SELECT a, b FROM t8 UNION SELECT c, d FROM t9 ORDER BY c COLLATE NOCASE
+} {
+  SELECT a, b FROM t8 UNION SELECT c, d FROM t9 ORDER BY t9.c COLLATE NOCASE
+}
+
+do_same_test 5.3 {
+  SELECT a, b FROM t8 EXCEPT SELECT c, d FROM t9 ORDER BY b, c COLLATE NOCASE
+} {
+  SELECT a, b FROM t8 EXCEPT SELECT c, d FROM t9 ORDER BY 2, 1 COLLATE NOCASE
+} {
+  SELECT a, b FROM t8 EXCEPT SELECT c, d FROM t9 ORDER BY d, a COLLATE NOCASE
+} {
+  SELECT a, b FROM t8 EXCEPT SELECT * FROM t9 ORDER BY t9.d, c COLLATE NOCASE
+} {
+  SELECT * FROM t8 EXCEPT SELECT c, d FROM t9 ORDER BY d, t8.a COLLATE NOCASE
+}
+
+do_catchsql_test 5.4 {
+  SELECT * FROM t8 UNION SELECT * FROM t9 ORDER BY a+b COLLATE NOCASE
+} {1 {1st ORDER BY term does not match any column in the result set}}
+
+
 finish_test
