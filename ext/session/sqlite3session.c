@@ -316,8 +316,8 @@ static int sessionSerializeValue(
         }else{
           z = (u8 *)sqlite3_value_blob(pValue);
         }
-        if( z==0 ) return SQLITE_NOMEM;
         n = sqlite3_value_bytes(pValue);
+        if( z==0 && (eType!=SQLITE_BLOB || n>0) ) return SQLITE_NOMEM;
         nVarint = sessionVarintLen(n);
   
         if( aBuf ){
@@ -435,13 +435,15 @@ static int sessionPreupdateHash(
         h = sessionHashAppendI64(h, iVal);
       }else if( eType==SQLITE_TEXT || eType==SQLITE_BLOB ){
         const u8 *z;
+        int n;
         if( eType==SQLITE_TEXT ){
           z = (const u8 *)sqlite3_value_text(pVal);
         }else{
           z = (const u8 *)sqlite3_value_blob(pVal);
         }
-        if( !z ) return SQLITE_NOMEM;
-        h = sessionHashAppendBlob(h, sqlite3_value_bytes(pVal), z);
+        n = sqlite3_value_bytes(pVal);
+        if( !z && (eType!=SQLITE_BLOB || n>0) ) return SQLITE_NOMEM;
+        h = sessionHashAppendBlob(h, n, z);
       }else{
         assert( eType==SQLITE_NULL );
         *pbNullPK = 1;
@@ -1500,13 +1502,14 @@ static void sessionAppendCol(
     }
     if( eType==SQLITE_BLOB || eType==SQLITE_TEXT ){
       u8 *z;
+      int nByte;
       if( eType==SQLITE_BLOB ){
         z = (u8 *)sqlite3_column_blob(pStmt, iCol);
       }else{
         z = (u8 *)sqlite3_column_text(pStmt, iCol);
       }
-      if( z ){
-        int nByte = sqlite3_column_bytes(pStmt, iCol);
+      nByte = sqlite3_column_bytes(pStmt, iCol);
+      if( z || (eType==SQLITE_BLOB && nByte==0) ){
         sessionAppendVarint(p, nByte, pRc);
         sessionAppendBlob(p, z, nByte, pRc);
       }else{
@@ -2179,7 +2182,7 @@ static int sessionValueSetStr(
   ** argument to sqlite3ValueSetStr() and have the copy created 
   ** automatically. But doing so makes it difficult to detect any OOM
   ** error. Hence the code to create the copy externally. */
-  u8 *aCopy = sqlite3_malloc(nData);
+  u8 *aCopy = sqlite3_malloc(nData+1);
   if( aCopy==0 ) return SQLITE_NOMEM;
   memcpy(aCopy, aData, nData);
   sqlite3ValueSetStr(pVal, nData, (char*)aCopy, enc, sqlite3_free);

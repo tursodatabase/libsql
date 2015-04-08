@@ -169,7 +169,17 @@ set set_of_tests {
     INSERT INTO %T4% VALUES('def', 'abc');
   }
   17 { UPDATE %T4% SET b = 1 }
+
   18 { DELETE FROM %T4% WHERE 1 }
+
+  19 { 
+    INSERT INTO t1 VALUES('', '');
+    INSERT INTO t1 VALUES(X'', X'');
+  }
+  20 { 
+    DELETE FROM t1;
+    INSERT INTO t1 VALUES('', NULL);
+  }
 }
 
 test_reset
