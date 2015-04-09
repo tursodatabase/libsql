@@ -1,9 +1,9 @@
-C Remove\sa\svariable\sinitializion\sto\ssilence\sa\sharmless\scompiler\swarning.
-D 2015-04-09T11:24:03.589
+C Add\sthe\s"sqldiff"\sutility\sprogram.
+D 2015-04-09T13:34:29.580
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in 00d12636df7a5b08af09116bcd6c7bfd49b8b3b4
+F Makefile.in 5f78b1ab81b64e7c57a75d170832443e66c0880a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc a8d817fa486d8c88dfbd19ae6a6567d9d350de39
+F Makefile.msc fa6a6de11af800d89f86e8a4266fd40a46008347
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md d58e3bebc0a4145e0f2a87994015fdb575a8e866
 F VERSION 319eb1ced4b4d17a67730f2b7b85f15c1346cb60
@@ -152,7 +152,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 997eee18387a3e69394f2f948c9c6ccf079655a4
+F main.mk ddffac494a82d42772df9fe30d3a78acf4f7cb41
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
 F mkopcodeh.awk c6b3fa301db6ef7ac916b14c60868aeaec1337b5
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
@@ -1239,6 +1239,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
+F tool/sqldiff.c 9c1c1e0aef974f1ad52aa720440a8a105d24d6f0
 F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
 F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
 F tool/symbols.sh fec58532668296d7c7dc48be9c87f75ccdb5814f
@@ -1249,7 +1250,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8a8ffc862e96f57aa698f93de10dee28e69f6e09
-R 94d9923532f03d2c01923395a653f609
+P 79861adbef8998c0f23e160543af8212d5546cd0
+R 55392413d804c3fa91206c94bb3d11f7
 U drh
-Z 1ec7205940b0e152091a81dfbeda06fb
+Z a808bd48a859f116c92ef95210be5fe3
