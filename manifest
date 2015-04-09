@@ -1,5 +1,5 @@
-C Remove\stwo\spointless\sassert()\sstatements.\s\sThis\sshould\ssilence\sharmless\ncompiler\swarnings\sreported\sat\s\n[https://bugzilla.mozilla.org/show_bug.cgi?id=1152845]
-D 2015-04-09T16:30:56.502
+C Add\sthe\s--primarykey\soption\sto\sthe\ssqldiff\stool,\swhich\scauses\sit\sto\suse\sthe\nschema-defined\sPRIMARY\sKEY.
+D 2015-04-09T18:14:03.130
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f78b1ab81b64e7c57a75d170832443e66c0880a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1239,7 +1239,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
-F tool/sqldiff.c a28d17d824bc80940c2d67b2cf85a387c461dc97
+F tool/sqldiff.c 9334ebc767dda9e02b904d4cbbd31cf8aaba3ca5
 F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
 F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
 F tool/symbols.sh fec58532668296d7c7dc48be9c87f75ccdb5814f
@@ -1250,7 +1250,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 32ab2bb990746a84f5944e3cf428fb2dff3628da
-R 37f01a89c55b4805b0a5cf101a377c7c
+P 83b342a44ffc9ea07dc4d59f2866cefc68ee4f13
+R 80b4d61d5d12e62d07bcaa502c23a21f
 U drh
-Z 80169060600c5dd4d547a3dab7f7d969
+Z 965913d93d231505652de01e91883fad

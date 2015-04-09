@@ -26,6 +26,7 @@
 struct GlobalVars {
   const char *zArgv0;       /* Name of program */
   int bSchemaOnly;          /* Only show schema differences */
+  int bSchemaPK;            /* Use the schema-defined PK, not the true PK */
   unsigned fDebug;          /* Debug flags */
   sqlite3 *db;              /* The database connection */
 } g;
@@ -217,27 +218,34 @@ static void namelistFree(char **az){
 ** hold the list is obtained from sqlite3_malloc() and should released
 ** using namelistFree() when no longer needed.
 **
-** Primary key columns are listed first, followed by data columns.  The
-** "primary key" in the previous sentence is the true primary key - the
-** rowid or INTEGER PRIMARY KEY for ordinary tables or the declared
-** PRIMARY KEY for WITHOUT ROWID tables.  The number of columns in the
-** primary key is returned in *pnPkey.
+** Primary key columns are listed first, followed by data columns.
+** The number of columns in the primary key is returned in *pnPkey.
 **
-** If the table is a rowid table for which the rowid is inaccessible,
+** Normally, the "primary key" in the previous sentence is the true
+** primary key - the rowid or INTEGER PRIMARY KEY for ordinary tables
+** or the declared PRIMARY KEY for WITHOUT ROWID tables.  However, if
+** the g.bSchemaPK flag is set, then the schema-defined PRIMARY KEY is
+** used in all cases.  In that case, entries that have NULL values in
+** any of their primary key fields will be excluded from the analysis.
+**
+** If the primary key for a table is the rowid but rowid is inaccessible,
 ** then this routine returns a NULL pointer.
 **
 ** Examples:
 **    CREATE TABLE t1(a INT UNIQUE, b INTEGER, c TEXT, PRIMARY KEY(c));
 **    *pnPKey = 1;
-**    az = { "rowid", "a", "b", "c", 0 }
+**    az = { "rowid", "a", "b", "c", 0 }  // Normal case
+**    az = { "c", "a", "b", 0 }           // g.bSchemaPK==1
 **
 **    CREATE TABLE t2(a INT UNIQUE, b INTEGER, c TEXT, PRIMARY KEY(b));
 **    *pnPKey = 1;
 **    az = { "b", "a", "c", 0 }
 **
 **    CREATE TABLE t3(x,y,z,PRIMARY KEY(y,z));
-**    *pnPKey = 1
-**    az = { "rowid", "x", "y", "z", 0 }
+**    *pnPKey = 1                         // Normal case
+**    az = { "rowid", "x", "y", "z", 0 }  // Normal case
+**    *pnPKey = 2                         // g.bSchemaPK==1
+**    az = { "y", "x", "z", 0 }           // g.bSchemaPK==1
 **
 **    CREATE TABLE t4(x,y,z,PRIMARY KEY(y,z)) WITHOUT ROWID;
 **    *pnPKey = 2
@@ -247,50 +255,72 @@ static void namelistFree(char **az){
 **    az = 0     // The rowid is not accessible
 */
 static char **columnNames(const char *zDb, const char *zTab, int *pnPKey){
-  char **az = 0;
-  int naz = 0;
-  sqlite3_stmt *pStmt;
+  char **az = 0;           /* List of column names to be returned */
+  int naz = 0;             /* Number of entries in az[] */
+  sqlite3_stmt *pStmt;     /* SQL statement being run */
   char *zPkIdxName = 0;    /* Name of the PRIMARY KEY index */
-  int truePk = 0;          /* PRAGMA table_info indentifies the true PK */
+  int truePk = 0;          /* PRAGMA table_info indentifies the PK to use */
   int nPK = 0;             /* Number of PRIMARY KEY columns */
-  int i, j;
+  int i, j;                /* Loop counters */
 
-  pStmt = db_prepare("PRAGMA %s.index_list=%Q", zDb, zTab);
-  while( SQLITE_ROW==sqlite3_step(pStmt) ){
-    if( sqlite3_stricmp((const char*)sqlite3_column_text(pStmt,3),"pk")==0 ){
-      zPkIdxName = sqlite3_mprintf("%s", sqlite3_column_text(pStmt, 1));
-      break;
-    }
-  }
-  sqlite3_finalize(pStmt);
-  if( zPkIdxName ){
-    int nKey = 0;
-    int nCol = 0;
-    truePk = 0;
-    pStmt = db_prepare("PRAGMA %s.index_xinfo=%Q", zDb, zPkIdxName);
+  if( g.bSchemaPK==0 ){
+    /* Normal case:  Figure out what the true primary key is for the table.
+    **   *  For WITHOUT ROWID tables, the true primary key is the same as
+    **      the schema PRIMARY KEY, which is guaranteed to be present.
+    **   *  For rowid tables with an INTEGER PRIMARY KEY, the true primary
+    **      key is the INTEGER PRIMARY KEY.
+    **   *  For all other rowid tables, the rowid is the true primary key.
+    */
+    pStmt = db_prepare("PRAGMA %s.index_list=%Q", zDb, zTab);
     while( SQLITE_ROW==sqlite3_step(pStmt) ){
-      nCol++;
-      if( sqlite3_column_int(pStmt,5) ){ nKey++; continue; }
-      if( sqlite3_column_int(pStmt,1)>=0 ) truePk = 1;
-    }
-    if( nCol==nKey ) truePk = 1;
-    if( truePk ){
-      nPK = nKey;
-    }else{
-      nPK = 1;
+      if( sqlite3_stricmp((const char*)sqlite3_column_text(pStmt,3),"pk")==0 ){
+        zPkIdxName = sqlite3_mprintf("%s", sqlite3_column_text(pStmt, 1));
+        break;
+      }
     }
     sqlite3_finalize(pStmt);
-    sqlite3_free(zPkIdxName);
+    if( zPkIdxName ){
+      int nKey = 0;
+      int nCol = 0;
+      truePk = 0;
+      pStmt = db_prepare("PRAGMA %s.index_xinfo=%Q", zDb, zPkIdxName);
+      while( SQLITE_ROW==sqlite3_step(pStmt) ){
+        nCol++;
+        if( sqlite3_column_int(pStmt,5) ){ nKey++; continue; }
+        if( sqlite3_column_int(pStmt,1)>=0 ) truePk = 1;
+      }
+      if( nCol==nKey ) truePk = 1;
+      if( truePk ){
+        nPK = nKey;
+      }else{
+        nPK = 1;
+      }
+      sqlite3_finalize(pStmt);
+      sqlite3_free(zPkIdxName);
+    }else{
+      truePk = 1;
+      nPK = 1;
+    }
+    pStmt = db_prepare("PRAGMA %s.table_info=%Q", zDb, zTab);
   }else{
+    /* The g.bSchemaPK==1 case:  Use whatever primary key is declared
+    ** in the schema.  The "rowid" will still be used as the primary key
+    ** if the table definition does not contain a PRIMARY KEY.
+    */
+    nPK = 0;
+    pStmt = db_prepare("PRAGMA %s.table_info=%Q", zDb, zTab);
+    while( SQLITE_ROW==sqlite3_step(pStmt) ){
+      if( sqlite3_column_int(pStmt,5)>0 ) nPK++;
+    }
+    sqlite3_reset(pStmt);
+    if( nPK==0 ) nPK = 1;
     truePk = 1;
-    nPK = 1;
   }
   *pnPKey = nPK;
   naz = nPK;
   az = sqlite3_malloc( sizeof(char*)*(nPK+1) );
   if( az==0 ) runtimeError("out of memory");
   memset(az, 0, sizeof(char*)*(nPK+1));
-  pStmt = db_prepare("PRAGMA %s.table_info=%Q", zDb, zTab);
   while( SQLITE_ROW==sqlite3_step(pStmt) ){
     int iPKey;
     if( truePk && (iPKey = sqlite3_column_int(pStmt,5))>0 ){
@@ -692,6 +722,7 @@ static void showHelp(void){
   printf(
 "Output SQL text that would transform DB1 into DB2.\n"
 "Options:\n"
+"  --primarykey          Use schema-defined PRIMARY KEYs\n"
 "  --schema              Show only differences in the schema\n"
 "  --table TAB           Show only differences in table TAB\n"
   );
@@ -719,6 +750,9 @@ int main(int argc, char **argv){
       if( strcmp(z,"help")==0 ){
         showHelp();
         return 0;
+      }else
+      if( strcmp(z,"primarykey")==0 ){
+        g.bSchemaPK = 1;
       }else
       if( strcmp(z,"schema")==0 ){
         g.bSchemaOnly = 1;
