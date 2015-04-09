@@ -680,7 +680,6 @@ static SrcList *targetSrcList(
   pSrc = sqlite3SrcListAppend(pParse->db, 0, &pStep->target, 0);
   if( pSrc ){
     assert( pSrc->nSrc>0 );
-    assert( pSrc->a!=0 );
     iDb = sqlite3SchemaToIndex(pParse->db, pStep->pTrig->pSchema);
     if( iDb==0 || iDb>=2 ){
       sqlite3 *db = pParse->db;
