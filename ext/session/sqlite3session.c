@@ -159,7 +159,7 @@ struct SessionTable {
 ** Each group of changes begins with a table header:
 **
 **   1 byte: Constant 0x54 (capital 'T')
-**   Varint: Big-endian integer set to the number of columns in the table.
+**   Varint: Number of columns in the table.
 **   nCol bytes: 0x01 for PK columns, 0x00 otherwise.
 **   N bytes: Unqualified table name (encoded using UTF-8). Nul-terminated.
 **
@@ -170,16 +170,38 @@ struct SessionTable {
 **   old.* record: (delete and update only)
 **   new.* record: (insert and update only)
 **
+** The "old.*" and "new.*" records, if present, are N field records in the
+** format described above under "RECORD FORMAT", where N is the number of
+** columns in the table. The i'th field of each record is associated with
+** the i'th column of the table, counting from left to right in the order
+** in which columns were declared in the CREATE TABLE statement.
+**
+** The new.* record that is part of each INSERT change contains the values
+** that make up the new row. Similarly, the old.* record that is part of each
+** DELETE change contains the values that made up the row that was deleted 
+** from the database. In the changeset format, the records that are part
+** of INSERT or DELETE changes never contain any undefined (type byte 0x00)
+** fields.
+**
+** Within the old.* record associated with an UPDATE change, all fields
+** associated with table columns that are not PRIMARY KEY columns and are
+** not modified by the UPDATE change are set to "undefined". Other fields
+** are set to the values that made up the row before the UPDATE that the
+** change records took place. Within the new.* record, fields associated 
+** with table columns modified by the UPDATE change contain the new 
+** values. Fields associated with table columns that are not modified
+** are set to "undefined".
+**
 ** PATCHSET FORMAT:
 **
 ** A patchset is also a collection of changes. It is similar to a changeset,
-** but omits those fields that are not useful if no conflict resolution
-** is required when applying the changeset.
+** but leaves undefined those fields that are not useful if no conflict
+** resolution is required when applying the changeset.
 **
 ** Each group of changes begins with a table header:
 **
 **   1 byte: Constant 0x50 (capital 'P')
-**   Varint: Big-endian integer set to the number of columns in the table.
+**   Varint: Number of columns in the table.
 **   nCol bytes: 0x01 for PK columns, 0x00 otherwise.
 **   N bytes: Unqualified table name (encoded using UTF-8). Nul-terminated.
 **
@@ -187,7 +209,26 @@ struct SessionTable {
 **
 **   1 byte: Either SQLITE_INSERT, UPDATE or DELETE.
 **   1 byte: The "indirect-change" flag.
-**   single record: (PK fields for DELETE, or full record for INSERT/UPDATE).
+**   single record: (PK fields for DELETE, PK and modified fields for UPDATE,
+**                   full record for INSERT).
+**
+** As in the changeset format, each field of the single record that is part
+** of a patchset change is associated with the correspondingly positioned
+** table column, counting from left to right within the CREATE TABLE 
+** statement.
+**
+** For a DELETE change, all fields within the record except those associated
+** with PRIMARY KEY columns are set to "undefined". The PRIMARY KEY fields
+** contain the values identifying the row to delete.
+**
+** For an UPDATE change, all fields except those associated with PRIMARY KEY
+** columns and columns that are modified by the UPDATE are set to "undefined".
+** PRIMARY KEY fields contain the values identifying the table row to update,
+** and fields associated with modified columns contain the new column values.
+**
+** The records associated with INSERT changes are in the same format as for
+** changesets. It is not possible for a record associated with an INSERT
+** change to contain a field set to "undefined".
 */
 
 /*
