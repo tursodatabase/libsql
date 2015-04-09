@@ -214,14 +214,14 @@ static void namelistFree(char **az){
 
 /*
 ** Return a list of column names for the table zDb.zTab.  Space to
-** old the list is obtained from malloc() and should released by calling
-** namelistFree() when no longer needed.
+** hold the list is obtained from sqlite3_malloc() and should released
+** using namelistFree() when no longer needed.
 **
 ** Primary key columns are listed first, followed by data columns.  The
 ** "primary key" in the previous sentence is the true primary key - the
 ** rowid or INTEGER PRIMARY KEY for ordinary tables or the declared
 ** PRIMARY KEY for WITHOUT ROWID tables.  The number of columns in the
-** primary key is returned in *pNPkey.
+** primary key is returned in *pnPkey.
 **
 ** If the table is a rowid table for which the rowid is inaccessible,
 ** then this routine returns a NULL pointer.

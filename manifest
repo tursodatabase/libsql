@@ -1,5 +1,5 @@
-C Add\sthe\s"sqldiff"\sutility\sprogram.
-D 2015-04-09T13:34:29.580
+C Fix\scomment\stypos\sin\sthe\ssqldiff.c\sutility\sprogram.
+D 2015-04-09T13:40:18.767
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f78b1ab81b64e7c57a75d170832443e66c0880a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1239,7 +1239,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
-F tool/sqldiff.c 9c1c1e0aef974f1ad52aa720440a8a105d24d6f0
+F tool/sqldiff.c a28d17d824bc80940c2d67b2cf85a387c461dc97
 F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
 F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
 F tool/symbols.sh fec58532668296d7c7dc48be9c87f75ccdb5814f
@@ -1250,7 +1250,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 79861adbef8998c0f23e160543af8212d5546cd0
-R 55392413d804c3fa91206c94bb3d11f7
+P 88da5bf5d2c4f848dbd4b5ffb1539abfbbdaff18
+R df929ff4fd13763291be7acc0214ee00
 U drh
-Z a808bd48a859f116c92ef95210be5fe3
+Z 41493ba4ef878730b46175333abd9329
