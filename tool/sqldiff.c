@@ -658,7 +658,7 @@ static void diff_one_table(const char *zTab){
           zSep = " SET";
           for(i=nPk+1; i<nQ; i+=2){
             if( sqlite3_column_int(pStmt,i)==0 ) continue;
-            printf("%s %s=", zSep, az2[(i-1)/2]);
+            printf("%s %s=", zSep, az2[(i+nPk-1)/2]);
             zSep = ",";
             printQuoted(sqlite3_column_value(pStmt,i+1));
           }
