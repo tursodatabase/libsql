@@ -1,9 +1,9 @@
-C In\ssqlite3_declare_vtab(),\savoid\saccessing\sthe\sdatabase\sstructure\suntil\safter\sthe\s"api-armour"\ssafety-check\shas\scompleted\sand\sthe\sdb\smutex\shas\sbeen\sobtained.
-D 2015-04-10T16:05:33.033
+C Minor\sbuild\senhancements\sfor\sMSVC.
+D 2015-04-10T21:16:11.659
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f78b1ab81b64e7c57a75d170832443e66c0880a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc fa6a6de11af800d89f86e8a4266fd40a46008347
+F Makefile.msc 0078f5781538e07ea38683439f38d5f5ab79ab6e
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md d58e3bebc0a4145e0f2a87994015fdb575a8e866
 F VERSION 319eb1ced4b4d17a67730f2b7b85f15c1346cb60
@@ -203,7 +203,7 @@ F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
 F src/mem3.c 61c9d47b792908c532ca3a62b999cf21795c6534
 F src/mem5.c 61eeb90134f9a5be6c2e68d8daae7628b25953fb
 F src/memjournal.c 3eb2c0b51adbd869cb6a44780323f05fa904dc85
-F src/msvc.h e78002098966e39b2fd9915bd70b7bc3ec8398b7
+F src/msvc.h d9ba56c6851227ab44b3f228a35f3f5772296495
 F src/mutex.c 19bf9acba69ca2f367c3761080f8a9f0cf4670a8
 F src/mutex.h 779d588e3b7756ec3ecf7d78cde1d84aba414f85
 F src/mutex_noop.c 529bab0743c3321c940f32c3464de494fd38cfa9
@@ -1250,7 +1250,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ed3cbaab6ad49b0cb5b17e44def26c866919387a
-R f962720dd8c90d63a1a200cd065fa312
-U dan
-Z 666766483214acd3a759f5cb43f45fc3
+P 860e4f8a94901d451fac3954960c1d2f589e8882
+R d724f3837aa2139b84d99a7758232948
+U mistachkin
+Z add6515d666dc387abaf063a7b8f0157
