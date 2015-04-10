@@ -536,6 +536,9 @@ sqlite3$(TEXE):	$(TOP)/src/shell.c libsqlite3.la sqlite3.h
 		-o $@ $(TOP)/src/shell.c libsqlite3.la \
 		$(LIBREADLINE) $(TLIBS) -rpath "$(libdir)"
 
+sqldiff$(EXE):	$(TOP)/tool/sqldiff.c sqlite3.c sqlite3.h
+	$(LTLINK) -o $@ $(TOP)/tool/sqldiff.c	sqlite3.c $(TLIBS)
+
 mptester$(EXE):	sqlite3.c $(TOP)/mptest/mptest.c
 	$(LTLINK) -o $@ -I. $(TOP)/mptest/mptest.c sqlite3.c \
 		$(TLIBS) -rpath "$(libdir)"
@@ -1059,7 +1062,7 @@ install:	sqlite3$(BEXE) lib_install sqlite3.h sqlite3.pc ${HAVE_TCL:1=tcl_instal
 	$(INSTALL) -m 0644 sqlite3.pc $(DESTDIR)$(pkgconfigdir)
 
 pkgIndex.tcl:
-	echo 'package ifneeded sqlite3 $(RELEASE) [list load $(TCLLIBDIR)/libtclsqlite3.so sqlite3]' > $@
+	echo 'package ifneeded sqlite3 $(RELEASE) [list load $(TCLLIBDIR)/libtclsqlite3$(SHLIB_SUFFIX) sqlite3]' > $@
 tcl_install:	lib_install libtclsqlite3.la pkgIndex.tcl
 	$(INSTALL) -d $(DESTDIR)$(TCLLIBDIR)
 	$(LTINSTALL) libtclsqlite3.la $(DESTDIR)$(TCLLIBDIR)

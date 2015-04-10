@@ -1656,7 +1656,7 @@ static int vdbeMergeEngineStep(
         pReadr2 = &pMerger->aReadr[ pMerger->aTree[i ^ 0x0001] ];
         bCached = 0;
       }else{
-        bCached = (pReadr1->pFd!=0);
+        if( pReadr1->pFd ) bCached = 0;
         pMerger->aTree[i] = (int)(pReadr2 - pMerger->aReadr);
         pReadr1 = &pMerger->aReadr[ pMerger->aTree[i ^ 0x0001] ];
       }

@@ -1731,7 +1731,7 @@ static char *msort(
   char *ep;
   char *set[LISTSIZE];
   int i;
-  offset = (unsigned long)next - (unsigned long)list;
+  offset = (unsigned long)((char*)next - (char*)list);
   for(i=0; i<LISTSIZE; i++) set[i] = 0;
   while( list ){
     ep = list;
@@ -1875,7 +1875,7 @@ static int handleswitch(int i, FILE *err)
         if( *end ){
           if( err ){
             fprintf(err,"%sillegal character in floating-point argument.\n",emsg);
-            errline(i,((unsigned long)end)-(unsigned long)argv[i],err);
+            errline(i,(int)((char*)end-(char*)argv[i]),err);
           }
           errcnt++;
         }
@@ -1886,7 +1886,7 @@ static int handleswitch(int i, FILE *err)
         if( *end ){
           if( err ){
             fprintf(err,"%sillegal character in integer argument.\n",emsg);
-            errline(i,((unsigned long)end)-(unsigned long)argv[i],err);
+            errline(i,(int)((char*)end-(char*)argv[i]),err);
           }
           errcnt++;
         }

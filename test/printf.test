@@ -472,6 +472,18 @@ do_test printf-1.16.7 {
   sqlite3_mprintf_int {abc: (%#6d) (%#6x) (%#6o) :xyz}\
        0xff676981 0xff676981 0xff676981
 } {abc: (-9999999) (0xff676981) (037731664601) :xyz}
+do_test printf-1.17.1 {
+  sqlite3_mprintf_int {abd: %2147483647d %2147483647x %2147483647o} 1 1 1
+} {}
+do_test printf-1.17.2 {
+  sqlite3_mprintf_int {abd: %*d %x} 2147483647 1 1
+} {}
+do_test printf-1.17.3 {
+  sqlite3_mprintf_int {abd: %*d %x} -2147483648 1 1
+} {abd: 1 1}
+do_test printf-1.17.4 {
+  sqlite3_mprintf_int {abd: %.2147483648d %x %x} 1 1 1
+} {/.*/}
 do_test printf-2.1.1.1 {
   sqlite3_mprintf_double {abc: (%*.*f) :xyz} 1 1 0.001
 } {abc: (0.0) :xyz}
@@ -526,6 +538,9 @@ do_test printf-2.1.2.8 {
 do_test printf-2.1.2.9 {
   sqlite3_mprintf_double {abc: %d %d (%1.1g) :xyz} 1 1 1.0e-20
 } {abc: 1 1 (1e-20) :xyz}
+do_test printf-2.1.2.10 {
+  sqlite3_mprintf_double {abc: %*.*f}  2000000000 1000000000 1.0e-20
+} {abc: }
 do_test printf-2.1.3.1 {
   sqlite3_mprintf_double {abc: (%*.*f) :xyz} 1 1 1.0
 } {abc: (1.0) :xyz}
@@ -3466,6 +3481,15 @@ do_test printf-3.5 {
 do_test printf-3.6 {
   sqlite3_mprintf_str {%d %d A String: (%-30s)} 1 2 {This is the string}
 } [format {%d %d A String: (%-30s)} 1 2 {This is the string}]
+do_test printf-3.7 {
+  sqlite3_mprintf_str {%d A String: (%*s)} 1 2147483647 {This is the string}
+} []
+do_test printf-3.8 {
+  sqlite3_mprintf_str {%d A String: (%*s)} 1 -2147483648 {This is the string}
+} {1 A String: (This is the string)}
+do_test printf-3.9 {
+  sqlite3_mprintf_str {%d A String: (%.*s)} 1 -2147483648 {This is the string}
+} {1 A String: (This is the string)}
 do_test snprintf-3.11 {
   sqlite3_snprintf_str 2 {x%d %d %s} 10 10 {This is the string}
 } {x}
@@ -3685,6 +3709,9 @@ do_test printf-13.5 {
 do_test printf-13.6 {
   sqlite3_mprintf_hexdouble %.20f fff8000000000000
 } {NaN}
+do_test printf-13.7 {
+  sqlite3_mprintf_hexdouble %2147483648.10000f 4693b8b5b5056e17
+} {/100000000000000000000000000000000.00/}
 
 do_test printf-14.1 {
   sqlite3_mprintf_str {abc-%y-123} 0 0 {not used}

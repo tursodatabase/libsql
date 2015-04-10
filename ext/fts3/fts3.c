@@ -1019,7 +1019,8 @@ static int fts3ContentColumns(
   const char *zTbl,               /* Name of content table */
   const char ***pazCol,           /* OUT: Malloc'd array of column names */
   int *pnCol,                     /* OUT: Size of array *pazCol */
-  int *pnStr                      /* OUT: Bytes of string content */
+  int *pnStr,                     /* OUT: Bytes of string content */
+  char **pzErr                    /* OUT: error message */
 ){
   int rc = SQLITE_OK;             /* Return code */
   char *zSql;                     /* "SELECT *" statement on zTbl */  
@@ -1030,6 +1031,9 @@ static int fts3ContentColumns(
     rc = SQLITE_NOMEM;
   }else{
     rc = sqlite3_prepare(db, zSql, -1, &pStmt, 0);
+    if( rc!=SQLITE_OK ){
+      *pzErr = sqlite3_mprintf("%s", sqlite3_errmsg(db));
+    }
   }
   sqlite3_free(zSql);
 
@@ -1108,7 +1112,7 @@ static int fts3InitVtab(
   const char **aCol;              /* Array of column names */
   sqlite3_tokenizer *pTokenizer = 0;        /* Tokenizer for this table */
 
-  int nIndex;                     /* Size of aIndex[] array */
+  int nIndex = 0;                 /* Size of aIndex[] array */
   struct Fts3Index *aIndex = 0;   /* Array of indexes for this table */
 
   /* The results of parsing supported FTS4 key=value options: */
@@ -1281,7 +1285,7 @@ static int fts3InitVtab(
     if( nCol==0 ){
       sqlite3_free((void*)aCol); 
       aCol = 0;
-      rc = fts3ContentColumns(db, argv[1], zContent, &aCol, &nCol, &nString);
+      rc = fts3ContentColumns(db, argv[1], zContent,&aCol,&nCol,&nString,pzErr);
 
       /* If a languageid= option was specified, remove the language id
       ** column from the aCol[] array. */ 
@@ -2502,26 +2506,33 @@ static int fts3DoclistOrMerge(
 **
 ** The right-hand input doclist is overwritten by this function.
 */
-static void fts3DoclistPhraseMerge(
+static int fts3DoclistPhraseMerge(
   int bDescDoclist,               /* True if arguments are desc */
   int nDist,                      /* Distance from left to right (1=adjacent) */
   char *aLeft, int nLeft,         /* Left doclist */
-  char *aRight, int *pnRight      /* IN/OUT: Right/output doclist */
+  char **paRight, int *pnRight    /* IN/OUT: Right/output doclist */
 ){
   sqlite3_int64 i1 = 0;
   sqlite3_int64 i2 = 0;
   sqlite3_int64 iPrev = 0;
+  char *aRight = *paRight;
   char *pEnd1 = &aLeft[nLeft];
   char *pEnd2 = &aRight[*pnRight];
   char *p1 = aLeft;
   char *p2 = aRight;
   char *p;
   int bFirstOut = 0;
-  char *aOut = aRight;
+  char *aOut;
 
   assert( nDist>0 );
-
+  if( bDescDoclist ){
+    aOut = sqlite3_malloc(*pnRight + FTS3_VARINT_MAX);
+    if( aOut==0 ) return SQLITE_NOMEM;
+  }else{
+    aOut = aRight;
+  }
   p = aOut;
+
   fts3GetDeltaVarint3(&p1, pEnd1, 0, &i1);
   fts3GetDeltaVarint3(&p2, pEnd2, 0, &i2);
 
@@ -2550,6 +2561,12 @@ static void fts3DoclistPhraseMerge(
   }
 
   *pnRight = (int)(p - aOut);
+  if( bDescDoclist ){
+    sqlite3_free(aRight);
+    *paRight = aOut;
+  }
+
+  return SQLITE_OK;
 }
 
 /*
@@ -2674,8 +2691,22 @@ static int fts3TermSelectMerge(
 ){
   if( pTS->aaOutput[0]==0 ){
     /* If this is the first term selected, copy the doclist to the output
-    ** buffer using memcpy(). */
-    pTS->aaOutput[0] = sqlite3_malloc(nDoclist);
+    ** buffer using memcpy(). 
+    **
+    ** Add FTS3_VARINT_MAX bytes of unused space to the end of the 
+    ** allocation. This is so as to ensure that the buffer is big enough
+    ** to hold the current doclist AND'd with any other doclist. If the
+    ** doclists are stored in order=ASC order, this padding would not be
+    ** required (since the size of [doclistA AND doclistB] is always less
+    ** than or equal to the size of [doclistA] in that case). But this is
+    ** not true for order=DESC. For example, a doclist containing (1, -1) 
+    ** may be smaller than (-1), as in the first example the -1 may be stored
+    ** as a single-byte delta, whereas in the second it must be stored as a
+    ** FTS3_VARINT_MAX byte varint.
+    **
+    ** Similar padding is added in the fts3DoclistOrMerge() function.
+    */
+    pTS->aaOutput[0] = sqlite3_malloc(nDoclist + FTS3_VARINT_MAX + 1);
     pTS->anOutput[0] = nDoclist;
     if( pTS->aaOutput[0] ){
       memcpy(pTS->aaOutput[0], aDoclist, nDoclist);
@@ -3931,14 +3962,17 @@ static void fts3EvalAllocateReaders(
 ** This function assumes that pList points to a buffer allocated using
 ** sqlite3_malloc(). This function takes responsibility for eventually
 ** freeing the buffer.
+**
+** SQLITE_OK is returned if successful, or SQLITE_NOMEM if an error occurs.
 */
-static void fts3EvalPhraseMergeToken(
+static int fts3EvalPhraseMergeToken(
   Fts3Table *pTab,                /* FTS Table pointer */
   Fts3Phrase *p,                  /* Phrase to merge pList/nList into */
   int iToken,                     /* Token pList/nList corresponds to */
   char *pList,                    /* Pointer to doclist */
   int nList                       /* Number of bytes in pList */
 ){
+  int rc = SQLITE_OK;
   assert( iToken!=p->iDoclistToken );
 
   if( pList==0 ){
@@ -3977,13 +4011,16 @@ static void fts3EvalPhraseMergeToken(
       nDiff = p->iDoclistToken - iToken;
     }
 
-    fts3DoclistPhraseMerge(pTab->bDescIdx, nDiff, pLeft, nLeft, pRight,&nRight);
+    rc = fts3DoclistPhraseMerge(
+        pTab->bDescIdx, nDiff, pLeft, nLeft, &pRight, &nRight
+    );
     sqlite3_free(pLeft);
     p->doclist.aAll = pRight;
     p->doclist.nAll = nRight;
   }
 
   if( iToken>p->iDoclistToken ) p->iDoclistToken = iToken;
+  return rc;
 }
 
 /*
@@ -4009,7 +4046,7 @@ static int fts3EvalPhraseLoad(
       char *pThis = 0;
       rc = fts3TermSelect(pTab, pToken, p->iColumn, &nThis, &pThis);
       if( rc==SQLITE_OK ){
-        fts3EvalPhraseMergeToken(pTab, p, iToken, pThis, nThis);
+        rc = fts3EvalPhraseMergeToken(pTab, p, iToken, pThis, nThis);
       }
     }
     assert( pToken->pSegcsr==0 );
@@ -4812,8 +4849,12 @@ static int fts3EvalSelectDeferred(
         rc = fts3TermSelect(pTab, pToken, pTC->iCol, &nList, &pList);
         assert( rc==SQLITE_OK || pList==0 );
         if( rc==SQLITE_OK ){
+          rc = fts3EvalPhraseMergeToken(
+              pTab, pTC->pPhrase, pTC->iToken,pList,nList
+          );
+        }
+        if( rc==SQLITE_OK ){
           int nCount;
-          fts3EvalPhraseMergeToken(pTab, pTC->pPhrase, pTC->iToken,pList,nList);
           nCount = fts3DoclistCountDocids(
               pTC->pPhrase->doclist.aAll, pTC->pPhrase->doclist.nAll
           );

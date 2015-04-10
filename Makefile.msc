@@ -331,7 +331,7 @@ SHELL_CCONV_OPTS =
 # These are additional compiler options used for the core library.
 #
 !IFNDEF CORE_COMPILE_OPTS
-!IF $(USE_STDCALL)!=0
+!IF $(DYNAMIC_SHELL)!=0
 CORE_COMPILE_OPTS = $(CORE_CCONV_OPTS) -DSQLITE_API=__declspec(dllexport)
 !ELSE
 CORE_COMPILE_OPTS = $(CORE_CCONV_OPTS)
@@ -342,7 +342,7 @@ CORE_COMPILE_OPTS = $(CORE_CCONV_OPTS)
 # when linking.
 #
 !IFNDEF CORE_LINK_DEP
-!IF $(USE_STDCALL)!=0
+!IF $(DYNAMIC_SHELL)!=0
 CORE_LINK_DEP =
 !ELSE
 CORE_LINK_DEP = sqlite3.def
@@ -352,7 +352,7 @@ CORE_LINK_DEP = sqlite3.def
 # These are additional linker options used for the core library.
 #
 !IFNDEF CORE_LINK_OPTS
-!IF $(USE_STDCALL)!=0
+!IF $(DYNAMIC_SHELL)!=0
 CORE_LINK_OPTS =
 !ELSE
 CORE_LINK_OPTS = /DEF:sqlite3.def
@@ -1154,9 +1154,26 @@ sqlite3.exe:	$(TOP)\src\shell.c $(SHELL_CORE_DEP) $(LIBRESOBJS) sqlite3.h
 	$(LTLINK) $(SHELL_COMPILE_OPTS) $(READLINE_FLAGS) $(TOP)\src\shell.c \
 		/link /pdb:sqlite3sh.pdb $(LTLINKOPTS) $(SHELL_LINK_OPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LIBREADLINE) $(LTLIBS) $(TLIBS)
 
+sqldiff.exe:	$(TOP)\tool\sqldiff.c sqlite3.c sqlite3.h
+	$(LTLINK) $(TOP)\tool\sqldiff.c sqlite3.c
+
 mptester.exe:	$(TOP)\mptest\mptest.c $(SHELL_CORE_DEP) $(LIBRESOBJS) sqlite3.h
 	$(LTLINK) $(SHELL_COMPILE_OPTS) $(TOP)\mptest\mptest.c \
 		/link $(LTLINKOPTS) $(LTLIBPATHS) $(SHELL_LINK_OPTS) $(LIBRESOBJS) $(LIBREADLINE) $(LTLIBS) $(TLIBS)
+
+MPTEST1 = mptester mptest.db $(TOP)/mptest/crash01.test --repeat 20
+MPTEST2 = mptester mptest.db $(TOP)/mptest/multiwrite01.test --repeat 20
+
+mptest:	mptester.exe
+	del /Q mptest.db 2>NUL
+	$(MPTEST1) --journalmode DELETE
+	$(MPTEST2) --journalmode WAL
+	$(MPTEST1) --journalmode WAL
+	$(MPTEST2) --journalmode PERSIST
+	$(MPTEST1) --journalmode PERSIST
+	$(MPTEST2) --journalmode TRUNCATE
+	$(MPTEST1) --journalmode TRUNCATE
+	$(MPTEST2) --journalmode DELETE
 
 # This target creates a directory named "tsrc" and fills it with
 # copies of all of the C source code and header files needed to

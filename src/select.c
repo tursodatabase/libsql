@@ -3884,6 +3884,8 @@ static int convertCompoundSelectToSubquery(Walker *pWalker, Select *p){
   p->pPrior = 0;
   p->pNext = 0;
   p->selFlags &= ~SF_Compound;
+  assert( (p->selFlags & SF_Converted)==0 );
+  p->selFlags |= SF_Converted;
   assert( pNew->pPrior!=0 );
   pNew->pPrior->pNext = pNew;
   pNew->pLimit = 0;

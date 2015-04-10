@@ -1920,11 +1920,15 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
         testcase( pIn1->flags & MEM_Int );
         testcase( pIn1->flags & MEM_Real );
         sqlite3VdbeMemStringify(pIn1, encoding, 1);
+        testcase( (flags1&MEM_Dyn) != (pIn1->flags&MEM_Dyn) );
+        flags1 = (pIn1->flags & ~MEM_TypeMask) | (flags1 & MEM_TypeMask);
       }
       if( (pIn3->flags & MEM_Str)==0 && (pIn3->flags & (MEM_Int|MEM_Real))!=0 ){
         testcase( pIn3->flags & MEM_Int );
         testcase( pIn3->flags & MEM_Real );
         sqlite3VdbeMemStringify(pIn3, encoding, 1);
+        testcase( (flags3&MEM_Dyn) != (pIn3->flags&MEM_Dyn) );
+        flags3 = (pIn3->flags & ~MEM_TypeMask) | (flags3 & MEM_TypeMask);
       }
     }
     assert( pOp->p4type==P4_COLLSEQ || pOp->p4.pColl==0 );
@@ -1961,7 +1965,9 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
     }
   }
   /* Undo any changes made by applyAffinity() to the input registers. */
+  assert( (pIn1->flags & MEM_Dyn) == (flags1 & MEM_Dyn) );
   pIn1->flags = flags1;
+  assert( (pIn3->flags & MEM_Dyn) == (flags3 & MEM_Dyn) );
   pIn3->flags = flags3;
   break;
 }
@@ -4484,7 +4490,7 @@ case OP_NullRow: {
   break;
 }
 
-/* Opcode: Last P1 P2 * * *
+/* Opcode: Last P1 P2 P3 * *
 **
 ** The next use of the Rowid or Column or Prev instruction for P1 
 ** will refer to the last entry in the database table or index.
@@ -4511,6 +4517,7 @@ case OP_Last: {        /* jump */
   pC->nullRow = (u8)res;
   pC->deferredMoveto = 0;
   pC->cacheStatus = CACHE_STALE;
+  pC->seekResult = pOp->p3;
 #ifdef SQLITE_DEBUG
   pC->seekOp = OP_Last;
 #endif
