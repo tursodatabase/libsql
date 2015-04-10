@@ -1,5 +1,5 @@
-C Fix\sforeign\skey\sCASCADE\sfor\scases\swhere\sthe\sparent\skey\sis\san\sINTEGER\sPRIMARY\nKEY\sand\sthe\sparent\stable\scontains\sother\scolumns\snamed\s"rowid",\s"_rowid_",\nand\s"oid".
-D 2015-04-10T12:04:57.414
+C In\ssqlite3_declare_vtab(),\savoid\saccessing\sthe\sdatabase\sstructure\suntil\safter\sthe\s"api-armour"\ssafety-check\shas\scompleted\sand\sthe\sdb\smutex\shas\sbeen\sobtained.
+D 2015-04-10T16:05:33.033
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f78b1ab81b64e7c57a75d170832443e66c0880a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -302,7 +302,7 @@ F src/vdbeblob.c 4f2e8e075d238392df98c5e03a64342465b03f90
 F src/vdbemem.c c0dc81285b7571b0a31c40f17846fe2397ec1cd9
 F src/vdbesort.c 919717d7599fa31d343ec28bffd0f9e91a4ff5f6
 F src/vdbetrace.c 7e4222955e07dd707a2f360c0eb73452be1cb010
-F src/vtab.c ff722a886ed61e2e2889ee221b0a4f6dcaabb8e1
+F src/vtab.c 9ca557215e8591ceb66e0b7c0a579c6df1e54b2d
 F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 878c8e1a51cb2ec45c395d26b7d5cd9e1a098e4a
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
@@ -1250,7 +1250,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0a72726da21581ab16cb3e964bd825b8f2e931e4
-R b2dde8f542352409005b61e29f91d905
-U drh
-Z 7c6c1370c12f07a8520590c209ac9901
+P ed3cbaab6ad49b0cb5b17e44def26c866919387a
+R f962720dd8c90d63a1a200cd065fa312
+U dan
+Z 666766483214acd3a759f5cb43f45fc3

@@ -722,7 +722,7 @@ int sqlite3VtabCallCreate(sqlite3 *db, int iDb, const char *zTab, char **pzErr){
 ** virtual table module.
 */
 int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
-  VtabCtx *pCtx = db->pVtabCtx;
+  VtabCtx *pCtx;
   Parse *pParse;
   int rc = SQLITE_OK;
   Table *pTab;
@@ -734,6 +734,7 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
   }
 #endif
   sqlite3_mutex_enter(db->mutex);
+  pCtx = db->pVtabCtx;
   if( !pCtx || pCtx->bDeclared ){
     sqlite3Error(db, SQLITE_MISUSE);
     sqlite3_mutex_leave(db->mutex);
