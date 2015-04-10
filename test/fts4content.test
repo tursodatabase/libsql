@@ -48,6 +48,9 @@ ifcapable !fts3 {
 #
 #   9.* - Test using content=xxx where xxx is a virtual table.
 #
+#   11.* - Test that circular references (e.g. "t1(content=t1)") are
+#          detected.
+#
 
 do_execsql_test 1.1.1 {
   CREATE TABLE t1(a, b, c);
@@ -406,7 +409,7 @@ do_execsql_test 5.1.7 {
 # 
 do_catchsql_test 6.1.1 {
   CREATE VIRTUAL TABLE ft7 USING fts4(content=t7);
-} {1 {vtable constructor failed: ft7}}
+} {1 {no such table: main.t7}}
 
 do_execsql_test 6.2.1 {
   CREATE TABLE t7(one, two);
@@ -433,7 +436,7 @@ do_execsql_test 6.2.3 {
 }
 do_catchsql_test 6.2.4 {
   SELECT * FROM ft7;
-} {1 {vtable constructor failed: ft7}}
+} {1 {no such table: main.t7}}
 do_execsql_test 6.2.5 {
   CREATE TABLE t7(x, y);
   INSERT INTO t7 VALUES('A B', 'B A');
@@ -622,4 +625,15 @@ do_execsql_test 10.7 {
   {...c d [e] f g...}
 }
 
+#-------------------------------------------------------------------------
+# Test cases 11.*
+# 
+reset_db
+
+do_catchsql_test 11.1 {
+  CREATE VIRTUAL TABLE x1 USING fts4(content=x1);
+} {1 {vtable constructor called recursively: x1}}
+
+
 finish_test
+

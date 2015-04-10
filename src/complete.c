@@ -269,7 +269,7 @@ int sqlite3_complete(const char *zSql){
 int sqlite3_complete16(const void *zSql){
   sqlite3_value *pVal;
   char const *zSql8;
-  int rc = SQLITE_NOMEM;
+  int rc;
 
 #ifndef SQLITE_OMIT_AUTOINIT
   rc = sqlite3_initialize();
