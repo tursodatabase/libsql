@@ -1,5 +1,5 @@
-C Do\snot\sallow\svirtual\stable\sconstructors\sto\sbe\scalled\srecursively.
-D 2015-04-10T07:55:07.186
+C Fix\sforeign\skey\sCASCADE\sfor\scases\swhere\sthe\sparent\skey\sis\san\sINTEGER\sPRIMARY\nKEY\sand\sthe\sparent\stable\scontains\sother\scolumns\snamed\s"rowid",\s"_rowid_",\nand\s"oid".
+D 2015-04-10T12:04:57.414
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f78b1ab81b64e7c57a75d170832443e66c0880a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -184,7 +184,7 @@ F src/date.c e4d50b3283696836ec1036b695ead9a19e37a5ac
 F src/delete.c 37964e6c1d73ff49cbea9ff690c9605fb15f600e
 F src/expr.c d09dac67d53c78880ba31d56e8ba2be3a6490553
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
-F src/fkey.c e0444b61bed271a76840cbe6182df93a9baa3f12
+F src/fkey.c 3343d551a8d810782257244fb33f2ce191493c39
 F src/func.c 1414c24c873c48796ad45942257a179a423ba42f
 F src/global.c 4f77cadbc5427d00139ba43d0f3979804cbb700e
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
@@ -505,7 +505,7 @@ F test/fallocate.test 3e979af17dfa7e5e9dda5eba1a696c04fa9d47f7
 F test/filectrl.test 14fa712e42c4cb791e09dfd58a6a03efb47ef13a
 F test/filefmt.test cb34663f126cbc2d358af552dcaf5c72769b0146
 F test/fkey1.test e1d1fa84cde579185ea01358436839703e415a5b
-F test/fkey2.test 1db212cda86b0d3ce72714001f7b6381c321341c
+F test/fkey2.test 223c624e7eccee21e89c98d4d127ac88d774b940
 F test/fkey3.test 76d475c80b84ee7a5d062e56ccb6ea68882e2b49
 F test/fkey4.test 86446017011273aad8f9a99c1a65019e7bd9ca9d
 F test/fkey5.test 56bcb5a6e8b725b17febc267fb041a6695e86853
@@ -1250,7 +1250,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ee53b46011852e27db23708387fe1e918cc8284c
-R 7e9242555b174ae9f2c42129917fe80c
-U dan
-Z a71357da8ab26f740f6d9ebc28389132
+P 0a72726da21581ab16cb3e964bd825b8f2e931e4
+R b2dde8f542352409005b61e29f91d905
+U drh
+Z 7c6c1370c12f07a8520590c209ac9901
