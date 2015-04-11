@@ -1,5 +1,5 @@
-C Add\sthe\s--changeset\soption\sto\sthe\ssqldiff\sutility\sprogram,\sfor\sgenerating\na\ssessions\schangeset\sfile\sinstead\sof\san\sSQL\sdiff.
-D 2015-04-11T13:49:16.216
+C Fix\sa\sproblem\swith\ssorting\slarge\samounts\sof\spartially\sordered\sdata.
+D 2015-04-11T20:20:29.810
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f78b1ab81b64e7c57a75d170832443e66c0880a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -300,7 +300,7 @@ F src/vdbeapi.c 583d56b129dd27f12bed518270de9ebe521e6a75
 F src/vdbeaux.c 413dc496248ac18eb0c19e35e86bb1ffd47b8907
 F src/vdbeblob.c 4f2e8e075d238392df98c5e03a64342465b03f90
 F src/vdbemem.c c0dc81285b7571b0a31c40f17846fe2397ec1cd9
-F src/vdbesort.c 919717d7599fa31d343ec28bffd0f9e91a4ff5f6
+F src/vdbesort.c a9d39d99969462908f50d09918791883c5b067ab
 F src/vdbetrace.c 7e4222955e07dd707a2f360c0eb73452be1cb010
 F src/vtab.c 9ca557215e8591ceb66e0b7c0a579c6df1e54b2d
 F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
@@ -771,7 +771,7 @@ F test/notnull.test f8fcf58669ddba79274daa2770d61dfad8274f62
 F test/null.test 0dcce4f04284ec66108c503327ad6d224c0752b3
 F test/numcast.test 5d126f7f581432e86a90d1e35cac625164aec4a1
 F test/openv2.test 0d3040974bf402e19b7df4b783e447289d7ab394
-F test/orderby1.test eb246e377612b21a418fbea57047ba8ea88aaa6b
+F test/orderby1.test d69a2c99c023c85b014ece2cf691caec16a40d6d
 F test/orderby2.test bc11009f7cd99d96b1b11e57b199b00633eb5b04
 F test/orderby3.test 8619d06a3debdcd80a27c0fdea5c40b468854b99
 F test/orderby4.test 4d39bfbaaa3ae64d026ca2ff166353d2edca4ba4
@@ -1250,8 +1250,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P da49700ca148d91e1b8863c2eb6ee79144e83ac9 1a2e2803920dcf64190d81d8a487d6c3c9bb28ee
-R c078ada2bdea31973177a0bd82842009
-T +closed 1a2e2803920dcf64190d81d8a487d6c3c9bb28ee
-U drh
-Z 157b78d075c326a9e01bf8b58e910074
+P f9a3a8391c28cf13d76ec54f471735d35059acea
+R 20d1ab6a886883435eefbe113ce65f82
+U dan
+Z 26f0ad0889bc54d15cfec6237366d6c5

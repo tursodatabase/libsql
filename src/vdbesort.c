@@ -887,30 +887,24 @@ static void vdbeSorterRecordFree(sqlite3 *db, SorterRecord *pRecord){
 */
 static void vdbeSortSubtaskCleanup(sqlite3 *db, SortSubtask *pTask){
   sqlite3DbFree(db, pTask->pUnpacked);
-  pTask->pUnpacked = 0;
 #if SQLITE_MAX_WORKER_THREADS>0
   /* pTask->list.aMemory can only be non-zero if it was handed memory
   ** from the main thread.  That only occurs SQLITE_MAX_WORKER_THREADS>0 */
   if( pTask->list.aMemory ){
     sqlite3_free(pTask->list.aMemory);
-    pTask->list.aMemory = 0;
   }else
 #endif
   {
     assert( pTask->list.aMemory==0 );
     vdbeSorterRecordFree(0, pTask->list.pList);
   }
-  pTask->list.pList = 0;
   if( pTask->file.pFd ){
     sqlite3OsCloseFree(pTask->file.pFd);
-    pTask->file.pFd = 0;
-    pTask->file.iEof = 0;
   }
   if( pTask->file2.pFd ){
     sqlite3OsCloseFree(pTask->file2.pFd);
-    pTask->file2.pFd = 0;
-    pTask->file2.iEof = 0;
   }
+  memset(pTask, 0, sizeof(SortSubtask));
 }
 
 #ifdef SQLITE_DEBUG_SORTER_THREADS
@@ -1090,6 +1084,7 @@ void sqlite3VdbeSorterReset(sqlite3 *db, VdbeSorter *pSorter){
   for(i=0; i<pSorter->nTask; i++){
     SortSubtask *pTask = &pSorter->aTask[i];
     vdbeSortSubtaskCleanup(db, pTask);
+    pTask->pSorter = pSorter;
   }
   if( pSorter->list.aMemory==0 ){
     vdbeSorterRecordFree(0, pSorter->list.pList);
