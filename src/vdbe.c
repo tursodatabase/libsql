@@ -4486,7 +4486,7 @@ case OP_NullRow: {
   break;
 }
 
-/* Opcode: Last P1 P2 * * *
+/* Opcode: Last P1 P2 P3 * *
 **
 ** The next use of the Rowid or Column or Prev instruction for P1 
 ** will refer to the last entry in the database table or index.
@@ -4513,6 +4513,7 @@ case OP_Last: {        /* jump */
   pC->nullRow = (u8)res;
   pC->deferredMoveto = 0;
   pC->cacheStatus = CACHE_STALE;
+  pC->seekResult = pOp->p3;
 #ifdef SQLITE_DEBUG
   pC->seekOp = OP_Last;
 #endif
