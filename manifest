@@ -1,5 +1,5 @@
-C Detect\sand\sreport\soversized\srecords\sconstructed\sfrom\smultiple\szeroblobs.
-D 2015-04-11T02:08:48.265
+C Do\snot\sassume\san\sindex\scontains\sunique\sentries\sunless\sit\sis\sdeclared\sUNIQUE\sand\sNOT\sNULL\sis\sspecified\sfor\sall\scolumns.\sFix\sfor\s[7b4fee9f6c].
+D 2015-04-11T11:44:27.202
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f78b1ab81b64e7c57a75d170832443e66c0880a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -307,7 +307,7 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 878c8e1a51cb2ec45c395d26b7d5cd9e1a098e4a
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
-F src/where.c 85d832efa5ef57de542db7f430b72fecd3af8b38
+F src/where.c bd435b75b9de53e11b5eb561540e395041ac0cba
 F src/whereInt.h cbe4aa57326998d89e7698ca65bb7c28541d483c
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -768,7 +768,7 @@ F test/notify1.test 669b2b743618efdc18ca4b02f45423d5d2304abf
 F test/notify2.test 2ecabaa1305083856b7c39cf32816b612740c161
 F test/notify3.test 10ff25cde502e72a92053a2f215d64bece4ef934
 F test/notnull.test f8fcf58669ddba79274daa2770d61dfad8274f62
-F test/null.test a8b09b8ed87852742343b33441a9240022108993
+F test/null.test 0dcce4f04284ec66108c503327ad6d224c0752b3
 F test/numcast.test 5d126f7f581432e86a90d1e35cac625164aec4a1
 F test/openv2.test 0d3040974bf402e19b7df4b783e447289d7ab394
 F test/orderby1.test eb246e377612b21a418fbea57047ba8ea88aaa6b
@@ -1250,7 +1250,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 40c417a7efb17221cec4a0a703863854bcab8db2
-R fd7ff5723f566045f2ba0751ddce0467
-U drh
-Z f6419661cff2a502b477cceb45bb8fdd
+P 9e139afd92116ebc593114ed63b57c8f469653f6
+R cb22563425ec3fdd92f04af95791ab8d
+U dan
+Z a8ae95b3c171e79da5c1dd8c91dd053d
