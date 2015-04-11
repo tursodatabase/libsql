@@ -1,5 +1,5 @@
-C Minor\sbuild\senhancements\sfor\sMSVC.
-D 2015-04-10T21:16:11.659
+C Detect\sand\sreport\soversized\srecords\sconstructed\sfrom\smultiple\szeroblobs.
+D 2015-04-11T02:08:48.265
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f78b1ab81b64e7c57a75d170832443e66c0880a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -293,7 +293,7 @@ F src/update.c 3c4ecc282accf12d39edb8d524cf089645e55a13
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c 98a7627ca48ad3265b6940915a1d08355eb3fc7e
 F src/vacuum.c 9460b9de7b2d4e34b0d374894aa6c8a0632be8ec
-F src/vdbe.c 86ae6f4774410868af41bd839b72b7081ff03e78
+F src/vdbe.c 06cc2cf42daf8b0c397f69a6fb1818124f3cd93a
 F src/vdbe.h 6fc69d9c5e146302c56e163cb4b31d1ee64a18c3
 F src/vdbeInt.h 9cbaa84f53ddd2d09a0cf61a94337a3a035d08a0
 F src/vdbeapi.c 583d56b129dd27f12bed518270de9ebe521e6a75
@@ -1194,7 +1194,7 @@ F test/without_rowid4.test 4e08bcbaee0399f35d58b5581881e7a6243d458a
 F test/without_rowid5.test 61256715b686359df48ca1742db50cc7e3e7b862
 F test/without_rowid6.test db0dbf03c49030aa3c1ba5f618620334bd2baf5f
 F test/wordcount.c 9915e06cb33d8ca8109b8700791afe80d305afda
-F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
+F test/zeroblob.test fb3c0e4ab172d386954deda24c03f500e121d80d
 F test/zerodamage.test cf6748bad89553cc1632be51a6f54e487e4039ac
 F tool/build-all-msvc.bat 72e05bc8deca39a547884485c086b915f50a91ed x
 F tool/build-shell.sh 950f47c6174f1eea171319438b93ba67ff5bf367
@@ -1250,7 +1250,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 860e4f8a94901d451fac3954960c1d2f589e8882
-R d724f3837aa2139b84d99a7758232948
-U mistachkin
-Z add6515d666dc387abaf063a7b8f0157
+P 40c417a7efb17221cec4a0a703863854bcab8db2
+R fd7ff5723f566045f2ba0751ddce0467
+U drh
+Z f6419661cff2a502b477cceb45bb8fdd
