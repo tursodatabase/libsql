@@ -1,5 +1,5 @@
-C First\scomplete\sattempt\sto\sgenerate\sa\sworking\schangeset.\s\sStill\scontains\sbugs.
-D 2015-04-11T12:07:40.414
+C The\s--changeset\soption\snow\sappears\sto\sbe\sworking.
+D 2015-04-11T13:48:01.693
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f78b1ab81b64e7c57a75d170832443e66c0880a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1239,7 +1239,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
-F tool/sqldiff.c ed945df30d962d15d26188e33f7c5431cf197487
+F tool/sqldiff.c 51c05cc1435507736b8b5a41a0498016041b3e48
 F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
 F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
 F tool/symbols.sh fec58532668296d7c7dc48be9c87f75ccdb5814f
@@ -1250,7 +1250,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 463e38d765f9d055b63792a8ea15c3782657b07f
-R c7ffcaee222b675f0ec3e43f31931e14
+P 5611fa9bd5b8fd762d16ce9b0853c2e779a1a1b7
+R 907cf695d8fcffe3003a321f9aace7fc
 U drh
-Z c4472641aefb50d8b597b0b444fecd27
+Z 3b5f839006775d8054dcfb8aab08f0fa

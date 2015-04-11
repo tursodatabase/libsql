@@ -719,7 +719,7 @@ end_diff_one_table:
 */
 static void putsVarint(FILE *out, sqlite3_uint64 v){
   int i, n;
-  unsigned char buf[12], p[12];
+  unsigned char p[12];
   if( v & (((sqlite3_uint64)0xff000000)<<32) ){
     p[8] = (unsigned char)v;
     v >>= 8;
@@ -734,8 +734,45 @@ static void putsVarint(FILE *out, sqlite3_uint64 v){
       p[n--] = (unsigned char)((v & 0x7f) | 0x80);
       v >>= 7;
     }while( v!=0 );
-    buf[9] &= 0x7f;
-    fwrite(buf+n+1, 9-n, 1, out);
+    p[9] &= 0x7f;
+    fwrite(p+n+1, 9-n, 1, out);
+  }
+}
+
+/*
+** Write an SQLite value onto out.
+*/
+static void putValue(FILE *out, sqlite3_value *pVal){
+  int iDType = sqlite3_value_type(pVal);
+  sqlite3_int64 iX;
+  double rX;
+  sqlite3_uint64 uX;
+  int j;
+
+  putc(iDType, out);
+  switch( iDType ){
+    case SQLITE_INTEGER:
+      iX = sqlite3_value_int64(pVal);
+      memcpy(&uX, &iX, 8);
+      for(j=56; j>=0; j-=8) putc((uX>>j)&0xff, out);
+      break;
+    case SQLITE_FLOAT:
+      rX = sqlite3_value_int64(pVal);
+      memcpy(&uX, &rX, 8);
+      for(j=56; j>=0; j-=8) putc((uX>>j)&0xff, out);
+      break;
+    case SQLITE_TEXT:
+      iX = sqlite3_value_bytes(pVal);
+      putsVarint(out, (sqlite3_uint64)iX);
+      fwrite(sqlite3_value_text(pVal),1,iX,out);
+      break;
+    case SQLITE_BLOB:
+      iX = sqlite3_value_bytes(pVal);
+      putsVarint(out, (sqlite3_uint64)iX);
+      fwrite(sqlite3_value_blob(pVal),1,iX,out);
+      break;
+    case SQLITE_NULL:
+      break;
   }
 }
 
@@ -751,7 +788,7 @@ static void changeset_one_table(const char *zTab, FILE *out){
   int *aiPk = 0;                /* Column numbers for each PK column */
   int nPk = 0;                  /* Number of PRIMARY KEY columns */
   Str sql;                      /* SQL for the diff query */
-  int i, j;                     /* Loop counters */
+  int i, k;                     /* Loop counters */
   const char *zSep;             /* List separator */
 
   pStmt = db_prepare(
@@ -789,8 +826,14 @@ static void changeset_one_table(const char *zTab, FILE *out){
   strInit(&sql);
   if( nCol>nPk ){
     strPrintf(&sql, "SELECT %d", SQLITE_UPDATE);
-    for(i=0; i<nCol; i++) strPrintf(&sql, ", A.%s", azCol[i]);
-    for(i=0; i<nCol; i++) strPrintf(&sql, ", B.%s", azCol[i]);
+    for(i=0; i<nCol; i++){
+      if( aiFlg[i] ){
+        strPrintf(&sql, ",\n       A.%s", azCol[i]);
+      }else{
+        strPrintf(&sql, ",\n       A.%s IS NOT B.%s, A.%s, B.%s",
+                  azCol[i], azCol[i], azCol[i], azCol[i]);
+      }
+    }
     strPrintf(&sql,"\n  FROM main.%s A, aux.%s B\n", zId, zId);
     zSep = " WHERE";
     for(i=0; i<nPk; i++){
@@ -806,9 +849,14 @@ static void changeset_one_table(const char *zTab, FILE *out){
     strPrintf(&sql,")\n UNION ALL\n");
   }
   strPrintf(&sql, "SELECT %d", SQLITE_DELETE);
-  for(i=0; i<nCol; i++) strPrintf(&sql, ", A.%s", azCol[i]);
-  for(i=0; i<nCol; i++) strPrintf(&sql, ", 0");
-  strPrintf(&sql, "  FROM main.%s A\n", zId);
+  for(i=0; i<nCol; i++){
+    if( aiFlg[i] ){
+      strPrintf(&sql, ",\n       A.%s", azCol[i]);
+    }else{
+      strPrintf(&sql, ",\n       1, A.%s, NULL", azCol[i]);
+    }
+  }
+  strPrintf(&sql, "\n  FROM main.%s A\n", zId);
   strPrintf(&sql, " WHERE NOT EXISTS(SELECT 1 FROM aux.%s B\n", zId);
   zSep =          "                   WHERE";
   for(i=0; i<nPk; i++){
@@ -817,9 +865,14 @@ static void changeset_one_table(const char *zTab, FILE *out){
   }
   strPrintf(&sql, ")\n UNION ALL\n");
   strPrintf(&sql, "SELECT %d", SQLITE_INSERT);
-  for(i=0; i<nCol; i++) strPrintf(&sql, ", 0");
-  for(i=0; i<nCol; i++) strPrintf(&sql, ", B.%s", azCol[i]);
-  strPrintf(&sql, "  FROM aux.%s B\n", zId);
+  for(i=0; i<nCol; i++){
+    if( aiFlg[i] ){
+      strPrintf(&sql, ",\n       B.%s", azCol[i]);
+    }else{
+      strPrintf(&sql, ",\n       1, NULL, B.%s", azCol[i]);
+    }
+  }
+  strPrintf(&sql, "\n  FROM aux.%s B\n", zId);
   strPrintf(&sql, " WHERE NOT EXISTS(SELECT 1 FROM main.%s A\n", zId);
   zSep =          "                   WHERE";
   for(i=0; i<nPk; i++){
@@ -830,7 +883,7 @@ static void changeset_one_table(const char *zTab, FILE *out){
   strPrintf(&sql, " ORDER BY");
   zSep = " ";
   for(i=0; i<nPk; i++){
-    strPrintf(&sql, "%s %d", zSep, aiPk[i]+1);
+    strPrintf(&sql, "%s %d", zSep, aiPk[i]+2);
     zSep = ",";
   }
   strPrintf(&sql, ";\n");
@@ -849,39 +902,59 @@ static void changeset_one_table(const char *zTab, FILE *out){
   pStmt = db_prepare("%s", sql.z);
   while( SQLITE_ROW==sqlite3_step(pStmt) ){
     int iType = sqlite3_column_int(pStmt,0);
-    int iFirst = iType==SQLITE_INSERT ? nCol+1 : 1;
-    int iLast = iType==SQLITE_DELETE ? nCol+1 : 2*nCol+1;
     putc(iType, out);
     putc(0, out);
-    for(i=iFirst; i<=iLast; i++){
-      int iDType = sqlite3_column_type(pStmt,i);
-      sqlite3_int64 iX;
-      double rX;
-      sqlite3_uint64 uX;
-      putc(iDType, out);
-      switch( iDType ){
-        case SQLITE_INTEGER:
-          iX = sqlite3_column_int64(pStmt,i);
-          memcpy(&uX, &iX, 8);
-          for(j=56; j>=0; j-=8) putc((uX>>j)&0xff, out);
-          break;
-        case SQLITE_FLOAT:
-          rX = sqlite3_column_int64(pStmt,i);
-          memcpy(&uX, &rX, 8);
-          for(j=56; j>=0; j-=8) putc((uX>>j)&0xff, out);
-          break;
-        case SQLITE_TEXT:
-          iX = sqlite3_column_bytes(pStmt,i);
-          putsVarint(out, (sqlite3_uint64)iX);
-          fwrite(sqlite3_column_text(pStmt,i),1,iX,out);
-          break;
-        case SQLITE_BLOB:
-          iX = sqlite3_column_bytes(pStmt,i);
-          putsVarint(out, (sqlite3_uint64)iX);
-          fwrite(sqlite3_column_blob(pStmt,i),1,iX,out);
-          break;
-        case SQLITE_NULL:
-          break;
+    switch( sqlite3_column_int(pStmt,0) ){
+      case SQLITE_UPDATE: {
+        for(k=1, i=0; i<nCol; i++){
+          if( aiFlg[i] ){
+            putValue(out, sqlite3_column_value(pStmt,k));
+            k++;
+          }else if( sqlite3_column_int(pStmt,k) ){
+            putValue(out, sqlite3_column_value(pStmt,k+1));
+            k += 3;
+          }else{
+            putc(0, out);
+            k += 3;
+          }
+        }
+        for(k=1, i=0; i<nCol; i++){
+          if( aiFlg[i] ){
+            putc(0, out);
+            k++;
+          }else if( sqlite3_column_int(pStmt,k) ){
+            putValue(out, sqlite3_column_value(pStmt,k+2));
+            k += 3;
+          }else{
+            putc(0, out);
+            k += 3;
+          }
+        }
+        break;
+      }
+      case SQLITE_INSERT: {
+        for(k=1, i=0; i<nCol; i++){
+          if( aiFlg[i] ){
+            putValue(out, sqlite3_column_value(pStmt,k));
+            k++;
+          }else{
+            putValue(out, sqlite3_column_value(pStmt,k+2));
+            k += 3;
+          }
+        }
+        break;
+      }
+      case SQLITE_DELETE: {
+        for(k=1, i=0; i<nCol; i++){
+          if( aiFlg[i] ){
+            putValue(out, sqlite3_column_value(pStmt,k));
+            k++;
+          }else{
+            putValue(out, sqlite3_column_value(pStmt,k+1));
+            k += 3;
+          }
+        }
+        break;
       }
     }
   }
