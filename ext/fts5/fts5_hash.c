@@ -167,14 +167,16 @@ static int fts5HashResize(Fts5Hash *pHash){
 
 static void fts5HashAddPoslistSize(Fts5HashEntry *p){
   if( p->iSzPoslist ){
+    /* WRITEPOSLISTSIZE */
     u8 *pPtr = (u8*)p;
-    int nSz = p->nData - p->iSzPoslist - 1;
+    int nSz = (p->nData - p->iSzPoslist - 1) * 2;
 
     if( nSz<=127 ){
       pPtr[p->iSzPoslist] = nSz;
     }else{
       int nByte = sqlite3Fts5GetVarintLen((u32)nSz);
-      memmove(&pPtr[p->iSzPoslist + nByte], &pPtr[p->iSzPoslist + 1], nSz);
+      /* WRITEPOSLISTSIZE */
+      memmove(&pPtr[p->iSzPoslist + nByte], &pPtr[p->iSzPoslist + 1], nSz/2);
       sqlite3PutVarint(&pPtr[p->iSzPoslist], nSz);
       p->nData += (nByte-1);
     }

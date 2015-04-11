@@ -382,17 +382,6 @@ int sqlite3Fts5HashWrite(
 */
 void sqlite3Fts5HashClear(Fts5Hash*);
 
-/*
-** Iterate through the contents of the hash table.
-*/
-int sqlite3Fts5HashIterate(
-  Fts5Hash*,
-  void *pCtx,
-  int (*xTerm)(void*, const char*, int),
-  int (*xEntry)(void*, i64, const u8*, int),
-  int (*xTermDone)(void*)
-);
-
 int sqlite3Fts5HashQuery(
   Fts5Hash*,                      /* Hash table to query */
   const char *pTerm, int nTerm,   /* Query term */
