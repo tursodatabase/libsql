@@ -1,5 +1,5 @@
-C Do\snot\sassume\san\sindex\scontains\sunique\sentries\sunless\sit\sis\sdeclared\sUNIQUE\sand\sNOT\sNULL\sis\sspecified\sfor\sall\scolumns.\sFix\sfor\s[7b4fee9f6c].
-D 2015-04-11T11:44:27.202
+C Update\stests\sin\swhereD.test\sto\saccount\sfor\sthe\schange\sin\sthe\sprevious\scommit.
+D 2015-04-11T11:53:39.984
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f78b1ab81b64e7c57a75d170832443e66c0880a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1171,7 +1171,7 @@ F test/where9.test 729c3ba9b47e8f9f1aab96bae7dad2a524f1d1a2
 F test/whereA.test 4d253178d135ec46d1671e440cd8f2b916aa6e6b
 F test/whereB.test 0def95db3bdec220a731c7e4bec5930327c1d8c5
 F test/whereC.test d6f4ecd4fa2d9429681a5b22a25d2bda8e86ab8a
-F test/whereD.test fd9120e262f9da3c45940f52aefeef4d15b904e5
+F test/whereD.test 9eba1f9b18e5b19a0b0bcaae5e8c037260195f2b
 F test/whereE.test b3a055eef928c992b0a33198a7b8dc10eea5ad2f
 F test/whereF.test 5b2ba0dbe8074aa13e416b37c753991f0a2492d7
 F test/whereG.test 69f5ec4b15760a8c860f80e2d55525669390aab3
@@ -1250,7 +1250,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9e139afd92116ebc593114ed63b57c8f469653f6
-R cb22563425ec3fdd92f04af95791ab8d
+P e3b1f625518edc0e925116668dca5d25c3232b59
+R 7890e1f1fdfc32123135ecc1b57978ea
 U dan
-Z a8ae95b3c171e79da5c1dd8c91dd053d
+Z 68688658f813a09121106ccdd49ce975
