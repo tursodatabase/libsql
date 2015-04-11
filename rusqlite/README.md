@@ -22,7 +22,7 @@ struct Person {
 }
 
 fn main() {
-    let conn = SqliteConnection::open(":memory:").unwrap();
+    let conn = SqliteConnection::open_in_memory().unwrap();
 
     conn.execute("CREATE TABLE person (
                   id              INTEGER PRIMARY KEY,
@@ -48,7 +48,7 @@ fn main() {
             time_created: row.get(2),
             data: row.get(3)
         };
-        println!("Found person {}", person);
+        println!("Found person {:?}", person);
     }
 }
 ```
