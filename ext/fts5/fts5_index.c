@@ -4428,9 +4428,24 @@ int sqlite3Fts5IndexIntegrityCheck(Fts5Index *p, u64 cksum){
         ** the same. If not, call this corruption.  */
         rc = fts5QueryCksum(p, z, n, flags, &ck1);
         if( rc==SQLITE_OK ){
-          rc = fts5QueryCksum(p, z, n, flags | FTS5INDEX_QUERY_DESC, &ck2);
+          rc = fts5QueryCksum(p, z, n, flags|FTS5INDEX_QUERY_DESC, &ck2);
         }
         if( rc==SQLITE_OK && ck1!=ck2 ) rc = FTS5_CORRUPT;
+
+        /* If this is a prefix query, check that the results returned if the
+        ** the index is disabled are the same. In both ASC and DESC order. */
+        if( iIdx>0 && rc==SQLITE_OK ){
+          int f = flags|FTS5INDEX_QUERY_TEST_NOIDX;
+          ck2 = 0;
+          rc = fts5QueryCksum(p, z, n, f, &ck2);
+          if( rc==SQLITE_OK && ck1!=ck2 ) rc = FTS5_CORRUPT;
+        }
+        if( iIdx>0 && rc==SQLITE_OK ){
+          int f = flags|FTS5INDEX_QUERY_TEST_NOIDX|FTS5INDEX_QUERY_DESC;
+          ck2 = 0;
+          rc = fts5QueryCksum(p, z, n, f, &ck2);
+          if( rc==SQLITE_OK && ck1!=ck2 ) rc = FTS5_CORRUPT;
+        }
 
         cksum3 ^= ck1;
         fts5BufferSet(&rc, &term, n, (const u8*)z);
@@ -4706,17 +4721,18 @@ int sqlite3Fts5IndexQuery(
   int flags,                      /* Mask of FTS5INDEX_QUERY_X flags */
   Fts5IndexIter **ppIter          /* OUT: New iterator object */
 ){
+  Fts5Config *pConfig = p->pConfig;
   Fts5IndexIter *pRet;
   int iIdx = 0;
 
   if( flags & FTS5INDEX_QUERY_PREFIX ){
-    Fts5Config *pConfig = p->pConfig;
-    int nChar = fts5IndexCharlen(pToken, nToken);
-    for(iIdx=1; iIdx<=pConfig->nPrefix; iIdx++){
-      if( pConfig->aPrefix[iIdx-1]==nChar ) break;
-    }
-    if( iIdx>pConfig->nPrefix ){
-      iIdx = -1;
+    if( flags & FTS5INDEX_QUERY_TEST_NOIDX ){
+      iIdx = 1+pConfig->nPrefix;
+    }else{
+      int nChar = fts5IndexCharlen(pToken, nToken);
+      for(iIdx=1; iIdx<=pConfig->nPrefix; iIdx++){
+        if( pConfig->aPrefix[iIdx-1]==nChar ) break;
+      }
     }
   }
 
@@ -4725,7 +4741,7 @@ int sqlite3Fts5IndexQuery(
     memset(pRet, 0, sizeof(Fts5IndexIter));
 
     pRet->pIndex = p;
-    if( iIdx>=0 ){
+    if( iIdx<=pConfig->nPrefix ){
       pRet->pStruct = fts5StructureRead(p, iIdx);
       if( pRet->pStruct ){
         fts5MultiIterNew(p, pRet->pStruct, 

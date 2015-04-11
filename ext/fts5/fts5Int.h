@@ -227,8 +227,9 @@ typedef struct Fts5IndexIter Fts5IndexIter;
 /*
 ** Values used as part of the flags argument passed to IndexQuery().
 */
-#define FTS5INDEX_QUERY_PREFIX  0x0001      /* Prefix query */
-#define FTS5INDEX_QUERY_DESC    0x0002      /* Docs in descending rowid order */
+#define FTS5INDEX_QUERY_PREFIX     0x0001   /* Prefix query */
+#define FTS5INDEX_QUERY_DESC       0x0002   /* Docs in descending rowid order */
+#define FTS5INDEX_QUERY_TEST_NOIDX 0x0004   /* Do not use prefix index */
 
 /*
 ** Create/destroy an Fts5Index object.
