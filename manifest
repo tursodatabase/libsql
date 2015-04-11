@@ -1,5 +1,5 @@
-C Updates\sto\scomments\sdescribing\sthe\schangeset\sand\spatchset\sformats.
-D 2015-04-09T19:19:22.574
+C Merge\sthe\ssessions-diff\sbranch\swith\sthis\sone.
+D 2015-04-11T17:09:36.697
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3083cf0c2bc6618e532b9478ce735bb512322985
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -158,11 +158,12 @@ F ext/session/session9.test 5409d90d8141881d08285ed1c2c0d8d10fb92069
 F ext/session/sessionA.test 1feeab0b8e03527f08f2f1defb442da25480138f
 F ext/session/sessionB.test 06961b7c3641151f5d23088250ecad132501113c
 F ext/session/sessionC.test 3982f8577b0744c5ce3aaef7cfeb5bd903f17fe4
+F ext/session/sessionD.test 95903bd6a23dadbda7e192f730dd7dedd2d369ef
 F ext/session/session_common.tcl 9de0451b6a47218fc16b9ed8876b6238a0a3d88d
 F ext/session/sessionfault.test bef044d0952c0d62c31c8d2400be72c8684545cc
-F ext/session/sqlite3session.c 27eb71e164a8e05d344c6254e8f906f093dfd4d1
-F ext/session/sqlite3session.h 16608d29879a0ed3c6be6b7fb18dcdb5c707aaef
-F ext/session/test_session.c a28352e99bc6a83b94e4cce99a7bf25c73d6d489
+F ext/session/sqlite3session.c 7876b6e614f089158722b66bb05e269ab6bf0f61
+F ext/session/sqlite3session.h d9ebd8d4c5791aafdf18165575c7f2223c09279b
+F ext/session/test_session.c 037fc25340a918eb2195972fed439d7adf7b5db9
 F ext/userauth/sqlite3userauth.h 19cb6f0e31316d0ee4afdfb7a85ef9da3333a220
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
@@ -1267,7 +1268,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b9459d5980c6249a5c1bc5ea72cb4f3b1ba0e433
-R a602d0c91e77a7e6222a205b1b755ccf
+P 5342f721e878b52f207731ea57411f3669ae3f3f c4340b2ea2115ad97dcac036f9034e132ab789e5
+R 93733f2c3fd75be901f1056d40d1b2f2
 U dan
-Z 08fe7407f1e8070b595e48c16318a0a6
+Z 4fa2ba77648737a16f5365f796a8dd77

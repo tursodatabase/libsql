@@ -117,14 +117,15 @@ static int test_session_cmd(
     const char *zMsg;
     int iSub;
   } aSub[] = {
-    { "attach",       1, "TABLE",  }, /* 0 */
-    { "changeset",    0, "",       }, /* 1 */
-    { "delete",       0, "",       }, /* 2 */
-    { "enable",       1, "BOOL",   }, /* 3 */
-    { "indirect",     1, "BOOL",   }, /* 4 */
-    { "isempty",      0, "",       }, /* 5 */
-    { "table_filter", 1, "SCRIPT", }, /* 6 */
-    { "patchset",     0, "",       }, /* 7 */
+    { "attach",       1, "TABLE",      }, /* 0 */
+    { "changeset",    0, "",           }, /* 1 */
+    { "delete",       0, "",           }, /* 2 */
+    { "enable",       1, "BOOL",       }, /* 3 */
+    { "indirect",     1, "BOOL",       }, /* 4 */
+    { "isempty",      0, "",           }, /* 5 */
+    { "table_filter", 1, "SCRIPT",     }, /* 6 */
+    { "patchset",     0, "",           }, /* 7 */
+    { "diff",         2, "FROMDB TBL", }, /* 8 */
     { 0 }
   };
   int iSub;
@@ -214,6 +215,24 @@ static int test_session_cmd(
       p->pFilterScript = Tcl_DuplicateObj(objv[2]);
       Tcl_IncrRefCount(p->pFilterScript);
       sqlite3session_table_filter(pSession, test_table_filter, clientData);
+      break;
+    }
+
+    case 8: {      /* diff */
+      char *zErr = 0;
+      rc = sqlite3session_diff(pSession, 
+          Tcl_GetString(objv[2]),
+          Tcl_GetString(objv[3]),
+          &zErr
+      );
+      assert( rc!=SQLITE_OK || zErr==0 );
+      if( zErr ){
+        Tcl_AppendResult(interp, zErr, 0);
+        return TCL_ERROR;
+      }
+      if( rc ){
+        return test_session_error(interp, rc);
+      }
       break;
     }
   }
