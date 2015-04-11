@@ -715,6 +715,31 @@ end_diff_one_table:
 }
 
 /*
+** Write a 64-bit signed integer as a varint onto out
+*/
+static void putsVarint(FILE *out, sqlite3_uint64 v){
+  int i, n;
+  unsigned char buf[12], p[12];
+  if( v & (((sqlite3_uint64)0xff000000)<<32) ){
+    p[8] = (unsigned char)v;
+    v >>= 8;
+    for(i=7; i>=0; i--){
+      p[i] = (unsigned char)((v & 0x7f) | 0x80);
+      v >>= 7;
+    }
+    fwrite(p, 8, 1, out);
+  }else{
+    n = 9;
+    do{
+      p[n--] = (unsigned char)((v & 0x7f) | 0x80);
+      v >>= 7;
+    }while( v!=0 );
+    buf[9] &= 0x7f;
+    fwrite(buf+n+1, 9-n, 1, out);
+  }
+}
+
+/*
 ** Generate a CHANGESET for all differences from main.zTab to aux.zTab.
 */
 static void changeset_one_table(const char *zTab, FILE *out){
@@ -726,7 +751,7 @@ static void changeset_one_table(const char *zTab, FILE *out){
   int *aiPk = 0;                /* Column numbers for each PK column */
   int nPk = 0;                  /* Number of PRIMARY KEY columns */
   Str sql;                      /* SQL for the diff query */
-  int i;                        /* Loop counter */
+  int i, j;                     /* Loop counters */
   const char *zSep;             /* List separator */
 
   pStmt = db_prepare(
@@ -763,7 +788,7 @@ static void changeset_one_table(const char *zTab, FILE *out){
   if( nPk==0 ) goto end_changeset_one_table; 
   strInit(&sql);
   if( nCol>nPk ){
-    strPrintf(&sql, "SELECT 1");  /* Changes to non-PK columns */
+    strPrintf(&sql, "SELECT %d", SQLITE_UPDATE);
     for(i=0; i<nCol; i++) strPrintf(&sql, ", A.%s", azCol[i]);
     for(i=0; i<nCol; i++) strPrintf(&sql, ", B.%s", azCol[i]);
     strPrintf(&sql,"\n  FROM main.%s A, aux.%s B\n", zId, zId);
@@ -780,7 +805,7 @@ static void changeset_one_table(const char *zTab, FILE *out){
     }
     strPrintf(&sql,")\n UNION ALL\n");
   }
-  strPrintf(&sql, "SELECT 2");   /* Deleted rows */
+  strPrintf(&sql, "SELECT %d", SQLITE_DELETE);
   for(i=0; i<nCol; i++) strPrintf(&sql, ", A.%s", azCol[i]);
   for(i=0; i<nCol; i++) strPrintf(&sql, ", 0");
   strPrintf(&sql, "  FROM main.%s A\n", zId);
@@ -791,7 +816,7 @@ static void changeset_one_table(const char *zTab, FILE *out){
     zSep = " AND";
   }
   strPrintf(&sql, ")\n UNION ALL\n");
-  strPrintf(&sql, "SELECT 3");   /* Inserted rows */
+  strPrintf(&sql, "SELECT %d", SQLITE_INSERT);
   for(i=0; i<nCol; i++) strPrintf(&sql, ", 0");
   for(i=0; i<nCol; i++) strPrintf(&sql, ", B.%s", azCol[i]);
   strPrintf(&sql, "  FROM aux.%s B\n", zId);
@@ -810,9 +835,57 @@ static void changeset_one_table(const char *zTab, FILE *out){
   }
   strPrintf(&sql, ";\n");
 
-printf("for table %s:\n%s\n", zId, sql.z);
-strFree(&sql);
-  
+  if( g.fDebug & DEBUG_DIFF_SQL ){ 
+    printf("SQL for %s:\n%s\n", zId, sql.z);
+    goto end_changeset_one_table;
+  }
+
+  putc('T', out);
+  putsVarint(out, (sqlite3_uint64)nCol);
+  for(i=0; i<nCol; i++) putc(aiFlg[i]!=0, out);
+  fwrite(zTab, 1, strlen(zTab), out);
+  putc(0, out);
+
+  pStmt = db_prepare("%s", sql.z);
+  while( SQLITE_ROW==sqlite3_step(pStmt) ){
+    int iType = sqlite3_column_int(pStmt,0);
+    int iFirst = iType==SQLITE_INSERT ? nCol+1 : 1;
+    int iLast = iType==SQLITE_DELETE ? nCol+1 : 2*nCol+1;
+    putc(iType, out);
+    putc(0, out);
+    for(i=iFirst; i<=iLast; i++){
+      int iDType = sqlite3_column_type(pStmt,i);
+      sqlite3_int64 iX;
+      double rX;
+      sqlite3_uint64 uX;
+      putc(iDType, out);
+      switch( iDType ){
+        case SQLITE_INTEGER:
+          iX = sqlite3_column_int64(pStmt,i);
+          memcpy(&uX, &iX, 8);
+          for(j=56; j>=0; j-=8) putc((uX>>j)&0xff, out);
+          break;
+        case SQLITE_FLOAT:
+          rX = sqlite3_column_int64(pStmt,i);
+          memcpy(&uX, &rX, 8);
+          for(j=56; j>=0; j-=8) putc((uX>>j)&0xff, out);
+          break;
+        case SQLITE_TEXT:
+          iX = sqlite3_column_bytes(pStmt,i);
+          putsVarint(out, (sqlite3_uint64)iX);
+          fwrite(sqlite3_column_text(pStmt,i),1,iX,out);
+          break;
+        case SQLITE_BLOB:
+          iX = sqlite3_column_bytes(pStmt,i);
+          putsVarint(out, (sqlite3_uint64)iX);
+          fwrite(sqlite3_column_blob(pStmt,i),1,iX,out);
+          break;
+        case SQLITE_NULL:
+          break;
+      }
+    }
+  }
+  sqlite3_finalize(pStmt);
   
 end_changeset_one_table:
   while( nCol>0 ) sqlite3_free(azCol[--nCol]);
