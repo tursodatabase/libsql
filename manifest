@@ -1,12 +1,12 @@
-C Fix\sa\sproblem\swith\sa\sstale\sSelect.pWith\spointer\swhen\sa\sCTE\sis\sused\stogether\nwith\sa\scompound\squery\sand\san\sORDER\sBY\sclause.
-D 2015-04-12T17:35:27.113
+C Update\sthe\sversion\snumber\sto\s3.8.10\sbecause\sof\sthe\snew\ssort\soptimizations\sfrom\scheck-in\s[79326d6eec].
+D 2015-04-12T21:28:50.540
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f78b1ab81b64e7c57a75d170832443e66c0880a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc 0078f5781538e07ea38683439f38d5f5ab79ab6e
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md d58e3bebc0a4145e0f2a87994015fdb575a8e866
-F VERSION 319eb1ced4b4d17a67730f2b7b85f15c1346cb60
+F VERSION 2e244662b71e6e68a5c29b014ebc5b7564f4cc5a
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 9eb448a552d5c0185cf62c463f9c173cedae3811
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -38,7 +38,7 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 42b71ad3fe21c9e88fa59e8458ca1a6bc72eb0c0
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 8b18c2378805a1d8aaca85d293671f450dd3c723 x
+F configure 2ea5f5b58dd106da449ab598ab6e515339d7fa2a x
 F configure.ac 0b775d383c536bbaafc1e46dd3cbb81a7ea11aeb
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 334dbf6621b8fb8790297ec1abf3cfa4621709d1
@@ -1250,7 +1250,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e527d96a1e098ade4e9d124b630a8c2ea2ac9b36
-R f469da7981f7e5a80ef00c68d565b4fb
+P 9a453f52a2b30595891604ede7d4acf61c2736a1
+R 4a2a023e9382e5658a5d290bebd20330
 U drh
-Z 637f476e29fbab1d809f7d30402eeba5
+Z 3fe3cb8d2199de920836663cd4df5373
