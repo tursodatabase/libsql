@@ -779,7 +779,6 @@ static int sessionPreupdateEqual(
   SessionChange *pChange,         /* Change to compare to */
   int op                          /* Current pre-update operation */
 ){
-  sqlite3 *db = pSession->db;
   int iCol;                       /* Used to iterate through columns */
   u8 *a = pChange->aRecord;       /* Cursor used to scan change record */
 
