@@ -6241,7 +6241,7 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
       pWInfo->revMask = pFrom->revLoop;
     }
     if( (pWInfo->wctrlFlags & WHERE_SORTBYGROUP)
-        && pWInfo->nOBSat==pWInfo->pOrderBy->nExpr
+        && pWInfo->nOBSat==pWInfo->pOrderBy->nExpr && nLoop>0
     ){
       Bitmask revMask = 0;
       int nOrder = wherePathSatisfiesOrderBy(pWInfo, pWInfo->pOrderBy, 
