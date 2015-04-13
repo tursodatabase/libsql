@@ -1735,6 +1735,14 @@ static int walCheckpoint(
     mxSafeFrame = pWal->hdr.mxFrame;
     mxPage = pWal->hdr.nPage;
     for(i=1; i<WAL_NREADER; i++){
+      /* Thread-sanitizer reports that the following is an unsafe read,
+      ** as some other thread may be in the process of updating the value
+      ** of the aReadMark[] slot. The assumption here is that if that is
+      ** happening, the other client may only be increasing the value,
+      ** not decreasing it. So assuming either that either the "old" or
+      ** "new" version of the value is read, and not some arbitrary value
+      ** that would never be written by a real client, things are still 
+      ** safe.  */
       u32 y = pInfo->aReadMark[i];
       if( mxSafeFrame>y ){
         assert( y<=pWal->hdr.mxFrame );

@@ -391,6 +391,10 @@ sqlite3$(EXE):	$(TOP)/src/shell.c libsqlite3.a sqlite3.h
 		$(TOP)/src/shell.c                                  \
 		libsqlite3.a $(LIBREADLINE) $(TLIBS) $(THREADLIB)
 
+sqldiff$(EXE):	$(TOP)/tool/sqldiff.c sqlite3.c sqlite3.h
+	$(TCCX) -o sqldiff$(EXE) -DSQLITE_THREADSAFE=0 \
+		$(TOP)/tool/sqldiff.c	sqlite3.c $(TLIBS) $(THREADLIB)
+
 mptester$(EXE):	sqlite3.c $(TOP)/mptest/mptest.c
 	$(TCCX) -o $@ -I. $(TOP)/mptest/mptest.c sqlite3.c \
 		$(TLIBS) $(THREADLIB)
