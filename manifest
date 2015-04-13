@@ -1,5 +1,5 @@
-C Update\sthe\sversion\snumber\sto\s3.8.10\sbecause\sof\sthe\snew\ssort\soptimizations\sfrom\scheck-in\s[79326d6eec].
-D 2015-04-12T21:28:50.540
+C Remove\san\sunreachable\sbranch\sfrom\sthe\svdbeSorterCompareInt()\sroutine.
+D 2015-04-13T12:45:58.929
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f78b1ab81b64e7c57a75d170832443e66c0880a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -300,7 +300,7 @@ F src/vdbeapi.c 583d56b129dd27f12bed518270de9ebe521e6a75
 F src/vdbeaux.c a20504ae52392459fa08402fda3f195f19d7c79d
 F src/vdbeblob.c 4f2e8e075d238392df98c5e03a64342465b03f90
 F src/vdbemem.c c0dc81285b7571b0a31c40f17846fe2397ec1cd9
-F src/vdbesort.c 5a729a15fb46b1759e13be49a10441172628e593
+F src/vdbesort.c 2e7f683464fd5db3be4beaa1ff2d39e24fcb64b8
 F src/vdbetrace.c 7e4222955e07dd707a2f360c0eb73452be1cb010
 F src/vtab.c 9ca557215e8591ceb66e0b7c0a579c6df1e54b2d
 F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
@@ -1250,7 +1250,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9a453f52a2b30595891604ede7d4acf61c2736a1
-R 4a2a023e9382e5658a5d290bebd20330
+P bd2cfa1d72368db91064bace298df3d77d9963e6
+R b8f08800d49097dd7ac4eb07d7ead02a
 U drh
-Z 3fe3cb8d2199de920836663cd4df5373
+Z b7397c89c618aad1f80f88c7af5c800c

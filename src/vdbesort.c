@@ -882,10 +882,11 @@ static int vdbeSorterCompareInt(
       }else{
         res = s1 - s2;
       }
+      assert( res!=0 );
 
       if( res>0 ){
         if( *v1 & 0x80 ) res = -1;
-      }else if( res<0 ){
+      }else{
         if( *v2 & 0x80 ) res = +1;
       }
     }
