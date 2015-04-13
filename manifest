@@ -1,5 +1,5 @@
-C Remove\san\sunreachable\sbranch\sfrom\sthe\svdbeSorterCompareInt()\sroutine.
-D 2015-04-13T12:45:58.929
+C Remove\san\sunreachable\sbranch\sfrom\sthe\sVACUUM\slogic.
+D 2015-04-13T14:03:54.116
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f78b1ab81b64e7c57a75d170832443e66c0880a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -190,7 +190,7 @@ F src/global.c 4f77cadbc5427d00139ba43d0f3979804cbb700e
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
 F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c 1cc9dc4e939b5dd4a74ac4a3222b89e66b074210
+F src/insert.c 305dd3f9539d0affa4bf1c14cc7dffb34867e040
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
@@ -1250,7 +1250,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P bd2cfa1d72368db91064bace298df3d77d9963e6
-R b8f08800d49097dd7ac4eb07d7ead02a
+P f666ef06869f4fb655c43daacf5034c17575d951
+R 13ae6f8a2a03926d32aaccc1e7fe4f0a
 U drh
-Z b7397c89c618aad1f80f88c7af5c800c
+Z 18a3bd532998a4429c86c5536067680b
