@@ -1,5 +1,5 @@
-C Omit\sthe\s"pc"\sor\s"program\scounter"\svariable\sfrom\sthe\sVDBE\sloop\sfor\s0.6%\nperformance\sincrease.
-D 2015-04-13T21:39:54.858
+C On\sa\sDETACH\sstatement,\skeep\sall\sschemas\sintact\sexcept\sfo\sthe\sone\sthat\sis\nbeing\sdetached,\sand\sthus\savoid\sunnecessary\sschema\sreparsing.
+D 2015-04-13T22:26:55.617
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f78b1ab81b64e7c57a75d170832443e66c0880a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -168,7 +168,7 @@ F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c d23d6b6991f66b383934f137fd4384d93fb98c81
 F src/analyze.c 91540f835163d5369ccbae78e2e6c74d0dd53c1d
-F src/attach.c 880f9b8641a829c563e52dd13c452ce457ae4dd8
+F src/attach.c 3c1053a4cf1c3ca05c8c1d74a94cb688d763cef2
 F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c ff743689c4d6c5cb55ad42ed9d174b2b3e71f1e3
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
@@ -1250,7 +1250,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e29c7f2c910dac07f0f92dfef5e0e743141954eb
-R 264d755a27d6975322da35a6d51f72d4
+P d2f10c41a832f520de13cf8315be22e66552f8e1
+R 49212af07046904ea6b82f6ec3cc0926
 U drh
-Z 01e6d8b5894e3dcd9945571fd6cd1cd0
+Z b2d6c204725accd9dcc524641d192884
