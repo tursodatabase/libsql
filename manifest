@@ -1,5 +1,5 @@
-C Test\sthat\sif\sthe\sdefinition\sof\sa\scollation\ssequence\sis\schanged\sand\sVACUUM\srun,\sthe\snew\sdatabase\scontains\srecords\ssorted\sin\sthe\s(new)\scorrect\sorder.
-D 2015-04-13T14:08:27.490
+C Remove\sa\sfaulty\sassert()\sfrom\sthe\sbtree\sbalancing\slogic.
+D 2015-04-13T14:44:01.870
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f78b1ab81b64e7c57a75d170832443e66c0880a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -173,7 +173,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c ff743689c4d6c5cb55ad42ed9d174b2b3e71f1e3
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c 2caf598165f3608fde8abac2b243826616ce54b7
+F src/btree.c 67648f6532c2da79d3b3fb6853aa1a0c3ba0e1ad
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 973a22a6fd61350b454ad614832b1f0a5e25a1e4
 F src/build.c fa4795bc795077388aa4e746e1b25ef97bc10489
@@ -1250,7 +1250,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 65ace4b062d9454a296c5a1aa7ea7316b1507ad4
-R 10297fb20a52d4dc7c571adcebaddc36
-U dan
-Z 0a6c3062817beaba9c93ab9bd5dcc5e3
+P ce6eaac10a190b26b87bfe75918e2ef58fd7a3f9
+R bac46adba95b910001781f1715fe4531
+U drh
+Z 344080508147bb8eb54111c6b1e074c7
