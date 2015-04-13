@@ -1,5 +1,5 @@
-C Add\sa\scomment\sto\swal.c\sto\sexplain\swhy\sa\srace\scondition\sis\ssafe.
-D 2015-04-13T17:43:43.335
+C Remove\sthe\sout2-prerelease\sVDBE\sopcode\sproperty\sand\sits\sassociated\scode,\nfor\sa\s0.5%\sperformance\simprovement.
+D 2015-04-13T19:14:06.003
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f78b1ab81b64e7c57a75d170832443e66c0880a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -154,7 +154,7 @@ F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
 F main.mk ddffac494a82d42772df9fe30d3a78acf4f7cb41
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
-F mkopcodeh.awk c6b3fa301db6ef7ac916b14c60868aeaec1337b5
+F mkopcodeh.awk d5e22023b5238985bb54a72d33e0ac71fe4f8a32
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -293,7 +293,7 @@ F src/update.c 3c4ecc282accf12d39edb8d524cf089645e55a13
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c 98a7627ca48ad3265b6940915a1d08355eb3fc7e
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c c4bd96912f8837777bfe5762d310767ed628b442
+F src/vdbe.c 584abb81e4abf9dd51a9a2e71f680289bd0c019b
 F src/vdbe.h 7e538ecf47dccb307ea2d087c3ddc2dd8d70e79d
 F src/vdbeInt.h 9cbaa84f53ddd2d09a0cf61a94337a3a035d08a0
 F src/vdbeapi.c 583d56b129dd27f12bed518270de9ebe521e6a75
@@ -1250,7 +1250,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d06669d968c8f6af8799fbfeabadaab68b9b8db8
-R 90c9a3885d268edb8b0fe9dee7687f08
-U dan
-Z a7fde54970dc241049366741c468ca23
+P bc33af866403c23d548dd4705675315810d52d7f
+R 6ac0695a2f1b9d518c2805dcc9a01314
+U drh
+Z 453362d5fdffab6ea02dce6dd25e18dd
