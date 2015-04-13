@@ -1,5 +1,5 @@
-C On\sa\sDETACH\sstatement,\skeep\sall\sschemas\sintact\sexcept\sfo\sthe\sone\sthat\sis\nbeing\sdetached,\sand\sthus\savoid\sunnecessary\sschema\sreparsing.
-D 2015-04-13T22:26:55.617
+C Add\s#ifdef\smagic\sfor\sHAVE_GETHOSTUUID\sso\sthat\sthe\sbuild\swill\shopefully\snow\nwork\son\smore\sverions\sof\sMacOS\swith\sSQLITE_ENABLE_LOCKING_STYLE\sturned\son.
+D 2015-04-13T23:05:28.978
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f78b1ab81b64e7c57a75d170832443e66c0880a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -214,7 +214,7 @@ F src/os.c 8fd25588eeba74068d41102d26810e216999b6c8
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c 25b80a3d167da44226a2084dc9e89a6cb1f02e2e
+F src/os_unix.c 5ed7e2e453c2980909a6b2c80dc55764b50819a8
 F src/os_win.c 03d27be3a20048ef52a648d5f0a15f5edda9f2a3
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 4120a49ecd37697e28f5ed807f470b9c0b88410c
@@ -1250,7 +1250,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d2f10c41a832f520de13cf8315be22e66552f8e1
-R 49212af07046904ea6b82f6ec3cc0926
+P 661db19b34566642dd44ee4cff4ebc093cb8a552
+R 8591357f8b00a438bdaa3b5a16ff0e3f
 U drh
-Z b2d6c204725accd9dcc524641d192884
+Z d2025877377cf6ead9db7636c81d5974
