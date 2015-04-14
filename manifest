@@ -1,5 +1,5 @@
-C Add\s#ifdef\smagic\sfor\sHAVE_GETHOSTUUID\sso\sthat\sthe\sbuild\swill\shopefully\snow\nwork\son\smore\sverions\sof\sMacOS\swith\sSQLITE_ENABLE_LOCKING_STYLE\sturned\son.
-D 2015-04-13T23:05:28.978
+C Update\sAPI\sdocumentation\sto\sidentify\smany\sfunctions\sas\smethods\son\sobjects.\nNo\schanges\sto\scode.
+D 2015-04-14T15:14:06.177
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f78b1ab81b64e7c57a75d170832443e66c0880a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -232,7 +232,7 @@ F src/resolve.c 41aa91af56d960e9414ce1d7c17cfb68e0d1c6cb
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 117e0f9ac9254a6f7472fac5144eba21ba0b2ec1
 F src/shell.c 84a1593bd86aaa14f4da8a8f9b16fbc239d262aa
-F src/sqlite.h.in 278602140d49575e8708e643161f4263e428a02a
+F src/sqlite.h.in ca27603a36fcacdaac5a19d8ee35aaff8ce8516f
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
 F src/sqliteInt.h 90b7bfd89d7307cd0750663da419ba4bb81e7379
@@ -1250,7 +1250,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 661db19b34566642dd44ee4cff4ebc093cb8a552
-R 8591357f8b00a438bdaa3b5a16ff0e3f
+P 211411d02c0729c9af0e3cc7e4910db2e7e0d08e
+R 32297e2ca295bdee2feb4a534c04bc42
 U drh
-Z d2025877377cf6ead9db7636c81d5974
+Z 358af9cd25fc843b833aaa97a1900951
