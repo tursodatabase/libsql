@@ -62,6 +62,7 @@ struct Fts5HashEntry {
   int nAlloc;                     /* Total size of allocation */
   int iSzPoslist;                 /* Offset of space for 4-byte poslist size */
   int nData;                      /* Total bytes of data (incl. structure) */
+  u8 bDel;                        /* Set delete-flag @ iSzPoslist */
 
   int iCol;                       /* Column of last value written */
   int iPos;                       /* Position of last value written */
@@ -167,19 +168,20 @@ static int fts5HashResize(Fts5Hash *pHash){
 
 static void fts5HashAddPoslistSize(Fts5HashEntry *p){
   if( p->iSzPoslist ){
-    /* WRITEPOSLISTSIZE */
     u8 *pPtr = (u8*)p;
-    int nSz = (p->nData - p->iSzPoslist - 1) * 2;
+    int nSz = (p->nData - p->iSzPoslist - 1);         /* Size in bytes */
+    int nPos = nSz*2 + p->bDel;                       /* Value of nPos field */
 
-    if( nSz<=127 ){
-      pPtr[p->iSzPoslist] = nSz;
+    assert( p->bDel==0 || p->bDel==1 );
+    if( nPos<=127 ){
+      pPtr[p->iSzPoslist] = nPos;
     }else{
-      int nByte = sqlite3Fts5GetVarintLen((u32)nSz);
-      /* WRITEPOSLISTSIZE */
-      memmove(&pPtr[p->iSzPoslist + nByte], &pPtr[p->iSzPoslist + 1], nSz/2);
-      sqlite3PutVarint(&pPtr[p->iSzPoslist], nSz);
+      int nByte = sqlite3Fts5GetVarintLen((u32)nPos);
+      memmove(&pPtr[p->iSzPoslist + nByte], &pPtr[p->iSzPoslist + 1], nSz);
+      sqlite3PutVarint(&pPtr[p->iSzPoslist], nPos);
       p->nData += (nByte-1);
     }
+    p->bDel = 0;
     p->iSzPoslist = 0;
   }
 }
@@ -277,6 +279,9 @@ int sqlite3Fts5HashWrite(
     /* Append the new position offset */
     p->nData += sqlite3PutVarint(&pPtr[p->nData], iPos - p->iPos + 2);
     p->iPos = iPos;
+  }else{
+    /* This is a delete. Set the delete flag. */
+    p->bDel = 1;
   }
   nIncr += p->nData;
 

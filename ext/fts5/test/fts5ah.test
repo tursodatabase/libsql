@@ -94,7 +94,7 @@ foreach {tn q res} "
   } {1}
 
   do_test 1.6.$tn.2 {
-    set n [execsql_reads "$q ORDER BY rowid ASC"]
+    set n [execsql_reads "$q ORDER BY rowid DESC"]
     expr {$n < ($nReadX / 10)}
   } {1}
 

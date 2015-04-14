@@ -21,8 +21,6 @@ ifcapable !fts5 {
   return
 }
 
-if 1 {
-
 do_execsql_test 1.0 {
   CREATE VIRTUAL TABLE t1 USING fts5(a, b, c);
   SELECT name, sql FROM sqlite_master;
@@ -329,7 +327,6 @@ do_execsql_test 13.6 {
   SELECT rowid FROM t1 WHERE t1 MATCH '.';
 } {}
 
-}
 #-------------------------------------------------------------------------
 #
 reset_db

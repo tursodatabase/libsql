@@ -75,7 +75,7 @@ void sqlite3Fts5BufferAppendBlob(
   int nData, 
   const u8 *pData
 ){
-  assert( nData>=0 );
+  assert( *pRc || nData>=0 );
   if( sqlite3Fts5BufferGrow(pRc, pBuf, nData) ) return;
   memcpy(&pBuf->p[pBuf->n], pData, nData);
   pBuf->n += nData;
