@@ -1,5 +1,5 @@
-C Remove\san\sincorrect\sALWAYS()\sfrom\sthe\stable_info\spragma.
-D 2015-04-15T07:19:27.406
+C Remove\san\sincorrect\sALWAYS()\sfrom\sthe\sautomatic\sindex\sgenerator.
+D 2015-04-15T07:34:25.165
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f78b1ab81b64e7c57a75d170832443e66c0880a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -307,7 +307,7 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 753995db83247f20361a8e8a874990b21a75abd9
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
-F src/where.c 8a05434f5a75a38c64c45e316b00167ba0fd7ad3
+F src/where.c 8ba8ff31dc9bf1b69fe771d35d8764d5a1efd310
 F src/whereInt.h cbe4aa57326998d89e7698ca65bb7c28541d483c
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -349,7 +349,7 @@ F test/auth.test 855233ef26eb3601b6886567ea4e326c72959360
 F test/auth2.test 264c6af53cad9aba5218c68bbe18036e39007bfa
 F test/auth3.test 5cfa94ed90c6617c42b7ba4b133fd79678b251c7
 F test/autoinc.test c58912526998a39e11f66b533e23cfabea7f25b7
-F test/autoindex1.test 7008c9f604141fdabe31b7bb95b5ff31b518251f
+F test/autoindex1.test 14b63a9f1e405fe6d5bfc8c8d00249c2ebaf13ea
 F test/autoindex2.test af7e595c6864cc6ef5fc38d5db579a3e34940cb8
 F test/autoindex3.test a3be0d1a53a7d2edff208a5e442312957047e972
 F test/autoindex4.test 49d3cd791a9baa16fb461d7ea3de80d019a819cf
@@ -1250,7 +1250,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 14784c317bff05dd0a74e2596432dfd12c139391
-R 275812afa820df20388de5de5b05e3ce
+P 0e087c0183bc7a758cf2a1d39158bc24fde833a2
+R 45168c2ae417f665e937b47961f47d47
 U drh
-Z c974cc37b6f1891bf4b4ede9ca413ca2
+Z fe2feaff56a77a679eecea2f54332501
