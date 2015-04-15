@@ -1198,7 +1198,7 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
     ** after the names have been resolved.  */
     if( p->selFlags & SF_Converted ){
       Select *pSub = p->pSrc->a[0].pSelect;
-      assert( p->pSrc->nSrc==1 && isCompound==0 && p->pOrderBy );
+      assert( p->pSrc->nSrc==1 && p->pOrderBy );
       assert( pSub->pPrior && pSub->pOrderBy==0 );
       pSub->pOrderBy = p->pOrderBy;
       p->pOrderBy = 0;
