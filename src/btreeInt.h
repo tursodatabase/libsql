@@ -518,6 +518,7 @@ struct BtCursor {
   u8 hints;                             /* As configured by CursorSetHints() */
   i16 iPage;                            /* Index of current page in apPage */
   u16 aiIdx[BTCURSOR_MAX_DEPTH];        /* Current index in apPage[i] */
+  MemPage *pPage;                       /* Current page */
   MemPage *apPage[BTCURSOR_MAX_DEPTH];  /* Pages from root to current page */
 };
 

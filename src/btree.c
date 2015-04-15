@@ -587,6 +587,7 @@ static void btreeReleaseAllCursorPages(BtCursor *pCur){
     pCur->apPage[i] = 0;
   }
   pCur->iPage = -1;
+  pCur->pPage = 0;
 }
 
 
@@ -3651,6 +3652,7 @@ int sqlite3BtreeTripAllCursors(Btree *pBtree, int errCode, int writeOnly){
         releasePage(p->apPage[i]);
         p->apPage[i] = 0;
       }
+      p->pPage = 0;
     }
     sqlite3BtreeLeave(pBtree);
   }
@@ -3865,6 +3867,7 @@ static int btreeCursor(
   ** variables and link the cursor into the BtShared list.  */
   pCur->pgnoRoot = (Pgno)iTable;
   pCur->iPage = -1;
+  pCur->pPage = 0;
   pCur->pKeyInfo = pKeyInfo;
   pCur->pBtree = p;
   pCur->pBt = pBt;
@@ -3966,7 +3969,8 @@ int sqlite3BtreeCloseCursor(BtCursor *pCur){
     CellInfo info;
     int iPage = pCur->iPage;
     memset(&info, 0, sizeof(info));
-    btreeParseCell(pCur->apPage[iPage], pCur->aiIdx[iPage], &info);
+    assert( pCur->pPage==pCur->apPage[iPage] );
+    btreeParseCell(pCur->pPage, pCur->aiIdx[iPage], &info);
     assert( CORRUPT_DB || memcmp(&info, &pCur->info, sizeof(info))==0 );
   }
 #else
@@ -3977,7 +3981,8 @@ int sqlite3BtreeCloseCursor(BtCursor *pCur){
   static void getCellInfo(BtCursor *pCur){
     if( pCur->info.nSize==0 ){
       int iPage = pCur->iPage;
-      btreeParseCell(pCur->apPage[iPage],pCur->aiIdx[iPage],&pCur->info);
+      assert( pCur->pPage==pCur->apPage[iPage] );
+      btreeParseCell(pCur->pPage,pCur->aiIdx[iPage],&pCur->info);
       pCur->curFlags |= BTCF_ValidNKey;
     }else{
       assertCellInfo(pCur);
@@ -3988,7 +3993,8 @@ int sqlite3BtreeCloseCursor(BtCursor *pCur){
 #define getCellInfo(pCur)                                                      \
   if( pCur->info.nSize==0 ){                                                   \
     int iPage = pCur->iPage;                                                   \
-    btreeParseCell(pCur->apPage[iPage],pCur->aiIdx[iPage],&pCur->info);        \
+    assert( pCur->pPage==pCur->apPage[iPage] );                                \
+    btreeParseCell(pCur->pPage,pCur->aiIdx[iPage],&pCur->info);                \
     pCur->curFlags |= BTCF_ValidNKey;                                          \
   }else{                                                                       \
     assertCellInfo(pCur);                                                      \
@@ -4043,7 +4049,8 @@ int sqlite3BtreeDataSize(BtCursor *pCur, u32 *pSize){
   assert( pCur->eState==CURSOR_VALID );
   assert( pCur->iPage>=0 );
   assert( pCur->iPage<BTCURSOR_MAX_DEPTH );
-  assert( pCur->apPage[pCur->iPage]->intKeyLeaf==1 );
+  assert( pCur->pPage==pCur->apPage[pCur->iPage] );
+  assert( pCur->pPage->intKeyLeaf==1 );
   getCellInfo(pCur);
   *pSize = pCur->info.nPayload;
   return SQLITE_OK;
@@ -4197,14 +4204,15 @@ static int accessPayload(
   unsigned char *aPayload;
   int rc = SQLITE_OK;
   int iIdx = 0;
-  MemPage *pPage = pCur->apPage[pCur->iPage]; /* Btree page of current entry */
-  BtShared *pBt = pCur->pBt;                  /* Btree this cursor belongs to */
+  MemPage *pPage = pCur->pPage;             /* Btree page of current entry */
+  BtShared *pBt = pCur->pBt;                /* Btree this cursor belongs to */
 #ifdef SQLITE_DIRECT_OVERFLOW_READ
   unsigned char * const pBufStart = pBuf;
   int bEnd;                                 /* True if reading to end of data */
 #endif
 
   assert( pPage );
+  assert( pPage==pCur->apPage[pCur->iPage] );
   assert( pCur->eState==CURSOR_VALID );
   assert( pCur->aiIdx[pCur->iPage]<pPage->nCell );
   assert( cursorHoldsMutex(pCur) );
@@ -4394,8 +4402,10 @@ static int accessPayload(
 int sqlite3BtreeKey(BtCursor *pCur, u32 offset, u32 amt, void *pBuf){
   assert( cursorHoldsMutex(pCur) );
   assert( pCur->eState==CURSOR_VALID );
-  assert( pCur->iPage>=0 && pCur->apPage[pCur->iPage] );
-  assert( pCur->aiIdx[pCur->iPage]<pCur->apPage[pCur->iPage]->nCell );
+  assert( pCur->iPage>=0 );
+  assert( pCur->apPage[pCur->iPage]==pCur->pPage );
+  assert( pCur->pPage!=0 );
+  assert( pCur->aiIdx[pCur->iPage]<pCur->pPage->nCell );
   return accessPayload(pCur, offset, amt, (unsigned char*)pBuf, 0);
 }
 
@@ -4421,8 +4431,10 @@ int sqlite3BtreeData(BtCursor *pCur, u32 offset, u32 amt, void *pBuf){
   rc = restoreCursorPosition(pCur);
   if( rc==SQLITE_OK ){
     assert( pCur->eState==CURSOR_VALID );
-    assert( pCur->iPage>=0 && pCur->apPage[pCur->iPage] );
-    assert( pCur->aiIdx[pCur->iPage]<pCur->apPage[pCur->iPage]->nCell );
+    assert( pCur->iPage>=0 );
+    assert( pCur->apPage[pCur->iPage]==pCur->pPage );
+    assert( pCur->pPage!=0 );
+    assert( pCur->aiIdx[pCur->iPage]<pCur->pPage->nCell );
     rc = accessPayload(pCur, offset, amt, pBuf, 0);
   }
   return rc;
@@ -4452,15 +4464,18 @@ static const void *fetchPayload(
   u32 *pAmt            /* Write the number of available bytes here */
 ){
   u32 amt;
-  assert( pCur!=0 && pCur->iPage>=0 && pCur->apPage[pCur->iPage]);
+  assert( pCur!=0 );
+  assert( pCur->iPage>=0 );
+  assert( pCur->apPage[pCur->iPage]==pCur->pPage );
+  assert( pCur->pPage!=0 );
   assert( pCur->eState==CURSOR_VALID );
   assert( sqlite3_mutex_held(pCur->pBtree->db->mutex) );
   assert( cursorHoldsMutex(pCur) );
-  assert( pCur->aiIdx[pCur->iPage]<pCur->apPage[pCur->iPage]->nCell );
+  assert( pCur->aiIdx[pCur->iPage]<pCur->pPage->nCell );
   assert( pCur->info.nSize>0 );
-  assert( pCur->info.pPayload>pCur->apPage[pCur->iPage]->aData || CORRUPT_DB );
-  assert( pCur->info.pPayload<pCur->apPage[pCur->iPage]->aDataEnd ||CORRUPT_DB);
-  amt = (int)(pCur->apPage[pCur->iPage]->aDataEnd - pCur->info.pPayload);
+  assert( pCur->info.pPayload>pCur->pPage->aData || CORRUPT_DB );
+  assert( pCur->info.pPayload<pCur->pPage->aDataEnd || CORRUPT_DB );
+  amt = (int)(pCur->pPage->aDataEnd - pCur->info.pPayload);
   if( pCur->info.nLocal<amt ) amt = pCur->info.nLocal;
   *pAmt = amt;
   return (void*)pCur->info.pPayload;
@@ -4514,7 +4529,7 @@ static int moveToChild(BtCursor *pCur, u32 newPgno){
   rc = getAndInitPage(pBt, newPgno, &pNewPage,
                (pCur->curFlags & BTCF_WriteFlag)==0 ? PAGER_GET_READONLY : 0);
   if( rc ) return rc;
-  pCur->apPage[i+1] = pNewPage;
+  pCur->apPage[i+1] = pCur->pPage = pNewPage;
   pCur->aiIdx[i+1] = 0;
   pCur->iPage++;
 
@@ -4560,16 +4575,18 @@ static void moveToParent(BtCursor *pCur){
   assert( cursorHoldsMutex(pCur) );
   assert( pCur->eState==CURSOR_VALID );
   assert( pCur->iPage>0 );
-  assert( pCur->apPage[pCur->iPage] );
+  assert( pCur->pPage==pCur->apPage[pCur->iPage] );
+  assert( pCur->pPage!=0 );
   assertParentIndex(
     pCur->apPage[pCur->iPage-1], 
     pCur->aiIdx[pCur->iPage-1], 
-    pCur->apPage[pCur->iPage]->pgno
+    pCur->pPage->pgno
   );
   testcase( pCur->aiIdx[pCur->iPage-1] > pCur->apPage[pCur->iPage-1]->nCell );
 
-  releasePage(pCur->apPage[pCur->iPage]);
+  releasePage(pCur->pPage);
   pCur->iPage--;
+  pCur->pPage = pCur->apPage[pCur->iPage];
   pCur->info.nSize = 0;
   pCur->curFlags &= ~(BTCF_ValidNKey|BTCF_ValidOvfl);
 }
@@ -4625,7 +4642,8 @@ static int moveToRoot(BtCursor *pCur){
     }
     pCur->iPage = 0;
   }
-  pRoot = pCur->apPage[0];
+  assert( pCur->iPage==0 );
+  pRoot = pCur->pPage = pCur->apPage[0];
   assert( pRoot->pgno==pCur->pgnoRoot );
 
   /* If pCur->pKeyInfo is not NULL, then the caller that opened this cursor
@@ -4675,7 +4693,7 @@ static int moveToLeftmost(BtCursor *pCur){
 
   assert( cursorHoldsMutex(pCur) );
   assert( pCur->eState==CURSOR_VALID );
-  while( rc==SQLITE_OK && !(pPage = pCur->apPage[pCur->iPage])->leaf ){
+  while( rc==SQLITE_OK && !(pPage = pCur->pPage)->leaf ){
     assert( pCur->aiIdx[pCur->iPage]<pPage->nCell );
     pgno = get4byte(findCell(pPage, pCur->aiIdx[pCur->iPage]));
     rc = moveToChild(pCur, pgno);
@@ -4700,7 +4718,7 @@ static int moveToRightmost(BtCursor *pCur){
 
   assert( cursorHoldsMutex(pCur) );
   assert( pCur->eState==CURSOR_VALID );
-  while( !(pPage = pCur->apPage[pCur->iPage])->leaf ){
+  while( !(pPage = pCur->pPage)->leaf ){
     pgno = get4byte(&pPage->aData[pPage->hdrOffset+8]);
     pCur->aiIdx[pCur->iPage] = pPage->nCell;
     rc = moveToChild(pCur, pgno);
@@ -4723,11 +4741,12 @@ int sqlite3BtreeFirst(BtCursor *pCur, int *pRes){
   assert( sqlite3_mutex_held(pCur->pBtree->db->mutex) );
   rc = moveToRoot(pCur);
   if( rc==SQLITE_OK ){
+    assert( pCur->pPage==pCur->apPage[pCur->iPage] );
     if( pCur->eState==CURSOR_INVALID ){
-      assert( pCur->pgnoRoot==0 || pCur->apPage[pCur->iPage]->nCell==0 );
+      assert( pCur->pgnoRoot==0 || pCur->pPage->nCell==0 );
       *pRes = 1;
     }else{
-      assert( pCur->apPage[pCur->iPage]->nCell>0 );
+      assert( pCur->pPage->nCell>0 );
       *pRes = 0;
       rc = moveToLeftmost(pCur);
     }
@@ -4754,8 +4773,9 @@ int sqlite3BtreeLast(BtCursor *pCur, int *pRes){
     for(ii=0; ii<pCur->iPage; ii++){
       assert( pCur->aiIdx[ii]==pCur->apPage[ii]->nCell );
     }
-    assert( pCur->aiIdx[pCur->iPage]==pCur->apPage[pCur->iPage]->nCell-1 );
-    assert( pCur->apPage[pCur->iPage]->leaf );
+    assert( pCur->pPage==pCur->apPage[pCur->iPage] );
+    assert( pCur->aiIdx[pCur->iPage]==pCur->pPage->nCell-1 );
+    assert( pCur->pPage->leaf );
 #endif
     return SQLITE_OK;
   }
@@ -4853,19 +4873,20 @@ int sqlite3BtreeMovetoUnpacked(
   if( rc ){
     return rc;
   }
-  assert( pCur->pgnoRoot==0 || pCur->apPage[pCur->iPage] );
-  assert( pCur->pgnoRoot==0 || pCur->apPage[pCur->iPage]->isInit );
-  assert( pCur->eState==CURSOR_INVALID || pCur->apPage[pCur->iPage]->nCell>0 );
+  assert( pCur->pgnoRoot==0 || pCur->apPage[pCur->iPage]==pCur->pPage );
+  assert( pCur->pgnoRoot==0 || pCur->pPage!=0 );
+  assert( pCur->pgnoRoot==0 || pCur->pPage->isInit );
+  assert( pCur->eState==CURSOR_INVALID || pCur->pPage->nCell>0 );
   if( pCur->eState==CURSOR_INVALID ){
     *pRes = -1;
-    assert( pCur->pgnoRoot==0 || pCur->apPage[pCur->iPage]->nCell==0 );
+    assert( pCur->pgnoRoot==0 || pCur->pPage->nCell==0 );
     return SQLITE_OK;
   }
-  assert( pCur->apPage[0]->intKey || pIdxKey );
+  assert( pCur->pPage->intKey || pIdxKey );
   for(;;){
     int lwr, upr, idx, c;
     Pgno chldPg;
-    MemPage *pPage = pCur->apPage[pCur->iPage];
+    MemPage *pPage = pCur->pPage;
     u8 *pCell;                          /* Pointer to current cell in pPage */
 
     /* pPage->nCell must be greater than zero. If this is the root-page
@@ -4988,7 +5009,7 @@ int sqlite3BtreeMovetoUnpacked(
     assert( lwr==upr+1 || (pPage->intKey && !pPage->leaf) );
     assert( pPage->isInit );
     if( pPage->leaf ){
-      assert( pCur->aiIdx[pCur->iPage]<pCur->apPage[pCur->iPage]->nCell );
+      assert( pCur->aiIdx[pCur->iPage]<pCur->pPage->nCell );
       pCur->aiIdx[pCur->iPage] = (u16)idx;
       *pRes = c;
       rc = SQLITE_OK;
@@ -5076,7 +5097,7 @@ static SQLITE_NOINLINE int btreeNext(BtCursor *pCur, int *pRes){
     }
   }
 
-  pPage = pCur->apPage[pCur->iPage];
+  pPage = pCur->pPage;
   idx = ++pCur->aiIdx[pCur->iPage];
   assert( pPage->isInit );
 
@@ -5100,7 +5121,7 @@ static SQLITE_NOINLINE int btreeNext(BtCursor *pCur, int *pRes){
         return SQLITE_OK;
       }
       moveToParent(pCur);
-      pPage = pCur->apPage[pCur->iPage];
+      pPage = pCur->pPage;
     }while( pCur->aiIdx[pCur->iPage]>=pPage->nCell );
     if( pPage->intKey ){
       return sqlite3BtreeNext(pCur, pRes);
@@ -5124,7 +5145,7 @@ int sqlite3BtreeNext(BtCursor *pCur, int *pRes){
   pCur->curFlags &= ~(BTCF_ValidNKey|BTCF_ValidOvfl);
   *pRes = 0;
   if( pCur->eState!=CURSOR_VALID ) return btreeNext(pCur, pRes);
-  pPage = pCur->apPage[pCur->iPage];
+  pPage = pCur->pPage;
   if( (++pCur->aiIdx[pCur->iPage])>=pPage->nCell ){
     pCur->aiIdx[pCur->iPage]--;
     return btreeNext(pCur, pRes);
@@ -5187,7 +5208,8 @@ static SQLITE_NOINLINE int btreePrevious(BtCursor *pCur, int *pRes){
     }
   }
 
-  pPage = pCur->apPage[pCur->iPage];
+  pPage = pCur->pPage;
+  assert( pPage==pCur->apPage[pCur->iPage] );
   assert( pPage->isInit );
   if( !pPage->leaf ){
     int idx = pCur->aiIdx[pCur->iPage];
@@ -5207,7 +5229,8 @@ static SQLITE_NOINLINE int btreePrevious(BtCursor *pCur, int *pRes){
     assert( (pCur->curFlags & (BTCF_ValidNKey|BTCF_ValidOvfl))==0 );
 
     pCur->aiIdx[pCur->iPage]--;
-    pPage = pCur->apPage[pCur->iPage];
+    assert( pCur->apPage[pCur->iPage]==pCur->pPage );
+    pPage = pCur->pPage;
     if( pPage->intKey && !pPage->leaf ){
       rc = sqlite3BtreePrevious(pCur, pRes);
     }else{
@@ -5226,7 +5249,7 @@ int sqlite3BtreePrevious(BtCursor *pCur, int *pRes){
   pCur->info.nSize = 0;
   if( pCur->eState!=CURSOR_VALID
    || pCur->aiIdx[pCur->iPage]==0
-   || pCur->apPage[pCur->iPage]->leaf==0
+   || pCur->pPage->leaf==0
   ){
     return btreePrevious(pCur, pRes);
   }
@@ -7419,7 +7442,8 @@ static int balance(BtCursor *pCur){
 
   do {
     int iPage = pCur->iPage;
-    MemPage *pPage = pCur->apPage[iPage];
+    MemPage *pPage = pCur->pPage;
+    assert( pPage==pCur->apPage[iPage] );
 
     if( iPage==0 ){
       if( pPage->nOverflow ){
@@ -7434,7 +7458,8 @@ static int balance(BtCursor *pCur){
           pCur->iPage = 1;
           pCur->aiIdx[0] = 0;
           pCur->aiIdx[1] = 0;
-          assert( pCur->apPage[1]->nOverflow );
+          pCur->pPage = pCur->apPage[1];
+          assert( pCur->pPage->nOverflow );
         }
       }else{
         break;
@@ -7513,6 +7538,7 @@ static int balance(BtCursor *pCur){
       releasePage(pPage);
       pCur->iPage--;
       assert( pCur->iPage>=0 );
+      pCur->pPage = pCur->apPage[pCur->iPage];
     }
   }while( rc==SQLITE_OK );
 
@@ -7615,7 +7641,8 @@ int sqlite3BtreeInsert(
   }
   assert( pCur->eState==CURSOR_VALID || (pCur->eState==CURSOR_INVALID && loc) );
 
-  pPage = pCur->apPage[pCur->iPage];
+  assert( pCur->pPage==pCur->apPage[pCur->iPage] );
+  pPage = pCur->pPage;
   assert( pPage->intKey || nKey>=0 );
   assert( pPage->leaf || !pPage->intKey );
 
@@ -7682,10 +7709,11 @@ int sqlite3BtreeInsert(
     ** fails. Internal data structure corruption will result otherwise. 
     ** Also, set the cursor state to invalid. This stops saveCursorPosition()
     ** from trying to save the current position of the cursor.  */
-    pCur->apPage[pCur->iPage]->nOverflow = 0;
+    assert( pCur->pPage==pCur->apPage[pCur->iPage] );
+    pCur->pPage->nOverflow = 0;
     pCur->eState = CURSOR_INVALID;
   }
-  assert( pCur->apPage[pCur->iPage]->nOverflow==0 );
+  assert( pCur->pPage->nOverflow==0 );
 
 end_insert:
   return rc;
@@ -7711,8 +7739,9 @@ int sqlite3BtreeDelete(BtCursor *pCur){
   assert( pCur->curFlags & BTCF_WriteFlag );
   assert( hasSharedCacheTableLock(p, pCur->pgnoRoot, pCur->pKeyInfo!=0, 2) );
   assert( !hasReadConflicts(p, pCur->pgnoRoot) );
+  assert( pCur->pPage==pCur->apPage[pCur->iPage] );
 
-  if( NEVER(pCur->aiIdx[pCur->iPage]>=pCur->apPage[pCur->iPage]->nCell) 
+  if( NEVER(pCur->aiIdx[pCur->iPage]>=pCur->pPage->nCell) 
    || NEVER(pCur->eState!=CURSOR_VALID)
   ){
     return SQLITE_ERROR;  /* Something has gone awry. */
@@ -7762,7 +7791,7 @@ int sqlite3BtreeDelete(BtCursor *pCur){
   ** node. The cell from the leaf node needs to be moved to the internal
   ** node to replace the deleted cell.  */
   if( !pPage->leaf ){
-    MemPage *pLeaf = pCur->apPage[pCur->iPage];
+    MemPage *pLeaf = pCur->pPage;
     int nCell;
     Pgno n = pCur->apPage[iCellDepth+1]->pgno;
     unsigned char *pTmp;
@@ -7798,6 +7827,7 @@ int sqlite3BtreeDelete(BtCursor *pCur){
     while( pCur->iPage>iCellDepth ){
       releasePage(pCur->apPage[pCur->iPage--]);
     }
+    pCur->pPage = pCur->apPage[pCur->iPage];
     rc = balance(pCur);
   }
 
@@ -8302,7 +8332,8 @@ int sqlite3BtreeCount(BtCursor *pCur, i64 *pnEntry){
     ** this page contains countable entries. Increment the entry counter
     ** accordingly.
     */
-    pPage = pCur->apPage[pCur->iPage];
+    assert( pCur->pPage==pCur->apPage[pCur->iPage] );
+    pPage = pCur->pPage;
     if( pPage->leaf || !pPage->intKey ){
       nEntry += pPage->nCell;
     }
@@ -8325,10 +8356,11 @@ int sqlite3BtreeCount(BtCursor *pCur, i64 *pnEntry){
           return moveToRoot(pCur);
         }
         moveToParent(pCur);
-      }while ( pCur->aiIdx[pCur->iPage]>=pCur->apPage[pCur->iPage]->nCell );
+      }while ( pCur->aiIdx[pCur->iPage]>=pCur->pPage->nCell );
 
       pCur->aiIdx[pCur->iPage]++;
-      pPage = pCur->apPage[pCur->iPage];
+      assert( pCur->pPage==pCur->apPage[pCur->iPage] );
+      pPage = pCur->pPage;
     }
 
     /* Descend to the child node of the cell that the cursor currently 
@@ -9111,6 +9143,7 @@ int sqlite3BtreePutData(BtCursor *pCsr, u32 offset, u32 amt, void *z){
   assert( hasSharedCacheTableLock(pCsr->pBtree, pCsr->pgnoRoot, 0, 2) );
   assert( !hasReadConflicts(pCsr->pBtree, pCsr->pgnoRoot) );
   assert( pCsr->apPage[pCsr->iPage]->intKey );
+  assert( pCsr->pPage==pCsr->apPage[pCsr->iPage] );
 
   return accessPayload(pCsr, offset, amt, (unsigned char *)z, 1);
 }
