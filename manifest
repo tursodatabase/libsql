@@ -1,5 +1,5 @@
-C Remove\san\sincorrect\sALWAYS()\sfrom\sthe\sautomatic\sindex\sgenerator.
-D 2015-04-15T07:34:25.165
+C Fix\sthe\serror\smessage\sgenerator\sfor\sillegal\stoken\serrors\sso\sthat\sit\sdoes\snot\nleak\smemory\sif\sit\simmediately\sfollows\sanother\serroneous\sSQL\sstatement.
+D 2015-04-15T07:57:27.369
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f78b1ab81b64e7c57a75d170832443e66c0880a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -287,7 +287,7 @@ F src/test_vfs.c b7e6831e6fcf04c5090accff30640ec5c9630739
 F src/test_vfstrace.c bab9594adc976cbe696ff3970728830b4c5ed698
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 6bbcc9fe50c917864d48287b4792d46d6e873481
-F src/tokenize.c a8d270b06e5f709930f7b67cf70a847969cb5bf3
+F src/tokenize.c 2b93d338833be43cba93644562e85a24ff3d97d1
 F src/trigger.c 69a91bed7c94e46223e37ffccfeeb35e34b999ac
 F src/update.c 3c4ecc282accf12d39edb8d524cf089645e55a13
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
@@ -1250,7 +1250,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0e087c0183bc7a758cf2a1d39158bc24fde833a2
-R 45168c2ae417f665e937b47961f47d47
+P eeb4bd06bf69e411736cc6077d1d64af6bd8fb09
+R a12d30eac869033c520f48032e05590c
 U drh
-Z fe2feaff56a77a679eecea2f54332501
+Z d83a0172461932509217291c59869b0d

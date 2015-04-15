@@ -430,10 +430,8 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
         break;
       }
       case TK_ILLEGAL: {
-        sqlite3DbFree(db, *pzErrMsg);
-        *pzErrMsg = sqlite3MPrintf(db, "unrecognized token: \"%T\"",
+        sqlite3ErrorMsg(pParse, "unrecognized token: \"%T\"",
                         &pParse->sLastToken);
-        nErr++;
         goto abort_parse;
       }
       case TK_SEMI: {
