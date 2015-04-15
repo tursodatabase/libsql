@@ -1,5 +1,5 @@
-C Enhance\sthe\sshowdb\sutility\sprogram\sso\sthat\sit\scan\sread\sthe\slast\spartial\spage\nof\sa\struncated\sdatabase\sfile.
-D 2015-04-15T15:29:05.938
+C Prevent\sthe\sfetchPayload()\sroutine\sfrom\sreporting\sa\scell\ssize\sthat\sextends\noff\sthe\send\sof\sthe\spage\son\sa\spathologically\scorrupted\sdatabase\sfile.
+D 2015-04-15T17:26:55.979
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f78b1ab81b64e7c57a75d170832443e66c0880a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -173,7 +173,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c ff743689c4d6c5cb55ad42ed9d174b2b3e71f1e3
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c 67648f6532c2da79d3b3fb6853aa1a0c3ba0e1ad
+F src/btree.c c6e32d84442f79d5b96965265d65b3baa231dffc
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 973a22a6fd61350b454ad614832b1f0a5e25a1e4
 F src/build.c 01b969b20a44a3d9620e597d9af8242348123540
@@ -1250,7 +1250,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b8768f124ef7d79e500b60a3ede288d46a0f529d
-R ba09996f8bd767f4c42736f26f8bc5d1
+P 61d72e17916bc043ce53c64e5ba7050a9bae554e
+R a75e3890d67000037a79bd4d7c9f248e
 U drh
-Z aee37f07b2a30818108be904ab58fa7c
+Z c0a93418012c7dd834fb5d24bb6e0682
