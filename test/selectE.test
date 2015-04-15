@@ -92,4 +92,9 @@ do_test selectE-2.2 {
   }
 } {}
 
+do_catchsql_test selectE-3.1 {
+  SELECT 1 EXCEPT SELECT 2 ORDER BY 1 COLLATE nocase EXCEPT SELECT 3;
+} {1 {ORDER BY clause should come after EXCEPT not before}}
+
+
 finish_test

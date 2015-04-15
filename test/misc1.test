@@ -639,4 +639,9 @@ do_catchsql_test misc1-21.2 {
   VALUES(0,0x0MATCH#0;
 } {1 {near ";": syntax error}}
 
+# 2015-04-15
+do_execsql_test misc1-22.1 {
+  SELECT ""+3 FROM (SELECT ""+5);
+} {3}
+
 finish_test
