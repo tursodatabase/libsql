@@ -58,6 +58,9 @@ do_execsql_test printf2-1.10 {
 do_execsql_test printf2-1.11 {
   SELECT printf('%lld%n',314159.2653,'hi');
 } {314159}
+do_execsql_test printf2-1.12 {
+  SELECT printf('%n',0);
+} {{}}
 
 # EVIDENCE-OF: R-17002-27534 The %z format is interchangeable with %s.
 #

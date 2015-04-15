@@ -460,6 +460,7 @@ static int lookupName(
   if( cnt==0 && zTab==0 && ExprHasProperty(pExpr,EP_DblQuoted) ){
     pExpr->op = TK_STRING;
     pExpr->pTab = 0;
+    pExpr->iTable = -1;
     return WRC_Prune;
   }
 
@@ -993,9 +994,11 @@ static int resolveCompoundOrderBy(
         if( pItem->pExpr==pE ){
           pItem->pExpr = pNew;
         }else{
-          assert( pItem->pExpr->op==TK_COLLATE );
-          assert( pItem->pExpr->pLeft==pE );
-          pItem->pExpr->pLeft = pNew;
+          Expr *pParent = pItem->pExpr;
+          assert( pParent->op==TK_COLLATE );
+          while( pParent->pLeft->op==TK_COLLATE ) pParent = pParent->pLeft;
+          assert( pParent->pLeft==pE );
+          pParent->pLeft = pNew;
         }
         sqlite3ExprDelete(db, pE);
         pItem->u.x.iOrderByCol = (u16)iCol;
@@ -1195,7 +1198,7 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
     ** after the names have been resolved.  */
     if( p->selFlags & SF_Converted ){
       Select *pSub = p->pSrc->a[0].pSelect;
-      assert( p->pSrc->nSrc==1 && isCompound==0 && p->pOrderBy );
+      assert( p->pSrc->nSrc==1 && p->pOrderBy );
       assert( pSub->pPrior && pSub->pOrderBy==0 );
       pSub->pOrderBy = p->pOrderBy;
       p->pOrderBy = 0;

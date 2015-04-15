@@ -2036,7 +2036,8 @@ static int xferOptimization(
       int i;
       for(i=0; i<pSrcIdx->nColumn; i++){
         char *zColl = pSrcIdx->azColl[i];
-        if( zColl && sqlite3_stricmp("BINARY", zColl) ) break;
+        assert( zColl!=0 );
+        if( sqlite3_stricmp("BINARY", zColl) ) break;
       }
       if( i==pSrcIdx->nColumn ){
         useSeekResult = OPFLAG_USESEEKRESULT;

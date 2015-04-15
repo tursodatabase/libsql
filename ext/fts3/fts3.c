@@ -313,6 +313,13 @@ static int fts3EvalStart(Fts3Cursor *pCsr);
 static int fts3TermSegReaderCursor(
     Fts3Cursor *, const char *, int, int, Fts3MultiSegReader **);
 
+#ifndef SQLITE_AMALGAMATION
+# if defined(SQLITE_DEBUG)
+int sqlite3Fts3Always(int b) { assert( b ); return b; }
+int sqlite3Fts3Never(int b)  { assert( !b ); return b; }
+# endif
+#endif
+
 /* 
 ** Write a 64-bit variable-length integer to memory starting at p[0].
 ** The length of data written will be between 1 and FTS3_VARINT_MAX bytes.
@@ -422,7 +429,7 @@ void sqlite3Fts3Dequote(char *z){
     /* If the first byte was a '[', then the close-quote character is a ']' */
     if( quote=='[' ) quote = ']';  
 
-    while( ALWAYS(z[iIn]) ){
+    while( z[iIn] ){
       if( z[iIn]==quote ){
         if( z[iIn+1]!=quote ) break;
         z[iOut++] = quote;
@@ -3527,6 +3534,8 @@ static void fts3SnippetFunc(
   }
   if( !zEllipsis || !zEnd || !zStart ){
     sqlite3_result_error_nomem(pContext);
+  }else if( nToken==0 ){
+    sqlite3_result_text(pContext, "", -1, SQLITE_STATIC);
   }else if( SQLITE_OK==fts3CursorSeek(pContext, pCsr) ){
     sqlite3Fts3Snippet(pContext, pCsr, zStart, zEnd, zEllipsis, iCol, nToken);
   }

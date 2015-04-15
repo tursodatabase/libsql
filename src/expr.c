@@ -1691,7 +1691,7 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, u32 inFlags, int *prRhsHasNull){
   ** ephemeral table.
   */
   p = (ExprHasProperty(pX, EP_xIsSelect) ? pX->x.pSelect : 0);
-  if( ALWAYS(pParse->nErr==0) && isCandidateForInOpt(p) ){
+  if( pParse->nErr==0 && isCandidateForInOpt(p) ){
     sqlite3 *db = pParse->db;              /* Database connection */
     Table *pTab;                           /* Table <table>. */
     Expr *pExpr;                           /* Expression <column> */
@@ -2016,6 +2016,7 @@ int sqlite3CodeSubselect(
       pSel->pLimit = sqlite3PExpr(pParse, TK_INTEGER, 0, 0,
                                   &sqlite3IntTokens[1]);
       pSel->iLimit = 0;
+      pSel->selFlags &= ~SF_AllValues;
       if( sqlite3Select(pParse, pSel, &dest) ){
         return 0;
       }

@@ -799,6 +799,11 @@ do_test select4-11.15 {
     SELECT x FROM t2
   }
 } {1 {SELECTs to the left and right of UNION do not have the same number of result columns}}
+do_test select4-11.16 {
+  catchsql {
+    INSERT INTO t2(rowid) VALUES(2) UNION SELECT 3,4 UNION SELECT 5,6 ORDER BY 1;
+  }
+} {1 {SELECTs to the left and right of UNION do not have the same number of result columns}}
 
 do_test select4-12.1 {
   sqlite3 db2 :memory:
@@ -863,5 +868,12 @@ do_execsql_test select4-14.8 {
 do_execsql_test select4-14.9 {
   SELECT * FROM t14 UNION ALL VALUES(3,2,1),(2,3,1),(1,2,3),(2,1,3);
 } {1 2 3 4 5 6 3 2 1 2 3 1 1 2 3 2 1 3}
+do_execsql_test select4-14.10 {
+  SELECT (VALUES(1),(2),(3),(4))
+} {1}
+do_execsql_test select4-14.11 {
+  SELECT (SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4)
+} {1}
+
 
 finish_test
