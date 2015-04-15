@@ -1,5 +1,5 @@
-C Correctly\sdeal\swith\san\sunknown\scollating\ssequence\son\san\sindexed\sDISTINCT\squery.
-D 2015-04-15T05:31:02.899
+C Fix\sa\sfaulty\sassert()\sin\sthe\ssqlite3StrAccumAppend()\sroutine.
+D 2015-04-15T05:38:35.928
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f78b1ab81b64e7c57a75d170832443e66c0880a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -226,7 +226,7 @@ F src/pcache1.c 69d137620a305f814398bd29a0c998038c0695e9
 F src/pragma.c ac4f3f856b4234e85f55b0f069698a4766011100
 F src/pragma.h 09c89bca58e9a44de2116cc8272b8d454657129f
 F src/prepare.c 173a5a499138451b2561614ecb87d78f9f4644b9
-F src/printf.c 8ae1fa9d30c1200a9268a390ba9e9cea9197b27a
+F src/printf.c 08fa675c200aac29e561c6153f91f909ed17612f
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 7bd67ded824a2fe8b356cd45e053d9c94b1874c2
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
@@ -798,7 +798,7 @@ F test/pragma.test ad99d05e411c7687302124be56f3b362204be041
 F test/pragma2.test f624a496a95ee878e81e59961eade66d5c00c028
 F test/pragma3.test 6f849ccffeee7e496d2f2b5e74152306c0b8757c
 F test/printf.test b3ff34e73d59124140eaf89f7672e21bc2ca5fcc
-F test/printf2.test b4acd4bf8734243257f01ddefa17c4fb090acc8a
+F test/printf2.test 0b61566dd1c0f0b802f59dffa228c5dc5aa6b054
 F test/progress.test a282973d1d17f08071bc58a77d6b80f2a81c354d
 F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
 F test/queryonly.test 5f653159e0f552f0552d43259890c1089391dcca
@@ -1250,7 +1250,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7c27310bdf6b4af44a0811a2787ed64966d720d2
-R 97d8aa531c1ae9c06ffcd147c2fe4f6f
+P a0b6e2fed3e95cf78ed0515c6e4da7510af4e86a
+R bd008e3cfd1613a5e1f1a28458fbfaad
 U drh
-Z 3a34d92eb0e2b45ff65d57bcfcec8b05
+Z cf565eb6ae4e94564c05e7f944eb18e5
