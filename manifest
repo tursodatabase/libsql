@@ -1,5 +1,5 @@
-C When\sadding\sthe\simplied\s"LIMIT\s1"\sto\sthe\send\sof\sa\sscalar\ssubquery,\smake\ssure\nthat\ssubquery\sis\snot\sa\sVALUES-only\squery\sas\ssuch\squeries\scannot\sdeal\swith\nLIMIT\sclauses.
-D 2015-04-15T05:20:44.109
+C Correctly\sdeal\swith\san\sunknown\scollating\ssequence\son\san\sindexed\sDISTINCT\squery.
+D 2015-04-15T05:31:02.899
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f78b1ab81b64e7c57a75d170832443e66c0880a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -307,7 +307,7 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 753995db83247f20361a8e8a874990b21a75abd9
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
-F src/where.c 9952e4749f481707595692f2f13d3ce3b64ffdc8
+F src/where.c 8a05434f5a75a38c64c45e316b00167ba0fd7ad3
 F src/whereInt.h cbe4aa57326998d89e7698ca65bb7c28541d483c
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -401,7 +401,7 @@ F test/closure01.test b1703ba40639cfc9b295cf478d70739415eec6a4
 F test/coalesce.test cee0dccb9fbd2d494b77234bccf9dc6c6786eb91
 F test/collate1.test 7fcfe78f9613dc4a7e247d6bd27749955f108741
 F test/collate2.test 9aaa410a00734e48bcb27f3872617d6f69b2a621
-F test/collate3.test 79558a286362cb9ed603c6fa543f1cda7f563f0f
+F test/collate3.test 89defc49983ddfbf0a0555aca8c0521a676f56a5
 F test/collate4.test f04d5168685f2eef637ecfa2d4ddf8ec0d600177
 F test/collate5.test 65d928034d30d2d263a80f6359f7549ee1598ec6
 F test/collate6.test 8be65a182abaac8011a622131486dafb8076e907
@@ -1250,7 +1250,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d7211b68107ea669de39e0aa81a1be40901e1487
-R 880c9defd1fb09406a80bcc7ed2c9c3e
+P 7c27310bdf6b4af44a0811a2787ed64966d720d2
+R 97d8aa531c1ae9c06ffcd147c2fe4f6f
 U drh
-Z 868124641765b45b984dc6b337325865
+Z 3a34d92eb0e2b45ff65d57bcfcec8b05

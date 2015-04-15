@@ -1532,7 +1532,7 @@ static int findIndexCol(
      && p->iTable==iBase
     ){
       CollSeq *pColl = sqlite3ExprCollSeq(pParse, pList->a[i].pExpr);
-      if( ALWAYS(pColl) && 0==sqlite3StrICmp(pColl->zName, zColl) ){
+      if( pColl && 0==sqlite3StrICmp(pColl->zName, zColl) ){
         return i;
       }
     }
