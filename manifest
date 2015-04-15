@@ -1,5 +1,5 @@
-C Remove\sa\sbranch\sthat\sbecame\sunreachable\sdue\sto\sone\sof\sthe\searlier\scheck-ins\ntoday.
-D 2015-04-15T08:37:42.853
+C Remove\san\sincorrect\sassert()\sstatement\sfrom\ssqlite3Fts3Dequote().
+D 2015-04-15T09:16:39.633
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f78b1ab81b64e7c57a75d170832443e66c0880a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -78,9 +78,9 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c ed6624d7c5fb5aee5d47f884b2d184169fa7a7d4
+F ext/fts3/fts3.c 4bd75289875b63c04f943d6ed7c31737da99cd74
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h 394858c12a17740f7a1f6bd372c4606d4425a8d1
+F ext/fts3/fts3Int.h 3626655d6ba903a3919bb44e1c38e5f0f9d6be82
 F ext/fts3/fts3_aux.c 5c211e17a64885faeb16b9ba7772f9d5445c2365
 F ext/fts3/fts3_expr.c 40123785eaa3ebd4c45c9b23407cc44ac0c49905
 F ext/fts3/fts3_hash.c 29b986e43f4e9dd40110eafa377dc0d63c422c60
@@ -601,7 +601,7 @@ F test/fts3rnd.test 1320d8826a845e38a96e769562bf83d7a92a15d0
 F test/fts3shared.test 57e26a801f21027b7530da77db54286a6fe4997e
 F test/fts3snippet.test 63dbd687d5bf5191f1b8e6a0977aa9c1e28a7004
 F test/fts3sort.test ed34c716a11cc2009a35210e84ad5f9c102362ca
-F test/fts3tok1.test c551043de056b0b1582a54e878991f57bad074bc
+F test/fts3tok1.test 178c050199af8c05299b1ad572514ce1c54b7827
 F test/fts3tok_err.test 52273cd193b9036282f7bacb43da78c6be87418d
 F test/fts3varint.test 752c08ed5d32c5d7dc211b056f4ed68a76b7e36e
 F test/fts4aa.test 10aac8e9d62c7357590acfabe3fad01e9a9ce1cb
@@ -1250,7 +1250,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P eafd0a1e3f25f38d551603f177ff4634cf79de77
-R cd3636389f675a46c2832548029faa61
-U drh
-Z 0baf8e6f8836d6dbdde447c335370222
+P fa0956edf866f48f448967836709a3ad822ff917
+R ae90fdb352a7af37163dde65a0adec8a
+U dan
+Z a5cd9462fba20ef05f7047cbd877b3d9
