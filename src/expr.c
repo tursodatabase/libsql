@@ -2016,6 +2016,7 @@ int sqlite3CodeSubselect(
       pSel->pLimit = sqlite3PExpr(pParse, TK_INTEGER, 0, 0,
                                   &sqlite3IntTokens[1]);
       pSel->iLimit = 0;
+      pSel->selFlags &= ~SF_AllValues;
       if( sqlite3Select(pParse, pSel, &dest) ){
         return 0;
       }

@@ -1,5 +1,5 @@
-C When\sdoing\sthe\s(dubious)\sconversion\sof\sdouble-quoted\sidentifier\sinto\sstring\nliteral\sfor\sMySQL\scompatibility,\sbe\ssure\sto\salso\sclear\sthe\siTable\svalue\sfrom\nthe\sExpr\sentry\sto\savoid\san\sassert.
-D 2015-04-15T04:51:28.676
+C When\sadding\sthe\simplied\s"LIMIT\s1"\sto\sthe\send\sof\sa\sscalar\ssubquery,\smake\ssure\nthat\ssubquery\sis\snot\sa\sVALUES-only\squery\sas\ssuch\squeries\scannot\sdeal\swith\nLIMIT\sclauses.
+D 2015-04-15T05:20:44.109
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f78b1ab81b64e7c57a75d170832443e66c0880a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -182,7 +182,7 @@ F src/complete.c a5cf5b4b56390cfb7b8636e8f7ddef90258dd575
 F src/ctime.c 98f89724adc891a1a4c655bee04e33e716e05887
 F src/date.c e4d50b3283696836ec1036b695ead9a19e37a5ac
 F src/delete.c 37964e6c1d73ff49cbea9ff690c9605fb15f600e
-F src/expr.c aba4f0547aac1fcbd965d548ab2e36efd5a4481c
+F src/expr.c 8800584340a9b4f4c0ca55c360de751c6da0b11a
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 3343d551a8d810782257244fb33f2ce191493c39
 F src/func.c 1414c24c873c48796ad45942257a179a423ba42f
@@ -839,7 +839,7 @@ F test/securedel2.test 2d54c28e46eb1fd6902089958b20b1b056c6f1c5
 F test/select1.test fc2a61f226a649393664ad54bc5376631801517c
 F test/select2.test 352480e0e9c66eda9c3044e412abdf5be0215b56
 F test/select3.test 2ce595f8fb8e2ac10071d3b4e424cadd4634a054
-F test/select4.test e20e8ce47b558de80616102ef273704cf0d48a3b
+F test/select4.test af938bb5f55c6f3925047fc7cd837c894566f5db
 F test/select5.test e758b8ef94f69b111df4cb819008856655dcd535
 F test/select6.test 39eac4a5c03650b2b473c532882273283ee8b7a0
 F test/select7.test 7fd2ef598cfabb6b9ff6ac13973b91d0527df49d
@@ -1250,7 +1250,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3872742591add4e94033484c2844e7d7ab69674b
-R 3d936303913ff5357294410059be6467
+P d7211b68107ea669de39e0aa81a1be40901e1487
+R 880c9defd1fb09406a80bcc7ed2c9c3e
 U drh
-Z adb676b9f25e7eed8c83dbf9762c49f4
+Z 868124641765b45b984dc6b337325865
