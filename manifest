@@ -1,5 +1,5 @@
-C Fix\sa\sfaulty\sassert()\sstatement\sin\sthe\sname\sresolver\sassociated\swith\sthe\noptimization\sthat\sconverts\scompound\sselects\swith\sORDER\sBY\sCOLLATE\sinto\nsubqueries.
-D 2015-04-15T06:45:13.856
+C Change\sthe\smultiSelectOrderBy()\sroutine\sto\sreturn\snon-zero\sif\sthere\shas\nbeen\sany\sprior\serror.
+D 2015-04-15T07:10:25.034
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f78b1ab81b64e7c57a75d170832443e66c0880a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -230,7 +230,7 @@ F src/printf.c 08fa675c200aac29e561c6153f91f909ed17612f
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 66cfe49a9c3b449ef13b89a8c47036a4ed167eab
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c 117e0f9ac9254a6f7472fac5144eba21ba0b2ec1
+F src/select.c 93260bc9e7e0e6dfe1b7cb8815b0ed4cad8be9e3
 F src/shell.c 84a1593bd86aaa14f4da8a8f9b16fbc239d262aa
 F src/sqlite.h.in ca27603a36fcacdaac5a19d8ee35aaff8ce8516f
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
@@ -839,7 +839,7 @@ F test/securedel2.test 2d54c28e46eb1fd6902089958b20b1b056c6f1c5
 F test/select1.test fc2a61f226a649393664ad54bc5376631801517c
 F test/select2.test 352480e0e9c66eda9c3044e412abdf5be0215b56
 F test/select3.test 2ce595f8fb8e2ac10071d3b4e424cadd4634a054
-F test/select4.test af938bb5f55c6f3925047fc7cd837c894566f5db
+F test/select4.test 16fa1cafb942f42294ec85cbb78954c2f2d15a44
 F test/select5.test e758b8ef94f69b111df4cb819008856655dcd535
 F test/select6.test 39eac4a5c03650b2b473c532882273283ee8b7a0
 F test/select7.test 7fd2ef598cfabb6b9ff6ac13973b91d0527df49d
@@ -1250,7 +1250,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9e1f837b08facbc7a2b6196770599a58233e725c
-R d99053241fb4278349e47e2aa3bd86a0
+P c72324ef9243946550ae3d974826502b1cc5eb10
+R a18a17a9c69cd2c9e7e0fb3024e1e22e
 U drh
-Z d2955d105f5f67e57ae3e9b26664c585
+Z 56fd45c34ac20b50b5d25609e083b049
