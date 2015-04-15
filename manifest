@@ -1,5 +1,5 @@
-C An\soversize\shex\sliteral\scan\scause\sa\sparsing\serror\swhile\sgenerating\scode\sfor\nconstants\sthat\sare\sfactored\sout\sof\sthe\smain\sbody\sof\sthe\sVDBE\sprogram.\s\sSo\nallow\sfor\sthat\scase.
-D 2015-04-15T04:10:50.814
+C Add\sa\stest\scase\sfor\swhat\swas\sformerly\sthought\sto\sbe\san\sunreachable\scondition:\nwhen\sthe\sLHS\sof\san\sOR\soperator\scontains\san\serror\sand\sthe\sRHS\scontains\san\sIN\noperator.
+D 2015-04-15T04:20:58.065
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f78b1ab81b64e7c57a75d170832443e66c0880a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -182,7 +182,7 @@ F src/complete.c a5cf5b4b56390cfb7b8636e8f7ddef90258dd575
 F src/ctime.c 98f89724adc891a1a4c655bee04e33e716e05887
 F src/date.c e4d50b3283696836ec1036b695ead9a19e37a5ac
 F src/delete.c 37964e6c1d73ff49cbea9ff690c9605fb15f600e
-F src/expr.c d09dac67d53c78880ba31d56e8ba2be3a6490553
+F src/expr.c aba4f0547aac1fcbd965d548ab2e36efd5a4481c
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 3343d551a8d810782257244fb33f2ce191493c39
 F src/func.c 1414c24c873c48796ad45942257a179a423ba42f
@@ -637,7 +637,7 @@ F test/hexlit.test 1d312fa816dfd3650a3bb488093bc09a0c927f67
 F test/hook.test 162d7cef7a2d2b04839fe14402934e6a1b79442f
 F test/icu.test 70df4faca133254c042d02ae342c0a141f2663f4
 F test/imposter1.test c3f1db2d3db2c24611a6596a3fc0ffc14f1466c8
-F test/in.test 047c4671328e9032ab95666a67021adbbd36e98e
+F test/in.test b52fa96bcf6cebc5c8829c822315d0f87af9c6c2
 F test/in2.test 5d4c61d17493c832f7d2d32bef785119e87bde75
 F test/in3.test 3cbf58c87f4052cee3a58b37b6389777505aa0c0
 F test/in4.test d2b38cba404bc4320f4fe1b595b3d163f212c068
@@ -1250,7 +1250,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 88b22761c59b06fa86c57f8d22a46046ad17d5d5
-R a0a6eb36c09cbd9c15f1359867fe74af
+P a084690b4fcabba20d9770ebf3a014dda84e2954
+R fcf0b4147f04a74e05def15e3b1a56b8
 U drh
-Z 7045f923a68da4f66662aff61189246b
+Z 041867bd4c7c23a09c20a9ae6f8ff29f
