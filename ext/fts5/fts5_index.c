@@ -1771,30 +1771,9 @@ static void fts5SegIterReverseNewPage(Fts5Index *p, Fts5SegIter *pIter){
 ** points to a delete marker. A delete marker is an entry with a 0 byte
 ** position-list.
 */
-static int fts5SegIterIsDelete(
-  Fts5Index *p,                   /* FTS5 backend object */
-  Fts5SegIter *pIter              /* Iterator to advance */
-){
-  int bRet = 0;
-  Fts5Data *pLeaf = pIter->pLeaf;
-  if( p->rc==SQLITE_OK && pLeaf ){
-    bRet = pIter->nPos==0;
-    /* bRet = pIter->bDel; */
-#if 0
-    if( pIter->iLeafOffset<pLeaf->n ){
-      bRet = ((pLeaf->p[pIter->iLeafOffset] & 0xFE)==0x00);
-    }else{
-      Fts5Data *pNew = fts5DataRead(p, FTS5_SEGMENT_ROWID(
-            pIter->iIdx, pIter->pSeg->iSegid, 0, pIter->iLeafPgno+1
-      ));
-      if( pNew ){
-        bRet = ((pNew->p[4] & 0xFE)==0x00);
-        fts5DataRelease(pNew);
-      }
-    }
-#endif
-  }
-  return bRet;
+static int fts5MultiIterIsEmpty(Fts5Index *p, Fts5MultiSegIter *pIter){
+  Fts5SegIter *pSeg = &pIter->aSeg[pIter->aFirst[1].iFirst];
+  return (p->rc==SQLITE_OK && pSeg->pLeaf && pSeg->nPos==0);
 }
 
 /*
@@ -2318,7 +2297,10 @@ static int fts5MultiIterDoCompare(Fts5MultiSegIter *pIter, int iOut){
       assert( i2>i1 );
       assert( i2!=0 );
       pRes->bTermEq = 1;
-      if( p1->iRowid==p2->iRowid ) return i2;
+      if( p1->iRowid==p2->iRowid ){
+        p1->bDel = p2->bDel;
+        return i2;
+      }
       res = ((p1->iRowid > p2->iRowid)==pIter->bRev) ? -1 : +1;
     }
     assert( res!=0 );
@@ -2513,9 +2495,7 @@ static void fts5MultiIterNext(
       fts5AssertMultiIterSetup(p, pIter);
 
       bUseFrom = 0;
-    }while( pIter->bSkipEmpty 
-         && fts5SegIterIsDelete(p, &pIter->aSeg[pIter->aFirst[1].iFirst])
-    );
+    }while( pIter->bSkipEmpty && fts5MultiIterIsEmpty(p, pIter) );
   }
 }
 
@@ -2611,9 +2591,7 @@ static void fts5MultiIterNew(
     }
     fts5AssertMultiIterSetup(p, pNew);
 
-    if( pNew->bSkipEmpty 
-     && fts5SegIterIsDelete(p, &pNew->aSeg[pNew->aFirst[1].iFirst]) 
-    ){
+    if( pNew->bSkipEmpty && fts5MultiIterIsEmpty(p, pNew) ){
       fts5MultiIterNext(p, pNew, 0, 0);
     }
   }else{
@@ -3408,36 +3386,38 @@ fflush(stdout);
   ){
     Fts5SegIter *pSeg = &pIter->aSeg[ pIter->aFirst[1].iFirst ];
     Fts5ChunkIter sPos;           /* Used to iterate through position list */
+    int nPos;                     /* position-list size field value */
+    int nTerm;
+    const u8 *pTerm;
 
-    /* If the segment being written is the oldest in the entire index and
-    ** the position list is empty (i.e. the entry is a delete marker), no
-    ** entry need be written to the output.  */
+    /* Check for key annihilation. */
+    if( pSeg->nPos==0 && (bOldest || pSeg->bDel==0) ) continue;
+
     fts5ChunkIterInit(p, pSeg, &sPos);
-    if( bOldest==0 || sPos.nRem>0 ){
-      int nTerm;
-      const u8 *pTerm = fts5MultiIterTerm(pIter, &nTerm);
-      if( nTerm!=term.n || memcmp(pTerm, term.p, nTerm) ){
-        if( pnRem && writer.nLeafWritten>nRem ){
-          fts5ChunkIterRelease(&sPos);
-          break;
-        }
 
-        /* This is a new term. Append a term to the output segment. */
-        if( bRequireDoclistTerm ){
-          fts5WriteAppendZerobyte(p, &writer);
-        }
-        fts5WriteAppendTerm(p, &writer, nTerm, pTerm);
-        fts5BufferSet(&p->rc, &term, nTerm, pTerm);
-        bRequireDoclistTerm = 1;
+    pTerm = fts5MultiIterTerm(pIter, &nTerm);
+    if( nTerm!=term.n || memcmp(pTerm, term.p, nTerm) ){
+      if( pnRem && writer.nLeafWritten>nRem ){
+        fts5ChunkIterRelease(&sPos);
+        break;
       }
 
-      /* Append the rowid to the output */
-      /* WRITEPOSLISTSIZE */
-      fts5WriteAppendRowid(p, &writer, fts5MultiIterRowid(pIter), sPos.nRem*2);
-
-      for(/* noop */; !fts5ChunkIterEof(p, &sPos); fts5ChunkIterNext(p, &sPos)){
-        fts5WriteAppendPoslistData(p, &writer, sPos.p, sPos.n);
+      /* This is a new term. Append a term to the output segment. */
+      if( bRequireDoclistTerm ){
+        fts5WriteAppendZerobyte(p, &writer);
       }
+      fts5WriteAppendTerm(p, &writer, nTerm, pTerm);
+      fts5BufferSet(&p->rc, &term, nTerm, pTerm);
+      bRequireDoclistTerm = 1;
+    }
+
+    /* Append the rowid to the output */
+    /* WRITEPOSLISTSIZE */
+    nPos = pSeg->nPos*2 + pSeg->bDel;
+    fts5WriteAppendRowid(p, &writer, fts5MultiIterRowid(pIter), nPos);
+
+    for(/* noop */; !fts5ChunkIterEof(p, &sPos); fts5ChunkIterNext(p, &sPos)){
+      fts5WriteAppendPoslistData(p, &writer, sPos.p, sPos.n);
     }
 
     fts5ChunkIterRelease(&sPos);
@@ -3882,12 +3862,14 @@ static void fts5BtreeIterInit(
   int i;
   nByte = sizeof(pIter->aLvl[0]) * (pSeg->nHeight-1);
   memset(pIter, 0, sizeof(*pIter));
-  pIter->nLvl = pSeg->nHeight-1;
-  pIter->iIdx = iIdx;
-  pIter->p = p;
-  pIter->pSeg = pSeg;
-  if( nByte && p->rc==SQLITE_OK ){
+  if( nByte ){
     pIter->aLvl = (Fts5BtreeIterLevel*)fts5IdxMalloc(p, nByte);
+  }
+  if( p->rc==SQLITE_OK ){
+    pIter->nLvl = pSeg->nHeight-1;
+    pIter->iIdx = iIdx;
+    pIter->p = p;
+    pIter->pSeg = pSeg;
   }
   for(i=0; p->rc==SQLITE_OK && i<pIter->nLvl; i++){
     i64 iRowid = FTS5_SEGMENT_ROWID(iIdx, pSeg->iSegid, i+1, 1);

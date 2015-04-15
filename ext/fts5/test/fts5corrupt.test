@@ -63,8 +63,8 @@ db func rnddoc fts5_rnddoc
 do_test 2.1 {
   for {set i 0} {$i < 500} {incr i} {
     execsql { INSERT INTO t2 VALUES(rnddoc(50)) }
-    execsql { INSERT INTO t2(t2) VALUES('integrity-check') }
   }
+  execsql { INSERT INTO t2(t2) VALUES('integrity-check') }
 } {}
 
 #--------------------------------------------------------------------
