@@ -1,5 +1,5 @@
-C Begin\schanging\sfts5\sto\suse\sa\sdelete\sflag\sso\sthat\sdelete\smarkers\smay\sbe\sannihilated\smore\squickly.
-D 2015-04-14T20:15:41.831
+C Fix\sa\sproblem\spreventing\sdoclist\sindexes\sfrom\sbeing\sloaded.
+D 2015-04-15T16:01:42.421
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -112,7 +112,7 @@ F ext/fts5/fts5_buffer.c 3ba56cc6824c9f7b1e0695159e0a9c636f6b4a23
 F ext/fts5/fts5_config.c 0847facc8914f57ea4452c43ce109200dc65e894
 F ext/fts5/fts5_expr.c 5215137efab527577d36bdf9e44bfc2ec3e1be98
 F ext/fts5/fts5_hash.c 3cb5a3d04dd2030eb0ac8d544711dfd37c0e6529
-F ext/fts5/fts5_index.c ba7680d0c6b3f4772e1ac54676f6f65679c24a08
+F ext/fts5/fts5_index.c 9556d405a12a38b3e1a323333a2620813b9f323a
 F ext/fts5/fts5_storage.c ac0f0937059c8d4f38a1f13aa5f2c2cd7edf3e0d
 F ext/fts5/fts5_tcl.c 617b6bb96545be8d9045de6967c688cd9cd15541
 F ext/fts5/fts5_tokenize.c c07f2c2f749282c1dbbf46bde1f6d7095c740b8b
@@ -1292,7 +1292,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P bdb8e82ab683f2438cde9f0b63e497dbf0141dcf
-R 98bc774fac6611e41c6e4422cb947fd5
+P 9341c070bb6140dbf559680952909674aa83fa55
+R c6ba726746ea3bc47027dcf89fd1186f
 U dan
-Z 5d35832a61b13dbbe8195fefbe4221a8
+Z a5a728f32ef73ddd62455c44220623a7

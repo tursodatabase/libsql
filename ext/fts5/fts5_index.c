@@ -2018,7 +2018,6 @@ static void fts5SegIterLoadDlidx(Fts5Index *p, int iIdx, Fts5SegIter *pIter){
   int iSeg = pIter->pSeg->iSegid;
   int bRev = (pIter->flags & FTS5_SEGITER_REVERSE);
   Fts5Data *pLeaf = pIter->pLeaf; /* Current leaf data */
-  int iOff = pIter->iLeafOffset;  /* Byte offset within current leaf */
 
   assert( pIter->flags & FTS5_SEGITER_ONETERM );
   assert( pIter->pDlidx==0 );
@@ -2027,18 +2026,19 @@ static void fts5SegIterLoadDlidx(Fts5Index *p, int iIdx, Fts5SegIter *pIter){
   ** early without loading the doclist-index (as it belongs to a different
   ** term. */
   if( pIter->iTermLeafPgno==pIter->iLeafPgno ){
-    int nPos = pIter->nPos;
+    int iOff = pIter->iLeafOffset + pIter->nPos;
     while( iOff<pLeaf->n ){
       i64 iDelta;
 
       /* iOff is currently the offset of the start of position list data */
-      iOff += nPos;
       iOff += getVarint(&pLeaf->p[iOff], (u64*)&iDelta);
       if( iDelta==0 ) return;
 
       if( iOff<pLeaf->n ){
         int bDummy;
+        int nPos;
         iOff += fts5GetPoslistSize(&pLeaf->p[iOff], &nPos, &bDummy);
+        iOff += nPos;
       }
     }
   }
@@ -4492,8 +4492,6 @@ int sqlite3Fts5IndexIntegrityCheck(Fts5Index *p, u64 cksum){
         ** the index is disabled are the same. In both ASC and DESC order. */
         if( iIdx>0 && rc==SQLITE_OK ){
           int f = flags|FTS5INDEX_QUERY_TEST_NOIDX;
-static int nCall = 0;
-nCall++;
           ck2 = 0;
           rc = fts5QueryCksum(p, z, n, f, &ck2);
           if( rc==SQLITE_OK && ck1!=ck2 ) rc = FTS5_CORRUPT;
