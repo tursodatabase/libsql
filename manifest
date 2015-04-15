@@ -1,5 +1,5 @@
-C Add\sthe\s--msvc\scommand-line\soption\sto\sthe\sreleasetest.tcl\sscript.\s\sThis\sis\nonly\sa\spartial\smerge\sfrom\sthe\swinTest\sbranch\sas\sthe\sOS_TRACE\schanges\sare\nomitted.
-D 2015-04-15T14:52:05.457
+C Enhance\sthe\sshowdb\sutility\sprogram\sso\sthat\sit\scan\sread\sthe\slast\spartial\spage\nof\sa\struncated\sdatabase\sfile.
+D 2015-04-15T15:29:05.938
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f78b1ab81b64e7c57a75d170832443e66c0880a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1225,7 +1225,7 @@ F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/pagesig.c ff0ca355fd3c2398e933da5e22439bbff89b803b
 F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
-F tool/showdb.c 63cdef19e7fbca0c164b096ef8aef3bb9e9dd222
+F tool/showdb.c 3b5d335d537e4dc44d0c86967023819453c87dc6
 F tool/showjournal.c 053eb1cc774710c6890b7dd6293300cc297b16a5
 F tool/showlocks.c 9920bcc64f58378ff1118caead34147201f48c68
 F tool/showstat4.c 9515faa8ec176599d4a8288293ba8ec61f7b728a
@@ -1250,7 +1250,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P bd06eeb8d06237dc2d54d8a03e8bf525cb811c9e f664bfdc82597a4530d4f4938bb96557b43b171b
-R b50245239bcc99605991067d21ad645b
+P b8768f124ef7d79e500b60a3ede288d46a0f529d
+R ba09996f8bd767f4c42736f26f8bc5d1
 U drh
-Z 4acea00deaa3e67c61c8980097c82958
+Z aee37f07b2a30818108be904ab58fa7c
