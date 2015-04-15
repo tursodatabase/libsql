@@ -752,6 +752,16 @@ do_test pragma-6.7 {
   {3 four REAL 0 X'abcdef' 0} \
   {4 five {} 0 CURRENT_TIME 0} \
 ]
+do_test pragma-6.8 {
+  execsql {
+    CREATE TABLE t68(a,b,c,PRIMARY KEY(a,b,a,c));
+    PRAGMA table_info(t68);
+  }
+} [concat \
+  {0 a {} 0 {} 1} \
+  {1 b {} 0 {} 2} \
+  {2 c {} 0 {} 4} \
+]
 } ;# ifcapable schema_pragmas
 # Miscellaneous tests
 #

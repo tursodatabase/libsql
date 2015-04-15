@@ -1057,7 +1057,7 @@ void sqlite3Pragma(
         }else if( pPk==0 ){
           k = 1;
         }else{
-          for(k=1; ALWAYS(k<=pTab->nCol) && pPk->aiColumn[k-1]!=i; k++){}
+          for(k=1; k<=pTab->nCol && pPk->aiColumn[k-1]!=i; k++){}
         }
         sqlite3VdbeAddOp2(v, OP_Integer, k, 6);
         sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 6);

@@ -826,7 +826,7 @@ static void SQLITE_NOINLINE enlargeAndAppend(StrAccum *p, const char *z, int N){
 ** size of the memory allocation for StrAccum if necessary.
 */
 void sqlite3StrAccumAppend(StrAccum *p, const char *z, int N){
-  assert( z!=0 );
+  assert( z!=0 || N==0 );
   assert( p->zText!=0 || p->nChar==0 || p->accError );
   assert( N>=0 );
   assert( p->accError==0 || p->nAlloc==0 );
