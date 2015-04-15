@@ -1,5 +1,5 @@
-C Change\sthe\smultiSelectOrderBy()\sroutine\sto\sreturn\snon-zero\sif\sthere\shas\nbeen\sany\sprior\serror.
-D 2015-04-15T07:10:25.034
+C Remove\san\sincorrect\sALWAYS()\sfrom\sthe\stable_info\spragma.
+D 2015-04-15T07:19:27.406
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f78b1ab81b64e7c57a75d170832443e66c0880a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -223,7 +223,7 @@ F src/parse.y 1299c66e7b1707322ccd8af43a359b8fb0d46d72
 F src/pcache.c 10539fb959849ad6efff80050541cab3d25089d4
 F src/pcache.h b44658c9c932d203510279439d891a2a83e12ba8
 F src/pcache1.c 69d137620a305f814398bd29a0c998038c0695e9
-F src/pragma.c ac4f3f856b4234e85f55b0f069698a4766011100
+F src/pragma.c 3965ae4e82bed39fb97ce04c5fe18c9bc3ee6a88
 F src/pragma.h 09c89bca58e9a44de2116cc8272b8d454657129f
 F src/prepare.c 173a5a499138451b2561614ecb87d78f9f4644b9
 F src/printf.c 08fa675c200aac29e561c6153f91f909ed17612f
@@ -794,7 +794,7 @@ F test/pcache.test b09104b03160aca0d968d99e8cd2c5b1921a993d
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
 F test/permutations.test f9cc1dd987986c9d4949211c7a4ed55ec9aecba1
-F test/pragma.test ad99d05e411c7687302124be56f3b362204be041
+F test/pragma.test e6605ce89c66db930aef561e43a22281a09ffc66
 F test/pragma2.test f624a496a95ee878e81e59961eade66d5c00c028
 F test/pragma3.test 6f849ccffeee7e496d2f2b5e74152306c0b8757c
 F test/printf.test b3ff34e73d59124140eaf89f7672e21bc2ca5fcc
@@ -1250,7 +1250,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c72324ef9243946550ae3d974826502b1cc5eb10
-R a18a17a9c69cd2c9e7e0fb3024e1e22e
+P 14784c317bff05dd0a74e2596432dfd12c139391
+R 275812afa820df20388de5de5b05e3ce
 U drh
-Z 56fd45c34ac20b50b5d25609e083b049
+Z c974cc37b6f1891bf4b4ede9ca413ca2
