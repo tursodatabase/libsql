@@ -460,6 +460,7 @@ static int lookupName(
   if( cnt==0 && zTab==0 && ExprHasProperty(pExpr,EP_DblQuoted) ){
     pExpr->op = TK_STRING;
     pExpr->pTab = 0;
+    pExpr->iTable = -1;
     return WRC_Prune;
   }
 
