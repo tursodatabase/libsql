@@ -1,5 +1,5 @@
-C Fix\sa\sfaulty\sassert()\sin\sthe\ssqlite3StrAccumAppend()\sroutine.
-D 2015-04-15T05:38:35.928
+C Correctly\shandle\sCOLLATE\soperators\sapplied\sto\sCOLLATE\soperators\sin\san\nORDER\sBY\sclause.
+D 2015-04-15T05:57:50.327
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f78b1ab81b64e7c57a75d170832443e66c0880a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -228,7 +228,7 @@ F src/pragma.h 09c89bca58e9a44de2116cc8272b8d454657129f
 F src/prepare.c 173a5a499138451b2561614ecb87d78f9f4644b9
 F src/printf.c 08fa675c200aac29e561c6153f91f909ed17612f
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
-F src/resolve.c 7bd67ded824a2fe8b356cd45e053d9c94b1874c2
+F src/resolve.c 03fe2a8640b7f1477e6cbca6f3bc1b5549263a47
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 117e0f9ac9254a6f7472fac5144eba21ba0b2ec1
 F src/shell.c 84a1593bd86aaa14f4da8a8f9b16fbc239d262aa
@@ -399,7 +399,7 @@ F test/check.test 5831ddb6f2c687782eaf2e1a07b6e17f24c4f763
 F test/close.test 340bd24cc58b16c6bc01967402755027c37eb815
 F test/closure01.test b1703ba40639cfc9b295cf478d70739415eec6a4
 F test/coalesce.test cee0dccb9fbd2d494b77234bccf9dc6c6786eb91
-F test/collate1.test 7fcfe78f9613dc4a7e247d6bd27749955f108741
+F test/collate1.test 08c18e7512a5a32c97938854263fa15362eeb846
 F test/collate2.test 9aaa410a00734e48bcb27f3872617d6f69b2a621
 F test/collate3.test 89defc49983ddfbf0a0555aca8c0521a676f56a5
 F test/collate4.test f04d5168685f2eef637ecfa2d4ddf8ec0d600177
@@ -1250,7 +1250,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a0b6e2fed3e95cf78ed0515c6e4da7510af4e86a
-R bd008e3cfd1613a5e1f1a28458fbfaad
+P 998cfdb8dcda2cac94b83326751e16dcef8b267f
+R 365a6b3d3d3943322095f384b9ee1504
 U drh
-Z cf565eb6ae4e94564c05e7f944eb18e5
+Z eaf1d275b82a1bdf74f8de064c4444e7

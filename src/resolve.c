@@ -994,9 +994,11 @@ static int resolveCompoundOrderBy(
         if( pItem->pExpr==pE ){
           pItem->pExpr = pNew;
         }else{
-          assert( pItem->pExpr->op==TK_COLLATE );
-          assert( pItem->pExpr->pLeft==pE );
-          pItem->pExpr->pLeft = pNew;
+          Expr *pParent = pItem->pExpr;
+          assert( pParent->op==TK_COLLATE );
+          while( pParent->pLeft->op==TK_COLLATE ) pParent = pParent->pLeft;
+          assert( pParent->pLeft==pE );
+          pParent->pLeft = pNew;
         }
         sqlite3ExprDelete(db, pE);
         pItem->u.x.iOrderByCol = (u16)iCol;
