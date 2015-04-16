@@ -1,5 +1,5 @@
-C Fix\sthe\sVDBE\sso\sthat\sit\salways\suses\sthe\soriginal\sopcode\sfor\sprofiling\sand\ndebugging\seven\safter\sthe\spOp\spointer\shas\sbeen\supdated\sdue\sto\sa\sjump.
-D 2015-04-16T17:31:02.931
+C Make\ssure\sall\scursors\sare\sclosed\swhen\sreturning\sfrom\sa\sVDBE\ssubprogram\sthat\nimplements\sa\sforeign-key\sconstruct.
+D 2015-04-16T18:11:50.067
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f78b1ab81b64e7c57a75d170832443e66c0880a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -297,7 +297,7 @@ F src/vdbe.c 55650cb03d26ce5955cffcdc6568e046680b1fd4
 F src/vdbe.h 7e538ecf47dccb307ea2d087c3ddc2dd8d70e79d
 F src/vdbeInt.h 9cbaa84f53ddd2d09a0cf61a94337a3a035d08a0
 F src/vdbeapi.c 583d56b129dd27f12bed518270de9ebe521e6a75
-F src/vdbeaux.c a20504ae52392459fa08402fda3f195f19d7c79d
+F src/vdbeaux.c 03591cca98ec50e1493043f0ff7abbece0b9c83d
 F src/vdbeblob.c 4f2e8e075d238392df98c5e03a64342465b03f90
 F src/vdbemem.c c0dc81285b7571b0a31c40f17846fe2397ec1cd9
 F src/vdbesort.c 2e7f683464fd5db3be4beaa1ff2d39e24fcb64b8
@@ -505,7 +505,7 @@ F test/fallocate.test 3e979af17dfa7e5e9dda5eba1a696c04fa9d47f7
 F test/filectrl.test 14fa712e42c4cb791e09dfd58a6a03efb47ef13a
 F test/filefmt.test cb34663f126cbc2d358af552dcaf5c72769b0146
 F test/fkey1.test e1d1fa84cde579185ea01358436839703e415a5b
-F test/fkey2.test 043692a609d513f8f230ca3064e8074f8643b60e
+F test/fkey2.test f3d27ecba480a348c328965d154214719bb158a9
 F test/fkey3.test 76d475c80b84ee7a5d062e56ccb6ea68882e2b49
 F test/fkey4.test 86446017011273aad8f9a99c1a65019e7bd9ca9d
 F test/fkey5.test 56bcb5a6e8b725b17febc267fb041a6695e86853
@@ -1250,7 +1250,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 10715b05f2201a63dca317f99ce39d3ce182e182
-R a3daab05325b2d95fe679d302a2d11e4
+P 647495cf12b656f6a2f028dc1fb459d667153cf2
+R a757fbed701cb5d24ccca7b2844fe222
 U drh
-Z 9f3c109ab0871adbf8f7030a7a0d36ce
+Z 3babb77db24db798d253708de47714ee

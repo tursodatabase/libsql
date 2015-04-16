@@ -676,6 +676,11 @@ do_test fkey2-9.2.3 {
     SELECT * FROM cc;
   }
 } {{} A {} {} B {} 3 A 2 3 B 2}
+do_execsql_test fkey2-9.3.0 {
+  CREATE TABLE t3(x PRIMARY KEY REFERENCES t3 ON DELETE SET NULL);
+  INSERT INTO t3(x) VALUES(12345);
+  DROP TABLE t3;
+} {}
 
 #-------------------------------------------------------------------------
 # The following tests, fkey2-10.*, test "foreign key mismatch" and 
