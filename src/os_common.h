@@ -30,19 +30,6 @@
 #endif
 
 /*
-** Declarations used for tracing the operating system interfaces.
-*/
-#if (defined(SQLITE_DEBUG) && SQLITE_OS_WIN) || \
-    defined(SQLITE_TEST) || defined(SQLITE_FORCE_OS_TRACE)
-  extern int sqlite3OSTrace;
-# define OSTRACE(X)          if( sqlite3OSTrace ) sqlite3DebugPrintf X
-# define SQLITE_HAVE_OS_TRACE
-#else
-# define OSTRACE(X)
-# undef  SQLITE_HAVE_OS_TRACE
-#endif
-
-/*
 ** Macros for performance tracing.  Normally turned off.  Only works
 ** on i486 hardware.
 */

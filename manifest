@@ -1,5 +1,5 @@
-C Make\ssure\sthe\ssqlite3DebugPrintf()\sfunction\sis\sdefined\sfor\sOSTRACE\sas\swell.
-D 2015-04-16T03:37:19.418
+C Move\sOSTRACE\sdefines\sso\sthey\sare\svisible\sto\sall\ssource\sfiles\sthat\sneed\sthem.
+D 2015-04-16T03:56:32.316
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f78b1ab81b64e7c57a75d170832443e66c0880a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -195,7 +195,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
 F src/loadext.c 86bd4e2fccd520b748cba52492ab60c4a770f660
-F src/main.c df3cbe6ebe9df0bea291e649cea3dfcaa6a18cb7
+F src/main.c 9f4b0e0924cd1be1c7766290bf3f9c98b97f32b7
 F src/malloc.c 6a370b83d54e4bbf6f94021221c2a311cff26a18
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c abe6ee469b6c5a35c7f22bfeb9c9bac664a1c987
@@ -212,7 +212,7 @@ F src/mutex_w32.c 61660ada28d8308ad190f444c2170c4f2a590c2f
 F src/notify.c 9711a7575036f0d3040ba61bc6e217f13a9888e7
 F src/os.c 8fd25588eeba74068d41102d26810e216999b6c8
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
-F src/os_common.h 7cb39fb6ceec8c69a27d001163b41880fa9b23c0
+F src/os_common.h abdb9a191a367793268fe553d25bab894e986a0e
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c cf45d7b1cd27341ba8699e62c4902062b6297039
 F src/os_win.c c2f0b0b3541906e310588b9e95080df4df75b674
@@ -235,7 +235,7 @@ F src/shell.c 72b61a9d41ba12b67ea06fe9267abcc012c6c5bb
 F src/sqlite.h.in ca27603a36fcacdaac5a19d8ee35aaff8ce8516f
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
-F src/sqliteInt.h 2aa91b5b500aaf877c59e00a6e1c81c0b4d4babe
+F src/sqliteInt.h 0c5881204cfbba739fa5c859a6acb3219a70f42e
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c f266ad8a2892d659b74f0f50cb6a88b6e7c12179
 F src/table.c e7a09215315a978057fb42c640f890160dbcc45e
@@ -1250,7 +1250,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P cd1542664eb3eb46d486664ded49cd9c4bef3948
-R bcc89826e9f25bef6a366a7f195dedc4
+P ae5af70427e0df960a54c48cd27a6288500b1f31
+R 947eabea0fc8e6e24a4dbedb3eb276a4
 U mistachkin
-Z fe350e14fe404098bece6b10d955edca
+Z 9274684aadef583df5fc51a559e8c418

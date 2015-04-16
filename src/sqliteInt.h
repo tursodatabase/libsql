@@ -363,6 +363,19 @@
 #endif
 
 /*
+** Declarations used for tracing the operating system interfaces.
+*/
+#if (defined(SQLITE_DEBUG) && SQLITE_OS_WIN) || \
+    defined(SQLITE_TEST) || defined(SQLITE_FORCE_OS_TRACE)
+  extern int sqlite3OSTrace;
+# define OSTRACE(X)          if( sqlite3OSTrace ) sqlite3DebugPrintf X
+# define SQLITE_HAVE_OS_TRACE
+#else
+# define OSTRACE(X)
+# undef  SQLITE_HAVE_OS_TRACE
+#endif
+
+/*
 ** Return true (non-zero) if the input is an integer that is too large
 ** to fit in 32-bits.  This macro is used inside of various testcase()
 ** macros to verify that we have tested SQLite for large-file support.
@@ -3493,7 +3506,7 @@ void *sqlite3HexToBlob(sqlite3*, const char *z, int n);
 u8 sqlite3HexToInt(int h);
 int sqlite3TwoPartName(Parse *, Token *, Token *, Token **);
 
-#ifdef SQLITE_HAVE_OS_TRACE
+#if defined(SQLITE_DEBUG) || defined(SQLITE_HAVE_OS_TRACE)
 const char *sqlite3ErrName(int);
 #endif
 
