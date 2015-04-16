@@ -5765,7 +5765,8 @@ int sqlite3Fts3EvalPhrasePoslist(
     pIter = pPhrase->pOrPoslist;
     iDocid = pPhrase->iOrDocid;
     if( pCsr->bDesc==bDescDoclist ){
-      bEof = (pIter >= (pPhrase->doclist.aAll + pPhrase->doclist.nAll));
+      bEof = !pPhrase->doclist.nAll ||
+                 (pIter >= (pPhrase->doclist.aAll + pPhrase->doclist.nAll));
       while( (pIter==0 || DOCID_CMP(iDocid, pCsr->iPrevId)<0 ) && bEof==0 ){
         sqlite3Fts3DoclistNext(
             bDescDoclist, pPhrase->doclist.aAll, pPhrase->doclist.nAll, 
