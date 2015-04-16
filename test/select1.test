@@ -307,6 +307,9 @@ do_test select1-4.4 {
   set v [catch {execsql {SELECT f1 FROM test1 ORDER BY min(f1)}} msg]
   lappend v $msg
 } {1 {misuse of aggregate: min()}}
+do_catchsql_test select1-4.5 {
+  INSERT INTO test1(f1) SELECT f1 FROM test1 ORDER BY min(f1);
+} {1 {misuse of aggregate: min()}}
 
 # The restriction not allowing constants in the ORDER BY clause
 # has been removed.  See ticket #1768

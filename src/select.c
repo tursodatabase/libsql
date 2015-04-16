@@ -5483,10 +5483,9 @@ int sqlite3Select(
   */
   sqlite3VdbeResolveLabel(v, iEnd);
 
-  /* The SELECT was successfully coded.   Set the return code to 0
-  ** to indicate no errors.
-  */
-  rc = 0;
+  /* The SELECT has been coded. If there is an error in the Parse structure,
+  ** set the return code to 1. Otherwise 0. */
+  rc = (pParse->nErr>0);
 
   /* Control jumps to here if an error is encountered above, or upon
   ** successful coding of the SELECT.

@@ -1,5 +1,5 @@
-C When\sparsing\sthe\sschema,\signore\sany\sSQL\sthat\sdoes\snot\sbegin\swith\s"CREATE".
-D 2015-04-16T00:26:03.247
+C Ensure\sthe\ssqlite3Select()\sroutine\salways\sreturns\snon-zero\sif\san\serror\shas\soccurred.
+D 2015-04-16T07:19:23.819
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f78b1ab81b64e7c57a75d170832443e66c0880a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -230,7 +230,7 @@ F src/printf.c 08fa675c200aac29e561c6153f91f909ed17612f
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 66cfe49a9c3b449ef13b89a8c47036a4ed167eab
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c 93260bc9e7e0e6dfe1b7cb8815b0ed4cad8be9e3
+F src/select.c fdac71edb73206488b44cfc0f78708e83f99f591
 F src/shell.c 72b61a9d41ba12b67ea06fe9267abcc012c6c5bb
 F src/sqlite.h.in ca27603a36fcacdaac5a19d8ee35aaff8ce8516f
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
@@ -836,7 +836,7 @@ F test/schema4.test e6a66e20cc69f0e306667c08be7fda3d11707dc5
 F test/schema5.test 29699b4421f183c8f0e88bd28ce7d75d13ea653e
 F test/securedel.test 21749c32ccc30f1ea9e4b9f33295a6521ec20fa0
 F test/securedel2.test 2d54c28e46eb1fd6902089958b20b1b056c6f1c5
-F test/select1.test fc2a61f226a649393664ad54bc5376631801517c
+F test/select1.test 53c3a5228b099601eafc7f3cc0e9cd682b07d9d5
 F test/select2.test 352480e0e9c66eda9c3044e412abdf5be0215b56
 F test/select3.test 2ce595f8fb8e2ac10071d3b4e424cadd4634a054
 F test/select4.test 16fa1cafb942f42294ec85cbb78954c2f2d15a44
@@ -1250,7 +1250,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e018f4bf1f27f7838342940ad89a12d7f1536e8e
-R 9772cd879deb52a3e48d7b6cb0b29092
-U drh
-Z 089490261a72224f9edd48b4acf9b866
+P d3c00d61581c8ba6dce5618391432d3af8d324d4
+R 8123505062f70927e7be9214d0f6d5b6
+U dan
+Z fd48a7f3e42fad2b9442aa5a1e6cf7ce
