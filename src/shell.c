@@ -1960,7 +1960,7 @@ static void resolve_backslashes(char *z){
   char c;
   while( *z && *z!='\\' ) z++;
   for(i=j=0; (c = z[i])!=0; i++, j++){
-    if( c=='\\' ){
+    if( c=='\\' && z[i+1]!=0 ){
       c = z[++i];
       if( c=='a' ){
         c = '\a';

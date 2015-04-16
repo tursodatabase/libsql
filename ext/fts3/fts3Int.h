@@ -134,6 +134,11 @@ SQLITE_EXTENSION_INIT3
 #ifdef SQLITE_COVERAGE_TEST
 # define ALWAYS(x) (1)
 # define NEVER(X)  (0)
+#elif defined(SQLITE_DEBUG)
+# define ALWAYS(x) sqlite3Fts3Always((x)!=0)
+# define NEVER(x) sqlite3Fts3Never((x)!=0)
+int sqlite3Fts3Always(int b);
+int sqlite3Fts3Never(int b);
 #else
 # define ALWAYS(x) (x)
 # define NEVER(x)  (x)

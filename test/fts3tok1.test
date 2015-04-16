@@ -110,5 +110,15 @@ do_catchsql_test 2.1 {
   SELECT * FROM t4;
 } {1 {SQL logic error or missing database}}
 
+do_catchsql_test 2.2 {
+  CREATE VIRTUAL TABLE t USING fts4(tokenize=simple""); 
+} {0 {}}
+
+ifcapable fts3_unicode {
+  do_catchsql_test 2.3 {
+    CREATE VIRTUAL TABLE u USING fts4(tokenize=unicode61""); 
+  } {1 {unknown tokenizer}}
+}
+
 
 finish_test
