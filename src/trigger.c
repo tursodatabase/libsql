@@ -795,6 +795,7 @@ static void transferParseError(Parse *pTo, Parse *pFrom){
   if( pTo->nErr==0 ){
     pTo->zErrMsg = pFrom->zErrMsg;
     pTo->nErr = pFrom->nErr;
+    pTo->rc = pFrom->rc;
   }else{
     sqlite3DbFree(pFrom->db, pFrom->zErrMsg);
   }

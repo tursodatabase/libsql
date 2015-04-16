@@ -2014,4 +2014,18 @@ do_test fkey2-ce7c13.1.6 {
   }
 } {1 {FOREIGN KEY constraint failed}}
 
+# 2015-04-16:  Foreign key errors propagate back up to the parser.
+#
+do_test fkey2-20150416-100 {
+  db close
+  sqlite3 db :memory:
+  catchsql {
+    PRAGMA foreign_keys=1;
+    CREATE TABLE t1(x PRIMARY KEY);
+    CREATE TABLE t(y REFERENCES t0(x)ON DELETE SET DEFAULT);
+    CREATE TABLE t0(y REFERENCES t1 ON DELETE SET NULL);
+    REPLACE INTO t1 SELECT(0);CREATE TABLE t2(x);CREATE TABLE t3;
+  }
+} {1 {foreign key mismatch - "t" referencing "t0"}}
+
 finish_test

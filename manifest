@@ -1,5 +1,5 @@
-C Add\sthe\s--backslash\soption\sto\sthe\scommand-line\sshell\sfor\stesting\spurposes.
-D 2015-04-16T15:05:04.946
+C Make\ssure\serrors\sin\scoding\striggers\sare\spropagated\sback\sup\sto\sthe\sparser.
+D 2015-04-16T15:47:06.148
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f78b1ab81b64e7c57a75d170832443e66c0880a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -288,7 +288,7 @@ F src/test_vfstrace.c bab9594adc976cbe696ff3970728830b4c5ed698
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 6bbcc9fe50c917864d48287b4792d46d6e873481
 F src/tokenize.c a8234a67577308935cdf13e618cd66556f5f45d1
-F src/trigger.c 69a91bed7c94e46223e37ffccfeeb35e34b999ac
+F src/trigger.c a261da05e2ba65035d6f4b85d1fe6d4f363c1f1f
 F src/update.c 3c4ecc282accf12d39edb8d524cf089645e55a13
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c 98a7627ca48ad3265b6940915a1d08355eb3fc7e
@@ -505,7 +505,7 @@ F test/fallocate.test 3e979af17dfa7e5e9dda5eba1a696c04fa9d47f7
 F test/filectrl.test 14fa712e42c4cb791e09dfd58a6a03efb47ef13a
 F test/filefmt.test cb34663f126cbc2d358af552dcaf5c72769b0146
 F test/fkey1.test e1d1fa84cde579185ea01358436839703e415a5b
-F test/fkey2.test 223c624e7eccee21e89c98d4d127ac88d774b940
+F test/fkey2.test 043692a609d513f8f230ca3064e8074f8643b60e
 F test/fkey3.test 76d475c80b84ee7a5d062e56ccb6ea68882e2b49
 F test/fkey4.test 86446017011273aad8f9a99c1a65019e7bd9ca9d
 F test/fkey5.test 56bcb5a6e8b725b17febc267fb041a6695e86853
@@ -1250,7 +1250,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9d336be1b16aa9bd5c9e4132bb645874993c7d96
-R 5fbffaa37b14ccf06bc3b95dfad9c618
+P dd96211e8022365637286b146120cc5db44a9923
+R 046f14926b5af5dfc4416003fb47b3d1
 U drh
-Z e400cf12f450b0a1df16da05ddca199b
+Z 6ea7be360982608826bd8c7c45584988
