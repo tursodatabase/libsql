@@ -385,6 +385,20 @@ do_execsql_test 6.8 {
   SELECT x, y FROM c1 ORDER BY y COLLATE """""""";
 } {2 abb 1 ABC 4 WXY 3 wxz}
 
+# 2015-04-15:  Nested COLLATE operators
+#
+do_execsql_test 7.0 {
+   SELECT 'abc' UNION ALL SELECT 'DEF'
+    ORDER BY 1 COLLATE nocase COLLATE nocase COLLATE nocase COLLATE nocase;
+} {abc DEF}
+do_execsql_test 7.1 {
+   SELECT 'abc' UNION ALL SELECT 'DEF'
+    ORDER BY 1 COLLATE nocase COLLATE nocase COLLATE nocase COLLATE binary;
+} {DEF abc}
+do_execsql_test 7.2 {
+   SELECT 'abc' UNION ALL SELECT 'DEF'
+    ORDER BY 1 COLLATE binary COLLATE binary COLLATE binary COLLATE nocase;
+} {abc DEF}
+
+
 finish_test
-
-

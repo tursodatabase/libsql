@@ -91,6 +91,17 @@
 # include <sys/param.h>
 #endif /* SQLITE_ENABLE_LOCKING_STYLE */
 
+#if defined(__APPLE__) && ((__MAC_OS_X_VERSION_MIN_REQUIRED > 1050) || \
+                           (__IPHONE_OS_VERSION_MIN_REQUIRED > 2000))
+#  if (!defined(TARGET_OS_EMBEDDED) || (TARGET_OS_EMBEDDED==0)) \
+       && (!defined(TARGET_IPHONE_SIMULATOR) || (TARGET_IPHONE_SIMULATOR==0))
+#    define HAVE_GETHOSTUUID 1
+#  else
+#    warning "gethostuuid() is disabled."
+#  endif
+#endif
+
+
 #if OS_VXWORKS
 # include <sys/ioctl.h>
 # include <semaphore.h>
@@ -630,7 +641,7 @@ static int unixMutexHeld(void) {
 #endif
 
 
-#if defined(SQLITE_TEST) && defined(SQLITE_DEBUG)
+#ifdef SQLITE_HAVE_OS_TRACE
 /*
 ** Helper function for printing out trace information from debugging
 ** binaries. This returns the string representation of the supplied
@@ -3783,7 +3794,7 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
   unixFile *pFile = (unixFile*)id;
   switch( op ){
     case SQLITE_FCNTL_WAL_BLOCK: {
-      pFile->ctrlFlags |= UNIXFILE_BLOCK;
+      /* pFile->ctrlFlags |= UNIXFILE_BLOCK; // Deferred feature */
       return SQLITE_OK;
     }
     case SQLITE_FCNTL_LOCKSTATE: {
@@ -6602,8 +6613,10 @@ int sqlite3_hostid_num = 0;
 
 #define PROXY_HOSTIDLEN    16  /* conch file host id length */
 
+#ifdef HAVE_GETHOSTUUID
 /* Not always defined in the headers as it ought to be */
 extern int gethostuuid(uuid_t id, const struct timespec *wait);
+#endif
 
 /* get the host ID via gethostuuid(), pHostID must point to PROXY_HOSTIDLEN 
 ** bytes of writable memory.
@@ -6611,8 +6624,7 @@ extern int gethostuuid(uuid_t id, const struct timespec *wait);
 static int proxyGetHostID(unsigned char *pHostID, int *pError){
   assert(PROXY_HOSTIDLEN == sizeof(uuid_t));
   memset(pHostID, 0, PROXY_HOSTIDLEN);
-# if defined(__APPLE__) && ((__MAC_OS_X_VERSION_MIN_REQUIRED > 1050) || \
-                            (__IPHONE_OS_VERSION_MIN_REQUIRED > 2000))
+#ifdef HAVE_GETHOSTUUID
   {
     struct timespec timeout = {1, 0}; /* 1 sec timeout */
     if( gethostuuid(pHostID, &timeout) ){

@@ -274,4 +274,22 @@ do_execsql_test 6.5.2 {
   SELECT md5sum(quote(root)) FROM t1_segdir;
 } [db eval {SELECT md5sum(quote(root)) FROM t2_segdir}]
 
+
+do_execsql_test 7.0 {
+  CREATE VIRTUAL TABLE t6 USING fts4(x,order=DESC);
+  INSERT INTO t6(docid, x) VALUES(-1,'a b');
+  INSERT INTO t6(docid, x) VALUES(1, 'b');
+}
+do_execsql_test 7.1 {
+  SELECT docid FROM t6 WHERE t6 MATCH '"a* b"';
+} {-1}
+do_execsql_test 7.2 {
+  SELECT docid FROM t6 WHERE t6 MATCH 'a*';
+} {-1}
+do_execsql_test 7.3 {
+  SELECT docid FROM t6 WHERE t6 MATCH 'a* b';
+} {-1}
+
+
+
 finish_test

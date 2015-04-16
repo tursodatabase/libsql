@@ -1765,6 +1765,7 @@ static int xferOptimization(
   int onError,          /* How to handle constraint errors */
   int iDbDest           /* The database of pDest */
 ){
+  sqlite3 *db = pParse->db;
   ExprList *pEList;                /* The result set of the SELECT */
   Table *pSrc;                     /* The table in the FROM clause of SELECT */
   Index *pSrcIdx, *pDestIdx;       /* Source and destination indices */
@@ -1912,11 +1913,11 @@ static int xferOptimization(
   ** the extra complication to make this rule less restrictive is probably
   ** not worth the effort.  Ticket [6284df89debdfa61db8073e062908af0c9b6118e]
   */
-  if( (pParse->db->flags & SQLITE_ForeignKeys)!=0 && pDest->pFKey!=0 ){
+  if( (db->flags & SQLITE_ForeignKeys)!=0 && pDest->pFKey!=0 ){
     return 0;
   }
 #endif
-  if( (pParse->db->flags & SQLITE_CountRows)!=0 ){
+  if( (db->flags & SQLITE_CountRows)!=0 ){
     return 0;  /* xfer opt does not play well with PRAGMA count_changes */
   }
 
@@ -1927,7 +1928,7 @@ static int xferOptimization(
 #ifdef SQLITE_TEST
   sqlite3_xferopt_count++;
 #endif
-  iDbSrc = sqlite3SchemaToIndex(pParse->db, pSrc->pSchema);
+  iDbSrc = sqlite3SchemaToIndex(db, pSrc->pSchema);
   v = sqlite3GetVdbe(pParse);
   sqlite3CodeVerifySchema(pParse, iDbSrc);
   iSrc = pParse->nTab++;
@@ -1937,14 +1938,18 @@ static int xferOptimization(
   regRowid = sqlite3GetTempReg(pParse);
   sqlite3OpenTable(pParse, iDest, iDbDest, pDest, OP_OpenWrite);
   assert( HasRowid(pDest) || destHasUniqueIdx );
-  if( (pDest->iPKey<0 && pDest->pIndex!=0)          /* (1) */
+  if( (db->flags & SQLITE_Vacuum)==0 && (
+      (pDest->iPKey<0 && pDest->pIndex!=0)          /* (1) */
    || destHasUniqueIdx                              /* (2) */
    || (onError!=OE_Abort && onError!=OE_Rollback)   /* (3) */
-  ){
+  )){
     /* In some circumstances, we are able to run the xfer optimization
-    ** only if the destination table is initially empty.  This code makes
-    ** that determination.  Conditions under which the destination must
-    ** be empty:
+    ** only if the destination table is initially empty. Unless the
+    ** SQLITE_Vacuum flag is set, this block generates code to make
+    ** that determination. If SQLITE_Vacuum is set, then the destination
+    ** table is always empty.
+    **
+    ** Conditions under which the destination must be empty:
     **
     ** (1) There is no INTEGER PRIMARY KEY but there are indices.
     **     (If the destination is not initially empty, the rowid fields
@@ -1987,6 +1992,7 @@ static int xferOptimization(
     sqlite3TableLock(pParse, iDbSrc, pSrc->tnum, 0, pSrc->zName);
   }
   for(pDestIdx=pDest->pIndex; pDestIdx; pDestIdx=pDestIdx->pNext){
+    u8 useSeekResult = 0;
     for(pSrcIdx=pSrc->pIndex; ALWAYS(pSrcIdx); pSrcIdx=pSrcIdx->pNext){
       if( xferCompatibleIndex(pDestIdx, pSrcIdx) ) break;
     }
@@ -2000,7 +2006,34 @@ static int xferOptimization(
     VdbeComment((v, "%s", pDestIdx->zName));
     addr1 = sqlite3VdbeAddOp2(v, OP_Rewind, iSrc, 0); VdbeCoverage(v);
     sqlite3VdbeAddOp2(v, OP_RowKey, iSrc, regData);
+    if( db->flags & SQLITE_Vacuum ){
+      /* This INSERT command is part of a VACUUM operation, which guarantees
+      ** that the destination table is empty. If all indexed columns use
+      ** collation sequence BINARY, then it can also be assumed that the
+      ** index will be populated by inserting keys in strictly sorted 
+      ** order. In this case, instead of seeking within the b-tree as part
+      ** of every OP_IdxInsert opcode, an OP_Last is added before the
+      ** OP_IdxInsert to seek to the point within the b-tree where each key 
+      ** should be inserted. This is faster.
+      **
+      ** If any of the indexed columns use a collation sequence other than
+      ** BINARY, this optimization is disabled. This is because the user 
+      ** might change the definition of a collation sequence and then run
+      ** a VACUUM command. In that case keys may not be written in strictly
+      ** sorted order.  */
+      int i;
+      for(i=0; i<pSrcIdx->nColumn; i++){
+        char *zColl = pSrcIdx->azColl[i];
+        assert( zColl!=0 );
+        if( sqlite3_stricmp("BINARY", zColl) ) break;
+      }
+      if( i==pSrcIdx->nColumn ){
+        useSeekResult = OPFLAG_USESEEKRESULT;
+        sqlite3VdbeAddOp3(v, OP_Last, iDest, 0, -1);
+      }
+    }
     sqlite3VdbeAddOp3(v, OP_IdxInsert, iDest, regData, 1);
+    sqlite3VdbeChangeP5(v, useSeekResult);
     sqlite3VdbeAddOp2(v, OP_Next, iSrc, addr1+1); VdbeCoverage(v);
     sqlite3VdbeJumpHere(v, addr1);
     sqlite3VdbeAddOp2(v, OP_Close, iSrc, 0);

@@ -129,11 +129,11 @@ do_execsql_test 3.0 {
 
 do_searchcount_test 3.1 {
   SELECT a, b FROM t3 WHERE (a=1 AND b='one') OR (a=2 AND b='two')
-} {1 one 2 two search 2}
+} {1 one 2 two search 4}
 
 do_searchcount_test 3.2 {
   SELECT a, c FROM t3 WHERE (a=1 AND b='one') OR (a=2 AND b='two')
-} {1 i 2 ii search 4}
+} {1 i 2 ii search 6}
 
 do_searchcount_test 3.4.1 {
   SELECT y FROM t4 WHERE x='a'
@@ -142,24 +142,24 @@ do_searchcount_test 3.4.2 {
   SELECT a, b FROM t3 WHERE 
         (a=1 AND b=(SELECT y FROM t4 WHERE x='a')) 
      OR (a=2 AND b='two')
-} {1 one 2 two search 4}
+} {1 one 2 two search 6}
 do_searchcount_test 3.4.3 {
   SELECT a, b FROM t3 WHERE 
         (a=2 AND b='two')
      OR (a=1 AND b=(SELECT y FROM t4 WHERE x='a')) 
-} {2 two 1 one search 4}
+} {2 two 1 one search 6}
 do_searchcount_test 3.4.4 {
   SELECT a, b FROM t3 WHERE 
         (a=2 AND b=(SELECT y FROM t4 WHERE x='b')) 
      OR (a=1 AND b=(SELECT y FROM t4 WHERE x='a')) 
-} {2 two 1 one search 6}
+} {2 two 1 one search 8}
 
 do_searchcount_test 3.5.1 {
   SELECT a, b FROM t3 WHERE (a=1 AND b='one') OR rowid=4
-} {1 one 2 two search 2}
+} {1 one 2 two search 3}
 do_searchcount_test 3.5.2 {
   SELECT a, c FROM t3 WHERE (a=1 AND b='one') OR rowid=4
-} {1 i 2 ii search 2}
+} {1 i 2 ii search 3}
 
 # Ticket [d02e1406a58ea02d] (2012-10-04)
 # LEFT JOIN with an OR in the ON clause causes segfault 

@@ -32,12 +32,17 @@ source $testdir/tester.tcl
 #
 do_test collate3-1.0 {
   execsql {
-    CREATE TABLE collate3t1(c1);
+    CREATE TABLE collate3t1(c1 UNIQUE);
   }
 } {}
 do_test collate3-1.1 {
   catchsql {
     SELECT * FROM collate3t1 ORDER BY 1 collate garbage;
+  }
+} {1 {no such collation sequence: garbage}}
+do_test collate3-1.1.2 {
+  catchsql {
+    SELECT DISTINCT c1 COLLATE garbage FROM collate3t1;
   }
 } {1 {no such collation sequence: garbage}}
 do_test collate3-1.2 {

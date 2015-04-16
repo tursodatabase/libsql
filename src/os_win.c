@@ -26,14 +26,6 @@
 #include "os_win.h"
 
 /*
-** Is the OSTRACE macro defined to actually do something?
-*/
-#if (defined(SQLITE_DEBUG) && SQLITE_OS_WIN) || \
-    (defined(SQLITE_TEST) || defined(SQLITE_FORCE_OS_TRACE))
-#  define SQLITE_WIN32_HAS_OS_TRACE
-#endif
-
-/*
 ** Compiling and using WAL mode requires several APIs that are only
 ** available in Windows platforms based on the NT kernel.
 */
@@ -2765,7 +2757,7 @@ static int winSync(sqlite3_file *id, int flags){
   BOOL rc;
 #endif
 #if !defined(NDEBUG) || !defined(SQLITE_NO_SYNC) || \
-    defined(SQLITE_WIN32_HAS_OS_TRACE)
+    defined(SQLITE_HAVE_OS_TRACE)
   /*
   ** Used when SQLITE_NO_SYNC is not defined and by the assert() and/or
   ** OSTRACE() macros.
@@ -3442,7 +3434,7 @@ struct winShmNode {
   int nRef;                  /* Number of winShm objects pointing to this */
   winShm *pFirst;            /* All winShm objects pointing to this */
   winShmNode *pNext;         /* Next in list of all winShmNode objects */
-#if defined(SQLITE_DEBUG) || defined(SQLITE_WIN32_HAS_OS_TRACE)
+#if defined(SQLITE_DEBUG) || defined(SQLITE_HAVE_OS_TRACE)
   u8 nextShmId;              /* Next available winShm.id value */
 #endif
 };
@@ -3473,7 +3465,7 @@ struct winShm {
   u8 hasMutex;               /* True if holding the winShmNode mutex */
   u16 sharedMask;            /* Mask of shared locks held */
   u16 exclMask;              /* Mask of exclusive locks held */
-#if defined(SQLITE_DEBUG) || defined(SQLITE_WIN32_HAS_OS_TRACE)
+#if defined(SQLITE_DEBUG) || defined(SQLITE_HAVE_OS_TRACE)
   u8 id;                     /* Id of this connection with its winShmNode */
 #endif
 };
@@ -3664,7 +3656,7 @@ static int winOpenSharedMemory(winFile *pDbFd){
 
   /* Make the new connection a child of the winShmNode */
   p->pShmNode = pShmNode;
-#if defined(SQLITE_DEBUG) || defined(SQLITE_WIN32_HAS_OS_TRACE)
+#if defined(SQLITE_DEBUG) || defined(SQLITE_HAVE_OS_TRACE)
   p->id = pShmNode->nextShmId++;
 #endif
   pShmNode->nRef++;

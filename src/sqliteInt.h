@@ -1226,6 +1226,7 @@ struct sqlite3 {
 #define SQLITE_DeferFKs       0x01000000  /* Defer all FK constraints */
 #define SQLITE_QueryOnly      0x02000000  /* Disable database changes */
 #define SQLITE_VdbeEQP        0x04000000  /* Debug EXPLAIN QUERY PLAN */
+#define SQLITE_Vacuum         0x08000000  /* Currently in a VACUUM */
 
 
 /*
@@ -2389,6 +2390,7 @@ struct Select {
 #define SF_MaybeConvert    0x0400  /* Need convertCompoundSelectToSubquery() */
 #define SF_Recursive       0x0800  /* The recursive part of a recursive CTE */
 #define SF_MinMaxAgg       0x1000  /* Aggregate containing min() or max() */
+#define SF_Converted       0x2000  /* By convertCompoundSelectToSubquery() */
 
 
 /*
@@ -3491,8 +3493,7 @@ void *sqlite3HexToBlob(sqlite3*, const char *z, int n);
 u8 sqlite3HexToInt(int h);
 int sqlite3TwoPartName(Parse *, Token *, Token *, Token **);
 
-#if (defined(SQLITE_DEBUG) && SQLITE_OS_WIN) || \
-    (defined(SQLITE_TEST) || defined(SQLITE_FORCE_OS_TRACE))
+#ifdef SQLITE_HAVE_OS_TRACE
 const char *sqlite3ErrName(int);
 #endif
 
