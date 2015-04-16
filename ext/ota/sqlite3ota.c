@@ -2047,16 +2047,18 @@ static void otaMoveOalFile(sqlite3ota *p){
     if( p->rc==SQLITE_OK ){
       otaFileSuffix3(zBase, zWal);
       otaFileSuffix3(zBase, zOal);
-      rename(zOal, zWal);
 
       /* Re-open the databases. */
       otaObjIterFinalize(&p->objiter);
       sqlite3_close(p->dbMain);
       sqlite3_close(p->dbOta);
-      p->dbMain = 0;
-      p->dbOta = 0;
-      otaOpenDatabase(p);
-      otaSetupCheckpoint(p, 0);
+      p->rc = rename(zOal, zWal) ? SQLITE_IOERR : SQLITE_OK;
+      if( p->rc==SQLITE_OK ){
+        p->dbMain = 0;
+        p->dbOta = 0;
+        otaOpenDatabase(p);
+        otaSetupCheckpoint(p, 0);
+      }
     }
   }
 
