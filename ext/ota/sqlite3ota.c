@@ -2295,7 +2295,7 @@ static void otaSaveState(sqlite3ota *p, int eStage){
           "(%d, %Q), "
           "(%d, %Q), "
           "(%d, %d), "
-          "(%d, %lld), "
+          "(%d, %d), "
           "(%d, %lld), "
           "(%d, %lld), "
           "(%d, %lld) ",
