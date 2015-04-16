@@ -2628,7 +2628,7 @@ static int generateOutputSubroutine(
     ** of the scan loop.
     */
     case SRT_Mem: {
-      assert( pIn->nSdst==1 );
+      assert( pIn->nSdst==1 || pParse->nErr>0 );  testcase( pIn->nSdst!=1 );
       sqlite3ExprCodeMove(pParse, pIn->iSdst, pDest->iSDParm, 1);
       /* The LIMIT clause will jump out of the loop for us */
       break;
