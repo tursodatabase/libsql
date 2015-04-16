@@ -1,5 +1,5 @@
-C Ensure\sthe\ssqlite3Select()\sroutine\salways\sreturns\snon-zero\sif\san\serror\shas\soccurred.
-D 2015-04-16T07:19:23.819
+C Fix\sa\sproblem\sin\stest\sfile\se_reindex.test.
+D 2015-04-16T08:54:01.766
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f78b1ab81b64e7c57a75d170832443e66c0880a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -476,7 +476,7 @@ F test/e_expr.test 8f5fdd7261e2d746813b0c6a1c0e34824ad3c5ad
 F test/e_fkey.test a1783fe1f759e1990e6a11adfcf0702dac4d0707
 F test/e_fts3.test 5c02288842e4f941896fd44afdef564dd5fc1459
 F test/e_insert.test 0e63edc037afe738bb81a626a676811ed7862c90
-F test/e_reindex.test 396b7b4f0a66863b4e95116a67d93b227193e589
+F test/e_reindex.test 57d439f6c644befc8274ac93cf2f5449cf2736c1
 F test/e_resolve.test dcce9308fb13b934ce29591105d031d3e14fbba6
 F test/e_select.test 52692ff3849541e828ad4661fe3773a9b8711763
 F test/e_select2.test aceb80ab927d46fba5ce7586ebabf23e2bb0604f
@@ -1250,7 +1250,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d3c00d61581c8ba6dce5618391432d3af8d324d4
-R 8123505062f70927e7be9214d0f6d5b6
+P b51028ed2f57f4245a7ebd9bdb99d1bcfaf1a01b
+R 2161c4b29e95b81d422e85f30c2d6731
 U dan
-Z fd48a7f3e42fad2b9442aa5a1e6cf7ce
+Z 154b9b38eeade2d6cb79a81e5bb9fb34
