@@ -2108,8 +2108,7 @@ static int multiSelectValues(
   int nExpr = p->pEList->nExpr;
   int nRow = 1;
   int rc = 0;
-  assert( p->pNext==0 );
-  assert( p->selFlags & SF_AllValues );
+  assert( p->selFlags & SF_MultiValue );
   do{
     assert( p->selFlags & SF_Values );
     assert( p->op==TK_ALL || (p->op==TK_SELECT && p->pPrior==0) );
@@ -2218,7 +2217,7 @@ static int multiSelect(
 
   /* Special handling for a compound-select that originates as a VALUES clause.
   */
-  if( p->selFlags & SF_AllValues ){
+  if( p->selFlags & SF_MultiValue ){
     rc = multiSelectValues(pParse, p, &dest);
     goto multi_select_end;
   }
@@ -4422,7 +4421,7 @@ static void sqlite3SelectExpand(Parse *pParse, Select *pSelect){
     sqlite3WalkSelect(&w, pSelect);
   }
   w.xSelectCallback = selectExpander;
-  if( (pSelect->selFlags & SF_AllValues)==0 ){
+  if( (pSelect->selFlags & SF_MultiValue)==0 ){
     w.xSelectCallback2 = selectPopWith;
   }
   sqlite3WalkSelect(&w, pSelect);
