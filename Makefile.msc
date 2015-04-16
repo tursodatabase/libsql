@@ -140,6 +140,13 @@ MEMDEBUG = 0
 WIN32HEAP = 0
 !ENDIF
 
+# Set this to non-0 to enable OSTRACE() macros, which can be useful when
+# debugging.
+#
+!IFNDEF OSTRACE
+OSTRACE = 0
+!ENDIF
+
 # Set this to one of the following values to enable various debugging
 # features.  Each level includes the debugging options from the previous
 # levels.  Currently, the recognized values for DEBUG are:
@@ -481,9 +488,9 @@ TCC = $(TCC) -DSQLITE_DEBUG
 RCC = $(RCC) -DSQLITE_DEBUG
 !ENDIF
 
-!IF $(DEBUG)>4
-TCC = $(TCC) -DSQLITE_DEBUG_OS_TRACE=1
-RCC = $(RCC) -DSQLITE_DEBUG_OS_TRACE=1
+!IF $(DEBUG)>4 || $(OSTRACE)!=0
+TCC = $(TCC) -DSQLITE_FORCE_OS_TRACE=1 -DSQLITE_DEBUG_OS_TRACE=1
+RCC = $(RCC) -DSQLITE_FORCE_OS_TRACE=1 -DSQLITE_DEBUG_OS_TRACE=1
 !ENDIF
 
 !IF $(DEBUG)>5
