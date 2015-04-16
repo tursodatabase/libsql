@@ -1,5 +1,5 @@
-C Fix\sa\smismatched\sprintf()\sargument\sand\sformat\sspecifier.\sAdd\sota\sfiles\sto\sMakefile.in.
-D 2015-04-16T14:33:09.849
+C Be\ssure\sto\srelease\sany\sxShmLock\slocks\sheld\swhen\sclosing\san\sOTA\shandle.
+D 2015-04-16T18:49:53.533
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 79b306896135a2305cfb7e6d88990fc4820fb917
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -134,11 +134,11 @@ F ext/ota/ota6.test 3bde7f69a894748b27206b6753462ec3b75b6bb6
 F ext/ota/ota7.test 1fe2c5761705374530e29f70c39693076028221a
 F ext/ota/ota8.test cd70e63a0c29c45c0906692827deafa34638feda
 F ext/ota/ota9.test d3eee95dd836824d07a22e5efcdb7bf6e869358b
-F ext/ota/otaA.test ef4bfa8cfd4ed814ae86f7457b64aa2f18c90171
+F ext/ota/otaA.test ab67f7f53670b81c750dcc946c5b704f51c429a4
 F ext/ota/otacrash.test a078d34e2edbcedac5f894e3e7d08d452a327007
 F ext/ota/otafault.test 8c43586c2b96ca16bbce00b5d7e7d67316126db8
 F ext/ota/otafault2.test fa202a98ca221faec318f3e5c5f39485b1256561
-F ext/ota/sqlite3ota.c 876445eb19a9d4b53a6c79e604748542d935f528
+F ext/ota/sqlite3ota.c 424d4b9a010a836003e3eab6d84d37774cb620ed
 F ext/ota/sqlite3ota.h f1a9dd98b00fa622c7e2eb68e580ee02e194c4d6
 F ext/ota/test_ota.c e34c801c665d64b4b9e00b71f1acf8c652404b2b
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
@@ -1269,7 +1269,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 658c3b0c80b9fe7eaac5982573651dc649a4c53f
-R 7c644ea03a0ef90234d338e031f21ca5
+P 5db810a88dac5cbf1f6b321345d01cc0d9d05d31
+R c5895a3241a2de3944e668930a0eb998
 U dan
-Z 85db6025ab0c4250cca566f7a293b04a
+Z dc29da0591555b6f4d89a9eb4ca47d9d

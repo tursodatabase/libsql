@@ -31,6 +31,7 @@ set ota_sql {
 }
 
 do_test 1.0 {
+  db close
   forcedelete test.db ota.db
 
   sqlite3 db test.db

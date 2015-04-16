@@ -629,6 +629,7 @@ static int otaMPrintfExec(sqlite3ota *p, sqlite3 *db, const char *zFmt, ...){
 static void *otaMalloc(sqlite3ota *p, int nByte){
   void *pRet = 0;
   if( p->rc==SQLITE_OK ){
+    assert( nByte>0 );
     pRet = sqlite3_malloc(nByte);
     if( pRet==0 ){
       p->rc = SQLITE_NOMEM;
@@ -2845,6 +2846,19 @@ sqlite3_int64 sqlite3ota_progress(sqlite3ota *pOta){
 **     file fail with SQLITE_INTERNAL errors.
 */
 
+static void otaUnlockShm(ota_file *p){
+  if( p->pOta ){
+    int (*xShmLock)(sqlite3_file*,int,int,int) = p->pReal->pMethods->xShmLock;
+    int i;
+    for(i=0; i<SQLITE_SHM_NLOCK;i++){
+      if( (1<<i) & p->pOta->mLock ){
+        xShmLock(p->pReal, i, 1, SQLITE_SHM_UNLOCK|SQLITE_SHM_EXCLUSIVE);
+      }
+    }
+    p->pOta->mLock = 0;
+  }
+}
+
 /*
 ** Close an ota file.
 */
@@ -2867,6 +2881,7 @@ static int otaVfsClose(sqlite3_file *pFile){
     for(pp=&p->pOtaVfs->pMain; *pp!=p; pp=&((*pp)->pMainNext));
     *pp = p->pMainNext;
     sqlite3_mutex_leave(p->pOtaVfs->mutex);
+    otaUnlockShm(p);
     p->pReal->pMethods->xShmUnmap(p->pReal, 0);
   }
 
@@ -3203,6 +3218,8 @@ static int otaVfsShmUnmap(sqlite3_file *pFile, int delFlag){
   if( eStage==OTA_STAGE_OAL || eStage==OTA_STAGE_MOVE ){
     /* no-op */
   }else{
+    /* Release the checkpointer and writer locks */
+    otaUnlockShm(p);
     rc = p->pReal->pMethods->xShmUnmap(p->pReal, delFlag);
   }
   return rc;
