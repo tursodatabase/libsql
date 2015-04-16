@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\stest\sfile\se_reindex.test.
-D 2015-04-16T08:54:01.766
+C Fix\sthe\scorruptC.test\smodule\sdue\sto\sa\schange\sin\serror\smessage\stext.
+D 2015-04-16T12:12:07.953
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f78b1ab81b64e7c57a75d170832443e66c0880a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -426,7 +426,7 @@ F test/corrupt8.test 2399dfe40d2c0c63af86706e30f3e6302a8d0516
 F test/corrupt9.test 730a3db08d4ab9aa43392ea30d9c2b4879cbff85
 F test/corruptA.test 53e56dafd180addcdadb402244b8cb9771d2ba26
 F test/corruptB.test 73a8d6c0b9833697ecf16b63e3c5c05c945b5dec
-F test/corruptC.test 02405cf7ed0c1e989060e1aab6d02ffbc3906fbb
+F test/corruptC.test 3fcc0f73d2cf2d69befe2d96332b942426a6aae2
 F test/corruptD.test b3c205fac7952b1de645ce44bb02335cd9e3e040
 F test/corruptE.test 193b4ca4e927e77c1d5f4f56203ddc998432a7ee
 F test/corruptF.test be9fde98e4c93648f1ba52b74e5318edc8f59fe4
@@ -1250,7 +1250,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b51028ed2f57f4245a7ebd9bdb99d1bcfaf1a01b
-R 2161c4b29e95b81d422e85f30c2d6731
-U dan
-Z 154b9b38eeade2d6cb79a81e5bb9fb34
+P 5b3de9390f2ffc4c530fd47c71c70e87972cf74b
+R 52f7fd6b33b7cf36f49fd780c8e11ee8
+U drh
+Z 89ad7719122c7a76b704b370103ce659
