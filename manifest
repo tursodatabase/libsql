@@ -1,5 +1,5 @@
-C Fix\sa\scouple\sof\sunreachable\sbranches.
-D 2015-04-16T20:27:09.079
+C Use\sa\sheap\srather\sthan\sa\sbitmap\sfor\scell\scoverage\sand\soverlap\stesting\son\nbtree\spages\sin\sPRAGMA\sintegrity_check.
+D 2015-04-16T21:57:37.861
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f78b1ab81b64e7c57a75d170832443e66c0880a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -173,7 +173,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c ff743689c4d6c5cb55ad42ed9d174b2b3e71f1e3
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c c6e32d84442f79d5b96965265d65b3baa231dffc
+F src/btree.c 127aceb71ba93f59bc9c6ba810e992a04299e98a
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 973a22a6fd61350b454ad614832b1f0a5e25a1e4
 F src/build.c 01b969b20a44a3d9620e597d9af8242348123540
@@ -1250,7 +1250,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 55d10baf0bffdb1a34bf5627ed8f25e4a4efd942
-R 114fb2d7e0df7ea2622d3974dda61e5a
+P 8f391dffcfe068d48f854784648610d8a86f6bc8 5619c959bf7babb19fd8ba8b228be7f090fe0ce3
+R 72a6fa603587f85ee318933146285087
+T +closed 5619c959bf7babb19fd8ba8b228be7f090fe0ce3
 U drh
-Z 08da3cff84a49c68f76471919d394d1c
+Z e48be2bfe822e32604f22d78d2be1c02
