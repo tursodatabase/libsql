@@ -1,5 +1,5 @@
-C Improvements\sto\sthe\sway\sVALUES\sclauses\sare\sparsed.
-D 2015-04-16T14:13:12.394
+C Fix\sa\sfaulty\sassert()\sin\sthe\scompound\sselect\scode\sgenerator.
+D 2015-04-16T14:33:35.359
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f78b1ab81b64e7c57a75d170832443e66c0880a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -230,7 +230,7 @@ F src/printf.c 08fa675c200aac29e561c6153f91f909ed17612f
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 66cfe49a9c3b449ef13b89a8c47036a4ed167eab
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c e24bd1a7b6bf2256cf8df115d01e308c94ad9c05
+F src/select.c b7b91db829464db6ebba4cd6a878a0ef688b847d
 F src/shell.c 72b61a9d41ba12b67ea06fe9267abcc012c6c5bb
 F src/sqlite.h.in ca27603a36fcacdaac5a19d8ee35aaff8ce8516f
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
@@ -1250,7 +1250,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7c0deed25762a954c78d98412d8f4a265a437d06
-R 611a860661173119865e499e8c5f5052
+P ec5a493ad27593ca78899b3001630c1898b940ff
+R 11ac4c431272562d678d3132e12f4ff6
 U drh
-Z f1f791a01fc19f4f892a113c0900910a
+Z 9969aaea0bee219926e4d05bec4ccd67
