@@ -1059,7 +1059,7 @@ void sqlite3_log(int iErrCode, const char *zFormat, ...){
   }
 }
 
-#if defined(SQLITE_DEBUG)
+#if defined(SQLITE_DEBUG) || defined(SQLITE_HAVE_OS_TRACE)
 /*
 ** A version of printf() that understands %lld.  Used for debugging.
 ** The printf() built into some versions of windows does not understand %lld

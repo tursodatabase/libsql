@@ -38,8 +38,8 @@
 # define OSTRACE(X)          if( sqlite3OSTrace ) sqlite3DebugPrintf X
 # define SQLITE_HAVE_OS_TRACE
 #else
-# undef  SQLITE_HAVE_OS_TRACE
 # define OSTRACE(X)
+# undef  SQLITE_HAVE_OS_TRACE
 #endif
 
 /*

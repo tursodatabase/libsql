@@ -3146,7 +3146,7 @@ void sqlite3XPrintf(StrAccum*, u32, const char*, ...);
 char *sqlite3MPrintf(sqlite3*,const char*, ...);
 char *sqlite3VMPrintf(sqlite3*,const char*, va_list);
 char *sqlite3MAppendf(sqlite3*,char*,const char*,...);
-#if defined(SQLITE_TEST) || defined(SQLITE_DEBUG)
+#if defined(SQLITE_DEBUG) || defined(SQLITE_HAVE_OS_TRACE)
   void sqlite3DebugPrintf(const char*, ...);
 #endif
 #if defined(SQLITE_TEST)
