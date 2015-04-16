@@ -1,5 +1,5 @@
-C Fix\sa\sfaulty\sassert()\sin\sthe\scompound-SELECT\scode\sgenerator.
-D 2015-04-16T16:22:27.087
+C Fix\sthe\sVDBE\sso\sthat\sit\salways\suses\sthe\soriginal\sopcode\sfor\sprofiling\sand\ndebugging\seven\safter\sthe\spOp\spointer\shas\sbeen\supdated\sdue\sto\sa\sjump.
+D 2015-04-16T17:31:02.931
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f78b1ab81b64e7c57a75d170832443e66c0880a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -293,7 +293,7 @@ F src/update.c 3c4ecc282accf12d39edb8d524cf089645e55a13
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c 98a7627ca48ad3265b6940915a1d08355eb3fc7e
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c 3f3afd12d4794cb51fe13dc948b1172a5eb71a94
+F src/vdbe.c 55650cb03d26ce5955cffcdc6568e046680b1fd4
 F src/vdbe.h 7e538ecf47dccb307ea2d087c3ddc2dd8d70e79d
 F src/vdbeInt.h 9cbaa84f53ddd2d09a0cf61a94337a3a035d08a0
 F src/vdbeapi.c 583d56b129dd27f12bed518270de9ebe521e6a75
@@ -1250,7 +1250,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e0a88176fcfbed7b554a036948261a332c920053
-R 0b75ab69a90f92b9d27a639039ba6734
+P 10715b05f2201a63dca317f99ce39d3ce182e182
+R a3daab05325b2d95fe679d302a2d11e4
 U drh
-Z 2a30576e418c5afefa31fbc64fb3a4fe
+Z 9f3c109ab0871adbf8f7030a7a0d36ce
