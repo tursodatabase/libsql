@@ -1,5 +1,5 @@
-C Fix\sa\sboundry-value\scondition\sin\sthe\sphrase\sposlist\sextractor\sof\sFTS3/4.
-D 2015-04-16T20:10:17.867
+C Fix\sa\scouple\sof\sunreachable\sbranches.
+D 2015-04-16T20:27:09.079
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f78b1ab81b64e7c57a75d170832443e66c0880a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -219,7 +219,7 @@ F src/os_win.c 03d27be3a20048ef52a648d5f0a15f5edda9f2a3
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 4120a49ecd37697e28f5ed807f470b9c0b88410c
 F src/pager.h c3476e7c89cdf1c6914e50a11f3714e30b4e0a77
-F src/parse.y b5c16bc5aa5e59a7ceb0fe94defa9dce3a6b1d3c
+F src/parse.y 5944031bd7660589a7bb340cef5e134b55f01ec0
 F src/pcache.c 10539fb959849ad6efff80050541cab3d25089d4
 F src/pcache.h b44658c9c932d203510279439d891a2a83e12ba8
 F src/pcache1.c 69d137620a305f814398bd29a0c998038c0695e9
@@ -287,7 +287,7 @@ F src/test_vfs.c b7e6831e6fcf04c5090accff30640ec5c9630739
 F src/test_vfstrace.c bab9594adc976cbe696ff3970728830b4c5ed698
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 6bbcc9fe50c917864d48287b4792d46d6e873481
-F src/tokenize.c a8234a67577308935cdf13e618cd66556f5f45d1
+F src/tokenize.c b7fb584c2be5ec39b6fdf04b185e7c6f33f8dc15
 F src/trigger.c a261da05e2ba65035d6f4b85d1fe6d4f363c1f1f
 F src/update.c 3c4ecc282accf12d39edb8d524cf089645e55a13
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
@@ -1250,7 +1250,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d04d354d8e423961c3091b6ebcfbbbf10d3ecb04
-R 7d25758eea33f4a370736317991c770a
+P 55d10baf0bffdb1a34bf5627ed8f25e4a4efd942
+R 114fb2d7e0df7ea2622d3974dda61e5a
 U drh
-Z 4086867d1a0bc88e855064836598b64d
+Z 08da3cff84a49c68f76471919d394d1c

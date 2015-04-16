@@ -509,7 +509,7 @@ values(A) ::= VALUES LP nexprlist(X) RP. {
 values(A) ::= values(X) COMMA LP exprlist(Y) RP. {
   Select *pRight, *pLeft = X;
   pRight = sqlite3SelectNew(pParse,Y,0,0,0,0,0,SF_Values|SF_MultiValue,0,0);
-  if( pLeft ) pLeft->selFlags &= ~SF_MultiValue;
+  if( ALWAYS(pLeft) ) pLeft->selFlags &= ~SF_MultiValue;
   if( pRight ){
     pRight->op = TK_ALL;
     pLeft = X;
