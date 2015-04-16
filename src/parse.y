@@ -415,7 +415,7 @@ cmd ::= select(X).  {
   ** all elements in the list.  And make sure list length does not exceed
   ** SQLITE_LIMIT_COMPOUND_SELECT.
   */
-  void parserDoubleLinkSelect(Parse *pParse, Select *p){
+  static void parserDoubleLinkSelect(Parse *pParse, Select *p){
     if( p->pPrior ){
       Select *pNext = 0, *pLoop;
       int mxSelect, cnt = 0;
