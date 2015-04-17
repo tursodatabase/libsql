@@ -142,9 +142,11 @@ void sqlite3FinishCoding(Parse *pParse){
 
   assert( pParse->pToplevel==0 );
   db = pParse->db;
-  if( db->mallocFailed ) return;
   if( pParse->nested ) return;
-  if( pParse->nErr ) return;
+  if( db->mallocFailed || pParse->nErr ){
+    if( pParse->rc==SQLITE_OK ) pParse->rc = SQLITE_ERROR;
+    return;
+  }
 
   /* Begin by generating some termination code at the end of the
   ** vdbe program

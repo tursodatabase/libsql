@@ -227,6 +227,12 @@ do_test pragma-1.14.1 {
 } {0}
 do_test pragma-1.14.2 {
   execsql {
+    PRAGMA synchronous=3;
+    PRAGMA synchronous;
+  }
+} {0}
+do_test pragma-1.14.3 {
+  execsql {
     PRAGMA synchronous=10;
     PRAGMA synchronous;
   }
