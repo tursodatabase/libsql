@@ -3307,11 +3307,20 @@ static int otaVfsOpen(
       ota_file *pDb = otaFindMaindb(pOtaVfs, zName);
       if( pDb ){
         if( pDb->pOta && pDb->pOta->eStage==OTA_STAGE_OAL ){
-          char *zCopy = otaStrndup(zName, &rc);
+          /* This call is to open a *-wal file. Intead, open the *-oal. This
+          ** code ensures that the string passed to xOpen() is terminated by a
+          ** pair of '\0' bytes in case the VFS attempts to extract a URI 
+          ** parameter from it.  */
+          int nCopy = strlen(zName);
+          char *zCopy = sqlite3_malloc(nCopy+2);
           if( zCopy ){
-            int nCopy = strlen(zCopy);
+            memcpy(zCopy, zName, nCopy);
             zCopy[nCopy-3] = 'o';
+            zCopy[nCopy] = '\0';
+            zCopy[nCopy+1] = '\0';
             zOpen = (const char*)(pFd->zDel = zCopy);
+          }else{
+            rc = SQLITE_NOMEM;
           }
           pFd->pOta = pDb->pOta;
         }
