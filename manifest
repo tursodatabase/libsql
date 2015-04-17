@@ -1,5 +1,5 @@
-C In\sthe\sexpression-tree\scomparison\sroutine,\sdo\snot\scompiler\sExpr.iColumn\nand\sExpr.iTable\sfor\sTK_STRING\sexpressions.
-D 2015-04-17T19:41:37.324
+C Fix\sa\sproblem\saffecting\ssome\sfts3\sUPDATE\sand\sDELETE\sstatements\son\sorder=DESC\stables.
+D 2015-04-17T20:51:55.807
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in faaf75b89840659d74501bea269c7e33414761c1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -78,7 +78,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c cb5019020e1ca8e999beb2a63100563c17def8ae
+F ext/fts3/fts3.c 29300a76fabbbb8fc30bb261c27d421df9f40c76
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 3626655d6ba903a3919bb44e1c38e5f0f9d6be82
 F ext/fts3/fts3_aux.c 5c211e17a64885faeb16b9ba7772f9d5445c2365
@@ -551,7 +551,7 @@ F test/fts2r.test b154c30b63061d8725e320fba1a39e2201cadd5e
 F test/fts2token.test d8070b241a15ff13592a9ae4a8b7c171af6f445a
 F test/fts3.test 672a040ea57036fb4b6fdc09027c18d7d24ab654
 F test/fts3_common.tcl 99cf6659b87c0f74f55963c2aea03b3a7d66ceb0
-F test/fts3aa.test edd20ddbbc5b6015ab340abf2ca278ae11ec387d
+F test/fts3aa.test 6c263a6f8845205ee02550981a94c2e8dc1e7058
 F test/fts3ab.test 7f6cf260ae80dda064023df8e8e503e9a412b91f
 F test/fts3ac.test 636ed7486043055d4f126a0e385f2d5a82ebbf63
 F test/fts3ad.test e40570cb6f74f059129ad48bcef3d7cbc20dda49
@@ -1251,7 +1251,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6c39ef73d5899eabdb46db50c2b00c2d8381a41a
-R 040960ee1fc741cd8f8eec5fca5d25c5
-U drh
-Z 6cc887a5a4d09f0ddeeb5f3fd5032470
+P b67bb16c72c3e015ea82665ada9b5d3289ef6fb2
+R e2e6547f1f65a23306e35eed7a1b5202
+U dan
+Z 1c324a552a5080240054761e4e92cb4f
