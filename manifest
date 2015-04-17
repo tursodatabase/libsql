@@ -1,5 +1,5 @@
-C Fix\sa\sstray\sbackslash\scharacter\sin\sa\sprintf\sformat\sstring\sin\nsessionDiffFindModified()
-D 2015-04-16T13:52:03.882
+C Hold\sthe\sdatabase\smutex\sfor\sthe\sduration\sof\ssqlite3session_diff().
+D 2015-04-17T11:31:08.304
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7e23076b9c9dd5c1901c78cf6cdd64d616e5a539
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -161,7 +161,7 @@ F ext/session/sessionC.test 3982f8577b0744c5ce3aaef7cfeb5bd903f17fe4
 F ext/session/sessionD.test 95903bd6a23dadbda7e192f730dd7dedd2d369ef
 F ext/session/session_common.tcl 9de0451b6a47218fc16b9ed8876b6238a0a3d88d
 F ext/session/sessionfault.test bef044d0952c0d62c31c8d2400be72c8684545cc
-F ext/session/sqlite3session.c 7c82934f4cff05cfbb58bde7562de0964bb7fb32
+F ext/session/sqlite3session.c 2ad7285103457129c636a2367d40f3b9c459b256
 F ext/session/sqlite3session.h d9ebd8d4c5791aafdf18165575c7f2223c09279b
 F ext/session/test_session.c 037fc25340a918eb2195972fed439d7adf7b5db9
 F ext/userauth/sqlite3userauth.h 19cb6f0e31316d0ee4afdfb7a85ef9da3333a220
@@ -1269,7 +1269,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e65e65f9bc9b4bf5c9dd6e3a77a0d5f03c40e006
-R 25456e7e52fcd9fbd64c7561e09a3c2d
-U drh
-Z 6d1f041621c8223ff5e5a995b79f05ad
+P abb192a1d79388d4717f459b91e34f9c035935f2
+R 39574ad38832f7643b0bd124d608871c
+U dan
+Z 2a1b149e99da178a1dea33510073d75a
