@@ -3334,6 +3334,8 @@ static int otaVfsOpen(
       pOtaVfs->pMain = pFd;
       sqlite3_mutex_leave(pOtaVfs->mutex);
     }
+  }else{
+    sqlite3_free(pFd->zDel);
   }
 
   return rc;
