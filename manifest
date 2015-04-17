@@ -1,9 +1,9 @@
-C Fix\sthe\sheader\scomment\son\sthe\ssqldiff\sutility\sprogram.\s\sNo\scode\schanges.
-D 2015-04-17T12:16:09.669
+C Add\sthe\stool/fuzzershell.c\sutility\sprogram.
+D 2015-04-17T14:30:49.931
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in 5f78b1ab81b64e7c57a75d170832443e66c0880a
+F Makefile.in faaf75b89840659d74501bea269c7e33414761c1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 11cb5361e34b80e9c5b417ed6a6deee099c5b5f3
+F Makefile.msc a19bceec468fa18bb54df52257b1a2211e69172d
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md d58e3bebc0a4145e0f2a87994015fdb575a8e866
 F VERSION 2e244662b71e6e68a5c29b014ebc5b7564f4cc5a
@@ -152,7 +152,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk ddffac494a82d42772df9fe30d3a78acf4f7cb41
+F main.mk 60aba7d38b9bd73e249693344dd8405aa24ac02a
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
 F mkopcodeh.awk d5e22023b5238985bb54a72d33e0ac71fe4f8a32
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
@@ -1203,6 +1203,7 @@ F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/extract.c 054069d81b095fbdc189a6f5d4466e40380505e2
 F tool/fast_vacuum.c 5ba0d6f5963a0a63bdc42840f678bad75b2ebce1
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
+F tool/fuzzershell.c 9e7e273da203037154b433bb67f10b0d9772b370
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
@@ -1250,7 +1251,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P cd6598f47480a6189df3e4283231833fd246d7fb
-R bfdce473d247dbaaedf4cb00e3a28380
+P b355ca3a3f617cd6d4c45c8e27ecd75d9e68b792
+R d4d32c82236775154903bd68de367067
 U drh
-Z c972653cce57a7491204b613b522cd75
+Z b7bf748b01ea8ab50dc7b538dea6204b
