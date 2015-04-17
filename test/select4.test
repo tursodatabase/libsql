@@ -119,7 +119,7 @@ do_test select4-1.3 {
   lappend v $msg
 } {1 {ORDER BY clause should come after UNION ALL not before}}
 do_catchsql_test select4-1.4 {
-  SELECT (VALUES(0) INTERSECT SELECT(0) UNION SELECT(0) ORDER BY (0) UNION
+  SELECT (VALUES(0) INTERSECT SELECT(0) UNION SELECT(0) ORDER BY 1 UNION
           SELECT 0 UNION SELECT 0 ORDER BY 1);
 } {1 {ORDER BY clause should come after UNION not before}}
 
@@ -149,6 +149,12 @@ do_test select4-2.3 {
     UNION
     SELECT n FROM t1 WHERE log=3
     ORDER BY log;
+  }} msg]
+  lappend v $msg
+} {1 {ORDER BY clause should come after UNION not before}}
+do_test select4-2.4 {
+  set v [catch {execsql {
+    SELECT 0 ORDER BY (SELECT 0) UNION SELECT 0;
   }} msg]
   lappend v $msg
 } {1 {ORDER BY clause should come after UNION not before}}

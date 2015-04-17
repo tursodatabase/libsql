@@ -1,5 +1,5 @@
-C Remove\sunnecessary\sparser\serror\scount\sincrements.\s\sLet\sthe\ssqlite3ErrorMsg()\ntake\scare\sof\sdoing\sthat.
-D 2015-04-17T18:22:53.635
+C Always\sresolve\ssymbols\sin\sall\sORDER\sBY\sclauses\sof\sa\scompound-SELECT,\seven\nillegal\sORDER\sBY\sclauses.
+D 2015-04-17T18:52:37.624
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in faaf75b89840659d74501bea269c7e33414761c1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -228,7 +228,7 @@ F src/pragma.h 09c89bca58e9a44de2116cc8272b8d454657129f
 F src/prepare.c 1fffbdcd6f8a0173a8f70d71f22528f4c0e1e3d3
 F src/printf.c 08fa675c200aac29e561c6153f91f909ed17612f
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
-F src/resolve.c 66cfe49a9c3b449ef13b89a8c47036a4ed167eab
+F src/resolve.c 1ab0bd187f5590d10d51838b64976d6fb7da1ac1
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 361dfc32244656bbe3f0e53d8ed791b3ec0c4be8
 F src/shell.c 28b3e1174a7fc00155d7d00880a33589a88508c9
@@ -839,7 +839,7 @@ F test/securedel2.test 2d54c28e46eb1fd6902089958b20b1b056c6f1c5
 F test/select1.test be62204d2bd9a5a8a149e9974cfddce893d8f686
 F test/select2.test 352480e0e9c66eda9c3044e412abdf5be0215b56
 F test/select3.test 2ce595f8fb8e2ac10071d3b4e424cadd4634a054
-F test/select4.test 4b2df48129369a2a426f0f710fb94c50f75b31fb
+F test/select4.test a3201fa921fdfc1397cc629e78c7a976e198a40d
 F test/select5.test e758b8ef94f69b111df4cb819008856655dcd535
 F test/select6.test 39eac4a5c03650b2b473c532882273283ee8b7a0
 F test/select7.test 7fd2ef598cfabb6b9ff6ac13973b91d0527df49d
@@ -1251,7 +1251,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ad67a67c03078a2bc65d28f2b880b29bf02067c1
-R b18dfa3e7e5ddb8a0e9d36234afbeb5d
+P 3f3b0f683af2fbee83811536f6bef770ff919385
+R 2ffa33d8e1ee81a06afa86726c2d9478
 U drh
-Z 77598d348cd54fccd8be37637dc84656
+Z 2bc4a70be377f4bd80ade4dfaae10be0
