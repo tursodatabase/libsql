@@ -1,5 +1,5 @@
-C Ensure\sthat\ssemantic\sSQL\serrors\sare\salways\sreported\sback\sup\sto\sthe\ssyntax\nparser.\s\sAlso:\s\sImprove\sthe\sdefense\sagainst\sinvalid\sPRAGMA\ssynchronous\ssettings.
-D 2015-04-17T15:58:33.364
+C Remove\san\sALWAYS()\sthat\sturns\sout\sto\sbe\sfalse\swhen\sthere\sis\sa\ssemantic\nerror\son\sa\scompound\sSELECT.
+D 2015-04-17T16:12:03.870
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in faaf75b89840659d74501bea269c7e33414761c1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -230,7 +230,7 @@ F src/printf.c 08fa675c200aac29e561c6153f91f909ed17612f
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 66cfe49a9c3b449ef13b89a8c47036a4ed167eab
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c e7d3f26dd2bb513049c6c585919aa195c862a287
+F src/select.c 361dfc32244656bbe3f0e53d8ed791b3ec0c4be8
 F src/shell.c 28b3e1174a7fc00155d7d00880a33589a88508c9
 F src/sqlite.h.in ca27603a36fcacdaac5a19d8ee35aaff8ce8516f
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
@@ -1251,7 +1251,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 620d19c3b462f5c4763ebd26513321431f21dd72
-R 3232d5345bb2d152e6d22cf04db83714
+P 7aeade9a07f29bf26e50394042ea18d0121fe7a3
+R 4ffb47078274895143770c4805431d69
 U drh
-Z c636e6bb9960db85c57f7546f9b2327e
+Z 423cc03f9b773c1e0bc4b6f9fa63f5b6
