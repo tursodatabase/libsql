@@ -1,5 +1,5 @@
-C Remove\san\sALWAYS()\sthat\sturns\sout\sto\sbe\sfalse\swhen\sthere\sis\sa\ssemantic\nerror\son\sa\scompound\sSELECT.
-D 2015-04-17T16:12:03.870
+C Remove\sunnecessary\sparser\serror\scount\sincrements.\s\sLet\sthe\ssqlite3ErrorMsg()\ntake\scare\sof\sdoing\sthat.
+D 2015-04-17T18:22:53.635
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in faaf75b89840659d74501bea269c7e33414761c1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -168,7 +168,7 @@ F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c d23d6b6991f66b383934f137fd4384d93fb98c81
 F src/analyze.c 91540f835163d5369ccbae78e2e6c74d0dd53c1d
-F src/attach.c 3c1053a4cf1c3ca05c8c1d74a94cb688d763cef2
+F src/attach.c c38ac5a520a231d5d0308fd7f2ad95191c867bae
 F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c ff743689c4d6c5cb55ad42ed9d174b2b3e71f1e3
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
@@ -176,7 +176,7 @@ F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
 F src/btree.c 127aceb71ba93f59bc9c6ba810e992a04299e98a
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 973a22a6fd61350b454ad614832b1f0a5e25a1e4
-F src/build.c f82d394b9ad94be03a13d04edc2b6309ad5274e8
+F src/build.c 8c4cbff225db37add6351496696151a69965c0b9
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c a5cf5b4b56390cfb7b8636e8f7ddef90258dd575
 F src/ctime.c 98f89724adc891a1a4c655bee04e33e716e05887
@@ -288,7 +288,7 @@ F src/test_vfstrace.c bab9594adc976cbe696ff3970728830b4c5ed698
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 6bbcc9fe50c917864d48287b4792d46d6e873481
 F src/tokenize.c b7fb584c2be5ec39b6fdf04b185e7c6f33f8dc15
-F src/trigger.c a261da05e2ba65035d6f4b85d1fe6d4f363c1f1f
+F src/trigger.c bc647c712454c9b209fac082bb82870b5fd6fa54
 F src/update.c 3c4ecc282accf12d39edb8d524cf089645e55a13
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c 98a7627ca48ad3265b6940915a1d08355eb3fc7e
@@ -908,7 +908,7 @@ F test/superlock.test 1cde669f68d2dd37d6c9bd35eee1d95491ae3fc2
 F test/sync.test a34cd43e98b7fb84eabbf38f7ed8f7349b3f3d85
 F test/syscall.test d2fdaad713f103ac611fe7ef9b724c7b69f8149c
 F test/sysfault.test fa776e60bf46bdd3ae69f0b73e46ee3977a58ae6
-F test/table.test 06271d61eb13871490d38168433c1ef3dd82bb2a
+F test/table.test bd841e8df69b99172ce9c7d53587463913d711ca
 F test/tableapi.test 2674633fa95d80da917571ebdd759a14d9819126
 F test/tableopts.test dba698ba97251017b7c80d738c198d39ab747930
 F test/tclsqlite.test 7fb866443c7deceed22b63948ccd6f76b52ad054
@@ -1251,7 +1251,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7aeade9a07f29bf26e50394042ea18d0121fe7a3
-R 4ffb47078274895143770c4805431d69
+P ad67a67c03078a2bc65d28f2b880b29bf02067c1
+R b18dfa3e7e5ddb8a0e9d36234afbeb5d
 U drh
-Z 423cc03f9b773c1e0bc4b6f9fa63f5b6
+Z 77598d348cd54fccd8be37637dc84656
