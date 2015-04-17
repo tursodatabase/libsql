@@ -1768,7 +1768,7 @@ static int otaGetUpdateStmt(
 static sqlite3 *otaOpenDbhandle(sqlite3ota *p, const char *zName){
   sqlite3 *db = 0;
   if( p->rc==SQLITE_OK ){
-    const int flags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE;
+    const int flags = SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|SQLITE_OPEN_URI;
     p->rc = sqlite3_open_v2(zName, &db, flags, p->zVfsName);
     if( p->rc ){
       p->zErrmsg = sqlite3_mprintf("%s", sqlite3_errmsg(db));

@@ -16,6 +16,12 @@ if {![info exists testdir]} {
 source $testdir/tester.tcl
 set ::testprefix otacrash
 
+db close
+forcedelete test.db-oal ota.db
+sqlite3_shutdown
+sqlite3_config_uri 1
+reset_db
+
 # Set up a target database and an ota update database. The target
 # db is the usual "test.db", the ota db is "test.db2".
 #
@@ -109,7 +115,9 @@ proc do_ota_crash_test {tn nPre nStep} {
       ota close
     }
 
-    set res [crashsql -file test.db2 -delay $iDelay -tclbody $script {}]
+    set res [
+      crashsql -file test.db2 -delay $iDelay -tclbody $script -opendb {} {}
+    ]
 
     set bDone 1
     if {$res == "1 {child process exited abnormally}"} {

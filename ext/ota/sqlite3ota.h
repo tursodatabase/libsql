@@ -237,7 +237,10 @@ typedef struct sqlite3ota sqlite3ota;
 **
 ** Argument zTarget is the path to the target database. Argument zOta is
 ** the path to the OTA database. Each call to this function must be matched
-** by a call to sqlite3ota_close().
+** by a call to sqlite3ota_close(). When opening the databases, OTA passes
+** the SQLITE_CONFIG_URI flag to sqlite3_open_v2(). So if either zTarget
+** or zOta begin with "file:", it will be interpreted as an SQLite 
+** database URI, not a regular file name.
 **
 ** By default, OTA uses the default VFS to access the files on disk. To
 ** use a VFS other than the default, an SQLite "file:" URI containing a
