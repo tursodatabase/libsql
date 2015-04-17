@@ -1,5 +1,5 @@
-C Add\sthe\stool/fuzzershell.c\sutility\sprogram.
-D 2015-04-17T14:30:49.931
+C Fix\sa\sfaulty\sassert()\sin\ssqlite3SelectNew().
+D 2015-04-17T15:16:58.290
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in faaf75b89840659d74501bea269c7e33414761c1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -230,7 +230,7 @@ F src/printf.c 08fa675c200aac29e561c6153f91f909ed17612f
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 66cfe49a9c3b449ef13b89a8c47036a4ed167eab
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c d66970749a9d5a5b04950c9a26d6d0ea1320f91b
+F src/select.c e7d3f26dd2bb513049c6c585919aa195c862a287
 F src/shell.c 28b3e1174a7fc00155d7d00880a33589a88508c9
 F src/sqlite.h.in ca27603a36fcacdaac5a19d8ee35aaff8ce8516f
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
@@ -836,7 +836,7 @@ F test/schema4.test e6a66e20cc69f0e306667c08be7fda3d11707dc5
 F test/schema5.test 29699b4421f183c8f0e88bd28ce7d75d13ea653e
 F test/securedel.test 21749c32ccc30f1ea9e4b9f33295a6521ec20fa0
 F test/securedel2.test 2d54c28e46eb1fd6902089958b20b1b056c6f1c5
-F test/select1.test 53c3a5228b099601eafc7f3cc0e9cd682b07d9d5
+F test/select1.test be62204d2bd9a5a8a149e9974cfddce893d8f686
 F test/select2.test 352480e0e9c66eda9c3044e412abdf5be0215b56
 F test/select3.test 2ce595f8fb8e2ac10071d3b4e424cadd4634a054
 F test/select4.test 4b2df48129369a2a426f0f710fb94c50f75b31fb
@@ -1251,7 +1251,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b355ca3a3f617cd6d4c45c8e27ecd75d9e68b792
-R d4d32c82236775154903bd68de367067
+P db8d9af4d04ee862995ffa13ae6dcd9a1fc72855
+R a2d46793733766d02a97971b373ce378
 U drh
-Z b7bf748b01ea8ab50dc7b538dea6204b
+Z 3bc04f03d72aa5c77d969deb6f174a4e
