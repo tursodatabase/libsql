@@ -1,5 +1,5 @@
-C Ensure\sthat\sif\sa\s"ROLLBACK\sTO"\sstatement\sis\sused\sto\srollback\s(but\snot\sclose)\stheoutermost\stransaction,\sthe\sxRollbackTo()\smethod\sof\sany\svirtual\stables\sinvolved\sin\sthe\stransaction\sis\sinvoked.
-D 2015-04-18T16:25:54.955
+C Fix\san\sincorrect\sassert()\sstatement\sin\sthe\sCREATE\sINDEX\scode\sgenerator.
+D 2015-04-18T17:43:29.222
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in faaf75b89840659d74501bea269c7e33414761c1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -176,7 +176,7 @@ F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
 F src/btree.c 127aceb71ba93f59bc9c6ba810e992a04299e98a
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 973a22a6fd61350b454ad614832b1f0a5e25a1e4
-F src/build.c 8c4cbff225db37add6351496696151a69965c0b9
+F src/build.c 2d43ee768a3678eaeed203ba5b55490b970f0a5e
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c a5cf5b4b56390cfb7b8636e8f7ddef90258dd575
 F src/ctime.c 98f89724adc891a1a4c655bee04e33e716e05887
@@ -659,7 +659,7 @@ F test/index3.test b6ec456cf3b81d9a32123fe7e449bde434db338b
 F test/index4.test ab92e736d5946840236cd61ac3191f91a7856bf6
 F test/index5.test 25b0b451aceed4ac5f7d49f856f6de7257470b3e
 F test/index6.test 3ae54e53c53f2adcacda269237d8e52bdb05a481
-F test/index7.test 3d54dce09344c4530ea39a458aa304da044c887a
+F test/index7.test 9c6765a74fc3fcde7aebc5b3bd40d98df14a527c
 F test/indexedby.test 5f527a78bae74c61b8046ae3037f9dfb0bf0c353
 F test/indexfault.test 31d4ab9a7d2f6e9616933eb079722362a883eb1d
 F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
@@ -1251,7 +1251,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 691cc201e135a01c4cc4057be7e5d99285ab392d
-R a45b779d489ba296bfd31a8dac248aa9
-U dan
-Z 69dcdf9b3e64dbdf271ca541915d8dc9
+P e98d481d84ef31b6ed154f14deae9b261f722616
+R 56d8c8ddd6b4abbbd3e6fe39eaafa28b
+U drh
+Z bd5e83def6fd1c67c4a5e49c1b029978
