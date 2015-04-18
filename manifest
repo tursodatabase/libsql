@@ -1,5 +1,5 @@
-C Disregard\sleading\szeros\swhen\sconverting\sstrings\sto\s32-bit\sintegers.
-D 2015-04-18T04:45:00.010
+C Ensure\sthat\sif\sa\s"ROLLBACK\sTO"\sstatement\sis\sused\sto\srollback\s(but\snot\sclose)\stheoutermost\stransaction,\sthe\sxRollbackTo()\smethod\sof\sany\svirtual\stables\sinvolved\sin\sthe\stransaction\sis\sinvoked.
+D 2015-04-18T16:25:54.955
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in faaf75b89840659d74501bea269c7e33414761c1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -293,7 +293,7 @@ F src/update.c 3c4ecc282accf12d39edb8d524cf089645e55a13
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c a6431c92803b975b7322724a7b433e538d243539
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c 55650cb03d26ce5955cffcdc6568e046680b1fd4
+F src/vdbe.c f0cf3cf527d5a40b8d5d2324fdbb31da6c90cd8b
 F src/vdbe.h 7e538ecf47dccb307ea2d087c3ddc2dd8d70e79d
 F src/vdbeInt.h 9cbaa84f53ddd2d09a0cf61a94337a3a035d08a0
 F src/vdbeapi.c 583d56b129dd27f12bed518270de9ebe521e6a75
@@ -302,7 +302,7 @@ F src/vdbeblob.c 4f2e8e075d238392df98c5e03a64342465b03f90
 F src/vdbemem.c c0dc81285b7571b0a31c40f17846fe2397ec1cd9
 F src/vdbesort.c 2e7f683464fd5db3be4beaa1ff2d39e24fcb64b8
 F src/vdbetrace.c e41a50837d694ddd8434533964058e82f0ee7288
-F src/vtab.c 9ca557215e8591ceb66e0b7c0a579c6df1e54b2d
+F src/vtab.c be741af2a377bd894104d62504796e7394a04916
 F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 753995db83247f20361a8e8a874990b21a75abd9
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
@@ -1113,7 +1113,7 @@ F test/vacuum4.test d3f8ecff345f166911568f397d2432c16d2867d9
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/veryquick.test 57ab846bacf7b90cf4e9a672721ea5c5b669b661
 F test/view.test f311691d696a5cc27e3c1b875cec1b0866b4ccd9
-F test/vtab1.test c9dc2a73e93331d70b37ce4b246ef6dc18412fef
+F test/vtab1.test d1e5ec7a818f1d3f0402382b6a1d0c06071b770f
 F test/vtab2.test 3644649aa8d1daac57fd541f6a5f914cac59203e
 F test/vtab3.test b45f47d20f225ccc9c28dc915d92740c2dee311e
 F test/vtab4.test 942f8b8280b3ea8a41dae20e7822d065ca1cb275
@@ -1251,7 +1251,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P eabde33997b5b2ffc0067930305d6fed5951a234
-R 531a7d098945303938ecac96381b796d
-U drh
-Z 9c19b8dbab6a9d466a77ca5cd049d2a1
+P 691cc201e135a01c4cc4057be7e5d99285ab392d
+R a45b779d489ba296bfd31a8dac248aa9
+U dan
+Z 69dcdf9b3e64dbdf271ca541915d8dc9

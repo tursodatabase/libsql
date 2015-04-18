@@ -1491,4 +1491,41 @@ do_test 23.3.1 {
 } {1 {database table is locked}}
 do_execsql_test 23.3.2 { SELECT * FROM t1e } {1 2 3 4}
 
+#-------------------------------------------------------------------------
+# At one point SQL like this:
+#
+#   SAVEPOINT xyz;       -- Opens SQL transaction
+#     INSERT INTO vtab   -- Write to virtual table
+#     ROLLBACK TO xyz;
+#   RELEASE xyz;
+#
+# was not invoking the xRollbackTo() callback for the ROLLBACK TO 
+# operation. Which meant that virtual tables like FTS3 would incorrectly 
+# commit the results of the INSERT as part of the "RELEASE xyz" command.
+#
+# The following tests check that this has been fixed.
+#
+ifcapable fts3 {
+  do_execsql_test 24.0 {
+    CREATE VIRTUAL TABLE t4 USING fts3();
+    SAVEPOINT a;
+    INSERT INTO t4 VALUES('a b c');
+    ROLLBACK TO a;
+    RELEASE a;
+    SELECT * FROM t4;
+  } {}
+
+  do_execsql_test 24.1 { SELECT * FROM t4 WHERE t4 MATCH 'b' } {}
+  do_execsql_test 24.2 { INSERT INTO t4(t4) VALUES('integrity-check') } {}
+
+  do_execsql_test 24.3 {
+    SAVEPOINT a;
+    CREATE VIRTUAL TABLE t5 USING fts3();
+    SAVEPOINT b;
+    ROLLBACK TO a;
+    SAVEPOINT c;
+    RELEASE a;
+  }
+}
+
 finish_test
