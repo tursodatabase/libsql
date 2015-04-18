@@ -111,10 +111,12 @@ char *sqlite3VdbeExpandSql(
           idx = nextIndex;
         }
       }else{
-        assert( zRawSql[0]==':' || zRawSql[0]=='$' || zRawSql[0]=='@' );
+        assert( zRawSql[0]==':' || zRawSql[0]=='$' ||
+                zRawSql[0]=='@' || zRawSql[0]=='#' );
         testcase( zRawSql[0]==':' );
         testcase( zRawSql[0]=='$' );
         testcase( zRawSql[0]=='@' );
+        testcase( zRawSql[0]=='#' );
         idx = sqlite3VdbeParameterIndex(p, zRawSql, nToken);
         assert( idx>0 );
       }
