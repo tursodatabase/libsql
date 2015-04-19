@@ -644,4 +644,18 @@ do_execsql_test misc1-22.1 {
   SELECT ""+3 FROM (SELECT ""+5);
 } {3}
 
+# 2015-04-19: NULL pointer dereference on a corrupt schema
+#
+do_execsql_test misc1-23.1 {
+  DROP TABLE IF EXISTS t1;
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t1(x);
+  PRAGMA writable_schema=ON;
+  UPDATE sqlite_master SET sql='CREATE table t(d CHECK(T(#0)';
+  BEGIN;
+  CREATE TABLE t2(y);
+  ROLLBACK;
+  DROP TABLE IF EXISTS t3;
+} {}
+
 finish_test

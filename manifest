@@ -1,5 +1,5 @@
-C Bring\scomments\son\sthe\sINSERT\scode\sgenerator\sup-to-date.\s\sFix\sthe\sINSERT\scode\ngenerator\sso\sthat\sit\scorrectly\shandles\sinserts\sfrom\sa\sSELECT\sinto\sa\svirtual\ntable\swith\snon-terminal\shidden\scolumns.
-D 2015-04-19T18:32:43.531
+C Fix\sa\spotential\sNULL\spointer\sdeference\son\sa\scorrupt\sdatabase\sschema.
+D 2015-04-19T19:21:19.025
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in faaf75b89840659d74501bea269c7e33414761c1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -182,7 +182,7 @@ F src/complete.c a5cf5b4b56390cfb7b8636e8f7ddef90258dd575
 F src/ctime.c 98f89724adc891a1a4c655bee04e33e716e05887
 F src/date.c e4d50b3283696836ec1036b695ead9a19e37a5ac
 F src/delete.c 37964e6c1d73ff49cbea9ff690c9605fb15f600e
-F src/expr.c 55e7ce8f7e6c98402365e253b277377fe567772a
+F src/expr.c 25a732f30ba391dfb00bbdc9ec079056c2fbced5
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 3343d551a8d810782257244fb33f2ce191493c39
 F src/func.c 1414c24c873c48796ad45942257a179a423ba42f
@@ -743,7 +743,7 @@ F test/minmax.test 42fbad0e81afaa6e0de41c960329f2b2c3526efd
 F test/minmax2.test b44bae787fc7b227597b01b0ca5575c7cb54d3bc
 F test/minmax3.test cc1e8b010136db0d01a6f2a29ba5a9f321034354
 F test/minmax4.test 936941484ebdceb8adec7c86b6cd9b6e5e897c1f
-F test/misc1.test 9abcae9a0b8785d6fa92925dbb19c309ae9ea077
+F test/misc1.test 623405f6da1ea0b78b68c0549ee6c2cc027668f2
 F test/misc2.test 00d7de54eda90e237fc9a38b9e5ccc769ebf6d4d
 F test/misc3.test cf3dda47d5dda3e53fc5804a100d3c82be736c9d
 F test/misc4.test 9c078510fbfff05a9869a0b6d8b86a623ad2c4f6
@@ -1251,7 +1251,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 917e3c36293a1bf052a16116c93e5037ed712f96
-R b611a70a7a5e6fee6ae7534de091ac22
+P 4ac81fac6c6302c042be3df493a41630b733fff0
+R 217c2ee5ae382a4066646fde6de10d74
 U drh
-Z cc4a9846aabfd76674510baafeb05d26
+Z 68ce861ea89d3d58ce69aec04612a1ea

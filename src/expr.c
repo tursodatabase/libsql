@@ -1251,7 +1251,8 @@ u32 sqlite3ExprListFlags(const ExprList *pList){
   u32 m = 0;
   if( pList ){
     for(i=0; i<pList->nExpr; i++){
-       m |= pList->a[i].pExpr->flags;
+       Expr *pExpr = pList->a[i].pExpr;
+       if( pExpr ) m |= pList->a[i].pExpr->flags;
     }
   }
   return m;
