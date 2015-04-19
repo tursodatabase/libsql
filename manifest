@@ -1,5 +1,5 @@
-C Document\sthe\sNMAKE_ARGS\senvironment\svariable\sas\swell.
-D 2015-04-19T19:53:43.925
+C Fix\sharmless\scompiler\swarnings\sseen\swith\sMSVC\s2015.
+D 2015-04-19T21:43:16.561
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in faaf75b89840659d74501bea269c7e33414761c1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -91,7 +91,7 @@ F ext/fts3/fts3_snippet.c 52c2dcf410b1f9af5a44d81a2cf8c68ed1cb5283
 F ext/fts3/fts3_term.c a521f75132f9a495bdca1bdd45949b3191c52763
 F ext/fts3/fts3_test.c 8a3a78c4458b2d7c631fcf4b152a5cd656fa7038
 F ext/fts3/fts3_tokenize_vtab.c becc661223db7898b213f9e8a23d75bac02408c9
-F ext/fts3/fts3_tokenizer.c b7e586baeb8d0a061cf01a0f7081d88f3935eecf
+F ext/fts3/fts3_tokenizer.c 9afd223b07740b14dd589edd3116acacf951fd78
 F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c a93f5edc0aff44ef8b06d7cb55b52026541ca145
@@ -111,7 +111,7 @@ F ext/misc/closure.c 636024302cde41b2bf0c542f81c40c624cfb7012
 F ext/misc/compress.c 122faa92d25033d6c3f07c39231de074ab3d2e83
 F ext/misc/eval.c f971962e92ebb8b0a4e6b62949463ee454d88fa2
 F ext/misc/fileio.c d4171c815d6543a9edef8308aab2951413cd8d0f
-F ext/misc/fuzzer.c e3e18f47252c151b5553d7e806f38e757d37c4cc
+F ext/misc/fuzzer.c 4c84635c71c26cfa7c2e5848cf49fe2d2cfcd767
 F ext/misc/ieee754.c b0362167289170627659e84173f5d2e8fee8566e
 F ext/misc/nextchar.c 35c8b8baacb96d92abbb34a83a997b797075b342
 F ext/misc/percentile.c bcbee3c061b884eccb80e21651daaae8e1e43c63
@@ -190,7 +190,7 @@ F src/global.c 4f77cadbc5427d00139ba43d0f3979804cbb700e
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
 F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c 305dd3f9539d0affa4bf1c14cc7dffb34867e040
+F src/insert.c f43325e75175e3ca325f164464bb6475e3653d6d
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
@@ -217,13 +217,13 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c 5ed7e2e453c2980909a6b2c80dc55764b50819a8
 F src/os_win.c 03d27be3a20048ef52a648d5f0a15f5edda9f2a3
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
-F src/pager.c 4120a49ecd37697e28f5ed807f470b9c0b88410c
+F src/pager.c 5283581c8ce8950ff483a0b3a3cab9cb4d25a21e
 F src/pager.h c3476e7c89cdf1c6914e50a11f3714e30b4e0a77
 F src/parse.y c4e0387bc88c8e21e5ba653e2578959a1f3cdbc7
 F src/pcache.c 10539fb959849ad6efff80050541cab3d25089d4
 F src/pcache.h b44658c9c932d203510279439d891a2a83e12ba8
 F src/pcache1.c 69d137620a305f814398bd29a0c998038c0695e9
-F src/pragma.c 2a81f312cdb78bf0672a0484478ca3c1083028e9
+F src/pragma.c c1f4d012ea9f6b1ce52d341b2cd0ad72d560afd7
 F src/pragma.h 09c89bca58e9a44de2116cc8272b8d454657129f
 F src/prepare.c 1fffbdcd6f8a0173a8f70d71f22528f4c0e1e3d3
 F src/printf.c 08fa675c200aac29e561c6153f91f909ed17612f
@@ -231,7 +231,7 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 53486a98c17b7ae09b8c2b398013e973ce4c1aae
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 361dfc32244656bbe3f0e53d8ed791b3ec0c4be8
-F src/shell.c 28b3e1174a7fc00155d7d00880a33589a88508c9
+F src/shell.c 78eabce4c16c45e36fea2368f95118116399ba8a
 F src/sqlite.h.in ca27603a36fcacdaac5a19d8ee35aaff8ce8516f
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
@@ -239,7 +239,7 @@ F src/sqliteInt.h af228df2a02bf1a608d678b312d46aa480470b3c
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c f266ad8a2892d659b74f0f50cb6a88b6e7c12179
 F src/table.c e7a09215315a978057fb42c640f890160dbcc45e
-F src/tclsqlite.c fa72a7c5278662357c105ba7925c1d0972506ff9
+F src/tclsqlite.c 14f1992dd6100bfeb1a3dec7e7f449e1c814b8ee
 F src/test1.c 90fbedce75330d48d99eadb7d5f4223e86969585
 F src/test2.c 577961fe48961b2f2e5c8b56ee50c3f459d3359d
 F src/test3.c 64d2afdd68feac1bb5e2ffb8226c8c639f798622
@@ -265,12 +265,12 @@ F src/test_intarray.c 6c610a21ab8edde85a3a2c7f2b069244ecf4d834
 F src/test_intarray.h 9dc57417fb65bc7835cc18548852cc08cc062202
 F src/test_journal.c 5360fbe1d1e4416ca36290562fd5a2e3f70f32aa
 F src/test_loadext.c a5251f956ab6af21e138dc1f9c0399394a510cb4
-F src/test_malloc.c b9495384e74923aefde8311de974bf9b0f5ba570
-F src/test_multiplex.c 97813565daa7ee480abcc5dd1e9984ed1f71eb8c
+F src/test_malloc.c 208f09a4e21defa496bc1094fcfadea19385a112
+F src/test_multiplex.c 4dfb159e5c280c0ebdbf8b5ab9d95bf2765061f9
 F src/test_multiplex.h c08e4e8f8651f0c5e0509b138ff4d5b43ed1f5d3
 F src/test_mutex.c 293042d623ebba969160f471a82aa1551626454f
-F src/test_onefile.c 0396f220561f3b4eedc450cef26d40c593c69a25
-F src/test_osinst.c 3d0340bc31a9f3d8a3547e0272373e80f78dde25
+F src/test_onefile.c 38f7cbe79d5bafe95bde683cc3a53b8ca16daf10
+F src/test_osinst.c 5423dc1d355f594371f27dd292ca54bd320b8196
 F src/test_pcache.c a5cd24730cb43c5b18629043314548c9169abb00
 F src/test_quota.c 180813f43683be5725458fc1ff13ac455d8e722d
 F src/test_quota.h 2a8ad1952d1d2ca9af0ce0465e56e6c023b5e15d
@@ -283,7 +283,7 @@ F src/test_superlock.c 06797157176eb7085027d9dd278c0d7a105e3ec9
 F src/test_syscall.c 2e21ca7f7dc54a028f1967b63f1e76155c356f9b
 F src/test_tclvar.c f4dc67d5f780707210d6bb0eb6016a431c04c7fa
 F src/test_thread.c af391ec03d23486dffbcc250b7e58e073f172af9
-F src/test_vfs.c b7e6831e6fcf04c5090accff30640ec5c9630739
+F src/test_vfs.c 3b65d42e18b262805716bd96178c81da8f2d9283
 F src/test_vfstrace.c bab9594adc976cbe696ff3970728830b4c5ed698
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 6bbcc9fe50c917864d48287b4792d46d6e873481
@@ -1207,7 +1207,7 @@ F tool/fuzzershell.c 9e7e273da203037154b433bb67f10b0d9772b370
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
-F tool/lemon.c ae5f61e3b164d35955777b20d6febcbaf0950702
+F tool/lemon.c b9109f59b57e7b6f101c4fe644c8361ba6dee969
 F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
 F tool/logest.c eef612f8adf4d0993dafed0416064cf50d5d33c6
 F tool/mkautoconfamal.sh d1a2da0e15b2ed33d60af35c7e9d483f13a8eb9f
@@ -1251,7 +1251,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ca64ef079811006f3e0526919871ffd286c3e714
-R 52d9f3383650b84247283bfd77621eab
+P 977fd39c1509edec2e28cc8bac64e0994699f398
+R 482b18ff9d203ff55695e8f455ac3925
 U mistachkin
-Z 4ecdfe31e09fefcd24da72e520807bdb
+Z 1e735d37890a7ca485ccb54b168d7937
