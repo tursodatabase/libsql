@@ -927,7 +927,7 @@ void sqlite3StartTable(
       if( !noErr ){
         sqlite3ErrorMsg(pParse, "table %T already exists", pName);
       }else{
-        assert( !db->init.busy );
+        assert( !db->init.busy || CORRUPT_DB );
         sqlite3CodeVerifySchema(pParse, iDb);
       }
       goto begin_table_error;
