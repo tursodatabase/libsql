@@ -1,5 +1,5 @@
-C Silently\signore\sparser\sstack\soverflow\swhen\sparsing\sa\smalformed\sschema\sin\nPRAGMA\swritable_schema\smode.
-D 2015-04-19T22:31:45.600
+C Fix\sa\sbroken\sassert()\sand\scomparison\sfor\sINSERT\sINTO\s...\sSELECT\swhen\sthe\nSELECT\suses\san\sunknown\scollating\ssequence.
+D 2015-04-19T22:41:22.682
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in faaf75b89840659d74501bea269c7e33414761c1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -190,7 +190,7 @@ F src/global.c 4f77cadbc5427d00139ba43d0f3979804cbb700e
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
 F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c 9f5f25a9d645089973d2f451711b7402bfde6ab5
+F src/insert.c b152e71457c40a3967ceafa9e7cbbb52e9ead2c1
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
@@ -666,7 +666,7 @@ F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
 F test/insert.test 38742b5e9601c8f8d76e9b7555f7270288c2d371
 F test/insert2.test 4f3a04d168c728ed5ec2c88842e772606c7ce435
 F test/insert3.test 1b7db95a03ad9c5013fdf7d6722b6cd66ee55e30
-F test/insert4.test 4791662c50518bdd37d394cae9a7a8014e845bb3
+F test/insert4.test a20432f1c0fbbcff8f11d0e6ab4acb8c9db58023
 F test/insert5.test 394f96728d1258f406fe5f5aeb0aaf29487c39a6
 F test/instr.test 737bbf80685232033f3abedc6ae92f75860b5dd2
 F test/intarray.test 066b7d7ac38d25bf96f87f1b017bfc687551cdd4
@@ -1251,7 +1251,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P bc97cec6338b16a4e9b1a9457d01bb7fe462934d
-R 01f9eeee512ab8c1eb8c49d658fe5ba3
+P 2cb37b959c66b5ae3535ab81ba14a4ebf9732df7
+R e2cf191d4292c134d8577e2e34e33df7
 U drh
-Z 025d0c7f7a9e2517785c78c21f380610
+Z 7931b9be35191227870d2d70e1da695e

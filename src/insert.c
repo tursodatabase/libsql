@@ -649,8 +649,7 @@ void sqlite3Insert(
     dest.nSdst = pTab->nCol;
     rc = sqlite3Select(pParse, pSelect, &dest);
     regFromSelect = dest.iSdst;
-    assert( pParse->nErr==0 || rc );
-    if( rc || db->mallocFailed ) goto insert_cleanup;
+    if( rc || db->mallocFailed || pParse->nErr ) goto insert_cleanup;
     sqlite3VdbeAddOp1(v, OP_EndCoroutine, regYield);
     sqlite3VdbeJumpHere(v, addrTop - 1);                       /* label B: */
     assert( pSelect->pEList );
