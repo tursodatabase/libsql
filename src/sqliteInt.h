@@ -1622,6 +1622,12 @@ struct Table {
 
 /*
 ** Allowed values for Table.tabFlags.
+**
+** TF_OOOHidden applies to virtual tables that have hidden columns that are
+** followed by non-hidden columns.  Example:  "CREATE VIRTUAL TABLE x USING
+** vtab1(a HIDDEN, b);".  Since "b" is a non-hidden column but "a" is hidden,
+** the TF_OOOHidden attribute would apply in this case.  Such tables require
+** special handling during INSERT processing.
 */
 #define TF_Readonly        0x01    /* Read-only system table */
 #define TF_Ephemeral       0x02    /* An ephemeral table */
@@ -1629,6 +1635,7 @@ struct Table {
 #define TF_Autoincrement   0x08    /* Integer primary key is autoincrement */
 #define TF_Virtual         0x10    /* Is a virtual table */
 #define TF_WithoutRowid    0x20    /* No rowid used. PRIMARY KEY is the key */
+#define TF_OOOHidden       0x40    /* Out-of-Order hidden columns */
 
 
 /*

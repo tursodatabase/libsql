@@ -1,5 +1,5 @@
-C The\ssqlite3_trace()\scallback\sdoes\snot\stry\sto\sexpand\sparameters\sin\sstatements\nthat\shave\sno\sparameter.
-D 2015-04-18T19:20:14.612
+C Bring\scomments\son\sthe\sINSERT\scode\sgenerator\sup-to-date.\s\sFix\sthe\sINSERT\scode\ngenerator\sso\sthat\sit\scorrectly\shandles\sinserts\sfrom\sa\sSELECT\sinto\sa\svirtual\ntable\swith\snon-terminal\shidden\scolumns.
+D 2015-04-19T18:32:43.531
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in faaf75b89840659d74501bea269c7e33414761c1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -190,7 +190,7 @@ F src/global.c 4f77cadbc5427d00139ba43d0f3979804cbb700e
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
 F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c 305dd3f9539d0affa4bf1c14cc7dffb34867e040
+F src/insert.c 9f5f25a9d645089973d2f451711b7402bfde6ab5
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
@@ -235,7 +235,7 @@ F src/shell.c 28b3e1174a7fc00155d7d00880a33589a88508c9
 F src/sqlite.h.in ca27603a36fcacdaac5a19d8ee35aaff8ce8516f
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
-F src/sqliteInt.h af228df2a02bf1a608d678b312d46aa480470b3c
+F src/sqliteInt.h 3a1fccc2bb62ab16750730b6f6f24305e686a0ce
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c f266ad8a2892d659b74f0f50cb6a88b6e7c12179
 F src/table.c e7a09215315a978057fb42c640f890160dbcc45e
@@ -302,7 +302,7 @@ F src/vdbeblob.c 4f2e8e075d238392df98c5e03a64342465b03f90
 F src/vdbemem.c c0dc81285b7571b0a31c40f17846fe2397ec1cd9
 F src/vdbesort.c 2e7f683464fd5db3be4beaa1ff2d39e24fcb64b8
 F src/vdbetrace.c f95c2dff9041fcf07f871789c22ebb0648ea0b7c
-F src/vtab.c be741af2a377bd894104d62504796e7394a04916
+F src/vtab.c 4feb365e2688dd02474e671e37f27e35784d2cff
 F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 753995db83247f20361a8e8a874990b21a75abd9
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
@@ -1122,7 +1122,7 @@ F test/vtab6.test 5f5380c425e52993560ab4763db4f826d2ba7b09
 F test/vtab7.test ae560ebea870ed04e9aa4177cc302f910faaabb5
 F test/vtab8.test e19fa4a538fcd1bb66c22825fa8f71618fb13583
 F test/vtab9.test ea58d2b95d61955f87226381716b2d0b1d4e4f9b
-F test/vtabA.test c86e1990b7e1e2bb34602a06fffa4c69f2b516dc
+F test/vtabA.test 1317f06a03597eee29f40a49b6c21e1aaba4285f
 F test/vtabB.test 04df5dc531b9f44d9ca65b9c1b79f12b5922a796
 F test/vtabC.test 4528f459a13136f982e75614d120aef165f17292
 F test/vtabD.test 05b3f1d77117271671089e48719524b676842e96
@@ -1251,7 +1251,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2eed41fda068f2cbac55e63d7c1875ddaa331508
-R fe8a360bbce7dedd87d096d07c896e4c
+P 917e3c36293a1bf052a16116c93e5037ed712f96
+R b611a70a7a5e6fee6ae7534de091ac22
 U drh
-Z 768a04b82f6060145bfe8edb7197ea08
+Z cc4a9846aabfd76674510baafeb05d26
