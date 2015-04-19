@@ -87,6 +87,14 @@ REM When set, modifies how the NSDKLIBPATH environment variable is built, based
 REM on the WindowsSdkDir environment variable.  It causes this batch script to
 REM assume the Windows 10.0 SDK location should be used.
 REM
+REM                        NMAKE_ARGS
+REM
+REM When set, the value is expanded and passed to the NMAKE command line, after
+REM its other arguments.  This is used to specify additional NMAKE options, for
+REM example:
+REM
+REM                        SET NMAKE_ARGS=FOR_WINRT=1
+REM
 SETLOCAL
 
 REM SET __ECHO=ECHO
