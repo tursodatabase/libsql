@@ -927,7 +927,7 @@ void sqlite3StartTable(
       if( !noErr ){
         sqlite3ErrorMsg(pParse, "table %T already exists", pName);
       }else{
-        assert( !db->init.busy );
+        assert( !db->init.busy || CORRUPT_DB );
         sqlite3CodeVerifySchema(pParse, iDb);
       }
       goto begin_table_error;
@@ -1216,7 +1216,8 @@ void sqlite3AddColumnType(Parse *pParse, Token *pType){
   p = pParse->pNewTable;
   if( p==0 || NEVER(p->nCol<1) ) return;
   pCol = &p->aCol[p->nCol-1];
-  assert( pCol->zType==0 );
+  assert( pCol->zType==0 || CORRUPT_DB );
+  sqlite3DbFree(pParse->db, pCol->zType);
   pCol->zType = sqlite3NameFromToken(pParse->db, pType);
   pCol->affinity = sqlite3AffinityType(pCol->zType, &pCol->szEst);
 }
@@ -2450,6 +2451,7 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
   }
   assert( pParse->nErr==0 );
   assert( pName->nSrc==1 );
+  if( sqlite3ReadSchema(pParse) ) goto exit_drop_table;
   if( noErr ) db->suppressErr++;
   pTab = sqlite3LocateTableItem(pParse, isView, &pName->a[0]);
   if( noErr ) db->suppressErr--;

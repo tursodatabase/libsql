@@ -342,20 +342,23 @@ static int xferOptimization(
 /*
 ** This routine is called to handle SQL of the following forms:
 **
-**    insert into TABLE (IDLIST) values(EXPRLIST)
+**    insert into TABLE (IDLIST) values(EXPRLIST),(EXPRLIST),...
 **    insert into TABLE (IDLIST) select
+**    insert into TABLE (IDLIST) default values
 **
 ** The IDLIST following the table name is always optional.  If omitted,
-** then a list of all columns for the table is substituted.  The IDLIST
-** appears in the pColumn parameter.  pColumn is NULL if IDLIST is omitted.
+** then a list of all (non-hidden) columns for the table is substituted.
+** The IDLIST appears in the pColumn parameter.  pColumn is NULL if IDLIST
+** is omitted.
 **
-** The pList parameter holds EXPRLIST in the first form of the INSERT
-** statement above, and pSelect is NULL.  For the second form, pList is
-** NULL and pSelect is a pointer to the select statement used to generate
-** data for the insert.
+** For the pSelect parameter holds the values to be inserted for the
+** first two forms shown above.  A VALUES clause is really just short-hand
+** for a SELECT statement that omits the FROM clause and everything else
+** that follows.  If the pSelect parameter is NULL, that means that the
+** DEFAULT VALUES form of the INSERT statement is intended.
 **
 ** The code generated follows one of four templates.  For a simple
-** insert with data coming from a VALUES clause, the code executes
+** insert with data coming from a single-row VALUES clause, the code executes
 ** once straight down through.  Pseudo-code follows (we call this
 ** the "1st template"):
 **
@@ -462,7 +465,7 @@ void sqlite3Insert(
   u8 useTempTable = 0;  /* Store SELECT results in intermediate table */
   u8 appendFlag = 0;    /* True if the insert is likely to be an append */
   u8 withoutRowid;      /* 0 for normal table.  1 for WITHOUT ROWID table */
-  u8 bIdListInOrder = 1; /* True if IDLIST is in table order */
+  u8 bIdListInOrder;    /* True if IDLIST is in table order */
   ExprList *pList = 0;  /* List of VALUES() to be inserted  */
 
   /* Register allocations */
@@ -487,8 +490,8 @@ void sqlite3Insert(
   }
 
   /* If the Select object is really just a simple VALUES() list with a
-  ** single row values (the common case) then keep that one row of values
-  ** and go ahead and discard the Select object
+  ** single row (the common case) then keep that one row of values
+  ** and discard the other (unused) parts of the pSelect object
   */
   if( pSelect && (pSelect->selFlags & SF_Values)!=0 && pSelect->pPrior==0 ){
     pList = pSelect->pEList;
@@ -596,6 +599,7 @@ void sqlite3Insert(
   ** is appears in the original table.  (The index of the INTEGER
   ** PRIMARY KEY in the original table is pTab->iPKey.)
   */
+  bIdListInOrder = (pTab->tabFlags & TF_OOOHidden)==0;
   if( pColumn ){
     for(i=0; i<pColumn->nId; i++){
       pColumn->a[i].idx = -1;
@@ -631,7 +635,8 @@ void sqlite3Insert(
   ** co-routine is the common header to the 3rd and 4th templates.
   */
   if( pSelect ){
-    /* Data is coming from a SELECT.  Generate a co-routine to run the SELECT */
+    /* Data is coming from a SELECT or from a multi-row VALUES clause.
+    ** Generate a co-routine to run the SELECT. */
     int regYield;       /* Register holding co-routine entry-point */
     int addrTop;        /* Top of the co-routine */
     int rc;             /* Result code */
@@ -644,8 +649,7 @@ void sqlite3Insert(
     dest.nSdst = pTab->nCol;
     rc = sqlite3Select(pParse, pSelect, &dest);
     regFromSelect = dest.iSdst;
-    assert( pParse->nErr==0 || rc );
-    if( rc || db->mallocFailed ) goto insert_cleanup;
+    if( rc || db->mallocFailed || pParse->nErr ) goto insert_cleanup;
     sqlite3VdbeAddOp1(v, OP_EndCoroutine, regYield);
     sqlite3VdbeJumpHere(v, addrTop - 1);                       /* label B: */
     assert( pSelect->pEList );
@@ -693,8 +697,8 @@ void sqlite3Insert(
       sqlite3ReleaseTempReg(pParse, regTempRowid);
     }
   }else{
-    /* This is the case if the data for the INSERT is coming from a VALUES
-    ** clause
+    /* This is the case if the data for the INSERT is coming from a 
+    ** single-row VALUES clause
     */
     NameContext sNC;
     memset(&sNC, 0, sizeof(sNC));

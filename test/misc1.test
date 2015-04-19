@@ -644,4 +644,44 @@ do_execsql_test misc1-22.1 {
   SELECT ""+3 FROM (SELECT ""+5);
 } {3}
 
+# 2015-04-19: NULL pointer dereference on a corrupt schema
+#
+db close
+sqlite3 db :memory:
+do_execsql_test misc1-23.1 {
+  CREATE TABLE t1(x);
+  PRAGMA writable_schema=ON;
+  UPDATE sqlite_master SET sql='CREATE table t(d CHECK(T(#0)';
+  BEGIN;
+  CREATE TABLE t2(y);
+  ROLLBACK;
+  DROP TABLE IF EXISTS t3;
+} {}
+
+# 2015-04-19:  Faulty assert() statement
+#
+db close
+database_may_be_corrupt
+sqlite3 db :memory:
+do_catchsql_test misc1-23.2 {
+  CREATE TABLE t1(x UNIQUE);
+  PRAGMA writable_schema=ON;
+  UPDATE sqlite_master SET sql='CREATE TABLE IF not EXISTS t(c)';
+  BEGIN;
+  CREATE TABLE t2(x);
+  ROLLBACK;
+  DROP TABLE F;
+} {1 {no such table: F}}
+db close
+sqlite3 db :memory:
+do_catchsql_test misc1-23.3 {
+  CREATE TABLE t1(x UNIQUE);
+  PRAGMA writable_schema=ON;
+  UPDATE sqlite_master SET sql='CREATE table y(a TEXT, a TEXT)';
+  BEGIN;
+  CREATE TABLE t2(y);
+  ROLLBACK;
+  DROP TABLE IF EXISTS t;
+} {0 {}}
+
 finish_test
