@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sseen\swith\sMSVC\s2015.
-D 2015-04-19T21:43:16.561
+C Modify\sthe\s'mkvsix'\stool\sitself\sto\ssupport\sthe\sVisual\sStudio\s2015\sCTP.
+D 2015-04-19T23:39:05.488
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in faaf75b89840659d74501bea269c7e33414761c1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1219,7 +1219,7 @@ F tool/mksqlite3c-noext.tcl 69bae8ce4aa52d2ff82d4a8a856bf283ec035b2e
 F tool/mksqlite3c.tcl 52a3352f7aa15f1db851e45ac3a5e2173d6fe93c
 F tool/mksqlite3h.tcl 44730d586c9031638cdd2eb443b801c0d2dbd9f8
 F tool/mksqlite3internalh.tcl eb994013e833359137eb53a55acdad0b5ae1049b
-F tool/mkvsix.tcl 52a4c613707ac34ae9c226e5ccc69cb948556105
+F tool/mkvsix.tcl 3b58b9398f91c7dbf18d49eb87cefeee9efdbce1
 F tool/offsets.c fe4262fdfa378e8f5499a42136d17bf3b98f6091
 F tool/omittest.tcl 34d7ac01fe4fd18e3637f64abe12c40eca0f6b97
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
@@ -1251,7 +1251,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 977fd39c1509edec2e28cc8bac64e0994699f398
-R 482b18ff9d203ff55695e8f455ac3925
+P d05becd873a03a366843a34e7f4c732dd8f88c86
+R bb1f1e19d70e43199cc9b8784e79ff68
 U mistachkin
-Z 1e735d37890a7ca485ccb54b168d7937
+Z 8dda7ece1b23ed740b28f121d2c5d713
