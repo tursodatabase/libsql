@@ -1,5 +1,5 @@
-C Work\sin\sprogress\son\smaking\sVSIX\spackages\sfor\sthe\sVisual\sStudio\s2015\sCTP.
-D 2015-04-19T06:18:10.467
+C Improve\sdocumentation\sand\scomments\sin\sthe\sMSVC\sbatch\sbuild\stool.
+D 2015-04-19T18:58:29.991
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in faaf75b89840659d74501bea269c7e33414761c1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1196,7 +1196,7 @@ F test/without_rowid6.test db0dbf03c49030aa3c1ba5f618620334bd2baf5f
 F test/wordcount.c 9915e06cb33d8ca8109b8700791afe80d305afda
 F test/zeroblob.test fb3c0e4ab172d386954deda24c03f500e121d80d
 F test/zerodamage.test cf6748bad89553cc1632be51a6f54e487e4039ac
-F tool/build-all-msvc.bat 62f4f74b55781757d5b20e12651650d5d94ef2cf x
+F tool/build-all-msvc.bat 78d530f024c22828ce882a3f0b892490aaaf3201 x
 F tool/build-shell.sh 950f47c6174f1eea171319438b93ba67ff5bf367
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
@@ -1251,10 +1251,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 917e3c36293a1bf052a16116c93e5037ed712f96
-R db56dc9284c6212139225593eec3e32c
-T *branch * vsix2015
-T *sym-vsix2015 *
-T -sym-trunk *
+P 8469d651a0442a2bc572a869a0457a6ea8c06bc7
+R 05d8b709a19efc6c268ced1a9d746700
 U mistachkin
-Z af05882e14ca6800d4b8b20f52645692
+Z 13c315b8e34663ea44d46ce0d67e7224
