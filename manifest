@@ -1,9 +1,9 @@
-C The\ssqlite3_trace()\scallback\sdoes\snot\stry\sto\sexpand\sparameters\sin\sstatements\nthat\shave\sno\sparameter.
-D 2015-04-18T19:20:14.612
+C Work\sin\sprogress\son\smaking\sVSIX\spackages\sfor\sthe\sVisual\sStudio\s2015\sCTP.
+D 2015-04-19T06:18:10.467
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in faaf75b89840659d74501bea269c7e33414761c1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc a19bceec468fa18bb54df52257b1a2211e69172d
+F Makefile.msc 513abdaff333b04ef68775ec25ceb6053b4ecafd
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md d58e3bebc0a4145e0f2a87994015fdb575a8e866
 F VERSION 2e244662b71e6e68a5c29b014ebc5b7564f4cc5a
@@ -1196,7 +1196,7 @@ F test/without_rowid6.test db0dbf03c49030aa3c1ba5f618620334bd2baf5f
 F test/wordcount.c 9915e06cb33d8ca8109b8700791afe80d305afda
 F test/zeroblob.test fb3c0e4ab172d386954deda24c03f500e121d80d
 F test/zerodamage.test cf6748bad89553cc1632be51a6f54e487e4039ac
-F tool/build-all-msvc.bat 72e05bc8deca39a547884485c086b915f50a91ed x
+F tool/build-all-msvc.bat 62f4f74b55781757d5b20e12651650d5d94ef2cf x
 F tool/build-shell.sh 950f47c6174f1eea171319438b93ba67ff5bf367
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
@@ -1251,7 +1251,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2eed41fda068f2cbac55e63d7c1875ddaa331508
-R fe8a360bbce7dedd87d096d07c896e4c
-U drh
-Z 768a04b82f6060145bfe8edb7197ea08
+P 917e3c36293a1bf052a16116c93e5037ed712f96
+R db56dc9284c6212139225593eec3e32c
+T *branch * vsix2015
+T *sym-vsix2015 *
+T -sym-trunk *
+U mistachkin
+Z af05882e14ca6800d4b8b20f52645692

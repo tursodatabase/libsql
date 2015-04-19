@@ -217,8 +217,20 @@ SET TOOLPATH=%gawk.exe_PATH%;%tclsh85.exe_PATH%
 %_VECHO% ToolPath = '%TOOLPATH%'
 
 REM
-REM NOTE: Check for MSVC 2012/2013 because the Windows SDK directory handling
-REM       is slightly different for those versions.
+REM NOTE: Setting the Windows SDK library path is only required for MSVC
+REM       2012, 2013, and 2015.
+REM
+CALL :fn_UnsetVariable SET_NSDKLIBPATH
+
+REM
+REM NOTE: Setting the Universal CRT library path is only required for MSVC
+REM       2015.
+REM
+CALL :fn_UnsetVariable SET_NUCRTLIBPATH
+
+REM
+REM NOTE: Check for MSVC 2012, 2013, and 2015 specially because the Windows
+REM       SDK directory handling is slightly different for those versions.
 REM
 IF "%VisualStudioVersion%" == "11.0" (
   REM
@@ -236,8 +248,22 @@ IF "%VisualStudioVersion%" == "11.0" (
   IF NOT DEFINED NSDKLIBPATH (
     SET SET_NSDKLIBPATH=1
   )
-) ELSE (
-  CALL :fn_UnsetVariable SET_NSDKLIBPATH
+) ELSE IF "%VisualStudioVersion%" == "14.0" (
+  REM
+  REM NOTE: If the Windows SDK library path has already been set, do not set
+  REM       it to something else later on.
+  REM
+  IF NOT DEFINED NSDKLIBPATH (
+    SET SET_NSDKLIBPATH=1
+  )
+
+  REM
+  REM NOTE: If the Universal CRT library path has already been set, do not set
+  REM       it to something else later on.
+  REM
+  IF NOT DEFINED NUCRTLIBPATH (
+    SET SET_NUCRTLIBPATH=1
+  )
 )
 
 REM
@@ -294,6 +320,7 @@ FOR %%P IN (%PLATFORMS%) DO (
     CALL :fn_UnsetVariable LIB
     CALL :fn_UnsetVariable LIBPATH
     CALL :fn_UnsetVariable Platform
+    CALL :fn_UnsetVariable UniversalCRTSdkDir
     REM CALL :fn_UnsetVariable VCINSTALLDIR
     CALL :fn_UnsetVariable VSINSTALLDIR
     CALL :fn_UnsetVariable WindowsPhoneKitDir
@@ -385,8 +412,8 @@ FOR %%P IN (%PLATFORMS%) DO (
         )
 
         REM
-        REM NOTE: When using MSVC 2012 and/or 2013, the native SDK path cannot
-        REM       simply use the "lib" sub-directory beneath the location
+        REM NOTE: When using MSVC 2012, 2013, or 2015, the native SDK path
+        REM       cannot simply be the "lib" sub-directory beneath the location
         REM       specified in the WindowsSdkDir environment variable because
         REM       that location does not actually contain the necessary library
         REM       files for x86.  This must be done for each iteration because
@@ -405,16 +432,34 @@ FOR %%P IN (%PLATFORMS%) DO (
             CALL :fn_CopyVariable WindowsSdkDir NSDKLIBPATH
 
             REM
-            REM NOTE: The Windows 8.1 SDK has a slightly different directory
-            REM       naming convention.
+            REM NOTE: The Windows 8.x and Windows 10 SDKs have a slightly
+            REM       different directory naming conventions.
             REM
-            IF DEFINED USE_WINV63_NSDKLIBPATH (
+            IF DEFINED USE_WINV100_NSDKLIBPATH (
+              CALL :fn_AppendVariable NSDKLIBPATH \..\10\lib\10.0.10030.0\um\x86
+            ) ELSE IF DEFINED USE_WINV63_NSDKLIBPATH (
               CALL :fn_AppendVariable NSDKLIBPATH \lib\winv6.3\um\x86
             ) ELSE IF "%VisualStudioVersion%" == "12.0" (
+              CALL :fn_AppendVariable NSDKLIBPATH \..\8.0\lib\win8\um\x86
+            ) ELSE IF "%VisualStudioVersion%" == "14.0" (
               CALL :fn_AppendVariable NSDKLIBPATH \..\8.0\lib\win8\um\x86
             ) ELSE (
               CALL :fn_AppendVariable NSDKLIBPATH \lib\win8\um\x86
             )
+          )
+        )
+
+        REM
+        REM NOTE: When using MSVC 2015, setting the Universal CRT library path
+        REM       for x86 may be required as well.  This must also be done for
+        REM       each iteration because it relies upon the UniversalCRTSdkDir
+        REM       environment variable being set by the batch file used to
+        REM       setup the MSVC environment.
+        REM
+        IF DEFINED SET_NUCRTLIBPATH (
+          IF DEFINED UniversalCRTSdkDir (
+            CALL :fn_CopyVariable UniversalCRTSdkDir NUCRTLIBPATH
+            CALL :fn_AppendVariable NUCRTLIBPATH \lib\winv10.0\ucrt\x86
           )
         )
 
