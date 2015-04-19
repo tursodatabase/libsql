@@ -6646,7 +6646,6 @@ WhereInfo *sqlite3WhereBegin(
   }
 #ifdef WHERETRACE_ENABLED /* !=0 */
   if( sqlite3WhereTrace ){
-    int ii;
     sqlite3DebugPrintf("---- Solution nRow=%d", pWInfo->nRowOut);
     if( pWInfo->nOBSat>0 ){
       sqlite3DebugPrintf(" ORDERBY=%d,0x%llx", pWInfo->nOBSat, pWInfo->revMask);
