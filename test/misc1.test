@@ -672,5 +672,16 @@ do_catchsql_test misc1-23.2 {
   ROLLBACK;
   DROP TABLE F;
 } {1 {no such table: F}}
+db close
+sqlite3 db :memory:
+do_catchsql_test misc1-23.3 {
+  CREATE TABLE t1(x UNIQUE);
+  PRAGMA writable_schema=ON;
+  UPDATE sqlite_master SET sql='CREATE table y(a TEXT, a TEXT)';
+  BEGIN;
+  CREATE TABLE t2(y);
+  ROLLBACK;
+  DROP TABLE IF EXISTS t;
+} {0 {}}
 
 finish_test
