@@ -1,5 +1,5 @@
-C Fix\san\sobscure\smemory\sleak\sin\ssqlite3Stat4ProbeFree()
-D 2015-04-20T13:59:18.103
+C Fix\sa\smemory\sleak\scaused\sby\sduplicate\sentries\sin\sthe\ssqlite_stat1\stable.
+D 2015-04-20T15:13:08.018
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in faaf75b89840659d74501bea269c7e33414761c1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -167,7 +167,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c d23d6b6991f66b383934f137fd4384d93fb98c81
-F src/analyze.c 91540f835163d5369ccbae78e2e6c74d0dd53c1d
+F src/analyze.c d23790787f80ebed58df7774744b4cf96401498b
 F src/attach.c c38ac5a520a231d5d0308fd7f2ad95191c867bae
 F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c ff743689c4d6c5cb55ad42ed9d174b2b3e71f1e3
@@ -321,7 +321,7 @@ F test/alter4.test c461150723ac957f3b2214aa0b11552cd72023ec
 F test/altermalloc.test e81ac9657ed25c6c5bb09bebfa5a047cd8e4acfc
 F test/amatch1.test b5ae7065f042b7f4c1c922933f4700add50cdb9f
 F test/analyze.test 3eb35a4af972f98422e5dc0586501b17d103d321
-F test/analyze3.test c2c07285e1012315e561132fcfa8fd43be66ec8c
+F test/analyze3.test 0f0ee6135b293a0e5af471a8423b80b688469d71
 F test/analyze4.test eff2df19b8dd84529966420f29ea52edc6b56213
 F test/analyze5.test 765c4e284aa69ca172772aa940946f55629bc8c4
 F test/analyze6.test f1c552ce39cca4ec922a7e4e0e5d0203d6b3281f
@@ -1251,7 +1251,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ab0a96ca73cfe92d5a837c71c148e8361f42acc3
-R 3caac82026514fa2d10894c0463eb30d
-U drh
-Z 942c4169ecb37cfefc1570a95881cae9
+P c72abbe2c1735f3d563c6672616b2918b6209922
+R 1099b0a7b8aeb7ed253f854d69b78f1d
+U dan
+Z 6ab446cc76a19cef515e242940078110
