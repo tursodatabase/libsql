@@ -1647,7 +1647,7 @@ void sqlite3Stat4ProbeFree(UnpackedRecord *pRec){
     Mem *aMem = pRec->aMem;
     sqlite3 *db = aMem[0].db;
     for(i=0; i<nCol; i++){
-      if( aMem[i].szMalloc ) sqlite3DbFree(db, aMem[i].zMalloc);
+      sqlite3VdbeMemRelease(&aMem[i]);
     }
     sqlite3KeyInfoUnref(pRec->pKeyInfo);
     sqlite3DbFree(db, pRec);
