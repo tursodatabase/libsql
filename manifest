@@ -1,5 +1,5 @@
-C Fix\sanother\sharmless\scompiler\swarning.
-D 2015-04-19T23:48:10.023
+C Merge\supdates\sfrom\strunk.
+D 2015-04-20T23:53:50.803
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in faaf75b89840659d74501bea269c7e33414761c1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -167,7 +167,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c d23d6b6991f66b383934f137fd4384d93fb98c81
-F src/analyze.c 91540f835163d5369ccbae78e2e6c74d0dd53c1d
+F src/analyze.c d23790787f80ebed58df7774744b4cf96401498b
 F src/attach.c c38ac5a520a231d5d0308fd7f2ad95191c867bae
 F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c ff743689c4d6c5cb55ad42ed9d174b2b3e71f1e3
@@ -182,7 +182,7 @@ F src/complete.c a5cf5b4b56390cfb7b8636e8f7ddef90258dd575
 F src/ctime.c 98f89724adc891a1a4c655bee04e33e716e05887
 F src/date.c e4d50b3283696836ec1036b695ead9a19e37a5ac
 F src/delete.c 37964e6c1d73ff49cbea9ff690c9605fb15f600e
-F src/expr.c 25a732f30ba391dfb00bbdc9ec079056c2fbced5
+F src/expr.c 5555f768c05d7d4a7840c6c2e72ad7aecbe0fe54
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 3343d551a8d810782257244fb33f2ce191493c39
 F src/func.c 1414c24c873c48796ad45942257a179a423ba42f
@@ -299,7 +299,7 @@ F src/vdbeInt.h 9cbaa84f53ddd2d09a0cf61a94337a3a035d08a0
 F src/vdbeapi.c 583d56b129dd27f12bed518270de9ebe521e6a75
 F src/vdbeaux.c 03591cca98ec50e1493043f0ff7abbece0b9c83d
 F src/vdbeblob.c 4f2e8e075d238392df98c5e03a64342465b03f90
-F src/vdbemem.c c0dc81285b7571b0a31c40f17846fe2397ec1cd9
+F src/vdbemem.c b5256445b318b0f2b3bc429028469cfbb08f19a5
 F src/vdbesort.c 2e7f683464fd5db3be4beaa1ff2d39e24fcb64b8
 F src/vdbetrace.c f95c2dff9041fcf07f871789c22ebb0648ea0b7c
 F src/vtab.c 5f81f8a59c1f5ddb94c918f25ed5d83578fcc633
@@ -321,7 +321,7 @@ F test/alter4.test c461150723ac957f3b2214aa0b11552cd72023ec
 F test/altermalloc.test e81ac9657ed25c6c5bb09bebfa5a047cd8e4acfc
 F test/amatch1.test b5ae7065f042b7f4c1c922933f4700add50cdb9f
 F test/analyze.test 3eb35a4af972f98422e5dc0586501b17d103d321
-F test/analyze3.test 75b9e42ea1e4edc919250450dc5762186965d4e6
+F test/analyze3.test 0f0ee6135b293a0e5af471a8423b80b688469d71
 F test/analyze4.test eff2df19b8dd84529966420f29ea52edc6b56213
 F test/analyze5.test 765c4e284aa69ca172772aa940946f55629bc8c4
 F test/analyze6.test f1c552ce39cca4ec922a7e4e0e5d0203d6b3281f
@@ -1203,7 +1203,7 @@ F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/extract.c 054069d81b095fbdc189a6f5d4466e40380505e2
 F tool/fast_vacuum.c 5ba0d6f5963a0a63bdc42840f678bad75b2ebce1
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
-F tool/fuzzershell.c 9e7e273da203037154b433bb67f10b0d9772b370
+F tool/fuzzershell.c 00c12b1e95095f43980ae3cafb51938eda577fe2
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
@@ -1251,7 +1251,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 59d1a3bb6050a812c4eb0d25ac53327081b9efed
-R c62ac4459285512471f07359006f6839
+P 5ae853aaebaee76c9265061984185f74c10c4c8b b940b0fa6cf68fef58344d269ad5d39468ffe72f
+R 9804529a8e22c5281a0b002dbd15342c
 U mistachkin
-Z 8e5b7cac312056ae4f94ac4a6cc605a8
+Z 86189532b6fc39f0925b12aaa4387878
