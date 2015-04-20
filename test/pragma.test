@@ -219,6 +219,24 @@ do_test pragma-1.14 {
     PRAGMA synchronous;
   }
 } {2}
+do_test pragma-1.14.1 {
+  execsql {
+    PRAGMA synchronous=4;
+    PRAGMA synchronous;
+  }
+} {0}
+do_test pragma-1.14.2 {
+  execsql {
+    PRAGMA synchronous=3;
+    PRAGMA synchronous;
+  }
+} {0}
+do_test pragma-1.14.3 {
+  execsql {
+    PRAGMA synchronous=10;
+    PRAGMA synchronous;
+  }
+} {2}
 } ;# ifcapable pager_pragmas
 
 # Test turning "flag" pragmas on and off.

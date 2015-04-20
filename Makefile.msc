@@ -1159,12 +1159,15 @@ sqlite3.exe:	$(TOP)\src\shell.c $(SHELL_CORE_DEP) $(LIBRESOBJS) sqlite3.h
 sqldiff.exe:	$(TOP)\tool\sqldiff.c sqlite3.c sqlite3.h
 	$(LTLINK) $(TOP)\tool\sqldiff.c sqlite3.c
 
+fuzzershell.exe:	$(TOP)\tool\fuzzershell.c sqlite3.c sqlite3.h
+	$(LTLINK) $(TOP)\tool\fuzzershell.c sqlite3.c
+
 mptester.exe:	$(TOP)\mptest\mptest.c $(SHELL_CORE_DEP) $(LIBRESOBJS) sqlite3.h
 	$(LTLINK) $(SHELL_COMPILE_OPTS) $(TOP)\mptest\mptest.c \
 		/link $(LTLINKOPTS) $(LTLIBPATHS) $(SHELL_LINK_OPTS) $(LIBRESOBJS) $(LIBREADLINE) $(LTLIBS) $(TLIBS)
 
-MPTEST1 = mptester mptest.db $(TOP)/mptest/crash01.test --repeat 20
-MPTEST2 = mptester mptest.db $(TOP)/mptest/multiwrite01.test --repeat 20
+MPTEST1 = mptester mptest.db $(TOP)\mptest\crash01.test --repeat 20
+MPTEST2 = mptester mptest.db $(TOP)\mptest\multiwrite01.test --repeat 20
 
 mptest:	mptester.exe
 	del /Q mptest.db 2>NUL
@@ -1612,6 +1615,9 @@ queryplantest:	testfixture.exe sqlite3.exe
 
 test:	testfixture.exe sqlite3.exe
 	.\testfixture.exe $(TOP)\test\veryquick.test
+
+smoketest:	testfixture.exe
+	.\testfixture.exe $(TOP)\test\main.test
 
 sqlite3_analyzer.c: $(SQLITE3C) $(TOP)\src\test_stat.c $(TOP)\src\tclsqlite.c $(TOP)\tool\spaceanal.tcl
 	copy $(SQLITE3C) + $(TOP)\src\test_stat.c + $(TOP)\src\tclsqlite.c $@

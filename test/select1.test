@@ -307,6 +307,9 @@ do_test select1-4.4 {
   set v [catch {execsql {SELECT f1 FROM test1 ORDER BY min(f1)}} msg]
   lappend v $msg
 } {1 {misuse of aggregate: min()}}
+do_catchsql_test select1-4.5 {
+  INSERT INTO test1(f1) SELECT f1 FROM test1 ORDER BY min(f1);
+} {1 {misuse of aggregate: min()}}
 
 # The restriction not allowing constants in the ORDER BY clause
 # has been removed.  See ticket #1768
@@ -1072,5 +1075,10 @@ if {[db one {PRAGMA locking_mode}]=="normal"} {
 do_test select1-16.1 {
   catchsql {SELECT 1 FROM (SELECT *)}
 } {1 {no tables specified}}
+
+# 2015-04-17:  assertion fix.
+do_catchsql_test select1-16.2 {
+  SELECT 1 FROM sqlite_master LIMIT 1,#1;
+} {1 {near "#1": syntax error}}
   
 finish_test
