@@ -1901,13 +1901,20 @@ static void fts5SegIterNext(
 ** the doclist.
 */
 static void fts5SegIterReverse(Fts5Index *p, int iIdx, Fts5SegIter *pIter){
+  Fts5DlidxIter *pDlidx = pIter->pDlidx;
   Fts5Data *pLast = 0;
   int pgnoLast = 0;
 
-  if( pIter->pDlidx ){
-    int iSegid = pIter->pSeg->iSegid;
-    pgnoLast = pIter->pDlidx->iLeafPgno;
-    pLast = fts5DataRead(p, FTS5_SEGMENT_ROWID(iIdx, iSegid, 0, pgnoLast));
+  if( pDlidx ){
+    /* If the doclist-iterator is already at EOF, then the current doclist
+    ** contains no entries except those on the current page. */
+    if( fts5DlidxIterEof(p, pDlidx)==0 ){
+      int iSegid = pIter->pSeg->iSegid;
+      pgnoLast = pDlidx->iLeafPgno;
+      pLast = fts5DataRead(p, FTS5_SEGMENT_ROWID(iIdx, iSegid, 0, pgnoLast));
+    }else{
+      pIter->iLeafOffset -= sqlite3Fts5GetVarintLen(pIter->nPos*2+pIter->bDel);
+    }
   }else{
     int iOff;                               /* Byte offset within pLeaf */
     Fts5Data *pLeaf = pIter->pLeaf;         /* Current leaf data */
@@ -1915,7 +1922,7 @@ static void fts5SegIterReverse(Fts5Index *p, int iIdx, Fts5SegIter *pIter){
     /* Currently, Fts5SegIter.iLeafOffset (and iOff) points to the first 
     ** byte of position-list content for the current rowid. Back it up
     ** so that it points to the start of the position-list size field. */
-    pIter->iLeafOffset -= sqlite3Fts5GetVarintLen(pIter->nPos*2 + pIter->bDel);
+    pIter->iLeafOffset -= sqlite3Fts5GetVarintLen(pIter->nPos*2+pIter->bDel);
     iOff = pIter->iLeafOffset;
     assert( iOff>=4 );
 
@@ -3285,6 +3292,9 @@ static void fts5TrimSegments(Fts5Index *p, Fts5MultiSegIter *pIter){
     if( pSeg->pSeg==0 ){
       /* no-op */
     }else if( pSeg->pLeaf==0 ){
+      /* All keys from this input segment have been transfered to the output.
+      ** Set both the first and last page-numbers to 0 to indicate that the
+      ** segment is now empty. */
       pSeg->pSeg->pgnoLast = 0;
       pSeg->pSeg->pgnoFirst = 0;
     }else{
@@ -4092,7 +4102,13 @@ static void fts5IndexIntegrityCheckSegment(
     }
   }
 
-  if( p->rc==SQLITE_OK && iter.iLeaf!=pSeg->pgnoLast ){
+  /* Either iter.iLeaf must be the rightmost leaf-page in the segment, or 
+  ** else the segment has been completely emptied by an ongoing merge
+  ** operation. */
+  if( p->rc==SQLITE_OK 
+   && iter.iLeaf!=pSeg->pgnoLast 
+   && (pSeg->pgnoFirst || pSeg->pgnoLast) 
+  ){
     p->rc = FTS5_CORRUPT;
   }
 

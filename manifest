@@ -1,5 +1,5 @@
-C Logically\sstore\supdates\sas\s(insert+delete)\swithin\sthe\sFTS\stree.\sThis\sallows\skeys\sto\sbe\sannihilated\smore\squickly\sunder\ssome\scircumstances.
-D 2015-04-15T18:49:20.008
+C Fix\ssome\sfts5\sproblems\swith\svery\slarge\sposition\slists.
+D 2015-04-20T18:48:57.780
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -112,7 +112,7 @@ F ext/fts5/fts5_buffer.c 3ba56cc6824c9f7b1e0695159e0a9c636f6b4a23
 F ext/fts5/fts5_config.c 0847facc8914f57ea4452c43ce109200dc65e894
 F ext/fts5/fts5_expr.c 5215137efab527577d36bdf9e44bfc2ec3e1be98
 F ext/fts5/fts5_hash.c 3cb5a3d04dd2030eb0ac8d544711dfd37c0e6529
-F ext/fts5/fts5_index.c 28f1bfadf3eb4f860c8b978f4d8d6ea0cf7c724d
+F ext/fts5/fts5_index.c f840e35cceafcd0597688467010a4d12feea9c76
 F ext/fts5/fts5_storage.c ac0f0937059c8d4f38a1f13aa5f2c2cd7edf3e0d
 F ext/fts5/fts5_tcl.c 617b6bb96545be8d9045de6967c688cd9cd15541
 F ext/fts5/fts5_tokenize.c c07f2c2f749282c1dbbf46bde1f6d7095c740b8b
@@ -133,6 +133,7 @@ F ext/fts5/test/fts5aj.test 05b569f5c16ea3098fb1984eec5cf50dbdaae5d8
 F ext/fts5/test/fts5ak.test 7b8c5df96df599293f920b7e5521ebc79f647592
 F ext/fts5/test/fts5al.test 6a5717faaf7f1e0e866360022d284903f3a4eede
 F ext/fts5/test/fts5auxdata.test c69b86092bf1a157172de5f9169731af3403179b
+F ext/fts5/test/fts5bigpl.test b1cfd00561350ab04994ba7dd9d48468e5e0ec3b
 F ext/fts5/test/fts5content.test 8dc302fccdff834d946497e9d862750ea87d4517
 F ext/fts5/test/fts5corrupt.test dbdcfe75749ed2f2eb3915cf68fd55d3dc3b058d
 F ext/fts5/test/fts5ea.test 04695560a444fcc00c3c4f27783bdcfbf71f030c
@@ -1292,7 +1293,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b29109a083e5cd442cdd19f29d7be45b09c4f661
-R 3f3d372bbefa9c63dd6c3e57000a1fa8
+P 50fae1f0006c0e946b5214e73eedf2687a0016f9
+R e3e266d7af429931ea61b2ad868bf28e
 U dan
-Z ff9a464604d7627b634f349ee851852e
+Z 88f214a9049d68201f885f825375d535
