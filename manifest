@@ -1,5 +1,5 @@
-C Many\snew\sconfiguration\soptions\sfor\sfuzzershell.
-D 2015-04-20T18:58:38.348
+C Add\sthe\s--mode\soption\sto\sfuzzershell.
+D 2015-04-20T22:36:49.631
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in faaf75b89840659d74501bea269c7e33414761c1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1203,7 +1203,7 @@ F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/extract.c 054069d81b095fbdc189a6f5d4466e40380505e2
 F tool/fast_vacuum.c 5ba0d6f5963a0a63bdc42840f678bad75b2ebce1
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
-F tool/fuzzershell.c a25ae00de7ec929723981bc5d0c8c484ea1e6a9c
+F tool/fuzzershell.c 00c12b1e95095f43980ae3cafb51938eda577fe2
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
@@ -1251,7 +1251,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2f58c8c9722fffc486610f9e6b08178d53a56b64
-R 3fade4dfead5d7d8a2c7049fe386ecdf
+P 41c954391690833bf2ece4ea14457ee4bdd74e90
+R 18124f1b8c247e9f547c30e618d3a441
 U drh
-Z 1d6c6c4ef178b17fd0f9732ebc91d908
+Z d312afa4cd0d932d0a233db0b53736ad

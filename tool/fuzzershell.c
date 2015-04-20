@@ -315,6 +315,14 @@ static int integerValue(const char *zArg){
   return (int)(isNeg? -v : v);
 }
 
+/*
+** Various operating modes
+*/
+#define FZMODE_Generic   1
+#define FZMODE_Strftime  2
+#define FZMODE_Printf    3
+#define FZMODE_Glob      4
+
 
 int main(int argc, char **argv){
   char *zIn = 0;          /* Input text */
@@ -340,6 +348,9 @@ int main(int argc, char **argv){
   void *pPCache = 0;            /* Allocated storage for pcache */
   void *pScratch = 0;           /* Allocated storage for scratch */
   int doAutovac = 0;            /* True for --autovacuum */
+  char *zSql;                   /* SQL to run */
+  char *zToFree = 0;            /* Call sqlite3_free() on this afte running zSql */
+  int iMode = FZMODE_Generic;   /* Operating mode */
 
 
   g.zArgv0 = argv[0];
@@ -375,6 +386,21 @@ int main(int argc, char **argv){
         nLook = integerValue(argv[i+1]);
         szLook = integerValue(argv[i+2]);
         i += 2;
+      }else
+      if( strcmp(z,"mode")==0 ){
+        if( i>=argc-1 ) abendError("missing argument on %s", argv[i]);
+        z = argv[++i];
+        if( strcmp(z,"generic")==0 ){
+          iMode = FZMODE_Printf;
+        }else if( strcmp(z, "glob")==0 ){
+          iMode = FZMODE_Glob;
+        }else if( strcmp(z, "printf")==0 ){
+          iMode = FZMODE_Printf;
+        }else if( strcmp(z, "strftime")==0 ){
+          iMode = FZMODE_Strftime;
+        }else{
+          abendError("unknown --mode: %s", z);
+        }
       }else
       if( strcmp(z,"pagesize")==0 ){
         if( i>=argc-1 ) abendError("missing argument on %s", argv[i]);
@@ -492,7 +518,23 @@ int main(int argc, char **argv){
     zIn[iNext] = 0;
     printf("INPUT (offset: %d, size: %d): [%s]\n",
             i, (int)strlen(&zIn[i]), &zIn[i]);
-    rc = sqlite3_exec(db, &zIn[i], execCallback, 0, &zErrMsg);
+    zSql = &zIn[i];
+    switch( iMode ){
+      case FZMODE_Glob:
+        zSql = zToFree = sqlite3_mprintf("SELECT glob(%s);", zSql);
+        break;
+      case FZMODE_Printf:
+        zSql = zToFree = sqlite3_mprintf("SELECT printf(%s);", zSql);
+        break;
+      case FZMODE_Strftime:
+        zSql = zToFree = sqlite3_mprintf("SELECT strftime(%s);", zSql);
+        break;
+    }
+    rc = sqlite3_exec(db, zSql, execCallback, 0, &zErrMsg);
+    if( zToFree ){
+      sqlite3_free(zToFree);
+      zToFree = 0;
+    }
     zIn[iNext] = cSaved;
 
     printf("RESULT-CODE: %d\n", rc);
