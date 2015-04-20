@@ -10,8 +10,13 @@
 **
 *************************************************************************
 **
-** This is a utility problem that computes the differences in content
+** This is a utility program that computes the differences in content
 ** between two SQLite databases.
+**
+** To compile, simply link against SQLite.
+**
+** See the showHelp() routine below for a brief description of how to
+** run the utility.
 */
 #include <stdio.h>
 #include <stdlib.h>

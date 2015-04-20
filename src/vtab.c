@@ -472,7 +472,7 @@ void sqlite3VtabArgExtend(Parse *pParse, Token *p){
     pArg->z = p->z;
     pArg->n = p->n;
   }else{
-    assert(pArg->z < p->z);
+    assert(pArg->z <= p->z);
     pArg->n = (int)(&p->z[p->n] - pArg->z);
   }
 }
@@ -559,6 +559,7 @@ static int vtabCallConstructor(
       rc = SQLITE_ERROR;
     }else{
       int iCol;
+      u8 oooHidden = 0;
       /* If everything went according to plan, link the new VTable structure
       ** into the linked list headed by pTab->pVTable. Then loop through the 
       ** columns of the table to see if any of them contain the token "hidden".
@@ -571,7 +572,10 @@ static int vtabCallConstructor(
         char *zType = pTab->aCol[iCol].zType;
         int nType;
         int i = 0;
-        if( !zType ) continue;
+        if( !zType ){
+          pTab->tabFlags |= oooHidden;
+          continue;
+        }
         nType = sqlite3Strlen30(zType);
         if( sqlite3StrNICmp("hidden", zType, 6)||(zType[6] && zType[6]!=' ') ){
           for(i=0; i<nType; i++){
@@ -594,6 +598,9 @@ static int vtabCallConstructor(
             zType[i-1] = '\0';
           }
           pTab->aCol[iCol].colFlags |= COLFLAG_HIDDEN;
+          oooHidden = TF_OOOHidden;
+        }else{
+          pTab->tabFlags |= oooHidden;
         }
       }
     }
@@ -957,7 +964,7 @@ int sqlite3VtabSavepoint(sqlite3 *db, int op, int iSavepoint){
   int rc = SQLITE_OK;
 
   assert( op==SAVEPOINT_RELEASE||op==SAVEPOINT_ROLLBACK||op==SAVEPOINT_BEGIN );
-  assert( iSavepoint>=0 );
+  assert( iSavepoint>=-1 );
   if( db->aVTrans ){
     int i;
     for(i=0; rc==SQLITE_OK && i<db->nVTrans; i++){

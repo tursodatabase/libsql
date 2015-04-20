@@ -16,6 +16,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix fts3aa
 
 # If SQLITE_ENABLE_FTS3 is defined, omit this file.
 ifcapable !fts3 {
@@ -220,6 +221,27 @@ do_execsql_test fts3aa-7.4 {
 do_catchsql_test fts3aa-7.5 {
   CREATE VIRTUAL TABLE t4 USING fts4(tokenize=simple, tokenize=simple);
 } {1 {unrecognized parameter: tokenize=simple}}
+
+do_execsql_test 8.0 {
+  CREATE VIRTUAL TABLE t0 USING fts4(order=desc);
+  BEGIN;
+  INSERT INTO t0(rowid, content) VALUES(1, 'abc');
+  UPDATE t0 SET docid=5 WHERE docid=1;
+  INSERT INTO t0(rowid, content) VALUES(6, 'abc');
+}
+do_execsql_test 8.1 {
+  SELECT docid FROM t0 WHERE t0 MATCH 'abc';
+} {6 5}
+do_execsql_test 8.2 {
+  SELECT docid FROM t0 WHERE t0 MATCH '"abc abc"';
+} {}
+do_execsql_test 8.3 { COMMIT }
+do_execsql_test 8.4 {
+  SELECT docid FROM t0 WHERE t0 MATCH 'abc';
+} {6 5}
+do_execsql_test 8.5 {
+  SELECT docid FROM t0 WHERE t0 MATCH '"abc abc"';
+} {}
 
 
 finish_test

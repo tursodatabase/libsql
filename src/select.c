@@ -111,7 +111,6 @@ Select *sqlite3SelectNew(
   Select standin;
   sqlite3 *db = pParse->db;
   pNew = sqlite3DbMallocZero(db, sizeof(*pNew) );
-  assert( db->mallocFailed || !pOffset || pLimit ); /* OFFSET implies LIMIT */
   if( pNew==0 ){
     assert( db->mallocFailed );
     pNew = &standin;
@@ -131,7 +130,7 @@ Select *sqlite3SelectNew(
   pNew->op = TK_SELECT;
   pNew->pLimit = pLimit;
   pNew->pOffset = pOffset;
-  assert( pOffset==0 || pLimit!=0 );
+  assert( pOffset==0 || pLimit!=0 || pParse->nErr>0 || db->mallocFailed!=0 );
   pNew->addrOpenEphm[0] = -1;
   pNew->addrOpenEphm[1] = -1;
   if( db->mallocFailed ) {
@@ -1381,7 +1380,7 @@ static const char *columnTypeImpl(
         ** of the SELECT statement. Return the declaration type and origin
         ** data for the result-set column of the sub-select.
         */
-        if( iCol>=0 && ALWAYS(iCol<pS->pEList->nExpr) ){
+        if( iCol>=0 && iCol<pS->pEList->nExpr ){
           /* If iCol is less than zero, then the expression requests the
           ** rowid of the sub-select or view. This expression is legal (see 
           ** test case misc2.2.2) - it always evaluates to NULL.
@@ -2108,8 +2107,7 @@ static int multiSelectValues(
   int nExpr = p->pEList->nExpr;
   int nRow = 1;
   int rc = 0;
-  assert( p->pNext==0 );
-  assert( p->selFlags & SF_AllValues );
+  assert( p->selFlags & SF_MultiValue );
   do{
     assert( p->selFlags & SF_Values );
     assert( p->op==TK_ALL || (p->op==TK_SELECT && p->pPrior==0) );
@@ -2218,7 +2216,7 @@ static int multiSelect(
 
   /* Special handling for a compound-select that originates as a VALUES clause.
   */
-  if( p->selFlags & SF_AllValues ){
+  if( p->selFlags & SF_MultiValue ){
     rc = multiSelectValues(pParse, p, &dest);
     goto multi_select_end;
   }
@@ -2629,7 +2627,7 @@ static int generateOutputSubroutine(
     ** of the scan loop.
     */
     case SRT_Mem: {
-      assert( pIn->nSdst==1 );
+      assert( pIn->nSdst==1 || pParse->nErr>0 );  testcase( pIn->nSdst!=1 );
       sqlite3ExprCodeMove(pParse, pIn->iSdst, pDest->iSDParm, 1);
       /* The LIMIT clause will jump out of the loop for us */
       break;
@@ -2860,8 +2858,10 @@ static int multiSelectOrderBy(
   if( aPermute ){
     struct ExprList_item *pItem;
     for(i=0, pItem=pOrderBy->a; i<nOrderBy; i++, pItem++){
-      assert( pItem->u.x.iOrderByCol>0
-          && pItem->u.x.iOrderByCol<=p->pEList->nExpr );
+      assert( pItem->u.x.iOrderByCol>0 );
+      /* assert( pItem->u.x.iOrderByCol<=p->pEList->nExpr ) is also true
+      ** but only for well-formed SELECT statements. */
+      testcase( pItem->u.x.iOrderByCol > p->pEList->nExpr );
       aPermute[i] = pItem->u.x.iOrderByCol - 1;
     }
     pKeyMerge = multiSelectOrderByKeyInfo(pParse, p, 1);
@@ -4422,7 +4422,7 @@ static void sqlite3SelectExpand(Parse *pParse, Select *pSelect){
     sqlite3WalkSelect(&w, pSelect);
   }
   w.xSelectCallback = selectExpander;
-  if( (pSelect->selFlags & SF_AllValues)==0 ){
+  if( (pSelect->selFlags & SF_MultiValue)==0 ){
     w.xSelectCallback2 = selectPopWith;
   }
   sqlite3WalkSelect(&w, pSelect);
@@ -5483,10 +5483,9 @@ int sqlite3Select(
   */
   sqlite3VdbeResolveLabel(v, iEnd);
 
-  /* The SELECT was successfully coded.   Set the return code to 0
-  ** to indicate no errors.
-  */
-  rc = 0;
+  /* The SELECT has been coded. If there is an error in the Parse structure,
+  ** set the return code to 1. Otherwise 0. */
+  rc = (pParse->nErr>0);
 
   /* Control jumps to here if an error is encountered above, or upon
   ** successful coding of the SELECT.

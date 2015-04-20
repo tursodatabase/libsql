@@ -51,6 +51,6 @@ do_test index3-99.1 {
   db close
   catch { sqlite3 db test.db }
   catchsql { DROP INDEX i1 }
-} {1 {malformed database schema (t1) - near "nonsense": syntax error}}
+} {1 {malformed database schema (t1)}}
 
 finish_test

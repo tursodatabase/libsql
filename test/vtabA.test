@@ -74,28 +74,39 @@ do_test vtabA-1.6 {
     SELECT * FROM t1e;
   }
 } {{value a} {value c}}
+do_execsql_test vtabA-1.7 {
+  DELETE FROM t1e;
+  INSERT INTO t1e SELECT 'abc','def';
+} {}
+do_execsql_test vtabA-1.8 {
+  INSERT INTO t1e VALUES('ghi','jkl'),('mno','pqr'),('stu','vwx');
+} {}
+do_execsql_test vtabA-1.9 {
+  SELECT a,b,c, '|' FROM t1e ORDER BY 1;
+} {abc {} def | ghi {} jkl | mno {} pqr | stu {} vwx |}
+
 
 # Test that the expansion of a '*' expression in the result set of
 # a SELECT does not include the hidden column.
 #
-do_test vtabA-1.7 {
+do_test vtabA-1.20 {
   execsql {
     INSERT INTO t1e SELECT * FROM t1e;
   }
 } {}
-do_test vtabA-1.8 {
+do_test vtabA-1.21 {
   execsql {
-    SELECT * FROM t1e;
+    SELECT * FROM t1e ORDER BY 1;
   }
-} {{value a} {value c} {value a} {value c}}
+} {abc def abc def ghi jkl ghi jkl mno pqr mno pqr stu vwx stu vwx}
 
 # Test that the declaration type of the hidden column does not include
 # the token "HIDDEN".
 #
-do_test vtabA-1.9 {
+do_test vtabA-1.22 {
   get_decltype t1e b
 } {VARCHAR}
-do_test vtabA-1.10 {
+do_test vtabA-1.23 {
   get_collist t1e
 } {a c}
 

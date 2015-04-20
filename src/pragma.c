@@ -946,7 +946,9 @@ void sqlite3Pragma(
         sqlite3ErrorMsg(pParse, 
             "Safety level may not be changed inside a transaction");
       }else{
-        pDb->safety_level = getSafetyLevel(zRight,0,1)+1;
+        int iLevel = (getSafetyLevel(zRight,0,1)+1) & PAGER_SYNCHRONOUS_MASK;
+        if( iLevel==0 ) iLevel = 1;
+        pDb->safety_level = iLevel;
         setAllPagerFlags(db);
       }
     }

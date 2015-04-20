@@ -64,11 +64,13 @@ static void out_of_memory(void){
 */
 static unsigned char *getContent(int ofst, int nByte){
   unsigned char *aData;
+  int got;
   aData = malloc(nByte+32);
   if( aData==0 ) out_of_memory();
   memset(aData, 0, nByte+32);
   lseek(db, ofst, SEEK_SET);
-  if( read(db, aData, nByte)<nByte ) memset(aData, 0, nByte);
+  got = read(db, aData, nByte);
+  if( got>0 && got<nByte ) memset(aData+got, 0, nByte-got);
   return aData;
 }
 
@@ -981,7 +983,7 @@ int main(int argc, char **argv){
   if( pagesize==0 ) pagesize = 1024;
   printf("Pagesize: %d\n", pagesize);
   fstat(db, &sbuf);
-  mxPage = sbuf.st_size/pagesize;
+  mxPage = (sbuf.st_size+pagesize-1)/pagesize;
   printf("Available pages: 1..%d\n", mxPage);
   if( argc==2 ){
     int i;

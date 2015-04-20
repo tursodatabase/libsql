@@ -193,7 +193,6 @@ void sqlite3BeginTrigger(
   /* Do not create a trigger on a system table */
   if( sqlite3StrNICmp(pTab->zName, "sqlite_", 7)==0 ){
     sqlite3ErrorMsg(pParse, "cannot create trigger on system table");
-    pParse->nErr++;
     goto trigger_cleanup;
   }
 
@@ -795,6 +794,7 @@ static void transferParseError(Parse *pTo, Parse *pFrom){
   if( pTo->nErr==0 ){
     pTo->zErrMsg = pFrom->zErrMsg;
     pTo->nErr = pFrom->nErr;
+    pTo->rc = pFrom->rc;
   }else{
     sqlite3DbFree(pFrom->db, pFrom->zErrMsg);
   }
