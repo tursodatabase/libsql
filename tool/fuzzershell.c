@@ -31,6 +31,29 @@
 **
 **    (4)  The eval() SQL function is added, allowing the fuzzer to do 
 **         interesting recursive operations.
+**
+** 2015-04-20: The input text can be divided into separate SQL chunks using
+** lines of the form:
+**
+**       |****<...>****|
+**
+** where the "..." is arbitrary text, except the "|" should really be "/".
+** ("|" is used here to avoid compiler warnings about nested comments.)
+** Each such SQL comment is printed as it is encountered.  A separate 
+** in-memory SQLite database is created to run each chunk of SQL.  This
+** feature allows the "queue" of AFL to be captured into a single big
+** file using a command like this:
+**
+**    (for i in id:*; do echo '|****<'$i'>****|'; cat $i; done) >~/all-queue.txt
+**
+** (Once again, change the "|" to "/") Then all elements of the AFL queue
+** can be run in a single go (for regression testing, for example, by typing:
+**
+**    fuzzershell -f ~/all-queue.txt >out.txt
+**
+** After running each chunk of SQL, the database connection is closed.  The
+** program aborts if the close fails or if there is any unfreed memory after
+** the close.
 */
 #include <stdio.h>
 #include <stdlib.h>
@@ -218,8 +241,9 @@ int main(int argc, char **argv){
   FILE *in = stdin;       /* Where to read SQL text from */
   int rc = SQLITE_OK;     /* Result codes from API functions */
   int i;                  /* Loop counter */
+  int iNext;              /* Next block of SQL */
   sqlite3 *db;            /* Open database */
-  sqlite3 *dbInit;        /* On-disk database used to initialize the in-memory db */
+  sqlite3 *dbInit = 0;    /* On-disk database used to initialize the in-memory db */
   const char *zInitDb = 0;/* Name of the initialization database file */
   char *zErrMsg = 0;      /* Error message returned from sqlite3_exec() */
 
@@ -250,45 +274,75 @@ int main(int argc, char **argv){
     }
   }
   sqlite3_config(SQLITE_CONFIG_LOG, shellLog, 0);
-  rc = sqlite3_open_v2(
-    "main.db", &db,
-    SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_MEMORY,
-    0);
-  if( rc!=SQLITE_OK ){
-    abendError("Unable to open the in-memory database");
-  }
-  if( zInitDb ){
-    sqlite3_backup *pBackup;
-    rc = sqlite3_open_v2(zInitDb, &dbInit, SQLITE_OPEN_READONLY, 0);
-    if( rc!=SQLITE_OK ){
-      abendError("unable to open initialization database \"%s\"", zInitDb);
-    }
-    pBackup = sqlite3_backup_init(db, "main", dbInit, "main");
-    rc = sqlite3_backup_step(pBackup, -1);
-    if( rc!=SQLITE_DONE ){
-      abendError("attempt to initialize the in-memory database failed (rc=%d)",rc);
-    }
-    sqlite3_backup_finish(pBackup);
-    sqlite3_close(dbInit);
-  }
-  sqlite3_trace(db, traceCallback, 0);
-  sqlite3_create_function(db, "eval", 1, SQLITE_UTF8, 0, sqlEvalFunc, 0, 0);
-  sqlite3_create_function(db, "eval", 2, SQLITE_UTF8, 0, sqlEvalFunc, 0, 0);
   while( !feof(in) ){
-    nAlloc += 1000;
-    zIn = sqlite3_realloc(zIn, nAlloc);
+    nAlloc += nAlloc+1000;
+    zIn = realloc(zIn, nAlloc);
     if( zIn==0 ) fatalError("out of memory");
     got = fread(zIn+nIn, 1, nAlloc-nIn-1, in); 
     nIn += (int)got;
     zIn[nIn] = 0;
     if( got==0 ) break;
   }
-  printf("INPUT (%d bytes): [%s]\n", nIn, zIn);
-  rc = sqlite3_exec(db, zIn, execCallback, 0, &zErrMsg);
-  printf("RESULT-CODE: %d\n", rc);
-  if( zErrMsg ){
-    printf("ERROR-MSG: [%s]\n", zErrMsg);
-    sqlite3_free(zErrMsg);
+  if( zInitDb ){
+    rc = sqlite3_open_v2(zInitDb, &dbInit, SQLITE_OPEN_READONLY, 0);
+    if( rc!=SQLITE_OK ){
+      abendError("unable to open initialization database \"%s\"", zInitDb);
+    }
   }
-  return rc!=SQLITE_OK;
+  for(i=0; i<nIn; i=iNext){
+    char cSaved;
+    if( strncmp(&zIn[i], "/****<",6)==0 ){
+      char *z = strstr(&zIn[i], ">****/");
+      if( z ){
+        z += 6;
+        printf("%.*s\n", (int)(z-&zIn[i]), &zIn[i]);
+        i += (int)(z-&zIn[i]);
+      }
+    }
+    for(iNext=i; iNext<nIn && strncmp(&zIn[iNext],"/****<",6)!=0; iNext++){}
+    
+    rc = sqlite3_open_v2(
+      "main.db", &db,
+      SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_MEMORY,
+      0);
+    if( rc!=SQLITE_OK ){
+      abendError("Unable to open the in-memory database");
+    }
+    if( zInitDb ){
+      sqlite3_backup *pBackup;
+      pBackup = sqlite3_backup_init(db, "main", dbInit, "main");
+      rc = sqlite3_backup_step(pBackup, -1);
+      if( rc!=SQLITE_DONE ){
+        abendError("attempt to initialize the in-memory database failed (rc=%d)",
+                   rc);
+      }
+      sqlite3_backup_finish(pBackup);
+    }
+    sqlite3_trace(db, traceCallback, 0);
+    sqlite3_create_function(db, "eval", 1, SQLITE_UTF8, 0, sqlEvalFunc, 0, 0);
+    sqlite3_create_function(db, "eval", 2, SQLITE_UTF8, 0, sqlEvalFunc, 0, 0);
+    sqlite3_limit(db, SQLITE_LIMIT_LENGTH, 1000000);
+
+    cSaved = zIn[iNext];
+    zIn[iNext] = 0;
+    printf("INPUT (offset: %d, size: %d): [%s]\n",
+            i, (int)strlen(&zIn[i]), &zIn[i]);
+    rc = sqlite3_exec(db, &zIn[i], execCallback, 0, &zErrMsg);
+    zIn[iNext] = cSaved;
+
+    printf("RESULT-CODE: %d\n", rc);
+    if( zErrMsg ){
+      printf("ERROR-MSG: [%s]\n", zErrMsg);
+      sqlite3_free(zErrMsg);
+    }
+    rc = sqlite3_close(db);
+    if( rc ){
+      abendError("sqlite3_close() failed with rc=%d", rc);
+    }
+    if( sqlite3_memory_used()>0 ){
+      abendError("memory in use after close: %lld bytes", sqlite3_memory_used());
+    }
+  }
+  free(zIn);
+  return 0;
 }
