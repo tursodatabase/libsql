@@ -255,13 +255,14 @@ static int whereClauseInsert(WhereClause *pWC, Expr *p, u16 wtFlags){
 ** all terms of the WHERE clause.
 */
 static void whereSplit(WhereClause *pWC, Expr *pExpr, u8 op){
+  Expr *pE2 = sqlite3ExprSkipCollate(pExpr);
   pWC->op = op;
-  if( pExpr==0 ) return;
-  if( pExpr->op!=op ){
+  if( pE2==0 ) return;
+  if( pE2->op!=op ){
     whereClauseInsert(pWC, pExpr, 0);
   }else{
-    whereSplit(pWC, pExpr->pLeft, op);
-    whereSplit(pWC, pExpr->pRight, op);
+    whereSplit(pWC, pE2->pLeft, op);
+    whereSplit(pWC, pE2->pRight, op);
   }
 }
 

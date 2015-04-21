@@ -1,5 +1,5 @@
-C Enable\scompilation\sand\sVSIX\spackage\screation\swith\sthe\sVisual\sStudio\s2015\sCTP.
-D 2015-04-21T00:23:38.259
+C Make\ssure\sthe\swhereSplit()\sroutine\sin\sthe\squery\splanner\sis\snot\sconfused\nby\sthe\slikely()\soperator.
+D 2015-04-21T02:12:13.667
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in faaf75b89840659d74501bea269c7e33414761c1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -307,7 +307,7 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 753995db83247f20361a8e8a874990b21a75abd9
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
-F src/where.c 723b4f614cd60b7198f5f1cc053362f8a28b0bed
+F src/where.c 32fe265e3dc74ef3b27deb9e6eb5fc3c71409612
 F src/whereInt.h cbe4aa57326998d89e7698ca65bb7c28541d483c
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1251,7 +1251,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b940b0fa6cf68fef58344d269ad5d39468ffe72f 5ae853aaebaee76c9265061984185f74c10c4c8b
-R 9804529a8e22c5281a0b002dbd15342c
-U mistachkin
-Z 2ec7897fcafe697e2540c7ecf3cbf657
+P 03b725a768290e3c7b31f1ba3310532fd7dc05cd
+R 1a86c7004bf5b29df45cd677c642d5c4
+U drh
+Z 973efc28f5c5e0de1e0d5148069074b3
