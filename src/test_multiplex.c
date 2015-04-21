@@ -568,15 +568,15 @@ static int multiplexOpen(
       if( pSubOpen==0 && rc==SQLITE_OK ) rc = SQLITE_CANTOPEN;
     }
     if( rc==SQLITE_OK ){
-      sqlite3_int64 sz;
+      sqlite3_int64 sz64;
 
-      rc = pSubOpen->pMethods->xFileSize(pSubOpen, &sz);
+      rc = pSubOpen->pMethods->xFileSize(pSubOpen, &sz64);
       if( rc==SQLITE_OK && zName ){
         int bExists;
         if( flags & SQLITE_OPEN_MASTER_JOURNAL ){
           pGroup->bEnabled = 0;
         }else
-        if( sz==0 ){
+        if( sz64==0 ){
           if( flags & SQLITE_OPEN_MAIN_JOURNAL ){
             /* If opening a main journal file and the first chunk is zero
             ** bytes in size, delete any subsequent chunks from the 
@@ -607,10 +607,10 @@ static int multiplexOpen(
           rc = pOrigVfs->xAccess(pOrigVfs, pGroup->aReal[1].z,
               SQLITE_ACCESS_EXISTS, &bExists);
           bExists = multiplexSubSize(pGroup, 1, &rc)>0;
-          if( rc==SQLITE_OK && bExists  && sz==(sz&0xffff0000) && sz>0
-              && sz!=pGroup->szChunk ){
-            pGroup->szChunk = (int)sz;
-          }else if( rc==SQLITE_OK && !bExists && sz>pGroup->szChunk ){
+          if( rc==SQLITE_OK && bExists && sz64==(sz64&0xffff0000) && sz64>0
+              && sz64!=pGroup->szChunk ){
+            pGroup->szChunk = (int)sz64;
+          }else if( rc==SQLITE_OK && !bExists && sz64>pGroup->szChunk ){
             pGroup->bEnabled = 0;
           }
         }
