@@ -1,5 +1,5 @@
-C Fix\ssome\sidentifier\sname\sde-quoting\sissues\sin\sthe\sforeign\skey\sand\strigger\slogic.
-D 2015-04-21T03:13:47.283
+C Fix\san\sfts4\sproblem\sto\sdo\swith\sthe\shandling\sof\sphrases\sthat\scontain\szero\stokens.
+D 2015-04-21T12:06:53.262
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in faaf75b89840659d74501bea269c7e33414761c1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -78,7 +78,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 29300a76fabbbb8fc30bb261c27d421df9f40c76
+F ext/fts3/fts3.c 1b198ddb76cd706722dacbbaeb17a2fde6fca2cc
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 3626655d6ba903a3919bb44e1c38e5f0f9d6be82
 F ext/fts3/fts3_aux.c 5c211e17a64885faeb16b9ba7772f9d5445c2365
@@ -587,6 +587,7 @@ F test/fts3expr.test 3401d47b229c4504424caf362cc4ff704cad4162
 F test/fts3expr2.test 18da930352e5693eaa163a3eacf96233b7290d1a
 F test/fts3expr3.test 9e91b8edbcb197bf2e92161aa7696446d96dce5f
 F test/fts3expr4.test e1be1248566f43c252d4404d52914f1fc4bfa065
+F test/fts3expr5.test f9abfffbf5e53d48a33e12a1e8f8ba2c551c9b49
 F test/fts3fault.test cb72dccb0a3b9f730f16c5240f3fcb9303eb1660
 F test/fts3fault2.test f953bb3cf903988172270a9a0aafd5a890b0f98f
 F test/fts3first.test dbdedd20914c8d539aa3206c9b34a23775644641
@@ -1251,7 +1252,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a526f58bc96c0fdead51b6bd9aafea7b48bf398e
-R 6263ca10bc3a41fc51b68112322cb0ff
-U drh
-Z 0f5648b8f58dd956d25b7cd57819a2e5
+P 59e92bd9521f1e8315a9a7e7fd3d63b0c75eaf0e
+R e9b5552434d39d6b3276df99138ae1dc
+U dan
+Z 403ed60a8d3b410bd6a0e0c95de6325c
