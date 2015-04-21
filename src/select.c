@@ -4608,7 +4608,8 @@ static void updateAccumulator(Parse *pParse, AggInfo *pAggInfo){
     }
     if( pF->iDistinct>=0 ){
       addrNext = sqlite3VdbeMakeLabel(v);
-      assert( nArg==1 );
+      testcase( nArg==0 );  /* Error condition */
+      testcase( nArg>1 );   /* Also an error */
       codeDistinct(pParse, pF->iDistinct, addrNext, 1, regAgg);
     }
     if( pF->pFunc->funcFlags & SQLITE_FUNC_NEEDCOLL ){

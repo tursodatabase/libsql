@@ -1,5 +1,5 @@
-C Fix\san\sfts4\sproblem\sto\sdo\swith\sthe\shandling\sof\sphrases\sthat\scontain\szero\stokens.
-D 2015-04-21T12:06:53.262
+C Change\san\sassert()\sin\sthe\saggregate\squery\scode\sgenerator\sinto\sa\stestcase().
+D 2015-04-21T15:16:48.720
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in faaf75b89840659d74501bea269c7e33414761c1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -230,7 +230,7 @@ F src/printf.c 08fa675c200aac29e561c6153f91f909ed17612f
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 53486a98c17b7ae09b8c2b398013e973ce4c1aae
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c 361dfc32244656bbe3f0e53d8ed791b3ec0c4be8
+F src/select.c d87c64b394293f00e85c95d729c8663b74d560ea
 F src/shell.c 78eabce4c16c45e36fea2368f95118116399ba8a
 F src/sqlite.h.in ca27603a36fcacdaac5a19d8ee35aaff8ce8516f
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
@@ -435,7 +435,7 @@ F test/corruptH.test 5dd4fa98c6c1ed33b178f9e8a48c4fdd3cfc9067
 F test/corruptI.test 221ad8b7f0a9ac6b80fc577e73b5ad8cdea31243
 F test/corruptJ.test 9e29e7a81ee3b6ac50f77ea7a9e2f3fa03f32d91
 F test/cost.test 19d314526616ce4473eb4e4e450fcb94499ce318
-F test/count.test 42a251178e32f617eda33f76236a7f79825a50b5
+F test/count.test cb2e0f934c6eb33670044520748d2ecccd46259c
 F test/coveridxscan.test cdb47d01acc4a634a34fd25abe85189e0d0f1e62
 F test/crash.test fb9dc4a02dcba30d4aa5c2c226f98b220b2b959f
 F test/crash2.test 5b14d4eb58b880e231361d3b609b216acda86651
@@ -1252,7 +1252,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 59e92bd9521f1e8315a9a7e7fd3d63b0c75eaf0e
-R e9b5552434d39d6b3276df99138ae1dc
-U dan
-Z 403ed60a8d3b410bd6a0e0c95de6325c
+P caba5be0b2bdaf4eb4af9af267c0c22dfbd3dba5
+R a42d4b42e1e0eeb130dc235a2eaf2ef6
+U drh
+Z f1234d42aa2af13247e7d70d40d070fb
