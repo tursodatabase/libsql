@@ -5538,6 +5538,7 @@ void sqlite3TreeViewSelect(TreeView *pView, const Select *p, u8 moreToFollow){
       StrAccum x;
       char zLine[100];
       sqlite3StrAccumInit(&x, zLine, sizeof(zLine), 0);
+      x.useMalloc = 0;
       sqlite3XPrintf(&x, 0, "{%d,*}", pItem->iCursor);
       if( pItem->zDatabase ){
         sqlite3XPrintf(&x, 0, " %s.%s", pItem->zDatabase, pItem->zName);
