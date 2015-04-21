@@ -1426,7 +1426,7 @@ static int fts5DlidxIterNext(Fts5DlidxIter *pIter){
 }
 
 static int fts5DlidxIterEof(Fts5Index *p, Fts5DlidxIter *pIter){
-  return (p->rc!=SQLITE_OK || pIter->bEof);
+  return pIter->bEof;
 }
 
 static void fts5DlidxIterLast(Fts5DlidxIter *pIter){
@@ -1460,6 +1460,7 @@ static int fts5DlidxIterPrev(Fts5DlidxIter *pIter){
     pIter->iRowid -= iVal;
     pIter->iLeafPgno--;
 
+    /* Skip backwards passed any 0x00 bytes. */
     while( iOff>pIter->iFirstOff 
         && a[iOff-1]==0x00 && (a[iOff-2] & 0x80)==0 
     ){
@@ -3698,6 +3699,7 @@ static void fts5FlushOneHash(Fts5Index *p, int iHash, int *pnLeaf){
             fts5PutU16(&pBuf->p[0], pBuf->n);   /* first docid on page */
             pBuf->n += sqlite3PutVarint(&pBuf->p[pBuf->n], iRowid);
             bFirstDocid = 0;
+            fts5WriteDlidxAppend(p, &writer, iRowid);
           }else{
             pBuf->n += sqlite3PutVarint(&pBuf->p[pBuf->n], iDelta);
           }
@@ -3720,13 +3722,16 @@ static void fts5FlushOneHash(Fts5Index *p, int iHash, int *pnLeaf){
                 n = nCopy - iPos;
               }else{
                 n = fts5PoslistPrefix(&pPoslist[iPos], nSpace);
+                assert( n>=nSpace );
               }
               assert( n>0 );
               fts5BufferSafeAppendBlob(pBuf, &pPoslist[iPos], n);
               iPos += n;
+              if( pBuf->n>=pgsz ){
+                fts5WriteFlushLeaf(p, &writer);
+                pBuf = &writer.aWriter[0].buf;
+              }
               if( iPos>=nCopy ) break;
-              fts5WriteFlushLeaf(p, &writer);
-              pBuf = &writer.aWriter[0].buf;
             }
             bFirstDocid = 1;
           }

@@ -1,0 +1,80 @@
+# 2015 April 21
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# This test is focused on uses of doclist-index records.
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+set testprefix fts5dlidx
+
+if { $tcl_platform(wordSize)<8 } {
+  finish_test
+  return
+}
+
+proc do_fb_test {tn sql res} {
+  set res2 [lsort -integer -decr $res]
+  uplevel [list do_execsql_test $tn.1 $sql $res]
+  uplevel [list do_execsql_test $tn.2 "$sql ORDER BY rowid DESC" $res2]
+}
+
+do_execsql_test 1.0 { 
+  CREATE VIRTUAL TABLE t1 USING fts5(x);
+  INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
+}
+
+foreach {tn spc1 spc2 mul} {
+  1 10  100 1000
+  2 1   1   128
+} {
+  set xdoc [list]
+  set ydoc [list]
+  
+  execsql { DELETE FROM t1 }
+
+  do_test 1.$tn.1 {
+  
+    execsql BEGIN
+    for {set i 0} {$i < 10000} {incr i} {
+      set rowid [expr $i * $mul]
+      set doc "a b c a b c a b c a b c a b c"
+      if {($i % $spc1)==0} { 
+        lappend xdoc $rowid
+        append doc " x" 
+        if {($i % $spc2)==0} { 
+          lappend ydoc $rowid
+          append doc " y" 
+        }
+      }
+      execsql { INSERT INTO t1(rowid, x) VALUES($rowid, $doc) }
+    }
+    execsql COMMIT
+    execsql { INSERT INTO t1(t1) VALUES('integrity-check') }
+  } {}
+  
+  do_execsql_test 1.$tn.2 { INSERT INTO t1(t1) VALUES('integrity-check') }
+  
+  do_fb_test 1.$tn.3.1 { SELECT rowid FROM t1 WHERE t1 MATCH 'a AND x' } $xdoc
+  do_fb_test 1.$tn.3.2 { SELECT rowid FROM t1 WHERE t1 MATCH 'x AND a' } $xdoc
+  
+  do_fb_test 1.$tn.4.1 { SELECT rowid FROM t1 WHERE t1 MATCH 'a AND y' } $ydoc
+  do_fb_test 1.$tn.4.2 { SELECT rowid FROM t1 WHERE t1 MATCH 'y AND a' } $ydoc
+  
+  do_fb_test 1.$tn.5.1 { 
+    SELECT rowid FROM t1 WHERE t1 MATCH 'a + b + c + x' } $xdoc
+  do_fb_test 1.$tn.5.2 { 
+    SELECT rowid FROM t1 WHERE t1 MATCH 'b + c + x + y' } $ydoc
+
+}
+
+
+finish_test
+
