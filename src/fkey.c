@@ -1275,13 +1275,12 @@ static Trigger *fkActionTrigger(
     pTrigger = (Trigger *)sqlite3DbMallocZero(db, 
         sizeof(Trigger) +         /* struct Trigger */
         sizeof(TriggerStep) +     /* Single step in trigger program */
-        nFrom + 1                 /* Space for pStep->target.z */
+        nFrom + 1                 /* Space for pStep->zTarget */
     );
     if( pTrigger ){
       pStep = pTrigger->step_list = (TriggerStep *)&pTrigger[1];
-      pStep->target.z = (char *)&pStep[1];
-      pStep->target.n = nFrom;
-      memcpy((char *)pStep->target.z, zFrom, nFrom);
+      pStep->zTarget = (char *)&pStep[1];
+      memcpy((char *)pStep->zTarget, zFrom, nFrom);
   
       pStep->pWhere = sqlite3ExprDup(db, pWhere, EXPRDUP_REDUCE);
       pStep->pExprList = sqlite3ExprListDup(db, pList, EXPRDUP_REDUCE);

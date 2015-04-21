@@ -1,5 +1,5 @@
-C Fix\sa\smemory\sleak\sin\sthe\sSELECT\scode\sgenerator\stracing\slogic\s(code\sthat\sis\nomitted\sin\snon-debugging\sbuilds).
-D 2015-04-21T16:09:07.623
+C Ensure\sthat\stables\snames\sare\sdequoted\sexactly\sonce\sby\sthe\strigger\slogic.
+D 2015-04-21T16:38:49.045
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in faaf75b89840659d74501bea269c7e33414761c1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -184,7 +184,7 @@ F src/date.c e4d50b3283696836ec1036b695ead9a19e37a5ac
 F src/delete.c 37964e6c1d73ff49cbea9ff690c9605fb15f600e
 F src/expr.c 5555f768c05d7d4a7840c6c2e72ad7aecbe0fe54
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
-F src/fkey.c 6040cf888922273171f30b8d6e0726aeae4ec82d
+F src/fkey.c c9b63a217d86582c22121699a47f22f524608869
 F src/func.c 1414c24c873c48796ad45942257a179a423ba42f
 F src/global.c 4f77cadbc5427d00139ba43d0f3979804cbb700e
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
@@ -235,7 +235,7 @@ F src/shell.c 78eabce4c16c45e36fea2368f95118116399ba8a
 F src/sqlite.h.in ca27603a36fcacdaac5a19d8ee35aaff8ce8516f
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
-F src/sqliteInt.h 3a1fccc2bb62ab16750730b6f6f24305e686a0ce
+F src/sqliteInt.h 8abcea1295138f10ef8f7ed38db5f1b573b93ece
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c f266ad8a2892d659b74f0f50cb6a88b6e7c12179
 F src/table.c e7a09215315a978057fb42c640f890160dbcc45e
@@ -288,7 +288,7 @@ F src/test_vfstrace.c bab9594adc976cbe696ff3970728830b4c5ed698
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 6bbcc9fe50c917864d48287b4792d46d6e873481
 F src/tokenize.c b7fb584c2be5ec39b6fdf04b185e7c6f33f8dc15
-F src/trigger.c 45db6f59c6a945e1fe1acbdc77263c5c414d4c65
+F src/trigger.c 322f23aad694e8f31d384dcfa386d52a48d3c52f
 F src/update.c 3c4ecc282accf12d39edb8d524cf089645e55a13
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c a6431c92803b975b7322724a7b433e538d243539
@@ -1088,7 +1088,7 @@ F test/trigger8.test 30cb0530bd7c4728055420e3f739aa00412eafa4
 F test/trigger9.test 2226ec795a33b0460ab5cf8891e9054cc7edef41
 F test/triggerA.test fe5597f47ee21bacb4936dc827994ed94161e332
 F test/triggerB.test 56780c031b454abac2340dbb3b71ac5c56c3d7fe
-F test/triggerC.test a68980c5955d62ee24be6f97129d824f199f9a4c
+F test/triggerC.test 302d8995f5ffe63bbc15053abb3ef7a39cf5a092
 F test/triggerD.test 8e7f3921a92a5797d472732108109e44575fa650
 F test/triggerE.test 355e9c5cbaed5cd039a60baad1fb2197caeb8e52
 F test/tt3_checkpoint.c 9e75cf7c1c364f52e1c47fd0f14c4340a9db0fe1
@@ -1252,7 +1252,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 718d5d0eab045a874107e078a857226a80ab912d
-R 7e6bc612737dab76da35e37065b9b922
-U drh
-Z ba983635f4ecc26ab029799e1b9c58b7
+P b623ebd859dcb1d99398aa9953f6b113bad26304
+R 1545a9c9d59837055bc5d4ecbd66cac7
+U dan
+Z a1ff940bb9d58b1311bd4296ffd3ef6a
