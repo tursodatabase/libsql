@@ -1,5 +1,5 @@
-C Change\san\sassert()\sin\sthe\saggregate\squery\scode\sgenerator\sinto\sa\stestcase().
-D 2015-04-21T15:16:48.720
+C Fix\san\sobscure\sproblem\swith\s"INSERT\sINTO\stbl(cols)\sSELECT"\sstatements\swhere\sthe\sSELECT\sis\sa\scompound\swith\san\sORDER\sBY\sand\s"cols"\sis\sa\sstrict\ssubset\sof\stbl's\scolumns.
+D 2015-04-21T15:49:04.252
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in faaf75b89840659d74501bea269c7e33414761c1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -230,7 +230,7 @@ F src/printf.c 08fa675c200aac29e561c6153f91f909ed17612f
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 53486a98c17b7ae09b8c2b398013e973ce4c1aae
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c d87c64b394293f00e85c95d729c8663b74d560ea
+F src/select.c b14a9e1ee035166df10f8f5c9379ac697ef43f62
 F src/shell.c 78eabce4c16c45e36fea2368f95118116399ba8a
 F src/sqlite.h.in ca27603a36fcacdaac5a19d8ee35aaff8ce8516f
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
@@ -665,7 +665,7 @@ F test/indexedby.test 5f527a78bae74c61b8046ae3037f9dfb0bf0c353
 F test/indexfault.test 31d4ab9a7d2f6e9616933eb079722362a883eb1d
 F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
 F test/insert.test 38742b5e9601c8f8d76e9b7555f7270288c2d371
-F test/insert2.test 4f3a04d168c728ed5ec2c88842e772606c7ce435
+F test/insert2.test 4d14b8f1b810a41995f6286b64a6943215d52208
 F test/insert3.test 1b7db95a03ad9c5013fdf7d6722b6cd66ee55e30
 F test/insert4.test a20432f1c0fbbcff8f11d0e6ab4acb8c9db58023
 F test/insert5.test 394f96728d1258f406fe5f5aeb0aaf29487c39a6
@@ -1252,7 +1252,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P caba5be0b2bdaf4eb4af9af267c0c22dfbd3dba5
-R a42d4b42e1e0eeb130dc235a2eaf2ef6
-U drh
-Z f1234d42aa2af13247e7d70d40d070fb
+P d1e6bc918b0c8e0701f5e15afb91b84a9004231b
+R 7ccd1057167111672b7d4496a5645687
+U dan
+Z 692b69290119d874ac81343f57f21abd
