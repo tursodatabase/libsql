@@ -1,5 +1,5 @@
-C Test\scase\sfor\sthe\sprevious\scheck-in.
-D 2015-04-21T02:17:30.839
+C Fix\ssome\sidentifier\sname\sde-quoting\sissues\sin\sthe\sforeign\skey\sand\strigger\slogic.
+D 2015-04-21T03:13:47.283
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in faaf75b89840659d74501bea269c7e33414761c1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -184,7 +184,7 @@ F src/date.c e4d50b3283696836ec1036b695ead9a19e37a5ac
 F src/delete.c 37964e6c1d73ff49cbea9ff690c9605fb15f600e
 F src/expr.c 5555f768c05d7d4a7840c6c2e72ad7aecbe0fe54
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
-F src/fkey.c 3343d551a8d810782257244fb33f2ce191493c39
+F src/fkey.c 6040cf888922273171f30b8d6e0726aeae4ec82d
 F src/func.c 1414c24c873c48796ad45942257a179a423ba42f
 F src/global.c 4f77cadbc5427d00139ba43d0f3979804cbb700e
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
@@ -288,7 +288,7 @@ F src/test_vfstrace.c bab9594adc976cbe696ff3970728830b4c5ed698
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 6bbcc9fe50c917864d48287b4792d46d6e873481
 F src/tokenize.c b7fb584c2be5ec39b6fdf04b185e7c6f33f8dc15
-F src/trigger.c bc647c712454c9b209fac082bb82870b5fd6fa54
+F src/trigger.c 45db6f59c6a945e1fe1acbdc77263c5c414d4c65
 F src/update.c 3c4ecc282accf12d39edb8d524cf089645e55a13
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c a6431c92803b975b7322724a7b433e538d243539
@@ -504,7 +504,7 @@ F test/extension01.test 00d13cec817f331a687a243e0e5a2d87b0e358c9
 F test/fallocate.test 3e979af17dfa7e5e9dda5eba1a696c04fa9d47f7
 F test/filectrl.test 14fa712e42c4cb791e09dfd58a6a03efb47ef13a
 F test/filefmt.test cb34663f126cbc2d358af552dcaf5c72769b0146
-F test/fkey1.test e1d1fa84cde579185ea01358436839703e415a5b
+F test/fkey1.test de5b287f6a480b36bd51e8debcf48168e26e4ed2
 F test/fkey2.test f3d27ecba480a348c328965d154214719bb158a9
 F test/fkey3.test 76d475c80b84ee7a5d062e56ccb6ea68882e2b49
 F test/fkey4.test 86446017011273aad8f9a99c1a65019e7bd9ca9d
@@ -1251,7 +1251,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 588db14ffb4b0e8e76d511b7b1541db3ec78836a
-R 0379e03a168715422bfe2697c2af7c68
+P a526f58bc96c0fdead51b6bd9aafea7b48bf398e
+R 6263ca10bc3a41fc51b68112322cb0ff
 U drh
-Z ee4991a8fe0a3ae557d83e10280b0c68
+Z 0f5648b8f58dd956d25b7cd57819a2e5
