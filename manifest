@@ -1,5 +1,5 @@
-C Make\ssure\sthe\swhereSplit()\sroutine\sin\sthe\squery\splanner\sis\snot\sconfused\nby\sthe\slikely()\soperator.
-D 2015-04-21T02:12:13.667
+C Test\scase\sfor\sthe\sprevious\scheck-in.
+D 2015-04-21T02:17:30.839
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in faaf75b89840659d74501bea269c7e33414761c1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -839,7 +839,7 @@ F test/securedel2.test 2d54c28e46eb1fd6902089958b20b1b056c6f1c5
 F test/select1.test be62204d2bd9a5a8a149e9974cfddce893d8f686
 F test/select2.test 352480e0e9c66eda9c3044e412abdf5be0215b56
 F test/select3.test 2ce595f8fb8e2ac10071d3b4e424cadd4634a054
-F test/select4.test a3201fa921fdfc1397cc629e78c7a976e198a40d
+F test/select4.test 48e14766d98b744b2202cca6d4679bf7ef3784c8
 F test/select5.test e758b8ef94f69b111df4cb819008856655dcd535
 F test/select6.test 39eac4a5c03650b2b473c532882273283ee8b7a0
 F test/select7.test 7fd2ef598cfabb6b9ff6ac13973b91d0527df49d
@@ -1251,7 +1251,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 03b725a768290e3c7b31f1ba3310532fd7dc05cd
-R 1a86c7004bf5b29df45cd677c642d5c4
+P 588db14ffb4b0e8e76d511b7b1541db3ec78836a
+R 0379e03a168715422bfe2697c2af7c68
 U drh
-Z 973efc28f5c5e0de1e0d5148069074b3
+Z ee4991a8fe0a3ae557d83e10280b0c68
