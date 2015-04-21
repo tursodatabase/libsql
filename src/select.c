@@ -1700,6 +1700,8 @@ static void selectAddColumnTypeAndCollation(
   a = pSelect->pEList->a;
   for(i=0, pCol=pTab->aCol; i<pTab->nCol; i++, pCol++){
     p = a[i].pExpr;
+    if( pCol->zType ) break;
+    if( pCol->zColl ) break;
     pCol->zType = sqlite3DbStrDup(db, columnType(&sNC, p,0,0,0, &pCol->szEst));
     szAll += pCol->szEst;
     pCol->affinity = sqlite3ExprAffinity(p);
