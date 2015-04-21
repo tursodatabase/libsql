@@ -188,6 +188,12 @@
 **
 **   UPDATE ft1 SET b = 'usa' WHERE rowid = 12;
 **
+** The data_xxx tables themselves should have no PRIMARY KEY declarations.
+** However, OTA is more efficient if reading the rows in from each data_xxx
+** table in "rowid" order is roughly the same as reading them sorted by
+** the PRIMARY KEY of the corresponding target database table. In other 
+** words, rows should be sorted using the destination table PRIMARY KEY 
+** fields before they are inserted into the data_xxx tables.
 **
 ** USAGE
 **

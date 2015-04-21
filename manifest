@@ -1,5 +1,5 @@
-C Ensure\sthat\sfilenames\spassed\sto\sthe\sVFS\sxOpen()\sfunction\sare\sterminated\sby\s2\s'\\0'\sbytes.
-D 2015-04-17T17:00:52.068
+C Add\sa\scomment\sto\ssqlite3ota.h.\sNo\scode\schanges.
+D 2015-04-21T15:35:30.574
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 79b306896135a2305cfb7e6d88990fc4820fb917
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -139,7 +139,7 @@ F ext/ota/otacrash.test 8346192b2d46cbe7787d5d65904d81d3262a3cbf
 F ext/ota/otafault.test 8c43586c2b96ca16bbce00b5d7e7d67316126db8
 F ext/ota/otafault2.test fa202a98ca221faec318f3e5c5f39485b1256561
 F ext/ota/sqlite3ota.c b45d73607b78eba89ca224fb0d10e10d1b32b6b0
-F ext/ota/sqlite3ota.h 5b1453917e955701b0232c0dfb0884b3d598feb1
+F ext/ota/sqlite3ota.h a57edd7097b170842350f7024142bd23693ef17f
 F ext/ota/test_ota.c e34c801c665d64b4b9e00b71f1acf8c652404b2b
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 14e6239434d4e3f65d3e90320713f26aa24e167f
@@ -1269,7 +1269,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c3dc15e71782fc70e92b71ad9eec0cf8ffef611f
-R c2474b91078725af2bd1a6c2f0fedd19
+P 66eff473c3634edb42f6ad6955acfba3e3a10def
+R b0ede25cbd76dcce408ddbe246efdf05
 U dan
-Z f5f8b3c1bf2f5b9b81d7f4245d8bd01a
+Z f4ef1c4f6a4788f592c8604fbd633b01
