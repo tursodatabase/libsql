@@ -1473,45 +1473,31 @@ static int fts5DlidxIterPrev(Fts5DlidxIter *pIter){
   return pIter->bEof;
 }
 
-static void fts5DlidxIterInitFromData(
-  Fts5Index *p,                   /* Fts5 Backend to iterate within */
-  int bRev,                       /* True for ORDER BY ASC */
-  int iLeafPgno,                  /* Leaf page number dlidx is for */
-  Fts5Data *pDlidx,               /* Leaf index data */
-  Fts5DlidxIter **ppIter          /* OUT: Populated iterator */
-){
-  Fts5DlidxIter *pIter = *ppIter;
-
-  if( pIter==0 ){
-    *ppIter = pIter = (Fts5DlidxIter*)fts5IdxMalloc(p, sizeof(Fts5DlidxIter));
-    if( pIter==0 ){ 
-      fts5DataRelease(pDlidx);
-      return;
-    }
-  }else{
-    memset(pIter, 0, sizeof(Fts5DlidxIter));
-  }
-
-  pIter->pData = pDlidx;
-  pIter->iLeafPgno = iLeafPgno;
-  if( bRev==0 ){
-    fts5DlidxIterFirst(pIter);
-  }else{
-    fts5DlidxIterLast(pIter);
-  }
-}
-
-static void fts5DlidxIterInit(
+static Fts5DlidxIter *fts5DlidxIterInit(
   Fts5Index *p,                   /* Fts5 Backend to iterate within */
   int bRev,                       /* True for ORDER BY ASC */
   int iIdx, int iSegid,           /* Segment iSegid within index iIdx */
-  int iLeafPgno,                  /* Leaf page number to load dlidx for */
-  Fts5DlidxIter **ppIter          /* OUT: Populated iterator */
+  int iLeafPg                     /* Leaf page number to load dlidx for */
 ){
-  Fts5Data *pDlidx;
-  pDlidx = fts5DataRead(p, FTS5_DOCLIST_IDX_ROWID(iIdx, iSegid, iLeafPgno));
-  if( pDlidx==0 ) return;
-  fts5DlidxIterInitFromData(p, bRev, iLeafPgno, pDlidx, ppIter);
+  Fts5DlidxIter *pIter;
+
+  pIter = (Fts5DlidxIter*)fts5IdxMalloc(p, sizeof(Fts5DlidxIter));
+  if( pIter==0 ) return 0;
+
+  pIter->pData = fts5DataRead(p, FTS5_DOCLIST_IDX_ROWID(iIdx, iSegid, iLeafPg));
+  if( pIter->pData==0 ){
+    sqlite3_free(pIter);
+    pIter = 0;
+  }else{
+    pIter->iLeafPgno = iLeafPg;
+    if( bRev==0 ){
+      fts5DlidxIterFirst(pIter);
+    }else{
+      fts5DlidxIterLast(pIter);
+    }
+  }
+
+  return pIter;
 }
 
 /*
@@ -2030,7 +2016,7 @@ static void fts5SegIterLoadDlidx(Fts5Index *p, int iIdx, Fts5SegIter *pIter){
     }
   }
 
-  fts5DlidxIterInit(p, bRev, iIdx, iSeg, pIter->iTermLeafPgno, &pIter->pDlidx);
+  pIter->pDlidx = fts5DlidxIterInit(p, bRev, iIdx, iSeg, pIter->iTermLeafPgno);
 }
 
 /*
@@ -3975,7 +3961,7 @@ static void fts5DlidxIterTestReverse(
   i64 cksum1 = 13;
   i64 cksum2 = 13;
 
-  for(fts5DlidxIterInit(p, 0, iIdx, iSegid, iLeaf, &pDlidx);
+  for(pDlidx=fts5DlidxIterInit(p, 0, iIdx, iSegid, iLeaf);
       fts5DlidxIterEof(p, pDlidx)==0;
       fts5DlidxIterNext(pDlidx)
   ){
@@ -3986,7 +3972,7 @@ static void fts5DlidxIterTestReverse(
   fts5DlidxIterFree(pDlidx);
   pDlidx = 0;
 
-  for(fts5DlidxIterInit(p, 1, iIdx, iSegid, iLeaf, &pDlidx);
+  for(pDlidx=fts5DlidxIterInit(p, 1, iIdx, iSegid, iLeaf);
       fts5DlidxIterEof(p, pDlidx)==0;
       fts5DlidxIterPrev(pDlidx)
   ){
@@ -4063,7 +4049,7 @@ static void fts5IndexIntegrityCheckSegment(
       int iPg;
       i64 iKey;
 
-      for(fts5DlidxIterInit(p, 0, iIdx, iSegid, iter.iLeaf, &pDlidx);
+      for(pDlidx=fts5DlidxIterInit(p, 0, iIdx, iSegid, iter.iLeaf);
           fts5DlidxIterEof(p, pDlidx)==0;
           fts5DlidxIterNext(pDlidx)
       ){

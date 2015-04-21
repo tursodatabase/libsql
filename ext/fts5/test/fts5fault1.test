@@ -31,8 +31,6 @@ ifcapable !fts5 {
 #
 #
 
-if 1 {
-
 faultsim_save_and_close
 do_faultsim_test 1 -prep {
   faultsim_restore_and_reopen
@@ -317,8 +315,6 @@ do_faultsim_test 8.1 -faults oom* -prep {
   faultsim_test_result [list 0 $::res]
 }
 
-}
-
 #-------------------------------------------------------------------------
 # Segment promotion.
 #
@@ -336,13 +332,13 @@ do_test 9.0 {
   }
   fts5_level_segs s2
 } {0 1}
+set insert_doc [db one {SELECT rnddoc(160)}]
 faultsim_save_and_close
 
 do_faultsim_test 9.1 -faults oom-* -prep {
   faultsim_restore_and_reopen
-  db func rnddoc fts5_rnddoc
 } -body {
-  execsql { INSERT INTO s2 VALUES(rnddoc(160)) }
+  execsql { INSERT INTO s2 VALUES($::insert_doc) }
 } -test {
   faultsim_test_result {0 {}}
   if {$testrc==0} {

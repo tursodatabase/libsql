@@ -1,5 +1,5 @@
-C Fix\san\sfts5\sproblem\swith\slarge\sdeletes.
-D 2015-04-21T19:07:39.210
+C Fix\sa\sproblem\sin\sfts5fault1.test.
+D 2015-04-21T20:13:38.631
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 88a3e6261286db378fdffa1124cad11b3c05f5bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -112,7 +112,7 @@ F ext/fts5/fts5_buffer.c 3ba56cc6824c9f7b1e0695159e0a9c636f6b4a23
 F ext/fts5/fts5_config.c 0847facc8914f57ea4452c43ce109200dc65e894
 F ext/fts5/fts5_expr.c 5215137efab527577d36bdf9e44bfc2ec3e1be98
 F ext/fts5/fts5_hash.c 3cb5a3d04dd2030eb0ac8d544711dfd37c0e6529
-F ext/fts5/fts5_index.c abf74b5e0d96b954911b6db3e13dce008c091303
+F ext/fts5/fts5_index.c 6ae86ef3f266c303cbf4a04fe63e8da54d91cd09
 F ext/fts5/fts5_storage.c ac0f0937059c8d4f38a1f13aa5f2c2cd7edf3e0d
 F ext/fts5/fts5_tcl.c 617b6bb96545be8d9045de6967c688cd9cd15541
 F ext/fts5/fts5_tokenize.c c07f2c2f749282c1dbbf46bde1f6d7095c740b8b
@@ -139,7 +139,7 @@ F ext/fts5/test/fts5corrupt.test dbdcfe75749ed2f2eb3915cf68fd55d3dc3b058d
 F ext/fts5/test/fts5dlidx.test 710d1eaf44e6fbb09dfa73b7fd488227d8cc751a
 F ext/fts5/test/fts5ea.test 04695560a444fcc00c3c4f27783bdcfbf71f030c
 F ext/fts5/test/fts5eb.test 728a1f23f263548f5c29b29dfb851b5f2dbe723e
-F ext/fts5/test/fts5fault1.test fbd8612889234849ff041f5b36f8e390feeed46e
+F ext/fts5/test/fts5fault1.test ed71717a479bef32d05f02d9c48691011d160d4d
 F ext/fts5/test/fts5near.test 3f9f64e16cac82725d03d4e04c661090f0b3b947
 F ext/fts5/test/fts5optimize.test 0028c90a7817d3e576d1148fc8dff17d89054e54
 F ext/fts5/test/fts5porter.test 50322599823cb8080a99f0ec0c39f7d0c12bcb5e
@@ -1294,7 +1294,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2ea8f9cbe67dac60c1a0a661c95a03ecfa9a0b9a
-R f13e2690ef21877d2344bab07fedcde6
+P e50e8031d6f804ebe50e0eec9a8b6e7f0152ecc3
+R 60eea8ec1517faa88921988ca09638c5
 U dan
-Z 02eb8d79520bf4e8512cc80bc0c885cd
+Z b632ef0339d92005d6b22a3d7746ce59
