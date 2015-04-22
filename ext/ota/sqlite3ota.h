@@ -229,6 +229,19 @@
 ** To remove all OTA extension state information, returning an OTA database 
 ** to its original contents, it is sufficient to drop all tables that begin
 ** with the prefix "ota_"
+**
+** DATABASE LOCKING
+**
+** An OTA update may not be applied to a database in WAL mode. Attempting
+** to do so is an error (SQLITE_ERROR).
+**
+** While an OTA handle is open, a SHARED lock may be held on the target
+** database file. This means it is possible for other clients to read the
+** database, but not to write it.
+**
+** If an OTA update is started and then suspended before it is completed,
+** then an external client writes to the database, then attempting to resume
+** the suspended OTA update is also an error (SQLITE_BUSY).
 */
 
 #ifndef _SQLITE3OTA_H
