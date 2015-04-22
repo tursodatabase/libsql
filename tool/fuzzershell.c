@@ -351,6 +351,7 @@ int main(int argc, char **argv){
   char *zSql;                   /* SQL to run */
   char *zToFree = 0;            /* Call sqlite3_free() on this afte running zSql */
   int iMode = FZMODE_Generic;   /* Operating mode */
+  const char *zCkGlob = 0;      /* Inputs must match this glob */
 
 
   g.zArgv0 = argv[0];
@@ -392,12 +393,16 @@ int main(int argc, char **argv){
         z = argv[++i];
         if( strcmp(z,"generic")==0 ){
           iMode = FZMODE_Printf;
+          zCkGlob = 0;
         }else if( strcmp(z, "glob")==0 ){
           iMode = FZMODE_Glob;
+          zCkGlob = "'*','*'";
         }else if( strcmp(z, "printf")==0 ){
           iMode = FZMODE_Printf;
+          zCkGlob = "'*',*";
         }else if( strcmp(z, "strftime")==0 ){
           iMode = FZMODE_Strftime;
+          zCkGlob = "'*',*";
         }else{
           abendError("unknown --mode: %s", z);
         }
@@ -487,7 +492,7 @@ int main(int argc, char **argv){
     for(iNext=i; iNext<nIn && strncmp(&zIn[iNext],"/****<",6)!=0; iNext++){}
     cSaved = zIn[iNext];
     zIn[iNext] = 0;
-    if( iMode!=FZMODE_Generic && sqlite3_strglob("'*',*",&zIn[i])!=0 ){
+    if( zCkGlob && sqlite3_strglob(zCkGlob,&zIn[i])!=0 ){
       zIn[iNext] = cSaved;
       continue;
     }
