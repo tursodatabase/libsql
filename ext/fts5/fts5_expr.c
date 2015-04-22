@@ -623,8 +623,9 @@ static int fts5ExprAdvanceto(
 
   iRowid = sqlite3Fts5IterRowid(pIter);
   if( (bDesc==0 && iLast>iRowid) || (bDesc && iLast<iRowid) ){
-    sqlite3Fts5IterNextFrom(pIter, iLast);
-    if( sqlite3Fts5IterEof(pIter) ){
+    int rc = sqlite3Fts5IterNextFrom(pIter, iLast);
+    if( rc || sqlite3Fts5IterEof(pIter) ){
+      *pRc = rc;
       *pbEof = 1;
       return 1;
     }

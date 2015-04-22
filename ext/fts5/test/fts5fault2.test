@@ -1,0 +1,55 @@
+# 2014 June 17
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+#
+# This file is focused on OOM errors.
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+source $testdir/malloc_common.tcl
+set testprefix fts5fault2
+
+# If SQLITE_ENABLE_FTS3 is defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+
+set doc [string trim [string repeat "x y z " 200]]
+do_execsql_test 1.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, x);
+  CREATE VIRTUAL TABLE x1 USING fts5(x, content='t1', content_rowid='a');
+  INSERT INTO x1(x1, rank) VALUES('pgsz', 32);
+  WITH input(a,b) AS (
+    SELECT 1, $doc UNION ALL
+    SELECT a+1, ($doc || CASE WHEN (a+1)%100 THEN '' ELSE ' xyz' END) 
+    FROM input WHERE a < 1000
+  )
+  INSERT INTO t1 SELECT * FROM input;
+
+  INSERT INTO x1(x1) VALUES('rebuild');
+}
+
+do_faultsim_test 1.1 -faults oom-* -prep {
+} -body {
+  execsql { SELECT rowid FROM x1 WHERE x1 MATCH 'z AND xyz' }
+} -test {
+  faultsim_test_result {0 {100 200 300 400 500 600 700 800 900 1000}}
+}
+
+do_faultsim_test 1.2 -faults oom-* -prep {
+} -body {
+  execsql { SELECT rowid FROM x1 WHERE x1 MATCH 'z + xyz' ORDER BY 1 DESC}
+} -test {
+  faultsim_test_result {0 {1000 900 800 700 600 500 400 300 200 100}}
+}
+
+finish_test
+

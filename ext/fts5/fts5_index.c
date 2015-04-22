@@ -1561,18 +1561,9 @@ static int fts5GetPoslistSize(const u8 *p, int *pnSz, int *pbDel){
 */
 static void fts5SegIterLoadNPos(Fts5Index *p, Fts5SegIter *pIter){
   if( p->rc==SQLITE_OK ){
+    const u8 *a = &pIter->pLeaf->p[pIter->iLeafOffset];
     int iOff = pIter->iLeafOffset;  /* Offset to read at */
-    if( iOff>=pIter->pLeaf->n ){
-      assert( 0 );
-      fts5SegIterNextPage(p, pIter);
-      if( pIter->pLeaf==0 ){
-        if( p->rc==SQLITE_OK ) p->rc = FTS5_CORRUPT;
-        return;
-      }
-      iOff = 4;
-    }
-    iOff += fts5GetPoslistSize(pIter->pLeaf->p+iOff, &pIter->nPos,&pIter->bDel);
-    pIter->iLeafOffset = iOff;
+    pIter->iLeafOffset += fts5GetPoslistSize(a, &pIter->nPos,&pIter->bDel);
   }
 }
 
@@ -1678,7 +1669,7 @@ static void fts5SegIterReverseInitPage(Fts5Index *p, Fts5SegIter *pIter){
   u8 *a = pIter->pLeaf->p;
   int iRowidOffset = 0;
 
-  while( p->rc==SQLITE_OK && i<n ){
+  while( 1 ){
     i64 iDelta = 0;
     int nPos;
     int bDummy;
