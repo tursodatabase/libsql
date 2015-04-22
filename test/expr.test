@@ -943,5 +943,13 @@ do_realnum_test expr-13.7 {
   }
 } {9.22337203685478e+18}
 
+do_execsql_test expr-13.8 {
+  SELECT "" <= '';
+} {1}
+do_execsql_test expr-13.9 {
+  SELECT '' <= "";
+} {1}
+
+
 
 finish_test

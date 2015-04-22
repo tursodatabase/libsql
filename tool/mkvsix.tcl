@@ -174,6 +174,9 @@ proc writeFile { fileName data } {
   return ""
 }
 
+#
+# TODO: Modify this procedure when a new version of Visual Studio is released.
+#
 proc getMinVsVersionXmlChunk { vsVersion } {
   switch -exact $vsVersion {
     2012 {
@@ -184,17 +187,26 @@ proc getMinVsVersionXmlChunk { vsVersion } {
       return [appendArgs \
           "\r\n    " {MinVSVersion="12.0"}]
     }
+    2015 {
+      return [appendArgs \
+          "\r\n    " {MinVSVersion="14.0"}]
+    }
     default {
       return ""
     }
   }
 }
 
+#
+# TODO: Modify this procedure when a new version of Visual Studio is released.
+#
 proc getMaxPlatformVersionXmlChunk { packageFlavor vsVersion } {
   #
-  # NOTE: Only Visual Studio 2013 supports this SDK manifest attribute.
+  # NOTE: Only Visual Studio 2013 and later support this attribute within the
+  #       SDK manifest.
   #
-  if {![string equal $vsVersion 2013]} then {
+  if {![string equal $vsVersion 2013] && \
+      ![string equal $vsVersion 2015]} then {
     return ""
   }
 
@@ -221,6 +233,9 @@ proc getMaxPlatformVersionXmlChunk { packageFlavor vsVersion } {
   }
 }
 
+#
+# TODO: Modify this procedure when a new version of Visual Studio is released.
+#
 proc getExtraFileListXmlChunk { packageFlavor vsVersion } {
   #
   # NOTE: Windows Phone 8.0 does not require any extra attributes in its VSIX
@@ -244,6 +259,14 @@ proc getExtraFileListXmlChunk { packageFlavor vsVersion } {
       return [appendArgs \
           "\r\n    " AppliesTo=\" $appliesTo \" \
           "\r\n    " {DependsOn="Microsoft.VCLibs, version=12.0"}]
+    }
+    2015 {
+      #
+      # TODO: Is the ".AppLocal" suffix always needed here?
+      #
+      return [appendArgs \
+          "\r\n    " AppliesTo=\" $appliesTo \" \
+          "\r\n    " {DependsOn="Microsoft.VCLibs.AppLocal, version=14.0"}]
     }
     default {
       return ""
@@ -354,10 +377,11 @@ if {[string length $vsVersion] == 0} then {
   fail "invalid Visual Studio version"
 }
 
-if {![string equal $vsVersion 2012] && ![string equal $vsVersion 2013]} then {
+if {![string equal $vsVersion 2012] && ![string equal $vsVersion 2013] && \
+    ![string equal $vsVersion 2015]} then {
   fail [appendArgs \
       "unsupported Visual Studio version, must be one of: " \
-      [list 2012 2013]]
+      [list 2012 2013 2015]]
 }
 
 set shortNames(WinRT,2012) SQLite.WinRT
@@ -368,6 +392,7 @@ set shortNames(WP80,2013) SQLite.WP80.2013
 set shortNames(WP81,2013) SQLite.WP81
 set shortNames(Win32,2012) SQLite.Win32
 set shortNames(Win32,2013) SQLite.Win32.2013
+set shortNames(UAP,2015) SQLite.UAP.2015
 
 set displayNames(WinRT,2012) "SQLite for Windows Runtime"
 set displayNames(WinRT,2013) "SQLite for Windows Runtime"
@@ -377,6 +402,7 @@ set displayNames(WP80,2013) "SQLite for Windows Phone"
 set displayNames(WP81,2013) "SQLite for Windows Phone 8.1"
 set displayNames(Win32,2012) "SQLite for Windows"
 set displayNames(Win32,2013) "SQLite for Windows"
+set displayNames(UAP,2015) "SQLite for Universal App Platform"
 
 if {[string equal $packageFlavor WinRT]} then {
   set shortName $shortNames($packageFlavor,$vsVersion)
@@ -432,6 +458,22 @@ if {[string equal $packageFlavor WinRT]} then {
   set extraSdkPath "\\..\\$targetPlatformIdentifier"
   set extraFileListAttributes \
       [getExtraFileListXmlChunk $packageFlavor $vsVersion]
+} elseif {[string equal $packageFlavor UAP]} then {
+  if {$vsVersion ne "2015"} then {
+    fail [appendArgs \
+        "unsupported combination, package flavor " $packageFlavor \
+        " is only supported with Visual Studio 2015"]
+  }
+  set shortName $shortNames($packageFlavor,$vsVersion)
+  set displayName $displayNames($packageFlavor,$vsVersion)
+  set targetPlatformIdentifier UAP
+  set targetPlatformVersion v0.8.0.0
+  set minVsVersion [getMinVsVersionXmlChunk $vsVersion]
+  set maxPlatformVersion \
+      [getMaxPlatformVersionXmlChunk $packageFlavor $vsVersion]
+  set extraSdkPath "\\..\\$targetPlatformIdentifier"
+  set extraFileListAttributes \
+      [getExtraFileListXmlChunk $packageFlavor $vsVersion]
 } elseif {[string equal $packageFlavor Win32]} then {
   set shortName $shortNames($packageFlavor,$vsVersion)
   set displayName $displayNames($packageFlavor,$vsVersion)
@@ -446,7 +488,7 @@ if {[string equal $packageFlavor WinRT]} then {
 } else {
   fail [appendArgs \
       "unsupported package flavor, must be one of: " \
-      [list WinRT WinRT81 WP80 WP81 Win32]]
+      [list WinRT WinRT81 WP80 WP81 UAP Win32]]
 }
 
 ###############################################################################

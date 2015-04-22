@@ -64,6 +64,7 @@ while {1} {
     if {[info exists ::log] && $::log!=""} {
       do_test win32lock-1.2-$delay1-log1 {
         regsub {\d+} $::log # x
+        regsub { at line \d+} $x "" x
         set x
       } {{delayed #ms for lock/sharing conflict}}
     }
@@ -112,6 +113,7 @@ while {1} {
     if {[info exists ::log] && $::log!=""} {
       do_test win32lock-2.2-$delay1-log1 {
         regsub {\d+} $::log # x
+        regsub { at line \d+} $x "" x
         set x
       } {{delayed #ms for lock/sharing conflict}}
     }

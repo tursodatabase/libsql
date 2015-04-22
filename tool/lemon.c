@@ -1114,7 +1114,6 @@ void FindActions(struct lemon *lemp)
   /* Resolve conflicts */
   for(i=0; i<lemp->nstate; i++){
     struct action *ap, *nap;
-    struct state *stp;
     stp = lemp->sorted[i];
     /* assert( stp->ap ); */
     stp->ap = Action_sort(stp->ap);
@@ -1731,7 +1730,7 @@ static char *msort(
   char *ep;
   char *set[LISTSIZE];
   int i;
-  offset = (unsigned long)next - (unsigned long)list;
+  offset = (unsigned long)((char*)next - (char*)list);
   for(i=0; i<LISTSIZE; i++) set[i] = 0;
   while( list ){
     ep = list;
@@ -1875,7 +1874,7 @@ static int handleswitch(int i, FILE *err)
         if( *end ){
           if( err ){
             fprintf(err,"%sillegal character in floating-point argument.\n",emsg);
-            errline(i,((unsigned long)end)-(unsigned long)argv[i],err);
+            errline(i,(int)((char*)end-(char*)argv[i]),err);
           }
           errcnt++;
         }
@@ -1886,7 +1885,7 @@ static int handleswitch(int i, FILE *err)
         if( *end ){
           if( err ){
             fprintf(err,"%sillegal character in integer argument.\n",emsg);
-            errline(i,((unsigned long)end)-(unsigned long)argv[i],err);
+            errline(i,(int)((char*)end-(char*)argv[i]),err);
           }
           errcnt++;
         }
@@ -3748,9 +3747,9 @@ void ReportTable(
   /* Generate the include code, if any */
   tplt_print(out,lemp,lemp->include,&lineno);
   if( mhflag ){
-    char *name = file_makename(lemp, ".h");
-    fprintf(out,"#include \"%s\"\n", name); lineno++;
-    free(name);
+    char *incName = file_makename(lemp, ".h");
+    fprintf(out,"#include \"%s\"\n", incName); lineno++;
+    free(incName);
   }
   tplt_xfer(lemp->name,in,out,&lineno);
 
@@ -3791,7 +3790,6 @@ void ReportTable(
   }
   name = lemp->name ? lemp->name : "Parse";
   if( lemp->arg && lemp->arg[0] ){
-    int i;
     i = lemonStrlen(lemp->arg);
     while( i>=1 && isspace(lemp->arg[i-1]) ) i--;
     while( i>=1 && (isalnum(lemp->arg[i-1]) || lemp->arg[i-1]=='_') ) i--;
@@ -4479,18 +4477,18 @@ int Strsafe_insert(const char *data)
   }
   if( x1a->count>=x1a->size ){
     /* Need to make the hash table bigger */
-    int i,size;
+    int i,arrSize;
     struct s_x1 array;
-    array.size = size = x1a->size*2;
+    array.size = arrSize = x1a->size*2;
     array.count = x1a->count;
-    array.tbl = (x1node*)calloc(size, sizeof(x1node) + sizeof(x1node*));
+    array.tbl = (x1node*)calloc(arrSize, sizeof(x1node) + sizeof(x1node*));
     if( array.tbl==0 ) return 0;  /* Fail due to malloc failure */
-    array.ht = (x1node**)&(array.tbl[size]);
-    for(i=0; i<size; i++) array.ht[i] = 0;
+    array.ht = (x1node**)&(array.tbl[arrSize]);
+    for(i=0; i<arrSize; i++) array.ht[i] = 0;
     for(i=0; i<x1a->count; i++){
       x1node *oldnp, *newnp;
       oldnp = &(x1a->tbl[i]);
-      h = strhash(oldnp->data) & (size-1);
+      h = strhash(oldnp->data) & (arrSize-1);
       newnp = &(array.tbl[i]);
       if( array.ht[h] ) array.ht[h]->from = &(newnp->next);
       newnp->next = array.ht[h];
@@ -4646,18 +4644,18 @@ int Symbol_insert(struct symbol *data, const char *key)
   }
   if( x2a->count>=x2a->size ){
     /* Need to make the hash table bigger */
-    int i,size;
+    int i,arrSize;
     struct s_x2 array;
-    array.size = size = x2a->size*2;
+    array.size = arrSize = x2a->size*2;
     array.count = x2a->count;
-    array.tbl = (x2node*)calloc(size, sizeof(x2node) + sizeof(x2node*));
+    array.tbl = (x2node*)calloc(arrSize, sizeof(x2node) + sizeof(x2node*));
     if( array.tbl==0 ) return 0;  /* Fail due to malloc failure */
-    array.ht = (x2node**)&(array.tbl[size]);
-    for(i=0; i<size; i++) array.ht[i] = 0;
+    array.ht = (x2node**)&(array.tbl[arrSize]);
+    for(i=0; i<arrSize; i++) array.ht[i] = 0;
     for(i=0; i<x2a->count; i++){
       x2node *oldnp, *newnp;
       oldnp = &(x2a->tbl[i]);
-      h = strhash(oldnp->key) & (size-1);
+      h = strhash(oldnp->key) & (arrSize-1);
       newnp = &(array.tbl[i]);
       if( array.ht[h] ) array.ht[h]->from = &(newnp->next);
       newnp->next = array.ht[h];
@@ -4722,12 +4720,12 @@ int Symbol_count()
 struct symbol **Symbol_arrayof()
 {
   struct symbol **array;
-  int i,size;
+  int i,arrSize;
   if( x2a==0 ) return 0;
-  size = x2a->count;
-  array = (struct symbol **)calloc(size, sizeof(struct symbol *));
+  arrSize = x2a->count;
+  array = (struct symbol **)calloc(arrSize, sizeof(struct symbol *));
   if( array ){
-    for(i=0; i<size; i++) array[i] = x2a->tbl[i].data;
+    for(i=0; i<arrSize; i++) array[i] = x2a->tbl[i].data;
   }
   return array;
 }
@@ -4843,18 +4841,18 @@ int State_insert(struct state *data, struct config *key)
   }
   if( x3a->count>=x3a->size ){
     /* Need to make the hash table bigger */
-    int i,size;
+    int i,arrSize;
     struct s_x3 array;
-    array.size = size = x3a->size*2;
+    array.size = arrSize = x3a->size*2;
     array.count = x3a->count;
-    array.tbl = (x3node*)calloc(size, sizeof(x3node) + sizeof(x3node*));
+    array.tbl = (x3node*)calloc(arrSize, sizeof(x3node) + sizeof(x3node*));
     if( array.tbl==0 ) return 0;  /* Fail due to malloc failure */
-    array.ht = (x3node**)&(array.tbl[size]);
-    for(i=0; i<size; i++) array.ht[i] = 0;
+    array.ht = (x3node**)&(array.tbl[arrSize]);
+    for(i=0; i<arrSize; i++) array.ht[i] = 0;
     for(i=0; i<x3a->count; i++){
       x3node *oldnp, *newnp;
       oldnp = &(x3a->tbl[i]);
-      h = statehash(oldnp->key) & (size-1);
+      h = statehash(oldnp->key) & (arrSize-1);
       newnp = &(array.tbl[i]);
       if( array.ht[h] ) array.ht[h]->from = &(newnp->next);
       newnp->next = array.ht[h];
@@ -4901,12 +4899,12 @@ struct state *State_find(struct config *key)
 struct state **State_arrayof()
 {
   struct state **array;
-  int i,size;
+  int i,arrSize;
   if( x3a==0 ) return 0;
-  size = x3a->count;
-  array = (struct state **)calloc(size, sizeof(struct state *));
+  arrSize = x3a->count;
+  array = (struct state **)calloc(arrSize, sizeof(struct state *));
   if( array ){
-    for(i=0; i<size; i++) array[i] = x3a->tbl[i].data;
+    for(i=0; i<arrSize; i++) array[i] = x3a->tbl[i].data;
   }
   return array;
 }
@@ -4983,18 +4981,18 @@ int Configtable_insert(struct config *data)
   }
   if( x4a->count>=x4a->size ){
     /* Need to make the hash table bigger */
-    int i,size;
+    int i,arrSize;
     struct s_x4 array;
-    array.size = size = x4a->size*2;
+    array.size = arrSize = x4a->size*2;
     array.count = x4a->count;
-    array.tbl = (x4node*)calloc(size, sizeof(x4node) + sizeof(x4node*));
+    array.tbl = (x4node*)calloc(arrSize, sizeof(x4node) + sizeof(x4node*));
     if( array.tbl==0 ) return 0;  /* Fail due to malloc failure */
-    array.ht = (x4node**)&(array.tbl[size]);
-    for(i=0; i<size; i++) array.ht[i] = 0;
+    array.ht = (x4node**)&(array.tbl[arrSize]);
+    for(i=0; i<arrSize; i++) array.ht[i] = 0;
     for(i=0; i<x4a->count; i++){
       x4node *oldnp, *newnp;
       oldnp = &(x4a->tbl[i]);
-      h = confighash(oldnp->data) & (size-1);
+      h = confighash(oldnp->data) & (arrSize-1);
       newnp = &(array.tbl[i]);
       if( array.ht[h] ) array.ht[h]->from = &(newnp->next);
       newnp->next = array.ht[h];

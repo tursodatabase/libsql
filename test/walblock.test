@@ -15,6 +15,7 @@ source $testdir/tester.tcl
 source $testdir/lock_common.tcl
 source $testdir/wal_common.tcl
 
+finish_test; return;    #  Feature currently not implemented.
 ifcapable !wal {finish_test ; return }
 if {$::tcl_platform(platform)!="unix"} { finish_test ; return }
 set testprefix walblock
@@ -92,9 +93,9 @@ proc barrier_callback {method args} {
   set ::out ""
   testfixture $::C { db eval { SELECT * FROM t1 } } {set ::out}
 
-  do_test "1.2.2.(blocking 5 seconds)" { 
+  do_test "1.2.2.(blocking 10 seconds)" { 
     set ::continue 0
-    after 5000 {set ::continue 1}
+    after 10000 {set ::continue 1}
     vwait ::continue
     set ::out 
   } {}
@@ -111,7 +112,3 @@ do_test "1.2.3.(blocking 0.5 seconds)" {
 
 
 finish_test
-
-
-
-

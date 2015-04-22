@@ -843,4 +843,10 @@ do_catchsql_test 13.3 {
   SELECT i FROM c;
 } {1 {table c has 1 values for 2 columns}}
 
+# 2015-04-12
+#
+do_execsql_test 14.1 {
+  WITH x AS (SELECT * FROM t) SELECT 0 EXCEPT SELECT 0 ORDER BY 1 COLLATE binary;
+} {}
+
 finish_test

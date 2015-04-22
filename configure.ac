@@ -430,6 +430,7 @@ if test "${use_tcl}" = "yes" ; then
     AC_SUBST(TCL_STUB_LIB_FILE)
     AC_SUBST(TCL_STUB_LIB_FLAG)
     AC_SUBST(TCL_STUB_LIB_SPEC)
+    AC_SUBST(TCL_SHLIB_SUFFIX)
   fi
 fi
 if test "${use_tcl}" = "no" ; then

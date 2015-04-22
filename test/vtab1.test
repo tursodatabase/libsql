@@ -1437,4 +1437,95 @@ ifcapable fts3 {
   } {SQLITE_OK}
 }
 
+
+#-------------------------------------------------------------------------
+# The following tests verify that a DROP TABLE command on a virtual
+# table does not cause other operations to crash.
+#
+#   23.1: Dropping a vtab while a SELECT is running on it.
+#
+#   23.2: Dropping a vtab while a SELECT that will, but has not yet,
+#         open a cursor on the vtab, is running. In this case the
+#         DROP TABLE succeeds and the SELECT hits an error.
+#   
+#   23.3: Dropping a vtab from within a user-defined-function callback
+#         in the middle of an "INSERT INTO vtab SELECT ..." statement.
+#
+reset_db
+load_static_extension db wholenumber
+load_static_extension db eval
+register_echo_module db
+
+do_test 23.1 {
+  execsql { CREATE VIRTUAL TABLE t1 USING wholenumber }
+  set res ""
+  db eval { SELECT value FROM t1 WHERE value<10 } {
+    if {$value == 5} {
+      set res [catchsql { DROP TABLE t1 }]
+    }
+  }
+  set res
+} {1 {database table is locked}}
+
+do_test 23.2 {
+  execsql { 
+    CREATE TABLE t2(value);
+    INSERT INTO t2 VALUES(1), (2), (3);
+  }
+
+  set res2 [list [catch {
+    db eval {
+      SELECT value FROM t2 UNION ALL 
+      SELECT value FROM t1 WHERE value<10
+    } {
+      if {$value == 2} { set res1 [catchsql { DROP TABLE t1 }] }
+    }
+  } msg] $msg]
+  list $res1 $res2
+} {{0 {}} {1 {database table is locked}}}
+
+do_test 23.3.1 {
+  execsql { CREATE VIRTUAL TABLE t1e USING echo(t2) }
+  execsql { INSERT INTO t1e SELECT 4 }
+  catchsql { INSERT INTO t1e SELECT eval('DROP TABLE t1e') }
+} {1 {database table is locked}}
+do_execsql_test 23.3.2 { SELECT * FROM t1e } {1 2 3 4}
+
+#-------------------------------------------------------------------------
+# At one point SQL like this:
+#
+#   SAVEPOINT xyz;       -- Opens SQL transaction
+#     INSERT INTO vtab   -- Write to virtual table
+#     ROLLBACK TO xyz;
+#   RELEASE xyz;
+#
+# was not invoking the xRollbackTo() callback for the ROLLBACK TO 
+# operation. Which meant that virtual tables like FTS3 would incorrectly 
+# commit the results of the INSERT as part of the "RELEASE xyz" command.
+#
+# The following tests check that this has been fixed.
+#
+ifcapable fts3 {
+  do_execsql_test 24.0 {
+    CREATE VIRTUAL TABLE t4 USING fts3();
+    SAVEPOINT a;
+    INSERT INTO t4 VALUES('a b c');
+    ROLLBACK TO a;
+    RELEASE a;
+    SELECT * FROM t4;
+  } {}
+
+  do_execsql_test 24.1 { SELECT * FROM t4 WHERE t4 MATCH 'b' } {}
+  do_execsql_test 24.2 { INSERT INTO t4(t4) VALUES('integrity-check') } {}
+
+  do_execsql_test 24.3 {
+    SAVEPOINT a;
+    CREATE VIRTUAL TABLE t5 USING fts3();
+    SAVEPOINT b;
+    ROLLBACK TO a;
+    SAVEPOINT c;
+    RELEASE a;
+  }
+}
+
 finish_test

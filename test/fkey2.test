@@ -676,6 +676,11 @@ do_test fkey2-9.2.3 {
     SELECT * FROM cc;
   }
 } {{} A {} {} B {} 3 A 2 3 B 2}
+do_execsql_test fkey2-9.3.0 {
+  CREATE TABLE t3(x PRIMARY KEY REFERENCES t3 ON DELETE SET NULL);
+  INSERT INTO t3(x) VALUES(12345);
+  DROP TABLE t3;
+} {}
 
 #-------------------------------------------------------------------------
 # The following tests, fkey2-10.*, test "foreign key mismatch" and 
@@ -746,10 +751,10 @@ do_test fkey2-10.2.2 {
 drop_all_tables
 do_test fkey2-11.1.1 {
   execsql {
-    CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+    CREATE TABLE t1(a INTEGER PRIMARY KEY, b, rowid, _rowid_, oid);
     CREATE TABLE t2(c, d, FOREIGN KEY(c) REFERENCES t1(a) ON UPDATE CASCADE);
 
-    INSERT INTO t1 VALUES(10, 100);
+    INSERT INTO t1 VALUES(10, 100, 'abc', 'def', 'ghi');
     INSERT INTO t2 VALUES(10, 100);
     UPDATE t1 SET a = 15;
     SELECT * FROM t2;
@@ -2013,5 +2018,19 @@ do_test fkey2-ce7c13.1.6 {
     UPDATE tce73 set a = 101 where a = 100;
   }
 } {1 {FOREIGN KEY constraint failed}}
+
+# 2015-04-16:  Foreign key errors propagate back up to the parser.
+#
+do_test fkey2-20150416-100 {
+  db close
+  sqlite3 db :memory:
+  catchsql {
+    PRAGMA foreign_keys=1;
+    CREATE TABLE t1(x PRIMARY KEY);
+    CREATE TABLE t(y REFERENCES t0(x)ON DELETE SET DEFAULT);
+    CREATE TABLE t0(y REFERENCES t1 ON DELETE SET NULL);
+    REPLACE INTO t1 SELECT(0);CREATE TABLE t2(x);CREATE TABLE t3;
+  }
+} {1 {foreign key mismatch - "t" referencing "t0"}}
 
 finish_test

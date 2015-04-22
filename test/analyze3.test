@@ -16,6 +16,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix analyze3
 
 ifcapable !stat4&&!stat3 {
   finish_test
@@ -45,6 +46,9 @@ ifcapable !stat4&&!stat3 {
 #               using the clear_bindings() or transfer_bindings() APIs.
 # 
 # analyze3-6.*: Test that the problem fixed by commit [127a5b776d] is fixed.
+#
+# analyze3-7.*: Test that some memory leaks discovered by fuzz testing 
+#               have been fixed.
 #
 
 proc getvar {varname} { uplevel #0 set $varname }
@@ -661,5 +665,31 @@ do_eqp_test analyze3-6-3 {
 do_eqp_test analyze3-6-2 {
   SELECT * FROM t1 WHERE a = 5 AND b > 'w' AND c = 13;
 } {0 0 0 {SEARCH TABLE t1 USING INDEX i2 (c=?)}}
+
+#-----------------------------------------------------------------------------
+# 2015-04-20.
+# Memory leak in sqlite3Stat4ProbeFree().  (Discovered while fuzzing.)
+#
+do_execsql_test analyze-7.1 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+  INSERT INTO t1 VALUES(1,1,'0000');
+  CREATE INDEX t0b ON t1(b);
+  ANALYZE;
+  SELECT c FROM t1 WHERE b=3 AND a BETWEEN 30 AND hex(1);
+} {}
+
+# At one point duplicate stat1 entries were causing a memory leak.
+#
+reset_db
+do_execsql_test 7.2 {
+  CREATE TABLE t1(a,b,c);
+  CREATE INDEX t1a ON t1(a);
+  ANALYZE;
+  SELECT * FROM sqlite_stat1;
+  INSERT INTO sqlite_stat1(tbl,idx,stat) VALUES('t1','t1a','12000');
+  INSERT INTO sqlite_stat1(tbl,idx,stat) VALUES('t1','t1a','12000');
+  ANALYZE sqlite_master;
+}
 
 finish_test

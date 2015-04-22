@@ -311,5 +311,9 @@ do_eqp_test index7-6.4 {
 } {
   0 0 0 {SEARCH TABLE t4 USING INDEX i4 (c=?)}
 }
+do_catchsql_test index7-6.5 {
+  CREATE INDEX t5a ON t5(a) WHERE a=#1;
+} {1 {near "#1": syntax error}}
+
 
 finish_test

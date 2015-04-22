@@ -655,6 +655,7 @@ int sqlite3GetInt32(const char *zNum, int *pValue){
     }
   }
 #endif
+  while( zNum[0]=='0' ) zNum++;
   for(i=0; i<11 && (c = zNum[i] - '0')>=0 && c<=9; i++){
     v = v*10 + c;
   }

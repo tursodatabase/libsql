@@ -219,6 +219,24 @@ do_test pragma-1.14 {
     PRAGMA synchronous;
   }
 } {2}
+do_test pragma-1.14.1 {
+  execsql {
+    PRAGMA synchronous=4;
+    PRAGMA synchronous;
+  }
+} {0}
+do_test pragma-1.14.2 {
+  execsql {
+    PRAGMA synchronous=3;
+    PRAGMA synchronous;
+  }
+} {0}
+do_test pragma-1.14.3 {
+  execsql {
+    PRAGMA synchronous=10;
+    PRAGMA synchronous;
+  }
+} {2}
 } ;# ifcapable pager_pragmas
 
 # Test turning "flag" pragmas on and off.
@@ -751,6 +769,16 @@ do_test pragma-6.7 {
   {2 three {VARCHAR(45, 65)} 0 'abcde' 0} \
   {3 four REAL 0 X'abcdef' 0} \
   {4 five {} 0 CURRENT_TIME 0} \
+]
+do_test pragma-6.8 {
+  execsql {
+    CREATE TABLE t68(a,b,c,PRIMARY KEY(a,b,a,c));
+    PRAGMA table_info(t68);
+  }
+} [concat \
+  {0 a {} 0 {} 1} \
+  {1 b {} 0 {} 2} \
+  {2 c {} 0 {} 4} \
 ]
 } ;# ifcapable schema_pragmas
 # Miscellaneous tests

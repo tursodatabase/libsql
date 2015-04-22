@@ -191,4 +191,9 @@ do_execsql_test count-5.1 {
   SELECT count(*) FROM t5;
 } {1}
 
+do_catchsql_test count-6.1 {
+  CREATE TABLE t6(x);
+  SELECT count(DISTINCT) FROM t6 GROUP BY x;
+} {1 {DISTINCT aggregates must have exactly one argument}}
+
 finish_test
