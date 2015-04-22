@@ -735,6 +735,14 @@ int sqlite3_db_config(sqlite3 *db, int op, ...){
       rc = setupLookaside(db, pBuf, sz, cnt);
       break;
     }
+    case SQLITE_DBCONFIG_LOG: {
+      /* MSVC is picky about pulling func ptrs from va lists.
+      ** http://support.microsoft.com/kb/47961  */
+      typedef void(*LOGFUNC_t)(void*,int,const char*);
+      db->xLog = va_arg(ap, LOGFUNC_t);
+      db->pLogArg = va_arg(ap, void*);
+      break;
+    }
     default: {
       static const struct {
         int op;      /* The opcode */

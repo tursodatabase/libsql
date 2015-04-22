@@ -1,0 +1,37 @@
+# 2015-04-22
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+# Test cases for the sqlite3_log() and sqlite3_db_log() interfaces.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+unset -nocomplain log
+set log {}
+do_test errlog01-1.0 {
+  test_sqlite3_db_log db [list lappend ::log]
+  db eval {SELECT sqlite_log(7,'simulated error')}
+} {{}}
+do_test errlog01-1.1 {
+  set ::log
+} {SQLITE_NOMEM {simulated error}}
+do_test errlog01-1.2 {
+  sqlite3 db2 :memory:
+  set ::log {}
+  db2 eval {SELECT sqlite_log(7,'simulated error')}
+} {{}}
+do_test errlog01-1.3 {
+  set ::log
+} {}
+
+    
+
+finish_test

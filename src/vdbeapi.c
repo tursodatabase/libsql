@@ -1145,9 +1145,9 @@ static int vdbeUnbind(Vdbe *p, int i){
   sqlite3_mutex_enter(p->db->mutex);
   if( p->magic!=VDBE_MAGIC_RUN || p->pc>=0 ){
     sqlite3Error(p->db, SQLITE_MISUSE);
-    sqlite3_mutex_leave(p->db->mutex);
-    sqlite3_log(SQLITE_MISUSE, 
+    sqlite3_db_log(p->db, SQLITE_MISUSE, 
         "bind on a busy prepared statement: [%s]", p->zSql);
+    sqlite3_mutex_leave(p->db->mutex);
     return SQLITE_MISUSE_BKPT;
   }
   if( i<1 || i>p->nVar ){

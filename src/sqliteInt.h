@@ -1138,6 +1138,8 @@ struct sqlite3 {
     double notUsed1;            /* Spacer */
   } u1;
   Lookaside lookaside;          /* Lookaside malloc configuration */
+  void (*xLog)(void*,int,const char*); /* Function for logging */
+  void *pLogArg;                       /* First argument to xLog() */
 #ifndef SQLITE_OMIT_AUTHORIZATION
   sqlite3_xauth xAuth;          /* Access authorization function */
   void *pAuthArg;               /* 1st argument to the access auth function */

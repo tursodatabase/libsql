@@ -2053,11 +2053,11 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
       u32 iRandom;
       if( retryCount ){
         if( retryCount>100 ){
-          sqlite3_log(SQLITE_FULL, "MJ delete: %s", zMaster);
+          sqlite3_db_log(db, SQLITE_FULL, "MJ delete: %s", zMaster);
           sqlite3OsDelete(pVfs, zMaster, 0);
           break;
         }else if( retryCount==1 ){
-          sqlite3_log(SQLITE_FULL, "MJ collide: %s", zMaster);
+          sqlite3_db_log(db, SQLITE_FULL, "MJ collide: %s", zMaster);
         }
       }
       retryCount++;

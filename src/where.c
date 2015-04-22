@@ -1750,7 +1750,7 @@ static void constructAutomaticIndex(
       testcase( iCol==BMS );
       testcase( iCol==BMS-1 );
       if( !sentWarning ){
-        sqlite3_log(SQLITE_WARNING_AUTOINDEX,
+        sqlite3_db_log(pParse->db, SQLITE_WARNING_AUTOINDEX,
             "automatic index on %s(%s)", pTable->zName,
             pTable->aCol[iCol].zName);
         sentWarning = 1;

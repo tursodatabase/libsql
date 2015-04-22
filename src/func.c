@@ -886,8 +886,8 @@ static void sourceidFunc(
 
 /*
 ** Implementation of the sqlite_log() function.  This is a wrapper around
-** sqlite3_log().  The return value is NULL.  The function exists purely for
-** its side-effects.
+** sqlite3_db_log().  The return value is NULL.  The function exists purely
+** for its side-effects.
 */
 static void errlogFunc(
   sqlite3_context *context,
@@ -896,7 +896,9 @@ static void errlogFunc(
 ){
   UNUSED_PARAMETER(argc);
   UNUSED_PARAMETER(context);
-  sqlite3_log(sqlite3_value_int(argv[0]), "%s", sqlite3_value_text(argv[1]));
+  sqlite3_db_log(sqlite3_context_db_handle(context),
+                 sqlite3_value_int(argv[0]),
+                 "%s", sqlite3_value_text(argv[1]));
 }
 
 /*

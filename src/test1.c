@@ -5797,11 +5797,37 @@ static int test_sqlite3_log(
     logcallback.pInterp = 0;
     sqlite3_config(SQLITE_CONFIG_LOG, 0, 0);
   }
-  if( objc>1 ){
+  if( objc==2 ){
     logcallback.pObj = objv[1];
     Tcl_IncrRefCount(logcallback.pObj);
     logcallback.pInterp = interp;
     sqlite3_config(SQLITE_CONFIG_LOG, xLogcallback, 0);
+  }
+  return TCL_OK;
+}
+static int test_sqlite3_db_log(
+  ClientData clientData,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  sqlite3 *db;
+  if( objc<1 || objc>3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB SCRIPT");
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  if( logcallback.pObj ){
+    Tcl_DecrRefCount(logcallback.pObj);
+    logcallback.pObj = 0;
+    logcallback.pInterp = 0;
+    sqlite3_db_config(db, SQLITE_DBCONFIG_LOG, 0, 0);
+  }
+  if( objc==3 ){
+    logcallback.pObj = objv[2];
+    Tcl_IncrRefCount(logcallback.pObj);
+    logcallback.pInterp = interp;
+    sqlite3_db_config(db, SQLITE_DBCONFIG_LOG, xLogcallback, 0);
   }
   return TCL_OK;
 }
@@ -6906,6 +6932,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_wal_checkpoint_v2",test_wal_checkpoint_v2, 0  },
      { "sqlite3_wal_autocheckpoint",test_wal_autocheckpoint, 0  },
      { "test_sqlite3_log",         test_sqlite3_log, 0  },
+     { "test_sqlite3_db_log",      test_sqlite3_db_log, 0  },
 #ifndef SQLITE_OMIT_EXPLAIN
      { "print_explain_query_plan", test_print_eqp, 0  },
 #endif

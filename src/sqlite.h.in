@@ -1869,11 +1869,36 @@ struct sqlite3_mem_methods {
 ** following this call.  The second parameter may be a NULL pointer, in
 ** which case the trigger setting is not reported back. </dd>
 **
+** [[SQLITE_DBCONFIG_LOG]] <dt>SQLITE_DBCONFIG_LOG</dt>
+** <dd> The SQLITE_DBCONFIG_LOG option is used to configure the SQLite
+** [error log] for a specific database connection.  See also the
+** [SQLITE_CONFIG_LOG] option to [sqlite3_config()] for the global log
+** callback.
+** (^The SQLITE_DBCONFIG_LOG option takes two arguments: a pointer to a
+** function with a call signature of void(*)(void*,int,const char*), 
+** and a pointer to void. ^If the function pointer is not NULL, it is
+** invoked by [sqlite3_db_log()] to process each logging event.  ^If the
+** function pointer is NULL, then calls to [sqlite3_db_log()] interface try
+** to use the [SQLITE_CONFIG_LOG|global error log].  If both the connection
+** and global error log callbacks are NULL then [sqlite3_db_log()] is a
+** harmless no-op.
+** ^The void pointer that is the second argument to SQLITE_DBCONFIG_LOG is
+** passed through as the first parameter to the application-defined logger
+** function whenever that function is invoked.  ^The second parameter to
+** the logger function is a copy of the second parameter to the corresponding
+** [sqlite3_db_log()] call and is intended to be a [result code] or an
+** [extended result code].  ^The third parameter passed to the logger is
+** log message after formatting via [sqlite3_snprintf()].
+** The SQLite logging interface is not reentrant; the logger function
+** supplied by the application must not invoke any SQLite interface.
+** </dd>
+**
 ** </dl>
 */
 #define SQLITE_DBCONFIG_LOOKASIDE       1001  /* void* int int */
 #define SQLITE_DBCONFIG_ENABLE_FKEY     1002  /* int int* */
 #define SQLITE_DBCONFIG_ENABLE_TRIGGER  1003  /* int int* */
+#define SQLITE_DBCONFIG_LOG             1004  /* xFunc, void* */
 
 
 /*
@@ -7285,10 +7310,19 @@ int sqlite3_strglob(const char *zGlob, const char *zStr);
 **
 ** ^The [sqlite3_log()] interface writes a message into the [error log]
 ** established by the [SQLITE_CONFIG_LOG] option to [sqlite3_config()].
+** ^The [sqlite3_db_log()] interface writes a message into the [error log]
+** established by the [SQLITE_DBCONFIG_LOG] option to [sqlite3_db_config()].
 ** ^If logging is enabled, the zFormat string and subsequent arguments are
 ** used with [sqlite3_snprintf()] to generate the final output string.
 **
-** The sqlite3_log() interface is intended for use by extensions such as
+** ^The [sqlite3_db_log()] interface writes error and warning information
+** to the callback identified by the [SQLITE_DBCONFIG_LOG] option if that
+** callback is not NULL, falling back to the [SQLITE_CONFIG_LOG] callback
+** if the first parameter to [sqlite3_db_log()] is NULL or if the
+** [SQLITE_DBCONFIG_LOG] callback is NULL.
+**
+** The sqlite3_log() and sqlite3_db_log() interfaces are intended for
+** use by extensions such as
 ** virtual tables, collating functions, and SQL functions.  While there is
 ** nothing to prevent an application from calling sqlite3_log(), doing so
 ** is considered bad form.
@@ -7302,6 +7336,7 @@ int sqlite3_strglob(const char *zGlob, const char *zStr);
 ** buffer.
 */
 void sqlite3_log(int iErrCode, const char *zFormat, ...);
+void sqlite3_db_log(sqlite3*, int iErrCode, const char *zFormat, ...);
 
 /*
 ** CAPI3REF: Write-Ahead Log Commit Hook

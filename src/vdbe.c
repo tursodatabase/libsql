@@ -974,7 +974,7 @@ case OP_Halt: {
     }else{
       sqlite3SetString(&p->zErrMsg, db, "%s constraint failed", zType);
     }
-    sqlite3_log(pOp->p1, zLogFmt, pcx, p->zSql, p->zErrMsg);
+    sqlite3_db_log(db, pOp->p1, zLogFmt, pcx, p->zSql, p->zErrMsg);
   }
   rc = sqlite3VdbeHalt(p);
   assert( rc==SQLITE_BUSY || rc==SQLITE_OK || rc==SQLITE_ERROR );
@@ -6529,7 +6529,7 @@ vdbe_error_halt:
   assert( rc );
   p->rc = rc;
   testcase( sqlite3GlobalConfig.xLog!=0 );
-  sqlite3_log(rc, "statement aborts at %d: [%s] %s", 
+  sqlite3_db_log(db, rc, "statement aborts at %d: [%s] %s", 
                    (int)(pOp - aOp), p->zSql, p->zErrMsg);
   sqlite3VdbeHalt(p);
   if( rc==SQLITE_IOERR_NOMEM ) db->mallocFailed = 1;

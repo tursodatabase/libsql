@@ -1036,15 +1036,20 @@ char *sqlite3_snprintf(int n, char *zBuf, const char *zFormat, ...){
 ** allocate memory because it might be called while the memory allocator
 ** mutex is held.
 */
-static void renderLogMsg(int iErrCode, const char *zFormat, va_list ap){
+static void renderLogMsg(
+  void (*xLog)(void*,int,const char*),   /* Logging function */
+  void *pArg,                            /* First argument to xLog */
+  int iErrCode,                          /* Error code */
+  const char *zFormat,                   /* Format string for error message */
+  va_list ap                             /* Arguments to format string */
+){
   StrAccum acc;                          /* String accumulator */
   char zMsg[SQLITE_PRINT_BUF_SIZE*3];    /* Complete log message */
 
   sqlite3StrAccumInit(&acc, zMsg, sizeof(zMsg), 0);
   acc.useMalloc = 0;
   sqlite3VXPrintf(&acc, 0, zFormat, ap);
-  sqlite3GlobalConfig.xLog(sqlite3GlobalConfig.pLogArg, iErrCode,
-                           sqlite3StrAccumFinish(&acc));
+  xLog(pArg, iErrCode, sqlite3StrAccumFinish(&acc));
 }
 
 /*
@@ -1054,7 +1059,21 @@ void sqlite3_log(int iErrCode, const char *zFormat, ...){
   va_list ap;                             /* Vararg list */
   if( sqlite3GlobalConfig.xLog ){
     va_start(ap, zFormat);
-    renderLogMsg(iErrCode, zFormat, ap);
+    renderLogMsg(sqlite3GlobalConfig.xLog, sqlite3GlobalConfig.pLogArg,
+                 iErrCode, zFormat, ap);
+    va_end(ap);
+  }
+}
+void sqlite3_db_log(sqlite3 *db, int iErrCode, const char *zFormat, ...){
+  va_list ap;                             /* Vararg list */
+  if( db && db->xLog ){
+    va_start(ap, zFormat);
+    renderLogMsg(db->xLog, db->pLogArg, iErrCode, zFormat, ap);
+    va_end(ap);
+  }else if( sqlite3GlobalConfig.xLog ){
+    va_start(ap, zFormat);
+    renderLogMsg(sqlite3GlobalConfig.xLog, sqlite3GlobalConfig.pLogArg,
+                 iErrCode, zFormat, ap);
     va_end(ap);
   }
 }
