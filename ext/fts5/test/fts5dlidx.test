@@ -31,49 +31,60 @@ do_execsql_test 1.0 {
   INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
 }
 
-foreach {tn spc1 spc2 mul} {
-  1 10  100 1000
-  2 1   1   128
-} {
+# This test populates the FTS5 table containing $nEntry entries. Rows are 
+# numbered from 0 to ($nEntry-1). The rowid for row $i is:
+#
+#   ($iFirst + $i*$nStep)
+#
+# Each document is of the form "a b c a b c a b c...". If the row number ($i)
+# is an integer multiple of $spc1, then an "x" token is appended to the
+# document. If it is *also* a multiple of $spc2, a "y" token is also appended.
+#
+proc do_dlidx_test1 {tn spc1 spc2 nEntry iFirst nStep} {
+
+  do_execsql_test $tn.0 { DELETE FROM t1 }
+
   set xdoc [list]
   set ydoc [list]
-  
-  execsql { DELETE FROM t1 }
 
-  do_test 1.$tn.1 {
-  
-    execsql BEGIN
-    for {set i 0} {$i < 10000} {incr i} {
-      set rowid [expr $i * $mul]
-      set doc "a b c a b c a b c a b c a b c"
-      if {($i % $spc1)==0} { 
-        lappend xdoc $rowid
-        append doc " x" 
-        if {($i % $spc2)==0} { 
-          lappend ydoc $rowid
-          append doc " y" 
-        }
+  execsql BEGIN
+  for {set i 0} {$i < $nEntry} {incr i} {
+    set rowid [expr $i * $nStep]
+    set doc [string trim [string repeat "a b c " 100]]
+    if {($i % $spc1)==0} {
+      lappend xdoc $rowid
+      append doc " x" 
+      if {($i % $spc2)==0} { 
+        lappend ydoc $rowid
+        append doc " y" 
       }
-      execsql { INSERT INTO t1(rowid, x) VALUES($rowid, $doc) }
     }
-    execsql COMMIT
+    execsql { INSERT INTO t1(rowid, x) VALUES($rowid, $doc) }
+  }
+  execsql COMMIT
+
+  do_test $tn.1 {
     execsql { INSERT INTO t1(t1) VALUES('integrity-check') }
   } {}
   
-  do_execsql_test 1.$tn.2 { INSERT INTO t1(t1) VALUES('integrity-check') }
+  do_fb_test $tn.3.1 { SELECT rowid FROM t1 WHERE t1 MATCH 'a AND x' } $xdoc
+  do_fb_test $tn.3.2 { SELECT rowid FROM t1 WHERE t1 MATCH 'x AND a' } $xdoc
   
-  do_fb_test 1.$tn.3.1 { SELECT rowid FROM t1 WHERE t1 MATCH 'a AND x' } $xdoc
-  do_fb_test 1.$tn.3.2 { SELECT rowid FROM t1 WHERE t1 MATCH 'x AND a' } $xdoc
+  do_fb_test $tn.4.1 { SELECT rowid FROM t1 WHERE t1 MATCH 'a AND y' } $ydoc
+  do_fb_test $tn.4.2 { SELECT rowid FROM t1 WHERE t1 MATCH 'y AND a' } $ydoc
   
-  do_fb_test 1.$tn.4.1 { SELECT rowid FROM t1 WHERE t1 MATCH 'a AND y' } $ydoc
-  do_fb_test 1.$tn.4.2 { SELECT rowid FROM t1 WHERE t1 MATCH 'y AND a' } $ydoc
-  
-  do_fb_test 1.$tn.5.1 { 
+  do_fb_test $tn.5.1 { 
     SELECT rowid FROM t1 WHERE t1 MATCH 'a + b + c + x' } $xdoc
-  do_fb_test 1.$tn.5.2 { 
+  do_fb_test $tn.5.2 { 
     SELECT rowid FROM t1 WHERE t1 MATCH 'b + c + x + y' } $ydoc
-
 }
+
+
+do_dlidx_test1 1.1     10 100 10000 0 1000
+do_dlidx_test1 1.2     10 10  10000 0 128
+do_dlidx_test1 1.3     10 10  100   0 36028797018963970
+do_dlidx_test1 1.3     10 10  50    0 150000000000000000
+
 
 
 finish_test

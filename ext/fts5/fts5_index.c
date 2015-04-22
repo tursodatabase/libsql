@@ -2993,8 +2993,9 @@ static void fts5WriteFlushLeaf(Fts5Index *p, Fts5SegWriter *pWriter){
   /* Increase the leaves written counter */
   pWriter->nLeafWritten++;
 
-  /* The new leaf holds no terms */
+  /* The new leaf holds no terms or rowids */
   pWriter->bFirstTermInPage = 1;
+  pWriter->bFirstRowidInPage = 1;
 }
 
 /*
@@ -3067,7 +3068,6 @@ static void fts5WriteAppendTerm(
   /* If the current leaf page is full, flush it to disk. */
   if( pPage->buf.n>=p->pConfig->pgsz ){
     fts5WriteFlushLeaf(p, pWriter);
-    pWriter->bFirstRowidInPage = 1;
   }
 }
 
@@ -3106,7 +3106,6 @@ static void fts5WriteAppendRowid(
 
     if( pPage->buf.n>=p->pConfig->pgsz ){
       fts5WriteFlushLeaf(p, pWriter);
-      pWriter->bFirstRowidInPage = 1;
     }
   }
 }
@@ -3121,7 +3120,6 @@ static void fts5WriteAppendPoslistInt(
     fts5BufferAppendVarint(&p->rc, &pPage->buf, iVal);
     if( pPage->buf.n>=p->pConfig->pgsz ){
       fts5WriteFlushLeaf(p, pWriter);
-      pWriter->bFirstRowidInPage = 1;
     }
   }
 }
@@ -3148,7 +3146,6 @@ static void fts5WriteAppendPoslistData(
     a += nCopy;
     n -= nCopy;
     fts5WriteFlushLeaf(p, pWriter);
-    pWriter->bFirstRowidInPage = 1;
   }
   if( n>0 ){
     fts5BufferAppendBlob(&p->rc, &pPage->buf, n, a);
@@ -3667,7 +3664,8 @@ static void fts5FlushOneHash(Fts5Index *p, int iHash, int *pnLeaf){
         i64 iRowid = 0;
         i64 iDelta = 0;
         int iOff = 0;
-        int bFirstDocid = 0;
+
+        writer.bFirstRowidInPage = 0;
 
         /* The entire doclist will not fit on this leaf. The following 
         ** loop iterates through the poslists that make up the current 
@@ -3681,10 +3679,10 @@ static void fts5FlushOneHash(Fts5Index *p, int iHash, int *pnLeaf){
           nCopy += nPos;
           iRowid += iDelta;
           
-          if( bFirstDocid ){
+          if( writer.bFirstRowidInPage ){
             fts5PutU16(&pBuf->p[0], pBuf->n);   /* first docid on page */
             pBuf->n += sqlite3PutVarint(&pBuf->p[pBuf->n], iRowid);
-            bFirstDocid = 0;
+            writer.bFirstRowidInPage = 0;
             fts5WriteDlidxAppend(p, &writer, iRowid);
           }else{
             pBuf->n += sqlite3PutVarint(&pBuf->p[pBuf->n], iDelta);
@@ -3708,7 +3706,6 @@ static void fts5FlushOneHash(Fts5Index *p, int iHash, int *pnLeaf){
                 n = nCopy - iPos;
               }else{
                 n = fts5PoslistPrefix(&pPoslist[iPos], nSpace);
-                assert( n>=nSpace );
               }
               assert( n>0 );
               fts5BufferSafeAppendBlob(pBuf, &pPoslist[iPos], n);
@@ -3719,7 +3716,6 @@ static void fts5FlushOneHash(Fts5Index *p, int iHash, int *pnLeaf){
               }
               if( iPos>=nCopy ) break;
             }
-            bFirstDocid = 1;
           }
           iOff += nCopy;
         }
