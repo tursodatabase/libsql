@@ -1,9 +1,9 @@
-C Alternative\sfix\sfor\sthe\sdouble-initialization\sof\stype\sand\scollating\ssequence\nproblem\sthat\sleaves\sthe\sestimated\stable\ssize\sintact.
-D 2015-04-21T17:17:47.197
+C When\scompiling\sfor\sUAP,\slink\sagainst\sthe\snew\sminimal\sMSVC\sruntime.
+D 2015-04-22T01:33:53.959
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in faaf75b89840659d74501bea269c7e33414761c1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 513abdaff333b04ef68775ec25ceb6053b4ecafd
+F Makefile.msc 32d8fe89ac5c130f9f14293fb4a59b120895c943
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md d58e3bebc0a4145e0f2a87994015fdb575a8e866
 F VERSION 2e244662b71e6e68a5c29b014ebc5b7564f4cc5a
@@ -1197,7 +1197,7 @@ F test/without_rowid6.test db0dbf03c49030aa3c1ba5f618620334bd2baf5f
 F test/wordcount.c 9915e06cb33d8ca8109b8700791afe80d305afda
 F test/zeroblob.test fb3c0e4ab172d386954deda24c03f500e121d80d
 F test/zerodamage.test cf6748bad89553cc1632be51a6f54e487e4039ac
-F tool/build-all-msvc.bat 19be654f72b0b0ed4d2451a998c603a4eb65a60f x
+F tool/build-all-msvc.bat 9058bd90a3c078a3d8c17d40e853aaa0f47885f4 x
 F tool/build-shell.sh 950f47c6174f1eea171319438b93ba67ff5bf367
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
@@ -1252,7 +1252,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9e6beda2c8d879e438ee933e658f860d6eb42a20
-R e945ee9cd5bcd63adee2f8cd77bbfeb7
-U drh
-Z a3d2a31d5a72cc2f0da62ee0f93b8c64
+P 623ddbdbf48d26dac58c593bcb9e7b184334ddfc
+R 647b9c5f348c3c64b56250400a815823
+U mistachkin
+Z 2676785d203eabdaf7fb118930189562

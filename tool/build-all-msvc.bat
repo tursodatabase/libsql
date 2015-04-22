@@ -483,6 +483,8 @@ FOR %%P IN (%PLATFORMS%) DO (
             REM
             IF DEFINED USE_WINV100_NSDKLIBPATH (
               CALL :fn_AppendVariable NSDKLIBPATH \..\10\lib\10.0.10030.0\um\x86
+              CALL :fn_CopyVariable UniversalCRTSdkDir PSDKLIBPATH
+              CALL :fn_AppendVariable PSDKLIBPATH Lib\10.0.10030.0\um\%%D
             ) ELSE IF DEFINED USE_WINV63_NSDKLIBPATH (
               CALL :fn_AppendVariable NSDKLIBPATH \lib\winv6.3\um\x86
             ) ELSE IF "%VisualStudioVersion%" == "12.0" (
@@ -665,6 +667,19 @@ REM
 REM NOTE: If we get to this point, we have succeeded.
 REM
 GOTO no_errors
+
+:fn_ShowVariable
+  SETLOCAL
+  SET __ECHO_CMD=ECHO %%%2%%
+  FOR /F "delims=" %%V IN ('%__ECHO_CMD%') DO (
+    IF NOT "%%V" == "" (
+      IF NOT "%%V" == "%%%2%%" (
+        %_VECHO% %1 = '%%V'
+      )
+    )
+  )
+  ENDLOCAL
+  GOTO :EOF
 
 :fn_ResetErrorLevel
   VERIFY > NUL

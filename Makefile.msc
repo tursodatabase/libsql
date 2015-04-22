@@ -115,6 +115,14 @@ USE_RC = 1
 FOR_WINRT = 0
 !ENDIF
 
+# Set this non-0 to compile binaries suitable for the UAP environment.
+# This setting does not apply to any binaries that require Tcl to operate
+# properly (i.e. the text fixture, etc).
+#
+!IFNDEF FOR_UAP
+FOR_UAP = 0
+!ENDIF
+
 # Set this non-0 to skip attempting to look for and/or link with the Tcl
 # runtime library.
 #
@@ -713,7 +721,7 @@ LTLIBOPTS = /NOLOGO
 #
 !IF $(FOR_WINRT)!=0
 LTLINKOPTS = $(LTLINKOPTS) /APPCONTAINER
-!IF "$(VISUALSTUDIOVERSION)"=="12.0"
+!IF "$(VISUALSTUDIOVERSION)"=="12.0" || "$(VISUALSTUDIOVERSION)"=="14.0"
 !IFNDEF STORELIBPATH
 !IF "$(PLATFORM)"=="x86"
 STORELIBPATH = $(CRTLIBPATH)\store
@@ -755,6 +763,16 @@ LTLINKOPTS = $(LTLINKOPTS) "/LIBPATH:$(WP81LIBPATH)"
 LTLINKOPTS = $(LTLINKOPTS) /DYNAMICBASE
 LTLINKOPTS = $(LTLINKOPTS) WindowsPhoneCore.lib RuntimeObject.lib PhoneAppModelHost.lib
 LTLINKOPTS = $(LTLINKOPTS) /NODEFAULTLIB:kernel32.lib /NODEFAULTLIB:ole32.lib
+!ENDIF
+
+# When compiling for UAP, some extra linker options are also required.
+#
+!IF $(FOR_UAP)!=0
+LTLINKOPTS = $(LTLINKOPTS) /DYNAMICBASE /NODEFAULTLIB:kernel32.lib
+LTLINKOPTS = $(LTLINKOPTS) mincore.lib
+!IFDEF PSDKLIBPATH
+LTLINKOPTS = $(LTLINKOPTS) "/LIBPATH:$(PSDKLIBPATH)"
+!ENDIF
 !ENDIF
 
 # If either debugging or symbols are enabled, enable PDBs.
