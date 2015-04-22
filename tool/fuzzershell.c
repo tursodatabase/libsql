@@ -485,7 +485,12 @@ int main(int argc, char **argv){
       }
     }
     for(iNext=i; iNext<nIn && strncmp(&zIn[iNext],"/****<",6)!=0; iNext++){}
-    
+    cSaved = zIn[iNext];
+    zIn[iNext] = 0;
+    if( iMode!=FZMODE_Generic && sqlite3_strglob("'*',*",&zIn[i])!=0 ){
+      zIn[iNext] = cSaved;
+      continue;
+    }
     rc = sqlite3_open_v2(
       "main.db", &db,
       SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_MEMORY,
@@ -514,8 +519,6 @@ int main(int argc, char **argv){
     if( zEncoding ) sqlexec(db, "PRAGMA encoding=%s", zEncoding);
     if( pageSize ) sqlexec(db, "PRAGMA pagesize=%d", pageSize);
     if( doAutovac ) sqlexec(db, "PRAGMA auto_vacuum=FULL");
-    cSaved = zIn[iNext];
-    zIn[iNext] = 0;
     printf("INPUT (offset: %d, size: %d): [%s]\n",
             i, (int)strlen(&zIn[i]), &zIn[i]);
     zSql = &zIn[i];
