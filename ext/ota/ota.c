@@ -48,8 +48,8 @@ void report_default_vfs(){
 }
 
 void report_ota_vfs(sqlite3ota *pOta){
-  if( pOta ){
-    sqlite3 *db = sqlite3ota_db(pOta, 0);
+  sqlite3 *db = sqlite3ota_db(pOta, 0);
+  if( db ){
     char *zName = 0;
     sqlite3_file_control(db, "main", SQLITE_FCNTL_VFSNAME, &zName);
     if( zName ){

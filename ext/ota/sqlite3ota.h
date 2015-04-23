@@ -295,6 +295,10 @@ sqlite3ota *sqlite3ota_open(const char *zTarget, const char *zOta);
 **   * If the application uses the "ota_delta()" feature described above,
 **     it must use sqlite3_create_function() or similar to register the
 **     ota_delta() implementation with the target database handle.
+**
+** If an error has occurred, either while opening or stepping the OTA object,
+** this function may return NULL. The error code and message may be collected
+** when sqlite3ota_close() is called.
 */
 sqlite3 *sqlite3ota_db(sqlite3ota*, int bOta);
 

@@ -1,5 +1,5 @@
-C Merge\slatest\strunk\schanges\sinto\sthis\sbranch.
-D 2015-04-23T19:32:19.839
+C Fix\sa\sproblem\sin\sthe\s"ota"\sutility\sprogram\scausing\sit\sto\scrash\sif\sSQLite\sfailed\sto\sopen\sthe\starget\sdatabase.
+D 2015-04-23T19:38:20.522
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 34ca00e764c293f3a75208b607b4083a90a1bccf
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -123,7 +123,7 @@ F ext/misc/totype.c 4a167594e791abeed95e0a8db028822b5e8fe512
 F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
-F ext/ota/ota.c feb0a11f720a8f30d2bebb835bba3c131a725685
+F ext/ota/ota.c c47352838b967384a81eda5de75c352922a0dd6e
 F ext/ota/ota1.test 960418e4171a989426f8b1ad8ee31770e0f94fb8
 F ext/ota/ota10.test 85e0f6e7964db5007590c1b299e75211ed4240d4
 F ext/ota/ota11.test 2f606cd2b4af260a86b549e91b9f395450fc75cb
@@ -140,7 +140,7 @@ F ext/ota/otacrash.test 8346192b2d46cbe7787d5d65904d81d3262a3cbf
 F ext/ota/otafault.test 8c43586c2b96ca16bbce00b5d7e7d67316126db8
 F ext/ota/otafault2.test fa202a98ca221faec318f3e5c5f39485b1256561
 F ext/ota/sqlite3ota.c 5bfd677bd956d0ea9f0022b010ac70409e8e9bf6
-F ext/ota/sqlite3ota.h c0d32e46aa52cce3b16899399639deaff1f27b2f
+F ext/ota/sqlite3ota.h 7faa45e080b9c136e666c383187ff6e39d88135b
 F ext/ota/test_ota.c e34c801c665d64b4b9e00b71f1acf8c652404b2b
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 14e6239434d4e3f65d3e90320713f26aa24e167f
@@ -1272,7 +1272,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fa62093b2531424846ea500c4155170d1bc7110e b5e43602833249aa4b73337bf85b7f308450dab6
-R c95117e2851354f4fbc699c1409b62e5
+P 1506e99eca19f72fb59b55ec9e2534505dfa7a6e
+R 5fcb34c1c4f5453896bfec967f317705
 U dan
-Z 4eaccde899eceec56aac43725e359315
+Z 1b150381fd804dab419a02d028d557d7
