@@ -1,5 +1,5 @@
-C Improved\sfiltering\sof\sinput\sfor\sfuzzershell\sfor\smodes\sother\sthan\sgeneric.
-D 2015-04-22T13:16:46.644
+C Fix\sa\sproblem\scausing\sthe\sfts3\sintegrity-check\sto\sfail\sif\srun\sinside\sa\stransaction.
+D 2015-04-23T11:52:04.753
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in faaf75b89840659d74501bea269c7e33414761c1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -78,7 +78,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 1b198ddb76cd706722dacbbaeb17a2fde6fca2cc
+F ext/fts3/fts3.c 81f9ed55ad58614828ad9d8b1e0525ad78fede1b
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 3626655d6ba903a3919bb44e1c38e5f0f9d6be82
 F ext/fts3/fts3_aux.c 5c211e17a64885faeb16b9ba7772f9d5445c2365
@@ -96,7 +96,7 @@ F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c a93f5edc0aff44ef8b06d7cb55b52026541ca145
 F ext/fts3/fts3_unicode2.c c3d01968d497bd7001e7dc774ba75b372738c057
-F ext/fts3/fts3_write.c 7104ec015474ee61a8a570349b925f35c6b0a294
+F ext/fts3/fts3_write.c 4f005f78592a1447ca96c8475ef5342ab7dbe02a
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/fts3/tool/fts3view.c 8e53d0190a7b3443764bbd32ad47be2bd852026d
@@ -606,7 +606,7 @@ F test/fts3tok1.test 178c050199af8c05299b1ad572514ce1c54b7827
 F test/fts3tok_err.test 52273cd193b9036282f7bacb43da78c6be87418d
 F test/fts3varint.test 752c08ed5d32c5d7dc211b056f4ed68a76b7e36e
 F test/fts4aa.test 10aac8e9d62c7357590acfabe3fad01e9a9ce1cb
-F test/fts4check.test 74d77f6cdb768ac49df5afda575cef14ae3d239a
+F test/fts4check.test 9d9e818fd6cb29c0e007cd6d00447739d4fde430
 F test/fts4content.test abb0c77bc3da3df64fec72e00844d2257a90025d
 F test/fts4docid.test e33c383cfbdff0284685604d256f347a18fdbf01
 F test/fts4growth.test df10fde9f47cf5c71861e63fd8efcd573c4f7e53
@@ -1072,7 +1072,7 @@ F test/tkt4018.test 7c2c9ba4df489c676a0a7a0e809a1fb9b2185bd1
 F test/tokenize.test ce430a7aed48fc98301611429595883fdfcab5d7
 F test/tpch01.test 04adbf8d8300fa60a222f28d901abd76e7be6dd4
 F test/trace.test 73a5508100f7fccfbc3f8018d5f6963ed478eea0
-F test/trace2.test 93b47ca6996c66b47f57224cfb146f34e07df382
+F test/trace2.test f5cb67ad3bc09e0c58e8cca78dfd0b5639259983
 F test/trans.test 6e1b4c6a42dba31bd65f8fa5e61a2708e08ddde6
 F test/trans2.test 62bd045bfc7a1c14c5ba83ba64d21ade31583f76
 F test/trans3.test 91a100e5412b488e22a655fe423a14c26403ab94
@@ -1252,7 +1252,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1cceefa7c6585bca786fe9f7118f7beb829ad709
-R cbbdf393d38b0307d153eda6dc2aba63
-U drh
-Z 11145234dd05700bee32abe646d63f11
+P 025e8370dde2918b66683f8d7fa9c7d23d03c9b4
+R 0493843e21c0418553e48f04134edffd
+U dan
+Z f0b3e3cb42b414d1c0d4ee7ec6a01960
