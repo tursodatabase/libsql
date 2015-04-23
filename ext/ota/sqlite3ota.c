@@ -90,6 +90,9 @@
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_OTA)
 #include "sqlite3ota.h"
 
+/* Maximum number of prepared UPDATE statements held by this module */
+#define SQLITE_OTA_UPDATE_CACHESIZE 16
+
 /*
 ** Swap two objects of type TYPE.
 */
@@ -165,6 +168,7 @@ typedef struct OtaObjIter OtaObjIter;
 typedef struct OtaState OtaState;
 typedef struct ota_vfs ota_vfs;
 typedef struct ota_file ota_file;
+typedef struct OtaUpdateStmt OtaUpdateStmt;
 
 #if !defined(SQLITE_AMALGAMATION)
 typedef unsigned int u32;
@@ -193,6 +197,12 @@ struct OtaState {
   i64 nProgress;
   u32 iCookie;
   i64 iOalSz;
+};
+
+struct OtaUpdateStmt {
+  char *zMask;                    /* Copy of update mask used with pUpdate */
+  sqlite3_stmt *pUpdate;          /* Last update statement (or NULL) */
+  OtaUpdateStmt *pNext;
 };
 
 /*
@@ -239,8 +249,7 @@ struct OtaObjIter {
   sqlite3_stmt *pTmpInsert;       /* Insert into ota_tmp_$zTbl */
 
   /* Last UPDATE used (for PK b-tree updates only), or NULL. */
-  char *zMask;                    /* Copy of update mask used with pUpdate */
-  sqlite3_stmt *pUpdate;          /* Last update statement (or NULL) */
+  OtaUpdateStmt *pOtaUpdate;
 };
 
 /*
@@ -436,8 +445,6 @@ static void otaObjIterFreeCols(OtaObjIter *pIter){
   pIter->abTblPk = 0;
   pIter->abNotNull = 0;
   pIter->nTblCol = 0;
-  sqlite3_free(pIter->zMask);
-  pIter->zMask = 0;
   pIter->eType = 0;               /* Invalid value */
 }
 
@@ -446,15 +453,24 @@ static void otaObjIterFreeCols(OtaObjIter *pIter){
 ** the current object (table/index pair).
 */
 static void otaObjIterClearStatements(OtaObjIter *pIter){
+  OtaUpdateStmt *pUp;
+
   sqlite3_finalize(pIter->pSelect);
   sqlite3_finalize(pIter->pInsert);
   sqlite3_finalize(pIter->pDelete);
-  sqlite3_finalize(pIter->pUpdate);
   sqlite3_finalize(pIter->pTmpInsert);
+  pUp = pIter->pOtaUpdate;
+  while( pUp ){
+    OtaUpdateStmt *pTmp = pUp->pNext;
+    sqlite3_finalize(pUp->pUpdate);
+    sqlite3_free(pUp);
+    pUp = pTmp;
+  }
+  
   pIter->pSelect = 0;
   pIter->pInsert = 0;
   pIter->pDelete = 0;
-  pIter->pUpdate = 0;
+  pIter->pOtaUpdate = 0;
   pIter->pTmpInsert = 0;
   pIter->nCol = 0;
 }
@@ -1709,9 +1725,6 @@ static int otaObjIterPrepareAll(
         otaObjIterPrepareTmpInsert(p, pIter, zCollist, zOtaRowid);
       }
 
-      /* Allocate space required for the zMask field. */
-      pIter->zMask = (char*)otaMalloc(p, pIter->nTblCol+1);
-
       sqlite3_free(zWhere);
       sqlite3_free(zOldlist);
       sqlite3_free(zNewlist);
@@ -1729,6 +1742,9 @@ static int otaObjIterPrepareAll(
 ** be used to update the imposter table for the main table b-tree of the
 ** table object that pIter currently points to, assuming that the 
 ** ota_control column of the data_xyz table contains zMask.
+** 
+** If the zMask string does not specify any columns to update, then this
+** is not an error. Output variable *ppStmt is set to NULL in this case.
 */
 static int otaGetUpdateStmt(
   sqlite3ota *p,                  /* OTA handle */
@@ -1736,15 +1752,50 @@ static int otaGetUpdateStmt(
   const char *zMask,              /* ota_control value ('x.x.') */
   sqlite3_stmt **ppStmt           /* OUT: UPDATE statement handle */
 ){
-  if( pIter->pUpdate && strcmp(zMask, pIter->zMask)==0 ){
-    *ppStmt = pIter->pUpdate;
+  OtaUpdateStmt **pp;
+  OtaUpdateStmt *pUp = 0;
+  int nUp = 0;
+
+  /* In case an error occurs */
+  *ppStmt = 0;
+
+  /* Search for an existing statement. If one is found, shift it to the front
+  ** of the LRU queue and return immediately. Otherwise, leave nUp pointing
+  ** to the number of statements currently in the cache and pUp to the
+  ** last object in the list.  */
+  for(pp=&pIter->pOtaUpdate; *pp; pp=&((*pp)->pNext)){
+    pUp = *pp;
+    if( strcmp(pUp->zMask, zMask)==0 ){
+      *pp = pUp->pNext;
+      pUp->pNext = pIter->pOtaUpdate;
+      pIter->pOtaUpdate = pUp;
+      *ppStmt = pUp->pUpdate; 
+      return SQLITE_OK;
+    }
+    nUp++;
+  }
+  assert( pUp==0 || pUp->pNext==0 );
+
+  if( nUp>=SQLITE_OTA_UPDATE_CACHESIZE ){
+    for(pp=&pIter->pOtaUpdate; *pp!=pUp; pp=&((*pp)->pNext));
+    *pp = 0;
+    sqlite3_finalize(pUp->pUpdate);
+    pUp->pUpdate = 0;
   }else{
+    pUp = (OtaUpdateStmt*)otaMalloc(p, sizeof(OtaUpdateStmt)+pIter->nTblCol+1);
+  }
+
+  if( pUp ){
     char *zWhere = otaObjIterGetWhere(p, pIter);
     char *zSet = otaObjIterGetSetlist(p, pIter, zMask);
     char *zUpdate = 0;
-    sqlite3_finalize(pIter->pUpdate);
-    pIter->pUpdate = 0;
-    if( p->rc==SQLITE_OK ){
+
+    pUp->zMask = (char*)&pUp[1];
+    memcpy(pUp->zMask, zMask, pIter->nTblCol);
+    pUp->pNext = pIter->pOtaUpdate;
+    pIter->pOtaUpdate = pUp;
+
+    if( zSet ){
       const char *zPrefix = "";
 
       if( pIter->eType!=OTA_PK_VTAB ) zPrefix = "ota_imp_";
@@ -1752,16 +1803,14 @@ static int otaGetUpdateStmt(
           zPrefix, pIter->zTbl, zSet, zWhere
       );
       p->rc = prepareFreeAndCollectError(
-          p->dbMain, &pIter->pUpdate, &p->zErrmsg, zUpdate
+          p->dbMain, &pUp->pUpdate, &p->zErrmsg, zUpdate
       );
-      *ppStmt = pIter->pUpdate;
-    }
-    if( p->rc==SQLITE_OK ){
-      memcpy(pIter->zMask, zMask, pIter->nTblCol);
+      *ppStmt = pUp->pUpdate;
     }
     sqlite3_free(zWhere);
     sqlite3_free(zSet);
   }
+
   return p->rc;
 }
 
@@ -1857,7 +1906,7 @@ static void otaFileSuffix3(const char *zBase, char *z){
 ** blob starting at byte offset 40.
 */
 static i64 otaShmChecksum(sqlite3ota *p){
-  i64 iRet;
+  i64 iRet = 0;
   if( p->rc==SQLITE_OK ){
     sqlite3_file *pDb = p->pTargetFd->pReal;
     u32 volatile *ptr;

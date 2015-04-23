@@ -1,5 +1,5 @@
-C Add\scomments\srelated\sto\sdatabase\slocking\sto\ssqlite3ota.h.
-D 2015-04-22T11:34:38.145
+C Have\sOTA\smaintain\sa\ssmall\sLRU\scache\sof\sUPDATE\sstatements.\sThis\sreduces\sthe\samount\sof\stime\sit\sspends\scompiling\sUPDATE\sif\sa\ssingle\sdata_xxx\stable\scontains\smany\sdifferent\sota_control\sstrings.
+D 2015-04-23T18:14:21.590
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 79b306896135a2305cfb7e6d88990fc4820fb917
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -128,6 +128,7 @@ F ext/ota/ota1.test 960418e4171a989426f8b1ad8ee31770e0f94fb8
 F ext/ota/ota10.test 85e0f6e7964db5007590c1b299e75211ed4240d4
 F ext/ota/ota11.test 2f606cd2b4af260a86b549e91b9f395450fc75cb
 F ext/ota/ota12.test 0dff44474de448fb4b0b28c20da63273a4149abb
+F ext/ota/ota13.test f7a3d73fa5d3fabf2755b569f125fce7390a874c
 F ext/ota/ota3.test 3fe3521fbdce32d0e4e116a60999c3cba47712c5
 F ext/ota/ota5.test ad0799daf8923ddebffe75ae8c5504ca90b7fadb
 F ext/ota/ota6.test 3bde7f69a894748b27206b6753462ec3b75b6bb6
@@ -138,7 +139,7 @@ F ext/ota/otaA.test ab67f7f53670b81c750dcc946c5b704f51c429a4
 F ext/ota/otacrash.test 8346192b2d46cbe7787d5d65904d81d3262a3cbf
 F ext/ota/otafault.test 8c43586c2b96ca16bbce00b5d7e7d67316126db8
 F ext/ota/otafault2.test fa202a98ca221faec318f3e5c5f39485b1256561
-F ext/ota/sqlite3ota.c b45d73607b78eba89ca224fb0d10e10d1b32b6b0
+F ext/ota/sqlite3ota.c 3b53197166b08bae980ea9b3b668f7eb0580fe8c
 F ext/ota/sqlite3ota.h c0d32e46aa52cce3b16899399639deaff1f27b2f
 F ext/ota/test_ota.c e34c801c665d64b4b9e00b71f1acf8c652404b2b
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
@@ -1269,7 +1270,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 352fa09efd8240567b8f9487944e8c3ade4e664a
-R 7514208e376f1404350994ff3e1120f2
+P 77242965e77446313a8f0a65a39fccb67fe4cabf
+R a8ed618fd0d0e5a18750e29ca6db9e19
 U dan
-Z aab2f59acbc2b3195f57173b44acb17c
+Z 00cb71982fa5d2b70e9c222c1f403ddb
