@@ -1235,7 +1235,7 @@ static int dbPrepareAndBind(
         int n;
         u8 *data;
         const char *zType = (pVar->typePtr ? pVar->typePtr->name : "");
-        char c = zType[0];
+        c = zType[0];
         if( zVar[0]=='@' ||
            (c=='b' && strcmp(zType,"bytearray")==0 && pVar->bytes==0) ){
           /* Load a BLOB type if the Tcl variable is a bytearray and
@@ -2383,7 +2383,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       }
       Tcl_DecrRefCount(pRet);
     }else{
-      ClientData cd[2];
+      ClientData cd2[2];
       DbEvalContext *p;
       Tcl_Obj *pArray = 0;
       Tcl_Obj *pScript;
@@ -2397,9 +2397,9 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       p = (DbEvalContext *)Tcl_Alloc(sizeof(DbEvalContext));
       dbEvalInit(p, pDb, objv[2], pArray);
 
-      cd[0] = (void *)p;
-      cd[1] = (void *)pScript;
-      rc = DbEvalNextCmd(cd, interp, TCL_OK);
+      cd2[0] = (void *)p;
+      cd2[1] = (void *)pScript;
+      rc = DbEvalNextCmd(cd2, interp, TCL_OK);
     }
     break;
   }

@@ -2810,7 +2810,7 @@ static int fts3SegReaderCursor(
   ** calls out here.  */
   if( iLevel<0 && p->aIndex ){
     Fts3SegReader *pSeg = 0;
-    rc = sqlite3Fts3SegReaderPending(p, iIndex, zTerm, nTerm, isPrefix, &pSeg);
+    rc = sqlite3Fts3SegReaderPending(p, iIndex, zTerm, nTerm, isPrefix||isScan, &pSeg);
     if( rc==SQLITE_OK && pSeg ){
       rc = fts3SegReaderCursorAppend(pCsr, pSeg);
     }
@@ -4617,12 +4617,14 @@ static void fts3EvalStartReaders(
 ){
   if( pExpr && SQLITE_OK==*pRc ){
     if( pExpr->eType==FTSQUERY_PHRASE ){
-      int i;
       int nToken = pExpr->pPhrase->nToken;
-      for(i=0; i<nToken; i++){
-        if( pExpr->pPhrase->aToken[i].pDeferred==0 ) break;
+      if( nToken ){
+        int i;
+        for(i=0; i<nToken; i++){
+          if( pExpr->pPhrase->aToken[i].pDeferred==0 ) break;
+        }
+        pExpr->bDeferred = (i==nToken);
       }
-      pExpr->bDeferred = (i==nToken);
       *pRc = fts3EvalPhraseStart(pCsr, 1, pExpr->pPhrase);
     }else{
       fts3EvalStartReaders(pCsr, pExpr->pLeft, pRc);
