@@ -228,6 +228,7 @@ static int test_session_cmd(
       assert( rc!=SQLITE_OK || zErr==0 );
       if( zErr ){
         Tcl_AppendResult(interp, zErr, 0);
+        sqlite3_free(zErr);
         return TCL_ERROR;
       }
       if( rc ){

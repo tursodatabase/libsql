@@ -1,5 +1,5 @@
-C Fix\sa\sperformance\sproblem\sin\ssqlite3session_diff().
-D 2015-04-23T14:40:17.627
+C Fix\sthe\serror\smessage\sreturned\sby\ssqlite3session_diff()\sfor\stables\swith\sno\sPRIMARY\sKEY.
+D 2015-04-23T15:03:14.997
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7599f0c96df628cd543884b1b2f2a2fbffd00079
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -158,12 +158,12 @@ F ext/session/session9.test 5409d90d8141881d08285ed1c2c0d8d10fb92069
 F ext/session/sessionA.test 1feeab0b8e03527f08f2f1defb442da25480138f
 F ext/session/sessionB.test 06961b7c3641151f5d23088250ecad132501113c
 F ext/session/sessionC.test 3982f8577b0744c5ce3aaef7cfeb5bd903f17fe4
-F ext/session/sessionD.test 197781b4823fbf0003a21da0e4360b37d0e0a81f
+F ext/session/sessionD.test bdc20e2384bf92b5719b9e41ad3b18cd9188cf26
 F ext/session/session_common.tcl 9de0451b6a47218fc16b9ed8876b6238a0a3d88d
 F ext/session/sessionfault.test bef044d0952c0d62c31c8d2400be72c8684545cc
-F ext/session/sqlite3session.c de11ba62d7bf5b9a5d732411550771d4ee6b412a
+F ext/session/sqlite3session.c 0b26c45c0c3c0b2afaae9bd69ae1e80a6b8e9b5a
 F ext/session/sqlite3session.h d9ebd8d4c5791aafdf18165575c7f2223c09279b
-F ext/session/test_session.c 037fc25340a918eb2195972fed439d7adf7b5db9
+F ext/session/test_session.c 67a049635d910c55917f23d067575ab5432d4546
 F ext/userauth/sqlite3userauth.h 19cb6f0e31316d0ee4afdfb7a85ef9da3333a220
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
@@ -1271,7 +1271,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4e5f17d189eb0578a544c21fc150f9e2ee3428e3
-R bb0c0c482394af2863743ccd1d1a9362
+P ea400eca314d81761fe5c0e329b906c045f0dfe4
+R 57c462c26b9985ec1f9daf86d6b971a1
 U dan
-Z ee0bd6bc3557d1b9872d331b62e53091
+Z dd15ced7dcdddbd36a44e0c8439b0673

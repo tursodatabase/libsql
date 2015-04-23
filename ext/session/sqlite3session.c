@@ -1473,23 +1473,30 @@ int sqlite3session_diff(
 
     /* Check the table schemas match */
     if( rc==SQLITE_OK ){
+      int bHasPk = 0;
       int nCol;                   /* Columns in zFrom.zTbl */
       u8 *abPK;
       const char **azCol = 0;
       rc = sessionTableInfo(db, zFrom, zTbl, &nCol, 0, &azCol, &abPK);
       if( rc==SQLITE_OK ){
         int bMismatch = 0;
-        if( pTo->nCol!=nCol || memcmp(pTo->abPK, abPK, nCol) ){
+        if( pTo->nCol!=nCol ){
           bMismatch = 1;
         }else{
           int i;
           for(i=0; i<nCol; i++){
+            if( pTo->abPK[i]!=abPK[i] ) bMismatch = 1;
             if( sqlite3_stricmp(azCol[i], pTo->azCol[i]) ) bMismatch = 1;
+            if( abPK[i] ) bHasPk = 1;
           }
         }
 
         if( bMismatch ){
           *pzErrMsg = sqlite3_mprintf("table schemas do not match");
+          rc = SQLITE_ERROR;
+        }
+        if( bHasPk==0 ){
+          *pzErrMsg = sqlite3_mprintf("table has no primary key");
           rc = SQLITE_ERROR;
         }
       }
