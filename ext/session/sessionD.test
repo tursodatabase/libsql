@@ -65,6 +65,25 @@ proc do_diff_test {tn setup} {
   uplevel do_test $tn.2 [list {scksum db aux}] [list $cksum]
 }
 
+# Ensure that the diff produced by comparing the current contents of [db]
+# with itself is empty.
+proc do_empty_diff_test {tn} {
+  forcedelete test.db2
+  forcecopy test.db test.db2
+
+  execsql { ATTACH 'test.db2' AS aux }
+  sqlite3session S db main
+  foreach tbl [db eval {SELECT name FROM sqlite_master WHERE type='table'}] {
+    S attach $tbl
+    S diff aux $tbl
+  }
+
+  set ::C [S changeset]
+  S delete
+
+  uplevel [list do_test $tn {string length $::C} 0]
+}
+
 
 forcedelete test.db2
 do_execsql_test 1.0 {
@@ -145,6 +164,25 @@ do_diff_test 2.4 {
   INSERT INTO aux.t1 
   VALUES('ckmqmzoeuvxisxqy',X'EB5A5D3A1DD22FD1','tidgtsplhjcbvbppdt',-642987.3);
 }
+
+reset_db
+do_execsql_test 3.0 {
+  CREATE TABLE t1(a, b, c, PRIMARY KEY(a));
+  INSERT INTO t1 VALUES(1, 2, 3);
+  INSERT INTO t1 VALUES(4, 5, 6);
+  INSERT INTO t1 VALUES(7, 8, 9);
+
+  CREATE TABLE t2(a, b, c, PRIMARY KEY(a, b));
+  INSERT INTO t2 VALUES(1, 2, 3);
+  INSERT INTO t2 VALUES(4, 5, 6);
+  INSERT INTO t2 VALUES(7, 8, 9);
+
+  CREATE TABLE t3(a, b, c, PRIMARY KEY(a, b, c));
+  INSERT INTO t3 VALUES(1, 2, 3);
+  INSERT INTO t3 VALUES(4, 5, 6);
+  INSERT INTO t3 VALUES(7, 8, 9);
+}
+do_empty_diff_test 3.1
 
 finish_test
 

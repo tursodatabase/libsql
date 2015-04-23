@@ -1417,7 +1417,7 @@ static int sessionDiffFindModified(
     rc = SQLITE_NOMEM;
   }else{
     char *zStmt = sqlite3_mprintf(
-        "SELECT * FROM \"%w\".\"%w\", \"%w\".\"%w\" WHERE %s AND %z",
+        "SELECT * FROM \"%w\".\"%w\", \"%w\".\"%w\" WHERE %s AND (%z)",
         pSession->zDb, pTab->zName, zFrom, pTab->zName, zExpr, zExpr2
     );
     if( zStmt==0 ){
