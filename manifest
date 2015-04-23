@@ -1,5 +1,5 @@
-C Have\sOTA\smaintain\sa\ssmall\sLRU\scache\sof\sUPDATE\sstatements.\sThis\sreduces\sthe\samount\sof\stime\sit\sspends\scompiling\sUPDATE\sif\sa\ssingle\sdata_xxx\stable\scontains\smany\sdifferent\sota_control\sstrings.
-D 2015-04-23T18:14:21.590
+C Fix\sa\sperformance\sproblem\sin\scalls\sto\ssqlite3ota_close()\smade\safter\sthe\sOTA\supdate\shas\sbeen\scompletely\sapplied\sand\scheckpointed.
+D 2015-04-23T19:18:42.820
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 79b306896135a2305cfb7e6d88990fc4820fb917
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -139,7 +139,7 @@ F ext/ota/otaA.test ab67f7f53670b81c750dcc946c5b704f51c429a4
 F ext/ota/otacrash.test 8346192b2d46cbe7787d5d65904d81d3262a3cbf
 F ext/ota/otafault.test 8c43586c2b96ca16bbce00b5d7e7d67316126db8
 F ext/ota/otafault2.test fa202a98ca221faec318f3e5c5f39485b1256561
-F ext/ota/sqlite3ota.c 3b53197166b08bae980ea9b3b668f7eb0580fe8c
+F ext/ota/sqlite3ota.c 5bfd677bd956d0ea9f0022b010ac70409e8e9bf6
 F ext/ota/sqlite3ota.h c0d32e46aa52cce3b16899399639deaff1f27b2f
 F ext/ota/test_ota.c e34c801c665d64b4b9e00b71f1acf8c652404b2b
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
@@ -1270,7 +1270,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 77242965e77446313a8f0a65a39fccb67fe4cabf
-R a8ed618fd0d0e5a18750e29ca6db9e19
+P baee3556ea10d96f1623cf4dce112fa1a1070820
+R 3707e9567587057d1905ac3053e5ac43
 U dan
-Z 00cb71982fa5d2b70e9c222c1f403ddb
+Z 69c7c4a32a6fe3149d703bd1c7c578ac

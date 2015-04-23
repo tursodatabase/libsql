@@ -2443,7 +2443,7 @@ int sqlite3ota_step(sqlite3ota *p){
               void volatile *ptr;
               p->rc = pDb->pMethods->xShmMap(pDb, 0, 32*1024, 0, &ptr);
               if( p->rc==SQLITE_OK ){
-                ((u32*)ptr)[12] = p->iMaxFrame;
+                ((u32 volatile*)ptr)[24] = p->iMaxFrame;
               }
             }
   
