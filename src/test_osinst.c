@@ -1131,7 +1131,6 @@ static int test_vfslog(
 
   switch( (enum VL_enum)iSub ){
     case VL_ANNOTATE: {
-      int rc;
       char *zVfs;
       char *zMsg;
       if( objc!=4 ){
@@ -1148,7 +1147,6 @@ static int test_vfslog(
       break;
     }
     case VL_FINALIZE: {
-      int rc;
       char *zVfs;
       if( objc!=3 ){
         Tcl_WrongNumArgs(interp, 2, objv, "VFS");
@@ -1164,7 +1162,6 @@ static int test_vfslog(
     };
 
     case VL_NEW: {
-      int rc;
       char *zVfs;
       char *zParent;
       char *zLog;

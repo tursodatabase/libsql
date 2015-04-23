@@ -2810,7 +2810,7 @@ static int fts3SegReaderCursor(
   ** calls out here.  */
   if( iLevel<0 && p->aIndex ){
     Fts3SegReader *pSeg = 0;
-    rc = sqlite3Fts3SegReaderPending(p, iIndex, zTerm, nTerm, isPrefix, &pSeg);
+    rc = sqlite3Fts3SegReaderPending(p, iIndex, zTerm, nTerm, isPrefix||isScan, &pSeg);
     if( rc==SQLITE_OK && pSeg ){
       rc = fts3SegReaderCursorAppend(pCsr, pSeg);
     }
@@ -3459,11 +3459,31 @@ static void fts3ReversePoslist(char *pStart, char **ppPoslist){
   char *p = &(*ppPoslist)[-2];
   char c = 0;
 
+  /* Skip backwards passed any trailing 0x00 bytes added by NearTrim() */
   while( p>pStart && (c=*p--)==0 );
+
+  /* Search backwards for a varint with value zero (the end of the previous 
+  ** poslist). This is an 0x00 byte preceded by some byte that does not
+  ** have the 0x80 bit set.  */
   while( p>pStart && (*p & 0x80) | c ){ 
     c = *p--; 
   }
-  if( p>pStart ){ p = &p[2]; }
+  assert( p==pStart || c==0 );
+
+  /* At this point p points to that preceding byte without the 0x80 bit
+  ** set. So to find the start of the poslist, skip forward 2 bytes then
+  ** over a varint. 
+  **
+  ** Normally. The other case is that p==pStart and the poslist to return
+  ** is the first in the doclist. In this case do not skip forward 2 bytes.
+  ** The second part of the if condition (c==0 && *ppPoslist>&p[2])
+  ** is required for cases where the first byte of a doclist and the
+  ** doclist is empty. For example, if the first docid is 10, a doclist
+  ** that begins with:
+  **
+  **   0x0A 0x00 <next docid delta varint>
+  */
+  if( p>pStart || (c==0 && *ppPoslist>&p[2]) ){ p = &p[2]; }
   while( *p++&0x80 );
   *ppPoslist = p;
 }
@@ -4597,12 +4617,14 @@ static void fts3EvalStartReaders(
 ){
   if( pExpr && SQLITE_OK==*pRc ){
     if( pExpr->eType==FTSQUERY_PHRASE ){
-      int i;
       int nToken = pExpr->pPhrase->nToken;
-      for(i=0; i<nToken; i++){
-        if( pExpr->pPhrase->aToken[i].pDeferred==0 ) break;
+      if( nToken ){
+        int i;
+        for(i=0; i<nToken; i++){
+          if( pExpr->pPhrase->aToken[i].pDeferred==0 ) break;
+        }
+        pExpr->bDeferred = (i==nToken);
       }
-      pExpr->bDeferred = (i==nToken);
       *pRc = fts3EvalPhraseStart(pCsr, 1, pExpr->pPhrase);
     }else{
       fts3EvalStartReaders(pCsr, pExpr->pLeft, pRc);
@@ -5765,7 +5787,8 @@ int sqlite3Fts3EvalPhrasePoslist(
     pIter = pPhrase->pOrPoslist;
     iDocid = pPhrase->iOrDocid;
     if( pCsr->bDesc==bDescDoclist ){
-      bEof = (pIter >= (pPhrase->doclist.aAll + pPhrase->doclist.nAll));
+      bEof = !pPhrase->doclist.nAll ||
+                 (pIter >= (pPhrase->doclist.aAll + pPhrase->doclist.nAll));
       while( (pIter==0 || DOCID_CMP(iDocid, pCsr->iPrevId)<0 ) && bEof==0 ){
         sqlite3Fts3DoclistNext(
             bDescDoclist, pPhrase->doclist.aAll, pPhrase->doclist.nAll, 

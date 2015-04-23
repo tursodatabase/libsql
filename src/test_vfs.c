@@ -1080,7 +1080,7 @@ static int testvfs_obj_cmd(
   switch( aSubcmd[i].eCmd ){
     case CMD_SHM: {
       Tcl_Obj *pObj;
-      int i, rc;
+      int rc;
       TestvfsBuffer *pBuffer;
       char *zName;
       if( objc!=3 && objc!=4 ){
@@ -1160,7 +1160,6 @@ static int testvfs_obj_cmd(
       };
       Tcl_Obj **apElem = 0;
       int nElem = 0;
-      int i;
       int mask = 0;
       if( objc!=3 ){
         Tcl_WrongNumArgs(interp, 2, objv, "LIST");

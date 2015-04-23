@@ -115,6 +115,14 @@ USE_RC = 1
 FOR_WINRT = 0
 !ENDIF
 
+# Set this non-0 to compile binaries suitable for the UAP environment.
+# This setting does not apply to any binaries that require Tcl to operate
+# properly (i.e. the text fixture, etc).
+#
+!IFNDEF FOR_UAP
+FOR_UAP = 0
+!ENDIF
+
 # Set this non-0 to skip attempting to look for and/or link with the Tcl
 # runtime library.
 #
@@ -288,6 +296,11 @@ BCC = $(BCC) -FAcs
 #
 !IF $(USE_NATIVE_LIBPATHS)!=0
 NLTLIBPATHS = "/LIBPATH:$(NCRTLIBPATH)" "/LIBPATH:$(NSDKLIBPATH)"
+
+!IFDEF NUCRTLIBPATH
+NUCRTLIBPATH = $(NUCRTLIBPATH:\\=\)
+NLTLIBPATHS = $(NLTLIBPATHS) "/LIBPATH:$(NUCRTLIBPATH)"
+!ENDIF
 !ENDIF
 
 # C compiler and options for use in building executables that
@@ -708,7 +721,7 @@ LTLIBOPTS = /NOLOGO
 #
 !IF $(FOR_WINRT)!=0
 LTLINKOPTS = $(LTLINKOPTS) /APPCONTAINER
-!IF "$(VISUALSTUDIOVERSION)"=="12.0"
+!IF "$(VISUALSTUDIOVERSION)"=="12.0" || "$(VISUALSTUDIOVERSION)"=="14.0"
 !IFNDEF STORELIBPATH
 !IF "$(PLATFORM)"=="x86"
 STORELIBPATH = $(CRTLIBPATH)\store
@@ -750,6 +763,16 @@ LTLINKOPTS = $(LTLINKOPTS) "/LIBPATH:$(WP81LIBPATH)"
 LTLINKOPTS = $(LTLINKOPTS) /DYNAMICBASE
 LTLINKOPTS = $(LTLINKOPTS) WindowsPhoneCore.lib RuntimeObject.lib PhoneAppModelHost.lib
 LTLINKOPTS = $(LTLINKOPTS) /NODEFAULTLIB:kernel32.lib /NODEFAULTLIB:ole32.lib
+!ENDIF
+
+# When compiling for UAP, some extra linker options are also required.
+#
+!IF $(FOR_UAP)!=0
+LTLINKOPTS = $(LTLINKOPTS) /DYNAMICBASE /NODEFAULTLIB:kernel32.lib
+LTLINKOPTS = $(LTLINKOPTS) mincore.lib
+!IFDEF PSDKLIBPATH
+LTLINKOPTS = $(LTLINKOPTS) "/LIBPATH:$(PSDKLIBPATH)"
+!ENDIF
 !ENDIF
 
 # If either debugging or symbols are enabled, enable PDBs.
@@ -1159,12 +1182,15 @@ sqlite3.exe:	$(TOP)\src\shell.c $(SHELL_CORE_DEP) $(LIBRESOBJS) sqlite3.h
 sqldiff.exe:	$(TOP)\tool\sqldiff.c sqlite3.c sqlite3.h
 	$(LTLINK) $(TOP)\tool\sqldiff.c sqlite3.c
 
+fuzzershell.exe:	$(TOP)\tool\fuzzershell.c sqlite3.c sqlite3.h
+	$(LTLINK) $(TOP)\tool\fuzzershell.c sqlite3.c
+
 mptester.exe:	$(TOP)\mptest\mptest.c $(SHELL_CORE_DEP) $(LIBRESOBJS) sqlite3.h
 	$(LTLINK) $(SHELL_COMPILE_OPTS) $(TOP)\mptest\mptest.c \
 		/link $(LTLINKOPTS) $(LTLIBPATHS) $(SHELL_LINK_OPTS) $(LIBRESOBJS) $(LIBREADLINE) $(LTLIBS) $(TLIBS)
 
-MPTEST1 = mptester mptest.db $(TOP)/mptest/crash01.test --repeat 20
-MPTEST2 = mptester mptest.db $(TOP)/mptest/multiwrite01.test --repeat 20
+MPTEST1 = mptester mptest.db $(TOP)\mptest\crash01.test --repeat 20
+MPTEST2 = mptester mptest.db $(TOP)\mptest\multiwrite01.test --repeat 20
 
 mptest:	mptester.exe
 	del /Q mptest.db 2>NUL
@@ -1612,6 +1638,9 @@ queryplantest:	testfixture.exe sqlite3.exe
 
 test:	testfixture.exe sqlite3.exe
 	.\testfixture.exe $(TOP)\test\veryquick.test
+
+smoketest:	testfixture.exe
+	.\testfixture.exe $(TOP)\test\main.test
 
 sqlite3_analyzer.c: $(SQLITE3C) $(TOP)\src\test_stat.c $(TOP)\src\tclsqlite.c $(TOP)\tool\spaceanal.tcl
 	copy $(SQLITE3C) + $(TOP)\src\test_stat.c + $(TOP)\src\tclsqlite.c $@
