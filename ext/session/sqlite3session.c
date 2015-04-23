@@ -1474,12 +1474,12 @@ int sqlite3session_diff(
     /* Check the table schemas match */
     if( rc==SQLITE_OK ){
       int bHasPk = 0;
+      int bMismatch = 0;
       int nCol;                   /* Columns in zFrom.zTbl */
       u8 *abPK;
       const char **azCol = 0;
       rc = sessionTableInfo(db, zFrom, zTbl, &nCol, 0, &azCol, &abPK);
       if( rc==SQLITE_OK ){
-        int bMismatch = 0;
         if( pTo->nCol!=nCol ){
           bMismatch = 1;
         }else{
@@ -1491,16 +1491,16 @@ int sqlite3session_diff(
           }
         }
 
-        if( bMismatch ){
-          *pzErrMsg = sqlite3_mprintf("table schemas do not match");
-          rc = SQLITE_ERROR;
-        }
-        if( bHasPk==0 ){
-          *pzErrMsg = sqlite3_mprintf("table has no primary key");
-          rc = SQLITE_ERROR;
-        }
       }
       sqlite3_free(azCol);
+      if( bMismatch ){
+        *pzErrMsg = sqlite3_mprintf("table schemas do not match");
+        rc = SQLITE_SCHEMA;
+      }
+      if( bHasPk==0 ){
+        /* Ignore tables with no primary keys */
+        goto diff_out;
+      }
     }
 
     if( rc==SQLITE_OK ){

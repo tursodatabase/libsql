@@ -189,7 +189,8 @@ do_empty_diff_test 3.1
 # Test some error cases:
 # 
 #   1) schema mismatches between the two dbs, and 
-#   2) tables with no primary keys.
+#   2) tables with no primary keys. This is not actually an error, but
+#      should not add any changes to the session object.
 #
 reset_db
 forcedelete test.db2
@@ -197,22 +198,27 @@ do_execsql_test 4.0 {
   ATTACH 'test.db2' AS ixua;
   CREATE TABLE ixua.t1(a, b, c);
   CREATE TABLE main.t1(a, b, c);
+  INSERT INTO main.t1 VALUES(1, 2, 3);
 
   CREATE TABLE ixua.t2(a PRIMARY KEY, b, c);
   CREATE TABLE main.t2(a PRIMARY KEY, b, x);
 }
 
-do_test 4.1 {
+do_test 4.1.1 {
   sqlite3session S db main
   S attach t1
   list [catch { S diff ixua t1 } msg] $msg
-} {1 {table has no primary key}}
+} {0 {}}
+do_test 4.1.2 {
+  string length [S changeset]
+} {0}
+S delete
 
-do_test 4.2 {
+do_test 4.2.2 {
+  sqlite3session S db main
   S attach t2
   list [catch { S diff ixua t2 } msg] $msg
-} {1 {table schemas do not match}}
-
+} {1 {SQLITE_SCHEMA - table schemas do not match}}
 S delete
 
 finish_test

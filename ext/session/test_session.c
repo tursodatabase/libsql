@@ -39,9 +39,13 @@ static int test_tcl_integer(Tcl_Interp *interp, const char *zVar){
   return iVal;
 }
 
-static int test_session_error(Tcl_Interp *interp, int rc){
+static int test_session_error(Tcl_Interp *interp, int rc, char *zErr){
   extern const char *sqlite3ErrName(int);
   Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
+  if( zErr ){
+    Tcl_AppendResult(interp, " - ", zErr, 0);
+    sqlite3_free(zErr);
+  }
   return TCL_ERROR;
 }
 
@@ -150,7 +154,7 @@ static int test_session_cmd(
       if( zArg[0]=='*' && zArg[1]=='\0' ) zArg = 0;
       rc = sqlite3session_attach(pSession, zArg);
       if( rc!=SQLITE_OK ){
-        return test_session_error(interp, rc);
+        return test_session_error(interp, rc, 0);
       }
       break;
     }
@@ -177,7 +181,7 @@ static int test_session_cmd(
       }
       sqlite3_free(o.p);
       if( rc!=SQLITE_OK ){
-        return test_session_error(interp, rc);
+        return test_session_error(interp, rc, 0);
       }
       break;
     }
@@ -226,13 +230,8 @@ static int test_session_cmd(
           &zErr
       );
       assert( rc!=SQLITE_OK || zErr==0 );
-      if( zErr ){
-        Tcl_AppendResult(interp, zErr, 0);
-        sqlite3_free(zErr);
-        return TCL_ERROR;
-      }
       if( rc ){
-        return test_session_error(interp, rc);
+        return test_session_error(interp, rc, zErr);
       }
       break;
     }
@@ -278,7 +277,7 @@ static int test_sqlite3session(
   rc = sqlite3session_create(db, Tcl_GetString(objv[3]), &p->pSession);
   if( rc!=SQLITE_OK ){
     ckfree((char*)p);
-    return test_session_error(interp, rc);
+    return test_session_error(interp, rc, 0);
   }
 
   Tcl_CreateObjCommand(
@@ -652,7 +651,7 @@ static int test_sqlite3changeset_apply(
   }
 
   if( rc!=SQLITE_OK ){
-    return test_session_error(interp, rc);
+    return test_session_error(interp, rc, 0);
   }
   Tcl_ResetResult(interp);
   return TCL_OK;
@@ -686,7 +685,7 @@ static int test_sqlite3changeset_apply_replace_all(
 
   rc = sqlite3changeset_apply(db, nChangeset, pChangeset, 0, replace_handler,0);
   if( rc!=SQLITE_OK ){
-    return test_session_error(interp, rc);
+    return test_session_error(interp, rc, 0);
   }
   Tcl_ResetResult(interp);
   return TCL_OK;
@@ -724,7 +723,7 @@ static int test_sqlite3changeset_invert(
     rc = sqlite3changeset_invert(sIn.nData, sIn.aData, &sOut.n, &sOut.p);
   }
   if( rc!=SQLITE_OK ){
-    rc = test_session_error(interp, rc);
+    rc = test_session_error(interp, rc, 0);
   }else{
     Tcl_SetObjResult(interp,Tcl_NewByteArrayObj((unsigned char*)sOut.p,sOut.n));
   }
@@ -772,7 +771,7 @@ static int test_sqlite3changeset_concat(
   }
 
   if( rc!=SQLITE_OK ){
-    rc = test_session_error(interp, rc);
+    rc = test_session_error(interp, rc, 0);
   }else{
     Tcl_SetObjResult(interp,Tcl_NewByteArrayObj((unsigned char*)sOut.p,sOut.n));
   }
@@ -824,7 +823,7 @@ static int test_sqlite3session_foreach(
     rc = sqlite3changeset_start_strm(&pIter, testStreamInput, (void*)&sStr);
   }
   if( rc!=SQLITE_OK ){
-    return test_session_error(interp, rc);
+    return test_session_error(interp, rc, 0);
   }
 
   while( SQLITE_ROW==sqlite3changeset_next(pIter) ){
@@ -907,7 +906,7 @@ static int test_sqlite3session_foreach(
     rc = sqlite3changeset_finalize(pIter);
   }
   if( rc!=SQLITE_OK ){
-    return test_session_error(interp, rc);
+    return test_session_error(interp, rc, 0);
   }
 
   return TCL_OK;

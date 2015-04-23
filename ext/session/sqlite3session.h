@@ -293,6 +293,11 @@ int sqlite3session_changeset(
 **   <li> Has the same PRIMARY KEY definition.
 ** </ul>
 **
+** If the tables are not compatible, SQLITE_SCHEMA is returned. If the tables
+** are compatible but do not have any PRIMARY KEY columns, it is not an error
+** but no changes are added to the session object. As with other session
+** APIs, tables without PRIMARY KEYs are simply ignored.
+**
 ** This function adds a set of changes to the session object that could be
 ** used to update the table in database zFrom (call this the "from-table") 
 ** so that its content is the same as the table attached to the session 
