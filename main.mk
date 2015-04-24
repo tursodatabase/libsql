@@ -621,14 +621,14 @@ fts3_unicode2.o:	$(TOP)/ext/fts3/fts3_unicode2.c $(HDR) $(EXTHDR)
 fts3_write.o:	$(TOP)/ext/fts3/fts3_write.c $(HDR) $(EXTHDR)
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_write.c
 
-fts5.o:	$(TOP)/ext/fts5/fts5.c $(HDR) $(EXTHDR)
-	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts5/fts5.c
-
 rtree.o:	$(TOP)/ext/rtree/rtree.c $(HDR) $(EXTHDR)
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/rtree/rtree.c
 
 # FTS5 things
 #
+fts5.o:	$(TOP)/ext/fts5/fts5.c $(HDR) $(EXTHDR)
+	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts5/fts5.c
+
 fts5_aux.o:	$(TOP)/ext/fts5/fts5_aux.c $(HDR) $(EXTHDR)
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts5/fts5_aux.c
 
@@ -665,6 +665,8 @@ fts5parse.c:	$(TOP)/ext/fts5/fts5parse.y lemon
 	cat fts5parse.c.orig | sed 's/yy/fts5yy/g' | sed 's/YY/fts5YY/g' \
 		| sed 's/TOKEN/FTS5TOKEN/g' >> fts5parse.c
 	echo "#endif /* SQLITE_ENABLE_FTS5 */" >> fts5parse.c
+
+fts5parse.h: fts5parse.c
 
 
 userauth.o:	$(TOP)/ext/userauth/userauth.c $(HDR) $(EXTHDR)

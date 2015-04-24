@@ -1,5 +1,5 @@
-C Add\sextra\sOOM\stests\sfor\sfts5.
-D 2015-04-22T20:58:24.232
+C Fix\san\sfts5\sbuild\sproblem\sin\smain.mk.
+D 2015-04-24T06:02:29.587
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in faaf75b89840659d74501bea269c7e33414761c1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -200,7 +200,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 0bdbbda2133675d0624b333f55e5d38a46ece577
+F main.mk 2f5c69b4d942b4084f61c7a9e76e6ad2c9912bcd
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
 F mkopcodeh.awk d5e22023b5238985bb54a72d33e0ac71fe4f8a32
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
@@ -1301,7 +1301,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1e5994097e4c740c5173ea9718c3935728fdb86f
-R 8fd8d325057a6a764b3fb8036f0655cc
+P 2dd59b5762c944b3bdd270e95c6739cd4f530bfa
+R 16931392bbfaadd753438e7b377b1156
 U dan
-Z a76fe5c70a2f59aae49b2624efc313d4
+Z b1c66eea22fb17fe989c58ccfd8fe427
