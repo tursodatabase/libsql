@@ -1624,19 +1624,22 @@ testfixture.exe:	$(TESTFIXTURE_SRC) $(LIBRESOBJS) $(HDR)
 extensiontest: testfixture.exe testloadext.dll
 	.\testfixture.exe $(TOP)\test\loadext.test
 
-fulltest:	testfixture.exe sqlite3.exe
+fulltest:	testfixture.exe sqlite3.exe fuzztest
 	.\testfixture.exe $(TOP)\test\all.test
 
 soaktest:	testfixture.exe sqlite3.exe
 	.\testfixture.exe $(TOP)\test\all.test -soak=1
 
-fulltestonly:	testfixture.exe sqlite3.exe
+fulltestonly:	testfixture.exe sqlite3.exe fuzztest
 	.\testfixture.exe $(TOP)\test\full.test
 
 queryplantest:	testfixture.exe sqlite3.exe
 	.\testfixture.exe $(TOP)\test\permutations.test queryplanner
 
-test:	testfixture.exe sqlite3.exe
+fuzztest:	fuzzershell.exe
+	.\fuzzershell.exe -f $(TOP)\test\fuzzdata1.txt
+
+test:	testfixture.exe sqlite3.exe fuzztest
 	.\testfixture.exe $(TOP)\test\veryquick.test
 
 smoketest:	testfixture.exe

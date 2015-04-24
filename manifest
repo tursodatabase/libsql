@@ -1,9 +1,9 @@
-C Add\sAFL-generated\stest\scases\sin\sthe\stest/fuzzdata1.txt\sfile.\s\sAutomatically\nrun\sfuzzershell\sagainst\sthose\scases\son\sa\s"make\stest".
-D 2015-04-24T16:09:12.862
+C Add\sthe\sfuzztest\starget\sto\sthe\sMSVC\smakefile.
+D 2015-04-24T16:16:31.886
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a1e5faa26179818cfb4e7dac6cfa131d03f6b0ea
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 32d8fe89ac5c130f9f14293fb4a59b120895c943
+F Makefile.msc 4a546e42ecfd0fe53c31e05c2a965e17fb591637
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md d58e3bebc0a4145e0f2a87994015fdb575a8e866
 F VERSION 2e244662b71e6e68a5c29b014ebc5b7564f4cc5a
@@ -1253,7 +1253,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7cb718491b5de77d4a73d8484324b66a36815019
-R 5c239b072c2dcd31e4add6efc2487c7d
+P 627ea83c26b420088f101801eb8765127f47d2d0
+R f95072dc4d7f37b67ec23c04637d926a
 U drh
-Z 9d51c74e3083ce62441ba344efd87c33
+Z ad44373bb5cba44811711435ae9efa03
