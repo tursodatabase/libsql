@@ -407,10 +407,10 @@ static int fts5ConfigDefaultTokenizer(Fts5Global *pGlobal, Fts5Config *pConfig){
 ** set if a parse error (failed to find close quote) occurs.
 */
 static const char *fts5ConfigGobbleWord(
-  int *pRc, 
-  const char *zIn, 
-  char **pzOut, 
-  int *pbQuoted
+  int *pRc,                       /* IN/OUT: Error code */
+  const char *zIn,                /* Buffer to gobble string/bareword from */
+  char **pzOut,                   /* OUT: malloc'd buffer containing str/bw */
+  int *pbQuoted                   /* OUT: Set to true if dequoting required */
 ){
   const char *zRet = 0;
   *pbQuoted = 0;
