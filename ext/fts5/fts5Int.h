@@ -39,6 +39,18 @@ int sqlite3Fts5Corrupt(void);
 # define FTS5_CORRUPT SQLITE_CORRUPT_VTAB
 #endif
 
+/*
+** The assert_nc() macro is similar to the assert() macro, except that it
+** is used for assert() conditions that are true only if it can be 
+** guranteed that the database is not corrupt.
+*/
+#ifdef SQLITE_TEST
+extern int sqlite3_fts5_may_be_corrupt;
+# define assert_nc(x) assert(sqlite3_fts5_may_be_corrupt || (x))
+#else
+# define assert_nc(x) assert(x)
+#endif
+
 /**************************************************************************
 ** Interface to code in fts5.c. 
 */

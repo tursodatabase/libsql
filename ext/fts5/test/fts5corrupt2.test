@@ -1,0 +1,116 @@
+# 2015 Apr 24
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# This file tests that FTS5 handles corrupt databases (i.e. internal
+# inconsistencies in the backing tables) correctly. In this case 
+# "correctly" means without crashing.
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+set testprefix fts5corrupt2
+
+# Create a simple FTS5 table containing 100 documents. Each document 
+# contains 10 terms, each of which start with the character "x".
+#
+expr srand(0)
+db func rnddoc fts5_rnddoc
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(x);
+  INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
+  WITH ii(i) AS (SELECT 1 UNION SELECT i+1 FROM ii WHERE i<100)
+  INSERT INTO t1 SELECT rnddoc(10) FROM ii;
+}
+
+set mask [expr 31 << 31]
+
+# Test 1:
+#
+#   For each page in the t1_data table, open a transaction and DELETE
+#   the t1_data entry. Then run:
+#
+#     * an integrity-check, and
+#     * unless the deleted block was a b-tree node, a query for "t1 MATCH 'x*'"
+#
+#   and check that the corruption is detected in both cases. The 
+#   rollback the transaction.
+#
+# Test 2:
+#
+#   Same thing, except instead of deleting a row from t1_data, replace its
+#   blob content with integer value 14.
+#
+foreach {tno stmt} {
+  1 { DELETE FROM t1_data WHERE rowid=$rowid }
+  2 { UPDATE t1_data SET block=14 WHERE rowid=$rowid }
+} {
+  break
+  set tn 0
+  foreach rowid [db eval {SELECT rowid FROM t1_data WHERE rowid>10}] {
+    incr tn
+    #if {$tn!=224} continue
+  
+    do_test 1.$tno.$tn.1.$rowid {
+      execsql { BEGIN }
+      execsql $stmt
+      catchsql { INSERT INTO t1(t1) VALUES('integrity-check') }
+    } {1 {database disk image is malformed}}
+  
+    if {($rowid & $mask)==0} {
+      # Node is a leaf node, not a b-tree node.
+      do_catchsql_test 1.$tno.$tn.2.$rowid {
+        SELECT rowid FROM t1 WHERE t1 MATCH 'x*'
+      } {1 {database disk image is malformed}}
+    }
+  
+    do_execsql_test 1.$tno.$tn.3.$rowid {
+      ROLLBACK;
+      INSERT INTO t1(t1) VALUES('integrity-check');
+    } {}
+  }
+}
+
+# Run N-1 tests, where N is the number of bytes in the rightmost leaf page
+# of the fts index. For test $i, truncate the rightmost leafpage to $i
+# bytes. Then test both the integrity-check detects the corruption.
+#
+# Also tested is that "MATCH 'x*'" does not crash and sometimes reports
+# corruption. It may not report the db as corrupt because truncating the
+# final leaf to some sizes may create a valid leaf page.
+#
+set lrowid [db one {SELECT max(rowid) FROM t1_data WHERE (rowid & $mask)=0}] 
+set nbyte [db one {SELECT length(block) FROM t1_data WHERE rowid=$lrowid}]
+set all [db eval {SELECT rowid FROM t1}]
+for {set i [expr $nbyte-2]} {$i>=0} {incr i -1} {
+  do_execsql_test 2.$i.1 {
+    BEGIN;
+      UPDATE t1_data SET block = substr(block, 1, $i) WHERE rowid=$lrowid;
+  }
+
+  do_catchsql_test 2.$i.2 {
+    INSERT INTO t1(t1) VALUES('integrity-check');
+  } {1 {database disk image is malformed}}
+
+  do_test 2.$i.3 {
+    set res [catchsql {SELECT rowid FROM t1 WHERE t1 MATCH 'x*'}]
+    expr {
+        $res=="1 {database disk image is malformed}" 
+     || $res=="0 {$all}" 
+    }
+  } 1
+
+  do_execsql_test 2.$i.4 {
+    ROLLBACK;
+    INSERT INTO t1(t1) VALUES('integrity-check');
+  } {}
+}
+
+finish_test
+

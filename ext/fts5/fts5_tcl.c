@@ -22,6 +22,14 @@
 #include <string.h>
 #include <assert.h>
 
+/*
+** This variable is set to true when running corruption tests. Otherwise
+** false. If it is false, extra assert() conditions in the fts5 code are
+** activated - conditions that are only true if it is guaranteed that the
+** fts5 database is not corrupt.
+*/
+int sqlite3_fts5_may_be_corrupt = 0;
+
 /*************************************************************************
 ** This is a copy of the first part of the SqliteDb structure in 
 ** tclsqlite.c.  We need it here so that the get_sqlite_pointer routine
@@ -831,6 +839,33 @@ static void xF5tFree(ClientData clientData){
 }
 
 /*
+**      sqlite3_fts5_may_be_corrupt BOOLEAN
+**
+** Set or clear the global "may-be-corrupt" flag. Return the old value.
+*/
+static int f5tMayBeCorrupt(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int bOld = sqlite3_fts5_may_be_corrupt;
+
+  if( objc!=2 && objc!=1 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "?BOOLEAN?");
+    return TCL_ERROR;
+  }
+  if( objc==2 ){
+    int bNew;
+    if( Tcl_GetBooleanFromObj(interp, objv[1], &bNew) ) return TCL_ERROR;
+    sqlite3_fts5_may_be_corrupt = bNew;
+  }
+
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(bOld));
+  return TCL_OK;
+}
+
+/*
 ** Entry point.
 */
 int Fts5tcl_Init(Tcl_Interp *interp){
@@ -842,7 +877,8 @@ int Fts5tcl_Init(Tcl_Interp *interp){
     { "sqlite3_fts5_create_tokenizer", f5tCreateTokenizer, 1 },
     { "sqlite3_fts5_token",            f5tTokenizerReturn, 1 },
     { "sqlite3_fts5_tokenize",         f5tTokenize, 0 },
-    { "sqlite3_fts5_create_function",  f5tCreateFunction, 0 }
+    { "sqlite3_fts5_create_function",  f5tCreateFunction, 0 },
+    { "sqlite3_fts5_may_be_corrupt",   f5tMayBeCorrupt, 0 }
   };
   int i;
   F5tTokenizerContext *pContext;

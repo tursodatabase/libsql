@@ -752,6 +752,46 @@ static void fts5CloseReader(Fts5Index *p){
   }
 }
 
+/*
+** Check if row iRowid exists in the %_data table, and that it contains
+** a blob value. If so, return SQLITE_ERROR (yes - SQLITE_ERROR, not 
+** SQLITE_OK). If not, return SQLITE_CORRUPT_VTAB.
+**
+** If an error occurs (e.g. OOM or IOERR), return the relevant error code.
+**
+** This function does not need to be efficient. It is part of vary rarely
+** invoked error handling code only.
+*/
+#if 0
+static int fts5CheckMissingRowid(Fts5Index *p, i64 iRowid){
+  const char *zFmt = "SELECT typeof(block)=='blob' FROM '%q'.%Q WHERE id=%lld";
+  int bOk = 0;
+  int rc;
+  char *zSql;
+
+  zSql = sqlite3_mprintf(zFmt, p->pConfig->zDb, p->zDataTbl, iRowid);
+  if( zSql==0 ){
+    rc = SQLITE_NOMEM;
+  }else{
+    sqlite3_stmt *pStmt;
+    rc = sqlite3_prepare_v2(p->pConfig->db, zSql, -1, &pStmt, 0);
+    if( rc==SQLITE_OK ){
+      if( SQLITE_ROW==sqlite3_step(pStmt) ){
+        bOk = sqlite3_column_int(pStmt, 0);
+      }
+      rc = sqlite3_finalize(pStmt);
+    }
+    sqlite3_free(zSql);
+  }
+
+  if( rc==SQLITE_OK ){
+    rc = bOk ? SQLITE_ERROR : FTS5_CORRUPT;
+  }
+
+  return rc;
+}
+#endif
+
 static Fts5Data *fts5DataReadOrBuffer(
   Fts5Index *p, 
   Fts5Buffer *pBuf, 
@@ -761,13 +801,6 @@ static Fts5Data *fts5DataReadOrBuffer(
   if( p->rc==SQLITE_OK ){
     int rc = SQLITE_OK;
 
-#if 0
-Fts5Buffer buf = {0,0,0};
-fts5DebugRowid(&rc, &buf, iRowid);
-fprintf(stdout, "read: %s\n", buf.p);
-fflush(stdout);
-sqlite3_free(buf.p);
-#endif
     if( p->pReader ){
       /* This call may return SQLITE_ABORT if there has been a savepoint
       ** rollback since it was last used. In this case a new blob handle
@@ -787,6 +820,13 @@ sqlite3_free(buf.p);
           pConfig->zDb, p->zDataTbl, "block", iRowid, 0, &p->pReader
       );
     }
+
+    /* If either of the sqlite3_blob_open() or sqlite3_blob_reopen() calls
+    ** above returned SQLITE_ERROR, return SQLITE_CORRUPT_VTAB instead.
+    ** All the reasons those functions might return SQLITE_ERROR - missing
+    ** table, missing row, non-blob/text in block column - indicate 
+    ** backing store corruption.  */
+    if( rc==SQLITE_ERROR ) rc = FTS5_CORRUPT;
 
     if( rc==SQLITE_OK ){
       u8 *aOut;                   /* Read blob data into this buffer */
@@ -1563,7 +1603,7 @@ static void fts5SegIterLoadNPos(Fts5Index *p, Fts5SegIter *pIter){
   if( p->rc==SQLITE_OK ){
     const u8 *a = &pIter->pLeaf->p[pIter->iLeafOffset];
     int iOff = pIter->iLeafOffset;  /* Offset to read at */
-    pIter->iLeafOffset += fts5GetPoslistSize(a, &pIter->nPos,&pIter->bDel);
+    pIter->iLeafOffset += fts5GetPoslistSize(a, &pIter->nPos, &pIter->bDel);
   }
 }
 
@@ -1577,8 +1617,6 @@ static void fts5SegIterLoadNPos(Fts5Index *p, Fts5SegIter *pIter){
 **
 **   Fts5SegIter.term
 **   Fts5SegIter.rowid
-**   Fts5SegIter.nPos
-**   Fts5SegIter.bDel
 **
 ** accordingly and leaves (Fts5SegIter.iLeafOffset) set to the content of
 ** the first position list. The position list belonging to document 
@@ -3912,7 +3950,6 @@ static void fts5BtreeIterNext(Fts5BtreeIter *pIter){
   pIter->nEmpty = pIter->aLvl[0].s.nEmpty;
   pIter->bDlidx = pIter->aLvl[0].s.bDlidx;
   pIter->iLeaf = pIter->aLvl[0].s.iChild;
-  assert( p->rc==SQLITE_OK || pIter->bEof );
 }
 
 static void fts5BtreeIterFree(Fts5BtreeIter *pIter){
@@ -3985,7 +4022,7 @@ static void fts5IndexIntegrityCheckSegment(
 
   /* Iterate through the b-tree hierarchy.  */
   for(fts5BtreeIterInit(p, iIdx, pSeg, &iter);
-      iter.bEof==0;
+      p->rc==SQLITE_OK && iter.bEof==0;
       fts5BtreeIterNext(&iter)
   ){
     i64 iRow;                     /* Rowid for this leaf */

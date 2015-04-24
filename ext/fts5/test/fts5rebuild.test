@@ -39,7 +39,7 @@ do_execsql_test 1.5 {
 
 do_catchsql_test 1.6 {
   INSERT INTO f1(f1) VALUES('integrity-check');
-} {1 {SQL logic error or missing database}}
+} {1 {database disk image is malformed}}
 
 do_execsql_test 1.7 {
   INSERT INTO f1(f1) VALUES('rebuild');
