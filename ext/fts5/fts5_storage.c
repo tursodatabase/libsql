@@ -323,6 +323,7 @@ static int fts5StorageDeleteFromIndex(Fts5Storage *p, i64 iDel){
       ctx.iCol = -1;
       rc = sqlite3Fts5IndexBeginWrite(p->pIndex, iDel);
       for(iCol=1; rc==SQLITE_OK && iCol<=pConfig->nCol; iCol++){
+        if( pConfig->abUnindexed[iCol-1] ) continue;
         ctx.szCol = 0;
         rc = sqlite3Fts5Tokenize(pConfig, 
             (const char*)sqlite3_column_text(pSeek, iCol),
@@ -486,6 +487,7 @@ int sqlite3Fts5StorageSpecialDelete(
 
     rc = sqlite3Fts5IndexBeginWrite(p->pIndex, iDel);
     for(iCol=0; rc==SQLITE_OK && iCol<pConfig->nCol; iCol++){
+      if( pConfig->abUnindexed[iCol] ) continue;
       ctx.szCol = 0;
       rc = sqlite3Fts5Tokenize(pConfig, 
         (const char*)sqlite3_value_text(apVal[iCol]),
@@ -564,12 +566,14 @@ int sqlite3Fts5StorageRebuild(Fts5Storage *p){
     rc = sqlite3Fts5IndexBeginWrite(p->pIndex, iRowid);
     for(ctx.iCol=0; rc==SQLITE_OK && ctx.iCol<pConfig->nCol; ctx.iCol++){
       ctx.szCol = 0;
-      rc = sqlite3Fts5Tokenize(pConfig, 
-          (const char*)sqlite3_column_text(pScan, ctx.iCol+1),
-          sqlite3_column_bytes(pScan, ctx.iCol+1),
-          (void*)&ctx,
-          fts5StorageInsertCallback
-      );
+      if( pConfig->abUnindexed[ctx.iCol]==0 ){
+        rc = sqlite3Fts5Tokenize(pConfig, 
+            (const char*)sqlite3_column_text(pScan, ctx.iCol+1),
+            sqlite3_column_bytes(pScan, ctx.iCol+1),
+            (void*)&ctx,
+            fts5StorageInsertCallback
+        );
+      }
       sqlite3Fts5BufferAppendVarint(&rc, &buf, ctx.szCol);
       p->aTotalSize[ctx.iCol] += (i64)ctx.szCol;
     }
@@ -671,12 +675,14 @@ int sqlite3Fts5StorageInsert(
   }
   for(ctx.iCol=0; rc==SQLITE_OK && ctx.iCol<pConfig->nCol; ctx.iCol++){
     ctx.szCol = 0;
-    rc = sqlite3Fts5Tokenize(pConfig, 
-        (const char*)sqlite3_value_text(apVal[ctx.iCol+2]),
-        sqlite3_value_bytes(apVal[ctx.iCol+2]),
-        (void*)&ctx,
-        fts5StorageInsertCallback
-    );
+    if( pConfig->abUnindexed[ctx.iCol]==0 ){
+      rc = sqlite3Fts5Tokenize(pConfig, 
+          (const char*)sqlite3_value_text(apVal[ctx.iCol+2]),
+          sqlite3_value_bytes(apVal[ctx.iCol+2]),
+          (void*)&ctx,
+          fts5StorageInsertCallback
+      );
+    }
     sqlite3Fts5BufferAppendVarint(&rc, &buf, ctx.szCol);
     p->aTotalSize[ctx.iCol] += (i64)ctx.szCol;
   }
@@ -783,6 +789,7 @@ int sqlite3Fts5StorageIntegrity(Fts5Storage *p){
       ctx.szCol = 0;
       rc = sqlite3Fts5StorageDocsize(p, ctx.iRowid, aColSize);
       for(i=0; rc==SQLITE_OK && i<pConfig->nCol; i++){
+        if( pConfig->abUnindexed[i] ) continue;
         ctx.iCol = i;
         ctx.szCol = 0;
         rc = sqlite3Fts5Tokenize(

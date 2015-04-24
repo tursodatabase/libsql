@@ -70,7 +70,7 @@ do_catchsql_test 4.1 {
 } {1 {parse error in "tokenize = tcl abc"}}
 do_catchsql_test 4.2 {
   CREATE VIRTUAL TABLE ft2 USING fts5(x y)
-} {1 {parse error in "x y"}}
+} {1 {unrecognized column option: y}}
 
 #-------------------------------------------------------------------------
 # Test the "separators" and "tokenchars" options a bit.

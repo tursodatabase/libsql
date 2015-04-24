@@ -92,6 +92,7 @@ struct Fts5Config {
   char *zName;                    /* Name of FTS index */
   int nCol;                       /* Number of columns */
   char **azCol;                   /* Column names */
+  u8 *abUnindexed;                /* True for unindexed columns */
   int nPrefix;                    /* Number of prefix indexes */
   int *aPrefix;                   /* Sizes in bytes of nPrefix prefix indexes */
   int eContent;                   /* An FTS5_CONTENT value */

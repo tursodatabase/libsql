@@ -134,31 +134,50 @@ static const char *fts5ConfigSkipLiteral(const char *pIn){
   return p;
 }
 
+/*
+** The first character of the string pointed to by argument z is guaranteed
+** to be an open-quote character (see function fts5_isopenquote()).
+**
+** This function searches for the corresponding close-quote character within
+** the string and, if found, dequotes the string in place and adds a new
+** nul-terminator byte.
+**
+** If the close-quote is found, the value returned is the byte offset of
+** the character immediately following it. Or, if the close-quote is not 
+** found, -1 is returned. If -1 is returned, the buffer is left in an 
+** undefined state.
+*/
 static int fts5Dequote(char *z){
   char q;
   int iIn = 1;
   int iOut = 0;
-  int bRet = 1;
   q = z[0];
 
+  /* Set stack variable q to the close-quote character */
   assert( q=='[' || q=='\'' || q=='"' || q=='`' );
   if( q=='[' ) q = ']';  
 
   while( z[iIn] ){
     if( z[iIn]==q ){
       if( z[iIn+1]!=q ){
-        if( z[iIn+1]=='\0' ) bRet = 0;
-        break;
+        /* Character iIn was the close quote. */
+        z[iOut] = '\0';
+        return iIn+1;
+      }else{
+        /* Character iIn and iIn+1 form an escaped quote character. Skip
+        ** the input cursor past both and copy a single quote character 
+        ** to the output buffer. */
+        iIn += 2;
+        z[iOut++] = q;
       }
-      z[iOut++] = q;
-      iIn += 2;
     }else{
       z[iOut++] = z[iIn++];
     }
   }
-  z[iOut] = '\0';
 
-  return bRet;
+  /* Did not find the close-quote character. Return -1. */
+  z[iOut] = '\0';
+  return -1;
 }
 
 /*
@@ -182,18 +201,6 @@ void sqlite3Fts5Dequote(char *z){
   if( quote=='[' || quote=='\'' || quote=='"' || quote=='`' ){
     fts5Dequote(z);
   }
-}
-
-/*
-** Trim any white-space from the right of nul-terminated string z.
-*/
-static char *fts5TrimString(char *z){
-  int n = strlen(z);
-  while( n>0 && fts5_iswhitespace(z[n-1]) ){
-    z[--n] = '\0';
-  }
-  while( fts5_iswhitespace(*z) ) z++;
-  return z;
 }
 
 /*
@@ -251,10 +258,10 @@ static int fts5ConfigParseSpecial(
   Fts5Global *pGlobal,
   Fts5Config *pConfig,            /* Configuration object to update */
   const char *zCmd,               /* Special command to parse */
-  int nCmd,                       /* Size of zCmd in bytes */
   const char *zArg,               /* Argument to parse */
   char **pzErr                    /* OUT: Error message */
 ){
+  int nCmd = strlen(zCmd);
   if( sqlite3_strnicmp("prefix", zCmd, nCmd)==0 ){
     const int nByte = sizeof(int) * FTS5_MAX_PREFIX_INDEXES;
     int rc = SQLITE_OK;
@@ -385,6 +392,84 @@ static int fts5ConfigDefaultTokenizer(Fts5Global *pGlobal, Fts5Config *pConfig){
 }
 
 /*
+** Gobble up the first bareword or quoted word from the input buffer zIn.
+** Return a pointer to the character immediately following the last in
+** the gobbled word if successful, or a NULL pointer otherwise (failed
+** to find close-quote character).
+**
+** Before returning, set pzOut to point to a new buffer containing a
+** nul-terminated, dequoted copy of the gobbled word. If the word was
+** quoted, *pbQuoted is also set to 1 before returning.
+**
+** If *pRc is other than SQLITE_OK when this function is called, it is
+** a no-op (NULL is returned). Otherwise, if an OOM occurs within this
+** function, *pRc is set to SQLITE_NOMEM before returning. *pRc is *not*
+** set if a parse error (failed to find close quote) occurs.
+*/
+static const char *fts5ConfigGobbleWord(
+  int *pRc, 
+  const char *zIn, 
+  char **pzOut, 
+  int *pbQuoted
+){
+  const char *zRet = 0;
+  *pbQuoted = 0;
+  *pzOut = 0;
+
+  if( *pRc==SQLITE_OK ){
+    int nIn = strlen(zIn);
+    char *zOut = sqlite3_malloc(nIn+1);
+
+    if( zOut==0 ){
+      *pRc = SQLITE_NOMEM;
+    }else{
+      memcpy(zOut, zIn, nIn+1);
+      if( fts5_isopenquote(zOut[0]) ){
+        int ii = fts5Dequote(zOut);
+        if( ii>0 ) zRet = &zIn[ii];
+        *pbQuoted = 1;
+      }else{
+        zRet = fts5ConfigSkipBareword(zIn);
+        zOut[zRet-zIn] = '\0';
+      }
+    }
+
+    if( zRet==0 ){
+      sqlite3_free(zOut);
+    }else{
+      *pzOut = zOut;
+    }
+  }
+
+  return zRet;
+}
+
+static int fts5ConfigParseColumn(
+  Fts5Config *p, 
+  char *zCol, 
+  char *zArg, 
+  char **pzErr
+){
+  int rc = SQLITE_OK;
+  if( 0==sqlite3_stricmp(zCol, FTS5_RANK_NAME) 
+   || 0==sqlite3_stricmp(zCol, FTS5_ROWID_NAME) 
+  ){
+    *pzErr = sqlite3_mprintf("reserved fts5 column name: %s", zCol);
+    rc = SQLITE_ERROR;
+  }else if( zArg ){
+    if( 0==sqlite3_stricmp(zArg, "unindexed") ){
+      p->abUnindexed[p->nCol] = 1;
+    }else{
+      *pzErr = sqlite3_mprintf("unrecognized column option: %s", zArg);
+      rc = SQLITE_ERROR;
+    }
+  }
+
+  p->azCol[p->nCol++] = zCol;
+  return rc;
+}
+
+/*
 ** Arguments nArg/azArg contain the string arguments passed to the xCreate
 ** or xConnect method of the virtual table. This function attempts to 
 ** allocate an instance of Fts5Config containing the results of parsing
@@ -407,6 +492,7 @@ int sqlite3Fts5ConfigParse(
   int rc = SQLITE_OK;             /* Return code */
   Fts5Config *pRet;               /* New object to return */
   int i;
+  int nByte;
 
   *ppOut = pRet = (Fts5Config*)sqlite3_malloc(sizeof(Fts5Config));
   if( pRet==0 ) return SQLITE_NOMEM;
@@ -414,7 +500,9 @@ int sqlite3Fts5ConfigParse(
   pRet->db = db;
   pRet->iCookie = -1;
 
-  pRet->azCol = (char**)sqlite3Fts5MallocZero(&rc, sizeof(char*) * nArg);
+  nByte = nArg * (sizeof(char*) + sizeof(u8));
+  pRet->azCol = (char**)sqlite3Fts5MallocZero(&rc, nByte);
+  pRet->abUnindexed = (u8*)&pRet->azCol[nArg];
   pRet->zDb = fts5Strdup(&rc, azArg[1]);
   pRet->zName = fts5Strdup(&rc, azArg[2]);
   if( rc==SQLITE_OK && sqlite3_stricmp(pRet->zName, FTS5_RANK_NAME)==0 ){
@@ -423,63 +511,48 @@ int sqlite3Fts5ConfigParse(
   }
 
   for(i=3; rc==SQLITE_OK && i<nArg; i++){
-    char *zDup = fts5Strdup(&rc, azArg[i]);
-    if( zDup ){
-      char *zCol = 0;
-      int bParseError = 0;
+    const char *zOrig = azArg[i];
+    const char *z;
+    char *zOne = 0;
+    char *zTwo = 0;
+    int bOption = 0;
+    int bMustBeCol = 0;
 
-      /* Check if this is a quoted column name */
-      if( fts5_isopenquote(zDup[0]) ){
-        bParseError = fts5Dequote(zDup);
-        zCol = zDup;
-      }else{
-        char *z = (char*)fts5ConfigSkipBareword(zDup);
-        if( *z=='\0' ){
-          zCol = zDup;
-        }else{
-          int nCmd = z - zDup;
-          z = (char*)fts5ConfigSkipWhitespace(z);
-          if( *z!='=' ){
-            bParseError = 1;
-          }else{
-            z++;
-            z = fts5TrimString(z);
-            if( fts5_isopenquote(*z) ){
-              if( fts5Dequote(z) ) bParseError = 1;
-            }else{
-              char *z2 = (char*)fts5ConfigSkipBareword(z);
-              if( *z2 ) bParseError = 1;
-            }
-            if( bParseError==0 ){
-              rc = fts5ConfigParseSpecial(pGlobal, pRet, zDup, nCmd, z, pzErr);
-            }
-          }
-        }
-      }
-
-      if( bParseError ){
-        assert( *pzErr==0 );
-        *pzErr = sqlite3_mprintf("parse error in \"%s\"", zDup);
-        rc = SQLITE_ERROR;
-      }else if( zCol ){
-        if( 0==sqlite3_stricmp(zCol, FTS5_RANK_NAME) 
-         || 0==sqlite3_stricmp(zCol, FTS5_ROWID_NAME) 
-        ){
-          *pzErr = sqlite3_mprintf("reserved fts5 column name: %s", zCol);
-          rc = SQLITE_ERROR;
-        }else{
-          pRet->azCol[pRet->nCol++] = zCol;
-          zDup = 0;
-        }
-      }
-
-      sqlite3_free(zDup);
+    z = fts5ConfigGobbleWord(&rc, zOrig, &zOne, &bMustBeCol);
+    z = fts5ConfigSkipWhitespace(z);
+    if( z && *z=='=' ){
+      bOption = 1;
+      z++;
+      if( bMustBeCol ) z = 0;
     }
+    z = fts5ConfigSkipWhitespace(z);
+    if( z && z[0] ){
+      int bDummy;
+      z = fts5ConfigGobbleWord(&rc, z, &zTwo, &bDummy);
+      if( z && z[0] ) z = 0;
+    }
+
+    if( rc==SQLITE_OK ){
+      if( z==0 ){
+        *pzErr = sqlite3_mprintf("parse error in \"%s\"", zOrig);
+        rc = SQLITE_ERROR;
+      }else{
+        if( bOption ){
+          rc = fts5ConfigParseSpecial(pGlobal, pRet, zOne, zTwo, pzErr);
+        }else{
+          rc = fts5ConfigParseColumn(pRet, zOne, zTwo, pzErr);
+          zOne = 0;
+        }
+      }
+    }
+
+    sqlite3_free(zOne);
+    sqlite3_free(zTwo);
   }
 
   /* If a tokenizer= option was successfully parsed, the tokenizer has
   ** already been allocated. Otherwise, allocate an instance of the default
-  ** tokenizer (simple) now.  */
+  ** tokenizer (unicode61) now.  */
   if( rc==SQLITE_OK && pRet->pTok==0 ){
     rc = fts5ConfigDefaultTokenizer(pGlobal, pRet);
   }

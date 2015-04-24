@@ -1815,15 +1815,13 @@ static void fts5SegIterNext(
         int bDummy;
         i64 iDelta;
 
-        if( p->rc==SQLITE_OK ){
-          pIter->iRowidOffset--;
-          pIter->iLeafOffset = iOff = pIter->aRowidOffset[pIter->iRowidOffset];
-          iOff += fts5GetPoslistSize(&a[iOff], &nPos, &bDummy);
-          iOff += nPos;
-          getVarint(&a[iOff], (u64*)&iDelta);
-          pIter->iRowid -= iDelta;
-          fts5SegIterLoadNPos(p, pIter);
-        }
+        pIter->iRowidOffset--;
+        pIter->iLeafOffset = iOff = pIter->aRowidOffset[pIter->iRowidOffset];
+        iOff += fts5GetPoslistSize(&a[iOff], &nPos, &bDummy);
+        iOff += nPos;
+        getVarint(&a[iOff], (u64*)&iDelta);
+        pIter->iRowid -= iDelta;
+        fts5SegIterLoadNPos(p, pIter);
       }else{
         fts5SegIterReverseNewPage(p, pIter);
       }
