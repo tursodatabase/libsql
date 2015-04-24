@@ -71,10 +71,50 @@
 ** All global variables are gathered into the "g" singleton.
 */
 struct GlobalVars {
-  const char *zArgv0;         /* Name of program */
+  const char *zArgv0;              /* Name of program */
+  sqlite3_mem_methods sOrigMem;    /* Original memory methods */
+  sqlite3_mem_methods sOomMem;     /* Memory methods with OOM simulator */
+  int iOomCntdown;                 /* Memory fails on 1 to 0 transition */
+  int nOomFault;                   /* Increments for each OOM fault */
+  int bOomOnce;                    /* Fail just once if true */
+  int bOomEnable;                  /* True to enable OOM simulation */
+  int nOomBrkpt;                   /* Number of calls to oomFault() */
 } g;
 
+/*
+** This routine is called when a simulated OOM occurs.  It exists as a
+** convenient place to set a debugger breakpoint.
+*/
+static void oomFault(void){
+  g.nOomBrkpt++;
+}
 
+
+/* Versions of malloc() and realloc() that simulate OOM conditions */
+static void *oomMalloc(int nByte){
+  if( nByte>0 && g.bOomEnable && g.iOomCntdown>0 ){
+    g.iOomCntdown--;
+    if( g.iOomCntdown==0 ){
+      if( g.nOomFault==0 ) oomFault();
+      g.nOomFault++;
+      if( !g.bOomOnce ) g.iOomCntdown = 1;
+      return 0;
+    }
+  }
+  return g.sOrigMem.xMalloc(nByte);
+}
+static void *oomRealloc(void *pOld, int nByte){
+  if( nByte>0 && g.bOomEnable && g.iOomCntdown>0 ){
+    g.iOomCntdown--;
+    if( g.iOomCntdown==0 ){
+      if( g.nOomFault==0 ) oomFault();
+      g.nOomFault++;
+      if( !g.bOomOnce ) g.iOomCntdown = 1;
+      return 0;
+    }
+  }
+  return g.sOrigMem.xRealloc(pOld, nByte);
+}
 
 /*
 ** Print an error message and abort in such a way to indicate to the
@@ -259,6 +299,7 @@ static void showHelp(void){
 "  --help                Show this help text\n"    
 "  --initdb DBFILE       Initialize the in-memory database using template DBFILE\n"
 "  --lookaside N SZ      Configure lookaside for N slots of SZ bytes each\n"
+"  --oom                 Run each test multiple times in a simulated OOM loop\n"
 "  --pagesize N          Set the page size to N\n"
 "  --pcache N SZ         Configure N pages of pagecache each of size SZ bytes\n"
 "  -q                    Reduced output\n"
@@ -376,8 +417,13 @@ int main(int argc, char **argv){
   sqlite3_stmt *pStmt = 0;      /* Statement to insert testcase into dataDb */
   const char *zDataOut = 0;     /* Write compacted data to this output file */
   int nHeader = 0;              /* Bytes of header comment text on input file */
+  int oomFlag = 0;              /* --oom */
+  int oomCnt = 0;               /* Counter for the OOM loop */
+  char zErrBuf[200];            /* Space for the error message */
+  const char *zFailCode;        /* Value of the TEST_FAILURE environment var */
 
 
+  zFailCode = getenv("TEST_FAILURE");
   g.zArgv0 = argv[0];
   for(i=1; i<argc; i++){
     const char *z = argv[i];
@@ -431,6 +477,9 @@ int main(int argc, char **argv){
           abendError("unknown --mode: %s", z);
         }
       }else
+      if( strcmp(z,"oom")==0 ){
+        oomFlag = 1;
+      }else
       if( strcmp(z,"pagesize")==0 ){
         if( i>=argc-1 ) abendError("missing argument on %s", argv[i]);
         pageSize = integerValue(argv[++i]);
@@ -479,6 +528,13 @@ int main(int argc, char **argv){
     if( pHeap==0 ) fatalError("cannot allocate %d-byte heap\n", nHeap);
     rc = sqlite3_config(SQLITE_CONFIG_HEAP, pHeap, nHeap, mnHeap);
     if( rc ) abendError("heap configuration failed: %d\n", rc);
+  }
+  if( oomFlag ){
+    sqlite3_config(SQLITE_CONFIG_GETMALLOC, &g.sOrigMem);
+    g.sOomMem = g.sOrigMem;
+    g.sOomMem.xMalloc = oomMalloc;
+    g.sOomMem.xRealloc = oomRealloc;
+    sqlite3_config(SQLITE_CONFIG_MALLOC, &g.sOomMem);
   }
   if( nLook>0 ){
     sqlite3_config(SQLITE_CONFIG_LOOKASIDE, 0, 0);
@@ -557,45 +613,15 @@ int main(int argc, char **argv){
       zIn[iNext] = cSaved;
       continue;
     }
-    rc = sqlite3_open_v2(
-      "main.db", &db,
-      SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_MEMORY,
-      0);
-    if( rc!=SQLITE_OK ){
-      abendError("Unable to open the in-memory database");
-    }
-    if( pLook ){
-      rc = sqlite3_db_config(db, SQLITE_DBCONFIG_LOOKASIDE, pLook, szLook, nLook);
-      if( rc!=SQLITE_OK ) abendError("lookaside configuration filed: %d", rc);
-    }
-    if( zInitDb ){
-      sqlite3_backup *pBackup;
-      pBackup = sqlite3_backup_init(db, "main", dbInit, "main");
-      rc = sqlite3_backup_step(pBackup, -1);
-      if( rc!=SQLITE_DONE ){
-        abendError("attempt to initialize the in-memory database failed (rc=%d)",
-                   rc);
-      }
-      sqlite3_backup_finish(pBackup);
-    }
-#ifndef SQLITE_OMIT_TRACE
-    if( verboseFlag ) sqlite3_trace(db, traceCallback, 0);
-#endif
-    sqlite3_create_function(db, "eval", 1, SQLITE_UTF8, 0, sqlEvalFunc, 0, 0);
-    sqlite3_create_function(db, "eval", 2, SQLITE_UTF8, 0, sqlEvalFunc, 0, 0);
-    sqlite3_limit(db, SQLITE_LIMIT_LENGTH, 1000000);
-    if( zEncoding ) sqlexec(db, "PRAGMA encoding=%s", zEncoding);
-    if( pageSize ) sqlexec(db, "PRAGMA pagesize=%d", pageSize);
-    if( doAutovac ) sqlexec(db, "PRAGMA auto_vacuum=FULL");
     zSql = &zIn[i];
     if( verboseFlag ){
       printf("INPUT (offset: %d, size: %d): [%s]\n",
               i, (int)strlen(&zIn[i]), &zIn[i]);
     }else if( multiTest && !quietFlag ){
-      int pct = 10*iNext/nIn;
+      int pct = oomFlag ? 100*iNext/nIn : ((10*iNext)/nIn)*10;
       if( pct!=lastPct ){
         if( lastPct<0 ) printf("fuzz test:");
-        printf(" %d%%", pct*10);
+        printf(" %d%%", pct);
         fflush(stdout);
         lastPct = pct;
       }
@@ -611,8 +637,84 @@ int main(int argc, char **argv){
         zSql = zToFree = sqlite3_mprintf("SELECT strftime(%s);", zSql);
         break;
     }
-    zErrMsg = 0;
-    rc = sqlite3_exec(db, zSql, verboseFlag ? execCallback : execNoop, 0, &zErrMsg);
+    if( oomFlag ){
+      oomCnt = g.iOomCntdown = 1;
+      g.nOomFault = 0;
+      g.bOomOnce = 1;
+      if( verboseFlag ) printf("Once.%d\n", oomCnt);
+    }else{
+      oomCnt = 0;
+    }
+    do{
+      rc = sqlite3_open_v2(
+        "main.db", &db,
+        SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_MEMORY,
+        0);
+      if( rc!=SQLITE_OK ){
+        abendError("Unable to open the in-memory database");
+      }
+      if( pLook ){
+        rc = sqlite3_db_config(db, SQLITE_DBCONFIG_LOOKASIDE, pLook, szLook, nLook);
+        if( rc!=SQLITE_OK ) abendError("lookaside configuration filed: %d", rc);
+      }
+      if( zInitDb ){
+        sqlite3_backup *pBackup;
+        pBackup = sqlite3_backup_init(db, "main", dbInit, "main");
+        rc = sqlite3_backup_step(pBackup, -1);
+        if( rc!=SQLITE_DONE ){
+          abendError("attempt to initialize the in-memory database failed (rc=%d)",
+                     rc);
+        }
+        sqlite3_backup_finish(pBackup);
+      }
+  #ifndef SQLITE_OMIT_TRACE
+      if( verboseFlag ) sqlite3_trace(db, traceCallback, 0);
+  #endif
+      sqlite3_create_function(db, "eval", 1, SQLITE_UTF8, 0, sqlEvalFunc, 0, 0);
+      sqlite3_create_function(db, "eval", 2, SQLITE_UTF8, 0, sqlEvalFunc, 0, 0);
+      sqlite3_limit(db, SQLITE_LIMIT_LENGTH, 1000000);
+      if( zEncoding ) sqlexec(db, "PRAGMA encoding=%s", zEncoding);
+      if( pageSize ) sqlexec(db, "PRAGMA pagesize=%d", pageSize);
+      if( doAutovac ) sqlexec(db, "PRAGMA auto_vacuum=FULL");
+      g.bOomEnable = 1;
+      if( verboseFlag ){
+        zErrMsg = 0;
+        rc = sqlite3_exec(db, zSql, execCallback, 0, &zErrMsg);
+        if( zErrMsg ){
+          sqlite3_snprintf(sizeof(zErrBuf),zErrBuf,"%z", zErrMsg);
+          zErrMsg = 0;
+        }
+      }else {
+        rc = sqlite3_exec(db, zSql, execNoop, 0, 0);
+      }
+      g.bOomEnable = 0;
+      rc = sqlite3_close(db);
+      if( rc ){
+        abendError("sqlite3_close() failed with rc=%d", rc);
+      }
+      if( sqlite3_memory_used()>0 ){
+        abendError("memory in use after close: %lld bytes", sqlite3_memory_used());
+      }
+      if( oomFlag ){
+        if( g.nOomFault==0 || oomCnt>2000 ){
+          if( g.bOomOnce ){
+            oomCnt = g.iOomCntdown = 1;
+            g.bOomOnce = 0;
+          }else{
+            oomCnt = 0;
+          }
+        }else{
+          g.iOomCntdown = ++oomCnt;
+          g.nOomFault = 0;
+        }
+        if( oomCnt ){
+          if( verboseFlag ){
+            printf("%s.%d\n", g.bOomOnce ? "Once" : "Multi", oomCnt);
+          }
+          nTest++;
+        }
+      }
+    }while( oomCnt>0 );
     if( zToFree ){
       sqlite3_free(zToFree);
       zToFree = 0;
@@ -621,29 +723,18 @@ int main(int argc, char **argv){
     if( verboseFlag ){
       printf("RESULT-CODE: %d\n", rc);
       if( zErrMsg ){
-        printf("ERROR-MSG: [%s]\n", zErrMsg);
+        printf("ERROR-MSG: [%s]\n", zErrBuf);
       }
     }
-    sqlite3_free(zErrMsg);
-    rc = sqlite3_close(db);
-    if( rc ){
-      abendError("sqlite3_close() failed with rc=%d", rc);
-    }
-    if( sqlite3_memory_used()>0 ){
-      abendError("memory in use after close: %lld bytes", sqlite3_memory_used());
-    }
-    if( nTest==1 ){
-      /* Simulate an error if the TEST_FAILURE environment variable is "5" */
-      char *zFailCode = getenv("TEST_FAILURE");
-      if( zFailCode ){
-        if( zFailCode[0]=='5' && zFailCode[1]==0 ){
-          abendError("simulated failure");
-        }else if( zFailCode[0]!=0 ){
-          /* If TEST_FAILURE is something other than 5, just exit the test
-          ** early */
-          printf("\nExit early due to TEST_FAILURE being set");
-          break;
-        }
+    /* Simulate an error if the TEST_FAILURE environment variable is "5" */
+    if( zFailCode ){
+      if( zFailCode[0]=='5' && zFailCode[1]==0 ){
+        abendError("simulated failure");
+      }else if( zFailCode[0]!=0 ){
+        /* If TEST_FAILURE is something other than 5, just exit the test
+        ** early */
+        printf("\nExit early due to TEST_FAILURE being set");
+        break;
       }
     }
   }

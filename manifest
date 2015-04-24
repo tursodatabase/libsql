@@ -1,5 +1,5 @@
-C Fix\sfuzzershell\sso\sthat\sit\sworks\swith\sSQLITE_OMIT_TRACE.
-D 2015-04-24T18:31:12.676
+C Add\sthe\s--oom\soption\sto\sfuzzershell.
+D 2015-04-24T23:45:23.568
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 31b38b9da2e4b36f54a013bd71a5c3f6e45ca78f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1205,7 +1205,7 @@ F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/extract.c 054069d81b095fbdc189a6f5d4466e40380505e2
 F tool/fast_vacuum.c 5ba0d6f5963a0a63bdc42840f678bad75b2ebce1
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
-F tool/fuzzershell.c a13c48cb83bbea8966442d777e14595b87023701
+F tool/fuzzershell.c 96fb9b18a3e77777290b59bee9a2759dab3a8ef9
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
@@ -1253,7 +1253,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4dda916a572bcb54c8cf3b81d965328632a722eb
-R fafcb3fcae40447c0604a45203b7a18d
+P dc88fe7e641c52d27fba8c753cee590db87388c5
+R b6b6b08ed6fc824093828aadd4063979
 U drh
-Z 443a2106b8aed7f08a3ed861aaf1e388
+Z 5f3b959ee8a94e01f097246d319ba4ca
