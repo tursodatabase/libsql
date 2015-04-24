@@ -39,9 +39,8 @@
 **
 ** where the "..." is arbitrary text, except the "|" should really be "/".
 ** ("|" is used here to avoid compiler warnings about nested comments.)
-** Each such SQL comment is printed as it is encountered.  A separate 
-** in-memory SQLite database is created to run each chunk of SQL.  This
-** feature allows the "queue" of AFL to be captured into a single big
+** A separate in-memory SQLite database is created to run each chunk of SQL.
+** This feature allows the "queue" of AFL to be captured into a single big
 ** file using a command like this:
 **
 **    (for i in id:*; do echo '|****<'$i'>****|'; cat $i; done) >~/all-queue.txt
@@ -49,11 +48,17 @@
 ** (Once again, change the "|" to "/") Then all elements of the AFL queue
 ** can be run in a single go (for regression testing, for example) by typing:
 **
-**    fuzzershell -f ~/all-queue.txt >out.txt
+**    fuzzershell -f ~/all-queue.txt
 **
 ** After running each chunk of SQL, the database connection is closed.  The
 ** program aborts if the close fails or if there is any unfreed memory after
 ** the close.
+**
+** New cases can be appended to all-queue.txt at any time.  If redundant cases
+** are added, that can be eliminated by running:
+**
+**    fuzzershell -f ~/all-queue.txt --unique-cases ~/unique-cases.txt
+**
 */
 #include <stdio.h>
 #include <stdlib.h>
@@ -246,21 +251,22 @@ static void showHelp(void){
   printf(
 "Read SQL text from standard input and evaluate it.\n"
 "Options:\n"
-"  --autovacuum        Enable AUTOVACUUM mode\n"
-"  -f FILE             Read SQL text from FILE instead of standard input\n"
-"  --heap SZ MIN       Memory allocator uses SZ bytes & min allocation MIN\n"
-"  --help              Show this help text\n"    
-"  --initdb DBFILE     Initialize the in-memory database using template DBFILE\n"
-"  --lookaside N SZ    Configure lookaside for N slots of SZ bytes each\n"
-"  --pagesize N        Set the page size to N\n"
-"  --pcache N SZ       Configure N pages of pagecache each of size SZ bytes\n"
-"  -q                  Reduced output\n"
-"  --quiet             Reduced output\n"
-"  --scratch N SZ      Configure scratch memory for N slots of SZ bytes each\n"
-"  --utf16be           Set text encoding to UTF-16BE\n"
-"  --utf16le           Set text encoding to UTF-16LE\n"
-"  -v                  Increased output\n"
-"  --verbose           Increased output\n"
+"  --autovacuum          Enable AUTOVACUUM mode\n"
+"  -f FILE               Read SQL text from FILE instead of standard input\n"
+"  --heap SZ MIN         Memory allocator uses SZ bytes & min allocation MIN\n"
+"  --help                Show this help text\n"    
+"  --initdb DBFILE       Initialize the in-memory database using template DBFILE\n"
+"  --lookaside N SZ      Configure lookaside for N slots of SZ bytes each\n"
+"  --pagesize N          Set the page size to N\n"
+"  --pcache N SZ         Configure N pages of pagecache each of size SZ bytes\n"
+"  -q                    Reduced output\n"
+"  --quiet               Reduced output\n"
+"  --scratch N SZ        Configure scratch memory for N slots of SZ bytes each\n"
+"  --unique-cases FILE   Write all unique test cases to FILE\n"
+"  --utf16be             Set text encoding to UTF-16BE\n"
+"  --utf16le             Set text encoding to UTF-16LE\n"
+"  -v                    Increased output\n"
+"  --verbose             Increased output\n"
   );
 }
 
@@ -364,6 +370,9 @@ int main(int argc, char **argv){
   int nTest = 0;                /* Number of test cases run */
   int multiTest = 0;            /* True if there will be multiple test cases */
   int lastPct = -1;             /* Previous percentage done output */
+  sqlite3 *dataDb = 0;          /* Database holding compacted input data */
+  sqlite3_stmt *pStmt = 0;      /* Statement to insert testcase into dataDb */
+  const char *zDataOut = 0;     /* Write compacted data to this output file */
 
 
   g.zArgv0 = argv[0];
@@ -439,6 +448,11 @@ int main(int argc, char **argv){
         szScratch = integerValue(argv[i+2]);
         i += 2;
       }else
+      if( strcmp(z, "unique-cases")==0 ){
+        if( i>=argc-1 ) abendError("missing arguments on %s", argv[i]);
+        if( zDataOut ) abendError("only one --minimize allowed");
+        zDataOut = argv[++i];
+      }else
       if( strcmp(z,"utf16le")==0 ){
         zEncoding = "utf16le";
       }else
@@ -493,6 +507,17 @@ int main(int argc, char **argv){
     zIn[nIn] = 0;
     if( got==0 ) break;
   }
+  if( in!=stdin ) fclose(in);
+  if( zDataOut ){
+    rc = sqlite3_open(":memory:", &dataDb);
+    if( rc ) abendError("cannot open :memory: database");
+    rc = sqlite3_exec(dataDb,
+          "CREATE TABLE testcase(sql BLOB PRIMARY KEY) WITHOUT ROWID;",0,0,0);
+    if( rc ) abendError("%s", sqlite3_errmsg(dataDb));
+    rc = sqlite3_prepare_v2(dataDb, "INSERT OR IGNORE INTO testcase(sql)VALUES(?1)",
+                            -1, &pStmt, 0);
+    if( rc ) abendError("%s", sqlite3_errmsg(dataDb));
+  }
   if( zInitDb ){
     rc = sqlite3_open_v2(zInitDb, &dbInit, SQLITE_OPEN_READONLY, 0);
     if( rc!=SQLITE_OK ){
@@ -511,6 +536,13 @@ int main(int argc, char **argv){
       }
     }
     for(iNext=i; iNext<nIn && strncmp(&zIn[iNext],"/****<",6)!=0; iNext++){}
+    if( zDataOut ){
+      sqlite3_bind_blob(pStmt, 1, &zIn[i], iNext-i, SQLITE_STATIC);
+      rc = sqlite3_step(pStmt);
+      if( rc!=SQLITE_DONE ) abendError("%s", sqlite3_errmsg(dataDb));
+      sqlite3_reset(pStmt);
+      continue;
+    }
     cSaved = zIn[iNext];
     zIn[iNext] = 0;
     if( zCkGlob && sqlite3_strglob(zCkGlob,&zIn[i])!=0 ){
@@ -591,7 +623,23 @@ int main(int argc, char **argv){
     }
   }
   if( nTest>1 && !quietFlag ){
-    printf("%d tests with no errors\n", nTest);
+    printf("%d tests with no errors\nSQLite %s %s\n",
+           nTest, sqlite3_libversion(), sqlite3_sourceid());
+  }
+  if( zDataOut ){
+    FILE *out = fopen(zDataOut, "wb");
+    int n = 0;
+    if( out==0 ) abendError("cannot open %s for writing", zDataOut);
+    sqlite3_finalize(pStmt);
+    rc = sqlite3_prepare_v2(dataDb, "SELECT sql FROM testcase", -1, &pStmt, 0);
+    if( rc ) abendError("%s", sqlite3_errmsg(dataDb));
+    while( sqlite3_step(pStmt)==SQLITE_ROW ){
+      fprintf(out,"/****<%d>****/", ++n);
+      fwrite(sqlite3_column_blob(pStmt,0),sqlite3_column_bytes(pStmt,0),1,out);
+    }
+    fclose(out);
+    sqlite3_finalize(pStmt);
+    sqlite3_close(dataDb);
   }
   free(zIn);
   free(pHeap);
