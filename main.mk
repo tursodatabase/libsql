@@ -633,19 +633,22 @@ fts3-testfixture$(EXE): sqlite3.c fts3amal.c $(TESTSRC) $(TOP)/src/tclsqlite.c
 		$(TESTSRC) $(TOP)/src/tclsqlite.c sqlite3.c fts3amal.c       \
 		-o testfixture$(EXE) $(LIBTCL) $(THREADLIB)
 
-fulltest:	testfixture$(EXE) sqlite3$(EXE)
+fulltest:	testfixture$(EXE) sqlite3$(EXE) fuzztest
 	./testfixture$(EXE) $(TOP)/test/all.test
 
 soaktest:	testfixture$(EXE) sqlite3$(EXE)
 	./testfixture$(EXE) $(TOP)/test/all.test -soak=1
 
-fulltestonly:	testfixture$(EXE) sqlite3$(EXE)
+fulltestonly:	testfixture$(EXE) sqlite3$(EXE) fuzztest
 	./testfixture$(EXE) $(TOP)/test/full.test
 
 queryplantest:	testfixture$(EXE) sqlite3$(EXE)
 	./testfixture$(EXE) $(TOP)/test/permutations.test queryplanner
 
-test:	testfixture$(EXE) sqlite3$(EXE)
+fuzztest:	fuzzershell$(EXE)
+	./fuzzershell$(EXE) -f $(TOP)/test/fuzzdata1.txt
+
+test:	testfixture$(EXE) sqlite3$(EXE) fuzztest
 	./testfixture$(EXE) $(TOP)/test/veryquick.test
 
 # The next two rules are used to support the "threadtest" target. Building

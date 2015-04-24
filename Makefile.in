@@ -951,7 +951,7 @@ testfixture$(TEXE):	$(TESTFIXTURE_SRC)
 		-o $@ $(TESTFIXTURE_SRC) $(LIBTCL) $(TLIBS)
 
 # A very detailed test running most or all test cases
-fulltest:	testfixture$(TEXE) sqlite3$(TEXE)
+fulltest:	testfixture$(TEXE) sqlite3$(TEXE) fuzztest
 	./testfixture$(TEXE) $(TOP)/test/all.test
 
 # Really really long testing
@@ -962,10 +962,14 @@ soaktest:	testfixture$(TEXE) sqlite3$(TEXE)
 fulltestonly:	testfixture$(TEXE) sqlite3$(TEXE)
 	./testfixture$(TEXE) $(TOP)/test/full.test
 
+# Fuzz testing
+fuzztest:	fuzzershell$(TEXE)
+	./fuzzershell$(TEXE) -f $(TOP)/test/fuzzdata1.txt
+
 # This is the common case.  Run many tests but not those that take
 # a really long time.
 #
-test:	testfixture$(TEXE) sqlite3$(TEXE)
+test:	testfixture$(TEXE) sqlite3$(TEXE) fuzztest
 	./testfixture$(TEXE) $(TOP)/test/veryquick.test
 
 # Run a test using valgrind.  This can take a really long time

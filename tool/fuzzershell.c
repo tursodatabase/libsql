@@ -373,6 +373,7 @@ int main(int argc, char **argv){
   sqlite3 *dataDb = 0;          /* Database holding compacted input data */
   sqlite3_stmt *pStmt = 0;      /* Statement to insert testcase into dataDb */
   const char *zDataOut = 0;     /* Write compacted data to this output file */
+  int nHeader = 0;              /* Bytes of header comment text on input file */
 
 
   g.zArgv0 = argv[0];
@@ -524,7 +525,12 @@ int main(int argc, char **argv){
       abendError("unable to open initialization database \"%s\"", zInitDb);
     }
   }
-  for(i=nTest=0; i<nIn; i=iNext, nTest++){
+  for(i=0; i<nIn; i=iNext+1){   /* Skip initial lines beginning with '#' */
+    if( zIn[i]!='#' ) break;
+    for(iNext=i+1; iNext<nIn && zIn[iNext]!='\n'; iNext++){}
+  }
+  nHeader = i;
+  for(nTest=0; i<nIn; i=iNext, nTest++){
     char cSaved;
     if( strncmp(&zIn[i], "/****<",6)==0 ){
       char *z = strstr(&zIn[i], ">****/");
@@ -582,9 +588,10 @@ int main(int argc, char **argv){
       printf("INPUT (offset: %d, size: %d): [%s]\n",
               i, (int)strlen(&zIn[i]), &zIn[i]);
     }else if( multiTest && !quietFlag ){
-      int pct = 100*(i+strlen(zSql))/nIn;
+      int pct = 10*iNext/nIn;
       if( pct!=lastPct ){
-        printf("%d%%\r", pct);
+        if( lastPct<0 ) printf("fuzz test:");
+        printf(" %d%%", pct*10);
         fflush(stdout);
         lastPct = pct;
       }
@@ -621,15 +628,24 @@ int main(int argc, char **argv){
     if( sqlite3_memory_used()>0 ){
       abendError("memory in use after close: %lld bytes", sqlite3_memory_used());
     }
+    if( nTest==1 ){
+      /* Simulate an error if the TEST_FAILURE environment variable is "5" */
+      char *zFailCode = getenv("TEST_FAILURE");
+      if( zFailCode && zFailCode[0]=='5' && zFailCode[1]==0 ){
+        abendError("simulated failure");
+      }
+    }
   }
+  if( !verboseFlag && multiTest && !quietFlag ) printf("\n");
   if( nTest>1 && !quietFlag ){
-    printf("%d tests with no errors\nSQLite %s %s\n",
+    printf("%d fuzz tests with no errors\nSQLite %s %s\n",
            nTest, sqlite3_libversion(), sqlite3_sourceid());
   }
   if( zDataOut ){
-    FILE *out = fopen(zDataOut, "wb");
     int n = 0;
+    FILE *out = fopen(zDataOut, "wb");
     if( out==0 ) abendError("cannot open %s for writing", zDataOut);
+    if( nHeader>0 ) fwrite(zIn, nHeader, 1, out);
     sqlite3_finalize(pStmt);
     rc = sqlite3_prepare_v2(dataDb, "SELECT sql FROM testcase", -1, &pStmt, 0);
     if( rc ) abendError("%s", sqlite3_errmsg(dataDb));
