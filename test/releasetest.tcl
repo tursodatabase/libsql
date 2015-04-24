@@ -18,6 +18,7 @@ optional) are:
     --buildonly                        (Just build testfixture - do not run)
     --dryrun                           (Print what would have happened)
     --info                             (Show diagnostic info)
+    --with-tcl=DIR                     (Use TCL build at DIR)
 
 The default value for --srcdir is the parent of the directory holding
 this script.
@@ -355,7 +356,7 @@ proc run_test_suite {name testtarget config} {
   set cflags [expr {$::MSVC ? "-Zi" : "-g"}]
   set opts ""
   set title ${name}($testtarget)
-  set configOpts ""
+  set configOpts $::WITHTCL
 
   regsub -all {#[^\n]*\n} $config \n config
   foreach arg $config {
@@ -486,6 +487,7 @@ proc process_options {argv} {
   set ::DRYRUN    0
   set ::EXEC      exec
   set ::TRACE     0
+  set ::WITHTCL   {}
   set config {}
   set platform $::tcl_platform(os)-$::tcl_platform(machine)
 
@@ -558,6 +560,10 @@ proc process_options {argv} {
         } else {
           lappend ::EXTRACONFIG [lindex $argv $i]
         }
+      }
+
+      -with-tcl=* {
+        set ::WITHTCL -$x
       }
 
       -D* -
