@@ -138,6 +138,9 @@ static int execCallback(void *NotUsed, int argc, char **argv, char **colv){
   }
   return 0;
 }
+static int execNoop(void *NotUsed, int argc, char **argv, char **colv){
+  return 0;
+}
 
 /*
 ** This callback is invoked by sqlite3_trace() as each SQL statement
@@ -251,9 +254,13 @@ static void showHelp(void){
 "  --lookaside N SZ    Configure lookaside for N slots of SZ bytes each\n"
 "  --pagesize N        Set the page size to N\n"
 "  --pcache N SZ       Configure N pages of pagecache each of size SZ bytes\n"
+"  -q                  Reduced output\n"
+"  --quiet             Reduced output\n"
 "  --scratch N SZ      Configure scratch memory for N slots of SZ bytes each\n"
 "  --utf16be           Set text encoding to UTF-16BE\n"
 "  --utf16le           Set text encoding to UTF-16LE\n"
+"  -v                  Increased output\n"
+"  --verbose           Increased output\n"
   );
 }
 
@@ -352,6 +359,11 @@ int main(int argc, char **argv){
   char *zToFree = 0;            /* Call sqlite3_free() on this afte running zSql */
   int iMode = FZMODE_Generic;   /* Operating mode */
   const char *zCkGlob = 0;      /* Inputs must match this glob */
+  int verboseFlag = 0;          /* --verbose or -v flag */
+  int quietFlag = 0;            /* --quiet or -q flag */
+  int nTest = 0;                /* Number of test cases run */
+  int multiTest = 0;            /* True if there will be multiple test cases */
+  int lastPct = -1;             /* Previous percentage done output */
 
 
   g.zArgv0 = argv[0];
@@ -417,6 +429,10 @@ int main(int argc, char **argv){
         szPCache = integerValue(argv[i+2]);
         i += 2;
       }else
+      if( strcmp(z,"quiet")==0 || strcmp(z,"q")==0 ){
+        quietFlag = 1;
+        verboseFlag = 0;
+      }else
       if( strcmp(z,"scratch")==0 ){
         if( i>=argc-2 ) abendError("missing arguments on %s", argv[i]);
         nScratch = integerValue(argv[i+1]);
@@ -429,6 +445,10 @@ int main(int argc, char **argv){
       if( strcmp(z,"utf16be")==0 ){
         zEncoding = "utf16be";
       }else
+      if( strcmp(z,"verbose")==0 || strcmp(z,"v")==0 ){
+        quietFlag = 0;
+        verboseFlag = 1;
+      }else
       {
         abendError("unknown option: %s", argv[i]);
       }
@@ -436,7 +456,7 @@ int main(int argc, char **argv){
       abendError("unknown argument: %s", argv[i]);
     }
   }
-  sqlite3_config(SQLITE_CONFIG_LOG, shellLog, 0);
+  if( verboseFlag ) sqlite3_config(SQLITE_CONFIG_LOG, shellLog, 0);
   if( nHeap>0 ){
     pHeap = malloc( nHeap );
     if( pHeap==0 ) fatalError("cannot allocate %d-byte heap\n", nHeap);
@@ -479,14 +499,15 @@ int main(int argc, char **argv){
       abendError("unable to open initialization database \"%s\"", zInitDb);
     }
   }
-  for(i=0; i<nIn; i=iNext){
+  for(i=nTest=0; i<nIn; i=iNext, nTest++){
     char cSaved;
     if( strncmp(&zIn[i], "/****<",6)==0 ){
       char *z = strstr(&zIn[i], ">****/");
       if( z ){
         z += 6;
-        printf("%.*s\n", (int)(z-&zIn[i]), &zIn[i]);
+        if( verboseFlag ) printf("%.*s\n", (int)(z-&zIn[i]), &zIn[i]);
         i += (int)(z-&zIn[i]);
+        multiTest = 1;
       }
     }
     for(iNext=i; iNext<nIn && strncmp(&zIn[iNext],"/****<",6)!=0; iNext++){}
@@ -517,16 +538,25 @@ int main(int argc, char **argv){
       }
       sqlite3_backup_finish(pBackup);
     }
-    sqlite3_trace(db, traceCallback, 0);
+    if( verboseFlag ) sqlite3_trace(db, traceCallback, 0);
     sqlite3_create_function(db, "eval", 1, SQLITE_UTF8, 0, sqlEvalFunc, 0, 0);
     sqlite3_create_function(db, "eval", 2, SQLITE_UTF8, 0, sqlEvalFunc, 0, 0);
     sqlite3_limit(db, SQLITE_LIMIT_LENGTH, 1000000);
     if( zEncoding ) sqlexec(db, "PRAGMA encoding=%s", zEncoding);
     if( pageSize ) sqlexec(db, "PRAGMA pagesize=%d", pageSize);
     if( doAutovac ) sqlexec(db, "PRAGMA auto_vacuum=FULL");
-    printf("INPUT (offset: %d, size: %d): [%s]\n",
-            i, (int)strlen(&zIn[i]), &zIn[i]);
     zSql = &zIn[i];
+    if( verboseFlag ){
+      printf("INPUT (offset: %d, size: %d): [%s]\n",
+              i, (int)strlen(&zIn[i]), &zIn[i]);
+    }else if( multiTest && !quietFlag ){
+      int pct = 100*(i+strlen(zSql))/nIn;
+      if( pct!=lastPct ){
+        printf("%d%%\r", pct);
+        fflush(stdout);
+        lastPct = pct;
+      }
+    }
     switch( iMode ){
       case FZMODE_Glob:
         zSql = zToFree = sqlite3_mprintf("SELECT glob(%s);", zSql);
@@ -538,18 +568,20 @@ int main(int argc, char **argv){
         zSql = zToFree = sqlite3_mprintf("SELECT strftime(%s);", zSql);
         break;
     }
-    rc = sqlite3_exec(db, zSql, execCallback, 0, &zErrMsg);
+    zErrMsg = 0;
+    rc = sqlite3_exec(db, zSql, verboseFlag ? execCallback : execNoop, 0, &zErrMsg);
     if( zToFree ){
       sqlite3_free(zToFree);
       zToFree = 0;
     }
     zIn[iNext] = cSaved;
-
-    printf("RESULT-CODE: %d\n", rc);
-    if( zErrMsg ){
-      printf("ERROR-MSG: [%s]\n", zErrMsg);
-      sqlite3_free(zErrMsg);
+    if( verboseFlag ){
+      printf("RESULT-CODE: %d\n", rc);
+      if( zErrMsg ){
+        printf("ERROR-MSG: [%s]\n", zErrMsg);
+      }
     }
+    sqlite3_free(zErrMsg);
     rc = sqlite3_close(db);
     if( rc ){
       abendError("sqlite3_close() failed with rc=%d", rc);
@@ -557,6 +589,9 @@ int main(int argc, char **argv){
     if( sqlite3_memory_used()>0 ){
       abendError("memory in use after close: %lld bytes", sqlite3_memory_used());
     }
+  }
+  if( nTest>1 && !quietFlag ){
+    printf("%d tests with no errors\n", nTest);
   }
   free(zIn);
   free(pHeap);
