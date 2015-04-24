@@ -147,6 +147,7 @@ static int execNoop(void *NotUsed, int argc, char **argv, char **colv){
   return 0;
 }
 
+#ifndef SQLITE_OMIT_TRACE
 /*
 ** This callback is invoked by sqlite3_trace() as each SQL statement
 ** starts.
@@ -154,6 +155,7 @@ static int execNoop(void *NotUsed, int argc, char **argv, char **colv){
 static void traceCallback(void *NotUsed, const char *zMsg){
   printf("TRACE: %s\n", zMsg);
 }
+#endif
 
 /***************************************************************************
 ** eval() implementation copied from ../ext/misc/eval.c
@@ -576,7 +578,9 @@ int main(int argc, char **argv){
       }
       sqlite3_backup_finish(pBackup);
     }
+#ifndef SQLITE_OMIT_TRACE
     if( verboseFlag ) sqlite3_trace(db, traceCallback, 0);
+#endif
     sqlite3_create_function(db, "eval", 1, SQLITE_UTF8, 0, sqlEvalFunc, 0, 0);
     sqlite3_create_function(db, "eval", 2, SQLITE_UTF8, 0, sqlEvalFunc, 0, 0);
     sqlite3_limit(db, SQLITE_LIMIT_LENGTH, 1000000);
