@@ -631,8 +631,15 @@ int main(int argc, char **argv){
     if( nTest==1 ){
       /* Simulate an error if the TEST_FAILURE environment variable is "5" */
       char *zFailCode = getenv("TEST_FAILURE");
-      if( zFailCode && zFailCode[0]=='5' && zFailCode[1]==0 ){
-        abendError("simulated failure");
+      if( zFailCode ){
+        if( zFailCode[0]=='5' && zFailCode[1]==0 ){
+          abendError("simulated failure");
+        }else if( zFailCode[0]!=0 ){
+          /* If TEST_FAILURE is something other than 5, just exit the test
+          ** early */
+          printf("\nExit early due to TEST_FAILURE being set");
+          break;
+        }
       }
     }
   }

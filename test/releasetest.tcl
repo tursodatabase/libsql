@@ -199,7 +199,8 @@ array set ::Configs [strip_comments {
   Fail2 {-O0}
   Fail3 {-O0}
   Fail4 {-O0}
-  FuzzFail {-O0}
+  FuzzFail1 {-O0}
+  FuzzFail2 {-O0}
 }]
 
 array set ::Platforms [strip_comments {
@@ -256,7 +257,8 @@ array set ::Platforms [strip_comments {
     Fail2     "TEST_FAILURE=2 valgrindtest"
     Fail3     "TEST_FAILURE=3 valgrindtest"
     Fail4     "TEST_FAILURE=4 test"
-    FuzzFail  "TEST_FAILURE=5 test"
+    FuzzFail1 "TEST_FAILURE=5 test"
+    FuzzFail2 "TEST_FAILURE=5 valgrindtest"
   }
 }]
 

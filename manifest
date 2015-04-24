@@ -1,7 +1,7 @@
-C Add\sthe\sfuzztest\starget\sto\sthe\sMSVC\smakefile.
-D 2015-04-24T16:16:31.886
+C Run\sfuzzershell\sas\spart\sof\sthe\svalgrindtest\smakefile\starget.
+D 2015-04-24T16:53:03.100
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in a1e5faa26179818cfb4e7dac6cfa131d03f6b0ea
+F Makefile.in e25a3b8036f49bc0a08694b7a41ee0913d60f4e5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc 4a546e42ecfd0fe53c31e05c2a965e17fb591637
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
@@ -152,7 +152,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 3cb2fbae2405c63ad74be4f25070a29c46a56fe6
+F main.mk b8996b5919fd0781417b1c2305f4a7ea18b2220d
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
 F mkopcodeh.awk d5e22023b5238985bb54a72d33e0ac71fe4f8a32
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
@@ -814,7 +814,7 @@ F test/randexpr1.test eda062a97e60f9c38ae8d806b03b0ddf23d796df
 F test/rdonly.test 64e2696c322e3538df0b1ed624e21f9a23ed9ff8
 F test/regexp1.test 497ea812f264d12b6198d6e50a76be4a1973a9d8
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
-F test/releasetest.tcl dcc5f4244098474b2dd4357123518258657807e0
+F test/releasetest.tcl ca3390bad7c156c6d635e2b657332a5067f44acc
 F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
 F test/rollback.test 458fe73eb3ffdfdf9f6ba3e9b7350a6220414dea
 F test/rollback2.test fc14cf6d1a2b250d2735ef16124b971bce152f14
@@ -1205,7 +1205,7 @@ F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/extract.c 054069d81b095fbdc189a6f5d4466e40380505e2
 F tool/fast_vacuum.c 5ba0d6f5963a0a63bdc42840f678bad75b2ebce1
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
-F tool/fuzzershell.c ddb3cf6e1f8366f76498c75bd36d63a58ac57a97
+F tool/fuzzershell.c 0a260bf9bbf33d4534834167c30f812cd8fdf7c8
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
@@ -1253,7 +1253,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 627ea83c26b420088f101801eb8765127f47d2d0
-R f95072dc4d7f37b67ec23c04637d926a
+P 98edc6152cdd935dc83c1330c088145e7adb9dd0
+R 57cb1c15bd3f01264a7d78a199355194
 U drh
-Z ad44373bb5cba44811711435ae9efa03
+Z 84cb54aeebcbf9196abb3e78dcce4413

@@ -975,7 +975,8 @@ test:	testfixture$(TEXE) sqlite3$(TEXE) fuzztest
 # Run a test using valgrind.  This can take a really long time
 # because valgrind is so much slower than a native machine.
 #
-valgrindtest:	testfixture$(TEXE) sqlite3$(TEXE)
+valgrindtest:	testfixture$(TEXE) sqlite3$(TEXE) fuzzershell$(TEXE)
+	valgrind -v ./fuzzershell$(TEXE) -f $(TOP)/test/fuzzdata1.txt
 	OMIT_MISUSE=1 valgrind -v ./testfixture$(TEXE) $(TOP)/test/permutations.test valgrind
 
 # A very fast test that checks basic sanity.  The name comes from

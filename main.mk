@@ -651,6 +651,13 @@ fuzztest:	fuzzershell$(EXE)
 test:	testfixture$(EXE) sqlite3$(EXE) fuzztest
 	./testfixture$(EXE) $(TOP)/test/veryquick.test
 
+# Run a test using valgrind.  This can take a really long time
+# because valgrind is so much slower than a native machine.
+#
+valgrindtest:	testfixture$(EXE) sqlite3$(EXE) fuzzershell$(EXE)
+	valgrind -v ./fuzzershell$(EXE) -f $(TOP)/test/fuzzdata1.txt
+	OMIT_MISUSE=1 valgrind -v ./testfixture$(EXE) $(TOP)/test/permutations.test valgrind
+
 # The next two rules are used to support the "threadtest" target. Building
 # threadtest runs a few thread-safety tests that are implemented in C. This
 # target is invoked by the releasetest.tcl script.
