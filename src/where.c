@@ -4303,6 +4303,13 @@ static void whereLoopDelete(sqlite3 *db, WhereLoop *p){
 */
 static void whereInfoFree(sqlite3 *db, WhereInfo *pWInfo){
   if( ALWAYS(pWInfo) ){
+    int i;
+    for(i=0; i<pWInfo->nLevel; i++){
+      WhereLevel *pLevel = &pWInfo->a[i];
+      if( pLevel->pWLoop && (pLevel->pWLoop->wsFlags & WHERE_IN_ABLE) ){
+        sqlite3DbFree(db, pLevel->u.in.aInLoop);
+      }
+    }
     whereClauseClear(&pWInfo->sWC);
     while( pWInfo->pLoops ){
       WhereLoop *p = pWInfo->pLoops;
@@ -6899,7 +6906,6 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
         VdbeCoverageIf(v, pIn->eEndLoopOp==OP_NextIfOpen);
         sqlite3VdbeJumpHere(v, pIn->addrInTop-1);
       }
-      sqlite3DbFree(db, pLevel->u.in.aInLoop);
     }
     sqlite3VdbeResolveLabel(v, pLevel->addrBrk);
     if( pLevel->addrSkip ){

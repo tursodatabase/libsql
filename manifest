@@ -1,5 +1,5 @@
-C In\sfuzzershell:\s(1)\scomment\sfixes.\s\s(2)\sSet\sand\sclear\sg.zTestName[]\scorrectly.\n(3)\sUse\sthe\svalue\sin\sg.zTestName[]\sin\serror\smessages.
-D 2015-04-25T11:35:48.066
+C Fix\san\sobscure\smemory\sleak\sthat\scould\sfollow\san\sOOM\sin\swhere.c.
+D 2015-04-25T12:20:24.152
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 31b38b9da2e4b36f54a013bd71a5c3f6e45ca78f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -307,7 +307,7 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 753995db83247f20361a8e8a874990b21a75abd9
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
-F src/where.c 32fe265e3dc74ef3b27deb9e6eb5fc3c71409612
+F src/where.c 52c524b8b38a074888bba6d0920ff79accaa2679
 F src/whereInt.h cbe4aa57326998d89e7698ca65bb7c28541d483c
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -713,7 +713,7 @@ F test/lock_common.tcl 7ffb45accf6ee91c736df9bafe0806a44358f035
 F test/lookaside.test 93f07bac140c5bb1d49f3892d2684decafdc7af2
 F test/main.test 16131264ea0c2b93b95201f0c92958e85f2ba11a
 F test/make-where7.tcl 05c16b5d4f5d6512881dfec560cb793915932ef9
-F test/malloc.test 96939d2d1a6f39667bbebe5bc27c6525f2ab614e
+F test/malloc.test 21c213365f2cca95ab2d7dc078dc8525f96065f8
 F test/malloc3.test e3b32c724b5a124b57cb0ed177f675249ad0c66a
 F test/malloc4.test 957337613002b7058a85116493a262f679f3a261
 F test/malloc5.test 79182b8bffd6d62f77b1a5a8ba8e6bf0e5053b8e
@@ -1253,7 +1253,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3045f454817f657df801358c40c665b0b0d73c1f
-R b9b965233af1fc1c7cae9e72ea74ad46
-U drh
-Z a557ccd71f3380b516c5cede9672ec60
+P b7394755fab81329d56bad1b506e536b2fcbe8cd
+R ffe242310eb47eb26efd0e21515d48b5
+U dan
+Z d148d9794c2520483b80e18ea41d6bd5
