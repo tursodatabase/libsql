@@ -32,14 +32,16 @@
 **    (4)  The eval() SQL function is added, allowing the fuzzer to do 
 **         interesting recursive operations.
 **
-** 2015-04-20: The input text can be divided into separate SQL chunks using
-** lines of the form:
+**    (5)  An error is raised if there is a memory leak.
+**
+** The input text can be divided into separate test cases using comments
+** of the form:
 **
 **       |****<...>****|
 **
 ** where the "..." is arbitrary text, except the "|" should really be "/".
-** ("|" is used here to avoid compiler warnings about nested comments.)
-** A separate in-memory SQLite database is created to run each chunk of SQL.
+** ("|" is used here to avoid compiler errors about nested comments.)
+** A separate in-memory SQLite database is created to run each test case.
 ** This feature allows the "queue" of AFL to be captured into a single big
 ** file using a command like this:
 **
@@ -54,8 +56,8 @@
 ** program aborts if the close fails or if there is any unfreed memory after
 ** the close.
 **
-** New cases can be appended to all-queue.txt at any time.  If redundant cases
-** are added, that can be eliminated by running:
+** New test cases can be appended to all-queue.txt at any time.  If redundant
+** test cases are added, they can be eliminated by running:
 **
 **    fuzzershell -f ~/all-queue.txt --unique-cases ~/unique-cases.txt
 **
@@ -87,7 +89,7 @@ struct GlobalVars {
 ** convenient place to set a debugger breakpoint.
 */
 static void oomFault(void){
-  g.nOomBrkpt++;
+  g.nOomBrkpt++; /* Prevent oomFault() from being optimized out */
 }
 
 
@@ -123,7 +125,11 @@ static void *oomRealloc(void *pOld, int nByte){
 */
 static void abendError(const char *zFormat, ...){
   va_list ap;
-  fprintf(stderr, "%s: ", g.zArgv0);
+  if( g.zTestName[0] ){
+    fprintf(stderr, "%s (%s): ", g.zArgv0, g.zTestName);
+  }else{
+    fprintf(stderr, "%s: ", g.zArgv0);
+  }
   va_start(ap, zFormat);
   vfprintf(stderr, zFormat, ap);
   va_end(ap);
@@ -136,7 +142,11 @@ static void abendError(const char *zFormat, ...){
 */
 static void fatalError(const char *zFormat, ...){
   va_list ap;
-  fprintf(stderr, "%s: ", g.zArgv0);
+  if( g.zTestName[0] ){
+    fprintf(stderr, "%s (%s): ", g.zArgv0, g.zTestName);
+  }else{
+    fprintf(stderr, "%s: ", g.zArgv0);
+  }
   va_start(ap, zFormat);
   vfprintf(stderr, zFormat, ap);
   va_end(ap);
@@ -598,13 +608,13 @@ int main(int argc, char **argv){
     for(iNext=i+1; iNext<nIn && zIn[iNext]!='\n'; iNext++){}
   }
   nHeader = i;
-  for(nTest=0; i<nIn; i=iNext, nTest++){
+  for(nTest=0; i<nIn; i=iNext, nTest++, g.zTestName[0]=0){
     char cSaved;
     if( strncmp(&zIn[i], "/****<",6)==0 ){
       char *z = strstr(&zIn[i], ">****/");
       if( z ){
         z += 6;
-        sqlite3_snprintf(sizeof(g.zTestName), g.zTestName, "%.*", 
+        sqlite3_snprintf(sizeof(g.zTestName), g.zTestName, "%.*s", 
                          (int)(z-&zIn[i]), &zIn[i]);
         if( verboseFlag ){
           printf("%.*s\n", (int)(z-&zIn[i]), &zIn[i]);

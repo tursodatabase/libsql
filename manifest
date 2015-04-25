@@ -1,5 +1,5 @@
-C In\sthe\sfuzzershell,\salways\sinvoke\sthe\strace\sand\slog\scallbacks\seven\sif\soutput\nis\ssuppressed.\s\sKeep\strack\sof\sthe\scurrent\stest\sname\sin\sa\sglobal\svariable\nfor\ssimplified\sdebugging.
-D 2015-04-25T11:19:51.094
+C In\sfuzzershell:\s(1)\scomment\sfixes.\s\s(2)\sSet\sand\sclear\sg.zTestName[]\scorrectly.\n(3)\sUse\sthe\svalue\sin\sg.zTestName[]\sin\serror\smessages.
+D 2015-04-25T11:35:48.066
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 31b38b9da2e4b36f54a013bd71a5c3f6e45ca78f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1205,7 +1205,7 @@ F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/extract.c 054069d81b095fbdc189a6f5d4466e40380505e2
 F tool/fast_vacuum.c 5ba0d6f5963a0a63bdc42840f678bad75b2ebce1
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
-F tool/fuzzershell.c 176b6012f843c0a0f30a4f55c4bb9de6dbc0225d
+F tool/fuzzershell.c 4d87082924b010c7b2c89e1bb01332a5cab8289a
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
@@ -1253,7 +1253,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9aa70ddf2ca6044634560a801b43df121384eb64
-R e57acda28e13513e1a84ebb724d11baf
+P 3045f454817f657df801358c40c665b0b0d73c1f
+R b9b965233af1fc1c7cae9e72ea74ad46
 U drh
-Z 793f5b4972bee92c375b2bfc0ff9f6be
+Z a557ccd71f3380b516c5cede9672ec60
