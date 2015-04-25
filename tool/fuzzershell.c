@@ -87,7 +87,7 @@ struct GlobalVars {
 ** Maximum number of iterations for an OOM test
 */
 #ifndef OOM_MAX
-# define OOM_MAX 1000
+# define OOM_MAX 625
 #endif
 
 /*
@@ -734,8 +734,11 @@ int main(int argc, char **argv){
         abendError("memory in use after close: %lld bytes", sqlite3_memory_used());
       }
       if( oomFlag ){
+        /* Limit the number of iterations of the OOM loop to OOM_MAX.  If the
+        ** first pass (single failure) exceeds 2/3rds of OOM_MAX this skip the
+        ** second pass (continuous failure after first) completely. */
         if( g.nOomFault==0 || oomCnt>OOM_MAX ){
-          if( g.bOomOnce ){
+          if( g.bOomOnce && oomCnt<=(OOM_MAX*2/3) ){
             oomCnt = g.iOomCntdown = 1;
             g.bOomOnce = 0;
           }else{
@@ -780,8 +783,8 @@ int main(int argc, char **argv){
   }
   if( !verboseFlag && multiTest && !quietFlag && !oomFlag ) printf("\n");
   if( nTest>1 && !quietFlag ){
-    printf("%d fuzz tests with no errors\nSQLite %s %s\n",
-           nTest, sqlite3_libversion(), sqlite3_sourceid());
+    printf("%s: 0 errors out of %d tests\nSQLite %s %s\n",
+           g.zArgv0, nTest, sqlite3_libversion(), sqlite3_sourceid());
   }
   if( zDataOut ){
     int n = 0;
