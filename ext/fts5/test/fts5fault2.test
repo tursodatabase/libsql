@@ -51,5 +51,28 @@ do_faultsim_test 1.2 -faults oom-* -prep {
   faultsim_test_result {0 {1000 900 800 700 600 500 400 300 200 100}}
 }
 
+#-------------------------------------------------------------------------
+# OOM within a query that accesses the in-memory hash table. 
+#
+reset_db 
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE "a b c" USING fts5(a, b, c);
+  INSERT INTO "a b c" VALUES('one two', 'x x x', 'three four');
+  INSERT INTO "a b c" VALUES('nine ten', 'y y y', 'two two');
+}
+
+do_faultsim_test 2.1 -faults oom-trans* -prep {
+  execsql {
+    BEGIN;
+      INSERT INTO "a b c" VALUES('one one', 'z z z', 'nine ten');
+  }
+} -body {
+  execsql { SELECT rowid FROM "a b c" WHERE "a b c" MATCH 'one' }
+} -test {
+  faultsim_test_result {0 {1 3}}
+  catchsql { ROLLBACK }
+}
+
+
 finish_test
 

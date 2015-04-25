@@ -47,11 +47,9 @@ do_execsql_test 2.0 {
 do_execsql_test 2.1 {
   INSERT INTO t1 VALUES('a b c', 'd e f');
 }
-do_execsql_test 2.2 {
-  SELECT fts5_decode(id, block) FROM t1_data WHERE id==10
-} {
-  {{structure idx=0} {lvl=0 nMerge=0 {id=27723 h=1 leaves=1..1}}}
-}
+do_test 2.2 {
+  execsql { SELECT fts5_decode(id, block) FROM t1_data WHERE id==10 }
+} {/{{structure idx=0} {lvl=0 nMerge=0 {id=[0123456789]* h=1 leaves=1..1}}}/}
 do_execsql_test 2.3 {
   INSERT INTO t1(t1) VALUES('integrity-check');
 }

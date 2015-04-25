@@ -28,7 +28,6 @@ do_execsql_test 1.0 {
   WITH ii(i) AS (SELECT 1 UNION SELECT i+1 FROM ii WHERE i<100)
   INSERT INTO t1 SELECT rnddoc(10) FROM ii;
 }
-
 set mask [expr 31 << 31]
 
 # Test 1:
@@ -51,7 +50,6 @@ foreach {tno stmt} {
   1 { DELETE FROM t1_data WHERE rowid=$rowid }
   2 { UPDATE t1_data SET block=14 WHERE rowid=$rowid }
 } {
-  break
   set tn 0
   foreach rowid [db eval {SELECT rowid FROM t1_data WHERE rowid>10}] {
     incr tn
@@ -77,6 +75,8 @@ foreach {tno stmt} {
   }
 }
 
+# Using the same database as the 1.* tests.
+#
 # Run N-1 tests, where N is the number of bytes in the rightmost leaf page
 # of the fts index. For test $i, truncate the rightmost leafpage to $i
 # bytes. Then test both the integrity-check detects the corruption.
@@ -111,6 +111,88 @@ for {set i [expr $nbyte-2]} {$i>=0} {incr i -1} {
     INSERT INTO t1(t1) VALUES('integrity-check');
   } {}
 }
+
+#-------------------------------------------------------------------------
+# Test that corruption in leaf page headers is detected by queries that use
+# doclist-indexes.
+#
+set doc "A B C D E F G H I J "
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE x3 USING fts5(tt);
+  INSERT INTO x3(x3, rank) VALUES('pgsz', 32);
+  WITH ii(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM ii WHERE i<1000) 
+  INSERT INTO x3 
+  SELECT ($doc || CASE WHEN (i%50)==0 THEN 'X' ELSE 'Y' END) FROM ii;
+}
+
+foreach {tn hdr} {
+  1 "\00\00\00\00"
+  2 "\FF\FF\FF\FF"
+} {
+  set tn2 0
+  set nCorrupt 0
+  foreach rowid [db eval {SELECT rowid FROM x3_data WHERE rowid>10}] {
+    if {$rowid & $mask} continue
+    incr tn2
+    do_test 3.$tn.$tn2 {
+      execsql BEGIN
+
+      set fd [db incrblob main x3_data block $rowid]
+      fconfigure $fd -encoding binary -translation binary
+      puts -nonewline $fd $hdr
+      close $fd
+
+      set res [catchsql {SELECT rowid FROM x3 WHERE x3 MATCH 'x AND a'}]
+      if {$res == "1 {database disk image is malformed}"} {incr nCorrupt}
+      set {} 1
+    } {1}
+
+    execsql ROLLBACK
+  }
+
+  do_test 3.$tn.x { expr $nCorrupt>0 } 1
+}
+
+#--------------------------------------------------------------------
+#
+set doc "A B C D E F G H I J "
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE x4 USING fts5(tt);
+  INSERT INTO x4(x4, rank) VALUES('pgsz', 32);
+  WITH ii(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM ii WHERE i<10) 
+  INSERT INTO x4 
+  SELECT ($doc || CASE WHEN (i%50)==0 THEN 'X' ELSE 'Y' END) FROM ii;
+}
+
+foreach {tn nCut} {
+  1 1
+  2 10
+} {
+  set tn2 0
+  set nCorrupt 0
+  foreach rowid [db eval {SELECT rowid FROM x4_data WHERE rowid>10}] {
+    if {$rowid & $mask} continue
+    incr tn2
+    do_test 4.$tn.$tn2 {
+      execsql {
+        BEGIN;
+          UPDATE x4_data SET block = substr(block, 1, length(block)-$nCut) 
+          WHERE id = $rowid;
+      }
+
+      set res [catchsql {
+        SELECT rowid FROM x4 WHERE x4 MATCH 'a' ORDER BY 1 DESC
+      }]
+      if {$res == "1 {database disk image is malformed}"} {incr nCorrupt}
+      set {} 1
+    } {1}
+
+    execsql ROLLBACK
+  }
+
+  do_test 4.$tn.x { expr $nCorrupt>0 } 1
+}
+
 
 finish_test
 

@@ -263,5 +263,27 @@ do_execsql_test 6.3 {
   SELECT rowid FROM s3 WHERE s3 MATCH 'a'
 } {1 2}
 
+do_test 6.4 {
+  db close
+  sqlite3 db test.db
+  execsql {
+    BEGIN;
+      INSERT INTO s3(s3) VALUES('optimize');
+    ROLLBACK;
+  }
+} {}
+
+#-------------------------------------------------------------------------
+#
+set doc [string repeat "a b c " 500]
+breakpoint
+do_execsql_test 7.0 {
+  CREATE VIRTUAL TABLE x1 USING fts5(x);
+  INSERT INTO x1(x1, rank) VALUES('pgsz', 32);
+  INSERT INTO x1 VALUES($doc);
+}
+
+
+
 finish_test
 
