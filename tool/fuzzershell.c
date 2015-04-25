@@ -164,6 +164,7 @@ static void sqlexec(sqlite3 *db, const char *zFormat, ...){
 */
 static void shellLog(void *pNotUsed, int iErrCode, const char *zMsg){
   printf("LOG: (%d) %s\n", iErrCode, zMsg);
+  fflush(stdout);
 }
 
 /*
@@ -181,6 +182,7 @@ static int execCallback(void *NotUsed, int argc, char **argv, char **colv){
       printf("NULL\n");
     }
   }
+  fflush(stdout);
   return 0;
 }
 static int execNoop(void *NotUsed, int argc, char **argv, char **colv){
@@ -194,6 +196,7 @@ static int execNoop(void *NotUsed, int argc, char **argv, char **colv){
 */
 static void traceCallback(void *NotUsed, const char *zMsg){
   printf("TRACE: %s\n", zMsg);
+  fflush(stdout);
 }
 #endif
 
@@ -594,7 +597,10 @@ int main(int argc, char **argv){
       char *z = strstr(&zIn[i], ">****/");
       if( z ){
         z += 6;
-        if( verboseFlag ) printf("%.*s\n", (int)(z-&zIn[i]), &zIn[i]);
+        if( verboseFlag ){
+          printf("%.*s\n", (int)(z-&zIn[i]), &zIn[i]);
+          fflush(stdout);
+        }
         i += (int)(z-&zIn[i]);
         multiTest = 1;
       }
@@ -617,6 +623,7 @@ int main(int argc, char **argv){
     if( verboseFlag ){
       printf("INPUT (offset: %d, size: %d): [%s]\n",
               i, (int)strlen(&zIn[i]), &zIn[i]);
+      fflush(stdout);
     }else if( multiTest && !quietFlag ){
       int pct = oomFlag ? 100*iNext/nIn : ((10*iNext)/nIn)*10;
       if( pct!=lastPct ){
@@ -641,7 +648,10 @@ int main(int argc, char **argv){
       oomCnt = g.iOomCntdown = 1;
       g.nOomFault = 0;
       g.bOomOnce = 1;
-      if( verboseFlag ) printf("Once.%d\n", oomCnt);
+      if( verboseFlag ){
+        printf("Once.%d\n", oomCnt);
+        fflush(stdout);
+      }
     }else{
       oomCnt = 0;
     }
@@ -710,6 +720,7 @@ int main(int argc, char **argv){
         if( oomCnt ){
           if( verboseFlag ){
             printf("%s.%d\n", g.bOomOnce ? "Once" : "Multi", oomCnt);
+            fflush(stdout);
           }
           nTest++;
         }
@@ -725,6 +736,7 @@ int main(int argc, char **argv){
       if( zErrMsg ){
         printf("ERROR-MSG: [%s]\n", zErrBuf);
       }
+      fflush(stdout);
     }
     /* Simulate an error if the TEST_FAILURE environment variable is "5" */
     if( zFailCode ){
