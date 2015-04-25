@@ -497,7 +497,7 @@ static void diff_one_table(const char *zTab, FILE *out){
   char **az2 = 0;           /* Columns in aux */
   int nPk;                  /* Primary key columns in main */
   int nPk2;                 /* Primary key columns in aux */
-  int n;                    /* Number of columns in main */
+  int n = 0;                /* Number of columns in main */
   int n2;                   /* Number of columns in aux */
   int nQ;                   /* Number of output columns in the diff query */
   int i;                    /* Loop counter */
@@ -734,7 +734,7 @@ static void summarize_one_table(const char *zTab, FILE *out){
   char **az2 = 0;           /* Columns in aux */
   int nPk;                  /* Primary key columns in main */
   int nPk2;                 /* Primary key columns in aux */
-  int n;                    /* Number of columns in main */
+  int n = 0;                /* Number of columns in main */
   int n2;                   /* Number of columns in aux */
   int i;                    /* Loop counter */
   const char *zSep;         /* Separator string */

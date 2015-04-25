@@ -1,5 +1,5 @@
-C Update\sthe\sAFL\sfuzzer\sdata\swith\snewly\sdiscovered\spaths.
-D 2015-04-25T17:45:36.363
+C Fix\scompiler\swarnings\sin\ssqldiff.
+D 2015-04-25T18:39:21.096
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e3268d234210842b4be0a6e2e1c5990999f1d9f4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1242,7 +1242,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
-F tool/sqldiff.c 393b0f5b17ef29341664563a90d40ee63a0a18f7
+F tool/sqldiff.c 8999f959c2305a908b50e44bc636bdbfe04aa06c
 F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
 F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
 F tool/symbols.sh fec58532668296d7c7dc48be9c87f75ccdb5814f
@@ -1253,7 +1253,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f5e6c4b28d25429aac53ea8cb334a2e6bd821f39
-R 30804977f0681064a533a165cd5b5fba
+P d98219805d4596360ac6ae9647687f8dc709828a
+R d07983ac3fb7821457bf39e275be14e2
 U drh
-Z 5c328a6506a614f02e41a0113d08abba
+Z f99b6fc939f7a6e13bee4c6bb346143a
