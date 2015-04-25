@@ -1,5 +1,5 @@
-C Add\stests\sfor\sfts5.
-D 2015-04-25T18:56:48.351
+C Improve\scoverage\sof\sfts5_index.c\sslightly.
+D 2015-04-25T20:29:46.707
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 31b38b9da2e4b36f54a013bd71a5c3f6e45ca78f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -112,7 +112,7 @@ F ext/fts5/fts5_buffer.c 3ba56cc6824c9f7b1e0695159e0a9c636f6b4a23
 F ext/fts5/fts5_config.c 43fcf838d3a3390d1245e3d5e651fa5cc1df575b
 F ext/fts5/fts5_expr.c 05da381ab26031243266069302c6eb4094b2c5dd
 F ext/fts5/fts5_hash.c 3cb5a3d04dd2030eb0ac8d544711dfd37c0e6529
-F ext/fts5/fts5_index.c c87369d11271847df9f033f0df148e7f004a88a2
+F ext/fts5/fts5_index.c 699b716f1b84ef78da9ccee25a8b6fe020cff32a
 F ext/fts5/fts5_storage.c b3a4cbbcd197fe587789398e51a631f92fc9196c
 F ext/fts5/fts5_tcl.c 10bf0eb678d34c1bfdcfaf653d2e6dd92afa8b38
 F ext/fts5/fts5_tokenize.c c07f2c2f749282c1dbbf46bde1f6d7095c740b8b
@@ -141,7 +141,7 @@ F ext/fts5/test/fts5dlidx.test 748a84ceb74a4154725096a26dfa854260b0182f
 F ext/fts5/test/fts5ea.test 04695560a444fcc00c3c4f27783bdcfbf71f030c
 F ext/fts5/test/fts5eb.test 728a1f23f263548f5c29b29dfb851b5f2dbe723e
 F ext/fts5/test/fts5fault1.test ed71717a479bef32d05f02d9c48691011d160d4d
-F ext/fts5/test/fts5fault2.test f478fa94e39a6911189f9e052a3b93ab4cd275fa
+F ext/fts5/test/fts5fault2.test 0476720b3fcbb3f30c26da4cc8bda4f020d3e408
 F ext/fts5/test/fts5full.test 0924bdca5416a242103239ace79c6f5aa34bab8d
 F ext/fts5/test/fts5near.test 3f9f64e16cac82725d03d4e04c661090f0b3b947
 F ext/fts5/test/fts5optimize.test 0028c90a7817d3e576d1148fc8dff17d89054e54
@@ -1305,7 +1305,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1c78d8920fb59da3cb97dd2eb09b3e08dfd14259
-R 6572bfe0dee7d9becde3a8bb0a8d33a2
+P e748651c940eae2389fe826cf5c25f1166a5e611
+R 0f1e32978d2225a38a865fc7c17144a3
 U dan
-Z e7bb2196ce75c57e787365bfa027743a
+Z 504cb23846c7efd7bba629c51f43c91a

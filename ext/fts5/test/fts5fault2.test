@@ -22,6 +22,8 @@ ifcapable !fts5 {
   return
 }
 
+if 0 {
+
 set doc [string trim [string repeat "x y z " 200]]
 do_execsql_test 1.0 {
   CREATE TABLE t1(a INTEGER PRIMARY KEY, x);
@@ -73,6 +75,32 @@ do_faultsim_test 2.1 -faults oom-trans* -prep {
   catchsql { ROLLBACK }
 }
 
+}
+
+#-------------------------------------------------------------------------
+# OOM within an 'optimize' operation that writes multiple pages to disk.
+#
+reset_db 
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE zzz USING fts5(z);
+  INSERT INTO zzz(zzz, rank) VALUES('pgsz', 32);
+  INSERT INTO zzz VALUES('a b c d');
+  INSERT INTO zzz SELECT 'c d e f' FROM zzz;
+  INSERT INTO zzz SELECT 'e f g h' FROM zzz;
+  INSERT INTO zzz SELECT 'i j k l' FROM zzz;
+  INSERT INTO zzz SELECT 'l k m n' FROM zzz;
+  INSERT INTO zzz SELECT 'o p q r' FROM zzz;
+}
+faultsim_save_and_close
+
+do_faultsim_test 3.1 -faults oom-trans* -prep {
+  faultsim_restore_and_reopen
+  execsql { SELECT rowid FROM zzz }
+} -body {
+  execsql { INSERT INTO zzz(zzz) VALUES('optimize') }
+} -test {
+  faultsim_test_result {0 {}}
+}
 
 finish_test
 
