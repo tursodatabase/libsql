@@ -1627,7 +1627,7 @@ extensiontest: testfixture.exe testloadext.dll
 fulltest:	testfixture.exe sqlite3.exe fuzztest
 	.\testfixture.exe $(TOP)\test\all.test
 
-soaktest:	testfixture.exe sqlite3.exe
+soaktest:	testfixture.exe sqlite3.exe fuzzoomtest
 	.\testfixture.exe $(TOP)\test\all.test -soak=1
 
 fulltestonly:	testfixture.exe sqlite3.exe fuzztest
@@ -1638,6 +1638,9 @@ queryplantest:	testfixture.exe sqlite3.exe
 
 fuzztest:	fuzzershell.exe
 	.\fuzzershell.exe -f $(TOP)\test\fuzzdata1.txt
+
+fuzzoomtest:	fuzzershell.exe
+	.\fuzzershell.exe -f $(TOP)\test\fuzzdata1.txt --oom
 
 test:	testfixture.exe sqlite3.exe fuzztest
 	.\testfixture.exe $(TOP)\test\veryquick.test

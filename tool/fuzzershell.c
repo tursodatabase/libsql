@@ -39,8 +39,8 @@
 **
 **       |****<...>****|
 **
-** where the "..." is arbitrary text, except the "|" should really be "/".
-** ("|" is used here to avoid compiler errors about nested comments.)
+** where the "..." is arbitrary text. (Except the "|" should really be "/".
+** "|" is used here to avoid compiler errors about nested comments.)
 ** A separate in-memory SQLite database is created to run each test case.
 ** This feature allows the "queue" of AFL to be captured into a single big
 ** file using a command like this:
@@ -60,7 +60,6 @@
 ** test cases are added, they can be eliminated by running:
 **
 **    fuzzershell -f ~/all-queue.txt --unique-cases ~/unique-cases.txt
-**
 */
 #include <stdio.h>
 #include <stdlib.h>
@@ -83,6 +82,13 @@ struct GlobalVars {
   int nOomBrkpt;                   /* Number of calls to oomFault() */
   char zTestName[100];             /* Name of current test */
 } g;
+
+/*
+** Maximum number of iterations for an OOM test
+*/
+#ifndef OOM_MAX
+# define OOM_MAX 1000
+#endif
 
 /*
 ** This routine is called when a simulated OOM occurs.  It exists as a
@@ -615,7 +621,7 @@ int main(int argc, char **argv){
       if( z ){
         z += 6;
         sqlite3_snprintf(sizeof(g.zTestName), g.zTestName, "%.*s", 
-                         (int)(z-&zIn[i]), &zIn[i]);
+                         (int)(z-&zIn[i]) - 12, &zIn[i+6]);
         if( verboseFlag ){
           printf("%.*s\n", (int)(z-&zIn[i]), &zIn[i]);
           fflush(stdout);
@@ -642,16 +648,19 @@ int main(int argc, char **argv){
     if( verboseFlag ){
       printf("INPUT (offset: %d, size: %d): [%s]\n",
               i, (int)strlen(&zIn[i]), &zIn[i]);
-      fflush(stdout);
     }else if( multiTest && !quietFlag ){
-      int pct = oomFlag ? 100*iNext/nIn : ((10*iNext)/nIn)*10;
-      if( pct!=lastPct ){
-        if( lastPct<0 ) printf("fuzz test:");
-        printf(" %d%%", pct);
-        fflush(stdout);
-        lastPct = pct;
+      if( oomFlag ){
+        printf("%s\n", g.zTestName);
+      }else{
+        int pct = (10*iNext)/nIn;
+        if( pct!=lastPct ){
+          if( lastPct<0 ) printf("fuzz test:");
+          printf(" %d%%", pct*10);
+          lastPct = pct;
+        }
       }
     }
+    fflush(stdout);
     switch( iMode ){
       case FZMODE_Glob:
         zSql = zToFree = sqlite3_mprintf("SELECT glob(%s);", zSql);
@@ -725,7 +734,7 @@ int main(int argc, char **argv){
         abendError("memory in use after close: %lld bytes", sqlite3_memory_used());
       }
       if( oomFlag ){
-        if( g.nOomFault==0 || oomCnt>2000 ){
+        if( g.nOomFault==0 || oomCnt>OOM_MAX ){
           if( g.bOomOnce ){
             oomCnt = g.iOomCntdown = 1;
             g.bOomOnce = 0;
@@ -769,7 +778,7 @@ int main(int argc, char **argv){
       }
     }
   }
-  if( !verboseFlag && multiTest && !quietFlag ) printf("\n");
+  if( !verboseFlag && multiTest && !quietFlag && !oomFlag ) printf("\n");
   if( nTest>1 && !quietFlag ){
     printf("%d fuzz tests with no errors\nSQLite %s %s\n",
            nTest, sqlite3_libversion(), sqlite3_sourceid());

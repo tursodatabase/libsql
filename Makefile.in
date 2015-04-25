@@ -955,7 +955,7 @@ fulltest:	testfixture$(TEXE) sqlite3$(TEXE) fuzztest
 	./testfixture$(TEXE) $(TOP)/test/all.test
 
 # Really really long testing
-soaktest:	testfixture$(TEXE) sqlite3$(TEXE)
+soaktest:	testfixture$(TEXE) sqlite3$(TEXE) fuzzoomtest
 	./testfixture$(TEXE) $(TOP)/test/all.test -soak=1
 
 # Do extra testing but not aeverything.
@@ -965,6 +965,9 @@ fulltestonly:	testfixture$(TEXE) sqlite3$(TEXE)
 # Fuzz testing
 fuzztest:	fuzzershell$(TEXE)
 	./fuzzershell$(TEXE) -f $(TOP)/test/fuzzdata1.txt
+
+fuzzoomtest:	fuzzershell$(TEXE)
+	./fuzzershell$(TEXE) -f $(TOP)/test/fuzzdata1.txt --oom
 
 # This is the common case.  Run many tests but not those that take
 # a really long time.

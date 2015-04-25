@@ -636,7 +636,7 @@ fts3-testfixture$(EXE): sqlite3.c fts3amal.c $(TESTSRC) $(TOP)/src/tclsqlite.c
 fulltest:	testfixture$(EXE) sqlite3$(EXE) fuzztest
 	./testfixture$(EXE) $(TOP)/test/all.test
 
-soaktest:	testfixture$(EXE) sqlite3$(EXE)
+soaktest:	testfixture$(EXE) sqlite3$(EXE) fuzzoomtest
 	./testfixture$(EXE) $(TOP)/test/all.test -soak=1
 
 fulltestonly:	testfixture$(EXE) sqlite3$(EXE) fuzztest
@@ -647,6 +647,9 @@ queryplantest:	testfixture$(EXE) sqlite3$(EXE)
 
 fuzztest:	fuzzershell$(EXE)
 	./fuzzershell$(EXE) -f $(TOP)/test/fuzzdata1.txt
+
+fuzzoomtest:	fuzzershell$(EXE)
+	./fuzzershell$(EXE) -f $(TOP)/test/fuzzdata1.txt --oom
 
 test:	testfixture$(EXE) sqlite3$(EXE) fuzztest
 	./testfixture$(EXE) $(TOP)/test/veryquick.test

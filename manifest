@@ -1,9 +1,9 @@
-C Fix\san\sobscure\smemory\sleak\sthat\scould\sfollow\san\sOOM\sin\swhere.c.
-D 2015-04-25T12:20:24.152
+C Add\sthe\sfuzzoomtest\starget\sto\sthe\smakefiles.\s\sInvoke\sfuzzoomtest\sfrom\nreleasetest.tcl.
+D 2015-04-25T13:39:29.321
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in 31b38b9da2e4b36f54a013bd71a5c3f6e45ca78f
+F Makefile.in e3268d234210842b4be0a6e2e1c5990999f1d9f4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 4a546e42ecfd0fe53c31e05c2a965e17fb591637
+F Makefile.msc 0f859a8bbda8b3876ed2f257281db26ba9ad8398
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md d58e3bebc0a4145e0f2a87994015fdb575a8e866
 F VERSION 2e244662b71e6e68a5c29b014ebc5b7564f4cc5a
@@ -152,7 +152,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk b8996b5919fd0781417b1c2305f4a7ea18b2220d
+F main.mk c0c7503b9749c1532c1e0e9501331abc1afc299d
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
 F mkopcodeh.awk d5e22023b5238985bb54a72d33e0ac71fe4f8a32
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
@@ -814,7 +814,7 @@ F test/randexpr1.test eda062a97e60f9c38ae8d806b03b0ddf23d796df
 F test/rdonly.test 64e2696c322e3538df0b1ed624e21f9a23ed9ff8
 F test/regexp1.test 497ea812f264d12b6198d6e50a76be4a1973a9d8
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
-F test/releasetest.tcl f649253610c8b0b0d63ad85b0d2961867d4f0ac0
+F test/releasetest.tcl 7ad4fd49ae50c41ec7781815bdda8a8b278781d4
 F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
 F test/rollback.test 458fe73eb3ffdfdf9f6ba3e9b7350a6220414dea
 F test/rollback2.test fc14cf6d1a2b250d2735ef16124b971bce152f14
@@ -1205,7 +1205,7 @@ F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/extract.c 054069d81b095fbdc189a6f5d4466e40380505e2
 F tool/fast_vacuum.c 5ba0d6f5963a0a63bdc42840f678bad75b2ebce1
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
-F tool/fuzzershell.c 4d87082924b010c7b2c89e1bb01332a5cab8289a
+F tool/fuzzershell.c 871797988625b34debda280f4aecaa2b8bc84b17
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
@@ -1253,7 +1253,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b7394755fab81329d56bad1b506e536b2fcbe8cd
-R ffe242310eb47eb26efd0e21515d48b5
-U dan
-Z d148d9794c2520483b80e18ea41d6bd5
+P 08ec9f2f5a446774bb8e9b9b0ef463dd5458d28e
+R 68dc03c91e8d3010850b75fff4d0681d
+U drh
+Z 96fbeeb79fb3935e237bb24fa6fd4a78
