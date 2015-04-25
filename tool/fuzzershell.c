@@ -79,6 +79,7 @@ struct GlobalVars {
   int bOomOnce;                    /* Fail just once if true */
   int bOomEnable;                  /* True to enable OOM simulation */
   int nOomBrkpt;                   /* Number of calls to oomFault() */
+  char zTestName[100];             /* Name of current test */
 } g;
 
 /*
@@ -166,6 +167,9 @@ static void shellLog(void *pNotUsed, int iErrCode, const char *zMsg){
   printf("LOG: (%d) %s\n", iErrCode, zMsg);
   fflush(stdout);
 }
+static void shellLogNoop(void *pNotUsed, int iErrCode, const char *zMsg){
+  return;
+}
 
 /*
 ** This callback is invoked by sqlite3_exec() to return query results.
@@ -197,6 +201,9 @@ static int execNoop(void *NotUsed, int argc, char **argv, char **colv){
 static void traceCallback(void *NotUsed, const char *zMsg){
   printf("TRACE: %s\n", zMsg);
   fflush(stdout);
+}
+static void traceNoop(void *NotUsed, const char *zMsg){
+  return;
 }
 #endif
 
@@ -525,7 +532,7 @@ int main(int argc, char **argv){
       abendError("unknown argument: %s", argv[i]);
     }
   }
-  if( verboseFlag ) sqlite3_config(SQLITE_CONFIG_LOG, shellLog, 0);
+  sqlite3_config(SQLITE_CONFIG_LOG, verboseFlag ? shellLog : shellLogNoop, 0);
   if( nHeap>0 ){
     pHeap = malloc( nHeap );
     if( pHeap==0 ) fatalError("cannot allocate %d-byte heap\n", nHeap);
@@ -597,6 +604,8 @@ int main(int argc, char **argv){
       char *z = strstr(&zIn[i], ">****/");
       if( z ){
         z += 6;
+        sqlite3_snprintf(sizeof(g.zTestName), g.zTestName, "%.*", 
+                         (int)(z-&zIn[i]), &zIn[i]);
         if( verboseFlag ){
           printf("%.*s\n", (int)(z-&zIn[i]), &zIn[i]);
           fflush(stdout);
@@ -678,7 +687,7 @@ int main(int argc, char **argv){
         sqlite3_backup_finish(pBackup);
       }
   #ifndef SQLITE_OMIT_TRACE
-      if( verboseFlag ) sqlite3_trace(db, traceCallback, 0);
+      sqlite3_trace(db, verboseFlag ? traceCallback : traceNoop, 0);
   #endif
       sqlite3_create_function(db, "eval", 1, SQLITE_UTF8, 0, sqlEvalFunc, 0, 0);
       sqlite3_create_function(db, "eval", 2, SQLITE_UTF8, 0, sqlEvalFunc, 0, 0);
