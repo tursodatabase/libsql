@@ -1,5 +1,5 @@
-C Add\sfflush()\scalls\sto\sfuzzershell\sto\skeep\sstderr\sand\sstdout\ssynchronized.
-D 2015-04-25T00:20:15.042
+C Do\snot\ssend\sthe\sextra\s";"\sand\s"\\000"\stokens\sto\sthe\sparser\sif\sa\sprior\serror\nhas\soccurred.
+D 2015-04-25T00:32:30.368
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 31b38b9da2e4b36f54a013bd71a5c3f6e45ca78f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -287,7 +287,7 @@ F src/test_vfs.c 3b65d42e18b262805716bd96178c81da8f2d9283
 F src/test_vfstrace.c bab9594adc976cbe696ff3970728830b4c5ed698
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 6bbcc9fe50c917864d48287b4792d46d6e873481
-F src/tokenize.c b7fb584c2be5ec39b6fdf04b185e7c6f33f8dc15
+F src/tokenize.c b15511a2396641792f386ceb440d1d922972a78e
 F src/trigger.c 322f23aad694e8f31d384dcfa386d52a48d3c52f
 F src/update.c 3c4ecc282accf12d39edb8d524cf089645e55a13
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
@@ -1253,7 +1253,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 14a9e4a377bf2974f5db148c8f86e2c5ffdfa28d
-R 4c614aefb4895c61e9e71626f64617fb
+P 2b98a25237d1b3e64aec2772b622e8b3be2df454
+R 1845152f55b1ee59daa60e6bac40340e
 U drh
-Z ca0e19da89eb1b89a5b2a79cf11e1cd5
+Z ee49a39b84a8bd70ced442059a45b915
