@@ -1055,7 +1055,7 @@ static void fts5SetVtabError(Fts5Table *p, const char *zFormat, ...){
 static int fts5SpecialInsert(
   Fts5Table *pTab,                /* Fts5 table object */
   sqlite3_value *pCmd,            /* Value inserted into special column */
-  sqlite3_value *pVal             /* Value inserted into rowid column */
+  sqlite3_value *pVal             /* Value inserted into rank column */
 ){
   Fts5Config *pConfig = pTab->pConfig;
   const char *z = (const char*)sqlite3_value_text(pCmd);
@@ -1083,6 +1083,9 @@ static int fts5SpecialInsert(
     }
   }else if( 0==sqlite3_stricmp("optimize", z) ){
     rc = sqlite3Fts5StorageOptimize(pTab->pStorage);
+  }else if( 0==sqlite3_stricmp("merge", z) ){
+    int nMerge = sqlite3_value_int(pVal);
+    rc = sqlite3Fts5StorageMerge(pTab->pStorage, nMerge);
   }else if( 0==sqlite3_stricmp("integrity-check", z) ){
     rc = sqlite3Fts5StorageIntegrity(pTab->pStorage);
   }else{

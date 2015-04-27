@@ -823,16 +823,20 @@ static Fts5Data *fts5DataReadOrBuffer(
       /* This call may return SQLITE_ABORT if there has been a savepoint
       ** rollback since it was last used. In this case a new blob handle
       ** is required.  */
-      rc = sqlite3_blob_reopen(p->pReader, iRowid);
-      if( rc==SQLITE_ABORT ){
+      sqlite3_blob *pBlob = p->pReader;
+      p->pReader = 0;
+      rc = sqlite3_blob_reopen(pBlob, iRowid);
+      assert( p->pReader==0 );
+      p->pReader = pBlob;
+      if( rc!=SQLITE_OK ){
         fts5CloseReader(p);
-        rc = SQLITE_OK;
       }
+      if( rc==SQLITE_ABORT ) rc = SQLITE_OK;
     }
 
     /* If the blob handle is not yet open, open and seek it. Otherwise, use
     ** the blob_reopen() API to reseek the existing blob handle.  */
-    if( p->pReader==0 ){
+    if( p->pReader==0 && rc==SQLITE_OK ){
       Fts5Config *pConfig = p->pConfig;
       rc = sqlite3_blob_open(pConfig->db, 
           pConfig->zDb, p->zDataTbl, "block", iRowid, 0, &p->pReader
@@ -2770,7 +2774,6 @@ static void fts5ChunkIterRelease(Fts5ChunkIter *pIter){
 ** returned in this case.
 */
 static int fts5AllocateSegid(Fts5Index *p, Fts5Structure *pStruct){
-  int i;
   u32 iSegid = 0;
 
   if( p->rc==SQLITE_OK ){
@@ -3227,11 +3230,11 @@ static void fts5WriteInitForAppend(
   pWriter->iIdx = iIdx;
   pWriter->iSegid = pSeg->iSegid;
   pWriter->aWriter = (Fts5PageWriter*)fts5IdxMalloc(p, nByte);
-  pWriter->nWriter = pSeg->nHeight;
 
   if( p->rc==SQLITE_OK ){
     int pgno = 1;
     int i;
+    pWriter->nWriter = pSeg->nHeight;
     pWriter->aWriter[0].pgno = pSeg->pgnoLast+1;
     for(i=pSeg->nHeight-1; i>0; i--){
       i64 iRowid = FTS5_SEGMENT_ROWID(pWriter->iIdx, pWriter->iSegid, i, pgno);
@@ -3250,7 +3253,7 @@ static void fts5WriteInitForAppend(
     if( pSeg->nHeight==1 ){
       pWriter->nEmpty = pSeg->pgnoLast-1;
     }
-    assert( (pgno+pWriter->nEmpty)==pSeg->pgnoLast );
+    assert( p->rc!=SQLITE_OK || (pgno+pWriter->nEmpty)==pSeg->pgnoLast );
     pWriter->bFirstTermInPage = 1;
     assert( pWriter->aWriter[0].term.n==0 );
   }
@@ -3351,7 +3354,6 @@ static void fts5IndexMergeLevel(
     fts5WriteInit(p, &writer, iIdx, iSegid);
 
     /* Add the new segment to the output level */
-    if( iLvl+1==pStruct->nLevel ) pStruct->nLevel++;
     pSeg = &pLvlOut->aSeg[pLvlOut->nSeg];
     pLvlOut->nSeg++;
     pSeg->pgnoFirst = 1;
@@ -3448,6 +3450,59 @@ fflush(stdout);
 }
 
 /*
+** Do up to nPg pages of automerge work on index iIdx.
+*/
+static void fts5IndexMerge(
+  Fts5Index *p,                   /* FTS5 backend object */
+  int iIdx,                       /* Index to work on */
+  Fts5Structure **ppStruct,       /* IN/OUT: Current structure of index */
+  int nPg                         /* Pages of work to do */
+){
+  int nRem = nPg;
+  Fts5Structure *pStruct = *ppStruct;
+  while( nRem>0 && p->rc==SQLITE_OK ){
+    int iLvl;                   /* To iterate through levels */
+    int iBestLvl = 0;           /* Level offering the most input segments */
+    int nBest = 0;              /* Number of input segments on best level */
+
+    /* Set iBestLvl to the level to read input segments from. */
+    assert( pStruct->nLevel>0 );
+    for(iLvl=0; iLvl<pStruct->nLevel; iLvl++){
+      Fts5StructureLevel *pLvl = &pStruct->aLevel[iLvl];
+      if( pLvl->nMerge ){
+        if( pLvl->nMerge>nBest ){
+          iBestLvl = iLvl;
+          nBest = pLvl->nMerge;
+        }
+        break;
+      }
+      if( pLvl->nSeg>nBest ){
+        nBest = pLvl->nSeg;
+        iBestLvl = iLvl;
+      }
+    }
+
+    /* If nBest is still 0, then the index must be empty. */
+#ifdef SQLITE_DEBUG
+    for(iLvl=0; nBest==0 && iLvl<pStruct->nLevel; iLvl++){
+      assert( pStruct->aLevel[iLvl].nSeg==0 );
+    }
+#endif
+
+    if( nBest<p->pConfig->nAutomerge 
+        && pStruct->aLevel[iBestLvl].nMerge==0 
+      ){
+      break;
+    }
+    fts5IndexMergeLevel(p, iIdx, &pStruct, iBestLvl, &nRem);
+    if( p->rc==SQLITE_OK && pStruct->aLevel[iBestLvl].nMerge==0 ){
+      fts5StructurePromote(p, iBestLvl+1, pStruct);
+    }
+  }
+  *ppStruct = pStruct;
+}
+
+/*
 ** A total of nLeaf leaf pages of data has just been flushed to a level-0
 ** segments in index iIdx with structure pStruct. This function updates the
 ** write-counter accordingly and, if necessary, performs incremental merge
@@ -3456,13 +3511,13 @@ fflush(stdout);
 ** If an error occurs, set the Fts5Index.rc error code. If an error has 
 ** already occurred, this function is a no-op.
 */
-static void fts5IndexWork(
+static void fts5IndexAutomerge(
   Fts5Index *p,                   /* FTS5 backend object */
   int iIdx,                       /* Index to work on */
   Fts5Structure **ppStruct,       /* IN/OUT: Current structure of index */
   int nLeaf                       /* Number of output leaves just written */
 ){
-  if( p->rc==SQLITE_OK ){
+  if( p->rc==SQLITE_OK && p->pConfig->nAutomerge>0 ){
     Fts5Structure *pStruct = *ppStruct;
     i64 nWrite;                   /* Initial value of write-counter */
     int nWork;                    /* Number of work-quanta to perform */
@@ -3474,62 +3529,21 @@ static void fts5IndexWork(
     pStruct->nWriteCounter += nLeaf;
     nRem = p->nWorkUnit * nWork * pStruct->nLevel;
 
-    while( nRem>0 ){
-      int iLvl;                   /* To iterate through levels */
-      int iBestLvl = 0;           /* Level offering the most input segments */
-      int nBest = 0;              /* Number of input segments on best level */
-
-      /* Set iBestLvl to the level to read input segments from. */
-      assert( pStruct->nLevel>0 );
-      for(iLvl=0; iLvl<pStruct->nLevel; iLvl++){
-        Fts5StructureLevel *pLvl = &pStruct->aLevel[iLvl];
-        if( pLvl->nMerge ){
-          if( pLvl->nMerge>nBest ){
-            iBestLvl = iLvl;
-            nBest = pLvl->nMerge;
-          }
-          break;
-        }
-        if( pLvl->nSeg>nBest ){
-          nBest = pLvl->nSeg;
-          iBestLvl = iLvl;
-        }
-      }
-
-      /* If nBest is still 0, then the index must be empty. */
-#ifdef SQLITE_DEBUG
-      for(iLvl=0; nBest==0 && iLvl<pStruct->nLevel; iLvl++){
-        assert( pStruct->aLevel[iLvl].nSeg==0 );
-      }
-#endif
-
-      if( nBest<p->pConfig->nAutomerge 
-       && pStruct->aLevel[iBestLvl].nMerge==0 
-      ){
-        break;
-      }
-      fts5IndexMergeLevel(p, iIdx, &pStruct, iBestLvl, &nRem);
-      assert( nRem==0 || p->rc==SQLITE_OK );
-      if( p->rc==SQLITE_OK && pStruct->aLevel[iBestLvl].nMerge==0 ){
-        fts5StructurePromote(p, iBestLvl+1, pStruct);
-      }
-      *ppStruct = pStruct;
-    }
-
+    fts5IndexMerge(p, iIdx, ppStruct, nRem);
   }
 }
 
-static void fts5IndexCrisisMerge(
+static void fts5IndexCrisismerge(
   Fts5Index *p,                   /* FTS5 backend object */
   int iIdx,                       /* Index to work on */
   Fts5Structure **ppStruct        /* IN/OUT: Current structure of index */
 ){
+  const int nCrisis = p->pConfig->nCrisisMerge;
   Fts5Structure *pStruct = *ppStruct;
   int iLvl = 0;
-  while( p->rc==SQLITE_OK 
-      && iLvl<pStruct->nLevel
-      && pStruct->aLevel[iLvl].nSeg>=p->pConfig->nCrisisMerge 
-  ){
+
+  assert( p->rc!=SQLITE_OK || pStruct->nLevel>0 );
+  while( p->rc==SQLITE_OK && pStruct->aLevel[iLvl].nSeg>=nCrisis ){
     fts5IndexMergeLevel(p, iIdx, &pStruct, iLvl, 0);
     fts5StructurePromote(p, iLvl+1, pStruct);
     iLvl++;
@@ -3744,8 +3758,8 @@ static void fts5FlushOneHash(Fts5Index *p, int iHash, int *pnLeaf){
   }
 
 
-  if( p->pConfig->nAutomerge>0 ) fts5IndexWork(p, iHash, &pStruct, pgnoLast);
-  fts5IndexCrisisMerge(p, iHash, &pStruct);
+  fts5IndexAutomerge(p, iHash, &pStruct, pgnoLast);
+  fts5IndexCrisismerge(p, iHash, &pStruct);
   fts5StructureWrite(p, iHash, pStruct);
   fts5StructureRelease(pStruct);
 }
@@ -3759,7 +3773,7 @@ static void fts5IndexFlush(Fts5Index *p){
   int nLeaf = 0;                  /* Number of leaves written */
 
   /* If an error has already occured this call is a no-op. */
-  if( p->rc!=SQLITE_OK || p->nPendingData==0 ) return;
+  if( p->nPendingData==0 ) return;
   assert( p->apHash );
 
   /* Flush the terms and each prefix index to disk */
@@ -3774,6 +3788,7 @@ int sqlite3Fts5IndexOptimize(Fts5Index *p){
   Fts5Config *pConfig = p->pConfig;
   int i;
 
+  assert( p->rc==SQLITE_OK );
   fts5IndexFlush(p);
   for(i=0; i<=pConfig->nPrefix; i++){
     Fts5Structure *pStruct = fts5StructureRead(p, i);
@@ -3828,6 +3843,16 @@ int sqlite3Fts5IndexOptimize(Fts5Index *p){
   return fts5IndexReturn(p); 
 }
 
+int sqlite3Fts5IndexMerge(Fts5Index *p, int nMerge){
+  Fts5Structure *pStruct;
+
+  pStruct = fts5StructureRead(p, 0);
+  fts5IndexMerge(p, 0, &pStruct, nMerge);
+  fts5StructureWrite(p, 0, pStruct);
+  fts5StructureRelease(pStruct);
+
+  return fts5IndexReturn(p);
+}
 
 
 /*
@@ -4122,6 +4147,7 @@ int sqlite3Fts5IndexBeginWrite(Fts5Index *p, i64 iRowid){
   }
 
   if( iRowid<=p->iWriteRowid || (p->nPendingData > p->nMaxPendingData) ){
+    assert( p->rc==SQLITE_OK );
     fts5IndexFlush(p);
   }
   p->iWriteRowid = iRowid;
@@ -4702,6 +4728,8 @@ static void fts5IndexIntegrityCheckSegment(
   Fts5StructureSegment *pSeg      /* Segment to check internal consistency */
 ){
   Fts5BtreeIter iter;             /* Used to iterate through b-tree hierarchy */
+
+  if( pSeg->pgnoFirst==0 && pSeg->pgnoLast==0 ) return;
 
   /* Iterate through the b-tree hierarchy.  */
   for(fts5BtreeIterInit(p, iIdx, pSeg, &iter);
