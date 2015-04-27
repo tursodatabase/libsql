@@ -6107,8 +6107,9 @@ case OP_VOpen: {
       pCur->pVtabCursor = pVtabCursor;
       pVtab->nRef++;
     }else{
-      db->mallocFailed = 1;
+      assert( db->mallocFailed );
       pModule->xClose(pVtabCursor);
+      goto no_mem;
     }
   }
   break;
