@@ -85,6 +85,16 @@ typedef struct Fts5Config Fts5Config;
 **   The minimum number of segments that an auto-merge operation should
 **   attempt to merge together. A value of 1 sets the object to use the 
 **   compile time default. Zero disables auto-merge altogether.
+**
+** zContent:
+**
+** zContentRowid:
+**   The value of the content_rowid= option, if one was specified. Or 
+**   the string "rowid" otherwise. This text is not quoted - if it is
+**   used as part of an SQL statement it needs to be quoted appropriately.
+**
+** zContentExprlist:
+**
 */
 struct Fts5Config {
   sqlite3 *db;                    /* Database handle */
@@ -98,6 +108,7 @@ struct Fts5Config {
   int eContent;                   /* An FTS5_CONTENT value */
   char *zContent;                 /* content table */ 
   char *zContentRowid;            /* "content_rowid=" option value */ 
+  char *zContentExprlist;
   Fts5Tokenizer *pTok;
   fts5_tokenizer *pTokApi;
 

@@ -370,7 +370,7 @@ static int fts5ConfigParseSpecial(
       *pzErr = sqlite3_mprintf("multiple content_rowid=... directives");
       rc = SQLITE_ERROR;
     }else{
-      pConfig->zContentRowid = fts5EscapeName(&rc, zArg);
+      pConfig->zContentRowid = fts5Strdup(&rc, zArg);
     }
     return rc;
   }
@@ -466,6 +466,31 @@ static int fts5ConfigParseColumn(
   }
 
   p->azCol[p->nCol++] = zCol;
+  return rc;
+}
+
+/*
+** Populate the Fts5Config.zContentExprlist string.
+*/
+static int fts5ConfigMakeExprlist(Fts5Config *p){
+  int i;
+  int rc = SQLITE_OK;
+  Fts5Buffer buf = {0, 0, 0};
+  const char *zSep = "";
+
+  sqlite3Fts5BufferAppendPrintf(&rc, &buf, "T.%Q", p->zContentRowid);
+  if( p->eContent!=FTS5_CONTENT_NONE ){
+    for(i=0; i<p->nCol; i++){
+      if( p->eContent==FTS5_CONTENT_EXTERNAL ){
+        sqlite3Fts5BufferAppendPrintf(&rc, &buf, ", T.%Q", p->azCol[i]);
+      }else{
+        sqlite3Fts5BufferAppendPrintf(&rc, &buf, ", T.c%d", i);
+      }
+    }
+  }
+
+  assert( p->zContentExprlist==0 );
+  p->zContentExprlist = (char*)buf.p;
   return rc;
 }
 
@@ -571,6 +596,11 @@ int sqlite3Fts5ConfigParse(
     pRet->zContentRowid = fts5Strdup(&rc, "rowid");
   }
 
+  /* Formulate the zContentExprlist text */
+  if( rc==SQLITE_OK ){
+    rc = fts5ConfigMakeExprlist(pRet);
+  }
+
   if( rc!=SQLITE_OK ){
     sqlite3Fts5ConfigFree(pRet);
     *ppOut = 0;
@@ -598,6 +628,7 @@ void sqlite3Fts5ConfigFree(Fts5Config *pConfig){
     sqlite3_free(pConfig->zRankArgs);
     sqlite3_free(pConfig->zContent);
     sqlite3_free(pConfig->zContentRowid);
+    sqlite3_free(pConfig->zContentExprlist);
     sqlite3_free(pConfig);
   }
 }

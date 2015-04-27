@@ -4729,7 +4729,7 @@ static void fts5IndexIntegrityCheckSegment(
 ){
   Fts5BtreeIter iter;             /* Used to iterate through b-tree hierarchy */
 
-  if( pSeg->pgnoFirst==0 && pSeg->pgnoLast==0 ) return;
+  if( pSeg->pgnoFirst==0 ) return;
 
   /* Iterate through the b-tree hierarchy.  */
   for(fts5BtreeIterInit(p, iIdx, pSeg, &iter);
@@ -5148,10 +5148,8 @@ static int fts5DecodeDoclist(int *pRc, Fts5Buffer *pBuf, const u8 *a, int n){
   i64 iDocid;
   int iOff = 0;
 
-  if( iOff<n ){
-    iOff += sqlite3GetVarint(&a[iOff], (u64*)&iDocid);
-    sqlite3Fts5BufferAppendPrintf(pRc, pBuf, " rowid=%lld", iDocid);
-  }
+  iOff = sqlite3GetVarint(&a[iOff], (u64*)&iDocid);
+  sqlite3Fts5BufferAppendPrintf(pRc, pBuf, " rowid=%lld", iDocid);
   while( iOff<n ){
     int nPos;
     int bDummy;

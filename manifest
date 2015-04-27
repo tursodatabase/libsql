@@ -1,5 +1,5 @@
-C Further\stests\sfor\sfts5.
-D 2015-04-27T11:31:56.573
+C Change\sthe\sfts5\scontent=\soption\sso\sthat\sit\smatches\sfts5\scolumns\swith\sthe\sunderlying\stable\scolumns\sby\sname,\snot\sby\stheir\sposition\swithin\sthe\sCREATE\sTABLE\sstatement.
+D 2015-04-27T16:21:49.481
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 31b38b9da2e4b36f54a013bd71a5c3f6e45ca78f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -106,14 +106,14 @@ F ext/fts3/unicode/mkunicode.tcl 159c1194da0bc72f51b3c2eb71022568006dc5ad
 F ext/fts5/extract_api_docs.tcl 55a6d648d516f35d9a1e580ac00de27154e1904a
 F ext/fts5/fts5.c 3383b8a44766c68bda812b68ce74684c6b87787f
 F ext/fts5/fts5.h 24a2cc35b5e76eec57b37ba48c12d9d2cb522b3a
-F ext/fts5/fts5Int.h 7dc902e195e00c5820b85d71c2476500c2cf9027
+F ext/fts5/fts5Int.h d148c951deae924105d77f21f25287b60c57327a
 F ext/fts5/fts5_aux.c fcea18b1a2a3f95a498b52aba2983557d7678a22
 F ext/fts5/fts5_buffer.c 3ba56cc6824c9f7b1e0695159e0a9c636f6b4a23
-F ext/fts5/fts5_config.c 43fcf838d3a3390d1245e3d5e651fa5cc1df575b
+F ext/fts5/fts5_config.c f344ffa24d2add70fd5bde2b73c44846ad7a06bd
 F ext/fts5/fts5_expr.c 05da381ab26031243266069302c6eb4094b2c5dd
 F ext/fts5/fts5_hash.c 3cb5a3d04dd2030eb0ac8d544711dfd37c0e6529
-F ext/fts5/fts5_index.c 5f969f5b6f5e022c9c62973dd6e4e82e1d5f3f30
-F ext/fts5/fts5_storage.c 87f85986a6d07391f4e0ddfa9799dbecc40fa165
+F ext/fts5/fts5_index.c 65d5a75b1ba5f6db9f283f91e71aaa14105dcef7
+F ext/fts5/fts5_storage.c d5c3567b31a0e334ac7d4ac67a2be1c6ae9165cd
 F ext/fts5/fts5_tcl.c 10bf0eb678d34c1bfdcfaf653d2e6dd92afa8b38
 F ext/fts5/fts5_tokenize.c c07f2c2f749282c1dbbf46bde1f6d7095c740b8b
 F ext/fts5/fts5_unicode2.c f74f53316377068812a1fa5a37819e6b8124631d
@@ -134,14 +134,14 @@ F ext/fts5/test/fts5ak.test 7b8c5df96df599293f920b7e5521ebc79f647592
 F ext/fts5/test/fts5al.test 6a5717faaf7f1e0e866360022d284903f3a4eede
 F ext/fts5/test/fts5auxdata.test c69b86092bf1a157172de5f9169731af3403179b
 F ext/fts5/test/fts5bigpl.test b1cfd00561350ab04994ba7dd9d48468e5e0ec3b
-F ext/fts5/test/fts5content.test 8dc302fccdff834d946497e9d862750ea87d4517
+F ext/fts5/test/fts5content.test c4f5b0fe1bc7523bb6706591d05d1194a0aec452
 F ext/fts5/test/fts5corrupt.test 9e8524281aa322c522c1d6e2b347e24e060c2727
 F ext/fts5/test/fts5corrupt2.test 494111fd4f2dab36499cf97718eaba1f7c11e9d0
 F ext/fts5/test/fts5dlidx.test 748a84ceb74a4154725096a26dfa854260b0182f
 F ext/fts5/test/fts5ea.test 04695560a444fcc00c3c4f27783bdcfbf71f030c
 F ext/fts5/test/fts5eb.test 728a1f23f263548f5c29b29dfb851b5f2dbe723e
 F ext/fts5/test/fts5fault1.test ed71717a479bef32d05f02d9c48691011d160d4d
-F ext/fts5/test/fts5fault2.test 37c325cb3e6e27c74c122bb49673b4ae0862df33
+F ext/fts5/test/fts5fault2.test 26c3d70648f691e2cc9391e14bbc11a973656383
 F ext/fts5/test/fts5fault3.test f8935b92976ae645d43205562fdbb0c8511dd049
 F ext/fts5/test/fts5full.test 0924bdca5416a242103239ace79c6f5aa34bab8d
 F ext/fts5/test/fts5merge.test 453a0717881aa7784885217b2040f3f275caff03
@@ -156,6 +156,7 @@ F ext/fts5/test/fts5unicode.test 79b3e34eb29ce4929628aa514a40cb467fdabe4d
 F ext/fts5/test/fts5unicode2.test 64a5267fd6082fcb46439892ebd0cbaa5c38acee
 F ext/fts5/test/fts5unindexed.test f388605341a476b6ab622b4c267cd168f59a5944
 F ext/fts5/tool/loadfts5.tcl 1e126891d14ab85dcdb0fac7755a4cd5ba52e8b8
+F ext/fts5/tool/showfts5.tcl 921f33b30c3189deefd2b2cc81f951638544aaf1
 F ext/icu/README.txt d9fbbad0c2f647c3fdf715fc9fd64af53aedfc43
 F ext/icu/icu.c d415ccf984defeb9df2c0e1afcfaa2f6dc05eacb
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
@@ -1307,7 +1308,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e5aaa01306597ffd2475dcb83ae889393f68d315
-R 328723993a482062ac5cfa3f373fa969
+P ffeb3ef3cfec3681b72bb28cfa612aa15e07887d
+R 16d25c5b756f9ed2c991a70239bfd1f6
 U dan
-Z dd82cb2122e4379a606aef38aa888497
+Z e5577dade0e18372482b97b5f2daae05

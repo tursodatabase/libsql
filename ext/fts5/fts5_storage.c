@@ -65,9 +65,9 @@ static int fts5StorageGetStmt(
   assert( eStmt>=0 && eStmt<ArraySize(p->aStmt) );
   if( p->aStmt[eStmt]==0 ){
     const char *azStmt[] = {
-      "SELECT * FROM %s ORDER BY %s ASC",               /* SCAN_ASC */
-      "SELECT * FROM %s ORDER BY %s DESC",              /* SCAN_DESC */
-      "SELECT * FROM %s WHERE %s=?",                    /* LOOKUP  */
+      "SELECT %s FROM %s T ORDER BY T.%Q ASC",          /* SCAN_ASC */
+      "SELECT %s FROM %s T ORDER BY T.%Q DESC",         /* SCAN_DESC */
+      "SELECT %s FROM %s T WHERE    T.%Q=?",            /* LOOKUP  */
 
       "INSERT INTO %Q.'%q_content' VALUES(%s)",         /* INSERT_CONTENT  */
       "REPLACE INTO %Q.'%q_content' VALUES(%s)",        /* REPLACE_CONTENT */
@@ -86,7 +86,9 @@ static int fts5StorageGetStmt(
       case FTS5_STMT_SCAN_ASC:
       case FTS5_STMT_SCAN_DESC:
       case FTS5_STMT_LOOKUP:
-        zSql = sqlite3_mprintf(azStmt[eStmt], pC->zContent, pC->zContentRowid);
+        zSql = sqlite3_mprintf(azStmt[eStmt], 
+            pC->zContentExprlist, pC->zContent, pC->zContentRowid
+        );
         break;
 
       case FTS5_STMT_INSERT_CONTENT: 

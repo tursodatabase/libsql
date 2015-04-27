@@ -9,6 +9,7 @@
 #
 #***********************************************************************
 #
+# This file contains tests for the content= and content_rowid= options.
 #
 
 source [file join [file dirname [info script]] fts5_common.tcl]
@@ -186,5 +187,35 @@ do_catchsql_test 3.8 {
   INSERT INTO t4(t4) VALUES('delete-all');
 } {1 {'delete-all' may only be used with a contentless or external content fts5 table}}
 
+#-------------------------------------------------------------------------
+# Test an external content table with a more interesting schema.
+#
+do_execsql_test 4.1 {
+  CREATE TABLE x2(a, "key col" PRIMARY KEY, b, c) WITHOUT ROWID;
+  INSERT INTO x2 VALUES('a b',   1, 'c d' , 'e f');
+  INSERT INTO x2 VALUES('x y', -40, 'z z' , 'y x');
+
+  CREATE VIRTUAL TABLE t2 USING fts5(a, c, content=x2, content_rowid='key col');
+  INSERT INTO t2(t2) VALUES('rebuild');
+}
+
+do_execsql_test 4.2 { SELECT rowid FROM t2 } {-40 1}
+do_execsql_test 4.3 { SELECT rowid FROM t2 WHERE t2 MATCH 'c'} {}
+do_execsql_test 4.4 { SELECT rowid FROM t2 WHERE t2 MATCH 'a'} {1}
+do_execsql_test 4.5 { SELECT rowid FROM t2 WHERE t2 MATCH 'x'} {-40}
+
+do_execsql_test 4.6 { INSERT INTO t2(t2) VALUES('integrity-check') } {}
+
+do_execsql_test 4.7 { 
+  DELETE FROM x2 WHERE "key col" = 1;
+  INSERT INTO t2(t2, rowid, a, c) VALUES('delete', 1, 'a b', 'e f');
+  INSERT INTO t2(t2) VALUES('integrity-check');
+}
+
+do_execsql_test 4.8 { SELECT rowid FROM t2 WHERE t2 MATCH 'b'} {}
+do_execsql_test 4.9 { SELECT rowid FROM t2 WHERE t2 MATCH 'y'} {-40}
+
+
 finish_test
+
 
