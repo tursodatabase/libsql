@@ -1,0 +1,48 @@
+# 2015 April 28
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# This file focuses on testing the planner (xBestIndex function).
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+set testprefix fts5restart
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE f1 USING fts5(ff);
+}
+
+do_test 1.1 {
+  for {set i 1} {$i < 1000} {incr i} {
+    execsql { INSERT INTO f1 VALUES('a b c d e') }
+    lappend lRowid $i
+  }
+} {}
+
+do_execsql_test 1.2 {
+  SELECT rowid FROM f1 WHERE f1 MATCH 'c';
+} $lRowid
+
+breakpoint
+do_test 1.3 {
+  set res [list]
+  db eval { SELECT rowid FROM f1 WHERE f1 MATCH 'c' } {
+    if {$rowid == 100} {
+      execsql { INSERT INTO f1(f1) VALUES('optimize') }
+    }
+    lappend res $rowid
+  }
+  set res
+} $lRowid
+
+
+
+finish_test
+

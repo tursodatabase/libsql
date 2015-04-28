@@ -776,6 +776,10 @@ static int fts5ExprNearInitAll(
     pPhrase = pNear->apPhrase[i];
     for(j=0; j<pPhrase->nTerm; j++){
       pTerm = &pPhrase->aTerm[j];
+      if( pTerm->pIter ){
+        sqlite3Fts5IterClose(pTerm->pIter);
+        pTerm->pIter = 0;
+      }
       rc = sqlite3Fts5IndexQuery(
           pExpr->pIndex, pTerm->zTerm, strlen(pTerm->zTerm),
           (pTerm->bPrefix ? FTS5INDEX_QUERY_PREFIX : 0) |

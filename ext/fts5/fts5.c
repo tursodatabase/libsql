@@ -186,6 +186,7 @@ struct Fts5Cursor {
 #define FTS5CSR_REQUIRE_DOCSIZE   0x02
 #define FTS5CSR_EOF               0x04
 #define FTS5CSR_FREE_ZRANK        0x08
+#define FTS5CSR_REQUIRE_RESEEK    0x10
 
 /*
 ** Macros to Set(), Clear() and Test() cursor flags.
@@ -269,14 +270,12 @@ static int fts5IsContentless(Fts5Table *pTab){
 ** Delete a virtual table handle allocated by fts5InitVtab(). 
 */
 static void fts5FreeVtab(Fts5Table *pTab){
-  int rc = SQLITE_OK;
   if( pTab ){
     sqlite3Fts5IndexClose(pTab->pIndex);
     sqlite3Fts5StorageClose(pTab->pStorage);
     sqlite3Fts5ConfigFree(pTab->pConfig);
     sqlite3_free(pTab);
   }
-  return rc;
 }
 
 /*
@@ -608,6 +607,63 @@ static int fts5SorterNext(Fts5Cursor *pCsr){
   return rc;
 }
 
+
+/*
+** Set the FTS5CSR_REQUIRE_RESEEK flag on all FTS5_PLAN_MATCH cursors 
+** open on table pTab.
+*/
+static void fts5TripCursors(Fts5Table *pTab){
+  Fts5Cursor *pCsr;
+  for(pCsr=pTab->pGlobal->pCsr; pCsr; pCsr=pCsr->pNext){
+    if( FTS5_PLAN(pCsr->idxNum)==FTS5_PLAN_MATCH
+     && pCsr->base.pVtab==(sqlite3_vtab*)pTab 
+    ){
+      CsrFlagSet(pCsr, FTS5CSR_REQUIRE_RESEEK);
+    }
+  }
+}
+
+/*
+** If the REQUIRE_RESEEK flag is set on the cursor passed as the first
+** argument, close and reopen all Fts5IndexIter iterators that the cursor 
+** is using. Then attempt to move the cursor to a rowid equal to or laster
+** (in the cursors sort order - ASC or DESC) than the current rowid. 
+**
+** If the new rowid is not equal to the old, set output parameter *pbSkip
+** to 1 before returning. Otherwise, leave it unchanged.
+**
+** Return SQLITE_OK if successful or if no reseek was required, or an 
+** error code if an error occurred.
+*/
+static int fts5CursorReseek(Fts5Cursor *pCsr, int *pbSkip){
+  int rc = SQLITE_OK;
+  assert( *pbSkip==0 );
+  if( CsrFlagTest(pCsr, FTS5CSR_REQUIRE_RESEEK) ){
+    Fts5Table *pTab = (Fts5Table*)(pCsr->base.pVtab);
+    int bDesc = ((pCsr->idxNum & FTS5_ORDER_DESC) ? 1 : 0);
+    i64 iRowid = sqlite3Fts5ExprRowid(pCsr->pExpr);
+
+    rc = sqlite3Fts5ExprFirst(pCsr->pExpr, pTab->pIndex, bDesc);
+    while( rc==SQLITE_OK && sqlite3Fts5ExprEof(pCsr->pExpr)==0 ){
+      i64 ii = sqlite3Fts5ExprRowid(pCsr->pExpr);
+      if( ii==iRowid ) break;
+      if( (bDesc && ii<iRowid) || (bDesc==0 && ii>iRowid) ){
+        *pbSkip = 1;
+        break;
+      }
+      rc = sqlite3Fts5ExprNext(pCsr->pExpr);
+    }
+
+    CsrFlagClear(pCsr, FTS5CSR_REQUIRE_RESEEK);
+    fts5CsrNewrow(pCsr);
+    if( sqlite3Fts5ExprEof(pCsr->pExpr) ){
+      CsrFlagSet(pCsr, FTS5CSR_EOF);
+    }
+  }
+  return rc;
+}
+
+
 /*
 ** Advance the cursor to the next row in the table that matches the 
 ** search criteria.
@@ -619,7 +675,10 @@ static int fts5SorterNext(Fts5Cursor *pCsr){
 static int fts5NextMethod(sqlite3_vtab_cursor *pCursor){
   Fts5Cursor *pCsr = (Fts5Cursor*)pCursor;
   int ePlan = FTS5_PLAN(pCsr->idxNum);
-  int rc = SQLITE_OK;
+  int bSkip = 0;
+  int rc;
+
+  if( (rc = fts5CursorReseek(pCsr, &bSkip)) || bSkip ) return rc;
 
   switch( ePlan ){
     case FTS5_PLAN_MATCH:
@@ -1156,6 +1215,7 @@ static int fts5UpdateMethod(
   assert( eType0==SQLITE_INTEGER || eType0==SQLITE_NULL );
   assert( pVtab->zErrMsg==0 );
 
+  fts5TripCursors(pTab);
   if( rc==SQLITE_OK && eType0==SQLITE_INTEGER ){
     if( fts5IsContentless(pTab) ){
       pTab->base.zErrMsg = sqlite3_mprintf(
@@ -1196,6 +1256,7 @@ static int fts5SyncMethod(sqlite3_vtab *pVtab){
   int rc;
   Fts5Table *pTab = (Fts5Table*)pVtab;
   fts5CheckTransactionState(pTab, FTS5_SYNC, 0);
+  fts5TripCursors(pTab);
   rc = sqlite3Fts5StorageSync(pTab->pStorage, 1);
   return rc;
 }
@@ -1717,6 +1778,7 @@ static int fts5RenameMethod(
 static int fts5SavepointMethod(sqlite3_vtab *pVtab, int iSavepoint){
   Fts5Table *pTab = (Fts5Table*)pVtab;
   fts5CheckTransactionState(pTab, FTS5_SAVEPOINT, iSavepoint);
+  fts5TripCursors(pTab);
   return sqlite3Fts5StorageSync(pTab->pStorage, 0);
 }
 
@@ -1728,6 +1790,7 @@ static int fts5SavepointMethod(sqlite3_vtab *pVtab, int iSavepoint){
 static int fts5ReleaseMethod(sqlite3_vtab *pVtab, int iSavepoint){
   Fts5Table *pTab = (Fts5Table*)pVtab;
   fts5CheckTransactionState(pTab, FTS5_RELEASE, iSavepoint);
+  fts5TripCursors(pTab);
   return sqlite3Fts5StorageSync(pTab->pStorage, 0);
 }
 
@@ -1739,6 +1802,7 @@ static int fts5ReleaseMethod(sqlite3_vtab *pVtab, int iSavepoint){
 static int fts5RollbackToMethod(sqlite3_vtab *pVtab, int iSavepoint){
   Fts5Table *pTab = (Fts5Table*)pVtab;
   fts5CheckTransactionState(pTab, FTS5_ROLLBACKTO, iSavepoint);
+  fts5TripCursors(pTab);
   return sqlite3Fts5StorageRollback(pTab->pStorage);
 }
 
