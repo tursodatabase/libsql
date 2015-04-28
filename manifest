@@ -1,5 +1,5 @@
-C Fix\ssqlite3VdbeMakeWritable()\sto\salways\sclear\sthe\sMEM_Ephem\sflag.\nChange\sthe\sOP_Move\sopcode\sto\salways\sdeephemeralize\smoved\scontent.
-D 2015-04-28T14:00:02.605
+C Fix\san\sassert()\sfailure\sthat\scould\soccur\sif\sthe\sinternal\ssqlite3_rename_parent()\sSQL\sscalar\sfunction\swas\sinvoked\sdirectly.
+D 2015-04-28T14:07:02.040
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e3268d234210842b4be0a6e2e1c5990999f1d9f4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -166,7 +166,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c d23d6b6991f66b383934f137fd4384d93fb98c81
+F src/alter.c 8f6dc4a6ddc1ebc0ed5cc470c4e57ff0d1605e90
 F src/analyze.c d23790787f80ebed58df7774744b4cf96401498b
 F src/attach.c c38ac5a520a231d5d0308fd7f2ad95191c867bae
 F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
@@ -314,7 +314,7 @@ F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test b35b4cd69fc913f90d39a575e171e1116c3a4bb7
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 6ff7b43c2b4b905c74dc4a813d201d0fa64c5783
-F test/alter.test 547dc2d292644301ac9a7dda22b319b74f9c08d2
+F test/alter.test 2facdddf08d0d48e75dc6cc312cd2b030f4835dd
 F test/alter2.test 7ea05c7d92ac99349a802ef7ada17294dd647060
 F test/alter3.test 49c9d9fba2b8fcdce2dedeca97bbf1f369cc548d
 F test/alter4.test c461150723ac957f3b2214aa0b11552cd72023ec
@@ -1255,7 +1255,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P add4e043b35f9c454dea7b888eef1c1e14d791f1
-R f7334524d04c391c1db9b57676cc23de
-U drh
-Z c39c343fcde018c720bba13c4eb69466
+P fbb06727181eac1470b2dd458d2d159146439d21
+R f9b787e827a82a66b62d3e812baf8481
+U dan
+Z 56682e320e4e9009176cb61980beb0a9
