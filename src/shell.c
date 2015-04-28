@@ -1909,6 +1909,12 @@ static void open_db(ShellState *p, int keepAlive){
   if( p->db==0 ){
     sqlite3_initialize();
     sqlite3_open(p->zDbFilename, &p->db);
+#ifdef SQLITE_ENABLE_STAT_VTAB_EXPERIMENTAL
+    if( p->db ){
+      int sqlite3_dbstat_register(sqlite3*);
+      sqlite3_dbstat_register(p->db);
+    }
+#endif
     globalDb = p->db;
     if( p->db && sqlite3_errcode(p->db)==SQLITE_OK ){
       sqlite3_create_function(p->db, "shellstatic", 0, SQLITE_UTF8, 0,
