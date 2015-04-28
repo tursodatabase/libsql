@@ -865,6 +865,42 @@ static int f5tMayBeCorrupt(
   return TCL_OK;
 }
 
+
+static unsigned int f5t_fts5HashKey(int nSlot, const char *p, int n){
+  int i;
+  unsigned int h = 13;
+  for(i=n-1; i>=0; i--){
+    h = (h << 3) ^ h ^ p[i];
+  }
+  return (h % nSlot);
+}
+
+static int f5tTokenHash(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int bOld = sqlite3_fts5_may_be_corrupt;
+  char *z;
+  int n;
+  unsigned int iVal;
+  int nSlot;
+
+  if( objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "NSLOT TOKEN");
+    return TCL_ERROR;
+  }
+  if( Tcl_GetIntFromObj(interp, objv[1], &nSlot) ){
+    return TCL_ERROR;
+  }
+  z = Tcl_GetStringFromObj(objv[2], &n);
+
+  iVal = f5t_fts5HashKey(nSlot, z, n);
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(iVal));
+  return TCL_OK;
+}
+
 /*
 ** Entry point.
 */
@@ -878,7 +914,8 @@ int Fts5tcl_Init(Tcl_Interp *interp){
     { "sqlite3_fts5_token",            f5tTokenizerReturn, 1 },
     { "sqlite3_fts5_tokenize",         f5tTokenize, 0 },
     { "sqlite3_fts5_create_function",  f5tCreateFunction, 0 },
-    { "sqlite3_fts5_may_be_corrupt",   f5tMayBeCorrupt, 0 }
+    { "sqlite3_fts5_may_be_corrupt",   f5tMayBeCorrupt, 0 },
+    { "sqlite3_fts5_token_hash",       f5tTokenHash, 0 }
   };
   int i;
   F5tTokenizerContext *pContext;

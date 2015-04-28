@@ -92,9 +92,8 @@ void sqlite3Fts5BufferAppendString(
   const char *zStr
 ){
   int nStr = strlen(zStr);
-  if( sqlite3Fts5BufferGrow(pRc, pBuf, nStr+1) ) return;
-  sqlite3Fts5BufferAppendBlob(pRc, pBuf, nStr, (const u8*)zStr);
-  if( *pRc==SQLITE_OK ) pBuf->p[pBuf->n] = 0x00;
+  sqlite3Fts5BufferAppendBlob(pRc, pBuf, nStr+1, (const u8*)zStr);
+  pBuf->n--;
 }
 
 /*
@@ -226,61 +225,6 @@ int sqlite3Fts5PoslistWriterAppend(
   fts5BufferAppendVarint(&rc, pBuf, (iPos - pWriter->iPrev) + 2);
   pWriter->iPrev = iPos;
   return rc;
-}
-
-int sqlite3Fts5PoslistNext(
-  const u8 *a, int n,             /* Buffer containing poslist */
-  int *pi,                        /* IN/OUT: Offset within a[] */
-  int *piCol,                     /* IN/OUT: Current column */
-  int *piOff                      /* IN/OUT: Current token offset */
-){
-  int i = *pi;
-  int iVal;
-  if( i>=n ){
-    /* EOF */
-    return 1;  
-  }
-  i += getVarint32(&a[i], iVal);
-  if( iVal==1 ){
-    i += getVarint32(&a[i], iVal);
-    *piCol = iVal;
-    *piOff = 0;
-    i += getVarint32(&a[i], iVal);
-  }
-  *piOff += (iVal-2);
-  *pi = i;
-  return 0;
-}
-
-void sqlite3Fts5BufferAppendListElem(
-  int *pRc,                       /* IN/OUT: Error code */
-  Fts5Buffer *pBuf,               /* Buffer to append to */
-  const char *z, int n            /* Value to append to buffer */
-){
-  int bParen = (n==0);
-  int nMax = n*2 + 2 + 1;
-  u8 *pOut;
-  int i;
-
-  /* Ensure the buffer has space for the new list element */
-  if( sqlite3Fts5BufferGrow(pRc, pBuf, nMax) ) return;
-  pOut = &pBuf->p[pBuf->n];
-
-  /* Figure out if we need the enclosing {} */
-  for(i=0; i<n && bParen==0; i++){
-    if( z[i]=='"' || z[i]==' ' ){
-      bParen = 1;
-    }
-  }
-
-  if( bParen ) *pOut++ = '{';
-  for(i=0; i<n; i++){
-    *pOut++ = z[i];
-  }
-  if( bParen ) *pOut++ = '}';
-
-  pBuf->n = pOut - pBuf->p;
-  *pOut = '\0';
 }
 
 void *sqlite3Fts5MallocZero(int *pRc, int nByte){

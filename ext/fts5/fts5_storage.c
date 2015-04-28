@@ -154,13 +154,25 @@ static int fts5ExecPrintf(
 }
 
 /*
-** Drop the shadow table with the postfix zPost (e.g. "content"). Return
-** SQLITE_OK if successful or an SQLite error code otherwise.
+** Drop all shadow tables. Return SQLITE_OK if successful or an SQLite error
+** code otherwise.
 */
-int sqlite3Fts5DropTable(Fts5Config *pConfig, const char *zPost){
-  return fts5ExecPrintf(pConfig->db, 0, "DROP TABLE IF EXISTS %Q.'%q_%q'",
-      pConfig->zDb, pConfig->zName, zPost
+int sqlite3Fts5DropAll(Fts5Config *pConfig){
+  int rc = fts5ExecPrintf(pConfig->db, 0, 
+      "DROP TABLE IF EXISTS %Q.'%q_data';"
+      "DROP TABLE IF EXISTS %Q.'%q_docsize';"
+      "DROP TABLE IF EXISTS %Q.'%q_config';",
+      pConfig->zDb, pConfig->zName,
+      pConfig->zDb, pConfig->zName,
+      pConfig->zDb, pConfig->zName
   );
+  if( rc==SQLITE_OK && pConfig->eContent==FTS5_CONTENT_NORMAL ){
+    rc = fts5ExecPrintf(pConfig->db, 0, 
+        "DROP TABLE IF EXISTS %Q.'%q_content';",
+        pConfig->zDb, pConfig->zName
+    );
+  }
+  return rc;
 }
 
 /*
@@ -248,7 +260,7 @@ int sqlite3Fts5StorageOpen(
   }
 
   if( rc ){
-    sqlite3Fts5StorageClose(p, 0);
+    sqlite3Fts5StorageClose(p);
     *pp = 0;
   }
   return rc;
@@ -257,7 +269,7 @@ int sqlite3Fts5StorageOpen(
 /*
 ** Close a handle opened by an earlier call to sqlite3Fts5StorageOpen().
 */
-int sqlite3Fts5StorageClose(Fts5Storage *p, int bDestroy){
+int sqlite3Fts5StorageClose(Fts5Storage *p){
   int rc = SQLITE_OK;
   if( p ){
     int i;
@@ -265,15 +277,6 @@ int sqlite3Fts5StorageClose(Fts5Storage *p, int bDestroy){
     /* Finalize all SQL statements */
     for(i=0; i<ArraySize(p->aStmt); i++){
       sqlite3_finalize(p->aStmt[i]);
-    }
-
-    /* If required, remove the shadow tables from the database */
-    if( bDestroy ){
-      if( p->pConfig->eContent==FTS5_CONTENT_NORMAL ){
-        rc = sqlite3Fts5DropTable(p->pConfig, "content");
-      }
-      if( rc==SQLITE_OK ) rc = sqlite3Fts5DropTable(p->pConfig, "docsize");
-      if( rc==SQLITE_OK ) rc = sqlite3Fts5DropTable(p->pConfig, "config");
     }
 
     sqlite3_free(p);

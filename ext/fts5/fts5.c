@@ -266,17 +266,13 @@ static int fts5IsContentless(Fts5Table *pTab){
 }
 
 /*
-** Close a virtual table handle opened by fts5InitVtab(). If the bDestroy
-** argument is non-zero, attempt delete the shadow tables from teh database
+** Delete a virtual table handle allocated by fts5InitVtab(). 
 */
-static int fts5FreeVtab(Fts5Table *pTab, int bDestroy){
+static void fts5FreeVtab(Fts5Table *pTab){
   int rc = SQLITE_OK;
   if( pTab ){
-    int rc2;
-    rc2 = sqlite3Fts5IndexClose(pTab->pIndex, bDestroy);
-    if( rc==SQLITE_OK ) rc = rc2;
-    rc2 = sqlite3Fts5StorageClose(pTab->pStorage, bDestroy);
-    if( rc==SQLITE_OK ) rc = rc2;
+    sqlite3Fts5IndexClose(pTab->pIndex);
+    sqlite3Fts5StorageClose(pTab->pStorage);
     sqlite3Fts5ConfigFree(pTab->pConfig);
     sqlite3_free(pTab);
   }
@@ -287,14 +283,20 @@ static int fts5FreeVtab(Fts5Table *pTab, int bDestroy){
 ** The xDisconnect() virtual table method.
 */
 static int fts5DisconnectMethod(sqlite3_vtab *pVtab){
-  return fts5FreeVtab((Fts5Table*)pVtab, 0);
+  fts5FreeVtab((Fts5Table*)pVtab);
+  return SQLITE_OK;
 }
 
 /*
 ** The xDestroy() virtual table method.
 */
 static int fts5DestroyMethod(sqlite3_vtab *pVtab){
-  return fts5FreeVtab((Fts5Table*)pVtab, 1);
+  Fts5Table *pTab = (Fts5Table*)pVtab;
+  int rc = sqlite3Fts5DropAll(pTab->pConfig);
+  if( rc==SQLITE_OK ){
+    fts5FreeVtab((Fts5Table*)pVtab);
+  }
+  return rc;
 }
 
 /*
@@ -352,7 +354,7 @@ static int fts5InitVtab(
   }
 
   if( rc!=SQLITE_OK ){
-    fts5FreeVtab(pTab, 0);
+    fts5FreeVtab(pTab);
     pTab = 0;
   }else if( bCreate ){
     fts5CheckTransactionState(pTab, FTS5_BEGIN, 0);

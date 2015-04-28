@@ -417,8 +417,8 @@ int sqlite3Fts5HashScanInit(
 }
 
 void sqlite3Fts5HashScanNext(Fts5Hash *p){
-  Fts5HashEntry *pScan = p->pScan;
-  if( pScan ) p->pScan = pScan->pScanNext;
+  assert( !sqlite3Fts5HashScanEof(p) );
+  p->pScan = p->pScan->pScanNext;
 }
 
 int sqlite3Fts5HashScanEof(Fts5Hash *p){

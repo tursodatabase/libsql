@@ -177,7 +177,6 @@ void sqlite3Fts5BufferFree(Fts5Buffer*);
 void sqlite3Fts5BufferZero(Fts5Buffer*);
 void sqlite3Fts5BufferSet(int*, Fts5Buffer*, int, const u8*);
 void sqlite3Fts5BufferAppendPrintf(int *, Fts5Buffer*, char *zFmt, ...);
-void sqlite3Fts5BufferAppendListElem(int*, Fts5Buffer*, const char*, int);
 void sqlite3Fts5BufferAppend32(int*, Fts5Buffer*, int);
 
 #define fts5BufferZero(x)             sqlite3Fts5BufferZero(x)
@@ -220,13 +219,6 @@ struct Fts5PoslistWriter {
 };
 int sqlite3Fts5PoslistWriterAppend(Fts5Buffer*, Fts5PoslistWriter*, i64);
 
-int sqlite3Fts5PoslistNext(
-  const u8 *a, int n,             /* Buffer containing poslist */
-  int *pi,                        /* IN/OUT: Offset within a[] */
-  int *piCol,                     /* IN/OUT: Current column */
-  int *piOff                      /* IN/OUT: Current token offset */
-);
-
 int sqlite3Fts5PoslistNext64(
   const u8 *a, int n,             /* Buffer containing poslist */
   int *pi,                        /* IN/OUT: Offset within a[] */
@@ -259,7 +251,7 @@ typedef struct Fts5IndexIter Fts5IndexIter;
 ** Create/destroy an Fts5Index object.
 */
 int sqlite3Fts5IndexOpen(Fts5Config *pConfig, int bCreate, Fts5Index**, char**);
-int sqlite3Fts5IndexClose(Fts5Index *p, int bDestroy);
+int sqlite3Fts5IndexClose(Fts5Index *p);
 
 /*
 ** for(
@@ -444,9 +436,9 @@ void sqlite3Fts5HashScanEntry(Fts5Hash *,
 typedef struct Fts5Storage Fts5Storage;
 
 int sqlite3Fts5StorageOpen(Fts5Config*, Fts5Index*, int, Fts5Storage**, char**);
-int sqlite3Fts5StorageClose(Fts5Storage *p, int bDestroy);
+int sqlite3Fts5StorageClose(Fts5Storage *p);
 
-int sqlite3Fts5DropTable(Fts5Config*, const char *zPost);
+int sqlite3Fts5DropAll(Fts5Config*);
 int sqlite3Fts5CreateTable(Fts5Config*, const char*, const char*, int, char **);
 
 int sqlite3Fts5StorageDelete(Fts5Storage *p, i64);

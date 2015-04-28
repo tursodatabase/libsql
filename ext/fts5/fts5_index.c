@@ -702,16 +702,7 @@ int sqlite3Fts5GetVarintLen(u32 iVal){
 ** the Fts5Index handle passed as the first argument.
 */
 static void *fts5IdxMalloc(Fts5Index *p, int nByte){
-  void *pRet = 0;
-  if( p->rc==SQLITE_OK ){
-    pRet = sqlite3_malloc(nByte);
-    if( pRet==0 ){
-      p->rc = SQLITE_NOMEM;
-    }else{
-      memset(pRet, 0, nByte);
-    }
-  }
-  return pRet;
+  return sqlite3Fts5MallocZero(&p->rc, nByte);
 }
 
 /*
@@ -4213,28 +4204,27 @@ int sqlite3Fts5IndexOpen(
   int rc = SQLITE_OK;
   Fts5Index *p;                   /* New object */
 
-  *pp = p = (Fts5Index*)sqlite3_malloc(sizeof(Fts5Index));
-  if( !p ) return SQLITE_NOMEM;
-
-  memset(p, 0, sizeof(Fts5Index));
-  p->pConfig = pConfig;
-  p->nWorkUnit = FTS5_WORK_UNIT;
-  p->nMaxPendingData = 1024*1024;
-  p->zDataTbl = sqlite3_mprintf("%s_data", pConfig->zName);
-  if( p->zDataTbl==0 ){
-    rc = SQLITE_NOMEM;
-  }else if( bCreate ){
-    rc = sqlite3Fts5CreateTable(
-        pConfig, "data", "id INTEGER PRIMARY KEY, block BLOB", 0, pzErr
-    );
-    if( rc==SQLITE_OK ){
-      rc = sqlite3Fts5IndexReinit(p);
+  *pp = p = (Fts5Index*)sqlite3Fts5MallocZero(&rc, sizeof(Fts5Index));
+  if( rc==SQLITE_OK ){
+    p->pConfig = pConfig;
+    p->nWorkUnit = FTS5_WORK_UNIT;
+    p->nMaxPendingData = 1024*1024;
+    p->zDataTbl = sqlite3_mprintf("%s_data", pConfig->zName);
+    if( p->zDataTbl==0 ){
+      rc = SQLITE_NOMEM;
+    }else if( bCreate ){
+      rc = sqlite3Fts5CreateTable(
+          pConfig, "data", "id INTEGER PRIMARY KEY, block BLOB", 0, pzErr
+      );
+      if( rc==SQLITE_OK ){
+        rc = sqlite3Fts5IndexReinit(p);
+      }
     }
   }
 
-  assert( p->rc==SQLITE_OK || rc!=SQLITE_OK );
+  assert( rc!=SQLITE_OK || p->rc==SQLITE_OK );
   if( rc ){
-    sqlite3Fts5IndexClose(p, 0);
+    sqlite3Fts5IndexClose(p);
     *pp = 0;
   }
   return rc;
@@ -4243,12 +4233,9 @@ int sqlite3Fts5IndexOpen(
 /*
 ** Close a handle opened by an earlier call to sqlite3Fts5IndexOpen().
 */
-int sqlite3Fts5IndexClose(Fts5Index *p, int bDestroy){
+int sqlite3Fts5IndexClose(Fts5Index *p){
   int rc = SQLITE_OK;
   if( p ){
-    if( bDestroy ){
-      rc = sqlite3Fts5DropTable(p->pConfig, "data");
-    }
     assert( p->pReader==0 );
     sqlite3_finalize(p->pWriter);
     sqlite3_finalize(p->pDeleter);

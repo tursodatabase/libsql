@@ -1,0 +1,45 @@
+# 2014 June 17
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+#
+# This file is focused on OOM errors.
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+source $testdir/malloc_common.tcl
+set testprefix fts5fault4
+
+# If SQLITE_ENABLE_FTS3 is defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+
+#-------------------------------------------------------------------------
+# An OOM while dropping an fts5 table.
+#
+db func rnddoc fts5_rnddoc 
+do_test 1.0 {
+  execsql { CREATE VIRTUAL TABLE xx USING fts5(x) }
+} {}
+faultsim_save_and_close
+
+do_faultsim_test 1 -faults oom-* -prep {
+  faultsim_restore_and_reopen
+  execsql { SELECT * FROM xx }
+} -body {
+  execsql { DROP TABLE xx }
+} -test {
+  faultsim_test_result [list 0 {}]
+}
+
+
+finish_test
+

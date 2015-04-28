@@ -80,6 +80,32 @@ do_faultsim_test 2 -faults oom-* -prep {
   faultsim_test_result [list 0 {}]
 }
 
+#-------------------------------------------------------------------------
+# An OOM while flushing an unusually large term to disk.
+#
+reset_db
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE xx USING fts5(x);
+}
+faultsim_save_and_close
+
+set doc [fts5_rnddoc 1000]
+do_faultsim_test 3.1 -faults oom-* -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql { INSERT INTO xx(x) VALUES ($::doc) }
+} -test {
+  faultsim_test_result [list 0 {}]
+}
+
+set doc [string repeat "abc " 100]
+do_faultsim_test 3.2 -faults oom-* -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql { INSERT INTO xx(x) VALUES ($::doc) }
+} -test {
+  faultsim_test_result [list 0 {}]
+}
 
 
 
