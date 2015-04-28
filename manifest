@@ -1,5 +1,5 @@
-C Shift\sthe\sMem.pScopyFrom\spointer\sin\sthe\scorrect\sdirection\sin\sOP_Move.\nFix\sfor\sa\sdefective\scheck-in\s[a2135ad13049]\sand\sticket\s[d6352363751].\nDebugging\scode\sonly\s-\sdoes\snot\saffect\snormal\soperation.
-D 2015-04-28T12:44:55.671
+C Fix\ssqlite3VdbeMakeWritable()\sto\salways\sclear\sthe\sMEM_Ephem\sflag.\nChange\sthe\sOP_Move\sopcode\sto\salways\sdeephemeralize\smoved\scontent.
+D 2015-04-28T14:00:02.605
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e3268d234210842b4be0a6e2e1c5990999f1d9f4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -293,13 +293,13 @@ F src/update.c 3c4ecc282accf12d39edb8d524cf089645e55a13
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c a6431c92803b975b7322724a7b433e538d243539
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c 74507905e92fec055e23895cb6b8dc322b9aacfc
+F src/vdbe.c dca4bf7a0e674ed10912e18cefa6d12768d11cbd
 F src/vdbe.h 7e538ecf47dccb307ea2d087c3ddc2dd8d70e79d
 F src/vdbeInt.h 9cbaa84f53ddd2d09a0cf61a94337a3a035d08a0
 F src/vdbeapi.c 583d56b129dd27f12bed518270de9ebe521e6a75
 F src/vdbeaux.c 03591cca98ec50e1493043f0ff7abbece0b9c83d
 F src/vdbeblob.c 4f2e8e075d238392df98c5e03a64342465b03f90
-F src/vdbemem.c b5256445b318b0f2b3bc429028469cfbb08f19a5
+F src/vdbemem.c 7bfbeef0978a2e1a05d979641fdbf7c189b7ddf4
 F src/vdbesort.c 2e7f683464fd5db3be4beaa1ff2d39e24fcb64b8
 F src/vdbetrace.c f95c2dff9041fcf07f871789c22ebb0648ea0b7c
 F src/vtab.c 5f81f8a59c1f5ddb94c918f25ed5d83578fcc633
@@ -1255,7 +1255,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 60174cf572f8788e67a0434d5fe763724d7425a3
-R 773b440150500b57e22af35317620b77
+P add4e043b35f9c454dea7b888eef1c1e14d791f1
+R f7334524d04c391c1db9b57676cc23de
 U drh
-Z c14a7cb7a900290985ef094e06bbaf04
+Z c39c343fcde018c720bba13c4eb69466
