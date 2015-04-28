@@ -1,5 +1,5 @@
-C Restore\sSQLITE_FORCE_OS_TRACE\sto\sthe\sMSVC\smakefile,\swhich\swas\sremoved\sduring\sa\smerge.
-D 2015-04-16T16:27:29.786
+C Revise\swhen\sthe\ssqlite3ErrName()\sfunction\sis\sdefined.
+D 2015-04-28T23:34:10.625
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f78b1ab81b64e7c57a75d170832443e66c0880a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -195,7 +195,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
 F src/loadext.c 86bd4e2fccd520b748cba52492ab60c4a770f660
-F src/main.c 9f4b0e0924cd1be1c7766290bf3f9c98b97f32b7
+F src/main.c 6dc030204d80be177578210a90c912e1d9597126
 F src/malloc.c 6a370b83d54e4bbf6f94021221c2a311cff26a18
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c abe6ee469b6c5a35c7f22bfeb9c9bac664a1c987
@@ -235,7 +235,7 @@ F src/shell.c 72b61a9d41ba12b67ea06fe9267abcc012c6c5bb
 F src/sqlite.h.in ca27603a36fcacdaac5a19d8ee35aaff8ce8516f
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
-F src/sqliteInt.h 1b6087a8e82c3e5bf3acfbf0fe144519df7cecc8
+F src/sqliteInt.h 5a4e0ae0ce02acb1cadb783abd70af800f538cba
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c f266ad8a2892d659b74f0f50cb6a88b6e7c12179
 F src/table.c e7a09215315a978057fb42c640f890160dbcc45e
@@ -1250,7 +1250,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 72485c97c6de47b8bba63b2a307e7bdeea114040
-R 59a3cad2ebc56d9746b8d39612e405b8
+P c37f4d492f98ac5c07c08705a3826a3e86107306
+R f96d406cf134e6be926fdb343dc33ea3
 U mistachkin
-Z ed5465cd174207b2ad19d34d3cae09df
+Z 0af972753cfc85d551aad5ddaa27fa03

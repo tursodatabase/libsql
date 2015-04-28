@@ -376,6 +376,19 @@
 #endif
 
 /*
+** Is the sqlite3ErrName() function needed in the build?  Currently,
+** it is needed by "mutex_w32.c" (when debugging), "os_win.c" (when
+** OSTRACE is enabled), and by several "test*.c" files (which are
+** compiled using SQLITE_TEST).
+*/
+#if defined(SQLITE_HAVE_OS_TRACE) || defined(SQLITE_TEST) || \
+    (defined(SQLITE_DEBUG) && SQLITE_OS_WIN)
+# define SQLITE_NEED_ERR_NAME
+#else
+# undef  SQLITE_NEED_ERR_NAME
+#endif
+
+/*
 ** Return true (non-zero) if the input is an integer that is too large
 ** to fit in 32-bits.  This macro is used inside of various testcase()
 ** macros to verify that we have tested SQLite for large-file support.
@@ -3506,7 +3519,7 @@ void *sqlite3HexToBlob(sqlite3*, const char *z, int n);
 u8 sqlite3HexToInt(int h);
 int sqlite3TwoPartName(Parse *, Token *, Token *, Token **);
 
-#if defined(SQLITE_DEBUG) || defined(SQLITE_HAVE_OS_TRACE)
+#if defined(SQLITE_NEED_ERR_NAME)
 const char *sqlite3ErrName(int);
 #endif
 
