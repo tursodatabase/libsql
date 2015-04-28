@@ -8537,12 +8537,12 @@ static void checkList(
 **
 ** The heap property is this:  Every node is less than or equal to both
 ** of its daughter nodes.  A consequence of the heap property is that the
-** root node aHeap[1] is always the minimum value current in the heap.
+** root node aHeap[1] is always the minimum value currently in the heap.
 **
 ** The btreeHeapInsert() routine inserts an unsigned 32-bit number onto
 ** the heap, preserving the heap property.  The btreeHeapPull() routine
 ** removes the root element from the heap (the minimum value in the heap)
-** and then move other nodes around as necessary to preserve the heap
+** and then moves other nodes around as necessary to preserve the heap
 ** property.
 **
 ** This heap is used for cell overlap and coverage testing.  Each u32

@@ -1,5 +1,5 @@
-C Add\sa\sTCL\sscript\sthat\scan\sbe\srun\sto\sgenerate\sthe\sfuzzdata1.txt\sfile.
-D 2015-04-28T00:53:26.193
+C Fix\scomment\stypos.\s\sNo\scode\schanges.
+D 2015-04-28T01:28:36.504
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e3268d234210842b4be0a6e2e1c5990999f1d9f4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -173,7 +173,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c ff743689c4d6c5cb55ad42ed9d174b2b3e71f1e3
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c 127aceb71ba93f59bc9c6ba810e992a04299e98a
+F src/btree.c 809cdb06a5b83793e6c5b90830eb3ccbabe0c587
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 973a22a6fd61350b454ad614832b1f0a5e25a1e4
 F src/build.c e246c2cea69c8f6fc825a156ea2de9dd4a17f18b
@@ -1255,7 +1255,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ea5e0b74c997492025225cd86e65e8a8c86ca4a0
-R 665c35450ac2eba500934043a45f4d8f
+P fdc79fd14af8e05d1d5b4665303715b391f2e402
+R 55049d2c3047e3692a4e24bc838bfe6a
 U drh
-Z 3f98585e47e8d7e97d7cf0e6cce74567
+Z ca9d059cba96e027902a4d242e38e726
