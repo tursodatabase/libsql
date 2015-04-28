@@ -1,5 +1,5 @@
-C Fix\scomment\stypos.\s\sNo\scode\schanges.
-D 2015-04-28T01:28:36.504
+C Shift\sthe\sMem.pScopyFrom\spointer\sin\sthe\scorrect\sdirection\sin\sOP_Move.\nFix\sfor\sa\sdefective\scheck-in\s[a2135ad13049]\sand\sticket\s[d6352363751].\nDebugging\scode\sonly\s-\sdoes\snot\saffect\snormal\soperation.
+D 2015-04-28T12:44:55.671
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e3268d234210842b4be0a6e2e1c5990999f1d9f4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -293,7 +293,7 @@ F src/update.c 3c4ecc282accf12d39edb8d524cf089645e55a13
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c a6431c92803b975b7322724a7b433e538d243539
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c 519bff8aa3cddbe013de3f01f1cd4a18d582a197
+F src/vdbe.c 74507905e92fec055e23895cb6b8dc322b9aacfc
 F src/vdbe.h 7e538ecf47dccb307ea2d087c3ddc2dd8d70e79d
 F src/vdbeInt.h 9cbaa84f53ddd2d09a0cf61a94337a3a035d08a0
 F src/vdbeapi.c 583d56b129dd27f12bed518270de9ebe521e6a75
@@ -1255,7 +1255,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fdc79fd14af8e05d1d5b4665303715b391f2e402
-R 55049d2c3047e3692a4e24bc838bfe6a
+P 60174cf572f8788e67a0434d5fe763724d7425a3
+R 773b440150500b57e22af35317620b77
 U drh
-Z ca9d059cba96e027902a4d242e38e726
+Z c14a7cb7a900290985ef094e06bbaf04
