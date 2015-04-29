@@ -1,9 +1,9 @@
-C Update\sthe\stest/fuzzdata1.txt\sfile\swith\sthe\slatest\scases\sdiscovered\sby\sAFL.
-D 2015-04-28T14:49:41.338
+C Improved\ssupport\sfor\sOSTRACE\son\sWindows.
+D 2015-04-29T00:35:07.945
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e3268d234210842b4be0a6e2e1c5990999f1d9f4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 0f859a8bbda8b3876ed2f257281db26ba9ad8398
+F Makefile.msc d80278757ef0b02d797d6ab98e07baf9c608b1a2
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md d58e3bebc0a4145e0f2a87994015fdb575a8e866
 F VERSION 2e244662b71e6e68a5c29b014ebc5b7564f4cc5a
@@ -195,7 +195,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
 F src/loadext.c 86bd4e2fccd520b748cba52492ab60c4a770f660
-F src/main.c 40e333960d53f7d50ee8ce09d40431c87ea653f2
+F src/main.c 6dc030204d80be177578210a90c912e1d9597126
 F src/malloc.c 6a370b83d54e4bbf6f94021221c2a311cff26a18
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c abe6ee469b6c5a35c7f22bfeb9c9bac664a1c987
@@ -212,10 +212,10 @@ F src/mutex_w32.c 61660ada28d8308ad190f444c2170c4f2a590c2f
 F src/notify.c 9711a7575036f0d3040ba61bc6e217f13a9888e7
 F src/os.c 8fd25588eeba74068d41102d26810e216999b6c8
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
-F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
+F src/os_common.h abdb9a191a367793268fe553d25bab894e986a0e
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c 5ed7e2e453c2980909a6b2c80dc55764b50819a8
-F src/os_win.c 03d27be3a20048ef52a648d5f0a15f5edda9f2a3
+F src/os_unix.c cf45d7b1cd27341ba8699e62c4902062b6297039
+F src/os_win.c c2f0b0b3541906e310588b9e95080df4df75b674
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 5283581c8ce8950ff483a0b3a3cab9cb4d25a21e
 F src/pager.h c3476e7c89cdf1c6914e50a11f3714e30b4e0a77
@@ -226,7 +226,7 @@ F src/pcache1.c 69d137620a305f814398bd29a0c998038c0695e9
 F src/pragma.c c1f4d012ea9f6b1ce52d341b2cd0ad72d560afd7
 F src/pragma.h 09c89bca58e9a44de2116cc8272b8d454657129f
 F src/prepare.c 1fffbdcd6f8a0173a8f70d71f22528f4c0e1e3d3
-F src/printf.c 08fa675c200aac29e561c6153f91f909ed17612f
+F src/printf.c 18df0da8c343dc4380f27a803858f2a4b81f1824
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 13109bc3b5ab404446296efa17039640de5bc35d
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
@@ -235,7 +235,7 @@ F src/shell.c 78eabce4c16c45e36fea2368f95118116399ba8a
 F src/sqlite.h.in ca27603a36fcacdaac5a19d8ee35aaff8ce8516f
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
-F src/sqliteInt.h 8abcea1295138f10ef8f7ed38db5f1b573b93ece
+F src/sqliteInt.h d6b2e99b3dd3f51ccc4b7c568d8b529d0fd5d07c
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c f266ad8a2892d659b74f0f50cb6a88b6e7c12179
 F src/table.c e7a09215315a978057fb42c640f890160dbcc45e
@@ -1255,7 +1255,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 36e515261825be60ffdc73d13340d77cf377e8e1
-R db2aae636d49245c4e56d8069299efc5
+P f2063f5320f5a5d884f9c931eb91b7cc94945b92 9e593fb3dbc58e86f499ba4399530e3e760eb84d
+R 50bbfdab6cd5db4348f928cc10df10af
+T +closed 9e593fb3dbc58e86f499ba4399530e3e760eb84d
 U drh
-Z 6bb01ba2e8fe64ed97342e20664c6298
+Z 2fc3b10b7831d47e1437f4606a69806e
