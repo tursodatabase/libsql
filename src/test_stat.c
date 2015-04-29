@@ -145,7 +145,7 @@ static int statConnect(
 
   rc = sqlite3_declare_vtab(db, VTAB_SCHEMA);
   if( rc==SQLITE_OK ){
-    pTab = (StatTable *)sqlite3_malloc(sizeof(StatTable));
+    pTab = (StatTable *)sqlite3_malloc64(sizeof(StatTable));
     if( pTab==0 ) rc = SQLITE_NOMEM;
   }
 
@@ -203,7 +203,7 @@ static int statOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
   StatCursor *pCsr;
   int rc;
 
-  pCsr = (StatCursor *)sqlite3_malloc(sizeof(StatCursor));
+  pCsr = (StatCursor *)sqlite3_malloc64(sizeof(StatCursor));
   if( pCsr==0 ){
     rc = SQLITE_NOMEM;
   }else{
@@ -320,7 +320,7 @@ static int statDecodePage(Btree *pBt, StatPage *p){
     sqlite3BtreeEnter(pBt);
     nUsable = szPage - sqlite3BtreeGetReserveNoMutex(pBt);
     sqlite3BtreeLeave(pBt);
-    p->aCell = sqlite3_malloc((p->nCell+1) * sizeof(StatCell));
+    p->aCell = sqlite3_malloc64((p->nCell+1) * sizeof(StatCell));
     if( p->aCell==0 ) return SQLITE_NOMEM;
     memset(p->aCell, 0, (p->nCell+1) * sizeof(StatCell));
 
@@ -353,7 +353,7 @@ static int statDecodePage(Btree *pBt, StatPage *p){
           int nOvfl = ((nPayload - nLocal) + nUsable-4 - 1) / (nUsable - 4);
           pCell->nLastOvfl = (nPayload-nLocal) - (nOvfl-1) * (nUsable-4);
           pCell->nOvfl = nOvfl;
-          pCell->aOvfl = sqlite3_malloc(sizeof(u32)*nOvfl);
+          pCell->aOvfl = sqlite3_malloc64(sizeof(u32)*nOvfl);
           if( pCell->aOvfl==0 ) return SQLITE_NOMEM;
           pCell->aOvfl[0] = sqlite3Get4byte(&aData[iOff+nLocal]);
           for(j=1; j<nOvfl; j++){

@@ -1191,7 +1191,7 @@ static char *save_err_msg(
   sqlite3 *db            /* Database to query */
 ){
   int nErrMsg = 1+strlen30(sqlite3_errmsg(db));
-  char *zErrMsg = sqlite3_malloc(nErrMsg);
+  char *zErrMsg = sqlite3_malloc64(nErrMsg);
   if( zErrMsg ){
     memcpy(zErrMsg, sqlite3_errmsg(db), nErrMsg);
   }
@@ -1428,8 +1428,8 @@ static void explain_data_prepare(ShellState *p, sqlite3_stmt *pSql){
     /* Grow the p->aiIndent array as required */
     if( iOp>=nAlloc ){
       nAlloc += 100;
-      p->aiIndent = (int*)sqlite3_realloc(p->aiIndent, nAlloc*sizeof(int));
-      abYield = (int*)sqlite3_realloc(abYield, nAlloc*sizeof(int));
+      p->aiIndent = (int*)sqlite3_realloc64(p->aiIndent, nAlloc*sizeof(int));
+      abYield = (int*)sqlite3_realloc64(abYield, nAlloc*sizeof(int));
     }
     abYield[iOp] = str_in_array(zOp, azYield);
     p->aiIndent[iOp] = 0;
@@ -1546,7 +1546,7 @@ static int shell_exec(
         if( xCallback ){
           /* allocate space for col name ptr, value ptr, and type */
           int nCol = sqlite3_column_count(pStmt);
-          void *pData = sqlite3_malloc(3*nCol*sizeof(const char*) + 1);
+          void *pData = sqlite3_malloc64(3*nCol*sizeof(const char*) + 1);
           if( !pData ){
             rc = SQLITE_NOMEM;
           }else{
@@ -1862,7 +1862,7 @@ static void readfileFunc(
   fseek(in, 0, SEEK_END);
   nIn = ftell(in);
   rewind(in);
-  pBuf = sqlite3_malloc( nIn );
+  pBuf = sqlite3_malloc64( nIn );
   if( pBuf && 1==fread(pBuf, nIn, 1, in) ){
     sqlite3_result_blob(context, pBuf, nIn, sqlite3_free);
   }else{
@@ -2122,7 +2122,7 @@ struct ImportCtx {
 static void import_append_char(ImportCtx *p, int c){
   if( p->n+1>=p->nAlloc ){
     p->nAlloc += p->nAlloc + 100;
-    p->z = sqlite3_realloc(p->z, p->nAlloc);
+    p->z = sqlite3_realloc64(p->z, p->nAlloc);
     if( p->z==0 ){
       fprintf(stderr, "out of memory\n");
       exit(1);
@@ -2136,7 +2136,7 @@ static void import_append_char(ImportCtx *p, int c){
 **
 **   +  Input comes from p->in.
 **   +  Store results in p->z of length p->n.  Space to hold p->z comes
-**      from sqlite3_malloc().
+**      from sqlite3_malloc64().
 **   +  Use p->cSep as the column separator.  The default is ",".
 **   +  Use p->rSep as the row separator.  The default is "\n".
 **   +  Keep track of the line number in p->nLine.
@@ -2210,7 +2210,7 @@ static char *SQLITE_CDECL csv_read_one_field(ImportCtx *p){
 **
 **   +  Input comes from p->in.
 **   +  Store results in p->z of length p->n.  Space to hold p->z comes
-**      from sqlite3_malloc().
+**      from sqlite3_malloc64().
 **   +  Use p->cSep as the column separator.  The default is "\x1F".
 **   +  Use p->rSep as the row separator.  The default is "\x1E".
 **   +  Keep track of the row number in p->nLine.
@@ -2270,7 +2270,7 @@ static void tryToCloneData(
     goto end_data_xfer;
   }
   n = sqlite3_column_count(pQuery);
-  zInsert = sqlite3_malloc(200 + nTable + n*3);
+  zInsert = sqlite3_malloc64(200 + nTable + n*3);
   if( zInsert==0 ){
     fprintf(stderr, "out of memory\n");
     goto end_data_xfer;
@@ -3025,7 +3025,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     sqlite3_finalize(pStmt);
     pStmt = 0;
     if( nCol==0 ) return 0; /* no columns, no error */
-    zSql = sqlite3_malloc( nByte*2 + 20 + nCol*2 );
+    zSql = sqlite3_malloc64( nByte*2 + 20 + nCol*2 );
     if( zSql==0 ){
       fprintf(stderr, "Error: out of memory\n");
       xCloser(sCtx.in);
@@ -3650,7 +3650,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       if( nRow>=nAlloc ){
         char **azNew;
         int n2 = nAlloc*2 + 10;
-        azNew = sqlite3_realloc(azResult, sizeof(azResult[0])*n2);
+        azNew = sqlite3_realloc64(azResult, sizeof(azResult[0])*n2);
         if( azNew==0 ){
           fprintf(stderr, "Error: out of memory\n");
           break;

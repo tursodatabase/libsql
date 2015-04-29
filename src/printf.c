@@ -778,7 +778,7 @@ static int sqlite3StrAccumEnlarge(StrAccum *p, int N){
     if( p->useMalloc==1 ){
       zNew = sqlite3DbRealloc(p->db, zOld, p->nAlloc);
     }else{
-      zNew = sqlite3_realloc(zOld, p->nAlloc);
+      zNew = sqlite3_realloc64(zOld, p->nAlloc);
     }
     if( zNew ){
       assert( p->zText!=0 || p->nChar==0 );
@@ -859,7 +859,7 @@ char *sqlite3StrAccumFinish(StrAccum *p){
       if( p->useMalloc==1 ){
         p->zText = sqlite3DbMallocRaw(p->db, p->nChar+1 );
       }else{
-        p->zText = sqlite3_malloc(p->nChar+1);
+        p->zText = sqlite3_malloc64(p->nChar+1);
       }
       if( p->zText ){
         memcpy(p->zText, p->zBase, p->nChar+1);
@@ -1097,7 +1097,7 @@ void sqlite3DebugPrintf(const char *zFormat, ...){
 ** is not the last item in the tree. */
 TreeView *sqlite3TreeViewPush(TreeView *p, u8 moreToFollow){
   if( p==0 ){
-    p = sqlite3_malloc( sizeof(*p) );
+    p = sqlite3_malloc64( sizeof(*p) );
     if( p==0 ) return 0;
     memset(p, 0, sizeof(*p));
   }else{

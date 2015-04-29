@@ -904,7 +904,7 @@ static struct vxworksFileId *vxworksFindFileId(const char *zAbsoluteName){
 
   assert( zAbsoluteName[0]=='/' );
   n = (int)strlen(zAbsoluteName);
-  pNew = sqlite3_malloc( sizeof(*pNew) + (n+1) );
+  pNew = sqlite3_malloc64( sizeof(*pNew) + (n+1) );
   if( pNew==0 ) return 0;
   pNew->zCanonicalName = (char*)&pNew[1];
   memcpy(pNew->zCanonicalName, zAbsoluteName, n+1);
@@ -1308,7 +1308,7 @@ static int findInodeInfo(
     pInode = pInode->pNext;
   }
   if( pInode==0 ){
-    pInode = sqlite3_malloc( sizeof(*pInode) );
+    pInode = sqlite3_malloc64( sizeof(*pInode) );
     if( pInode==0 ){
       return SQLITE_NOMEM;
     }
@@ -3829,7 +3829,7 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
       return SQLITE_OK;
     }
     case SQLITE_FCNTL_TEMPFILENAME: {
-      char *zTFile = sqlite3_malloc( pFile->pVfs->mxPathname );
+      char *zTFile = sqlite3_malloc64( pFile->pVfs->mxPathname );
       if( zTFile ){
         unixGetTempname(pFile->pVfs->mxPathname, zTFile);
         *(char**)pArg = zTFile;
@@ -4270,7 +4270,7 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
   int nShmFilename;               /* Size of the SHM filename in bytes */
 
   /* Allocate space for the new unixShm object. */
-  p = sqlite3_malloc( sizeof(*p) );
+  p = sqlite3_malloc64( sizeof(*p) );
   if( p==0 ) return SQLITE_NOMEM;
   memset(p, 0, sizeof(*p));
   assert( pDbFd->pShm==0 );
@@ -4301,7 +4301,7 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
 #else
     nShmFilename = 6 + (int)strlen(zBasePath);
 #endif
-    pShmNode = sqlite3_malloc( sizeof(*pShmNode) + nShmFilename );
+    pShmNode = sqlite3_malloc64( sizeof(*pShmNode) + nShmFilename );
     if( pShmNode==0 ){
       rc = SQLITE_NOMEM;
       goto shm_open_err;
@@ -4511,7 +4511,7 @@ static int unixShmMap(
           goto shmpage_out;
         }
       }else{
-        pMem = sqlite3_malloc(szRegion);
+        pMem = sqlite3_malloc64(szRegion);
         if( pMem==0 ){
           rc = SQLITE_NOMEM;
           goto shmpage_out;
@@ -5348,7 +5348,7 @@ static int fillInUnixFile(
     ** the afpLockingContext.
     */
     afpLockingContext *pCtx;
-    pNew->lockingContext = pCtx = sqlite3_malloc( sizeof(*pCtx) );
+    pNew->lockingContext = pCtx = sqlite3_malloc64( sizeof(*pCtx) );
     if( pCtx==0 ){
       rc = SQLITE_NOMEM;
     }else{
@@ -5378,7 +5378,7 @@ static int fillInUnixFile(
     int nFilename;
     assert( zFilename!=0 );
     nFilename = (int)strlen(zFilename) + 6;
-    zLockFile = (char *)sqlite3_malloc(nFilename);
+    zLockFile = (char *)sqlite3_malloc64(nFilename);
     if( zLockFile==0 ){
       rc = SQLITE_NOMEM;
     }else{
@@ -5755,7 +5755,7 @@ static int unixOpen(
     if( pUnused ){
       fd = pUnused->fd;
     }else{
-      pUnused = sqlite3_malloc(sizeof(*pUnused));
+      pUnused = sqlite3_malloc64(sizeof(*pUnused));
       if( !pUnused ){
         return SQLITE_NOMEM;
       }
@@ -6547,7 +6547,7 @@ static int proxyCreateUnixFile(
   if( pUnused ){
     fd = pUnused->fd;
   }else{
-    pUnused = sqlite3_malloc(sizeof(*pUnused));
+    pUnused = sqlite3_malloc64(sizeof(*pUnused));
     if( !pUnused ){
       return SQLITE_NOMEM;
     }
@@ -6580,7 +6580,7 @@ static int proxyCreateUnixFile(
     }
   }
   
-  pNew = (unixFile *)sqlite3_malloc(sizeof(*pNew));
+  pNew = (unixFile *)sqlite3_malloc64(sizeof(*pNew));
   if( pNew==NULL ){
     rc = SQLITE_NOMEM;
     goto end_create_proxy;
@@ -7042,7 +7042,7 @@ static int proxyReleaseConch(unixFile *pFile){
 
 /*
 ** Given the name of a database file, compute the name of its conch file.
-** Store the conch filename in memory obtained from sqlite3_malloc().
+** Store the conch filename in memory obtained from sqlite3_malloc64().
 ** Make *pConchPath point to the new name.  Return SQLITE_OK on success
 ** or SQLITE_NOMEM if unable to obtain memory.
 **
@@ -7058,7 +7058,7 @@ static int proxyCreateConchPathname(char *dbPath, char **pConchPath){
 
   /* Allocate space for the conch filename and initialize the name to
   ** the name of the original database file. */  
-  *pConchPath = conchPath = (char *)sqlite3_malloc(len + 8);
+  *pConchPath = conchPath = (char *)sqlite3_malloc64(len + 8);
   if( conchPath==0 ){
     return SQLITE_NOMEM;
   }
@@ -7174,7 +7174,7 @@ static int proxyTransformUnixFile(unixFile *pFile, const char *path) {
   OSTRACE(("TRANSPROXY  %d for %s pid=%d\n", pFile->h,
            (lockPath ? lockPath : ":auto:"), osGetpid(0)));
 
-  pCtx = sqlite3_malloc( sizeof(*pCtx) );
+  pCtx = sqlite3_malloc64( sizeof(*pCtx) );
   if( pCtx==0 ){
     return SQLITE_NOMEM;
   }

@@ -388,7 +388,7 @@ static void roundFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
 #endif
 
 /*
-** Allocate nByte bytes of space using sqlite3_malloc(). If the
+** Allocate nByte bytes of space using sqlite3Malloc(). If the
 ** allocation fails, call sqlite3_result_error_nomem() to notify
 ** the database handle that malloc() has failed and return NULL.
 ** If nByte is larger than the maximum string or blob length, then
@@ -1057,7 +1057,7 @@ static void charFunc(
 ){
   unsigned char *z, *zOut;
   int i;
-  zOut = z = sqlite3_malloc( argc*4+1 );
+  zOut = z = sqlite3_malloc64( argc*4+1 );
   if( z==0 ){
     sqlite3_result_error_nomem(context);
     return;
@@ -1205,7 +1205,7 @@ static void replaceFunc(
         return;
       }
       zOld = zOut;
-      zOut = sqlite3_realloc(zOut, (int)nOut);
+      zOut = sqlite3_realloc64(zOut, (int)nOut);
       if( zOut==0 ){
         sqlite3_result_error_nomem(context);
         sqlite3_free(zOld);
