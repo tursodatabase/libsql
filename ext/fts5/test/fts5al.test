@@ -268,6 +268,14 @@ do_execsql_test 4.3.3 {
   {a three} 0 {a one} 1 {a four} 1 {a two} 2 {a five} 2 
 }
 
+do_catchsql_test 4.4.3 {
+  SELECT *, rank FROM t3 WHERE t3 MATCH 'a' AND rank MATCH 'xyz(3)' 
+} {1 {no such function: xyz}}
+do_catchsql_test 4.4.4 {
+  SELECT *, rank FROM t3 WHERE t3 MATCH 'a' AND rank MATCH NULL
+} {1 {parse error in rank function: }}
+
+
 
 finish_test
 

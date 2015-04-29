@@ -330,11 +330,9 @@ static int fts5ConfigParseSpecial(
           rc = SQLITE_ERROR;
         }else{
           rc = sqlite3Fts5GetTokenizer(pGlobal, 
-              (const char**)azArg, nArg, &pConfig->pTok, &pConfig->pTokApi
+              (const char**)azArg, nArg, &pConfig->pTok, &pConfig->pTokApi,
+              pzErr
           );
-          if( rc!=SQLITE_OK ){
-            *pzErr = sqlite3_mprintf("error in tokenizer constructor");
-          }
         }
       }
     }
@@ -387,7 +385,7 @@ static int fts5ConfigParseSpecial(
 static int fts5ConfigDefaultTokenizer(Fts5Global *pGlobal, Fts5Config *pConfig){
   assert( pConfig->pTok==0 && pConfig->pTokApi==0 );
   return sqlite3Fts5GetTokenizer(
-      pGlobal, 0, 0, &pConfig->pTok, &pConfig->pTokApi
+      pGlobal, 0, 0, &pConfig->pTok, &pConfig->pTokApi, 0
   );
 }
 
@@ -563,7 +561,7 @@ int sqlite3Fts5ConfigParse(
         rc = SQLITE_ERROR;
       }else{
         if( bOption ){
-          rc = fts5ConfigParseSpecial(pGlobal, pRet, zOne, zTwo, pzErr);
+          rc = fts5ConfigParseSpecial(pGlobal, pRet, zOne, zTwo?zTwo:"", pzErr);
         }else{
           rc = fts5ConfigParseColumn(pRet, zOne, zTwo, pzErr);
           zOne = 0;

@@ -297,7 +297,7 @@ do_catchsql_test 12.2 {
 } {1 {unknown special query: stuff}}
 
 do_test 12.3 {
-  set res [db one { SELECT t2 FROM t2 WHERE t2 MATCH '* reads ' }]
+  set res [db eval { SELECT t2 FROM t2 WHERE t2 MATCH '* reads ' }]
   string is integer $res
 } {1}
 

@@ -280,14 +280,14 @@ int sqlite3Fts5ExprPhraseExpr(
   Fts5ExprPhrase *pCopy;
 
   pOrig = pExpr->apExprPhrase[iPhrase];
+  pCopy = (Fts5ExprPhrase*)fts5ExprMalloc(&rc, 
+      sizeof(Fts5ExprPhrase) + sizeof(Fts5ExprTerm) * pOrig->nTerm
+  );
   pNew = (Fts5Expr*)fts5ExprMalloc(&rc, sizeof(Fts5Expr));
   apPhrase = (Fts5ExprPhrase**)fts5ExprMalloc(&rc, sizeof(Fts5ExprPhrase*));
   pNode = (Fts5ExprNode*)fts5ExprMalloc(&rc, sizeof(Fts5ExprNode));
   pNear = (Fts5ExprNearset*)fts5ExprMalloc(&rc, 
       sizeof(Fts5ExprNearset) + sizeof(Fts5ExprPhrase*)
-  );
-  pCopy = (Fts5ExprPhrase*)fts5ExprMalloc(&rc, 
-      sizeof(Fts5ExprPhrase) + sizeof(Fts5ExprTerm) * pOrig->nTerm
   );
 
   for(i=0; rc==SQLITE_OK && i<pOrig->nTerm; i++){

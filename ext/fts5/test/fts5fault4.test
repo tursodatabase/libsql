@@ -22,6 +22,8 @@ ifcapable !fts5 {
   return
 }
 
+if 1 {
+
 #-------------------------------------------------------------------------
 # An OOM while dropping an fts5 table.
 #
@@ -39,6 +41,154 @@ do_faultsim_test 1 -faults oom-* -prep {
 } -test {
   faultsim_test_result [list 0 {}]
 }
+
+#-------------------------------------------------------------------------
+# An OOM within an "ORDER BY rank" query.
+#
+db func rnddoc fts5_rnddoc 
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE xx USING fts5(x);
+  INSERT INTO xx VALUES ('abc ' || rnddoc(10));
+  INSERT INTO xx VALUES ('abc abc' || rnddoc(9));
+  INSERT INTO xx VALUES ('abc abc abc' || rnddoc(8));
+} {}
+faultsim_save_and_close
+
+do_faultsim_test 2 -faults oom-* -prep {
+  faultsim_restore_and_reopen
+  execsql { SELECT * FROM xx }
+} -body {
+  execsql { SELECT rowid FROM xx WHERE xx MATCH 'abc' ORDER BY rank }
+} -test {
+  faultsim_test_result [list 0 {3 2 1}]
+}
+
+#-------------------------------------------------------------------------
+# An OOM while "reseeking" an FTS cursor.
+#
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE jj USING fts5(j);
+  INSERT INTO jj(rowid, j) VALUES(101, 'm t w t f s s');
+  INSERT INTO jj(rowid, j) VALUES(202, 't w t f s');
+  INSERT INTO jj(rowid, j) VALUES(303, 'w t f');
+  INSERT INTO jj(rowid, j) VALUES(404, 't');
+}
+faultsim_save_and_close
+
+do_faultsim_test 3 -faults oom-* -prep {
+  faultsim_restore_and_reopen
+  execsql { SELECT * FROM jj }
+} -body {
+  set res [list]
+  db eval { SELECT rowid FROM jj WHERE jj MATCH 't' } {
+    lappend res $rowid
+    if {$rowid==303} {
+      execsql { DELETE FROM jj WHERE rowid=404 }
+    }
+  }
+  set res
+} -test {
+  faultsim_test_result [list 0 {101 202 303}]
+}
+
+#-------------------------------------------------------------------------
+# An OOM within a special "*reads" query.
+#
+reset_db
+db func rnddoc fts5_rnddoc
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE x1 USING fts5(x);
+  INSERT INTO x1(x1, rank) VALUES('pgsz', 32);
+
+  WITH ii(i) AS ( SELECT 1 UNION ALL SELECT i+1 FROM ii WHERE i<10 )
+  INSERT INTO x1 SELECT rnddoc(5) FROM ii;
+}
+
+set ::res [db eval {SELECT rowid, x1 FROM x1 WHERE x1 MATCH '*reads'}]
+
+do_faultsim_test 4 -faults oom-* -body {
+  db eval {SELECT rowid, x, x1 FROM x1 WHERE x1 MATCH '*reads'}
+} -test {
+  faultsim_test_result {0 {0 {} 3}}
+}
+
+#-------------------------------------------------------------------------
+# An OOM within a query that uses a custom rank function.
+#
+reset_db
+do_execsql_test 5.0 {
+  PRAGMA encoding='utf16';
+  CREATE VIRTUAL TABLE x2 USING fts5(x);
+  INSERT INTO x2(rowid, x) VALUES(10, 'a b c'); -- 3
+  INSERT INTO x2(rowid, x) VALUES(20, 'a b c'); -- 6
+  INSERT INTO x2(rowid, x) VALUES(30, 'a b c'); -- 2
+  INSERT INTO x2(rowid, x) VALUES(40, 'a b c'); -- 5
+  INSERT INTO x2(rowid, x) VALUES(50, 'a b c'); -- 1
+}
+
+proc rowidmod {cmd mod} { 
+  set row [$cmd xRowid]
+  expr {$row % $mod}
+}
+sqlite3_fts5_create_function db rowidmod rowidmod
+
+do_faultsim_test 5.1 -faults oom-* -body {
+  db eval {
+    SELECT rowid || '-' || rank FROM x2 WHERE x2 MATCH 'b' AND 
+    rank MATCH "rowidmod('7')" ORDER BY rank
+  }
+} -test {
+  faultsim_test_result {0 {50-1 30-2 10-3 40-5 20-6}}
+}
+
+proc rowidprefix {cmd prefix} { 
+  set row [$cmd xRowid]
+  set {} "${row}-${prefix}"
+}
+sqlite3_fts5_create_function db rowidprefix rowidprefix
+
+set str [string repeat abcdefghijklmnopqrstuvwxyz 10]
+do_faultsim_test 5.2 -faults oom-* -body {
+  db eval "
+    SELECT rank, x FROM x2 WHERE x2 MATCH 'b' AND 
+    rank MATCH 'rowidprefix(''$::str'')'
+    LIMIT 1
+  "
+} -test {
+  faultsim_test_result "0 {10-$::str {a b c}}"
+}
+
+}
+
+
+#-------------------------------------------------------------------------
+# OOM errors within auxiliary functions.
+#
+reset_db
+do_execsql_test 6.0 {
+  CREATE VIRTUAL TABLE x3 USING fts5(xxx);
+  INSERT INTO x3 VALUES('a b c d c b a');
+}
+
+do_faultsim_test 6.1 -faults oom-t* -body {
+  db eval { SELECT highlight(x3, 0, '*', '*') FROM x3 WHERE x3 MATCH 'c' }
+} -test {
+  faultsim_test_result {0 {{a b *c* d *c* b a}}}
+}
+
+proc firstinst {cmd} { 
+  foreach {p c o} [$cmd xInst 0] {}
+  expr $c*100 + $o
+}
+sqlite3_fts5_create_function db firstinst firstinst
+
+do_faultsim_test 6.2 -faults oom-t* -body {
+  db eval { SELECT firstinst(x3) FROM x3 WHERE x3 MATCH 'c' }
+} -test {
+  faultsim_test_result {0 2} {1 SQLITE_NOMEM}
+}
+
+
 
 
 finish_test

@@ -46,5 +46,16 @@ do_execsql_test 1.7 {
   INSERT INTO f1(f1) VALUES('integrity-check');
 } {}
 
+
+#-------------------------------------------------------------------------
+# Check that 'rebuild' may not be used with a contentless table.
+#
+do_execsql_test 2.1 {
+  CREATE VIRTUAL TABLE nc USING fts5(doc, content=);
+}
+
+do_catchsql_test 2.2 {
+  INSERT INTO nc(nc) VALUES('rebuild');
+} {1 {'rebuild' may not be used with a contentless fts5 table}}
 finish_test
 

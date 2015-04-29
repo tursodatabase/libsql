@@ -215,6 +215,24 @@ do_execsql_test 4.7 {
 do_execsql_test 4.8 { SELECT rowid FROM t2 WHERE t2 MATCH 'b'} {}
 do_execsql_test 4.9 { SELECT rowid FROM t2 WHERE t2 MATCH 'y'} {-40}
 
+#-------------------------------------------------------------------------
+# Test that if the 'rowid' field of a 'delete' is not an integer, no
+# changes are made to the FTS index.
+#
+do_execsql_test 5.0 {
+  CREATE VIRTUAL TABLE t5 USING fts5(a, b, content=);
+  INSERT INTO t5(rowid, a, b) VALUES(-1, 'one',   'two');
+  INSERT INTO t5(rowid, a, b) VALUES( 0, 'three', 'four');
+  INSERT INTO t5(rowid, a, b) VALUES( 1, 'five',  'six');
+}
+
+set ::checksum [execsql {SELECT md5sum(id, block) FROM t5_data}]
+
+do_execsql_test 5.1 {
+  INSERT INTO t5(t5, rowid, a, b) VALUES('delete', NULL, 'three', 'four');
+  SELECT md5sum(id, block) FROM t5_data;
+} $::checksum
+
 
 finish_test
 

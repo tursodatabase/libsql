@@ -230,10 +230,11 @@ static void fts5HighlightFunction(
 
     if( rc==SQLITE_OK ){
       sqlite3_result_text(pCtx, (const char*)ctx.zOut, -1, SQLITE_TRANSIENT);
-    }else{
-      sqlite3_result_error_code(pCtx, rc);
     }
     sqlite3_free(ctx.zOut);
+  }
+  if( rc!=SQLITE_OK ){
+    sqlite3_result_error_code(pCtx, rc);
   }
 }
 /*

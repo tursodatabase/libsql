@@ -36,6 +36,9 @@ int sqlite3_fts5_may_be_corrupt = 0;
 ** can extract the sqlite3* pointer from an existing Tcl SQLite
 ** connection.
 */
+
+extern const char *sqlite3ErrName(int);
+
 struct SqliteDb {
   sqlite3 *db;
 };
@@ -390,7 +393,7 @@ static int xF5tApi(
 #undef CASE
 
   if( rc!=SQLITE_OK ){
-    Tcl_AppendResult(interp, "error in api call", 0);
+    Tcl_SetResult(interp, (char*)sqlite3ErrName(rc), TCL_VOLATILE);
     return TCL_ERROR;
   }
 
@@ -726,8 +729,6 @@ static int f5tTokenizerTokenize(
   pInst->pContext->xToken = xOldToken;
   return rc;
 }
-
-extern const char *sqlite3ErrName(int);
 
 /*
 ** sqlite3_fts5_token TEXT START END POS

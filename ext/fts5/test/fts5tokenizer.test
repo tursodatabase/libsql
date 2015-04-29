@@ -37,6 +37,14 @@ do_execsql_test 1.4 {
   DROP TABLE ft1;
 }
 
+do_catchsql_test 1.5 {
+  CREATE VIRTUAL TABLE ft1 USING fts5(x, tokenize = 'nosuch');
+} {1 {no such tokenizer: nosuch}}
+
+do_catchsql_test 1.6 {
+  CREATE VIRTUAL TABLE ft1 USING fts5(x, tokenize = 'porter nosuch');
+} {1 {error in tokenizer constructor}}
+
 do_execsql_test 2.0 {
   CREATE VIRTUAL TABLE ft1 USING fts5(x, tokenize=porter);
   INSERT INTO ft1 VALUES('embedded databases');

@@ -529,46 +529,48 @@ static void fts5CsrNewrow(Fts5Cursor *pCsr){
 ** on the xClose method of the virtual table interface.
 */
 static int fts5CloseMethod(sqlite3_vtab_cursor *pCursor){
-  Fts5Table *pTab = (Fts5Table*)(pCursor->pVtab);
-  Fts5Cursor *pCsr = (Fts5Cursor*)pCursor;
-  Fts5Cursor **pp;
-  Fts5Auxdata *pData;
-  Fts5Auxdata *pNext;
+  if( pCursor ){
+    Fts5Table *pTab = (Fts5Table*)(pCursor->pVtab);
+    Fts5Cursor *pCsr = (Fts5Cursor*)pCursor;
+    Fts5Cursor **pp;
+    Fts5Auxdata *pData;
+    Fts5Auxdata *pNext;
 
-  fts5CsrNewrow(pCsr);
-  if( pCsr->pStmt ){
-    int eStmt = fts5StmtType(pCsr->idxNum);
-    sqlite3Fts5StorageStmtRelease(pTab->pStorage, eStmt, pCsr->pStmt);
-  }
-  if( pCsr->pSorter ){
-    Fts5Sorter *pSorter = pCsr->pSorter;
-    sqlite3_finalize(pSorter->pStmt);
-    sqlite3_free(pSorter);
-  }
-  
-  if( pCsr->idxNum!=FTS5_PLAN_SOURCE ){
-    sqlite3Fts5ExprFree(pCsr->pExpr);
-  }
+    fts5CsrNewrow(pCsr);
+    if( pCsr->pStmt ){
+      int eStmt = fts5StmtType(pCsr->idxNum);
+      sqlite3Fts5StorageStmtRelease(pTab->pStorage, eStmt, pCsr->pStmt);
+    }
+    if( pCsr->pSorter ){
+      Fts5Sorter *pSorter = pCsr->pSorter;
+      sqlite3_finalize(pSorter->pStmt);
+      sqlite3_free(pSorter);
+    }
 
-  for(pData=pCsr->pAuxdata; pData; pData=pNext){
-    pNext = pData->pNext;
-    if( pData->xDelete ) pData->xDelete(pData->pPtr);
-    sqlite3_free(pData);
+    if( pCsr->idxNum!=FTS5_PLAN_SOURCE ){
+      sqlite3Fts5ExprFree(pCsr->pExpr);
+    }
+
+    for(pData=pCsr->pAuxdata; pData; pData=pNext){
+      pNext = pData->pNext;
+      if( pData->xDelete ) pData->xDelete(pData->pPtr);
+      sqlite3_free(pData);
+    }
+
+    /* Remove the cursor from the Fts5Global.pCsr list */
+    for(pp=&pTab->pGlobal->pCsr; (*pp)!=pCsr; pp=&(*pp)->pNext);
+    *pp = pCsr->pNext;
+
+    sqlite3_finalize(pCsr->pRankArgStmt);
+    sqlite3_free(pCsr->apRankArg);
+
+    sqlite3_free(pCsr->zSpecial);
+    if( CsrFlagTest(pCsr, FTS5CSR_FREE_ZRANK) ){
+      sqlite3_free(pCsr->zRank);
+      sqlite3_free(pCsr->zRankArgs);
+    }
+    sqlite3_free(pCsr);
   }
-
-  /* Remove the cursor from the Fts5Global.pCsr list */
-  for(pp=&pTab->pGlobal->pCsr; (*pp)!=pCsr; pp=&(*pp)->pNext);
-  *pp = pCsr->pNext;
-
-  sqlite3_finalize(pCsr->pRankArgStmt);
-  sqlite3_free(pCsr->apRankArg);
-
-  sqlite3_free(pCsr->zSpecial);
-  if( CsrFlagTest(pCsr, FTS5CSR_FREE_ZRANK) ){
-    sqlite3_free(pCsr->zRank);
-    sqlite3_free(pCsr->zRankArgs);
-  }
-  sqlite3_free(pCsr);
   return SQLITE_OK;
 }
 
@@ -893,7 +895,11 @@ static int fts5CursorParseRank(
     char *zRank = 0;
     char *zRankArgs = 0;
 
-    rc = sqlite3Fts5ConfigParseRank(z, &zRank, &zRankArgs);
+    if( z==0 ){
+      if( sqlite3_value_type(pRank)==SQLITE_NULL ) rc = SQLITE_ERROR;
+    }else{
+      rc = sqlite3Fts5ConfigParseRank(z, &zRank, &zRankArgs);
+    }
     if( rc==SQLITE_OK ){
       pCsr->zRank = zRank;
       pCsr->zRankArgs = zRankArgs;
@@ -1207,16 +1213,16 @@ static int fts5UpdateMethod(
   **   3. Values for each of the nCol matchable columns.
   **   4. Values for the two hidden columns (<tablename> and "rank").
   */
-  assert( nArg==1 || nArg==(2 + pConfig->nCol + 2) );
 
   eType0 = sqlite3_value_type(apVal[0]);
   eConflict = sqlite3_vtab_on_conflict(pConfig->db);
 
   assert( eType0==SQLITE_INTEGER || eType0==SQLITE_NULL );
   assert( pVtab->zErrMsg==0 );
+  assert( (nArg==1 && eType0==SQLITE_INTEGER) || nArg==(2+pConfig->nCol+2) );
 
   fts5TripCursors(pTab);
-  if( rc==SQLITE_OK && eType0==SQLITE_INTEGER ){
+  if( eType0==SQLITE_INTEGER ){
     if( fts5IsContentless(pTab) ){
       pTab->base.zErrMsg = sqlite3_mprintf(
           "cannot %s contentless fts5 table: %s", 
@@ -1227,7 +1233,8 @@ static int fts5UpdateMethod(
       i64 iDel = sqlite3_value_int64(apVal[0]);  /* Rowid to delete */
       rc = sqlite3Fts5StorageDelete(pTab->pStorage, iDel);
     }
-  }else if( nArg>1 ){
+  }else{
+    assert( nArg>1 );
     sqlite3_value *pCmd = apVal[2 + pConfig->nCol];
     if( SQLITE_NULL!=sqlite3_value_type(pCmd) ){
       const char *z = (const char*)sqlite3_value_text(pCmd);
@@ -1471,6 +1478,7 @@ static int fts5ApiColumnSize(Fts5Context *pCtx, int iCol, int *pnToken){
   if( CsrFlagTest(pCsr, FTS5CSR_REQUIRE_DOCSIZE) ){
     i64 iRowid = fts5CursorRowid(pCsr);
     rc = sqlite3Fts5StorageDocsize(pTab->pStorage, iRowid, pCsr->aColumnSize);
+    CsrFlagClear(pCsr, FTS5CSR_REQUIRE_DOCSIZE);
   }
   if( iCol<0 ){
     int i;
@@ -1879,6 +1887,23 @@ static int fts5CreateTokenizer(
   return rc;
 }
 
+static Fts5TokenizerModule *fts5LocateTokenizer(
+  Fts5Global *pGlobal, 
+  const char *zName
+){
+  Fts5TokenizerModule *pMod = 0;
+
+  if( zName==0 ){
+    pMod = pGlobal->pDfltTok;
+  }else{
+    for(pMod=pGlobal->pTok; pMod; pMod=pMod->pNext){
+      if( sqlite3_stricmp(zName, pMod->zName)==0 ) break;
+    }
+  }
+
+  return pMod;
+}
+
 /*
 ** Find a tokenizer. This is the implementation of the 
 ** fts5_api.xFindTokenizer() method.
@@ -1889,21 +1914,13 @@ static int fts5FindTokenizer(
   void **ppUserData,
   fts5_tokenizer *pTokenizer      /* Populate this object */
 ){
-  Fts5Global *pGlobal = (Fts5Global*)pApi;
   int rc = SQLITE_OK;
-  Fts5TokenizerModule *pTok;
+  Fts5TokenizerModule *pMod;
 
-  if( zName==0 ){
-    pTok = pGlobal->pDfltTok;
-  }else{
-    for(pTok=pGlobal->pTok; pTok; pTok=pTok->pNext){
-      if( sqlite3_stricmp(zName, pTok->zName)==0 ) break;
-    }
-  }
-
-  if( pTok ){
-    *pTokenizer = pTok->x;
-    *ppUserData = pTok->pUserData;
+  pMod = fts5LocateTokenizer((Fts5Global*)pApi, zName);
+  if( pMod ){
+    *pTokenizer = pMod->x;
+    *ppUserData = pMod->pUserData;
   }else{
     memset(pTokenizer, 0, sizeof(fts5_tokenizer));
     rc = SQLITE_ERROR;
@@ -1917,24 +1934,23 @@ int sqlite3Fts5GetTokenizer(
   const char **azArg,
   int nArg,
   Fts5Tokenizer **ppTok,
-  fts5_tokenizer **ppTokApi
+  fts5_tokenizer **ppTokApi,
+  char **pzErr
 ){
-  Fts5TokenizerModule *pMod = 0;
+  Fts5TokenizerModule *pMod;
   int rc = SQLITE_OK;
 
-  if( nArg==0 ){
-    pMod = pGlobal->pDfltTok;
-  }else{
-    for(pMod=pGlobal->pTok; pMod; pMod=pMod->pNext){
-      if( sqlite3_stricmp(azArg[0], pMod->zName)==0 ) break;
-    }
-  }
-
+  pMod = fts5LocateTokenizer(pGlobal, nArg==0 ? 0 : azArg[0]);
   if( pMod==0 ){
+    assert( nArg>0 );
     rc = SQLITE_ERROR;
+    *pzErr = sqlite3_mprintf("no such tokenizer: %s", azArg[0]);
   }else{
     rc = pMod->x.xCreate(pMod->pUserData, &azArg[1], (nArg?nArg-1:0), ppTok);
     *ppTokApi = &pMod->x;
+    if( rc!=SQLITE_OK && pzErr ){
+      *pzErr = sqlite3_mprintf("error in tokenizer constructor");
+    }
   }
 
   if( rc!=SQLITE_OK ){

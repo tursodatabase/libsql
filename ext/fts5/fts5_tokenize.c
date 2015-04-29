@@ -529,11 +529,16 @@ static int fts5PorterCreate(
   int rc = SQLITE_OK;
   PorterTokenizer *pRet;
   void *pUserdata = 0;
+  const char *zBase = "unicode61";
+
+  if( nArg>0 ){
+    zBase = azArg[0];
+  }
 
   pRet = (PorterTokenizer*)sqlite3_malloc(sizeof(PorterTokenizer));
   if( pRet ){
     memset(pRet, 0, sizeof(PorterTokenizer));
-    rc = pApi->xFindTokenizer(pApi, "unicode61", &pUserdata, &pRet->tokenizer);
+    rc = pApi->xFindTokenizer(pApi, zBase, &pUserdata, &pRet->tokenizer);
   }else{
     rc = SQLITE_NOMEM;
   }

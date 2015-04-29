@@ -61,7 +61,8 @@ int sqlite3Fts5GetTokenizer(
   const char **azArg,
   int nArg,
   Fts5Tokenizer**,
-  fts5_tokenizer**
+  fts5_tokenizer**,
+  char **pzErr
 );
 
 /*

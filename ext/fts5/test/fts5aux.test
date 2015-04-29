@@ -1,0 +1,57 @@
+# 2014 Dec 20
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# Tests focusing on the auxiliary function APIs.
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+set testprefix fts5aux
+
+proc inst {cmd i} { 
+  $cmd xInst $i
+}
+sqlite3_fts5_create_function db inst inst
+
+proc colsize {cmd i} { 
+  $cmd xColumnSize $i
+}
+sqlite3_fts5_create_function db colsize colsize
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE f1 USING fts5(a, b);
+  INSERT INTO f1 VALUES('one two', 'two one zero');
+}
+
+do_catchsql_test 1.1 {
+  SELECT inst(f1, -1) FROM f1 WHERE f1 MATCH 'two';
+} {1 SQLITE_RANGE}
+do_catchsql_test 1.2 {
+  SELECT inst(f1, 0) FROM f1 WHERE f1 MATCH 'two';
+} {0 {{0 0 1}}}
+do_catchsql_test 1.3 {
+  SELECT inst(f1, 1) FROM f1 WHERE f1 MATCH 'two';
+} {0 {{0 1 0}}}
+do_catchsql_test 1.4 {
+  SELECT inst(f1, 2) FROM f1 WHERE f1 MATCH 'two';
+} {1 SQLITE_RANGE}
+
+do_catchsql_test 2.1 {
+  SELECT colsize(f1, 2) FROM f1 WHERE f1 MATCH 'two';
+} {1 SQLITE_RANGE}
+
+do_execsql_test 2.2 {
+  SELECT colsize(f1, 0), colsize(f1, 1) FROM f1 WHERE f1 MATCH 'zero';
+} {2 3}
+
+
+
+finish_test
+

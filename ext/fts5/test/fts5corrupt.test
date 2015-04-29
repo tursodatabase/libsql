@@ -70,7 +70,24 @@ do_test 2.1 {
 } {}
 
 #--------------------------------------------------------------------
+# A mundane test - missing row in the %_content table.
 #
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE t3 USING fts5(x);
+  INSERT INTO t3 VALUES('one o');
+  INSERT INTO t3 VALUES('two e');
+  INSERT INTO t3 VALUES('three o');
+  INSERT INTO t3 VALUES('four e');
+  INSERT INTO t3 VALUES('five o');
+}
+do_execsql_test 3.1 {
+  SELECT * FROM t3 WHERE t3 MATCH 'o'
+} {{one o} {three o} {five o}}
+
+do_catchsql_test 3.1 {
+  DELETE FROM t3_content WHERE rowid = 3;
+  SELECT * FROM t3 WHERE t3 MATCH 'o';
+} {1 {database disk image is malformed}}
 
 finish_test
 
