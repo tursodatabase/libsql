@@ -109,4 +109,5 @@ foreach file [glob tmp2/*] {
 close $out
 progress "done.  $n test cases written to $OUTFILE"
 progress "clean-up..."
-file delete -force tmp1 tmp2
+file delete -force tmp1
+progress "culled test cases left in the tmp2 directory"

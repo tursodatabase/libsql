@@ -1,5 +1,5 @@
-C Fix\ssigned/unsigned\scomparison\scompiler\swarnings.\s\sAdd\sthe\nSQLITE_OMIT_RANDOMNESS\scompile-time\soption\sto\scause\sthe\sPRNG\sto\sbe\sseeded\nidentically\son\severy\srun,\sfor\stesting\spurposes.
-D 2015-04-30T12:31:49.332
+C Modify\sthe\smkfuzzdata1.tcl\sscript\sso\sthat\sit\sretains\sthe\sculled\stest\svectors\nin\sthe\stmp2\ssubdirectory.
+D 2015-04-30T13:06:15.418
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e3268d234210842b4be0a6e2e1c5990999f1d9f4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -754,7 +754,7 @@ F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test edd0b63e2ee29a256900b0514f6fff27e19e9bb2
 F test/misc8.test fc2754d38892f7dac30c22db3616c2764f117d66
 F test/misuse.test 3c34719944ba045cc6c188a4852ba04680728912
-F test/mkfuzzdata1.tcl a2d0a8d07c957c637ab3c258cbd618ca72faf8c6
+F test/mkfuzzdata1.tcl 5f9c33fadc64b078bb4a2c04c18b6dd3da075bec
 F test/mmap1.test 1bfd611b9841eafb44f7d83c0788e146d84a33c9
 F test/mmap2.test 9d6dd9ddb4ad2379f29cc78f38ce1e63ed418022
 F test/mmap3.test c92273e16eb8d23c1d55c9815b446bb72ef0512e
@@ -1255,7 +1255,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 48f553b05c05373c0af4b9c3a542979db3a2ee19
-R dd26855992180d2c266361c3b03d1c94
+P 93ce2bca701efc67aeb517c4d641bde71332e8a0
+R 28f5642fe77297c696872db17b058512
 U drh
-Z d6ff6b1ef48aec60635037ca357742fb
+Z cb23768c5860254e693b905c24f499f6
