@@ -620,8 +620,7 @@ int sqlite3_dbstat_register(sqlite3 *db){
     0,                            /* xFindMethod */
     0,                            /* xRename */
   };
-  sqlite3_create_module(db, "dbstat", &dbstat_module, 0);
-  return SQLITE_OK;
+  return sqlite3_create_module(db, "dbstat", &dbstat_module, 0);
 }
 
 #endif

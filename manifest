@@ -1,5 +1,5 @@
-C Modify\sthe\smkfuzzdata1.tcl\sscript\sso\sthat\sit\sretains\sthe\sculled\stest\svectors\nin\sthe\stmp2\ssubdirectory.
-D 2015-04-30T13:06:15.418
+C Avoid\sdropping\san\serror\scode\sin\stest\sfunction\ssqlite3_dbstat_register().
+D 2015-04-30T20:26:53.835
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e3268d234210842b4be0a6e2e1c5990999f1d9f4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -278,7 +278,7 @@ F src/test_rtree.c bfe6f4386517f70054311109f3528adffec34485
 F src/test_schema.c 2bdba21b82f601da69793e1f1d11bf481a79b091
 F src/test_server.c a2615049954cbb9cfb4a62e18e2f0616e4dc38fe
 F src/test_sqllog.c b690c12933f50ff46491e0d56a251f84ae16e914
-F src/test_stat.c 3c936bfe6d95a1957f2ae6ff3b016433b0dfc04e
+F src/test_stat.c e6583a44b0a23207ba2a9d69be16a338a8b70aa2
 F src/test_superlock.c 06797157176eb7085027d9dd278c0d7a105e3ec9
 F src/test_syscall.c 2e21ca7f7dc54a028f1967b63f1e76155c356f9b
 F src/test_tclvar.c f4dc67d5f780707210d6bb0eb6016a431c04c7fa
@@ -1255,7 +1255,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 93ce2bca701efc67aeb517c4d641bde71332e8a0
-R 28f5642fe77297c696872db17b058512
-U drh
-Z cb23768c5860254e693b905c24f499f6
+P 431a958f3b605ef059119eaedd69796e14bec291
+R 5f86e104d119e7c3cd5441939a55321d
+U dan
+Z 4d924a5523a94fd43bb578b7eb2bbe58
