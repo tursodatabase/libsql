@@ -1,5 +1,5 @@
-C Avoid\sdropping\san\serror\scode\sin\stest\sfunction\ssqlite3_dbstat_register().
-D 2015-04-30T20:26:53.835
+C Fix\sa\sharmless\scomment\stypo.
+D 2015-04-30T20:33:25.923
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e3268d234210842b4be0a6e2e1c5990999f1d9f4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -293,7 +293,7 @@ F src/update.c 3c4ecc282accf12d39edb8d524cf089645e55a13
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c a6431c92803b975b7322724a7b433e538d243539
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c dca4bf7a0e674ed10912e18cefa6d12768d11cbd
+F src/vdbe.c ff9efff0548b6a31d095ddc999d606e7605f0cdc
 F src/vdbe.h 7e538ecf47dccb307ea2d087c3ddc2dd8d70e79d
 F src/vdbeInt.h 9cbaa84f53ddd2d09a0cf61a94337a3a035d08a0
 F src/vdbeapi.c 583d56b129dd27f12bed518270de9ebe521e6a75
@@ -1255,7 +1255,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 431a958f3b605ef059119eaedd69796e14bec291
-R 5f86e104d119e7c3cd5441939a55321d
-U dan
-Z 4d924a5523a94fd43bb578b7eb2bbe58
+P 9a9f633f035fc3f6484b2d8eeed937374f4558c4
+R 20bc5e89d0fcdb5543515f2ee3af3142
+U drh
+Z 7ac753d1cc4cbff953f0752b0a36c863

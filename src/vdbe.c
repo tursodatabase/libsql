@@ -2478,7 +2478,7 @@ case OP_Column: {
       }
     }
 
-    /* If after trying to extra new entries from the header, nHdrParsed is
+    /* If after trying to extract new entries from the header, nHdrParsed is
     ** still not up to p2, that means that the record has fewer than p2
     ** columns.  So the result will be either the default value or a NULL.
     */
