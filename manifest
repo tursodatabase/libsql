@@ -1,5 +1,5 @@
-C Use\ssqlite3_malloc64()\sin\splace\sof\ssqlite3_malloc()\sinternally.
-D 2015-04-29T16:50:28.175
+C Fix\ssigned/unsigned\scomparison\scompiler\swarnings.\s\sAdd\sthe\nSQLITE_OMIT_RANDOMNESS\scompile-time\soption\sto\scause\sthe\sPRNG\sto\sbe\sseeded\nidentically\son\severy\srun,\sfor\stesting\spurposes.
+D 2015-04-30T12:31:49.332
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e3268d234210842b4be0a6e2e1c5990999f1d9f4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -194,7 +194,7 @@ F src/insert.c 8176ba5bad8fcef643558ca5708f33ed05a4035a
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
-F src/loadext.c 89176b67ce0c2833e6397c7623252968e57aed3f
+F src/loadext.c 29255bbe1cfb2ce9bbff2526a5ecfddcb49b9271
 F src/main.c af89a158aa7bd40f6edef527c7b78ef581d72886
 F src/malloc.c 6a370b83d54e4bbf6f94021221c2a311cff26a18
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
@@ -214,8 +214,8 @@ F src/os.c 8fd25588eeba74068d41102d26810e216999b6c8
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h abdb9a191a367793268fe553d25bab894e986a0e
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c 661b48c533c762452f6046a167679b8cd501b217
-F src/os_win.c 59972cd57edd76a5e77fb275043c25a5b1e392c1
+F src/os_unix.c 23eb5f56fac54d8fe0cb204291f3b3b2d94f23fc
+F src/os_win.c 2da99cf07da7db6bcb1974013abfd89ec74749b3
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 5283581c8ce8950ff483a0b3a3cab9cb4d25a21e
 F src/pager.h c3476e7c89cdf1c6914e50a11f3714e30b4e0a77
@@ -1255,7 +1255,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ca43812bde499a23244e2860d3ceddc97d29f09e
-R 6559d7e54df8a22fb50a87822b5b85b8
+P 48f553b05c05373c0af4b9c3a542979db3a2ee19
+R dd26855992180d2c266361c3b03d1c94
 U drh
-Z df85d6bb8cf9b5c163c2dd25f571385a
+Z d6ff6b1ef48aec60635037ca357742fb

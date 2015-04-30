@@ -6135,7 +6135,7 @@ static int unixRandomness(sqlite3_vfs *NotUsed, int nBuf, char *zBuf){
   */
   memset(zBuf, 0, nBuf);
   randomnessPid = osGetpid(0);  
-#if !defined(SQLITE_TEST)
+#if !defined(SQLITE_TEST) && !defined(SQLITE_OMIT_RANDOMNESS)
   {
     int fd, got;
     fd = robust_open("/dev/urandom", O_RDONLY, 0);
