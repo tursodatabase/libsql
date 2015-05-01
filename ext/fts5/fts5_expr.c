@@ -104,13 +104,13 @@ struct Fts5Parse {
 };
 
 void sqlite3Fts5ParseError(Fts5Parse *pParse, const char *zFmt, ...){
+  va_list ap;
+  va_start(ap, zFmt);
   if( pParse->rc==SQLITE_OK ){
-    va_list ap;
-    va_start(ap, zFmt);
     pParse->zErr = sqlite3_vmprintf(zFmt, ap);
-    va_end(ap);
     pParse->rc = SQLITE_ERROR;
   }
+  va_end(ap);
 }
 
 static int fts5ExprIsspace(char t){
@@ -269,52 +269,51 @@ int sqlite3Fts5ExprPhraseExpr(
   Fts5Expr **ppNew
 ){
   int rc = SQLITE_OK;             /* Return code */
-  Fts5ExprPhrase *pOrig = 0;      /* The phrase extracted from pExpr */
-  int i;                          /* Used to iterate through phrase terms */
-
-  /* Components of the new expression object */
-  Fts5Expr *pNew;
-  Fts5ExprPhrase **apPhrase;
-  Fts5ExprNode *pNode;
-  Fts5ExprNearset *pNear;
-  Fts5ExprPhrase *pCopy;
+  Fts5ExprPhrase *pOrig;          /* The phrase extracted from pExpr */
+  Fts5ExprPhrase *pCopy;          /* Copy of pOrig */
+  Fts5Expr *pNew = 0;             /* Expression to return via *ppNew */
 
   pOrig = pExpr->apExprPhrase[iPhrase];
   pCopy = (Fts5ExprPhrase*)fts5ExprMalloc(&rc, 
       sizeof(Fts5ExprPhrase) + sizeof(Fts5ExprTerm) * pOrig->nTerm
   );
-  pNew = (Fts5Expr*)fts5ExprMalloc(&rc, sizeof(Fts5Expr));
-  apPhrase = (Fts5ExprPhrase**)fts5ExprMalloc(&rc, sizeof(Fts5ExprPhrase*));
-  pNode = (Fts5ExprNode*)fts5ExprMalloc(&rc, sizeof(Fts5ExprNode));
-  pNear = (Fts5ExprNearset*)fts5ExprMalloc(&rc, 
-      sizeof(Fts5ExprNearset) + sizeof(Fts5ExprPhrase*)
-  );
+  if( pCopy ){
+    int i;                          /* Used to iterate through phrase terms */
+    Fts5ExprPhrase **apPhrase;
+    Fts5ExprNode *pNode;
+    Fts5ExprNearset *pNear;
 
-  for(i=0; rc==SQLITE_OK && i<pOrig->nTerm; i++){
-    pCopy->aTerm[i].zTerm = fts5ExprStrdup(&rc, pOrig->aTerm[i].zTerm);
-    pCopy->aTerm[i].bPrefix = pOrig->aTerm[i].bPrefix;
-  }
+    pNew = (Fts5Expr*)fts5ExprMalloc(&rc, sizeof(Fts5Expr));
+    apPhrase = (Fts5ExprPhrase**)fts5ExprMalloc(&rc, sizeof(Fts5ExprPhrase*));
+    pNode = (Fts5ExprNode*)fts5ExprMalloc(&rc, sizeof(Fts5ExprNode));
+    pNear = (Fts5ExprNearset*)fts5ExprMalloc(&rc, 
+        sizeof(Fts5ExprNearset) + sizeof(Fts5ExprPhrase*)
+    );
 
-  if( rc==SQLITE_OK ){
-    /* All the allocations succeeded. Put the expression object together. */
-    pNew->pIndex = pExpr->pIndex;
-    pNew->pRoot = pNode;
-    pNew->nPhrase = 1;
-    pNew->apExprPhrase = apPhrase;
-    pNew->apExprPhrase[0] = pCopy;
+    for(i=0; i<pOrig->nTerm; i++){
+      pCopy->aTerm[i].zTerm = fts5ExprStrdup(&rc, pOrig->aTerm[i].zTerm);
+      pCopy->aTerm[i].bPrefix = pOrig->aTerm[i].bPrefix;
+    }
 
-    pNode->eType = FTS5_STRING;
-    pNode->pNear = pNear;
+    if( rc==SQLITE_OK ){
+      /* All the allocations succeeded. Put the expression object together. */
+      pNew->pIndex = pExpr->pIndex;
+      pNew->pRoot = pNode;
+      pNew->nPhrase = 1;
+      pNew->apExprPhrase = apPhrase;
+      pNew->apExprPhrase[0] = pCopy;
 
-    pNear->iCol = -1;
-    pNear->nPhrase = 1;
-    pNear->apPhrase[0] = pCopy;
+      pNode->eType = FTS5_STRING;
+      pNode->pNear = pNear;
 
-    pCopy->nTerm = pOrig->nTerm;
-    pCopy->pNode = pNode;
-  }else{
-    /* At least one allocation failed. Free them all. */
-    if( pCopy ){
+      pNear->iCol = -1;
+      pNear->nPhrase = 1;
+      pNear->apPhrase[0] = pCopy;
+
+      pCopy->nTerm = pOrig->nTerm;
+      pCopy->pNode = pNode;
+    }else{
+      /* At least one allocation failed. Free them all. */
       for(i=0; i<pOrig->nTerm; i++){
         sqlite3_free(pCopy->aTerm[i].zTerm);
       }
@@ -504,7 +503,7 @@ static int fts5ExprNearIsMatch(Fts5ExprNearset *pNear, int *pbMatch){
   /* If the aStatic[] array is not large enough, allocate a large array
   ** using sqlite3_malloc(). This approach could be improved upon. */
   if( pNear->nPhrase>(sizeof(aStatic) / sizeof(aStatic[0])) ){
-    int nByte = sizeof(Fts5LookaheadReader) * pNear->nPhrase;
+    int nByte = sizeof(Fts5NearTrimmer) * pNear->nPhrase;
     a = (Fts5NearTrimmer*)sqlite3_malloc(nByte);
     if( !a ) return SQLITE_NOMEM;
     memset(a, 0, nByte);
@@ -719,7 +718,7 @@ static int fts5ExprNearNextMatch(
 
     /* Advance the iterators until they all point to the same rowid */
     rc = fts5ExprNearNextRowidMatch(pExpr, pNode, bFromValid, iFrom);
-    if( pNode->bEof || rc!=SQLITE_OK ) break;
+    if( rc!=SQLITE_OK || pNode->bEof ) break;
 
     /* Check that each phrase in the nearset matches the current row.
     ** Populate the pPhrase->poslist buffers at the same time. If any

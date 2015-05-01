@@ -1,5 +1,5 @@
-C Improve\stest\scoverage\sof\sfts5.c.
-D 2015-05-01T12:14:23.640
+C Further\simprovements\sto\stest\scoverage\sof\sfts5\scode.
+D 2015-05-01T20:38:57.153
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 31b38b9da2e4b36f54a013bd71a5c3f6e45ca78f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -110,7 +110,7 @@ F ext/fts5/fts5Int.h 2e0a1a6b77e1e014b7e9b1479ca686ff79930457
 F ext/fts5/fts5_aux.c d53f00f31ad615ca4f139dd8751f9041afa00971
 F ext/fts5/fts5_buffer.c 8c8cfe7f09ca2767ab53ea883f9a0af0edb6bbae
 F ext/fts5/fts5_config.c ecbbd5163758a958106867051892e0dfecf68b5c
-F ext/fts5/fts5_expr.c 663c75dfdb1bfd8809d696357d7b55f507815098
+F ext/fts5/fts5_expr.c e2005ba7823f4ac51d46a8e5aaa1ff66c701b32e
 F ext/fts5/fts5_hash.c 29d8b0668727863cc1f1efa65efe4dd78635b016
 F ext/fts5/fts5_index.c de588982b0237b1605d6c37afd115b34c95c3da1
 F ext/fts5/fts5_storage.c ef60fc9dcc4e274f9589165e26833173c273ae18
@@ -140,12 +140,12 @@ F ext/fts5/test/fts5corrupt.test 138aecc75c36c3dac9259c7f57c5bc3d009255f8
 F ext/fts5/test/fts5corrupt2.test 494111fd4f2dab36499cf97718eaba1f7c11e9d0
 F ext/fts5/test/fts5dlidx.test 748a84ceb74a4154725096a26dfa854260b0182f
 F ext/fts5/test/fts5doclist.test 635b80ac785627841a59c583bac702b55d49fdc5
-F ext/fts5/test/fts5ea.test 04695560a444fcc00c3c4f27783bdcfbf71f030c
+F ext/fts5/test/fts5ea.test 7cc498993c16849bb866dbdfb008d91a29f9870b
 F ext/fts5/test/fts5eb.test 728a1f23f263548f5c29b29dfb851b5f2dbe723e
 F ext/fts5/test/fts5fault1.test ed71717a479bef32d05f02d9c48691011d160d4d
 F ext/fts5/test/fts5fault2.test 26c3d70648f691e2cc9391e14bbc11a973656383
 F ext/fts5/test/fts5fault3.test d6e9577d4312e331a913c72931bf131704efc8f3
-F ext/fts5/test/fts5fault4.test 087066bae36f41227eb85968a2436c8a9c960501
+F ext/fts5/test/fts5fault4.test 4090af395d8d3342c0a0b27349dd71eb7cc6262d
 F ext/fts5/test/fts5full.test 0924bdca5416a242103239ace79c6f5aa34bab8d
 F ext/fts5/test/fts5hash.test adb7b0442cc1c77c507f07e16d11490486e75dfa
 F ext/fts5/test/fts5merge.test 453a0717881aa7784885217b2040f3f275caff03
@@ -1315,7 +1315,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c1f07a3aa98eac87e2747527d15e5e5562221ceb
-R 67c24377157269f998af5007c163ea4c
+P add4f4681c648dcbecaa68d08f7b2f4e6d63003c
+R 58de859125935eeaf7ecede3ffbb5a07
 U dan
-Z 082bd0388383a4ef8c727daa5b60df05
+Z fc00d731e9356a3f17b66c35cad599ad
