@@ -1,5 +1,5 @@
-C Use\sthe\ssqlite3Fts3ErrMsg()\sfunction\sto\sset\serror\smessage\stext\sin\sFTS3,\nand\sto\sensure\sthat\serror\smessages\sare\snot\soverwritten\sand\sthus\sleaked.
-D 2015-05-01T14:07:30.122
+C Remove\sobselete\scomment\stext\sfrom\sthe\sdescription\sof\sthe\sTable\sobject.\nNo\schanges\sto\scode.
+D 2015-05-01T15:25:51.767
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e3268d234210842b4be0a6e2e1c5990999f1d9f4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -235,7 +235,7 @@ F src/shell.c 0b68e745dff6fc7b9f86c330d401fd572a5bbbc2
 F src/sqlite.h.in ca27603a36fcacdaac5a19d8ee35aaff8ce8516f
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
-F src/sqliteInt.h d6b2e99b3dd3f51ccc4b7c568d8b529d0fd5d07c
+F src/sqliteInt.h 82cb9dc7f8d4fcc98d7b88e997d9d7107e642741
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c f266ad8a2892d659b74f0f50cb6a88b6e7c12179
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
@@ -1255,7 +1255,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 822dfc00173dad7703aa6413bb94f72f0da8e2c6
-R edaf3095e977d7fef12667cd98f7f94e
+P 605347e087ec5eb817f3c94f4616abe26c7ab66b
+R 49af71398b314fdf0cd1517eca78da9a
 U drh
-Z 8de4ba108eb3eec835d7a12530f79ecf
+Z cb062f9c66d14cbf9dc87b64ba4f37f6
