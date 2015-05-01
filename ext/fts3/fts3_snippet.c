@@ -824,7 +824,7 @@ static int fts3MatchinfoCheck(
   ){
     return SQLITE_OK;
   }
-  *pzErr = sqlite3_mprintf("unrecognized matchinfo request: %c", cArg);
+  sqlite3Fts3ErrMsg(pzErr, "unrecognized matchinfo request: %c", cArg);
   return SQLITE_ERROR;
 }
 

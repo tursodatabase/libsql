@@ -509,6 +509,17 @@ static int fts3DisconnectMethod(sqlite3_vtab *pVtab){
 }
 
 /*
+** Write an error message into *pzErr
+*/
+void sqlite3Fts3ErrMsg(char **pzErr, const char *zFormat, ...){
+  va_list ap;
+  sqlite3_free(*pzErr);
+  va_start(ap, zFormat);
+  *pzErr = sqlite3_vmprintf(zFormat, ap);
+  va_end(ap);
+}
+
+/*
 ** Construct one or more SQL statements from the format string given
 ** and then evaluate those statements. The success code is written
 ** into *pRc.
@@ -1039,7 +1050,7 @@ static int fts3ContentColumns(
   }else{
     rc = sqlite3_prepare(db, zSql, -1, &pStmt, 0);
     if( rc!=SQLITE_OK ){
-      *pzErr = sqlite3_mprintf("%s", sqlite3_errmsg(db));
+      sqlite3Fts3ErrMsg(pzErr, "%s", sqlite3_errmsg(db));
     }
   }
   sqlite3_free(zSql);
@@ -1207,13 +1218,13 @@ static int fts3InitVtab(
           }
         }
         if( iOpt==SizeofArray(aFts4Opt) ){
-          *pzErr = sqlite3_mprintf("unrecognized parameter: %s", z);
+          sqlite3Fts3ErrMsg(pzErr, "unrecognized parameter: %s", z);
           rc = SQLITE_ERROR;
         }else{
           switch( iOpt ){
             case 0:               /* MATCHINFO */
               if( strlen(zVal)!=4 || sqlite3_strnicmp(zVal, "fts3", 4) ){
-                *pzErr = sqlite3_mprintf("unrecognized matchinfo: %s", zVal);
+                sqlite3Fts3ErrMsg(pzErr, "unrecognized matchinfo: %s", zVal);
                 rc = SQLITE_ERROR;
               }
               bNoDocsize = 1;
@@ -1241,7 +1252,7 @@ static int fts3InitVtab(
               if( (strlen(zVal)!=3 || sqlite3_strnicmp(zVal, "asc", 3)) 
                && (strlen(zVal)!=4 || sqlite3_strnicmp(zVal, "desc", 4)) 
               ){
-                *pzErr = sqlite3_mprintf("unrecognized order: %s", zVal);
+                sqlite3Fts3ErrMsg(pzErr, "unrecognized order: %s", zVal);
                 rc = SQLITE_ERROR;
               }
               bDescIdx = (zVal[0]=='d' || zVal[0]=='D');
@@ -1327,7 +1338,7 @@ static int fts3InitVtab(
   rc = fts3PrefixParameter(zPrefix, &nIndex, &aIndex);
   if( rc==SQLITE_ERROR ){
     assert( zPrefix );
-    *pzErr = sqlite3_mprintf("error parsing prefix parameter: %s", zPrefix);
+    sqlite3Fts3ErrMsg(pzErr, "error parsing prefix parameter: %s", zPrefix);
   }
   if( rc!=SQLITE_OK ) goto fts3_init_out;
 
@@ -1409,7 +1420,7 @@ static int fts3InitVtab(
   }
   for(i=0; i<nNotindexed; i++){
     if( azNotindexed[i] ){
-      *pzErr = sqlite3_mprintf("no such column: %s", azNotindexed[i]);
+      sqlite3Fts3ErrMsg(pzErr, "no such column: %s", azNotindexed[i]);
       rc = SQLITE_ERROR;
     }
   }
@@ -1417,7 +1428,7 @@ static int fts3InitVtab(
   if( rc==SQLITE_OK && (zCompress==0)!=(zUncompress==0) ){
     char const *zMiss = (zCompress==0 ? "compress" : "uncompress");
     rc = SQLITE_ERROR;
-    *pzErr = sqlite3_mprintf("missing %s parameter in fts4 constructor", zMiss);
+    sqlite3Fts3ErrMsg(pzErr, "missing %s parameter in fts4 constructor", zMiss);
   }
   p->zReadExprlist = fts3ReadExprList(p, zUncompress, &rc);
   p->zWriteExprlist = fts3WriteExprList(p, zCompress, &rc);

@@ -1,5 +1,5 @@
-C Enhance\sthe\sCLI\sto\sinitialize\sthe\sdbstat\svirtual\stable\sif\scompiled\susing\nSQLITE_ENABLE_STAT_VTAB.
-D 2015-04-30T20:35:33.318
+C Use\sthe\ssqlite3Fts3ErrMsg()\sfunction\sto\sset\serror\smessage\stext\sin\sFTS3,\nand\sto\sensure\sthat\serror\smessages\sare\snot\soverwritten\sand\sthus\sleaked.
+D 2015-05-01T14:07:30.122
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e3268d234210842b4be0a6e2e1c5990999f1d9f4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -78,20 +78,20 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 81f9ed55ad58614828ad9d8b1e0525ad78fede1b
+F ext/fts3/fts3.c 2fb98467f4b670c8934cdd97d1ba3ffa7382764c
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h 3626655d6ba903a3919bb44e1c38e5f0f9d6be82
-F ext/fts3/fts3_aux.c 5c211e17a64885faeb16b9ba7772f9d5445c2365
-F ext/fts3/fts3_expr.c 40123785eaa3ebd4c45c9b23407cc44ac0c49905
+F ext/fts3/fts3Int.h 59ecaa2d7af0da44c70b6aeaebdcfc070d14abab
+F ext/fts3/fts3_aux.c 9edc3655fcb287f0467d0a4b886a01c6185fe9f1
+F ext/fts3/fts3_expr.c 71c063da9c2a4167fb54aec089dd5ef33a58c9cb
 F ext/fts3/fts3_hash.c 29b986e43f4e9dd40110eafa377dc0d63c422c60
 F ext/fts3/fts3_hash.h 39cf6874dc239d6b4e30479b1975fe5b22a3caaf
 F ext/fts3/fts3_icu.c e319e108661147bcca8dd511cd562f33a1ba81b5
 F ext/fts3/fts3_porter.c 3565faf04b626cddf85f03825e86056a4562c009
-F ext/fts3/fts3_snippet.c 52c2dcf410b1f9af5a44d81a2cf8c68ed1cb5283
-F ext/fts3/fts3_term.c a521f75132f9a495bdca1bdd45949b3191c52763
+F ext/fts3/fts3_snippet.c 0ce4ee2451b9f3603a1693ef9779bb0fb662a9fe
+F ext/fts3/fts3_term.c 88c55a6fa1a51ab494e33dced0401a6c28791fd7
 F ext/fts3/fts3_test.c 8a3a78c4458b2d7c631fcf4b152a5cd656fa7038
-F ext/fts3/fts3_tokenize_vtab.c becc661223db7898b213f9e8a23d75bac02408c9
-F ext/fts3/fts3_tokenizer.c 9afd223b07740b14dd589edd3116acacf951fd78
+F ext/fts3/fts3_tokenize_vtab.c a27593ab19657166f6fa5ec073b678cc29a75860
+F ext/fts3/fts3_tokenizer.c 50e7a69a549ac5882cc1971ee43f66aaabc11395
 F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c a93f5edc0aff44ef8b06d7cb55b52026541ca145
@@ -1255,7 +1255,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 012a0c4e8485b1c2206ecff1946bf036bae04f3c 7ed86dd3b85ee092a19fe5d1e2fba39ce0166a2a
-R ce4ce0ea10f0361792c80aff76a3f2ab
+P 822dfc00173dad7703aa6413bb94f72f0da8e2c6
+R edaf3095e977d7fef12667cd98f7f94e
 U drh
-Z 7586895a6156132f56fe0bdc67703db2
+Z 8de4ba108eb3eec835d7a12530f79ecf
