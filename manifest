@@ -1,5 +1,5 @@
-C Fix\san\sassert()\sfailure\scaused\sby\ssetting\s"PRAGMA\sjournal_mode=off"\son\san\sdatabase\sin\sexclusive-mode\sthat\shas\salready\sopened\sthe\sjournal\sfile.
-D 2015-05-01T16:57:24.266
+C Fix\san\sassert\sin\sRTREE\sthat\swould\sfire\sif\sthe\srtree\stable\sis\smisdeclared.
+D 2015-05-01T18:00:37.511
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e3268d234210842b4be0a6e2e1c5990999f1d9f4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -124,7 +124,7 @@ F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 14e6239434d4e3f65d3e90320713f26aa24e167f
+F ext/rtree/rtree.c 0c207fd8b814a35537d96681cbf57436e200b75e
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test 541bbcab74613907fea08b2ecdcdd5b7aa724cc9
 F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
@@ -1255,7 +1255,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6566b72a9c68b347d126189b376f52ffd56edfba
-R f6676a27ea8fd7f080695c7806564a78
-U dan
-Z fe516a6f38b171b235c89343c757478c
+P 40db3e40126db1035fcc12989026915744dc5651
+R d52749e43e60b570f31909140ed0a510
+U drh
+Z 292f5446ecb0ed9f640d81ad4e3c067d
