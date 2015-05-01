@@ -61,6 +61,27 @@ static int f5tDbPointer(Tcl_Interp *interp, Tcl_Obj *pObj, sqlite3 **ppDb){
 /* End of code that accesses the SqliteDb struct.
 **************************************************************************/
 
+static int f5tResultToErrorCode(const char *zRes){
+  struct ErrorCode {
+    int rc;
+    const char *zError;
+  } aErr[] = {
+    { SQLITE_DONE,  "SQLITE_DONE" },
+    { SQLITE_ERROR, "SQLITE_ERROR" },
+    { SQLITE_OK,    "SQLITE_OK" },
+    { SQLITE_OK,    "" },
+  };
+  int i;
+
+  for(i=0; i<sizeof(aErr)/sizeof(aErr[0]); i++){
+    if( 0==sqlite3_stricmp(zRes, aErr[i].zError) ){
+      return aErr[i].rc;
+    }
+  }
+
+  return SQLITE_ERROR;
+}
+
 static int f5tDbAndApi(
   Tcl_Interp *interp, 
   Tcl_Obj *pObj, 
@@ -170,6 +191,10 @@ static int xQueryPhraseCb(
   Tcl_DecrRefCount(pEval);
   Tcl_DeleteCommand(p->interp, zCmd);
 
+  if( rc==TCL_OK ){
+    rc = f5tResultToErrorCode(Tcl_GetStringResult(p->interp));
+  }
+
   return rc;
 }
 
@@ -195,20 +220,22 @@ static int xF5tApi(
     int nArg;
     const char *zMsg;
   } aSub[] = {
-    { "xColumnCount",      0, "" },
-    { "xRowCount",         0, "" },
-    { "xColumnTotalSize",  1, "COL" },
-    { "xTokenize",         2, "TEXT SCRIPT" },
-    { "xPhraseCount",      0, "" },
-    { "xPhraseSize",       1, "PHRASE" },
-    { "xInstCount",        0, "" },
-    { "xInst",             1, "IDX" },
-    { "xRowid",            0, "" },
-    { "xColumnText",       1, "COL" },
-    { "xColumnSize",       1, "COL" },
-    { "xQueryPhrase",      2, "PHRASE SCRIPT" },
-    { "xSetAuxdata",       1, "VALUE" },
-    { "xGetAuxdata",       1, "CLEAR" },
+    { "xColumnCount",      0, "" },                   /*  0 */
+    { "xRowCount",         0, "" },                   /*  1 */
+    { "xColumnTotalSize",  1, "COL" },                /*  2 */
+    { "xTokenize",         2, "TEXT SCRIPT" },        /*  3 */
+    { "xPhraseCount",      0, "" },                   /*  4 */
+    { "xPhraseSize",       1, "PHRASE" },             /*  5 */
+    { "xInstCount",        0, "" },                   /*  6 */
+    { "xInst",             1, "IDX" },                /*  7 */
+    { "xRowid",            0, "" },                   /*  8 */
+    { "xColumnText",       1, "COL" },                /*  9 */
+    { "xColumnSize",       1, "COL" },                /* 10 */
+    { "xQueryPhrase",      2, "PHRASE SCRIPT" },      /* 11 */
+    { "xSetAuxdata",       1, "VALUE" },              /* 12 */
+    { "xGetAuxdata",       1, "CLEAR" },              /* 13 */
+    { "xSetAuxdataInt",    1, "INTEGER" },            /* 14 */
+    { "xGetAuxdataInt",    1, "CLEAR" },              /* 15 */
     { 0, 0, 0}
   };
 
@@ -383,6 +410,25 @@ static int xF5tApi(
           xSetAuxdataDestructor((void*)pData);
         }
       }
+      break;
+    }
+
+    /* These two - xSetAuxdataInt and xGetAuxdataInt - are similar to the
+    ** xSetAuxdata and xGetAuxdata methods implemented above. The difference
+    ** is that they may only save an integer value as auxiliary data, and
+    ** do not specify a destructor function.  */
+    CASE(14, "xSetAuxdataInt") {
+      int iVal;
+      if( Tcl_GetIntFromObj(interp, objv[2], &iVal) ) return TCL_ERROR;
+      rc = p->pApi->xSetAuxdata(p->pFts, (void*)iVal, 0);
+      break;
+    }
+    CASE(15, "xGetAuxdataInt") {
+      int iVal;
+      int bClear;
+      if( Tcl_GetBooleanFromObj(interp, objv[2], &bClear) ) return TCL_ERROR;
+      iVal = (int)p->pApi->xGetAuxdata(p->pFts, bClear);
+      Tcl_SetObjResult(interp, Tcl_NewIntObj(iVal));
       break;
     }
 

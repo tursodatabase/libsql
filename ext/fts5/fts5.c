@@ -1495,6 +1495,9 @@ static int fts5ApiColumnSize(Fts5Context *pCtx, int iCol, int *pnToken){
   return rc;
 }
 
+/*
+** Implementation of the xSetAuxdata() method.
+*/
 static int fts5ApiSetAuxdata(
   Fts5Context *pCtx,              /* Fts5 context */
   void *pPtr,                     /* Pointer to save as auxdata */
@@ -1503,6 +1506,8 @@ static int fts5ApiSetAuxdata(
   Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
   Fts5Auxdata *pData;
 
+  /* Search through the cursors list of Fts5Auxdata objects for one that
+  ** corresponds to the currently executing auxiliary function.  */
   for(pData=pCsr->pAuxdata; pData; pData=pData->pNext){
     if( pData->pAux==pCsr->pAux ) break;
   }
@@ -1512,12 +1517,12 @@ static int fts5ApiSetAuxdata(
       pData->xDelete(pData->pPtr);
     }
   }else{
-    pData = (Fts5Auxdata*)sqlite3_malloc(sizeof(Fts5Auxdata));
+    int rc = SQLITE_OK;
+    pData = (Fts5Auxdata*)sqlite3Fts5MallocZero(&rc, sizeof(Fts5Auxdata));
     if( pData==0 ){
       if( xDelete ) xDelete(pPtr);
-      return SQLITE_NOMEM;
+      return rc;
     }
-    memset(pData, 0, sizeof(Fts5Auxdata));
     pData->pAux = pCsr->pAux;
     pData->pNext = pCsr->pAuxdata;
     pCsr->pAuxdata = pData;
@@ -1644,6 +1649,7 @@ static void fts5ApiCallback(
   if( pCsr==0 ){
     char *zErr = sqlite3_mprintf("no such cursor: %lld", iCsrId);
     sqlite3_result_error(context, zErr, -1);
+    sqlite3_free(zErr);
   }else{
     fts5ApiInvoke(pAux, pCsr, context, argc-1, &argv[1]);
   }
