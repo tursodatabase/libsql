@@ -1644,7 +1644,7 @@ queryplantest:	testfixture.exe sqlite3.exe
 	.\testfixture.exe $(TOP)\test\permutations.test queryplanner
 
 fuzztest:	fuzzershell.exe
-	.\fuzzershell.exe -f $(TOP)\test\fuzzdata1.txt
+	.\fuzzershell.exe $(TOP)\test\fuzzdata1.txt $(TOP)\test\fuzzdata2.txt
 
 fuzzoomtest:	fuzzershell.exe
 	.\fuzzershell.exe -f $(TOP)\test\fuzzdata1.txt --oom

@@ -315,15 +315,14 @@ static void sqlEvalFunc(
 ** Print sketchy documentation for this utility program
 */
 static void showHelp(void){
-  printf("Usage: %s [options]\n", g.zArgv0);
+  printf("Usage: %s [options] ?FILE...?\n", g.zArgv0);
   printf(
-"Read SQL text from standard input and evaluate it.\n"
+"Read SQL text from FILE... (or from standard input if FILE... is omitted)\n"
+"and then evaluate each block of SQL contained therein.\n"
 "Options:\n"
 "  --autovacuum          Enable AUTOVACUUM mode\n"
-"  -f FILE               Read SQL text from FILE instead of standard input\n"
 "  --heap SZ MIN         Memory allocator uses SZ bytes & min allocation MIN\n"
 "  --help                Show this help text\n"    
-"  --initdb DBFILE       Initialize the in-memory database using template DBFILE\n"
 "  --lookaside N SZ      Configure lookaside for N slots of SZ bytes each\n"
 "  --oom                 Run each test multiple times in a simulated OOM loop\n"
 "  --pagesize N          Set the page size to N\n"
@@ -397,28 +396,17 @@ static int integerValue(const char *zArg){
   return (int)(isNeg? -v : v);
 }
 
-/*
-** Various operating modes
-*/
-#define FZMODE_Generic   1
-#define FZMODE_Strftime  2
-#define FZMODE_Printf    3
-#define FZMODE_Glob      4
-
 
 int main(int argc, char **argv){
-  char *zIn = 0;          /* Input text */
-  int nAlloc = 0;         /* Number of bytes allocated for zIn[] */
-  int nIn = 0;            /* Number of bytes of zIn[] used */
-  size_t got;             /* Bytes read from input */
-  FILE *in = stdin;       /* Where to read SQL text from */
-  int rc = SQLITE_OK;     /* Result codes from API functions */
-  int i;                  /* Loop counter */
-  int iNext;              /* Next block of SQL */
-  sqlite3 *db;            /* Open database */
-  sqlite3 *dbInit = 0;    /* On-disk database used to initialize the in-memory db */
-  const char *zInitDb = 0;/* Name of the initialization database file */
-  char *zErrMsg = 0;      /* Error message returned from sqlite3_exec() */
+  char *zIn = 0;                /* Input text */
+  int nAlloc = 0;               /* Number of bytes allocated for zIn[] */
+  int nIn = 0;                  /* Number of bytes of zIn[] used */
+  size_t got;                   /* Bytes read from input */
+  int rc = SQLITE_OK;           /* Result codes from API functions */
+  int i;                        /* Loop counter */
+  int iNext;                    /* Next block of SQL */
+  sqlite3 *db;                  /* Open database */
+  char *zErrMsg = 0;            /* Error message returned from sqlite3_exec() */
   const char *zEncoding = 0;    /* --utf16be or --utf16le */
   int nHeap = 0, mnHeap = 0;    /* Heap size from --heap */
   int nLook = 0, szLook = 0;    /* --lookaside configuration */
@@ -432,7 +420,6 @@ int main(int argc, char **argv){
   int doAutovac = 0;            /* True for --autovacuum */
   char *zSql;                   /* SQL to run */
   char *zToFree = 0;            /* Call sqlite3_free() on this afte running zSql */
-  int iMode = FZMODE_Generic;   /* Operating mode */
   const char *zCkGlob = 0;      /* Inputs must match this glob */
   int verboseFlag = 0;          /* --verbose or -v flag */
   int quietFlag = 0;            /* --quiet or -q flag */
@@ -447,10 +434,15 @@ int main(int argc, char **argv){
   int oomCnt = 0;               /* Counter for the OOM loop */
   char zErrBuf[200];            /* Space for the error message */
   const char *zFailCode;        /* Value of the TEST_FAILURE environment var */
+  const char *zPrompt;          /* Initial prompt when large-file fuzzing */
+  int nInFile = 0;              /* Number of input files to read */
+  char **azInFile = 0;          /* Array of input file names */
+  int jj;                       /* Loop counter for azInFile[] */
 
 
   zFailCode = getenv("TEST_FAILURE");
   g.zArgv0 = argv[0];
+  zPrompt = "<stdin>";
   for(i=1; i<argc; i++){
     const char *z = argv[i];
     if( z[0]=='-' ){
@@ -460,9 +452,8 @@ int main(int argc, char **argv){
         doAutovac = 1;
       }else
       if( strcmp(z, "f")==0 && i+1<argc ){
-        if( in!=stdin ) abendError("only one -f allowed");
-        in = fopen(argv[++i],"rb");
-        if( in==0 )  abendError("cannot open input file \"%s\"", argv[i]);
+        i++;
+        goto addNewInFile;
       }else
       if( strcmp(z,"heap")==0 ){
         if( i>=argc-2 ) abendError("missing arguments on %s\n", argv[i]);
@@ -474,34 +465,11 @@ int main(int argc, char **argv){
         showHelp();
         return 0;
       }else
-      if( strcmp(z, "initdb")==0 && i+1<argc ){
-        if( zInitDb!=0 ) abendError("only one --initdb allowed");
-        zInitDb = argv[++i];
-      }else
       if( strcmp(z,"lookaside")==0 ){
         if( i>=argc-2 ) abendError("missing arguments on %s", argv[i]);
         nLook = integerValue(argv[i+1]);
         szLook = integerValue(argv[i+2]);
         i += 2;
-      }else
-      if( strcmp(z,"mode")==0 ){
-        if( i>=argc-1 ) abendError("missing argument on %s", argv[i]);
-        z = argv[++i];
-        if( strcmp(z,"generic")==0 ){
-          iMode = FZMODE_Printf;
-          zCkGlob = 0;
-        }else if( strcmp(z, "glob")==0 ){
-          iMode = FZMODE_Glob;
-          zCkGlob = "'*','*'";
-        }else if( strcmp(z, "printf")==0 ){
-          iMode = FZMODE_Printf;
-          zCkGlob = "'*',*";
-        }else if( strcmp(z, "strftime")==0 ){
-          iMode = FZMODE_Strftime;
-          zCkGlob = "'*',*";
-        }else{
-          abendError("unknown --mode: %s", z);
-        }
       }else
       if( strcmp(z,"oom")==0 ){
         oomFlag = 1;
@@ -545,9 +513,15 @@ int main(int argc, char **argv){
         abendError("unknown option: %s", argv[i]);
       }
     }else{
-      abendError("unknown argument: %s", argv[i]);
+      addNewInFile:
+      nInFile++;
+      azInFile = realloc(azInFile, sizeof(azInFile[0])*nInFile);
+      if( azInFile==0 ) abendError("out of memory");
+      azInFile[nInFile-1] = argv[i];
     }
   }
+
+  /* Do global SQLite initialization */
   sqlite3_config(SQLITE_CONFIG_LOG, verboseFlag ? shellLog : shellLogNoop, 0);
   if( nHeap>0 ){
     pHeap = malloc( nHeap );
@@ -583,209 +557,245 @@ int main(int argc, char **argv){
     rc = sqlite3_config(SQLITE_CONFIG_PAGECACHE, pPCache, szPCache, nPCache);
     if( rc ) abendError("pcache configuration failed: %d", rc);
   }
-  while( !feof(in) ){
-    nAlloc += nAlloc+1000;
-    zIn = realloc(zIn, nAlloc);
-    if( zIn==0 ) fatalError("out of memory");
-    got = fread(zIn+nIn, 1, nAlloc-nIn-1, in); 
-    nIn += (int)got;
-    zIn[nIn] = 0;
-    if( got==0 ) break;
-  }
-  if( in!=stdin ) fclose(in);
+
+  /* If the --unique-cases option was supplied, open the database that will
+  ** be used to gather unique test cases.
+  */
   if( zDataOut ){
     rc = sqlite3_open(":memory:", &dataDb);
     if( rc ) abendError("cannot open :memory: database");
     rc = sqlite3_exec(dataDb,
           "CREATE TABLE testcase(sql BLOB PRIMARY KEY) WITHOUT ROWID;",0,0,0);
     if( rc ) abendError("%s", sqlite3_errmsg(dataDb));
-    rc = sqlite3_prepare_v2(dataDb, "INSERT OR IGNORE INTO testcase(sql)VALUES(?1)",
-                            -1, &pStmt, 0);
+    rc = sqlite3_prepare_v2(dataDb,
+          "INSERT OR IGNORE INTO testcase(sql)VALUES(?1)",
+          -1, &pStmt, 0);
     if( rc ) abendError("%s", sqlite3_errmsg(dataDb));
   }
-  if( zInitDb ){
-    rc = sqlite3_open_v2(zInitDb, &dbInit, SQLITE_OPEN_READONLY, 0);
-    if( rc!=SQLITE_OK ){
-      abendError("unable to open initialization database \"%s\"", zInitDb);
-    }
-  }
-  for(i=0; i<nIn; i=iNext+1){   /* Skip initial lines beginning with '#' */
-    if( zIn[i]!='#' ) break;
-    for(iNext=i+1; iNext<nIn && zIn[iNext]!='\n'; iNext++){}
-  }
-  nHeader = i;
-  for(nTest=0; i<nIn; i=iNext, nTest++, g.zTestName[0]=0){
-    char cSaved;
-    if( strncmp(&zIn[i], "/****<",6)==0 ){
-      char *z = strstr(&zIn[i], ">****/");
-      if( z ){
-        z += 6;
-        sqlite3_snprintf(sizeof(g.zTestName), g.zTestName, "%.*s", 
-                         (int)(z-&zIn[i]) - 12, &zIn[i+6]);
-        if( verboseFlag ){
-          printf("%.*s\n", (int)(z-&zIn[i]), &zIn[i]);
-          fflush(stdout);
-        }
-        i += (int)(z-&zIn[i]);
-        multiTest = 1;
+
+  /* Initialize the input buffer used to hold SQL text */
+  if( nInFile==0 ) nInFile = 1;
+  nAlloc = 1000;
+  zIn = malloc(nAlloc);
+  if( zIn==0 ) fatalError("out of memory");
+
+  /* Loop over all input files */
+  for(jj=0; jj<nInFile; jj++){
+
+    /* Read the complete content of the next input file into zIn[] */
+    FILE *in;
+    if( azInFile ){
+      int j, k;
+      in = fopen(azInFile[jj],"rb");
+      if( in==0 ){
+        abendError("cannot open %s for reading", azInFile[jj]);
       }
-    }
-    for(iNext=i; iNext<nIn && strncmp(&zIn[iNext],"/****<",6)!=0; iNext++){}
-    if( zDataOut ){
-      sqlite3_bind_blob(pStmt, 1, &zIn[i], iNext-i, SQLITE_STATIC);
-      rc = sqlite3_step(pStmt);
-      if( rc!=SQLITE_DONE ) abendError("%s", sqlite3_errmsg(dataDb));
-      sqlite3_reset(pStmt);
-      continue;
-    }
-    cSaved = zIn[iNext];
-    zIn[iNext] = 0;
-    if( zCkGlob && sqlite3_strglob(zCkGlob,&zIn[i])!=0 ){
-      zIn[iNext] = cSaved;
-      continue;
-    }
-    zSql = &zIn[i];
-    if( verboseFlag ){
-      printf("INPUT (offset: %d, size: %d): [%s]\n",
-              i, (int)strlen(&zIn[i]), &zIn[i]);
-    }else if( multiTest && !quietFlag ){
-      if( oomFlag ){
-        printf("%s\n", g.zTestName);
-      }else{
-        int pct = (10*iNext)/nIn;
-        if( pct!=lastPct ){
-          if( lastPct<0 ) printf("fuzz test:");
-          printf(" %d%%", pct*10);
-          lastPct = pct;
-        }
-      }
-    }
-    fflush(stdout);
-    switch( iMode ){
-      case FZMODE_Glob:
-        zSql = zToFree = sqlite3_mprintf("SELECT glob(%s);", zSql);
-        break;
-      case FZMODE_Printf:
-        zSql = zToFree = sqlite3_mprintf("SELECT printf(%s);", zSql);
-        break;
-      case FZMODE_Strftime:
-        zSql = zToFree = sqlite3_mprintf("SELECT strftime(%s);", zSql);
-        break;
-    }
-    if( oomFlag ){
-      oomCnt = g.iOomCntdown = 1;
-      g.nOomFault = 0;
-      g.bOomOnce = 1;
-      if( verboseFlag ){
-        printf("Once.%d\n", oomCnt);
-        fflush(stdout);
-      }
+      zPrompt = azInFile[jj];
+      for(j=k=0; zPrompt[j]; j++) if( zPrompt[j]=='/' ) k = j+1;
+      zPrompt += k;
     }else{
-      oomCnt = 0;
+      in = stdin;
+      zPrompt = "<stdin>";
     }
-    do{
-      rc = sqlite3_open_v2(
-        "main.db", &db,
-        SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_MEMORY,
-        0);
-      if( rc!=SQLITE_OK ){
-        abendError("Unable to open the in-memory database");
-      }
-      if( pLook ){
-        rc = sqlite3_db_config(db, SQLITE_DBCONFIG_LOOKASIDE, pLook, szLook, nLook);
-        if( rc!=SQLITE_OK ) abendError("lookaside configuration filed: %d", rc);
-      }
-      if( zInitDb ){
-        sqlite3_backup *pBackup;
-        pBackup = sqlite3_backup_init(db, "main", dbInit, "main");
-        rc = sqlite3_backup_step(pBackup, -1);
-        if( rc!=SQLITE_DONE ){
-          abendError("attempt to initialize the in-memory database failed (rc=%d)",
-                     rc);
-        }
-        sqlite3_backup_finish(pBackup);
-      }
-  #ifndef SQLITE_OMIT_TRACE
-      sqlite3_trace(db, verboseFlag ? traceCallback : traceNoop, 0);
-  #endif
-      sqlite3_create_function(db, "eval", 1, SQLITE_UTF8, 0, sqlEvalFunc, 0, 0);
-      sqlite3_create_function(db, "eval", 2, SQLITE_UTF8, 0, sqlEvalFunc, 0, 0);
-      sqlite3_limit(db, SQLITE_LIMIT_LENGTH, 1000000);
-      if( zEncoding ) sqlexec(db, "PRAGMA encoding=%s", zEncoding);
-      if( pageSize ) sqlexec(db, "PRAGMA pagesize=%d", pageSize);
-      if( doAutovac ) sqlexec(db, "PRAGMA auto_vacuum=FULL");
-      g.bOomEnable = 1;
-      if( verboseFlag ){
-        zErrMsg = 0;
-        rc = sqlite3_exec(db, zSql, execCallback, 0, &zErrMsg);
-        if( zErrMsg ){
-          sqlite3_snprintf(sizeof(zErrBuf),zErrBuf,"%z", zErrMsg);
-          zErrMsg = 0;
-        }
-      }else {
-        rc = sqlite3_exec(db, zSql, execNoop, 0, 0);
-      }
-      g.bOomEnable = 0;
-      rc = sqlite3_close(db);
-      if( rc ){
-        abendError("sqlite3_close() failed with rc=%d", rc);
-      }
-      if( sqlite3_memory_used()>0 ){
-        abendError("memory in use after close: %lld bytes", sqlite3_memory_used());
-      }
-      if( oomFlag ){
-        /* Limit the number of iterations of the OOM loop to OOM_MAX.  If the
-        ** first pass (single failure) exceeds 2/3rds of OOM_MAX this skip the
-        ** second pass (continuous failure after first) completely. */
-        if( g.nOomFault==0 || oomCnt>OOM_MAX ){
-          if( g.bOomOnce && oomCnt<=(OOM_MAX*2/3) ){
-            oomCnt = g.iOomCntdown = 1;
-            g.bOomOnce = 0;
-          }else{
-            oomCnt = 0;
-          }
-        }else{
-          g.iOomCntdown = ++oomCnt;
-          g.nOomFault = 0;
-        }
-        if( oomCnt ){
+    while( !feof(in) ){
+      zIn = realloc(zIn, nAlloc);
+      if( zIn==0 ) fatalError("out of memory");
+      got = fread(zIn+nIn, 1, nAlloc-nIn-1, in); 
+      nIn += (int)got;
+      zIn[nIn] = 0;
+      if( got==0 ) break;
+      nAlloc += nAlloc+1000;
+    }
+    if( in!=stdin ) fclose(in);
+    lastPct = -1;
+
+    /* Skip initial lines of the input file that begin with "#" */
+    for(i=0; i<nIn; i=iNext+1){
+      if( zIn[i]!='#' ) break;
+      for(iNext=i+1; iNext<nIn && zIn[iNext]!='\n'; iNext++){}
+    }
+    nHeader = i;
+
+    /* Process all test cases contained within the input file.
+    */
+    for(; i<nIn; i=iNext, nTest++, g.zTestName[0]=0){
+      char cSaved;
+      if( strncmp(&zIn[i], "/****<",6)==0 ){
+        char *z = strstr(&zIn[i], ">****/");
+        if( z ){
+          z += 6;
+          sqlite3_snprintf(sizeof(g.zTestName), g.zTestName, "%.*s", 
+                           (int)(z-&zIn[i]) - 12, &zIn[i+6]);
           if( verboseFlag ){
-            printf("%s.%d\n", g.bOomOnce ? "Once" : "Multi", oomCnt);
+            printf("%.*s\n", (int)(z-&zIn[i]), &zIn[i]);
             fflush(stdout);
           }
-          nTest++;
+          i += (int)(z-&zIn[i]);
+          multiTest = 1;
         }
       }
-    }while( oomCnt>0 );
-    if( zToFree ){
-      sqlite3_free(zToFree);
-      zToFree = 0;
-    }
-    zIn[iNext] = cSaved;
-    if( verboseFlag ){
-      printf("RESULT-CODE: %d\n", rc);
-      if( zErrMsg ){
-        printf("ERROR-MSG: [%s]\n", zErrBuf);
+      for(iNext=i; iNext<nIn && strncmp(&zIn[iNext],"/****<",6)!=0; iNext++){}
+
+      /* Store unique test cases in the in the dataDb database if the
+      ** --unique-cases flag is present
+      */
+      if( zDataOut ){
+        sqlite3_bind_blob(pStmt, 1, &zIn[i], iNext-i, SQLITE_STATIC);
+        rc = sqlite3_step(pStmt);
+        if( rc!=SQLITE_DONE ) abendError("%s", sqlite3_errmsg(dataDb));
+        sqlite3_reset(pStmt);
+        continue;
+      }
+      cSaved = zIn[iNext];
+      zIn[iNext] = 0;
+      if( zCkGlob && sqlite3_strglob(zCkGlob,&zIn[i])!=0 ){
+        zIn[iNext] = cSaved;
+        continue;
+      }
+
+      /* Print out the SQL of the next test case is --verbose is enabled
+      */
+      zSql = &zIn[i];
+      if( verboseFlag ){
+        printf("INPUT (offset: %d, size: %d): [%s]\n",
+                i, (int)strlen(&zIn[i]), &zIn[i]);
+      }else if( multiTest && !quietFlag ){
+        if( oomFlag ){
+          printf("%s\n", g.zTestName);
+        }else{
+          int pct = (10*iNext)/nIn;
+          if( pct!=lastPct ){
+            if( lastPct<0 ) printf("%s:", zPrompt);
+            printf(" %d%%", pct*10);
+            lastPct = pct;
+          }
+        }
       }
       fflush(stdout);
-    }
-    /* Simulate an error if the TEST_FAILURE environment variable is "5" */
-    if( zFailCode ){
-      if( zFailCode[0]=='5' && zFailCode[1]==0 ){
-        abendError("simulated failure");
-      }else if( zFailCode[0]!=0 ){
-        /* If TEST_FAILURE is something other than 5, just exit the test
-        ** early */
-        printf("\nExit early due to TEST_FAILURE being set");
-        break;
+
+      /* Run the next test case.  Run it multiple times in --oom mode
+      */
+      if( oomFlag ){
+        oomCnt = g.iOomCntdown = 1;
+        g.nOomFault = 0;
+        g.bOomOnce = 1;
+        if( verboseFlag ){
+          printf("Once.%d\n", oomCnt);
+          fflush(stdout);
+        }
+      }else{
+        oomCnt = 0;
+      }
+      do{
+        rc = sqlite3_open_v2(
+          "main.db", &db,
+          SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_MEMORY,
+          0);
+        if( rc!=SQLITE_OK ){
+          abendError("Unable to open the in-memory database");
+        }
+        if( pLook ){
+          rc = sqlite3_db_config(db, SQLITE_DBCONFIG_LOOKASIDE,pLook,szLook,nLook);
+          if( rc!=SQLITE_OK ) abendError("lookaside configuration filed: %d", rc);
+        }
+    #ifndef SQLITE_OMIT_TRACE
+        sqlite3_trace(db, verboseFlag ? traceCallback : traceNoop, 0);
+    #endif
+        sqlite3_create_function(db, "eval", 1, SQLITE_UTF8, 0, sqlEvalFunc, 0, 0);
+        sqlite3_create_function(db, "eval", 2, SQLITE_UTF8, 0, sqlEvalFunc, 0, 0);
+        sqlite3_limit(db, SQLITE_LIMIT_LENGTH, 1000000);
+        if( zEncoding ) sqlexec(db, "PRAGMA encoding=%s", zEncoding);
+        if( pageSize ) sqlexec(db, "PRAGMA pagesize=%d", pageSize);
+        if( doAutovac ) sqlexec(db, "PRAGMA auto_vacuum=FULL");
+        g.bOomEnable = 1;
+        if( verboseFlag ){
+          zErrMsg = 0;
+          rc = sqlite3_exec(db, zSql, execCallback, 0, &zErrMsg);
+          if( zErrMsg ){
+            sqlite3_snprintf(sizeof(zErrBuf),zErrBuf,"%z", zErrMsg);
+            zErrMsg = 0;
+          }
+        }else {
+          rc = sqlite3_exec(db, zSql, execNoop, 0, 0);
+        }
+        g.bOomEnable = 0;
+        rc = sqlite3_close(db);
+        if( rc ){
+          abendError("sqlite3_close() failed with rc=%d", rc);
+        }
+        if( sqlite3_memory_used()>0 ){
+          abendError("memory in use after close: %lld bytes",sqlite3_memory_used());
+        }
+        if( oomFlag ){
+          /* Limit the number of iterations of the OOM loop to OOM_MAX.  If the
+          ** first pass (single failure) exceeds 2/3rds of OOM_MAX this skip the
+          ** second pass (continuous failure after first) completely. */
+          if( g.nOomFault==0 || oomCnt>OOM_MAX ){
+            if( g.bOomOnce && oomCnt<=(OOM_MAX*2/3) ){
+              oomCnt = g.iOomCntdown = 1;
+              g.bOomOnce = 0;
+            }else{
+              oomCnt = 0;
+            }
+          }else{
+            g.iOomCntdown = ++oomCnt;
+            g.nOomFault = 0;
+          }
+          if( oomCnt ){
+            if( verboseFlag ){
+              printf("%s.%d\n", g.bOomOnce ? "Once" : "Multi", oomCnt);
+              fflush(stdout);
+            }
+            nTest++;
+          }
+        }
+      }while( oomCnt>0 );
+
+      /* Free the SQL from the current test case
+      */
+      if( zToFree ){
+        sqlite3_free(zToFree);
+        zToFree = 0;
+      }
+      zIn[iNext] = cSaved;
+
+      /* Show test-case results in --verbose mode
+      */
+      if( verboseFlag ){
+        printf("RESULT-CODE: %d\n", rc);
+        if( zErrMsg ){
+          printf("ERROR-MSG: [%s]\n", zErrBuf);
+        }
+        fflush(stdout);
+      }
+
+      /* Simulate an error if the TEST_FAILURE environment variable is "5".
+      ** This is used to verify that automated test script really do spot
+      ** errors that occur in this test program.
+      */
+      if( zFailCode ){
+        if( zFailCode[0]=='5' && zFailCode[1]==0 ){
+          abendError("simulated failure");
+        }else if( zFailCode[0]!=0 ){
+          /* If TEST_FAILURE is something other than 5, just exit the test
+          ** early */
+          printf("\nExit early due to TEST_FAILURE being set");
+          break;
+        }
       }
     }
+    if( !verboseFlag && multiTest && !quietFlag && !oomFlag ) printf("\n");
   }
-  if( !verboseFlag && multiTest && !quietFlag && !oomFlag ) printf("\n");
+
+  /* Report total number of tests run
+  */
   if( nTest>1 && !quietFlag ){
     printf("%s: 0 errors out of %d tests\nSQLite %s %s\n",
            g.zArgv0, nTest, sqlite3_libversion(), sqlite3_sourceid());
   }
+
+  /* Write the unique test cases if the --unique-cases flag was used
+  */
   if( zDataOut ){
     int n = 0;
     FILE *out = fopen(zDataOut, "wb");
@@ -802,6 +812,10 @@ int main(int argc, char **argv){
     sqlite3_finalize(pStmt);
     sqlite3_close(dataDb);
   }
+
+  /* Clean up and exit.
+  */
+  free(azInFile);
   free(zIn);
   free(pHeap);
   free(pLook);

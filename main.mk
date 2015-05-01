@@ -646,7 +646,7 @@ queryplantest:	testfixture$(EXE) sqlite3$(EXE)
 	./testfixture$(EXE) $(TOP)/test/permutations.test queryplanner
 
 fuzztest:	fuzzershell$(EXE)
-	./fuzzershell$(EXE) -f $(TOP)/test/fuzzdata1.txt
+	./fuzzershell$(EXE) $(TOP)/test/fuzzdata1.txt $(TOP)/test/fuzzdata2.txt
 
 fuzzoomtest:	fuzzershell$(EXE)
 	./fuzzershell$(EXE) -f $(TOP)/test/fuzzdata1.txt --oom

@@ -964,7 +964,7 @@ fulltestonly:	testfixture$(TEXE) sqlite3$(TEXE)
 
 # Fuzz testing
 fuzztest:	fuzzershell$(TEXE)
-	./fuzzershell$(TEXE) -f $(TOP)/test/fuzzdata1.txt
+	./fuzzershell$(TEXE) $(TOP)/test/fuzzdata1.txt $(TOP)/test/fuzzdata2.txt
 
 fuzzoomtest:	fuzzershell$(TEXE)
 	./fuzzershell$(TEXE) -f $(TOP)/test/fuzzdata1.txt --oom
