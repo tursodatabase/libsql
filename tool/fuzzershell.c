@@ -396,6 +396,20 @@ static int integerValue(const char *zArg){
   return (int)(isNeg? -v : v);
 }
 
+/* Return the current wall-clock time */
+static sqlite3_int64 timeOfDay(void){
+  static sqlite3_vfs *clockVfs = 0;
+  sqlite3_int64 t;
+  if( clockVfs==0 ) clockVfs = sqlite3_vfs_find(0);
+  if( clockVfs->iVersion>=1 && clockVfs->xCurrentTimeInt64!=0 ){
+    clockVfs->xCurrentTimeInt64(clockVfs, &t);
+  }else{
+    double r;
+    clockVfs->xCurrentTime(clockVfs, &r);
+    t = (sqlite3_int64)(r*86400000.0);
+  }
+  return t;
+}
 
 int main(int argc, char **argv){
   char *zIn = 0;                /* Input text */
@@ -420,7 +434,6 @@ int main(int argc, char **argv){
   int doAutovac = 0;            /* True for --autovacuum */
   char *zSql;                   /* SQL to run */
   char *zToFree = 0;            /* Call sqlite3_free() on this afte running zSql */
-  const char *zCkGlob = 0;      /* Inputs must match this glob */
   int verboseFlag = 0;          /* --verbose or -v flag */
   int quietFlag = 0;            /* --quiet or -q flag */
   int nTest = 0;                /* Number of test cases run */
@@ -438,6 +451,7 @@ int main(int argc, char **argv){
   int nInFile = 0;              /* Number of input files to read */
   char **azInFile = 0;          /* Array of input file names */
   int jj;                       /* Loop counter for azInFile[] */
+  sqlite3_int64 iStart, iEnd;   /* Start and end-times for a test case */
 
 
   zFailCode = getenv("TEST_FAILURE");
@@ -565,10 +579,10 @@ int main(int argc, char **argv){
     rc = sqlite3_open(":memory:", &dataDb);
     if( rc ) abendError("cannot open :memory: database");
     rc = sqlite3_exec(dataDb,
-          "CREATE TABLE testcase(sql BLOB PRIMARY KEY) WITHOUT ROWID;",0,0,0);
+          "CREATE TABLE testcase(sql BLOB PRIMARY KEY, tm) WITHOUT ROWID;",0,0,0);
     if( rc ) abendError("%s", sqlite3_errmsg(dataDb));
     rc = sqlite3_prepare_v2(dataDb,
-          "INSERT OR IGNORE INTO testcase(sql)VALUES(?1)",
+          "INSERT OR IGNORE INTO testcase(sql,tm)VALUES(?1,?2)",
           -1, &pStmt, 0);
     if( rc ) abendError("%s", sqlite3_errmsg(dataDb));
   }
@@ -635,23 +649,9 @@ int main(int argc, char **argv){
         }
       }
       for(iNext=i; iNext<nIn && strncmp(&zIn[iNext],"/****<",6)!=0; iNext++){}
-
-      /* Store unique test cases in the in the dataDb database if the
-      ** --unique-cases flag is present
-      */
-      if( zDataOut ){
-        sqlite3_bind_blob(pStmt, 1, &zIn[i], iNext-i, SQLITE_STATIC);
-        rc = sqlite3_step(pStmt);
-        if( rc!=SQLITE_DONE ) abendError("%s", sqlite3_errmsg(dataDb));
-        sqlite3_reset(pStmt);
-        continue;
-      }
       cSaved = zIn[iNext];
       zIn[iNext] = 0;
-      if( zCkGlob && sqlite3_strglob(zCkGlob,&zIn[i])!=0 ){
-        zIn[iNext] = cSaved;
-        continue;
-      }
+
 
       /* Print out the SQL of the next test case is --verbose is enabled
       */
@@ -707,6 +707,7 @@ int main(int argc, char **argv){
         if( zEncoding ) sqlexec(db, "PRAGMA encoding=%s", zEncoding);
         if( pageSize ) sqlexec(db, "PRAGMA pagesize=%d", pageSize);
         if( doAutovac ) sqlexec(db, "PRAGMA auto_vacuum=FULL");
+        iStart = timeOfDay();
         g.bOomEnable = 1;
         if( verboseFlag ){
           zErrMsg = 0;
@@ -719,11 +720,12 @@ int main(int argc, char **argv){
           rc = sqlite3_exec(db, zSql, execNoop, 0, 0);
         }
         g.bOomEnable = 0;
+        iEnd = timeOfDay();
         rc = sqlite3_close(db);
         if( rc ){
           abendError("sqlite3_close() failed with rc=%d", rc);
         }
-        if( sqlite3_memory_used()>0 ){
+        if( !zDataOut && sqlite3_memory_used()>0 ){
           abendError("memory in use after close: %lld bytes",sqlite3_memory_used());
         }
         if( oomFlag ){
@@ -750,6 +752,17 @@ int main(int argc, char **argv){
           }
         }
       }while( oomCnt>0 );
+
+      /* Store unique test cases in the in the dataDb database if the
+      ** --unique-cases flag is present
+      */
+      if( zDataOut ){
+        sqlite3_bind_blob(pStmt, 1, &zIn[i], iNext-i, SQLITE_STATIC);
+        sqlite3_bind_int64(pStmt, 2, iEnd - iStart);
+        rc = sqlite3_step(pStmt);
+        if( rc!=SQLITE_DONE ) abendError("%s", sqlite3_errmsg(dataDb));
+        sqlite3_reset(pStmt);
+      }
 
       /* Free the SQL from the current test case
       */
@@ -802,10 +815,11 @@ int main(int argc, char **argv){
     if( out==0 ) abendError("cannot open %s for writing", zDataOut);
     if( nHeader>0 ) fwrite(zIn, nHeader, 1, out);
     sqlite3_finalize(pStmt);
-    rc = sqlite3_prepare_v2(dataDb, "SELECT sql FROM testcase", -1, &pStmt, 0);
+    rc = sqlite3_prepare_v2(dataDb, "SELECT sql, tm FROM testcase ORDER BY tm, sql",
+                            -1, &pStmt, 0);
     if( rc ) abendError("%s", sqlite3_errmsg(dataDb));
     while( sqlite3_step(pStmt)==SQLITE_ROW ){
-      fprintf(out,"/****<%d>****/", ++n);
+      fprintf(out,"/****<%d:%dms>****/", ++n, sqlite3_column_int(pStmt,1));
       fwrite(sqlite3_column_blob(pStmt,0),sqlite3_column_bytes(pStmt,0),1,out);
     }
     fclose(out);
