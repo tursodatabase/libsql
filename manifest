@@ -1,5 +1,5 @@
-C Reorganize\ssome\smulti-threaded\scode\sin\svdbesort.c\sso\sthat\sfull\sMC/DC\stest\scoverage\sdoes\snot\sdepend\son\sthe\soutcome\sof\sa\srace\scondition.
-D 2015-05-02T12:40:12.793
+C Add\sthe\s".limit"\scommand\sto\sthe\scommand-line\sshell.
+D 2015-05-02T17:40:23.555
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e628c50e237251fc7e768bef14ee7e822ad69e69
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -231,7 +231,7 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 13109bc3b5ab404446296efa17039640de5bc35d
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 5e83049a0be1caf88921e815d0118bce49cba827
-F src/shell.c 0b68e745dff6fc7b9f86c330d401fd572a5bbbc2
+F src/shell.c b1e17be8565b5ce4138707d2808df077bf9750d9
 F src/sqlite.h.in ca27603a36fcacdaac5a19d8ee35aaff8ce8516f
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
@@ -1256,7 +1256,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7952c32268aa650d9ee946d5bfe190f712e3bbe6
-R b89595a534f421de5f0d98acb44972ee
-U dan
-Z 22691f754ec0b999bb5069d3c75c8ca1
+P 78c7ec95931265b89a92f6a799fc9b1a9f0476bf
+R b4e016ae5f2b9a1c3d3b22b5f2592000
+U drh
+Z d46a3572f454bea0b6b400466ab43088

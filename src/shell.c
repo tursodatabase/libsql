@@ -1793,6 +1793,7 @@ static char zHelp[] =
 #ifdef SQLITE_ENABLE_IOTRACE
   ".iotrace FILE          Enable I/O diagnostic logging to FILE\n"
 #endif
+  ".limit ?LIMIT? ?VAL?   Display or change the value of an SQLITE_LIMIT\n"
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
   ".load FILE ?ENTRY?     Load an extension library\n"
 #endif
@@ -3171,6 +3172,63 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
   }else
 #endif
+  if( c=='l' && n>=5 && strncmp(azArg[0], "limits", n)==0 ){
+    static const struct {
+       const char *zLimitName;   /* Name of a limit */
+       int limitCode;            /* Integer code for that limit */
+    } aLimit[] = {
+      { "length",                SQLITE_LIMIT_LENGTH                    },
+      { "sql_length",            SQLITE_LIMIT_SQL_LENGTH                },
+      { "column",                SQLITE_LIMIT_COLUMN                    },
+      { "expr_depth",            SQLITE_LIMIT_EXPR_DEPTH                },
+      { "compound_select",       SQLITE_LIMIT_COMPOUND_SELECT           },
+      { "vdbe_op",               SQLITE_LIMIT_VDBE_OP                   },
+      { "function_arg",          SQLITE_LIMIT_FUNCTION_ARG              },
+      { "attached",              SQLITE_LIMIT_ATTACHED                  },
+      { "like_pattern_length",   SQLITE_LIMIT_LIKE_PATTERN_LENGTH       },
+      { "variable_number",       SQLITE_LIMIT_VARIABLE_NUMBER           },
+      { "trigger_depth",         SQLITE_LIMIT_TRIGGER_DEPTH             },
+      { "worker_threads",        SQLITE_LIMIT_WORKER_THREADS            },
+    };
+    int i, n2;
+    open_db(p, 0);
+    if( nArg==1 ){
+      for(i=0; i<sizeof(aLimit)/sizeof(aLimit[0]); i++){
+        printf("%20s %d\n", aLimit[i].zLimitName, 
+               sqlite3_limit(p->db, aLimit[i].limitCode, -1));
+      }
+    }else if( nArg>3 ){
+      fprintf(stderr, "Usage: .limit NAME ?NEW-VALUE?\n");
+      rc = 1;
+      goto meta_command_exit;
+    }else{
+      int iLimit = -1;
+      n2 = strlen30(azArg[1]);
+      for(i=0; i<sizeof(aLimit)/sizeof(aLimit[0]); i++){
+        if( sqlite3_strnicmp(aLimit[i].zLimitName, azArg[1], n2)==0 ){
+          if( iLimit<0 ){
+            iLimit = i;
+          }else{
+            fprintf(stderr, "ambiguous limit: \"%s\"\n", azArg[1]);
+            rc = 1;
+            goto meta_command_exit;
+          }
+        }
+      }
+      if( iLimit<0 ){
+        fprintf(stderr, "unknown limit: \"%s\"\n"
+                        "enter \".limits\" with no arguments for a list.\n",
+                         azArg[1]);
+        rc = 1;
+        goto meta_command_exit;
+      }
+      if( nArg==3 ){
+        sqlite3_limit(p->db, aLimit[iLimit].limitCode, integerValue(azArg[2]));
+      }
+      printf("%20s %d\n", aLimit[iLimit].zLimitName,
+             sqlite3_limit(p->db, aLimit[iLimit].limitCode, -1));
+    }
+  }else
 
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
   if( c=='l' && strncmp(azArg[0], "load", n)==0 ){
