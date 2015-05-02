@@ -3189,6 +3189,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       { "variable_number",       SQLITE_LIMIT_VARIABLE_NUMBER           },
       { "trigger_depth",         SQLITE_LIMIT_TRIGGER_DEPTH             },
       { "worker_threads",        SQLITE_LIMIT_WORKER_THREADS            },
+      { "printf_width",          SQLITE_LIMIT_PRINTF_WIDTH              },
     };
     int i, n2;
     open_db(p, 0);

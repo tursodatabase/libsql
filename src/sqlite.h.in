@@ -3190,6 +3190,17 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 ** [[SQLITE_LIMIT_WORKER_THREADS]] ^(<dt>SQLITE_LIMIT_WORKER_THREADS</dt>
 ** <dd>The maximum number of auxiliary worker threads that a single
 ** [prepared statement] may start.</dd>)^
+**
+** [[SQLITE_LIMIT_PRINTF_WIDTH]] ^(<dt>SQLITE_LIMIT_PRINTF_WIDTH</dt>
+** <dd>The maximum absolute value of the width or precision of a
+** format specifier in the [printf SQL function].)^  ^Any invocation of
+** the [printf SQL function] containing a width or precision larger than
+** this limit (or smaller than the negative of this limit) causes an
+** [SQLITE_TOOBIG] exception to be thrown.  <p>This limit applies
+** to the SQL function printf() only, and not to the various C-language
+** printf-style interfaces such as [sqlite3_mprintf()].  For the C-language
+** interfaces, the width and precision can be any 32-bit signed
+** integer.
 ** </dl>
 */
 #define SQLITE_LIMIT_LENGTH                    0
@@ -3204,6 +3215,7 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 #define SQLITE_LIMIT_VARIABLE_NUMBER           9
 #define SQLITE_LIMIT_TRIGGER_DEPTH            10
 #define SQLITE_LIMIT_WORKER_THREADS           11
+#define SQLITE_LIMIT_PRINTF_WIDTH             12
 
 /*
 ** CAPI3REF: Compiling An SQL Statement

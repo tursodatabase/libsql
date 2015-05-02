@@ -5451,10 +5451,11 @@ static int test_limit(
     { "SQLITE_LIMIT_VARIABLE_NUMBER",     SQLITE_LIMIT_VARIABLE_NUMBER      },
     { "SQLITE_LIMIT_TRIGGER_DEPTH",       SQLITE_LIMIT_TRIGGER_DEPTH        },
     { "SQLITE_LIMIT_WORKER_THREADS",      SQLITE_LIMIT_WORKER_THREADS       },
+    { "SQLITE_LIMIT_PRINTF_WIDTH",        SQLITE_LIMIT_PRINTF_WIDTH         },
     
     /* Out of range test cases */
     { "SQLITE_LIMIT_TOOSMALL",            -1,                               },
-    { "SQLITE_LIMIT_TOOBIG",              SQLITE_LIMIT_WORKER_THREADS+1     },
+    { "SQLITE_LIMIT_TOOBIG",              SQLITE_LIMIT_PRINTF_WIDTH+1       },
   };
   int i, id = 0;
   int val;

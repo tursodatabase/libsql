@@ -231,7 +231,6 @@ static void printfFunc(
   PrintfArguments x;
   StrAccum str;
   const char *zFormat;
-  int n;
   sqlite3 *db = sqlite3_context_db_handle(context);
 
   if( argc>=1 && (zFormat = (const char*)sqlite3_value_text(argv[0]))!=0 ){
@@ -240,9 +239,15 @@ static void printfFunc(
     x.apArg = argv+1;
     sqlite3StrAccumInit(&str, db, 0, 0, db->aLimit[SQLITE_LIMIT_LENGTH]);
     sqlite3XPrintf(&str, SQLITE_PRINTF_SQLFUNC, zFormat, &x);
-    n = str.nChar;
-    sqlite3_result_text(context, sqlite3StrAccumFinish(&str), n,
+    sqlite3_result_text(context, sqlite3StrAccumFinish(&str), str.nChar,
                         SQLITE_DYNAMIC);
+    if( str.accError ){
+      if( str.accError==STRACCUM_NOMEM ){
+        sqlite3_result_error_nomem(context);
+      }else{
+        sqlite3_result_error_toobig(context);
+      }
+    }
   }
 }
 

@@ -301,6 +301,16 @@ void sqlite3VXPrintf(
     }else{
       precision = -1;
     }
+
+    /* Check for over-size width or precision and error-out if found */
+    if( bArgList ){
+      int iLimit = pAccum->db->aLimit[SQLITE_LIMIT_PRINTF_WIDTH];
+      if( width>iLimit || precision>iLimit ){
+        setStrAccumError(pAccum, STRACCUM_TOOBIG);
+        return;
+      }
+    }
+
     /* Get the conversion type modifier */
     if( c=='l' ){
       flag_long = 1;

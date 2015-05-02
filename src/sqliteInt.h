@@ -1009,7 +1009,7 @@ struct Schema {
 ** The number of different kinds of things that can be limited
 ** using the sqlite3_limit() interface.
 */
-#define SQLITE_N_LIMIT (SQLITE_LIMIT_WORKER_THREADS+1)
+#define SQLITE_N_LIMIT (SQLITE_LIMIT_PRINTF_WIDTH+1)
 
 /*
 ** Lookaside malloc is a set of fixed-size buffers that can be used

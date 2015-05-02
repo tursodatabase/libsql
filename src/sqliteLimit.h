@@ -208,3 +208,11 @@
 #ifndef SQLITE_MAX_TRIGGER_DEPTH
 # define SQLITE_MAX_TRIGGER_DEPTH 1000
 #endif
+
+/*
+** Maximum width or precision of a format specification in the SQL printf()
+** function.
+*/
+#ifndef SQLITE_MAX_PRINTF_WIDTH
+# define SQLITE_MAX_PRINTF_WIDTH 0x7fffffff
+#endif
