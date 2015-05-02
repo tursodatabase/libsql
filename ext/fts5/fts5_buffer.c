@@ -239,5 +239,30 @@ void *sqlite3Fts5MallocZero(int *pRc, int nByte){
   }
   return pRet;
 }
+
+/*
+** Return a nul-terminated copy of the string indicated by pIn. If nIn
+** is non-negative, then it is the length of the string in bytes. Otherwise,
+** the length of the string is determined using strlen().
+**
+** It is the responsibility of the caller to eventually free the returned
+** buffer using sqlite3_free(). If an OOM error occurs, NULL is returned. 
+*/
+char *sqlite3Fts5Strndup(int *pRc, const char *pIn, int nIn){
+  char *zRet = 0;
+  if( *pRc==SQLITE_OK ){
+    if( nIn<0 ){
+      nIn = strlen(pIn);
+    }
+    zRet = (char*)sqlite3_malloc(nIn+1);
+    if( zRet ){
+      memcpy(zRet, pIn, nIn);
+      zRet[nIn] = '\0';
+    }else{
+      *pRc = SQLITE_NOMEM;
+    }
+  }
+  return zRet;
+}
 #endif /* SQLITE_ENABLE_FTS5 */
 

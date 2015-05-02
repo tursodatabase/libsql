@@ -66,11 +66,15 @@ foreach {tn expr err} {
   3 {abc OR AND}                   {fts5: syntax error near "AND"}
   4 {(a OR b) abc}                 {fts5: syntax error near "abc"}
   5 {NEaR (a b)}                   {fts5: syntax error near "NEaR"}
-  6 {(a OR b) NOT c)}              {fts5: syntax error near ")"}
-  7 {nosuch: a nosuch2: b}         {no such column: nosuch}
-  8 {addr: a nosuch2: b}           {no such column: nosuch2}
-  9 {NOT}                          {fts5: syntax error near "NOT"}
-  10 {a AND "abc}                  {unterminated string}
+  6 {NEa (a b)}                    {fts5: syntax error near "NEa"}
+  7 {(a OR b) NOT c)}              {fts5: syntax error near ")"}
+  8 {nosuch: a nosuch2: b}         {no such column: nosuch}
+  9 {addr: a nosuch2: b}           {no such column: nosuch2}
+  10 {NOT}                          {fts5: syntax error near "NOT"}
+  11 {a AND "abc}                  {unterminated string}
+
+  12 {NEAR(a b, xyz)}              {expected integer, got "xyz"}
+  13 {NEAR(a b, // )}              {expected integer, got "//"}
 } {
   do_catchsql_test 3.$tn {SELECT fts5_expr($expr, 'name', 'addr')} [list 1 $err]
 }

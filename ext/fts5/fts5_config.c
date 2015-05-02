@@ -204,21 +204,6 @@ void sqlite3Fts5Dequote(char *z){
 }
 
 /*
-** Duplicate the string passed as the only argument into a buffer allocated
-** by sqlite3_malloc().
-**
-** Return 0 if an OOM error is encountered.
-*/
-static char *fts5Strdup(int *pRc, const char *z){
-  char *pRet = 0;
-  if( *pRc==SQLITE_OK ){
-    pRet = sqlite3_mprintf("%s", z);
-    if( pRet==0 ) *pRc = SQLITE_NOMEM;
-  }
-  return pRet;
-}
-
-/*
 ** Argument z points to a nul-terminated string containing an SQL identifier.
 ** This function returns a copy of the identifier enclosed in backtick 
 ** quotes.
@@ -368,7 +353,7 @@ static int fts5ConfigParseSpecial(
       *pzErr = sqlite3_mprintf("multiple content_rowid=... directives");
       rc = SQLITE_ERROR;
     }else{
-      pConfig->zContentRowid = fts5Strdup(&rc, zArg);
+      pConfig->zContentRowid = sqlite3Fts5Strndup(&rc, zArg, -1);
     }
     return rc;
   }
@@ -526,8 +511,8 @@ int sqlite3Fts5ConfigParse(
   nByte = nArg * (sizeof(char*) + sizeof(u8));
   pRet->azCol = (char**)sqlite3Fts5MallocZero(&rc, nByte);
   pRet->abUnindexed = (u8*)&pRet->azCol[nArg];
-  pRet->zDb = fts5Strdup(&rc, azArg[1]);
-  pRet->zName = fts5Strdup(&rc, azArg[2]);
+  pRet->zDb = sqlite3Fts5Strndup(&rc, azArg[1], -1);
+  pRet->zName = sqlite3Fts5Strndup(&rc, azArg[2], -1);
   if( rc==SQLITE_OK && sqlite3_stricmp(pRet->zName, FTS5_RANK_NAME)==0 ){
     *pzErr = sqlite3_mprintf("reserved fts5 table name: %s", pRet->zName);
     rc = SQLITE_ERROR;
@@ -591,7 +576,7 @@ int sqlite3Fts5ConfigParse(
     }
   }
   if( rc==SQLITE_OK && pRet->zContentRowid==0 ){
-    pRet->zContentRowid = fts5Strdup(&rc, "rowid");
+    pRet->zContentRowid = sqlite3Fts5Strndup(&rc, "rowid", -1);
   }
 
   /* Formulate the zContentExprlist text */

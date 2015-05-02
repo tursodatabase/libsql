@@ -228,6 +228,7 @@ int sqlite3Fts5PoslistNext64(
 
 /* Malloc utility */
 void *sqlite3Fts5MallocZero(int *pRc, int nByte);
+char *sqlite3Fts5Strndup(int *pRc, const char *pIn, int nIn);
 
 /*
 ** End of interface to code in fts5_buffer.c.

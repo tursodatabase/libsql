@@ -231,33 +231,6 @@ int sqlite3Fts5ExprNew(
   return sParse.rc;
 }
 
-static char *fts5ExprStrdup(int *pRc, const char *zIn){
-  char *zRet = 0;
-  if( *pRc==SQLITE_OK ){
-    int nByte = strlen(zIn) + 1;
-    zRet = sqlite3_malloc(nByte);
-    if( zRet ){
-      memcpy(zRet, zIn, nByte);
-    }else{
-      *pRc = SQLITE_NOMEM;
-    }
-  }
-  return zRet;
-}
-
-static void *fts5ExprMalloc(int *pRc, int nByte){
-  void *pRet = 0;
-  if( *pRc==SQLITE_OK ){
-    pRet = sqlite3_malloc(nByte);
-    if( pRet ){
-      memset(pRet, 0, nByte);
-    }else{
-      *pRc = SQLITE_NOMEM;
-    }
-  }
-  return pRet;
-}
-
 /*
 ** Create a new FTS5 expression by cloning phrase iPhrase of the
 ** expression passed as the second argument.
@@ -274,7 +247,7 @@ int sqlite3Fts5ExprPhraseExpr(
   Fts5Expr *pNew = 0;             /* Expression to return via *ppNew */
 
   pOrig = pExpr->apExprPhrase[iPhrase];
-  pCopy = (Fts5ExprPhrase*)fts5ExprMalloc(&rc, 
+  pCopy = (Fts5ExprPhrase*)sqlite3Fts5MallocZero(&rc, 
       sizeof(Fts5ExprPhrase) + sizeof(Fts5ExprTerm) * pOrig->nTerm
   );
   if( pCopy ){
@@ -283,15 +256,17 @@ int sqlite3Fts5ExprPhraseExpr(
     Fts5ExprNode *pNode;
     Fts5ExprNearset *pNear;
 
-    pNew = (Fts5Expr*)fts5ExprMalloc(&rc, sizeof(Fts5Expr));
-    apPhrase = (Fts5ExprPhrase**)fts5ExprMalloc(&rc, sizeof(Fts5ExprPhrase*));
-    pNode = (Fts5ExprNode*)fts5ExprMalloc(&rc, sizeof(Fts5ExprNode));
-    pNear = (Fts5ExprNearset*)fts5ExprMalloc(&rc, 
+    pNew = (Fts5Expr*)sqlite3Fts5MallocZero(&rc, sizeof(Fts5Expr));
+    apPhrase = (Fts5ExprPhrase**)sqlite3Fts5MallocZero(&rc, 
+        sizeof(Fts5ExprPhrase*)
+    );
+    pNode = (Fts5ExprNode*)sqlite3Fts5MallocZero(&rc, sizeof(Fts5ExprNode));
+    pNear = (Fts5ExprNearset*)sqlite3Fts5MallocZero(&rc, 
         sizeof(Fts5ExprNearset) + sizeof(Fts5ExprPhrase*)
     );
 
     for(i=0; i<pOrig->nTerm; i++){
-      pCopy->aTerm[i].zTerm = fts5ExprStrdup(&rc, pOrig->aTerm[i].zTerm);
+      pCopy->aTerm[i].zTerm = sqlite3Fts5Strndup(&rc, pOrig->aTerm[i].zTerm,-1);
       pCopy->aTerm[i].bPrefix = pOrig->aTerm[i].bPrefix;
     }
 
@@ -576,29 +551,29 @@ static int fts5ExprNearIsMatch(Fts5ExprNearset *pNear, int *pbMatch){
 }
 
 /*
-** Advance each term iterator in each phrase in pNear. If any reach EOF, 
-** set output variable *pbEof to true before returning.
+** Advance the first term iterator in the first phrase of pNear. Set output
+** variable *pbEof to true if it reaches EOF or if an error occurs.
+**
+** Return SQLITE_OK if successful, or an SQLite error code if an error
+** occurs.
 */
-static int fts5ExprNearAdvanceAll(
+static int fts5ExprNearAdvanceFirst(
   Fts5Expr *pExpr,                /* Expression pPhrase belongs to */
-  Fts5ExprNearset *pNear,         /* Near object to advance iterators of */
-  int *pbEof                      /* OUT: Set to true if phrase at EOF */
+  Fts5ExprNode *pNode,            /* FTS5_STRING node */
+  int bFromValid,
+  i64 iFrom 
 ){
-  int i, j;                       /* Phrase and token index, respectively */
+  Fts5IndexIter *pIter = pNode->pNear->apPhrase[0]->aTerm[0].pIter;
+  int rc;
 
-  for(i=0; i<pNear->nPhrase; i++){
-    Fts5ExprPhrase *pPhrase = pNear->apPhrase[i];
-    for(j=0; j<pPhrase->nTerm; j++){
-      Fts5IndexIter *pIter = pPhrase->aTerm[j].pIter;
-      int rc = sqlite3Fts5IterNext(pIter);
-      if( rc || sqlite3Fts5IterEof(pIter) ){
-        *pbEof = 1;
-        return rc;
-      }
-    }
+  if( bFromValid ){
+    rc = sqlite3Fts5IterNextFrom(pIter, iFrom);
+  }else{
+    rc = sqlite3Fts5IterNext(pIter);
   }
 
-  return SQLITE_OK;
+  pNode->bEof = (rc || sqlite3Fts5IterEof(pIter));
+  return rc;
 }
 
 /*
@@ -649,9 +624,7 @@ static int fts5ExprAdvanceto(
 */
 static int fts5ExprNearNextRowidMatch(
   Fts5Expr *pExpr,                /* Expression pPhrase belongs to */
-  Fts5ExprNode *pNode,
-  int bFromValid,
-  i64 iFrom
+  Fts5ExprNode *pNode
 ){
   Fts5ExprNearset *pNear = pNode->pNear;
   int rc = SQLITE_OK;
@@ -664,10 +637,6 @@ static int fts5ExprNearNextRowidMatch(
   ** the maximum rowid. Or, if the iterator is "ORDER BY rowid DESC", then it
   ** means the minimum rowid.  */
   iLast = sqlite3Fts5IterRowid(pNear->apPhrase[0]->aTerm[0].pIter);
-  if( bFromValid && (iFrom>iLast)==(pExpr->bDesc==0) ){
-    assert( pExpr->bDesc || iFrom>=iLast );
-    iLast = iFrom;
-  }
 
   do {
     bMatch = 1;
@@ -707,9 +676,7 @@ static int fts5ExprNearNextRowidMatch(
 */
 static int fts5ExprNearNextMatch(
   Fts5Expr *pExpr,                /* Expression that pNear is a part of */
-  Fts5ExprNode *pNode,            /* The "NEAR" node (FTS5_STRING) */
-  int bFromValid,
-  i64 iFrom
+  Fts5ExprNode *pNode             /* The "NEAR" node (FTS5_STRING) */
 ){
   int rc = SQLITE_OK;
   Fts5ExprNearset *pNear = pNode->pNear;
@@ -717,7 +684,7 @@ static int fts5ExprNearNextMatch(
     int i;
 
     /* Advance the iterators until they all point to the same rowid */
-    rc = fts5ExprNearNextRowidMatch(pExpr, pNode, bFromValid, iFrom);
+    rc = fts5ExprNearNextRowidMatch(pExpr, pNode);
     if( rc!=SQLITE_OK || pNode->bEof ) break;
 
     /* Check that each phrase in the nearset matches the current row.
@@ -748,7 +715,7 @@ static int fts5ExprNearNextMatch(
     /* If control flows to here, then the current rowid is not a match.
     ** Advance all term iterators in all phrases to the next rowid. */
     if( rc==SQLITE_OK ){
-      rc = fts5ExprNearAdvanceAll(pExpr, pNear, &pNode->bEof);
+      rc = fts5ExprNearAdvanceFirst(pExpr, pNode, 0, 0);
     }
     if( pNode->bEof || rc!=SQLITE_OK ) break;
   }
@@ -797,7 +764,23 @@ static int fts5ExprNearInitAll(
 }
 
 /* fts5ExprNodeNext() calls fts5ExprNodeNextMatch(). And vice-versa. */
-static int fts5ExprNodeNextMatch(Fts5Expr*, Fts5ExprNode*, int, i64);
+static int fts5ExprNodeNextMatch(Fts5Expr*, Fts5ExprNode*);
+
+
+static int fts5RowidCmp(
+  Fts5Expr *pExpr,
+  i64 iLhs,
+  i64 iRhs
+){
+  assert( pExpr->bDesc==0 || pExpr->bDesc==1 );
+  if( pExpr->bDesc==0 ){
+    if( iLhs<iRhs ) return -1;
+    return (iLhs > iRhs);
+  }else{
+    if( iLhs>iRhs ) return -1;
+    return (iLhs < iRhs);
+  }
+}
 
 /*
 ** Compare the values currently indicated by the two nodes as follows:
@@ -818,13 +801,7 @@ static int fts5NodeCompare(
 ){
   if( p2->bEof ) return -1;
   if( p1->bEof ) return +1;
-  if( pExpr->bDesc==0 ){
-    if( p1->iRowid<p2->iRowid ) return -1;
-    return (p1->iRowid > p2->iRowid);
-  }else{
-    if( p1->iRowid>p2->iRowid ) return -1;
-    return (p1->iRowid < p2->iRowid);
-  }
+  return fts5RowidCmp(pExpr, p1->iRowid, p2->iRowid);
 }
 
 /*
@@ -845,7 +822,7 @@ static int fts5ExprNodeNext(
   if( pNode->bEof==0 ){
     switch( pNode->eType ){
       case FTS5_STRING: {
-        rc = fts5ExprNearAdvanceAll(pExpr, pNode->pNear, &pNode->bEof);
+        rc = fts5ExprNearAdvanceFirst(pExpr, pNode, bFromValid, iFrom);
         break;
       };
 
@@ -863,13 +840,14 @@ static int fts5ExprNodeNext(
         Fts5ExprNode *p2 = pNode->pRight;
         int cmp = fts5NodeCompare(pExpr, p1, p2);
 
-        if( cmp==0 ){
+        if( cmp<=0 || (bFromValid && fts5RowidCmp(pExpr,p1->iRowid,iFrom)<0) ){
           rc = fts5ExprNodeNext(pExpr, p1, bFromValid, iFrom);
+        }
+
+        if( cmp>=0 || (bFromValid && fts5RowidCmp(pExpr,p2->iRowid,iFrom)<0) ){
           if( rc==SQLITE_OK ){
             rc = fts5ExprNodeNext(pExpr, p2, bFromValid, iFrom);
           }
-        }else{
-          rc = fts5ExprNodeNext(pExpr, (cmp < 0) ? p1 : p2, bFromValid, iFrom);
         }
 
         break;
@@ -882,9 +860,21 @@ static int fts5ExprNodeNext(
     }
 
     if( rc==SQLITE_OK ){
-      rc = fts5ExprNodeNextMatch(pExpr, pNode, bFromValid, iFrom);
+      rc = fts5ExprNodeNextMatch(pExpr, pNode);
     }
   }
+
+  /* Assert that if bFromValid was true, either:
+  **
+  **   a) an error occurred, or
+  **   b) the node is now at EOF, or
+  **   c) the node is now at or past rowid iFrom.
+  */
+  assert( bFromValid==0 
+      || rc!=SQLITE_OK                                                  /* a */
+      || pNode->bEof                                                    /* b */
+      || pNode->iRowid==iFrom || pExpr->bDesc==(pNode->iRowid<iFrom)    /* c */
+  );
 
   return rc;
 }
@@ -898,20 +888,20 @@ static void fts5ExprSetEof(Fts5ExprNode *pNode){
 }
 
 /*
-**
+** If pNode currently points to a match, this function returns SQLITE_OK
+** without modifying it. Otherwise, pNode is advanced until it does point
+** to a match or EOF is reached.
 */
 static int fts5ExprNodeNextMatch(
-  Fts5Expr *pExpr, 
-  Fts5ExprNode *pNode,
-  int bFromValid,
-  i64 iFrom
+  Fts5Expr *pExpr,                /* Expression of which pNode is a part */
+  Fts5ExprNode *pNode             /* Expression node to test */
 ){
   int rc = SQLITE_OK;
   if( pNode->bEof==0 ){
     switch( pNode->eType ){
 
       case FTS5_STRING: {
-        rc = fts5ExprNearNextMatch(pExpr, pNode, bFromValid, iFrom);
+        rc = fts5ExprNearNextMatch(pExpr, pNode);
         break;
       }
 
@@ -921,17 +911,14 @@ static int fts5ExprNodeNextMatch(
 
         while( p1->bEof==0 && p2->bEof==0 && p2->iRowid!=p1->iRowid ){
           Fts5ExprNode *pAdv;
+          i64 iFrom;
           assert( pExpr->bDesc==0 || pExpr->bDesc==1 );
           if( pExpr->bDesc==(p1->iRowid > p2->iRowid) ){
             pAdv = p1;
-            if( bFromValid==0 || pExpr->bDesc==(p2->iRowid < iFrom) ){
-              iFrom = p2->iRowid;
-            }
+            iFrom = p2->iRowid;
           }else{
             pAdv = p2;
-            if( bFromValid==0 || pExpr->bDesc==(p1->iRowid < iFrom) ){
-              iFrom = p1->iRowid;
-            }
+            iFrom = p1->iRowid;
           }
           rc = fts5ExprNodeNext(pExpr, pAdv, 1, iFrom);
           if( rc!=SQLITE_OK ) break;
@@ -955,13 +942,16 @@ static int fts5ExprNodeNextMatch(
       default: assert( pNode->eType==FTS5_NOT ); {
         Fts5ExprNode *p1 = pNode->pLeft;
         Fts5ExprNode *p2 = pNode->pRight;
-        while( rc==SQLITE_OK ){
-          int cmp;
-          while( rc==SQLITE_OK && (cmp = fts5NodeCompare(pExpr, p1, p2))>0 ){
-            rc = fts5ExprNodeNext(pExpr, p2, bFromValid, iFrom);
+
+        while( rc==SQLITE_OK && p1->bEof==0 ){
+          int cmp = fts5NodeCompare(pExpr, p1, p2);
+          if( cmp>0 ){
+            rc = fts5ExprNodeNext(pExpr, p2, 1, p1->iRowid);
+            cmp = fts5NodeCompare(pExpr, p1, p2);
           }
-          if( rc || cmp ) break;
-          rc = fts5ExprNodeNext(pExpr, p1, bFromValid, iFrom);
+          assert( rc!=SQLITE_OK || cmp<=0 );
+          if( rc || cmp<0 ) break;
+          rc = fts5ExprNodeNext(pExpr, p1, 0, 0);
         }
         pNode->bEof = p1->bEof;
         pNode->iRowid = p1->iRowid;
@@ -991,7 +981,7 @@ static int fts5ExprNodeFirst(Fts5Expr *pExpr, Fts5ExprNode *pNode){
 
     /* Attempt to advance to the first match */
     if( rc==SQLITE_OK && pNode->bEof==0 ){
-      rc = fts5ExprNearNextMatch(pExpr, pNode, 0, 0);
+      rc = fts5ExprNearNextMatch(pExpr, pNode);
     }
 
   }else{
@@ -1000,7 +990,7 @@ static int fts5ExprNodeFirst(Fts5Expr *pExpr, Fts5ExprNode *pNode){
       rc = fts5ExprNodeFirst(pExpr, pNode->pRight);
     }
     if( rc==SQLITE_OK ){
-      rc = fts5ExprNodeNextMatch(pExpr, pNode, 0, 0);
+      rc = fts5ExprNodeNextMatch(pExpr, pNode);
     }
   }
   return rc;
@@ -1047,31 +1037,9 @@ i64 sqlite3Fts5ExprRowid(Fts5Expr *p){
   return p->pRoot->iRowid;
 }
 
-/*
-** Argument pIn points to a buffer of nIn bytes. This function allocates
-** and returns a new buffer populated with a copy of (pIn/nIn) with a 
-** nul-terminator byte appended to it.
-**
-** It is the responsibility of the caller to eventually free the returned
-** buffer using sqlite3_free(). If an OOM error occurs, NULL is returned. 
-*/
-static char *fts5Strndup(int *pRc, const char *pIn, int nIn){
-  char *zRet = 0;
-  if( *pRc==SQLITE_OK ){
-    zRet = (char*)sqlite3_malloc(nIn+1);
-    if( zRet ){
-      memcpy(zRet, pIn, nIn);
-      zRet[nIn] = '\0';
-    }else{
-      *pRc = SQLITE_NOMEM;
-    }
-  }
-  return zRet;
-}
-
 static int fts5ParseStringFromToken(Fts5Token *pToken, char **pz){
   int rc = SQLITE_OK;
-  *pz = fts5Strndup(&rc, pToken->p, pToken->n);
+  *pz = sqlite3Fts5Strndup(&rc, pToken->p, pToken->n);
   return rc;
 }
 
@@ -1123,7 +1091,7 @@ Fts5ExprNearset *sqlite3Fts5ParseNearset(
         pRet->iCol = -1;
       }
     }else if( (pNear->nPhrase % SZALLOC)==0 ){
-      int nNew = pRet->nPhrase + SZALLOC;
+      int nNew = pNear->nPhrase + SZALLOC;
       int nByte = sizeof(Fts5ExprNearset) + nNew * sizeof(Fts5ExprPhrase*);
 
       pRet = (Fts5ExprNearset*)sqlite3_realloc(pNear, nByte);
@@ -1181,7 +1149,7 @@ static int fts5ParseTokenize(
 
   pTerm = &pPhrase->aTerm[pPhrase->nTerm++];
   memset(pTerm, 0, sizeof(Fts5ExprTerm));
-  pTerm->zTerm = fts5Strndup(&rc, pToken, nToken);
+  pTerm->zTerm = sqlite3Fts5Strndup(&rc, pToken, nToken);
 
   return rc;
 }
@@ -1272,12 +1240,10 @@ Fts5ExprPhrase *sqlite3Fts5ParseTerm(
 ** in the pParse object.
 */
 void sqlite3Fts5ParseNear(Fts5Parse *pParse, Fts5Token *pTok){
-  if( pParse->rc==SQLITE_OK ){
-    if( pTok->n!=4 || memcmp("NEAR", pTok->p, 4) ){
-      sqlite3Fts5ParseError(
-          pParse, "fts5: syntax error near \"%.*s\"", pTok->n, pTok->p
-      );
-    }
+  if( pTok->n!=4 || memcmp("NEAR", pTok->p, 4) ){
+    sqlite3Fts5ParseError(
+        pParse, "fts5: syntax error near \"%.*s\"", pTok->n, pTok->p
+    );
   }
 }
 
@@ -1310,23 +1276,25 @@ void sqlite3Fts5ParseSetColumn(
   Fts5ExprNearset *pNear, 
   Fts5Token *p
 ){
-  char *z = 0;
-  int rc = fts5ParseStringFromToken(p, &z);
-  if( rc==SQLITE_OK ){
-    Fts5Config *pConfig = pParse->pConfig;
-    int i;
-    for(i=0; i<pConfig->nCol; i++){
-      if( 0==sqlite3_stricmp(pConfig->azCol[i], z) ){
-        pNear->iCol = i;
-        break;
+  if( pParse->rc==SQLITE_OK ){
+    char *z = 0;
+    int rc = fts5ParseStringFromToken(p, &z);
+    if( rc==SQLITE_OK ){
+      Fts5Config *pConfig = pParse->pConfig;
+      int i;
+      for(i=0; i<pConfig->nCol; i++){
+        if( 0==sqlite3_stricmp(pConfig->azCol[i], z) ){
+          pNear->iCol = i;
+          break;
+        }
       }
+      if( i==pConfig->nCol ){
+        sqlite3Fts5ParseError(pParse, "no such column: %s", z);
+      }
+      sqlite3_free(z);
+    }else{
+      pParse->rc = rc;
     }
-    if( i==pConfig->nCol ){
-      sqlite3Fts5ParseError(pParse, "no such column: %s", z);
-    }
-    sqlite3_free(z);
-  }else{
-    pParse->rc = rc;
   }
 }
 

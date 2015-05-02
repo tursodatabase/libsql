@@ -201,6 +201,8 @@ do_faultsim_test 6.2 -faults oom-t* -body {
   faultsim_test_result {0 {0 2 7}} {1 SQLITE_NOMEM}
 }
 
+}
+
 #-------------------------------------------------------------------------
 # OOM error when querying for a phrase with many tokens.
 #
@@ -218,6 +220,10 @@ do_execsql_test 7.0 {
   INSERT INTO tt VALUES('e a e b e e', 'd c c f f f');  -- 9
   INSERT INTO tt VALUES('f a g g c c', 'e g d g c e');  -- 10
   INSERT INTO tt VALUES('c d b a e f', 'f g e h e e');  -- 11
+
+  CREATE VIRTUAL TABLE tt2 USING fts5(o);
+  INSERT INTO tt2(rowid, o) SELECT rowid, x||' '||y FROM tt;
+  INSERT INTO tt2(rowid, o) VALUES(12, 'a b c d e f g h i j k l');
 }
 
 do_faultsim_test 7.2 -faults oom-* -body {
@@ -232,6 +238,22 @@ do_faultsim_test 7.3 -faults oom-* -body {
   faultsim_test_result {0 11} {1 SQLITE_NOMEM}
 }
 
+do_faultsim_test 7.4 -faults oom-t* -body {
+  db eval { SELECT rowid FROM tt2 WHERE tt2 MATCH '"g c f c e f e e a f"' }
+} -test {
+  faultsim_test_result {0 8} {1 SQLITE_NOMEM}
+}
+
+do_faultsim_test 7.5 -faults oom-* -body {
+  db eval {SELECT rowid FROM tt2 WHERE tt2 MATCH 'NEAR(a b c d e f g h i j k)'}
+} -test {
+  faultsim_test_result {0 12} {1 SQLITE_NOMEM}
+}
+
+do_faultsim_test 7.6 -faults oom-* -body {
+  db eval {SELECT rowid FROM tt WHERE tt MATCH 'y: "c c"'}
+} -test {
+  faultsim_test_result {0 {1 9}} {1 SQLITE_NOMEM}
 }
 
 #-------------------------------------------------------------------------
@@ -260,6 +282,27 @@ do_faultsim_test 8.2 -faults oom-t* -body {
   faultsim_test_result {0 100} {1 SQLITE_NOMEM}
 }
 
+
+#-------------------------------------------------------------------------
+# Fault in NOT query.
+#
+reset_db
+do_execsql_test 9.0 {
+  CREATE VIRTUAL TABLE tt USING fts5(x);
+  INSERT INTO tt(tt, rank) VALUES('pgsz', 32);
+  BEGIN;
+    WITH ii(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM ii WHERE i<200)
+      INSERT INTO tt(rowid, x) 
+      SELECT i, CASE WHEN (i%50)==0 THEN 'a a a a a a' ELSE 'a x a x a x' END 
+      FROM ii;
+  COMMIT;
+}
+
+do_faultsim_test 9.1 -faults oom-* -body {
+  db eval { SELECT rowid FROM tt WHERE tt MATCH 'a NOT x' }
+} -test {
+  faultsim_test_result {0 {50 100 150 200}} {1 SQLITE_NOMEM}
+}
 
 
 
