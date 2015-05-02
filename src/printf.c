@@ -138,6 +138,7 @@ static char et_getdigit(LONGDOUBLE_TYPE *val, int *cnt){
 ** Set the StrAccum object to an error mode.
 */
 static void setStrAccumError(StrAccum *p, u8 eError){
+  assert( eError==STRACCUM_NOMEM || eError==STRACCUM_TOOBIG );
   p->accError = eError;
   p->nAlloc = 0;
 }
@@ -755,7 +756,7 @@ static int sqlite3StrAccumEnlarge(StrAccum *p, int N){
     testcase(p->accError==STRACCUM_NOMEM);
     return 0;
   }
-  if( !p->useMalloc ){
+  if( p->mxAlloc==0 ){
     N = p->nAlloc - p->nChar - 1;
     setStrAccumError(p, STRACCUM_TOOBIG);
     return N;
@@ -775,7 +776,7 @@ static int sqlite3StrAccumEnlarge(StrAccum *p, int N){
     }else{
       p->nAlloc = (int)szNew;
     }
-    if( p->useMalloc==1 ){
+    if( p->db ){
       zNew = sqlite3DbRealloc(p->db, zOld, p->nAlloc);
     }else{
       zNew = sqlite3_realloc64(zOld, p->nAlloc);
@@ -855,12 +856,8 @@ void sqlite3StrAccumAppendAll(StrAccum *p, const char *z){
 char *sqlite3StrAccumFinish(StrAccum *p){
   if( p->zText ){
     p->zText[p->nChar] = 0;
-    if( p->useMalloc && p->zText==p->zBase ){
-      if( p->useMalloc==1 ){
-        p->zText = sqlite3DbMallocRaw(p->db, p->nChar+1 );
-      }else{
-        p->zText = sqlite3_malloc64(p->nChar+1);
-      }
+    if( p->mxAlloc>0 && p->zText==p->zBase ){
+      p->zText = sqlite3DbMallocRaw(p->db, p->nChar+1 );
       if( p->zText ){
         memcpy(p->zText, p->zBase, p->nChar+1);
       }else{
@@ -876,25 +873,31 @@ char *sqlite3StrAccumFinish(StrAccum *p){
 */
 void sqlite3StrAccumReset(StrAccum *p){
   if( p->zText!=p->zBase ){
-    if( p->useMalloc==1 ){
-      sqlite3DbFree(p->db, p->zText);
-    }else{
-      sqlite3_free(p->zText);
-    }
+    sqlite3DbFree(p->db, p->zText);
   }
   p->zText = 0;
 }
 
 /*
-** Initialize a string accumulator
+** Initialize a string accumulator.
+**
+** p:     The accumulator to be initialized.
+** db:    Pointer to a database connection.  May be NULL.  Lookaside
+**        memory is used if not NULL. db->mallocFailed is set appropriately
+**        when not NULL.
+** zBase: An initial buffer.  May be NULL in which case the initial buffer
+**        is malloced.
+** n:     Size of zBase in bytes.  If total space requirements never exceed
+**        n then no memory allocations ever occur.
+** mx:    Maximum number of bytes to accumulate.  If mx==0 then no memory
+**        allocations will ever occur.
 */
-void sqlite3StrAccumInit(StrAccum *p, char *zBase, int n, int mx){
+void sqlite3StrAccumInit(StrAccum *p, sqlite3 *db, char *zBase, int n, int mx){
   p->zText = p->zBase = zBase;
-  p->db = 0;
+  p->db = db;
   p->nChar = 0;
   p->nAlloc = n;
   p->mxAlloc = mx;
-  p->useMalloc = 1;
   p->accError = 0;
 }
 
@@ -907,9 +910,8 @@ char *sqlite3VMPrintf(sqlite3 *db, const char *zFormat, va_list ap){
   char zBase[SQLITE_PRINT_BUF_SIZE];
   StrAccum acc;
   assert( db!=0 );
-  sqlite3StrAccumInit(&acc, zBase, sizeof(zBase),
+  sqlite3StrAccumInit(&acc, db, zBase, sizeof(zBase),
                       db->aLimit[SQLITE_LIMIT_LENGTH]);
-  acc.db = db;
   sqlite3VXPrintf(&acc, SQLITE_PRINTF_INTERNAL, zFormat, ap);
   z = sqlite3StrAccumFinish(&acc);
   if( acc.accError==STRACCUM_NOMEM ){
@@ -967,8 +969,7 @@ char *sqlite3_vmprintf(const char *zFormat, va_list ap){
 #ifndef SQLITE_OMIT_AUTOINIT
   if( sqlite3_initialize() ) return 0;
 #endif
-  sqlite3StrAccumInit(&acc, zBase, sizeof(zBase), SQLITE_MAX_LENGTH);
-  acc.useMalloc = 2;
+  sqlite3StrAccumInit(&acc, 0, zBase, sizeof(zBase), SQLITE_MAX_LENGTH);
   sqlite3VXPrintf(&acc, 0, zFormat, ap);
   z = sqlite3StrAccumFinish(&acc);
   return z;
@@ -1013,8 +1014,7 @@ char *sqlite3_vsnprintf(int n, char *zBuf, const char *zFormat, va_list ap){
     return zBuf;
   }
 #endif
-  sqlite3StrAccumInit(&acc, zBuf, n, 0);
-  acc.useMalloc = 0;
+  sqlite3StrAccumInit(&acc, 0, zBuf, n, 0);
   sqlite3VXPrintf(&acc, 0, zFormat, ap);
   return sqlite3StrAccumFinish(&acc);
 }
@@ -1040,8 +1040,7 @@ static void renderLogMsg(int iErrCode, const char *zFormat, va_list ap){
   StrAccum acc;                          /* String accumulator */
   char zMsg[SQLITE_PRINT_BUF_SIZE*3];    /* Complete log message */
 
-  sqlite3StrAccumInit(&acc, zMsg, sizeof(zMsg), 0);
-  acc.useMalloc = 0;
+  sqlite3StrAccumInit(&acc, 0, zMsg, sizeof(zMsg), 0);
   sqlite3VXPrintf(&acc, 0, zFormat, ap);
   sqlite3GlobalConfig.xLog(sqlite3GlobalConfig.pLogArg, iErrCode,
                            sqlite3StrAccumFinish(&acc));
@@ -1069,8 +1068,7 @@ void sqlite3DebugPrintf(const char *zFormat, ...){
   va_list ap;
   StrAccum acc;
   char zBuf[500];
-  sqlite3StrAccumInit(&acc, zBuf, sizeof(zBuf), 0);
-  acc.useMalloc = 0;
+  sqlite3StrAccumInit(&acc, 0, zBuf, sizeof(zBuf), 0);
   va_start(ap,zFormat);
   sqlite3VXPrintf(&acc, 0, zFormat, ap);
   va_end(ap);
@@ -1120,8 +1118,7 @@ void sqlite3TreeViewLine(TreeView *p, const char *zFormat, ...){
   int i;
   StrAccum acc;
   char zBuf[500];
-  sqlite3StrAccumInit(&acc, zBuf, sizeof(zBuf), 0);
-  acc.useMalloc = 0;
+  sqlite3StrAccumInit(&acc, 0, zBuf, sizeof(zBuf), 0);
   if( p ){
     for(i=0; i<p->iLevel && i<sizeof(p->bLine)-1; i++){
       sqlite3StrAccumAppend(&acc, p->bLine[i] ? "|   " : "    ", 4);

@@ -2835,8 +2835,7 @@ struct StrAccum {
   char *zText;         /* The string collected so far */
   int  nChar;          /* Length of the string so far */
   int  nAlloc;         /* Amount of space allocated in zText */
-  int  mxAlloc;        /* Maximum allowed string length */
-  u8   useMalloc;      /* 0: none,  1: sqlite3DbMalloc,  2: sqlite3_malloc */
+  int  mxAlloc;        /* Maximum allowed allocation.  0 for no malloc usage */
   u8   accError;       /* STRACCUM_NOMEM or STRACCUM_TOOBIG */
 };
 #define STRACCUM_NOMEM   1
@@ -3594,7 +3593,7 @@ int sqlite3CreateFunc(sqlite3 *, const char *, int, int, void *,
 int sqlite3ApiExit(sqlite3 *db, int);
 int sqlite3OpenTempDatabase(Parse *);
 
-void sqlite3StrAccumInit(StrAccum*, char*, int, int);
+void sqlite3StrAccumInit(StrAccum*, sqlite3*, char*, int, int);
 void sqlite3StrAccumAppend(StrAccum*,const char*,int);
 void sqlite3StrAccumAppendAll(StrAccum*,const char*);
 void sqlite3AppendChar(StrAccum*,int,char);

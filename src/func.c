@@ -232,13 +232,13 @@ static void printfFunc(
   StrAccum str;
   const char *zFormat;
   int n;
+  sqlite3 *db = sqlite3_context_db_handle(context);
 
   if( argc>=1 && (zFormat = (const char*)sqlite3_value_text(argv[0]))!=0 ){
     x.nArg = argc-1;
     x.nUsed = 0;
     x.apArg = argv+1;
-    sqlite3StrAccumInit(&str, 0, 0, SQLITE_MAX_LENGTH);
-    str.db = sqlite3_context_db_handle(context);
+    sqlite3StrAccumInit(&str, db, 0, 0, db->aLimit[SQLITE_LIMIT_LENGTH]);
     sqlite3XPrintf(&str, SQLITE_PRINTF_SQLFUNC, zFormat, &x);
     n = str.nChar;
     sqlite3_result_text(context, sqlite3StrAccumFinish(&str), n,
@@ -1567,8 +1567,7 @@ static void groupConcatStep(
 
   if( pAccum ){
     sqlite3 *db = sqlite3_context_db_handle(context);
-    int firstTerm = pAccum->useMalloc==0;
-    pAccum->useMalloc = 2;
+    int firstTerm = pAccum->mxAlloc==0;
     pAccum->mxAlloc = db->aLimit[SQLITE_LIMIT_LENGTH];
     if( !firstTerm ){
       if( argc==2 ){
