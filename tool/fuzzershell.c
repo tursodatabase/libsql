@@ -451,9 +451,10 @@ int main(int argc, char **argv){
   int nInFile = 0;              /* Number of input files to read */
   char **azInFile = 0;          /* Array of input file names */
   int jj;                       /* Loop counter for azInFile[] */
+  sqlite3_int64 iBegin;         /* Start time for the whole program */
   sqlite3_int64 iStart, iEnd;   /* Start and end-times for a test case */
 
-
+  iBegin = timeOfDay();
   zFailCode = getenv("TEST_FAILURE");
   g.zArgv0 = argv[0];
   zPrompt = "<stdin>";
@@ -612,13 +613,15 @@ int main(int argc, char **argv){
       zPrompt = "<stdin>";
     }
     while( !feof(in) ){
-      zIn = realloc(zIn, nAlloc);
-      if( zIn==0 ) fatalError("out of memory");
       got = fread(zIn+nIn, 1, nAlloc-nIn-1, in); 
       nIn += (int)got;
       zIn[nIn] = 0;
       if( got==0 ) break;
-      nAlloc += nAlloc+1000;
+      if( nAlloc - nIn - 1 < 100 ){
+        nAlloc += nAlloc+1000;
+        zIn = realloc(zIn, nAlloc);
+        if( zIn==0 ) fatalError("out of memory");
+      }
     }
     if( in!=stdin ) fclose(in);
     lastPct = -1;
@@ -670,6 +673,8 @@ int main(int argc, char **argv){
             lastPct = pct;
           }
         }
+      }else if( nInFile>1 ){
+        printf("%s\n", zPrompt);
       }
       fflush(stdout);
 
@@ -803,8 +808,10 @@ int main(int argc, char **argv){
   /* Report total number of tests run
   */
   if( nTest>1 && !quietFlag ){
-    printf("%s: 0 errors out of %d tests\nSQLite %s %s\n",
-           g.zArgv0, nTest, sqlite3_libversion(), sqlite3_sourceid());
+    sqlite3_int64 iElapse = timeOfDay() - iBegin;
+    printf("%s: 0 errors out of %d tests in %d.%03d seconds\nSQLite %s %s\n",
+           g.zArgv0, nTest, (int)(iElapse/1000), (int)(iElapse%1000),
+           sqlite3_libversion(), sqlite3_sourceid());
   }
 
   /* Write the unique test cases if the --unique-cases flag was used
