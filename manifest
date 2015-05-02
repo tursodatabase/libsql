@@ -1,5 +1,5 @@
-C Enhance\sthe\sfuzzershell\s--uniquecases\soption\sto\soutput\sresults\sin\sorder\sof\nincreasing\sruntime\sand\sto\sinclude\sthe\sruntime\sin\sthe\scomment\sseparator\sof\nthe\soutput.
-D 2015-05-01T20:34:47.283
+C Add\sthe\sexperimental\smatchinfo\s'y'\sflag\sto\sfts3/4.
+D 2015-05-02T09:44:15.512
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e628c50e237251fc7e768bef14ee7e822ad69e69
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -87,7 +87,7 @@ F ext/fts3/fts3_hash.c 29b986e43f4e9dd40110eafa377dc0d63c422c60
 F ext/fts3/fts3_hash.h 39cf6874dc239d6b4e30479b1975fe5b22a3caaf
 F ext/fts3/fts3_icu.c e319e108661147bcca8dd511cd562f33a1ba81b5
 F ext/fts3/fts3_porter.c 3565faf04b626cddf85f03825e86056a4562c009
-F ext/fts3/fts3_snippet.c 0ce4ee2451b9f3603a1693ef9779bb0fb662a9fe
+F ext/fts3/fts3_snippet.c 40a96ba78e90aba7d7d6d014a18049bb218060fd
 F ext/fts3/fts3_term.c 88c55a6fa1a51ab494e33dced0401a6c28791fd7
 F ext/fts3/fts3_test.c 8a3a78c4458b2d7c631fcf4b152a5cd656fa7038
 F ext/fts3/fts3_tokenize_vtab.c a27593ab19657166f6fa5ec073b678cc29a75860
@@ -593,7 +593,7 @@ F test/fts3fault2.test f953bb3cf903988172270a9a0aafd5a890b0f98f
 F test/fts3first.test dbdedd20914c8d539aa3206c9b34a23775644641
 F test/fts3join.test 53e66a0c21eb568580674a43b21c059acb26f499
 F test/fts3malloc.test b0e4c133b8d61d4f6d112d8110f8320e9e453ef6
-F test/fts3matchinfo.test 58544fa4d254000fa4e7f494b0a832f7ba61d45e
+F test/fts3matchinfo.test 3e5f5ac2e0a8ba42eafd4c685f803ca48b4c3a83
 F test/fts3near.test 7e3354d46f155a822b59c0e957fd2a70c1d7e905
 F test/fts3prefix.test fa794eaab0bdae466494947b0b153d7844478ab2
 F test/fts3prefix2.test e1f0a822ca661dced7f12ce392e14eaf65609dce
@@ -1256,7 +1256,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ab5523aafe4817232388d28ea99be0953e7dccf3
-R 4fd9e5d40fbea2385d9a56050bcd9320
-U drh
-Z 553d78dd29d30462935dd4f96d370f3a
+P 04630b989d8794b9ed2553f4d223de2b322437c5
+R 609861034508ca4e227e94341a24112e
+T *branch * fts3-matchinfo-y
+T *sym-fts3-matchinfo-y *
+T -sym-trunk *
+U dan
+Z 0627f347fc7cc3989ff7a94e2d2c43c4
