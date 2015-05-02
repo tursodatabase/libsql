@@ -1,5 +1,5 @@
-C Cleanup\sof\sthe\ssqlite3StrAccumInit()\sfunction.\s\sNo\sfunctionality\schanges.
-D 2015-05-02T11:45:53.551
+C Reorganize\ssome\smulti-threaded\scode\sin\svdbesort.c\sso\sthat\sfull\sMC/DC\stest\scoverage\sdoes\snot\sdepend\son\sthe\soutcome\sof\sa\srace\scondition.
+D 2015-05-02T12:40:12.793
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e628c50e237251fc7e768bef14ee7e822ad69e69
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -300,7 +300,7 @@ F src/vdbeapi.c 583d56b129dd27f12bed518270de9ebe521e6a75
 F src/vdbeaux.c 03591cca98ec50e1493043f0ff7abbece0b9c83d
 F src/vdbeblob.c 4f2e8e075d238392df98c5e03a64342465b03f90
 F src/vdbemem.c 7bfbeef0978a2e1a05d979641fdbf7c189b7ddf4
-F src/vdbesort.c 2e7f683464fd5db3be4beaa1ff2d39e24fcb64b8
+F src/vdbesort.c f5009e7a35e3065635d8918b9a31f498a499976b
 F src/vdbetrace.c 8befe829faff6d9e6f6e4dee5a7d3f85cc85f1a0
 F src/vtab.c c535e80259ebe616467181a83a4263555b97c694
 F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
@@ -1256,7 +1256,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 04630b989d8794b9ed2553f4d223de2b322437c5
-R cd7508b548af68bb962d66cc8239f85e
-U drh
-Z 85d38ece2e515fea582923b194ee7234
+P 7952c32268aa650d9ee946d5bfe190f712e3bbe6
+R b89595a534f421de5f0d98acb44972ee
+U dan
+Z 22691f754ec0b999bb5069d3c75c8ca1
