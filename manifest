@@ -1,5 +1,5 @@
-C In\sthe\scommand-line\sshell,\sand\sthe\s".binary"\scommand\sand\sadditional\nC-style\sbackslash\sescapes.
-D 2015-05-04T19:13:25.970
+C Automatically\senable\sthe\sdbstat\svirtual\stable\son\sall\snew\sdatabase\nconnections\swith\sthe\sSQLITE_ENABLE_DBSTAT_VTAB\scompile-time\soption\sis\sused.
+D 2015-05-04T20:25:05.875
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 382b774885a3f0ac5207b1835e92c96b641c85e5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -196,7 +196,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
 F src/loadext.c 29255bbe1cfb2ce9bbff2526a5ecfddcb49b9271
-F src/main.c af89a158aa7bd40f6edef527c7b78ef581d72886
+F src/main.c 331fda6b255ae6a08e6ade89f0ac1d158691f3c6
 F src/malloc.c 6a370b83d54e4bbf6f94021221c2a311cff26a18
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c abe6ee469b6c5a35c7f22bfeb9c9bac664a1c987
@@ -232,7 +232,7 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 13109bc3b5ab404446296efa17039640de5bc35d
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 1b0bfc7d59e48c26b895a6b719157111a617d9e3
-F src/shell.c ad4c91f89eaced670f5c0d57531dda3fef3a4afe
+F src/shell.c 1b6fc902d4455b7a4d6d9cc9a23d3f6af7089302
 F src/sqlite.h.in ca27603a36fcacdaac5a19d8ee35aaff8ce8516f
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
@@ -1256,8 +1256,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e7529705903a9d4d410801658a47fb43a4f2de2f 22827542a5c7aeac4385ba647f45bd500e787fe6
-R c2304b3b31b242f903f6a4281630c0d1
-T +closed 22827542a5c7aeac4385ba647f45bd500e787fe6
+P 850c11866686a7b39d7b163fb60898c11283688e
+R d957afaabac02b446c83338793586361
 U drh
-Z 33af9893538436935c8227ae916eb9bb
+Z 85a47c27fb95447ea53df020897f9b65

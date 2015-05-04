@@ -2876,6 +2876,13 @@ static int openDatabase(
   }
 #endif
 
+#ifdef SQLITE_ENABLE_DBSTAT_VTAB
+  if( !db->mallocFailed && rc==SQLITE_OK){
+    int sqlite3_dbstat_register(sqlite3*);
+    rc = sqlite3_dbstat_register(db);
+  }
+#endif
+
   /* -DSQLITE_DEFAULT_LOCKING_MODE=1 makes EXCLUSIVE the default locking
   ** mode.  -DSQLITE_DEFAULT_LOCKING_MODE=0 make NORMAL the default locking
   ** mode.  Doing nothing at all also makes NORMAL the default.
