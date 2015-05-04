@@ -738,6 +738,9 @@ do_test shell1-4.1 {
     PRAGMA encoding=UTF16;
     CREATE TABLE t1(x);
     INSERT INTO t1 VALUES(null), (''), (1), (2.25), ('hello'), (x'807f');
+    CREATE TABLE t3(x,y);
+    INSERT INTO t3 VALUES(1,null), (2,''), (3,1),
+                         (4,2.25), (5,'hello'), (6,x'807f');
   }
   catchcmd test.db {.dump}
 } {0 {PRAGMA foreign_keys=OFF;
@@ -749,11 +752,18 @@ INSERT INTO "t1" VALUES(1);
 INSERT INTO "t1" VALUES(2.25);
 INSERT INTO "t1" VALUES('hello');
 INSERT INTO "t1" VALUES(X'807F');
+CREATE TABLE t3(x,y);
+INSERT INTO "t3" VALUES(1,NULL);
+INSERT INTO "t3" VALUES(2,'');
+INSERT INTO "t3" VALUES(3,1);
+INSERT INTO "t3" VALUES(4,2.25);
+INSERT INTO "t3" VALUES(5,'hello');
+INSERT INTO "t3" VALUES(6,X'807F');
 COMMIT;}}
 
 # Test the output of ".mode insert"
 #
-do_test shell1-4.2 {
+do_test shell1-4.2.1 {
   catchcmd test.db ".mode insert t1\nselect * from t1;"
 } {0 {INSERT INTO t1 VALUES(NULL);
 INSERT INTO t1 VALUES('');
@@ -761,6 +771,39 @@ INSERT INTO t1 VALUES(1);
 INSERT INTO t1 VALUES(2.25);
 INSERT INTO t1 VALUES('hello');
 INSERT INTO t1 VALUES(X'807f');}}
+
+# Test the output of ".mode insert" with headers
+#
+do_test shell1-4.2.2 {
+  catchcmd test.db ".mode insert t1\n.headers on\nselect * from t1;"
+} {0 {INSERT INTO t1(x) VALUES(NULL);
+INSERT INTO t1(x) VALUES('');
+INSERT INTO t1(x) VALUES(1);
+INSERT INTO t1(x) VALUES(2.25);
+INSERT INTO t1(x) VALUES('hello');
+INSERT INTO t1(x) VALUES(X'807f');}}
+
+# Test the output of ".mode insert"
+#
+do_test shell1-4.2.3 {
+  catchcmd test.db ".mode insert t3\nselect * from t3;"
+} {0 {INSERT INTO t3 VALUES(1,NULL);
+INSERT INTO t3 VALUES(2,'');
+INSERT INTO t3 VALUES(3,1);
+INSERT INTO t3 VALUES(4,2.25);
+INSERT INTO t3 VALUES(5,'hello');
+INSERT INTO t3 VALUES(6,X'807f');}}
+
+# Test the output of ".mode insert" with headers
+#
+do_test shell1-4.2.4 {
+  catchcmd test.db ".mode insert t3\n.headers on\nselect * from t3;"
+} {0 {INSERT INTO t3(x,y) VALUES(1,NULL);
+INSERT INTO t3(x,y) VALUES(2,'');
+INSERT INTO t3(x,y) VALUES(3,1);
+INSERT INTO t3(x,y) VALUES(4,2.25);
+INSERT INTO t3(x,y) VALUES(5,'hello');
+INSERT INTO t3(x,y) VALUES(6,X'807f');}}
 
 # Test the output of ".mode tcl"
 #
@@ -817,5 +860,62 @@ do_test shell1-4.6 {
 "\\}"
 ";"
 "$"} 7}
+
+# Test using arbitrary byte data with the shell via standard input/output.
+#
+do_test shell1-5.0 {
+  #
+  # NOTE: Skip NUL byte because it appears to be incompatible with command
+  #       shell argument parsing.
+  #
+  for {set i 1} {$i < 256} {incr i} {
+    #
+    # NOTE: Due to how the Tcl [exec] command works (i.e. where it treats
+    #       command channels opened for it as textual ones), the carriage
+    #       return character (and on Windows, the end-of-file character)
+    #       cannot be used here.
+    #
+    if {$i==0x0D || ($tcl_platform(platform)=="windows" && $i==0x1A)} {
+      continue
+    }
+    set hex [format %02X $i]
+    set char [subst \\x$hex]; set oldChar $char
+    set escapes [list]
+    if {$tcl_platform(platform)=="windows"} {
+      #
+      # NOTE: On Windows, we need to escape all the whitespace characters,
+      #       the alarm (\a) character, and those with special meaning to
+      #       the SQLite shell itself.
+      #
+      set escapes [list \
+          \a \\a \b \\b \t \\t \n \\n \v \\v \f \\f \r \\r \
+          " " "\" \"" \" \\\" ' \"'\" \\ \\\\]
+    } else {
+      #
+      # NOTE: On Unix, we need to escape most of the whitespace characters
+      #       and those with special meaning to the SQLite shell itself.
+      #       The alarm (\a), backspace (\b), and carriage-return (\r)
+      #       characters do not appear to require escaping on Unix.  For
+      #       the alarm and backspace characters, this is probably due to
+      #       differences in the command shell.  For the carriage-return,
+      #       it is probably due to differences in how Tcl handles command
+      #       channel end-of-line translations.
+      #
+      set escapes [list \
+          \t \\t \n \\n \v \\v \f \\f \
+          " " "\" \"" \" \\\" ' \"'\" \\ \\\\]
+    }
+    set char [string map $escapes $char]
+    set x [catchcmdex test.db ".print $char\n"]
+    set code [lindex $x 0]
+    set res [lindex $x 1]
+    if {$code ne "0"} {
+      error "failed with error: $res"
+    }
+    if {$res ne "$oldChar\n"} {
+      error "failed with byte $hex mismatch"
+    }
+  }
+} {}
 
 finish_test

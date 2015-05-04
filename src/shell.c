@@ -990,7 +990,16 @@ static int shell_callback(
     case MODE_Insert: {
       p->cnt++;
       if( azArg==0 ) break;
-      fprintf(p->out,"INSERT INTO %s VALUES(",p->zDestTable);
+      fprintf(p->out,"INSERT INTO %s",p->zDestTable);
+      if( p->showHeader ){
+        fprintf(p->out,"(");
+        for(i=0; i<nArg; i++){
+          char *zSep = i>0 ? ",": "";
+          fprintf(p->out, "%s%s", zSep, azCol[i]);
+        }
+        fprintf(p->out,")");
+      }
+      fprintf(p->out," VALUES(");
       for(i=0; i<nArg; i++){
         char *zSep = i>0 ? ",": "";
         if( (azArg[i]==0) || (aiType && aiType[i]==SQLITE_NULL) ){
@@ -1772,6 +1781,7 @@ static int run_schema_dump_query(
 static char zHelp[] =
   ".backup ?DB? FILE      Backup DB (default \"main\") to FILE\n"
   ".bail on|off           Stop after hitting an error.  Default OFF\n"
+  ".binary on|off         Turn binary output on or off.  Default OFF\n"
   ".clone NEWDB           Clone data into NEWDB from the existing database\n"
   ".databases             List names and files of attached databases\n"
   ".dbinfo ?DB?           Show status information about the database\n"
@@ -1940,12 +1950,18 @@ static void open_db(ShellState *p, int keepAlive){
 /*
 ** Do C-language style dequoting.
 **
+**    \a    -> alarm
+**    \b    -> backspace
 **    \t    -> tab
 **    \n    -> newline
+**    \v    -> vertical tab
+**    \f    -> form feed
 **    \r    -> carriage return
+**    \s    -> space
 **    \"    -> "
-**    \NNN  -> ascii character NNN in octal
+**    \'    -> '
 **    \\    -> backslash
+**    \NNN  -> ascii character NNN in octal
 */
 static void resolve_backslashes(char *z){
   int i, j;
@@ -1954,12 +1970,24 @@ static void resolve_backslashes(char *z){
   for(i=j=0; (c = z[i])!=0; i++, j++){
     if( c=='\\' && z[i+1]!=0 ){
       c = z[++i];
-      if( c=='n' ){
-        c = '\n';
+      if( c=='a' ){
+        c = '\a';
+      }else if( c=='b' ){
+        c = '\b';
       }else if( c=='t' ){
         c = '\t';
+      }else if( c=='n' ){
+        c = '\n';
+      }else if( c=='v' ){
+        c = '\v';
+      }else if( c=='f' ){
+        c = '\f';
       }else if( c=='r' ){
         c = '\r';
+      }else if( c=='"' ){
+        c = '"';
+      }else if( c=='\'' ){
+        c = '\'';
       }else if( c=='\\' ){
         c = '\\';
       }else if( c>='0' && c<='7' ){
@@ -2689,6 +2717,19 @@ static int do_meta_command(char *zLine, ShellState *p){
       bail_on_error = booleanValue(azArg[1]);
     }else{
       fprintf(stderr, "Usage: .bail on|off\n");
+      rc = 1;
+    }
+  }else
+
+  if( c=='b' && n>=3 && strncmp(azArg[0], "binary", n)==0 ){
+    if( nArg==2 ){
+      if( booleanValue(azArg[1]) ){
+        setBinaryMode(p->out);
+      }else{
+        setTextMode(p->out);
+      }
+    }else{
+      fprintf(stderr, "Usage: .binary on|off\n");
       rc = 1;
     }
   }else

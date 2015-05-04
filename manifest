@@ -1,5 +1,5 @@
-C Add\sthe\s"dbstat"\svirtual\stable\sas\sa\sstandard\scomponent\sin\sthe\sSQLite\namalgamation,\sthough\sturned\soff\sunless\scompiled\swith\sSQLITE_ENABLE_DBSTAT_VTAB.
-D 2015-05-04T19:06:09.589
+C In\sthe\scommand-line\sshell,\sand\sthe\s".binary"\scommand\sand\sadditional\nC-style\sbackslash\sescapes.
+D 2015-05-04T19:13:25.970
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 382b774885a3f0ac5207b1835e92c96b641c85e5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -181,7 +181,7 @@ F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c a5cf5b4b56390cfb7b8636e8f7ddef90258dd575
 F src/ctime.c 98f89724adc891a1a4c655bee04e33e716e05887
 F src/date.c e4d50b3283696836ec1036b695ead9a19e37a5ac
-F src/dbstat.c ae435cf8c8ec8d2438835f245ed2e7f3c1996cc9 w src/test_stat.c
+F src/dbstat.c ae435cf8c8ec8d2438835f245ed2e7f3c1996cc9
 F src/delete.c 37964e6c1d73ff49cbea9ff690c9605fb15f600e
 F src/expr.c 4c05a28eebe63b288fda1db0e8de556a82ca2ec6
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
@@ -232,7 +232,7 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 13109bc3b5ab404446296efa17039640de5bc35d
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 1b0bfc7d59e48c26b895a6b719157111a617d9e3
-F src/shell.c 4ef9436ea7d1016584421067b16ba8a41c506dc4
+F src/shell.c ad4c91f89eaced670f5c0d57531dda3fef3a4afe
 F src/sqlite.h.in ca27603a36fcacdaac5a19d8ee35aaff8ce8516f
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
@@ -869,7 +869,7 @@ F test/sharedA.test 0cdf1a76dfa00e6beee66af5b534b1e8df2720f5
 F test/sharedB.test 16cc7178e20965d75278f410943109b77b2e645e
 F test/shared_err.test 2f2aee20db294b9924e81f6ccbe60f19e21e8506
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test ca88b14a8fc8b1f3543a24e519d019585ac9c903
+F test/shell1.test ce5e744870387164703bf2dee2cc9753e4a71513
 F test/shell2.test 12b8bf901b0e3a8ac58cf5c0c63a0a388d4d1862
 F test/shell3.test 5e8545ec72c4413a0e8d4c6be56496e3c257ca29
 F test/shell4.test ddf0a99044e2245a87fc17423e3aaa1445b3243b
@@ -920,7 +920,7 @@ F test/tclsqlite.test 7fb866443c7deceed22b63948ccd6f76b52ad054
 F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
 F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptrigger.test 8ec228b0db5d7ebc4ee9b458fc28cb9e7873f5e1
-F test/tester.tcl ed77454e6c7b40eb501db7e79d1c6fbfd3eebbff
+F test/tester.tcl 51211254f2ee2340d3e4fa0a83bd5381b9e1a227
 F test/thread001.test 9f22fd3525a307ff42a326b6bc7b0465be1745a5
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -1256,8 +1256,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1421c8ffba179d6aafa2643012f80a2738779117 a24480a474993f82ff58edbe12d2093c59b1a2dc
-R 320890eb90a509d549c3b65f61bb2b7a
-T +closed a24480a474993f82ff58edbe12d2093c59b1a2dc
+P e7529705903a9d4d410801658a47fb43a4f2de2f 22827542a5c7aeac4385ba647f45bd500e787fe6
+R c2304b3b31b242f903f6a4281630c0d1
+T +closed 22827542a5c7aeac4385ba647f45bd500e787fe6
 U drh
-Z 2cb33eb36021c827866f2a0db467007d
+Z 33af9893538436935c8227ae916eb9bb
