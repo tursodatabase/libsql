@@ -157,7 +157,7 @@ impl SqliteConnection {
     ///
     /// `SqliteConnection::open(path)` is equivalent to `SqliteConnection::open_with_flags(path,
     /// SQLITE_OPEN_READ_WRITE | SQLITE_OPEN_CREATE)`.
-    pub fn open(path: &Path) -> SqliteResult<SqliteConnection> {
+    pub fn open<P: AsRef<Path>>(path: &P) -> SqliteResult<SqliteConnection> {
         let flags = SQLITE_OPEN_READ_WRITE | SQLITE_OPEN_CREATE;
         SqliteConnection::open_with_flags(path, flags)
     }
@@ -172,9 +172,9 @@ impl SqliteConnection {
     ///
     /// Database Connection](http://www.sqlite.org/c3ref/open.html) for a description of valid
     /// flag combinations.
-    pub fn open_with_flags(path: &Path, flags: SqliteOpenFlags)
+    pub fn open_with_flags<P: AsRef<Path>>(path: &P, flags: SqliteOpenFlags)
             -> SqliteResult<SqliteConnection> {
-        let c_path = try!(path_to_cstring(path));
+        let c_path = try!(path_to_cstring(path.as_ref()));
         InnerSqliteConnection::open_with_flags(&c_path, flags).map(|db| {
             SqliteConnection{ db: RefCell::new(db) }
         })
@@ -398,7 +398,7 @@ impl SqliteConnection {
     ///     conn.load_extension(Path::new("my_sqlite_extension"), None)
     /// }
     #[cfg(feature = "load_extension")]
-    pub fn load_extension(&self, dylib_path: &Path, entry_point: Option<&str>) -> SqliteResult<()> {
+    pub fn load_extension<P: AsRef<Path>>(&self, dylib_path: &P, entry_point: Option<&str>) -> SqliteResult<()> {
         self.db.borrow_mut().load_extension(dylib_path, entry_point)
     }
 
@@ -816,7 +816,9 @@ impl<'stmt> SqliteRow<'stmt> {
 #[cfg(test)]
 mod test {
     extern crate libsqlite3_sys as ffi;
+    extern crate tempdir;
     use super::*;
+    use self::tempdir::TempDir;
 
     // this function is never called, but is still type checked; in
     // particular, calls with specific instantiations will require
@@ -828,6 +830,29 @@ mod test {
 
     fn checked_memory_handle() -> SqliteConnection {
         SqliteConnection::open_in_memory().unwrap()
+    }
+
+    #[test]
+    fn test_persistence() {
+        let temp_dir = TempDir::new("test_open_file").unwrap();
+        let path = temp_dir.path().join("test.db3");
+
+        {
+            let db = SqliteConnection::open(&path).unwrap();
+            let sql = "BEGIN;
+                   CREATE TABLE foo(x INTEGER);
+                   INSERT INTO foo VALUES(42);
+                   END;";
+            db.execute_batch(sql).unwrap();
+        }
+        
+        let path_string = path.to_str().unwrap();
+        let db = SqliteConnection::open(&path_string).unwrap();
+        let the_answer = db.query_row_safe("SELECT x FROM foo",
+                                           &[],
+                                           |r| r.get::<i64>(0));
+
+        assert_eq!(42i64, the_answer.unwrap());
     }
 
     #[test]
