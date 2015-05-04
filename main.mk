@@ -447,8 +447,8 @@ target_source:	$(SRC) $(TOP)/tool/vdbe-compress.tcl
 	mv vdbe.new tsrc/vdbe.c
 	touch target_source
 
-sqlite3.c:	target_source $(TOP)/tool/mksqlite3c.tcl
-	tclsh $(TOP)/tool/mksqlite3c.tcl
+sqlite3.c:	target_source $(TOP)/src/test_stat.c $(TOP)/tool/mksqlite3c.tcl
+	tclsh $(TOP)/tool/mksqlite3c.tcl --srcdir $(TOP)/src
 	cp tsrc/shell.c tsrc/sqlite3ext.h .
 	echo '#ifndef USE_SYSTEM_SQLITE' >tclsqlite3.c
 	cat sqlite3.c >>tclsqlite3.c
@@ -603,7 +603,8 @@ tclsqlite3:	$(TOP)/src/tclsqlite.c libsqlite3.a
 
 sqlite3_analyzer.c: sqlite3.c $(TOP)/src/test_stat.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl
 	echo "#define TCLSH 2" > $@
-	cat sqlite3.c $(TOP)/src/test_stat.c $(TOP)/src/tclsqlite.c >> $@
+	echo "#define SQLITE_ENABLE_DBSTAT_VTAB 1" >> $@
+	cat sqlite3.c $(TOP)/src/tclsqlite.c >> $@
 	echo "static const char *tclsh_main_loop(void){" >> $@
 	echo "static const char *zMainloop = " >> $@
 	$(NAWK) -f $(TOP)/tool/tostr.awk $(TOP)/tool/spaceanal.tcl >> $@

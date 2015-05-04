@@ -18,8 +18,18 @@
 ** for an example implementation.
 */
 
+/* Only compile this module if there is evidence that the programmer
+** deliberately wants to include it.  Evidence can be:
+**    (1) Tt is compiled and linked separately from the amalgamation.
+**    (2) The SQLITE_ENABLE_DBSTAT_VTAB compile-time option is used
+**    (3) The SQLITE_TEST compile-time option is used
+*/
+#if !defined(SQLITE_AMALGAMATION) \
+     || defined(SQLITE_ENABLE_DBSTAT_VTAB) \
+     || defined(SQLITE_TEST)
+
 #ifndef SQLITE_AMALGAMATION
-# include "sqliteInt.h"
+# include "sqliteInt.h"   /* Requires access to internal data structures */
 #endif
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
@@ -625,9 +635,17 @@ int sqlite3_dbstat_register(sqlite3 *db){
 
 #endif
 
+/*
+** This is the TCL interface
+*/
 #if defined(SQLITE_TEST) || TCLSH==2
-#include <tcl.h>
+#include <tcl.h> /* amalgamator: keep */
 
+/*
+** tclcmd:   register_dbstat_vtab DB
+**
+** Cause the dbstat virtual table to be available on the connection DB
+*/
 static int test_dbstat(
   void *clientData,
   Tcl_Interp *interp,
@@ -656,9 +674,10 @@ static int test_dbstat(
   return TCL_OK;
 #endif
 }
-
 int SqlitetestStat_Init(Tcl_Interp *interp){
   Tcl_CreateObjCommand(interp, "register_dbstat_vtab", test_dbstat, 0, 0);
   return TCL_OK;
 }
 #endif /* if defined(SQLITE_TEST) || TCLSH==2 */
+
+#endif /* !SQLITE_AMALGAMATION || SQLITE_ENABLE_DBSTAT_VTAB || SQLITE_TEST */
