@@ -140,7 +140,6 @@ impl<T: ToSql> ToSql for Option<T> {
 /// ## Example
 ///
 /// ```rust,no_run
-/// #![allow(unstable)]
 /// # extern crate libc;
 /// # extern crate rusqlite;
 /// # use rusqlite::{SqliteConnection, SqliteResult};

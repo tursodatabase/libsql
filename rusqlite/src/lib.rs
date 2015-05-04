@@ -2,7 +2,6 @@
 //! an interface similar to [rust-postgres](https://github.com/sfackler/rust-postgres).
 //!
 //! ```rust
-//! #![allow(unstable)]
 //! extern crate rusqlite;
 //! extern crate time;
 //!

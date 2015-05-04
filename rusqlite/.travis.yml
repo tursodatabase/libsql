@@ -2,13 +2,17 @@ language: rust
 
 env:
     global:
-        - secure: Dr/AOuXnBuLZqw0ZW+KDKlCyUGUfqMv5AnuPr8mnzxL3CrWInBwoNv8bME3pY10A/u4e16+T6NhdK5AuoYvhTnDUM0srGMhHgTtV8X5yQog1U0BUIMTfQhgGOQ+/2m0yawjtm7KTZQmNCh5+c/S26fZPVcgoMpu9GZR5h7m2ep4=
+        secure: "FyGzHF0AIYdBcuM/2qIoABotx3MbNAlaHDzxPbbeUlVg64bnuib9G9K/qWve0a1BWCgv+8e/SbXZb7gt3JlUNE27aE4RZG4FEdtEpLYQp87Dc9d9HX0FwpUeFK3binsrtYl4WEBnIjQ3ICnUVey0E6GHEdkM+t5bWyJO5c4dJ30="
 
 script:
     - cargo build
     - cargo test
     - cargo doc --no-deps
 
-after_script:
-    - mv target/doc .
-    - curl http://www.rust-ci.org/artifacts/put?t=$RUSTCI_TOKEN | sh
+after_success: |
+    [ $TRAVIS_BRANCH = master ] &&
+    [ $TRAVIS_PULL_REQUEST = false ] &&
+    echo '<meta http-equiv=refresh content=0;url=rusqlite/index.html>' > target/doc/index.html &&
+    sudo pip install ghp-import &&
+    ghp-import -n target/doc &&
+    git push -fq https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git gh-pages
