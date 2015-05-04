@@ -20,6 +20,9 @@ time = "~0.1.0"
 bitflags = "~0.1"
 libc = "~0.1"
 
+[dev-dependencies]
+tempdir = "~0.3.4"
+
 [dependencies.libsqlite3-sys]
 path = "libsqlite3-sys"
 version = "0.0.13"
