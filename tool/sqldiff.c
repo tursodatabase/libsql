@@ -1116,6 +1116,7 @@ static void showHelp(void){
 "Output SQL text that would transform DB1 into DB2.\n"
 "Options:\n"
 "  --changeset FILE      Write a CHANGESET into FILE\n"
+"  -L|--lib LIBRARY      Load an SQLite extension library\n"
 "  --primarykey          Use schema-defined PRIMARY KEYs\n"
 "  --schema              Show only differences in the schema\n"
 "  --summary             Show only a summary of the differences\n"
@@ -1134,6 +1135,8 @@ int main(int argc, char **argv){
   char *zTab = 0;
   FILE *out = stdout;
   void (*xDiff)(const char*,FILE*) = diff_one_table;
+  int nExt = 0;
+  const char **azExt = 0;
 
   g.zArgv0 = argv[0];
   for(i=1; i<argc; i++){
@@ -1142,16 +1145,24 @@ int main(int argc, char **argv){
       z++;
       if( z[0]=='-' ) z++;
       if( strcmp(z,"changeset")==0 ){
+        if( i==argc-1 ) cmdlineError("missing argument to %s", argv[i]);
         out = fopen(argv[++i], "wb");
         if( out==0 ) cmdlineError("cannot open: %s", argv[i]);
         xDiff = changeset_one_table;
       }else
       if( strcmp(z,"debug")==0 ){
+        if( i==argc-1 ) cmdlineError("missing argument to %s", argv[i]);
         g.fDebug = strtol(argv[++i], 0, 0);
       }else
       if( strcmp(z,"help")==0 ){
         showHelp();
         return 0;
+      }else
+      if( strcmp(z,"lib")==0 || strcmp(z,"L")==0 ){
+        if( i==argc-1 ) cmdlineError("missing argument to %s", argv[i]);
+        azExt = realloc(azExt, sizeof(azExt[0])*(nExt+1));
+        if( azExt==0 ) cmdlineError("out of memory");
+        azExt[nExt++] = argv[++i];
       }else
       if( strcmp(z,"primarykey")==0 ){
         g.bSchemaPK = 1;
@@ -1163,6 +1174,7 @@ int main(int argc, char **argv){
         xDiff = summarize_one_table;
       }else
       if( strcmp(z,"table")==0 ){
+        if( i==argc-1 ) cmdlineError("missing argument to %s", argv[i]);
         zTab = argv[++i];
       }else
       {
@@ -1187,6 +1199,14 @@ int main(int argc, char **argv){
   if( rc || zErrMsg ){
     cmdlineError("\"%s\" does not appear to be a valid SQLite database", zDb1);
   }
+  sqlite3_enable_load_extension(g.db, 1);
+  for(i=0; i<nExt; i++){
+    rc = sqlite3_load_extension(g.db, azExt[i], 0, &zErrMsg);
+    if( rc || zErrMsg ){
+      cmdlineError("error loading %s: %s", azExt[i], zErrMsg);
+    }
+  }
+  free(azExt);
   zSql = sqlite3_mprintf("ATTACH %Q as aux;", zDb2);
   rc = sqlite3_exec(g.db, zSql, 0, 0, &zErrMsg);
   if( rc || zErrMsg ){
