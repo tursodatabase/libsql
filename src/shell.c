@@ -1910,7 +1910,7 @@ static void open_db(ShellState *p, int keepAlive){
   if( p->db==0 ){
     sqlite3_initialize();
     sqlite3_open(p->zDbFilename, &p->db);
-#ifdef SQLITE_ENABLE_STAT_VTAB
+#ifdef SQLITE_ENABLE_DBSTAT_VTAB
     if( p->db ){
       int sqlite3_dbstat_register(sqlite3*);
       sqlite3_dbstat_register(p->db);

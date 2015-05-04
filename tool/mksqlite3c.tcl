@@ -17,7 +17,7 @@
 # After the "tsrc" directory has been created and populated, run
 # this script:
 #
-#      tclsh mksqlite3c.tcl
+#      tclsh mksqlite3c.tcl --srcdir $SRC
 #
 # The amalgamated SQLite code will be written into sqlite3.c
 #
@@ -26,15 +26,17 @@
 # from in this file.  The version number is needed to generate the header
 # comment of the amalgamation.
 #
-if {[lsearch $argv --nostatic]>=0} {
-  set addstatic 0
-} else {
-  set addstatic 1
-}
-if {[lsearch $argv --linemacros]>=0} {
-  set linemacros 1
-} else {
-  set linemacros 0
+set addstatic 1
+set linemacros 0
+for {set i 0} {$i<[llength $argv]} {incr i} {
+  set x [lindex $argv $i]
+  if {[regexp {^-+nostatic$} $x]} {
+    set addstatic 0
+  } elseif {[regexp {^-+linemacros} $x]} {
+    set linemacros 1
+  } else {
+    error "unknown command-line option: $x"
+  }
 }
 set in [open tsrc/sqlite3.h]
 set cnt 0
@@ -366,6 +368,7 @@ foreach file {
    rtree.c
    icu.c
    fts3_icu.c
+   dbstat.c
 } {
   copy_file tsrc/$file
 }

@@ -18,11 +18,9 @@
 ** for an example implementation.
 */
 
-#ifndef SQLITE_AMALGAMATION
-# include "sqliteInt.h"
-#endif
-
-#ifndef SQLITE_OMIT_VIRTUALTABLE
+#if (defined(SQLITE_ENABLE_DBSTAT_VTAB) || defined(SQLITE_TEST)) \
+    && !defined(SQLITE_OMIT_VIRTUAL_TABLE)
+#include "sqliteInt.h"   /* Requires access to internal data structures */
 
 /*
 ** Page paths:
@@ -597,6 +595,9 @@ static int statRowid(sqlite3_vtab_cursor *pCursor, sqlite_int64 *pRowid){
   return SQLITE_OK;
 }
 
+/*
+** Invoke this routine to register the "dbstat" virtual table module
+*/
 int sqlite3_dbstat_register(sqlite3 *db){
   static sqlite3_module dbstat_module = {
     0,                            /* iVersion */
@@ -622,43 +623,4 @@ int sqlite3_dbstat_register(sqlite3 *db){
   };
   return sqlite3_create_module(db, "dbstat", &dbstat_module, 0);
 }
-
-#endif
-
-#if defined(SQLITE_TEST) || TCLSH==2
-#include <tcl.h>
-
-static int test_dbstat(
-  void *clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-#ifdef SQLITE_OMIT_VIRTUALTABLE
-  Tcl_AppendResult(interp, "dbstat not available because of "
-                           "SQLITE_OMIT_VIRTUALTABLE", (void*)0);
-  return TCL_ERROR;
-#else
-  struct SqliteDb { sqlite3 *db; };
-  char *zDb;
-  Tcl_CmdInfo cmdInfo;
-
-  if( objc!=2 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "DB");
-    return TCL_ERROR;
-  }
-
-  zDb = Tcl_GetString(objv[1]);
-  if( Tcl_GetCommandInfo(interp, zDb, &cmdInfo) ){
-    sqlite3* db = ((struct SqliteDb*)cmdInfo.objClientData)->db;
-    sqlite3_dbstat_register(db);
-  }
-  return TCL_OK;
-#endif
-}
-
-int SqlitetestStat_Init(Tcl_Interp *interp){
-  Tcl_CreateObjCommand(interp, "register_dbstat_vtab", test_dbstat, 0, 0);
-  return TCL_OK;
-}
-#endif /* if defined(SQLITE_TEST) || TCLSH==2 */
+#endif /* SQLITE_ENABLE_DBSTAT_VTAB */
