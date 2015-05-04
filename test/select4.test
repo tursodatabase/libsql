@@ -274,6 +274,16 @@ do_test select4-4.3 {
   }} msg]
   lappend v $msg
 } {1 {ORDER BY clause should come after INTERSECT not before}}
+do_catchsql_test select4-4.4 {
+  SELECT 3 IN (
+    SELECT 0 ORDER BY 1
+    INTERSECT
+    SELECT 1
+    INTERSECT 
+    SELECT 2
+    ORDER BY 1
+  );
+} {1 {ORDER BY clause should come after INTERSECT not before}}
 
 # Various error messages while processing UNION or INTERSECT
 #
