@@ -4,7 +4,7 @@
 
 Rusqlite is an ergonomic wrapper for using SQLite from Rust. It attempts to expose
 an interface similar to [rust-postgres](https://github.com/sfackler/rust-postgres). View the full
-[API documentation](http://www.rust-ci.org/jgallagher/rusqlite/doc/rusqlite/).
+[API documentation](http://jgallagher.github.io/rusqlite/rusqlite/index.html).
 
 ```rust
 extern crate rusqlite;
