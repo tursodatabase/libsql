@@ -897,19 +897,19 @@ static void putValue(FILE *out, sqlite3_value *pVal){
       for(j=56; j>=0; j-=8) putc((uX>>j)&0xff, out);
       break;
     case SQLITE_FLOAT:
-      rX = sqlite3_value_int64(pVal);
+      rX = sqlite3_value_double(pVal);
       memcpy(&uX, &rX, 8);
       for(j=56; j>=0; j-=8) putc((uX>>j)&0xff, out);
       break;
     case SQLITE_TEXT:
       iX = sqlite3_value_bytes(pVal);
       putsVarint(out, (sqlite3_uint64)iX);
-      fwrite(sqlite3_value_text(pVal),1,iX,out);
+      fwrite(sqlite3_value_text(pVal),1,(size_t)iX,out);
       break;
     case SQLITE_BLOB:
       iX = sqlite3_value_bytes(pVal);
       putsVarint(out, (sqlite3_uint64)iX);
-      fwrite(sqlite3_value_blob(pVal),1,iX,out);
+      fwrite(sqlite3_value_blob(pVal),1,(size_t)iX,out);
       break;
     case SQLITE_NULL:
       break;
@@ -1136,7 +1136,7 @@ int main(int argc, char **argv){
   FILE *out = stdout;
   void (*xDiff)(const char*,FILE*) = diff_one_table;
   int nExt = 0;
-  const char **azExt = 0;
+  char **azExt = 0;
 
   g.zArgv0 = argv[0];
   for(i=1; i<argc; i++){
