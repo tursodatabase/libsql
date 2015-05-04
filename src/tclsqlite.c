@@ -3704,7 +3704,42 @@ static int db_last_stmt_ptr(
 
   return TCL_OK;
 }
-#endif
+#endif /* SQLITE_TEST */
+
+/*
+** tclcmd:   register_dbstat_vtab DB
+**
+** Cause the dbstat virtual table to be available on the connection DB
+*/
+static int sqlite3RegisterDbstatCmd(
+  void *clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+#ifdef SQLITE_OMIT_VIRTUALTABLE
+  Tcl_AppendResult(interp, "dbstat not available because of "
+                           "SQLITE_OMIT_VIRTUALTABLE", (void*)0);
+  return TCL_ERROR;
+#else
+  struct SqliteDb { sqlite3 *db; };
+  char *zDb;
+  Tcl_CmdInfo cmdInfo;
+
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB");
+    return TCL_ERROR;
+  }
+
+  zDb = Tcl_GetString(objv[1]);
+  if( Tcl_GetCommandInfo(interp, zDb, &cmdInfo) ){
+    int sqlite3_dbstat_register(sqlite3*);
+    sqlite3* db = ((struct SqliteDb*)cmdInfo.objClientData)->db;
+    sqlite3_dbstat_register(db);
+  }
+  return TCL_OK;
+#endif /* SQLITE_OMIT_VIRTUALTABLE */
+}
 
 /*
 ** Configure the interpreter passed as the first argument to have access
@@ -3729,10 +3764,9 @@ static void init_all(Tcl_Interp *interp){
   ** required for testfixture and sqlite3_analyzer, but not by the production
   ** Tcl extension.  */
 #if defined(SQLITE_TEST) || TCLSH==2
-  {
-    extern int SqlitetestStat_Init(Tcl_Interp*);
-    SqlitetestStat_Init(interp);
-  }
+  Tcl_CreateObjCommand(
+      interp, "register_dbstat_vtab", sqlite3RegisterDbstatCmd, 0, 0
+  );
 #endif
 
 #ifdef SQLITE_TEST

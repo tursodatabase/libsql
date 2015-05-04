@@ -28,16 +28,12 @@
 #
 set addstatic 1
 set linemacros 0
-set srcdir {}
 for {set i 0} {$i<[llength $argv]} {incr i} {
   set x [lindex $argv $i]
   if {[regexp {^-+nostatic$} $x]} {
     set addstatic 0
   } elseif {[regexp {^-+linemacros} $x]} {
     set linemacros 1
-  } elseif {[regexp {^-+srcdir} $x]} {
-    incr i
-    set srcdir [lindex $argv $i]
   } else {
     error "unknown command-line option: $x"
   }
@@ -372,11 +368,9 @@ foreach file {
    rtree.c
    icu.c
    fts3_icu.c
+   dbstat.c
 } {
   copy_file tsrc/$file
-}
-if {$srcdir!=""} {
-  copy_file $srcdir/test_stat.c
 }
 
 close $out

@@ -1,9 +1,9 @@
-C Include\sthe\s"dbstat"\svirtual\stable\sin\sthe\samalgamation.
-D 2015-05-04T17:06:39.476
+C Rename\sthe\stest_stat.c\ssource\sfile\sto\sdbstat.c\sand\srework\sthe\smakefiles\sto\nmake\sdbstat.c\sa\sfirst-class\ssource\smodule.
+D 2015-05-04T18:31:09.073
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in 765cd5203f272e10eee92566dd0fd160d5b63623
+F Makefile.in 382b774885a3f0ac5207b1835e92c96b641c85e5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc a635cba1c339e9ecb250fa26ecc4a55437aee127
+F Makefile.msc c6241f7fa2912427410ef15429c8ab5601e19a71
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md d58e3bebc0a4145e0f2a87994015fdb575a8e866
 F VERSION 2e244662b71e6e68a5c29b014ebc5b7564f4cc5a
@@ -152,7 +152,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 909fc13d3f538f2c9be17527145f00f3e09d5e12
+F main.mk f012feb95fc4acfb583f89b6f9d1dc6253a8f08d
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
 F mkopcodeh.awk d5e22023b5238985bb54a72d33e0ac71fe4f8a32
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
@@ -181,6 +181,7 @@ F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c a5cf5b4b56390cfb7b8636e8f7ddef90258dd575
 F src/ctime.c 98f89724adc891a1a4c655bee04e33e716e05887
 F src/date.c e4d50b3283696836ec1036b695ead9a19e37a5ac
+F src/dbstat.c ae435cf8c8ec8d2438835f245ed2e7f3c1996cc9 w src/test_stat.c
 F src/delete.c 37964e6c1d73ff49cbea9ff690c9605fb15f600e
 F src/expr.c 4c05a28eebe63b288fda1db0e8de556a82ca2ec6
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
@@ -239,7 +240,7 @@ F src/sqliteInt.h 20d9c59fd82774503b8953acfbcc6ecbdd9ee6aa
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c f266ad8a2892d659b74f0f50cb6a88b6e7c12179
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
-F src/tclsqlite.c 14f1992dd6100bfeb1a3dec7e7f449e1c814b8ee
+F src/tclsqlite.c 22b7040d20bc318a670f55fd47d937d12877712f
 F src/test1.c 90fbedce75330d48d99eadb7d5f4223e86969585
 F src/test2.c 577961fe48961b2f2e5c8b56ee50c3f459d3359d
 F src/test3.c 64d2afdd68feac1bb5e2ffb8226c8c639f798622
@@ -278,7 +279,6 @@ F src/test_rtree.c bfe6f4386517f70054311109f3528adffec34485
 F src/test_schema.c 2bdba21b82f601da69793e1f1d11bf481a79b091
 F src/test_server.c a2615049954cbb9cfb4a62e18e2f0616e4dc38fe
 F src/test_sqllog.c b690c12933f50ff46491e0d56a251f84ae16e914
-F src/test_stat.c 0906b134cb6fbceaef99c9f35b03594191128176
 F src/test_superlock.c 06797157176eb7085027d9dd278c0d7a105e3ec9
 F src/test_syscall.c 2e21ca7f7dc54a028f1967b63f1e76155c356f9b
 F src/test_tclvar.c f4dc67d5f780707210d6bb0eb6016a431c04c7fa
@@ -1221,7 +1221,7 @@ F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkpragmatab.tcl 94f196c9961e0ca3513e29f57125a3197808be2d
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 69bae8ce4aa52d2ff82d4a8a856bf283ec035b2e
-F tool/mksqlite3c.tcl 49da6d5d50580fa1c00bb24d2e310590bf579318
+F tool/mksqlite3c.tcl 10c06c9c616415c0269c13a33304a75e3c319c3f
 F tool/mksqlite3h.tcl 44730d586c9031638cdd2eb443b801c0d2dbd9f8
 F tool/mksqlite3internalh.tcl eb994013e833359137eb53a55acdad0b5ae1049b
 F tool/mkvsix.tcl 3b58b9398f91c7dbf18d49eb87cefeee9efdbce1
@@ -1256,10 +1256,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1421c8ffba179d6aafa2643012f80a2738779117
-R 5221fe8f417bbca3fd24bdac9e11179c
-T *branch * dbstat-in-amalgamation
-T *sym-dbstat-in-amalgamation *
-T -sym-trunk *
+P fc6504aa8ca19b3737f72c1e20db8df6b7608dd2
+R 320890eb90a509d549c3b65f61bb2b7a
 U drh
-Z 95c360ac7eadea1b6b901d97b908041e
+Z 758bd5cd6e19f38fef7bd25dc6e1cd6f

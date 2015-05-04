@@ -53,7 +53,7 @@ TCCX += -I$(TOP)/ext/async -I$(TOP)/ext/userauth
 LIBOBJ+= vdbe.o parse.o \
          alter.o analyze.o attach.o auth.o \
          backup.o bitvec.o btmutex.o btree.o build.o \
-         callback.o complete.o ctime.o date.o delete.o expr.o fault.o fkey.o \
+         callback.o complete.o ctime.o date.o dbstat.o delete.o expr.o fault.o fkey.o \
          fts3.o fts3_aux.o fts3_expr.o fts3_hash.o fts3_icu.o fts3_porter.o \
          fts3_snippet.o fts3_tokenizer.o fts3_tokenizer1.o \
          fts3_tokenize_vtab.o \
@@ -91,6 +91,7 @@ SRC = \
   $(TOP)/src/complete.c \
   $(TOP)/src/ctime.c \
   $(TOP)/src/date.c \
+  $(TOP)/src/dbstat.c \
   $(TOP)/src/delete.c \
   $(TOP)/src/expr.c \
   $(TOP)/src/fault.c \
@@ -270,7 +271,6 @@ TESTSRC = \
   $(TOP)/src/test_rtree.c \
   $(TOP)/src/test_schema.c \
   $(TOP)/src/test_server.c \
-  $(TOP)/src/test_stat.c \
   $(TOP)/src/test_sqllog.c \
   $(TOP)/src/test_superlock.c \
   $(TOP)/src/test_syscall.c \
@@ -306,6 +306,7 @@ TESTSRC2 = \
   $(TOP)/src/btree.c \
   $(TOP)/src/build.c \
   $(TOP)/src/date.c \
+  $(TOP)/src/dbstat.c \
   $(TOP)/src/expr.c \
   $(TOP)/src/func.c \
   $(TOP)/src/insert.c \
@@ -447,8 +448,8 @@ target_source:	$(SRC) $(TOP)/tool/vdbe-compress.tcl
 	mv vdbe.new tsrc/vdbe.c
 	touch target_source
 
-sqlite3.c:	target_source $(TOP)/src/test_stat.c $(TOP)/tool/mksqlite3c.tcl
-	tclsh $(TOP)/tool/mksqlite3c.tcl --srcdir $(TOP)/src
+sqlite3.c:	target_source $(TOP)/tool/mksqlite3c.tcl
+	tclsh $(TOP)/tool/mksqlite3c.tcl
 	cp tsrc/shell.c tsrc/sqlite3ext.h .
 	echo '#ifndef USE_SYSTEM_SQLITE' >tclsqlite3.c
 	cat sqlite3.c >>tclsqlite3.c
@@ -601,7 +602,7 @@ tclsqlite3:	$(TOP)/src/tclsqlite.c libsqlite3.a
 	$(TCCX) $(TCL_FLAGS) -DTCLSH=1 -o tclsqlite3 \
 		$(TOP)/src/tclsqlite.c libsqlite3.a $(LIBTCL) $(THREADLIB)
 
-sqlite3_analyzer.c: sqlite3.c $(TOP)/src/test_stat.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl
+sqlite3_analyzer.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl
 	echo "#define TCLSH 2" > $@
 	echo "#define SQLITE_ENABLE_DBSTAT_VTAB 1" >> $@
 	cat sqlite3.c $(TOP)/src/tclsqlite.c >> $@
