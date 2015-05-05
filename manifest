@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\sMakefile.in\sthat\sonly\scomes\sup\son\sWindows\swith\sMinGW.
-D 2015-05-05T01:09:06.067
+C Fix\sa\sfaulty\sassert()\sin\sthe\sbtree\spart\sof\sthe\s"PRAGMA\spage_size\s=\s?"\scode.
+D 2015-05-05T10:03:08.878
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 08728ecbeddca339c77bfd564d3484b523dffdb1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -173,7 +173,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c ff743689c4d6c5cb55ad42ed9d174b2b3e71f1e3
 F src/bitvec.c 5eb7958c3bf65210211cbcfc44eff86d0ded7c9d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c 9c1a6b3aafa1ce5fde83724fdc2dce2ed3144690
+F src/btree.c 30a80340481098d699398cba3536c895373b2e2c
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 973a22a6fd61350b454ad614832b1f0a5e25a1e4
 F src/build.c 61b47073f79f31e80a05db9ce13c5ca81bf8f74e
@@ -793,7 +793,7 @@ F test/pagerfault.test ae9ee0db5a30aecda9db8290ce3dd12e5f7bbaa1
 F test/pagerfault2.test caf4c7facb914fd3b03a17b31ae2b180c8d6ca1f
 F test/pagerfault3.test 1003fcda009bf48a8e22a516e193b6ef0dd1bbd8
 F test/pageropt.test 6b8f6a123a5572c195ad4ae40f2987007923bbd6
-F test/pagesize.test 1dd51367e752e742f58e861e65ed7390603827a0
+F test/pagesize.test 5769fc62d8c890a83a503f67d47508dfdc543305
 F test/pcache.test b09104b03160aca0d968d99e8cd2c5b1921a993d
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
@@ -1256,7 +1256,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fe723bb5d5fa9522411c06dcee8bf1a8fd210db3
-R d7c4deb16bf26a7674db9e0cb4527dc8
-U drh
-Z 25a7c0abd03d9bc7bf67b4ae02f65f16
+P 5f3cd68b3e3ac9957059c7076e95c5c4e8238f51
+R cc4f59b77414273fa2e6b8c4ac908fce
+U dan
+Z 80e1f21d30b8b3c750530e41a6aaf062
