@@ -797,6 +797,30 @@ impl<'stmt> SqliteRow<'stmt> {
         self.get_opt(idx).unwrap()
     }
 
+    /// Get the value of a particular column of the result row.
+    ///
+    /// ## Failure
+    ///
+    /// Returns a `SQLITE_MISMATCH`-coded `SqliteError` if the underlying SQLite column
+    /// type is not a valid type as a source for `T`.
+    ///
+    /// Panics if `idx` is outside the range of columns in the returned query or if this row
+    /// is stale.
+    pub fn get_checked<T: FromSql>(&self, idx: c_int) -> SqliteResult<T> {
+        let valid_column_type = unsafe {
+            T::column_has_valid_sqlite_type(self.stmt.stmt, idx)
+        };
+
+        if valid_column_type {
+            Ok(self.get(idx))
+        } else {
+            Err(SqliteError{
+                code: ffi::SQLITE_MISMATCH,
+                message: "Invalid column type".to_string(),
+            })
+        }
+    }
+
     /// Attempt to get the value of a particular column of the result row.
     ///
     /// ## Failure
