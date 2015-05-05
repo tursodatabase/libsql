@@ -1,5 +1,5 @@
-C Automatically\senable\sthe\sdbstat\svirtual\stable\son\sall\snew\sdatabase\nconnections\swith\sthe\sSQLITE_ENABLE_DBSTAT_VTAB\scompile-time\soption\sis\sused.
-D 2015-05-04T20:25:05.875
+C Fix\s#ifdef\sproblem\sin\stclsqlite.c.
+D 2015-05-05T00:48:23.312
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 382b774885a3f0ac5207b1835e92c96b641c85e5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -240,7 +240,7 @@ F src/sqliteInt.h 20d9c59fd82774503b8953acfbcc6ecbdd9ee6aa
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c f266ad8a2892d659b74f0f50cb6a88b6e7c12179
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
-F src/tclsqlite.c 22b7040d20bc318a670f55fd47d937d12877712f
+F src/tclsqlite.c d4fa052d3fbb655150d4ca8eedc70384b98bfef3
 F src/test1.c 90fbedce75330d48d99eadb7d5f4223e86969585
 F src/test2.c 577961fe48961b2f2e5c8b56ee50c3f459d3359d
 F src/test3.c 64d2afdd68feac1bb5e2ffb8226c8c639f798622
@@ -1256,7 +1256,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 850c11866686a7b39d7b163fb60898c11283688e
-R d957afaabac02b446c83338793586361
+P 1c9c6eaa9f75fd7b90fbf8b057656fd9e50b5060
+R 9a7e5c596dc078247dfb69c6d041cbfa
 U drh
-Z 85a47c27fb95447ea53df020897f9b65
+Z 87590d6f91af0883cbac7672326d49e7
