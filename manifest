@@ -1,5 +1,5 @@
-C Spell\sSQLITE_OMIT_VIRTUALTABLE\scorrectly\sin\sa\s#if\sin\sdbstat.c.
-D 2015-05-05T10:46:02.873
+C Add\s#ifdef\sstatements\sto\stest_blob.c\sso\sthat\sit\swill\sbuild\nwith\sSQLITE_OMIT_INCRBLOB.
+D 2015-05-05T11:08:02.278
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 08728ecbeddca339c77bfd564d3484b523dffdb1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -253,7 +253,7 @@ F src/test9.c bea1e8cf52aa93695487badedd6e1886c321ea60
 F src/test_async.c 21e11293a2f72080eda70e1124e9102044531cd8
 F src/test_autoext.c dea8a01a7153b9adc97bd26161e4226329546e12
 F src/test_backup.c 2e6e6a081870150f20c526a2e9d0d29cda47d803
-F src/test_blob.c 1f2e3e25255b731c4fcf15ee7990d06347cb6c09
+F src/test_blob.c e5a7a81d61a780da79101aeb1e60d300af169e07
 F src/test_btree.c 2e9978eca99a9a4bfa8cae949efb00886860a64f
 F src/test_config.c c2d3ff6c129d50183900c7eff14158ff7e9b3f03
 F src/test_demovfs.c 0de72c2c89551629f58486fde5734b7d90758852
@@ -1256,7 +1256,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 90b197489a37e01dcb2f3a8182848c1301e1757b
-R 487591e49d4ce43ade52228db8e56b2e
+P d2cb1becc07fad5cbd48c206c676493ba90cada1
+R e1db2a6afd30f4051a55266b8de5e117
 U drh
-Z 66e74e1f0938640cd95f7967b4c95cd5
+Z df7e75264a470014004f32463950df05
