@@ -1,7 +1,7 @@
-C Fix\s#ifdef\sproblem\sin\stclsqlite.c.
-D 2015-05-05T00:48:23.312
+C Fix\sa\sproblem\sin\sMakefile.in\sthat\sonly\scomes\sup\son\sWindows\swith\sMinGW.
+D 2015-05-05T01:09:06.067
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in 382b774885a3f0ac5207b1835e92c96b641c85e5
+F Makefile.in 08728ecbeddca339c77bfd564d3484b523dffdb1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc c6241f7fa2912427410ef15429c8ab5601e19a71
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
@@ -1256,7 +1256,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1c9c6eaa9f75fd7b90fbf8b057656fd9e50b5060
-R 9a7e5c596dc078247dfb69c6d041cbfa
+P fe723bb5d5fa9522411c06dcee8bf1a8fd210db3
+R d7c4deb16bf26a7674db9e0cb4527dc8
 U drh
-Z 87590d6f91af0883cbac7672326d49e7
+Z 25a7c0abd03d9bc7bf67b4ae02f65f16

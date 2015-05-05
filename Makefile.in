@@ -537,19 +537,19 @@ sqlite3$(TEXE):	$(TOP)/src/shell.c libsqlite3.la sqlite3.h
 		-o $@ $(TOP)/src/shell.c libsqlite3.la \
 		$(LIBREADLINE) $(TLIBS) -rpath "$(libdir)"
 
-sqldiff$(EXE):	$(TOP)/tool/sqldiff.c sqlite3.c sqlite3.h
+sqldiff$(TEXE):	$(TOP)/tool/sqldiff.c sqlite3.c sqlite3.h
 	$(LTLINK) -o $@ $(TOP)/tool/sqldiff.c	sqlite3.c $(TLIBS)
 
-fuzzershell$(EXE):	$(TOP)/tool/fuzzershell.c sqlite3.c sqlite3.h
+fuzzershell$(TEXE):	$(TOP)/tool/fuzzershell.c sqlite3.c sqlite3.h
 	$(LTLINK) -o $@ $(TOP)/tool/fuzzershell.c	sqlite3.c $(TLIBS)
 
-mptester$(EXE):	sqlite3.c $(TOP)/mptest/mptest.c
+mptester$(TEXE):	sqlite3.c $(TOP)/mptest/mptest.c
 	$(LTLINK) -o $@ -I. $(TOP)/mptest/mptest.c sqlite3.c \
 		$(TLIBS) -rpath "$(libdir)"
 
-MPTEST1=./mptester$(EXE) mptest.db $(TOP)/mptest/crash01.test --repeat 20
-MPTEST2=./mptester$(EXE) mptest.db $(TOP)/mptest/multiwrite01.test --repeat 20
-mptest:	mptester$(EXE)
+MPTEST1=./mptester$(TEXE) mptest.db $(TOP)/mptest/crash01.test --repeat 20
+MPTEST2=./mptester$(TEXE) mptest.db $(TOP)/mptest/multiwrite01.test --repeat 20
+mptest:	mptester$(TEXE)
 	rm -f mptest.db
 	$(MPTEST1) --journalmode DELETE
 	$(MPTEST2) --journalmode WAL
