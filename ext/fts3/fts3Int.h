@@ -197,6 +197,8 @@ typedef struct Fts3DeferredToken Fts3DeferredToken;
 typedef struct Fts3SegReader Fts3SegReader;
 typedef struct Fts3MultiSegReader Fts3MultiSegReader;
 
+typedef struct MatchinfoBuffer MatchinfoBuffer;
+
 /*
 ** A connection to a fulltext index is an instance of the following
 ** structure. The xCreate and xConnect methods create an instance
@@ -306,9 +308,7 @@ struct Fts3Cursor {
   i64 iMinDocid;                  /* Minimum docid to return */
   i64 iMaxDocid;                  /* Maximum docid to return */
   int isMatchinfoNeeded;          /* True when aMatchinfo[] needs filling in */
-  u32 *aMatchinfo;                /* Information about most recent match */
-  int nMatchinfo;                 /* Number of elements in aMatchinfo[] */
-  char *zMatchinfo;               /* Matchinfo specification */
+  MatchinfoBuffer *pMIBuffer;     /* Buffer for matchinfo data */
 };
 
 #define FTS3_EVAL_FILTER    0
@@ -564,6 +564,7 @@ void sqlite3Fts3Snippet(sqlite3_context *, Fts3Cursor *, const char *,
   const char *, const char *, int, int
 );
 void sqlite3Fts3Matchinfo(sqlite3_context *, Fts3Cursor *, const char *);
+void sqlite3Fts3MIBufferFree(MatchinfoBuffer *p);
 
 /* fts3_expr.c */
 int sqlite3Fts3ExprParse(sqlite3_tokenizer *, int,

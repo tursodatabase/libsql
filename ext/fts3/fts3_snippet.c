@@ -92,6 +92,18 @@ struct MatchInfo {
   u32 *aMatchinfo;                /* Pre-allocated buffer */
 };
 
+/*
+** An instance of this structure is used to manage a pair of buffers, each
+** (nElem * sizeof(u32)) bytes in size. See the MatchinfoBuffer code below
+** for details.
+*/
+struct MatchinfoBuffer {
+  u8 aRef[3];
+  int nElem;
+  int bGlobal;                    /* Set if global data is loaded */
+  char *zMatchinfo;
+  u32 aMatchinfo[0];
+};
 
 
 /*
@@ -105,6 +117,97 @@ struct StrBuffer {
   int n;                          /* Length of z in bytes (excl. nul-term) */
   int nAlloc;                     /* Allocated size of buffer z in bytes */
 };
+
+
+/*************************************************************************
+** Start of MatchinfoBuffer code.
+*/
+
+/*
+** Allocate a two-slot MatchinfoBuffer object.
+*/
+static MatchinfoBuffer *fts3MIBufferNew(int nElem, const char *zMatchinfo){
+  MatchinfoBuffer *pRet;
+  int nByte = sizeof(u32) * (2*nElem + 2) + sizeof(MatchinfoBuffer);
+  int nStr = strlen(zMatchinfo);
+
+  pRet = sqlite3_malloc(nByte + nStr+1);
+  if( pRet ){
+    memset(pRet, 0, nByte);
+    pRet->aMatchinfo[0] = (u8*)(&pRet->aMatchinfo[1]) - (u8*)pRet;
+    pRet->aMatchinfo[1+nElem] = pRet->aMatchinfo[0] + sizeof(u32)*(nElem+1);
+    pRet->nElem = nElem;
+    pRet->zMatchinfo = ((char*)pRet) + nByte;
+    memcpy(pRet->zMatchinfo, zMatchinfo, nStr+1);
+    pRet->aRef[0] = 1;
+  }
+
+  return pRet;
+}
+
+static void fts3MIBufferFree(void *p){
+  MatchinfoBuffer *pBuf = (MatchinfoBuffer*)((u8*)p - ((u32*)p)[-1]);
+
+  assert( (u32*)p==&pBuf->aMatchinfo[1] 
+       || (u32*)p==&pBuf->aMatchinfo[pBuf->nElem+2] 
+  );
+  if( (u32*)p==&pBuf->aMatchinfo[1] ){
+    pBuf->aRef[1] = 0;
+  }else{
+    pBuf->aRef[2] = 0;
+  }
+
+  if( pBuf->aRef[0]==0 && pBuf->aRef[1]==0 && pBuf->aRef[2]==0 ){
+    sqlite3_free(pBuf);
+  }
+}
+
+static void (*fts3MIBufferAlloc(MatchinfoBuffer *p, u32 **paOut))(void*){
+  void (*xRet)(void*) = 0;
+  u32 *aOut = 0;
+
+  if( p->aRef[1]==0 ){
+    p->aRef[1] = 1;
+    aOut = &p->aMatchinfo[1];
+    xRet = fts3MIBufferFree;
+  }
+  else if( p->aRef[2]==0 ){
+    p->aRef[2] = 1;
+    aOut = &p->aMatchinfo[p->nElem+2];
+    xRet = fts3MIBufferFree;
+  }else{
+    aOut = (u32*)sqlite3_malloc(p->nElem * sizeof(u32));
+    if( aOut ){
+      xRet = sqlite3_free;
+      if( p->bGlobal ) memcpy(aOut, &p->aMatchinfo[1], p->nElem*sizeof(u32));
+    }
+  }
+
+  *paOut = aOut;
+  return xRet;
+}
+
+static void fts3MIBufferSetGlobal(MatchinfoBuffer *p){
+  p->bGlobal = 1;
+  memcpy(&p->aMatchinfo[2+p->nElem], &p->aMatchinfo[1], p->nElem*sizeof(u32));
+}
+
+/*
+** Free a MatchinfoBuffer object allocated using fts3MIBufferNew()
+*/
+void sqlite3Fts3MIBufferFree(MatchinfoBuffer *p){
+  if( p ){
+    assert( p->aRef[0]==1 );
+    p->aRef[0] = 0;
+    if( p->aRef[0]==0 && p->aRef[1]==0 && p->aRef[2]==0 ){
+      sqlite3_free(p);
+    }
+  }
+}
+
+/* 
+** End of MatchinfoBuffer code.
+*************************************************************************/
 
 
 /*
@@ -133,6 +236,8 @@ static void fts3GetDeltaPosition(char **pp, int *piPos){
   *piPos += (iVal-2);
 }
 
+static int fts3ExprLHitsCb(Fts3Expr*,int,void*);
+
 /*
 ** Helper function for fts3ExprIterate() (see below).
 */
@@ -143,17 +248,21 @@ static int fts3ExprIterate2(
   void *pCtx                      /* Second argument to pass to callback */
 ){
   int rc;                         /* Return code */
-  int eType = pExpr->eType;       /* Type of expression node pExpr */
 
-  if( eType!=FTSQUERY_PHRASE ){
-    assert( pExpr->pLeft && pExpr->pRight );
-    rc = fts3ExprIterate2(pExpr->pLeft, piPhrase, x, pCtx);
-    if( rc==SQLITE_OK && eType!=FTSQUERY_NOT ){
-      rc = fts3ExprIterate2(pExpr->pRight, piPhrase, x, pCtx);
-    }
+  if( x==fts3ExprLHitsCb && pExpr->bEof ){
+    rc = SQLITE_OK;
   }else{
-    rc = x(pExpr, *piPhrase, pCtx);
-    (*piPhrase)++;
+    int eType = pExpr->eType;     /* Type of expression node pExpr */
+    if( eType!=FTSQUERY_PHRASE ){
+      assert( pExpr->pLeft && pExpr->pRight );
+      rc = fts3ExprIterate2(pExpr->pLeft, piPhrase, x, pCtx);
+      if( rc==SQLITE_OK && eType!=FTSQUERY_NOT ){
+        rc = fts3ExprIterate2(pExpr->pRight, piPhrase, x, pCtx);
+      }
+    }else{
+      rc = x(pExpr, *piPhrase, pCtx);
+      (*piPhrase)++;
+    }
   }
   return rc;
 }
@@ -819,23 +928,15 @@ static int fts3ExprLHitsCb(
   int iPhrase,                    /* Phrase number */
   void *pCtx                      /* Pointer to MatchInfo structure */
 ){
-  MatchInfo *p = (MatchInfo *)pCtx;
-  Fts3Table *pTab = (Fts3Table *)p->pCursor->base.pVtab;
   int rc = SQLITE_OK;
-  int iStart = iPhrase * p->nCol;
-  Fts3Expr *pEof;                 /* Ancestor node already at EOF */
+  MatchInfo *p = (MatchInfo *)pCtx;
   
   /* This must be a phrase */
   assert( pExpr->pPhrase );
 
-  /* Initialize all output integers to zero. */
-  memset(&p->aMatchinfo[iStart], 0, sizeof(u32) * p->nCol);
-
-  /* Check if this or any parent node is at EOF. If so, then all output
-  ** values are zero.  */
-  for(pEof=pExpr; pEof && pEof->bEof==0; pEof=pEof->pParent);
-
-  if( pEof==0 && pExpr->iDocid==p->pCursor->iPrevId ){
+  if( pExpr->iDocid==p->pCursor->iPrevId ){
+    Fts3Table *pTab = (Fts3Table *)p->pCursor->base.pVtab;
+    int iStart = iPhrase * p->nCol;
     Fts3Phrase *pPhrase = pExpr->pPhrase;
     char *pIter = pPhrase->doclist.pList;
     int iCol = 0;
@@ -1149,9 +1250,12 @@ static int fts3MatchinfoValues(
         }
         break;
 
-      case FTS3_MATCHINFO_LHITS:
+      case FTS3_MATCHINFO_LHITS: {
+        int nZero = fts3MatchinfoSize(pInfo, FTS3_MATCHINFO_LHITS)*sizeof(u32);
+        memset(pInfo->aMatchinfo, 0, nZero);
         (void)fts3ExprIterate(pCsr->pExpr, fts3ExprLHitsCb, (void*)pInfo);
         break;
+      }
 
       default: {
         Fts3Expr *pExpr;
@@ -1185,6 +1289,7 @@ static int fts3MatchinfoValues(
 ** 'matchinfo' data is an array of 32-bit unsigned integers (C type u32).
 */
 static int fts3GetMatchinfo(
+  sqlite3_context *pCtx,        /* Return results here */
   Fts3Cursor *pCsr,               /* FTS3 Cursor object */
   const char *zArg                /* Second argument to matchinfo() function */
 ){
@@ -1193,6 +1298,9 @@ static int fts3GetMatchinfo(
   int rc = SQLITE_OK;
   int bGlobal = 0;                /* Collect 'global' stats as well as local */
 
+  u32 *aOut = 0;
+  void (*xDestroyOut)(void*) = 0;
+
   memset(&sInfo, 0, sizeof(MatchInfo));
   sInfo.pCursor = pCsr;
   sInfo.nCol = pTab->nColumn;
@@ -1200,19 +1308,17 @@ static int fts3GetMatchinfo(
   /* If there is cached matchinfo() data, but the format string for the 
   ** cache does not match the format string for this request, discard 
   ** the cached data. */
-  if( pCsr->zMatchinfo && strcmp(pCsr->zMatchinfo, zArg) ){
-    assert( pCsr->aMatchinfo );
-    sqlite3_free(pCsr->aMatchinfo);
-    pCsr->zMatchinfo = 0;
-    pCsr->aMatchinfo = 0;
+  if( pCsr->pMIBuffer && strcmp(pCsr->pMIBuffer->zMatchinfo, zArg) ){
+    sqlite3Fts3MIBufferFree(pCsr->pMIBuffer);
+    pCsr->pMIBuffer = 0;
   }
 
-  /* If Fts3Cursor.aMatchinfo[] is NULL, then this is the first time the
+  /* If Fts3Cursor.pMIBuffer is NULL, then this is the first time the
   ** matchinfo function has been called for this query. In this case 
   ** allocate the array used to accumulate the matchinfo data and
   ** initialize those elements that are constant for every row.
   */
-  if( pCsr->aMatchinfo==0 ){
+  if( pCsr->pMIBuffer==0 ){
     int nMatchinfo = 0;           /* Number of u32 elements in match-info */
     int nArg;                     /* Bytes in zArg */
     int i;                        /* Used to iterate through zArg */
@@ -1227,23 +1333,35 @@ static int fts3GetMatchinfo(
     }
 
     /* Allocate space for Fts3Cursor.aMatchinfo[] and Fts3Cursor.zMatchinfo. */
-    nArg = (int)strlen(zArg);
-    pCsr->aMatchinfo = (u32 *)sqlite3_malloc(sizeof(u32)*nMatchinfo + nArg + 1);
-    if( !pCsr->aMatchinfo ) return SQLITE_NOMEM;
+    pCsr->pMIBuffer = fts3MIBufferNew(nMatchinfo, zArg);
+    if( !pCsr->pMIBuffer ) rc = SQLITE_NOMEM;
 
-    pCsr->zMatchinfo = (char *)&pCsr->aMatchinfo[nMatchinfo];
-    pCsr->nMatchinfo = nMatchinfo;
-    memcpy(pCsr->zMatchinfo, zArg, nArg+1);
-    memset(pCsr->aMatchinfo, 0, sizeof(u32)*nMatchinfo);
     pCsr->isMatchinfoNeeded = 1;
     bGlobal = 1;
   }
 
-  sInfo.aMatchinfo = pCsr->aMatchinfo;
-  sInfo.nPhrase = pCsr->nPhrase;
-  if( pCsr->isMatchinfoNeeded ){
+  if( rc==SQLITE_OK ){
+    xDestroyOut = fts3MIBufferAlloc(pCsr->pMIBuffer, &aOut);
+    if( xDestroyOut==0 ){
+      rc = SQLITE_NOMEM;
+    }
+  }
+
+  if( rc==SQLITE_OK ){
+    sInfo.aMatchinfo = aOut;
+    sInfo.nPhrase = pCsr->nPhrase;
     rc = fts3MatchinfoValues(pCsr, bGlobal, &sInfo, zArg);
-    pCsr->isMatchinfoNeeded = 0;
+    if( bGlobal ){
+      fts3MIBufferSetGlobal(pCsr->pMIBuffer);
+    }
+  }
+
+  if( rc!=SQLITE_OK ){
+    sqlite3_result_error_code(pCtx, rc);
+    if( xDestroyOut ) xDestroyOut(aOut);
+  }else{
+    int n = pCsr->pMIBuffer->nElem * sizeof(u32);
+    sqlite3_result_blob(pCtx, aOut, n, xDestroyOut);
   }
 
   return rc;
@@ -1568,15 +1686,8 @@ void sqlite3Fts3Matchinfo(
   }
 
   /* Retrieve matchinfo() data. */
-  rc = fts3GetMatchinfo(pCsr, zFormat);
+  rc = fts3GetMatchinfo(pContext, pCsr, zFormat);
   sqlite3Fts3SegmentsClose(pTab);
-
-  if( rc!=SQLITE_OK ){
-    sqlite3_result_error_code(pContext, rc);
-  }else{
-    int n = pCsr->nMatchinfo * sizeof(u32);
-    sqlite3_result_blob(pContext, pCsr->aMatchinfo, n, SQLITE_TRANSIENT);
-  }
 }
 
 #endif

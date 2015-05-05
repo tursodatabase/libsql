@@ -1,5 +1,5 @@
-C Add\s#ifdef\sstatements\sto\stest_blob.c\sso\sthat\sit\swill\sbuild\nwith\sSQLITE_OMIT_INCRBLOB.
-D 2015-05-05T11:08:02.278
+C Optimizations\sfor\sthe\smatchinfo()\sfunction,\sparticularly\sthe\s'y'\sflag.
+D 2015-05-05T19:37:07.819
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 08728ecbeddca339c77bfd564d3484b523dffdb1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -78,16 +78,16 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 2fb98467f4b670c8934cdd97d1ba3ffa7382764c
+F ext/fts3/fts3.c 341e9d9a3c7615bac8e815a8937d576265b22f78
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h 59ecaa2d7af0da44c70b6aeaebdcfc070d14abab
+F ext/fts3/fts3Int.h bf61766eeb57a6922a8458b894d85e50d1cfb04e
 F ext/fts3/fts3_aux.c 9edc3655fcb287f0467d0a4b886a01c6185fe9f1
 F ext/fts3/fts3_expr.c 71c063da9c2a4167fb54aec089dd5ef33a58c9cb
 F ext/fts3/fts3_hash.c 29b986e43f4e9dd40110eafa377dc0d63c422c60
 F ext/fts3/fts3_hash.h 39cf6874dc239d6b4e30479b1975fe5b22a3caaf
 F ext/fts3/fts3_icu.c e319e108661147bcca8dd511cd562f33a1ba81b5
 F ext/fts3/fts3_porter.c 3565faf04b626cddf85f03825e86056a4562c009
-F ext/fts3/fts3_snippet.c 40a96ba78e90aba7d7d6d014a18049bb218060fd
+F ext/fts3/fts3_snippet.c a1c62f1b7c55d14a13385689ce11aa0e1ada55b8
 F ext/fts3/fts3_term.c 88c55a6fa1a51ab494e33dced0401a6c28791fd7
 F ext/fts3/fts3_test.c 8a3a78c4458b2d7c631fcf4b152a5cd656fa7038
 F ext/fts3/fts3_tokenize_vtab.c a27593ab19657166f6fa5ec073b678cc29a75860
@@ -1256,7 +1256,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d2cb1becc07fad5cbd48c206c676493ba90cada1
-R e1db2a6afd30f4051a55266b8de5e117
-U drh
-Z df7e75264a470014004f32463950df05
+P b8f090e65d010c62df335d0520a36a24904e8bc6
+R db4b4f916c43503b3d5880cc35083941
+T *branch * fts3-matchinfo-y
+T *sym-fts3-matchinfo-y *
+T -sym-trunk *
+U dan
+Z 2cd9b208c5989e901293be093105f297
