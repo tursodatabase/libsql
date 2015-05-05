@@ -274,28 +274,27 @@ impl SqliteConnection {
     /// ## Example
     ///
     /// ```rust,no_run
-    /// # use rusqlite::{SqliteConnection};
-    /// fn preferred_locale(conn: &SqliteConnection) -> String {
-    ///     conn.query_row("SELECT value FROM preferences WHERE name='locale'", &[], |row| {
+    /// # use rusqlite::{SqliteResult,SqliteConnection};
+    /// fn preferred_locale(conn: &SqliteConnection) -> SqliteResult<String> {
+    ///     conn.query_row_safe("SELECT value FROM preferences WHERE name='locale'", &[], |row| {
     ///         row.get(0)
     ///     })
     /// }
     /// ```
     ///
-    /// ## Failure
-    ///
-    /// Panics if:
-    ///
-    ///   * Preparing the query fails.
-    ///   * Running the query fails (i.e., calling `query` on the prepared statement).
-    ///   * The query does not successfully return at least one row.
-    ///
     /// If the query returns more than one row, all rows except the first are ignored.
-    pub fn query_row<T, F>(&self, sql: &str, params: &[&ToSql], f: F) -> T
+    pub fn query_row<T, F>(&self, sql: &str, params: &[&ToSql], f: F) -> SqliteResult<T>
                            where F: FnOnce(SqliteRow) -> T {
-        let mut stmt = self.prepare(sql).unwrap();
-        let mut rows = stmt.query(params).unwrap();
-        f(rows.next().expect("Query did not return a row").unwrap())
+        let mut stmt = try!(self.prepare(sql));
+        let mut rows = try!(stmt.query(params));
+
+        match rows.next() {
+            Some(row) => row.map(f),
+            None      => Err(SqliteError{
+                code: ffi::SQLITE_NOTICE,
+                message: "Query did not return a row".to_string(),
+            })
+        }
     }
 
     /// Convenience method to execute a query that is expected to return a single row.
@@ -312,18 +311,14 @@ impl SqliteConnection {
     /// ```
     ///
     /// If the query returns more than one row, all rows except the first are ignored.
+    ///
+    /// ## Deprecated
+    ///
+    /// This method should be considered deprecated. Use `query_row` instead, which now
+    /// does exactly the same thing.
     pub fn query_row_safe<T, F>(&self, sql: &str, params: &[&ToSql], f: F) -> SqliteResult<T>
                                 where F: FnOnce(SqliteRow) -> T {
-        let mut stmt = try!(self.prepare(sql));
-        let mut rows = try!(stmt.query(params));
-
-        match rows.next() {
-            Some(row) => row.map(f),
-            None      => Err(SqliteError{
-                code: ffi::SQLITE_NOTICE,
-                message: "Query did not return a row".to_string(),
-            })
-        }
+        self.query_row(sql, params, f)
     }
 
     /// Prepare a SQL statement for execution.
@@ -904,7 +899,7 @@ mod test {
         assert_eq!(db.execute("INSERT INTO foo(x) VALUES (?)", &[&1i32]).unwrap(), 1);
         assert_eq!(db.execute("INSERT INTO foo(x) VALUES (?)", &[&2i32]).unwrap(), 1);
 
-        assert_eq!(3i32, db.query_row("SELECT SUM(x) FROM foo", &[], |r| r.get(0)));
+        assert_eq!(3i32, db.query_row("SELECT SUM(x) FROM foo", &[], |r| r.get(0)).unwrap());
     }
 
     #[test]
