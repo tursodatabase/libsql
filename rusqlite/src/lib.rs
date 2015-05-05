@@ -630,18 +630,26 @@ impl<'conn> SqliteStatement<'conn> {
         self.reset_if_needed();
 
         unsafe {
-            assert!(params.len() as c_int == ffi::sqlite3_bind_parameter_count(self.stmt),
-                    "incorrect number of parameters to query(): expected {}, got {}",
-                    ffi::sqlite3_bind_parameter_count(self.stmt),
-                    params.len());
-
-            for (i, p) in params.iter().enumerate() {
-                try!(self.conn.decode_result(p.bind_parameter(self.stmt, (i + 1) as c_int)));
-            }
-
-            self.needs_reset = true;
-            Ok(SqliteRows::new(self))
+            try!(self.bind_parameters(params));
         }
+        
+        Ok(SqliteRows::new(self))
+    }
+
+    pub fn query_map<'a, 'map, T, F>(&'a mut self, params: &[&ToSql], f: &'map F)
+                                     -> SqliteResult<MappedRows<'a, 'map, T>>
+                                     where T: 'static,
+                                           F: Fn(MappedRow) -> T {
+        self.reset_if_needed();
+
+        unsafe {
+            try!(self.bind_parameters(params));
+        }
+
+        Ok(MappedRows {
+            stmt: self,
+            map: f
+        })
     }
 
     /// Consumes the statement.
@@ -650,6 +658,21 @@ impl<'conn> SqliteStatement<'conn> {
     /// that occur.
     pub fn finalize(mut self) -> SqliteResult<()> {
         self.finalize_()
+    }
+
+    unsafe fn bind_parameters(&mut self, params: &[&ToSql]) -> SqliteResult<()> {
+        assert!(params.len() as c_int == ffi::sqlite3_bind_parameter_count(self.stmt),
+                "incorrect number of parameters to query(): expected {}, got {}",
+                ffi::sqlite3_bind_parameter_count(self.stmt),
+                params.len());
+
+        for (i, p) in params.iter().enumerate() {
+            try!(self.conn.decode_result(p.bind_parameter(self.stmt, (i + 1) as c_int)));
+        }
+
+        self.needs_reset = true;
+
+        Ok(())
     }
 
     fn reset_if_needed(&mut self) {
@@ -676,6 +699,44 @@ impl<'conn> Drop for SqliteStatement<'conn> {
     #[allow(unused_must_use)]
     fn drop(&mut self) {
         self.finalize_();
+    }
+}
+
+pub struct MappedRows<'stmt, 'map, T> {
+    stmt: &'stmt SqliteStatement<'stmt>,
+    map: &'map Fn(MappedRow) -> T
+}
+
+impl<'stmt, 'map, T: 'static> Iterator for MappedRows<'stmt, 'map, T> {
+    type Item = SqliteResult<T>;
+
+    fn next(&mut self) -> Option<SqliteResult<T>> {
+        match unsafe { ffi::sqlite3_step(self.stmt.stmt) } {
+            ffi::SQLITE_ROW => {
+                Some(Ok((*self.map)(MappedRow(self.stmt))))
+            },
+            ffi::SQLITE_DONE => None,
+            code => {
+                Some(Err(self.stmt.conn.decode_result(code).unwrap_err()))
+            }
+        }
+    }
+}
+
+pub struct MappedRow<'stmt>(&'stmt SqliteStatement<'stmt>);
+
+impl<'stmt> MappedRow<'stmt> {
+    pub fn get<T: FromSql>(&self, idx: c_int) -> T {
+        self.get_opt(idx).unwrap()
+    }
+
+    pub fn get_opt<T: FromSql>(&self, idx: c_int) -> SqliteResult<T> {
+        // Do assertions because these are logic errors.
+        // We can probably skip them in release builds.
+        assert!(idx >= 0);
+        assert!(idx < unsafe { ffi::sqlite3_column_count(self.0.stmt) });
+
+        unsafe { FromSql::column_result(self.0.stmt, idx) }
     }
 }
 
@@ -945,6 +1006,24 @@ mod test {
             let v: Vec<i32> = rows.map(|r| r.unwrap().get(0)).collect();
             assert_eq!(v, [2i32, 1]);
         }
+    }
+
+    #[test]
+    fn test_query_map() {
+        let db = checked_memory_handle();
+        let sql = "BEGIN;
+                   CREATE TABLE foo(x INTEGER, y TEXT);
+                   INSERT INTO foo VALUES(4, \"hello\");
+                   INSERT INTO foo VALUES(3, \", \");
+                   INSERT INTO foo VALUES(2, \"world\");
+                   INSERT INTO foo VALUES(1, \"!\");
+                   END;";
+        db.execute_batch(sql).unwrap();
+
+        let mut query = db.prepare("SELECT x, y FROM foo ORDER BY x DESC").unwrap();
+        let results: SqliteResult<Vec<String>> = query.query_map(&[], &(|row| row.get(1))).unwrap().collect();
+
+        assert_eq!(results.unwrap().concat(), "hello, world!");
     }
 
     #[test]
