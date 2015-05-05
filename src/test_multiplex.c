@@ -286,7 +286,7 @@ static void multiplexFilename(
 static int multiplexSubFilename(multiplexGroup *pGroup, int iChunk){
   if( iChunk>=pGroup->nReal ){
     struct multiplexReal *p;
-    p = sqlite3_realloc(pGroup->aReal, (iChunk+1)*sizeof(*p));
+    p = sqlite3_realloc64(pGroup->aReal, (iChunk+1)*sizeof(*p));
     if( p==0 ){
       return SQLITE_NOMEM;
     }
@@ -297,7 +297,7 @@ static int multiplexSubFilename(multiplexGroup *pGroup, int iChunk){
   if( pGroup->zName && pGroup->aReal[iChunk].z==0 ){
     char *z;
     int n = pGroup->nName;
-    pGroup->aReal[iChunk].z = z = sqlite3_malloc( n+5 );
+    pGroup->aReal[iChunk].z = z = sqlite3_malloc64( n+5 );
     if( z==0 ){
       return SQLITE_NOMEM;
     }
@@ -357,7 +357,7 @@ static sqlite3_file *multiplexSubOpen(
       }
       flags &= ~SQLITE_OPEN_CREATE;
     }
-    pSubOpen = sqlite3_malloc( pOrigVfs->szOsFile );
+    pSubOpen = sqlite3_malloc64( pOrigVfs->szOsFile );
     if( pSubOpen==0 ){
       *rc = SQLITE_IOERR_NOMEM;
       return 0;
@@ -524,7 +524,7 @@ static int multiplexOpen(
     nName = zName ? multiplexStrlen30(zName) : 0;
     sz = sizeof(multiplexGroup)                             /* multiplexGroup */
        + nName + 1;                                         /* zName */
-    pGroup = sqlite3_malloc( sz );
+    pGroup = sqlite3_malloc64( sz );
     if( pGroup==0 ){
       rc = SQLITE_NOMEM;
     }
@@ -655,7 +655,7 @@ static int multiplexDelete(
     */
     int nName = (int)strlen(zName);
     char *z;
-    z = sqlite3_malloc(nName + 5);
+    z = sqlite3_malloc64(nName + 5);
     if( z==0 ){
       rc = SQLITE_IOERR_NOMEM;
     }else{

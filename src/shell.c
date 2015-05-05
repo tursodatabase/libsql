@@ -1007,7 +1007,16 @@ static int shell_callback(
     case MODE_Insert: {
       p->cnt++;
       if( azArg==0 ) break;
-      fprintf(p->out,"INSERT INTO %s VALUES(",p->zDestTable);
+      fprintf(p->out,"INSERT INTO %s",p->zDestTable);
+      if( p->showHeader ){
+        fprintf(p->out,"(");
+        for(i=0; i<nArg; i++){
+          char *zSep = i>0 ? ",": "";
+          fprintf(p->out, "%s%s", zSep, azCol[i]);
+        }
+        fprintf(p->out,")");
+      }
+      fprintf(p->out," VALUES(");
       for(i=0; i<nArg; i++){
         char *zSep = i>0 ? ",": "";
         if( (azArg[i]==0) || (aiType && aiType[i]==SQLITE_NULL) ){
@@ -1208,7 +1217,7 @@ static char *save_err_msg(
   sqlite3 *db            /* Database to query */
 ){
   int nErrMsg = 1+strlen30(sqlite3_errmsg(db));
-  char *zErrMsg = sqlite3_malloc(nErrMsg);
+  char *zErrMsg = sqlite3_malloc64(nErrMsg);
   if( zErrMsg ){
     memcpy(zErrMsg, sqlite3_errmsg(db), nErrMsg);
   }
@@ -1445,8 +1454,8 @@ static void explain_data_prepare(ShellState *p, sqlite3_stmt *pSql){
     /* Grow the p->aiIndent array as required */
     if( iOp>=nAlloc ){
       nAlloc += 100;
-      p->aiIndent = (int*)sqlite3_realloc(p->aiIndent, nAlloc*sizeof(int));
-      abYield = (int*)sqlite3_realloc(abYield, nAlloc*sizeof(int));
+      p->aiIndent = (int*)sqlite3_realloc64(p->aiIndent, nAlloc*sizeof(int));
+      abYield = (int*)sqlite3_realloc64(abYield, nAlloc*sizeof(int));
     }
     abYield[iOp] = str_in_array(zOp, azYield);
     p->aiIndent[iOp] = 0;
@@ -1563,7 +1572,7 @@ static int shell_exec(
         if( xCallback ){
           /* allocate space for col name ptr, value ptr, and type */
           int nCol = sqlite3_column_count(pStmt);
-          void *pData = sqlite3_malloc(3*nCol*sizeof(const char*) + 1);
+          void *pData = sqlite3_malloc64(3*nCol*sizeof(const char*) + 1);
           if( !pData ){
             rc = SQLITE_NOMEM;
           }else{
@@ -1789,6 +1798,7 @@ static int run_schema_dump_query(
 static char zHelp[] =
   ".backup ?DB? FILE      Backup DB (default \"main\") to FILE\n"
   ".bail on|off           Stop after hitting an error.  Default OFF\n"
+  ".binary on|off         Turn binary output on or off.  Default OFF\n"
   ".clone NEWDB           Clone data into NEWDB from the existing database\n"
   ".databases             List names and files of attached databases\n"
   ".dbinfo ?DB?           Show status information about the database\n"
@@ -1810,6 +1820,7 @@ static char zHelp[] =
 #ifdef SQLITE_ENABLE_IOTRACE
   ".iotrace FILE          Enable I/O diagnostic logging to FILE\n"
 #endif
+  ".limit ?LIMIT? ?VAL?   Display or change the value of an SQLITE_LIMIT\n"
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
   ".load FILE ?ENTRY?     Load an extension library\n"
 #endif
@@ -1906,7 +1917,7 @@ static void readfileFunc(
   fseek(in, 0, SEEK_END);
   nIn = ftell(in);
   rewind(in);
-  pBuf = sqlite3_malloc( nIn );
+  pBuf = sqlite3_malloc64( nIn );
   if( pBuf && 1==fread(pBuf, nIn, 1, in) ){
     sqlite3_result_blob(context, pBuf, nIn, sqlite3_free);
   }else{
@@ -2022,12 +2033,18 @@ static void open_db(ShellState *p, int keepAlive){
 /*
 ** Do C-language style dequoting.
 **
+**    \a    -> alarm
+**    \b    -> backspace
 **    \t    -> tab
 **    \n    -> newline
+**    \v    -> vertical tab
+**    \f    -> form feed
 **    \r    -> carriage return
+**    \s    -> space
 **    \"    -> "
-**    \NNN  -> ascii character NNN in octal
+**    \'    -> '
 **    \\    -> backslash
+**    \NNN  -> ascii character NNN in octal
 */
 static void resolve_backslashes(char *z){
   int i, j;
@@ -2036,12 +2053,24 @@ static void resolve_backslashes(char *z){
   for(i=j=0; (c = z[i])!=0; i++, j++){
     if( c=='\\' && z[i+1]!=0 ){
       c = z[++i];
-      if( c=='n' ){
-        c = '\n';
+      if( c=='a' ){
+        c = '\a';
+      }else if( c=='b' ){
+        c = '\b';
       }else if( c=='t' ){
         c = '\t';
+      }else if( c=='n' ){
+        c = '\n';
+      }else if( c=='v' ){
+        c = '\v';
+      }else if( c=='f' ){
+        c = '\f';
       }else if( c=='r' ){
         c = '\r';
+      }else if( c=='"' ){
+        c = '"';
+      }else if( c=='\'' ){
+        c = '\'';
       }else if( c=='\\' ){
         c = '\\';
       }else if( c>='0' && c<='7' ){
@@ -2211,7 +2240,7 @@ struct ImportCtx {
 static void import_append_char(ImportCtx *p, int c){
   if( p->n+1>=p->nAlloc ){
     p->nAlloc += p->nAlloc + 100;
-    p->z = sqlite3_realloc(p->z, p->nAlloc);
+    p->z = sqlite3_realloc64(p->z, p->nAlloc);
     if( p->z==0 ){
       fprintf(stderr, "out of memory\n");
       exit(1);
@@ -2225,7 +2254,7 @@ static void import_append_char(ImportCtx *p, int c){
 **
 **   +  Input comes from p->in.
 **   +  Store results in p->z of length p->n.  Space to hold p->z comes
-**      from sqlite3_malloc().
+**      from sqlite3_malloc64().
 **   +  Use p->cSep as the column separator.  The default is ",".
 **   +  Use p->rSep as the row separator.  The default is "\n".
 **   +  Keep track of the line number in p->nLine.
@@ -2299,7 +2328,7 @@ static char *SQLITE_CDECL csv_read_one_field(ImportCtx *p){
 **
 **   +  Input comes from p->in.
 **   +  Store results in p->z of length p->n.  Space to hold p->z comes
-**      from sqlite3_malloc().
+**      from sqlite3_malloc64().
 **   +  Use p->cSep as the column separator.  The default is "\x1F".
 **   +  Use p->rSep as the row separator.  The default is "\x1E".
 **   +  Keep track of the row number in p->nLine.
@@ -2359,7 +2388,7 @@ static void tryToCloneData(
     goto end_data_xfer;
   }
   n = sqlite3_column_count(pQuery);
-  zInsert = sqlite3_malloc(200 + nTable + n*3);
+  zInsert = sqlite3_malloc64(200 + nTable + n*3);
   if( zInsert==0 ){
     fprintf(stderr, "out of memory\n");
     goto end_data_xfer;
@@ -2775,6 +2804,19 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
   }else
 
+  if( c=='b' && n>=3 && strncmp(azArg[0], "binary", n)==0 ){
+    if( nArg==2 ){
+      if( booleanValue(azArg[1]) ){
+        setBinaryMode(p->out);
+      }else{
+        setTextMode(p->out);
+      }
+    }else{
+      fprintf(stderr, "Usage: .binary on|off\n");
+      rc = 1;
+    }
+  }else
+
   /* The undocumented ".breakpoint" command causes a call to the no-op
   ** routine named test_breakpoint().
   */
@@ -3114,7 +3156,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     sqlite3_finalize(pStmt);
     pStmt = 0;
     if( nCol==0 ) return 0; /* no columns, no error */
-    zSql = sqlite3_malloc( nByte*2 + 20 + nCol*2 );
+    zSql = sqlite3_malloc64( nByte*2 + 20 + nCol*2 );
     if( zSql==0 ){
       fprintf(stderr, "Error: out of memory\n");
       xCloser(sCtx.in);
@@ -3254,6 +3296,63 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
   }else
 #endif
+  if( c=='l' && n>=5 && strncmp(azArg[0], "limits", n)==0 ){
+    static const struct {
+       const char *zLimitName;   /* Name of a limit */
+       int limitCode;            /* Integer code for that limit */
+    } aLimit[] = {
+      { "length",                SQLITE_LIMIT_LENGTH                    },
+      { "sql_length",            SQLITE_LIMIT_SQL_LENGTH                },
+      { "column",                SQLITE_LIMIT_COLUMN                    },
+      { "expr_depth",            SQLITE_LIMIT_EXPR_DEPTH                },
+      { "compound_select",       SQLITE_LIMIT_COMPOUND_SELECT           },
+      { "vdbe_op",               SQLITE_LIMIT_VDBE_OP                   },
+      { "function_arg",          SQLITE_LIMIT_FUNCTION_ARG              },
+      { "attached",              SQLITE_LIMIT_ATTACHED                  },
+      { "like_pattern_length",   SQLITE_LIMIT_LIKE_PATTERN_LENGTH       },
+      { "variable_number",       SQLITE_LIMIT_VARIABLE_NUMBER           },
+      { "trigger_depth",         SQLITE_LIMIT_TRIGGER_DEPTH             },
+      { "worker_threads",        SQLITE_LIMIT_WORKER_THREADS            },
+    };
+    int i, n2;
+    open_db(p, 0);
+    if( nArg==1 ){
+      for(i=0; i<sizeof(aLimit)/sizeof(aLimit[0]); i++){
+        printf("%20s %d\n", aLimit[i].zLimitName, 
+               sqlite3_limit(p->db, aLimit[i].limitCode, -1));
+      }
+    }else if( nArg>3 ){
+      fprintf(stderr, "Usage: .limit NAME ?NEW-VALUE?\n");
+      rc = 1;
+      goto meta_command_exit;
+    }else{
+      int iLimit = -1;
+      n2 = strlen30(azArg[1]);
+      for(i=0; i<sizeof(aLimit)/sizeof(aLimit[0]); i++){
+        if( sqlite3_strnicmp(aLimit[i].zLimitName, azArg[1], n2)==0 ){
+          if( iLimit<0 ){
+            iLimit = i;
+          }else{
+            fprintf(stderr, "ambiguous limit: \"%s\"\n", azArg[1]);
+            rc = 1;
+            goto meta_command_exit;
+          }
+        }
+      }
+      if( iLimit<0 ){
+        fprintf(stderr, "unknown limit: \"%s\"\n"
+                        "enter \".limits\" with no arguments for a list.\n",
+                         azArg[1]);
+        rc = 1;
+        goto meta_command_exit;
+      }
+      if( nArg==3 ){
+        sqlite3_limit(p->db, aLimit[iLimit].limitCode, integerValue(azArg[2]));
+      }
+      printf("%20s %d\n", aLimit[iLimit].zLimitName,
+             sqlite3_limit(p->db, aLimit[iLimit].limitCode, -1));
+    }
+  }else
 
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
   if( c=='l' && strncmp(azArg[0], "load", n)==0 ){
@@ -3931,7 +4030,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       if( nRow>=nAlloc ){
         char **azNew;
         int n2 = nAlloc*2 + 10;
-        azNew = sqlite3_realloc(azResult, sizeof(azResult[0])*n2);
+        azNew = sqlite3_realloc64(azResult, sizeof(azResult[0])*n2);
         if( azNew==0 ){
           fprintf(stderr, "Error: out of memory\n");
           break;

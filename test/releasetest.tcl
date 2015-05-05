@@ -18,6 +18,7 @@ optional) are:
     --buildonly                        (Just build testfixture - do not run)
     --dryrun                           (Print what would have happened)
     --info                             (Show diagnostic info)
+    --with-tcl=DIR                     (Use TCL build at DIR)
 
 The default value for --srcdir is the parent of the directory holding
 this script.
@@ -110,6 +111,13 @@ array set ::Configs [strip_comments {
     -DSQLITE_ENABLE_STAT4
     -DSQLITE_MAX_ATTACHED=125
   }
+  "Fast-One" {
+    -O6
+    -DSQLITE_ENABLE_FTS4=1
+    -DSQLITE_ENABLE_RTREE=1
+    -DSQLITE_ENABLE_STAT4
+    -DSQLITE_MAX_ATTACHED=125
+  }
   "Device-One" {
     -O2
     -DSQLITE_DEBUG=1
@@ -199,6 +207,8 @@ array set ::Configs [strip_comments {
   Fail2 {-O0}
   Fail3 {-O0}
   Fail4 {-O0}
+  FuzzFail1 {-O0}
+  FuzzFail2 {-O0}
 }]
 
 array set ::Platforms [strip_comments {
@@ -214,6 +224,7 @@ array set ::Platforms [strip_comments {
     "No-lookaside"            test
     "Devkit"                  test
     "Sanitize"                {QUICKTEST_OMIT=func4.test,nan.test test}
+    "Fast-One"                fuzzoomtest
     "Valgrind"                valgrindtest
     "Default"                 "threadtest fulltest"
     "Device-One"              fulltest
@@ -255,6 +266,8 @@ array set ::Platforms [strip_comments {
     Fail2     "TEST_FAILURE=2 valgrindtest"
     Fail3     "TEST_FAILURE=3 valgrindtest"
     Fail4     "TEST_FAILURE=4 test"
+    FuzzFail1 "TEST_FAILURE=5 test"
+    FuzzFail2 "TEST_FAILURE=5 valgrindtest"
   }
 }]
 
@@ -351,7 +364,7 @@ proc run_test_suite {name testtarget config} {
   set cflags [expr {$::MSVC ? "-Zi" : "-g"}]
   set opts ""
   set title ${name}($testtarget)
-  set configOpts ""
+  set configOpts $::WITHTCL
 
   regsub -all {#[^\n]*\n} $config \n config
   foreach arg $config {
@@ -482,6 +495,7 @@ proc process_options {argv} {
   set ::DRYRUN    0
   set ::EXEC      exec
   set ::TRACE     0
+  set ::WITHTCL   {}
   set config {}
   set platform $::tcl_platform(os)-$::tcl_platform(machine)
 
@@ -554,6 +568,10 @@ proc process_options {argv} {
         } else {
           lappend ::EXTRACONFIG [lindex $argv $i]
         }
+      }
+
+      -with-tcl=* {
+        set ::WITHTCL -$x
       }
 
       -D* -
@@ -643,10 +661,11 @@ proc main {argv} {
     # it and run veryquick.test. If it did not include the SQLITE_DEBUG option
     # add it and run veryquick.test.
     if {$target!="checksymbols" && $target!="valgrindtest"
-           && !$::BUILDONLY && $::QUICK<2} {
+           && $target!="fuzzoomtest" && !$::BUILDONLY && $::QUICK<2} {
       set debug_idx [lsearch -glob $config_options -DSQLITE_DEBUG*]
       set xtarget $target
       regsub -all {fulltest[a-z]*} $xtarget test xtarget
+      regsub -all {fuzzoomtest} $xtarget fuzztest xtarget
       if {$debug_idx < 0} {
         incr NTEST
         append config_options " -DSQLITE_DEBUG=1"

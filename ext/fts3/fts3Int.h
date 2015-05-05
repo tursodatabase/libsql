@@ -539,6 +539,7 @@ int sqlite3Fts3Incrmerge(Fts3Table*,int,int);
 )
 
 /* fts3.c */
+void sqlite3Fts3ErrMsg(char**,const char*,...);
 int sqlite3Fts3PutVarint(char *, sqlite3_int64);
 int sqlite3Fts3GetVarint(const char *, sqlite_int64 *);
 int sqlite3Fts3GetVarint32(const char *, int *);
