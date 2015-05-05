@@ -42,7 +42,11 @@ pub const SQLITE_ROW       : c_int = 100;
 pub const SQLITE_DONE      : c_int = 101;
 
 // SQLite datatype constants.
-pub const SQLITE_NULL : c_int = 5;
+pub const SQLITE_INTEGER : c_int = 1;
+pub const SQLITE_FLOAT   : c_int = 2;
+pub const SQLITE_TEXT    : c_int = 3;
+pub const SQLITE_BLOB    : c_int = 4;
+pub const SQLITE_NULL    : c_int = 5;
 
 pub type SqliteDestructor = extern "C" fn(*mut c_void);
 
