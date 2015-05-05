@@ -1,5 +1,5 @@
-C Fix\sa\sfaulty\sassert()\sin\sthe\sbtree\spart\sof\sthe\s"PRAGMA\spage_size\s=\s?"\scode.
-D 2015-05-05T10:03:08.878
+C Spell\sSQLITE_OMIT_VIRTUALTABLE\scorrectly\sin\sa\s#if\sin\sdbstat.c.
+D 2015-05-05T10:46:02.873
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 08728ecbeddca339c77bfd564d3484b523dffdb1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -181,7 +181,7 @@ F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c a5cf5b4b56390cfb7b8636e8f7ddef90258dd575
 F src/ctime.c 98f89724adc891a1a4c655bee04e33e716e05887
 F src/date.c e4d50b3283696836ec1036b695ead9a19e37a5ac
-F src/dbstat.c ae435cf8c8ec8d2438835f245ed2e7f3c1996cc9
+F src/dbstat.c 1eacd310212b5ae59b7be645a06de8f8bbe0b5d6
 F src/delete.c 37964e6c1d73ff49cbea9ff690c9605fb15f600e
 F src/expr.c 4c05a28eebe63b288fda1db0e8de556a82ca2ec6
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
@@ -1256,7 +1256,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5f3cd68b3e3ac9957059c7076e95c5c4e8238f51
-R cc4f59b77414273fa2e6b8c4ac908fce
-U dan
-Z 80e1f21d30b8b3c750530e41a6aaf062
+P 90b197489a37e01dcb2f3a8182848c1301e1757b
+R 487591e49d4ce43ade52228db8e56b2e
+U drh
+Z 66e74e1f0938640cd95f7967b4c95cd5

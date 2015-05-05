@@ -19,7 +19,7 @@
 */
 
 #if (defined(SQLITE_ENABLE_DBSTAT_VTAB) || defined(SQLITE_TEST)) \
-    && !defined(SQLITE_OMIT_VIRTUAL_TABLE)
+    && !defined(SQLITE_OMIT_VIRTUALTABLE)
 #include "sqliteInt.h"   /* Requires access to internal data structures */
 
 /*
