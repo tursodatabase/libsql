@@ -1,5 +1,5 @@
-C Fix\sa\sminor\scoding\sinefficiency\sfound\sduring\spre-release\sinspection.
-D 2015-05-05T16:57:52.547
+C Remove\sfour\slines\sof\ssuperfluous\scode\sidentified\sby\sclang\sscan-build.
+D 2015-05-05T18:52:54.583
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 08728ecbeddca339c77bfd564d3484b523dffdb1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -227,7 +227,7 @@ F src/pcache1.c 69d137620a305f814398bd29a0c998038c0695e9
 F src/pragma.c c1f4d012ea9f6b1ce52d341b2cd0ad72d560afd7
 F src/pragma.h 09c89bca58e9a44de2116cc8272b8d454657129f
 F src/prepare.c 1fffbdcd6f8a0173a8f70d71f22528f4c0e1e3d3
-F src/printf.c 1f87c24770b2cea3fadbec03bfb6bdcbd353802c
+F src/printf.c 54dd6dce95454fadffa3ebf7717c5f6c06250d1d
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 13109bc3b5ab404446296efa17039640de5bc35d
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
@@ -293,7 +293,7 @@ F src/update.c 3c4ecc282accf12d39edb8d524cf089645e55a13
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c a6431c92803b975b7322724a7b433e538d243539
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c ff9efff0548b6a31d095ddc999d606e7605f0cdc
+F src/vdbe.c d437887d02d13d79dc69ac018f788aefac3b3972
 F src/vdbe.h 7e538ecf47dccb307ea2d087c3ddc2dd8d70e79d
 F src/vdbeInt.h 9cbaa84f53ddd2d09a0cf61a94337a3a035d08a0
 F src/vdbeapi.c 583d56b129dd27f12bed518270de9ebe521e6a75
@@ -1256,7 +1256,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b8f090e65d010c62df335d0520a36a24904e8bc6
-R aa3e34d67b680aaa71313e3178def66e
+P cc50883d67334507227e1384fef6cc7c93fd7de1
+R 76d874e855b2e1920bd5ad182d7df042
 U drh
-Z cdb699fe6147a4b364800efebeb8babc
+Z bdf9d10f7b9ce59bce00a351127a0aa2
