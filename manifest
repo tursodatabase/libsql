@@ -1,5 +1,5 @@
-C Add\s#ifdef\sstatements\sto\stest_blob.c\sso\sthat\sit\swill\sbuild\nwith\sSQLITE_OMIT_INCRBLOB.
-D 2015-05-05T11:08:02.278
+C Fix\sa\sminor\scoding\sinefficiency\sfound\sduring\spre-release\sinspection.
+D 2015-05-05T16:57:52.547
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 08728ecbeddca339c77bfd564d3484b523dffdb1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -183,7 +183,7 @@ F src/ctime.c 98f89724adc891a1a4c655bee04e33e716e05887
 F src/date.c e4d50b3283696836ec1036b695ead9a19e37a5ac
 F src/dbstat.c 1eacd310212b5ae59b7be645a06de8f8bbe0b5d6
 F src/delete.c 37964e6c1d73ff49cbea9ff690c9605fb15f600e
-F src/expr.c 4c05a28eebe63b288fda1db0e8de556a82ca2ec6
+F src/expr.c 3fb2ab3ab69d15b4b75ae53fceb4e317f64cb306
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c c9b63a217d86582c22121699a47f22f524608869
 F src/func.c 5b8b8e77a0fb644eaf8947d413804622e32692b6
@@ -1256,7 +1256,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d2cb1becc07fad5cbd48c206c676493ba90cada1
-R e1db2a6afd30f4051a55266b8de5e117
+P b8f090e65d010c62df335d0520a36a24904e8bc6
+R aa3e34d67b680aaa71313e3178def66e
 U drh
-Z df7e75264a470014004f32463950df05
+Z cdb699fe6147a4b364800efebeb8babc
