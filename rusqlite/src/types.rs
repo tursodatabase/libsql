@@ -195,7 +195,10 @@ impl FromSql for Vec<u8> {
         let c_blob = ffi::sqlite3_column_blob(stmt, col);
         let len = ffi::sqlite3_column_bytes(stmt, col);
 
-        assert!(len >= 0); let len = len as usize;
+        // The documentation for sqlite3_column_bytes indicates it is always non-negative,
+        // but we should assert here just to be sure.
+        assert!(len >= 0, "unexpected negative return from sqlite3_column_bytes");
+        let len = len as usize;
 
         Ok(from_raw_parts(mem::transmute(c_blob), len).to_vec())
     }

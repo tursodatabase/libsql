@@ -592,7 +592,10 @@ impl<'conn> SqliteStatement<'conn> {
         self.reset_if_needed();
 
         unsafe {
-            assert_eq!(params.len() as c_int, ffi::sqlite3_bind_parameter_count(self.stmt));
+            assert!(params.len() as c_int == ffi::sqlite3_bind_parameter_count(self.stmt),
+                    "incorrect number of parameters to execute(): expected {}, got {}",
+                    ffi::sqlite3_bind_parameter_count(self.stmt),
+                    params.len());
 
             for (i, p) in params.iter().enumerate() {
                 try!(self.conn.decode_result(p.bind_parameter(self.stmt, (i + 1) as c_int)));
@@ -632,7 +635,10 @@ impl<'conn> SqliteStatement<'conn> {
         self.reset_if_needed();
 
         unsafe {
-            assert_eq!(params.len() as c_int, ffi::sqlite3_bind_parameter_count(self.stmt));
+            assert!(params.len() as c_int == ffi::sqlite3_bind_parameter_count(self.stmt),
+                    "incorrect number of parameters to query(): expected {}, got {}",
+                    ffi::sqlite3_bind_parameter_count(self.stmt),
+                    params.len());
 
             for (i, p) in params.iter().enumerate() {
                 try!(self.conn.decode_result(p.bind_parameter(self.stmt, (i + 1) as c_int)));
@@ -844,7 +850,7 @@ mod test {
                    END;";
             db.execute_batch(sql).unwrap();
         }
-        
+
         let path_string = path.to_str().unwrap();
         let db = SqliteConnection::open(&path_string).unwrap();
         let the_answer = db.query_row_safe("SELECT x FROM foo",
