@@ -1,5 +1,5 @@
-C Remove\sfour\slines\sof\ssuperfluous\scode\sidentified\sby\sclang\sscan-build.
-D 2015-05-05T18:52:54.583
+C Have\sthe\sautoconf\spackage\sbuild\sthe\sshell\stool\swith\sSQLite\slinked\sin\sstatically.
+D 2015-05-06T14:18:58.864
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 08728ecbeddca339c77bfd564d3484b523dffdb1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -13,7 +13,7 @@ F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
-F autoconf/Makefile.am 8fc2972d92769cf20ab8e4a73ea901b84d69bf44
+F autoconf/Makefile.am 4012e106208c7b86ba54d06e9ed400b59a4dee6b
 F autoconf/README 14458f1046c118efa721aadec5f227e876d3cd38
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/config.guess 94cc57e2a3fdb9c235b362ace86d77e89d188cad x
@@ -1256,7 +1256,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P cc50883d67334507227e1384fef6cc7c93fd7de1
-R 76d874e855b2e1920bd5ad182d7df042
-U drh
-Z bdf9d10f7b9ce59bce00a351127a0aa2
+P 04afa3febee32854fbb09ef8d4ffffd432119716
+R c802443e961f136bbb49cf06ee4d41db
+U dan
+Z de033081a6dd5244aca249205579af45
