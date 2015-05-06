@@ -238,27 +238,28 @@ static void fts3GetDeltaPosition(char **pp, int *piPos){
   *piPos += (iVal-2);
 }
 
+static int fts3ExprLHitsCb(Fts3Expr*, int, void*);
+
 /*
 ** Helper function for fts3ExprIterate() (see below).
 */
 static int fts3ExprIterate2(
   Fts3Expr *pExpr,                /* Expression to iterate phrases of */
-  int bExcludeEof,
   int *piPhrase,                  /* Pointer to phrase counter */
   int (*x)(Fts3Expr*,int,void*),  /* Callback function to invoke for phrases */
   void *pCtx                      /* Second argument to pass to callback */
 ){
   int rc;                         /* Return code */
 
-  if( bExcludeEof && pExpr->bEof ){
+  if( x==fts3ExprLHitsCb && pExpr->bEof ){
     rc = SQLITE_OK;
   }else{
     int eType = pExpr->eType;     /* Type of expression node pExpr */
     if( eType!=FTSQUERY_PHRASE ){
       assert( pExpr->pLeft && pExpr->pRight );
-      rc = fts3ExprIterate2(pExpr->pLeft, bExcludeEof, piPhrase, x, pCtx);
+      rc = fts3ExprIterate2(pExpr->pLeft, piPhrase, x, pCtx);
       if( rc==SQLITE_OK && eType!=FTSQUERY_NOT ){
-        rc = fts3ExprIterate2(pExpr->pRight, bExcludeEof, piPhrase, x, pCtx);
+        rc = fts3ExprIterate2(pExpr->pRight, piPhrase, x, pCtx);
       }
     }else{
       rc = x(pExpr, *piPhrase, pCtx);
@@ -280,12 +281,11 @@ static int fts3ExprIterate2(
 */
 static int fts3ExprIterate(
   Fts3Expr *pExpr,                /* Expression to iterate phrases of */
-  int bExcludeEof,                /* Include nodes already at EOF */
   int (*x)(Fts3Expr*,int,void*),  /* Callback function to invoke for phrases */
   void *pCtx                      /* Second argument to pass to callback */
 ){
   int iPhrase = 0;                /* Variable used as the phrase counter */
-  return fts3ExprIterate2(pExpr, bExcludeEof, &iPhrase, x, pCtx);
+  return fts3ExprIterate2(pExpr, &iPhrase, x, pCtx);
 }
 
 /*
@@ -324,7 +324,7 @@ static int fts3ExprLoadDoclists(
   int rc;                         /* Return Code */
   LoadDoclistCtx sCtx = {0,0,0};  /* Context for fts3ExprIterate() */
   sCtx.pCsr = pCsr;
-  rc = fts3ExprIterate(pCsr->pExpr, 0, fts3ExprLoadDoclistsCb, (void *)&sCtx);
+  rc = fts3ExprIterate(pCsr->pExpr, fts3ExprLoadDoclistsCb, (void *)&sCtx);
   if( pnPhrase ) *pnPhrase = sCtx.nPhrase;
   if( pnToken ) *pnToken = sCtx.nToken;
   return rc;
@@ -338,7 +338,7 @@ static int fts3ExprPhraseCountCb(Fts3Expr *pExpr, int iPhrase, void *ctx){
 }
 static int fts3ExprPhraseCount(Fts3Expr *pExpr){
   int nPhrase = 0;
-  (void)fts3ExprIterate(pExpr, 0, fts3ExprPhraseCountCb, (void *)&nPhrase);
+  (void)fts3ExprIterate(pExpr, fts3ExprPhraseCountCb, (void *)&nPhrase);
   return nPhrase;
 }
 
@@ -554,7 +554,7 @@ static int fts3BestSnippet(
   sIter.nSnippet = nSnippet;
   sIter.nPhrase = nList;
   sIter.iCurrent = -1;
-  rc = fts3ExprIterate(pCsr->pExpr, 0, fts3SnippetFindPositions, (void*)&sIter);
+  rc = fts3ExprIterate(pCsr->pExpr, fts3SnippetFindPositions, (void*)&sIter);
   if( rc==SQLITE_OK ){
 
     /* Set the *pmSeen output variable. */
@@ -923,7 +923,7 @@ static int fts3ExprLocalHitsCb(
 
 /*
 ** fts3ExprIterate() callback used to gather information for the matchinfo
-** directive 'y'.
+** directives 'y' and 'b'.
 */
 static int fts3ExprLHitsCb(
   Fts3Expr *pExpr,                /* Phrase expression node */
@@ -1124,7 +1124,7 @@ static int fts3MatchinfoLcs(Fts3Cursor *pCsr, MatchInfo *pInfo){
   aIter = sqlite3_malloc(sizeof(LcsIterator) * pCsr->nPhrase);
   if( !aIter ) return SQLITE_NOMEM;
   memset(aIter, 0, sizeof(LcsIterator) * pCsr->nPhrase);
-  (void)fts3ExprIterate(pCsr->pExpr, 0, fts3MatchinfoLcsCb, (void*)aIter);
+  (void)fts3ExprIterate(pCsr->pExpr, fts3MatchinfoLcsCb, (void*)aIter);
 
   for(i=0; i<pInfo->nPhrase; i++){
     LcsIterator *pIter = &aIter[i];
@@ -1272,7 +1272,7 @@ static int fts3MatchinfoValues(
       case FTS3_MATCHINFO_LHITS: {
         int nZero = fts3MatchinfoSize(pInfo, zArg[i]) * sizeof(u32);
         memset(pInfo->aMatchinfo, 0, nZero);
-        (void)fts3ExprIterate(pCsr->pExpr, 1, fts3ExprLHitsCb, (void*)pInfo);
+        (void)fts3ExprIterate(pCsr->pExpr, fts3ExprLHitsCb, (void*)pInfo);
         break;
       }
 
@@ -1287,10 +1287,10 @@ static int fts3MatchinfoValues(
             rc = fts3MatchinfoSelectDoctotal(pTab, &pSelect, &pInfo->nDoc, 0);
             if( rc!=SQLITE_OK ) break;
           }
-          rc = fts3ExprIterate(pExpr, 0, fts3ExprGlobalHitsCb,(void*)pInfo);
+          rc = fts3ExprIterate(pExpr, fts3ExprGlobalHitsCb,(void*)pInfo);
           if( rc!=SQLITE_OK ) break;
         }
-        (void)fts3ExprIterate(pExpr, 0, fts3ExprLocalHitsCb,(void*)pInfo);
+        (void)fts3ExprIterate(pExpr, fts3ExprLocalHitsCb,(void*)pInfo);
         break;
       }
     }
@@ -1348,6 +1348,12 @@ static int fts3GetMatchinfo(
 
     /* Determine the number of integers in the buffer returned by this call. */
     for(i=0; zArg[i]; i++){
+      char *zErr = 0;
+      if( fts3MatchinfoCheck(pTab, zArg[i], &zErr) ){
+        sqlite3_result_error(pCtx, zErr, -1);
+        sqlite3_free(zErr);
+        return;
+      }
       nMatchinfo += fts3MatchinfoSize(&sInfo, zArg[i]);
     }
 
@@ -1589,7 +1595,7 @@ void sqlite3Fts3Offsets(
     */
     sCtx.iCol = iCol;
     sCtx.iTerm = 0;
-    (void)fts3ExprIterate(pCsr->pExpr, 0, fts3ExprTermOffsetInit, (void*)&sCtx);
+    (void)fts3ExprIterate(pCsr->pExpr, fts3ExprTermOffsetInit, (void*)&sCtx);
 
     /* Retreive the text stored in column iCol. If an SQL NULL is stored 
     ** in column iCol, jump immediately to the next iteration of the loop.
@@ -1681,19 +1687,10 @@ void sqlite3Fts3Matchinfo(
   const char *zArg                /* Second arg to matchinfo() function */
 ){
   Fts3Table *pTab = (Fts3Table *)pCsr->base.pVtab;
-  int rc;
-  int i;
   const char *zFormat;
+  int rc;
 
   if( zArg ){
-    for(i=0; zArg[i]; i++){
-      char *zErr = 0;
-      if( fts3MatchinfoCheck(pTab, zArg[i], &zErr) ){
-        sqlite3_result_error(pContext, zErr, -1);
-        sqlite3_free(zErr);
-        return;
-      }
-    }
     zFormat = zArg;
   }else{
     zFormat = FTS3_MATCHINFO_DEFAULT;
@@ -1702,11 +1699,11 @@ void sqlite3Fts3Matchinfo(
   if( !pCsr->pExpr ){
     sqlite3_result_blob(pContext, "", 0, SQLITE_STATIC);
     return;
+  }else{
+    /* Retrieve matchinfo() data. */
+    rc = fts3GetMatchinfo(pContext, pCsr, zFormat);
+    sqlite3Fts3SegmentsClose(pTab);
   }
-
-  /* Retrieve matchinfo() data. */
-  rc = fts3GetMatchinfo(pContext, pCsr, zFormat);
-  sqlite3Fts3SegmentsClose(pTab);
 }
 
 #endif
