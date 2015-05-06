@@ -288,6 +288,7 @@ static int fts3ExprIterate(
   return fts3ExprIterate2(pExpr, &iPhrase, x, pCtx);
 }
 
+
 /*
 ** This is an fts3ExprIterate() callback used while loading the doclists
 ** for each phrase into Fts3Expr.aDoclist[]/nDoclist. See also
@@ -332,8 +333,7 @@ static int fts3ExprLoadDoclists(
 
 static int fts3ExprPhraseCountCb(Fts3Expr *pExpr, int iPhrase, void *ctx){
   (*(int *)ctx)++;
-  UNUSED_PARAMETER(pExpr);
-  UNUSED_PARAMETER(iPhrase);
+  pExpr->iPhrase = iPhrase;
   return SQLITE_OK;
 }
 static int fts3ExprPhraseCount(Fts3Expr *pExpr){
@@ -856,6 +856,60 @@ static int fts3ColumnlistCount(char **ppCollist){
 }
 
 /*
+** This function gathers 'y' or 'b' data for a single phrase.
+*/
+static void fts3ExprLHits(
+  Fts3Expr *pExpr,                /* Phrase expression node */
+  MatchInfo *p                    /* Matchinfo context */
+){
+  Fts3Table *pTab = (Fts3Table *)p->pCursor->base.pVtab;
+  int iStart;
+  Fts3Phrase *pPhrase = pExpr->pPhrase;
+  char *pIter = pPhrase->doclist.pList;
+  int iCol = 0;
+
+  assert( p->flag==FTS3_MATCHINFO_LHITS_BM || p->flag==FTS3_MATCHINFO_LHITS );
+  if( p->flag==FTS3_MATCHINFO_LHITS ){
+    iStart = pExpr->iPhrase * p->nCol;
+  }else{
+    iStart = pExpr->iPhrase * ((p->nCol + 31) / 32);
+  }
+
+  while( 1 ){
+    int nHit = fts3ColumnlistCount(&pIter);
+    if( (pPhrase->iColumn>=pTab->nColumn || pPhrase->iColumn==iCol) ){
+      if( p->flag==FTS3_MATCHINFO_LHITS ){
+        p->aMatchinfo[iStart + iCol] = (u32)nHit;
+      }else if( nHit ){
+        p->aMatchinfo[iStart + (iCol+1)/32] |= (1 << (iCol&0x1F));
+      }
+    }
+    assert( *pIter==0x00 || *pIter==0x01 );
+    if( *pIter!=0x01 ) break;
+    pIter++;
+    pIter += fts3GetVarint32(pIter, &iCol);
+  }
+}
+
+/*
+** Gather the results for matchinfo directives 'y' and 'b'.
+*/
+static void fts3ExprLHitGather(
+  Fts3Expr *pExpr,
+  MatchInfo *p
+){
+  assert( (pExpr->pLeft==0)==(pExpr->pRight==0) );
+  if( pExpr->bEof==0 && pExpr->iDocid==p->pCursor->iPrevId ){
+    if( pExpr->pLeft ){
+      fts3ExprLHitGather(pExpr->pLeft, p);
+      fts3ExprLHitGather(pExpr->pRight, p);
+    }else{
+      fts3ExprLHits(pExpr, p);
+    }
+  }
+}
+
+/*
 ** fts3ExprIterate() callback used to collect the "global" matchinfo stats
 ** for a single query. 
 **
@@ -1272,7 +1326,7 @@ static int fts3MatchinfoValues(
       case FTS3_MATCHINFO_LHITS: {
         int nZero = fts3MatchinfoSize(pInfo, zArg[i]) * sizeof(u32);
         memset(pInfo->aMatchinfo, 0, nZero);
-        (void)fts3ExprIterate(pCsr->pExpr, fts3ExprLHitsCb, (void*)pInfo);
+        fts3ExprLHitGather(pCsr->pExpr, pInfo);
         break;
       }
 
@@ -1307,7 +1361,7 @@ static int fts3MatchinfoValues(
 ** Populate pCsr->aMatchinfo[] with data for the current row. The 
 ** 'matchinfo' data is an array of 32-bit unsigned integers (C type u32).
 */
-static int fts3GetMatchinfo(
+static void fts3GetMatchinfo(
   sqlite3_context *pCtx,        /* Return results here */
   Fts3Cursor *pCsr,               /* FTS3 Cursor object */
   const char *zArg                /* Second argument to matchinfo() function */
@@ -1339,7 +1393,6 @@ static int fts3GetMatchinfo(
   */
   if( pCsr->pMIBuffer==0 ){
     int nMatchinfo = 0;           /* Number of u32 elements in match-info */
-    int nArg;                     /* Bytes in zArg */
     int i;                        /* Used to iterate through zArg */
 
     /* Determine the number of phrases in the query */
@@ -1388,8 +1441,6 @@ static int fts3GetMatchinfo(
     int n = pCsr->pMIBuffer->nElem * sizeof(u32);
     sqlite3_result_blob(pCtx, aOut, n, xDestroyOut);
   }
-
-  return rc;
 }
 
 /*
@@ -1688,7 +1739,6 @@ void sqlite3Fts3Matchinfo(
 ){
   Fts3Table *pTab = (Fts3Table *)pCsr->base.pVtab;
   const char *zFormat;
-  int rc;
 
   if( zArg ){
     zFormat = zArg;
@@ -1701,7 +1751,7 @@ void sqlite3Fts3Matchinfo(
     return;
   }else{
     /* Retrieve matchinfo() data. */
-    rc = fts3GetMatchinfo(pContext, pCsr, zFormat);
+    fts3GetMatchinfo(pContext, pCsr, zFormat);
     sqlite3Fts3SegmentsClose(pTab);
   }
 }

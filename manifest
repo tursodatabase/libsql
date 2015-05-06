@@ -1,5 +1,5 @@
-C Further\soptimizations\sfor\sthe\s'y'\sand\s'b'\smatchinfo\soperators.
-D 2015-05-06T08:43:26.741
+C More\soptimization\sfor\sthe\s'y'\sand\s'b'\smatchinfo\sdirectives.
+D 2015-05-06T17:41:19.953
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 08728ecbeddca339c77bfd564d3484b523dffdb1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -80,14 +80,14 @@ F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
 F ext/fts3/fts3.c 341e9d9a3c7615bac8e815a8937d576265b22f78
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h bf61766eeb57a6922a8458b894d85e50d1cfb04e
+F ext/fts3/fts3Int.h 142837a7544dff49121b67091a71c4f7a4546b0f
 F ext/fts3/fts3_aux.c 9edc3655fcb287f0467d0a4b886a01c6185fe9f1
 F ext/fts3/fts3_expr.c 71c063da9c2a4167fb54aec089dd5ef33a58c9cb
 F ext/fts3/fts3_hash.c 29b986e43f4e9dd40110eafa377dc0d63c422c60
 F ext/fts3/fts3_hash.h 39cf6874dc239d6b4e30479b1975fe5b22a3caaf
 F ext/fts3/fts3_icu.c e319e108661147bcca8dd511cd562f33a1ba81b5
 F ext/fts3/fts3_porter.c 3565faf04b626cddf85f03825e86056a4562c009
-F ext/fts3/fts3_snippet.c e03db2f3eb878849aa95e9638873d057be9aad39
+F ext/fts3/fts3_snippet.c aa922977437794f1db44153a3641dc13532d70bf
 F ext/fts3/fts3_term.c 88c55a6fa1a51ab494e33dced0401a6c28791fd7
 F ext/fts3/fts3_test.c 8a3a78c4458b2d7c631fcf4b152a5cd656fa7038
 F ext/fts3/fts3_tokenize_vtab.c a27593ab19657166f6fa5ec073b678cc29a75860
@@ -1256,7 +1256,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b9b77972d88171e4239b8194f308eb5d60b5d172
-R 34e6b7f6ad3a1ef38f2174c145dcb2ec
+P fbd038bb57322e1ed2e1ee52f3d134594b6bfcc0
+R 780f3f117425896614672c37a51cec34
 U dan
-Z b623aae8ea84248dd7625f093d4e05ab
+Z 685754dfb55ce5a995c9773000dc4c01
