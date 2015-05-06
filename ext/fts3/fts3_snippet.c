@@ -238,8 +238,6 @@ static void fts3GetDeltaPosition(char **pp, int *piPos){
   *piPos += (iVal-2);
 }
 
-static int fts3ExprLHitsCb(Fts3Expr*, int, void*);
-
 /*
 ** Helper function for fts3ExprIterate() (see below).
 */
@@ -250,21 +248,17 @@ static int fts3ExprIterate2(
   void *pCtx                      /* Second argument to pass to callback */
 ){
   int rc;                         /* Return code */
+  int eType = pExpr->eType;     /* Type of expression node pExpr */
 
-  if( x==fts3ExprLHitsCb && pExpr->bEof ){
-    rc = SQLITE_OK;
-  }else{
-    int eType = pExpr->eType;     /* Type of expression node pExpr */
-    if( eType!=FTSQUERY_PHRASE ){
-      assert( pExpr->pLeft && pExpr->pRight );
-      rc = fts3ExprIterate2(pExpr->pLeft, piPhrase, x, pCtx);
-      if( rc==SQLITE_OK && eType!=FTSQUERY_NOT ){
-        rc = fts3ExprIterate2(pExpr->pRight, piPhrase, x, pCtx);
-      }
-    }else{
-      rc = x(pExpr, *piPhrase, pCtx);
-      (*piPhrase)++;
+  if( eType!=FTSQUERY_PHRASE ){
+    assert( pExpr->pLeft && pExpr->pRight );
+    rc = fts3ExprIterate2(pExpr->pLeft, piPhrase, x, pCtx);
+    if( rc==SQLITE_OK && eType!=FTSQUERY_NOT ){
+      rc = fts3ExprIterate2(pExpr->pRight, piPhrase, x, pCtx);
     }
+  }else{
+    rc = x(pExpr, *piPhrase, pCtx);
+    (*piPhrase)++;
   }
   return rc;
 }
@@ -969,54 +963,6 @@ static int fts3ExprLocalHitsCb(
       p->aMatchinfo[iStart+i*3] = fts3ColumnlistCount(&pCsr);
     }else{
       p->aMatchinfo[iStart+i*3] = 0;
-    }
-  }
-
-  return rc;
-}
-
-/*
-** fts3ExprIterate() callback used to gather information for the matchinfo
-** directives 'y' and 'b'.
-*/
-static int fts3ExprLHitsCb(
-  Fts3Expr *pExpr,                /* Phrase expression node */
-  int iPhrase,                    /* Phrase number */
-  void *pCtx                      /* Pointer to MatchInfo structure */
-){
-  int rc = SQLITE_OK;
-  MatchInfo *p = (MatchInfo *)pCtx;
-  
-  /* This must be a phrase */
-  assert( pExpr->pPhrase );
-
-  if( pExpr->iDocid==p->pCursor->iPrevId ){
-    Fts3Table *pTab = (Fts3Table *)p->pCursor->base.pVtab;
-    int iStart;
-    Fts3Phrase *pPhrase = pExpr->pPhrase;
-    char *pIter = pPhrase->doclist.pList;
-    int iCol = 0;
-
-    assert( p->flag==FTS3_MATCHINFO_LHITS_BM || p->flag==FTS3_MATCHINFO_LHITS );
-    if( p->flag==FTS3_MATCHINFO_LHITS ){
-      iStart = iPhrase * p->nCol;
-    }else{
-      iStart = iPhrase * ((p->nCol + 31) / 32);
-    }
-
-    while( 1 ){
-      int nHit = fts3ColumnlistCount(&pIter);
-      if( (pPhrase->iColumn>=pTab->nColumn || pPhrase->iColumn==iCol) ){
-        if( p->flag==FTS3_MATCHINFO_LHITS ){
-          p->aMatchinfo[iStart + iCol] = (u32)nHit;
-        }else if( nHit ){
-          p->aMatchinfo[iStart + (iCol+1)/32] |= (1 << (iCol&0x1F));
-        }
-      }
-      assert( *pIter==0x00 || *pIter==0x01 );
-      if( *pIter!=0x01 ) break;
-      pIter++;
-      pIter += fts3GetVarint32(pIter, &iCol);
     }
   }
 
