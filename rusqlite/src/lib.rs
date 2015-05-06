@@ -639,15 +639,13 @@ impl<'conn> SqliteStatement<'conn> {
     pub fn query_map<'a, 'map, T, F>(&'a mut self, params: &[&ToSql], f: F)
                                      -> SqliteResult<MappedRows<'a, 'map, T>>
                                      where T: 'static,
-                                           F: 'map + Fn(MappedRow) -> T {
+                                           F: 'map + Fn(SqliteRow) -> T {
         self.reset_if_needed();
 
-        unsafe {
-            try!(self.bind_parameters(params));
-        }
+        let rows = try!(self.query(params));
 
         Ok(MappedRows{
-            stmt: self,
+            rows: rows,
             map: Box::new(f),
         })
     }
@@ -703,40 +701,15 @@ impl<'conn> Drop for SqliteStatement<'conn> {
 }
 
 pub struct MappedRows<'stmt, 'map, T> {
-    stmt: &'stmt SqliteStatement<'stmt>,
-    map: Box<Fn(MappedRow) -> T + 'map>,
+    rows: SqliteRows<'stmt>,
+    map: Box<Fn(SqliteRow<'stmt>) -> T + 'map>,
 }
 
 impl<'stmt, 'map, T: 'static> Iterator for MappedRows<'stmt, 'map, T> {
     type Item = SqliteResult<T>;
 
     fn next(&mut self) -> Option<SqliteResult<T>> {
-        match unsafe { ffi::sqlite3_step(self.stmt.stmt) } {
-            ffi::SQLITE_ROW => {
-                Some(Ok((*self.map)(MappedRow(self.stmt))))
-            },
-            ffi::SQLITE_DONE => None,
-            code => {
-                Some(Err(self.stmt.conn.decode_result(code).unwrap_err()))
-            }
-        }
-    }
-}
-
-pub struct MappedRow<'stmt>(&'stmt SqliteStatement<'stmt>);
-
-impl<'stmt> MappedRow<'stmt> {
-    pub fn get<T: FromSql>(&self, idx: c_int) -> T {
-        self.get_opt(idx).unwrap()
-    }
-
-    pub fn get_opt<T: FromSql>(&self, idx: c_int) -> SqliteResult<T> {
-        // Do assertions because these are logic errors.
-        // We can probably skip them in release builds.
-        assert!(idx >= 0);
-        assert!(idx < unsafe { ffi::sqlite3_column_count(self.0.stmt) });
-
-        unsafe { FromSql::column_result(self.0.stmt, idx) }
+        self.rows.next().map(|row_result| row_result.map(|row| (*self.map)(row)))
     }
 }
 
