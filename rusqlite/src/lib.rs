@@ -632,23 +632,23 @@ impl<'conn> SqliteStatement<'conn> {
         unsafe {
             try!(self.bind_parameters(params));
         }
-        
+
         Ok(SqliteRows::new(self))
     }
 
-    pub fn query_map<'a, 'map, T, F>(&'a mut self, params: &[&ToSql], f: &'map F)
+    pub fn query_map<'a, 'map, T, F>(&'a mut self, params: &[&ToSql], f: F)
                                      -> SqliteResult<MappedRows<'a, 'map, T>>
                                      where T: 'static,
-                                           F: Fn(MappedRow) -> T {
+                                           F: 'map + Fn(MappedRow) -> T {
         self.reset_if_needed();
 
         unsafe {
             try!(self.bind_parameters(params));
         }
 
-        Ok(MappedRows {
+        Ok(MappedRows{
             stmt: self,
-            map: f
+            map: Box::new(f),
         })
     }
 
@@ -704,7 +704,7 @@ impl<'conn> Drop for SqliteStatement<'conn> {
 
 pub struct MappedRows<'stmt, 'map, T> {
     stmt: &'stmt SqliteStatement<'stmt>,
-    map: &'map Fn(MappedRow) -> T
+    map: Box<Fn(MappedRow) -> T + 'map>,
 }
 
 impl<'stmt, 'map, T: 'static> Iterator for MappedRows<'stmt, 'map, T> {
@@ -1021,7 +1021,10 @@ mod test {
         db.execute_batch(sql).unwrap();
 
         let mut query = db.prepare("SELECT x, y FROM foo ORDER BY x DESC").unwrap();
-        let results: SqliteResult<Vec<String>> = query.query_map(&[], &(|row| row.get(1))).unwrap().collect();
+        let results: SqliteResult<Vec<String>> = query
+            .query_map(&[], |row| row.get(1))
+            .unwrap()
+            .collect();
 
         assert_eq!(results.unwrap().concat(), "hello, world!");
     }
