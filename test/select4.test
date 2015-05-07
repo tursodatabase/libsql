@@ -158,6 +158,9 @@ do_test select4-2.4 {
   }} msg]
   lappend v $msg
 } {1 {ORDER BY clause should come after UNION not before}}
+do_execsql_test select4-2.5 {
+  SELECT 123 AS x ORDER BY (SELECT x ORDER BY 1);
+} {123}
 
 # Except operator
 #
