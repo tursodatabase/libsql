@@ -122,6 +122,7 @@ struct StatCursor {
 struct StatTable {
   sqlite3_vtab base;
   sqlite3 *db;
+  int iDb;                        /* Index of database to analyze */
 };
 
 #ifndef get2byte
@@ -140,7 +141,17 @@ static int statConnect(
 ){
   StatTable *pTab = 0;
   int rc = SQLITE_OK;
+  int iDb;
 
+  if( argc>=4 ){
+    iDb = sqlite3FindDbName(db, argv[3]);
+    if( iDb<0 ){
+      *pzErr = sqlite3_mprintf("no such database: %s", argv[3]);
+      return SQLITE_ERROR;
+    }
+  }else{
+    iDb = 0;
+  }
   rc = sqlite3_declare_vtab(db, VTAB_SCHEMA);
   if( rc==SQLITE_OK ){
     pTab = (StatTable *)sqlite3_malloc64(sizeof(StatTable));
@@ -151,6 +162,7 @@ static int statConnect(
   if( rc==SQLITE_OK ){
     memset(pTab, 0, sizeof(StatTable));
     pTab->db = db;
+    pTab->iDb = iDb;
   }
 
   *ppVtab = (sqlite3_vtab*)pTab;
@@ -205,16 +217,22 @@ static int statOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
   if( pCsr==0 ){
     rc = SQLITE_NOMEM;
   }else{
+    char *zSql;
     memset(pCsr, 0, sizeof(StatCursor));
     pCsr->base.pVtab = pVTab;
 
-    rc = sqlite3_prepare_v2(pTab->db, 
+    zSql = sqlite3_mprintf(
         "SELECT 'sqlite_master' AS name, 1 AS rootpage, 'table' AS type"
         "  UNION ALL  "
-        "SELECT name, rootpage, type FROM sqlite_master WHERE rootpage!=0"
-        "  ORDER BY name", -1,
-        &pCsr->pStmt, 0
-        );
+        "SELECT name, rootpage, type"
+        "  FROM \"%w\".sqlite_master WHERE rootpage!=0"
+        "  ORDER BY name", pTab->db->aDb[pTab->iDb].zName);
+    if( zSql==0 ){
+      rc = SQLITE_NOMEM;
+    }else{
+      rc = sqlite3_prepare_v2(pTab->db, zSql, -1, &pCsr->pStmt, 0);
+      sqlite3_free(zSql);
+    }
     if( rc!=SQLITE_OK ){
       sqlite3_free(pCsr);
       pCsr = 0;
@@ -380,7 +398,7 @@ static int statDecodePage(Btree *pBt, StatPage *p){
 */
 static void statSizeAndOffset(StatCursor *pCsr){
   StatTable *pTab = (StatTable *)((sqlite3_vtab_cursor *)pCsr)->pVtab;
-  Btree *pBt = pTab->db->aDb[0].pBt;
+  Btree *pBt = pTab->db->aDb[pTab->iDb].pBt;
   Pager *pPager = sqlite3BtreePager(pBt);
   sqlite3_file *fd;
   sqlite3_int64 x[2];
@@ -394,7 +412,7 @@ static void statSizeAndOffset(StatCursor *pCsr){
   */
   fd = sqlite3PagerFile(pPager);
   x[0] = pCsr->iPageno;
-  if( sqlite3OsFileControl(fd, 230440, &x)==SQLITE_OK ){
+  if( fd->pMethods!=0 && sqlite3OsFileControl(fd, 230440, &x)==SQLITE_OK ){
     pCsr->iOffset = x[0];
     pCsr->szPage = (int)x[1];
   }
@@ -408,7 +426,7 @@ static int statNext(sqlite3_vtab_cursor *pCursor){
   int nPayload;
   StatCursor *pCsr = (StatCursor *)pCursor;
   StatTable *pTab = (StatTable *)pCursor->pVtab;
-  Btree *pBt = pTab->db->aDb[0].pBt;
+  Btree *pBt = pTab->db->aDb[pTab->iDb].pBt;
   Pager *pPager = sqlite3BtreePager(pBt);
 
   sqlite3_free(pCsr->zPath);

@@ -1,5 +1,5 @@
-C Version\s3.8.10
-D 2015-05-07T11:53:08.287
+C Enhance\sthe\sdbstat\svirtual\stable\swith\sthe\sability\sto\sanalyze\sATTACHed\ndatabases.
+D 2015-05-07T14:41:56.372
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 08728ecbeddca339c77bfd564d3484b523dffdb1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -181,7 +181,7 @@ F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c a5cf5b4b56390cfb7b8636e8f7ddef90258dd575
 F src/ctime.c 98f89724adc891a1a4c655bee04e33e716e05887
 F src/date.c e4d50b3283696836ec1036b695ead9a19e37a5ac
-F src/dbstat.c 1eacd310212b5ae59b7be645a06de8f8bbe0b5d6
+F src/dbstat.c a9c0550fe90b765e1ac38760e1822bb7a1dfe857
 F src/delete.c 37964e6c1d73ff49cbea9ff690c9605fb15f600e
 F src/expr.c 3fb2ab3ab69d15b4b75ae53fceb4e317f64cb306
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
@@ -902,7 +902,7 @@ F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
 F test/speedtest1.c 2b416dca3a155fcaa849540b2e7fc1df12896c23
 F test/spellfix.test 24f676831acddd2f4056a598fd731a72c6311f49
 F test/sqllimits1.test e05786eaed7950ff6a2d00031d001d8a26131e68
-F test/stat.test 76fd746b85459e812a0193410fb599f0531f22de
+F test/stat.test 8de91498c99f5298b303f70f1d1f3b9557af91bf
 F test/statfault.test f525a7bf633e50afd027700e9a486090684b1ac1
 F test/stmt.test 25d64e3dbf9a3ce89558667d7f39d966fe2a71b9
 F test/subquery.test d7268d193dd33d5505df965399d3a594e76ae13f
@@ -1256,10 +1256,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5f2539da8cb9df99029ab4ab7023804722697673
-R 014968d54fc9fdc23120a39f420a5f8f
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.8.10 *
+P cf975957b9ae671f34bb65f049acf351e650d437
+R e2036c834faa435fbd4ece874ab9ac24
 U drh
-Z 6270ca72fe7be4337004b813fe656c7c
+Z cef1b7912e822bf40819db2b70a8eba6
