@@ -424,6 +424,7 @@ static void statSizeAndOffset(StatCursor *pCsr){
 static int statNext(sqlite3_vtab_cursor *pCursor){
   int rc;
   int nPayload;
+  char *z;
   StatCursor *pCsr = (StatCursor *)pCursor;
   StatTable *pTab = (StatTable *)pCursor->pVtab;
   Btree *pBt = pTab->db->aDb[pTab->iDb].pBt;
@@ -446,8 +447,9 @@ statNextRestart:
       rc = sqlite3PagerGet(pPager, iRoot, &pCsr->aPage[0].pPg);
       pCsr->aPage[0].iPgno = iRoot;
       pCsr->aPage[0].iCell = 0;
-      pCsr->aPage[0].zPath = sqlite3_mprintf("/");
+      pCsr->aPage[0].zPath = z = sqlite3_mprintf("/");
       pCsr->iPage = 0;
+      if( z==0 ) rc = SQLITE_NOMEM;
     }else{
       pCsr->isEof = 1;
       return sqlite3_reset(pCsr->pStmt);
@@ -470,7 +472,7 @@ statNextRestart:
         pCsr->zPagetype = "overflow";
         pCsr->nCell = 0;
         pCsr->nMxPayload = 0;
-        pCsr->zPath = sqlite3_mprintf(
+        pCsr->zPath = z = sqlite3_mprintf(
             "%s%.3x+%.6x", p->zPath, p->iCell, pCell->iOvfl
         );
         if( pCell->iOvfl<pCell->nOvfl-1 ){
@@ -482,7 +484,7 @@ statNextRestart:
         }
         pCell->iOvfl++;
         statSizeAndOffset(pCsr);
-        return SQLITE_OK;
+        return z==0 ? SQLITE_NOMEM : SQLITE_OK;
       }
       if( p->iRightChildPg ) break;
       p->iCell++;
@@ -504,8 +506,9 @@ statNextRestart:
     }
     rc = sqlite3PagerGet(pPager, p[1].iPgno, &p[1].pPg);
     p[1].iCell = 0;
-    p[1].zPath = sqlite3_mprintf("%s%.3x/", p->zPath, p->iCell);
+    p[1].zPath = z = sqlite3_mprintf("%s%.3x/", p->zPath, p->iCell);
     p->iCell++;
+    if( z==0 ) rc = SQLITE_NOMEM;
   }
 
 
@@ -538,7 +541,8 @@ statNextRestart:
       pCsr->nCell = p->nCell;
       pCsr->nUnused = p->nUnused;
       pCsr->nMxPayload = p->nMxPayload;
-      pCsr->zPath = sqlite3_mprintf("%s", p->zPath);
+      pCsr->zPath = z = sqlite3_mprintf("%s", p->zPath);
+      if( z==0 ) rc = SQLITE_NOMEM;
       nPayload = 0;
       for(i=0; i<p->nCell; i++){
         nPayload += p->aCell[i].nLocal;
@@ -574,7 +578,7 @@ static int statColumn(
   StatCursor *pCsr = (StatCursor *)pCursor;
   switch( i ){
     case 0:            /* name */
-      sqlite3_result_text(ctx, pCsr->zName, -1, SQLITE_STATIC);
+      sqlite3_result_text(ctx, pCsr->zName, -1, SQLITE_TRANSIENT);
       break;
     case 1:            /* path */
       sqlite3_result_text(ctx, pCsr->zPath, -1, SQLITE_TRANSIENT);
@@ -600,7 +604,8 @@ static int statColumn(
     case 8:            /* pgoffset */
       sqlite3_result_int64(ctx, pCsr->iOffset);
       break;
-    case 9:            /* pgsize */
+    default:           /* pgsize */
+      assert( i==9 );
       sqlite3_result_int(ctx, pCsr->szPage);
       break;
   }
