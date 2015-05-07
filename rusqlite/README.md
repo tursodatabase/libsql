@@ -41,14 +41,17 @@ fn main() {
                  &[&me.name, &me.time_created, &me.data]).unwrap();
 
     let mut stmt = conn.prepare("SELECT id, name, time_created, data FROM person").unwrap();
-    for row in stmt.query(&[]).unwrap().map(|row| row.unwrap()) {
-        let person = Person {
+    let mut person_iter = stmt.query_map(&[], |row| {
+        Person {
             id: row.get(0),
             name: row.get(1),
             time_created: row.get(2),
             data: row.get(3)
-        };
-        println!("Found person {:?}", person);
+        }
+    }).unwrap();
+
+    for person in person_iter {
+        println!("Found person {:?}", person.unwrap());
     }
 }
 ```
@@ -86,6 +89,10 @@ fn bad_function_will_panic(conn: &SqliteConnection) -> SqliteResult<i64> {
 
 There are other, less obvious things that may result in a panic as well, such as calling
 `collect()` on a `SqliteRows` and then trying to use the collected rows.
+
+The method `query_map()` is an alternative to `query()` and is guaranteed not to panic. This method
+returns an iterator over rows after they have been mapped to a static type, e.g., types without
+references to other values.
 
 ## Author
 

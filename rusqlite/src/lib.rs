@@ -36,14 +36,17 @@
 //!                  &[&me.name, &me.time_created, &me.data]).unwrap();
 //!
 //!     let mut stmt = conn.prepare("SELECT id, name, time_created, data FROM person").unwrap();
-//!     for row in stmt.query(&[]).unwrap().map(|row| row.unwrap()) {
-//!         let person = Person {
+//!     let mut person_iter = stmt.query_map(&[], |row| {
+//!         Person {
 //!             id: row.get(0),
 //!             name: row.get(1),
 //!             time_created: row.get(2),
 //!             data: row.get(3)
-//!         };
-//!         println!("Found person {:?}", person);
+//!         }
+//!     }).unwrap();
+//!
+//!     for person in person_iter {
+//!         println!("Found person {:?}", person.unwrap());
 //!     }
 //! }
 //! ```
@@ -636,17 +639,20 @@ impl<'conn> SqliteStatement<'conn> {
         Ok(SqliteRows::new(self))
     }
 
-    pub fn query_map<'a, 'map, T, F>(&'a mut self, params: &[&ToSql], f: F)
-                                     -> SqliteResult<MappedRows<'a, 'map, T>>
+    /// Executes the prepared statement and maps a function over the resulting
+    /// rows. 
+    ///
+    /// Unlike the iterator produced by `query`, the returned iterator does not expose the possibility
+    /// for accessing stale rows.
+    pub fn query_map<'a, T, F>(&'a mut self, params: &[&ToSql], f: F)
+                                     -> SqliteResult<MappedRows<'a, F>>
                                      where T: 'static,
-                                           F: 'map + Fn(SqliteRow) -> T {
-        self.reset_if_needed();
-
-        let rows = try!(self.query(params));
+                                           F: FnMut(SqliteRow) -> T {
+        let row_iter = try!(self.query(params));
 
         Ok(MappedRows{
-            rows: rows,
-            map: Box::new(f),
+            rows: row_iter,
+            map: f,
         })
     }
 
@@ -700,16 +706,19 @@ impl<'conn> Drop for SqliteStatement<'conn> {
     }
 }
 
-pub struct MappedRows<'stmt, 'map, T> {
+/// An iterator over the mapped resulting rows of a query.
+pub struct MappedRows<'stmt, F> {
     rows: SqliteRows<'stmt>,
-    map: Box<Fn(SqliteRow<'stmt>) -> T + 'map>,
+    map: F,
 }
 
-impl<'stmt, 'map, T: 'static> Iterator for MappedRows<'stmt, 'map, T> {
+impl<'stmt, T, F> Iterator for MappedRows<'stmt, F>
+                        where T: 'static,
+                              F: FnMut(SqliteRow) -> T {
     type Item = SqliteResult<T>;
 
     fn next(&mut self) -> Option<SqliteResult<T>> {
-        self.rows.next().map(|row_result| row_result.map(|row| (*self.map)(row)))
+        self.rows.next().map(|row_result| row_result.map(|row| (self.map)(row)))
     }
 }
 
