@@ -253,7 +253,6 @@ void sqlite3VXPrintf(
       }
     }while( !done && (c=(*++fmt))!=0 );
     /* Get the field width */
-    width = 0;
     if( c=='*' ){
       if( bArgList ){
         width = (int)getIntArg(pArgList);
@@ -277,7 +276,6 @@ void sqlite3VXPrintf(
 
     /* Get the precision */
     if( c=='.' ){
-      precision = 0;
       c = *++fmt;
       if( c=='*' ){
         if( bArgList ){

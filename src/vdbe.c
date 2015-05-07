@@ -995,7 +995,6 @@ case OP_Halt: {
     assert( rc==SQLITE_OK || db->nDeferredCons>0 || db->nDeferredImmCons>0 );
     rc = p->rc ? SQLITE_ERROR : SQLITE_DONE;
   }
-  pOp = &aOp[pcx];
   goto vdbe_return;
 }
 
@@ -5973,7 +5972,6 @@ case OP_JournalMode: {    /* out2 */
   }
   eNew = sqlite3PagerSetJournalMode(pPager, eNew);
 
-  pOut = &aMem[pOp->p2];
   pOut->flags = MEM_Str|MEM_Static|MEM_Term;
   pOut->z = (char *)sqlite3JournalModename(eNew);
   pOut->n = sqlite3Strlen30(pOut->z);
