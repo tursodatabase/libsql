@@ -276,7 +276,7 @@ impl SqliteConnection {
     /// ```rust,no_run
     /// # use rusqlite::{SqliteResult,SqliteConnection};
     /// fn preferred_locale(conn: &SqliteConnection) -> SqliteResult<String> {
-    ///     conn.query_row_safe("SELECT value FROM preferences WHERE name='locale'", &[], |row| {
+    ///     conn.query_row("SELECT value FROM preferences WHERE name='locale'", &[], |row| {
     ///         row.get(0)
     ///     })
     /// }
@@ -848,7 +848,7 @@ mod test {
 
         let path_string = path.to_str().unwrap();
         let db = SqliteConnection::open(&path_string).unwrap();
-        let the_answer = db.query_row_safe("SELECT x FROM foo",
+        let the_answer = db.query_row("SELECT x FROM foo",
                                            &[],
                                            |r| r.get::<i64>(0));
 
@@ -948,7 +948,7 @@ mod test {
     }
 
     #[test]
-    fn test_query_row_safe() {
+    fn test_query_row() {
         let db = checked_memory_handle();
         let sql = "BEGIN;
                    CREATE TABLE foo(x INTEGER);
@@ -959,17 +959,17 @@ mod test {
                    END;";
         db.execute_batch(sql).unwrap();
 
-        assert_eq!(10i64, db.query_row_safe("SELECT SUM(x) FROM foo", &[], |r| {
+        assert_eq!(10i64, db.query_row("SELECT SUM(x) FROM foo", &[], |r| {
             r.get::<i64>(0)
         }).unwrap());
 
-        let result = db.query_row_safe("SELECT x FROM foo WHERE x > 5", &[], |r| r.get::<i64>(0));
+        let result = db.query_row("SELECT x FROM foo WHERE x > 5", &[], |r| r.get::<i64>(0));
         let error = result.unwrap_err();
 
         assert!(error.code == ffi::SQLITE_NOTICE);
         assert!(error.message == "Query did not return a row");
 
-        let bad_query_result = db.query_row_safe("NOT A PROPER QUERY; test123", &[], |_| ());
+        let bad_query_result = db.query_row("NOT A PROPER QUERY; test123", &[], |_| ());
 
         assert!(bad_query_result.is_err());
     }
