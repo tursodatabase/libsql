@@ -40,6 +40,7 @@ proc usage {} {
   puts stderr "  -limit N     (load no more than N documents)"
   puts stderr "  -automerge N (set the automerge parameter to N)"
   puts stderr "  -crisismerge N (set the crisismerge parameter to N)"
+  puts stderr "  -prefix PREFIX (comma separated prefix= argument)"
   exit 1
 }
 
@@ -49,6 +50,7 @@ set O(limit)      0
 set O(delete)     0
 set O(automerge)  -1
 set O(crisismerge)  -1
+set O(prefix)     ""
 
 if {[llength $argv]<2} usage
 set nOpt [expr {[llength $argv]-2}]
@@ -86,6 +88,11 @@ for {set i 0} {$i < $nOpt} {incr i} {
       set O(crisismerge) [lindex $argv $i]
     }
 
+    -prefix {
+      if { [incr i]>=$nOpt } usage
+      set O(prefix) [lindex $argv $i]
+    }
+
     default {
       usage
     }
@@ -98,8 +105,10 @@ sqlite3 db $dbfile
 db func loadfile loadfile
 
 db transaction {
+  set pref ""
+  if {$O(prefix)!=""} { set pref ", prefix='$O(prefix)'" }
   catch {
-    db eval "CREATE VIRTUAL TABLE t1 USING $O(vtab) (path, content$O(tok))"
+    db eval "CREATE VIRTUAL TABLE t1 USING $O(vtab) (path, content$O(tok)$pref)"
   }
   if {$O(automerge)>=0} {
     if {$O(vtab) == "fts5"} {

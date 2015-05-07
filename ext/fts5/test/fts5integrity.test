@@ -1,0 +1,35 @@
+# 2015 Jan 13
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# This file containst tests focused on the integrity-check procedure.
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+set testprefix fts5integrity
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE xx USING fts5(x);
+  INSERT INTO xx VALUES('term');
+}
+do_execsql_test 1.1 {
+  INSERT INTO xx(xx) VALUES('integrity-check');
+}
+
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE yy USING fts5(x, prefix=1);
+  INSERT INTO yy VALUES('term');
+}
+do_execsql_test 2.1 {
+  INSERT INTO yy(yy) VALUES('integrity-check');
+}
+
+finish_test
+

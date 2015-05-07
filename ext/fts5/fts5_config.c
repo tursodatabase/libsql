@@ -204,33 +204,6 @@ void sqlite3Fts5Dequote(char *z){
 }
 
 /*
-** Argument z points to a nul-terminated string containing an SQL identifier.
-** This function returns a copy of the identifier enclosed in backtick 
-** quotes.
-*/
-static char *fts5EscapeName(int *pRc, const char *z){
-  char *pRet = 0;
-  if( *pRc==SQLITE_OK ){
-    int n = strlen(z);
-    pRet = (char*)sqlite3_malloc(2 + 2*n + 1);
-    if( pRet==0 ){
-      *pRc = SQLITE_NOMEM;
-    }else{
-      int i;
-      char *p = pRet;
-      *p++ = '`';
-      for(i=0; i<n; i++){
-        if( z[i]=='`' ) *p++ = '`';
-        *p++ = z[i];
-      }
-      *p++ = '`';
-      *p++ = '\0';
-    }
-  }
-  return pRet;
-}
-
-/*
 ** Parse the "special" CREATE VIRTUAL TABLE directive and update
 ** configuration object pConfig as appropriate.
 **
@@ -459,7 +432,6 @@ static int fts5ConfigMakeExprlist(Fts5Config *p){
   int i;
   int rc = SQLITE_OK;
   Fts5Buffer buf = {0, 0, 0};
-  const char *zSep = "";
 
   sqlite3Fts5BufferAppendPrintf(&rc, &buf, "T.%Q", p->zContentRowid);
   if( p->eContent!=FTS5_CONTENT_NONE ){
@@ -849,6 +821,7 @@ int sqlite3Fts5ConfigLoad(Fts5Config *pConfig, int iCookie){
   char *zSql;
   sqlite3_stmt *p = 0;
   int rc;
+  int iVersion = 0;
 
   /* Set default values */
   pConfig->pgsz = FTS5_DEFAULT_PAGE_SIZE;
@@ -868,9 +841,17 @@ int sqlite3Fts5ConfigLoad(Fts5Config *pConfig, int iCookie){
     while( SQLITE_ROW==sqlite3_step(p) ){
       const char *zK = (const char*)sqlite3_column_text(p, 0);
       sqlite3_value *pVal = sqlite3_column_value(p, 1);
-      sqlite3Fts5ConfigSetValue(pConfig, zK, pVal, 0);
+      if( 0==sqlite3_stricmp(zK, "version") ){
+        iVersion = sqlite3_value_int(pVal);
+      }else{
+        sqlite3Fts5ConfigSetValue(pConfig, zK, pVal, 0);
+      }
     }
-    rc = sqlite3_finalize(p);
+    if( rc==SQLITE_OK ) rc = sqlite3_finalize(p);
+  }
+  
+  if( rc==SQLITE_OK && iVersion!=FTS5_CURRENT_VERSION ){
+    rc = sqlite3Fts5Corrupt();
   }
 
   if( rc==SQLITE_OK ){

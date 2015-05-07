@@ -257,6 +257,9 @@ int sqlite3Fts5StorageOpen(
           pConfig, "config", "k PRIMARY KEY, v", 1, pzErr
       );
     }
+    if( rc==SQLITE_OK ){
+      rc = sqlite3Fts5StorageConfigValue(p, "version", 0, FTS5_CURRENT_VERSION);
+    }
   }
 
   if( rc ){
@@ -542,6 +545,9 @@ int sqlite3Fts5StorageDeleteAll(Fts5Storage *p){
   ** and averages records.  */
   if( rc==SQLITE_OK ){
     rc = sqlite3Fts5IndexReinit(p->pIndex);
+  }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3Fts5StorageConfigValue(p, "version", 0, FTS5_CURRENT_VERSION);
   }
   return rc;
 }
@@ -983,18 +989,23 @@ int sqlite3Fts5StorageRollback(Fts5Storage *p){
 
 int sqlite3Fts5StorageConfigValue(
   Fts5Storage *p, 
-  const char *z, 
-  sqlite3_value *pVal
+  const char *z,
+  sqlite3_value *pVal,
+  int iVal
 ){
   sqlite3_stmt *pReplace = 0;
   int rc = fts5StorageGetStmt(p, FTS5_STMT_REPLACE_CONFIG, &pReplace, 0);
   if( rc==SQLITE_OK ){
     sqlite3_bind_text(pReplace, 1, z, -1, SQLITE_STATIC);
-    sqlite3_bind_value(pReplace, 2, pVal);
+    if( pVal ){
+      sqlite3_bind_value(pReplace, 2, pVal);
+    }else{
+      sqlite3_bind_int(pReplace, 2, iVal);
+    }
     sqlite3_step(pReplace);
     rc = sqlite3_reset(pReplace);
   }
-  if( rc==SQLITE_OK ){
+  if( rc==SQLITE_OK && pVal ){
     int iNew = p->pConfig->iCookie + 1;
     rc = sqlite3Fts5IndexSetCookie(p->pIndex, iNew);
     if( rc==SQLITE_OK ){

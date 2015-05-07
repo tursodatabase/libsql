@@ -136,6 +136,16 @@ static unsigned int fts5HashKey(int nSlot, const char *p, int n){
   return (h % nSlot);
 }
 
+static unsigned int fts5HashKey2(int nSlot, char b, const char *p, int n){
+  int i;
+  unsigned int h = 13;
+  for(i=n-1; i>=0; i--){
+    h = (h << 3) ^ h ^ p[i];
+  }
+  h = (h << 3) ^ h ^ b;
+  return (h % nSlot);
+}
+
 /*
 ** Resize the hash table by doubling the number of slots.
 */
@@ -191,36 +201,44 @@ int sqlite3Fts5HashWrite(
   i64 iRowid,                     /* Rowid for this entry */
   int iCol,                       /* Column token appears in (-ve -> delete) */
   int iPos,                       /* Position of token within column */
+  char bByte,                     /* First byte of token */
   const char *pToken, int nToken  /* Token to add or remove to or from index */
 ){
-  unsigned int iHash = fts5HashKey(pHash->nSlot, pToken, nToken);
+  unsigned int iHash = fts5HashKey2(pHash->nSlot, bByte, pToken, nToken);
   Fts5HashEntry *p;
   u8 *pPtr;
   int nIncr = 0;                  /* Amount to increment (*pHash->pnByte) by */
 
   /* Attempt to locate an existing hash entry */
   for(p=pHash->aSlot[iHash]; p; p=p->pHashNext){
-    if( memcmp(p->zKey, pToken, nToken)==0 && p->zKey[nToken]==0 ) break;
+    if( p->zKey[0]==bByte 
+     && memcmp(&p->zKey[1], pToken, nToken)==0 
+     && p->zKey[nToken+1]==0 
+    ){
+      break;
+    }
   }
 
   /* If an existing hash entry cannot be found, create a new one. */
   if( p==0 ){
-    int nByte = sizeof(Fts5HashEntry) + nToken + 1 + 64;
+    int nByte = sizeof(Fts5HashEntry) + (nToken+1) + 1 + 64;
     if( nByte<128 ) nByte = 128;
 
     if( (pHash->nEntry*2)>=pHash->nSlot ){
       int rc = fts5HashResize(pHash);
       if( rc!=SQLITE_OK ) return rc;
-      iHash = fts5HashKey(pHash->nSlot, pToken, nToken);
+      iHash = fts5HashKey2(pHash->nSlot, bByte, pToken, nToken);
     }
 
     p = (Fts5HashEntry*)sqlite3_malloc(nByte);
     if( !p ) return SQLITE_NOMEM;
     memset(p, 0, sizeof(Fts5HashEntry));
     p->nAlloc = nByte;
-    memcpy(p->zKey, pToken, nToken);
-    p->zKey[nToken] = '\0';
-    p->nData = nToken + 1 + sizeof(Fts5HashEntry);
+    p->zKey[0] = bByte;
+    memcpy(&p->zKey[1], pToken, nToken);
+    assert( iHash==fts5HashKey(pHash->nSlot, p->zKey, nToken+1) );
+    p->zKey[nToken+1] = '\0';
+    p->nData = nToken+1 + 1 + sizeof(Fts5HashEntry);
     p->nData += sqlite3PutVarint(&((u8*)p)[p->nData], iRowid);
     p->iSzPoslist = p->nData;
     p->nData += 1;

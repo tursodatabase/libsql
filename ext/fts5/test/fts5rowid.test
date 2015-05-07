@@ -21,19 +21,11 @@ do_catchsql_test 1.1 {
 
 do_catchsql_test 1.2 {
   SELECT fts5_rowid('segment')
-} {1 {should be: fts5_rowid('segment', idx, segid, height, pgno))}}
+} {1 {should be: fts5_rowid('segment', segid, height, pgno))}}
 
 do_execsql_test 1.3 {
-  SELECT fts5_rowid('segment', 1, 1, 1, 1)
-} {4503670494330881}
-
-do_catchsql_test 1.4 {
-  SELECT fts5_rowid('start-of-index');
-} {1 {should be: fts5_rowid('start-of-index', idx)}}
-
-do_execsql_test 1.5 {
-  SELECT fts5_rowid('start-of-index', 1);
-} {4503668346847232}
+  SELECT fts5_rowid('segment', 1, 1, 1)
+} {70866960385}
 
 do_catchsql_test 1.4 {
   SELECT fts5_rowid('nosucharg');

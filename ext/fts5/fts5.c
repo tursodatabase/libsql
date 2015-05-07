@@ -1164,7 +1164,7 @@ static int fts5SpecialInsert(
       if( bError ){
         rc = SQLITE_ERROR;
       }else{
-        rc = sqlite3Fts5StorageConfigValue(pTab->pStorage, z, pVal);
+        rc = sqlite3Fts5StorageConfigValue(pTab->pStorage, z, pVal, 0);
       }
     }
   }

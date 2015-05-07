@@ -32,12 +32,12 @@ ifcapable !fts5 {
 #
 
 faultsim_save_and_close
-do_faultsim_test 1 -prep {
+do_faultsim_test 1 -faults ioerr-t* -prep {
   faultsim_restore_and_reopen
 } -body {
   execsql { CREATE VIRTUAL TABLE t1 USING fts5(a, b, prefix='1, 2, 3') }
 } -test {
-  faultsim_test_result {0 {}} 
+  faultsim_test_result {0 {}} {1 {vtable constructor failed: t1}}
 }
 
 reset_db

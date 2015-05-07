@@ -126,8 +126,8 @@ do_execsql_test 3.0 {
 }
 
 foreach {tn hdr} {
-  1 "\00\00\00\00"
-  2 "\FF\FF\FF\FF"
+  1 "\x00\x00\x00\x00"
+  2 "\xFF\xFF\xFF\xFF"
 } {
   set tn2 0
   set nCorrupt 0

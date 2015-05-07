@@ -79,6 +79,13 @@ foreach {tn expr err} {
   do_catchsql_test 3.$tn {SELECT fts5_expr($expr, 'name', 'addr')} [list 1 $err]
 }
 
+#-------------------------------------------------------------------------
+# Experiment with a tokenizer that considers " to be a token character.
+#
+do_execsql_test 4.0 {
+  SELECT fts5_expr('a AND """"', 'x', 'tokenize="unicode61 tokenchars ''""''"');
+} {{"a" AND """"}}
+
 
 
 

@@ -1371,7 +1371,7 @@ static char *fts5PrintfAppend(char *zApp, const char *zFmt, ...){
   va_start(ap, zFmt);
   zNew = sqlite3_vmprintf(zFmt, ap);
   va_end(ap);
-  if( zApp ){
+  if( zApp && zNew ){
     char *zNew2 = sqlite3_mprintf("%s%s", zApp, zNew);
     sqlite3_free(zNew);
     zNew = zNew2;
@@ -1548,12 +1548,14 @@ static void fts5ExprFunction(
   const char *zNearsetCmd = "nearset";
   int nConfig;                    /* Size of azConfig[] */
   Fts5Config *pConfig = 0;
+  int iArg = 1;
 
   if( bTcl && nArg>1 ){
     zNearsetCmd = (const char*)sqlite3_value_text(apVal[1]);
+    iArg = 2;
   }
 
-  nConfig = nArg + 2 - bTcl;
+  nConfig = 3 + (nArg-iArg);
   azConfig = (const char**)sqlite3_malloc(sizeof(char*) * nConfig);
   if( azConfig==0 ){
     sqlite3_result_error_nomem(pCtx);
@@ -1562,9 +1564,10 @@ static void fts5ExprFunction(
   azConfig[0] = 0;
   azConfig[1] = "main";
   azConfig[2] = "tbl";
-  for(i=1+bTcl; i<nArg; i++){
-    azConfig[i+2-bTcl] = (const char*)sqlite3_value_text(apVal[i]);
+  for(i=3; iArg<nArg; iArg++){
+    azConfig[i++] = (const char*)sqlite3_value_text(apVal[iArg]);
   }
+
   zExpr = (const char*)sqlite3_value_text(apVal[0]);
 
   rc = sqlite3Fts5ConfigParse(pGlobal, db, nConfig, azConfig, &pConfig, &zErr);
@@ -1580,7 +1583,9 @@ static void fts5ExprFunction(
     }else{
       zText = fts5ExprPrint(pConfig, pExpr->pRoot);
     }
-    if( rc==SQLITE_OK ){
+    if( zText==0 ){
+      rc = SQLITE_NOMEM;
+    }else{
       sqlite3_result_text(pCtx, zText, -1, SQLITE_TRANSIENT);
       sqlite3_free(zText);
     }

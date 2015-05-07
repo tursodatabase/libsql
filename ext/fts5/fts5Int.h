@@ -122,9 +122,13 @@ struct Fts5Config {
   char *zRankArgs;                /* Arguments to rank function */
 };
 
+/* Current expected value of %_config table 'version' field */
+#define FTS5_CURRENT_VERSION 1
+
 #define FTS5_CONTENT_NORMAL   0
 #define FTS5_CONTENT_NONE     1
 #define FTS5_CONTENT_EXTERNAL 2
+
 
 
 
@@ -394,6 +398,7 @@ int sqlite3Fts5HashWrite(
   i64 iRowid,                     /* Rowid for this entry */
   int iCol,                       /* Column token appears in (-ve -> delete) */
   int iPos,                       /* Position of token within column */
+  char bByte,
   const char *pToken, int nToken  /* Token to add or remove to or from index */
 );
 
@@ -458,7 +463,9 @@ int sqlite3Fts5StorageRowCount(Fts5Storage *p, i64 *pnRow);
 int sqlite3Fts5StorageSync(Fts5Storage *p, int bCommit);
 int sqlite3Fts5StorageRollback(Fts5Storage *p);
 
-int sqlite3Fts5StorageConfigValue(Fts5Storage *p, const char*, sqlite3_value*);
+int sqlite3Fts5StorageConfigValue(
+    Fts5Storage *p, const char*, sqlite3_value*, int
+);
 
 int sqlite3Fts5StorageSpecialDelete(Fts5Storage *p, i64 iDel, sqlite3_value**);
 
