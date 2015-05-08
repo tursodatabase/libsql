@@ -2075,7 +2075,7 @@ static void fts5SegIterSeekInit(
 ){
   int iPg = 1;
   int h;
-  int bGe = (flags & FTS5INDEX_QUERY_PREFIX);
+  int bGe = (flags & FTS5INDEX_QUERY_SCAN);
   int bDlidx = 0;                 /* True if there is a doclist-index */
 
   assert( bGe==0 || (flags & FTS5INDEX_QUERY_DESC)==0 );
@@ -2171,7 +2171,7 @@ static void fts5SegIterHashInit(
   assert( p->pHash );
   assert( p->rc==SQLITE_OK );
 
-  if( pTerm==0 || (flags & FTS5INDEX_QUERY_PREFIX) ){
+  if( pTerm==0 || (flags & FTS5INDEX_QUERY_SCAN) ){
     p->rc = sqlite3Fts5HashScanInit(p->pHash, (const char*)pTerm, nTerm);
     sqlite3Fts5HashScanEntry(p->pHash, (const char**)&z, &pList, &nList);
     n = (z ? strlen((const char*)z) : 0);
@@ -4004,6 +4004,7 @@ static void fts5SetupPrefixIter(
   pStruct = fts5StructureRead(p);
 
   if( aBuf && pStruct ){
+    const int flags = FTS5INDEX_QUERY_SCAN;
     Fts5DoclistIter *pDoclist;
     int i;
     i64 iLastRowid = 0;
@@ -4011,7 +4012,7 @@ static void fts5SetupPrefixIter(
     Fts5Buffer doclist;
 
     memset(&doclist, 0, sizeof(doclist));
-    for(fts5MultiIterNew(p, pStruct, 1, 1, pToken, nToken, -1, 0, &p1);
+    for(fts5MultiIterNew(p, pStruct, 1, flags, pToken, nToken, -1, 0, &p1);
         fts5MultiIterEof(p, p1)==0;
         fts5MultiIterNext(p, p1, 0, 0)
     ){
@@ -4272,6 +4273,11 @@ int sqlite3Fts5IndexQuery(
   int iIdx = 0;
   Fts5Buffer buf = {0, 0, 0};
 
+  /* If the QUERY_SCAN flag is set, all other flags must be clear. */
+  assert( (flags & FTS5INDEX_QUERY_SCAN)==0
+       || (flags & FTS5INDEX_QUERY_SCAN)==FTS5INDEX_QUERY_SCAN
+  );
+
   if( sqlite3Fts5BufferGrow(&p->rc, &buf, nToken+1)==0 ){
     memcpy(&buf.p[1], pToken, nToken);
   }
@@ -4296,9 +4302,8 @@ int sqlite3Fts5IndexQuery(
       buf.p[0] = FTS5_MAIN_PREFIX + iIdx;
       pRet->pStruct = fts5StructureRead(p);
       if( pRet->pStruct ){
-        int f = (flags & ~FTS5INDEX_QUERY_PREFIX);
         fts5MultiIterNew(
-            p, pRet->pStruct, 1, f, buf.p, nToken+1, -1, 0, &pRet->pMulti
+            p, pRet->pStruct, 1, flags, buf.p, nToken+1, -1, 0, &pRet->pMulti
         );
       }
     }else{
@@ -4344,6 +4349,29 @@ int sqlite3Fts5IterNext(Fts5IndexIter *pIter){
 }
 
 /*
+** Move to the next matching term/rowid. Used by the fts5vocab module.
+*/
+int sqlite3Fts5IterNextScan(Fts5IndexIter *pIter){
+  Fts5Index *p = pIter->pIndex;
+  Fts5MultiSegIter *pMulti = pIter->pMulti;
+
+  assert( pIter->pIndex->rc==SQLITE_OK );
+  assert( pMulti );
+
+  fts5BufferZero(&pIter->poslist);
+  fts5MultiIterNext(p, pMulti, 0, 0);
+  if( p->rc==SQLITE_OK ){
+    Fts5SegIter *pSeg = &pMulti->aSeg[ pMulti->aFirst[1].iFirst ];
+    if( pSeg->pLeaf && pSeg->term.p[0]!=FTS5_MAIN_PREFIX ){
+      fts5DataRelease(pSeg->pLeaf);
+      pSeg->pLeaf = 0;
+    }
+  }
+
+  return fts5IndexReturn(pIter->pIndex);
+}
+
+/*
 ** Move the doclist-iter passed as the first argument to the next 
 ** matching rowid that occurs at or after iMatch. The definition of "at 
 ** or after" depends on whether this iterator iterates in ascending or 
@@ -4381,6 +4409,16 @@ i64 sqlite3Fts5IterRowid(Fts5IndexIter *pIter){
   }else{
     return fts5MultiIterRowid(pIter->pMulti);
   }
+}
+
+/*
+** Return the current term.
+*/
+const char *sqlite3Fts5IterTerm(Fts5IndexIter *pIter, int *pn){
+  int n;
+  const char *z = fts5MultiIterTerm(pIter->pMulti, &n);
+  *pn = n-1;
+  return &z[1];
 }
 
 

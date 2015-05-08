@@ -145,11 +145,9 @@ struct Fts5Sorter {
 /*
 ** Virtual-table cursor object.
 **
-** zSpecial:
+** iSpecial:
 **   If this is a 'special' query (refer to function fts5SpecialMatch()), 
-**   then this variable points to a nul-terminated buffer containing the
-**   result to return through the table-name column. It is nul-terminated
-**   and should eventually be freed using sqlite3_free().
+**   then this variable contains the result of the query. 
 */
 struct Fts5Cursor {
   sqlite3_vtab_cursor base;       /* Base class used by SQLite core */
@@ -159,7 +157,7 @@ struct Fts5Cursor {
   Fts5Sorter *pSorter;            /* Sorter for "ORDER BY rank" queries */
   int csrflags;                   /* Mask of cursor flags (see below) */
   Fts5Cursor *pNext;              /* Next cursor in Fts5Cursor.pCsr list */
-  char *zSpecial;                 /* Result of special query */
+  i64 iSpecial;                   /* Result of special query */
 
   /* "rank" function. Populated on demand from vtab.xColumn(). */
   char *zRank;                    /* Custom rank function */
@@ -564,7 +562,6 @@ static int fts5CloseMethod(sqlite3_vtab_cursor *pCursor){
     sqlite3_finalize(pCsr->pRankArgStmt);
     sqlite3_free(pCsr->apRankArg);
 
-    sqlite3_free(pCsr->zSpecial);
     if( CsrFlagTest(pCsr, FTS5CSR_FREE_ZRANK) ){
       sqlite3_free(pCsr->zRank);
       sqlite3_free(pCsr->zRankArgs);
@@ -799,12 +796,13 @@ static int fts5SpecialMatch(
   for(n=0; z[n] && z[n]!=' '; n++);
 
   assert( pTab->base.zErrMsg==0 );
-  assert( pCsr->zSpecial==0 );
+  pCsr->idxNum = FTS5_PLAN_SPECIAL;
 
   if( 0==sqlite3_strnicmp("reads", z, n) ){
-    pCsr->zSpecial = sqlite3_mprintf("%d", sqlite3Fts5IndexReads(pTab->pIndex));
-    pCsr->idxNum = FTS5_PLAN_SPECIAL;
-    if( pCsr->zSpecial==0 ) rc = SQLITE_NOMEM;
+    pCsr->iSpecial = sqlite3Fts5IndexReads(pTab->pIndex);
+  }
+  else if( 0==sqlite3_strnicmp("id", z, n) ){
+    pCsr->iSpecial = pCsr->iCsrId;
   }
   else{
     /* An unrecognized directive. Return an error message. */
@@ -1668,6 +1666,26 @@ static void fts5ApiCallback(
   }
 }
 
+
+/*
+** Given cursor id iId, return a pointer to the corresponding Fts5Index 
+** object. Or NULL If the cursor id does not exist.
+*/
+Fts5Index *sqlite3Fts5IndexFromCsrid(Fts5Global *pGlobal, i64 iCsrId){
+  Fts5Cursor *pCsr;
+  Fts5Index *pIndex = 0;
+
+  for(pCsr=pGlobal->pCsr; pCsr; pCsr=pCsr->pNext){
+    if( pCsr->iCsrId==iCsrId ) break;
+  }
+  if( pCsr ){
+    Fts5Table *pTab = (Fts5Table*)pCsr->base.pVtab;
+    pIndex = pTab->pIndex;
+  }
+
+  return pIndex;
+}
+
 /*
 ** Return a "position-list blob" corresponding to the current position of
 ** cursor pCsr via sqlite3_result_blob(). A position-list blob contains
@@ -1728,7 +1746,7 @@ static int fts5ColumnMethod(
 
   if( pCsr->idxNum==FTS5_PLAN_SPECIAL ){
     if( iCol==pConfig->nCol ){
-      sqlite3_result_text(pCtx, pCsr->zSpecial, -1, SQLITE_TRANSIENT);
+      sqlite3_result_int64(pCtx, pCsr->iSpecial);
     }
   }else
 
@@ -2059,6 +2077,7 @@ int sqlite3Fts5Init(sqlite3 *db){
     if( rc==SQLITE_OK ) rc = sqlite3Fts5ExprInit(pGlobal, db);
     if( rc==SQLITE_OK ) rc = sqlite3Fts5AuxInit(&pGlobal->api);
     if( rc==SQLITE_OK ) rc = sqlite3Fts5TokenizerInit(&pGlobal->api);
+    if( rc==SQLITE_OK ) rc = sqlite3Fts5VocabInit(pGlobal, db);
     if( rc==SQLITE_OK ){
       rc = sqlite3_create_function(
           db, "fts5", 0, SQLITE_UTF8, p, fts5Fts5Func, 0, 0

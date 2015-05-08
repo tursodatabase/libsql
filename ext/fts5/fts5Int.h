@@ -51,23 +51,7 @@ extern int sqlite3_fts5_may_be_corrupt;
 # define assert_nc(x) assert(x)
 #endif
 
-/**************************************************************************
-** Interface to code in fts5.c. 
-*/
 typedef struct Fts5Global Fts5Global;
-
-int sqlite3Fts5GetTokenizer(
-  Fts5Global*, 
-  const char **azArg,
-  int nArg,
-  Fts5Tokenizer**,
-  fts5_tokenizer**,
-  char **pzErr
-);
-
-/*
-** End of interface to code in fts5.c.
-**************************************************************************/
 
 /**************************************************************************
 ** Interface to code in fts5_config.c. fts5_config.c contains contains code
@@ -260,6 +244,7 @@ typedef struct Fts5IndexIter Fts5IndexIter;
 #define FTS5INDEX_QUERY_PREFIX     0x0001   /* Prefix query */
 #define FTS5INDEX_QUERY_DESC       0x0002   /* Docs in descending rowid order */
 #define FTS5INDEX_QUERY_TEST_NOIDX 0x0004   /* Do not use prefix index */
+#define FTS5INDEX_QUERY_SCAN       0x0008   /* Scan query (fts5vocab) */
 
 /*
 ** Create/destroy an Fts5Index object.
@@ -302,6 +287,13 @@ int sqlite3Fts5IterPoslist(Fts5IndexIter*, const u8 **pp, int *pn);
 ** Close an iterator opened by sqlite3Fts5IndexQuery().
 */
 void sqlite3Fts5IterClose(Fts5IndexIter*);
+
+/*
+** This interface is used by the fts5vocab module.
+*/
+const char *sqlite3Fts5IterTerm(Fts5IndexIter*, int*);
+int sqlite3Fts5IterNextScan(Fts5IndexIter*);
+
 
 /*
 ** Insert or remove data to or from the index. Each time a document is 
@@ -388,6 +380,25 @@ int sqlite3Fts5GetVarintLen(u32 iVal);
 
 /*
 ** End of interface to code in fts5_index.c.
+**************************************************************************/
+
+/**************************************************************************
+** Interface to code in fts5.c. 
+*/
+
+int sqlite3Fts5GetTokenizer(
+  Fts5Global*, 
+  const char **azArg,
+  int nArg,
+  Fts5Tokenizer**,
+  fts5_tokenizer**,
+  char **pzErr
+);
+
+Fts5Index *sqlite3Fts5IndexFromCsrid(Fts5Global*, i64);
+
+/*
+** End of interface to code in fts5.c.
 **************************************************************************/
 
 /**************************************************************************
@@ -605,6 +616,16 @@ int sqlite3Fts5SorterNew(Fts5Expr *pExpr, Fts5Sorter **pp);
 
 /*
 ** End of interface to code in fts5_sorter.c.
+**************************************************************************/
+
+/**************************************************************************
+** Interface to code in fts5_vocab.c. 
+*/
+
+int sqlite3Fts5VocabInit(Fts5Global*, sqlite3*);
+
+/*
+** End of interface to code in fts5_vocab.c.
 **************************************************************************/
 
 #endif

@@ -1,0 +1,55 @@
+# 2015 Apr 24
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# The tests in this file focus on testing the fts5vocab module.
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+set testprefix fts5vocab
+
+
+do_execsql_test 1.1 {
+  CREATE VIRTUAL TABLE t1 USING fts5(one, prefix=1);
+  CREATE VIRTUAL TABLE v1 USING fts5vocab(t1);
+  PRAGMA table_info = v1;
+} {
+  0 term {} 0 {} 0
+  1 row {} 0 {} 0
+  2 inst {} 0 {} 0
+}
+
+do_execsql_test 1.2 { SELECT * FROM v1 } { }
+
+do_execsql_test 1.3 {
+  INSERT INTO t1 VALUES('x y z');
+  INSERT INTO t1 VALUES('x x x');
+}
+
+do_execsql_test 1.4 {
+  SELECT * FROM v1;
+} {x 2 4  y 1 1  z 1 1}
+
+do_execsql_test 1.5 {
+  BEGIN;
+    INSERT INTO t1 VALUES('a b c');
+    SELECT * FROM v1 WHERE term<'d';
+  COMMIT;
+} {a 1 1   b 1 1   c 1 1}
+
+do_execsql_test 1.6 {
+  DELETE FROM t1 WHERE one = 'a b c';
+  SELECT * FROM v1;
+} {x 2 4  y 1 1  z 1 1}
+
+
+
+finish_test
+
