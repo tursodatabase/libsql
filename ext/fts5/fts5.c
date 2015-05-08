@@ -943,6 +943,10 @@ static int fts5FilterMethod(
   Fts5Cursor *pCsr = (Fts5Cursor*)pCursor;
   int bDesc = ((idxNum & FTS5_ORDER_DESC) ? 1 : 0);
   int rc = SQLITE_OK;
+  char **pzErrmsg = pTab->pConfig->pzErrmsg;
+
+  assert( pzErrmsg==0 || pzErrmsg==&pTab->base.zErrMsg );
+  pTab->pConfig->pzErrmsg = &pTab->base.zErrMsg;
 
   assert( nVal<=2 );
   assert( pCsr->pStmt==0 );
@@ -1004,6 +1008,7 @@ static int fts5FilterMethod(
     }
   }
 
+  pTab->pConfig->pzErrmsg = pzErrmsg;
   return rc;
 }
 
@@ -1205,6 +1210,9 @@ static int fts5UpdateMethod(
   /* A transaction must be open when this is called. */
   assert( pTab->ts.eState==1 );
 
+  assert( pTab->pConfig->pzErrmsg==0 );
+  pTab->pConfig->pzErrmsg = &pTab->base.zErrMsg;
+
   /* A delete specifies a single argument - the rowid of the row to remove.
   ** Update and insert operations pass:
   **
@@ -1241,10 +1249,11 @@ static int fts5UpdateMethod(
       if( pConfig->eContent!=FTS5_CONTENT_NORMAL 
        && 0==sqlite3_stricmp("delete", z) 
       ){
-        return fts5SpecialDelete(pTab, apVal, pRowid);
+        rc = fts5SpecialDelete(pTab, apVal, pRowid);
       }else{
-        return fts5SpecialInsert(pTab, pCmd, apVal[2 + pConfig->nCol + 1]);
+        rc = fts5SpecialInsert(pTab, pCmd, apVal[2 + pConfig->nCol + 1]);
       }
+      goto update_method_out;
     }
   }
 
@@ -1253,6 +1262,8 @@ static int fts5UpdateMethod(
     rc = sqlite3Fts5StorageInsert(pTab->pStorage, apVal, eConflict, pRowid);
   }
 
+ update_method_out:
+  pTab->pConfig->pzErrmsg = 0;
   return rc;
 }
 
@@ -1263,8 +1274,10 @@ static int fts5SyncMethod(sqlite3_vtab *pVtab){
   int rc;
   Fts5Table *pTab = (Fts5Table*)pVtab;
   fts5CheckTransactionState(pTab, FTS5_SYNC, 0);
+  pTab->pConfig->pzErrmsg = &pTab->base.zErrMsg;
   fts5TripCursors(pTab);
   rc = sqlite3Fts5StorageSync(pTab->pStorage, 1);
+  pTab->pConfig->pzErrmsg = 0;
   return rc;
 }
 

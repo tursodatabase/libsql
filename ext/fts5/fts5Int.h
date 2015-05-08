@@ -96,6 +96,11 @@ typedef struct Fts5Config Fts5Config;
 **
 ** zContentExprlist:
 **
+** pzErrmsg:
+**   This exists in order to allow the fts5_index.c module to return a 
+**   decent error message if it encounters a file-format version it does
+**   not understand.
+**
 */
 struct Fts5Config {
   sqlite3 *db;                    /* Database handle */
@@ -120,6 +125,9 @@ struct Fts5Config {
   int nCrisisMerge;               /* Maximum allowed segments per level */
   char *zRank;                    /* Name of rank function */
   char *zRankArgs;                /* Arguments to rank function */
+
+  /* If non-NULL, points to sqlite3_vtab.base.zErrmsg. Often NULL. */
+  char **pzErrmsg;
 };
 
 /* Current expected value of %_config table 'version' field */
