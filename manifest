@@ -1,5 +1,5 @@
-C Add\san\sentry\sto\ssqlite3_compileoption_used()\sfor\s\nSQLITE_ENABLE_DBSTAT_VTAB.
-D 2015-05-07T20:26:20.680
+C Remove\sa\scouple\sstray\stest\sbreakpoint\scalls.
+D 2015-05-08T00:58:39.650
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 08728ecbeddca339c77bfd564d3484b523dffdb1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -134,7 +134,7 @@ F ext/rtree/rtree5.test 6a510494f12454bf57ef28f45bc7764ea279431e
 F ext/rtree/rtree6.test 773a90db2dce6a8353dd0d5b64bca69b29761196
 F ext/rtree/rtree7.test 1fa710b9e6bf997a0c1a537b81be7bb6fded1971
 F ext/rtree/rtree8.test db79c812f9e4a11f9b1f3f9934007884610a713a
-F ext/rtree/rtree9.test d86ebf08ff6328895613ed577dd8a2a37c472c34
+F ext/rtree/rtree9.test b5eb13849545dfd271a54ff16784cb00d8792aea
 F ext/rtree/rtreeA.test ace05e729a36e342d40cf94e9efc7b4723d9dcdf
 F ext/rtree/rtreeB.test c85f9ce78766c4e68b8b89fbf2979ee9cfa82b4e
 F ext/rtree/rtreeC.test df158dcc81f1a43ce7eef361af03c48ec91f1e06
@@ -691,7 +691,7 @@ F test/join6.test cfe6503791ceb0cbb509966740286ec423cbf10b
 F test/journal1.test 69abc726c51b4a0409189f9a85191205297c0577
 F test/journal2.test ae06f566c28552c313ded3fee79a6c69e6d049b1
 F test/journal3.test ff8af941f9e06161d3db1b46bb9f965ff0e7f307
-F test/jrnlmode.test 6014ba5c11d66ff8bc7d87a7a2abc5c54be73b2e
+F test/jrnlmode.test 7864d59cf7f6e552b9b99ba0f38acd167edc10fa
 F test/jrnlmode2.test 81610545a4e6ed239ea8fa661891893385e23a1d
 F test/jrnlmode3.test 556b447a05be0e0963f4311e95ab1632b11c9eaa
 F test/keyword1.test 37ef6bba5d2ed5b07ecdd6810571de2956599dff
@@ -1256,7 +1256,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d51ce539327b4807150b030a10bb105fa34cbc24
-R 3b5b2e980214b28c55465333df6bca07
-U drh
-Z 098e50a61d449fdf99ad3beb0a05fa07
+P 480b4cb04212277ea07e230b6c13cb81a7b769b5
+R 21f625b3bd733fe1fb68391f44c5179c
+U mistachkin
+Z 03eb70e9ee3446ef0b4c4aefb03ea173

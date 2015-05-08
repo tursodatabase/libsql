@@ -559,7 +559,6 @@ do_execsql_test jrnlmode-8.30 { PRAGMA journal_mode=DELETE }    {delete}
 do_test jrnlmode-9.1 {
   forcedelete test2.db
   sqlite3 db2 test2.db
-  breakpoint
   db2 eval {CREATE TEMP TABLE t(l); PRAGMA journal_mode=off;}
   db2 close
 } {}
