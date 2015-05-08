@@ -3258,7 +3258,8 @@ static int do_meta_command(char *zLine, ShellState *p){
         goto meta_command_exit;
       }
       if( nArg==3 ){
-        sqlite3_limit(p->db, aLimit[iLimit].limitCode, integerValue(azArg[2]));
+        sqlite3_limit(p->db, aLimit[iLimit].limitCode,
+                      (int)integerValue(azArg[2]));
       }
       printf("%20s %d\n", aLimit[iLimit].zLimitName,
              sqlite3_limit(p->db, aLimit[iLimit].limitCode, -1));

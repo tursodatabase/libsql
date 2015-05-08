@@ -1,5 +1,5 @@
-C Remove\sa\scouple\sstray\stest\sbreakpoint\scalls.
-D 2015-05-08T00:58:39.650
+C Fix\sharmless\scompiler\swarning\swith\sMSVC.
+D 2015-05-08T01:04:39.640
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 08728ecbeddca339c77bfd564d3484b523dffdb1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -232,7 +232,7 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 99eabf7eff0bfa65b75939b46caa82e2b2133f28
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 1b0bfc7d59e48c26b895a6b719157111a617d9e3
-F src/shell.c 1b6fc902d4455b7a4d6d9cc9a23d3f6af7089302
+F src/shell.c 07dda7cd692911d2f22269953418d049f2e2c0ee
 F src/sqlite.h.in ca27603a36fcacdaac5a19d8ee35aaff8ce8516f
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
@@ -1256,7 +1256,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 480b4cb04212277ea07e230b6c13cb81a7b769b5
-R 21f625b3bd733fe1fb68391f44c5179c
+P 2860cebeeaebd346de60c762aa3e51dbab008578
+R 2b88857e5f693a4a1c565ce1e1d17d93
 U mistachkin
-Z 03eb70e9ee3446ef0b4c4aefb03ea173
+Z 9082451360a5e29f616c75443f8db35c
