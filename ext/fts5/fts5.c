@@ -1670,8 +1670,15 @@ static void fts5ApiCallback(
 /*
 ** Given cursor id iId, return a pointer to the corresponding Fts5Index 
 ** object. Or NULL If the cursor id does not exist.
+**
+** If successful, set *pnCol to the number of indexed columns in the
+** table before returning.
 */
-Fts5Index *sqlite3Fts5IndexFromCsrid(Fts5Global *pGlobal, i64 iCsrId){
+Fts5Index *sqlite3Fts5IndexFromCsrid(
+  Fts5Global *pGlobal, 
+  i64 iCsrId, 
+  int *pnCol
+){
   Fts5Cursor *pCsr;
   Fts5Index *pIndex = 0;
 
@@ -1681,6 +1688,7 @@ Fts5Index *sqlite3Fts5IndexFromCsrid(Fts5Global *pGlobal, i64 iCsrId){
   if( pCsr ){
     Fts5Table *pTab = (Fts5Table*)pCsr->base.pVtab;
     pIndex = pTab->pIndex;
+    *pnCol = pTab->pConfig->nCol;
   }
 
   return pIndex;
