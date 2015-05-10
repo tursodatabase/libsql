@@ -1,5 +1,5 @@
-C Version\s3.8.10.1
-D 2015-05-09T12:14:55.159
+C Fix\sthe\ssqlite3_memory_used()\sand\ssqlite3_memory_highwater()\sinterfaces\sso\nthat\sthey\sreally\sdo\sprovide\sa\s64-bit\sanswer.
+D 2015-05-10T02:01:08.271
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 08728ecbeddca339c77bfd564d3484b523dffdb1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -197,7 +197,7 @@ F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
 F src/loadext.c 29255bbe1cfb2ce9bbff2526a5ecfddcb49b9271
 F src/main.c 331fda6b255ae6a08e6ade89f0ac1d158691f3c6
-F src/malloc.c 6a370b83d54e4bbf6f94021221c2a311cff26a18
+F src/malloc.c 5bc15d525811d387b37c29f2e368143460e41e96
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c abe6ee469b6c5a35c7f22bfeb9c9bac664a1c987
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
@@ -1256,10 +1256,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9c6bf0c1865896c83ca69bf7f2e37735a71ca9a6
-R 52ad5aed0a515212a5cae24455eec5a5
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.8.10.1 *
+P 05b4b1f2a937c06c90db70c09890038f6c98ec40
+R 9b6fcbbc8ca8af1c1035670670115add
 U drh
-Z 2f070bdd5b3f9c1cfd8326cf20ed9566
+Z 0488f0f2f633ca7ffcc2d7caebddb063
