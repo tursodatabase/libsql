@@ -510,7 +510,7 @@ EXTHDR += \
 EXTHDR += \
   $(TOP)/ext/rtree/sqlite3rtree.h
 
-# executabled needed for testing
+# executables needed for testing
 #
 TESTPROGS = \
   testfixture$(TEXE) \
@@ -971,8 +971,8 @@ fulltest:	$(TESTPROGS) fuzztest
 soaktest:	$(TESTPROGS) fuzzoomtest
 	./testfixture$(TEXE) $(TOP)/test/all.test -soak=1
 
-# Do extra testing but not aeverything.
-fulltestonly:	testfixture$(TEXE) sqlite3$(TEXE)
+# Do extra testing but not everything.
+fulltestonly:	$(TESTPROGS)
 	./testfixture$(TEXE) $(TOP)/test/full.test
 
 # Fuzz testing
@@ -1115,6 +1115,8 @@ clean:
 	rm -f sqlite3_analyzer$(TEXE) sqlite3_analyzer.c
 	rm -f sqlite-*-output.vsix
 	rm -f mptester mptester.exe
+	rm -f fuzzershell fuzzershell.exe
+	rm -f sqldiff sqldiff.exe
 
 distclean:	clean
 	rm -f config.log config.status libtool Makefile sqlite3.pc

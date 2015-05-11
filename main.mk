@@ -391,7 +391,7 @@ EXTHDR += \
 EXTHDR += \
   $(TOP)/ext/userauth/sqlite3userauth.h
 
-# executabled needed for testing
+# executables needed for testing
 #
 TESTPROGS = \
   testfixture$(EXE) \
@@ -671,6 +671,13 @@ valgrindtest:	$(TESTPROGS) fuzzershell$(EXE)
 	valgrind -v ./fuzzershell$(EXE) -f $(TOP)/test/fuzzdata1.txt
 	OMIT_MISUSE=1 valgrind -v ./testfixture$(EXE) $(TOP)/test/permutations.test valgrind
 
+# A very fast test that checks basic sanity.  The name comes from
+# the 60s-era electronics testing:  "Turn it on and see if smoke
+# comes out."
+#
+smoketest:	$(TESTPROGS) fuzzershell$(EXE)
+	./testfixture$(EXE) $(TOP)/test/main.test
+
 # The next two rules are used to support the "threadtest" target. Building
 # threadtest runs a few thread-safety tests that are implemented in C. This
 # target is invoked by the releasetest.tcl script.
@@ -777,3 +784,5 @@ clean:
 	rm -f sqlite3_analyzer sqlite3_analyzer.exe sqlite3_analyzer.c
 	rm -f sqlite-*-output.vsix
 	rm -f mptester mptester.exe
+	rm -f fuzzershell fuzzershell.exe
+	rm -f sqldiff sqldiff.exe

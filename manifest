@@ -1,9 +1,9 @@
-C Build\sthe\ssqlite3_analyzer.exe\sand\ssqldiff.exe\sprograms\son\s"make\stest"\nand\s"make\ssmoketest"\sand\sother\ssimilar\stest\stargets.
-D 2015-05-11T12:15:45.279
+C Fix\sminor\sMakefile\stypos.\s\sImprove\sconsistency\sof\sMSVC\smakefile.\s\sAdd\snew\stargets\sto\sclean.
+D 2015-05-11T16:27:33.778
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in 13f5add36234e93cbebf9153d3920623ca7fd7ab
+F Makefile.in edfc69769e613a6359c42c06ea1d42c3bece1736
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 042b52591ab5fe3047e2d37858e77b894f6d0ef0
+F Makefile.msc c65882433fde5f35ff66e759938eaf2dde9f360d
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md d58e3bebc0a4145e0f2a87994015fdb575a8e866
 F VERSION 8af05c43e00f7de32be74ff9984d792c96cdb0de
@@ -152,7 +152,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk cb55a01d762d7dd6722232b98665843ef93d8d1e
+F main.mk d49723483ee9e4fb71dc2bd0e6be58705a481e73
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
 F mkopcodeh.awk d5e22023b5238985bb54a72d33e0ac71fe4f8a32
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
@@ -1256,7 +1256,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4e6520159e729b6ea96ccdb14f0ecb00a0ff7cbd
-R efe77b0d0c67edf1e2c0b42f110eae7b
-U drh
-Z 64fd5a5789d465ed8546db070d4d7ca4
+P 1b83f2e7ddfdb488e732731f7a184d37edcad5af
+R 9144e728928711a4d1e8e355f9e1d47b
+U mistachkin
+Z 7fbb5f9bc605e2a68894de61a25f2ba0
