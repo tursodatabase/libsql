@@ -88,7 +88,6 @@ if {[catch {sqlite3 db $file_to_analyze -uri 1} msg]} {
   puts stderr "error trying to open $file_to_analyze: $msg"
   exit 1
 }
-register_dbstat_vtab db
 
 db eval {SELECT count(*) FROM sqlite_master}
 set pageSize [expr {wide([db one {PRAGMA page_size}])}]

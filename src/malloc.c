@@ -226,10 +226,8 @@ void sqlite3MallocEnd(void){
 ** Return the amount of memory currently checked out.
 */
 sqlite3_int64 sqlite3_memory_used(void){
-  int n, mx;
-  sqlite3_int64 res;
-  sqlite3_status(SQLITE_STATUS_MEMORY_USED, &n, &mx, 0);
-  res = (sqlite3_int64)n;  /* Work around bug in Borland C. Ticket #3216 */
+  sqlite3_int64 res, mx;
+  sqlite3_status64(SQLITE_STATUS_MEMORY_USED, &res, &mx, 0);
   return res;
 }
 
@@ -239,11 +237,9 @@ sqlite3_int64 sqlite3_memory_used(void){
 ** or since the most recent reset.
 */
 sqlite3_int64 sqlite3_memory_highwater(int resetFlag){
-  int n, mx;
-  sqlite3_int64 res;
-  sqlite3_status(SQLITE_STATUS_MEMORY_USED, &n, &mx, resetFlag);
-  res = (sqlite3_int64)mx;  /* Work around bug in Borland C. Ticket #3216 */
-  return res;
+  sqlite3_int64 res, mx;
+  sqlite3_status64(SQLITE_STATUS_MEMORY_USED, &res, &mx, resetFlag);
+  return mx;
 }
 
 /*

@@ -1172,6 +1172,15 @@ EXTHDR = $(EXTHDR) \
 EXTHDR = $(EXTHDR) \
   $(TOP)\ext\rtree\sqlite3rtree.h
 
+# executables needed for testing
+#
+TESTPROGS = \
+  testfixture.exe \
+  sqlite3.exe \
+  sqlite3_analyzer.exe \
+  sqldiff.exe
+
+
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
 #
@@ -1635,13 +1644,13 @@ testfixture.exe:	$(TESTFIXTURE_SRC) $(LIBRESOBJS) $(HDR)
 extensiontest: testfixture.exe testloadext.dll
 	.\testfixture.exe $(TOP)\test\loadext.test
 
-fulltest:	testfixture.exe sqlite3.exe fuzztest
+fulltest:	$(TESTPROGS) fuzztest
 	.\testfixture.exe $(TOP)\test\all.test
 
-soaktest:	testfixture.exe sqlite3.exe fuzzoomtest
+soaktest:	$(TESTPROGS) fuzzoomtest
 	.\testfixture.exe $(TOP)\test\all.test -soak=1
 
-fulltestonly:	testfixture.exe sqlite3.exe fuzztest
+fulltestonly:	$(TESTPROGS) fuzztest
 	.\testfixture.exe $(TOP)\test\full.test
 
 queryplantest:	testfixture.exe sqlite3.exe
@@ -1653,21 +1662,23 @@ fuzztest:	fuzzershell.exe
 fuzzoomtest:	fuzzershell.exe
 	.\fuzzershell.exe -f $(TOP)\test\fuzzdata1.txt --oom
 
-test:	testfixture.exe sqlite3.exe fuzztest
+test:	$(TESTPROGS) fuzztest
 	.\testfixture.exe $(TOP)\test\veryquick.test
 
-smoketest:	testfixture.exe
+smoketest:	$(TESTPROGS) fuzzershell.exe
 	.\testfixture.exe $(TOP)\test\main.test
 
 sqlite3_analyzer.c: $(SQLITE3C) $(TOP)\src\tclsqlite.c $(TOP)\tool\spaceanal.tcl
-	copy $(SQLITE3C) + $(TOP)\src\tclsqlite.c $@
+	echo #define TCLSH 2 > $@
+	echo #define SQLITE_ENABLE_DBSTAT_VTAB 1 >> $@
+	copy $@ + $(SQLITE3C) + $(TOP)\src\tclsqlite.c $@
 	echo static const char *tclsh_main_loop(void){ >> $@
 	echo static const char *zMainloop = >> $@
 	$(NAWK) -f $(TOP)\tool\tostr.awk $(TOP)\tool\spaceanal.tcl >> $@
 	echo ; return zMainloop; } >> $@
 
 sqlite3_analyzer.exe:	sqlite3_analyzer.c $(LIBRESOBJS)
-	$(LTLINK) $(NO_WARN) -DBUILD_sqlite -DSQLITE_ENABLE_DBSTAT_VTAB -DTCLSH=2 -I$(TCLINCDIR) sqlite3_analyzer.c \
+	$(LTLINK) $(NO_WARN) -DBUILD_sqlite -I$(TCLINCDIR) sqlite3_analyzer.c \
 		/link $(LTLINKOPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LTLIBS) $(TLIBS)
 
 testloadext.lo:	$(TOP)\src\test_loadext.c
@@ -1737,6 +1748,7 @@ clean:
 	del /Q shell.c sqlite3ext.h 2>NUL
 	del /Q sqlite3_analyzer.exe sqlite3_analyzer.c 2>NUL
 	del /Q sqlite-*-output.vsix 2>NUL
+	del /Q fuzzershell.exe sqldiff.exe 2>NUL
 
 # Dynamic link library section.
 #
