@@ -37,3 +37,5 @@ do_test analyzer1-1.0 {
 do_test analyzer1-1.1 {
   regexp {^/\*\* Disk-Space Utilization.*COMMIT;\W*$} $::MSG
 } {1}
+
+finish_test

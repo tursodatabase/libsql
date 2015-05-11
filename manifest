@@ -1,5 +1,5 @@
-C Test\scases\sfor\ssqlite3_analyzer\sand\ssqldiff.\s\sFix\sa\sproblem\swith\s\nsqlite3_analyzer\srelated\sto\sthe\srenaming\sof\sthe\sinitialization\sroutine.
-D 2015-05-11T17:46:14.438
+C Add\smissing\s"finish_test"\scommands\sto\sthe\send\sof\sthe\stwo\snew\stest\sscripts\nfor\ssqlite3_analyzer\sand\ssqldiff.
+D 2015-05-11T18:48:52.709
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in edfc69769e613a6359c42c06ea1d42c3bece1736
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -334,7 +334,7 @@ F test/analyzeC.test 555a6cc388b9818b6eda6df816f01ce0a75d3a93
 F test/analyzeD.test 08f9d0bee4e118a66fff3a32d02dbe0ee0a2b594
 F test/analyzeE.test 8684e8ac5722fb97c251887ad97e5d496a98af1d
 F test/analyzeF.test 7ccd7a04f7d3061bde1a8a4dacc4792edccf6bf2
-F test/analyzer1.test 0f803d7d466d7c3e027dfe18bc412b634999995b
+F test/analyzer1.test ef9b179ac399d49eebd29a2eab1bff500cb7d5fd
 F test/async.test 1d0e056ba1bb9729283a0f22718d3a25e82c277b
 F test/async2.test c0a9bd20816d7d6a2ceca7b8c03d3d69c28ffb8b
 F test/async3.test d73a062002376d7edc1fe3edff493edbec1fc2f7
@@ -902,7 +902,7 @@ F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
 F test/speedtest1.c 2b416dca3a155fcaa849540b2e7fc1df12896c23
 F test/spellfix.test 24f676831acddd2f4056a598fd731a72c6311f49
-F test/sqldiff1.test 4b6a8cb8619b970ac4869d3a9ec221cd314d6cae
+F test/sqldiff1.test 40e4d3b714f3a780bd7adff8b1dd1adfe1cefdf2
 F test/sqllimits1.test e05786eaed7950ff6a2d00031d001d8a26131e68
 F test/stat.test 8de91498c99f5298b303f70f1d1f3b9557af91bf
 F test/statfault.test f525a7bf633e50afd027700e9a486090684b1ac1
@@ -1258,7 +1258,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f84fbe98994c602de6c0b242dcbad3ab77298425
-R 07df1d707f9f5d9656bc9195b802cb19
+P 85a4a46c3bb9fd8124969c9e975086c795113b7e
+R dbcd907b1272e0530a99c0695a45d6f7
 U drh
-Z cfe7ea3673b7464899013ab57623434c
+Z 28eaa7fe5ab9618b47710962d47606de

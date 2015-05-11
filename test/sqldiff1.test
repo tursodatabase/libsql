@@ -55,3 +55,5 @@ INSERT INTO t2(a,b) VALUES(50.5,'xyzzy');
 CREATE TABLE t3(a,b,c);
 INSERT INTO t3(rowid,a,b,c) VALUES(1,111,222,333);
 DROP TABLE t4;}
+
+finish_test
