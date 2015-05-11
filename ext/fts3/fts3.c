@@ -1675,7 +1675,7 @@ static int fts3CloseMethod(sqlite3_vtab_cursor *pCursor){
   sqlite3Fts3ExprFree(pCsr->pExpr);
   sqlite3Fts3FreeDeferredTokens(pCsr);
   sqlite3_free(pCsr->aDoclist);
-  sqlite3_free(pCsr->aMatchinfo);
+  sqlite3Fts3MIBufferFree(pCsr->pMIBuffer);
   assert( ((Fts3Table *)pCsr->base.pVtab)->pSegments==0 );
   sqlite3_free(pCsr);
   return SQLITE_OK;
@@ -3176,7 +3176,7 @@ static int fts3FilterMethod(
   /* In case the cursor has been used before, clear it now. */
   sqlite3_finalize(pCsr->pStmt);
   sqlite3_free(pCsr->aDoclist);
-  sqlite3_free(pCsr->aMatchinfo);
+  sqlite3Fts3MIBufferFree(pCsr->pMIBuffer);
   sqlite3Fts3ExprFree(pCsr->pExpr);
   memset(&pCursor[1], 0, sizeof(Fts3Cursor)-sizeof(sqlite3_vtab_cursor));
 
