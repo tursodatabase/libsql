@@ -621,7 +621,7 @@ static int statRowid(sqlite3_vtab_cursor *pCursor, sqlite_int64 *pRowid){
 /*
 ** Invoke this routine to register the "dbstat" virtual table module
 */
-int sqlite3_dbstat_register(sqlite3 *db){
+int sqlite3DbstatRegister(sqlite3 *db){
   static sqlite3_module dbstat_module = {
     0,                            /* iVersion */
     statConnect,                  /* xCreate */

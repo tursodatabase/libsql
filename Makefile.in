@@ -995,7 +995,7 @@ smoketest:	testfixture$(TEXE) fuzzershell$(TEXE)
 
 sqlite3_analyzer.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl
 	echo "#define TCLSH 2" > $@
-	echo "#define SQLITE_ENABLE_DBSTAT_VTAB" >> $@
+	echo "#define SQLITE_ENABLE_DBSTAT_VTAB 1" >> $@
 	cat sqlite3.c $(TOP)/src/tclsqlite.c >> $@
 	echo "static const char *tclsh_main_loop(void){" >> $@
 	echo "static const char *zMainloop = " >> $@

@@ -1,7 +1,7 @@
-C Change\sautoconf/Makefile.am\sto\savoid\sbuilding\starget\ssqlite3.o\sas\spart\sof\sboth\sthe\sshared\slibrary\sand\sshell\stool.\sDoing\sso\scauses\sproblems\sfor\sparallel\sbuilds.
-D 2015-05-11T06:22:22.935
+C Revamp\sthe\sway\sthe\sDBSTAT\svirtual\stable\sis\sregistered.
+D 2015-05-11T11:59:15.863
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in 08728ecbeddca339c77bfd564d3484b523dffdb1
+F Makefile.in 72931ef100ef7dfbfc3d1f42d85da59f1aae430d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc c6241f7fa2912427410ef15429c8ab5601e19a71
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
@@ -181,7 +181,7 @@ F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c a5cf5b4b56390cfb7b8636e8f7ddef90258dd575
 F src/ctime.c 5a0b735dc95604766f5dac73973658eef782ee8b
 F src/date.c e4d50b3283696836ec1036b695ead9a19e37a5ac
-F src/dbstat.c db36fbd268f778ea1cdb8b0c1eb9828c1f10bf70
+F src/dbstat.c fa5b981f37c2b4f7797b4496f1c10254e11a2f4a
 F src/delete.c 37964e6c1d73ff49cbea9ff690c9605fb15f600e
 F src/expr.c 3fb2ab3ab69d15b4b75ae53fceb4e317f64cb306
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
@@ -196,7 +196,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
 F src/loadext.c 29255bbe1cfb2ce9bbff2526a5ecfddcb49b9271
-F src/main.c 331fda6b255ae6a08e6ade89f0ac1d158691f3c6
+F src/main.c bf14bc6a321965e528d8ab30087e9440335f2e4b
 F src/malloc.c 5bc15d525811d387b37c29f2e368143460e41e96
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c abe6ee469b6c5a35c7f22bfeb9c9bac664a1c987
@@ -236,12 +236,12 @@ F src/shell.c 07dda7cd692911d2f22269953418d049f2e2c0ee
 F src/sqlite.h.in ca27603a36fcacdaac5a19d8ee35aaff8ce8516f
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
-F src/sqliteInt.h 20d9c59fd82774503b8953acfbcc6ecbdd9ee6aa
+F src/sqliteInt.h c9f77bd02f419dcc8c644c5032c42eb29069a545
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c f266ad8a2892d659b74f0f50cb6a88b6e7c12179
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
-F src/tclsqlite.c d4fa052d3fbb655150d4ca8eedc70384b98bfef3
-F src/test1.c 90fbedce75330d48d99eadb7d5f4223e86969585
+F src/tclsqlite.c 9111a95999edac92229c972e2c34fbc171bbb6c5
+F src/test1.c a8e09b811f70184ce65012f27f30cfee7e54f268
 F src/test2.c 577961fe48961b2f2e5c8b56ee50c3f459d3359d
 F src/test3.c 64d2afdd68feac1bb5e2ffb8226c8c639f798622
 F src/test4.c d168f83cc78d02e8d35567bb5630e40dcd85ac1e
@@ -1256,7 +1256,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8a0d5d5e9a4515603c47e9354af47550155a6f2d
-R 3193d17811806f4a9cbdb09f2be5bd14
-U dan
-Z 11303427faf9306de18929db0c47633e
+P 85bfa9a67f9970843c55c3fbe0ec44ace6985896
+R 189fc358e8ba2d525e3e3c8a3c5e8737
+U drh
+Z 8b69c9f4cff7121b2fbd1c4aae9fe407
