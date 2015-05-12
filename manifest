@@ -1,5 +1,5 @@
-C Fix\sa\scouple\sof\stypos\sin\scomments.
-D 2015-05-12T23:31:02.255
+C Use\sthe\sdatabase\smutex\swhere\sapplicable.
+D 2015-05-12T23:33:32.287
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in edfc69769e613a6359c42c06ea1d42c3bece1736
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -196,7 +196,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
 F src/loadext.c 29255bbe1cfb2ce9bbff2526a5ecfddcb49b9271
-F src/main.c 6b7c1b1d08b5855cb44f086c3bf4485b90a37f3a
+F src/main.c bd2c1bb33f9d01576a028c4c21d5beba86ee316c
 F src/malloc.c 5bc15d525811d387b37c29f2e368143460e41e96
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c abe6ee469b6c5a35c7f22bfeb9c9bac664a1c987
@@ -1258,7 +1258,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fbf29b453f8b49b6b21b8b0a9e09189e35e53986
-R 82a9214cb929b109eedb4167b3957a38
+P e908365faea6987f98dc3954b932f9a353241bfc
+R e9c28482805eb7c4ec3e21f0c39ac069
 U mistachkin
-Z c078521110e15d682f4fa0f622695d3e
+Z efab135419f44db544c50d8003598130

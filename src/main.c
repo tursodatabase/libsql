@@ -1775,8 +1775,10 @@ int sqlite3_get_trace(
     return SQLITE_MISUSE_BKPT;
   }
 #endif
+  sqlite3_mutex_enter(db->mutex);
   *pxTrace = db->xTrace;
   *ppArg = db->pTraceArg;
+  sqlite3_mutex_leave(db->mutex);
   return SQLITE_OK;
 }
 /*
@@ -1820,8 +1822,10 @@ int sqlite3_get_profile(
     return SQLITE_MISUSE_BKPT;
   }
 #endif
+  sqlite3_mutex_enter(db->mutex);
   *pxProfile = db->xProfile;
   *ppArg = db->pProfileArg;
+  sqlite3_mutex_leave(db->mutex);
   return SQLITE_OK;
 }
 #endif /* SQLITE_OMIT_TRACE */
