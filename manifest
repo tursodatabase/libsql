@@ -1,5 +1,5 @@
-C Attempt\sto\sget\sDBSTAT\sto\scompile\swithout\swarnings\sacross\sall\sbuild\nconfigurations.
-D 2015-05-12T19:10:18.469
+C Fix\stypo\sin\sWin32\sVFS\scode\senabled\swhen\sthe\sSQLITE_WIN32_USE_UUID\scompile-time\soption\sis\sused.
+D 2015-05-12T19:53:15.308
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in edfc69769e613a6359c42c06ea1d42c3bece1736
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -216,7 +216,7 @@ F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h abdb9a191a367793268fe553d25bab894e986a0e
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c 23eb5f56fac54d8fe0cb204291f3b3b2d94f23fc
-F src/os_win.c 2da99cf07da7db6bcb1974013abfd89ec74749b3
+F src/os_win.c 97f7828a9554d753665b6fcf7540e31c2b3d6a6e
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 97110085b1321298412f1e5c37bddb95b36d9208
 F src/pager.h c3476e7c89cdf1c6914e50a11f3714e30b4e0a77
@@ -1258,7 +1258,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P aad3ff257a156b572334b64aa57643ff3ea231a4
-R a7da5ff564874b4b543b1f2446af493d
-U drh
-Z 76dbe37865affc77525affd7f0404dba
+P c3cbe3b06eb37b9949c5fcb0e257a845953de7a7
+R f8a1a5e41ff600c683edb344c8800a3a
+U mistachkin
+Z 79fe1e789aa3c85e03551f9de21569c5
