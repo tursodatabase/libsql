@@ -36,14 +36,17 @@
 //!                  &[&me.name, &me.time_created, &me.data]).unwrap();
 //!
 //!     let mut stmt = conn.prepare("SELECT id, name, time_created, data FROM person").unwrap();
-//!     for row in stmt.query(&[]).unwrap().map(|row| row.unwrap()) {
-//!         let person = Person {
+//!     let mut person_iter = stmt.query_map(&[], |row| {
+//!         Person {
 //!             id: row.get(0),
 //!             name: row.get(1),
 //!             time_created: row.get(2),
 //!             data: row.get(3)
-//!         };
-//!         println!("Found person {:?}", person);
+//!         }
+//!     }).unwrap();
+//!
+//!     for person in person_iter {
+//!         println!("Found person {:?}", person.unwrap());
 //!     }
 //! }
 //! ```
@@ -630,18 +633,27 @@ impl<'conn> SqliteStatement<'conn> {
         self.reset_if_needed();
 
         unsafe {
-            assert!(params.len() as c_int == ffi::sqlite3_bind_parameter_count(self.stmt),
-                    "incorrect number of parameters to query(): expected {}, got {}",
-                    ffi::sqlite3_bind_parameter_count(self.stmt),
-                    params.len());
-
-            for (i, p) in params.iter().enumerate() {
-                try!(self.conn.decode_result(p.bind_parameter(self.stmt, (i + 1) as c_int)));
-            }
-
-            self.needs_reset = true;
-            Ok(SqliteRows::new(self))
+            try!(self.bind_parameters(params));
         }
+
+        Ok(SqliteRows::new(self))
+    }
+
+    /// Executes the prepared statement and maps a function over the resulting
+    /// rows. 
+    ///
+    /// Unlike the iterator produced by `query`, the returned iterator does not expose the possibility
+    /// for accessing stale rows.
+    pub fn query_map<'a, T, F>(&'a mut self, params: &[&ToSql], f: F)
+                                     -> SqliteResult<MappedRows<'a, F>>
+                                     where T: 'static,
+                                           F: FnMut(SqliteRow) -> T {
+        let row_iter = try!(self.query(params));
+
+        Ok(MappedRows{
+            rows: row_iter,
+            map: f,
+        })
     }
 
     /// Consumes the statement.
@@ -650,6 +662,21 @@ impl<'conn> SqliteStatement<'conn> {
     /// that occur.
     pub fn finalize(mut self) -> SqliteResult<()> {
         self.finalize_()
+    }
+
+    unsafe fn bind_parameters(&mut self, params: &[&ToSql]) -> SqliteResult<()> {
+        assert!(params.len() as c_int == ffi::sqlite3_bind_parameter_count(self.stmt),
+                "incorrect number of parameters to query(): expected {}, got {}",
+                ffi::sqlite3_bind_parameter_count(self.stmt),
+                params.len());
+
+        for (i, p) in params.iter().enumerate() {
+            try!(self.conn.decode_result(p.bind_parameter(self.stmt, (i + 1) as c_int)));
+        }
+
+        self.needs_reset = true;
+
+        Ok(())
     }
 
     fn reset_if_needed(&mut self) {
@@ -676,6 +703,22 @@ impl<'conn> Drop for SqliteStatement<'conn> {
     #[allow(unused_must_use)]
     fn drop(&mut self) {
         self.finalize_();
+    }
+}
+
+/// An iterator over the mapped resulting rows of a query.
+pub struct MappedRows<'stmt, F> {
+    rows: SqliteRows<'stmt>,
+    map: F,
+}
+
+impl<'stmt, T, F> Iterator for MappedRows<'stmt, F>
+                        where T: 'static,
+                              F: FnMut(SqliteRow) -> T {
+    type Item = SqliteResult<T>;
+
+    fn next(&mut self) -> Option<SqliteResult<T>> {
+        self.rows.next().map(|row_result| row_result.map(|row| (self.map)(row)))
     }
 }
 
@@ -945,6 +988,27 @@ mod test {
             let v: Vec<i32> = rows.map(|r| r.unwrap().get(0)).collect();
             assert_eq!(v, [2i32, 1]);
         }
+    }
+
+    #[test]
+    fn test_query_map() {
+        let db = checked_memory_handle();
+        let sql = "BEGIN;
+                   CREATE TABLE foo(x INTEGER, y TEXT);
+                   INSERT INTO foo VALUES(4, \"hello\");
+                   INSERT INTO foo VALUES(3, \", \");
+                   INSERT INTO foo VALUES(2, \"world\");
+                   INSERT INTO foo VALUES(1, \"!\");
+                   END;";
+        db.execute_batch(sql).unwrap();
+
+        let mut query = db.prepare("SELECT x, y FROM foo ORDER BY x DESC").unwrap();
+        let results: SqliteResult<Vec<String>> = query
+            .query_map(&[], |row| row.get(1))
+            .unwrap()
+            .collect();
+
+        assert_eq!(results.unwrap().concat(), "hello, world!");
     }
 
     #[test]
