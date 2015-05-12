@@ -646,6 +646,6 @@ int sqlite3DbstatRegister(sqlite3 *db){
   };
   return sqlite3_create_module(db, "dbstat", &dbstat_module, 0);
 }
-#else  /* Without the proper defines, sqlite3DbstatRegister is a no-op */
+#elif defined(SQLITE_ENABLE_DBSTAT_VTAB)
 int sqlite3DbstatRegister(sqlite3 *db){ return SQLITE_OK; }
 #endif /* SQLITE_ENABLE_DBSTAT_VTAB */

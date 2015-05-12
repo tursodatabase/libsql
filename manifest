@@ -1,5 +1,5 @@
-C Improvements\sto\sdocumentation\sof\sthe\ssqlite3_column_xxxxx()\sinterfaces.\nNo\scode\schanges.
-D 2015-05-12T13:32:55.686
+C Fix\sa\scompiler\swarning\swhen\sbuilding\swith\stclsqlite3.c\sand\swithout\nSQLITE_ENABLE_DBSTAT_VTAB.
+D 2015-05-12T14:22:05.884
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in edfc69769e613a6359c42c06ea1d42c3bece1736
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -181,7 +181,7 @@ F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c a5cf5b4b56390cfb7b8636e8f7ddef90258dd575
 F src/ctime.c 5a0b735dc95604766f5dac73973658eef782ee8b
 F src/date.c e4d50b3283696836ec1036b695ead9a19e37a5ac
-F src/dbstat.c 7fd79cb56fe0535fa795ae79b0428bf1395663d9
+F src/dbstat.c d0b0757e491936a03768867dcfce271d28ef9a68
 F src/delete.c 37964e6c1d73ff49cbea9ff690c9605fb15f600e
 F src/expr.c 3fb2ab3ab69d15b4b75ae53fceb4e317f64cb306
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
@@ -1258,7 +1258,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 07c7d3925cbcf44c2f606c7f016ec56304e0ca24
-R 232891624456fc55311da5c18d427088
+P f1aa951a337037c18ee14e114e36314835e05926
+R 7fd0d11b6a2c1402aea56f1ab8267c55
 U drh
-Z 86dda33358ab407f165215b386fe79a0
+Z 5370d82879dee02ccaf08bd80ca71d1a
