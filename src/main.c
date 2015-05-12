@@ -1765,19 +1765,19 @@ void *sqlite3_trace(sqlite3 *db, void (*xTrace)(void*,const char*), void *pArg){
 /*
 ** Return the curren trace function and argument.
 */
-void sqlite3_get_trace(
+int sqlite3_get_trace(
   const sqlite3 *db,
   void (**pxTrace)(void*,const char*),
   void **ppArg
 ){
 #ifdef SQLITE_ENABLE_API_ARMOR
   if( !sqlite3SafetyCheckOk(db) ){
-    (void)SQLITE_MISUSE_BKPT;
-    return 0;
+    return SQLITE_MISUSE_BKPT;
   }
 #endif
   *pxTrace = db->xTrace;
   *ppArg = db->pTraceArg;
+  return SQLITE_OK;
 }
 /*
 ** Register a profile function.  The pArg from the previously registered 
@@ -1810,19 +1810,19 @@ void *sqlite3_profile(
 /*
 ** Return the curren trace function and argument.
 */
-void sqlite3_get_profile(
+int sqlite3_get_profile(
   const sqlite3 *db,
   void (**pxProfile)(void*,const char*,sqlite3_uint64),
   void **ppArg
 ){
 #ifdef SQLITE_ENABLE_API_ARMOR
   if( !sqlite3SafetyCheckOk(db) ){
-    (void)SQLITE_MISUSE_BKPT;
-    return 0;
+    return SQLITE_MISUSE_BKPT;
   }
 #endif
   *pxProfile = db->xProfile;
   *ppArg = db->pProfileArg;
+  return SQLITE_OK;
 }
 #endif /* SQLITE_OMIT_TRACE */
 

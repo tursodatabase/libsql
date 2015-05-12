@@ -2709,8 +2709,8 @@ int sqlite3_set_authorizer(
 void *sqlite3_trace(sqlite3*, void(*xTrace)(void*,const char*), void*);
 void *sqlite3_profile(sqlite3*,
    void(*xProfile)(void*,const char*,sqlite3_uint64), void*);
-void sqlite3_get_trace(const sqlite3*, void(**)(void*,const char*),void**);
-void sqlite3_get_profile(const sqlite3*,
+int sqlite3_get_trace(const sqlite3*, void(**)(void*,const char*),void**);
+int sqlite3_get_profile(const sqlite3*,
    void(**)(void*,const char*,sqlite3_uint64),void**);
 
 /*
