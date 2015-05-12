@@ -1157,7 +1157,7 @@ static void logBadConnection(const char *zType){
 ** open properly and is not fit for general use but which can be
 ** used as an argument to sqlite3_errmsg() or sqlite3_close().
 */
-int sqlite3SafetyCheckOk(sqlite3 *db){
+int sqlite3SafetyCheckOk(const sqlite3 *db){
   u32 magic;
   if( db==0 ){
     logBadConnection("NULL");
@@ -1174,7 +1174,7 @@ int sqlite3SafetyCheckOk(sqlite3 *db){
     return 1;
   }
 }
-int sqlite3SafetyCheckSickOrOk(sqlite3 *db){
+int sqlite3SafetyCheckSickOrOk(const sqlite3 *db){
   u32 magic;
   magic = db->magic;
   if( magic!=SQLITE_MAGIC_SICK &&

@@ -1771,7 +1771,7 @@ int sqlite3_get_trace(
   void **ppArg
 ){
 #ifdef SQLITE_ENABLE_API_ARMOR
-  if( !sqlite3SafetyCheckOk(db) ){
+  if( !sqlite3SafetyCheckOk(db) || pxTrace==0 || ppArg==0 ){
     return SQLITE_MISUSE_BKPT;
   }
 #endif
@@ -1816,7 +1816,7 @@ int sqlite3_get_profile(
   void **ppArg
 ){
 #ifdef SQLITE_ENABLE_API_ARMOR
-  if( !sqlite3SafetyCheckOk(db) ){
+  if( !sqlite3SafetyCheckOk(db) || pxProfile==0 || ppArg==0 ){
     return SQLITE_MISUSE_BKPT;
   }
 #endif

@@ -1,5 +1,5 @@
-C Modify\sthe\snew\sfunctions\sto\smake\sthem\sreturn\sa\sstandard\sreturn\scode.
-D 2015-05-12T23:20:23.636
+C Improve\sAPI\sarmor\sintegration.\s\sFix\sharmless\scompiler\swarnings.
+D 2015-05-12T23:28:03.074
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in edfc69769e613a6359c42c06ea1d42c3bece1736
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -196,7 +196,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
 F src/loadext.c 29255bbe1cfb2ce9bbff2526a5ecfddcb49b9271
-F src/main.c 3924dad8a0e8d84ce8b76cc1d1c0fa855cd1a75e
+F src/main.c fade920311146e5ad2a1abfa353a4c0ce1428bfd
 F src/malloc.c 5bc15d525811d387b37c29f2e368143460e41e96
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c abe6ee469b6c5a35c7f22bfeb9c9bac664a1c987
@@ -236,7 +236,7 @@ F src/shell.c 07dda7cd692911d2f22269953418d049f2e2c0ee
 F src/sqlite.h.in 87908d43d02f8b813b151e3586da22f2a6fa12ed
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
-F src/sqliteInt.h c9f77bd02f419dcc8c644c5032c42eb29069a545
+F src/sqliteInt.h 51bf2dcd742399257fdc6409cae1c84bf66900f2
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c f266ad8a2892d659b74f0f50cb6a88b6e7c12179
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
@@ -291,7 +291,7 @@ F src/tokenize.c b15511a2396641792f386ceb440d1d922972a78e
 F src/trigger.c 322f23aad694e8f31d384dcfa386d52a48d3c52f
 F src/update.c 3c4ecc282accf12d39edb8d524cf089645e55a13
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
-F src/util.c a6431c92803b975b7322724a7b433e538d243539
+F src/util.c bb07b2e79e2dff45384b056274b556ecc3d016c9
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
 F src/vdbe.c d437887d02d13d79dc69ac018f788aefac3b3972
 F src/vdbe.h 7e538ecf47dccb307ea2d087c3ddc2dd8d70e79d
@@ -1258,7 +1258,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9de33768fff2d8952fdff552d918da96e5267e5d
-R ad2fc56380a12ce4e3217459fe073178
+P 02f694d5babe5fc03a4fcec001e3d878fa58f2c8
+R ed93fbd39e04051e7af80fb87705bbad
 U mistachkin
-Z cc261669363b61aef345a3c4f20016ef
+Z 609125a8640184819ed777a28013f419
