@@ -1,5 +1,5 @@
-C Try\sto\sget\srecent\ssqlite3_analyzer\sand\ssqldiff\stests\sworking\sfor\sall\ntested\scombinations\sof\scompile-time\soptions,\sespecially\nSQLITE_OMIT_VIRTUALTABLE\sand\sSQLITE_OMIT_LOAD_EXTENSION.
-D 2015-05-12T12:24:50.764
+C Improvements\sto\sdocumentation\sof\sthe\ssqlite3_column_xxxxx()\sinterfaces.\nNo\scode\schanges.
+D 2015-05-12T13:32:55.686
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in edfc69769e613a6359c42c06ea1d42c3bece1736
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -233,7 +233,7 @@ F src/resolve.c 99eabf7eff0bfa65b75939b46caa82e2b2133f28
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 1b0bfc7d59e48c26b895a6b719157111a617d9e3
 F src/shell.c 07dda7cd692911d2f22269953418d049f2e2c0ee
-F src/sqlite.h.in ca27603a36fcacdaac5a19d8ee35aaff8ce8516f
+F src/sqlite.h.in bf3fe5eba3a5142477b8dae3cfce627c3e971455
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
 F src/sqliteInt.h c9f77bd02f419dcc8c644c5032c42eb29069a545
@@ -1258,7 +1258,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c223910e726131d7b718b556c83df5faa723369d
-R e55107543f272121344d208983268384
+P 07c7d3925cbcf44c2f606c7f016ec56304e0ca24
+R 232891624456fc55311da5c18d427088
 U drh
-Z ab32b0f5550e44730f2f58e837fbdfe9
+Z 86dda33358ab407f165215b386fe79a0
