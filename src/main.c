@@ -1763,7 +1763,7 @@ void *sqlite3_trace(sqlite3 *db, void (*xTrace)(void*,const char*), void *pArg){
   return pOld;
 }
 /*
-** Return the curren trace function and argument.
+** Return the current trace function and argument.
 */
 int sqlite3_get_trace(
   const sqlite3 *db,
@@ -1808,7 +1808,7 @@ void *sqlite3_profile(
   return pOld;
 }
 /*
-** Return the curren trace function and argument.
+** Return the current profile function and argument.
 */
 int sqlite3_get_profile(
   const sqlite3 *db,
