@@ -62,6 +62,9 @@ use super::ffi;
 use super::{SqliteResult, SqliteError, str_to_cstring};
 
 pub use ffi::sqlite3_stmt as sqlite3_stmt;
+pub use ffi::sqlite3_column_type as sqlite3_column_type;
+
+pub use ffi::{SQLITE_INTEGER, SQLITE_FLOAT, SQLITE_TEXT, SQLITE_BLOB, SQLITE_NULL};
 
 const SQLITE_DATETIME_FMT: &'static str = "%Y-%m-%d %H:%M:%S";
 
@@ -73,6 +76,14 @@ pub trait ToSql {
 /// A trait for types that can be created from a SQLite value.
 pub trait FromSql {
     unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> SqliteResult<Self>;
+
+    /// FromSql types can implement this method and use sqlite3_column_type to check that
+    /// the type reported by SQLite matches a type suitable for Self. This method is used
+    /// by `SqliteRow::get_checked` to confirm that the column contains a valid type before
+    /// attempting to retrieve the value.
+    unsafe fn column_has_valid_sqlite_type(_: *mut sqlite3_stmt, _: c_int) -> bool {
+        true
+    }
 }
 
 macro_rules! raw_to_impl(
@@ -161,18 +172,22 @@ impl ToSql for Null {
 }
 
 macro_rules! raw_from_impl(
-    ($t:ty, $f:ident) => (
+    ($t:ty, $f:ident, $c:expr) => (
         impl FromSql for $t {
             unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> SqliteResult<$t> {
                 Ok(ffi::$f(stmt, col))
+            }
+
+            unsafe fn column_has_valid_sqlite_type(stmt: *mut sqlite3_stmt, col: c_int) -> bool {
+                sqlite3_column_type(stmt, col) == $c
             }
         }
     )
 );
 
-raw_from_impl!(c_int, sqlite3_column_int);
-raw_from_impl!(i64, sqlite3_column_int64);
-raw_from_impl!(c_double, sqlite3_column_double);
+raw_from_impl!(c_int, sqlite3_column_int, ffi::SQLITE_INTEGER);
+raw_from_impl!(i64, sqlite3_column_int64, ffi::SQLITE_INTEGER);
+raw_from_impl!(c_double, sqlite3_column_double, ffi::SQLITE_FLOAT);
 
 impl FromSql for String {
     unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> SqliteResult<String> {
@@ -186,6 +201,10 @@ impl FromSql for String {
                 .map(|s| { s.to_string() })
                 .map_err(|e| { SqliteError{code: 0, message: e.to_string()} })
         }
+    }
+
+    unsafe fn column_has_valid_sqlite_type(stmt: *mut sqlite3_stmt, col: c_int) -> bool {
+        sqlite3_column_type(stmt, col) == ffi::SQLITE_TEXT
     }
 }
 
@@ -202,6 +221,10 @@ impl FromSql for Vec<u8> {
 
         Ok(from_raw_parts(mem::transmute(c_blob), len).to_vec())
     }
+
+    unsafe fn column_has_valid_sqlite_type(stmt: *mut sqlite3_stmt, col: c_int) -> bool {
+        sqlite3_column_type(stmt, col) == ffi::SQLITE_BLOB
+    }
 }
 
 impl FromSql for time::Timespec {
@@ -216,26 +239,37 @@ impl FromSql for time::Timespec {
             })
         })
     }
+
+    unsafe fn column_has_valid_sqlite_type(stmt: *mut sqlite3_stmt, col: c_int) -> bool {
+        String::column_has_valid_sqlite_type(stmt, col)
+    }
 }
 
 impl<T: FromSql> FromSql for Option<T> {
     unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> SqliteResult<Option<T>> {
-        if ffi::sqlite3_column_type(stmt, col) == ffi::SQLITE_NULL {
+        if sqlite3_column_type(stmt, col) == ffi::SQLITE_NULL {
             Ok(None)
         } else {
             FromSql::column_result(stmt, col).map(|t| Some(t))
         }
+    }
+
+    unsafe fn column_has_valid_sqlite_type(stmt: *mut sqlite3_stmt, col: c_int) -> bool {
+        sqlite3_column_type(stmt, col) == ffi::SQLITE_NULL ||
+            T::column_has_valid_sqlite_type(stmt, col)
     }
 }
 
 #[cfg(test)]
 mod test {
     use SqliteConnection;
+    use ffi;
     use super::time;
+    use libc::{c_int, c_double};
 
     fn checked_memory_handle() -> SqliteConnection {
         let db = SqliteConnection::open_in_memory().unwrap();
-        db.execute_batch("CREATE TABLE foo (b BLOB, t TEXT)").unwrap();
+        db.execute_batch("CREATE TABLE foo (b BLOB, t TEXT, i INTEGER, f FLOAT, n)").unwrap();
         db
     }
 
@@ -296,5 +330,66 @@ mod test {
         let b2: Option<Vec<u8>> = row2.get(1);
         assert!(s2.is_none());
         assert_eq!(b, b2);
+    }
+
+    #[test]
+    fn test_mismatched_types() {
+        let db = checked_memory_handle();
+
+        db.execute("INSERT INTO foo(b, t, i, f) VALUES (X'0102', 'text', 1, 1.5)", &[]).unwrap();
+
+        let mut stmt = db.prepare("SELECT b, t, i, f, n FROM foo").unwrap();
+        let mut rows = stmt.query(&[]).unwrap();
+
+        let row = rows.next().unwrap().unwrap();
+
+        // check the correct types come back as expected
+        assert_eq!(vec![1,2], row.get_checked::<Vec<u8>>(0).unwrap());
+        assert_eq!("text",    row.get_checked::<String>(1).unwrap());
+        assert_eq!(1,         row.get_checked::<c_int>(2).unwrap());
+        assert_eq!(1.5,       row.get_checked::<c_double>(3).unwrap());
+        assert!(row.get_checked::<Option<c_int>>(4).unwrap().is_none());
+        assert!(row.get_checked::<Option<c_double>>(4).unwrap().is_none());
+        assert!(row.get_checked::<Option<String>>(4).unwrap().is_none());
+
+        // check some invalid types
+
+        // 0 is actually a blob (Vec<u8>)
+        assert_eq!(row.get_checked::<c_int>(0).err().unwrap().code, ffi::SQLITE_MISMATCH);
+        assert_eq!(row.get_checked::<i64>(0).err().unwrap().code, ffi::SQLITE_MISMATCH);
+        assert_eq!(row.get_checked::<c_double>(0).err().unwrap().code, ffi::SQLITE_MISMATCH);
+        assert_eq!(row.get_checked::<String>(0).err().unwrap().code, ffi::SQLITE_MISMATCH);
+        assert_eq!(row.get_checked::<time::Timespec>(0).err().unwrap().code, ffi::SQLITE_MISMATCH);
+        assert_eq!(row.get_checked::<Option<c_int>>(0).err().unwrap().code, ffi::SQLITE_MISMATCH);
+
+        // 1 is actually a text (String)
+        assert_eq!(row.get_checked::<c_int>(1).err().unwrap().code, ffi::SQLITE_MISMATCH);
+        assert_eq!(row.get_checked::<i64>(1).err().unwrap().code, ffi::SQLITE_MISMATCH);
+        assert_eq!(row.get_checked::<c_double>(1).err().unwrap().code, ffi::SQLITE_MISMATCH);
+        assert_eq!(row.get_checked::<Vec<u8>>(1).err().unwrap().code, ffi::SQLITE_MISMATCH);
+        assert_eq!(row.get_checked::<Option<c_int>>(1).err().unwrap().code, ffi::SQLITE_MISMATCH);
+
+        // 2 is actually an integer
+        assert_eq!(row.get_checked::<c_double>(2).err().unwrap().code, ffi::SQLITE_MISMATCH);
+        assert_eq!(row.get_checked::<String>(2).err().unwrap().code, ffi::SQLITE_MISMATCH);
+        assert_eq!(row.get_checked::<Vec<u8>>(2).err().unwrap().code, ffi::SQLITE_MISMATCH);
+        assert_eq!(row.get_checked::<time::Timespec>(2).err().unwrap().code, ffi::SQLITE_MISMATCH);
+        assert_eq!(row.get_checked::<Option<c_double>>(2).err().unwrap().code, ffi::SQLITE_MISMATCH);
+
+        // 3 is actually a float (c_double)
+        assert_eq!(row.get_checked::<c_int>(3).err().unwrap().code, ffi::SQLITE_MISMATCH);
+        assert_eq!(row.get_checked::<i64>(3).err().unwrap().code, ffi::SQLITE_MISMATCH);
+        assert_eq!(row.get_checked::<String>(3).err().unwrap().code, ffi::SQLITE_MISMATCH);
+        assert_eq!(row.get_checked::<Vec<u8>>(3).err().unwrap().code, ffi::SQLITE_MISMATCH);
+        assert_eq!(row.get_checked::<time::Timespec>(3).err().unwrap().code, ffi::SQLITE_MISMATCH);
+        assert_eq!(row.get_checked::<Option<c_int>>(3).err().unwrap().code, ffi::SQLITE_MISMATCH);
+
+        // 4 is actually NULL
+        assert_eq!(row.get_checked::<c_int>(4).err().unwrap().code, ffi::SQLITE_MISMATCH);
+        assert_eq!(row.get_checked::<i64>(4).err().unwrap().code, ffi::SQLITE_MISMATCH);
+        assert_eq!(row.get_checked::<c_double>(4).err().unwrap().code, ffi::SQLITE_MISMATCH);
+        assert_eq!(row.get_checked::<String>(4).err().unwrap().code, ffi::SQLITE_MISMATCH);
+        assert_eq!(row.get_checked::<Vec<u8>>(4).err().unwrap().code, ffi::SQLITE_MISMATCH);
+        assert_eq!(row.get_checked::<time::Timespec>(4).err().unwrap().code, ffi::SQLITE_MISMATCH);
     }
 }

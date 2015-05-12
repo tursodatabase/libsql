@@ -25,4 +25,4 @@ tempdir = "~0.3.4"
 
 [dependencies.libsqlite3-sys]
 path = "libsqlite3-sys"
-version = "0.0.13"
+version = "0.1.0"
