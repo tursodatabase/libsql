@@ -1,5 +1,5 @@
-C Add\snew\sfts3\smatchinfo\soption\s'b'.\sAlso\soptimize\sexisting\soption\s'y'.
-D 2015-05-11T19:01:18.521
+C Fix\ssqldiff.exe\sso\sthat\sit\salways\sruns\sin\ssingle-thread\smode.
+D 2015-05-12T00:46:40.670
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in edfc69769e613a6359c42c06ea1d42c3bece1736
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1247,7 +1247,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
-F tool/sqldiff.c 10e3c01111f97b99627adf0954cf5ffbfba0723c
+F tool/sqldiff.c e740816b93a27694380b45b92f9785f37f140575
 F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
 F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
 F tool/symbols.sh fec58532668296d7c7dc48be9c87f75ccdb5814f
@@ -1258,7 +1258,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1d5e72b1c4e0350c492e12f102acc41e1777ef98 82e5a6e088c58815140ad36715ac11c96527cb25
-R 795248e8534b4aa5326a7558d85be223
-U dan
-Z ae2284b291e4689841953453008382e8
+P 2e7679a1df4020dc0166f5de8ffd664df18a3002
+R 359d8551ba323944bb8bb381428d219d
+U drh
+Z a4ba4cabfec9eaef7bbe324bf195de1a

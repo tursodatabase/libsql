@@ -1139,6 +1139,7 @@ int main(int argc, char **argv){
   char **azExt = 0;
 
   g.zArgv0 = argv[0];
+  sqlite3_config(SQLITE_CONFIG_SINGLETHREAD);
   for(i=1; i<argc; i++){
     const char *z = argv[i];
     if( z[0]=='-' ){
