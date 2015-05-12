@@ -1,3 +1,10 @@
+# Version 0.1.0 (2015-05-11)
+
+* [breaking-change] Modify `query_row` to return a `Result` instead of unwrapping.
+* Deprecate `query_row_safe` (use `query_row` instead).
+* Add `query_map`.
+* Add `get_checked`, which asks SQLite to do some basic type-checking of columns.
+
 # Version 0.0.17 (2015-04-03)
 
 * Publish version that builds on stable rust (beta). This version lives on the
