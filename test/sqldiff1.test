@@ -13,6 +13,7 @@
 #
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
 if {$tcl_platform(platform)=="windows"} {
   set PROG "sqldiff.exe"
 } else {

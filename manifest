@@ -1,5 +1,5 @@
-C Fix\ssqldiff.exe\sso\sthat\sit\salways\sruns\sin\ssingle-thread\smode.
-D 2015-05-12T00:46:40.670
+C Try\sto\sget\srecent\ssqlite3_analyzer\sand\ssqldiff\stests\sworking\sfor\sall\ntested\scombinations\sof\scompile-time\soptions,\sespecially\nSQLITE_OMIT_VIRTUALTABLE\sand\sSQLITE_OMIT_LOAD_EXTENSION.
+D 2015-05-12T12:24:50.764
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in edfc69769e613a6359c42c06ea1d42c3bece1736
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -181,7 +181,7 @@ F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c a5cf5b4b56390cfb7b8636e8f7ddef90258dd575
 F src/ctime.c 5a0b735dc95604766f5dac73973658eef782ee8b
 F src/date.c e4d50b3283696836ec1036b695ead9a19e37a5ac
-F src/dbstat.c fa5b981f37c2b4f7797b4496f1c10254e11a2f4a
+F src/dbstat.c 7fd79cb56fe0535fa795ae79b0428bf1395663d9
 F src/delete.c 37964e6c1d73ff49cbea9ff690c9605fb15f600e
 F src/expr.c 3fb2ab3ab69d15b4b75ae53fceb4e317f64cb306
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
@@ -334,7 +334,7 @@ F test/analyzeC.test 555a6cc388b9818b6eda6df816f01ce0a75d3a93
 F test/analyzeD.test 08f9d0bee4e118a66fff3a32d02dbe0ee0a2b594
 F test/analyzeE.test 8684e8ac5722fb97c251887ad97e5d496a98af1d
 F test/analyzeF.test 7ccd7a04f7d3061bde1a8a4dacc4792edccf6bf2
-F test/analyzer1.test ef9b179ac399d49eebd29a2eab1bff500cb7d5fd
+F test/analyzer1.test e3bccac3be49382050464952998a631bf51e3ce1
 F test/async.test 1d0e056ba1bb9729283a0f22718d3a25e82c277b
 F test/async2.test c0a9bd20816d7d6a2ceca7b8c03d3d69c28ffb8b
 F test/async3.test d73a062002376d7edc1fe3edff493edbec1fc2f7
@@ -902,7 +902,7 @@ F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
 F test/speedtest1.c 2b416dca3a155fcaa849540b2e7fc1df12896c23
 F test/spellfix.test 24f676831acddd2f4056a598fd731a72c6311f49
-F test/sqldiff1.test 40e4d3b714f3a780bd7adff8b1dd1adfe1cefdf2
+F test/sqldiff1.test e5ecfe95b3a2ff6380f0db6ea8bec246b675e122
 F test/sqllimits1.test e05786eaed7950ff6a2d00031d001d8a26131e68
 F test/stat.test 8de91498c99f5298b303f70f1d1f3b9557af91bf
 F test/statfault.test f525a7bf633e50afd027700e9a486090684b1ac1
@@ -1247,7 +1247,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
-F tool/sqldiff.c e740816b93a27694380b45b92f9785f37f140575
+F tool/sqldiff.c 0748c0daed08f31e5a8eab6de98ca57500e61ecf
 F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
 F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
 F tool/symbols.sh fec58532668296d7c7dc48be9c87f75ccdb5814f
@@ -1258,7 +1258,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2e7679a1df4020dc0166f5de8ffd664df18a3002
-R 359d8551ba323944bb8bb381428d219d
+P c223910e726131d7b718b556c83df5faa723369d
+R e55107543f272121344d208983268384
 U drh
-Z a4ba4cabfec9eaef7bbe324bf195de1a
+Z ab32b0f5550e44730f2f58e837fbdfe9

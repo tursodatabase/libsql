@@ -13,6 +13,12 @@
 #
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+ifcapable !vtab {
+  finish_test
+  return
+}
+
 if {$tcl_platform(platform)=="windows"} {
   set PROG "sqlite3_analyzer.exe"
 } else {
