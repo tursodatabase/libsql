@@ -3704,7 +3704,7 @@ static int db_last_stmt_ptr(
 
   return TCL_OK;
 }
-#endif
+#endif /* SQLITE_TEST */
 
 /*
 ** Configure the interpreter passed as the first argument to have access
@@ -3722,17 +3722,6 @@ static void init_all(Tcl_Interp *interp){
 
 #if defined(SQLITE_TEST) || defined(SQLITE_TCLMD5)
   Md5_Init(interp);
-#endif
-
-  /* Install the [register_dbstat_vtab] command to access the implementation
-  ** of virtual table dbstat (source file test_stat.c). This command is
-  ** required for testfixture and sqlite3_analyzer, but not by the production
-  ** Tcl extension.  */
-#if defined(SQLITE_TEST) || TCLSH==2
-  {
-    extern int SqlitetestStat_Init(Tcl_Interp*);
-    SqlitetestStat_Init(interp);
-  }
 #endif
 
 #ifdef SQLITE_TEST

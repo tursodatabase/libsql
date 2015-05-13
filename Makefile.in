@@ -167,7 +167,7 @@ USE_AMALGAMATION = @USE_AMALGAMATION@
 #
 LIBOBJS0 = alter.lo analyze.lo attach.lo auth.lo \
          backup.lo bitvec.lo btmutex.lo btree.lo build.lo \
-         callback.lo complete.lo ctime.lo date.lo delete.lo \
+         callback.lo complete.lo ctime.lo date.lo dbstat.lo delete.lo \
          expr.lo fault.lo fkey.lo \
          fts3.lo fts3_aux.lo fts3_expr.lo fts3_hash.lo fts3_icu.lo \
          fts3_porter.lo fts3_snippet.lo fts3_tokenizer.lo fts3_tokenizer1.lo \
@@ -213,6 +213,7 @@ SRC = \
   $(TOP)/src/complete.c \
   $(TOP)/src/ctime.c \
   $(TOP)/src/date.c \
+  $(TOP)/src/dbstat.c \
   $(TOP)/src/delete.c \
   $(TOP)/src/expr.c \
   $(TOP)/src/fault.c \
@@ -389,7 +390,6 @@ TESTSRC = \
   $(TOP)/src/test_server.c \
   $(TOP)/src/test_superlock.c \
   $(TOP)/src/test_syscall.c \
-  $(TOP)/src/test_stat.c \
   $(TOP)/src/test_tclvar.c \
   $(TOP)/src/test_thread.c \
   $(TOP)/src/test_vfs.c \
@@ -423,6 +423,7 @@ TESTSRC2 = \
   $(TOP)/src/build.c \
   $(TOP)/src/ctime.c \
   $(TOP)/src/date.c \
+  $(TOP)/src/dbstat.c \
   $(TOP)/src/expr.c \
   $(TOP)/src/func.c \
   $(TOP)/src/insert.c \
@@ -509,6 +510,15 @@ EXTHDR += \
 EXTHDR += \
   $(TOP)/ext/rtree/sqlite3rtree.h
 
+# executables needed for testing
+#
+TESTPROGS = \
+  testfixture$(TEXE) \
+  sqlite3$(TEXE) \
+  sqlite3_analyzer$(TEXE) \
+  sqldiff$(TEXE)
+
+
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
 #
@@ -536,19 +546,19 @@ sqlite3$(TEXE):	$(TOP)/src/shell.c libsqlite3.la sqlite3.h
 		-o $@ $(TOP)/src/shell.c libsqlite3.la \
 		$(LIBREADLINE) $(TLIBS) -rpath "$(libdir)"
 
-sqldiff$(EXE):	$(TOP)/tool/sqldiff.c sqlite3.c sqlite3.h
+sqldiff$(TEXE):	$(TOP)/tool/sqldiff.c sqlite3.c sqlite3.h
 	$(LTLINK) -o $@ $(TOP)/tool/sqldiff.c	sqlite3.c $(TLIBS)
 
-fuzzershell$(EXE):	$(TOP)/tool/fuzzershell.c sqlite3.c sqlite3.h
+fuzzershell$(TEXE):	$(TOP)/tool/fuzzershell.c sqlite3.c sqlite3.h
 	$(LTLINK) -o $@ $(TOP)/tool/fuzzershell.c	sqlite3.c $(TLIBS)
 
-mptester$(EXE):	sqlite3.c $(TOP)/mptest/mptest.c
+mptester$(TEXE):	sqlite3.c $(TOP)/mptest/mptest.c
 	$(LTLINK) -o $@ -I. $(TOP)/mptest/mptest.c sqlite3.c \
 		$(TLIBS) -rpath "$(libdir)"
 
-MPTEST1=./mptester$(EXE) mptest.db $(TOP)/mptest/crash01.test --repeat 20
-MPTEST2=./mptester$(EXE) mptest.db $(TOP)/mptest/multiwrite01.test --repeat 20
-mptest:	mptester$(EXE)
+MPTEST1=./mptester$(TEXE) mptest.db $(TOP)/mptest/crash01.test --repeat 20
+MPTEST2=./mptester$(TEXE) mptest.db $(TOP)/mptest/multiwrite01.test --repeat 20
+mptest:	mptester$(TEXE)
 	rm -f mptest.db
 	$(MPTEST1) --journalmode DELETE
 	$(MPTEST2) --journalmode WAL
@@ -651,6 +661,9 @@ ctime.lo:	$(TOP)/src/ctime.c $(HDR)
 
 date.lo:	$(TOP)/src/date.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/date.c
+
+dbstat.lo:	$(TOP)/src/dbstat.c $(HDR)
+	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/dbstat.c
 
 delete.lo:	$(TOP)/src/delete.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/delete.c
@@ -951,31 +964,34 @@ testfixture$(TEXE):	$(TESTFIXTURE_SRC)
 		-o $@ $(TESTFIXTURE_SRC) $(LIBTCL) $(TLIBS)
 
 # A very detailed test running most or all test cases
-fulltest:	testfixture$(TEXE) sqlite3$(TEXE) fuzztest
+fulltest:	$(TESTPROGS) fuzztest
 	./testfixture$(TEXE) $(TOP)/test/all.test
 
 # Really really long testing
-soaktest:	testfixture$(TEXE) sqlite3$(TEXE)
+soaktest:	$(TESTPROGS) fuzzoomtest
 	./testfixture$(TEXE) $(TOP)/test/all.test -soak=1
 
-# Do extra testing but not aeverything.
-fulltestonly:	testfixture$(TEXE) sqlite3$(TEXE)
+# Do extra testing but not everything.
+fulltestonly:	$(TESTPROGS)
 	./testfixture$(TEXE) $(TOP)/test/full.test
 
 # Fuzz testing
 fuzztest:	fuzzershell$(TEXE)
-	./fuzzershell$(TEXE) -f $(TOP)/test/fuzzdata1.txt
+	./fuzzershell$(TEXE) $(TOP)/test/fuzzdata1.txt $(TOP)/test/fuzzdata2.txt
+
+fuzzoomtest:	fuzzershell$(TEXE)
+	./fuzzershell$(TEXE) -f $(TOP)/test/fuzzdata1.txt --oom
 
 # This is the common case.  Run many tests but not those that take
 # a really long time.
 #
-test:	testfixture$(TEXE) sqlite3$(TEXE) fuzztest
+test:	$(TESTPROGS) fuzztest
 	./testfixture$(TEXE) $(TOP)/test/veryquick.test
 
 # Run a test using valgrind.  This can take a really long time
 # because valgrind is so much slower than a native machine.
 #
-valgrindtest:	testfixture$(TEXE) sqlite3$(TEXE) fuzzershell$(TEXE)
+valgrindtest:	$(TESTPROGS) fuzzershell$(TEXE)
 	valgrind -v ./fuzzershell$(TEXE) -f $(TOP)/test/fuzzdata1.txt
 	OMIT_MISUSE=1 valgrind -v ./testfixture$(TEXE) $(TOP)/test/permutations.test valgrind
 
@@ -983,12 +999,13 @@ valgrindtest:	testfixture$(TEXE) sqlite3$(TEXE) fuzzershell$(TEXE)
 # the 60s-era electronics testing:  "Turn it on and see if smoke
 # comes out."
 #
-smoketest:	testfixture$(TEXE) fuzzershell$(TEXE)
+smoketest:	$(TESTPROGS) fuzzershell$(TEXE)
 	./testfixture$(TEXE) $(TOP)/test/main.test
 
-sqlite3_analyzer.c: sqlite3.c $(TOP)/src/test_stat.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl
+sqlite3_analyzer.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl
 	echo "#define TCLSH 2" > $@
-	cat sqlite3.c $(TOP)/src/test_stat.c $(TOP)/src/tclsqlite.c >> $@
+	echo "#define SQLITE_ENABLE_DBSTAT_VTAB 1" >> $@
+	cat sqlite3.c $(TOP)/src/tclsqlite.c >> $@
 	echo "static const char *tclsh_main_loop(void){" >> $@
 	echo "static const char *zMainloop = " >> $@
 	$(NAWK) -f $(TOP)/tool/tostr.awk $(TOP)/tool/spaceanal.tcl >> $@
@@ -1098,6 +1115,8 @@ clean:
 	rm -f sqlite3_analyzer$(TEXE) sqlite3_analyzer.c
 	rm -f sqlite-*-output.vsix
 	rm -f mptester mptester.exe
+	rm -f fuzzershell fuzzershell.exe
+	rm -f sqldiff sqldiff.exe
 
 distclean:	clean
 	rm -f config.log config.status libtool Makefile sqlite3.pc

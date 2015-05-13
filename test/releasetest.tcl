@@ -111,6 +111,13 @@ array set ::Configs [strip_comments {
     -DSQLITE_ENABLE_STAT4
     -DSQLITE_MAX_ATTACHED=125
   }
+  "Fast-One" {
+    -O6
+    -DSQLITE_ENABLE_FTS4=1
+    -DSQLITE_ENABLE_RTREE=1
+    -DSQLITE_ENABLE_STAT4
+    -DSQLITE_MAX_ATTACHED=125
+  }
   "Device-One" {
     -O2
     -DSQLITE_DEBUG=1
@@ -217,6 +224,7 @@ array set ::Platforms [strip_comments {
     "No-lookaside"            test
     "Devkit"                  test
     "Sanitize"                {QUICKTEST_OMIT=func4.test,nan.test test}
+    "Fast-One"                fuzzoomtest
     "Valgrind"                valgrindtest
     "Default"                 "threadtest fulltest"
     "Device-One"              fulltest
@@ -653,10 +661,11 @@ proc main {argv} {
     # it and run veryquick.test. If it did not include the SQLITE_DEBUG option
     # add it and run veryquick.test.
     if {$target!="checksymbols" && $target!="valgrindtest"
-           && !$::BUILDONLY && $::QUICK<2} {
+           && $target!="fuzzoomtest" && !$::BUILDONLY && $::QUICK<2} {
       set debug_idx [lsearch -glob $config_options -DSQLITE_DEBUG*]
       set xtarget $target
       regsub -all {fulltest[a-z]*} $xtarget test xtarget
+      regsub -all {fuzzoomtest} $xtarget fuzztest xtarget
       if {$debug_idx < 0} {
         incr NTEST
         append config_options " -DSQLITE_DEBUG=1"

@@ -85,7 +85,7 @@ static int intarrayCreate(
   char **pzErr              /* Put error message text here */
 ){
   int rc = SQLITE_NOMEM;
-  intarray_vtab *pVtab = sqlite3_malloc(sizeof(intarray_vtab));
+  intarray_vtab *pVtab = sqlite3_malloc64(sizeof(intarray_vtab));
 
   if( pVtab ){
     memset(pVtab, 0, sizeof(intarray_vtab));
@@ -102,7 +102,7 @@ static int intarrayCreate(
 static int intarrayOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
   int rc = SQLITE_NOMEM;
   intarray_cursor *pCur;
-  pCur = sqlite3_malloc(sizeof(intarray_cursor));
+  pCur = sqlite3_malloc64(sizeof(intarray_cursor));
   if( pCur ){
     memset(pCur, 0, sizeof(intarray_cursor));
     *ppCursor = (sqlite3_vtab_cursor *)pCur;
@@ -225,7 +225,7 @@ SQLITE_API int sqlite3_intarray_create(
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   sqlite3_intarray *p;
 
-  *ppReturn = p = sqlite3_malloc( sizeof(*p) );
+  *ppReturn = p = sqlite3_malloc64( sizeof(*p) );
   if( p==0 ){
     return SQLITE_NOMEM;
   }
@@ -340,7 +340,7 @@ static int test_intarray_bind(
   pArray = (sqlite3_intarray*)sqlite3TestTextToPtr(Tcl_GetString(objv[1]));
   n = objc - 2;
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-  a = sqlite3_malloc( sizeof(a[0])*n );
+  a = sqlite3_malloc64( sizeof(a[0])*n );
   if( a==0 ){
     Tcl_AppendResult(interp, "SQLITE_NOMEM", (char*)0);
     return TCL_ERROR;

@@ -36,6 +36,13 @@ USE_STDCALL = 0
 DYNAMIC_SHELL = 0
 !ENDIF
 
+# Set this non-0 to enable extra code that attempts to detect misuse of the
+# SQLite API.
+#
+!IFNDEF API_ARMOR
+API_ARMOR = 0
+!ENDIF
+
 # If necessary, create a list of harmless compiler warnings to disable when
 # compiling the various tools.  For the SQLite source code itself, warnings,
 # if any, will be disabled from within it.
@@ -146,6 +153,13 @@ MEMDEBUG = 0
 #
 !IFNDEF WIN32HEAP
 WIN32HEAP = 0
+!ENDIF
+
+# Set this to non-0 to enable OSTRACE() macros, which can be useful when
+# debugging.
+#
+!IFNDEF OSTRACE
+OSTRACE = 0
 !ENDIF
 
 # Set this to one of the following values to enable various debugging
@@ -484,24 +498,24 @@ BCC = $(BCC) -DNDEBUG
 RCC = $(RCC) -DNDEBUG
 !ENDIF
 
-!IF $(DEBUG)>0
-TCC = $(TCC) -DSQLITE_ENABLE_API_ARMOR
-RCC = $(RCC) -DSQLITE_ENABLE_API_ARMOR
+!IF $(DEBUG)>0 || $(API_ARMOR)!=0
+TCC = $(TCC) -DSQLITE_ENABLE_API_ARMOR=1
+RCC = $(RCC) -DSQLITE_ENABLE_API_ARMOR=1
 !ENDIF
 
 !IF $(DEBUG)>2
-TCC = $(TCC) -DSQLITE_DEBUG
-RCC = $(RCC) -DSQLITE_DEBUG
+TCC = $(TCC) -DSQLITE_DEBUG=1
+RCC = $(RCC) -DSQLITE_DEBUG=1
 !ENDIF
 
-!IF $(DEBUG)>4
-TCC = $(TCC) -DSQLITE_DEBUG_OS_TRACE=1
-RCC = $(RCC) -DSQLITE_DEBUG_OS_TRACE=1
+!IF $(DEBUG)>4 || $(OSTRACE)!=0
+TCC = $(TCC) -DSQLITE_FORCE_OS_TRACE=1 -DSQLITE_DEBUG_OS_TRACE=1
+RCC = $(RCC) -DSQLITE_FORCE_OS_TRACE=1 -DSQLITE_DEBUG_OS_TRACE=1
 !ENDIF
 
 !IF $(DEBUG)>5
-TCC = $(TCC) -DSQLITE_ENABLE_IOTRACE
-RCC = $(RCC) -DSQLITE_ENABLE_IOTRACE
+TCC = $(TCC) -DSQLITE_ENABLE_IOTRACE=1
+RCC = $(RCC) -DSQLITE_ENABLE_IOTRACE=1
 !ENDIF
 
 # Prevent warnings about "insecure" MSVC runtime library functions
@@ -808,7 +822,7 @@ NAWK = gawk.exe
 #
 LIBOBJS0 = vdbe.lo parse.lo alter.lo analyze.lo attach.lo auth.lo \
          backup.lo bitvec.lo btmutex.lo btree.lo build.lo \
-         callback.lo complete.lo ctime.lo date.lo delete.lo \
+         callback.lo complete.lo ctime.lo date.lo dbstat.lo delete.lo \
          expr.lo fault.lo fkey.lo \
          fts3.lo fts3_aux.lo fts3_expr.lo fts3_hash.lo fts3_icu.lo \
          fts3_porter.lo fts3_snippet.lo fts3_tokenizer.lo fts3_tokenizer1.lo \
@@ -864,6 +878,7 @@ SRC1 = \
   $(TOP)\src\complete.c \
   $(TOP)\src\ctime.c \
   $(TOP)\src\date.c \
+  $(TOP)\src\dbstat.c \
   $(TOP)\src\delete.c \
   $(TOP)\src\expr.c \
   $(TOP)\src\fault.c \
@@ -1041,7 +1056,6 @@ TESTSRC = \
   $(TOP)\src\test_server.c \
   $(TOP)\src\test_superlock.c \
   $(TOP)\src\test_syscall.c \
-  $(TOP)\src\test_stat.c \
   $(TOP)\src\test_tclvar.c \
   $(TOP)\src\test_thread.c \
   $(TOP)\src\test_vfs.c \
@@ -1076,6 +1090,7 @@ TESTSRC2 = \
   $(TOP)\src\build.c \
   $(TOP)\src\ctime.c \
   $(TOP)\src\date.c \
+  $(TOP)\src\dbstat.c \
   $(TOP)\src\expr.c \
   $(TOP)\src\func.c \
   $(TOP)\src\insert.c \
@@ -1163,6 +1178,15 @@ EXTHDR = $(EXTHDR) \
   $(TOP)\ext\icu\sqliteicu.h
 EXTHDR = $(EXTHDR) \
   $(TOP)\ext\rtree\sqlite3rtree.h
+
+# executables needed for testing
+#
+TESTPROGS = \
+  testfixture.exe \
+  sqlite3.exe \
+  sqlite3_analyzer.exe \
+  sqldiff.exe
+
 
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
@@ -1318,6 +1342,9 @@ ctime.lo:	$(TOP)\src\ctime.c $(HDR)
 
 date.lo:	$(TOP)\src\date.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\date.c
+
+dbstat.lo:	$(TOP)\src\date.c $(HDR)
+	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\dbstat.c
 
 delete.lo:	$(TOP)\src\delete.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\delete.c
@@ -1624,36 +1651,41 @@ testfixture.exe:	$(TESTFIXTURE_SRC) $(LIBRESOBJS) $(HDR)
 extensiontest: testfixture.exe testloadext.dll
 	.\testfixture.exe $(TOP)\test\loadext.test
 
-fulltest:	testfixture.exe sqlite3.exe fuzztest
+fulltest:	$(TESTPROGS) fuzztest
 	.\testfixture.exe $(TOP)\test\all.test
 
-soaktest:	testfixture.exe sqlite3.exe
+soaktest:	$(TESTPROGS) fuzzoomtest
 	.\testfixture.exe $(TOP)\test\all.test -soak=1
 
-fulltestonly:	testfixture.exe sqlite3.exe fuzztest
+fulltestonly:	$(TESTPROGS) fuzztest
 	.\testfixture.exe $(TOP)\test\full.test
 
 queryplantest:	testfixture.exe sqlite3.exe
 	.\testfixture.exe $(TOP)\test\permutations.test queryplanner
 
 fuzztest:	fuzzershell.exe
-	.\fuzzershell.exe -f $(TOP)\test\fuzzdata1.txt
+	.\fuzzershell.exe $(TOP)\test\fuzzdata1.txt $(TOP)\test\fuzzdata2.txt
 
-test:	testfixture.exe sqlite3.exe fuzztest
+fuzzoomtest:	fuzzershell.exe
+	.\fuzzershell.exe -f $(TOP)\test\fuzzdata1.txt --oom
+
+test:	$(TESTPROGS) fuzztest
 	.\testfixture.exe $(TOP)\test\veryquick.test
 
-smoketest:	testfixture.exe
+smoketest:	$(TESTPROGS) fuzzershell.exe
 	.\testfixture.exe $(TOP)\test\main.test
 
-sqlite3_analyzer.c: $(SQLITE3C) $(TOP)\src\test_stat.c $(TOP)\src\tclsqlite.c $(TOP)\tool\spaceanal.tcl
-	copy $(SQLITE3C) + $(TOP)\src\test_stat.c + $(TOP)\src\tclsqlite.c $@
+sqlite3_analyzer.c: $(SQLITE3C) $(TOP)\src\tclsqlite.c $(TOP)\tool\spaceanal.tcl
+	echo #define TCLSH 2 > $@
+	echo #define SQLITE_ENABLE_DBSTAT_VTAB 1 >> $@
+	copy $@ + $(SQLITE3C) + $(TOP)\src\tclsqlite.c $@
 	echo static const char *tclsh_main_loop(void){ >> $@
 	echo static const char *zMainloop = >> $@
 	$(NAWK) -f $(TOP)\tool\tostr.awk $(TOP)\tool\spaceanal.tcl >> $@
 	echo ; return zMainloop; } >> $@
 
 sqlite3_analyzer.exe:	sqlite3_analyzer.c $(LIBRESOBJS)
-	$(LTLINK) $(NO_WARN) -DBUILD_sqlite -DTCLSH=2 -I$(TCLINCDIR) sqlite3_analyzer.c \
+	$(LTLINK) $(NO_WARN) -DBUILD_sqlite -I$(TCLINCDIR) sqlite3_analyzer.c \
 		/link $(LTLINKOPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LTLIBS) $(TLIBS)
 
 testloadext.lo:	$(TOP)\src\test_loadext.c
@@ -1723,6 +1755,7 @@ clean:
 	del /Q shell.c sqlite3ext.h 2>NUL
 	del /Q sqlite3_analyzer.exe sqlite3_analyzer.c 2>NUL
 	del /Q sqlite-*-output.vsix 2>NUL
+	del /Q fuzzershell.exe sqldiff.exe 2>NUL
 
 # Dynamic link library section.
 #

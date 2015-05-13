@@ -555,4 +555,18 @@ do_execsql_test jrnlmode-8.28 { PRAGMA journal_mode=DELETE }    {delete}
 do_execsql_test jrnlmode-8.29 { COMMIT }                        {}
 do_execsql_test jrnlmode-8.30 { PRAGMA journal_mode=DELETE }    {delete}
 
+# Assertion fault on 2015-05-01
+do_test jrnlmode-9.1 {
+  forcedelete test2.db
+  sqlite3 db2 test2.db
+  db2 eval {CREATE TEMP TABLE t(l); PRAGMA journal_mode=off;}
+  db2 close
+} {}
+do_execsql_test jrnlmode-9.2 {
+  PRAGMA locking_mode = exclusive;
+  CREATE TABLE tx(a);
+  PRAGMA journal_mode = off;
+} {exclusive off}
+
+
 finish_test

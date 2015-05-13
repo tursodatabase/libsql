@@ -1022,13 +1022,13 @@ int sqlite3Fts3ExprParse(
     sqlite3Fts3ExprFree(*ppExpr);
     *ppExpr = 0;
     if( rc==SQLITE_TOOBIG ){
-      *pzErr = sqlite3_mprintf(
+      sqlite3Fts3ErrMsg(pzErr,
           "FTS expression tree is too large (maximum depth %d)", 
           SQLITE_FTS3_MAX_EXPR_DEPTH
       );
       rc = SQLITE_ERROR;
     }else if( rc==SQLITE_ERROR ){
-      *pzErr = sqlite3_mprintf("malformed MATCH expression: [%s]", z);
+      sqlite3Fts3ErrMsg(pzErr, "malformed MATCH expression: [%s]", z);
     }
   }
 

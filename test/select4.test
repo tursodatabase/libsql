@@ -158,6 +158,9 @@ do_test select4-2.4 {
   }} msg]
   lappend v $msg
 } {1 {ORDER BY clause should come after UNION not before}}
+do_execsql_test select4-2.5 {
+  SELECT 123 AS x ORDER BY (SELECT x ORDER BY 1);
+} {123}
 
 # Except operator
 #
@@ -273,6 +276,16 @@ do_test select4-4.3 {
     ORDER BY log;
   }} msg]
   lappend v $msg
+} {1 {ORDER BY clause should come after INTERSECT not before}}
+do_catchsql_test select4-4.4 {
+  SELECT 3 IN (
+    SELECT 0 ORDER BY 1
+    INTERSECT
+    SELECT 1
+    INTERSECT 
+    SELECT 2
+    ORDER BY 1
+  );
 } {1 {ORDER BY clause should come after INTERSECT not before}}
 
 # Various error messages while processing UNION or INTERSECT

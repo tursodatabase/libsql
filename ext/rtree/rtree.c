@@ -2820,11 +2820,19 @@ static int rtreeUpdate(
   if( nData>1 ){
     int ii;
 
-    /* Populate the cell.aCoord[] array. The first coordinate is azData[3]. */
-    assert( nData==(pRtree->nDim*2 + 3) );
+    /* Populate the cell.aCoord[] array. The first coordinate is azData[3].
+    **
+    ** NB: nData can only be less than nDim*2+3 if the rtree is mis-declared
+    ** with "column" that are interpreted as table constraints.
+    ** Example:  CREATE VIRTUAL TABLE bad USING rtree(x,y,CHECK(y>5));
+    ** This problem was discovered after years of use, so we silently ignore
+    ** these kinds of misdeclared tables to avoid breaking any legacy.
+    */
+    assert( nData<=(pRtree->nDim*2 + 3) );
+
 #ifndef SQLITE_RTREE_INT_ONLY
     if( pRtree->eCoordType==RTREE_COORD_REAL32 ){
-      for(ii=0; ii<(pRtree->nDim*2); ii+=2){
+      for(ii=0; ii<nData-4; ii+=2){
         cell.aCoord[ii].f = rtreeValueDown(azData[ii+3]);
         cell.aCoord[ii+1].f = rtreeValueUp(azData[ii+4]);
         if( cell.aCoord[ii].f>cell.aCoord[ii+1].f ){
@@ -2835,7 +2843,7 @@ static int rtreeUpdate(
     }else
 #endif
     {
-      for(ii=0; ii<(pRtree->nDim*2); ii+=2){
+      for(ii=0; ii<nData-4; ii+=2){
         cell.aCoord[ii].i = sqlite3_value_int(azData[ii+3]);
         cell.aCoord[ii+1].i = sqlite3_value_int(azData[ii+4]);
         if( cell.aCoord[ii].i>cell.aCoord[ii+1].i ){
