@@ -36,6 +36,13 @@ USE_STDCALL = 0
 DYNAMIC_SHELL = 0
 !ENDIF
 
+# Set this non-0 to enable extra code that attempts to detect misuse of the
+# SQLite API.
+#
+!IFNDEF API_ARMOR
+API_ARMOR = 0
+!ENDIF
+
 # If necessary, create a list of harmless compiler warnings to disable when
 # compiling the various tools.  For the SQLite source code itself, warnings,
 # if any, will be disabled from within it.
@@ -491,14 +498,14 @@ BCC = $(BCC) -DNDEBUG
 RCC = $(RCC) -DNDEBUG
 !ENDIF
 
-!IF $(DEBUG)>0
-TCC = $(TCC) -DSQLITE_ENABLE_API_ARMOR
-RCC = $(RCC) -DSQLITE_ENABLE_API_ARMOR
+!IF $(DEBUG)>0 || $(API_ARMOR)!=0
+TCC = $(TCC) -DSQLITE_ENABLE_API_ARMOR=1
+RCC = $(RCC) -DSQLITE_ENABLE_API_ARMOR=1
 !ENDIF
 
 !IF $(DEBUG)>2
-TCC = $(TCC) -DSQLITE_DEBUG
-RCC = $(RCC) -DSQLITE_DEBUG
+TCC = $(TCC) -DSQLITE_DEBUG=1
+RCC = $(RCC) -DSQLITE_DEBUG=1
 !ENDIF
 
 !IF $(DEBUG)>4 || $(OSTRACE)!=0
@@ -507,8 +514,8 @@ RCC = $(RCC) -DSQLITE_FORCE_OS_TRACE=1 -DSQLITE_DEBUG_OS_TRACE=1
 !ENDIF
 
 !IF $(DEBUG)>5
-TCC = $(TCC) -DSQLITE_ENABLE_IOTRACE
-RCC = $(RCC) -DSQLITE_ENABLE_IOTRACE
+TCC = $(TCC) -DSQLITE_ENABLE_IOTRACE=1
+RCC = $(RCC) -DSQLITE_ENABLE_IOTRACE=1
 !ENDIF
 
 # Prevent warnings about "insecure" MSVC runtime library functions
