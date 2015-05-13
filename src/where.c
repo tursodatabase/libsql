@@ -417,7 +417,7 @@ static u16 operatorMask(int op){
   }else if( op==TK_ISNULL ){
     c = WO_ISNULL;
   }else if( op==TK_IS ){
-    c = WO_EQ;
+    c = WO_EQ;  /* IS works like ==, just without the IsNull tests */
   }else{
     assert( (WO_EQ<<(op-TK_EQ)) < 0x7fff );
     c = (u16)(WO_EQ<<(op-TK_EQ));
@@ -1117,6 +1117,7 @@ static void exprAnalyzeOrTerm(
       okToChngToIN = 1;
       for(; i>=0 && okToChngToIN; i--, pOrTerm++){
         assert( pOrTerm->eOperator & WO_EQ );
+        testcase( pOrTerm->pExpr->op==TK_IS );
         if( pOrTerm->leftCursor!=iCursor ){
           pOrTerm->wtFlags &= ~TERM_OR_OK;
         }else if( pOrTerm->u.leftColumn!=iColumn ){
@@ -1153,6 +1154,7 @@ static void exprAnalyzeOrTerm(
         assert( pOrTerm->eOperator & WO_EQ );
         assert( pOrTerm->leftCursor==iCursor );
         assert( pOrTerm->u.leftColumn==iColumn );
+        testcase( pOrTerm->pExpr->op==TK_IS );
         pDup = sqlite3ExprDup(db, pOrTerm->pExpr->pRight, 0);
         pList = sqlite3ExprListAppend(pWInfo->pParse, pList, pDup);
         pLeft = pOrTerm->pExpr->pLeft;
@@ -1683,6 +1685,7 @@ static int termCanDriveIndex(
   if( pTerm->u.leftColumn<0 ) return 0;
   aff = pSrc->pTab->aCol[pTerm->u.leftColumn].affinity;
   if( !sqlite3IndexAffinityOk(pTerm->pExpr, aff) ) return 0;
+  testcase( pTerm->pExpr->op==TK_IS );
   return 1;
 }
 #endif
@@ -2980,6 +2983,7 @@ static int codeAllEqualityTerms(
     testcase( pTerm->eOperator & WO_IN );
     if( (pTerm->eOperator & (WO_ISNULL|WO_IN))==0 ){
       Expr *pRight = pTerm->pExpr->pRight;
+      testcase( pTerm->pExpr->op==TK_IS );
       if( (pTerm->wtFlags & TERM_NULLOK)==0
        && sqlite3ExprCanBeNull(pRight)
       ){
@@ -3631,6 +3635,7 @@ static Bitmask codeOneLoopStart(
       Expr *pRight = pRangeStart->pExpr->pRight;
       sqlite3ExprCode(pParse, pRight, regBase+nEq);
       whereLikeOptimizationStringFixup(v, pLevel, pRangeStart);
+      testcase( pRangeStart->pExpr->op==TK_IS );
       if( (pRangeStart->wtFlags & TERM_NULLOK)==0
        && sqlite3ExprCanBeNull(pRight)
       ){
@@ -3677,6 +3682,7 @@ static Bitmask codeOneLoopStart(
       sqlite3ExprCacheRemove(pParse, regBase+nEq, 1);
       sqlite3ExprCode(pParse, pRight, regBase+nEq);
       whereLikeOptimizationStringFixup(v, pLevel, pRangeEnd);
+      testcase( pRangeEnd->pExpr->op==TK_IS );
       if( (pRangeEnd->wtFlags & TERM_NULLOK)==0
        && sqlite3ExprCanBeNull(pRight)
       ){
@@ -4113,7 +4119,7 @@ static Bitmask codeOneLoopStart(
     pAlt = findTerm(pWC, iCur, pTerm->u.leftColumn, notReady, WO_EQ|WO_IN, 0);
     if( pAlt==0 ) continue;
     if( pAlt->wtFlags & (TERM_CODED) ) continue;
-    testcase( pAlt->eOperator & WO_EQ );
+    testcase( (pAlt->eOperator & WO_EQ)!=0 && pAlt->pExpr->op==TK_IS );
     testcase( pAlt->eOperator & WO_IN );
     VdbeModuleComment((v, "begin transitive constraint"));
     pEAlt = sqlite3StackAllocRaw(db, sizeof(*pEAlt));
@@ -4658,6 +4664,7 @@ static void whereLoopOutputAdjust(
         pLoop->nOut--;
         if( pTerm->eOperator&WO_EQ ){
           Expr *pRight = pTerm->pExpr->pRight;
+          testcase( pTerm->pExpr->op==TK_IS );
           if( sqlite3ExprIsInteger(pRight, &k) && k>=(-1) && k<=1 ){
             k = 10;
           }else{
@@ -4859,7 +4866,7 @@ static int whereLoopAddBtreeIndex(
         ){
           Expr *pExpr = pTerm->pExpr;
           if( (eOp & (WO_EQ|WO_ISNULL))!=0 ){
-            testcase( eOp & WO_EQ );
+            testcase( (eOp & WO_EQ)!=0 && pExpr->op==TK_IS );
             testcase( eOp & WO_ISNULL );
             rc = whereEqualScanEst(pParse, pBuilder, pExpr->pRight, &nOut);
           }else{
@@ -5707,6 +5714,7 @@ static i8 wherePathSatisfiesOrderBy(
         if( !pColl ) pColl = db->pDfltColl;
         z2 = pColl->zName;
         if( sqlite3StrICmp(z1, z2)!=0 ) continue;
+        testcase( pTerm->pExpr->op==TK_IS );
       }
       obSat |= MASKBIT(i);
     }
@@ -6329,6 +6337,7 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
         pTerm = findTerm(pWC, iCur, pIdx->aiColumn[j], 0, WO_EQ, pIdx);
         if( pTerm==0 ) break;
         pLoop->aLTerm[j] = pTerm;
+        testcase( pTerm->pExpr->op==TK_IS );
       }
       if( j!=pIdx->nKeyCol ) continue;
       pLoop->wsFlags = WHERE_COLUMN_EQ|WHERE_ONEROW|WHERE_INDEXED;
