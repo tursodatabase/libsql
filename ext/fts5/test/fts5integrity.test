@@ -31,5 +31,27 @@ do_execsql_test 2.1 {
   INSERT INTO yy(yy) VALUES('integrity-check');
 }
 
+#--------------------------------------------------------------------
+#
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE zz USING fts5(z);
+  INSERT INTO zz(zz, rank) VALUES('pgsz', 32);
+  INSERT INTO zz VALUES('b b b b b b b b b b b b b b');
+  INSERT INTO zz SELECT z FROM zz;
+  INSERT INTO zz SELECT z FROM zz;
+  INSERT INTO zz SELECT z FROM zz;
+  INSERT INTO zz SELECT z FROM zz;
+  INSERT INTO zz SELECT z FROM zz;
+  INSERT INTO zz SELECT z FROM zz;
+  INSERT INTO zz(zz) VALUES('optimize');
+}
+
+do_execsql_test 3.1 { INSERT INTO zz(zz) VALUES('integrity-check'); }
+
+
+#db eval {SELECT rowid, fts5_decode(rowid, block) aS r FROM zz_data} {puts $r}
+#exit
+
+
 finish_test
 

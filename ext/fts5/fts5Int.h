@@ -44,7 +44,7 @@ int sqlite3Fts5Corrupt(void);
 ** is used for assert() conditions that are true only if it can be 
 ** guranteed that the database is not corrupt.
 */
-#ifdef SQLITE_TEST
+#ifdef SQLITE_DEBUG
 extern int sqlite3_fts5_may_be_corrupt;
 # define assert_nc(x) assert(sqlite3_fts5_may_be_corrupt || (x))
 #else
@@ -115,7 +115,7 @@ struct Fts5Config {
 };
 
 /* Current expected value of %_config table 'version' field */
-#define FTS5_CURRENT_VERSION 1
+#define FTS5_CURRENT_VERSION 2
 
 #define FTS5_CONTENT_NORMAL   0
 #define FTS5_CONTENT_NONE     1

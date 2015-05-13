@@ -22,13 +22,7 @@
 #include <string.h>
 #include <assert.h>
 
-/*
-** This variable is set to true when running corruption tests. Otherwise
-** false. If it is false, extra assert() conditions in the fts5 code are
-** activated - conditions that are only true if it is guaranteed that the
-** fts5 database is not corrupt.
-*/
-int sqlite3_fts5_may_be_corrupt = 0;
+extern int sqlite3_fts5_may_be_corrupt;
 
 /*************************************************************************
 ** This is a copy of the first part of the SqliteDb structure in 

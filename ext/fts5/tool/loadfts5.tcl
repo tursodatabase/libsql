@@ -109,6 +109,7 @@ db transaction {
   if {$O(prefix)!=""} { set pref ", prefix='$O(prefix)'" }
   catch {
     db eval "CREATE VIRTUAL TABLE t1 USING $O(vtab) (path, content$O(tok)$pref)"
+    # db eval "INSERT INTO t1(t1, rank) VALUES('pgsz', 4050);"
   }
   if {$O(automerge)>=0} {
     if {$O(vtab) == "fts5"} {

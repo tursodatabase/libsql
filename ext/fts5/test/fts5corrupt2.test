@@ -16,6 +16,7 @@
 
 source [file join [file dirname [info script]] fts5_common.tcl]
 set testprefix fts5corrupt2
+sqlite3_fts5_may_be_corrupt 1
 
 # Create a simple FTS5 table containing 100 documents. Each document 
 # contains 10 terms, each of which start with the character "x".
@@ -29,6 +30,7 @@ do_execsql_test 1.0 {
   INSERT INTO t1 SELECT rnddoc(10) FROM ii;
 }
 set mask [expr 31 << 31]
+
 
 # Test 1:
 #
@@ -194,5 +196,6 @@ foreach {tn nCut} {
 }
 
 
+sqlite3_fts5_may_be_corrupt 0
 finish_test
 

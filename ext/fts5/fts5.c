@@ -17,6 +17,14 @@
 
 #include "fts5Int.h"
 
+/*
+** This variable is set to true when running corruption tests. Otherwise
+** false. If it is false, extra assert() conditions in the fts5 code are
+** activated - conditions that are only true if it is guaranteed that the
+** fts5 database is not corrupt.
+*/
+int sqlite3_fts5_may_be_corrupt = 0;
+
 
 typedef struct Fts5Table Fts5Table;
 typedef struct Fts5Cursor Fts5Cursor;

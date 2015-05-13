@@ -377,6 +377,7 @@ foreach file {
    fts5_storage.c
    fts5_tokenize.c
    fts5_unicode2.c
+   fts5_vocab.c
 
    rtree.c
    icu.c
