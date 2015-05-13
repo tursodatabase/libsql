@@ -280,7 +280,7 @@ struct WhereTerm {
 #define TERM_LIKEOPT    0x100  /* Virtual terms from the LIKE optimization */
 #define TERM_LIKECOND   0x200  /* Conditionally this LIKE operator term */
 #define TERM_LIKE       0x400  /* The original LIKE operator */
-#define TERM_NULLOK     0x800  /* Comparison operators against NULL work */
+#define TERM_IS         0x800  /* Term.pExpr is an IS operator */
 
 /*
 ** An instance of the WhereScan object is used as an iterator for locating
@@ -430,7 +430,7 @@ struct WhereInfo {
 ** particular WhereTerms within a WhereClause.
 */
 #define WO_IN     0x001
-#define WO_EQ     0x002
+#define WO_EQ     0x002                      /* Used for both == and IS */
 #define WO_LT     (WO_EQ<<(TK_LT-TK_EQ))
 #define WO_LE     (WO_EQ<<(TK_LE-TK_EQ))
 #define WO_GT     (WO_EQ<<(TK_GT-TK_EQ))

@@ -1259,7 +1259,7 @@ static void exprAnalyze(
       pTerm->u.leftColumn = pLeft->iColumn;
       pTerm->eOperator = operatorMask(op) & opMask;
     }
-    if( op==TK_IS ) pTerm->wtFlags |= TERM_NULLOK;
+    if( op==TK_IS ) pTerm->wtFlags |= TERM_IS;
     if( pRight && pRight->op==TK_COLUMN ){
       WhereTerm *pNew;
       Expr *pDup;
@@ -1284,7 +1284,7 @@ static void exprAnalyze(
           pTerm->eOperator |= WO_EQUIV;
           eExtraOp = WO_EQUIV;
         }
-        if( op==TK_IS ) pNew->wtFlags |= TERM_NULLOK;
+        if( op==TK_IS ) pNew->wtFlags |= TERM_IS;
       }else{
         pDup = pExpr;
         pNew = pTerm;
@@ -1475,8 +1475,7 @@ static void exprAnalyze(
   ** as "x>NULL" if x is not an INTEGER PRIMARY KEY.  So construct a
   ** virtual term of that form.
   **
-  ** Note that the virtual term must be tagged with both TERM_VNULL
-  ** and TERM_NULLOK.
+  ** Note that the virtual term must be tagged with TERM_VNULL.
   */
   if( pExpr->op==TK_NOTNULL
    && pExpr->pLeft->op==TK_COLUMN
@@ -1493,7 +1492,7 @@ static void exprAnalyze(
                             sqlite3PExpr(pParse, TK_NULL, 0, 0, 0), 0);
 
     idxNew = whereClauseInsert(pWC, pNewExpr,
-                              TERM_VIRTUAL|TERM_DYNAMIC|TERM_VNULL|TERM_NULLOK);
+                              TERM_VIRTUAL|TERM_DYNAMIC|TERM_VNULL);
     if( idxNew ){
       pNewTerm = &pWC->a[idxNew];
       pNewTerm->prereqRight = 0;
@@ -2983,10 +2982,7 @@ static int codeAllEqualityTerms(
     testcase( pTerm->eOperator & WO_IN );
     if( (pTerm->eOperator & (WO_ISNULL|WO_IN))==0 ){
       Expr *pRight = pTerm->pExpr->pRight;
-      testcase( pTerm->pExpr->op==TK_IS );
-      if( (pTerm->wtFlags & TERM_NULLOK)==0
-       && sqlite3ExprCanBeNull(pRight)
-      ){
+      if( (pTerm->wtFlags & TERM_IS)==0 && sqlite3ExprCanBeNull(pRight) ){
         sqlite3VdbeAddOp2(v, OP_IsNull, regBase+j, pLevel->addrBrk);
         VdbeCoverage(v);
       }
@@ -3635,8 +3631,7 @@ static Bitmask codeOneLoopStart(
       Expr *pRight = pRangeStart->pExpr->pRight;
       sqlite3ExprCode(pParse, pRight, regBase+nEq);
       whereLikeOptimizationStringFixup(v, pLevel, pRangeStart);
-      testcase( pRangeStart->pExpr->op==TK_IS );
-      if( (pRangeStart->wtFlags & TERM_NULLOK)==0
+      if( (pRangeStart->wtFlags & TERM_VNULL)==0
        && sqlite3ExprCanBeNull(pRight)
       ){
         sqlite3VdbeAddOp2(v, OP_IsNull, regBase+nEq, addrNxt);
@@ -3682,8 +3677,7 @@ static Bitmask codeOneLoopStart(
       sqlite3ExprCacheRemove(pParse, regBase+nEq, 1);
       sqlite3ExprCode(pParse, pRight, regBase+nEq);
       whereLikeOptimizationStringFixup(v, pLevel, pRangeEnd);
-      testcase( pRangeEnd->pExpr->op==TK_IS );
-      if( (pRangeEnd->wtFlags & TERM_NULLOK)==0
+      if( (pRangeEnd->wtFlags & TERM_VNULL)==0
        && sqlite3ExprCanBeNull(pRight)
       ){
         sqlite3VdbeAddOp2(v, OP_IsNull, regBase+nEq, addrNxt);
