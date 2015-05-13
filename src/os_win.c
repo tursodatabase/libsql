@@ -5411,14 +5411,14 @@ static int winRandomness(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
     UUID id;
     memset(&id, 0, sizeof(UUID));
     osUuidCreate(&id);
-    memcpy(zBuf, &id, sizeof(UUID));
+    memcpy(&zBuf[n], &id, sizeof(UUID));
     n += sizeof(UUID);
   }
   if( sizeof(UUID)<=nBuf-n ){
     UUID id;
     memset(&id, 0, sizeof(UUID));
     osUuidCreateSequential(&id);
-    memcpy(zBuf, &id, sizeof(UUID));
+    memcpy(&zBuf[n], &id, sizeof(UUID));
     n += sizeof(UUID);
   }
 #endif

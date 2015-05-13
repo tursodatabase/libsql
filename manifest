@@ -1,9 +1,9 @@
-C Use\sthe\sdatabase\smutex\swhere\sapplicable.
-D 2015-05-12T23:33:32.287
+C Merge\supdates\sfrom\strunk.
+D 2015-05-13T04:52:26.726
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in edfc69769e613a6359c42c06ea1d42c3bece1736
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc c65882433fde5f35ff66e759938eaf2dde9f360d
+F Makefile.msc a9fd7fd02265aa5b3b2522f5e39d975972ff906d
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md d58e3bebc0a4145e0f2a87994015fdb575a8e866
 F VERSION 8af05c43e00f7de32be74ff9984d792c96cdb0de
@@ -216,7 +216,7 @@ F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h abdb9a191a367793268fe553d25bab894e986a0e
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c 23eb5f56fac54d8fe0cb204291f3b3b2d94f23fc
-F src/os_win.c 2da99cf07da7db6bcb1974013abfd89ec74749b3
+F src/os_win.c 97f7828a9554d753665b6fcf7540e31c2b3d6a6e
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 97110085b1321298412f1e5c37bddb95b36d9208
 F src/pager.h c3476e7c89cdf1c6914e50a11f3714e30b4e0a77
@@ -1258,7 +1258,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e908365faea6987f98dc3954b932f9a353241bfc
-R e9c28482805eb7c4ec3e21f0c39ac069
+P 28cfdabc471e132a856292781767777c6390ea3c 59e3e9e764440b7feaafadff74f422535d21bca2
+R 6d9983e3c63d923bd10dfd89492e7521
 U mistachkin
-Z efab135419f44db544c50d8003598130
+Z c62be7c9e3b3706985519faa753e0586
