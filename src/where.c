@@ -363,7 +363,7 @@ static int allowedOp(int op){
   assert( TK_LT>TK_EQ && TK_LT<TK_GE );
   assert( TK_LE>TK_EQ && TK_LE<TK_GE );
   assert( TK_GE==TK_EQ+4 );
-  return op==TK_IN || (op>=TK_EQ && op<=TK_GE) || op==TK_ISNULL;
+  return op==TK_IN || (op>=TK_EQ && op<=TK_GE) || op==TK_ISNULL || op==TK_IS;
 }
 
 /*
@@ -416,6 +416,8 @@ static u16 operatorMask(int op){
     c = WO_IN;
   }else if( op==TK_ISNULL ){
     c = WO_ISNULL;
+  }else if( op==TK_IS ){
+    c = WO_EQ;
   }else{
     assert( (WO_EQ<<(op-TK_EQ)) < 0x7fff );
     c = (u16)(WO_EQ<<(op-TK_EQ));
@@ -427,6 +429,7 @@ static u16 operatorMask(int op){
   assert( op!=TK_LE || c==WO_LE );
   assert( op!=TK_GT || c==WO_GT );
   assert( op!=TK_GE || c==WO_GE );
+  assert( op!=TK_IS || c==WO_EQ );
   return c;
 }
 
@@ -1254,6 +1257,7 @@ static void exprAnalyze(
       pTerm->u.leftColumn = pLeft->iColumn;
       pTerm->eOperator = operatorMask(op) & opMask;
     }
+    if( op==TK_IS ) pTerm->wtFlags |= TERM_NULLOK;
     if( pRight && pRight->op==TK_COLUMN ){
       WhereTerm *pNew;
       Expr *pDup;
@@ -1278,6 +1282,7 @@ static void exprAnalyze(
           pTerm->eOperator |= WO_EQUIV;
           eExtraOp = WO_EQUIV;
         }
+        if( op==TK_IS ) pNew->wtFlags |= TERM_NULLOK;
       }else{
         pDup = pExpr;
         pNew = pTerm;
@@ -1468,10 +1473,8 @@ static void exprAnalyze(
   ** as "x>NULL" if x is not an INTEGER PRIMARY KEY.  So construct a
   ** virtual term of that form.
   **
-  ** Note that the virtual term must be tagged with TERM_VNULL.  This
-  ** TERM_VNULL tag will suppress the not-null check at the beginning
-  ** of the loop.  Without the TERM_VNULL flag, the not-null check at
-  ** the start of the loop will prevent any results from being returned.
+  ** Note that the virtual term must be tagged with both TERM_VNULL
+  ** and TERM_NULLOK.
   */
   if( pExpr->op==TK_NOTNULL
    && pExpr->pLeft->op==TK_COLUMN
@@ -1488,7 +1491,7 @@ static void exprAnalyze(
                             sqlite3PExpr(pParse, TK_NULL, 0, 0, 0), 0);
 
     idxNew = whereClauseInsert(pWC, pNewExpr,
-                              TERM_VIRTUAL|TERM_DYNAMIC|TERM_VNULL);
+                              TERM_VIRTUAL|TERM_DYNAMIC|TERM_VNULL|TERM_NULLOK);
     if( idxNew ){
       pNewTerm = &pWC->a[idxNew];
       pNewTerm->prereqRight = 0;
@@ -2792,7 +2795,7 @@ static int codeEqualityTerm(
   int iReg;                  /* Register holding results */
 
   assert( iTarget>0 );
-  if( pX->op==TK_EQ ){
+  if( pX->op==TK_EQ || pX->op==TK_IS ){
     iReg = sqlite3ExprCodeTarget(pParse, pX->pRight, iTarget);
   }else if( pX->op==TK_ISNULL ){
     iReg = iTarget;
@@ -2977,7 +2980,9 @@ static int codeAllEqualityTerms(
     testcase( pTerm->eOperator & WO_IN );
     if( (pTerm->eOperator & (WO_ISNULL|WO_IN))==0 ){
       Expr *pRight = pTerm->pExpr->pRight;
-      if( sqlite3ExprCanBeNull(pRight) ){
+      if( (pTerm->wtFlags & TERM_NULLOK)==0
+       && sqlite3ExprCanBeNull(pRight)
+      ){
         sqlite3VdbeAddOp2(v, OP_IsNull, regBase+j, pLevel->addrBrk);
         VdbeCoverage(v);
       }
@@ -3626,7 +3631,7 @@ static Bitmask codeOneLoopStart(
       Expr *pRight = pRangeStart->pExpr->pRight;
       sqlite3ExprCode(pParse, pRight, regBase+nEq);
       whereLikeOptimizationStringFixup(v, pLevel, pRangeStart);
-      if( (pRangeStart->wtFlags & TERM_VNULL)==0
+      if( (pRangeStart->wtFlags & TERM_NULLOK)==0
        && sqlite3ExprCanBeNull(pRight)
       ){
         sqlite3VdbeAddOp2(v, OP_IsNull, regBase+nEq, addrNxt);
@@ -3672,7 +3677,7 @@ static Bitmask codeOneLoopStart(
       sqlite3ExprCacheRemove(pParse, regBase+nEq, 1);
       sqlite3ExprCode(pParse, pRight, regBase+nEq);
       whereLikeOptimizationStringFixup(v, pLevel, pRangeEnd);
-      if( (pRangeEnd->wtFlags & TERM_VNULL)==0
+      if( (pRangeEnd->wtFlags & TERM_NULLOK)==0
        && sqlite3ExprCanBeNull(pRight)
       ){
         sqlite3VdbeAddOp2(v, OP_IsNull, regBase+nEq, addrNxt);
@@ -4158,9 +4163,10 @@ static void whereTermPrint(WhereTerm *pTerm, int iTerm){
     if( pTerm->wtFlags & TERM_VIRTUAL ) zType[0] = 'V';
     if( pTerm->eOperator & WO_EQUIV  ) zType[1] = 'E';
     if( ExprHasProperty(pTerm->pExpr, EP_FromJoin) ) zType[2] = 'L';
-    sqlite3DebugPrintf("TERM-%-3d %p %s cursor=%-3d prob=%-3d op=0x%03x\n",
-                       iTerm, pTerm, zType, pTerm->leftCursor, pTerm->truthProb,
-                       pTerm->eOperator);
+    sqlite3DebugPrintf(
+       "TERM-%-3d %p %s cursor=%-3d prob=%-3d op=0x%03x wtFlags=0x%04x\n",
+       iTerm, pTerm, zType, pTerm->leftCursor, pTerm->truthProb,
+       pTerm->eOperator, pTerm->wtFlags);
     sqlite3TreeViewExpr(0, pTerm->pExpr, 0);
   }
 }

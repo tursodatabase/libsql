@@ -280,6 +280,7 @@ struct WhereTerm {
 #define TERM_LIKEOPT    0x100  /* Virtual terms from the LIKE optimization */
 #define TERM_LIKECOND   0x200  /* Conditionally this LIKE operator term */
 #define TERM_LIKE       0x400  /* The original LIKE operator */
+#define TERM_NULLOK     0x800  /* Comparison operators against NULL work */
 
 /*
 ** An instance of the WhereScan object is used as an iterator for locating
