@@ -1,5 +1,5 @@
-C More\stest\scases.\s\sRemove\ssome\sinvalid\stestcase()\smacros.\s\sRearrange\ssome\scode\nfor\simproved\stestability.
-D 2015-05-14T13:41:22.643
+C A\sfew\smore\stest\scases\sfor\sthe\sIS\soperator.
+D 2015-05-14T14:03:21.962
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in edfc69769e613a6359c42c06ea1d42c3bece1736
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1082,7 +1082,7 @@ F test/trace2.test f5cb67ad3bc09e0c58e8cca78dfd0b5639259983
 F test/trans.test 6e1b4c6a42dba31bd65f8fa5e61a2708e08ddde6
 F test/trans2.test 62bd045bfc7a1c14c5ba83ba64d21ade31583f76
 F test/trans3.test 91a100e5412b488e22a655fe423a14c26403ab94
-F test/transitive1.test 03f532954f46cdf5608f7766bff0b0c52bf2a7cd
+F test/transitive1.test 875a9f0097a15b30a62431d183f989364d5accac
 F test/trigger1.test dc47573ac79ffe0ee3eecaa517d70d8dacbccd03
 F test/trigger2.test 5cd7d69a7ba1143ee045e4ae2963ff32ae4c87a6
 F test/trigger3.test aa640bb2bbb03edd5ff69c055117ea088f121945
@@ -1121,11 +1121,11 @@ F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/veryquick.test 57ab846bacf7b90cf4e9a672721ea5c5b669b661
 F test/view.test f311691d696a5cc27e3c1b875cec1b0866b4ccd9
 F test/vtab1.test dbe0e9e121102d0ba365f20d126a72676aa2343f
-F test/vtab2.test 3644649aa8d1daac57fd541f6a5f914cac59203e
+F test/vtab2.test f8cd1bb9aba7143eba97812d9617880a36d247ad
 F test/vtab3.test b45f47d20f225ccc9c28dc915d92740c2dee311e
 F test/vtab4.test 942f8b8280b3ea8a41dae20e7822d065ca1cb275
 F test/vtab5.test 889f444970393c73f1e077e2bdc5d845e157a391
-F test/vtab6.test 5f5380c425e52993560ab4763db4f826d2ba7b09
+F test/vtab6.test d2986cf418dc51e7fb81d12366bea2caa8b812df
 F test/vtab7.test ae560ebea870ed04e9aa4177cc302f910faaabb5
 F test/vtab8.test e19fa4a538fcd1bb66c22825fa8f71618fb13583
 F test/vtab9.test ea58d2b95d61955f87226381716b2d0b1d4e4f9b
@@ -1258,7 +1258,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d195d4a65d7184e34a2a08c3ac3db7f6c8c1c21c
-R f1988e6e31a1e471b8c207ba95b50e6f
+P b3676377b257bd8bb7fefe9c365d76cdc9e44856
+R bdc88e4814b826734527d4ac723cdd70
 U drh
-Z 903b5f8a9a56d496508b20810e19ed0d
+Z e30ac775b8d8ec0dc6dc3a554502ca78
