@@ -1280,7 +1280,7 @@ static void exprAnalyze(
         markTermAsChild(pWC, idxNew, idxTerm);
         pTerm = &pWC->a[idxTerm];
         pTerm->wtFlags |= TERM_COPIED;
-        if( pExpr->op==TK_EQ
+        if( (op==TK_EQ || op==TK_IS)
          && !ExprHasProperty(pExpr, EP_FromJoin)
          && OptimizationEnabled(db, SQLITE_Transitive)
         ){
@@ -1904,8 +1904,9 @@ static sqlite3_index_info *allocateIndexInfo(
     assert( IsPowerOfTwo(pTerm->eOperator & ~WO_EQUIV) );
     testcase( pTerm->eOperator & WO_IN );
     testcase( pTerm->eOperator & WO_ISNULL );
+    testcase( pTerm->eOperator & WO_IS );
     testcase( pTerm->eOperator & WO_ALL );
-    if( (pTerm->eOperator & ~(WO_ISNULL|WO_EQUIV))==0 ) continue;
+    if( (pTerm->eOperator & ~(WO_ISNULL|WO_EQUIV|WO_IS))==0 ) continue;
     if( pTerm->wtFlags & TERM_VNULL ) continue;
     nTerm++;
   }
@@ -1956,6 +1957,7 @@ static sqlite3_index_info *allocateIndexInfo(
     if( pTerm->leftCursor != pSrc->iCursor ) continue;
     assert( IsPowerOfTwo(pTerm->eOperator & ~WO_EQUIV) );
     testcase( pTerm->eOperator & WO_IN );
+    testcase( pTerm->eOperator & WO_IS );
     testcase( pTerm->eOperator & WO_ISNULL );
     testcase( pTerm->eOperator & WO_ALL );
     if( (pTerm->eOperator & ~(WO_ISNULL|WO_EQUIV|WO_IS))==0 ) continue;
@@ -4107,7 +4109,8 @@ static Bitmask codeOneLoopStart(
     Expr *pE, *pEAlt;
     WhereTerm *pAlt;
     if( pTerm->wtFlags & (TERM_VIRTUAL|TERM_CODED) ) continue;
-    if( (pTerm->eOperator&(WO_EQUIV|WO_EQ|WO_IS))<=WO_EQUIV ) continue;
+    if( (pTerm->eOperator & WO_EQUIV)==0 ) continue;
+    if( (pTerm->eOperator & (WO_EQ|WO_IS))==0 ) continue;
     if( pTerm->leftCursor!=iCur ) continue;
     if( pLevel->iLeftJoin ) continue;
     pE = pTerm->pExpr;
@@ -4731,7 +4734,7 @@ static int whereLoopAddBtreeIndex(
   assert( (pNew->wsFlags & WHERE_TOP_LIMIT)==0 );
   if( pNew->wsFlags & WHERE_BTM_LIMIT ){
     opMask = WO_LT|WO_LE;
-  }else if( pProbe->tnum<=0 || (pSrc->jointype & JT_LEFT)!=0 ){
+  }else if( /*pProbe->tnum<=0 ||*/ (pSrc->jointype & JT_LEFT)!=0 ){
     opMask = WO_EQ|WO_IN|WO_GT|WO_GE|WO_LT|WO_LE;
   }else{
     opMask = WO_EQ|WO_IN|WO_GT|WO_GE|WO_LT|WO_LE|WO_ISNULL|WO_IS;
