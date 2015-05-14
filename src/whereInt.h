@@ -280,6 +280,7 @@ struct WhereTerm {
 #define TERM_LIKEOPT    0x100  /* Virtual terms from the LIKE optimization */
 #define TERM_LIKECOND   0x200  /* Conditionally this LIKE operator term */
 #define TERM_LIKE       0x400  /* The original LIKE operator */
+#define TERM_IS         0x800  /* Term.pExpr is an IS operator */
 
 /*
 ** An instance of the WhereScan object is used as an iterator for locating
@@ -428,21 +429,22 @@ struct WhereInfo {
 ** OR-ed combination of these values can be used when searching for
 ** particular WhereTerms within a WhereClause.
 */
-#define WO_IN     0x001
-#define WO_EQ     0x002
+#define WO_IN     0x0001
+#define WO_EQ     0x0002
 #define WO_LT     (WO_EQ<<(TK_LT-TK_EQ))
 #define WO_LE     (WO_EQ<<(TK_LE-TK_EQ))
 #define WO_GT     (WO_EQ<<(TK_GT-TK_EQ))
 #define WO_GE     (WO_EQ<<(TK_GE-TK_EQ))
-#define WO_MATCH  0x040
-#define WO_ISNULL 0x080
-#define WO_OR     0x100       /* Two or more OR-connected terms */
-#define WO_AND    0x200       /* Two or more AND-connected terms */
-#define WO_EQUIV  0x400       /* Of the form A==B, both columns */
-#define WO_NOOP   0x800       /* This term does not restrict search space */
+#define WO_MATCH  0x0040
+#define WO_IS     0x0080
+#define WO_ISNULL 0x0100
+#define WO_OR     0x0200       /* Two or more OR-connected terms */
+#define WO_AND    0x0400       /* Two or more AND-connected terms */
+#define WO_EQUIV  0x0800       /* Of the form A==B, both columns */
+#define WO_NOOP   0x1000       /* This term does not restrict search space */
 
-#define WO_ALL    0xfff       /* Mask of all possible WO_* values */
-#define WO_SINGLE 0x0ff       /* Mask of all non-compound WO_* values */
+#define WO_ALL    0x1fff       /* Mask of all possible WO_* values */
+#define WO_SINGLE 0x01ff       /* Mask of all non-compound WO_* values */
 
 /*
 ** These are definitions of bits in the WhereLoop.wsFlags field.

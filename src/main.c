@@ -2899,8 +2899,7 @@ static int openDatabase(
 
 #ifdef SQLITE_ENABLE_DBSTAT_VTAB
   if( !db->mallocFailed && rc==SQLITE_OK){
-    int sqlite3_dbstat_register(sqlite3*);
-    rc = sqlite3_dbstat_register(db);
+    rc = sqlite3DbstatRegister(db);
   }
 #endif
 

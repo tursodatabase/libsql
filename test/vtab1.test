@@ -1085,9 +1085,20 @@ do_test vtab1.13-3 {
     SELECT * FROM echo_c WHERE b IS NULL 
   }
 } {15 {} 16}
-do_test vtab1.13-3 {
+do_test vtab1.13-4 {
+  unset -nocomplain null
+  execsql { 
+    SELECT * FROM echo_c WHERE b IS $null
+  }
+} {15 {} 16}
+do_test vtab1.13-5 {
   execsql { 
     SELECT * FROM echo_c WHERE b IS NULL AND a = 15;
+  }
+} {15 {} 16}
+do_test vtab1.13-6 {
+  execsql { 
+    SELECT * FROM echo_c WHERE NULL IS b AND a IS 15;
   }
 } {15 {} 16}
 

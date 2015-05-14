@@ -87,7 +87,6 @@ do_catchsql_test rtree9-4.3 {
 #
 register_circle_geom db
 
-breakpoint
 do_execsql_test rtree9-5.1 {
   CREATE VIRTUAL TABLE rt2 USING rtree(id, xmin, xmax, ymin, ymax);
 

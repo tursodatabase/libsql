@@ -173,8 +173,8 @@ do_select_tests 5.4 -errorformat {
   4 "SELECT optimize(content) FROM t2 WHERE t2 MATCH 'history'"  optimize
 }
 do_catchsql_test 5.5.1 {
-  SELECT matchinfo(t2, 'abc') FROM t2 WHERE t2 MATCH 'history'
-} {1 {unrecognized matchinfo request: b}}
+  SELECT matchinfo(t2, 'abcd') FROM t2 WHERE t2 MATCH 'history'
+} {1 {unrecognized matchinfo request: d}}
 
 do_execsql_test 5.5 { DROP TABLE t2 }
 

@@ -166,8 +166,10 @@ sqlite3 db test.db
 register_dbstat_vtab db
 do_execsql_test stat-5.1 {
   PRAGMA auto_vacuum = OFF;
-  CREATE VIRTUAL TABLE temp.stat USING dbstat;
-  CREATE TABLE t1(x);
+  CREATE TABLE tx(y);
+  ATTACH ':memory:' AS aux1;
+  CREATE VIRTUAL TABLE temp.stat USING dbstat(aux1);
+  CREATE TABLE aux1.t1(x);
   INSERT INTO t1 VALUES(zeroblob(1513));
   INSERT INTO t1 VALUES(zeroblob(1514));
   SELECT name, path, pageno, pagetype, ncell, payload, unused, mx_payload
@@ -177,5 +179,9 @@ do_execsql_test stat-5.1 {
   t1 /000+000000 3 overflow 0 1020 0 0    \
   t1 /001+000000 4 overflow 0 1020 0 0    \
 ]
+
+do_catchsql_test stat-6.1 {
+  CREATE VIRTUAL TABLE temp.s2 USING dbstat(mainx);
+} {1 {no such database: mainx}}
 
 finish_test

@@ -399,6 +399,14 @@ EXTHDR += \
 EXTHDR += \
   $(TOP)/ext/userauth/sqlite3userauth.h
 
+# executables needed for testing
+#
+TESTPROGS = \
+  testfixture$(EXE) \
+  sqlite3$(EXE) \
+  sqlite3_analyzer$(EXE) \
+  sqldiff$(EXE)
+
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
 #
@@ -649,13 +657,13 @@ fts3-testfixture$(EXE): sqlite3.c fts3amal.c $(TESTSRC) $(TOP)/src/tclsqlite.c
 		$(TESTSRC) $(TOP)/src/tclsqlite.c sqlite3.c fts3amal.c       \
 		-o testfixture$(EXE) $(LIBTCL) $(THREADLIB)
 
-fulltest:	testfixture$(EXE) sqlite3$(EXE) fuzztest
+fulltest:	$(TESTPROGS) fuzztest
 	./testfixture$(EXE) $(TOP)/test/all.test
 
-soaktest:	testfixture$(EXE) sqlite3$(EXE) fuzzoomtest
+soaktest:	$(TESTPROGS) fuzzoomtest
 	./testfixture$(EXE) $(TOP)/test/all.test -soak=1
 
-fulltestonly:	testfixture$(EXE) sqlite3$(EXE) fuzztest
+fulltestonly:	$(TESTPROGS) fuzztest
 	./testfixture$(EXE) $(TOP)/test/full.test
 
 queryplantest:	testfixture$(EXE) sqlite3$(EXE)
@@ -667,15 +675,22 @@ fuzztest:	fuzzershell$(EXE)
 fuzzoomtest:	fuzzershell$(EXE)
 	./fuzzershell$(EXE) -f $(TOP)/test/fuzzdata1.txt --oom
 
-test:	testfixture$(EXE) sqlite3$(EXE) fuzztest
+test:	$(TESTPROGS) fuzztest
 	./testfixture$(EXE) $(TOP)/test/veryquick.test
 
 # Run a test using valgrind.  This can take a really long time
 # because valgrind is so much slower than a native machine.
 #
-valgrindtest:	testfixture$(EXE) sqlite3$(EXE) fuzzershell$(EXE)
+valgrindtest:	$(TESTPROGS) fuzzershell$(EXE)
 	valgrind -v ./fuzzershell$(EXE) -f $(TOP)/test/fuzzdata1.txt
 	OMIT_MISUSE=1 valgrind -v ./testfixture$(EXE) $(TOP)/test/permutations.test valgrind
+
+# A very fast test that checks basic sanity.  The name comes from
+# the 60s-era electronics testing:  "Turn it on and see if smoke
+# comes out."
+#
+smoketest:	$(TESTPROGS) fuzzershell$(EXE)
+	./testfixture$(EXE) $(TOP)/test/main.test
 
 # The next two rules are used to support the "threadtest" target. Building
 # threadtest runs a few thread-safety tests that are implemented in C. This
@@ -788,3 +803,5 @@ clean:
 	rm -f sqlite3_analyzer sqlite3_analyzer.exe sqlite3_analyzer.c
 	rm -f sqlite-*-output.vsix
 	rm -f mptester mptester.exe
+	rm -f fuzzershell fuzzershell.exe
+	rm -f sqldiff sqldiff.exe

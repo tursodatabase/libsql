@@ -519,6 +519,15 @@ EXTHDR += \
 EXTHDR += \
   $(TOP)/ext/rtree/sqlite3rtree.h
 
+# executables needed for testing
+#
+TESTPROGS = \
+  testfixture$(TEXE) \
+  sqlite3$(TEXE) \
+  sqlite3_analyzer$(TEXE) \
+  sqldiff$(TEXE)
+
+
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
 #
@@ -968,15 +977,15 @@ testfixture$(TEXE):	$(TESTFIXTURE_SRC)
 		-o $@ $(TESTFIXTURE_SRC) $(LIBTCL) $(TLIBS)
 
 # A very detailed test running most or all test cases
-fulltest:	testfixture$(TEXE) sqlite3$(TEXE) fuzztest
+fulltest:	$(TESTPROGS) fuzztest
 	./testfixture$(TEXE) $(TOP)/test/all.test
 
 # Really really long testing
-soaktest:	testfixture$(TEXE) sqlite3$(TEXE) fuzzoomtest
+soaktest:	$(TESTPROGS) fuzzoomtest
 	./testfixture$(TEXE) $(TOP)/test/all.test -soak=1
 
-# Do extra testing but not aeverything.
-fulltestonly:	testfixture$(TEXE) sqlite3$(TEXE)
+# Do extra testing but not everything.
+fulltestonly:	$(TESTPROGS)
 	./testfixture$(TEXE) $(TOP)/test/full.test
 
 # Fuzz testing
@@ -989,13 +998,13 @@ fuzzoomtest:	fuzzershell$(TEXE)
 # This is the common case.  Run many tests but not those that take
 # a really long time.
 #
-test:	testfixture$(TEXE) sqlite3$(TEXE) fuzztest
+test:	$(TESTPROGS) fuzztest
 	./testfixture$(TEXE) $(TOP)/test/veryquick.test
 
 # Run a test using valgrind.  This can take a really long time
 # because valgrind is so much slower than a native machine.
 #
-valgrindtest:	testfixture$(TEXE) sqlite3$(TEXE) fuzzershell$(TEXE)
+valgrindtest:	$(TESTPROGS) fuzzershell$(TEXE)
 	valgrind -v ./fuzzershell$(TEXE) -f $(TOP)/test/fuzzdata1.txt
 	OMIT_MISUSE=1 valgrind -v ./testfixture$(TEXE) $(TOP)/test/permutations.test valgrind
 
@@ -1003,12 +1012,12 @@ valgrindtest:	testfixture$(TEXE) sqlite3$(TEXE) fuzzershell$(TEXE)
 # the 60s-era electronics testing:  "Turn it on and see if smoke
 # comes out."
 #
-smoketest:	testfixture$(TEXE) fuzzershell$(TEXE)
+smoketest:	$(TESTPROGS) fuzzershell$(TEXE)
 	./testfixture$(TEXE) $(TOP)/test/main.test
 
 sqlite3_analyzer.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl
 	echo "#define TCLSH 2" > $@
-	echo "#define SQLITE_ENABLE_DBSTAT_VTAB" >> $@
+	echo "#define SQLITE_ENABLE_DBSTAT_VTAB 1" >> $@
 	cat sqlite3.c $(TOP)/src/tclsqlite.c >> $@
 	echo "static const char *tclsh_main_loop(void){" >> $@
 	echo "static const char *zMainloop = " >> $@
@@ -1122,6 +1131,8 @@ clean:
 	rm -f sqlite3_analyzer$(TEXE) sqlite3_analyzer.c
 	rm -f sqlite-*-output.vsix
 	rm -f mptester mptester.exe
+	rm -f fuzzershell fuzzershell.exe
+	rm -f sqldiff sqldiff.exe
 
 distclean:	clean
 	rm -f config.log config.status libtool Makefile sqlite3.pc

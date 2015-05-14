@@ -1139,6 +1139,7 @@ int main(int argc, char **argv){
   char **azExt = 0;
 
   g.zArgv0 = argv[0];
+  sqlite3_config(SQLITE_CONFIG_SINGLETHREAD);
   for(i=1; i<argc; i++){
     const char *z = argv[i];
     if( z[0]=='-' ){
@@ -1158,12 +1159,14 @@ int main(int argc, char **argv){
         showHelp();
         return 0;
       }else
+#ifndef SQLITE_OMIT_LOAD_EXTENSION
       if( strcmp(z,"lib")==0 || strcmp(z,"L")==0 ){
         if( i==argc-1 ) cmdlineError("missing argument to %s", argv[i]);
         azExt = realloc(azExt, sizeof(azExt[0])*(nExt+1));
         if( azExt==0 ) cmdlineError("out of memory");
         azExt[nExt++] = argv[++i];
       }else
+#endif
       if( strcmp(z,"primarykey")==0 ){
         g.bSchemaPK = 1;
       }else
@@ -1199,6 +1202,7 @@ int main(int argc, char **argv){
   if( rc || zErrMsg ){
     cmdlineError("\"%s\" does not appear to be a valid SQLite database", zDb1);
   }
+#ifndef SQLITE_OMIT_LOAD_EXTENSION
   sqlite3_enable_load_extension(g.db, 1);
   for(i=0; i<nExt; i++){
     rc = sqlite3_load_extension(g.db, azExt[i], 0, &zErrMsg);
@@ -1206,6 +1210,7 @@ int main(int argc, char **argv){
       cmdlineError("error loading %s: %s", azExt[i], zErrMsg);
     }
   }
+#endif
   free(azExt);
   zSql = sqlite3_mprintf("ATTACH %Q as aux;", zDb2);
   rc = sqlite3_exec(g.db, zSql, 0, 0, &zErrMsg);
