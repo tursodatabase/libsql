@@ -57,6 +57,10 @@ proc count sql {
 do_test where4-1.1 {
   count {SELECT rowid FROM t1 WHERE w IS NULL}
 } {7 2}
+do_test where4-1.1b {
+  unset -nocomplain null
+  count {SELECT rowid FROM t1 WHERE w IS $null}
+} {7 2}
 do_test where4-1.2 {
   count {SELECT rowid FROM t1 WHERE +w IS NULL}
 } {7 6}
@@ -141,6 +145,17 @@ do_test where4-3.1 {
 do_test where4-3.2 {
   execsql {
     SELECT * FROM t2 LEFT JOIN t3 ON a=x WHERE y IS NULL;
+  }
+} {2 2 {} 3 {} {}}
+do_test where4-3.3 {
+  execsql {
+    SELECT * FROM t2 LEFT JOIN t3 ON a=x WHERE NULL is y;
+  }
+} {2 2 {} 3 {} {}}
+do_test where4-3.4 {
+  unset -nocomplain null
+  execsql {
+    SELECT * FROM t2 LEFT JOIN t3 ON a=x WHERE y IS $null;
   }
 } {2 2 {} 3 {} {}}
 

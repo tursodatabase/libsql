@@ -59,6 +59,7 @@ foreach {tn sql res} {
  12   "SELECT i FROM t1 WHERE a=2 AND b=2 AND i<NULL"      {}
  13   "SELECT i FROM t1 WHERE a=2 AND b=2 AND i>=NULL"     {}
  14   "SELECT i FROM t1 WHERE a=1 AND b='2' AND i<4.5"     {3 4}
+ 15   "SELECT i FROM t1 WHERE rowid IS '12'"               {12}
 } {
   do_execsql_test 1.$tn.1 $sql $res
   do_execsql_test 1.$tn.2 "$sql ORDER BY i ASC"  [lsort -integer -inc  $res]
