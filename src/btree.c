@@ -2429,7 +2429,7 @@ int sqlite3BtreeSetPageSize(Btree *p, int pageSize, int nReserve, int iFix){
   if( pageSize>=512 && pageSize<=SQLITE_MAX_PAGE_SIZE &&
         ((pageSize-1)&pageSize)==0 ){
     assert( (pageSize & 7)==0 );
-    assert( !pBt->pPage1 && !pBt->pCursor );
+    assert( !pBt->pCursor );
     pBt->pageSize = (u32)pageSize;
     freeTempSpace(pBt);
   }
@@ -8537,12 +8537,12 @@ static void checkList(
 **
 ** The heap property is this:  Every node is less than or equal to both
 ** of its daughter nodes.  A consequence of the heap property is that the
-** root node aHeap[1] is always the minimum value current in the heap.
+** root node aHeap[1] is always the minimum value currently in the heap.
 **
 ** The btreeHeapInsert() routine inserts an unsigned 32-bit number onto
 ** the heap, preserving the heap property.  The btreeHeapPull() routine
 ** removes the root element from the heap (the minimum value in the heap)
-** and then move other nodes around as necessary to preserve the heap
+** and then moves other nodes around as necessary to preserve the heap
 ** property.
 **
 ** This heap is used for cell overlap and coverage testing.  Each u32
@@ -8899,8 +8899,7 @@ char *sqlite3BtreeIntegrityCheck(
   }
   i = PENDING_BYTE_PAGE(pBt);
   if( i<=sCheck.nPage ) setPageReferenced(&sCheck, i);
-  sqlite3StrAccumInit(&sCheck.errMsg, zErr, sizeof(zErr), SQLITE_MAX_LENGTH);
-  sCheck.errMsg.useMalloc = 2;
+  sqlite3StrAccumInit(&sCheck.errMsg, 0, zErr, sizeof(zErr), SQLITE_MAX_LENGTH);
 
   /* Check the integrity of the freelist
   */

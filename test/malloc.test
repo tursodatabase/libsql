@@ -923,6 +923,27 @@ do_faultsim_test 41.2 -faults oom* -body {
   faultsim_integrity_check
 }
 
+reset_db
+do_execsql_test 42.0 {
+  CREATE TABLE t1(x INTEGER PRIMARY KEY, y, z);
+  CREATE TABLE t2(a, b);
+  CREATE VIEW a002 AS SELECT *, sum(b) AS m FROM t2 GROUP BY a;
+}
+faultsim_save_and_close
+do_faultsim_test 42 -faults oom-tran* -prep {
+  faultsim_restore_and_reopen
+  execsql { SELECT * FROM sqlite_master }
+} -body {
+  execsql {
+    SELECT t1.z, a002.m
+    FROM t1 JOIN a002 ON t1.y=a002.m
+    WHERE t1.x IN (1,2,3);
+  }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+
 # Ensure that no file descriptors were leaked.
 do_test malloc-99.X {
   catch {db close}

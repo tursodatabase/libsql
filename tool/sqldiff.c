@@ -497,7 +497,7 @@ static void diff_one_table(const char *zTab, FILE *out){
   char **az2 = 0;           /* Columns in aux */
   int nPk;                  /* Primary key columns in main */
   int nPk2;                 /* Primary key columns in aux */
-  int n;                    /* Number of columns in main */
+  int n = 0;                /* Number of columns in main */
   int n2;                   /* Number of columns in aux */
   int nQ;                   /* Number of output columns in the diff query */
   int i;                    /* Loop counter */
@@ -734,7 +734,7 @@ static void summarize_one_table(const char *zTab, FILE *out){
   char **az2 = 0;           /* Columns in aux */
   int nPk;                  /* Primary key columns in main */
   int nPk2;                 /* Primary key columns in aux */
-  int n;                    /* Number of columns in main */
+  int n = 0;                /* Number of columns in main */
   int n2;                   /* Number of columns in aux */
   int i;                    /* Loop counter */
   const char *zSep;         /* Separator string */
@@ -897,19 +897,19 @@ static void putValue(FILE *out, sqlite3_value *pVal){
       for(j=56; j>=0; j-=8) putc((uX>>j)&0xff, out);
       break;
     case SQLITE_FLOAT:
-      rX = sqlite3_value_int64(pVal);
+      rX = sqlite3_value_double(pVal);
       memcpy(&uX, &rX, 8);
       for(j=56; j>=0; j-=8) putc((uX>>j)&0xff, out);
       break;
     case SQLITE_TEXT:
       iX = sqlite3_value_bytes(pVal);
       putsVarint(out, (sqlite3_uint64)iX);
-      fwrite(sqlite3_value_text(pVal),1,iX,out);
+      fwrite(sqlite3_value_text(pVal),1,(size_t)iX,out);
       break;
     case SQLITE_BLOB:
       iX = sqlite3_value_bytes(pVal);
       putsVarint(out, (sqlite3_uint64)iX);
-      fwrite(sqlite3_value_blob(pVal),1,iX,out);
+      fwrite(sqlite3_value_blob(pVal),1,(size_t)iX,out);
       break;
     case SQLITE_NULL:
       break;
@@ -1116,6 +1116,7 @@ static void showHelp(void){
 "Output SQL text that would transform DB1 into DB2.\n"
 "Options:\n"
 "  --changeset FILE      Write a CHANGESET into FILE\n"
+"  -L|--lib LIBRARY      Load an SQLite extension library\n"
 "  --primarykey          Use schema-defined PRIMARY KEYs\n"
 "  --schema              Show only differences in the schema\n"
 "  --summary             Show only a summary of the differences\n"
@@ -1134,25 +1135,38 @@ int main(int argc, char **argv){
   char *zTab = 0;
   FILE *out = stdout;
   void (*xDiff)(const char*,FILE*) = diff_one_table;
+  int nExt = 0;
+  char **azExt = 0;
 
   g.zArgv0 = argv[0];
+  sqlite3_config(SQLITE_CONFIG_SINGLETHREAD);
   for(i=1; i<argc; i++){
     const char *z = argv[i];
     if( z[0]=='-' ){
       z++;
       if( z[0]=='-' ) z++;
       if( strcmp(z,"changeset")==0 ){
+        if( i==argc-1 ) cmdlineError("missing argument to %s", argv[i]);
         out = fopen(argv[++i], "wb");
         if( out==0 ) cmdlineError("cannot open: %s", argv[i]);
         xDiff = changeset_one_table;
       }else
       if( strcmp(z,"debug")==0 ){
+        if( i==argc-1 ) cmdlineError("missing argument to %s", argv[i]);
         g.fDebug = strtol(argv[++i], 0, 0);
       }else
       if( strcmp(z,"help")==0 ){
         showHelp();
         return 0;
       }else
+#ifndef SQLITE_OMIT_LOAD_EXTENSION
+      if( strcmp(z,"lib")==0 || strcmp(z,"L")==0 ){
+        if( i==argc-1 ) cmdlineError("missing argument to %s", argv[i]);
+        azExt = realloc(azExt, sizeof(azExt[0])*(nExt+1));
+        if( azExt==0 ) cmdlineError("out of memory");
+        azExt[nExt++] = argv[++i];
+      }else
+#endif
       if( strcmp(z,"primarykey")==0 ){
         g.bSchemaPK = 1;
       }else
@@ -1163,6 +1177,7 @@ int main(int argc, char **argv){
         xDiff = summarize_one_table;
       }else
       if( strcmp(z,"table")==0 ){
+        if( i==argc-1 ) cmdlineError("missing argument to %s", argv[i]);
         zTab = argv[++i];
       }else
       {
@@ -1187,6 +1202,16 @@ int main(int argc, char **argv){
   if( rc || zErrMsg ){
     cmdlineError("\"%s\" does not appear to be a valid SQLite database", zDb1);
   }
+#ifndef SQLITE_OMIT_LOAD_EXTENSION
+  sqlite3_enable_load_extension(g.db, 1);
+  for(i=0; i<nExt; i++){
+    rc = sqlite3_load_extension(g.db, azExt[i], 0, &zErrMsg);
+    if( rc || zErrMsg ){
+      cmdlineError("error loading %s: %s", azExt[i], zErrMsg);
+    }
+  }
+#endif
+  free(azExt);
   zSql = sqlite3_mprintf("ATTACH %Q as aux;", zDb2);
   rc = sqlite3_exec(g.db, zSql, 0, 0, &zErrMsg);
   if( rc || zErrMsg ){

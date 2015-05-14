@@ -216,4 +216,22 @@ foreach PGSZ {512 2048 4096 8192} {
   } [list $PGSZ $PGSZ]
 }
 
+reset_db
+do_execsql_test pagesize-3.1 {
+  BEGIN;
+  SELECT * FROM sqlite_master;
+  PRAGMA page_size=2048;
+  PRAGMA main.page_size;
+} {1024}
+do_execsql_test pagesize-3.2 {
+  CREATE TABLE t1(x);
+  COMMIT;
+}
+do_execsql_test pagesize-3.3 {
+  BEGIN;
+    PRAGMA page_size = 2048;
+  COMMIT;
+  PRAGMA main.page_size;
+} {1024}
+
 finish_test

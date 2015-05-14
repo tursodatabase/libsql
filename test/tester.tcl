@@ -666,6 +666,15 @@ proc do_test {name cmd expected} {
   flush stdout
 }
 
+proc dumpbytes {s} {
+  set r ""
+  for {set i 0} {$i < [string length $s]} {incr i} {
+    if {$i > 0} {append r " "}
+    append r [format %02X [scan [string index $s $i] %c]]
+  }
+  return $r
+}
+
 proc catchcmd {db {cmd ""}} {
   global CLI
   set out [open cmds.txt w]
@@ -673,6 +682,30 @@ proc catchcmd {db {cmd ""}} {
   close $out
   set line "exec $CLI $db < cmds.txt"
   set rc [catch { eval $line } msg]
+  list $rc $msg
+}
+
+proc catchcmdex {db {cmd ""}} {
+  global CLI
+  set out [open cmds.txt w]
+  fconfigure $out -encoding binary -translation binary
+  puts -nonewline $out $cmd
+  close $out
+  set line "exec -keepnewline -- $CLI $db < cmds.txt"
+  set chans [list stdin stdout stderr]
+  foreach chan $chans {
+    catch {
+      set modes($chan) [fconfigure $chan]
+      fconfigure $chan -encoding binary -translation binary -buffering none
+    }
+  }
+  set rc [catch { eval $line } msg]
+  foreach chan $chans {
+    catch {
+      eval fconfigure [list $chan] $modes($chan)
+    }
+  }
+  # puts [dumpbytes $msg]
   list $rc $msg
 }
 

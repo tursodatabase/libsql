@@ -55,6 +55,18 @@ int sqlite3_libversion_number(void){ return SQLITE_VERSION_NUMBER; }
 */
 int sqlite3_threadsafe(void){ return SQLITE_THREADSAFE; }
 
+/*
+** When compiling the test fixture or with debugging enabled (on Win32),
+** this variable being set to non-zero will cause OSTRACE macros to emit
+** extra diagnostic information.
+*/
+#ifdef SQLITE_HAVE_OS_TRACE
+# ifndef SQLITE_DEBUG_OS_TRACE
+#   define SQLITE_DEBUG_OS_TRACE 0
+# endif
+  int sqlite3OSTrace = SQLITE_DEBUG_OS_TRACE;
+#endif
+
 #if !defined(SQLITE_OMIT_TRACE) && defined(SQLITE_ENABLE_IOTRACE)
 /*
 ** If the following function pointer is not NULL and if
@@ -1194,7 +1206,7 @@ void sqlite3RollbackAll(sqlite3 *db, int tripCode){
 ** Return a static string containing the name corresponding to the error code
 ** specified in the argument.
 */
-#if (defined(SQLITE_DEBUG) && SQLITE_OS_WIN) || defined(SQLITE_TEST)
+#if defined(SQLITE_NEED_ERR_NAME)
 const char *sqlite3ErrName(int rc){
   const char *zName = 0;
   int i, origRc = rc;
@@ -2419,14 +2431,14 @@ int sqlite3ParseUri(
     int eState;                   /* Parser state when parsing URI */
     int iIn;                      /* Input character index */
     int iOut = 0;                 /* Output character index */
-    int nByte = nUri+2;           /* Bytes of space to allocate */
+    u64 nByte = nUri+2;           /* Bytes of space to allocate */
 
     /* Make sure the SQLITE_OPEN_URI flag is set to indicate to the VFS xOpen 
     ** method that there may be extra parameters following the file-name.  */
     flags |= SQLITE_OPEN_URI;
 
     for(iIn=0; iIn<nUri; iIn++) nByte += (zUri[iIn]=='&');
-    zFile = sqlite3_malloc(nByte);
+    zFile = sqlite3_malloc64(nByte);
     if( !zFile ) return SQLITE_NOMEM;
 
     iIn = 5;
@@ -2592,7 +2604,7 @@ int sqlite3ParseUri(
     }
 
   }else{
-    zFile = sqlite3_malloc(nUri+2);
+    zFile = sqlite3_malloc64(nUri+2);
     if( !zFile ) return SQLITE_NOMEM;
     memcpy(zFile, zUri, nUri);
     zFile[nUri] = '\0';
@@ -2861,6 +2873,12 @@ static int openDatabase(
 #ifdef SQLITE_ENABLE_RTREE
   if( !db->mallocFailed && rc==SQLITE_OK){
     rc = sqlite3RtreeInit(db);
+  }
+#endif
+
+#ifdef SQLITE_ENABLE_DBSTAT_VTAB
+  if( !db->mallocFailed && rc==SQLITE_OK){
+    rc = sqlite3DbstatRegister(db);
   }
 #endif
 
