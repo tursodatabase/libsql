@@ -317,13 +317,14 @@ do_execsql_test 10.0 {
   COMMIT;
 }
 
-}
-
 do_faultsim_test 10.1 -faults oom-t* -body {
   db one { SELECT fts5_expr('a AND b NEAR(a b)') }
 } -test {
   faultsim_test_result {0 {"a" AND ("b" AND NEAR("a" "b", 10))}} 
 }
+
+}
+
 
 #do_faultsim_test 10.2 -faults oom-t* -body {
 #  db one { SELECT fts5_expr_tcl('x:"a b c" AND b NEAR(a b)', 'ns', 'x') }
@@ -331,7 +332,6 @@ do_faultsim_test 10.1 -faults oom-t* -body {
 #  set res {[ns -col 0 -- {a b c}] && ([ns -- {b}] && [ns -near 10 -- {a} {b}]}
 #  faultsim_test_result [list 0 $res]
 #}
-
 
 
 finish_test

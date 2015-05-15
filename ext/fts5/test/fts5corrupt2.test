@@ -31,6 +31,7 @@ do_execsql_test 1.0 {
 }
 set mask [expr 31 << 31]
 
+if 1 {
 
 # Test 1:
 #
@@ -114,6 +115,8 @@ for {set i [expr $nbyte-2]} {$i>=0} {incr i -1} {
   } {}
 }
 
+}
+
 #-------------------------------------------------------------------------
 # Test that corruption in leaf page headers is detected by queries that use
 # doclist-indexes.
@@ -130,17 +133,21 @@ do_execsql_test 3.0 {
 foreach {tn hdr} {
   1 "\x00\x00\x00\x00"
   2 "\xFF\xFF\xFF\xFF"
+  3 "\x44\x45"
 } {
   set tn2 0
   set nCorrupt 0
+  set nCorrupt2 0
   foreach rowid [db eval {SELECT rowid FROM x3_data WHERE rowid>10}] {
     if {$rowid & $mask} continue
     incr tn2
-    do_test 3.$tn.$tn2 {
+    do_test 3.$tn.$tn2.1 {
       execsql BEGIN
 
       set fd [db incrblob main x3_data block $rowid]
       fconfigure $fd -encoding binary -translation binary
+      set existing [read $fd [string length $hdr]]
+      seek $fd 0
       puts -nonewline $fd $hdr
       close $fd
 
@@ -148,6 +155,12 @@ foreach {tn hdr} {
       if {$res == "1 {database disk image is malformed}"} {incr nCorrupt}
       set {} 1
     } {1}
+
+    if {($tn2 % 10)==0 && $existing != $hdr} {
+      do_test 3.$tn.$tn2.2 {
+        catchsql { INSERT INTO x3(x3) VALUES('integrity-check') }
+      } {1 {database disk image is malformed}}
+    }
 
     execsql ROLLBACK
   }

@@ -2071,15 +2071,9 @@ static void fts5SegIterReverse(Fts5Index *p, Fts5SegIter *pIter){
   int pgnoLast = 0;
 
   if( pDlidx ){
-    /* If the doclist-iterator is already at EOF, then the current doclist
-    ** contains no entries except those on the current page. */
-    if( fts5DlidxIterEof(p, pDlidx)==0 ){
-      int iSegid = pIter->pSeg->iSegid;
-      pgnoLast = fts5DlidxIterPgno(pDlidx);
-      pLast = fts5DataRead(p, FTS5_SEGMENT_ROWID(iSegid, 0, pgnoLast));
-    }else{
-      pIter->iLeafOffset -= sqlite3Fts5GetVarintLen(pIter->nPos*2+pIter->bDel);
-    }
+    int iSegid = pIter->pSeg->iSegid;
+    pgnoLast = fts5DlidxIterPgno(pDlidx);
+    pLast = fts5DataRead(p, FTS5_SEGMENT_ROWID(iSegid, 0, pgnoLast));
   }else{
     int iOff;                               /* Byte offset within pLeaf */
     Fts5Data *pLeaf = pIter->pLeaf;         /* Current leaf data */
@@ -3430,8 +3424,7 @@ static void fts5WriteInit(
   pWriter->iSegid = iSegid;
 
   pWriter->aWriter = (Fts5PageWriter*)fts5IdxMalloc(p, sizeof(Fts5PageWriter));
-  pWriter->aDlidx = (Fts5DlidxWriter*)fts5IdxMalloc(p, sizeof(Fts5DlidxWriter));
-  if( pWriter->aDlidx==0 ) return;
+  if( fts5WriteDlidxGrow(p, pWriter, 1) ) return;
   pWriter->nWriter = 1;
   pWriter->nDlidx = 1;
   pWriter->aWriter[0].pgno = 1;
@@ -3902,7 +3895,7 @@ static void fts5FlushOneHash(Fts5Index *p){
         /* The entire doclist will not fit on this leaf. The following 
         ** loop iterates through the poslists that make up the current 
         ** doclist.  */
-        while( iOff<nDoclist ){
+        while( p->rc==SQLITE_OK && iOff<nDoclist ){
           int nPos;
           int nCopy;
           int bDummy;
@@ -3931,7 +3924,7 @@ static void fts5FlushOneHash(Fts5Index *p){
             ** that each varint must be stored contiguously.  */
             const u8 *pPoslist = &pDoclist[iOff];
             int iPos = 0;
-            while( 1 ){
+            while( p->rc==SQLITE_OK ){
               int nSpace = pgsz - pBuf->n;
               int n = 0;
               if( (nCopy - iPos)<=nSpace ){
@@ -3990,7 +3983,7 @@ static void fts5FlushOneHash(Fts5Index *p){
 */
 static void fts5IndexFlush(Fts5Index *p){
   /* Unless it is empty, flush the hash table to disk */
-  if( p->rc==SQLITE_OK && p->nPendingData ){
+  if( p->nPendingData ){
     assert( p->pHash );
     p->nPendingData = 0;
     fts5FlushOneHash(p);
@@ -4337,6 +4330,7 @@ int sqlite3Fts5IndexBeginWrite(Fts5Index *p, i64 iRowid){
     p->rc = sqlite3Fts5HashNew(&p->pHash, &p->nPendingData);
   }
 
+  /* Flush the hash table to disk if required */
   if( iRowid<=p->iWriteRowid || (p->nPendingData > p->nMaxPendingData) ){
     fts5IndexFlush(p);
   }
@@ -4932,7 +4926,6 @@ static void fts5DlidxIterTestReverse(
   ){
     i64 iRowid = fts5DlidxIterRowid(pDlidx);
     int pgno = fts5DlidxIterPgno(pDlidx);
-
     assert( fts5DlidxIterPgno(pDlidx)>iLeaf );
     cksum2 += iRowid + ((i64)pgno<<32);
   }
@@ -4971,22 +4964,30 @@ static void fts5IndexIntegrityCheckSegment(
     if( pLeaf==0 ) break;
 
     /* Check that the leaf contains at least one term, and that it is equal
-    ** to or larger than the split-key in iter.term.  */
+    ** to or larger than the split-key in iter.term.  Also check that if there
+    ** is also a rowid pointer within the leaf page header, it points to a
+    ** location before the term.  */
     iOff = fts5GetU16(&pLeaf->p[2]);
     if( iOff==0 ){
       p->rc = FTS5_CORRUPT;
     }else{
+      int iRowidOff;
       int nTerm;                  /* Size of term on leaf in bytes */
       int res;                    /* Comparison of term and split-key */
-      iOff += fts5GetVarint32(&pLeaf->p[iOff], nTerm);
-      res = memcmp(&pLeaf->p[iOff], iter.term.p, MIN(nTerm, iter.term.n));
-      if( res==0 ) res = nTerm - iter.term.n;
-      if( res<0 ){
+
+      iRowidOff = fts5GetU16(&pLeaf->p[0]);
+      if( iRowidOff>=iOff ){
         p->rc = FTS5_CORRUPT;
+      }else{
+        iOff += fts5GetVarint32(&pLeaf->p[iOff], nTerm);
+        res = memcmp(&pLeaf->p[iOff], iter.term.p, MIN(nTerm, iter.term.n));
+        if( res==0 ) res = nTerm - iter.term.n;
+        if( res<0 ) p->rc = FTS5_CORRUPT;
       }
     }
     fts5DataRelease(pLeaf);
     if( p->rc ) break;
+
 
     /* Now check that the iter.nEmpty leaves following the current leaf
     ** (a) exist and (b) contain no terms. */

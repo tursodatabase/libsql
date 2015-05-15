@@ -344,36 +344,36 @@ static int fts5VocabNextMethod(sqlite3_vtab_cursor *pCursor){
       pCsr->iCol = 0;
 
       assert( pTab->eType==FTS5_VOCAB_COL || pTab->eType==FTS5_VOCAB_ROW );
-      while( 1 ){
+      while( rc==SQLITE_OK ){
         const u8 *pPos; int nPos;   /* Position list */
         i64 iPos = 0;               /* 64-bit position read from poslist */
         int iOff = 0;               /* Current offset within position list */
 
         rc = sqlite3Fts5IterPoslist(pCsr->pIter, &pPos, &nPos);
-        if( rc!=SQLITE_OK ) break;
-
-        if( pTab->eType==FTS5_VOCAB_ROW ){
-          while( 0==sqlite3Fts5PoslistNext64(pPos, nPos, &iOff, &iPos) ){
-            pCsr->aVal[1]++;
-          }
-          pCsr->aVal[0]++;
-        }else{
-          int iCol = -1;
-          while( 0==sqlite3Fts5PoslistNext64(pPos, nPos, &iOff, &iPos) ){
-            int ii = FTS5_POS2COLUMN(iPos);
-            pCsr->aCnt[ii]++;
-            if( iCol!=ii ){
-              pCsr->aDoc[ii]++;
-              iCol = ii;
+        if( rc==SQLITE_OK ){
+          if( pTab->eType==FTS5_VOCAB_ROW ){
+            while( 0==sqlite3Fts5PoslistNext64(pPos, nPos, &iOff, &iPos) ){
+              pCsr->aVal[1]++;
+            }
+            pCsr->aVal[0]++;
+          }else{
+            int iCol = -1;
+            while( 0==sqlite3Fts5PoslistNext64(pPos, nPos, &iOff, &iPos) ){
+              int ii = FTS5_POS2COLUMN(iPos);
+              pCsr->aCnt[ii]++;
+              if( iCol!=ii ){
+                pCsr->aDoc[ii]++;
+                iCol = ii;
+              }
             }
           }
+          rc = sqlite3Fts5IterNextScan(pCsr->pIter);
         }
-
-        rc = sqlite3Fts5IterNextScan(pCsr->pIter);
-        if( rc!=SQLITE_OK ) break;
-        zTerm = sqlite3Fts5IterTerm(pCsr->pIter, &nTerm);
-        if( nTerm!=pCsr->term.n || memcmp(zTerm, pCsr->term.p, nTerm) ) break;
-        if( sqlite3Fts5IterEof(pCsr->pIter) ) break;
+        if( rc==SQLITE_OK ){
+          zTerm = sqlite3Fts5IterTerm(pCsr->pIter, &nTerm);
+          if( nTerm!=pCsr->term.n || memcmp(zTerm, pCsr->term.p, nTerm) ) break;
+          if( sqlite3Fts5IterEof(pCsr->pIter) ) break;
+        }
       }
     }
   }

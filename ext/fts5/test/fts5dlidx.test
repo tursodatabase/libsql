@@ -26,11 +26,6 @@ proc do_fb_test {tn sql res} {
   uplevel [list do_execsql_test $tn.2 "$sql ORDER BY rowid DESC" $res2]
 }
 
-do_execsql_test 1.0 { 
-  CREATE VIRTUAL TABLE t1 USING fts5(x);
-  INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
-}
-
 # This test populates the FTS5 table containing $nEntry entries. Rows are 
 # numbered from 0 to ($nEntry-1). The rowid for row $i is:
 #
@@ -61,9 +56,9 @@ proc do_dlidx_test1 {tn spc1 spc2 nEntry iFirst nStep} {
     }
     execsql { INSERT INTO t1(rowid, x) VALUES($rowid, $doc) }
   }
-  breakpoint
   execsql COMMIT
 
+  breakpoint
   do_test $tn.1 {
     execsql { INSERT INTO t1(t1) VALUES('integrity-check') }
   } {}
@@ -81,12 +76,51 @@ proc do_dlidx_test1 {tn spc1 spc2 nEntry iFirst nStep} {
 }
 
 
-do_dlidx_test1 1.1     10 100 10000 0 1000
-do_dlidx_test1 1.2     10 10  10000 0 128
-do_dlidx_test1 1.3     10 10  66   0 36028797018963970
-do_dlidx_test1 1.4     10 10  50    0 150000000000000000
+foreach {tn pgsz} {
+  1 32
+  2 200
+} {
+  do_execsql_test $tn.0 { 
+    DROP TABLE IF EXISTS t1;
+    CREATE VIRTUAL TABLE t1 USING fts5(x);
+    INSERT INTO t1(t1, rank) VALUES('pgsz', $pgsz);
+  }
 
+  do_dlidx_test1 1.$tn.1     10 100 10000 0 1000
+  do_dlidx_test1 1.$tn.2     10 10  10000 0 128
+  do_dlidx_test1 1.$tn.3     10 10  66    0 36028797018963970
+  do_dlidx_test1 1.$tn.4     10 10  50    0 150000000000000000
+  do_dlidx_test1 1.$tn.5     10 10  200   0 [expr 1<<55]
+  do_dlidx_test1 1.$tn.6      10 10  30    0 [expr 1<<58]
+}
 
+proc do_dlidx_test2 {tn nEntry iFirst nStep} {
+  set str [string repeat "a " 500]
+  execsql {
+    BEGIN;
+    DROP TABLE IF EXISTS t1;
+    CREATE VIRTUAL TABLE t1 USING fts5(x);
+    INSERT INTO t1(t1, rank) VALUES('pgsz', 64);
+    INSERT INTO t1 VALUES('b a');
+
+    WITH iii(ii, i) AS (
+      SELECT 1,     $iFirst UNION ALL 
+      SELECT ii+1, i+$nStep FROM iii WHERE ii<$nEntry
+    )
+    INSERT INTO t1(rowid,x) SELECT i, $str FROM iii;
+    COMMIT;
+  }
+
+  do_execsql_test $tn.1 {
+    SELECT rowid FROM t1 WHERE t1 MATCH 'b AND a'
+  } {1}
+  breakpoint
+  do_execsql_test $tn.2 {
+    SELECT rowid FROM t1 WHERE t1 MATCH 'b AND a' ORDER BY rowid DESC
+  } {1}
+}
+
+do_dlidx_test2 2.1 [expr 20] [expr 1<<57] [expr (1<<57) + 128]
 
 finish_test
 
