@@ -1,5 +1,5 @@
-C Simplifications\sto\serror\smessage\sprocessing.\s\sFix\sa\spossible\sproblem\sin\serror\nmessage\sformatting\swhen\svacuuming\sa\sdatabase\swith\sa\scorrupt\sschema.
-D 2015-05-15T04:13:15.980
+C Do\snot\sassume\sthat\s"col\sIS\s?"\smatches\sat\smost\sa\ssingle\srow\sof\sa\sUNIQUE\scolumn\sunless\sthe\scolumn\sis\salso\sNOT\sNULL.
+D 2015-05-15T19:59:23.465
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in edfc69769e613a6359c42c06ea1d42c3bece1736
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -307,7 +307,7 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c ce2cb2d06faab54d1bce3e739bec79e063dd9113
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
-F src/where.c 08fadd0d211699348349be5449f3a1e391adf20e
+F src/where.c 78dd9fc79b44be2a0eb37f4315b6785592cc000b
 F src/whereInt.h a6f5a762bc1b4b1c76e1cea79976b437ac35a435
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1168,7 +1168,7 @@ F test/walthread.test de8dbaf6d9e41481c460ba31ca61e163d7348f8e
 F test/where.test 1ff3d9f8da0a6c0dc5ccfd38d9225b2cdb5b6afb
 F test/where2.test 23fdb5d8e756554aad4ca7ae03de9dd8367a2c6e
 F test/where3.test 1ad55ba900bd7747f98b6082e65bd3e442c5004e
-F test/where4.test a4603fa0d018bd4b9430dac840c9c522af421dd5
+F test/where4.test 68aa5ad796e33816db2078bc0f6de719c7a0e21f
 F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
 F test/where6.test 5da5a98cec820d488e82708301b96cb8c18a258b
 F test/where7.test 5a4b0abc207d71da4deecd734ad8579e8dd40aa8
@@ -1258,7 +1258,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P be438d049dd9d7aa6b88db8314eaa11bdd7af5b9
-R 71064bfce8a81bd8d5b829a20a3cc70a
-U drh
-Z 79e4b5f5046076a826cf4c89f92e95b1
+P 56ef98a04765c34c1c2f3ed7a6f03a732f3b886e
+R 40b8a98e6255d5ebcc7a2294b397be72
+U dan
+Z 3608bbb309c9166edff355d025615d3b
