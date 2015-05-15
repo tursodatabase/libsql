@@ -208,4 +208,15 @@ do_test misc4-6.2 {
   }
 } {1}
 
+# 2015-05-15.  Error message formatting problem.
+#
+db close
+sqlite3 db :memory:
+do_catchsql_test misc4-7.1 {
+  CREATE TABLE t7(x);
+  PRAGMA writable_schema=ON;
+  UPDATE sqlite_master SET sql='CREATE TABLE [M%s%s%s%s%s%s%s%s%s%s%s%s%s';
+  VACUUM;
+} {1 {unrecognized token: "[M%s%s%s%s%s%s%s%s%s%s%s%s%s"}}
+
 finish_test

@@ -3151,7 +3151,6 @@ void sqlite3VXPrintf(StrAccum*, u32, const char*, va_list);
 void sqlite3XPrintf(StrAccum*, u32, const char*, ...);
 char *sqlite3MPrintf(sqlite3*,const char*, ...);
 char *sqlite3VMPrintf(sqlite3*,const char*, va_list);
-char *sqlite3MAppendf(sqlite3*,char*,const char*,...);
 #if defined(SQLITE_DEBUG) || defined(SQLITE_HAVE_OS_TRACE)
   void sqlite3DebugPrintf(const char*, ...);
 #endif
@@ -3170,7 +3169,7 @@ char *sqlite3MAppendf(sqlite3*,char*,const char*,...);
 #endif
 
 
-void sqlite3SetString(char **, sqlite3*, const char*, ...);
+void sqlite3SetString(char **, sqlite3*, const char*);
 void sqlite3ErrorMsg(Parse*, const char*, ...);
 int sqlite3Dequote(char*);
 int sqlite3KeywordCode(const unsigned char*, int);

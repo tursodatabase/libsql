@@ -1,5 +1,5 @@
-C Increase\sthe\sversion\snumber\sto\s3.8.11.\s\sUpgrade\sautoconf\sfrom\s2.62\sto\s2.69.
-D 2015-05-14T15:39:18.685
+C Simplifications\sto\serror\smessage\sprocessing.\s\sFix\sa\spossible\sproblem\sin\serror\nmessage\sformatting\swhen\svacuuming\sa\sdatabase\swith\sa\scorrupt\sschema.
+D 2015-05-15T04:13:15.980
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in edfc69769e613a6359c42c06ea1d42c3bece1736
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -197,7 +197,7 @@ F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
 F src/loadext.c 29255bbe1cfb2ce9bbff2526a5ecfddcb49b9271
 F src/main.c bf14bc6a321965e528d8ab30087e9440335f2e4b
-F src/malloc.c 5bc15d525811d387b37c29f2e368143460e41e96
+F src/malloc.c 908c780fdddd472163c2d1b1820ae4081f01ad20
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c abe6ee469b6c5a35c7f22bfeb9c9bac664a1c987
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
@@ -226,8 +226,8 @@ F src/pcache.h b44658c9c932d203510279439d891a2a83e12ba8
 F src/pcache1.c 69d137620a305f814398bd29a0c998038c0695e9
 F src/pragma.c c1f4d012ea9f6b1ce52d341b2cd0ad72d560afd7
 F src/pragma.h 09c89bca58e9a44de2116cc8272b8d454657129f
-F src/prepare.c 1fffbdcd6f8a0173a8f70d71f22528f4c0e1e3d3
-F src/printf.c 54dd6dce95454fadffa3ebf7717c5f6c06250d1d
+F src/prepare.c 82e5db1013846a819f198336fed72c44c974e7b1
+F src/printf.c 13ce37e5574f9b0682fa86dbcf9faf76b9d82a15
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 99eabf7eff0bfa65b75939b46caa82e2b2133f28
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
@@ -236,7 +236,7 @@ F src/shell.c 07dda7cd692911d2f22269953418d049f2e2c0ee
 F src/sqlite.h.in bf3fe5eba3a5142477b8dae3cfce627c3e971455
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
-F src/sqliteInt.h c9f77bd02f419dcc8c644c5032c42eb29069a545
+F src/sqliteInt.h 88738d94a343000e7a5c0e295d111c4cfccb18b0
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c f266ad8a2892d659b74f0f50cb6a88b6e7c12179
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
@@ -287,17 +287,17 @@ F src/test_vfs.c 3b65d42e18b262805716bd96178c81da8f2d9283
 F src/test_vfstrace.c bab9594adc976cbe696ff3970728830b4c5ed698
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 6bbcc9fe50c917864d48287b4792d46d6e873481
-F src/tokenize.c b15511a2396641792f386ceb440d1d922972a78e
+F src/tokenize.c af8cbbca6db6b664ffecafa236b06629ef6d35c4
 F src/trigger.c 322f23aad694e8f31d384dcfa386d52a48d3c52f
 F src/update.c 3c4ecc282accf12d39edb8d524cf089645e55a13
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c a6431c92803b975b7322724a7b433e538d243539
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c d437887d02d13d79dc69ac018f788aefac3b3972
+F src/vdbe.c 8775967d8ae262f4134a34f539b8747b23421000
 F src/vdbe.h 7e538ecf47dccb307ea2d087c3ddc2dd8d70e79d
-F src/vdbeInt.h 9cbaa84f53ddd2d09a0cf61a94337a3a035d08a0
+F src/vdbeInt.h de3291a6688dfef9f61d47705c1bd57008b1185d
 F src/vdbeapi.c 583d56b129dd27f12bed518270de9ebe521e6a75
-F src/vdbeaux.c 03591cca98ec50e1493043f0ff7abbece0b9c83d
+F src/vdbeaux.c efe1667d31e8648dbe04a441e5aa9b62dbee2f03
 F src/vdbeblob.c 4f2e8e075d238392df98c5e03a64342465b03f90
 F src/vdbemem.c 7bfbeef0978a2e1a05d979641fdbf7c189b7ddf4
 F src/vdbesort.c f5009e7a35e3065635d8918b9a31f498a499976b
@@ -750,7 +750,7 @@ F test/minmax4.test 936941484ebdceb8adec7c86b6cd9b6e5e897c1f
 F test/misc1.test 783ba75743b2cf71e0f646bf540a6cef57264811
 F test/misc2.test 00d7de54eda90e237fc9a38b9e5ccc769ebf6d4d
 F test/misc3.test cf3dda47d5dda3e53fc5804a100d3c82be736c9d
-F test/misc4.test 9c078510fbfff05a9869a0b6d8b86a623ad2c4f6
+F test/misc4.test 21c3a52354c022d2388a40c5082e9348e041bef7
 F test/misc5.test f96428ea95b3820aafc6f1c50cf48a09e4597ee1
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test edd0b63e2ee29a256900b0514f6fff27e19e9bb2
@@ -1258,7 +1258,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3428043cd00294457548bb07ada2ad526b6532d6
-R c07bb644a4970dea0428c10e9d8b15e9
+P be438d049dd9d7aa6b88db8314eaa11bdd7af5b9
+R 71064bfce8a81bd8d5b829a20a3cc70a
 U drh
-Z daab10dd46a6d0c5e5daa86cd7f31c23
+Z 79e4b5f5046076a826cf4c89f92e95b1
