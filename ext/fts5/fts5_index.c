@@ -3462,9 +3462,6 @@ static void fts5WriteInitForAppend(
         fts5NodeIterFree(&ss);
       }
     }
-    if( pSeg->nHeight==1 ){
-      pWriter->nEmpty = pSeg->pgnoLast-1;
-    }
     assert( p->rc!=SQLITE_OK || (pgno+pWriter->nEmpty)==pSeg->pgnoLast );
     pWriter->bFirstTermInPage = 1;
     assert( pWriter->aWriter[0].term.n==0 );
@@ -4051,8 +4048,10 @@ int sqlite3Fts5IndexMerge(Fts5Index *p, int nMerge){
   Fts5Structure *pStruct;
 
   pStruct = fts5StructureRead(p);
-  fts5IndexMerge(p, &pStruct, nMerge);
-  fts5StructureWrite(p, pStruct);
+  if( pStruct && pStruct->nLevel ){
+    fts5IndexMerge(p, &pStruct, nMerge);
+    fts5StructureWrite(p, pStruct);
+  }
   fts5StructureRelease(pStruct);
 
   return fts5IndexReturn(p);
@@ -4533,21 +4532,21 @@ int sqlite3Fts5IndexQuery(
     memcpy(&buf.p[1], pToken, nToken);
   }
 
+#ifdef SQLITE_DEBUG
+  if( flags & FTS5INDEX_QUERY_TEST_NOIDX ){
+    assert( flags & FTS5INDEX_QUERY_PREFIX );
+    iIdx = 1+pConfig->nPrefix;
+  }else
+#endif
   if( flags & FTS5INDEX_QUERY_PREFIX ){
-    if( flags & FTS5INDEX_QUERY_TEST_NOIDX ){
-      iIdx = 1+pConfig->nPrefix;
-    }else{
-      int nChar = fts5IndexCharlen(pToken, nToken);
-      for(iIdx=1; iIdx<=pConfig->nPrefix; iIdx++){
-        if( pConfig->aPrefix[iIdx-1]==nChar ) break;
-      }
+    int nChar = fts5IndexCharlen(pToken, nToken);
+    for(iIdx=1; iIdx<=pConfig->nPrefix; iIdx++){
+      if( pConfig->aPrefix[iIdx-1]==nChar ) break;
     }
   }
 
   pRet = (Fts5IndexIter*)sqlite3Fts5MallocZero(&p->rc, sizeof(Fts5IndexIter));
   if( pRet ){
-    memset(pRet, 0, sizeof(Fts5IndexIter));
-
     pRet->pIndex = p;
     if( iIdx<=pConfig->nPrefix ){
       buf.p[0] = FTS5_MAIN_PREFIX + iIdx;
@@ -4890,6 +4889,7 @@ static void fts5BtreeIterFree(Fts5BtreeIter *pIter){
   fts5BufferFree(&pIter->term);
 }
 
+#ifdef SQLITE_DEBUG
 /*
 ** This function is purely an internal test. It does not contribute to 
 ** FTS functionality, or even the integrity-check, in any way.
@@ -4898,8 +4898,7 @@ static void fts5BtreeIterFree(Fts5BtreeIter *pIter){
 ** visited regardless of whether the doclist-index identified by parameters
 ** iSegid/iLeaf is iterated in forwards or reverse order.
 */
-#ifdef SQLITE_DEBUG
-static void fts5DlidxIterTestReverse(
+static void fts5TestDlidxReverse(
   Fts5Index *p, 
   int iSegid,                     /* Segment id to load from */
   int iLeaf                       /* Load doclist-index for this leaf */
@@ -4934,8 +4933,107 @@ static void fts5DlidxIterTestReverse(
 
   if( p->rc==SQLITE_OK && cksum1!=cksum2 ) p->rc = FTS5_CORRUPT;
 }
+
+static int fts5QueryCksum(
+  Fts5Index *p,                   /* Fts5 index object */
+  int iIdx,
+  const char *z,                  /* Index key to query for */
+  int n,                          /* Size of index key in bytes */
+  int flags,                      /* Flags for Fts5IndexQuery */
+  u64 *pCksum                     /* IN/OUT: Checksum value */
+){
+  u64 cksum = *pCksum;
+  Fts5IndexIter *pIdxIter = 0;
+  int rc = sqlite3Fts5IndexQuery(p, z, n, flags, &pIdxIter);
+
+  while( rc==SQLITE_OK && 0==sqlite3Fts5IterEof(pIdxIter) ){
+    const u8 *pPos;
+    int nPos;
+    i64 rowid = sqlite3Fts5IterRowid(pIdxIter);
+    rc = sqlite3Fts5IterPoslist(pIdxIter, &pPos, &nPos);
+    if( rc==SQLITE_OK ){
+      Fts5PoslistReader sReader;
+      for(sqlite3Fts5PoslistReaderInit(-1, pPos, nPos, &sReader);
+          sReader.bEof==0;
+          sqlite3Fts5PoslistReaderNext(&sReader)
+      ){
+        int iCol = FTS5_POS2COLUMN(sReader.iPos);
+        int iOff = FTS5_POS2OFFSET(sReader.iPos);
+        cksum ^= fts5IndexEntryCksum(rowid, iCol, iOff, iIdx, z, n);
+      }
+      rc = sqlite3Fts5IterNext(pIdxIter);
+    }
+  }
+  sqlite3Fts5IterClose(pIdxIter);
+
+  *pCksum = cksum;
+  return rc;
+}
+
+
+/*
+** This function is also purely an internal test. It does not contribute to 
+** FTS functionality, or even the integrity-check, in any way.
+*/
+static void fts5TestTerm(
+  Fts5Index *p, 
+  Fts5Buffer *pPrev,              /* Previous term */
+  const char *z, int n,           /* Possibly new term to test */
+  u64 expected,
+  u64 *pCksum
+){
+  int rc = p->rc;
+  if( pPrev->n==0 ){
+    fts5BufferSet(&rc, pPrev, n, (const u8*)z);
+  }else
+  if( rc==SQLITE_OK && (pPrev->n!=n || memcmp(pPrev->p, z, n)) ){
+    u32 cksum3 = *pCksum;
+    const char *zTerm = &pPrev->p[1];  /* The term without the prefix-byte */
+    int nTerm = pPrev->n-1;            /* Size of zTerm in bytes */
+    int iIdx = (pPrev->p[0] - FTS5_MAIN_PREFIX);
+    int flags = (iIdx==0 ? 0 : FTS5INDEX_QUERY_PREFIX);
+    int rc;
+    u64 ck1 = 0;
+    u64 ck2 = 0;
+
+    /* Check that the results returned for ASC and DESC queries are
+    ** the same. If not, call this corruption.  */
+    rc = fts5QueryCksum(p, iIdx, zTerm, nTerm, flags, &ck1);
+    if( rc==SQLITE_OK ){
+      int f = flags|FTS5INDEX_QUERY_DESC;
+      rc = fts5QueryCksum(p, iIdx, zTerm, nTerm, f, &ck2);
+    }
+    if( rc==SQLITE_OK && ck1!=ck2 ) rc = FTS5_CORRUPT;
+
+    /* If this is a prefix query, check that the results returned if the
+    ** the index is disabled are the same. In both ASC and DESC order. */
+    if( iIdx>0 && rc==SQLITE_OK ){
+      int f = flags|FTS5INDEX_QUERY_TEST_NOIDX;
+      ck2 = 0;
+      rc = fts5QueryCksum(p, iIdx, zTerm, nTerm, f, &ck2);
+      if( rc==SQLITE_OK && ck1!=ck2 ) rc = FTS5_CORRUPT;
+    }
+    if( iIdx>0 && rc==SQLITE_OK ){
+      int f = flags|FTS5INDEX_QUERY_TEST_NOIDX|FTS5INDEX_QUERY_DESC;
+      ck2 = 0;
+      rc = fts5QueryCksum(p, iIdx, zTerm, nTerm, f, &ck2);
+      if( rc==SQLITE_OK && ck1!=ck2 ) rc = FTS5_CORRUPT;
+    }
+
+    cksum3 ^= ck1;
+    fts5BufferSet(&rc, pPrev, n, (const u8*)z);
+
+    if( rc==SQLITE_OK && cksum3!=expected ){
+      rc = FTS5_CORRUPT;
+    }
+    *pCksum = cksum3;
+  }
+  p->rc = rc;
+}
+ 
 #else
-# define fts5DlidxIterTestReverse(x,y,z)
+# define fts5TestDlidxReverse(x,y,z)
+# define fts5TestTerm(u,v,w,x,y,z)
 #endif
 
 static void fts5IndexIntegrityCheckSegment(
@@ -5046,59 +5144,18 @@ static void fts5IndexIntegrityCheckSegment(
       }
 
       fts5DlidxIterFree(pDlidx);
-      fts5DlidxIterTestReverse(p, iSegid, iter.iLeaf);
+      fts5TestDlidxReverse(p, iSegid, iter.iLeaf);
     }
   }
 
-  /* Either iter.iLeaf must be the rightmost leaf-page in the segment, or 
-  ** else the segment has been completely emptied by an ongoing merge
-  ** operation. */
-  if( p->rc==SQLITE_OK 
-   && iter.iLeaf!=pSeg->pgnoLast 
-   && (pSeg->pgnoFirst || pSeg->pgnoLast) 
-  ){
+  /* Page iter.iLeaf must now be the rightmost leaf-page in the segment */
+  if( p->rc==SQLITE_OK && iter.iLeaf!=pSeg->pgnoLast ){
     p->rc = FTS5_CORRUPT;
   }
 
   fts5BtreeIterFree(&iter);
 }
 
-
-static int fts5QueryCksum(
-  Fts5Index *p,                   /* Fts5 index object */
-  int iIdx,
-  const char *z,                  /* Index key to query for */
-  int n,                          /* Size of index key in bytes */
-  int flags,                      /* Flags for Fts5IndexQuery */
-  u64 *pCksum                     /* IN/OUT: Checksum value */
-){
-  u64 cksum = *pCksum;
-  Fts5IndexIter *pIdxIter = 0;
-  int rc = sqlite3Fts5IndexQuery(p, z, n, flags, &pIdxIter);
-
-  while( rc==SQLITE_OK && 0==sqlite3Fts5IterEof(pIdxIter) ){
-    const u8 *pPos;
-    int nPos;
-    i64 rowid = sqlite3Fts5IterRowid(pIdxIter);
-    rc = sqlite3Fts5IterPoslist(pIdxIter, &pPos, &nPos);
-    if( rc==SQLITE_OK ){
-      Fts5PoslistReader sReader;
-      for(sqlite3Fts5PoslistReaderInit(-1, pPos, nPos, &sReader);
-          sReader.bEof==0;
-          sqlite3Fts5PoslistReaderNext(&sReader)
-      ){
-        int iCol = FTS5_POS2COLUMN(sReader.iPos);
-        int iOff = FTS5_POS2OFFSET(sReader.iPos);
-        cksum ^= fts5IndexEntryCksum(rowid, iCol, iOff, iIdx, z, n);
-      }
-      rc = sqlite3Fts5IterNext(pIdxIter);
-    }
-  }
-  sqlite3Fts5IterClose(pIdxIter);
-
-  *pCksum = cksum;
-  return rc;
-}
 
 /*
 ** Run internal checks to ensure that the FTS index (a) is internally 
@@ -5112,11 +5169,13 @@ static int fts5QueryCksum(
 */
 int sqlite3Fts5IndexIntegrityCheck(Fts5Index *p, u64 cksum){
   u64 cksum2 = 0;                 /* Checksum based on contents of indexes */
-  u64 cksum3 = 0;                 /* Checksum based on contents of indexes */
-  Fts5Buffer term = {0,0,0};      /* Buffer used to hold most recent term */
   Fts5Buffer poslist = {0,0,0};   /* Buffer used to hold a poslist */
   Fts5MultiSegIter *pIter;        /* Used to iterate through entire index */
   Fts5Structure *pStruct;         /* Index structure */
+
+  /* Used by extra internal tests only run if NDEBUG is not defined */
+  u64 cksum3 = 0;                 /* Checksum based on contents of indexes */
+  Fts5Buffer term = {0,0,0};      /* Buffer used to hold most recent term */
   
   /* Load the FTS index structure */
   pStruct = fts5StructureRead(p);
@@ -5164,48 +5223,12 @@ int sqlite3Fts5IndexIntegrityCheck(Fts5Index *p, u64 cksum){
     }
 
     /* If this is a new term, query for it. Update cksum3 with the results. */
-    if( p->rc==SQLITE_OK && (term.n!=n || memcmp(term.p, z, n)) ){
-      const char *zTerm = &z[1];     /* The term without the prefix-byte */
-      int nTerm = n-1;               /* Size of zTerm in bytes */
-      int iIdx = (z[0] - FTS5_MAIN_PREFIX);
-      int flags = (iIdx==0 ? 0 : FTS5INDEX_QUERY_PREFIX);
-      int rc;
-      u64 ck1 = 0;
-      u64 ck2 = 0;
-
-      /* Check that the results returned for ASC and DESC queries are
-      ** the same. If not, call this corruption.  */
-      rc = fts5QueryCksum(p, iIdx, zTerm, nTerm, flags, &ck1);
-      if( rc==SQLITE_OK ){
-        int f = flags|FTS5INDEX_QUERY_DESC;
-        rc = fts5QueryCksum(p, iIdx, zTerm, nTerm, f, &ck2);
-      }
-      if( rc==SQLITE_OK && ck1!=ck2 ) rc = FTS5_CORRUPT;
-
-      /* If this is a prefix query, check that the results returned if the
-      ** the index is disabled are the same. In both ASC and DESC order. */
-      if( iIdx>0 && rc==SQLITE_OK ){
-        int f = flags|FTS5INDEX_QUERY_TEST_NOIDX;
-        ck2 = 0;
-        rc = fts5QueryCksum(p, iIdx, zTerm, nTerm, f, &ck2);
-        if( rc==SQLITE_OK && ck1!=ck2 ) rc = FTS5_CORRUPT;
-      }
-      if( iIdx>0 && rc==SQLITE_OK ){
-        int f = flags|FTS5INDEX_QUERY_TEST_NOIDX|FTS5INDEX_QUERY_DESC;
-        ck2 = 0;
-        rc = fts5QueryCksum(p, iIdx, zTerm, nTerm, f, &ck2);
-        if( rc==SQLITE_OK && ck1!=ck2 ) rc = FTS5_CORRUPT;
-      }
-
-      cksum3 ^= ck1;
-      fts5BufferSet(&rc, &term, n, (const u8*)z);
-      p->rc = rc;
-    }
+    fts5TestTerm(p, &term, z, n, cksum2, &cksum3);
   }
-  fts5MultiIterFree(p, pIter);
+  fts5TestTerm(p, &term, 0, 0, cksum2, &cksum3);
 
+  fts5MultiIterFree(p, pIter);
   if( p->rc==SQLITE_OK && cksum!=cksum2 ) p->rc = FTS5_CORRUPT;
-  if( p->rc==SQLITE_OK && cksum!=cksum3 ) p->rc = FTS5_CORRUPT;
 
   fts5StructureRelease(pStruct);
   fts5BufferFree(&term);

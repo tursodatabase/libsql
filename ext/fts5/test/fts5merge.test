@@ -135,5 +135,54 @@ do_test 3.4 {
   fts5_level_segs x8
 } {0 1}
 
+#-------------------------------------------------------------------------
+#
+proc mydoc {} {
+  set x [lindex {a b c d e f g h i j} [expr int(rand()*10)]]
+  return [string repeat "$x " 30]
+}
+db func mydoc mydoc
+
+proc mycount {} {
+  set res [list]
+  foreach x {a b c d e f g h i j} {
+    lappend res [db one {SELECT count(*) FROM x8 WHERE x8 MATCH $x}]
+  }
+  set res
+}
+
+  #1 32
+foreach {tn pgsz} {
+  2 1000
+} {
+  do_execsql_test 4.$tn.1 {
+    DROP TABLE IF EXISTS x8;
+    CREATE VIRTUAL TABLE x8 USING fts5(i);
+    INSERT INTO x8(x8, rank) VALUES('pgsz', $pgsz);
+  }
+
+  do_execsql_test 4.$tn.2 {
+    INSERT INTO x8(x8, rank) VALUES('merge', 1);
+  }
+
+  do_execsql_test 4.$tn.3 {
+    WITH ii(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM ii WHERE i<100)
+      INSERT INTO x8 SELECT mydoc() FROM ii;
+    WITH ii(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM ii WHERE i<100)
+      INSERT INTO x8 SELECT mydoc() FROM ii;
+    INSERT INTO x8(x8, rank) VALUES('automerge', 2);
+  }
+
+  set expect [mycount]
+    for {set i 0} {$i < 20} {incr i} {
+      do_test 4.$tn.4.$i {
+        execsql { INSERT INTO x8(x8, rank) VALUES('merge', 1); }
+        mycount
+      } $expect
+      break
+    }
+  db eval {SELECT fts5_decode(rowid, block) AS r FROM x8_data} { puts $r }
+}
+
 finish_test
 

@@ -1,0 +1,57 @@
+# 2015 Apr 24
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# This file tests that FTS5 handles corrupt databases (i.e. internal
+# inconsistencies in the backing tables) correctly. In this case 
+# "correctly" means without crashing.
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+set testprefix fts5corrupt3
+sqlite3_fts5_may_be_corrupt 1
+
+# Create a simple FTS5 table containing 100 documents. Each document 
+# contains 10 terms, each of which start with the character "x".
+#
+expr srand(0)
+db func rnddoc fts5_rnddoc
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(x);
+  INSERT INTO t1(t1, rank) VALUES('pgsz', 64);
+  WITH ii(i) AS (SELECT 1 UNION SELECT i+1 FROM ii WHERE i<100)
+  INSERT INTO t1 SELECT rnddoc(10) FROM ii;
+}
+set mask [expr 31 << 31]
+
+do_test 1.1 {
+  # Pick out the rowid of the right-most b-tree leaf in the new segment.
+  set rowid [db one {
+    SELECT max(rowid) FROM t1_data WHERE ((rowid>>31) & 0x0F)==1
+  }]
+  set L [db one {SELECT length(block) FROM t1_data WHERE rowid = $rowid}]
+  set {} {}
+} {} 
+
+for {set i 0} {$i < $L} {incr i} {
+  do_test 1.2.$i {
+    catchsql {
+      BEGIN;
+      UPDATE t1_data SET block = substr(block, 1, $i) WHERE id = $rowid;
+      INSERT INTO t1(t1) VALUES('integrity-check');
+    }
+  } {1 {database disk image is malformed}}
+  catchsql ROLLBACK
+}
+ 
+
+sqlite3_fts5_may_be_corrupt 0
+finish_test
+

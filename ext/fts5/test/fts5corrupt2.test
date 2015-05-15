@@ -115,8 +115,6 @@ for {set i [expr $nbyte-2]} {$i>=0} {incr i -1} {
   } {}
 }
 
-}
-
 #-------------------------------------------------------------------------
 # Test that corruption in leaf page headers is detected by queries that use
 # doclist-indexes.
@@ -206,6 +204,40 @@ foreach {tn nCut} {
   }
 
   do_test 4.$tn.x { expr $nCorrupt>0 } 1
+}
+
+}
+
+set doc [string repeat "A B C " 1000]
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE x5 USING fts5(tt);
+  INSERT INTO x5(x5, rank) VALUES('pgsz', 32);
+  WITH ii(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM ii WHERE i<10) 
+  INSERT INTO x5 SELECT $doc FROM ii;
+}
+
+foreach {tn hdr} {
+  1 "\x00\x01"
+} {
+  set tn2 0
+  set nCorrupt 0
+  foreach rowid [db eval {SELECT rowid FROM x5_data WHERE rowid>10}] {
+    if {$rowid & $mask} continue
+    incr tn2
+    do_test 4.$tn.$tn2 {
+      execsql BEGIN
+
+      set fd [db incrblob main x5_data block $rowid]
+      fconfigure $fd -encoding binary -translation binary
+      puts -nonewline $fd $hdr
+      close $fd
+
+      catchsql { INSERT INTO x5(x5) VALUES('integrity-check') }
+      set {} {}
+    } {}
+
+    execsql ROLLBACK
+  }
 }
 
 
