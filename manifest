@@ -1,5 +1,5 @@
-C Improve\sthe\sclean\starget\sin\sthe\sMSVC\smakefile.
-D 2015-05-16T03:41:41.012
+C Fix\sa\stypo\sin\sa\scomment.\s\sNo\schanges\sto\scode.
+D 2015-05-16T18:31:44.355
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in edfc69769e613a6359c42c06ea1d42c3bece1736
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -307,7 +307,7 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c ce2cb2d06faab54d1bce3e739bec79e063dd9113
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
-F src/where.c 8b319f2a966ee7f88889fe500448e1e746aed998
+F src/where.c 430ae75d8850ea9e3c7ceba8e05adb105300ddb4
 F src/whereInt.h a6f5a762bc1b4b1c76e1cea79976b437ac35a435
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1258,7 +1258,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 08f11980efa907728102065115a5bebd44be2419
-R 82f27f3e0722706c87aaa943b79923d2
-U mistachkin
-Z 555f5fa7f01030a921d58a611fdef8ff
+P 2c1039d454e359b0eec3db2d4201b4ba7e543052
+R c540749c837ccfa9e646ed2d9c9c0493
+U drh
+Z 98006a9bc56782e174c039d9f287e37a

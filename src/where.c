@@ -636,7 +636,7 @@ static void exprAnalyzeAll(
 ** In order for the operator to be optimizible, the RHS must be a string
 ** literal that does not begin with a wildcard.  The LHS must be a column
 ** that may only be NULL, a string, or a BLOB, never a number. (This means
-** that virtual tables cannot participate in the LIKE optimization.)  If the
+** that virtual tables cannot participate in the LIKE optimization.)  The
 ** collating sequence for the column on the LHS must be appropriate for
 ** the operator.
 */
