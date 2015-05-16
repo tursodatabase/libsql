@@ -302,36 +302,29 @@ do_faultsim_test 9.1 -faults oom-* -body {
   faultsim_test_result {0 {50 100 150 200}} {1 SQLITE_NOMEM}
 }
 
+}
+
 #-------------------------------------------------------------------------
 # OOM in fts5_expr() SQL function.
 #
-reset_db
-do_execsql_test 10.0 {
-  CREATE VIRTUAL TABLE tt USING fts5(x);
-  INSERT INTO tt(tt, rank) VALUES('pgsz', 32);
-  BEGIN;
-    WITH ii(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM ii WHERE i<200)
-      INSERT INTO tt(rowid, x) 
-      SELECT i, CASE WHEN (i%50)==0 THEN 'a a a a a a' ELSE 'a x a x a x' END 
-      FROM ii;
-  COMMIT;
-}
-
 do_faultsim_test 10.1 -faults oom-t* -body {
   db one { SELECT fts5_expr('a AND b NEAR(a b)') }
 } -test {
   faultsim_test_result {0 {"a" AND ("b" AND NEAR("a" "b", 10))}} 
 }
 
+do_faultsim_test 10.2 -faults oom-t* -body {
+  db one { SELECT fts5_expr_tcl('x:"a b c" AND b NEAR(a b)', 'ns', 'x') }
+} -test {
+  set res {[ns -col 0 -- {a b c}] && ([ns -- {b}] && [ns -near 10 -- {a} {b}])}
+  faultsim_test_result [list 0 $res]
 }
 
-
-#do_faultsim_test 10.2 -faults oom-t* -body {
-#  db one { SELECT fts5_expr_tcl('x:"a b c" AND b NEAR(a b)', 'ns', 'x') }
-#} -test {
-#  set res {[ns -col 0 -- {a b c}] && ([ns -- {b}] && [ns -near 10 -- {a} {b}]}
-#  faultsim_test_result [list 0 $res]
-#}
+do_faultsim_test 10.3 -faults oom-t* -body {
+  db one { SELECT fts5_expr('x:a', 'x') }
+} -test {
+  faultsim_test_result {0 {x : "a"}}
+}
 
 
 finish_test

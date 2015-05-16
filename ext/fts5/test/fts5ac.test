@@ -443,5 +443,9 @@ foreach {tn2 sql} {
   }
 }
 
+do_execsql_test 3.1 {
+  SELECT fts5_expr_tcl('a AND b');
+} {{[nearset -- {a}] && [nearset -- {b}]}}
+
 finish_test
 

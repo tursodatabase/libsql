@@ -1398,6 +1398,7 @@ static char *fts5ExprPrintTcl(
     int iTerm;
 
     zRet = fts5PrintfAppend(zRet, "[%s ", zNearsetCmd);
+    if( zRet==0 ) return 0;
     if( pNear->iCol>=0 ){
       zRet = fts5PrintfAppend(zRet, "-col %d ", pNear->iCol);
       if( zRet==0 ) return 0;
@@ -1424,7 +1425,7 @@ static char *fts5ExprPrintTcl(
       if( zRet==0 ) return 0;
     }
 
-    if( zRet ) zRet = fts5PrintfAppend(zRet, "]");
+    zRet = fts5PrintfAppend(zRet, "]");
     if( zRet==0 ) return 0;
 
   }else{
@@ -1434,8 +1435,10 @@ static char *fts5ExprPrintTcl(
     switch( pExpr->eType ){
       case FTS5_AND: zOp = "&&"; break;
       case FTS5_NOT: zOp = "&& !"; break;
-      case FTS5_OR:  zOp = "||"; break;
-      default: assert( 0 );
+      default: 
+        assert( pExpr->eType==FTS5_OR );
+        zOp = "||"; 
+        break;
     }
 
     z1 = fts5ExprPrintTcl(pConfig, zNearsetCmd, pExpr->pLeft);
@@ -1504,8 +1507,10 @@ static char *fts5ExprPrint(Fts5Config *pConfig, Fts5ExprNode *pExpr){
     switch( pExpr->eType ){
       case FTS5_AND: zOp = "AND"; break;
       case FTS5_NOT: zOp = "NOT"; break;
-      case FTS5_OR:  zOp = "OR"; break;
-      default: assert( 0 );
+      default:  
+        assert( pExpr->eType==FTS5_OR );
+        zOp = "OR"; 
+        break;
     }
 
     z1 = fts5ExprPrint(pConfig, pExpr->pLeft);
@@ -1663,16 +1668,17 @@ int sqlite3Fts5ExprPhraseSize(Fts5Expr *pExpr, int iPhrase){
 ** iPhrase.
 */
 int sqlite3Fts5ExprPoslist(Fts5Expr *pExpr, int iPhrase, const u8 **pa){
-  if( iPhrase>=0 && iPhrase<pExpr->nPhrase ){
-    Fts5ExprPhrase *pPhrase = pExpr->apExprPhrase[iPhrase];
-    Fts5ExprNode *pNode = pPhrase->pNode;
-    if( pNode->bEof==0 && pNode->iRowid==pExpr->pRoot->iRowid ){
-      *pa = pPhrase->poslist.p;
-      return pPhrase->poslist.n;
-    }
+  int nRet;
+  Fts5ExprPhrase *pPhrase = pExpr->apExprPhrase[iPhrase];
+  Fts5ExprNode *pNode = pPhrase->pNode;
+  if( pNode->bEof==0 && pNode->iRowid==pExpr->pRoot->iRowid ){
+    *pa = pPhrase->poslist.p;
+    nRet = pPhrase->poslist.n;
+  }else{
+    *pa = 0;
+    nRet = 0;
   }
-  *pa = 0;
-  return 0;
+  return nRet;
 }
 
 #endif /* SQLITE_ENABLE_FTS5 */

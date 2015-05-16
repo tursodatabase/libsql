@@ -180,6 +180,25 @@ do_catchsql_test 6.2 {
   SELECT my_rowid(y) FROM e11 WHERE e11 MATCH 'b'
 } {1 {no such cursor: 0}}
 
+#-------------------------------------------------------------------------
+# Test passing an out-of-range phrase number to xPhraseSize (should 
+# return 0).
+#
+proc my_phrasesize {cmd iPhrase} { $cmd xPhraseSize $iPhrase }
+sqlite3_fts5_create_function db my_phrasesize my_phrasesize
+
+do_execsql_test 7.1 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a);
+  INSERT INTO t1 VALUES('a b c');
+}
+do_execsql_test 7.2 {
+  SELECT 
+    my_phrasesize(t1, -1),
+    my_phrasesize(t1, 0),
+    my_phrasesize(t1, 1),
+    my_phrasesize(t1, 2)
+  FROM t1 WHERE t1 MATCH 'a OR b+c'
+} {0 1 2 0}
 
 finish_test
 

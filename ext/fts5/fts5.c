@@ -1648,6 +1648,14 @@ static void fts5ApiInvoke(
   pCsr->pAux = 0;
 }
 
+static Fts5Cursor *fts5CursorFromCsrid(Fts5Global *pGlobal, i64 iCsrId){
+  Fts5Cursor *pCsr;
+  for(pCsr=pGlobal->pCsr; pCsr; pCsr=pCsr->pNext){
+    if( pCsr->iCsrId==iCsrId ) break;
+  }
+  return pCsr;
+}
+
 static void fts5ApiCallback(
   sqlite3_context *context,
   int argc,
@@ -1662,9 +1670,7 @@ static void fts5ApiCallback(
   pAux = (Fts5Auxiliary*)sqlite3_user_data(context);
   iCsrId = sqlite3_value_int64(argv[0]);
 
-  for(pCsr=pAux->pGlobal->pCsr; pCsr; pCsr=pCsr->pNext){
-    if( pCsr->iCsrId==iCsrId ) break;
-  }
+  pCsr = fts5CursorFromCsrid(pAux->pGlobal, iCsrId);
   if( pCsr==0 ){
     char *zErr = sqlite3_mprintf("no such cursor: %lld", iCsrId);
     sqlite3_result_error(context, zErr, -1);
@@ -1688,18 +1694,13 @@ Fts5Index *sqlite3Fts5IndexFromCsrid(
   int *pnCol
 ){
   Fts5Cursor *pCsr;
-  Fts5Index *pIndex = 0;
+  Fts5Table *pTab;
 
-  for(pCsr=pGlobal->pCsr; pCsr; pCsr=pCsr->pNext){
-    if( pCsr->iCsrId==iCsrId ) break;
-  }
-  if( pCsr ){
-    Fts5Table *pTab = (Fts5Table*)pCsr->base.pVtab;
-    pIndex = pTab->pIndex;
-    *pnCol = pTab->pConfig->nCol;
-  }
+  pCsr = fts5CursorFromCsrid(pGlobal, iCsrId);
+  pTab = (Fts5Table*)pCsr->base.pVtab;
+  *pnCol = pTab->pConfig->nCol;
 
-  return pIndex;
+  return pTab->pIndex;
 }
 
 /*

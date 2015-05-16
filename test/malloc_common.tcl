@@ -292,7 +292,7 @@ proc faultsim_test_result_int {args} {
   upvar testrc testrc testresult testresult testnfail testnfail
   set t [list $testrc $testresult]
   set r $args
-  if { ($testnfail==0 && $t != [lindex $r 0]) || [lsearch $r $t]<0 } {
+  if { ($testnfail==0 && $t != [lindex $r 0]) || [lsearch -exact $r $t]<0 } {
     error "nfail=$testnfail rc=$testrc result=$testresult list=$r"
   }
 }
