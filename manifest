@@ -1,9 +1,9 @@
-C Update\sthe\sREADME.md\sfile\sat\sthe\stop\sof\sthe\srepository\sso\sthat\sthe\shomepage\nof\sGit\smirrors\sof\sSQLite\sdirect\susers\sto\sthe\sofficial\srepository.
-D 2015-05-15T22:20:40.611
+C Improve\sthe\sclean\starget\sin\sthe\sMSVC\smakefile.
+D 2015-05-16T03:41:41.012
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in edfc69769e613a6359c42c06ea1d42c3bece1736
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc a9fd7fd02265aa5b3b2522f5e39d975972ff906d
+F Makefile.msc f9da80e91c8f953f7517c979a1540ef8af1b386f
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md 0bfccb18927349653c09137a458b961fa8ab4cb9
 F VERSION ce0ae95abd7121c534f6917c1c8f2b70d9acd4db
@@ -1258,7 +1258,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1a4628c66c632d2aff02bf134ddf7adceb04fb84
-R ea675dd26a3effefea44152656123a71
-U drh
-Z 0a87c8f05ba90871d20d93f758bd4f9c
+P 08f11980efa907728102065115a5bebd44be2419
+R 82f27f3e0722706c87aaa943b79923d2
+U mistachkin
+Z 555f5fa7f01030a921d58a611fdef8ff
