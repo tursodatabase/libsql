@@ -1276,16 +1276,31 @@ static void exprAnalyze(
         if( idxNew==0 ) return;
         pNew = &pWC->a[idxNew];
         markTermAsChild(pWC, idxNew, idxTerm);
+        if( op==TK_IS ) pNew->wtFlags |= TERM_IS;
         pTerm = &pWC->a[idxTerm];
         pTerm->wtFlags |= TERM_COPIED;
+
+        /* Expressions of the form "A==B" or "A IS B" might be candidates
+        ** for propagating constraints via the transitive property.  In other
+        ** words:  "A==B AND B==$xyz" implies "A==$xyz".  If this term
+        ** qualifies, mark it with WO_EQUIV.  Necessary preconditions:
+        **   1.  The term is not in the ON clause of a LEFT JOIN
+        **   2.  The affinities of A and B must be compatible
+        **   3.  The SQLITE_Transitive optimization must be enabled
+        */
         if( (op==TK_EQ || op==TK_IS)
          && !ExprHasProperty(pExpr, EP_FromJoin)
          && OptimizationEnabled(db, SQLITE_Transitive)
         ){
-          pTerm->eOperator |= WO_EQUIV;
-          eExtraOp = WO_EQUIV;
+          char aff1 = sqlite3ExprAffinity(pDup->pLeft);
+          char aff2 = sqlite3ExprAffinity(pDup->pRight);
+          if( aff1==aff2
+           || (sqlite3IsNumericAffinity(aff1) && sqlite3IsNumericAffinity(aff2))
+          ){
+            pTerm->eOperator |= WO_EQUIV;
+            eExtraOp = WO_EQUIV;
+          }
         }
-        if( op==TK_IS ) pNew->wtFlags |= TERM_IS;
       }else{
         pDup = pExpr;
         pNew = pTerm;
