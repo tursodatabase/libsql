@@ -1,5 +1,5 @@
-C Fix\sthe\stransitive\sconstraint\sprocessing\sto\sonly\sallow\stransitivity\sif\sthe\noperands\sof\sthe\s==\sor\sIS\soperator\shave\scompatible\saffinities.
-D 2015-05-16T19:17:17.907
+C Further\srestrictions\son\sthe\suse\sof\sthe\stransitive\sproperty\sin\sWHERE\sclauses.
+D 2015-05-16T20:51:25.495
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in edfc69769e613a6359c42c06ea1d42c3bece1736
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -307,7 +307,7 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c ce2cb2d06faab54d1bce3e739bec79e063dd9113
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
-F src/where.c 58c0161b81ec25bf7d221baf445d871ab98d9cce
+F src/where.c ca8d3b5b579304b9920c91371d83db8384d41bf7
 F src/whereInt.h a6f5a762bc1b4b1c76e1cea79976b437ac35a435
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1258,10 +1258,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ee4b74250ad7a4061421d44b490cb79f649b3720
-R 1beebe1e9084926919d5e75f3ab331f9
-T *branch * transitive-constraints
-T *sym-transitive-constraints *
-T -sym-trunk *
+P a46a247fbcfe6e63b12cef31353835295a650c9b
+R 4551cb9328257688f241c62e5acce267
 U drh
-Z 9dd679bea28da23301e6184e5fdbcc54
+Z d352b897d8069cb12e380202c093ac79

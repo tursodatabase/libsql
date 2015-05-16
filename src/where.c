@@ -1183,6 +1183,41 @@ static void exprAnalyzeOrTerm(
 #endif /* !SQLITE_OMIT_OR_OPTIMIZATION && !SQLITE_OMIT_SUBQUERY */
 
 /*
+** We already know that pExpr is a binary operator where both operands are
+** column references.  This routine checks to see if pExpr is an equivalence
+** relation:
+**   1.  The SQLITE_Transitive optimization must be enabled
+**   2.  Must be either an == or an IS operator
+**   3.  Not taken from the ON clause of a LEFT JOIN
+**   4.  The affinities of A and B must be compatible
+**   5.  Use the same collating sequence if not numeric affinity
+** If this routine returns TRUE, that means that the RHS can be substituted
+** for the LHS anyplace else in the WHERE clause where the LHS column occurs.
+** This is an optimization.  No harm comes from returning 0.  But if 1 is
+** returned when it should not be, then incorrect answers might result.
+*/
+static int isEquivalence(Parse *pParse, Expr *pExpr){
+  char aff1, aff2;
+  CollSeq *pColl1, *pColl2;
+  const char *zColl1, *zColl2;
+  if( !OptimizationEnabled(pParse->db, SQLITE_Transitive) ) return 0;
+  if( pExpr->op!=TK_EQ && pExpr->op!=TK_IS ) return 0;
+  if( ExprHasProperty(pExpr, EP_FromJoin) ) return 0;
+  aff1 = sqlite3ExprAffinity(pExpr->pLeft);
+  aff2 = sqlite3ExprAffinity(pExpr->pRight);
+  if( aff1!=aff2
+   && (!sqlite3IsNumericAffinity(aff1) || !sqlite3IsNumericAffinity(aff2))
+  ){
+    return 0;
+  }
+  pColl1 = sqlite3ExprCollSeq(pParse, pExpr->pRight);
+  zColl1 = pColl1 ? pColl1->zName : "BINARY";
+  pColl2 = sqlite3ExprCollSeq(pParse, pExpr->pLeft);
+  zColl2 = pColl2 ? pColl2->zName : "BINARY";
+  return sqlite3StrICmp(zColl1, zColl2)==0;
+}
+
+/*
 ** The input to this routine is an WhereTerm structure with only the
 ** "pExpr" field filled in.  The job of this routine is to analyze the
 ** subexpression and populate all the other fields of the WhereTerm
@@ -1280,26 +1315,9 @@ static void exprAnalyze(
         pTerm = &pWC->a[idxTerm];
         pTerm->wtFlags |= TERM_COPIED;
 
-        /* Expressions of the form "A==B" or "A IS B" might be candidates
-        ** for propagating constraints via the transitive property.  In other
-        ** words:  "A==B AND B==$xyz" implies "A==$xyz".  If this term
-        ** qualifies, mark it with WO_EQUIV.  Necessary preconditions:
-        **   1.  The term is not in the ON clause of a LEFT JOIN
-        **   2.  The affinities of A and B must be compatible
-        **   3.  The SQLITE_Transitive optimization must be enabled
-        */
-        if( (op==TK_EQ || op==TK_IS)
-         && !ExprHasProperty(pExpr, EP_FromJoin)
-         && OptimizationEnabled(db, SQLITE_Transitive)
-        ){
-          char aff1 = sqlite3ExprAffinity(pDup->pLeft);
-          char aff2 = sqlite3ExprAffinity(pDup->pRight);
-          if( aff1==aff2
-           || (sqlite3IsNumericAffinity(aff1) && sqlite3IsNumericAffinity(aff2))
-          ){
-            pTerm->eOperator |= WO_EQUIV;
-            eExtraOp = WO_EQUIV;
-          }
+        if( isEquivalence(pParse, pDup) ){
+          pTerm->eOperator |= WO_EQUIV;
+          eExtraOp = WO_EQUIV;
         }
       }else{
         pDup = pExpr;
