@@ -240,6 +240,26 @@ foreach {tn hdr} {
   }
 }
 
+#--------------------------------------------------------------------
+reset_db
+do_execsql_test 5.1 {
+  CREATE VIRTUAL TABLE x5 USING fts5(tt);
+  INSERT INTO x5 VALUES('a');
+  INSERT INTO x5 VALUES('a a');
+  INSERT INTO x5 VALUES('a a a');
+  INSERT INTO x5 VALUES('a a a a');
+
+  UPDATE x5_docsize SET sz = X'' WHERE id=3;
+}
+proc colsize {cmd i} { 
+  $cmd xColumnSize $i
+}
+sqlite3_fts5_create_function db colsize colsize
+
+do_catchsql_test 5.2 {
+  SELECT colsize(x5, 0) FROM x5 WHERE x5 MATCH 'a'
+} {1 SQLITE_CORRUPT_VTAB}
+
 
 sqlite3_fts5_may_be_corrupt 0
 finish_test

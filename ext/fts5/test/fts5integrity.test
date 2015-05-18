@@ -48,6 +48,50 @@ do_execsql_test 3.0 {
 
 do_execsql_test 3.1 { INSERT INTO zz(zz) VALUES('integrity-check'); }
 
+#--------------------------------------------------------------------
+# Mess around with a docsize record. And the averages record. Then
+# check that integrity-check picks it up.
+#
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE aa USING fts5(zz);
+  INSERT INTO aa(zz) VALUES('a b c d e');
+  INSERT INTO aa(zz) VALUES('a b c d');
+  INSERT INTO aa(zz) VALUES('a b c');
+  INSERT INTO aa(zz) VALUES('a b');
+  INSERT INTO aa(zz) VALUES('a');
+  SELECT length(sz) FROM aa_docsize;
+} {1 1 1 1 1}
+do_execsql_test 4.1 { 
+  INSERT INTO aa(aa) VALUES('integrity-check'); 
+}
+
+do_catchsql_test 4.2 { 
+  BEGIN;
+    UPDATE aa_docsize SET sz = X'44' WHERE rowid = 3;
+    INSERT INTO aa(aa) VALUES('integrity-check'); 
+} {1 {database disk image is malformed}}
+
+do_catchsql_test 4.3 { 
+  ROLLBACK;
+  BEGIN;
+    UPDATE aa_data SET block = X'44' WHERE rowid = 1;
+    INSERT INTO aa(aa) VALUES('integrity-check'); 
+} {1 {database disk image is malformed}}
+
+do_catchsql_test 4.4 { 
+  ROLLBACK;
+  BEGIN;
+    INSERT INTO aa_docsize VALUES(23, X'04');
+    INSERT INTO aa(aa) VALUES('integrity-check'); 
+} {1 {database disk image is malformed}}
+
+do_catchsql_test 4.5 { 
+  ROLLBACK;
+  BEGIN;
+    INSERT INTO aa_docsize VALUES(23, X'00');
+    INSERT INTO aa_content VALUES(23, '');
+    INSERT INTO aa(aa) VALUES('integrity-check'); 
+} {1 {database disk image is malformed}}
 
 #db eval {SELECT rowid, fts5_decode(rowid, block) aS r FROM zz_data} {puts $r}
 #exit

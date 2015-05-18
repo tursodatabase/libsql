@@ -143,6 +143,14 @@ do_execsql_test 6.2 {
   INSERT INTO t1(t1) VALUES('integrity-check') 
 }
 
+do_execsql_test 6.3 {
+  REPLACE INTO t1(rowid, x, y) VALUES('22', 'l l l', 'l l l');
+}
+
+do_execsql_test 6.4 {
+  INSERT INTO t1(t1) VALUES('integrity-check') 
+}
+
 #-------------------------------------------------------------------------
 #
 reset_db
@@ -399,6 +407,25 @@ db func funk funk
 do_catchsql_test 16.2 {
   SELECT funk(), bm25(n1), funk() FROM n1 WHERE n1 MATCH 'a+b+c+d'
 } {1 {SQL logic error or missing database}}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 17.1 {
+  CREATE VIRTUAL TABLE b2 USING fts5(x);
+  INSERT INTO b2 VALUES('a');
+  INSERT INTO b2 VALUES('b');
+  INSERT INTO b2 VALUES('c');
+}
+
+do_test 17.2 {
+  set res [list]
+  db eval { SELECT * FROM b2 ORDER BY rowid ASC } {
+    lappend res [execsql { SELECT * FROM b2 ORDER BY rowid ASC }]
+  }
+  set res
+} {{a b c} {a b c} {a b c}}
+
 
 finish_test
 

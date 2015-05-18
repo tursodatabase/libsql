@@ -25,9 +25,15 @@ proc colsize {cmd i} {
 }
 sqlite3_fts5_create_function db colsize colsize
 
+proc totalsize {cmd i} { 
+  $cmd xColumnTotalSize $i
+}
+sqlite3_fts5_create_function db totalsize totalsize
+
 do_execsql_test 1.0 {
   CREATE VIRTUAL TABLE f1 USING fts5(a, b);
   INSERT INTO f1 VALUES('one two', 'two one zero');
+  INSERT INTO f1 VALUES('one one', 'one one one');
 }
 
 do_catchsql_test 1.1 {
@@ -46,11 +52,25 @@ do_catchsql_test 1.4 {
 do_catchsql_test 2.1 {
   SELECT colsize(f1, 2) FROM f1 WHERE f1 MATCH 'two';
 } {1 SQLITE_RANGE}
-
 do_execsql_test 2.2 {
   SELECT colsize(f1, 0), colsize(f1, 1) FROM f1 WHERE f1 MATCH 'zero';
 } {2 3}
+do_execsql_test 2.3 {
+  SELECT colsize(f1, -1) FROM f1 WHERE f1 MATCH 'zero';
+} {5}
 
+do_execsql_test 2.4.1 {
+  SELECT totalsize(f1, -1) FROM f1 WHERE f1 MATCH 'zero';
+} {10}
+do_execsql_test 2.4.2 {
+  SELECT totalsize(f1, 0) FROM f1 WHERE f1 MATCH 'zero';
+} {4}
+do_execsql_test 2.4.3 {
+  SELECT totalsize(f1, 1) FROM f1 WHERE f1 MATCH 'zero';
+} {6}
+do_catchsql_test 2.4.4 {
+  SELECT totalsize(f1, 2) FROM f1 WHERE f1 MATCH 'zero';
+} {1 SQLITE_RANGE}
 
 #-------------------------------------------------------------------------
 # Test the xSet and xGetAuxdata APIs with a NULL destructor.

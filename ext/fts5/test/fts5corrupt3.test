@@ -51,6 +51,23 @@ for {set i 0} {$i < $L} {incr i} {
   catchsql ROLLBACK
 }
  
+#-------------------------------------------------------------------------
+# Test that trailing bytes appended to the averages record are ignored.
+#
+do_execsql_test 2.1 {
+  CREATE VIRTUAL TABLE t2 USING fts5(x);
+  INSERT INTO t2 VALUES(rnddoc(10));
+  INSERT INTO t2 VALUES(rnddoc(10));
+  SELECT length(block) FROM t2_data WHERE id=1;
+} {2}
+do_execsql_test 2.2 {
+  UPDATE t2_data SET block = block || 'abcd' WHERE id=1;
+  SELECT length(block) FROM t2_data WHERE id=1;
+} {6}
+do_execsql_test 2.2 {
+  INSERT INTO t2 VALUES(rnddoc(10));
+  SELECT length(block) FROM t2_data WHERE id=1;
+} {2}
 
 sqlite3_fts5_may_be_corrupt 0
 finish_test

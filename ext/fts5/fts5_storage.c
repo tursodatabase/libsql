@@ -663,9 +663,7 @@ int sqlite3Fts5StorageInsert(
     }else{
       if( eConflict==SQLITE_REPLACE ){
         eStmt = FTS5_STMT_REPLACE_CONTENT;
-        if( sqlite3_value_type(apVal[1])==SQLITE_INTEGER ){
-          rc = fts5StorageDeleteFromIndex(p, sqlite3_value_int64(apVal[1]));
-        }
+        rc = fts5StorageDeleteFromIndex(p, sqlite3_value_int64(apVal[1]));
       }else{
         eStmt = FTS5_STMT_INSERT_CONTENT;
       }
