@@ -1188,17 +1188,18 @@ static void exprAnalyzeOrTerm(
 ** relation:
 **   1.  The SQLITE_Transitive optimization must be enabled
 **   2.  Must be either an == or an IS operator
-**   3.  Not taken from the ON clause of a LEFT JOIN
+**   3.  Not originating the ON clause of an OUTER JOIN
 **   4.  The affinities of A and B must be compatible
-**   5.  Use the same collating sequence if not numeric affinity
+**   5a. Both operands use the same collating sequence OR
+**   5b. The overall collating sequence is BINARY
 ** If this routine returns TRUE, that means that the RHS can be substituted
 ** for the LHS anyplace else in the WHERE clause where the LHS column occurs.
 ** This is an optimization.  No harm comes from returning 0.  But if 1 is
 ** returned when it should not be, then incorrect answers might result.
 */
-static int isEquivalence(Parse *pParse, Expr *pExpr){
+static int termIsEquivalence(Parse *pParse, Expr *pExpr){
   char aff1, aff2;
-  CollSeq *pColl1, *pColl2;
+  CollSeq *pColl;
   const char *zColl1, *zColl2;
   if( !OptimizationEnabled(pParse->db, SQLITE_Transitive) ) return 0;
   if( pExpr->op!=TK_EQ && pExpr->op!=TK_IS ) return 0;
@@ -1210,10 +1211,12 @@ static int isEquivalence(Parse *pParse, Expr *pExpr){
   ){
     return 0;
   }
-  pColl1 = sqlite3ExprCollSeq(pParse, pExpr->pRight);
-  zColl1 = pColl1 ? pColl1->zName : "BINARY";
-  pColl2 = sqlite3ExprCollSeq(pParse, pExpr->pLeft);
-  zColl2 = pColl2 ? pColl2->zName : "BINARY";
+  pColl = sqlite3BinaryCompareCollSeq(pParse, pExpr->pLeft, pExpr->pRight);
+  if( pColl==0 || sqlite3StrICmp(pColl->zName, "BINARY")==0 ) return 1;
+  pColl = sqlite3ExprCollSeq(pParse, pExpr->pLeft);
+  zColl1 = pColl ? pColl->zName : "BINARY";
+  pColl = sqlite3ExprCollSeq(pParse, pExpr->pRight);
+  zColl2 = pColl ? pColl->zName : "BINARY";
   return sqlite3StrICmp(zColl1, zColl2)==0;
 }
 
@@ -1315,7 +1318,7 @@ static void exprAnalyze(
         pTerm = &pWC->a[idxTerm];
         pTerm->wtFlags |= TERM_COPIED;
 
-        if( isEquivalence(pParse, pDup) ){
+        if( termIsEquivalence(pParse, pDup) ){
           pTerm->eOperator |= WO_EQUIV;
           eExtraOp = WO_EQUIV;
         }
