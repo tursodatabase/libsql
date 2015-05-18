@@ -1,5 +1,5 @@
-C Add\sa\stest\sfor\san\suntested\sbranch\sin\sfts5_expr.c.
-D 2015-05-18T18:03:06.791
+C Fix\sa\sbug\sin\stest\sscript\sfts5fault4.test.
+D 2015-05-18T18:24:41.367
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in edfc69769e613a6359c42c06ea1d42c3bece1736
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -148,7 +148,7 @@ F ext/fts5/test/fts5eb.test 728a1f23f263548f5c29b29dfb851b5f2dbe723e
 F ext/fts5/test/fts5fault1.test b42d3296be8a75f557cf2cbce0d8b483fc9db45b
 F ext/fts5/test/fts5fault2.test 28c36c843bb39ae855ba79827417ecc37f114341
 F ext/fts5/test/fts5fault3.test d6e9577d4312e331a913c72931bf131704efc8f3
-F ext/fts5/test/fts5fault4.test 7301602e916261f0b277ed93f447fd871d5d7064
+F ext/fts5/test/fts5fault4.test 7c7c46559368f06b98daa940d376c4740bcdad25
 F ext/fts5/test/fts5fault5.test 98e7e77bc1d8bb47c955e7d6dc870ab5736536e3
 F ext/fts5/test/fts5full.test 0924bdca5416a242103239ace79c6f5aa34bab8d
 F ext/fts5/test/fts5hash.test bdba7b591d503005d5a81871ba00a359daa1e969
@@ -1327,7 +1327,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 47dbfadb994814c9349d4c9c113b862c2e97c01a
-R 8b343fcd5b0f5f6f5d1de871460e7a2e
+P ce08206b5c5bf6a81decf20c99a524dd92c3715b
+R 2291f8df21e231273c06942c0f18b8cc
 U dan
-Z fa2c7b5394616fc24195f932cca28cd9
+Z 4cefad1c255457ef6a42a53ca33a35a5

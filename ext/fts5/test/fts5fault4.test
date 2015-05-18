@@ -22,8 +22,6 @@ ifcapable !fts5 {
   return
 }
 
-if 1 {
-
 #-------------------------------------------------------------------------
 # An OOM while dropping an fts5 table.
 #
@@ -302,8 +300,6 @@ do_faultsim_test 9.1 -faults oom-* -body {
   faultsim_test_result {0 {50 100 150 200}} {1 SQLITE_NOMEM}
 }
 
-}
-
 #-------------------------------------------------------------------------
 # OOM in fts5_expr() SQL function.
 #
@@ -333,12 +329,10 @@ reset_db
 do_execsql_test 11.0 {
   CREATE VIRTUAL TABLE ft USING fts5(x);
 }
-do_faultsim_test 11.1 -faults oom-* -body {
-  db eval { 
-    INSERT INTO ft(ft, rank) VALUES('rank', 'bm25(10.0, 5.0)');
-  }
+do_faultsim_test 11.1 -faults oom-t* -body {
+  db eval { INSERT INTO ft(ft, rank) VALUES('rank', 'bm25(10.0, 5.0)') }
 } -test {
-  faultsim_test_result {0 {}}
+  faultsim_test_result {0 {}} {1 {disk I/O error}}
 }
 
 finish_test
