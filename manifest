@@ -1,5 +1,5 @@
-C Make\sa\shard\scopy\sof\sthe\sresults\sof\sa\ssubquery\slest\sthe\sresult\sof\sthe\nsubquery\sbe\sreferenced\safter\sa\schange\sto\sthe\stable\sthat\sgenerated\sthe\ssubquery\nresult.
-D 2015-05-18T04:24:27.963
+C Transitive\sconstraints\sshould\sonly\swork\sif\soperands\shave\scompatible\naffinities\sand\scollating\ssequences.
+D 2015-05-18T12:28:09.009
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in edfc69769e613a6359c42c06ea1d42c3bece1736
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -307,7 +307,7 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c ce2cb2d06faab54d1bce3e739bec79e063dd9113
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
-F src/where.c 430ae75d8850ea9e3c7ceba8e05adb105300ddb4
+F src/where.c e71eae3b1383249c3b5d136d6b71ca8d28fb8d61
 F src/whereInt.h a6f5a762bc1b4b1c76e1cea79976b437ac35a435
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1082,7 +1082,7 @@ F test/trace2.test f5cb67ad3bc09e0c58e8cca78dfd0b5639259983
 F test/trans.test 6e1b4c6a42dba31bd65f8fa5e61a2708e08ddde6
 F test/trans2.test 62bd045bfc7a1c14c5ba83ba64d21ade31583f76
 F test/trans3.test 91a100e5412b488e22a655fe423a14c26403ab94
-F test/transitive1.test 875a9f0097a15b30a62431d183f989364d5accac
+F test/transitive1.test 293300f46916569f08875cdb2fe2134be2c27677
 F test/trigger1.test dc47573ac79ffe0ee3eecaa517d70d8dacbccd03
 F test/trigger2.test 5cd7d69a7ba1143ee045e4ae2963ff32ae4c87a6
 F test/trigger3.test aa640bb2bbb03edd5ff69c055117ea088f121945
@@ -1258,7 +1258,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ee4b74250ad7a4061421d44b490cb79f649b3720
-R cec1b3be1402a8f9c8bcb82830e4cc3b
+P 9c0d80907b4dee8ee8f205c2ebdb759f5ba1d771 204e567f68e4b3e069f04ca0643c6e5db781d39f
+R a4e8ba2aafa10a2da2324dbd46c77e5c
+T +closed 204e567f68e4b3e069f04ca0643c6e5db781d39f
 U drh
-Z f5d245b9071d9cc745d677044b477f63
+Z b4b536b620859a084b09e8398affe376
