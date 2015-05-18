@@ -1214,9 +1214,11 @@ static int termIsEquivalence(Parse *pParse, Expr *pExpr){
   pColl = sqlite3BinaryCompareCollSeq(pParse, pExpr->pLeft, pExpr->pRight);
   if( pColl==0 || sqlite3StrICmp(pColl->zName, "BINARY")==0 ) return 1;
   pColl = sqlite3ExprCollSeq(pParse, pExpr->pLeft);
-  zColl1 = pColl ? pColl->zName : "BINARY";
+  /* Since pLeft and pRight are both a column references, their collating
+  ** sequence should always be defined. */
+  zColl1 = ALWAYS(pColl) ? pColl->zName : 0;
   pColl = sqlite3ExprCollSeq(pParse, pExpr->pRight);
-  zColl2 = pColl ? pColl->zName : "BINARY";
+  zColl2 = ALWAYS(pColl) ? pColl->zName : 0;
   return sqlite3StrICmp(zColl1, zColl2)==0;
 }
 
