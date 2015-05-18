@@ -203,8 +203,9 @@ struct Fts5ExtensionApi {
 **
 ** Applications may also register custom tokenizer types. A tokenizer 
 ** is registered by providing fts5 with a populated instance of the 
-** following structure. The structure methods are expected to function
-** as follows:
+** following structure. All structure methods must be defined, setting
+** any member of the fts5_tokenizer struct to NULL leads to undefined
+** behaviour. The structure methods are expected to function as follows:
 **
 ** xCreate:
 **   This function is used to allocate and inititalize a tokenizer instance.

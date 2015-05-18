@@ -181,7 +181,7 @@ foreach {tn pgsz} {
       } $expect
       break
     }
-  db eval {SELECT fts5_decode(rowid, block) AS r FROM x8_data} { puts $r }
+#  db eval {SELECT fts5_decode(rowid, block) AS r FROM x8_data} { puts $r }
 }
 
 finish_test

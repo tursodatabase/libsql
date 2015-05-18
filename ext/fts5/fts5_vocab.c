@@ -189,6 +189,8 @@ static int fts5VocabInitVtab(
       pRet->zFts5Db = &pRet->zFts5Tbl[nTab];
       memcpy(pRet->zFts5Tbl, zTab, nTab);
       memcpy(pRet->zFts5Db, zDb, nDb);
+      sqlite3Fts5Dequote(pRet->zFts5Tbl);
+      sqlite3Fts5Dequote(pRet->zFts5Db);
     }
   }
 

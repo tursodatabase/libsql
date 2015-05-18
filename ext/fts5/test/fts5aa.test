@@ -285,6 +285,9 @@ do_catchsql_test 11.1 {
 do_catchsql_test 11.2 {
   CREATE VIRTUAL TABLE rank USING fts5(a, b, c);
 } {1 {reserved fts5 table name: rank}}
+do_catchsql_test 11.3 {
+  CREATE VIRTUAL TABLE t2 USING fts5(a, b, c, rowid);
+} {1 {reserved fts5 column name: rowid}}
 
 #-------------------------------------------------------------------------
 #
@@ -376,6 +379,26 @@ do_execsql_test 15.1 {
 do_catchsql_test 15.2 {
   INSERT INTO t1(t1) VALUES('integrity-check');
 } {1 {database disk image is malformed}}
+
+#-------------------------------------------------------------------------
+#
+do_execsql_test 16.1 {
+  CREATE VIRTUAL TABLE n1 USING fts5(a);
+  INSERT INTO n1 VALUES('a b c d');
+}
+
+proc funk {} {
+  set fd [db incrblob main n1_data block 10]
+  fconfigure $fd -encoding binary -translation binary
+  puts -nonewline $fd "\x44\x45"
+  close $fd
+  db eval { UPDATE n1_config SET v=50 WHERE k='version' }
+}
+db func funk funk
+
+do_catchsql_test 16.2 {
+  SELECT funk(), bm25(n1), funk() FROM n1 WHERE n1 MATCH 'a+b+c+d'
+} {1 {SQL logic error or missing database}}
 
 finish_test
 

@@ -264,5 +264,31 @@ char *sqlite3Fts5Strndup(int *pRc, const char *pIn, int nIn){
   }
   return zRet;
 }
+
+
+/*
+** Return true if character 't' may be part of an FTS5 bareword, or false
+** otherwise. Characters that may be part of barewords:
+**
+**   * All non-ASCII characters,
+**   * The 52 upper and lower case ASCII characters, and
+**   * The 10 integer ASCII characters.
+**   * The underscore character "_" (0x5F).
+*/
+int sqlite3Fts5IsBareword(char t){
+  u8 aBareword[128] = {
+    0, 0, 0, 0, 0, 0, 0, 0,    0, 0, 0, 0, 0, 0, 0, 0,   /* 0x00 .. 0x0F */
+    0, 0, 0, 0, 0, 0, 0, 0,    0, 0, 0, 0, 0, 0, 0, 0,   /* 0x10 .. 0x1F */
+    0, 0, 0, 0, 0, 0, 0, 0,    0, 0, 0, 0, 0, 0, 0, 0,   /* 0x20 .. 0x2F */
+    1, 1, 1, 1, 1, 1, 1, 1,    1, 1, 0, 0, 0, 0, 0, 0,   /* 0x30 .. 0x3F */
+    0, 1, 1, 1, 1, 1, 1, 1,    1, 1, 1, 1, 1, 1, 1, 1,   /* 0x40 .. 0x4F */
+    1, 1, 1, 1, 1, 1, 1, 1,    1, 1, 1, 0, 0, 0, 0, 1,   /* 0x50 .. 0x5F */
+    0, 1, 1, 1, 1, 1, 1, 1,    1, 1, 1, 1, 1, 1, 1, 1,   /* 0x60 .. 0x6F */
+    1, 1, 1, 1, 1, 1, 1, 1,    1, 1, 1, 0, 0, 0, 0, 0    /* 0x70 .. 0x7F */
+  };
+
+  return (t & 0x80) || aBareword[(int)t];
+}
+
 #endif /* SQLITE_ENABLE_FTS5 */
 

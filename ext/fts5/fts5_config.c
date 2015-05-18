@@ -53,12 +53,7 @@ static const char *fts5ConfigSkipWhitespace(const char *pIn){
 */
 static const char *fts5ConfigSkipBareword(const char *pIn){
   const char *p = pIn;
-  while( *p      && *p!=' ' && *p!=':' && *p!='!' && *p!='@' 
-      && *p!='#' && *p!='$' && *p!='%' && *p!='^' && *p!='&' 
-      && *p!='*' && *p!='(' && *p!=')' && *p!='='
-  ){
-    p++;
-  }
+  while ( sqlite3Fts5IsBareword(*p) ) p++;
   if( p==pIn ) p = 0;
   return p;
 }
@@ -71,64 +66,62 @@ static int fts5_isdigit(char a){
 
 static const char *fts5ConfigSkipLiteral(const char *pIn){
   const char *p = pIn;
-  if( p ){
-    switch( *p ){
-      case 'n': case 'N':
-        if( sqlite3_strnicmp("null", p, 4)==0 ){
-          p = &p[4];
+  switch( *p ){
+    case 'n': case 'N':
+      if( sqlite3_strnicmp("null", p, 4)==0 ){
+        p = &p[4];
+      }else{
+        p = 0;
+      }
+      break;
+
+    case 'x': case 'X':
+      p++;
+      if( *p=='\'' ){
+        p++;
+        while( (*p>='a' && *p<='f') 
+            || (*p>='A' && *p<='F') 
+            || (*p>='0' && *p<='9') 
+            ){
+          p++;
+        }
+        if( *p=='\'' && 0==((p-pIn)%2) ){
+          p++;
         }else{
           p = 0;
         }
-        break;
-        
-      case 'x': case 'X':
-        p++;
+      }else{
+        p = 0;
+      }
+      break;
+
+    case '\'':
+      p++;
+      while( p ){
         if( *p=='\'' ){
           p++;
-          while( (*p>='a' && *p<='f') 
-              || (*p>='A' && *p<='F') 
-              || (*p>='0' && *p<='9') 
-          ){
-            p++;
-          }
-          if( *p=='\'' && 0==((p-pIn)%2) ){
-            p++;
-          }else{
-            p = 0;
-          }
-        }else{
-          p = 0;
+          if( *p!='\'' ) break;
         }
-        break;
-
-      case '\'':
         p++;
-        while( p ){
-          if( *p=='\'' ){
-            p++;
-            if( *p!='\'' ) break;
-          }
-          p++;
-          if( *p==0 ) p = 0;
-        }
-        break;
+        if( *p==0 ) p = 0;
+      }
+      break;
 
-      default:
-        /* maybe a number */
-        if( *p=='+' || *p=='-' ) p++;
+    default:
+      /* maybe a number */
+      if( *p=='+' || *p=='-' ) p++;
+      while( fts5_isdigit(*p) ) p++;
+
+      /* At this point, if the literal was an integer, the parse is 
+      ** finished. Or, if it is a floating point value, it may continue
+      ** with either a decimal point or an 'E' character. */
+      if( *p=='.' && fts5_isdigit(p[1]) ){
+        p += 2;
         while( fts5_isdigit(*p) ) p++;
+      }
+      if( p==pIn ) p = 0;
 
-        /* At this point, if the literal was an integer, the parse is 
-        ** finished. Or, if it is a floating point value, it may continue
-        ** with either a decimal point or an 'E' character. */
-        if( *p=='.' && fts5_isdigit(p[1]) ){
-          p += 2;
-          while( fts5_isdigit(*p) ) p++;
-        }
-        if( p==pIn ) p = 0;
-
-        break;
-    }
+      break;
   }
 
   return p;
@@ -157,12 +150,12 @@ static int fts5Dequote(char *z){
   assert( q=='[' || q=='\'' || q=='"' || q=='`' );
   if( q=='[' ) q = ']';  
 
-  while( z[iIn] ){
+  while( ALWAYS(z[iIn]) ){
     if( z[iIn]==q ){
       if( z[iIn+1]!=q ){
         /* Character iIn was the close quote. */
-        z[iOut] = '\0';
-        return iIn+1;
+        iIn++;
+        break;
       }else{
         /* Character iIn and iIn+1 form an escaped quote character. Skip
         ** the input cursor past both and copy a single quote character 
@@ -175,9 +168,8 @@ static int fts5Dequote(char *z){
     }
   }
 
-  /* Did not find the close-quote character. Return -1. */
   z[iOut] = '\0';
-  return -1;
+  return iIn;
 }
 
 /*
@@ -270,7 +262,7 @@ static int fts5ConfigParseSpecial(
       }else{
         for(nArg=0; p && *p; nArg++){
           const char *p2 = fts5ConfigSkipWhitespace(p);
-          if( p2 && *p2=='\'' ){
+          if( *p2=='\'' ){
             p = fts5ConfigSkipLiteral(p2);
           }else{
             p = fts5ConfigSkipBareword(p2);
@@ -369,32 +361,32 @@ static const char *fts5ConfigGobbleWord(
   int *pbQuoted                   /* OUT: Set to true if dequoting required */
 ){
   const char *zRet = 0;
+
+  int nIn = strlen(zIn);
+  char *zOut = sqlite3_malloc(nIn+1);
+
+  assert( *pRc==SQLITE_OK );
   *pbQuoted = 0;
   *pzOut = 0;
 
-  if( *pRc==SQLITE_OK ){
-    int nIn = strlen(zIn);
-    char *zOut = sqlite3_malloc(nIn+1);
-
-    if( zOut==0 ){
-      *pRc = SQLITE_NOMEM;
+  if( zOut==0 ){
+    *pRc = SQLITE_NOMEM;
+  }else{
+    memcpy(zOut, zIn, nIn+1);
+    if( fts5_isopenquote(zOut[0]) ){
+      int ii = fts5Dequote(zOut);
+      zRet = &zIn[ii];
+      *pbQuoted = 1;
     }else{
-      memcpy(zOut, zIn, nIn+1);
-      if( fts5_isopenquote(zOut[0]) ){
-        int ii = fts5Dequote(zOut);
-        if( ii>0 ) zRet = &zIn[ii];
-        *pbQuoted = 1;
-      }else{
-        zRet = fts5ConfigSkipBareword(zIn);
-        zOut[zRet-zIn] = '\0';
-      }
+      zRet = fts5ConfigSkipBareword(zIn);
+      zOut[zRet-zIn] = '\0';
     }
+  }
 
-    if( zRet==0 ){
-      sqlite3_free(zOut);
-    }else{
-      *pzOut = zOut;
-    }
+  if( zRet==0 ){
+    sqlite3_free(zOut);
+  }else{
+    *pzOut = zOut;
   }
 
   return zRet;
@@ -569,7 +561,7 @@ int sqlite3Fts5ConfigParse(
 void sqlite3Fts5ConfigFree(Fts5Config *pConfig){
   if( pConfig ){
     int i;
-    if( pConfig->pTok && pConfig->pTokApi->xDelete ){
+    if( pConfig->pTok ){
       pConfig->pTokApi->xDelete(pConfig->pTok);
     }
     sqlite3_free(pConfig->zDb);
@@ -727,7 +719,7 @@ int sqlite3Fts5ConfigParseRank(
       p = fts5ConfigSkipArgs(p);
       if( p==0 ){
         rc = SQLITE_ERROR;
-      }else if( p!=pArgs ){
+      }else{
         zRankArgs = sqlite3Fts5MallocZero(&rc, 1 + p - pArgs);
         if( zRankArgs ) memcpy(zRankArgs, pArgs, p-pArgs);
       }
@@ -751,17 +743,14 @@ int sqlite3Fts5ConfigSetValue(
   int *pbBadkey
 ){
   int rc = SQLITE_OK;
-  if(      0==sqlite3_stricmp(zKey, "cookie") ){
-    pConfig->iCookie = sqlite3_value_int(pVal);
-  }
 
-  else if( 0==sqlite3_stricmp(zKey, "pgsz") ){
+  if( 0==sqlite3_stricmp(zKey, "pgsz") ){
     int pgsz = 0;
     if( SQLITE_INTEGER==sqlite3_value_numeric_type(pVal) ){
       pgsz = sqlite3_value_int(pVal);
     }
     if( pgsz<=0 || pgsz>FTS5_MAX_PAGE_SIZE ){
-      if( pbBadkey ) *pbBadkey = 1;
+      *pbBadkey = 1;
     }else{
       pConfig->pgsz = pgsz;
     }
@@ -773,7 +762,7 @@ int sqlite3Fts5ConfigSetValue(
       nAutomerge = sqlite3_value_int(pVal);
     }
     if( nAutomerge<0 || nAutomerge>64 ){
-      if( pbBadkey ) *pbBadkey = 1;
+      *pbBadkey = 1;
     }else{
       if( nAutomerge==1 ) nAutomerge = FTS5_DEFAULT_AUTOMERGE;
       pConfig->nAutomerge = nAutomerge;
@@ -786,7 +775,7 @@ int sqlite3Fts5ConfigSetValue(
       nCrisisMerge = sqlite3_value_int(pVal);
     }
     if( nCrisisMerge<0 ){
-      if( pbBadkey ) *pbBadkey = 1;
+      *pbBadkey = 1;
     }else{
       if( nCrisisMerge<=1 ) nCrisisMerge = FTS5_DEFAULT_CRISISMERGE;
       pConfig->nCrisisMerge = nCrisisMerge;
@@ -805,10 +794,10 @@ int sqlite3Fts5ConfigSetValue(
       pConfig->zRankArgs = zRankArgs;
     }else if( rc==SQLITE_ERROR ){
       rc = SQLITE_OK;
-      if( pbBadkey ) *pbBadkey = 1;
+      *pbBadkey = 1;
     }
   }else{
-    if( pbBadkey ) *pbBadkey = 1;
+    *pbBadkey = 1;
   }
   return rc;
 }
@@ -844,10 +833,11 @@ int sqlite3Fts5ConfigLoad(Fts5Config *pConfig, int iCookie){
       if( 0==sqlite3_stricmp(zK, "version") ){
         iVersion = sqlite3_value_int(pVal);
       }else{
-        sqlite3Fts5ConfigSetValue(pConfig, zK, pVal, 0);
+        int bDummy = 0;
+        sqlite3Fts5ConfigSetValue(pConfig, zK, pVal, &bDummy);
       }
     }
-    if( rc==SQLITE_OK ) rc = sqlite3_finalize(p);
+    rc = sqlite3_finalize(p);
   }
   
   if( rc==SQLITE_OK && iVersion!=FTS5_CURRENT_VERSION ){

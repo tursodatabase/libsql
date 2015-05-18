@@ -117,5 +117,24 @@ do_faultsim_test 4.1 -faults oom-trans* -prep {
   faultsim_test_result {0 {}}
 }
 
+#-------------------------------------------------------------------------
+# OOM while parsing a tokenize=option
+#
+reset_db
+faultsim_save_and_close
+do_faultsim_test 5.0 -faults oom-* -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql { 
+    CREATE VIRTUAL TABLE uio USING fts5(a, b, 
+      tokenize="porter 'ascii'",
+      content="another table",
+      content_rowid="somecolumn"
+    );
+  }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
 finish_test
 

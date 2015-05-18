@@ -5566,20 +5566,6 @@ static void fts5RowidFunction(
         iRowid = FTS5_SEGMENT_ROWID(segid, height, pgno);
         sqlite3_result_int64(pCtx, iRowid);
       }
-#if 0
-    }else if( 0==sqlite3_stricmp(zArg, "start-of-index") ){
-      i64 iRowid;
-      int idx;
-      if( nArg!=2 ){
-        sqlite3_result_error(pCtx, 
-            "should be: fts5_rowid('start-of-index', idx)", -1
-        );
-      }else{
-        idx = sqlite3_value_int(apVal[1]);
-        iRowid = FTS5_SEGMENT_ROWID(idx, 1, 0, 0);
-        sqlite3_result_int64(pCtx, iRowid);
-      }
-#endif
     }else {
       sqlite3_result_error(pCtx, 
         "first arg to fts5_rowid() must be 'segment' "

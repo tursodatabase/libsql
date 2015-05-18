@@ -24,7 +24,7 @@ proc do_near_test {tn doc near res} {
 }
 
 execsql { 
-  CREATE VIRTUAL TABLE t1 USING fts5(x, tokenize = 'ascii tokenchars .') 
+  CREATE VIRTUAL TABLE t1 USING fts5(x, tokenize = "ascii tokenchars '.'") 
 }
 
 do_near_test 1.1 ". . a . . . b . ." { NEAR(a b, 5) } 1

@@ -326,6 +326,20 @@ do_faultsim_test 10.3 -faults oom-t* -body {
   faultsim_test_result {0 {x : "a"}}
 }
 
+#-------------------------------------------------------------------------
+# OOM while configuring 'rank' option.
+#
+reset_db
+do_execsql_test 11.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(x);
+}
+do_faultsim_test 11.1 -faults oom-* -body {
+  db eval { 
+    INSERT INTO ft(ft, rank) VALUES('rank', 'bm25(10.0, 5.0)');
+  }
+} -test {
+  faultsim_test_result {0 {}}
+}
 
 finish_test
 

@@ -117,12 +117,6 @@ static int fts5ExprIsspace(char t){
   return t==' ' || t=='\t' || t=='\n' || t=='\r';
 }
 
-static int fts5ExprIstoken(char t){
-  return fts5ExprIsspace(t)==0 && t!='\0' 
-      && t!=':' && t!='(' && t!=')' 
-      && t!=',' && t!='+' && t!='*';
-}
-
 /*
 ** Read the first token from the nul-terminated string at *pz.
 */
@@ -169,7 +163,7 @@ static int fts5ExprGetToken(
     default: {
       const char *z2;
       tok = FTS5_STRING;
-      for(z2=&z[1]; fts5ExprIstoken(*z2); z2++);
+      for(z2=&z[1]; sqlite3Fts5IsBareword(*z2); z2++);
       pToken->n = (z2 - z);
       if( pToken->n==2 && memcmp(pToken->p, "OR", 2)==0 )  tok = FTS5_OR;
       if( pToken->n==3 && memcmp(pToken->p, "NOT", 3)==0 ) tok = FTS5_NOT;
