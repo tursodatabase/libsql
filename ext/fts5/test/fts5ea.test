@@ -75,6 +75,7 @@ foreach {tn expr err} {
 
   12 {NEAR(a b, xyz)}              {expected integer, got "xyz"}
   13 {NEAR(a b, // )}              {fts5: syntax error near "/"}
+  14 {NEAR(a b, "xyz" )}           {expected integer, got ""xyz""}
 } {
   do_catchsql_test 3.$tn {SELECT fts5_expr($expr, 'name', 'addr')} [list 1 $err]
 }
