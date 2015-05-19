@@ -65,7 +65,7 @@ LIBOBJ+= vdbe.o parse.o \
          mutex.o mutex_noop.o mutex_unix.o mutex_w32.o \
          notify.o opcodes.o os.o os_unix.o os_win.o \
          pager.o pcache.o pcache1.o pragma.o prepare.o printf.o \
-         random.o resolve.o rowset.o rtree.o select.o status.o \
+         random.o resolve.o rowset.o rtree.o select.o sqlite3ota.o status.o \
          table.o threads.o tokenize.o trigger.o \
          update.o userauth.o util.o vacuum.o \
          vdbeapi.o vdbeaux.o vdbeblob.o vdbemem.o vdbesort.o \
@@ -221,6 +221,9 @@ SRC += \
 SRC += \
   $(TOP)/ext/userauth/userauth.c \
   $(TOP)/ext/userauth/sqlite3userauth.h
+SRC += \
+  $(TOP)/ext/ota/sqlite3ota.c \
+  $(TOP)/ext/ota/sqlite3ota.h
 
 # Generated source code files
 #
@@ -238,6 +241,7 @@ SRC += \
 TESTSRC = \
   $(TOP)/ext/fts3/fts3_term.c \
   $(TOP)/ext/fts3/fts3_test.c \
+  $(TOP)/ext/ota/test_ota.c \
   $(TOP)/src/test1.c \
   $(TOP)/src/test2.c \
   $(TOP)/src/test3.c \
@@ -339,7 +343,7 @@ TESTSRC2 = \
   $(TOP)/ext/fts3/fts3_expr.c \
   $(TOP)/ext/fts3/fts3_tokenizer.c \
   $(TOP)/ext/fts3/fts3_write.c \
-  $(TOP)/ext/async/sqlite3async.c
+  $(TOP)/ext/async/sqlite3async.c 
 
 # Header files used by all library source files.
 #
@@ -603,6 +607,9 @@ rtree.o:	$(TOP)/ext/rtree/rtree.c $(HDR) $(EXTHDR)
 userauth.o:	$(TOP)/ext/userauth/userauth.c $(HDR) $(EXTHDR)
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/userauth/userauth.c
 
+sqlite3ota.o:	$(TOP)/ext/ota/sqlite3ota.c $(HDR) $(EXTHDR)
+	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/ota/sqlite3ota.c
+
 
 # Rules for building test programs and for running tests
 #
@@ -734,7 +741,11 @@ wordcount$(EXE):	$(TOP)/test/wordcount.c sqlite3.c
 		$(TOP)/test/wordcount.c sqlite3.c
 
 speedtest1$(EXE):	$(TOP)/test/speedtest1.c sqlite3.o
-	$(TCC) -I. -o speedtest1$(EXE) $(TOP)/test/speedtest1.c sqlite3.o $(THREADLIB)
+	$(TCC) -I. $(OTAFLAGS) -o speedtest1$(EXE) $(TOP)/test/speedtest1.c sqlite3.o $(THREADLIB) 
+
+ota$(EXE): $(TOP)/ext/ota/ota.c $(TOP)/ext/ota/sqlite3ota.c sqlite3.o 
+	$(TCC) -I. -o ota$(EXE) $(TOP)/ext/ota/ota.c sqlite3.o \
+	  $(THREADLIB)
 
 # This target will fail if the SQLite amalgamation contains any exported
 # symbols that do not begin with "sqlite3_". It is run as part of the

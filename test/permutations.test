@@ -113,7 +113,7 @@ set allquicktests [test_set $alltests -exclude {
   vtab_err.test walslow.test walcrash.test walcrash3.test
   walthread.test rtree3.test indexfault.test securedel2.test
   sort3.test sort4.test fts4growth.test fts4growth2.test
-  bigsort.test
+  bigsort.test ota.test
 }]
 if {[info exists ::env(QUICKTEST_INCLUDE)]} {
   set allquicktests [concat $allquicktests $::env(QUICKTEST_INCLUDE)]
@@ -938,6 +938,12 @@ test_suite "wal" -description {
 test_suite "rtree" -description {
   All R-tree related tests. Provides coverage of source file rtree.c.
 } -files [glob -nocomplain $::testdir/../ext/rtree/*.test]
+
+test_suite "ota" -description {
+  OTA tests.
+} -files [
+  test_set [glob -nocomplain $::testdir/../ext/ota/*.test] -exclude ota.test
+]
 
 test_suite "no_optimization" -description {
   Run test scripts with optimizations disabled using the
