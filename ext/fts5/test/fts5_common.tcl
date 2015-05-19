@@ -51,6 +51,7 @@ proc fts5_test_columntotalsize {cmd} {
 proc test_append_token {varname token iStart iEnd} {
   upvar $varname var
   lappend var $token
+  return "SQLITE_OK"
 }
 proc fts5_test_tokenize {cmd} {
   set res [list]

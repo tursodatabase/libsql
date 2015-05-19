@@ -154,6 +154,9 @@ static int xTokenizeCb(
 
   rc = Tcl_EvalObjEx(p->interp, pEval, 0);
   Tcl_DecrRefCount(pEval);
+  if( rc==TCL_OK ){
+    rc = f5tResultToErrorCode(Tcl_GetStringResult(p->interp));
+  }
 
   return rc;
 }

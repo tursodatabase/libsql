@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# Tests focusing on the fts5 tokenizers
+# Tests focusing on the built-in fts5 tokenizers. 
 #
 
 source [file join [file dirname [info script]] fts5_common.tcl]
@@ -100,6 +100,39 @@ foreach {tn tokenizer} {1 ascii 2 unicode61} {
     " $res
   }
 }
+
+#-------------------------------------------------------------------------
+# Miscellaneous tests for the ascii tokenizer.
+#
+# 5.1.*: Test that the ascii tokenizer ignores non-ASCII characters in the
+#        'separators' option. But unicode61 does not.
+#
+# 5.2.*: An option without an argument is an error.
+#
+
+do_test 5.1.1 {
+  execsql "
+    CREATE VIRTUAL TABLE a1 USING fts5(x, tokenize=`ascii separators '\u1234'`);
+    INSERT INTO a1 VALUES('abc\u1234def');
+  "
+  execsql { SELECT rowid FROM a1 WHERE a1 MATCH 'def' } 
+} {}
+
+do_test 5.1.2 {
+  execsql "
+    CREATE VIRTUAL TABLE a2 USING fts5(
+        x, tokenize=`unicode61 separators '\u1234'`);
+    INSERT INTO a2 VALUES('abc\u1234def');
+  "
+  execsql { SELECT rowid FROM a2 WHERE a2 MATCH 'def' } 
+} {1}
+
+do_catchsql_test 5.2 {
+  CREATE VIRTUAL TABLE a3 USING fts5(x, y, tokenize = 'ascii tokenchars');
+} {1 {error in tokenizer constructor}}
+do_catchsql_test 5.3 {
+  CREATE VIRTUAL TABLE a3 USING fts5(x, y, tokenize = 'ascii opt arg');
+} {1 {error in tokenizer constructor}}
 
 finish_test
 

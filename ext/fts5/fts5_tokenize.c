@@ -55,7 +55,14 @@ static void fts5AsciiAddExceptions(
 }
 
 /*
-** Create a "ascii" tokenizer.
+** Delete a "ascii" tokenizer.
+*/
+static void fts5AsciiDelete(Fts5Tokenizer *p){
+  sqlite3_free(p);
+}
+
+/*
+** Create an "ascii" tokenizer.
 */
 static int fts5AsciiCreate(
   void *pCtx, 
@@ -85,18 +92,15 @@ static int fts5AsciiCreate(
           rc = SQLITE_ERROR;
         }
       }
+      if( rc!=SQLITE_OK ){
+        fts5AsciiDelete((Fts5Tokenizer*)p);
+        p = 0;
+      }
     }
   }
 
   *ppOut = (Fts5Tokenizer*)p;
   return rc;
-}
-
-/*
-** Delete a "ascii" tokenizer.
-*/
-static void fts5AsciiDelete(Fts5Tokenizer *p){
-  sqlite3_free(p);
 }
 
 
