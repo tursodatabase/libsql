@@ -966,6 +966,11 @@ struct sqlite3_io_methods {
 ** <li>[[SQLITE_FCNTL_ZIPVFS]]
 ** The [SQLITE_FCNTL_ZIPVFS] opcode is implemented by zipvfs only. All other
 ** VFS should return SQLITE_NOTFOUND for this opcode.
+**
+** <li>[[SQLITE_FCNTL_OTA]]
+** The [SQLITE_FCNTL_OTA] opcode is implemented by the special VFS used by
+** the OTA extension only.  All other VFS should return SQLITE_NOTFOUND for
+** this opcode.  
 ** </ul>
 */
 #define SQLITE_FCNTL_LOCKSTATE               1

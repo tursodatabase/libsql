@@ -1,5 +1,5 @@
-C Allow\sOTA\supdate\sstate\sdata\sto\sbe\sstored\sin\sa\sdatabase\sseparate\sfrom\sthe\sOTA\supdate\sdatabase.
-D 2015-05-19T16:22:58.978
+C Add\sa\scomment\sfor\sSQLITE_FCNTL_OTA\sto\ssqlite.h.in.
+D 2015-05-19T16:26:51.563
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0a6ae26396ec696221021780dffbb894ff3cead7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -252,7 +252,7 @@ F src/resolve.c 99eabf7eff0bfa65b75939b46caa82e2b2133f28
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 6d9d6ae899acb9bf148862e8cccdf16085514b26
 F src/shell.c 07dda7cd692911d2f22269953418d049f2e2c0ee
-F src/sqlite.h.in ad7ce501e5447f89785d6c04bb61d0514554bcd2
+F src/sqlite.h.in 0127e418883c2b41f7fbc056bc1033fa56fbd2a5
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 17d487c3c91b0b8c584a32fbeb393f6f795eea7d
 F src/sqliteInt.h 88738d94a343000e7a5c0e295d111c4cfccb18b0
@@ -1278,7 +1278,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6055a6725cb24469c10de9a04f3614dcc79193c6
-R 2b87c978f295a3b27fab33174a5bc3b2
+P 5af8db56af457d60ea030d84666ca7fffb6821fe
+R 90f51428989ad97de8b5b492628ddcf2
 U dan
-Z 5cb8f8d4aed58cbcc0b1d560014c2a0f
+Z 939b1bde27d2b3f6f6554896ab8cea12
