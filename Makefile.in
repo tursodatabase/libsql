@@ -340,6 +340,22 @@ SRC += \
   $(TOP)/ext/rtree/rtree.h \
   $(TOP)/ext/rtree/rtree.c
 
+SRC += \
+   $(TOP)/ext/fts5/fts5.h \
+   $(TOP)/ext/fts5/fts5Int.h \
+   $(TOP)/ext/fts5/fts5_aux.c \
+   $(TOP)/ext/fts5/fts5_buffer.c \
+   $(TOP)/ext/fts5/fts5.c \
+   $(TOP)/ext/fts5/fts5_config.c \
+   $(TOP)/ext/fts5/fts5_expr.c \
+   $(TOP)/ext/fts5/fts5_hash.c \
+   $(TOP)/ext/fts5/fts5_index.c \
+   fts5parse.c fts5parse.h \
+   $(TOP)/ext/fts5/fts5_storage.c \
+   $(TOP)/ext/fts5/fts5_tokenize.c \
+   $(TOP)/ext/fts5/fts5_unicode2.c \
+   $(TOP)/ext/fts5/fts5_vocab.c 
+
 
 # Generated source code files
 #
@@ -941,6 +957,18 @@ fts3_write.lo:	$(TOP)/ext/fts3/fts3_write.c $(HDR) $(EXTHDR)
 
 rtree.lo:	$(TOP)/ext/rtree/rtree.c $(HDR) $(EXTHDR)
 	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/rtree/rtree.c
+
+fts5parse.c:	$(TOP)/ext/fts5/fts5parse.y lemon 
+	cp $(TOP)/ext/fts5/fts5parse.y .
+	rm -f fts5parse.h
+	./lemon $(OPTS) fts5parse.y
+	mv fts5parse.c fts5parse.c.orig
+	echo "#ifdef SQLITE_ENABLE_FTS5" > fts5parse.c
+	cat fts5parse.c.orig | sed 's/yy/fts5yy/g' | sed 's/YY/fts5YY/g' \
+		| sed 's/TOKEN/FTS5TOKEN/g' >> fts5parse.c
+	echo "#endif /* SQLITE_ENABLE_FTS5 */" >> fts5parse.c
+
+fts5parse.h: fts5parse.c
 
 
 # Rules to build the 'testfixture' application.
