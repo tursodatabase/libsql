@@ -1,4 +1,4 @@
-# 2015-03-19
+# 2015-03-16
 #
 # The author disclaims copyright to this source code.  In place of
 # a legal notice, here is a blessing:
@@ -8,70 +8,65 @@
 #    May you share freely, never taking more than you give.
 #
 #***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing OR expressions where terms can be
+# factored from either side of the OR and combined into a single new
+# AND term that is beneficial to the search.  Examples:
 #
+#      (x>A OR x=A)              -->    ... AND (x>=A)
+#      (x>A OR (x=A AND y>=B)    -->    ... AND (x>=A)
+#
+
+
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set ::testprefix whereK
 
-do_execsql_test 1.0 {
-  CREATE TABLE t1(v, w TEXT, x, PRIMARY KEY(w, x)) WITHOUT ROWID;
+do_execsql_test 1.1 {
+  CREATE TABLE t1(a,b,c);
+  WITH RECURSIVE c(x) AS (VALUES(0) UNION ALL SELECT x+1 FROM c WHERE x<99)
+    INSERT INTO t1(a,b,c) SELECT x, x/10, x%10 FROM c;
+  CREATE INDEX t1bc ON t1(b,c);
+  SELECT a FROM t1 WHERE b>9 OR b=9 ORDER BY +a;
+} {90 91 92 93 94 95 96 97 98 99}
+do_execsql_test 1.1eqp {
+  EXPLAIN QUERY PLAN
+  SELECT a FROM t1 WHERE b>9 OR b=9 ORDER BY +a;
+} {/SEARCH TABLE t1 USING INDEX t1bc/}
 
-  INSERT INTO t1 VALUES('a', 1, 1);
-  INSERT INTO t1 VALUES('B', 2, 2);
-  INSERT INTO t1 VALUES('C', 3, 3);
-  INSERT INTO t1 VALUES('d', 4, 4);
+do_execsql_test 1.2 {
+  SELECT a FROM t1 WHERE b>8 OR (b=8 AND c>7) ORDER BY +a;
+} {88 89 90 91 92 93 94 95 96 97 98 99}
+do_execsql_test 1.2eqp {
+  EXPLAIN QUERY PLAN
+  SELECT a FROM t1 WHERE b>8 OR (b=8 AND c>7) ORDER BY +a;
+} {/SEARCH TABLE t1 USING INDEX t1bc/}
 
-  CREATE TABLE t2(v, w TEXT, x, PRIMARY KEY(w, x));
+do_execsql_test 1.3 {
+  SELECT a FROM t1 WHERE (b=8 AND c>7) OR b>8 ORDER BY +a;
+} {88 89 90 91 92 93 94 95 96 97 98 99}
+do_execsql_test 1.3eqp {
+  EXPLAIN QUERY PLAN
+  SELECT a FROM t1 WHERE (b=8 AND c>7) OR b>8 ORDER BY +a;
+} {/SEARCH TABLE t1 USING INDEX t1bc/}
 
-  CREATE TABLE t3(a, b, c);
-  CREATE UNIQUE INDEX t3a ON t3(a);
-}
+do_execsql_test 1.4 {
+  SELECT a FROM t1 WHERE (b=8 AND c>7) OR 8<b ORDER BY +a;
+} {88 89 90 91 92 93 94 95 96 97 98 99}
+do_execsql_test 1.4eqp {
+  EXPLAIN QUERY PLAN
+  SELECT a FROM t1 WHERE (b=8 AND c>7) OR 8<b ORDER BY +a;
+} {/SEARCH TABLE t1 USING INDEX t1bc/}
 
-do_eqp_test 1.1.1 {
-  SELECT v FROM t1 WHERE w IS ? AND x IS ?
-} {/SEARCH TABLE t1.*(w=. AND x=.)/}
-
-do_eqp_test 1.1.2 {
-  SELECT v FROM t2 WHERE w IS ? AND x IS ?
-} {/SCAN TABLE t2/}
-
-do_execsql_test 1.2.1 { SELECT v FROM t1 WHERE w IS 1   AND x IS 1 }   {a}
-do_execsql_test 1.2.2 { SELECT v FROM t1 WHERE w IS '2' AND x IS 2 }   {B}
-do_execsql_test 1.2.3 { SELECT v FROM t1 WHERE w IS 3   AND x IS '3' } {}
-do_execsql_test 1.2.4 { SELECT v FROM t1 WHERE w IS '4' AND x IS '4' } {}
-  
-
-# IS constraints may only be used if all fields of the index are 
-# constrained by either "IS" or "=".
-#
-do_eqp_test 1.3.1 {
-    SELECT v FROM t1 WHERE w IS ?
-} {/SCAN TABLE t1/}
-do_eqp_test 1.3.2 {
-    SELECT v FROM t1 WHERE w IS ? AND x > ?
-} {/SCAN TABLE t1/}
-
-do_execsql_test 1.4.1 { SELECT v FROM t1 WHERE w IS 3   AND x = 3 } {C}
-do_execsql_test 1.4.2 { SELECT v FROM t1 WHERE w = '4' AND x IS 4 } {d}
-
-do_eqp_test 1.5.1 { SELECT b FROM t3 WHERE a IS ? } {/SCAN TABLE/}
-do_eqp_test 1.5.2 { SELECT b FROM t3 WHERE a = ? } {/SEARCH TABLE/}
-
-#-------------------------------------------------------------------------
-# Check that this works with PRIMARY KEY indexes that have large numbers
-# of columns.
-
-do_execsql_test 2.1.1 {
-  CREATE TABLE x1(a, b, c, d, e, f, g, h, i,
-    PRIMARY KEY(a, b, c, d, e, f, g)
-  ) WITHOUT ROWID;
-}
-do_eqp_test 2.1.2 { 
-  SELECT i FROM x1 WHERE 
-  a IS ? AND b IS ? AND c IS ? AND d IS ? AND e IS ? AND f IS ? AND g IS ?
-} {/SEARCH TABLE/}
+do_execsql_test 1.5 {
+  SELECT a FROM t1 WHERE (b=8 AND c>7) OR (b>8 AND c NOT IN (4,5,6))
+   ORDER BY +a;
+} {88 89 90 91 92 93 97 98 99}
+do_execsql_test 1.5eqp {
+  EXPLAIN QUERY PLAN
+  SELECT a FROM t1 WHERE (b=8 AND c>7) OR (b>8 AND c NOT IN (4,5,6))
+   ORDER BY +a;
+} {/SEARCH TABLE t1 USING INDEX t1bc/}
 
 finish_test
-
-

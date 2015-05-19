@@ -19,6 +19,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix where4
 
 ifcapable !tclvar||!bloblit {
   finish_test
@@ -285,4 +286,22 @@ do_test where4-7.2 {
 
 }; #ifcapable subquery
 
+#-------------------------------------------------------------------------
+# Verify that "IS ?" with a NULL bound to the variable also functions
+# correctly.
+
+unset -nocomplain null
+
+do_execsql_test 8.1 {
+  CREATE TABLE u9(a UNIQUE, b);
+  INSERT INTO u9 VALUES(NULL, 1);
+  INSERT INTO u9 VALUES(NULL, 2);
+}
+do_execsql_test 8.2 { SELECT * FROM u9 WHERE a IS NULL  } {{} 1 {} 2}
+do_execsql_test 8.2 { SELECT * FROM u9 WHERE a IS $null } {{} 1 {} 2}
+
+
+
+
 finish_test
+

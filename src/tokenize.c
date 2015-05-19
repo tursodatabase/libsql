@@ -472,7 +472,7 @@ abort_parse:
     pParse->rc = SQLITE_NOMEM;
   }
   if( pParse->rc!=SQLITE_OK && pParse->rc!=SQLITE_DONE && pParse->zErrMsg==0 ){
-    sqlite3SetString(&pParse->zErrMsg, db, "%s", sqlite3ErrStr(pParse->rc));
+    pParse->zErrMsg = sqlite3MPrintf(db, "%s", sqlite3ErrStr(pParse->rc));
   }
   assert( pzErrMsg!=0 );
   if( pParse->zErrMsg ){

@@ -26,13 +26,13 @@ static void corruptSchema(
 ){
   sqlite3 *db = pData->db;
   if( !db->mallocFailed && (db->flags & SQLITE_RecoveryMode)==0 ){
+    char *z;
     if( zObj==0 ) zObj = "?";
-    sqlite3SetString(pData->pzErrMsg, db,
-      "malformed database schema (%s)", zObj);
-    if( zExtra ){
-      *pData->pzErrMsg = sqlite3MAppendf(db, *pData->pzErrMsg, 
-                                 "%s - %s", *pData->pzErrMsg, zExtra);
-    }
+    z = sqlite3_mprintf("malformed database schema (%s)", zObj);
+    if( z && zExtra ) z = sqlite3_mprintf("%z - %s", z, zExtra);
+    sqlite3DbFree(db, *pData->pzErrMsg);
+    *pData->pzErrMsg = z;
+    if( z==0 ) db->mallocFailed = 1;
   }
   pData->rc = db->mallocFailed ? SQLITE_NOMEM : SQLITE_CORRUPT_BKPT;
 }
@@ -224,7 +224,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   if( !sqlite3BtreeIsInReadTrans(pDb->pBt) ){
     rc = sqlite3BtreeBeginTrans(pDb->pBt, 0);
     if( rc!=SQLITE_OK ){
-      sqlite3SetString(pzErrMsg, db, "%s", sqlite3ErrStr(rc));
+      sqlite3SetString(pzErrMsg, db, sqlite3ErrStr(rc));
       goto initone_error_out;
     }
     openedTransaction = 1;

@@ -66,6 +66,12 @@ do_execsql_test transitive1-301 {
    WHERE w=y AND y IS NOT NULL
    ORDER BY w;
 } {1 2 1 3 3 4 3 6 5 6 5 7}
+do_execsql_test transitive1-302 {
+  SELECT *
+    FROM t301 CROSS JOIN t302
+   WHERE w IS y AND y IS NOT NULL
+   ORDER BY w;
+} {1 2 1 3 3 4 3 6 5 6 5 7}
 do_execsql_test transitive1-310 {
   SELECT *
     FROM t301 CROSS JOIN t302 ON w=y
@@ -103,7 +109,7 @@ do_execsql_test transitive1-332 {
 } {3 4 3 6 1 2 1 3}
 
 # Ticket [c620261b5b5dc] circa 2013-10-28.
-# Make sureconstraints are not used with LEFT JOINs.
+# Make sure constraints are not used with LEFT JOINs.
 #
 # The next case is from the ticket report.  It outputs no rows in 3.8.1
 # prior to the bug-fix.
@@ -116,6 +122,16 @@ do_execsql_test transitive1-400 {
   INSERT INTO t403 VALUES(1);
   SELECT '1-row' FROM t401 LEFT JOIN t402 ON b=a JOIN t403 ON c=a;
 } {1-row}
+do_execsql_test transitive1-401 {
+  SELECT '1-row' FROM t401 LEFT JOIN t402 ON b IS a JOIN t403 ON c=a;
+} {1-row}
+do_execsql_test transitive1-402 {
+  SELECT '1-row' FROM t401 LEFT JOIN t402 ON b=a JOIN t403 ON c IS a;
+} {1-row}
+do_execsql_test transitive1-403 {
+  SELECT '1-row' FROM t401 LEFT JOIN t402 ON b IS a JOIN t403 ON c IS a;
+} {1-row}
+
 
 # The following is a script distilled from the XBMC project where the
 # bug was originally encountered.  The correct answer is a single row
@@ -280,5 +296,61 @@ do_execsql_test transitive1-410 {
   GROUP BY episodeview.c12;
 } {1 /tmp/tvshows/The.Big.Bang.Theory/ {The Big Bang Theory} {Leonard Hofstadter and Sheldon Cooper are brilliant physicists, the kind of "beautiful minds" that understand how the universe works. But none of that genius helps them interact with people, especially women. All this begins to change when a free-spirited beauty named Penny moves in next door. Sheldon, Leonard's roommate, is quite content spending his nights playing Klingon Boggle with their socially dysfunctional friends, fellow CalTech scientists Howard Wolowitz and Raj Koothrappali. However, Leonard sees in Penny a whole new universe of possibilities... including love.} 2007-09-24 Comedy CBS TV-PG 3 1 0}
 
+##############################################################################
+# 2015-05-18.  Make sure transitive constraints are avoided when column
+# affinities and collating sequences get in the way.
+#
+db close
+forcedelete test.db
+sqlite3 db test.db
+do_execsql_test transitive1-500 {
+  CREATE TABLE x(i INTEGER PRIMARY KEY, y TEXT);
+  INSERT INTO x VALUES(10, '10');
+  SELECT * FROM x WHERE x.y>='1' AND x.y<'2' AND x.i=x.y;
+} {10 10}
+do_execsql_test transitive1-510 {
+  CREATE TABLE t1(x TEXT); 
+  CREATE TABLE t2(y TEXT); 
+  INSERT INTO t1 VALUES('abc');
+  INSERT INTO t2 VALUES('ABC');
+  SELECT * FROM t1 CROSS JOIN t2 WHERE (x=y COLLATE nocase) AND y='ABC';
+} {abc ABC}
+do_execsql_test transitive1-520 {
+  CREATE TABLE t3(i INTEGER PRIMARY KEY, t TEXT);
+  INSERT INTO t3 VALUES(10, '10');
+  SELECT * FROM t3 WHERE i=t AND t = '10 ';
+} {}
+do_execsql_test transitive1-530 {
+  CREATE TABLE u1(x TEXT, y INTEGER, z TEXT);
+  CREATE INDEX i1 ON u1(x);
+  INSERT INTO u1 VALUES('00013', 13, '013');
+  SELECT * FROM u1 WHERE x=y AND y=z AND z='013';
+} {00013 13 013}
+do_execsql_test transitive1-540 {
+  CREATE TABLE b1(x, y);
+  INSERT INTO b1 VALUES('abc', 'ABC');
+  CREATE INDEX b1x ON b1(x);
+  SELECT * FROM b1 WHERE (x=y COLLATE nocase) AND y='ABC';
+} {abc ABC}
+do_execsql_test transitive1-550 {
+  CREATE TABLE c1(x, y COLLATE nocase, z);
+  INSERT INTO c1 VALUES('ABC', 'ABC', 'abc');
+  SELECT * FROM c1 WHERE x=y AND y=z AND z='abc';
+} {ABC ABC abc}
+do_execsql_test transitive1-560 {
+  CREATE INDEX c1x ON c1(x);
+  SELECT * FROM c1 WHERE x=y AND y=z AND z='abc';
+} {ABC ABC abc}
+do_execsql_test transitive1-560eqp {
+  EXPLAIN QUERY PLAN
+  SELECT * FROM c1 WHERE x=y AND y=z AND z='abc';
+} {/SCAN TABLE c1/}
+do_execsql_test transitive1-570 {
+  SELECT * FROM c1 WHERE x=y AND z=y AND z='abc';
+} {}
+do_execsql_test transitive1-570eqp {
+  EXPLAIN QUERY PLAN
+  SELECT * FROM c1 WHERE x=y AND z=y AND z='abc';
+} {/SEARCH TABLE c1 USING INDEX c1x/}
 
 finish_test
