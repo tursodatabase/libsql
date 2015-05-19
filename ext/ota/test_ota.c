@@ -124,6 +124,7 @@ static int test_sqlite3ota(
   const char *zCmd;
   const char *zTarget;
   const char *zOta;
+  const char *zStateDb = 0;
 
   if( objc!=4 && objc!=5 ){
     Tcl_WrongNumArgs(interp, 1, objv, "NAME TARGET-DB OTA-DB ?STATE-DB?");
@@ -132,13 +133,9 @@ static int test_sqlite3ota(
   zCmd = Tcl_GetString(objv[1]);
   zTarget = Tcl_GetString(objv[2]);
   zOta = Tcl_GetString(objv[3]);
+  if( objc==5 ) zStateDb = Tcl_GetString(objv[4]);
 
-  if( objc==4 ){
-    pOta = sqlite3ota_open(zTarget, zOta);
-  }else{
-    const char *zStateDb = Tcl_GetString(objv[4]);
-    pOta = sqlite3ota_open_v2(zTarget, zOta, zStateDb);
-  }
+  pOta = sqlite3ota_open(zTarget, zOta, zStateDb);
   Tcl_CreateObjCommand(interp, zCmd, test_sqlite3ota_cmd, (ClientData)pOta, 0);
   Tcl_SetObjResult(interp, objv[1]);
   return TCL_OK;

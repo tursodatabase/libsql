@@ -261,6 +261,20 @@ typedef struct sqlite3ota sqlite3ota;
 ** or zOta begin with "file:", it will be interpreted as an SQLite 
 ** database URI, not a regular file name.
 **
+** If the zState argument is passed a NULL value, the OTA extension stores 
+** the current state of the update (how many rows have been updated, which 
+** indexes are yet to be updated etc.) within the OTA database itself. This
+** can be convenient, as it means that the OTA application does not need to
+** organize removing a separate state file after the update is concluded. 
+** Or, if zState is non-NULL, it must be a path to a database file in which 
+** the OTA extension can store the state of the update.
+**
+** When resuming an OTA update, the zState argument must be passed the same
+** value as when the OTA update was started.
+**
+** Once the OTA update is finished, the OTA extension does not 
+** automatically remove any zState database file, even if it created it.
+**
 ** By default, OTA uses the default VFS to access the files on disk. To
 ** use a VFS other than the default, an SQLite "file:" URI containing a
 ** "vfs=..." option may be passed as the zTarget option.
@@ -270,35 +284,8 @@ typedef struct sqlite3ota sqlite3ota;
 ** not work out of the box with zipvfs. Refer to the comment describing
 ** the zipvfs_create_vfs() API below for details on using OTA with zipvfs.
 */
-sqlite3ota *sqlite3ota_open(const char *zTarget, const char *zOta);
-
-/*
-** Open an OTA handle with an auxiliary state file.
-**
-** This API is similar to sqlite3ota_open(), except that it allows the user 
-** to specify a separate SQLite database in which to store the OTA update 
-** state.
-**
-** While executing, the OTA extension usually stores the current state 
-** of the update (how many rows have been updated, which indexes are yet
-** to be updated etc.) within the OTA database itself. This can be 
-** convenient, as it means that the OTA application does not need to
-** organize removing a separate state file after the update is concluded.
-** However, it can also be inconvenient - for example if the OTA update
-** database is sto be stored on a read-only media.
-**
-** If an OTA update started using a handle opened with this function is
-** suspended, the application must use this function to resume it, and 
-** must pass the same zState argument each time the update is resumed.
-** Attempting to resume an sqlite3ota_open_v2() update using sqlite3ota_open(),
-** or with a call to sqlite3ota_open_v2() specifying a different zState
-** argument leads to undefined behaviour.
-**
-** Once the OTA update is finished, the OTA extension does not 
-** automatically remove the zState database file, even if it created it.
-*/
-sqlite3ota *sqlite3ota_open_v2(
-  const char *zTarget,
+sqlite3ota *sqlite3ota_open(
+  const char *zTarget, 
   const char *zOta,
   const char *zState
 );

@@ -2660,7 +2660,10 @@ static void otaDeleteVfs(sqlite3ota *p){
   }
 }
 
-static sqlite3ota *otaOpen(
+/*
+** Open and return a new OTA handle. 
+*/
+sqlite3ota *sqlite3ota_open(
   const char *zTarget, 
   const char *zOta,
   const char *zState
@@ -2775,27 +2778,6 @@ static sqlite3ota *otaOpen(
   return p;
 }
 
-
-/*
-** Open and return a new OTA handle. 
-*/
-sqlite3ota *sqlite3ota_open_v2(
-  const char *zDb, 
-  const char *zOta, 
-  const char *zState
-){
-  return otaOpen(zDb, zOta, zState);
-}
-
-/*
-** Open and return a new OTA handle. 
-*/
-sqlite3ota *sqlite3ota_open(
-  const char *zDb, 
-  const char *zOta 
-){
-  return otaOpen(zDb, zOta, 0);
-}
 
 /*
 ** Return the database handle used by pOta.
