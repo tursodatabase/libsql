@@ -1,5 +1,5 @@
-C Remove\sthe\ssqlite3ota_open_v2()\sAPI.\sAdd\sa\snew\sparameter\sto\ssqlite3ota_open()\sinstead.
-D 2015-05-19T17:48:11.466
+C Ensure\sthat\swhen\sthe\sVM\sapplies\sTEXT\saffinity\sto\sa\svalue\sit\sdiscards\sany\sexisting\sREAL\sor\sINTEGER\svalue.
+D 2015-05-19T19:44:25.924
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0a6ae26396ec696221021780dffbb894ff3cead7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -312,7 +312,7 @@ F src/update.c 3c4ecc282accf12d39edb8d524cf089645e55a13
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c a6431c92803b975b7322724a7b433e538d243539
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c 8775967d8ae262f4134a34f539b8747b23421000
+F src/vdbe.c 6aee8a041742413ab3113e6682bc7ad1628a2bbe
 F src/vdbe.h 7e538ecf47dccb307ea2d087c3ddc2dd8d70e79d
 F src/vdbeInt.h de3291a6688dfef9f61d47705c1bd57008b1185d
 F src/vdbeapi.c 583d56b129dd27f12bed518270de9ebe521e6a75
@@ -1103,7 +1103,7 @@ F test/trans.test 6e1b4c6a42dba31bd65f8fa5e61a2708e08ddde6
 F test/trans2.test 62bd045bfc7a1c14c5ba83ba64d21ade31583f76
 F test/trans3.test 91a100e5412b488e22a655fe423a14c26403ab94
 F test/transitive1.test 293300f46916569f08875cdb2fe2134be2c27677
-F test/trigger1.test dc47573ac79ffe0ee3eecaa517d70d8dacbccd03
+F test/trigger1.test ea9624cc1dae05645469df6119fa815f9e6f1e8c
 F test/trigger2.test 5cd7d69a7ba1143ee045e4ae2963ff32ae4c87a6
 F test/trigger3.test aa640bb2bbb03edd5ff69c055117ea088f121945
 F test/trigger4.test 74700b76ebf3947b2f7a92405141eb2cf2a5d359
@@ -1278,7 +1278,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 08e2864ed7c2d36410a248459061dcbd5576e145
-R d09494068161087db80612c39a639a87
+P c74e0bc481ce995f83ca8384e05dfbe068a0ae85
+R 156f7f5ee2915cdb09e3f94c0c3af5e0
 U dan
-Z 59d2caf8980d2c8a59e31483a39f217a
+Z 98adea0e9355f8ba8d3dfa8723cc9e42
