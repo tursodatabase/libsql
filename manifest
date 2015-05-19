@@ -1,12 +1,12 @@
-C Version\s3.8.10.1
-D 2015-05-09T12:14:55.159
+C Ensure\sthat\swhen\sthe\sVM\sapplies\sTEXT\saffinity\sto\sa\svalue\sit\sdiscards\s\nany\sexisting\sREAL\sor\sINTEGER\svalue.\sFix\sfor\s[34cd55d6].\nIncrease\sthe\sversion\snumber\sto\s3.8.10.2.
+D 2015-05-19T19:52:32.723
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 08728ecbeddca339c77bfd564d3484b523dffdb1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc c6241f7fa2912427410ef15429c8ab5601e19a71
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md d58e3bebc0a4145e0f2a87994015fdb575a8e866
-F VERSION 8af05c43e00f7de32be74ff9984d792c96cdb0de
+F VERSION 527b4c5a3d1a29e3b16162473d0903b569c6d7cb
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 9eb448a552d5c0185cf62c463f9c173cedae3811
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -38,7 +38,7 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 42b71ad3fe21c9e88fa59e8458ca1a6bc72eb0c0
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure dae9f0ec4df32a9e300befbcdbc4ff8874731357 x
+F configure 17b518102f77344a1709422da84afebb57f0fcfe x
 F configure.ac 0b775d383c536bbaafc1e46dd3cbb81a7ea11aeb
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 334dbf6621b8fb8790297ec1abf3cfa4621709d1
@@ -293,7 +293,7 @@ F src/update.c 3c4ecc282accf12d39edb8d524cf089645e55a13
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c a6431c92803b975b7322724a7b433e538d243539
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c d437887d02d13d79dc69ac018f788aefac3b3972
+F src/vdbe.c 163e045d58ec5ff5384020e48b12ea49950c2922
 F src/vdbe.h 7e538ecf47dccb307ea2d087c3ddc2dd8d70e79d
 F src/vdbeInt.h 9cbaa84f53ddd2d09a0cf61a94337a3a035d08a0
 F src/vdbeapi.c 583d56b129dd27f12bed518270de9ebe521e6a75
@@ -1081,7 +1081,7 @@ F test/trans.test 6e1b4c6a42dba31bd65f8fa5e61a2708e08ddde6
 F test/trans2.test 62bd045bfc7a1c14c5ba83ba64d21ade31583f76
 F test/trans3.test 91a100e5412b488e22a655fe423a14c26403ab94
 F test/transitive1.test 03f532954f46cdf5608f7766bff0b0c52bf2a7cd
-F test/trigger1.test dc47573ac79ffe0ee3eecaa517d70d8dacbccd03
+F test/trigger1.test ea9624cc1dae05645469df6119fa815f9e6f1e8c
 F test/trigger2.test 5cd7d69a7ba1143ee045e4ae2963ff32ae4c87a6
 F test/trigger3.test aa640bb2bbb03edd5ff69c055117ea088f121945
 F test/trigger4.test 74700b76ebf3947b2f7a92405141eb2cf2a5d359
@@ -1256,10 +1256,11 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9c6bf0c1865896c83ca69bf7f2e37735a71ca9a6
-R 52ad5aed0a515212a5cae24455eec5a5
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.8.10.1 *
+P 05b4b1f2a937c06c90db70c09890038f6c98ec40
+Q +f5d0ce80792d58ef424300f973f8876d835ed4ad
+R cbe65e60b1898893979d31fa14de6276
+T *branch * branch-3.8.10
+T *sym-branch-3.8.10 *
+T -sym-trunk *
 U drh
-Z 2f070bdd5b3f9c1cfd8326cf20ed9566
+Z 6af3d1307e3dbea37cfecc8b3f17aad9

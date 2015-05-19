@@ -296,6 +296,7 @@ static void applyAffinity(
     if( 0==(pRec->flags&MEM_Str) && (pRec->flags&(MEM_Real|MEM_Int)) ){
       sqlite3VdbeMemStringify(pRec, enc, 1);
     }
+    pRec->flags &= ~(MEM_Real|MEM_Int);
   }
 }
 
