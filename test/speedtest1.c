@@ -43,6 +43,10 @@ static const char zHelp[] =
 #include <string.h>
 #include <ctype.h>
 
+#ifdef SQLITE_ENABLE_OTA
+# include "sqlite3ota.h"
+#endif
+
 /* All global state is held in this structure */
 static struct Global {
   sqlite3 *db;               /* The open database connection */
@@ -534,7 +538,7 @@ void testset_main(void){
   speedtest1_exec("COMMIT");
   speedtest1_end_test();
 
-  n = 10; //g.szTest/5;
+  n = 10; /* g.szTest/5; */
   speedtest1_begin_test(145, "%d SELECTS w/ORDER BY and LIMIT, unindexed", n);
   speedtest1_exec("BEGIN");
   speedtest1_prepare(
@@ -1204,6 +1208,11 @@ int main(int argc, char **argv){
         noSync = 1;
       }else if( strcmp(z,"notnull")==0 ){
         g.zNN = "NOT NULL";
+#ifdef SQLITE_ENABLE_OTA
+      }else if( strcmp(z,"ota")==0 ){
+        sqlite3ota_create_vfs("ota", 0);
+        sqlite3_vfs_register(sqlite3_vfs_find("ota"), 1);
+#endif
       }else if( strcmp(z,"pagesize")==0 ){
         if( i>=argc-1 ) fatal_error("missing argument on %s\n", argv[i]);
         pageSize = integerValue(argv[++i]);

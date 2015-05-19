@@ -636,7 +636,7 @@ static void exprAnalyzeAll(
 ** In order for the operator to be optimizible, the RHS must be a string
 ** literal that does not begin with a wildcard.  The LHS must be a column
 ** that may only be NULL, a string, or a BLOB, never a number. (This means
-** that virtual tables cannot participate in the LIKE optimization.)  If the
+** that virtual tables cannot participate in the LIKE optimization.)  The
 ** collating sequence for the column on the LHS must be appropriate for
 ** the operator.
 */
@@ -1183,6 +1183,46 @@ static void exprAnalyzeOrTerm(
 #endif /* !SQLITE_OMIT_OR_OPTIMIZATION && !SQLITE_OMIT_SUBQUERY */
 
 /*
+** We already know that pExpr is a binary operator where both operands are
+** column references.  This routine checks to see if pExpr is an equivalence
+** relation:
+**   1.  The SQLITE_Transitive optimization must be enabled
+**   2.  Must be either an == or an IS operator
+**   3.  Not originating the ON clause of an OUTER JOIN
+**   4.  The affinities of A and B must be compatible
+**   5a. Both operands use the same collating sequence OR
+**   5b. The overall collating sequence is BINARY
+** If this routine returns TRUE, that means that the RHS can be substituted
+** for the LHS anyplace else in the WHERE clause where the LHS column occurs.
+** This is an optimization.  No harm comes from returning 0.  But if 1 is
+** returned when it should not be, then incorrect answers might result.
+*/
+static int termIsEquivalence(Parse *pParse, Expr *pExpr){
+  char aff1, aff2;
+  CollSeq *pColl;
+  const char *zColl1, *zColl2;
+  if( !OptimizationEnabled(pParse->db, SQLITE_Transitive) ) return 0;
+  if( pExpr->op!=TK_EQ && pExpr->op!=TK_IS ) return 0;
+  if( ExprHasProperty(pExpr, EP_FromJoin) ) return 0;
+  aff1 = sqlite3ExprAffinity(pExpr->pLeft);
+  aff2 = sqlite3ExprAffinity(pExpr->pRight);
+  if( aff1!=aff2
+   && (!sqlite3IsNumericAffinity(aff1) || !sqlite3IsNumericAffinity(aff2))
+  ){
+    return 0;
+  }
+  pColl = sqlite3BinaryCompareCollSeq(pParse, pExpr->pLeft, pExpr->pRight);
+  if( pColl==0 || sqlite3StrICmp(pColl->zName, "BINARY")==0 ) return 1;
+  pColl = sqlite3ExprCollSeq(pParse, pExpr->pLeft);
+  /* Since pLeft and pRight are both a column references, their collating
+  ** sequence should always be defined. */
+  zColl1 = ALWAYS(pColl) ? pColl->zName : 0;
+  pColl = sqlite3ExprCollSeq(pParse, pExpr->pRight);
+  zColl2 = ALWAYS(pColl) ? pColl->zName : 0;
+  return sqlite3StrICmp(zColl1, zColl2)==0;
+}
+
+/*
 ** The input to this routine is an WhereTerm structure with only the
 ** "pExpr" field filled in.  The job of this routine is to analyze the
 ** subexpression and populate all the other fields of the WhereTerm
@@ -1276,16 +1316,14 @@ static void exprAnalyze(
         if( idxNew==0 ) return;
         pNew = &pWC->a[idxNew];
         markTermAsChild(pWC, idxNew, idxTerm);
+        if( op==TK_IS ) pNew->wtFlags |= TERM_IS;
         pTerm = &pWC->a[idxTerm];
         pTerm->wtFlags |= TERM_COPIED;
-        if( (op==TK_EQ || op==TK_IS)
-         && !ExprHasProperty(pExpr, EP_FromJoin)
-         && OptimizationEnabled(db, SQLITE_Transitive)
-        ){
+
+        if( termIsEquivalence(pParse, pDup) ){
           pTerm->eOperator |= WO_EQUIV;
           eExtraOp = WO_EQUIV;
         }
-        if( op==TK_IS ) pNew->wtFlags |= TERM_IS;
       }else{
         pDup = pExpr;
         pNew = pTerm;
@@ -6330,15 +6368,17 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
     pLoop->rRun = 33;  /* 33==sqlite3LogEst(10) */
   }else{
     for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+      int opMask;
       assert( pLoop->aLTermSpace==pLoop->aLTerm );
       if( !IsUniqueIndex(pIdx)
        || pIdx->pPartIdxWhere!=0 
        || pIdx->nKeyCol>ArraySize(pLoop->aLTermSpace) 
       ) continue;
+      opMask = pIdx->uniqNotNull ? (WO_EQ|WO_IS) : WO_EQ;
       for(j=0; j<pIdx->nKeyCol; j++){
-        pTerm = findTerm(pWC, iCur, pIdx->aiColumn[j], 0, WO_EQ|WO_IS, pIdx);
+        pTerm = findTerm(pWC, iCur, pIdx->aiColumn[j], 0, opMask, pIdx);
         if( pTerm==0 ) break;
-         testcase( pTerm->eOperator & WO_IS );
+        testcase( pTerm->eOperator & WO_IS );
         pLoop->aLTerm[j] = pTerm;
       }
       if( j!=pIdx->nKeyCol ) continue;

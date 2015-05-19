@@ -1762,8 +1762,8 @@ speedtest1.exe:	$(TOP)\test\speedtest1.c $(SQLITE3C)
 		$(TOP)\test\speedtest1.c $(SQLITE3C)
 
 clean:
-	del /Q *.exp *.lo *.ilk *.lib *.obj *.pdb 2>NUL
-	del /Q *.cod *.da *.bb *.bbg gmon.out 2>NUL
+	del /Q *.exp *.lo *.ilk *.lib *.obj *.ncb *.pdb *.sdf *.suo 2>NUL
+	del /Q *.bsc *.cod *.da *.bb *.bbg gmon.out 2>NUL
 	del /Q sqlite3.h opcodes.c opcodes.h 2>NUL
 	del /Q lemon.* lempar.c parse.* 2>NUL
 	del /Q mkkeywordhash.* keywordhash.h 2>NUL

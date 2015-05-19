@@ -3401,11 +3401,18 @@ static void geomCallback(sqlite3_context *ctx, int nArg, sqlite3_value **aArg){
     pBlob->cb = pGeomCtx[0];
     pBlob->nParam = nArg;
     for(i=0; i<nArg; i++){
+      if( sqlite3_value_type(aArg[i])==SQLITE_BLOB
+        && sqlite3_value_bytes(aArg[i])==sizeof(sqlite3_rtree_dbl)
+      ){
+        memcpy(&pBlob->aParam[i], sqlite3_value_blob(aArg[i]),
+               sizeof(sqlite3_rtree_dbl));
+      }else{
 #ifdef SQLITE_RTREE_INT_ONLY
-      pBlob->aParam[i] = sqlite3_value_int64(aArg[i]);
+        pBlob->aParam[i] = sqlite3_value_int64(aArg[i]);
 #else
-      pBlob->aParam[i] = sqlite3_value_double(aArg[i]);
+        pBlob->aParam[i] = sqlite3_value_double(aArg[i]);
 #endif
+      }
     }
     sqlite3_result_blob(ctx, pBlob, nBlob, sqlite3_free);
   }

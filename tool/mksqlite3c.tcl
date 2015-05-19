@@ -114,6 +114,8 @@ foreach hdr {
    sqlite3session.h
    sqlite3ext.h
    sqlite3.h
+   sqlite3ext.h
+   sqlite3ota.h
    sqliteicu.h
    sqliteInt.h
    sqliteLimit.h
@@ -370,6 +372,7 @@ foreach file {
    rtree.c
    icu.c
    fts3_icu.c
+   sqlite3ota.c
    dbstat.c
    sqlite3session.c
 } {

@@ -345,8 +345,9 @@ SRC += \
 SRC += \
   $(TOP)/ext/session/sqlite3session.c \
   $(TOP)/ext/session/sqlite3session.h
-
-
+SRC += \
+  $(TOP)/ext/ota/sqlite3ota.h \
+  $(TOP)/ext/ota/sqlite3ota.c
 
 # Generated source code files
 #
@@ -400,10 +401,11 @@ TESTSRC = \
   $(TOP)/src/test_tclvar.c \
   $(TOP)/src/test_thread.c \
   $(TOP)/src/test_vfs.c \
-  $(TOP)/src/test_wsd.c       \
+  $(TOP)/src/test_wsd.c \
   $(TOP)/ext/fts3/fts3_term.c \
   $(TOP)/ext/fts3/fts3_test.c  \
-  $(TOP)/ext/session/test_session.c
+  $(TOP)/ext/session/test_session.c \
+  $(TOP)/ext/ota/test_ota.c 
 
 # Statically linked extensions
 #
@@ -1059,7 +1061,7 @@ speedtest1$(TEXE):	$(TOP)/test/speedtest1.c sqlite3.lo
 # releasetest.tcl script.
 #
 checksymbols: sqlite3.lo
-	nm -g --defined-only sqlite3.o | grep -v " sqlite3_" ; test $$? -ne 0
+	nm -g --defined-only sqlite3.o | egrep -v ' sqlite3(changeset|session)?_' ; test $$? -ne 0
 	echo '0 errors out of 1 tests'
 
 # Build the amalgamation-autoconf package.

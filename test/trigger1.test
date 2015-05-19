@@ -712,4 +712,20 @@ do_test trigger1-16.7 {
   }
 } {1 {the INDEXED BY clause is not allowed on UPDATE or DELETE statements within triggers}}
 
+#-------------------------------------------------------------------------
+# Test that bug [34cd55d68e0e6e7c] has been fixed.
+#
+do_execsql_test trigger1-17.0 {
+  CREATE TABLE t17a(ii INT);
+  CREATE TABLE t17b(tt TEXT PRIMARY KEY, ss);
+  CREATE TRIGGER t17a_ai AFTER INSERT ON t17a BEGIN
+    INSERT INTO t17b(tt) VALUES(new.ii);
+  END;
+  CREATE TRIGGER t17b_ai AFTER INSERT ON t17b BEGIN
+    UPDATE t17b SET ss = 4;
+  END;
+  INSERT INTO t17a(ii) VALUES('1');
+  PRAGMA integrity_check;
+} {ok}
+
 finish_test

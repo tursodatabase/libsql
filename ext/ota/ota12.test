@@ -1,0 +1,172 @@
+# 2015 February 16
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+
+if {![info exists testdir]} {
+  set testdir [file join [file dirname [info script]] .. .. test]
+}
+source $testdir/tester.tcl
+source $testdir/lock_common.tcl
+set ::testprefix ota12
+
+set setup_sql {
+  DROP TABLE IF EXISTS xx;
+  DROP TABLE IF EXISTS xy;
+  CREATE TABLE xx(a, b, c PRIMARY KEY);
+  INSERT INTO xx VALUES(1, 2, 3);
+  CREATE TABLE xy(a, b, c PRIMARY KEY);
+
+  ATTACH 'ota.db' AS ota;
+    DROP TABLE IF EXISTS data_xx;
+    CREATE TABLE ota.data_xx(a, b, c, ota_control);
+    INSERT INTO data_xx VALUES(4, 5, 6, 0);
+    INSERT INTO data_xx VALUES(7, 8, 9, 0);
+    CREATE TABLE ota.data_xy(a, b, c, ota_control);
+    INSERT INTO data_xy VALUES(10, 11, 12, 0);
+  DETACH ota;
+}
+
+do_multiclient_test tn {
+
+  # Initialize a target (test.db) and ota (ota.db) database.
+  #
+  forcedelete ota.db
+  sql1 $setup_sql
+
+  # Using connection 2, open a read transaction on the target database.
+  # OTA will still be able to generate "test.db-oal", but it will not be
+  # able to rename it to "test.db-wal".
+  #
+  do_test 1.$tn.1 {
+    sql2 { BEGIN; SELECT * FROM xx; }
+  } {1 2 3}
+  do_test 1.$tn.2 {
+    sqlite3ota ota test.db ota.db
+    while 1 {
+      set res [ota step]
+      if {$res!="SQLITE_OK"} break
+    }
+    set res
+  } {SQLITE_BUSY}
+
+  do_test 1.$tn.3 { sql2 { SELECT * FROM xx; } } {1 2 3}
+  do_test 1.$tn.4 { sql2 { SELECT * FROM xy; } } {}
+  do_test 1.$tn.5 {
+    list [file exists test.db-wal] [file exists test.db-oal]
+  } {0 1}
+  do_test 1.$tn.6 { sql2 COMMIT } {}
+
+  # The ota object that hit the SQLITE_BUSY error above cannot be reused.
+  # It is stuck in a permanent SQLITE_BUSY state at this point.
+  #
+  do_test 1.$tn.7 { ota step } {SQLITE_BUSY}
+  do_test 1.$tn.8 { 
+    list [catch { ota close } msg] $msg 
+  } {1 SQLITE_BUSY}
+
+  do_test 1.$tn.9.1 { sql2 { BEGIN EXCLUSIVE } } {}
+  do_test 1.$tn.9.2 {
+    sqlite3ota ota test.db ota.db
+    ota step
+  } {SQLITE_BUSY}
+  do_test 1.$tn.9.3 {
+    list [catch { ota close } msg] $msg 
+  } {1 {SQLITE_BUSY - database is locked}}
+  do_test 1.$tn.9.4 { sql2 COMMIT } {}
+
+  sqlite3ota ota test.db ota.db
+  do_test 1.$tn.10.1 { sql2 { BEGIN EXCLUSIVE } } {}
+  do_test 1.$tn.10.2 {
+    ota step
+  } {SQLITE_BUSY}
+  do_test 1.$tn.10.3 {
+    list [catch { ota close } msg] $msg 
+  } {1 SQLITE_BUSY}
+  do_test 1.$tn.10.4 { sql2 COMMIT } {}
+
+  # A new ota object can finish the work though.
+  #
+  do_test 1.$tn.11 {
+    sqlite3ota ota test.db ota.db
+    ota step
+  } {SQLITE_OK}
+  do_test 1.$tn.12 {
+    list [file exists test.db-wal] [file exists test.db-oal]
+  } {1 0}
+  do_test 1.$tn.13 {
+    while 1 {
+      set res [ota step]
+      if {$res!="SQLITE_OK"} break
+    }
+    set res
+  } {SQLITE_DONE}
+
+  do_test 1.$tn.14 {
+    ota close
+  } {SQLITE_DONE}
+}
+
+do_multiclient_test tn {
+
+  # Initialize a target (test.db) and ota (ota.db) database.
+  #
+  forcedelete ota.db
+  sql1 $setup_sql
+
+  do_test 2.$tn.1 {
+    sqlite3ota ota test.db ota.db
+    while {[file exists test.db-wal]==0} {
+      if {[ota step]!="SQLITE_OK"} {error "problem here...."}
+    }
+    ota close
+  } {SQLITE_OK}
+
+
+  do_test 2.$tn.2 { sql2 { BEGIN IMMEDIATE } } {}
+
+  do_test 2.$tn.3 { 
+    sqlite3ota ota test.db ota.db
+    ota step 
+  } {SQLITE_BUSY}
+
+  do_test 2.$tn.4 { list [catch { ota close } msg] $msg } {1 SQLITE_BUSY}
+
+  do_test 2.$tn.5 { 
+    sql2 { SELECT * FROM xx ; COMMIT }
+  } {1 2 3 4 5 6 7 8 9}
+
+  do_test 2.$tn.6 {
+    sqlite3ota ota test.db ota.db
+    ota step
+    ota close
+  } {SQLITE_OK}
+
+  do_test 2.$tn.7 { sql2 { BEGIN EXCLUSIVE } } {}
+
+  do_test 2.$tn.8 { 
+    sqlite3ota ota test.db ota.db
+    ota step 
+  } {SQLITE_BUSY}
+  do_test 2.$tn.9 { list [catch { ota close } msg] $msg } {1 SQLITE_BUSY}
+  do_test 2.$tn.10 { 
+    sql2 { SELECT * FROM xx ; COMMIT }
+  } {1 2 3 4 5 6 7 8 9}
+
+  do_test 2.$tn.11 {
+    sqlite3ota ota test.db ota.db
+    while {[ota step]=="SQLITE_OK"} {}
+    ota close
+  } {SQLITE_DONE}
+
+}
+
+finish_test
+

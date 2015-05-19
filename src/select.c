@@ -713,8 +713,13 @@ static void selectInnerLoop(
     /* If the destination is an EXISTS(...) expression, the actual
     ** values returned by the SELECT are not required.
     */
-    sqlite3ExprCodeExprList(pParse, pEList, regResult,
-                  (eDest==SRT_Output||eDest==SRT_Coroutine)?SQLITE_ECEL_DUP:0);
+    u8 ecelFlags;
+    if( eDest==SRT_Mem || eDest==SRT_Output || eDest==SRT_Coroutine ){
+      ecelFlags = SQLITE_ECEL_DUP;
+    }else{
+      ecelFlags = 0;
+    }
+    sqlite3ExprCodeExprList(pParse, pEList, regResult, ecelFlags);
   }
 
   /* If the DISTINCT keyword was present on the SELECT statement

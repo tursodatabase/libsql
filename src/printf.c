@@ -932,24 +932,6 @@ char *sqlite3MPrintf(sqlite3 *db, const char *zFormat, ...){
 }
 
 /*
-** Like sqlite3MPrintf(), but call sqlite3DbFree() on zStr after formatting
-** the string and before returning.  This routine is intended to be used
-** to modify an existing string.  For example:
-**
-**       x = sqlite3MPrintf(db, x, "prefix %s suffix", x);
-**
-*/
-char *sqlite3MAppendf(sqlite3 *db, char *zStr, const char *zFormat, ...){
-  va_list ap;
-  char *z;
-  va_start(ap, zFormat);
-  z = sqlite3VMPrintf(db, zFormat, ap);
-  va_end(ap);
-  sqlite3DbFree(db, zStr);
-  return z;
-}
-
-/*
 ** Print into memory obtained from sqlite3_malloc().  Omit the internal
 ** %-conversion extensions.
 */

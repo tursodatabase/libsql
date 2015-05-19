@@ -116,6 +116,7 @@ array set ::Configs [strip_comments {
     -DSQLITE_ENABLE_FTS4=1
     -DSQLITE_ENABLE_RTREE=1
     -DSQLITE_ENABLE_STAT4
+    -DSQLITE_ENABLE_OTA
     -DSQLITE_MAX_ATTACHED=125
   }
   "Device-One" {

@@ -2201,7 +2201,7 @@ static void sessionAppendTableHdr(
 ** occurs, an SQLite error code is returned and both output variables set 
 ** to 0.
 */
-int sessionGenerateChangeset(
+static int sessionGenerateChangeset(
   sqlite3_session *pSession,      /* Session object */
   int bPatchset,                  /* True for patchset, false for changeset */
   int (*xOutput)(void *pOut, const void *pData, int nData),
@@ -2420,7 +2420,7 @@ int sqlite3session_isempty(sqlite3_session *pSession){
 /*
 ** Do the work for either sqlite3changeset_start() or start_strm().
 */
-int sessionChangesetStart(
+static int sessionChangesetStart(
   sqlite3_changeset_iter **pp,    /* OUT: Changeset iterator handle */
   int (*xInput)(void *pIn, void *pData, int *pnData),
   void *pIn,
@@ -4267,7 +4267,7 @@ static int sessionChangesetToHash(
 **
 ** 3. Write an output changeset based on the contents of the hash table.
 */
-int sessionChangesetConcat(
+static int sessionChangesetConcat(
   sqlite3_changeset_iter *pLeft,
   sqlite3_changeset_iter *pRight,
   int (*xOutput)(void *pOut, const void *pData, int nData),
