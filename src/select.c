@@ -5523,9 +5523,9 @@ select_end:
 void sqlite3TreeViewSelect(TreeView *pView, const Select *p, u8 moreToFollow){
   int n = 0;
   pView = sqlite3TreeViewPush(pView, moreToFollow);
-  sqlite3TreeViewLine(pView, "SELECT%s%s (0x%p)",
+  sqlite3TreeViewLine(pView, "SELECT%s%s (0x%p) selFlags=0x%x",
     ((p->selFlags & SF_Distinct) ? " DISTINCT" : ""),
-    ((p->selFlags & SF_Aggregate) ? " agg_flag" : ""), p
+    ((p->selFlags & SF_Aggregate) ? " agg_flag" : ""), p, p->selFlags
   );
   if( p->pSrc && p->pSrc->nSrc ) n++;
   if( p->pWhere ) n++;
