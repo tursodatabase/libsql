@@ -1,5 +1,5 @@
-C Ensure\sthat\swhen\sthe\sVM\sapplies\sTEXT\saffinity\sto\sa\svalue\sit\sdiscards\sany\sexisting\sREAL\sor\sINTEGER\svalue.
-D 2015-05-19T19:44:25.924
+C Allow\sR-Tree\sgeometry\sfunctions\sto\stake\s8-byte\sBLOB\sarguments\swhich\sare\npassed\sdirectly\sthrough\sto\sthe\sunderlying\scallback,\sand\swhich\scan\sbe\sused\nto\spass\spointers\sinto\sthe\scallback.
+D 2015-05-19T22:20:48.133
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0a6ae26396ec696221021780dffbb894ff3cead7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -143,7 +143,7 @@ F ext/ota/sqlite3ota.c 2246b779f46ab20d5e7876f5b96c378c601d20f4
 F ext/ota/sqlite3ota.h 00028de37eede471ff1947d455cc3f33d3a911c6
 F ext/ota/test_ota.c a876f88550d7d59a3ef62d4c1a5c04c4c2f1ebe1
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 0c207fd8b814a35537d96681cbf57436e200b75e
+F ext/rtree/rtree.c 60ec0a71d4d213665a706c795c887e7c4d148635
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test 541bbcab74613907fea08b2ecdcdd5b7aa724cc9
 F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
@@ -1278,7 +1278,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c74e0bc481ce995f83ca8384e05dfbe068a0ae85
-R 156f7f5ee2915cdb09e3f94c0c3af5e0
-U dan
-Z 98adea0e9355f8ba8d3dfa8723cc9e42
+P f5d0ce80792d58ef424300f973f8876d835ed4ad
+R 5846851b430040d78bdb1e84f57132a2
+U drh
+Z 13e366e41ee3fd8fbadbd262c604767f
