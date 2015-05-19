@@ -1,5 +1,5 @@
-C Merge\slatest\strunk\schanges\swith\sthis\sbranch.
-D 2015-05-19T14:14:57.988
+C Allow\sOTA\supdate\sstate\sdata\sto\sbe\sstored\sin\sa\sdatabase\sseparate\sfrom\sthe\sOTA\supdate\sdatabase.
+D 2015-05-19T16:22:58.978
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0a6ae26396ec696221021780dffbb894ff3cead7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -124,7 +124,7 @@ F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
 F ext/ota/ota.c c47352838b967384a81eda5de75c352922a0dd6e
-F ext/ota/ota1.test 960418e4171a989426f8b1ad8ee31770e0f94fb8
+F ext/ota/ota1.test abdcbe746db4c7f7b51e842b576cacb33eef28f5
 F ext/ota/ota10.test 85e0f6e7964db5007590c1b299e75211ed4240d4
 F ext/ota/ota11.test 2f606cd2b4af260a86b549e91b9f395450fc75cb
 F ext/ota/ota12.test 0dff44474de448fb4b0b28c20da63273a4149abb
@@ -139,9 +139,9 @@ F ext/ota/otaA.test ab67f7f53670b81c750dcc946c5b704f51c429a4
 F ext/ota/otacrash.test 8346192b2d46cbe7787d5d65904d81d3262a3cbf
 F ext/ota/otafault.test 8c43586c2b96ca16bbce00b5d7e7d67316126db8
 F ext/ota/otafault2.test fa202a98ca221faec318f3e5c5f39485b1256561
-F ext/ota/sqlite3ota.c 5bfd677bd956d0ea9f0022b010ac70409e8e9bf6
-F ext/ota/sqlite3ota.h 7faa45e080b9c136e666c383187ff6e39d88135b
-F ext/ota/test_ota.c e34c801c665d64b4b9e00b71f1acf8c652404b2b
+F ext/ota/sqlite3ota.c 89530008cff5825072ef455eb45cf04d497d6399
+F ext/ota/sqlite3ota.h ebde09505ccfff78def3c67b02cfebe27f830925
+F ext/ota/test_ota.c ba5d936190713d15919502d6ee6f287cada279ae
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 0c207fd8b814a35537d96681cbf57436e200b75e
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
@@ -1278,7 +1278,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 16ab9cafd00ea5df7e6f75d6a6740237828b888d 5df4056448fee1c766f8f79c735ed12abdce5101
-R ca0828efa06faab3b9677740d6592df2
+P 6055a6725cb24469c10de9a04f3614dcc79193c6
+R 2b87c978f295a3b27fab33174a5bc3b2
 U dan
-Z 5e45a187c4752901348a44d76452f100
+Z 5cb8f8d4aed58cbcc0b1d560014c2a0f

@@ -273,6 +273,37 @@ typedef struct sqlite3ota sqlite3ota;
 sqlite3ota *sqlite3ota_open(const char *zTarget, const char *zOta);
 
 /*
+** Open an OTA handle with an auxiliary state file.
+**
+** This API is similar to sqlite3ota_open(), except that it allows the user 
+** to specify a separate SQLite database in which to store the OTA update 
+** state.
+**
+** While executing, the OTA extension usually stores the current state 
+** of the update (how many rows have been updated, which indexes are yet
+** to be updated etc.) within the OTA database itself. This can be 
+** convenient, as it means that the OTA application does not need to
+** organize removing a separate state file after the update is concluded.
+** However, it can also be inconvenient - for example if the OTA update
+** database is sto be stored on a read-only media.
+**
+** If an OTA update started using a handle opened with this function is
+** suspended, the application must use this function to resume it, and 
+** must pass the same zState argument each time the update is resumed.
+** Attempting to resume an sqlite3ota_open_v2() update using sqlite3ota_open(),
+** or with a call to sqlite3ota_open_v2() specifying a different zState
+** argument leads to undefined behaviour.
+**
+** Once the OTA update is finished, the OTA extension does not 
+** automatically remove the zState database file, even if it created it.
+*/
+sqlite3ota *sqlite3ota_open_v2(
+  const char *zTarget,
+  const char *zOta,
+  const char *zState
+);
+
+/*
 ** Internally, each OTA connection uses a separate SQLite database 
 ** connection to access the target and ota update databases. This
 ** API allows the application direct access to these database handles.

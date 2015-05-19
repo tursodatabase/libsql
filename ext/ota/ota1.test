@@ -129,6 +129,25 @@ proc step_ota_uri {target ota} {
   set rc
 }
 
+# Same as [step_ota], except using an external state database - "state.db"
+#
+proc step_ota_state {target ota} {
+  while 1 {
+    sqlite3ota ota $target $ota state.db
+    set rc [ota step]
+    ota close
+    if {$rc != "SQLITE_OK"} break
+  }
+  set rc
+}
+
+proc dbfilecksum {file} {
+  sqlite3 ck $file
+  set cksum [dbcksum ck main]
+  ck close
+  set cksum
+}
+
 foreach {tn3 create_vfs destroy_vfs} {
   1 {} {}
   2 {
@@ -140,7 +159,10 @@ foreach {tn3 create_vfs destroy_vfs} {
 
   eval $create_vfs
 
-  foreach {tn2 cmd} {1 run_ota 2 step_ota 3 step_ota_uri} {
+  foreach {tn2 cmd} {
+      1 run_ota 
+      2 step_ota 3 step_ota_uri 4 step_ota_state
+  } {
     foreach {tn schema} {
       1 {
         CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
@@ -218,9 +240,11 @@ foreach {tn3 create_vfs destroy_vfs} {
     } {
       reset_db
       execsql $schema
+      create_ota1 ota.db
+      set check [dbfilecksum ota.db]
+      forcedelete state.db
 
       do_test $tn3.1.$tn2.$tn.1 {
-        create_ota1 ota.db
         $cmd test.db ota.db
       } {SQLITE_DONE}
 
@@ -241,6 +265,14 @@ foreach {tn3 create_vfs destroy_vfs} {
       }
    
       do_execsql_test $tn3.1.$tn2.$tn.5 { PRAGMA integrity_check } ok
+
+      if {$cmd=="step_ota_state"} {
+        do_test $tn3.1.$tn2.$tn.6 { file exists state.db } 1
+        do_test $tn3.1.$tn2.$tn.7 { expr {$check == [dbfilecksum ota.db]} } 1
+      } else {
+        do_test $tn3.1.$tn2.$tn.8 { file exists state.db } 0
+        do_test $tn3.1.$tn2.$tn.9 { expr {$check == [dbfilecksum ota.db]} } 0
+      }
     }
   }
 
@@ -325,7 +357,7 @@ foreach {tn3 create_vfs destroy_vfs} {
 
   #-------------------------------------------------------------------------
   #
-  foreach {tn2 cmd} {1 run_ota 2 step_ota} {
+  foreach {tn2 cmd} {1 run_ota 2 step_ota 3 step_ota_state } {
     foreach {tn schema} {
       1 {
         CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
@@ -373,9 +405,12 @@ foreach {tn3 create_vfs destroy_vfs} {
         INSERT INTO t1 VALUES(4, 'hello', 'planet');
         INSERT INTO t1 VALUES(6, 'hello', 'xyz');
       }
+
+      create_ota4 ota.db
+      set check [dbfilecksum ota.db]
+      forcedelete state.db
     
       do_test $tn3.4.$tn2.$tn.1 {
-        create_ota4 ota.db
         $cmd test.db ota.db
       } {SQLITE_DONE}
       
@@ -388,10 +423,18 @@ foreach {tn3 create_vfs destroy_vfs} {
       }
     
       do_execsql_test $tn3.4.$tn2.$tn.3 { PRAGMA integrity_check } ok
+
+      if {$cmd=="step_ota_state"} {
+        do_test $tn3.4.$tn2.$tn.4 { file exists state.db } 1
+        do_test $tn3.4.$tn2.$tn.5 { expr {$check == [dbfilecksum ota.db]} } 1
+      } else {
+        do_test $tn3.4.$tn2.$tn.6 { file exists state.db } 0
+        do_test $tn3.4.$tn2.$tn.7 { expr {$check == [dbfilecksum ota.db]} } 0
+      }
     }
   }
 
-  foreach {tn2 cmd} {1 run_ota 2 step_ota} {
+  foreach {tn2 cmd} {1 run_ota 2 step_ota 3 step_ota_state} {
     foreach {tn schema} {
       1 {
         CREATE TABLE t1(c, b, '(a)' INTEGER PRIMARY KEY);
@@ -411,13 +454,16 @@ foreach {tn3 create_vfs destroy_vfs} {
         INSERT INTO t1('(a)', b, c) VALUES(4, 'hello', 'planet');
         INSERT INTO t1('(a)', b, c) VALUES(6, 'hello', 'xyz');
       }
+
+      create_ota4b ota.db
+      set check [dbfilecksum ota.db]
+      forcedelete state.db
     
-      do_test $tn3.4.$tn2.$tn.1 {
-        create_ota4b ota.db
+      do_test $tn3.5.$tn2.$tn.1 {
         $cmd test.db ota.db
       } {SQLITE_DONE}
       
-      do_execsql_test $tn3.4.$tn2.$tn.2 {
+      do_execsql_test $tn3.5.$tn2.$tn.2 {
         SELECT * FROM t1 ORDER BY "(a)" ASC;
       } {
         3 2 1
@@ -426,12 +472,20 @@ foreach {tn3 create_vfs destroy_vfs} {
       }
     
       do_execsql_test $tn3.4.$tn2.$tn.3 { PRAGMA integrity_check } ok
+
+      if {$cmd=="step_ota_state"} {
+        do_test $tn3.5.$tn2.$tn.4 { file exists state.db } 1
+        do_test $tn3.5.$tn2.$tn.5 { expr {$check == [dbfilecksum ota.db]} } 1
+      } else {
+        do_test $tn3.5.$tn2.$tn.6 { file exists state.db } 0
+        do_test $tn3.5.$tn2.$tn.7 { expr {$check == [dbfilecksum ota.db]} } 0
+      }
     }
   }
 
   #-------------------------------------------------------------------------
   #
-  foreach {tn2 cmd} {1 run_ota 2 step_ota} {
+  foreach {tn2 cmd} {1 run_ota 2 step_ota 3 step_ota_state} {
     foreach {tn schema} {
       1 {
         CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c, d);
@@ -472,8 +526,11 @@ foreach {tn3 create_vfs destroy_vfs} {
         INSERT INTO t1 VALUES(3, 8, 9, 10);
       }
     
+      create_ota5 ota.db
+      set check [dbfilecksum ota.db]
+      forcedelete state.db
+
       do_test $tn3.5.$tn2.$tn.1 {
-        create_ota5 ota.db
         $cmd test.db ota.db
       } {SQLITE_DONE}
       
@@ -485,7 +542,15 @@ foreach {tn3 create_vfs destroy_vfs} {
         3 11 9 10
       }
     
-      do_execsql_test $tn3.5.$tn2.$tn.3 { PRAGMA integrity_check } ok
+      do_execsql_test $tn3.6.$tn2.$tn.3 { PRAGMA integrity_check } ok
+
+      if {$cmd=="step_ota_state"} {
+        do_test $tn3.6.$tn2.$tn.4 { file exists state.db } 1
+        do_test $tn3.6.$tn2.$tn.5 { expr {$check == [dbfilecksum ota.db]} } 1
+      } else {
+        do_test $tn3.6.$tn2.$tn.6 { file exists state.db } 0
+        do_test $tn3.6.$tn2.$tn.7 { expr {$check == [dbfilecksum ota.db]} } 0
+      }
     }
   }
 
@@ -566,7 +631,7 @@ foreach {tn3 create_vfs destroy_vfs} {
       execsql { ATTACH 'ota.db' AS ota }
       execsql $schema
 
-      do_test $tn3.6.$tn {
+      do_test $tn3.7.$tn {
         list [catch { run_ota test.db ota.db } msg] $msg
       } [list 1 $error]
     }
@@ -576,7 +641,7 @@ foreach {tn3 create_vfs destroy_vfs} {
   # correctly.
   reset_db
   forcedelete ota.db
-  do_test $tn3.7 {
+  do_test $tn3.8 {
     list [catch { run_ota test.db ota.db } msg] $msg
   } {0 SQLITE_DONE}
   
@@ -584,7 +649,7 @@ foreach {tn3 create_vfs destroy_vfs} {
   #
   reset_db
   forcedelete ota.db
-  do_execsql_test $tn3.8.1 {
+  do_execsql_test $tn3.9.1 {
     CREATE TABLE t1(a PRIMARY KEY, b, c);
     CREATE INDEX i1 ON t1(b, c);
     INSERT INTO t1 VALUES(1, 1, NULL);
@@ -597,14 +662,14 @@ foreach {tn3 create_vfs destroy_vfs} {
     INSERT INTO data_t1 VALUES(3, NULL, NULL, 1);
   } {}
 
-  do_test $tn3.8.2 {
+  do_test $tn3.9.2 {
     list [catch { run_ota test.db ota.db } msg] $msg
   } {0 SQLITE_DONE}
 
-  do_execsql_test $tn3.8.3 {
+  do_execsql_test $tn3.9.3 {
     SELECT * FROM t1
   } {2 {} 2}
-  do_execsql_test $tn3.8.4 { PRAGMA integrity_check } {ok}
+  do_execsql_test $tn3.9.4 { PRAGMA integrity_check } {ok}
 
   catch { db close }
   eval $destroy_vfs
