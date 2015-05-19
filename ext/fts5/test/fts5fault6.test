@@ -100,5 +100,53 @@ do_faultsim_test 2.3 -faults oom-t* -prep {
   faultsim_test_result {0 {}}
 }
 
+#-------------------------------------------------------------------------
+# OOM in the ASCII tokenizer with very large tokens. 
+#
+# Also the unicode tokenizer.
+#
+set t1 [string repeat wxyz 20]
+set t2 [string repeat wxyz 200]
+set t3 [string repeat wxyz 2000]
+set doc "$t1 $t2 $t3"
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE xyz USING fts5(c, tokenize=ascii, content="");
+  CREATE VIRTUAL TABLE xyz2 USING fts5(c, content="");
+}
+faultsim_save_and_close
+
+do_faultsim_test 3.1 -faults oom-t* -prep {
+  faultsim_restore_and_reopen
+  db eval { SELECT * FROM xyz }
+} -body {
+  db eval { INSERT INTO xyz VALUES($::doc) }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+do_faultsim_test 3.2 -faults oom-t* -prep {
+  faultsim_restore_and_reopen
+  db eval { SELECT * FROM xyz2 }
+} -body {
+  db eval { INSERT INTO xyz2 VALUES($::doc) }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+#-------------------------------------------------------------------------
+# OOM while initializing a unicode61 tokenizer.
+#
+reset_db
+faultsim_save_and_close
+do_faultsim_test 4.1 -faults oom-t* -prep {
+  faultsim_restore_and_reopen
+} -body {
+  db eval { 
+    CREATE VIRTUAL TABLE yu USING fts5(x, tokenize="unicode61 separators abc");
+  }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
 finish_test
 

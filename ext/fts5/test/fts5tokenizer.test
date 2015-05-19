@@ -134,5 +134,81 @@ do_catchsql_test 5.3 {
   CREATE VIRTUAL TABLE a3 USING fts5(x, y, tokenize = 'ascii opt arg');
 } {1 {error in tokenizer constructor}}
 
+#-------------------------------------------------------------------------
+# Test that the ASCII and unicode61 tokenizers both handle SQLITE_DONE 
+# correctly.
+#
+
+proc test_token_cb {varname token iStart iEnd} {
+  upvar $varname var
+  lappend var $token
+  if {[llength $var]==3} { return "SQLITE_DONE" }
+  return "SQLITE_OK"
+}
+
+proc tokenize {cmd} {
+  set res [list]
+  $cmd xTokenize [$cmd xColumnText 0] [list test_token_cb res]
+  set res
+}
+sqlite3_fts5_create_function db tokenize tokenize
+
+do_execsql_test 6.0 {
+  CREATE VIRTUAL TABLE x1 USING fts5(a, tokenize=ascii);
+  INSERT INTO x1 VALUES('q w e r t y');
+  INSERT INTO x1 VALUES('y t r e w q');
+  SELECT tokenize(x1) FROM x1 WHERE x1 MATCH 'e AND r';
+} {
+  {q w e} {y t r}
+}
+
+do_execsql_test 6.1 {
+  CREATE VIRTUAL TABLE x2 USING fts5(a, tokenize=unicode61);
+  INSERT INTO x2 VALUES('q w e r t y');
+  INSERT INTO x2 VALUES('y t r e w q');
+  SELECT tokenize(x2) FROM x2 WHERE x2 MATCH 'e AND r';
+} {
+  {q w e} {y t r}
+}
+
+
+#-------------------------------------------------------------------------
+# Miscellaneous tests for the unicode tokenizer.
+#
+do_catchsql_test 6.1 {
+  CREATE VIRTUAL TABLE a3 USING fts5(x, y, tokenize = 'unicode61 tokenchars');
+} {1 {error in tokenizer constructor}}
+do_catchsql_test 6.2 {
+  CREATE VIRTUAL TABLE a3 USING fts5(x, y, tokenize = 'unicode61 a b');
+} {1 {error in tokenizer constructor}}
+do_catchsql_test 6.3 {
+  CREATE VIRTUAL TABLE a3 USING fts5(
+    x, y, tokenize = 'unicode61 remove_diacritics 2'
+  );
+} {1 {error in tokenizer constructor}}
+do_catchsql_test 6.4 {
+  CREATE VIRTUAL TABLE a3 USING fts5(
+    x, y, tokenize = 'unicode61 remove_diacritics 10'
+  );
+} {1 {error in tokenizer constructor}}
+
+#-------------------------------------------------------------------------
+# Porter tokenizer with very large tokens.
+#
+set a [string repeat a 100]
+set b [string repeat b 500]
+set c [string repeat c 1000]
+do_execsql_test 7.0 {
+  CREATE VIRTUAL TABLE e5 USING fts5(x, tokenize=porter);
+  INSERT INTO e5 VALUES($a || ' ' || $b);
+  INSERT INTO e5 VALUES($b || ' ' || $c);
+  INSERT INTO e5 VALUES($c || ' ' || $a);
+}
+
+do_execsql_test 7.1 {SELECT rowid FROM e5 WHERE e5 MATCH $a} { 1 3 }
+do_execsql_test 7.2 {SELECT rowid FROM e5 WHERE e5 MATCH $b} { 1 2 }
+do_execsql_test 7.3 {SELECT rowid FROM e5 WHERE e5 MATCH $c} { 2 3 }
+
+
 finish_test
 

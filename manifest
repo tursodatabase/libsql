@@ -1,5 +1,5 @@
-C Update\sMakefile.in\sso\sthat\sthe\samalgamation\sfiles\sbuilt\sby\s"make\ssqlite3.c"\sinclude\sfts5.
-D 2015-05-19T11:38:32.860
+C Add\stests\sfor\sfts5\stokenizers.
+D 2015-05-19T19:37:09.304
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2c28e557780395095c307a6e5cb539419027eb5e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -150,7 +150,7 @@ F ext/fts5/test/fts5fault2.test 28c36c843bb39ae855ba79827417ecc37f114341
 F ext/fts5/test/fts5fault3.test d6e9577d4312e331a913c72931bf131704efc8f3
 F ext/fts5/test/fts5fault4.test 7c7c46559368f06b98daa940d376c4740bcdad25
 F ext/fts5/test/fts5fault5.test 98e7e77bc1d8bb47c955e7d6dc870ab5736536e3
-F ext/fts5/test/fts5fault6.test 7cdfdceef362cb9d72f66388846d62bff44c6d01
+F ext/fts5/test/fts5fault6.test 234dc6355f8d3f8b5be2763f30699d770247c215
 F ext/fts5/test/fts5full.test 0924bdca5416a242103239ace79c6f5aa34bab8d
 F ext/fts5/test/fts5hash.test bdba7b591d503005d5a81871ba00a359daa1e969
 F ext/fts5/test/fts5integrity.test b45f633381a85dc000e41d68c96ab510985ca35e
@@ -164,7 +164,7 @@ F ext/fts5/test/fts5rank.test f59a6b20ec8e08cb130d833dcece59cf9cd92890
 F ext/fts5/test/fts5rebuild.test 77c6613aa048f38b4a12ddfacb2e6e1342e1b066
 F ext/fts5/test/fts5restart.test cd58a5fb552ac10db549482698e503f82693bcd0
 F ext/fts5/test/fts5rowid.test ca9d91ccb3a4590fc561b2d7a884361bb21e8df5
-F ext/fts5/test/fts5tokenizer.test 45cc65223a686b303b409b19154ac310ba70678d
+F ext/fts5/test/fts5tokenizer.test f54bbbff67ff03ce49c153c0f6a5e3f8369f986a
 F ext/fts5/test/fts5unicode.test 79b3e34eb29ce4929628aa514a40cb467fdabe4d
 F ext/fts5/test/fts5unicode2.test 64a5267fd6082fcb46439892ebd0cbaa5c38acee
 F ext/fts5/test/fts5unindexed.test f388605341a476b6ab622b4c267cd168f59a5944
@@ -1328,7 +1328,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P de9f8ef6ebf036df5a558cd78fb4927da2d83ce8
-R 48462bff9aab6209ce6b76328087ee6c
+P 2870a80593302e7835c5f5d167f42710d8439e7d
+R 63f128b09262f76dbe78be4c38aa78c8
 U dan
-Z 49662f04b4638e7ccdb8bbbc0c7d2948
+Z e801c590b1575eb988d36c609d9907aa
