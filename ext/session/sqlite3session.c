@@ -1492,7 +1492,7 @@ int sqlite3session_diff(
         }
 
       }
-      sqlite3_free(azCol);
+      sqlite3_free((char*)azCol);
       if( bMismatch ){
         *pzErrMsg = sqlite3_mprintf("table schemas do not match");
         rc = SQLITE_SCHEMA;
