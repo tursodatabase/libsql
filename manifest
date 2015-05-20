@@ -1,5 +1,5 @@
-C When\sparsing\sthe\sschema,\signore\sany\sSQL\sthat\sdoes\snot\sbegin\swith\s"CREATE".\sCherrypick\sof\s[d3c00d61581c].
-D 2015-05-20T19:57:02.125
+C Fix\sa\sbug\scaused\sby\scherrypicking\sfrom\sa\sbranch\sthat\sassumes\ssqlite3_stricmp()\scan\shandle\sNULL\sarguments.
+D 2015-05-20T20:21:49.412
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -217,7 +217,7 @@ F src/pcache.c d8eafac28290d4bb80332005435db44991d07fc2
 F src/pcache.h a5e4f5d9f5d592051d91212c5949517971ae6222
 F src/pcache1.c 102e6f5a2fbc646154463eb856d1fd716867b64c
 F src/pragma.c d10ef67c4de79f78188b965b4b7988aff1d66f2e
-F src/prepare.c 6c427840bc90233b0eef4c6ffb3bed42967c51ab
+F src/prepare.c a811a0fb09f65b9cc2199d20e4b33d7a7f660565
 F src/printf.c 1c030b72d7678386dc359e296fdd3b6214a2aadb
 F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 0ea356d32a5e884add23d1b9b4e8736681dd5697
@@ -1186,8 +1186,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4a08f6b8bb0d4f5e565fd05a48d0b1af04b9eb2d
-Q +d3c00d61581c8ba6dce5618391432d3af8d324d4
-R d9d9bb19f146fc0be4ab4dab0330d25d
+P 0da229b81ad29d731789c86abadf2abc9bfcd738
+R 581423dd860f77f5014db0e9e3638ada
 U dan
-Z 987c5b3ef0719b604f1812a4747b05af
+Z 0ff00bd3381bac8382bab76d7dc03ba4
