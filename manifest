@@ -1,5 +1,5 @@
-C Fix\san\sobscure\sproblem\swith\s"INSERT\sINTO\stbl(cols)\sSELECT"\sstatements\swhere\sthe\sSELECT\sis\sa\scompound\swith\san\sORDER\sBY\sand\s"cols"\sis\sa\sstrict\ssubset\sof\stbl's\scolumns.\sCherrypick\sof\s[718d5d0eab04].
-D 2015-05-20T20:27:00.289
+C Ensure\sthat\stables\snames\sare\sdequoted\sexactly\sonce\sby\sthe\strigger\sand\sFK\slogic.\sCherrypick\sof\s[59e92bd9521f]\sand\s[9d887b92f808].
+D 2015-05-20T20:30:37.354
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -178,7 +178,7 @@ F src/date.c 593c744b2623971e45affd0bde347631bdfa4625
 F src/delete.c bcf8f72126cea80fc3d5bc5494cf19b3f8935aaf
 F src/expr.c 1686997ef7a2ccb6db0a9215761a138bd8e182a0
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
-F src/fkey.c 8545f3b36da47473e10800ea4fb0810fd4062514
+F src/fkey.c 5fadcfb51f6c8e249ab795348612e2793a59c826
 F src/func.c bbb724b74ed96ca42675a7274646a71dd52bcda7
 F src/global.c 1e4bd956dc2f608f87d2a929abc4a20db65f30e4
 F src/hash.c d139319967164f139c8d1bb8a11b14db9c4ba3cd
@@ -227,7 +227,7 @@ F src/shell.c 75bb7bd2c80bb44861598f322a417c4bafe98fd7
 F src/sqlite.h.in ed9d35990c61f0388ca6405706455c4095310553
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h 10038993697680d281fa7dfb2c7219646e59fec1
+F src/sqliteInt.h 978e6e01780b5d7dd328e1247ca878e074f64f6c
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -278,7 +278,7 @@ F src/test_vfs.c f84075a388527892ff184988f43b69ce69b8083c
 F src/test_vfstrace.c bab9594adc976cbe696ff3970728830b4c5ed698
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/tokenize.c ae45399d6252b4d736af43bee1576ce7bff86aec
-F src/trigger.c 66f3470b03b52b395e839155786966e3e037fddb
+F src/trigger.c 274874731e060355be9ed25c670190775654ac25
 F src/update.c ea336ce7b8b3fc5e316ba8f082e6445babf81059
 F src/utf.c a0314e637768a030e6e84a957d0c4f6ba910cc05
 F src/util.c 3076bdd51cdbf60a6e2e57fada745be37133c73e
@@ -473,7 +473,7 @@ F test/extension01.test 00d13cec817f331a687a243e0e5a2d87b0e358c9
 F test/fallocate.test 3e979af17dfa7e5e9dda5eba1a696c04fa9d47f7
 F test/filectrl.test 14fa712e42c4cb791e09dfd58a6a03efb47ef13a
 F test/filefmt.test cb34663f126cbc2d358af552dcaf5c72769b0146
-F test/fkey1.test e1d1fa84cde579185ea01358436839703e415a5b
+F test/fkey1.test de5b287f6a480b36bd51e8debcf48168e26e4ed2
 F test/fkey2.test 32ca728bcb854feed72d1406ea375fe423eebff2
 F test/fkey3.test 76d475c80b84ee7a5d062e56ccb6ea68882e2b49
 F test/fkey4.test 86446017011273aad8f9a99c1a65019e7bd9ca9d
@@ -1034,7 +1034,7 @@ F test/trigger8.test 30cb0530bd7c4728055420e3f739aa00412eafa4
 F test/trigger9.test 5b0789f1c5c4600961f8e68511b825b87be53e31
 F test/triggerA.test fe5597f47ee21bacb4936dc827994ed94161e332
 F test/triggerB.test 56780c031b454abac2340dbb3b71ac5c56c3d7fe
-F test/triggerC.test a68980c5955d62ee24be6f97129d824f199f9a4c
+F test/triggerC.test 302d8995f5ffe63bbc15053abb3ef7a39cf5a092
 F test/triggerD.test 8e7f3921a92a5797d472732108109e44575fa650
 F test/triggerE.test 355e9c5cbaed5cd039a60baad1fb2197caeb8e52
 F test/tt3_checkpoint.c 415eccce672d681b297485fc20f44cdf0eac93af
@@ -1186,8 +1186,9 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7f3943fb01490180055312363cdd8a47642f4e9d
-Q +718d5d0eab045a874107e078a857226a80ab912d
-R 674066d8a74c7196d2f6ff9302d84144
+P 3cd2b7722186ad2b2a581b7f7e7782c59536e523
+Q +59e92bd9521f1e8315a9a7e7fd3d63b0c75eaf0e
+Q +9d887b92f8086961e045f8acb9ee7a443796d411
+R 0c68a1a4983e75713540bb859d2c365a
 U dan
-Z 8b40aaadaed2e2b26011aeadc2d4c018
+Z c00eee9d808bc1be37169bb3151d8ab7

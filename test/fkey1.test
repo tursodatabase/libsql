@@ -121,4 +121,34 @@ do_test fkey1-3.5 {
   sqlite3_db_status db DBSTATUS_DEFERRED_FKS 0
 } {0 0 0}
 
+# Stress the dequoting logic.  The first test is not so bad.
+do_execsql_test fkey1-4.0 {
+  PRAGMA foreign_keys=ON;
+  CREATE TABLE "xx1"("xx2" TEXT PRIMARY KEY, "xx3" TEXT);
+  INSERT INTO "xx1"("xx2","xx3") VALUES('abc','def');
+  CREATE TABLE "xx4"("xx5" TEXT REFERENCES "xx1" ON DELETE CASCADE);
+  INSERT INTO "xx4"("xx5") VALUES('abc');
+  INSERT INTO "xx1"("xx2","xx3") VALUES('uvw','xyz');
+  SELECT 1, "xx5" FROM "xx4";
+  DELETE FROM "xx1";
+  SELECT 2, "xx5" FROM "xx4";
+} {1 abc}
+
+# This case is identical to the previous except the "xx" in each name
+# is changed to a single escaped double-quote character.
+do_execsql_test fkey1-4.1 {
+  PRAGMA foreign_keys=ON;
+  CREATE TABLE """1"("""2" TEXT PRIMARY KEY, """3" TEXT);
+  INSERT INTO """1"("""2","""3") VALUES('abc','def');
+  CREATE TABLE """4"("""5" TEXT REFERENCES """1" ON DELETE CASCADE);
+  INSERT INTO """4"("""5") VALUES('abc');
+  INSERT INTO """1"("""2","""3") VALUES('uvw','xyz');
+  SELECT 1, """5" FROM """4";
+  DELETE FROM """1";
+  SELECT 2, """5" FROM """4";
+} {1 abc}
+do_execsql_test fkey1-4.2 {
+  PRAGMA table_info="""1";
+} {0 {"2} TEXT 0 {} 1 1 {"3} TEXT 0 {} 0}
+
 finish_test

@@ -2621,7 +2621,7 @@ struct Trigger {
  * orconf    -> stores the ON CONFLICT algorithm
  * pSelect   -> If this is an INSERT INTO ... SELECT ... statement, then
  *              this stores a pointer to the SELECT statement. Otherwise NULL.
- * target    -> A token holding the quoted name of the table to insert into.
+ * zTarget   -> Dequoted name of the table to insert into.
  * pExprList -> If this is an INSERT INTO ... VALUES ... statement, then
  *              this stores values to be inserted. Otherwise NULL.
  * pIdList   -> If this is an INSERT INTO ... (<column-names>) VALUES ... 
@@ -2629,12 +2629,12 @@ struct Trigger {
  *              inserted into.
  *
  * (op == TK_DELETE)
- * target    -> A token holding the quoted name of the table to delete from.
+ * zTarget   -> Dequoted name of the table to delete from.
  * pWhere    -> The WHERE clause of the DELETE statement if one is specified.
  *              Otherwise NULL.
  * 
  * (op == TK_UPDATE)
- * target    -> A token holding the quoted name of the table to update rows of.
+ * zTarget   -> Dequoted name of the table to update.
  * pWhere    -> The WHERE clause of the UPDATE statement if one is specified.
  *              Otherwise NULL.
  * pExprList -> A list of the columns to update and the expressions to update
@@ -2646,8 +2646,8 @@ struct TriggerStep {
   u8 op;               /* One of TK_DELETE, TK_UPDATE, TK_INSERT, TK_SELECT */
   u8 orconf;           /* OE_Rollback etc. */
   Trigger *pTrig;      /* The trigger that this step is a part of */
-  Select *pSelect;     /* SELECT statment or RHS of INSERT INTO .. SELECT ... */
-  Token target;        /* Target table for DELETE, UPDATE, INSERT */
+  Select *pSelect;     /* SELECT statement or RHS of INSERT INTO SELECT ... */
+  char *zTarget;       /* Target table for DELETE, UPDATE, INSERT */
   Expr *pWhere;        /* The WHERE clause for DELETE or UPDATE steps */
   ExprList *pExprList; /* SET clause for UPDATE. */
   IdList *pIdList;     /* Column names for INSERT */

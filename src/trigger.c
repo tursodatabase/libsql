@@ -375,12 +375,12 @@ static TriggerStep *triggerStepAllocate(
 ){
   TriggerStep *pTriggerStep;
 
-  pTriggerStep = sqlite3DbMallocZero(db, sizeof(TriggerStep) + pName->n);
+  pTriggerStep = sqlite3DbMallocZero(db, sizeof(TriggerStep) + pName->n + 1);
   if( pTriggerStep ){
     char *z = (char*)&pTriggerStep[1];
     memcpy(z, pName->z, pName->n);
-    pTriggerStep->target.z = z;
-    pTriggerStep->target.n = pName->n;
+    sqlite3Dequote(z);
+    pTriggerStep->zTarget = z;
     pTriggerStep->op = op;
   }
   return pTriggerStep;
@@ -666,7 +666,7 @@ Trigger *sqlite3TriggersExist(
 }
 
 /*
-** Convert the pStep->target token into a SrcList and return a pointer
+** Convert the pStep->zTarget string into a SrcList and return a pointer
 ** to that SrcList.
 **
 ** This routine adds a specific database name, if needed, to the target when
@@ -679,17 +679,17 @@ static SrcList *targetSrcList(
   Parse *pParse,       /* The parsing context */
   TriggerStep *pStep   /* The trigger containing the target token */
 ){
+  sqlite3 *db = pParse->db;
   int iDb;             /* Index of the database to use */
   SrcList *pSrc;       /* SrcList to be returned */
 
-  pSrc = sqlite3SrcListAppend(pParse->db, 0, &pStep->target, 0);
+  pSrc = sqlite3SrcListAppend(db, 0, 0, 0);
   if( pSrc ){
     assert( pSrc->nSrc>0 );
-    assert( pSrc->a!=0 );
-    iDb = sqlite3SchemaToIndex(pParse->db, pStep->pTrig->pSchema);
+    pSrc->a[pSrc->nSrc-1].zName = sqlite3DbStrDup(db, pStep->zTarget);
+    iDb = sqlite3SchemaToIndex(db, pStep->pTrig->pSchema);
     if( iDb==0 || iDb>=2 ){
-      sqlite3 *db = pParse->db;
-      assert( iDb<pParse->db->nDb );
+      assert( iDb<db->nDb );
       pSrc->a[pSrc->nSrc-1].zDatabase = sqlite3DbStrDup(db, db->aDb[iDb].zName);
     }
   }
