@@ -10,12 +10,12 @@
 #
 #***********************************************************************
 # This file implements regression tests for SQLite library.  The
-# focus of this script is page cache subsystem.
+# focus of this script is testing collation sequences.
 #
-# $Id: collate1.test,v 1.5 2007/02/01 23:02:46 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix collate1
 
 #
 # Tests are roughly organised as follows:
@@ -333,4 +333,58 @@ do_test collate1-5.3 {
   }
 } {1 2}
 
+
+
+#-------------------------------------------------------------------------
+# Fix problems with handling collation sequences named '"""'.
+#
+do_execsql_test 6.1 {
+  SELECT """""""";
+} {\"\"\"}
+
+do_catchsql_test 6.2 {
+  CREATE TABLE x1(a);
+  SELECT a FROM x1 ORDER BY a COLLATE """""""";
+} {1 {no such collation sequence: """}}
+
+do_catchsql_test 6.3 {
+  SELECT a FROM x1 ORDER BY 1 COLLATE """""""";
+} {1 {no such collation sequence: """}}
+
+do_catchsql_test 6.4 {
+  SELECT 0 UNION SELECT 0 ORDER BY 1 COLLATE """""""";
+} {1 {no such collation sequence: """}}
+
+db collate {"""} [list string compare -nocase]
+
+do_execsql_test 6.5 {
+  PRAGMA foreign_keys = ON;
+  CREATE TABLE p1(a PRIMARY KEY COLLATE '"""');
+  CREATE TABLE c1(x, y REFERENCES p1);
+} {}
+
+do_execsql_test 6.6 { 
+  INSERT INTO p1 VALUES('abc'); 
+  INSERT INTO c1 VALUES(1, 'ABC'); 
+}
+
+ifcapable foreignkey {
+  do_catchsql_test 6.7 { 
+    DELETE FROM p1 WHERE rowid = 1 
+  } {1 {FOREIGN KEY constraint failed}}
+}
+
+do_execsql_test 6.8 { 
+  INSERT INTO p1 VALUES('abb');
+  INSERT INTO p1 VALUES('wxz');
+  INSERT INTO p1 VALUES('wxy');
+
+  INSERT INTO c1 VALUES(2, 'abb');
+  INSERT INTO c1 VALUES(3, 'wxz');
+  INSERT INTO c1 VALUES(4, 'WXY');
+  SELECT x, y FROM c1 ORDER BY y COLLATE """""""";
+} {2 abb 1 ABC 4 WXY 3 wxz}
+
 finish_test
+
+
