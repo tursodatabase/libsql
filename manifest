@@ -1,5 +1,5 @@
-C Ensure\sthat\scomparison\soperators\sdo\snot\smess\sup\sthe\sMEM_Dyn\sflag\son\sregisters\s\nwhen\sreverting\saffinity\schanges.\sCherrypick\sof\s[02e3c88fbf6a].
-D 2015-05-20T19:44:12.544
+C Avoid\ssigned\sinteger\soverflow\swhen\sconverting\soversized\sin-line\sinteger\s\nwidths\sand\sprecisions\sin\sprintf().\sCherrypick\sof\s[c494171f77dc],\s[5ce4e7d7651e],\s[95625ef3adc3]\sand\s[8e4ac2ce2441].
+D 2015-05-20T19:48:55.227
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -218,7 +218,7 @@ F src/pcache.h a5e4f5d9f5d592051d91212c5949517971ae6222
 F src/pcache1.c 102e6f5a2fbc646154463eb856d1fd716867b64c
 F src/pragma.c d10ef67c4de79f78188b965b4b7988aff1d66f2e
 F src/prepare.c 677521ab7132615a8a26107a1d1c3132f44ae337
-F src/printf.c af06f66927919730f03479fed6ae9854f73419f4
+F src/printf.c 1c030b72d7678386dc359e296fdd3b6214a2aadb
 F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 0ea356d32a5e884add23d1b9b4e8736681dd5697
 F src/rowset.c a9c9aae3234b44a6d7c6f5a3cadf90dce1e627be
@@ -757,7 +757,7 @@ F test/percentile.test b98fc868d71eb5619d42a1702e9ab91718cbed54
 F test/permutations.test bc474bafb022cc5014ef3a9c3d5ab61d6d6f587c
 F test/pragma.test 19d0241a007bcdd77fc2606ec60fc60357e7fc8b
 F test/pragma2.test aea7b3d82c76034a2df2b38a13745172ddc0bc13
-F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
+F test/printf.test b3ff34e73d59124140eaf89f7672e21bc2ca5fcc
 F test/printf2.test bed79b4c3e5da08ba88ad637c0bf62586843cfb1
 F test/progress.test a282973d1d17f08071bc58a77d6b80f2a81c354d
 F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
@@ -1186,8 +1186,11 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fc1a4f293c6e29f570098d1fc52d21b32a081476
-Q +02e3c88fbf6abdcf3975fb0fb71972b0ab30da30
-R 50f238e6a4e4d64a05826094e25a8e9e
+P 4125477e63fd3a71dce262e0866d3e39cec765f1
+Q +5ce4e7d7651e5c72a59f03f7aeb366291e62ab57
+Q +8e4ac2ce24415926247961b00a62425ae85d6ffb
+Q +95625ef3adc3c408d67e70f877f390445fbb8292
+Q +c494171f77dc2e5e04cb6d865e688448f04e5920
+R 4b6e5530dadb627f38b2aa53dc82cd07
 U dan
-Z 70e234f07696ffaa54fe0a2491f483ca
+Z 46e842739206c835d8bd7b51ff043562

@@ -257,15 +257,19 @@ void sqlite3VXPrintf(
       }
       if( width<0 ){
         flag_leftjustify = 1;
-        width = -width;
+        width = width >= -2147483647 ? -width : 0;
       }
       c = *++fmt;
     }else{
+      unsigned wx = 0;
       while( c>='0' && c<='9' ){
-        width = width*10 + c - '0';
+        wx = wx*10 + c - '0';
         c = *++fmt;
       }
+      testcase( wx>0x7fffffff );
+      width = wx & 0x7fffffff;
     }
+
     /* Get the precision */
     if( c=='.' ){
       precision = 0;
@@ -276,13 +280,18 @@ void sqlite3VXPrintf(
         }else{
           precision = va_arg(ap,int);
         }
-        if( precision<0 ) precision = -precision;
         c = *++fmt;
+        if( precision<0 ){
+          precision = precision >= -2147483647 ? -precision : -1;
+        }
       }else{
+        unsigned px = 0;
         while( c>='0' && c<='9' ){
-          precision = precision*10 + c - '0';
+          px = px*10 + c - '0';
           c = *++fmt;
         }
+        testcase( px>0x7fffffff );
+        precision = px & 0x7fffffff;
       }
     }else{
       precision = -1;
@@ -447,7 +456,8 @@ void sqlite3VXPrintf(
           else                         prefix = 0;
         }
         if( xtype==etGENERIC && precision>0 ) precision--;
-        for(idx=precision, rounder=0.5; idx>0; idx--, rounder*=0.1){}
+        testcase( precision>0xfff );
+        for(idx=precision&0xfff, rounder=0.5; idx>0; idx--, rounder*=0.1){}
         if( xtype==etFLOAT ) realvalue += rounder;
         /* Normalize realvalue to within 10.0 > realvalue >= 1.0 */
         exp = 0;
@@ -502,8 +512,9 @@ void sqlite3VXPrintf(
         }else{
           e2 = exp;
         }
-        if( MAX(e2,0)+precision+width > etBUFSIZE - 15 ){
-          bufpt = zExtra = sqlite3Malloc( MAX(e2,0)+precision+width+15 );
+        if( MAX(e2,0)+(i64)precision+(i64)width > etBUFSIZE - 15 ){
+          bufpt = zExtra 
+              = sqlite3Malloc( MAX(e2,0)+(i64)precision+(i64)width+15 );
           if( bufpt==0 ){
             setStrAccumError(pAccum, STRACCUM_NOMEM);
             return;
@@ -729,7 +740,7 @@ void sqlite3VXPrintf(
 */
 static int sqlite3StrAccumEnlarge(StrAccum *p, int N){
   char *zNew;
-  assert( p->nChar+N >= p->nAlloc ); /* Only called if really needed */
+  assert( p->nChar+(i64)N >= p->nAlloc ); /* Only called if really needed */
   if( p->accError ){
     testcase(p->accError==STRACCUM_TOOBIG);
     testcase(p->accError==STRACCUM_NOMEM);
@@ -772,7 +783,10 @@ static int sqlite3StrAccumEnlarge(StrAccum *p, int N){
 ** Append N space characters to the given string buffer.
 */
 void sqlite3AppendSpace(StrAccum *p, int N){
-  if( p->nChar+N >= p->nAlloc && (N = sqlite3StrAccumEnlarge(p, N))<=0 ) return;
+  testcase( p->nChar + (i64)N > 0x7fffffff );
+  if( p->nChar+(i64)N >= p->nAlloc && (N = sqlite3StrAccumEnlarge(p, N))<=0 ){
+    return;
+  }
   while( (N--)>0 ) p->zText[p->nChar++] = ' ';
 }
 
