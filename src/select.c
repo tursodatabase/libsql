@@ -2528,7 +2528,7 @@ static int generateOutputSubroutine(
         pDest->iSdst = sqlite3GetTempRange(pParse, pIn->nSdst);
         pDest->nSdst = pIn->nSdst;
       }
-      sqlite3ExprCodeMove(pParse, pIn->iSdst, pDest->iSdst, pDest->nSdst);
+      sqlite3ExprCodeMove(pParse, pIn->iSdst, pDest->iSdst, pIn->nSdst);
       sqlite3VdbeAddOp1(v, OP_Yield, pDest->iSDParm);
       break;
     }

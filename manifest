@@ -1,5 +1,5 @@
-C Fix\sa\spotential\sNULL\spointer\sdeference\son\sa\scorrupt\sdatabase\sschema.\sCherrypick\sof\s[dc61b292d8ea].
-D 2015-05-20T20:24:10.240
+C Fix\san\sobscure\sproblem\swith\s"INSERT\sINTO\stbl(cols)\sSELECT"\sstatements\swhere\sthe\sSELECT\sis\sa\scompound\swith\san\sORDER\sBY\sand\s"cols"\sis\sa\sstrict\ssubset\sof\stbl's\scolumns.\sCherrypick\sof\s[718d5d0eab04].
+D 2015-05-20T20:27:00.289
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -222,7 +222,7 @@ F src/printf.c 1c030b72d7678386dc359e296fdd3b6214a2aadb
 F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 0ea356d32a5e884add23d1b9b4e8736681dd5697
 F src/rowset.c a9c9aae3234b44a6d7c6f5a3cadf90dce1e627be
-F src/select.c ea48e891406ccdf748f3eb02893e056d134a0fea
+F src/select.c 5b44995dad6cddd69f40b46101d2ca91509eaaef
 F src/shell.c 75bb7bd2c80bb44861598f322a417c4bafe98fd7
 F src/sqlite.h.in ed9d35990c61f0388ca6405706455c4095310553
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
@@ -630,7 +630,7 @@ F test/indexedby.test b2f22f3e693a53813aa3f50b812eb609ba6df1ec
 F test/indexfault.test 31d4ab9a7d2f6e9616933eb079722362a883eb1d
 F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
 F test/insert.test 38742b5e9601c8f8d76e9b7555f7270288c2d371
-F test/insert2.test 4f3a04d168c728ed5ec2c88842e772606c7ce435
+F test/insert2.test 4d14b8f1b810a41995f6286b64a6943215d52208
 F test/insert3.test 1b7db95a03ad9c5013fdf7d6722b6cd66ee55e30
 F test/insert4.test 4791662c50518bdd37d394cae9a7a8014e845bb3
 F test/insert5.test 394f96728d1258f406fe5f5aeb0aaf29487c39a6
@@ -1186,8 +1186,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2c649cdf7e058cf490597ffbddd5dc1eb5c3b346
-Q +dc61b292d8eaf422ca8a2b18f1caccef1a5389fd
-R 3aa98590f9ef0d51632cfc6ad035728b
+P 7f3943fb01490180055312363cdd8a47642f4e9d
+Q +718d5d0eab045a874107e078a857226a80ab912d
+R 674066d8a74c7196d2f6ff9302d84144
 U dan
-Z 00df42a4da58e5c26052c32787452a5a
+Z 8b40aaadaed2e2b26011aeadc2d4c018
