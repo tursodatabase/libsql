@@ -1915,15 +1915,24 @@ void sqlite3EndTable(
     if( pSelect ){
       SelectDest dest;
       Table *pSelTab;
+      int regYield;       /* Register holding co-routine entry-point */
+      int addrTop;        /* Top of the co-routine */
 
+      regYield = ++pParse->nMem;
       assert(pParse->nTab==1);
       sqlite3VdbeAddOp3(v, OP_OpenWrite, 1, pParse->regRoot, iDb);
       sqlite3VdbeChangeP5(v, OPFLAG_P2ISREG);
       pParse->nTab = 2;
-      sqlite3SelectDestInit(&dest, SRT_Table, 1);
+      addrTop = sqlite3VdbeCurrentAddr(v) + 1;
+      sqlite3VdbeAddOp3(v, OP_InitCoroutine, regYield, 0, addrTop);
+      sqlite3SelectDestInit(&dest, SRT_Coroutine, regYield);
       sqlite3Select(pParse, pSelect, &dest);
-      sqlite3VdbeAddOp1(v, OP_Close, 1);
+      sqlite3VdbeAddOp1(v, OP_EndCoroutine, regYield);
+      sqlite3VdbeJumpHere(v, addrTop - 1);
       if( pParse->nErr==0 ){
+        int regRec = ++pParse->nMem;
+        int regRowid = ++pParse->nMem;
+        int addrInsLoop;
         pSelTab = sqlite3ResultSetOfSelect(pParse, pSelect);
         if( pSelTab==0 ) return;
         assert( p->aCol==0 );
@@ -1932,6 +1941,15 @@ void sqlite3EndTable(
         pSelTab->nCol = 0;
         pSelTab->aCol = 0;
         sqlite3DeleteTable(db, pSelTab);
+        addrInsLoop = sqlite3VdbeAddOp1(v, OP_Yield, dest.iSDParm);
+        VdbeCoverage(v);
+        sqlite3VdbeAddOp3(v, OP_MakeRecord, dest.iSdst, dest.nSdst, regRec);
+        sqlite3TableAffinity(v, p, 0);
+        sqlite3VdbeAddOp2(v, OP_NewRowid, 1, regRowid);
+        sqlite3VdbeAddOp3(v, OP_Insert, 1, regRec, regRowid);
+        sqlite3VdbeAddOp2(v, OP_Goto, 0, addrInsLoop);
+        sqlite3VdbeJumpHere(v, addrInsLoop);
+        sqlite3VdbeAddOp1(v, OP_Close, 1);
       }
     }
 
