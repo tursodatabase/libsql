@@ -359,6 +359,6 @@ do_test analyze-99.1 {
   catchsql {
     ANALYZE
   }
-} {1 {malformed database schema (sqlite_stat1) - near "nonsense": syntax error}}
+} {1 {malformed database schema (sqlite_stat1)}}
 
 finish_test
