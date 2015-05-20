@@ -1,5 +1,5 @@
-C Enhance\sthe\sselecttrace\sdisplay\sby\sshowing\sSelect.selFlags.
-D 2015-05-19T23:56:07.009
+C Fix\shandling\sof\squeries\swith\sVALUES\son\sthe\sleft\sand\sUNION\sALL\sSELECT\son\sthe\nright\sand\sa\sLIMIT\sclause.
+D 2015-05-20T00:15:27.101
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0a6ae26396ec696221021780dffbb894ff3cead7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -239,7 +239,7 @@ F src/os_win.c 97f7828a9554d753665b6fcf7540e31c2b3d6a6e
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 97110085b1321298412f1e5c37bddb95b36d9208
 F src/pager.h c3476e7c89cdf1c6914e50a11f3714e30b4e0a77
-F src/parse.y c4e0387bc88c8e21e5ba653e2578959a1f3cdbc7
+F src/parse.y af55d4fb5e588705112e9788364ca3af09651fcf
 F src/pcache.c 10539fb959849ad6efff80050541cab3d25089d4
 F src/pcache.h b44658c9c932d203510279439d891a2a83e12ba8
 F src/pcache1.c 69d137620a305f814398bd29a0c998038c0695e9
@@ -864,7 +864,7 @@ F test/securedel2.test 2d54c28e46eb1fd6902089958b20b1b056c6f1c5
 F test/select1.test be62204d2bd9a5a8a149e9974cfddce893d8f686
 F test/select2.test 352480e0e9c66eda9c3044e412abdf5be0215b56
 F test/select3.test 2ce595f8fb8e2ac10071d3b4e424cadd4634a054
-F test/select4.test 824342f382f16b4afe42d0887ef82b3d6abb6075
+F test/select4.test 6d5bc6d178a367e8b48fa1c1d3ea12cae9c2d650
 F test/select5.test e758b8ef94f69b111df4cb819008856655dcd535
 F test/select6.test 39eac4a5c03650b2b473c532882273283ee8b7a0
 F test/select7.test 7fd2ef598cfabb6b9ff6ac13973b91d0527df49d
@@ -1278,7 +1278,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c7b16645307d6e46c4153693d6806269de64955f
-R ea3eb1f6139bdf0dd5e3dd418a160ce1
+P 45d3893c6142ee1dfed48e26a13cf547da12468a
+R d2f9de9f0b0e2d9149961be12bc360a3
 U drh
-Z 134fe99ba84c8d22f546034f7884244d
+Z dfad787f317538afb4e1ced0974df5c8

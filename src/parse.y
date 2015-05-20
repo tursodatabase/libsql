@@ -448,6 +448,7 @@ selectnowith(A) ::= oneselect(X).                      {A = X;}
 %ifndef SQLITE_OMIT_COMPOUND_SELECT
 selectnowith(A) ::= selectnowith(X) multiselect_op(Y) oneselect(Z).  {
   Select *pRhs = Z;
+  Select *pLhs = X;
   if( pRhs && pRhs->pPrior ){
     SrcList *pFrom;
     Token x;
@@ -458,11 +459,12 @@ selectnowith(A) ::= selectnowith(X) multiselect_op(Y) oneselect(Z).  {
   }
   if( pRhs ){
     pRhs->op = (u8)Y;
-    pRhs->pPrior = X;
+    pRhs->pPrior = pLhs;
+    if( ALWAYS(pLhs) ) pLhs->selFlags &= ~SF_MultiValue;
     pRhs->selFlags &= ~SF_MultiValue;
     if( Y!=TK_ALL ) pParse->hasCompound = 1;
   }else{
-    sqlite3SelectDelete(pParse->db, X);
+    sqlite3SelectDelete(pParse->db, pLhs);
   }
   A = pRhs;
 }
