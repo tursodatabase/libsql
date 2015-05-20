@@ -1210,10 +1210,26 @@ void sqlite3ExprListDelete(sqlite3 *db, ExprList *pList){
 }
 
 /*
-** These routines are Walker callbacks.  Walker.u.pi is a pointer
-** to an integer.  These routines are checking an expression to see
-** if it is a constant.  Set *Walker.u.pi to 0 if the expression is
-** not constant.
+** Return the bitwise-OR of all Expr.flags fields in the given
+** ExprList.
+*/
+u32 sqlite3ExprListFlags(const ExprList *pList){
+  int i;
+  u32 m = 0;
+  if( pList ){
+    for(i=0; i<pList->nExpr; i++){
+       Expr *pExpr = pList->a[i].pExpr;
+       if( pExpr ) m |= pList->a[i].pExpr->flags;
+    }
+  }
+  return m;
+}
+
+/*
+** These routines are Walker callbacks used to check expressions to
+** see if they are "constant" for some definition of constant.  The
+** Walker.eCode value determines the type of "constant" we are looking
+** for.
 **
 ** These callback routines are used to implement the following:
 **

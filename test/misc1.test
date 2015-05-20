@@ -627,4 +627,18 @@ do_catchsql_test misc1-20.1 {
 } {1 {CHECK constraint failed: t0}}
 
 
+# 2015-04-19: NULL pointer dereference on a corrupt schema
+#
+do_execsql_test misc1-23.1 {
+  DROP TABLE IF EXISTS t1;
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t1(x);
+  PRAGMA writable_schema=ON;
+  UPDATE sqlite_master SET sql='CREATE table t(d CHECK(T(#0)';
+  BEGIN;
+  CREATE TABLE t2(y);
+  ROLLBACK;
+  DROP TABLE IF EXISTS t3;
+} {}
+
 finish_test
