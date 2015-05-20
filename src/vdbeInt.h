@@ -186,6 +186,12 @@ struct Mem {
 #endif
 };
 
+/*
+** Size of struct Mem not including the Mem.zMalloc member or anything that
+** follows.
+*/
+#define MEMCELLSIZE offsetof(Mem,zMalloc)
+
 /* One or more of the following flags are set to indicate the validOK
 ** representations of the value stored in the Mem struct.
 **
