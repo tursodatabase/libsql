@@ -351,6 +351,7 @@ struct RtreeMatchArg {
   u32 magic;                  /* Always RTREE_GEOMETRY_MAGIC */
   RtreeGeomCallback cb;       /* Info about the callback functions */
   int nParam;                 /* Number of parameters to the SQL function */
+  sqlite3_value **apSqlParam; /* Original SQL parameter values */
   RtreeDValue aParam[1];      /* Values for parameters to the SQL function */
 };
 
@@ -1495,6 +1496,7 @@ static int deserializeGeometry(sqlite3_value *pValue, RtreeConstraint *pCons){
 
   memcpy(pBlob, sqlite3_value_blob(pValue), nBlob);
   nExpected = (int)(sizeof(RtreeMatchArg) +
+                    pBlob->nParam*sizeof(sqlite3_value*) +
                     (pBlob->nParam-1)*sizeof(RtreeDValue));
   if( pBlob->magic!=RTREE_GEOMETRY_MAGIC || nBlob!=nExpected ){
     sqlite3_free(pInfo);
@@ -1503,6 +1505,7 @@ static int deserializeGeometry(sqlite3_value *pValue, RtreeConstraint *pCons){
   pInfo->pContext = pBlob->cb.pContext;
   pInfo->nParam = pBlob->nParam;
   pInfo->aParam = pBlob->aParam;
+  pInfo->apSqlParam = pBlob->apSqlParam;
 
   if( pBlob->cb.xGeom ){
     pCons->u.xGeom = pBlob->cb.xGeom;
@@ -3373,6 +3376,18 @@ static void rtreeFreeCallback(void *p){
 }
 
 /*
+** This routine frees the BLOB that is returned by geomCallback().
+*/
+static void rtreeMatchArgFree(void *pArg){
+  int i;
+  RtreeMatchArg *p = (RtreeMatchArg*)pArg;
+  for(i=0; i<p->nParam; i++){
+    sqlite3_value_free(p->apSqlParam[i]);
+  }
+  sqlite3_free(p);
+}
+
+/*
 ** Each call to sqlite3_rtree_geometry_callback() or
 ** sqlite3_rtree_query_callback() creates an ordinary SQLite
 ** scalar function that is implemented by this routine.
@@ -3390,8 +3405,10 @@ static void geomCallback(sqlite3_context *ctx, int nArg, sqlite3_value **aArg){
   RtreeGeomCallback *pGeomCtx = (RtreeGeomCallback *)sqlite3_user_data(ctx);
   RtreeMatchArg *pBlob;
   int nBlob;
+  int memErr = 0;
 
-  nBlob = sizeof(RtreeMatchArg) + (nArg-1)*sizeof(RtreeDValue);
+  nBlob = sizeof(RtreeMatchArg) + (nArg-1)*sizeof(RtreeDValue)
+           + nArg*sizeof(sqlite3_value*);
   pBlob = (RtreeMatchArg *)sqlite3_malloc(nBlob);
   if( !pBlob ){
     sqlite3_result_error_nomem(ctx);
@@ -3399,22 +3416,23 @@ static void geomCallback(sqlite3_context *ctx, int nArg, sqlite3_value **aArg){
     int i;
     pBlob->magic = RTREE_GEOMETRY_MAGIC;
     pBlob->cb = pGeomCtx[0];
+    pBlob->apSqlParam = (sqlite3_value**)&pBlob->aParam[nArg];
     pBlob->nParam = nArg;
     for(i=0; i<nArg; i++){
-      if( sqlite3_value_type(aArg[i])==SQLITE_BLOB
-        && sqlite3_value_bytes(aArg[i])==sizeof(sqlite3_rtree_dbl)
-      ){
-        memcpy(&pBlob->aParam[i], sqlite3_value_blob(aArg[i]),
-               sizeof(sqlite3_rtree_dbl));
-      }else{
+      pBlob->apSqlParam[i] = sqlite3_value_dup(aArg[i]);
+      if( pBlob->apSqlParam[i]==0 ) memErr = 1;
 #ifdef SQLITE_RTREE_INT_ONLY
-        pBlob->aParam[i] = sqlite3_value_int64(aArg[i]);
+      pBlob->aParam[i] = sqlite3_value_int64(aArg[i]);
 #else
-        pBlob->aParam[i] = sqlite3_value_double(aArg[i]);
+      pBlob->aParam[i] = sqlite3_value_double(aArg[i]);
 #endif
-      }
     }
-    sqlite3_result_blob(ctx, pBlob, nBlob, sqlite3_free);
+    if( memErr ){
+      sqlite3_result_error_nomem(ctx);
+      rtreeMatchArgFree(pBlob);
+    }else{
+      sqlite3_result_blob(ctx, pBlob, nBlob, rtreeMatchArgFree);
+    }
   }
 }
 

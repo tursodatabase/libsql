@@ -770,10 +770,6 @@ void sqlite3VdbeMemAboutToChange(Vdbe *pVdbe, Mem *pMem){
 }
 #endif /* SQLITE_DEBUG */
 
-/*
-** Size of struct Mem not including the Mem.zMalloc member.
-*/
-#define MEMCELLSIZE offsetof(Mem,zMalloc)
 
 /*
 ** Make an shallow copy of pFrom into pTo.  Prior contents of
