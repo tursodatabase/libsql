@@ -255,5 +255,14 @@ do_test zeroblob-9.8 {
   db eval {SELECT zeroblob(2) IN (zeroblob(2))}
 } {1}
 
+# Oversized zeroblob records
+#
+do_test zeroblob-10.1 {
+  db eval {
+    CREATE TABLE t10(a,b,c);
+  }
+  catchsql {INSERT INTO t10 VALUES(zeroblob(1e9),zeroblob(1e9),zeroblob(1e9))}
+} {1 {string or blob too big}}
+
 
 finish_test

@@ -2620,7 +2620,7 @@ case OP_MakeRecord: {
   u64 nData;             /* Number of bytes of data space */
   int nHdr;              /* Number of bytes of header space */
   i64 nByte;             /* Data space required for this record */
-  int nZero;             /* Number of zero bytes at the end of the record */
+  i64 nZero;             /* Number of zero bytes at the end of the record */
   int nVarint;           /* Number of bytes in a varint */
   u32 serial_type;       /* Type field */
   Mem *pData0;           /* First field to be combined into the record */
@@ -2709,7 +2709,7 @@ case OP_MakeRecord: {
     if( nVarint<sqlite3VarintLen(nHdr) ) nHdr++;
   }
   nByte = nHdr+nData;
-  if( nByte>db->aLimit[SQLITE_LIMIT_LENGTH] ){
+  if( nByte+nZero>db->aLimit[SQLITE_LIMIT_LENGTH] ){
     goto too_big;
   }
 
