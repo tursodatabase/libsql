@@ -603,6 +603,15 @@ do_execsql_test misc1-19.2 {
   SELECT * FROM t19b;
 } {4 5 6}
 
+# 2015-05-20:  CREATE TABLE AS should not store INT value is a TEXT
+# column.
+#
+do_execsql_test misc1-19.3 {
+  CREATE TABLE t19c(x TEXT);
+  CREATE TABLE t19d AS SELECT * FROM t19c UNION ALL SELECT 1234;
+  SELECT x, typeof(x) FROM t19d;
+} {1234 text}
+
 # 2014-05-16:  Tests for the SQLITE_TESTCTRL_FAULT_INSTALL feature.
 #
 unset -nocomplain fault_callbacks
