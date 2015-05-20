@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\scausing\scollation\ssequence\snames\sto\sbe\sdequoted\smultiple\stimes\sunder\ssome\scircumstances.\sCherrypick\sof\s[eddc05e7bb31].
-D 2015-05-20T19:34:18.237
+C Ensure\sthat\scomparison\soperators\sdo\snot\smess\sup\sthe\sMEM_Dyn\sflag\son\sregisters\s\nwhen\sreverting\saffinity\schanges.\sCherrypick\sof\s[02e3c88fbf6a].
+D 2015-05-20T19:44:12.544
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -283,7 +283,7 @@ F src/update.c ea336ce7b8b3fc5e316ba8f082e6445babf81059
 F src/utf.c a0314e637768a030e6e84a957d0c4f6ba910cc05
 F src/util.c 3076bdd51cdbf60a6e2e57fada745be37133c73e
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c f7f4066e4d6e3858878d76ce9288ea603e12ddf6
+F src/vdbe.c 9326966931c8227d6b463e25c43ac4941522c4ca
 F src/vdbe.h c63fad052c9e7388d551e556e119c0bcf6bebdf8
 F src/vdbeInt.h f5513f2b5ac1e2c5128996c7ea23add256a301df
 F src/vdbeapi.c 24e40422382beb774daab11fe9fe9d37e8a04949
@@ -708,7 +708,7 @@ F test/minmax.test 42fbad0e81afaa6e0de41c960329f2b2c3526efd
 F test/minmax2.test b44bae787fc7b227597b01b0ca5575c7cb54d3bc
 F test/minmax3.test cc1e8b010136db0d01a6f2a29ba5a9f321034354
 F test/minmax4.test 536a3360470633a177e42fbc19660d146b51daef
-F test/misc1.test 1201a037c24f982cc0e956cdaa34fcaf6439c417
+F test/misc1.test 830f2398da04b4e933cd16975c1bddb804b5e76d
 F test/misc2.test 00d7de54eda90e237fc9a38b9e5ccc769ebf6d4d
 F test/misc3.test cf3dda47d5dda3e53fc5804a100d3c82be736c9d
 F test/misc4.test 9c078510fbfff05a9869a0b6d8b86a623ad2c4f6
@@ -1186,8 +1186,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ff7be4db8473fa850088e9b66231ba241a7543eb
-Q +eddc05e7bb31fae74daa86e0504a3478b99fa0f2
-R 22aa86e6b34d9b5f76c6dc58c1b02f64
+P fc1a4f293c6e29f570098d1fc52d21b32a081476
+Q +02e3c88fbf6abdcf3975fb0fb71972b0ab30da30
+R 50f238e6a4e4d64a05826094e25a8e9e
 U dan
-Z 66c803e8725a4c0e312cc23324c25cfe
+Z 70e234f07696ffaa54fe0a2491f483ca

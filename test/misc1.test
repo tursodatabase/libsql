@@ -621,4 +621,10 @@ do_test misc1-19.2 {
   set fault_callbacks
 } {0}
 
+do_catchsql_test misc1-20.1 {
+  create table t0(o CHar(0)CHECK(0&O>O));
+  insert into t0 select randomblob(0)-trim(0);
+} {1 {CHECK constraint failed: t0}}
+
+
 finish_test

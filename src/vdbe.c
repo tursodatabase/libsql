@@ -1986,6 +1986,8 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
       applyAffinity(pIn3, affinity, encoding);
       if( db->mallocFailed ) goto no_mem;
     }
+    flags1 = (pIn1->flags & ~MEM_TypeMask) | (flags1 & MEM_TypeMask);
+    flags3 = (pIn3->flags & ~MEM_TypeMask) | (flags3 & MEM_TypeMask);
 
     assert( pOp->p4type==P4_COLLSEQ || pOp->p4.pColl==0 );
     ExpandBlob(pIn1);
@@ -2014,7 +2016,9 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
     }
   }
   /* Undo any changes made by applyAffinity() to the input registers. */
+  assert( (pIn1->flags & MEM_Dyn) == (flags1 & MEM_Dyn) );
   pIn1->flags = (pIn1->flags&~MEM_TypeMask) | (flags1&MEM_TypeMask);
+  assert( (pIn3->flags & MEM_Dyn) == (flags3 & MEM_Dyn) );
   pIn3->flags = (pIn3->flags&~MEM_TypeMask) | (flags3&MEM_TypeMask);
   break;
 }
