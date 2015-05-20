@@ -209,6 +209,37 @@ do_execsql_test 7.1 {SELECT rowid FROM e5 WHERE e5 MATCH $a} { 1 3 }
 do_execsql_test 7.2 {SELECT rowid FROM e5 WHERE e5 MATCH $b} { 1 2 }
 do_execsql_test 7.3 {SELECT rowid FROM e5 WHERE e5 MATCH $c} { 2 3 }
 
+#-------------------------------------------------------------------------
+# Test the 'separators' option with the unicode61 tokenizer.
+#
+do_execsql_test 8.1 {
+  BEGIN;
+  CREATE VIRTUAL TABLE e6 USING fts5(x,
+    tokenize="unicode61 separators ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+  );
+  INSERT INTO e6 VALUES('theAquickBbrownCfoxDjumpedWoverXtheYlazyZdog');
+  CREATE VIRTUAL TABLE e7 USING fts5vocab(e6, 'row');
+  SELECT term FROM e7;
+  ROLLBACK;
+} {
+  brown dog fox jumped lazy over quick the
+}
+
+do_execsql_test 8.2 [subst {
+  BEGIN;
+  CREATE VIRTUAL TABLE e6 USING fts5(x,
+    tokenize="unicode61 separators '\u0E01\u0E02\u0E03\u0E04\u0E05\u0E06\u0E07'"
+  );
+  INSERT INTO e6 VALUES('the\u0E01quick\u0E01brown\u0E01fox\u0E01' 
+                     || 'jumped\u0E01over\u0E01the\u0E01lazy\u0E01dog'
+  );
+  INSERT INTO e6 VALUES('\u0E08\u0E07\u0E09');
+  CREATE VIRTUAL TABLE e7 USING fts5vocab(e6, 'row');
+  SELECT term FROM e7;
+  ROLLBACK;
+}] [subst {
+  brown dog fox jumped lazy over quick the \u0E08 \u0E09
+}]
 
 finish_test
 

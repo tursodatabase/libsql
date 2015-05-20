@@ -70,6 +70,12 @@ do_unicode_token_test2 1.10 "xx\u0301xx" "xxxx xx\u301xx"
 # Title-case mappings work
 do_unicode_token_test 1.11 "\u01c5" "\u01c6 \u01c5"
 
+do_unicode_token_test 1.12 "\u00C1abc\u00C2 \u00D1def\u00C3" \
+    "\u00E1abc\u00E2 \u00C1abc\u00C2 \u00F1def\u00E3 \u00D1def\u00C3"
+
+do_unicode_token_test 1.13 "\u00A2abc\u00A3 \u00A4def\u00A5" \
+    "abc abc def def"
+
 #-------------------------------------------------------------------------
 #
 set docs [list {
@@ -225,6 +231,10 @@ do_test 4.1 {
     INSERT INTO t1 VALUES($c);
     INSERT INTO t1 VALUES($d);
   }
+
+  execsql "CREATE VIRTUAL TABLE t8 USING fts5(
+      a, b, tokenize=\"unicode61 separators '\uFFFE\uD800\u00BF'\"
+  )"
 } {}
 
 do_test 4.2 {
@@ -252,6 +262,15 @@ do_test 4.3 {
     INSERT INTO t1 VALUES($d);
   }
 } {}
+
+do_test 4.4 {
+  sqlite3_exec_hex db {
+    CREATE VIRTUAL TABLE t9 USING fts5(a, b, 
+      tokenize="unicode61 separators '%C09004'"
+    );
+    INSERT INTO t9(a) VALUES('abc%88def %89ghi%90');
+  }
+} {0 {}}
 
 
 #-------------------------------------------------------------------------

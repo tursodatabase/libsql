@@ -666,8 +666,8 @@ static int fts5Porter_Ostar(char *zStem, int nStem){
 
 /* porter rule condition: (m > 1 and (*S or *T)) */
 static int fts5Porter_MGt1_and_S_or_T(char *zStem, int nStem){
-  return nStem>0
-      && (zStem[nStem-1]=='s' || zStem[nStem-1]=='t')
+  assert( nStem>0 );
+  return (zStem[nStem-1]=='s' || zStem[nStem-1]=='t') 
       && fts5Porter_MGt1(zStem, nStem);
 }
 
@@ -1167,7 +1167,8 @@ static int fts5PorterCb(
   fts5PorterStep4(aBuf, &nBuf);
 
   /* Step 5a. */
-  if( nBuf>0 && aBuf[nBuf-1]=='e' ){
+  assert( nBuf>0 );
+  if( aBuf[nBuf-1]=='e' ){
     if( fts5Porter_MGt1(aBuf, nBuf-1) 
      || (fts5Porter_MEq1(aBuf, nBuf-1) && !fts5Porter_Ostar(aBuf, nBuf-1))
     ){
