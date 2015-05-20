@@ -179,5 +179,35 @@ do_test 4.2 {
 } {1 {database disk image is malformed}}
 reset_db
 
+#--------------------------------------------------------------------------
+# Test case 5.*
+#
+# Test that the integrity-check works if there is uncommitted data.
+#
+do_execsql_test 5.0 {
+  BEGIN;
+  CREATE VIRTUAL TABLE t5 USING fts4(a, prefix="1,2,3");
+  INSERT INTO t5 VALUES('And down by Kosiosko, where the reed-banks sweep');
+  INSERT INTO t5 VALUES('and sway, and the rolling plains are wide, the');
+  INSERT INTO t5 VALUES('man from snowy river is a household name today,');
+  INSERT INTO t5 VALUES('and the stockmen tell the story of his ride');
+}
+
+do_execsql_test 5.1 {
+  INSERT INTO t5(t5) VALUES('integrity-check');
+} {}
+
+do_catchsql_test 5.2 {
+  INSERT INTO t5_content VALUES(5, 'his hardy mountain pony');
+  INSERT INTO t5(t5) VALUES('integrity-check');
+} {1 {database disk image is malformed}}
+
+do_execsql_test 5.3 ROLLBACK
+
+do_execsql_test 5.4 {
+  CREATE VIRTUAL TABLE t5 USING fts4(a, prefix="1,2,3");
+  INSERT INTO t5(t5) VALUES('integrity-check');
+} {}
+
 finish_test
 
