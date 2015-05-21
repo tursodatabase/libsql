@@ -24,6 +24,8 @@
 struct VtabCtx {
   Table *pTab;
   VTable *pVTable;
+  VtabCtx *pPrior;    /* Parent context (if any) */
+  int bDeclared;      /* True after sqlite3_declare_vtab() is called */
 };
 
 /*
@@ -453,8 +455,20 @@ static int vtabCallConstructor(
   const char *const*azArg = (const char *const*)pTab->azModuleArg;
   int nArg = pTab->nModuleArg;
   char *zErr = 0;
-  char *zModuleName = sqlite3MPrintf(db, "%s", pTab->zName);
+  char *zModuleName;
+  VtabCtx *pCtx;
 
+  /* Check that the virtual-table is not already being initialized */
+  for(pCtx=db->pVtabCtx; pCtx; pCtx=pCtx->pPrior){
+    if( pCtx->pTab==pTab ){
+      *pzErr = sqlite3MPrintf(db, 
+          "vtable constructor called recursively: %s", pTab->zName
+      );
+      return SQLITE_LOCKED;
+    }
+  }
+
+  zModuleName = sqlite3MPrintf(db, "%s", pTab->zName);
   if( !zModuleName ){
     return SQLITE_NOMEM;
   }
@@ -472,10 +486,13 @@ static int vtabCallConstructor(
   assert( xConstruct );
   sCtx.pTab = pTab;
   sCtx.pVTable = pVTable;
+  sCtx.pPrior = db->pVtabCtx;
+  sCtx.bDeclared = 0;
   db->pVtabCtx = &sCtx;
   rc = xConstruct(db, pMod->pAux, nArg, azArg, &pVTable->pVtab, &zErr);
-  db->pVtabCtx = 0;
+  db->pVtabCtx = sCtx.pPrior;
   if( rc==SQLITE_NOMEM ) db->mallocFailed = 1;
+  assert( sCtx.pTab==pTab );
 
   if( SQLITE_OK!=rc ){
     if( zErr==0 ){
@@ -490,7 +507,7 @@ static int vtabCallConstructor(
     ** the sqlite3_vtab object if successful.  */
     pVTable->pVtab->pModule = pMod->pModule;
     pVTable->nRef = 1;
-    if( sCtx.pTab ){
+    if( sCtx.bDeclared==0 ){
       const char *zFormat = "vtable constructor did not declare schema: %s";
       *pzErr = sqlite3MPrintf(db, zFormat, pTab->zName);
       sqlite3VtabUnlock(pVTable);
@@ -660,18 +677,19 @@ int sqlite3VtabCallCreate(sqlite3 *db, int iDb, const char *zTab, char **pzErr){
 ** virtual table module.
 */
 int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
+  VtabCtx *pCtx = db->pVtabCtx;
   Parse *pParse;
-
   int rc = SQLITE_OK;
   Table *pTab;
   char *zErr = 0;
 
   sqlite3_mutex_enter(db->mutex);
-  if( !db->pVtabCtx || !(pTab = db->pVtabCtx->pTab) ){
+  if( !pCtx || pCtx->bDeclared ){
     sqlite3Error(db, SQLITE_MISUSE, 0);
     sqlite3_mutex_leave(db->mutex);
     return SQLITE_MISUSE_BKPT;
   }
+  pTab = pCtx->pTab;
   assert( (pTab->tabFlags & TF_Virtual)!=0 );
 
   pParse = sqlite3StackAllocZero(db, sizeof(*pParse));
@@ -694,7 +712,7 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
         pParse->pNewTable->nCol = 0;
         pParse->pNewTable->aCol = 0;
       }
-      db->pVtabCtx->pTab = 0;
+      pCtx->bDeclared = 1;
     }else{
       sqlite3Error(db, SQLITE_ERROR, (zErr ? "%s" : 0), zErr);
       sqlite3DbFree(db, zErr);

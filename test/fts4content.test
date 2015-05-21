@@ -46,6 +46,9 @@ ifcapable !fts3 {
 #   8.* - Test that if the content=xxx and prefix options are used together,
 #         the 'rebuild' command still works.
 #
+#   11.* - Test that circular references (e.g. "t1(content=t1)") are
+#          detected.
+#
 
 do_execsql_test 1.1.1 {
   CREATE TABLE t1(a, b, c);
@@ -404,7 +407,7 @@ do_execsql_test 5.1.7 {
 # 
 do_catchsql_test 6.1.1 {
   CREATE VIRTUAL TABLE ft7 USING fts4(content=t7);
-} {1 {vtable constructor failed: ft7}}
+} {1 {no such table: main.t7}}
 
 do_execsql_test 6.2.1 {
   CREATE TABLE t7(one, two);
@@ -431,7 +434,7 @@ do_execsql_test 6.2.3 {
 }
 do_catchsql_test 6.2.4 {
   SELECT * FROM ft7;
-} {1 {vtable constructor failed: ft7}}
+} {1 {no such table: main.t7}}
 do_execsql_test 6.2.5 {
   CREATE TABLE t7(x, y);
   INSERT INTO t7 VALUES('A B', 'B A');
@@ -521,5 +524,50 @@ do_execsql_test 8.3 { INSERT INTO ft10(ft10) VALUES('rebuild');        }
 do_execsql_test 8.4 { SELECT rowid FROM ft10 WHERE a MATCH 'ab*';      } {1 2 3}
 do_execsql_test 8.5 { SELECT rowid FROM ft10 WHERE b MATCH 'abav*';    } {3}
 do_execsql_test 8.6 { SELECT rowid FROM ft10 WHERE ft10 MATCH 'abas*'; } {1}
+
+#-------------------------------------------------------------------------
+# Test cases 9.*
+# 
+reset_db
+register_echo_module [sqlite3_connection_pointer db]
+
+do_execsql_test 9.1 {
+  CREATE TABLE tbl1(a, b);
+  INSERT INTO tbl1 VALUES('a b', 'c d');
+  INSERT INTO tbl1 VALUES('e f', 'a b');
+  CREATE VIRTUAL TABLE e1 USING echo(tbl1);
+  CREATE VIRTUAL TABLE ft1 USING fts4(content=e1);
+  INSERT INTO ft1(ft1) VALUES('rebuild');
+}
+
+do_execsql_test 9.2 {
+  SELECT rowid, * FROM ft1 WHERE ft1 MATCH 'e'
+} {2 {e f} {a b}}
+
+do_execsql_test 9.3 {
+  SELECT rowid, * FROM ft1 WHERE ft1 MATCH 'a'
+} {1 {a b} {c d} 2 {e f} {a b}}
+
+do_execsql_test 9.4 { 
+  DELETE FROM ft1 WHERE docid=1;
+}
+
+do_execsql_test 9.5 {
+  SELECT rowid, * FROM ft1 WHERE ft1 MATCH 'a'
+} {2 {e f} {a b}}
+
+do_execsql_test 9.6 {
+  INSERT INTO ft1(ft1) VALUES('rebuild');
+  SELECT rowid, * FROM ft1 WHERE ft1 MATCH 'a'
+} {1 {a b} {c d} 2 {e f} {a b}}
+
+#-------------------------------------------------------------------------
+# Test cases 11.*
+# 
+reset_db
+
+do_catchsql_test 11.1 {
+  CREATE VIRTUAL TABLE x1 USING fts4(content=x1);
+} {1 {vtable constructor called recursively: x1}}
 
 finish_test
