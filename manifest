@@ -1,5 +1,5 @@
-C Ensure\sthat\stables\snames\sare\sdequoted\sexactly\sonce\sby\sthe\strigger\slogic.\nCherrypick\s[59e92bd9521f1e8]\sand\s[9d887b92f8086961e].
-D 2015-05-21T02:20:47.492
+C Silently\signore\sany\sattempt\sto\sadd\sa\sprefix\sindex\sfor\sprefixes\szero\sbytes\sin\ssize\sto\san\sfts3/4\stable.\sOr\sany\sprefix\sindex\ssize\sso\slarge\sthat\sit\soverflows\sa\s32-bit\ssigned\sinteger.\s\sCherrypick\s[ad4b19d2ac0889a]
+D 2015-05-21T02:24:35.011
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2f37e468503dbe79d35c9f6dffcf3fae1ae9ec20
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -63,7 +63,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c a2a545a38d9d4d2574608da189284b5f8ba00d6d
+F ext/fts3/fts3.c 64d50e38c2b8087c164b150a813d2330bfa21979
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h d1d7f964ddee067bcd16a6af4ba7ecf66220056d
 F ext/fts3/fts3_aux.c 5205182bd8f372782597888156404766edf5781e
@@ -487,7 +487,7 @@ F test/fts3first.test dbdedd20914c8d539aa3206c9b34a23775644641
 F test/fts3malloc.test b86ea33db9e8c58c0c2f8027a9fcadaf6a1568be
 F test/fts3matchinfo.test 6507fe1c342e542300d65ea637d4110eccf894e6
 F test/fts3near.test 2e318ee434d32babd27c167142e2b94ddbab4844
-F test/fts3prefix.test b36d4f00b128a51e7b386cc013a874246d9d7dc1
+F test/fts3prefix.test 6bd3fc277769a373f90e96c04f8747bee823e4c5
 F test/fts3prefix2.test 477ca96e67f60745b7ac931cfa6e9b080c562da5
 F test/fts3query.test ef79d31fdb355d094baec1c1b24b60439a1fb8a2
 F test/fts3rnd.test 1320d8826a845e38a96e769562bf83d7a92a15d0
@@ -992,9 +992,8 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh 9f406d66e750e8ac031c63a9ef3248aaa347ef2a
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-P 09784f376b47b6ca539a5106dfa65d8abebe1ef2
-Q +59e92bd9521f1e8315a9a7e7fd3d63b0c75eaf0e
-Q +9d887b92f8086961e045f8acb9ee7a443796d411
-R 8b9677253ae83c017d7457a710552396
+P 9e3f64a4f4182ad80e82edb53095ed508e8b1d13
+Q +ad4b19d2ac0889a23fe3b0fd844286efc10cdd82
+R eb8d361274a46c018e06afbba8f0a59c
 U drh
-Z 94b5f3dbcf1046c08af07824e7389b9d
+Z 2bdf48b209e1a6d6f4d758c56e896ebb
