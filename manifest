@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\stest\sfile\se_reindex.test.\sCherrypick\sof\s[5b3de9390f2f].
-D 2015-05-20T20:50:59.596
+C Avoid\sever\swriting\sbefore\sthe\sstart\sof\san\sallocated\sbuffer\sin\sthe\sDIRECT_OVERFLOW_READ\scode.\sFix\sfor\s[e3a290961a6].\sCherrypick\sof\s[c3c15d20c691].
+D 2015-05-21T17:21:05.934
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -167,7 +167,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c a729e63cf5cd1829507cb7b8e89f99b95141bb53
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c fa057e30794bfd867963b44a3a42710a45c335a1
+F src/btree.c 3baad8da3d3a8363348b70ddfacbcc3e82760e61
 F src/btree.h 4245a349bfe09611d7ff887dbc3a80cee8b7955a
 F src/btreeInt.h cf180d86b2e9e418f638d65baa425c4c69c0e0e3
 F src/build.c 5abf794fe8a605f2005b422e98a3cedad9b9ef5b
@@ -742,6 +742,7 @@ F test/orderby5.test 8f08a54836d21fb7c70245360751aedd1c2286fb
 F test/orderby6.test 8b38138ab0972588240b3fca0985d2e400432859
 F test/orderby7.test 3d1383d52ade5b9eb3a173b3147fdd296f0202da
 F test/oserror.test 50417780d0e0d7cd23cf12a8277bb44024765df3
+F test/ovfl.test 4f7ca651cba5c059a12d8c67dddd49bec5747799
 F test/pager1.test 1acbdb14c5952a72dd43129cabdbf69aaa3ed1fa
 F test/pager2.test 67b8f40ae98112bcdba1f2b2d03ea83266418c71
 F test/pager3.test 3856d9c80839be0668efee1b74811b1b7f7fc95f
@@ -1186,8 +1187,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7d7d633c71bb36bed98bc2c77d3268cc26fbac3e
-Q +5b3de9390f2ffc4c530fd47c71c70e87972cf74b
-R b85e8aeadcdd5ec4c54b45311910ff86
+P 80633682d714e5bedc129d8f579a46cc7c2040e6
+Q +c3c15d20c6913811956a5041c959a56ca4eeb5eb
+R a14351485096703f0ae3593f0280678f
 U dan
-Z e6c180a85390645dc9dfecdc10a4b12e
+Z 4475ac0ddfbc6008239591329b8dd6f2

@@ -3967,7 +3967,8 @@ static int accessPayload(
   MemPage *pPage = pCur->apPage[pCur->iPage]; /* Btree page of current entry */
   BtShared *pBt = pCur->pBt;                  /* Btree this cursor belongs to */
 #ifdef SQLITE_DIRECT_OVERFLOW_READ
-  int bEnd;                                   /* True if reading to end of data */
+  unsigned char * const pBufStart = pBuf;
+  int bEnd;                                 /* True if reading to end of data */
 #endif
 
   assert( pPage );
@@ -4094,6 +4095,7 @@ static int accessPayload(
         **   4) there is no open write-transaction, and
         **   5) the database is not a WAL database,
         **   6) all data from the page is being read.
+        **   7) at least 4 bytes have already been read into the output buffer 
         **
         ** then data can be read directly from the database file into the
         ** output buffer, bypassing the page-cache altogether. This speeds
@@ -4105,9 +4107,11 @@ static int accessPayload(
          && pBt->inTransaction==TRANS_READ                     /* (4) */
          && (fd = sqlite3PagerFile(pBt->pPager))->pMethods     /* (3) */
          && pBt->pPage1->aData[19]==0x01                       /* (5) */
+         && &pBuf[-4]>=pBufStart                               /* (7) */
         ){
           u8 aSave[4];
           u8 *aWrite = &pBuf[-4];
+          assert( aWrite>=pBufStart );                         /* hence (7) */
           memcpy(aSave, aWrite, 4);
           rc = sqlite3OsRead(fd, aWrite, a+4, (i64)pBt->pageSize*(nextPage-1));
           nextPage = get4byte(aWrite);
