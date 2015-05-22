@@ -327,10 +327,12 @@ int sqlite3Fts5UnicodeFold(int c, int bRemoveDiacritic){
   if( c<128 ){
     if( c>='A' && c<='Z' ) ret = c + ('a' - 'A');
   }else if( c<65536 ){
+    const struct TableEntry *p;
     int iHi = sizeof(aEntry)/sizeof(aEntry[0]) - 1;
     int iLo = 0;
     int iRes = -1;
 
+    assert( c>aEntry[0].iCode );
     while( iHi>=iLo ){
       int iTest = (iHi + iLo) / 2;
       int cmp = (c - aEntry[iTest].iCode);
@@ -341,14 +343,12 @@ int sqlite3Fts5UnicodeFold(int c, int bRemoveDiacritic){
         iHi = iTest-1;
       }
     }
-    assert( iRes<0 || c>=aEntry[iRes].iCode );
 
-    if( iRes>=0 ){
-      const struct TableEntry *p = &aEntry[iRes];
-      if( c<(p->iCode + p->nRange) && 0==(0x01 & p->flags & (p->iCode ^ c)) ){
-        ret = (c + (aiOff[p->flags>>1])) & 0x0000FFFF;
-        assert( ret>0 );
-      }
+    assert( iRes>=0 && c>=aEntry[iRes].iCode );
+    p = &aEntry[iRes];
+    if( c<(p->iCode + p->nRange) && 0==(0x01 & p->flags & (p->iCode ^ c)) ){
+      ret = (c + (aiOff[p->flags>>1])) & 0x0000FFFF;
+      assert( ret>0 );
     }
 
     if( bRemoveDiacritic ) ret = fts5_remove_diacritic(ret);

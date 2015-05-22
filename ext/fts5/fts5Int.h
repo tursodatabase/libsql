@@ -631,4 +631,15 @@ int sqlite3Fts5VocabInit(Fts5Global*, sqlite3*);
 ** End of interface to code in fts5_vocab.c.
 **************************************************************************/
 
+
+/**************************************************************************
+** Interface to automatically generated code in fts5_unicode2.c. 
+*/
+int sqlite3Fts5UnicodeIsalnum(int c);
+int sqlite3Fts5UnicodeIsdiacritic(int c);
+int sqlite3Fts5UnicodeFold(int c, int bRemoveDiacritic);
+/*
+** End of interface to code in fts5_unicode2.c.
+**************************************************************************/
+
 #endif

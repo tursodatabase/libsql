@@ -174,13 +174,6 @@ static int fts5AsciiTokenize(
 ** Start of unicode61 tokenizer implementation.
 */
 
-/*
-** Functions in fts5_unicode2.c. 
-*/
-int sqlite3Fts5UnicodeIsalnum(int c);
-int sqlite3Fts5UnicodeIsdiacritic(int c);
-int sqlite3Fts5UnicodeFold(int c, int bRemoveDiacritic);
-
 
 /*
 ** The following two macros - READ_UTF8 and WRITE_UTF8 - have been copied

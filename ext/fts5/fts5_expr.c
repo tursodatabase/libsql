@@ -1619,6 +1619,45 @@ static void fts5ExprFunctionTcl(
 }
 
 /*
+** The implementation of an SQLite user-defined-function that accepts a
+** single integer as an argument. If the integer is an alpha-numeric 
+** unicode code point, 1 is returned. Otherwise 0.
+*/
+static void fts5ExprIsAlnum(
+  sqlite3_context *pCtx,          /* Function call context */
+  int nArg,                       /* Number of args */
+  sqlite3_value **apVal           /* Function arguments */
+){
+  int iCode;
+  if( nArg!=1 ){
+    sqlite3_result_error(pCtx, 
+        "wrong number of arguments to function fts5_isalnum", -1
+    );
+    return;
+  }
+  iCode = sqlite3_value_int(apVal[0]);
+  sqlite3_result_int(pCtx, sqlite3Fts5UnicodeIsalnum(iCode));
+}
+
+static void fts5ExprFold(
+  sqlite3_context *pCtx,          /* Function call context */
+  int nArg,                       /* Number of args */
+  sqlite3_value **apVal           /* Function arguments */
+){
+  if( nArg!=1 && nArg!=2 ){
+    sqlite3_result_error(pCtx, 
+        "wrong number of arguments to function fts5_fold", -1
+    );
+  }else{
+    int iCode;
+    int bRemoveDiacritics = 0;
+    iCode = sqlite3_value_int(apVal[0]);
+    if( nArg==2 ) bRemoveDiacritics = sqlite3_value_int(apVal[1]);
+    sqlite3_result_int(pCtx, sqlite3Fts5UnicodeFold(iCode, bRemoveDiacritics));
+  }
+}
+
+/*
 ** This is called during initialization to register the fts5_expr() scalar
 ** UDF with the SQLite handle passed as the only argument.
 */
@@ -1627,8 +1666,10 @@ int sqlite3Fts5ExprInit(Fts5Global *pGlobal, sqlite3 *db){
     const char *z;
     void (*x)(sqlite3_context*,int,sqlite3_value**);
   } aFunc[] = {
-    { "fts5_expr", fts5ExprFunctionHr },
+    { "fts5_expr",     fts5ExprFunctionHr },
     { "fts5_expr_tcl", fts5ExprFunctionTcl },
+    { "fts5_isalnum",  fts5ExprIsAlnum },
+    { "fts5_fold",     fts5ExprFold },
   };
   int i;
   int rc = SQLITE_OK;
