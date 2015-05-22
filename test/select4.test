@@ -909,5 +909,11 @@ do_execsql_test select4-14.14 {
 do_execsql_test select4-14.15 {
   SELECT * FROM (SELECT 123), (SELECT 456) ON likely(0 OR 1) OR 0;
 } {123 456}
+do_execsql_test select4-14.16 {
+  VALUES(1),(2),(3),(4) UNION ALL SELECT 5 LIMIT 99;
+} {1 2 3 4 5}
+do_execsql_test select4-14.17 {
+  VALUES(1),(2),(3),(4) UNION ALL SELECT 5 LIMIT 3;
+} {1 2 3}
 
 finish_test
