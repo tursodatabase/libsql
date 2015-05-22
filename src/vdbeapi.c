@@ -226,7 +226,10 @@ sqlite3_value *sqlite3_value_dup(const sqlite3_value *pOrig){
   if( pNew->flags&(MEM_Str|MEM_Blob) ){
     if( 0==(pOrig->flags&MEM_Static) ){
       pNew->flags |= MEM_Ephem;
-      sqlite3VdbeMemMakeWriteable(pNew);
+      if( sqlite3VdbeMemMakeWriteable(pNew)!=SQLITE_OK ){
+        sqlite3ValueFree(pNew);
+        pNew = 0;
+      }
     }
   }
   return pNew;

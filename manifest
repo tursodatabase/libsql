@@ -1,5 +1,5 @@
-C Update\swith\sfixes\sand\senhancements\sfrom\strunk.
-D 2015-05-22T18:40:48.061
+C Fix\sminor\sissues\swith\sthe\ssqlite3_value_dup()\sinterface.
+D 2015-05-22T19:55:10.064
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0a6ae26396ec696221021780dffbb894ff3cead7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -315,10 +315,10 @@ F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
 F src/vdbe.c 6aee8a041742413ab3113e6682bc7ad1628a2bbe
 F src/vdbe.h 7e538ecf47dccb307ea2d087c3ddc2dd8d70e79d
 F src/vdbeInt.h f0ccddac48583d5f762dc554a9f79e85ea8807e0
-F src/vdbeapi.c f9ad1be11b9e8f2f8580656191abeeefd24f71dd
+F src/vdbeapi.c 06b7b785dce358045138b8e10dbbc9d25ebf27c6
 F src/vdbeaux.c efe1667d31e8648dbe04a441e5aa9b62dbee2f03
 F src/vdbeblob.c 4f2e8e075d238392df98c5e03a64342465b03f90
-F src/vdbemem.c e87e076b863e4228d71d8c4d1c4df6836d810043
+F src/vdbemem.c 21f9169289a804308f6cdde55e9417fb8336997f
 F src/vdbesort.c f5009e7a35e3065635d8918b9a31f498a499976b
 F src/vdbetrace.c 8befe829faff6d9e6f6e4dee5a7d3f85cc85f1a0
 F src/vtab.c c535e80259ebe616467181a83a4263555b97c694
@@ -1278,7 +1278,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a7ee40c4fc62843ac5b96ba47ca14a66e8cd6961 b9727e6bbfc3c62c601227e86e62f2f39792fd1d
-R 9098cc91ef3cf8266e40130f2497d66b
+P 9605d008f5c763137e9734d033fe4510ca316858
+R 0084568ba3e04d525eb096dd7e201fe6
 U drh
-Z 1a2a84e2d9cad97b20ef26fa2573d0ad
+Z 0e179fe2ecd0f632949a18d2f8a6b466
