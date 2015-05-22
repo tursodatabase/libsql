@@ -267,6 +267,8 @@ struct sqlite3_api_routines {
   void (*result_text64)(sqlite3_context*,const char*,sqlite3_uint64,
                          void(*)(void*), unsigned char);
   int (*strglob)(const char*,const char*);
+  sqlite3_value (*value_dup)(const sqlite3_value*);
+  void (*value_free)(sqlite3_value*);
 };
 
 /*
@@ -497,6 +499,9 @@ struct sqlite3_api_routines {
 #define sqlite3_result_blob64          sqlite3_api->result_blob64
 #define sqlite3_result_text64          sqlite3_api->result_text64
 #define sqlite3_strglob                sqlite3_api->strglob
+/* Version 3.8.11 and later */
+#define sqlite3_value_dup              sqlite3_api->value_dup
+#define sqlite3_value_free             sqlite3_api->value_free
 #endif /* SQLITE_CORE */
 
 #ifndef SQLITE_CORE
