@@ -1,5 +1,5 @@
-C Fix\stwo\sfaulty\sassert\sstatements\sdiscovered\sby\sfuzzing.
-D 2015-05-22T13:09:50.891
+C Have\sr-tree\sprefer\sto\suse\sthe\sconstraint\s"col\sMATCH\s?"\sover\s"rowid\s=\s?".
+D 2015-05-22T16:08:42.447
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0a6ae26396ec696221021780dffbb894ff3cead7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -143,7 +143,7 @@ F ext/ota/sqlite3ota.c 2246b779f46ab20d5e7876f5b96c378c601d20f4
 F ext/ota/sqlite3ota.h 00028de37eede471ff1947d455cc3f33d3a911c6
 F ext/ota/test_ota.c a876f88550d7d59a3ef62d4c1a5c04c4c2f1ebe1
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 60ec0a71d4d213665a706c795c887e7c4d148635
+F ext/rtree/rtree.c 9d9302a6ed53b3e2e2063778bf482b5243e58c23
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test 541bbcab74613907fea08b2ecdcdd5b7aa724cc9
 F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
@@ -158,7 +158,7 @@ F ext/rtree/rtreeA.test ace05e729a36e342d40cf94e9efc7b4723d9dcdf
 F ext/rtree/rtreeB.test c85f9ce78766c4e68b8b89fbf2979ee9cfa82b4e
 F ext/rtree/rtreeC.test df158dcc81f1a43ce7eef361af03c48ec91f1e06
 F ext/rtree/rtreeD.test 636630357638f5983701550b37f0f5867130d2ca
-F ext/rtree/rtreeE.test 388c1c8602c3ce55c15f03b509e9cf545fb7c41f
+F ext/rtree/rtreeE.test ba29d4df85688fe80962baf6a23590729312b326
 F ext/rtree/rtreeF.test 66deb9fd1611c7ca2e374adba63debdc2dbb12b4
 F ext/rtree/rtree_perf.tcl 6c18c1f23cd48e0f948930c98dfdd37dfccb5195
 F ext/rtree/rtree_util.tcl 06aab2ed5b826545bf215fff90ecb9255a8647ea
@@ -1278,7 +1278,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a6eb2a39357c35dc13d549ef86c785ff5c69938a
-R d9917d1c8ed4ffaff7f5ca236b5ad758
-U drh
-Z d8611b43fb13ded0a9ff190ab5f2029c
+P 799817bfb2bc95963c0e0d70063c4cb15c94ef74
+Q +b9e45596d823a6659f4ce2450afcd703feb788d8
+R 28f0e486e27f35ba4c09d0bec0224e3e
+U dan
+Z e4a60b1b66e40fbda6f3bf3e83ae873e
