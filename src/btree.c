@@ -6167,7 +6167,8 @@ static void rebuildPage(
     memcpy(pData, pCell, szCell[i]);
     put2byte(pCellptr, (pData - aData));
     pCellptr += 2;
-    assert( szCell[i]==cellSizePtr(pPg, pCell) );
+    assert( szCell[i]==cellSizePtr(pPg, pCell) || CORRUPT_DB );
+    testcase( szCell[i]!=cellSizePtr(pPg,pCell) );
   }
 
   /* The pPg->nFree field is now set incorrectly. The caller will fix it. */

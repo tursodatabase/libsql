@@ -454,7 +454,7 @@ int main(int argc, char **argv){
   int jj;                       /* Loop counter for azInFile[] */
   sqlite3_int64 iBegin;         /* Start time for the whole program */
   sqlite3_int64 iStart, iEnd;   /* Start and end-times for a test case */
-  const char *zDbName;          /* Name of an on-disk database file to open */
+  const char *zDbName = 0;      /* Name of an on-disk database file to open */
 
   iBegin = timeOfDay();
   zFailCode = getenv("TEST_FAILURE");
@@ -701,14 +701,17 @@ int main(int argc, char **argv){
       do{
         if( zDbName ){
           rc = sqlite3_open_v2(zDbName, &db, SQLITE_OPEN_READWRITE, 0);
+          if( rc!=SQLITE_OK ){
+            abendError("Cannot open database file %s", zDbName);
+          }
         }else{
           rc = sqlite3_open_v2(
             "main.db", &db,
             SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_MEMORY,
             0);
-        }
-        if( rc!=SQLITE_OK ){
-          abendError("Unable to open the in-memory database");
+          if( rc!=SQLITE_OK ){
+            abendError("Unable to open the in-memory database");
+          }
         }
         if( pLook ){
           rc = sqlite3_db_config(db, SQLITE_DBCONFIG_LOOKASIDE,pLook,szLook,nLook);
