@@ -1,5 +1,5 @@
-C Fix\sthe\sinitialization\slogic\sin\sCREATE\sTABLE\sAS\sso\sthat\sthe\scorrect\saffinities\nare\sapplied\sto\sall\svalues\sbeing\sinserted\sinto\sthe\snew\stable,\seven\sif\sthe\nRHS\sis\sa\scompound\sSELECT.\s\sFix\sfor\sticket\s[f2ad7de056ab1dc9200].
-D 2015-05-20T17:36:49.966
+C Add\sthe\s--database\soption\sto\sthe\sfuzzershell\stest\sprogram.
+D 2015-05-22T11:38:22.072
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0a6ae26396ec696221021780dffbb894ff3cead7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1230,7 +1230,7 @@ F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/extract.c 054069d81b095fbdc189a6f5d4466e40380505e2
 F tool/fast_vacuum.c 5ba0d6f5963a0a63bdc42840f678bad75b2ebce1
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
-F tool/fuzzershell.c e8be9a8bd8e0e7814592c5e3e38de99ad7beee83
+F tool/fuzzershell.c e35a3e0918349f2a9e0498c17c6fe5a6c7d61d86
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
@@ -1278,8 +1278,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c403502cdce8b82e570e6fc49ab7f5144800c189 0e45e8f1574ef19a43dbd118440ddbc5cec80ce7
-R a7c7024ecc6e55965138342c00704c17
-T +closed 0e45e8f1574ef19a43dbd118440ddbc5cec80ce7
+P 6a0cf3ce9e68d0127f9653232e588ed59d34eca5
+R 549a709a6f5e577976c5b6d0eb103940
 U drh
-Z fd6f77c4d4a68df5c93e64187bb026e9
+Z 07941c2a844d4926d98c426b503acb2a
