@@ -454,7 +454,7 @@ int main(int argc, char **argv){
   int jj;                       /* Loop counter for azInFile[] */
   sqlite3_int64 iBegin;         /* Start time for the whole program */
   sqlite3_int64 iStart, iEnd;   /* Start and end-times for a test case */
-  const char *zDbName;          /* Name of an on-disk database file to open */
+  const char *zDbName = 0;      /* Name of an on-disk database file to open */
 
   iBegin = timeOfDay();
   zFailCode = getenv("TEST_FAILURE");
