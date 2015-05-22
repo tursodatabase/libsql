@@ -701,14 +701,17 @@ int main(int argc, char **argv){
       do{
         if( zDbName ){
           rc = sqlite3_open_v2(zDbName, &db, SQLITE_OPEN_READWRITE, 0);
+          if( rc!=SQLITE_OK ){
+            abendError("Cannot open database file %s", zDbName);
+          }
         }else{
           rc = sqlite3_open_v2(
             "main.db", &db,
             SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_MEMORY,
             0);
-        }
-        if( rc!=SQLITE_OK ){
-          abendError("Unable to open the in-memory database");
+          if( rc!=SQLITE_OK ){
+            abendError("Unable to open the in-memory database");
+          }
         }
         if( pLook ){
           rc = sqlite3_db_config(db, SQLITE_DBCONFIG_LOOKASIDE,pLook,szLook,nLook);
