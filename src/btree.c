@@ -7860,7 +7860,8 @@ static int btreeCreateTable(Btree *p, int *piTable, int createTabFlags){
         pgnoRoot==PENDING_BYTE_PAGE(pBt) ){
       pgnoRoot++;
     }
-    assert( pgnoRoot>=3 );
+    assert( pgnoRoot>=3 || CORRUPT_DB );
+    testcase( pgnoRoot<3 );
 
     /* Allocate a page. The page that currently resides at pgnoRoot will
     ** be moved to the allocated page (unless the allocated page happens
@@ -8010,7 +8011,8 @@ static int clearDatabasePage(
     rc = clearDatabasePage(pBt, get4byte(&pPage->aData[hdr+8]), 1, pnChange);
     if( rc ) goto cleardatabasepage_out;
   }else if( pnChange ){
-    assert( pPage->intKey );
+    assert( pPage->intKey || CORRUPT_DB );
+    testcase( !pPage->intKey );
     *pnChange += pPage->nCell;
   }
   if( freePageFlag ){

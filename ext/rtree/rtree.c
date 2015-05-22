@@ -1672,17 +1672,30 @@ static int rtreeBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
   Rtree *pRtree = (Rtree*)tab;
   int rc = SQLITE_OK;
   int ii;
+  int bMatch = 0;                 /* True if there exists a MATCH constraint */
   i64 nRow;                       /* Estimated rows returned by this scan */
 
   int iIdx = 0;
   char zIdxStr[RTREE_MAX_DIMENSIONS*8+1];
   memset(zIdxStr, 0, sizeof(zIdxStr));
 
+  /* Check if there exists a MATCH constraint - even an unusable one. If there
+  ** is, do not consider the lookup-by-rowid plan as using such a plan would
+  ** require the VDBE to evaluate the MATCH constraint, which is not currently
+  ** possible. */
+  for(ii=0; ii<pIdxInfo->nConstraint; ii++){
+    if( pIdxInfo->aConstraint[ii].op==SQLITE_INDEX_CONSTRAINT_MATCH ){
+      bMatch = 1;
+    }
+  }
+
   assert( pIdxInfo->idxStr==0 );
   for(ii=0; ii<pIdxInfo->nConstraint && iIdx<(int)(sizeof(zIdxStr)-1); ii++){
     struct sqlite3_index_constraint *p = &pIdxInfo->aConstraint[ii];
 
-    if( p->usable && p->iColumn==0 && p->op==SQLITE_INDEX_CONSTRAINT_EQ ){
+    if( bMatch==0 && p->usable 
+     && p->iColumn==0 && p->op==SQLITE_INDEX_CONSTRAINT_EQ 
+    ){
       /* We have an equality constraint on the rowid. Use strategy 1. */
       int jj;
       for(jj=0; jj<ii; jj++){

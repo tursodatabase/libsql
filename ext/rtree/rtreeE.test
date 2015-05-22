@@ -80,6 +80,13 @@ do_execsql_test rtreeE-1.6 {
   SELECT id FROM rt1 WHERE id MATCH Qcircle(0,0,1000,5) ORDER BY +id
 } {0 2 4 6 8 10 12 14 16 18 20 22 24 100 102 104 106 108 110 112 114 116 118 120 122 124 200 202 204 206 208 210 212 214 216 218 220 222 224}
 
+# Test that rtree prefers MATCH to lookup-by-rowid.
+#
+do_execsql_test rtreeE-1.7 {
+  SELECT id FROM rt1 WHERE id=18 AND id MATCH Qcircle(0,0,1000,5)
+} {18}
+
+
 # Construct a large 2-D RTree with thousands of random entries.
 #
 do_test rtreeE-2.1 {
@@ -128,5 +135,6 @@ set ans [db eval {SELECT id FROM t2 WHERE x1>=0 AND x0<=10000 AND y1>=0 AND y0<=
 do_execsql_test rtreeE-2.4 {
   SELECT id FROM rt2 WHERE id MATCH breadthfirstsearch(0,10000,0,10000) ORDER BY id
 } $ans
+
 
 finish_test
