@@ -42,7 +42,7 @@ void sqlite3OpenTable(
   }else{
     Index *pPk = sqlite3PrimaryKeyIndex(pTab);
     assert( pPk!=0 );
-    assert( pPk->tnum=pTab->tnum );
+    assert( pPk->tnum==pTab->tnum );
     sqlite3VdbeAddOp3(v, opcode, iCur, pPk->tnum, iDb);
     sqlite3VdbeSetP4KeyInfo(pParse, pPk);
     VdbeComment((v, "%s", pTab->zName));

@@ -8011,7 +8011,8 @@ static int clearDatabasePage(
     rc = clearDatabasePage(pBt, get4byte(&pPage->aData[hdr+8]), 1, pnChange);
     if( rc ) goto cleardatabasepage_out;
   }else if( pnChange ){
-    assert( pPage->intKey );
+    assert( pPage->intKey || CORRUPT_DB );
+    testcase( !pPage->intKey );
     *pnChange += pPage->nCell;
   }
   if( freePageFlag ){
