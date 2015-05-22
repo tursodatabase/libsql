@@ -1,5 +1,5 @@
-C Have\sr-tree\sprefer\sto\suse\sthe\sconstraint\s"col\sMATCH\s?"\sover\s"rowid\s=\s?".
-D 2015-05-22T16:08:42.447
+C The\sSRT_Table\stype\sfor\sthe\sSelectDest\sobject\sis\snow\sjust\san\sSRT_EphemTab\sfor\nwhich\sthe\sephemeral\stable\shas\salready\sbeen\sallocated.
+D 2015-05-22T17:29:27.432
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0a6ae26396ec696221021780dffbb894ff3cead7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -250,7 +250,7 @@ F src/printf.c 13ce37e5574f9b0682fa86dbcf9faf76b9d82a15
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 99eabf7eff0bfa65b75939b46caa82e2b2133f28
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c 95e728e1bdbca2ee45016308e3eb6d19095155cc
+F src/select.c 6adad8d698a382f83009eed7b73080273fa993ca
 F src/shell.c 07dda7cd692911d2f22269953418d049f2e2c0ee
 F src/sqlite.h.in 0127e418883c2b41f7fbc056bc1033fa56fbd2a5
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
@@ -308,7 +308,7 @@ F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 6bbcc9fe50c917864d48287b4792d46d6e873481
 F src/tokenize.c af8cbbca6db6b664ffecafa236b06629ef6d35c4
 F src/trigger.c 322f23aad694e8f31d384dcfa386d52a48d3c52f
-F src/update.c 3c4ecc282accf12d39edb8d524cf089645e55a13
+F src/update.c 487747b328b7216bb7f6af0695d6937d5c9e605f
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c a6431c92803b975b7322724a7b433e538d243539
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
@@ -1278,8 +1278,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 799817bfb2bc95963c0e0d70063c4cb15c94ef74
-Q +b9e45596d823a6659f4ce2450afcd703feb788d8
-R 28f0e486e27f35ba4c09d0bec0224e3e
-U dan
-Z e4a60b1b66e40fbda6f3bf3e83ae873e
+P b9fb95194d4f7c535f1d175fd2e18d69d76e8fc4
+R b9824a32563c5717dba8f6fd0e248f54
+U drh
+Z 6ae4be6461472ee1a411850c6b256793
