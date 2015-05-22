@@ -1,5 +1,5 @@
-C Add\sthe\s--database\soption\sto\sthe\sfuzzershell\stest\sprogram.
-D 2015-05-22T11:38:22.072
+C Fix\san\sassert\sin\sbtree.c\sthat\scan\sbe\sfalse\swhen\susing\sa\scorrupted\sdatabase\nfile.
+D 2015-05-22T12:37:37.573
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0a6ae26396ec696221021780dffbb894ff3cead7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -192,7 +192,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c ff743689c4d6c5cb55ad42ed9d174b2b3e71f1e3
 F src/bitvec.c 5eb7958c3bf65210211cbcfc44eff86d0ded7c9d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c 30a80340481098d699398cba3536c895373b2e2c
+F src/btree.c dbc8f9207278c109c3f38c9dc5f550c8bb5080d8
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 973a22a6fd61350b454ad614832b1f0a5e25a1e4
 F src/build.c d5d9090788118178190c5724c19f93953b8c7a4e
@@ -1278,7 +1278,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6a0cf3ce9e68d0127f9653232e588ed59d34eca5
-R 549a709a6f5e577976c5b6d0eb103940
+P c6d5512f4b8b1237fa4cf5f3f2eae19b160bcf26
+R b9e753c0683555ed773ae3f4504e148b
 U drh
-Z 07941c2a844d4926d98c426b503acb2a
+Z f51f66c2118a09b9970e631fa314a714
