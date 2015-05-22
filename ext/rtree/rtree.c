@@ -1483,9 +1483,7 @@ static int deserializeGeometry(sqlite3_value *pValue, RtreeConstraint *pCons){
 
   /* Check that the blob is roughly the right size. */
   nBlob = sqlite3_value_bytes(pValue);
-  if( nBlob<(int)sizeof(RtreeMatchArg) 
-   || ((nBlob-sizeof(RtreeMatchArg))%sizeof(RtreeDValue))!=0
-  ){
+  if( nBlob<(int)sizeof(RtreeMatchArg) ){
     return SQLITE_ERROR;
   }
 
