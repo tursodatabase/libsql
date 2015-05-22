@@ -260,8 +260,10 @@ static int fts5VocabOpenMethod(
     rc = sqlite3_prepare_v2(pTab->db, zSql, -1, &pStmt, 0);
   }
   sqlite3_free(zSql);
+  assert( rc==SQLITE_OK || pStmt==0 );
+  if( rc==SQLITE_ERROR ) rc = SQLITE_OK;
 
-  if( rc==SQLITE_OK && sqlite3_step(pStmt)==SQLITE_ROW ){
+  if( pStmt && sqlite3_step(pStmt)==SQLITE_ROW ){
     i64 iId = sqlite3_column_int64(pStmt, 0);
     pIndex = sqlite3Fts5IndexFromCsrid(pTab->pGlobal, iId, &nCol);
   }
@@ -271,8 +273,8 @@ static int fts5VocabOpenMethod(
     pStmt = 0;
     if( rc==SQLITE_OK ){
       pVTab->zErrMsg = sqlite3_mprintf(
-          "no such fts5 table: %Q.%Q", pTab->zFts5Db, pTab->zFts5Tbl
-          );
+          "no such fts5 table: %s.%s", pTab->zFts5Db, pTab->zFts5Tbl
+      );
       rc = SQLITE_ERROR;
     }
   }
@@ -304,13 +306,11 @@ static void fts5VocabResetCursor(Fts5VocabCursor *pCsr){
 ** on the xClose method of the virtual table interface.
 */
 static int fts5VocabCloseMethod(sqlite3_vtab_cursor *pCursor){
-  if( pCursor ){
-    Fts5VocabCursor *pCsr = (Fts5VocabCursor*)pCursor;
-    fts5VocabResetCursor(pCsr);
-    sqlite3Fts5BufferFree(&pCsr->term);
-    sqlite3_finalize(pCsr->pStmt);
-    sqlite3_free(pCsr);
-  }
+  Fts5VocabCursor *pCsr = (Fts5VocabCursor*)pCursor;
+  fts5VocabResetCursor(pCsr);
+  sqlite3Fts5BufferFree(&pCsr->term);
+  sqlite3_finalize(pCsr->pStmt);
+  sqlite3_free(pCsr);
   return SQLITE_OK;
 }
 

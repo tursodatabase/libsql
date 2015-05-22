@@ -335,5 +335,41 @@ do_faultsim_test 11.1 -faults oom-t* -body {
   faultsim_test_result {0 {}} {1 {disk I/O error}}
 }
 
+#-------------------------------------------------------------------------
+# OOM while creating an fts5vocab table.
+#
+reset_db
+do_execsql_test 12.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(x);
+}
+faultsim_save_and_close
+do_faultsim_test 12.1 -faults oom-t* -prep {
+  faultsim_restore_and_reopen
+  db eval { SELECT * FROM sqlite_master }
+} -body {
+  db eval { CREATE VIRTUAL TABLE vv USING fts5vocab(ft, 'row') }
+} -test {
+  faultsim_test_result {0 {}} 
+}
+
+#-------------------------------------------------------------------------
+# OOM while querying an fts5vocab table.
+#
+reset_db
+do_execsql_test 13.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(x);
+  INSERT INTO ft VALUES('a b');
+  CREATE VIRTUAL TABLE vv USING fts5vocab(ft, 'row');
+}
+faultsim_save_and_close
+do_faultsim_test 13.1 -faults oom-t* -prep {
+  faultsim_restore_and_reopen
+  db eval { SELECT * FROM vv }
+} -body {
+  db eval { SELECT * FROM vv }
+} -test {
+  faultsim_test_result {0 {a 1 1 b 1 1}} 
+}
+
 finish_test
 

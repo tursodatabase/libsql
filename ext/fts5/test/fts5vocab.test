@@ -120,6 +120,7 @@ foreach {tn tbl resname} {
 }
 
 #-------------------------------------------------------------------------
+# Test errors in the CREATE VIRTUAL TABLE statement.
 #
 foreach {tn sql} {
   1 { CREATE VIRTUAL TABLE aa USING fts5vocab() }
@@ -129,5 +130,82 @@ foreach {tn sql} {
 } {
   do_catchsql_test 3.$tn $sql {1 {wrong number of vtable arguments}}
 }
+
+do_catchsql_test 4.0 {
+  CREATE VIRTUAL TABLE cc USING fts5vocab(tbl, unknown);
+} {1 {fts5vocab: unknown table type: 'unknown'}}
+
+do_catchsql_test 4.1 {
+  ATTACH 'test.db' AS aux;
+  CREATE VIRTUAL TABLE aux.cc USING fts5vocab(main, tbl, row);
+} {1 {wrong number of vtable arguments}}
+
+#-------------------------------------------------------------------------
+# Test fts5vocab tables created in the temp schema. 
+#
+reset_db
+forcedelete test.db2
+do_execsql_test 5.0 {
+  ATTACH 'test.db2' AS aux;
+  CREATE VIRTUAL TABLE t1 USING fts5(x);
+  CREATE VIRTUAL TABLE temp.t1 USING fts5(x);
+  CREATE VIRTUAL TABLE aux.t1 USING fts5(x);
+
+  INSERT INTO main.t1 VALUES('a b c');
+  INSERT INTO main.t1 VALUES('d e f');
+  INSERT INTO main.t1 VALUES('a e c');
+
+  INSERT INTO temp.t1 VALUES('1 2 3');
+  INSERT INTO temp.t1 VALUES('4 5 6');
+  INSERT INTO temp.t1 VALUES('1 5 3');
+
+  INSERT INTO aux.t1 VALUES('x y z');
+  INSERT INTO aux.t1 VALUES('m n o');
+  INSERT INTO aux.t1 VALUES('x n z');
+}
+
+breakpoint
+do_execsql_test 5.1 {
+  CREATE VIRTUAL TABLE temp.vm  USING fts5vocab(main, t1, row);
+  CREATE VIRTUAL TABLE temp.vt1 USING fts5vocab(t1, row);
+  CREATE VIRTUAL TABLE temp.vt2 USING fts5vocab(temp, t1, row);
+  CREATE VIRTUAL TABLE temp.va  USING fts5vocab(aux, t1, row);
+}
+
+do_execsql_test 5.2 { SELECT * FROM vm } {
+  a 2 2 b 1 1 c 2 2 d 1 1 e 2 2 f 1 1
+}
+do_execsql_test 5.3 { SELECT * FROM vt1 } {
+  1 2 2 2 1 1 3 2 2 4 1 1 5 2 2 6 1 1
+}
+do_execsql_test 5.4 { SELECT * FROM vt2 } {
+  1 2 2 2 1 1 3 2 2 4 1 1 5 2 2 6 1 1
+}
+do_execsql_test 5.5 { SELECT * FROM va } {
+  m 1 1 n 2 2 o 1 1 x 2 2 y 1 1 z 2 2
+}
+
+#-------------------------------------------------------------------------
+#
+do_execsql_test 6.0 {
+  CREATE TABLE iii(iii);
+  CREATE TABLE jjj(x);
+}
+
+do_catchsql_test 6.1 {
+  CREATE VIRTUAL TABLE vocab1 USING fts5vocab(iii, row);
+  SELECT * FROM vocab1;
+} {1 {no such fts5 table: main.iii}}
+
+do_catchsql_test 6.2 {
+  CREATE VIRTUAL TABLE vocab2 USING fts5vocab(jjj, row);
+  SELECT * FROM vocab2;
+} {1 {no such fts5 table: main.jjj}}
+
+do_catchsql_test 6.2 {
+  CREATE VIRTUAL TABLE vocab3 USING fts5vocab(lll, row);
+  SELECT * FROM vocab3;
+} {1 {no such fts5 table: main.lll}}
+
 finish_test
 
