@@ -6879,6 +6879,10 @@ static int balance_nonroot(
       apCell[nCell] = pTemp+leafCorrection;
       assert( leafCorrection==0 || leafCorrection==4 );
       szCell[nCell] = szCell[nCell] - leafCorrection;
+      if( szCell[nCell]<3 ){
+        rc = SQLITE_CORRUPT_BKPT;
+        goto balance_cleanup;
+      }
       if( !pOld->leaf ){
         assert( leafCorrection==0 );
         assert( pOld->hdrOffset==0 );
