@@ -672,49 +672,67 @@ static int fts5ExprNearNextMatch(
   Fts5Expr *pExpr,                /* Expression that pNear is a part of */
   Fts5ExprNode *pNode             /* The "NEAR" node (FTS5_STRING) */
 ){
-  int rc = SQLITE_OK;
   Fts5ExprNearset *pNear = pNode->pNear;
-  while( 1 ){
-    int i;
 
-    /* Advance the iterators until they all point to the same rowid */
-    rc = fts5ExprNearNextRowidMatch(pExpr, pNode);
-    if( rc!=SQLITE_OK || pNode->bEof ) break;
+  if( pNear->nPhrase==1 
+   && pNear->apPhrase[0]->nTerm==1 
+   && pNear->iCol<0
+  ){
+    /* If this "NEAR" object is actually a single phrase that consists of
+    ** a single term only, then the row that it currently points to must
+    ** be a match. All that is required is to populate pPhrase->poslist
+    ** with the position-list data for the only term.  */
+    Fts5ExprPhrase *pPhrase = pNear->apPhrase[0];
+    Fts5IndexIter *pIter = pPhrase->aTerm[0].pIter;
+    assert( pPhrase->poslist.nSpace==0 );
+    pNode->iRowid = sqlite3Fts5IterRowid(pIter);
+    return sqlite3Fts5IterPoslist(pIter, 
+        (const u8**)&pPhrase->poslist.p, &pPhrase->poslist.n
+    );
+  }else{
+    int rc = SQLITE_OK;
 
-    /* Check that each phrase in the nearset matches the current row.
-    ** Populate the pPhrase->poslist buffers at the same time. If any
-    ** phrase is not a match, break out of the loop early.  */
-    for(i=0; rc==SQLITE_OK && i<pNear->nPhrase; i++){
-      Fts5ExprPhrase *pPhrase = pNear->apPhrase[i];
-      if( pPhrase->nTerm>1 || pNear->iCol>=0 ){
-        int bMatch = 0;
-        rc = fts5ExprPhraseIsMatch(pExpr, pNear->iCol, pPhrase, &bMatch);
-        if( bMatch==0 ) break;
-      }else{
-        int n;
-        const u8 *a;
-        rc = sqlite3Fts5IterPoslist(pPhrase->aTerm[0].pIter, &a, &n);
-        fts5BufferSet(&rc, &pPhrase->poslist, n, a);
+    while( 1 ){
+      int i;
+
+      /* Advance the iterators until they all point to the same rowid */
+      rc = fts5ExprNearNextRowidMatch(pExpr, pNode);
+      if( rc!=SQLITE_OK || pNode->bEof ) break;
+
+      /* Check that each phrase in the nearset matches the current row.
+      ** Populate the pPhrase->poslist buffers at the same time. If any
+      ** phrase is not a match, break out of the loop early.  */
+      for(i=0; rc==SQLITE_OK && i<pNear->nPhrase; i++){
+        Fts5ExprPhrase *pPhrase = pNear->apPhrase[i];
+        if( pPhrase->nTerm>1 || pNear->iCol>=0 ){
+          int bMatch = 0;
+          rc = fts5ExprPhraseIsMatch(pExpr, pNear->iCol, pPhrase, &bMatch);
+          if( bMatch==0 ) break;
+        }else{
+          rc = sqlite3Fts5IterPoslistBuffer(
+              pPhrase->aTerm[0].pIter, &pPhrase->poslist
+          );
+        }
       }
-    }
 
-    if( rc==SQLITE_OK && i==pNear->nPhrase ){
-      int bMatch = 1;
-      if( pNear->nPhrase>1 ){
-        rc = fts5ExprNearIsMatch(pNear, &bMatch);
+      if( rc==SQLITE_OK && i==pNear->nPhrase ){
+        int bMatch = 1;
+        if( pNear->nPhrase>1 ){
+          rc = fts5ExprNearIsMatch(pNear, &bMatch);
+        }
+        if( rc!=SQLITE_OK || bMatch ) break;
       }
-      if( rc!=SQLITE_OK || bMatch ) break;
+
+      /* If control flows to here, then the current rowid is not a match.
+      ** Advance all term iterators in all phrases to the next rowid. */
+      if( rc==SQLITE_OK ){
+        rc = fts5ExprNearAdvanceFirst(pExpr, pNode, 0, 0);
+      }
+      if( pNode->bEof || rc!=SQLITE_OK ) break;
     }
 
-    /* If control flows to here, then the current rowid is not a match.
-    ** Advance all term iterators in all phrases to the next rowid. */
-    if( rc==SQLITE_OK ){
-      rc = fts5ExprNearAdvanceFirst(pExpr, pNode, 0, 0);
-    }
-    if( pNode->bEof || rc!=SQLITE_OK ) break;
+    return rc;
   }
-
-  return rc;
 }
 
 /*
@@ -1050,7 +1068,7 @@ static void fts5ExprPhraseFree(Fts5ExprPhrase *pPhrase){
         sqlite3Fts5IterClose(pTerm->pIter);
       }
     }
-    fts5BufferFree(&pPhrase->poslist);
+    if( pPhrase->poslist.nSpace>0 ) fts5BufferFree(&pPhrase->poslist);
     sqlite3_free(pPhrase);
   }
 }

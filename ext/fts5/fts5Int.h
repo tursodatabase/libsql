@@ -285,6 +285,7 @@ int sqlite3Fts5IterNext(Fts5IndexIter*);
 int sqlite3Fts5IterNextFrom(Fts5IndexIter*, i64 iMatch);
 i64 sqlite3Fts5IterRowid(Fts5IndexIter*);
 int sqlite3Fts5IterPoslist(Fts5IndexIter*, const u8 **pp, int *pn);
+int sqlite3Fts5IterPoslistBuffer(Fts5IndexIter *pIter, Fts5Buffer *pBuf);
 
 /*
 ** Close an iterator opened by sqlite3Fts5IndexQuery().

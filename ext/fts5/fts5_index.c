@@ -4057,6 +4057,27 @@ int sqlite3Fts5IndexMerge(Fts5Index *p, int nMerge){
   return fts5IndexReturn(p);
 }
 
+/*
+** Iterator pIter currently points to a valid entry (not EOF). This
+** function appends the position list data for the current entry to
+** buffer pBuf. It does not make a copy of the position-list size
+** field.
+*/
+static void fts5SegiterPoslist(
+  Fts5Index *p,
+  Fts5SegIter *pSeg,
+  Fts5Buffer *pBuf
+){
+  if( p->rc==SQLITE_OK ){
+    Fts5ChunkIter iter;
+    fts5ChunkIterInit(p, pSeg, &iter);
+    while( fts5ChunkIterEof(p, &iter)==0 ){
+      fts5BufferAppendBlob(&p->rc, pBuf, iter.n, iter.p);
+      fts5ChunkIterNext(p, &iter);
+    }
+    fts5ChunkIterRelease(&iter);
+  }
+}
 
 /*
 ** Iterator pMulti currently points to a valid entry (not EOF). This
@@ -4069,27 +4090,18 @@ int sqlite3Fts5IndexMerge(Fts5Index *p, int nMerge){
 static void fts5MultiIterPoslist(
   Fts5Index *p,
   Fts5MultiSegIter *pMulti,
-  int bSz,
+  int bSz,                        /* Append a size field before the data */
   Fts5Buffer *pBuf
 ){
   if( p->rc==SQLITE_OK ){
-    Fts5ChunkIter iter;
     Fts5SegIter *pSeg = &pMulti->aSeg[ pMulti->aFirst[1].iFirst ];
     assert( fts5MultiIterEof(p, pMulti)==0 );
 
-    fts5ChunkIterInit(p, pSeg, &iter);
-
-    if( fts5ChunkIterEof(p, &iter)==0 ){
-      if( bSz ){
-        /* WRITEPOSLISTSIZE */
-        fts5BufferAppendVarint(&p->rc, pBuf, iter.nRem * 2);
-      }
-      while( fts5ChunkIterEof(p, &iter)==0 ){
-        fts5BufferAppendBlob(&p->rc, pBuf, iter.n, iter.p);
-        fts5ChunkIterNext(p, &iter);
-      }
+    if( bSz ){
+      /* WRITEPOSLISTSIZE */
+      fts5BufferAppendVarint(&p->rc, pBuf, pSeg->nPos*2);
     }
-    fts5ChunkIterRelease(&iter);
+    fts5SegiterPoslist(p, pSeg, pBuf);
   }
 }
 
@@ -4686,13 +4698,37 @@ int sqlite3Fts5IterPoslist(Fts5IndexIter *pIter, const u8 **pp, int *pn){
     *pn = pIter->pDoclist->nPoslist;
     *pp = pIter->pDoclist->aPoslist;
   }else{
-    Fts5Index *p = pIter->pIndex;
-    fts5BufferZero(&pIter->poslist);
-    fts5MultiIterPoslist(p, pIter->pMulti, 0, &pIter->poslist);
-    *pn = pIter->poslist.n;
-    *pp = pIter->poslist.p;
+    Fts5MultiSegIter *pMulti = pIter->pMulti;
+    Fts5SegIter *pSeg = &pMulti->aSeg[ pMulti->aFirst[1].iFirst ];
+    *pn = pSeg->nPos;
+    if( pSeg->iLeafOffset+pSeg->nPos <= pSeg->pLeaf->n ){
+      *pp = &pSeg->pLeaf->p[pSeg->iLeafOffset];
+    }else{
+      fts5BufferZero(&pIter->poslist);
+      fts5SegiterPoslist(pIter->pIndex, pSeg, &pIter->poslist);
+      *pp = pIter->poslist.p;
+    }
   }
   return fts5IndexReturn(pIter->pIndex);
+}
+
+/*
+** This function is similar to sqlite3Fts5IterPoslist(), except that it
+** copies the position list into the buffer supplied as the second 
+** argument.
+*/
+int sqlite3Fts5IterPoslistBuffer(Fts5IndexIter *pIter, Fts5Buffer *pBuf){
+  Fts5Index *p = pIter->pIndex;
+  Fts5DoclistIter *pDoclist = pIter->pDoclist;
+  assert( p->rc==SQLITE_OK );
+  if( pDoclist ){
+    fts5BufferSet(&p->rc, pBuf, pDoclist->nPoslist, pDoclist->aPoslist);
+  }else{
+    Fts5MultiSegIter *pMulti = pIter->pMulti;
+    fts5BufferZero(pBuf);
+    fts5MultiIterPoslist(p, pMulti, 0, pBuf);
+  }
+  return fts5IndexReturn(p);
 }
 
 /*

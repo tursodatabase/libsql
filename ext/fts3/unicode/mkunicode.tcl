@@ -487,7 +487,6 @@ proc print_fold {zFunc} {
   puts [subst -nocommands {
   int ret = c;
 
-  assert( c>=0 );
   assert( sizeof(unsigned short)==2 && sizeof(unsigned char)==1 );
 
   if( c<128 ){
