@@ -1,5 +1,5 @@
-C Improved\serror\smessages\sin\sfuzzershell\swhen\sunable\sto\sopen\sthe\sdatabase.
-D 2015-05-22T23:50:19.667
+C Minor\sdocumentation\simprovements.\s\sNo\schanges\sto\scode.
+D 2015-05-23T02:44:00.021
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0a6ae26396ec696221021780dffbb894ff3cead7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -252,7 +252,7 @@ F src/resolve.c 99eabf7eff0bfa65b75939b46caa82e2b2133f28
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 6adad8d698a382f83009eed7b73080273fa993ca
 F src/shell.c 07dda7cd692911d2f22269953418d049f2e2c0ee
-F src/sqlite.h.in f97f23de94767ab7e2c97745308920a749d4a4b5
+F src/sqlite.h.in 4d0ecd8e1e0272d9a2742b39602f5e4fad8d3246
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 2ebeb634e751a61a6f0eebfa0f4669f46a42f6cd
 F src/sqliteInt.h 88738d94a343000e7a5c0e295d111c4cfccb18b0
@@ -1278,7 +1278,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 745deab87adc378a5376aaa9451fb9485bc2f4c4
-R 7f1ec43795b4d42a65936d3bb7f0111c
+P c404fcace83613a50015f15097b7f28123c221c3
+R aea65554b1ff9d1de4bd129eeec24691
 U drh
-Z e4cfba910ab91f4d7a3f152da8ecf0bd
+Z b24694de2ad87d8d1cd289eb9cfaf505
