@@ -1291,7 +1291,7 @@ static u8 *pageFindSlot(MemPage *pPg, int nByte, int *pRc, int *pbDefrag){
         ** fragmented bytes within the page. */
         memcpy(&aData[iAddr], &aData[pc], 2);
         aData[hdr+7] += (u8)x;
-      }else if( size+pc > usableSize ){
+      }else if( pc < pPg->cellOffset+2*pPg->nCell || size+pc > usableSize ){
         *pRc = SQLITE_CORRUPT_BKPT;
         return 0;
       }else{
@@ -6169,8 +6169,7 @@ static void rebuildPage(
     memcpy(pData, pCell, szCell[i]);
     put2byte(pCellptr, (pData - aData));
     pCellptr += 2;
-    assert( szCell[i]==cellSizePtr(pPg, pCell) || CORRUPT_DB );
-    testcase( szCell[i]!=cellSizePtr(pPg,pCell) );
+    assert( szCell[i]==cellSizePtr(pPg, pCell) );
   }
 
   /* The pPg->nFree field is now set incorrectly. The caller will fix it. */
