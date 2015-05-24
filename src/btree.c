@@ -3084,8 +3084,10 @@ static int modifyPagePointer(MemPage *pPage, Pgno iFrom, Pgno iTo, u8 eType){
     u8 isInitOrig = pPage->isInit;
     int i;
     int nCell;
+    int rc;
 
-    btreeInitPage(pPage);
+    rc = btreeInitPage(pPage);
+    if( rc ) return rc;
     nCell = pPage->nCell;
 
     for(i=0; i<nCell; i++){

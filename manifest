@@ -1,5 +1,5 @@
-C Instead\sof\searly\sdetection\sof\scorruption\sin\sbalance_nonroot,\ssimply\signore\nthe\serror,\sas\sit\sis\sharmless\sand\sexceedingly\suncommon.
-D 2015-05-23T19:53:48.853
+C Detect\sdatabase\scorruption\sin\sthe\smodifyPagePointer()\sroutine\sand\sabort.
+D 2015-05-24T10:18:12.213
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0a6ae26396ec696221021780dffbb894ff3cead7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -192,7 +192,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c ff743689c4d6c5cb55ad42ed9d174b2b3e71f1e3
 F src/bitvec.c 5eb7958c3bf65210211cbcfc44eff86d0ded7c9d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c 3cf8dde013f2f0cf61535409dd2fd98ed2e7b242
+F src/btree.c c222cc2b5a87ffab3b7943f5d9e23d77af1e5170
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 973a22a6fd61350b454ad614832b1f0a5e25a1e4
 F src/build.c d5d9090788118178190c5724c19f93953b8c7a4e
@@ -1278,7 +1278,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ee6dc9913a8733891576e6e298241f7440209c5e
-R 39f78e994c511a1a5474259bce1b573f
+P 7bbf9b3cd6ebf103ebd8347579aef721d0dcd2dc
+R 2583ffdc05796a0af02256cd0d450b10
 U drh
-Z 8d523a012edec16ce4cbc40c19e8acd9
+Z d263884651c03b082e32e82465264add
