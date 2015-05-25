@@ -1288,6 +1288,7 @@ static int fts3MatchinfoValues(
             if( rc!=SQLITE_OK ) break;
           }
           rc = fts3ExprIterate(pExpr, fts3ExprGlobalHitsCb,(void*)pInfo);
+          sqlite3Fts3EvalTestDeferred(pCsr, &rc);
           if( rc!=SQLITE_OK ) break;
         }
         (void)fts3ExprIterate(pExpr, fts3ExprLocalHitsCb,(void*)pInfo);
