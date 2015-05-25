@@ -506,25 +506,11 @@ static void inmemVfsRegister(void){
   sqlite3_vfs_register(&inmemVfs, 0);
 };
 
-#ifndef SQLITE_OMIT_TRACE
-/*
-** This callback is invoked by sqlite3_trace() as each SQL statement
-** starts.
-*/
-static void traceCallback(void *NotUsed, const char *zMsg){
-  printf("TRACE: %s\n", zMsg);
-  fflush(stdout);
-}
-static void traceNoop(void *NotUsed, const char *zMsg){
-  return;
-}
-#endif
-
 /*
 ** Run multiple commands of SQL.  Similar to sqlite3_exec(), but does not
 ** stop if an error is encountered.
 */
-static void runSql(sqlite3 *db, const char *zSql){
+static void runSql(sqlite3 *db, const char *zSql, int traceFlag){
   const char *zMore;
   sqlite3_stmt *pStmt;
 
@@ -532,12 +518,24 @@ static void runSql(sqlite3 *db, const char *zSql){
     zMore = 0;
     pStmt = 0;
     sqlite3_prepare_v2(db, zSql, -1, &pStmt, &zMore);
+    if( zMore==zSql ) break;
+    if( traceFlag ){
+      const char *z = zSql;
+      int n;
+      while( z<zMore && isspace(z[0]) ) z++;
+      n = (int)(zMore - z);
+      while( n>0 && isspace(z[n-1]) ) n--;
+      if( n==0 ) break;
+      if( pStmt==0 ){
+        printf("TRACE: %.*s (error: %s)\n", n, z, sqlite3_errmsg(db));
+      }else{
+        printf("TRACE: %.*s\n", n, z);
+      }
+    }
     zSql = zMore;
     if( pStmt ){
-      while( SQLITE_ROW==sqlite3_step(pStmt) );
+      while( SQLITE_ROW==sqlite3_step(pStmt) ){}
       sqlite3_finalize(pStmt);
-    }else{
-      break;
     }
   }
 }
@@ -729,11 +727,8 @@ int main(int argc, char **argv){
         zVfs = 0;
       }
       rc = sqlite3_open_v2("main.db", &db, openFlags, zVfs);
-#ifndef SQLITE_OMIT_TRACE
-      sqlite3_trace(db, verboseFlag ? traceCallback : traceNoop, 0);
-#endif
       if( rc ) fatalError("cannot open inmem database");
-      runSql(db, (char*)pSql->a);
+      runSql(db, (char*)pSql->a, verboseFlag);
       sqlite3_close(db);
       if( sqlite3_memory_used()>0 ) fatalError("memory leak");
       reformatVfs();
