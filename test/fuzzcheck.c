@@ -557,6 +557,7 @@ static void showHelp(void){
 "  --quiet               Reduced output\n"
 "  --load-sql ARGS...    Load SQL scripts fro files into SOURCE-DB\n"
 "  --load-db ARGS...     Load template databases from files into SOURCE_DB\n"
+"  --native-vfs          Use the native VFS for initially empty database files\n"
 "  --sqlid N             Use only SQL where sqlid=N\n"
 "  -v                    Increased output\n"
 "  --verbose             Increased output\n"
@@ -577,6 +578,7 @@ int main(int argc, char **argv){
   int i;                       /* Loop index for the argv[] loop */
   int onlySqlid = -1;          /* --sqlid */
   int onlyDbid = -1;           /* --dbid */
+  int nativeFlag = 0;          /* --native-vfs */
 
   iBegin = timeOfDay();
   g.zArgv0 = argv[0];
@@ -602,6 +604,9 @@ int main(int argc, char **argv){
         zInsSql = "INSERT INTO db(dbcontent) VALUES(readfile(?1))";
         iFirstInsArg = i+1;
         break;
+      }else
+      if( strcmp(z,"native-vfs")==0 ){
+        nativeFlag = 1;
       }else
       if( strcmp(z,"quiet")==0 || strcmp(z,"q")==0 ){
         quietFlag = 1;
@@ -700,6 +705,8 @@ int main(int argc, char **argv){
   }
   for(pSql=g.pFirstSql; pSql; pSql=pSql->pNext){
     for(pDb=g.pFirstDb; pDb; pDb=pDb->pNext){
+      int openFlags;
+      const char *zVfs = "inmem";
       sqlite3_snprintf(sizeof(g.zTestName), g.zTestName, "sqlid=%d,dbid=%d",
                        pSql->id, pDb->id);
       if( verboseFlag ){
@@ -711,12 +718,17 @@ int main(int argc, char **argv){
         int amt = idx*10/(g.nDb*g.nSql);
         if( amt!=prevAmt ){
           printf(" %d%%", amt*10);
+          fflush(stdout);
           prevAmt = amt;
         }
       }
       createVFile("main.db", pDb->sz, pDb->a);
-      rc = sqlite3_open_v2("main.db", &db, SQLITE_OPEN_CREATE|SQLITE_OPEN_READWRITE,
-                           "inmem");
+      openFlags = SQLITE_OPEN_CREATE | SQLITE_OPEN_READWRITE;
+      if( nativeFlag && pDb->sz==0 ){
+        openFlags |= SQLITE_OPEN_MEMORY;
+        zVfs = 0;
+      }
+      rc = sqlite3_open_v2("main.db", &db, openFlags, zVfs);
 #ifndef SQLITE_OMIT_TRACE
       sqlite3_trace(db, verboseFlag ? traceCallback : traceNoop, 0);
 #endif

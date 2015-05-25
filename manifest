@@ -1,5 +1,5 @@
-C Merge\sthe\sbtree\sfixes\sout\sof\strunk.
-D 2015-05-25T19:37:17.641
+C Add\sthe\s--native-vfs\soption\son\sfuzzcheck.
+D 2015-05-25T21:59:05.654
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0a6ae26396ec696221021780dffbb894ff3cead7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -651,7 +651,7 @@ F test/fuzz2.test 76dc35b32b6d6f965259508508abce75a6c4d7e1
 F test/fuzz3.test efd384b896c647b61a2c1848ba70d42aad60a7b3
 F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
 F test/fuzz_malloc.test 328f70aaca63adf29b4c6f06505ed0cf57ca7c26
-F test/fuzzcheck.c d544781b2a4651fc180642cc9a355c953dac851a
+F test/fuzzcheck.c f411c6be09bfec22fcc0b8757b6adae7ed8dafaf
 F test/fuzzdata1.txt 9fceb50868e0b798160e83742bd7e44e457176a0
 F test/fuzzdata2.txt ba9b4467d7ec46cc85d32c0d031540cd727ae6ad
 F test/fuzzer1.test d4c52aaf3ef923da293a2653cfab33d02f718a36
@@ -1279,7 +1279,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 75ec9299faca8ce3d49d825ba6ea60588a91d113 aa18c8e9d1676b1caa53bc5f5c1dc5f201089b88
-R c7aca3d20b244db420c1462dc5cead3b
+P f3cd8cecf4f7aa3429e3ebc90ed31c4e8fff7bc2
+R dc13cc2996e1b64ebe5fbea1ce4d46c4
 U drh
-Z 4da0e8ead0aba6b030c4a4298009f78b
+Z c989f194cb51739e915cc1a31986dfac
