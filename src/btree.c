@@ -5750,7 +5750,9 @@ static int clearCell(
   assert( pBt->usableSize > 4 );
   ovflPageSize = pBt->usableSize - 4;
   nOvfl = (info.nPayload - info.nLocal + ovflPageSize - 1)/ovflPageSize;
-  assert( ovflPgno==0 || nOvfl>0 );
+  assert( nOvfl>0 || 
+    (CORRUPT_DB && (info.nPayload + ovflPageSize)<ovflPageSize)
+  );
   while( nOvfl-- ){
     Pgno iNext = 0;
     MemPage *pOvfl = 0;
@@ -6005,7 +6007,7 @@ static void dropCell(MemPage *pPage, int idx, int sz, int *pRC){
   if( *pRC ) return;
 
   assert( idx>=0 && idx<pPage->nCell );
-  assert( sz==cellSize(pPage, idx) );
+  assert( CORRUPT_DB || sz==cellSize(pPage, idx) );
   assert( sqlite3PagerIswriteable(pPage->pDbPage) );
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
   data = pPage->aData;

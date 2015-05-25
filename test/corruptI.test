@@ -184,4 +184,25 @@ do_test 5.3 {
 } {1 {database disk image is malformed}}
 
 
+#-------------------------------------------------------------------------
+# Set the payload size of a cell to just less than 2^32 bytes (not
+# possible in an uncorrupted db). Then try to delete the cell. At one
+# point this led to an integer overflow that caused an assert() to fail.
+#
+reset_db
+do_execsql_test 6.0 {
+  PRAGMA page_size = 512;
+  CREATE TABLE t1(x);
+  INSERT INTO t1 VALUES(zeroblob(300));
+  INSERT INTO t1 VALUES(zeroblob(600));
+} {}
+do_test 6.1 {
+  db close
+  hexio_write test.db 616 EAFFFFFF0202
+  sqlite3 db test.db
+  breakpoint
+  execsql { DELETE FROM t1 WHERE rowid=2 }
+} {}
+
+
 finish_test
