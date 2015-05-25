@@ -3888,9 +3888,13 @@ int sqlite3BtreeCursor(
   BtCursor *pCur                              /* Write new cursor here */
 ){
   int rc;
-  sqlite3BtreeEnter(p);
-  rc = btreeCursor(p, iTable, wrFlag, pKeyInfo, pCur);
-  sqlite3BtreeLeave(p);
+  if( iTable<1 ){
+    rc = SQLITE_CORRUPT_BKPT;
+  }else{
+    sqlite3BtreeEnter(p);
+    rc = btreeCursor(p, iTable, wrFlag, pKeyInfo, pCur);
+    sqlite3BtreeLeave(p);
+  }
   return rc;
 }
 
