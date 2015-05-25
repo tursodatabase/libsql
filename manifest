@@ -1,5 +1,5 @@
-C First\scode\sfor\sa\snew\sutility\sprogram\sto\srerun\schecks\son\sa\slarge\snumber\sof\nfuzzer-generated\stest\scases.
-D 2015-05-25T18:48:19.012
+C Add\sthe\s--dbid\sand\s--sqlid\sparameters\sto\sfuzzcheck.\s\sOther\sfuzzcheck\sfixes.
+D 2015-05-25T19:35:42.936
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0a6ae26396ec696221021780dffbb894ff3cead7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -651,7 +651,7 @@ F test/fuzz2.test 76dc35b32b6d6f965259508508abce75a6c4d7e1
 F test/fuzz3.test efd384b896c647b61a2c1848ba70d42aad60a7b3
 F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
 F test/fuzz_malloc.test 328f70aaca63adf29b4c6f06505ed0cf57ca7c26
-F test/fuzzcheck.c ae31f7af026968cdb04d0452fb1e8031d4ca3aa9
+F test/fuzzcheck.c d544781b2a4651fc180642cc9a355c953dac851a
 F test/fuzzdata1.txt 9fceb50868e0b798160e83742bd7e44e457176a0
 F test/fuzzdata2.txt ba9b4467d7ec46cc85d32c0d031540cd727ae6ad
 F test/fuzzer1.test d4c52aaf3ef923da293a2653cfab33d02f718a36
@@ -1279,10 +1279,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 97806a78142b15f89878e25ee70dc5b0524d6793
-R 01232d1301acd5ee81dd9c394ecdbcf8
-T *branch * fuzzcheck
-T *sym-fuzzcheck *
-T -sym-trunk *
+P c5b4e363528aa1d2d5f41451f16de0aa91152b38
+R df1cffb558a450a54d1765e42395b4a9
 U drh
-Z e7fd4cad8a5ae98c34f9373dc841d5b8
+Z 2a52604473d276af6452030585c0eebc

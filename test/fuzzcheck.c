@@ -159,6 +159,7 @@ static void reformatVfs(void){
 */
 static VFile *findVFile(const char *zName){
   int i;
+  if( zName==0 ) return 0;
   for(i=0; i<MX_FILE; i++){
     if( g.aFile[i].zFilename==0 ) continue;   
     if( strcmp(g.aFile[i].zFilename, zName)==0 ) return &g.aFile[i];
@@ -179,8 +180,12 @@ static VFile *createVFile(const char *zName, int sz, unsigned char *pData){
   for(i=0; i<MX_FILE && g.aFile[i].sz>=0; i++){}
   if( i>=MX_FILE ) return 0;
   pNew = &g.aFile[i];
-  pNew->zFilename = safe_realloc(0, strlen(zName)+1);
-  memcpy(pNew->zFilename, zName, strlen(zName)+1);
+  if( zName ){
+    pNew->zFilename = safe_realloc(0, strlen(zName)+1);
+    memcpy(pNew->zFilename, zName, strlen(zName)+1);
+  }else{
+    pNew->zFilename = 0;
+  }
   pNew->nRef = 0;
   pNew->sz = sz;
   pNew->a = safe_realloc(0, sz);
@@ -221,30 +226,12 @@ static void readfileFunc(
 }
 
 /*
-** Print sketchy documentation for this utility program
-*/
-static void showHelp(void){
-  printf("Usage: %s [options] SOURCE-DB ?ARGS...?\n", g.zArgv0);
-  printf(
-"Read databases and SQL scripts from SOURCE-DB and execute each script against\n"
-"each database, checking for crashes and memory leaks.\n"
-"Options:\n"
-"  --help                Show this help text\n"    
-"  -q                    Reduced output\n"
-"  --quiet               Reduced output\n"
-"  --load-sql ARGS...    Load SQL scripts fro files into SOURCE-DB\n"
-"  --load-db ARGS...     Load template databases from files into SOURCE_DB\n"
-"  -v                    Increased output\n"
-"  --verbose             Increased output\n"
-  );
-}
-
-/*
 ** Load a list of Blob objects from the database
 */
 static void blobListLoadFromDb(
   sqlite3 *db,             /* Read from this database */
   const char *zSql,        /* Query used to extract the blobs */
+  int onlyId,              /* Only load where id is this value */
   int *pN,                 /* OUT: Write number of blobs loaded here */
   Blob **ppList            /* OUT: Write the head of the blob list here */
 ){
@@ -253,8 +240,15 @@ static void blobListLoadFromDb(
   sqlite3_stmt *pStmt;
   int n = 0;
   int rc;
+  char *z2;
 
-  rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
+  if( onlyId>0 ){
+    z2 = sqlite3_mprintf("%s WHERE rowid=%d", zSql, onlyId);
+  }else{
+    z2 = sqlite3_mprintf("%s", zSql);
+  }
+  rc = sqlite3_prepare_v2(db, z2, -1, &pStmt, 0);
+  sqlite3_free(z2);
   if( rc ) fatalError("%s", sqlite3_errmsg(db));
   head.pNext = 0;
   p = &head;
@@ -346,7 +340,9 @@ static int inmemWrite(
   VHandle *pHandle = (VHandle*)pFile;
   VFile *pVFile = pHandle->pVFile;
   if( iOfst+iAmt > pVFile->sz ){
-    if( iOfst+iAmt >= MX_FILE_SZ ) return SQLITE_FULL;
+    if( iOfst+iAmt >= MX_FILE_SZ ){
+      return SQLITE_FULL;
+    }
     pVFile->a = safe_realloc(pVFile->a, iOfst+iAmt);
     memset(pVFile->a + pVFile->sz, 0, iOfst - pVFile->sz);
     pVFile->sz = iOfst + iAmt;
@@ -428,7 +424,9 @@ static int inmemOpen(
 ){
   VFile *pVFile = createVFile(zFilename, 0, (unsigned char*)"");
   VHandle *pHandle = (VHandle*)pFile;
-  if( pVFile==0 ) return SQLITE_FULL;
+  if( pVFile==0 ){
+    return SQLITE_FULL;
+  }
   pHandle->pVFile = pVFile;
   pVFile->nRef++;
   pFile->pMethods = &VHandleMethods;
@@ -544,6 +542,27 @@ static void runSql(sqlite3 *db, const char *zSql){
   }
 }
 
+/*
+** Print sketchy documentation for this utility program
+*/
+static void showHelp(void){
+  printf("Usage: %s [options] SOURCE-DB ?ARGS...?\n", g.zArgv0);
+  printf(
+"Read databases and SQL scripts from SOURCE-DB and execute each script against\n"
+"each database, checking for crashes and memory leaks.\n"
+"Options:\n"
+"  --dbid N              Use only the database where dbid=N\n"
+"  --help                Show this help text\n"    
+"  -q                    Reduced output\n"
+"  --quiet               Reduced output\n"
+"  --load-sql ARGS...    Load SQL scripts fro files into SOURCE-DB\n"
+"  --load-db ARGS...     Load template databases from files into SOURCE_DB\n"
+"  --sqlid N             Use only SQL where sqlid=N\n"
+"  -v                    Increased output\n"
+"  --verbose             Increased output\n"
+  );
+}
+
 int main(int argc, char **argv){
   sqlite3_int64 iBegin;        /* Start time of this program */
   const char *zSourceDb = 0;   /* Source database filename */
@@ -556,6 +575,8 @@ int main(int argc, char **argv){
   Blob *pSql;                  /* For looping over SQL scripts */
   Blob *pDb;                   /* For looping over template databases */
   int i;                       /* Loop index for the argv[] loop */
+  int onlySqlid = -1;          /* --sqlid */
+  int onlyDbid = -1;           /* --dbid */
 
   iBegin = timeOfDay();
   g.zArgv0 = argv[0];
@@ -564,6 +585,10 @@ int main(int argc, char **argv){
     if( z[0]=='-' ){
       z++;
       if( z[0]=='-' ) z++;
+      if( strcmp(z,"dbid")==0 ){
+        if( i>=argc-1 ) fatalError("missing arguments on %s", argv[i]);
+        onlyDbid = atoi(argv[++i]);
+      }else
       if( strcmp(z,"help")==0 ){
         showHelp();
         return 0;
@@ -581,6 +606,10 @@ int main(int argc, char **argv){
       if( strcmp(z,"quiet")==0 || strcmp(z,"q")==0 ){
         quietFlag = 1;
         verboseFlag = 0;
+      }else
+      if( strcmp(z,"sqlid")==0 ){
+        if( i>=argc-1 ) fatalError("missing arguments on %s", argv[i]);
+        onlySqlid = atoi(argv[++i]);
       }else
       if( strcmp(z,"verbose")==0 || strcmp(z,"v")==0 ){
         quietFlag = 0;
@@ -635,9 +664,11 @@ int main(int argc, char **argv){
   /* Load all SQL script content and all initial database images from the
   ** source db
   */
-  blobListLoadFromDb(db, "SELECT sqlid, sqltext FROM xsql", &g.nSql, &g.pFirstSql);
+  blobListLoadFromDb(db, "SELECT sqlid, sqltext FROM xsql", onlySqlid,
+                         &g.nSql, &g.pFirstSql);
   if( g.nSql==0 ) fatalError("need at least one SQL script");
-  blobListLoadFromDb(db, "SELECT dbid, dbcontent FROM db", &g.nDb, &g.pFirstDb);
+  blobListLoadFromDb(db, "SELECT dbid, dbcontent FROM db", onlyDbid,
+                     &g.nDb, &g.pFirstDb);
   if( g.nDb==0 ){
     g.pFirstDb = safe_realloc(0, sizeof(Blob));
     memset(g.pFirstDb, 0, sizeof(Blob));
