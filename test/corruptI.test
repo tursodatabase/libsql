@@ -131,4 +131,57 @@ do_test 4.1 {
   execsql { DELETE FROM t1 WHERE a=0 }
 } {}
 
+
+#-------------------------------------------------------------------------
+# Database properties:
+#
+#   * Incremental vacuum mode.
+#   * Database root table has a single leaf page.
+#   * Free list consists of a single trunk page.
+#
+# The db is then corrupted by adding the root table leaf page as a free-list
+# leaf page (so that it is referenced twice).
+#
+# Then, a new table is created. The new root page is the current free-list
+# trunk. This means that the root table leaf page is made into the new
+# free list trunk, which corrupts its header. Then, when the new entry is
+# inserted into the root table, things would get chaotic.
+#
+reset_db
+do_test 5.0 {
+  execsql {
+    PRAGMA page_size = 512;
+    PRAGMA auto_vacuum = 2;
+  }
+  for {set i 3} {1} {incr i} {
+    execsql "CREATE TABLE t${i}(x)"
+    if {[db one {PRAGMA page_count}]>$i} break
+  }
+  set nPage [db one {PRAGMA page_count}]
+  execsql {
+    CREATE TABLE t100(x);
+    DROP TABLE t100;
+  }
+} {}
+
+do_execsql_test 5.1 { 
+  PRAGMA page_count 
+} [expr $nPage+1]
+
+do_test 5.2 { 
+  # The last page of the db is now the only leaf of the sqlite_master table.
+  # Corrupt the db by adding it to the free-list as well (the second last
+  # page of the db is the free-list trunk).
+  db close
+  hexio_write test.db [expr 512*($nPage-1)] [
+    format "%.8X%.8X%.8X" 0 1 [expr $nPage+1]
+  ]
+} {12}
+
+do_test 5.3 {
+  sqlite3 db test.db
+  catchsql { CREATE TABLE tx(x); }
+} {1 {database disk image is malformed}}
+
+
 finish_test
