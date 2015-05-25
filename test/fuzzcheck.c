@@ -328,7 +328,7 @@ static int inmemRead(
     memcpy(pData, pVFile->a, iAmt);
     return SQLITE_IOERR_SHORT_READ;
   }
-  memcpy(pData, pVFile->a, iAmt);
+  memcpy(pData, pVFile->a + iOfst, iAmt);
   return SQLITE_OK;
 }
 static int inmemWrite(
