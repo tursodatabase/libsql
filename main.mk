@@ -425,6 +425,10 @@ fuzzershell$(EXE):	$(TOP)/tool/fuzzershell.c sqlite3.c sqlite3.h
 	$(TCCX) -o fuzzershell$(EXE) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION\
 		$(TOP)/tool/fuzzershell.c	sqlite3.c $(TLIBS) $(THREADLIB)
 
+fuzzcheck$(EXE):	$(TOP)/test/fuzzcheck.c sqlite3.c sqlite3.h
+	$(TCCX) -o fuzzcheck$(EXE) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION\
+		$(TOP)/test/fuzzcheck.c	sqlite3.c $(TLIBS) $(THREADLIB)
+
 mptester$(EXE):	sqlite3.c $(TOP)/mptest/mptest.c
 	$(TCCX) -o $@ -I. $(TOP)/mptest/mptest.c sqlite3.c \
 		$(TLIBS) $(THREADLIB)
