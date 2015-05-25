@@ -324,7 +324,7 @@ static int inmemRead(
   }
   if( iOfst+iAmt>pVFile->sz ){
     memset(pData, 0, iAmt);
-    iAmt = pVFile->sz - iOfst;
+    iAmt = (int)(pVFile->sz - iOfst);
     memcpy(pData, pVFile->a, iAmt);
     return SQLITE_IOERR_SHORT_READ;
   }
@@ -343,9 +343,9 @@ static int inmemWrite(
     if( iOfst+iAmt >= MX_FILE_SZ ){
       return SQLITE_FULL;
     }
-    pVFile->a = safe_realloc(pVFile->a, iOfst+iAmt);
-    memset(pVFile->a + pVFile->sz, 0, iOfst - pVFile->sz);
-    pVFile->sz = iOfst + iAmt;
+    pVFile->a = safe_realloc(pVFile->a, (int)(iOfst+iAmt));
+    memset(pVFile->a + pVFile->sz, 0, (int)(iOfst - pVFile->sz));
+    pVFile->sz = (int)(iOfst + iAmt);
   }
   memcpy(pVFile->a + iOfst, pData, iAmt);
   return SQLITE_OK;
@@ -353,7 +353,7 @@ static int inmemWrite(
 static int inmemTruncate(sqlite3_file *pFile, sqlite3_int64 iSize){
   VHandle *pHandle = (VHandle*)pFile;
   VFile *pVFile = pHandle->pVFile;
-  if( pVFile->sz>iSize && iSize>=0 ) pVFile->sz = iSize;
+  if( pVFile->sz>iSize && iSize>=0 ) pVFile->sz = (int)iSize;
   return SQLITE_OK;
 }
 static int inmemSync(sqlite3_file *pFile, int flags){
