@@ -1,9 +1,9 @@
-C Fix\sa\scase\sof\sa\scorrupt\sdatabase\scausing\sSQLite\sto\sread\sfrom\sup\sto\s4\sbytes\sbefore\sthe\sstart\sof\sa\smemory\sallocation.
-D 2015-05-25T20:04:15.531
+C Add\sthe\sfuzzcheck\stest\sprogram.
+D 2015-05-25T22:38:00.788
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in 0a6ae26396ec696221021780dffbb894ff3cead7
+F Makefile.in 411b8dc7191769de8b1ddd5c4d83bcf2e37ed5e4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 55fdbee85598e2c61fc1e643d02f38f1f943463c
+F Makefile.msc 5a063468f5785e6823104f2adcfe2cd3331fa812
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md 0bfccb18927349653c09137a458b961fa8ab4cb9
 F VERSION ce0ae95abd7121c534f6917c1c8f2b70d9acd4db
@@ -171,7 +171,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 59e4ac92e080c23d8e260195748c8a706dd18a20
+F main.mk 901e78812c4040c6991cd1370b3f40822c3bd830
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
 F mkopcodeh.awk d5e22023b5238985bb54a72d33e0ac71fe4f8a32
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
@@ -651,6 +651,7 @@ F test/fuzz2.test 76dc35b32b6d6f965259508508abce75a6c4d7e1
 F test/fuzz3.test efd384b896c647b61a2c1848ba70d42aad60a7b3
 F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
 F test/fuzz_malloc.test 328f70aaca63adf29b4c6f06505ed0cf57ca7c26
+F test/fuzzcheck.c 2235e5713384b38165d3caf9877f59502b0aeeb4
 F test/fuzzdata1.txt 9fceb50868e0b798160e83742bd7e44e457176a0
 F test/fuzzdata2.txt ba9b4467d7ec46cc85d32c0d031540cd727ae6ad
 F test/fuzzer1.test d4c52aaf3ef923da293a2653cfab33d02f718a36
@@ -1278,7 +1279,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P aa18c8e9d1676b1caa53bc5f5c1dc5f201089b88
-R 2543e1ce5d351c3852d827d2b79794af
-U dan
-Z bdd86a9186a2d4ac711797171541a410
+P 7d2c4f7b6695806ab8ce0c6f49d8bc1d77a4320b 7b3d21906a9650377cda56b94facdff75b2cb858
+R 00e95d3d9ed40a5829d3d01e66cda04a
+T +closed 7b3d21906a9650377cda56b94facdff75b2cb858
+U drh
+Z b84cb4a515b6a871548fcf09855cb826

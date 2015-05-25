@@ -556,6 +556,9 @@ sqldiff$(TEXE):	$(TOP)/tool/sqldiff.c sqlite3.c sqlite3.h
 fuzzershell$(TEXE):	$(TOP)/tool/fuzzershell.c sqlite3.c sqlite3.h
 	$(LTLINK) -o $@ $(TOP)/tool/fuzzershell.c	sqlite3.c $(TLIBS)
 
+fuzzcheck$(TEXE):	$(TOP)/test/fuzzcheck.c sqlite3.c sqlite3.h
+	$(LTLINK) -o $@ $(TOP)/test/fuzzcheck.c	sqlite3.c $(TLIBS)
+
 mptester$(TEXE):	sqlite3.c $(TOP)/mptest/mptest.c
 	$(LTLINK) -o $@ -I. $(TOP)/mptest/mptest.c sqlite3.c \
 		$(TLIBS) -rpath "$(libdir)"
