@@ -7777,6 +7777,7 @@ int sqlite3BtreeDelete(BtCursor *pCur){
     unsigned char *pTmp;
 
     pCell = findCell(pLeaf, pLeaf->nCell-1);
+    if( pCell<&pLeaf->aData[4] ) return SQLITE_CORRUPT_BKPT;
     nCell = cellSizePtr(pLeaf, pCell);
     assert( MX_CELL_SIZE(pBt) >= nCell );
     pTmp = pBt->pTmpSpace;
