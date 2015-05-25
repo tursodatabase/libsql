@@ -1,5 +1,5 @@
-C Improved\stracing\scapabilities\sin\sfuzzcheck.
-D 2015-05-25T22:17:06.593
+C Merge\sin\strunk\sfixes.
+D 2015-05-25T22:18:33.572
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0a6ae26396ec696221021780dffbb894ff3cead7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -192,7 +192,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c ff743689c4d6c5cb55ad42ed9d174b2b3e71f1e3
 F src/bitvec.c 5eb7958c3bf65210211cbcfc44eff86d0ded7c9d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c a5beb7f19f9bacbad2bd5ebf8e34e327de7a6656
+F src/btree.c a7d627f89e8382cea8645cc2eec6927b203fdb31
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 973a22a6fd61350b454ad614832b1f0a5e25a1e4
 F src/build.c d5d9090788118178190c5724c19f93953b8c7a4e
@@ -1279,7 +1279,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 12e95e3f178b89d649bc7e30db731df439ae1653
-R df913344b7d3616e49af599608d3d74e
+P 864bfdbfe7b196cc9df2136b15a28e2a0f2713cb 7d2c4f7b6695806ab8ce0c6f49d8bc1d77a4320b
+R 9f4c15449a7a5268b20bd4afaa94ba40
 U drh
-Z 7099e69332034b78c8602623e54bc3b8
+Z 4b2b2637896560e00230932f0089f20d
