@@ -1,5 +1,5 @@
-C Remove\san\sincorrect\sand\spointless\sassert().
-D 2015-05-25T09:33:48.801
+C Fix\san\sobsolete\scomment\s-\sno\schanges\sto\scode.
+D 2015-05-25T10:29:52.538
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0a6ae26396ec696221021780dffbb894ff3cead7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -237,7 +237,7 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c 23eb5f56fac54d8fe0cb204291f3b3b2d94f23fc
 F src/os_win.c 97f7828a9554d753665b6fcf7540e31c2b3d6a6e
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
-F src/pager.c 97110085b1321298412f1e5c37bddb95b36d9208
+F src/pager.c 9bc918a009285f96ec6dac62dd764c7063552455
 F src/pager.h c3476e7c89cdf1c6914e50a11f3714e30b4e0a77
 F src/parse.y af55d4fb5e588705112e9788364ca3af09651fcf
 F src/pcache.c 10539fb959849ad6efff80050541cab3d25089d4
@@ -1278,7 +1278,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 336fccc84cd7b770c9c3720efc9976269096232e
-R e6209457c074a6729d7b05e89be47ecb
+P 8c3929bd42ff9c041df341aced5b7dbc0f563506
+R 11e0e82c515ce5306d176915c715cba0
 U drh
-Z 95520a7699ed285b4b256a5657988e91
+Z d2520be369a919344f6618089d325658
