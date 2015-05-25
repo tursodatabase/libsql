@@ -90,12 +90,14 @@ foreach {tn q res} "
 
   do_test 1.6.$tn.1 {
     set n [execsql_reads $q]
-    expr {$n < ($nReadX / 10)}
+    puts -nonewline "(n=$n nReadX=$nReadX)"
+    expr {$n < ($nReadX / 8)}
   } {1}
 
   do_test 1.6.$tn.2 {
     set n [execsql_reads "$q ORDER BY rowid DESC"]
-    expr {$n < ($nReadX / 10)}
+    puts -nonewline "(n=$n nReadX=$nReadX)"
+    expr {$n < ($nReadX / 8)}
   } {1}
 
   do_execsql_test 1.6.$tn.3 $q [lsort -int -incr $res]

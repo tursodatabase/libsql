@@ -357,9 +357,10 @@ static int fts5ExprPhraseIsMatch(
 
   /* Initialize a term iterator for each term in the phrase */
   for(i=0; i<pPhrase->nTerm; i++){
+    i64 dummy;
     int n;
     const u8 *a;
-    rc = sqlite3Fts5IterPoslist(pPhrase->aTerm[i].pIter, &a, &n);
+    rc = sqlite3Fts5IterPoslist(pPhrase->aTerm[i].pIter, &a, &n, &dummy);
     if( rc || sqlite3Fts5PoslistReaderInit(iCol, a, n, &aIter[i]) ){
       goto ismatch_out;
     }
@@ -685,9 +686,8 @@ static int fts5ExprNearNextMatch(
     Fts5ExprPhrase *pPhrase = pNear->apPhrase[0];
     Fts5IndexIter *pIter = pPhrase->aTerm[0].pIter;
     assert( pPhrase->poslist.nSpace==0 );
-    pNode->iRowid = sqlite3Fts5IterRowid(pIter);
     return sqlite3Fts5IterPoslist(pIter, 
-        (const u8**)&pPhrase->poslist.p, &pPhrase->poslist.n
+        (const u8**)&pPhrase->poslist.p, &pPhrase->poslist.n, &pNode->iRowid
     );
   }else{
     int rc = SQLITE_OK;
