@@ -105,4 +105,30 @@ if {[db one {SELECT sqlite_compileoption_used('ENABLE_OVERSIZE_CELL_CHECK')}]} {
      INSERT INTO t1 VALUES(9, 'klmnopqrst');
    } {1 {database disk image is malformed}}
 } ;# end-if !defined(ENABLE_OVERSIZE_CELL_CHECK)
+
+
+#-------------------------------------------------------------------------
+# Test that an assert() failure discovered by AFL corrupt database file
+# testing has been fixed.
+#
+reset_db
+do_execsql_test 4.0 {
+  PRAGMA page_size = 65536;
+  PRAGMA autovacuum = 0;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+  INSERT INTO t1 VALUES(-1, 'abcdefghij');
+  INSERT INTO t1 VALUES(0, 'abcdefghij');
+}
+
+set root [db one {SELECT rootpage FROM sqlite_master}]
+set offset [expr ($root-1) * 65536]
+
+do_test 4.1 {
+  db close
+  hexio_write test.db [expr $offset + 8 + 2] 0000
+  hexio_write test.db [expr $offset + 5] 0000
+  sqlite3 db test.db
+  execsql { DELETE FROM t1 WHERE a=0 }
+} {}
+
 finish_test
