@@ -1343,7 +1343,7 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
   ** However, that integer is too large to be stored in a 2-byte unsigned
   ** integer, so a value of 0 is used in its place. */
   top = get2byteNotZero(&data[hdr+5]);
-  if( gap>top || top>pPage->pBt->usableSize ) return SQLITE_CORRUPT_BKPT;
+  if( gap>top || (u32)top>pPage->pBt->usableSize ) return SQLITE_CORRUPT_BKPT;
 
   /* If there is enough space between gap and top for one more cell pointer
   ** array entry offset, and if the freelist is not empty, then search the

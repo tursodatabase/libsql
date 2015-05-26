@@ -1,5 +1,5 @@
-C Avoid\susing\sa\szero-sized\sarray\swithin\sa\sstruct\sin\sfts3\scode.
-D 2015-05-26T17:29:48.708
+C Add\sa\scast\sto\sone\sside\sof\sthe\stest\sadded\sby\s[97806a78]\sin\sorder\sto\savoid\sa\ssigned/unsigned\scomparison\swarning.
+D 2015-05-26T17:33:30.013
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 69b596e4be75a16f4e55587f29db66497b207fad
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -192,7 +192,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c ff743689c4d6c5cb55ad42ed9d174b2b3e71f1e3
 F src/bitvec.c 5eb7958c3bf65210211cbcfc44eff86d0ded7c9d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c 8921e4d70b4e7b82f1380b548f9ba7180f06f8ee
+F src/btree.c 82bb9ad936fc513682a68f6d9444011266e6b459
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 973a22a6fd61350b454ad614832b1f0a5e25a1e4
 F src/build.c 9552e7490b0310a8c73fcf3a0c36e7624789d8df
@@ -1279,7 +1279,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 16878a314baceb14632a3ec43187fcc020089a76
-R 0ea0b6b454cde9ea66e3b1a15b6a45e8
+P b05cae36cedd98d59813e637f328a52eee7ef0d2
+R 71dc8a83e674b695379f248ac499faa7
 U dan
-Z ab9bd6ec479754258f8cc2a7ff20886a
+Z 9e4f492737d95c87cb31979895ac2144
