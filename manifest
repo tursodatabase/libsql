@@ -1,5 +1,5 @@
-C The\s"make\sfuzztest"\starget\snow\suses\sfuzzcheck\sinstead\sof\sfuzzershell.\s\sTest\ndata\sis\sadded\sfor\sdatabase\sfuzz\stesting.
-D 2015-05-26T19:08:14.763
+C Avoid\sbranching\son\san\suninitalized\svariable\swhen\scomparing\sSQL\svalues\swith\sthe\sundefined\sserial\stypes\s10\sand\s11\s(which\sonly\sappear\sin\scorrupt\sdatabases).
+D 2015-05-26T20:07:32.939
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3feb7cbdad8898fe7a8a24355b4a753029c3ec3b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -316,7 +316,7 @@ F src/vdbe.c 6aee8a041742413ab3113e6682bc7ad1628a2bbe
 F src/vdbe.h 7e538ecf47dccb307ea2d087c3ddc2dd8d70e79d
 F src/vdbeInt.h f0ccddac48583d5f762dc554a9f79e85ea8807e0
 F src/vdbeapi.c 6a0d7757987018ff6b1b81bc5293219cd26bb299
-F src/vdbeaux.c efe1667d31e8648dbe04a441e5aa9b62dbee2f03
+F src/vdbeaux.c d3e4b36e6e6a7ada756993f1a0c7c89f2183fcf1
 F src/vdbeblob.c 4f2e8e075d238392df98c5e03a64342465b03f90
 F src/vdbemem.c 21f9169289a804308f6cdde55e9417fb8336997f
 F src/vdbesort.c f5009e7a35e3065635d8918b9a31f498a499976b
@@ -1279,8 +1279,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 193364c81c301a41c16835108d23ad2ab84d9dd7 e85628e34ac684b8a23f49eee71e4d6546e0ef64
-R 3d82c0fa4f6ee04379bd9745bde5d911
-T +closed e85628e34ac684b8a23f49eee71e4d6546e0ef64
-U drh
-Z f05d0da940377f1e118d67abedff2c44
+P 5e3e410bf49a29efbf9ff3ef048e158804ca0027
+R f39b315003c60aaa407135f808ae9f63
+U dan
+Z bbb0b6475f661c6ff9c98c6db1ebf479
