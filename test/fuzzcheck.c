@@ -345,7 +345,9 @@ static int inmemWrite(
       return SQLITE_FULL;
     }
     pVFile->a = safe_realloc(pVFile->a, (int)(iOfst+iAmt));
-    memset(pVFile->a + pVFile->sz, 0, (int)(iOfst - pVFile->sz));
+    if( iOfst > pVFile->sz ){
+      memset(pVFile->a + pVFile->sz, 0, (int)(iOfst - pVFile->sz));
+    }
     pVFile->sz = (int)(iOfst + iAmt);
   }
   memcpy(pVFile->a + iOfst, pData, iAmt);

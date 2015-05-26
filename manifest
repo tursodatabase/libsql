@@ -1,5 +1,5 @@
-C Update\stest\scases\sin\scorruptI.test\sso\sthat\sthey\swork\swith\sboth\sSQLITE_ENABLE_OVERSIZE_CELL_CHECK\sand\sSQLITE_DEFAULT_AUTOVACUUM\sbuilds.
-D 2015-05-26T14:57:45.716
+C Fix\sanother\sbug\sin\sthe\sin-memory\sVFS\sfor\sfuzzcheck.
+D 2015-05-26T16:12:45.409
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 69b596e4be75a16f4e55587f29db66497b207fad
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -651,7 +651,7 @@ F test/fuzz2.test 76dc35b32b6d6f965259508508abce75a6c4d7e1
 F test/fuzz3.test efd384b896c647b61a2c1848ba70d42aad60a7b3
 F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
 F test/fuzz_malloc.test 328f70aaca63adf29b4c6f06505ed0cf57ca7c26
-F test/fuzzcheck.c 7c7946e0ab6021361f12f5776f6e84bb0e122ca3
+F test/fuzzcheck.c 449c4e5928b1cd8da72d2e01dd271188b699342b
 F test/fuzzdata1.txt 9fceb50868e0b798160e83742bd7e44e457176a0
 F test/fuzzdata2.txt ba9b4467d7ec46cc85d32c0d031540cd727ae6ad
 F test/fuzzer1.test d4c52aaf3ef923da293a2653cfab33d02f718a36
@@ -1279,7 +1279,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 68876003f922635737349f55bc73a78891ea7028
-R 70e937d03a4979d1a7a8b4f6de706ca8
-U dan
-Z 68736d8ef2ff1b67c68f4886c45044a4
+P 22a14663782312fa7f4f18545509ef4b27e9b8c1
+R c430c5139c8b2fca96f4c8173180fc85
+U drh
+Z 9f3e869d4bf304fb4f5a5214d33d6109
