@@ -66,6 +66,7 @@ typedef struct Blob Blob;
 struct Blob {
   Blob *pNext;            /* Next in a list */
   int id;                 /* Id of this Blob */
+  int seq;                /* Sequence number */
   int sz;                 /* Size of this Blob in bytes */
   unsigned char a[1];     /* Blob content.  Extra space allocated as needed. */
 };
@@ -257,12 +258,12 @@ static void blobListLoadFromDb(
     Blob *pNew = safe_realloc(0, sizeof(*pNew)+sz );
     pNew->id = sqlite3_column_int(pStmt, 0);
     pNew->sz = sz;
+    pNew->seq = n++;
     pNew->pNext = 0;
     memcpy(pNew->a, sqlite3_column_blob(pStmt,1), sz);
     pNew->a[sz] = 0;
     p->pNext = pNew;
     p = pNew;
-    n++;
   }
   sqlite3_finalize(pStmt);
   *pN = n;
@@ -507,10 +508,16 @@ static void inmemVfsRegister(void){
 };
 
 /*
+** Allowed values for the runFlags parameter to runSql()
+*/
+#define SQL_TRACE  0x0001     /* Print each SQL statement as it is prepared */
+#define SQL_OUTPUT 0x0002     /* Show the SQL output */
+
+/*
 ** Run multiple commands of SQL.  Similar to sqlite3_exec(), but does not
 ** stop if an error is encountered.
 */
-static void runSql(sqlite3 *db, const char *zSql, int traceFlag){
+static void runSql(sqlite3 *db, const char *zSql, unsigned  runFlags){
   const char *zMore;
   sqlite3_stmt *pStmt;
 
@@ -519,7 +526,7 @@ static void runSql(sqlite3 *db, const char *zSql, int traceFlag){
     pStmt = 0;
     sqlite3_prepare_v2(db, zSql, -1, &pStmt, &zMore);
     if( zMore==zSql ) break;
-    if( traceFlag ){
+    if( runFlags & SQL_TRACE ){
       const char *z = zSql;
       int n;
       while( z<zMore && isspace(z[0]) ) z++;
@@ -534,7 +541,45 @@ static void runSql(sqlite3 *db, const char *zSql, int traceFlag){
     }
     zSql = zMore;
     if( pStmt ){
-      while( SQLITE_ROW==sqlite3_step(pStmt) ){}
+      if( (runFlags & SQL_OUTPUT)==0 ){
+        while( SQLITE_ROW==sqlite3_step(pStmt) ){}
+      }else{
+        int nCol = -1;
+        while( SQLITE_ROW==sqlite3_step(pStmt) ){
+          int i;
+          if( nCol<0 ){
+            nCol = sqlite3_column_count(pStmt);
+          }else if( nCol>0 ){
+            printf("--------------------------------------------\n");
+          }
+          for(i=0; i<nCol; i++){
+            int eType = sqlite3_column_type(pStmt,i);
+            printf("%s = ", sqlite3_column_name(pStmt,i));
+            switch( eType ){
+              case SQLITE_NULL: {
+                printf("NULL\n");
+                break;
+              }
+              case SQLITE_INTEGER: {
+                printf("INT %s\n", sqlite3_column_text(pStmt,i));
+                break;
+              }
+              case SQLITE_FLOAT: {
+                printf("FLOAT %s\n", sqlite3_column_text(pStmt,i));
+                break;
+              }
+              case SQLITE_TEXT: {
+                printf("TEXT [%s]\n", sqlite3_column_text(pStmt,i));
+                break;
+              }
+              case SQLITE_BLOB: {
+                printf("BLOB (%d bytes)\n", sqlite3_column_bytes(pStmt,i));
+                break;
+              }
+            }
+          }
+        }
+      }         
       sqlite3_finalize(pStmt);
     }
   }
@@ -556,6 +601,7 @@ static void showHelp(void){
 "  --load-sql ARGS...    Load SQL scripts fro files into SOURCE-DB\n"
 "  --load-db ARGS...     Load template databases from files into SOURCE_DB\n"
 "  --native-vfs          Use the native VFS for initially empty database files\n"
+"  --result-trace        Show the results of each SQL command\n"
 "  --sqlid N             Use only SQL where sqlid=N\n"
 "  -v                    Increased output\n"
 "  --verbose             Increased output\n"
@@ -577,6 +623,7 @@ int main(int argc, char **argv){
   int onlySqlid = -1;          /* --sqlid */
   int onlyDbid = -1;           /* --dbid */
   int nativeFlag = 0;          /* --native-vfs */
+  int runFlags = 0;            /* Flags sent to runSql() */
 
   iBegin = timeOfDay();
   g.zArgv0 = argv[0];
@@ -594,7 +641,7 @@ int main(int argc, char **argv){
         return 0;
       }else
       if( strcmp(z,"load-sql")==0 ){
-        zInsSql = "INSERT INTO xsql(sqltext) VALUES(readfile(?1))";
+        zInsSql = "INSERT INTO xsql(sqltext) VALUES(CAST(readfile(?1) AS text))";
         iFirstInsArg = i+1;
         break;
       }else
@@ -610,6 +657,9 @@ int main(int argc, char **argv){
         quietFlag = 1;
         verboseFlag = 0;
       }else
+      if( strcmp(z,"result-trace")==0 ){
+        runFlags |= SQL_OUTPUT;
+      }else
       if( strcmp(z,"sqlid")==0 ){
         if( i>=argc-1 ) fatalError("missing arguments on %s", argv[i]);
         onlySqlid = atoi(argv[++i]);
@@ -617,6 +667,7 @@ int main(int argc, char **argv){
       if( strcmp(z,"verbose")==0 || strcmp(z,"v")==0 ){
         quietFlag = 0;
         verboseFlag = 1;
+        runFlags |= SQL_TRACE;
       }else
       {
         fatalError("unknown option: %s", argv[i]);
@@ -676,6 +727,7 @@ int main(int argc, char **argv){
     g.pFirstDb = safe_realloc(0, sizeof(Blob));
     memset(g.pFirstDb, 0, sizeof(Blob));
     g.pFirstDb->id = 1;
+    g.pFirstDb->seq = 0;
     g.nDb = 1;
   }
     
@@ -712,7 +764,7 @@ int main(int argc, char **argv){
         fflush(stdout);
       }else if( !quietFlag ){
         static int prevAmt = -1;
-        int idx = (pSql->id-1)*g.nDb + pDb->id - 1;
+        int idx = pSql->seq*g.nDb + pDb->id - 1;
         int amt = idx*10/(g.nDb*g.nSql);
         if( amt!=prevAmt ){
           printf(" %d%%", amt*10);
@@ -728,7 +780,7 @@ int main(int argc, char **argv){
       }
       rc = sqlite3_open_v2("main.db", &db, openFlags, zVfs);
       if( rc ) fatalError("cannot open inmem database");
-      runSql(db, (char*)pSql->a, verboseFlag);
+      runSql(db, (char*)pSql->a, runFlags);
       sqlite3_close(db);
       if( sqlite3_memory_used()>0 ) fatalError("memory leak");
       reformatVfs();
@@ -738,7 +790,7 @@ int main(int argc, char **argv){
 
   if( !quietFlag ){
     sqlite3_int64 iElapse = timeOfDay() - iBegin;
-    if( !verboseFlag ) printf("\n");
+    if( !verboseFlag ) printf(" 100%%\n");
     printf("fuzzcheck: 0 errors out of %d tests in %d.%03d seconds\nSQLite %s %s\n",
            g.nDb*g.nSql, (int)(iElapse/1000), (int)(iElapse%1000),
            sqlite3_libversion(), sqlite3_sourceid());

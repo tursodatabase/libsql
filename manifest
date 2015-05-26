@@ -1,5 +1,5 @@
-C Fix\san\simportant\sbug\sin\sthe\sxRead\smethod\sof\sthe\sin-memory\sVFS\sfor\sfuzzcheck.
-D 2015-05-25T23:14:37.419
+C Add\sthe\s--result-trace\soption\sto\sfuzzcheck,\sand\sother\sinterface\senhancements.
+D 2015-05-26T00:28:08.697
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 411b8dc7191769de8b1ddd5c4d83bcf2e37ed5e4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -651,7 +651,7 @@ F test/fuzz2.test 76dc35b32b6d6f965259508508abce75a6c4d7e1
 F test/fuzz3.test efd384b896c647b61a2c1848ba70d42aad60a7b3
 F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
 F test/fuzz_malloc.test 328f70aaca63adf29b4c6f06505ed0cf57ca7c26
-F test/fuzzcheck.c d545dfbca2e9a75de7ae92ed3139900a6fadf846
+F test/fuzzcheck.c 7c7946e0ab6021361f12f5776f6e84bb0e122ca3
 F test/fuzzdata1.txt 9fceb50868e0b798160e83742bd7e44e457176a0
 F test/fuzzdata2.txt ba9b4467d7ec46cc85d32c0d031540cd727ae6ad
 F test/fuzzer1.test d4c52aaf3ef923da293a2653cfab33d02f718a36
@@ -1279,7 +1279,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 341cb6abe74e1e9d03c82ffdeba86be6a2d00397
-R f5e89509deaf82258e177c7db9b5da20
+P 58cd40e89f3060c63abb9a3fca385a1e72ce7bb4
+R 32cf38aec65deccc8cc067da345baf0c
 U drh
-Z b0b4ed3682ecee9d5832e0b1ae33eee2
+Z 6c1ca5d7f4d278cf3dabf72acc1e60c9
