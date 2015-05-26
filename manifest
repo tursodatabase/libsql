@@ -1,9 +1,9 @@
-C Add\sfuzzcheck\sto\smakefile\sclean\stargets.\s\sAlso,\sfor\sconsistency,\sreplace\sa\sfew\stabs\swith\sspaces.
-D 2015-05-26T03:24:33.559
+C Silence\sharmless\scompiler\swarnings\swhen\sbuilding\sthe\scommand\sline\sutilities\swith\sMSVC.
+D 2015-05-26T03:31:46.981
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 69b596e4be75a16f4e55587f29db66497b207fad
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 8a296515094710366fa3c040ca69605d0cceba8d
+F Makefile.msc 6c5a92060e8e5fe465186ea7facfc80c258bcf9e
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md 0bfccb18927349653c09137a458b961fa8ab4cb9
 F VERSION ce0ae95abd7121c534f6917c1c8f2b70d9acd4db
@@ -1279,7 +1279,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c415bb7bbfd531b138462589cdd58fa0204804e8
-R bb46898678172639918d384850732d50
+P eda2a437506f148bcb5bb33baa64b5ad8ae73ada
+R 729e132ed27defff17edf873b9ea2761
 U mistachkin
-Z f8f5477c9ba98dfdc98d72d91daa5dc8
+Z 455a04fccd298870eb1e19dc1cb5545d
