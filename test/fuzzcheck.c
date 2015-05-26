@@ -633,9 +633,11 @@ int main(int argc, char **argv){
   int iSrcDb;                  /* Loop over all source databases */
   int nTest = 0;               /* Total number of tests performed */
   char *zDbName = "";          /* Appreviated name of a source database */
+  const char *zFailCode = 0;   /* Value of the TEST_FAILURE environment variable */
 
   iBegin = timeOfDay();
   g.zArgv0 = argv[0];
+  zFailCode = getenv("TEST_FAILURE");
   for(i=1; i<argc; i++){
     const char *z = argv[i];
     if( z[0]=='-' ){
@@ -829,6 +831,22 @@ int main(int argc, char **argv){
         reformatVfs();
         nTest++;
         g.zTestName[0] = 0;
+
+        /* Simulate an error if the TEST_FAILURE environment variable is "5".
+        ** This is used to verify that automated test script really do spot
+        ** errors that occur in this test program.
+        */
+        if( zFailCode ){
+          if( zFailCode[0]=='5' && zFailCode[1]==0 ){
+            fatalError("simulated failure");
+          }else if( zFailCode[0]!=0 ){
+            /* If TEST_FAILURE is something other than 5, just exit the test
+            ** early */
+            printf("\nExit early due to TEST_FAILURE being set\n");
+            iSrcDb = nSrcDb-1;
+            goto sourcedb_cleanup;
+          }
+        }
       }
     }
     if( !quietFlag && !verboseFlag ){
@@ -837,6 +855,7 @@ int main(int argc, char **argv){
   
     /* Clean up at the end of processing a single source database
     */
+  sourcedb_cleanup:
     blobListFree(g.pFirstSql);
     blobListFree(g.pFirstDb);
     reformatVfs();

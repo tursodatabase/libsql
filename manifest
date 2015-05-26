@@ -1,5 +1,5 @@
-C Fix\sa\sone-byte\sbuffer\soverread\sthat\smay\sfollow\sa\ssyntax\serror\swhile\spreparing\san\sSQL\sstatement.
-D 2015-05-26T18:58:57.869
+C Merge\saccidental\sfork.
+D 2015-05-26T19:01:36.410
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3feb7cbdad8898fe7a8a24355b4a753029c3ec3b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -651,7 +651,7 @@ F test/fuzz2.test 76dc35b32b6d6f965259508508abce75a6c4d7e1
 F test/fuzz3.test efd384b896c647b61a2c1848ba70d42aad60a7b3
 F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
 F test/fuzz_malloc.test 328f70aaca63adf29b4c6f06505ed0cf57ca7c26
-F test/fuzzcheck.c 69998e6430903af8f1904dfa8c7fc21c94d59ebc
+F test/fuzzcheck.c 348c2ac1ef3fde2eb7d312d5bf6fbf7ff42033b3
 F test/fuzzdata1.db b60254eeb6bc11474071b883059662a73c48da7f
 F test/fuzzdata2.db f03a420d3b822cc82e4f894ca957618fbe9c4973
 F test/fuzzdata3.db 57ae47d2a1c837fb8ddc10ce4ab56a04ad044cb4
@@ -1279,7 +1279,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4a5f6f1f0128657fd8d4d99d0682edd5bac2a19e
-R 065e508f512bb407d5d12027502751ea
+P 075003930da98419f671b7833a5850693529fb62 76770c9e061e2eb106d7ea402eef888b98ba9d0e
+R 3d82c0fa4f6ee04379bd9745bde5d911
 U dan
-Z 196ef8f8d5bf66f74ab95e80a414f84a
+Z 537a6ddf41a5c2e06d41f2aa9a07cb1e
