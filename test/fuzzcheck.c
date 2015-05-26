@@ -602,6 +602,7 @@ static void showHelp(void){
 "  --quiet               Reduced output\n"
 "  --load-sql ARGS...    Load SQL scripts fro files into SOURCE-DB\n"
 "  --load-db ARGS...     Load template databases from files into SOURCE_DB\n"
+"  -m TEXT               Add a description to the database\n"
 "  --native-vfs          Use the native VFS for initially empty database files\n"
 "  --result-trace        Show the results of each SQL command\n"
 "  --sqlid N             Use only SQL where sqlid=N\n"
@@ -612,12 +613,12 @@ static void showHelp(void){
 
 int main(int argc, char **argv){
   sqlite3_int64 iBegin;        /* Start time of this program */
-  const char *zSourceDb = 0;   /* Source database filename */
   int quietFlag = 0;           /* True if --quiet or -q */
   int verboseFlag = 0;         /* True if --verbose or -v */
   char *zInsSql = 0;           /* SQL statement for --load-db or --load-sql */
   int iFirstInsArg = 0;        /* First argv[] to use for --load-db or --load-sql */
   sqlite3 *db = 0;             /* The open database connection */
+  sqlite3_stmt *pStmt;         /* A prepared statement */
   int rc;                      /* Result code from SQLite interface calls */
   Blob *pSql;                  /* For looping over SQL scripts */
   Blob *pDb;                   /* For looping over template databases */
@@ -626,6 +627,12 @@ int main(int argc, char **argv){
   int onlyDbid = -1;           /* --dbid */
   int nativeFlag = 0;          /* --native-vfs */
   int runFlags = 0;            /* Flags sent to runSql() */
+  char *zMsg = 0;              /* Add this message */
+  int nSrcDb = 0;              /* Number of source databases */
+  char **azSrcDb = 0;          /* Array of source database names */
+  int iSrcDb;                  /* Loop over all source databases */
+  int nTest = 0;               /* Total number of tests performed */
+  char *zDbName = "";          /* Appreviated name of a source database */
 
   iBegin = timeOfDay();
   g.zArgv0 = argv[0];
@@ -652,6 +659,10 @@ int main(int argc, char **argv){
         iFirstInsArg = i+1;
         break;
       }else
+      if( strcmp(z,"m")==0 ){
+        if( i>=argc-1 ) fatalError("missing arguments on %s", argv[i]);
+        zMsg = argv[++i];
+      }else
       if( strcmp(z,"native-vfs")==0 ){
         nativeFlag = 1;
       }else
@@ -675,133 +686,169 @@ int main(int argc, char **argv){
         fatalError("unknown option: %s", argv[i]);
       }
     }else{
-      if( zSourceDb ) fatalError("extra argument: %s", argv[i]);
-      zSourceDb = argv[i];
+      nSrcDb++;
+      azSrcDb = safe_realloc(azSrcDb, nSrcDb*sizeof(azSrcDb[0]));
+      azSrcDb[nSrcDb-1] = argv[i];
     }
   }
-  if( zSourceDb==0 ) fatalError("no source database specified");
-  rc = sqlite3_open(zSourceDb, &db);
-  if( rc ){
-    fatalError("cannot open source database %s - %s",
-    zSourceDb, sqlite3_errmsg(db));
-  }
-  rc = sqlite3_exec(db, 
-     "CREATE TABLE IF NOT EXISTS db(\n"
-     "  dbid INTEGER PRIMARY KEY, -- database id\n"
-     "  dbcontent BLOB            -- database disk file image\n"
-     ");\n"
-     "CREATE TABLE IF NOT EXISTS xsql(\n"
-     "  sqlid INTEGER PRIMARY KEY,   -- SQL script id\n"
-     "  sqltext TEXT                 -- Text of SQL statements to run\n"
-     ");", 0, 0, 0);
-  if( rc ) fatalError("cannot create schema: %s", sqlite3_errmsg(db));
-  if( zInsSql ){
-    sqlite3_stmt *pStmt;
-    sqlite3_create_function(db, "readfile", 1, SQLITE_UTF8, 0,
-                            readfileFunc, 0, 0);
-    rc = sqlite3_prepare_v2(db, zInsSql, -1, &pStmt, 0);
-    if( rc ) fatalError("cannot prepare statement [%s]: %s",
-                        zInsSql, sqlite3_errmsg(db));
-    rc = sqlite3_exec(db, "BEGIN", 0, 0, 0);
-    if( rc ) fatalError("cannot start a transaction");
-    for(i=iFirstInsArg; i<argc; i++){
-      sqlite3_bind_text(pStmt, 1, argv[i], -1, SQLITE_STATIC);
-      sqlite3_step(pStmt);
-      rc = sqlite3_reset(pStmt);
-      if( rc ) fatalError("insert failed for %s", argv[i]);
+  if( nSrcDb==0 ) fatalError("no source database specified");
+  if( nSrcDb>1 ){
+    if( zMsg ){
+      fatalError("cannot change the description of more than one database");
     }
-    sqlite3_finalize(pStmt);
-    rc = sqlite3_exec(db, "COMMIT", 0, 0, 0);
-    if( rc ) fatalError("cannot commit the transaction: %s", sqlite3_errmsg(db));
-    sqlite3_close(db);
-    return 0;
+    if( zInsSql ){
+      fatalError("cannot import into more than one database");
+    }
   }
 
-  /* Load all SQL script content and all initial database images from the
-  ** source db
-  */
-  blobListLoadFromDb(db, "SELECT sqlid, sqltext FROM xsql", onlySqlid,
-                         &g.nSql, &g.pFirstSql);
-  if( g.nSql==0 ) fatalError("need at least one SQL script");
-  blobListLoadFromDb(db, "SELECT dbid, dbcontent FROM db", onlyDbid,
-                     &g.nDb, &g.pFirstDb);
-  if( g.nDb==0 ){
-    g.pFirstDb = safe_realloc(0, sizeof(Blob));
-    memset(g.pFirstDb, 0, sizeof(Blob));
-    g.pFirstDb->id = 1;
-    g.pFirstDb->seq = 0;
-    g.nDb = 1;
-  }
-    
-
-  /* Close the source database.  Verify that no SQLite memory allocations are
-  ** outstanding.
-  */
-  sqlite3_close(db);
-  if( sqlite3_memory_used()>0 ){
-    fatalError("SQLite has memory in use before the start of testing");
-  }
-
-  /* Register the in-memory virtual filesystem
-  */
-  formatVfs();
-  inmemVfsRegister();
-  
-  /* Run a test using each SQL script against each database.
-  */
-  if( !verboseFlag && !quietFlag ){
-    int i;
-    i = strlen(zSourceDb) - 1;
-    while( i>0 && zSourceDb[i-1]!='/' && zSourceDb[i-1]!='\\' ){ i--; }
-    printf("%s:", &zSourceDb[i]);
-  }
-  for(pSql=g.pFirstSql; pSql; pSql=pSql->pNext){
-    for(pDb=g.pFirstDb; pDb; pDb=pDb->pNext){
-      int openFlags;
-      const char *zVfs = "inmem";
-      sqlite3_snprintf(sizeof(g.zTestName), g.zTestName, "sqlid=%d,dbid=%d",
-                       pSql->id, pDb->id);
-      if( verboseFlag ){
-        printf("%s\n", g.zTestName);
-        fflush(stdout);
-      }else if( !quietFlag ){
-        static int prevAmt = -1;
-        int idx = pSql->seq*g.nDb + pDb->id - 1;
-        int amt = idx*10/(g.nDb*g.nSql);
-        if( amt!=prevAmt ){
-          printf(" %d%%", amt*10);
-          fflush(stdout);
-          prevAmt = amt;
-        }
+  /* Process each source database separately */
+  for(iSrcDb=0; iSrcDb<nSrcDb; iSrcDb++){
+    rc = sqlite3_open(azSrcDb[iSrcDb], &db);
+    if( rc ){
+      fatalError("cannot open source database %s - %s",
+      azSrcDb[iSrcDb], sqlite3_errmsg(db));
+    }
+    rc = sqlite3_exec(db, 
+       "CREATE TABLE IF NOT EXISTS db(\n"
+       "  dbid INTEGER PRIMARY KEY, -- database id\n"
+       "  dbcontent BLOB            -- database disk file image\n"
+       ");\n"
+       "CREATE TABLE IF NOT EXISTS xsql(\n"
+       "  sqlid INTEGER PRIMARY KEY,   -- SQL script id\n"
+       "  sqltext TEXT                 -- Text of SQL statements to run\n"
+       ");"
+       "CREATE TABLE IF NOT EXISTS readme(\n"
+       "  msg TEXT -- Human-readable description of this file\n"
+       ");", 0, 0, 0);
+    if( rc ) fatalError("cannot create schema: %s", sqlite3_errmsg(db));
+    if( zMsg ){
+      char *zSql;
+      zSql = sqlite3_mprintf(
+               "DELETE FROM readme; INSERT INTO readme(msg) VALUES(%Q)", zMsg);
+      rc = sqlite3_exec(db, zSql, 0, 0, 0);
+      sqlite3_free(zSql);
+      if( rc ) fatalError("cannot change description: %s", sqlite3_errmsg(db));
+    }
+    if( zInsSql ){
+      sqlite3_create_function(db, "readfile", 1, SQLITE_UTF8, 0,
+                              readfileFunc, 0, 0);
+      rc = sqlite3_prepare_v2(db, zInsSql, -1, &pStmt, 0);
+      if( rc ) fatalError("cannot prepare statement [%s]: %s",
+                          zInsSql, sqlite3_errmsg(db));
+      rc = sqlite3_exec(db, "BEGIN", 0, 0, 0);
+      if( rc ) fatalError("cannot start a transaction");
+      for(i=iFirstInsArg; i<argc; i++){
+        sqlite3_bind_text(pStmt, 1, argv[i], -1, SQLITE_STATIC);
+        sqlite3_step(pStmt);
+        rc = sqlite3_reset(pStmt);
+        if( rc ) fatalError("insert failed for %s", argv[i]);
       }
-      createVFile("main.db", pDb->sz, pDb->a);
-      openFlags = SQLITE_OPEN_CREATE | SQLITE_OPEN_READWRITE;
-      if( nativeFlag && pDb->sz==0 ){
-        openFlags |= SQLITE_OPEN_MEMORY;
-        zVfs = 0;
-      }
-      rc = sqlite3_open_v2("main.db", &db, openFlags, zVfs);
-      if( rc ) fatalError("cannot open inmem database");
-      runSql(db, (char*)pSql->a, runFlags);
+      sqlite3_finalize(pStmt);
+      rc = sqlite3_exec(db, "COMMIT", 0, 0, 0);
+      if( rc ) fatalError("cannot commit the transaction: %s", sqlite3_errmsg(db));
       sqlite3_close(db);
-      if( sqlite3_memory_used()>0 ) fatalError("memory leak");
-      reformatVfs();
-      g.zTestName[0] = 0;
+      return 0;
     }
-  }
+  
+    /* Load all SQL script content and all initial database images from the
+    ** source db
+    */
+    blobListLoadFromDb(db, "SELECT sqlid, sqltext FROM xsql", onlySqlid,
+                           &g.nSql, &g.pFirstSql);
+    if( g.nSql==0 ) fatalError("need at least one SQL script");
+    blobListLoadFromDb(db, "SELECT dbid, dbcontent FROM db", onlyDbid,
+                       &g.nDb, &g.pFirstDb);
+    if( g.nDb==0 ){
+      g.pFirstDb = safe_realloc(0, sizeof(Blob));
+      memset(g.pFirstDb, 0, sizeof(Blob));
+      g.pFirstDb->id = 1;
+      g.pFirstDb->seq = 0;
+      g.nDb = 1;
+    }
+  
+    /* Print the description, if there is one */
+    if( !quietFlag ){
+      int i;
+      zDbName = azSrcDb[iSrcDb];
+      i = strlen(zDbName) - 1;
+      while( i>0 && zDbName[i-1]!='/' && zDbName[i-1]!='\\' ){ i--; }
+      zDbName += i;
+      sqlite3_prepare_v2(db, "SELECT msg FROM readme", -1, &pStmt, 0);
+      if( pStmt && sqlite3_step(pStmt)==SQLITE_ROW ){
+        printf("%s: %s\n", zDbName, sqlite3_column_text(pStmt,0));
+      }
+      sqlite3_finalize(pStmt);
+    }
+  
+    /* Close the source database.  Verify that no SQLite memory allocations are
+    ** outstanding.
+    */
+    sqlite3_close(db);
+    if( sqlite3_memory_used()>0 ){
+      fatalError("SQLite has memory in use before the start of testing");
+    }
+  
+    /* Register the in-memory virtual filesystem
+    */
+    formatVfs();
+    inmemVfsRegister();
+    
+    /* Run a test using each SQL script against each database.
+    */
+    if( !verboseFlag && !quietFlag ) printf("%s:", zDbName);
+    for(pSql=g.pFirstSql; pSql; pSql=pSql->pNext){
+      for(pDb=g.pFirstDb; pDb; pDb=pDb->pNext){
+        int openFlags;
+        const char *zVfs = "inmem";
+        sqlite3_snprintf(sizeof(g.zTestName), g.zTestName, "sqlid=%d,dbid=%d",
+                         pSql->id, pDb->id);
+        if( verboseFlag ){
+          printf("%s\n", g.zTestName);
+          fflush(stdout);
+        }else if( !quietFlag ){
+          static int prevAmt = -1;
+          int idx = pSql->seq*g.nDb + pDb->id - 1;
+          int amt = idx*10/(g.nDb*g.nSql);
+          if( amt!=prevAmt ){
+            printf(" %d%%", amt*10);
+            fflush(stdout);
+            prevAmt = amt;
+          }
+        }
+        createVFile("main.db", pDb->sz, pDb->a);
+        openFlags = SQLITE_OPEN_CREATE | SQLITE_OPEN_READWRITE;
+        if( nativeFlag && pDb->sz==0 ){
+          openFlags |= SQLITE_OPEN_MEMORY;
+          zVfs = 0;
+        }
+        rc = sqlite3_open_v2("main.db", &db, openFlags, zVfs);
+        if( rc ) fatalError("cannot open inmem database");
+        runSql(db, (char*)pSql->a, runFlags);
+        sqlite3_close(db);
+        if( sqlite3_memory_used()>0 ) fatalError("memory leak");
+        reformatVfs();
+        nTest++;
+        g.zTestName[0] = 0;
+      }
+    }
+    if( !quietFlag && !verboseFlag ){
+      printf(" 100%% - %d tests\n", g.nDb*g.nSql);
+    }
+  
+    /* Clean up at the end of processing a single source database
+    */
+    blobListFree(g.pFirstSql);
+    blobListFree(g.pFirstDb);
+    reformatVfs();
+ 
+  } /* End loop over all source databases */
 
   if( !quietFlag ){
     sqlite3_int64 iElapse = timeOfDay() - iBegin;
-    if( !verboseFlag ) printf(" 100%%\n");
-    printf("fuzzcheck: 0 errors out of %d tests in %d.%03d seconds\nSQLite %s %s\n",
-           g.nDb*g.nSql, (int)(iElapse/1000), (int)(iElapse%1000),
+    printf("fuzzcheck: 0 errors out of %d tests in %d.%03d seconds\n"
+           "SQLite %s %s\n",
+           nTest, (int)(iElapse/1000), (int)(iElapse%1000),
            sqlite3_libversion(), sqlite3_sourceid());
   }
-
-  /* Clean up and exit.
-  */
-  blobListFree(g.pFirstSql);
-  blobListFree(g.pFirstDb);
-  reformatVfs();
   return 0;
 }
