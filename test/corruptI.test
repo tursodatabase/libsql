@@ -226,4 +226,30 @@ do_test 7.2 {
   catchsql { UPDATE t1 SET x='d' AND y='D' WHERE rowid = 2 }
 } {1 {database disk image is malformed}}
 
+#-------------------------------------------------------------------------
+# At one point an assert() would fail if attempt was made to free page 1.
+#
+reset_db
+do_execsql_test 8.0 {
+  CREATE TABLE t1(x);
+  INSERT INTO t1 VALUES(zeroblob(300));
+  INSERT INTO t1 VALUES(zeroblob(300));
+  INSERT INTO t1 VALUES(zeroblob(300));
+  INSERT INTO t1 VALUES(zeroblob(300));
+} {}
+
+do_test 8.1 {
+  db close
+  hexio_write test.db [expr 1024 + 8] 00000001
+  sqlite3 db test.db
+  catchsql { DELETE FROM t1 }
+} {1 {database disk image is malformed}}
+
+do_test 8.2 {
+  db close
+  sqlite3 db test.db
+  execsql { PRAGMA integrity_check }
+} {/.*in database main.*/}
+
+
 finish_test
