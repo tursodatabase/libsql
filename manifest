@@ -1,5 +1,5 @@
-C Avoid\sredundant\sloads\sfrom\sthe\s%_data\stable\sin\sthe\sfts5\scode.
-D 2015-05-25T11:46:33.325
+C Simplifications\sand\sminor\soptimizations\sto\sfts5\sprefix\squeries\sthat\scannot\suse\sa\sprefix\sindex.
+D 2015-05-26T18:22:01.843
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2c28e557780395095c307a6e5cb539419027eb5e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -113,7 +113,7 @@ F ext/fts5/fts5_buffer.c 861599a0abe2383f0cd0352c57001140a26b0930
 F ext/fts5/fts5_config.c 11f969ed711a0a8b611d47431d74c372ad78c713
 F ext/fts5/fts5_expr.c a8b31d363c02108dae01e13948661859f449ebb9
 F ext/fts5/fts5_hash.c 54dd25348a46ea62ea96322c572e08cd1fb37304
-F ext/fts5/fts5_index.c 79b8fcf40bee484dc62a7a0ba1f3d8de0a662812
+F ext/fts5/fts5_index.c c41e4f90876ad7d1feeaddb14d29d4e4c7dd17db
 F ext/fts5/fts5_storage.c 5d2b51adb304643d8f825ba89283d628418b20c2
 F ext/fts5/fts5_tcl.c 7ea165878e4ae3598e89acd470a0ee1b5a00e33c
 F ext/fts5/fts5_tokenize.c 24649425adfea2c4877d8f69f2754b70374940ec
@@ -125,7 +125,7 @@ F ext/fts5/test/fts5_common.tcl 6d663e8c3d8409857363f66560df96b8ca813e79
 F ext/fts5/test/fts5aa.test 26f1a462213f3aa067c208bd508d6218c54a620f
 F ext/fts5/test/fts5ab.test 6fe3a56731d15978afbb74ae51b355fc9310f2ad
 F ext/fts5/test/fts5ac.test 05008e00bd2761cc45df838a0988ecf318cbe1fd
-F ext/fts5/test/fts5ad.test 2141b0360dc4397bfed30f0b0d700fa64b44835d
+F ext/fts5/test/fts5ad.test 312f3c8ed9592533499c5b94d2059ae6382913a0
 F ext/fts5/test/fts5ae.test 9175201baf8c885fc1cbb2da11a0c61fd11224db
 F ext/fts5/test/fts5af.test c2501ec2b61d6b179c305f5d2b8782ab3d4f832a
 F ext/fts5/test/fts5ag.test ec3e119b728196620a31507ef503c455a7a73505
@@ -1331,7 +1331,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5165de548b84825cb000d33e5d3de12b0ef112c0
-R 0a35d34e585361d7ce3301bdbbc300de
+P 02069782f8b7896a582582c79185b50418622736
+R 01e4b9608560855e31f532d223b68ea6
 U dan
-Z 478e4cabed12f1b6c85b518dcaf965c8
+Z 2a2ddee3129d7371ffa2412643605052

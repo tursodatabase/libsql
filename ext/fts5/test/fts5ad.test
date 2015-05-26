@@ -215,7 +215,7 @@ foreach {T create} {
       11 {k*} 12 {kl*} 13 {klm*} 14 {klmn*} 15 {klmno*}
       16 {p*} 17 {pq*} 18 {pqr*} 19 {pqrs*} 20 {pqrst*}
       21 {u*} 22 {uv*} 23 {uvw*} 24 {uvwx*} 25 {uvwxy*} 26 {uvwxyz*}
-      27 {x*} 
+      27 {x*}
       28 {a f*} 29 {a* f*} 30 {a* fghij*}
     } {
       set res [prefix_query $prefix]
