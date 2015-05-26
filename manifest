@@ -1,5 +1,5 @@
-C The\s"make\sfuzztest"\starget\snow\suses\sfuzzcheck\sinstead\sof\sfuzzershell.
-D 2015-05-26T18:15:08.927
+C Fix\sa\sone-byte\sbuffer\soverread\sthat\smay\sfollow\sa\ssyntax\serror\swhile\spreparing\san\sSQL\sstatement.
+D 2015-05-26T18:58:57.869
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3feb7cbdad8898fe7a8a24355b4a753029c3ec3b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -306,7 +306,7 @@ F src/test_vfs.c 3b65d42e18b262805716bd96178c81da8f2d9283
 F src/test_vfstrace.c bab9594adc976cbe696ff3970728830b4c5ed698
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 6bbcc9fe50c917864d48287b4792d46d6e873481
-F src/tokenize.c af8cbbca6db6b664ffecafa236b06629ef6d35c4
+F src/tokenize.c 27d60b6bf4a92d17c329a11ff9fe94081b2a8510
 F src/trigger.c 322f23aad694e8f31d384dcfa386d52a48d3c52f
 F src/update.c 487747b328b7216bb7f6af0695d6937d5c9e605f
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
@@ -768,7 +768,7 @@ F test/minmax.test 42fbad0e81afaa6e0de41c960329f2b2c3526efd
 F test/minmax2.test b44bae787fc7b227597b01b0ca5575c7cb54d3bc
 F test/minmax3.test cc1e8b010136db0d01a6f2a29ba5a9f321034354
 F test/minmax4.test 936941484ebdceb8adec7c86b6cd9b6e5e897c1f
-F test/misc1.test 2bb46a3656e97f80c82880a94ea10d76a3b60cb0
+F test/misc1.test 3f1c479c5a093a6280f378c0fbff1c2701486660
 F test/misc2.test 00d7de54eda90e237fc9a38b9e5ccc769ebf6d4d
 F test/misc3.test cf3dda47d5dda3e53fc5804a100d3c82be736c9d
 F test/misc4.test 0d8be3466adf123a7791a66ba2bc8e8d229e87f3
@@ -1279,10 +1279,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 193364c81c301a41c16835108d23ad2ab84d9dd7
-R 72bebf492c55de7ece7f6fdbb9a7dd3f
-T *branch * test-using-fuzzcheck
-T *sym-test-using-fuzzcheck *
-T -sym-trunk *
-U drh
-Z 66f2916d8728b836edfc9ebde30c4bfc
+P 4a5f6f1f0128657fd8d4d99d0682edd5bac2a19e
+R 065e508f512bb407d5d12027502751ea
+U dan
+Z 196ef8f8d5bf66f74ab95e80a414f84a
