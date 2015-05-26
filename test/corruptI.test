@@ -123,13 +123,18 @@ do_execsql_test 4.0 {
 set root [db one {SELECT rootpage FROM sqlite_master}]
 set offset [expr ($root-1) * 65536]
 
+ifcapable oversize_cell_check {
+  set res {1 {database disk image is malformed}}
+} else {
+  set res {0 {}}
+}
 do_test 4.1 {
   db close
   hexio_write test.db [expr $offset + 8 + 2] 0000
   hexio_write test.db [expr $offset + 5] 0000
   sqlite3 db test.db
-  execsql { DELETE FROM t1 WHERE a=0 }
-} {}
+  catchsql { DELETE FROM t1 WHERE a=0 }
+} $res
 
 
 #-------------------------------------------------------------------------
@@ -192,6 +197,7 @@ do_test 5.3 {
 reset_db
 do_execsql_test 6.0 {
   PRAGMA page_size = 512;
+  PRAGMA auto_vacuum=0;
   CREATE TABLE t1(x);
   INSERT INTO t1 VALUES(zeroblob(300));
   INSERT INTO t1 VALUES(zeroblob(600));
@@ -210,6 +216,7 @@ do_test 6.1 {
 #
 reset_db
 do_execsql_test 7.0 {
+  PRAGMA auto_vacuum=0;
   CREATE TABLE t1(x PRIMARY KEY, y);
   INSERT INTO t1 VALUES('a', 'A');
   INSERT INTO t1 VALUES('b', 'A');
@@ -231,6 +238,7 @@ do_test 7.2 {
 #
 reset_db
 do_execsql_test 8.0 {
+  PRAGMA auto_vacuum=0;
   CREATE TABLE t1(x);
   INSERT INTO t1 VALUES(zeroblob(300));
   INSERT INTO t1 VALUES(zeroblob(300));
