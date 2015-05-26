@@ -1761,7 +1761,7 @@ clean:
 	del /Q shell.c sqlite3ext.h 2>NUL
 	del /Q sqlite3_analyzer.exe sqlite3_analyzer.c 2>NUL
 	del /Q sqlite-*-output.vsix 2>NUL
-	del /Q fuzzershell.exe sqldiff.exe 2>NUL
+	del /Q fuzzershell.exe fuzzcheck.exe sqldiff.exe 2>NUL
 
 # Dynamic link library section.
 #

@@ -419,15 +419,15 @@ sqlite3$(EXE):	$(TOP)/src/shell.c libsqlite3.a sqlite3.h
 
 sqldiff$(EXE):	$(TOP)/tool/sqldiff.c sqlite3.c sqlite3.h
 	$(TCCX) -o sqldiff$(EXE) -DSQLITE_THREADSAFE=0 \
-		$(TOP)/tool/sqldiff.c	sqlite3.c $(TLIBS) $(THREADLIB)
+		$(TOP)/tool/sqldiff.c sqlite3.c $(TLIBS) $(THREADLIB)
 
 fuzzershell$(EXE):	$(TOP)/tool/fuzzershell.c sqlite3.c sqlite3.h
 	$(TCCX) -o fuzzershell$(EXE) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION\
-		$(TOP)/tool/fuzzershell.c	sqlite3.c $(TLIBS) $(THREADLIB)
+		$(TOP)/tool/fuzzershell.c sqlite3.c $(TLIBS) $(THREADLIB)
 
 fuzzcheck$(EXE):	$(TOP)/test/fuzzcheck.c sqlite3.c sqlite3.h
 	$(TCCX) -o fuzzcheck$(EXE) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION\
-		$(TOP)/test/fuzzcheck.c	sqlite3.c $(TLIBS) $(THREADLIB)
+		$(TOP)/test/fuzzcheck.c sqlite3.c $(TLIBS) $(THREADLIB)
 
 mptester$(EXE):	sqlite3.c $(TOP)/mptest/mptest.c
 	$(TCCX) -o $@ -I. $(TOP)/mptest/mptest.c sqlite3.c \
@@ -800,4 +800,5 @@ clean:
 	rm -f sqlite-*-output.vsix
 	rm -f mptester mptester.exe
 	rm -f fuzzershell fuzzershell.exe
+	rm -f fuzzcheck fuzzcheck.exe
 	rm -f sqldiff sqldiff.exe

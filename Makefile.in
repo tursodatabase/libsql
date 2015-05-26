@@ -551,13 +551,13 @@ sqlite3$(TEXE):	$(TOP)/src/shell.c libsqlite3.la sqlite3.h
 		$(LIBREADLINE) $(TLIBS) -rpath "$(libdir)"
 
 sqldiff$(TEXE):	$(TOP)/tool/sqldiff.c sqlite3.c sqlite3.h
-	$(LTLINK) -o $@ $(TOP)/tool/sqldiff.c	sqlite3.c $(TLIBS)
+	$(LTLINK) -o $@ $(TOP)/tool/sqldiff.c sqlite3.c $(TLIBS)
 
 fuzzershell$(TEXE):	$(TOP)/tool/fuzzershell.c sqlite3.c sqlite3.h
-	$(LTLINK) -o $@ $(TOP)/tool/fuzzershell.c	sqlite3.c $(TLIBS)
+	$(LTLINK) -o $@ $(TOP)/tool/fuzzershell.c sqlite3.c $(TLIBS)
 
 fuzzcheck$(TEXE):	$(TOP)/test/fuzzcheck.c sqlite3.c sqlite3.h
-	$(LTLINK) -o $@ $(TOP)/test/fuzzcheck.c	sqlite3.c $(TLIBS)
+	$(LTLINK) -o $@ $(TOP)/test/fuzzcheck.c sqlite3.c $(TLIBS)
 
 mptester$(TEXE):	sqlite3.c $(TOP)/mptest/mptest.c
 	$(LTLINK) -o $@ -I. $(TOP)/mptest/mptest.c sqlite3.c \
@@ -1123,6 +1123,7 @@ clean:
 	rm -f sqlite-*-output.vsix
 	rm -f mptester mptester.exe
 	rm -f fuzzershell fuzzershell.exe
+	rm -f fuzzcheck fuzzcheck.exe
 	rm -f sqldiff sqldiff.exe
 
 distclean:	clean
