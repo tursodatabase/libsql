@@ -104,7 +104,7 @@ struct MatchinfoBuffer {
   int nElem;
   int bGlobal;                    /* Set if global data is loaded */
   char *zMatchinfo;
-  u32 aMatchinfo[0];
+  u32 aMatchinfo[1];
 };
 
 
@@ -130,7 +130,7 @@ struct StrBuffer {
 */
 static MatchinfoBuffer *fts3MIBufferNew(int nElem, const char *zMatchinfo){
   MatchinfoBuffer *pRet;
-  int nByte = sizeof(u32) * (2*nElem + 2) + sizeof(MatchinfoBuffer);
+  int nByte = sizeof(u32) * (2*nElem + 1) + sizeof(MatchinfoBuffer);
   int nStr = (int)strlen(zMatchinfo);
 
   pRet = sqlite3_malloc(nByte + nStr+1);
