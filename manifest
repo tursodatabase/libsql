@@ -1,5 +1,5 @@
-C Avoid\sbranching\son\san\suninitalized\svariable\swhen\scomparing\sSQL\svalues\swith\sthe\sundefined\sserial\stypes\s10\sand\s11\s(which\sonly\sappear\sin\scorrupt\sdatabases).
-D 2015-05-26T20:07:32.939
+C Avoid\sa\sbuffer\soverread\swhen\scomparing\sagainst\sa\scorrupt\srecord\sthat\sspans\sat\sleast\sone\soverflow\spage.
+D 2015-05-26T20:31:20.007
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3feb7cbdad8898fe7a8a24355b4a753029c3ec3b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -192,7 +192,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c ff743689c4d6c5cb55ad42ed9d174b2b3e71f1e3
 F src/bitvec.c 5eb7958c3bf65210211cbcfc44eff86d0ded7c9d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c 82bb9ad936fc513682a68f6d9444011266e6b459
+F src/btree.c 51cafeb18184dcb46285120d5574da6e19c58362
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 973a22a6fd61350b454ad614832b1f0a5e25a1e4
 F src/build.c 9552e7490b0310a8c73fcf3a0c36e7624789d8df
@@ -316,7 +316,7 @@ F src/vdbe.c 6aee8a041742413ab3113e6682bc7ad1628a2bbe
 F src/vdbe.h 7e538ecf47dccb307ea2d087c3ddc2dd8d70e79d
 F src/vdbeInt.h f0ccddac48583d5f762dc554a9f79e85ea8807e0
 F src/vdbeapi.c 6a0d7757987018ff6b1b81bc5293219cd26bb299
-F src/vdbeaux.c d3e4b36e6e6a7ada756993f1a0c7c89f2183fcf1
+F src/vdbeaux.c 46f9bc4b32866082eb87a36b461e487a0bbdbe8e
 F src/vdbeblob.c 4f2e8e075d238392df98c5e03a64342465b03f90
 F src/vdbemem.c 21f9169289a804308f6cdde55e9417fb8336997f
 F src/vdbesort.c f5009e7a35e3065635d8918b9a31f498a499976b
@@ -1279,7 +1279,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5e3e410bf49a29efbf9ff3ef048e158804ca0027
-R f39b315003c60aaa407135f808ae9f63
+P b4a45d3b78fede2433ac18f20b1ab7bddee77059
+R f36cc3a04ab23b9a0c27493daaf0c4c0
 U dan
-Z bbb0b6475f661c6ff9c98c6db1ebf479
+Z 4ff3966eaffa78ba4bc7061be84a775f

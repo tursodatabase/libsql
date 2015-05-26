@@ -4951,18 +4951,22 @@ int sqlite3BtreeMovetoUnpacked(
           /* The record flows over onto one or more overflow pages. In
           ** this case the whole cell needs to be parsed, a buffer allocated
           ** and accessPayload() used to retrieve the record into the
-          ** buffer before VdbeRecordCompare() can be called. */
+          ** buffer before VdbeRecordCompare() can be called. An extra
+          ** byte of zeroed padding is allocated at the end of the buffer,
+          ** as this stops the record-compare routines from reading past
+          ** the end of the buffer if the record is corrupt.  */
           void *pCellKey;
           u8 * const pCellBody = pCell - pPage->childPtrSize;
           btreeParseCellPtr(pPage, pCellBody, &pCur->info);
           nCell = (int)pCur->info.nKey;
-          pCellKey = sqlite3Malloc( nCell );
+          pCellKey = sqlite3Malloc( nCell+1 );
           if( pCellKey==0 ){
             rc = SQLITE_NOMEM;
             goto moveto_finish;
           }
           pCur->aiIdx[pCur->iPage] = (u16)idx;
           rc = accessPayload(pCur, 0, nCell, (unsigned char*)pCellKey, 2);
+          ((unsigned char *)pCellKey)[nCell] = 0;
           if( rc ){
             sqlite3_free(pCellKey);
             goto moveto_finish;

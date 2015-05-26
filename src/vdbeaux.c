@@ -3651,7 +3651,7 @@ int sqlite3VdbeRecordCompareWithSkip(
     if( pRhs->flags & MEM_Int ){
       serial_type = aKey1[idx1];
       testcase( serial_type==12 );
-      if( serial_type>=12 ){
+      if( serial_type>=10 ){
         rc = +1;
       }else if( serial_type==0 ){
         rc = -1;
