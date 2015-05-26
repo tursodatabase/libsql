@@ -277,5 +277,37 @@ foreach {tn cnt where eqp} $queries {
   do_eqp_test 5.7.$tn.2  "SELECT count(*) FROM t46 WHERE $where" $eqp
 }
 
+#-------------------------------------------------------------------------
+# Check that redundant UNIQUE constraints do not cause a problem.
+#
+do_execsql_test 6.0 {
+  CREATE TABLE t47(a, b UNIQUE PRIMARY KEY) WITHOUT ROWID;
+  CREATE INDEX i47 ON t47(a);
+  INSERT INTO t47 VALUES(1, 2);
+  INSERT INTO t47 VALUES(2, 4);
+  INSERT INTO t47 VALUES(3, 6);
+  INSERT INTO t47 VALUES(4, 8);
+
+  VACUUM;
+  PRAGMA integrity_check;
+  SELECT name FROM sqlite_master WHERE tbl_name = 't47';
+} {ok t47 i47}
+
+do_execsql_test 6.1 {
+  CREATE TABLE t48(
+    a UNIQUE UNIQUE, 
+    b UNIQUE, 
+    PRIMARY KEY(a), 
+    UNIQUE(a)
+  ) WITHOUT ROWID;
+  INSERT INTO t48 VALUES('a', 'b'), ('c', 'd'), ('e', 'f');
+  VACUUM;
+  PRAGMA integrity_check;
+  SELECT name FROM sqlite_master WHERE tbl_name = 't48';
+} {
+  ok  t48   sqlite_autoindex_t48_2
+}
+
+
   
 finish_test

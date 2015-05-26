@@ -1325,14 +1325,11 @@ void sqlite3AddPrimaryKey(
        "INTEGER PRIMARY KEY");
 #endif
   }else{
-    Vdbe *v = pParse->pVdbe;
     Index *p;
-    if( v ) pParse->addrSkipPK = sqlite3VdbeAddOp0(v, OP_Noop);
     p = sqlite3CreateIndex(pParse, 0, 0, 0, pList, onError, 0,
                            0, sortOrder, 0);
     if( p ){
       p->idxType = SQLITE_IDXTYPE_PRIMARYKEY;
-      if( v ) sqlite3VdbeJumpHere(v, pParse->addrSkipPK);
     }
     pList = 0;
   }
@@ -1685,14 +1682,6 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
     sqlite3VdbeGetOp(v, pParse->addrCrTab)->opcode = OP_CreateIndex;
   }
 
-  /* Bypass the creation of the PRIMARY KEY btree and the sqlite_master
-  ** table entry.
-  */
-  if( pParse->addrSkipPK ){
-    assert( v );
-    sqlite3VdbeGetOp(v, pParse->addrSkipPK)->opcode = OP_Goto;
-  }
-
   /* Locate the PRIMARY KEY index.  Or, if this table was originally
   ** an INTEGER PRIMARY KEY table, create a new PRIMARY KEY index. 
   */
@@ -1710,6 +1699,16 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
     pTab->iPKey = -1;
   }else{
     pPk = sqlite3PrimaryKeyIndex(pTab);
+
+    /* Bypass the creation of the PRIMARY KEY btree and the sqlite_master
+    ** table entry. This is only required if currently generating VDBE
+    ** code for a CREATE TABLE (not when parsing one as part of reading
+    ** a database schema).  */
+    if( v ){
+      assert( db->init.busy==0 );
+      sqlite3VdbeGetOp(v, pPk->tnum)->opcode = OP_Goto;
+    }
+
     /*
     ** Remove all redundant columns from the PRIMARY KEY.  For example, change
     ** "PRIMARY KEY(a,b,a,b,c,b,c,d)" into just "PRIMARY KEY(a,b,c,d)".  Later
@@ -3250,10 +3249,15 @@ Index *sqlite3CreateIndex(
     v = sqlite3GetVdbe(pParse);
     if( v==0 ) goto exit_create_index;
 
-
-    /* Create the rootpage for the index
-    */
     sqlite3BeginWriteOperation(pParse, 1, iDb);
+
+    /* Create the rootpage for the index using CreateIndex. But before
+    ** doing so, code a Noop instruction and store its address in 
+    ** Index.tnum. This is required in case this index is actually a 
+    ** PRIMARY KEY and the table is actually a WITHOUT ROWID table. In 
+    ** that case the convertToWithoutRowidTable() routine will replace
+    ** the Noop with a Goto to jump over the VDBE code generated below. */
+    pIndex->tnum = sqlite3VdbeAddOp0(v, OP_Noop);
     sqlite3VdbeAddOp2(v, OP_CreateIndex, iDb, iMem);
 
     /* Gather the complete text of the CREATE INDEX statement into
@@ -3293,6 +3297,8 @@ Index *sqlite3CreateIndex(
          sqlite3MPrintf(db, "name='%q' AND type='index'", pIndex->zName));
       sqlite3VdbeAddOp1(v, OP_Expire, 0);
     }
+
+    sqlite3VdbeJumpHere(v, pIndex->tnum);
   }
 
   /* When adding an index to the list of indices for a table, make

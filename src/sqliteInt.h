@@ -1811,6 +1811,14 @@ struct UnpackedRecord {
 ** and the value of Index.onError indicate the which conflict resolution 
 ** algorithm to employ whenever an attempt is made to insert a non-unique
 ** element.
+**
+** While parsing a CREATE TABLE or CREATE INDEX statement in order to
+** generate VDBE code (as opposed to parsing one read from an sqlite_master
+** table as part of parsing an existing database schema), transient instances
+** of this structure may be created. In this case the Index.tnum variable is
+** used to store the address of a VDBE instruction, not a database page
+** number (it cannot - the database page is not allocated until the VDBE
+** program is executed). See convertToWithoutRowidTable() for details.
 */
 struct Index {
   char *zName;             /* Name of this index */
@@ -2639,7 +2647,6 @@ struct Parse {
   Parse *pToplevel;    /* Parse structure for main program (or NULL) */
   Table *pTriggerTab;  /* Table triggers are being coded for */
   int addrCrTab;       /* Address of OP_CreateTable opcode on CREATE TABLE */
-  int addrSkipPK;      /* Address of instruction to skip PRIMARY KEY index */
   u32 nQueryLoop;      /* Est number of iterations of a query (10*log2(N)) */
   u32 oldmask;         /* Mask of old.* columns referenced */
   u32 newmask;         /* Mask of new.* columns referenced */
