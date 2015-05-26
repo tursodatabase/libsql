@@ -1,9 +1,9 @@
-C Enhance\sfuzzcheck\swith\sthe\sability\sto\sstore\sdescriptions\sin\seach\ssource\ndatabase\sand\sto\srun\smultiple\ssource\sdatabases\sin\sa\ssingle\sinvocation.
-D 2015-05-26T17:57:56.164
+C The\s"make\sfuzztest"\starget\snow\suses\sfuzzcheck\sinstead\sof\sfuzzershell.\s\sTest\ndata\sis\sadded\sfor\sdatabase\sfuzz\stesting.
+D 2015-05-26T19:08:14.763
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in 69b596e4be75a16f4e55587f29db66497b207fad
+F Makefile.in 3feb7cbdad8898fe7a8a24355b4a753029c3ec3b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 6c5a92060e8e5fe465186ea7facfc80c258bcf9e
+F Makefile.msc d37d2c2323df3acae6e24c71a478889421c17264
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md 0bfccb18927349653c09137a458b961fa8ab4cb9
 F VERSION ce0ae95abd7121c534f6917c1c8f2b70d9acd4db
@@ -171,7 +171,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk ed889716a9ef6887d8732e3a6fd8774e85199643
+F main.mk 031e36b22e2be9b9fdab086fd3115fc88c2e37bd
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
 F mkopcodeh.awk d5e22023b5238985bb54a72d33e0ac71fe4f8a32
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
@@ -306,7 +306,7 @@ F src/test_vfs.c 3b65d42e18b262805716bd96178c81da8f2d9283
 F src/test_vfstrace.c bab9594adc976cbe696ff3970728830b4c5ed698
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 6bbcc9fe50c917864d48287b4792d46d6e873481
-F src/tokenize.c af8cbbca6db6b664ffecafa236b06629ef6d35c4
+F src/tokenize.c 27d60b6bf4a92d17c329a11ff9fe94081b2a8510
 F src/trigger.c 322f23aad694e8f31d384dcfa386d52a48d3c52f
 F src/update.c 487747b328b7216bb7f6af0695d6937d5c9e605f
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
@@ -651,9 +651,10 @@ F test/fuzz2.test 76dc35b32b6d6f965259508508abce75a6c4d7e1
 F test/fuzz3.test efd384b896c647b61a2c1848ba70d42aad60a7b3
 F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
 F test/fuzz_malloc.test 328f70aaca63adf29b4c6f06505ed0cf57ca7c26
-F test/fuzzcheck.c 69998e6430903af8f1904dfa8c7fc21c94d59ebc
-F test/fuzzdata1.txt 9fceb50868e0b798160e83742bd7e44e457176a0
-F test/fuzzdata2.txt ba9b4467d7ec46cc85d32c0d031540cd727ae6ad
+F test/fuzzcheck.c 348c2ac1ef3fde2eb7d312d5bf6fbf7ff42033b3
+F test/fuzzdata1.db b60254eeb6bc11474071b883059662a73c48da7f
+F test/fuzzdata2.db f03a420d3b822cc82e4f894ca957618fbe9c4973
+F test/fuzzdata3.db 57ae47d2a1c837fb8ddc10ce4ab56a04ad044cb4
 F test/fuzzer1.test d4c52aaf3ef923da293a2653cfab33d02f718a36
 F test/fuzzerfault.test 8792cd77fd5bce765b05d0c8e01b9edcf8af8536
 F test/genesis.tcl 1e2e2e8e5cc4058549a154ff1892fe5c9de19f98
@@ -767,7 +768,7 @@ F test/minmax.test 42fbad0e81afaa6e0de41c960329f2b2c3526efd
 F test/minmax2.test b44bae787fc7b227597b01b0ca5575c7cb54d3bc
 F test/minmax3.test cc1e8b010136db0d01a6f2a29ba5a9f321034354
 F test/minmax4.test 936941484ebdceb8adec7c86b6cd9b6e5e897c1f
-F test/misc1.test 2bb46a3656e97f80c82880a94ea10d76a3b60cb0
+F test/misc1.test 3f1c479c5a093a6280f378c0fbff1c2701486660
 F test/misc2.test 00d7de54eda90e237fc9a38b9e5ccc769ebf6d4d
 F test/misc3.test cf3dda47d5dda3e53fc5804a100d3c82be736c9d
 F test/misc4.test 0d8be3466adf123a7791a66ba2bc8e8d229e87f3
@@ -776,7 +777,6 @@ F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test edd0b63e2ee29a256900b0514f6fff27e19e9bb2
 F test/misc8.test fc2754d38892f7dac30c22db3616c2764f117d66
 F test/misuse.test 3c34719944ba045cc6c188a4852ba04680728912
-F test/mkfuzzdata1.tcl 5f9c33fadc64b078bb4a2c04c18b6dd3da075bec
 F test/mmap1.test 1bfd611b9841eafb44f7d83c0788e146d84a33c9
 F test/mmap2.test 9d6dd9ddb4ad2379f29cc78f38ce1e63ed418022
 F test/mmap3.test c92273e16eb8d23c1d55c9815b446bb72ef0512e
@@ -1279,7 +1279,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5b46d2a78a45de4176b666bfc89c2aaa6f083662
-R 0ae8e5db841e94a0cd60c9e4742373e1
+P 193364c81c301a41c16835108d23ad2ab84d9dd7 e85628e34ac684b8a23f49eee71e4d6546e0ef64
+R 3d82c0fa4f6ee04379bd9745bde5d911
+T +closed e85628e34ac684b8a23f49eee71e4d6546e0ef64
 U drh
-Z f62c751ed8a012eb7d841a949af555ac
+Z f05d0da940377f1e118d67abedff2c44

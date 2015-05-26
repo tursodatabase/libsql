@@ -1190,6 +1190,13 @@ TESTPROGS = \
   sqlite3_analyzer.exe \
   sqldiff.exe
 
+# Databases containing fuzzer test cases
+#
+FUZZDATA = \
+  $(TOP)\test\fuzzdata1.db \
+  $(TOP)\test\fuzzdata2.db \
+  $(TOP)\test\fuzzdata3.db
+
 
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
@@ -1660,7 +1667,7 @@ extensiontest: testfixture.exe testloadext.dll
 fulltest:	$(TESTPROGS) fuzztest
 	.\testfixture.exe $(TOP)\test\all.test
 
-soaktest:	$(TESTPROGS) fuzzoomtest
+soaktest:	$(TESTPROGS)
 	.\testfixture.exe $(TOP)\test\all.test -soak=1
 
 fulltestonly:	$(TESTPROGS) fuzztest
@@ -1669,16 +1676,13 @@ fulltestonly:	$(TESTPROGS) fuzztest
 queryplantest:	testfixture.exe sqlite3.exe
 	.\testfixture.exe $(TOP)\test\permutations.test queryplanner
 
-fuzztest:	fuzzershell.exe
-	.\fuzzershell.exe $(TOP)\test\fuzzdata1.txt $(TOP)\test\fuzzdata2.txt
-
-fuzzoomtest:	fuzzershell.exe
-	.\fuzzershell.exe -f $(TOP)\test\fuzzdata1.txt --oom
+fuzztest:	fuzzcheck.exe
+	.\fuzzcheck.exe $(FUZZDATA)
 
 test:	$(TESTPROGS) fuzztest
 	.\testfixture.exe $(TOP)\test\veryquick.test
 
-smoketest:	$(TESTPROGS) fuzzershell.exe
+smoketest:	$(TESTPROGS)
 	.\testfixture.exe $(TOP)\test\main.test
 
 sqlite3_analyzer.c: $(SQLITE3C) $(TOP)\src\tclsqlite.c $(TOP)\tool\spaceanal.tcl

@@ -522,6 +522,12 @@ TESTPROGS = \
   sqlite3_analyzer$(TEXE) \
   sqldiff$(TEXE)
 
+# Databases containing fuzzer test cases
+#
+FUZZDATA = \
+  $(TOP)/test/fuzzdata1.db \
+  $(TOP)/test/fuzzdata2.db \
+  $(TOP)/test/fuzzdata3.db
 
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
@@ -975,7 +981,7 @@ fulltest:	$(TESTPROGS) fuzztest
 	./testfixture$(TEXE) $(TOP)/test/all.test
 
 # Really really long testing
-soaktest:	$(TESTPROGS) fuzzoomtest
+soaktest:	$(TESTPROGS)
 	./testfixture$(TEXE) $(TOP)/test/all.test -soak=1
 
 # Do extra testing but not everything.
@@ -983,11 +989,8 @@ fulltestonly:	$(TESTPROGS)
 	./testfixture$(TEXE) $(TOP)/test/full.test
 
 # Fuzz testing
-fuzztest:	fuzzershell$(TEXE)
-	./fuzzershell$(TEXE) $(TOP)/test/fuzzdata1.txt $(TOP)/test/fuzzdata2.txt
-
-fuzzoomtest:	fuzzershell$(TEXE)
-	./fuzzershell$(TEXE) -f $(TOP)/test/fuzzdata1.txt --oom
+fuzztest:	fuzzcheck$(TEXE)
+	./fuzzcheck$(TEXE) $(FUZZDATA)
 
 # This is the common case.  Run many tests but not those that take
 # a really long time.
@@ -998,15 +1001,15 @@ test:	$(TESTPROGS) fuzztest
 # Run a test using valgrind.  This can take a really long time
 # because valgrind is so much slower than a native machine.
 #
-valgrindtest:	$(TESTPROGS) fuzzershell$(TEXE)
-	valgrind -v ./fuzzershell$(TEXE) -f $(TOP)/test/fuzzdata1.txt
+valgrindtest:	$(TESTPROGS) fuzzcheck$(TEXE)
+	valgrind -v ./fuzzcheck$(TEXE) $(FUZZDATA)
 	OMIT_MISUSE=1 valgrind -v ./testfixture$(TEXE) $(TOP)/test/permutations.test valgrind
 
 # A very fast test that checks basic sanity.  The name comes from
 # the 60s-era electronics testing:  "Turn it on and see if smoke
 # comes out."
 #
-smoketest:	$(TESTPROGS) fuzzershell$(TEXE)
+smoketest:	$(TESTPROGS) fuzzcheck$(TEXE)
 	./testfixture$(TEXE) $(TOP)/test/main.test
 
 sqlite3_analyzer.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl
