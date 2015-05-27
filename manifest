@@ -1,7 +1,7 @@
-C All\sbytes\sof\sa\spage\sare\sinitialized,\seven\sbytes\sthat\sfollow\sa\s2-byte\scell\non\sa\smalformed\spage.
-D 2015-05-27T18:13:35.676
+C Fix\sa\sminor\sand\sharmless\smemory\sleak\sin\sfuzzcheck.\s\sAdjust\sthe\smakefiles\nto\srun\sfuzzcheck\swith\s--quiet\son\svalgrind\stests.
+D 2015-05-27T18:19:50.794
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in afc69c576d95c25380e973496434be5f85204fa7
+F Makefile.in 994bab32a3a69e0c35bd148b65cde49879772964
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc d37d2c2323df3acae6e24c71a478889421c17264
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
@@ -171,7 +171,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 7c4a0434aafc8537cfe972a8644039411a63b5bb
+F main.mk 8d418497da6a152a59b00d64ae3d66f3c665974c
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
 F mkopcodeh.awk d5e22023b5238985bb54a72d33e0ac71fe4f8a32
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
@@ -651,7 +651,7 @@ F test/fuzz2.test 76dc35b32b6d6f965259508508abce75a6c4d7e1
 F test/fuzz3.test efd384b896c647b61a2c1848ba70d42aad60a7b3
 F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
 F test/fuzz_malloc.test 328f70aaca63adf29b4c6f06505ed0cf57ca7c26
-F test/fuzzcheck.c c7dde1815b4a3973f6232fa474646c082b5579a1
+F test/fuzzcheck.c a60f926e3fa86c8d33908406d75eec868c22b9ca
 F test/fuzzdata1.db b60254eeb6bc11474071b883059662a73c48da7f
 F test/fuzzdata2.db f03a420d3b822cc82e4f894ca957618fbe9c4973
 F test/fuzzdata3.db 57ae47d2a1c837fb8ddc10ce4ab56a04ad044cb4
@@ -1279,7 +1279,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 95eaa49f4ee071c7a0f690a695f1f2d1ebca68a8
-R bb66ca065683b551ad898269100a4272
+P 7373a004ed0e2781cda503c73e9a94f24350ef79
+R 5154fcf524820f4fb4fd44b2aec38e6c
 U drh
-Z 3323dea07601fb482f9ef3d7ec44a46d
+Z a4567a6b2d0fbb930db71dddcaca79e5

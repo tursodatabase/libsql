@@ -875,5 +875,6 @@ int main(int argc, char **argv){
            nTest, (int)(iElapse/1000), (int)(iElapse%1000),
            sqlite3_libversion(), sqlite3_sourceid());
   }
+  free(azSrcDb);
   return 0;
 }
