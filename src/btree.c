@@ -6897,13 +6897,13 @@ static int balance_nonroot(
         memcpy(apCell[nCell], &pOld->aData[8], 4);
       }else{
         assert( leafCorrection==4 );
-        if( szCell[nCell]<4 ){
+        while( szCell[nCell]<4 ){
           /* Do not allow any cells smaller than 4 bytes. If a smaller cell
           ** does exist, pad it with 0x00 bytes. */
           assert( szCell[nCell]==3 || CORRUPT_DB );
           assert( apCell[nCell]==&aSpace1[iSpace1-3] || CORRUPT_DB );
           aSpace1[iSpace1++] = 0x00;
-          szCell[nCell] = 4;
+          szCell[nCell]++;
         }
       }
       nCell++;
