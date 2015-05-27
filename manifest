@@ -1,5 +1,5 @@
-C Disallow\sthe\suse\sof\s"rowid"\sin\sCTEs\s-\sit\shas\snever\sworked\scorrectly\sand\sit\nmakes\sno\ssense,\sso\swe\smight\sas\swell\smake\sit\san\sexplicit\serror.\nAlso:\sadd\sthe\sPRAGMA\scell_size_check=ON\scommand.
-D 2015-05-27T15:10:20.505
+C A\sdifferent\sapproach\sto\spreventing\sbuffer\soverreads\swhen\scomparing\sa\svector\nof\svalues\swith\sa\scorrupt\sindex\srecord\sthat\sspans\sat\sleast\sone\soverflow\spage.
+D 2015-05-27T15:42:53.434
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in afc69c576d95c25380e973496434be5f85204fa7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -192,7 +192,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c ff743689c4d6c5cb55ad42ed9d174b2b3e71f1e3
 F src/bitvec.c 5eb7958c3bf65210211cbcfc44eff86d0ded7c9d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c 5905cbd1436d36908cf68a42145a43efb650ac34
+F src/btree.c de509eeae5e8dbf365dbc37d1cf14dc6c12937c8
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 973a22a6fd61350b454ad614832b1f0a5e25a1e4
 F src/build.c 85a169a0a22f8b80caf513eaf2944d39b979f571
@@ -1279,9 +1279,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 62a5b3633a086694ef0e579a0a82322cb1ae3d60 2ead43f074d01312c7642e1df9abccc95547f019 0055df0445932a43e42b318ef88672dcbe312c3a
-R 7ab4fcc903cf51f8eb4412f548c7eaca
-T +closed 0055df0445932a43e42b318ef88672dcbe312c3a
-T +closed 2ead43f074d01312c7642e1df9abccc95547f019
+P 19e2cebc12aaa4e72d3bad74af73575a0457e5d4 7e9e1b6123bc455dd7d1c894b6154ccd27acec18
+R d744c38ef8fa2ca29d4e58d42264be16
+T +closed 7e9e1b6123bc455dd7d1c894b6154ccd27acec18
 U drh
-Z c5914e6af6583bdf37d7650c746e4d3e
+Z 5a3a1f535bbc53578663f80d8c6e8f69
