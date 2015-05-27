@@ -596,6 +596,7 @@ static void showHelp(void){
 "Read databases and SQL scripts from SOURCE-DB and execute each script against\n"
 "each database, checking for crashes and memory leaks.\n"
 "Options:\n"
+"  --cell-size-check     Set the PRAGMA cell_size_check=ON\n"
 "  --dbid N              Use only the database where dbid=N\n"
 "  --help                Show this help text\n"    
 "  -q                    Reduced output\n"
@@ -634,6 +635,7 @@ int main(int argc, char **argv){
   int nTest = 0;               /* Total number of tests performed */
   char *zDbName = "";          /* Appreviated name of a source database */
   const char *zFailCode = 0;   /* Value of the TEST_FAILURE environment variable */
+  int cellSzCkFlag = 0;        /* --cell-size-check */
 
   iBegin = timeOfDay();
   g.zArgv0 = argv[0];
@@ -643,6 +645,9 @@ int main(int argc, char **argv){
     if( z[0]=='-' ){
       z++;
       if( z[0]=='-' ) z++;
+      if( strcmp(z,"cell-size-check")==0 ){
+        cellSzCkFlag = 1;
+      }else
       if( strcmp(z,"dbid")==0 ){
         if( i>=argc-1 ) fatalError("missing arguments on %s", argv[i]);
         onlyDbid = atoi(argv[++i]);
@@ -825,6 +830,7 @@ int main(int argc, char **argv){
         }
         rc = sqlite3_open_v2("main.db", &db, openFlags, zVfs);
         if( rc ) fatalError("cannot open inmem database");
+        if( cellSzCkFlag ) runSql(db, "PRAGMA cell_size_check=ON", runFlags);
         runSql(db, (char*)pSql->a, runFlags);
         sqlite3_close(db);
         if( sqlite3_memory_used()>0 ) fatalError("memory leak");

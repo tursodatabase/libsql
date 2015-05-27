@@ -683,7 +683,7 @@ test:	$(TESTPROGS) fuzztest
 # because valgrind is so much slower than a native machine.
 #
 valgrindtest:	$(TESTPROGS) fuzzcheck$(EXE) $(FUZZDATA)
-	valgrind -v ./fuzzcheck$(EXE) $(FUZZDATA)
+	valgrind -v ./fuzzcheck$(EXE) --cell-size-check $(FUZZDATA)
 	OMIT_MISUSE=1 valgrind -v ./testfixture$(EXE) $(TOP)/test/permutations.test valgrind
 
 # A very fast test that checks basic sanity.  The name comes from

@@ -1,7 +1,7 @@
-C Avoid\sa\sbuffer\soverread\swhen\scomparing\sagainst\sa\scorrupt\srecord\sthat\sspans\sat\sleast\sone\soverflow\spage.
-D 2015-05-26T20:31:20.007
+C Add\sthe\s"PRAGMA\scell_size_check=ON"\scommand.
+D 2015-05-27T03:46:18.035
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in 3feb7cbdad8898fe7a8a24355b4a753029c3ec3b
+F Makefile.in afc69c576d95c25380e973496434be5f85204fa7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc d37d2c2323df3acae6e24c71a478889421c17264
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
@@ -171,7 +171,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 031e36b22e2be9b9fdab086fd3115fc88c2e37bd
+F main.mk 7c4a0434aafc8537cfe972a8644039411a63b5bb
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
 F mkopcodeh.awk d5e22023b5238985bb54a72d33e0ac71fe4f8a32
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
@@ -192,7 +192,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c ff743689c4d6c5cb55ad42ed9d174b2b3e71f1e3
 F src/bitvec.c 5eb7958c3bf65210211cbcfc44eff86d0ded7c9d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c 51cafeb18184dcb46285120d5574da6e19c58362
+F src/btree.c 5905cbd1436d36908cf68a42145a43efb650ac34
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 973a22a6fd61350b454ad614832b1f0a5e25a1e4
 F src/build.c 9552e7490b0310a8c73fcf3a0c36e7624789d8df
@@ -215,7 +215,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
 F src/loadext.c 29255bbe1cfb2ce9bbff2526a5ecfddcb49b9271
-F src/main.c bf14bc6a321965e528d8ab30087e9440335f2e4b
+F src/main.c 3a610587018485d9a12e38899dd8b8129b04d836
 F src/malloc.c 908c780fdddd472163c2d1b1820ae4081f01ad20
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c abe6ee469b6c5a35c7f22bfeb9c9bac664a1c987
@@ -244,7 +244,7 @@ F src/pcache.c 10539fb959849ad6efff80050541cab3d25089d4
 F src/pcache.h b44658c9c932d203510279439d891a2a83e12ba8
 F src/pcache1.c 69d137620a305f814398bd29a0c998038c0695e9
 F src/pragma.c c1f4d012ea9f6b1ce52d341b2cd0ad72d560afd7
-F src/pragma.h 09c89bca58e9a44de2116cc8272b8d454657129f
+F src/pragma.h b8632d7cdda7b25323fa580e3e558a4f0d4502cc
 F src/prepare.c 82e5db1013846a819f198336fed72c44c974e7b1
 F src/printf.c 13ce37e5574f9b0682fa86dbcf9faf76b9d82a15
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
@@ -255,7 +255,7 @@ F src/shell.c 07dda7cd692911d2f22269953418d049f2e2c0ee
 F src/sqlite.h.in 4d0ecd8e1e0272d9a2742b39602f5e4fad8d3246
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 2ebeb634e751a61a6f0eebfa0f4669f46a42f6cd
-F src/sqliteInt.h 26484793b2f8017960b30ae2d0cbc7512eff5b17
+F src/sqliteInt.h a45d51a1ba1add61b221c33c21ceb12dc336adeb
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c f266ad8a2892d659b74f0f50cb6a88b6e7c12179
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
@@ -651,7 +651,7 @@ F test/fuzz2.test 76dc35b32b6d6f965259508508abce75a6c4d7e1
 F test/fuzz3.test efd384b896c647b61a2c1848ba70d42aad60a7b3
 F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
 F test/fuzz_malloc.test 328f70aaca63adf29b4c6f06505ed0cf57ca7c26
-F test/fuzzcheck.c 348c2ac1ef3fde2eb7d312d5bf6fbf7ff42033b3
+F test/fuzzcheck.c c7dde1815b4a3973f6232fa474646c082b5579a1
 F test/fuzzdata1.db b60254eeb6bc11474071b883059662a73c48da7f
 F test/fuzzdata2.db f03a420d3b822cc82e4f894ca957618fbe9c4973
 F test/fuzzdata3.db 57ae47d2a1c837fb8ddc10ce4ab56a04ad044cb4
@@ -1241,7 +1241,7 @@ F tool/logest.c eef612f8adf4d0993dafed0416064cf50d5d33c6
 F tool/mkautoconfamal.sh d1a2da0e15b2ed33d60af35c7e9d483f13a8eb9f
 F tool/mkkeywordhash.c dfff09dbbfaf950e89af294f48f902181b144670
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
-F tool/mkpragmatab.tcl 94f196c9961e0ca3513e29f57125a3197808be2d
+F tool/mkpragmatab.tcl 40c287d3f929ece67da6e9e7c49885789960accf
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 69bae8ce4aa52d2ff82d4a8a856bf283ec035b2e
 F tool/mksqlite3c.tcl fdeab4c1eed90b7ab741ec12a7bc5c2fb60188bd
@@ -1279,7 +1279,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b4a45d3b78fede2433ac18f20b1ab7bddee77059
-R f36cc3a04ab23b9a0c27493daaf0c4c0
-U dan
-Z 4ff3966eaffa78ba4bc7061be84a775f
+P 62a5b3633a086694ef0e579a0a82322cb1ae3d60
+R 010488f120297f349ac64bbd79d606ed
+T *branch * cell-size-check-pragma
+T *sym-cell-size-check-pragma *
+T -sym-trunk *
+U drh
+Z d748b29c905901d502dcb715608a92ad
