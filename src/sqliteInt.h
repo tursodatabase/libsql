@@ -1634,8 +1634,9 @@ struct Table {
 #define TF_HasPrimaryKey   0x04    /* Table has a primary key */
 #define TF_Autoincrement   0x08    /* Integer primary key is autoincrement */
 #define TF_Virtual         0x10    /* Is a virtual table */
-#define TF_WithoutRowid    0x20    /* No rowid used. PRIMARY KEY is the key */
-#define TF_OOOHidden       0x40    /* Out-of-Order hidden columns */
+#define TF_WithoutRowid    0x20    /* No rowid.  PRIMARY KEY is the key */
+#define TF_NoVisibleRowid  0x40    /* No user-visible "rowid" column */
+#define TF_OOOHidden       0x80    /* Out-of-Order hidden columns */
 
 
 /*
@@ -1653,6 +1654,7 @@ struct Table {
 
 /* Does the table have a rowid */
 #define HasRowid(X)     (((X)->tabFlags & TF_WithoutRowid)==0)
+#define VisibleRowid(X) (((X)->tabFlags & TF_NoVisibleRowid)==0)
 
 /*
 ** Each foreign key constraint is an instance of the following structure.
