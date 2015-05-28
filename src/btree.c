@@ -6878,6 +6878,14 @@ static int balance_nonroot(
     int limit;
     MemPage *pOld = apOld[i];
 
+    /* Verify that all sibling pages are of the same "type" (table-leaf,
+    ** table-interior, index-leaf, or index-interior).
+    */
+    if( pOld->aData[0]!=apOld[0]->aData[0] ){
+      rc = SQLITE_CORRUPT_BKPT;
+      goto balance_cleanup;
+    }
+
     limit = pOld->nCell+pOld->nOverflow;
     if( pOld->nOverflow>0 ){
       for(j=0; j<limit; j++){
