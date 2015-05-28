@@ -1,5 +1,5 @@
-C Do\snot\sattempt\sto\stake\sany\swrite\slock\son\sa\sread-only\sdatabase\son\sWindows.
-D 2015-05-28T00:54:35.202
+C Add\sthe\sbtreeGetUnusedPage()\sroutine\sto\sbtree.c,\sand\suse\sit\sto\sdetect\scontent\npages\son\sthe\sfreelist\sand\sto\scause\sthat\scondition\sto\strigger\san\sSQLITE_CORRUPT.
+D 2015-05-28T03:28:27.932
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 994bab32a3a69e0c35bd148b65cde49879772964
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -192,7 +192,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c ff743689c4d6c5cb55ad42ed9d174b2b3e71f1e3
 F src/bitvec.c 5eb7958c3bf65210211cbcfc44eff86d0ded7c9d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c 84b1f0f4688c8da2c426a158502a77617ce5f286
+F src/btree.c 7cd71f5579269590ebc864cb0e196fa02c52339a
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 973a22a6fd61350b454ad614832b1f0a5e25a1e4
 F src/build.c 85a169a0a22f8b80caf513eaf2944d39b979f571
@@ -1280,7 +1280,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 06959d4ada53b765cae4b192a691fced4b8aebbb
-R b30cfcc10e16186636545a138869402d
+P a47ff0cdab0f82398c68ea770053f193f4812a51
+R 6b967d488166149b477f7892b5bb9a1c
 U drh
-Z 3b24ef1efe39a20b744ff0c0269b43f9
+Z 3a9fdccaff4c9c6bd17852b6f3db0358

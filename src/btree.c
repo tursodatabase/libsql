@@ -1723,10 +1723,10 @@ static MemPage *btreePageFromDbPage(DbPage *pDbPage, Pgno pgno, BtShared *pBt){
 
 /*
 ** Get a page from the pager.  Initialize the MemPage.pBt and
-** MemPage.aData elements if needed.
+** MemPage.aData elements if needed.  See also: btreeGetUnusedPage().
 **
-** If the noContent flag is set, it means that we do not care about
-** the content of the page at this time.  So do not go to the disk
+** If the PAGER_GET_NOCONTENT flag is set, it means that we do not care
+** about the content of the page at this time.  So do not go to the disk
 ** to fetch the content.  Just fill in the content with zeros for now.
 ** If in the future we call sqlite3PagerWrite() on this page, that
 ** means we have started to be concerned about content and the disk
@@ -1827,6 +1827,36 @@ static void releasePage(MemPage *pPage){
     sqlite3PagerUnrefNotNull(pPage->pDbPage);
   }
 }
+
+/*
+** Get an unused page.
+**
+** This works just like btreeGetPage() with the addition:
+**
+**   *  If the page is already in use for some other purpose, immediately
+**      release it and return an SQLITE_CURRUPT error.
+**   *  Make sure the isInit flag is clear
+*/
+static int btreeGetUnusedPage(
+  BtShared *pBt,       /* The btree */
+  Pgno pgno,           /* Number of the page to fetch */
+  MemPage **ppPage,    /* Return the page in this parameter */
+  int flags            /* PAGER_GET_NOCONTENT or PAGER_GET_READONLY */
+){
+  int rc = btreeGetPage(pBt, pgno, ppPage, flags);
+  if( rc==SQLITE_OK ){
+    if( sqlite3PagerPageRefcount((*ppPage)->pDbPage)>1 ){
+      releasePage(*ppPage);
+      *ppPage = 0;
+      return SQLITE_CORRUPT_BKPT;
+    }
+    (*ppPage)->isInit = 0;
+  }else{
+    *ppPage = 0;
+  }
+  return rc;
+}
+
 
 /*
 ** During a rollback, when the pager reloads information into the cache
@@ -5345,7 +5375,7 @@ static int allocateBtreePage(
       if( iTrunk>mxPage ){
         rc = SQLITE_CORRUPT_BKPT;
       }else{
-        rc = btreeGetPage(pBt, iTrunk, &pTrunk, 0);
+        rc = btreeGetUnusedPage(pBt, iTrunk, &pTrunk, 0);
       }
       if( rc ){
         pTrunk = 0;
@@ -5410,7 +5440,7 @@ static int allocateBtreePage(
             goto end_allocate_page;
           }
           testcase( iNewTrunk==mxPage );
-          rc = btreeGetPage(pBt, iNewTrunk, &pNewTrunk, 0);
+          rc = btreeGetUnusedPage(pBt, iNewTrunk, &pNewTrunk, 0);
           if( rc!=SQLITE_OK ){
             goto end_allocate_page;
           }
@@ -5490,7 +5520,7 @@ static int allocateBtreePage(
           }
           put4byte(&aData[4], k-1);
           noContent = !btreeGetHasContent(pBt, *pPgno)? PAGER_GET_NOCONTENT : 0;
-          rc = btreeGetPage(pBt, *pPgno, ppPage, noContent);
+          rc = btreeGetUnusedPage(pBt, *pPgno, ppPage, noContent);
           if( rc==SQLITE_OK ){
             rc = sqlite3PagerWrite((*ppPage)->pDbPage);
             if( rc!=SQLITE_OK ){
@@ -5538,7 +5568,7 @@ static int allocateBtreePage(
       MemPage *pPg = 0;
       TRACE(("ALLOCATE: %d from end of file (pointer-map page)\n", pBt->nPage));
       assert( pBt->nPage!=PENDING_BYTE_PAGE(pBt) );
-      rc = btreeGetPage(pBt, pBt->nPage, &pPg, bNoContent);
+      rc = btreeGetUnusedPage(pBt, pBt->nPage, &pPg, bNoContent);
       if( rc==SQLITE_OK ){
         rc = sqlite3PagerWrite(pPg->pDbPage);
         releasePage(pPg);
@@ -5552,11 +5582,12 @@ static int allocateBtreePage(
     *pPgno = pBt->nPage;
 
     assert( *pPgno!=PENDING_BYTE_PAGE(pBt) );
-    rc = btreeGetPage(pBt, *pPgno, ppPage, bNoContent);
+    rc = btreeGetUnusedPage(pBt, *pPgno, ppPage, bNoContent);
     if( rc ) return rc;
     rc = sqlite3PagerWrite((*ppPage)->pDbPage);
     if( rc!=SQLITE_OK ){
       releasePage(*ppPage);
+      *ppPage = 0;
     }
     TRACE(("ALLOCATE: %d from end of file\n", *pPgno));
   }
@@ -5566,17 +5597,8 @@ static int allocateBtreePage(
 end_allocate_page:
   releasePage(pTrunk);
   releasePage(pPrevTrunk);
-  if( rc==SQLITE_OK ){
-    if( sqlite3PagerPageRefcount((*ppPage)->pDbPage)>1 ){
-      releasePage(*ppPage);
-      *ppPage = 0;
-      return SQLITE_CORRUPT_BKPT;
-    }
-    (*ppPage)->isInit = 0;
-  }else{
-    *ppPage = 0;
-  }
-  assert( rc!=SQLITE_OK || sqlite3PagerIswriteable((*ppPage)->pDbPage) );
+  assert( rc!=SQLITE_OK || sqlite3PagerPageRefcount((*ppPage)->pDbPage)<=1 );
+  assert( rc!=SQLITE_OK || (*ppPage)->isInit==0 );
   return rc;
 }
 
