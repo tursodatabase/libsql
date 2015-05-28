@@ -220,5 +220,25 @@ do_execsql_test 7.2 {
   FROM t1 WHERE t1 MATCH 'a OR b+c'
 } {0 1 2 0}
 
+#-------------------------------------------------------------------------
+#
+do_execsql_test 8.0 {
+  CREATE VIRTUAL TABLE x1 USING fts5(a);
+}
+
+foreach {tn lRow res} {
+  4  {"a a a" "b" "a d"} {"[a] [a] [a]" "[a] d"}
+  1  {"b d" "a b"}       {"[b] [d]" "[a] b"}
+  2  {"d b" "a d"}       {"[d] [b]" "[a] d"}
+  3  {"a a d"}           {"[a] [a] d"}
+} {
+  execsql { DELETE FROM x1 }
+  foreach row $lRow { execsql { INSERT INTO x1 VALUES($row) } }
+  breakpoint
+  do_execsql_test 8.$tn {
+    SELECT highlight(x1, 0, '[', ']') FROM x1 WHERE x1 MATCH 'a OR (b AND d)';
+  } $res
+}
+
 finish_test
 

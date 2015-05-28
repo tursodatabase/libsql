@@ -76,13 +76,13 @@ do_test 3.0 {
     BEGIN;
   }
   for {set i 0} {$i < 20} {incr i} {
-    set str [string repeat "$i " 20]
+    set str [string repeat "$i " 50]
     execsql { INSERT INTO tt VALUES($str) }
   }
   execsql COMMIT
 } {}
 
-do_faultsim_test 2.1 -faults oom-t* -body {
+do_faultsim_test 3.1 -faults oom-t* -body {
   db eval {
     SELECT term FROM tv;
   }

@@ -272,28 +272,10 @@
 #define FTS5_SEGMENT_ROWID(segid, height, pgno) fts5_dri(segid, 0, height, pgno)
 #define FTS5_DLIDX_ROWID(segid, height, pgno)   fts5_dri(segid, 1, height, pgno)
 
-#if 0
-/*
-** The height of segment b-trees is actually limited to one less than 
-** (1<<HEIGHT_BITS). This is because the rowid address space for nodes
-** with such a height is used by doclist indexes.
-*/
-#define FTS5_SEGMENT_MAX_HEIGHT ((1 << FTS5_DATA_HEIGHT_B)-1)
-#endif
-
 /*
 ** Maximum segments permitted in a single index 
 */
 #define FTS5_MAX_SEGMENT 2000
-
-#if 0
-/*
-** The rowid for the doclist index associated with leaf page pgno of segment
-** segid in index idx.
-*/
-#define FTS5_DOCLIST_IDX_ROWID(segid, height, pgno) \
-        FTS5_SEGMENT_ROWID(segid, FTS5_SEGMENT_MAX_HEIGHT, pgno)
-#endif
 
 #ifdef SQLITE_DEBUG
 int sqlite3Fts5Corrupt() { return SQLITE_CORRUPT_VTAB; }
@@ -772,46 +754,6 @@ static void fts5CloseReader(Fts5Index *p){
   }
 }
 
-/*
-** Check if row iRowid exists in the %_data table, and that it contains
-** a blob value. If so, return SQLITE_ERROR (yes - SQLITE_ERROR, not 
-** SQLITE_OK). If not, return SQLITE_CORRUPT_VTAB.
-**
-** If an error occurs (e.g. OOM or IOERR), return the relevant error code.
-**
-** This function does not need to be efficient. It is part of vary rarely
-** invoked error handling code only.
-*/
-#if 0
-static int fts5CheckMissingRowid(Fts5Index *p, i64 iRowid){
-  const char *zFmt = "SELECT typeof(block)=='blob' FROM '%q'.%Q WHERE id=%lld";
-  int bOk = 0;
-  int rc;
-  char *zSql;
-
-  zSql = sqlite3_mprintf(zFmt, p->pConfig->zDb, p->zDataTbl, iRowid);
-  if( zSql==0 ){
-    rc = SQLITE_NOMEM;
-  }else{
-    sqlite3_stmt *pStmt;
-    rc = sqlite3_prepare_v2(p->pConfig->db, zSql, -1, &pStmt, 0);
-    if( rc==SQLITE_OK ){
-      if( SQLITE_ROW==sqlite3_step(pStmt) ){
-        bOk = sqlite3_column_int(pStmt, 0);
-      }
-      rc = sqlite3_finalize(pStmt);
-    }
-    sqlite3_free(zSql);
-  }
-
-  if( rc==SQLITE_OK ){
-    rc = bOk ? SQLITE_ERROR : FTS5_CORRUPT;
-  }
-
-  return rc;
-}
-#endif
-
 static Fts5Data *fts5DataReadOrBuffer(
   Fts5Index *p, 
   Fts5Buffer *pBuf, 
@@ -977,20 +919,6 @@ static void fts5DataDelete(Fts5Index *p, i64 iFirst, i64 iLast){
   sqlite3_step(p->pDeleter);
   p->rc = sqlite3_reset(p->pDeleter);
 }
-
-/*
-** Close the sqlite3_blob handle used to read records from the %_data table.
-** And discard any cached reads. This function is called at the end of
-** a read transaction or when any sub-transaction is rolled back.
-*/
-#if 0
-static void fts5DataReset(Fts5Index *p){
-  if( p->pReader ){
-    sqlite3_blob_close(p->pReader);
-    p->pReader = 0;
-  }
-}
-#endif
 
 /*
 ** Remove all records associated with segment iSegid.
@@ -3309,22 +3237,6 @@ static void fts5WriteAppendRowid(
   }
 }
 
-#if 0
-static void fts5WriteAppendPoslistInt(
-  Fts5Index *p, 
-  Fts5SegWriter *pWriter,
-  int iVal
-){
-  if( p->rc==SQLITE_OK ){
-    Fts5PageWriter *pPage = &pWriter->aWriter[0];
-    fts5BufferAppendVarint(&p->rc, &pPage->buf, iVal);
-    if( pPage->buf.n>=p->pConfig->pgsz ){
-      fts5WriteFlushLeaf(p, pWriter);
-    }
-  }
-}
-#endif
-
 static void fts5WriteAppendPoslistData(
   Fts5Index *p, 
   Fts5SegWriter *pWriter, 
@@ -3573,11 +3485,6 @@ static void fts5IndexMergeLevel(
     nInput = pLvl->nSeg;
   }
   bOldest = (pLvlOut->nSeg==1 && pStruct->nLevel==iLvl+2);
-
-#if 0
-fprintf(stdout, "merging %d segments from level %d!", nInput, iLvl);
-fflush(stdout);
-#endif
 
   assert( iLvl>=0 );
   for(fts5MultiIterNew(p, pStruct, 0, 0, 0, 0, iLvl, nInput, &pIter);
