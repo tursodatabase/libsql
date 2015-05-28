@@ -1,5 +1,5 @@
-C The\sfuzzoomtest\smakefile\starget\sis\sno\slonger\ssupported,\sso\supdate\nreleasetest.tcl\saccordingly.
-D 2015-05-27T19:35:08.477
+C Do\snot\sattempt\sto\stake\sany\swrite\slock\son\sa\sread-only\sdatabase\son\sWindows.
+D 2015-05-28T00:54:35.202
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 994bab32a3a69e0c35bd148b65cde49879772964
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -235,7 +235,7 @@ F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h abdb9a191a367793268fe553d25bab894e986a0e
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c 23eb5f56fac54d8fe0cb204291f3b3b2d94f23fc
-F src/os_win.c 97f7828a9554d753665b6fcf7540e31c2b3d6a6e
+F src/os_win.c 27cc135e2d0b8b1e2e4944db1e2669a6a18fa0f8
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 9bc918a009285f96ec6dac62dd764c7063552455
 F src/pager.h c3476e7c89cdf1c6914e50a11f3714e30b4e0a77
@@ -843,6 +843,7 @@ F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
 F test/rollback.test 458fe73eb3ffdfdf9f6ba3e9b7350a6220414dea
 F test/rollback2.test fc14cf6d1a2b250d2735ef16124b971bce152f14
 F test/rollbackfault.test 6a004f71087cc399296cffbb5429ea6da655ae65
+F test/rowallock.test f7f834125f11ff62f6e1ae7d0b07fd9228f2d5a2
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
 F test/rowid.test 742b5741584a8a44fd83e856cc2896688401d645
 F test/rtree.test 0c8d9dd458d6824e59683c19ab2ffa9ef946f798
@@ -1279,7 +1280,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8bfe834432b37f94779da6c71fc369651f024590
-R 7269484077d02112c37e52a4369ae264
+P 06959d4ada53b765cae4b192a691fced4b8aebbb
+R b30cfcc10e16186636545a138869402d
 U drh
-Z 7d5ba49e31193e65fb96ee7978e16396
+Z 3b24ef1efe39a20b744ff0c0269b43f9
