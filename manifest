@@ -1,5 +1,5 @@
-C Earlier\sdetection\sof\sincompatible\ssibling\spages\sin\sbalance_nonroot.
-D 2015-05-28T11:23:11.109
+C Added\scomments\sand\stestcase()\smacros\sto\serror\scases\sin\sthe\sbtree\ssearch.
+D 2015-05-28T15:14:32.636
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 994bab32a3a69e0c35bd148b65cde49879772964
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -192,7 +192,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c ff743689c4d6c5cb55ad42ed9d174b2b3e71f1e3
 F src/bitvec.c 5eb7958c3bf65210211cbcfc44eff86d0ded7c9d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c f34b9368934017f9300462c947f24808fc804fe1
+F src/btree.c a1f510492027253e016d347d78d3c94ea0376595
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 973a22a6fd61350b454ad614832b1f0a5e25a1e4
 F src/build.c 85a169a0a22f8b80caf513eaf2944d39b979f571
@@ -1280,7 +1280,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 467b13a40171dd8462dc11d05bb1e9cb588e6a23
-R 28872cdddc660eeb8a0db0c548d4f7c4
+P 60a09f17d8b70dbc4b020586a1b81bce76882729
+R f6f606a9ee18565706ed9fa4a93542b7
 U drh
-Z 7c4a1962ababfd83666abb4833ebdc57
+Z daad2a296f17463ceed0e3de94772244

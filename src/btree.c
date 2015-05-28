@@ -4943,7 +4943,7 @@ int sqlite3BtreeMovetoUnpacked(
       }
     }else{
       for(;;){
-        int nCell;
+        int nCell;  /* Size of the pCell cell in bytes */
         pCell = findCell(pPage, idx) + pPage->childPtrSize;
 
         /* The maximum supported page-size is 65536 bytes. This means that
@@ -4982,7 +4982,10 @@ int sqlite3BtreeMovetoUnpacked(
           u8 * const pCellBody = pCell - pPage->childPtrSize;
           btreeParseCellPtr(pPage, pCellBody, &pCur->info);
           nCell = (int)pCur->info.nKey;
-          testcase( nCell<0 );
+          testcase( nCell<0 );   /* True if key size is 2^32 or more */
+          testcase( nCell==0 );  /* Invalid key size:  0x80 0x80 0x00 */
+          testcase( nCell==1 );  /* Invalid key size:  0x80 0x80 0x01 */
+          testcase( nCell==2 );  /* Minimum legal index key size */
           if( nCell<2 ){
             rc = SQLITE_CORRUPT_BKPT;
             goto moveto_finish;
