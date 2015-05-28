@@ -426,6 +426,12 @@ do_test 17.2 {
   set res
 } {{a b c} {a b c} {a b c}}
 
+reset_db
+do_execsql_test 18.1 {
+  CREATE VIRTUAL TABLE c2 USING fts5(x, y);
+  INSERT INTO c2 VALUES('x x x', 'x x x');
+  SELECT rowid FROM c2 WHERE c2 MATCH 'y:x';
+} {1}
 
 finish_test
 

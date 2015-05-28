@@ -653,6 +653,45 @@ static int fts5ExprNearNextRowidMatch(
 }
 
 /*
+** IN/OUT parameter (*pa) points to a position list n bytes in size. If
+** the position list contains entries for column iCol, then (*pa) is set
+** to point to the sub-position-list for that column and the number of
+** bytes in it returned. Or, if the argument position list does not
+** contain any entries for column iCol, return 0.
+*/
+static int fts5ExprExtractCol(
+  const u8 **pa,                  /* IN/OUT: Pointer to poslist */
+  int n,                          /* IN: Size of poslist in bytes */
+  int iCol                        /* Column to extract from poslist */
+){
+  int ii;
+  int iCurrent = 0;
+  const u8 *p = *pa;
+  const u8 *pEnd = &p[n];         /* One byte past end of position list */
+  u8 prev = 0;
+
+  while( iCol!=iCurrent ){
+    /* Advance pointer p until it points to pEnd or an 0x01 byte that is
+    ** not part of a varint */
+    while( !(prev & 0x80) && *p!=0x01 ){
+      prev = *p++;
+      if( p==pEnd ) return 0;
+    }
+    *pa = p++;
+    p += getVarint32(p, iCurrent);
+  }
+
+  /* Advance pointer p until it points to pEnd or an 0x01 byte that is
+  ** not part of a varint */
+  while( p<pEnd && !(prev & 0x80) && *p!=0x01 ){
+    prev = *p++;
+  }
+  return p - (*pa);
+}
+
+
+
+/*
 ** Argument pNode points to a NEAR node. All individual term iterators 
 ** point to valid entries (not EOF).
 *
@@ -674,26 +713,39 @@ static int fts5ExprNearNextMatch(
   Fts5ExprNode *pNode             /* The "NEAR" node (FTS5_STRING) */
 ){
   Fts5ExprNearset *pNear = pNode->pNear;
+  int rc = SQLITE_OK;
 
-  if( pNear->nPhrase==1 
-   && pNear->apPhrase[0]->nTerm==1 
-   && pNear->iCol<0
-  ){
-    /* If this "NEAR" object is actually a single phrase that consists of
-    ** a single term only, then the row that it currently points to must
-    ** be a match. All that is required is to populate pPhrase->poslist
-    ** with the position-list data for the only term.  */
-    Fts5ExprPhrase *pPhrase = pNear->apPhrase[0];
-    Fts5IndexIter *pIter = pPhrase->aTerm[0].pIter;
-    assert( pPhrase->poslist.nSpace==0 );
-    return sqlite3Fts5IterPoslist(pIter, 
-        (const u8**)&pPhrase->poslist.p, &pPhrase->poslist.n, &pNode->iRowid
-    );
-  }else{
-    int rc = SQLITE_OK;
+  while( 1 ){
+    int i;
 
-    while( 1 ){
-      int i;
+    if( pNear->nPhrase==1 && pNear->apPhrase[0]->nTerm==1 ){
+      /* If this "NEAR" object is actually a single phrase that consists 
+      ** of a single term only, then grab pointers into the poslist
+      ** managed by the fts5_index.c iterator object. This is much faster 
+      ** than synthesizing a new poslist the way we have to for more
+      ** complicated phrase or NEAR expressions.  */
+      Fts5ExprPhrase *pPhrase = pNear->apPhrase[0];
+      Fts5IndexIter *pIter = pPhrase->aTerm[0].pIter;
+      assert( pPhrase->poslist.nSpace==0 );
+      rc = sqlite3Fts5IterPoslist(pIter, 
+          (const u8**)&pPhrase->poslist.p, &pPhrase->poslist.n, &pNode->iRowid
+      );
+
+      /* If the term may match any column, then this must be a match. 
+      ** Return immediately in this case. Otherwise, try to find the
+      ** part of the poslist that corresponds to the required column.
+      ** If it can be found, return. If it cannot, the next iteration
+      ** of the loop will test the next rowid in the database for this
+      ** term.  */
+      if( pNear->iCol<0 ) return rc;
+
+      pPhrase->poslist.n = fts5ExprExtractCol(
+          (const u8**)&pPhrase->poslist.p,
+          pPhrase->poslist.n,
+          pNear->iCol
+      );
+      if( pPhrase->poslist.n ) return rc;
+    }else{
 
       /* Advance the iterators until they all point to the same rowid */
       rc = fts5ExprNearNextRowidMatch(pExpr, pNode);
@@ -711,7 +763,7 @@ static int fts5ExprNearNextMatch(
         }else{
           rc = sqlite3Fts5IterPoslistBuffer(
               pPhrase->aTerm[0].pIter, &pPhrase->poslist
-          );
+              );
         }
       }
 
@@ -722,17 +774,17 @@ static int fts5ExprNearNextMatch(
         }
         if( rc!=SQLITE_OK || bMatch ) break;
       }
-
-      /* If control flows to here, then the current rowid is not a match.
-      ** Advance all term iterators in all phrases to the next rowid. */
-      if( rc==SQLITE_OK ){
-        rc = fts5ExprNearAdvanceFirst(pExpr, pNode, 0, 0);
-      }
-      if( pNode->bEof || rc!=SQLITE_OK ) break;
     }
 
-    return rc;
+    /* If control flows to here, then the current rowid is not a match.
+    ** Advance all term iterators in all phrases to the next rowid. */
+    if( rc==SQLITE_OK ){
+      rc = fts5ExprNearAdvanceFirst(pExpr, pNode, 0, 0);
+    }
+    if( pNode->bEof || rc!=SQLITE_OK ) break;
   }
+
+  return rc;
 }
 
 /*
