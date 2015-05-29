@@ -7027,10 +7027,6 @@ static int balance_nonroot(
   /*
   ** Allocate k new pages.  Reuse old pages where possible.
   */
-  if( apOld[0]->pgno<=1 ){
-    rc = SQLITE_CORRUPT_BKPT;
-    goto balance_cleanup;
-  }
   pageFlags = apOld[0]->aData[0];
   for(i=0; i<k; i++){
     MemPage *pNew;
