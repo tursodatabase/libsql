@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\sautomatic\sindexes\son\sFROM-clause\ssubqueries\sthat\sare\nimplemented\svia\sco-routine.
-D 2015-05-29T14:47:18.594
+C Omit\sthe\srowallock.test\sscript\s(Read-Only\sWAL\slock)\sfrom\sthe\s\ninmemory_journal\spermutation.
+D 2015-05-29T15:15:40.911
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 994bab32a3a69e0c35bd148b65cde49879772964
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -820,7 +820,7 @@ F test/pagesize.test 5769fc62d8c890a83a503f67d47508dfdc543305
 F test/pcache.test b09104b03160aca0d968d99e8cd2c5b1921a993d
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
-F test/permutations.test 0e2dc2aab7b1043bd2b4404f51651c31da007e52
+F test/permutations.test 32e2b82e0dfbe5c6b6b38a5c1f4cac194298ad4e
 F test/pragma.test be7195f0aa72bdb8a512133e9640ac40f15b57a2
 F test/pragma2.test f624a496a95ee878e81e59961eade66d5c00c028
 F test/pragma3.test 6f849ccffeee7e496d2f2b5e74152306c0b8757c
@@ -1281,8 +1281,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a29e117d7ecec05da949348689dbfb0d3acb1280 6d410442fb532e2cf0ad1859bc9e843651f8ff4d
-R 12e2c54c40333a10e1b02fb50d487ba7
-T +closed 6d410442fb532e2cf0ad1859bc9e843651f8ff4d
+P 020b8b106fc8f840f6b506e1c9c3bc75676daec3
+R 66158a5898be2753c3b3aab0410cc41d
 U drh
-Z d7928c070549025a5dd811faa36cb8a3
+Z e9a85cbb72f219095603560550fbabe4
