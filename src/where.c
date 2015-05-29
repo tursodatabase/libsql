@@ -5220,14 +5220,14 @@ static int whereLoopAddBtree(
 
 #ifndef SQLITE_OMIT_AUTOMATIC_INDEX
   /* Automatic indexes */
-  if( !pBuilder->pOrSet
+  if( !pBuilder->pOrSet   /* Not part of an OR optimization */
    && (pWInfo->wctrlFlags & WHERE_NO_AUTOINDEX)==0
    && (pWInfo->pParse->db->flags & SQLITE_AutoIndex)!=0
-   && pSrc->pIndex==0
-   && !pSrc->notIndexed
-   && HasRowid(pTab)
-   && !pSrc->isCorrelated
-   && !pSrc->isRecursive
+   && pSrc->pIndex==0     /* Has no INDEXED BY clause */
+   && !pSrc->notIndexed   /* Has no NOT INDEXED clause */
+   && HasRowid(pTab)      /* Is not a WITHOUT ROWID table. (FIXME: Why not?) */
+   && !pSrc->isCorrelated /* Not a correlated subquery */
+   && !pSrc->isRecursive  /* Not a recursive common table expression. */
   ){
     /* Generate auto-index WhereLoops */
     WhereTerm *pTerm;
