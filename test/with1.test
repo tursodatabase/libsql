@@ -849,4 +849,13 @@ do_execsql_test 14.1 {
   WITH x AS (SELECT * FROM t) SELECT 0 EXCEPT SELECT 0 ORDER BY 1 COLLATE binary;
 } {}
 
+# 2015-05-27:  Do not allow rowid usage within a CTE
+#
+do_catchsql_test 15.1 {
+  WITH RECURSIVE
+    d(x) AS (VALUES(1) UNION ALL SELECT rowid+1 FROM d WHERE rowid<10)
+  SELECT x FROM d;
+} {1 {no such column: rowid}}
+
+
 finish_test

@@ -1214,6 +1214,13 @@ TESTPROGS = \
   sqlite3_analyzer.exe \
   sqldiff.exe
 
+# Databases containing fuzzer test cases
+#
+FUZZDATA = \
+  $(TOP)\test\fuzzdata1.db \
+  $(TOP)\test\fuzzdata2.db \
+  $(TOP)\test\fuzzdata3.db
+
 
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
@@ -1231,13 +1238,16 @@ sqlite3.exe:	$(TOP)\src\shell.c $(SHELL_CORE_DEP) $(LIBRESOBJS) sqlite3.h
 		/link /pdb:sqlite3sh.pdb $(LTLINKOPTS) $(SHELL_LINK_OPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LIBREADLINE) $(LTLIBS) $(TLIBS)
 
 sqldiff.exe:	$(TOP)\tool\sqldiff.c sqlite3.c sqlite3.h
-	$(LTLINK) $(TOP)\tool\sqldiff.c sqlite3.c
+	$(LTLINK) $(NO_WARN) $(TOP)\tool\sqldiff.c sqlite3.c
 
 fuzzershell.exe:	$(TOP)\tool\fuzzershell.c sqlite3.c sqlite3.h
-	$(LTLINK) $(TOP)\tool\fuzzershell.c sqlite3.c
+	$(LTLINK) $(NO_WARN) $(TOP)\tool\fuzzershell.c sqlite3.c
+
+fuzzcheck.exe:	$(TOP)\test\fuzzcheck.c sqlite3.c sqlite3.h
+	$(LTLINK) $(NO_WARN) $(TOP)\test\fuzzcheck.c sqlite3.c
 
 mptester.exe:	$(TOP)\mptest\mptest.c $(SHELL_CORE_DEP) $(LIBRESOBJS) sqlite3.h
-	$(LTLINK) $(SHELL_COMPILE_OPTS) $(TOP)\mptest\mptest.c \
+	$(LTLINK) $(NO_WARN) $(SHELL_COMPILE_OPTS) $(TOP)\mptest\mptest.c \
 		/link $(LTLINKOPTS) $(LTLIBPATHS) $(SHELL_LINK_OPTS) $(LIBRESOBJS) $(LIBREADLINE) $(LTLIBS) $(TLIBS)
 
 MPTEST1 = mptester mptest.db $(TOP)\mptest\crash01.test --repeat 20
@@ -1685,7 +1695,7 @@ extensiontest: testfixture.exe testloadext.dll
 fulltest:	$(TESTPROGS) fuzztest
 	.\testfixture.exe $(TOP)\test\all.test
 
-soaktest:	$(TESTPROGS) fuzzoomtest
+soaktest:	$(TESTPROGS)
 	.\testfixture.exe $(TOP)\test\all.test -soak=1
 
 fulltestonly:	$(TESTPROGS) fuzztest
@@ -1694,16 +1704,13 @@ fulltestonly:	$(TESTPROGS) fuzztest
 queryplantest:	testfixture.exe sqlite3.exe
 	.\testfixture.exe $(TOP)\test\permutations.test queryplanner
 
-fuzztest:	fuzzershell.exe
-	.\fuzzershell.exe $(TOP)\test\fuzzdata1.txt $(TOP)\test\fuzzdata2.txt
-
-fuzzoomtest:	fuzzershell.exe
-	.\fuzzershell.exe -f $(TOP)\test\fuzzdata1.txt --oom
+fuzztest:	fuzzcheck.exe
+	.\fuzzcheck.exe $(FUZZDATA)
 
 test:	$(TESTPROGS) fuzztest
 	.\testfixture.exe $(TOP)\test\veryquick.test
 
-smoketest:	$(TESTPROGS) fuzzershell.exe
+smoketest:	$(TESTPROGS)
 	.\testfixture.exe $(TOP)\test\main.test
 
 sqlite3_analyzer.c: $(SQLITE3C) $(TOP)\src\tclsqlite.c $(TOP)\tool\spaceanal.tcl
@@ -1791,7 +1798,7 @@ clean:
 	del /Q shell.c sqlite3ext.h 2>NUL
 	del /Q sqlite3_analyzer.exe sqlite3_analyzer.c 2>NUL
 	del /Q sqlite-*-output.vsix 2>NUL
-	del /Q fuzzershell.exe sqldiff.exe 2>NUL
+	del /Q fuzzershell.exe fuzzcheck.exe sqldiff.exe 2>NUL
 
 # Dynamic link library section.
 #

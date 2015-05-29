@@ -411,6 +411,13 @@ TESTPROGS = \
   sqlite3_analyzer$(EXE) \
   sqldiff$(EXE)
 
+# Databases containing fuzzer test cases
+#
+FUZZDATA = \
+  $(TOP)/test/fuzzdata1.db \
+  $(TOP)/test/fuzzdata2.db \
+  $(TOP)/test/fuzzdata3.db
+
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
 #
@@ -427,11 +434,15 @@ sqlite3$(EXE):	$(TOP)/src/shell.c libsqlite3.a sqlite3.h
 
 sqldiff$(EXE):	$(TOP)/tool/sqldiff.c sqlite3.c sqlite3.h
 	$(TCCX) -o sqldiff$(EXE) -DSQLITE_THREADSAFE=0 \
-		$(TOP)/tool/sqldiff.c	sqlite3.c $(TLIBS) $(THREADLIB)
+		$(TOP)/tool/sqldiff.c sqlite3.c $(TLIBS) $(THREADLIB)
 
 fuzzershell$(EXE):	$(TOP)/tool/fuzzershell.c sqlite3.c sqlite3.h
 	$(TCCX) -o fuzzershell$(EXE) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION\
-		$(TOP)/tool/fuzzershell.c	sqlite3.c $(TLIBS) $(THREADLIB)
+		$(TOP)/tool/fuzzershell.c sqlite3.c $(TLIBS) $(THREADLIB)
+
+fuzzcheck$(EXE):	$(TOP)/test/fuzzcheck.c sqlite3.c sqlite3.h
+	$(TCCX) -o fuzzcheck$(EXE) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION\
+		$(TOP)/test/fuzzcheck.c sqlite3.c $(TLIBS) $(THREADLIB)
 
 mptester$(EXE):	sqlite3.c $(TOP)/mptest/mptest.c
 	$(TCCX) -o $@ -I. $(TOP)/mptest/mptest.c sqlite3.c \
@@ -666,7 +677,7 @@ fts3-testfixture$(EXE): sqlite3.c fts3amal.c $(TESTSRC) $(TOP)/src/tclsqlite.c
 fulltest:	$(TESTPROGS) fuzztest
 	./testfixture$(EXE) $(TOP)/test/all.test
 
-soaktest:	$(TESTPROGS) fuzzoomtest
+soaktest:	$(TESTPROGS)
 	./testfixture$(EXE) $(TOP)/test/all.test -soak=1
 
 fulltestonly:	$(TESTPROGS) fuzztest
@@ -675,11 +686,8 @@ fulltestonly:	$(TESTPROGS) fuzztest
 queryplantest:	testfixture$(EXE) sqlite3$(EXE)
 	./testfixture$(EXE) $(TOP)/test/permutations.test queryplanner
 
-fuzztest:	fuzzershell$(EXE)
-	./fuzzershell$(EXE) $(TOP)/test/fuzzdata1.txt $(TOP)/test/fuzzdata2.txt
-
-fuzzoomtest:	fuzzershell$(EXE)
-	./fuzzershell$(EXE) -f $(TOP)/test/fuzzdata1.txt --oom
+fuzztest:	fuzzcheck$(EXE) $(FUZZDATA)
+	./fuzzcheck$(EXE) $(FUZZDATA)
 
 test:	$(TESTPROGS) fuzztest
 	./testfixture$(EXE) $(TOP)/test/veryquick.test
@@ -687,15 +695,15 @@ test:	$(TESTPROGS) fuzztest
 # Run a test using valgrind.  This can take a really long time
 # because valgrind is so much slower than a native machine.
 #
-valgrindtest:	$(TESTPROGS) fuzzershell$(EXE)
-	valgrind -v ./fuzzershell$(EXE) -f $(TOP)/test/fuzzdata1.txt
+valgrindtest:	$(TESTPROGS) fuzzcheck$(EXE) $(FUZZDATA)
+	valgrind -v ./fuzzcheck$(EXE) --cell-size-check --quiet $(FUZZDATA)
 	OMIT_MISUSE=1 valgrind -v ./testfixture$(EXE) $(TOP)/test/permutations.test valgrind
 
 # A very fast test that checks basic sanity.  The name comes from
 # the 60s-era electronics testing:  "Turn it on and see if smoke
 # comes out."
 #
-smoketest:	$(TESTPROGS) fuzzershell$(EXE)
+smoketest:	$(TESTPROGS) fuzzcheck$(EXE)
 	./testfixture$(EXE) $(TOP)/test/main.test
 
 # The next two rules are used to support the "threadtest" target. Building
@@ -814,4 +822,5 @@ clean:
 	rm -f sqlite-*-output.vsix
 	rm -f mptester mptester.exe
 	rm -f fuzzershell fuzzershell.exe
+	rm -f fuzzcheck fuzzcheck.exe
 	rm -f sqldiff sqldiff.exe

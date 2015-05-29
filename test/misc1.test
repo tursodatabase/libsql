@@ -693,4 +693,12 @@ do_catchsql_test misc1-23.3 {
   DROP TABLE IF EXISTS t;
 } {0 {}}
 
+
+# At one point, running this would read one byte passed the end of a 
+# buffer, upsetting valgrind.
+#
+do_test misc1-24.0 {
+  list [catch { sqlite3_prepare_v2 db ! -1 dummy } msg] $msg
+} {1 {(1) unrecognized token: "!}}
+
 finish_test

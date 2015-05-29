@@ -1661,6 +1661,36 @@ static LogEst estLog(LogEst N){
 }
 
 /*
+** Convert OP_Column opcodes to OP_Copy in previously generated code.
+**
+** This routine runs over generated VDBE code and translates OP_Column
+** opcodes into OP_Copy, and OP_Rowid into OP_Null, when the table is being
+** accessed via co-routine instead of via table lookup.
+*/
+static void translateColumnToCopy(
+  Vdbe *v,            /* The VDBE containing code to translate */
+  int iStart,         /* Translate from this opcode to the end */
+  int iTabCur,        /* OP_Column/OP_Rowid references to this table */
+  int iRegister       /* The first column is in this register */
+){
+  VdbeOp *pOp = sqlite3VdbeGetOp(v, iStart);
+  int iEnd = sqlite3VdbeCurrentAddr(v);
+  for(; iStart<iEnd; iStart++, pOp++){
+    if( pOp->p1!=iTabCur ) continue;
+    if( pOp->opcode==OP_Column ){
+      pOp->opcode = OP_Copy;
+      pOp->p1 = pOp->p2 + iRegister;
+      pOp->p2 = pOp->p3;
+      pOp->p3 = 0;
+    }else if( pOp->opcode==OP_Rowid ){
+      pOp->opcode = OP_Null;
+      pOp->p1 = 0;
+      pOp->p3 = 0;
+    }
+  }
+}
+
+/*
 ** Two routines for printing the content of an sqlite3_index_info
 ** structure.  Used for testing and debugging only.  If neither
 ** SQLITE_TEST or SQLITE_DEBUG are defined, then these routines
@@ -1762,6 +1792,7 @@ static void constructAutomaticIndex(
   u8 sentWarning = 0;         /* True if a warnning has been issued */
   Expr *pPartial = 0;         /* Partial Index Expression */
   int iContinue = 0;          /* Jump here to skip excluded rows */
+  struct SrcList_item *pTabItem;  /* FROM clause term being indexed */
 
   /* Generate code to skip over the creation and initialization of the
   ** transient index on 2nd and subsequent iterations of the loop. */
@@ -1887,7 +1918,16 @@ static void constructAutomaticIndex(
 
   /* Fill the automatic index with content */
   sqlite3ExprCachePush(pParse);
-  addrTop = sqlite3VdbeAddOp1(v, OP_Rewind, pLevel->iTabCur); VdbeCoverage(v);
+  pTabItem = &pWC->pWInfo->pTabList->a[pLevel->iFrom];
+  if( pTabItem->viaCoroutine ){
+    int regYield = pTabItem->regReturn;
+    sqlite3VdbeAddOp3(v, OP_InitCoroutine, regYield, 0, pTabItem->addrFillSub);
+    addrTop =  sqlite3VdbeAddOp1(v, OP_Yield, regYield);
+    VdbeCoverage(v);
+    VdbeComment((v, "next row of \"%s\"", pTabItem->pTab->zName));
+  }else{
+    addrTop = sqlite3VdbeAddOp1(v, OP_Rewind, pLevel->iTabCur); VdbeCoverage(v);
+  }
   if( pPartial ){
     iContinue = sqlite3VdbeMakeLabel(v);
     sqlite3ExprIfFalse(pParse, pPartial, iContinue, SQLITE_JUMPIFNULL);
@@ -1898,7 +1938,13 @@ static void constructAutomaticIndex(
   sqlite3VdbeAddOp2(v, OP_IdxInsert, pLevel->iIdxCur, regRecord);
   sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
   if( pPartial ) sqlite3VdbeResolveLabel(v, iContinue);
-  sqlite3VdbeAddOp2(v, OP_Next, pLevel->iTabCur, addrTop+1); VdbeCoverage(v);
+  if( pTabItem->viaCoroutine ){
+    translateColumnToCopy(v, addrTop, pLevel->iTabCur, pTabItem->regResult);
+    sqlite3VdbeAddOp2(v, OP_Goto, 0, addrTop);
+    pTabItem->viaCoroutine = 0;
+  }else{
+    sqlite3VdbeAddOp2(v, OP_Next, pLevel->iTabCur, addrTop+1); VdbeCoverage(v);
+  }
   sqlite3VdbeChangeP5(v, SQLITE_STMTSTATUS_AUTOINDEX);
   sqlite3VdbeJumpHere(v, addrTop);
   sqlite3ReleaseTempReg(pParse, regRecord);
@@ -5174,15 +5220,14 @@ static int whereLoopAddBtree(
 
 #ifndef SQLITE_OMIT_AUTOMATIC_INDEX
   /* Automatic indexes */
-  if( !pBuilder->pOrSet
+  if( !pBuilder->pOrSet   /* Not part of an OR optimization */
    && (pWInfo->wctrlFlags & WHERE_NO_AUTOINDEX)==0
    && (pWInfo->pParse->db->flags & SQLITE_AutoIndex)!=0
-   && pSrc->pIndex==0
-   && !pSrc->viaCoroutine
-   && !pSrc->notIndexed
-   && HasRowid(pTab)
-   && !pSrc->isCorrelated
-   && !pSrc->isRecursive
+   && pSrc->pIndex==0     /* Has no INDEXED BY clause */
+   && !pSrc->notIndexed   /* Has no NOT INDEXED clause */
+   && HasRowid(pTab)      /* Is not a WITHOUT ROWID table. (FIXME: Why not?) */
+   && !pSrc->isCorrelated /* Not a correlated subquery */
+   && !pSrc->isRecursive  /* Not a recursive common table expression. */
   ){
     /* Generate auto-index WhereLoops */
     WhereTerm *pTerm;
@@ -7017,26 +7062,12 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     pLoop = pLevel->pWLoop;
 
     /* For a co-routine, change all OP_Column references to the table of
-    ** the co-routine into OP_SCopy of result contained in a register.
+    ** the co-routine into OP_Copy of result contained in a register.
     ** OP_Rowid becomes OP_Null.
     */
     if( pTabItem->viaCoroutine && !db->mallocFailed ){
-      last = sqlite3VdbeCurrentAddr(v);
-      k = pLevel->addrBody;
-      pOp = sqlite3VdbeGetOp(v, k);
-      for(; k<last; k++, pOp++){
-        if( pOp->p1!=pLevel->iTabCur ) continue;
-        if( pOp->opcode==OP_Column ){
-          pOp->opcode = OP_Copy;
-          pOp->p1 = pOp->p2 + pTabItem->regResult;
-          pOp->p2 = pOp->p3;
-          pOp->p3 = 0;
-        }else if( pOp->opcode==OP_Rowid ){
-          pOp->opcode = OP_Null;
-          pOp->p1 = 0;
-          pOp->p3 = 0;
-        }
-      }
+      translateColumnToCopy(v, pLevel->addrBody, pLevel->iTabCur,
+                            pTabItem->regResult);
       continue;
     }
 

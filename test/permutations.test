@@ -708,7 +708,7 @@ test_suite "inmemory_journal" -description {
   zerodamage.test
 
   # WAL mode is different.
-  wal* tkt-2d1a5c67d.test backcompat.test e_wal*
+  wal* tkt-2d1a5c67d.test backcompat.test e_wal* rowallock.test
 }]
 
 ifcapable mem3 {

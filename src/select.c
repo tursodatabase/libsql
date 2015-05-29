@@ -3991,7 +3991,7 @@ static int withExpand(
     pTab->zName = sqlite3DbStrDup(db, pCte->zName);
     pTab->iPKey = -1;
     pTab->nRowLogEst = 200; assert( 200==sqlite3LogEst(1048576) );
-    pTab->tabFlags |= TF_Ephemeral;
+    pTab->tabFlags |= TF_Ephemeral | TF_NoVisibleRowid;
     pFrom->pSelect = sqlite3SelectDup(db, pCte->pSelect, 0);
     if( db->mallocFailed ) return SQLITE_NOMEM;
     assert( pFrom->pSelect );
@@ -4235,13 +4235,6 @@ static int selectExpander(Walker *pWalker, Select *p){
     int flags = pParse->db->flags;
     int longNames = (flags & SQLITE_FullColNames)!=0
                       && (flags & SQLITE_ShortColNames)==0;
-
-    /* When processing FROM-clause subqueries, it is always the case
-    ** that full_column_names=OFF and short_column_names=ON.  The
-    ** sqlite3ResultSetOfSelect() routine makes it so. */
-    assert( (p->selFlags & SF_NestedFrom)==0
-          || ((flags & SQLITE_FullColNames)==0 &&
-              (flags & SQLITE_ShortColNames)!=0) );
 
     for(k=0; k<pEList->nExpr; k++){
       pE = a[k].pExpr;
@@ -4824,6 +4817,7 @@ int sqlite3Select(
       }
       i = -1;
     }else if( pTabList->nSrc==1
+           && (p->selFlags & SF_All)==0
            && OptimizationEnabled(db, SQLITE_SubqCoroutine)
     ){
       /* Implement a co-routine that will return a single row of the result
