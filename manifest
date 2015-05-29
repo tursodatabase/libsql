@@ -1,5 +1,5 @@
-C Using\s"SELECT\sALL"\sinstead\sof\sjust\s"SELECT"\son\sa\squery\sthat\suses\sa\ssingle\nunflattenable\ssubquery\sor\sview\sin\sits\sFROM\sclause\swill\sforce\sthe\ssubquery\sto\nbe\smanifested\sinto\sa\stemporary\stable\srather\sthan\srun\sincrementally\susing\sa\nco-routine.\s\sThis\sis\sa\sstop-gap\smeans\sof\scontrolling\sthe\sdecision\sto\smanifest\nwhile\swe\stry\sto\swork\sout\sa\sbetter\sto\smake\sthat\sdecision\sautomatically.
-D 2015-05-29T01:35:19.289
+C An\sattempt\sto\sallow\sautomatic\sindex\screation\son\ssubqueries\saccessed\svia\nco-routine.
+D 2015-05-29T13:55:33.273
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 994bab32a3a69e0c35bd148b65cde49879772964
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -326,7 +326,7 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c ce2cb2d06faab54d1bce3e739bec79e063dd9113
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
-F src/where.c e71eae3b1383249c3b5d136d6b71ca8d28fb8d61
+F src/where.c 5eb9ab47f6e256f0f241a000469bc4e1bd2cb085
 F src/whereInt.h a6f5a762bc1b4b1c76e1cea79976b437ac35a435
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1280,7 +1280,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7da7dc714bf1fe34b38fc33a923490dfd3e4f070
-R 499acad2035bec51403566408ee68110
+P a29e117d7ecec05da949348689dbfb0d3acb1280
+R 88c52c7945c3c5cf23282c30dc23f438
+T *branch * coroutine-autoindex
+T *sym-coroutine-autoindex *
+T -sym-trunk *
 U drh
-Z 2eaa693f71c1ef80818c82e114933ddd
+Z 77000af208e80e6a672a8b20d82a8232
