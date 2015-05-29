@@ -450,7 +450,8 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   }
 abort_parse:
   assert( nErr==0 );
-  if( pParse->rc==SQLITE_OK && db->mallocFailed==0 && zSql[i]==0 ){
+  if( pParse->rc==SQLITE_OK && db->mallocFailed==0 ){
+    assert( zSql[i]==0 );
     if( lastTokenParsed!=TK_SEMI ){
       sqlite3Parser(pEngine, TK_SEMI, pParse->sLastToken, pParse);
       pParse->zTail = &zSql[i];

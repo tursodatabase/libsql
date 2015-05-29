@@ -1,5 +1,5 @@
-C Remove\sa\scorruption\stest\sin\sbalance_nonroot\sthat\sis\ssuperceded\sby\sa\sprior\nbetter\scheck.
-D 2015-05-29T17:13:14.348
+C Move\stwo\sunreachable\sconditionals\sinside\sof\sNEVER()\sor\sassert().
+D 2015-05-29T17:51:16.121
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 994bab32a3a69e0c35bd148b65cde49879772964
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -192,7 +192,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c ff743689c4d6c5cb55ad42ed9d174b2b3e71f1e3
 F src/bitvec.c 5eb7958c3bf65210211cbcfc44eff86d0ded7c9d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c 7dcddf0ae24076ba6ee3cda393c6211a5c6a2477
+F src/btree.c 5fa5fda8017a223d26b6040062918c4f56ced644
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 973a22a6fd61350b454ad614832b1f0a5e25a1e4
 F src/build.c 85a169a0a22f8b80caf513eaf2944d39b979f571
@@ -306,7 +306,7 @@ F src/test_vfs.c 3b65d42e18b262805716bd96178c81da8f2d9283
 F src/test_vfstrace.c bab9594adc976cbe696ff3970728830b4c5ed698
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 6bbcc9fe50c917864d48287b4792d46d6e873481
-F src/tokenize.c 27d60b6bf4a92d17c329a11ff9fe94081b2a8510
+F src/tokenize.c baa0e550dfa76a8d781732a7bfb1f0aa094942f2
 F src/trigger.c 322f23aad694e8f31d384dcfa386d52a48d3c52f
 F src/update.c 487747b328b7216bb7f6af0695d6937d5c9e605f
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
@@ -1281,7 +1281,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d21db3308996510ffc3c869c2ac093de70d03412
-R 384e50fd9f5eabe1effd940fe34288b1
+P 00693682d8664fa608ba43684f6376a9bd5b84eb
+R db8d22fad06b4e06987d42eaf1810c23
 U drh
-Z 2414e807ca41c4170d36989b6a30d8be
+Z 8cbe618404dd17db82b74657f07aece3
