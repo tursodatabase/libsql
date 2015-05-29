@@ -125,126 +125,6 @@ set data {
     99  {r c v w i v h a t a c v c r e}     {h h u m g o f b a e o}
 }
 
-#-------------------------------------------------------------------------
-# Usage:
-#
-#   poslist aCol ?-pc VARNAME? ?-near N? ?-col C? -- phrase1 phrase2...
-#
-# This command is used to test if a document (set of column values) matches
-# the logical equivalent of a single FTS5 NEAR() clump and, if so, return
-# the equivalent of an FTS5 position list.
-#
-# Parameter $aCol is passed a list of the column values for the document
-# to test. Parameters $phrase1 and so on are the phrases.
-#
-# The result is a list of phrase hits. Each phrase hit is formatted as
-# three integers separated by "." characters, in the following format:
-#
-#   <phrase number> . <column number> . <token offset>
-#
-# Options:
-#
-#   -near N        (NEAR distance. Default 10)
-#   -col  C        (List of column indexes to match against)
-#   -pc   VARNAME  (variable in caller frame to use for phrase numbering)
-#
-proc poslist {aCol args} {
-  set O(-near) 10
-  set O(-col)  {}
-  set O(-pc)   ""
-
-  set nOpt [lsearch -exact $args --]
-  if {$nOpt<0} { error "no -- option" }
-
-  foreach {k v} [lrange $args 0 [expr $nOpt-1]] {
-    if {[info exists O($k)]==0} { error "unrecognized option $k" }
-    set O($k) $v
-  }
-
-  if {$O(-pc) == ""} {
-    set counter 0
-  } else {
-    upvar $O(-pc) counter
-  }
-
-  # Set $phraselist to be a list of phrases. $nPhrase its length.
-  set phraselist [lrange $args [expr $nOpt+1] end]
-  set nPhrase [llength $phraselist]
-
-  for {set j 0} {$j < [llength $aCol]} {incr j} {
-    for {set i 0} {$i < $nPhrase} {incr i} { 
-      set A($j,$i) [list]
-    }
-  }
-
-  set iCol -1
-  foreach col $aCol {
-    incr iCol
-    if {$O(-col)!="" && [lsearch $O(-col) $iCol]<0} continue
-    set nToken [llength $col]
-
-    set iFL [expr $O(-near) >= $nToken ? $nToken - 1 : $O(-near)]
-    for { } {$iFL < $nToken} {incr iFL} {
-      for {set iPhrase 0} {$iPhrase<$nPhrase} {incr iPhrase} {
-        set B($iPhrase) [list]
-      }
-      
-      for {set iPhrase 0} {$iPhrase<$nPhrase} {incr iPhrase} {
-        set p [lindex $phraselist $iPhrase]
-        set nPm1 [expr {[llength $p] - 1}]
-        set iFirst [expr $iFL - $O(-near) - [llength $p]]
-
-        for {set i $iFirst} {$i <= $iFL} {incr i} {
-          if {[lrange $col $i [expr $i+$nPm1]] == $p} { lappend B($iPhrase) $i }
-        }
-        if {[llength $B($iPhrase)] == 0} break
-      }
-
-      if {$iPhrase==$nPhrase} {
-        for {set iPhrase 0} {$iPhrase<$nPhrase} {incr iPhrase} {
-          set A($iCol,$iPhrase) [concat $A($iCol,$iPhrase) $B($iPhrase)]
-          set A($iCol,$iPhrase) [lsort -integer -uniq $A($iCol,$iPhrase)]
-        }
-      }
-    }
-  }
-
-  set res [list]
-#puts [array names A]
-
-  for {set iPhrase 0} {$iPhrase<$nPhrase} {incr iPhrase} {
-    for {set iCol 0} {$iCol < [llength $aCol]} {incr iCol} {
-      foreach a $A($iCol,$iPhrase) {
-        lappend res "$counter.$iCol.$a"
-      }
-    }
-    incr counter
-  }
-
-    #puts $res
-  return $res
-}
-
-# Usage:
-#
-#   nearset aCol ?-near N? ?-col C? -- phrase1 phrase2...
-#
-proc nearset {args} {
-  set plist [poslist {*}$args]
-  return [expr [llength [lindex $plist 0]]>0]
-}
-
-proc instcompare {lhs rhs} {
-  foreach {p1 c1 o1} [split $lhs .] {}
-  foreach {p2 c2 o2} [split $rhs .] {}
-
-  set res [expr $c1 - $c2]
-  if {$res==0} { set res [expr $o1 - $o2] }
-  if {$res==0} { set res [expr $p1 - $p2] }
-
-  return $res
-}
-
 # Argument $expr is an FTS5 match expression designed to be executed against
 # an FTS5 table with the following schema:
 # 
@@ -262,25 +142,20 @@ proc instcompare {lhs rhs} {
 #
 proc matchdata {bPos expr {bAsc 1}} {
 
-  set tclexpr [db one {SELECT fts5_expr_tcl($expr, 'nearset $cols', 'x', 'y')}]
+  set tclexpr [db one {
+    SELECT fts5_expr_tcl($expr, 'nearset $cols -pc ::pc', 'x', 'y')
+  }]
   set res [list]
 
   #puts $tclexpr
   foreach {id x y} $::data {
     set cols [list $x $y]
-    if $tclexpr {
+    set ::pc 0
+    #set hits [lsort -command instcompare [eval $tclexpr]]
+    set hits [eval $tclexpr]
+    if {[llength $hits]>0} {
       if {$bPos} {
-        set N [regexp -all -inline {\[nearset [^\]]*\]} $tclexpr]
-        set rowres [list]
-        set cnt 0
-        foreach phrase $N {
-          set arglist [string range $phrase 9 end-1]
-          set cmd "poslist [lindex $arglist 0] -pc cnt [lrange $arglist 1 end]"
-          set pos [eval $cmd]
-          set rowres [concat $rowres $pos]
-        }
-        set rowres [lsort -command instcompare $rowres]
-        lappend res [list $id $rowres]
+        lappend res [list $id $hits]
       } else {
         lappend res $id
       }
@@ -425,11 +300,11 @@ foreach {tn2 sql} {
     } $res
   }
 
-  do_test $tn2.4.1  { poslist {{a b c}} -- a } {0.0.0}
-  do_test $tn2.4.2  { poslist {{a b c}} -- c } {0.0.2}
+  do_test $tn2.4.1  { nearset {{a b c}} -- a } {0.0.0}
+  do_test $tn2.4.2  { nearset {{a b c}} -- c } {0.0.2}
 
   foreach {tn expr tclexpr} {
-    1 {a b} {[N $x -- {a}] && [N $x -- {b}]}
+    1 {a b} {AND [N $x -- {a}] [N $x -- {b}]}
   } {
     do_execsql_test $tn2.5.$tn {
       SELECT fts5_expr_tcl($expr, 'N $x')
@@ -477,7 +352,7 @@ foreach {tn2 sql} {
 
 do_execsql_test 3.1 {
   SELECT fts5_expr_tcl('a AND b');
-} {{[nearset -- {a}] && [nearset -- {b}]}}
+} {{AND [nearset -- {a}] [nearset -- {b}]}}
 
 finish_test
 
