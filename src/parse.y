@@ -527,7 +527,7 @@ values(A) ::= values(X) COMMA LP exprlist(Y) RP. {
 //
 %type distinct {u16}
 distinct(A) ::= DISTINCT.   {A = SF_Distinct;}
-distinct(A) ::= ALL.        {A = 0;}
+distinct(A) ::= ALL.        {A = SF_All;}
 distinct(A) ::= .           {A = 0;}
 
 // selcollist is a list of expressions that are to become the return
@@ -890,7 +890,7 @@ expr(A) ::= id(X) LP distinct(D) exprlist(Y) RP(E). {
   }
   A.pExpr = sqlite3ExprFunction(pParse, Y, &X);
   spanSet(&A,&X,&E);
-  if( D && A.pExpr ){
+  if( D==SF_Distinct && A.pExpr ){
     A.pExpr->flags |= EP_Distinct;
   }
 }

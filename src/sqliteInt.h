@@ -2396,19 +2396,20 @@ struct Select {
 ** "Select Flag".
 */
 #define SF_Distinct        0x0001  /* Output should be DISTINCT */
-#define SF_Resolved        0x0002  /* Identifiers have been resolved */
-#define SF_Aggregate       0x0004  /* Contains aggregate functions */
-#define SF_UsesEphemeral   0x0008  /* Uses the OpenEphemeral opcode */
-#define SF_Expanded        0x0010  /* sqlite3SelectExpand() called on this */
-#define SF_HasTypeInfo     0x0020  /* FROM subqueries have Table metadata */
-#define SF_Compound        0x0040  /* Part of a compound query */
-#define SF_Values          0x0080  /* Synthesized from VALUES clause */
-#define SF_MultiValue      0x0100  /* Single VALUES term with multiple rows */
-#define SF_NestedFrom      0x0200  /* Part of a parenthesized FROM clause */
-#define SF_MaybeConvert    0x0400  /* Need convertCompoundSelectToSubquery() */
-#define SF_Recursive       0x0800  /* The recursive part of a recursive CTE */
+#define SF_All             0x0002  /* Includes the ALL keyword */
+#define SF_Resolved        0x0004  /* Identifiers have been resolved */
+#define SF_Aggregate       0x0008  /* Contains aggregate functions */
+#define SF_UsesEphemeral   0x0010  /* Uses the OpenEphemeral opcode */
+#define SF_Expanded        0x0020  /* sqlite3SelectExpand() called on this */
+#define SF_HasTypeInfo     0x0040  /* FROM subqueries have Table metadata */
+#define SF_Compound        0x0080  /* Part of a compound query */
+#define SF_Values          0x0100  /* Synthesized from VALUES clause */
+#define SF_MultiValue      0x0200  /* Single VALUES term with multiple rows */
+#define SF_NestedFrom      0x0400  /* Part of a parenthesized FROM clause */
+#define SF_MaybeConvert    0x0800  /* Need convertCompoundSelectToSubquery() */
 #define SF_MinMaxAgg       0x1000  /* Aggregate containing min() or max() */
-#define SF_Converted       0x2000  /* By convertCompoundSelectToSubquery() */
+#define SF_Recursive       0x2000  /* The recursive part of a recursive CTE */
+#define SF_Converted       0x4000  /* By convertCompoundSelectToSubquery() */
 
 
 /*
