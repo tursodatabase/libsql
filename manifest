@@ -1,5 +1,5 @@
-C Using\s"SELECT\sALL"\sinstead\sof\sjust\s"SELECT"\son\sa\squery\sthat\suses\sa\ssingle\nunflattenable\ssubquery\sor\sview\sin\sits\sFROM\sclause\swill\sforce\sthe\ssubquery\sto\nbe\smanifested\sinto\sa\stemporary\stable\srather\sthan\srun\sincrementally\susing\sa\nco-routine.\s\sThis\sis\sa\sstop-gap\smeans\sof\scontrolling\sthe\sdecision\sto\smanifest\nwhile\swe\stry\sto\swork\sout\sa\sbetter\sto\smake\sthat\sdecision\sautomatically.
-D 2015-05-29T01:35:19.289
+C Add\ssupport\sfor\sautomatic\sindexes\son\sFROM-clause\ssubqueries\sthat\sare\nimplemented\svia\sco-routine.
+D 2015-05-29T14:47:18.594
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 994bab32a3a69e0c35bd148b65cde49879772964
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -326,7 +326,7 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c ce2cb2d06faab54d1bce3e739bec79e063dd9113
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
-F src/where.c e71eae3b1383249c3b5d136d6b71ca8d28fb8d61
+F src/where.c f6f41c2f8b9903854992170ea5178898f9cb6c9c
 F src/whereInt.h a6f5a762bc1b4b1c76e1cea79976b437ac35a435
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -373,6 +373,7 @@ F test/autoindex1.test 14b63a9f1e405fe6d5bfc8c8d00249c2ebaf13ea
 F test/autoindex2.test af7e595c6864cc6ef5fc38d5db579a3e34940cb8
 F test/autoindex3.test a3be0d1a53a7d2edff208a5e442312957047e972
 F test/autoindex4.test 49d3cd791a9baa16fb461d7ea3de80d019a819cf
+F test/autoindex5.test 6f487290ce2a667c24517191651bfb8c7d86b6dc
 F test/autovacuum.test 941892505d2c0f410a0cb5970dfa1c7c4e5f6e74
 F test/autovacuum_ioerr2.test 8a367b224183ad801e0e24dcb7d1501f45f244b4
 F test/avtrans.test 0252654f4295ddda3b2cce0e894812259e655a85
@@ -1280,7 +1281,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7da7dc714bf1fe34b38fc33a923490dfd3e4f070
-R 499acad2035bec51403566408ee68110
+P a29e117d7ecec05da949348689dbfb0d3acb1280 6d410442fb532e2cf0ad1859bc9e843651f8ff4d
+R 12e2c54c40333a10e1b02fb50d487ba7
+T +closed 6d410442fb532e2cf0ad1859bc9e843651f8ff4d
 U drh
-Z 2eaa693f71c1ef80818c82e114933ddd
+Z d7928c070549025a5dd811faa36cb8a3
