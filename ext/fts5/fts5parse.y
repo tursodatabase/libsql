@@ -95,10 +95,27 @@ exprlist(A) ::= exprlist(X) cnearset(Y). {
 cnearset(A) ::= nearset(X). { 
   A = sqlite3Fts5ParseNode(pParse, FTS5_STRING, 0, 0, X); 
 }
-cnearset(A) ::= STRING(X) COLON nearset(Y). { 
-  sqlite3Fts5ParseSetColumn(pParse, Y, &X);
+cnearset(A) ::= colset(X) COLON nearset(Y). { 
+  sqlite3Fts5ParseSetColset(pParse, Y, X);
   A = sqlite3Fts5ParseNode(pParse, FTS5_STRING, 0, 0, Y); 
 }
+
+%type colset {Fts5ExprColset*}
+%destructor colset { sqlite3_free($$); }
+%type colsetlist {Fts5ExprColset*}
+%destructor colsetlist { sqlite3_free($$); }
+
+colset(A) ::= LSP colsetlist(X) RSP. { A = X; }
+colset(A) ::= STRING(X). {
+  A = sqlite3Fts5ParseColset(pParse, 0, &X);
+}
+
+colsetlist(A) ::= colsetlist(Y) STRING(X). { 
+  A = sqlite3Fts5ParseColset(pParse, Y, &X); }
+colsetlist(A) ::= STRING(X). { 
+  A = sqlite3Fts5ParseColset(pParse, 0, &X); 
+}
+
 
 %type nearset     {Fts5ExprNearset*}
 %type nearphrases {Fts5ExprNearset*}

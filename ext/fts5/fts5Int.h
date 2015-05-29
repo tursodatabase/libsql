@@ -511,6 +511,7 @@ typedef struct Fts5Parse Fts5Parse;
 typedef struct Fts5Token Fts5Token;
 typedef struct Fts5ExprPhrase Fts5ExprPhrase;
 typedef struct Fts5ExprNearset Fts5ExprNearset;
+typedef struct Fts5ExprColset Fts5ExprColset;
 
 struct Fts5Token {
   const char *p;                  /* Token text (not NULL terminated) */
@@ -578,12 +579,18 @@ Fts5ExprNearset *sqlite3Fts5ParseNearset(
   Fts5ExprPhrase* 
 );
 
+Fts5ExprColset *sqlite3Fts5ParseColset(
+  Fts5Parse*, 
+  Fts5ExprColset*, 
+  Fts5Token *
+);
+
 void sqlite3Fts5ParsePhraseFree(Fts5ExprPhrase*);
 void sqlite3Fts5ParseNearsetFree(Fts5ExprNearset*);
 void sqlite3Fts5ParseNodeFree(Fts5ExprNode*);
 
 void sqlite3Fts5ParseSetDistance(Fts5Parse*, Fts5ExprNearset*, Fts5Token*);
-void sqlite3Fts5ParseSetColumn(Fts5Parse*, Fts5ExprNearset*, Fts5Token*);
+void sqlite3Fts5ParseSetColset(Fts5Parse*, Fts5ExprNearset*, Fts5ExprColset*);
 void sqlite3Fts5ParseFinished(Fts5Parse *pParse, Fts5ExprNode *p);
 void sqlite3Fts5ParseNear(Fts5Parse *pParse, Fts5Token*);
 

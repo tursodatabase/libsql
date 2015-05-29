@@ -4479,7 +4479,6 @@ int sqlite3Fts5IterEof(Fts5IndexIter *pIter){
 */
 int sqlite3Fts5IterNext(Fts5IndexIter *pIter){
   assert( pIter->pIndex->rc==SQLITE_OK );
-  fts5BufferZero(&pIter->poslist);
   fts5MultiIterNext(pIter->pIndex, pIter->pMulti, 0, 0);
   return fts5IndexReturn(pIter->pIndex);
 }
@@ -4494,7 +4493,6 @@ int sqlite3Fts5IterNextScan(Fts5IndexIter *pIter){
   assert( pIter->pIndex->rc==SQLITE_OK );
   assert( pMulti );
 
-  fts5BufferZero(&pIter->poslist);
   fts5MultiIterNext(p, pMulti, 0, 0);
   if( p->rc==SQLITE_OK ){
     Fts5SegIter *pSeg = &pMulti->aSeg[ pMulti->aFirst[1].iFirst ];

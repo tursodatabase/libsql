@@ -125,13 +125,32 @@ set data {
     99  {r c v w i v h a t a c v c r e}     {h h u m g o f b a e o}
 }
 
+#-------------------------------------------------------------------------
 # Usage:
 #
 #   poslist aCol ?-pc VARNAME? ?-near N? ?-col C? -- phrase1 phrase2...
 #
+# This command is used to test if a document (set of column values) matches
+# the logical equivalent of a single FTS5 NEAR() clump and, if so, return
+# the equivalent of an FTS5 position list.
+#
+# Parameter $aCol is passed a list of the column values for the document
+# to test. Parameters $phrase1 and so on are the phrases.
+#
+# The result is a list of phrase hits. Each phrase hit is formatted as
+# three integers separated by "." characters, in the following format:
+#
+#   <phrase number> . <column number> . <token offset>
+#
+# Options:
+#
+#   -near N        (NEAR distance. Default 10)
+#   -col  C        (List of column indexes to match against)
+#   -pc   VARNAME  (variable in caller frame to use for phrase numbering)
+#
 proc poslist {aCol args} {
   set O(-near) 10
-  set O(-col)  -1
+  set O(-col)  {}
   set O(-pc)   ""
 
   set nOpt [lsearch -exact $args --]
@@ -161,8 +180,7 @@ proc poslist {aCol args} {
   set iCol -1
   foreach col $aCol {
     incr iCol
-    if {$O(-col)>=0 && $O(-col)!=$iCol} continue
-
+    if {$O(-col)!="" && [lsearch $O(-col) $iCol]<0} continue
     set nToken [llength $col]
 
     set iFL [expr $O(-near) >= $nToken ? $nToken - 1 : $O(-near)]
@@ -361,10 +379,24 @@ foreach {tn2 sql} {
   # Queries on a specific column.
   #
   foreach {tn expr} {
-    1 "x:a"
-    2 "y:a"
-    3 "x:b"
-    4 "y:b"
+    1.1 "x:a"
+    1.2 "y:a"
+    1.3 "x:b"
+    1.4 "y:b"
+    2.1 "[x]:a"
+    2.2 "[y]:a"
+    2.3 "[x]:b"
+    2.4 "[y]:b"
+
+    3.1 "[x y]:a"
+    3.2 "[y x]:a"
+    3.3 "[x x]:b"
+    3.4 "[y y]:b"
+
+    4.1 {["x" "y"]:a}
+    4.2 {["y" x]:a}
+    4.3 {[x "x"]:b}
+    4.4 {["y" y]:b}
   } {
     set res [matchdata 1 $expr]
     do_execsql_test $tn2.3.$tn.[llength $res] { 
