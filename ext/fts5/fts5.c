@@ -601,7 +601,7 @@ static int fts5SorterNext(Fts5Cursor *pCsr){
 
     for(i=0; i<(pSorter->nIdx-1); i++){
       int iVal;
-      a += getVarint32(a, iVal);
+      a += fts5GetVarint32(a, iVal);
       iOff += iVal;
       pSorter->aIdx[i] = iOff;
     }

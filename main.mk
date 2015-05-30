@@ -82,6 +82,7 @@ LIBOBJ += fts5_index.o
 LIBOBJ += fts5_storage.o
 LIBOBJ += fts5_tokenize.o
 LIBOBJ += fts5_unicode2.o
+LIBOBJ += fts5_varint.o
 LIBOBJ += fts5_vocab.o
 LIBOBJ += fts5parse.o
 
@@ -249,6 +250,7 @@ SRC += \
    $(TOP)/ext/fts5/fts5_storage.c \
    $(TOP)/ext/fts5/fts5_tokenize.c \
    $(TOP)/ext/fts5/fts5_unicode2.c \
+   $(TOP)/ext/fts5/fts5_varint.c \
    $(TOP)/ext/fts5/fts5_vocab.c 
 
 
@@ -666,6 +668,9 @@ fts5_tokenize.o:	$(TOP)/ext/fts5/fts5_tokenize.c $(HDR) $(EXTHDR)
 
 fts5_unicode2.o:	$(TOP)/ext/fts5/fts5_unicode2.c $(HDR) $(EXTHDR)
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts5/fts5_unicode2.c
+
+fts5_varint.o:	$(TOP)/ext/fts5/fts5_varint.c $(HDR) $(EXTHDR)
+	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts5/fts5_varint.c
 
 fts5_vocab.o:	$(TOP)/ext/fts5/fts5_vocab.c $(HDR) $(EXTHDR)
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts5/fts5_vocab.c

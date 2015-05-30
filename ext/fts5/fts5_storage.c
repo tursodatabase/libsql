@@ -233,14 +233,18 @@ int sqlite3Fts5StorageOpen(
 
   if( bCreate ){
     if( pConfig->eContent==FTS5_CONTENT_NORMAL ){
+      int nDefn = 32 + pConfig->nCol*10;
       char *zDefn = sqlite3_malloc(32 + pConfig->nCol * 10);
       if( zDefn==0 ){
         rc = SQLITE_NOMEM;
       }else{
         int i;
-        int iOff = sprintf(zDefn, "id INTEGER PRIMARY KEY");
+        int iOff;
+        sqlite3_snprintf(nDefn, zDefn, "id INTEGER PRIMARY KEY");
+        iOff = strlen(zDefn);
         for(i=0; i<pConfig->nCol; i++){
-          iOff += sprintf(&zDefn[iOff], ", c%d", i);
+          sqlite3_snprintf(nDefn-iOff, &zDefn[iOff], ", c%d", i);
+          iOff += strlen(&zDefn[iOff]);
         }
         rc = sqlite3Fts5CreateTable(pConfig, "content", zDefn, 0, pzErr);
       }
@@ -395,9 +399,9 @@ static int fts5StorageLoadTotals(Fts5Storage *p, int bCache){
     if( rc==SQLITE_OK && buf.n ){
       int i = 0;
       int iCol;
-      i += getVarint(&buf.p[i], (u64*)&p->nTotalRow);
+      i += fts5GetVarint(&buf.p[i], (u64*)&p->nTotalRow);
       for(iCol=0; i<buf.n && iCol<nCol; iCol++){
-        i += getVarint(&buf.p[i], (u64*)&p->aTotalSize[iCol]);
+        i += fts5GetVarint(&buf.p[i], (u64*)&p->aTotalSize[iCol]);
       }
     }
     sqlite3_free(buf.p);
@@ -907,7 +911,7 @@ static int fts5StorageDecodeSizeArray(
   int iOff = 0;
   for(i=0; i<nCol; i++){
     if( iOff>=nBlob ) return 1;
-    iOff += getVarint32(&aBlob[iOff], aCol[i]);
+    iOff += fts5GetVarint32(&aBlob[iOff], aCol[i]);
   }
   return (iOff!=nBlob);
 }

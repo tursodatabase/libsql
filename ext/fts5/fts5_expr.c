@@ -708,7 +708,7 @@ static int fts5ExprExtractCol(
       if( p==pEnd ) return 0;
     }
     *pa = p++;
-    p += getVarint32(p, iCurrent);
+    p += fts5GetVarint32(p, iCurrent);
   }
 
   /* Advance pointer p until it points to pEnd or an 0x01 byte that is

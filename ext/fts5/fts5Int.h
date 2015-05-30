@@ -15,7 +15,27 @@
 #define _FTS5INT_H
 
 #include "fts5.h"
-#include "sqliteInt.h"
+
+#include <string.h>
+#include <assert.h>
+
+#ifndef SQLITE_AMALGAMATION
+
+typedef unsigned char  u8;
+typedef unsigned int   u32;
+typedef unsigned short u16;
+typedef sqlite3_int64 i64;
+typedef sqlite3_uint64 u64;
+
+#define ArraySize(x) (sizeof(x) / sizeof(x[0]))
+
+#define testcase(x)
+#define ALWAYS(x) 1
+#define NEVER(x) 0
+
+#define MIN(x,y) (((x) < (y)) ? (x) : (y))
+
+#endif
 
 
 /*
@@ -377,14 +397,25 @@ int sqlite3Fts5IndexMerge(Fts5Index *p, int nMerge);
 
 int sqlite3Fts5IndexLoadConfig(Fts5Index *p);
 
-int sqlite3Fts5GetVarint32(const unsigned char *p, u32 *v);
-#define fts5GetVarint32(a,b) sqlite3Fts5GetVarint32(a,(u32*)&b)
-
-int sqlite3Fts5GetVarintLen(u32 iVal);
-
 /*
 ** End of interface to code in fts5_index.c.
 **************************************************************************/
+
+/**************************************************************************
+** Interface to code in fts5_varint.c. 
+*/
+int sqlite3Fts5GetVarint32(const unsigned char *p, u32 *v);
+int sqlite3Fts5GetVarintLen(u32 iVal);
+u8 sqlite3Fts5GetVarint(const unsigned char*, u64*);
+int sqlite3Fts5PutVarint(unsigned char *p, u64 v);
+
+#define fts5GetVarint32(a,b) sqlite3Fts5GetVarint32(a,(u32*)&b)
+#define fts5GetVarint    sqlite3Fts5GetVarint
+
+/*
+** End of interface to code in fts5_varint.c.
+**************************************************************************/
+
 
 /**************************************************************************
 ** Interface to code in fts5.c. 

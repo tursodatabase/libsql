@@ -44,7 +44,7 @@ int sqlite3Fts5BufferGrow(int *pRc, Fts5Buffer *pBuf, int nByte){
 */
 void sqlite3Fts5BufferAppendVarint(int *pRc, Fts5Buffer *pBuf, i64 iVal){
   if( sqlite3Fts5BufferGrow(pRc, pBuf, 9) ) return;
-  pBuf->n += sqlite3PutVarint(&pBuf->p[pBuf->n], iVal);
+  pBuf->n += sqlite3Fts5PutVarint(&pBuf->p[pBuf->n], iVal);
 }
 
 void sqlite3Fts5Put32(u8 *aBuf, int iVal){
@@ -169,11 +169,11 @@ int sqlite3Fts5PoslistNext64(
   }else{
     i64 iOff = *piOff;
     int iVal;
-    i += getVarint32(&a[i], iVal);
+    i += fts5GetVarint32(&a[i], iVal);
     if( iVal==1 ){
-      i += getVarint32(&a[i], iVal);
+      i += fts5GetVarint32(&a[i], iVal);
       iOff = ((i64)iVal) << 32;
-      i += getVarint32(&a[i], iVal);
+      i += fts5GetVarint32(&a[i], iVal);
     }
     *piOff = iOff + (iVal-2);
     *pi = i;

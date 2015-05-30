@@ -188,7 +188,7 @@ static void fts5HashAddPoslistSize(Fts5HashEntry *p){
     }else{
       int nByte = sqlite3Fts5GetVarintLen((u32)nPos);
       memmove(&pPtr[p->iSzPoslist + nByte], &pPtr[p->iSzPoslist + 1], nSz);
-      sqlite3PutVarint(&pPtr[p->iSzPoslist], nPos);
+      sqlite3Fts5PutVarint(&pPtr[p->iSzPoslist], nPos);
       p->nData += (nByte-1);
     }
     p->bDel = 0;
@@ -239,7 +239,7 @@ int sqlite3Fts5HashWrite(
     assert( iHash==fts5HashKey(pHash->nSlot, p->zKey, nToken+1) );
     p->zKey[nToken+1] = '\0';
     p->nData = nToken+1 + 1 + sizeof(Fts5HashEntry);
-    p->nData += sqlite3PutVarint(&((u8*)p)[p->nData], iRowid);
+    p->nData += sqlite3Fts5PutVarint(&((u8*)p)[p->nData], iRowid);
     p->iSzPoslist = p->nData;
     p->nData += 1;
     p->iRowid = iRowid;
@@ -276,7 +276,7 @@ int sqlite3Fts5HashWrite(
   ** entry, and the new rowid for this entry.  */
   if( iRowid!=p->iRowid ){
     fts5HashAddPoslistSize(p);
-    p->nData += sqlite3PutVarint(&pPtr[p->nData], iRowid - p->iRowid);
+    p->nData += sqlite3Fts5PutVarint(&pPtr[p->nData], iRowid - p->iRowid);
     p->iSzPoslist = p->nData;
     p->nData += 1;
     p->iCol = 0;
@@ -289,13 +289,13 @@ int sqlite3Fts5HashWrite(
     assert( iCol>=p->iCol );
     if( iCol!=p->iCol ){
       pPtr[p->nData++] = 0x01;
-      p->nData += sqlite3PutVarint(&pPtr[p->nData], iCol);
+      p->nData += sqlite3Fts5PutVarint(&pPtr[p->nData], iCol);
       p->iCol = iCol;
       p->iPos = 0;
     }
 
     /* Append the new position offset */
-    p->nData += sqlite3PutVarint(&pPtr[p->nData], iPos - p->iPos + 2);
+    p->nData += sqlite3Fts5PutVarint(&pPtr[p->nData], iPos - p->iPos + 2);
     p->iPos = iPos;
   }else{
     /* This is a delete. Set the delete flag. */

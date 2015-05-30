@@ -13,9 +13,7 @@
 
 #if defined(SQLITE_ENABLE_FTS5)
 
-#include "fts5.h"
-#include <string.h>
-#include <assert.h>
+#include "fts5Int.h"
 
 /**************************************************************************
 ** Start of ascii tokenizer implementation.
