@@ -1,5 +1,5 @@
-C Fix\sminor\stypo\sin\scomment.\s\sNo\schanges\sto\scode.
-D 2015-05-30T22:05:17.458
+C Updates\sto\sconfigure.ac\sto\shelp\sit\sfind\swhere\sthe\sTCL\slibraries\shidden\non\sUbuntu\s14.04.
+D 2015-05-30T22:57:49.610
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 994bab32a3a69e0c35bd148b65cde49879772964
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -38,8 +38,8 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 42b71ad3fe21c9e88fa59e8458ca1a6bc72eb0c0
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 35cbd52af707ae22401641fe7b3672f05aea0eb1 x
-F configure.ac 0b775d383c536bbaafc1e46dd3cbb81a7ea11aeb
+F configure 17bd8dc3e35c718df68d04f53bf7dacf2b639732 x
+F configure.ac 713de38000413e469188db2cb85bed759b56f322
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 334dbf6621b8fb8790297ec1abf3cfa4621709d1
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
@@ -1281,7 +1281,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 09a38bf665902834936d39341627ded88142e6ae
-R ef3c3ce42e00538e32e192eb7a670812
-U mistachkin
-Z 7d37f32a6f8f03a1b757dcda37cff44f
+P 73fc058b3a74c1b018cff990de793f19a602c12f
+R 6be0a2acb8b138e304ff212c6a26c60d
+U drh
+Z d3293018ae234b91be7ef388addbca2d
