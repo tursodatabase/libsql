@@ -44,18 +44,21 @@ struct Fts5Expr {
 ** eType:
 **   Expression node type. Always one of:
 **
-**       FTS5_AND                 (pLeft, pRight valid)
-**       FTS5_OR                  (pLeft, pRight valid)
-**       FTS5_NOT                 (pLeft, pRight valid)
+**       FTS5_AND                 (nChild, apChild valid)
+**       FTS5_OR                  (nChild, apChild valid)
+**       FTS5_NOT                 (nChild, apChild valid)
 **       FTS5_STRING              (pNear valid)
 */
 struct Fts5ExprNode {
   int eType;                      /* Node type */
-  Fts5ExprNode *pLeft;            /* Left hand child node */
-  Fts5ExprNode *pRight;           /* Right hand child node */
-  Fts5ExprNearset *pNear;         /* For FTS5_STRING - cluster of phrases */
   int bEof;                       /* True at EOF */
   i64 iRowid;                     /* Current rowid */
+  Fts5ExprNearset *pNear;         /* For FTS5_STRING - cluster of phrases */
+
+  /* Child nodes. For a NOT node, this array always contains 2 entries. For 
+  ** AND or OR nodes, it contains 2 or more entries.  */
+  int nChild;                     /* Number of child nodes */
+  Fts5ExprNode *apChild[0];       /* Array of child nodes */
 };
 
 /*
@@ -315,8 +318,10 @@ int sqlite3Fts5ExprPhraseExpr(
 */
 void sqlite3Fts5ParseNodeFree(Fts5ExprNode *p){
   if( p ){
-    sqlite3Fts5ParseNodeFree(p->pLeft);
-    sqlite3Fts5ParseNodeFree(p->pRight);
+    int i;
+    for(i=0; i<p->nChild; i++){
+      sqlite3Fts5ParseNodeFree(p->apChild[i]);
+    }
     sqlite3Fts5ParseNearsetFree(p->pNear);
     sqlite3_free(p);
   }
@@ -685,6 +690,7 @@ static int fts5ExprNearNextRowidMatch(
   return rc;
 }
 
+
 /*
 ** IN/OUT parameter (*pa) points to a position list n bytes in size. If
 ** the position list contains entries for column iCol, then (*pa) is set
@@ -898,6 +904,16 @@ static int fts5ExprNearInitAll(
 static int fts5ExprNodeNextMatch(Fts5Expr*, Fts5ExprNode*);
 
 
+/*
+** If pExpr is an ASC iterator, this function returns a value with the
+** same sign as:
+**
+**   (iLhs - iRhs)
+**
+** Otherwise, if this is a DESC iterator, the opposite is returned:
+**
+**   (iRhs - iLhs)
+*/
 static int fts5RowidCmp(
   Fts5Expr *pExpr,
   i64 iLhs,
@@ -912,6 +928,68 @@ static int fts5RowidCmp(
     return (iLhs < iRhs);
   }
 }
+
+static void fts5ExprSetEof(Fts5ExprNode *pNode){
+  if( pNode ){
+    int i;
+    pNode->bEof = 1;
+    for(i=0; i<pNode->nChild; i++){
+      fts5ExprSetEof(pNode->apChild[i]);
+    }
+  }
+}
+
+
+static int fts5ExprNodeNext(Fts5Expr*, Fts5ExprNode*, int, i64);
+
+/*
+** Argument pNode is an FTS5_AND node.
+*/
+static int fts5ExprAndNextRowid(
+  Fts5Expr *pExpr,                /* Expression pPhrase belongs to */
+  Fts5ExprNode *pAnd              /* FTS5_AND node to advance */
+){
+  int iChild;
+  i64 iLast = pAnd->iRowid;
+  int rc = SQLITE_OK;
+  int bMatch;
+
+  assert( pAnd->bEof==0 );
+  do {
+    bMatch = 1;
+    for(iChild=0; iChild<pAnd->nChild; iChild++){
+      Fts5ExprNode *pChild = pAnd->apChild[iChild];
+      if( 0 && pChild->eType==FTS5_STRING ){
+        /* TODO */
+      }else{
+        int cmp = fts5RowidCmp(pExpr, iLast, pChild->iRowid);
+        if( cmp>0 ){
+          /* Advance pChild until it points to iLast or laster */
+          rc = fts5ExprNodeNext(pExpr, pChild, 1, iLast);
+          if( rc!=SQLITE_OK ) return rc;
+        }
+      }
+
+      /* If the child node is now at EOF, so is the parent AND node. Otherwise,
+      ** the child node is guaranteed to have advanced at least as far as
+      ** rowid iLast. So if it is not at exactly iLast, pChild->iRowid is the
+      ** new lastest rowid seen so far.  */
+      assert( pChild->bEof || fts5RowidCmp(pExpr, iLast, pChild->iRowid)<=0 );
+      if( pChild->bEof ){
+        fts5ExprSetEof(pAnd);
+        bMatch = 1;
+        break;
+      }else if( iLast!=pChild->iRowid ){
+        bMatch = 0;
+        iLast = pChild->iRowid;
+      }
+    }
+  }while( bMatch==0 );
+
+  pAnd->iRowid = iLast;
+  return SQLITE_OK;
+}
+
 
 /*
 ** Compare the values currently indicated by the two nodes as follows:
@@ -958,27 +1036,24 @@ static int fts5ExprNodeNext(
       };
 
       case FTS5_AND: {
-        Fts5ExprNode *pLeft = pNode->pLeft;
+        Fts5ExprNode *pLeft = pNode->apChild[0];
         rc = fts5ExprNodeNext(pExpr, pLeft, bFromValid, iFrom);
-        if( rc==SQLITE_OK && pLeft->bEof==0 ){
-          assert( !bFromValid || fts5RowidCmp(pExpr, pLeft->iRowid, iFrom)>=0 );
-          rc = fts5ExprNodeNext(pExpr, pNode->pRight, 1, pLeft->iRowid);
-        }
         break;
       }
 
       case FTS5_OR: {
-        Fts5ExprNode *p1 = pNode->pLeft;
-        Fts5ExprNode *p2 = pNode->pRight;
-        int cmp = fts5NodeCompare(pExpr, p1, p2);
+        int i;
+        int iLast = pNode->iRowid;
 
-        if( cmp<=0 || (bFromValid && fts5RowidCmp(pExpr,p1->iRowid,iFrom)<0) ){
-          rc = fts5ExprNodeNext(pExpr, p1, bFromValid, iFrom);
-        }
-
-        if( cmp>=0 || (bFromValid && fts5RowidCmp(pExpr,p2->iRowid,iFrom)<0) ){
-          if( rc==SQLITE_OK ){
-            rc = fts5ExprNodeNext(pExpr, p2, bFromValid, iFrom);
+        for(i=0; rc==SQLITE_OK && i<pNode->nChild; i++){
+          Fts5ExprNode *p1 = pNode->apChild[i];
+          assert( p1->bEof || fts5RowidCmp(pExpr, p1->iRowid, iLast)>=0 );
+          if( p1->bEof==0 ){
+            if( (p1->iRowid==iLast) 
+             || (bFromValid && fts5RowidCmp(pExpr, p1->iRowid, iFrom)<0)
+            ){
+              rc = fts5ExprNodeNext(pExpr, p1, bFromValid, iFrom);
+            }
           }
         }
 
@@ -986,7 +1061,8 @@ static int fts5ExprNodeNext(
       }
 
       default: assert( pNode->eType==FTS5_NOT ); {
-        rc = fts5ExprNodeNext(pExpr, pNode->pLeft, bFromValid, iFrom);
+        assert( pNode->nChild==2 );
+        rc = fts5ExprNodeNext(pExpr, pNode->apChild[0], bFromValid, iFrom);
         break;
       }
     }
@@ -1020,8 +1096,10 @@ static void fts5ExprNodeZeroPoslist(Fts5ExprNode *pNode){
       pPhrase->poslist.n = 0;
     }
   }else{
-    fts5ExprNodeZeroPoslist(pNode->pLeft);
-    fts5ExprNodeZeroPoslist(pNode->pRight);
+    int i;
+    for(i=0; i<pNode->nChild; i++){
+      fts5ExprNodeZeroPoslist(pNode->apChild[i]);
+    }
   }
 }
 
@@ -1042,28 +1120,36 @@ static int fts5ExprNodeTest(
         break;
 
       case FTS5_AND: {
-        int bRes1 = fts5ExprNodeTest(pRc, pExpr, iRowid, pNode->pLeft);
-        int bRes2 = fts5ExprNodeTest(pRc, pExpr, iRowid, pNode->pRight);
-        assert( (bRes1==0 || bRes1==1) && (bRes2==0 || bRes2==1) );
-
-        bRes = (bRes1 && bRes2);
-        if( bRes1!=bRes2 ){
-          fts5ExprNodeZeroPoslist(bRes1 ? pNode->pLeft : pNode->pRight);
+        int i;
+        for(i=0; i<pNode->nChild; i++){
+          if( fts5ExprNodeTest(pRc, pExpr, iRowid, pNode->apChild[i])==0 ){
+            break;
+          }
         }
+        bRes = (i==pNode->nChild);
+        if( bRes==0 && i>0 ){
+          for(i=0; i<pNode->nChild; i++){
+            fts5ExprNodeZeroPoslist(pNode->apChild[i]);
+          }
+        }
+
         break;
       }
 
       case FTS5_OR: {
-        int bRes1 = fts5ExprNodeTest(pRc, pExpr, iRowid, pNode->pLeft);
-        int bRes2 = fts5ExprNodeTest(pRc, pExpr, iRowid, pNode->pRight);
-
-        bRes = (bRes1 || bRes2);
+        int i;
+        for(i=0; i<pNode->nChild; i++){
+          if( fts5ExprNodeTest(pRc, pExpr, iRowid, pNode->apChild[i]) ){
+            bRes = 1;
+          }
+        }
         break;
       }
 
       default:
         assert( pNode->eType==FTS5_NOT );
-        bRes = fts5ExprNodeTest(pRc, pExpr, iRowid, pNode->pLeft);
+        assert( pNode->nChild==2 );
+        bRes = fts5ExprNodeTest(pRc, pExpr, iRowid, pNode->apChild[0]);
         break;
     }
   }
@@ -1071,14 +1157,6 @@ static int fts5ExprNodeTest(
   return bRes;
 }
 
-
-static void fts5ExprSetEof(Fts5ExprNode *pNode){
-  if( pNode ){
-    pNode->bEof = 1;
-    fts5ExprSetEof(pNode->pLeft);
-    fts5ExprSetEof(pNode->pRight);
-  }
-}
 
 /*
 ** If pNode currently points to a match, this function returns SQLITE_OK
@@ -1102,42 +1180,28 @@ static int fts5ExprNodeNextMatch(
       }
 
       case FTS5_AND: {
-        Fts5ExprNode *p1 = pNode->pLeft;
-        Fts5ExprNode *p2 = pNode->pRight;
-
-        while( p1->bEof==0 && p2->bEof==0 && p2->iRowid!=p1->iRowid ){
-          Fts5ExprNode *pAdv;
-          i64 iFrom;
-          assert( pExpr->bDesc==0 || pExpr->bDesc==1 );
-          if( pExpr->bDesc==(p1->iRowid > p2->iRowid) ){
-            pAdv = p1;
-            iFrom = p2->iRowid;
-          }else{
-            pAdv = p2;
-            iFrom = p1->iRowid;
-          }
-          rc = fts5ExprNodeNext(pExpr, pAdv, 1, iFrom);
-          if( rc!=SQLITE_OK ) break;
-        }
-        if( p1->bEof || p2->bEof ){
-          fts5ExprSetEof(pNode);
-        }
-        pNode->iRowid = p1->iRowid;
+        rc = fts5ExprAndNextRowid(pExpr, pNode);
         break;
       }
 
       case FTS5_OR: {
-        Fts5ExprNode *p1 = pNode->pLeft;
-        Fts5ExprNode *p2 = pNode->pRight;
-        Fts5ExprNode *pNext = (fts5NodeCompare(pExpr, p1, p2) > 0 ? p2 : p1);
-        pNode->bEof = pNext->bEof;
+        Fts5ExprNode *pNext = pNode->apChild[0];
+        int i;
+        for(i=1; i<pNode->nChild; i++){
+          Fts5ExprNode *pChild = pNode->apChild[i];
+          if( fts5NodeCompare(pExpr, pNext, pChild)>0 ){
+            pNext = pChild;
+          }
+        }
         pNode->iRowid = pNext->iRowid;
+        pNode->bEof = pNext->bEof;
         break;
       }
 
       default: assert( pNode->eType==FTS5_NOT ); {
-        Fts5ExprNode *p1 = pNode->pLeft;
-        Fts5ExprNode *p2 = pNode->pRight;
+        Fts5ExprNode *p1 = pNode->apChild[0];
+        Fts5ExprNode *p2 = pNode->apChild[1];
+        assert( pNode->nChild==2 );
 
         while( rc==SQLITE_OK && p1->bEof==0 ){
           int cmp = fts5NodeCompare(pExpr, p1, p2);
@@ -1184,10 +1248,12 @@ static int fts5ExprNodeFirst(Fts5Expr *pExpr, Fts5ExprNode *pNode){
     }
 
   }else{
-    rc = fts5ExprNodeFirst(pExpr, pNode->pLeft);
-    if( rc==SQLITE_OK ){
-      rc = fts5ExprNodeFirst(pExpr, pNode->pRight);
+    int i;
+    for(i=0; i<pNode->nChild && rc==SQLITE_OK; i++){
+      rc = fts5ExprNodeFirst(pExpr, pNode->apChild[i]);
     }
+
+    pNode->iRowid = pNode->apChild[0]->iRowid;
     if( rc==SQLITE_OK ){
       rc = fts5ExprNodeNextMatch(pExpr, pNode);
     }
@@ -1230,10 +1296,11 @@ int sqlite3Fts5ExprFirst(Fts5Expr *p, Fts5Index *pIdx, int bDesc){
 */
 int sqlite3Fts5ExprNext(Fts5Expr *p){
   int rc;
+  Fts5ExprNode *pRoot = p->pRoot;
   do {
-    rc = fts5ExprNodeNext(p, p->pRoot, 0, 0);
-  }while( p->pRoot->bEof==0 
-      && fts5ExprNodeTest(&rc, p, p->pRoot->iRowid, p->pRoot)==0 
+    rc = fts5ExprNodeNext(p, pRoot, 0, 0);
+  }while( pRoot->bEof==0 
+      && fts5ExprNodeTest(&rc, p, pRoot->iRowid, p->pRoot)==0 
       && rc==SQLITE_OK 
   );
   return rc;
@@ -1578,6 +1645,17 @@ void sqlite3Fts5ParseSetColset(
   }
 }
 
+static void fts5ExprAddChildren(Fts5ExprNode *p, Fts5ExprNode *pSub){
+  if( p->eType!=FTS5_NOT && pSub->eType==p->eType ){
+    int nByte = sizeof(Fts5ExprNode*) * pSub->nChild;
+    memcpy(&p->apChild[p->nChild], pSub->apChild, nByte);
+    p->nChild += pSub->nChild;
+    sqlite3_free(pSub);
+  }else{
+    p->apChild[p->nChild++] = pSub;
+  }
+}
+
 /*
 ** Allocate and return a new expression object. If anything goes wrong (i.e.
 ** OOM error), leave an error code in pParse and return NULL.
@@ -1592,26 +1670,38 @@ Fts5ExprNode *sqlite3Fts5ParseNode(
   Fts5ExprNode *pRet = 0;
 
   if( pParse->rc==SQLITE_OK ){
+    int nChild = 0;               /* Number of children of returned node */
+    int nByte;                    /* Bytes of space to allocate for this node */
+ 
     assert( (eType!=FTS5_STRING && !pNear)
-        || (eType==FTS5_STRING && !pLeft && !pRight)
+         || (eType==FTS5_STRING && !pLeft && !pRight)
     );
     if( eType==FTS5_STRING && pNear==0 ) return 0;
     if( eType!=FTS5_STRING && pLeft==0 ) return pRight;
     if( eType!=FTS5_STRING && pRight==0 ) return pLeft;
-    pRet = (Fts5ExprNode*)sqlite3_malloc(sizeof(Fts5ExprNode));
-    if( pRet==0 ){
-      pParse->rc = SQLITE_NOMEM;
-    }else{
-      memset(pRet, 0, sizeof(*pRet));
+
+    if( eType==FTS5_NOT ){
+      nChild = 2;
+    }else if( eType==FTS5_AND || eType==FTS5_OR ){
+      nChild = 2;
+      if( pLeft->eType==eType ) nChild += pLeft->nChild-1;
+      if( pRight->eType==eType ) nChild += pRight->nChild-1;
+    }
+
+    nByte = sizeof(Fts5ExprNode) + sizeof(Fts5ExprNode*)*nChild;
+    pRet = (Fts5ExprNode*)sqlite3Fts5MallocZero(&pParse->rc, nByte);
+
+    if( pRet ){
       pRet->eType = eType;
-      pRet->pLeft = pLeft;
-      pRet->pRight = pRight;
       pRet->pNear = pNear;
       if( eType==FTS5_STRING ){
         int iPhrase;
         for(iPhrase=0; iPhrase<pNear->nPhrase; iPhrase++){
           pNear->apPhrase[iPhrase]->pNode = pRet;
         }
+      }else{
+        fts5ExprAddChildren(pRet, pLeft);
+        fts5ExprAddChildren(pRet, pRight);
       }
     }
   }
@@ -1718,9 +1808,8 @@ static char *fts5ExprPrintTcl(
     if( zRet==0 ) return 0;
 
   }else{
-    char *zOp = 0;
-    char *z1 = 0;
-    char *z2 = 0;
+    char const *zOp = 0;
+    int i;
     switch( pExpr->eType ){
       case FTS5_AND: zOp = "AND"; break;
       case FTS5_NOT: zOp = "NOT"; break;
@@ -1730,13 +1819,16 @@ static char *fts5ExprPrintTcl(
         break;
     }
 
-    z1 = fts5ExprPrintTcl(pConfig, zNearsetCmd, pExpr->pLeft);
-    z2 = fts5ExprPrintTcl(pConfig, zNearsetCmd, pExpr->pRight);
-    if( z1 && z2 ){
-      zRet = sqlite3_mprintf("%s [%s] [%s]", zOp, z1, z2);
+    zRet = sqlite3_mprintf("%s", zOp);
+    for(i=0; zRet && i<pExpr->nChild; i++){
+      char *z = fts5ExprPrintTcl(pConfig, zNearsetCmd, pExpr->apChild[i]);
+      if( !z ){
+        sqlite3_free(zRet);
+        zRet = 0;
+      }else{
+        zRet = fts5PrintfAppend(zRet, " [%z]", z);
+      }
     }
-    sqlite3_free(z1);
-    sqlite3_free(z2);
   }
 
   return zRet;
@@ -1785,31 +1877,32 @@ static char *fts5ExprPrint(Fts5Config *pConfig, Fts5ExprNode *pExpr){
     }
 
   }else{
-    char *zOp = 0;
-    char *z1 = 0;
-    char *z2 = 0;
+    char const *zOp = 0;
+    int i;
+
     switch( pExpr->eType ){
-      case FTS5_AND: zOp = "AND"; break;
-      case FTS5_NOT: zOp = "NOT"; break;
+      case FTS5_AND: zOp = " AND "; break;
+      case FTS5_NOT: zOp = " NOT "; break;
       default:  
         assert( pExpr->eType==FTS5_OR );
-        zOp = "OR"; 
+        zOp = " OR "; 
         break;
     }
 
-    z1 = fts5ExprPrint(pConfig, pExpr->pLeft);
-    z2 = fts5ExprPrint(pConfig, pExpr->pRight);
-    if( z1 && z2 ){
-      int b1 = pExpr->pLeft->eType!=FTS5_STRING;
-      int b2 = pExpr->pRight->eType!=FTS5_STRING;
-      zRet = sqlite3_mprintf("%s%s%s %s %s%s%s", 
-          b1 ? "(" : "", z1, b1 ? ")" : "",
-          zOp, 
-          b2 ? "(" : "", z2, b2 ? ")" : ""
-      );
+    for(i=0; i<pExpr->nChild; i++){
+      char *z = fts5ExprPrint(pConfig, pExpr->apChild[i]);
+      if( z==0 ){
+        sqlite3_free(zRet);
+        zRet = 0;
+      }else{
+        int b = (pExpr->apChild[i]->eType!=FTS5_STRING);
+        zRet = fts5PrintfAppend(zRet, "%s%s%z%s", 
+            (i==0 ? "" : zOp),
+            (b?"(":""), z, (b?")":"")
+        );
+      }
+      if( zRet==0 ) break;
     }
-    sqlite3_free(z1);
-    sqlite3_free(z2);
   }
 
   return zRet;

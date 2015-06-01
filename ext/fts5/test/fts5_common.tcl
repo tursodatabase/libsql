@@ -271,12 +271,14 @@ proc instcompare {lhs rhs} {
 #-------------------------------------------------------------------------
 # Logical operators used by the commands returned by fts5_tcl_expr().
 #
-proc AND {a b} {
-  if {[llength $a]==0 || [llength $b]==0} { return [list] }
-  sort_poslist [concat $a $b]
+proc AND {args} {
+  foreach a $args {
+    if {[llength $a]==0} { return [list] }
+  }
+  sort_poslist [concat {*}$args]
 }
-proc OR {a b} {
-  sort_poslist [concat $a $b]
+proc OR {args} {
+  sort_poslist [concat {*}$args]
 }
 proc NOT {a b} {
   if {[llength $b]>0} { return [list] }
