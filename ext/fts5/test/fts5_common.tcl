@@ -279,7 +279,7 @@ proc OR {a b} {
   sort_poslist [concat $a $b]
 }
 proc NOT {a b} {
-  if {[llength $b]} { return [list] }
+  if {[llength $b]>0} { return [list] }
   return $a
 }
 

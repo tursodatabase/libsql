@@ -653,10 +653,8 @@ static int fts5ExprNearNextRowidMatch(
   Fts5ExprNode *pNode
 ){
   Fts5ExprNearset *pNear = pNode->pNear;
-  int rc = SQLITE_OK;
-  int i, j;                       /* Phrase and token index, respectively */
   i64 iLast;                      /* Lastest rowid any iterator points to */
-  int bMatch;                     /* True if all terms are at the same rowid */
+  int rc = SQLITE_OK;
 
   /* Initialize iLast, the "lastest" rowid any iterator points to. If the
   ** iterator skips through rowids in the default ascending order, this means
@@ -664,20 +662,24 @@ static int fts5ExprNearNextRowidMatch(
   ** means the minimum rowid.  */
   iLast = sqlite3Fts5IterRowid(pNear->apPhrase[0]->aTerm[0].pIter);
 
-  do {
-    bMatch = 1;
-    for(i=0; i<pNear->nPhrase; i++){
-      Fts5ExprPhrase *pPhrase = pNear->apPhrase[i];
-      for(j=0; j<pPhrase->nTerm; j++){
-        Fts5IndexIter *pIter = pPhrase->aTerm[j].pIter;
-        i64 iRowid = sqlite3Fts5IterRowid(pIter);
-        if( iRowid!=iLast ) bMatch = 0;
-        if( fts5ExprAdvanceto(pIter, pExpr->bDesc, &iLast, &rc, &pNode->bEof) ){
-          return rc;
+  if( pNear->nPhrase>1 || pNear->apPhrase[0]->nTerm>1 ){
+    int i, j;                     /* Phrase and token index, respectively */
+    int bMatch;                   /* True if all terms are at the same rowid */
+    do {
+      bMatch = 1;
+      for(i=0; i<pNear->nPhrase; i++){
+        Fts5ExprPhrase *pPhrase = pNear->apPhrase[i];
+        for(j=0; j<pPhrase->nTerm; j++){
+          Fts5IndexIter *pIter = pPhrase->aTerm[j].pIter;
+          i64 iRowid = sqlite3Fts5IterRowid(pIter);
+          if( iRowid!=iLast ) bMatch = 0;
+          if( fts5ExprAdvanceto(pIter, pExpr->bDesc, &iLast,&rc,&pNode->bEof) ){
+            return rc;
+          }
         }
       }
-    }
-  }while( bMatch==0 );
+    }while( bMatch==0 );
+  }
 
   pNode->iRowid = iLast;
   return rc;
@@ -738,6 +740,76 @@ static int fts5ExprExtractColset (
   return rc;
 }
 
+static int fts5ExprNearTest(
+  int *pRc,
+  Fts5Expr *pExpr,                /* Expression that pNear is a part of */
+  Fts5ExprNode *pNode             /* The "NEAR" node (FTS5_STRING) */
+){
+  Fts5ExprNearset *pNear = pNode->pNear;
+  int rc = *pRc;
+
+  if( pNear->nPhrase==1 && pNear->apPhrase[0]->nTerm==1 ){
+    /* If this "NEAR" object is actually a single phrase that consists 
+    ** of a single term only, then grab pointers into the poslist
+    ** managed by the fts5_index.c iterator object. This is much faster 
+    ** than synthesizing a new poslist the way we have to for more
+    ** complicated phrase or NEAR expressions.  */
+    Fts5ExprPhrase *pPhrase = pNear->apPhrase[0];
+    Fts5IndexIter *pIter = pPhrase->aTerm[0].pIter;
+    Fts5ExprColset *pColset = pNear->pColset;
+    const u8 *pPos;
+    int nPos;
+
+    if( rc!=SQLITE_OK ) return 0;
+    rc = sqlite3Fts5IterPoslist(pIter, &pPos, &nPos, &pNode->iRowid);
+
+    /* If the term may match any column, then this must be a match. 
+    ** Return immediately in this case. Otherwise, try to find the
+    ** part of the poslist that corresponds to the required column.
+    ** If it can be found, return. If it cannot, the next iteration
+    ** of the loop will test the next rowid in the database for this
+    ** term.  */
+    if( pColset==0 ){
+      assert( pPhrase->poslist.nSpace==0 );
+      pPhrase->poslist.p = (u8*)pPos;
+      pPhrase->poslist.n = nPos;
+    }else if( pColset->nCol==1 ){
+      assert( pPhrase->poslist.nSpace==0 );
+      pPhrase->poslist.n = fts5ExprExtractCol(&pPos, nPos, pColset->aiCol[0]);
+      pPhrase->poslist.p = (u8*)pPos;
+    }else if( rc==SQLITE_OK ){
+      rc = fts5ExprExtractColset(pColset, pPos, nPos, &pPhrase->poslist);
+    }
+
+    *pRc = rc;
+    return (pPhrase->poslist.n>0);
+  }else{
+    int i;
+
+    /* Check that each phrase in the nearset matches the current row.
+    ** Populate the pPhrase->poslist buffers at the same time. If any
+    ** phrase is not a match, break out of the loop early.  */
+    for(i=0; rc==SQLITE_OK && i<pNear->nPhrase; i++){
+      Fts5ExprPhrase *pPhrase = pNear->apPhrase[i];
+      if( pPhrase->nTerm>1 || pNear->pColset ){
+        int bMatch = 0;
+        rc = fts5ExprPhraseIsMatch(pExpr, pNear->pColset, pPhrase, &bMatch);
+        if( bMatch==0 ) break;
+      }else{
+        rc = sqlite3Fts5IterPoslistBuffer(
+            pPhrase->aTerm[0].pIter, &pPhrase->poslist
+        );
+      }
+    }
+
+    *pRc = rc;
+    if( i==pNear->nPhrase && (i==1 || fts5ExprNearIsMatch(pRc, pNear)) ){
+      return 1;
+    }
+  }
+
+  return 0;
+}
 
 /*
 ** Argument pNode points to a NEAR node. All individual term iterators 
@@ -760,72 +832,16 @@ static int fts5ExprNearNextMatch(
   Fts5Expr *pExpr,                /* Expression that pNear is a part of */
   Fts5ExprNode *pNode             /* The "NEAR" node (FTS5_STRING) */
 ){
-  Fts5ExprNearset *pNear = pNode->pNear;
   int rc = SQLITE_OK;
 
+  assert( pNode->pNear );
   while( 1 ){
 
-    if( pNear->nPhrase==1 && pNear->apPhrase[0]->nTerm==1 ){
-      /* If this "NEAR" object is actually a single phrase that consists 
-      ** of a single term only, then grab pointers into the poslist
-      ** managed by the fts5_index.c iterator object. This is much faster 
-      ** than synthesizing a new poslist the way we have to for more
-      ** complicated phrase or NEAR expressions.  */
-      Fts5ExprPhrase *pPhrase = pNear->apPhrase[0];
-      Fts5IndexIter *pIter = pPhrase->aTerm[0].pIter;
-      Fts5ExprColset *pColset = pNear->pColset;
-      const u8 *pPos;
-      int nPos;
+    /* Advance the iterators until they all point to the same rowid */
+    rc = fts5ExprNearNextRowidMatch(pExpr, pNode);
+    if( rc!=SQLITE_OK || pNode->bEof ) break;
 
-      rc = sqlite3Fts5IterPoslist(pIter, &pPos, &nPos, &pNode->iRowid);
-
-      /* If the term may match any column, then this must be a match. 
-      ** Return immediately in this case. Otherwise, try to find the
-      ** part of the poslist that corresponds to the required column.
-      ** If it can be found, return. If it cannot, the next iteration
-      ** of the loop will test the next rowid in the database for this
-      ** term.  */
-      if( pColset==0 ){
-        assert( pPhrase->poslist.nSpace==0 );
-        pPhrase->poslist.p = (u8*)pPos;
-        pPhrase->poslist.n = nPos;
-      }else if( pColset->nCol==1 ){
-        assert( pPhrase->poslist.nSpace==0 );
-        pPhrase->poslist.n = fts5ExprExtractCol(&pPos, nPos, pColset->aiCol[0]);
-        pPhrase->poslist.p = (u8*)pPos;
-      }else if( rc==SQLITE_OK ){
-        rc = fts5ExprExtractColset(pColset, pPos, nPos, &pPhrase->poslist);
-      }
-
-      if( pPhrase->poslist.n ) return rc;
-    }else{
-      int i;
-
-      /* Advance the iterators until they all point to the same rowid */
-      rc = fts5ExprNearNextRowidMatch(pExpr, pNode);
-      if( rc!=SQLITE_OK || pNode->bEof ) break;
-
-      /* Check that each phrase in the nearset matches the current row.
-      ** Populate the pPhrase->poslist buffers at the same time. If any
-      ** phrase is not a match, break out of the loop early.  */
-      for(i=0; rc==SQLITE_OK && i<pNear->nPhrase; i++){
-        Fts5ExprPhrase *pPhrase = pNear->apPhrase[i];
-        if( pPhrase->nTerm>1 || pNear->pColset ){
-          int bMatch = 0;
-          rc = fts5ExprPhraseIsMatch(pExpr, pNear->pColset, pPhrase, &bMatch);
-          if( bMatch==0 ) break;
-        }else{
-          rc = sqlite3Fts5IterPoslistBuffer(
-              pPhrase->aTerm[0].pIter, &pPhrase->poslist
-          );
-        }
-      }
-
-      if( i==pNear->nPhrase ){
-        if( i==1 ) break;
-        if( fts5ExprNearIsMatch(&rc, pNear) ) break;
-      }
-    }
+    if( fts5ExprNearTest(&rc, pExpr, pNode) ) break;
 
     /* If control flows to here, then the current rowid is not a match.
     ** Advance all term iterators in all phrases to the next rowid. */
@@ -942,10 +958,11 @@ static int fts5ExprNodeNext(
       };
 
       case FTS5_AND: {
-        rc = fts5ExprNodeNext(pExpr, pNode->pLeft, bFromValid, iFrom);
-        if( rc==SQLITE_OK ){
-          /* todo: update (iFrom/bFromValid) here */
-          rc = fts5ExprNodeNext(pExpr, pNode->pRight, bFromValid, iFrom);
+        Fts5ExprNode *pLeft = pNode->pLeft;
+        rc = fts5ExprNodeNext(pExpr, pLeft, bFromValid, iFrom);
+        if( rc==SQLITE_OK && pLeft->bEof==0 ){
+          assert( !bFromValid || fts5RowidCmp(pExpr, pLeft->iRowid, iFrom)>=0 );
+          rc = fts5ExprNodeNext(pExpr, pNode->pRight, 1, pLeft->iRowid);
         }
         break;
       }
@@ -994,6 +1011,67 @@ static int fts5ExprNodeNext(
   return rc;
 }
 
+static void fts5ExprNodeZeroPoslist(Fts5ExprNode *pNode){
+  if( pNode->eType==FTS5_STRING ){
+    Fts5ExprNearset *pNear = pNode->pNear;
+    int i;
+    for(i=0; i<pNear->nPhrase; i++){
+      Fts5ExprPhrase *pPhrase = pNear->apPhrase[i];
+      pPhrase->poslist.n = 0;
+    }
+  }else{
+    fts5ExprNodeZeroPoslist(pNode->pLeft);
+    fts5ExprNodeZeroPoslist(pNode->pRight);
+  }
+}
+
+static int fts5ExprNodeTest(
+  int *pRc, 
+  Fts5Expr *pExpr, 
+  i64 iRowid,
+  Fts5ExprNode *pNode
+){
+  int bRes = 0;
+  if( pNode->bEof || pNode->iRowid!=iRowid ){
+    bRes = 0;
+  }else {
+    switch( pNode->eType ){
+      case FTS5_STRING:
+        bRes = fts5ExprNearTest(pRc, pExpr, pNode);
+        if( *pRc ) bRes = 0;
+        break;
+
+      case FTS5_AND: {
+        int bRes1 = fts5ExprNodeTest(pRc, pExpr, iRowid, pNode->pLeft);
+        int bRes2 = fts5ExprNodeTest(pRc, pExpr, iRowid, pNode->pRight);
+        assert( (bRes1==0 || bRes1==1) && (bRes2==0 || bRes2==1) );
+
+        bRes = (bRes1 && bRes2);
+        if( bRes1!=bRes2 ){
+          fts5ExprNodeZeroPoslist(bRes1 ? pNode->pLeft : pNode->pRight);
+        }
+        break;
+      }
+
+      case FTS5_OR: {
+        int bRes1 = fts5ExprNodeTest(pRc, pExpr, iRowid, pNode->pLeft);
+        int bRes2 = fts5ExprNodeTest(pRc, pExpr, iRowid, pNode->pRight);
+
+        bRes = (bRes1 || bRes2);
+        break;
+      }
+
+      default:
+        assert( pNode->eType==FTS5_NOT );
+        bRes = fts5ExprNodeTest(pRc, pExpr, iRowid, pNode->pLeft);
+        break;
+    }
+  }
+
+  return bRes;
+}
+
+
 static void fts5ExprSetEof(Fts5ExprNode *pNode){
   if( pNode ){
     pNode->bEof = 1;
@@ -1016,7 +1094,10 @@ static int fts5ExprNodeNextMatch(
     switch( pNode->eType ){
 
       case FTS5_STRING: {
+#if 0
         rc = fts5ExprNearNextMatch(pExpr, pNode);
+#endif
+        rc = fts5ExprNearNextRowidMatch(pExpr, pNode);
         break;
       }
 
@@ -1065,7 +1146,7 @@ static int fts5ExprNodeNextMatch(
             cmp = fts5NodeCompare(pExpr, p1, p2);
           }
           assert( rc!=SQLITE_OK || cmp<=0 );
-          if( rc || cmp<0 ) break;
+          if( 0==fts5ExprNodeTest(&rc, pExpr, p1->iRowid, p2) ) break;
           rc = fts5ExprNodeNext(pExpr, p1, 0, 0);
         }
         pNode->bEof = p1->bEof;
@@ -1096,7 +1177,10 @@ static int fts5ExprNodeFirst(Fts5Expr *pExpr, Fts5ExprNode *pNode){
 
     /* Attempt to advance to the first match */
     if( rc==SQLITE_OK && pNode->bEof==0 ){
+#if 0
       rc = fts5ExprNearNextMatch(pExpr, pNode);
+#endif
+      rc = fts5ExprNearNextRowidMatch(pExpr, pNode);
     }
 
   }else{
@@ -1112,7 +1196,6 @@ static int fts5ExprNodeFirst(Fts5Expr *pExpr, Fts5ExprNode *pNode){
 }
 
 
-
 /*
 ** Begin iterating through the set of documents in index pIdx matched by
 ** the MATCH expression passed as the first argument. If the "bDesc" parameter
@@ -1123,11 +1206,18 @@ static int fts5ExprNodeFirst(Fts5Expr *pExpr, Fts5ExprNode *pNode){
 ** is not considered an error if the query does not match any documents.
 */
 int sqlite3Fts5ExprFirst(Fts5Expr *p, Fts5Index *pIdx, int bDesc){
+  Fts5ExprNode *pRoot = p->pRoot;
   int rc = SQLITE_OK;
-  if( p->pRoot ){
+  if( pRoot ){
     p->pIndex = pIdx;
     p->bDesc = bDesc;
-    rc = fts5ExprNodeFirst(p, p->pRoot);
+    rc = fts5ExprNodeFirst(p, pRoot);
+    if( pRoot->bEof==0 
+     && 0==fts5ExprNodeTest(&rc, p, pRoot->iRowid, pRoot) 
+     && rc==SQLITE_OK 
+    ){
+      rc = sqlite3Fts5ExprNext(p);
+    }
   }
   return rc;
 }
@@ -1140,7 +1230,12 @@ int sqlite3Fts5ExprFirst(Fts5Expr *p, Fts5Index *pIdx, int bDesc){
 */
 int sqlite3Fts5ExprNext(Fts5Expr *p){
   int rc;
-  rc = fts5ExprNodeNext(p, p->pRoot, 0, 0);
+  do {
+    rc = fts5ExprNodeNext(p, p->pRoot, 0, 0);
+  }while( p->pRoot->bEof==0 
+      && fts5ExprNodeTest(&rc, p, p->pRoot->iRowid, p->pRoot)==0 
+      && rc==SQLITE_OK 
+  );
   return rc;
 }
 

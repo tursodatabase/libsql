@@ -226,32 +226,13 @@ set data {
     {k s}                           {r f e j q p w}               
 }
 
-do_test 1.0 {
-  execsql {
-    BEGIN;
-    CREATE VIRTUAL TABLE tt USING fts5(a, b, c, d, e, f);
-  }
-  foreach {rowid a b c d e f} $data {
-    execsql {
-      INSERT INTO tt(rowid, a, b, c, d, e, f) 
-      VALUES($rowid, $a, $b, $c, $d, $e, $f)
-    }
-  }
-  execsql {
-    COMMIT;
-  }
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE tt USING fts5(a, b, c, d, e, f);
 } {}
 
-proc fts5_test_poslist {cmd} {
-  set res [list]
-  for {set i 0} {$i < [$cmd xInstCount]} {incr i} {
-    lappend res [string map {{ } .} [$cmd xInst $i]]
-  }
-  set res
-}
-sqlite3_fts5_create_function db fts5_test_poslist fts5_test_poslist
+fts5_aux_test_functions db
 
-proc matchdata {expr} {
+proc matchdata {expr {order ASC}} {
   set tclexpr [db one {
     SELECT fts5_expr_tcl(
       $expr, 'nearset $cols -pc ::pc', 'a','b','c','d','e','f'
@@ -259,49 +240,88 @@ proc matchdata {expr} {
   }]
   set res [list]
 
-  db eval {SELECT rowid, * FROM tt} {
+  db eval "SELECT rowid, * FROM tt ORDER BY rowid $order" {
     set cols [list $a $b $c $d $e $f]
     set ::pc 0
     set rowdata [eval $tclexpr]
-
-    if {$rowdata != ""} {
-      lappend res $rowid $rowdata
-    }
+    if {$rowdata != ""} { lappend res $rowid $rowdata }
   }
 
   set res
 }
 
+proc do_auto_test {tn expr} { 
+  foreach order {asc desc} {
+    set res [matchdata $expr $order]
+    set testname "3.$tn.[string range $order 0 0].rows=[expr [llength $res]/2]"
+
+    set ::autotest_expr $expr
+    do_execsql_test $testname [subst -novar {
+      SELECT rowid, fts5_test_poslist(tt) FROM tt 
+      WHERE tt MATCH $::autotest_expr ORDER BY rowid [set order]
+    }] $res
+  }
+
+
+}
+
 #-------------------------------------------------------------------------
 #
 
-do_execsql_test 2.0 {
-  SELECT rowid, fts5_test_poslist(tt) FROM tt WHERE tt MATCH 'a AND b';
-} [matchdata "a AND b"]
+for {set fold 0} {$fold < 3} {incr fold} {
+  switch $fold {
+    0 { set map {} }
+    1 { set map {
+      a a  b a  c b  d b  e c  f c  g d  h d  
+      i e  j e  k f  l f  m g  g g  o h  p h
+      q i  r i  s j  t j  u k  v k  w l  x l
+      y m  z m
+    }}
 
-do_test 2.1 {
-  llength [matchdata "a AND b"]
-} 62
+    2 { set map {
+      a a  b a  c a  d a  e a  f a  g a  h a  
+      i b  j b  k b  l b  m b  g b  o b  p b
+      q c  r c  s c  t c  u c  v c  w c  x c
+    }}
+  }
 
-foreach {tn expr} {
-  1 { [a] : x }
-  2 { [a b] : x }
-  3 { [a b f] : x }
-  4 { [f a b] : x }
-  5 { [f a b] : x y }
-  6 { [f a b] : x + y }
-  7 { [c a b] : x + c }
-  8 { [c d] : "l m" }
-  9 { [c e] : "l m" }
-} {
-  set res [matchdata $expr]
-  do_test 3.$tn.[llength $res] {
+  execsql {
+    BEGIN;
+    DELETE FROM tt;
+  }
+  foreach {rowid a b c d e f} [string map $map $data] {
     execsql {
-      SELECT rowid, fts5_test_poslist(tt) FROM tt WHERE tt MATCH $expr
+      INSERT INTO tt(rowid, a, b, c, d, e, f) 
+      VALUES($rowid, $a, $b, $c, $d, $e, $f)
     }
-  } $res
-}
+  }
+  execsql COMMIT
 
+
+  foreach {tn expr} {
+    3.1 { [a] : x }
+    3.2 { [a b] : x }
+    3.3 { [a b f] : x }
+    3.4 { [f a b] : x }
+    3.5 { [f a b] : x y }
+    3.6 { [f a b] : x + y }
+    3.7 { [c a b] : x + c }
+    3.8 { [c d] : "l m" }
+    3.9 { [c e] : "l m" }
+
+    4.1 { a NOT b }
+    4.2 { a NOT a:b }
+    4.3 { a OR (b AND c) }
+    4.4 { a OR (b AND [a b c]:c) }
+    4.5 { a OR "b c" }
+    4.6 { a OR b OR c }
+
+    5.1 { a OR (b AND "b c") }
+    5.2 { a OR (b AND "z c") }
+  } {
+    do_auto_test 3.$fold.$tn $expr
+  }
+}
 
 finish_test
 
