@@ -823,7 +823,7 @@ NAWK = gawk.exe
 LIBOBJS0 = vdbe.lo parse.lo alter.lo analyze.lo attach.lo auth.lo \
          backup.lo bitvec.lo btmutex.lo btree.lo build.lo \
          callback.lo complete.lo ctime.lo date.lo dbstat.lo delete.lo \
-         expr.lo fault.lo fkey.lo \
+         expr.lo fault.lo fkey.lo flatten.lo \
          fts3.lo fts3_aux.lo fts3_expr.lo fts3_hash.lo fts3_icu.lo \
          fts3_porter.lo fts3_snippet.lo fts3_tokenizer.lo fts3_tokenizer1.lo \
          fts3_tokenize_vtab.lo fts3_unicode.lo fts3_unicode2.lo fts3_write.lo \
@@ -883,6 +883,7 @@ SRC1 = \
   $(TOP)\src\expr.c \
   $(TOP)\src\fault.c \
   $(TOP)\src\fkey.c \
+  $(TOP)\src\flatten.c \
   $(TOP)\src\func.c \
   $(TOP)\src\global.c \
   $(TOP)\src\hash.c \
@@ -1370,6 +1371,9 @@ fault.lo:	$(TOP)\src\fault.c $(HDR)
 
 fkey.lo:	$(TOP)\src\fkey.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\fkey.c
+
+flatten.lo:	$(TOP)\src\flatten.c $(HDR)
+	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\flatten.c
 
 func.lo:	$(TOP)\src\func.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\func.c

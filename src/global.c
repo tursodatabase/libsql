@@ -260,3 +260,10 @@ int sqlite3PendingByte = 0x40000000;
 ** the vdbe.c file.  
 */
 const unsigned char sqlite3OpcodeProperty[] = OPFLG_INITIALIZER;
+
+/*
+** Enable or disable tracing of SELECT statement compilation.
+*/
+#if SELECTTRACE_ENABLED
+int sqlite3SelectTrace = 0;
+#endif

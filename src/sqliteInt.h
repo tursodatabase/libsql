@@ -772,6 +772,16 @@ extern const int sqlite3one;
 #else
 # define SELECTTRACE_ENABLED 0
 #endif
+#if SELECTTRACE_ENABLED
+extern int sqlite3SelectTrace; /* Defined in global.c */
+# define SELECTTRACE(K,P,S,X)  \
+  if(sqlite3SelectTrace&(K))   \
+    sqlite3DebugPrintf("%*s%s.%p: ",\
+       (P)->nSelectIndent*2-2,"",(S)->zSelName,(S)),\
+    sqlite3DebugPrintf X
+#else
+# define SELECTTRACE(K,P,S,X)
+#endif
 
 /*
 ** An instance of the following structure is used to store the busy-handler
@@ -3289,6 +3299,15 @@ Index *sqlite3AllocateIndexObject(sqlite3*,i16,int,char**);
 Index *sqlite3CreateIndex(Parse*,Token*,Token*,SrcList*,ExprList*,int,Token*,
                           Expr*, int, int);
 void sqlite3DropIndex(Parse*, SrcList*, int);
+#if !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW)
+int sqlite3FlattenSubquery(
+  Parse *pParse,       /* Parsing context */
+  Select *p,           /* The parent or outer SELECT statement */
+  int iFrom,           /* Index in p->pSrc->a[] of the inner subquery */
+  int isAgg,           /* True if outer SELECT uses aggregate functions */
+  int subqueryIsAgg    /* True if the subquery uses aggregate functions */
+);
+#endif
 int sqlite3Select(Parse*, Select*, SelectDest*);
 Select *sqlite3SelectNew(Parse*,ExprList*,SrcList*,Expr*,ExprList*,
                          Expr*,ExprList*,u16,Expr*,Expr*);

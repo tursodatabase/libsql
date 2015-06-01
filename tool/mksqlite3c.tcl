@@ -337,6 +337,7 @@ foreach file {
    loadext.c
    pragma.c
    prepare.c
+   flatten.c
    select.c
    table.c
    trigger.c

@@ -53,7 +53,8 @@ TCCX += -I$(TOP)/ext/async -I$(TOP)/ext/userauth
 LIBOBJ+= vdbe.o parse.o \
          alter.o analyze.o attach.o auth.o \
          backup.o bitvec.o btmutex.o btree.o build.o \
-         callback.o complete.o ctime.o date.o dbstat.o delete.o expr.o fault.o fkey.o \
+         callback.o complete.o ctime.o date.o dbstat.o delete.o expr.o \
+         fault.o fkey.o flatten.o \
          fts3.o fts3_aux.o fts3_expr.o fts3_hash.o fts3_icu.o fts3_porter.o \
          fts3_snippet.o fts3_tokenizer.o fts3_tokenizer1.o \
          fts3_tokenize_vtab.o \
@@ -96,6 +97,7 @@ SRC = \
   $(TOP)/src/expr.c \
   $(TOP)/src/fault.c \
   $(TOP)/src/fkey.c \
+  $(TOP)/src/flatten.c \
   $(TOP)/src/func.c \
   $(TOP)/src/global.c \
   $(TOP)/src/hash.c \
