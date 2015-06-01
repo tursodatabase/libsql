@@ -1,5 +1,5 @@
-C Corrections\sto\scomments\sin\sexpr.c.\s\sNo\scode\schanges.
-D 2015-06-01T18:13:16.094
+C For\sFROM-clause\ssubqueries\sthat\scannot\sbe\sflattened,\stry\sto\spush\sWHERE\sclause\nterms\sof\sthe\souter\squery\sdown\sinto\sthe\ssubquery\sin\sorder\sto\shelp\sthe\ssubquery\nrun\sfaster\sand/or\suse\sless\smemory.
+D 2015-06-01T20:28:03.248
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 994bab32a3a69e0c35bd148b65cde49879772964
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -250,7 +250,7 @@ F src/printf.c 13ce37e5574f9b0682fa86dbcf9faf76b9d82a15
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 84c571794e3ee5806274d95158a4c0177c6c4708
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c 5978cc521cb8fc1aa6a0089e35edaf531accb52a
+F src/select.c 7acdb105dccfa226ea30f3c08a847d448e216240
 F src/shell.c 07dda7cd692911d2f22269953418d049f2e2c0ee
 F src/sqlite.h.in d165beeceb6b40af60f352a4d4e37e02d9af7df0
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
@@ -1281,7 +1281,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9b8e5823bccf69f5cdedd8655e75df6e9718b809
-R 79c21798380eea59e3e40be5d7ba64b0
+P f925389eaf5bf8962a28fcaa652b75caa606efba
+R 033219587dbe88756604bf887ec3da43
+T *branch * subquery-opt
+T *sym-subquery-opt *
+T -sym-trunk *
 U drh
-Z 59ba12ae4d822d8c7d37e1e41f2f9dfd
+Z 48ce2765ca9875a4f4c27e6792269bfa
