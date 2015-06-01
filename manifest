@@ -1,5 +1,5 @@
-C Typo\sfixes\sand\sadditional\sbackground\sinformation\sin\sREADME.md.
-D 2015-06-01T11:10:39.796
+C Corrections\sto\scomments\sin\sexpr.c.\s\sNo\scode\schanges.
+D 2015-06-01T18:13:16.094
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 994bab32a3a69e0c35bd148b65cde49879772964
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -202,7 +202,7 @@ F src/ctime.c 5a0b735dc95604766f5dac73973658eef782ee8b
 F src/date.c e4d50b3283696836ec1036b695ead9a19e37a5ac
 F src/dbstat.c f402e77e25089c6003d0c60b3233b9b3947d599a
 F src/delete.c 37964e6c1d73ff49cbea9ff690c9605fb15f600e
-F src/expr.c 3fb2ab3ab69d15b4b75ae53fceb4e317f64cb306
+F src/expr.c 5de0af7c63a3722d4eb5335f81841f386daa4c20
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c c9b63a217d86582c22121699a47f22f524608869
 F src/func.c 5b8b8e77a0fb644eaf8947d413804622e32692b6
@@ -1281,7 +1281,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c864ff912db8bc0a3c3ecc1ceac61a25332e76c5
-R 36a9006d323883fc8b82cd3617fe7735
+P 9b8e5823bccf69f5cdedd8655e75df6e9718b809
+R 79c21798380eea59e3e40be5d7ba64b0
 U drh
-Z 5f89713174f72e7e8f725e1fe0117a4f
+Z 59ba12ae4d822d8c7d37e1e41f2f9dfd

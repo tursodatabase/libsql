@@ -1268,7 +1268,7 @@ u32 sqlite3ExprListFlags(const ExprList *pList){
 **
 **     sqlite3ExprIsConstant()                  pWalker->eCode==1
 **     sqlite3ExprIsConstantNotJoin()           pWalker->eCode==2
-**     sqlite3ExprRefOneTableOnly()             pWalker->eCode==3
+**     sqlite3ExprIsTableConstant()             pWalker->eCode==3
 **     sqlite3ExprIsConstantOrFunction()        pWalker->eCode==4 or 5
 **
 ** In all cases, the callbacks set Walker.eCode=0 and abort if the expression
@@ -1376,7 +1376,7 @@ int sqlite3ExprIsConstantNotJoin(Expr *p){
 }
 
 /*
-** Walk an expression tree.  Return non-zero if the expression constant
+** Walk an expression tree.  Return non-zero if the expression is constant
 ** for any single row of the table with cursor iCur.  In other words, the
 ** expression must not refer to any non-deterministic function nor any
 ** table other than iCur.
