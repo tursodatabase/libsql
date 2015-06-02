@@ -1,5 +1,5 @@
-C Rename\sSQLITE_AFF_NONE\sto\sSQLITE_AFF_BLOB\sto\savoid\sconfusion\swith\n"no\saffinity".
-D 2015-06-02T16:19:56.840
+C Add\stest\scases\sfor\stype\saffinity\srules.
+D 2015-06-02T17:25:05.494
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 994bab32a3a69e0c35bd148b65cde49879772964
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -329,6 +329,7 @@ F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
 F src/where.c dcdfee81d35ae9261a4c5bda6289ed5fa6d7e1ae
 F src/whereInt.h a6f5a762bc1b4b1c76e1cea79976b437ac35a435
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
+F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test b35b4cd69fc913f90d39a575e171e1116c3a4bb7
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
@@ -1281,7 +1282,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4e621af1345a001360938de76e3b0a14deb5e991 bce3f04186cd2d69414a5a98b5b77dc8f060554a
-R ee13a8dd8e0014c6c36d8309e414bd72
+P 29ad9e917330969810ac1bc685bba4282401bdae
+R 5097b9f5eaad8b186d53b7faa7ec8244
 U drh
-Z 7bcfea926bf6cb138b5a18403403f3f4
+Z 413a5118f0977cbaebf568697e060ab8
