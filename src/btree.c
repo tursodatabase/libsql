@@ -1272,7 +1272,10 @@ static u8 *pageFindSlot(MemPage *pPg, int nByte, int *pRc, int *pbDefrag){
       int x = size - nByte;
       testcase( x==4 );
       testcase( x==3 );
-      if( x<4 ){
+      if( pc < pPg->cellOffset+2*pPg->nCell || size+pc > usableSize ){
+        *pRc = SQLITE_CORRUPT_BKPT;
+        return 0;
+      }else if( x<4 ){
         /* EVIDENCE-OF: R-11498-58022 In a well-formed b-tree page, the total
         ** number of bytes in fragments may not exceed 60. */
         if( aData[hdr+7]>=60 ){
@@ -1283,9 +1286,6 @@ static u8 *pageFindSlot(MemPage *pPg, int nByte, int *pRc, int *pbDefrag){
         ** fragmented bytes within the page. */
         memcpy(&aData[iAddr], &aData[pc], 2);
         aData[hdr+7] += (u8)x;
-      }else if( pc < pPg->cellOffset+2*pPg->nCell || size+pc > usableSize ){
-        *pRc = SQLITE_CORRUPT_BKPT;
-        return 0;
       }else{
         /* The slot remains on the free-list. Reduce its size to account
          ** for the portion used by the new allocation. */
