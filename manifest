@@ -1,5 +1,5 @@
-C Modify\sthe\ssessions\smodule\sto\signore\sall\soperations\son\stables\swith\sno\sprimary\skeys\sas\sdocumented.
-D 2015-06-02T09:19:22.231
+C Add\sthe\s"finish_test"\scommand\sto\sthe\send\sof\snew\stest\sscript\ssessionE.test.
+D 2015-06-02T09:20:46.301
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 58c16cc8cd876ed112902e70cf33d33f3270b5aa
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -178,7 +178,7 @@ F ext/session/sessionA.test 1feeab0b8e03527f08f2f1defb442da25480138f
 F ext/session/sessionB.test 06961b7c3641151f5d23088250ecad132501113c
 F ext/session/sessionC.test 3982f8577b0744c5ce3aaef7cfeb5bd903f17fe4
 F ext/session/sessionD.test d4744c78334162851d2a2f285c7e603e31b49aa2
-F ext/session/sessionE.test 9ebeae9918f0a07fafc2b5f4a1636fd8bc940804
+F ext/session/sessionE.test e60a238c47f0feb3bb707e7f35e22be09c7e8f26
 F ext/session/session_common.tcl f4b7b59c617edf0c9b00d94cd93498d225d43837
 F ext/session/sessionfault.test bef044d0952c0d62c31c8d2400be72c8684545cc
 F ext/session/sqlite3session.c d630293057fcf4274451edec24c2745953ca042c
@@ -1301,7 +1301,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 54bec164ebeaf62d783352b3c4d0de8845394091
-R f80d0c3771ea18894e499ba6e9adad71
+P bdaf9575cd9ebb33dc5da4062a84bca79e7b0fec
+R dbe1b57e21e93824d104fb3b930d73e6
 U dan
-Z e52febd1b018cb0f724ad3d4cfe4ef9d
+Z cd8fea501989560b39f7780ac3d3b3f9
