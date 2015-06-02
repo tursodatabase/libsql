@@ -680,7 +680,7 @@ static int isLikeOrGlob(
   if( op==TK_VARIABLE ){
     Vdbe *pReprepare = pParse->pReprepare;
     int iCol = pRight->iColumn;
-    pVal = sqlite3VdbeGetBoundValue(pReprepare, iCol, SQLITE_AFF_NONE);
+    pVal = sqlite3VdbeGetBoundValue(pReprepare, iCol, SQLITE_AFF_BLOB);
     if( pVal && sqlite3_value_type(pVal)==SQLITE_TEXT ){
       z = (char *)sqlite3_value_text(pVal);
     }
@@ -2824,9 +2824,9 @@ static void disableTerm(WhereLevel *pLevel, WhereTerm *pTerm){
 ** Code an OP_Affinity opcode to apply the column affinity string zAff
 ** to the n registers starting at base. 
 **
-** As an optimization, SQLITE_AFF_NONE entries (which are no-ops) at the
+** As an optimization, SQLITE_AFF_BLOB entries (which are no-ops) at the
 ** beginning and end of zAff are ignored.  If all entries in zAff are
-** SQLITE_AFF_NONE, then no code gets generated.
+** SQLITE_AFF_BLOB, then no code gets generated.
 **
 ** This routine makes its own copy of zAff so that the caller is free
 ** to modify zAff after this routine returns.
@@ -2839,15 +2839,15 @@ static void codeApplyAffinity(Parse *pParse, int base, int n, char *zAff){
   }
   assert( v!=0 );
 
-  /* Adjust base and n to skip over SQLITE_AFF_NONE entries at the beginning
+  /* Adjust base and n to skip over SQLITE_AFF_BLOB entries at the beginning
   ** and end of the affinity string.
   */
-  while( n>0 && zAff[0]==SQLITE_AFF_NONE ){
+  while( n>0 && zAff[0]==SQLITE_AFF_BLOB ){
     n--;
     base++;
     zAff++;
   }
-  while( n>1 && zAff[n-1]==SQLITE_AFF_NONE ){
+  while( n>1 && zAff[n-1]==SQLITE_AFF_BLOB ){
     n--;
   }
 
@@ -2977,17 +2977,17 @@ static int codeEqualityTerm(
 ** Before returning, *pzAff is set to point to a buffer containing a
 ** copy of the column affinity string of the index allocated using
 ** sqlite3DbMalloc(). Except, entries in the copy of the string associated
-** with equality constraints that use NONE affinity are set to
-** SQLITE_AFF_NONE. This is to deal with SQL such as the following:
+** with equality constraints that use BLOB or NONE affinity are set to
+** SQLITE_AFF_BLOB. This is to deal with SQL such as the following:
 **
 **   CREATE TABLE t1(a TEXT PRIMARY KEY, b);
 **   SELECT ... FROM t1 AS t2, t1 WHERE t1.a = t2.b;
 **
 ** In the example above, the index on t1(a) has TEXT affinity. But since
-** the right hand side of the equality constraint (t2.b) has NONE affinity,
+** the right hand side of the equality constraint (t2.b) has BLOB/NONE affinity,
 ** no conversion should be attempted before using a t2.b value as part of
 ** a key to search the index. Hence the first byte in the returned affinity
-** string in this example would be set to SQLITE_AFF_NONE.
+** string in this example would be set to SQLITE_AFF_BLOB.
 */
 static int codeAllEqualityTerms(
   Parse *pParse,        /* Parsing context */
@@ -3074,11 +3074,11 @@ static int codeAllEqualityTerms(
         VdbeCoverage(v);
       }
       if( zAff ){
-        if( sqlite3CompareAffinity(pRight, zAff[j])==SQLITE_AFF_NONE ){
-          zAff[j] = SQLITE_AFF_NONE;
+        if( sqlite3CompareAffinity(pRight, zAff[j])==SQLITE_AFF_BLOB ){
+          zAff[j] = SQLITE_AFF_BLOB;
         }
         if( sqlite3ExprNeedsNoAffinityChange(pRight, zAff[j]) ){
-          zAff[j] = SQLITE_AFF_NONE;
+          zAff[j] = SQLITE_AFF_BLOB;
         }
       }
     }
@@ -3725,14 +3725,14 @@ static Bitmask codeOneLoopStart(
         VdbeCoverage(v);
       }
       if( zStartAff ){
-        if( sqlite3CompareAffinity(pRight, zStartAff[nEq])==SQLITE_AFF_NONE){
+        if( sqlite3CompareAffinity(pRight, zStartAff[nEq])==SQLITE_AFF_BLOB){
           /* Since the comparison is to be performed with no conversions
           ** applied to the operands, set the affinity to apply to pRight to 
-          ** SQLITE_AFF_NONE.  */
-          zStartAff[nEq] = SQLITE_AFF_NONE;
+          ** SQLITE_AFF_BLOB.  */
+          zStartAff[nEq] = SQLITE_AFF_BLOB;
         }
         if( sqlite3ExprNeedsNoAffinityChange(pRight, zStartAff[nEq]) ){
-          zStartAff[nEq] = SQLITE_AFF_NONE;
+          zStartAff[nEq] = SQLITE_AFF_BLOB;
         }
       }  
       nConstraint++;
@@ -3770,7 +3770,7 @@ static Bitmask codeOneLoopStart(
         sqlite3VdbeAddOp2(v, OP_IsNull, regBase+nEq, addrNxt);
         VdbeCoverage(v);
       }
-      if( sqlite3CompareAffinity(pRight, cEndAff)!=SQLITE_AFF_NONE
+      if( sqlite3CompareAffinity(pRight, cEndAff)!=SQLITE_AFF_BLOB
        && !sqlite3ExprNeedsNoAffinityChange(pRight, cEndAff)
       ){
         codeApplyAffinity(pParse, regBase+nEq, 1, &cEndAff);

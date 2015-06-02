@@ -1709,7 +1709,7 @@ static void selectAddColumnTypeAndCollation(
     }
     szAll += pCol->szEst;
     pCol->affinity = sqlite3ExprAffinity(p);
-    if( pCol->affinity==0 ) pCol->affinity = SQLITE_AFF_NONE;
+    if( pCol->affinity==0 ) pCol->affinity = SQLITE_AFF_BLOB;
     pColl = sqlite3ExprCollSeq(pParse, p);
     if( pColl && pCol->zColl==0 ){
       pCol->zColl = sqlite3DbStrDup(db, pColl->zName);
