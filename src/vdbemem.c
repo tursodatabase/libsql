@@ -588,7 +588,7 @@ int sqlite3VdbeMemNumerify(Mem *pMem){
 void sqlite3VdbeMemCast(Mem *pMem, u8 aff, u8 encoding){
   if( pMem->flags & MEM_Null ) return;
   switch( aff ){
-    case SQLITE_AFF_NONE: {   /* Really a cast to BLOB */
+    case SQLITE_AFF_BLOB: {   /* Really a cast to BLOB */
       if( (pMem->flags & MEM_Blob)==0 ){
         sqlite3ValueApplyAffinity(pMem, SQLITE_AFF_TEXT, encoding);
         assert( pMem->flags & MEM_Str || pMem->db->mallocFailed );
@@ -770,10 +770,6 @@ void sqlite3VdbeMemAboutToChange(Vdbe *pVdbe, Mem *pMem){
 }
 #endif /* SQLITE_DEBUG */
 
-/*
-** Size of struct Mem not including the Mem.zMalloc member.
-*/
-#define MEMCELLSIZE offsetof(Mem,zMalloc)
 
 /*
 ** Make an shallow copy of pFrom into pTo.  Prior contents of
@@ -800,7 +796,10 @@ void sqlite3VdbeMemShallowCopy(Mem *pTo, const Mem *pFrom, int srcType){
 int sqlite3VdbeMemCopy(Mem *pTo, const Mem *pFrom){
   int rc = SQLITE_OK;
 
-  assert( pTo->db==pFrom->db );
+  /* The pFrom==0 case in the following assert() is when an sqlite3_value
+  ** from sqlite3_value_dup() is used as the argument
+  ** to sqlite3_result_value(). */
+  assert( pTo->db==pFrom->db || pFrom->db==0 );
   assert( (pFrom->flags & MEM_RowSet)==0 );
   if( VdbeMemDynamic(pTo) ) vdbeMemClearExternAndSetNull(pTo);
   memcpy(pTo, pFrom, MEMCELLSIZE);
@@ -1312,7 +1311,7 @@ static int valueFromExpr(
       if( zVal==0 ) goto no_mem;
       sqlite3ValueSetStr(pVal, -1, zVal, SQLITE_UTF8, SQLITE_DYNAMIC);
     }
-    if( (op==TK_INTEGER || op==TK_FLOAT ) && affinity==SQLITE_AFF_NONE ){
+    if( (op==TK_INTEGER || op==TK_FLOAT ) && affinity==SQLITE_AFF_BLOB ){
       sqlite3ValueApplyAffinity(pVal, SQLITE_AFF_NUMERIC, SQLITE_UTF8);
     }else{
       sqlite3ValueApplyAffinity(pVal, affinity, SQLITE_UTF8);

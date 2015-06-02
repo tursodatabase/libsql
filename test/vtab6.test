@@ -233,6 +233,11 @@ do_test vtab6-2.4 {
     SELECT * FROM t1 LEFT JOIN t2 ON t1.a=t2.d
   }
 } {1 2 3 {} {} {} 2 3 4 {} {} {} 3 4 5 1 2 3}
+do_test vtab6-2.4.1 {
+  execsql {
+    SELECT * FROM t1 LEFT JOIN t2 ON t1.a IS t2.d
+  }
+} {1 2 3 {} {} {} 2 3 4 {} {} {} 3 4 5 1 2 3}
 do_test vtab6-2.5 {
   execsql {
     SELECT * FROM t1 LEFT JOIN t2 ON t1.a=t2.d WHERE t1.a>1

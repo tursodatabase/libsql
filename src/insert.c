@@ -42,7 +42,7 @@ void sqlite3OpenTable(
   }else{
     Index *pPk = sqlite3PrimaryKeyIndex(pTab);
     assert( pPk!=0 );
-    assert( pPk->tnum=pTab->tnum );
+    assert( pPk->tnum==pTab->tnum );
     sqlite3VdbeAddOp3(v, opcode, iCur, pPk->tnum, iDb);
     sqlite3VdbeSetP4KeyInfo(pParse, pPk);
     VdbeComment((v, "%s", pTab->zName));
@@ -56,7 +56,7 @@ void sqlite3OpenTable(
 **
 **  Character      Column affinity
 **  ------------------------------
-**  'A'            NONE
+**  'A'            BLOB
 **  'B'            TEXT
 **  'C'            NUMERIC
 **  'D'            INTEGER
@@ -99,9 +99,9 @@ const char *sqlite3IndexAffinityStr(Vdbe *v, Index *pIdx){
 
 /*
 ** Compute the affinity string for table pTab, if it has not already been
-** computed.  As an optimization, omit trailing SQLITE_AFF_NONE affinities.
+** computed.  As an optimization, omit trailing SQLITE_AFF_BLOB affinities.
 **
-** If the affinity exists (if it is no entirely SQLITE_AFF_NONE values) and
+** If the affinity exists (if it is no entirely SQLITE_AFF_BLOB values) and
 ** if iReg>0 then code an OP_Affinity opcode that will set the affinities
 ** for register iReg and following.  Or if affinities exists and iReg==0,
 ** then just set the P4 operand of the previous opcode (which should  be
@@ -111,7 +111,7 @@ const char *sqlite3IndexAffinityStr(Vdbe *v, Index *pIdx){
 **
 **  Character      Column affinity
 **  ------------------------------
-**  'A'            NONE
+**  'A'            BLOB
 **  'B'            TEXT
 **  'C'            NUMERIC
 **  'D'            INTEGER
@@ -133,7 +133,7 @@ void sqlite3TableAffinity(Vdbe *v, Table *pTab, int iReg){
     }
     do{
       zColAff[i--] = 0;
-    }while( i>=0 && zColAff[i]==SQLITE_AFF_NONE );
+    }while( i>=0 && zColAff[i]==SQLITE_AFF_BLOB );
     pTab->zColAff = zColAff;
   }
   i = sqlite3Strlen30(zColAff);

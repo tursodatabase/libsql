@@ -363,7 +363,7 @@ static int allowedOp(int op){
   assert( TK_LT>TK_EQ && TK_LT<TK_GE );
   assert( TK_LE>TK_EQ && TK_LE<TK_GE );
   assert( TK_GE==TK_EQ+4 );
-  return op==TK_IN || (op>=TK_EQ && op<=TK_GE) || op==TK_ISNULL;
+  return op==TK_IN || (op>=TK_EQ && op<=TK_GE) || op==TK_ISNULL || op==TK_IS;
 }
 
 /*
@@ -416,6 +416,8 @@ static u16 operatorMask(int op){
     c = WO_IN;
   }else if( op==TK_ISNULL ){
     c = WO_ISNULL;
+  }else if( op==TK_IS ){
+    c = WO_IS;
   }else{
     assert( (WO_EQ<<(op-TK_EQ)) < 0x7fff );
     c = (u16)(WO_EQ<<(op-TK_EQ));
@@ -427,6 +429,7 @@ static u16 operatorMask(int op){
   assert( op!=TK_LE || c==WO_LE );
   assert( op!=TK_GT || c==WO_GT );
   assert( op!=TK_GE || c==WO_GE );
+  assert( op!=TK_IS || c==WO_IS );
   return c;
 }
 
@@ -487,11 +490,12 @@ static WhereTerm *whereScanNext(WhereScan *pScan){
                 continue;
               }
             }
-            if( (pTerm->eOperator & WO_EQ)!=0
+            if( (pTerm->eOperator & (WO_EQ|WO_IS))!=0
              && (pX = pTerm->pExpr->pRight)->op==TK_COLUMN
              && pX->iTable==pScan->aEquiv[0]
              && pX->iColumn==pScan->aEquiv[1]
             ){
+              testcase( pTerm->eOperator & WO_IS );
               continue;
             }
             pScan->k = k+1;
@@ -593,9 +597,11 @@ static WhereTerm *findTerm(
   WhereScan scan;
 
   p = whereScanInit(&scan, pWC, iCur, iColumn, op, pIdx);
+  op &= WO_EQ|WO_IS;
   while( p ){
     if( (p->prereqRight & notReady)==0 ){
-      if( p->prereqRight==0 && (p->eOperator&WO_EQ)!=0 ){
+      if( p->prereqRight==0 && (p->eOperator&op)!=0 ){
+        testcase( p->eOperator & WO_IS );
         return p;
       }
       if( pResult==0 ) pResult = p;
@@ -630,7 +636,7 @@ static void exprAnalyzeAll(
 ** In order for the operator to be optimizible, the RHS must be a string
 ** literal that does not begin with a wildcard.  The LHS must be a column
 ** that may only be NULL, a string, or a BLOB, never a number. (This means
-** that virtual tables cannot participate in the LIKE optimization.)  If the
+** that virtual tables cannot participate in the LIKE optimization.)  The
 ** collating sequence for the column on the LHS must be appropriate for
 ** the operator.
 */
@@ -674,7 +680,7 @@ static int isLikeOrGlob(
   if( op==TK_VARIABLE ){
     Vdbe *pReprepare = pParse->pReprepare;
     int iCol = pRight->iColumn;
-    pVal = sqlite3VdbeGetBoundValue(pReprepare, iCol, SQLITE_AFF_NONE);
+    pVal = sqlite3VdbeGetBoundValue(pReprepare, iCol, SQLITE_AFF_BLOB);
     if( pVal && sqlite3_value_type(pVal)==SQLITE_TEXT ){
       z = (char *)sqlite3_value_text(pVal);
     }
@@ -1177,6 +1183,46 @@ static void exprAnalyzeOrTerm(
 #endif /* !SQLITE_OMIT_OR_OPTIMIZATION && !SQLITE_OMIT_SUBQUERY */
 
 /*
+** We already know that pExpr is a binary operator where both operands are
+** column references.  This routine checks to see if pExpr is an equivalence
+** relation:
+**   1.  The SQLITE_Transitive optimization must be enabled
+**   2.  Must be either an == or an IS operator
+**   3.  Not originating the ON clause of an OUTER JOIN
+**   4.  The affinities of A and B must be compatible
+**   5a. Both operands use the same collating sequence OR
+**   5b. The overall collating sequence is BINARY
+** If this routine returns TRUE, that means that the RHS can be substituted
+** for the LHS anyplace else in the WHERE clause where the LHS column occurs.
+** This is an optimization.  No harm comes from returning 0.  But if 1 is
+** returned when it should not be, then incorrect answers might result.
+*/
+static int termIsEquivalence(Parse *pParse, Expr *pExpr){
+  char aff1, aff2;
+  CollSeq *pColl;
+  const char *zColl1, *zColl2;
+  if( !OptimizationEnabled(pParse->db, SQLITE_Transitive) ) return 0;
+  if( pExpr->op!=TK_EQ && pExpr->op!=TK_IS ) return 0;
+  if( ExprHasProperty(pExpr, EP_FromJoin) ) return 0;
+  aff1 = sqlite3ExprAffinity(pExpr->pLeft);
+  aff2 = sqlite3ExprAffinity(pExpr->pRight);
+  if( aff1!=aff2
+   && (!sqlite3IsNumericAffinity(aff1) || !sqlite3IsNumericAffinity(aff2))
+  ){
+    return 0;
+  }
+  pColl = sqlite3BinaryCompareCollSeq(pParse, pExpr->pLeft, pExpr->pRight);
+  if( pColl==0 || sqlite3StrICmp(pColl->zName, "BINARY")==0 ) return 1;
+  pColl = sqlite3ExprCollSeq(pParse, pExpr->pLeft);
+  /* Since pLeft and pRight are both a column references, their collating
+  ** sequence should always be defined. */
+  zColl1 = ALWAYS(pColl) ? pColl->zName : 0;
+  pColl = sqlite3ExprCollSeq(pParse, pExpr->pRight);
+  zColl2 = ALWAYS(pColl) ? pColl->zName : 0;
+  return sqlite3StrICmp(zColl1, zColl2)==0;
+}
+
+/*
 ** The input to this routine is an WhereTerm structure with only the
 ** "pExpr" field filled in.  The job of this routine is to analyze the
 ** subexpression and populate all the other fields of the WhereTerm
@@ -1254,6 +1300,7 @@ static void exprAnalyze(
       pTerm->u.leftColumn = pLeft->iColumn;
       pTerm->eOperator = operatorMask(op) & opMask;
     }
+    if( op==TK_IS ) pTerm->wtFlags |= TERM_IS;
     if( pRight && pRight->op==TK_COLUMN ){
       WhereTerm *pNew;
       Expr *pDup;
@@ -1269,12 +1316,11 @@ static void exprAnalyze(
         if( idxNew==0 ) return;
         pNew = &pWC->a[idxNew];
         markTermAsChild(pWC, idxNew, idxTerm);
+        if( op==TK_IS ) pNew->wtFlags |= TERM_IS;
         pTerm = &pWC->a[idxTerm];
         pTerm->wtFlags |= TERM_COPIED;
-        if( pExpr->op==TK_EQ
-         && !ExprHasProperty(pExpr, EP_FromJoin)
-         && OptimizationEnabled(db, SQLITE_Transitive)
-        ){
+
+        if( termIsEquivalence(pParse, pDup) ){
           pTerm->eOperator |= WO_EQUIV;
           eExtraOp = WO_EQUIV;
         }
@@ -1468,10 +1514,7 @@ static void exprAnalyze(
   ** as "x>NULL" if x is not an INTEGER PRIMARY KEY.  So construct a
   ** virtual term of that form.
   **
-  ** Note that the virtual term must be tagged with TERM_VNULL.  This
-  ** TERM_VNULL tag will suppress the not-null check at the beginning
-  ** of the loop.  Without the TERM_VNULL flag, the not-null check at
-  ** the start of the loop will prevent any results from being returned.
+  ** Note that the virtual term must be tagged with TERM_VNULL.
   */
   if( pExpr->op==TK_NOTNULL
    && pExpr->pLeft->op==TK_COLUMN
@@ -1618,6 +1661,36 @@ static LogEst estLog(LogEst N){
 }
 
 /*
+** Convert OP_Column opcodes to OP_Copy in previously generated code.
+**
+** This routine runs over generated VDBE code and translates OP_Column
+** opcodes into OP_Copy, and OP_Rowid into OP_Null, when the table is being
+** accessed via co-routine instead of via table lookup.
+*/
+static void translateColumnToCopy(
+  Vdbe *v,            /* The VDBE containing code to translate */
+  int iStart,         /* Translate from this opcode to the end */
+  int iTabCur,        /* OP_Column/OP_Rowid references to this table */
+  int iRegister       /* The first column is in this register */
+){
+  VdbeOp *pOp = sqlite3VdbeGetOp(v, iStart);
+  int iEnd = sqlite3VdbeCurrentAddr(v);
+  for(; iStart<iEnd; iStart++, pOp++){
+    if( pOp->p1!=iTabCur ) continue;
+    if( pOp->opcode==OP_Column ){
+      pOp->opcode = OP_Copy;
+      pOp->p1 = pOp->p2 + iRegister;
+      pOp->p2 = pOp->p3;
+      pOp->p3 = 0;
+    }else if( pOp->opcode==OP_Rowid ){
+      pOp->opcode = OP_Null;
+      pOp->p1 = 0;
+      pOp->p3 = 0;
+    }
+  }
+}
+
+/*
 ** Two routines for printing the content of an sqlite3_index_info
 ** structure.  Used for testing and debugging only.  If neither
 ** SQLITE_TEST or SQLITE_DEBUG are defined, then these routines
@@ -1675,11 +1748,12 @@ static int termCanDriveIndex(
 ){
   char aff;
   if( pTerm->leftCursor!=pSrc->iCursor ) return 0;
-  if( (pTerm->eOperator & WO_EQ)==0 ) return 0;
+  if( (pTerm->eOperator & (WO_EQ|WO_IS))==0 ) return 0;
   if( (pTerm->prereqRight & notReady)!=0 ) return 0;
   if( pTerm->u.leftColumn<0 ) return 0;
   aff = pSrc->pTab->aCol[pTerm->u.leftColumn].affinity;
   if( !sqlite3IndexAffinityOk(pTerm->pExpr, aff) ) return 0;
+  testcase( pTerm->pExpr->op==TK_IS );
   return 1;
 }
 #endif
@@ -1718,6 +1792,7 @@ static void constructAutomaticIndex(
   u8 sentWarning = 0;         /* True if a warnning has been issued */
   Expr *pPartial = 0;         /* Partial Index Expression */
   int iContinue = 0;          /* Jump here to skip excluded rows */
+  struct SrcList_item *pTabItem;  /* FROM clause term being indexed */
 
   /* Generate code to skip over the creation and initialization of the
   ** transient index on 2nd and subsequent iterations of the loop. */
@@ -1843,7 +1918,16 @@ static void constructAutomaticIndex(
 
   /* Fill the automatic index with content */
   sqlite3ExprCachePush(pParse);
-  addrTop = sqlite3VdbeAddOp1(v, OP_Rewind, pLevel->iTabCur); VdbeCoverage(v);
+  pTabItem = &pWC->pWInfo->pTabList->a[pLevel->iFrom];
+  if( pTabItem->viaCoroutine ){
+    int regYield = pTabItem->regReturn;
+    sqlite3VdbeAddOp3(v, OP_InitCoroutine, regYield, 0, pTabItem->addrFillSub);
+    addrTop =  sqlite3VdbeAddOp1(v, OP_Yield, regYield);
+    VdbeCoverage(v);
+    VdbeComment((v, "next row of \"%s\"", pTabItem->pTab->zName));
+  }else{
+    addrTop = sqlite3VdbeAddOp1(v, OP_Rewind, pLevel->iTabCur); VdbeCoverage(v);
+  }
   if( pPartial ){
     iContinue = sqlite3VdbeMakeLabel(v);
     sqlite3ExprIfFalse(pParse, pPartial, iContinue, SQLITE_JUMPIFNULL);
@@ -1854,7 +1938,13 @@ static void constructAutomaticIndex(
   sqlite3VdbeAddOp2(v, OP_IdxInsert, pLevel->iIdxCur, regRecord);
   sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
   if( pPartial ) sqlite3VdbeResolveLabel(v, iContinue);
-  sqlite3VdbeAddOp2(v, OP_Next, pLevel->iTabCur, addrTop+1); VdbeCoverage(v);
+  if( pTabItem->viaCoroutine ){
+    translateColumnToCopy(v, addrTop, pLevel->iTabCur, pTabItem->regResult);
+    sqlite3VdbeAddOp2(v, OP_Goto, 0, addrTop);
+    pTabItem->viaCoroutine = 0;
+  }else{
+    sqlite3VdbeAddOp2(v, OP_Next, pLevel->iTabCur, addrTop+1); VdbeCoverage(v);
+  }
   sqlite3VdbeChangeP5(v, SQLITE_STMTSTATUS_AUTOINDEX);
   sqlite3VdbeJumpHere(v, addrTop);
   sqlite3ReleaseTempReg(pParse, regRecord);
@@ -1896,8 +1986,9 @@ static sqlite3_index_info *allocateIndexInfo(
     assert( IsPowerOfTwo(pTerm->eOperator & ~WO_EQUIV) );
     testcase( pTerm->eOperator & WO_IN );
     testcase( pTerm->eOperator & WO_ISNULL );
+    testcase( pTerm->eOperator & WO_IS );
     testcase( pTerm->eOperator & WO_ALL );
-    if( (pTerm->eOperator & ~(WO_ISNULL|WO_EQUIV))==0 ) continue;
+    if( (pTerm->eOperator & ~(WO_ISNULL|WO_EQUIV|WO_IS))==0 ) continue;
     if( pTerm->wtFlags & TERM_VNULL ) continue;
     nTerm++;
   }
@@ -1948,9 +2039,10 @@ static sqlite3_index_info *allocateIndexInfo(
     if( pTerm->leftCursor != pSrc->iCursor ) continue;
     assert( IsPowerOfTwo(pTerm->eOperator & ~WO_EQUIV) );
     testcase( pTerm->eOperator & WO_IN );
+    testcase( pTerm->eOperator & WO_IS );
     testcase( pTerm->eOperator & WO_ISNULL );
     testcase( pTerm->eOperator & WO_ALL );
-    if( (pTerm->eOperator & ~(WO_ISNULL|WO_EQUIV))==0 ) continue;
+    if( (pTerm->eOperator & ~(WO_ISNULL|WO_EQUIV|WO_IS))==0 ) continue;
     if( pTerm->wtFlags & TERM_VNULL ) continue;
     pIdxCons[j].iColumn = pTerm->u.leftColumn;
     pIdxCons[j].iTermOffset = i;
@@ -2732,9 +2824,9 @@ static void disableTerm(WhereLevel *pLevel, WhereTerm *pTerm){
 ** Code an OP_Affinity opcode to apply the column affinity string zAff
 ** to the n registers starting at base. 
 **
-** As an optimization, SQLITE_AFF_NONE entries (which are no-ops) at the
+** As an optimization, SQLITE_AFF_BLOB entries (which are no-ops) at the
 ** beginning and end of zAff are ignored.  If all entries in zAff are
-** SQLITE_AFF_NONE, then no code gets generated.
+** SQLITE_AFF_BLOB, then no code gets generated.
 **
 ** This routine makes its own copy of zAff so that the caller is free
 ** to modify zAff after this routine returns.
@@ -2747,15 +2839,15 @@ static void codeApplyAffinity(Parse *pParse, int base, int n, char *zAff){
   }
   assert( v!=0 );
 
-  /* Adjust base and n to skip over SQLITE_AFF_NONE entries at the beginning
+  /* Adjust base and n to skip over SQLITE_AFF_BLOB entries at the beginning
   ** and end of the affinity string.
   */
-  while( n>0 && zAff[0]==SQLITE_AFF_NONE ){
+  while( n>0 && zAff[0]==SQLITE_AFF_BLOB ){
     n--;
     base++;
     zAff++;
   }
-  while( n>1 && zAff[n-1]==SQLITE_AFF_NONE ){
+  while( n>1 && zAff[n-1]==SQLITE_AFF_BLOB ){
     n--;
   }
 
@@ -2792,7 +2884,7 @@ static int codeEqualityTerm(
   int iReg;                  /* Register holding results */
 
   assert( iTarget>0 );
-  if( pX->op==TK_EQ ){
+  if( pX->op==TK_EQ || pX->op==TK_IS ){
     iReg = sqlite3ExprCodeTarget(pParse, pX->pRight, iTarget);
   }else if( pX->op==TK_ISNULL ){
     iReg = iTarget;
@@ -2885,17 +2977,17 @@ static int codeEqualityTerm(
 ** Before returning, *pzAff is set to point to a buffer containing a
 ** copy of the column affinity string of the index allocated using
 ** sqlite3DbMalloc(). Except, entries in the copy of the string associated
-** with equality constraints that use NONE affinity are set to
-** SQLITE_AFF_NONE. This is to deal with SQL such as the following:
+** with equality constraints that use BLOB or NONE affinity are set to
+** SQLITE_AFF_BLOB. This is to deal with SQL such as the following:
 **
 **   CREATE TABLE t1(a TEXT PRIMARY KEY, b);
 **   SELECT ... FROM t1 AS t2, t1 WHERE t1.a = t2.b;
 **
 ** In the example above, the index on t1(a) has TEXT affinity. But since
-** the right hand side of the equality constraint (t2.b) has NONE affinity,
+** the right hand side of the equality constraint (t2.b) has BLOB/NONE affinity,
 ** no conversion should be attempted before using a t2.b value as part of
 ** a key to search the index. Hence the first byte in the returned affinity
-** string in this example would be set to SQLITE_AFF_NONE.
+** string in this example would be set to SQLITE_AFF_BLOB.
 */
 static int codeAllEqualityTerms(
   Parse *pParse,        /* Parsing context */
@@ -2977,16 +3069,16 @@ static int codeAllEqualityTerms(
     testcase( pTerm->eOperator & WO_IN );
     if( (pTerm->eOperator & (WO_ISNULL|WO_IN))==0 ){
       Expr *pRight = pTerm->pExpr->pRight;
-      if( sqlite3ExprCanBeNull(pRight) ){
+      if( (pTerm->wtFlags & TERM_IS)==0 && sqlite3ExprCanBeNull(pRight) ){
         sqlite3VdbeAddOp2(v, OP_IsNull, regBase+j, pLevel->addrBrk);
         VdbeCoverage(v);
       }
       if( zAff ){
-        if( sqlite3CompareAffinity(pRight, zAff[j])==SQLITE_AFF_NONE ){
-          zAff[j] = SQLITE_AFF_NONE;
+        if( sqlite3CompareAffinity(pRight, zAff[j])==SQLITE_AFF_BLOB ){
+          zAff[j] = SQLITE_AFF_BLOB;
         }
         if( sqlite3ExprNeedsNoAffinityChange(pRight, zAff[j]) ){
-          zAff[j] = SQLITE_AFF_NONE;
+          zAff[j] = SQLITE_AFF_BLOB;
         }
       }
     }
@@ -3633,14 +3725,14 @@ static Bitmask codeOneLoopStart(
         VdbeCoverage(v);
       }
       if( zStartAff ){
-        if( sqlite3CompareAffinity(pRight, zStartAff[nEq])==SQLITE_AFF_NONE){
+        if( sqlite3CompareAffinity(pRight, zStartAff[nEq])==SQLITE_AFF_BLOB){
           /* Since the comparison is to be performed with no conversions
           ** applied to the operands, set the affinity to apply to pRight to 
-          ** SQLITE_AFF_NONE.  */
-          zStartAff[nEq] = SQLITE_AFF_NONE;
+          ** SQLITE_AFF_BLOB.  */
+          zStartAff[nEq] = SQLITE_AFF_BLOB;
         }
         if( sqlite3ExprNeedsNoAffinityChange(pRight, zStartAff[nEq]) ){
-          zStartAff[nEq] = SQLITE_AFF_NONE;
+          zStartAff[nEq] = SQLITE_AFF_BLOB;
         }
       }  
       nConstraint++;
@@ -3678,7 +3770,7 @@ static Bitmask codeOneLoopStart(
         sqlite3VdbeAddOp2(v, OP_IsNull, regBase+nEq, addrNxt);
         VdbeCoverage(v);
       }
-      if( sqlite3CompareAffinity(pRight, cEndAff)!=SQLITE_AFF_NONE
+      if( sqlite3CompareAffinity(pRight, cEndAff)!=SQLITE_AFF_BLOB
        && !sqlite3ExprNeedsNoAffinityChange(pRight, cEndAff)
       ){
         codeApplyAffinity(pParse, regBase+nEq, 1, &cEndAff);
@@ -4099,16 +4191,19 @@ static Bitmask codeOneLoopStart(
     Expr *pE, *pEAlt;
     WhereTerm *pAlt;
     if( pTerm->wtFlags & (TERM_VIRTUAL|TERM_CODED) ) continue;
-    if( pTerm->eOperator!=(WO_EQUIV|WO_EQ) ) continue;
+    if( (pTerm->eOperator & (WO_EQ|WO_IS))==0 ) continue;
+    if( (pTerm->eOperator & WO_EQUIV)==0 ) continue;
     if( pTerm->leftCursor!=iCur ) continue;
     if( pLevel->iLeftJoin ) continue;
     pE = pTerm->pExpr;
     assert( !ExprHasProperty(pE, EP_FromJoin) );
     assert( (pTerm->prereqRight & pLevel->notReady)!=0 );
-    pAlt = findTerm(pWC, iCur, pTerm->u.leftColumn, notReady, WO_EQ|WO_IN, 0);
+    pAlt = findTerm(pWC, iCur, pTerm->u.leftColumn, notReady,
+                    WO_EQ|WO_IN|WO_IS, 0);
     if( pAlt==0 ) continue;
     if( pAlt->wtFlags & (TERM_CODED) ) continue;
     testcase( pAlt->eOperator & WO_EQ );
+    testcase( pAlt->eOperator & WO_IS );
     testcase( pAlt->eOperator & WO_IN );
     VdbeModuleComment((v, "begin transitive constraint"));
     pEAlt = sqlite3StackAllocRaw(db, sizeof(*pEAlt));
@@ -4158,9 +4253,10 @@ static void whereTermPrint(WhereTerm *pTerm, int iTerm){
     if( pTerm->wtFlags & TERM_VIRTUAL ) zType[0] = 'V';
     if( pTerm->eOperator & WO_EQUIV  ) zType[1] = 'E';
     if( ExprHasProperty(pTerm->pExpr, EP_FromJoin) ) zType[2] = 'L';
-    sqlite3DebugPrintf("TERM-%-3d %p %s cursor=%-3d prob=%-3d op=0x%03x\n",
-                       iTerm, pTerm, zType, pTerm->leftCursor, pTerm->truthProb,
-                       pTerm->eOperator);
+    sqlite3DebugPrintf(
+       "TERM-%-3d %p %s cursor=%-3d prob=%-3d op=0x%03x wtFlags=0x%04x\n",
+       iTerm, pTerm, zType, pTerm->leftCursor, pTerm->truthProb,
+       pTerm->eOperator, pTerm->wtFlags);
     sqlite3TreeViewExpr(0, pTerm->pExpr, 0);
   }
 }
@@ -4650,8 +4746,9 @@ static void whereLoopOutputAdjust(
         /* In the absence of explicit truth probabilities, use heuristics to
         ** guess a reasonable truth probability. */
         pLoop->nOut--;
-        if( pTerm->eOperator&WO_EQ ){
+        if( pTerm->eOperator&(WO_EQ|WO_IS) ){
           Expr *pRight = pTerm->pExpr->pRight;
+          testcase( pTerm->pExpr->op==TK_IS );
           if( sqlite3ExprIsInteger(pRight, &k) && k>=(-1) && k<=1 ){
             k = 10;
           }else{
@@ -4719,10 +4816,10 @@ static int whereLoopAddBtreeIndex(
   assert( (pNew->wsFlags & WHERE_TOP_LIMIT)==0 );
   if( pNew->wsFlags & WHERE_BTM_LIMIT ){
     opMask = WO_LT|WO_LE;
-  }else if( pProbe->tnum<=0 || (pSrc->jointype & JT_LEFT)!=0 ){
+  }else if( /*pProbe->tnum<=0 ||*/ (pSrc->jointype & JT_LEFT)!=0 ){
     opMask = WO_EQ|WO_IN|WO_GT|WO_GE|WO_LT|WO_LE;
   }else{
-    opMask = WO_EQ|WO_IN|WO_ISNULL|WO_GT|WO_GE|WO_LT|WO_LE;
+    opMask = WO_EQ|WO_IN|WO_GT|WO_GE|WO_LT|WO_LE|WO_ISNULL|WO_IS;
   }
   if( pProbe->bUnordered ) opMask &= ~(WO_GT|WO_GE|WO_LT|WO_LE);
 
@@ -4785,7 +4882,7 @@ static int whereLoopAddBtreeIndex(
       assert( nIn>0 );  /* RHS always has 2 or more terms...  The parser
                         ** changes "x IN (?)" into "x=?". */
 
-    }else if( eOp & (WO_EQ) ){
+    }else if( eOp & (WO_EQ|WO_IS) ){
       pNew->wsFlags |= WHERE_COLUMN_EQ;
       if( iCol<0 || (nInMul==0 && pNew->u.btree.nEq==pProbe->nKeyCol-1) ){
         if( iCol>=0 && pProbe->uniqNotNull==0 ){
@@ -4835,7 +4932,7 @@ static int whereLoopAddBtreeIndex(
       whereRangeScanEst(pParse, pBuilder, pBtm, pTop, pNew);
     }else{
       int nEq = ++pNew->u.btree.nEq;
-      assert( eOp & (WO_ISNULL|WO_EQ|WO_IN) );
+      assert( eOp & (WO_ISNULL|WO_EQ|WO_IN|WO_IS) );
 
       assert( pNew->nOut==saved_nOut );
       if( pTerm->truthProb<=0 && iCol>=0 ){
@@ -4852,8 +4949,9 @@ static int whereLoopAddBtreeIndex(
          && ((eOp & WO_IN)==0 || !ExprHasProperty(pTerm->pExpr, EP_xIsSelect))
         ){
           Expr *pExpr = pTerm->pExpr;
-          if( (eOp & (WO_EQ|WO_ISNULL))!=0 ){
+          if( (eOp & (WO_EQ|WO_ISNULL|WO_IS))!=0 ){
             testcase( eOp & WO_EQ );
+            testcase( eOp & WO_IS );
             testcase( eOp & WO_ISNULL );
             rc = whereEqualScanEst(pParse, pBuilder, pExpr->pRight, &nOut);
           }else{
@@ -5122,15 +5220,14 @@ static int whereLoopAddBtree(
 
 #ifndef SQLITE_OMIT_AUTOMATIC_INDEX
   /* Automatic indexes */
-  if( !pBuilder->pOrSet
+  if( !pBuilder->pOrSet   /* Not part of an OR optimization */
    && (pWInfo->wctrlFlags & WHERE_NO_AUTOINDEX)==0
    && (pWInfo->pParse->db->flags & SQLITE_AutoIndex)!=0
-   && pSrc->pIndex==0
-   && !pSrc->viaCoroutine
-   && !pSrc->notIndexed
-   && HasRowid(pTab)
-   && !pSrc->isCorrelated
-   && !pSrc->isRecursive
+   && pSrc->pIndex==0     /* Has no INDEXED BY clause */
+   && !pSrc->notIndexed   /* Has no NOT INDEXED clause */
+   && HasRowid(pTab)      /* Is not a WITHOUT ROWID table. (FIXME: Why not?) */
+   && !pSrc->isCorrelated /* Not a correlated subquery */
+   && !pSrc->isRecursive  /* Not a recursive common table expression. */
   ){
     /* Generate auto-index WhereLoops */
     WhereTerm *pTerm;
@@ -5690,9 +5787,9 @@ static i8 wherePathSatisfiesOrderBy(
       if( pOBExpr->op!=TK_COLUMN ) continue;
       if( pOBExpr->iTable!=iCur ) continue;
       pTerm = findTerm(&pWInfo->sWC, iCur, pOBExpr->iColumn,
-                       ~ready, WO_EQ|WO_ISNULL, 0);
+                       ~ready, WO_EQ|WO_ISNULL|WO_IS, 0);
       if( pTerm==0 ) continue;
-      if( (pTerm->eOperator&WO_EQ)!=0 && pOBExpr->iColumn>=0 ){
+      if( (pTerm->eOperator&(WO_EQ|WO_IS))!=0 && pOBExpr->iColumn>=0 ){
         const char *z1, *z2;
         pColl = sqlite3ExprCollSeq(pWInfo->pParse, pOrderBy->a[i].pExpr);
         if( !pColl ) pColl = db->pDfltColl;
@@ -5701,6 +5798,7 @@ static i8 wherePathSatisfiesOrderBy(
         if( !pColl ) pColl = db->pDfltColl;
         z2 = pColl->zName;
         if( sqlite3StrICmp(z1, z2)!=0 ) continue;
+        testcase( pTerm->pExpr->op==TK_IS );
       }
       obSat |= MASKBIT(i);
     }
@@ -5731,7 +5829,7 @@ static i8 wherePathSatisfiesOrderBy(
         /* Skip over == and IS NULL terms */
         if( j<pLoop->u.btree.nEq
          && pLoop->nSkip==0
-         && ((i = pLoop->aLTerm[j]->eOperator) & (WO_EQ|WO_ISNULL))!=0
+         && ((i = pLoop->aLTerm[j]->eOperator) & (WO_EQ|WO_ISNULL|WO_IS))!=0
         ){
           if( i & WO_ISNULL ){
             testcase( isOrderDistinct );
@@ -6304,8 +6402,9 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
   pLoop = pBuilder->pNew;
   pLoop->wsFlags = 0;
   pLoop->nSkip = 0;
-  pTerm = findTerm(pWC, iCur, -1, 0, WO_EQ, 0);
+  pTerm = findTerm(pWC, iCur, -1, 0, WO_EQ|WO_IS, 0);
   if( pTerm ){
+    testcase( pTerm->eOperator & WO_IS );
     pLoop->wsFlags = WHERE_COLUMN_EQ|WHERE_IPK|WHERE_ONEROW;
     pLoop->aLTerm[0] = pTerm;
     pLoop->nLTerm = 1;
@@ -6314,14 +6413,17 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
     pLoop->rRun = 33;  /* 33==sqlite3LogEst(10) */
   }else{
     for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+      int opMask;
       assert( pLoop->aLTermSpace==pLoop->aLTerm );
       if( !IsUniqueIndex(pIdx)
        || pIdx->pPartIdxWhere!=0 
        || pIdx->nKeyCol>ArraySize(pLoop->aLTermSpace) 
       ) continue;
+      opMask = pIdx->uniqNotNull ? (WO_EQ|WO_IS) : WO_EQ;
       for(j=0; j<pIdx->nKeyCol; j++){
-        pTerm = findTerm(pWC, iCur, pIdx->aiColumn[j], 0, WO_EQ, pIdx);
+        pTerm = findTerm(pWC, iCur, pIdx->aiColumn[j], 0, opMask, pIdx);
         if( pTerm==0 ) break;
+        testcase( pTerm->eOperator & WO_IS );
         pLoop->aLTerm[j] = pTerm;
       }
       if( j!=pIdx->nKeyCol ) continue;
@@ -6960,26 +7062,12 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     pLoop = pLevel->pWLoop;
 
     /* For a co-routine, change all OP_Column references to the table of
-    ** the co-routine into OP_SCopy of result contained in a register.
+    ** the co-routine into OP_Copy of result contained in a register.
     ** OP_Rowid becomes OP_Null.
     */
     if( pTabItem->viaCoroutine && !db->mallocFailed ){
-      last = sqlite3VdbeCurrentAddr(v);
-      k = pLevel->addrBody;
-      pOp = sqlite3VdbeGetOp(v, k);
-      for(; k<last; k++, pOp++){
-        if( pOp->p1!=pLevel->iTabCur ) continue;
-        if( pOp->opcode==OP_Column ){
-          pOp->opcode = OP_Copy;
-          pOp->p1 = pOp->p2 + pTabItem->regResult;
-          pOp->p2 = pOp->p3;
-          pOp->p3 = 0;
-        }else if( pOp->opcode==OP_Rowid ){
-          pOp->opcode = OP_Null;
-          pOp->p1 = 0;
-          pOp->p3 = 0;
-        }
-      }
+      translateColumnToCopy(v, pLevel->addrBody, pLevel->iTabCur,
+                            pTabItem->regResult);
       continue;
     }
 

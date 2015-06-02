@@ -292,7 +292,7 @@ int sqlite3Fts5ExprPhraseExpr(
       pNew->apExprPhrase = apPhrase;
       pNew->apExprPhrase[0] = pCopy;
 
-      pNode->eType = (pCopy->nTerm==1 ? FTS5_TERM : FTS5_STRING);
+      pNode->eType = (pOrig->nTerm==1 ? FTS5_TERM : FTS5_STRING);
       pNode->pNear = pNear;
 
       pNear->nPhrase = 1;

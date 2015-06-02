@@ -3015,6 +3015,12 @@ static int winLock(sqlite3_file *id, int locktype){
     return SQLITE_OK;
   }
 
+  /* Do not allow any kind of write-lock on a read-only database
+  */
+  if( (pFile->ctrlFlags & WINFILE_RDONLY)!=0 && locktype>=RESERVED_LOCK ){
+    return SQLITE_IOERR_LOCK;
+  }
+
   /* Make sure the locking sequence is correct
   */
   assert( pFile->locktype!=NO_LOCK || locktype==SHARED_LOCK );

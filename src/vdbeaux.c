@@ -39,6 +39,17 @@ Vdbe *sqlite3VdbeCreate(Parse *pParse){
 }
 
 /*
+** Change the error string stored in Vdbe.zErrMsg
+*/
+void sqlite3VdbeError(Vdbe *p, const char *zFormat, ...){
+  va_list ap;
+  sqlite3DbFree(p->db, p->zErrMsg);
+  va_start(ap, zFormat);
+  p->zErrMsg = sqlite3VMPrintf(p->db, zFormat, ap);
+  va_end(ap);
+}
+
+/*
 ** Remember the SQL string for a prepared statement.
 */
 void sqlite3VdbeSetSql(Vdbe *p, const char *z, int n, int isPrepareV2){
@@ -1394,7 +1405,7 @@ int sqlite3VdbeList(
   }else if( db->u1.isInterrupted ){
     p->rc = SQLITE_INTERRUPT;
     rc = SQLITE_ERROR;
-    sqlite3SetString(&p->zErrMsg, db, "%s", sqlite3ErrStr(p->rc));
+    sqlite3VdbeError(p, sqlite3ErrStr(p->rc));
   }else{
     char *zP4;
     Op *pOp;
@@ -2297,7 +2308,7 @@ int sqlite3VdbeCheckFk(Vdbe *p, int deferred){
   ){
     p->rc = SQLITE_CONSTRAINT_FOREIGNKEY;
     p->errorAction = OE_Abort;
-    sqlite3SetString(&p->zErrMsg, db, "FOREIGN KEY constraint failed");
+    sqlite3VdbeError(p, "FOREIGN KEY constraint failed");
     return SQLITE_ERROR;
   }
   return SQLITE_OK;
@@ -3640,7 +3651,7 @@ int sqlite3VdbeRecordCompareWithSkip(
     if( pRhs->flags & MEM_Int ){
       serial_type = aKey1[idx1];
       testcase( serial_type==12 );
-      if( serial_type>=12 ){
+      if( serial_type>=10 ){
         rc = +1;
       }else if( serial_type==0 ){
         rc = -1;
@@ -3666,7 +3677,11 @@ int sqlite3VdbeRecordCompareWithSkip(
     /* RHS is real */
     else if( pRhs->flags & MEM_Real ){
       serial_type = aKey1[idx1];
-      if( serial_type>=12 ){
+      if( serial_type>=10 ){
+        /* Serial types 12 or greater are strings and blobs (greater than
+        ** numbers). Types 10 and 11 are currently "reserved for future 
+        ** use", so it doesn't really matter what the results of comparing
+        ** them to numberic values are.  */
         rc = +1;
       }else if( serial_type==0 ){
         rc = -1;

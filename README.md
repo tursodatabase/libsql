@@ -4,6 +4,10 @@ This repository contains the complete source code for the SQLite database
 engine.  Some test scripts are also include.  However, many other test scripts
 and most of the documentation are managed separately.
 
+If you are reading this on a Git mirror someplace, you are doing it wrong.
+The [official repository](https://www.sqlite.org/src/) is better.  Go there
+now.
+
 ## Compiling
 
 First create a directory in which to place
@@ -174,7 +178,7 @@ complex code.  So there is a lot of complexity in the SQLite implementation.
 
 Key files:
 
-  *  **sqlite3.h** - This file defines the public interface to the SQLite
+  *  **sqlite.h.in** - This file defines the public interface to the SQLite
      library.  Readers will need to be familiar with this interface before
      trying to understand how the library works internally.
 
@@ -182,7 +186,7 @@ Key files:
      used internally by SQLite.
 
   *  **parse.y** - This file describes the LALR(1) grammer that SQLite uses
-     to parse SQL statements, and the actions that are taken at each stop
+     to parse SQL statements, and the actions that are taken at each step
      in the parsing process.
 
   *  **vdbe.c** - This file implements the virtual machine that runs
@@ -205,6 +209,17 @@ Key files:
   *  **os_unix.c** and **os_win.c** - These two files implement the interface
      between SQLite and the underlying operating system using the run-time
      pluggable VFS interface.
+
+  *  **shell.c** - This file is not part of the core SQLite library.  This
+     is the file that, when linked against sqlite3.a, generates the
+     "sqlite3.exe" command-line shell.
+
+  *  **tclsqlite.c** - This file implements the Tcl bindings for SQLite.  It
+     is not part of the core SQLite library.  But as most of the tests in this
+     repository are written in Tcl, the Tcl language bindings are important.
+
+There are many other source files.  Each has a suscinct header comment that
+describes its purpose and role within the larger system.
 
 
 ## Contacts

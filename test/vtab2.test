@@ -104,6 +104,14 @@ do_test vtab2-3.2 {
      WHERE a.rowid=1
   }
 } {main schema 0 database {} 0 {} 0 {} {} {} {} {} {} {} {} {}}
+do_test vtab2-3.3 {
+  execsql {
+    SELECT *, b.rowid
+      FROM schema a LEFT JOIN schema b ON a.dflt_value IS b.dflt_value
+                                      AND a.dflt_value IS NOT NULL
+     WHERE a.rowid=1
+  }
+} {main schema 0 database {} 0 {} 0 {} {} {} {} {} {} {} {} {}}
 
 do_test vtab2-4.1 {
   execsql {
@@ -153,4 +161,3 @@ ifcapable fts3 {
 
 
 finish_test
-

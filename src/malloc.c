@@ -771,19 +771,11 @@ char *sqlite3DbStrNDup(sqlite3 *db, const char *z, u64 n){
 }
 
 /*
-** Create a string from the zFromat argument and the va_list that follows.
-** Store the string in memory obtained from sqliteMalloc() and make *pz
-** point to that string.
+** Free any prior content in *pz and replace it with a copy of zNew.
 */
-void sqlite3SetString(char **pz, sqlite3 *db, const char *zFormat, ...){
-  va_list ap;
-  char *z;
-
-  va_start(ap, zFormat);
-  z = sqlite3VMPrintf(db, zFormat, ap);
-  va_end(ap);
+void sqlite3SetString(char **pz, sqlite3 *db, const char *zNew){
   sqlite3DbFree(db, *pz);
-  *pz = z;
+  *pz = sqlite3DbStrDup(db, zNew);
 }
 
 /*

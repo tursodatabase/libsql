@@ -65,8 +65,14 @@ proc count sql {
 do_test where-1.1.1 {
   count {SELECT x, y, w FROM t1 WHERE w=10}
 } {3 121 10 3}
+do_test where-1.1.1b {
+  count {SELECT x, y, w FROM t1 WHERE w IS 10}
+} {3 121 10 3}
 do_eqp_test where-1.1.2 {
   SELECT x, y, w FROM t1 WHERE w=10
+} {*SEARCH TABLE t1 USING INDEX i1w (w=?)*}
+do_eqp_test where-1.1.2b {
+  SELECT x, y, w FROM t1 WHERE w IS 10
 } {*SEARCH TABLE t1 USING INDEX i1w (w=?)*}
 do_test where-1.1.3 {
   db status step
@@ -101,11 +107,20 @@ do_test where-1.3.1 {
 do_test where-1.3.2 {
   count {SELECT x, y, w AS abc FROM t1 WHERE 11=abc}
 } {3 144 11 3}
+do_test where-1.3.3 {
+  count {SELECT x, y, w AS abc FROM t1 WHERE 11 IS abc}
+} {3 144 11 3}
 do_test where-1.4.1 {
   count {SELECT w, x, y FROM t1 WHERE 11=w AND x>2}
 } {11 3 144 3}
+do_test where-1.4.1b {
+  count {SELECT w, x, y FROM t1 WHERE 11 IS w AND x>2}
+} {11 3 144 3}
 do_eqp_test where-1.4.2 {
   SELECT w, x, y FROM t1 WHERE 11=w AND x>2
+} {*SEARCH TABLE t1 USING INDEX i1w (w=?)*}
+do_eqp_test where-1.4.2b {
+  SELECT w, x, y FROM t1 WHERE 11 IS w AND x>2
 } {*SEARCH TABLE t1 USING INDEX i1w (w=?)*}
 do_test where-1.4.3 {
   count {SELECT w AS a, x AS b, y FROM t1 WHERE 11=a AND b>2}
@@ -143,6 +158,9 @@ do_test where-1.10 {
 do_test where-1.11 {
   count {SELECT x, y FROM t1 WHERE x=3 AND y=100 AND w<10}
 } {3 100 3}
+do_test where-1.11b {
+  count {SELECT x, y FROM t1 WHERE x IS 3 AND y IS 100 AND w<10}
+} {3 100 3}
 
 # New for SQLite version 2.1: Verify that that inequality constraints
 # are used correctly.
@@ -150,11 +168,17 @@ do_test where-1.11 {
 do_test where-1.12 {
   count {SELECT w FROM t1 WHERE x=3 AND y<100}
 } {8 3}
+do_test where-1.12b {
+  count {SELECT w FROM t1 WHERE x IS 3 AND y<100}
+} {8 3}
 do_test where-1.13 {
   count {SELECT w FROM t1 WHERE x=3 AND 100>y}
 } {8 3}
 do_test where-1.14 {
   count {SELECT w FROM t1 WHERE 3=x AND y<100}
+} {8 3}
+do_test where-1.14b {
+  count {SELECT w FROM t1 WHERE 3 IS x AND y<100}
 } {8 3}
 do_test where-1.15 {
   count {SELECT w FROM t1 WHERE 3=x AND 100>y}
@@ -168,6 +192,9 @@ do_test where-1.17 {
 do_test where-1.18 {
   count {SELECT w FROM t1 WHERE x=3 AND y>225}
 } {15 3}
+do_test where-1.18b {
+  count {SELECT w FROM t1 WHERE x IS 3 AND y>225}
+} {15 3}
 do_test where-1.19 {
   count {SELECT w FROM t1 WHERE x=3 AND 225<y}
 } {15 3}
@@ -179,6 +206,9 @@ do_test where-1.21 {
 } {14 15 5}
 do_test where-1.22 {
   count {SELECT w FROM t1 WHERE x=3 AND y>121 AND y<196}
+} {11 12 5}
+do_test where-1.22b {
+  count {SELECT w FROM t1 WHERE x IS 3 AND y>121 AND y<196}
 } {11 12 5}
 do_test where-1.23 {
   count {SELECT w FROM t1 WHERE x=3 AND y>=121 AND y<=196}

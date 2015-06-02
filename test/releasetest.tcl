@@ -116,6 +116,7 @@ array set ::Configs [strip_comments {
     -DSQLITE_ENABLE_FTS4=1
     -DSQLITE_ENABLE_RTREE=1
     -DSQLITE_ENABLE_STAT4
+    -DSQLITE_ENABLE_OTA
     -DSQLITE_MAX_ATTACHED=125
   }
   "Device-One" {
@@ -224,7 +225,7 @@ array set ::Platforms [strip_comments {
     "No-lookaside"            test
     "Devkit"                  test
     "Sanitize"                {QUICKTEST_OMIT=func4.test,nan.test test}
-    "Fast-One"                fuzzoomtest
+    "Fast-One"                fuzztest
     "Valgrind"                valgrindtest
     "Default"                 "threadtest fulltest"
     "Device-One"              fulltest

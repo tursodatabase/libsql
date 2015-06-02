@@ -713,8 +713,13 @@ static void selectInnerLoop(
     /* If the destination is an EXISTS(...) expression, the actual
     ** values returned by the SELECT are not required.
     */
-    sqlite3ExprCodeExprList(pParse, pEList, regResult,
-                  (eDest==SRT_Output||eDest==SRT_Coroutine)?SQLITE_ECEL_DUP:0);
+    u8 ecelFlags;
+    if( eDest==SRT_Mem || eDest==SRT_Output || eDest==SRT_Coroutine ){
+      ecelFlags = SQLITE_ECEL_DUP;
+    }else{
+      ecelFlags = 0;
+    }
+    sqlite3ExprCodeExprList(pParse, pEList, regResult, ecelFlags);
   }
 
   /* If the DISTINCT keyword was present on the SELECT statement
@@ -811,6 +816,8 @@ static void selectInnerLoop(
       int r1 = sqlite3GetTempRange(pParse, nPrefixReg+1);
       testcase( eDest==SRT_Table );
       testcase( eDest==SRT_EphemTab );
+      testcase( eDest==SRT_Fifo );
+      testcase( eDest==SRT_DistFifo );
       sqlite3VdbeAddOp3(v, OP_MakeRecord, regResult, nResultCol, r1+nPrefixReg);
 #ifndef SQLITE_OMIT_CTE
       if( eDest==SRT_DistFifo ){
@@ -1226,10 +1233,7 @@ static void generateSortTail(
     VdbeComment((v, "%s", aOutEx[i].zName ? aOutEx[i].zName : aOutEx[i].zSpan));
   }
   switch( eDest ){
-    case SRT_Table:
     case SRT_EphemTab: {
-      testcase( eDest==SRT_Table );
-      testcase( eDest==SRT_EphemTab );
       sqlite3VdbeAddOp2(v, OP_NewRowid, iParm, regRowid);
       sqlite3VdbeAddOp3(v, OP_Insert, iParm, regRow, regRowid);
       sqlite3VdbeChangeP5(v, OPFLAG_APPEND);
@@ -1705,7 +1709,7 @@ static void selectAddColumnTypeAndCollation(
     }
     szAll += pCol->szEst;
     pCol->affinity = sqlite3ExprAffinity(p);
-    if( pCol->affinity==0 ) pCol->affinity = SQLITE_AFF_NONE;
+    if( pCol->affinity==0 ) pCol->affinity = SQLITE_AFF_BLOB;
     pColl = sqlite3ExprCollSeq(pParse, p);
     if( pColl && pCol->zColl==0 ){
       pCol->zColl = sqlite3DbStrDup(db, pColl->zName);
@@ -2578,15 +2582,14 @@ static int generateOutputSubroutine(
   */
   codeOffset(v, p->iOffset, iContinue);
 
+  assert( pDest->eDest!=SRT_Exists );
+  assert( pDest->eDest!=SRT_Table );
   switch( pDest->eDest ){
     /* Store the result as data using a unique key.
     */
-    case SRT_Table:
     case SRT_EphemTab: {
       int r1 = sqlite3GetTempReg(pParse);
       int r2 = sqlite3GetTempReg(pParse);
-      testcase( pDest->eDest==SRT_Table );
-      testcase( pDest->eDest==SRT_EphemTab );
       sqlite3VdbeAddOp3(v, OP_MakeRecord, pIn->iSdst, pIn->nSdst, r1);
       sqlite3VdbeAddOp2(v, OP_NewRowid, pDest->iSDParm, r2);
       sqlite3VdbeAddOp3(v, OP_Insert, pDest->iSDParm, r1, r2);
@@ -2613,16 +2616,6 @@ static int generateOutputSubroutine(
       sqlite3ReleaseTempReg(pParse, r1);
       break;
     }
-
-#if 0  /* Never occurs on an ORDER BY query */
-    /* If any row exist in the result set, record that fact and abort.
-    */
-    case SRT_Exists: {
-      sqlite3VdbeAddOp2(v, OP_Integer, 1, pDest->iSDParm);
-      /* The LIMIT clause will terminate the loop for us */
-      break;
-    }
-#endif
 
     /* If this is a scalar select that is part of an expression, then
     ** store the results in the appropriate memory cell and break out
@@ -3998,7 +3991,7 @@ static int withExpand(
     pTab->zName = sqlite3DbStrDup(db, pCte->zName);
     pTab->iPKey = -1;
     pTab->nRowLogEst = 200; assert( 200==sqlite3LogEst(1048576) );
-    pTab->tabFlags |= TF_Ephemeral;
+    pTab->tabFlags |= TF_Ephemeral | TF_NoVisibleRowid;
     pFrom->pSelect = sqlite3SelectDup(db, pCte->pSelect, 0);
     if( db->mallocFailed ) return SQLITE_NOMEM;
     assert( pFrom->pSelect );
@@ -4242,13 +4235,6 @@ static int selectExpander(Walker *pWalker, Select *p){
     int flags = pParse->db->flags;
     int longNames = (flags & SQLITE_FullColNames)!=0
                       && (flags & SQLITE_ShortColNames)==0;
-
-    /* When processing FROM-clause subqueries, it is always the case
-    ** that full_column_names=OFF and short_column_names=ON.  The
-    ** sqlite3ResultSetOfSelect() routine makes it so. */
-    assert( (p->selFlags & SF_NestedFrom)==0
-          || ((flags & SQLITE_FullColNames)==0 &&
-              (flags & SQLITE_ShortColNames)!=0) );
 
     for(k=0; k<pEList->nExpr; k++){
       pE = a[k].pExpr;
@@ -4831,6 +4817,7 @@ int sqlite3Select(
       }
       i = -1;
     }else if( pTabList->nSrc==1
+           && (p->selFlags & SF_All)==0
            && OptimizationEnabled(db, SQLITE_SubqCoroutine)
     ){
       /* Implement a co-routine that will return a single row of the result
@@ -5518,9 +5505,9 @@ select_end:
 void sqlite3TreeViewSelect(TreeView *pView, const Select *p, u8 moreToFollow){
   int n = 0;
   pView = sqlite3TreeViewPush(pView, moreToFollow);
-  sqlite3TreeViewLine(pView, "SELECT%s%s (0x%p)",
+  sqlite3TreeViewLine(pView, "SELECT%s%s (0x%p) selFlags=0x%x",
     ((p->selFlags & SF_Distinct) ? " DISTINCT" : ""),
-    ((p->selFlags & SF_Aggregate) ? " agg_flag" : ""), p
+    ((p->selFlags & SF_Aggregate) ? " agg_flag" : ""), p, p->selFlags
   );
   if( p->pSrc && p->pSrc->nSrc ) n++;
   if( p->pWhere ) n++;

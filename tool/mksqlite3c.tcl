@@ -114,8 +114,9 @@ foreach hdr {
    pcache.h
    pragma.h
    rtree.h
-   sqlite3ext.h
    sqlite3.h
+   sqlite3ext.h
+   sqlite3ota.h
    sqliteicu.h
    sqliteInt.h
    sqliteLimit.h
@@ -217,7 +218,7 @@ proc copy_file {filename} {
         regsub {^SQLITE_API } $line {} line
         # Add the SQLITE_PRIVATE or SQLITE_API keyword before functions.
         # so that linkage can be modified at compile-time.
-        if {[regexp {^sqlite3_} $funcname]} {
+        if {[regexp {^sqlite3(_|ota_)} $funcname]} {
           set line SQLITE_API
           append line " " [string trim $rettype]
           if {[string index $rettype end] ne "*"} {
@@ -385,6 +386,7 @@ foreach file {
    rtree.c
    icu.c
    fts3_icu.c
+   sqlite3ota.c
    dbstat.c
 } {
   copy_file tsrc/$file

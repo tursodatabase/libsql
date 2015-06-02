@@ -321,6 +321,7 @@ static void showHelp(void){
 "and then evaluate each block of SQL contained therein.\n"
 "Options:\n"
 "  --autovacuum          Enable AUTOVACUUM mode\n"
+"  --database FILE       Use database FILE instead of an in-memory database\n"
 "  --heap SZ MIN         Memory allocator uses SZ bytes & min allocation MIN\n"
 "  --help                Show this help text\n"    
 "  --lookaside N SZ      Configure lookaside for N slots of SZ bytes each\n"
@@ -453,6 +454,7 @@ int main(int argc, char **argv){
   int jj;                       /* Loop counter for azInFile[] */
   sqlite3_int64 iBegin;         /* Start time for the whole program */
   sqlite3_int64 iStart, iEnd;   /* Start and end-times for a test case */
+  const char *zDbName = 0;      /* Name of an on-disk database file to open */
 
   iBegin = timeOfDay();
   zFailCode = getenv("TEST_FAILURE");
@@ -465,6 +467,11 @@ int main(int argc, char **argv){
       if( z[0]=='-' ) z++;
       if( strcmp(z,"autovacuum")==0 ){
         doAutovac = 1;
+      }else
+      if( strcmp(z,"database")==0 ){
+        if( i>=argc-1 ) abendError("missing argument on %s\n", argv[i]);
+        zDbName = argv[i+1];
+        i += 1;
       }else
       if( strcmp(z, "f")==0 && i+1<argc ){
         i++;
@@ -692,12 +699,19 @@ int main(int argc, char **argv){
         oomCnt = 0;
       }
       do{
-        rc = sqlite3_open_v2(
-          "main.db", &db,
-          SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_MEMORY,
-          0);
-        if( rc!=SQLITE_OK ){
-          abendError("Unable to open the in-memory database");
+        if( zDbName ){
+          rc = sqlite3_open_v2(zDbName, &db, SQLITE_OPEN_READWRITE, 0);
+          if( rc!=SQLITE_OK ){
+            abendError("Cannot open database file %s", zDbName);
+          }
+        }else{
+          rc = sqlite3_open_v2(
+            "main.db", &db,
+            SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_MEMORY,
+            0);
+          if( rc!=SQLITE_OK ){
+            abendError("Unable to open the in-memory database");
+          }
         }
         if( pLook ){
           rc = sqlite3_db_config(db, SQLITE_DBCONFIG_LOOKASIDE,pLook,szLook,nLook);

@@ -166,7 +166,7 @@ create_table_args ::= AS select(S). {
 table_options(A) ::= .    {A = 0;}
 table_options(A) ::= WITHOUT nm(X). {
   if( X.n==5 && sqlite3_strnicmp(X.z,"rowid",5)==0 ){
-    A = TF_WithoutRowid;
+    A = TF_WithoutRowid | TF_NoVisibleRowid;
   }else{
     A = 0;
     sqlite3ErrorMsg(pParse, "unknown table option: %.*s", X.n, X.z);
@@ -448,6 +448,7 @@ selectnowith(A) ::= oneselect(X).                      {A = X;}
 %ifndef SQLITE_OMIT_COMPOUND_SELECT
 selectnowith(A) ::= selectnowith(X) multiselect_op(Y) oneselect(Z).  {
   Select *pRhs = Z;
+  Select *pLhs = X;
   if( pRhs && pRhs->pPrior ){
     SrcList *pFrom;
     Token x;
@@ -458,11 +459,12 @@ selectnowith(A) ::= selectnowith(X) multiselect_op(Y) oneselect(Z).  {
   }
   if( pRhs ){
     pRhs->op = (u8)Y;
-    pRhs->pPrior = X;
+    pRhs->pPrior = pLhs;
+    if( ALWAYS(pLhs) ) pLhs->selFlags &= ~SF_MultiValue;
     pRhs->selFlags &= ~SF_MultiValue;
     if( Y!=TK_ALL ) pParse->hasCompound = 1;
   }else{
-    sqlite3SelectDelete(pParse->db, X);
+    sqlite3SelectDelete(pParse->db, pLhs);
   }
   A = pRhs;
 }
@@ -525,7 +527,7 @@ values(A) ::= values(X) COMMA LP exprlist(Y) RP. {
 //
 %type distinct {u16}
 distinct(A) ::= DISTINCT.   {A = SF_Distinct;}
-distinct(A) ::= ALL.        {A = 0;}
+distinct(A) ::= ALL.        {A = SF_All;}
 distinct(A) ::= .           {A = 0;}
 
 // selcollist is a list of expressions that are to become the return
@@ -888,7 +890,7 @@ expr(A) ::= id(X) LP distinct(D) exprlist(Y) RP(E). {
   }
   A.pExpr = sqlite3ExprFunction(pParse, Y, &X);
   spanSet(&A,&X,&E);
-  if( D && A.pExpr ){
+  if( D==SF_Distinct && A.pExpr ){
     A.pExpr->flags |= EP_Distinct;
   }
 }

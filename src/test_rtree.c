@@ -155,6 +155,11 @@ static int circle_geom(
 /*
 ** Implementation of "circle" r-tree geometry callback using the 
 ** 2nd-generation interface that allows scoring.
+**
+** Two calling forms:
+**
+**          Qcircle(X,Y,Radius,eType)        -- All values are doubles
+**          Qcircle('x:X y:Y r:R e:ETYPE')   -- Single string parameter
 */
 static int circle_query_func(sqlite3_rtree_query_info *p){
   int i;                          /* Iterator variable */
@@ -176,10 +181,9 @@ static int circle_query_func(sqlite3_rtree_query_info *p){
     ** Return an error if the table does not have exactly 2 dimensions. */
     if( p->nCoord!=4 ) return SQLITE_ERROR;
 
-    /* Test that the correct number of parameters (4) have been supplied,
-    ** and that the parameters are in range (that the radius of the circle 
-    ** radius is greater than zero). */
-    if( p->nParam!=4 || p->aParam[2]<0.0 ) return SQLITE_ERROR;
+    /* Test that the correct number of parameters (1 or 4) have been supplied.
+    */
+    if( p->nParam!=4 && p->nParam!=1 ) return SQLITE_ERROR;
 
     /* Allocate a structure to cache parameter data in. Return SQLITE_NOMEM
     ** if the allocation fails. */
@@ -191,10 +195,38 @@ static int circle_query_func(sqlite3_rtree_query_info *p){
     ** tested bounding boxes that intersect the circular region are detected
     ** is by testing if each corner of the bounding box lies within radius
     ** units of the center of the circle. */
-    pCircle->centerx = p->aParam[0];
-    pCircle->centery = p->aParam[1];
-    pCircle->radius = p->aParam[2];
-    pCircle->eScoreType = (int)p->aParam[3];
+    if( p->nParam==4 ){
+      pCircle->centerx = p->aParam[0];
+      pCircle->centery = p->aParam[1];
+      pCircle->radius = p->aParam[2];
+      pCircle->eScoreType = (int)p->aParam[3];
+    }else{
+      const char *z = (const char*)sqlite3_value_text(p->apSqlParam[0]);
+      pCircle->centerx = 0.0;
+      pCircle->centery = 0.0;
+      pCircle->radius = 0.0;
+      pCircle->eScoreType = 0;
+      while( z && z[0] ){
+        if( z[0]=='r' && z[1]==':' ){
+          pCircle->radius = atof(&z[2]);
+        }else if( z[0]=='x' && z[1]==':' ){
+          pCircle->centerx = atof(&z[2]);
+        }else if( z[0]=='y' && z[1]==':' ){
+          pCircle->centery = atof(&z[2]);
+        }else if( z[0]=='e' && z[1]==':' ){
+          pCircle->eScoreType = (int)atof(&z[2]);
+        }else if( z[0]==' ' ){
+          z++;
+          continue;
+        }
+        while( z[0]!=0 && z[0]!=' ' ) z++;
+        while( z[0]==' ' ) z++;
+      }
+    }
+    if( pCircle->radius<0.0 ){
+      sqlite3_free(pCircle);
+      return SQLITE_NOMEM;
+    }
 
     /* Define two bounding box regions. The first, aBox[0], extends to
     ** infinity in the X dimension. It covers the same range of the Y dimension
