@@ -1,4 +1,14 @@
 
+proc do_changeset_test {tn session res} {
+  set r [list]
+  foreach x $res {lappend r $x}
+  uplevel do_test $tn [list [subst -nocommands {
+    set x [list]
+    sqlite3session_foreach c [$session changeset] { lappend x [set c] }
+    set x
+  }]] [list $r]
+}
+
 
 proc do_conflict_test {tn args} {
   proc xConflict {args} { 

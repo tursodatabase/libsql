@@ -1,5 +1,5 @@
-C Import\srecent\senhancements\sfrom\strunk.
-D 2015-05-29T19:04:58.908
+C Modify\sthe\ssessions\smodule\sto\signore\sall\soperations\son\stables\swith\sno\sprimary\skeys\sas\sdocumented.
+D 2015-06-02T09:19:22.231
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 58c16cc8cd876ed112902e70cf33d33f3270b5aa
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -166,7 +166,7 @@ F ext/rtree/sqlite3rtree.h 9c5777af3d2921c7b4ae4954e8e5697502289d28
 F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F ext/session/changeset.c 4ccbaa4531944c24584bf6a61ba3a39c62b6267a
-F ext/session/session1.test 4653867f32a98ce4bbb4a181aac6debe51ca4dfb
+F ext/session/session1.test d4f53b9b5add7eeb358e535d6e18552142092429
 F ext/session/session2.test a95a2d270b32638c1acba7cb9c81856712d469ac
 F ext/session/session3.test a7a9ce59b8d1e49e2cc23d81421ac485be0eea01
 F ext/session/session4.test a6ed685da7a5293c5d6f99855bcf41dbc352ca84
@@ -178,9 +178,10 @@ F ext/session/sessionA.test 1feeab0b8e03527f08f2f1defb442da25480138f
 F ext/session/sessionB.test 06961b7c3641151f5d23088250ecad132501113c
 F ext/session/sessionC.test 3982f8577b0744c5ce3aaef7cfeb5bd903f17fe4
 F ext/session/sessionD.test d4744c78334162851d2a2f285c7e603e31b49aa2
-F ext/session/session_common.tcl 9de0451b6a47218fc16b9ed8876b6238a0a3d88d
+F ext/session/sessionE.test 9ebeae9918f0a07fafc2b5f4a1636fd8bc940804
+F ext/session/session_common.tcl f4b7b59c617edf0c9b00d94cd93498d225d43837
 F ext/session/sessionfault.test bef044d0952c0d62c31c8d2400be72c8684545cc
-F ext/session/sqlite3session.c 9ccf68d542f4afc5dc14295d984bf37a7db6b936
+F ext/session/sqlite3session.c d630293057fcf4274451edec24c2745953ca042c
 F ext/session/sqlite3session.h 8e86f9eec3ed71f1f30eefbe810cbe5bc10b5aa9
 F ext/session/test_session.c 187bd344c5ae9d5be85e22ef7c3010f0c17307ce
 F ext/userauth/sqlite3userauth.h 19cb6f0e31316d0ee4afdfb7a85ef9da3333a220
@@ -1300,7 +1301,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 519054bb72e8f8977b11161c81b0e96ba7bca589 09a38bf665902834936d39341627ded88142e6ae
-R 8892830f1d56f04b6b2e14d9642ea36b
-U drh
-Z 5694d275e23a4dea203ff0f897ed1e57
+P 54bec164ebeaf62d783352b3c4d0de8845394091
+R f80d0c3771ea18894e499ba6e9adad71
+U dan
+Z e52febd1b018cb0f724ad3d4cfe4ef9d

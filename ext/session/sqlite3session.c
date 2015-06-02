@@ -1008,32 +1008,33 @@ static int sessionTableInfo(
 /*
 ** This function is only called from within a pre-update handler for a
 ** write to table pTab, part of session pSession. If this is the first
-** write to this table, set the SessionTable.nCol variable to the number
-** of columns in the table.
+** write to this table, initalize the SessionTable.nCol, azCol[] and
+** abPK[] arrays accordingly.
 **
-** Otherwise, if this is not the first time this table has been written
-** to, check that the number of columns in the table has not changed. If
-** it has not, return zero.
-**
-** If the number of columns in the table has changed since the last write
-** was recorded, set the session error-code to SQLITE_SCHEMA and return
-** non-zero. Users are not allowed to change the number of columns in a table
-** for which changes are being recorded by the session module. If they do so, 
-** it is an error.
+** If an error occurs, an error code is stored in sqlite3_session.rc and
+** non-zero returned. Or, if no error occurs but the table has no primary
+** key, sqlite3_session.rc is left set to SQLITE_OK and non-zero returned to
+** indicate that updates on this table should be ignored. SessionTable.abPK 
+** is set to NULL in this case.
 */
 static int sessionInitTable(sqlite3_session *pSession, SessionTable *pTab){
   if( pTab->nCol==0 ){
+    u8 *abPK;
     assert( pTab->azCol==0 || pTab->abPK==0 );
     pSession->rc = sessionTableInfo(pSession->db, pSession->zDb, 
-        pTab->zName, &pTab->nCol, 0, &pTab->azCol, &pTab->abPK
+        pTab->zName, &pTab->nCol, 0, &pTab->azCol, &abPK
     );
+    if( pSession->rc==SQLITE_OK ){
+      int i;
+      for(i=0; i<pTab->nCol; i++){
+        if( abPK[i] ){
+          pTab->abPK = abPK;
+          break;
+        }
+      }
+    }
   }
-  if( pSession->rc==SQLITE_OK 
-   && pTab->nCol!=pSession->hook.xCount(pSession->hook.pCtx)
-  ){
-    pSession->rc = SQLITE_SCHEMA;
-  }
-  return pSession->rc;
+  return (pSession->rc || pTab->abPK==0);
 }
 
 /*
@@ -1057,6 +1058,13 @@ static void sessionPreupdateOneChange(
 
   /* Load table details if required */
   if( sessionInitTable(pSession, pTab) ) return;
+
+  /* Check the number of columns in this xPreUpdate call matches the 
+  ** number of columns in the table.  */
+  if( pTab->nCol!=pSession->hook.xCount(pSession->hook.pCtx) ){
+    pSession->rc = SQLITE_SCHEMA;
+    return;
+  }
 
   /* Grow the hash table if required */
   if( sessionGrowHash(0, pTab) ){
@@ -1465,10 +1473,9 @@ int sqlite3session_diff(
     /* Locate and if necessary initialize the target table object */
     rc = sessionFindTable(pSession, zTbl, &pTo);
     if( pTo==0 ) goto diff_out;
-    if( pTo->nCol==0 ){
-      rc = pSession->rc = sessionTableInfo(db, zDb, 
-          pTo->zName, &pTo->nCol, 0, &pTo->azCol, &pTo->abPK
-      );
+    if( sessionInitTable(pSession, pTo) ){
+      rc = pSession->rc;
+      goto diff_out;
     }
 
     /* Check the table schemas match */

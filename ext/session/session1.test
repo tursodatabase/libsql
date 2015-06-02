@@ -20,16 +20,6 @@ ifcapable !session {finish_test; return}
 
 set testprefix session1
 
-proc do_changeset_test {tn session res} {
-  set r [list]
-  foreach x $res {lappend r $x}
-  uplevel do_test $tn [list [subst -nocommands {
-    set x [list]
-    sqlite3session_foreach c [$session changeset] { lappend x [set c] }
-    set x
-  }]] [list $r]
-}
-
 proc do_changeset_invert_test {tn session res} {
   set r [list]
   foreach x $res {lappend r $x}
@@ -525,6 +515,47 @@ do_changeset_test 9.2 S {{UPDATE t7 0 ....X.. {{} {} i 1 {} {} i 1 i 1 {} {} {} 
 S delete
 catch { db2 close }
  
+#-------------------------------------------------------------------------
+# Test a really long table name.
+#
+reset_db
+set tblname [string repeat tblname123 100]
+do_test 10.1.1 {
+  execsql "
+    CREATE TABLE $tblname (a PRIMARY KEY, b);
+    INSERT INTO $tblname VALUES('xyz', 'def');
+  "
+  sqlite3session S db main
+  S attach $tblname
+  execsql " 
+    INSERT INTO $tblname VALUES('uvw', 'abc');
+    DELETE FROM $tblname WHERE a = 'xyz';
+  "
+} {}
+breakpoint
+do_changeset_test 10.1.2 S "
+  {INSERT $tblname 0 X. {} {t uvw t abc}}
+  {DELETE $tblname 0 X. {t xyz t def} {}}
+"
+do_test 10.1.4 { S delete } {}
+
+#---------------------------------------------------------------
+reset_db
+do_execsql_test 11.1 {
+  CREATE TABLE t1(a, b);
+}
+do_test 11.2 {
+  sqlite3session S db main
+  S attach t1
+  execsql {
+    INSERT INTO t1 VALUES(1, 2);
+  }
+  S changeset
+} {}
+
+S delete
+
+
 #-------------------------------------------------------------------------
 # Test a really long table name.
 #
