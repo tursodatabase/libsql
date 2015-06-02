@@ -290,34 +290,36 @@ for {set fold 0} {$fold < 3} {incr fold} {
     DELETE FROM tt;
   }
   foreach {rowid a b c d e f} [string map $map $data] {
+  if {$rowid==-4703774} {
     execsql {
       INSERT INTO tt(rowid, a, b, c, d, e, f) 
       VALUES($rowid, $a, $b, $c, $d, $e, $f)
+    }
     }
   }
   execsql COMMIT
 
 
   foreach {tn expr} {
-    3.1 { [a] : x }
-    3.2 { [a b] : x }
-    3.3 { [a b f] : x }
-    3.4 { [f a b] : x }
-    3.5 { [f a b] : x y }
-    3.6 { [f a b] : x + y }
-    3.7 { [c a b] : x + c }
-    3.8 { [c d] : "l m" }
-    3.9 { [c e] : "l m" }
+    A.1 { [a] : x }
+    A.2 { [a b] : x }
+    A.3 { [a b f] : x }
+    A.4 { [f a b] : x }
+    A.5 { [f a b] : x y }
+    A.6 { [f a b] : x + y }
+    A.7 { [c a b] : x + c }
+    A.8 { [c d] : "l m" }
+    A.9 { [c e] : "l m" }
 
-    4.1 { a NOT b }
-    4.2 { a NOT a:b }
-    4.3 { a OR (b AND c) }
-    4.4 { a OR (b AND [a b c]:c) }
-    4.5 { a OR "b c" }
-    4.6 { a OR b OR c }
+    B.1 { a NOT b }
+    B.2 { a NOT a:b }
+    B.3 { a OR (b AND c) }
+    B.4 { a OR (b AND [a b c]:c) }
+    B.5 { a OR "b c" }
+    B.6 { a OR b OR c }
 
-    5.1 { a OR (b AND "b c") }
-    5.2 { a OR (b AND "z c") }
+    C.1 { a OR (b AND "b c") }
+    C.2 { a OR (b AND "z c") }
   } {
     do_auto_test 3.$fold.$tn $expr
   }

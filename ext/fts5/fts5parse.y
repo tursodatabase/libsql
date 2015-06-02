@@ -63,6 +63,7 @@
 %left OR.
 %left AND.
 %left NOT.
+%left TERM.
 %left COLON.
 
 input ::= expr(X). { sqlite3Fts5ParseFinished(pParse, X); }
