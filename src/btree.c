@@ -6141,9 +6141,9 @@ static void insertCell(
     ins = cellOffset + 2*i;
     rc = allocateSpace(pPage, sz, &idx);
     if( rc ){ *pRC = rc; return; }
-    /* The allocateSpace() routine guarantees the following two properties
-    ** if it returns success */
-    assert( idx >= end+2 );
+    /* The allocateSpace() routine guarantees the following properties
+    ** if it returns successfully */
+    assert( idx >= 0 && (idx >= end+2 || CORRUPT_DB) );
     assert( idx+sz <= (int)pPage->pBt->usableSize );
     pPage->nCell++;
     pPage->nFree -= (u16)(2 + sz);

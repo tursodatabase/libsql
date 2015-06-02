@@ -1,5 +1,5 @@
-C Corrections\sto\scomments\sin\sexpr.c.\s\sNo\scode\schanges.
-D 2015-06-01T18:13:16.094
+C Fix\sa\sfaulty\sassert()\sin\sbtree.c.\s\sUpdate\sthe\sdatabase\sfuzz\stest\sfile\swith\nnew\stest\scases.
+D 2015-06-02T14:02:18.322
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 994bab32a3a69e0c35bd148b65cde49879772964
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -192,7 +192,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c ff743689c4d6c5cb55ad42ed9d174b2b3e71f1e3
 F src/bitvec.c 5eb7958c3bf65210211cbcfc44eff86d0ded7c9d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c 9e837a0e7e35c54bedddf55db906b7902d175078
+F src/btree.c c73a170115df068764126a85288cdec092ec180c
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 973a22a6fd61350b454ad614832b1f0a5e25a1e4
 F src/build.c 85a169a0a22f8b80caf513eaf2944d39b979f571
@@ -655,7 +655,7 @@ F test/fuzz_malloc.test 328f70aaca63adf29b4c6f06505ed0cf57ca7c26
 F test/fuzzcheck.c a60f926e3fa86c8d33908406d75eec868c22b9ca
 F test/fuzzdata1.db b60254eeb6bc11474071b883059662a73c48da7f
 F test/fuzzdata2.db f03a420d3b822cc82e4f894ca957618fbe9c4973
-F test/fuzzdata3.db 2701a08185d24d8570eb6e765201131fe75eff84
+F test/fuzzdata3.db 3632e598ff8574228aadf09897bd040d3c5f5ffb
 F test/fuzzer1.test d4c52aaf3ef923da293a2653cfab33d02f718a36
 F test/fuzzerfault.test 8792cd77fd5bce765b05d0c8e01b9edcf8af8536
 F test/genesis.tcl 1e2e2e8e5cc4058549a154ff1892fe5c9de19f98
@@ -1281,7 +1281,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9b8e5823bccf69f5cdedd8655e75df6e9718b809
-R 79c21798380eea59e3e40be5d7ba64b0
+P f925389eaf5bf8962a28fcaa652b75caa606efba
+R ae4a37b7f156067ca4ef803074aa5dc0
 U drh
-Z 59ba12ae4d822d8c7d37e1e41f2f9dfd
+Z d6aea5d5b820e4f6ddc306cbfe7d28b3
