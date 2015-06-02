@@ -258,20 +258,20 @@ foreach {tn2 sql} {
     1.2 "y:a"
     1.3 "x:b"
     1.4 "y:b"
-    2.1 "[x]:a"
-    2.2 "[y]:a"
-    2.3 "[x]:b"
-    2.4 "[y]:b"
+    2.1 "{x}:a"
+    2.2 "{y}:a"
+    2.3 "{x}:b"
+    2.4 "{y}:b"
 
-    3.1 "[x y]:a"
-    3.2 "[y x]:a"
-    3.3 "[x x]:b"
-    3.4 "[y y]:b"
+    3.1 "{x y}:a"
+    3.2 "{y x}:a"
+    3.3 "{x x}:b"
+    3.4 "{y y}:b"
 
-    4.1 {["x" "y"]:a}
-    4.2 {["y" x]:a}
-    4.3 {[x "x"]:b}
-    4.4 {["y" y]:b}
+    4.1 {{"x" "y"}:a}
+    4.2 {{"y" x}:a}
+    4.3 {{x "x"}:b}
+    4.4 {{"y" y}:b}
   } {
     set res [matchdata 1 $expr]
     do_execsql_test $tn2.3.$tn.[llength $res] { 

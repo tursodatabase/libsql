@@ -154,8 +154,8 @@ static int fts5ExprGetToken(
   switch( *z ){
     case '(':  tok = FTS5_LP;    break;
     case ')':  tok = FTS5_RP;    break;
-    case '[':  tok = FTS5_LSP;   break;
-    case ']':  tok = FTS5_RSP;   break;
+    case '{':  tok = FTS5_LCP;   break;
+    case '}':  tok = FTS5_RCP;   break;
     case ':':  tok = FTS5_COLON; break;
     case ',':  tok = FTS5_COMMA; break;
     case '+':  tok = FTS5_PLUS;  break;

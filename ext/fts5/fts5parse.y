@@ -106,7 +106,7 @@ cnearset(A) ::= colset(X) COLON nearset(Y). {
 %type colsetlist {Fts5ExprColset*}
 %destructor colsetlist { sqlite3_free($$); }
 
-colset(A) ::= LSP colsetlist(X) RSP. { A = X; }
+colset(A) ::= LCP colsetlist(X) RCP. { A = X; }
 colset(A) ::= STRING(X). {
   A = sqlite3Fts5ParseColset(pParse, 0, &X);
 }

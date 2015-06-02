@@ -301,20 +301,20 @@ for {set fold 0} {$fold < 3} {incr fold} {
 
 
   foreach {tn expr} {
-    A.1 { [a] : x }
-    A.2 { [a b] : x }
-    A.3 { [a b f] : x }
-    A.4 { [f a b] : x }
-    A.5 { [f a b] : x y }
-    A.6 { [f a b] : x + y }
-    A.7 { [c a b] : x + c }
-    A.8 { [c d] : "l m" }
-    A.9 { [c e] : "l m" }
+    A.1 { {a} : x }
+    A.2 { {a b} : x }
+    A.3 { {a b f} : x }
+    A.4 { {f a b} : x }
+    A.5 { {f a b} : x y }
+    A.6 { {f a b} : x + y }
+    A.7 { {c a b} : x + c }
+    A.8 { {c d} : "l m" }
+    A.9 { {c e} : "l m" }
 
     B.1 { a NOT b }
     B.2 { a NOT a:b }
     B.3 { a OR (b AND c) }
-    B.4 { a OR (b AND [a b c]:c) }
+    B.4 { a OR (b AND {a b c}:c) }
     B.5 { a OR "b c" }
     B.6 { a OR b OR c }
 
