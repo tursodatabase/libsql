@@ -270,7 +270,7 @@ static void applyNumericAffinity(Mem *pRec, int bTryForInt){
 ** SQLITE_AFF_TEXT:
 **    Convert pRec to a text representation.
 **
-** SQLITE_AFF_NONE:
+** SQLITE_AFF_BLOB:
 **    No-op.  pRec is unchanged.
 */
 static void applyAffinity(
@@ -1780,9 +1780,9 @@ case OP_RealAffinity: {                  /* in1 */
 ** A NULL value is not changed by this routine.  It remains NULL.
 */
 case OP_Cast: {                  /* in1 */
-  assert( pOp->p2>=SQLITE_AFF_NONE && pOp->p2<=SQLITE_AFF_REAL );
+  assert( pOp->p2>=SQLITE_AFF_BLOB && pOp->p2<=SQLITE_AFF_REAL );
   testcase( pOp->p2==SQLITE_AFF_TEXT );
-  testcase( pOp->p2==SQLITE_AFF_NONE );
+  testcase( pOp->p2==SQLITE_AFF_BLOB );
   testcase( pOp->p2==SQLITE_AFF_NUMERIC );
   testcase( pOp->p2==SQLITE_AFF_INTEGER );
   testcase( pOp->p2==SQLITE_AFF_REAL );
@@ -2593,7 +2593,7 @@ case OP_Affinity: {
 ** The mapping from character to affinity is given by the SQLITE_AFF_
 ** macros defined in sqliteInt.h.
 **
-** If P4 is NULL then all index fields have the affinity NONE.
+** If P4 is NULL then all index fields have the affinity BLOB.
 */
 case OP_MakeRecord: {
   u8 *zNewRecord;        /* A buffer to hold the data for the new record */
