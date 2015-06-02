@@ -1717,6 +1717,7 @@ void sqlite3RegisterGlobalFunctions(void){
     AGGREGATE2(max,              1, 1, 1, minmaxStep,      minMaxFinalize,
                                           SQLITE_FUNC_MINMAX ),
     FUNCTION2(typeof,            1, 0, 0, typeofFunc,  SQLITE_FUNC_TYPEOF),
+    FUNCTION2(affinity,          1, 0, 0, noopFunc,    SQLITE_FUNC_AFFINITY),
     FUNCTION2(length,            1, 0, 0, lengthFunc,  SQLITE_FUNC_LENGTH),
     FUNCTION(instr,              2, 0, 0, instrFunc        ),
     FUNCTION(substr,             2, 0, 0, substrFunc       ),

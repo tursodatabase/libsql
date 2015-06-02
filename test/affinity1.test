@@ -1,0 +1,88 @@
+# 2015-06-02
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is type affinity and the affinity() built-in
+# function.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set ::testprefix affinity1
+
+do_execsql_test 100 {
+  CREATE TABLE t1(
+    c01 INT,
+    c02 INTEGER,
+    c03 TINYINT,
+    c04 SMALLINT,
+    c05 MEDIUMINT, 
+    c06 BIGINT,
+    c07 UNSIGNED BIG INT,
+    c08 INT2,
+    c09 INT4,
+    c10 CHARACTER(20),
+    c11 VARCHAR(255),
+    c12 VARYING CHARACTER(255),
+    c13 NCHAR(55),
+    c14 NATIVE CHARACTER(70),
+    c15 NVARCHAR(100),
+    c16 TEXT,
+    c17 CLOB,
+    c20 BLOB,
+    c21,
+    c30 REAL,
+    c31 DOUBLE,
+    c32 DOUBLE PRECISION,
+    c33 FLOAT,
+    c40 NUMERIC,
+    c41 DECIMAL(10,5),
+    c42 BOOLEAN,
+    c43 DATE,
+    c44 DATETIME,
+    c50 FLOATING POINT,
+    c60 STRING
+  );
+  INSERT INTO t1 DEFAULT VALUES;
+} {}
+do_execsql_test 201 {
+  SELECT affinity(c01), affinity(c01+1), affinity(+c01) FROM t1;
+} {INTEGER {} {}}
+do_execsql_test 202 {SELECT affinity(c02) FROM t1} {INTEGER}
+do_execsql_test 203 {SELECT affinity(c03) FROM t1} {INTEGER}
+do_execsql_test 204 {SELECT affinity(c04) FROM t1} {INTEGER}
+do_execsql_test 205 {SELECT affinity(c05) FROM t1} {INTEGER}
+do_execsql_test 206 {SELECT affinity(c06) FROM t1} {INTEGER}
+do_execsql_test 207 {SELECT affinity(c07) FROM t1} {INTEGER}
+do_execsql_test 208 {SELECT affinity(c08) FROM t1} {INTEGER}
+do_execsql_test 209 {SELECT affinity(c09) FROM t1} {INTEGER}
+do_execsql_test 210 {SELECT affinity(c10) FROM t1} {TEXT}
+do_execsql_test 211 {SELECT affinity(c11) FROM t1} {TEXT}
+do_execsql_test 212 {SELECT affinity(c12) FROM t1} {TEXT}
+do_execsql_test 213 {SELECT affinity(c13) FROM t1} {TEXT}
+do_execsql_test 214 {SELECT affinity(c14) FROM t1} {TEXT}
+do_execsql_test 215 {SELECT affinity(c15) FROM t1} {TEXT}
+do_execsql_test 216 {SELECT affinity(c16) FROM t1} {TEXT}
+do_execsql_test 220 {SELECT affinity(c20) FROM t1} {BLOB}
+do_execsql_test 221 {SELECT affinity(c21) FROM t1} {BLOB}
+do_execsql_test 230 {SELECT affinity(c30) FROM t1} {REAL}
+do_execsql_test 231 {SELECT affinity(c31) FROM t1} {REAL}
+do_execsql_test 232 {SELECT affinity(c32) FROM t1} {REAL}
+do_execsql_test 233 {SELECT affinity(c33) FROM t1} {REAL}
+do_execsql_test 240 {SELECT affinity(c40) FROM t1} {NUMERIC}
+do_execsql_test 241 {SELECT affinity(c41) FROM t1} {NUMERIC}
+do_execsql_test 242 {SELECT affinity(c42) FROM t1} {NUMERIC}
+do_execsql_test 243 {SELECT affinity(c43) FROM t1} {NUMERIC}
+do_execsql_test 244 {SELECT affinity(c44) FROM t1} {NUMERIC}
+do_execsql_test 250 {SELECT affinity(c50) FROM t1} {INTEGER}
+do_execsql_test 260 {SELECT affinity(c60) FROM t1} {NUMERIC}
+
+
+finish_test

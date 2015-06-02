@@ -1348,18 +1348,19 @@ struct FuncDestructor {
 ** values must correspond to OPFLAG_LENGTHARG and OPFLAG_TYPEOFARG.  There
 ** are assert() statements in the code to verify this.
 */
-#define SQLITE_FUNC_ENCMASK  0x003 /* SQLITE_UTF8, SQLITE_UTF16BE or UTF16LE */
-#define SQLITE_FUNC_LIKE     0x004 /* Candidate for the LIKE optimization */
-#define SQLITE_FUNC_CASE     0x008 /* Case-sensitive LIKE-type function */
-#define SQLITE_FUNC_EPHEM    0x010 /* Ephemeral.  Delete with VDBE */
-#define SQLITE_FUNC_NEEDCOLL 0x020 /* sqlite3GetFuncCollSeq() might be called */
-#define SQLITE_FUNC_LENGTH   0x040 /* Built-in length() function */
-#define SQLITE_FUNC_TYPEOF   0x080 /* Built-in typeof() function */
-#define SQLITE_FUNC_COUNT    0x100 /* Built-in count(*) aggregate */
-#define SQLITE_FUNC_COALESCE 0x200 /* Built-in coalesce() or ifnull() */
-#define SQLITE_FUNC_UNLIKELY 0x400 /* Built-in unlikely() function */
-#define SQLITE_FUNC_CONSTANT 0x800 /* Constant inputs give a constant output */
-#define SQLITE_FUNC_MINMAX  0x1000 /* True for min() and max() aggregates */
+#define SQLITE_FUNC_ENCMASK  0x0003 /* SQLITE_UTF8, SQLITE_UTF16BE or UTF16LE */
+#define SQLITE_FUNC_LIKE     0x0004 /* Candidate for the LIKE optimization */
+#define SQLITE_FUNC_CASE     0x0008 /* Case-sensitive LIKE-type function */
+#define SQLITE_FUNC_EPHEM    0x0010 /* Ephemeral.  Delete with VDBE */
+#define SQLITE_FUNC_NEEDCOLL 0x0020 /* sqlite3GetFuncCollSeq might be called */
+#define SQLITE_FUNC_LENGTH   0x0040 /* Built-in length() function */
+#define SQLITE_FUNC_TYPEOF   0x0080 /* Built-in typeof() function */
+#define SQLITE_FUNC_COUNT    0x0100 /* Built-in count(*) aggregate */
+#define SQLITE_FUNC_COALESCE 0x0200 /* Built-in coalesce() or ifnull() */
+#define SQLITE_FUNC_UNLIKELY 0x0400 /* Built-in unlikely() function */
+#define SQLITE_FUNC_CONSTANT 0x0800 /* Constant inputs give a constant output */
+#define SQLITE_FUNC_MINMAX   0x1000 /* True for min() and max() aggregates */
+#define SQLITE_FUNC_AFFINITY 0x2000 /* Built-in affinity() function */
 
 /*
 ** The following three macros, FUNCTION(), LIKEFUNC() and AGGREGATE() are

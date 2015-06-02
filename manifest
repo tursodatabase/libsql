@@ -1,5 +1,5 @@
-C Rename\sSQLITE_AFF_NONE\sto\sSQLITE_AFF_BLOB.
-D 2015-06-02T15:32:08.579
+C Add\sthe\sbuilt-in\saffinity()\sSQL\sfunction.\s\sThis\sturns\sout\sto\sbe\snot\sas\suseful\nas\soriginally\senvisioned,\sso\sabandon\sit\son\sa\sbranch.
+D 2015-06-02T16:09:58.099
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 994bab32a3a69e0c35bd148b65cde49879772964
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -202,10 +202,10 @@ F src/ctime.c 5a0b735dc95604766f5dac73973658eef782ee8b
 F src/date.c e4d50b3283696836ec1036b695ead9a19e37a5ac
 F src/dbstat.c f402e77e25089c6003d0c60b3233b9b3947d599a
 F src/delete.c 37964e6c1d73ff49cbea9ff690c9605fb15f600e
-F src/expr.c 52f5c1c2c16bf47234dc276d9f72b5ea85ae14af
+F src/expr.c 5abe19af1c41dd8b334318611c6614cc21155b88
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c c9b63a217d86582c22121699a47f22f524608869
-F src/func.c 5b8b8e77a0fb644eaf8947d413804622e32692b6
+F src/func.c c215efa308b831f7ea147c7a6a03080c870caf8a
 F src/global.c 4f77cadbc5427d00139ba43d0f3979804cbb700e
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
 F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
@@ -255,7 +255,7 @@ F src/shell.c 07dda7cd692911d2f22269953418d049f2e2c0ee
 F src/sqlite.h.in d165beeceb6b40af60f352a4d4e37e02d9af7df0
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 2ebeb634e751a61a6f0eebfa0f4669f46a42f6cd
-F src/sqliteInt.h bcf51f6ec3ad67dbdf1acf78fcb94884af93c183
+F src/sqliteInt.h 98c49cbd565f08f2e516399734e497340ca9549c
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c f266ad8a2892d659b74f0f50cb6a88b6e7c12179
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
@@ -329,6 +329,7 @@ F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
 F src/where.c dcdfee81d35ae9261a4c5bda6289ed5fa6d7e1ae
 F src/whereInt.h a6f5a762bc1b4b1c76e1cea79976b437ac35a435
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
+F test/affinity1.test 3f68d94550f47bac467f916844d939c94882b557
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test b35b4cd69fc913f90d39a575e171e1116c3a4bb7
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
@@ -1281,10 +1282,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4e621af1345a001360938de76e3b0a14deb5e991
-R ee13a8dd8e0014c6c36d8309e414bd72
-T *branch * blob-affinity-rename
-T *sym-blob-affinity-rename *
-T -sym-trunk *
+P bce3f04186cd2d69414a5a98b5b77dc8f060554a
+R 98be638f0f819b9a8a15b45777fdc534
+T *branch * affinity-func
+T *sym-affinity-func *
+T -sym-blob-affinity-rename *
 U drh
-Z 3dc5f9f8176f1194f0510f7321cda212
+Z 13640b2e248aab3cf67f2fff3528da6a

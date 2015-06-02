@@ -2874,6 +2874,22 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
         break;
       }
 
+      /* The AFFINITY() function returns the type affinity of its argument.
+      ** The type affinity is a compile-time value, so we might as well
+      ** code it directly.
+      */
+      if( pDef->funcFlags & SQLITE_FUNC_AFFINITY ){
+        int aff;
+        static const char *const azAffName[] = {
+           "", "BLOB", "TEXT", "NUMERIC", "INTEGER", "REAL"
+        };
+        assert( nFarg==1 );
+        aff = sqlite3ExprAffinity(pFarg->a[0].pExpr);
+        if( aff ) aff -= SQLITE_AFF_BLOB - 1;
+        sqlite3VdbeAddOp4(v, OP_String8, 0, target, 0, azAffName[aff], 0);
+        break;
+      }
+
       for(i=0; i<nFarg; i++){
         if( i<32 && sqlite3ExprIsConstant(pFarg->a[i].pExpr) ){
           testcase( i==31 );
