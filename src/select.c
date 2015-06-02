@@ -3718,6 +3718,73 @@ static int flattenSubquery(
 }
 #endif /* !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW) */
 
+
+
+#if !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW)
+/*
+** Make copies of relevant WHERE clause terms of the outer query into
+** the WHERE clause of subquery.  Example:
+**
+**    SELECT * FROM (SELECT a AS x, c-d AS y FROM t1) WHERE x=5 AND y=10;
+**
+** Transformed into:
+**
+**    SELECT * FROM (SELECT a AS x, c-d AS y FROM t1 WHERE a=5 AND c-d=10)
+**     WHERE x=5 AND y=10;
+**
+** The hope is that the terms added to the inner query will make it more
+** efficient.
+**
+** Do not attempt this optimization if:
+**
+**   (1) The inner query is an aggregate.  (In that case, we'd really want
+**       to copy the outer WHERE-clause terms onto the HAVING clause of the
+**       inner query.  But they probably won't help there so do not bother.)
+**
+**   (2) The inner query is the recursive part of a common table expression.
+**
+**   (3) The inner query has a LIMIT clause (since the changes to the WHERE
+**       close would change the meaning of the LIMIT).
+**
+**   (4) The inner query is the right operand of a LEFT JOIN.  (The caller
+**       enforces this restriction since this routine does not have enough
+**       information to know.)
+**
+** Return 0 if no changes are made and non-zero if one or more WHERE clause
+** terms are duplicated into the subquery.
+*/
+static int pushDownWhereTerms(
+  sqlite3 *db,          /* The database connection (for malloc()) */
+  Select *pSubq,        /* The subquery whose WHERE clause is to be augmented */
+  Expr *pWhere,         /* The WHERE clause of the outer query */
+  int iCursor           /* Cursor number of the subquery */
+){
+  Expr *pNew;
+  int nChng = 0;
+  if( pWhere==0 ) return 0;
+  if( (pSubq->selFlags & (SF_Aggregate|SF_Recursive))!=0 ){
+     return 0; /* restrictions (1) and (2) */
+  }
+  if( pSubq->pLimit!=0 ){
+     return 0; /* restriction (3) */
+  }
+  while( pWhere->op==TK_AND ){
+    nChng += pushDownWhereTerms(db, pSubq, pWhere->pRight, iCursor);
+    pWhere = pWhere->pLeft;
+  }
+  if( sqlite3ExprIsTableConstant(pWhere, iCursor) ){
+    nChng++;
+    while( pSubq ){
+      pNew = sqlite3ExprDup(db, pWhere, 0);
+      pNew = substExpr(db, pNew, iCursor, pSubq->pEList);
+      pSubq->pWhere = sqlite3ExprAnd(db, pSubq->pWhere, pNew);
+      pSubq = pSubq->pPrior;
+    }
+  }
+  return nChng;
+}
+#endif /* !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW) */
+
 /*
 ** Based on the contents of the AggInfo structure indicated by the first
 ** argument, this function checks if the following are true:
@@ -4816,60 +4883,72 @@ int sqlite3Select(
         p->selFlags |= SF_Aggregate;
       }
       i = -1;
-    }else if( pTabList->nSrc==1
-           && (p->selFlags & SF_All)==0
-           && OptimizationEnabled(db, SQLITE_SubqCoroutine)
-    ){
-      /* Implement a co-routine that will return a single row of the result
-      ** set on each invocation.
-      */
-      int addrTop = sqlite3VdbeCurrentAddr(v)+1;
-      pItem->regReturn = ++pParse->nMem;
-      sqlite3VdbeAddOp3(v, OP_InitCoroutine, pItem->regReturn, 0, addrTop);
-      VdbeComment((v, "%s", pItem->pTab->zName));
-      pItem->addrFillSub = addrTop;
-      sqlite3SelectDestInit(&dest, SRT_Coroutine, pItem->regReturn);
-      explainSetInteger(pItem->iSelectId, (u8)pParse->iNextSelectId);
-      sqlite3Select(pParse, pSub, &dest);
-      pItem->pTab->nRowLogEst = sqlite3LogEst(pSub->nSelectRow);
-      pItem->viaCoroutine = 1;
-      pItem->regResult = dest.iSdst;
-      sqlite3VdbeAddOp1(v, OP_EndCoroutine, pItem->regReturn);
-      sqlite3VdbeJumpHere(v, addrTop-1);
-      sqlite3ClearTempRegCache(pParse);
     }else{
-      /* Generate a subroutine that will fill an ephemeral table with
-      ** the content of this subquery.  pItem->addrFillSub will point
-      ** to the address of the generated subroutine.  pItem->regReturn
-      ** is a register allocated to hold the subroutine return address
-      */
-      int topAddr;
-      int onceAddr = 0;
-      int retAddr;
-      assert( pItem->addrFillSub==0 );
-      pItem->regReturn = ++pParse->nMem;
-      topAddr = sqlite3VdbeAddOp2(v, OP_Integer, 0, pItem->regReturn);
-      pItem->addrFillSub = topAddr+1;
-      if( pItem->isCorrelated==0 ){
-        /* If the subquery is not correlated and if we are not inside of
-        ** a trigger, then we only need to compute the value of the subquery
-        ** once. */
-        onceAddr = sqlite3CodeOnce(pParse); VdbeCoverage(v);
-        VdbeComment((v, "materialize \"%s\"", pItem->pTab->zName));
-      }else{
-        VdbeNoopComment((v, "materialize \"%s\"", pItem->pTab->zName));
+      if( (pItem->jointype & JT_OUTER)==0
+       && pushDownWhereTerms(db, pSub, p->pWhere, pItem->iCursor)
+      ){
+#if SELECTTRACE_ENABLED
+        if( sqlite3SelectTrace & 0x100 ){
+          sqlite3DebugPrintf("After WHERE-clause push-down:\n");
+          sqlite3TreeViewSelect(0, p, 0);
+        }
+#endif
       }
-      sqlite3SelectDestInit(&dest, SRT_EphemTab, pItem->iCursor);
-      explainSetInteger(pItem->iSelectId, (u8)pParse->iNextSelectId);
-      sqlite3Select(pParse, pSub, &dest);
-      pItem->pTab->nRowLogEst = sqlite3LogEst(pSub->nSelectRow);
-      if( onceAddr ) sqlite3VdbeJumpHere(v, onceAddr);
-      retAddr = sqlite3VdbeAddOp1(v, OP_Return, pItem->regReturn);
-      VdbeComment((v, "end %s", pItem->pTab->zName));
-      sqlite3VdbeChangeP1(v, topAddr, retAddr);
-      sqlite3ClearTempRegCache(pParse);
+      if( pTabList->nSrc==1
+       && (p->selFlags & SF_All)==0
+       && OptimizationEnabled(db, SQLITE_SubqCoroutine)
+      ){
+        /* Implement a co-routine that will return a single row of the result
+        ** set on each invocation.
+        */
+        int addrTop = sqlite3VdbeCurrentAddr(v)+1;
+        pItem->regReturn = ++pParse->nMem;
+        sqlite3VdbeAddOp3(v, OP_InitCoroutine, pItem->regReturn, 0, addrTop);
+        VdbeComment((v, "%s", pItem->pTab->zName));
+        pItem->addrFillSub = addrTop;
+        sqlite3SelectDestInit(&dest, SRT_Coroutine, pItem->regReturn);
+        explainSetInteger(pItem->iSelectId, (u8)pParse->iNextSelectId);
+        sqlite3Select(pParse, pSub, &dest);
+        pItem->pTab->nRowLogEst = sqlite3LogEst(pSub->nSelectRow);
+        pItem->viaCoroutine = 1;
+        pItem->regResult = dest.iSdst;
+        sqlite3VdbeAddOp1(v, OP_EndCoroutine, pItem->regReturn);
+        sqlite3VdbeJumpHere(v, addrTop-1);
+        sqlite3ClearTempRegCache(pParse);
+      }else{
+        /* Generate a subroutine that will fill an ephemeral table with
+        ** the content of this subquery.  pItem->addrFillSub will point
+        ** to the address of the generated subroutine.  pItem->regReturn
+        ** is a register allocated to hold the subroutine return address
+        */
+        int topAddr;
+        int onceAddr = 0;
+        int retAddr;
+        assert( pItem->addrFillSub==0 );
+        pItem->regReturn = ++pParse->nMem;
+        topAddr = sqlite3VdbeAddOp2(v, OP_Integer, 0, pItem->regReturn);
+        pItem->addrFillSub = topAddr+1;
+        if( pItem->isCorrelated==0 ){
+          /* If the subquery is not correlated and if we are not inside of
+          ** a trigger, then we only need to compute the value of the subquery
+          ** once. */
+          onceAddr = sqlite3CodeOnce(pParse); VdbeCoverage(v);
+          VdbeComment((v, "materialize \"%s\"", pItem->pTab->zName));
+        }else{
+          VdbeNoopComment((v, "materialize \"%s\"", pItem->pTab->zName));
+        }
+        sqlite3SelectDestInit(&dest, SRT_EphemTab, pItem->iCursor);
+        explainSetInteger(pItem->iSelectId, (u8)pParse->iNextSelectId);
+        sqlite3Select(pParse, pSub, &dest);
+        pItem->pTab->nRowLogEst = sqlite3LogEst(pSub->nSelectRow);
+        if( onceAddr ) sqlite3VdbeJumpHere(v, onceAddr);
+        retAddr = sqlite3VdbeAddOp1(v, OP_Return, pItem->regReturn);
+        VdbeComment((v, "end %s", pItem->pTab->zName));
+        sqlite3VdbeChangeP1(v, topAddr, retAddr);
+        sqlite3ClearTempRegCache(pParse);
+      }
     }
-    if( /*pParse->nErr ||*/ db->mallocFailed ){
+    if( db->mallocFailed ){
       goto select_end;
     }
     pParse->nHeight -= sqlite3SelectExprHeight(p);
