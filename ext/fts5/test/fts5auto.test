@@ -232,33 +232,43 @@ do_execsql_test 1.0 {
 
 fts5_aux_test_functions db
 
-proc matchdata {expr {order ASC}} {
-  set tclexpr [db one {
+proc matchdata {expr tbl collist {order ASC}} {
+
+  set cols ""
+  foreach e $collist {
+    append cols ", '$e'"
+  }
+
+  set tclexpr [db one [subst -novar {
     SELECT fts5_expr_tcl(
-      $expr, 'nearset $cols -pc ::pc', 'a','b','c','d','e','f'
+      $expr, 'nearset $cols -pc ::pc' [set cols]
     )
-  }]
+  }]]
   set res [list]
 
-  db eval "SELECT rowid, * FROM tt ORDER BY rowid $order" {
-    set cols [list $a $b $c $d $e $f]
+  db eval "SELECT rowid, * FROM $tbl ORDER BY rowid $order" x {
+    set cols [list]
+    foreach col $x(*) {
+      if {$col != "rowid"} { lappend cols $x($col) }
+    }
+    # set cols [list $a $b $c $d $e $f]
     set ::pc 0
     set rowdata [eval $tclexpr]
-    if {$rowdata != ""} { lappend res $rowid $rowdata }
+    if {$rowdata != ""} { lappend res $x(rowid) $rowdata }
   }
 
   set res
 }
 
-proc do_auto_test {tn expr} { 
+proc do_auto_test {tn tbl cols expr} { 
   foreach order {asc desc} {
-    set res [matchdata $expr $order]
-    set testname "3.$tn.[string range $order 0 0].rows=[expr [llength $res]/2]"
+    set res [matchdata $expr $tbl $cols $order]
+    set testname "$tn.[string range $order 0 0].rows=[expr [llength $res]/2]"
 
     set ::autotest_expr $expr
     do_execsql_test $testname [subst -novar {
-      SELECT rowid, fts5_test_poslist(tt) FROM tt 
-      WHERE tt MATCH $::autotest_expr ORDER BY rowid [set order]
+      SELECT rowid, fts5_test_poslist([set tbl]) FROM [set tbl] 
+      WHERE [set tbl] MATCH $::autotest_expr ORDER BY rowid [set order]
     }] $res
   }
 
@@ -310,6 +320,7 @@ for {set fold 0} {$fold < 3} {incr fold} {
     A.7 { {c a b} : x + c }
     A.8 { {c d} : "l m" }
     A.9 { {c e} : "l m" }
+    A.10 { {a b c a b c a b c f f e} : "l m" }
 
     B.1 { a NOT b }
     B.2 { a NOT a:b }
@@ -321,9 +332,48 @@ for {set fold 0} {$fold < 3} {incr fold} {
     C.1 { a OR (b AND "b c") }
     C.2 { a OR (b AND "z c") }
   } {
-    do_auto_test 3.$fold.$tn $expr
+    do_auto_test 3.$fold.$tn tt {a b c d e f} $expr
   }
 }
+
+proc replace_elems {list args} {
+  set ret $list
+  foreach {idx elem} $args {
+    set ret [lreplace $ret $idx $idx $elem]
+  }
+  set ret
+}
+
+#-------------------------------------------------------------------------
+#
+set bigdoc [string trim [string repeat "a " 1000]]
+do_test 4.0 {
+  set a [replace_elems $bigdoc  50 x  950 x]
+  set b [replace_elems $bigdoc  20 y   21 x  887 x 888 y]
+  set c [replace_elems $bigdoc   1 z  444 z  789 z]
+  execsql {
+    CREATE VIRTUAL TABLE yy USING fts5(c1, c2, c3);
+    INSERT INTO yy(rowid, c1, c2, c3) VALUES(-56789, $a, $b, $c);
+    INSERT INTO yy(rowid, c1, c2, c3) VALUES(250, $a, $b, $c);
+  }
+} {}
+
+foreach {tn expr} {
+  1 x    
+  2 y    
+  3 z
+
+  4 {c1 : x} 5 {c2 : x} 6 {c3 : x}
+  7 {c1 : y} 8 {c2 : y} 9 {c3 : y}
+  10 {c1 : z} 11 {c2 : z} 12 {c3 : z}
+
+
+} {
+breakpoint
+  do_auto_test 4.$tn yy {c1 c2 c3} $expr
+}
+
+
 
 finish_test
 

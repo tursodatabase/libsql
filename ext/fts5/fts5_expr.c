@@ -668,7 +668,7 @@ static int fts5ExprExtractCol(
   while( iCol!=iCurrent ){
     /* Advance pointer p until it points to pEnd or an 0x01 byte that is
     ** not part of a varint */
-    while( !(prev & 0x80) && *p!=0x01 ){
+    while( (prev & 0x80) || *p!=0x01 ){
       prev = *p++;
       if( p==pEnd ) return 0;
     }
@@ -678,7 +678,8 @@ static int fts5ExprExtractCol(
 
   /* Advance pointer p until it points to pEnd or an 0x01 byte that is
   ** not part of a varint */
-  while( p<pEnd && !(prev & 0x80) && *p!=0x01 ){
+  assert( (prev & 0x80)==0 );
+  while( p<pEnd && ((prev & 0x80) || *p!=0x01) ){
     prev = *p++;
   }
   return p - (*pa);
@@ -710,65 +711,27 @@ static int fts5ExprNearTest(
 ){
   Fts5ExprNearset *pNear = pNode->pNear;
   int rc = *pRc;
+  int i;
 
-  if( pNear->nPhrase==1 && pNear->apPhrase[0]->nTerm==1 ){
-    /* If this "NEAR" object is actually a single phrase that consists 
-    ** of a single term only, then grab pointers into the poslist
-    ** managed by the fts5_index.c iterator object. This is much faster 
-    ** than synthesizing a new poslist the way we have to for more
-    ** complicated phrase or NEAR expressions.  */
-    Fts5ExprPhrase *pPhrase = pNear->apPhrase[0];
-    Fts5IndexIter *pIter = pPhrase->aTerm[0].pIter;
-    Fts5ExprColset *pColset = pNear->pColset;
-    const u8 *pPos;
-    int nPos;
-
-    if( rc!=SQLITE_OK ) return 0;
-    rc = sqlite3Fts5IterPoslist(pIter, &pPos, &nPos, &pNode->iRowid);
-
-    /* If the term may match any column, then this must be a match. 
-    ** Return immediately in this case. Otherwise, try to find the
-    ** part of the poslist that corresponds to the required column.
-    ** If it can be found, return. If it cannot, the next iteration
-    ** of the loop will test the next rowid in the database for this
-    ** term.  */
-    if( pColset==0 ){
-      assert( pPhrase->poslist.nSpace==0 );
-      pPhrase->poslist.p = (u8*)pPos;
-      pPhrase->poslist.n = nPos;
-    }else if( pColset->nCol==1 ){
-      assert( pPhrase->poslist.nSpace==0 );
-      pPhrase->poslist.n = fts5ExprExtractCol(&pPos, nPos, pColset->aiCol[0]);
-      pPhrase->poslist.p = (u8*)pPos;
-    }else if( rc==SQLITE_OK ){
-      rc = fts5ExprExtractColset(pColset, pPos, nPos, &pPhrase->poslist);
+  /* Check that each phrase in the nearset matches the current row.
+  ** Populate the pPhrase->poslist buffers at the same time. If any
+  ** phrase is not a match, break out of the loop early.  */
+  for(i=0; rc==SQLITE_OK && i<pNear->nPhrase; i++){
+    Fts5ExprPhrase *pPhrase = pNear->apPhrase[i];
+    if( pPhrase->nTerm>1 || pNear->pColset ){
+      int bMatch = 0;
+      rc = fts5ExprPhraseIsMatch(pExpr, pNear->pColset, pPhrase, &bMatch);
+      if( bMatch==0 ) break;
+    }else{
+      rc = sqlite3Fts5IterPoslistBuffer(
+          pPhrase->aTerm[0].pIter, &pPhrase->poslist
+      );
     }
+  }
 
-    *pRc = rc;
-    return (pPhrase->poslist.n>0);
-  }else{
-    int i;
-
-    /* Check that each phrase in the nearset matches the current row.
-    ** Populate the pPhrase->poslist buffers at the same time. If any
-    ** phrase is not a match, break out of the loop early.  */
-    for(i=0; rc==SQLITE_OK && i<pNear->nPhrase; i++){
-      Fts5ExprPhrase *pPhrase = pNear->apPhrase[i];
-      if( pPhrase->nTerm>1 || pNear->pColset ){
-        int bMatch = 0;
-        rc = fts5ExprPhraseIsMatch(pExpr, pNear->pColset, pPhrase, &bMatch);
-        if( bMatch==0 ) break;
-      }else{
-        rc = sqlite3Fts5IterPoslistBuffer(
-            pPhrase->aTerm[0].pIter, &pPhrase->poslist
-        );
-      }
-    }
-
-    *pRc = rc;
-    if( i==pNear->nPhrase && (i==1 || fts5ExprNearIsMatch(pRc, pNear)) ){
-      return 1;
-    }
+  *pRc = rc;
+  if( i==pNear->nPhrase && (i==1 || fts5ExprNearIsMatch(pRc, pNear)) ){
+    return 1;
   }
 
   return 0;
@@ -939,12 +902,10 @@ static int fts5RowidCmp(
 }
 
 static void fts5ExprSetEof(Fts5ExprNode *pNode){
-  if( pNode ){
-    int i;
-    pNode->bEof = 1;
-    for(i=0; i<pNode->nChild; i++){
-      fts5ExprSetEof(pNode->apChild[i]);
-    }
+  int i;
+  pNode->bEof = 1;
+  for(i=0; i<pNode->nChild; i++){
+    fts5ExprSetEof(pNode->apChild[i]);
   }
 }
 
@@ -1562,34 +1523,26 @@ Fts5ExprColset *sqlite3Fts5ParseColset(
   Fts5Token *p
 ){
   Fts5ExprColset *pRet = 0;
+  int iCol;
+  char *z;                        /* Dequoted copy of token p */
 
+  z = sqlite3Fts5Strndup(&pParse->rc, p->p, p->n);
   if( pParse->rc==SQLITE_OK ){
-    int iCol;
-    char *z = 0;
-    int rc = fts5ParseStringFromToken(p, &z);
-    if( rc==SQLITE_OK ){
-      Fts5Config *pConfig = pParse->pConfig;
-      sqlite3Fts5Dequote(z);
-      for(iCol=0; iCol<pConfig->nCol; iCol++){
-        if( 0==sqlite3_stricmp(pConfig->azCol[iCol], z) ){
-          break;
-        }
-      }
-      if( iCol==pConfig->nCol ){
-        sqlite3Fts5ParseError(pParse, "no such column: %s", z);
-      }
-      sqlite3_free(z);
-    }else{
-      pParse->rc = rc;
+    Fts5Config *pConfig = pParse->pConfig;
+    sqlite3Fts5Dequote(z);
+    for(iCol=0; iCol<pConfig->nCol; iCol++){
+      if( 0==sqlite3_stricmp(pConfig->azCol[iCol], z) ) break;
     }
-
-    if( pParse->rc==SQLITE_OK ){
+    if( iCol==pConfig->nCol ){
+      sqlite3Fts5ParseError(pParse, "no such column: %s", z);
+    }else{
       pRet = fts5ParseColset(pParse, pColset, iCol);
     }
+    sqlite3_free(z);
   }
 
-  if( pParse->rc!=SQLITE_OK ){
-    assert( pRet==0 );
+  if( pRet==0 ){
+    assert( pParse->rc!=SQLITE_OK );
     sqlite3_free(pColset);
   }
 
@@ -1770,8 +1723,6 @@ static char *fts5ExprPrintTcl(
       if( zRet ) zRet = fts5PrintfAppend(zRet, "}");
       if( zRet==0 ) return 0;
     }
-
-    if( zRet==0 ) return 0;
 
   }else{
     char const *zOp = 0;

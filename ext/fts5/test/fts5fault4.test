@@ -371,5 +371,33 @@ do_faultsim_test 13.1 -faults oom-t* -prep {
   faultsim_test_result {0 {a 1 1 b 1 1}} 
 }
 
+#-------------------------------------------------------------------------
+# OOM in multi-column token query.
+#
+reset_db
+do_execsql_test 13.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(x, y, z);
+  INSERT INTO ft(ft, rank) VALUES('pgsz', 32);
+  INSERT INTO ft VALUES(
+      'x x x x x x x x x x x x x x x x',
+      'y y y y y y y y y y y y y y y y',
+      'z z z z z z z z x x x x x x x x'
+  );
+  INSERT INTO ft SELECT * FROM ft;
+  INSERT INTO ft SELECT * FROM ft;
+  INSERT INTO ft SELECT * FROM ft;
+  INSERT INTO ft SELECT * FROM ft;
+}
+faultsim_save_and_close
+do_faultsim_test 13.1 -faults oom-t* -prep {
+  faultsim_restore_and_reopen
+  db eval { SELECT * FROM ft }
+} -body {
+  db eval { SELECT rowid FROM ft WHERE ft MATCH '{x z}: x' }
+} -test {
+  faultsim_test_result {0 {1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16}}
+}
+
+
 finish_test
 
