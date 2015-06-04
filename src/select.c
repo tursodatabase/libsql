@@ -3868,16 +3868,16 @@ static Table *isSimpleCount(Select *p, AggInfo *pAggInfo){
 ** pFrom->pIndex and return SQLITE_OK.
 */
 int sqlite3IndexedByLookup(Parse *pParse, struct SrcList_item *pFrom){
-  if( pFrom->pTab && pFrom->zIndex ){
+  if( pFrom->pTab && pFrom->zIndexedBy ){
     Table *pTab = pFrom->pTab;
-    char *zIndex = pFrom->zIndex;
+    char *zIndexedBy = pFrom->zIndexedBy;
     Index *pIdx;
     for(pIdx=pTab->pIndex; 
-        pIdx && sqlite3StrICmp(pIdx->zName, zIndex); 
+        pIdx && sqlite3StrICmp(pIdx->zName, zIndexedBy); 
         pIdx=pIdx->pNext
     );
     if( !pIdx ){
-      sqlite3ErrorMsg(pParse, "no such index: %s", zIndex, 0);
+      sqlite3ErrorMsg(pParse, "no such index: %s", zIndexedBy, 0);
       pParse->checkSchema = 1;
       return SQLITE_ERROR;
     }
