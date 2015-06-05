@@ -3709,7 +3709,7 @@ static int flattenSubquery(
 
 #if SELECTTRACE_ENABLED
   if( sqlite3SelectTrace & 0x100 ){
-    sqlite3DebugPrintf("After flattening:\n");
+    SELECTTRACE(0x100,pParse,p,("After flattening:\n"));
     sqlite3TreeViewSelect(0, p, 0);
   }
 #endif
@@ -4889,7 +4889,7 @@ int sqlite3Select(
       ){
 #if SELECTTRACE_ENABLED
         if( sqlite3SelectTrace & 0x100 ){
-          sqlite3DebugPrintf("After WHERE-clause push-down:\n");
+          SELECTTRACE(0x100,pParse,p,("After WHERE-clause push-down:\n"));
           sqlite3TreeViewSelect(0, p, 0);
         }
 #endif
@@ -4963,6 +4963,13 @@ int sqlite3Select(
   pGroupBy = p->pGroupBy;
   pHaving = p->pHaving;
   sDistinct.isTnct = (p->selFlags & SF_Distinct)!=0;
+
+#if SELECTTRACE_ENABLED
+  if( sqlite3SelectTrace & 0x400 ){
+    SELECTTRACE(0x400,pParse,p,("After all FROM-clause analysis:\n"));
+    sqlite3TreeViewSelect(0, p, 0);
+  }
+#endif
 
 #ifndef SQLITE_OMIT_COMPOUND_SELECT
   /* If there is are a sequence of queries, do the earlier ones first.
