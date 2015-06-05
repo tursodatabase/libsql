@@ -4842,14 +4842,54 @@ int sqlite3Select(
   }
 #endif
 
-  /* Generate code for all sub-queries in the FROM clause
+  /* Try to flatten subqueries in the FROM clause into the main query
   */
 #if !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW)
   for(i=0; !p->pPrior && i<pTabList->nSrc; i++){
     struct SrcList_item *pItem = &pTabList->a[i];
-    SelectDest dest;
     Select *pSub = pItem->pSelect;
     int isAggSub;
+    if( pSub==0 ) continue;
+    isAggSub = (pSub->selFlags & SF_Aggregate)!=0;
+    if( flattenSubquery(pParse, p, i, isAgg, isAggSub) ){
+      /* This subquery can be absorbed into its parent. */
+      if( isAggSub ){
+        isAgg = 1;
+        p->selFlags |= SF_Aggregate;
+      }
+      i = -1;
+    }
+    pTabList = p->pSrc;
+    if( db->mallocFailed ) goto select_end;
+    if( !IgnorableOrderby(pDest) ){
+      sSort.pOrderBy = p->pOrderBy;
+    }
+  }
+#endif
+
+
+#ifndef SQLITE_OMIT_COMPOUND_SELECT
+  /* Handle compound SELECT statements using the separate multiSelect()
+  ** procedure.
+  */
+  if( p->pPrior ){
+    rc = multiSelect(pParse, p, pDest);
+    explainSetInteger(pParse->iSelectId, iRestoreSelectId);
+#if SELECTTRACE_ENABLED
+    SELECTTRACE(1,pParse,p,("end compound-select processing\n"));
+    pParse->nSelectIndent--;
+#endif
+    return rc;
+  }
+#endif
+
+  /* Generate code for all sub-queries in the FROM clause
+  */
+#if !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW)
+  for(i=0; i<pTabList->nSrc; i++){
+    struct SrcList_item *pItem = &pTabList->a[i];
+    SelectDest dest;
+    Select *pSub = pItem->pSelect;
 
     if( pSub==0 ) continue;
 
@@ -4875,87 +4915,73 @@ int sqlite3Select(
     */
     pParse->nHeight += sqlite3SelectExprHeight(p);
 
-    isAggSub = (pSub->selFlags & SF_Aggregate)!=0;
-    if( flattenSubquery(pParse, p, i, isAgg, isAggSub) ){
-      /* This subquery can be absorbed into its parent. */
-      if( isAggSub ){
-        isAgg = 1;
-        p->selFlags |= SF_Aggregate;
-      }
-      i = -1;
-    }else{
-      if( (pItem->jointype & JT_OUTER)==0
-       && pushDownWhereTerms(db, pSub, p->pWhere, pItem->iCursor)
-      ){
+    if( (pItem->jointype & JT_OUTER)==0
+     && pushDownWhereTerms(db, pSub, p->pWhere, pItem->iCursor)
+    ){
 #if SELECTTRACE_ENABLED
-        if( sqlite3SelectTrace & 0x100 ){
-          SELECTTRACE(0x100,pParse,p,("After WHERE-clause push-down:\n"));
-          sqlite3TreeViewSelect(0, p, 0);
-        }
+      if( sqlite3SelectTrace & 0x100 ){
+        SELECTTRACE(0x100,pParse,p,("After WHERE-clause push-down:\n"));
+        sqlite3TreeViewSelect(0, p, 0);
+      }
 #endif
-      }
-      if( pTabList->nSrc==1
-       && (p->selFlags & SF_All)==0
-       && OptimizationEnabled(db, SQLITE_SubqCoroutine)
-      ){
-        /* Implement a co-routine that will return a single row of the result
-        ** set on each invocation.
-        */
-        int addrTop = sqlite3VdbeCurrentAddr(v)+1;
-        pItem->regReturn = ++pParse->nMem;
-        sqlite3VdbeAddOp3(v, OP_InitCoroutine, pItem->regReturn, 0, addrTop);
-        VdbeComment((v, "%s", pItem->pTab->zName));
-        pItem->addrFillSub = addrTop;
-        sqlite3SelectDestInit(&dest, SRT_Coroutine, pItem->regReturn);
-        explainSetInteger(pItem->iSelectId, (u8)pParse->iNextSelectId);
-        sqlite3Select(pParse, pSub, &dest);
-        pItem->pTab->nRowLogEst = sqlite3LogEst(pSub->nSelectRow);
-        pItem->viaCoroutine = 1;
-        pItem->regResult = dest.iSdst;
-        sqlite3VdbeAddOp1(v, OP_EndCoroutine, pItem->regReturn);
-        sqlite3VdbeJumpHere(v, addrTop-1);
-        sqlite3ClearTempRegCache(pParse);
+    }
+    if( pTabList->nSrc==1
+     && (p->selFlags & SF_All)==0
+     && OptimizationEnabled(db, SQLITE_SubqCoroutine)
+    ){
+      /* Implement a co-routine that will return a single row of the result
+      ** set on each invocation.
+      */
+      int addrTop = sqlite3VdbeCurrentAddr(v)+1;
+      pItem->regReturn = ++pParse->nMem;
+      sqlite3VdbeAddOp3(v, OP_InitCoroutine, pItem->regReturn, 0, addrTop);
+      VdbeComment((v, "%s", pItem->pTab->zName));
+      pItem->addrFillSub = addrTop;
+      sqlite3SelectDestInit(&dest, SRT_Coroutine, pItem->regReturn);
+      explainSetInteger(pItem->iSelectId, (u8)pParse->iNextSelectId);
+      sqlite3Select(pParse, pSub, &dest);
+      pItem->pTab->nRowLogEst = sqlite3LogEst(pSub->nSelectRow);
+      pItem->viaCoroutine = 1;
+      pItem->regResult = dest.iSdst;
+      sqlite3VdbeAddOp1(v, OP_EndCoroutine, pItem->regReturn);
+      sqlite3VdbeJumpHere(v, addrTop-1);
+      sqlite3ClearTempRegCache(pParse);
+    }else{
+      /* Generate a subroutine that will fill an ephemeral table with
+      ** the content of this subquery.  pItem->addrFillSub will point
+      ** to the address of the generated subroutine.  pItem->regReturn
+      ** is a register allocated to hold the subroutine return address
+      */
+      int topAddr;
+      int onceAddr = 0;
+      int retAddr;
+      assert( pItem->addrFillSub==0 );
+      pItem->regReturn = ++pParse->nMem;
+      topAddr = sqlite3VdbeAddOp2(v, OP_Integer, 0, pItem->regReturn);
+      pItem->addrFillSub = topAddr+1;
+      if( pItem->isCorrelated==0 ){
+        /* If the subquery is not correlated and if we are not inside of
+        ** a trigger, then we only need to compute the value of the subquery
+        ** once. */
+        onceAddr = sqlite3CodeOnce(pParse); VdbeCoverage(v);
+        VdbeComment((v, "materialize \"%s\"", pItem->pTab->zName));
       }else{
-        /* Generate a subroutine that will fill an ephemeral table with
-        ** the content of this subquery.  pItem->addrFillSub will point
-        ** to the address of the generated subroutine.  pItem->regReturn
-        ** is a register allocated to hold the subroutine return address
-        */
-        int topAddr;
-        int onceAddr = 0;
-        int retAddr;
-        assert( pItem->addrFillSub==0 );
-        pItem->regReturn = ++pParse->nMem;
-        topAddr = sqlite3VdbeAddOp2(v, OP_Integer, 0, pItem->regReturn);
-        pItem->addrFillSub = topAddr+1;
-        if( pItem->isCorrelated==0 ){
-          /* If the subquery is not correlated and if we are not inside of
-          ** a trigger, then we only need to compute the value of the subquery
-          ** once. */
-          onceAddr = sqlite3CodeOnce(pParse); VdbeCoverage(v);
-          VdbeComment((v, "materialize \"%s\"", pItem->pTab->zName));
-        }else{
-          VdbeNoopComment((v, "materialize \"%s\"", pItem->pTab->zName));
-        }
-        sqlite3SelectDestInit(&dest, SRT_EphemTab, pItem->iCursor);
-        explainSetInteger(pItem->iSelectId, (u8)pParse->iNextSelectId);
-        sqlite3Select(pParse, pSub, &dest);
-        pItem->pTab->nRowLogEst = sqlite3LogEst(pSub->nSelectRow);
-        if( onceAddr ) sqlite3VdbeJumpHere(v, onceAddr);
-        retAddr = sqlite3VdbeAddOp1(v, OP_Return, pItem->regReturn);
-        VdbeComment((v, "end %s", pItem->pTab->zName));
-        sqlite3VdbeChangeP1(v, topAddr, retAddr);
-        sqlite3ClearTempRegCache(pParse);
+        VdbeNoopComment((v, "materialize \"%s\"", pItem->pTab->zName));
       }
+      sqlite3SelectDestInit(&dest, SRT_EphemTab, pItem->iCursor);
+      explainSetInteger(pItem->iSelectId, (u8)pParse->iNextSelectId);
+      sqlite3Select(pParse, pSub, &dest);
+      pItem->pTab->nRowLogEst = sqlite3LogEst(pSub->nSelectRow);
+      if( onceAddr ) sqlite3VdbeJumpHere(v, onceAddr);
+      retAddr = sqlite3VdbeAddOp1(v, OP_Return, pItem->regReturn);
+      VdbeComment((v, "end %s", pItem->pTab->zName));
+      sqlite3VdbeChangeP1(v, topAddr, retAddr);
+      sqlite3ClearTempRegCache(pParse);
     }
     if( db->mallocFailed ){
       goto select_end;
     }
     pParse->nHeight -= sqlite3SelectExprHeight(p);
-    pTabList = p->pSrc;
-    if( !IgnorableOrderby(pDest) ){
-      sSort.pOrderBy = p->pOrderBy;
-    }
   }
   pEList = p->pEList;
 #endif
@@ -4968,20 +4994,6 @@ int sqlite3Select(
   if( sqlite3SelectTrace & 0x400 ){
     SELECTTRACE(0x400,pParse,p,("After all FROM-clause analysis:\n"));
     sqlite3TreeViewSelect(0, p, 0);
-  }
-#endif
-
-#ifndef SQLITE_OMIT_COMPOUND_SELECT
-  /* If there is are a sequence of queries, do the earlier ones first.
-  */
-  if( p->pPrior ){
-    rc = multiSelect(pParse, p, pDest);
-    explainSetInteger(pParse->iSelectId, iRestoreSelectId);
-#if SELECTTRACE_ENABLED
-    SELECTTRACE(1,pParse,p,("end compound-select processing\n"));
-    pParse->nSelectIndent--;
-#endif
-    return rc;
   }
 #endif
 

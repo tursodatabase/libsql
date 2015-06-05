@@ -3559,14 +3559,6 @@ void sqlite3TreeViewExprList(
     sqlite3TreeViewLine(pView, "%s", zLabel);
     for(i=0; i<pList->nExpr; i++){
       sqlite3TreeViewExpr(pView, pList->a[i].pExpr, i<pList->nExpr-1);
-#if 0
-     if( pList->a[i].zName ){
-        sqlite3ExplainPrintf(pOut, " AS %s", pList->a[i].zName);
-      }
-      if( pList->a[i].bSpanIsTab ){
-        sqlite3ExplainPrintf(pOut, " (%s)", pList->a[i].zSpan);
-      }
-#endif
     }
   }
   sqlite3TreeViewPop(pView);
