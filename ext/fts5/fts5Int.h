@@ -566,8 +566,8 @@ int sqlite3Fts5ExprNew(
 **   i64 iRowid = sqlite3Fts5ExprRowid(pExpr);
 ** }
 */
-int sqlite3Fts5ExprFirst(Fts5Expr*, Fts5Index *pIdx, int bDesc);
-int sqlite3Fts5ExprNext(Fts5Expr*);
+int sqlite3Fts5ExprFirst(Fts5Expr*, Fts5Index *pIdx, i64 iMin, int bDesc);
+int sqlite3Fts5ExprNext(Fts5Expr*, i64 iMax);
 int sqlite3Fts5ExprEof(Fts5Expr*);
 i64 sqlite3Fts5ExprRowid(Fts5Expr*);
 

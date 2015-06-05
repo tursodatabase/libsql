@@ -1193,14 +1193,20 @@ static int fts5ExprNodeFirst(Fts5Expr *pExpr, Fts5ExprNode *pNode){
 
 /*
 ** Begin iterating through the set of documents in index pIdx matched by
-** the MATCH expression passed as the first argument. If the "bDesc" parameter
-** is passed a non-zero value, iteration is in descending rowid order. Or,
-** if it is zero, in ascending order.
+** the MATCH expression passed as the first argument. If the "bDesc" 
+** parameter is passed a non-zero value, iteration is in descending rowid 
+** order. Or, if it is zero, in ascending order.
+**
+** If iterating in ascending rowid order (bDesc==0), the first document
+** visited is that with the smallest rowid that is larger than or equal
+** to parameter iFirst. Or, if iterating in ascending order (bDesc==1),
+** then the first document visited must have a rowid smaller than or
+** equal to iFirst.
 **
 ** Return SQLITE_OK if successful, or an SQLite error code otherwise. It
 ** is not considered an error if the query does not match any documents.
 */
-int sqlite3Fts5ExprFirst(Fts5Expr *p, Fts5Index *pIdx, int bDesc){
+int sqlite3Fts5ExprFirst(Fts5Expr *p, Fts5Index *pIdx, i64 iFirst, int bDesc){
   Fts5ExprNode *pRoot = p->pRoot;
   int rc = SQLITE_OK;
   if( pRoot ){
@@ -1208,6 +1214,13 @@ int sqlite3Fts5ExprFirst(Fts5Expr *p, Fts5Index *pIdx, int bDesc){
     p->bDesc = bDesc;
     rc = fts5ExprNodeFirst(p, pRoot);
 
+    /* If not at EOF but the current rowid occurs earlier than iFirst in
+    ** the iteration order, move to document iFirst or later. */
+    if( pRoot->bEof==0 && fts5RowidCmp(p, pRoot->iRowid, iFirst)<0 ){
+      rc = fts5ExprNodeNext(p, pRoot, 1, iFirst);
+    }
+
+    /* If the iterator is not at a real match, skip forward until it is. */
     while( pRoot->bNomatch && rc==SQLITE_OK && pRoot->bEof==0 ){
       rc = fts5ExprNodeNext(p, pRoot, 0, 0);
     }
@@ -1221,12 +1234,15 @@ int sqlite3Fts5ExprFirst(Fts5Expr *p, Fts5Index *pIdx, int bDesc){
 ** Return SQLITE_OK if successful, or an SQLite error code otherwise. It
 ** is not considered an error if the query does not match any documents.
 */
-int sqlite3Fts5ExprNext(Fts5Expr *p){
+int sqlite3Fts5ExprNext(Fts5Expr *p, i64 iLast){
   int rc;
   Fts5ExprNode *pRoot = p->pRoot;
   do {
     rc = fts5ExprNodeNext(p, pRoot, 0, 0);
   }while( pRoot->bNomatch && pRoot->bEof==0 && rc==SQLITE_OK );
+  if( fts5RowidCmp(p, pRoot->iRowid, iLast)>0 ){
+    pRoot->bEof = 1;
+  }
   return rc;
 }
 

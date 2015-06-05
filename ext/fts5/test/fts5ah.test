@@ -104,6 +104,46 @@ foreach {tn q res} "
   do_execsql_test 1.6.$tn.4 "$q ORDER BY rowid DESC" [lsort -int -decr $res]
 }
 
+#-------------------------------------------------------------------------
+# Now test that adding range constraints on the rowid field reduces the
+# number of pages loaded from disk.
+#
+foreach {tn fraction tail cnt} {
+  1 0.6 {rowid > 5000} 5000
+  2 0.2 {rowid > 9000} 1000
+  3 0.2 {rowid < 1000}  999
+  4 0.2 {rowid BETWEEN 4000 AND 5000}  1001
+  5 0.6 {rowid >= 5000} 5001
+  6 0.2 {rowid >= 9000} 1001
+  7 0.2 {rowid <= 1000} 1000
+  8 0.6 {rowid > '5000'} 5000
+  9 0.2 {rowid > '9000'} 1000
+  10 0.1 {rowid = 444} 1
+} {
+  set q "SELECT rowid FROM t1 WHERE t1 MATCH 'x' AND $tail"
+  set n [execsql_reads $q]
+  set ret [llength [execsql $q]]
+
+  do_test "1.7.$tn.asc.(n=$n ret=$ret)" {
+    expr {$n < ($fraction*$nReadX) && $ret==$cnt}
+  } {1}
+
+  set q "SELECT rowid FROM t1 WHERE t1 MATCH 'x' AND $tail ORDER BY rowid DESC"
+  set n [execsql_reads $q]
+  set ret [llength [execsql $q]]
+  do_test "1.7.$tn.desc.(n=$n ret=$ret)" {
+    expr {$n < 2*$fraction*$nReadX && $ret==$cnt}
+  } {1}
+}
+
+do_execsql_test 1.8.1 {
+  SELECT count(*) FROM t1 WHERE t1 MATCH 'x' AND +rowid < 'text';
+} {10000}
+do_execsql_test 1.8.2 {
+  SELECT count(*) FROM t1 WHERE t1 MATCH 'x' AND rowid < 'text';
+} {10000}
+
+
 #db eval {SELECT rowid, fts5_decode(rowid, block) aS r FROM t1_data} {puts $r}
 
 finish_test
