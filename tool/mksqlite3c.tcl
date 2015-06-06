@@ -343,6 +343,7 @@ foreach file {
    update.c
    vacuum.c
    vtab.c
+   wherecode.c
    where.c
 
    parse.c

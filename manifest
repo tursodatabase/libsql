@@ -1,9 +1,9 @@
-C Code\ssimplifications\sin\sselect.c\sand\swhere.c.
-D 2015-06-06T18:30:17.822
+C Split\sout\sthe\sbulk\sof\sthe\sactual\sVDBE\scode\sgeneration\slogic\sfrom\swhere.c\ninto\sa\snew\sfile,\sleaving\sbehind\sthe\sanalysis\slogic.\s\sThis\smakes\sthe\soriginal\nwhere.c\ssmaller\sand\shopefully\seasier\sto\sedit.
+D 2015-06-06T20:12:09.183
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in 994bab32a3a69e0c35bd148b65cde49879772964
+F Makefile.in 64136f59edd49b389b5c5d24388e204929b807e5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc d37d2c2323df3acae6e24c71a478889421c17264
+F Makefile.msc e2f1f95dc4a0af0b9ac3c2ee66878700b71ad93f
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION ce0ae95abd7121c534f6917c1c8f2b70d9acd4db
@@ -171,7 +171,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 8d418497da6a152a59b00d64ae3d66f3c665974c
+F main.mk b9e0c806c04739b20f281680f8771bc2e20acd54
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
 F mkopcodeh.awk d5e22023b5238985bb54a72d33e0ac71fe4f8a32
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
@@ -326,8 +326,9 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c ce2cb2d06faab54d1bce3e739bec79e063dd9113
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
-F src/where.c 5cc416ad6d8b6d2027735fcf7c5a6165bb745636
-F src/whereInt.h a6f5a762bc1b4b1c76e1cea79976b437ac35a435
+F src/where.c c9d804dcf02388207096e4da19487d9a2a7a9a67
+F src/whereInt.h 40e1d060b6aa02edbb7b8a1f3dfc0cc4ff140881
+F src/wherecode.c 0669481cabaf5caf934b6bb825df15bc57f60d40
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1247,7 +1248,7 @@ F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkpragmatab.tcl 40c287d3f929ece67da6e9e7c49885789960accf
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 69bae8ce4aa52d2ff82d4a8a856bf283ec035b2e
-F tool/mksqlite3c.tcl fdeab4c1eed90b7ab741ec12a7bc5c2fb60188bd
+F tool/mksqlite3c.tcl 9f60238b2273048a4089077a43716d3b33a67c51
 F tool/mksqlite3h.tcl 44730d586c9031638cdd2eb443b801c0d2dbd9f8
 F tool/mksqlite3internalh.tcl eb994013e833359137eb53a55acdad0b5ae1049b
 F tool/mkvsix.tcl 3b58b9398f91c7dbf18d49eb87cefeee9efdbce1
@@ -1282,7 +1283,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f4c90d06bb941453d8110680c7b279e471e8f034
-R 042f84cf941d82ab55744b287e51eff7
+P 4f20ac90bce8bd7ba43ef59af5cc4ef7aa282fe8
+R f7b66d3e1070ad2d563a494aba699c70
 U drh
-Z f6bc4d318934fdab6d55b7066c6ff342
+Z 85351aea272e066665037522f98406f9

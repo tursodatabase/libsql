@@ -69,7 +69,7 @@ LIBOBJ+= vdbe.o parse.o \
          table.o threads.o tokenize.o trigger.o \
          update.o userauth.o util.o vacuum.o \
          vdbeapi.o vdbeaux.o vdbeblob.o vdbemem.o vdbesort.o \
-	 vdbetrace.o wal.o walker.o where.o utf.o vtab.o
+	 vdbetrace.o wal.o walker.o where.o wherecode.o utf.o vtab.o
 
 
 
@@ -171,6 +171,7 @@ SRC = \
   $(TOP)/src/wal.h \
   $(TOP)/src/walker.c \
   $(TOP)/src/where.c \
+  $(TOP)/src/wherecode.c \
   $(TOP)/src/whereInt.h
 
 # Source code for extensions
@@ -337,6 +338,7 @@ TESTSRC2 = \
   $(TOP)/src/vdbe.c \
   $(TOP)/src/vdbemem.c \
   $(TOP)/src/where.c \
+  $(TOP)/src/wherecode.c \
   parse.c \
   $(TOP)/ext/fts3/fts3.c \
   $(TOP)/ext/fts3/fts3_aux.c \
