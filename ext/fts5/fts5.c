@@ -1138,6 +1138,9 @@ static int fts5FilterMethod(
     if( rc==SQLITE_OK ){
       if( pCsr->ePlan==FTS5_PLAN_ROWID ){
         sqlite3_bind_value(pCsr->pStmt, 1, apVal[0]);
+      }else{
+        sqlite3_bind_int64(pCsr->pStmt, 1, pCsr->iFirstRowid);
+        sqlite3_bind_int64(pCsr->pStmt, 2, pCsr->iLastRowid);
       }
       rc = fts5NextMethod(pCursor);
     }

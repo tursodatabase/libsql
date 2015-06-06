@@ -433,6 +433,69 @@ do_execsql_test 18.1 {
   SELECT rowid FROM c2 WHERE c2 MATCH 'y:x';
 } {1}
 
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 17.1 {
+  CREATE VIRTUAL TABLE uio USING fts5(ttt);
+  INSERT INTO uio VALUES(NULL);
+  INSERT INTO uio SELECT NULL FROM uio;
+  INSERT INTO uio SELECT NULL FROM uio;
+  INSERT INTO uio SELECT NULL FROM uio;
+  INSERT INTO uio SELECT NULL FROM uio;
+  INSERT INTO uio SELECT NULL FROM uio;
+  INSERT INTO uio SELECT NULL FROM uio;
+  INSERT INTO uio SELECT NULL FROM uio;
+  INSERT INTO uio SELECT NULL FROM uio;
+  SELECT count(*) FROM uio;
+} {256}
+
+do_execsql_test 17.2 {
+  SELECT count(*) FROM uio WHERE rowid BETWEEN 8 AND 17
+} {10}
+do_execsql_test 17.3 {
+  SELECT rowid FROM uio WHERE rowid BETWEEN 8 AND 17
+} {8 9 10 11 12 13 14 15 16 17}
+do_execsql_test 17.4 {
+  SELECT rowid FROM uio WHERE rowid BETWEEN 8 AND 17 ORDER BY rowid DESC
+} {17 16 15 14 13 12 11 10 9 8}
+do_execsql_test 17.5 {
+  SELECT count(*) FROM uio
+} {256}
+
+do_execsql_test 17.6 {
+  INSERT INTO uio(rowid) VALUES(9223372036854775807);
+  INSERT INTO uio(rowid) VALUES(-9223372036854775808);
+  SELECT count(*) FROM uio;
+} {258}
+do_execsql_test 17.7 {
+  SELECT min(rowid), max(rowid) FROM uio;
+} {-9223372036854775808 9223372036854775807}
+
+do_execsql_test 17.8 {
+  INSERT INTO uio DEFAULT VALUES;
+  SELECT min(rowid), max(rowid), count(*) FROM uio;
+} {-9223372036854775808 9223372036854775807 259}
+
+do_execsql_test 17.9 {
+  SELECT min(rowid), max(rowid), count(*) FROM uio WHERE rowid < 10;
+} {-9223372036854775808 9 10}
+
+#--------------------------------------------------------------------
+#
+do_execsql_test 18.1 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a, b);
+  CREATE VIRTUAL TABLE t2 USING fts5(c, d);
+  INSERT INTO t1 VALUES('abc*', NULL);
+  INSERT INTO t2 VALUES(1, 'abcdefg');
+}
+do_execsql_test 18.2 {
+  SELECT t1.rowid, t2.rowid FROM t1, t2 WHERE t2 MATCH t1.a AND t1.rowid = t2.c
+} {1 1}
+do_execsql_test 18.3 {
+  SELECT t1.rowid, t2.rowid FROM t2, t1 WHERE t2 MATCH t1.a AND t1.rowid = t2.c
+} {1 1}
+
 finish_test
 
 

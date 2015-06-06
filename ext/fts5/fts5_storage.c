@@ -23,7 +23,7 @@ struct Fts5Storage {
   int bTotalsValid;               /* True if nTotalRow/aTotalSize[] are valid */
   i64 nTotalRow;                  /* Total number of rows in FTS table */
   i64 *aTotalSize;                /* Total sizes of each column */ 
-  sqlite3_stmt *aStmt[10];
+  sqlite3_stmt *aStmt[11];
 };
 
 
@@ -48,6 +48,8 @@ struct Fts5Storage {
 
 #define FTS5_STMT_REPLACE_CONFIG 9
 
+#define FTS5_STMT_SCAN 10
+
 /*
 ** Prepare the two insert statements - Fts5Storage.pInsertContent and
 ** Fts5Storage.pInsertDocsize - if they have not already been prepared.
@@ -65,9 +67,9 @@ static int fts5StorageGetStmt(
   assert( eStmt>=0 && eStmt<ArraySize(p->aStmt) );
   if( p->aStmt[eStmt]==0 ){
     const char *azStmt[] = {
-      "SELECT %s FROM %s T ORDER BY T.%Q ASC",          /* SCAN_ASC */
-      "SELECT %s FROM %s T ORDER BY T.%Q DESC",         /* SCAN_DESC */
-      "SELECT %s FROM %s T WHERE    T.%Q=?",            /* LOOKUP  */
+      "SELECT %s FROM %s T WHERE T.%Q >= ? AND T.%Q <= ? ORDER BY T.%Q ASC",
+      "SELECT %s FROM %s T WHERE T.%Q <= ? AND T.%Q >= ? ORDER BY T.%Q DESC",
+      "SELECT %s FROM %s T WHERE T.%Q=?",               /* LOOKUP  */
 
       "INSERT INTO %Q.'%q_content' VALUES(%s)",         /* INSERT_CONTENT  */
       "REPLACE INTO %Q.'%q_content' VALUES(%s)",        /* REPLACE_CONTENT */
@@ -78,13 +80,26 @@ static int fts5StorageGetStmt(
       "SELECT sz FROM %Q.'%q_docsize' WHERE id=?",      /* LOOKUP_DOCSIZE  */
 
       "REPLACE INTO %Q.'%q_config' VALUES(?,?)",        /* REPLACE_CONFIG */
+      "SELECT %s FROM %s AS T",                         /* SCAN */
     };
     Fts5Config *pC = p->pConfig;
     char *zSql = 0;
 
     switch( eStmt ){
+      case FTS5_STMT_SCAN:
+        zSql = sqlite3_mprintf(azStmt[eStmt], 
+            pC->zContentExprlist, pC->zContent
+        );
+        break;
+
       case FTS5_STMT_SCAN_ASC:
       case FTS5_STMT_SCAN_DESC:
+        zSql = sqlite3_mprintf(azStmt[eStmt], pC->zContentExprlist, 
+            pC->zContent, pC->zContentRowid, pC->zContentRowid,
+            pC->zContentRowid
+        );
+        break;
+
       case FTS5_STMT_LOOKUP:
         zSql = sqlite3_mprintf(azStmt[eStmt], 
             pC->zContentExprlist, pC->zContent, pC->zContentRowid
@@ -571,7 +586,7 @@ int sqlite3Fts5StorageRebuild(Fts5Storage *p){
   }
 
   if( rc==SQLITE_OK ){
-    rc = fts5StorageGetStmt(p, FTS5_STMT_SCAN_ASC, &pScan, 0);
+    rc = fts5StorageGetStmt(p, FTS5_STMT_SCAN, &pScan, 0);
   }
 
   while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pScan) ){
@@ -797,7 +812,7 @@ int sqlite3Fts5StorageIntegrity(Fts5Storage *p){
 
   /* Generate the expected index checksum based on the contents of the
   ** %_content table. This block stores the checksum in ctx.cksum. */
-  rc = fts5StorageGetStmt(p, FTS5_STMT_SCAN_ASC, &pScan, 0);
+  rc = fts5StorageGetStmt(p, FTS5_STMT_SCAN, &pScan, 0);
   if( rc==SQLITE_OK ){
     int rc2;
     while( SQLITE_ROW==sqlite3_step(pScan) ){
