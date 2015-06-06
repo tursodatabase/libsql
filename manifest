@@ -1,5 +1,5 @@
-C Fix\shandling\sof\sfts5\srowid\sconstraints\sin\sthe\sabsence\sof\sa\sMATCH\sclause.\sAdd\stests\sto\scover\srecently\sadded\sbranches.
-D 2015-06-06T16:28:29.334
+C Fix\sa\scomment\sin\sfts5.h.
+D 2015-06-06T19:23:32.945
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d272f8755b464f20e02dd7799bfe16794c9574c4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -106,7 +106,7 @@ F ext/fts3/unicode/mkunicode.tcl ed0534dd51efce39878bce33944c6073d37a1e20
 F ext/fts3/unicode/parseunicode.tcl da577d1384810fb4e2b209bf3313074353193e95
 F ext/fts5/extract_api_docs.tcl 55a6d648d516f35d9a1e580ac00de27154e1904a
 F ext/fts5/fts5.c 1c7424b9ba39f1e244f776556a4fface71abe772
-F ext/fts5/fts5.h 4266c6231094005b051dbfc8dd85d2bc57243d34
+F ext/fts5/fts5.h 81d1a92fc2b4bd477af7e4e0b38b456f3e199fba
 F ext/fts5/fts5Int.h 3de83c9639bd8332eb84a13c1eb2387e83e128bf
 F ext/fts5/fts5_aux.c d53f00f31ad615ca4f139dd8751f9041afa00971
 F ext/fts5/fts5_buffer.c 9ec57c75c81e81dca118568876b1caead0aadadf
@@ -1357,7 +1357,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 32cbc0ed3699cc21302f0b6a159493117ad4bd4f
-R 6f9b9f6d43c04c7ec55a64f8c057a03e
+P 3a9cb648138a059862fb438c0787fdd888f5e88e
+R 01f96e31f05863ae01feddea5f82854e
 U dan
-Z 85736f383e03d41cf70fac675094eadf
+Z 479453162469a9d47c2a3d0d93cd23e2

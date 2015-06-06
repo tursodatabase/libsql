@@ -67,7 +67,12 @@ typedef void (*fts5_extension_function)(
 **   Reports the size in tokens of a column value from the current row.
 **
 ** xColumnText:
-**   Reports the size in tokens of a column value from the current row.
+**   This function attempts to retrieve the text of column iCol of the
+**   current document. If successful, (*pz) is set to point to a buffer
+**   containing the text in utf-8 encoding, (*pn) is set to the size in bytes
+**   (not characters) of the buffer and SQLITE_OK is returned. Otherwise,
+**   if an error occurs, an SQLite error code is returned and the final values
+**   of (*pz) and (*pn) are undefined.
 **
 ** xPhraseCount:
 **   Returns the number of phrases in the current query expression.
