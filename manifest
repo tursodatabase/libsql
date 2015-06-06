@@ -1,5 +1,5 @@
-C Split\sFROM-clause\ssubquery\sflattening\sand\scode\sgeneration\sinto\sseparate\sloops.
-D 2015-06-05T22:33:39.408
+C Minor\scleanup\sof\sthe\ssqlite3Select()\sprocedure.
+D 2015-06-06T00:18:01.663
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 994bab32a3a69e0c35bd148b65cde49879772964
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -250,7 +250,7 @@ F src/printf.c 13ce37e5574f9b0682fa86dbcf9faf76b9d82a15
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 84c571794e3ee5806274d95158a4c0177c6c4708
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c 6a8f2c442dc69ff343411788e5146b45ddb87609
+F src/select.c 630623e6536115ec360e07be3cb5e01fab9166f9
 F src/shell.c 07dda7cd692911d2f22269953418d049f2e2c0ee
 F src/sqlite.h.in d165beeceb6b40af60f352a4d4e37e02d9af7df0
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
@@ -1282,10 +1282,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 283bf0b64da7acc5aa5812fc659954965002d409
-R 7215f59414fcbc308f2938a5f5f79857
-T *branch * view-optimization
-T *sym-view-optimization *
-T -sym-trunk *
+P be8e3fc70e4c13b28b07985df3457960f58ffddd
+R c9ba4b66998c994d5a4d88f3868eca18
 U drh
-Z b4c3a234d5928895ab25f2763d32a4ad
+Z f5a7ad6c64c16a42ea0d51c96b63ee57

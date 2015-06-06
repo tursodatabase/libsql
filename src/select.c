@@ -4814,12 +4814,11 @@ int sqlite3Select(
   memset(&sSort, 0, sizeof(sSort));
   sSort.pOrderBy = p->pOrderBy;
   pTabList = p->pSrc;
-  pEList = p->pEList;
   if( pParse->nErr || db->mallocFailed ){
     goto select_end;
   }
+  assert( p->pEList!=0 );
   isAgg = (p->selFlags & SF_Aggregate)!=0;
-  assert( pEList!=0 );
 #if SELECTTRACE_ENABLED
   if( sqlite3SelectTrace & 0x100 ){
     SELECTTRACE(0x100,pParse,p, ("after name resolution:\n"));
@@ -4828,21 +4827,16 @@ int sqlite3Select(
 #endif
 
 
-  /* Begin generating code.
-  */
-  v = sqlite3GetVdbe(pParse);
-  if( v==0 ) goto select_end;
-
   /* If writing to memory or generating a set
   ** only a single column may be output.
   */
 #ifndef SQLITE_OMIT_SUBQUERY
-  if( checkForMultiColumnSelectError(pParse, pDest, pEList->nExpr) ){
+  if( checkForMultiColumnSelectError(pParse, pDest, p->pEList->nExpr) ){
     goto select_end;
   }
 #endif
 
-  /* Try to flatten subqueries in the FROM clause into the main query
+  /* Try to flatten subqueries in the FROM clause up into the main query
   */
 #if !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW)
   for(i=0; !p->pPrior && i<pTabList->nSrc; i++){
@@ -4867,6 +4861,10 @@ int sqlite3Select(
   }
 #endif
 
+  /* Get a pointer the VDBE under construction, allocating a new VDBE if one
+  ** does not already exist */
+  v = sqlite3GetVdbe(pParse);
+  if( v==0 ) goto select_end;
 
 #ifndef SQLITE_OMIT_COMPOUND_SELECT
   /* Handle compound SELECT statements using the separate multiSelect()
@@ -4890,7 +4888,6 @@ int sqlite3Select(
     struct SrcList_item *pItem = &pTabList->a[i];
     SelectDest dest;
     Select *pSub = pItem->pSelect;
-
     if( pSub==0 ) continue;
 
     /* Sometimes the code for a subquery will be generated more than
@@ -4915,6 +4912,9 @@ int sqlite3Select(
     */
     pParse->nHeight += sqlite3SelectExprHeight(p);
 
+    /* Make copies of constant WHERE-clause terms in the outer query down
+    ** inside the subquery.  This can help the subquery to run more efficiently.
+    */
     if( (pItem->jointype & JT_OUTER)==0
      && pushDownWhereTerms(db, pSub, p->pWhere, pItem->iCursor)
     ){
@@ -4925,6 +4925,9 @@ int sqlite3Select(
       }
 #endif
     }
+
+    /* Generate code to implement the subquery
+    */
     if( pTabList->nSrc==1
      && (p->selFlags & SF_All)==0
      && OptimizationEnabled(db, SQLITE_SubqCoroutine)
@@ -4978,13 +4981,13 @@ int sqlite3Select(
       sqlite3VdbeChangeP1(v, topAddr, retAddr);
       sqlite3ClearTempRegCache(pParse);
     }
-    if( db->mallocFailed ){
-      goto select_end;
-    }
+    if( db->mallocFailed ) goto select_end;
     pParse->nHeight -= sqlite3SelectExprHeight(p);
   }
-  pEList = p->pEList;
 #endif
+
+  /* Various elements of the SELECT copied into local variables for convenience */
+  pEList = p->pEList;
   pWhere = p->pWhere;
   pGroupBy = p->pGroupBy;
   pHaving = p->pHaving;
@@ -5013,23 +5016,23 @@ int sqlite3Select(
   ** BY and DISTINCT, and an index or separate temp-table for the other.
   */
   if( (p->selFlags & (SF_Distinct|SF_Aggregate))==SF_Distinct 
-   && sqlite3ExprListCompare(sSort.pOrderBy, p->pEList, -1)==0
+   && sqlite3ExprListCompare(sSort.pOrderBy, pEList, -1)==0
   ){
     p->selFlags &= ~SF_Distinct;
-    p->pGroupBy = sqlite3ExprListDup(db, p->pEList, 0);
-    pGroupBy = p->pGroupBy;
+    pGroupBy = p->pGroupBy = sqlite3ExprListDup(db, pEList, 0);
     /* Notice that even thought SF_Distinct has been cleared from p->selFlags,
     ** the sDistinct.isTnct is still set.  Hence, isTnct represents the
     ** original setting of the SF_Distinct flag, not the current setting */
     assert( sDistinct.isTnct );
   }
 
-  /* If there is an ORDER BY clause, then this sorting
-  ** index might end up being unused if the data can be 
-  ** extracted in pre-sorted order.  If that is the case, then the
-  ** OP_OpenEphemeral instruction will be changed to an OP_Noop once
-  ** we figure out that the sorting index is not needed.  The addrSortIndex
-  ** variable is used to facilitate that change.
+  /* If there is an ORDER BY clause, then create an ephemeral index to
+  ** do the sorting.  But this sorting ephemeral index might end up
+  ** being unused if the data can be extracted in pre-sorted order.
+  ** If that is the case, then the OP_OpenEphemeral instruction will be
+  ** changed to an OP_Noop once we figure out that the sorting index is
+  ** not needed.  The sSort.addrSortIndex variable is used to facilitate
+  ** that change.
   */
   if( sSort.pOrderBy ){
     KeyInfo *pKeyInfo;
@@ -5060,7 +5063,7 @@ int sqlite3Select(
     sSort.sortFlags |= SORTFLAG_UseSorter;
   }
 
-  /* Open a virtual index to use for the distinct set.
+  /* Open an ephemeral index to use for the distinct set.
   */
   if( p->selFlags & SF_Distinct ){
     sDistinct.tabTnct = pParse->nTab++;
@@ -5145,11 +5148,10 @@ int sqlite3Select(
       p->nSelectRow = 1;
     }
 
-
     /* If there is both a GROUP BY and an ORDER BY clause and they are
     ** identical, then it may be possible to disable the ORDER BY clause 
     ** on the grounds that the GROUP BY will cause elements to come out 
-    ** in the correct order. It also may not - the GROUP BY may use a
+    ** in the correct order. It also may not - the GROUP BY might use a
     ** database index that causes rows to be grouped together as required
     ** but not actually sorted. Either way, record the fact that the
     ** ORDER BY and GROUP BY clauses are the same by setting the orderByGrp
