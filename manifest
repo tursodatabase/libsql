@@ -1,5 +1,5 @@
-C Minor\scleanup\sof\sthe\ssqlite3Select()\sprocedure.
-D 2015-06-06T00:18:01.663
+C Code\ssimplifications\sin\sselect.c\sand\swhere.c.
+D 2015-06-06T18:30:17.822
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 994bab32a3a69e0c35bd148b65cde49879772964
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -250,7 +250,7 @@ F src/printf.c 13ce37e5574f9b0682fa86dbcf9faf76b9d82a15
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 84c571794e3ee5806274d95158a4c0177c6c4708
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c 630623e6536115ec360e07be3cb5e01fab9166f9
+F src/select.c d507fe715b12e6aba157fa34b0a5680809e59bac
 F src/shell.c 07dda7cd692911d2f22269953418d049f2e2c0ee
 F src/sqlite.h.in d165beeceb6b40af60f352a4d4e37e02d9af7df0
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
@@ -326,7 +326,7 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c ce2cb2d06faab54d1bce3e739bec79e063dd9113
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
-F src/where.c 2db8137f14644e2117c2e2350e08a05e02d6bdab
+F src/where.c 5cc416ad6d8b6d2027735fcf7c5a6165bb745636
 F src/whereInt.h a6f5a762bc1b4b1c76e1cea79976b437ac35a435
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -1282,7 +1282,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P be8e3fc70e4c13b28b07985df3457960f58ffddd
-R c9ba4b66998c994d5a4d88f3868eca18
+P f4c90d06bb941453d8110680c7b279e471e8f034
+R 042f84cf941d82ab55744b287e51eff7
 U drh
-Z f5a7ad6c64c16a42ea0d51c96b63ee57
+Z f6bc4d318934fdab6d55b7066c6ff342

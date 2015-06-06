@@ -1310,28 +1310,27 @@ static void generateSortTail(
 */
 #ifdef SQLITE_ENABLE_COLUMN_METADATA
 # define columnType(A,B,C,D,E,F) columnTypeImpl(A,B,C,D,E,F)
+#else /* if !defined(SQLITE_ENABLE_COLUMN_METADATA) */
+# define columnType(A,B,C,D,E,F) columnTypeImpl(A,B,F)
+#endif
 static const char *columnTypeImpl(
   NameContext *pNC, 
   Expr *pExpr,
+#ifdef SQLITE_ENABLE_COLUMN_METADATA
   const char **pzOrigDb,
   const char **pzOrigTab,
   const char **pzOrigCol,
+#endif
   u8 *pEstWidth
 ){
-  char const *zOrigDb = 0;
-  char const *zOrigTab = 0;
-  char const *zOrigCol = 0;
-#else /* if !defined(SQLITE_ENABLE_COLUMN_METADATA) */
-# define columnType(A,B,C,D,E,F) columnTypeImpl(A,B,F)
-static const char *columnTypeImpl(
-  NameContext *pNC, 
-  Expr *pExpr,
-  u8 *pEstWidth
-){
-#endif /* !defined(SQLITE_ENABLE_COLUMN_METADATA) */
   char const *zType = 0;
   int j;
   u8 estWidth = 1;
+#ifdef SQLITE_ENABLE_COLUMN_METADATA
+  char const *zOrigDb = 0;
+  char const *zOrigTab = 0;
+  char const *zOrigCol = 0;
+#endif
 
   if( NEVER(pExpr==0) || pNC->pSrcList==0 ) return 0;
   switch( pExpr->op ){

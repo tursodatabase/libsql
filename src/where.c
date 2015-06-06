@@ -616,6 +616,11 @@ static void exprAnalyze(SrcList*, WhereClause*, int);
 
 /*
 ** Call exprAnalyze on all terms in a WHERE clause.  
+**
+** Note that exprAnalyze() might add new virtual terms onto the
+** end of the WHERE clause.  We do not want to analyze these new
+** virtual terms, so start analyzing at the end and work forward
+** so that the added virtual terms are never processed.
 */
 static void exprAnalyzeAll(
   SrcList *pTabList,       /* the FROM clause */
@@ -891,7 +896,7 @@ static void whereCombineDisjuncts(
 **
 ** CASE 2:
 **
-** If there are exactly two disjuncts one side has x>A and the other side
+** If there are exactly two disjuncts and one side has x>A and the other side
 ** has x=A (for the same x and A) then add a new virtual conjunct term to the
 ** WHERE clause of the form "x>=A".  Example:
 **
@@ -920,22 +925,22 @@ static void whereCombineDisjuncts(
 ** is decided elsewhere.  This analysis only looks at whether subterms
 ** appropriate for indexing exist.
 **
-** All examples A through E above satisfy case 2.  But if a term
+** All examples A through E above satisfy case 3.  But if a term
 ** also satisfies case 1 (such as B) we know that the optimizer will
-** always prefer case 1, so in that case we pretend that case 2 is not
+** always prefer case 1, so in that case we pretend that case 3 is not
 ** satisfied.
 **
 ** It might be the case that multiple tables are indexable.  For example,
 ** (E) above is indexable on tables P, Q, and R.
 **
-** Terms that satisfy case 2 are candidates for lookup by using
+** Terms that satisfy case 3 are candidates for lookup by using
 ** separate indices to find rowids for each subterm and composing
 ** the union of all rowids using a RowSet object.  This is similar
 ** to "bitmap indices" in other database engines.
 **
 ** OTHERWISE:
 **
-** If neither case 1 nor case 2 apply, then leave the eOperator set to
+** If none of cases 1, 2, or 3 apply, then leave the eOperator set to
 ** zero.  This term is not useful for search.
 */
 static void exprAnalyzeOrTerm(
@@ -973,7 +978,7 @@ static void exprAnalyzeOrTerm(
   assert( pOrWc->nTerm>=2 );
 
   /*
-  ** Compute the set of tables that might satisfy cases 1 or 2.
+  ** Compute the set of tables that might satisfy cases 1 or 3.
   */
   indexable = ~(Bitmask)0;
   chngToIN = ~(Bitmask)0;
@@ -1188,7 +1193,7 @@ static void exprAnalyzeOrTerm(
 ** relation:
 **   1.  The SQLITE_Transitive optimization must be enabled
 **   2.  Must be either an == or an IS operator
-**   3.  Not originating the ON clause of an OUTER JOIN
+**   3.  Not originating in the ON clause of an OUTER JOIN
 **   4.  The affinities of A and B must be compatible
 **   5a. Both operands use the same collating sequence OR
 **   5b. The overall collating sequence is BINARY
@@ -1589,8 +1594,8 @@ static int findIndexCol(
 ** Return true if the DISTINCT expression-list passed as the third argument
 ** is redundant.
 **
-** A DISTINCT list is redundant if the database contains some subset of
-** columns that are unique and non-null.
+** A DISTINCT list is redundant if any subset of the columns in the
+** DISTINCT list are collectively unique and individually non-null.
 */
 static int isDistinctRedundant(
   Parse *pParse,            /* Parsing context */
@@ -6689,15 +6694,9 @@ WhereInfo *sqlite3WhereBegin(
   }
 #endif
 
-  /* Analyze all of the subexpressions.  Note that exprAnalyze() might
-  ** add new virtual terms onto the end of the WHERE clause.  We do not
-  ** want to analyze these virtual terms, so start analyzing at the end
-  ** and work forward so that the added virtual terms are never processed.
-  */
+  /* Analyze all of the subexpressions. */
   exprAnalyzeAll(pTabList, &pWInfo->sWC);
-  if( db->mallocFailed ){
-    goto whereBeginError;
-  }
+  if( db->mallocFailed ) goto whereBeginError;
 
   if( wctrlFlags & WHERE_WANT_DISTINCT ){
     if( isDistinctRedundant(pParse, pTabList, &pWInfo->sWC, pResultSet) ){
@@ -6713,8 +6712,7 @@ WhereInfo *sqlite3WhereBegin(
   /* Construct the WhereLoop objects */
   WHERETRACE(0xffff,("*** Optimizer Start ***\n"));
 #if defined(WHERETRACE_ENABLED)
-  /* Display all terms of the WHERE clause */
-  if( sqlite3WhereTrace & 0x100 ){
+  if( sqlite3WhereTrace & 0x100 ){ /* Display all terms of the WHERE clause */
     int i;
     for(i=0; i<sWLB.pWC->nTerm; i++){
       whereTermPrint(&sWLB.pWC->a[i], i);
@@ -6726,13 +6724,12 @@ WhereInfo *sqlite3WhereBegin(
     rc = whereLoopAddAll(&sWLB);
     if( rc ) goto whereBeginError;
   
-    /* Display all of the WhereLoop objects if wheretrace is enabled */
-#ifdef WHERETRACE_ENABLED /* !=0 */
-    if( sqlite3WhereTrace ){
+#ifdef WHERETRACE_ENABLED
+    if( sqlite3WhereTrace ){    /* Display all of the WhereLoop objects */
       WhereLoop *p;
       int i;
-      static char zLabel[] = "0123456789abcdefghijklmnopqrstuvwyxz"
-                                       "ABCDEFGHIJKLMNOPQRSTUVWYXZ";
+      static const char zLabel[] = "0123456789abcdefghijklmnopqrstuvwyxz"
+                                             "ABCDEFGHIJKLMNOPQRSTUVWYXZ";
       for(p=pWInfo->pLoops, i=0; p; p=p->pNextLoop, i++){
         p->cId = zLabel[i%sizeof(zLabel)];
         whereLoopPrint(p, sWLB.pWC);
@@ -6753,7 +6750,7 @@ WhereInfo *sqlite3WhereBegin(
   if( pParse->nErr || NEVER(db->mallocFailed) ){
     goto whereBeginError;
   }
-#ifdef WHERETRACE_ENABLED /* !=0 */
+#ifdef WHERETRACE_ENABLED
   if( sqlite3WhereTrace ){
     sqlite3DebugPrintf("---- Solution nRow=%d", pWInfo->nRowOut);
     if( pWInfo->nOBSat>0 ){
@@ -6816,7 +6813,7 @@ WhereInfo *sqlite3WhereBegin(
   /* If the caller is an UPDATE or DELETE statement that is requesting
   ** to use a one-pass algorithm, determine if this is appropriate.
   ** The one-pass algorithm only works if the WHERE clause constrains
-  ** the statement to update a single row.
+  ** the statement to update or delete a single row.
   */
   assert( (wctrlFlags & WHERE_ONEPASS_DESIRED)==0 || pWInfo->nLevel==1 );
   if( (wctrlFlags & WHERE_ONEPASS_DESIRED)!=0 
@@ -6830,7 +6827,6 @@ WhereInfo *sqlite3WhereBegin(
   /* Open all tables in the pTabList and any indices selected for
   ** searching those tables.
   */
-  notReady = ~(Bitmask)0;
   for(ii=0, pLevel=pWInfo->a; ii<nTabList; ii++, pLevel++){
     Table *pTab;     /* Table to open */
     int iDb;         /* Index of database containing table/index */
@@ -6919,7 +6915,6 @@ WhereInfo *sqlite3WhereBegin(
       }
     }
     if( iDb>=0 ) sqlite3CodeVerifySchema(pParse, iDb);
-    notReady &= ~getMask(&pWInfo->sMaskSet, pTabItem->iCursor);
   }
   pWInfo->iTop = sqlite3VdbeCurrentAddr(v);
   if( db->mallocFailed ) goto whereBeginError;
