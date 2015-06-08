@@ -835,7 +835,7 @@ LIBOBJS0 = vdbe.lo parse.lo alter.lo analyze.lo attach.lo auth.lo \
          notify.lo opcodes.lo os.lo os_unix.lo os_win.lo \
          pager.lo pcache.lo pcache1.lo pragma.lo prepare.lo printf.lo \
          random.lo resolve.lo rowset.lo rtree.lo select.lo status.lo \
-         table.lo threads.lo tokenize.lo trigger.lo \
+         table.lo threads.lo tokenize.lo treeview.lo trigger.lo \
          update.lo util.lo vacuum.lo \
          vdbeapi.lo vdbeaux.lo vdbeblob.lo vdbemem.lo vdbesort.lo \
          vdbetrace.lo wal.lo walker.lo where.lo wherecode.lo whereexpr.lo \
@@ -940,6 +940,7 @@ SRC2 = \
   $(TOP)\src\threads.c \
   $(TOP)\src\tclsqlite.c \
   $(TOP)\src\tokenize.c \
+  $(TOP)\src\treeview.c \
   $(TOP)\src\trigger.c \
   $(TOP)\src\utf.c \
   $(TOP)\src\update.c \
@@ -1486,6 +1487,9 @@ threads.lo:	$(TOP)\src\threads.c $(HDR)
 
 tokenize.lo:	$(TOP)\src\tokenize.c keywordhash.h $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\tokenize.c
+
+treeview.lo:	$(TOP)\src\treeview.c $(HDR)
+	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\treeview.c
 
 trigger.lo:	$(TOP)\src\trigger.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\trigger.c

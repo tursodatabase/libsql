@@ -66,7 +66,7 @@ LIBOBJ+= vdbe.o parse.o \
          notify.o opcodes.o os.o os_unix.o os_win.o \
          pager.o pcache.o pcache1.o pragma.o prepare.o printf.o \
          random.o resolve.o rowset.o rtree.o select.o sqlite3ota.o status.o \
-         table.o threads.o tokenize.o trigger.o \
+         table.o threads.o tokenize.o treeview.o trigger.o \
          update.o userauth.o util.o vacuum.o \
          vdbeapi.o vdbeaux.o vdbeblob.o vdbemem.o vdbesort.o \
 	 vdbetrace.o wal.o walker.o where.o wherecode.o whereexpr.o \
@@ -152,6 +152,7 @@ SRC = \
   $(TOP)/src/tclsqlite.c \
   $(TOP)/src/threads.c \
   $(TOP)/src/tokenize.c \
+  $(TOP)/src/treeview.c \
   $(TOP)/src/trigger.c \
   $(TOP)/src/utf.c \
   $(TOP)/src/update.c \

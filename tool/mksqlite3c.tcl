@@ -289,6 +289,7 @@ foreach file {
    mutex_w32.c
    malloc.c
    printf.c
+   treeview.c
    random.c
    threads.c
    utf.c

@@ -3170,10 +3170,6 @@ char *sqlite3VMPrintf(sqlite3*,const char*, va_list);
 #endif
 
 #if defined(SQLITE_DEBUG)
-  TreeView *sqlite3TreeViewPush(TreeView*,u8);
-  void sqlite3TreeViewPop(TreeView*);
-  void sqlite3TreeViewLine(TreeView*, const char*, ...);
-  void sqlite3TreeViewItem(TreeView*, const char*, u8);
   void sqlite3TreeViewExpr(TreeView*, const Expr*, u8);
   void sqlite3TreeViewExprList(TreeView*, const ExprList*, u8, const char*);
   void sqlite3TreeViewSelect(TreeView*, const Select*, u8);

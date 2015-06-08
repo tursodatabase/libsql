@@ -21,7 +21,8 @@
 /***/ int sqlite3SelectTrace = 0;
 # define SELECTTRACE(K,P,S,X)  \
   if(sqlite3SelectTrace&(K))   \
-    sqlite3DebugPrintf("%*s%s.%p: ",(P)->nSelectIndent*2-2,"",(S)->zSelName,(S)),\
+    sqlite3DebugPrintf("%*s%s.%p: ",(P)->nSelectIndent*2-2,"",\
+        (S)->zSelName,(S)),\
     sqlite3DebugPrintf X
 #else
 # define SELECTTRACE(K,P,S,X)
@@ -774,7 +775,8 @@ static void selectInnerLoop(
 
       default: {
         assert( pDistinct->eTnctType==WHERE_DISTINCT_UNORDERED );
-        codeDistinct(pParse, pDistinct->tabTnct, iContinue, nResultCol, regResult);
+        codeDistinct(pParse, pDistinct->tabTnct, iContinue, nResultCol,
+                     regResult);
         break;
       }
     }
@@ -827,7 +829,8 @@ static void selectInnerLoop(
         ** current row to the index and proceed with writing it to the
         ** output table as well.  */
         int addr = sqlite3VdbeCurrentAddr(v) + 4;
-        sqlite3VdbeAddOp4Int(v, OP_Found, iParm+1, addr, r1, 0); VdbeCoverage(v);
+        sqlite3VdbeAddOp4Int(v, OP_Found, iParm+1, addr, r1, 0);
+        VdbeCoverage(v);
         sqlite3VdbeAddOp2(v, OP_IdxInsert, iParm+1, r1);
         assert( pSort==0 );
       }
@@ -1704,7 +1707,8 @@ static void selectAddColumnTypeAndCollation(
   for(i=0, pCol=pTab->aCol; i<pTab->nCol; i++, pCol++){
     p = a[i].pExpr;
     if( pCol->zType==0 ){
-      pCol->zType = sqlite3DbStrDup(db, columnType(&sNC, p,0,0,0, &pCol->szEst));
+      pCol->zType = sqlite3DbStrDup(db, 
+                        columnType(&sNC, p,0,0,0, &pCol->szEst));
     }
     szAll += pCol->szEst;
     pCol->affinity = sqlite3ExprAffinity(p);
@@ -3214,8 +3218,8 @@ static void substSelect(
 **
 **  (**)  Restriction (10) was removed from the code on 2005-02-05 but we
 **        accidently carried the comment forward until 2014-09-15.  Original
-**        text: "The subquery does not use aggregates or the outer query does not
-**        use LIMIT."
+**        text: "The subquery does not use aggregates or the outer query 
+**        does not use LIMIT."
 **
 **  (11)  The subquery and the outer query do not both have ORDER BY clauses.
 **
@@ -4985,7 +4989,8 @@ int sqlite3Select(
   }
 #endif
 
-  /* Various elements of the SELECT copied into local variables for convenience */
+  /* Various elements of the SELECT copied into local variables for
+  ** convenience */
   pEList = p->pEList;
   pWhere = p->pWhere;
   pGroupBy = p->pGroupBy;
@@ -5067,9 +5072,9 @@ int sqlite3Select(
   if( p->selFlags & SF_Distinct ){
     sDistinct.tabTnct = pParse->nTab++;
     sDistinct.addrTnct = sqlite3VdbeAddOp4(v, OP_OpenEphemeral,
-                                sDistinct.tabTnct, 0, 0,
-                                (char*)keyInfoFromExprList(pParse, p->pEList,0,0),
-                                P4_KEYINFO);
+                             sDistinct.tabTnct, 0, 0,
+                             (char*)keyInfoFromExprList(pParse, p->pEList,0,0),
+                             P4_KEYINFO);
     sqlite3VdbeChangeP5(v, BTREE_UNORDERED);
     sDistinct.eTnctType = WHERE_DISTINCT_UNORDERED;
   }else{
@@ -5328,7 +5333,8 @@ int sqlite3Select(
       addrTopOfLoop = sqlite3VdbeCurrentAddr(v);
       sqlite3ExprCacheClear(pParse);
       if( groupBySort ){
-        sqlite3VdbeAddOp3(v, OP_SorterData, sAggInfo.sortingIdx, sortOut,sortPTab);
+        sqlite3VdbeAddOp3(v, OP_SorterData, sAggInfo.sortingIdx,
+                          sortOut, sortPTab);
       }
       for(j=0; j<pGroupBy->nExpr; j++){
         if( groupBySort ){
@@ -5400,7 +5406,8 @@ int sqlite3Select(
       sqlite3VdbeAddOp1(v, OP_Return, regOutputRow);
       sqlite3VdbeResolveLabel(v, addrOutputRow);
       addrOutputRow = sqlite3VdbeCurrentAddr(v);
-      sqlite3VdbeAddOp2(v, OP_IfPos, iUseFlag, addrOutputRow+2); VdbeCoverage(v);
+      sqlite3VdbeAddOp2(v, OP_IfPos, iUseFlag, addrOutputRow+2);
+      VdbeCoverage(v);
       VdbeComment((v, "Groupby result generator entry point"));
       sqlite3VdbeAddOp1(v, OP_Return, regOutputRow);
       finalizeAggFunctions(pParse, &sAggInfo);
@@ -5564,7 +5571,8 @@ int sqlite3Select(
   ** and send them to the callback one by one.
   */
   if( sSort.pOrderBy ){
-    explainTempTable(pParse, sSort.nOBSat>0 ? "RIGHT PART OF ORDER BY":"ORDER BY");
+    explainTempTable(pParse,
+                     sSort.nOBSat>0 ? "RIGHT PART OF ORDER BY":"ORDER BY");
     generateSortTail(pParse, p, &sSort, pEList->nExpr, pDest);
   }
 
@@ -5596,97 +5604,3 @@ select_end:
 #endif
   return rc;
 }
-
-#ifdef SQLITE_DEBUG
-/*
-** Generate a human-readable description of a the Select object.
-*/
-void sqlite3TreeViewSelect(TreeView *pView, const Select *p, u8 moreToFollow){
-  int n = 0;
-  pView = sqlite3TreeViewPush(pView, moreToFollow);
-  sqlite3TreeViewLine(pView, "SELECT%s%s (0x%p) selFlags=0x%x",
-    ((p->selFlags & SF_Distinct) ? " DISTINCT" : ""),
-    ((p->selFlags & SF_Aggregate) ? " agg_flag" : ""), p, p->selFlags
-  );
-  if( p->pSrc && p->pSrc->nSrc ) n++;
-  if( p->pWhere ) n++;
-  if( p->pGroupBy ) n++;
-  if( p->pHaving ) n++;
-  if( p->pOrderBy ) n++;
-  if( p->pLimit ) n++;
-  if( p->pOffset ) n++;
-  if( p->pPrior ) n++;
-  sqlite3TreeViewExprList(pView, p->pEList, (n--)>0, "result-set");
-  if( p->pSrc && p->pSrc->nSrc ){
-    int i;
-    pView = sqlite3TreeViewPush(pView, (n--)>0);
-    sqlite3TreeViewLine(pView, "FROM");
-    for(i=0; i<p->pSrc->nSrc; i++){
-      struct SrcList_item *pItem = &p->pSrc->a[i];
-      StrAccum x;
-      char zLine[100];
-      sqlite3StrAccumInit(&x, 0, zLine, sizeof(zLine), 0);
-      sqlite3XPrintf(&x, 0, "{%d,*}", pItem->iCursor);
-      if( pItem->zDatabase ){
-        sqlite3XPrintf(&x, 0, " %s.%s", pItem->zDatabase, pItem->zName);
-      }else if( pItem->zName ){
-        sqlite3XPrintf(&x, 0, " %s", pItem->zName);
-      }
-      if( pItem->pTab ){
-        sqlite3XPrintf(&x, 0, " tabname=%Q", pItem->pTab->zName);
-      }
-      if( pItem->zAlias ){
-        sqlite3XPrintf(&x, 0, " (AS %s)", pItem->zAlias);
-      }
-      if( pItem->jointype & JT_LEFT ){
-        sqlite3XPrintf(&x, 0, " LEFT-JOIN");
-      }
-      sqlite3StrAccumFinish(&x);
-      sqlite3TreeViewItem(pView, zLine, i<p->pSrc->nSrc-1); 
-      if( pItem->pSelect ){
-        sqlite3TreeViewSelect(pView, pItem->pSelect, 0);
-      }
-      sqlite3TreeViewPop(pView);
-    }
-    sqlite3TreeViewPop(pView);
-  }
-  if( p->pWhere ){
-    sqlite3TreeViewItem(pView, "WHERE", (n--)>0);
-    sqlite3TreeViewExpr(pView, p->pWhere, 0);
-    sqlite3TreeViewPop(pView);
-  }
-  if( p->pGroupBy ){
-    sqlite3TreeViewExprList(pView, p->pGroupBy, (n--)>0, "GROUPBY");
-  }
-  if( p->pHaving ){
-    sqlite3TreeViewItem(pView, "HAVING", (n--)>0);
-    sqlite3TreeViewExpr(pView, p->pHaving, 0);
-    sqlite3TreeViewPop(pView);
-  }
-  if( p->pOrderBy ){
-    sqlite3TreeViewExprList(pView, p->pOrderBy, (n--)>0, "ORDERBY");
-  }
-  if( p->pLimit ){
-    sqlite3TreeViewItem(pView, "LIMIT", (n--)>0);
-    sqlite3TreeViewExpr(pView, p->pLimit, 0);
-    sqlite3TreeViewPop(pView);
-  }
-  if( p->pOffset ){
-    sqlite3TreeViewItem(pView, "OFFSET", (n--)>0);
-    sqlite3TreeViewExpr(pView, p->pOffset, 0);
-    sqlite3TreeViewPop(pView);
-  }
-  if( p->pPrior ){
-    const char *zOp = "UNION";
-    switch( p->op ){
-      case TK_ALL:         zOp = "UNION ALL";  break;
-      case TK_INTERSECT:   zOp = "INTERSECT";  break;
-      case TK_EXCEPT:      zOp = "EXCEPT";     break;
-    }
-    sqlite3TreeViewItem(pView, zOp, (n--)>0);
-    sqlite3TreeViewSelect(pView, p->pPrior, 0);
-    sqlite3TreeViewPop(pView);
-  }
-  sqlite3TreeViewPop(pView);
-}
-#endif /* SQLITE_DEBUG */
