@@ -682,14 +682,16 @@ queryplantest:	testfixture$(EXE) sqlite3$(EXE)
 fuzztest:	fuzzcheck$(EXE) $(FUZZDATA)
 	./fuzzcheck$(EXE) $(FUZZDATA)
 
+valgrindfuzz:	fuzzcheck$(EXE) $(FUZZDATA)
+	valgrind ./fuzzcheck$(EXE) --cell-size-check --quiet $(FUZZDATA)
+
 test:	$(TESTPROGS) fuzztest
 	./testfixture$(EXE) $(TOP)/test/veryquick.test
 
 # Run a test using valgrind.  This can take a really long time
 # because valgrind is so much slower than a native machine.
 #
-valgrindtest:	$(TESTPROGS) fuzzcheck$(EXE) $(FUZZDATA)
-	valgrind -v ./fuzzcheck$(EXE) --cell-size-check --quiet $(FUZZDATA)
+valgrindtest:	$(TESTPROGS) valgrindfuzz
 	OMIT_MISUSE=1 valgrind -v ./testfixture$(EXE) $(TOP)/test/permutations.test valgrind
 
 # A very fast test that checks basic sanity.  The name comes from

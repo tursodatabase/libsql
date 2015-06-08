@@ -1,7 +1,7 @@
-C Fix\stypo\sin\scomment.\s\sNo\schanges\sto\scode.
-D 2015-06-08T17:42:57.317
+C Add\sthe\svalgrindfuzz\starget\sto\sunix\smakefile.
+D 2015-06-08T19:15:50.266
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in a7b384855b72378fd860425b128ea5f75296e9d6
+F Makefile.in 580e006530fab67ccd34926ce2eda66d326af60f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc 5438dc167466f51349ab0c4497aef547d0c9352c
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
@@ -171,7 +171,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk dc931768b88e4417bc2f8b2d45dba385ad29f727
+F main.mk 033741a45df95c577814914b13d182a0b6c7dc89
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
 F mkopcodeh.awk d5e22023b5238985bb54a72d33e0ac71fe4f8a32
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
@@ -1285,7 +1285,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 50f336818c8509d8b8bde282e9399d2b2b5ea70a
-R 960d1cfe6672a4659b85889f9d77d89d
-U mistachkin
-Z 915f959f38ed01d6c5f7a7f0fd181c25
+P e49c291735e613e384f6da044ef865dd274cabc8
+R 038506d4cfda1e2a7849e18cec45efaf
+U drh
+Z dac87b83585efac2cb7ce09058568bbf

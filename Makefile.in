@@ -1004,8 +1004,11 @@ fulltestonly:	$(TESTPROGS)
 	./testfixture$(TEXE) $(TOP)/test/full.test
 
 # Fuzz testing
-fuzztest:	fuzzcheck$(TEXE)
+fuzztest:	fuzzcheck$(TEXE) $(FUZZDATA)
 	./fuzzcheck$(TEXE) $(FUZZDATA)
+
+valgrindfuzz:	fuzzcheck$(TEXT) $(FUZZDATA)
+	valgrind ./fuzzcheck$(TEXE) --cell-size-check --quiet $(FUZZDATA)
 
 # This is the common case.  Run many tests but not those that take
 # a really long time.
@@ -1016,8 +1019,7 @@ test:	$(TESTPROGS) fuzztest
 # Run a test using valgrind.  This can take a really long time
 # because valgrind is so much slower than a native machine.
 #
-valgrindtest:	$(TESTPROGS) fuzzcheck$(TEXE)
-	valgrind -v ./fuzzcheck$(TEXE) --cell-size-check --quiet $(FUZZDATA)
+valgrindtest:	$(TESTPROGS) valgrindfuzz
 	OMIT_MISUSE=1 valgrind -v ./testfixture$(TEXE) $(TOP)/test/permutations.test valgrind
 
 # A very fast test that checks basic sanity.  The name comes from
