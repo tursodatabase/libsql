@@ -835,10 +835,11 @@ LIBOBJS0 = vdbe.lo parse.lo alter.lo analyze.lo attach.lo auth.lo \
          notify.lo opcodes.lo os.lo os_unix.lo os_win.lo \
          pager.lo pcache.lo pcache1.lo pragma.lo prepare.lo printf.lo \
          random.lo resolve.lo rowset.lo rtree.lo select.lo status.lo \
-         table.lo threads.lo tokenize.lo trigger.lo \
+         table.lo threads.lo tokenize.lo treeview.lo trigger.lo \
          update.lo util.lo vacuum.lo \
          vdbeapi.lo vdbeaux.lo vdbeblob.lo vdbemem.lo vdbesort.lo \
-         vdbetrace.lo wal.lo walker.lo where.lo utf.lo vtab.lo
+         vdbetrace.lo wal.lo walker.lo where.lo wherecode.lo whereexpr.lo \
+         utf.lo vtab.lo
 
 # Object files for the amalgamation.
 #
@@ -939,6 +940,7 @@ SRC2 = \
   $(TOP)\src\threads.c \
   $(TOP)\src\tclsqlite.c \
   $(TOP)\src\tokenize.c \
+  $(TOP)\src\treeview.c \
   $(TOP)\src\trigger.c \
   $(TOP)\src\utf.c \
   $(TOP)\src\update.c \
@@ -959,6 +961,8 @@ SRC2 = \
   $(TOP)\src\wal.h \
   $(TOP)\src\walker.c \
   $(TOP)\src\where.c \
+  $(TOP)\src\wherecode.c \
+  $(TOP)\src\whereexpr.c \
   $(TOP)\src\whereInt.h
 
 # Source code for extensions
@@ -1121,6 +1125,8 @@ TESTSRC2 = \
   $(TOP)\src\vdbesort.c \
   $(TOP)\src\vdbetrace.c \
   $(TOP)\src\where.c \
+  $(TOP)\src\wherecode.c \
+  $(TOP)\src\whereexpr.c \
   parse.c \
   $(TOP)\ext\fts3\fts3.c \
   $(TOP)\ext\fts3\fts3_aux.c \
@@ -1482,6 +1488,9 @@ threads.lo:	$(TOP)\src\threads.c $(HDR)
 tokenize.lo:	$(TOP)\src\tokenize.c keywordhash.h $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\tokenize.c
 
+treeview.lo:	$(TOP)\src\treeview.c $(HDR)
+	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\treeview.c
+
 trigger.lo:	$(TOP)\src\trigger.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\trigger.c
 
@@ -1529,6 +1538,12 @@ walker.lo:	$(TOP)\src\walker.c $(HDR)
 
 where.lo:	$(TOP)\src\where.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\where.c
+
+wherecode.lo:	$(TOP)\src\wherecode.c $(HDR)
+	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\wherecode.c
+
+whereexpr.lo:	$(TOP)\src\whereexpr.c $(HDR)
+	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\whereexpr.c
 
 tclsqlite.lo:	$(TOP)\src\tclsqlite.c $(HDR)
 	$(LTCOMPILE) $(NO_WARN) -DUSE_TCL_STUBS=1 -DBUILD_sqlite -I$(TCLINCDIR) -c $(TOP)\src\tclsqlite.c
