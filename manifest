@@ -1,5 +1,5 @@
-C Split\sout\ssome\ssource\scode\sinto\snew\sfiles:\swherecode.c,\swhereexpr.c,\sand\ntreeview.c.\s\sOther\sminor\srefactoring\schanges.
-D 2015-06-08T17:40:30.804
+C Fix\stypo\sin\scomment.\s\sNo\schanges\sto\scode.
+D 2015-06-08T17:42:57.317
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a7b384855b72378fd860425b128ea5f75296e9d6
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -246,7 +246,7 @@ F src/pcache1.c 69d137620a305f814398bd29a0c998038c0695e9
 F src/pragma.c c1f4d012ea9f6b1ce52d341b2cd0ad72d560afd7
 F src/pragma.h b8632d7cdda7b25323fa580e3e558a4f0d4502cc
 F src/prepare.c 82e5db1013846a819f198336fed72c44c974e7b1
-F src/printf.c 9889e8826f8e2bd8c2718d7d3faa761bef8eac79
+F src/printf.c db11b5960105ee661dcac690f2ae6276e49bf251
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 84c571794e3ee5806274d95158a4c0177c6c4708
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
@@ -1285,7 +1285,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 283bf0b64da7acc5aa5812fc659954965002d409 c32ce54ca46a4be4373983be6fd44b1f3a0250d1
-R b8b4fb0f1a8beaad9f2b2c3f4237ea7b
-U drh
-Z 5b9788fbc214053ba5053f4dafcfebef
+P 50f336818c8509d8b8bde282e9399d2b2b5ea70a
+R 960d1cfe6672a4659b85889f9d77d89d
+U mistachkin
+Z 915f959f38ed01d6c5f7a7f0fd181c25

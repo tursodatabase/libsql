@@ -7,7 +7,7 @@
 ** This file contains code for a set of "printf"-like routines.  These
 ** routines format strings much like the printf() from the standard C
 ** library, though the implementation here has enhancements to support
-** SQLlite.
+** SQLite.
 */
 #include "sqliteInt.h"
 
