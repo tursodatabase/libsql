@@ -184,7 +184,8 @@ LIBOBJS0 = alter.lo analyze.lo attach.lo auth.lo \
          table.lo threads.lo tokenize.lo trigger.lo \
          update.lo util.lo vacuum.lo \
          vdbe.lo vdbeapi.lo vdbeaux.lo vdbeblob.lo vdbemem.lo vdbesort.lo \
-         vdbetrace.lo wal.lo walker.lo where.lo wherecode.lo utf.lo vtab.lo
+         vdbetrace.lo wal.lo walker.lo where.lo wherecode.lo whereexpr.lo \
+         utf.lo vtab.lo
 
 # Object files for the amalgamation.
 #
@@ -294,6 +295,7 @@ SRC = \
   $(TOP)/src/walker.c \
   $(TOP)/src/where.c \
   $(TOP)/src/wherecode.c \
+  $(TOP)/src/whereexpr.c \
   $(TOP)/src/whereInt.h
 
 # Source code for extensions
@@ -456,6 +458,7 @@ TESTSRC2 = \
   $(TOP)/src/vdbetrace.c \
   $(TOP)/src/where.c \
   $(TOP)/src/wherecode.c \
+  $(TOP)/src/whereexpr.c \
   parse.c \
   $(TOP)/ext/fts3/fts3.c \
   $(TOP)/ext/fts3/fts3_aux.c \
@@ -853,6 +856,9 @@ where.lo:	$(TOP)/src/where.c $(HDR)
 
 wherecode.lo:	$(TOP)/src/wherecode.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/wherecode.c
+
+whereexpr.lo:	$(TOP)/src/whereexpr.c $(HDR)
+	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/whereexpr.c
 
 tclsqlite.lo:	$(TOP)/src/tclsqlite.c $(HDR)
 	$(LTCOMPILE) -DUSE_TCL_STUBS=1 -c $(TOP)/src/tclsqlite.c

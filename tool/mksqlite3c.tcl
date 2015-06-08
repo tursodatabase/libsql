@@ -344,6 +344,7 @@ foreach file {
    vacuum.c
    vtab.c
    wherecode.c
+   whereexpr.c
    where.c
 
    parse.c

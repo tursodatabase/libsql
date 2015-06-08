@@ -369,6 +369,11 @@ struct WhereMaskSet {
 };
 
 /*
+** Initialize a WhereMaskSet object
+*/
+#define initMaskSet(P)  (P)->n=0
+
+/*
 ** This object is a convenience wrapper holding all information needed
 ** to construct WhereLoop objects for a particular query.
 */
@@ -421,6 +426,8 @@ struct WhereInfo {
 
 /*
 ** Private interfaces - callable only by other where.c routines.
+**
+** where.c:
 */
 Bitmask sqlite3WhereGetMask(WhereMaskSet*,int);
 WhereTerm *sqlite3WhereFindTerm(
@@ -431,6 +438,8 @@ WhereTerm *sqlite3WhereFindTerm(
   u32 op,               /* Mask of WO_xx values describing operator */
   Index *pIdx           /* Must be compatible with this index, if not NULL */
 );
+
+/* wherecode.c: */
 #ifndef SQLITE_OMIT_EXPLAIN
 int sqlite3WhereExplainOneScan(
   Parse *pParse,                  /* Parse context */
@@ -459,7 +468,13 @@ Bitmask sqlite3WhereCodeOneLoopStart(
   Bitmask notReady     /* Which tables are currently available */
 );
 
-
+/* whereexpr.c: */
+void sqlite3WhereClauseInit(WhereClause*,WhereInfo*);
+void sqlite3WhereClauseClear(WhereClause*);
+void sqlite3WhereSplit(WhereClause*,Expr*,u8);
+Bitmask sqlite3WhereExprUsage(WhereMaskSet*, Expr*);
+Bitmask sqlite3WhereExprListUsage(WhereMaskSet*, ExprList*);
+void sqlite3WhereExprAnalyze(SrcList*, WhereClause*);
 
 
 
