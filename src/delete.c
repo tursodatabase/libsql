@@ -397,7 +397,7 @@ void sqlite3DeleteFrom(
     /* Construct a query to find the rowid or primary key for every row
     ** to be deleted, based on the WHERE clause.
     */
-    pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, 0, 0, 
+    pWInfo = sqlite3WhereBegin(pParse, 0, pTabList, pWhere, 0, 0, 
                                WHERE_ONEPASS_DESIRED|WHERE_DUPLICATES_OK,
                                iTabCur+1);
     if( pWInfo==0 ) goto delete_from_cleanup;

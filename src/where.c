@@ -3856,6 +3856,7 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
 */
 WhereInfo *sqlite3WhereBegin(
   Parse *pParse,        /* The parser context */
+  Select *pSelect,      /* SELECT stmt that owns this WHERE. Might be NULL */
   SrcList *pTabList,    /* FROM clause: A list of all tables to be scanned */
   Expr *pWhere,         /* The WHERE clause */
   ExprList *pOrderBy,   /* An ORDER BY (or GROUP BY) clause, or NULL */
@@ -4129,6 +4130,18 @@ WhereInfo *sqlite3WhereBegin(
       pWInfo->a[0].pWLoop->wsFlags &= ~WHERE_IDX_ONLY;
     }
   }
+
+#if 0
+  /* If this WHERE clause is part of a SELECT statement, then there
+  ** might be subqueries in the FROM clause that need to be manifested.
+  ** This works mostly - except the Table.nRowLogEst value is not set
+  ** correctly for the subquery, resulting in a bad plan in some cases.
+  */
+  if( pSelect!=0 ){
+    sqlite3ManifestSubqueries(pParse, pSelect, pTabList);
+    if( db->mallocFailed ) goto whereBeginError;
+  }
+#endif
 
   /* Open all tables in the pTabList and any indices selected for
   ** searching those tables.
