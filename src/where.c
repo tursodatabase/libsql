@@ -2997,6 +2997,7 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
   sqlite3 *db = pWInfo->pParse->db;
   int rc = SQLITE_OK;
   WhereLoop *pNew;
+  u8 priorJointype = 0;
 
   pNew = pBuilder->pNew;
   whereLoopInit(pNew);
@@ -3008,11 +3009,12 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
     Bitmask mUnusable = 0;
     pNew->iTab = iTab;
     pNew->maskSelf = sqlite3WhereGetMask(&pWInfo->sMaskSet, pItem->iCursor);
-    if( (pItem->jointype & (JT_LEFT|JT_CROSS))!=0 ){
+    if( ((pItem->jointype|priorJointype) & (JT_LEFT|JT_CROSS))!=0 ){
       /* This condition is true when pItem is the FROM clause term on the
       ** right-hand-side of a LEFT or CROSS JOIN.  */
       mExtra = mPrior;
     }
+    priorJointype = pItem->jointype;
     if( IsVirtual(pItem->pTab) ){
       struct SrcList_item *p;
       for(p=&pItem[1]; p<pEnd; p++){

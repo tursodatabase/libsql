@@ -1,5 +1,5 @@
-C Avoid\spassing\sconstraints\sthat\sare\sunusable\sdue\sto\sLEFT\sor\sCROSS\sjoins\sto\svirtual\stable\sxBestIndex()\smethods.
-D 2015-06-08T18:05:54.638
+C If\sa\squery\scontains\s"FROM\st1\sLEFT\sJOIN\st2,\st3,\st4",\sensure\sthat\stables\st3\sand\st4\sare\snot\sscanned\sbefore\st2.\sThe\strunk\salready\sdoes\sthis.
+D 2015-06-08T18:48:29.533
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a7b384855b72378fd860425b128ea5f75296e9d6
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -327,7 +327,7 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c ce2cb2d06faab54d1bce3e739bec79e063dd9113
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
-F src/where.c 38b2c4bea9e7a76f882d49c2808e0907e29e2a6d
+F src/where.c d98dd9461feb44daabfa0fe64831970bc0daacf2
 F src/whereInt.h 5f87e3c4b0551747d119730dfebddd3c54f04047
 F src/wherecode.c 0669481cabaf5caf934b6bb825df15bc57f60d40
 F src/whereexpr.c 9ce1c9cfedbf80c93c7d899497025ec8256ce652
@@ -709,7 +709,7 @@ F test/ioerr3.test d3cec5e1a11ad6d27527d0d38573fbff14c71bdd
 F test/ioerr4.test f130fe9e71008577b342b8874d52984bd04ede2c
 F test/ioerr5.test 2edfa4fb0f896f733071303b42224df8bedd9da4
 F test/ioerr6.test a395a6ab144b26a9e3e21059a1ab6a7149cca65b
-F test/join.test 52d4d49f86d0cf46926672878c4eaf0da399104a
+F test/join.test f9d4a28dec81c6e9dc21b73518e024d73b5ebf57
 F test/join2.test f2171c265e57ee298a27e57e7051d22962f9f324
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
@@ -1285,10 +1285,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e49c291735e613e384f6da044ef865dd274cabc8
-R 861f3c87e22a2bd19cbd1623c84fcecb
-T *branch * vtab-left-join
-T *sym-vtab-left-join *
-T -sym-trunk *
+P 80ee56dda7db3860f8be5f6968c8745138f8453f
+R dd22f5dd58533915c3eebee09006a2ae
 U dan
-Z 3d7670af603531efb0f4fc0b8b662b61
+Z 7d33e5ba0e6b939fee95e64c7940bec7
