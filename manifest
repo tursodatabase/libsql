@@ -1,5 +1,5 @@
-C Fix\stypo\sin\scomment.\s\sNo\schanges\sto\scode.
-D 2015-06-08T17:42:57.317
+C Avoid\spassing\sconstraints\sthat\sare\sunusable\sdue\sto\sLEFT\sor\sCROSS\sjoins\sto\svirtual\stable\sxBestIndex()\smethods.
+D 2015-06-08T18:05:54.638
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a7b384855b72378fd860425b128ea5f75296e9d6
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -156,7 +156,7 @@ F ext/rtree/rtree8.test db79c812f9e4a11f9b1f3f9934007884610a713a
 F ext/rtree/rtree9.test b5eb13849545dfd271a54ff16784cb00d8792aea
 F ext/rtree/rtreeA.test ace05e729a36e342d40cf94e9efc7b4723d9dcdf
 F ext/rtree/rtreeB.test c85f9ce78766c4e68b8b89fbf2979ee9cfa82b4e
-F ext/rtree/rtreeC.test df158dcc81f1a43ce7eef361af03c48ec91f1e06
+F ext/rtree/rtreeC.test 90aaaffe2fd4f0dcd12289cad5515f6d41f45ffd
 F ext/rtree/rtreeD.test 636630357638f5983701550b37f0f5867130d2ca
 F ext/rtree/rtreeE.test 45a147a64a76306172819562309681d8e90f94bb
 F ext/rtree/rtreeF.test 66deb9fd1611c7ca2e374adba63debdc2dbb12b4
@@ -327,7 +327,7 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c ce2cb2d06faab54d1bce3e739bec79e063dd9113
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
-F src/where.c a328fcc3342044992644b6a11bf301593b8dafb4
+F src/where.c 38b2c4bea9e7a76f882d49c2808e0907e29e2a6d
 F src/whereInt.h 5f87e3c4b0551747d119730dfebddd3c54f04047
 F src/wherecode.c 0669481cabaf5caf934b6bb825df15bc57f60d40
 F src/whereexpr.c 9ce1c9cfedbf80c93c7d899497025ec8256ce652
@@ -1285,7 +1285,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 50f336818c8509d8b8bde282e9399d2b2b5ea70a
-R 960d1cfe6672a4659b85889f9d77d89d
-U mistachkin
-Z 915f959f38ed01d6c5f7a7f0fd181c25
+P e49c291735e613e384f6da044ef865dd274cabc8
+R 861f3c87e22a2bd19cbd1623c84fcecb
+T *branch * vtab-left-join
+T *sym-vtab-left-join *
+T -sym-trunk *
+U dan
+Z 3d7670af603531efb0f4fc0b8b662b61

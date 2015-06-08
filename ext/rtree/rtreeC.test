@@ -269,5 +269,88 @@ ifcapable rtree {
   db close
 }
 
+#--------------------------------------------------------------------
+# Test that queries featuring LEFT or CROSS JOINS are handled correctly.
+# Handled correctly in this case means:
+#
+#   * Terms with prereqs that appear to the left of a LEFT JOIN against
+#     the virtual table are always available to xBestIndex.
+#
+#   * Terms with prereqs that appear to the right of a LEFT JOIN against
+#     the virtual table are never available to xBestIndex.
+#
+# And the same behaviour for CROSS joins.
+#
+reset_db
+do_execsql_test 7.0 {
+  CREATE TABLE xdir(x1);
+  CREATE TABLE ydir(y1);
+  CREATE VIRTUAL TABLE rt USING rtree_i32(id, xmin, xmax, ymin, ymax);
+
+  INSERT INTO xdir VALUES(5);
+  INSERT INTO ydir VALUES(10);
+
+  INSERT INTO rt VALUES(1, 2, 7, 12, 14);      -- Not a hit
+  INSERT INTO rt VALUES(2, 2, 7, 8, 12);       -- A hit!
+  INSERT INTO rt VALUES(3, 7, 11, 8, 12);      -- Not a hit!
+  INSERT INTO rt VALUES(4, 5, 5, 10, 10);      -- A hit!
+
+}
+
+proc do_eqp_execsql_test {tn sql res} {
+  set query "EXPLAIN QUERY PLAN $sql ; $sql "
+  uplevel [list do_execsql_test $tn $query $res]
+}
+
+do_eqp_execsql_test 7.1 {
+  SELECT id FROM xdir, rt, ydir 
+  ON (y1 BETWEEN ymin AND ymax)
+  WHERE (x1 BETWEEN xmin AND xmax);
+} {
+  0 0 0 {SCAN TABLE xdir} 
+  0 1 2 {SCAN TABLE ydir} 
+  0 2 1 {SCAN TABLE rt VIRTUAL TABLE INDEX 2:B2D3B0D1}
+  2 4
+}
+
+do_eqp_execsql_test 7.2 {
+  SELECT * FROM xdir, rt LEFT JOIN ydir 
+  ON (y1 BETWEEN ymin AND ymax)
+  WHERE (x1 BETWEEN xmin AND xmax);
+} {
+  0 0 0 {SCAN TABLE xdir} 
+  0 1 1 {SCAN TABLE rt VIRTUAL TABLE INDEX 2:B0D1}
+  0 2 2 {SCAN TABLE ydir} 
+
+  5 1 2 7 12 14 {}
+  5 2 2 7  8 12 10
+  5 4 5 5 10 10 10
+}
+
+do_eqp_execsql_test 7.3 {
+  SELECT id FROM xdir, rt CROSS JOIN ydir 
+  ON (y1 BETWEEN ymin AND ymax)
+  WHERE (x1 BETWEEN xmin AND xmax);
+} {
+  0 0 0 {SCAN TABLE xdir} 
+  0 1 1 {SCAN TABLE rt VIRTUAL TABLE INDEX 2:B0D1}
+  0 2 2 {SCAN TABLE ydir} 
+  2 4
+}
+
+do_eqp_execsql_test 7.4 {
+  SELECT id FROM rt, xdir CROSS JOIN ydir 
+  ON (y1 BETWEEN ymin AND ymax)
+  WHERE (x1 BETWEEN xmin AND xmax);
+} {
+  0 0 1 {SCAN TABLE xdir} 
+  0 1 0 {SCAN TABLE rt VIRTUAL TABLE INDEX 2:B0D1}
+  0 2 2 {SCAN TABLE ydir} 
+  2 4
+}
+
+finish_test
+
+
 
 finish_test
