@@ -1,5 +1,5 @@
-C If\sa\squery\scontains\s"FROM\st1\sLEFT\sJOIN\st2,\st3,\st4",\sensure\sthat\stables\st3\sand\st4\sare\snot\sscanned\sbefore\st2.\sThe\strunk\salready\sdoes\sthis.
-D 2015-06-08T18:48:29.533
+C Remove\ssome\srepeated\slines\sof\ssource\scode.\sProbably\sintroduced\sby\scareless\scut'n'pasting.
+D 2015-06-09T10:58:51.586
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a7b384855b72378fd860425b128ea5f75296e9d6
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -327,7 +327,7 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c ce2cb2d06faab54d1bce3e739bec79e063dd9113
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
-F src/where.c d98dd9461feb44daabfa0fe64831970bc0daacf2
+F src/where.c 95c0fbfff7aef890b5da7293f6d85cd9a5f99af8
 F src/whereInt.h 5f87e3c4b0551747d119730dfebddd3c54f04047
 F src/wherecode.c 0669481cabaf5caf934b6bb825df15bc57f60d40
 F src/whereexpr.c 9ce1c9cfedbf80c93c7d899497025ec8256ce652
@@ -1285,7 +1285,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 80ee56dda7db3860f8be5f6968c8745138f8453f
-R dd22f5dd58533915c3eebee09006a2ae
+P 0d9edfab9fb61322620f188b48ae2a1798a07581
+R 95c7a86e3c55ce5e80eb0382016d2fb7
 U dan
-Z 7d33e5ba0e6b939fee95e64c7940bec7
+Z e08af2de2874802b3cdcc1dde01f104f

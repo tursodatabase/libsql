@@ -2999,9 +2999,6 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
   WhereLoop *pNew;
   u8 priorJointype = 0;
 
-  pNew = pBuilder->pNew;
-  whereLoopInit(pNew);
-
   /* Loop over the tables in the join, from left to right */
   pNew = pBuilder->pNew;
   whereLoopInit(pNew);
