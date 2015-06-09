@@ -196,7 +196,7 @@ void sqlite3Fts5Dequote(char *z){
 }
 
 /*
-** Parse the "special" CREATE VIRTUAL TABLE directive and update
+** Parse a "special" CREATE VIRTUAL TABLE directive and update
 ** configuration object pConfig as appropriate.
 **
 ** If successful, object pConfig is updated and SQLITE_OK returned. If
@@ -211,10 +211,10 @@ static int fts5ConfigParseSpecial(
   const char *zArg,               /* Argument to parse */
   char **pzErr                    /* OUT: Error message */
 ){
+  int rc = SQLITE_OK;
   int nCmd = strlen(zCmd);
   if( sqlite3_strnicmp("prefix", zCmd, nCmd)==0 ){
     const int nByte = sizeof(int) * FTS5_MAX_PREFIX_INDEXES;
-    int rc = SQLITE_OK;
     const char *p;
     if( pConfig->aPrefix ){
       *pzErr = sqlite3_mprintf("multiple prefix=... directives");
@@ -248,7 +248,6 @@ static int fts5ConfigParseSpecial(
   }
 
   if( sqlite3_strnicmp("tokenize", zCmd, nCmd)==0 ){
-    int rc = SQLITE_OK;
     const char *p = (const char*)zArg;
     int nArg = strlen(zArg) + 1;
     char **azArg = sqlite3Fts5MallocZero(&rc, sizeof(char*) * nArg);
@@ -293,7 +292,6 @@ static int fts5ConfigParseSpecial(
   }
 
   if( sqlite3_strnicmp("content", zCmd, nCmd)==0 ){
-    int rc = SQLITE_OK;
     if( pConfig->eContent!=FTS5_CONTENT_NORMAL ){
       *pzErr = sqlite3_mprintf("multiple content=... directives");
       rc = SQLITE_ERROR;
@@ -301,24 +299,30 @@ static int fts5ConfigParseSpecial(
       if( zArg[0] ){
         pConfig->eContent = FTS5_CONTENT_EXTERNAL;
         pConfig->zContent = sqlite3_mprintf("%Q.%Q", pConfig->zDb, zArg);
+        if( pConfig->zContent==0 ) rc = SQLITE_NOMEM;
       }else{
         pConfig->eContent = FTS5_CONTENT_NONE;
-        pConfig->zContent = sqlite3_mprintf(
-            "%Q.'%q_docsize'", pConfig->zDb, pConfig->zName
-        );
       }
-      if( pConfig->zContent==0 ) rc = SQLITE_NOMEM;
     }
     return rc;
   }
 
   if( sqlite3_strnicmp("content_rowid", zCmd, nCmd)==0 ){
-    int rc = SQLITE_OK;
     if( pConfig->zContentRowid ){
       *pzErr = sqlite3_mprintf("multiple content_rowid=... directives");
       rc = SQLITE_ERROR;
     }else{
       pConfig->zContentRowid = sqlite3Fts5Strndup(&rc, zArg, -1);
+    }
+    return rc;
+  }
+
+  if( sqlite3_strnicmp("columnsize", zCmd, nCmd)==0 ){
+    if( (zArg[0]!='0' && zArg[0]!='1') || zArg[1]!='\0' ){
+      *pzErr = sqlite3_mprintf("malformed columnsize=... directive");
+      rc = SQLITE_ERROR;
+    }else{
+      pConfig->bColumnsize = (zArg[0]=='1');
     }
     return rc;
   }
@@ -477,6 +481,7 @@ int sqlite3Fts5ConfigParse(
   pRet->abUnindexed = (u8*)&pRet->azCol[nArg];
   pRet->zDb = sqlite3Fts5Strndup(&rc, azArg[1], -1);
   pRet->zName = sqlite3Fts5Strndup(&rc, azArg[2], -1);
+  pRet->bColumnsize = 1;
   if( rc==SQLITE_OK && sqlite3_stricmp(pRet->zName, FTS5_RANK_NAME)==0 ){
     *pzErr = sqlite3_mprintf("reserved fts5 table name: %s", pRet->zName);
     rc = SQLITE_ERROR;
@@ -530,15 +535,24 @@ int sqlite3Fts5ConfigParse(
   }
 
   /* If no zContent option was specified, fill in the default values. */
-  if( rc==SQLITE_OK && pRet->eContent==FTS5_CONTENT_NORMAL ){
-    pRet->zContent = sqlite3_mprintf("%Q.'%q_content'", pRet->zDb, pRet->zName);
-    if( pRet->zContent==0 ){
-      rc = SQLITE_NOMEM;
-    }else{
-      sqlite3_free(pRet->zContentRowid);
-      pRet->zContentRowid = 0;
+  if( rc==SQLITE_OK && pRet->zContent==0 ){
+    const char *zTail = 0;
+    assert( pRet->eContent==FTS5_CONTENT_NORMAL 
+         || pRet->eContent==FTS5_CONTENT_NONE 
+    );
+    if( pRet->eContent==FTS5_CONTENT_NORMAL ){
+      zTail = "content";
+    }else if( pRet->bColumnsize ){
+      zTail = "docsize";
+    }
+
+    if( zTail ){
+      pRet->zContent = sqlite3Fts5Mprintf(
+          &rc, "%Q.'%q_%s'", pRet->zDb, pRet->zName, zTail
+      );
     }
   }
+
   if( rc==SQLITE_OK && pRet->zContentRowid==0 ){
     pRet->zContentRowid = sqlite3Fts5Strndup(&rc, "rowid", -1);
   }

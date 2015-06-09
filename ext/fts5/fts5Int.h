@@ -105,6 +105,9 @@ typedef struct Fts5Config Fts5Config;
 **   decent error message if it encounters a file-format version it does
 **   not understand.
 **
+** bColumnsize:
+**   True if the %_docsize table is created.
+**
 */
 struct Fts5Config {
   sqlite3 *db;                    /* Database handle */
@@ -118,6 +121,7 @@ struct Fts5Config {
   int eContent;                   /* An FTS5_CONTENT value */
   char *zContent;                 /* content table */ 
   char *zContentRowid;            /* "content_rowid=" option value */ 
+  int bColumnsize;                /* "columnsize=" option value (dflt==1) */
   char *zContentExprlist;
   Fts5Tokenizer *pTok;
   fts5_tokenizer *pTokApi;
@@ -195,6 +199,8 @@ void sqlite3Fts5BufferZero(Fts5Buffer*);
 void sqlite3Fts5BufferSet(int*, Fts5Buffer*, int, const u8*);
 void sqlite3Fts5BufferAppendPrintf(int *, Fts5Buffer*, char *zFmt, ...);
 void sqlite3Fts5BufferAppend32(int*, Fts5Buffer*, int);
+
+char *sqlite3Fts5Mprintf(int *pRc, char *zFmt, ...);
 
 #define fts5BufferZero(x)             sqlite3Fts5BufferZero(x)
 #define fts5BufferGrow(a,b,c)         sqlite3Fts5BufferGrow(a,b,c)

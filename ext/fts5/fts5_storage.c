@@ -39,15 +39,11 @@ struct Fts5Storage {
 
 #define FTS5_STMT_INSERT_CONTENT  3
 #define FTS5_STMT_REPLACE_CONTENT 4
-
 #define FTS5_STMT_DELETE_CONTENT  5
 #define FTS5_STMT_REPLACE_DOCSIZE  6
 #define FTS5_STMT_DELETE_DOCSIZE  7
-
 #define FTS5_STMT_LOOKUP_DOCSIZE  8
-
 #define FTS5_STMT_REPLACE_CONFIG 9
-
 #define FTS5_STMT_SCAN 10
 
 /*
@@ -63,6 +59,14 @@ static int fts5StorageGetStmt(
   char **pzErrMsg                 /* OUT: Error message (if any) */
 ){
   int rc = SQLITE_OK;
+
+  /* If there is no %_docsize table, there should be no requests for 
+  ** statements to operate on it.  */
+  assert( p->pConfig->bColumnsize || (
+        eStmt!=FTS5_STMT_REPLACE_DOCSIZE 
+     && eStmt!=FTS5_STMT_DELETE_DOCSIZE 
+     && eStmt!=FTS5_STMT_LOOKUP_DOCSIZE 
+  ));
 
   assert( eStmt>=0 && eStmt<ArraySize(p->aStmt) );
   if( p->aStmt[eStmt]==0 ){
@@ -175,12 +179,16 @@ static int fts5ExecPrintf(
 int sqlite3Fts5DropAll(Fts5Config *pConfig){
   int rc = fts5ExecPrintf(pConfig->db, 0, 
       "DROP TABLE IF EXISTS %Q.'%q_data';"
-      "DROP TABLE IF EXISTS %Q.'%q_docsize';"
       "DROP TABLE IF EXISTS %Q.'%q_config';",
-      pConfig->zDb, pConfig->zName,
       pConfig->zDb, pConfig->zName,
       pConfig->zDb, pConfig->zName
   );
+  if( rc==SQLITE_OK && pConfig->bColumnsize ){
+    rc = fts5ExecPrintf(pConfig->db, 0, 
+        "DROP TABLE IF EXISTS %Q.'%q_docsize';",
+        pConfig->zDb, pConfig->zName
+    );
+  }
   if( rc==SQLITE_OK && pConfig->eContent==FTS5_CONTENT_NORMAL ){
     rc = fts5ExecPrintf(pConfig->db, 0, 
         "DROP TABLE IF EXISTS %Q.'%q_content';",
@@ -266,7 +274,7 @@ int sqlite3Fts5StorageOpen(
       sqlite3_free(zDefn);
     }
 
-    if( rc==SQLITE_OK ){
+    if( rc==SQLITE_OK && pConfig->bColumnsize ){
       rc = sqlite3Fts5CreateTable(
           pConfig, "docsize", "id INTEGER PRIMARY KEY, sz BLOB", 0, pzErr
       );
@@ -374,19 +382,25 @@ static int fts5StorageDeleteFromIndex(Fts5Storage *p, i64 iDel){
 ** Insert a record into the %_docsize table. Specifically, do:
 **
 **   INSERT OR REPLACE INTO %_docsize(id, sz) VALUES(iRowid, pBuf);
+**
+** If there is no %_docsize table (as happens if the columnsize=0 option
+** is specified when the FTS5 table is created), this function is a no-op.
 */
 static int fts5StorageInsertDocsize(
   Fts5Storage *p,                 /* Storage module to write to */
   i64 iRowid,                     /* id value */
   Fts5Buffer *pBuf                /* sz value */
 ){
-  sqlite3_stmt *pReplace = 0;
-  int rc = fts5StorageGetStmt(p, FTS5_STMT_REPLACE_DOCSIZE, &pReplace, 0);
-  if( rc==SQLITE_OK ){
-    sqlite3_bind_int64(pReplace, 1, iRowid);
-    sqlite3_bind_blob(pReplace, 2, pBuf->p, pBuf->n, SQLITE_STATIC);
-    sqlite3_step(pReplace);
-    rc = sqlite3_reset(pReplace);
+  int rc = SQLITE_OK;
+  if( p->pConfig->bColumnsize ){
+    sqlite3_stmt *pReplace = 0;
+    rc = fts5StorageGetStmt(p, FTS5_STMT_REPLACE_DOCSIZE, &pReplace, 0);
+    if( rc==SQLITE_OK ){
+      sqlite3_bind_int64(pReplace, 1, iRowid);
+      sqlite3_bind_blob(pReplace, 2, pBuf->p, pBuf->n, SQLITE_STATIC);
+      sqlite3_step(pReplace);
+      rc = sqlite3_reset(pReplace);
+    }
   }
   return rc;
 }
@@ -455,6 +469,7 @@ static int fts5StorageSaveTotals(Fts5Storage *p){
 ** Remove a row from the FTS table.
 */
 int sqlite3Fts5StorageDelete(Fts5Storage *p, i64 iDel){
+  Fts5Config *pConfig = p->pConfig;
   int rc;
   sqlite3_stmt *pDel;
 
@@ -466,7 +481,7 @@ int sqlite3Fts5StorageDelete(Fts5Storage *p, i64 iDel){
   }
 
   /* Delete the %_docsize record */
-  if( rc==SQLITE_OK ){
+  if( rc==SQLITE_OK && pConfig->bColumnsize ){
     rc = fts5StorageGetStmt(p, FTS5_STMT_DELETE_DOCSIZE, &pDel, 0);
   }
   if( rc==SQLITE_OK ){
@@ -528,13 +543,15 @@ int sqlite3Fts5StorageSpecialDelete(
   }
 
   /* Delete the %_docsize record */
-  if( rc==SQLITE_OK ){
-    rc = fts5StorageGetStmt(p, FTS5_STMT_DELETE_DOCSIZE, &pDel, 0);
-  }
-  if( rc==SQLITE_OK ){
-    sqlite3_bind_int64(pDel, 1, iDel);
-    sqlite3_step(pDel);
-    rc = sqlite3_reset(pDel);
+  if( pConfig->bColumnsize ){
+    if( rc==SQLITE_OK ){
+      rc = fts5StorageGetStmt(p, FTS5_STMT_DELETE_DOCSIZE, &pDel, 0);
+    }
+    if( rc==SQLITE_OK ){
+      sqlite3_bind_int64(pDel, 1, iDel);
+      sqlite3_step(pDel);
+      rc = sqlite3_reset(pDel);
+    }
   }
 
   /* Write the averages record */
@@ -554,11 +571,15 @@ int sqlite3Fts5StorageDeleteAll(Fts5Storage *p){
 
   /* Delete the contents of the %_data and %_docsize tables. */
   rc = fts5ExecPrintf(pConfig->db, 0,
-      "DELETE FROM %Q.'%q_data';"
-      "DELETE FROM %Q.'%q_docsize';",
-      pConfig->zDb, pConfig->zName,
+      "DELETE FROM %Q.'%q_data';",
       pConfig->zDb, pConfig->zName
   );
+  if( rc==SQLITE_OK && pConfig->bColumnsize ){
+    rc = fts5ExecPrintf(pConfig->db, 0,
+        "DELETE FROM %Q.'%q_docsize';",
+        pConfig->zDb, pConfig->zName
+    );
+  }
 
   /* Reinitialize the %_data table. This call creates the initial structure
   ** and averages records.  */
@@ -635,18 +656,24 @@ int sqlite3Fts5StorageMerge(Fts5Storage *p, int nMerge){
 ** a NULL value is inserted into the rowid column. The new rowid is allocated
 ** by inserting a dummy row into the %_docsize table. The dummy will be
 ** overwritten later.
+**
+** If the %_docsize table does not exist, SQLITE_MISMATCH is returned. In
+** this case the user is required to provide a rowid explicitly.
 */
 static int fts5StorageNewRowid(Fts5Storage *p, i64 *piRowid){
-  sqlite3_stmt *pReplace = 0;
-  int rc = fts5StorageGetStmt(p, FTS5_STMT_REPLACE_DOCSIZE, &pReplace, 0);
-  if( rc==SQLITE_OK ){
-    sqlite3_bind_null(pReplace, 1);
-    sqlite3_bind_null(pReplace, 2);
-    sqlite3_step(pReplace);
-    rc = sqlite3_reset(pReplace);
-  }
-  if( rc==SQLITE_OK ){
-    *piRowid = sqlite3_last_insert_rowid(p->pConfig->db);
+  int rc = SQLITE_MISMATCH;
+  if( p->pConfig->bColumnsize ){
+    sqlite3_stmt *pReplace = 0;
+    rc = fts5StorageGetStmt(p, FTS5_STMT_REPLACE_DOCSIZE, &pReplace, 0);
+    if( rc==SQLITE_OK ){
+      sqlite3_bind_null(pReplace, 1);
+      sqlite3_bind_null(pReplace, 2);
+      sqlite3_step(pReplace);
+      rc = sqlite3_reset(pReplace);
+    }
+    if( rc==SQLITE_OK ){
+      *piRowid = sqlite3_last_insert_rowid(p->pConfig->db);
+    }
   }
   return rc;
 }
@@ -958,6 +985,7 @@ int sqlite3Fts5StorageDocsize(Fts5Storage *p, i64 iRowid, int *aCol){
       rc = FTS5_CORRUPT;
     }
   }
+
   return rc;
 }
 

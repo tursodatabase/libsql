@@ -125,6 +125,21 @@ void sqlite3Fts5BufferAppendPrintf(
   }
 }
 
+char *sqlite3Fts5Mprintf(int *pRc, char *zFmt, ...){
+  char *zRet = 0;
+  if( *pRc==SQLITE_OK ){
+    va_list ap;
+    va_start(ap, zFmt);
+    zRet = sqlite3_vmprintf(zFmt, ap);
+    va_end(ap);
+    if( zRet==0 ){
+      *pRc = SQLITE_NOMEM; 
+    }
+  }
+  return zRet;
+}
+ 
+
 /*
 ** Free any buffer allocated by pBuf. Zero the structure before returning.
 */

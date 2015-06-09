@@ -148,7 +148,7 @@ do_execsql_test 5.2 {
   1 {4 6}
 }
 
-do_execsql_test 5.2 {
+do_execsql_test 5.3 {
   SELECT rowid, fts5_test_columntext(t5) FROM t5 WHERE t5 MATCH 'a'
   ORDER BY rowid DESC;
 } {
@@ -157,7 +157,7 @@ do_execsql_test 5.2 {
   1 {{a b c d} {e f g h i j}}
 }
 
-do_execsql_test 5.3 {
+do_execsql_test 5.4 {
   SELECT rowid, fts5_test_columntotalsize(t5) FROM t5 WHERE t5 MATCH 'a'
   ORDER BY rowid DESC;
 } {
@@ -166,7 +166,7 @@ do_execsql_test 5.3 {
   1 {5 7}
 }
 
-do_execsql_test 5.4 {
+do_execsql_test 5.5 {
   INSERT INTO t5 VALUES('x y z', 'v w x y z');
   SELECT rowid, fts5_test_columntotalsize(t5) FROM t5 WHERE t5 MATCH 'a'
   ORDER BY rowid DESC;

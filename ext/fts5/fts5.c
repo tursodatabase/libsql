@@ -1039,6 +1039,7 @@ static int fts5FilterMethod(
   sqlite3_value **apVal           /* Arguments for the indexing scheme */
 ){
   Fts5Table *pTab = (Fts5Table*)(pCursor->pVtab);
+  Fts5Config *pConfig = pTab->pConfig;
   Fts5Cursor *pCsr = (Fts5Cursor*)pCursor;
   int rc = SQLITE_OK;             /* Error code */
   int iVal = 0;                   /* Counter for apVal[] */
@@ -1049,7 +1050,7 @@ static int fts5FilterMethod(
   sqlite3_value *pRowidEq = 0;    /* rowid = ? expression (or NULL) */
   sqlite3_value *pRowidLe = 0;    /* rowid <= ? expression (or NULL) */
   sqlite3_value *pRowidGe = 0;    /* rowid >= ? expression (or NULL) */
-  char **pzErrmsg = pTab->pConfig->pzErrmsg;
+  char **pzErrmsg = pConfig->pzErrmsg;
 
   assert( pCsr->pStmt==0 );
   assert( pCsr->pExpr==0 );
@@ -1059,7 +1060,7 @@ static int fts5FilterMethod(
   assert( pCsr->zRankArgs==0 );
 
   assert( pzErrmsg==0 || pzErrmsg==&pTab->base.zErrMsg );
-  pTab->pConfig->pzErrmsg = &pTab->base.zErrMsg;
+  pConfig->pzErrmsg = &pTab->base.zErrMsg;
 
   /* Decode the arguments passed through to this function.
   **
@@ -1107,7 +1108,7 @@ static int fts5FilterMethod(
   }else if( pMatch ){
     const char *zExpr = (const char*)sqlite3_value_text(apVal[0]);
 
-    rc = fts5CursorParseRank(pTab->pConfig, pCsr, pRank);
+    rc = fts5CursorParseRank(pConfig, pCsr, pRank);
     if( rc==SQLITE_OK ){
       if( zExpr[0]=='*' ){
         /* The user has issued a query of the form "MATCH '*...'". This
@@ -1116,7 +1117,7 @@ static int fts5FilterMethod(
         rc = fts5SpecialMatch(pTab, pCsr, &zExpr[1]);
       }else{
         char **pzErr = &pTab->base.zErrMsg;
-        rc = sqlite3Fts5ExprNew(pTab->pConfig, zExpr, &pCsr->pExpr, pzErr);
+        rc = sqlite3Fts5ExprNew(pConfig, zExpr, &pCsr->pExpr, pzErr);
         if( rc==SQLITE_OK ){
           if( bOrderByRank ){
             pCsr->ePlan = FTS5_PLAN_SORTED_MATCH;
@@ -1128,6 +1129,11 @@ static int fts5FilterMethod(
         }
       }
     }
+  }else if( pConfig->zContent==0 ){
+    *pConfig->pzErrmsg = sqlite3_mprintf(
+        "%s: table does not support scanning", pConfig->zName
+    );
+    rc = SQLITE_ERROR;
   }else{
     /* This is either a full-table scan (ePlan==FTS5_PLAN_SCAN) or a lookup
     ** by rowid (ePlan==FTS5_PLAN_ROWID).  */
@@ -1146,7 +1152,7 @@ static int fts5FilterMethod(
     }
   }
 
-  pTab->pConfig->pzErrmsg = pzErrmsg;
+  pConfig->pzErrmsg = pzErrmsg;
   return rc;
 }
 
@@ -1621,23 +1627,58 @@ static int fts5ApiColumnText(
   return rc;
 }
 
+static int fts5ColumnSizeCb(
+  void *pContext,                 /* Pointer to int */
+  const char *pToken,             /* Buffer containing token */
+  int nToken,                     /* Size of token in bytes */
+  int iStart,                     /* Start offset of token */
+  int iEnd                        /* End offset of token */
+){
+  int *pCnt = (int*)pContext;
+  *pCnt = *pCnt + 1;
+  return SQLITE_OK;
+}
+
 static int fts5ApiColumnSize(Fts5Context *pCtx, int iCol, int *pnToken){
   Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
   Fts5Table *pTab = (Fts5Table*)(pCsr->base.pVtab);
+  Fts5Config *pConfig = pTab->pConfig;
   int rc = SQLITE_OK;
 
   if( CsrFlagTest(pCsr, FTS5CSR_REQUIRE_DOCSIZE) ){
-    i64 iRowid = fts5CursorRowid(pCsr);
-    rc = sqlite3Fts5StorageDocsize(pTab->pStorage, iRowid, pCsr->aColumnSize);
+    if( pConfig->bColumnsize ){
+      i64 iRowid = fts5CursorRowid(pCsr);
+      rc = sqlite3Fts5StorageDocsize(pTab->pStorage, iRowid, pCsr->aColumnSize);
+    }else if( pConfig->zContent==0 ){
+      int i;
+      for(i=0; i<pConfig->nCol; i++){
+        if( pConfig->abUnindexed[i]==0 ){
+          pCsr->aColumnSize[i] = -1;
+        }
+      }
+    }else{
+      int i;
+      for(i=0; rc==SQLITE_OK && i<pConfig->nCol; i++){
+        if( pConfig->abUnindexed[i]==0 ){
+          const char *z; int n;
+          void *p = (void*)(&pCsr->aColumnSize[i]);
+          pCsr->aColumnSize[i] = 0;
+          rc = fts5ApiColumnText(pCtx, i, &z, &n);
+          if( rc==SQLITE_OK ){
+            rc = sqlite3Fts5Tokenize(pConfig, z, n, p, fts5ColumnSizeCb);
+          }
+        }
+      }
+    }
     CsrFlagClear(pCsr, FTS5CSR_REQUIRE_DOCSIZE);
   }
   if( iCol<0 ){
     int i;
     *pnToken = 0;
-    for(i=0; i<pTab->pConfig->nCol; i++){
+    for(i=0; i<pConfig->nCol; i++){
       *pnToken += pCsr->aColumnSize[i];
     }
-  }else if( iCol<pTab->pConfig->nCol ){
+  }else if( iCol<pConfig->nCol ){
     *pnToken = pCsr->aColumnSize[iCol];
   }else{
     *pnToken = 0;
@@ -1956,7 +1997,7 @@ static int fts5FindFunctionMethod(
 }
 
 /*
-** Implementation of FTS3 xRename method. Rename an fts5 table.
+** Implementation of FTS5 xRename method. Rename an fts5 table.
 */
 static int fts5RenameMethod(
   sqlite3_vtab *pVtab,            /* Virtual table handle */
