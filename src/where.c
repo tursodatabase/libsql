@@ -757,6 +757,7 @@ end_auto_index_create:
 static sqlite3_index_info *allocateIndexInfo(
   Parse *pParse,
   WhereClause *pWC,
+  Bitmask mUnusable,              /* Ignore terms with these prereqs */
   struct SrcList_item *pSrc,
   ExprList *pOrderBy
 ){
@@ -773,6 +774,7 @@ static sqlite3_index_info *allocateIndexInfo(
   ** to this virtual table */
   for(i=nTerm=0, pTerm=pWC->a; i<pWC->nTerm; i++, pTerm++){
     if( pTerm->leftCursor != pSrc->iCursor ) continue;
+    if( pTerm->prereqRight & mUnusable ) continue;
     assert( IsPowerOfTwo(pTerm->eOperator & ~WO_EQUIV) );
     testcase( pTerm->eOperator & WO_IN );
     testcase( pTerm->eOperator & WO_ISNULL );
@@ -827,6 +829,7 @@ static sqlite3_index_info *allocateIndexInfo(
   for(i=j=0, pTerm=pWC->a; i<pWC->nTerm; i++, pTerm++){
     u8 op;
     if( pTerm->leftCursor != pSrc->iCursor ) continue;
+    if( pTerm->prereqRight & mUnusable ) continue;
     assert( IsPowerOfTwo(pTerm->eOperator & ~WO_EQUIV) );
     testcase( pTerm->eOperator & WO_IN );
     testcase( pTerm->eOperator & WO_IS );
@@ -2667,10 +2670,32 @@ static int whereLoopAddBtree(
 /*
 ** Add all WhereLoop objects for a table of the join identified by
 ** pBuilder->pNew->iTab.  That table is guaranteed to be a virtual table.
+**
+** If there are no LEFT or CROSS JOIN joins in the query, both mExtra and
+** mUnusable are set to 0. Otherwise, mExtra is a mask of all FROM clause
+** entries that occur before the virtual table in the FROM clause and are
+** separated from it by at least one LEFT or CROSS JOIN. Similarly, the
+** mUnusable mask contains all FROM clause entries that occur after the
+** virtual table and are separated from it by at least one LEFT or 
+** CROSS JOIN. 
+**
+** For example, if the query were:
+**
+**   ... FROM t1, t2 LEFT JOIN t3, t4, vt CROSS JOIN t5, t6;
+**
+** then mExtra corresponds to (t1, t2) and mUnusable to (t5, t6).
+**
+** All the tables in mExtra must be scanned before the current virtual 
+** table. So any terms for which all prerequisites are satisfied by 
+** mExtra may be specified as "usable" in all calls to xBestIndex. 
+** Conversely, all tables in mUnusable must be scanned after the current
+** virtual table, so any terms for which the prerequisites overlap with
+** mUnusable should always be configured as "not-usable" for xBestIndex.
 */
 static int whereLoopAddVirtual(
   WhereLoopBuilder *pBuilder,  /* WHERE clause information */
-  Bitmask mExtra
+  Bitmask mExtra,              /* Tables that must be scanned before this one */
+  Bitmask mUnusable            /* Tables that must be scanned after this one */
 ){
   WhereInfo *pWInfo;           /* WHERE analysis context */
   Parse *pParse;               /* The parsing context */
@@ -2691,6 +2716,7 @@ static int whereLoopAddVirtual(
   WhereLoop *pNew;
   int rc = SQLITE_OK;
 
+  assert( (mExtra & mUnusable)==0 );
   pWInfo = pBuilder->pWInfo;
   pParse = pWInfo->pParse;
   db = pParse->db;
@@ -2699,7 +2725,7 @@ static int whereLoopAddVirtual(
   pSrc = &pWInfo->pTabList->a[pNew->iTab];
   pTab = pSrc->pTab;
   assert( IsVirtual(pTab) );
-  pIdxInfo = allocateIndexInfo(pParse, pWC, pSrc, pBuilder->pOrderBy);
+  pIdxInfo = allocateIndexInfo(pParse, pWC, mUnusable, pSrc,pBuilder->pOrderBy);
   if( pIdxInfo==0 ) return SQLITE_NOMEM;
   pNew->prereq = 0;
   pNew->rSetup = 0;
@@ -2729,7 +2755,7 @@ static int whereLoopAddVirtual(
           if( (pTerm->eOperator & WO_IN)!=0 ){
             seenIn = 1;
           }
-          if( pTerm->prereqRight!=0 ){
+          if( (pTerm->prereqRight & ~mExtra)!=0 ){
             seenVar = 1;
           }else if( (pTerm->eOperator & WO_IN)==0 ){
             pIdxCons->usable = 1;
@@ -2737,7 +2763,7 @@ static int whereLoopAddVirtual(
           break;
         case 1:    /* Constants with IN operators */
           assert( seenIn );
-          pIdxCons->usable = (pTerm->prereqRight==0);
+          pIdxCons->usable = (pTerm->prereqRight & ~mExtra)==0;
           break;
         case 2:    /* Variables without IN */
           assert( seenVar );
@@ -2836,7 +2862,11 @@ whereLoopAddVtab_exit:
 ** Add WhereLoop entries to handle OR terms.  This works for either
 ** btrees or virtual tables.
 */
-static int whereLoopAddOr(WhereLoopBuilder *pBuilder, Bitmask mExtra){
+static int whereLoopAddOr(
+  WhereLoopBuilder *pBuilder, 
+  Bitmask mExtra, 
+  Bitmask mUnusable
+){
   WhereInfo *pWInfo = pBuilder->pWInfo;
   WhereClause *pWC;
   WhereLoop *pNew;
@@ -2895,14 +2925,14 @@ static int whereLoopAddOr(WhereLoopBuilder *pBuilder, Bitmask mExtra){
 #endif
 #ifndef SQLITE_OMIT_VIRTUALTABLE
         if( IsVirtual(pItem->pTab) ){
-          rc = whereLoopAddVirtual(&sSubBuild, mExtra);
+          rc = whereLoopAddVirtual(&sSubBuild, mExtra, mUnusable);
         }else
 #endif
         {
           rc = whereLoopAddBtree(&sSubBuild, mExtra);
         }
         if( rc==SQLITE_OK ){
-          rc = whereLoopAddOr(&sSubBuild, mExtra);
+          rc = whereLoopAddOr(&sSubBuild, mExtra, mUnusable);
         }
         assert( rc==SQLITE_OK || sCur.n==0 );
         if( sCur.n==0 ){
@@ -2964,33 +2994,43 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
   int iTab;
   SrcList *pTabList = pWInfo->pTabList;
   struct SrcList_item *pItem;
+  struct SrcList_item *pEnd = &pTabList->a[pWInfo->nLevel];
   sqlite3 *db = pWInfo->pParse->db;
-  int nTabList = pWInfo->nLevel;
   int rc = SQLITE_OK;
-  u8 priorJoinType = 0;
   WhereLoop *pNew;
+  u8 priorJointype = 0;
 
   /* Loop over the tables in the join, from left to right */
   pNew = pBuilder->pNew;
   whereLoopInit(pNew);
-  for(iTab=0, pItem=pTabList->a; iTab<nTabList; iTab++, pItem++){
+  for(iTab=0, pItem=pTabList->a; pItem<pEnd; iTab++, pItem++){
+    Bitmask mUnusable = 0;
     pNew->iTab = iTab;
     pNew->maskSelf = sqlite3WhereGetMask(&pWInfo->sMaskSet, pItem->iCursor);
-    if( ((pItem->jointype|priorJoinType) & (JT_LEFT|JT_CROSS))!=0 ){
+    if( ((pItem->jointype|priorJointype) & (JT_LEFT|JT_CROSS))!=0 ){
+      /* This condition is true when pItem is the FROM clause term on the
+      ** right-hand-side of a LEFT or CROSS JOIN.  */
       mExtra = mPrior;
     }
-    priorJoinType = pItem->jointype;
+    priorJointype = pItem->jointype;
     if( IsVirtual(pItem->pTab) ){
-      rc = whereLoopAddVirtual(pBuilder, mExtra);
+      struct SrcList_item *p;
+      for(p=&pItem[1]; p<pEnd; p++){
+        if( mUnusable || (p->jointype & (JT_LEFT|JT_CROSS)) ){
+          mUnusable |= sqlite3WhereGetMask(&pWInfo->sMaskSet, p->iCursor);
+        }
+      }
+      rc = whereLoopAddVirtual(pBuilder, mExtra, mUnusable);
     }else{
       rc = whereLoopAddBtree(pBuilder, mExtra);
     }
     if( rc==SQLITE_OK ){
-      rc = whereLoopAddOr(pBuilder, mExtra);
+      rc = whereLoopAddOr(pBuilder, mExtra, mUnusable);
     }
     mPrior |= pNew->maskSelf;
     if( rc || db->mallocFailed ) break;
   }
+
   whereLoopClear(db, pNew);
   return rc;
 }

@@ -416,6 +416,10 @@ FUZZDATA = \
   $(TOP)/test/fuzzdata2.db \
   $(TOP)/test/fuzzdata3.db
 
+# Standard options to testfixture
+#
+TESTOPTS = --verbose=file --output=test-out.txt
+
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
 #
@@ -668,36 +672,48 @@ fts3-testfixture$(EXE): sqlite3.c fts3amal.c $(TESTSRC) $(TOP)/src/tclsqlite.c
 		-o testfixture$(EXE) $(LIBTCL) $(THREADLIB)
 
 fulltest:	$(TESTPROGS) fuzztest
-	./testfixture$(EXE) $(TOP)/test/all.test
+	./testfixture$(EXE) $(TOP)/test/all.test $(TESTOPTS)
 
 soaktest:	$(TESTPROGS)
-	./testfixture$(EXE) $(TOP)/test/all.test -soak=1
+	./testfixture$(EXE) $(TOP)/test/all.test -soak=1 $(TESTOPTS)
 
 fulltestonly:	$(TESTPROGS) fuzztest
-	./testfixture$(EXE) $(TOP)/test/full.test
+	./testfixture$(EXE) $(TOP)/test/full.test $(TESTOPTS)
 
 queryplantest:	testfixture$(EXE) sqlite3$(EXE)
-	./testfixture$(EXE) $(TOP)/test/permutations.test queryplanner
+	./testfixture$(EXE) $(TOP)/test/permutations.test queryplanner $(TESTOPTS)
 
 fuzztest:	fuzzcheck$(EXE) $(FUZZDATA)
 	./fuzzcheck$(EXE) $(FUZZDATA)
 
+valgrindfuzz:	fuzzcheck$(EXE) $(FUZZDATA)
+	valgrind ./fuzzcheck$(EXE) --cell-size-check --quiet $(FUZZDATA)
+
+# A very quick test using only testfixture and omitting all the slower
+# tests.  Designed to run in under 3 minutes on a workstation.
+#
+quicktest:	./testfixture$(EXE)
+	./testfixture$(EXE) $(TOP)/test/extraquick.test $(TESTOPTS)
+
+# The default test case.  Runs most of the faster standard TCL tests,
+# and fuzz tests, and sqlite3_analyzer and sqldiff tests.
+#
 test:	$(TESTPROGS) fuzztest
-	./testfixture$(EXE) $(TOP)/test/veryquick.test
+	./testfixture$(EXE) $(TOP)/test/veryquick.test $(TESTOPTS)
 
 # Run a test using valgrind.  This can take a really long time
 # because valgrind is so much slower than a native machine.
 #
-valgrindtest:	$(TESTPROGS) fuzzcheck$(EXE) $(FUZZDATA)
-	valgrind -v ./fuzzcheck$(EXE) --cell-size-check --quiet $(FUZZDATA)
-	OMIT_MISUSE=1 valgrind -v ./testfixture$(EXE) $(TOP)/test/permutations.test valgrind
+valgrindtest:	$(TESTPROGS) valgrindfuzz
+	OMIT_MISUSE=1 valgrind -v \
+	./testfixture$(EXE) $(TOP)/test/permutations.test valgrind $(TESTOPTS)
 
 # A very fast test that checks basic sanity.  The name comes from
 # the 60s-era electronics testing:  "Turn it on and see if smoke
 # comes out."
 #
 smoketest:	$(TESTPROGS) fuzzcheck$(EXE)
-	./testfixture$(EXE) $(TOP)/test/main.test
+	./testfixture$(EXE) $(TOP)/test/main.test $(TESTOPTS)
 
 # The next two rules are used to support the "threadtest" target. Building
 # threadtest runs a few thread-safety tests that are implemented in C. This

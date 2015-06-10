@@ -547,7 +547,10 @@ proc process_options {argv} {
         puts "   --srcdir $::SRCDIR"
         puts "   --platform [list $platform]"
         puts "   --config [list $config]"
-        if {$::QUICK}     {puts "   --quick"}
+        if {$::QUICK} {
+          if {$::QUICK==1} {puts "   --quick"}
+          if {$::QUICK==2} {puts "   --veryquick"}
+        }
         if {$::MSVC}      {puts "   --msvc"}
         if {$::BUILDONLY} {puts "   --buildonly"}
         if {$::DRYRUN}    {puts "   --dryrun"}
@@ -645,7 +648,7 @@ proc main {argv} {
     }
     if {$target ne "checksymbols"} {
       switch -- $::QUICK {
-         1 {set target test}
+         1 {set target quicktest}
          2 {set target smoketest}
       }
       if {$::BUILDONLY} {

@@ -1203,6 +1203,9 @@ FUZZDATA = \
   $(TOP)\test\fuzzdata2.db \
   $(TOP)\test\fuzzdata3.db
 
+# Standard options to testfixture
+#
+TESTOPTS = --verbose=file --output=test-out.txt
 
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
@@ -1677,28 +1680,36 @@ testfixture.exe:	$(TESTFIXTURE_SRC) $(LIBRESOBJS) $(HDR)
 		/link $(LTLINKOPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LTLIBS) $(TLIBS)
 
 extensiontest: testfixture.exe testloadext.dll
-	.\testfixture.exe $(TOP)\test\loadext.test
+	.\testfixture.exe $(TOP)\test\loadext.test $(TESTOPTS)
 
 fulltest:	$(TESTPROGS) fuzztest
-	.\testfixture.exe $(TOP)\test\all.test
+	.\testfixture.exe $(TOP)\test\all.test $(TESTOPTS)
 
 soaktest:	$(TESTPROGS)
-	.\testfixture.exe $(TOP)\test\all.test -soak=1
+	.\testfixture.exe $(TOP)\test\all.test -soak=1 $(TESTOPTS)
 
 fulltestonly:	$(TESTPROGS) fuzztest
 	.\testfixture.exe $(TOP)\test\full.test
 
 queryplantest:	testfixture.exe sqlite3.exe
-	.\testfixture.exe $(TOP)\test\permutations.test queryplanner
+	.\testfixture.exe $(TOP)\test\permutations.test queryplanner $(TESTOPTS)
 
 fuzztest:	fuzzcheck.exe
 	.\fuzzcheck.exe $(FUZZDATA)
 
+# Minimal testing that runs in less than 3 minutes (on a fast machine)
+#
+quicktest:	.\testfixture.exe
+	.\testfixture.exe $(TOP)\test\extraquick.test $(TESTOPTS)
+
+# This is the common case.  Run many tests that do not take too long,
+# including fuzzcheck, sqlite3_analyzer, and sqldiff tests.
+#
 test:	$(TESTPROGS) fuzztest
-	.\testfixture.exe $(TOP)\test\veryquick.test
+	.\testfixture.exe $(TOP)\test\veryquick.test $(TESTOPTS)
 
 smoketest:	$(TESTPROGS)
-	.\testfixture.exe $(TOP)\test\main.test
+	.\testfixture.exe $(TOP)\test\main.test $(TESTOPTS)
 
 sqlite3_analyzer.c: $(SQLITE3C) $(TOP)\src\tclsqlite.c $(TOP)\tool\spaceanal.tcl
 	echo #define TCLSH 2 > $@
