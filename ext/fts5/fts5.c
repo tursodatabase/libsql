@@ -2003,8 +2003,8 @@ static int fts5RenameMethod(
   sqlite3_vtab *pVtab,            /* Virtual table handle */
   const char *zName               /* New name of table */
 ){
-  int rc = SQLITE_OK;
-  return rc;
+  Fts5Table *pTab = (Fts5Table*)pVtab;
+  return sqlite3Fts5StorageRename(pTab->pStorage, zName);
 }
 
 /*

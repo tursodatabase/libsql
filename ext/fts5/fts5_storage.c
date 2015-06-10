@@ -198,6 +198,35 @@ int sqlite3Fts5DropAll(Fts5Config *pConfig){
   return rc;
 }
 
+static void fts5StorageRenameOne(
+  Fts5Config *pConfig,            /* Current FTS5 configuration */
+  int *pRc,                       /* IN/OUT: Error code */
+  const char *zTail,              /* Tail of table name e.g. "data", "config" */
+  const char *zName               /* New name of FTS5 table */
+){
+  if( *pRc==SQLITE_OK ){
+    *pRc = fts5ExecPrintf(pConfig->db, 0, 
+        "ALTER TABLE %Q.'%q_%s' RENAME TO '%q_%s';",
+        pConfig->zDb, pConfig->zName, zTail, zName, zTail
+    );
+  }
+}
+
+int sqlite3Fts5StorageRename(Fts5Storage *pStorage, const char *zName){
+  Fts5Config *pConfig = pStorage->pConfig;
+  int rc = sqlite3Fts5StorageSync(pStorage, 1);
+
+  fts5StorageRenameOne(pConfig, &rc, "data", zName);
+  fts5StorageRenameOne(pConfig, &rc, "config", zName);
+  if( pConfig->bColumnsize ){
+    fts5StorageRenameOne(pConfig, &rc, "docsize", zName);
+  }
+  if( pConfig->eContent==FTS5_CONTENT_NORMAL ){
+    fts5StorageRenameOne(pConfig, &rc, "content", zName);
+  }
+  return rc;
+}
+
 /*
 ** Create the shadow table named zPost, with definition zDefn. Return
 ** SQLITE_OK if successful, or an SQLite error code otherwise.

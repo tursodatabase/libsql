@@ -504,6 +504,7 @@ typedef struct Fts5Storage Fts5Storage;
 
 int sqlite3Fts5StorageOpen(Fts5Config*, Fts5Index*, int, Fts5Storage**, char**);
 int sqlite3Fts5StorageClose(Fts5Storage *p);
+int sqlite3Fts5StorageRename(Fts5Storage*, const char *zName);
 
 int sqlite3Fts5DropAll(Fts5Config*);
 int sqlite3Fts5CreateTable(Fts5Config*, const char*, const char*, int, char **);
