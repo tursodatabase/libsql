@@ -535,6 +535,10 @@ FUZZDATA = \
   $(TOP)/test/fuzzdata2.db \
   $(TOP)/test/fuzzdata3.db
 
+# Standard options to testfixture
+#
+TESTOPTS = --verbose=file --output=test-out.txt
+
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
 #
@@ -993,11 +997,11 @@ testfixture$(TEXE):	$(TESTFIXTURE_SRC)
 
 # A very detailed test running most or all test cases
 fulltest:	$(TESTPROGS) fuzztest
-	./testfixture$(TEXE) $(TOP)/test/all.test
+	./testfixture$(TEXE) $(TOP)/test/all.test $(TESTOPTS)
 
 # Really really long testing
 soaktest:	$(TESTPROGS)
-	./testfixture$(TEXE) $(TOP)/test/all.test -soak=1
+	./testfixture$(TEXE) $(TOP)/test/all.test -soak=1 $(TESTOPTS)
 
 # Do extra testing but not everything.
 fulltestonly:	$(TESTPROGS)
@@ -1010,24 +1014,29 @@ fuzztest:	fuzzcheck$(TEXE) $(FUZZDATA)
 valgrindfuzz:	fuzzcheck$(TEXT) $(FUZZDATA)
 	valgrind ./fuzzcheck$(TEXE) --cell-size-check --quiet $(FUZZDATA)
 
-# This is the common case.  Run many tests but not those that take
-# a really long time.
+# Minimal testing that runs in less than 3 minutes
+#
+quicktest:	./testfixture$(TEXE)
+	./testfixture$(TEXE) $(TOP)/test/extraquick.test $(TESTOPTS)
+
+# This is the common case.  Run many tests that do not take too long,
+# including fuzzcheck, sqlite3_analyzer, and sqldiff tests.
 #
 test:	$(TESTPROGS) fuzztest
-	./testfixture$(TEXE) $(TOP)/test/veryquick.test
+	./testfixture$(TEXE) $(TOP)/test/veryquick.test $(TESTOPTS)
 
 # Run a test using valgrind.  This can take a really long time
 # because valgrind is so much slower than a native machine.
 #
 valgrindtest:	$(TESTPROGS) valgrindfuzz
-	OMIT_MISUSE=1 valgrind -v ./testfixture$(TEXE) $(TOP)/test/permutations.test valgrind
+	OMIT_MISUSE=1 valgrind -v ./testfixture$(TEXE) $(TOP)/test/permutations.test valgrind $(TESTOPTS)
 
 # A very fast test that checks basic sanity.  The name comes from
 # the 60s-era electronics testing:  "Turn it on and see if smoke
 # comes out."
 #
 smoketest:	$(TESTPROGS) fuzzcheck$(TEXE)
-	./testfixture$(TEXE) $(TOP)/test/main.test
+	./testfixture$(TEXE) $(TOP)/test/main.test $(TESTOPTS)
 
 sqlite3_analyzer.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl
 	echo "#define TCLSH 2" > $@

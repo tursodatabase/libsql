@@ -1,9 +1,9 @@
-C Avoid\spassing\sconstraints\sthat\sare\sunusable\sdue\sto\sLEFT\sor\sCROSS\sjoins\sto\svirtual\stable\sxBestIndex()\smethods.
-D 2015-06-10T14:27:40.648
+C "test"\stargets\son\sall\smakefiles\suse\s--verbose=file\s--output=test-out.txt.\nAdd\sthe\snew\s"quicktest"\starget\sto\sall\smakefiles\s-\sdesigned\sto\srun\sin\sunder\nthree\sminutes.\s\sThe\s--quick\soption\son\sreleasetest.tcl\snow\suses\squicktest.
+D 2015-06-10T18:53:09.696
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in 580e006530fab67ccd34926ce2eda66d326af60f
+F Makefile.in 1063c58075b7400d93326b0eb332b48a54f53025
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 5438dc167466f51349ab0c4497aef547d0c9352c
+F Makefile.msc 5a8418c81f736dfa953c809af1a48398017b3610
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION ce0ae95abd7121c534f6917c1c8f2b70d9acd4db
@@ -171,7 +171,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 033741a45df95c577814914b13d182a0b6c7dc89
+F main.mk 68f86c21505d6b66765a13c193f00a53dde6a212
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
 F mkopcodeh.awk d5e22023b5238985bb54a72d33e0ac71fe4f8a32
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
@@ -357,7 +357,7 @@ F test/analyzeC.test 555a6cc388b9818b6eda6df816f01ce0a75d3a93
 F test/analyzeD.test 08f9d0bee4e118a66fff3a32d02dbe0ee0a2b594
 F test/analyzeE.test 8684e8ac5722fb97c251887ad97e5d496a98af1d
 F test/analyzeF.test 7ccd7a04f7d3061bde1a8a4dacc4792edccf6bf2
-F test/analyzer1.test e3bccac3be49382050464952998a631bf51e3ce1
+F test/analyzer1.test 498e2ff4b62740c2751c3a2f8b744fe26689fae9
 F test/async.test 1d0e056ba1bb9729283a0f22718d3a25e82c277b
 F test/async2.test c0a9bd20816d7d6a2ceca7b8c03d3d69c28ffb8b
 F test/async3.test d73a062002376d7edc1fe3edff493edbec1fc2f7
@@ -526,6 +526,7 @@ F test/exec.test e949714dc127eaa5ecc7d723efec1ec27118fdd7
 F test/exists.test 8f7b27b61c2fbe5822f0a1f899c715d14e416e30
 F test/expr.test 79c3e7502d9e571553b85f0ecc8ff2ac7d0e4931
 F test/extension01.test 00d13cec817f331a687a243e0e5a2d87b0e358c9
+F test/extraquick.test cb254400bd42bfb777ff675356aabf3287978f79
 F test/fallocate.test 3e979af17dfa7e5e9dda5eba1a696c04fa9d47f7
 F test/filectrl.test 14fa712e42c4cb791e09dfd58a6a03efb47ef13a
 F test/filefmt.test cb34663f126cbc2d358af552dcaf5c72769b0146
@@ -824,7 +825,7 @@ F test/pagesize.test 5769fc62d8c890a83a503f67d47508dfdc543305
 F test/pcache.test b09104b03160aca0d968d99e8cd2c5b1921a993d
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
-F test/permutations.test 32e2b82e0dfbe5c6b6b38a5c1f4cac194298ad4e
+F test/permutations.test 6b0f339a4d5f00041555a986dde8fbe8f54c25bc
 F test/pragma.test be7195f0aa72bdb8a512133e9640ac40f15b57a2
 F test/pragma2.test f624a496a95ee878e81e59961eade66d5c00c028
 F test/pragma3.test 6f849ccffeee7e496d2f2b5e74152306c0b8757c
@@ -843,7 +844,7 @@ F test/randexpr1.test eda062a97e60f9c38ae8d806b03b0ddf23d796df
 F test/rdonly.test 64e2696c322e3538df0b1ed624e21f9a23ed9ff8
 F test/regexp1.test 497ea812f264d12b6198d6e50a76be4a1973a9d8
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
-F test/releasetest.tcl 3e906a8bbd047b8e1f035984fbdc96df4caaea47
+F test/releasetest.tcl 2aaffa548a8f8d10053b20bcf68a1b5a01081e51
 F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
 F test/rollback.test 458fe73eb3ffdfdf9f6ba3e9b7350a6220414dea
 F test/rollback2.test fc14cf6d1a2b250d2735ef16124b971bce152f14
@@ -929,7 +930,7 @@ F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
 F test/speedtest1.c 9f1b745c24886cced3f70ffc666300152a39013c
 F test/spellfix.test 24f676831acddd2f4056a598fd731a72c6311f49
-F test/sqldiff1.test e5ecfe95b3a2ff6380f0db6ea8bec246b675e122
+F test/sqldiff1.test 8f6bc7c6a5b3585d350d779c6078869ba402f8f5
 F test/sqllimits1.test e05786eaed7950ff6a2d00031d001d8a26131e68
 F test/stat.test 8de91498c99f5298b303f70f1d1f3b9557af91bf
 F test/statfault.test f525a7bf633e50afd027700e9a486090684b1ac1
@@ -1285,7 +1286,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f7b2c70362f10ee0347c1d2318918ffefa53243d a34cd71c8aafaece04a2332a127e9b8e99c1403c
-R 83db81ff2fb6c9dcf1dbb41c52657424
-U dan
-Z 293899bbe176179f6b2abcd42b5d0831
+P 7b446771cadedafbe8924ad0658adc2597816dc7
+R e13907780a1cb22e147b44d8ea4a5351
+U drh
+Z 0da5f15a574d2a2ef40a9dda668b3442
