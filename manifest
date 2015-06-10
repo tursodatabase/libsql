@@ -1,9 +1,9 @@
-C "test"\stargets\son\sall\smakefiles\suse\s--verbose=file\s--output=test-out.txt.\nAdd\sthe\snew\s"quicktest"\starget\sto\sall\smakefiles\s-\sdesigned\sto\srun\sin\sunder\nthree\sminutes.\s\sThe\s--quick\soption\son\sreleasetest.tcl\snow\suses\squicktest.
-D 2015-06-10T18:53:09.696
+C Fix\sminor\stypo\sin\sthe\squicktest\sMSVC\smakefile\starget.
+D 2015-06-10T22:03:40.913
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1063c58075b7400d93326b0eb332b48a54f53025
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 5a8418c81f736dfa953c809af1a48398017b3610
+F Makefile.msc b7db9ccbbad1c495b98e5326a06cac03aa206127
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION ce0ae95abd7121c534f6917c1c8f2b70d9acd4db
@@ -1286,7 +1286,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7b446771cadedafbe8924ad0658adc2597816dc7
-R e13907780a1cb22e147b44d8ea4a5351
-U drh
-Z 0da5f15a574d2a2ef40a9dda668b3442
+P 6ddef2ad35ceb5822fc14c65bc7c6a2662edb63c
+R c63a194dd469f312ca0f35c47faf1707
+U mistachkin
+Z c108f8ac4d75e13d11936c87d29e2e70

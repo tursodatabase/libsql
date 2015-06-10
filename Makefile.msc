@@ -1699,7 +1699,7 @@ fuzztest:	fuzzcheck.exe
 
 # Minimal testing that runs in less than 3 minutes (on a fast machine)
 #
-quicktest:	.\testfixture.exe
+quicktest:	testfixture.exe
 	.\testfixture.exe $(TOP)\test\extraquick.test $(TESTOPTS)
 
 # This is the common case.  Run many tests that do not take too long,
