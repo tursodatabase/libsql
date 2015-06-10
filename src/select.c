@@ -4999,13 +4999,13 @@ int sqlite3Select(
   }
 #endif
 
-#if 1
-  /* Manifest the subqueries.  This needs to be done before calling
-  ** sqlite3WhereBegin() so that the Table.nRowLogEst value can be set
-  ** correctly for the subqueries. */
-  sqlite3ManifestSubqueries(pParse, p, pTabList);
-  if( db->mallocFailed ) goto select_end;
-#endif
+  if( !OptimizationEnabled(db, SQLITE_LateSubquery) ){
+    /* Manifest the subqueries.  This needs to be done before calling
+    ** sqlite3WhereBegin() so that the Table.nRowLogEst value can be set
+    ** correctly for the subqueries. */
+    sqlite3ManifestSubqueries(pParse, p, pTabList);
+    if( db->mallocFailed ) goto select_end;
+  }
 
   /* Various elements of the SELECT copied into local variables for
   ** convenience */

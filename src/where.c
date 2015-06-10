@@ -2552,15 +2552,16 @@ static int whereLoopAddBtree(
         /* TUNING: One-time cost for computing the automatic index is
         ** estimated to be X*N*log2(N) where N is the number of rows in
         ** the table being indexed and where X is 7 (LogEst=28) for normal
-        ** tables or 1.375 (LogEst=4) for views and subqueries.  The value
+        ** tables or 0.3333 (LogEst=-16) for views and subqueries.  The value
         ** of X is smaller for views and subqueries so that the query planner
         ** will be more aggressive about generating automatic indexes for
         ** those objects, since there is no opportunity to add schema
         ** indexes on subqueries and views. */
-        pNew->rSetup = rLogSize + rSize + 4;
+        pNew->rSetup = rLogSize + rSize - 16;
         if( pTab->pSelect==0 && (pTab->tabFlags & TF_Ephemeral)==0 ){
-          pNew->rSetup += 24;
+          pNew->rSetup += 44;
         }
+        if( pNew->rSetup<1 ) pNew->rSetup = 1;
         ApplyCostMultiplier(pNew->rSetup, pTab->costMult);
         /* TUNING: Each index lookup yields 20 rows in the table.  This
         ** is more than the usual guess of 10 rows, since we have no way
@@ -4131,17 +4132,15 @@ WhereInfo *sqlite3WhereBegin(
     }
   }
 
-#if 0
   /* If this WHERE clause is part of a SELECT statement, then there
   ** might be subqueries in the FROM clause that need to be manifested.
   ** This works mostly - except the Table.nRowLogEst value is not set
   ** correctly for the subquery, resulting in a bad plan in some cases.
   */
-  if( pSelect!=0 ){
+  if( OptimizationEnabled(db, SQLITE_LateSubquery) && pSelect!=0 ){
     sqlite3ManifestSubqueries(pParse, pSelect, pTabList);
     if( db->mallocFailed ) goto whereBeginError;
   }
-#endif
 
   /* Open all tables in the pTabList and any indices selected for
   ** searching those tables.
