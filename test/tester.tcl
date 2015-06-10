@@ -1168,20 +1168,20 @@ proc catchsql {sql {db db}} {
 # Do an VDBE code dump on the SQL given
 #
 proc explain {sql {db db}} {
-  puts ""
-  puts "addr  opcode        p1      p2      p3      p4               p5  #"
-  puts "----  ------------  ------  ------  ------  ---------------  --  -"
+  output1 ""
+  output1 "addr  opcode        p1      p2      p3      p4               p5  #"
+  output1 "----  ------------  ------  ------  ------  ---------------  --  -"
   $db eval "explain $sql" {} {
-    puts [format {%-4d  %-12.12s  %-6d  %-6d  %-6d  % -17s %s  %s} \
+    output1 [format {%-4d  %-12.12s  %-6d  %-6d  %-6d  % -17s %s  %s} \
       $addr $opcode $p1 $p2 $p3 $p4 $p5 $comment
     ]
   }
 }
 
 proc explain_i {sql {db db}} {
-  puts ""
-  puts "addr  opcode        p1      p2      p3      p4                p5  #"
-  puts "----  ------------  ------  ------  ------  ----------------  --  -"
+  output1 ""
+  output1 "addr  opcode        p1      p2      p3      p4                p5  #"
+  output1 "----  ------------  ------  ------  ------  ----------------  --  -"
 
 
   # Set up colors for the different opcodes. Scheme is as follows:
@@ -1254,11 +1254,11 @@ proc explain_i {sql {db db}} {
     set col ""
     catch { set col $color($opcode) }
 
-    puts [format {%-4d  %s%s%-12.12s%s  %-6d  %-6d  %-6d  % -17s %s  %s} \
+    output1 [format {%-4d  %s%s%-12.12s%s  %-6d  %-6d  %-6d  % -17s %s  %s} \
       $addr $I $col $opcode $D $p1 $p2 $p3 $p4 $p5 $comment
     ]
   }
-  puts "----  ------------  ------  ------  ------  ----------------  --  -"
+  output1 "----  ------------  ------  ------  ------  ----------------  --  -"
 }
 
 # Show the VDBE program for an SQL statement but omit the Trace
