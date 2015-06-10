@@ -1,5 +1,5 @@
-C Remove\spossibly\sstray\soutput\sfrom\svarious\stests.
-D 2015-06-10T22:51:02.529
+C More\stest\soutput\srefinements.
+D 2015-06-10T23:02:38.561
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1063c58075b7400d93326b0eb332b48a54f53025
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -831,7 +831,7 @@ F test/pragma2.test f624a496a95ee878e81e59961eade66d5c00c028
 F test/pragma3.test 6f849ccffeee7e496d2f2b5e74152306c0b8757c
 F test/printf.test b3ff34e73d59124140eaf89f7672e21bc2ca5fcc
 F test/printf2.test 0b61566dd1c0f0b802f59dffa228c5dc5aa6b054
-F test/progress.test a282973d1d17f08071bc58a77d6b80f2a81c354d
+F test/progress.test ebab27f670bd0d4eb9d20d49cef96e68141d92fb
 F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
 F test/queryonly.test 5f653159e0f552f0552d43259890c1089391dcca
 F test/quick.test 1681febc928d686362d50057c642f77a02c62e57
@@ -950,7 +950,7 @@ F test/tclsqlite.test 7fb866443c7deceed22b63948ccd6f76b52ad054
 F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
 F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptrigger.test 8ec228b0db5d7ebc4ee9b458fc28cb9e7873f5e1
-F test/tester.tcl d23d57063764471b6fb51276b851ac51d364db06
+F test/tester.tcl b3a41e20f98a029a76e930b33d0711c5854267bb
 F test/thread001.test 9f22fd3525a307ff42a326b6bc7b0465be1745a5
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -1148,7 +1148,7 @@ F test/vacuum4.test d3f8ecff345f166911568f397d2432c16d2867d9
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/veryquick.test 57ab846bacf7b90cf4e9a672721ea5c5b669b661
 F test/view.test f311691d696a5cc27e3c1b875cec1b0866b4ccd9
-F test/vtab1.test dbe0e9e121102d0ba365f20d126a72676aa2343f
+F test/vtab1.test 6210e076997f176bedc300a87ad6404651b601dd
 F test/vtab2.test f8cd1bb9aba7143eba97812d9617880a36d247ad
 F test/vtab3.test b45f47d20f225ccc9c28dc915d92740c2dee311e
 F test/vtab4.test 942f8b8280b3ea8a41dae20e7822d065ca1cb275
@@ -1286,10 +1286,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 75b65f9d49daaf48e97042cb82ea554e2ec74eec
-R 7ce3aec9083e0231108814bdab12a834
-T *branch * testerOutput
-T *sym-testerOutput *
-T -sym-trunk *
+P f38e0be56fc086a3ce08134ade83ab61c9fca106
+R 27c776937a2faf6a3c6ca0150fe1d26e
 U mistachkin
-Z db6ff78743d076544ff22113ea65f70d
+Z 4bdc8fbc12892afab86b92929a73ad3a

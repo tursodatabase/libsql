@@ -56,9 +56,6 @@ ifcapable !vtab||!schema_pragmas {
 # We cannot create a virtual table if the module has not been registered.
 #
 do_test vtab1-1.1.1 {
-  explain {
-    CREATE VIRTUAL TABLE t1 USING echo;
-  }
   catchsql {
     CREATE VIRTUAL TABLE t1 USING echo;
   }
