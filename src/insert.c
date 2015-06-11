@@ -1381,8 +1381,8 @@ void sqlite3GenerateConstraintChecks(
     if( pIdx->pPartIdxWhere ){
       sqlite3VdbeAddOp2(v, OP_Null, 0, aRegIdx[ix]);
       pParse->ckBase = regNewData+1;
-      sqlite3ExprIfFalse(pParse, pIdx->pPartIdxWhere, addrUniqueOk,
-                         SQLITE_JUMPIFNULL);
+      sqlite3ExprIfFalseDup(pParse, pIdx->pPartIdxWhere, addrUniqueOk,
+                            SQLITE_JUMPIFNULL);
       pParse->ckBase = 0;
     }
 

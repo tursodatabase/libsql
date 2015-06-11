@@ -3329,6 +3329,7 @@ int sqlite3ExprCodeExprList(Parse*, ExprList*, int, u8);
 #define SQLITE_ECEL_FACTOR   0x02  /* Factor out constant terms */
 void sqlite3ExprIfTrue(Parse*, Expr*, int, int);
 void sqlite3ExprIfFalse(Parse*, Expr*, int, int);
+void sqlite3ExprIfFalseDup(Parse*, Expr*, int, int);
 Table *sqlite3FindTable(sqlite3*,const char*, const char*);
 Table *sqlite3LocateTable(Parse*,int isView,const char*, const char*);
 Table *sqlite3LocateTableItem(Parse*,int isView,struct SrcList_item *);

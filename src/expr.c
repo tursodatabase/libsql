@@ -3703,6 +3703,21 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
 }
 
 /*
+** Like sqlite3ExprIfFalse() except that a copy is made of pExpr before
+** code generation, and that copy is deleted after code generation. This
+** ensures that the original pExpr is unchanged.
+*/
+void sqlite3ExprIfFalseDup(Parse *pParse, Expr *pExpr, int dest,int jumpIfNull){
+  sqlite3 *db = pParse->db;
+  Expr *pCopy = sqlite3ExprDup(db, pExpr, 0);
+  if( db->mallocFailed==0 ){
+    sqlite3ExprIfFalse(pParse, pCopy, dest, jumpIfNull);
+  }
+  sqlite3ExprDelete(db, pCopy);
+}
+
+
+/*
 ** Do a deep comparison of two expression trees.  Return 0 if the two
 ** expressions are completely identical.  Return 1 if they differ only
 ** by a COLLATE operator at the top level.  Return 2 if there are differences

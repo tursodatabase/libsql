@@ -798,8 +798,8 @@ int sqlite3GenerateIndexKey(
       *piPartIdxLabel = sqlite3VdbeMakeLabel(v);
       pParse->iPartIdxTab = iDataCur;
       sqlite3ExprCachePush(pParse);
-      sqlite3ExprIfFalse(pParse, pIdx->pPartIdxWhere, *piPartIdxLabel, 
-                         SQLITE_JUMPIFNULL);
+      sqlite3ExprIfFalseDup(pParse, pIdx->pPartIdxWhere, *piPartIdxLabel, 
+                            SQLITE_JUMPIFNULL);
     }else{
       *piPartIdxLabel = 0;
     }
