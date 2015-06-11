@@ -16,7 +16,6 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 db close
-puts hello
 
 # This script is only valid if we are running shared-cache mode in a
 # threadsafe-capable database engine.

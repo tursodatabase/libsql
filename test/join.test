@@ -687,4 +687,30 @@ ifcapable pragma&&compileoption_diags {
   }
 }
 
+
+#-------------------------------------------------------------------------
+# Test a problem with reordering tables following a LEFT JOIN.
+#
+do_execsql_test join-13.0 {
+  CREATE TABLE aa(a);
+  CREATE TABLE bb(b);
+  CREATE TABLE cc(c);
+
+  INSERT INTO aa VALUES(45);
+  INSERT INTO cc VALUES(45);
+  INSERT INTO cc VALUES(45);
+}
+
+do_execsql_test join-13.1 {
+  SELECT * FROM aa LEFT JOIN bb, cc WHERE cc.c=aa.a;
+} {45 {} 45 45 {} 45}
+
+# In the following, the order of [cc] and [bb] must not be exchanged, even
+# though this would be helpful if the query used an inner join.
+do_execsql_test join-13.2 {
+  CREATE INDEX ccc ON cc(c);
+  SELECT * FROM aa LEFT JOIN bb, cc WHERE cc.c=aa.a;
+} {45 {} 45 45 {} 45}
+
+
 finish_test
