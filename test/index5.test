@@ -67,8 +67,10 @@ do_test 1.3 {
     }
     set iPrev $iNext
   }
-  puts -nonewline \
-      " (forward=$nForward, back=$nBackward, noncontiguous=$nNoncont)"
+  if {0} {
+    puts -nonewline \
+        " (forward=$nForward, back=$nBackward, noncontiguous=$nNoncont)"
+  }
 
   expr {$nForward > 2*($nBackward + $nNoncont)}
 } {1}

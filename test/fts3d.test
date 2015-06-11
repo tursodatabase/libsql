@@ -213,7 +213,7 @@ do_test fts3d-4.matches {
         {0 1 0 4 0 2 5 3 0 3 9 1 0 5 11 4} \
         {0 0 0 4 0 4 5 2 0 3 8 1 0 5 10 4}]
 
-puts [db eval {SELECT c FROM t1 } ]
+db eval {SELECT c FROM t1 }
 check_terms_all fts3d-4.1      {a four is test that this was}
 check_doclist_all fts3d-4.1.1  a {[1 0[2]] [2 0[2]] [3 0[2]]}
 check_doclist_all fts3d-4.1.2  four {}

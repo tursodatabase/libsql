@@ -171,7 +171,6 @@ foreach {tn code} {
   #
   set ::busy_callback_count 0
   proc busy_callback {args} {
-  puts Hello
     incr ::busy_callback_count
     return 0
   }
