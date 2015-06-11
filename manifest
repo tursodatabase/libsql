@@ -1,5 +1,5 @@
-C Add\sthe\s"finish_test"\scommand\sto\sthe\send\sof\snew\stest\sscript\ssessionE.test.
-D 2015-06-02T09:20:46.301
+C Add\sthe\ssqlite3changegroup_xxx()\sAPIs\sto\sthe\ssessions\smodule.\sFor\scombining\smultiple\schangesets\sor\spatchsets.
+D 2015-06-11T17:26:10.939
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 58c16cc8cd876ed112902e70cf33d33f3270b5aa
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -181,8 +181,8 @@ F ext/session/sessionD.test d4744c78334162851d2a2f285c7e603e31b49aa2
 F ext/session/sessionE.test e60a238c47f0feb3bb707e7f35e22be09c7e8f26
 F ext/session/session_common.tcl f4b7b59c617edf0c9b00d94cd93498d225d43837
 F ext/session/sessionfault.test bef044d0952c0d62c31c8d2400be72c8684545cc
-F ext/session/sqlite3session.c d630293057fcf4274451edec24c2745953ca042c
-F ext/session/sqlite3session.h 8e86f9eec3ed71f1f30eefbe810cbe5bc10b5aa9
+F ext/session/sqlite3session.c 78e5b310cd6e655e9166f40dc8a319c0c866cfdc
+F ext/session/sqlite3session.h 772cffe38f11bd62f434eabf080157eabf3d553e
 F ext/session/test_session.c 187bd344c5ae9d5be85e22ef7c3010f0c17307ce
 F ext/userauth/sqlite3userauth.h 19cb6f0e31316d0ee4afdfb7a85ef9da3333a220
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
@@ -1301,7 +1301,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P bdaf9575cd9ebb33dc5da4062a84bca79e7b0fec
-R dbe1b57e21e93824d104fb3b930d73e6
+P fb3914070791c84b5f323b7359ac845246d8a844
+R 8257ada0208a724be61180fd75fdecb0
 U dan
-Z cd8fea501989560b39f7780ac3d3b3f9
+Z fef5e9795fb303b4eab93bd557fcafaf
