@@ -427,24 +427,22 @@ static void pcache1ResizeHash(PCache1 *p){
 */
 static void pcache1PinPage(PgHdr1 *pPage){
   PCache1 *pCache;
-  PGroup *pGroup;
 
   assert( pPage!=0 );
   assert( pPage->isPinned==0 );
   pCache = pPage->pCache;
-  pGroup = pCache->pGroup;
-  assert( pPage->pLruNext || pPage==pGroup->pLruTail );
-  assert( pPage->pLruPrev || pPage==pGroup->pLruHead );
-  assert( sqlite3_mutex_held(pGroup->mutex) );
+  assert( pPage->pLruNext || pPage==pCache->pGroup->pLruTail );
+  assert( pPage->pLruPrev || pPage==pCache->pGroup->pLruHead );
+  assert( sqlite3_mutex_held(pCache->pGroup->mutex) );
   if( pPage->pLruPrev ){
     pPage->pLruPrev->pLruNext = pPage->pLruNext;
   }else{
-    pGroup->pLruHead = pPage->pLruNext;
+    pCache->pGroup->pLruHead = pPage->pLruNext;
   }
   if( pPage->pLruNext ){
     pPage->pLruNext->pLruPrev = pPage->pLruPrev;
   }else{
-    pGroup->pLruTail = pPage->pLruPrev;
+    pCache->pGroup->pLruTail = pPage->pLruPrev;
   }
   pPage->pLruNext = 0;
   pPage->pLruPrev = 0;

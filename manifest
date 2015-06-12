@@ -1,5 +1,5 @@
-C Add\sthe\sOP_ColumnsUsed\sopcode\s(when\scompiled\swith\nSQLITE_ENABLE_COLUMN_USED_MASK)\sas\sa\shint\sto\sthe\sb-tree\slayer\sas\sto\swhich\ncolumns\sof\sa\sbtree\scursor\swill\sbe\sused.
-D 2015-06-12T12:54:15.456
+C Minor\sperformance\soptimization\sin\spcache1.c.
+D 2015-06-12T13:04:51.385
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1063c58075b7400d93326b0eb332b48a54f53025
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -242,7 +242,7 @@ F src/pager.h c3476e7c89cdf1c6914e50a11f3714e30b4e0a77
 F src/parse.y 6d60dda8f8d418b6dc034f1fbccd816c459983a8
 F src/pcache.c 10539fb959849ad6efff80050541cab3d25089d4
 F src/pcache.h b44658c9c932d203510279439d891a2a83e12ba8
-F src/pcache1.c 69d137620a305f814398bd29a0c998038c0695e9
+F src/pcache1.c 0f2c218d9fa84814403033319036d8e9ecb06dfd
 F src/pragma.c c1f4d012ea9f6b1ce52d341b2cd0ad72d560afd7
 F src/pragma.h b8632d7cdda7b25323fa580e3e558a4f0d4502cc
 F src/prepare.c 82e5db1013846a819f198336fed72c44c974e7b1
@@ -1286,8 +1286,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P afc6db9b105f32110112b877f06091757888a5f2 f167bba446b78dd7538d0b2bae3e6678f3b1ba28
-R a835938c5e3feca63734c05b1d351c1c
-T +closed f167bba446b78dd7538d0b2bae3e6678f3b1ba28
+P 711a176cbfad5dde6defa9648fba6d0d663af134
+R 9bc91229df1369aa902663b713f0e063
 U drh
-Z a8bcbc55ca8439f9fa1efdec8155d95f
+Z c8fd78f00b5d9acfb5119a0b1df9ec4a
