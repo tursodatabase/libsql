@@ -425,7 +425,7 @@ static void pcache1ResizeHash(PCache1 *p){
 **
 ** The PGroup mutex must be held when this function is called.
 */
-static void pcache1PinPage(PgHdr1 *pPage){
+static PgHdr1 *pcache1PinPage(PgHdr1 *pPage){
   PCache1 *pCache;
 
   assert( pPage!=0 );
@@ -448,6 +448,7 @@ static void pcache1PinPage(PgHdr1 *pPage){
   pPage->pLruPrev = 0;
   pPage->isPinned = 1;
   pCache->nRecyclable--;
+  return pPage;
 }
 
 
@@ -803,8 +804,13 @@ static SQLITE_NOINLINE PgHdr1 *pcache1FetchStage2(
 **      proceed to step 5. 
 **
 **   5. Otherwise, allocate and return a new page buffer.
+**
+** There are two versions of this routine.  pcache1FetchWithMutex() is
+** the general case.  pcache1FetchNoMutex() is a faster implementation for
+** the common case where pGroup->mutex is NULL.  The pcache1Fetch() wrapper
+** invokes the appropriate routine.
 */
-static sqlite3_pcache_page *pcache1Fetch(
+static PgHdr1 *pcache1FetchNoMutex(
   sqlite3_pcache *p, 
   unsigned int iKey, 
   int createFlag
@@ -812,28 +818,56 @@ static sqlite3_pcache_page *pcache1Fetch(
   PCache1 *pCache = (PCache1 *)p;
   PgHdr1 *pPage = 0;
 
-  assert( offsetof(PgHdr1,page)==0 );
-  assert( pCache->bPurgeable || createFlag!=1 );
-  assert( pCache->bPurgeable || pCache->nMin==0 );
-  assert( pCache->bPurgeable==0 || pCache->nMin==10 );
-  assert( pCache->nMin==0 || pCache->bPurgeable );
-  assert( pCache->nHash>0 );
-  pcache1EnterMutex(pCache->pGroup);
-
   /* Step 1: Search the hash table for an existing entry. */
   pPage = pCache->apHash[iKey % pCache->nHash];
   while( pPage && pPage->iKey!=iKey ){ pPage = pPage->pNext; }
 
   /* Step 2: Abort if no existing page is found and createFlag is 0 */
   if( pPage ){
-    if( !pPage->isPinned ) pcache1PinPage(pPage);
+    if( !pPage->isPinned ){
+      return pcache1PinPage(pPage);
+    }else{
+      return pPage;
+    }
   }else if( createFlag ){
     /* Steps 3, 4, and 5 implemented by this subroutine */
-    pPage = pcache1FetchStage2(pCache, iKey, createFlag);
+    return pcache1FetchStage2(pCache, iKey, createFlag);
+  }else{
+    return 0;
   }
+}
+static PgHdr1 *pcache1FetchWithMutex(
+  sqlite3_pcache *p, 
+  unsigned int iKey, 
+  int createFlag
+){
+  PCache1 *pCache = (PCache1 *)p;
+  PgHdr1 *pPage;
+
+  pcache1EnterMutex(pCache->pGroup);
+  pPage = pcache1FetchNoMutex(p, iKey, createFlag);
   assert( pPage==0 || pCache->iMaxKey>=iKey );
   pcache1LeaveMutex(pCache->pGroup);
-  return (sqlite3_pcache_page*)pPage;
+  return pPage;
+}
+static sqlite3_pcache_page *pcache1Fetch(
+  sqlite3_pcache *p, 
+  unsigned int iKey, 
+  int createFlag
+){
+  PCache1 *pCache = (PCache1 *)p;
+
+  assert( offsetof(PgHdr1,page)==0 );
+  assert( pCache->bPurgeable || createFlag!=1 );
+  assert( pCache->bPurgeable || pCache->nMin==0 );
+  assert( pCache->bPurgeable==0 || pCache->nMin==10 );
+  assert( pCache->nMin==0 || pCache->bPurgeable );
+  assert( pCache->nHash>0 );
+  if( pCache->pGroup->mutex ){
+    return (sqlite3_pcache_page*)pcache1FetchWithMutex(p, iKey, createFlag);
+  }else{
+    return (sqlite3_pcache_page*)pcache1FetchNoMutex(p, iKey, createFlag);
+  }
 }
 
 
