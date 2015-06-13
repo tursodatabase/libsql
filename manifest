@@ -1,5 +1,5 @@
-C Add\sthe\sIS\sDISTINCT\sFROM\sand\sIS\sNOT\sDISTINCT\sFROM\soperators.
-D 2015-06-13T11:48:52.517
+C Added\stest\scases\sbased\son\sBruce\sMomjian's\stalk\son\sSQL\sNULLs.
+D 2015-06-13T19:05:44.010
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1063c58075b7400d93326b0eb332b48a54f53025
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -787,6 +787,7 @@ F test/mmap1.test 1bfd611b9841eafb44f7d83c0788e146d84a33c9
 F test/mmap2.test 9d6dd9ddb4ad2379f29cc78f38ce1e63ed418022
 F test/mmap3.test c92273e16eb8d23c1d55c9815b446bb72ef0512e
 F test/mmapfault.test d4c9eff9cd8c2dc14bc43e71e042f175b0a26fe3
+F test/momjian1.test 81eb75ee46a4385be922b0e6af52d936213cb22e
 F test/multiplex.test efd015ca0b5b4a57dc9535b8feb1273eebeadb60
 F test/multiplex2.test 580ca5817c7edbe4cc68fa150609c9473393003a
 F test/multiplex3.test d228f59eac91839a977eac19f21d053f03e4d101
@@ -1286,10 +1287,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P caf8f574e5c64da461c6dfba8a06cf3fb18aaa42
-R 82263371860b048ad46608f49acbed93
-T *branch * is-distinct-from
-T *sym-is-distinct-from *
-T -sym-trunk *
+P 0be4478209fc3544152874fde2750ce86b410221
+R aa34463b472eb51d91292ad6ef6dc49a
 U drh
-Z b6ee23a624f1d839afa2fd36813a2640
+Z e68b43ce2d2a7b57cd7747d8f8290458

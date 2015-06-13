@@ -1,0 +1,262 @@
+# 2015-06-12
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# 
+# Test cases derived from Bruce Momjian's talk on NULL handling in SQL.
+# http://momjian.us/main/writings/pgsql/nulls.pdf
+#
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+db null nil
+do_execsql_test momjian1-100 {
+  SELECT null;
+} {nil}
+
+do_execsql_test momjian1-110 {
+  CREATE TABLE nulltest (x INTEGER, y INTEGER);
+  INSERT INTO nulltest VALUES (1,NULL);
+  SELECT * FROM nulltest;
+} {1 nil}
+
+do_execsql_test momjian1-120 {
+  INSERT INTO nulltest (x) VALUES (2);
+  SELECT * FROM nulltest;
+} {1 nil 2 nil}
+
+do_catchsql_test momjian1-130 {
+  CREATE TABLE nulltest2 (x INTEGER NOT NULL, y INTEGER NOT NULL);
+  INSERT INTO nulltest2 VALUES (3,NULL )
+} {1 {NOT NULL constraint failed: nulltest2.y}}
+do_catchsql_test momjian1-131 {
+  INSERT INTO nulltest2 (x) VALUES (4);
+} {1 {NOT NULL constraint failed: nulltest2.y}}
+
+do_execsql_test momjian1-140 {
+  SELECT NULL+1;
+} {nil}
+do_execsql_test momjian1-141 {
+  SELECT NULL || 'a';
+} {nil}
+do_execsql_test momjian1-142 {
+  SELECT 'b' || NULL;
+} {nil}
+
+do_execsql_test momjian1-150 {
+  CREATE TABLE inctest (x INTEGER);
+  INSERT INTO inctest VALUES (30), (40),(NULL);
+  SELECT x + 1 FROM inctest;
+} {31 41 nil}
+
+do_execsql_test momjian1-160 {
+  SELECT NULL = 1;
+} {nil}
+do_execsql_test momjian1-161 {
+  SELECT NULL = '';
+} {nil}
+do_execsql_test momjian1-162 {
+  SELECT NULL = NULL;
+} {nil}
+do_execsql_test momjian1-163 {
+  SELECT NULL < NULL + 1;
+} {nil}
+
+do_execsql_test momjian1-170 {
+  SELECT 1 WHERE 1;
+} {1}
+do_execsql_test momjian1-171 {
+  SELECT 1 WHERE 0;
+} {}
+do_execsql_test momjian1-172 {
+  SELECT 1 WHERE NULL;
+} {}
+
+do_execsql_test momjian1-180 {
+  SELECT 1 AND NULL;
+} {nil}
+do_execsql_test momjian1-181 {
+  SELECT NOT NULL;
+} {nil}
+
+do_execsql_test momjian1-190 {
+  SELECT * FROM inctest WHERE x >= 0;
+} {30 40}
+do_execsql_test momjian1-191 {
+  SELECT * FROM inctest WHERE x < 0;
+} {}
+do_execsql_test momjian1-192 {
+  SELECT * FROM inctest WHERE x < 0 OR x >= 0;
+} {30 40}
+
+do_execsql_test momjian1-200 {
+  SELECT * FROM inctest WHERE x <> 10;
+} {30 40}
+do_execsql_test momjian1-201 {
+  SELECT * FROM inctest WHERE x <> 10 OR x = 10;    
+} {30 40}
+
+do_execsql_test momjian1-210 {
+  SELECT 1 <> 2 AND 1 <> 3;
+} {1}
+do_execsql_test momjian1-211 {
+  SELECT 1 <> 2 AND 1 <> 3 AND 1 <> NULL;
+} {nil}
+
+do_execsql_test momjian1-220 {
+  SELECT 'a' IN (SELECT NULL);
+} {nil}
+do_execsql_test momjian1-221 {
+  SELECT 'a' NOT IN (SELECT NULL);
+} {nil}
+
+do_execsql_test momjian1-230 {
+  SELECT 'a' IN (SELECT 'a' UNION ALL SELECT NULL);
+} {1}
+do_execsql_test momjian1-231 {
+  SELECT 'a' NOT IN (SELECT 'a' UNION ALL SELECT NULL);
+} {0}
+do_execsql_test momjian1-232 {
+  SELECT 'a' IN (SELECT 'b' UNION ALL SELECT NULL);
+} {nil}
+do_execsql_test momjian1-233 {
+  SELECT 'a' NOT IN (SELECT 'b' UNION ALL SELECT NULL);
+} {nil}
+
+do_execsql_test momjian1-240 {
+  SELECT 'a' = 'b' OR 'a' = NULL;
+} {nil}
+do_execsql_test momjian1-241 {
+  SELECT 'a' <> 'b' AND 'a' <> NULL;
+} {nil}
+
+do_execsql_test momjian1-250 {
+  SELECT NULL = NULL;
+} {nil}
+do_execsql_test momjian1-251 {
+  SELECT NULL IS NULL;
+} {1}
+do_execsql_test momjian1-252 {
+  SELECT NULL IS NOT NULL;
+} {0}
+
+do_execsql_test momjian1-260 {
+  SELECT * FROM inctest WHERE x IS NULL;
+} {nil}
+do_execsql_test momjian1-261 {
+  SELECT * FROM inctest WHERE x IS NOT NULL;
+} {30 40}
+
+do_execsql_test momjian1-270 {
+  SELECT 2 IS DISTINCT FROM 1;
+  SELECT 2 IS NOT 1
+} {1 1}
+do_execsql_test momjian1-271 {
+  SELECT NULL IS DISTINCT FROM 1;
+  SELECT NULL IS NOT 1;
+} {1 1}
+do_execsql_test momjian1-272 {
+  SELECT NULL IS DISTINCT FROM NULL;
+  SELECT NULL IS NOT NULL;
+} {0 0}
+do_execsql_test momjian1-273 {
+  SELECT NULL <> 1;
+} {nil}
+
+do_execsql_test momjian1-280 {
+  -- SELECT * FROM inctest WHERE x IS DISTINCT FROM 30;
+  SELECT * FROM inctest WHERE x IS NOT 30;
+} {40 nil}
+do_execsql_test momjian1-281 {
+  -- SELECT * FROM inctest WHERE x IS NOT DISTINCT FROM 30;
+  SELECT * FROM inctest WHERE x IS 30;
+} {30}
+
+do_execsql_test momjian1-300 {
+  CREATE TABLE disttest (x INTEGER, y INTEGER);
+  INSERT INTO disttest VALUES (1, 1), (2, 3), (NULL, NULL);
+  SELECT * FROM disttest where x IS NOT DISTINCT FROM y;
+  SELECT * FROM disttest WHERE x IS y;
+} {1 1 nil nil 1 1 nil nil}
+
+do_execsql_test momjian1-310 {
+  WITH ordertest AS (
+    SELECT NULL
+    UNION ALL
+    SELECT 2
+    UNION ALL
+    SELECT 1
+    UNION ALL
+    SELECT NULL
+  )
+  SELECT * FROM ordertest
+  ORDER BY 1;
+} {nil nil 1 2}
+
+do_execsql_test momjian1-320 {
+  CREATE TABLE uniqtest (x INTEGER);
+  CREATE UNIQUE INDEX i_uniqtest ON uniqtest (x);
+  INSERT INTO uniqtest VALUES (1),(NULL), (NULL);
+  SELECT * FROM uniqtest;
+} {1 nil nil}
+
+do_execsql_test momjian1-330 {
+  CREATE TABLE aggtest (x INTEGER);
+  INSERT INTO aggtest VALUES (7), (8), (NULL);
+  SELECT COUNT(*), COUNT(x), SUM(x), MIN(x), MAX(x), AVG(x) FROM aggtest;
+} {3 2 15 7 8 7.5}
+do_execsql_test momjian1-331 {
+  DELETE FROM aggtest;
+  SELECT COUNT(*), COUNT(x), SUM(x), MIN(x), MAX(x), AVG(x) FROM aggtest;
+} {0 0 nil nil nil nil}
+
+do_execsql_test momjian1-340 {
+  DELETE FROM aggtest;
+  INSERT INTO aggtest VALUES (7), (8), (NULL), (NULL);
+  SELECT x, COUNT(*), COUNT(x), SUM(x), MIN(x), MAX(x), AVG(x)
+    FROM aggtest
+   GROUP BY x ORDER BY x;
+} {nil 2 0 nil nil nil nil 7 1 1 7 7 7 7.0 8 1 1 8 8 8 8.0}
+
+do_execsql_test momjian1-350 {
+  SELECT COALESCE(NULL, 0);
+} {0}
+do_execsql_test momjian1-351 {
+  SELECT COALESCE(NULL, 'I am null.');
+} {{I am null.}}
+
+do_execsql_test momjian1-352 {
+  CREATE TABLE nullmaptest(x TEXT);
+  INSERT INTO nullmaptest VALUES ('f'), ('g'), (NULL);
+  SELECT x, COALESCE(x, 'n/a') FROM nullmaptest;
+} {f f g g nil n/a}
+do_execsql_test momjian1-353 {
+  SELECT 'a' || COALESCE(NULL, '') || 'b';
+} {ab}
+do_execsql_test momjian1-354 {
+  SELECT SUM(x), COALESCE(SUM(x), 0) FROM aggtest;
+} {15 15}
+do_execsql_test momjian1-355 {
+  DELETE FROM aggtest;
+  SELECT SUM(x), COALESCE(SUM(x), 0) FROM aggtest;
+} {nil 0}
+
+do_execsql_test momjian1-360 {
+  CREATE TABLE emptytest (x INTEGER);
+  SELECT * from emptytest;
+} {}
+do_execsql_test momjian1-361 {
+  SELECT (SELECT * from emptytest);
+} {nil}
+do_execsql_test momjian1-362 {
+  SELECT (SELECT * from emptytest) IS NULL;
+} {1}
+
+
+finish_test
