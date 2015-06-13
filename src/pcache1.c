@@ -148,8 +148,15 @@ static SQLITE_WSD struct PCacheGlobal {
 /*
 ** Macros to enter and leave the PCache LRU mutex.
 */
-#define pcache1EnterMutex(X) sqlite3_mutex_enter((X)->mutex)
-#define pcache1LeaveMutex(X) sqlite3_mutex_leave((X)->mutex)
+#if !defined(SQLITE_ENABLE_MEMORY_MANAGEMENT) || SQLITE_THREADSAFE==0
+# define pcache1EnterMutex(X)  assert((X)->mutex==0)
+# define pcache1LeaveMutex(X)  assert((X)->mutex==0)
+# define PCACHE1_MIGHT_USE_GROUP_MUTEX 0
+#else
+# define pcache1EnterMutex(X) sqlite3_mutex_enter((X)->mutex)
+# define pcache1LeaveMutex(X) sqlite3_mutex_leave((X)->mutex)
+# define PCACHE1_MIGHT_USE_GROUP_MUTEX 1
+#endif
 
 /******************************************************************************/
 /******** Page Allocation/SQLITE_CONFIG_PCACHE Related Functions **************/
@@ -529,10 +536,12 @@ static int pcache1Init(void *NotUsed){
   UNUSED_PARAMETER(NotUsed);
   assert( pcache1.isInit==0 );
   memset(&pcache1, 0, sizeof(pcache1));
+#if SQLITE_THREADSAFE
   if( sqlite3GlobalConfig.bCoreMutex ){
     pcache1.grp.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_LRU);
     pcache1.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_PMEM);
   }
+#endif
   pcache1.grp.mxPinned = 10;
   pcache1.isInit = 1;
   return SQLITE_OK;
@@ -836,6 +845,7 @@ static PgHdr1 *pcache1FetchNoMutex(
     return 0;
   }
 }
+#if PCACHE1_MIGHT_USE_GROUP_MUTEX
 static PgHdr1 *pcache1FetchWithMutex(
   sqlite3_pcache *p, 
   unsigned int iKey, 
@@ -850,12 +860,15 @@ static PgHdr1 *pcache1FetchWithMutex(
   pcache1LeaveMutex(pCache->pGroup);
   return pPage;
 }
+#endif
 static sqlite3_pcache_page *pcache1Fetch(
   sqlite3_pcache *p, 
   unsigned int iKey, 
   int createFlag
 ){
+#if PCACHE1_MIGHT_USE_GROUP_MUTEX || defined(SQLITE_DEBUG)
   PCache1 *pCache = (PCache1 *)p;
+#endif
 
   assert( offsetof(PgHdr1,page)==0 );
   assert( pCache->bPurgeable || createFlag!=1 );
@@ -863,9 +876,12 @@ static sqlite3_pcache_page *pcache1Fetch(
   assert( pCache->bPurgeable==0 || pCache->nMin==10 );
   assert( pCache->nMin==0 || pCache->bPurgeable );
   assert( pCache->nHash>0 );
+#if PCACHE1_MIGHT_USE_GROUP_MUTEX
   if( pCache->pGroup->mutex ){
     return (sqlite3_pcache_page*)pcache1FetchWithMutex(p, iKey, createFlag);
-  }else{
+  }else
+#endif
+  {
     return (sqlite3_pcache_page*)pcache1FetchNoMutex(p, iKey, createFlag);
   }
 }

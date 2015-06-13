@@ -1,5 +1,5 @@
-C Add\sa\sfast-path\simplementation\sof\spcache1Fetch()\sfor\sthe\scommon\scase\sof\nseparate\scaches\sthat\sdo\snot\suse\sa\smutex.
-D 2015-06-12T13:49:26.780
+C Avoid\sunnecessary\smutex\susage\sin\spcache1,\sfor\sa\ssignificant\sspeedup.
+D 2015-06-13T11:10:55.570
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1063c58075b7400d93326b0eb332b48a54f53025
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -242,7 +242,7 @@ F src/pager.h c3476e7c89cdf1c6914e50a11f3714e30b4e0a77
 F src/parse.y 6d60dda8f8d418b6dc034f1fbccd816c459983a8
 F src/pcache.c 10539fb959849ad6efff80050541cab3d25089d4
 F src/pcache.h b44658c9c932d203510279439d891a2a83e12ba8
-F src/pcache1.c 0324126d981c6db4ba39e0a6b2bf79b690d3107f
+F src/pcache1.c 7ca0caf7ec16c365aff3ddb4a7e00734a0e1fe97
 F src/pragma.c c1f4d012ea9f6b1ce52d341b2cd0ad72d560afd7
 F src/pragma.h b8632d7cdda7b25323fa580e3e558a4f0d4502cc
 F src/prepare.c 82e5db1013846a819f198336fed72c44c974e7b1
@@ -1286,10 +1286,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2e8ad2ead9d146e312c693d9b967bbd5b92429d9
-R 911300e4b1697824e69cfe439e19a5f8
-T *branch * faster-pcache1-fetch
-T *sym-faster-pcache1-fetch *
-T -sym-trunk *
+P 760700edb3ff1f5d6bf3058f874cc8e2808905c7
+R caec30587447e9722ed3cdf5357476d2
 U drh
-Z e8ae5ddb4580a5169c907c35e69dd177
+Z 153683ea51b205873f976242b39879f7
