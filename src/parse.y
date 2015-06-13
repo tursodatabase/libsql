@@ -991,6 +991,8 @@ expr(A) ::= expr(X) NOT NULL(E). {spanUnaryPostfix(&A,pParse,TK_NOTNULL,&X,&E);}
 
 //    expr1 IS expr2
 //    expr1 IS NOT expr2
+//    expr1 IS DISTINCT FROM expr2
+//    expr1 IS NOT DISTINCT FROM expr2
 //
 // If expr2 is NULL then code as TK_ISNULL or TK_NOTNULL.  If expr2
 // is any other expression, code as TK_IS or TK_ISNOT.
@@ -1002,6 +1004,14 @@ expr(A) ::= expr(X) IS expr(Y).     {
 expr(A) ::= expr(X) IS NOT expr(Y). {
   spanBinaryExpr(&A,pParse,TK_ISNOT,&X,&Y);
   binaryToUnaryIfNull(pParse, Y.pExpr, A.pExpr, TK_NOTNULL);
+}
+expr(A) ::= expr(X) IS DISTINCT FROM expr(Y).     {
+  spanBinaryExpr(&A,pParse,TK_ISNOT,&X,&Y);
+  binaryToUnaryIfNull(pParse, Y.pExpr, A.pExpr, TK_NOTNULL);
+}
+expr(A) ::= expr(X) IS NOT DISTINCT FROM expr(Y). {
+  spanBinaryExpr(&A,pParse,TK_IS,&X,&Y);
+  binaryToUnaryIfNull(pParse, Y.pExpr, A.pExpr, TK_ISNULL);
 }
 
 %include {
