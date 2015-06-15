@@ -1,5 +1,5 @@
-C Omit\smutex\scalls\sin\spcache1\swhen\sthe\smutex\sis\sNULL,\sfor\sa\ssignificant\nperformance\simprovement.
-D 2015-06-13T11:19:47.811
+C Comment\stypo\sfix.\s\sNo\scode\schanges.
+D 2015-06-15T10:49:01.943
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1063c58075b7400d93326b0eb332b48a54f53025
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -252,7 +252,7 @@ F src/resolve.c 84c571794e3ee5806274d95158a4c0177c6c4708
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 45a814a755f90c1a6345164d2da4a8ef293da53d
 F src/shell.c 07dda7cd692911d2f22269953418d049f2e2c0ee
-F src/sqlite.h.in d165beeceb6b40af60f352a4d4e37e02d9af7df0
+F src/sqlite.h.in 76d2f5637eb795b6300d9dd3c3ec3632ffafd721
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 2ebeb634e751a61a6f0eebfa0f4669f46a42f6cd
 F src/sqliteInt.h 8f095bfe43ba68c32bac8d5349131ffacc660967
@@ -1286,8 +1286,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2e8ad2ead9d146e312c693d9b967bbd5b92429d9 dcf4fb8d764611de60afea27cda0a8548ba7ca82
-R caec30587447e9722ed3cdf5357476d2
-T +closed dcf4fb8d764611de60afea27cda0a8548ba7ca82
+P caf8f574e5c64da461c6dfba8a06cf3fb18aaa42
+R aba3870768022563ba244dff8ac08eff
 U drh
-Z d83dc113d9069d701eaef24905e6fe62
+Z abfc9d17f4897829cc21d3b706c43334
