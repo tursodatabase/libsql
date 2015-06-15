@@ -737,9 +737,9 @@ static SQLITE_NOINLINE PgHdr1 *pcache1FetchStage2(
   ** attempt to allocate a new one. 
   */
   if( !pPage ){
-    if( createFlag==1 ) sqlite3BeginBenignMalloc();
+    if( createFlag==1 ){ sqlite3BeginBenignMalloc(); }
     pPage = pcache1AllocPage(pCache);
-    if( createFlag==1 ) sqlite3EndBenignMalloc();
+    if( createFlag==1 ){ sqlite3EndBenignMalloc(); }
   }
 
   if( pPage ){
