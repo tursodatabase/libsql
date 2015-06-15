@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings.
-D 2015-06-15T14:43:25.708
+C Fix\sa\sharmless\scomment\stypo.\s\sNo\scode\schanges.
+D 2015-06-15T16:09:35.833
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1063c58075b7400d93326b0eb332b48a54f53025
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -192,7 +192,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c ff743689c4d6c5cb55ad42ed9d174b2b3e71f1e3
 F src/bitvec.c 5eb7958c3bf65210211cbcfc44eff86d0ded7c9d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c e269b13c9ad70177cc24e9506c91705c53f1425b
+F src/btree.c e557af3120ac3e5cea9680ca12688cf26b0222bc
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 973a22a6fd61350b454ad614832b1f0a5e25a1e4
 F src/build.c 6770b74ccb51cb485e81057c625f77455d5ddc06
@@ -1286,7 +1286,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 29bcb56887f862a1f06677a7b4bfae6475d29732
-R 5ad9a69ba3ab157466aa22136a13ce7e
+P b0badb99023e23bef0e2064cec58f2b279af0c0b
+R c7949b921102cce9b301519c2fb02c1a
 U drh
-Z fdade3bbae6ad7299292ad94aabb282b
+Z 103d93c1867cc9ff7fdf7b89d6bdddd9
