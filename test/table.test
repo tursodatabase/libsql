@@ -808,4 +808,20 @@ do_execsql_test table-17.1 {
   SELECT p, q, '|' FROM t3 ORDER BY p;
 } {1 1 | 2 2 |}
 
+# 2015-06-16
+# Ticket [https://www.sqlite.org/src/tktview/873cae2b6e25b1991ce5e9b782f9cd0409b96063]
+# Make sure a CREATE TABLE AS statement correctly rolls back partial changes to the
+# sqlite_master table when the SELECT on the right-hand side aborts.
+#
+do_catchsql_test table-18.1 {
+  DROP TABLE IF EXISTS t1;
+  BEGIN;
+  CREATE TABLE t1 AS SELECT zeroblob(2e20);
+} {1 {string or blob too big}}
+do_execsql_test table-18.2 {
+  COMMIT;
+  PRAGMA integrity_check;
+} {ok}
+
+
 finish_test

@@ -1,5 +1,5 @@
-C Adjust\sICU\stests\sto\saccount\sfor\srecent\schanges\sin\sthe\sofficial\s\nUnicode\sdefinition\sof\swhitespace.
-D 2015-06-15T16:40:38.658
+C Ensure\sthat\sthe\sCREATE\sTABLE\sAS\sstatement\scorrectly\sundoes\spartial\schanges\nto\sthe\ssqlite_master\stable\sif\sthe\sSELECT\son\sthe\sright-hand\sside\saborts\swith\nan\serror.\s\sFix\sfor\sticket\s[873cae2b6e25b]
+D 2015-06-16T16:39:01.822
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1063c58075b7400d93326b0eb332b48a54f53025
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -195,7 +195,7 @@ F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
 F src/btree.c e557af3120ac3e5cea9680ca12688cf26b0222bc
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 973a22a6fd61350b454ad614832b1f0a5e25a1e4
-F src/build.c 6770b74ccb51cb485e81057c625f77455d5ddc06
+F src/build.c b3f15255d5b16e42dafeaa638fd4f8a47c94ed70
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c a5cf5b4b56390cfb7b8636e8f7ddef90258dd575
 F src/ctime.c 5a0b735dc95604766f5dac73973658eef782ee8b
@@ -317,7 +317,7 @@ F src/vdbe.c c9b8985dfc5df9bd512342ea2e56af4be30cb31a
 F src/vdbe.h 90048aea1910f9df93e6044592bd4a466dc9c5e7
 F src/vdbeInt.h 20295e482121d13437f69985f77db211cdc8bac1
 F src/vdbeapi.c 6a0d7757987018ff6b1b81bc5293219cd26bb299
-F src/vdbeaux.c 89c85926ce346988d275132e05ddb0c9681807c2
+F src/vdbeaux.c b4a127630ef81d5ea85346262f38aaf482ece4d9
 F src/vdbeblob.c 4f2e8e075d238392df98c5e03a64342465b03f90
 F src/vdbemem.c 67b302dc6df64b4d6785881c5d22bd4f9b17739d
 F src/vdbesort.c f5009e7a35e3065635d8918b9a31f498a499976b
@@ -943,7 +943,7 @@ F test/superlock.test 1cde669f68d2dd37d6c9bd35eee1d95491ae3fc2
 F test/sync.test a34cd43e98b7fb84eabbf38f7ed8f7349b3f3d85
 F test/syscall.test d2fdaad713f103ac611fe7ef9b724c7b69f8149c
 F test/sysfault.test fa776e60bf46bdd3ae69f0b73e46ee3977a58ae6
-F test/table.test bd841e8df69b99172ce9c7d53587463913d711ca
+F test/table.test 33bf0d1fd07f304582695184b8e6feb017303816
 F test/tableapi.test 2674633fa95d80da917571ebdd759a14d9819126
 F test/tableopts.test dba698ba97251017b7c80d738c198d39ab747930
 F test/tclsqlite.test 7fb866443c7deceed22b63948ccd6f76b52ad054
@@ -1286,7 +1286,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ae6876521819e7a8ce473c8f96617cba35e2156d
-R a07fe181e35e9a94a47adc71c8d7ce80
+P 0816525386ac51454b7b09a507e45b6a2cb8bf6e
+R aac2c97e6c3d9c60b2cdef77f1695ab5
 U drh
-Z bb1a4c355eadbeb14b6625f3b7a90f48
+Z 6de6d20f4ab095b721ee46bcbe62906a
