@@ -1,5 +1,5 @@
-C Make\sgetCellInfo()\sa\sreal\sfunction\sinstead\sof\sa\smacro,\sfor\sa\ssize\sreduction\nand\sa\s0.2%\sperformance\sgain.
-D 2015-06-17T02:11:46.631
+C Performance\soptimization\sand\scomment\sfixes\sfor\sthe\sLIKE\sand\sGLOB\soperators.
+D 2015-06-17T13:20:54.580
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1063c58075b7400d93326b0eb332b48a54f53025
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -205,7 +205,7 @@ F src/delete.c 8857a6f27560718f65d43bdbec86c967ae1f8dfa
 F src/expr.c fbde754df3fa10bbd3a1dcea08e77b0f1684d188
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c c9b63a217d86582c22121699a47f22f524608869
-F src/func.c 5b8b8e77a0fb644eaf8947d413804622e32692b6
+F src/func.c a98ea5880dc50e9ca6dd6f57079a37b9cfcdecf1
 F src/global.c 4f77cadbc5427d00139ba43d0f3979804cbb700e
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
 F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
@@ -1286,7 +1286,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 66d033b9c9a8c16b9a342be0b325bd85b8487c03
-R b009f7bdded8eda946c7f086260f521c
+P 55c393ea14197ae5fa56ebca7a47e7d980511fa7
+R 1acc9fb214636b090a14b1a72649aa22
 U drh
-Z e2dd593dbc0c1057f97a55b340af2663
+Z f92b296584755a34dfd3307b30aabfde
