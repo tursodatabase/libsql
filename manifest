@@ -1,5 +1,5 @@
-C Improve\sspacing\sand\scomment\sstyle\sfor\sthe\sshell.\s\sNo\schanges\sto\scode.
-D 2015-06-17T18:57:37.637
+C Use\s'binary'\smode\sfor\spopen\swith\sMSVC.
+D 2015-06-17T19:06:23.479
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1063c58075b7400d93326b0eb332b48a54f53025
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -251,7 +251,7 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 84c571794e3ee5806274d95158a4c0177c6c4708
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 45a814a755f90c1a6345164d2da4a8ef293da53d
-F src/shell.c 8af3cced094aebb5f57a8ad739b9dafc7867eed7
+F src/shell.c 5ebff868cf3124a484d7b107907589bf4f127f82
 F src/sqlite.h.in 76d2f5637eb795b6300d9dd3c3ec3632ffafd721
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h be1a718b7d2ce40ceba725ae92c8eb5f18003066
@@ -1286,7 +1286,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a7e27d19280048bcfff6d2e796eed72287b9dabe
-R 10ec64cfc3a208bfe24294966a7ab6ac
+P 5b547da00d131a494a6b348339af3d91dfa6e3b6
+R 8612529b13f9ca5434e4332b04ad8958
+T *branch * popenMsvc
+T *sym-popenMsvc *
+T -sym-trunk *
 U mistachkin
-Z 7cf2fc34937c3a0e66c014198502d58b
+Z 113266189542ecf55e5f2a32a4472f5b

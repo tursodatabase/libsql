@@ -109,6 +109,11 @@
 # define popen _popen
 # undef pclose
 # define pclose _pclose
+# if !defined(SQLITE_POPEN_MODE) && defined(_MSC_VER)
+#  define SQLITE_POPEN_MODE "b"
+# else
+#  define SQLITE_POPEN_MODE ""
+# endif
 #else
  /* Make sure isatty() has a prototype. */
  extern int isatty(int);
@@ -118,6 +123,9 @@
   ** sometimes omitted from the <stdio.h> header */
    extern FILE *popen(const char*,const char*);
    extern int pclose(FILE*);
+#  ifndef SQLITE_POPEN_MODE
+#   define SQLITE_POPEN_MODE ""
+#  endif
 # else
 #  define SQLITE_OMIT_POPEN 1
 # endif
@@ -3004,7 +3012,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       fprintf(stderr, "Error: pipes are not supported in this OS\n");
       return 1;
 #else
-      sCtx.in = popen(sCtx.zFile+1, "r");
+      sCtx.in = popen(sCtx.zFile+1, "r" SQLITE_POPEN_MODE);
       sCtx.zFile = "<pipe>";
       xCloser = pclose;
 #endif
@@ -3392,7 +3400,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       rc = 1;
       p->out = stdout;
 #else
-      p->out = popen(zFile + 1, "w");
+      p->out = popen(zFile + 1, "w" SQLITE_POPEN_MODE);
       if( p->out==0 ){
         fprintf(stderr,"Error: cannot open pipe \"%s\"\n", zFile + 1);
         p->out = stdout;
