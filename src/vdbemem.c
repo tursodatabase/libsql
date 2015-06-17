@@ -777,10 +777,15 @@ void sqlite3VdbeMemAboutToChange(Vdbe *pVdbe, Mem *pMem){
 ** pFrom->z is used, then pTo->z points to the same thing as pFrom->z
 ** and flags gets srcType (either MEM_Ephem or MEM_Static).
 */
+static SQLITE_NOINLINE void vdbeClrCopy(Mem *pTo, const Mem *pFrom, int eType){
+  vdbeMemClearExternAndSetNull(pTo);
+  assert( !VdbeMemDynamic(pTo) );
+  sqlite3VdbeMemShallowCopy(pTo, pFrom, eType);
+}
 void sqlite3VdbeMemShallowCopy(Mem *pTo, const Mem *pFrom, int srcType){
   assert( (pFrom->flags & MEM_RowSet)==0 );
   assert( pTo->db==pFrom->db );
-  if( VdbeMemDynamic(pTo) ) vdbeMemClearExternAndSetNull(pTo);
+  if( VdbeMemDynamic(pTo) ){ vdbeClrCopy(pTo,pFrom,srcType); return; }
   memcpy(pTo, pFrom, MEMCELLSIZE);
   if( (pFrom->flags&MEM_Static)==0 ){
     pTo->flags &= ~(MEM_Dyn|MEM_Static|MEM_Ephem);

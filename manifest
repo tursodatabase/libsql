@@ -1,5 +1,5 @@
-C Improve\sspacing\sand\scomment\sstyle\sfor\sthe\sshell.\s\sNo\schanges\sto\scode.
-D 2015-06-17T18:57:37.637
+C Performance\simprovement\sin\ssqlite3VdbeMemShallowCopy()\sfor\sthe\scommon\ncase\swhere\sthe\sreceiver\sdoes\snot\srequire\sprior\sresource\sdeallocation.
+D 2015-06-17T23:28:03.205
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1063c58075b7400d93326b0eb332b48a54f53025
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -319,7 +319,7 @@ F src/vdbeInt.h 20295e482121d13437f69985f77db211cdc8bac1
 F src/vdbeapi.c 6a0d7757987018ff6b1b81bc5293219cd26bb299
 F src/vdbeaux.c 4c82d6f686f72ea7d266d26d528a171b728626f7
 F src/vdbeblob.c 4f2e8e075d238392df98c5e03a64342465b03f90
-F src/vdbemem.c 15c5ca36201efc5a603e6eb3786e09bec08b9a64
+F src/vdbemem.c 4e947cd322bb531e3f7f6f58f0f536d182b38ef8
 F src/vdbesort.c f5009e7a35e3065635d8918b9a31f498a499976b
 F src/vdbetrace.c 8befe829faff6d9e6f6e4dee5a7d3f85cc85f1a0
 F src/vtab.c c535e80259ebe616467181a83a4263555b97c694
@@ -1286,7 +1286,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a7e27d19280048bcfff6d2e796eed72287b9dabe
-R 10ec64cfc3a208bfe24294966a7ab6ac
-U mistachkin
-Z 7cf2fc34937c3a0e66c014198502d58b
+P 5b547da00d131a494a6b348339af3d91dfa6e3b6
+R 8b11dda5b48978322f8411a0ee077b21
+U drh
+Z c4d66c4cd049a599b9f894238778087c
