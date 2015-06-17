@@ -3354,9 +3354,8 @@ static int do_meta_command(char *zLine, ShellState *p){
     const char *zSavedFilename = p->zDbFilename;
     char *zNewFilename = 0;
     p->db = 0;
-    if( nArg>=2 ){
-      p->zDbFilename = zNewFilename = sqlite3_mprintf("%s", azArg[1]);
-    }
+    if( nArg>=2 ) zNewFilename = sqlite3_mprintf("%s", azArg[1]);
+    p->zDbFilename = zNewFilename;
     open_db(p, 1);
     if( p->db!=0 ){
       sqlite3_close(savedDb);

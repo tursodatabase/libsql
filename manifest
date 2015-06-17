@@ -1,5 +1,5 @@
-C Performance\soptimization\sand\scomment\sfixes\sfor\sthe\sLIKE\sand\sGLOB\soperators.
-D 2015-06-17T13:20:54.580
+C Fix\sa\suninitialized\svariable\suse\sin\sthe\scommand-line\sshell\swhen\sthe\n".open"\scommand\sis\sinvoked\swithout\sany\sarguments.
+D 2015-06-17T17:08:22.680
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1063c58075b7400d93326b0eb332b48a54f53025
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -251,7 +251,7 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 84c571794e3ee5806274d95158a4c0177c6c4708
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 45a814a755f90c1a6345164d2da4a8ef293da53d
-F src/shell.c ae5c3985a6d2173563f37a459f8e68fd6eaad4f4
+F src/shell.c 69c9ca4dba7a33dc70a1bc46ee3ddd70449e969a
 F src/sqlite.h.in 76d2f5637eb795b6300d9dd3c3ec3632ffafd721
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h be1a718b7d2ce40ceba725ae92c8eb5f18003066
@@ -1286,7 +1286,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 55c393ea14197ae5fa56ebca7a47e7d980511fa7
-R 1acc9fb214636b090a14b1a72649aa22
+P c89d772628564a808173f6f73bc1798ec714276b
+R 2be138dcb45d5c718e3a818150a1ac69
 U drh
-Z f92b296584755a34dfd3307b30aabfde
+Z 1c763b619a4c5a5f5f6d672aa5693e42
