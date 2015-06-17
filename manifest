@@ -1,5 +1,5 @@
-C Fix\sa\suninitialized\svariable\suse\sin\sthe\scommand-line\sshell\swhen\sthe\n".open"\scommand\sis\sinvoked\swithout\sany\sarguments.
-D 2015-06-17T17:08:22.680
+C Improved\scomments\son\sthe\sfuzzcheck.c\stest\sprogram.\s\sNo\schanges\sto\scode.
+D 2015-06-17T18:24:40.654
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1063c58075b7400d93326b0eb332b48a54f53025
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -657,7 +657,7 @@ F test/fuzz2.test 76dc35b32b6d6f965259508508abce75a6c4d7e1
 F test/fuzz3.test efd384b896c647b61a2c1848ba70d42aad60a7b3
 F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
 F test/fuzz_malloc.test 328f70aaca63adf29b4c6f06505ed0cf57ca7c26
-F test/fuzzcheck.c a60f926e3fa86c8d33908406d75eec868c22b9ca
+F test/fuzzcheck.c 5805b2236292f8643d56e727a3a6e4d88e0856a5
 F test/fuzzdata1.db b60254eeb6bc11474071b883059662a73c48da7f
 F test/fuzzdata2.db f03a420d3b822cc82e4f894ca957618fbe9c4973
 F test/fuzzdata3.db f4ca6fa92973501cec63ac5d1992ef88f6a78e7f
@@ -1286,7 +1286,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c89d772628564a808173f6f73bc1798ec714276b
-R 2be138dcb45d5c718e3a818150a1ac69
+P fc4f4d1eccec2e09b5d2e6c4da082204f4d5a016
+R c899e9b20cb2a89272908946dedc2b9a
 U drh
-Z 1c763b619a4c5a5f5f6d672aa5693e42
+Z 2e60edd59a1d27a41fd4904a20b823dc
