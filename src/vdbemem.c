@@ -946,6 +946,32 @@ int sqlite3VdbeMemSetStr(
 ** If this routine fails for any reason (malloc returns NULL or unable
 ** to read from the disk) then the pMem is left in an inconsistent state.
 */
+static SQLITE_NOINLINE int vdbeMemFromBtreeResize(
+  BtCursor *pCur,   /* Cursor pointing at record to retrieve. */
+  u32 offset,       /* Offset from the start of data to return bytes from. */
+  u32 amt,          /* Number of bytes to return. */
+  int key,          /* If true, retrieve from the btree key, not data. */
+  Mem *pMem         /* OUT: Return data in this Mem structure. */
+){
+  int rc;
+  pMem->flags = MEM_Null;
+  if( SQLITE_OK==(rc = sqlite3VdbeMemClearAndResize(pMem, amt+2)) ){
+    if( key ){
+      rc = sqlite3BtreeKey(pCur, offset, amt, pMem->z);
+    }else{
+      rc = sqlite3BtreeData(pCur, offset, amt, pMem->z);
+    }
+    if( rc==SQLITE_OK ){
+      pMem->z[amt] = 0;
+      pMem->z[amt+1] = 0;
+      pMem->flags = MEM_Blob|MEM_Term;
+      pMem->n = (int)amt;
+    }else{
+      sqlite3VdbeMemRelease(pMem);
+    }
+  }
+  return rc;
+}
 int sqlite3VdbeMemFromBtree(
   BtCursor *pCur,   /* Cursor pointing at record to retrieve. */
   u32 offset,       /* Offset from the start of data to return bytes from. */
@@ -975,22 +1001,7 @@ int sqlite3VdbeMemFromBtree(
     pMem->flags = MEM_Blob|MEM_Ephem;
     pMem->n = (int)amt;
   }else{
-    pMem->flags = MEM_Null;
-    if( SQLITE_OK==(rc = sqlite3VdbeMemClearAndResize(pMem, amt+2)) ){
-      if( key ){
-        rc = sqlite3BtreeKey(pCur, offset, amt, pMem->z);
-      }else{
-        rc = sqlite3BtreeData(pCur, offset, amt, pMem->z);
-      }
-      if( rc==SQLITE_OK ){
-        pMem->z[amt] = 0;
-        pMem->z[amt+1] = 0;
-        pMem->flags = MEM_Blob|MEM_Term;
-        pMem->n = (int)amt;
-      }else{
-        sqlite3VdbeMemRelease(pMem);
-      }
-    }
+    rc = vdbeMemFromBtreeResize(pCur, offset, amt, key, pMem);
   }
 
   return rc;

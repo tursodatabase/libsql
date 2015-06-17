@@ -1241,12 +1241,11 @@ void sqlite3VdbeEnter(Vdbe *p){
 /*
 ** Unlock all of the btrees previously locked by a call to sqlite3VdbeEnter().
 */
-void sqlite3VdbeLeave(Vdbe *p){
+static SQLITE_NOINLINE void vdbeLeave(Vdbe *p){
   int i;
   sqlite3 *db;
   Db *aDb;
   int nDb;
-  if( DbMaskAllZero(p->lockMask) ) return;  /* The common case */
   db = p->db;
   aDb = db->aDb;
   nDb = db->nDb;
@@ -1255,6 +1254,10 @@ void sqlite3VdbeLeave(Vdbe *p){
       sqlite3BtreeLeave(aDb[i].pBt);
     }
   }
+}
+void sqlite3VdbeLeave(Vdbe *p){
+  if( DbMaskAllZero(p->lockMask) ) return;  /* The common case */
+  vdbeLeave(p);
 }
 #endif
 

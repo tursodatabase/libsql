@@ -1,5 +1,5 @@
-C Ensure\sthat\sthe\sCREATE\sTABLE\sAS\sstatement\scorrectly\sundoes\spartial\schanges\nto\sthe\ssqlite_master\stable\sif\sthe\sSELECT\son\sthe\sright-hand\sside\saborts\swith\nan\serror.\s\sFix\sfor\sticket\s[873cae2b6e25b]
-D 2015-06-16T16:39:01.822
+C Optimizations\sto\stwo\sVDBE\saccessory\sroutines\sfor\sa\s0.2%\sperformance\sincrease.
+D 2015-06-17T01:31:28.018
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1063c58075b7400d93326b0eb332b48a54f53025
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -317,9 +317,9 @@ F src/vdbe.c c9b8985dfc5df9bd512342ea2e56af4be30cb31a
 F src/vdbe.h 90048aea1910f9df93e6044592bd4a466dc9c5e7
 F src/vdbeInt.h 20295e482121d13437f69985f77db211cdc8bac1
 F src/vdbeapi.c 6a0d7757987018ff6b1b81bc5293219cd26bb299
-F src/vdbeaux.c b4a127630ef81d5ea85346262f38aaf482ece4d9
+F src/vdbeaux.c 4c82d6f686f72ea7d266d26d528a171b728626f7
 F src/vdbeblob.c 4f2e8e075d238392df98c5e03a64342465b03f90
-F src/vdbemem.c 67b302dc6df64b4d6785881c5d22bd4f9b17739d
+F src/vdbemem.c 15c5ca36201efc5a603e6eb3786e09bec08b9a64
 F src/vdbesort.c f5009e7a35e3065635d8918b9a31f498a499976b
 F src/vdbetrace.c 8befe829faff6d9e6f6e4dee5a7d3f85cc85f1a0
 F src/vtab.c c535e80259ebe616467181a83a4263555b97c694
@@ -1286,7 +1286,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0816525386ac51454b7b09a507e45b6a2cb8bf6e
-R aac2c97e6c3d9c60b2cdef77f1695ab5
+P 400e025e7c61efab71b891743c07a0862e5bb934
+R d6ec7bd1e825895971b1bb96fc6c1218
 U drh
-Z 6de6d20f4ab095b721ee46bcbe62906a
+Z dd5ab0f28ac99d3509e4690cbccf7594
