@@ -1441,7 +1441,7 @@ static int freeSpace(MemPage *pPage, u16 iStart, u16 iSize){
   
     /* At this point:
     **    iFreeBlk:   First freeblock after iStart, or zero if none
-    **    iPtr:       The address of a pointer iFreeBlk
+    **    iPtr:       The address of a pointer to iFreeBlk
     **
     ** Check to see if iFreeBlk should be coalesced onto the end of iStart.
     */
@@ -1449,6 +1449,7 @@ static int freeSpace(MemPage *pPage, u16 iStart, u16 iSize){
       nFrag = iFreeBlk - iEnd;
       if( iEnd>iFreeBlk ) return SQLITE_CORRUPT_BKPT;
       iEnd = iFreeBlk + get2byte(&data[iFreeBlk+2]);
+      if( iEnd > pPage->pBt->usableSize ) return SQLITE_CORRUPT_BKPT;
       iSize = iEnd - iStart;
       iFreeBlk = get2byte(&data[iFreeBlk]);
     }
@@ -3984,13 +3985,6 @@ int sqlite3BtreeCloseCursor(BtCursor *pCur){
 **
 ** BtCursor.info is a cache of the information in the current cell.
 ** Using this cache reduces the number of calls to btreeParseCell().
-**
-** 2007-06-25:  There is a bug in some versions of MSVC that cause the
-** compiler to crash when getCellInfo() is implemented as a macro.
-** But there is a measureable speed advantage to using the macro on gcc
-** (when less compiler optimizations like -Os or -O0 are used and the
-** compiler is not doing aggressive inlining.)  So we use a real function
-** for MSVC and a macro for everything else.  Ticket #2457.
 */
 #ifndef NDEBUG
   static void assertCellInfo(BtCursor *pCur){
@@ -4003,28 +3997,15 @@ int sqlite3BtreeCloseCursor(BtCursor *pCur){
 #else
   #define assertCellInfo(x)
 #endif
-#ifdef _MSC_VER
-  /* Use a real function in MSVC to work around bugs in that compiler. */
-  static void getCellInfo(BtCursor *pCur){
-    if( pCur->info.nSize==0 ){
-      int iPage = pCur->iPage;
-      btreeParseCell(pCur->apPage[iPage],pCur->aiIdx[iPage],&pCur->info);
-      pCur->curFlags |= BTCF_ValidNKey;
-    }else{
-      assertCellInfo(pCur);
-    }
+static SQLITE_NOINLINE void getCellInfo(BtCursor *pCur){
+  if( pCur->info.nSize==0 ){
+    int iPage = pCur->iPage;
+    pCur->curFlags |= BTCF_ValidNKey;
+    btreeParseCell(pCur->apPage[iPage],pCur->aiIdx[iPage],&pCur->info);
+  }else{
+    assertCellInfo(pCur);
   }
-#else /* if not _MSC_VER */
-  /* Use a macro in all other compilers so that the function is inlined */
-#define getCellInfo(pCur)                                                      \
-  if( pCur->info.nSize==0 ){                                                   \
-    int iPage = pCur->iPage;                                                   \
-    btreeParseCell(pCur->apPage[iPage],pCur->aiIdx[iPage],&pCur->info);        \
-    pCur->curFlags |= BTCF_ValidNKey;                                          \
-  }else{                                                                       \
-    assertCellInfo(pCur);                                                      \
-  }
-#endif /* _MSC_VER */
+}
 
 #ifndef NDEBUG  /* The next routine used only within assert() statements */
 /*

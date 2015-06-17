@@ -2103,9 +2103,11 @@ int sqlite3TempInMemory(const sqlite3 *db){
   return ( db->temp_store!=1 );
 #endif
 #if SQLITE_TEMP_STORE==3
+  UNUSED_PARAMETER(db);
   return 1;
 #endif
 #if SQLITE_TEMP_STORE<1 || SQLITE_TEMP_STORE>3
+  UNUSED_PARAMETER(db);
   return 0;
 #endif
 }
@@ -3377,7 +3379,9 @@ int sqlite3_file_control(sqlite3 *db, const char *zDbName, int op, void *pArg){
 */
 int sqlite3_test_control(int op, ...){
   int rc = 0;
-#ifndef SQLITE_OMIT_BUILTIN_TEST
+#ifdef SQLITE_OMIT_BUILTIN_TEST
+  UNUSED_PARAMETER(op);
+#else
   va_list ap;
   va_start(ap, op);
   switch( op ){

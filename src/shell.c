@@ -1348,7 +1348,10 @@ static void display_scanstats(
   sqlite3 *db,                    /* Database to query */
   ShellState *pArg                /* Pointer to ShellState */
 ){
-#ifdef SQLITE_ENABLE_STMT_SCANSTATUS
+#ifndef SQLITE_ENABLE_STMT_SCANSTATUS
+  UNUSED_PARAMETER(db);
+  UNUSED_PARAMETER(pArg);
+#else
   int i, k, n, mx;
   fprintf(pArg->out, "-------- scanstats --------\n");
   mx = 0;
@@ -1910,6 +1913,7 @@ static void readfileFunc(
   long nIn;
   void *pBuf;
 
+  UNUSED_PARAMETER(argc);
   zName = (const char*)sqlite3_value_text(argv[0]);
   if( zName==0 ) return;
   in = fopen(zName, "rb");
@@ -1942,6 +1946,7 @@ static void writefileFunc(
   sqlite3_int64 rc;
   const char *zFile;
 
+  UNUSED_PARAMETER(argc);
   zFile = (const char*)sqlite3_value_text(argv[0]);
   if( zFile==0 ) return;
   out = fopen(zFile, "wb");
@@ -2666,7 +2671,7 @@ static int shell_dbinfo_command(ShellState *p, int nArg, char **azArg){
   fprintf(p->out, "%-20s %d\n", "write format:", aHdr[18]);
   fprintf(p->out, "%-20s %d\n", "read format:", aHdr[19]);
   fprintf(p->out, "%-20s %d\n", "reserved bytes:", aHdr[20]);
-  for(i=0; i<sizeof(aField)/sizeof(aField[0]); i++){
+  for(i=0; i<ArraySize(aField); i++){
     int ofst = aField[i].ofst;
     unsigned int val = get4byteInt(aHdr + ofst);
     fprintf(p->out, "%-20s %u", aField[i].zName, val);
@@ -2686,7 +2691,7 @@ static int shell_dbinfo_command(ShellState *p, int nArg, char **azArg){
   }else{
     zSchemaTab = sqlite3_mprintf("\"%w\".sqlite_master", zDb);
   }
-  for(i=0; i<sizeof(aQuery)/sizeof(aQuery[0]); i++){
+  for(i=0; i<ArraySize(aQuery); i++){
     char *zSql = sqlite3_mprintf(aQuery[i].zSql, zSchemaTab);
     int val = db_int(p, zSql);
     sqlite3_free(zSql);
@@ -3317,7 +3322,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     int i, n2;
     open_db(p, 0);
     if( nArg==1 ){
-      for(i=0; i<sizeof(aLimit)/sizeof(aLimit[0]); i++){
+      for(i=0; i<ArraySize(aLimit); i++){
         printf("%20s %d\n", aLimit[i].zLimitName, 
                sqlite3_limit(p->db, aLimit[i].limitCode, -1));
       }
@@ -3328,7 +3333,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     }else{
       int iLimit = -1;
       n2 = strlen30(azArg[1]);
-      for(i=0; i<sizeof(aLimit)/sizeof(aLimit[0]); i++){
+      for(i=0; i<ArraySize(aLimit); i++){
         if( sqlite3_strnicmp(aLimit[i].zLimitName, azArg[1], n2)==0 ){
           if( iLimit<0 ){
             iLimit = i;
@@ -3438,9 +3443,8 @@ static int do_meta_command(char *zLine, ShellState *p){
     const char *zSavedFilename = p->zDbFilename;
     char *zNewFilename = 0;
     p->db = 0;
-    if( nArg>=2 ){
-      p->zDbFilename = zNewFilename = sqlite3_mprintf("%s", azArg[1]);
-    }
+    if( nArg>=2 ) zNewFilename = sqlite3_mprintf("%s", azArg[1]);
+    p->zDbFilename = zNewFilename;
     open_db(p, 1);
     if( p->db!=0 ){
       session_close_all(p);
@@ -4096,7 +4100,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     /* convert testctrl text option to value. allow any unique prefix
     ** of the option name, or a numerical value. */
     n2 = strlen30(azArg[1]);
-    for(i=0; i<(int)(sizeof(aCtrl)/sizeof(aCtrl[0])); i++){
+    for(i=0; i<ArraySize(aCtrl); i++){
       if( strncmp(azArg[1], aCtrl[i].zCtrlName, n2)==0 ){
         if( testctrl<0 ){
           testctrl = aCtrl[i].ctrlCode;
@@ -5073,7 +5077,7 @@ int SQLITE_CDECL main(int argc, char **argv){
           sqlite3_snprintf(nHistory, zHistory,"%s/.sqlite_history", zHome);
         }
       }
-      if( zHistory ) shell_read_history(zHistory);
+      if( zHistory ){ shell_read_history(zHistory); }
       rc = process_input(&data, 0);
       if( zHistory ){
         shell_stifle_history(100);

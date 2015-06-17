@@ -575,17 +575,15 @@ struct compareInfo {
 
 /*
 ** For LIKE and GLOB matching on EBCDIC machines, assume that every
-** character is exactly one byte in size.  Also, all characters are
-** able to participate in upper-case-to-lower-case mappings in EBCDIC
-** whereas only characters less than 0x80 do in ASCII.
+** character is exactly one byte in size.  Also, provde the Utf8Read()
+** macro for fast reading of the next character in the common case where
+** the next character is ASCII.
 */
 #if defined(SQLITE_EBCDIC)
 # define sqlite3Utf8Read(A)        (*((*A)++))
-# define GlobUpperToLower(A)       A = sqlite3UpperToLower[A]
-# define GlobUpperToLowerAscii(A)  A = sqlite3UpperToLower[A]
+# define Utf8Read(A)               (*(A++))
 #else
-# define GlobUpperToLower(A)       if( A<=0x7f ){ A = sqlite3UpperToLower[A]; }
-# define GlobUpperToLowerAscii(A)  A = sqlite3UpperToLower[A]
+# define Utf8Read(A)               (A[0]<0x80?*(A++):sqlite3Utf8Read(&A))
 #endif
 
 static const struct compareInfo globInfo = { '*', '?', '[', 0 };
@@ -627,7 +625,7 @@ static const struct compareInfo likeInfoAlt = { '%', '_',   0, 0 };
 **      Ec        Where E is the "esc" character and c is any other
 **                character, including '%', '_', and esc, match exactly c.
 **
-** The comments through this routine usually assume glob matching.
+** The comments within this routine usually assume glob matching.
 **
 ** This routine is usually quick, but can be N**2 in the worst case.
 */
@@ -651,13 +649,12 @@ static int patternCompare(
   */
   matchOther = esc ? esc : pInfo->matchSet;
 
-  while( (c = sqlite3Utf8Read(&zPattern))!=0 ){
+  while( (c = Utf8Read(zPattern))!=0 ){
     if( c==matchAll ){  /* Match "*" */
       /* Skip over multiple "*" characters in the pattern.  If there
       ** are also "?" characters, skip those as well, but consume a
       ** single character of the input string for each "?" skipped */
-      while( (c=sqlite3Utf8Read(&zPattern)) == matchAll
-               || c == matchOne ){
+      while( (c=Utf8Read(zPattern)) == matchAll || c == matchOne ){
         if( c==matchOne && sqlite3Utf8Read(&zString)==0 ){
           return 0;
         }
@@ -702,7 +699,7 @@ static int patternCompare(
           if( patternCompare(zPattern,zString,pInfo,esc) ) return 1;
         }
       }else{
-        while( (c2 = sqlite3Utf8Read(&zString))!=0 ){
+        while( (c2 = Utf8Read(zString))!=0 ){
           if( c2!=c ) continue;
           if( patternCompare(zPattern,zString,pInfo,esc) ) return 1;
         }
@@ -748,7 +745,7 @@ static int patternCompare(
         continue;
       }
     }
-    c2 = sqlite3Utf8Read(&zString);
+    c2 = Utf8Read(zString);
     if( c==c2 ) continue;
     if( noCase && c<0x80 && c2<0x80 && sqlite3Tolower(c)==sqlite3Tolower(c2) ){
       continue;

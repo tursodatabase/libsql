@@ -402,7 +402,10 @@ static const sqlite3_api_routines sqlite3Apis = {
   sqlite3_reset_auto_extension,
   sqlite3_result_blob64,
   sqlite3_result_text64,
-  sqlite3_strglob
+  sqlite3_strglob,
+  /* Version 3.8.11 and later */
+  (sqlite3_value*(*)(const sqlite3_value*))sqlite3_value_dup,
+  sqlite3_value_free
 };
 
 /*

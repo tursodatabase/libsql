@@ -235,6 +235,23 @@ int sqlite3VdbeAddOp4(
 }
 
 /*
+** Add an opcode that includes the p4 value with a P4_INT64 type.
+*/
+int sqlite3VdbeAddOp4Dup8(
+  Vdbe *p,            /* Add the opcode to this VM */
+  int op,             /* The new opcode */
+  int p1,             /* The P1 operand */
+  int p2,             /* The P2 operand */
+  int p3,             /* The P3 operand */
+  const u8 *zP4,      /* The P4 operand */
+  int p4type          /* P4 operand type */
+){
+  char *p4copy = sqlite3DbMallocRaw(sqlite3VdbeDb(p), 8);
+  if( p4copy ) memcpy(p4copy, zP4, 8);
+  return sqlite3VdbeAddOp4(p, op, p1, p2, p3, p4copy, p4type);
+}
+
+/*
 ** Add an OP_ParseSchema opcode.  This routine is broken out from
 ** sqlite3VdbeAddOp4() since it needs to also needs to mark all btrees
 ** as having been used.
@@ -398,6 +415,7 @@ static Op *opIterNext(VdbeOpIter *p){
 **   *  OP_VUpdate
 **   *  OP_VRename
 **   *  OP_FkCounter with P2==0 (immediate foreign key constraint)
+**   *  OP_CreateTable and OP_InitCoroutine (for CREATE TABLE AS SELECT ...)
 **
 ** Then check that the value of Parse.mayAbort is true if an
 ** ABORT may be thrown, or false otherwise. Return true if it does
@@ -409,6 +427,8 @@ static Op *opIterNext(VdbeOpIter *p){
 int sqlite3VdbeAssertMayAbort(Vdbe *v, int mayAbort){
   int hasAbort = 0;
   int hasFkCounter = 0;
+  int hasCreateTable = 0;
+  int hasInitCoroutine = 0;
   Op *pOp;
   VdbeOpIter sIter;
   memset(&sIter, 0, sizeof(sIter));
@@ -423,6 +443,8 @@ int sqlite3VdbeAssertMayAbort(Vdbe *v, int mayAbort){
       hasAbort = 1;
       break;
     }
+    if( opcode==OP_CreateTable ) hasCreateTable = 1;
+    if( opcode==OP_InitCoroutine ) hasInitCoroutine = 1;
 #ifndef SQLITE_OMIT_FOREIGN_KEY
     if( opcode==OP_FkCounter && pOp->p1==0 && pOp->p2==1 ){
       hasFkCounter = 1;
@@ -436,7 +458,8 @@ int sqlite3VdbeAssertMayAbort(Vdbe *v, int mayAbort){
   ** through all opcodes and hasAbort may be set incorrectly. Return
   ** true for this case to prevent the assert() in the callers frame
   ** from failing.  */
-  return ( v->db->mallocFailed || hasAbort==mayAbort || hasFkCounter );
+  return ( v->db->mallocFailed || hasAbort==mayAbort || hasFkCounter
+              || (hasCreateTable && hasInitCoroutine) );
 }
 #endif /* SQLITE_DEBUG - the sqlite3AssertMayAbort() function */
 
@@ -1219,12 +1242,11 @@ void sqlite3VdbeEnter(Vdbe *p){
 /*
 ** Unlock all of the btrees previously locked by a call to sqlite3VdbeEnter().
 */
-void sqlite3VdbeLeave(Vdbe *p){
+static SQLITE_NOINLINE void vdbeLeave(Vdbe *p){
   int i;
   sqlite3 *db;
   Db *aDb;
   int nDb;
-  if( DbMaskAllZero(p->lockMask) ) return;  /* The common case */
   db = p->db;
   aDb = db->aDb;
   nDb = db->nDb;
@@ -1233,6 +1255,10 @@ void sqlite3VdbeLeave(Vdbe *p){
       sqlite3BtreeLeave(aDb[i].pBt);
     }
   }
+}
+void sqlite3VdbeLeave(Vdbe *p){
+  if( DbMaskAllZero(p->lockMask) ) return;  /* The common case */
+  vdbeLeave(p);
 }
 #endif
 

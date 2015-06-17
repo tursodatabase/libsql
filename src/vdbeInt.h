@@ -83,6 +83,9 @@ struct VdbeCursor {
   i64 seqCount;         /* Sequence counter */
   i64 movetoTarget;     /* Argument to the deferred sqlite3BtreeMoveto() */
   VdbeSorter *pSorter;  /* Sorter object for OP_SorterOpen cursors */
+#ifdef SQLITE_ENABLE_COLUMN_USED_MASK
+  u64 maskUsed;         /* Mask of columns used by this cursor */
+#endif
 
   /* Cached information about the header for the data record that the
   ** cursor is currently pointing to.  Only valid if cacheStatus matches

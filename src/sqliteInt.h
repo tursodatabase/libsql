@@ -3078,7 +3078,9 @@ int sqlite3CantopenError(int);
 # define sqlite3Isxdigit(x)  isxdigit((unsigned char)(x))
 # define sqlite3Tolower(x)   tolower((unsigned char)(x))
 #endif
+#ifndef SQLITE_OMIT_COMPILEOPTION_DIAGS
 int sqlite3IsIdChar(u8);
+#endif
 
 /*
 ** Internal function prototypes
@@ -3106,7 +3108,9 @@ void sqlite3ScratchFree(void*);
 void *sqlite3PageMalloc(int);
 void sqlite3PageFree(void*);
 void sqlite3MemSetDefault(void);
+#ifndef SQLITE_OMIT_BUILTIN_TEST
 void sqlite3BenignMallocHooks(void (*)(void), void (*)(void));
+#endif
 int sqlite3HeapNearlyFull(void);
 
 /*
@@ -3250,7 +3254,9 @@ int sqlite3BitvecSet(Bitvec*, u32);
 void sqlite3BitvecClear(Bitvec*, u32, void*);
 void sqlite3BitvecDestroy(Bitvec*);
 u32 sqlite3BitvecSize(Bitvec*);
+#ifndef SQLITE_OMIT_BUILTIN_TEST
 int sqlite3BitvecBuiltinTest(int,int*);
+#endif
 
 RowSet *sqlite3RowSetInit(sqlite3*, void*, unsigned int);
 void sqlite3RowSetClear(RowSet*);
@@ -3355,8 +3361,10 @@ void sqlite3ExprAnalyzeAggregates(NameContext*, Expr*);
 void sqlite3ExprAnalyzeAggList(NameContext*,ExprList*);
 int sqlite3FunctionUsesThisSrc(Expr*, SrcList*);
 Vdbe *sqlite3GetVdbe(Parse*);
+#ifndef SQLITE_OMIT_BUILTIN_TEST
 void sqlite3PrngSaveState(void);
 void sqlite3PrngRestoreState(void);
+#endif
 void sqlite3RollbackAll(sqlite3*,int);
 void sqlite3CodeVerifySchema(Parse*, int);
 void sqlite3CodeVerifyNamedSchema(Parse*, const char *zDb);
