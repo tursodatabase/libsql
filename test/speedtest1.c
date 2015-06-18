@@ -306,7 +306,7 @@ static void printSql(const char *zSql){
   if( g.bExplain ) printf("EXPLAIN ");
   printf("%.*s;\n", n, zSql);
   if( g.bExplain
-#if SQLITE_VERSION_NUMBER>=3007010 
+#if SQLITE_VERSION_NUMBER>=3007017 
    && ( sqlite3_strglob("CREATE *", zSql)==0
      || sqlite3_strglob("DROP *", zSql)==0
      || sqlite3_strglob("ALTER *", zSql)==0
@@ -374,12 +374,15 @@ void speedtest1_run(void){
       }
     }
   }
+#if SQLITE_VERSION_NUMBER>=3006001
   if( g.bReprepare ){
     sqlite3_stmt *pNew;
     sqlite3_prepare_v2(g.db, sqlite3_sql(g.pStmt), -1, &pNew, 0);
     sqlite3_finalize(g.pStmt);
     g.pStmt = pNew;
-  }else{
+  }else
+#endif
+  {
     sqlite3_reset(g.pStmt);
   }
 }
@@ -1273,6 +1276,7 @@ int main(int argc, char **argv){
     fatal_error(zHelp, argv[0]);
   }
 #endif
+#if SQLITE_VERSION_NUMBER>=3006001
   if( nHeap>0 ){
     pHeap = malloc( nHeap );
     if( pHeap==0 ) fatal_error("cannot allocate %d-byte heap\n", nHeap);
@@ -1296,16 +1300,19 @@ int main(int argc, char **argv){
   if( nLook>0 ){
     sqlite3_config(SQLITE_CONFIG_LOOKASIDE, 0, 0);
   }
+#endif
  
   /* Open the database and the input file */
   if( sqlite3_open(zDbName, &g.db) ){
     fatal_error("Cannot open database file: %s\n", zDbName);
   }
+#if SQLITE_VERSION_NUMBER>=3006001
   if( nLook>0 && szLook>0 ){
     pLook = malloc( nLook*szLook );
     rc = sqlite3_db_config(g.db, SQLITE_DBCONFIG_LOOKASIDE, pLook, szLook,nLook);
     if( rc ) fatal_error("lookaside configuration failed: %d\n", rc);
   }
+#endif
 
   /* Set database connection options */
   sqlite3_create_function(g.db, "random", 0, SQLITE_UTF8, 0, randomFunc, 0, 0);
@@ -1387,6 +1394,7 @@ int main(int argc, char **argv){
 
   sqlite3_close(g.db);
 
+#if SQLITE_VERSION_NUMBER>=3006001
   /* Global memory usage statistics printed after the database connection
   ** has closed.  Memory usage should be zero at this point. */
   if( showStats ){
@@ -1407,6 +1415,7 @@ int main(int argc, char **argv){
     sqlite3_status(SQLITE_STATUS_SCRATCH_SIZE, &iCur, &iHi, 0);
     printf("-- Largest Scratch Allocation:  %d bytes\n", iHi);
   }
+#endif
 
   /* Release memory */
   free( pLook );
