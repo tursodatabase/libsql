@@ -43,6 +43,9 @@ static const char zHelp[] =
 #include <string.h>
 #include <ctype.h>
 
+#if SQLITE_VERSION_NUMBER<3005000
+# define sqlite3_int64 sqlite_int64
+#endif
 #ifdef SQLITE_ENABLE_OTA
 # include "sqlite3ota.h"
 #endif
@@ -143,6 +146,9 @@ static int integerValue(const char *zArg){
 
 /* Return the current wall-clock time, in milliseconds */
 sqlite3_int64 speedtest1_timestamp(void){
+#if SQLITE_VERSION_NUMBER<3005000
+  return 0;
+#else
   static sqlite3_vfs *clockVfs = 0;
   sqlite3_int64 t;
   if( clockVfs==0 ) clockVfs = sqlite3_vfs_find(0);
@@ -157,6 +163,7 @@ sqlite3_int64 speedtest1_timestamp(void){
     t = (sqlite3_int64)(r*86400000.0);
   }
   return t;
+#endif
 }
 
 /* Return a pseudo-random unsigned integer */
