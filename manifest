@@ -1,5 +1,5 @@
-C Show\sthe\svalues\sof\sExpr.flag\sin\sthe\sAST\sof\s".selecttrace"
-D 2015-06-18T14:09:13.947
+C Pervent\sthe\slikelihood()\sfunction\sfrom\smoving\sON\sclause\sterms\sof\sa\sLEFT\sJOIN\ninto\sthe\sWHERE\sclause.\nFix\sfor\sticket\s[5f60b11fc8e23490e2]
+D 2015-06-18T14:32:51.732
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1063c58075b7400d93326b0eb332b48a54f53025
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -250,7 +250,7 @@ F src/printf.c db11b5960105ee661dcac690f2ae6276e49bf251
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 84c571794e3ee5806274d95158a4c0177c6c4708
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c 45a814a755f90c1a6345164d2da4a8ef293da53d
+F src/select.c 15a17aff39e161d97deb880edc7e0527f01b2324
 F src/shell.c 8af3cced094aebb5f57a8ad739b9dafc7867eed7
 F src/sqlite.h.in 76d2f5637eb795b6300d9dd3c3ec3632ffafd721
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
@@ -1209,7 +1209,7 @@ F test/whereC.test cae295158703cb3fc23bf1a108a9ab730efff0f6
 F test/whereD.test 9eba1f9b18e5b19a0b0bcaae5e8c037260195f2b
 F test/whereE.test b3a055eef928c992b0a33198a7b8dc10eea5ad2f
 F test/whereF.test 5b2ba0dbe8074aa13e416b37c753991f0a2492d7
-F test/whereG.test 69f5ec4b15760a8c860f80e2d55525669390aab3
+F test/whereG.test a9fa7c84d7050b5a86a9ef94d343986d0b52ada1
 F test/whereH.test e4b07f7a3c2f5d31195cd33710054c78667573b2
 F test/whereI.test 1d89199697919d4930be05a71e7fe620f114e622
 F test/whereJ.test 55a3221706a7ab706293f17cc8f96da563bf0767
@@ -1286,7 +1286,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f50dd154d33c58d7a9aa1852fdc362c2e81feef2
-R 22636f96e0a5b958f11aa19ecbc51e6e
+P a84d1004cbee67f2b8ba1fd201e43af49ea67c1b
+R 530ba24618abbbf122ded3eb71849514
 U drh
-Z bfca8d78599e0b1cd1fa7858d0e8d79f
+Z 790eb5c98101c017e4fe81f6e31f872f
