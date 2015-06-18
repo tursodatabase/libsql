@@ -178,25 +178,31 @@ void sqlite3TreeViewSelect(TreeView *pView, const Select *p, u8 moreToFollow){
 void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
   const char *zBinOp = 0;   /* Binary operator */
   const char *zUniOp = 0;   /* Unary operator */
+  char zFlgs[30];
   pView = sqlite3TreeViewPush(pView, moreToFollow);
   if( pExpr==0 ){
     sqlite3TreeViewLine(pView, "nil");
     sqlite3TreeViewPop(pView);
     return;
   }
+  if( pExpr->flags ){
+    sqlite3_snprintf(sizeof(zFlgs),zFlgs,"  flags=0x%x",pExpr->flags);
+  }else{
+    zFlgs[0] = 0;
+  }
   switch( pExpr->op ){
     case TK_AGG_COLUMN: {
-      sqlite3TreeViewLine(pView, "AGG{%d:%d}",
-            pExpr->iTable, pExpr->iColumn);
+      sqlite3TreeViewLine(pView, "AGG{%d:%d}%s",
+            pExpr->iTable, pExpr->iColumn, zFlgs);
       break;
     }
     case TK_COLUMN: {
       if( pExpr->iTable<0 ){
         /* This only happens when coding check constraints */
-        sqlite3TreeViewLine(pView, "COLUMN(%d)", pExpr->iColumn);
+        sqlite3TreeViewLine(pView, "COLUMN(%d)%s", pExpr->iColumn, zFlgs);
       }else{
-        sqlite3TreeViewLine(pView, "{%d:%d}",
-                             pExpr->iTable, pExpr->iColumn);
+        sqlite3TreeViewLine(pView, "{%d:%d}%s",
+                             pExpr->iTable, pExpr->iColumn, zFlgs);
       }
       break;
     }
@@ -389,11 +395,11 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
     }
   }
   if( zBinOp ){
-    sqlite3TreeViewLine(pView, "%s", zBinOp);
+    sqlite3TreeViewLine(pView, "%s%s", zBinOp, zFlgs);
     sqlite3TreeViewExpr(pView, pExpr->pLeft, 1);
     sqlite3TreeViewExpr(pView, pExpr->pRight, 0);
   }else if( zUniOp ){
-    sqlite3TreeViewLine(pView, "%s", zUniOp);
+    sqlite3TreeViewLine(pView, "%s%s", zUniOp, zFlgs);
     sqlite3TreeViewExpr(pView, pExpr->pLeft, 0);
   }
   sqlite3TreeViewPop(pView);

@@ -1,5 +1,5 @@
-C Add\s#ifdefs\sto\ssome\sfeatures\sspeedtest1.c\sso\sthat\sit\scompiles\swith\s\nolder\sversions\sof\sSQLite,\sgoing\sback\sto\sversion\s3.5.1.
-D 2015-06-18T12:37:32.427
+C Show\sthe\svalues\sof\sExpr.flag\sin\sthe\sAST\sof\s".selecttrace"
+D 2015-06-18T14:09:13.947
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1063c58075b7400d93326b0eb332b48a54f53025
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -307,7 +307,7 @@ F src/test_vfstrace.c bab9594adc976cbe696ff3970728830b4c5ed698
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 6bbcc9fe50c917864d48287b4792d46d6e873481
 F src/tokenize.c 57cb3720f53f84d811def2069c2b169b6be539a5
-F src/treeview.c 84aa2d2ed26627ccc8dd3a2becfa18dc86ee4607
+F src/treeview.c c84b1a8ebc7f1d00cd76ce4958eeb3ae1021beed
 F src/trigger.c 322f23aad694e8f31d384dcfa386d52a48d3c52f
 F src/update.c 487747b328b7216bb7f6af0695d6937d5c9e605f
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
@@ -1286,7 +1286,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d718ea36dce8cf1684c8bcda457fee87f8f8c4e2
-R 2fec93a2150d7ae7b09d15812bf76e79
+P f50dd154d33c58d7a9aa1852fdc362c2e81feef2
+R 22636f96e0a5b958f11aa19ecbc51e6e
 U drh
-Z 189f0c4fbb00b22a5016916932c6c3ba
+Z bfca8d78599e0b1cd1fa7858d0e8d79f
