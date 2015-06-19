@@ -231,6 +231,7 @@
 /* Forward declarations */
 typedef struct MemPage MemPage;
 typedef struct BtLock BtLock;
+typedef struct CellInfo CellInfo;
 
 /*
 ** This is a magic string that appears at the beginning of every
@@ -295,7 +296,8 @@ struct MemPage {
   u8 *aDataEnd;        /* One byte past the end of usable data */
   u8 *aCellIdx;        /* The cell index area */
   DbPage *pDbPage;     /* Pager page handle */
-  u16 (*xCellSize)(MemPage*,u8*);  /* cellSizePtr method */
+  u16 (*xCellSize)(MemPage*,u8*);             /* cellSizePtr method */
+  void (*xParseCell)(MemPage*,u8*,CellInfo*); /* btreeParseCell method */
   Pgno pgno;           /* Page number for this page */
 };
 
@@ -461,7 +463,6 @@ struct BtShared {
 ** about a cell.  The parseCellPtr() function fills in this structure
 ** based on information extract from the raw disk page.
 */
-typedef struct CellInfo CellInfo;
 struct CellInfo {
   i64 nKey;      /* The key for INTKEY tables, or nPayload otherwise */
   u8 *pPayload;  /* Pointer to the start of payload */
