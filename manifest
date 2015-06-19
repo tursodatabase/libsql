@@ -1,5 +1,5 @@
-C Add\sthe\sMemPage.xParseCell\smethod\sand\sprovide\svarious\simplementations\n(variations\son\sthe\sformer\sbtreeParseCellPtr())\sdepending\son\sthe\spage\stype.
-D 2015-06-19T17:19:34.228
+C Performance\simprovements\sin\sbtreeParseCell()\sby\sinlining\sthe\svarint\sdecoder.
+D 2015-06-19T18:24:37.928
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1063c58075b7400d93326b0eb332b48a54f53025
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -192,7 +192,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c ff743689c4d6c5cb55ad42ed9d174b2b3e71f1e3
 F src/bitvec.c 5eb7958c3bf65210211cbcfc44eff86d0ded7c9d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c cf8310b4429e5f0400868b598d75d414b32da98e
+F src/btree.c 32d2d8674e462ed7f9343a83a304c5651165f539
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 6ece2dd9c8e2eac05f0a8ded8772a44e96486c65
 F src/build.c b3f15255d5b16e42dafeaa638fd4f8a47c94ed70
@@ -1286,7 +1286,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 02f7e9d7d7b93d0b6bbd6cc0d0359b3b741b9931
-R 2f4b41ef502fc9cfa753afb16ada8794
+P 41d03d883c4f7ca279eb9dd679f3ab81c8d957d9
+R 7c0a97271e0bde50dd22074cdc063563
+T *branch * btree-opt
+T *sym-btree-opt *
+T -sym-trunk *
 U drh
-Z a171034151748a0b17304cc3b38b62ab
+Z 88046b08ce75f4bf4926f31a639805e5
