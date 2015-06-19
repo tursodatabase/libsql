@@ -1072,7 +1072,7 @@ static void btreeParseCellPtr(
   */
   nPayload = *pIter;
   if( nPayload>=0x80 ){
-    u8 *pEnd = &pIter[9];
+    u8 *pEnd = &pIter[8];
     nPayload &= 0x7f;
     do{
       nPayload = (nPayload<<7) | (*++pIter & 0x7f);
@@ -1133,7 +1133,7 @@ static void btreeParseCellPtrIndex(
   pIter = pCell + pPage->childPtrSize;
   nPayload = *pIter;
   if( nPayload>=0x80 ){
-    u8 *pEnd = &pIter[9];
+    u8 *pEnd = &pIter[8];
     nPayload &= 0x7f;
     do{
       nPayload = (nPayload<<7) | (*++pIter & 0x7f);
@@ -1194,7 +1194,7 @@ static u16 cellSizePtr(MemPage *pPage, u8 *pCell){
   assert( pPage->noPayload==0 );
   nSize = *pIter;
   if( nSize>=0x80 ){
-    pEnd = &pIter[9];
+    pEnd = &pIter[8];
     nSize &= 0x7f;
     do{
       nSize = (nSize<<7) | (*++pIter & 0x7f);

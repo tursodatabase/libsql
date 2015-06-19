@@ -1,5 +1,5 @@
-C Performance\simprovements\sin\sbtreeParseCell()\sby\sinlining\sthe\svarint\sdecoder.
-D 2015-06-19T18:24:37.928
+C Fix\scorner\scases\sinvolving\scorrupt\svarint\svalues\sin\srecord\sheaders.
+D 2015-06-19T20:08:39.479
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1063c58075b7400d93326b0eb332b48a54f53025
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -192,7 +192,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c ff743689c4d6c5cb55ad42ed9d174b2b3e71f1e3
 F src/bitvec.c 5eb7958c3bf65210211cbcfc44eff86d0ded7c9d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c 32d2d8674e462ed7f9343a83a304c5651165f539
+F src/btree.c 173c2ba1b8cf941971683f584965369791125f12
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 6ece2dd9c8e2eac05f0a8ded8772a44e96486c65
 F src/build.c b3f15255d5b16e42dafeaa638fd4f8a47c94ed70
@@ -457,7 +457,7 @@ F test/corruptE.test 193b4ca4e927e77c1d5f4f56203ddc998432a7ee
 F test/corruptF.test be9fde98e4c93648f1ba52b74e5318edc8f59fe4
 F test/corruptG.test 1ab3bf97ee7bdba70e0ff3ba2320657df55d1804
 F test/corruptH.test 5dd4fa98c6c1ed33b178f9e8a48c4fdd3cfc9067
-F test/corruptI.test ddf8c7146db0bc6080eedced67453b4cc69b5340
+F test/corruptI.test f2b10e4fec2a4315bca2b936ffa52ccbffac3422
 F test/corruptJ.test 9e29e7a81ee3b6ac50f77ea7a9e2f3fa03f32d91
 F test/cost.test 19d314526616ce4473eb4e4e450fcb94499ce318
 F test/count.test cb2e0f934c6eb33670044520748d2ecccd46259c
@@ -1286,10 +1286,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 41d03d883c4f7ca279eb9dd679f3ab81c8d957d9
-R 7c0a97271e0bde50dd22074cdc063563
-T *branch * btree-opt
-T *sym-btree-opt *
-T -sym-trunk *
+P faab0ed928074f3ec7c25e1a2058414fbd9b013c
+R 17322242ece767a3323f72561a7eab73
 U drh
-Z 88046b08ce75f4bf4926f31a639805e5
+Z 6da824f4fe4f5bb0c3f4de7caaaa681b
