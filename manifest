@@ -1,5 +1,5 @@
-C Further\s#ifdef\schanges\sin\sspeedtest1.c\sin\sorder\sto\ssupport\sSQLite\sback\sto\nversion\s3.3.9\sand\sperhaps\seven\searlier.
-D 2015-06-18T15:26:09.205
+C Make\scellSizePtr()\sa\smethod\son\sthe\sMemPage\sobject,\swith\salternative\nimplementations\sdepending\son\sthe\spage\stype.\s\sThis\sresults\sis\sa\ssmall\sperformance\nimprovement\sand\ssize\sreduction.
+D 2015-06-19T15:07:14.566
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1063c58075b7400d93326b0eb332b48a54f53025
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -192,9 +192,9 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c ff743689c4d6c5cb55ad42ed9d174b2b3e71f1e3
 F src/bitvec.c 5eb7958c3bf65210211cbcfc44eff86d0ded7c9d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c 02caf39192ed1f5c7157a1aac0b2ff23389233de
+F src/btree.c 960e66f4a9fd494c5712f4342432a2fb1cbb72c1
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
-F src/btreeInt.h 973a22a6fd61350b454ad614832b1f0a5e25a1e4
+F src/btreeInt.h 97901d5434a22344cd5ae47e80ed677bd21d572d
 F src/build.c b3f15255d5b16e42dafeaa638fd4f8a47c94ed70
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c a5cf5b4b56390cfb7b8636e8f7ddef90258dd575
@@ -1286,7 +1286,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ed96e14adce4a4f94cc6838c46bc97937c4cb72a
-R 4e77e4d1b1f5f9af9315f930f1585b67
+P 9246eca54adaee571dab0c066afaa604fcf9c44f
+R 65525ba5a493bb8d3d370265d6f2abe8
 U drh
-Z 4a2d5290228b5807450e51ccee479c2e
+Z b80278f806bcab0592c2162609b43f46

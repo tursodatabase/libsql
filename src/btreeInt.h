@@ -295,6 +295,7 @@ struct MemPage {
   u8 *aDataEnd;        /* One byte past the end of usable data */
   u8 *aCellIdx;        /* The cell index area */
   DbPage *pDbPage;     /* Pager page handle */
+  u16 (*xCellSize)(MemPage*,u8*);  /* cellSizePtr method */
   Pgno pgno;           /* Page number for this page */
 };
 
