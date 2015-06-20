@@ -1,5 +1,5 @@
-C Performance\simprovements\sin\sbtreeParseCell()\sby\sinlining\sthe\svarint\sdecoder.
-D 2015-06-19T20:31:02.328
+C Make\ssure\sthat\sthe\slikelihood()\sfunction\sdoes\snot\smess\sup\sgeneration\sof\nresult-set\scode\swhen\sit\sis\sused\s(inappropropriately)\sin\sa\sresult-set\s\nexpression.
+D 2015-06-20T13:18:34.320
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1063c58075b7400d93326b0eb332b48a54f53025
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -202,7 +202,7 @@ F src/ctime.c 5a0b735dc95604766f5dac73973658eef782ee8b
 F src/date.c e4d50b3283696836ec1036b695ead9a19e37a5ac
 F src/dbstat.c f402e77e25089c6003d0c60b3233b9b3947d599a
 F src/delete.c 8857a6f27560718f65d43bdbec86c967ae1f8dfa
-F src/expr.c fbde754df3fa10bbd3a1dcea08e77b0f1684d188
+F src/expr.c 32c836d9fa22c25371039febf074849dcefb3de9
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c c9b63a217d86582c22121699a47f22f524608869
 F src/func.c a98ea5880dc50e9ca6dd6f57079a37b9cfcdecf1
@@ -1209,7 +1209,7 @@ F test/whereC.test cae295158703cb3fc23bf1a108a9ab730efff0f6
 F test/whereD.test 9eba1f9b18e5b19a0b0bcaae5e8c037260195f2b
 F test/whereE.test b3a055eef928c992b0a33198a7b8dc10eea5ad2f
 F test/whereF.test 5b2ba0dbe8074aa13e416b37c753991f0a2492d7
-F test/whereG.test a9fa7c84d7050b5a86a9ef94d343986d0b52ada1
+F test/whereG.test dde4c52a97385a55be6a7cd46be8373f0cf35501
 F test/whereH.test e4b07f7a3c2f5d31195cd33710054c78667573b2
 F test/whereI.test 1d89199697919d4930be05a71e7fe620f114e622
 F test/whereJ.test 55a3221706a7ab706293f17cc8f96da563bf0767
@@ -1286,8 +1286,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 41d03d883c4f7ca279eb9dd679f3ab81c8d957d9 3189116b42c5ecef5e30c8b317f4458bbf8b9086
-R 17322242ece767a3323f72561a7eab73
-T +closed 3189116b42c5ecef5e30c8b317f4458bbf8b9086
+P 172a864d14fd9f0e3e97d2a13b22222ae0fedd39
+R 15b26e1c929c22d8d2f79a37c9411873
 U drh
-Z 9792c9ad3223b34d6cd839672f530e9d
+Z 3bcd77a420167e4346978f981f1d3443
