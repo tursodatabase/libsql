@@ -1175,10 +1175,12 @@ static void btreeParseCell(
 ** the space used by the cell pointer.
 **
 ** cellSizePtrNoPayload()    =>   table internal nodes
-** cellSizePtr()             =>   all index nodes & table leaf nodes
+** cellSizeTableLeaf()       =>   table leaf nodes
+** cellSizeIndexInternal()   =>   internal index nodes
+** cellSizeIndexLeaf()       =>   leaf index nodes
 */
-static u16 cellSizePtr(MemPage *pPage, u8 *pCell){
-  u8 *pIter = pCell + pPage->childPtrSize; /* For looping over bytes of pCell */
+static u16 cellSizeTableLeaf(MemPage *pPage, u8 *pCell){
+  u8 *pIter = pCell;                       /* For looping over bytes of pCell */
   u8 *pEnd;                                /* End mark for a varint */
   u32 nSize;                               /* Size value to return */
 
@@ -1192,6 +1194,7 @@ static u16 cellSizePtr(MemPage *pPage, u8 *pCell){
 #endif
 
   assert( pPage->noPayload==0 );
+  assert( pPage->childPtrSize==0 );
   nSize = *pIter;
   if( nSize>=0x80 ){
     pEnd = &pIter[8];
@@ -1201,18 +1204,105 @@ static u16 cellSizePtr(MemPage *pPage, u8 *pCell){
     }while( *(pIter)>=0x80 && pIter<pEnd );
   }
   pIter++;
-  if( pPage->intKey ){
-    /* pIter now points at the 64-bit integer key value, a variable length 
-    ** integer. The following block moves pIter to point at the first byte
-    ** past the end of the key value. */
-    pEnd = &pIter[9];
-    while( (*pIter++)&0x80 && pIter<pEnd );
-  }
+  assert( pPage->intKey );
+  /* pIter now points at the 64-bit integer key value, a variable length 
+  ** integer. The following block moves pIter to point at the first byte
+  ** past the end of the key value. */
+  pEnd = &pIter[9];
+  while( (*pIter++)&0x80 && pIter<pEnd );
   testcase( nSize==pPage->maxLocal );
   testcase( nSize==pPage->maxLocal+1 );
   if( nSize<=pPage->maxLocal ){
     nSize += (u32)(pIter - pCell);
     if( nSize<4 ) nSize = 4;
+  }else{
+    int minLocal = pPage->minLocal;
+    nSize = minLocal + (nSize - minLocal) % (pPage->pBt->usableSize - 4);
+    testcase( nSize==pPage->maxLocal );
+    testcase( nSize==pPage->maxLocal+1 );
+    if( nSize>pPage->maxLocal ){
+      nSize = minLocal;
+    }
+    nSize += 4 + (u16)(pIter - pCell);
+  }
+  assert( nSize==debuginfo.nSize || CORRUPT_DB );
+  return (u16)nSize;
+}
+static u16 cellSizeIndexLeaf(MemPage *pPage, u8 *pCell){
+  u8 *pIter = pCell;                       /* For looping over bytes of pCell */
+  u8 *pEnd;                                /* End mark for a varint */
+  u32 nSize;                               /* Size value to return */
+
+#ifdef SQLITE_DEBUG
+  /* The value returned by this function should always be the same as
+  ** the (CellInfo.nSize) value found by doing a full parse of the
+  ** cell. If SQLITE_DEBUG is defined, an assert() at the bottom of
+  ** this function verifies that this invariant is not violated. */
+  CellInfo debuginfo;
+  pPage->xParseCell(pPage, pCell, &debuginfo);
+#endif
+
+  assert( pPage->noPayload==0 );
+  assert( pPage->childPtrSize==0 );
+  nSize = *pIter;
+  if( nSize>=0x80 ){
+    pEnd = &pIter[8];
+    nSize &= 0x7f;
+    do{
+      nSize = (nSize<<7) | (*++pIter & 0x7f);
+    }while( *(pIter)>=0x80 && pIter<pEnd );
+  }
+  pIter++;
+  assert( pPage->intKey==0 );
+  testcase( nSize==pPage->maxLocal );
+  testcase( nSize==pPage->maxLocal+1 );
+  if( nSize<=pPage->maxLocal ){
+    nSize += (u32)(pIter - pCell);
+    if( nSize<4 ) nSize = 4;
+  }else{
+    int minLocal = pPage->minLocal;
+    nSize = minLocal + (nSize - minLocal) % (pPage->pBt->usableSize - 4);
+    testcase( nSize==pPage->maxLocal );
+    testcase( nSize==pPage->maxLocal+1 );
+    if( nSize>pPage->maxLocal ){
+      nSize = minLocal;
+    }
+    nSize += 4 + (u16)(pIter - pCell);
+  }
+  assert( nSize==debuginfo.nSize || CORRUPT_DB );
+  return (u16)nSize;
+}
+static u16 cellSizePtrIndexInternal(MemPage *pPage, u8 *pCell){
+  u8 *pIter = pCell + 4;                   /* For looping over bytes of pCell */
+  u8 *pEnd;                                /* End mark for a varint */
+  u32 nSize;                               /* Size value to return */
+
+#ifdef SQLITE_DEBUG
+  /* The value returned by this function should always be the same as
+  ** the (CellInfo.nSize) value found by doing a full parse of the
+  ** cell. If SQLITE_DEBUG is defined, an assert() at the bottom of
+  ** this function verifies that this invariant is not violated. */
+  CellInfo debuginfo;
+  pPage->xParseCell(pPage, pCell, &debuginfo);
+#endif
+
+  assert( pPage->childPtrSize==4 );
+  assert( pPage->noPayload==0 );
+  nSize = *pIter;
+  if( nSize>=0x80 ){
+    pEnd = &pIter[8];
+    nSize &= 0x7f;
+    do{
+      nSize = (nSize<<7) | (*++pIter & 0x7f);
+    }while( *(pIter)>=0x80 && pIter<pEnd );
+  }
+  pIter++;
+  assert( pPage->intKey==0 );
+  testcase( nSize==pPage->maxLocal );
+  testcase( nSize==pPage->maxLocal+1 );
+  if( nSize<=pPage->maxLocal ){
+    nSize += (u32)(pIter - pCell);
+    assert( nSize>=4 );
   }else{
     int minLocal = pPage->minLocal;
     nSize = minLocal + (nSize - minLocal) % (pPage->pBt->usableSize - 4);
@@ -1633,7 +1723,6 @@ static int decodeFlags(MemPage *pPage, int flagByte){
   pPage->leaf = (u8)(flagByte>>3);  assert( PTF_LEAF == 1<<3 );
   flagByte &= ~PTF_LEAF;
   pPage->childPtrSize = 4-4*pPage->leaf;
-  pPage->xCellSize = cellSizePtr;
   pBt = pPage->pBt;
   if( flagByte==(PTF_LEAFDATA | PTF_INTKEY) ){
     /* EVIDENCE-OF: R-03640-13415 A value of 5 means the page is an interior
@@ -1646,6 +1735,7 @@ static int decodeFlags(MemPage *pPage, int flagByte){
     if( pPage->leaf ){
       pPage->intKeyLeaf = 1;
       pPage->noPayload = 0;
+      pPage->xCellSize = cellSizeTableLeaf;
       pPage->xParseCell = btreeParseCellPtr;
     }else{
       pPage->intKeyLeaf = 0;
@@ -1668,6 +1758,11 @@ static int decodeFlags(MemPage *pPage, int flagByte){
     pPage->xParseCell = btreeParseCellPtrIndex;
     pPage->maxLocal = pBt->maxLocal;
     pPage->minLocal = pBt->minLocal;
+    if( pPage->leaf ){
+      pPage->xCellSize = cellSizeIndexLeaf;
+    }else{
+      pPage->xCellSize = cellSizePtrIndexInternal;
+    }
   }else{
     /* EVIDENCE-OF: R-47608-56469 Any other value for the b-tree page type is
     ** an error. */
