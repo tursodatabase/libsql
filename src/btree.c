@@ -3206,6 +3206,7 @@ static int setChildPtrmaps(MemPage *pPage){
     if( !pPage->leaf ){
       Pgno childPgno = get4byte(pCell);
       ptrmapPut(pBt, childPgno, PTRMAP_BTREE, pgno, &rc);
+      if( rc ) return rc;
     }
   }
 
@@ -6295,7 +6296,7 @@ static void insertCell(
 ** The MemPage.nFree field is invalidated by this function. It is the 
 ** responsibility of the caller to set it correctly.
 */
-static void rebuildPage(
+static int rebuildPage(
   MemPage *pPg,                   /* Edit this page */
   int nCell,                      /* Final number of cells on page */
   u8 **apCell,                    /* Array of cells */
@@ -6320,9 +6321,10 @@ static void rebuildPage(
       pCell = &pTmp[pCell - aData];
     }
     pData -= szCell[i];
-    memcpy(pData, pCell, szCell[i]);
     put2byte(pCellptr, (pData - aData));
     pCellptr += 2;
+    if( pData < pCellptr ) return SQLITE_CORRUPT_BKPT;
+    memcpy(pData, pCell, szCell[i]);
     assert( szCell[i]==pPg->xCellSize(pPg, pCell) || CORRUPT_DB );
     testcase( szCell[i]==pPg->xCellSize(pPg,pCell) );
   }
@@ -6335,6 +6337,7 @@ static void rebuildPage(
   put2byte(&aData[hdr+3], pPg->nCell);
   put2byte(&aData[hdr+5], pData - aData);
   aData[hdr+7] = 0x00;
+  return SQLITE_OK;
 }
 
 /*
@@ -6454,7 +6457,7 @@ static int pageFreeArray(
 ** The pPg->nFree field is invalid when this function returns. It is the
 ** responsibility of the caller to set it correctly.
 */
-static void editPage(
+static int editPage(
   MemPage *pPg,                   /* Edit this page */
   int iOld,                       /* Index of first cell currently on page */
   int iNew,                       /* Index of new first cell on page */
@@ -6545,10 +6548,10 @@ static void editPage(
   }
 #endif
 
-  return;
+  return SQLITE_OK;
  editpage_fail:
   /* Unable to edit this page. Rebuild it from scratch instead. */
-  rebuildPage(pPg, nNew, &apCell[iNew], &szCell[iNew]);
+  return rebuildPage(pPg, nNew, &apCell[iNew], &szCell[iNew]);
 }
 
 /*
@@ -6620,7 +6623,8 @@ static int balance_quick(MemPage *pParent, MemPage *pPage, u8 *pSpace){
     assert( sqlite3PagerIswriteable(pNew->pDbPage) );
     assert( pPage->aData[0]==(PTF_INTKEY|PTF_LEAFDATA|PTF_LEAF) );
     zeroPage(pNew, PTF_INTKEY|PTF_LEAFDATA|PTF_LEAF);
-    rebuildPage(pNew, 1, &pCell, &szCell);
+    rc = rebuildPage(pNew, 1, &pCell, &szCell);
+    if( rc ) return rc;
     pNew->nFree = pBt->usableSize - pNew->cellOffset - 2 - szCell;
 
     /* If this is an auto-vacuum database, update the pointer map
@@ -6835,7 +6839,6 @@ static int balance_nonroot(
   int leafData;                /* True if pPage is a leaf of a LEAFDATA tree */
   int usableSpace;             /* Bytes in pPage beyond the header */
   int pageFlags;               /* Value of pPage->aData[0] */
-  int subtotal;                /* Subtotal of bytes in cells on one page */
   int iSpace1 = 0;             /* First unused byte of aSpace1[] */
   int iOvflSpace = 0;          /* First unused byte of aOvflSpace[] */
   int szScratch;               /* Size of scratch memory requested */
@@ -7081,21 +7084,50 @@ static int balance_nonroot(
   ** 
   */
   usableSpace = pBt->usableSize - 12 + leafCorrection;
-  for(subtotal=k=i=0; i<nCell; i++){
-    assert( i<nMaxCells );
-    subtotal += szCell[i] + 2;
-    if( subtotal > usableSpace ){
-      szNew[k] = subtotal - szCell[i] - 2;
-      cntNew[k] = i;
-      if( leafData ){ i--; }
-      subtotal = 0;
-      k++;
-      if( k>NB+1 ){ rc = SQLITE_CORRUPT_BKPT; goto balance_cleanup; }
+  for(i=0; i<nOld; i++){
+    MemPage *p = apOld[i];
+    szNew[i] = usableSpace - p->nFree;
+    if( szNew[i]<0 ){ rc = SQLITE_CORRUPT_BKPT; goto balance_cleanup; }
+    for(j=0; j<p->nOverflow; j++){
+      szNew[i] += 2 + p->xCellSize(p, p->apOvfl[j]);
+    }
+    cntNew[i] = cntOld[i];
+  }
+  k = nOld;
+  for(i=0; i<k; i++){
+    int sz;
+    while( szNew[i]>usableSpace ){
+      if( i+1>=k ){
+        k = i+2;
+        if( k>NB+2 ){ rc = SQLITE_CORRUPT_BKPT; goto balance_cleanup; }
+        szNew[k-1] = 0;
+        cntNew[k-1] = nCell;
+      }
+      sz = 2+szCell[cntNew[i]-1];
+      szNew[i] -= sz;
+      if( !leafData ){
+        sz = cntNew[i]<nCell ? 2+szCell[cntNew[i]] : 0;
+      }
+      szNew[i+1] += sz;
+      cntNew[i]--;
+    }
+    while( cntNew[i]<nCell ){
+      sz = 2+szCell[cntNew[i]];
+      if( szNew[i]+sz>usableSpace ) break;
+      szNew[i] += sz;
+      cntNew[i]++;
+      if( !leafData ){
+        sz = cntNew[i]<nCell ? 2+szCell[cntNew[i]] : 0;
+      }
+      szNew[i+1] -= sz;
+    }
+    if( cntNew[i]>=nCell ){
+      k = i+1;
+    }else if( cntNew[i] - (i>0 ? cntNew[i-1] : 0) <= 0 ){
+      rc = SQLITE_CORRUPT_BKPT;
+      goto balance_cleanup;
     }
   }
-  szNew[k] = subtotal;
-  cntNew[k] = nCell;
-  k++;
 
   /*
   ** The packing computed by the previous block is biased toward the siblings
@@ -7124,6 +7156,10 @@ static int balance_nonroot(
       szRight += szCell[d] + 2;
       szLeft -= szCell[r] + 2;
       cntNew[i-1]--;
+      if( cntNew[i-1] <= 0 ){
+        rc = SQLITE_CORRUPT_BKPT;
+        goto balance_cleanup;
+      }
       r = cntNew[i-1] - 1;
       d = r + 1 - leafData;
     }
@@ -7294,9 +7330,11 @@ static int balance_nonroot(
       ){
         if( !leafCorrection ){
           ptrmapPut(pBt, get4byte(pCell), PTRMAP_BTREE, pNew->pgno, &rc);
+          if( rc ) goto balance_cleanup;
         }
         if( szCell[i]>pNew->minLocal ){
           ptrmapPutOvflPtr(pNew, pCell, &rc);
+          if( rc ) goto balance_cleanup;
         }
       }
     }
@@ -7404,7 +7442,8 @@ static int balance_nonroot(
         nNewCell = cntNew[iPg] - iNew;
       }
 
-      editPage(apNew[iPg], iOld, iNew, nNewCell, apCell, szCell);
+      rc = editPage(apNew[iPg], iOld, iNew, nNewCell, apCell, szCell);
+      if( rc ) goto balance_cleanup;
       abDone[iPg]++;
       apNew[iPg]->nFree = usableSpace-szNew[iPg];
       assert( apNew[iPg]->nOverflow==0 );

@@ -1,5 +1,5 @@
-C Update\sthe\sfuzztest\sdata\susing\sthe\slatest\stest\svectors\sdiscovered\sby\sAFL.
-D 2015-06-20T14:11:56.166
+C Change\sthe\sway\sthat\sbalance_nonroot()\spartitions\scells\sbetween\sthe\ssibling\npages\ssuch\sthat\sa\sscan\sof\sthe\scell\ssize\sarray\sis\snot\srequired.
+D 2015-06-22T20:02:04.079
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1063c58075b7400d93326b0eb332b48a54f53025
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -192,7 +192,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c ff743689c4d6c5cb55ad42ed9d174b2b3e71f1e3
 F src/bitvec.c 5eb7958c3bf65210211cbcfc44eff86d0ded7c9d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c 173c2ba1b8cf941971683f584965369791125f12
+F src/btree.c 8f65725c7c138aecb1a6339ef2b276b4b3632a20
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 6ece2dd9c8e2eac05f0a8ded8772a44e96486c65
 F src/build.c b3f15255d5b16e42dafeaa638fd4f8a47c94ed70
@@ -1286,7 +1286,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7cdbae625eb029538a693d2bebec465a6f65fb90
-R 5add07a39efb3611e2cfa0ac20a2c5f5
+P b97f9cf73e503c7285ba3a801e1f932f222d96b2
+R d9f18f053d77ccfca6ce052159dd7203
+T *branch * btree-opt2
+T *sym-btree-opt2 *
+T -sym-trunk *
 U drh
-Z 71db4d574368380e4b14cadc01f6d8d0
+Z ffa77b78cbb43ac17ffd24e89fe96b6a
