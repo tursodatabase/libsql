@@ -827,15 +827,14 @@ static int fts5CursorFirstSorted(Fts5Table *pTab, Fts5Cursor *pCsr, int bDesc){
   ** table, saving it creates a circular reference.
   **
   ** If SQLite a built-in statement cache, this wouldn't be a problem. */
-  zSql = sqlite3_mprintf("SELECT rowid, rank FROM %Q.%Q ORDER BY %s(%s%s%s) %s",
+  zSql = sqlite3Fts5Mprintf(&rc, 
+      "SELECT rowid, rank FROM %Q.%Q ORDER BY %s(%s%s%s) %s",
       pConfig->zDb, pConfig->zName, zRank, pConfig->zName,
       (zRankArgs ? ", " : ""),
       (zRankArgs ? zRankArgs : ""),
       bDesc ? "DESC" : "ASC"
   );
-  if( zSql==0 ){
-    rc = SQLITE_NOMEM;
-  }else{
+  if( zSql ){
     rc = sqlite3_prepare_v2(pConfig->db, zSql, -1, &pSorter->pStmt, 0);
     sqlite3_free(zSql);
   }
@@ -930,10 +929,8 @@ static int fts5FindRankFunction(Fts5Cursor *pCsr){
   const char *zRankArgs = pCsr->zRankArgs;
 
   if( zRankArgs ){
-    char *zSql = sqlite3_mprintf("SELECT %s", zRankArgs);
-    if( zSql==0 ){
-      rc = SQLITE_NOMEM;
-    }else{
+    char *zSql = sqlite3Fts5Mprintf(&rc, "SELECT %s", zRankArgs);
+    if( zSql ){
       sqlite3_stmt *pStmt = 0;
       rc = sqlite3_prepare_v2(pConfig->db, zSql, -1, &pStmt, 0);
       sqlite3_free(zSql);
@@ -1213,8 +1210,11 @@ static int fts5RowidMethod(sqlite3_vtab_cursor *pCursor, sqlite_int64 *pRowid){
 /*
 ** If the cursor requires seeking (bSeekRequired flag is set), seek it.
 ** Return SQLITE_OK if no error occurs, or an SQLite error code otherwise.
+**
+** If argument bErrormsg is true and an error occurs, an error message may
+** be left in sqlite3_vtab.zErrMsg.
 */
-static int fts5SeekCursor(Fts5Cursor *pCsr){
+static int fts5SeekCursor(Fts5Cursor *pCsr, int bErrormsg){
   int rc = SQLITE_OK;
 
   /* If the cursor does not yet have a statement handle, obtain one now. */ 
@@ -1222,8 +1222,9 @@ static int fts5SeekCursor(Fts5Cursor *pCsr){
     Fts5Table *pTab = (Fts5Table*)(pCsr->base.pVtab);
     int eStmt = fts5StmtType(pCsr);
     rc = sqlite3Fts5StorageStmt(
-        pTab->pStorage, eStmt, &pCsr->pStmt, &pTab->base.zErrMsg
+        pTab->pStorage, eStmt, &pCsr->pStmt, (bErrormsg?&pTab->base.zErrMsg:0)
     );
+    assert( rc!=SQLITE_OK || pTab->base.zErrMsg==0 );
     assert( CsrFlagTest(pCsr, FTS5CSR_REQUIRE_CONTENT) );
   }
 
@@ -1618,7 +1619,7 @@ static int fts5ApiColumnText(
     *pz = 0;
     *pn = 0;
   }else{
-    rc = fts5SeekCursor(pCsr);
+    rc = fts5SeekCursor(pCsr, 0);
     if( rc==SQLITE_OK ){
       *pz = (const char*)sqlite3_column_text(pCsr->pStmt, iCol+1);
       *pn = sqlite3_column_bytes(pCsr->pStmt, iCol+1);
@@ -1962,7 +1963,7 @@ static int fts5ColumnMethod(
       }
     }
   }else if( !fts5IsContentless(pTab) ){
-    rc = fts5SeekCursor(pCsr);
+    rc = fts5SeekCursor(pCsr, 1);
     if( rc==SQLITE_OK ){
       sqlite3_result_value(pCtx, sqlite3_column_value(pCsr->pStmt, iCol+1));
     }

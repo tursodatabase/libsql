@@ -250,13 +250,11 @@ static int fts5VocabOpenMethod(
   char *zSql = 0;
   int nByte;
 
-  zSql = sqlite3_mprintf(
+  zSql = sqlite3Fts5Mprintf(&rc,
       "SELECT t.%Q FROM %Q.%Q AS t WHERE t.%Q MATCH '*id'",
       pTab->zFts5Tbl, pTab->zFts5Db, pTab->zFts5Tbl, pTab->zFts5Tbl
   );
-  if( zSql==0 ){
-    rc = SQLITE_NOMEM;
-  }else{
+  if( zSql ){
     rc = sqlite3_prepare_v2(pTab->db, zSql, -1, &pStmt, 0);
   }
   sqlite3_free(zSql);

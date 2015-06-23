@@ -28,6 +28,7 @@ foreach {tn outcome stmt} {
   6 2 { CREATE VIRTUAL TABLE t1 USING fts5(x, columnsize=2) }
   7 1 { CREATE VIRTUAL TABLE t1 USING fts5(x, columnsize=0, columnsize=1) }
   8 1 { CREATE VIRTUAL TABLE t1 USING fts5(x) }
+  9 2 { CREATE VIRTUAL TABLE t1 USING fts5(x, columnsize=11) }
 } {
   execsql { 
     DROP TABLE IF EXISTS t1;
@@ -98,22 +99,34 @@ do_execsql_test 2.X {
 #
 fts5_aux_test_functions db
 
-do_execsql_test 3.0 {
+do_execsql_test 3.1.0 {
   CREATE VIRTUAL TABLE t3 USING fts5(x, y UNINDEXED, z, columnsize=0);
   INSERT INTO t3 VALUES('a a', 'b b b', 'c');
   INSERT INTO t3 VALUES('x a x', 'b b b y', '');
 }
-do_execsql_test 3.1 {
+do_execsql_test 3.1.1 {
   SELECT rowid, fts5_test_columnsize(t3) FROM t3 WHERE t3 MATCH 'a'
 } {
   1 {2 0 1} 2 {3 0 0}
 }
-do_execsql_test 3.1 {
+do_execsql_test 3.1.2 {
   INSERT INTO t3 VALUES(NULL, NULL, 'a a a a');
   DELETE FROM t3 WHERE rowid = 1;
   SELECT rowid, fts5_test_columnsize(t3) FROM t3 WHERE t3 MATCH 'a'
 } {
   2 {3 0 0} 3 {0 0 4}
 }
+
+do_execsql_test 3.2.0 {
+  CREATE VIRTUAL TABLE t4 USING fts5(x, y UNINDEXED, z, columnsize=0, content='');
+  INSERT INTO t4(rowid, x, y, z) VALUES(1, 'a a', 'b b b', 'c');
+  INSERT INTO t4(rowid, x, y, z) VALUES(2, 'x a x', 'b b b y', '');
+}
+do_execsql_test 3.2.1 {
+  SELECT rowid, fts5_test_columnsize(t4) FROM t4 WHERE t4 MATCH 'a'
+} {
+  1 {-1 0 -1} 2 {-1 0 -1}
+}
+
 
 finish_test

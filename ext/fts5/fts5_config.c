@@ -298,8 +298,7 @@ static int fts5ConfigParseSpecial(
     }else{
       if( zArg[0] ){
         pConfig->eContent = FTS5_CONTENT_EXTERNAL;
-        pConfig->zContent = sqlite3_mprintf("%Q.%Q", pConfig->zDb, zArg);
-        if( pConfig->zContent==0 ) rc = SQLITE_NOMEM;
+        pConfig->zContent = sqlite3Fts5Mprintf(&rc, "%Q.%Q", pConfig->zDb,zArg);
       }else{
         pConfig->eContent = FTS5_CONTENT_NONE;
       }
@@ -601,28 +600,21 @@ void sqlite3Fts5ConfigFree(Fts5Config *pConfig){
 */
 int sqlite3Fts5ConfigDeclareVtab(Fts5Config *pConfig){
   int i;
-  int rc;
+  int rc = SQLITE_OK;
   char *zSql;
   char *zOld;
 
-  zSql = (char*)sqlite3_mprintf("CREATE TABLE x(");
+  zSql = sqlite3Fts5Mprintf(&rc, "CREATE TABLE x(");
   for(i=0; zSql && i<pConfig->nCol; i++){
-    zOld = zSql;
-    zSql = sqlite3_mprintf("%s%s%Q", zOld, (i==0?"":", "), pConfig->azCol[i]);
-    sqlite3_free(zOld);
+    const char *zSep = (i==0?"":", ");
+    zSql = sqlite3Fts5Mprintf(&rc, "%z%s%Q", zSql, zSep, pConfig->azCol[i]);
   }
+  zSql = sqlite3Fts5Mprintf(&rc, "%z, %Q HIDDEN, %s HIDDEN)", 
+      zSql, pConfig->zName, FTS5_RANK_NAME
+  );
 
+  assert( zSql || rc==SQLITE_NOMEM );
   if( zSql ){
-    zOld = zSql;
-    zSql = sqlite3_mprintf("%s, %Q HIDDEN, %s HIDDEN)", 
-        zOld, pConfig->zName, FTS5_RANK_NAME
-    );
-    sqlite3_free(zOld);
-  }
-
-  if( zSql==0 ){
-    rc = SQLITE_NOMEM;
-  }else{
     rc = sqlite3_declare_vtab(pConfig->db, zSql);
     sqlite3_free(zSql);
   }
@@ -823,7 +815,7 @@ int sqlite3Fts5ConfigLoad(Fts5Config *pConfig, int iCookie){
   const char *zSelect = "SELECT k, v FROM %Q.'%q_config'";
   char *zSql;
   sqlite3_stmt *p = 0;
-  int rc;
+  int rc = SQLITE_OK;
   int iVersion = 0;
 
   /* Set default values */
@@ -831,10 +823,8 @@ int sqlite3Fts5ConfigLoad(Fts5Config *pConfig, int iCookie){
   pConfig->nAutomerge = FTS5_DEFAULT_AUTOMERGE;
   pConfig->nCrisisMerge = FTS5_DEFAULT_CRISISMERGE;
 
-  zSql = sqlite3_mprintf(zSelect, pConfig->zDb, pConfig->zName);
-  if( zSql==0 ){
-    rc = SQLITE_NOMEM;
-  }else{
+  zSql = sqlite3Fts5Mprintf(&rc, zSelect, pConfig->zDb, pConfig->zName);
+  if( zSql ){
     rc = sqlite3_prepare_v2(pConfig->db, zSql, -1, &p, 0);
     sqlite3_free(zSql);
   }

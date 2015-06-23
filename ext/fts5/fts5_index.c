@@ -791,14 +791,12 @@ static void fts5DataWrite(Fts5Index *p, i64 iRowid, const u8 *pData, int nData){
   if( p->rc!=SQLITE_OK ) return;
 
   if( p->pWriter==0 ){
-    int rc;
+    int rc = SQLITE_OK;
     Fts5Config *pConfig = p->pConfig;
-    char *zSql = sqlite3_mprintf(
+    char *zSql = sqlite3Fts5Mprintf(&rc,
         "REPLACE INTO '%q'.%Q(id, block) VALUES(?,?)", pConfig->zDb, p->zDataTbl
     );
-    if( zSql==0 ){
-      rc = SQLITE_NOMEM;
-    }else{
+    if( zSql ){
       rc = sqlite3_prepare_v2(pConfig->db, zSql, -1, &p->pWriter, 0);
       sqlite3_free(zSql);
     }
@@ -4218,10 +4216,8 @@ int sqlite3Fts5IndexOpen(
     p->pConfig = pConfig;
     p->nWorkUnit = FTS5_WORK_UNIT;
     p->nMaxPendingData = 1024*1024;
-    p->zDataTbl = sqlite3_mprintf("%s_data", pConfig->zName);
-    if( p->zDataTbl==0 ){
-      rc = SQLITE_NOMEM;
-    }else if( bCreate ){
+    p->zDataTbl = sqlite3Fts5Mprintf(&rc, "%s_data", pConfig->zName);
+    if( p->zDataTbl && bCreate ){
       rc = sqlite3Fts5CreateTable(
           pConfig, "data", "id INTEGER PRIMARY KEY, block BLOB", 0, pzErr
       );
