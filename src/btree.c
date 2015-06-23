@@ -6414,25 +6414,26 @@ static int pageInsertArray(
   u8 *pBegin,                     /* End of cell-pointer array */
   u8 **ppData,                    /* IN/OUT: Page content -area pointer */
   u8 *pCellptr,                   /* Pointer to cell-pointer area */
+  int iFirst,                     /* Index of first cell to add */
   int nCell,                      /* Number of cells to add to pPg */
-  u8 **apCell,                    /* Array of cells */
-  u16 *szCell                     /* Array of cell sizes */
+  CellArray *pCArray              /* Array of cells */
 ){
   int i;
   u8 *aData = pPg->aData;
   u8 *pData = *ppData;
   const int bFreelist = aData[1] || aData[2];
+  int iEnd = iFirst + nCell;
   assert( CORRUPT_DB || pPg->hdrOffset==0 );    /* Never called on page 1 */
-  for(i=0; i<nCell; i++){
-    int sz = szCell[i];
-    int rc;
+  for(i=iFirst; i<iEnd; i++){
+    int sz, rc;
     u8 *pSlot;
+    sz = cachedCellSize(pCArray, i);
     if( bFreelist==0 || (pSlot = pageFindSlot(pPg, sz, &rc, 0))==0 ){
       pData -= sz;
       if( pData<pBegin ) return 1;
       pSlot = pData;
     }
-    memcpy(pSlot, apCell[i], sz);
+    memcpy(pSlot, pCArray->apCell[i], sz);
     put2byte(pCellptr, (pSlot - aData));
     pCellptr += 2;
   }
@@ -6451,22 +6452,27 @@ static int pageInsertArray(
 */
 static int pageFreeArray(
   MemPage *pPg,                   /* Page to edit */
+  int iFirst,                     /* First cell to delete */
   int nCell,                      /* Cells to delete */
-  u8 **apCell,                    /* Array of cells */
-  u16 *szCell                     /* Array of cell sizes */
+  CellArray *pCArray              /* Array of cells */
 ){
   u8 * const aData = pPg->aData;
   u8 * const pEnd = &aData[pPg->pBt->usableSize];
   u8 * const pStart = &aData[pPg->hdrOffset + 8 + pPg->childPtrSize];
   int nRet = 0;
   int i;
+  int iEnd = iFirst + nCell;
   u8 *pFree = 0;
   int szFree = 0;
 
-  for(i=0; i<nCell; i++){
-    u8 *pCell = apCell[i];
+  for(i=iFirst; i<iEnd; i++){
+    u8 *pCell = pCArray->apCell[i];
     if( pCell>=pStart && pCell<pEnd ){
-      int sz = szCell[i];
+      int sz;
+      /* No need to use cachedCellSize() here.  The sizes of all cells that
+      ** are to be freed have already been computing while deciding which
+      ** cells need freeing */
+      sz = pCArray->szCell[i];  assert( sz>0 );
       if( pFree!=(pCell + sz) ){
         if( pFree ){
           assert( pFree>aData && (pFree - aData)<65536 );
@@ -6525,20 +6531,12 @@ static int editPage(
 
   /* Remove cells from the start and end of the page */
   if( iOld<iNew ){
-    int nShift;
-    populateCellCache(pCArray, iOld, iNew-iOld);
-    nShift = pageFreeArray(
-        pPg, iNew-iOld, &pCArray->apCell[iOld], &pCArray->szCell[iOld]
-    );
+    int nShift = pageFreeArray(pPg, iOld, iNew-iOld, pCArray);
     memmove(pPg->aCellIdx, &pPg->aCellIdx[nShift*2], nCell*2);
     nCell -= nShift;
   }
   if( iNewEnd < iOldEnd ){
-    populateCellCache(pCArray, iNewEnd, iOldEnd-iNewEnd);
-    nCell -= pageFreeArray(
-        pPg, iOldEnd-iNewEnd,
-        &pCArray->apCell[iNewEnd], &pCArray->szCell[iNewEnd]
-    );
+    nCell -= pageFreeArray(pPg, iNewEnd, iOldEnd - iNewEnd, pCArray);
   }
 
   pData = &aData[get2byteNotZero(&aData[hdr+5])];
@@ -6550,10 +6548,9 @@ static int editPage(
     assert( (iOld-iNew)<nNew || nCell==0 || CORRUPT_DB );
     pCellptr = pPg->aCellIdx;
     memmove(&pCellptr[nAdd*2], pCellptr, nCell*2);
-    populateCellCache(pCArray, iNew, nAdd);
     if( pageInsertArray(
           pPg, pBegin, &pData, pCellptr,
-          nAdd, &pCArray->apCell[iNew], &pCArray->szCell[iNew]
+          iNew, nAdd, pCArray
     ) ) goto editpage_fail;
     nCell += nAdd;
   }
@@ -6565,20 +6562,18 @@ static int editPage(
       pCellptr = &pPg->aCellIdx[iCell * 2];
       memmove(&pCellptr[2], pCellptr, (nCell - iCell) * 2);
       nCell++;
-      (void)cachedCellSize(pCArray, iCell + iNew);
       if( pageInsertArray(
             pPg, pBegin, &pData, pCellptr,
-            1, &pCArray->apCell[iCell + iNew], &pCArray->szCell[iCell + iNew]
+            iCell+iNew, 1, pCArray
       ) ) goto editpage_fail;
     }
   }
 
   /* Append cells to the end of the page */
   pCellptr = &pPg->aCellIdx[nCell*2];
-  populateCellCache(pCArray, iNew+nCell, nNew-nCell);
   if( pageInsertArray(
         pPg, pBegin, &pData, pCellptr,
-        nNew-nCell, &pCArray->apCell[iNew+nCell], &pCArray->szCell[iNew+nCell]
+        iNew+nCell, nNew-nCell, pCArray
   ) ) goto editpage_fail;
 
   pPg->nCell = nNew;
