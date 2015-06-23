@@ -240,12 +240,13 @@ static int icuNext(
 ** The set of routines that implement the simple tokenizer
 */
 static const sqlite3_tokenizer_module icuTokenizerModule = {
-  0,                           /* iVersion */
-  icuCreate,                   /* xCreate  */
-  icuDestroy,                  /* xCreate  */
-  icuOpen,                     /* xOpen    */
-  icuClose,                    /* xClose   */
-  icuNext,                     /* xNext    */
+  0,                           /* iVersion    */
+  icuCreate,                   /* xCreate     */
+  icuDestroy,                  /* xCreate     */
+  icuOpen,                     /* xOpen       */
+  icuClose,                    /* xClose      */
+  icuNext,                     /* xNext       */
+  0,                           /* xLanguageid */
 };
 
 /*

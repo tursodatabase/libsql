@@ -204,7 +204,7 @@ do_execsql_test 6.0 {
 } {}
 do_test 6.1 {
   db close
-  hexio_write test.db 616 EAFFFFFF0202
+  hexio_write test.db 616 8FFFFFFF7F02
   sqlite3 db test.db
   breakpoint
   execsql { DELETE FROM t1 WHERE rowid=2 }

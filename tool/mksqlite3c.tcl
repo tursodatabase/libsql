@@ -292,6 +292,7 @@ foreach file {
    mutex_w32.c
    malloc.c
    printf.c
+   treeview.c
    random.c
    threads.c
    utf.c
@@ -346,6 +347,8 @@ foreach file {
    update.c
    vacuum.c
    vtab.c
+   wherecode.c
+   whereexpr.c
    where.c
 
    parse.c

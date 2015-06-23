@@ -2260,7 +2260,7 @@ struct SrcList {
     Expr *pOn;        /* The ON clause of a join */
     IdList *pUsing;   /* The USING clause of a join */
     Bitmask colUsed;  /* Bit N (1<<N) set if column N of pTab is used */
-    char *zIndex;     /* Identifier from "INDEXED BY <zIndex>" clause */
+    char *zIndexedBy; /* Identifier from "INDEXED BY <zIndex>" clause */
     Index *pIndex;    /* Index structure corresponding to zIndex, if any */
   } a[1];             /* One entry for each identifier on the list */
 };
@@ -3066,7 +3066,9 @@ int sqlite3CantopenError(int);
 # define sqlite3Isxdigit(x)  isxdigit((unsigned char)(x))
 # define sqlite3Tolower(x)   tolower((unsigned char)(x))
 #endif
+#ifndef SQLITE_OMIT_COMPILEOPTION_DIAGS
 int sqlite3IsIdChar(u8);
+#endif
 
 /*
 ** Internal function prototypes
@@ -3094,7 +3096,9 @@ void sqlite3ScratchFree(void*);
 void *sqlite3PageMalloc(int);
 void sqlite3PageFree(void*);
 void sqlite3MemSetDefault(void);
+#ifndef SQLITE_OMIT_BUILTIN_TEST
 void sqlite3BenignMallocHooks(void (*)(void), void (*)(void));
+#endif
 int sqlite3HeapNearlyFull(void);
 
 /*
@@ -3170,10 +3174,6 @@ char *sqlite3VMPrintf(sqlite3*,const char*, va_list);
 #endif
 
 #if defined(SQLITE_DEBUG)
-  TreeView *sqlite3TreeViewPush(TreeView*,u8);
-  void sqlite3TreeViewPop(TreeView*);
-  void sqlite3TreeViewLine(TreeView*, const char*, ...);
-  void sqlite3TreeViewItem(TreeView*, const char*, u8);
   void sqlite3TreeViewExpr(TreeView*, const Expr*, u8);
   void sqlite3TreeViewExprList(TreeView*, const ExprList*, u8, const char*);
   void sqlite3TreeViewSelect(TreeView*, const Select*, u8);
@@ -3242,7 +3242,9 @@ int sqlite3BitvecSet(Bitvec*, u32);
 void sqlite3BitvecClear(Bitvec*, u32, void*);
 void sqlite3BitvecDestroy(Bitvec*);
 u32 sqlite3BitvecSize(Bitvec*);
+#ifndef SQLITE_OMIT_BUILTIN_TEST
 int sqlite3BitvecBuiltinTest(int,int*);
+#endif
 
 RowSet *sqlite3RowSetInit(sqlite3*, void*, unsigned int);
 void sqlite3RowSetClear(RowSet*);
@@ -3330,6 +3332,7 @@ int sqlite3ExprCodeExprList(Parse*, ExprList*, int, u8);
 #define SQLITE_ECEL_FACTOR   0x02  /* Factor out constant terms */
 void sqlite3ExprIfTrue(Parse*, Expr*, int, int);
 void sqlite3ExprIfFalse(Parse*, Expr*, int, int);
+void sqlite3ExprIfFalseDup(Parse*, Expr*, int, int);
 Table *sqlite3FindTable(sqlite3*,const char*, const char*);
 Table *sqlite3LocateTable(Parse*,int isView,const char*, const char*);
 Table *sqlite3LocateTableItem(Parse*,int isView,struct SrcList_item *);
@@ -3346,8 +3349,10 @@ void sqlite3ExprAnalyzeAggregates(NameContext*, Expr*);
 void sqlite3ExprAnalyzeAggList(NameContext*,ExprList*);
 int sqlite3FunctionUsesThisSrc(Expr*, SrcList*);
 Vdbe *sqlite3GetVdbe(Parse*);
+#ifndef SQLITE_OMIT_BUILTIN_TEST
 void sqlite3PrngSaveState(void);
 void sqlite3PrngRestoreState(void);
+#endif
 void sqlite3RollbackAll(sqlite3*,int);
 void sqlite3CodeVerifySchema(Parse*, int);
 void sqlite3CodeVerifyNamedSchema(Parse*, const char *zDb);
@@ -3565,6 +3570,7 @@ void sqlite3NestedParse(Parse*, const char*, ...);
 void sqlite3ExpirePreparedStatements(sqlite3*);
 int sqlite3CodeSubselect(Parse *, Expr *, int, int);
 void sqlite3SelectPrep(Parse*, Select*, NameContext*);
+void sqlite3SelectWrongNumTermsError(Parse *pParse, Select *p);
 int sqlite3MatchSpanName(const char*, const char*, const char*, const char*);
 int sqlite3ResolveExprNames(NameContext*, Expr*);
 void sqlite3ResolveSelectNames(Parse*, Select*, NameContext*);

@@ -19,7 +19,7 @@
 ** Trace output macros
 */
 #if defined(SQLITE_TEST) || defined(SQLITE_DEBUG)
-/***/ int sqlite3WhereTrace = 0;
+/***/ int sqlite3WhereTrace;
 #endif
 #if defined(SQLITE_DEBUG) \
     && (defined(SQLITE_TEST) || defined(SQLITE_ENABLE_WHERETRACE))
@@ -160,10 +160,6 @@ struct WhereOrSet {
   u16 n;                      /* Number of valid a[] entries */
   WhereOrCost a[N_OR_COST];   /* Set of best costs */
 };
-
-
-/* Forward declaration of methods */
-static int whereLoopResize(sqlite3*, WhereLoop*, int);
 
 /*
 ** Each instance of this object holds a sequence of WhereLoop objects
@@ -373,6 +369,11 @@ struct WhereMaskSet {
 };
 
 /*
+** Initialize a WhereMaskSet object
+*/
+#define initMaskSet(P)  (P)->n=0
+
+/*
 ** This object is a convenience wrapper holding all information needed
 ** to construct WhereLoop objects for a particular query.
 */
@@ -422,6 +423,62 @@ struct WhereInfo {
   WhereClause sWC;          /* Decomposition of the WHERE clause */
   WhereLevel a[1];          /* Information about each nest loop in WHERE */
 };
+
+/*
+** Private interfaces - callable only by other where.c routines.
+**
+** where.c:
+*/
+Bitmask sqlite3WhereGetMask(WhereMaskSet*,int);
+WhereTerm *sqlite3WhereFindTerm(
+  WhereClause *pWC,     /* The WHERE clause to be searched */
+  int iCur,             /* Cursor number of LHS */
+  int iColumn,          /* Column number of LHS */
+  Bitmask notReady,     /* RHS must not overlap with this mask */
+  u32 op,               /* Mask of WO_xx values describing operator */
+  Index *pIdx           /* Must be compatible with this index, if not NULL */
+);
+
+/* wherecode.c: */
+#ifndef SQLITE_OMIT_EXPLAIN
+int sqlite3WhereExplainOneScan(
+  Parse *pParse,                  /* Parse context */
+  SrcList *pTabList,              /* Table list this loop refers to */
+  WhereLevel *pLevel,             /* Scan to write OP_Explain opcode for */
+  int iLevel,                     /* Value for "level" column of output */
+  int iFrom,                      /* Value for "from" column of output */
+  u16 wctrlFlags                  /* Flags passed to sqlite3WhereBegin() */
+);
+#else
+# define sqlite3WhereExplainOneScan(u,v,w,x,y,z) 0
+#endif /* SQLITE_OMIT_EXPLAIN */
+#ifdef SQLITE_ENABLE_STMT_SCANSTATUS
+void sqlite3WhereAddScanStatus(
+  Vdbe *v,                        /* Vdbe to add scanstatus entry to */
+  SrcList *pSrclist,              /* FROM clause pLvl reads data from */
+  WhereLevel *pLvl,               /* Level to add scanstatus() entry for */
+  int addrExplain                 /* Address of OP_Explain (or 0) */
+);
+#else
+# define sqlite3WhereAddScanStatus(a, b, c, d) ((void)d)
+#endif
+Bitmask sqlite3WhereCodeOneLoopStart(
+  WhereInfo *pWInfo,   /* Complete information about the WHERE clause */
+  int iLevel,          /* Which level of pWInfo->a[] should be coded */
+  Bitmask notReady     /* Which tables are currently available */
+);
+
+/* whereexpr.c: */
+void sqlite3WhereClauseInit(WhereClause*,WhereInfo*);
+void sqlite3WhereClauseClear(WhereClause*);
+void sqlite3WhereSplit(WhereClause*,Expr*,u8);
+Bitmask sqlite3WhereExprUsage(WhereMaskSet*, Expr*);
+Bitmask sqlite3WhereExprListUsage(WhereMaskSet*, ExprList*);
+void sqlite3WhereExprAnalyze(SrcList*, WhereClause*);
+
+
+
+
 
 /*
 ** Bitmasks for the operators on WhereTerm objects.  These are all

@@ -102,7 +102,11 @@ const char sqlite3IsEbcdicIdChar[] = {
 };
 #define IdChar(C)  (((c=C)>=0x42 && sqlite3IsEbcdicIdChar[c-0x40]))
 #endif
+
+/* Make the IdChar function accessible from ctime.c */
+#ifndef SQLITE_OMIT_COMPILEOPTION_DIAGS
 int sqlite3IsIdChar(u8 c){ return IdChar(c); }
+#endif
 
 
 /*

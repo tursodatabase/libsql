@@ -81,6 +81,12 @@
 #      permutation
 #      presql
 #
+# Command to test whether or not --verbose=1 was specified on the command
+# line (returns 0 for not-verbose, 1 for verbose and 2 for "verbose in the
+# output file only").
+#
+#      verbose
+#
 
 # Set the precision of FP arithmatic used by the interpreter. And
 # configure SQLite to take database file locks on the page that begins
@@ -388,6 +394,9 @@ if {[info exists cmdlinearg]==0} {
   #   --file-retry-delay=N
   #   --start=[$permutation:]$testfile
   #   --match=$pattern
+  #   --verbose=$val
+  #   --output=$filename
+  #   --help
   #
   set cmdlinearg(soft-heap-limit)    0
   set cmdlinearg(maxerror)        1000
@@ -399,6 +408,8 @@ if {[info exists cmdlinearg]==0} {
   set cmdlinearg(file-retry-delay)   0
   set cmdlinearg(start)             ""
   set cmdlinearg(match)             ""
+  set cmdlinearg(verbose)           ""
+  set cmdlinearg(output)            ""
 
   set leftover [list]
   foreach a $argv {
@@ -457,6 +468,22 @@ if {[info exists cmdlinearg]==0} {
         set ::G(match) $cmdlinearg(match)
         if {$::G(match) == ""} {unset ::G(match)}
       }
+
+      {^-+output=.+$} {
+        foreach {dummy cmdlinearg(output)} [split $a =] break
+        if {$cmdlinearg(verbose)==""} {
+          set cmdlinearg(verbose) 2
+        }
+      }
+      {^-+verbose=.+$} {
+        foreach {dummy cmdlinearg(verbose)} [split $a =] break
+        if {$cmdlinearg(verbose)=="file"} {
+          set cmdlinearg(verbose) 2
+        } elseif {[string is boolean -strict $cmdlinearg(verbose)]==0} {
+          error "option --verbose= must be set to a boolean or to \"file\""
+        }
+      }
+
       default {
         lappend leftover $a
       }
@@ -483,6 +510,16 @@ if {[info exists cmdlinearg]==0} {
   #
   if {$cmdlinearg(malloctrace)} {
     sqlite3_memdebug_backtrace $cmdlinearg(backtrace)
+  }
+
+  if {$cmdlinearg(output)!=""} {
+    puts "Copying output to file $cmdlinearg(output)"
+    set ::G(output_fd) [open $cmdlinearg(output) w]
+    fconfigure $::G(output_fd) -buffering line
+  }
+
+  if {$cmdlinearg(verbose)==""} {
+    set cmdlinearg(verbose) 1
   }
 }
 
@@ -554,7 +591,7 @@ proc fail_test {name} {
 
   set nFail [set_test_counter errors]
   if {$nFail>=$::cmdlinearg(maxerror)} {
-    puts "*** Giving up..."
+    output2 "*** Giving up..."
     finalize_testing
   }
 }
@@ -562,7 +599,7 @@ proc fail_test {name} {
 # Remember a warning message to be displayed at the conclusion of all testing
 #
 proc warning {msg {append 1}} {
-  puts "Warning: $msg"
+  output2 "Warning: $msg"
   set warnList [set_test_counter warn_list]
   if {$append} {
     lappend warnList $msg
@@ -576,6 +613,61 @@ proc warning {msg {append 1}} {
 proc incr_ntest {} {
   set_test_counter count [expr [set_test_counter count] + 1]
 }
+
+# Return true if --verbose=1 was specified on the command line. Otherwise,
+# return false.
+#
+proc verbose {} {
+  return $::cmdlinearg(verbose)
+}
+
+# Use the following commands instead of [puts] for test output within
+# this file. Test scripts can still use regular [puts], which is directed
+# to stdout and, if one is open, the --output file.
+#
+# output1: output that should be printed if --verbose=1 was specified.
+# output2: output that should be printed unconditionally.
+# output2_if_no_verbose: output that should be printed only if --verbose=0.
+#
+proc output1 {args} {
+  set v [verbose]
+  if {$v==1} {
+    uplevel output2 $args
+  } elseif {$v==2} {
+    uplevel puts [lrange $args 0 end-1] $::G(output_fd) [lrange $args end end]
+  }
+}
+proc output2 {args} {
+  set nArg [llength $args]
+  uplevel puts $args
+}
+proc output2_if_no_verbose {args} {
+  set v [verbose]
+  if {$v==0} {
+    uplevel output2 $args
+  } elseif {$v==2} {
+    uplevel puts [lrange $args 0 end-1] stdout [lrange $args end end]
+  }
+}
+
+# Override the [puts] command so that if no channel is explicitly 
+# specified the string is written to both stdout and to the file 
+# specified by "--output=", if any.
+#
+proc puts_override {args} {
+  set nArg [llength $args]
+  if {$nArg==1 || ($nArg==2 && [string first [lindex $args 0] -nonewline]==0)} {
+    uplevel puts_original $args
+    if {[info exists ::G(output_fd)]} {
+      uplevel puts [lrange $args 0 end-1] $::G(output_fd) [lrange $args end end]
+    }
+  } else {
+    # A channel was explicitly specified.
+    uplevel puts_original $args
+  }
+}
+rename puts puts_original
+proc puts {args} { uplevel puts_override $args }
 
 
 # Invoke the do_test procedure to run a single test
@@ -604,12 +696,13 @@ proc do_test {name cmd expected} {
   }
 
   incr_ntest
-  puts -nonewline $name...
+  output1 -nonewline $name...
   flush stdout
 
   if {![info exists ::G(match)] || [string match $::G(match) $name]} {
     if {[catch {uplevel #0 "$cmd;\n"} result]} {
-      puts "\nError: $result"
+      output2_if_no_verbose -nonewline $name...
+      output2 "\nError: $result"
       fail_test $name
     } else {
       if {[regexp {^~?/.*/$} $expected]} {
@@ -653,14 +746,15 @@ proc do_test {name cmd expected} {
         # if {![info exists ::testprefix] || $::testprefix eq ""} {
         #   error "no test prefix"
         # }
-        puts "\nExpected: \[$expected\]\n     Got: \[$result\]"
+        output2_if_no_verbose -nonewline $name...
+        output2 "\nExpected: \[$expected\]\n     Got: \[$result\]"
         fail_test $name
       } else {
-        puts " Ok"
+        output1 " Ok"
       }
     }
   } else {
-    puts " Omitted"
+    output1 " Omitted"
     omit_test $name "pattern mismatch" 0
   }
   flush stdout
@@ -837,7 +931,7 @@ proc delete_all_data {} {
 # Return the number of microseconds per statement.
 #
 proc speed_trial {name numstmt units sql} {
-  puts -nonewline [format {%-21.21s } $name...]
+  output2 -nonewline [format {%-21.21s } $name...]
   flush stdout
   set speed [time {sqlite3_exec_nr db $sql}]
   set tm [lindex $speed 0]
@@ -847,13 +941,13 @@ proc speed_trial {name numstmt units sql} {
     set rate [format %20.5f [expr {1000000.0*$numstmt/$tm}]]
   }
   set u2 $units/s
-  puts [format {%12d uS %s %s} $tm $rate $u2]
+  output2 [format {%12d uS %s %s} $tm $rate $u2]
   global total_time
   set total_time [expr {$total_time+$tm}]
   lappend ::speed_trial_times $name $tm
 }
 proc speed_trial_tcl {name numstmt units script} {
-  puts -nonewline [format {%-21.21s } $name...]
+  output2 -nonewline [format {%-21.21s } $name...]
   flush stdout
   set speed [time {eval $script}]
   set tm [lindex $speed 0]
@@ -863,7 +957,7 @@ proc speed_trial_tcl {name numstmt units script} {
     set rate [format %20.5f [expr {1000000.0*$numstmt/$tm}]]
   }
   set u2 $units/s
-  puts [format {%12d uS %s %s} $tm $rate $u2]
+  output2 [format {%12d uS %s %s} $tm $rate $u2]
   global total_time
   set total_time [expr {$total_time+$tm}]
   lappend ::speed_trial_times $name $tm
@@ -875,19 +969,19 @@ proc speed_trial_init {name} {
   sqlite3 versdb :memory:
   set vers [versdb one {SELECT sqlite_source_id()}]
   versdb close
-  puts "SQLite $vers"
+  output2 "SQLite $vers"
 }
 proc speed_trial_summary {name} {
   global total_time
-  puts [format {%-21.21s %12d uS TOTAL} $name $total_time]
+  output2 [format {%-21.21s %12d uS TOTAL} $name $total_time]
 
   if { 0 } {
     sqlite3 versdb :memory:
     set vers [lindex [versdb one {SELECT sqlite_source_id()}] 0]
     versdb close
-    puts "CREATE TABLE IF NOT EXISTS time(version, script, test, us);"
+    output2 "CREATE TABLE IF NOT EXISTS time(version, script, test, us);"
     foreach {test us} $::speed_trial_times {
-      puts "INSERT INTO time VALUES('$vers', '$name', '$test', $us);"
+      output2 "INSERT INTO time VALUES('$vers', '$name', '$test', $us);"
     }
   }
 }
@@ -931,75 +1025,75 @@ proc finalize_testing {} {
     }
   }
   if {$nKnown>0} {
-    puts "[expr {$nErr-$nKnown}] new errors and $nKnown known errors\
+    output2 "[expr {$nErr-$nKnown}] new errors and $nKnown known errors\
          out of $nTest tests"
   } else {
-    puts "$nErr errors out of $nTest tests"
+    output2 "$nErr errors out of $nTest tests"
   }
   if {$nErr>$nKnown} {
-    puts -nonewline "Failures on these tests:"
+    output2 -nonewline "Failures on these tests:"
     foreach x [set_test_counter fail_list] {
-      if {![info exists known_error($x)]} {puts -nonewline " $x"}
+      if {![info exists known_error($x)]} {output2 -nonewline " $x"}
     }
-    puts ""
+    output2 ""
   }
   foreach warning [set_test_counter warn_list] {
-    puts "Warning: $warning"
+    output2 "Warning: $warning"
   }
   run_thread_tests 1
   if {[llength $omitList]>0} {
-    puts "Omitted test cases:"
+    output2 "Omitted test cases:"
     set prec {}
     foreach {rec} [lsort $omitList] {
       if {$rec==$prec} continue
       set prec $rec
-      puts [format {  %-12s %s} [lindex $rec 0] [lindex $rec 1]]
+      output2 [format {  %-12s %s} [lindex $rec 0] [lindex $rec 1]]
     }
   }
   if {$nErr>0 && ![working_64bit_int]} {
-    puts "******************************************************************"
-    puts "N.B.:  The version of TCL that you used to build this test harness"
-    puts "is defective in that it does not support 64-bit integers.  Some or"
-    puts "all of the test failures above might be a result from this defect"
-    puts "in your TCL build."
-    puts "******************************************************************"
+    output2 "******************************************************************"
+    output2 "N.B.:  The version of TCL that you used to build this test harness"
+    output2 "is defective in that it does not support 64-bit integers.  Some or"
+    output2 "all of the test failures above might be a result from this defect"
+    output2 "in your TCL build."
+    output2 "******************************************************************"
   }
   if {$::cmdlinearg(binarylog)} {
     vfslog finalize binarylog
   }
   if {$sqlite_open_file_count} {
-    puts "$sqlite_open_file_count files were left open"
+    output2 "$sqlite_open_file_count files were left open"
     incr nErr
   }
   if {[lindex [sqlite3_status SQLITE_STATUS_MALLOC_COUNT 0] 1]>0 ||
               [sqlite3_memory_used]>0} {
-    puts "Unfreed memory: [sqlite3_memory_used] bytes in\
+    output2 "Unfreed memory: [sqlite3_memory_used] bytes in\
          [lindex [sqlite3_status SQLITE_STATUS_MALLOC_COUNT 0] 1] allocations"
     incr nErr
     ifcapable memdebug||mem5||(mem3&&debug) {
-      puts "Writing unfreed memory log to \"./memleak.txt\""
+      output2 "Writing unfreed memory log to \"./memleak.txt\""
       sqlite3_memdebug_dump ./memleak.txt
     }
   } else {
-    puts "All memory allocations freed - no leaks"
+    output2 "All memory allocations freed - no leaks"
     ifcapable memdebug||mem5 {
       sqlite3_memdebug_dump ./memusage.txt
     }
   }
   show_memstats
-  puts "Maximum memory usage: [sqlite3_memory_highwater 1] bytes"
-  puts "Current memory usage: [sqlite3_memory_highwater] bytes"
+  output2 "Maximum memory usage: [sqlite3_memory_highwater 1] bytes"
+  output2 "Current memory usage: [sqlite3_memory_highwater] bytes"
   if {[info commands sqlite3_memdebug_malloc_count] ne ""} {
-    puts "Number of malloc()  : [sqlite3_memdebug_malloc_count] calls"
+    output2 "Number of malloc()  : [sqlite3_memdebug_malloc_count] calls"
   }
   if {$::cmdlinearg(malloctrace)} {
-    puts "Writing mallocs.sql..."
+    output2 "Writing mallocs.sql..."
     memdebug_log_sql
     sqlite3_memdebug_log stop
     sqlite3_memdebug_log clear
 
     if {[sqlite3_memory_used]>0} {
-      puts "Writing leaks.sql..."
+      output2 "Writing leaks.sql..."
       sqlite3_memdebug_log sync
       memdebug_log_sql leaks.sql
     }
@@ -1020,30 +1114,30 @@ proc show_memstats {} {
   set y [sqlite3_status SQLITE_STATUS_MALLOC_SIZE 0]
   set val [format {now %10d  max %10d  max-size %10d} \
               [lindex $x 1] [lindex $x 2] [lindex $y 2]]
-  puts "Memory used:          $val"
+  output1 "Memory used:          $val"
   set x [sqlite3_status SQLITE_STATUS_MALLOC_COUNT 0]
   set val [format {now %10d  max %10d} [lindex $x 1] [lindex $x 2]]
-  puts "Allocation count:     $val"
+  output1 "Allocation count:     $val"
   set x [sqlite3_status SQLITE_STATUS_PAGECACHE_USED 0]
   set y [sqlite3_status SQLITE_STATUS_PAGECACHE_SIZE 0]
   set val [format {now %10d  max %10d  max-size %10d} \
               [lindex $x 1] [lindex $x 2] [lindex $y 2]]
-  puts "Page-cache used:      $val"
+  output1 "Page-cache used:      $val"
   set x [sqlite3_status SQLITE_STATUS_PAGECACHE_OVERFLOW 0]
   set val [format {now %10d  max %10d} [lindex $x 1] [lindex $x 2]]
-  puts "Page-cache overflow:  $val"
+  output1 "Page-cache overflow:  $val"
   set x [sqlite3_status SQLITE_STATUS_SCRATCH_USED 0]
   set val [format {now %10d  max %10d} [lindex $x 1] [lindex $x 2]]
-  puts "Scratch memory used:  $val"
+  output1 "Scratch memory used:  $val"
   set x [sqlite3_status SQLITE_STATUS_SCRATCH_OVERFLOW 0]
   set y [sqlite3_status SQLITE_STATUS_SCRATCH_SIZE 0]
   set val [format {now %10d  max %10d  max-size %10d} \
                [lindex $x 1] [lindex $x 2] [lindex $y 2]]
-  puts "Scratch overflow:     $val"
+  output1 "Scratch overflow:     $val"
   ifcapable yytrackmaxstackdepth {
     set x [sqlite3_status SQLITE_STATUS_PARSER_STACK 0]
     set val [format {               max %10d} [lindex $x 2]]
-    puts "Parser stack depth:    $val"
+    output2 "Parser stack depth:    $val"
   }
 }
 
@@ -1058,7 +1152,7 @@ proc execsql_timed {sql {db db}} {
     set x [uplevel [list $db eval $sql]]
   } 1]
   set tm [lindex $tm 0]
-  puts -nonewline " ([expr {$tm*0.001}]ms) "
+  output1 -nonewline " ([expr {$tm*0.001}]ms) "
   set x
 }
 
@@ -1074,20 +1168,20 @@ proc catchsql {sql {db db}} {
 # Do an VDBE code dump on the SQL given
 #
 proc explain {sql {db db}} {
-  puts ""
-  puts "addr  opcode        p1      p2      p3      p4               p5  #"
-  puts "----  ------------  ------  ------  ------  ---------------  --  -"
+  output2 ""
+  output2 "addr  opcode        p1      p2      p3      p4               p5  #"
+  output2 "----  ------------  ------  ------  ------  ---------------  --  -"
   $db eval "explain $sql" {} {
-    puts [format {%-4d  %-12.12s  %-6d  %-6d  %-6d  % -17s %s  %s} \
+    output2 [format {%-4d  %-12.12s  %-6d  %-6d  %-6d  % -17s %s  %s} \
       $addr $opcode $p1 $p2 $p3 $p4 $p5 $comment
     ]
   }
 }
 
 proc explain_i {sql {db db}} {
-  puts ""
-  puts "addr  opcode        p1      p2      p3      p4                p5  #"
-  puts "----  ------------  ------  ------  ------  ----------------  --  -"
+  output2 ""
+  output2 "addr  opcode        p1      p2      p3      p4                p5  #"
+  output2 "----  ------------  ------  ------  ------  ----------------  --  -"
 
 
   # Set up colors for the different opcodes. Scheme is as follows:
@@ -1153,18 +1247,18 @@ proc explain_i {sql {db db}} {
 
   $db eval "explain $sql" {} {
     if {[info exists linebreak($addr)]} {
-      puts ""
+      output2 ""
     }
     set I [string repeat " " $x($addr)]
 
     set col ""
     catch { set col $color($opcode) }
 
-    puts [format {%-4d  %s%s%-12.12s%s  %-6d  %-6d  %-6d  % -17s %s  %s} \
+    output2 [format {%-4d  %s%s%-12.12s%s  %-6d  %-6d  %-6d  % -17s %s  %s} \
       $addr $I $col $opcode $D $p1 $p2 $p3 $p4 $p5 $comment
     ]
   }
-  puts "----  ------------  ------  ------  ------  ----------------  --  -"
+  output2 "----  ------------  ------  ------  ------  ----------------  --  -"
 }
 
 # Show the VDBE program for an SQL statement but omit the Trace
@@ -1595,9 +1689,9 @@ proc do_ioerr_test {testname args} {
         set nowcksum [cksum]
         set res [expr {$nowcksum==$::checksum || $nowcksum==$::goodcksum}]
         if {$res==0} {
-          puts "now=$nowcksum"
-          puts "the=$::checksum"
-          puts "fwd=$::goodcksum"
+          output2 "now=$nowcksum"
+          output2 "the=$::checksum"
+          output2 "fwd=$::goodcksum"
         }
         set res
       } 1
@@ -1821,6 +1915,12 @@ proc slave_test_script {script} {
     interp eval tinterp [list set $var $value]
   }
 
+  # If output is being copied into a file, share the file-descriptor with
+  # the interpreter.
+  if {[info exists ::G(output_fd)]} {
+    interp share {} $::G(output_fd) tinterp
+  }
+
   # The alias used to access the global test counters.
   tinterp alias set_test_counter set_test_counter
 
@@ -1889,7 +1989,7 @@ proc slave_test_file {zFile} {
 
   # Add some info to the output.
   #
-  puts "Time: $tail $ms ms"
+  output2 "Time: $tail $ms ms"
   show_memstats
 }
 

@@ -980,11 +980,73 @@ static u8 *findOverflowCell(MemPage *pPage, int iCell){
 }
 
 /*
-** Parse a cell content block and fill in the CellInfo structure.  There
-** are two versions of this function.  btreeParseCell() takes a 
-** cell index as the second argument and btreeParseCellPtr() 
-** takes a pointer to the body of the cell as its second argument.
+** This is common tail processing for btreeParseCellPtr() and
+** btreeParseCellPtrIndex() for the case when the cell does not fit entirely
+** on a single B-tree page.  Make necessary adjustments to the CellInfo
+** structure.
 */
+static SQLITE_NOINLINE void btreeParseCellAdjustSizeForOverflow(
+  MemPage *pPage,         /* Page containing the cell */
+  u8 *pCell,              /* Pointer to the cell text. */
+  CellInfo *pInfo         /* Fill in this structure */
+){
+  /* If the payload will not fit completely on the local page, we have
+  ** to decide how much to store locally and how much to spill onto
+  ** overflow pages.  The strategy is to minimize the amount of unused
+  ** space on overflow pages while keeping the amount of local storage
+  ** in between minLocal and maxLocal.
+  **
+  ** Warning:  changing the way overflow payload is distributed in any
+  ** way will result in an incompatible file format.
+  */
+  int minLocal;  /* Minimum amount of payload held locally */
+  int maxLocal;  /* Maximum amount of payload held locally */
+  int surplus;   /* Overflow payload available for local storage */
+
+  minLocal = pPage->minLocal;
+  maxLocal = pPage->maxLocal;
+  surplus = minLocal + (pInfo->nPayload - minLocal)%(pPage->pBt->usableSize-4);
+  testcase( surplus==maxLocal );
+  testcase( surplus==maxLocal+1 );
+  if( surplus <= maxLocal ){
+    pInfo->nLocal = (u16)surplus;
+  }else{
+    pInfo->nLocal = (u16)minLocal;
+  }
+  pInfo->iOverflow = (u16)(&pInfo->pPayload[pInfo->nLocal] - pCell);
+  pInfo->nSize = pInfo->iOverflow + 4;
+}
+
+/*
+** The following routines are implementations of the MemPage.xParseCell()
+** method.
+**
+** Parse a cell content block and fill in the CellInfo structure.
+**
+** btreeParseCellPtr()        =>   table btree leaf nodes
+** btreeParseCellNoPayload()  =>   table btree internal nodes
+** btreeParseCellPtrIndex()   =>   index btree nodes
+**
+** There is also a wrapper function btreeParseCell() that works for
+** all MemPage types and that references the cell by index rather than
+** by pointer.
+*/
+static void btreeParseCellPtrNoPayload(
+  MemPage *pPage,         /* Page containing the cell */
+  u8 *pCell,              /* Pointer to the cell text. */
+  CellInfo *pInfo         /* Fill in this structure */
+){
+  assert( sqlite3_mutex_held(pPage->pBt->mutex) );
+  assert( pPage->leaf==0 );
+  assert( pPage->noPayload );
+  assert( pPage->childPtrSize==4 );
+  pInfo->nSize = 4 + getVarint(&pCell[4], (u64*)&pInfo->nKey);
+  pInfo->nPayload = 0;
+  pInfo->nLocal = 0;
+  pInfo->iOverflow = 0;
+  pInfo->pPayload = 0;
+  return;
+}
 static void btreeParseCellPtr(
   MemPage *pPage,         /* Page containing the cell */
   u8 *pCell,              /* Pointer to the cell text. */
@@ -992,26 +1054,54 @@ static void btreeParseCellPtr(
 ){
   u8 *pIter;              /* For scanning through pCell */
   u32 nPayload;           /* Number of bytes of cell payload */
+  u64 iKey;               /* Extracted Key value */
 
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
   assert( pPage->leaf==0 || pPage->leaf==1 );
-  if( pPage->intKeyLeaf ){
-    assert( pPage->childPtrSize==0 );
-    pIter = pCell + getVarint32(pCell, nPayload);
-    pIter += getVarint(pIter, (u64*)&pInfo->nKey);
-  }else if( pPage->noPayload ){
-    assert( pPage->childPtrSize==4 );
-    pInfo->nSize = 4 + getVarint(&pCell[4], (u64*)&pInfo->nKey);
-    pInfo->nPayload = 0;
-    pInfo->nLocal = 0;
-    pInfo->iOverflow = 0;
-    pInfo->pPayload = 0;
-    return;
-  }else{
-    pIter = pCell + pPage->childPtrSize;
-    pIter += getVarint32(pIter, nPayload);
-    pInfo->nKey = nPayload;
+  assert( pPage->intKeyLeaf || pPage->noPayload );
+  assert( pPage->noPayload==0 );
+  assert( pPage->intKeyLeaf );
+  assert( pPage->childPtrSize==0 );
+  pIter = pCell;
+
+  /* The next block of code is equivalent to:
+  **
+  **     pIter += getVarint32(pIter, nPayload);
+  **
+  ** The code is inlined to avoid a function call.
+  */
+  nPayload = *pIter;
+  if( nPayload>=0x80 ){
+    u8 *pEnd = &pIter[8];
+    nPayload &= 0x7f;
+    do{
+      nPayload = (nPayload<<7) | (*++pIter & 0x7f);
+    }while( (*pIter)>=0x80 && pIter<pEnd );
   }
+  pIter++;
+
+  /* The next block of code is equivalent to:
+  **
+  **     pIter += getVarint(pIter, (u64*)&pInfo->nKey);
+  **
+  ** The code is inlined to avoid a function call.
+  */
+  iKey = *pIter;
+  if( iKey>=0x80 ){
+    u8 *pEnd = &pIter[7];
+    iKey &= 0x7f;
+    while(1){
+      iKey = (iKey<<7) | (*++pIter & 0x7f);
+      if( (*pIter)<0x80 ) break;
+      if( pIter>=pEnd ){
+        iKey = (iKey<<8) | *++pIter;
+        break;
+      }
+    }
+  }
+  pIter++;
+
+  pInfo->nKey = *(i64*)&iKey;
   pInfo->nPayload = nPayload;
   pInfo->pPayload = pIter;
   testcase( nPayload==pPage->maxLocal );
@@ -1025,31 +1115,46 @@ static void btreeParseCellPtr(
     pInfo->nLocal = (u16)nPayload;
     pInfo->iOverflow = 0;
   }else{
-    /* If the payload will not fit completely on the local page, we have
-    ** to decide how much to store locally and how much to spill onto
-    ** overflow pages.  The strategy is to minimize the amount of unused
-    ** space on overflow pages while keeping the amount of local storage
-    ** in between minLocal and maxLocal.
-    **
-    ** Warning:  changing the way overflow payload is distributed in any
-    ** way will result in an incompatible file format.
-    */
-    int minLocal;  /* Minimum amount of payload held locally */
-    int maxLocal;  /* Maximum amount of payload held locally */
-    int surplus;   /* Overflow payload available for local storage */
+    btreeParseCellAdjustSizeForOverflow(pPage, pCell, pInfo);
+  }
+}
+static void btreeParseCellPtrIndex(
+  MemPage *pPage,         /* Page containing the cell */
+  u8 *pCell,              /* Pointer to the cell text. */
+  CellInfo *pInfo         /* Fill in this structure */
+){
+  u8 *pIter;              /* For scanning through pCell */
+  u32 nPayload;           /* Number of bytes of cell payload */
 
-    minLocal = pPage->minLocal;
-    maxLocal = pPage->maxLocal;
-    surplus = minLocal + (nPayload - minLocal)%(pPage->pBt->usableSize - 4);
-    testcase( surplus==maxLocal );
-    testcase( surplus==maxLocal+1 );
-    if( surplus <= maxLocal ){
-      pInfo->nLocal = (u16)surplus;
-    }else{
-      pInfo->nLocal = (u16)minLocal;
-    }
-    pInfo->iOverflow = (u16)(&pInfo->pPayload[pInfo->nLocal] - pCell);
-    pInfo->nSize = pInfo->iOverflow + 4;
+  assert( sqlite3_mutex_held(pPage->pBt->mutex) );
+  assert( pPage->leaf==0 || pPage->leaf==1 );
+  assert( pPage->intKeyLeaf==0 );
+  assert( pPage->noPayload==0 );
+  pIter = pCell + pPage->childPtrSize;
+  nPayload = *pIter;
+  if( nPayload>=0x80 ){
+    u8 *pEnd = &pIter[8];
+    nPayload &= 0x7f;
+    do{
+      nPayload = (nPayload<<7) | (*++pIter & 0x7f);
+    }while( *(pIter)>=0x80 && pIter<pEnd );
+  }
+  pIter++;
+  pInfo->nKey = nPayload;
+  pInfo->nPayload = nPayload;
+  pInfo->pPayload = pIter;
+  testcase( nPayload==pPage->maxLocal );
+  testcase( nPayload==pPage->maxLocal+1 );
+  if( nPayload<=pPage->maxLocal ){
+    /* This is the (easy) common case where the entire payload fits
+    ** on the local page.  No overflow is required.
+    */
+    pInfo->nSize = nPayload + (u16)(pIter - pCell);
+    if( pInfo->nSize<4 ) pInfo->nSize = 4;
+    pInfo->nLocal = (u16)nPayload;
+    pInfo->iOverflow = 0;
+  }else{
+    btreeParseCellAdjustSizeForOverflow(pPage, pCell, pInfo);
   }
 }
 static void btreeParseCell(
@@ -1057,14 +1162,20 @@ static void btreeParseCell(
   int iCell,              /* The cell index.  First cell is 0 */
   CellInfo *pInfo         /* Fill in this structure */
 ){
-  btreeParseCellPtr(pPage, findCell(pPage, iCell), pInfo);
+  pPage->xParseCell(pPage, findCell(pPage, iCell), pInfo);
 }
 
 /*
+** The following routines are implementations of the MemPage.xCellSize
+** method.
+**
 ** Compute the total number of bytes that a Cell needs in the cell
 ** data area of the btree-page.  The return number includes the cell
 ** data header and the local payload, but not any overflow page or
 ** the space used by the cell pointer.
+**
+** cellSizePtrNoPayload()    =>   table internal nodes
+** cellSizePtr()             =>   all index nodes & table leaf nodes
 */
 static u16 cellSizePtr(MemPage *pPage, u8 *pCell){
   u8 *pIter = pCell + pPage->childPtrSize; /* For looping over bytes of pCell */
@@ -1077,18 +1188,13 @@ static u16 cellSizePtr(MemPage *pPage, u8 *pCell){
   ** cell. If SQLITE_DEBUG is defined, an assert() at the bottom of
   ** this function verifies that this invariant is not violated. */
   CellInfo debuginfo;
-  btreeParseCellPtr(pPage, pCell, &debuginfo);
+  pPage->xParseCell(pPage, pCell, &debuginfo);
 #endif
 
-  if( pPage->noPayload ){
-    pEnd = &pIter[9];
-    while( (*pIter++)&0x80 && pIter<pEnd );
-    assert( pPage->childPtrSize==4 );
-    return (u16)(pIter - pCell);
-  }
+  assert( pPage->noPayload==0 );
   nSize = *pIter;
   if( nSize>=0x80 ){
-    pEnd = &pIter[9];
+    pEnd = &pIter[8];
     nSize &= 0x7f;
     do{
       nSize = (nSize<<7) | (*++pIter & 0x7f);
@@ -1120,12 +1226,32 @@ static u16 cellSizePtr(MemPage *pPage, u8 *pCell){
   assert( nSize==debuginfo.nSize || CORRUPT_DB );
   return (u16)nSize;
 }
+static u16 cellSizePtrNoPayload(MemPage *pPage, u8 *pCell){
+  u8 *pIter = pCell + 4; /* For looping over bytes of pCell */
+  u8 *pEnd;              /* End mark for a varint */
+
+#ifdef SQLITE_DEBUG
+  /* The value returned by this function should always be the same as
+  ** the (CellInfo.nSize) value found by doing a full parse of the
+  ** cell. If SQLITE_DEBUG is defined, an assert() at the bottom of
+  ** this function verifies that this invariant is not violated. */
+  CellInfo debuginfo;
+  pPage->xParseCell(pPage, pCell, &debuginfo);
+#endif
+
+  assert( pPage->childPtrSize==4 );
+  pEnd = pIter + 9;
+  while( (*pIter++)&0x80 && pIter<pEnd );
+  assert( debuginfo.nSize==(u16)(pIter - pCell) || CORRUPT_DB );
+  return (u16)(pIter - pCell);
+}
+
 
 #ifdef SQLITE_DEBUG
 /* This variation on cellSizePtr() is used inside of assert() statements
 ** only. */
 static u16 cellSize(MemPage *pPage, int iCell){
-  return cellSizePtr(pPage, findCell(pPage, iCell));
+  return pPage->xCellSize(pPage, findCell(pPage, iCell));
 }
 #endif
 
@@ -1139,7 +1265,7 @@ static void ptrmapPutOvflPtr(MemPage *pPage, u8 *pCell, int *pRC){
   CellInfo info;
   if( *pRC ) return;
   assert( pCell!=0 );
-  btreeParseCellPtr(pPage, pCell, &info);
+  pPage->xParseCell(pPage, pCell, &info);
   if( info.iOverflow ){
     Pgno ovfl = get4byte(&pCell[info.iOverflow]);
     ptrmapPut(pPage->pBt, ovfl, PTRMAP_OVERFLOW1, pPage->pgno, pRC);
@@ -1203,7 +1329,7 @@ static int defragmentPage(MemPage *pPage){
       return SQLITE_CORRUPT_BKPT;
     }
     assert( pc>=iCellFirst && pc<=iCellLast );
-    size = cellSizePtr(pPage, &src[pc]);
+    size = pPage->xCellSize(pPage, &src[pc]);
     cbrk -= size;
     if( cbrk<iCellFirst || pc+size>usableSize ){
       return SQLITE_CORRUPT_BKPT;
@@ -1272,7 +1398,10 @@ static u8 *pageFindSlot(MemPage *pPg, int nByte, int *pRc, int *pbDefrag){
       int x = size - nByte;
       testcase( x==4 );
       testcase( x==3 );
-      if( x<4 ){
+      if( pc < pPg->cellOffset+2*pPg->nCell || size+pc > usableSize ){
+        *pRc = SQLITE_CORRUPT_BKPT;
+        return 0;
+      }else if( x<4 ){
         /* EVIDENCE-OF: R-11498-58022 In a well-formed b-tree page, the total
         ** number of bytes in fragments may not exceed 60. */
         if( aData[hdr+7]>=60 ){
@@ -1283,9 +1412,6 @@ static u8 *pageFindSlot(MemPage *pPg, int nByte, int *pRc, int *pbDefrag){
         ** fragmented bytes within the page. */
         memcpy(&aData[iAddr], &aData[pc], 2);
         aData[hdr+7] += (u8)x;
-      }else if( pc < pPg->cellOffset+2*pPg->nCell || size+pc > usableSize ){
-        *pRc = SQLITE_CORRUPT_BKPT;
-        return 0;
       }else{
         /* The slot remains on the free-list. Reduce its size to account
          ** for the portion used by the new allocation. */
@@ -1441,7 +1567,7 @@ static int freeSpace(MemPage *pPage, u16 iStart, u16 iSize){
   
     /* At this point:
     **    iFreeBlk:   First freeblock after iStart, or zero if none
-    **    iPtr:       The address of a pointer iFreeBlk
+    **    iPtr:       The address of a pointer to iFreeBlk
     **
     ** Check to see if iFreeBlk should be coalesced onto the end of iStart.
     */
@@ -1449,6 +1575,7 @@ static int freeSpace(MemPage *pPage, u16 iStart, u16 iSize){
       nFrag = iFreeBlk - iEnd;
       if( iEnd>iFreeBlk ) return SQLITE_CORRUPT_BKPT;
       iEnd = iFreeBlk + get2byte(&data[iFreeBlk+2]);
+      if( iEnd > pPage->pBt->usableSize ) return SQLITE_CORRUPT_BKPT;
       iSize = iEnd - iStart;
       iFreeBlk = get2byte(&data[iFreeBlk]);
     }
@@ -1506,6 +1633,7 @@ static int decodeFlags(MemPage *pPage, int flagByte){
   pPage->leaf = (u8)(flagByte>>3);  assert( PTF_LEAF == 1<<3 );
   flagByte &= ~PTF_LEAF;
   pPage->childPtrSize = 4-4*pPage->leaf;
+  pPage->xCellSize = cellSizePtr;
   pBt = pPage->pBt;
   if( flagByte==(PTF_LEAFDATA | PTF_INTKEY) ){
     /* EVIDENCE-OF: R-03640-13415 A value of 5 means the page is an interior
@@ -1515,8 +1643,16 @@ static int decodeFlags(MemPage *pPage, int flagByte){
     ** table b-tree page. */
     assert( (PTF_LEAFDATA|PTF_INTKEY|PTF_LEAF)==13 );
     pPage->intKey = 1;
-    pPage->intKeyLeaf = pPage->leaf;
-    pPage->noPayload = !pPage->leaf;
+    if( pPage->leaf ){
+      pPage->intKeyLeaf = 1;
+      pPage->noPayload = 0;
+      pPage->xParseCell = btreeParseCellPtr;
+    }else{
+      pPage->intKeyLeaf = 0;
+      pPage->noPayload = 1;
+      pPage->xCellSize = cellSizePtrNoPayload;
+      pPage->xParseCell = btreeParseCellPtrNoPayload;
+    }
     pPage->maxLocal = pBt->maxLeaf;
     pPage->minLocal = pBt->minLeaf;
   }else if( flagByte==PTF_ZERODATA ){
@@ -1529,6 +1665,7 @@ static int decodeFlags(MemPage *pPage, int flagByte){
     pPage->intKey = 0;
     pPage->intKeyLeaf = 0;
     pPage->noPayload = 0;
+    pPage->xParseCell = btreeParseCellPtrIndex;
     pPage->maxLocal = pBt->maxLocal;
     pPage->minLocal = pBt->minLocal;
   }else{
@@ -1623,7 +1760,7 @@ static int btreeInitPage(MemPage *pPage){
         if( pc<iCellFirst || pc>iCellLast ){
           return SQLITE_CORRUPT_BKPT;
         }
-        sz = cellSizePtr(pPage, &data[pc]);
+        sz = pPage->xCellSize(pPage, &data[pc]);
         testcase( pc+sz==usableSize );
         if( pc+sz>usableSize ){
           return SQLITE_CORRUPT_BKPT;
@@ -3119,7 +3256,7 @@ static int modifyPagePointer(MemPage *pPage, Pgno iFrom, Pgno iTo, u8 eType){
       u8 *pCell = findCell(pPage, i);
       if( eType==PTRMAP_OVERFLOW1 ){
         CellInfo info;
-        btreeParseCellPtr(pPage, pCell, &info);
+        pPage->xParseCell(pPage, pCell, &info);
         if( info.iOverflow
          && pCell+info.iOverflow+3<=pPage->aData+pPage->maskPage
          && iFrom==get4byte(&pCell[info.iOverflow])
@@ -3984,13 +4121,6 @@ int sqlite3BtreeCloseCursor(BtCursor *pCur){
 **
 ** BtCursor.info is a cache of the information in the current cell.
 ** Using this cache reduces the number of calls to btreeParseCell().
-**
-** 2007-06-25:  There is a bug in some versions of MSVC that cause the
-** compiler to crash when getCellInfo() is implemented as a macro.
-** But there is a measureable speed advantage to using the macro on gcc
-** (when less compiler optimizations like -Os or -O0 are used and the
-** compiler is not doing aggressive inlining.)  So we use a real function
-** for MSVC and a macro for everything else.  Ticket #2457.
 */
 #ifndef NDEBUG
   static void assertCellInfo(BtCursor *pCur){
@@ -4003,28 +4133,15 @@ int sqlite3BtreeCloseCursor(BtCursor *pCur){
 #else
   #define assertCellInfo(x)
 #endif
-#ifdef _MSC_VER
-  /* Use a real function in MSVC to work around bugs in that compiler. */
-  static void getCellInfo(BtCursor *pCur){
-    if( pCur->info.nSize==0 ){
-      int iPage = pCur->iPage;
-      btreeParseCell(pCur->apPage[iPage],pCur->aiIdx[iPage],&pCur->info);
-      pCur->curFlags |= BTCF_ValidNKey;
-    }else{
-      assertCellInfo(pCur);
-    }
+static SQLITE_NOINLINE void getCellInfo(BtCursor *pCur){
+  if( pCur->info.nSize==0 ){
+    int iPage = pCur->iPage;
+    pCur->curFlags |= BTCF_ValidNKey;
+    btreeParseCell(pCur->apPage[iPage],pCur->aiIdx[iPage],&pCur->info);
+  }else{
+    assertCellInfo(pCur);
   }
-#else /* if not _MSC_VER */
-  /* Use a macro in all other compilers so that the function is inlined */
-#define getCellInfo(pCur)                                                      \
-  if( pCur->info.nSize==0 ){                                                   \
-    int iPage = pCur->iPage;                                                   \
-    btreeParseCell(pCur->apPage[iPage],pCur->aiIdx[iPage],&pCur->info);        \
-    pCur->curFlags |= BTCF_ValidNKey;                                          \
-  }else{                                                                       \
-    assertCellInfo(pCur);                                                      \
-  }
-#endif /* _MSC_VER */
+}
 
 #ifndef NDEBUG  /* The next routine used only within assert() statements */
 /*
@@ -4984,7 +5101,7 @@ int sqlite3BtreeMovetoUnpacked(
           ** case this happens.  */
           void *pCellKey;
           u8 * const pCellBody = pCell - pPage->childPtrSize;
-          btreeParseCellPtr(pPage, pCellBody, &pCur->info);
+          pPage->xParseCell(pPage, pCellBody, &pCur->info);
           nCell = (int)pCur->info.nKey;
           testcase( nCell<0 );   /* True if key size is 2^32 or more */
           testcase( nCell==0 );  /* Invalid key size:  0x80 0x80 0x00 */
@@ -5773,7 +5890,7 @@ static int clearCell(
   u32 ovflPageSize;
 
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
-  btreeParseCellPtr(pPage, pCell, &info);
+  pPage->xParseCell(pPage, pCell, &info);
   *pnSize = info.nSize;
   if( info.iOverflow==0 ){
     return SQLITE_OK;  /* No overflow pages. Return without doing anything */
@@ -5927,7 +6044,7 @@ static int fillInCell(
 #if SQLITE_DEBUG
   {
     CellInfo info;
-    btreeParseCellPtr(pPage, pCell, &info);
+    pPage->xParseCell(pPage, pCell, &info);
     assert( nHeader=(int)(info.pPayload - pCell) );
     assert( info.nKey==nKey );
     assert( *pnSize == info.nSize );
@@ -6115,7 +6232,7 @@ static void insertCell(
   ** wanted to be less than 4 but got rounded up to 4 on the leaf, then size
   ** might be less than 8 (leaf-size + pointer) on the interior node.  Hence
   ** the term after the || in the following assert(). */
-  assert( sz==cellSizePtr(pPage, pCell) || (sz==8 && iChild>0) );
+  assert( sz==pPage->xCellSize(pPage, pCell) || (sz==8 && iChild>0) );
   if( pPage->nOverflow || sz+2>pPage->nFree ){
     if( pTemp ){
       memcpy(pTemp, pCell, sz);
@@ -6206,8 +6323,8 @@ static void rebuildPage(
     memcpy(pData, pCell, szCell[i]);
     put2byte(pCellptr, (pData - aData));
     pCellptr += 2;
-    assert( szCell[i]==cellSizePtr(pPg, pCell) || CORRUPT_DB );
-    testcase( szCell[i]==cellSizePtr(pPg,pCell) );
+    assert( szCell[i]==pPg->xCellSize(pPg, pCell) || CORRUPT_DB );
+    testcase( szCell[i]==pPg->xCellSize(pPg,pCell) );
   }
 
   /* The pPg->nFree field is now set incorrectly. The caller will fix it. */
@@ -6497,7 +6614,7 @@ static int balance_quick(MemPage *pParent, MemPage *pPage, u8 *pSpace){
 
     u8 *pOut = &pSpace[4];
     u8 *pCell = pPage->apOvfl[0];
-    u16 szCell = cellSizePtr(pPage, pCell);
+    u16 szCell = pPage->xCellSize(pPage, pCell);
     u8 *pStop;
 
     assert( sqlite3PagerIswriteable(pNew->pDbPage) );
@@ -6576,7 +6693,7 @@ static int ptrmapCheckPages(MemPage **apPage, int nPage){
       u8 *z;
      
       z = findCell(pPage, j);
-      btreeParseCellPtr(pPage, z, &info);
+      pPage->xParseCell(pPage, z, &info);
       if( info.iOverflow ){
         Pgno ovfl = get4byte(&z[info.iOverflow]);
         ptrmapGet(pBt, ovfl, &e, &n);
@@ -6803,12 +6920,12 @@ static int balance_nonroot(
     if( i+nxDiv==pParent->aiOvfl[0] && pParent->nOverflow ){
       apDiv[i] = pParent->apOvfl[0];
       pgno = get4byte(apDiv[i]);
-      szNew[i] = cellSizePtr(pParent, apDiv[i]);
+      szNew[i] = pParent->xCellSize(pParent, apDiv[i]);
       pParent->nOverflow = 0;
     }else{
       apDiv[i] = findCell(pParent, i+nxDiv-pParent->nOverflow);
       pgno = get4byte(apDiv[i]);
-      szNew[i] = cellSizePtr(pParent, apDiv[i]);
+      szNew[i] = pParent->xCellSize(pParent, apDiv[i]);
 
       /* Drop the cell from the parent page. apDiv[i] still points to
       ** the cell within the parent, even though it has been dropped.
@@ -6898,7 +7015,7 @@ static int balance_nonroot(
       for(j=0; j<limit; j++){
         assert( nCell<nMaxCells );
         apCell[nCell] = findOverflowCell(pOld, j);
-        szCell[nCell] = cellSizePtr(pOld, apCell[nCell]);
+        szCell[nCell] = pOld->xCellSize(pOld, apCell[nCell]);
         nCell++;
       }
     }else{
@@ -6908,7 +7025,7 @@ static int balance_nonroot(
       for(j=0; j<limit; j++){
         assert( nCell<nMaxCells );
         apCell[nCell] = findCellv2(aData, maskPage, cellOffset, j);
-        szCell[nCell] = cellSizePtr(pOld, apCell[nCell]);
+        szCell[nCell] = pOld->xCellSize(pOld, apCell[nCell]);
         nCell++;
       }
     }       
@@ -7207,7 +7324,7 @@ static int balance_nonroot(
       */
       CellInfo info;
       j--;
-      btreeParseCellPtr(pNew, apCell[j], &info);
+      pNew->xParseCell(pNew, apCell[j], &info);
       pCell = pTemp;
       sz = 4 + putVarint(&pCell[4], info.nKey);
       pTemp = 0;
@@ -7226,7 +7343,7 @@ static int balance_nonroot(
       */
       if( szCell[j]==4 ){
         assert(leafCorrection==4);
-        sz = cellSizePtr(pParent, pCell);
+        sz = pParent->xCellSize(pParent, pCell);
       }
     }
     iOvflSpace += sz;
@@ -7671,7 +7788,7 @@ int sqlite3BtreeInsert(
   assert( newCell!=0 );
   rc = fillInCell(pPage, newCell, pKey, nKey, pData, nData, nZero, &szNew);
   if( rc ) goto end_insert;
-  assert( szNew==cellSizePtr(pPage, newCell) );
+  assert( szNew==pPage->xCellSize(pPage, newCell) );
   assert( szNew <= MX_CELL_SIZE(pBt) );
   idx = pCur->aiIdx[pCur->iPage];
   if( loc==0 ){
@@ -7813,7 +7930,7 @@ int sqlite3BtreeDelete(BtCursor *pCur){
 
     pCell = findCell(pLeaf, pLeaf->nCell-1);
     if( pCell<&pLeaf->aData[4] ) return SQLITE_CORRUPT_BKPT;
-    nCell = cellSizePtr(pLeaf, pCell);
+    nCell = pLeaf->xCellSize(pLeaf, pCell);
     assert( MX_CELL_SIZE(pBt) >= nCell );
     pTmp = pBt->pTmpSpace;
     assert( pTmp!=0 );
@@ -8707,7 +8824,7 @@ static int checkTreePage(
     pCheck->v1 = iPage;
     pCheck->v2 = i;
     pCell = findCell(pPage,i);
-    btreeParseCellPtr(pPage, pCell, &info);
+    pPage->xParseCell(pPage, pCell, &info);
     sz = info.nPayload;
     /* For intKey pages, check that the keys are in order.
     */
@@ -8825,7 +8942,7 @@ static int checkTreePage(
       int pc = get2byte(&data[cellStart+i*2]);
       u32 size = 65536;
       if( pc<=usableSize-4 ){
-        size = cellSizePtr(pPage, &data[pc]);
+        size = pPage->xCellSize(pPage, &data[pc]);
       }
       if( (int)(pc+size-1)>=usableSize ){
         pCheck->zPfx = 0;

@@ -398,6 +398,22 @@ do_faultsim_test 13.1 -faults oom-t* -prep {
   faultsim_test_result {0 {1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16}}
 }
 
+#-------------------------------------------------------------------------
+# OOM in an "ALTER TABLE RENAME TO"
+#
+reset_db
+do_execsql_test 14.0 {
+  CREATE VIRTUAL TABLE "tbl one" USING fts5(x, y, z);
+}
+faultsim_save_and_close
+do_faultsim_test 14.1 -faults oom-t* -prep {
+  faultsim_restore_and_reopen
+  db eval { SELECT * FROM "tbl one" }
+} -body {
+  db eval { ALTER TABLE "tbl one" RENAME TO "tbl two" }
+} -test {
+  faultsim_test_result {0 {}}
+}
 
 finish_test
 

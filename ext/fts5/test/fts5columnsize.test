@@ -108,5 +108,12 @@ do_execsql_test 3.1 {
 } {
   1 {2 0 1} 2 {3 0 0}
 }
+do_execsql_test 3.1 {
+  INSERT INTO t3 VALUES(NULL, NULL, 'a a a a');
+  DELETE FROM t3 WHERE rowid = 1;
+  SELECT rowid, fts5_test_columnsize(t3) FROM t3 WHERE t3 MATCH 'a'
+} {
+  2 {3 0 0} 3 {0 0 4}
+}
 
 finish_test

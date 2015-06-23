@@ -512,11 +512,11 @@ int sqlite3Fts5StorageDelete(Fts5Storage *p, i64 iDel){
   /* Delete the %_docsize record */
   if( rc==SQLITE_OK && pConfig->bColumnsize ){
     rc = fts5StorageGetStmt(p, FTS5_STMT_DELETE_DOCSIZE, &pDel, 0);
-  }
-  if( rc==SQLITE_OK ){
-    sqlite3_bind_int64(pDel, 1, iDel);
-    sqlite3_step(pDel);
-    rc = sqlite3_reset(pDel);
+    if( rc==SQLITE_OK ){
+      sqlite3_bind_int64(pDel, 1, iDel);
+      sqlite3_step(pDel);
+      rc = sqlite3_reset(pDel);
+    }
   }
 
   /* Delete the %_content record */

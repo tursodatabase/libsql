@@ -181,10 +181,11 @@ LIBOBJS0 = alter.lo analyze.lo attach.lo auth.lo \
          notify.lo opcodes.lo os.lo os_unix.lo os_win.lo \
          pager.lo parse.lo pcache.lo pcache1.lo pragma.lo prepare.lo printf.lo \
          random.lo resolve.lo rowset.lo rtree.lo select.lo status.lo \
-         table.lo threads.lo tokenize.lo trigger.lo \
+         table.lo threads.lo tokenize.lo treeview.lo trigger.lo \
          update.lo util.lo vacuum.lo \
          vdbe.lo vdbeapi.lo vdbeaux.lo vdbeblob.lo vdbemem.lo vdbesort.lo \
-         vdbetrace.lo wal.lo walker.lo where.lo utf.lo vtab.lo
+         vdbetrace.lo wal.lo walker.lo where.lo wherecode.lo whereexpr.lo \
+         utf.lo vtab.lo
 
 # Object files for the amalgamation.
 #
@@ -273,6 +274,7 @@ SRC = \
   $(TOP)/src/threads.c \
   $(TOP)/src/tclsqlite.c \
   $(TOP)/src/tokenize.c \
+  $(TOP)/src/treeview.c \
   $(TOP)/src/trigger.c \
   $(TOP)/src/utf.c \
   $(TOP)/src/update.c \
@@ -293,6 +295,8 @@ SRC = \
   $(TOP)/src/wal.h \
   $(TOP)/src/walker.c \
   $(TOP)/src/where.c \
+  $(TOP)/src/wherecode.c \
+  $(TOP)/src/whereexpr.c \
   $(TOP)/src/whereInt.h
 
 # Source code for extensions
@@ -470,6 +474,8 @@ TESTSRC2 = \
   $(TOP)/src/vdbemem.c \
   $(TOP)/src/vdbetrace.c \
   $(TOP)/src/where.c \
+  $(TOP)/src/wherecode.c \
+  $(TOP)/src/whereexpr.c \
   parse.c \
   $(TOP)/ext/fts3/fts3.c \
   $(TOP)/ext/fts3/fts3_aux.c \
@@ -544,6 +550,10 @@ FUZZDATA = \
   $(TOP)/test/fuzzdata1.db \
   $(TOP)/test/fuzzdata2.db \
   $(TOP)/test/fuzzdata3.db
+
+# Standard options to testfixture
+#
+TESTOPTS = --verbose=file --output=test-out.txt
 
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
@@ -817,6 +827,9 @@ threads.lo:	$(TOP)/src/threads.c $(HDR)
 tokenize.lo:	$(TOP)/src/tokenize.c keywordhash.h $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/tokenize.c
 
+treeview.lo:	$(TOP)/src/treeview.c $(HDR)
+	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/treeview.c
+
 trigger.lo:	$(TOP)/src/trigger.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/trigger.c
 
@@ -864,6 +877,12 @@ walker.lo:	$(TOP)/src/walker.c $(HDR)
 
 where.lo:	$(TOP)/src/where.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/where.c
+
+wherecode.lo:	$(TOP)/src/wherecode.c $(HDR)
+	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/wherecode.c
+
+whereexpr.lo:	$(TOP)/src/whereexpr.c $(HDR)
+	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/whereexpr.c
 
 tclsqlite.lo:	$(TOP)/src/tclsqlite.c $(HDR)
 	$(LTCOMPILE) -DUSE_TCL_STUBS=1 -c $(TOP)/src/tclsqlite.c
@@ -1006,39 +1025,46 @@ testfixture$(TEXE):	$(TESTFIXTURE_SRC)
 
 # A very detailed test running most or all test cases
 fulltest:	$(TESTPROGS) fuzztest
-	./testfixture$(TEXE) $(TOP)/test/all.test
+	./testfixture$(TEXE) $(TOP)/test/all.test $(TESTOPTS)
 
 # Really really long testing
 soaktest:	$(TESTPROGS)
-	./testfixture$(TEXE) $(TOP)/test/all.test -soak=1
+	./testfixture$(TEXE) $(TOP)/test/all.test -soak=1 $(TESTOPTS)
 
 # Do extra testing but not everything.
 fulltestonly:	$(TESTPROGS)
 	./testfixture$(TEXE) $(TOP)/test/full.test
 
 # Fuzz testing
-fuzztest:	fuzzcheck$(TEXE)
+fuzztest:	fuzzcheck$(TEXE) $(FUZZDATA)
 	./fuzzcheck$(TEXE) $(FUZZDATA)
 
-# This is the common case.  Run many tests but not those that take
-# a really long time.
+valgrindfuzz:	fuzzcheck$(TEXT) $(FUZZDATA)
+	valgrind ./fuzzcheck$(TEXE) --cell-size-check --quiet $(FUZZDATA)
+
+# Minimal testing that runs in less than 3 minutes
+#
+quicktest:	./testfixture$(TEXE)
+	./testfixture$(TEXE) $(TOP)/test/extraquick.test $(TESTOPTS)
+
+# This is the common case.  Run many tests that do not take too long,
+# including fuzzcheck, sqlite3_analyzer, and sqldiff tests.
 #
 test:	$(TESTPROGS) fuzztest
-	./testfixture$(TEXE) $(TOP)/test/veryquick.test
+	./testfixture$(TEXE) $(TOP)/test/veryquick.test $(TESTOPTS)
 
 # Run a test using valgrind.  This can take a really long time
 # because valgrind is so much slower than a native machine.
 #
-valgrindtest:	$(TESTPROGS) fuzzcheck$(TEXE)
-	valgrind -v ./fuzzcheck$(TEXE) --cell-size-check --quiet $(FUZZDATA)
-	OMIT_MISUSE=1 valgrind -v ./testfixture$(TEXE) $(TOP)/test/permutations.test valgrind
+valgrindtest:	$(TESTPROGS) valgrindfuzz
+	OMIT_MISUSE=1 valgrind -v ./testfixture$(TEXE) $(TOP)/test/permutations.test valgrind $(TESTOPTS)
 
 # A very fast test that checks basic sanity.  The name comes from
 # the 60s-era electronics testing:  "Turn it on and see if smoke
 # comes out."
 #
 smoketest:	$(TESTPROGS) fuzzcheck$(TEXE)
-	./testfixture$(TEXE) $(TOP)/test/main.test
+	./testfixture$(TEXE) $(TOP)/test/main.test $(TESTOPTS)
 
 sqlite3_analyzer.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl
 	echo "#define TCLSH 2" > $@

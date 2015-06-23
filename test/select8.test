@@ -32,7 +32,6 @@ set result [execsql {
   FROM songs      
   GROUP BY LOWER(artist)      
 }]
-puts result=$result
 do_test select8-1.1 {
   execsql {
     SELECT DISTINCT artist,sum(timesplayed) AS total      
