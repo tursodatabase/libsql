@@ -1,5 +1,5 @@
-C Test\sthat\sthe\sleft\sand\sright\ssides\sof\sa\scompound\sSELECT\soperator\shave\sthe\ssame\s\snumber\sof\sexpressions\sin\sthe\sexpanded\sexpression\slist\sbefore\sbeginning\sto\sgenerate\scode.
-D 2015-06-23T12:19:55.597
+C Mark\ssome\sbranches\sas\sunreachable\safter\sthe\srecent\schange\sthat\srecognizes\nmismatch\sresult\sset\ssizes\son\scompound\sSELECT\sstatements\ssooner.
+D 2015-06-23T23:31:52.120
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1063c58075b7400d93326b0eb332b48a54f53025
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -250,7 +250,7 @@ F src/printf.c db11b5960105ee661dcac690f2ae6276e49bf251
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 2d47554370de8de6dd5be060cef9559eec315005
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c 09865f89997db6ec617a78440cc18d84855e3053
+F src/select.c 9baeda79f93cfd180d471273a2f9c82c682a37a2
 F src/shell.c 8af3cced094aebb5f57a8ad739b9dafc7867eed7
 F src/sqlite.h.in 76d2f5637eb795b6300d9dd3c3ec3632ffafd721
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
@@ -1286,7 +1286,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b97f9cf73e503c7285ba3a801e1f932f222d96b2
-R 5d4925e11483f968b1575f6656e62b8a
-U dan
-Z 6c0c66a18bcc0b19ae618b4e0a65b57c
+P 4df852ce26c95d5d23c83dbe9c59d2c3435acddf
+R f33f66149dfc88305222eaacd7fef5a8
+U drh
+Z fe73de6bdd6d9128d20e7fa5150f1b6d
