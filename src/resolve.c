@@ -1331,6 +1331,13 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
       }
     }
 
+    /* If this is part of a compound SELECT, check that it has the right
+    ** number of expressions in the select list. */
+    if( p->pNext && p->pEList->nExpr!=p->pNext->pEList->nExpr ){
+      sqlite3SelectWrongNumTermsError(pParse, p->pNext);
+      return WRC_Abort;
+    }
+
     /* Advance to the next term of the compound
     */
     p = p->pPrior;
