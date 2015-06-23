@@ -2093,7 +2093,7 @@ static int multiSelectOrderBy(
 ** Error message for when two or more terms of a compound select have different
 ** size result sets.
 */
-static void selectWrongNumTermsError(Parse *pParse, Select *p){
+void sqlite3SelectWrongNumTermsError(Parse *pParse, Select *p){
   if( p->selFlags & SF_Values ){
     sqlite3ErrorMsg(pParse, "all VALUES must have the same number of terms");
   }else{
@@ -2119,7 +2119,6 @@ static int multiSelectValues(
   SelectDest *pDest     /* What to do with query results */
 ){
   Select *pPrior;
-  int nExpr = p->pEList->nExpr;
   int nRow = 1;
   int rc = 0;
   assert( p->selFlags & SF_MultiValue );
@@ -2128,10 +2127,7 @@ static int multiSelectValues(
     assert( p->op==TK_ALL || (p->op==TK_SELECT && p->pPrior==0) );
     assert( p->pLimit==0 );
     assert( p->pOffset==0 );
-    if( p->pEList->nExpr!=nExpr ){
-      selectWrongNumTermsError(pParse, p);
-      return 1;
-    }
+    assert( p->pNext==0 || p->pEList->nExpr==p->pNext->pEList->nExpr );
     if( p->pPrior==0 ) break;
     assert( p->pPrior->pNext==p );
     p = p->pPrior;
@@ -2240,11 +2236,7 @@ static int multiSelect(
   ** in their result sets.
   */
   assert( p->pEList && pPrior->pEList );
-  if( p->pEList->nExpr!=pPrior->pEList->nExpr ){
-    selectWrongNumTermsError(pParse, p);
-    rc = 1;
-    goto multi_select_end;
-  }
+  assert( p->pEList->nExpr==pPrior->pEList->nExpr );
 
 #ifndef SQLITE_OMIT_CTE
   if( p->selFlags & SF_Recursive ){
