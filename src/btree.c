@@ -1553,7 +1553,7 @@ static int freeSpace(MemPage *pPage, u16 iStart, u16 iSize){
       nFrag = iFreeBlk - iEnd;
       if( iEnd>iFreeBlk ) return SQLITE_CORRUPT_BKPT;
       iEnd = iFreeBlk + get2byte(&data[iFreeBlk+2]);
-      if( iEnd > pPage->pBt->usableSize ) return SQLITE_CORRUPT_BKPT;
+      if( NEVER(iEnd > pPage->pBt->usableSize) ) return SQLITE_CORRUPT_BKPT;
       iSize = iEnd - iStart;
       iFreeBlk = get2byte(&data[iFreeBlk]);
     }
@@ -3184,7 +3184,6 @@ static int setChildPtrmaps(MemPage *pPage){
     if( !pPage->leaf ){
       Pgno childPgno = get4byte(pCell);
       ptrmapPut(pBt, childPgno, PTRMAP_BTREE, pgno, &rc);
-      if( rc ) return rc;
     }
   }
 
@@ -6358,7 +6357,7 @@ static int rebuildPage(
     if( pData < pCellptr ) return SQLITE_CORRUPT_BKPT;
     memcpy(pData, pCell, szCell[i]);
     assert( szCell[i]==pPg->xCellSize(pPg, pCell) || CORRUPT_DB );
-    testcase( szCell[i]==pPg->xCellSize(pPg,pCell) );
+    testcase( szCell[i]!=pPg->xCellSize(pPg,pCell) );
   }
 
   /* The pPg->nFree field is now set incorrectly. The caller will fix it. */
@@ -6659,7 +6658,7 @@ static int balance_quick(MemPage *pParent, MemPage *pPage, u8 *pSpace){
     assert( pPage->aData[0]==(PTF_INTKEY|PTF_LEAFDATA|PTF_LEAF) );
     zeroPage(pNew, PTF_INTKEY|PTF_LEAFDATA|PTF_LEAF);
     rc = rebuildPage(pNew, 1, &pCell, &szCell);
-    if( rc ) return rc;
+    if( NEVER(rc) ) return rc;
     pNew->nFree = pBt->usableSize - pNew->cellOffset - 2 - szCell;
 
     /* If this is an auto-vacuum database, update the pointer map
@@ -7404,12 +7403,11 @@ static int balance_nonroot(
       ){
         if( !leafCorrection ){
           ptrmapPut(pBt, get4byte(pCell), PTRMAP_BTREE, pNew->pgno, &rc);
-          if( rc ) goto balance_cleanup;
         }
         if( cachedCellSize(&b,i)>pNew->minLocal ){
           ptrmapPutOvflPtr(pNew, pCell, &rc);
-          if( rc ) goto balance_cleanup;
         }
+        if( rc ) goto balance_cleanup;
       }
     }
   }
@@ -8043,7 +8041,7 @@ int sqlite3BtreeDelete(BtCursor *pCur){
     unsigned char *pTmp;
 
     pCell = findCell(pLeaf, pLeaf->nCell-1);
-    if( pCell<&pLeaf->aData[4] ) return SQLITE_CORRUPT_BKPT;
+    if( NEVER(pCell<&pLeaf->aData[4]) ) return SQLITE_CORRUPT_BKPT;
     nCell = pLeaf->xCellSize(pLeaf, pCell);
     assert( MX_CELL_SIZE(pBt) >= nCell );
     pTmp = pBt->pTmpSpace;
