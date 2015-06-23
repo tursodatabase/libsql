@@ -956,7 +956,6 @@ static int ptrmapGet(BtShared *pBt, Pgno key, u8 *pEType, Pgno *pPgno){
 */
 #define findCell(P,I) \
   ((P)->aData + ((P)->maskPage & get2byte(&(P)->aCellIdx[2*(I)])))
-#define findCellv2(D,M,O,I) (D+(M&get2byte(D+(O+2*(I)))))
 
 /*
 ** Sort the overflow cells of a page into index order.
@@ -7054,7 +7053,7 @@ static int balance_nonroot(
     int limit = pOld->nCell;
     u8 *aData = pOld->aData;
     u16 maskPage = pOld->maskPage;
-    u16 cellOffset = pOld->cellOffset;
+    u8 *piCell = aData + pOld->cellOffset;
 
     /* Verify that all sibling pages are of the same "type" (table-leaf,
     ** table-interior, index-leaf, or index-interior).
@@ -7073,27 +7072,28 @@ static int balance_nonroot(
     ** first.
     */
     memset(&b.szCell[b.nCell], 0, sizeof(b.szCell[0])*limit);
-    j = 0;
     if( pOld->nOverflow>0 ){
       memset(&b.szCell[b.nCell+limit], 0, sizeof(b.szCell[0])*pOld->nOverflow);
       btreeSortOverflow(pOld);
-      for(k=0; k<pOld->nOverflow; k++){
+      for(j=k=0; k<pOld->nOverflow; k++){
         limit = pOld->aiOvfl[k] - k;
         while( j<limit ){
-          b.apCell[b.nCell] = findCellv2(aData, maskPage, cellOffset, j);
+          b.apCell[b.nCell] = aData + (maskPage & get2byte(piCell));
+          piCell += 2;
           b.nCell++;
           j++;
         }
         b.apCell[b.nCell] = pOld->apOvfl[k];
         b.nCell++;
       }
-      limit = pOld->nCell;
+      limit = pOld->nCell - j;
     }
-    while( j<limit ){
+    limit += b.nCell;
+    while( b.nCell<limit ){
       assert( b.nCell<nMaxCells );
-      b.apCell[b.nCell] = findCellv2(aData, maskPage, cellOffset, j);
+      b.apCell[b.nCell] = aData + (maskPage & get2byte(piCell));
+      piCell += 2;
       b.nCell++;
-      j++;
     }
 
     cntOld[i] = b.nCell;

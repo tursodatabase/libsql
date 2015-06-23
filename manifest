@@ -1,5 +1,5 @@
-C Avoid\sunnecessary\scachedCellSize()\scalls\sin\sthe\scell\spartition\sadjustment\nphase\sof\sbalance_nonroot().
-D 2015-06-23T16:00:24.052
+C Faster\sloading\sof\scell\spointers\sinto\sthe\sb.apCell\sarray\sin\sbalance_nonroot.
+D 2015-06-23T17:09:53.066
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1063c58075b7400d93326b0eb332b48a54f53025
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -192,7 +192,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c ff743689c4d6c5cb55ad42ed9d174b2b3e71f1e3
 F src/bitvec.c 5eb7958c3bf65210211cbcfc44eff86d0ded7c9d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c 57f16870792abb0cc921124f3ee064d6379d5c8d
+F src/btree.c 0b20e8281ea9b2add9eef6f6c3f18433f2f47b53
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 6ece2dd9c8e2eac05f0a8ded8772a44e96486c65
 F src/build.c b3f15255d5b16e42dafeaa638fd4f8a47c94ed70
@@ -1286,7 +1286,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f7f41818119bb7bfbd1f1297d294b32f32769cd3
-R 37fa05f0f572512a3f64ce71dc3bcdd6
+P 6319ee1256b1f7c39dd39a536a39b77b3d10dcac
+R ed68212da4042fbfd3887c9cc6d179ba
 U drh
-Z c91e3b72c83e00e6480937885f4355e3
+Z 1ac31720ec363831ce0715d2977b6c52
