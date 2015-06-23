@@ -958,26 +958,24 @@ static int ptrmapGet(BtShared *pBt, Pgno key, u8 *pEType, Pgno *pPgno){
   ((P)->aData + ((P)->maskPage & get2byte(&(P)->aCellIdx[2*(I)])))
 #define findCellv2(D,M,O,I) (D+(M&get2byte(D+(O+2*(I)))))
 
-
 /*
-** This a more complex version of findCell() that works for
-** pages that do contain overflow cells.
+** Sort the overflow cells of a page into index order.
+**
+** An O(N*N) algorithm is used.  But that should not be a problem
+** since N is only very rarely more than 1.
 */
-static u8 *findOverflowCell(MemPage *pPage, int iCell){
-  int i;
-  assert( sqlite3_mutex_held(pPage->pBt->mutex) );
-  for(i=pPage->nOverflow-1; i>=0; i--){
-    int k;
-    k = pPage->aiOvfl[i];
-    if( k<=iCell ){
-      if( k==iCell ){
-        return pPage->apOvfl[i];
+static void btreeSortOverflow(MemPage *p){
+  int j, k;
+  for(j=0; j<p->nOverflow-1; j++){
+    for(k=j+1; k<p->nOverflow; k++){
+      if( p->aiOvfl[j]>p->aiOvfl[k] ){
+        SWAP(u16, p->aiOvfl[j], p->aiOvfl[k]);
+        SWAP(u8*, p->apOvfl[j], p->apOvfl[k]);
       }
-      iCell--;
     }
   }
-  return findCell(pPage, iCell);
 }
+
 
 /*
 ** This is common tail processing for btreeParseCellPtr() and
@@ -7057,8 +7055,11 @@ static int balance_nonroot(
   leafCorrection = b.pRef->leaf*4;
   leafData = b.pRef->intKeyLeaf;
   for(i=0; i<nOld; i++){
-    int limit;
     MemPage *pOld = apOld[i];
+    int limit = pOld->nCell;
+    u8 *aData = pOld->aData;
+    u16 maskPage = pOld->maskPage;
+    u16 cellOffset = pOld->cellOffset;
 
     /* Verify that all sibling pages are of the same "type" (table-leaf,
     ** table-interior, index-leaf, or index-interior).
@@ -7068,24 +7069,38 @@ static int balance_nonroot(
       goto balance_cleanup;
     }
 
-    limit = pOld->nCell+pOld->nOverflow;
+    /* Load b.apCell[] with pointers to all cells in pOld.  Intersperse
+    ** overflow cells in the correct sequence.  
+    **
+    ** This must be done in advance.  Once the balance starts, the cell
+    ** offset section of the btree page will be overwritten and we will no
+    ** long be able to find the cells if a pointer to each cell is not saved
+    ** first.
+    */
     memset(&b.szCell[b.nCell], 0, sizeof(b.szCell[0])*limit);
+    j = 0;
     if( pOld->nOverflow>0 ){
-      for(j=0; j<limit; j++){
-        assert( b.nCell<nMaxCells );
-        b.apCell[b.nCell] = findOverflowCell(pOld, j);
+      memset(&b.szCell[b.nCell+limit], 0, sizeof(b.szCell[0])*pOld->nOverflow);
+      btreeSortOverflow(pOld);
+      for(k=0; k<pOld->nOverflow; k++){
+        limit = pOld->aiOvfl[k] - k;
+        while( j<limit ){
+          b.apCell[b.nCell] = findCellv2(aData, maskPage, cellOffset, j);
+          b.nCell++;
+          j++;
+        }
+        b.apCell[b.nCell] = pOld->apOvfl[k];
         b.nCell++;
       }
-    }else{
-      u8 *aData = pOld->aData;
-      u16 maskPage = pOld->maskPage;
-      u16 cellOffset = pOld->cellOffset;
-      for(j=0; j<limit; j++){
-        assert( b.nCell<nMaxCells );
-        b.apCell[b.nCell] = findCellv2(aData, maskPage, cellOffset, j);
-        b.nCell++;
-      }
+      limit = pOld->nCell;
     }
+    while( j<limit ){
+      assert( b.nCell<nMaxCells );
+      b.apCell[b.nCell] = findCellv2(aData, maskPage, cellOffset, j);
+      b.nCell++;
+      j++;
+    }
+
     cntOld[i] = b.nCell;
     if( i<nOld-1 && !leafData){
       u16 sz = (u16)szNew[i];
