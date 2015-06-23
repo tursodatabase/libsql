@@ -958,25 +958,6 @@ static int ptrmapGet(BtShared *pBt, Pgno key, u8 *pEType, Pgno *pPgno){
   ((P)->aData + ((P)->maskPage & get2byte(&(P)->aCellIdx[2*(I)])))
 
 /*
-** Sort the overflow cells of a page into index order.
-**
-** An O(N*N) algorithm is used.  But that should not be a problem
-** since N is only very rarely more than 1.
-*/
-static void btreeSortOverflow(MemPage *p){
-  int j, k;
-  for(j=0; j<p->nOverflow-1; j++){
-    for(k=j+1; k<p->nOverflow; k++){
-      if( p->aiOvfl[j]>p->aiOvfl[k] ){
-        SWAP(u16, p->aiOvfl[j], p->aiOvfl[k]);
-        SWAP(u8*, p->apOvfl[j], p->apOvfl[k]);
-      }
-    }
-  }
-}
-
-
-/*
 ** This is common tail processing for btreeParseCellPtr() and
 ** btreeParseCellPtrIndex() for the case when the cell does not fit entirely
 ** on a single B-tree page.  Make necessary adjustments to the CellInfo
@@ -6243,6 +6224,14 @@ static void insertCell(
     assert( j<(int)(sizeof(pPage->apOvfl)/sizeof(pPage->apOvfl[0])) );
     pPage->apOvfl[j] = pCell;
     pPage->aiOvfl[j] = (u16)i;
+
+    /* When multiple overflows occur, they are always sequential and in
+    ** sorted order.  This invariants arise because multiple overflows can
+    ** only occur when inserting divider cells into the parent page during
+    ** balancing, and the dividers are adjacent and sorted.
+    */
+    assert( j==0 || pPage->aiOvfl[j-1]<(u16)i ); /* Overflows in sorted order */
+    assert( j==0 || i==pPage->aiOvfl[j-1]+1 );   /* Overflows are sequential */
   }else{
     int rc = sqlite3PagerWrite(pPage->pDbPage);
     if( rc!=SQLITE_OK ){
@@ -7054,6 +7043,7 @@ static int balance_nonroot(
     u8 *aData = pOld->aData;
     u16 maskPage = pOld->maskPage;
     u8 *piCell = aData + pOld->cellOffset;
+    u8 *piEnd;
 
     /* Verify that all sibling pages are of the same "type" (table-leaf,
     ** table-interior, index-leaf, or index-interior).
@@ -7063,8 +7053,17 @@ static int balance_nonroot(
       goto balance_cleanup;
     }
 
-    /* Load b.apCell[] with pointers to all cells in pOld.  Intersperse
-    ** overflow cells in the correct sequence.  
+    /* Load b.apCell[] with pointers to all cells in pOld.  If pOld
+    ** constains overflow cells, include them in the b.apCell[] array
+    ** in the correct spot.
+    **
+    ** Note that when there are multiple overflow cells, it is always the
+    ** case that they are sequential and adjacent.  This invariant arises
+    ** because multiple overflows can only occurs when inserting divider
+    ** cells into a parent on a prior balance, and divider cells are always
+    ** adjacent and are inserted in order.  There is an assert() tagged
+    ** with "NOTE 1" in the overflow cell insertion loop to prove this
+    ** invariant.
     **
     ** This must be done in advance.  Once the balance starts, the cell
     ** offset section of the btree page will be overwritten and we will no
@@ -7074,22 +7073,21 @@ static int balance_nonroot(
     memset(&b.szCell[b.nCell], 0, sizeof(b.szCell[0])*limit);
     if( pOld->nOverflow>0 ){
       memset(&b.szCell[b.nCell+limit], 0, sizeof(b.szCell[0])*pOld->nOverflow);
-      btreeSortOverflow(pOld);
-      for(j=k=0; k<pOld->nOverflow; k++){
-        limit = pOld->aiOvfl[k] - k;
-        while( j<limit ){
-          b.apCell[b.nCell] = aData + (maskPage & get2byte(piCell));
-          piCell += 2;
-          b.nCell++;
-          j++;
-        }
+      limit = pOld->aiOvfl[0];
+      for(j=0; j<limit; j++){
+        b.apCell[b.nCell] = aData + (maskPage & get2byte(piCell));
+        piCell += 2;
+        b.nCell++;
+      }
+      for(k=0; k<pOld->nOverflow; k++){
+        assert( k==0 || pOld->aiOvfl[k-1]+1==pOld->aiOvfl[k] );/* NOTE 1 */
         b.apCell[b.nCell] = pOld->apOvfl[k];
         b.nCell++;
       }
-      limit = pOld->nCell - j;
+      limit = pOld->nCell - pOld->aiOvfl[0];
     }
-    limit += b.nCell;
-    while( b.nCell<limit ){
+    piEnd = aData + pOld->cellOffset + 2*pOld->nCell;
+    while( piCell<piEnd ){
       assert( b.nCell<nMaxCells );
       b.apCell[b.nCell] = aData + (maskPage & get2byte(piCell));
       piCell += 2;
