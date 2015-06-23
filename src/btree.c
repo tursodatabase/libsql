@@ -7218,12 +7218,12 @@ static int balance_nonroot(
     int r;              /* Index of right-most cell in left sibling */
     int d;              /* Index of first cell to the left of right sibling */
 
+    r = cntNew[i-1] - 1;
+    d = r + 1 - leafData;
+    (void)cachedCellSize(&b, d);
     while(1){
-      r = cntNew[i-1] - 1;
-      d = r + 1 - leafData;
       assert( d<nMaxCells );
       assert( r<nMaxCells );
-      (void)cachedCellSize(&b, d);
       (void)cachedCellSize(&b, r);
       if( szRight!=0
        && (bBulk || szRight+b.szCell[d]+2 > szLeft-(b.szCell[r]+2)) ){
@@ -7231,11 +7231,13 @@ static int balance_nonroot(
       }
       szRight += b.szCell[d] + 2;
       szLeft -= b.szCell[r] + 2;
-      cntNew[i-1]--;
+      cntNew[i-1] = r;
       if( cntNew[i-1] <= 0 ){
         rc = SQLITE_CORRUPT_BKPT;
         goto balance_cleanup;
       }
+      r--;
+      d--;
     }
     szNew[i] = szRight;
     szNew[i-1] = szLeft;
