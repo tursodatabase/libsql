@@ -167,6 +167,19 @@ static void setAlarm(int N){
 }
 
 /*
+** This an SQL progress handler.  After an SQL statement has run for
+** many steps, we want to interrupt it.  This guards against infinite
+** loops from recursive common table expressions.
+**
+** *pVdbeLimitFlag is true if the --limit-vdbe command-line option is used.
+** In that case, hitting the progress handler is a fatal error.
+*/
+static int progressHandler(void *pVdbeLimitFlag){
+  if( *(int*)pVdbeLimitFlag ) fatalError("too many VDBE cycles");
+  return 1;
+}
+
+/*
 ** Reallocate memory.  Show and error and quit if unable.
 */
 static void *safe_realloc(void *pOld, int szNew){
@@ -678,9 +691,10 @@ static void showHelp(void){
 "Options:\n"
 "  --cell-size-check     Set the PRAGMA cell_size_check=ON\n"
 "  --dbid N              Use only the database where dbid=N\n"
-"  --help                Show this help text\n"    
+"  --help                Show this help text\n"
 "  -q                    Reduced output\n"
 "  --quiet               Reduced output\n"
+"  --limit-vdbe          Panic if an sync SQL runs for more than 100,000 cycles\n"
 "  --load-sql ARGS...    Load SQL scripts fro files into SOURCE-DB\n"
 "  --load-db ARGS...     Load template databases from files into SOURCE_DB\n"
 "  -m TEXT               Add a description to the database\n"
@@ -709,6 +723,7 @@ int main(int argc, char **argv){
   int onlyDbid = -1;           /* --dbid */
   int nativeFlag = 0;          /* --native-vfs */
   int rebuildFlag = 0;         /* --rebuild */
+  int vdbeLimitFlag = 0;       /* --limit-vdbe */
   int timeoutTest = 0;         /* undocumented --timeout-test flag */
   int runFlags = 0;            /* Flags sent to runSql() */
   char *zMsg = 0;              /* Add this message */
@@ -719,6 +734,7 @@ int main(int argc, char **argv){
   char *zDbName = "";          /* Appreviated name of a source database */
   const char *zFailCode = 0;   /* Value of the TEST_FAILURE environment variable */
   int cellSzCkFlag = 0;        /* --cell-size-check */
+  int sqlFuzz = 0;             /* True for SQL fuzz testing. False for DB fuzz */
 
   iBegin = timeOfDay();
 #ifdef __unix__
@@ -741,6 +757,9 @@ int main(int argc, char **argv){
       if( strcmp(z,"help")==0 ){
         showHelp();
         return 0;
+      }else
+      if( strcmp(z,"limit-vdbe")==0 ){
+        vdbeLimitFlag = 1;
       }else
       if( strcmp(z,"load-sql")==0 ){
         zInsSql = "INSERT INTO xsql(sqltext) VALUES(CAST(readfile(?1) AS text))";
@@ -867,6 +886,7 @@ int main(int argc, char **argv){
       g.pFirstDb->id = 1;
       g.pFirstDb->seq = 0;
       g.nDb = 1;
+      sqlFuzz = 1;
     }
   
     /* Print the description, if there is one */
@@ -938,6 +958,9 @@ int main(int argc, char **argv){
         if( rc ) fatalError("cannot open inmem database");
         if( cellSzCkFlag ) runSql(db, "PRAGMA cell_size_check=ON", runFlags);
         setAlarm(10);
+        if( sqlFuzz || vdbeLimitFlag ){
+          sqlite3_progress_handler(db, 100000, progressHandler, &vdbeLimitFlag);
+        }
         do{
           runSql(db, (char*)pSql->a, runFlags);
         }while( timeoutTest );

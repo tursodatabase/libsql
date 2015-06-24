@@ -1,5 +1,5 @@
-C Fix\sthe\sprogress\shandler\sso\sthat\sit\sdoes\snot\sfire\stoo\ssoon\sduring\san\nsqlite3_step()\scall\sother\sthan\sthe\sfirst.
-D 2015-06-24T14:36:27.096
+C In\sthe\sfuzzcheck\stest\sprogram,\suse\sthe\sprogress\shandler\sto\slimit\sthe\snumber\nof\sVDBE\scycles\sto\savoid\sgetting\sstuck\sif\sthe\sSQL\sunder\stest\scontains\san\ninfinite\sCTE\sloop.\s\sAdd\sthe\s--limit-vdbe\scommand-line\soption.
+D 2015-06-24T14:45:44.257
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1063c58075b7400d93326b0eb332b48a54f53025
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -657,7 +657,7 @@ F test/fuzz2.test 76dc35b32b6d6f965259508508abce75a6c4d7e1
 F test/fuzz3.test efd384b896c647b61a2c1848ba70d42aad60a7b3
 F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
 F test/fuzz_malloc.test 328f70aaca63adf29b4c6f06505ed0cf57ca7c26
-F test/fuzzcheck.c 4aa40bb9c64d25d0a196241ffe5bd99c8cc7a7fc
+F test/fuzzcheck.c 15f1293200aefcba30ff7720f5e3c28ef459c61c
 F test/fuzzdata1.db 7ee3227bad0e7ccdeb08a9e6822916777073c664
 F test/fuzzdata2.db f03a420d3b822cc82e4f894ca957618fbe9c4973
 F test/fuzzdata3.db b83d0c20ae64113432c03d40c06ba473a4cb696b
@@ -1286,7 +1286,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3b6fa95eebfa01703d9ef4f530674d17e965c512
-R 75422d8b90b14dff8d84366180ceffcf
+P b41ef5d6db107cac2b1b46a955e63414434ee976
+R 906785d44a97778169ea8177629aec9d
 U drh
-Z 09df4b10f79c6f8714af963c14357e4d
+Z 5a5062bd8b43ef3a45689ba975547888
