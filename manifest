@@ -1,5 +1,5 @@
-C Add\sthe\s--rebuild\sobject\sto\sfuzzcheck.
-D 2015-06-24T12:44:42.961
+C Update\sthe\sdatabase\sfuzz\stest\scases\sto\scover\sall\srecent\sfindings.
+D 2015-06-24T13:05:18.519
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1063c58075b7400d93326b0eb332b48a54f53025
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -660,7 +660,7 @@ F test/fuzz_malloc.test 328f70aaca63adf29b4c6f06505ed0cf57ca7c26
 F test/fuzzcheck.c 40f9db60546bef5a3b47858387f158f25b33dca9
 F test/fuzzdata1.db 7ee3227bad0e7ccdeb08a9e6822916777073c664
 F test/fuzzdata2.db f03a420d3b822cc82e4f894ca957618fbe9c4973
-F test/fuzzdata3.db ab36b87c73d97e046edc931d07210caba0eee3ce
+F test/fuzzdata3.db b83d0c20ae64113432c03d40c06ba473a4cb696b
 F test/fuzzer1.test d4c52aaf3ef923da293a2653cfab33d02f718a36
 F test/fuzzerfault.test 8792cd77fd5bce765b05d0c8e01b9edcf8af8536
 F test/genesis.tcl 1e2e2e8e5cc4058549a154ff1892fe5c9de19f98
@@ -1286,7 +1286,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4e5424fe89eed346f6cf26a05c72694d1eb9f58f
-R 408d47278af1389986b4d5a1a26ee4ab
+P db87664a224f44e01b85570a3f3b6ec1c81d6e0a
+R 80987d833c6ea525b9447487da2124df
 U drh
-Z 58722377525bd9539d5add410a8de869
+Z 3820c3951a0c18b6366e880d201a8261
