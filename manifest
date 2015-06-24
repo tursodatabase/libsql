@@ -1,5 +1,5 @@
-C In\sthe\sfuzzcheck\stest\sprogram,\suse\sthe\sprogress\shandler\sto\slimit\sthe\snumber\nof\sVDBE\scycles\sto\savoid\sgetting\sstuck\sif\sthe\sSQL\sunder\stest\scontains\san\ninfinite\sCTE\sloop.\s\sAdd\sthe\s--limit-vdbe\scommand-line\soption.
-D 2015-06-24T14:45:44.257
+C Add\s"ON\sCONFLICT"\shandling\sto\sthe\sspellfix\smodule.
+D 2015-06-24T17:21:52.413
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1063c58075b7400d93326b0eb332b48a54f53025
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -118,7 +118,7 @@ F ext/misc/percentile.c bcbee3c061b884eccb80e21651daaae8e1e43c63
 F ext/misc/regexp.c af92cdaa5058fcec1451e49becc7ba44dba023dc
 F ext/misc/rot13.c 1ac6f95f99b575907b9b09c81a349114cf9be45a
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
-F ext/misc/spellfix.c 25810dda37fc904b0772a13efd8ca072fb09e355
+F ext/misc/spellfix.c de9181ec188294dd2a1087b329ca55cfaa76a29d
 F ext/misc/totype.c 4a167594e791abeed95e0a8db028822b5e8fe512
 F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
@@ -929,7 +929,7 @@ F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
 F test/speedtest1.c f42fd04a34a0c1dc289cbe536ef62d706227a736
-F test/spellfix.test 24f676831acddd2f4056a598fd731a72c6311f49
+F test/spellfix.test 0597065ff57042df1f138e6a2611ae19c2698135
 F test/sqldiff1.test 8f6bc7c6a5b3585d350d779c6078869ba402f8f5
 F test/sqllimits1.test e05786eaed7950ff6a2d00031d001d8a26131e68
 F test/stat.test 8de91498c99f5298b303f70f1d1f3b9557af91bf
@@ -1286,7 +1286,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b41ef5d6db107cac2b1b46a955e63414434ee976
-R 906785d44a97778169ea8177629aec9d
-U drh
-Z 5a5062bd8b43ef3a45689ba975547888
+P fbf9c4325e98120914bb03bdf351b57643f7a8c8
+R de10737ebdc70bb8182e7abe767d84f9
+T *branch * spellfix-constraints
+T *sym-spellfix-constraints *
+T -sym-trunk *
+U dan
+Z fa582c8ac482ee4085cd5a29af44e41f
