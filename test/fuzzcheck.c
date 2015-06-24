@@ -704,6 +704,7 @@ static void showHelp(void){
 "  --rebuild             Rebuild and vacuum the database file\n"
 "  --result-trace        Show the results of each SQL command\n"
 "  --sqlid N             Use only SQL where sqlid=N\n"
+"  --timeline N          Abort if any single test case needs more than N seconds\n"
 "  -v                    Increased output\n"
 "  --verbose             Increased output\n"
   );
@@ -737,6 +738,7 @@ int main(int argc, char **argv){
   const char *zFailCode = 0;   /* Value of the TEST_FAILURE environment variable */
   int cellSzCkFlag = 0;        /* --cell-size-check */
   int sqlFuzz = 0;             /* True for SQL fuzz testing. False for DB fuzz */
+  int iTimeout = 60;           /* Default 60-second timeout */
 
   iBegin = timeOfDay();
 #ifdef __unix__
@@ -793,6 +795,10 @@ int main(int argc, char **argv){
       if( strcmp(z,"sqlid")==0 ){
         if( i>=argc-1 ) fatalError("missing arguments on %s", argv[i]);
         onlySqlid = atoi(argv[++i]);
+      }else
+      if( strcmp(z,"timeout")==0 ){
+        if( i>=argc-1 ) fatalError("missing arguments on %s", argv[i]);
+        iTimeout = atoi(argv[++i]);
       }else
       if( strcmp(z,"timeout-test")==0 ){
         timeoutTest = 1;
@@ -959,7 +965,7 @@ int main(int argc, char **argv){
         rc = sqlite3_open_v2("main.db", &db, openFlags, zVfs);
         if( rc ) fatalError("cannot open inmem database");
         if( cellSzCkFlag ) runSql(db, "PRAGMA cell_size_check=ON", runFlags);
-        setAlarm(10);
+        setAlarm(iTimeout);
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
         if( sqlFuzz || vdbeLimitFlag ){
           sqlite3_progress_handler(db, 100000, progressHandler, &vdbeLimitFlag);
