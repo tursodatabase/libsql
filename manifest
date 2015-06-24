@@ -1,5 +1,5 @@
-C Adjustment\sto\sa\smalloc\stest\sso\sthat\sit\saccepts\sa\snarrow\srange\sof\svalues\sto\naccount\sfor\svariations\sin\smalloc\ssubsystems.
-D 2015-06-24T10:46:25.903
+C Strengthen\sthe\snew\sbalance_nonroot()\scode\sagainst\svarious\scorrupt\sdatabase\nproblems.
+D 2015-06-24T12:07:40.692
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1063c58075b7400d93326b0eb332b48a54f53025
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -192,7 +192,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c ff743689c4d6c5cb55ad42ed9d174b2b3e71f1e3
 F src/bitvec.c 5eb7958c3bf65210211cbcfc44eff86d0ded7c9d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c 9980353a770fa660b74d9c9deabb3e07a218dfb7
+F src/btree.c 2167a4fdf8ab24b0bc066969db47f4c17a7773ec
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 6ece2dd9c8e2eac05f0a8ded8772a44e96486c65
 F src/build.c b3f15255d5b16e42dafeaa638fd4f8a47c94ed70
@@ -1286,7 +1286,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 14b73d201509d3c04f760a08d21f3c499f2870a8
-R a57cd0079b99218bd12ce044cb0278e1
+P e0195070f84f418c46698627a2dcbfcfb94d999c
+R 7d5a275fb657ecb8665ac07bebe4c955
 U drh
-Z ee5603fe9d2ad1d7f63752edf51bdda4
+Z 5227e07a1b8f384d21181ee18b88f9b4

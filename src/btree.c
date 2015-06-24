@@ -1439,9 +1439,7 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
   ** However, that integer is too large to be stored in a 2-byte unsigned
   ** integer, so a value of 0 is used in its place. */
   top = get2byteNotZero(&data[hdr+5]);
-  if( gap>top || NEVER((u32)top>pPage->pBt->usableSize) ){
-    /* The NEVER() is because a oversize "top" value will be blocked from
-    ** reaching this point by btreeInitPage() or btreeGetUnusedPage() */
+  if( gap>top || (u32)top>pPage->pBt->usableSize ){
     return SQLITE_CORRUPT_BKPT;
   }
 
@@ -7192,7 +7190,7 @@ static int balance_nonroot(
     }
     if( cntNew[i]>=b.nCell ){
       k = i+1;
-    }else if( cntNew[i] - (i>0 ? cntNew[i-1] : 0) <= 0 ){
+    }else if( cntNew[i] <= (i>0 ? cntNew[i-1] : 0) ){
       rc = SQLITE_CORRUPT_BKPT;
       goto balance_cleanup;
     }
@@ -7218,7 +7216,7 @@ static int balance_nonroot(
     r = cntNew[i-1] - 1;
     d = r + 1 - leafData;
     (void)cachedCellSize(&b, d);
-    while(1){
+    do{
       assert( d<nMaxCells );
       assert( r<nMaxCells );
       (void)cachedCellSize(&b, r);
@@ -7229,15 +7227,15 @@ static int balance_nonroot(
       szRight += b.szCell[d] + 2;
       szLeft -= b.szCell[r] + 2;
       cntNew[i-1] = r;
-      if( cntNew[i-1] <= 0 ){
-        rc = SQLITE_CORRUPT_BKPT;
-        goto balance_cleanup;
-      }
       r--;
       d--;
-    }
+    }while( r>=0 );
     szNew[i] = szRight;
     szNew[i-1] = szLeft;
+    if( cntNew[i-1] <= (i>1 ? cntNew[i-2] : 0) ){
+      rc = SQLITE_CORRUPT_BKPT;
+      goto balance_cleanup;
+    }
   }
 
   /* Sanity check:  For a non-corrupt database file one of the follwing
