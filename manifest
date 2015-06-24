@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\scompiler\swarning.
-D 2015-06-24T13:32:10.104
+C Fix\sthe\sprogress\shandler\sso\sthat\sit\sdoes\snot\sfire\stoo\ssoon\sduring\san\nsqlite3_step()\scall\sother\sthan\sthe\sfirst.
+D 2015-06-24T14:36:27.096
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1063c58075b7400d93326b0eb332b48a54f53025
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -313,7 +313,7 @@ F src/update.c 487747b328b7216bb7f6af0695d6937d5c9e605f
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c a6431c92803b975b7322724a7b433e538d243539
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c c9b8985dfc5df9bd512342ea2e56af4be30cb31a
+F src/vdbe.c 3af2d06e2b36012631dc3331957df52febdf8678
 F src/vdbe.h 90048aea1910f9df93e6044592bd4a466dc9c5e7
 F src/vdbeInt.h 20295e482121d13437f69985f77db211cdc8bac1
 F src/vdbeapi.c 6a0d7757987018ff6b1b81bc5293219cd26bb299
@@ -1286,7 +1286,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 659cfc9d1e9db83db171d621f248a7c2a5b183f6
-R 97f2f9e452b18631cf440c315058b8ed
+P 3b6fa95eebfa01703d9ef4f530674d17e965c512
+R 75422d8b90b14dff8d84366180ceffcf
 U drh
-Z f402035ca60cd5ed94df0b50e65bb375
+Z 09df4b10f79c6f8714af963c14357e4d
