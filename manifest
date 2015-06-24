@@ -1,5 +1,5 @@
-C Remove\san\sinvalid\sNEVER()\sand\sadd\sa\stest\scase\sto\scover\sit.
-D 2015-06-24T01:07:30.298
+C Adjustment\sto\sa\smalloc\stest\sso\sthat\sit\saccepts\sa\snarrow\srange\sof\svalues\sto\naccount\sfor\svariations\sin\smalloc\ssubsystems.
+D 2015-06-24T10:46:25.903
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1063c58075b7400d93326b0eb332b48a54f53025
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -745,7 +745,7 @@ F test/make-where7.tcl 05c16b5d4f5d6512881dfec560cb793915932ef9
 F test/malloc.test 21c213365f2cca95ab2d7dc078dc8525f96065f8
 F test/malloc3.test e3b32c724b5a124b57cb0ed177f675249ad0c66a
 F test/malloc4.test 957337613002b7058a85116493a262f679f3a261
-F test/malloc5.test 79182b8bffd6d62f77b1a5a8ba8e6bf0e5053b8e
+F test/malloc5.test e9a9116f80ab6b7a9ca258876c6f3dedb08cb08b
 F test/malloc6.test 2f039d9821927eacae43e1831f815e157659a151
 F test/malloc7.test 7c68a32942858bc715284856c5507446bba88c3a
 F test/malloc8.test 9b7a3f8cb9cf0b12fff566e80a980b1767bd961d
@@ -1286,7 +1286,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 25131e7062125e91c2d60ed2cadf134dd7609124
-R 5c4312cbcd81ccb56f8221ea245a8213
+P 14b73d201509d3c04f760a08d21f3c499f2870a8
+R a57cd0079b99218bd12ce044cb0278e1
 U drh
-Z 55c9b3204d112336d9f9453401a86861
+Z ee5603fe9d2ad1d7f63752edf51bdda4
