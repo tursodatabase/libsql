@@ -616,6 +616,31 @@ static void runSql(sqlite3 *db, const char *zSql, unsigned  runFlags){
 }
 
 /*
+** Rebuild the database file.
+**
+**    (1)  Remove duplicate entries
+**    (2)  Put all entries in order
+**    (3)  Vacuum
+*/
+static void rebuild_database(sqlite3 *db){
+  int rc;
+  rc = sqlite3_exec(db, 
+     "BEGIN;\n"
+     "CREATE TEMP TABLE dbx AS SELECT DISTINCT dbcontent FROM db;\n"
+     "DELETE FROM db;\n"
+     "INSERT INTO db(dbid, dbcontent) SELECT NULL, dbcontent FROM dbx ORDER BY 2;\n"
+     "DROP TABLE dbx;\n"
+     "CREATE TEMP TABLE sx AS SELECT DISTINCT sqltext FROM xsql;\n"
+     "DELETE FROM xsql;\n"
+     "INSERT INTO xsql(sqlid,sqltext) SELECT NULL, sqltext FROM sx ORDER BY 2;\n"
+     "DROP TABLE sx;\n"
+     "COMMIT;\n"
+     "PRAGMA page_size=1024;\n"
+     "VACUUM;\n", 0, 0, 0);
+  if( rc ) fatalError("cannot rebuild: %s", sqlite3_errmsg(db));
+}
+
+/*
 ** Print sketchy documentation for this utility program
 */
 static void showHelp(void){
@@ -633,6 +658,7 @@ static void showHelp(void){
 "  --load-db ARGS...     Load template databases from files into SOURCE_DB\n"
 "  -m TEXT               Add a description to the database\n"
 "  --native-vfs          Use the native VFS for initially empty database files\n"
+"  --rebuild             Rebuild and vacuum the database file\n"
 "  --result-trace        Show the results of each SQL command\n"
 "  --sqlid N             Use only SQL where sqlid=N\n"
 "  -v                    Increased output\n"
@@ -655,6 +681,7 @@ int main(int argc, char **argv){
   int onlySqlid = -1;          /* --sqlid */
   int onlyDbid = -1;           /* --dbid */
   int nativeFlag = 0;          /* --native-vfs */
+  int rebuildFlag = 0;         /* --rebuild */
   int runFlags = 0;            /* Flags sent to runSql() */
   char *zMsg = 0;              /* Add this message */
   int nSrcDb = 0;              /* Number of source databases */
@@ -705,6 +732,9 @@ int main(int argc, char **argv){
         quietFlag = 1;
         verboseFlag = 0;
       }else
+      if( strcmp(z,"rebuild")==0 ){
+        rebuildFlag = 1;
+      }else
       if( strcmp(z,"result-trace")==0 ){
         runFlags |= SQL_OUTPUT;
       }else
@@ -743,7 +773,7 @@ int main(int argc, char **argv){
       fatalError("cannot open source database %s - %s",
       azSrcDb[iSrcDb], sqlite3_errmsg(db));
     }
-    rc = sqlite3_exec(db, 
+    rc = sqlite3_exec(db,
        "CREATE TABLE IF NOT EXISTS db(\n"
        "  dbid INTEGER PRIMARY KEY, -- database id\n"
        "  dbcontent BLOB            -- database disk file image\n"
@@ -781,6 +811,7 @@ int main(int argc, char **argv){
       sqlite3_finalize(pStmt);
       rc = sqlite3_exec(db, "COMMIT", 0, 0, 0);
       if( rc ) fatalError("cannot commit the transaction: %s", sqlite3_errmsg(db));
+      rebuild_database(db);
       sqlite3_close(db);
       return 0;
     }
@@ -813,6 +844,16 @@ int main(int argc, char **argv){
         printf("%s: %s\n", zDbName, sqlite3_column_text(pStmt,0));
       }
       sqlite3_finalize(pStmt);
+    }
+
+    /* Rebuild the database, if requested */
+    if( rebuildFlag ){
+      if( !quietFlag ){
+        printf("%s: rebuilding... ", zDbName);
+        fflush(stdout);
+      }
+      rebuild_database(db);
+      if( !quietFlag ) printf("done\n");
     }
   
     /* Close the source database.  Verify that no SQLite memory allocations are
