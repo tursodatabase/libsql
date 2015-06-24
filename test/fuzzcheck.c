@@ -166,6 +166,7 @@ static void setAlarm(int N){
 #endif
 }
 
+#ifndef SQLITE_OMIT_PROGRESS_CALLBACK
 /*
 ** This an SQL progress handler.  After an SQL statement has run for
 ** many steps, we want to interrupt it.  This guards against infinite
@@ -178,6 +179,7 @@ static int progressHandler(void *pVdbeLimitFlag){
   if( *(int*)pVdbeLimitFlag ) fatalError("too many VDBE cycles");
   return 1;
 }
+#endif
 
 /*
 ** Reallocate memory.  Show and error and quit if unable.
@@ -958,9 +960,11 @@ int main(int argc, char **argv){
         if( rc ) fatalError("cannot open inmem database");
         if( cellSzCkFlag ) runSql(db, "PRAGMA cell_size_check=ON", runFlags);
         setAlarm(10);
+#ifndef SQLITE_OMIT_PROGRESS_CALLBACK
         if( sqlFuzz || vdbeLimitFlag ){
           sqlite3_progress_handler(db, 100000, progressHandler, &vdbeLimitFlag);
         }
+#endif
         do{
           runSql(db, (char*)pSql->a, runFlags);
         }while( timeoutTest );
