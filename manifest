@@ -1,5 +1,5 @@
-C Update\sthe\sdatabase\sfuzz\stest\scases\sto\scover\sall\srecent\sfindings.
-D 2015-06-24T13:05:18.519
+C Rig\sthe\sfuzzcheck\stest\sprogram\sso\sthat\sit\stimes\sout\safter\s10\sseconds\sin\scase\nof\san\sinfinite\sloop\sin\sthe\stest\scase.
+D 2015-06-24T13:25:34.917
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1063c58075b7400d93326b0eb332b48a54f53025
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -657,7 +657,7 @@ F test/fuzz2.test 76dc35b32b6d6f965259508508abce75a6c4d7e1
 F test/fuzz3.test efd384b896c647b61a2c1848ba70d42aad60a7b3
 F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
 F test/fuzz_malloc.test 328f70aaca63adf29b4c6f06505ed0cf57ca7c26
-F test/fuzzcheck.c 40f9db60546bef5a3b47858387f158f25b33dca9
+F test/fuzzcheck.c 4aa40bb9c64d25d0a196241ffe5bd99c8cc7a7fc
 F test/fuzzdata1.db 7ee3227bad0e7ccdeb08a9e6822916777073c664
 F test/fuzzdata2.db f03a420d3b822cc82e4f894ca957618fbe9c4973
 F test/fuzzdata3.db b83d0c20ae64113432c03d40c06ba473a4cb696b
@@ -1286,7 +1286,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P db87664a224f44e01b85570a3f3b6ec1c81d6e0a
-R 80987d833c6ea525b9447487da2124df
+P 47ba7d96b1b91858ef1b592374839bc820719b95
+R d64b6eb4d6ad9abfcf40a6dbaad4e3c0
 U drh
-Z 3820c3951a0c18b6366e880d201a8261
+Z 7df3ede0c0593e9eda4cbc4099bb5c77

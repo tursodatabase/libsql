@@ -71,6 +71,11 @@
 #include <ctype.h>
 #include "sqlite3.h"
 
+#ifdef __unix__
+# include <signal.h>
+# include <unistd.h>
+#endif
+
 /*
 ** Files in the virtual file system.
 */
@@ -137,6 +142,28 @@ static void fatalError(const char *zFormat, ...){
   va_end(ap);
   fprintf(stderr, "\n");
   exit(1);
+}
+
+/*
+** Timeout handler
+*/
+#ifdef __unix__
+static void timeoutHandler(int NotUsed){
+  (void)NotUsed;
+  fatalError("timeout\n");
+}
+#endif
+
+/*
+** Set the an alarm to go off after N seconds.  Disable the alarm
+** if N==0
+*/
+static void setAlarm(int N){
+#ifdef __unix__
+  alarm(N);
+#else
+  (void)N;
+#endif
 }
 
 /*
@@ -682,6 +709,7 @@ int main(int argc, char **argv){
   int onlyDbid = -1;           /* --dbid */
   int nativeFlag = 0;          /* --native-vfs */
   int rebuildFlag = 0;         /* --rebuild */
+  int timeoutTest = 0;         /* undocumented --timeout-test flag */
   int runFlags = 0;            /* Flags sent to runSql() */
   char *zMsg = 0;              /* Add this message */
   int nSrcDb = 0;              /* Number of source databases */
@@ -693,6 +721,9 @@ int main(int argc, char **argv){
   int cellSzCkFlag = 0;        /* --cell-size-check */
 
   iBegin = timeOfDay();
+#ifdef __unix__
+  signal(SIGALRM, timeoutHandler);
+#endif
   g.zArgv0 = argv[0];
   zFailCode = getenv("TEST_FAILURE");
   for(i=1; i<argc; i++){
@@ -741,6 +772,12 @@ int main(int argc, char **argv){
       if( strcmp(z,"sqlid")==0 ){
         if( i>=argc-1 ) fatalError("missing arguments on %s", argv[i]);
         onlySqlid = atoi(argv[++i]);
+      }else
+      if( strcmp(z,"timeout-test")==0 ){
+        timeoutTest = 1;
+#ifndef __unix__
+        fatalError("timeout is not available on non-unix systems");
+#endif
       }else
       if( strcmp(z,"verbose")==0 || strcmp(z,"v")==0 ){
         quietFlag = 0;
@@ -900,7 +937,11 @@ int main(int argc, char **argv){
         rc = sqlite3_open_v2("main.db", &db, openFlags, zVfs);
         if( rc ) fatalError("cannot open inmem database");
         if( cellSzCkFlag ) runSql(db, "PRAGMA cell_size_check=ON", runFlags);
-        runSql(db, (char*)pSql->a, runFlags);
+        setAlarm(10);
+        do{
+          runSql(db, (char*)pSql->a, runFlags);
+        }while( timeoutTest );
+        setAlarm(0);
         sqlite3_close(db);
         if( sqlite3_memory_used()>0 ) fatalError("memory leak");
         reformatVfs();
