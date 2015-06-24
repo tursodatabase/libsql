@@ -1,5 +1,5 @@
-C Performance\soptimization\son\sbalance_nonroot()\sand\srelated\sroutines.\n2.6%\sfaster\soverall\swith\sa\ssize\sincrease\sof\sless\sthan\s750\sbytes.
-D 2015-06-24T00:05:45.705
+C Remove\san\sinvalid\sNEVER()\sand\sadd\sa\stest\scase\sto\scover\sit.
+D 2015-06-24T01:07:30.298
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1063c58075b7400d93326b0eb332b48a54f53025
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -192,7 +192,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c ff743689c4d6c5cb55ad42ed9d174b2b3e71f1e3
 F src/bitvec.c 5eb7958c3bf65210211cbcfc44eff86d0ded7c9d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c 587dd00c675e99d61614c9537feb73bfc2e9683d
+F src/btree.c 9980353a770fa660b74d9c9deabb3e07a218dfb7
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 6ece2dd9c8e2eac05f0a8ded8772a44e96486c65
 F src/build.c b3f15255d5b16e42dafeaa638fd4f8a47c94ed70
@@ -660,7 +660,7 @@ F test/fuzz_malloc.test 328f70aaca63adf29b4c6f06505ed0cf57ca7c26
 F test/fuzzcheck.c 5805b2236292f8643d56e727a3a6e4d88e0856a5
 F test/fuzzdata1.db 7ee3227bad0e7ccdeb08a9e6822916777073c664
 F test/fuzzdata2.db f03a420d3b822cc82e4f894ca957618fbe9c4973
-F test/fuzzdata3.db 77bed4fc8c4945124ed5616daf2dc4f4c3bf762a
+F test/fuzzdata3.db ab36b87c73d97e046edc931d07210caba0eee3ce
 F test/fuzzer1.test d4c52aaf3ef923da293a2653cfab33d02f718a36
 F test/fuzzerfault.test 8792cd77fd5bce765b05d0c8e01b9edcf8af8536
 F test/genesis.tcl 1e2e2e8e5cc4058549a154ff1892fe5c9de19f98
@@ -1286,8 +1286,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c8d1f305b6e9dfc36b8e3f4ab92de4457884d903 eed6a3314518cdab809264284d7680385f0d5d2a
-R 89850ed2148a00ac2d9831c087418020
-T +closed eed6a3314518cdab809264284d7680385f0d5d2a
+P 25131e7062125e91c2d60ed2cadf134dd7609124
+R 5c4312cbcd81ccb56f8221ea245a8213
 U drh
-Z 115864ffd982466ffd849126735907ac
+Z 55c9b3204d112336d9f9453401a86861
