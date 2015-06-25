@@ -1694,17 +1694,26 @@ void sqlite3ValueFree(sqlite3_value *v){
 }
 
 /*
-** Return the number of bytes in the sqlite3_value object assuming
-** that it uses the encoding "enc"
+** The sqlite3ValueBytes() routine returns the number of bytes in the
+** sqlite3_value object assuming that it uses the encoding "enc".
+** The valueBytes() routine is a helper function.
 */
+static SQLITE_NOINLINE int valueBytes(sqlite3_value *pVal, u8 enc){
+  return valueToText(pVal, enc)!=0 ? pVal->n : 0;
+}
 int sqlite3ValueBytes(sqlite3_value *pVal, u8 enc){
   Mem *p = (Mem*)pVal;
-  if( (p->flags & MEM_Blob)!=0 || sqlite3ValueText(pVal, enc) ){
+  assert( (p->flags & MEM_Null)==0 || (p->flags & (MEM_Str|MEM_Blob))==0 );
+  if( (p->flags & MEM_Str)!=0 && pVal->enc==enc ){
+    return p->n;
+  }
+  if( (p->flags & MEM_Blob)!=0 ){
     if( p->flags & MEM_Zero ){
       return p->n + p->u.nZero;
     }else{
       return p->n;
     }
   }
-  return 0;
+  if( p->flags & MEM_Null ) return 0;
+  return valueBytes(pVal, enc);
 }

@@ -1,5 +1,5 @@
-C Simplifications\sand\sperformance\simprovements\sin\sinsertCell().
-D 2015-06-25T19:53:48.178
+C Optimization\sto\ssqlite3_value_bytes()\sfor\sthe\scommon\scase\sthat\sdoes\snot\nrequire\sa\sdata\stransformation.
+D 2015-06-25T23:52:48.104
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1063c58075b7400d93326b0eb332b48a54f53025
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -319,7 +319,7 @@ F src/vdbeInt.h 20295e482121d13437f69985f77db211cdc8bac1
 F src/vdbeapi.c 6a0d7757987018ff6b1b81bc5293219cd26bb299
 F src/vdbeaux.c 4c82d6f686f72ea7d266d26d528a171b728626f7
 F src/vdbeblob.c 4f2e8e075d238392df98c5e03a64342465b03f90
-F src/vdbemem.c 4e947cd322bb531e3f7f6f58f0f536d182b38ef8
+F src/vdbemem.c ae38a0d35ae71cf604381a887c170466ba518090
 F src/vdbesort.c f5009e7a35e3065635d8918b9a31f498a499976b
 F src/vdbetrace.c 8befe829faff6d9e6f6e4dee5a7d3f85cc85f1a0
 F src/vtab.c c535e80259ebe616467181a83a4263555b97c694
@@ -1286,7 +1286,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 78da0f69cb3289e332018864004f319f2764a5c8
-R 0d165d2d8c01ecd2475fdbe233dfe5e0
+P 7d02e6c992ef92e1f77ebc13889e17c028454b06
+R 055499679190be686aed6dd5c50e96a1
 U drh
-Z 8a4a8bb2d9c667bdbc4293aaa6065234
+Z a43ea71012a447eaba4e577595223851
