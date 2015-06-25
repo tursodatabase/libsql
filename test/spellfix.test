@@ -283,7 +283,124 @@ ifcapable trace {
   }
 }
 
+#------------------------------------------------------------------------- 
+# Test that the spellfix1 table supports conflict handling (OR REPLACE 
+# and so on).
+#
+do_execsql_test 7.1 {
+  CREATE VIRTUAL TABLE t4 USING spellfix1;
+  PRAGMA table_info = t4;
+} {
+  0 word {} 0 {} 0 
+  1 rank {} 0 {} 0 
+  2 distance {} 0 {} 0 
+  3 langid {} 0 {} 0 
+  4 score {} 0 {} 0 
+  5 matchlen {} 0 {} 0
+}
 
+do_execsql_test 7.2.1 {
+  INSERT INTO t4(rowid, word) VALUES(1, 'Archilles');
+  INSERT INTO t4(rowid, word) VALUES(2, 'Pluto');
+  INSERT INTO t4(rowid, word) VALUES(3, 'Atrides');
+  INSERT OR REPLACE INTO t4(rowid, word) VALUES(2, 'Apollo');
+  SELECT rowid, word FROM t4;
+} {
+  1 Archilles   2 Apollo   3 Atrides
+}
+do_catchsql_test 7.2.2 {
+  INSERT OR ABORT INTO t4(rowid, word) VALUES(1, 'Leto');
+} {1 {constraint failed}}
+do_catchsql_test 7.2.3 {
+  INSERT OR ROLLBACK INTO t4(rowid, word) VALUES(3, 'Zeus');
+} {1 {constraint failed}}
+do_catchsql_test 7.2.4 {
+  INSERT OR FAIL INTO t4(rowid, word) VALUES(3, 'Zeus');
+} {1 {constraint failed}}
+do_execsql_test 7.2.5 {
+  INSERT OR IGNORE INTO t4(rowid, word) VALUES(3, 'Zeus');
+  SELECT rowid, word FROM t4;
+} {
+  1 Archilles   2 Apollo   3 Atrides
+}
 
+do_execsql_test 7.3.1 {
+  UPDATE OR REPLACE t4 SET rowid=3 WHERE rowid=1;
+  SELECT rowid, word FROM t4;
+} {2 Apollo 3 Archilles}
+do_catchsql_test 7.3.2 {
+  UPDATE OR ABORT t4 SET rowid=3 WHERE rowid=2;
+} {1 {constraint failed}}
+do_catchsql_test 7.3.3 {
+  UPDATE OR ROLLBACK t4 SET rowid=3 WHERE rowid=2;
+} {1 {constraint failed}}
+do_catchsql_test 7.3.4 {
+  UPDATE OR FAIL t4 SET rowid=3 WHERE rowid=2;
+} {1 {constraint failed}}
+do_execsql_test 7.3.5 {
+  UPDATE OR IGNORE t4 SET rowid=3 WHERE rowid=2;
+  SELECT rowid, word FROM t4;
+} {2 Apollo  3 Archilles}
+
+do_execsql_test 7.4.1 {
+  DELETE FROM t4;
+  INSERT INTO t4(rowid, word) VALUES(10, 'Agamemnon');
+  INSERT INTO t4(rowid, word) VALUES(20, 'Patroclus');
+  INSERT INTO t4(rowid, word) VALUES(30, 'Chryses');
+
+  CREATE TABLE t5(i, w);
+  INSERT INTO t5 VALUES(5,  'Poseidon');
+  INSERT INTO t5 VALUES(20, 'Chronos');
+  INSERT INTO t5 VALUES(30, 'Hera');
+}
+
+db_save_and_close
+foreach {tn conflict err bRollback res} {
+  0 ""            {1 {constraint failed}} 0
+                  {10 Agamemnon 20 Patroclus 30 Chryses}
+  1 "OR REPLACE"  {0 {}} 0
+                  {5 Poseidon 10 Agamemnon 20 Chronos 30 Hera}
+  2 "OR ABORT"    {1 {constraint failed}} 0
+                  {10 Agamemnon 20 Patroclus 30 Chryses}
+  3 "OR ROLLBACK" {1 {constraint failed}} 1
+                  {10 Agamemnon 20 Patroclus 30 Chryses}
+  5 "OR IGNORE"   {0 {}} 0
+                  {5 Poseidon 10 Agamemnon 20 Patroclus 30 Chryses}
+} {
+  db_restore_and_reopen
+  load_static_extension db spellfix nextchar
+
+  execsql BEGIN
+  set sql "INSERT $conflict INTO t4(rowid, word) SELECT i, w FROM t5"
+  do_catchsql_test 7.4.2.$tn.1 $sql $err
+  do_execsql_test 7.4.2.$tn.2 { SELECT rowid, word FROM t4 } $res
+
+  do_test 7.4.2.$tn.3 { sqlite3_get_autocommit db } $bRollback
+  catchsql ROLLBACK
+}
+
+foreach {tn conflict err bRollback res} {
+  0 ""            {1 {constraint failed}} 0
+                  {10 Agamemnon 20 Patroclus 30 Chryses}
+  1 "OR REPLACE"  {0 {}} 0
+                  {15 Agamemnon 45 Chryses}
+  2 "OR ABORT"    {1 {constraint failed}} 0
+                  {10 Agamemnon 20 Patroclus 30 Chryses}
+  3 "OR ROLLBACK" {1 {constraint failed}} 1
+                  {10 Agamemnon 20 Patroclus 30 Chryses}
+  5 "OR IGNORE"   {0 {}} 0
+                  {15 Agamemnon 20 Patroclus 45 Chryses}
+} {
+  db_restore_and_reopen
+  load_static_extension db spellfix nextchar
+
+  execsql BEGIN
+  set sql "UPDATE $conflict t4 SET rowid=rowid + (rowid/2)"
+  do_catchsql_test 7.5.2.$tn.1 $sql $err
+  do_execsql_test 7.5.2.$tn.2 { SELECT rowid, word FROM t4 } $res
+  do_test 7.5.2.$tn.3 { sqlite3_get_autocommit db } $bRollback
+  catchsql ROLLBACK
+}
 
 finish_test
+

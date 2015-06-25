@@ -2855,7 +2855,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       */
       if( pDef->funcFlags & SQLITE_FUNC_UNLIKELY ){
         assert( nFarg>=1 );
-        sqlite3ExprCode(pParse, pFarg->a[0].pExpr, target);
+        inReg = sqlite3ExprCodeTarget(pParse, pFarg->a[0].pExpr, target);
         break;
       }
 

@@ -189,8 +189,8 @@ do_test malloc5-3.1 {
     BEGIN;
     SELECT * FROM def;
   } db2
-  sqlite3_release_memory
-} [expr $::pgalloc * 2]
+  value_in_range [expr $::pgalloc*2] 0.99 [sqlite3_release_memory]
+} [value_in_range [expr $::pgalloc * 2] 0.99]
 do_test malloc5-3.2 {
   concat \
     [execsql {SELECT * FROM abc; COMMIT}] \

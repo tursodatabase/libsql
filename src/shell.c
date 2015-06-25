@@ -101,28 +101,26 @@
 #if defined(_WIN32) || defined(WIN32)
 # include <io.h>
 # include <fcntl.h>
-#define isatty(h) _isatty(h)
-#ifndef access
-# define access(f,m) _access((f),(m))
-#endif
-#undef popen
-#define popen _popen
-#undef pclose
-#define pclose _pclose
+# define isatty(h) _isatty(h)
+# ifndef access
+#  define access(f,m) _access((f),(m))
+# endif
+# undef popen
+# define popen _popen
+# undef pclose
+# define pclose _pclose
 #else
-/* Make sure isatty() has a prototype.
-*/
-extern int isatty(int);
+ /* Make sure isatty() has a prototype. */
+ extern int isatty(int);
 
-#if !defined(__RTP__) && !defined(_WRS_KERNEL)
-  /* popen and pclose are not C89 functions and so are sometimes omitted from
-  ** the <stdio.h> header */
-  extern FILE *popen(const char*,const char*);
-  extern int pclose(FILE*);
-#else
-# define SQLITE_OMIT_POPEN 1
-#endif
-
+# if !defined(__RTP__) && !defined(_WRS_KERNEL)
+  /* popen and pclose are not C89 functions and so are
+  ** sometimes omitted from the <stdio.h> header */
+   extern FILE *popen(const char*,const char*);
+   extern int pclose(FILE*);
+# else
+#  define SQLITE_OMIT_POPEN 1
+# endif
 #endif
 
 #if defined(_WIN32_WCE)
