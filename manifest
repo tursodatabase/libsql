@@ -1,5 +1,5 @@
-C Minor\soptimization\sto\sallocateSpace().
-D 2015-06-25T15:04:56.778
+C Remove\sa\sNEVER()\sthat\sis\sin\sfact\sreachable.
+D 2015-06-25T15:21:52.642
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1063c58075b7400d93326b0eb332b48a54f53025
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -192,7 +192,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c ff743689c4d6c5cb55ad42ed9d174b2b3e71f1e3
 F src/bitvec.c 5eb7958c3bf65210211cbcfc44eff86d0ded7c9d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c 8910b2a624c7fcf06060442155ba81ed673f28fa
+F src/btree.c cb50b3f00fec44481c4b0a7f9ab1e4bed2ffce18
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h fdd1aff02fb2a63812bd95716e7f579fc3759107
 F src/build.c b3f15255d5b16e42dafeaa638fd4f8a47c94ed70
@@ -660,7 +660,7 @@ F test/fuzz_malloc.test 328f70aaca63adf29b4c6f06505ed0cf57ca7c26
 F test/fuzzcheck.c b973b06b500e6fc052d7059257cdf70df1f3a986
 F test/fuzzdata1.db 7ee3227bad0e7ccdeb08a9e6822916777073c664
 F test/fuzzdata2.db f03a420d3b822cc82e4f894ca957618fbe9c4973
-F test/fuzzdata3.db b83d0c20ae64113432c03d40c06ba473a4cb696b
+F test/fuzzdata3.db 1d6044c33a114007f02b6e6846f1fa232f607bfd
 F test/fuzzer1.test d4c52aaf3ef923da293a2653cfab33d02f718a36
 F test/fuzzerfault.test 8792cd77fd5bce765b05d0c8e01b9edcf8af8536
 F test/genesis.tcl 1e2e2e8e5cc4058549a154ff1892fe5c9de19f98
@@ -1286,7 +1286,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 476b11563c08c6d9c0abd69e4d865c4edcdd45f5
-R 839b3c203557349d49b4237a455fedf1
+P d007bc339b9ea6d59a3dd2b0c5e77e9c801b16f6
+R b3d0d7d3ac81c0743783e0e414777712
 U drh
-Z 4ce9d033e6697dcd53f95c95d2de46fc
+Z ec9d3f29e33fb82221154b9d11e7c8ba
