@@ -18,12 +18,12 @@
 #include "fts5Int.h"
 
 /*
-** This variable is set to true when running corruption tests. Otherwise
-** false. If it is false, extra assert() conditions in the fts5 code are
-** activated - conditions that are only true if it is guaranteed that the
-** fts5 database is not corrupt.
+** This variable is set to false when running tests for which the on disk
+** structures should not be corrupt. Otherwise, true. If it is false, extra
+** assert() conditions in the fts5 code are activated - conditions that are
+** only true if it is guaranteed that the fts5 database is not corrupt.
 */
-int sqlite3_fts5_may_be_corrupt = 0;
+int sqlite3_fts5_may_be_corrupt = 1;
 
 
 typedef struct Fts5Table Fts5Table;
@@ -2224,7 +2224,14 @@ static void fts5Fts5Func(
   sqlite3_result_blob(pCtx, buf, sizeof(pGlobal), SQLITE_TRANSIENT);
 }
 
-int sqlite3Fts5Init(sqlite3 *db){
+#ifdef _WIN32_
+__declspec(dllexport)
+#endif
+int sqlite3_fts5_init(
+  sqlite3 *db,
+  char **pzErrMsg,
+  const sqlite3_api_routines *pApi
+){
   static const sqlite3_module fts5Mod = {
     /* iVersion      */ 2,
     /* xCreate       */ fts5CreateMethod,
@@ -2253,8 +2260,10 @@ int sqlite3Fts5Init(sqlite3 *db){
 
   int rc;
   Fts5Global *pGlobal = 0;
-  pGlobal = (Fts5Global*)sqlite3_malloc(sizeof(Fts5Global));
 
+  SQLITE_EXTENSION_INIT2(pApi);
+
+  pGlobal = (Fts5Global*)sqlite3_malloc(sizeof(Fts5Global));
   if( pGlobal==0 ){
     rc = SQLITE_NOMEM;
   }else{

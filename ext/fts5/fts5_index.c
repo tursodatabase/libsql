@@ -4273,7 +4273,7 @@ static int fts5IndexCharlenToBytelen(const char *p, int nByte, int nChar){
 ** pIn is a UTF-8 encoded string, nIn bytes in size. Return the number of
 ** unicode characters in the string.
 */
-int fts5IndexCharlen(const char *pIn, int nIn){
+static int fts5IndexCharlen(const char *pIn, int nIn){
   int nChar = 0;            
   int i = 0;
   while( i<nIn ){

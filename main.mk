@@ -74,18 +74,6 @@ LIBOBJ+= vdbe.o parse.o \
          utf.o vtab.o
 
 LIBOBJ += fts5.o
-LIBOBJ += fts5_aux.o
-LIBOBJ += fts5_buffer.o
-LIBOBJ += fts5_config.o
-LIBOBJ += fts5_expr.o
-LIBOBJ += fts5_hash.o
-LIBOBJ += fts5_index.o
-LIBOBJ += fts5_storage.o
-LIBOBJ += fts5_tokenize.o
-LIBOBJ += fts5_unicode2.o
-LIBOBJ += fts5_varint.o
-LIBOBJ += fts5_vocab.o
-LIBOBJ += fts5parse.o
 
 
 
@@ -239,25 +227,11 @@ SRC += \
   $(TOP)/ext/rtree/rtree.c
 SRC += \
   $(TOP)/ext/userauth/userauth.c \
-  $(TOP)/ext/userauth/sqlite3userauth.h
+  $(TOP)/ext/userauth/sqlite3userauth.h 
+
 SRC += \
-   $(TOP)/ext/fts5/fts5.h \
-   $(TOP)/ext/fts5/fts5Int.h \
-   $(TOP)/ext/fts5/fts5_aux.c \
-   $(TOP)/ext/fts5/fts5_buffer.c \
-   $(TOP)/ext/fts5/fts5.c \
-   $(TOP)/ext/fts5/fts5_config.c \
-   $(TOP)/ext/fts5/fts5_expr.c \
-   $(TOP)/ext/fts5/fts5_hash.c \
-   $(TOP)/ext/fts5/fts5_index.c \
-   fts5parse.c fts5parse.h \
-   $(TOP)/ext/fts5/fts5_storage.c \
-   $(TOP)/ext/fts5/fts5_tokenize.c \
-   $(TOP)/ext/fts5/fts5_unicode2.c \
-   $(TOP)/ext/fts5/fts5_varint.c \
-   $(TOP)/ext/fts5/fts5_vocab.c  \
-   $(TOP)/ext/ota/sqlite3ota.c \
-   $(TOP)/ext/ota/sqlite3ota.h
+  $(TOP)/ext/ota/sqlite3ota.c \
+  $(TOP)/ext/ota/sqlite3ota.h
 
 
 # Generated source code files
@@ -663,41 +637,22 @@ rtree.o:	$(TOP)/ext/rtree/rtree.c $(HDR) $(EXTHDR)
 
 # FTS5 things
 #
-fts5.o:	$(TOP)/ext/fts5/fts5.c $(HDR) $(EXTHDR)
-	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts5/fts5.c
-
-fts5_aux.o:	$(TOP)/ext/fts5/fts5_aux.c $(HDR) $(EXTHDR)
-	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts5/fts5_aux.c
-
-fts5_buffer.o:	$(TOP)/ext/fts5/fts5_buffer.c $(HDR) $(EXTHDR)
-	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts5/fts5_buffer.c
-
-fts5_config.o:	$(TOP)/ext/fts5/fts5_config.c $(HDR) $(EXTHDR)
-	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts5/fts5_config.c
-
-fts5_expr.o:	$(TOP)/ext/fts5/fts5_expr.c $(HDR) $(EXTHDR)
-	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts5/fts5_expr.c
-
-fts5_hash.o:	$(TOP)/ext/fts5/fts5_hash.c $(HDR) $(EXTHDR)
-	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts5/fts5_hash.c
-
-fts5_index.o:	$(TOP)/ext/fts5/fts5_index.c $(HDR) $(EXTHDR)
-	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts5/fts5_index.c
-
-fts5_storage.o:	$(TOP)/ext/fts5/fts5_storage.c $(HDR) $(EXTHDR)
-	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts5/fts5_storage.c
-
-fts5_tokenize.o:	$(TOP)/ext/fts5/fts5_tokenize.c $(HDR) $(EXTHDR)
-	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts5/fts5_tokenize.c
-
-fts5_unicode2.o:	$(TOP)/ext/fts5/fts5_unicode2.c $(HDR) $(EXTHDR)
-	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts5/fts5_unicode2.c
-
-fts5_varint.o:	$(TOP)/ext/fts5/fts5_varint.c $(HDR) $(EXTHDR)
-	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts5/fts5_varint.c
-
-fts5_vocab.o:	$(TOP)/ext/fts5/fts5_vocab.c $(HDR) $(EXTHDR)
-	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts5/fts5_vocab.c
+FTS5_SRC = \
+   $(TOP)/ext/fts5/fts5.h \
+   $(TOP)/ext/fts5/fts5Int.h \
+   $(TOP)/ext/fts5/fts5_aux.c \
+   $(TOP)/ext/fts5/fts5_buffer.c \
+   $(TOP)/ext/fts5/fts5_main.c \
+   $(TOP)/ext/fts5/fts5_config.c \
+   $(TOP)/ext/fts5/fts5_expr.c \
+   $(TOP)/ext/fts5/fts5_hash.c \
+   $(TOP)/ext/fts5/fts5_index.c \
+   fts5parse.c fts5parse.h \
+   $(TOP)/ext/fts5/fts5_storage.c \
+   $(TOP)/ext/fts5/fts5_tokenize.c \
+   $(TOP)/ext/fts5/fts5_unicode2.c \
+   $(TOP)/ext/fts5/fts5_varint.c \
+   $(TOP)/ext/fts5/fts5_vocab.c  \
 
 fts5parse.c:	$(TOP)/ext/fts5/fts5parse.y lemon 
 	cp $(TOP)/ext/fts5/fts5parse.y .
@@ -710,6 +665,13 @@ fts5parse.c:	$(TOP)/ext/fts5/fts5parse.y lemon
 	echo "#endif /* SQLITE_ENABLE_FTS5 */" >> fts5parse.c
 
 fts5parse.h: fts5parse.c
+
+fts5.c: $(FTS5_SRC)
+	tclsh $(TOP)/ext/fts5/tool/mkfts5c.tcl
+
+fts5.o:	fts5.c $(HDR) $(EXTHDR)
+	$(TCCX) -DSQLITE_CORE -c fts5.c
+
 
 
 userauth.o:	$(TOP)/ext/userauth/userauth.c $(HDR) $(EXTHDR)
@@ -747,9 +709,9 @@ testfixture$(EXE): $(TESTSRC2) libsqlite3.a $(TESTSRC) $(TOP)/src/tclsqlite.c
 		$(TESTSRC) $(TESTSRC2) $(TOP)/src/tclsqlite.c                \
 		-o testfixture$(EXE) $(LIBTCL) libsqlite3.a $(THREADLIB)
 
-amalgamation-testfixture$(EXE): sqlite3.c $(TESTSRC) $(TOP)/src/tclsqlite.c
+amalgamation-testfixture$(EXE): sqlite3.c fts5.c $(TESTSRC) $(TOP)/src/tclsqlite.c
 	$(TCCX) $(TCL_FLAGS) -DTCLSH=1 $(TESTFIXTURE_FLAGS)                  \
-		$(TESTSRC) $(TOP)/src/tclsqlite.c sqlite3.c                  \
+		$(TESTSRC) $(TOP)/src/tclsqlite.c sqlite3.c fts5.c           \
 		-o testfixture$(EXE) $(LIBTCL) $(THREADLIB)
 
 fts3-testfixture$(EXE): sqlite3.c fts3amal.c $(TESTSRC) $(TOP)/src/tclsqlite.c

@@ -352,7 +352,7 @@ SRC += \
    $(TOP)/ext/fts5/fts5Int.h \
    $(TOP)/ext/fts5/fts5_aux.c \
    $(TOP)/ext/fts5/fts5_buffer.c \
-   $(TOP)/ext/fts5/fts5.c \
+   $(TOP)/ext/fts5/fts5_main.c \
    $(TOP)/ext/fts5/fts5_config.c \
    $(TOP)/ext/fts5/fts5_expr.c \
    $(TOP)/ext/fts5/fts5_hash.c \
