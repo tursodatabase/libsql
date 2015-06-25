@@ -738,7 +738,7 @@ int main(int argc, char **argv){
   const char *zFailCode = 0;   /* Value of the TEST_FAILURE environment variable */
   int cellSzCkFlag = 0;        /* --cell-size-check */
   int sqlFuzz = 0;             /* True for SQL fuzz testing. False for DB fuzz */
-  int iTimeout = 60;           /* Default 60-second timeout */
+  int iTimeout = 120;          /* Default 120-second timeout */
 
   iBegin = timeOfDay();
 #ifdef __unix__
