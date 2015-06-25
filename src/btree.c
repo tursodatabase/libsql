@@ -7082,7 +7082,6 @@ static int balance_nonroot(
         b.apCell[b.nCell] = pOld->apOvfl[k];
         b.nCell++;
       }
-      limit = pOld->nCell - pOld->aiOvfl[0];
     }
     piEnd = aData + pOld->cellOffset + 2*pOld->nCell;
     while( piCell<piEnd ){

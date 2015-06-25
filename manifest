@@ -1,5 +1,5 @@
-C Increase\sthe\sdefault\stimeout\son\sfuzzcheck\sto\s120\sseconds\s-\ssufficient\sfor\nrunning\sunder\svalgrind\son\sa\sslow\sworkstation.
-D 2015-06-25T02:25:28.876
+C Remove\sa\sline\sof\scode\sthat\sdoesn't\sdo\sany\suseful\swork.
+D 2015-06-25T02:26:45.202
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1063c58075b7400d93326b0eb332b48a54f53025
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -192,7 +192,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c ff743689c4d6c5cb55ad42ed9d174b2b3e71f1e3
 F src/bitvec.c 5eb7958c3bf65210211cbcfc44eff86d0ded7c9d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c 10ff19e09c5c085bef9816f753c42cc4827de583
+F src/btree.c a0eaf1139bbbb1f98abee448fb705c384a596075
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 6ece2dd9c8e2eac05f0a8ded8772a44e96486c65
 F src/build.c b3f15255d5b16e42dafeaa638fd4f8a47c94ed70
@@ -1286,7 +1286,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a8f4f7fa99e5e4131c1b59c0ac0597d62cedc0cd
-R 508695e79a938109fa0a0ec8f1e96553
+P fad0eacc64b1810f60cab73bc88ba380f99e4b2d
+R 1be92db979daaba09154bd51cdee9df8
 U drh
-Z 7b0d664942c9398213b7ebd71a581018
+Z 4ec67a5cc5de328f0e5fd8e756e47fd0
