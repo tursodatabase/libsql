@@ -1,5 +1,5 @@
-C More\ssimplifications\sand\sperformance\simprovements\sto\scell\sallocation\nlogic\sassociated\swith\sallocateSpace().
-D 2015-06-25T18:36:13.826
+C Simplifications\sand\sperformance\simprovements\sin\sinsertCell().
+D 2015-06-25T19:53:48.178
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1063c58075b7400d93326b0eb332b48a54f53025
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -192,7 +192,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c ff743689c4d6c5cb55ad42ed9d174b2b3e71f1e3
 F src/bitvec.c 5eb7958c3bf65210211cbcfc44eff86d0ded7c9d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c 960a641306010ed25690af8e05d599fe4b9a005d
+F src/btree.c 40e98c10725c2cec5429068e21c17924f4bf06cc
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h fdd1aff02fb2a63812bd95716e7f579fc3759107
 F src/build.c b3f15255d5b16e42dafeaa638fd4f8a47c94ed70
@@ -1286,7 +1286,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d67b0ed1054cbb7ea2cdd74720d4d6e0227cec14
-R 4a51cc2794802bb6f018a7f1798d3a79
+P 78da0f69cb3289e332018864004f319f2764a5c8
+R 0d165d2d8c01ecd2475fdbe233dfe5e0
 U drh
-Z 2ec930a14eaee4b6a3bd2ab311de6bca
+Z 8a4a8bb2d9c667bdbc4293aaa6065234
