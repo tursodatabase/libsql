@@ -1457,7 +1457,7 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
   testcase( gap+2==top );
   testcase( gap+1==top );
   testcase( gap==top );
-  if( gap+2<=top && (data[hdr+1] || data[hdr+2]) ){
+  if( (data[hdr+2] || data[hdr+1]) && gap+2<=top ){
     int bDefrag = 0;
     u8 *pSpace = pageFindSlot(pPage, nByte, &rc, &bDefrag);
     if( rc ) return rc;

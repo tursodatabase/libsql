@@ -1,5 +1,5 @@
-C Remove\sa\sNEVER()\sthat\sis\sin\sfact\sreachable.
-D 2015-06-25T15:21:52.642
+C Reorder\sthe\sterms\sof\sa\sconditional\sfor\sa\ssmall\sperformance\sgain.
+D 2015-06-25T16:01:44.112
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1063c58075b7400d93326b0eb332b48a54f53025
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -192,7 +192,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c ff743689c4d6c5cb55ad42ed9d174b2b3e71f1e3
 F src/bitvec.c 5eb7958c3bf65210211cbcfc44eff86d0ded7c9d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c cb50b3f00fec44481c4b0a7f9ab1e4bed2ffce18
+F src/btree.c 85679f63ebc2c67593479cf22f88539f71f2af70
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h fdd1aff02fb2a63812bd95716e7f579fc3759107
 F src/build.c b3f15255d5b16e42dafeaa638fd4f8a47c94ed70
@@ -1286,7 +1286,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d007bc339b9ea6d59a3dd2b0c5e77e9c801b16f6
-R b3d0d7d3ac81c0743783e0e414777712
+P f824e66b0dc120bed227c7446e2663fcad7cc4f6
+R 8aa067d659e72dd17b19d63682b0eebd
 U drh
-Z ec9d3f29e33fb82221154b9d11e7c8ba
+Z c674ba4fda0e43aa32d59f882342a9d7
