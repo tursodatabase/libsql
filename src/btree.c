@@ -1351,18 +1351,20 @@ static int defragmentPage(MemPage *pPage){
 ** This function may detect corruption within pPg.  If corruption is
 ** detected then *pRc is set to SQLITE_CORRUPT and NULL is returned.
 **
-** If a slot of at least nByte bytes is found but cannot be used because 
-** there are already at least 60 fragmented bytes on the page, return NULL.
-** In this case, if pbDefrag parameter is not NULL, set *pbDefrag to true.
+** Slots on the free list that are between 1 and 3 bytes larger than nByte
+** will be ignored if adding the extra space to the fragmentation count
+** causes the fragmentation count to exceed 60.
 */
-static u8 *pageFindSlot(MemPage *pPg, int nByte, int *pRc, int *pbDefrag){
+static u8 *pageFindSlot(MemPage *pPg, int nByte, int *pRc){
   const int hdr = pPg->hdrOffset;
   u8 * const aData = pPg->aData;
-  int iAddr;
-  int pc;
+  int iAddr = hdr + 1;
+  int pc = get2byte(&aData[iAddr]);
+  int x;
   int usableSize = pPg->pBt->usableSize;
 
-  for(iAddr=hdr+1; (pc = get2byte(&aData[iAddr]))>0; iAddr=pc){
+  assert( pc>0 );
+  do{
     int size;            /* Size of the free slot */
     /* EVIDENCE-OF: R-06866-39125 Freeblocks are always connected in order of
     ** increasing offset. */
@@ -1374,8 +1376,7 @@ static u8 *pageFindSlot(MemPage *pPg, int nByte, int *pRc, int *pbDefrag){
     ** freeblock form a big-endian integer which is the size of the freeblock
     ** in bytes, including the 4-byte header. */
     size = get2byte(&aData[pc+2]);
-    if( size>=nByte ){
-      int x = size - nByte;
+    if( (x = size - nByte)>=0 ){
       testcase( x==4 );
       testcase( x==3 );
       if( pc < pPg->cellOffset+2*pPg->nCell || size+pc > usableSize ){
@@ -1384,10 +1385,8 @@ static u8 *pageFindSlot(MemPage *pPg, int nByte, int *pRc, int *pbDefrag){
       }else if( x<4 ){
         /* EVIDENCE-OF: R-11498-58022 In a well-formed b-tree page, the total
         ** number of bytes in fragments may not exceed 60. */
-        if( aData[hdr+7]>=60 ){
-          if( pbDefrag ) *pbDefrag = 1;
-          return 0;
-        }
+        if( aData[hdr+7]>57 ) return 0;
+
         /* Remove the slot from the free-list. Update the number of
         ** fragmented bytes within the page. */
         memcpy(&aData[iAddr], &aData[pc], 2);
@@ -1399,7 +1398,9 @@ static u8 *pageFindSlot(MemPage *pPg, int nByte, int *pRc, int *pbDefrag){
       }
       return &aData[pc + x];
     }
-  }
+    iAddr = pc;
+    pc = get2byte(&aData[pc]);
+  }while( pc );
 
   return 0;
 }
@@ -1458,14 +1459,13 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
   testcase( gap+1==top );
   testcase( gap==top );
   if( (data[hdr+2] || data[hdr+1]) && gap+2<=top ){
-    int bDefrag = 0;
-    u8 *pSpace = pageFindSlot(pPage, nByte, &rc, &bDefrag);
-    if( rc ) return rc;
-    if( bDefrag ) goto defragment_page;
+    u8 *pSpace = pageFindSlot(pPage, nByte, &rc);
     if( pSpace ){
       assert( pSpace>=data && (pSpace - data)<65536 );
       *pIdx = (int)(pSpace - data);
       return SQLITE_OK;
+    }else if( rc ){
+      return rc;
     }
   }
 
@@ -1474,7 +1474,6 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
   */
   testcase( gap+2+nByte==top );
   if( gap+2+nByte>top ){
- defragment_page:
     assert( pPage->nCell>0 || CORRUPT_DB );
     rc = defragmentPage(pPage);
     if( rc ) return rc;
@@ -6414,14 +6413,13 @@ static int pageInsertArray(
   int i;
   u8 *aData = pPg->aData;
   u8 *pData = *ppData;
-  const int bFreelist = aData[1] || aData[2];
   int iEnd = iFirst + nCell;
   assert( CORRUPT_DB || pPg->hdrOffset==0 );    /* Never called on page 1 */
   for(i=iFirst; i<iEnd; i++){
     int sz, rc;
     u8 *pSlot;
     sz = cachedCellSize(pCArray, i);
-    if( bFreelist==0 || (pSlot = pageFindSlot(pPg, sz, &rc, 0))==0 ){
+    if( (aData[1]==0 && aData[2]==0) || (pSlot = pageFindSlot(pPg,sz,&rc))==0 ){
       pData -= sz;
       if( pData<pBegin ) return 1;
       pSlot = pData;
