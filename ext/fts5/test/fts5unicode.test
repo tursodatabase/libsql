@@ -15,6 +15,12 @@
 source [file join [file dirname [info script]] fts5_common.tcl]
 set testprefix fts5unicode
 
+# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+
 proc tokenize_test {tn tokenizer input output} {
   uplevel [list do_test $tn [subst -nocommands {
     set ret {}

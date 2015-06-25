@@ -12,11 +12,18 @@
 # Tests focusing on the fts5 tokenizers
 #
 
+source [file join [file dirname [info script]] fts5_common.tcl]
+
+# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+
 proc fts3_unicode_path {file} {
   file join [file dirname [info script]] .. .. fts3 unicode $file
 }
 
-source [file join [file dirname [info script]] fts5_common.tcl]
 source [fts3_unicode_path parseunicode.tcl]
 set testprefix fts5unicode3
 

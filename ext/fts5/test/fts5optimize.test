@@ -14,6 +14,12 @@
 source [file join [file dirname [info script]] fts5_common.tcl]
 set testprefix fts5optimize
 
+# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+
 proc rnddoc {nWord} {
   set vocab {a b c d e f g h i j k l m n o p q r s t u v w x y z}
   set nVocab [llength $vocab]

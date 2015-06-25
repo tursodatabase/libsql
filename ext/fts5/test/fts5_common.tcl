@@ -15,6 +15,7 @@ if {![info exists testdir]} {
 }
 source $testdir/tester.tcl
 
+
 catch { sqlite3_fts5_may_be_corrupt 0 }
 
 proc fts5_test_poslist {cmd} {

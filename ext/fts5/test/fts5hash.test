@@ -15,6 +15,12 @@
 source [file join [file dirname [info script]] fts5_common.tcl]
 set testprefix fts5hash
 
+# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+
 #-------------------------------------------------------------------------
 # Return a list of tokens (a vocabulary) that all share the same hash
 # key value. This can be used to test hash collisions.

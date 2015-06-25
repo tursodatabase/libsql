@@ -15,6 +15,12 @@
 source [file join [file dirname [info script]] fts5_common.tcl]
 set testprefix fts5near
 
+# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+
 proc do_near_test {tn doc near res} {
   uplevel [list do_execsql_test $tn "
     DELETE FROM t1;

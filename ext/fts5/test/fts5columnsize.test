@@ -15,6 +15,12 @@
 source [file join [file dirname [info script]] fts5_common.tcl]
 set testprefix fts5columnsize
 
+# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+
 #-------------------------------------------------------------------------
 # Check that the option can be parsed and that the %_docsize table is
 # only created if it is set to true.

@@ -15,6 +15,12 @@
 source [file join [file dirname [info script]] fts5_common.tcl]
 set testprefix fts5rowid
 
+# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+
 do_catchsql_test 1.1 {
   SELECT fts5_rowid()
 } {1 {should be: fts5_rowid(subject, ....)}}

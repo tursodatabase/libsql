@@ -17,6 +17,12 @@
 source [file join [file dirname [info script]] fts5_common.tcl]
 set testprefix fts5unicode2
 
+# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+
 proc do_unicode_token_test {tn input res} {
   uplevel [list do_test $tn [list \
     sqlite3_fts5_tokenize -subst db "unicode61 remove_diacritics 0" $input

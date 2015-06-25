@@ -173,6 +173,7 @@ LIBOBJS0 = alter.lo analyze.lo attach.lo auth.lo \
          fts3_porter.lo fts3_snippet.lo fts3_tokenizer.lo fts3_tokenizer1.lo \
          fts3_tokenize_vtab.lo \
          fts3_unicode.lo fts3_unicode2.lo fts3_write.lo \
+	 fts5.lo \
          func.lo global.lo hash.lo \
          icu.lo insert.lo journal.lo legacy.lo loadext.lo \
          main.lo malloc.lo mem0.lo mem1.lo mem2.lo mem3.lo mem5.lo \
@@ -347,22 +348,6 @@ SRC += \
   $(TOP)/ext/ota/sqlite3ota.h \
   $(TOP)/ext/ota/sqlite3ota.c
 
-SRC += \
-   $(TOP)/ext/fts5/fts5.h \
-   $(TOP)/ext/fts5/fts5Int.h \
-   $(TOP)/ext/fts5/fts5_aux.c \
-   $(TOP)/ext/fts5/fts5_buffer.c \
-   $(TOP)/ext/fts5/fts5_main.c \
-   $(TOP)/ext/fts5/fts5_config.c \
-   $(TOP)/ext/fts5/fts5_expr.c \
-   $(TOP)/ext/fts5/fts5_hash.c \
-   $(TOP)/ext/fts5/fts5_index.c \
-   fts5parse.c fts5parse.h \
-   $(TOP)/ext/fts5/fts5_storage.c \
-   $(TOP)/ext/fts5/fts5_tokenize.c \
-   $(TOP)/ext/fts5/fts5_unicode2.c \
-   $(TOP)/ext/fts5/fts5_vocab.c 
-
 
 # Generated source code files
 #
@@ -429,6 +414,7 @@ TESTSRC += \
   $(TOP)/ext/misc/eval.c \
   $(TOP)/ext/misc/fileio.c \
   $(TOP)/ext/misc/fuzzer.c \
+  $(TOP)/ext/fts5/fts5_tcl.c \
   $(TOP)/ext/misc/ieee754.c \
   $(TOP)/ext/misc/nextchar.c \
   $(TOP)/ext/misc/percentile.c \
@@ -990,6 +976,25 @@ fts3_write.lo:	$(TOP)/ext/fts3/fts3_write.c $(HDR) $(EXTHDR)
 rtree.lo:	$(TOP)/ext/rtree/rtree.c $(HDR) $(EXTHDR)
 	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/rtree/rtree.c
 
+# FTS5 things
+#
+FTS5_SRC = \
+   $(TOP)/ext/fts5/fts5.h \
+   $(TOP)/ext/fts5/fts5Int.h \
+   $(TOP)/ext/fts5/fts5_aux.c \
+   $(TOP)/ext/fts5/fts5_buffer.c \
+   $(TOP)/ext/fts5/fts5_main.c \
+   $(TOP)/ext/fts5/fts5_config.c \
+   $(TOP)/ext/fts5/fts5_expr.c \
+   $(TOP)/ext/fts5/fts5_hash.c \
+   $(TOP)/ext/fts5/fts5_index.c \
+   fts5parse.c fts5parse.h \
+   $(TOP)/ext/fts5/fts5_storage.c \
+   $(TOP)/ext/fts5/fts5_tokenize.c \
+   $(TOP)/ext/fts5/fts5_unicode2.c \
+   $(TOP)/ext/fts5/fts5_varint.c \
+   $(TOP)/ext/fts5/fts5_vocab.c  \
+
 fts5parse.c:	$(TOP)/ext/fts5/fts5parse.y lemon 
 	cp $(TOP)/ext/fts5/fts5parse.y .
 	rm -f fts5parse.h
@@ -1001,6 +1006,12 @@ fts5parse.c:	$(TOP)/ext/fts5/fts5parse.y lemon
 	echo "#endif /* SQLITE_ENABLE_FTS5 */" >> fts5parse.c
 
 fts5parse.h: fts5parse.c
+
+fts5.c: $(FTS5_SRC)
+	$(TCLSH_CMD) $(TOP)/ext/fts5/tool/mkfts5c.tcl
+
+fts5.lo:	fts5.c $(HDR) $(EXTHDR)
+	$(LTCOMPILE) -DSQLITE_CORE -c fts5.c
 
 
 # Rules to build the 'testfixture' application.
