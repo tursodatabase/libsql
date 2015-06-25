@@ -71,6 +71,11 @@
 #include <ctype.h>
 #include "sqlite3.h"
 
+#ifdef __unix__
+# include <signal.h>
+# include <unistd.h>
+#endif
+
 /*
 ** Files in the virtual file system.
 */
@@ -138,6 +143,43 @@ static void fatalError(const char *zFormat, ...){
   fprintf(stderr, "\n");
   exit(1);
 }
+
+/*
+** Timeout handler
+*/
+#ifdef __unix__
+static void timeoutHandler(int NotUsed){
+  (void)NotUsed;
+  fatalError("timeout\n");
+}
+#endif
+
+/*
+** Set the an alarm to go off after N seconds.  Disable the alarm
+** if N==0
+*/
+static void setAlarm(int N){
+#ifdef __unix__
+  alarm(N);
+#else
+  (void)N;
+#endif
+}
+
+#ifndef SQLITE_OMIT_PROGRESS_CALLBACK
+/*
+** This an SQL progress handler.  After an SQL statement has run for
+** many steps, we want to interrupt it.  This guards against infinite
+** loops from recursive common table expressions.
+**
+** *pVdbeLimitFlag is true if the --limit-vdbe command-line option is used.
+** In that case, hitting the progress handler is a fatal error.
+*/
+static int progressHandler(void *pVdbeLimitFlag){
+  if( *(int*)pVdbeLimitFlag ) fatalError("too many VDBE cycles");
+  return 1;
+}
+#endif
 
 /*
 ** Reallocate memory.  Show and error and quit if unable.
@@ -616,6 +658,31 @@ static void runSql(sqlite3 *db, const char *zSql, unsigned  runFlags){
 }
 
 /*
+** Rebuild the database file.
+**
+**    (1)  Remove duplicate entries
+**    (2)  Put all entries in order
+**    (3)  Vacuum
+*/
+static void rebuild_database(sqlite3 *db){
+  int rc;
+  rc = sqlite3_exec(db, 
+     "BEGIN;\n"
+     "CREATE TEMP TABLE dbx AS SELECT DISTINCT dbcontent FROM db;\n"
+     "DELETE FROM db;\n"
+     "INSERT INTO db(dbid, dbcontent) SELECT NULL, dbcontent FROM dbx ORDER BY 2;\n"
+     "DROP TABLE dbx;\n"
+     "CREATE TEMP TABLE sx AS SELECT DISTINCT sqltext FROM xsql;\n"
+     "DELETE FROM xsql;\n"
+     "INSERT INTO xsql(sqlid,sqltext) SELECT NULL, sqltext FROM sx ORDER BY 2;\n"
+     "DROP TABLE sx;\n"
+     "COMMIT;\n"
+     "PRAGMA page_size=1024;\n"
+     "VACUUM;\n", 0, 0, 0);
+  if( rc ) fatalError("cannot rebuild: %s", sqlite3_errmsg(db));
+}
+
+/*
 ** Print sketchy documentation for this utility program
 */
 static void showHelp(void){
@@ -626,15 +693,18 @@ static void showHelp(void){
 "Options:\n"
 "  --cell-size-check     Set the PRAGMA cell_size_check=ON\n"
 "  --dbid N              Use only the database where dbid=N\n"
-"  --help                Show this help text\n"    
+"  --help                Show this help text\n"
 "  -q                    Reduced output\n"
 "  --quiet               Reduced output\n"
+"  --limit-vdbe          Panic if an sync SQL runs for more than 100,000 cycles\n"
 "  --load-sql ARGS...    Load SQL scripts fro files into SOURCE-DB\n"
 "  --load-db ARGS...     Load template databases from files into SOURCE_DB\n"
 "  -m TEXT               Add a description to the database\n"
 "  --native-vfs          Use the native VFS for initially empty database files\n"
+"  --rebuild             Rebuild and vacuum the database file\n"
 "  --result-trace        Show the results of each SQL command\n"
 "  --sqlid N             Use only SQL where sqlid=N\n"
+"  --timeline N          Abort if any single test case needs more than N seconds\n"
 "  -v                    Increased output\n"
 "  --verbose             Increased output\n"
   );
@@ -655,6 +725,9 @@ int main(int argc, char **argv){
   int onlySqlid = -1;          /* --sqlid */
   int onlyDbid = -1;           /* --dbid */
   int nativeFlag = 0;          /* --native-vfs */
+  int rebuildFlag = 0;         /* --rebuild */
+  int vdbeLimitFlag = 0;       /* --limit-vdbe */
+  int timeoutTest = 0;         /* undocumented --timeout-test flag */
   int runFlags = 0;            /* Flags sent to runSql() */
   char *zMsg = 0;              /* Add this message */
   int nSrcDb = 0;              /* Number of source databases */
@@ -664,8 +737,13 @@ int main(int argc, char **argv){
   char *zDbName = "";          /* Appreviated name of a source database */
   const char *zFailCode = 0;   /* Value of the TEST_FAILURE environment variable */
   int cellSzCkFlag = 0;        /* --cell-size-check */
+  int sqlFuzz = 0;             /* True for SQL fuzz testing. False for DB fuzz */
+  int iTimeout = 120;          /* Default 120-second timeout */
 
   iBegin = timeOfDay();
+#ifdef __unix__
+  signal(SIGALRM, timeoutHandler);
+#endif
   g.zArgv0 = argv[0];
   zFailCode = getenv("TEST_FAILURE");
   for(i=1; i<argc; i++){
@@ -683,6 +761,9 @@ int main(int argc, char **argv){
       if( strcmp(z,"help")==0 ){
         showHelp();
         return 0;
+      }else
+      if( strcmp(z,"limit-vdbe")==0 ){
+        vdbeLimitFlag = 1;
       }else
       if( strcmp(z,"load-sql")==0 ){
         zInsSql = "INSERT INTO xsql(sqltext) VALUES(CAST(readfile(?1) AS text))";
@@ -705,12 +786,25 @@ int main(int argc, char **argv){
         quietFlag = 1;
         verboseFlag = 0;
       }else
+      if( strcmp(z,"rebuild")==0 ){
+        rebuildFlag = 1;
+      }else
       if( strcmp(z,"result-trace")==0 ){
         runFlags |= SQL_OUTPUT;
       }else
       if( strcmp(z,"sqlid")==0 ){
         if( i>=argc-1 ) fatalError("missing arguments on %s", argv[i]);
         onlySqlid = atoi(argv[++i]);
+      }else
+      if( strcmp(z,"timeout")==0 ){
+        if( i>=argc-1 ) fatalError("missing arguments on %s", argv[i]);
+        iTimeout = atoi(argv[++i]);
+      }else
+      if( strcmp(z,"timeout-test")==0 ){
+        timeoutTest = 1;
+#ifndef __unix__
+        fatalError("timeout is not available on non-unix systems");
+#endif
       }else
       if( strcmp(z,"verbose")==0 || strcmp(z,"v")==0 ){
         quietFlag = 0;
@@ -743,7 +837,7 @@ int main(int argc, char **argv){
       fatalError("cannot open source database %s - %s",
       azSrcDb[iSrcDb], sqlite3_errmsg(db));
     }
-    rc = sqlite3_exec(db, 
+    rc = sqlite3_exec(db,
        "CREATE TABLE IF NOT EXISTS db(\n"
        "  dbid INTEGER PRIMARY KEY, -- database id\n"
        "  dbcontent BLOB            -- database disk file image\n"
@@ -781,6 +875,7 @@ int main(int argc, char **argv){
       sqlite3_finalize(pStmt);
       rc = sqlite3_exec(db, "COMMIT", 0, 0, 0);
       if( rc ) fatalError("cannot commit the transaction: %s", sqlite3_errmsg(db));
+      rebuild_database(db);
       sqlite3_close(db);
       return 0;
     }
@@ -799,6 +894,7 @@ int main(int argc, char **argv){
       g.pFirstDb->id = 1;
       g.pFirstDb->seq = 0;
       g.nDb = 1;
+      sqlFuzz = 1;
     }
   
     /* Print the description, if there is one */
@@ -813,6 +909,16 @@ int main(int argc, char **argv){
         printf("%s: %s\n", zDbName, sqlite3_column_text(pStmt,0));
       }
       sqlite3_finalize(pStmt);
+    }
+
+    /* Rebuild the database, if requested */
+    if( rebuildFlag ){
+      if( !quietFlag ){
+        printf("%s: rebuilding... ", zDbName);
+        fflush(stdout);
+      }
+      rebuild_database(db);
+      if( !quietFlag ) printf("done\n");
     }
   
     /* Close the source database.  Verify that no SQLite memory allocations are
@@ -859,7 +965,16 @@ int main(int argc, char **argv){
         rc = sqlite3_open_v2("main.db", &db, openFlags, zVfs);
         if( rc ) fatalError("cannot open inmem database");
         if( cellSzCkFlag ) runSql(db, "PRAGMA cell_size_check=ON", runFlags);
-        runSql(db, (char*)pSql->a, runFlags);
+        setAlarm(iTimeout);
+#ifndef SQLITE_OMIT_PROGRESS_CALLBACK
+        if( sqlFuzz || vdbeLimitFlag ){
+          sqlite3_progress_handler(db, 100000, progressHandler, &vdbeLimitFlag);
+        }
+#endif
+        do{
+          runSql(db, (char*)pSql->a, runFlags);
+        }while( timeoutTest );
+        setAlarm(0);
         sqlite3_close(db);
         if( sqlite3_memory_used()>0 ) fatalError("memory leak");
         reformatVfs();

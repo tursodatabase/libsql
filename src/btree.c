@@ -490,13 +490,15 @@ static void invalidateIncrblobCursors(
   int isClearTable        /* True if all rows are being deleted */
 ){
   BtCursor *p;
-  BtShared *pBt = pBtree->pBt;
+  if( pBtree->hasIncrblobCur==0 ) return;
   assert( sqlite3BtreeHoldsMutex(pBtree) );
-  for(p=pBt->pCursor; p; p=p->pNext){
-    if( (p->curFlags & BTCF_Incrblob)!=0
-     && (isClearTable || p->info.nKey==iRow)
-    ){
-      p->eState = CURSOR_INVALID;
+  pBtree->hasIncrblobCur = 0;
+  for(p=pBtree->pBt->pCursor; p; p=p->pNext){
+    if( (p->curFlags & BTCF_Incrblob)!=0 ){
+      pBtree->hasIncrblobCur = 1;
+      if( isClearTable || p->info.nKey==iRow ){
+        p->eState = CURSOR_INVALID;
+      }
     }
   }
 }
@@ -956,28 +958,6 @@ static int ptrmapGet(BtShared *pBt, Pgno key, u8 *pEType, Pgno *pPgno){
 */
 #define findCell(P,I) \
   ((P)->aData + ((P)->maskPage & get2byte(&(P)->aCellIdx[2*(I)])))
-#define findCellv2(D,M,O,I) (D+(M&get2byte(D+(O+2*(I)))))
-
-
-/*
-** This a more complex version of findCell() that works for
-** pages that do contain overflow cells.
-*/
-static u8 *findOverflowCell(MemPage *pPage, int iCell){
-  int i;
-  assert( sqlite3_mutex_held(pPage->pBt->mutex) );
-  for(i=pPage->nOverflow-1; i>=0; i--){
-    int k;
-    k = pPage->aiOvfl[i];
-    if( k<=iCell ){
-      if( k==iCell ){
-        return pPage->apOvfl[i];
-      }
-      iCell--;
-    }
-  }
-  return findCell(pPage, iCell);
-}
 
 /*
 ** This is common tail processing for btreeParseCellPtr() and
@@ -1371,18 +1351,20 @@ static int defragmentPage(MemPage *pPage){
 ** This function may detect corruption within pPg.  If corruption is
 ** detected then *pRc is set to SQLITE_CORRUPT and NULL is returned.
 **
-** If a slot of at least nByte bytes is found but cannot be used because 
-** there are already at least 60 fragmented bytes on the page, return NULL.
-** In this case, if pbDefrag parameter is not NULL, set *pbDefrag to true.
+** Slots on the free list that are between 1 and 3 bytes larger than nByte
+** will be ignored if adding the extra space to the fragmentation count
+** causes the fragmentation count to exceed 60.
 */
-static u8 *pageFindSlot(MemPage *pPg, int nByte, int *pRc, int *pbDefrag){
+static u8 *pageFindSlot(MemPage *pPg, int nByte, int *pRc){
   const int hdr = pPg->hdrOffset;
   u8 * const aData = pPg->aData;
-  int iAddr;
-  int pc;
+  int iAddr = hdr + 1;
+  int pc = get2byte(&aData[iAddr]);
+  int x;
   int usableSize = pPg->pBt->usableSize;
 
-  for(iAddr=hdr+1; (pc = get2byte(&aData[iAddr]))>0; iAddr=pc){
+  assert( pc>0 );
+  do{
     int size;            /* Size of the free slot */
     /* EVIDENCE-OF: R-06866-39125 Freeblocks are always connected in order of
     ** increasing offset. */
@@ -1394,8 +1376,7 @@ static u8 *pageFindSlot(MemPage *pPg, int nByte, int *pRc, int *pbDefrag){
     ** freeblock form a big-endian integer which is the size of the freeblock
     ** in bytes, including the 4-byte header. */
     size = get2byte(&aData[pc+2]);
-    if( size>=nByte ){
-      int x = size - nByte;
+    if( (x = size - nByte)>=0 ){
       testcase( x==4 );
       testcase( x==3 );
       if( pc < pPg->cellOffset+2*pPg->nCell || size+pc > usableSize ){
@@ -1404,10 +1385,8 @@ static u8 *pageFindSlot(MemPage *pPg, int nByte, int *pRc, int *pbDefrag){
       }else if( x<4 ){
         /* EVIDENCE-OF: R-11498-58022 In a well-formed b-tree page, the total
         ** number of bytes in fragments may not exceed 60. */
-        if( aData[hdr+7]>=60 ){
-          if( pbDefrag ) *pbDefrag = 1;
-          return 0;
-        }
+        if( aData[hdr+7]>57 ) return 0;
+
         /* Remove the slot from the free-list. Update the number of
         ** fragmented bytes within the page. */
         memcpy(&aData[iAddr], &aData[pc], 2);
@@ -1419,7 +1398,9 @@ static u8 *pageFindSlot(MemPage *pPg, int nByte, int *pRc, int *pbDefrag){
       }
       return &aData[pc + x];
     }
-  }
+    iAddr = pc;
+    pc = get2byte(&aData[pc]);
+  }while( pc );
 
   return 0;
 }
@@ -1460,11 +1441,14 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
   ** then the cell content offset of an empty page wants to be 65536.
   ** However, that integer is too large to be stored in a 2-byte unsigned
   ** integer, so a value of 0 is used in its place. */
-  top = get2byteNotZero(&data[hdr+5]);
-  if( gap>top || NEVER((u32)top>pPage->pBt->usableSize) ){
-    /* The NEVER() is because a oversize "top" value will be blocked from
-    ** reaching this point by btreeInitPage() or btreeGetUnusedPage() */
-    return SQLITE_CORRUPT_BKPT;
+  top = get2byte(&data[hdr+5]);
+  assert( top<=pPage->pBt->usableSize ); /* Prevent by getAndInitPage() */
+  if( gap>top ){
+    if( top==0 && pPage->pBt->usableSize==65536 ){
+      top = 65536;
+    }else{
+      return SQLITE_CORRUPT_BKPT;
+    }
   }
 
   /* If there is enough space between gap and top for one more cell pointer
@@ -1474,15 +1458,14 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
   testcase( gap+2==top );
   testcase( gap+1==top );
   testcase( gap==top );
-  if( gap+2<=top && (data[hdr+1] || data[hdr+2]) ){
-    int bDefrag = 0;
-    u8 *pSpace = pageFindSlot(pPage, nByte, &rc, &bDefrag);
-    if( rc ) return rc;
-    if( bDefrag ) goto defragment_page;
+  if( (data[hdr+2] || data[hdr+1]) && gap+2<=top ){
+    u8 *pSpace = pageFindSlot(pPage, nByte, &rc);
     if( pSpace ){
       assert( pSpace>=data && (pSpace - data)<65536 );
       *pIdx = (int)(pSpace - data);
       return SQLITE_OK;
+    }else if( rc ){
+      return rc;
     }
   }
 
@@ -1491,7 +1474,6 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
   */
   testcase( gap+2+nByte==top );
   if( gap+2+nByte>top ){
- defragment_page:
     assert( pPage->nCell>0 || CORRUPT_DB );
     rc = defragmentPage(pPage);
     if( rc ) return rc;
@@ -5447,6 +5429,7 @@ static int allocateBtreePage(
     /* There are pages on the freelist.  Reuse one of those pages. */
     Pgno iTrunk;
     u8 searchList = 0; /* If the free-list must be searched for 'nearby' */
+    u32 nSearch = 0;   /* Count of the number of search attempts */
     
     /* If eMode==BTALLOC_EXACT and a query of the pointer-map
     ** shows that the page 'nearby' is somewhere on the free-list, then
@@ -5495,7 +5478,7 @@ static int allocateBtreePage(
         iTrunk = get4byte(&pPage1->aData[32]);
       }
       testcase( iTrunk==mxPage );
-      if( iTrunk>mxPage ){
+      if( iTrunk>mxPage || nSearch++ > n ){
         rc = SQLITE_CORRUPT_BKPT;
       }else{
         rc = btreeGetUnusedPage(pBt, iTrunk, &pTrunk, 0);
@@ -6214,10 +6197,8 @@ static void insertCell(
 ){
   int idx = 0;      /* Where to write new cell content in data[] */
   int j;            /* Loop counter */
-  int end;          /* First byte past the last cell pointer in data[] */
-  int ins;          /* Index in data[] where new cell pointer is inserted */
-  int cellOffset;   /* Address of first cell pointer in data[] */
   u8 *data;         /* The content of the whole page */
+  u8 *pIns;         /* The point in pPage->aCellIdx[] where no cell inserted */
 
   if( *pRC ) return;
 
@@ -6245,6 +6226,14 @@ static void insertCell(
     assert( j<(int)(sizeof(pPage->apOvfl)/sizeof(pPage->apOvfl[0])) );
     pPage->apOvfl[j] = pCell;
     pPage->aiOvfl[j] = (u16)i;
+
+    /* When multiple overflows occur, they are always sequential and in
+    ** sorted order.  This invariants arise because multiple overflows can
+    ** only occur when inserting divider cells into the parent page during
+    ** balancing, and the dividers are adjacent and sorted.
+    */
+    assert( j==0 || pPage->aiOvfl[j-1]<(u16)i ); /* Overflows in sorted order */
+    assert( j==0 || i==pPage->aiOvfl[j-1]+1 );   /* Overflows are sequential */
   }else{
     int rc = sqlite3PagerWrite(pPage->pDbPage);
     if( rc!=SQLITE_OK ){
@@ -6253,24 +6242,26 @@ static void insertCell(
     }
     assert( sqlite3PagerIswriteable(pPage->pDbPage) );
     data = pPage->aData;
-    cellOffset = pPage->cellOffset;
-    end = cellOffset + 2*pPage->nCell;
-    ins = cellOffset + 2*i;
+    assert( &data[pPage->cellOffset]==pPage->aCellIdx );
     rc = allocateSpace(pPage, sz, &idx);
     if( rc ){ *pRC = rc; return; }
     /* The allocateSpace() routine guarantees the following properties
     ** if it returns successfully */
-    assert( idx >= 0 && (idx >= end+2 || CORRUPT_DB) );
+    assert( idx >= 0 );
+    assert( idx >= pPage->cellOffset+2*pPage->nCell+2 || CORRUPT_DB );
     assert( idx+sz <= (int)pPage->pBt->usableSize );
-    pPage->nCell++;
     pPage->nFree -= (u16)(2 + sz);
     memcpy(&data[idx], pCell, sz);
     if( iChild ){
       put4byte(&data[idx], iChild);
     }
-    memmove(&data[ins+2], &data[ins], end-ins);
-    put2byte(&data[ins], idx);
-    put2byte(&data[pPage->hdrOffset+3], pPage->nCell);
+    pIns = pPage->aCellIdx + i*2;
+    memmove(pIns+2, pIns, 2*(pPage->nCell - i));
+    put2byte(pIns, idx);
+    pPage->nCell++;
+    /* increment the cell count */
+    if( (++data[pPage->hdrOffset+4])==0 ) data[pPage->hdrOffset+3]++;
+    assert( get2byte(&data[pPage->hdrOffset+3])==pPage->nCell );
 #ifndef SQLITE_OMIT_AUTOVACUUM
     if( pPage->pBt->autoVacuum ){
       /* The cell may contain a pointer to an overflow page. If so, write
@@ -6280,6 +6271,52 @@ static void insertCell(
     }
 #endif
   }
+}
+
+/*
+** A CellArray object contains a cache of pointers and sizes for a
+** consecutive sequence of cells that might be held multiple pages.
+*/
+typedef struct CellArray CellArray;
+struct CellArray {
+  int nCell;              /* Number of cells in apCell[] */
+  MemPage *pRef;          /* Reference page */
+  u8 **apCell;            /* All cells begin balanced */
+  u16 *szCell;            /* Local size of all cells in apCell[] */
+};
+
+/*
+** Make sure the cell sizes at idx, idx+1, ..., idx+N-1 have been
+** computed.
+*/
+static void populateCellCache(CellArray *p, int idx, int N){
+  assert( idx>=0 && idx+N<=p->nCell );
+  while( N>0 ){
+    assert( p->apCell[idx]!=0 );
+    if( p->szCell[idx]==0 ){
+      p->szCell[idx] = p->pRef->xCellSize(p->pRef, p->apCell[idx]);
+    }else{
+      assert( CORRUPT_DB ||
+              p->szCell[idx]==p->pRef->xCellSize(p->pRef, p->apCell[idx]) );
+    }
+    idx++;
+    N--;
+  }
+}
+
+/*
+** Return the size of the Nth element of the cell array
+*/
+static SQLITE_NOINLINE u16 computeCellSize(CellArray *p, int N){
+  assert( N>=0 && N<p->nCell );
+  assert( p->szCell[N]==0 );
+  p->szCell[N] = p->pRef->xCellSize(p->pRef, p->apCell[N]);
+  return p->szCell[N];
+}
+static u16 cachedCellSize(CellArray *p, int N){
+  assert( N>=0 && N<p->nCell );
+  if( p->szCell[N] ) return p->szCell[N];
+  return computeCellSize(p, N);
 }
 
 /*
@@ -6295,7 +6332,7 @@ static void insertCell(
 ** The MemPage.nFree field is invalidated by this function. It is the 
 ** responsibility of the caller to set it correctly.
 */
-static void rebuildPage(
+static int rebuildPage(
   MemPage *pPg,                   /* Edit this page */
   int nCell,                      /* Final number of cells on page */
   u8 **apCell,                    /* Array of cells */
@@ -6320,11 +6357,12 @@ static void rebuildPage(
       pCell = &pTmp[pCell - aData];
     }
     pData -= szCell[i];
-    memcpy(pData, pCell, szCell[i]);
     put2byte(pCellptr, (pData - aData));
     pCellptr += 2;
+    if( pData < pCellptr ) return SQLITE_CORRUPT_BKPT;
+    memcpy(pData, pCell, szCell[i]);
     assert( szCell[i]==pPg->xCellSize(pPg, pCell) || CORRUPT_DB );
-    testcase( szCell[i]==pPg->xCellSize(pPg,pCell) );
+    testcase( szCell[i]!=pPg->xCellSize(pPg,pCell) );
   }
 
   /* The pPg->nFree field is now set incorrectly. The caller will fix it. */
@@ -6335,6 +6373,7 @@ static void rebuildPage(
   put2byte(&aData[hdr+3], pPg->nCell);
   put2byte(&aData[hdr+5], pData - aData);
   aData[hdr+7] = 0x00;
+  return SQLITE_OK;
 }
 
 /*
@@ -6367,25 +6406,25 @@ static int pageInsertArray(
   u8 *pBegin,                     /* End of cell-pointer array */
   u8 **ppData,                    /* IN/OUT: Page content -area pointer */
   u8 *pCellptr,                   /* Pointer to cell-pointer area */
+  int iFirst,                     /* Index of first cell to add */
   int nCell,                      /* Number of cells to add to pPg */
-  u8 **apCell,                    /* Array of cells */
-  u16 *szCell                     /* Array of cell sizes */
+  CellArray *pCArray              /* Array of cells */
 ){
   int i;
   u8 *aData = pPg->aData;
   u8 *pData = *ppData;
-  const int bFreelist = aData[1] || aData[2];
+  int iEnd = iFirst + nCell;
   assert( CORRUPT_DB || pPg->hdrOffset==0 );    /* Never called on page 1 */
-  for(i=0; i<nCell; i++){
-    int sz = szCell[i];
-    int rc;
+  for(i=iFirst; i<iEnd; i++){
+    int sz, rc;
     u8 *pSlot;
-    if( bFreelist==0 || (pSlot = pageFindSlot(pPg, sz, &rc, 0))==0 ){
+    sz = cachedCellSize(pCArray, i);
+    if( (aData[1]==0 && aData[2]==0) || (pSlot = pageFindSlot(pPg,sz,&rc))==0 ){
       pData -= sz;
       if( pData<pBegin ) return 1;
       pSlot = pData;
     }
-    memcpy(pSlot, apCell[i], sz);
+    memcpy(pSlot, pCArray->apCell[i], sz);
     put2byte(pCellptr, (pSlot - aData));
     pCellptr += 2;
   }
@@ -6404,22 +6443,27 @@ static int pageInsertArray(
 */
 static int pageFreeArray(
   MemPage *pPg,                   /* Page to edit */
+  int iFirst,                     /* First cell to delete */
   int nCell,                      /* Cells to delete */
-  u8 **apCell,                    /* Array of cells */
-  u16 *szCell                     /* Array of cell sizes */
+  CellArray *pCArray              /* Array of cells */
 ){
   u8 * const aData = pPg->aData;
   u8 * const pEnd = &aData[pPg->pBt->usableSize];
   u8 * const pStart = &aData[pPg->hdrOffset + 8 + pPg->childPtrSize];
   int nRet = 0;
   int i;
+  int iEnd = iFirst + nCell;
   u8 *pFree = 0;
   int szFree = 0;
 
-  for(i=0; i<nCell; i++){
-    u8 *pCell = apCell[i];
+  for(i=iFirst; i<iEnd; i++){
+    u8 *pCell = pCArray->apCell[i];
     if( pCell>=pStart && pCell<pEnd ){
-      int sz = szCell[i];
+      int sz;
+      /* No need to use cachedCellSize() here.  The sizes of all cells that
+      ** are to be freed have already been computing while deciding which
+      ** cells need freeing */
+      sz = pCArray->szCell[i];  assert( sz>0 );
       if( pFree!=(pCell + sz) ){
         if( pFree ){
           assert( pFree>aData && (pFree - aData)<65536 );
@@ -6454,13 +6498,12 @@ static int pageFreeArray(
 ** The pPg->nFree field is invalid when this function returns. It is the
 ** responsibility of the caller to set it correctly.
 */
-static void editPage(
+static int editPage(
   MemPage *pPg,                   /* Edit this page */
   int iOld,                       /* Index of first cell currently on page */
   int iNew,                       /* Index of new first cell on page */
   int nNew,                       /* Final number of cells on page */
-  u8 **apCell,                    /* Array of cells */
-  u16 *szCell                     /* Array of cell sizes */
+  CellArray *pCArray              /* Array of cells and sizes */
 ){
   u8 * const aData = pPg->aData;
   const int hdr = pPg->hdrOffset;
@@ -6479,16 +6522,12 @@ static void editPage(
 
   /* Remove cells from the start and end of the page */
   if( iOld<iNew ){
-    int nShift = pageFreeArray(
-        pPg, iNew-iOld, &apCell[iOld], &szCell[iOld]
-    );
+    int nShift = pageFreeArray(pPg, iOld, iNew-iOld, pCArray);
     memmove(pPg->aCellIdx, &pPg->aCellIdx[nShift*2], nCell*2);
     nCell -= nShift;
   }
   if( iNewEnd < iOldEnd ){
-    nCell -= pageFreeArray(
-        pPg, iOldEnd-iNewEnd, &apCell[iNewEnd], &szCell[iNewEnd]
-    );
+    nCell -= pageFreeArray(pPg, iNewEnd, iOldEnd - iNewEnd, pCArray);
   }
 
   pData = &aData[get2byteNotZero(&aData[hdr+5])];
@@ -6502,7 +6541,7 @@ static void editPage(
     memmove(&pCellptr[nAdd*2], pCellptr, nCell*2);
     if( pageInsertArray(
           pPg, pBegin, &pData, pCellptr,
-          nAdd, &apCell[iNew], &szCell[iNew]
+          iNew, nAdd, pCArray
     ) ) goto editpage_fail;
     nCell += nAdd;
   }
@@ -6516,7 +6555,7 @@ static void editPage(
       nCell++;
       if( pageInsertArray(
             pPg, pBegin, &pData, pCellptr,
-            1, &apCell[iCell + iNew], &szCell[iCell + iNew]
+            iCell+iNew, 1, pCArray
       ) ) goto editpage_fail;
     }
   }
@@ -6525,7 +6564,7 @@ static void editPage(
   pCellptr = &pPg->aCellIdx[nCell*2];
   if( pageInsertArray(
         pPg, pBegin, &pData, pCellptr,
-        nNew-nCell, &apCell[iNew+nCell], &szCell[iNew+nCell]
+        iNew+nCell, nNew-nCell, pCArray
   ) ) goto editpage_fail;
 
   pPg->nCell = nNew;
@@ -6536,19 +6575,21 @@ static void editPage(
 
 #ifdef SQLITE_DEBUG
   for(i=0; i<nNew && !CORRUPT_DB; i++){
-    u8 *pCell = apCell[i+iNew];
+    u8 *pCell = pCArray->apCell[i+iNew];
     int iOff = get2byte(&pPg->aCellIdx[i*2]);
     if( pCell>=aData && pCell<&aData[pPg->pBt->usableSize] ){
       pCell = &pTmp[pCell - aData];
     }
-    assert( 0==memcmp(pCell, &aData[iOff], szCell[i+iNew]) );
+    assert( 0==memcmp(pCell, &aData[iOff],
+            pCArray->pRef->xCellSize(pCArray->pRef, pCArray->apCell[i+iNew])) );
   }
 #endif
 
-  return;
+  return SQLITE_OK;
  editpage_fail:
   /* Unable to edit this page. Rebuild it from scratch instead. */
-  rebuildPage(pPg, nNew, &apCell[iNew], &szCell[iNew]);
+  populateCellCache(pCArray, iNew, nNew);
+  return rebuildPage(pPg, nNew, &pCArray->apCell[iNew], &pCArray->szCell[iNew]);
 }
 
 /*
@@ -6620,7 +6661,8 @@ static int balance_quick(MemPage *pParent, MemPage *pPage, u8 *pSpace){
     assert( sqlite3PagerIswriteable(pNew->pDbPage) );
     assert( pPage->aData[0]==(PTF_INTKEY|PTF_LEAFDATA|PTF_LEAF) );
     zeroPage(pNew, PTF_INTKEY|PTF_LEAFDATA|PTF_LEAF);
-    rebuildPage(pNew, 1, &pCell, &szCell);
+    rc = rebuildPage(pNew, 1, &pCell, &szCell);
+    if( NEVER(rc) ) return rc;
     pNew->nFree = pBt->usableSize - pNew->cellOffset - 2 - szCell;
 
     /* If this is an auto-vacuum database, update the pointer map
@@ -6824,7 +6866,6 @@ static int balance_nonroot(
   int bBulk                       /* True if this call is part of a bulk load */
 ){
   BtShared *pBt;               /* The whole database */
-  int nCell = 0;               /* Number of cells in apCell[] */
   int nMaxCells = 0;           /* Allocated size of apCell, szCell, aFrom. */
   int nNew = 0;                /* Number of pages in apNew[] */
   int nOld;                    /* Number of pages in apOld[] */
@@ -6835,7 +6876,6 @@ static int balance_nonroot(
   int leafData;                /* True if pPage is a leaf of a LEAFDATA tree */
   int usableSpace;             /* Bytes in pPage beyond the header */
   int pageFlags;               /* Value of pPage->aData[0] */
-  int subtotal;                /* Subtotal of bytes in cells on one page */
   int iSpace1 = 0;             /* First unused byte of aSpace1[] */
   int iOvflSpace = 0;          /* First unused byte of aOvflSpace[] */
   int szScratch;               /* Size of scratch memory requested */
@@ -6843,19 +6883,20 @@ static int balance_nonroot(
   MemPage *apNew[NB+2];        /* pPage and up to NB siblings after balancing */
   u8 *pRight;                  /* Location in parent of right-sibling pointer */
   u8 *apDiv[NB-1];             /* Divider cells in pParent */
-  int cntNew[NB+2];            /* Index in aCell[] of cell after i-th page */
-  int cntOld[NB+2];            /* Old index in aCell[] after i-th page */
+  int cntNew[NB+2];            /* Index in b.paCell[] of cell after i-th page */
+  int cntOld[NB+2];            /* Old index in b.apCell[] */
   int szNew[NB+2];             /* Combined size of cells placed on i-th page */
-  u8 **apCell = 0;             /* All cells begin balanced */
-  u16 *szCell;                 /* Local size of all cells in apCell[] */
   u8 *aSpace1;                 /* Space for copies of dividers cells */
   Pgno pgno;                   /* Temp var to store a page number in */
   u8 abDone[NB+2];             /* True after i'th new page is populated */
   Pgno aPgno[NB+2];            /* Page numbers of new pages before shuffling */
   Pgno aPgOrder[NB+2];         /* Copy of aPgno[] used for sorting pages */
   u16 aPgFlags[NB+2];          /* flags field of new pages before shuffling */
+  CellArray b;                  /* Parsed information on cells being balanced */
 
   memset(abDone, 0, sizeof(abDone));
+  b.nCell = 0;
+  b.apCell = 0;
   pBt = pParent->pBt;
   assert( sqlite3_mutex_held(pBt->mutex) );
   assert( sqlite3PagerIswriteable(pParent->pDbPage) );
@@ -6964,43 +7005,48 @@ static int balance_nonroot(
   ** Allocate space for memory structures
   */
   szScratch =
-       nMaxCells*sizeof(u8*)                       /* apCell */
-     + nMaxCells*sizeof(u16)                       /* szCell */
+       nMaxCells*sizeof(u8*)                       /* b.apCell */
+     + nMaxCells*sizeof(u16)                       /* b.szCell */
      + pBt->pageSize;                              /* aSpace1 */
 
   /* EVIDENCE-OF: R-28375-38319 SQLite will never request a scratch buffer
   ** that is more than 6 times the database page size. */
   assert( szScratch<=6*(int)pBt->pageSize );
-  apCell = sqlite3ScratchMalloc( szScratch ); 
-  if( apCell==0 ){
+  b.apCell = sqlite3ScratchMalloc( szScratch ); 
+  if( b.apCell==0 ){
     rc = SQLITE_NOMEM;
     goto balance_cleanup;
   }
-  szCell = (u16*)&apCell[nMaxCells];
-  aSpace1 = (u8*)&szCell[nMaxCells];
+  b.szCell = (u16*)&b.apCell[nMaxCells];
+  aSpace1 = (u8*)&b.szCell[nMaxCells];
   assert( EIGHT_BYTE_ALIGNMENT(aSpace1) );
 
   /*
   ** Load pointers to all cells on sibling pages and the divider cells
-  ** into the local apCell[] array.  Make copies of the divider cells
+  ** into the local b.apCell[] array.  Make copies of the divider cells
   ** into space obtained from aSpace1[]. The divider cells have already
   ** been removed from pParent.
   **
   ** If the siblings are on leaf pages, then the child pointers of the
   ** divider cells are stripped from the cells before they are copied
-  ** into aSpace1[].  In this way, all cells in apCell[] are without
+  ** into aSpace1[].  In this way, all cells in b.apCell[] are without
   ** child pointers.  If siblings are not leaves, then all cell in
-  ** apCell[] include child pointers.  Either way, all cells in apCell[]
+  ** b.apCell[] include child pointers.  Either way, all cells in b.apCell[]
   ** are alike.
   **
   ** leafCorrection:  4 if pPage is a leaf.  0 if pPage is not a leaf.
   **       leafData:  1 if pPage holds key+data and pParent holds only keys.
   */
-  leafCorrection = apOld[0]->leaf*4;
-  leafData = apOld[0]->intKeyLeaf;
+  b.pRef = apOld[0];
+  leafCorrection = b.pRef->leaf*4;
+  leafData = b.pRef->intKeyLeaf;
   for(i=0; i<nOld; i++){
-    int limit;
     MemPage *pOld = apOld[i];
+    int limit = pOld->nCell;
+    u8 *aData = pOld->aData;
+    u16 maskPage = pOld->maskPage;
+    u8 *piCell = aData + pOld->cellOffset;
+    u8 *piEnd;
 
     /* Verify that all sibling pages are of the same "type" (table-leaf,
     ** table-interior, index-leaf, or index-interior).
@@ -7010,92 +7056,150 @@ static int balance_nonroot(
       goto balance_cleanup;
     }
 
-    limit = pOld->nCell+pOld->nOverflow;
+    /* Load b.apCell[] with pointers to all cells in pOld.  If pOld
+    ** constains overflow cells, include them in the b.apCell[] array
+    ** in the correct spot.
+    **
+    ** Note that when there are multiple overflow cells, it is always the
+    ** case that they are sequential and adjacent.  This invariant arises
+    ** because multiple overflows can only occurs when inserting divider
+    ** cells into a parent on a prior balance, and divider cells are always
+    ** adjacent and are inserted in order.  There is an assert() tagged
+    ** with "NOTE 1" in the overflow cell insertion loop to prove this
+    ** invariant.
+    **
+    ** This must be done in advance.  Once the balance starts, the cell
+    ** offset section of the btree page will be overwritten and we will no
+    ** long be able to find the cells if a pointer to each cell is not saved
+    ** first.
+    */
+    memset(&b.szCell[b.nCell], 0, sizeof(b.szCell[0])*limit);
     if( pOld->nOverflow>0 ){
+      memset(&b.szCell[b.nCell+limit], 0, sizeof(b.szCell[0])*pOld->nOverflow);
+      limit = pOld->aiOvfl[0];
       for(j=0; j<limit; j++){
-        assert( nCell<nMaxCells );
-        apCell[nCell] = findOverflowCell(pOld, j);
-        szCell[nCell] = pOld->xCellSize(pOld, apCell[nCell]);
-        nCell++;
+        b.apCell[b.nCell] = aData + (maskPage & get2byte(piCell));
+        piCell += 2;
+        b.nCell++;
       }
-    }else{
-      u8 *aData = pOld->aData;
-      u16 maskPage = pOld->maskPage;
-      u16 cellOffset = pOld->cellOffset;
-      for(j=0; j<limit; j++){
-        assert( nCell<nMaxCells );
-        apCell[nCell] = findCellv2(aData, maskPage, cellOffset, j);
-        szCell[nCell] = pOld->xCellSize(pOld, apCell[nCell]);
-        nCell++;
+      for(k=0; k<pOld->nOverflow; k++){
+        assert( k==0 || pOld->aiOvfl[k-1]+1==pOld->aiOvfl[k] );/* NOTE 1 */
+        b.apCell[b.nCell] = pOld->apOvfl[k];
+        b.nCell++;
       }
-    }       
-    cntOld[i] = nCell;
+    }
+    piEnd = aData + pOld->cellOffset + 2*pOld->nCell;
+    while( piCell<piEnd ){
+      assert( b.nCell<nMaxCells );
+      b.apCell[b.nCell] = aData + (maskPage & get2byte(piCell));
+      piCell += 2;
+      b.nCell++;
+    }
+
+    cntOld[i] = b.nCell;
     if( i<nOld-1 && !leafData){
       u16 sz = (u16)szNew[i];
       u8 *pTemp;
-      assert( nCell<nMaxCells );
-      szCell[nCell] = sz;
+      assert( b.nCell<nMaxCells );
+      b.szCell[b.nCell] = sz;
       pTemp = &aSpace1[iSpace1];
       iSpace1 += sz;
       assert( sz<=pBt->maxLocal+23 );
       assert( iSpace1 <= (int)pBt->pageSize );
       memcpy(pTemp, apDiv[i], sz);
-      apCell[nCell] = pTemp+leafCorrection;
+      b.apCell[b.nCell] = pTemp+leafCorrection;
       assert( leafCorrection==0 || leafCorrection==4 );
-      szCell[nCell] = szCell[nCell] - leafCorrection;
+      b.szCell[b.nCell] = b.szCell[b.nCell] - leafCorrection;
       if( !pOld->leaf ){
         assert( leafCorrection==0 );
         assert( pOld->hdrOffset==0 );
         /* The right pointer of the child page pOld becomes the left
         ** pointer of the divider cell */
-        memcpy(apCell[nCell], &pOld->aData[8], 4);
+        memcpy(b.apCell[b.nCell], &pOld->aData[8], 4);
       }else{
         assert( leafCorrection==4 );
-        while( szCell[nCell]<4 ){
+        while( b.szCell[b.nCell]<4 ){
           /* Do not allow any cells smaller than 4 bytes. If a smaller cell
           ** does exist, pad it with 0x00 bytes. */
-          assert( szCell[nCell]==3 || CORRUPT_DB );
-          assert( apCell[nCell]==&aSpace1[iSpace1-3] || CORRUPT_DB );
+          assert( b.szCell[b.nCell]==3 || CORRUPT_DB );
+          assert( b.apCell[b.nCell]==&aSpace1[iSpace1-3] || CORRUPT_DB );
           aSpace1[iSpace1++] = 0x00;
-          szCell[nCell]++;
+          b.szCell[b.nCell]++;
         }
       }
-      nCell++;
+      b.nCell++;
     }
   }
 
   /*
-  ** Figure out the number of pages needed to hold all nCell cells.
+  ** Figure out the number of pages needed to hold all b.nCell cells.
   ** Store this number in "k".  Also compute szNew[] which is the total
   ** size of all cells on the i-th page and cntNew[] which is the index
-  ** in apCell[] of the cell that divides page i from page i+1.  
-  ** cntNew[k] should equal nCell.
+  ** in b.apCell[] of the cell that divides page i from page i+1.  
+  ** cntNew[k] should equal b.nCell.
   **
   ** Values computed by this block:
   **
   **           k: The total number of sibling pages
   **    szNew[i]: Spaced used on the i-th sibling page.
-  **   cntNew[i]: Index in apCell[] and szCell[] for the first cell to
+  **   cntNew[i]: Index in b.apCell[] and b.szCell[] for the first cell to
   **              the right of the i-th sibling page.
   ** usableSpace: Number of bytes of space available on each sibling.
   ** 
   */
   usableSpace = pBt->usableSize - 12 + leafCorrection;
-  for(subtotal=k=i=0; i<nCell; i++){
-    assert( i<nMaxCells );
-    subtotal += szCell[i] + 2;
-    if( subtotal > usableSpace ){
-      szNew[k] = subtotal - szCell[i] - 2;
-      cntNew[k] = i;
-      if( leafData ){ i--; }
-      subtotal = 0;
-      k++;
-      if( k>NB+1 ){ rc = SQLITE_CORRUPT_BKPT; goto balance_cleanup; }
+  for(i=0; i<nOld; i++){
+    MemPage *p = apOld[i];
+    szNew[i] = usableSpace - p->nFree;
+    if( szNew[i]<0 ){ rc = SQLITE_CORRUPT_BKPT; goto balance_cleanup; }
+    for(j=0; j<p->nOverflow; j++){
+      szNew[i] += 2 + p->xCellSize(p, p->apOvfl[j]);
+    }
+    cntNew[i] = cntOld[i];
+  }
+  k = nOld;
+  for(i=0; i<k; i++){
+    int sz;
+    while( szNew[i]>usableSpace ){
+      if( i+1>=k ){
+        k = i+2;
+        if( k>NB+2 ){ rc = SQLITE_CORRUPT_BKPT; goto balance_cleanup; }
+        szNew[k-1] = 0;
+        cntNew[k-1] = b.nCell;
+      }
+      sz = 2 + cachedCellSize(&b, cntNew[i]-1);
+      szNew[i] -= sz;
+      if( !leafData ){
+        if( cntNew[i]<b.nCell ){
+          sz = 2 + cachedCellSize(&b, cntNew[i]);
+        }else{
+          sz = 0;
+        }
+      }
+      szNew[i+1] += sz;
+      cntNew[i]--;
+    }
+    while( cntNew[i]<b.nCell ){
+      sz = 2 + cachedCellSize(&b, cntNew[i]);
+      if( szNew[i]+sz>usableSpace ) break;
+      szNew[i] += sz;
+      cntNew[i]++;
+      if( !leafData ){
+        if( cntNew[i]<b.nCell ){
+          sz = 2 + cachedCellSize(&b, cntNew[i]);
+        }else{
+          sz = 0;
+        }
+      }
+      szNew[i+1] -= sz;
+    }
+    if( cntNew[i]>=b.nCell ){
+      k = i+1;
+    }else if( cntNew[i] <= (i>0 ? cntNew[i-1] : 0) ){
+      rc = SQLITE_CORRUPT_BKPT;
+      goto balance_cleanup;
     }
   }
-  szNew[k] = subtotal;
-  cntNew[k] = nCell;
-  k++;
 
   /*
   ** The packing computed by the previous block is biased toward the siblings
@@ -7116,19 +7220,27 @@ static int balance_nonroot(
 
     r = cntNew[i-1] - 1;
     d = r + 1 - leafData;
-    assert( d<nMaxCells );
-    assert( r<nMaxCells );
-    while( szRight==0 
-       || (!bBulk && szRight+szCell[d]+2<=szLeft-(szCell[r]+2)) 
-    ){
-      szRight += szCell[d] + 2;
-      szLeft -= szCell[r] + 2;
-      cntNew[i-1]--;
-      r = cntNew[i-1] - 1;
-      d = r + 1 - leafData;
-    }
+    (void)cachedCellSize(&b, d);
+    do{
+      assert( d<nMaxCells );
+      assert( r<nMaxCells );
+      (void)cachedCellSize(&b, r);
+      if( szRight!=0
+       && (bBulk || szRight+b.szCell[d]+2 > szLeft-(b.szCell[r]+2)) ){
+        break;
+      }
+      szRight += b.szCell[d] + 2;
+      szLeft -= b.szCell[r] + 2;
+      cntNew[i-1] = r;
+      r--;
+      d--;
+    }while( r>=0 );
     szNew[i] = szRight;
     szNew[i-1] = szLeft;
+    if( cntNew[i-1] <= (i>1 ? cntNew[i-2] : 0) ){
+      rc = SQLITE_CORRUPT_BKPT;
+      goto balance_cleanup;
+    }
   }
 
   /* Sanity check:  For a non-corrupt database file one of the follwing
@@ -7164,7 +7276,7 @@ static int balance_nonroot(
       zeroPage(pNew, pageFlags);
       apNew[i] = pNew;
       nNew++;
-      cntOld[i] = nCell;
+      cntOld[i] = b.nCell;
 
       /* Set the pointer-map entry for the new sibling page. */
       if( ISAUTOVACUUM ){
@@ -7269,8 +7381,8 @@ static int balance_nonroot(
     int iNew = 0;
     int iOld = 0;
 
-    for(i=0; i<nCell; i++){
-      u8 *pCell = apCell[i];
+    for(i=0; i<b.nCell; i++){
+      u8 *pCell = b.apCell[i];
       if( i==cntOldNext ){
         MemPage *pOld = (++iOld)<nNew ? apNew[iOld] : apOld[iOld];
         cntOldNext += pOld->nCell + pOld->nOverflow + !leafData;
@@ -7295,9 +7407,10 @@ static int balance_nonroot(
         if( !leafCorrection ){
           ptrmapPut(pBt, get4byte(pCell), PTRMAP_BTREE, pNew->pgno, &rc);
         }
-        if( szCell[i]>pNew->minLocal ){
+        if( cachedCellSize(&b,i)>pNew->minLocal ){
           ptrmapPutOvflPtr(pNew, pCell, &rc);
         }
+        if( rc ) goto balance_cleanup;
       }
     }
   }
@@ -7311,20 +7424,21 @@ static int balance_nonroot(
     j = cntNew[i];
 
     assert( j<nMaxCells );
-    pCell = apCell[j];
-    sz = szCell[j] + leafCorrection;
+    assert( b.apCell[j]!=0 );
+    pCell = b.apCell[j];
+    sz = b.szCell[j] + leafCorrection;
     pTemp = &aOvflSpace[iOvflSpace];
     if( !pNew->leaf ){
       memcpy(&pNew->aData[8], pCell, 4);
     }else if( leafData ){
       /* If the tree is a leaf-data tree, and the siblings are leaves, 
-      ** then there is no divider cell in apCell[]. Instead, the divider 
+      ** then there is no divider cell in b.apCell[]. Instead, the divider 
       ** cell consists of the integer key for the right-most cell of 
       ** the sibling-page assembled above only.
       */
       CellInfo info;
       j--;
-      pNew->xParseCell(pNew, apCell[j], &info);
+      pNew->xParseCell(pNew, b.apCell[j], &info);
       pCell = pTemp;
       sz = 4 + putVarint(&pCell[4], info.nKey);
       pTemp = 0;
@@ -7341,7 +7455,7 @@ static int balance_nonroot(
       ** cells are at least 4 bytes. It only happens in b-trees used
       ** to evaluate "IN (SELECT ...)" and similar clauses.
       */
-      if( szCell[j]==4 ){
+      if( b.szCell[j]==4 ){
         assert(leafCorrection==4);
         sz = pParent->xCellSize(pParent, pCell);
       }
@@ -7399,12 +7513,13 @@ static int balance_nonroot(
         iNew = iOld = 0;
         nNewCell = cntNew[0];
       }else{
-        iOld = iPg<nOld ? (cntOld[iPg-1] + !leafData) : nCell;
+        iOld = iPg<nOld ? (cntOld[iPg-1] + !leafData) : b.nCell;
         iNew = cntNew[iPg-1] + !leafData;
         nNewCell = cntNew[iPg] - iNew;
       }
 
-      editPage(apNew[iPg], iOld, iNew, nNewCell, apCell, szCell);
+      rc = editPage(apNew[iPg], iOld, iNew, nNewCell, &b);
+      if( rc ) goto balance_cleanup;
       abDone[iPg]++;
       apNew[iPg]->nFree = usableSpace-szNew[iPg];
       assert( apNew[iPg]->nOverflow==0 );
@@ -7455,7 +7570,7 @@ static int balance_nonroot(
 
   assert( pParent->isInit );
   TRACE(("BALANCE: finished: old=%d new=%d cells=%d\n",
-          nOld, nNew, nCell));
+          nOld, nNew, b.nCell));
 
   /* Free any old pages that were not reused as new pages.
   */
@@ -7478,7 +7593,7 @@ static int balance_nonroot(
   ** Cleanup before returning.
   */
 balance_cleanup:
-  sqlite3ScratchFree(apCell);
+  sqlite3ScratchFree(b.apCell);
   for(i=0; i<nOld; i++){
     releasePage(apOld[i]);
   }
@@ -9340,6 +9455,7 @@ int sqlite3BtreePutData(BtCursor *pCsr, u32 offset, u32 amt, void *z){
 */
 void sqlite3BtreeIncrblobCursor(BtCursor *pCur){
   pCur->curFlags |= BTCF_Incrblob;
+  pCur->pBtree->hasIncrblobCur = 1;
 }
 #endif
 

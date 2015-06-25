@@ -1392,10 +1392,13 @@ static const char *columnTypeImpl(
         ** of the SELECT statement. Return the declaration type and origin
         ** data for the result-set column of the sub-select.
         */
-        if( iCol>=0 && iCol<pS->pEList->nExpr ){
+        if( iCol>=0 && ALWAYS(iCol<pS->pEList->nExpr) ){
           /* If iCol is less than zero, then the expression requests the
           ** rowid of the sub-select or view. This expression is legal (see 
           ** test case misc2.2.2) - it always evaluates to NULL.
+          **
+          ** The ALWAYS() is because iCol>=pS->pEList->nExpr will have been
+          ** caught already by name resolution.
           */
           NameContext sNC;
           Expr *p = pS->pEList->a[iCol].pExpr;
@@ -1874,7 +1877,10 @@ static CollSeq *multiSelectCollSeq(Parse *pParse, Select *p, int iCol){
     pRet = 0;
   }
   assert( iCol>=0 );
-  if( pRet==0 && iCol<p->pEList->nExpr ){
+  /* iCol must be less than p->pEList->nExpr.  Otherwise an error would
+  ** have been thrown during name resolution and we would not have gotten
+  ** this far */
+  if( pRet==0 && ALWAYS(iCol<p->pEList->nExpr) ){
     pRet = sqlite3ExprCollSeq(pParse, p->pEList->a[iCol].pExpr);
   }
   return pRet;
@@ -2855,9 +2861,7 @@ static int multiSelectOrderBy(
     struct ExprList_item *pItem;
     for(i=0, pItem=pOrderBy->a; i<nOrderBy; i++, pItem++){
       assert( pItem->u.x.iOrderByCol>0 );
-      /* assert( pItem->u.x.iOrderByCol<=p->pEList->nExpr ) is also true
-      ** but only for well-formed SELECT statements. */
-      testcase( pItem->u.x.iOrderByCol > p->pEList->nExpr );
+      assert( pItem->u.x.iOrderByCol<=p->pEList->nExpr );
       aPermute[i] = pItem->u.x.iOrderByCol - 1;
     }
     pKeyMerge = multiSelectOrderByKeyInfo(pParse, p, 1);
@@ -3427,10 +3431,10 @@ static int flattenSubquery(
       testcase( (pSub1->selFlags & (SF_Distinct|SF_Aggregate))==SF_Distinct );
       testcase( (pSub1->selFlags & (SF_Distinct|SF_Aggregate))==SF_Aggregate );
       assert( pSub->pSrc!=0 );
+      assert( pSub->pEList->nExpr==pSub1->pEList->nExpr );
       if( (pSub1->selFlags & (SF_Distinct|SF_Aggregate))!=0
        || (pSub1->pPrior && pSub1->op!=TK_ALL) 
        || pSub1->pSrc->nSrc<1
-       || pSub->pEList->nExpr!=pSub1->pEList->nExpr
       ){
         return 0;
       }

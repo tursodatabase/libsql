@@ -582,13 +582,9 @@ int sqlite3VdbeExec(
   sqlite3VdbeIOTraceSql(p);
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
   if( db->xProgress ){
+    u32 iPrior = p->aCounter[SQLITE_STMTSTATUS_VM_STEP];
     assert( 0 < db->nProgressOps );
-    nProgressLimit = (unsigned)p->aCounter[SQLITE_STMTSTATUS_VM_STEP];
-    if( nProgressLimit==0 ){
-      nProgressLimit = db->nProgressOps;
-    }else{
-      nProgressLimit %= (unsigned)db->nProgressOps;
-    }
+    nProgressLimit = db->nProgressOps - (iPrior % db->nProgressOps);
   }
 #endif
 #ifdef SQLITE_DEBUG

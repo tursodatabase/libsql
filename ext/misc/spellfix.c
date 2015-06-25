@@ -2656,6 +2656,31 @@ static int spellfix1Rowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){
 }
 
 /*
+** This function is called by the xUpdate() method. It returns a string
+** containing the conflict mode that xUpdate() should use for the current
+** operation. One of: "ROLLBACK", "IGNORE", "ABORT" or "REPLACE".
+*/
+static const char *spellfix1GetConflict(sqlite3 *db){
+  static const char *azConflict[] = {
+    /* Note: Instead of "FAIL" - "ABORT". */
+    "ROLLBACK", "IGNORE", "ABORT", "ABORT", "REPLACE"
+  };
+  int eConflict = sqlite3_vtab_on_conflict(db);
+
+  assert( eConflict==SQLITE_ROLLBACK || eConflict==SQLITE_IGNORE
+       || eConflict==SQLITE_FAIL || eConflict==SQLITE_ABORT
+       || eConflict==SQLITE_REPLACE
+  );
+  assert( SQLITE_ROLLBACK==1 );
+  assert( SQLITE_IGNORE==2 );
+  assert( SQLITE_FAIL==3 );
+  assert( SQLITE_ABORT==4 );
+  assert( SQLITE_REPLACE==5 );
+
+  return azConflict[eConflict-1];
+}
+
+/*
 ** The xUpdate() method.
 */
 static int spellfix1Update(
@@ -2686,6 +2711,7 @@ static int spellfix1Update(
     char *zK1, *zK2;
     int i;
     char c;
+    const char *zConflict = spellfix1GetConflict(db);
 
     if( zWord==0 ){
       /* Inserts of the form:  INSERT INTO table(command) VALUES('xyzzy');
@@ -2746,10 +2772,10 @@ static int spellfix1Update(
       }else{
         newRowid = sqlite3_value_int64(argv[1]);
         spellfix1DbExec(&rc, db,
-               "INSERT INTO \"%w\".\"%w_vocab\"(id,rank,langid,word,k1,k2) "
-               "VALUES(%lld,%d,%d,%Q,%Q,%Q)",
-               p->zDbName, p->zTableName,
-               newRowid, iRank, iLang, zWord, zK1, zK2
+            "INSERT OR %s INTO \"%w\".\"%w_vocab\"(id,rank,langid,word,k1,k2) "
+            "VALUES(%lld,%d,%d,%Q,%Q,%Q)",
+            zConflict, p->zDbName, p->zTableName,
+            newRowid, iRank, iLang, zWord, zK1, zK2
         );
       }
       *pRowid = sqlite3_last_insert_rowid(db);
@@ -2757,9 +2783,9 @@ static int spellfix1Update(
       rowid = sqlite3_value_int64(argv[0]);
       newRowid = *pRowid = sqlite3_value_int64(argv[1]);
       spellfix1DbExec(&rc, db,
-             "UPDATE \"%w\".\"%w_vocab\" SET id=%lld, rank=%d, langid=%d,"
+             "UPDATE OR %s \"%w\".\"%w_vocab\" SET id=%lld, rank=%d, langid=%d,"
              " word=%Q, k1=%Q, k2=%Q WHERE id=%lld",
-             p->zDbName, p->zTableName, newRowid, iRank, iLang,
+             zConflict, p->zDbName, p->zTableName, newRowid, iRank, iLang,
              zWord, zK1, zK2, rowid
       );
     }

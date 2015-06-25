@@ -353,6 +353,7 @@ struct Btree {
   u8 inTrans;        /* TRANS_NONE, TRANS_READ or TRANS_WRITE */
   u8 sharable;       /* True if we can share pBt with another db */
   u8 locked;         /* True if db currently has pBt locked */
+  u8 hasIncrblobCur; /* True if there are one or more Incrblob cursors */
   int wantToLock;    /* Number of nested calls to sqlite3BtreeEnter() */
   int nBackup;       /* Number of backup operations reading this btree */
   u32 iDataVersion;  /* Combines with pBt->pPager->iDataVersion */
