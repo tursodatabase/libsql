@@ -1694,6 +1694,9 @@ fts5.c: $(FTS5_SRC)
 fts5.lo:	fts5.c $(HDR) $(EXTHDR)
 	$(LTCOMPILE) $(NO_WARN) -DSQLITE_ENABLE_FTS5 -c fts5.c
 
+fts5.dll:	fts5.lo
+	$(LD) $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) /DLL /OUT:$@ fts5.lo
+
 # Rules to build the 'testfixture' application.
 #
 # If using the amalgamation, use sqlite3.c directly to build the test

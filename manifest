@@ -1,9 +1,9 @@
-C Initial\schanges\sto\sget\sFTS5\sworking\swith\sMSVC.
-D 2015-06-26T04:34:36.916
+C Add\sFTS5\sDLL\starget\sfor\sMSVC.
+D 2015-06-26T16:17:36.812
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 285a0a234ed7610d431d91671c136098c2bd86a9
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 3ba6a2d04472e98b2aa882f47d959ec12af7c34c
+F Makefile.msc 5dff3f360037c7c924512973d13aa1051ba1fea6
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION ce0ae95abd7121c534f6917c1c8f2b70d9acd4db
@@ -1364,10 +1364,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3175220747f5d4dadd17e09fb1899dc782c90926
-R d72f4db2847a4a23ecfc8905fb081d41
-T *branch * fts5Msvc
-T *sym-fts5Msvc *
-T -sym-fts5 *
+P ef2052f81e33ca98e85a60f8a78cdd19a7c1c35c
+R 16ac75ae29a449789b1f8e90f4493086
 U mistachkin
-Z cca0d5b27b94cebaae71758fdb2c5cae
+Z 20765b1a5df4a09bb1c9c2fbe7adccb1
