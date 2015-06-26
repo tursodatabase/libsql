@@ -1,5 +1,5 @@
-C Simplify\sthe\spcache\sby\snot\skeeping\scontinuous\strack\sof\spage\s1\sbut\sinstead\njust\sloading\spage\s1\son\sthe\srare\soccasions\swhen\sit\sis\sactually\sneeded.
-D 2015-06-26T02:41:31.913
+C Cache\sthe\smost\srecently\ssqlite3_context\sused\sby\sOP_Function\sand\sreuse\sit\son\nsubsequent\scalls,\sif\sappropriate.\sThis\sgives\sa\snoticable\sperformance\sboost.
+D 2015-06-26T13:31:02.230
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1063c58075b7400d93326b0eb332b48a54f53025
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -313,7 +313,7 @@ F src/update.c 487747b328b7216bb7f6af0695d6937d5c9e605f
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c a6431c92803b975b7322724a7b433e538d243539
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c 3af2d06e2b36012631dc3331957df52febdf8678
+F src/vdbe.c 592957316d7bced599384e7897f6ee7728af5a61
 F src/vdbe.h 90048aea1910f9df93e6044592bd4a466dc9c5e7
 F src/vdbeInt.h 20295e482121d13437f69985f77db211cdc8bac1
 F src/vdbeapi.c 6a0d7757987018ff6b1b81bc5293219cd26bb299
@@ -1286,7 +1286,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8d79f3a1443391bee204bb8c49240f44477168db
-R c56e8779f6e8f4f9de88fc3a0bf56b01
+P 015302f15e46a087ec92f3644c6741600dbf4306
+R 7832174f14c22d1eacdad67bafdfeaa7
+T *branch * function-ctx-cache
+T *sym-function-ctx-cache *
+T -sym-trunk *
 U drh
-Z 87d94359f0bb80945f07f56dd11de5b2
+Z e48fb4a345ac7f54e42bdc087583de4b

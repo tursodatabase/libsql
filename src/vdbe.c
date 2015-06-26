@@ -562,6 +562,9 @@ int sqlite3VdbeExec(
 #ifdef VDBE_PROFILE
   u64 start;                 /* CPU clock count at start of opcode */
 #endif
+  Op *pCtxOp = 0;            /* Opcode for which ctx is initialized */
+  sqlite3_context ctx;       /* Function call context */
+
   /*** INSERT STACK UNION HERE ***/
 
   assert( p->magic==VDBE_MAGIC_RUN );  /* sqlite3_step() verifies this */
@@ -943,6 +946,7 @@ case OP_Halt: {
     aOp = p->aOp;
     aMem = p->aMem;
     pOp = &aOp[pcx];
+    pCtxOp = 0;
     break;
   }
   p->rc = pOp->p1;
@@ -1566,35 +1570,39 @@ case OP_CollSeq: {
 case OP_Function: {
   int i;
   Mem *pArg;
-  sqlite3_context ctx;
   sqlite3_value **apVal;
   int n;
 
   n = pOp->p5;
-  apVal = p->apArg;
-  assert( apVal || n==0 );
-  assert( pOp->p3>0 && pOp->p3<=(p->nMem-p->nCursor) );
-  ctx.pOut = &aMem[pOp->p3];
-  memAboutToChange(p, ctx.pOut);
+  if( pOp!=pCtxOp ){
+    apVal = p->apArg;
+    assert( apVal || n==0 );
+    assert( pOp->p3>0 && pOp->p3<=(p->nMem-p->nCursor) );
+    ctx.pOut = &aMem[pOp->p3];
 
-  assert( n==0 || (pOp->p2>0 && pOp->p2+n<=(p->nMem-p->nCursor)+1) );
-  assert( pOp->p3<pOp->p2 || pOp->p3>=pOp->p2+n );
-  pArg = &aMem[pOp->p2];
-  for(i=0; i<n; i++, pArg++){
-    assert( memIsValid(pArg) );
-    apVal[i] = pArg;
-    Deephemeralize(pArg);
-    REGISTER_TRACE(pOp->p2+i, pArg);
+    assert( n==0 || (pOp->p2>0 && pOp->p2+n<=(p->nMem-p->nCursor)+1) );
+    assert( pOp->p3<pOp->p2 || pOp->p3>=pOp->p2+n );
+    pArg = &aMem[pOp->p2];
+    for(i=0; i<n; i++, pArg++){
+      apVal[i] = pArg;
+    }
+    assert( pOp->p4type==P4_FUNCDEF );
+    ctx.pFunc = pOp->p4.pFunc;
+    ctx.iOp = (int)(pOp - aOp);
+    ctx.pVdbe = p;
+    pCtxOp = pOp;
   }
-
-  assert( pOp->p4type==P4_FUNCDEF );
-  ctx.pFunc = pOp->p4.pFunc;
-  ctx.iOp = (int)(pOp - aOp);
-  ctx.pVdbe = p;
+#ifdef SQLITE_DEBUG
+  for(i=0; i<n; i++){
+    assert( memIsValid(p->apArg[i]) );
+    REGISTER_TRACE(pOp->p2+i, p->apArg[i]);
+  }
+#endif
+  memAboutToChange(p, ctx.pOut);
   MemSetTypeFlag(ctx.pOut, MEM_Null);
   ctx.fErrorOrAux = 0;
   db->lastRowid = lastRowid;
-  (*ctx.pFunc->xFunc)(&ctx, n, apVal); /* IMP: R-24505-23230 */
+  (*ctx.pFunc->xFunc)(&ctx, n, p->apArg); /* IMP: R-24505-23230 */
   lastRowid = db->lastRowid;  /* Remember rowid changes made by xFunc */
 
   /* If the function returned an error, throw an exception */
@@ -5504,6 +5512,7 @@ case OP_Program: {        /* jump */
   p->nCursor = (u16)pFrame->nChildCsr;
   p->apCsr = (VdbeCursor **)&aMem[p->nMem+1];
   p->aOp = aOp = pProgram->aOp;
+  pCtxOp = 0;
   p->nOp = pProgram->nOp;
   p->aOnceFlag = (u8 *)&p->apCsr[p->nCursor];
   p->nOnceFlag = pProgram->nOnce;
@@ -5714,12 +5723,13 @@ case OP_AggStep: {
   Mem *pMem;
   Mem *pRec;
   Mem t;
-  sqlite3_context ctx;
+  sqlite3_context actx;
   sqlite3_value **apVal;
 
   n = pOp->p5;
   assert( n>=0 );
   pRec = &aMem[pOp->p2];
+  pCtxOp = 0;
   apVal = p->apArg;
   assert( apVal || n==0 );
   for(i=0; i<n; i++, pRec++){
@@ -5727,22 +5737,22 @@ case OP_AggStep: {
     apVal[i] = pRec;
     memAboutToChange(p, pRec);
   }
-  ctx.pFunc = pOp->p4.pFunc;
+  actx.pFunc = pOp->p4.pFunc;
   assert( pOp->p3>0 && pOp->p3<=(p->nMem-p->nCursor) );
-  ctx.pMem = pMem = &aMem[pOp->p3];
+  actx.pMem = pMem = &aMem[pOp->p3];
   pMem->n++;
   sqlite3VdbeMemInit(&t, db, MEM_Null);
-  ctx.pOut = &t;
-  ctx.isError = 0;
-  ctx.pVdbe = p;
-  ctx.iOp = (int)(pOp - aOp);
-  ctx.skipFlag = 0;
-  (ctx.pFunc->xStep)(&ctx, n, apVal); /* IMP: R-24505-23230 */
-  if( ctx.isError ){
+  actx.pOut = &t;
+  actx.isError = 0;
+  actx.pVdbe = p;
+  actx.iOp = (int)(pOp - aOp);
+  actx.skipFlag = 0;
+  (actx.pFunc->xStep)(&actx, n, apVal); /* IMP: R-24505-23230 */
+  if( actx.isError ){
     sqlite3VdbeError(p, "%s", sqlite3_value_text(&t));
-    rc = ctx.isError;
+    rc = actx.isError;
   }
-  if( ctx.skipFlag ){
+  if( actx.skipFlag ){
     assert( pOp[-1].opcode==OP_CollSeq );
     i = pOp[-1].p1;
     if( i ) sqlite3VdbeMemSetInt64(&aMem[i], 1);
@@ -6172,6 +6182,7 @@ case OP_VFilter: {   /* jump */
   for(i = 0; i<nArg; i++){
     apArg[i] = &pArgc[i+1];
   }
+  pCtxOp = 0;
   rc = pModule->xFilter(pVtabCursor, iQuery, pOp->p4.z, nArg, apArg);
   sqlite3VtabImportErrmsg(p, pVtab);
   if( rc==SQLITE_OK ){
@@ -6355,6 +6366,7 @@ case OP_VUpdate: {
   if( ALWAYS(pModule->xUpdate) ){
     u8 vtabOnConflict = db->vtabOnConflict;
     apArg = p->apArg;
+    pCtxOp = 0;
     pX = &aMem[pOp->p3];
     for(i=0; i<nArg; i++){
       assert( memIsValid(pX) );
