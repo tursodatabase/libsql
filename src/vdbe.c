@@ -4797,7 +4797,6 @@ next_tail:
 case OP_SorterInsert:       /* in2 */
 case OP_IdxInsert: {        /* in2 */
   VdbeCursor *pC;
-  BtCursor *pCrsr;
   int nKey;
   const char *zKey;
 
@@ -4807,18 +4806,17 @@ case OP_IdxInsert: {        /* in2 */
   assert( isSorter(pC)==(pOp->opcode==OP_SorterInsert) );
   pIn2 = &aMem[pOp->p2];
   assert( pIn2->flags & MEM_Blob );
-  pCrsr = pC->pCursor;
   if( pOp->p5 & OPFLAG_NCHANGE ) p->nChange++;
-  assert( pCrsr!=0 );
+  assert( pC->pCursor!=0 );
   assert( pC->isTable==0 );
   rc = ExpandBlob(pIn2);
   if( rc==SQLITE_OK ){
-    if( isSorter(pC) ){
+    if( pOp->opcode==OP_SorterInsert ){
       rc = sqlite3VdbeSorterWrite(pC, pIn2);
     }else{
       nKey = pIn2->n;
       zKey = pIn2->z;
-      rc = sqlite3BtreeInsert(pCrsr, zKey, nKey, "", 0, 0, pOp->p3, 
+      rc = sqlite3BtreeInsert(pC->pCursor, zKey, nKey, "", 0, 0, pOp->p3, 
           ((pOp->p5 & OPFLAG_USESEEKRESULT) ? pC->seekResult : 0)
           );
       assert( pC->deferredMoveto==0 );

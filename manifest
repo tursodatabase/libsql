@@ -1,5 +1,5 @@
-C Further\soptimization\sof\sSQL\sfunction\sdispatch.\s\sImprovements\sto\sopcode\ndocumentation.
-D 2015-06-26T18:47:53.814
+C Small\ssize\sreduction\sand\sperformance\sincrease\son\sthe\sOP_IdxInsert\sopcode.
+D 2015-06-26T19:43:55.327
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1063c58075b7400d93326b0eb332b48a54f53025
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -313,7 +313,7 @@ F src/update.c 487747b328b7216bb7f6af0695d6937d5c9e605f
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c a6431c92803b975b7322724a7b433e538d243539
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c b425feab69fb29b3cf4d40c5c8ea585bce883307
+F src/vdbe.c 3d5a78d39b15dc91ea2c11017d560a4224eb2f75
 F src/vdbe.h 7a75045d879118b9d3af7e8b3c108f2f27c51473
 F src/vdbeInt.h 8b54e01ad0463590e7cffabce0bc36da9ee4f816
 F src/vdbeapi.c 6a0d7757987018ff6b1b81bc5293219cd26bb299
@@ -1286,7 +1286,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2abc44eb3b9d489321baa50bc25e17dafbda3687
-R a98b4348d07c70a554120b6bb6158a33
+P eaddbf296aee98ffca82adade1b0d2fbefd09d7b
+R e2390f27840a2165ad1c292ca6931905
 U drh
-Z 2205c193de128862e6e7711ff0d4d13b
+Z 46d8302c1ebdc3ef48ddf35916e18889
