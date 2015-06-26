@@ -1693,10 +1693,13 @@ fts5.c: $(FTS5_SRC)
 	$(TCLSH_CMD) $(TOP)\ext\fts5\tool\mkfts5c.tcl
 
 fts5.lo:	fts5.c $(HDR) $(EXTHDR)
+	$(LTCOMPILE) $(CORE_COMPILE_OPTS) $(NO_WARN) -DSQLITE_CORE -c fts5.c
+
+fts5_ext.lo:	fts5.c $(HDR) $(EXTHDR)
 	$(LTCOMPILE) $(NO_WARN) -DSQLITE_ENABLE_FTS5 -c fts5.c
 
-fts5.dll:	fts5.lo
-	$(LD) $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) /DLL /OUT:$@ fts5.lo
+fts5.dll:	fts5_ext.lo
+	$(LD) $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) /DLL /OUT:$@ fts5_ext.lo
 
 # Rules to build the 'testfixture' application.
 #

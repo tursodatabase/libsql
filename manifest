@@ -1,9 +1,9 @@
-C Merge\sfts5\sbranch\sinto\strunk.
-D 2015-06-26T20:25:59.799
+C Treat\scompilation\sof\sFTS5\sfor\sthe\sloadable\sextension\sspecially\swith\sMSVC.
+D 2015-06-26T20:45:43.839
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 285a0a234ed7610d431d91671c136098c2bd86a9
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc de7668a4f537f91bdb185e7194a798b1d59f101f
+F Makefile.msc 0a0568c12cf37fd9683241dfe7aa484fcdf27554
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION ce0ae95abd7121c534f6917c1c8f2b70d9acd4db
@@ -1364,7 +1364,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b6bedc2e9c2f87709673799db9401b95fdb386b0 8671b9e137275d247e67e3d7d5d9c4cb1f380ff7
-R 0da9483025b8e801a1ae1ccbcdc9a8a2
-U dan
-Z d74fcb200391e22b2c75ffc9a8c44934
+P d27d9965b5404cd32be1113215fd9feeb5b66acc
+R 3acd5e6aa6095e21a23b200982f0e53b
+U mistachkin
+Z ca7f05b6600c190f8e4e9359f2b7edca
