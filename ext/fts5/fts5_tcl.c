@@ -529,7 +529,7 @@ static void xF5tFunction(
 static void xF5tDestroy(void *pCtx){
   F5tFunction *p = (F5tFunction*)pCtx;
   Tcl_DecrRefCount(p->pScript);
-  ckfree(p);
+  ckfree((char *)p);
 }
 
 /*
@@ -724,7 +724,8 @@ static int f5tTokenizerCreate(
   Tcl_DecrRefCount(pEval);
 
   if( rc==TCL_OK ){
-    F5tTokenizerInstance *pInst = ckalloc(sizeof(F5tTokenizerInstance));
+    F5tTokenizerInstance *pInst;
+    pInst = (F5tTokenizerInstance*)ckalloc(sizeof(F5tTokenizerInstance));
     memset(pInst, 0, sizeof(F5tTokenizerInstance));
     pInst->interp = pMod->interp;
     pInst->pScript = Tcl_GetObjResult(pMod->interp);
@@ -740,7 +741,7 @@ static int f5tTokenizerCreate(
 static void f5tTokenizerDelete(Fts5Tokenizer *p){
   F5tTokenizerInstance *pInst = (F5tTokenizerInstance*)p;
   Tcl_DecrRefCount(pInst->pScript);
-  ckfree(pInst);
+  ckfree((char *)pInst);
 }
 
 static int f5tTokenizerTokenize(
@@ -816,7 +817,7 @@ static int f5tTokenizerReturn(
 static void f5tDelTokenizer(void *pCtx){
   F5tTokenizerModule *pMod = (F5tTokenizerModule*)pCtx;
   Tcl_DecrRefCount(pMod->pScript);
-  ckfree(pMod);
+  ckfree((char *)pMod);
 }
 
 /*
@@ -964,7 +965,7 @@ int Fts5tcl_Init(Tcl_Interp *interp){
   int i;
   F5tTokenizerContext *pContext;
 
-  pContext = ckalloc(sizeof(F5tTokenizerContext));
+  pContext = (F5tTokenizerContext*)ckalloc(sizeof(F5tTokenizerContext));
   memset(pContext, 0, sizeof(*pContext));
 
   for(i=0; i<sizeof(aCmd)/sizeof(aCmd[0]); i++){

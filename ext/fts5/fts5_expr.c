@@ -1046,7 +1046,7 @@ static int fts5ExprNodeNext(
 
       case FTS5_OR: {
         int i;
-        int iLast = pNode->iRowid;
+        i64 iLast = pNode->iRowid;
 
         for(i=0; rc==SQLITE_OK && i<pNode->nChild; i++){
           Fts5ExprNode *p1 = pNode->apChild[i];
@@ -1915,7 +1915,7 @@ static void fts5ExprFunction(
       sqlite3_result_error_code(pCtx, rc);
     }
   }
-  sqlite3_free(azConfig);
+  sqlite3_free((void *)azConfig);
   sqlite3Fts5ConfigFree(pConfig);
   sqlite3Fts5ExprFree(pExpr);
 }

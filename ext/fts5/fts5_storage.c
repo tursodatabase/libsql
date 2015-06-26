@@ -158,8 +158,10 @@ static int fts5ExecPrintf(
 ){
   int rc;
   va_list ap;                     /* ... printf arguments */
+  char *zSql;
+
   va_start(ap, zFormat);
-  char *zSql = sqlite3_vmprintf(zFormat, ap);
+  zSql = sqlite3_vmprintf(zFormat, ap);
 
   if( zSql==0 ){
     rc = SQLITE_NOMEM;

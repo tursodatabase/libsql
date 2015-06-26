@@ -1,9 +1,9 @@
-C Remove\sfts5\sinitialization\scode\sfrom\score\sfile\smain.c.
-D 2015-06-26T16:42:17.368
+C Merge\schanges\sto\sget\sFTS5\sworking\swith\sMSVC.
+D 2015-06-26T17:10:12.989
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 285a0a234ed7610d431d91671c136098c2bd86a9
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc b7db9ccbbad1c495b98e5326a06cac03aa206127
+F Makefile.msc de7668a4f537f91bdb185e7194a798b1d59f101f
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION ce0ae95abd7121c534f6917c1c8f2b70d9acd4db
@@ -106,16 +106,16 @@ F ext/fts3/unicode/mkunicode.tcl ed0534dd51efce39878bce33944c6073d37a1e20
 F ext/fts3/unicode/parseunicode.tcl da577d1384810fb4e2b209bf3313074353193e95
 F ext/fts5/extract_api_docs.tcl 55a6d648d516f35d9a1e580ac00de27154e1904a
 F ext/fts5/fts5.h 81d1a92fc2b4bd477af7e4e0b38b456f3e199fba
-F ext/fts5/fts5Int.h 41e9ed1f073770f660b1b59116357f504a8c5ff1
+F ext/fts5/fts5Int.h 918e947c0c20122ed5eb9ea695d83c6c8cf7239a
 F ext/fts5/fts5_aux.c d53f00f31ad615ca4f139dd8751f9041afa00971
-F ext/fts5/fts5_buffer.c be0dc80a9406151b350be27c7ec2956722578771
-F ext/fts5/fts5_config.c c232d181d6324f0ae3a2a31319924473999e5816
-F ext/fts5/fts5_expr.c 549bda1f7edcf10365fbfbc002bdea1be3c287bb
+F ext/fts5/fts5_buffer.c 7428b0bcb257641cbecc3bacce7f40686cf99f36
+F ext/fts5/fts5_config.c d40da53f5e94214c553b2af3d6fd9aebac5f3f05
+F ext/fts5/fts5_expr.c 3386ab0a71dbab7e1259c3b16d6113c97d14123e
 F ext/fts5/fts5_hash.c c1cfdb2cae0fad00b06fae38a40eaf9261563ccc
-F ext/fts5/fts5_index.c 438b245e9e44be3cfa848c71351a4e769b75876a
-F ext/fts5/fts5_main.c 35e90d3d8fafe4c936f232108e891d5f9a6294ca
-F ext/fts5/fts5_storage.c b2fa301fce865d582d367a5e1bb438fe60c03cb5
-F ext/fts5/fts5_tcl.c 7ea165878e4ae3598e89acd470a0ee1b5a00e33c
+F ext/fts5/fts5_index.c 0c5a5218eb9fddd65c7d5bbad72c383d102c9648
+F ext/fts5/fts5_main.c c5b2a219d65967c07fd1bc8fd45206863a2fe360
+F ext/fts5/fts5_storage.c 3e672a0d35f63979556903861b324e7b8932cecc
+F ext/fts5/fts5_tcl.c b82f13f73a30f0959f539743f8818bece994a970
 F ext/fts5/fts5_tokenize.c 97251d68d7a6a9415bde1203f9382864dfc1f989
 F ext/fts5/fts5_unicode2.c da3cf712f05cd8347c8c5bc00964cc0361c88da9
 F ext/fts5/fts5_varint.c 366452037bf9a000c351374b489badc1b3541796
@@ -1364,7 +1364,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3175220747f5d4dadd17e09fb1899dc782c90926
-R 91fd07ffaf7094308b4ec5a4e0e61dc1
-U dan
-Z ca6474591f774c998709d70d57deb075
+P c91a93b343b4d3b1a19afdb5d23d1c508f9779d2 bfcd16089cf8c65130c011a9718bf7812685c841
+R 297861c6724b6a9194bdf2ab25858763
+T +closed bfcd16089cf8c65130c011a9718bf7812685c841
+U mistachkin
+Z d2f82b98bab3ebc4b4555fb7502228b7
