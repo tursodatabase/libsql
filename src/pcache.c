@@ -28,7 +28,6 @@ struct PCache {
   int (*xStress)(void*,PgHdr*);       /* Call to try make a page clean */
   void *pStress;                      /* Argument to xStress */
   sqlite3_pcache *pCache;             /* Pluggable cache module */
-  PgHdr *pPage1;                      /* Reference to page 1 */
 };
 
 /********************************** Linked List Management ********************/
@@ -106,9 +105,6 @@ static void pcacheManageDirtyList(PgHdr *pPage, u8 addRemove){
 */
 static void pcacheUnpin(PgHdr *p){
   if( p->pCache->bPurgeable ){
-    if( p->pgno==1 ){
-      p->pCache->pPage1 = 0;
-    }
     sqlite3GlobalConfig.pcache2.xUnpin(p->pCache->pCache, p->pPage, 0);
   }
 }
@@ -201,7 +197,6 @@ int sqlite3PcacheSetPageSize(PCache *pCache, int szPage){
       sqlite3GlobalConfig.pcache2.xDestroy(pCache->pCache);
     }
     pCache->pCache = pNew;
-    pCache->pPage1 = 0;
     pCache->szPage = szPage;
   }
   return SQLITE_OK;
@@ -359,9 +354,6 @@ PgHdr *sqlite3PcacheFetchFinish(
     pCache->nRef++;
   }
   pPgHdr->nRef++;
-  if( pgno==1 ){
-    pCache->pPage1 = pPgHdr;
-  }
   return pPgHdr;
 }
 
@@ -402,9 +394,6 @@ void sqlite3PcacheDrop(PgHdr *p){
     pcacheManageDirtyList(p, PCACHE_DIRTYLIST_REMOVE);
   }
   p->pCache->nRef--;
-  if( p->pgno==1 ){
-    p->pCache->pPage1 = 0;
-  }
   sqlite3GlobalConfig.pcache2.xUnpin(p->pCache->pCache, p->pPage, 1);
 }
 
@@ -495,9 +484,14 @@ void sqlite3PcacheTruncate(PCache *pCache, Pgno pgno){
         sqlite3PcacheMakeClean(p);
       }
     }
-    if( pgno==0 && pCache->pPage1 ){
-      memset(pCache->pPage1->pData, 0, pCache->szPage);
-      pgno = 1;
+    if( pgno==0 && pCache->nRef ){
+      sqlite3_pcache_page *pPage1;
+      pPage1 = sqlite3GlobalConfig.pcache2.xFetch(pCache->pCache,1,0);
+      if( ALWAYS(pPage1) ){  /* Page 1 is always available in cache, because
+                             ** pCache->nRef>0 */
+        memset(pPage1->pBuf, 0, pCache->szPage);
+        pgno = 1;
+      }
     }
     sqlite3GlobalConfig.pcache2.xTruncate(pCache->pCache, pgno+1);
   }
