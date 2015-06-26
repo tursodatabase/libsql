@@ -1,5 +1,5 @@
-C Merge\slatest\strunk\schanges\swith\sthis\sbranch.
-D 2015-06-26T19:33:04.560
+C Fix\sa\ssegfault\sthat\scould\sfollow\san\sOOM\serror\sin\sfts5.
+D 2015-06-26T20:08:25.582
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 285a0a234ed7610d431d91671c136098c2bd86a9
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -109,7 +109,7 @@ F ext/fts5/fts5.h 81d1a92fc2b4bd477af7e4e0b38b456f3e199fba
 F ext/fts5/fts5Int.h 918e947c0c20122ed5eb9ea695d83c6c8cf7239a
 F ext/fts5/fts5_aux.c d53f00f31ad615ca4f139dd8751f9041afa00971
 F ext/fts5/fts5_buffer.c 7428b0bcb257641cbecc3bacce7f40686cf99f36
-F ext/fts5/fts5_config.c d40da53f5e94214c553b2af3d6fd9aebac5f3f05
+F ext/fts5/fts5_config.c 7d19f4516cd79f1f8b58d38aa051b70195404422
 F ext/fts5/fts5_expr.c 3386ab0a71dbab7e1259c3b16d6113c97d14123e
 F ext/fts5/fts5_hash.c c1cfdb2cae0fad00b06fae38a40eaf9261563ccc
 F ext/fts5/fts5_index.c ad32235180757f182050b8d24c9dbe61056385d2
@@ -1364,7 +1364,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 360c57bbb8bad6cc84af140f61e0282fa06462b4 eaddbf296aee98ffca82adade1b0d2fbefd09d7b
-R 46e30302e9c721b7ade798b428e70680
+P 2a1af0f29e4c387721ec1fb3a2b55e8605b8401d
+R 9bc9b11118f27b38560ab00f58af8bdf
 U dan
-Z 99ffda12a690ac2d5944e0d64e334d3f
+Z 9ce0be1aae80e8832fceff3554ce4cad

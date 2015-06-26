@@ -650,6 +650,7 @@ int sqlite3Fts5Tokenize(
   void *pCtx,                     /* Context passed to xToken() */
   int (*xToken)(void*, const char*, int, int, int)    /* Callback */
 ){
+  if( pText==0 ) return SQLITE_OK;
   return pConfig->pTokApi->xTokenize(pConfig->pTok, pCtx, pText, nText, xToken);
 }
 
