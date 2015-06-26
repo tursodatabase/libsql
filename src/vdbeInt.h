@@ -279,14 +279,16 @@ struct AuxData {
 ** (Mem) which are only defined there.
 */
 struct sqlite3_context {
-  Mem *pOut;            /* The return value is stored here */
-  FuncDef *pFunc;       /* Pointer to function information */
-  Mem *pMem;            /* Memory cell used to store aggregate context */
-  Vdbe *pVdbe;          /* The VM that owns this context */
-  int iOp;              /* Instruction number of OP_Function */
-  int isError;          /* Error code returned by the function. */
-  u8 skipFlag;          /* Skip accumulator loading if true */
-  u8 fErrorOrAux;       /* isError!=0 or pVdbe->pAuxData modified */
+  Mem *pOut;              /* The return value is stored here */
+  FuncDef *pFunc;         /* Pointer to function information */
+  Mem *pMem;              /* Memory cell used to store aggregate context */
+  Vdbe *pVdbe;            /* The VM that owns this context */
+  int iOp;                /* Instruction number of OP_Function */
+  int isError;            /* Error code returned by the function. */
+  u8 skipFlag;            /* Skip accumulator loading if true */
+  u8 fErrorOrAux;         /* isError!=0 or pVdbe->pAuxData modified */
+  u8 argc;                /* Number of arguments */
+  sqlite3_value *argv[1]; /* Argument set */
 };
 
 /*

@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarning\sin\sassert\sstatement.
-D 2015-06-26T03:12:27.469
+C Cache\sthe\ssqlite3_context\sstructure\sin\sthe\sP4\soperand\sof\sVDBE\sprograms\nfor\sfaster\sSQL\sfunction\sdispatch.
+D 2015-06-26T18:16:52.781
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1063c58075b7400d93326b0eb332b48a54f53025
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -173,7 +173,7 @@ F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
 F main.mk 68f86c21505d6b66765a13c193f00a53dde6a212
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
-F mkopcodeh.awk d5e22023b5238985bb54a72d33e0ac71fe4f8a32
+F mkopcodeh.awk 0e7f04a8eb90f92259e47d80110e4e98d7ce337a
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -186,8 +186,8 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c 48e14b8aea28dc58baafe3cfcb8889c086b7744a
-F src/analyze.c d23790787f80ebed58df7774744b4cf96401498b
-F src/attach.c c38ac5a520a231d5d0308fd7f2ad95191c867bae
+F src/analyze.c f89727c36f997bd2bf6c5e546c2f51dc94e6f2a4
+F src/attach.c e944d0052b577703b9b83aac1638452ff42a8395
 F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c ff743689c4d6c5cb55ad42ed9d174b2b3e71f1e3
 F src/bitvec.c 5eb7958c3bf65210211cbcfc44eff86d0ded7c9d
@@ -202,7 +202,7 @@ F src/ctime.c 5a0b735dc95604766f5dac73973658eef782ee8b
 F src/date.c e4d50b3283696836ec1036b695ead9a19e37a5ac
 F src/dbstat.c f402e77e25089c6003d0c60b3233b9b3947d599a
 F src/delete.c 8857a6f27560718f65d43bdbec86c967ae1f8dfa
-F src/expr.c 32c836d9fa22c25371039febf074849dcefb3de9
+F src/expr.c c5c58e4d01c7ceb2266791d8d877f1b23a88e316
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c c9b63a217d86582c22121699a47f22f524608869
 F src/func.c a98ea5880dc50e9ca6dd6f57079a37b9cfcdecf1
@@ -250,7 +250,7 @@ F src/printf.c db11b5960105ee661dcac690f2ae6276e49bf251
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 2d47554370de8de6dd5be060cef9559eec315005
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c 9baeda79f93cfd180d471273a2f9c82c682a37a2
+F src/select.c 009c6138be8788449d4f911f380d99e8608040e2
 F src/shell.c 8af3cced094aebb5f57a8ad739b9dafc7867eed7
 F src/sqlite.h.in 76d2f5637eb795b6300d9dd3c3ec3632ffafd721
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
@@ -313,11 +313,11 @@ F src/update.c 487747b328b7216bb7f6af0695d6937d5c9e605f
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c a6431c92803b975b7322724a7b433e538d243539
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c 3af2d06e2b36012631dc3331957df52febdf8678
-F src/vdbe.h 90048aea1910f9df93e6044592bd4a466dc9c5e7
-F src/vdbeInt.h 20295e482121d13437f69985f77db211cdc8bac1
+F src/vdbe.c 8fde5281f304c31fd635891b3cb138e6b79ce9f5
+F src/vdbe.h 7a75045d879118b9d3af7e8b3c108f2f27c51473
+F src/vdbeInt.h 8b54e01ad0463590e7cffabce0bc36da9ee4f816
 F src/vdbeapi.c 6a0d7757987018ff6b1b81bc5293219cd26bb299
-F src/vdbeaux.c 4c82d6f686f72ea7d266d26d528a171b728626f7
+F src/vdbeaux.c 316e6bc773559d164155848f086c4b7d146f483a
 F src/vdbeblob.c 4f2e8e075d238392df98c5e03a64342465b03f90
 F src/vdbemem.c ae38a0d35ae71cf604381a887c170466ba518090
 F src/vdbesort.c f5009e7a35e3065635d8918b9a31f498a499976b
@@ -1286,7 +1286,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 015302f15e46a087ec92f3644c6741600dbf4306
-R 868fbc5146ce4734a4f8cc498ff855f9
-U mistachkin
-Z 40a758e35083225387fb9eeb28b88d0c
+P 7097716caed9d4aef49c7e766e41ea74abf5967f
+R 61b5a8d7a0dc65b1ab9c06045c3a6290
+U drh
+Z 9dd787a20069829fde828ff0d1be6044

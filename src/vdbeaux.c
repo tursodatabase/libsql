@@ -489,11 +489,6 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
     /* NOTE: Be sure to update mkopcodeh.awk when adding or removing
     ** cases from this switch! */
     switch( opcode ){
-      case OP_Function:
-      case OP_AggStep: {
-        if( pOp->p5>nMaxArgs ) nMaxArgs = pOp->p5;
-        break;
-      }
       case OP_Transaction: {
         if( pOp->p2!=0 ) p->readOnly = 0;
         /* fall thru */
@@ -737,6 +732,10 @@ static void freeP4(sqlite3 *db, int p4type, void *p4){
   if( p4 ){
     assert( db );
     switch( p4type ){
+      case P4_FUNCCTX: {
+        freeEphemeralFunction(db, ((sqlite3_context*)p4)->pFunc);
+        /* Fall through into the next case */
+      }
       case P4_REAL:
       case P4_INT64:
       case P4_DYNAMIC:
@@ -1118,6 +1117,11 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
     }
     case P4_FUNCDEF: {
       FuncDef *pDef = pOp->p4.pFunc;
+      sqlite3_snprintf(nTemp, zTemp, "%s(%d)", pDef->zName, pDef->nArg);
+      break;
+    }
+    case P4_FUNCCTX: {
+      FuncDef *pDef = pOp->p4.pCtx->pFunc;
       sqlite3_snprintf(nTemp, zTemp, "%s(%d)", pDef->zName, pDef->nArg);
       break;
     }
