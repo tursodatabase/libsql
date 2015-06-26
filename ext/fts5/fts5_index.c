@@ -3549,15 +3549,15 @@ static void fts5IndexAutomerge(
 ){
   if( p->rc==SQLITE_OK && p->pConfig->nAutomerge>0 ){
     Fts5Structure *pStruct = *ppStruct;
-    i64 nWrite;                   /* Initial value of write-counter */
+    u64 nWrite;                   /* Initial value of write-counter */
     int nWork;                    /* Number of work-quanta to perform */
     int nRem;                     /* Number of leaf pages left to write */
 
     /* Update the write-counter. While doing so, set nWork. */
     nWrite = pStruct->nWriteCounter;
-    nWork = ((nWrite + nLeaf) / p->nWorkUnit) - (nWrite / p->nWorkUnit);
+    nWork = (int)(((nWrite + nLeaf) / p->nWorkUnit) - (nWrite / p->nWorkUnit));
     pStruct->nWriteCounter += nLeaf;
-    nRem = p->nWorkUnit * nWork * pStruct->nLevel;
+    nRem = (int)(p->nWorkUnit * nWork * pStruct->nLevel);
 
     fts5IndexMerge(p, ppStruct, nRem);
   }
@@ -4552,11 +4552,11 @@ int sqlite3Fts5IndexSetCookie(Fts5Index *p, int iNew){
   int rc;                              /* Return code */
   Fts5Config *pConfig = p->pConfig;    /* Configuration object */
   u8 aCookie[4];                       /* Binary representation of iNew */
+  sqlite3_blob *pBlob = 0;
 
   assert( p->rc==SQLITE_OK );
-
   sqlite3Fts5Put32(aCookie, iNew);
-  sqlite3_blob *pBlob = 0;
+
   rc = sqlite3_blob_open(pConfig->db, pConfig->zDb, p->zDataTbl, 
       "block", FTS5_STRUCTURE_ROWID, 1, &pBlob
   );

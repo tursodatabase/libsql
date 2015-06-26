@@ -125,7 +125,7 @@ void sqlite3Fts5BufferAppendPrintf(
   }
 }
 
-char *sqlite3Fts5Mprintf(int *pRc, char *zFmt, ...){
+char *sqlite3Fts5Mprintf(int *pRc, const char *zFmt, ...){
   char *zRet = 0;
   if( *pRc==SQLITE_OK ){
     va_list ap;

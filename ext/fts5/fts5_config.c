@@ -602,7 +602,6 @@ int sqlite3Fts5ConfigDeclareVtab(Fts5Config *pConfig){
   int i;
   int rc = SQLITE_OK;
   char *zSql;
-  char *zOld;
 
   zSql = sqlite3Fts5Mprintf(&rc, "CREATE TABLE x(");
   for(i=0; zSql && i<pConfig->nCol; i++){

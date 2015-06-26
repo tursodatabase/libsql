@@ -1387,8 +1387,8 @@ static int fts5UpdateMethod(
       rc = sqlite3Fts5StorageDelete(pTab->pStorage, iDel);
     }
   }else{
-    assert( nArg>1 );
     sqlite3_value *pCmd = apVal[2 + pConfig->nCol];
+    assert( nArg>1 );
     if( SQLITE_NULL!=sqlite3_value_type(pCmd) ){
       const char *z = (const char*)sqlite3_value_text(pCmd);
       if( pConfig->eContent!=FTS5_CONTENT_NORMAL 
@@ -2224,7 +2224,7 @@ static void fts5Fts5Func(
   sqlite3_result_blob(pCtx, buf, sizeof(pGlobal), SQLITE_TRANSIENT);
 }
 
-#ifdef _WIN32_
+#ifdef _WIN32
 __declspec(dllexport)
 #endif
 int sqlite3_fts5_init(
