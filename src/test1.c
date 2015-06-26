@@ -6343,6 +6343,7 @@ static int tclLoadStaticExtensionCmd(
   extern int sqlite3_spellfix_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_totype_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_wholenumber_init(sqlite3*,char**,const sqlite3_api_routines*);
+  extern int sqlite3_fts5_init(sqlite3*,char**,const sqlite3_api_routines*);
   static const struct {
     const char *zExtName;
     int (*pInit)(sqlite3*,char**,const sqlite3_api_routines*);
@@ -6350,6 +6351,9 @@ static int tclLoadStaticExtensionCmd(
     { "amatch",                sqlite3_amatch_init               },
     { "closure",               sqlite3_closure_init              },
     { "eval",                  sqlite3_eval_init                 },
+#ifdef SQLITE_ENABLE_FTS5
+    { "fts5",                  sqlite3_fts5_init                 },
+#endif
     { "fileio",                sqlite3_fileio_init               },
     { "fuzzer",                sqlite3_fuzzer_init               },
     { "ieee754",               sqlite3_ieee_init                 },

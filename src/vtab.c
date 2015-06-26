@@ -837,8 +837,10 @@ int sqlite3VtabCallDestroy(sqlite3 *db, int iDb, const char *zTab){
 static void callFinaliser(sqlite3 *db, int offset){
   int i;
   if( db->aVTrans ){
+    VTable **aVTrans = db->aVTrans;
+    db->aVTrans = 0;
     for(i=0; i<db->nVTrans; i++){
-      VTable *pVTab = db->aVTrans[i];
+      VTable *pVTab = aVTrans[i];
       sqlite3_vtab *p = pVTab->pVtab;
       if( p ){
         int (*x)(sqlite3_vtab *);
@@ -848,9 +850,8 @@ static void callFinaliser(sqlite3 *db, int offset){
       pVTab->iSavepoint = 0;
       sqlite3VtabUnlock(pVTab);
     }
-    sqlite3DbFree(db, db->aVTrans);
+    sqlite3DbFree(db, aVTrans);
     db->nVTrans = 0;
-    db->aVTrans = 0;
   }
 }
 

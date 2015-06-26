@@ -1,0 +1,67 @@
+# 2015 Jan 13
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# This file containst tests focused on prefix indexes.
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+set testprefix fts5prefix
+
+# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE xx USING fts5(x, prefix=1);
+  INSERT INTO xx VALUES('one two three');
+  INSERT INTO xx VALUES('four five six');
+  INSERT INTO xx VALUES('seven eight nine ten');
+}
+
+do_execsql_test 1.1 {
+  SELECT rowid FROM xx WHERE xx MATCH 't*'
+} {1 3}
+
+
+#-------------------------------------------------------------------------
+# Check that prefix indexes really do index n-character prefixes, not 
+# n-byte prefixes. Use the ascii tokenizer so as not to be confused by
+# diacritic removal.
+#
+do_execsql_test 2.0 { 
+  CREATE VIRTUAL TABLE t1 USING fts5(x, tokenize = ascii, prefix = 2) 
+}
+
+do_test 2.1 {
+  foreach {rowid string} {
+    1 "\xCA\xCB\xCC\xCD"
+    2 "\u1234\u5678\u4321\u8765"
+  } {
+    execsql { INSERT INTO t1(rowid, x) VALUES($rowid, $string) }
+  }
+} {}
+
+do_execsql_test 2.2 {
+  INSERT INTO t1(t1) VALUES('integrity-check');
+}
+
+foreach {tn q res} {
+  1 "SELECT rowid FROM t1 WHERE t1 MATCH '\xCA\xCB*'" 1
+  2 "SELECT rowid FROM t1 WHERE t1 MATCH '\u1234\u5678*'" 2
+} {
+  do_execsql_test 2.3.$tn $q $res
+}
+
+
+finish_test
+

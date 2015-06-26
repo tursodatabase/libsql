@@ -1,0 +1,53 @@
+# 2014 June 17
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+set testprefix fts5eb
+
+# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+
+proc do_syntax_error_test {tn expr err} {
+  set ::se_expr $expr
+  do_catchsql_test $tn {SELECT fts5_expr($se_expr)} [list 1 $err]
+}
+
+proc do_syntax_test {tn expr res} {
+  set ::se_expr $expr
+  do_execsql_test $tn {SELECT fts5_expr($se_expr)} [list $res]
+}
+
+foreach {tn expr res} {
+  1  {abc}                           {"abc"}
+  2  {abc .}                         {"abc"}
+  3  {.}                             {}
+  4  {abc OR .}                      {"abc"}
+  5  {abc NOT .}                     {"abc"}
+  6  {abc AND .}                     {"abc"}
+  7  {. OR abc}                      {"abc"}
+  8  {. NOT abc}                     {"abc"}
+  9  {. AND abc}                     {"abc"}
+  10 {abc + . + def}                 {"abc" + "def"}
+  11 {abc . def}                     {"abc" AND "def"}
+  12 {r+e OR w}                      {"r" + "e" OR "w"}
+} {
+  do_execsql_test 1.$tn {SELECT fts5_expr($expr)} [list $res]
+}
+
+
+finish_test
+
+
+
