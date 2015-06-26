@@ -1,5 +1,5 @@
-C Remove\sunnecessary\slines\sfrom\sfts3.h\sand\smain.mk.
-D 2015-06-26T20:13:56.403
+C Merge\slatest\strunk\swith\sthis\sbranch.
+D 2015-06-26T20:14:23.171
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 285a0a234ed7610d431d91671c136098c2bd86a9
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -390,7 +390,7 @@ F src/update.c 487747b328b7216bb7f6af0695d6937d5c9e605f
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c a6431c92803b975b7322724a7b433e538d243539
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c b425feab69fb29b3cf4d40c5c8ea585bce883307
+F src/vdbe.c 3d5a78d39b15dc91ea2c11017d560a4224eb2f75
 F src/vdbe.h 7a75045d879118b9d3af7e8b3c108f2f27c51473
 F src/vdbeInt.h 8b54e01ad0463590e7cffabce0bc36da9ee4f816
 F src/vdbeapi.c 6a0d7757987018ff6b1b81bc5293219cd26bb299
@@ -1364,7 +1364,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 713239b8cf2900e8f7d97646c7f350248b4e804f
-R aa60ec33f0edbb2ca0c0b2937abf8e18
+P c1b268ced38259706674ed2fcbf842d3fbd9fb8c b6bedc2e9c2f87709673799db9401b95fdb386b0
+R 0da9483025b8e801a1ae1ccbcdc9a8a2
 U dan
-Z d664e62992da247f3e87e6811881dab7
+Z dcbee8465e533d0ab6cec1bca607aa0a
