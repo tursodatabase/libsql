@@ -1,5 +1,5 @@
-C Fix\sMakefile.in\sto\saccount\sfor\srecent\schanges.\sUpdate\sfts5\stest\sscripts\sso\sthat\sthey\sdo\snot\srun\sif\sSQLITE_ENABLE_FTS5\sis\snot\sdefined.
-D 2015-06-25T20:36:36.724
+C Remove\sfts5\sinitialization\scode\sfrom\score\sfile\smain.c.
+D 2015-06-26T16:42:17.368
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 285a0a234ed7610d431d91671c136098c2bd86a9
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -122,7 +122,7 @@ F ext/fts5/fts5_varint.c 366452037bf9a000c351374b489badc1b3541796
 F ext/fts5/fts5_vocab.c e454fa58c6d591024659a9b61eece0d708e8b575
 F ext/fts5/fts5parse.y 833db1101b78c0c47686ab1b84918e38c36e9452
 F ext/fts5/mkportersteps.tcl 5acf962d2e0074f701620bb5308155fa1e4a63ba
-F ext/fts5/test/fts5_common.tcl 407ab0852318cda22544834a09db7af265085ecb
+F ext/fts5/test/fts5_common.tcl 9553cce0757092d194307c2168d4edd100eab578
 F ext/fts5/test/fts5aa.test 0be21c89fd66b588db355a6398911fd875bdcc6c
 F ext/fts5/test/fts5ab.test 6fe3a56731d15978afbb74ae51b355fc9310f2ad
 F ext/fts5/test/fts5ac.test 0990ae7497ebaea2ab5f7fd5caedd93a71a905fc
@@ -150,7 +150,7 @@ F ext/fts5/test/fts5dlidx.test 59b80bbe34169a082c575d9c26f0a7019a7b79c1
 F ext/fts5/test/fts5doclist.test 8edb5b57e5f144030ed74ec00ef6fa4294fed79b
 F ext/fts5/test/fts5ea.test 451bb37310ee6df8ef72e4354fda5621b3b51448
 F ext/fts5/test/fts5eb.test 728a1f23f263548f5c29b29dfb851b5f2dbe723e
-F ext/fts5/test/fts5fault1.test b42d3296be8a75f557cf2cbce0d8b483fc9db45b
+F ext/fts5/test/fts5fault1.test 7a562367cb4a735b57b410dbdb62dcc8d971faec
 F ext/fts5/test/fts5fault2.test 28c36c843bb39ae855ba79827417ecc37f114341
 F ext/fts5/test/fts5fault3.test d6e9577d4312e331a913c72931bf131704efc8f3
 F ext/fts5/test/fts5fault4.test 762991d526ee67c2b374351a17248097ea38bee7
@@ -292,7 +292,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
 F src/loadext.c e722f4b832f923744788365df5fb8515c0bc8a47
-F src/main.c 37e3083001abc7a09de353186db990c2ee0ead80
+F src/main.c c0061a4f8ba86f957534be93b7026dab324f12c2
 F src/malloc.c 908c780fdddd472163c2d1b1820ae4081f01ad20
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c abe6ee469b6c5a35c7f22bfeb9c9bac664a1c987
@@ -337,7 +337,7 @@ F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c f266ad8a2892d659b74f0f50cb6a88b6e7c12179
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
 F src/tclsqlite.c 13b9c2aa725882de807377fa889682eff2a74114
-F src/test1.c a8e09b811f70184ce65012f27f30cfee7e54f268
+F src/test1.c e055ab594a48d25720ed31daa5eced1163544488
 F src/test2.c 577961fe48961b2f2e5c8b56ee50c3f459d3359d
 F src/test3.c 64d2afdd68feac1bb5e2ffb8226c8c639f798622
 F src/test4.c d168f83cc78d02e8d35567bb5630e40dcd85ac1e
@@ -1364,7 +1364,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fcd8f7ce601729dc51d880d16b97040c1be16aa2
-R d44c4485fa78076f45f58b5b04b05b9b
+P 3175220747f5d4dadd17e09fb1899dc782c90926
+R 91fd07ffaf7094308b4ec5a4e0e61dc1
 U dan
-Z cdc9c7cdbdc63c34e596c23a4d9ea399
+Z ca6474591f774c998709d70d57deb075

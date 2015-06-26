@@ -279,7 +279,7 @@ do_faultsim_test 7.0 -faults oom* -prep {
 } -body {
   sqlite3 db test.db
 } -test {
-  faultsim_test_result [list 0 {}] [list 1 {}]
+  faultsim_test_result [list 0 {}] {1 {}} {1 {initialization of fts5 failed: }}
 }
 
 #-------------------------------------------------------------------------
