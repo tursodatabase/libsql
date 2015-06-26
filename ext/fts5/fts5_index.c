@@ -1847,13 +1847,17 @@ static void fts5SegIterNext(
           fts5SegIterNextPage(p, pIter);
           pLeaf = pIter->pLeaf;
           if( pLeaf==0 ) break;
-          if( (iOff = fts5GetU16(&pLeaf->p[0])) ){
+          if( (iOff = fts5GetU16(&pLeaf->p[0])) && iOff<pLeaf->n ){
             iOff += sqlite3Fts5GetVarint(&pLeaf->p[iOff], (u64*)&pIter->iRowid);
             pIter->iLeafOffset = iOff;
           }
           else if( (iOff = fts5GetU16(&pLeaf->p[2])) ){
             pIter->iLeafOffset = iOff;
             bNewTerm = 1;
+          }
+          if( iOff>=pLeaf->n ){
+            p->rc = FTS5_CORRUPT;
+            return;
           }
         }
       }
@@ -2025,6 +2029,7 @@ static void fts5SegIterSeekInit(
   int h;
   int bGe = (flags & FTS5INDEX_QUERY_SCAN);
   int bDlidx = 0;                 /* True if there is a doclist-index */
+  Fts5Data *pLeaf;
 
   assert( bGe==0 || (flags & FTS5INDEX_QUERY_DESC)==0 );
   assert( pTerm && nTerm );
@@ -2063,21 +2068,25 @@ static void fts5SegIterSeekInit(
   pIter->iLeafPgno = iPg - 1;
   fts5SegIterNextPage(p, pIter);
 
-  if( pIter->pLeaf ){
+  if( (pLeaf = pIter->pLeaf) ){
     int res;
-    pIter->iLeafOffset = fts5GetU16(&pIter->pLeaf->p[2]);
-    fts5SegIterLoadTerm(p, pIter, 0);
-    fts5SegIterLoadNPos(p, pIter);
-    do {
-      res = fts5BufferCompareBlob(&pIter->term, pTerm, nTerm);
-      if( res>=0 ) break;
-      fts5SegIterNext(p, pIter, 0);
-    }while( pIter->pLeaf && p->rc==SQLITE_OK );
+    pIter->iLeafOffset = fts5GetU16(&pLeaf->p[2]);
+    if( pIter->iLeafOffset<4 || pIter->iLeafOffset>=pLeaf->n ){
+      p->rc = FTS5_CORRUPT;
+    }else{
+      fts5SegIterLoadTerm(p, pIter, 0);
+      fts5SegIterLoadNPos(p, pIter);
+      do {
+        res = fts5BufferCompareBlob(&pIter->term, pTerm, nTerm);
+        if( res>=0 ) break;
+        fts5SegIterNext(p, pIter, 0);
+      }while( pIter->pLeaf && p->rc==SQLITE_OK );
 
-    if( bGe==0 && res ){
-      /* Set iterator to point to EOF */
-      fts5DataRelease(pIter->pLeaf);
-      pIter->pLeaf = 0;
+      if( bGe==0 && res ){
+        /* Set iterator to point to EOF */
+        fts5DataRelease(pIter->pLeaf);
+        pIter->pLeaf = 0;
+      }
     }
   }
 
@@ -2525,7 +2534,7 @@ static void fts5MultiIterNew(
   int nSegment,                   /* Number of segments to merge (iLevel>=0) */
   Fts5MultiSegIter **ppOut        /* New object */
 ){
-  int nSeg;                       /* Number of segment-iters in use */
+  int nSeg = 0;                   /* Number of segment-iters in use */
   int iIter = 0;                  /* */
   int iSeg;                       /* Used to iterate through segments */
   Fts5StructureLevel *pLvl;
@@ -4928,8 +4937,12 @@ static void fts5IndexIntegrityCheckSegment(
         if( pLeaf ){
           i64 iRowid;
           int iRowidOff = fts5GetU16(&pLeaf->p[0]);
-          fts5GetVarint(&pLeaf->p[iRowidOff], (u64*)&iRowid);
-          if( iRowid!=fts5DlidxIterRowid(pDlidx) ) p->rc = FTS5_CORRUPT;
+          if( iRowidOff>=pLeaf->n ){
+            p->rc = FTS5_CORRUPT;
+          }else{
+            fts5GetVarint(&pLeaf->p[iRowidOff], (u64*)&iRowid);
+            if( iRowid!=fts5DlidxIterRowid(pDlidx) ) p->rc = FTS5_CORRUPT;
+          }
           fts5DataRelease(pLeaf);
         }
       }
