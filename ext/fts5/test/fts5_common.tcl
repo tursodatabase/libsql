@@ -15,8 +15,11 @@ if {![info exists testdir]} {
 }
 source $testdir/tester.tcl
 
-
-catch { sqlite3_fts5_may_be_corrupt 0 }
+catch { 
+  sqlite3_fts5_may_be_corrupt 0 
+  append G(perm:dbconfig) "; load_static_extension \$::dbhandle fts5"
+  reset_db
+}
 
 proc fts5_test_poslist {cmd} {
   set res [list]

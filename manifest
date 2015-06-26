@@ -1,9 +1,9 @@
-C Add\sFTS5\sDLL\starget\sfor\sMSVC.
-D 2015-06-26T16:17:36.812
+C Merge\supstream\schanges.\s\sGet\sthe\stest\sfixture\sworking\swith\sFTS5.\s\sFix\scompiler\swarnings.
+D 2015-06-26T16:55:55.630
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 285a0a234ed7610d431d91671c136098c2bd86a9
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 5dff3f360037c7c924512973d13aa1051ba1fea6
+F Makefile.msc de7668a4f537f91bdb185e7194a798b1d59f101f
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION ce0ae95abd7121c534f6917c1c8f2b70d9acd4db
@@ -112,17 +112,17 @@ F ext/fts5/fts5_buffer.c 7428b0bcb257641cbecc3bacce7f40686cf99f36
 F ext/fts5/fts5_config.c d40da53f5e94214c553b2af3d6fd9aebac5f3f05
 F ext/fts5/fts5_expr.c 3386ab0a71dbab7e1259c3b16d6113c97d14123e
 F ext/fts5/fts5_hash.c c1cfdb2cae0fad00b06fae38a40eaf9261563ccc
-F ext/fts5/fts5_index.c 11dbb41cd9f1acbf6beb5c959b913e1be91dabc4
+F ext/fts5/fts5_index.c 0c5a5218eb9fddd65c7d5bbad72c383d102c9648
 F ext/fts5/fts5_main.c c5b2a219d65967c07fd1bc8fd45206863a2fe360
 F ext/fts5/fts5_storage.c 3e672a0d35f63979556903861b324e7b8932cecc
-F ext/fts5/fts5_tcl.c 7ea165878e4ae3598e89acd470a0ee1b5a00e33c
+F ext/fts5/fts5_tcl.c b82f13f73a30f0959f539743f8818bece994a970
 F ext/fts5/fts5_tokenize.c 97251d68d7a6a9415bde1203f9382864dfc1f989
 F ext/fts5/fts5_unicode2.c da3cf712f05cd8347c8c5bc00964cc0361c88da9
 F ext/fts5/fts5_varint.c 366452037bf9a000c351374b489badc1b3541796
 F ext/fts5/fts5_vocab.c e454fa58c6d591024659a9b61eece0d708e8b575
 F ext/fts5/fts5parse.y 833db1101b78c0c47686ab1b84918e38c36e9452
 F ext/fts5/mkportersteps.tcl 5acf962d2e0074f701620bb5308155fa1e4a63ba
-F ext/fts5/test/fts5_common.tcl 407ab0852318cda22544834a09db7af265085ecb
+F ext/fts5/test/fts5_common.tcl 9553cce0757092d194307c2168d4edd100eab578
 F ext/fts5/test/fts5aa.test 0be21c89fd66b588db355a6398911fd875bdcc6c
 F ext/fts5/test/fts5ab.test 6fe3a56731d15978afbb74ae51b355fc9310f2ad
 F ext/fts5/test/fts5ac.test 0990ae7497ebaea2ab5f7fd5caedd93a71a905fc
@@ -150,7 +150,7 @@ F ext/fts5/test/fts5dlidx.test 59b80bbe34169a082c575d9c26f0a7019a7b79c1
 F ext/fts5/test/fts5doclist.test 8edb5b57e5f144030ed74ec00ef6fa4294fed79b
 F ext/fts5/test/fts5ea.test 451bb37310ee6df8ef72e4354fda5621b3b51448
 F ext/fts5/test/fts5eb.test 728a1f23f263548f5c29b29dfb851b5f2dbe723e
-F ext/fts5/test/fts5fault1.test b42d3296be8a75f557cf2cbce0d8b483fc9db45b
+F ext/fts5/test/fts5fault1.test 7a562367cb4a735b57b410dbdb62dcc8d971faec
 F ext/fts5/test/fts5fault2.test 28c36c843bb39ae855ba79827417ecc37f114341
 F ext/fts5/test/fts5fault3.test d6e9577d4312e331a913c72931bf131704efc8f3
 F ext/fts5/test/fts5fault4.test 762991d526ee67c2b374351a17248097ea38bee7
@@ -292,7 +292,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 7274c97d24bb46631e504332ccd3bd1b37841770
 F src/loadext.c e722f4b832f923744788365df5fb8515c0bc8a47
-F src/main.c 37e3083001abc7a09de353186db990c2ee0ead80
+F src/main.c c0061a4f8ba86f957534be93b7026dab324f12c2
 F src/malloc.c 908c780fdddd472163c2d1b1820ae4081f01ad20
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c abe6ee469b6c5a35c7f22bfeb9c9bac664a1c987
@@ -337,7 +337,7 @@ F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c f266ad8a2892d659b74f0f50cb6a88b6e7c12179
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
 F src/tclsqlite.c 13b9c2aa725882de807377fa889682eff2a74114
-F src/test1.c a8e09b811f70184ce65012f27f30cfee7e54f268
+F src/test1.c e055ab594a48d25720ed31daa5eced1163544488
 F src/test2.c 577961fe48961b2f2e5c8b56ee50c3f459d3359d
 F src/test3.c 64d2afdd68feac1bb5e2ffb8226c8c639f798622
 F src/test4.c d168f83cc78d02e8d35567bb5630e40dcd85ac1e
@@ -1364,7 +1364,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ef2052f81e33ca98e85a60f8a78cdd19a7c1c35c
-R 16ac75ae29a449789b1f8e90f4493086
+P be85b82499f63dce4378f29adf8366651e965325 c91a93b343b4d3b1a19afdb5d23d1c508f9779d2
+R 297861c6724b6a9194bdf2ab25858763
 U mistachkin
-Z 20765b1a5df4a09bb1c9c2fbe7adccb1
+Z 93e72613bfe7ab9055e0a552e03ca93f
