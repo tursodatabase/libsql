@@ -1549,7 +1549,7 @@ case OP_CollSeq: {
 /* Opcode: Function0 P1 P2 P3 P4 P5
 ** Synopsis: r[P3]=func(r[P2@P5])
 **
-** Invoke a user function (P4 is a pointer to a Function structure that
+** Invoke a user function (P4 is a pointer to a FuncDef object that
 ** defines the function) with P5 arguments taken from register P2 and
 ** successors.  The result of the function is stored in register P3.
 ** Register P3 must not be one of the function inputs.
@@ -1579,7 +1579,7 @@ case OP_CollSeq: {
 ** invocation of this opcode.
 **
 ** SQL functions are initially coded as OP_Function0 with P4 pointing
-** to the function itself.  But on first evaluation, the P4 operand is
+** to a FuncDef object.  But on first evaluation, the P4 operand is
 ** automatically converted into an sqlite3_context object and the operation
 ** changed to this OP_Function opcode.  In this way, the initialization of
 ** the sqlite3_context object occurs only once, rather than once for each
@@ -1619,8 +1619,9 @@ case OP_Function: {
   ** might change from one evaluation to the next.  The next block of code
   ** checks to see if the register array has changed, and if so it
   ** reinitializes the relavant parts of the sqlite3_context object */
-  if( pCtx->pOut != &aMem[pOp->p3] ){
-    pCtx->pOut = &aMem[pOp->p3];
+  pOut = &aMem[pOp->p3];
+  if( pCtx->pOut != pOut ){
+    pCtx->pOut = pOut;
     for(i=pCtx->argc-1; i>=0; i--) pCtx->argv[i] = &aMem[pOp->p2+i];
   }
 
@@ -1643,13 +1644,13 @@ case OP_Function: {
       sqlite3VdbeError(p, "%s", sqlite3_value_text(pCtx->pOut));
       rc = pCtx->isError;
     }
-    sqlite3VdbeDeleteAuxData(p, (int)(pOp - aOp), pOp->p1);
+    sqlite3VdbeDeleteAuxData(p, pCtx->iOp, pOp->p1);
   }
 
   /* Copy the result of the function into register P3 */
-  sqlite3VdbeChangeEncoding(pCtx->pOut, encoding);
-  if( sqlite3VdbeMemTooBig(pCtx->pOut) ){
-    goto too_big;
+  if( pOut->flags & (MEM_Str|MEM_Blob) ){
+    sqlite3VdbeChangeEncoding(pCtx->pOut, encoding);
+    if( sqlite3VdbeMemTooBig(pCtx->pOut) ) goto too_big;
   }
 
   REGISTER_TRACE(pOp->p3, pCtx->pOut);
@@ -5737,16 +5738,33 @@ case OP_JumpZeroIncr: {        /* jump, in1 */
   break;
 }
 
-/* Opcode: AggStep * P2 P3 P4 P5
+/* Opcode: AggStep0 * P2 P3 P4 P5
 ** Synopsis: accum=r[P3] step(r[P2@P5])
 **
 ** Execute the step function for an aggregate.  The
 ** function has P5 arguments.   P4 is a pointer to the FuncDef
-** structure that specifies the function.  Use register
-** P3 as the accumulator.
+** structure that specifies the function.  Register P3 is the
+** accumulator.
 **
 ** The P5 arguments are taken from register P2 and its
 ** successors.
+*/
+/* Opcode: AggStep * P2 P3 P4 P5
+** Synopsis: accum=r[P3] step(r[P2@P5])
+**
+** Execute the step function for an aggregate.  The
+** function has P5 arguments.   P4 is a pointer to an sqlite3_context
+** object that is used to run the function.  Register P3 is
+** as the accumulator.
+**
+** The P5 arguments are taken from register P2 and its
+** successors.
+**
+** This opcode is initially coded as OP_AggStep0.  On first evaluation,
+** the FuncDef stored in P4 is converted into an sqlite3_context and
+** the opcode is changed.  In this way, the initialization of the
+** sqlite3_context only happens once, instead of on each call to the
+** step function.
 */
 case OP_AggStep0: {
   int n;

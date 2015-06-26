@@ -1120,11 +1120,13 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
       sqlite3_snprintf(nTemp, zTemp, "%s(%d)", pDef->zName, pDef->nArg);
       break;
     }
+#ifdef SQLITE_DEBUG
     case P4_FUNCCTX: {
       FuncDef *pDef = pOp->p4.pCtx->pFunc;
       sqlite3_snprintf(nTemp, zTemp, "%s(%d)", pDef->zName, pDef->nArg);
       break;
     }
+#endif
     case P4_INT64: {
       sqlite3_snprintf(nTemp, zTemp, "%lld", *pOp->p4.pI64);
       break;
