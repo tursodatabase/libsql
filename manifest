@@ -1,5 +1,5 @@
-C Simplify\sthe\spcache\sby\snot\skeeping\scontinuous\strack\sof\spage\s1\sbut\sinstead\njust\sloading\spage\s1\son\sthe\srare\soccasions\swhen\sit\sis\sactually\sneeded.
-D 2015-06-26T02:41:31.913
+C Fix\sharmless\scompiler\swarning\sin\sassert\sstatement.
+D 2015-06-26T03:12:27.469
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1063c58075b7400d93326b0eb332b48a54f53025
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -192,7 +192,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c ff743689c4d6c5cb55ad42ed9d174b2b3e71f1e3
 F src/bitvec.c 5eb7958c3bf65210211cbcfc44eff86d0ded7c9d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c 40e98c10725c2cec5429068e21c17924f4bf06cc
+F src/btree.c c113f73fc4048038529cc30ed7147b24c34c2c5d
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h fdd1aff02fb2a63812bd95716e7f579fc3759107
 F src/build.c b3f15255d5b16e42dafeaa638fd4f8a47c94ed70
@@ -1286,7 +1286,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8d79f3a1443391bee204bb8c49240f44477168db
-R c56e8779f6e8f4f9de88fc3a0bf56b01
-U drh
-Z 87d94359f0bb80945f07f56dd11de5b2
+P 015302f15e46a087ec92f3644c6741600dbf4306
+R 868fbc5146ce4734a4f8cc498ff855f9
+U mistachkin
+Z 40a758e35083225387fb9eeb28b88d0c
