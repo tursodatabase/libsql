@@ -47,7 +47,6 @@
 TCCX =  $(TCC) $(OPTS) -I. -I$(TOP)/src -I$(TOP) 
 TCCX += -I$(TOP)/ext/rtree -I$(TOP)/ext/icu -I$(TOP)/ext/fts3
 TCCX += -I$(TOP)/ext/async -I$(TOP)/ext/userauth
-TCCX += -I$(TOP)/ext/fts5
 
 # Object files for the SQLite library.
 #

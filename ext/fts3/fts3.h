@@ -20,7 +20,6 @@ extern "C" {
 #endif  /* __cplusplus */
 
 int sqlite3Fts3Init(sqlite3 *db);
-int sqlite3Fts5Init(sqlite3 *db);
 
 #ifdef __cplusplus
 }  /* extern "C" */

@@ -1,5 +1,5 @@
-C Fix\sa\ssegfault\sthat\scould\sfollow\san\sOOM\serror\sin\sfts5.
-D 2015-06-26T20:08:25.582
+C Remove\sunnecessary\slines\sfrom\sfts3.h\sand\smain.mk.
+D 2015-06-26T20:13:56.403
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 285a0a234ed7610d431d91671c136098c2bd86a9
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -79,7 +79,7 @@ F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
 F ext/fts3/fts3.c a95de5190cf52f4fa9d5952890399cab63e632b9
-F ext/fts3/fts3.h 62a77d880cf06a2865052726f8325c8fabcecad7
+F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 601743955ac43a0e82e6828a931c07bb3b0c95ff
 F ext/fts3/fts3_aux.c 9edc3655fcb287f0467d0a4b886a01c6185fe9f1
 F ext/fts3/fts3_expr.c 71c063da9c2a4167fb54aec089dd5ef33a58c9cb
@@ -248,7 +248,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk d585680c45db1f68ec5ef88199fb10694d117e17
+F main.mk 934da670dac2fe2b40986a83741cec770c91fdc0
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
 F mkopcodeh.awk 0e7f04a8eb90f92259e47d80110e4e98d7ce337a
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
@@ -1364,7 +1364,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2a1af0f29e4c387721ec1fb3a2b55e8605b8401d
-R 9bc9b11118f27b38560ab00f58af8bdf
+P 713239b8cf2900e8f7d97646c7f350248b4e804f
+R aa60ec33f0edbb2ca0c0b2937abf8e18
 U dan
-Z 9ce0be1aae80e8832fceff3554ce4cad
+Z d664e62992da247f3e87e6811881dab7
