@@ -620,7 +620,7 @@ static int saveCursorPosition(BtCursor *pCur){
   ** table, then malloc space for and store the pCur->nKey bytes of key 
   ** data.
   */
-  if( 0==pCur->apPage[0]->intKey ){
+  if( 0==pCur->curIntKey ){
     void *pKey = sqlite3Malloc( pCur->nKey );
     if( pKey ){
       rc = sqlite3BtreeKey(pCur, 0, (int)pCur->nKey, pKey);
@@ -633,7 +633,7 @@ static int saveCursorPosition(BtCursor *pCur){
       rc = SQLITE_NOMEM;
     }
   }
-  assert( !pCur->apPage[0]->intKey || !pCur->pKey );
+  assert( !pCur->curIntKey || !pCur->pKey );
 
   if( rc==SQLITE_OK ){
     btreeReleaseAllCursorPages(pCur);
@@ -4987,7 +4987,7 @@ int sqlite3BtreeMovetoUnpacked(
   /* If the cursor is already positioned at the point we are trying
   ** to move to, then just return without doing any work */
   if( pCur->eState==CURSOR_VALID && (pCur->curFlags & BTCF_ValidNKey)!=0
-   && pCur->apPage[0]->intKey 
+   && pCur->curIntKey 
   ){
     if( pCur->info.nKey==intKey ){
       *pRes = 0;
@@ -5022,7 +5022,8 @@ int sqlite3BtreeMovetoUnpacked(
     assert( pCur->pgnoRoot==0 || pCur->apPage[pCur->iPage]->nCell==0 );
     return SQLITE_OK;
   }
-  assert( pCur->apPage[0]->intKey || pIdxKey );
+  assert( pCur->apPage[0]->intKey==pCur->curIntKey );
+  assert( pCur->curIntKey || pIdxKey );
   for(;;){
     int lwr, upr, idx, c;
     Pgno chldPg;
