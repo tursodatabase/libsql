@@ -954,10 +954,16 @@ static int ptrmapGet(BtShared *pBt, Pgno key, u8 *pEType, Pgno *pPgno){
 ** the page, 1 means the second cell, and so forth) return a pointer
 ** to the cell content.
 **
+** findCellPastPtr() does the same except it skips past the initial
+** 4-byte child pointer found on interior pages, if there is one.
+**
 ** This routine works only for pages that do not contain overflow cells.
 */
 #define findCell(P,I) \
   ((P)->aData + ((P)->maskPage & get2byte(&(P)->aCellIdx[2*(I)])))
+#define findCellPastPtr(P,I) \
+  ((P)->aDataOfst + ((P)->maskPage & get2byte(&(P)->aCellIdx[2*(I)])))
+
 
 /*
 ** This is common tail processing for btreeParseCellPtr() and
@@ -1703,6 +1709,7 @@ static int btreeInitPage(MemPage *pPage){
     pPage->cellOffset = cellOffset = hdr + 8 + pPage->childPtrSize;
     pPage->aDataEnd = &data[usableSize];
     pPage->aCellIdx = &data[cellOffset];
+    pPage->aDataOfst = &data[pPage->childPtrSize];
     /* EVIDENCE-OF: R-58015-48175 The two-byte integer at offset 5 designates
     ** the start of the cell content area. A zero value for this integer is
     ** interpreted as 65536. */
@@ -1822,6 +1829,7 @@ static void zeroPage(MemPage *pPage, int flags){
   pPage->cellOffset = first;
   pPage->aDataEnd = &data[pBt->usableSize];
   pPage->aCellIdx = &data[first];
+  pPage->aDataOfst = &data[pPage->childPtrSize];
   pPage->nOverflow = 0;
   assert( pBt->pageSize>=512 && pBt->pageSize<=65536 );
   pPage->maskPage = (u16)(pBt->pageSize - 1);
@@ -5014,7 +5022,7 @@ int sqlite3BtreeMovetoUnpacked(
     if( xRecordCompare==0 ){
       for(;;){
         i64 nCellKey;
-        pCell = findCell(pPage, idx) + pPage->childPtrSize;
+        pCell = findCellPastPtr(pPage, idx);
         if( pPage->intKeyLeaf ){
           while( 0x80 <= *(pCell++) ){
             if( pCell>=pPage->aDataEnd ) return SQLITE_CORRUPT_BKPT;
@@ -5047,7 +5055,7 @@ int sqlite3BtreeMovetoUnpacked(
     }else{
       for(;;){
         int nCell;  /* Size of the pCell cell in bytes */
-        pCell = findCell(pPage, idx) + pPage->childPtrSize;
+        pCell = findCellPastPtr(pPage, idx);
 
         /* The maximum supported page-size is 65536 bytes. This means that
         ** the maximum number of record bytes stored on an index B-Tree
