@@ -1,5 +1,5 @@
-C Add\sreleasePageNotNull()\sas\san\salternative\sto\sreleasePage()\swhen\sthe\sargument\nis\sguaranteed\sto\sbe\snon-NULL,\sand\suse\sit\sfor\sa\ssmall\sperformance\sgain.
-D 2015-06-27T14:59:26.791
+C Manually\sinline\sthe\scall\sfrom\sgetAndInitPage()\sto\sbtreeGetPage()\sfor\sa\nsavings\sof\s2.5\smillion\scycles\sat\sa\scost\sof\sless\sthan\s100\sbytes.
+D 2015-06-27T15:51:06.913
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 285a0a234ed7610d431d91671c136098c2bd86a9
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -269,7 +269,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c ff743689c4d6c5cb55ad42ed9d174b2b3e71f1e3
 F src/bitvec.c 5eb7958c3bf65210211cbcfc44eff86d0ded7c9d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c bcd36697aeef08a27603e1c3b49cba947dc989ff
+F src/btree.c be03b25d28cf714e81a825e60f7abcd8825e9b4e
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 426d1e0d1a15d06b3ad2304f4bedc5bb71e5b4a2
 F src/build.c b3f15255d5b16e42dafeaa638fd4f8a47c94ed70
@@ -1364,7 +1364,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P bee94dc3510745ba2efa044e8f3299793cfc7e34
-R 94fda06abca767c903bae476355c8d33
+P 9383a688701ac2c366a308efc287c9c0f8977d4e
+R 16848ebaab74906a500d4e5002f1b1ec
 U drh
-Z 5cbb493cc80b630214e6dea5f8f50f0d
+Z a8b43d2118aa53b4955ba2ebec95dffb

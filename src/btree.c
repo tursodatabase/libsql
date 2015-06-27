@@ -1848,7 +1848,7 @@ static MemPage *btreePageFromDbPage(DbPage *pDbPage, Pgno pgno, BtShared *pBt){
   pPage->pDbPage = pDbPage;
   pPage->pBt = pBt;
   pPage->pgno = pgno;
-  pPage->hdrOffset = pPage->pgno==1 ? 100 : 0;
+  pPage->hdrOffset = pgno==1 ? 100 : 0;
   return pPage; 
 }
 
@@ -1929,8 +1929,11 @@ static int getAndInitPage(
   if( pgno>btreePagecount(pBt) ){
     rc = SQLITE_CORRUPT_BKPT;
   }else{
-    rc = btreeGetPage(pBt, pgno, ppPage, bReadonly);
-    if( rc==SQLITE_OK && (*ppPage)->isInit==0 ){
+    DbPage *pDbPage;
+    rc = sqlite3PagerAcquire(pBt->pPager, pgno, (DbPage**)&pDbPage, bReadonly);
+    if( rc ) return rc;
+    *ppPage = btreePageFromDbPage(pDbPage, pgno, pBt);
+    if( (*ppPage)->isInit==0 ){
       rc = btreeInitPage(*ppPage);
       if( rc!=SQLITE_OK ){
         releasePage(*ppPage);
