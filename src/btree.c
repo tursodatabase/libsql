@@ -1955,7 +1955,7 @@ static int getAndInitPage(
   /* If obtaining a child page for a cursor, we must verify that the page is
   ** compatible with the root page. */
   if( pCur
-   && ((*ppPage)->nCell<1 || (*ppPage)->intKey!=pCur->apPage[0]->intKey)
+   && ((*ppPage)->nCell<1 || (*ppPage)->intKey!=pCur->curIntKey)
   ){
     rc = SQLITE_CORRUPT_BKPT;
     releasePage(*ppPage);
@@ -4784,6 +4784,7 @@ static int moveToRoot(BtCursor *pCur){
       return rc;
     }
     pCur->iPage = 0;
+    pCur->curIntKey = pCur->apPage[0]->intKey;
   }
   pRoot = pCur->apPage[0];
   assert( pRoot->pgno==pCur->pgnoRoot );

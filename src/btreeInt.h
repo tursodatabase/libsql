@@ -508,7 +508,6 @@ struct BtCursor {
   Btree *pBtree;            /* The Btree to which this cursor belongs */
   BtShared *pBt;            /* The BtShared this cursor points to */
   BtCursor *pNext, *pPrev;  /* Forms a linked list of all cursors */
-  struct KeyInfo *pKeyInfo; /* Argument passed to comparison function */
   Pgno *aOverflow;          /* Cache of overflow page locations */
   CellInfo info;            /* A parse of the cell we are pointing at */
   i64 nKey;                 /* Size of pKey, or last integer key */
@@ -520,8 +519,13 @@ struct BtCursor {
   u8 curFlags;              /* zero or more BTCF_* flags defined below */
   u8 curPagerFlags;         /* Flags to send to sqlite3PagerAcquire() */
   u8 eState;                /* One of the CURSOR_XXX constants (see below) */
-  u8 hints;                             /* As configured by CursorSetHints() */
-  i16 iPage;                            /* Index of current page in apPage */
+  u8 hints;                 /* As configured by CursorSetHints() */
+  /* All fields above are zeroed when the cursor is allocated.  See
+  ** sqlite3BtreeCursorZero().  Fields that follow must be manually
+  ** initialized. */
+  i8 iPage;                 /* Index of current page in apPage */
+  u8 curIntKey;             /* Value of apPage[0]->intKey */
+  struct KeyInfo *pKeyInfo; /* Argument passed to comparison function */
   u16 aiIdx[BTCURSOR_MAX_DEPTH];        /* Current index in apPage[i] */
   MemPage *apPage[BTCURSOR_MAX_DEPTH];  /* Pages from root to current page */
 };
