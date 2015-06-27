@@ -1947,16 +1947,17 @@ static int getAndInitPage(
 ** Release a MemPage.  This should be called once for each prior
 ** call to btreeGetPage.
 */
+static void releasePageNotNull(MemPage *pPage){
+  assert( pPage->aData );
+  assert( pPage->pBt );
+  assert( pPage->pDbPage!=0 );
+  assert( sqlite3PagerGetExtra(pPage->pDbPage) == (void*)pPage );
+  assert( sqlite3PagerGetData(pPage->pDbPage)==pPage->aData );
+  assert( sqlite3_mutex_held(pPage->pBt->mutex) );
+  sqlite3PagerUnrefNotNull(pPage->pDbPage);
+}
 static void releasePage(MemPage *pPage){
-  if( pPage ){
-    assert( pPage->aData );
-    assert( pPage->pBt );
-    assert( pPage->pDbPage!=0 );
-    assert( sqlite3PagerGetExtra(pPage->pDbPage) == (void*)pPage );
-    assert( sqlite3PagerGetData(pPage->pDbPage)==pPage->aData );
-    assert( sqlite3_mutex_held(pPage->pBt->mutex) );
-    sqlite3PagerUnrefNotNull(pPage->pDbPage);
-  }
+  if( pPage ) releasePageNotNull(pPage);
 }
 
 /*
@@ -2931,7 +2932,7 @@ static void unlockBtreeIfUnused(BtShared *pBt){
     assert( pPage1->aData );
     assert( sqlite3PagerRefcount(pBt->pPager)==1 );
     pBt->pPage1 = 0;
-    releasePage(pPage1);
+    releasePageNotNull(pPage1);
   }
 }
 
@@ -4705,11 +4706,9 @@ static void moveToParent(BtCursor *pCur){
     pCur->apPage[pCur->iPage]->pgno
   );
   testcase( pCur->aiIdx[pCur->iPage-1] > pCur->apPage[pCur->iPage-1]->nCell );
-
-  releasePage(pCur->apPage[pCur->iPage]);
-  pCur->iPage--;
   pCur->info.nSize = 0;
   pCur->curFlags &= ~(BTCF_ValidNKey|BTCF_ValidOvfl);
+  releasePageNotNull(pCur->apPage[pCur->iPage--]);
 }
 
 /*
@@ -4750,7 +4749,10 @@ static int moveToRoot(BtCursor *pCur){
   }
 
   if( pCur->iPage>=0 ){
-    while( pCur->iPage ) releasePage(pCur->apPage[pCur->iPage--]);
+    while( pCur->iPage ){
+      assert( pCur->apPage[pCur->iPage]!=0 );
+      releasePageNotNull(pCur->apPage[pCur->iPage--]);
+    }
   }else if( pCur->pgnoRoot==0 ){
     pCur->eState = CURSOR_INVALID;
     return SQLITE_OK;
