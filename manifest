@@ -1,5 +1,5 @@
-C Performance\simprovements\sin\smoveToChild()\sby\sshifting\ssome\swork\sover\nto\sgetAndInitPage().\s\sNet\simprovement\sis\sabout\s800K\scycles\sat\scost\sof\s30\sbytes.
-D 2015-06-27T19:45:03.070
+C Enhancements\sto\sthe\sprevious\scheck-in\sto\smake\sit\sa\slittle\ssmaller\sand\sfaster.
+D 2015-06-27T20:55:00.648
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 285a0a234ed7610d431d91671c136098c2bd86a9
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -269,7 +269,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c ff743689c4d6c5cb55ad42ed9d174b2b3e71f1e3
 F src/bitvec.c 5eb7958c3bf65210211cbcfc44eff86d0ded7c9d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c b1ba9f65eba193ecae9519be29cce63bc1daef4c
+F src/btree.c a6b0259834076783c7a22a0963bd91abcf27ef0f
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 30f611b87ff873f47a28ce0bf66dd778c3274d9a
 F src/build.c b3f15255d5b16e42dafeaa638fd4f8a47c94ed70
@@ -1364,7 +1364,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7f65b96b4017413bd19624570efe8fb2b0f7b991
-R 4df1944eb9c633cad9fdc689344e2d7e
+P 1956a4ce8eca650d98a7f68fd2d82eb8a3d6069f
+R 72a9a3c8bf73162e5f9bead1ad9abb3a
 U drh
-Z 093d236679649777c7df295c5a4c84ba
+Z d1566e69624f823fa39952a25235aa04

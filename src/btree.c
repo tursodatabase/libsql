@@ -1911,8 +1911,9 @@ u32 sqlite3BtreeLastPage(Btree *p){
 /*
 ** Get a page from the pager and initialize it.
 **
-** If pCur!=0 then the page acquired will be added to that cursor.
-** If the fetch fails, this routine must decrement pCur->iPage.
+** If pCur!=0 then the page is being fetched as part of a moveToChild()
+** call.  Do additional sanity checking on the page in this case.
+** And if the fetch fails, this routine must decrement pCur->iPage.
 **
 ** The page is fetched as read-write unless pCur is not NULL and is
 ** a read-only cursor.
@@ -1932,6 +1933,7 @@ static int getAndInitPage(
   assert( sqlite3_mutex_held(pBt->mutex) );
   assert( pCur==0 || ppPage==&pCur->apPage[pCur->iPage] );
   assert( pCur==0 || bReadOnly==pCur->curPagerFlags );
+  assert( pCur==0 || pCur->iPage>0 );
 
   if( pgno>btreePagecount(pBt) ){
     rc = SQLITE_CORRUPT_BKPT;
@@ -1950,9 +1952,9 @@ static int getAndInitPage(
     }
   }
 
-  /* If obtaining a page for a cursor, we must verify that the page is
-  ** compatible with the cursor */
-  if( pCur && pCur->iPage>0
+  /* If obtaining a child page for a cursor, we must verify that the page is
+  ** compatible with the root page. */
+  if( pCur
    && ((*ppPage)->nCell<1 || (*ppPage)->intKey!=pCur->apPage[0]->intKey)
   ){
     rc = SQLITE_CORRUPT_BKPT;
@@ -4775,9 +4777,8 @@ static int moveToRoot(BtCursor *pCur){
     return SQLITE_OK;
   }else{
     assert( pCur->iPage==(-1) );
-    pCur->iPage = 0;
     rc = getAndInitPage(pCur->pBtree->pBt, pCur->pgnoRoot, &pCur->apPage[0],
-                        pCur, pCur->curPagerFlags);
+                        0, pCur->curPagerFlags);
     if( rc!=SQLITE_OK ){
       pCur->eState = CURSOR_INVALID;
       return rc;
