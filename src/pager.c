@@ -5131,7 +5131,7 @@ int sqlite3PagerSharedLock(Pager *pPager){
       ** occurring on the very first access to a file, in order to save a
       ** single unnecessary sqlite3OsRead() call at the start-up.
       **
-      ** Database changes is detected by looking at 15 bytes beginning
+      ** Database changes are detected by looking at 15 bytes beginning
       ** at offset 24 into the file.  The first 4 of these 16 bytes are
       ** a 32-bit counter that is incremented with each change.  The
       ** other bytes change randomly with each file change when
@@ -5352,10 +5352,11 @@ int sqlite3PagerAcquire(
     pPg = 0;
     goto pager_acquire_err;
   }
-  assert( (*ppPage)->pgno==pgno );
-  assert( (*ppPage)->pPager==pPager || (*ppPage)->pPager==0 );
+  assert( pPg==(*ppPage) );
+  assert( pPg->pgno==pgno );
+  assert( pPg->pPager==pPager || pPg->pPager==0 );
 
-  if( (*ppPage)->pPager && !noContent ){
+  if( pPg->pPager && !noContent ){
     /* In this case the pcache already contains an initialized copy of
     ** the page. Return without further ado.  */
     assert( pgno<=PAGER_MAX_PGNO && pgno!=PAGER_MJ_PGNO(pPager) );
@@ -5366,7 +5367,6 @@ int sqlite3PagerAcquire(
     /* The pager cache has created a new page. Its content needs to 
     ** be initialized.  */
 
-    pPg = *ppPage;
     pPg->pPager = pPager;
 
     /* The maximum page number is 2^31. Return SQLITE_CORRUPT if a page

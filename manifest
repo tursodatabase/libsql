@@ -1,5 +1,5 @@
-C Avoid\sunnecessary\scalls\sto\ssqlite3VdbeSerialTypeLen()\sfor\sinteger\nserial\stypes,\sfor\sa\ssmall\ssize\sreduction\sand\sa\sspeed\sincrease.
-D 2015-06-28T02:58:51.359
+C Comment\stypo\sfix\sand\sminor\scleanup\sin\sthe\spager.\s\sNo\slogic\schanges.
+D 2015-06-28T17:33:11.230
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 285a0a234ed7610d431d91671c136098c2bd86a9
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -314,7 +314,7 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c 23eb5f56fac54d8fe0cb204291f3b3b2d94f23fc
 F src/os_win.c 27cc135e2d0b8b1e2e4944db1e2669a6a18fa0f8
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
-F src/pager.c 9bc918a009285f96ec6dac62dd764c7063552455
+F src/pager.c db79b64a5498e2b3a72f0f6bc74faebe48da3e95
 F src/pager.h c3476e7c89cdf1c6914e50a11f3714e30b4e0a77
 F src/parse.y 6d60dda8f8d418b6dc034f1fbccd816c459983a8
 F src/pcache.c d8b19632706dd6b81b03d0c5fd1e6bab8c13d0b9
@@ -1364,7 +1364,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 63998471d023dd846d5583ac856e2acc47ad41ea
-R 212ca1fcb98a576a11f4bdf11ee3ebc0
+P 9cd30d33b1d02dc8c55c1d74bdbcefab63ebf2a7
+R b8484b94b4d1a85c0081f4649a289df8
 U drh
-Z 171de1cc147222ccddab9bfa4a1ca423
+Z b085b905d03794e34ce8f566e5412526
