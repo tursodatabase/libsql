@@ -1,5 +1,5 @@
-C Make\sgreater\suse\sof\sBtCursor.curIntKey.
-D 2015-06-27T23:55:20.211
+C Avoid\sunnecessary\scalls\sto\ssqlite3VdbeSerialTypeLen()\sfor\sinteger\nserial\stypes,\sfor\sa\ssmall\ssize\sreduction\sand\sa\sspeed\sincrease.
+D 2015-06-28T02:58:51.359
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 285a0a234ed7610d431d91671c136098c2bd86a9
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -394,7 +394,7 @@ F src/vdbe.c 3d5a78d39b15dc91ea2c11017d560a4224eb2f75
 F src/vdbe.h 7a75045d879118b9d3af7e8b3c108f2f27c51473
 F src/vdbeInt.h 8b54e01ad0463590e7cffabce0bc36da9ee4f816
 F src/vdbeapi.c 6a0d7757987018ff6b1b81bc5293219cd26bb299
-F src/vdbeaux.c 13261b7597c7f189232f84a1e175a3268ea2c32b
+F src/vdbeaux.c 54bcc56d368b2d0bebc523cff514893156c09daf
 F src/vdbeblob.c 4f2e8e075d238392df98c5e03a64342465b03f90
 F src/vdbemem.c ae38a0d35ae71cf604381a887c170466ba518090
 F src/vdbesort.c f5009e7a35e3065635d8918b9a31f498a499976b
@@ -1364,7 +1364,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4a17df139ac41e29c9a2e58afbd1238a5e94bd36
-R 951a5590bfe7a8b4e737119af9769202
+P 63998471d023dd846d5583ac856e2acc47ad41ea
+R 212ca1fcb98a576a11f4bdf11ee3ebc0
 U drh
-Z 51f9425184670e22671d083e0bae99bd
+Z 171de1cc147222ccddab9bfa4a1ca423
