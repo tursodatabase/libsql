@@ -328,6 +328,7 @@ static SQLITE_NOINLINE PgHdr *pcacheFetchFinishWithInit(
   memset(pPgHdr->pExtra, 0, pCache->szExtra);
   pPgHdr->pCache = pCache;
   pPgHdr->pgno = pgno;
+  pPgHdr->flags = PGHDR_CLEAN;
   return sqlite3PcacheFetchFinish(pCache,pgno,pPage);
 }
 
@@ -366,7 +367,7 @@ void SQLITE_NOINLINE sqlite3PcacheRelease(PgHdr *p){
   p->nRef--;
   if( p->nRef==0 ){
     p->pCache->nRef--;
-    if( (p->flags&PGHDR_DIRTY)==0 ){
+    if( p->flags&PGHDR_CLEAN ){
       pcacheUnpin(p);
     }else if( p->pDirtyPrev!=0 ){
       /* Move the page to the head of the dirty list. */
@@ -402,11 +403,14 @@ void sqlite3PcacheDrop(PgHdr *p){
 ** make it so.
 */
 void sqlite3PcacheMakeDirty(PgHdr *p){
-  p->flags &= ~PGHDR_DONT_WRITE;
   assert( p->nRef>0 );
-  if( 0==(p->flags & PGHDR_DIRTY) ){
-    p->flags |= PGHDR_DIRTY;
-    pcacheManageDirtyList(p, PCACHE_DIRTYLIST_ADD);
+  if( p->flags & (PGHDR_CLEAN|PGHDR_DONT_WRITE) ){
+    p->flags &= ~PGHDR_DONT_WRITE;
+    if( p->flags & PGHDR_CLEAN ){
+      p->flags ^= (PGHDR_DIRTY|PGHDR_CLEAN);
+      assert( (p->flags & (PGHDR_DIRTY|PGHDR_CLEAN))==PGHDR_DIRTY );
+      pcacheManageDirtyList(p, PCACHE_DIRTYLIST_ADD);
+    }
   }
 }
 
@@ -416,8 +420,10 @@ void sqlite3PcacheMakeDirty(PgHdr *p){
 */
 void sqlite3PcacheMakeClean(PgHdr *p){
   if( (p->flags & PGHDR_DIRTY) ){
+    assert( (p->flags & PGHDR_CLEAN)==0 );
     pcacheManageDirtyList(p, PCACHE_DIRTYLIST_REMOVE);
     p->flags &= ~(PGHDR_DIRTY|PGHDR_NEED_SYNC);
+    p->flags |= PGHDR_CLEAN;
     if( p->nRef==0 ){
       pcacheUnpin(p);
     }

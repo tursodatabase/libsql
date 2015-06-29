@@ -46,6 +46,7 @@ struct PgHdr {
 };
 
 /* Bit values for PgHdr.flags */
+#define PGHDR_CLEAN             0x001  /* Page is unchanged */
 #define PGHDR_DIRTY             0x002  /* Page has changed */
 #define PGHDR_NEED_SYNC         0x004  /* Fsync the rollback journal before
                                        ** writing this page to the database */

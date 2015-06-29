@@ -1,5 +1,5 @@
-C Very\ssmall\ssize\sreduction\sand\sperformance\sincrease\sin\ssqlite3BitvecTest().
-D 2015-06-29T03:28:43.213
+C Add\sthe\snew\sPGHDR_CLEAN\sbit\sto\sPgHdr.flags\sin\spcache.c.\s\sThis\sbit\sis\salways\nthe\sopposite\sof\sPGHDR_DIRTY.\s\sUse\sthe\sextra\sbit\sto\savoid\sa\scomparison\nfor\sa\ssmall\sperformance\sboost.
+D 2015-06-29T04:21:15.041
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 285a0a234ed7610d431d91671c136098c2bd86a9
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -317,8 +317,8 @@ F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c db79b64a5498e2b3a72f0f6bc74faebe48da3e95
 F src/pager.h c3476e7c89cdf1c6914e50a11f3714e30b4e0a77
 F src/parse.y 6d60dda8f8d418b6dc034f1fbccd816c459983a8
-F src/pcache.c d8b19632706dd6b81b03d0c5fd1e6bab8c13d0b9
-F src/pcache.h b44658c9c932d203510279439d891a2a83e12ba8
+F src/pcache.c 994f15b465337a079feb04aac34c199dbc610247
+F src/pcache.h 445374bcf296515fb970c8bbf47c36222196d197
 F src/pcache1.c 9ec20f98f50ed7415019303ae9bd3745d4b7bd9b
 F src/pragma.c c1f4d012ea9f6b1ce52d341b2cd0ad72d560afd7
 F src/pragma.h b8632d7cdda7b25323fa580e3e558a4f0d4502cc
@@ -1364,7 +1364,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 18115164e12509ec21f34598089a7f1310048819
-R 01e6ba6910c7ae6426ef3c4845c78ace
+P 9b3a7281bd45994edf813a687e4b7a0761697929
+R 07d5c4c2284ae7b5a16a8d841b25dd0d
 U drh
-Z 0a8f5dc054956bcb3a50cf01c1349d73
+Z fa5a6a0b1c08c7af0b43f02924ea472a
