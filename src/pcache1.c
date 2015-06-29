@@ -462,10 +462,11 @@ static PgHdr1 *pcache1PinPage(PgHdr1 *pPage){
 /*
 ** Remove the page supplied as an argument from the hash table 
 ** (PCache1.apHash structure) that it is currently stored in.
+** Also free the page if freePage is true.
 **
 ** The PGroup mutex must be held when this function is called.
 */
-static void pcache1RemoveFromHash(PgHdr1 *pPage){
+static void pcache1RemoveFromHash(PgHdr1 *pPage, int freeFlag){
   unsigned int h;
   PCache1 *pCache = pPage->pCache;
   PgHdr1 **pp;
@@ -476,6 +477,7 @@ static void pcache1RemoveFromHash(PgHdr1 *pPage){
   *pp = (*pp)->pNext;
 
   pCache->nPage--;
+  if( freeFlag ) pcache1FreePage(pPage);
 }
 
 /*
@@ -489,8 +491,7 @@ static void pcache1EnforceMaxPage(PGroup *pGroup){
     assert( p->pCache->pGroup==pGroup );
     assert( p->isPinned==0 );
     pcache1PinPage(p);
-    pcache1RemoveFromHash(p);
-    pcache1FreePage(p);
+    pcache1RemoveFromHash(p, 1);
   }
 }
 
@@ -714,7 +715,7 @@ static SQLITE_NOINLINE PgHdr1 *pcache1FetchStage2(
     PCache1 *pOther;
     pPage = pGroup->pLruTail;
     assert( pPage->isPinned==0 );
-    pcache1RemoveFromHash(pPage);
+    pcache1RemoveFromHash(pPage, 0);
     pcache1PinPage(pPage);
     pOther = pPage->pCache;
 
@@ -912,8 +913,7 @@ static void pcache1Unpin(
   assert( pPage->isPinned==1 );
 
   if( reuseUnlikely || pGroup->nCurrentPage>pGroup->nMaxPage ){
-    pcache1RemoveFromHash(pPage);
-    pcache1FreePage(pPage);
+    pcache1RemoveFromHash(pPage, 1);
   }else{
     /* Add the page to the PGroup LRU list. */
     if( pGroup->pLruHead ){
@@ -1067,8 +1067,7 @@ int sqlite3PcacheReleaseMemory(int nReq){
 #endif
       assert( p->isPinned==0 );
       pcache1PinPage(p);
-      pcache1RemoveFromHash(p);
-      pcache1FreePage(p);
+      pcache1RemoveFromHash(p, 1);
     }
     pcache1LeaveMutex(&pcache1.grp);
   }

@@ -1,5 +1,5 @@
-C Comment\stypo\sfix\sand\sminor\scleanup\sin\sthe\spager.\s\sNo\slogic\schanges.
-D 2015-06-28T17:33:11.230
+C Use\stail\srecursion\sin\spcache1Unpin()\sto\sget\sa\ssmall\ssize\sreduction\sand\nspeed\simprovement.
+D 2015-06-29T00:21:00.874
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 285a0a234ed7610d431d91671c136098c2bd86a9
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -319,7 +319,7 @@ F src/pager.h c3476e7c89cdf1c6914e50a11f3714e30b4e0a77
 F src/parse.y 6d60dda8f8d418b6dc034f1fbccd816c459983a8
 F src/pcache.c d8b19632706dd6b81b03d0c5fd1e6bab8c13d0b9
 F src/pcache.h b44658c9c932d203510279439d891a2a83e12ba8
-F src/pcache1.c 8e3799b33c41d517d86444d4abefc80d4f02adca
+F src/pcache1.c 9ec20f98f50ed7415019303ae9bd3745d4b7bd9b
 F src/pragma.c c1f4d012ea9f6b1ce52d341b2cd0ad72d560afd7
 F src/pragma.h b8632d7cdda7b25323fa580e3e558a4f0d4502cc
 F src/prepare.c 82e5db1013846a819f198336fed72c44c974e7b1
@@ -1364,7 +1364,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9cd30d33b1d02dc8c55c1d74bdbcefab63ebf2a7
-R b8484b94b4d1a85c0081f4649a289df8
+P 94ef17012855b7be725594c34bcea75f34c40190
+R 33d15daee3cafade223d75c1a4d78a0b
 U drh
-Z b085b905d03794e34ce8f566e5412526
+Z 83eec004ab67e81db298053e8cf0783c
