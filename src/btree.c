@@ -7903,20 +7903,22 @@ int sqlite3BtreeInsert(
   if( rc ) return rc;
 
   if( pCur->pKeyInfo==0 ){
+    assert( pKey==0 );
     /* If this is an insert into a table b-tree, invalidate any incrblob 
     ** cursors open on the row being replaced */
     invalidateIncrblobCursors(p, nKey, 0);
 
     /* If the cursor is currently on the last row and we are appending a
-    ** new row onto the end, set the "loc" to avoid an unnecessary btreeMoveto()
-    ** call */
+    ** new row onto the end, set the "loc" to avoid an unnecessary
+    ** btreeMoveto() call */
     if( (pCur->curFlags&BTCF_ValidNKey)!=0 && nKey>0
       && pCur->info.nKey==nKey-1 ){
-      loc = -1;
+       loc = -1;
+    }else if( loc==0 ){
+      rc = sqlite3BtreeMovetoUnpacked(pCur, 0, nKey, appendBias, &loc);
+      if( rc ) return rc;
     }
-  }
-
-  if( !loc ){
+  }else if( loc==0 ){
     rc = btreeMoveto(pCur, pKey, nKey, appendBias, &loc);
     if( rc ) return rc;
   }
