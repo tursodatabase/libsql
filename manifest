@@ -1,5 +1,5 @@
-C Move\san\sassert()\sand\stestcase()\sinto\stheir\scorrect\sposition\swithin\ngetAndInitPage().
-D 2015-06-29T00:52:33.038
+C Very\ssmall\ssize\sreduction\sand\sperformance\sincrease\sin\ssqlite3BitvecTest().
+D 2015-06-29T03:28:43.213
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 285a0a234ed7610d431d91671c136098c2bd86a9
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -267,7 +267,7 @@ F src/analyze.c f89727c36f997bd2bf6c5e546c2f51dc94e6f2a4
 F src/attach.c e944d0052b577703b9b83aac1638452ff42a8395
 F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c ff743689c4d6c5cb55ad42ed9d174b2b3e71f1e3
-F src/bitvec.c 5eb7958c3bf65210211cbcfc44eff86d0ded7c9d
+F src/bitvec.c 828b218d3fc39f8ce9c9c5f4de4106fe08c92303
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
 F src/btree.c ce342e156716fb64b9cf5c040260d0b47989f37b
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
@@ -1364,7 +1364,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fde70472aebc09b34a517131f676e6847d02b747
-R 2759f4b6497579e6ac5cdd2dfc68ef6f
+P 18115164e12509ec21f34598089a7f1310048819
+R 01e6ba6910c7ae6426ef3c4845c78ace
 U drh
-Z 7a56a5c524bee1a78dcf76e001f644d9
+Z 0a8f5dc054956bcb3a50cf01c1349d73

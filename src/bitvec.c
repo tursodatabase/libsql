@@ -128,8 +128,8 @@ Bitvec *sqlite3BitvecCreate(u32 iSize){
 */
 int sqlite3BitvecTest(Bitvec *p, u32 i){
   if( p==0 ) return 0;
-  if( i>p->iSize || i==0 ) return 0;
   i--;
+  if( i>=p->iSize ) return 0;
   while( p->iDivisor ){
     u32 bin = i/p->iDivisor;
     i = i%p->iDivisor;
