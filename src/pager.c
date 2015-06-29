@@ -808,7 +808,7 @@ static const unsigned char aJournalMagic[] = {
 **
 **   if( pPager->jfd->pMethods ){ ...
 */
-#define isOpen(pFd) ((pFd)->pMethods)
+#define isOpen(pFd) ((pFd)->pMethods!=0)
 
 /*
 ** Return true if this pager uses a write-ahead log instead of the usual
@@ -1031,19 +1031,21 @@ static int subjRequiresPage(PgHdr *pPg){
   int i;
   for(i=0; i<pPager->nSavepoint; i++){
     p = &pPager->aSavepoint[i];
-    if( p->nOrig>=pgno && 0==sqlite3BitvecTest(p->pInSavepoint, pgno) ){
+    if( p->nOrig>=pgno && 0==sqlite3BitvecTestNotNull(p->pInSavepoint, pgno) ){
       return 1;
     }
   }
   return 0;
 }
 
+#ifdef SQLITE_DEBUG
 /*
 ** Return true if the page is already in the journal file.
 */
 static int pageInJournal(Pager *pPager, PgHdr *pPg){
   return sqlite3BitvecTest(pPager->pInJournal, pPg->pgno);
 }
+#endif
 
 /*
 ** Read a 32-bit integer from the given file descriptor.  Store the integer
@@ -5649,6 +5651,59 @@ int sqlite3PagerBegin(Pager *pPager, int exFlag, int subjInMemory){
 }
 
 /*
+** Write page pPg onto the end of the rollback journal.
+*/
+static SQLITE_NOINLINE int pagerAddPageToRollbackJournal(PgHdr *pPg){
+  Pager *pPager = pPg->pPager;
+  int rc;
+  u32 cksum;
+  char *pData2;
+  i64 iOff = pPager->journalOff;
+
+  /* We should never write to the journal file the page that
+  ** contains the database locks.  The following assert verifies
+  ** that we do not. */
+  assert( pPg->pgno!=PAGER_MJ_PGNO(pPager) );
+
+  assert( pPager->journalHdr<=pPager->journalOff );
+  CODEC2(pPager, pPg->pData, pPg->pgno, 7, return SQLITE_NOMEM, pData2);
+  cksum = pager_cksum(pPager, (u8*)pData2);
+
+  /* Even if an IO or diskfull error occurs while journalling the
+  ** page in the block above, set the need-sync flag for the page.
+  ** Otherwise, when the transaction is rolled back, the logic in
+  ** playback_one_page() will think that the page needs to be restored
+  ** in the database file. And if an IO error occurs while doing so,
+  ** then corruption may follow.
+  */
+  pPg->flags |= PGHDR_NEED_SYNC;
+
+  rc = write32bits(pPager->jfd, iOff, pPg->pgno);
+  if( rc!=SQLITE_OK ) return rc;
+  rc = sqlite3OsWrite(pPager->jfd, pData2, pPager->pageSize, iOff+4);
+  if( rc!=SQLITE_OK ) return rc;
+  rc = write32bits(pPager->jfd, iOff+pPager->pageSize+4, cksum);
+  if( rc!=SQLITE_OK ) return rc;
+
+  IOTRACE(("JOUT %p %d %lld %d\n", pPager, pPg->pgno, 
+           pPager->journalOff, pPager->pageSize));
+  PAGER_INCR(sqlite3_pager_writej_count);
+  PAGERTRACE(("JOURNAL %d page %d needSync=%d hash(%08x)\n",
+       PAGERID(pPager), pPg->pgno, 
+       ((pPg->flags&PGHDR_NEED_SYNC)?1:0), pager_pagehash(pPg)));
+
+  pPager->journalOff += 8 + pPager->pageSize;
+  pPager->nRec++;
+  assert( pPager->pInJournal!=0 );
+  rc = sqlite3BitvecSet(pPager->pInJournal, pPg->pgno);
+  testcase( rc==SQLITE_NOMEM );
+  assert( rc==SQLITE_OK || rc==SQLITE_NOMEM );
+  rc |= addToSavepointBitvecs(pPager, pPg->pgno);
+  assert( rc==SQLITE_OK || rc==SQLITE_NOMEM );
+  return rc;
+}
+
+/*
 ** Mark a single data page as writeable. The page is written into the 
 ** main journal or sub-journal as required. If the page is written into
 ** one of the journals, the corresponding bit is set in the 
@@ -5658,7 +5713,6 @@ int sqlite3PagerBegin(Pager *pPager, int exFlag, int subjInMemory){
 static int pager_write(PgHdr *pPg){
   Pager *pPager = pPg->pPager;
   int rc = SQLITE_OK;
-  int inJournal;
 
   /* This routine is not called unless a write-transaction has already 
   ** been started. The journal file may or may not be open at this point.
@@ -5671,7 +5725,6 @@ static int pager_write(PgHdr *pPg){
   assert( assert_pager_state(pPager) );
   assert( pPager->errCode==0 );
   assert( pPager->readOnly==0 );
-
   CHECK_PAGE(pPg);
 
   /* The journal file needs to be opened. Higher level routines have already
@@ -5690,91 +5743,41 @@ static int pager_write(PgHdr *pPg){
   assert( pPager->eState>=PAGER_WRITER_CACHEMOD );
   assert( assert_pager_state(pPager) );
 
-  /* Mark the page as dirty.  If the page has already been written
-  ** to the journal then we can return right away.
-  */
+  /* Mark the page that is about to be modified as dirty. */
   sqlite3PcacheMakeDirty(pPg);
-  inJournal = pageInJournal(pPager, pPg);
-  if( inJournal && (pPager->nSavepoint==0 || !subjRequiresPage(pPg)) ){
-    assert( !pagerUseWal(pPager) );
-  }else{
-  
-    /* The transaction journal now exists and we have a RESERVED or an
-    ** EXCLUSIVE lock on the main database file.  Write the current page to
-    ** the transaction journal if it is not there already.
-    */
-    if( !inJournal && !pagerUseWal(pPager) ){
-      assert( pagerUseWal(pPager)==0 );
-      if( pPg->pgno<=pPager->dbOrigSize && isOpen(pPager->jfd) ){
-        u32 cksum;
-        char *pData2;
-        i64 iOff = pPager->journalOff;
 
-        /* We should never write to the journal file the page that
-        ** contains the database locks.  The following assert verifies
-        ** that we do not. */
-        assert( pPg->pgno!=PAGER_MJ_PGNO(pPager) );
-
-        assert( pPager->journalHdr<=pPager->journalOff );
-        CODEC2(pPager, pPg->pData, pPg->pgno, 7, return SQLITE_NOMEM, pData2);
-        cksum = pager_cksum(pPager, (u8*)pData2);
-
-        /* Even if an IO or diskfull error occurs while journalling the
-        ** page in the block above, set the need-sync flag for the page.
-        ** Otherwise, when the transaction is rolled back, the logic in
-        ** playback_one_page() will think that the page needs to be restored
-        ** in the database file. And if an IO error occurs while doing so,
-        ** then corruption may follow.
-        */
-        pPg->flags |= PGHDR_NEED_SYNC;
-
-        rc = write32bits(pPager->jfd, iOff, pPg->pgno);
-        if( rc!=SQLITE_OK ) return rc;
-        rc = sqlite3OsWrite(pPager->jfd, pData2, pPager->pageSize, iOff+4);
-        if( rc!=SQLITE_OK ) return rc;
-        rc = write32bits(pPager->jfd, iOff+pPager->pageSize+4, cksum);
-        if( rc!=SQLITE_OK ) return rc;
-
-        IOTRACE(("JOUT %p %d %lld %d\n", pPager, pPg->pgno, 
-                 pPager->journalOff, pPager->pageSize));
-        PAGER_INCR(sqlite3_pager_writej_count);
-        PAGERTRACE(("JOURNAL %d page %d needSync=%d hash(%08x)\n",
-             PAGERID(pPager), pPg->pgno, 
-             ((pPg->flags&PGHDR_NEED_SYNC)?1:0), pager_pagehash(pPg)));
-
-        pPager->journalOff += 8 + pPager->pageSize;
-        pPager->nRec++;
-        assert( pPager->pInJournal!=0 );
-        rc = sqlite3BitvecSet(pPager->pInJournal, pPg->pgno);
-        testcase( rc==SQLITE_NOMEM );
-        assert( rc==SQLITE_OK || rc==SQLITE_NOMEM );
-        rc |= addToSavepointBitvecs(pPager, pPg->pgno);
-        if( rc!=SQLITE_OK ){
-          assert( rc==SQLITE_NOMEM );
-          return rc;
-        }
-      }else{
-        if( pPager->eState!=PAGER_WRITER_DBMOD ){
-          pPg->flags |= PGHDR_NEED_SYNC;
-        }
-        PAGERTRACE(("APPEND %d page %d needSync=%d\n",
-                PAGERID(pPager), pPg->pgno,
-               ((pPg->flags&PGHDR_NEED_SYNC)?1:0)));
+  /* If a rollback journal is in use, them make sure the page that is about
+  ** to change is in the rollback journal, or if the page is a new page off
+  ** then end of the file, make sure it is marked as PGHDR_NEED_SYNC.
+  */
+  assert( (pPager->pInJournal!=0) == isOpen(pPager->jfd) );
+  if( pPager->pInJournal!=0                                      /* Journal open */
+   && sqlite3BitvecTestNotNull(pPager->pInJournal, pPg->pgno)==0 /* pPg not in jrnl */
+  ){
+    assert( pagerUseWal(pPager)==0 );
+    if( pPg->pgno<=pPager->dbOrigSize ){
+      rc = pagerAddPageToRollbackJournal(pPg);
+      if( rc!=SQLITE_OK ){
+        return rc;
       }
-    }
-  
-    /* If the statement journal is open and the page is not in it,
-    ** then write the current page to the statement journal.  Note that
-    ** the statement journal format differs from the standard journal format
-    ** in that it omits the checksums and the header.
-    */
-    if( pPager->nSavepoint>0 && subjRequiresPage(pPg) ){
-      rc = subjournalPage(pPg);
+    }else{
+      if( pPager->eState!=PAGER_WRITER_DBMOD ){
+        pPg->flags |= PGHDR_NEED_SYNC;
+      }
+      PAGERTRACE(("APPEND %d page %d needSync=%d\n",
+              PAGERID(pPager), pPg->pgno,
+             ((pPg->flags&PGHDR_NEED_SYNC)?1:0)));
     }
   }
-
-  /* Update the database size and return.
+  
+  /* If the statement journal is open and the page is not in it,
+  ** then write the page into the statement journal.
   */
+  if( pPager->nSavepoint>0 && subjRequiresPage(pPg) ){
+    rc = subjournalPage(pPg);
+  }
+
+  /* Update the database size and return. */
   if( pPager->dbSize<pPg->pgno ){
     pPager->dbSize = pPg->pgno;
   }
