@@ -4320,8 +4320,6 @@ static int openSubJournal(Pager *pPager){
 
 /*
 ** Append a record of the current state of page pPg to the sub-journal. 
-** It is the callers responsibility to use subjRequiresPage() to check 
-** that it is really required before calling this function.
 **
 ** If successful, set the bit corresponding to pPg->pgno in the bitvecs
 ** for all open savepoints before returning.
@@ -4367,6 +4365,13 @@ static int subjournalPage(PgHdr *pPg){
     rc = addToSavepointBitvecs(pPager, pPg->pgno);
   }
   return rc;
+}
+static int subjournalPageIfRequired(PgHdr *pPg){
+  if( subjRequiresPage(pPg) ){
+    return subjournalPage(pPg);
+  }else{
+    return SQLITE_OK;
+  }
 }
 
 /*
@@ -4425,9 +4430,7 @@ static int pagerStress(void *p, PgHdr *pPg){
   pPg->pDirty = 0;
   if( pagerUseWal(pPager) ){
     /* Write a single frame for this page to the log. */
-    if( subjRequiresPage(pPg) ){ 
-      rc = subjournalPage(pPg); 
-    }
+    rc = subjournalPageIfRequired(pPg); 
     if( rc==SQLITE_OK ){
       rc = pagerWalFrames(pPager, pPg, 0, 0);
     }
@@ -4438,39 +4441,6 @@ static int pagerStress(void *p, PgHdr *pPg){
      || pPager->eState==PAGER_WRITER_CACHEMOD
     ){
       rc = syncJournal(pPager, 1);
-    }
-  
-    /* If the page number of this page is larger than the current size of
-    ** the database image, it may need to be written to the sub-journal.
-    ** This is because the call to pager_write_pagelist() below will not
-    ** actually write data to the file in this case.
-    **
-    ** Consider the following sequence of events:
-    **
-    **   BEGIN;
-    **     <journal page X>
-    **     <modify page X>
-    **     SAVEPOINT sp;
-    **       <shrink database file to Y pages>
-    **       pagerStress(page X)
-    **     ROLLBACK TO sp;
-    **
-    ** If (X>Y), then when pagerStress is called page X will not be written
-    ** out to the database file, but will be dropped from the cache. Then,
-    ** following the "ROLLBACK TO sp" statement, reading page X will read
-    ** data from the database file. This will be the copy of page X as it
-    ** was when the transaction started, not as it was when "SAVEPOINT sp"
-    ** was executed.
-    **
-    ** The solution is to write the current data for page X into the 
-    ** sub-journal file now (if it is not already there), so that it will
-    ** be restored to its current value when the "ROLLBACK TO sp" is 
-    ** executed.
-    */
-    if( NEVER(
-        rc==SQLITE_OK && pPg->pgno>pPager->dbSize && subjRequiresPage(pPg)
-    ) ){
-      rc = subjournalPage(pPg);
     }
   
     /* Write the contents of the page out to the database file. */
@@ -5781,8 +5751,8 @@ static int pager_write(PgHdr *pPg){
   /* If the statement journal is open and the page is not in it,
   ** then write the page into the statement journal.
   */
-  if( pPager->nSavepoint>0 && subjRequiresPage(pPg) ){
-    rc = subjournalPage(pPg);
+  if( pPager->nSavepoint>0 ){
+    rc = subjournalPageIfRequired(pPg);
   }
 
   /* Update the database size and return. */
@@ -6772,9 +6742,8 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno, int isCommit){
   ** one or more savepoint bitvecs. This is the reason this function
   ** may return SQLITE_NOMEM.
   */
-  if( pPg->flags&PGHDR_DIRTY
-   && subjRequiresPage(pPg)
-   && SQLITE_OK!=(rc = subjournalPage(pPg))
+  if( (pPg->flags & PGHDR_DIRTY)!=0
+   && SQLITE_OK!=(rc = subjournalPageIfRequired(pPg))
   ){
     return rc;
   }
