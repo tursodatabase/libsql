@@ -5770,6 +5770,13 @@ static int pager_write(PgHdr *pPg){
              ((pPg->flags&PGHDR_NEED_SYNC)?1:0)));
     }
   }
+
+  /* The PGHDR_DIRTY bit is set above when the page was added to the dirty-list
+  ** and before writing the page into the rollback journal.  Wait until now,
+  ** after the page has been successfully journalled, before setting the
+  ** PGHDR_WRITEABLE bit that indicates that the page can be safely modified.
+  */
+  pPg->flags |= PGHDR_WRITEABLE;
   
   /* If the statement journal is open and the page is not in it,
   ** then write the page into the statement journal.
@@ -5909,7 +5916,7 @@ int sqlite3PagerWrite(PgHdr *pPg){
 */
 #ifndef NDEBUG
 int sqlite3PagerIswriteable(DbPage *pPg){
-  return pPg->flags&PGHDR_DIRTY;
+  return pPg->flags & PGHDR_WRITEABLE;
 }
 #endif
 

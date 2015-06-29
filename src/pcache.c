@@ -422,7 +422,7 @@ void sqlite3PcacheMakeClean(PgHdr *p){
   if( (p->flags & PGHDR_DIRTY) ){
     assert( (p->flags & PGHDR_CLEAN)==0 );
     pcacheManageDirtyList(p, PCACHE_DIRTYLIST_REMOVE);
-    p->flags &= ~(PGHDR_DIRTY|PGHDR_NEED_SYNC);
+    p->flags &= ~(PGHDR_DIRTY|PGHDR_NEED_SYNC|PGHDR_WRITEABLE);
     p->flags |= PGHDR_CLEAN;
     if( p->nRef==0 ){
       pcacheUnpin(p);
