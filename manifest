@@ -1,5 +1,5 @@
-C Simplifications\sand\sperformance\simprovement\sin\spager_write().
-D 2015-06-29T14:11:50.755
+C Fix\sminor\sproblems\sin\sthe\sota\sdemo\sapplication.
+D 2015-06-29T15:41:50.815
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 285a0a234ed7610d431d91671c136098c2bd86a9
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -200,7 +200,7 @@ F ext/misc/totype.c 4a167594e791abeed95e0a8db028822b5e8fe512
 F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
-F ext/ota/ota.c c47352838b967384a81eda5de75c352922a0dd6e
+F ext/ota/ota.c 3a849c3b0a4ad6e63125668be9f67be03621216e
 F ext/ota/ota1.test abdcbe746db4c7f7b51e842b576cacb33eef28f5
 F ext/ota/ota10.test 85e0f6e7964db5007590c1b299e75211ed4240d4
 F ext/ota/ota11.test 2f606cd2b4af260a86b549e91b9f395450fc75cb
@@ -216,7 +216,7 @@ F ext/ota/otaA.test ab67f7f53670b81c750dcc946c5b704f51c429a4
 F ext/ota/otacrash.test 8346192b2d46cbe7787d5d65904d81d3262a3cbf
 F ext/ota/otafault.test 8c43586c2b96ca16bbce00b5d7e7d67316126db8
 F ext/ota/otafault2.test fa202a98ca221faec318f3e5c5f39485b1256561
-F ext/ota/sqlite3ota.c 2246b779f46ab20d5e7876f5b96c378c601d20f4
+F ext/ota/sqlite3ota.c 21575d86eac30482a9bfbb2a531f433015e0e03c
 F ext/ota/sqlite3ota.h 00028de37eede471ff1947d455cc3f33d3a911c6
 F ext/ota/test_ota.c a876f88550d7d59a3ef62d4c1a5c04c4c2f1ebe1
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
@@ -1364,7 +1364,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8619fc346d9a5a66a3c4566b4cc032b6b6bf73fd
-R 0aa742facd6911aa1b0a57fdcda4cf1c
-U drh
-Z 44e348c1758353ed5733624fd5385fad
+P ab7aeeead395a05b91a921ef9ebe9252fffad667
+R cf8c1f0870ca2f41a49b1e8959952d21
+U dan
+Z 5ca3fbc5a6a82f3d1d52496384d0d8e0

@@ -89,7 +89,7 @@ int main(int argc, char **argv){
   ** sqlite3ota_step() until either the OTA has been completely applied
   ** or an error occurs. Or, if nStep is greater than zero, call
   ** sqlite3ota_step() a maximum of nStep times.  */
-  pOta = sqlite3ota_open(zTarget, zOta);
+  pOta = sqlite3ota_open(zTarget, zOta, 0);
   report_ota_vfs(pOta);
   for(i=0; (nStep<=0 || i<nStep) && sqlite3ota_step(pOta)==SQLITE_OK; i++);
   nProgress = sqlite3ota_progress(pOta);

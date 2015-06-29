@@ -3120,8 +3120,8 @@ static int otaVfsFileControl(sqlite3_file *pFile, int op, void *pArg){
   int (*xControl)(sqlite3_file*,int,void*) = p->pReal->pMethods->xFileControl;
   int rc;
 
-  assert( p->openFlags & 
-      (SQLITE_OPEN_MAIN_DB|SQLITE_OPEN_TEMP_DB|SQLITE_OPEN_TRANSIENT_DB) 
+  assert( p->openFlags & (SQLITE_OPEN_MAIN_DB|SQLITE_OPEN_TEMP_DB)
+       || p->openFlags & (SQLITE_OPEN_TRANSIENT_DB|SQLITE_OPEN_TEMP_JOURNAL)
   );
   if( op==SQLITE_FCNTL_OTA ){
     sqlite3ota *pOta = (sqlite3ota*)pArg;
