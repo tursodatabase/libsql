@@ -456,9 +456,9 @@ struct PagerSavepoint {
 /*
 ** Bits of the Pager.doNotSpill flag.  See further description below.
 */
-#define SPILLFLAG_OFF         0x01      /* Never spill cache.  Set via pragma */
-#define SPILLFLAG_ROLLBACK    0x02      /* Current rolling back, so do not spill */
-#define SPILLFLAG_NOSYNC      0x04      /* Spill is ok, but do not sync */
+#define SPILLFLAG_OFF         0x01 /* Never spill cache.  Set via pragma */
+#define SPILLFLAG_ROLLBACK    0x02 /* Current rolling back, so do not spill */
+#define SPILLFLAG_NOSYNC      0x04 /* Spill is ok, but do not sync */
 
 /*
 ** An open page cache is an instance of struct Pager. A description of
@@ -540,11 +540,11 @@ struct PagerSavepoint {
 **   while it is being traversed by code in pager_playback().  The SPILLFLAG_OFF
 **   case is a user preference.
 ** 
-**   If the SPILLFLAG_NOSYNC bit is set, writing to the database from pagerStress()
-**   is permitted, but syncing the journal file is not. This flag is set
-**   by sqlite3PagerWrite() when the file-system sector-size is larger than
-**   the database page-size in order to prevent a journal sync from happening 
-**   in between the journalling of two pages on the same sector. 
+**   If the SPILLFLAG_NOSYNC bit is set, writing to the database from
+**   pagerStress() is permitted, but syncing the journal file is not.
+**   This flag is set by sqlite3PagerWrite() when the file-system sector-size
+**   is larger than the database page-size in order to prevent a journal sync
+**   from happening in between the journalling of two pages on the same sector. 
 **
 ** subjInMemory
 **
@@ -647,7 +647,7 @@ struct Pager {
   u8 doNotSpill;              /* Do not spill the cache when non-zero */
   u8 subjInMemory;            /* True to use in-memory sub-journals */
   u8 bUseFetch;               /* True to use xFetch() */
-  u8 hasBeenUsed;             /* True if any content previously read from this pager*/
+  u8 hasBeenUsed;             /* True if any content previously read */
   Pgno dbSize;                /* Number of pages in the database */
   Pgno dbOrigSize;            /* dbSize before the current transaction */
   Pgno dbFileSize;            /* Number of pages in the database file */
@@ -1657,7 +1657,8 @@ static int writeMasterJournal(Pager *pPager, const char *zMaster){
    || (0 != (rc = sqlite3OsWrite(pPager->jfd, zMaster, nMaster, iHdrOff+4)))
    || (0 != (rc = write32bits(pPager->jfd, iHdrOff+4+nMaster, nMaster)))
    || (0 != (rc = write32bits(pPager->jfd, iHdrOff+4+nMaster+4, cksum)))
-   || (0 != (rc = sqlite3OsWrite(pPager->jfd, aJournalMagic, 8, iHdrOff+4+nMaster+8)))
+   || (0 != (rc = sqlite3OsWrite(pPager->jfd, aJournalMagic, 8,
+                                 iHdrOff+4+nMaster+8)))
   ){
     return rc;
   }
@@ -4727,7 +4728,7 @@ int sqlite3PagerOpen(
 act_like_temp_file:
     tempFile = 1;
     pPager->eState = PAGER_READER;     /* Pretend we already have a lock */
-    pPager->eLock = EXCLUSIVE_LOCK;    /* Pretend we are in EXCLUSIVE locking mode */
+    pPager->eLock = EXCLUSIVE_LOCK;    /* Pretend we are in EXCLUSIVE mode */
     pPager->noLock = 1;                /* Do no locking */
     readOnly = (vfsFlags&SQLITE_OPEN_READONLY);
   }
@@ -4746,7 +4747,7 @@ act_like_temp_file:
     assert( nExtra<1000 );
     nExtra = ROUND8(nExtra);
     rc = sqlite3PcacheOpen(szPageDflt, nExtra, !memDb,
-                           !memDb?pagerStress:0, (void *)pPager, pPager->pPCache);
+                       !memDb?pagerStress:0, (void *)pPager, pPager->pPCache);
   }
 
   /* If an error occurred above, free the  Pager structure and close the file.
@@ -5751,8 +5752,8 @@ static int pager_write(PgHdr *pPg){
   ** then end of the file, make sure it is marked as PGHDR_NEED_SYNC.
   */
   assert( (pPager->pInJournal!=0) == isOpen(pPager->jfd) );
-  if( pPager->pInJournal!=0                                      /* Journal open */
-   && sqlite3BitvecTestNotNull(pPager->pInJournal, pPg->pgno)==0 /* pPg not in jrnl */
+  if( pPager->pInJournal!=0
+   && sqlite3BitvecTestNotNull(pPager->pInJournal, pPg->pgno)==0
   ){
     assert( pagerUseWal(pPager)==0 );
     if( pPg->pgno<=pPager->dbOrigSize ){
@@ -5792,17 +5793,17 @@ static int pager_write(PgHdr *pPg){
 ** a write.
 **
 ** Usually, the sector size is less than or equal to the page size, in which
-** case pages can be individually written.  This routine only runs in the exceptional
-** case where the page size is smaller than the sector size.
+** case pages can be individually written.  This routine only runs in the
+** exceptional case where the page size is smaller than the sector size.
 */
 static SQLITE_NOINLINE int pagerWriteLargeSector(PgHdr *pPg){
-  int rc = SQLITE_OK;            /* Return code */
-  Pgno nPageCount;               /* Total number of pages in database file */
-  Pgno pg1;                      /* First page of the sector pPg is located on. */
-  int nPage = 0;                 /* Number of pages starting at pg1 to journal */
-  int ii;                        /* Loop counter */
-  int needSync = 0;              /* True if any page has PGHDR_NEED_SYNC */
-  Pager *pPager = pPg->pPager;   /* The pager that owns pPg */
+  int rc = SQLITE_OK;          /* Return code */
+  Pgno nPageCount;             /* Total number of pages in database file */
+  Pgno pg1;                    /* First page of the sector pPg is located on. */
+  int nPage = 0;               /* Number of pages starting at pg1 to journal */
+  int ii;                      /* Loop counter */
+  int needSync = 0;            /* True if any page has PGHDR_NEED_SYNC */
+  Pager *pPager = pPg->pPager; /* The pager that owns pPg */
   Pgno nPagePerSector = (pPager->sectorSize/pPager->pageSize);
 
   /* Set the doNotSpill NOSYNC bit to 1. This is because we cannot allow
