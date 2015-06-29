@@ -1961,13 +1961,12 @@ static int getAndInitPage(
     releasePage(*ppPage);
     goto getAndInitPage_error;
   }
-
-  testcase( pgno==0 );
-  assert( pgno!=0 || rc==SQLITE_CORRUPT );
   return SQLITE_OK;
 
 getAndInitPage_error:
   if( pCur ) pCur->iPage--;
+  testcase( pgno==0 );
+  assert( pgno!=0 || rc==SQLITE_CORRUPT );
   return rc;
 }
 
