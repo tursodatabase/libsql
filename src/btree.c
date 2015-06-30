@@ -971,9 +971,9 @@ static int ptrmapGet(BtShared *pBt, Pgno key, u8 *pEType, Pgno *pPgno){
 ** This routine works only for pages that do not contain overflow cells.
 */
 #define findCell(P,I) \
-  ((P)->aData + ((P)->maskPage & get2byte(&(P)->aCellIdx[2*(I)])))
+  ((P)->aData + ((P)->maskPage & get2byteAligned(&(P)->aCellIdx[2*(I)])))
 #define findCellPastPtr(P,I) \
-  ((P)->aDataOfst + ((P)->maskPage & get2byte(&(P)->aCellIdx[2*(I)])))
+  ((P)->aDataOfst + ((P)->maskPage & get2byteAligned(&(P)->aCellIdx[2*(I)])))
 
 
 /*
@@ -1754,7 +1754,7 @@ static int btreeInitPage(MemPage *pPage){
 
       if( !pPage->leaf ) iCellLast--;
       for(i=0; i<pPage->nCell; i++){
-        pc = get2byte(&data[cellOffset+i*2]);
+        pc = get2byteAligned(&data[cellOffset+i*2]);
         testcase( pc==iCellFirst );
         testcase( pc==iCellLast );
         if( pc<iCellFirst || pc>iCellLast ){
@@ -6625,7 +6625,7 @@ static int editPage(
 #ifdef SQLITE_DEBUG
   for(i=0; i<nNew && !CORRUPT_DB; i++){
     u8 *pCell = pCArray->apCell[i+iNew];
-    int iOff = get2byte(&pPg->aCellIdx[i*2]);
+    int iOff = get2byteAligned(&pPg->aCellIdx[i*2]);
     if( pCell>=aData && pCell<&aData[pPg->pBt->usableSize] ){
       pCell = &pTmp[pCell - aData];
     }
@@ -7127,7 +7127,7 @@ static int balance_nonroot(
       memset(&b.szCell[b.nCell+limit], 0, sizeof(b.szCell[0])*pOld->nOverflow);
       limit = pOld->aiOvfl[0];
       for(j=0; j<limit; j++){
-        b.apCell[b.nCell] = aData + (maskPage & get2byte(piCell));
+        b.apCell[b.nCell] = aData + (maskPage & get2byteAligned(piCell));
         piCell += 2;
         b.nCell++;
       }
@@ -7140,7 +7140,7 @@ static int balance_nonroot(
     piEnd = aData + pOld->cellOffset + 2*pOld->nCell;
     while( piCell<piEnd ){
       assert( b.nCell<nMaxCells );
-      b.apCell[b.nCell] = aData + (maskPage & get2byte(piCell));
+      b.apCell[b.nCell] = aData + (maskPage & get2byteAligned(piCell));
       piCell += 2;
       b.nCell++;
     }
@@ -9105,7 +9105,7 @@ static int checkTreePage(
     /* EVIDENCE-OF: R-02776-14802 The cell pointer array consists of K 2-byte
     ** integer offsets to the cell contents. */
     for(i=0; i<nCell; i++){
-      int pc = get2byte(&data[cellStart+i*2]);
+      int pc = get2byteAligned(&data[cellStart+i*2]);
       u32 size = 65536;
       if( pc<=usableSize-4 ){
         size = pPage->xCellSize(pPage, &data[pc]);

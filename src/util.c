@@ -1082,10 +1082,6 @@ u32 sqlite3Get4byte(const u8 *p){
   u32 x;
   memcpy(&x,p,4);
   return x;
-#elif defined(_MSC_VER)
-  u32 x;
-  memcpy(&x,p,4);
-  return htonl(x);
 #elif SQLITE_BYTEORDER==1234 && defined(__GNUC__)
   u32 x;
   memcpy(&x,p,4);
@@ -1098,9 +1094,6 @@ u32 sqlite3Get4byte(const u8 *p){
 void sqlite3Put4byte(unsigned char *p, u32 v){
 #if SQLITE_BYTEORDER==4321
   memcpy(p,&v,4);
-#elif defined(_MSC_VER)
-  u32 x = htonl(v);
-  memcpy(&x,p,4);
 #elif SQLITE_BYTEORDER==1234 && defined(__GNUC__)
   u32 x = __builtin_bswap32(v);
   memcpy(p,&x,4);
