@@ -1,5 +1,5 @@
-C Put\sBtCursor\sobjects\son\sa\ssingly-linked\slist\sinstead\sof\sa\sdoubly-linked\slist.\nAdd\sthe\sBTCF_Multiple\sflag.\s\sOnly\sinvoke\ssaveAllCursors()\swhen\susing\sa\scursor\nthat\shas\sBTCF_Multiple\sset.
-D 2015-06-30T02:47:36.537
+C Change\ssqlite3ApiExit()\sso\sthat\sits\sfirst\sargument\sis\snever\sNULL.
+D 2015-06-30T03:13:47.365
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 285a0a234ed7610d431d91671c136098c2bd86a9
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -274,7 +274,7 @@ F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h e4eabc722b1ae017ac9c266a75769d4c6a9afde6
 F src/build.c b3f15255d5b16e42dafeaa638fd4f8a47c94ed70
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
-F src/complete.c a5cf5b4b56390cfb7b8636e8f7ddef90258dd575
+F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
 F src/ctime.c 5a0b735dc95604766f5dac73973658eef782ee8b
 F src/date.c e4d50b3283696836ec1036b695ead9a19e37a5ac
 F src/dbstat.c f402e77e25089c6003d0c60b3233b9b3947d599a
@@ -292,8 +292,8 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 92bafa308607dd985ca389a788cd9e0a2b608712
 F src/loadext.c e722f4b832f923744788365df5fb8515c0bc8a47
-F src/main.c c0061a4f8ba86f957534be93b7026dab324f12c2
-F src/malloc.c 908c780fdddd472163c2d1b1820ae4081f01ad20
+F src/main.c 92d79bfa1a36c7c554700bb58eb8327abff1ac5c
+F src/malloc.c 9be4e645f2fb411e5a04cf97e91f68b4faa6dc81
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c abe6ee469b6c5a35c7f22bfeb9c9bac664a1c987
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
@@ -1364,7 +1364,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ed54c14ea8a72d69d69e0c0d7f6936f54efc04c2
-R f3f8b025f26bf8ce4de670023e83b4e0
+P 429ccef2b36fc46e92914eb54afd5f800b1a40ff
+R 76fff8f8ba7a3e292fd9a942df7fcd8e
 U drh
-Z aa2cb7c94aea3021edb11ed06abf028f
+Z f5ae2d48a4b628f4b044b90e76fe7af0
