@@ -105,10 +105,8 @@ int sqlite3IsNaN(double x){
 ** than 1GiB) the value returned might be less than the true string length.
 */
 int sqlite3Strlen30(const char *z){
-  const char *z2 = z;
   if( z==0 ) return 0;
-  while( *z2 ){ z2++; }
-  return 0x3fffffff & (int)(z2 - z);
+  return 0x3fffffff & (int)strlen(z);
 }
 
 /*
