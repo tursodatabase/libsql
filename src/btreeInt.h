@@ -699,7 +699,7 @@ struct IntegrityCk {
 */
 #if SQLITE_BYTEORDER==4321
 # define get2byteAligned(x)  (*(u16*)(x))
-#elif SQLITE_BYTEORDER==1234 && defined(__GNUC__)
+#elif SQLITE_BYTEORDER==1234 && GCC_VERSION>=4008000
 # define get2byteAligned(x)  __builtin_bswap16(*(u16*)(x))
 #else
 # define get2byteAligned(x)  ((x)[0]<<8 | (x)[1])
