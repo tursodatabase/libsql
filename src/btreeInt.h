@@ -507,7 +507,7 @@ struct CellInfo {
 struct BtCursor {
   Btree *pBtree;            /* The Btree to which this cursor belongs */
   BtShared *pBt;            /* The BtShared this cursor points to */
-  BtCursor *pNext, *pPrev;  /* Forms a linked list of all cursors */
+  BtCursor *pNext;          /* Forms a linked list of all cursors */
   Pgno *aOverflow;          /* Cache of overflow page locations */
   CellInfo info;            /* A parse of the cell we are pointing at */
   i64 nKey;                 /* Size of pKey, or last integer key */
@@ -526,6 +526,7 @@ struct BtCursor {
   i8 iPage;                 /* Index of current page in apPage */
   u8 curIntKey;             /* Value of apPage[0]->intKey */
   struct KeyInfo *pKeyInfo; /* Argument passed to comparison function */
+  void *padding1;           /* Make object size a multiple of 16 */
   u16 aiIdx[BTCURSOR_MAX_DEPTH];        /* Current index in apPage[i] */
   MemPage *apPage[BTCURSOR_MAX_DEPTH];  /* Pages from root to current page */
 };
@@ -538,6 +539,7 @@ struct BtCursor {
 #define BTCF_ValidOvfl    0x04   /* True if aOverflow is valid */
 #define BTCF_AtLast       0x08   /* Cursor is pointing ot the last entry */
 #define BTCF_Incrblob     0x10   /* True if an incremental I/O handle */
+#define BTCF_Multiple     0x20   /* Maybe another cursor on the same btree */
 
 /*
 ** Potential values for BtCursor.eState.

@@ -655,6 +655,15 @@ static int SQLITE_NOINLINE saveCursorsOnList(BtCursor*,Pgno,BtCursor*);
 ** routine is called just before cursor pExcept is used to modify the
 ** table, for example in BtreeDelete() or BtreeInsert().
 **
+** If there are two or more cursors on the same btree, then all such 
+** cursors should have their BTCF_Multiple flag set.  The btreeCursor()
+** routine enforces that rule.  This routine only needs to be called in
+** the uncommon case when pExpect has the BTCF_Multiple flag set.
+**
+** If pExpect!=NULL and if no other cursors are found on the same root-page,
+** then the BTCF_Multiple flag on pExpect is cleared, to avoid another
+** pointless call to this routine.
+**
 ** Implementation note:  This routine merely checks to see if any cursors
 ** need to be saved.  It calls out to saveCursorsOnList() in the (unusual)
 ** event that cursors are in need to being saved.
@@ -666,7 +675,9 @@ static int saveAllCursors(BtShared *pBt, Pgno iRoot, BtCursor *pExcept){
   for(p=pBt->pCursor; p; p=p->pNext){
     if( p!=pExcept && (0==iRoot || p->pgnoRoot==iRoot) ) break;
   }
-  return p ? saveCursorsOnList(p, iRoot, pExcept) : SQLITE_OK;
+  if( p ) return saveCursorsOnList(p, iRoot, pExcept);
+  if( pExcept ) pExcept->curFlags &= ~BTCF_Multiple;
+  return SQLITE_OK;
 }
 
 /* This helper routine to saveAllCursors does the actual work of saving
@@ -4015,6 +4026,7 @@ static int btreeCursor(
   BtCursor *pCur                         /* Space for new cursor */
 ){
   BtShared *pBt = p->pBt;                /* Shared b-tree handle */
+  BtCursor *pX;                          /* Looping over other all cursors */
 
   assert( sqlite3BtreeHoldsMutex(p) );
   assert( wrFlag==0 || wrFlag==1 );
@@ -4051,10 +4063,15 @@ static int btreeCursor(
   assert( wrFlag==0 || wrFlag==BTCF_WriteFlag );
   pCur->curFlags = wrFlag;
   pCur->curPagerFlags = wrFlag ? 0 : PAGER_GET_READONLY;
-  pCur->pNext = pBt->pCursor;
-  if( pCur->pNext ){
-    pCur->pNext->pPrev = pCur;
+  /* If there are two or more cursors on the same btree, then all such
+  ** cursors *must* have the BTCF_Multiple flag set. */
+  for(pX=pBt->pCursor; pX; pX=pX->pNext){
+    if( pX->pgnoRoot==(Pgno)iTable ){
+      pX->curFlags |= BTCF_Multiple;
+      pCur->curFlags |= BTCF_Multiple;
+    }
   }
+  pCur->pNext = pBt->pCursor;
   pBt->pCursor = pCur;
   pCur->eState = CURSOR_INVALID;
   return SQLITE_OK;
@@ -4112,13 +4129,18 @@ int sqlite3BtreeCloseCursor(BtCursor *pCur){
     BtShared *pBt = pCur->pBt;
     sqlite3BtreeEnter(pBtree);
     sqlite3BtreeClearCursor(pCur);
-    if( pCur->pPrev ){
-      pCur->pPrev->pNext = pCur->pNext;
-    }else{
+    assert( pBt->pCursor!=0 );
+    if( pBt->pCursor==pCur ){
       pBt->pCursor = pCur->pNext;
-    }
-    if( pCur->pNext ){
-      pCur->pNext->pPrev = pCur->pPrev;
+    }else{
+      BtCursor *pPrev = pBt->pCursor;
+      do{
+        if( pPrev->pNext==pCur ){
+          pPrev->pNext = pCur->pNext;
+          break;
+        }
+        pPrev = pPrev->pNext;
+      }while( ALWAYS(pPrev) );
     }
     for(i=0; i<=pCur->iPage; i++){
       releasePage(pCur->apPage[i]);
@@ -7895,8 +7917,10 @@ int sqlite3BtreeInsert(
   ** doing any work. To avoid thwarting these optimizations, it is important
   ** not to clear the cursor here.
   */
-  rc = saveAllCursors(pBt, pCur->pgnoRoot, pCur);
-  if( rc ) return rc;
+  if( pCur->curFlags & BTCF_Multiple ){
+    rc = saveAllCursors(pBt, pCur->pgnoRoot, pCur);
+    if( rc ) return rc;
+  }
 
   if( pCur->pKeyInfo==0 ){
     assert( pKey==0 );
@@ -8042,8 +8066,10 @@ int sqlite3BtreeDelete(BtCursor *pCur){
   ** deleted writable. Then free any overflow pages associated with the 
   ** entry and finally remove the cell itself from within the page.  
   */
-  rc = saveAllCursors(pBt, pCur->pgnoRoot, pCur);
-  if( rc ) return rc;
+  if( pCur->curFlags & BTCF_Multiple ){
+    rc = saveAllCursors(pBt, pCur->pgnoRoot, pCur);
+    if( rc ) return rc;
+  }
 
   /* If this is a delete operation to remove a row from a table b-tree,
   ** invalidate any incrblob cursors open on the row being deleted.  */

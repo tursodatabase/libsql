@@ -1,5 +1,5 @@
-C Convert\sseveral\s5-year-old\sand\solder\sNEVER()\smacros\sinto\sassert().
-D 2015-06-30T01:25:52.068
+C Put\sBtCursor\sobjects\son\sa\ssingly-linked\slist\sinstead\sof\sa\sdoubly-linked\slist.\nAdd\sthe\sBTCF_Multiple\sflag.\s\sOnly\sinvoke\ssaveAllCursors()\swhen\susing\sa\scursor\nthat\shas\sBTCF_Multiple\sset.
+D 2015-06-30T02:47:36.537
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 285a0a234ed7610d431d91671c136098c2bd86a9
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -269,9 +269,9 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c ff743689c4d6c5cb55ad42ed9d174b2b3e71f1e3
 F src/bitvec.c d1f21d7d91690747881f03940584f4cc548c9d3d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c 5d5d48461b3838988bd1f5b197c145df66786805
+F src/btree.c 08ae64b0387e72b8201981a2d7b0f58b92fdff29
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
-F src/btreeInt.h 8ca7124af9ee2ce27747a4e5500c27a254dea8eb
+F src/btreeInt.h e4eabc722b1ae017ac9c266a75769d4c6a9afde6
 F src/build.c b3f15255d5b16e42dafeaa638fd4f8a47c94ed70
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c a5cf5b4b56390cfb7b8636e8f7ddef90258dd575
@@ -1364,7 +1364,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 53fe685d56368af78238c8981cc41704929f7660
-R 0ca8cb603f507b8c27049a9ebf015fe3
+P ed54c14ea8a72d69d69e0c0d7f6936f54efc04c2
+R f3f8b025f26bf8ce4de670023e83b4e0
 U drh
-Z e0e6efeb2c6c43faed874d1e7ab03448
+Z aa2cb7c94aea3021edb11ed06abf028f
