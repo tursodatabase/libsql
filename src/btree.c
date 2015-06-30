@@ -4030,10 +4030,8 @@ static int btreeCursor(
   assert( p->inTrans>TRANS_NONE );
   assert( wrFlag==0 || p->inTrans==TRANS_WRITE );
   assert( pBt->pPage1 && pBt->pPage1->aData );
+  assert( wrFlag==0 || (pBt->btsFlags & BTS_READ_ONLY)==0 );
 
-  if( NEVER(wrFlag && (pBt->btsFlags & BTS_READ_ONLY)!=0) ){
-    return SQLITE_READONLY;
-  }
   if( wrFlag ){
     allocateTempSpace(pBt);
     if( pBt->pTmpSpace==0 ) return SQLITE_NOMEM;
@@ -6016,9 +6014,7 @@ static int fillInCell(
     nSrc = nData;
     nData = 0;
   }else{ 
-    if( NEVER(nKey>0x7fffffff || pKey==0) ){
-      return SQLITE_CORRUPT_BKPT;
-    }
+    assert( nKey<=0x7fffffff && pKey!=0 );
     nPayload = (int)nKey;
     pSrc = pKey;
     nSrc = (int)nKey;
@@ -8020,12 +8016,8 @@ int sqlite3BtreeDelete(BtCursor *pCur){
   assert( pCur->curFlags & BTCF_WriteFlag );
   assert( hasSharedCacheTableLock(p, pCur->pgnoRoot, pCur->pKeyInfo!=0, 2) );
   assert( !hasReadConflicts(p, pCur->pgnoRoot) );
-
-  if( NEVER(pCur->aiIdx[pCur->iPage]>=pCur->apPage[pCur->iPage]->nCell) 
-   || NEVER(pCur->eState!=CURSOR_VALID)
-  ){
-    return SQLITE_ERROR;  /* Something has gone awry. */
-  }
+  assert( pCur->aiIdx[pCur->iPage]<pCur->apPage[pCur->iPage]->nCell );
+  assert( pCur->eState==CURSOR_VALID );
 
   iCellDepth = pCur->iPage;
   iCellIdx = pCur->aiIdx[iCellDepth];

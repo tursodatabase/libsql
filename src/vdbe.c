@@ -4056,9 +4056,8 @@ case OP_NewRowid: {           /* out2 */
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
-  if( NEVER(pC->pCursor==0) ){
-    /* The zero initialization above is all that is needed */
-  }else{
+  assert( pC->pCursor!=0 );
+  {
     /* The next rowid or record number (different terms for the same
     ** thing) is obtained in a two-step algorithm.
     **
