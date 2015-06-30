@@ -5319,7 +5319,7 @@ int sqlite3PagerAcquire(
         }
       }
       pPg = *ppPage = sqlite3PcacheFetchFinish(pPager->pPCache, pgno, pBase);
-      if( pPg==0 ) rc = SQLITE_NOMEM;
+      assert( pPg!=0 );
     }
   }
 
@@ -6475,54 +6475,62 @@ int sqlite3PagerIsMemdb(Pager *pPager){
 ** occurs while opening the sub-journal file, then an IO error code is
 ** returned. Otherwise, SQLITE_OK.
 */
-int sqlite3PagerOpenSavepoint(Pager *pPager, int nSavepoint){
+static SQLITE_NOINLINE int pagerOpenSavepoint(Pager *pPager, int nSavepoint){
   int rc = SQLITE_OK;                       /* Return code */
   int nCurrent = pPager->nSavepoint;        /* Current number of savepoints */
+  int ii;                                   /* Iterator variable */
+  PagerSavepoint *aNew;                     /* New Pager.aSavepoint array */
 
   assert( pPager->eState>=PAGER_WRITER_LOCKED );
   assert( assert_pager_state(pPager) );
+  assert( nSavepoint>nCurrent && pPager->useJournal );
 
-  if( nSavepoint>nCurrent && pPager->useJournal ){
-    int ii;                                 /* Iterator variable */
-    PagerSavepoint *aNew;                   /* New Pager.aSavepoint array */
+  /* Grow the Pager.aSavepoint array using realloc(). Return SQLITE_NOMEM
+  ** if the allocation fails. Otherwise, zero the new portion in case a 
+  ** malloc failure occurs while populating it in the for(...) loop below.
+  */
+  aNew = (PagerSavepoint *)sqlite3Realloc(
+      pPager->aSavepoint, sizeof(PagerSavepoint)*nSavepoint
+  );
+  if( !aNew ){
+    return SQLITE_NOMEM;
+  }
+  memset(&aNew[nCurrent], 0, (nSavepoint-nCurrent) * sizeof(PagerSavepoint));
+  pPager->aSavepoint = aNew;
 
-    /* Grow the Pager.aSavepoint array using realloc(). Return SQLITE_NOMEM
-    ** if the allocation fails. Otherwise, zero the new portion in case a 
-    ** malloc failure occurs while populating it in the for(...) loop below.
-    */
-    aNew = (PagerSavepoint *)sqlite3Realloc(
-        pPager->aSavepoint, sizeof(PagerSavepoint)*nSavepoint
-    );
-    if( !aNew ){
+  /* Populate the PagerSavepoint structures just allocated. */
+  for(ii=nCurrent; ii<nSavepoint; ii++){
+    aNew[ii].nOrig = pPager->dbSize;
+    if( isOpen(pPager->jfd) && pPager->journalOff>0 ){
+      aNew[ii].iOffset = pPager->journalOff;
+    }else{
+      aNew[ii].iOffset = JOURNAL_HDR_SZ(pPager);
+    }
+    aNew[ii].iSubRec = pPager->nSubRec;
+    aNew[ii].pInSavepoint = sqlite3BitvecCreate(pPager->dbSize);
+    if( !aNew[ii].pInSavepoint ){
       return SQLITE_NOMEM;
     }
-    memset(&aNew[nCurrent], 0, (nSavepoint-nCurrent) * sizeof(PagerSavepoint));
-    pPager->aSavepoint = aNew;
-
-    /* Populate the PagerSavepoint structures just allocated. */
-    for(ii=nCurrent; ii<nSavepoint; ii++){
-      aNew[ii].nOrig = pPager->dbSize;
-      if( isOpen(pPager->jfd) && pPager->journalOff>0 ){
-        aNew[ii].iOffset = pPager->journalOff;
-      }else{
-        aNew[ii].iOffset = JOURNAL_HDR_SZ(pPager);
-      }
-      aNew[ii].iSubRec = pPager->nSubRec;
-      aNew[ii].pInSavepoint = sqlite3BitvecCreate(pPager->dbSize);
-      if( !aNew[ii].pInSavepoint ){
-        return SQLITE_NOMEM;
-      }
-      if( pagerUseWal(pPager) ){
-        sqlite3WalSavepoint(pPager->pWal, aNew[ii].aWalData);
-      }
-      pPager->nSavepoint = ii+1;
+    if( pagerUseWal(pPager) ){
+      sqlite3WalSavepoint(pPager->pWal, aNew[ii].aWalData);
     }
-    assert( pPager->nSavepoint==nSavepoint );
-    assertTruncateConstraint(pPager);
+    pPager->nSavepoint = ii+1;
   }
-
+  assert( pPager->nSavepoint==nSavepoint );
+  assertTruncateConstraint(pPager);
   return rc;
 }
+int sqlite3PagerOpenSavepoint(Pager *pPager, int nSavepoint){
+  assert( pPager->eState>=PAGER_WRITER_LOCKED );
+  assert( assert_pager_state(pPager) );
+
+  if( nSavepoint>pPager->nSavepoint && pPager->useJournal ){
+    return pagerOpenSavepoint(pPager, nSavepoint);
+  }else{
+    return SQLITE_OK;
+  }
+}
+
 
 /*
 ** This function is called to rollback or release (commit) a savepoint.
