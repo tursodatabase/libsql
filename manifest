@@ -1,5 +1,5 @@
-C Implement\ssqlite3Strlen30()\susing\sstrlen()\sfrom\sthe\sC\slibrary.
-D 2015-06-30T03:18:33.065
+C Put\sall\svariable\sdeclarations\sfor\ssqlite3PagerWrite()\nat\sthe\sbeginning\sof\sthe\sblock.\s\sSyntax\sonly\s-\sno\slogic\schanges.
+D 2015-06-30T03:34:13.376
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 285a0a234ed7610d431d91671c136098c2bd86a9
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -314,7 +314,7 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c 23eb5f56fac54d8fe0cb204291f3b3b2d94f23fc
 F src/os_win.c 27cc135e2d0b8b1e2e4944db1e2669a6a18fa0f8
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
-F src/pager.c 6ae566c373f74be311b5975eef8f6dd130551bd5
+F src/pager.c fbd0dd63da21d62c51e845b919548d6eb14dd2ff
 F src/pager.h c3476e7c89cdf1c6914e50a11f3714e30b4e0a77
 F src/parse.y 6d60dda8f8d418b6dc034f1fbccd816c459983a8
 F src/pcache.c 379fd77feb732b39750eb733260d9c227d8a4314
@@ -1364,7 +1364,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 791b706ec6c3e80885666e48e01524f0e9a7557e
-R 890e3b877cdeef90793b2b79488c4b65
+P 8001aa52bd12f900092387fe3571463e89efd977
+R 3ab730a0fd8ce3dab29c0f5735db472f
 U drh
-Z 7d695210e1c17d010d5e00878a5ee246
+Z 2e2284bbdb4fcaa6c0dd63e70a1d9358
