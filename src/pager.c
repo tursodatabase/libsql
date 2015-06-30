@@ -5312,6 +5312,11 @@ int sqlite3PagerAcquire(
       if( pBase==0 ){
         rc = sqlite3PcacheFetchStress(pPager->pPCache, pgno, &pBase);
         if( rc!=SQLITE_OK ) goto pager_acquire_err;
+        if( pBase==0 ){
+          pPg = *ppPage = 0;
+          rc = SQLITE_NOMEM;
+          goto pager_acquire_err;
+        }
       }
       pPg = *ppPage = sqlite3PcacheFetchFinish(pPager->pPCache, pgno, pBase);
       if( pPg==0 ) rc = SQLITE_NOMEM;
@@ -5418,6 +5423,7 @@ DbPage *sqlite3PagerLookup(Pager *pPager, Pgno pgno){
   assert( pPager->pPCache!=0 );
   pPage = sqlite3PcacheFetch(pPager->pPCache, pgno, 0);
   assert( pPage==0 || pPager->hasBeenUsed );
+  if( pPage==0 ) return 0;
   return sqlite3PcacheFetchFinish(pPager->pPCache, pgno, pPage);
 }
 

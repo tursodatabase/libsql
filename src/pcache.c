@@ -321,7 +321,7 @@ static SQLITE_NOINLINE PgHdr *pcacheFetchFinishWithInit(
   assert( pPage!=0 );
   pPgHdr = (PgHdr*)pPage->pExtra;
   assert( pPgHdr->pPage==0 );
- memset(pPgHdr, 0, sizeof(PgHdr));
+  memset(pPgHdr, 0, sizeof(PgHdr));
   pPgHdr->pPage = pPage;
   pPgHdr->pData = pPage->pBuf;
   pPgHdr->pExtra = (void *)&pPgHdr[1];
@@ -345,7 +345,7 @@ PgHdr *sqlite3PcacheFetchFinish(
 ){
   PgHdr *pPgHdr;
 
-  if( pPage==0 ) return 0;
+  assert( pPage!=0 );
   pPgHdr = (PgHdr *)pPage->pExtra;
 
   if( !pPgHdr->pPage ){
