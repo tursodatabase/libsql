@@ -1,0 +1,152 @@
+# 2014 June 17
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+#
+# This file is focused on OOM errors.
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+source $testdir/malloc_common.tcl
+set testprefix fts5fault6
+
+# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+
+#-------------------------------------------------------------------------
+# OOM while rebuilding an FTS5 table.
+#
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE tt USING fts5(a, b);
+  INSERT INTO tt VALUES('c d c g g f', 'a a a d g a');
+  INSERT INTO tt VALUES('c d g b f d', 'b g e c g c');
+  INSERT INTO tt VALUES('c c f d e d', 'c e g d b c');
+  INSERT INTO tt VALUES('e a f c e f', 'g b a c d g');
+  INSERT INTO tt VALUES('c g f b b d', 'g c d c f g');
+  INSERT INTO tt VALUES('d a g a b b', 'g c g g c e');
+  INSERT INTO tt VALUES('e f a b c e', 'f d c d c c');
+  INSERT INTO tt VALUES('e c a g c d', 'b b g f f b');
+  INSERT INTO tt VALUES('g b d d e b', 'f f b d a c');
+  INSERT INTO tt VALUES('e a d a e d', 'c e a e f g');
+}
+faultsim_save_and_close
+
+do_faultsim_test 1.1 -faults oom-t* -prep {
+  faultsim_restore_and_reopen
+} -body {
+  db eval { INSERT INTO tt(tt) VALUES('rebuild') }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+do_faultsim_test 1.2 -faults oom-t* -prep {
+  faultsim_restore_and_reopen
+} -body {
+  db eval { REPLACE INTO tt(rowid, a, b) VALUES(6, 'x y z', 'l l l'); }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+
+#-------------------------------------------------------------------------
+# OOM within a special delete.
+#
+reset_db
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE tt USING fts5(a, content="");
+  INSERT INTO tt VALUES('c d c g g f');
+  INSERT INTO tt VALUES('c d g b f d');
+  INSERT INTO tt VALUES('c c f d e d');
+  INSERT INTO tt VALUES('e a f c e f');
+  INSERT INTO tt VALUES('c g f b b d');
+  INSERT INTO tt VALUES('d a g a b b');
+  INSERT INTO tt VALUES('e f a b c e');
+  INSERT INTO tt VALUES('e c a g c d');
+  INSERT INTO tt VALUES('g b d d e b');
+  INSERT INTO tt VALUES('e a d a e d');
+}
+faultsim_save_and_close
+
+do_faultsim_test 2.1 -faults oom-t* -prep {
+  faultsim_restore_and_reopen
+} -body {
+  db eval { INSERT INTO tt(tt, rowid, a) VALUES('delete', 3, 'c d g b f d'); }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+do_faultsim_test 2.2 -faults oom-t* -prep {
+  faultsim_restore_and_reopen
+} -body {
+  db eval { INSERT INTO tt(tt) VALUES('delete-all') }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+do_faultsim_test 2.3 -faults oom-t* -prep {
+  faultsim_restore_and_reopen
+} -body {
+  db eval { INSERT INTO tt VALUES('x y z') }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+#-------------------------------------------------------------------------
+# OOM in the ASCII tokenizer with very large tokens. 
+#
+# Also the unicode tokenizer.
+#
+set t1 [string repeat wxyz 20]
+set t2 [string repeat wxyz 200]
+set t3 [string repeat wxyz 2000]
+set doc "$t1 $t2 $t3"
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE xyz USING fts5(c, tokenize=ascii, content="");
+  CREATE VIRTUAL TABLE xyz2 USING fts5(c, content="");
+}
+faultsim_save_and_close
+
+do_faultsim_test 3.1 -faults oom-t* -prep {
+  faultsim_restore_and_reopen
+  db eval { SELECT * FROM xyz }
+} -body {
+  db eval { INSERT INTO xyz VALUES($::doc) }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+do_faultsim_test 3.2 -faults oom-t* -prep {
+  faultsim_restore_and_reopen
+  db eval { SELECT * FROM xyz2 }
+} -body {
+  db eval { INSERT INTO xyz2 VALUES($::doc) }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+#-------------------------------------------------------------------------
+# OOM while initializing a unicode61 tokenizer.
+#
+reset_db
+faultsim_save_and_close
+do_faultsim_test 4.1 -faults oom-t* -prep {
+  faultsim_restore_and_reopen
+} -body {
+  db eval { 
+    CREATE VIRTUAL TABLE yu USING fts5(x, tokenize="unicode61 separators abc");
+  }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+finish_test
+

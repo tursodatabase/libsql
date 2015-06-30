@@ -295,6 +295,7 @@ struct MemPage {
   u8 *aData;           /* Pointer to disk image of the page data */
   u8 *aDataEnd;        /* One byte past the end of usable data */
   u8 *aCellIdx;        /* The cell index area */
+  u8 *aDataOfst;       /* Same as aData for leaves.  aData+4 for interior */
   DbPage *pDbPage;     /* Pager page handle */
   u16 (*xCellSize)(MemPage*,u8*);             /* cellSizePtr method */
   void (*xParseCell)(MemPage*,u8*,CellInfo*); /* btreeParseCell method */
@@ -506,8 +507,7 @@ struct CellInfo {
 struct BtCursor {
   Btree *pBtree;            /* The Btree to which this cursor belongs */
   BtShared *pBt;            /* The BtShared this cursor points to */
-  BtCursor *pNext, *pPrev;  /* Forms a linked list of all cursors */
-  struct KeyInfo *pKeyInfo; /* Argument passed to comparison function */
+  BtCursor *pNext;          /* Forms a linked list of all cursors */
   Pgno *aOverflow;          /* Cache of overflow page locations */
   CellInfo info;            /* A parse of the cell we are pointing at */
   i64 nKey;                 /* Size of pKey, or last integer key */
@@ -517,9 +517,16 @@ struct BtCursor {
   int skipNext;    /* Prev() is noop if negative. Next() is noop if positive.
                    ** Error code if eState==CURSOR_FAULT */
   u8 curFlags;              /* zero or more BTCF_* flags defined below */
+  u8 curPagerFlags;         /* Flags to send to sqlite3PagerAcquire() */
   u8 eState;                /* One of the CURSOR_XXX constants (see below) */
-  u8 hints;                             /* As configured by CursorSetHints() */
-  i16 iPage;                            /* Index of current page in apPage */
+  u8 hints;                 /* As configured by CursorSetHints() */
+  /* All fields above are zeroed when the cursor is allocated.  See
+  ** sqlite3BtreeCursorZero().  Fields that follow must be manually
+  ** initialized. */
+  i8 iPage;                 /* Index of current page in apPage */
+  u8 curIntKey;             /* Value of apPage[0]->intKey */
+  struct KeyInfo *pKeyInfo; /* Argument passed to comparison function */
+  void *padding1;           /* Make object size a multiple of 16 */
   u16 aiIdx[BTCURSOR_MAX_DEPTH];        /* Current index in apPage[i] */
   MemPage *apPage[BTCURSOR_MAX_DEPTH];  /* Pages from root to current page */
 };
@@ -532,6 +539,7 @@ struct BtCursor {
 #define BTCF_ValidOvfl    0x04   /* True if aOverflow is valid */
 #define BTCF_AtLast       0x08   /* Cursor is pointing ot the last entry */
 #define BTCF_Incrblob     0x10   /* True if an incremental I/O handle */
+#define BTCF_Multiple     0x20   /* Maybe another cursor on the same btree */
 
 /*
 ** Potential values for BtCursor.eState.
@@ -683,3 +691,16 @@ struct IntegrityCk {
 #define put2byte(p,v) ((p)[0] = (u8)((v)>>8), (p)[1] = (u8)(v))
 #define get4byte sqlite3Get4byte
 #define put4byte sqlite3Put4byte
+
+/*
+** get2byteAligned(), unlike get2byte(), requires that its argument point to a
+** two-byte aligned address.  get2bytea() is only used for accessing the
+** cell addresses in a btree header.
+*/
+#if SQLITE_BYTEORDER==4321
+# define get2byteAligned(x)  (*(u16*)(x))
+#elif SQLITE_BYTEORDER==1234 && GCC_VERSION>=4008000
+# define get2byteAligned(x)  __builtin_bswap16(*(u16*)(x))
+#else
+# define get2byteAligned(x)  ((x)[0]<<8 | (x)[1])
+#endif

@@ -75,6 +75,8 @@ LIBOBJ+= vdbe.o parse.o \
 
 LIBOBJ += sqlite3session.o
 
+LIBOBJ += fts5.o
+
 
 
 # All of the source code files.
@@ -230,10 +232,12 @@ SRC += \
   $(TOP)/ext/session/sqlite3session.h
 SRC += \
   $(TOP)/ext/userauth/userauth.c \
-  $(TOP)/ext/userauth/sqlite3userauth.h
+  $(TOP)/ext/userauth/sqlite3userauth.h 
+
 SRC += \
   $(TOP)/ext/ota/sqlite3ota.c \
   $(TOP)/ext/ota/sqlite3ota.h
+
 
 # Generated source code files
 #
@@ -308,7 +312,8 @@ TESTSRC += \
   $(TOP)/ext/misc/spellfix.c \
   $(TOP)/ext/misc/totype.c \
   $(TOP)/ext/misc/wholenumber.c \
-  $(TOP)/ext/misc/vfslog.c
+  $(TOP)/ext/misc/vfslog.c \
+  $(TOP)/ext/fts5/fts5_tcl.c 
 
 
 #TESTSRC += $(TOP)/ext/fts2/fts2_tokenizer.c
@@ -406,6 +411,10 @@ EXTHDR += \
   $(TOP)/ext/rtree/rtree.h
 EXTHDR += \
   $(TOP)/ext/icu/sqliteicu.h
+EXTHDR += \
+  $(TOP)/ext/fts5/fts5Int.h  \
+  fts5parse.h                \
+  $(TOP)/ext/fts5/fts5.h 
 EXTHDR += \
   $(TOP)/ext/userauth/sqlite3userauth.h
 
@@ -634,6 +643,45 @@ fts3_write.o:	$(TOP)/ext/fts3/fts3_write.c $(HDR) $(EXTHDR)
 rtree.o:	$(TOP)/ext/rtree/rtree.c $(HDR) $(EXTHDR)
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/rtree/rtree.c
 
+# FTS5 things
+#
+FTS5_SRC = \
+   $(TOP)/ext/fts5/fts5.h \
+   $(TOP)/ext/fts5/fts5Int.h \
+   $(TOP)/ext/fts5/fts5_aux.c \
+   $(TOP)/ext/fts5/fts5_buffer.c \
+   $(TOP)/ext/fts5/fts5_main.c \
+   $(TOP)/ext/fts5/fts5_config.c \
+   $(TOP)/ext/fts5/fts5_expr.c \
+   $(TOP)/ext/fts5/fts5_hash.c \
+   $(TOP)/ext/fts5/fts5_index.c \
+   fts5parse.c fts5parse.h \
+   $(TOP)/ext/fts5/fts5_storage.c \
+   $(TOP)/ext/fts5/fts5_tokenize.c \
+   $(TOP)/ext/fts5/fts5_unicode2.c \
+   $(TOP)/ext/fts5/fts5_varint.c \
+   $(TOP)/ext/fts5/fts5_vocab.c  \
+
+fts5parse.c:	$(TOP)/ext/fts5/fts5parse.y lemon 
+	cp $(TOP)/ext/fts5/fts5parse.y .
+	rm -f fts5parse.h
+	./lemon $(OPTS) fts5parse.y
+	mv fts5parse.c fts5parse.c.orig
+	echo "#ifdef SQLITE_ENABLE_FTS5" > fts5parse.c
+	cat fts5parse.c.orig | sed 's/yy/fts5yy/g' | sed 's/YY/fts5YY/g' \
+		| sed 's/TOKEN/FTS5TOKEN/g' >> fts5parse.c
+	echo "#endif /* SQLITE_ENABLE_FTS5 */" >> fts5parse.c
+
+fts5parse.h: fts5parse.c
+
+fts5.c: $(FTS5_SRC)
+	tclsh $(TOP)/ext/fts5/tool/mkfts5c.tcl
+
+fts5.o:	fts5.c $(HDR) $(EXTHDR)
+	$(TCCX) -DSQLITE_CORE -c fts5.c
+
+
+
 userauth.o:	$(TOP)/ext/userauth/userauth.c $(HDR) $(EXTHDR)
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/userauth/userauth.c
 
@@ -671,10 +719,10 @@ testfixture$(EXE): $(TESTSRC2) libsqlite3.a $(TESTSRC) $(TOP)/src/tclsqlite.c
 		$(TESTSRC) $(TESTSRC2) $(TOP)/src/tclsqlite.c                \
 		-o testfixture$(EXE) $(LIBTCL) libsqlite3.a $(THREADLIB)
 
-amalgamation-testfixture$(EXE): sqlite3.c $(TESTSRC) $(TOP)/src/tclsqlite.c  \
+amalgamation-testfixture$(EXE): sqlite3.c fts5.c $(TESTSRC) $(TOP)/src/tclsqlite.c  \
 				$(TOP)/ext/session/test_session.c
 	$(TCCX) $(TCL_FLAGS) -DTCLSH=1 $(TESTFIXTURE_FLAGS)                  \
-		$(TESTSRC) $(TOP)/src/tclsqlite.c sqlite3.c                  \
+		$(TESTSRC) $(TOP)/src/tclsqlite.c sqlite3.c fts5.c           \
 		$(TOP)/ext/session/test_session.c                            \
 		-o testfixture$(EXE) $(LIBTCL) $(THREADLIB)
 
@@ -793,6 +841,9 @@ speedtest1$(EXE):	$(TOP)/test/speedtest1.c sqlite3.o
 ota$(EXE): $(TOP)/ext/ota/ota.c $(TOP)/ext/ota/sqlite3ota.c sqlite3.o 
 	$(TCC) -I. -o ota$(EXE) $(TOP)/ext/ota/ota.c sqlite3.o \
 	  $(THREADLIB)
+
+loadfts: $(TOP)/tool/loadfts.c libsqlite3.a
+	$(TCC) $(TOP)/tool/loadfts.c libsqlite3.a -o loadfts $(THREADLIB)
 
 # This target will fail if the SQLite amalgamation contains any exported
 # symbols that do not begin with "sqlite3_". It is run as part of the

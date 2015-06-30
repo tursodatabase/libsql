@@ -490,11 +490,6 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
     /* NOTE: Be sure to update mkopcodeh.awk when adding or removing
     ** cases from this switch! */
     switch( opcode ){
-      case OP_Function:
-      case OP_AggStep: {
-        if( pOp->p5>nMaxArgs ) nMaxArgs = pOp->p5;
-        break;
-      }
       case OP_Transaction: {
         if( pOp->p2!=0 ) p->readOnly = 0;
         /* fall thru */
@@ -738,6 +733,10 @@ static void freeP4(sqlite3 *db, int p4type, void *p4){
   if( p4 ){
     assert( db );
     switch( p4type ){
+      case P4_FUNCCTX: {
+        freeEphemeralFunction(db, ((sqlite3_context*)p4)->pFunc);
+        /* Fall through into the next case */
+      }
       case P4_REAL:
       case P4_INT64:
       case P4_DYNAMIC:
@@ -1122,6 +1121,13 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
       sqlite3_snprintf(nTemp, zTemp, "%s(%d)", pDef->zName, pDef->nArg);
       break;
     }
+#ifdef SQLITE_DEBUG
+    case P4_FUNCCTX: {
+      FuncDef *pDef = pOp->p4.pCtx->pFunc;
+      sqlite3_snprintf(nTemp, zTemp, "%s(%d)", pDef->zName, pDef->nArg);
+      break;
+    }
+#endif
     case P4_INT64: {
       sqlite3_snprintf(nTemp, zTemp, "%lld", *pOp->p4.pI64);
       break;
@@ -2957,14 +2963,20 @@ u32 sqlite3VdbeSerialType(Mem *pMem, int file_format){
 }
 
 /*
+** The sizes for serial types less than 12
+*/
+static const u8 sqlite3SmallTypeSizes[] = {
+  0, 1, 2, 3, 4, 6, 8, 8, 0, 0, 0, 0
+};
+
+/*
 ** Return the length of the data corresponding to the supplied serial-type.
 */
 u32 sqlite3VdbeSerialTypeLen(u32 serial_type){
   if( serial_type>=12 ){
     return (serial_type-12)/2;
   }else{
-    static const u8 aSize[] = { 0, 1, 2, 3, 4, 6, 8, 8, 0, 0, 0, 0 };
-    return aSize[serial_type];
+    return sqlite3SmallTypeSizes[serial_type];
   }
 }
 
@@ -3048,7 +3060,7 @@ u32 sqlite3VdbeSerialPut(u8 *buf, Mem *pMem, u32 serial_type){
     }else{
       v = pMem->u.i;
     }
-    len = i = sqlite3VdbeSerialTypeLen(serial_type);
+    len = i = sqlite3SmallTypeSizes[serial_type];
     assert( i>0 );
     do{
       buf[--i] = (u8)(v&0xFF);
@@ -4078,7 +4090,7 @@ int sqlite3VdbeIdxRowid(sqlite3 *db, BtCursor *pCur, i64 *rowid){
   if( unlikely(typeRowid<1 || typeRowid>9 || typeRowid==7) ){
     goto idx_rowid_corruption;
   }
-  lenRowid = sqlite3VdbeSerialTypeLen(typeRowid);
+  lenRowid = sqlite3SmallTypeSizes[typeRowid];
   testcase( (u32)m.n==szHdr+lenRowid );
   if( unlikely((u32)m.n<szHdr+lenRowid) ){
     goto idx_rowid_corruption;

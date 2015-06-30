@@ -2949,7 +2949,7 @@ opendb_out:
     sqlite3GlobalConfig.xSqllog(pArg, db, zFilename, 0);
   }
 #endif
-  return sqlite3ApiExit(0, rc);
+  return rc & 0xff;
 }
 
 /*
@@ -3007,7 +3007,7 @@ int sqlite3_open16(
   }
   sqlite3ValueFree(pVal);
 
-  return sqlite3ApiExit(0, rc);
+  return rc & 0xff;
 }
 #endif /* SQLITE_OMIT_UTF16 */
 

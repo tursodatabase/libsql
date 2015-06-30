@@ -796,17 +796,16 @@ static SQLITE_NOINLINE int apiOomError(sqlite3 *db){
 ** function. However, if a malloc() failure has occurred since the previous
 ** invocation SQLITE_NOMEM is returned instead. 
 **
-** If the first argument, db, is not NULL and a malloc() error has occurred,
-** then the connection error-code (the value returned by sqlite3_errcode())
-** is set to SQLITE_NOMEM.
+** If an OOM as occurred, then the connection error-code (the value
+** returned by sqlite3_errcode()) is set to SQLITE_NOMEM.
 */
 int sqlite3ApiExit(sqlite3* db, int rc){
-  /* If the db handle is not NULL, then we must hold the connection handle
-  ** mutex here. Otherwise the read (and possible write) of db->mallocFailed 
+  /* If the db handle must hold the connection handle mutex here.
+  ** Otherwise the read (and possible write) of db->mallocFailed 
   ** is unsafe, as is the call to sqlite3Error().
   */
-  assert( !db || sqlite3_mutex_held(db->mutex) );
-  if( db==0 ) return rc & 0xff;
+  assert( db!=0 );
+  assert( sqlite3_mutex_held(db->mutex) );
   if( db->mallocFailed || rc==SQLITE_IOERR_NOMEM ){
     return apiOomError(db);
   }

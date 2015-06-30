@@ -253,6 +253,18 @@ test_suite "fts3" -prefix "" -description {
   fts4growth.test fts4growth2.test
 }
 
+test_suite "fts5" -prefix "" -description {
+  All FTS5 tests.
+} -files [glob -nocomplain $::testdir/../ext/fts5/test/*.test]
+
+test_suite "fts5-light" -prefix "" -description {
+  All FTS5 tests.
+} -files [
+  test_set \
+      [glob -nocomplain $::testdir/../ext/fts5/test/*.test] \
+      -exclude *corrupt* *fault* *big* *fts5aj*
+]
+
 test_suite "nofaultsim" -prefix "" -description {
   "Very" quick test suite. Runs in less than 5 minutes on a workstation. 
   This test suite is the same as the "quick" tests, except that some files

@@ -1556,10 +1556,10 @@ case OP_CollSeq: {
   break;
 }
 
-/* Opcode: Function P1 P2 P3 P4 P5
+/* Opcode: Function0 P1 P2 P3 P4 P5
 ** Synopsis: r[P3]=func(r[P2@P5])
 **
-** Invoke a user function (P4 is a pointer to a Function structure that
+** Invoke a user function (P4 is a pointer to a FuncDef object that
 ** defines the function) with P5 arguments taken from register P2 and
 ** successors.  The result of the function is stored in register P3.
 ** Register P3 must not be one of the function inputs.
@@ -1571,59 +1571,100 @@ case OP_CollSeq: {
 ** sqlite3_set_auxdata() API may be safely retained until the next
 ** invocation of this opcode.
 **
-** See also: AggStep and AggFinal
+** See also: Function, AggStep, AggFinal
 */
-case OP_Function: {
-  int i;
-  Mem *pArg;
-  sqlite3_context ctx;
-  sqlite3_value **apVal;
+/* Opcode: Function P1 P2 P3 P4 P5
+** Synopsis: r[P3]=func(r[P2@P5])
+**
+** Invoke a user function (P4 is a pointer to an sqlite3_context object that
+** contains a pointer to the function to be run) with P5 arguments taken
+** from register P2 and successors.  The result of the function is stored
+** in register P3.  Register P3 must not be one of the function inputs.
+**
+** P1 is a 32-bit bitmask indicating whether or not each argument to the 
+** function was determined to be constant at compile time. If the first
+** argument was constant then bit 0 of P1 is set. This is used to determine
+** whether meta data associated with a user function argument using the
+** sqlite3_set_auxdata() API may be safely retained until the next
+** invocation of this opcode.
+**
+** SQL functions are initially coded as OP_Function0 with P4 pointing
+** to a FuncDef object.  But on first evaluation, the P4 operand is
+** automatically converted into an sqlite3_context object and the operation
+** changed to this OP_Function opcode.  In this way, the initialization of
+** the sqlite3_context object occurs only once, rather than once for each
+** evaluation of the function.
+**
+** See also: Function0, AggStep, AggFinal
+*/
+case OP_Function0: {
   int n;
-
-  n = pOp->p5;
-  apVal = p->apArg;
-  assert( apVal || n==0 );
-  assert( pOp->p3>0 && pOp->p3<=(p->nMem-p->nCursor) );
-  ctx.pOut = &aMem[pOp->p3];
-  memAboutToChange(p, ctx.pOut);
-
-  assert( n==0 || (pOp->p2>0 && pOp->p2+n<=(p->nMem-p->nCursor)+1) );
-  assert( pOp->p3<pOp->p2 || pOp->p3>=pOp->p2+n );
-  pArg = &aMem[pOp->p2];
-  for(i=0; i<n; i++, pArg++){
-    assert( memIsValid(pArg) );
-    apVal[i] = pArg;
-    Deephemeralize(pArg);
-    REGISTER_TRACE(pOp->p2+i, pArg);
-  }
+  sqlite3_context *pCtx;
 
   assert( pOp->p4type==P4_FUNCDEF );
-  ctx.pFunc = pOp->p4.pFunc;
-  ctx.iOp = (int)(pOp - aOp);
-  ctx.pVdbe = p;
-  MemSetTypeFlag(ctx.pOut, MEM_Null);
-  ctx.fErrorOrAux = 0;
+  n = pOp->p5;
+  assert( pOp->p3>0 && pOp->p3<=(p->nMem-p->nCursor) );
+  assert( n==0 || (pOp->p2>0 && pOp->p2+n<=(p->nMem-p->nCursor)+1) );
+  assert( pOp->p3<pOp->p2 || pOp->p3>=pOp->p2+n );
+  pCtx = sqlite3DbMallocRaw(db, sizeof(*pCtx) + (n-1)*sizeof(sqlite3_value*));
+  if( pCtx==0 ) goto no_mem;
+  pCtx->pOut = 0;
+  pCtx->pFunc = pOp->p4.pFunc;
+  pCtx->iOp = (int)(pOp - aOp);
+  pCtx->pVdbe = p;
+  pCtx->argc = n;
+  pOp->p4type = P4_FUNCCTX;
+  pOp->p4.pCtx = pCtx;
+  pOp->opcode = OP_Function;
+  /* Fall through into OP_Function */
+}
+case OP_Function: {
+  int i;
+  sqlite3_context *pCtx;
+
+  assert( pOp->p4type==P4_FUNCCTX );
+  pCtx = pOp->p4.pCtx;
+
+  /* If this function is inside of a trigger, the register array in aMem[]
+  ** might change from one evaluation to the next.  The next block of code
+  ** checks to see if the register array has changed, and if so it
+  ** reinitializes the relavant parts of the sqlite3_context object */
+  pOut = &aMem[pOp->p3];
+  if( pCtx->pOut != pOut ){
+    pCtx->pOut = pOut;
+    for(i=pCtx->argc-1; i>=0; i--) pCtx->argv[i] = &aMem[pOp->p2+i];
+  }
+
+  memAboutToChange(p, pCtx->pOut);
+#ifdef SQLITE_DEBUG
+  for(i=0; i<pCtx->argc; i++){
+    assert( memIsValid(pCtx->argv[i]) );
+    REGISTER_TRACE(pOp->p2+i, pCtx->argv[i]);
+  }
+#endif
+  MemSetTypeFlag(pCtx->pOut, MEM_Null);
+  pCtx->fErrorOrAux = 0;
   db->lastRowid = lastRowid;
-  (*ctx.pFunc->xFunc)(&ctx, n, apVal); /* IMP: R-24505-23230 */
+  (*pCtx->pFunc->xFunc)(pCtx, pCtx->argc, pCtx->argv); /* IMP: R-24505-23230 */
   lastRowid = db->lastRowid;  /* Remember rowid changes made by xFunc */
 
   /* If the function returned an error, throw an exception */
-  if( ctx.fErrorOrAux ){
-    if( ctx.isError ){
-      sqlite3VdbeError(p, "%s", sqlite3_value_text(ctx.pOut));
-      rc = ctx.isError;
+  if( pCtx->fErrorOrAux ){
+    if( pCtx->isError ){
+      sqlite3VdbeError(p, "%s", sqlite3_value_text(pCtx->pOut));
+      rc = pCtx->isError;
     }
-    sqlite3VdbeDeleteAuxData(p, (int)(pOp - aOp), pOp->p1);
+    sqlite3VdbeDeleteAuxData(p, pCtx->iOp, pOp->p1);
   }
 
   /* Copy the result of the function into register P3 */
-  sqlite3VdbeChangeEncoding(ctx.pOut, encoding);
-  if( sqlite3VdbeMemTooBig(ctx.pOut) ){
-    goto too_big;
+  if( pOut->flags & (MEM_Str|MEM_Blob) ){
+    sqlite3VdbeChangeEncoding(pCtx->pOut, encoding);
+    if( sqlite3VdbeMemTooBig(pCtx->pOut) ) goto too_big;
   }
 
-  REGISTER_TRACE(pOp->p3, ctx.pOut);
-  UPDATE_MAX_BLOBSIZE(ctx.pOut);
+  REGISTER_TRACE(pOp->p3, pCtx->pOut);
+  UPDATE_MAX_BLOBSIZE(pCtx->pOut);
   break;
 }
 
@@ -4025,9 +4066,8 @@ case OP_NewRowid: {           /* out2 */
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
-  if( NEVER(pC->pCursor==0) ){
-    /* The zero initialization above is all that is needed */
-  }else{
+  assert( pC->pCursor!=0 );
+  {
     /* The next rowid or record number (different terms for the same
     ** thing) is obtained in a two-step algorithm.
     **
@@ -4816,7 +4856,6 @@ next_tail:
 case OP_SorterInsert:       /* in2 */
 case OP_IdxInsert: {        /* in2 */
   VdbeCursor *pC;
-  BtCursor *pCrsr;
   int nKey;
   const char *zKey;
 
@@ -4826,18 +4865,17 @@ case OP_IdxInsert: {        /* in2 */
   assert( isSorter(pC)==(pOp->opcode==OP_SorterInsert) );
   pIn2 = &aMem[pOp->p2];
   assert( pIn2->flags & MEM_Blob );
-  pCrsr = pC->pCursor;
   if( pOp->p5 & OPFLAG_NCHANGE ) p->nChange++;
-  assert( pCrsr!=0 );
+  assert( pC->pCursor!=0 );
   assert( pC->isTable==0 );
   rc = ExpandBlob(pIn2);
   if( rc==SQLITE_OK ){
-    if( isSorter(pC) ){
+    if( pOp->opcode==OP_SorterInsert ){
       rc = sqlite3VdbeSorterWrite(pC, pIn2);
     }else{
       nKey = pIn2->n;
       zKey = pIn2->z;
-      rc = sqlite3BtreeInsert(pCrsr, zKey, nKey, "", 0, 0, pOp->p3, 
+      rc = sqlite3BtreeInsert(pC->pCursor, zKey, nKey, "", 0, 0, pOp->p3, 
           ((pOp->p5 & OPFLAG_USESEEKRESULT) ? pC->seekResult : 0)
           );
       assert( pC->deferredMoveto==0 );
@@ -5757,57 +5795,101 @@ case OP_JumpZeroIncr: {        /* jump, in1 */
   break;
 }
 
-/* Opcode: AggStep * P2 P3 P4 P5
+/* Opcode: AggStep0 * P2 P3 P4 P5
 ** Synopsis: accum=r[P3] step(r[P2@P5])
 **
 ** Execute the step function for an aggregate.  The
 ** function has P5 arguments.   P4 is a pointer to the FuncDef
-** structure that specifies the function.  Use register
-** P3 as the accumulator.
+** structure that specifies the function.  Register P3 is the
+** accumulator.
 **
 ** The P5 arguments are taken from register P2 and its
 ** successors.
 */
-case OP_AggStep: {
+/* Opcode: AggStep * P2 P3 P4 P5
+** Synopsis: accum=r[P3] step(r[P2@P5])
+**
+** Execute the step function for an aggregate.  The
+** function has P5 arguments.   P4 is a pointer to an sqlite3_context
+** object that is used to run the function.  Register P3 is
+** as the accumulator.
+**
+** The P5 arguments are taken from register P2 and its
+** successors.
+**
+** This opcode is initially coded as OP_AggStep0.  On first evaluation,
+** the FuncDef stored in P4 is converted into an sqlite3_context and
+** the opcode is changed.  In this way, the initialization of the
+** sqlite3_context only happens once, instead of on each call to the
+** step function.
+*/
+case OP_AggStep0: {
   int n;
-  int i;
-  Mem *pMem;
-  Mem *pRec;
-  Mem t;
-  sqlite3_context ctx;
-  sqlite3_value **apVal;
+  sqlite3_context *pCtx;
 
+  assert( pOp->p4type==P4_FUNCDEF );
   n = pOp->p5;
-  assert( n>=0 );
-  pRec = &aMem[pOp->p2];
-  apVal = p->apArg;
-  assert( apVal || n==0 );
-  for(i=0; i<n; i++, pRec++){
-    assert( memIsValid(pRec) );
-    apVal[i] = pRec;
-    memAboutToChange(p, pRec);
-  }
-  ctx.pFunc = pOp->p4.pFunc;
   assert( pOp->p3>0 && pOp->p3<=(p->nMem-p->nCursor) );
-  ctx.pMem = pMem = &aMem[pOp->p3];
+  assert( n==0 || (pOp->p2>0 && pOp->p2+n<=(p->nMem-p->nCursor)+1) );
+  assert( pOp->p3<pOp->p2 || pOp->p3>=pOp->p2+n );
+  pCtx = sqlite3DbMallocRaw(db, sizeof(*pCtx) + (n-1)*sizeof(sqlite3_value*));
+  if( pCtx==0 ) goto no_mem;
+  pCtx->pMem = 0;
+  pCtx->pFunc = pOp->p4.pFunc;
+  pCtx->iOp = (int)(pOp - aOp);
+  pCtx->pVdbe = p;
+  pCtx->argc = n;
+  pOp->p4type = P4_FUNCCTX;
+  pOp->p4.pCtx = pCtx;
+  pOp->opcode = OP_AggStep;
+  /* Fall through into OP_AggStep */
+}
+case OP_AggStep: {
+  int i;
+  sqlite3_context *pCtx;
+  Mem *pMem;
+  Mem t;
+
+  assert( pOp->p4type==P4_FUNCCTX );
+  pCtx = pOp->p4.pCtx;
+  pMem = &aMem[pOp->p3];
+
+  /* If this function is inside of a trigger, the register array in aMem[]
+  ** might change from one evaluation to the next.  The next block of code
+  ** checks to see if the register array has changed, and if so it
+  ** reinitializes the relavant parts of the sqlite3_context object */
+  if( pCtx->pMem != pMem ){
+    pCtx->pMem = pMem;
+    for(i=pCtx->argc-1; i>=0; i--) pCtx->argv[i] = &aMem[pOp->p2+i];
+  }
+
+#ifdef SQLITE_DEBUG
+  for(i=0; i<pCtx->argc; i++){
+    assert( memIsValid(pCtx->argv[i]) );
+    REGISTER_TRACE(pOp->p2+i, pCtx->argv[i]);
+  }
+#endif
+
   pMem->n++;
   sqlite3VdbeMemInit(&t, db, MEM_Null);
-  ctx.pOut = &t;
-  ctx.isError = 0;
-  ctx.pVdbe = p;
-  ctx.iOp = (int)(pOp - aOp);
-  ctx.skipFlag = 0;
-  (ctx.pFunc->xStep)(&ctx, n, apVal); /* IMP: R-24505-23230 */
-  if( ctx.isError ){
-    sqlite3VdbeError(p, "%s", sqlite3_value_text(&t));
-    rc = ctx.isError;
+  pCtx->pOut = &t;
+  pCtx->fErrorOrAux = 0;
+  pCtx->skipFlag = 0;
+  (pCtx->pFunc->xStep)(pCtx,pCtx->argc,pCtx->argv); /* IMP: R-24505-23230 */
+  if( pCtx->fErrorOrAux ){
+    if( pCtx->isError ){
+      sqlite3VdbeError(p, "%s", sqlite3_value_text(&t));
+      rc = pCtx->isError;
+    }
+    sqlite3VdbeMemRelease(&t);
+  }else{
+    assert( t.flags==MEM_Null );
   }
-  if( ctx.skipFlag ){
+  if( pCtx->skipFlag ){
     assert( pOp[-1].opcode==OP_CollSeq );
     i = pOp[-1].p1;
     if( i ) sqlite3VdbeMemSetInt64(&aMem[i], 1);
   }
-  sqlite3VdbeMemRelease(&t);
   break;
 }
 

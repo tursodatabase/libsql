@@ -1,0 +1,217 @@
+# 2015 Apr 24
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# The tests in this file focus on testing the fts5vocab module.
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+set testprefix fts5vocab
+
+# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+
+
+do_execsql_test 1.1.1 {
+  CREATE VIRTUAL TABLE t1 USING fts5(one, prefix=1);
+  CREATE VIRTUAL TABLE v1 USING fts5vocab(t1, 'row');
+  PRAGMA table_info = v1;
+} {
+  0 term {} 0 {} 0
+  1 doc {} 0 {} 0
+  2 cnt {} 0 {} 0
+}
+
+do_execsql_test 1.1.2 {
+  CREATE VIRTUAL TABLE v2 USING fts5vocab(t1, 'col');
+  PRAGMA table_info = v2;
+} {
+  0 term {} 0 {} 0
+  1 col {} 0 {} 0
+  2 doc {} 0 {} 0
+  3 cnt {} 0 {} 0
+}
+
+do_execsql_test 1.2.1 { SELECT * FROM v1 } { }
+do_execsql_test 1.2.2 { SELECT * FROM v2 } { }
+
+do_execsql_test 1.3 {
+  INSERT INTO t1 VALUES('x y z');
+  INSERT INTO t1 VALUES('x x x');
+}
+
+do_execsql_test 1.4.1 {
+  SELECT * FROM v1;
+} {x 2 4  y 1 1  z 1 1}
+
+do_execsql_test 1.4.2 {
+  SELECT * FROM v2;
+} {x 0 2 4  y 0 1 1  z 0 1 1}
+
+do_execsql_test 1.5.1 {
+  BEGIN;
+    INSERT INTO t1 VALUES('a b c');
+    SELECT * FROM v1 WHERE term<'d';
+} {a 1 1   b 1 1   c 1 1}
+
+do_execsql_test 1.5.2 {
+    SELECT * FROM v2 WHERE term<'d';
+  COMMIT;
+} {a 0 1 1  b 0 1 1  c 0 1 1}
+
+do_execsql_test 1.6 {
+  DELETE FROM t1 WHERE one = 'a b c';
+  SELECT * FROM v1;
+} {x 2 4  y 1 1  z 1 1}
+
+#-------------------------------------------------------------------------
+#
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE tt USING fts5(a, b);
+  INSERT INTO tt VALUES('d g b f d f', 'f c e c d a');
+  INSERT INTO tt VALUES('f a e a a b', 'e d c f d d');
+  INSERT INTO tt VALUES('b c a a a b', 'f f c c b c');
+  INSERT INTO tt VALUES('f d c a c e', 'd g d e g d');
+  INSERT INTO tt VALUES('g d e f a g x', 'f f d a a b');
+  INSERT INTO tt VALUES('g c f b c g', 'a g f d c b');
+  INSERT INTO tt VALUES('c e c f g b', 'f e d b g a');
+  INSERT INTO tt VALUES('g d e f d e', 'a c d b a g');
+  INSERT INTO tt VALUES('e f a c c b', 'b f e a f d y');
+  INSERT INTO tt VALUES('c c a a c f', 'd g a e b g');
+}
+
+set res_col {
+  a 0 6 11    a 1 7 9
+  b 0 6 7     b 1 7 7 
+  c 0 6 12    c 1 5 8 
+  d 0 4 6     d 1 9 13 
+  e 0 6 7     e 1 6 6 
+  f 0 9 10    f 1 7 10 
+  g 0 5 7     g 1 5 7
+  x 0 1 1     y 1 1 1
+}
+set res_row {
+  a 10 20   b 9 14   c 9 20   d 9 19   
+  e 8 13   f 10 20   g 7 14   x 1 1   
+  y 1 1
+}
+
+foreach {tn tbl resname} {
+  1 "fts5vocab(tt, 'col')" res_col
+  2 "fts5vocab(tt, 'row')" res_row
+  3 "fts5vocab(tt, \"row\")" res_row
+  4 "fts5vocab(tt, [row])" res_row
+  5 "fts5vocab(tt, `row`)" res_row
+
+  6 "fts5vocab('tt', 'row')" res_row
+  7 "fts5vocab(\"tt\", \"row\")" res_row
+  8 "fts5vocab([tt], [row])" res_row
+  9 "fts5vocab(`tt`, `row`)" res_row
+} {
+  do_execsql_test 2.$tn "
+    DROP TABLE IF EXISTS tv;
+    CREATE VIRTUAL TABLE tv USING $tbl;
+    SELECT * FROM tv;
+  " [set $resname]
+}
+
+#-------------------------------------------------------------------------
+# Test errors in the CREATE VIRTUAL TABLE statement.
+#
+foreach {tn sql} {
+  1 { CREATE VIRTUAL TABLE aa USING fts5vocab() }
+  2 { CREATE VIRTUAL TABLE aa USING fts5vocab(x) }
+  3 { CREATE VIRTUAL TABLE aa USING fts5vocab(x,y,z) }
+  4 { CREATE VIRTUAL TABLE temp.aa USING fts5vocab(x,y,z,y) }
+} {
+  do_catchsql_test 3.$tn $sql {1 {wrong number of vtable arguments}}
+}
+
+do_catchsql_test 4.0 {
+  CREATE VIRTUAL TABLE cc USING fts5vocab(tbl, unknown);
+} {1 {fts5vocab: unknown table type: 'unknown'}}
+
+do_catchsql_test 4.1 {
+  ATTACH 'test.db' AS aux;
+  CREATE VIRTUAL TABLE aux.cc USING fts5vocab(main, tbl, row);
+} {1 {wrong number of vtable arguments}}
+
+#-------------------------------------------------------------------------
+# Test fts5vocab tables created in the temp schema. 
+#
+reset_db
+forcedelete test.db2
+do_execsql_test 5.0 {
+  ATTACH 'test.db2' AS aux;
+  CREATE VIRTUAL TABLE t1 USING fts5(x);
+  CREATE VIRTUAL TABLE temp.t1 USING fts5(x);
+  CREATE VIRTUAL TABLE aux.t1 USING fts5(x);
+
+  INSERT INTO main.t1 VALUES('a b c');
+  INSERT INTO main.t1 VALUES('d e f');
+  INSERT INTO main.t1 VALUES('a e c');
+
+  INSERT INTO temp.t1 VALUES('1 2 3');
+  INSERT INTO temp.t1 VALUES('4 5 6');
+  INSERT INTO temp.t1 VALUES('1 5 3');
+
+  INSERT INTO aux.t1 VALUES('x y z');
+  INSERT INTO aux.t1 VALUES('m n o');
+  INSERT INTO aux.t1 VALUES('x n z');
+}
+
+breakpoint
+do_execsql_test 5.1 {
+  CREATE VIRTUAL TABLE temp.vm  USING fts5vocab(main, t1, row);
+  CREATE VIRTUAL TABLE temp.vt1 USING fts5vocab(t1, row);
+  CREATE VIRTUAL TABLE temp.vt2 USING fts5vocab(temp, t1, row);
+  CREATE VIRTUAL TABLE temp.va  USING fts5vocab(aux, t1, row);
+}
+
+do_execsql_test 5.2 { SELECT * FROM vm } {
+  a 2 2 b 1 1 c 2 2 d 1 1 e 2 2 f 1 1
+}
+do_execsql_test 5.3 { SELECT * FROM vt1 } {
+  1 2 2 2 1 1 3 2 2 4 1 1 5 2 2 6 1 1
+}
+do_execsql_test 5.4 { SELECT * FROM vt2 } {
+  1 2 2 2 1 1 3 2 2 4 1 1 5 2 2 6 1 1
+}
+do_execsql_test 5.5 { SELECT * FROM va } {
+  m 1 1 n 2 2 o 1 1 x 2 2 y 1 1 z 2 2
+}
+
+#-------------------------------------------------------------------------
+#
+do_execsql_test 6.0 {
+  CREATE TABLE iii(iii);
+  CREATE TABLE jjj(x);
+}
+
+do_catchsql_test 6.1 {
+  CREATE VIRTUAL TABLE vocab1 USING fts5vocab(iii, row);
+  SELECT * FROM vocab1;
+} {1 {no such fts5 table: main.iii}}
+
+do_catchsql_test 6.2 {
+  CREATE VIRTUAL TABLE vocab2 USING fts5vocab(jjj, row);
+  SELECT * FROM vocab2;
+} {1 {no such fts5 table: main.jjj}}
+
+do_catchsql_test 6.2 {
+  CREATE VIRTUAL TABLE vocab3 USING fts5vocab(lll, row);
+  SELECT * FROM vocab3;
+} {1 {no such fts5 table: main.lll}}
+
+finish_test
+

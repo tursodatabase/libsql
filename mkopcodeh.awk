@@ -122,9 +122,7 @@ END {
   for(i=0; i<n_op; i++){
     name = order[i];
     if( op[name]>=0 ) continue;
-    if( name=="OP_Function"      \
-     || name=="OP_AggStep"       \
-     || name=="OP_Transaction"   \
+    if( name=="OP_Transaction"   \
      || name=="OP_AutoCommit"    \
      || name=="OP_Savepoint"     \
      || name=="OP_Checkpoint"    \
