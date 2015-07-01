@@ -1749,14 +1749,14 @@ do_test 21.1 {
 } {100}
 
 set mainerr {*** in database main ***
-Multiple uses for byte 672 of page 15}
+Page 15: multiple uses for byte 672}
 set auxerr {*** in database aux ***
-Multiple uses for byte 672 of page 15}
+Page 15: Multiple uses for byte 672}
 
 set mainerr {/{\*\*\* in database main \*\*\*
-Multiple uses for byte 672 of page 15}.*/}
+Page 15: multiple uses for byte 672}.*/}
 set auxerr {/{\*\*\* in database aux \*\*\*
-Multiple uses for byte 672 of page 15}.*/}
+Page 15: multiple uses for byte 672}.*/}
 
 do_test 22.2 {
   catch { db close }

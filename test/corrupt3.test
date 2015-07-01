@@ -97,7 +97,7 @@ do_test corrupt3-1.10 {
     PRAGMA integrity_check
   }
 } {0 {{*** in database main ***
-On tree page 2 cell 0: invalid page number 4
+Page 2 cell 0: invalid page number 4
 Page 3 is never used}}}
 do_test corrupt3-1.11 {
   db close
@@ -112,7 +112,7 @@ do_test corrupt3-1.12 {
     PRAGMA integrity_check
   }
 } {0 {{*** in database main ***
-On tree page 2 cell 0: 1 of 1 pages missing from overflow list starting at 0
+Page 2 cell 0: 1 of 1 pages missing from overflow list starting at 0
 Page 3 is never used}}}
 
 finish_test

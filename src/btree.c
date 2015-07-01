@@ -8923,23 +8923,19 @@ static int btreeHeapPull(u32 *aHeap, u32 *pOut){
 ** These checks are done:
 **
 **      1.  Make sure that cells and freeblocks do not overlap
-**          but combine to completely cover the page.
-**  NO  2.  Make sure cell keys are in order.
-**  NO  3.  Make sure no key is less than or equal to zLowerBound.
-**  NO  4.  Make sure no key is greater than or equal to zUpperBound.
-**      5.  Check the integrity of overflow pages.
-**      6.  Recursively call checkTreePage on all children.
-**      7.  Verify that the depth of all children is the same.
-**      8.  Make sure this page is at least 33% full or else it is
-**          the root of the tree.
+**      2.  Ensure that every byte of the page is accounted for
+**      3.  Make sure integer cell keys are in order.
+**      4.  Check the integrity of overflow pages.
+**      5.  Recursively call checkTreePage on all children.
+**      6.  Verify that the depth of all children is the same.
 */
 static int checkTreePage(
   IntegrityCk *pCheck,  /* Context for the sanity check */
   int iPage,            /* Page number of the page to check */
-  i64 *pnParentMinKey, 
-  i64 *pnParentMaxKey
+  i64 minKey,           /* All integer primary keys must be >= this value */
+  i64 maxKey            /* All integer primary keys must be <= this value */
 ){
-  MemPage *pPage;
+  MemPage *pPage = 0;
   int i, rc, depth, d2, pgno, cnt;
   int hdr, cellStart;
   int nCell;
@@ -8948,8 +8944,9 @@ static int checkTreePage(
   int usableSize;
   u32 *heap = 0;
   u32 x, prev = 0;
-  i64 nMinKey = 0;
-  i64 nMaxKey = 0;
+  u32 pc;
+  int doCoverageCheck = 1;
+  int contentOffset;
   const char *saved_zPfx = pCheck->zPfx;
   int saved_v1 = pCheck->v1;
   int saved_v2 = pCheck->v2;
@@ -8963,8 +8960,7 @@ static int checkTreePage(
   pCheck->zPfx = "Page %d: ";
   pCheck->v1 = iPage;
   if( (rc = btreeGetPage(pBt, (Pgno)iPage, &pPage, 0))!=0 ){
-    checkAppendMsg(pCheck,
-       "unable to get the page. error code=%d", rc);
+    checkAppendMsg(pCheck, "unreadable - error code=%d", rc);
     depth = -1;
     goto end_of_check;
   }
@@ -8974,45 +8970,56 @@ static int checkTreePage(
   pPage->isInit = 0;
   if( (rc = btreeInitPage(pPage))!=0 ){
     assert( rc==SQLITE_CORRUPT );  /* The only possible error from InitPage */
-    checkAppendMsg(pCheck,
-                   "btreeInitPage() returns error code %d", rc);
-    releasePage(pPage);
+    checkAppendMsg(pCheck, "corrupt header or freelist");
     depth = -1;
     goto end_of_check;
   }
 
-  /* Check out all the cells.
-  */
+  /* Initialize variables used during cell scan */
+  data = pPage->aData;
+  hdr = pPage->hdrOffset;
   depth = 0;
+  contentOffset = get2byteNotZero(&data[hdr+5]);
+  assert( contentOffset<=usableSize );  /* Enforced by btreeInitPage() */
+
+  /* EVIDENCE-OF: R-37002-32774 The two-byte integer at offset 3 gives the
+  ** number of cells on the page. */
+  nCell = get2byte(&data[hdr+3]);
+  assert( nCell==pPage->nCell );
+
+  /* EVIDENCE-OF: R-23882-45353 The cell pointer array of a b-tree page
+  ** immediately follows the b-tree page header. */
+  cellStart = pPage->cellOffset;
+
+  /* EVIDENCE-OF: R-02776-14802 The cell pointer array consists of K 2-byte
+  ** integer offsets to the cell contents. */
+  pCheck->zPfx = "Page %d cell %d: ";
   for(i=0; i<pPage->nCell && pCheck->mxErr; i++){
-    u8 *pCell;
-    u32 sz;
     CellInfo info;
 
-    /* Check payload overflow pages
-    */
-    pCheck->zPfx = "On tree page %d cell %d: ";
-    pCheck->v1 = iPage;
     pCheck->v2 = i;
-    pCell = findCell(pPage,i);
-    pPage->xParseCell(pPage, pCell, &info);
-    sz = info.nPayload;
-    /* For intKey pages, check that the keys are in order.
-    */
-    if( pPage->intKey ){
-      if( i==0 ){
-        nMinKey = nMaxKey = info.nKey;
-      }else if( info.nKey <= nMaxKey ){
-        checkAppendMsg(pCheck,
-           "Rowid %lld out of order (previous was %lld)", info.nKey, nMaxKey);
-      }
-      nMaxKey = info.nKey;
+    pc = get2byteAligned(&data[cellStart+i*2]);
+    if( pc<contentOffset || pc>usableSize-4 ){
+      checkAppendMsg(pCheck,
+        "offset (%d) out of range %d..%d",
+        pc, contentOffset, usableSize-4
+      );
+      doCoverageCheck = 0;
+      continue;
     }
-    if( (sz>info.nLocal) 
-     && (&pCell[info.iOverflow]<=&pPage->aData[pBt->usableSize])
-    ){
-      int nPage = (sz - info.nLocal + usableSize - 5)/(usableSize - 4);
-      Pgno pgnoOvfl = get4byte(&pCell[info.iOverflow]);
+    pPage->xParseCell(pPage, &data[pc], &info);
+    if( pc+info.nSize > usableSize ){
+      checkAppendMsg(pCheck, "oversized content");
+      doCoverageCheck = 0;
+    }else
+
+    /* Scan overflow pages */
+    if( info.nPayload>info.nLocal ){
+      int nPage;
+      Pgno pgnoOvfl;
+      assert( pc+info.iOverflow <= usableSize-4 );
+      nPage = (info.nPayload - info.nLocal + usableSize-5)/(usableSize-4);
+      pgnoOvfl = get4byte(&data[pc+info.iOverflow]);
 #ifndef SQLITE_OMIT_AUTOVACUUM
       if( pBt->autoVacuum ){
         checkPtrmap(pCheck, pgnoOvfl, PTRMAP_OVERFLOW1, iPage);
@@ -9021,104 +9028,58 @@ static int checkTreePage(
       checkList(pCheck, 0, pgnoOvfl, nPage);
     }
 
-    /* Check sanity of left child page.
-    */
+    /* Check sanity of left child page. */
     if( !pPage->leaf ){
-      pgno = get4byte(pCell);
+      pgno = get4byte(&data[pc]);
 #ifndef SQLITE_OMIT_AUTOVACUUM
       if( pBt->autoVacuum ){
         checkPtrmap(pCheck, pgno, PTRMAP_BTREE, iPage);
       }
 #endif
-      d2 = checkTreePage(pCheck, pgno, &nMinKey, i==0?NULL:&nMaxKey);
+      d2 = checkTreePage(pCheck, pgno, minKey, info.nKey);
       if( i>0 && d2!=depth ){
-        checkAppendMsg(pCheck, "Child page depth differs");
+        checkAppendMsg(pCheck, "inconsistent subtree depth");
       }
       depth = d2;
+    }
+
+    /* For intKey pages, check that the keys are in order. */
+    if( pPage->intKey ){
+      i64 mx = maxKey - (nCell - (i+1));
+      if( info.nKey<minKey || info.nKey>mx ){
+        checkAppendMsg(pCheck, "rowid %lld out of range %lld..%lld",
+                       info.nKey, minKey, mx);
+      }else{
+        minKey = info.nKey+1;
+      }
     }
   }
 
   if( !pPage->leaf ){
-    pgno = get4byte(&pPage->aData[pPage->hdrOffset+8]);
-    pCheck->zPfx = "On page %d at right child: ";
-    pCheck->v1 = iPage;
+    pgno = get4byte(&data[pPage->hdrOffset+8]);
 #ifndef SQLITE_OMIT_AUTOVACUUM
     if( pBt->autoVacuum ){
+      pCheck->zPfx = "Page %d right child: ";
       checkPtrmap(pCheck, pgno, PTRMAP_BTREE, iPage);
     }
 #endif
-    checkTreePage(pCheck, pgno, NULL, !pPage->nCell?NULL:&nMaxKey);
-  }
- 
-  /* For intKey leaf pages, check that the min/max keys are in order
-  ** with any left/parent/right pages.
-  */
-  pCheck->zPfx = "Page %d: ";
-  pCheck->v1 = iPage;
-  if( pPage->leaf && pPage->intKey ){
-    /* if we are a left child page */
-    if( pnParentMinKey ){
-      /* if we are the left most child page */
-      if( !pnParentMaxKey ){
-        if( nMaxKey > *pnParentMinKey ){
-          checkAppendMsg(pCheck,
-              "Rowid %lld out of order (max larger than parent min of %lld)",
-              nMaxKey, *pnParentMinKey);
-        }
-      }else{
-        if( nMinKey <= *pnParentMinKey ){
-          checkAppendMsg(pCheck,
-              "Rowid %lld out of order (min less than parent min of %lld)",
-              nMinKey, *pnParentMinKey);
-        }
-        if( nMaxKey > *pnParentMaxKey ){
-          checkAppendMsg(pCheck,
-              "Rowid %lld out of order (max larger than parent max of %lld)",
-              nMaxKey, *pnParentMaxKey);
-        }
-        *pnParentMinKey = nMaxKey;
-      }
-    /* else if we're a right child page */
-    } else if( pnParentMaxKey ){
-      if( nMinKey <= *pnParentMaxKey ){
-        checkAppendMsg(pCheck,
-            "Rowid %lld out of order (min less than parent max of %lld)",
-            nMinKey, *pnParentMaxKey);
-      }
+    d2 = checkTreePage(pCheck, pgno, minKey, maxKey);
+    if( d2!=depth && nCell>0 ){
+      checkAppendMsg(pCheck, "inconsistent subtree depth");
     }
   }
 
   /* Check for complete coverage of the page
   */
-  data = pPage->aData;
-  hdr = pPage->hdrOffset;
-  heap = (u32*)sqlite3PageMalloc( pBt->pageSize );
-  pCheck->zPfx = 0;
-  if( heap==0 ){
-    pCheck->mallocFailed = 1;
-  }else{
-    int contentOffset = get2byteNotZero(&data[hdr+5]);
-    assert( contentOffset<=usableSize );  /* Enforced by btreeInitPage() */
+  if( doCoverageCheck ){
+    heap = pCheck->heap;
     heap[0] = 0;
     btreeHeapInsert(heap, contentOffset-1);
-    /* EVIDENCE-OF: R-37002-32774 The two-byte integer at offset 3 gives the
-    ** number of cells on the page. */
-    nCell = get2byte(&data[hdr+3]);
-    /* EVIDENCE-OF: R-23882-45353 The cell pointer array of a b-tree page
-    ** immediately follows the b-tree page header. */
-    cellStart = hdr + 12 - 4*pPage->leaf;
-    /* EVIDENCE-OF: R-02776-14802 The cell pointer array consists of K 2-byte
-    ** integer offsets to the cell contents. */
     for(i=nCell-1; i>=0; i--){
       u32 pc = get2byteAligned(&data[cellStart+i*2]);
       u32 size = pPage->xCellSize(pPage, &data[pc]);
-      if( (int)(pc+size-1)>=usableSize ){
-        pCheck->zPfx = 0;
-        checkAppendMsg(pCheck,
-            "Corruption detected in cell %d on page %d",i,iPage);
-      }else{
-        btreeHeapInsert(heap, (pc<<16)|(pc+size-1));
-      }
+      assert( pc+size <= usableSize );  /* Otherwise doCoverageCheck==0 */
+      btreeHeapInsert(heap, (pc<<16)|(pc+size-1));
     }
     /* EVIDENCE-OF: R-20690-50594 The second field of the b-tree page header
     ** is the offset of the first freeblock, or zero if there are no
@@ -9145,10 +9106,10 @@ static int checkTreePage(
     assert( heap[0]>0 );
     assert( (heap[1]>>16)==0 );
     btreeHeapPull(heap,&prev);
+    pCheck->zPfx = "Page %d: ";
     while( btreeHeapPull(heap,&x) ){
       if( (prev&0xffff)+1>(x>>16) ){
-        checkAppendMsg(pCheck,
-          "Multiple uses for byte %u of page %d", x>>16, iPage);
+        checkAppendMsg(pCheck, "multiple uses for byte %u", x>>16);
         break;
       }else{
         cnt += (x>>16) - (prev&0xffff) - 1;
@@ -9163,14 +9124,12 @@ static int checkTreePage(
     */
     if( heap[0]==0 && cnt!=data[hdr+7] ){
       checkAppendMsg(pCheck,
-          "Fragmentation of %d bytes reported as %d on page %d",
-          cnt, data[hdr+7], iPage);
+          "fragmentation of %d should be %d", data[hdr+7], cnt);
     }
   }
-  sqlite3PageFree(heap);
-  releasePage(pPage);
 
 end_of_check:
+  releasePage(pPage);
   pCheck->zPfx = saved_zPfx;
   pCheck->v1 = saved_v1;
   pCheck->v2 = saved_v2;
@@ -9200,14 +9159,15 @@ char *sqlite3BtreeIntegrityCheck(
   int *pnErr    /* Write number of errors seen to this variable */
 ){
   Pgno i;
-  int nRef;
+  VVA_ONLY( int nRef );
   IntegrityCk sCheck;
   BtShared *pBt = p->pBt;
+  int savedDbFlags = pBt->db->flags;
   char zErr[100];
 
   sqlite3BtreeEnter(p);
   assert( p->inTrans>TRANS_NONE && pBt->inTransaction>TRANS_NONE );
-  nRef = sqlite3PagerRefcount(pBt->pPager);
+  assert( (nRef = sqlite3PagerRefcount(pBt->pPager))>=0 );
   sCheck.pBt = pBt;
   sCheck.pPager = pBt->pPager;
   sCheck.nPage = btreePagecount(sCheck.pBt);
@@ -9217,21 +9177,26 @@ char *sqlite3BtreeIntegrityCheck(
   sCheck.zPfx = 0;
   sCheck.v1 = 0;
   sCheck.v2 = 0;
-  *pnErr = 0;
+  sCheck.aPgRef = 0;
+  sCheck.heap = 0;
+  sqlite3StrAccumInit(&sCheck.errMsg, 0, zErr, sizeof(zErr), SQLITE_MAX_LENGTH);
   if( sCheck.nPage==0 ){
-    sqlite3BtreeLeave(p);
-    return 0;
+    goto integrity_ck_cleanup;
   }
 
   sCheck.aPgRef = sqlite3MallocZero((sCheck.nPage / 8)+ 1);
   if( !sCheck.aPgRef ){
-    *pnErr = 1;
-    sqlite3BtreeLeave(p);
-    return 0;
+    sCheck.nErr = 1;
+    goto integrity_ck_cleanup;
   }
+  sCheck.heap = (u32*)sqlite3PageMalloc( pBt->pageSize );
+  if( sCheck.heap==0 ){
+    sCheck.mallocFailed = 1;
+    goto integrity_ck_cleanup;
+  }
+
   i = PENDING_BYTE_PAGE(pBt);
   if( i<=sCheck.nPage ) setPageReferenced(&sCheck, i);
-  sqlite3StrAccumInit(&sCheck.errMsg, 0, zErr, sizeof(zErr), SQLITE_MAX_LENGTH);
 
   /* Check the integrity of the freelist
   */
@@ -9242,17 +9207,18 @@ char *sqlite3BtreeIntegrityCheck(
 
   /* Check all the tables.
   */
+  pBt->db->flags &= ~SQLITE_CellSizeCk;
   for(i=0; (int)i<nRoot && sCheck.mxErr; i++){
+
     if( aRoot[i]==0 ) continue;
 #ifndef SQLITE_OMIT_AUTOVACUUM
     if( pBt->autoVacuum && aRoot[i]>1 ){
       checkPtrmap(&sCheck, aRoot[i], PTRMAP_ROOTPAGE, 0);
     }
 #endif
-    sCheck.zPfx = "List of tree roots: ";
-    checkTreePage(&sCheck, aRoot[i], NULL, NULL);
-    sCheck.zPfx = 0;
+    checkTreePage(&sCheck, aRoot[i], SMALLEST_INT64, LARGEST_INT64);
   }
+  pBt->db->flags = savedDbFlags;
 
   /* Make sure every page in the file is referenced
   */
@@ -9276,28 +9242,20 @@ char *sqlite3BtreeIntegrityCheck(
 #endif
   }
 
-  /* Make sure this analysis did not leave any unref() pages.
-  ** This is an internal consistency check; an integrity check
-  ** of the integrity check.
-  */
-  if( NEVER(nRef != sqlite3PagerRefcount(pBt->pPager)) ){
-    checkAppendMsg(&sCheck,
-      "Outstanding page count goes from %d to %d during this analysis",
-      nRef, sqlite3PagerRefcount(pBt->pPager)
-    );
-  }
-
   /* Clean  up and report errors.
   */
-  sqlite3BtreeLeave(p);
+integrity_ck_cleanup:
+  sqlite3PageFree(sCheck.heap);
   sqlite3_free(sCheck.aPgRef);
   if( sCheck.mallocFailed ){
     sqlite3StrAccumReset(&sCheck.errMsg);
-    *pnErr = sCheck.nErr+1;
-    return 0;
+    sCheck.nErr++;
   }
   *pnErr = sCheck.nErr;
   if( sCheck.nErr==0 ) sqlite3StrAccumReset(&sCheck.errMsg);
+  /* Make sure this analysis did not leave any unref() pages. */
+  assert( nRef==sqlite3PagerRefcount(pBt->pPager) );
+  sqlite3BtreeLeave(p);
   return sqlite3StrAccumFinish(&sCheck.errMsg);
 }
 #endif /* SQLITE_OMIT_INTEGRITY_CHECK */

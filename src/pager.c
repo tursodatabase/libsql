@@ -6387,12 +6387,14 @@ u8 sqlite3PagerIsreadonly(Pager *pPager){
   return pPager->readOnly;
 }
 
+#ifdef SQLITE_DEBUG
 /*
 ** Return the number of references to the pager.
 */
 int sqlite3PagerRefcount(Pager *pPager){
   return sqlite3PcacheRefCount(pPager->pPCache);
 }
+#endif
 
 /*
 ** Return the approximate number of bytes of memory currently

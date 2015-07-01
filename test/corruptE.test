@@ -82,9 +82,8 @@ do_test corruptE-2.1 {
   set res [ catchsql {PRAGMA integrity_check} ]
   set ans [lindex $res 1]
 
-  list [regexp {out of order.*previous was} $ans] \
-       [regexp {out of order.*max larger than parent max} $ans]
-} {1 1}
+  regexp {rowid \d+ out of range \d+\.\.\d+} $ans]
+} {1}
 
 do_test corruptE-2.2 {
   db close
@@ -98,9 +97,8 @@ do_test corruptE-2.2 {
   set res [ catchsql {PRAGMA integrity_check} ]
   set ans [lindex $res 1]
 
-  list [regexp {out of order.*previous was} $ans] \
-       [regexp {out of order.*min less than parent min} $ans]
-} {1 1}
+  regexp {rowid \d+ out of range \d+\.\.\d+} $ans]
+} {1}
 
 do_test corruptE-2.3 {
   db close
@@ -115,7 +113,7 @@ do_test corruptE-2.3 {
   set res [ catchsql {PRAGMA integrity_check} ]
   set ans [lindex $res 1]
 
-  list [regexp {out of order.*max larger than parent min} $ans]
+  regexp {rowid \d+ out of range \d+\.\.\d+} $ans]
 } {1}
 
 do_test corruptE-2.4 {
@@ -130,9 +128,8 @@ do_test corruptE-2.4 {
   set res [ catchsql {PRAGMA integrity_check} ]
   set ans [lindex $res 1]
 
-  list [regexp {out of order.*min less than parent max} $ans]
+  regexp {rowid \d+ out of range \d+\.\.\d+} $ans]
 } {1}
-
 
 set tests [list {10233 0xd0} \
                 {941 0x42} \
@@ -171,7 +168,7 @@ foreach test $tests {
     set res [ catchsql {PRAGMA integrity_check} ]
     set ans [lindex $res 1]
 
-    list [regexp {out of order} $ans]
+    list [regexp {out of range|database disk image is malformed} $ans]
   } {1}
   incr tc 1
 }

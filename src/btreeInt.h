@@ -682,6 +682,7 @@ struct IntegrityCk {
   const char *zPfx; /* Error message prefix */
   int v1, v2;       /* Values for up to two %d fields in zPfx */
   StrAccum errMsg;  /* Accumulate the error message text here */
+  u32 *heap;        /* Min-heap used for analyzing cell coverage */
 };
 
 /*
