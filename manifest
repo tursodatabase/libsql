@@ -1,5 +1,5 @@
-C Simplification\sof\sPRAGMA\sintegrity_check\slogic.\s\sMake\ssure\sthat\sthe\sdepth\nof\sthe\sright-most\ssubtree\sis\scorrect.\s\sSize\sreduction\sand\sperformance\sincrease,\nwith\sno\schange\sin\soutput.
-D 2015-07-01T17:53:49.435
+C Avoid\screate\sa\sstack\sfrom\sin\ssqlite3BackupUpdate()\sin\sthe\scommon\scase\swhere\nthe\sfirst\sargument\sis\sNULL.
+D 2015-07-01T19:59:36.722
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 285a0a234ed7610d431d91671c136098c2bd86a9
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -266,7 +266,7 @@ F src/alter.c 48e14b8aea28dc58baafe3cfcb8889c086b7744a
 F src/analyze.c f89727c36f997bd2bf6c5e546c2f51dc94e6f2a4
 F src/attach.c e944d0052b577703b9b83aac1638452ff42a8395
 F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
-F src/backup.c ff743689c4d6c5cb55ad42ed9d174b2b3e71f1e3
+F src/backup.c 4d9134dc988a87838c06056c89c0e8c4700a0452
 F src/bitvec.c d1f21d7d91690747881f03940584f4cc548c9d3d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
 F src/btree.c e283de2f9da7ec5e47bedcd442a66a671aa2e118
@@ -1364,7 +1364,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 307195c8709d7fd2a642baa8011eb0c88cfdc0ac
-R 1440540aa3867982699c114f203dbd2b
+P 550705fcb64e7ad637686e47cabe2621d65851bf
+R 859f151cbb85936ea5c95a187b7fc22c
 U drh
-Z 4a2c86e34c201f78bc5202943cc67b23
+Z 89cd83b2dd439137569e08223645cc6d
