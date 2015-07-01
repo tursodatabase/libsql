@@ -1037,6 +1037,9 @@ static void btreeParseCellPtrNoPayload(
   assert( pPage->leaf==0 );
   assert( pPage->noPayload );
   assert( pPage->childPtrSize==4 );
+#ifndef SQLITE_DEBUG
+  UNUSED_PARAMETER(pPage);
+#endif
   pInfo->nSize = 4 + getVarint(&pCell[4], (u64*)&pInfo->nKey);
   pInfo->nPayload = 0;
   pInfo->nLocal = 0;
@@ -1234,6 +1237,8 @@ static u16 cellSizePtrNoPayload(MemPage *pPage, u8 *pCell){
   ** this function verifies that this invariant is not violated. */
   CellInfo debuginfo;
   pPage->xParseCell(pPage, pCell, &debuginfo);
+#else
+  UNUSED_PARAMETER(pPage);
 #endif
 
   assert( pPage->childPtrSize==4 );
@@ -9105,11 +9110,8 @@ static int checkTreePage(
     /* EVIDENCE-OF: R-02776-14802 The cell pointer array consists of K 2-byte
     ** integer offsets to the cell contents. */
     for(i=nCell-1; i>=0; i--){
-      int pc = get2byteAligned(&data[cellStart+i*2]);
-      u32 size = 65536;
-      if( pc<=usableSize-4 ){
-        size = pPage->xCellSize(pPage, &data[pc]);
-      }
+      u32 pc = get2byteAligned(&data[cellStart+i*2]);
+      u32 size = pPage->xCellSize(pPage, &data[pc]);
       if( (int)(pc+size-1)>=usableSize ){
         pCheck->zPfx = 0;
         checkAppendMsg(pCheck,
