@@ -1,5 +1,5 @@
-C Make\suse\sof\sthe\s_byteswap_ushort()\sand\s_byteswap_ulong()\scompiler\sintrinsics\sfor\sMSVC,\swhen\savailable.
-D 2015-06-30T17:28:40.942
+C Change\sintegrity_check\sto\sanalyze\sthe\scells\sof\sa\spage\sin\sreverse\sorder,\sas\s\nthis\swill\stend\sto\sinsert\sthe\scells\sinto\sthe\sanalysis\sheap\sin\sincreasing\sorder\nby\saddress,\swhich\sis\sthe\smost\sefficient\sway\sto\sload\sa\smin-heap.
+D 2015-07-01T01:31:14.408
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 285a0a234ed7610d431d91671c136098c2bd86a9
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -269,7 +269,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c ff743689c4d6c5cb55ad42ed9d174b2b3e71f1e3
 F src/bitvec.c d1f21d7d91690747881f03940584f4cc548c9d3d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c 3a535c0118872c3ee4e198b80a62d09315381dab
+F src/btree.c a0eb750d855376724ba51401e0d2077d48fdb8d7
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h c54d380cb262549c4176e0d665518cc1a3861bdf
 F src/build.c b3f15255d5b16e42dafeaa638fd4f8a47c94ed70
@@ -1364,7 +1364,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8bfcda3d10aec864d71d12a1248c37e4db6f8899
-R 0b0302cb101be05314d04a740bd2104f
-U mistachkin
-Z 5b6957d403881561ab6dda74eaf3a043
+P fe144dd73f7097a17c24c7812c2a1cc40466e6da
+R d902bce857a438ed4cf7acbfc3ed2c71
+U drh
+Z b555330269cc680cca0da8f0e05cbcf3

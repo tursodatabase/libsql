@@ -9104,7 +9104,7 @@ static int checkTreePage(
     cellStart = hdr + 12 - 4*pPage->leaf;
     /* EVIDENCE-OF: R-02776-14802 The cell pointer array consists of K 2-byte
     ** integer offsets to the cell contents. */
-    for(i=0; i<nCell; i++){
+    for(i=nCell-1; i>=0; i--){
       int pc = get2byteAligned(&data[cellStart+i*2]);
       u32 size = 65536;
       if( pc<=usableSize-4 ){
