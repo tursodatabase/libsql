@@ -1,5 +1,5 @@
-C Fix\ssome\sharmless\scompiler\swarnings.
-D 2015-07-01T04:08:40.538
+C Simplification\sof\sPRAGMA\sintegrity_check\slogic.\s\sMake\ssure\sthat\sthe\sdepth\nof\sthe\sright-most\ssubtree\sis\scorrect.\s\sSize\sreduction\sand\sperformance\sincrease,\nwith\sno\schange\sin\soutput.
+D 2015-07-01T17:53:49.435
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 285a0a234ed7610d431d91671c136098c2bd86a9
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -269,9 +269,9 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c ff743689c4d6c5cb55ad42ed9d174b2b3e71f1e3
 F src/bitvec.c d1f21d7d91690747881f03940584f4cc548c9d3d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c 075ce6ddce9e66277c898f5b6a44a8a7c61c8125
+F src/btree.c e283de2f9da7ec5e47bedcd442a66a671aa2e118
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
-F src/btreeInt.h c54d380cb262549c4176e0d665518cc1a3861bdf
+F src/btreeInt.h 2ad754dd4528baa8d0946a593cc373b890bf859e
 F src/build.c b3f15255d5b16e42dafeaa638fd4f8a47c94ed70
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
@@ -314,8 +314,8 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c 23eb5f56fac54d8fe0cb204291f3b3b2d94f23fc
 F src/os_win.c 27cc135e2d0b8b1e2e4944db1e2669a6a18fa0f8
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
-F src/pager.c 922d8ea28387b79a117488da06ee84f77d50d71e
-F src/pager.h c3476e7c89cdf1c6914e50a11f3714e30b4e0a77
+F src/pager.c aa916ca28606ccf4b6877dfc2b643ccbca86589f
+F src/pager.h 6d435f563b3f7fcae4b84433b76a6ac2730036e2
 F src/parse.y 6d60dda8f8d418b6dc034f1fbccd816c459983a8
 F src/pcache.c cde06aa50962595e412d497e22fd2e07878ba1f0
 F src/pcache.h 9968603796240cdf83da7e7bef76edf90619cea9
@@ -1364,7 +1364,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 59ad912c4c1f858e04d27b1b8f25581a5f6e5daf
-R 71a875c7f3b6312a533d9c1fd4d005d9
+P 307195c8709d7fd2a642baa8011eb0c88cfdc0ac
+R 1440540aa3867982699c114f203dbd2b
 U drh
-Z 39cb6954bdcd951136843b690dd37c51
+Z 4a2c86e34c201f78bc5202943cc67b23

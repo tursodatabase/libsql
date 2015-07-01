@@ -8924,14 +8924,10 @@ static int btreeHeapPull(u32 *aHeap, u32 *pOut){
 **
 **      1.  Make sure that cells and freeblocks do not overlap
 **          but combine to completely cover the page.
-**  NO  2.  Make sure cell keys are in order.
-**  NO  3.  Make sure no key is less than or equal to zLowerBound.
-**  NO  4.  Make sure no key is greater than or equal to zUpperBound.
-**      5.  Check the integrity of overflow pages.
-**      6.  Recursively call checkTreePage on all children.
-**      7.  Verify that the depth of all children is the same.
-**      8.  Make sure this page is at least 33% full or else it is
-**          the root of the tree.
+**      2.  Make sure integer cell keys are in order.
+**      3.  Check the integrity of overflow pages.
+**      4.  Recursively call checkTreePage on all children.
+**      5.  Verify that the depth of all children is the same.
 */
 static int checkTreePage(
   IntegrityCk *pCheck,  /* Context for the sanity check */
@@ -8939,7 +8935,7 @@ static int checkTreePage(
   i64 *pnParentMinKey, 
   i64 *pnParentMaxKey
 ){
-  MemPage *pPage;
+  MemPage *pPage = 0;
   int i, rc, depth, d2, pgno, cnt;
   int hdr, cellStart;
   int nCell;
@@ -8976,7 +8972,6 @@ static int checkTreePage(
     assert( rc==SQLITE_CORRUPT );  /* The only possible error from InitPage */
     checkAppendMsg(pCheck,
                    "btreeInitPage() returns error code %d", rc);
-    releasePage(pPage);
     depth = -1;
     goto end_of_check;
   }
@@ -8984,6 +8979,7 @@ static int checkTreePage(
   /* Check out all the cells.
   */
   depth = 0;
+  pCheck->zPfx = "On tree page %d cell %d: ";
   for(i=0; i<pPage->nCell && pCheck->mxErr; i++){
     u8 *pCell;
     u32 sz;
@@ -8991,8 +8987,6 @@ static int checkTreePage(
 
     /* Check payload overflow pages
     */
-    pCheck->zPfx = "On tree page %d cell %d: ";
-    pCheck->v1 = iPage;
     pCheck->v2 = i;
     pCell = findCell(pPage,i);
     pPage->xParseCell(pPage, pCell, &info);
@@ -9041,20 +9035,21 @@ static int checkTreePage(
   if( !pPage->leaf ){
     pgno = get4byte(&pPage->aData[pPage->hdrOffset+8]);
     pCheck->zPfx = "On page %d at right child: ";
-    pCheck->v1 = iPage;
 #ifndef SQLITE_OMIT_AUTOVACUUM
     if( pBt->autoVacuum ){
       checkPtrmap(pCheck, pgno, PTRMAP_BTREE, iPage);
     }
 #endif
-    checkTreePage(pCheck, pgno, NULL, !pPage->nCell?NULL:&nMaxKey);
+    d2 = checkTreePage(pCheck, pgno, NULL, !pPage->nCell?NULL:&nMaxKey);
+    if( d2!=depth && iPage!=1 ){
+      checkAppendMsg(pCheck, "Child page depth differs");
+    }
   }
  
   /* For intKey leaf pages, check that the min/max keys are in order
   ** with any left/parent/right pages.
   */
   pCheck->zPfx = "Page %d: ";
-  pCheck->v1 = iPage;
   if( pPage->leaf && pPage->intKey ){
     /* if we are a left child page */
     if( pnParentMinKey ){
@@ -9092,14 +9087,12 @@ static int checkTreePage(
   */
   data = pPage->aData;
   hdr = pPage->hdrOffset;
-  heap = (u32*)sqlite3PageMalloc( pBt->pageSize );
+  heap = pCheck->heap;
+  heap[0] = 0;
   pCheck->zPfx = 0;
-  if( heap==0 ){
-    pCheck->mallocFailed = 1;
-  }else{
+  {
     int contentOffset = get2byteNotZero(&data[hdr+5]);
     assert( contentOffset<=usableSize );  /* Enforced by btreeInitPage() */
-    heap[0] = 0;
     btreeHeapInsert(heap, contentOffset-1);
     /* EVIDENCE-OF: R-37002-32774 The two-byte integer at offset 3 gives the
     ** number of cells on the page. */
@@ -9167,10 +9160,9 @@ static int checkTreePage(
           cnt, data[hdr+7], iPage);
     }
   }
-  sqlite3PageFree(heap);
-  releasePage(pPage);
 
 end_of_check:
+  releasePage(pPage);
   pCheck->zPfx = saved_zPfx;
   pCheck->v1 = saved_v1;
   pCheck->v2 = saved_v2;
@@ -9200,14 +9192,14 @@ char *sqlite3BtreeIntegrityCheck(
   int *pnErr    /* Write number of errors seen to this variable */
 ){
   Pgno i;
-  int nRef;
+  VVA_ONLY( int nRef );
   IntegrityCk sCheck;
   BtShared *pBt = p->pBt;
   char zErr[100];
 
   sqlite3BtreeEnter(p);
   assert( p->inTrans>TRANS_NONE && pBt->inTransaction>TRANS_NONE );
-  nRef = sqlite3PagerRefcount(pBt->pPager);
+  assert( (nRef = sqlite3PagerRefcount(pBt->pPager))>=0 );
   sCheck.pBt = pBt;
   sCheck.pPager = pBt->pPager;
   sCheck.nPage = btreePagecount(sCheck.pBt);
@@ -9217,21 +9209,26 @@ char *sqlite3BtreeIntegrityCheck(
   sCheck.zPfx = 0;
   sCheck.v1 = 0;
   sCheck.v2 = 0;
-  *pnErr = 0;
+  sCheck.aPgRef = 0;
+  sCheck.heap = 0;
+  sqlite3StrAccumInit(&sCheck.errMsg, 0, zErr, sizeof(zErr), SQLITE_MAX_LENGTH);
   if( sCheck.nPage==0 ){
-    sqlite3BtreeLeave(p);
-    return 0;
+    goto integrity_ck_cleanup;
   }
 
   sCheck.aPgRef = sqlite3MallocZero((sCheck.nPage / 8)+ 1);
   if( !sCheck.aPgRef ){
-    *pnErr = 1;
-    sqlite3BtreeLeave(p);
-    return 0;
+    sCheck.mallocFailed = 1;
+    goto integrity_ck_cleanup;
   }
+  sCheck.heap = (u32*)sqlite3PageMalloc( pBt->pageSize );
+  if( sCheck.heap==0 ){
+    sCheck.mallocFailed = 1;
+    goto integrity_ck_cleanup;
+  }
+
   i = PENDING_BYTE_PAGE(pBt);
   if( i<=sCheck.nPage ) setPageReferenced(&sCheck, i);
-  sqlite3StrAccumInit(&sCheck.errMsg, 0, zErr, sizeof(zErr), SQLITE_MAX_LENGTH);
 
   /* Check the integrity of the freelist
   */
@@ -9249,9 +9246,7 @@ char *sqlite3BtreeIntegrityCheck(
       checkPtrmap(&sCheck, aRoot[i], PTRMAP_ROOTPAGE, 0);
     }
 #endif
-    sCheck.zPfx = "List of tree roots: ";
     checkTreePage(&sCheck, aRoot[i], NULL, NULL);
-    sCheck.zPfx = 0;
   }
 
   /* Make sure every page in the file is referenced
@@ -9276,28 +9271,20 @@ char *sqlite3BtreeIntegrityCheck(
 #endif
   }
 
-  /* Make sure this analysis did not leave any unref() pages.
-  ** This is an internal consistency check; an integrity check
-  ** of the integrity check.
-  */
-  if( NEVER(nRef != sqlite3PagerRefcount(pBt->pPager)) ){
-    checkAppendMsg(&sCheck,
-      "Outstanding page count goes from %d to %d during this analysis",
-      nRef, sqlite3PagerRefcount(pBt->pPager)
-    );
-  }
-
   /* Clean  up and report errors.
   */
-  sqlite3BtreeLeave(p);
+integrity_ck_cleanup:
+  sqlite3PageFree(sCheck.heap);
   sqlite3_free(sCheck.aPgRef);
   if( sCheck.mallocFailed ){
     sqlite3StrAccumReset(&sCheck.errMsg);
-    *pnErr = sCheck.nErr+1;
-    return 0;
+    sCheck.nErr++;
   }
   *pnErr = sCheck.nErr;
   if( sCheck.nErr==0 ) sqlite3StrAccumReset(&sCheck.errMsg);
+  /* Make sure this analysis did not leave any unref() pages. */
+  assert( nRef==sqlite3PagerRefcount(pBt->pPager) );
+  sqlite3BtreeLeave(p);
   return sqlite3StrAccumFinish(&sCheck.errMsg);
 }
 #endif /* SQLITE_OMIT_INTEGRITY_CHECK */
