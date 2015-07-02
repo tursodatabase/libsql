@@ -1,5 +1,5 @@
-C Avoid\screate\sa\sstack\sfrom\sin\ssqlite3BackupUpdate()\sin\sthe\scommon\scase\swhere\nthe\sfirst\sargument\sis\sNULL.
-D 2015-07-01T19:59:36.722
+C Add\sthe\s--shrink-memory\soption\sto\sthe\sspeedtest1\stest\sprogram.
+D 2015-07-02T01:38:39.494
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 285a0a234ed7610d431d91671c136098c2bd86a9
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1005,7 +1005,7 @@ F test/speed3.test d32043614c08c53eafdc80f33191d5bd9b920523
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
-F test/speedtest1.c f42fd04a34a0c1dc289cbe536ef62d706227a736
+F test/speedtest1.c a2834483e435cf6017b0fead53c5a68c6efc67e8
 F test/spellfix.test 0597065ff57042df1f138e6a2611ae19c2698135
 F test/sqldiff1.test 8f6bc7c6a5b3585d350d779c6078869ba402f8f5
 F test/sqllimits1.test e05786eaed7950ff6a2d00031d001d8a26131e68
@@ -1364,7 +1364,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 550705fcb64e7ad637686e47cabe2621d65851bf
-R 859f151cbb85936ea5c95a187b7fc22c
+P 2a897b9e94acaf1fd91e9f8e94fa52e01694f011
+R a63cfb1ec4b20130b51d242769f92882
 U drh
-Z 89cd83b2dd439137569e08223645cc6d
+Z c9a2a6985068d8d618fc6cc57a241b1d

@@ -23,6 +23,7 @@ static const char zHelp[] =
   "  --reprepare         Reprepare each statement upon every invocation\n"
   "  --scratch N SZ      Configure scratch memory for N slots of SZ bytes each\n"
   "  --sqlonly           No-op.  Only show the SQL that would have been run.\n"
+  "  --shrink-memory     Invoke sqlite3_db_release_memory() frequently.\n"
   "  --size N            Relative test size.  Default=100\n"
   "  --stats             Show statistics at the end\n"
   "  --testset T         Run test-set T\n"
@@ -61,6 +62,7 @@ static struct Global {
   int bSqlOnly;              /* True to print the SQL once only */
   int bExplain;              /* Print SQL with EXPLAIN prefix */
   int bVerify;               /* Try to verify that results are correct */
+  int bMemShrink;            /* Call sqlite3_db_release_memory() often */
   int szTest;                /* Scale factor for test iterations */
   const char *zWR;           /* Might be WITHOUT ROWID */
   const char *zNN;           /* Might be NOT NULL */
@@ -324,6 +326,15 @@ static void printSql(const char *zSql){
   }
 }
 
+/* Shrink memory used, if appropriate and if the SQLite version is capable
+** of doing so.
+*/
+void speedtest1_shrink_memory(void){
+#if SQLITE_VERSION_NUMBER>=3007010
+  if( g.bMemShrink ) sqlite3_db_release_memory(g.db);
+#endif
+}
+
 /* Run SQL */
 void speedtest1_exec(const char *zFormat, ...){
   va_list ap;
@@ -340,6 +351,7 @@ void speedtest1_exec(const char *zFormat, ...){
     if( rc!=SQLITE_OK ) fatal_error("exec error: %s\n", sqlite3_errmsg(g.db));
   }
   sqlite3_free(zSql);
+  speedtest1_shrink_memory();
 }
 
 /* Prepare an SQL statement */
@@ -392,6 +404,7 @@ void speedtest1_run(void){
   {
     sqlite3_reset(g.pStmt);
   }
+  speedtest1_shrink_memory();
 }
 
 /* The sqlite3_trace() callback function */
@@ -1242,6 +1255,8 @@ int main(int argc, char **argv){
         i += 2;
       }else if( strcmp(z,"sqlonly")==0 ){
         g.bSqlOnly = 1;
+      }else if( strcmp(z,"shrink-memory")==0 ){
+        g.bMemShrink = 1;
       }else if( strcmp(z,"size")==0 ){
         if( i>=argc-1 ) fatal_error("missing argument on %s\n", argv[i]);
         g.szTest = integerValue(argv[++i]);
