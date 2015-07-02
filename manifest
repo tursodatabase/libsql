@@ -1,5 +1,5 @@
-C Add\sfts5_source_id()\sSQL\sfunction,\ssimilar\sto\ssqlite_source_id().
-D 2015-07-02T18:16:02.364
+C Minor\schange\sto\smkfts5c.tcl\sso\sthat\sfts5.c\scan\sbe\sused\saccording\sto\sthe\sinstructions\sin\sloadext.html.
+D 2015-07-02T18:52:16.632
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1f525f24e2d3a4defd0ce819c10980caeec967fe
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -178,7 +178,7 @@ F ext/fts5/test/fts5unindexed.test e9539d5b78c677315e7ed8ea911d4fd25437c680
 F ext/fts5/test/fts5version.test bed59038e937c40d3c0056d08076db7874c6cd4a
 F ext/fts5/test/fts5vocab.test cdf97b9678484e9bad5062edf9c9106e5c3b0c5c
 F ext/fts5/tool/loadfts5.tcl 7ef3e62131f0434a78e4f5c5b056b09d221710a8
-F ext/fts5/tool/mkfts5c.tcl a154b057664fabf5c9a0a202a99f2be7b96e545a
+F ext/fts5/tool/mkfts5c.tcl f9ada2ab7a96a471c7e28a2e390cf4f098348cff
 F ext/fts5/tool/showfts5.tcl 921f33b30c3189deefd2b2cc81f951638544aaf1
 F ext/icu/README.txt d9fbbad0c2f647c3fdf715fc9fd64af53aedfc43
 F ext/icu/icu.c b2732aef0b076e4276d9b39b5a33cec7a05e1413
@@ -1364,7 +1364,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P bcc8a75509aafda61feb6dcc074668c79611a662
-R 7e05f8767a887a2725fcaaa0e38ca6ef
+P ec2573487cb86664f7f056168a764c28ca8236fc
+R 8f8fb58b016bb7e374a57938c502e4cf
 U dan
-Z a6f281b613f2ad2a3748391e96894e41
+Z f04dde703cf9595bec71c1e298c8382a

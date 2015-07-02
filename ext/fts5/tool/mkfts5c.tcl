@@ -24,7 +24,7 @@ set G(src) [string map [list %dir% $srcdir] {
 
 set G(hdr) {
 
-#if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_FTS5) 
+#if !defined(SQLITE_TEST) || defined(SQLITE_ENABLE_FTS5) 
 
 #if !defined(NDEBUG) && !defined(SQLITE_DEBUG) 
 # define NDEBUG 1
@@ -37,7 +37,7 @@ set G(hdr) {
 
 set G(footer) {
     
-#endif /* !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_FTS5) */
+#endif /* !defined(SQLITE_TEST) || defined(SQLITE_ENABLE_FTS5) */
 }
 
 #-------------------------------------------------------------------------
