@@ -1,9 +1,9 @@
-C Fix\sa\s(harmless)\sshadowed\slocal\svariable\sdefinition\sin\sthe\sintegrity_check\nlogic.
-D 2015-07-02T16:29:56.368
+C Simplify\sFTS5\shandling\sin\sthe\sMSVC\smakefile.
+D 2015-07-02T16:50:43.673
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1f525f24e2d3a4defd0ce819c10980caeec967fe
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 0dd6214eb5a8038e4a4b4a551c55578dbb8e1b56
+F Makefile.msc 704da8dafbe56e3a734262d07003f203a7e490b6
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION ce0ae95abd7121c534f6917c1c8f2b70d9acd4db
@@ -1364,7 +1364,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 251a7590ff4f65f59a1c871892533e4e2c544515
-R 010518bade26bae82e6c430e9e1a14a3
-U drh
-Z c8df00cfe33d3c084bc57e29320bfa5b
+P 3a26a919fd5550e5a0053a48cb93a27bb95cc916
+R 19651ea83adcb4d525e3ac0569c1fb03
+U mistachkin
+Z 09efa0bc8e44f82df4002070e7088d11
