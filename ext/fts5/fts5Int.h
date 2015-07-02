@@ -14,8 +14,6 @@
 #ifndef _FTS5INT_H
 #define _FTS5INT_H
 
-#ifdef SQLITE_ENABLE_FTS5
-
 #include "fts5.h"
 #include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT1
@@ -692,5 +690,4 @@ int sqlite3Fts5UnicodeFold(int c, int bRemoveDiacritic);
 ** End of interface to code in fts5_unicode2.c.
 **************************************************************************/
 
-#endif
 #endif

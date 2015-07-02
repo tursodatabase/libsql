@@ -417,14 +417,14 @@ static int xF5tApi(
     CASE(14, "xSetAuxdataInt") {
       int iVal;
       if( Tcl_GetIntFromObj(interp, objv[2], &iVal) ) return TCL_ERROR;
-      rc = p->pApi->xSetAuxdata(p->pFts, (void*)iVal, 0);
+      rc = p->pApi->xSetAuxdata(p->pFts, (void*)((char*)0 + iVal), 0);
       break;
     }
     CASE(15, "xGetAuxdataInt") {
       int iVal;
       int bClear;
       if( Tcl_GetBooleanFromObj(interp, objv[2], &bClear) ) return TCL_ERROR;
-      iVal = (int)p->pApi->xGetAuxdata(p->pFts, bClear);
+      iVal = ((char*)p->pApi->xGetAuxdata(p->pFts, bClear) - (char*)0);
       Tcl_SetObjResult(interp, Tcl_NewIntObj(iVal));
       break;
     }

@@ -590,7 +590,7 @@ proc print_fileheader {} {
   }]
   puts ""
   if {$::generate_fts5_code} {
-    puts "#if defined(SQLITE_ENABLE_FTS5)"
+    # no-op
   } else {
     puts "#ifndef SQLITE_DISABLE_FTS3_UNICODE"
     puts "#if defined(SQLITE_ENABLE_FTS3) || defined(SQLITE_ENABLE_FTS4)"
@@ -687,7 +687,7 @@ if {$::generate_test_code} {
 }
 
 if {$generate_fts5_code} {
-  puts "#endif /* defined(SQLITE_ENABLE_FTS5) */"
+  # no-op
 } else {
   puts "#endif /* defined(SQLITE_ENABLE_FTS3) || defined(SQLITE_ENABLE_FTS4) */"
   puts "#endif /* !defined(SQLITE_DISABLE_FTS3_UNICODE) */"

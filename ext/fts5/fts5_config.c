@@ -13,7 +13,6 @@
 ** This is an SQLite module implementing full-text search.
 */
 
-#ifdef SQLITE_ENABLE_FTS5
 
 
 #include "fts5Int.h"
@@ -861,4 +860,3 @@ int sqlite3Fts5ConfigLoad(Fts5Config *pConfig, int iCookie){
   return rc;
 }
 
-#endif /* SQLITE_ENABLE_FTS5 */

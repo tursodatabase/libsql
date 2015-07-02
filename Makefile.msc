@@ -1680,12 +1680,10 @@ fts5parse.c:	$(TOP)\ext\fts5\fts5parse.y lemon.exe
 	del /Q fts5parse.h 2>NUL
 	.\lemon.exe $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS) $(OPTS) fts5parse.y
 	move fts5parse.c fts5parse.c.orig
-	echo #ifdef SQLITE_ENABLE_FTS5 > $@
 	type fts5parse.c.orig \
 		| $(NAWK) "/.*/ { gsub(/yy/,\"fts5yy\");print }" \
 		| $(NAWK) "/.*/ { gsub(/YY/,\"fts5YY\");print }" \
 		| $(NAWK) "/.*/ { gsub(/TOKEN/,\"FTS5TOKEN\");print }" >> $@
-	echo #endif /* SQLITE_ENABLE_FTS5 */ >> $@
 
 fts5parse.h: fts5parse.c
 

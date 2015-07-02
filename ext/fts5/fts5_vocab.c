@@ -31,7 +31,6 @@
 **   $term in the database.
 */
 
-#if defined(SQLITE_ENABLE_FTS5)
 
 #include "fts5Int.h"
 
@@ -486,6 +485,5 @@ int sqlite3Fts5VocabInit(Fts5Global *pGlobal, sqlite3 *db){
 
   return sqlite3_create_module_v2(db, "fts5vocab", &fts5Vocab, p, 0);
 }
-#endif /* defined(SQLITE_ENABLE_FTS5) */
 
 

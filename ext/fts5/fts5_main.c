@@ -13,7 +13,6 @@
 ** This is an SQLite module implementing full-text search.
 */
 
-#if defined(SQLITE_ENABLE_FTS5)
 
 #include "fts5Int.h"
 
@@ -2288,6 +2287,16 @@ int sqlite3_fts5_init(
   }
   return rc;
 }
-#endif /* defined(SQLITE_ENABLE_FTS5) */
+
+#ifdef _WIN32
+__declspec(dllexport)
+#endif
+int sqlite3_fts_init(
+  sqlite3 *db,
+  char **pzErrMsg,
+  const sqlite3_api_routines *pApi
+){
+  return sqlite3_fts5_init(db, pzErrMsg, pApi);
+}
 
 

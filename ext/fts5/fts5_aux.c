@@ -11,7 +11,6 @@
 ******************************************************************************
 */
 
-#ifdef SQLITE_ENABLE_FTS5
 
 #include "fts5Int.h"
 #include <math.h>
@@ -552,6 +551,5 @@ int sqlite3Fts5AuxInit(fts5_api *pApi){
 
   return rc;
 }
-#endif /* SQLITE_ENABLE_FTS5 */
 
 

@@ -11,7 +11,6 @@
 ******************************************************************************
 */
 
-#if defined(SQLITE_ENABLE_FTS5)
 
 #include "fts5Int.h"
 
@@ -1226,6 +1225,5 @@ int sqlite3Fts5TokenizerInit(fts5_api *pApi){
 
   return SQLITE_OK;
 }
-#endif /* defined(SQLITE_ENABLE_FTS5) */
 
 
