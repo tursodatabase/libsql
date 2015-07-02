@@ -1,5 +1,5 @@
-C Smaller\sand\sfaster\sPRAGMA\sintegrity_check\sthat\salso\sdoes\sa\sbetter\sjob\sof\ndetecting\serrors.\s\sSome\soutput\stext\sdescribing\sdiscovered\sfile\scorruption\nhas\schanged\sfor\sclarity.
-D 2015-07-02T16:17:30.545
+C Fix\sa\s(harmless)\sshadowed\slocal\svariable\sdefinition\sin\sthe\sintegrity_check\nlogic.
+D 2015-07-02T16:29:56.368
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1f525f24e2d3a4defd0ce819c10980caeec967fe
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -269,7 +269,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 4d9134dc988a87838c06056c89c0e8c4700a0452
 F src/bitvec.c d1f21d7d91690747881f03940584f4cc548c9d3d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c 98ef3db8f90e2258eae6428cbe9cf47802b81958
+F src/btree.c 6368ffd4c5a5e84ec480e23ad6f4fcdac7c3882d
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 2ad754dd4528baa8d0946a593cc373b890bf859e
 F src/build.c b3f15255d5b16e42dafeaa638fd4f8a47c94ed70
@@ -1364,7 +1364,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7819002ed85497bbd0f9cf4d39df641573324436
-R f272e35570685d031c8340df24a1680f
+P 251a7590ff4f65f59a1c871892533e4e2c544515
+R 010518bade26bae82e6c430e9e1a14a3
 U drh
-Z 39a394fff4020992662b6a21d701df1d
+Z c8df00cfe33d3c084bc57e29320bfa5b

@@ -9101,8 +9101,9 @@ static int checkTreePage(
       heap[0] = 0;
       btreeHeapInsert(heap, contentOffset-1);
       for(i=nCell-1; i>=0; i--){
-        u32 pc = get2byteAligned(&data[cellStart+i*2]);
-        u32 size = pPage->xCellSize(pPage, &data[pc]);
+        u32 size;
+        pc = get2byteAligned(&data[cellStart+i*2]);
+        size = pPage->xCellSize(pPage, &data[pc]);
         btreeHeapInsert(heap, (pc<<16)|(pc+size-1));
       }
     }
