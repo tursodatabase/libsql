@@ -1,5 +1,5 @@
-C Remove\s"#ifdef\sSQLITE_ENABLE_FTS5"\sfrom\sindividual\sfts5\ssource\sfiles.\sAdd\sa\ssingle\s"#if\s!defined(SQLITE_CORE)\s||\sdefined(SQLITE_ENABLE_FTS5)"\sto\sfts5.c.
-D 2015-07-02T15:52:21.801
+C Smaller\sand\sfaster\sPRAGMA\sintegrity_check\sthat\salso\sdoes\sa\sbetter\sjob\sof\ndetecting\serrors.\s\sSome\soutput\stext\sdescribing\sdiscovered\sfile\scorruption\nhas\schanged\sfor\sclarity.
+D 2015-07-02T16:17:30.545
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1f525f24e2d3a4defd0ce819c10980caeec967fe
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -269,7 +269,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 4d9134dc988a87838c06056c89c0e8c4700a0452
 F src/bitvec.c d1f21d7d91690747881f03940584f4cc548c9d3d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c e283de2f9da7ec5e47bedcd442a66a671aa2e118
+F src/btree.c 98ef3db8f90e2258eae6428cbe9cf47802b81958
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 2ad754dd4528baa8d0946a593cc373b890bf859e
 F src/build.c b3f15255d5b16e42dafeaa638fd4f8a47c94ed70
@@ -518,19 +518,19 @@ F test/conflict2.test 0d3af4fb534fa1bd020c79960bb56e4d52655f09
 F test/conflict3.test dec0634c0f31dec9a4b01c63063e939f0cd21b6b
 F test/contrib01.test 2a1cbc0f2f48955d7d073f725765da6fbceda6b4
 F test/corrupt.test 141c39ea650c1365e85a49e402fa05cb9617fb97
-F test/corrupt2.test f2064e0bf934124cc38868fd8badb8f0dd67b552
+F test/corrupt2.test 08cec1e5ffa68a3610306d6068f112d08bc9f090
 F test/corrupt3.test 4b548d0bbe2933bc81d3f54099a05fc4d28aff18
 F test/corrupt4.test b99652079d542b21f4965f6248703b983e40fe80
 F test/corrupt5.test 8ead52af76006f3286e9396cb41898018ccea107
 F test/corrupt6.test 269548d19427ac554c830763b1c5ea54a0252f80
-F test/corrupt7.test 22cc644c2e76c9804bc844121267aa6f8f7c0ded
+F test/corrupt7.test e4fa6d6584276679cc1d20c4e58beb9559a4eb85
 F test/corrupt8.test 2399dfe40d2c0c63af86706e30f3e6302a8d0516
 F test/corrupt9.test 730a3db08d4ab9aa43392ea30d9c2b4879cbff85
 F test/corruptA.test 53e56dafd180addcdadb402244b8cb9771d2ba26
 F test/corruptB.test 73a8d6c0b9833697ecf16b63e3c5c05c945b5dec
 F test/corruptC.test 3fcc0f73d2cf2d69befe2d96332b942426a6aae2
 F test/corruptD.test b3c205fac7952b1de645ce44bb02335cd9e3e040
-F test/corruptE.test 193b4ca4e927e77c1d5f4f56203ddc998432a7ee
+F test/corruptE.test be8e5088c369fc7979c662cd644efdaafc0f7f6d
 F test/corruptF.test be9fde98e4c93648f1ba52b74e5318edc8f59fe4
 F test/corruptG.test 1ab3bf97ee7bdba70e0ff3ba2320657df55d1804
 F test/corruptH.test 5dd4fa98c6c1ed33b178f9e8a48c4fdd3cfc9067
@@ -1364,7 +1364,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c9ddbd88998d9523e72ad910ea67eb55024b3a88
-R 6e7391ae89eb1933cb67f3ce933af577
-U dan
-Z 75f643c411d6a670d86998374f15370f
+P 7819002ed85497bbd0f9cf4d39df641573324436
+R f272e35570685d031c8340df24a1680f
+U drh
+Z 39a394fff4020992662b6a21d701df1d
