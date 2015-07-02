@@ -2223,6 +2223,18 @@ static void fts5Fts5Func(
   sqlite3_result_blob(pCtx, buf, sizeof(pGlobal), SQLITE_TRANSIENT);
 }
 
+/*
+** Implementation of fts5_source_id() function.
+*/
+static void fts5SourceIdFunc(
+  sqlite3_context *pCtx,          /* Function call context */
+  int nArg,                       /* Number of args */
+  sqlite3_value **apVal           /* Function arguments */
+){
+  assert( nArg==0 );
+  sqlite3_result_text(pCtx, "--FTS5-SOURCE-ID--", -1, SQLITE_TRANSIENT);
+}
+
 #ifdef _WIN32
 __declspec(dllexport)
 #endif
@@ -2282,6 +2294,11 @@ int sqlite3_fts5_init(
     if( rc==SQLITE_OK ){
       rc = sqlite3_create_function(
           db, "fts5", 0, SQLITE_UTF8, p, fts5Fts5Func, 0, 0
+      );
+    }
+    if( rc==SQLITE_OK ){
+      rc = sqlite3_create_function(
+          db, "fts5_source_id", 0, SQLITE_UTF8, p, fts5SourceIdFunc, 0, 0
       );
     }
   }

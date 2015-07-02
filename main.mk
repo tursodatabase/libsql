@@ -72,9 +72,6 @@ LIBOBJ+= vdbe.o parse.o \
 	 vdbetrace.o wal.o walker.o where.o wherecode.o whereexpr.o \
          utf.o vtab.o
 
-LIBOBJ += fts5.o
-
-
 
 # All of the source code files.
 #
@@ -307,7 +304,8 @@ TESTSRC += \
   $(TOP)/ext/misc/totype.c \
   $(TOP)/ext/misc/wholenumber.c \
   $(TOP)/ext/misc/vfslog.c \
-  $(TOP)/ext/fts5/fts5_tcl.c 
+  $(TOP)/ext/fts5/fts5_tcl.c \
+  fts5.c
 
 
 #TESTSRC += $(TOP)/ext/fts2/fts2_tokenizer.c
@@ -665,10 +663,6 @@ fts5parse.h: fts5parse.c
 
 fts5.c: $(FTS5_SRC)
 	tclsh $(TOP)/ext/fts5/tool/mkfts5c.tcl
-
-fts5.o:	fts5.c $(HDR) $(EXTHDR)
-	$(TCCX) -DSQLITE_CORE -c fts5.c
-
 
 
 userauth.o:	$(TOP)/ext/userauth/userauth.c $(HDR) $(EXTHDR)
