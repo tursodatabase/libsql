@@ -1,5 +1,5 @@
-C Simplify\sFTS5\shandling\sin\sthe\sMSVC\smakefile.
-D 2015-07-02T16:50:43.673
+C Fix\sharmless\scompiler\swarnings\sand\sone\smacro\sVVA_ONLY\smacro\susage\sissue.
+D 2015-07-02T16:52:01.447
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1f525f24e2d3a4defd0ce819c10980caeec967fe
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -269,7 +269,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 4d9134dc988a87838c06056c89c0e8c4700a0452
 F src/bitvec.c d1f21d7d91690747881f03940584f4cc548c9d3d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c 6368ffd4c5a5e84ec480e23ad6f4fcdac7c3882d
+F src/btree.c cf3375bf706d15d3b8b7ac1fc86b0bf5603324d5
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 2ad754dd4528baa8d0946a593cc373b890bf859e
 F src/build.c b3f15255d5b16e42dafeaa638fd4f8a47c94ed70
@@ -327,7 +327,7 @@ F src/printf.c db11b5960105ee661dcac690f2ae6276e49bf251
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 2d47554370de8de6dd5be060cef9559eec315005
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c 009c6138be8788449d4f911f380d99e8608040e2
+F src/select.c 7003fe663bc0636b656874440845a85dcbad4ba7
 F src/shell.c 8af3cced094aebb5f57a8ad739b9dafc7867eed7
 F src/sqlite.h.in 76d2f5637eb795b6300d9dd3c3ec3632ffafd721
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
@@ -1364,7 +1364,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3a26a919fd5550e5a0053a48cb93a27bb95cc916
-R 19651ea83adcb4d525e3ac0569c1fb03
+P f022e04343fc166a71b315d5aabbc5cc075a4767
+R 5c911bb6fc3e16cbfd6e76bce0768816
 U mistachkin
-Z 09efa0bc8e44f82df4002070e7088d11
+Z 616700ef04b7deb7995d1138c3fd92ed
