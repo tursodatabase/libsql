@@ -1,5 +1,5 @@
-C Minor\schange\sto\smkfts5c.tcl\sso\sthat\sfts5.c\scan\sbe\sused\saccording\sto\sthe\sinstructions\sin\sloadext.html.
-D 2015-07-02T18:52:16.632
+C When\sdoing\scoverage\sanalysis\sof\sa\sbtree\spage\sfor\spragma\sintegrity_check,\nmake\sthe\sfirst\sentry\s(that\scovers\sthe\sheader,\scell\sindex,\sand\sgap)\simplied,\nfor\sa\sperformance\sboost\sand\ssize\sreduction.
+D 2015-07-02T19:47:08.924
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1f525f24e2d3a4defd0ce819c10980caeec967fe
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -269,7 +269,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 4d9134dc988a87838c06056c89c0e8c4700a0452
 F src/bitvec.c d1f21d7d91690747881f03940584f4cc548c9d3d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c cf3375bf706d15d3b8b7ac1fc86b0bf5603324d5
+F src/btree.c 7705ce3e17c2b0cb8d4c3d935b269270d3c2a548
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 2ad754dd4528baa8d0946a593cc373b890bf859e
 F src/build.c b3f15255d5b16e42dafeaa638fd4f8a47c94ed70
@@ -1364,7 +1364,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ec2573487cb86664f7f056168a764c28ca8236fc
-R 8f8fb58b016bb7e374a57938c502e4cf
-U dan
-Z f04dde703cf9595bec71c1e298c8382a
+P edbcccd349090efff3f975e27451608136a429fc
+R cdbc7a7113ac1ac4a12173f49bd7408c
+U drh
+Z 652b7ed6ab7d80fc7ccd06705dfdfa60
