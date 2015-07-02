@@ -13,7 +13,6 @@
 ** Routines for varint serialization and deserialization.
 */
 
-#ifdef SQLITE_ENABLE_FTS5
 
 #include "fts5Int.h"
 
@@ -341,4 +340,3 @@ int sqlite3Fts5GetVarintLen(u32 iVal){
   return 5;
 }
 
-#endif /* SQLITE_ENABLE_FTS5 */

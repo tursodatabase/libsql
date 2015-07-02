@@ -24,6 +24,8 @@ set G(src) [string map [list %dir% $srcdir] {
 
 set G(hdr) {
 
+#if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_FTS5) 
+
 #if !defined(NDEBUG) && !defined(SQLITE_DEBUG) 
 # define NDEBUG 1
 #endif
@@ -31,6 +33,11 @@ set G(hdr) {
 # undef NDEBUG
 #endif
 
+}
+
+set G(footer) {
+    
+#endif /* !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_FTS5) */
 }
 
 proc readfile {zFile} {
@@ -63,6 +70,7 @@ proc fts5c_printfile {zIn} {
 
 proc fts5c_close {} {
   global G
+  puts -nonewline $G(fd) $G(footer)
   if {$G(fd)!="stdout"} {
     close $G(fd)
   }

@@ -12,7 +12,6 @@
 */
 
 
-#ifdef SQLITE_ENABLE_FTS5
 
 #include "fts5Int.h"
 
@@ -305,5 +304,4 @@ int sqlite3Fts5IsBareword(char t){
   return (t & 0x80) || aBareword[(int)t];
 }
 
-#endif /* SQLITE_ENABLE_FTS5 */
 

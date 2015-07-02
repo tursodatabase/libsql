@@ -667,10 +667,8 @@ fts5parse.c:	$(TOP)/ext/fts5/fts5parse.y lemon
 	rm -f fts5parse.h
 	./lemon $(OPTS) fts5parse.y
 	mv fts5parse.c fts5parse.c.orig
-	echo "#ifdef SQLITE_ENABLE_FTS5" > fts5parse.c
 	cat fts5parse.c.orig | sed 's/yy/fts5yy/g' | sed 's/YY/fts5YY/g' \
 		| sed 's/TOKEN/FTS5TOKEN/g' >> fts5parse.c
-	echo "#endif /* SQLITE_ENABLE_FTS5 */" >> fts5parse.c
 
 fts5parse.h: fts5parse.c
 

@@ -186,6 +186,16 @@
 #endif
 
 /*
+** Make sure that the compiler intrinsics we desire are enabled when
+** compiling with an appropriate version of MSVC.
+*/
+#if defined(_MSC_VER) && _MSC_VER>=1300
+#  include <intrin.h>
+#  pragma intrinsic(_byteswap_ushort)
+#  pragma intrinsic(_byteswap_ulong)
+#endif
+
+/*
 ** The SQLITE_THREADSAFE macro must be defined as 0, 1, or 2.
 ** 0 means mutexes are permanently disable and the library is never
 ** threadsafe.  1 means the library is serialized which is the highest

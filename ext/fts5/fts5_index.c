@@ -16,7 +16,6 @@
 ** the interface defined in fts5Int.h.
 */
 
-#ifdef SQLITE_ENABLE_FTS5
 
 #include "fts5Int.h"
 
@@ -5408,4 +5407,3 @@ int sqlite3Fts5IndexInit(sqlite3 *db){
   return rc;
 }
 
-#endif /* SQLITE_ENABLE_FTS5 */

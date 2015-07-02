@@ -15,7 +15,6 @@
 ** DO NOT EDIT THIS MACHINE GENERATED FILE.
 */
 
-#if defined(SQLITE_ENABLE_FTS5)
 
 #include <assert.h>
 
@@ -359,4 +358,3 @@ int sqlite3Fts5UnicodeFold(int c, int bRemoveDiacritic){
 
   return ret;
 }
-#endif /* defined(SQLITE_ENABLE_FTS5) */
