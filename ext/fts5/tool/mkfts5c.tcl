@@ -77,15 +77,20 @@ proc fts5c_init {zOut} {
 proc fts5c_printfile {zIn} {
   global G
   set data [readfile $zIn]
-  puts $G(fd) "#line 1 \"[file tail $zIn]\""
+  set zTail [file tail $zIn]
+  puts $G(fd) "#line 1 \"$zTail\""
 
-  set srcid_map [list --FTS5-SOURCE-ID-- [fts5_source_id $::srcdir]]
+  set sub_map [list --FTS5-SOURCE-ID-- [fts5_source_id $::srcdir]]
+  if {$zTail=="fts5parse.c"} {
+    lappend sub_map yy fts5yy YY fts5YY TOKEN FTS5TOKEN
+  }
+
   foreach line [split $data "\n"] {
     if {[regexp {^#include.*fts5} $line]} continue
     if {[regexp {^(const )?[a-zA-Z][a-zA-Z0-9]* [*]?sqlite3Fts5} $line]} {
       set line "static $line"
     }
-    set line [string map $srcid_map $line]
+    set line [string map $sub_map $line]
     puts $G(fd) $line
   }
 }

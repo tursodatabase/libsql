@@ -655,14 +655,12 @@ fts5parse.c:	$(TOP)/ext/fts5/fts5parse.y lemon
 	cp $(TOP)/ext/fts5/fts5parse.y .
 	rm -f fts5parse.h
 	./lemon $(OPTS) fts5parse.y
-	mv fts5parse.c fts5parse.c.orig
-	cat fts5parse.c.orig | sed 's/yy/fts5yy/g' | sed 's/YY/fts5YY/g' \
-		| sed 's/TOKEN/FTS5TOKEN/g' >> fts5parse.c
 
 fts5parse.h: fts5parse.c
 
 fts5.c: $(FTS5_SRC)
 	tclsh $(TOP)/ext/fts5/tool/mkfts5c.tcl
+	cp $(TOP)/ext/fts5/fts5.h .
 
 
 userauth.o:	$(TOP)/ext/userauth/userauth.c $(HDR) $(EXTHDR)
