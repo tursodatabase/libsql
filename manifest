@@ -1,5 +1,5 @@
-C Enable\suse\sof\sthe\s__builtin_bswap32()\sonly\swith\sGCC\s4.3\sand\shigher.
-D 2015-07-03T17:54:49.505
+C Speed\sup\seof\schecks\son\sfts5\scursors.
+D 2015-07-03T19:13:56.700
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 78db7e3b643002849258892ab2a9df10c24ee63d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -112,8 +112,8 @@ F ext/fts5/fts5_buffer.c 80f9ba4431848cb857e3d2158f5280093dcd8015
 F ext/fts5/fts5_config.c b2456e9625bca41c51d54c363e369c6356895c90
 F ext/fts5/fts5_expr.c d2e148345639c5a5583e0daa39a639bf298ae6a7
 F ext/fts5/fts5_hash.c 219f4edd72e5cf95b19c33f1058809a18fad5229
-F ext/fts5/fts5_index.c fb1f0de6b4cd02a212c0c9c5580daa64a5634035
-F ext/fts5/fts5_main.c f35f445dfe7578b79243a696f30ad8154a1cd313
+F ext/fts5/fts5_index.c 84c8aa1c226898b781f2cbe90040a57ddc4a4259
+F ext/fts5/fts5_main.c 37b0055cb4036c4b4bb4eb36e30ebd1c21c63939
 F ext/fts5/fts5_storage.c 4cae85b5287b159d9d98174a4e70adf872b0930a
 F ext/fts5/fts5_tcl.c 85eb4e0d0fefa9420b78151496ad4599a1783e20
 F ext/fts5/fts5_tokenize.c 30f97a8c74683797b4cd233790444fbefb3b0708
@@ -1364,7 +1364,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b9b0c1e50d77f5d6e02f43fbb100c722cb692cc5
-R d6a0b54da592b5928ec9d859952e5495
-U mistachkin
-Z 35231e9548761f3a117648fdf36fee13
+P 030f60a7ba171650ce8c0ac32dc166eab80aca32
+R 2a024a904d5b19f97eab1afbe90fa7a1
+U dan
+Z 8ac5a178ca95670b120c3cf4b40c3d86

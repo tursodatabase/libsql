@@ -438,12 +438,12 @@ static int fts5CreateMethod(
 /*
 ** The different query plans.
 */
-#define FTS5_PLAN_SCAN           1       /* No usable constraint */
-#define FTS5_PLAN_MATCH          2       /* (<tbl> MATCH ?) */
+#define FTS5_PLAN_MATCH          0       /* (<tbl> MATCH ?) */
+#define FTS5_PLAN_SOURCE         1       /* A source cursor for SORTED_MATCH */
+#define FTS5_PLAN_SPECIAL        2       /* An internal query */
 #define FTS5_PLAN_SORTED_MATCH   3       /* (<tbl> MATCH ? ORDER BY rank) */
-#define FTS5_PLAN_ROWID          4       /* (rowid = ?) */
-#define FTS5_PLAN_SOURCE         5       /* A source cursor for SORTED_MATCH */
-#define FTS5_PLAN_SPECIAL        6       /* An internal query */
+#define FTS5_PLAN_SCAN           4       /* No usable constraint */
+#define FTS5_PLAN_ROWID          5       /* (rowid = ?) */
 
 /*
 ** Implementation of the xBestIndex method for FTS5 tables. Within the 
@@ -764,41 +764,42 @@ static int fts5CursorReseek(Fts5Cursor *pCsr, int *pbSkip){
 */
 static int fts5NextMethod(sqlite3_vtab_cursor *pCursor){
   Fts5Cursor *pCsr = (Fts5Cursor*)pCursor;
-  int ePlan = pCsr->ePlan;
-  int bSkip = 0;
   int rc;
 
-  if( (rc = fts5CursorReseek(pCsr, &bSkip)) || bSkip ) return rc;
+  assert( (pCsr->ePlan<2)==
+          (pCsr->ePlan==FTS5_PLAN_MATCH || pCsr->ePlan==FTS5_PLAN_SOURCE) 
+  );
 
-  switch( ePlan ){
-    case FTS5_PLAN_MATCH:
-    case FTS5_PLAN_SOURCE:
-      rc = sqlite3Fts5ExprNext(pCsr->pExpr, pCsr->iLastRowid);
-      if( sqlite3Fts5ExprEof(pCsr->pExpr) ){
-        CsrFlagSet(pCsr, FTS5CSR_EOF);
-      }
-      fts5CsrNewrow(pCsr);
-      break;
-
-    case FTS5_PLAN_SPECIAL: {
+  if( pCsr->ePlan<2 ){
+    int bSkip = 0;
+    if( (rc = fts5CursorReseek(pCsr, &bSkip)) || bSkip ) return rc;
+    rc = sqlite3Fts5ExprNext(pCsr->pExpr, pCsr->iLastRowid);
+    if( sqlite3Fts5ExprEof(pCsr->pExpr) ){
       CsrFlagSet(pCsr, FTS5CSR_EOF);
-      break;
     }
-
-    case FTS5_PLAN_SORTED_MATCH: {
-      rc = fts5SorterNext(pCsr);
-      break;
-    }
-
-    default:
-      rc = sqlite3_step(pCsr->pStmt);
-      if( rc!=SQLITE_ROW ){
+    fts5CsrNewrow(pCsr);
+  }else{
+    switch( pCsr->ePlan ){
+      case FTS5_PLAN_SPECIAL: {
         CsrFlagSet(pCsr, FTS5CSR_EOF);
-        rc = sqlite3_reset(pCsr->pStmt);
-      }else{
-        rc = SQLITE_OK;
+        break;
       }
-      break;
+  
+      case FTS5_PLAN_SORTED_MATCH: {
+        rc = fts5SorterNext(pCsr);
+        break;
+      }
+  
+      default:
+        rc = sqlite3_step(pCsr->pStmt);
+        if( rc!=SQLITE_ROW ){
+          CsrFlagSet(pCsr, FTS5CSR_EOF);
+          rc = sqlite3_reset(pCsr->pStmt);
+        }else{
+          rc = SQLITE_OK;
+        }
+        break;
+    }
   }
   
   return rc;

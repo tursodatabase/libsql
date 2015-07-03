@@ -440,6 +440,7 @@ struct Fts5MultiSegIter {
   int nSeg;                       /* Size of aSeg[] array */
   int bRev;                       /* True to iterate in reverse order */
   int bSkipEmpty;                 /* True to skip deleted entries */
+  int bEof;                       /* True at EOF */
   Fts5SegIter *aSeg;              /* Array of segment iterators */
   Fts5CResult *aFirst;            /* Current merge state (see above) */
 };
@@ -2222,6 +2223,9 @@ static void fts5AssertComparisonResult(
 static void fts5AssertMultiIterSetup(Fts5Index *p, Fts5MultiSegIter *pIter){
   if( p->rc==SQLITE_OK ){
     int i;
+
+    assert( (pIter->aSeg[ pIter->aFirst[1].iFirst ].pLeaf==0)==pIter->bEof );
+
     for(i=0; i<pIter->nSeg; i+=2){
       Fts5SegIter *p1 = &pIter->aSeg[i];
       Fts5SegIter *p2 = &pIter->aSeg[i+1];
@@ -2230,10 +2234,9 @@ static void fts5AssertMultiIterSetup(Fts5Index *p, Fts5MultiSegIter *pIter){
     }
 
     for(i=1; i<(pIter->nSeg / 2); i+=2){
-      Fts5CResult *pRes = &pIter->aFirst[i];
       Fts5SegIter *p1 = &pIter->aSeg[ pIter->aFirst[i*2].iFirst ];
       Fts5SegIter *p2 = &pIter->aSeg[ pIter->aFirst[i*2+1].iFirst ];
-
+      Fts5CResult *pRes = &pIter->aFirst[i];
       fts5AssertComparisonResult(pIter, p1, p2, pRes);
     }
   }
@@ -2422,6 +2425,16 @@ static void fts5MultiIterAdvanced(
   }
 }
 
+/*
+** Sub-iterator iChanged of iterator pIter has just been advanced. It still
+** points to the same term though - just a different rowid. This function
+** attempts to update the contents of the pIter->aFirst[] accordingly.
+** If it does so successfully, 0 is returned. Otherwise 1.
+**
+** If non-zero is returned, the caller should call fts5MultiIterAdvanced()
+** on the iterator instead. That function does the same as this one, except
+** that it deals with more complicated cases as well.
+*/ 
 static int fts5MultiIterAdvanceRowid(
   Fts5Index *p,                   /* FTS5 backend to iterate within */
   Fts5MultiSegIter *pIter,        /* Iterator to update aFirst[] array for */
@@ -2454,6 +2467,13 @@ static int fts5MultiIterAdvanceRowid(
 }
 
 /*
+** Set the pIter->bEof variable based on the state of the sub-iterators.
+*/
+static void fts5MultiIterSetEof(Fts5MultiSegIter *pIter){
+  pIter->bEof = pIter->aSeg[ pIter->aFirst[1].iFirst ].pLeaf==0;
+}
+
+/*
 ** Move the iterator to the next entry. 
 **
 ** If an error occurs, an error code is left in Fts5Index.rc. It is not 
@@ -2483,6 +2503,7 @@ static void fts5MultiIterNext(
        || fts5MultiIterAdvanceRowid(p, pIter, iFirst)
       ){
         fts5MultiIterAdvanced(p, pIter, iFirst, 1);
+        fts5MultiIterSetEof(pIter);
       }
       fts5AssertMultiIterSetup(p, pIter);
 
@@ -2595,6 +2616,7 @@ static void fts5MultiIterNew(
         fts5MultiIterAdvanced(p, pNew, iEq, iIter);
       }
     }
+    fts5MultiIterSetEof(pNew);
     fts5AssertMultiIterSetup(p, pNew);
 
     if( pNew->bSkipEmpty && fts5MultiIterIsEmpty(p, pNew) ){
@@ -2634,6 +2656,8 @@ static void fts5MultiIterNew2(
         fts5SegIterLoadNPos(p, pIter);
       }
       pData = 0;
+    }else{
+      pNew->bEof = 1;
     }
 
     *ppOut = pNew;
@@ -2647,7 +2671,10 @@ static void fts5MultiIterNew2(
 ** False otherwise.
 */
 static int fts5MultiIterEof(Fts5Index *p, Fts5MultiSegIter *pIter){
-  return (p->rc || pIter->aSeg[ pIter->aFirst[1].iFirst ].pLeaf==0);
+  assert( p->rc 
+      || (pIter->aSeg[ pIter->aFirst[1].iFirst ].pLeaf==0)==pIter->bEof 
+  );
+  return (p->rc || pIter->bEof);
 }
 
 /*
@@ -4401,7 +4428,7 @@ int sqlite3Fts5IndexQuery(
 */
 int sqlite3Fts5IterEof(Fts5IndexIter *pIter){
   assert( pIter->pIndex->rc==SQLITE_OK );
-  return fts5MultiIterEof(pIter->pIndex, pIter->pMulti);
+  return pIter->pMulti->bEof;
 }
 
 /*
@@ -4429,6 +4456,7 @@ int sqlite3Fts5IterNextScan(Fts5IndexIter *pIter){
     if( pSeg->pLeaf && pSeg->term.p[0]!=FTS5_MAIN_PREFIX ){
       fts5DataRelease(pSeg->pLeaf);
       pSeg->pLeaf = 0;
+      pMulti->bEof = 1;
     }
   }
 
