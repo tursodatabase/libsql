@@ -19,7 +19,8 @@
 #include <assert.h>
 #include <string.h>
 
-#define MAX_MUTEXES (SQLITE_MUTEX_STATIC_VFS3+1)
+#define MAX_MUTEXES        (SQLITE_MUTEX_STATIC_VFS3+1)
+#define STATIC_MUTEXES     (MAX_MUTEXES-(SQLITE_MUTEX_RECURSIVE+1))
 
 /* defined in main.c */
 extern const char *sqlite3ErrName(int);
@@ -45,7 +46,7 @@ static struct test_mutex_globals {
   int isInit;                /* True if initialized */
   sqlite3_mutex_methods m;   /* Interface to "real" mutex system */
   int aCounter[MAX_MUTEXES]; /* Number of grabs of each type of mutex */
-  sqlite3_mutex aStatic[MAX_MUTEXES]; /* The static mutexes */
+  sqlite3_mutex aStatic[STATIC_MUTEXES]; /* The static mutexes */
 } g = {0};
 
 /* Return true if the countable mutex is currently held */
@@ -96,9 +97,9 @@ static sqlite3_mutex *counterMutexAlloc(int eType){
   if( eType==SQLITE_MUTEX_FAST || eType==SQLITE_MUTEX_RECURSIVE ){
     pRet = (sqlite3_mutex *)malloc(sizeof(sqlite3_mutex));
   }else{
-    int eStaticType = eType - (SQLITE_MUTEX_RECURSIVE + 1);
+    int eStaticType = eType - (MAX_MUTEXES - STATIC_MUTEXES);
     assert( eStaticType>=0 );
-    assert( eStaticType<MAX_MUTEXES );
+    assert( eStaticType<STATIC_MUTEXES );
     pRet = &g.aStatic[eStaticType];
   }
 

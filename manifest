@@ -1,5 +1,5 @@
-C Update\sclean\starget\sin\sMSVC\smakefile.
-D 2015-07-03T23:12:33.008
+C Correction\sto\scheck-in\s[1025873fdf],\stighten\sup\sthe\snumber\sof\sstatic\stest\smutexes.
+D 2015-07-03T23:29:55.094
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 78db7e3b643002849258892ab2a9df10c24ee63d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -365,7 +365,7 @@ F src/test_loadext.c a5251f956ab6af21e138dc1f9c0399394a510cb4
 F src/test_malloc.c 208f09a4e21defa496bc1094fcfadea19385a112
 F src/test_multiplex.c 9fefd23f6cc3fa9bf0748a5e453167e7b9f193ce
 F src/test_multiplex.h c08e4e8f8651f0c5e0509b138ff4d5b43ed1f5d3
-F src/test_mutex.c 486bea424c66005d587e8272b2a742a25d251c73
+F src/test_mutex.c dbdfaff8580071f2212a0deae3325a93a737819c
 F src/test_onefile.c 38f7cbe79d5bafe95bde683cc3a53b8ca16daf10
 F src/test_osinst.c 5423dc1d355f594371f27dd292ca54bd320b8196
 F src/test_pcache.c a5cd24730cb43c5b18629043314548c9169abb00
@@ -1364,7 +1364,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1025873fdfd9e7e53094c48af1a79c60ae50ae97
-R b3a13182f647db180395c6651e571755
+P e6c03e72010e919dbac2055b6c3f3b13b1663b15
+R 238f2504523ab15b65a60c28dd676b51
 U mistachkin
-Z e84454cfa4f76a73cfc440339f3d3545
+Z 50c8bc64878c693af322bb7e054ce81e
