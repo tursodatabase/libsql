@@ -1,9 +1,9 @@
-C Enhance\smutex\stesting\sto\sinclude\sAPP\sand\sVFS\sstatic\smutexes.
-D 2015-07-03T23:11:36.336
+C Update\sclean\starget\sin\sMSVC\smakefile.
+D 2015-07-03T23:12:33.008
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 78db7e3b643002849258892ab2a9df10c24ee63d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 8c5911bcee5867bd594f99cae130b2796520b6f4
+F Makefile.msc 86926e2330ad4b7ae6d4674762b53b293873b3fb
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION ce0ae95abd7121c534f6917c1c8f2b70d9acd4db
@@ -1364,7 +1364,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b202e2a1d73d104d795d2252b1c6f61d65bfb295
-R 1dd264571c6a612a20dc2b3433c44096
+P 1025873fdfd9e7e53094c48af1a79c60ae50ae97
+R b3a13182f647db180395c6651e571755
 U mistachkin
-Z 47fb3c7897d245bf0611496fd190514f
+Z e84454cfa4f76a73cfc440339f3d3545
