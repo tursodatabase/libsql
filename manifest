@@ -1,5 +1,5 @@
-C Avoid\sfreeing\sthe\sarray\sof\sinstance\smatches\seach\stime\sthe\sfts5\sxNext()\smethod\sis\scalled.
-D 2015-07-03T17:14:18.530
+C Enable\suse\sof\sthe\s__builtin_bswap32()\sonly\swith\sGCC\s4.3\sand\shigher.
+D 2015-07-03T17:54:49.505
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 78db7e3b643002849258892ab2a9df10c24ee63d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -388,7 +388,7 @@ F src/treeview.c c84b1a8ebc7f1d00cd76ce4958eeb3ae1021beed
 F src/trigger.c 322f23aad694e8f31d384dcfa386d52a48d3c52f
 F src/update.c 487747b328b7216bb7f6af0695d6937d5c9e605f
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
-F src/util.c 075c2878fb698bd387164047ecdf76f6cbacf402
+F src/util.c 46358a204b35971a839341cf64599d65b151ba88
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
 F src/vdbe.c 5ee4a2bf871418f61d06dc256b9b3a0084b5ec46
 F src/vdbe.h 7a75045d879118b9d3af7e8b3c108f2f27c51473
@@ -1364,7 +1364,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2b7567229e3ba7e22271bb909ba977b3de19cca5
-R c554dae646bd27cf8152fbda5fd30d51
-U dan
-Z 1785aa0d92187fcd270234eec6cbdc20
+P b9b0c1e50d77f5d6e02f43fbb100c722cb692cc5
+R d6a0b54da592b5928ec9d859952e5495
+U mistachkin
+Z 35231e9548761f3a117648fdf36fee13
