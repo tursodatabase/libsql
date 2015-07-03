@@ -436,15 +436,6 @@ struct Fts5CResult {
   u8 bTermEq;                     /* True if the terms are equal */
 };
 
-struct Fts5MultiSegIter {
-  int nSeg;                       /* Size of aSeg[] array */
-  int bRev;                       /* True to iterate in reverse order */
-  int bSkipEmpty;                 /* True to skip deleted entries */
-  int bEof;                       /* True at EOF */
-  Fts5SegIter *aSeg;              /* Array of segment iterators */
-  Fts5CResult *aFirst;            /* Current merge state (see above) */
-};
-
 /*
 ** Object for iterating through a single segment, visiting each term/docid
 ** pair in the segment.
@@ -517,6 +508,16 @@ struct Fts5SegIter {
 
 #define FTS5_SEGITER_ONETERM 0x01
 #define FTS5_SEGITER_REVERSE 0x02
+
+
+struct Fts5MultiSegIter {
+  int nSeg;                       /* Size of aSeg[] array */
+  int bRev;                       /* True to iterate in reverse order */
+  int bSkipEmpty;                 /* True to skip deleted entries */
+  int bEof;                       /* True at EOF */
+  Fts5CResult *aFirst;            /* Current merge state (see above) */
+  Fts5SegIter aSeg[1];            /* Array of segment iterators */
+};
 
 
 /*
@@ -2444,7 +2445,7 @@ static int fts5MultiIterAdvanceRowid(
   Fts5SegIter *pNew = &pIter->aSeg[iChanged];
   Fts5SegIter *pOther = &pIter->aSeg[iChanged ^ 0x0001];
 
-  for(i=(pIter->nSeg+iChanged)/2; p->rc==SQLITE_OK; i=i/2){
+  for(i=(pIter->nSeg+iChanged)/2; 1; i=i/2){
     Fts5CResult *pRes = &pIter->aFirst[i];
 
     assert( pNew->pLeaf );
@@ -2522,12 +2523,11 @@ static Fts5MultiSegIter *fts5MultiIterAlloc(
   for(nSlot=2; nSlot<nSeg; nSlot=nSlot*2);
   pNew = fts5IdxMalloc(p, 
       sizeof(Fts5MultiSegIter) +          /* pNew */
-      sizeof(Fts5SegIter) * nSlot +       /* pNew->aSeg[] */
+      sizeof(Fts5SegIter) * (nSlot-1) +   /* pNew->aSeg[] */
       sizeof(Fts5CResult) * nSlot         /* pNew->aFirst[] */
   );
   if( pNew ){
     pNew->nSeg = nSlot;
-    pNew->aSeg = (Fts5SegIter*)&pNew[1];
     pNew->aFirst = (Fts5CResult*)&pNew->aSeg[nSlot];
   }
   return pNew;
