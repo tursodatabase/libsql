@@ -1,5 +1,5 @@
-C Rework\sthe\sFts5MultiSegIter\sstructure\sa\sbit\sto\smake\sit\smore\sefficient.
-D 2015-07-03T20:47:18.417
+C Add\sstatic\smutexes\sfor\suse\sby\sthe\sbuilt-in\s/\sthird-party\sVFSs\sand\suse\sthe\sbuilt-in\sVFS\smutex\swhere\sappropriate.
+D 2015-07-03T21:38:09.670
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 78db7e3b643002849258892ab2a9df10c24ee63d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -303,16 +303,16 @@ F src/memjournal.c 3eb2c0b51adbd869cb6a44780323f05fa904dc85
 F src/msvc.h d9ba56c6851227ab44b3f228a35f3f5772296495
 F src/mutex.c 529e95739f815300a33c73fd8a7d6bdf0c24bd18
 F src/mutex.h 779d588e3b7756ec3ecf7d78cde1d84aba414f85
-F src/mutex_noop.c 529bab0743c3321c940f32c3464de494fd38cfa9
-F src/mutex_unix.c 5cf676464bd19e0a866297515d146e8bf1669dfb
-F src/mutex_w32.c 61660ada28d8308ad190f444c2170c4f2a590c2f
+F src/mutex_noop.c 9d4309c075ba9cc7249e19412d3d62f7f94839c4
+F src/mutex_unix.c b0d280089df0f49545f1318f45d61d07d2f674a8
+F src/mutex_w32.c b601f9e3073f7bd2c1f42a8c0ce59e42d6a08f85
 F src/notify.c 9711a7575036f0d3040ba61bc6e217f13a9888e7
 F src/os.c 8fd25588eeba74068d41102d26810e216999b6c8
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h abdb9a191a367793268fe553d25bab894e986a0e
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c 23eb5f56fac54d8fe0cb204291f3b3b2d94f23fc
-F src/os_win.c 27cc135e2d0b8b1e2e4944db1e2669a6a18fa0f8
+F src/os_unix.c 388c023582b17890f10c980b30ec1922b471753b
+F src/os_win.c 40b3af7a47eb1107d0d69e592bec345a3b7b798a
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c aa916ca28606ccf4b6877dfc2b643ccbca86589f
 F src/pager.h 6d435f563b3f7fcae4b84433b76a6ac2730036e2
@@ -329,7 +329,7 @@ F src/resolve.c 2d47554370de8de6dd5be060cef9559eec315005
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 7003fe663bc0636b656874440845a85dcbad4ba7
 F src/shell.c 8af3cced094aebb5f57a8ad739b9dafc7867eed7
-F src/sqlite.h.in 76d2f5637eb795b6300d9dd3c3ec3632ffafd721
+F src/sqlite.h.in 3d951bf985839de7fcf4d3f69568bb4df2641abe
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h be1a718b7d2ce40ceba725ae92c8eb5f18003066
 F src/sqliteInt.h bc2cb1755150fc0b490d1af23ac2911b03f2f92d
@@ -1364,7 +1364,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3df4af5d8c28863783b0bc867abfbe31cc96f1b9
-R bd4f50649100a2ce39bd3db1b7c2671b
-U dan
-Z 0da0ca80bc4a2dfa97d128394464cd4d
+P 0778825d0ec9315c70659fae8d0640b209049dd8
+R c3e93636a97f33c44303b10895e73ee1
+U mistachkin
+Z 0231ff1cbe7c5e5e0d327907d22772e6
