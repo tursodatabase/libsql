@@ -15,6 +15,8 @@ static const char zHelp[] =
   "  --journal M         Set the journal_mode to M\n"
   "  --key KEY           Set the encryption key to KEY\n"
   "  --lookaside N SZ    Configure lookaside for N slots of SZ bytes each\n"
+  "  --multithread       Set multithreaded mode\n"
+  "  --nomemstat         Disable memory statistics\n"
   "  --nosync            Set PRAGMA synchronous=OFF\n"
   "  --notnull           Add NOT NULL constraints to table columns\n"
   "  --pagesize N        Set the page size to N\n"
@@ -22,6 +24,8 @@ static const char zHelp[] =
   "  --primarykey        Use PRIMARY KEY instead of UNIQUE where appropriate\n"
   "  --reprepare         Reprepare each statement upon every invocation\n"
   "  --scratch N SZ      Configure scratch memory for N slots of SZ bytes each\n"
+  "  --serialized        Set serialized threading mode\n"
+  "  --singlethread      Set single-threaded mode - disables all mutexing\n"
   "  --sqlonly           No-op.  Only show the SQL that would have been run.\n"
   "  --shrink-memory     Invoke sqlite3_db_release_memory() frequently.\n"
   "  --size N            Relative test size.  Default=100\n"
@@ -1227,6 +1231,10 @@ int main(int argc, char **argv){
         nLook = integerValue(argv[i+1]);
         szLook = integerValue(argv[i+2]);
         i += 2;
+      }else if( strcmp(z,"multithread")==0 ){
+        sqlite3_config(SQLITE_CONFIG_MULTITHREAD);
+      }else if( strcmp(z,"nomemstat")==0 ){
+        sqlite3_config(SQLITE_CONFIG_MEMSTATUS, 0);
       }else if( strcmp(z,"nosync")==0 ){
         noSync = 1;
       }else if( strcmp(z,"notnull")==0 ){
@@ -1253,6 +1261,10 @@ int main(int argc, char **argv){
         nScratch = integerValue(argv[i+1]);
         szScratch = integerValue(argv[i+2]);
         i += 2;
+      }else if( strcmp(z,"serialized")==0 ){
+        sqlite3_config(SQLITE_CONFIG_SERIALIZED);
+      }else if( strcmp(z,"singlethread")==0 ){
+        sqlite3_config(SQLITE_CONFIG_SINGLETHREAD);
       }else if( strcmp(z,"sqlonly")==0 ){
         g.bSqlOnly = 1;
       }else if( strcmp(z,"shrink-memory")==0 ){
