@@ -219,9 +219,10 @@ struct Fts5Cursor {
 */
 #define FTS5CSR_REQUIRE_CONTENT   0x01
 #define FTS5CSR_REQUIRE_DOCSIZE   0x02
-#define FTS5CSR_EOF               0x04
-#define FTS5CSR_FREE_ZRANK        0x08
-#define FTS5CSR_REQUIRE_RESEEK    0x10
+#define FTS5CSR_REQUIRE_INST      0x04
+#define FTS5CSR_EOF               0x08
+#define FTS5CSR_FREE_ZRANK        0x10
+#define FTS5CSR_REQUIRE_RESEEK    0x20
 
 #define BitFlagAllTest(x,y) (((x) & (y))==(y))
 #define BitFlagTest(x,y)    (((x) & (y))!=0)
@@ -611,10 +612,11 @@ static int fts5StmtType(Fts5Cursor *pCsr){
 ** specific to the previous row stored by the cursor object.
 */
 static void fts5CsrNewrow(Fts5Cursor *pCsr){
-  CsrFlagSet(pCsr, FTS5CSR_REQUIRE_CONTENT | FTS5CSR_REQUIRE_DOCSIZE );
-  sqlite3_free(pCsr->aInst);
-  pCsr->aInst = 0;
-  pCsr->nInstCount = 0;
+  CsrFlagSet(pCsr, 
+      FTS5CSR_REQUIRE_CONTENT 
+    | FTS5CSR_REQUIRE_DOCSIZE 
+    | FTS5CSR_REQUIRE_INST 
+  );
 }
 
 /*
@@ -629,7 +631,7 @@ static int fts5CloseMethod(sqlite3_vtab_cursor *pCursor){
     Fts5Auxdata *pData;
     Fts5Auxdata *pNext;
 
-    fts5CsrNewrow(pCsr);
+    sqlite3_free(pCsr->aInst);
     if( pCsr->pStmt ){
       int eStmt = fts5StmtType(pCsr);
       sqlite3Fts5StorageStmtRelease(pTab->pStorage, eStmt, pCsr->pStmt);
@@ -1522,7 +1524,7 @@ static int fts5CsrPoslist(Fts5Cursor *pCsr, int iPhrase, const u8 **pa){
 */
 static int fts5CacheInstArray(Fts5Cursor *pCsr){
   int rc = SQLITE_OK;
-  if( pCsr->aInst==0 ){
+  if( CsrFlagTest(pCsr, FTS5CSR_REQUIRE_INST) ){
     Fts5PoslistReader *aIter;     /* One iterator for each phrase */
     int nIter;                    /* Number of iterators/phrases */
     int nByte;
@@ -1564,9 +1566,11 @@ static int fts5CacheInstArray(Fts5Cursor *pCsr){
         sqlite3Fts5PoslistReaderNext(&aIter[iBest]);
       }
 
+      sqlite3_free(pCsr->aInst);
       pCsr->aInst = (int*)buf.p;
       pCsr->nInstCount = nInst;
       sqlite3_free(aIter);
+      CsrFlagClear(pCsr, FTS5CSR_REQUIRE_INST);
     }
   }
   return rc;

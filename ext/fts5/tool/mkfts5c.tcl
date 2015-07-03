@@ -78,7 +78,7 @@ proc fts5c_printfile {zIn} {
   global G
   set data [readfile $zIn]
   set zTail [file tail $zIn]
-  puts $G(fd) "#line 1 \"$zTail\""
+  puts $G(fd) "#line 2 \"$zTail\""
 
   set sub_map [list --FTS5-SOURCE-ID-- [fts5_source_id $::srcdir]]
   if {$zTail=="fts5parse.c"} {
