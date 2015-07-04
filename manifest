@@ -1,9 +1,9 @@
-C Correction\sto\scheck-in\s[1025873fdf],\stighten\sup\sthe\snumber\sof\sstatic\stest\smutexes.
-D 2015-07-03T23:29:55.094
+C Sync\sup\sMakefile\sclean\stargets\sfor\sFTS5.
+D 2015-07-04T00:04:37.262
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in 78db7e3b643002849258892ab2a9df10c24ee63d
+F Makefile.in 017bf0511d1b2dd1db5e16488fbf75a17b526cbc
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 86926e2330ad4b7ae6d4674762b53b293873b3fb
+F Makefile.msc e97727cdfab1d4b890eb1f7e9d3f11a6717d329d
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION ce0ae95abd7121c534f6917c1c8f2b70d9acd4db
@@ -248,7 +248,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk a5b0c90e724860fdab98dd54d3a73d9e32cb0702
+F main.mk 2fda07d2e73021aaa98aeaf98e4b39b2ef2d5ccb
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
 F mkopcodeh.awk 0e7f04a8eb90f92259e47d80110e4e98d7ce337a
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
@@ -1364,7 +1364,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e6c03e72010e919dbac2055b6c3f3b13b1663b15
-R 238f2504523ab15b65a60c28dd676b51
+P 4e515897af97cb3a4158bcc34318992e8dcee77a
+R 0ed175228476a5c7601d367e38925a77
 U mistachkin
-Z 50c8bc64878c693af322bb7e054ce81e
+Z 452e29ca7fd5db2edd7c137285535715
