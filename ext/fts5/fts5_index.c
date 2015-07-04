@@ -4828,7 +4828,6 @@ static void fts5TestTerm(
     int nTerm = pPrev->n-1;            /* Size of zTerm in bytes */
     int iIdx = (pPrev->p[0] - FTS5_MAIN_PREFIX);
     int flags = (iIdx==0 ? 0 : FTS5INDEX_QUERY_PREFIX);
-    int rc;
     u64 ck1 = 0;
     u64 ck2 = 0;
 
@@ -5054,6 +5053,9 @@ int sqlite3Fts5IndexIntegrityCheck(Fts5Index *p, u64 cksum){
     i64 iRowid = fts5MultiIterRowid(pIter);
     char *z = (char*)fts5MultiIterTerm(pIter, &n);
 
+    /* If this is a new term, query for it. Update cksum3 with the results. */
+    fts5TestTerm(p, &term, z, n, cksum2, &cksum3);
+
     poslist.n = 0;
     fts5MultiIterPoslist(p, pIter, 0, &poslist);
     while( 0==sqlite3Fts5PoslistNext64(poslist.p, poslist.n, &iOff, &iPos) ){
@@ -5061,9 +5063,6 @@ int sqlite3Fts5IndexIntegrityCheck(Fts5Index *p, u64 cksum){
       int iTokOff = FTS5_POS2OFFSET(iPos);
       cksum2 ^= fts5IndexEntryCksum(iRowid, iCol, iTokOff, -1, z, n);
     }
-
-    /* If this is a new term, query for it. Update cksum3 with the results. */
-    fts5TestTerm(p, &term, z, n, cksum2, &cksum3);
   }
   fts5TestTerm(p, &term, 0, 0, cksum2, &cksum3);
 

@@ -1,5 +1,5 @@
-C Do\snot\spreserve\sthe\sbtreeInitPage()\sresults\sin\sPRAGMA\sintegrity_check\sif\nthere\swere\scell\ssizing\serrors\sbecause\sPRAGMA\scell_size_check\swas\sturned\soff\nduring\sthe\sbtreeInitPage()\scall.
-D 2015-07-04T11:14:20.284
+C Fix\sa\sproblem\sin\sthe\sfts5\sintegrity-check.
+D 2015-07-04T15:35:02.267
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 017bf0511d1b2dd1db5e16488fbf75a17b526cbc
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -112,7 +112,7 @@ F ext/fts5/fts5_buffer.c 80f9ba4431848cb857e3d2158f5280093dcd8015
 F ext/fts5/fts5_config.c b2456e9625bca41c51d54c363e369c6356895c90
 F ext/fts5/fts5_expr.c d2e148345639c5a5583e0daa39a639bf298ae6a7
 F ext/fts5/fts5_hash.c 219f4edd72e5cf95b19c33f1058809a18fad5229
-F ext/fts5/fts5_index.c 50f137bc97ae8c28ea555e156a01a155601cf0ff
+F ext/fts5/fts5_index.c 6564c103148e8b59d6b816f34d0b31f5f4025054
 F ext/fts5/fts5_main.c 37b0055cb4036c4b4bb4eb36e30ebd1c21c63939
 F ext/fts5/fts5_storage.c 4cae85b5287b159d9d98174a4e70adf872b0930a
 F ext/fts5/fts5_tcl.c 85eb4e0d0fefa9420b78151496ad4599a1783e20
@@ -1364,7 +1364,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 43ead44ef6416d69602e123c3be7a258772837f1
-R a66ab7da98093b47fcf696f0e3baef91
-U drh
-Z 85e64a90850a0b5ecb5f23fb7b4db837
+P 743bf1f184be316971f2e9c651bcf573bde8654a
+R 9bf7551534e5c2a541b49f913ee30aa3
+U dan
+Z 59b496d519385223221d6df6daef9f3a
