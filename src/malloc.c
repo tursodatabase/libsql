@@ -193,10 +193,9 @@ int sqlite3MallocInit(void){
     sqlite3GlobalConfig.nScratch = 0;
   }
   if( sqlite3GlobalConfig.pPage==0 || sqlite3GlobalConfig.szPage<512
-      || sqlite3GlobalConfig.nPage<1 ){
+      || sqlite3GlobalConfig.nPage<=0 ){
     sqlite3GlobalConfig.pPage = 0;
     sqlite3GlobalConfig.szPage = 0;
-    sqlite3GlobalConfig.nPage = 0;
   }
   rc = sqlite3GlobalConfig.m.xInit(sqlite3GlobalConfig.m.pAppData);
   if( rc!=SQLITE_OK ) memset(&mem0, 0, sizeof(mem0));

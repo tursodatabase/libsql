@@ -15,6 +15,41 @@
 ** of the SQLITE_CONFIG_PAGECACHE and sqlite3_release_memory() features.
 ** If the default page cache implementation is overridden, then neither of
 ** these two features are available.
+**
+** A Page cache line looks like this:
+**
+**  -------------------------------------------------------------
+**  |  database page content   |  PgHdr1  |  MemPage  |  PgHdr  |
+**  -------------------------------------------------------------
+**
+** The database page content is up front (so that buffer overreads tend to
+** flow harmlessly into the PgHdr1, MemPage, and PgHdr extensions).   MemPage
+** is the extension added by the btree.c module containing information such
+** as the database page number and how that database page is used.  PgHdr
+** is added by the pcache.c layer and contains information used to keep track
+** of which pages are "dirty".  PgHdr1 is an extension added by this
+** module (pcache1.c).  The PgHdr1 header is a subclass of sqlite3_pcache_page.
+** PgHdr1 contains information needed to look up a page by its page number.
+** The superclass sqlite3_pcache_page.pBuf points to the start of the
+** database page content and sqlite3_pcache_page.pExtra points to PgHdr.
+**
+** The size of the extension (MemPage+PgHdr+PgHdr1) can be determined at
+** runtime using sqlite3_config(SQLITE_CONFIG_PCACHE_HDRSZ, &size).  The
+** sizes of the extensions sum to 272 bytes on x64 for 3.8.10, but this
+** size can vary according to architecture, compile-time options, and
+** SQLite library version number.
+**
+** If SQLITE_PCACHE_SEPARATE_HEADER is defined, then the extension is obtained
+** using a separate memory allocation from the database page content.  This
+** seeks to overcome the "clownfoot" problem of allocating a few bytes more
+** than a power of two with the memory allocator rounding up to the next
+** power of two, and leaving the rounded-up space unused.
+**
+** This module tracks pointers to PgHdr1 objects.  Only pcache.c communicates
+** with this module.  Information is passed back and forth as PgHdr1 pointers.
+**
+** The pcache.c and pager.c modules deal pointers to PgHdr objects.
+** The btree.c module deals with pointers to MemPage objects.
 */
 
 #include "sqliteInt.h"
