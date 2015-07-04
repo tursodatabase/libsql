@@ -2012,6 +2012,118 @@ static void fts5SegIterLoadDlidx(Fts5Index *p, Fts5SegIter *pIter){
   pIter->pDlidx = fts5DlidxIterInit(p, bRev, iSeg, pIter->iTermLeafPgno);
 }
 
+#ifdef SQLITE_DEBUG
+static void fts5AssertNodeSeekOk(
+  Fts5Data *pNode,
+  const u8 *pTerm, int nTerm,     /* Term to search for */
+  int iExpectPg,
+  int bExpectDlidx
+){
+  int bDlidx;
+  int iPg;
+  int rc = SQLITE_OK;
+  Fts5NodeIter node;
+
+  fts5NodeIterInit(pNode->p, pNode->n, &node);
+  assert( node.term.n==0 );
+  iPg = node.iChild;
+  bDlidx = node.bDlidx;
+  for(fts5NodeIterNext(&rc, &node);
+      node.aData && fts5BufferCompareBlob(&node.term, pTerm, nTerm)<=0;
+      fts5NodeIterNext(&rc, &node)
+  ){
+    iPg = node.iChild;
+    bDlidx = node.bDlidx;
+  }
+  fts5NodeIterFree(&node);
+
+  assert( rc!=SQLITE_OK || iPg==iExpectPg );
+  assert( rc!=SQLITE_OK || bDlidx==bExpectDlidx );
+}
+#else
+#define fts5AssertNodeSeekOk(v,w,x,y,z)
+#endif
+
+/*
+** Argument pNode is an internal b-tree node. This function searches
+** within the node for the largest term that is smaller than or equal
+** to (pTerm/nTerm).
+**
+** It returns the associated page number. Or, if (pTerm/nTerm) is smaller
+** than all terms within the node, the leftmost child page number. 
+**
+** Before returning, (*pbDlidx) is set to true if the last term on the
+** returned child page number has a doclist-index. Or left as is otherwise.
+*/
+static int fts5NodeSeek(
+  Fts5Data *pNode,                /* Node to search */
+  const u8 *pTerm, int nTerm,     /* Term to search for */
+  int *pbDlidx                    /* OUT: True if dlidx flag is set */
+){
+  int iPg;
+  u8 *pPtr = pNode->p;
+  u8 *pEnd = &pPtr[pNode->n];
+  int nMatch = 0;                 /* Number of bytes of pTerm already matched */
+  
+  assert( *pbDlidx==0 );
+
+  pPtr += fts5GetVarint32(pPtr, iPg);
+  while( pPtr<pEnd ){
+    int nEmpty = 0;
+    int nKeep;
+    int nNew;
+
+    /* If there is a "no terms" record at pPtr, read it now. Store the
+    ** number of termless pages in nEmpty. If it indicates a doclist-index, 
+    ** set (*pbDlidx) to true.*/
+    if( *pPtr<2 ){
+      *pbDlidx = (*pPtr==0x01);
+      pPtr++;
+      pPtr += fts5GetVarint32(pPtr, nEmpty);
+    }
+
+    /* Read the next "term" pointer. Set nKeep to the number of bytes to
+    ** keep from the previous term, and nNew to the number of bytes of
+    ** new data that will be appended to it. */
+    nKeep = (int)*pPtr++;
+    nNew = (int)*pPtr++;
+    if( (nKeep | nNew) & 0x0080 ){
+      pPtr -= 2;
+      pPtr += fts5GetVarint32(pPtr, nKeep);
+      pPtr += fts5GetVarint32(pPtr, nNew);
+    }
+    nKeep -= 2;
+
+    /* Compare (pTerm/nTerm) to the current term on the node (the one described
+    ** by nKeep/nNew). If the node term is larger, break out of the while()
+    ** loop. 
+    **
+    ** Otherwise, if (pTerm/nTerm) is larger or the two terms are equal, 
+    ** leave variable nMatch set to the size of the largest prefix common to
+    ** both terms in bytes.  */
+    if( nKeep==nMatch ){
+      int nTst = MIN(nNew, nTerm-nMatch);
+      int i;
+      for(i=0; i<nTst; i++){
+        if( pTerm[nKeep+i]!=pPtr[i] ) break;
+      }
+      nMatch += i;
+      assert( nMatch<=nTerm );
+
+      if( i<nNew && (nMatch==nTerm || pPtr[i] > pTerm[nMatch]) ) break;
+    }else if( nKeep<nMatch ){
+      break;
+    }
+
+    iPg += 1 + nEmpty;
+    *pbDlidx = 0;
+    pPtr += nNew;
+  }
+
+  fts5AssertNodeSeekOk(pNode, pTerm, nTerm, iPg, *pbDlidx);
+  return iPg;
+}
+
 /*
 ** Initialize the object pIter to point to term pTerm/nTerm within segment
 ** pSeg. If there is no such term in the index, the iterator is set to EOF.
@@ -2040,24 +2152,11 @@ static void fts5SegIterSeekInit(
   /* This block sets stack variable iPg to the leaf page number that may
   ** contain term (pTerm/nTerm), if it is present in the segment. */
   for(h=pSeg->nHeight-1; h>0; h--){
-    Fts5NodeIter node;              /* For iterating through internal nodes */
     i64 iRowid = FTS5_SEGMENT_ROWID(pSeg->iSegid, h, iPg);
     Fts5Data *pNode = fts5DataRead(p, iRowid);
     if( pNode==0 ) break;
 
-    fts5NodeIterInit(pNode->p, pNode->n, &node);
-    assert( node.term.n==0 );
-
-    iPg = node.iChild;
-    bDlidx = node.bDlidx;
-    for(fts5NodeIterNext(&p->rc, &node);
-        node.aData && fts5BufferCompareBlob(&node.term, pTerm, nTerm)<=0;
-        fts5NodeIterNext(&p->rc, &node)
-    ){
-      iPg = node.iChild;
-      bDlidx = node.bDlidx;
-    }
-    fts5NodeIterFree(&node);
+    iPg = fts5NodeSeek(pNode, pTerm, nTerm, &bDlidx);
     fts5DataRelease(pNode);
   }
 

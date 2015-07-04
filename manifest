@@ -1,5 +1,5 @@
-C Preserve\sthe\snumber\sof\srequested\sPAGECACHE\spages\seven\sif\sthe\smemory\spointer\nor\ssize\sis\szero.\s\sEnhance\sthe\spcache1.c\sheader\scomment\sto\sexplain\sthe\smemory\nlayout\sof\sa\spage\scache\sline.
-D 2015-07-04T18:15:04.326
+C Optimize\sseek\soperations\son\sfts5\sb-trees.
+D 2015-07-04T18:44:07.139
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 017bf0511d1b2dd1db5e16488fbf75a17b526cbc
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -112,7 +112,7 @@ F ext/fts5/fts5_buffer.c 80f9ba4431848cb857e3d2158f5280093dcd8015
 F ext/fts5/fts5_config.c b2456e9625bca41c51d54c363e369c6356895c90
 F ext/fts5/fts5_expr.c d2e148345639c5a5583e0daa39a639bf298ae6a7
 F ext/fts5/fts5_hash.c 219f4edd72e5cf95b19c33f1058809a18fad5229
-F ext/fts5/fts5_index.c 6564c103148e8b59d6b816f34d0b31f5f4025054
+F ext/fts5/fts5_index.c 6224454702f852392cae8755c920f93b06b09283
 F ext/fts5/fts5_main.c 37b0055cb4036c4b4bb4eb36e30ebd1c21c63939
 F ext/fts5/fts5_storage.c 4cae85b5287b159d9d98174a4e70adf872b0930a
 F ext/fts5/fts5_tcl.c 85eb4e0d0fefa9420b78151496ad4599a1783e20
@@ -1364,7 +1364,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4e473559c9bdcf4d0b823e995a3642cd50ebd337
-R 3bd4765a55a11bf2fbafbabfd8169c43
-U drh
-Z 0199ebd97104f84a289dac04b3e8dc79
+P dacb2a615ce1c0573baf4518000454038745cf2a
+R a74787a76aedf64f2fa9d52272be4a28
+U dan
+Z 70c5b32ed488e093070d3138a449d5f1
