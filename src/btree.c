@@ -8959,6 +8959,7 @@ static int checkTreePage(
   const char *saved_zPfx = pCheck->zPfx;
   int saved_v1 = pCheck->v1;
   int saved_v2 = pCheck->v2;
+  u8 savedIsInit;
 
   /* Check that the page exists
   */
@@ -8976,6 +8977,7 @@ static int checkTreePage(
 
   /* Clear MemPage.isInit to make sure the corruption detection code in
   ** btreeInitPage() is executed.  */
+  savedIsInit = pPage->isInit;
   pPage->isInit = 0;
   if( (rc = btreeInitPage(pPage))!=0 ){
     assert( rc==SQLITE_CORRUPT );  /* The only possible error from InitPage */
@@ -9168,6 +9170,7 @@ static int checkTreePage(
   }
 
 end_of_check:
+  if( !doCoverageCheck ) pPage->isInit = savedIsInit;
   releasePage(pPage);
   pCheck->zPfx = saved_zPfx;
   pCheck->v1 = saved_v1;
