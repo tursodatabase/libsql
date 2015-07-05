@@ -857,5 +857,12 @@ do_catchsql_test 15.1 {
   SELECT x FROM d;
 } {1 {no such column: rowid}}
 
+# 2015-07-05:  Do not allow aggregate recursive queries
+#
+do_catchsql_test 16.1 {
+  WITH RECURSIVE
+    i(x) AS (VALUES(1) UNION SELECT count(*) FROM i)
+  SELECT * FROM i;
+} {1 {recursive aggregate queries not supported}}
 
 finish_test

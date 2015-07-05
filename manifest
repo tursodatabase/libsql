@@ -1,5 +1,5 @@
-C Optimize\sseek\soperations\son\sfts5\sb-trees.
-D 2015-07-04T18:44:07.139
+C Do\snot\sallow\srecursive\sCTEs\sthat\suse\saggregate\squeries\sin\sthe\srecursive\spart.
+D 2015-07-05T22:15:10.026
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 017bf0511d1b2dd1db5e16488fbf75a17b526cbc
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -327,7 +327,7 @@ F src/printf.c db11b5960105ee661dcac690f2ae6276e49bf251
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 2d47554370de8de6dd5be060cef9559eec315005
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c 7003fe663bc0636b656874440845a85dcbad4ba7
+F src/select.c d3c04f01549317afbe02455c4ca9465100e9c5fe
 F src/shell.c 8af3cced094aebb5f57a8ad739b9dafc7867eed7
 F src/sqlite.h.in 3d951bf985839de7fcf4d3f69568bb4df2641abe
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
@@ -1296,7 +1296,7 @@ F test/wild001.test bca33f499866f04c24510d74baf1e578d4e44b1c
 F test/win32heap.test ea19770974795cff26e11575e12d422dbd16893c
 F test/win32lock.test fbf107c91d8f5512be5a5b87c4c42ab9fdd54972
 F test/win32longpath.test 169c75a3b2e43481f4a62122510210c67b08f26d
-F test/with1.test e99845d4f4bf7863b61f104de554c61739d65764
+F test/with1.test a1e8660be88e2eb4648f8860f831d1e38b5b5443
 F test/with2.test ee227a663586aa09771cafd4fa269c5217eaf775
 F test/withM.test e97f2a8c506ab3ea9eab94e6f6072f6cc924c991
 F test/without_rowid1.test 1a7b9bd51b899928d327052df9741d2fe8dbe701
@@ -1364,7 +1364,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P dacb2a615ce1c0573baf4518000454038745cf2a
-R a74787a76aedf64f2fa9d52272be4a28
-U dan
-Z 70c5b32ed488e093070d3138a449d5f1
+P 8cf02090ce53ec150492d77d9e5e5f27665bd34f
+R 2ced95f329e3743e78bec1f4f82122ca
+U drh
+Z 74748fde014fce363e747a5eecd57396
