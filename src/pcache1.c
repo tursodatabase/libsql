@@ -189,6 +189,7 @@ static SQLITE_WSD struct PCacheGlobal {
   ** The nFreeSlot and pFree values do require mutex protection.
   */
   int isInit;                    /* True if initialized */
+  int separateCache;             /* Use a new PGroup for each PCache */
   int szSlot;                    /* Size of each free slot */
   int nSlot;                     /* The number of pcache slots */
   int nReserve;                  /* Try to keep nFreeSlot above this */
@@ -362,10 +363,14 @@ static PgHdr1 *pcache1AllocPage(PCache1 *pCache){
     pCache->pFree = p->pNext;
     p->pNext = 0;
   }else{
+#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
     /* The group mutex must be released before pcache1Alloc() is called. This
-    ** is because it may call sqlite3_release_memory(), which assumes that 
+    ** is because it might call sqlite3_release_memory(), which assumes that 
     ** this mutex is not held. */
+    assert( pcache1.separateCache==0 );
+    assert( pCache->pGroup==&pcache1.grp );
     pcache1LeaveMutex(pCache->pGroup);
+#endif
 #ifdef SQLITE_PCACHE_SEPARATE_HEADER
     pPg = pcache1Alloc(pCache->szPage);
     p = sqlite3Malloc(sizeof(PgHdr1) + pCache->szExtra);
@@ -378,7 +383,9 @@ static PgHdr1 *pcache1AllocPage(PCache1 *pCache){
     pPg = pcache1Alloc(pCache->szAlloc);
     p = (PgHdr1 *)&((u8 *)pPg)[pCache->szPage];
 #endif
+#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
     pcache1EnterMutex(pCache->pGroup);
+#endif
     if( pPg==0 ) return 0;
     p->page.pBuf = pPg;
     p->page.pExtra = &p[1];
@@ -392,27 +399,23 @@ static PgHdr1 *pcache1AllocPage(PCache1 *pCache){
 
 /*
 ** Free a page object allocated by pcache1AllocPage().
-**
-** The pointer is allowed to be NULL, which is prudent.  But it turns out
-** that the current implementation happens to never call this routine
-** with a NULL pointer, so we mark the NULL test with ALWAYS().
 */
 static void pcache1FreePage(PgHdr1 *p){
-  if( ALWAYS(p) ){
-    PCache1 *pCache = p->pCache;
-    assert( sqlite3_mutex_held(p->pCache->pGroup->mutex) );
-    if( p->isBulkLocal ){
-      p->pNext = pCache->pFree;
-      pCache->pFree = p;
-    }else{
-      pcache1Free(p->page.pBuf);
+  PCache1 *pCache;
+  assert( p!=0 );
+  pCache = p->pCache;
+  assert( sqlite3_mutex_held(p->pCache->pGroup->mutex) );
+  if( p->isBulkLocal ){
+    p->pNext = pCache->pFree;
+    pCache->pFree = p;
+  }else{
+    pcache1Free(p->page.pBuf);
 #ifdef SQLITE_PCACHE_SEPARATE_HEADER
-      sqlite3_free(p);
+    sqlite3_free(p);
 #endif
-    }
-    if( pCache->bPurgeable ){
-      pCache->pGroup->nCurrentPage--;
-    }
+  }
+  if( pCache->bPurgeable ){
+    pCache->pGroup->nCurrentPage--;
   }
 }
 
@@ -612,6 +615,29 @@ static int pcache1Init(void *NotUsed){
   UNUSED_PARAMETER(NotUsed);
   assert( pcache1.isInit==0 );
   memset(&pcache1, 0, sizeof(pcache1));
+
+
+  /*
+  ** The pcache1.separateCache variable is true if each PCache has its own
+  ** private PGroup (mode-1).  pcache1.separateCache is false if the single
+  ** PGroup in pcache1.grp is used for all page caches (mode-2).
+  **
+  **   *  Always use a unified cache (mode-2) if ENABLE_MEMORY_MANAGEMENT
+  **
+  **   *  Use a unified cache in single-threaded applications that have
+  **      configured a start-time buffer for use as page-cache memory using
+  **      sqlite3_config(SQLITE_CONFIG_PAGECACHE, pBuf, sz, N) with non-NULL 
+  **      pBuf argument.
+  **
+  **   *  Otherwise use separate caches (mode-1)
+  */
+#if defined(SQLITE_ENABLE_MEMORY_MANAGEMENT)
+  pcache1.separateCache = 0;
+#else
+  pcache1.separateCache = sqlite3GlobalConfig.pPage==0
+                          || sqlite3GlobalConfig.bCoreMutex>0;
+#endif
+
 #if SQLITE_THREADSAFE
   if( sqlite3GlobalConfig.bCoreMutex ){
     pcache1.grp.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_LRU);
@@ -647,31 +673,13 @@ static sqlite3_pcache *pcache1Create(int szPage, int szExtra, int bPurgeable){
   PGroup *pGroup;       /* The group the new page cache will belong to */
   int sz;               /* Bytes of memory required to allocate the new cache */
 
-  /*
-  ** The separateCache variable is true if each PCache has its own private
-  ** PGroup.  In other words, separateCache is true for mode (1) where no
-  ** mutexing is required.
-  **
-  **   *  Always use a unified cache (mode-2) if ENABLE_MEMORY_MANAGEMENT
-  **
-  **   *  Always use a unified cache in single-threaded applications
-  **
-  **   *  Otherwise (if multi-threaded and ENABLE_MEMORY_MANAGEMENT is off)
-  **      use separate caches (mode-1)
-  */
-#if defined(SQLITE_ENABLE_MEMORY_MANAGEMENT) || SQLITE_THREADSAFE==0
-  const int separateCache = 0;
-#else
-  int separateCache = sqlite3GlobalConfig.bCoreMutex>0;
-#endif
-
   assert( (szPage & (szPage-1))==0 && szPage>=512 && szPage<=65536 );
   assert( szExtra < 300 );
 
-  sz = sizeof(PCache1) + sizeof(PGroup)*separateCache;
+  sz = sizeof(PCache1) + sizeof(PGroup)*pcache1.separateCache;
   pCache = (PCache1 *)sqlite3MallocZero(sz);
   if( pCache ){
-    if( separateCache ){
+    if( pcache1.separateCache ){
       pGroup = (PGroup*)&pCache[1];
       pGroup->mxPinned = 10;
     }else{
@@ -690,10 +698,9 @@ static sqlite3_pcache *pcache1Create(int szPage, int szExtra, int bPurgeable){
       pGroup->mxPinned = pGroup->nMaxPage + 10 - pGroup->nMinPage;
     }
     pcache1LeaveMutex(pGroup);
-    if( separateCache
-     && sqlite3GlobalConfig.szPage==0
-     && sqlite3GlobalConfig.nPage!=0
-    ){
+    /* Try to initialize the local bulk pagecache line allocation if using
+    ** separate caches and if nPage!=0 */
+    if( pcache1.separateCache && sqlite3GlobalConfig.nPage!=0 ){
       int szBulk;
       char *zBulk;
       sqlite3BeginBenignMalloc();
