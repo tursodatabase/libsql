@@ -50,8 +50,35 @@
 **
 ** The pcache.c and pager.c modules deal pointers to PgHdr objects.
 ** The btree.c module deals with pointers to MemPage objects.
+**
+** SOURCE OF PAGE CACHE MEMORY:
+**
+** Memory for a page might come from any of three sources:
+**
+**    (1)  The general-purpose memory allocator - sqlite3Malloc()
+**    (2)  Global page-cache memory provided using sqlite3_config() with
+**         SQLITE_CONFIG_PAGECACHE.
+**    (3)  PCache-local bulk allocation.
+**
+** The third case is a chunk of heap memory (defaulting to 100 pages worth)
+** that is allocated when the page cache is created.  The size of the local
+** bulk allocation can be adjusted using 
+**
+**     sqlite3_config(SQLITE_CONFIG_PCACHE, 0, 0, N).
+**
+** If N is positive, then N pages worth of memory are allocated using a single
+** sqlite3Malloc() call and that memory is used for the first N pages allocated.
+** Or if N is negative, then -1024*N bytes of memory are allocated and used
+** for as many pages as can be accomodated.
+**
+** Only one of (2) or (3) can be used.  Once the memory available to (2) or
+** (3) is exhausted, subsequent allocations fail over to the general-purpose
+** memory allocator (1).
+**
+** Earlier versions of SQLite used only methods (1) and (2).  But experiments
+** show that method (3) with N==100 provides about a 5% performance boost for
+** common workloads.
 */
-
 #include "sqliteInt.h"
 
 typedef struct PCache1 PCache1;
@@ -105,8 +132,9 @@ struct PCache1 {
   ** The PGroup mutex must be held when accessing nMax.
   */
   PGroup *pGroup;                     /* PGroup this cache belongs to */
-  int szPage;                         /* Size of allocated pages in bytes */
-  int szExtra;                        /* Size of extra space in bytes */
+  int szPage;                         /* Size of database content section */
+  int szExtra;                        /* sizeof(MemPage)+sizeof(PgHdr) */
+  int szAlloc;                        /* Total size of one pcache line */
   int bPurgeable;                     /* True if cache is purgeable */
   unsigned int nMin;                  /* Minimum number of pages reserved */
   unsigned int nMax;                  /* Configured "cache_size" value */
@@ -120,6 +148,8 @@ struct PCache1 {
   unsigned int nPage;                 /* Total number of pages in apHash */
   unsigned int nHash;                 /* Number of slots in apHash[] */
   PgHdr1 **apHash;                    /* Hash table for fast lookup by key */
+  PgHdr1 *pFree;                      /* List of unused pcache-local pages */
+  void *pBulk;                        /* Bulk memory used by pcache-local */
 };
 
 /*
@@ -132,6 +162,7 @@ struct PgHdr1 {
   sqlite3_pcache_page page;
   unsigned int iKey;             /* Key value (page number) */
   u8 isPinned;                   /* Page in use, not on the LRU list */
+  u8 isBulkLocal;                /* This page from bulk local storage */
   PgHdr1 *pNext;                 /* Next in hash table chain */
   PCache1 *pCache;               /* Cache that currently owns this page */
   PgHdr1 *pLruNext;              /* Next in LRU list of unpinned pages */
@@ -139,8 +170,8 @@ struct PgHdr1 {
 };
 
 /*
-** Free slots in the allocator used to divide up the buffer provided using
-** the SQLITE_CONFIG_PAGECACHE mechanism.
+** Free slots in the allocator used to divide up the global page cache
+** buffer provided using the SQLITE_CONFIG_PAGECACHE mechanism.
 */
 struct PgFreeslot {
   PgFreeslot *pNext;  /* Next free slot */
@@ -161,7 +192,7 @@ static SQLITE_WSD struct PCacheGlobal {
   int szSlot;                    /* Size of each free slot */
   int nSlot;                     /* The number of pcache slots */
   int nReserve;                  /* Try to keep nFreeSlot above this */
-  void *pStart, *pEnd;           /* Bounds of pagecache malloc range */
+  void *pStart, *pEnd;           /* Bounds of global page cache memory */
   /* Above requires no mutex.  Use mutex below for variable that follow. */
   sqlite3_mutex *mutex;          /* Mutex for accessing the following: */
   PgFreeslot *pFree;             /* Free page blocks */
@@ -208,6 +239,7 @@ static SQLITE_WSD struct PCacheGlobal {
 void sqlite3PCacheBufferSetup(void *pBuf, int sz, int n){
   if( pcache1.isInit ){
     PgFreeslot *p;
+    if( pBuf==0 ) sz = n = 0;
     sz = ROUNDDOWN8(sz);
     pcache1.szSlot = sz;
     pcache1.nSlot = pcache1.nFreeSlot = n;
@@ -272,9 +304,9 @@ static void *pcache1Alloc(int nByte){
 /*
 ** Free an allocated buffer obtained from pcache1Alloc().
 */
-static int pcache1Free(void *p){
+static void pcache1Free(void *p){
   int nFreed = 0;
-  if( p==0 ) return 0;
+  if( p==0 ) return;
   if( p>=pcache1.pStart && p<pcache1.pEnd ){
     PgFreeslot *pSlot;
     sqlite3_mutex_enter(pcache1.mutex);
@@ -289,15 +321,14 @@ static int pcache1Free(void *p){
   }else{
     assert( sqlite3MemdebugHasType(p, MEMTYPE_PCACHE) );
     sqlite3MemdebugSetType(p, MEMTYPE_HEAP);
-    nFreed = sqlite3MallocSize(p);
 #ifndef SQLITE_DISABLE_PAGECACHE_OVERFLOW_STATS
+    nFreed = sqlite3MallocSize(p);
     sqlite3_mutex_enter(pcache1.mutex);
     sqlite3StatusDown(SQLITE_STATUS_PAGECACHE_OVERFLOW, nFreed);
     sqlite3_mutex_leave(pcache1.mutex);
 #endif
     sqlite3_free(p);
   }
-  return nFreed;
 }
 
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
@@ -325,34 +356,38 @@ static PgHdr1 *pcache1AllocPage(PCache1 *pCache){
   PgHdr1 *p = 0;
   void *pPg;
 
-  /* The group mutex must be released before pcache1Alloc() is called. This
-  ** is because it may call sqlite3_release_memory(), which assumes that 
-  ** this mutex is not held. */
   assert( sqlite3_mutex_held(pCache->pGroup->mutex) );
-  pcache1LeaveMutex(pCache->pGroup);
+  if( pCache->pFree ){
+    p = pCache->pFree;
+    pCache->pFree = p->pNext;
+    p->pNext = 0;
+  }else{
+    /* The group mutex must be released before pcache1Alloc() is called. This
+    ** is because it may call sqlite3_release_memory(), which assumes that 
+    ** this mutex is not held. */
+    pcache1LeaveMutex(pCache->pGroup);
 #ifdef SQLITE_PCACHE_SEPARATE_HEADER
-  pPg = pcache1Alloc(pCache->szPage);
-  p = sqlite3Malloc(sizeof(PgHdr1) + pCache->szExtra);
-  if( !pPg || !p ){
-    pcache1Free(pPg);
-    sqlite3_free(p);
-    pPg = 0;
-  }
+    pPg = pcache1Alloc(pCache->szPage);
+    p = sqlite3Malloc(sizeof(PgHdr1) + pCache->szExtra);
+    if( !pPg || !p ){
+      pcache1Free(pPg);
+      sqlite3_free(p);
+      pPg = 0;
+    }
 #else
-  pPg = pcache1Alloc(ROUND8(sizeof(PgHdr1)) + pCache->szPage + pCache->szExtra);
-  p = (PgHdr1 *)&((u8 *)pPg)[pCache->szPage];
+    pPg = pcache1Alloc(pCache->szAlloc);
+    p = (PgHdr1 *)&((u8 *)pPg)[pCache->szPage];
 #endif
-  pcache1EnterMutex(pCache->pGroup);
-
-  if( pPg ){
+    pcache1EnterMutex(pCache->pGroup);
+    if( pPg==0 ) return 0;
     p->page.pBuf = pPg;
     p->page.pExtra = &p[1];
-    if( pCache->bPurgeable ){
-      pCache->pGroup->nCurrentPage++;
-    }
-    return p;
+    p->isBulkLocal = 0;
   }
-  return 0;
+  if( pCache->bPurgeable ){
+    pCache->pGroup->nCurrentPage++;
+  }
+  return p;
 }
 
 /*
@@ -366,10 +401,15 @@ static void pcache1FreePage(PgHdr1 *p){
   if( ALWAYS(p) ){
     PCache1 *pCache = p->pCache;
     assert( sqlite3_mutex_held(p->pCache->pGroup->mutex) );
-    pcache1Free(p->page.pBuf);
+    if( p->isBulkLocal ){
+      p->pNext = pCache->pFree;
+      pCache->pFree = p;
+    }else{
+      pcache1Free(p->page.pBuf);
 #ifdef SQLITE_PCACHE_SEPARATE_HEADER
-    sqlite3_free(p);
+      sqlite3_free(p);
 #endif
+    }
     if( pCache->bPurgeable ){
       pCache->pGroup->nCurrentPage--;
     }
@@ -640,6 +680,7 @@ static sqlite3_pcache *pcache1Create(int szPage, int szExtra, int bPurgeable){
     pCache->pGroup = pGroup;
     pCache->szPage = szPage;
     pCache->szExtra = szExtra;
+    pCache->szAlloc = szPage + szExtra + ROUND8(sizeof(PgHdr1));
     pCache->bPurgeable = (bPurgeable ? 1 : 0);
     pcache1EnterMutex(pGroup);
     pcache1ResizeHash(pCache);
@@ -649,6 +690,34 @@ static sqlite3_pcache *pcache1Create(int szPage, int szExtra, int bPurgeable){
       pGroup->mxPinned = pGroup->nMaxPage + 10 - pGroup->nMinPage;
     }
     pcache1LeaveMutex(pGroup);
+    if( separateCache
+     && sqlite3GlobalConfig.szPage==0
+     && sqlite3GlobalConfig.nPage!=0
+    ){
+      int szBulk;
+      char *zBulk;
+      sqlite3BeginBenignMalloc();
+      if( sqlite3GlobalConfig.nPage>0 ){
+        szBulk = pCache->szAlloc * sqlite3GlobalConfig.nPage;
+      }else{
+        szBulk = -1024*sqlite3GlobalConfig.nPage;
+      }
+      zBulk = pCache->pBulk = sqlite3Malloc( szBulk );
+      sqlite3EndBenignMalloc();
+      if( zBulk ){
+        int nBulk = sqlite3MallocSize(zBulk)/pCache->szAlloc;
+        int i;
+        for(i=0; i<nBulk; i++){
+          PgHdr1 *pX = (PgHdr1*)&zBulk[szPage];
+          pX->page.pBuf = zBulk;
+          pX->page.pExtra = &pX[1];
+          pX->isBulkLocal = 1;
+          pX->pNext = pCache->pFree;
+          pCache->pFree = pX;
+          zBulk += pCache->szAlloc;
+        }
+      }
+    }
     if( pCache->nHash==0 ){
       pcache1Destroy((sqlite3_pcache*)pCache);
       pCache = 0;
@@ -753,15 +822,7 @@ static SQLITE_NOINLINE PgHdr1 *pcache1FetchStage2(
     pcache1RemoveFromHash(pPage, 0);
     pcache1PinPage(pPage);
     pOther = pPage->pCache;
-
-    /* We want to verify that szPage and szExtra are the same for pOther
-    ** and pCache.  Assert that we can verify this by comparing sums. */
-    assert( (pCache->szPage & (pCache->szPage-1))==0 && pCache->szPage>=512 );
-    assert( pCache->szExtra<512 );
-    assert( (pOther->szPage & (pOther->szPage-1))==0 && pOther->szPage>=512 );
-    assert( pOther->szExtra<512 );
-
-    if( pOther->szPage+pOther->szExtra != pCache->szPage+pCache->szExtra ){
+    if( pOther->szAlloc != pCache->szAlloc ){
       pcache1FreePage(pPage);
       pPage = 0;
     }else{
@@ -1037,6 +1098,7 @@ static void pcache1Destroy(sqlite3_pcache *p){
   pGroup->mxPinned = pGroup->nMaxPage + 10 - pGroup->nMinPage;
   pcache1EnforceMaxPage(pGroup);
   pcache1LeaveMutex(pGroup);
+  sqlite3_free(pCache->pBulk);
   sqlite3_free(pCache->apHash);
   sqlite3_free(pCache);
 }
@@ -1092,7 +1154,7 @@ int sqlite3PcacheReleaseMemory(int nReq){
   int nFree = 0;
   assert( sqlite3_mutex_notheld(pcache1.grp.mutex) );
   assert( sqlite3_mutex_notheld(pcache1.mutex) );
-  if( pcache1.pStart==0 ){
+  if( sqlite3GlobalConfig.nPage==0 ){
     PgHdr1 *p;
     pcache1EnterMutex(&pcache1.grp);
     while( (nReq<0 || nFree<nReq) && ((p=pcache1.grp.pLruTail)!=0) ){
