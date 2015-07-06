@@ -50,7 +50,17 @@ do_execsql_test 2.1 {
 do_test 2.2 {
   execsql { SELECT fts5_decode(id, block) FROM t1_data WHERE id==10 }
 } {/{\(structure\) {lvl=0 nMerge=0 {id=[0123456789]* h=1 leaves=1..1}}}/}
-do_execsql_test 2.3 {
+
+foreach w {a b c d e f} {
+  do_execsql_test 2.3.$w.asc {
+    SELECT rowid FROM t1 WHERE t1 MATCH $w;
+  } {1}
+  do_execsql_test 2.3.$w.desc {
+    SELECT rowid FROM t1 WHERE t1 MATCH $w ORDER BY rowid DESC;
+  } {1}
+}
+
+do_execsql_test 2.4 {
   INSERT INTO t1(t1) VALUES('integrity-check');
 }
 
@@ -190,8 +200,6 @@ for {set i 1} {$i <= 10} {incr i} {
     execsql { INSERT INTO t1(t1) VALUES('integrity-check'); }
   } {}
 }
-#db eval {SELECT rowid, fts5_decode(rowid, block) aS r FROM t1_data} {puts $r}
-#exit
 
 #-------------------------------------------------------------------------
 #

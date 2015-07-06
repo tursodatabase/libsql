@@ -81,6 +81,23 @@ do_execsql_test 2.3 {
   SELECT rowid FROM yy WHERE yy MATCH 'a + b + c';
 } {-56 -22}
 
+#-------------------------------------------------------------------------
+
+do_execsql_test 3.1 {
+  CREATE VIRTUAL TABLE abc USING fts5(a);
+  INSERT INTO abc(rowid, a) VALUES(1, 'a');
+  BEGIN;
+    INSERT INTO abc(rowid, a) VALUES(2, 'a');
+}
+breakpoint
+do_execsql_test 3.2 {
+    SELECT rowid FROM abc WHERE abc MATCH 'a';
+} {1 2}
+
+do_execsql_test 3.3 {
+  COMMIT;
+  SELECT rowid FROM abc WHERE abc MATCH 'a';
+} {1 2}
 
 finish_test
 

@@ -204,10 +204,11 @@ foreach {T create} {
     }
     return $ret
   }
+
   
   foreach {bAsc sql} {
-    0 {SELECT rowid FROM t1 WHERE t1 MATCH $prefix ORDER BY rowid DESC}
     1 {SELECT rowid FROM t1 WHERE t1 MATCH $prefix}
+    0 {SELECT rowid FROM t1 WHERE t1 MATCH $prefix ORDER BY rowid DESC}
   } {
     foreach {tn prefix} {
       1  {a*} 2 {ab*} 3 {abc*} 4 {abcd*} 5 {abcde*} 

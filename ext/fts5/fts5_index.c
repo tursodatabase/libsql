@@ -1580,6 +1580,23 @@ static void fts5SegIterLoadNPos(Fts5Index *p, Fts5SegIter *pIter){
   }
 }
 
+static void fts5SegIterLoadRowid(Fts5Index *p, Fts5SegIter *pIter){
+  u8 *a = pIter->pLeaf->p;        /* Buffer to read data from */
+  int iOff = pIter->iLeafOffset;
+
+  if( iOff>=pIter->pLeaf->n ){
+    fts5SegIterNextPage(p, pIter);
+    if( pIter->pLeaf==0 ){
+      if( p->rc==SQLITE_OK ) p->rc = FTS5_CORRUPT;
+      return;
+    }
+    iOff = 4;
+    a = pIter->pLeaf->p;
+  }
+  iOff += sqlite3Fts5GetVarint(&a[iOff], (u64*)&pIter->iRowid);
+  pIter->iLeafOffset = iOff;
+}
+
 /*
 ** Fts5SegIter.iLeafOffset currently points to the first byte of the 
 ** "nSuffix" field of a term. Function parameter nKeep contains the value
@@ -1606,17 +1623,9 @@ static void fts5SegIterLoadTerm(Fts5Index *p, Fts5SegIter *pIter, int nKeep){
   iOff += nNew;
   pIter->iTermLeafOffset = iOff;
   pIter->iTermLeafPgno = pIter->iLeafPgno;
-  if( iOff>=pIter->pLeaf->n ){
-    fts5SegIterNextPage(p, pIter);
-    if( pIter->pLeaf==0 ){
-      if( p->rc==SQLITE_OK ) p->rc = FTS5_CORRUPT;
-      return;
-    }
-    iOff = 4;
-    a = pIter->pLeaf->p;
-  }
-  iOff += sqlite3Fts5GetVarint(&a[iOff], (u64*)&pIter->iRowid);
   pIter->iLeafOffset = iOff;
+
+  fts5SegIterLoadRowid(p, pIter);
 }
 
 /*
@@ -2125,6 +2134,129 @@ static int fts5NodeSeek(
 }
 
 /*
+** The iterator object passed as the second argument currently contains
+** no valid values except for the Fts5SegIter.pLeaf member variable. This
+** function searches the leaf page for a term matching (pTerm/nTerm).
+**
+*/
+static void fts5LeafSeek(
+  Fts5Index *p,                   /* Leave any error code here */
+  int bGe,                        /* True for a >= search */
+  Fts5SegIter *pIter,             /* Iterator to seek */
+  const u8 *pTerm, int nTerm      /* Term to search for */
+){
+  int iOff;
+  const u8 *a = pIter->pLeaf->p;
+  int n = pIter->pLeaf->n;
+
+  int nMatch = 0;
+  int nKeep = 0;
+  int nNew = 0;
+
+  assert( p->rc==SQLITE_OK );
+  assert( pIter->pLeaf );
+
+  iOff = fts5GetU16(&a[2]);
+  if( iOff<4 || iOff>=n ){
+    p->rc = FTS5_CORRUPT;
+    return;
+  }
+
+  while( 1 ){
+    int i;
+    int nCmp;
+    i64 rowid;
+
+    /* Figure out how many new bytes are in this term */
+
+    nNew = a[iOff++];
+    if( nNew & 0x80 ){ 
+      iOff--;
+      iOff += fts5GetVarint32(&a[iOff], nNew);
+    }
+
+    if( nKeep<nMatch ){
+      goto search_failed;
+    }
+
+    assert( nKeep>=nMatch );
+    if( nKeep==nMatch ){
+      nCmp = MIN(nNew, nTerm-nMatch);
+      for(i=0; i<nCmp; i++){
+        if( a[iOff+i]!=pTerm[nMatch+i] ) break;
+      }
+      nMatch += i;
+
+      if( nTerm==nMatch ){
+        if( i==nNew ){
+          goto search_success;
+        }else{
+          goto search_failed;
+        }
+      }else if( i<nNew && a[iOff+i]>pTerm[nMatch] ){
+        goto search_failed;
+      }
+    }
+    iOff += nNew;
+
+    /* Skip past the doclist. If the end of the page is reached, bail out. */
+    iOff += fts5GetVarint(&a[iOff], &rowid);
+    while( iOff<n ){
+      int nPos;
+
+      iOff += fts5GetVarint32(&a[iOff], nPos);
+      iOff += (nPos / 2);
+
+      /* Skip past docid delta */
+      iOff += fts5GetVarint(&a[iOff], &rowid);
+      if( rowid==0 ) break;
+    };
+    if( iOff>=n ) goto search_failed;
+
+    /* Read the nKeep field of the next term. */
+    nKeep = a[iOff++];
+    if( nKeep & 0x80 ){
+      iOff--;
+      iOff += fts5GetVarint32(&a[iOff], nKeep);
+    }
+  }
+
+ search_failed:
+  if( bGe==0 ){
+    fts5DataRelease(pIter->pLeaf);
+    pIter->pLeaf = 0;
+    return;
+  }else if( iOff>=n ){
+    do {
+      fts5SegIterNextPage(p, pIter);
+      if( pIter->pLeaf==0 ) return;
+      a = pIter->pLeaf->p;
+      iOff = fts5GetU16(&a[2]);
+      if( iOff ){
+        if( iOff<4 || iOff>=n ){
+          p->rc = FTS5_CORRUPT;
+        }else{
+          nKeep = 0;
+          iOff += fts5GetVarint32(&a[iOff], nNew);
+          break;
+        }
+      }
+    }while( 1 );
+  }
+
+ search_success:
+  pIter->iLeafOffset = iOff + nNew;
+  pIter->iTermLeafOffset = pIter->iLeafOffset;
+  pIter->iTermLeafPgno = pIter->iLeafPgno;
+
+  fts5BufferSet(&p->rc, &pIter->term, nKeep, pTerm);
+  fts5BufferAppendBlob(&p->rc, &pIter->term, nNew, &a[iOff]);
+
+  fts5SegIterLoadRowid(p, pIter);
+  fts5SegIterLoadNPos(p, pIter);
+}
+
+/*
 ** Initialize the object pIter to point to term pTerm/nTerm within segment
 ** pSeg. If there is no such term in the index, the iterator is set to EOF.
 **
@@ -2168,26 +2300,8 @@ static void fts5SegIterSeekInit(
   pIter->iLeafPgno = iPg - 1;
   fts5SegIterNextPage(p, pIter);
 
-  if( (pLeaf = pIter->pLeaf) ){
-    int res;
-    pIter->iLeafOffset = fts5GetU16(&pLeaf->p[2]);
-    if( pIter->iLeafOffset<4 || pIter->iLeafOffset>=pLeaf->n ){
-      p->rc = FTS5_CORRUPT;
-    }else{
-      fts5SegIterLoadTerm(p, pIter, 0);
-      fts5SegIterLoadNPos(p, pIter);
-      do {
-        res = fts5BufferCompareBlob(&pIter->term, pTerm, nTerm);
-        if( res>=0 ) break;
-        fts5SegIterNext(p, pIter, 0);
-      }while( pIter->pLeaf && p->rc==SQLITE_OK );
-
-      if( bGe==0 && res ){
-        /* Set iterator to point to EOF */
-        fts5DataRelease(pIter->pLeaf);
-        pIter->pLeaf = 0;
-      }
-    }
+  if( pIter->pLeaf ){
+    fts5LeafSeek(p, bGe, pIter, pTerm, nTerm);
   }
 
   if( p->rc==SQLITE_OK && bGe==0 ){

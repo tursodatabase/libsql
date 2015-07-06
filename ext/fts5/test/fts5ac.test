@@ -205,6 +205,7 @@ foreach {tn2 sql} {
     execsql { INSERT INTO xx(xx) VALUES('integrity-check') }
   } {}
 
+
   #-------------------------------------------------------------------------
   # Test phrase queries.
   #
