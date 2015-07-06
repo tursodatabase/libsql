@@ -54,6 +54,7 @@ extern crate libc;
 extern crate libsqlite3_sys as ffi;
 #[macro_use] extern crate bitflags;
 
+use std::default::Default;
 use std::mem;
 use std::ptr;
 use std::fmt;
@@ -160,13 +161,13 @@ impl SqliteConnection {
     /// `SqliteConnection::open(path)` is equivalent to `SqliteConnection::open_with_flags(path,
     /// SQLITE_OPEN_READ_WRITE | SQLITE_OPEN_CREATE)`.
     pub fn open<P: AsRef<Path>>(path: &P) -> SqliteResult<SqliteConnection> {
-        let flags = SQLITE_OPEN_READ_WRITE | SQLITE_OPEN_CREATE;
+        let flags = Default::default();
         SqliteConnection::open_with_flags(path, flags)
     }
 
     /// Open a new connection to an in-memory SQLite database.
     pub fn open_in_memory() -> SqliteResult<SqliteConnection> {
-        let flags = SQLITE_OPEN_READ_WRITE | SQLITE_OPEN_CREATE;
+        let flags = Default::default();
         SqliteConnection::open_in_memory_with_flags(flags)
     }
 
@@ -432,6 +433,15 @@ bitflags! {
         const SQLITE_OPEN_FULL_MUTEX    = 0x00010000,
         const SQLITE_OPEN_SHARED_CACHE  = 0x00020000,
         const SQLITE_OPEN_PRIVATE_CACHE = 0x00040000,
+    }
+}
+
+impl Default for SqliteOpenFlags {
+    fn default() -> SqliteOpenFlags {
+        SQLITE_OPEN_READ_WRITE
+            | SQLITE_OPEN_CREATE
+            | SQLITE_OPEN_NO_MUTEX
+            | SQLITE_OPEN_URI
     }
 }
 
