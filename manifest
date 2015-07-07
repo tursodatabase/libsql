@@ -1,5 +1,5 @@
-C A\sunified\scache\sis\snow\sonly\sused\sfor\sSQLITE_ENABLE_MEMORY_MANAGEMENT,\sor\sif\nSQLITE_CONFIG_PAGECACHE\sdefines\sa\sshared\sstart-time\spage\scache\sbuffer\sand\sthe\napplication\sis\ssingle-threaded.
-D 2015-07-06T20:57:22.615
+C Simplify\sthe\spage\srecycling\scondition\sin\spcache1.\s\sFix\stest\scases\sto\swork\nwith\sthe\slatest\schanges.
+D 2015-07-07T14:06:18.833
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 017bf0511d1b2dd1db5e16488fbf75a17b526cbc
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -319,7 +319,7 @@ F src/pager.h 6d435f563b3f7fcae4b84433b76a6ac2730036e2
 F src/parse.y 6d60dda8f8d418b6dc034f1fbccd816c459983a8
 F src/pcache.c cde06aa50962595e412d497e22fd2e07878ba1f0
 F src/pcache.h 9968603796240cdf83da7e7bef76edf90619cea9
-F src/pcache1.c 17c392b4208ea6e1e5d220be18bcfebac07110b1
+F src/pcache1.c 1b6bc285d8d6a1a7df41e345cb45914093aecfdf
 F src/pragma.c c1f4d012ea9f6b1ce52d341b2cd0ad72d560afd7
 F src/pragma.h b8632d7cdda7b25323fa580e3e558a4f0d4502cc
 F src/prepare.c 82e5db1013846a819f198336fed72c44c974e7b1
@@ -843,9 +843,9 @@ F test/mallocL.test 252ddc7eb4fbf75364eab17b938816085ff1fc17
 F test/malloc_common.tcl aac62499b76be719fac31e7a3e54a7fd53272e7f
 F test/manydb.test 28385ae2087967aa05c38624cec7d96ec74feb3e
 F test/mem5.test c6460fba403c5703141348cd90de1c294188c68f
-F test/memdb.test fcb5297b321b562084fc79d64d5a12a1cd2b639b
+F test/memdb.test c1f2a343ad14398d5d6debda6ea33e80d0dafcc7
 F test/memleak.test 10b9c6c57e19fc68c32941495e9ba1c50123f6e2
-F test/memsubsys1.test 690d142525a7d31efb638b0d232e25fac3afeb1a
+F test/memsubsys1.test 1733c617e246642db5bf3b9f78c18e2b14fac96c
 F test/memsubsys2.test 3a1c1a9de48e5726faa85108b02459fae8cb9ee9
 F test/minmax.test 42fbad0e81afaa6e0de41c960329f2b2c3526efd
 F test/minmax2.test b44bae787fc7b227597b01b0ca5575c7cb54d3bc
@@ -900,7 +900,7 @@ F test/pagerfault3.test 1003fcda009bf48a8e22a516e193b6ef0dd1bbd8
 F test/pageropt.test 6b8f6a123a5572c195ad4ae40f2987007923bbd6
 F test/pagesize.test 5769fc62d8c890a83a503f67d47508dfdc543305
 F test/pcache.test b09104b03160aca0d968d99e8cd2c5b1921a993d
-F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
+F test/pcache2.test ec3ae192f444ee6a0a80d1fd80d99695d884bfb3
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
 F test/permutations.test 6a88fd9ca15b804e9c20990773262ca67494058f
 F test/pragma.test be7195f0aa72bdb8a512133e9640ac40f15b57a2
@@ -1364,7 +1364,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P aa7341c8736732a0a59f6688cc34e78be02a7bfc
-R ab876e072a5f820e07c8ea2cb7e263ca
+P d5ff1d69054d51a55eff6e1979971822db7f8f30
+R 968aaca5a1f6e381bde3c0ae75591e74
 U drh
-Z d6cf6ae811ec210c263fdd6a92d21a0f
+Z 609b7f68c8ef0f31b06857cf6a1355d8

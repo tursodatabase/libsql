@@ -818,11 +818,10 @@ static SQLITE_NOINLINE PgHdr1 *pcache1FetchStage2(
   assert( pCache->nHash>0 && pCache->apHash );
 
   /* Step 4. Try to recycle a page. */
-  if( pCache->bPurgeable && pGroup->pLruTail && (
-         (pCache->nPage+1>=pCache->nMax)
-      || pGroup->nCurrentPage>=pGroup->nMaxPage
-      || pcache1UnderMemoryPressure(pCache)
-  )){
+  if( pCache->bPurgeable
+   && pGroup->pLruTail
+   && ((pCache->nPage+1>=pCache->nMax) || pcache1UnderMemoryPressure(pCache))
+  ){
     PCache1 *pOther;
     pPage = pGroup->pLruTail;
     assert( pPage->isPinned==0 );
