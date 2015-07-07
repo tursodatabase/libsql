@@ -2133,11 +2133,32 @@ static int fts5NodeSeek(
   return iPg;
 }
 
+#define fts5IndexGetVarint32(a, iOff, nVal) {     \
+  nVal = a[iOff++];                               \
+  if( nVal & 0x80 ){                              \
+    iOff--;                                       \
+    iOff += fts5GetVarint32(&a[iOff], nVal);      \
+  }                                               \
+}
+
+#define fts5IndexSkipVarint(a, iOff) {            \
+  int iEnd = iOff+9;                              \
+  while( (a[iOff++] & 0x80) && iOff<iEnd );       \
+}
+
 /*
 ** The iterator object passed as the second argument currently contains
 ** no valid values except for the Fts5SegIter.pLeaf member variable. This
 ** function searches the leaf page for a term matching (pTerm/nTerm).
 **
+** If the specified term is found on the page, then the iterator is left
+** pointing to it. If argument bGe is zero and the term is not found,
+** the iterator is left pointing at EOF.
+**
+** If bGe is non-zero and the specified term is not found, then the
+** iterator is left pointing to the smallest term in the segment that
+** is larger than the specified term, even if this term is not on the
+** current page.
 */
 static void fts5LeafSeek(
   Fts5Index *p,                   /* Leave any error code here */
@@ -2168,12 +2189,7 @@ static void fts5LeafSeek(
     i64 rowid;
 
     /* Figure out how many new bytes are in this term */
-
-    nNew = a[iOff++];
-    if( nNew & 0x80 ){ 
-      iOff--;
-      iOff += fts5GetVarint32(&a[iOff], nNew);
-    }
+    fts5IndexGetVarint32(a, iOff, nNew);
 
     if( nKeep<nMatch ){
       goto search_failed;
@@ -2200,25 +2216,26 @@ static void fts5LeafSeek(
     iOff += nNew;
 
     /* Skip past the doclist. If the end of the page is reached, bail out. */
-    iOff += fts5GetVarint(&a[iOff], &rowid);
-    while( iOff<n ){
+    while( 1 ){
       int nPos;
 
-      iOff += fts5GetVarint32(&a[iOff], nPos);
-      iOff += (nPos / 2);
-
       /* Skip past docid delta */
-      iOff += fts5GetVarint(&a[iOff], &rowid);
-      if( rowid==0 ) break;
+      fts5IndexSkipVarint(a, iOff);
+
+      /* Skip past position list */
+      fts5IndexGetVarint32(a, iOff, nPos);
+      iOff += (nPos >> 1);
+      if( iOff>=n ) goto search_failed;
+
+      /* If this is the end of the doclist, break out of the loop */
+      if( a[iOff]==0x00 ){
+        iOff++;
+        break;
+      }
     };
-    if( iOff>=n ) goto search_failed;
 
     /* Read the nKeep field of the next term. */
-    nKeep = a[iOff++];
-    if( nKeep & 0x80 ){
-      iOff--;
-      iOff += fts5GetVarint32(&a[iOff], nKeep);
-    }
+    fts5IndexGetVarint32(a, iOff, nKeep);
   }
 
  search_failed:
