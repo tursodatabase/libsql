@@ -633,9 +633,11 @@ static int pcache1Init(void *NotUsed){
   */
 #if defined(SQLITE_ENABLE_MEMORY_MANAGEMENT)
   pcache1.separateCache = 0;
-#else
+#elif SQLITE_THREADSAFE
   pcache1.separateCache = sqlite3GlobalConfig.pPage==0
                           || sqlite3GlobalConfig.bCoreMutex>0;
+#else
+  pcache1.separateCache = sqlite3GlobalConfig.pPage==0;
 #endif
 
 #if SQLITE_THREADSAFE
