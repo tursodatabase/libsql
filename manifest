@@ -1,5 +1,5 @@
-C Further\soptimizations\sfor\sfts5\sb-tree\sseeks.
-D 2015-07-07T08:29:32.749
+C Add\sa\stest\scase\sto\sverify\sthat\s"PRAGMA\sdata_version"\sworks\sas\sexpected\swhen\san\sOTA\sclient\swrites\sto\sthe\sdatabase.
+D 2015-07-07T19:07:30.099
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 017bf0511d1b2dd1db5e16488fbf75a17b526cbc
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -204,7 +204,7 @@ F ext/ota/ota.c 3a849c3b0a4ad6e63125668be9f67be03621216e
 F ext/ota/ota1.test abdcbe746db4c7f7b51e842b576cacb33eef28f5
 F ext/ota/ota10.test 85e0f6e7964db5007590c1b299e75211ed4240d4
 F ext/ota/ota11.test 2f606cd2b4af260a86b549e91b9f395450fc75cb
-F ext/ota/ota12.test 0dff44474de448fb4b0b28c20da63273a4149abb
+F ext/ota/ota12.test e4c0b9a14255ffbe04d241fc15da2c65b3c06846
 F ext/ota/ota13.test f7a3d73fa5d3fabf2755b569f125fce7390a874c
 F ext/ota/ota3.test 3fe3521fbdce32d0e4e116a60999c3cba47712c5
 F ext/ota/ota5.test ad0799daf8923ddebffe75ae8c5504ca90b7fadb
@@ -1364,7 +1364,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7b7da1eb435d321fc4283f6aa2161fa1e16f2cf3
-R 24874c7422a967bb097e1a3642b88228
+P f37899686c032145f431f81c1072738536c61c7e
+R f128084ba3d886029accf1024856382b
 U dan
-Z f8ef7d272cb32b051f2a236ea6d3cc77
+Z ea7265b2d9c52b49db7f82cb72c0c2d5
