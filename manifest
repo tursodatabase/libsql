@@ -1,5 +1,5 @@
-C No\sneed\sto\stest\ssqlite3GlobalConfig.bCoreMutex\swhen\sSQLITE_THREADSAFE==0.
-D 2015-07-07T15:14:16.002
+C Add\sa\scompile-time\sconstant\sfor\sconfiguring\sthe\sdefault\spagecache\ssetup.
+D 2015-07-07T21:14:42.575
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 017bf0511d1b2dd1db5e16488fbf75a17b526cbc
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -283,7 +283,7 @@ F src/expr.c c5c58e4d01c7ceb2266791d8d877f1b23a88e316
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c c9b63a217d86582c22121699a47f22f524608869
 F src/func.c a98ea5880dc50e9ca6dd6f57079a37b9cfcdecf1
-F src/global.c 32c0ebfdca59db55c761f1405abf7bdfd24ecae0
+F src/global.c 508e4087f7b41d688e4762dcf4d4fe28cfbc87f9
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
 F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
@@ -332,7 +332,7 @@ F src/shell.c 8af3cced094aebb5f57a8ad739b9dafc7867eed7
 F src/sqlite.h.in 3d951bf985839de7fcf4d3f69568bb4df2641abe
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h be1a718b7d2ce40ceba725ae92c8eb5f18003066
-F src/sqliteInt.h bc2cb1755150fc0b490d1af23ac2911b03f2f92d
+F src/sqliteInt.h d8d420d66a5c403b119696159b69f71cd53840ce
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c f266ad8a2892d659b74f0f50cb6a88b6e7c12179
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
@@ -1364,7 +1364,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5b60df5503f61922326b3e10e94aa197b17afe4b
-R 2d7b920ac2e4dfd8e6b212c060ee3e55
+P 26db0fee06947d75621237a641b9652b312b3b37
+R eddaba760dcd1fbd940dd405a17b49da
 U drh
-Z 96d25228913b7734acfab488bf16d902
+Z 4021e6ca5eea0db9e457b6c7679c87e9
