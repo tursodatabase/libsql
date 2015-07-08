@@ -41,7 +41,8 @@
 **
 ** If SQLITE_PCACHE_SEPARATE_HEADER is defined, then the extension is obtained
 ** using a separate memory allocation from the database page content.  This
-** seeks to overcome the "clownfoot" problem of allocating a few bytes more
+** seeks to overcome the "clownshoe" problem (also called "internal
+** fragmentation" in academic literature) of allocating a few bytes more
 ** than a power of two with the memory allocator rounding up to the next
 ** power of two, and leaving the rounded-up space unused.
 **
