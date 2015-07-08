@@ -1,5 +1,5 @@
-C Enhance\sthe\spcache1\spage\scache\sso\sthat\sit\stries\sto\sallocate\sa\sblock\sof\nSQLITE_DEFAULT_PCACHE_INITSZ\spages\sfrom\smalloc()\son\sstartup,\sand\suses\sthose\npreallocated\spages\swhen\spossible\srather\sthan\sgoing\sto\smalloc()\sfor\seach\nindividual\spage.\s\sAbout\sa\s5%\sperformance\sincrease\sfor\ssome\sworkloads.
-D 2015-07-08T16:22:42.453
+C Fix\stwo\sproblems\sthat\scould\scause\sfts3\sauxiliary\sfunctions\sto\soccasionally\smisbehave\sif\sused\swith\smatch\sexpressions\sthat\scontain\sboth\sOR\sand\sNEAR.
+D 2015-07-08T17:59:08.894
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 017bf0511d1b2dd1db5e16488fbf75a17b526cbc
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -78,7 +78,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c a95de5190cf52f4fa9d5952890399cab63e632b9
+F ext/fts3/fts3.c d2f7981f4d7dfeb76aac82a15c7f37f425329c0f
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 601743955ac43a0e82e6828a931c07bb3b0c95ff
 F ext/fts3/fts3_aux.c 9edc3655fcb287f0467d0a4b886a01c6185fe9f1
@@ -691,13 +691,14 @@ F test/fts3expr2.test 18da930352e5693eaa163a3eacf96233b7290d1a
 F test/fts3expr3.test 9e91b8edbcb197bf2e92161aa7696446d96dce5f
 F test/fts3expr4.test e1be1248566f43c252d4404d52914f1fc4bfa065
 F test/fts3expr5.test f9abfffbf5e53d48a33e12a1e8f8ba2c551c9b49
-F test/fts3fault.test cb72dccb0a3b9f730f16c5240f3fcb9303eb1660
+F test/fts3fault.test da49627b280b210ebc6657f76344c7851f10ce66
 F test/fts3fault2.test f953bb3cf903988172270a9a0aafd5a890b0f98f
 F test/fts3first.test dbdedd20914c8d539aa3206c9b34a23775644641
 F test/fts3join.test 53e66a0c21eb568580674a43b21c059acb26f499
 F test/fts3malloc.test b0e4c133b8d61d4f6d112d8110f8320e9e453ef6
 F test/fts3matchinfo.test 07009313ad6c082f94d8c9c3228eb8940c93ac71
 F test/fts3near.test 7e3354d46f155a822b59c0e957fd2a70c1d7e905
+F test/fts3offsets.test 5b8ec5be27dd2070af3538b23c67f1ca8c822853
 F test/fts3prefix.test fa794eaab0bdae466494947b0b153d7844478ab2
 F test/fts3prefix2.test e1f0a822ca661dced7f12ce392e14eaf65609dce
 F test/fts3query.test f33eb71a1fe1084ea585eeb7ee76b390729f5170
@@ -1364,8 +1365,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b27a47fef995f0ab2516e6ca779711cab1f50fb9 c1e2ed0ef4d3436d19d3203c5fb553caac53659e
-R 0716d0744f0e72c8cdadbca41133bc14
-T +closed c1e2ed0ef4d3436d19d3203c5fb553caac53659e
-U drh
-Z eea1350426d30f63377f69d37a46ee1a
+P 5348ffc3fda5168c1e9e14aa88b0c6aedbda7c94
+R bb6c5e63b90e2eefb82b18295e953873
+U dan
+Z bead1c8f07e0e547f66cbd142b1cf6b7

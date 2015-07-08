@@ -4351,6 +4351,7 @@ void sqlite3Fts3DoclistNext(
     p += sqlite3Fts3GetVarint(p, piDocid);
   }else{
     fts3PoslistCopy(0, &p);
+    while( p<&aDoclist[nDoclist] && *p==0 ) p++; 
     if( p>=&aDoclist[nDoclist] ){
       *pbEof = 1;
     }else{
@@ -5757,10 +5758,10 @@ int sqlite3Fts3EvalPhrasePoslist(
     int rc = SQLITE_OK;
     int bDescDoclist = pTab->bDescIdx;      /* For DOCID_CMP macro */
     int bOr = 0;
-    u8 bEof = 0;
     u8 bTreeEof = 0;
     Fts3Expr *p;                  /* Used to iterate from pExpr to root */
     Fts3Expr *pNear;              /* Most senior NEAR ancestor (or pExpr) */
+    int bMatch;
 
     /* Check if this phrase descends from an OR expression node. If not, 
     ** return NULL. Otherwise, the entry that corresponds to docid 
@@ -5794,31 +5795,47 @@ int sqlite3Fts3EvalPhrasePoslist(
     }
     if( rc!=SQLITE_OK ) return rc;
 
-    pIter = pPhrase->pOrPoslist;
-    iDocid = pPhrase->iOrDocid;
-    if( pCsr->bDesc==bDescDoclist ){
-      bEof = !pPhrase->doclist.nAll ||
-                 (pIter >= (pPhrase->doclist.aAll + pPhrase->doclist.nAll));
-      while( (pIter==0 || DOCID_CMP(iDocid, pCsr->iPrevId)<0 ) && bEof==0 ){
-        sqlite3Fts3DoclistNext(
-            bDescDoclist, pPhrase->doclist.aAll, pPhrase->doclist.nAll, 
-            &pIter, &iDocid, &bEof
-        );
-      }
-    }else{
-      bEof = !pPhrase->doclist.nAll || (pIter && pIter<=pPhrase->doclist.aAll);
-      while( (pIter==0 || DOCID_CMP(iDocid, pCsr->iPrevId)>0 ) && bEof==0 ){
-        int dummy;
-        sqlite3Fts3DoclistPrev(
-            bDescDoclist, pPhrase->doclist.aAll, pPhrase->doclist.nAll, 
-            &pIter, &iDocid, &dummy, &bEof
-        );
-      }
-    }
-    pPhrase->pOrPoslist = pIter;
-    pPhrase->iOrDocid = iDocid;
+    bMatch = 1;
+    for(p=pNear; p; p=p->pLeft){
+      u8 bEof = 0;
+      Fts3Expr *pTest = p;
+      Fts3Phrase *pPh;
+      assert( pTest->eType==FTSQUERY_NEAR || pTest->eType==FTSQUERY_PHRASE );
+      if( pTest->eType==FTSQUERY_NEAR ) pTest = pTest->pRight;
+      assert( pTest->eType==FTSQUERY_PHRASE );
+      pPh = pTest->pPhrase;
 
-    if( bEof || iDocid!=pCsr->iPrevId ) pIter = 0;
+      pIter = pPh->pOrPoslist;
+      iDocid = pPh->iOrDocid;
+      if( pCsr->bDesc==bDescDoclist ){
+        bEof = !pPh->doclist.nAll ||
+          (pIter >= (pPh->doclist.aAll + pPh->doclist.nAll));
+        while( (pIter==0 || DOCID_CMP(iDocid, pCsr->iPrevId)<0 ) && bEof==0 ){
+          sqlite3Fts3DoclistNext(
+              bDescDoclist, pPh->doclist.aAll, pPh->doclist.nAll, 
+              &pIter, &iDocid, &bEof
+          );
+        }
+      }else{
+        bEof = !pPh->doclist.nAll || (pIter && pIter<=pPh->doclist.aAll);
+        while( (pIter==0 || DOCID_CMP(iDocid, pCsr->iPrevId)>0 ) && bEof==0 ){
+          int dummy;
+          sqlite3Fts3DoclistPrev(
+              bDescDoclist, pPh->doclist.aAll, pPh->doclist.nAll, 
+              &pIter, &iDocid, &dummy, &bEof
+              );
+        }
+      }
+      pPh->pOrPoslist = pIter;
+      pPh->iOrDocid = iDocid;
+      if( bEof || iDocid!=pCsr->iPrevId ) bMatch = 0;
+    }
+
+    if( bMatch ){
+      pIter = pPhrase->pOrPoslist;
+    }else{
+      pIter = 0;
+    }
   }
   if( pIter==0 ) return SQLITE_OK;
 
