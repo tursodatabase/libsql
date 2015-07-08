@@ -186,7 +186,7 @@ SQLITE_WSD struct Sqlite3Config sqlite3Config = {
    0,                         /* nScratch */
    (void*)0,                  /* pPage */
    0,                         /* szPage */
-   0,                         /* nPage */
+   SQLITE_DEFAULT_PCACHE_INITSZ, /* nPage */
    0,                         /* mxParserStack */
    0,                         /* sharedCacheEnabled */
    SQLITE_SORTER_PMASZ,       /* szPma */

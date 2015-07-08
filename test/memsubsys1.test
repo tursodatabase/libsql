@@ -75,6 +75,7 @@ set xtra_size 290
 db close
 sqlite3_shutdown
 sqlite3_config_lookaside 0 0
+sqlite3_config_pagecache 0 0
 sqlite3_initialize
 reset_highwater_marks
 build_test_db memsubsys1-1 {PRAGMA page_size=1024}
@@ -115,10 +116,10 @@ do_test memsubsys1-2.5 {
 db close
 sqlite3_shutdown
 sqlite3_config_pagecache [expr 512+$xtra_size] 20
+sqlite3_config singlethread
 sqlite3_initialize
 reset_highwater_marks
 build_test_db memsubsys1-3.1 {PRAGMA page_size=1024}
-#show_memstats
 do_test memsubsys1-3.1.3 {
   set pg_used [lindex [sqlite3_status SQLITE_STATUS_PAGECACHE_USED 0] 2]
 } 0
@@ -312,6 +313,7 @@ sqlite3_config_memstatus 1
 sqlite3_config_pagecache 0 0
 sqlite3_config_scratch 0 0
 sqlite3_config_lookaside 100 500
+sqlite3_config serialized
 sqlite3_initialize
 autoinstall_test_functions
 finish_test

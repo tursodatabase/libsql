@@ -1177,6 +1177,7 @@ int main(int argc, char **argv){
   int noSync = 0;               /* True for --nosync */
   int pageSize = 0;             /* Desired page size.  0 means default */
   int nPCache = 0, szPCache = 0;/* --pcache configuration */
+  int doPCache = 0;             /* True if --pcache is seen */
   int nScratch = 0, szScratch=0;/* --scratch configuration */
   int showStats = 0;            /* True for --stats */
   int nThread = 0;              /* --threads value */
@@ -1251,6 +1252,7 @@ int main(int argc, char **argv){
         if( i>=argc-2 ) fatal_error("missing arguments on %s\n", argv[i]);
         nPCache = integerValue(argv[i+1]);
         szPCache = integerValue(argv[i+2]);
+        doPCache = 1;
         i += 2;
       }else if( strcmp(z,"primarykey")==0 ){
         g.zPK = "PRIMARY KEY";
@@ -1317,10 +1319,12 @@ int main(int argc, char **argv){
     rc = sqlite3_config(SQLITE_CONFIG_HEAP, pHeap, nHeap, mnHeap);
     if( rc ) fatal_error("heap configuration failed: %d\n", rc);
   }
-  if( nPCache>0 && szPCache>0 ){
-    pPCache = malloc( nPCache*(sqlite3_int64)szPCache );
-    if( pPCache==0 ) fatal_error("cannot allocate %lld-byte pcache\n",
-                                 nPCache*(sqlite3_int64)szPCache);
+  if( doPCache ){
+    if( nPCache>0 && szPCache>0 ){
+      pPCache = malloc( nPCache*(sqlite3_int64)szPCache );
+      if( pPCache==0 ) fatal_error("cannot allocate %lld-byte pcache\n",
+                                   nPCache*(sqlite3_int64)szPCache);
+    }
     rc = sqlite3_config(SQLITE_CONFIG_PAGECACHE, pPCache, szPCache, nPCache);
     if( rc ) fatal_error("pcache configuration failed: %d\n", rc);
   }
