@@ -1,5 +1,5 @@
-C Merge\sthe\sFts5MultiSegIter\sand\sFts5IndexIter\sobjects.
-D 2015-07-07T19:35:11.437
+C Early\sdetection\sof\sfile\scorruption\sin\sa\sdebugging\sroutine,\sbefore\sthe\sinvalid\ndata\scan\scause\sproblems.
+D 2015-07-08T12:25:38.106
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 017bf0511d1b2dd1db5e16488fbf75a17b526cbc
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -394,7 +394,7 @@ F src/vdbe.c 5ee4a2bf871418f61d06dc256b9b3a0084b5ec46
 F src/vdbe.h 7a75045d879118b9d3af7e8b3c108f2f27c51473
 F src/vdbeInt.h 8b54e01ad0463590e7cffabce0bc36da9ee4f816
 F src/vdbeapi.c 6a0d7757987018ff6b1b81bc5293219cd26bb299
-F src/vdbeaux.c 54bcc56d368b2d0bebc523cff514893156c09daf
+F src/vdbeaux.c 787f5f9d58f4c6f39294ed06909ba602d1a402e6
 F src/vdbeblob.c 4f2e8e075d238392df98c5e03a64342465b03f90
 F src/vdbemem.c ae38a0d35ae71cf604381a887c170466ba518090
 F src/vdbesort.c f5009e7a35e3065635d8918b9a31f498a499976b
@@ -1364,7 +1364,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6441f2dc9e7f53de64bc15b1d766c885b2635112
-R f97628f043782e8117cb742bf5766746
-U dan
-Z e1b4a5f91c01e7d2767125a8d1a40f5a
+P 6ace73541ae48aeb19e0c2d9f6772d032d0a7eae
+R 8adde983bcb4c45839c171b768ffd3b9
+U drh
+Z b9cf714cb314f182c61af66a54b1bb68
