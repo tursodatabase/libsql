@@ -702,7 +702,10 @@ static sqlite3_pcache *pcache1Create(int szPage, int szExtra, int bPurgeable){
     pcache1LeaveMutex(pGroup);
     /* Try to initialize the local bulk pagecache line allocation if using
     ** separate caches and if nPage!=0 */
-    if( pcache1.separateCache && sqlite3GlobalConfig.nPage!=0 ){
+    if( pcache1.separateCache
+     && sqlite3GlobalConfig.nPage!=0
+     && sqlite3GlobalConfig.pPage==0
+    ){
       int szBulk;
       char *zBulk;
       sqlite3BeginBenignMalloc();
