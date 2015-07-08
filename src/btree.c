@@ -9119,7 +9119,7 @@ static int checkTreePage(
       assert( (u32)i<=usableSize-4 );     /* Enforced by btreeInitPage() */
       size = get2byte(&data[i+2]);
       assert( (u32)(i+size)<=usableSize );  /* Enforced by btreeInitPage() */
-      btreeHeapInsert(heap, (i<<16)|(i+size-1));
+      btreeHeapInsert(heap, (((u32)i)<<16)|(i+size-1));
       /* EVIDENCE-OF: R-58208-19414 The first 2 bytes of a freeblock are a
       ** big-endian integer which is the offset in the b-tree page of the next
       ** freeblock in the chain, or zero if the freeblock is the last on the
