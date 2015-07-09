@@ -227,14 +227,6 @@ struct Fts5Cursor {
 #define BitFlagAllTest(x,y) (((x) & (y))==(y))
 #define BitFlagTest(x,y)    (((x) & (y))!=0)
 
-/*
-** Constants for the largest and smallest possible 64-bit signed integers.
-** These are copied from sqliteInt.h.
-*/
-#ifndef SQLITE_AMALGAMATION
-# define LARGEST_INT64  (0xffffffff|(((i64)0x7fffffff)<<32))
-# define SMALLEST_INT64 (((i64)-1) - LARGEST_INT64)
-#endif
 
 /*
 ** Macros to Set(), Clear() and Test() cursor flags.

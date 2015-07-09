@@ -514,6 +514,8 @@ struct Fts5IndexIter {
   int bRev;                       /* True to iterate in reverse order */
   int bSkipEmpty;                 /* True to skip deleted entries */
   int bEof;                       /* True at EOF */
+
+  i64 iSwitchRowid;               /* Firstest rowid of other than aFirst[1] */
   Fts5CResult *aFirst;            /* Current merge state (see above) */
   Fts5SegIter aSeg[1];            /* Array of segment iterators */
 };
@@ -2499,9 +2501,21 @@ static void fts5AssertComparisonResult(
 */
 static void fts5AssertMultiIterSetup(Fts5Index *p, Fts5IndexIter *pIter){
   if( p->rc==SQLITE_OK ){
+    Fts5SegIter *pFirst = &pIter->aSeg[ pIter->aFirst[1].iFirst ];
     int i;
 
-    assert( (pIter->aSeg[ pIter->aFirst[1].iFirst ].pLeaf==0)==pIter->bEof );
+    assert( (pFirst->pLeaf==0)==pIter->bEof );
+
+    /* Check that pIter->iSwitchRowid is set correctly. */
+    for(i=0; i<pIter->nSeg; i++){
+      Fts5SegIter *p1 = &pIter->aSeg[i];
+      assert( p1==pFirst 
+           || p1->pLeaf==0 
+           || fts5BufferCompare(&pFirst->term, &p1->term) 
+           || p1->iRowid==pIter->iSwitchRowid
+           || (p1->iRowid<pIter->iSwitchRowid)==pIter->bRev
+      );
+    }
 
     for(i=0; i<pIter->nSeg; i+=2){
       Fts5SegIter *p1 = &pIter->aSeg[i];
@@ -2719,27 +2733,35 @@ static int fts5MultiIterAdvanceRowid(
   Fts5IndexIter *pIter,           /* Iterator to update aFirst[] array for */
   int iChanged                    /* Index of sub-iterator just advanced */
 ){
-  int i;
   Fts5SegIter *pNew = &pIter->aSeg[iChanged];
-  Fts5SegIter *pOther = &pIter->aSeg[iChanged ^ 0x0001];
 
-  for(i=(pIter->nSeg+iChanged)/2; 1; i=i/2){
-    Fts5CResult *pRes = &pIter->aFirst[i];
+  if( pNew->iRowid==pIter->iSwitchRowid
+   || (pNew->iRowid<pIter->iSwitchRowid)==pIter->bRev
+  ){
+    int i;
+    Fts5SegIter *pOther = &pIter->aSeg[iChanged ^ 0x0001];
+    pIter->iSwitchRowid = pIter->bRev ? SMALLEST_INT64 : LARGEST_INT64;
+    for(i=(pIter->nSeg+iChanged)/2; 1; i=i/2){
+      Fts5CResult *pRes = &pIter->aFirst[i];
 
-    assert( pNew->pLeaf );
-    assert( pRes->bTermEq==0 || pOther->pLeaf );
-    
-    if( pRes->bTermEq ){
-      if( pNew->iRowid==pOther->iRowid ){
-        return 1;
-      }else if( (pOther->iRowid>pNew->iRowid)==pIter->bRev ){
-        pNew = pOther;
+      assert( pNew->pLeaf );
+      assert( pRes->bTermEq==0 || pOther->pLeaf );
+
+      if( pRes->bTermEq ){
+        if( pNew->iRowid==pOther->iRowid ){
+          return 1;
+        }else if( (pOther->iRowid>pNew->iRowid)==pIter->bRev ){
+          pIter->iSwitchRowid = pOther->iRowid;
+          pNew = pOther;
+        }else if( (pOther->iRowid>pIter->iSwitchRowid)==pIter->bRev ){
+          pIter->iSwitchRowid = pOther->iRowid;
+        }
       }
-    }
-    pRes->iFirst = (pNew - pIter->aSeg);
-    if( i==1 ) break;
+      pRes->iFirst = (pNew - pIter->aSeg);
+      if( i==1 ) break;
 
-    pOther = &pIter->aSeg[ pIter->aFirst[i ^ 0x0001].iFirst ];
+      pOther = &pIter->aSeg[ pIter->aFirst[i ^ 0x0001].iFirst ];
+    }
   }
 
   return 0;
@@ -2749,7 +2771,9 @@ static int fts5MultiIterAdvanceRowid(
 ** Set the pIter->bEof variable based on the state of the sub-iterators.
 */
 static void fts5MultiIterSetEof(Fts5IndexIter *pIter){
-  pIter->bEof = pIter->aSeg[ pIter->aFirst[1].iFirst ].pLeaf==0;
+  Fts5SegIter *pSeg = &pIter->aSeg[ pIter->aFirst[1].iFirst ];
+  pIter->bEof = pSeg->pLeaf==0;
+  pIter->iSwitchRowid = pSeg->iRowid;
 }
 
 /*

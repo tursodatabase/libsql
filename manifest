@@ -1,5 +1,5 @@
-C Reduce\sthe\snumber\sof\scalls\sto\smalloc()\smade\sby\sfts5.
-D 2015-07-09T19:02:19.523
+C Improve\sthe\sperformance\sof\sdocid\smerges\sin\sfts5.
+D 2015-07-09T20:46:35.829
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 017bf0511d1b2dd1db5e16488fbf75a17b526cbc
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -106,14 +106,14 @@ F ext/fts3/unicode/mkunicode.tcl 95cf7ec186e48d4985e433ff8a1c89090a774252
 F ext/fts3/unicode/parseunicode.tcl da577d1384810fb4e2b209bf3313074353193e95
 F ext/fts5/extract_api_docs.tcl 55a6d648d516f35d9a1e580ac00de27154e1904a
 F ext/fts5/fts5.h 81d1a92fc2b4bd477af7e4e0b38b456f3e199fba
-F ext/fts5/fts5Int.h 582eb73064b5a2837d44e72907f84f94e86a2f79
+F ext/fts5/fts5Int.h 8d9bce1847a10df2e4ed9492ea4f3868276748fb
 F ext/fts5/fts5_aux.c 7cd0e2858171dacf505fea4e2e84ee6126854c3d
 F ext/fts5/fts5_buffer.c 80f9ba4431848cb857e3d2158f5280093dcd8015
 F ext/fts5/fts5_config.c b2456e9625bca41c51d54c363e369c6356895c90
 F ext/fts5/fts5_expr.c d2e148345639c5a5583e0daa39a639bf298ae6a7
 F ext/fts5/fts5_hash.c 219f4edd72e5cf95b19c33f1058809a18fad5229
-F ext/fts5/fts5_index.c ba397fe86f0b5ffdafe8eff71d5dbc85cc1180da
-F ext/fts5/fts5_main.c 37b0055cb4036c4b4bb4eb36e30ebd1c21c63939
+F ext/fts5/fts5_index.c 1a1fd996dfe2d632df1dd00689553bc0d205497d
+F ext/fts5/fts5_main.c 2e43726b3ef40b3d5efc0adc7c279d857b1c74fe
 F ext/fts5/fts5_storage.c 4cae85b5287b159d9d98174a4e70adf872b0930a
 F ext/fts5/fts5_tcl.c 85eb4e0d0fefa9420b78151496ad4599a1783e20
 F ext/fts5/fts5_tokenize.c 30f97a8c74683797b4cd233790444fbefb3b0708
@@ -1365,7 +1365,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 372c1db2475f367d54270d5801aff0503745bff4
-R cd5eb7bfe39c7cb521d188bde2e79a4e
+P 898618ccf61d3ad166d9fc742e132d518338b5c3
+R 67cbb00207cd0d10d2422bd26a9385a8
 U dan
-Z 5190374d0e2aa885aa84b71a9146c526
+Z ab9be791b136092de6b55e47372c8b3c
