@@ -605,6 +605,21 @@ struct Fts5BtreeIter {
 };
 
 
+/*
+** The first argument passed to this macro is a pointer to an Fts5Buffer
+** object.
+*/
+#define fts5BufferSize(pBuf,n) {                \
+  if( pBuf->nSpace<n ) {                        \
+    u8 *pNew = sqlite3_realloc(pBuf->p, n);     \
+    if( pNew==0 ){                              \
+      sqlite3_free(pBuf->p);                    \
+    }                                           \
+    pBuf->nSpace = n;                           \
+    pBuf->p = pNew;                             \
+  }                                             \
+}
+
 static void fts5PutU16(u8 *aOut, u16 iVal){
   aOut[0] = (iVal>>8);
   aOut[1] = (iVal&0xFF);
@@ -724,16 +739,20 @@ static Fts5Data *fts5DataReadOrBuffer(
       u8 *aOut;                   /* Read blob data into this buffer */
       int nByte = sqlite3_blob_bytes(p->pReader);
       if( pBuf ){
-        fts5BufferZero(pBuf);
-        fts5BufferGrow(&rc, pBuf, nByte);
-        aOut = pBuf->p;
+        fts5BufferSize(pBuf, MAX(nByte, p->pConfig->pgsz) + 20);
         pBuf->n = nByte;
+        aOut = pBuf->p;
+        if( aOut==0 ){
+          rc = SQLITE_NOMEM;
+        }
       }else{
         int nSpace = nByte + FTS5_DATA_ZERO_PADDING;
-        pRet = (Fts5Data*)sqlite3Fts5MallocZero(&rc, nSpace+sizeof(Fts5Data));
+        pRet = (Fts5Data*)sqlite3_malloc(nSpace+sizeof(Fts5Data));
         if( pRet ){
           pRet->n = nByte;
           aOut = pRet->p = (u8*)&pRet[1];
+        }else{
+          rc = SQLITE_NOMEM;
         }
       }
 
@@ -1019,18 +1038,20 @@ static void fts5StructureExtendLevel(
 static Fts5Structure *fts5StructureRead(Fts5Index *p){
   Fts5Config *pConfig = p->pConfig;
   Fts5Structure *pRet = 0;        /* Object to return */
-  Fts5Data *pData;                /* %_data entry containing structure record */
   int iCookie;                    /* Configuration cookie */
+  Fts5Buffer buf = {0, 0, 0};
 
-  pData = fts5DataRead(p, FTS5_STRUCTURE_ROWID);
-  if( !pData ) return 0;
-  p->rc = fts5StructureDecode(pData->p, pData->n, &iCookie, &pRet);
+  fts5DataBuffer(p, &buf, FTS5_STRUCTURE_ROWID);
+  if( buf.p==0 ) return 0;
+  assert( buf.nSpace>=(buf.n + FTS5_DATA_ZERO_PADDING) );
+  memset(&buf.p[buf.n], 0, FTS5_DATA_ZERO_PADDING);
+  p->rc = fts5StructureDecode(buf.p, buf.n, &iCookie, &pRet);
 
   if( p->rc==SQLITE_OK && pConfig->iCookie!=iCookie ){
     p->rc = sqlite3Fts5ConfigLoad(pConfig, iCookie);
   }
 
-  fts5DataRelease(pData);
+  fts5BufferFree(&buf);
   if( p->rc!=SQLITE_OK ){
     fts5StructureRelease(pRet);
     pRet = 0;
@@ -2028,7 +2049,7 @@ static void fts5SegIterLoadDlidx(Fts5Index *p, Fts5SegIter *pIter){
 
 #ifdef SQLITE_DEBUG
 static void fts5AssertNodeSeekOk(
-  Fts5Data *pNode,
+  Fts5Buffer *pNode,
   const u8 *pTerm, int nTerm,     /* Term to search for */
   int iExpectPg,
   int bExpectDlidx
@@ -2070,7 +2091,7 @@ static void fts5AssertNodeSeekOk(
 ** returned child page number has a doclist-index. Or left as is otherwise.
 */
 static int fts5NodeSeek(
-  Fts5Data *pNode,                /* Node to search */
+  Fts5Buffer *pNode,              /* Node to search */
   const u8 *pTerm, int nTerm,     /* Term to search for */
   int *pbDlidx                    /* OUT: True if dlidx flag is set */
 ){
@@ -2094,6 +2115,7 @@ static int fts5NodeSeek(
       *pbDlidx = (*pPtr==0x01);
       pPtr++;
       pPtr += fts5GetVarint32(pPtr, nEmpty);
+      if( pPtr>=pEnd ) break;
     }
 
     /* Read the next "term" pointer. Set nKeep to the number of bytes to
@@ -2230,7 +2252,10 @@ static void fts5LeafSeek(
       /* Skip past position list */
       fts5IndexGetVarint32(a, iOff, nPos);
       iOff += (nPos >> 1);
-      if( iOff>=n ) goto search_failed;
+      if( iOff>=(n-1) ){
+        iOff = n;
+        goto search_failed;
+      }
 
       /* If this is the end of the doclist, break out of the loop */
       if( a[iOff]==0x00 ){
@@ -2287,6 +2312,7 @@ static void fts5LeafSeek(
 */
 static void fts5SegIterSeekInit(
   Fts5Index *p,                   /* FTS5 backend */
+  Fts5Buffer *pBuf,               /* Buffer to use for loading pages */
   const u8 *pTerm, int nTerm,     /* Term to seek to */
   int flags,                      /* Mask of FTS5INDEX_XXX flags */
   Fts5StructureSegment *pSeg,     /* Description of segment */
@@ -2298,6 +2324,9 @@ static void fts5SegIterSeekInit(
   int bDlidx = 0;                 /* True if there is a doclist-index */
   Fts5Data *pLeaf;
 
+  static int nCall = 0;
+  nCall++;
+
   assert( bGe==0 || (flags & FTS5INDEX_QUERY_DESC)==0 );
   assert( pTerm && nTerm );
   memset(pIter, 0, sizeof(*pIter));
@@ -2307,11 +2336,9 @@ static void fts5SegIterSeekInit(
   ** contain term (pTerm/nTerm), if it is present in the segment. */
   for(h=pSeg->nHeight-1; h>0; h--){
     i64 iRowid = FTS5_SEGMENT_ROWID(pSeg->iSegid, h, iPg);
-    Fts5Data *pNode = fts5DataRead(p, iRowid);
-    if( pNode==0 ) break;
-
-    iPg = fts5NodeSeek(pNode, pTerm, nTerm, &bDlidx);
-    fts5DataRelease(pNode);
+    fts5DataBuffer(p, pBuf, iRowid);
+    if( p->rc ) break;
+    iPg = fts5NodeSeek(pBuf, pTerm, nTerm, &bDlidx);
   }
 
   if( iPg<pSeg->pgnoFirst ){
@@ -2340,6 +2367,20 @@ static void fts5SegIterSeekInit(
       }
     }
   }
+
+  /* Either:
+  **
+  **   1) an error has occurred, or
+  **   2) the iterator points to EOF, or
+  **   3) the iterator points to an entry with term (pTerm/nTerm), or
+  **   4) the FTS5INDEX_QUERY_SCAN flag was set and the iterator points
+  **      to an entry with a term greater than or equal to (pTerm/nTerm).
+  */
+  assert( p->rc!=SQLITE_OK                                          /* 1 */
+   || pIter->pLeaf==0                                               /* 2 */
+   || fts5BufferCompareBlob(&pIter->term, pTerm, nTerm)==0          /* 3 */
+   || (bGe && fts5BufferCompareBlob(&pIter->term, pTerm, nTerm)>0)  /* 4 */
+  );
 }
 
 /*
@@ -2795,6 +2836,7 @@ static void fts5MultiIterNew(
   int nSeg = 0;                   /* Number of segment-iters in use */
   int iIter = 0;                  /* */
   int iSeg;                       /* Used to iterate through segments */
+  Fts5Buffer buf = {0,0,0};       /* Buffer used by fts5SegIterSeekInit() */
   Fts5StructureLevel *pLvl;
   Fts5IndexIter *pNew;
 
@@ -2832,7 +2874,7 @@ static void fts5MultiIterNew(
         if( pTerm==0 ){
           fts5SegIterInit(p, pSeg, pIter);
         }else{
-          fts5SegIterSeekInit(p, pTerm, nTerm, flags, pSeg, pIter);
+          fts5SegIterSeekInit(p, &buf, pTerm, nTerm, flags, pSeg, pIter);
         }
       }
     }
@@ -2866,6 +2908,7 @@ static void fts5MultiIterNew(
     fts5MultiIterFree(p, pNew);
     *ppOut = 0;
   }
+  fts5BufferFree(&buf);
 }
 
 /*
@@ -5391,7 +5434,7 @@ static void fts5DebugStructure(
   for(iLvl=0; iLvl<p->nLevel; iLvl++){
     Fts5StructureLevel *pLvl = &p->aLevel[iLvl];
     sqlite3Fts5BufferAppendPrintf(pRc, pBuf, 
-        " {lvl=%d nMerge=%d", iLvl, pLvl->nMerge
+        " {lvl=%d nMerge=%d nSeg=%d", iLvl, pLvl->nMerge, pLvl->nSeg
     );
     for(iSeg=0; iSeg<pLvl->nSeg; iSeg++){
       Fts5StructureSegment *pSeg = &pLvl->aSeg[iSeg];

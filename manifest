@@ -1,5 +1,5 @@
-C Fix\stwo\sproblems\sthat\scould\scause\sfts3\sauxiliary\sfunctions\sto\soccasionally\smisbehave\sif\sused\swith\smatch\sexpressions\sthat\scontain\sboth\sOR\sand\sNEAR.
-D 2015-07-08T17:59:08.894
+C Reduce\sthe\snumber\sof\scalls\sto\smalloc()\smade\sby\sfts5.
+D 2015-07-09T19:02:19.523
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 017bf0511d1b2dd1db5e16488fbf75a17b526cbc
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -106,13 +106,13 @@ F ext/fts3/unicode/mkunicode.tcl 95cf7ec186e48d4985e433ff8a1c89090a774252
 F ext/fts3/unicode/parseunicode.tcl da577d1384810fb4e2b209bf3313074353193e95
 F ext/fts5/extract_api_docs.tcl 55a6d648d516f35d9a1e580ac00de27154e1904a
 F ext/fts5/fts5.h 81d1a92fc2b4bd477af7e4e0b38b456f3e199fba
-F ext/fts5/fts5Int.h c91773920639c01571d6870ac0c20e960798f79c
+F ext/fts5/fts5Int.h 582eb73064b5a2837d44e72907f84f94e86a2f79
 F ext/fts5/fts5_aux.c 7cd0e2858171dacf505fea4e2e84ee6126854c3d
 F ext/fts5/fts5_buffer.c 80f9ba4431848cb857e3d2158f5280093dcd8015
 F ext/fts5/fts5_config.c b2456e9625bca41c51d54c363e369c6356895c90
 F ext/fts5/fts5_expr.c d2e148345639c5a5583e0daa39a639bf298ae6a7
 F ext/fts5/fts5_hash.c 219f4edd72e5cf95b19c33f1058809a18fad5229
-F ext/fts5/fts5_index.c ab14b8a273ec72a4407eebfb787bbfb51acef565
+F ext/fts5/fts5_index.c ba397fe86f0b5ffdafe8eff71d5dbc85cc1180da
 F ext/fts5/fts5_main.c 37b0055cb4036c4b4bb4eb36e30ebd1c21c63939
 F ext/fts5/fts5_storage.c 4cae85b5287b159d9d98174a4e70adf872b0930a
 F ext/fts5/fts5_tcl.c 85eb4e0d0fefa9420b78151496ad4599a1783e20
@@ -122,8 +122,8 @@ F ext/fts5/fts5_varint.c 3f86ce09cab152e3d45490d7586b7ed2e40c13f1
 F ext/fts5/fts5_vocab.c 4e268a3fcbc099e50e335a1135be985a41ff6f7f
 F ext/fts5/fts5parse.y 833db1101b78c0c47686ab1b84918e38c36e9452
 F ext/fts5/mkportersteps.tcl 5acf962d2e0074f701620bb5308155fa1e4a63ba
-F ext/fts5/test/fts5_common.tcl 9553cce0757092d194307c2168d4edd100eab578
-F ext/fts5/test/fts5aa.test f7f057811eb0113d3259e059218bc85cef444280
+F ext/fts5/test/fts5_common.tcl e0b4a846a7670f6232a644ece69ef25a5c19c0e8
+F ext/fts5/test/fts5aa.test 4e896b9154764fed48179a87ba0bdf3650d7f49d
 F ext/fts5/test/fts5ab.test 6fe3a56731d15978afbb74ae51b355fc9310f2ad
 F ext/fts5/test/fts5ac.test 9737992d08c56bfd4803e933744d2d764e23795c
 F ext/fts5/test/fts5ad.test b2edee8b7de0c21d2c88f8a18c195034aad6952d
@@ -169,7 +169,7 @@ F ext/fts5/test/fts5prefix.test 552a462f0e8595676611f41643de217fb4ac2808
 F ext/fts5/test/fts5rank.test 11dcebba31d822f7e99685b4ea2c2ae3ec0b16f1
 F ext/fts5/test/fts5rebuild.test 03935f617ace91ed23a6099c7c74d905227ff29b
 F ext/fts5/test/fts5restart.test c17728fdea26e7d0f617d22ad5b4b2862b994c17
-F ext/fts5/test/fts5rowid.test f7674e19a40987bf59624d8db9827114cb7f7a3e
+F ext/fts5/test/fts5rowid.test 6f9833b23b176dc4aa15b7fc02afeb2b220fd460
 F ext/fts5/test/fts5tokenizer.test 83e7e01a21ec7fdf814d51f6184cc26bb77d7695
 F ext/fts5/test/fts5unicode.test fbef8d8a3b4b88470536cc57604a82ca52e51841
 F ext/fts5/test/fts5unicode2.test c1dd890ba32b7609adba78e420faa847abe43b59
@@ -179,7 +179,7 @@ F ext/fts5/test/fts5version.test c54a708236642bcc850d2aedc6f505fef1d9f9f1
 F ext/fts5/test/fts5vocab.test cdf97b9678484e9bad5062edf9c9106e5c3b0c5c
 F ext/fts5/tool/loadfts5.tcl 95edf0b6b92a09f9ed85595038b1108127987556
 F ext/fts5/tool/mkfts5c.tcl 5745072c7de346e18c7f491e4c3281fe8a1cfe51
-F ext/fts5/tool/showfts5.tcl 8478fbe6cb93a8ff37335c9b48a38c4197dcfe5e
+F ext/fts5/tool/showfts5.tcl fb62e8eae6d862afdd22f367e286fb886d5e1ab6
 F ext/icu/README.txt d9fbbad0c2f647c3fdf715fc9fd64af53aedfc43
 F ext/icu/icu.c b2732aef0b076e4276d9b39b5a33cec7a05e1413
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
@@ -1365,7 +1365,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5348ffc3fda5168c1e9e14aa88b0c6aedbda7c94
-R bb6c5e63b90e2eefb82b18295e953873
+P 372c1db2475f367d54270d5801aff0503745bff4
+R cd5eb7bfe39c7cb521d188bde2e79a4e
 U dan
-Z bead1c8f07e0e547f66cbd142b1cf6b7
+Z 5190374d0e2aa885aa84b71a9146c526

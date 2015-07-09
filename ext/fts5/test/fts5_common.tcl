@@ -124,7 +124,7 @@ proc fts5_level_segs {tbl} {
   set sql "SELECT fts5_decode(rowid,block) aS r FROM ${tbl}_data WHERE rowid=10"
   set ret [list]
   foreach L [lrange [db one $sql] 1 end] {
-    lappend ret [expr [llength $L] - 2]
+    lappend ret [expr [llength $L] - 3]
   }
   set ret
 } 
@@ -134,7 +134,7 @@ proc fts5_level_segids {tbl} {
   set ret [list]
   foreach L [lrange [db one $sql] 1 end] {
     set lvl [list]
-    foreach S [lrange $L 2 end] {
+    foreach S [lrange $L 3 end] {
       regexp {id=([1234567890]*)} $S -> segid
       lappend lvl $segid
     }
