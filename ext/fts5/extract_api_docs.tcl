@@ -134,6 +134,7 @@ proc get_api_docs {data} {
   #
   set D [get_struct_docs $data [array names M]]
   
+  output "<dl>"
   foreach {sub docs} $D {
     if {[info exists M($sub)]} {
       set hdr $M($sub)
@@ -142,12 +143,17 @@ proc get_api_docs {data} {
       set link ""
     }
 
-    output "<hr color=#eeeee style=\"margin:1em 8.4ex 0 8.4ex;\"$link>"
-    set style "padding-left:6ex;font-size:1.4em;display:block"
-    output "<h style=\"$style\"><pre>$hdr</pre></h>"
+    #output "<hr color=#eeeee style=\"margin:1em 8.4ex 0 8.4ex;\"$link>"
+    #set style "padding-left:6ex;font-size:1.4em;display:block"
+    #output "<h style=\"$style\"><pre>$hdr</pre></h>"
+
+    regsub -line {^  *[)]} $hdr ")" hdr
+    output "<dt style=\"white-space:pre;font-family:monospace;font-size:120%\""
+    output "$link>"
+    output "<b>$hdr</b></dt><dd>"
   
     set mode ""
-    set bEmpty 1
+    set margin " style=margin-top:0.1em"
     foreach line [split [string trim $docs] "\n"] {
       if {[string trim $line]==""} {
         if {$mode != ""} {output "</$mode>"}
@@ -158,12 +164,15 @@ proc get_api_docs {data} {
         } else {
           set mode p
         }
-        output "<$mode>"
+        output "<$mode$margin>"
+        set margin ""
       }
       output $line
     }
     if {$mode != ""} {output "</$mode>"}
+    output "</dd>"
   }
+  output "</dl>"
 }
 
 proc get_fts5_struct {data start end} {
