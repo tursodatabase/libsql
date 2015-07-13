@@ -1,5 +1,5 @@
-C Fix\sinconsistencies\sin\sformatting\sof\sfts5\sdocs.
-D 2015-07-10T17:55:42.512
+C Fix\sthe\sheader\scomment\son\sthe\sloadfts.c\sutility\sprogram.
+D 2015-07-13T18:01:14.191
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 017bf0511d1b2dd1db5e16488fbf75a17b526cbc
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1322,7 +1322,7 @@ F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/lemon.c b9109f59b57e7b6f101c4fe644c8361ba6dee969
 F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
-F tool/loadfts.c 76b6589ab5efcdc9cfe16d43ab5a6c2618e44bd4
+F tool/loadfts.c f6443dd32e23fd9c846d0c286c1f6c7cb2c8c6ea
 F tool/logest.c eef612f8adf4d0993dafed0416064cf50d5d33c6
 F tool/mkautoconfamal.sh d1a2da0e15b2ed33d60af35c7e9d483f13a8eb9f
 F tool/mkkeywordhash.c dfff09dbbfaf950e89af294f48f902181b144670
@@ -1365,7 +1365,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b2de77a01cc5edcea2f98f7916e64cb33e6bd414
-R 7c08478f15e7cb3428a462d66cb461c5
-U dan
-Z eba5e30eba51a8866d4bf4dc68e41c5e
+P 5fb4c77163be8d5ff1e2934dda3cc2ad0a6267e8
+R d3824c43622cd5af3eb2d4500e444b7b
+U drh
+Z 5617f1fcb2290edff5681fccc612ced5

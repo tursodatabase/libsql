@@ -1,5 +1,5 @@
 /*
-** 2013-06-10
+** 2015-07-28
 **
 ** The author disclaims copyright to this source code.  In place of
 ** a legal notice, here is a blessing:
@@ -9,6 +9,10 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
+**
+** This file implements a utility program that will load many disk
+** files (all files under a given directory) into a FTS table.  This is
+** used for performance testing of FTS3, FTS4, and FTS5.
 */
 
 #include <stdio.h>
