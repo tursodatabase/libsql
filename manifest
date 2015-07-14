@@ -1,9 +1,9 @@
-C Skip\strying\sto\sinclude\s'intrin.h'\swhen\scompiling\sfor\sWinCE\swith\sMSVC.
-D 2015-07-14T21:56:17.995
+C Further\srefine\sFTS5\scleanup\sin\sMakefiles.
+D 2015-07-14T21:56:53.776
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in 2a4a94d9c6ad8cde388b672d89d1463e6f38a6da
+F Makefile.in 6e8af213d49e6325bf283ebed7662254f8e15bda
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 86926e2330ad4b7ae6d4674762b53b293873b3fb
+F Makefile.msc efafcbf2be203b61dc7b6301703544753c513cb2
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION ce0ae95abd7121c534f6917c1c8f2b70d9acd4db
@@ -248,7 +248,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 551665e0bf7bd275a3e49dc8569ccb17098f7179
+F main.mk 7f0c666075028f306001ec9e883cf20dcb2deb64
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
 F mkopcodeh.awk 0e7f04a8eb90f92259e47d80110e4e98d7ce337a
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
@@ -1365,7 +1365,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3de030c904d125ccf41fa1929646b8a002b5341b
-R 005ae2df59e13158535147c0afd5a97b
+P 6db90ca2b4ac806b42532072ebe6b2a4a7b9713d
+R 8e7a1fc75fdd853e0505391914a90ba5
 U mistachkin
-Z b7895c5a0dbe848b1ad5c81c9335730e
+Z 9c90a50d81f502459cfc9d381f2f84f0

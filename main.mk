@@ -869,4 +869,4 @@ clean:
 	rm -f fuzzershell fuzzershell.exe
 	rm -f fuzzcheck fuzzcheck.exe
 	rm -f sqldiff sqldiff.exe
-	rm -f fts5.c fts5.h fts5parse.*
+	rm -f fts5.* fts5parse.*
