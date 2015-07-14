@@ -501,7 +501,7 @@ static int fts5StorageSaveTotals(Fts5Storage *p){
 int sqlite3Fts5StorageDelete(Fts5Storage *p, i64 iDel){
   Fts5Config *pConfig = p->pConfig;
   int rc;
-  sqlite3_stmt *pDel;
+  sqlite3_stmt *pDel = 0;
 
   rc = fts5StorageLoadTotals(p, 1);
 
@@ -545,7 +545,7 @@ int sqlite3Fts5StorageSpecialDelete(
 ){
   Fts5Config *pConfig = p->pConfig;
   int rc;
-  sqlite3_stmt *pDel;
+  sqlite3_stmt *pDel = 0;
 
   assert( pConfig->eContent!=FTS5_CONTENT_NORMAL );
   rc = fts5StorageLoadTotals(p, 1);
@@ -719,7 +719,7 @@ int sqlite3Fts5StorageInsert(
 ){
   Fts5Config *pConfig = p->pConfig;
   int rc = SQLITE_OK;             /* Return code */
-  sqlite3_stmt *pInsert;          /* Statement used to write %_content table */
+  sqlite3_stmt *pInsert = 0;      /* Statement used to write %_content table */
   int eStmt = 0;                  /* Type of statement used on %_content */
   int i;                          /* Counter variable */
   Fts5InsertCtx ctx;              /* Tokenization callback context object */

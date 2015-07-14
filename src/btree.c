@@ -8959,7 +8959,7 @@ static int checkTreePage(
   const char *saved_zPfx = pCheck->zPfx;
   int saved_v1 = pCheck->v1;
   int saved_v2 = pCheck->v2;
-  u8 savedIsInit;
+  u8 savedIsInit = 0;
 
   /* Check that the page exists
   */

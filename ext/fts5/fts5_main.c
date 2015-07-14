@@ -361,7 +361,7 @@ static int fts5InitVtab(
   Fts5Global *pGlobal = (Fts5Global*)pAux;
   const char **azConfig = (const char**)argv;
   int rc = SQLITE_OK;             /* Return code */
-  Fts5Config *pConfig;            /* Results of parsing argc/argv */
+  Fts5Config *pConfig = 0;        /* Results of parsing argc/argv */
   Fts5Table *pTab = 0;            /* New virtual table object */
 
   /* Allocate the new vtab object and parse the configuration */
@@ -756,7 +756,7 @@ static int fts5CursorReseek(Fts5Cursor *pCsr, int *pbSkip){
 */
 static int fts5NextMethod(sqlite3_vtab_cursor *pCursor){
   Fts5Cursor *pCsr = (Fts5Cursor*)pCursor;
-  int rc;
+  int rc = SQLITE_OK;
 
   assert( (pCsr->ePlan<2)==
           (pCsr->ePlan==FTS5_PLAN_MATCH || pCsr->ePlan==FTS5_PLAN_SOURCE) 

@@ -1,5 +1,5 @@
-C Always\sinvoke\sthe\sprofile\scallback\seven\sif\sthe\sstatement\sdoes\snot\srun\sto\ncompletion.
-D 2015-07-14T14:48:50.217
+C Fix\ssome\sharmless\scompiler\swarnings.
+D 2015-07-14T17:18:05.834
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2a4a94d9c6ad8cde388b672d89d1463e6f38a6da
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -107,14 +107,14 @@ F ext/fts3/unicode/parseunicode.tcl da577d1384810fb4e2b209bf3313074353193e95
 F ext/fts5/extract_api_docs.tcl 06583c935f89075ea0b32f85efa5dd7619fcbd03
 F ext/fts5/fts5.h 81d1a92fc2b4bd477af7e4e0b38b456f3e199fba
 F ext/fts5/fts5Int.h 8d9bce1847a10df2e4ed9492ea4f3868276748fb
-F ext/fts5/fts5_aux.c 7cd0e2858171dacf505fea4e2e84ee6126854c3d
+F ext/fts5/fts5_aux.c 044cb176a815f4388308738437f6e130aa384fb0
 F ext/fts5/fts5_buffer.c 80f9ba4431848cb857e3d2158f5280093dcd8015
 F ext/fts5/fts5_config.c b2456e9625bca41c51d54c363e369c6356895c90
 F ext/fts5/fts5_expr.c d2e148345639c5a5583e0daa39a639bf298ae6a7
 F ext/fts5/fts5_hash.c 219f4edd72e5cf95b19c33f1058809a18fad5229
-F ext/fts5/fts5_index.c 1a1fd996dfe2d632df1dd00689553bc0d205497d
-F ext/fts5/fts5_main.c 2e43726b3ef40b3d5efc0adc7c279d857b1c74fe
-F ext/fts5/fts5_storage.c 4cae85b5287b159d9d98174a4e70adf872b0930a
+F ext/fts5/fts5_index.c cfd41d49591e4e4ce2a5f84de35512f59fbb360d
+F ext/fts5/fts5_main.c 8f279999deb204b0c7760464f60f88666046398b
+F ext/fts5/fts5_storage.c 1c35a38a564ee9cadcbd7ae0b13a806bdda722bd
 F ext/fts5/fts5_tcl.c 85eb4e0d0fefa9420b78151496ad4599a1783e20
 F ext/fts5/fts5_tokenize.c 30f97a8c74683797b4cd233790444fbefb3b0708
 F ext/fts5/fts5_unicode2.c 78273fbd588d1d9bd0a7e4e0ccc9207348bae33c
@@ -269,7 +269,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 4d9134dc988a87838c06056c89c0e8c4700a0452
 F src/bitvec.c d1f21d7d91690747881f03940584f4cc548c9d3d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c 781deff0d5af639e8dd4f83ec963cc3bbf8cffc2
+F src/btree.c f48b3ef91676c06a90a8832987ecef6b94c931ee
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 2ad754dd4528baa8d0946a593cc373b890bf859e
 F src/build.c b3f15255d5b16e42dafeaa638fd4f8a47c94ed70
@@ -1365,7 +1365,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e548d77b3c91cdf11c78d1a688fd768e209bdbf5
-R f434f0b9092147e4e9389e2958ccbd33
-U drh
-Z 3bea78814fd8f9c4678ec13302736bdc
+P 202479aa0a62067343e724487960b8a039e2e978
+R 2160d68c9d0127f66e3d6f1278c01344
+U mistachkin
+Z a4e5a6ada18fe91bfc53e29cc79ebc33

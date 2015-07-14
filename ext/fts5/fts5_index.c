@@ -738,7 +738,7 @@ static Fts5Data *fts5DataReadOrBuffer(
     if( rc==SQLITE_ERROR ) rc = FTS5_CORRUPT;
 
     if( rc==SQLITE_OK ){
-      u8 *aOut;                   /* Read blob data into this buffer */
+      u8 *aOut = 0;               /* Read blob data into this buffer */
       int nByte = sqlite3_blob_bytes(p->pReader);
       if( pBuf ){
         fts5BufferSize(pBuf, MAX(nByte, p->pConfig->pgsz) + 20);
@@ -1198,7 +1198,7 @@ static void fts5StructurePromote(
   if( p->rc==SQLITE_OK ){
     int iTst;
     int iPromote = -1;
-    int szPromote;                /* Promote anything this size or smaller */
+    int szPromote = 0;            /* Promote anything this size or smaller */
     Fts5StructureSegment *pSeg;   /* Segment just written */
     int szSeg;                    /* Size of segment just written */
 
@@ -1863,8 +1863,8 @@ static void fts5SegIterNext(
         }
       }else if( pIter->pSeg==0 ){
         const u8 *pList = 0;
-        const char *zTerm;
-        int nList;
+        const char *zTerm = 0;
+        int nList = 0;
         if( 0==(pIter->flags & FTS5_SEGITER_ONETERM) ){
           sqlite3Fts5HashScanNext(p->pHash);
           sqlite3Fts5HashScanEntry(p->pHash, &zTerm, &pList, &nList);
@@ -2215,7 +2215,6 @@ static void fts5LeafSeek(
   while( 1 ){
     int i;
     int nCmp;
-    i64 rowid;
 
     /* Figure out how many new bytes are in this term */
     fts5IndexGetVarint32(a, iOff, nNew);
@@ -2324,7 +2323,6 @@ static void fts5SegIterSeekInit(
   int h;
   int bGe = (flags & FTS5INDEX_QUERY_SCAN);
   int bDlidx = 0;                 /* True if there is a doclist-index */
-  Fts5Data *pLeaf;
 
   static int nCall = 0;
   nCall++;
