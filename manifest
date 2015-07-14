@@ -1,5 +1,5 @@
-C Refine\scleaning\sof\sFTS5\sfiles\sby\sMakefile\stargets.
-D 2015-07-14T00:36:34.209
+C Always\sinvoke\sthe\sprofile\scallback\seven\sif\sthe\sstatement\sdoes\snot\srun\sto\ncompletion.
+D 2015-07-14T14:48:50.217
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2a4a94d9c6ad8cde388b672d89d1463e6f38a6da
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -393,7 +393,7 @@ F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
 F src/vdbe.c 5ee4a2bf871418f61d06dc256b9b3a0084b5ec46
 F src/vdbe.h 7a75045d879118b9d3af7e8b3c108f2f27c51473
 F src/vdbeInt.h 8b54e01ad0463590e7cffabce0bc36da9ee4f816
-F src/vdbeapi.c 6a0d7757987018ff6b1b81bc5293219cd26bb299
+F src/vdbeapi.c 2fa7ed7520313d6dd1dc6e6495999201c630adfc
 F src/vdbeaux.c 787f5f9d58f4c6f39294ed06909ba602d1a402e6
 F src/vdbeblob.c 4f2e8e075d238392df98c5e03a64342465b03f90
 F src/vdbemem.c ae38a0d35ae71cf604381a887c170466ba518090
@@ -1183,7 +1183,7 @@ F test/tkt3997.test a335fa41ca3985660a139df7b734a26ef53284bd
 F test/tkt4018.test 7c2c9ba4df489c676a0a7a0e809a1fb9b2185bd1
 F test/tokenize.test ce430a7aed48fc98301611429595883fdfcab5d7
 F test/tpch01.test 04adbf8d8300fa60a222f28d901abd76e7be6dd4
-F test/trace.test 73a5508100f7fccfbc3f8018d5f6963ed478eea0
+F test/trace.test 6f676313e3ebd2a50585036d2f212a3319dd5836
 F test/trace2.test f5cb67ad3bc09e0c58e8cca78dfd0b5639259983
 F test/trans.test 6e1b4c6a42dba31bd65f8fa5e61a2708e08ddde6
 F test/trans2.test 62bd045bfc7a1c14c5ba83ba64d21ade31583f76
@@ -1365,7 +1365,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5c76c062c0cbf7c95897c5de4868172292023303
-R 426b5fccc68ae98e50db8b48fd4e7d32
-U mistachkin
-Z 30f4df410df2e184bde2b63910ad9db6
+P e548d77b3c91cdf11c78d1a688fd768e209bdbf5
+R f434f0b9092147e4e9389e2958ccbd33
+U drh
+Z 3bea78814fd8f9c4678ec13302736bdc
