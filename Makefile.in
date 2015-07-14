@@ -1189,7 +1189,7 @@ clean:
 	rm -f fuzzershell fuzzershell.exe
 	rm -f fuzzcheck fuzzcheck.exe
 	rm -f sqldiff sqldiff.exe
-	rm -f fts5.c fts5.h fts5parse.c fts5parse.h
+	rm -f fts5.c fts5.h fts5parse.*
 
 distclean:	clean
 	rm -f config.log config.status libtool Makefile sqlite3.pc
