@@ -37,9 +37,9 @@ proc mutex_counters {varname} {
 
 #-------------------------------------------------------------------------
 # Tests mutex1-1.* test that sqlite3_config() returns SQLITE_MISUSE if
-# is called at the wrong time. And that the first time sqlite3_initialize 
+# is called at the wrong time. And that the first time sqlite3_initialize
 # is called it obtains the 'static_master' mutex 3 times and a recursive
-# mutex (sqlite3Config.pInitMutex) twice. Subsequent calls are no-ops 
+# mutex (sqlite3Config.pInitMutex) twice. Subsequent calls are no-ops
 # that do not require any mutexes.
 #
 do_test mutex1-1.0 {
@@ -102,12 +102,16 @@ ifcapable threadsafe&&shared_cache {
   foreach {mode mutexes} {
     singlethread {}
     multithread  {
-      fast static_lru static_master static_mem static_open static_prng 
-      static_pmem
+      fast static_app1 static_app2 static_app3
+      static_lru static_master static_mem static_open
+      static_prng static_pmem static_vfs1 static_vfs2
+      static_vfs3
     }
     serialized  {
-      fast recursive static_lru static_master static_mem static_open 
-      static_prng static_pmem
+      fast recursive static_app1 static_app2
+      static_app3 static_lru static_master static_mem
+      static_open static_prng static_pmem static_vfs1
+      static_vfs2 static_vfs3
     }
   } {
 
@@ -129,9 +133,28 @@ ifcapable threadsafe&&shared_cache {
     ifcapable !memorymanage {
       regsub { static_lru} $mutexes {} mutexes
     }
-    do_test mutex1.2.$mode.3 {
+    if {$mode ne "singlethread"} {
+      do_test mutex1.2.$mode.3 {
+        #
+        # NOTE: Make sure all the app and vfs mutexes get used.
+        #
+        enter_static_mutex static_app1
+        leave_static_mutex static_app1
+        enter_static_mutex static_app2
+        leave_static_mutex static_app2
+        enter_static_mutex static_app3
+        leave_static_mutex static_app3
+        enter_static_mutex static_vfs1
+        leave_static_mutex static_vfs1
+        enter_static_mutex static_vfs2
+        leave_static_mutex static_vfs2
+        enter_static_mutex static_vfs3
+        leave_static_mutex static_vfs3
+      } {}
+    }
+    do_test mutex1.2.$mode.4 {
       mutex_counters counters
-  
+
       set res [list]
       foreach {key value} [array get counters] {
         if {$key ne "total" && $value > 0} {

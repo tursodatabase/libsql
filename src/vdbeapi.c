@@ -53,6 +53,31 @@ static int vdbeSafetyNotNull(Vdbe *p){
   }
 }
 
+#ifndef SQLITE_OMIT_TRACE
+/*
+** Invoke the profile callback.  This routine is only called if we already
+** know that the profile callback is defined and needs to be invoked.
+*/
+static SQLITE_NOINLINE void invokeProfileCallback(sqlite3 *db, Vdbe *p){
+  sqlite3_int64 iNow;
+  assert( p->startTime>0 );
+  assert( db->xProfile!=0 );
+  assert( db->init.busy==0 );
+  assert( p->zSql!=0 );
+  sqlite3OsCurrentTimeInt64(db->pVfs, &iNow);
+  db->xProfile(db->pProfileArg, p->zSql, (iNow - p->startTime)*1000000);
+  p->startTime = 0;
+}
+/*
+** The checkProfileCallback(DB,P) macro checks to see if a profile callback
+** is needed, and it invokes the callback if it is needed.
+*/
+# define checkProfileCallback(DB,P) \
+   if( ((P)->startTime)>0 ){ invokeProfileCallback(DB,P); }
+#else
+# define checkProfileCallback(DB,P)  /*no-op*/
+#endif
+
 /*
 ** The following routine destroys a virtual machine that is created by
 ** the sqlite3_compile() routine. The integer returned is an SQLITE_
@@ -73,6 +98,7 @@ int sqlite3_finalize(sqlite3_stmt *pStmt){
     sqlite3 *db = v->db;
     if( vdbeSafety(v) ) return SQLITE_MISUSE_BKPT;
     sqlite3_mutex_enter(db->mutex);
+    checkProfileCallback(db, v);
     rc = sqlite3VdbeFinalize(v);
     rc = sqlite3ApiExit(db, rc);
     sqlite3LeaveMutexAndCloseZombie(db);
@@ -94,12 +120,14 @@ int sqlite3_reset(sqlite3_stmt *pStmt){
     rc = SQLITE_OK;
   }else{
     Vdbe *v = (Vdbe*)pStmt;
-    sqlite3_mutex_enter(v->db->mutex);
+    sqlite3 *db = v->db;
+    sqlite3_mutex_enter(db->mutex);
+    checkProfileCallback(db, v);
     rc = sqlite3VdbeReset(v);
     sqlite3VdbeRewind(v);
-    assert( (rc & (v->db->errMask))==rc );
-    rc = sqlite3ApiExit(v->db, rc);
-    sqlite3_mutex_leave(v->db->mutex);
+    assert( (rc & (db->errMask))==rc );
+    rc = sqlite3ApiExit(db, rc);
+    sqlite3_mutex_leave(db->mutex);
   }
   return rc;
 }
@@ -450,6 +478,7 @@ static int doWalCallbacks(sqlite3 *db){
   return rc;
 }
 
+
 /*
 ** Execute the statement pStmt, either until a row of data is ready, the
 ** statement is completely executed or an error occurs.
@@ -518,8 +547,10 @@ static int sqlite3Step(Vdbe *p){
     );
 
 #ifndef SQLITE_OMIT_TRACE
-    if( db->xProfile && !db->init.busy ){
+    if( db->xProfile && !db->init.busy && p->zSql ){
       sqlite3OsCurrentTimeInt64(db->pVfs, &p->startTime);
+    }else{
+      assert( p->startTime==0 );
     }
 #endif
 
@@ -543,13 +574,8 @@ static int sqlite3Step(Vdbe *p){
   }
 
 #ifndef SQLITE_OMIT_TRACE
-  /* Invoke the profile callback if there is one
-  */
-  if( rc!=SQLITE_ROW && db->xProfile && !db->init.busy && p->zSql ){
-    sqlite3_int64 iNow;
-    sqlite3OsCurrentTimeInt64(db->pVfs, &iNow);
-    db->xProfile(db->pProfileArg, p->zSql, (iNow - p->startTime)*1000000);
-  }
+  /* If the statement completed successfully, invoke the profile callback */
+  if( rc!=SQLITE_ROW ) checkProfileCallback(db, p);
 #endif
 
   if( rc==SQLITE_DONE ){

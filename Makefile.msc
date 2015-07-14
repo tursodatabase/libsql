@@ -1707,16 +1707,12 @@ fts5parse.c:	$(TOP)\ext\fts5\fts5parse.y lemon.exe
 	copy $(TOP)\ext\fts5\fts5parse.y .
 	del /Q fts5parse.h 2>NUL
 	.\lemon.exe $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS) $(OPTS) fts5parse.y
-	move fts5parse.c fts5parse.c.orig
-	type fts5parse.c.orig \
-		| $(NAWK) "/.*/ { gsub(/yy/,\"fts5yy\");print }" \
-		| $(NAWK) "/.*/ { gsub(/YY/,\"fts5YY\");print }" \
-		| $(NAWK) "/.*/ { gsub(/TOKEN/,\"FTS5TOKEN\");print }" > $@
 
 fts5parse.h: fts5parse.c
 
 fts5.c: $(FTS5_SRC)
 	$(TCLSH_CMD) $(TOP)\ext\fts5\tool\mkfts5c.tcl
+	copy $(TOP)\ext\fts5\fts5.h .
 
 fts5.lo:	fts5.c $(HDR) $(EXTHDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) $(NO_WARN) -DSQLITE_CORE -c fts5.c
@@ -1870,7 +1866,7 @@ clean:
 	del /Q sqlite3_analyzer.exe sqlite3_analyzer.c 2>NUL
 	del /Q sqlite-*-output.vsix 2>NUL
 	del /Q fuzzershell.exe fuzzcheck.exe sqldiff.exe 2>NUL
-	del /Q fts5.c fts5parse.* 2>NUL
+	del /Q fts5.c fts5.h fts5parse.* 2>NUL
 
 # Dynamic link library section.
 #

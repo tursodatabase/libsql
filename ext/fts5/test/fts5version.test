@@ -46,7 +46,6 @@ do_test 1.5 {
   catchsql { SELECT * FROM t1 WHERE t1 MATCH 'a' }
 } {1 {invalid fts5 file format (found 3, expected 2) - run 'rebuild'}}
 
-breakpoint
 do_test 1.6 {
   db close
   sqlite3 db test.db

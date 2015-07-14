@@ -2070,10 +2070,14 @@ static void generateWithRecursiveQuery(
   /* Execute the recursive SELECT taking the single row in Current as
   ** the value for the recursive-table. Store the results in the Queue.
   */
-  p->pPrior = 0;
-  sqlite3Select(pParse, p, &destQueue);
-  assert( p->pPrior==0 );
-  p->pPrior = pSetup;
+  if( p->selFlags & SF_Aggregate ){
+    sqlite3ErrorMsg(pParse, "recursive aggregate queries not supported");
+  }else{
+    p->pPrior = 0;
+    sqlite3Select(pParse, p, &destQueue);
+    assert( p->pPrior==0 );
+    p->pPrior = pSetup;
+  }
 
   /* Keep running the loop until the Queue is empty */
   sqlite3VdbeAddOp2(v, OP_Goto, 0, addrTop);

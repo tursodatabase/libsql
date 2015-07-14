@@ -24,6 +24,7 @@ do_test pcache2-1.1 {
   sqlite3_reset_auto_extension
   sqlite3_shutdown
   sqlite3_config_pagecache 6000 100
+  sqlite3_config singlethread
   sqlite3_initialize
   autoinstall_test_functions
   sqlite3_status SQLITE_STATUS_PAGECACHE_USED 1
@@ -73,6 +74,7 @@ catch {db2 close}
 sqlite3_reset_auto_extension
 sqlite3_shutdown
 sqlite3_config_pagecache 0 0
+sqlite3_config serialized
 sqlite3_initialize
 autoinstall_test_functions
 

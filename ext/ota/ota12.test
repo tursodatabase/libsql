@@ -168,5 +168,68 @@ do_multiclient_test tn {
 
 }
 
+#-------------------------------------------------------------------------
+# Test that "PRAGMA data_version" works when an OTA client writes the
+# database.
+#
+do_multiclient_test tn {
+
+  # Initialize a target (test.db) and ota (ota.db) database.
+  #
+  forcedelete ota.db
+  sql1 $setup_sql
+
+  # Check the initial database contains table "xx" with a single row.
+  # Also save the current values of "PRAGMA data-version" for [db1] 
+  # and [db2].
+  #
+  do_test 2.$tn.1 {
+    list [sql1 { SELECT count(*) FROM xx }] [sql2 { SELECT count(*) FROM xx }]
+  } {1 1}
+  set V1 [sql1 {PRAGMA data_version}] 
+  set V2 [sql2 {PRAGMA data_version}]
+
+  # Check the values of data-version have not magically changed.
+  #
+  do_test 2.$tn.2 {
+    list [sql1 {PRAGMA data_version}] [sql2 {PRAGMA data_version}]
+  } [list $V1 $V2]
+
+  # Start stepping the OTA. From the point of view of [db1] and [db2], the 
+  # data-version values remain unchanged until the database contents are
+  # modified. At which point the values are incremented.
+  #
+  sqlite3ota ota test.db ota.db
+  set x 0
+  while {[db one {SELECT count(*) FROM xx}]==1} {
+    do_test 2.$tn.3.[incr x] {
+      list [sql1 {PRAGMA data_version}] [sql2 {PRAGMA data_version}]
+    } [list $V1 $V2]
+    ota step
+  }
+  do_test 2.$tn.5.1 { expr {$V1 < [sql1 {PRAGMA data_version}]} } 1
+  do_test 2.$tn.5.2 { expr {$V2 < [sql2 {PRAGMA data_version}]} } 1
+
+  # Check the db contents is as expected.
+  #
+  do_test 2.$tn.4 {
+    list [sql1 {SELECT count(*) FROM xx}] [sql2 {SELECT count(*) FROM xx}]
+  } {3 3}
+
+  set V1 [sql1 {PRAGMA data_version}] 
+  set V2 [sql2 {PRAGMA data_version}]
+
+  # Finish applying the OTA (i.e. do the incremental checkpoint). Check that
+  # this does not cause the data-version values to change.
+  #
+  while {[ota step]=="SQLITE_OK"} { }
+  ota close
+
+  do_test 2.$tn.6 {
+    list [sql1 {PRAGMA data_version}] [sql2 {PRAGMA data_version}]
+  } [list $V1 $V2]
+
+}
+
 finish_test
 

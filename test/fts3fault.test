@@ -18,6 +18,8 @@ set ::testprefix fts3fault
 # If SQLITE_ENABLE_FTS3 is not defined, omit this file.
 ifcapable !fts3 { finish_test ; return }
 
+if 0 {
+
 # Test error handling in the sqlite3Fts3Init() function. This is the 
 # function that registers the FTS3 module and various support functions
 # with SQLite.
@@ -157,6 +159,9 @@ do_faultsim_test 7.3 -prep {
                        {1 {SQL logic error or missing database}}
 }
 
+
+}
+
 proc mit {blob} {
   set scan(littleEndian) i*
   set scan(bigEndian) I*
@@ -176,7 +181,7 @@ do_test 8.0 {
   faultsim_save_and_close
 } {}
 
-do_faultsim_test 8.1 -prep { 
+do_faultsim_test 8.1 -faults oom-t* -prep { 
   faultsim_restore_and_reopen
   db func mit mit
 } -body {
@@ -184,6 +189,7 @@ do_faultsim_test 8.1 -prep {
 } -test {
   faultsim_test_result {0 {{1 1 1 1 4 2 1 5 5}}}
 }
+
 do_faultsim_test 8.2 -faults oom-t* -prep { 
   faultsim_restore_and_reopen
   db func mit mit

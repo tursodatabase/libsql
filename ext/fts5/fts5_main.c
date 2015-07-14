@@ -219,21 +219,14 @@ struct Fts5Cursor {
 */
 #define FTS5CSR_REQUIRE_CONTENT   0x01
 #define FTS5CSR_REQUIRE_DOCSIZE   0x02
-#define FTS5CSR_EOF               0x04
-#define FTS5CSR_FREE_ZRANK        0x08
-#define FTS5CSR_REQUIRE_RESEEK    0x10
+#define FTS5CSR_REQUIRE_INST      0x04
+#define FTS5CSR_EOF               0x08
+#define FTS5CSR_FREE_ZRANK        0x10
+#define FTS5CSR_REQUIRE_RESEEK    0x20
 
 #define BitFlagAllTest(x,y) (((x) & (y))==(y))
 #define BitFlagTest(x,y)    (((x) & (y))!=0)
 
-/*
-** Constants for the largest and smallest possible 64-bit signed integers.
-** These are copied from sqliteInt.h.
-*/
-#ifndef SQLITE_AMALGAMATION
-# define LARGEST_INT64  (0xffffffff|(((i64)0x7fffffff)<<32))
-# define SMALLEST_INT64 (((i64)-1) - LARGEST_INT64)
-#endif
 
 /*
 ** Macros to Set(), Clear() and Test() cursor flags.
@@ -437,12 +430,12 @@ static int fts5CreateMethod(
 /*
 ** The different query plans.
 */
-#define FTS5_PLAN_SCAN           1       /* No usable constraint */
-#define FTS5_PLAN_MATCH          2       /* (<tbl> MATCH ?) */
+#define FTS5_PLAN_MATCH          0       /* (<tbl> MATCH ?) */
+#define FTS5_PLAN_SOURCE         1       /* A source cursor for SORTED_MATCH */
+#define FTS5_PLAN_SPECIAL        2       /* An internal query */
 #define FTS5_PLAN_SORTED_MATCH   3       /* (<tbl> MATCH ? ORDER BY rank) */
-#define FTS5_PLAN_ROWID          4       /* (rowid = ?) */
-#define FTS5_PLAN_SOURCE         5       /* A source cursor for SORTED_MATCH */
-#define FTS5_PLAN_SPECIAL        6       /* An internal query */
+#define FTS5_PLAN_SCAN           4       /* No usable constraint */
+#define FTS5_PLAN_ROWID          5       /* (rowid = ?) */
 
 /*
 ** Implementation of the xBestIndex method for FTS5 tables. Within the 
@@ -611,10 +604,11 @@ static int fts5StmtType(Fts5Cursor *pCsr){
 ** specific to the previous row stored by the cursor object.
 */
 static void fts5CsrNewrow(Fts5Cursor *pCsr){
-  CsrFlagSet(pCsr, FTS5CSR_REQUIRE_CONTENT | FTS5CSR_REQUIRE_DOCSIZE );
-  sqlite3_free(pCsr->aInst);
-  pCsr->aInst = 0;
-  pCsr->nInstCount = 0;
+  CsrFlagSet(pCsr, 
+      FTS5CSR_REQUIRE_CONTENT 
+    | FTS5CSR_REQUIRE_DOCSIZE 
+    | FTS5CSR_REQUIRE_INST 
+  );
 }
 
 /*
@@ -629,7 +623,7 @@ static int fts5CloseMethod(sqlite3_vtab_cursor *pCursor){
     Fts5Auxdata *pData;
     Fts5Auxdata *pNext;
 
-    fts5CsrNewrow(pCsr);
+    sqlite3_free(pCsr->aInst);
     if( pCsr->pStmt ){
       int eStmt = fts5StmtType(pCsr);
       sqlite3Fts5StorageStmtRelease(pTab->pStorage, eStmt, pCsr->pStmt);
@@ -762,41 +756,42 @@ static int fts5CursorReseek(Fts5Cursor *pCsr, int *pbSkip){
 */
 static int fts5NextMethod(sqlite3_vtab_cursor *pCursor){
   Fts5Cursor *pCsr = (Fts5Cursor*)pCursor;
-  int ePlan = pCsr->ePlan;
-  int bSkip = 0;
   int rc;
 
-  if( (rc = fts5CursorReseek(pCsr, &bSkip)) || bSkip ) return rc;
+  assert( (pCsr->ePlan<2)==
+          (pCsr->ePlan==FTS5_PLAN_MATCH || pCsr->ePlan==FTS5_PLAN_SOURCE) 
+  );
 
-  switch( ePlan ){
-    case FTS5_PLAN_MATCH:
-    case FTS5_PLAN_SOURCE:
-      rc = sqlite3Fts5ExprNext(pCsr->pExpr, pCsr->iLastRowid);
-      if( sqlite3Fts5ExprEof(pCsr->pExpr) ){
-        CsrFlagSet(pCsr, FTS5CSR_EOF);
-      }
-      fts5CsrNewrow(pCsr);
-      break;
-
-    case FTS5_PLAN_SPECIAL: {
+  if( pCsr->ePlan<2 ){
+    int bSkip = 0;
+    if( (rc = fts5CursorReseek(pCsr, &bSkip)) || bSkip ) return rc;
+    rc = sqlite3Fts5ExprNext(pCsr->pExpr, pCsr->iLastRowid);
+    if( sqlite3Fts5ExprEof(pCsr->pExpr) ){
       CsrFlagSet(pCsr, FTS5CSR_EOF);
-      break;
     }
-
-    case FTS5_PLAN_SORTED_MATCH: {
-      rc = fts5SorterNext(pCsr);
-      break;
-    }
-
-    default:
-      rc = sqlite3_step(pCsr->pStmt);
-      if( rc!=SQLITE_ROW ){
+    fts5CsrNewrow(pCsr);
+  }else{
+    switch( pCsr->ePlan ){
+      case FTS5_PLAN_SPECIAL: {
         CsrFlagSet(pCsr, FTS5CSR_EOF);
-        rc = sqlite3_reset(pCsr->pStmt);
-      }else{
-        rc = SQLITE_OK;
+        break;
       }
-      break;
+  
+      case FTS5_PLAN_SORTED_MATCH: {
+        rc = fts5SorterNext(pCsr);
+        break;
+      }
+  
+      default:
+        rc = sqlite3_step(pCsr->pStmt);
+        if( rc!=SQLITE_ROW ){
+          CsrFlagSet(pCsr, FTS5CSR_EOF);
+          rc = sqlite3_reset(pCsr->pStmt);
+        }else{
+          rc = SQLITE_OK;
+        }
+        break;
+    }
   }
   
   return rc;
@@ -1522,7 +1517,7 @@ static int fts5CsrPoslist(Fts5Cursor *pCsr, int iPhrase, const u8 **pa){
 */
 static int fts5CacheInstArray(Fts5Cursor *pCsr){
   int rc = SQLITE_OK;
-  if( pCsr->aInst==0 ){
+  if( CsrFlagTest(pCsr, FTS5CSR_REQUIRE_INST) ){
     Fts5PoslistReader *aIter;     /* One iterator for each phrase */
     int nIter;                    /* Number of iterators/phrases */
     int nByte;
@@ -1564,9 +1559,11 @@ static int fts5CacheInstArray(Fts5Cursor *pCsr){
         sqlite3Fts5PoslistReaderNext(&aIter[iBest]);
       }
 
+      sqlite3_free(pCsr->aInst);
       pCsr->aInst = (int*)buf.p;
       pCsr->nInstCount = nInst;
       sqlite3_free(aIter);
+      CsrFlagClear(pCsr, FTS5CSR_REQUIRE_INST);
     }
   }
   return rc;
@@ -2223,6 +2220,18 @@ static void fts5Fts5Func(
   sqlite3_result_blob(pCtx, buf, sizeof(pGlobal), SQLITE_TRANSIENT);
 }
 
+/*
+** Implementation of fts5_source_id() function.
+*/
+static void fts5SourceIdFunc(
+  sqlite3_context *pCtx,          /* Function call context */
+  int nArg,                       /* Number of args */
+  sqlite3_value **apVal           /* Function arguments */
+){
+  assert( nArg==0 );
+  sqlite3_result_text(pCtx, "--FTS5-SOURCE-ID--", -1, SQLITE_TRANSIENT);
+}
+
 #ifdef _WIN32
 __declspec(dllexport)
 #endif
@@ -2282,6 +2291,11 @@ int sqlite3_fts5_init(
     if( rc==SQLITE_OK ){
       rc = sqlite3_create_function(
           db, "fts5", 0, SQLITE_UTF8, p, fts5Fts5Func, 0, 0
+      );
+    }
+    if( rc==SQLITE_OK ){
+      rc = sqlite3_create_function(
+          db, "fts5_source_id", 0, SQLITE_UTF8, p, fts5SourceIdFunc, 0, 0
       );
     }
   }

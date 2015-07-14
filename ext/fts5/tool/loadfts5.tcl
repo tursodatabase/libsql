@@ -102,6 +102,7 @@ for {set i 0} {$i < $nOpt} {incr i} {
 set dbfile [lindex $argv end-1]
 if {$O(delete)} { file delete -force $dbfile }
 sqlite3 db $dbfile
+catch { load_static_extension db fts5 }
 db func loadfile loadfile
 
 db transaction {

@@ -380,7 +380,7 @@ proc do_isspace_test {tn tokenizer lCp} {
 }
 
 set tokenizers [list unicode61]
-ifcapable icu { lappend tokenizers icu }
+#ifcapable icu { lappend tokenizers icu }
 
 # Some tests to check that the tokenizers can both identify white-space 
 # codepoints. All codepoints tested below are of type "Zs" in the

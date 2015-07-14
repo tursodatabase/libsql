@@ -77,8 +77,6 @@ LIBOBJ += sqlite3session.o
 
 LIBOBJ += fts5.o
 
-
-
 # All of the source code files.
 #
 SRC = \
@@ -313,7 +311,8 @@ TESTSRC += \
   $(TOP)/ext/misc/totype.c \
   $(TOP)/ext/misc/wholenumber.c \
   $(TOP)/ext/misc/vfslog.c \
-  $(TOP)/ext/fts5/fts5_tcl.c 
+  $(TOP)/ext/fts5/fts5_tcl.c \
+  fts5.c
 
 
 #TESTSRC += $(TOP)/ext/fts2/fts2_tokenizer.c
@@ -666,18 +665,12 @@ fts5parse.c:	$(TOP)/ext/fts5/fts5parse.y lemon
 	cp $(TOP)/ext/fts5/fts5parse.y .
 	rm -f fts5parse.h
 	./lemon $(OPTS) fts5parse.y
-	mv fts5parse.c fts5parse.c.orig
-	cat fts5parse.c.orig | sed 's/yy/fts5yy/g' | sed 's/YY/fts5YY/g' \
-		| sed 's/TOKEN/FTS5TOKEN/g' >> fts5parse.c
 
 fts5parse.h: fts5parse.c
 
 fts5.c: $(FTS5_SRC)
 	tclsh $(TOP)/ext/fts5/tool/mkfts5c.tcl
-
-fts5.o:	fts5.c $(HDR) $(EXTHDR)
-	$(TCCX) -DSQLITE_CORE -c fts5.c
-
+	cp $(TOP)/ext/fts5/fts5.h .
 
 
 userauth.o:	$(TOP)/ext/userauth/userauth.c $(HDR) $(EXTHDR)
@@ -895,3 +888,4 @@ clean:
 	rm -f fuzzershell fuzzershell.exe
 	rm -f fuzzcheck fuzzcheck.exe
 	rm -f sqldiff sqldiff.exe
+	rm -f fts5.c fts5.h fts5parse.*
