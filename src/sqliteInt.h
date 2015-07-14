@@ -189,7 +189,7 @@
 ** Make sure that the compiler intrinsics we desire are enabled when
 ** compiling with an appropriate version of MSVC.
 */
-#if defined(_MSC_VER) && _MSC_VER>=1300
+#if defined(_MSC_VER) && _MSC_VER>=1300 && !defined(_WIN32_WCE)
 #  include <intrin.h>
 #  pragma intrinsic(_byteswap_ushort)
 #  pragma intrinsic(_byteswap_ulong)

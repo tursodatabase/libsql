@@ -1,5 +1,5 @@
-C Fix\ssome\sharmless\scompiler\swarnings.
-D 2015-07-14T17:18:05.834
+C Skip\strying\sto\sinclude\s'intrin.h'\swhen\scompiling\sfor\sWinCE\swith\sMSVC.
+D 2015-07-14T21:56:17.995
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2a4a94d9c6ad8cde388b672d89d1463e6f38a6da
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -332,7 +332,7 @@ F src/shell.c 8af3cced094aebb5f57a8ad739b9dafc7867eed7
 F src/sqlite.h.in 3d951bf985839de7fcf4d3f69568bb4df2641abe
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h be1a718b7d2ce40ceba725ae92c8eb5f18003066
-F src/sqliteInt.h d8d420d66a5c403b119696159b69f71cd53840ce
+F src/sqliteInt.h 61e6e8e6f37a665452f677f2d82f9c2c4cecdbd2
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c f266ad8a2892d659b74f0f50cb6a88b6e7c12179
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
@@ -1365,7 +1365,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 202479aa0a62067343e724487960b8a039e2e978
-R 2160d68c9d0127f66e3d6f1278c01344
+P 3de030c904d125ccf41fa1929646b8a002b5341b
+R 005ae2df59e13158535147c0afd5a97b
 U mistachkin
-Z a4e5a6ada18fe91bfc53e29cc79ebc33
+Z b7895c5a0dbe848b1ad5c81c9335730e
