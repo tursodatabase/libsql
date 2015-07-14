@@ -416,4 +416,3 @@ int sqlite3ota_create_vfs(const char *zName, const char *zParent);
 void sqlite3ota_destroy_vfs(const char *zName);
 
 #endif /* _SQLITE3OTA_H */
-
