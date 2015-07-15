@@ -1,5 +1,5 @@
-C Fix\ssome\sharmless\scompiler\swarnings.
-D 2015-07-15T18:35:54.200
+C Make\sthe\sdebugging\sline\snumbers\sin\sthe\samalgamation\smore\saccurate.
+D 2015-07-15T21:00:33.917
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6e8af213d49e6325bf283ebed7662254f8e15bda
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1329,8 +1329,8 @@ F tool/mkkeywordhash.c dfff09dbbfaf950e89af294f48f902181b144670
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkpragmatab.tcl 40c287d3f929ece67da6e9e7c49885789960accf
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
-F tool/mksqlite3c-noext.tcl 69bae8ce4aa52d2ff82d4a8a856bf283ec035b2e
-F tool/mksqlite3c.tcl d79e450048b0bbf04d53677e01c249a012981182
+F tool/mksqlite3c-noext.tcl 87240b09c20042999b41d5fabe091b7111287835
+F tool/mksqlite3c.tcl f29898d34f1dcd77ccc4e6fd7dcc2f9ebb54622f
 F tool/mksqlite3h.tcl 44730d586c9031638cdd2eb443b801c0d2dbd9f8
 F tool/mksqlite3internalh.tcl eb994013e833359137eb53a55acdad0b5ae1049b
 F tool/mkvsix.tcl 3b58b9398f91c7dbf18d49eb87cefeee9efdbce1
@@ -1365,7 +1365,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b522c95ddcd7046dca756f4d1a1e90c34dbcab64
-R 5ae06ee700ba79856dd8d83789b8e902
-U drh
-Z c7acc62193fe6f94b78724b3b176c9a0
+P 110cd84f5e842c4dcd9b9398cea211e25f36b3aa
+R 3027f3e188f09da4aed1352810f3e367
+U mistachkin
+Z f095bb94f35a2c2f2b8c78d0815b5cb4
