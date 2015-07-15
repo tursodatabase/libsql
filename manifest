@@ -1,5 +1,5 @@
-C Make\sthe\sdebugging\sline\snumbers\sin\sthe\samalgamation\smore\saccurate.
-D 2015-07-15T21:00:33.917
+C Enable\smemory-mapped\sI/O\son\sFreeBSD\sand\sDragonFly.
+D 2015-07-15T23:15:59.722
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6e8af213d49e6325bf283ebed7662254f8e15bda
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -332,7 +332,7 @@ F src/shell.c 8af3cced094aebb5f57a8ad739b9dafc7867eed7
 F src/sqlite.h.in 3d951bf985839de7fcf4d3f69568bb4df2641abe
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h be1a718b7d2ce40ceba725ae92c8eb5f18003066
-F src/sqliteInt.h 61e6e8e6f37a665452f677f2d82f9c2c4cecdbd2
+F src/sqliteInt.h c67d0a1368484dd156e7d13caa62862adc2ebefa
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c f266ad8a2892d659b74f0f50cb6a88b6e7c12179
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
@@ -1365,7 +1365,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 110cd84f5e842c4dcd9b9398cea211e25f36b3aa
-R 3027f3e188f09da4aed1352810f3e367
-U mistachkin
-Z f095bb94f35a2c2f2b8c78d0815b5cb4
+P 3b34e95ca85a6dd7d0766e43035a6cec4bc724a1
+R 16c8c817fa7a592f412bec571af44f5f
+U drh
+Z 22f6b41786e6e7d81e68671a3854bbda
