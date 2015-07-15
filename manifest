@@ -1,5 +1,5 @@
-C Amplify\sthe\scomment\son\srenderLogMsg()\sthat\sexplains\sthe\sproblems\sassociated\nwith\scalling\ssqlite3_log()\sfrom\sdeep\swithin\sthe\smemory\sallocator.
-D 2015-07-14T22:43:37.988
+C Fix\sthe\sfuzz3.test\sscript\sso\sthat\sit\sworks\swith\sthe\snew\sbulk\spagecache\nallocation\sfeature.
+D 2015-07-15T13:56:34.803
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6e8af213d49e6325bf283ebed7662254f8e15bda
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -732,7 +732,7 @@ F test/func5.test cdd224400bc3e48d891827cc913a57051a426fa4
 F test/fuzz-oss1.test 4912e528ec9cf2f42134456933659d371c9e0d74
 F test/fuzz.test 96083052bf5765e4518c1ba686ce2bab785670d1
 F test/fuzz2.test 76dc35b32b6d6f965259508508abce75a6c4d7e1
-F test/fuzz3.test efd384b896c647b61a2c1848ba70d42aad60a7b3
+F test/fuzz3.test 0d13010d1c13003a3aa57dda2f69b6b71ccac46e
 F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
 F test/fuzz_malloc.test 328f70aaca63adf29b4c6f06505ed0cf57ca7c26
 F test/fuzzcheck.c b973b06b500e6fc052d7059257cdf70df1f3a986
@@ -1365,7 +1365,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b53a95063cf6b8ee8cad77e9fff4c50a356c43bb
-R 26006e835c43647146db287bec9bd4c4
+P a73d7128fbca8dde5e90bd46ee915e39ae07dd1f
+R 1575b64aa232857a5cba2b7d0fa0d544
 U drh
-Z dc5623ac8940b300cc2e3eac0d79ceed
+Z 5196f1c48257576357ef4df004b3f923
