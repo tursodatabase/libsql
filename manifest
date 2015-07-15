@@ -1,5 +1,5 @@
-C Fix\sthe\sfuzz3.test\sscript\sso\sthat\sit\sworks\swith\sthe\snew\sbulk\spagecache\nallocation\sfeature.
-D 2015-07-15T13:56:34.803
+C Attempt\sto\sfix\sharmless\swarnings\sgenerated\sby\sGCC\sand\sClang\sruntime\sanalyzers.
+D 2015-07-15T18:04:48.790
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6e8af213d49e6325bf283ebed7662254f8e15bda
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -276,7 +276,7 @@ F src/build.c b3f15255d5b16e42dafeaa638fd4f8a47c94ed70
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
 F src/ctime.c 5a0b735dc95604766f5dac73973658eef782ee8b
-F src/date.c e4d50b3283696836ec1036b695ead9a19e37a5ac
+F src/date.c 8ec787fed4929d8ccdf6b1bc360fccc3e1d2ca58
 F src/dbstat.c f402e77e25089c6003d0c60b3233b9b3947d599a
 F src/delete.c 8857a6f27560718f65d43bdbec86c967ae1f8dfa
 F src/expr.c c5c58e4d01c7ceb2266791d8d877f1b23a88e316
@@ -337,7 +337,7 @@ F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c f266ad8a2892d659b74f0f50cb6a88b6e7c12179
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
 F src/tclsqlite.c 13b9c2aa725882de807377fa889682eff2a74114
-F src/test1.c e055ab594a48d25720ed31daa5eced1163544488
+F src/test1.c 375d7bd56d9f806095deb91a3dafe61bd0e367c8
 F src/test2.c 577961fe48961b2f2e5c8b56ee50c3f459d3359d
 F src/test3.c 64d2afdd68feac1bb5e2ffb8226c8c639f798622
 F src/test4.c d168f83cc78d02e8d35567bb5630e40dcd85ac1e
@@ -1365,7 +1365,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a73d7128fbca8dde5e90bd46ee915e39ae07dd1f
-R 1575b64aa232857a5cba2b7d0fa0d544
+P 829a2dbaf17413743b58ce0533d556031a14195a
+R 81af9970925c4f23f9b8c535565a4e96
 U drh
-Z 5196f1c48257576357ef4df004b3f923
+Z b330313b2eaf1b169130b9aad32db66a
