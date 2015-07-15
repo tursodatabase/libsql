@@ -17,7 +17,7 @@
 
 #include "fts5Int.h"
 
-#define FTS5_DEFAULT_PAGE_SIZE   1000
+#define FTS5_DEFAULT_PAGE_SIZE   4050
 #define FTS5_DEFAULT_AUTOMERGE      4
 #define FTS5_DEFAULT_CRISISMERGE   16
 

@@ -27,6 +27,7 @@ do_execsql_test 1.0 {
 } {
   t1 {CREATE VIRTUAL TABLE t1 USING fts5(a, b, c)}
   t1_data {CREATE TABLE 't1_data'(id INTEGER PRIMARY KEY, block BLOB)}
+  t1_idx {CREATE TABLE 't1_idx'(segid, term, pgno, dlidx, PRIMARY KEY(segid, term)) WITHOUT ROWID}
   t1_content {CREATE TABLE 't1_content'(id INTEGER PRIMARY KEY, c0, c1, c2)}
   t1_docsize {CREATE TABLE 't1_docsize'(id INTEGER PRIMARY KEY, sz BLOB)}
   t1_config {CREATE TABLE 't1_config'(k PRIMARY KEY, v) WITHOUT ROWID}
@@ -47,9 +48,10 @@ do_execsql_test 2.0 {
 do_execsql_test 2.1 {
   INSERT INTO t1 VALUES('a b c', 'd e f');
 }
+
 do_test 2.2 {
   execsql { SELECT fts5_decode(id, block) FROM t1_data WHERE id==10 }
-} {/{\(structure\) {lvl=0 nMerge=0 nSeg=1 {id=[0123456789]* h=1 leaves=1..1}}}/}
+} {/{\(structure\) {lvl=0 nMerge=0 nSeg=1 {id=[0123456789]* h=0 leaves=1..1}}}/}
 
 foreach w {a b c d e f} {
   do_execsql_test 2.3.$w.asc {
