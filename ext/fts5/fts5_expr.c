@@ -83,7 +83,7 @@ struct Fts5ExprPhrase {
   Fts5ExprNode *pNode;            /* FTS5_STRING node this phrase is part of */
   Fts5Buffer poslist;             /* Current position list */
   int nTerm;                      /* Number of entries in aTerm[] */
-  Fts5ExprTerm aTerm[0];          /* Terms that make up this phrase */
+  Fts5ExprTerm aTerm[1];          /* Terms that make up this phrase */
 };
 
 /*
@@ -104,7 +104,7 @@ struct Fts5ExprNearset {
   int nNear;                      /* NEAR parameter */
   Fts5ExprColset *pColset;        /* Columns to search (NULL -> all columns) */
   int nPhrase;                    /* Number of entries in aPhrase[] array */
-  Fts5ExprPhrase *apPhrase[0];    /* Array of phrase pointers */
+  Fts5ExprPhrase *apPhrase[1];    /* Array of phrase pointers */
 };
 
 
