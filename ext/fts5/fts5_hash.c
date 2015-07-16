@@ -66,8 +66,15 @@ struct Fts5HashEntry {
   int iCol;                       /* Column of last value written */
   int iPos;                       /* Position of last value written */
   i64 iRowid;                     /* Rowid of last value written */
-  char zKey[0];                   /* Nul-terminated entry key */
+  char zKey[8];                   /* Nul-terminated entry key */
 };
+
+/*
+** Size of Fts5HashEntry without the zKey[] array.
+*/
+#define FTS5_HASHENTRYSIZE (sizeof(Fts5HashEntry)-8)
+
+
 
 /*
 ** Allocate a new hash table.
@@ -220,7 +227,7 @@ int sqlite3Fts5HashWrite(
 
   /* If an existing hash entry cannot be found, create a new one. */
   if( p==0 ){
-    int nByte = sizeof(Fts5HashEntry) + (nToken+1) + 1 + 64;
+    int nByte = FTS5_HASHENTRYSIZE + (nToken+1) + 1 + 64;
     if( nByte<128 ) nByte = 128;
 
     if( (pHash->nEntry*2)>=pHash->nSlot ){
@@ -231,13 +238,13 @@ int sqlite3Fts5HashWrite(
 
     p = (Fts5HashEntry*)sqlite3_malloc(nByte);
     if( !p ) return SQLITE_NOMEM;
-    memset(p, 0, sizeof(Fts5HashEntry));
+    memset(p, 0, FTS5_HASHENTRYSIZE);
     p->nAlloc = nByte;
     p->zKey[0] = bByte;
     memcpy(&p->zKey[1], pToken, nToken);
     assert( iHash==fts5HashKey(pHash->nSlot, p->zKey, nToken+1) );
     p->zKey[nToken+1] = '\0';
-    p->nData = nToken+1 + 1 + sizeof(Fts5HashEntry);
+    p->nData = nToken+1 + 1 + FTS5_HASHENTRYSIZE;
     p->nData += sqlite3Fts5PutVarint(&((u8*)p)[p->nData], iRowid);
     p->iSzPoslist = p->nData;
     p->nData += 1;
@@ -417,7 +424,7 @@ int sqlite3Fts5HashQuery(
   if( p ){
     fts5HashAddPoslistSize(p);
     *ppDoclist = (const u8*)&p->zKey[nTerm+1];
-    *pnDoclist = p->nData - (sizeof(*p) + nTerm + 1);
+    *pnDoclist = p->nData - (FTS5_HASHENTRYSIZE + nTerm + 1);
   }else{
     *ppDoclist = 0;
     *pnDoclist = 0;
@@ -454,7 +461,7 @@ void sqlite3Fts5HashScanEntry(
     fts5HashAddPoslistSize(p);
     *pzTerm = p->zKey;
     *ppDoclist = (const u8*)&p->zKey[nTerm+1];
-    *pnDoclist = p->nData - (sizeof(*p) + nTerm + 1);
+    *pnDoclist = p->nData - (FTS5_HASHENTRYSIZE + nTerm + 1);
   }else{
     *pzTerm = 0;
     *ppDoclist = 0;

@@ -1082,7 +1082,6 @@ static KeyInfo *keyInfoFromExprList(
   return pInfo;
 }
 
-#ifndef SQLITE_OMIT_COMPOUND_SELECT
 /*
 ** Name of the connection operator, used for error messages.
 */
@@ -1096,7 +1095,6 @@ static const char *selectOpName(int id){
   }
   return z;
 }
-#endif /* SQLITE_OMIT_COMPOUND_SELECT */
 
 #ifndef SQLITE_OMIT_EXPLAIN
 /*
@@ -2100,19 +2098,6 @@ static int multiSelectOrderBy(
 );
 
 /*
-** Error message for when two or more terms of a compound select have different
-** size result sets.
-*/
-void sqlite3SelectWrongNumTermsError(Parse *pParse, Select *p){
-  if( p->selFlags & SF_Values ){
-    sqlite3ErrorMsg(pParse, "all VALUES must have the same number of terms");
-  }else{
-    sqlite3ErrorMsg(pParse, "SELECTs to the left and right of %s"
-      " do not have the same number of result columns", selectOpName(p->op));
-  }
-}
-
-/*
 ** Handle the special case of a compound-select that originates from a
 ** VALUES clause.  By handling this as a special case, we avoid deep
 ** recursion, and thus do not need to enforce the SQLITE_LIMIT_COMPOUND_SELECT
@@ -2537,6 +2522,19 @@ multi_select_end:
   return rc;
 }
 #endif /* SQLITE_OMIT_COMPOUND_SELECT */
+
+/*
+** Error message for when two or more terms of a compound select have different
+** size result sets.
+*/
+void sqlite3SelectWrongNumTermsError(Parse *pParse, Select *p){
+  if( p->selFlags & SF_Values ){
+    sqlite3ErrorMsg(pParse, "all VALUES must have the same number of terms");
+  }else{
+    sqlite3ErrorMsg(pParse, "SELECTs to the left and right of %s"
+      " do not have the same number of result columns", selectOpName(p->op));
+  }
+}
 
 /*
 ** Code an output subroutine for a coroutine implementation of a

@@ -145,7 +145,7 @@ struct Fts5Sorter {
   i64 iRowid;                     /* Current rowid */
   const u8 *aPoslist;             /* Position lists for current row */
   int nIdx;                       /* Number of entries in aIdx[] */
-  int aIdx[0];                    /* Offsets into aPoslist for current row */
+  int aIdx[1];                    /* Offsets into aPoslist for current row */
 };
 
 
@@ -808,7 +808,7 @@ static int fts5CursorFirstSorted(Fts5Table *pTab, Fts5Cursor *pCsr, int bDesc){
   const char *zRankArgs = pCsr->zRankArgs;
   
   nPhrase = sqlite3Fts5ExprPhraseCount(pCsr->pExpr);
-  nByte = sizeof(Fts5Sorter) + sizeof(int) * nPhrase;
+  nByte = sizeof(Fts5Sorter) + sizeof(int) * (nPhrase-1);
   pSorter = (Fts5Sorter*)sqlite3_malloc(nByte);
   if( pSorter==0 ) return SQLITE_NOMEM;
   memset(pSorter, 0, nByte);
