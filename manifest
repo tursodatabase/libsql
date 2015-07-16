@@ -1,5 +1,5 @@
-C Enable\smemory-mapped\sI/O\son\sFreeBSD\sand\sDragonFly.
-D 2015-07-15T23:15:59.722
+C Fix\scompilation\sissues\swith\sSQLITE_OMIT_COMPOUND_SELECT\sdefined.
+D 2015-07-16T17:29:27.953
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6e8af213d49e6325bf283ebed7662254f8e15bda
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -327,7 +327,7 @@ F src/printf.c 2bc439ff20a4aad0e0ad50a37a67b5eae7d20edc
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 2d47554370de8de6dd5be060cef9559eec315005
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c d3c04f01549317afbe02455c4ca9465100e9c5fe
+F src/select.c 57ef3d98c4400b93eea318813be41b2af2da2217
 F src/shell.c 8af3cced094aebb5f57a8ad739b9dafc7867eed7
 F src/sqlite.h.in 3d951bf985839de7fcf4d3f69568bb4df2641abe
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
@@ -1365,7 +1365,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3b34e95ca85a6dd7d0766e43035a6cec4bc724a1
-R 16c8c817fa7a592f412bec571af44f5f
-U drh
-Z 22f6b41786e6e7d81e68671a3854bbda
+P 2cdd647951ff5dca53576bb8be6dd6310a557571
+R 2352a36372e4c50dccbac9452cf765fb
+U mistachkin
+Z ddf00ea17d7e53d080e6ac931c2ced93
