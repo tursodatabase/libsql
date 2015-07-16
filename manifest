@@ -1,5 +1,5 @@
-C Fix\scompilation\sissues\swith\sSQLITE_OMIT_COMPOUND_SELECT\sdefined.
-D 2015-07-16T17:29:27.953
+C Defer\sthe\sbulk\spcache1\smemory\sallocation\suntil\sthe\sfirst\spage\sallocation\nrequest.\s\sLimit\sthe\ssize\sof\sthe\spcache1\sbulk\sallocation\sto\sthe\scache_size\nsetting.\s\sDeallocate\sthe\sbulk\sallocation\son\sa\ssqlite3_db_release_memory()\nrequest,\sif\sthe\sbulk\sallocation\sis\scompletely\sunused.
+D 2015-07-16T18:18:19.580
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6e8af213d49e6325bf283ebed7662254f8e15bda
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -319,9 +319,9 @@ F src/pager.h 6d435f563b3f7fcae4b84433b76a6ac2730036e2
 F src/parse.y 6d60dda8f8d418b6dc034f1fbccd816c459983a8
 F src/pcache.c cde06aa50962595e412d497e22fd2e07878ba1f0
 F src/pcache.h 9968603796240cdf83da7e7bef76edf90619cea9
-F src/pcache1.c 3f4c87cf913f2de8189026d9a5223ddaf55eaf6b
-F src/pragma.c c1f4d012ea9f6b1ce52d341b2cd0ad72d560afd7
-F src/pragma.h b8632d7cdda7b25323fa580e3e558a4f0d4502cc
+F src/pcache1.c 6c1e5957087b74e7e7cff871561849cf2fe09654
+F src/pragma.c e52084b37a08a88f258830518461e94627af2621
+F src/pragma.h 631a91c8b0e6ca8f051a1d8a4a0da4150e04620a
 F src/prepare.c 82e5db1013846a819f198336fed72c44c974e7b1
 F src/printf.c 2bc439ff20a4aad0e0ad50a37a67b5eae7d20edc
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
@@ -823,7 +823,7 @@ F test/make-where7.tcl 05c16b5d4f5d6512881dfec560cb793915932ef9
 F test/malloc.test 21c213365f2cca95ab2d7dc078dc8525f96065f8
 F test/malloc3.test e3b32c724b5a124b57cb0ed177f675249ad0c66a
 F test/malloc4.test 957337613002b7058a85116493a262f679f3a261
-F test/malloc5.test e9a9116f80ab6b7a9ca258876c6f3dedb08cb08b
+F test/malloc5.test 21f6552bacb9efe649e6ba10a52f2cedaecce242
 F test/malloc6.test 2f039d9821927eacae43e1831f815e157659a151
 F test/malloc7.test 7c68a32942858bc715284856c5507446bba88c3a
 F test/malloc8.test 9b7a3f8cb9cf0b12fff566e80a980b1767bd961d
@@ -900,8 +900,8 @@ F test/pagerfault2.test caf4c7facb914fd3b03a17b31ae2b180c8d6ca1f
 F test/pagerfault3.test 1003fcda009bf48a8e22a516e193b6ef0dd1bbd8
 F test/pageropt.test 6b8f6a123a5572c195ad4ae40f2987007923bbd6
 F test/pagesize.test 5769fc62d8c890a83a503f67d47508dfdc543305
-F test/pcache.test b09104b03160aca0d968d99e8cd2c5b1921a993d
-F test/pcache2.test ec3ae192f444ee6a0a80d1fd80d99695d884bfb3
+F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
+F test/pcache2.test c70d92547550136ba6f818e6a44fe246d2738604
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
 F test/permutations.test 6a88fd9ca15b804e9c20990773262ca67494058f
 F test/pragma.test be7195f0aa72bdb8a512133e9640ac40f15b57a2
@@ -1327,7 +1327,7 @@ F tool/logest.c eef612f8adf4d0993dafed0416064cf50d5d33c6
 F tool/mkautoconfamal.sh d1a2da0e15b2ed33d60af35c7e9d483f13a8eb9f
 F tool/mkkeywordhash.c dfff09dbbfaf950e89af294f48f902181b144670
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
-F tool/mkpragmatab.tcl 40c287d3f929ece67da6e9e7c49885789960accf
+F tool/mkpragmatab.tcl 84af2b180484323a2ea22a2279e8bd9e3e1e492e
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 87240b09c20042999b41d5fabe091b7111287835
 F tool/mksqlite3c.tcl f29898d34f1dcd77ccc4e6fd7dcc2f9ebb54622f
@@ -1365,7 +1365,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2cdd647951ff5dca53576bb8be6dd6310a557571
-R 2352a36372e4c50dccbac9452cf765fb
-U mistachkin
-Z ddf00ea17d7e53d080e6ac931c2ced93
+P 9c39d4644530ccc532f4ff26464106c6da43269a
+R 09036069f4d0dade4c9d3cbed758be18
+U drh
+Z 38e6769945da8f33e2e2b46c42a73ce6
