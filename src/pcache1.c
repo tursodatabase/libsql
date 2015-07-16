@@ -265,18 +265,18 @@ void sqlite3PCacheBufferSetup(void *pBuf, int sz, int n){
 ** true if pCache->pFree ends up containing one or more free pages.
 */
 static int pcache1InitBulk(PCache1 *pCache){
-  int szBulk;
+  i64 szBulk;
   char *zBulk;
   if( pcache1.nInitPage==0 ) return 0;
   /* Do not bother with a bulk allocation if the cache size very small */
   if( pCache->nMax<3 ) return 0;
   sqlite3BeginBenignMalloc();
   if( pcache1.nInitPage>0 ){
-    szBulk = pCache->szAlloc * pcache1.nInitPage;
+    szBulk = pCache->szAlloc * (i64)pcache1.nInitPage;
   }else{
-    szBulk = -1024*pcache1.nInitPage;
+    szBulk = -1024 * (i64)pcache1.nInitPage;
   }
-  if( szBulk > pCache->szAlloc*pCache->nMax ){
+  if( szBulk > pCache->szAlloc*(i64)pCache->nMax ){
     szBulk = pCache->szAlloc*pCache->nMax;
   }
   zBulk = pCache->pBulk = sqlite3Malloc( szBulk );
