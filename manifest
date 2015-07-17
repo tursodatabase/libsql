@@ -1,5 +1,5 @@
-C Avoid\sa\sharmless\scompiler\swarning.
-D 2015-07-17T01:16:10.825
+C More\sadjustments\sto\sthe\smalloc5.test\smodule\sso\sthat\sit\sworks\scorrectly\swith\nthe\snew\spcache1\sbulk\sallocation.
+D 2015-07-17T12:42:53.567
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6e8af213d49e6325bf283ebed7662254f8e15bda
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -823,7 +823,7 @@ F test/make-where7.tcl 05c16b5d4f5d6512881dfec560cb793915932ef9
 F test/malloc.test 21c213365f2cca95ab2d7dc078dc8525f96065f8
 F test/malloc3.test e3b32c724b5a124b57cb0ed177f675249ad0c66a
 F test/malloc4.test 957337613002b7058a85116493a262f679f3a261
-F test/malloc5.test 21f6552bacb9efe649e6ba10a52f2cedaecce242
+F test/malloc5.test 4e87e596a28908c034eb5777fc33dd921bb44fc3
 F test/malloc6.test 2f039d9821927eacae43e1831f815e157659a151
 F test/malloc7.test 7c68a32942858bc715284856c5507446bba88c3a
 F test/malloc8.test 9b7a3f8cb9cf0b12fff566e80a980b1767bd961d
@@ -1365,7 +1365,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e9bf275cd969eca6fb41384d3637528d6a19f819
-R 12f173b5d59b5ca59e2ddd738e75f068
+P 2288842b8f191ff05a157db7f77af867bfa83c4f
+R b4855de59061718601ad3bfe72c98bbc
 U drh
-Z b458ca27129248b1d38d912e023bd41c
+Z 238f0465cd3dec3d05c76c19fe6e7116

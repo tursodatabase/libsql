@@ -20,6 +20,11 @@
 #
 # $Id: malloc5.test,v 1.22 2009/04/11 19:09:54 drh Exp $
 
+sqlite3_shutdown
+sqlite3_config_pagecache 0 100
+sqlite3_initialize
+autoinstall_test_functions
+
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 source $testdir/malloc_common.tcl
