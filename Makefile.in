@@ -1192,7 +1192,7 @@ clean:
 	rm -f fts5.* fts5parse.*
 
 distclean:	clean
-	rm -f config.log config.status libtool Makefile sqlite3.pc
+	rm -f config.h config.log config.status libtool Makefile sqlite3.pc
 
 #
 # Windows section

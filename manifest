@@ -1,7 +1,7 @@
-C More\sadjustments\sto\sthe\smalloc5.test\smodule\sso\sthat\sit\sworks\scorrectly\swith\nthe\snew\spcache1\sbulk\sallocation.
-D 2015-07-17T12:42:53.567
+C Cleanup\sthe\s'config.h'\sfile\sin\sthe\sappropriate\sdistclean\stargets.
+D 2015-07-19T19:53:23.061
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in 6e8af213d49e6325bf283ebed7662254f8e15bda
+F Makefile.in 6b439e21d6dabede337772b85959340d37bb17bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc efafcbf2be203b61dc7b6301703544753c513cb2
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
@@ -23,7 +23,7 @@ F autoconf/depcomp 0b26f101e3bc9fd1ff0be1da9fb4a82371142f92 x
 F autoconf/install-sh 06ee6336e63bb845c8439d777c32eb2eccc4fbf1 x
 F autoconf/ltmain.sh 7a658a24028f02331c1d2446562758083c5eadd1
 F autoconf/missing d7c9981a81af13370d4ed152b24c0a82b7028585 x
-F autoconf/tea/Makefile.in d55bcc63832caf0309c2ff80358756116618cfca
+F autoconf/tea/Makefile.in b438a7020446c8a8156e8d97c8914a04833da6fd
 F autoconf/tea/README 3e9a3c060f29a44344ab50aec506f4db903fb873
 F autoconf/tea/aclocal.m4 52c47aac44ce0ddb1f918b6993e8beb8eee88f43
 F autoconf/tea/configure.ac 93d43c79e936fb16556e22498177d7e8571efa04
@@ -1365,7 +1365,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2288842b8f191ff05a157db7f77af867bfa83c4f
-R b4855de59061718601ad3bfe72c98bbc
-U drh
-Z 238f0465cd3dec3d05c76c19fe6e7116
+P 2a7b3a440f74019f154496b2f95aa852a46e04fc
+R 9ac1abb764f2df34d280651c8f2240d5
+U mistachkin
+Z d4dbff2c0caaf5449789190171f9545d
