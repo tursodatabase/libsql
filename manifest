@@ -1,5 +1,5 @@
-C Cleanup\sthe\s'config.h'\sfile\sin\sthe\sappropriate\sdistclean\stargets.
-D 2015-07-19T19:53:23.061
+C Fix\sharmless\scompiler\swarning\sin\sMSVC\s2015.
+D 2015-07-21T19:22:35.266
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6b439e21d6dabede337772b85959340d37bb17bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -401,7 +401,7 @@ F src/vdbesort.c f5009e7a35e3065635d8918b9a31f498a499976b
 F src/vdbetrace.c 8befe829faff6d9e6f6e4dee5a7d3f85cc85f1a0
 F src/vtab.c 082b35a25a26e3d36f365ca8cd73c1922532f05e
 F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
-F src/wal.c 590e85f3b24e8ed2f3263abd1f69f219a1f15ad2
+F src/wal.c 6fb6b68969e4692593c2552c4e7bff5882de2cb8
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
 F src/where.c 909eba3b6db984eb2adfbca9de2c237ee7056adb
@@ -1365,7 +1365,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2a7b3a440f74019f154496b2f95aa852a46e04fc
-R 9ac1abb764f2df34d280651c8f2240d5
+P e0a9978077a1b4e5988681438e4efff93920e574
+R cbf3f19f824b2b3f6f21c8e30bb2d4e0
 U mistachkin
-Z d4dbff2c0caaf5449789190171f9545d
+Z 106701e31e609f92431b2c0ad60fc867
