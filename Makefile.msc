@@ -1020,8 +1020,8 @@ SRC4 = \
   $(TOP)\ext\rtree\rtree.c \
   $(TOP)\ext\session\sqlite3session.h \
   $(TOP)\ext\session\sqlite3session.c \
-  $(TOP)\ext\ota\sqlite3ota.h \
-  $(TOP)\ext\ota\sqlite3ota.c
+  $(TOP)\ext\rbu\sqlite3rbu.h \
+  $(TOP)\ext\rbu\sqlite3rbu.c
 
 
 # Generated source code files
@@ -1083,7 +1083,7 @@ TESTSRC = \
   $(TOP)\ext\fts3\fts3_term.c \
   $(TOP)\ext\fts3\fts3_test.c \
   $(TOP)\ext\session\test_session.c \
-  $(TOP)\ext\ota\test_ota.c
+  $(TOP)\ext\rbu\test_rbu.c
 
 # Statically linked extensions
 #
@@ -1866,7 +1866,7 @@ clean:
 	del /Q sqlite3_analyzer.exe sqlite3_analyzer.c 2>NUL
 	del /Q sqlite-*-output.vsix 2>NUL
 	del /Q fuzzershell.exe fuzzcheck.exe sqldiff.exe 2>NUL
-	del /Q fts5.c fts5.h fts5parse.* 2>NUL
+	del /Q fts5.* fts5parse.* 2>NUL
 
 # Dynamic link library section.
 #

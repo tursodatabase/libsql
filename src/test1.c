@@ -274,6 +274,9 @@ static int clang_sanitize_address(
   res = 1;
 # endif
 #endif
+#ifdef __SANITIZE_ADDRESS__
+  res = 1;
+#endif
   if( res==0 && getenv("OMIT_MISUSE")!=0 ) res = 1;
   Tcl_SetObjResult(interp, Tcl_NewIntObj(res));
   return TCL_OK;

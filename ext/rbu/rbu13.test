@@ -9,8 +9,8 @@
 #
 #***********************************************************************
 #
-# Test an OTA update that features lots of different ota_control strings
-# for UPDATE statements. This tests OTA's internal UPDATE statement cache.
+# Test an RBU update that features lots of different rbu_control strings
+# for UPDATE statements. This tests RBU's internal UPDATE statement cache.
 #
 
 if {![info exists testdir]} {
@@ -18,7 +18,7 @@ if {![info exists testdir]} {
 }
 source $testdir/tester.tcl
 source $testdir/lock_common.tcl
-set ::testprefix ota13
+set ::testprefix rbu13
 
 do_execsql_test 1.0 {
   CREATE TABLE t1(a PRIMARY KEY, b, c, d, e, f, g, h);
@@ -26,10 +26,10 @@ do_execsql_test 1.0 {
   INSERT INTO t1 SELECT i, 0, 0, 0, 0, 0, 0, 0 FROM ii;
 }
 
-forcedelete ota.db
+forcedelete rbu.db
 do_execsql_test 1.1 {
-  ATTACH 'ota.db' AS ota;
-  CREATE TABLE ota.data_t1(a, b, c, d, e, f, g, h, ota_control);
+  ATTACH 'rbu.db' AS rbu;
+  CREATE TABLE rbu.data_t1(a, b, c, d, e, f, g, h, rbu_control);
 }
 
 do_test 1.2 {
@@ -47,12 +47,12 @@ do_test 1.2 {
 } {}
 
 do_test 1.3 {
-  sqlite3ota ota test.db ota.db
+  sqlite3rbu rbu test.db rbu.db
   while 1 {
-    set rc [ota step]
+    set rc [rbu step]
     if {$rc!="SQLITE_OK"} break
   }
-  ota close
+  rbu close
 } {SQLITE_DONE}
 
 do_execsql_test 1.4 {

@@ -351,8 +351,8 @@ SRC += \
   $(TOP)/ext/session/sqlite3session.c \
   $(TOP)/ext/session/sqlite3session.h
 SRC += \
-  $(TOP)/ext/ota/sqlite3ota.h \
-  $(TOP)/ext/ota/sqlite3ota.c
+  $(TOP)/ext/rbu/sqlite3rbu.h \
+  $(TOP)/ext/rbu/sqlite3rbu.c
 
 # Generated source code files
 #
@@ -410,7 +410,7 @@ TESTSRC = \
   $(TOP)/ext/fts3/fts3_term.c \
   $(TOP)/ext/fts3/fts3_test.c  \
   $(TOP)/ext/session/test_session.c \
-  $(TOP)/ext/ota/test_ota.c 
+  $(TOP)/ext/rbu/test_rbu.c 
 
 # Statically linked extensions
 #
@@ -1203,10 +1203,10 @@ clean:
 	rm -f fuzzershell fuzzershell.exe
 	rm -f fuzzcheck fuzzcheck.exe
 	rm -f sqldiff sqldiff.exe
-	rm -f fts5.c fts5.h fts5parse.*
+	rm -f fts5.* fts5parse.*
 
 distclean:	clean
-	rm -f config.log config.status libtool Makefile sqlite3.pc
+	rm -f config.h config.log config.status libtool Makefile sqlite3.pc
 
 #
 # Windows section

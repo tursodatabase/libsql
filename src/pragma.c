@@ -721,6 +721,7 @@ void sqlite3Pragma(
   case PragTyp_CACHE_SIZE: {
     assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
     if( !zRight ){
+      if( sqlite3ReadSchema(pParse) ) goto pragma_out;
       returnSingleInt(pParse, "cache_size", pDb->pSchema->cache_size);
     }else{
       int size = sqlite3Atoi(zRight);

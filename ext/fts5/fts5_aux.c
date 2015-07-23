@@ -255,7 +255,7 @@ static void fts5SnippetFunction(
   int iCol;                       /* 1st argument to snippet() */
   const char *zEllips;            /* 4th argument to snippet() */
   int nToken;                     /* 5th argument to snippet() */
-  int nInst;                      /* Number of instance matches this row */
+  int nInst = 0;                  /* Number of instance matches this row */
   int i;                          /* Used to iterate through instances */
   int nPhrase;                    /* Number of phrases in query */
   unsigned char *aSeen;           /* Array of "seen instance" flags */
@@ -263,7 +263,7 @@ static void fts5SnippetFunction(
   int iBestStart = 0;             /* First token of best snippet */
   int iBestLast;                  /* Last token of best snippet */
   int nBestScore = 0;             /* Score of best snippet */
-  int nColSize;                   /* Total size of iBestCol in tokens */
+  int nColSize = 0;               /* Total size of iBestCol in tokens */
 
   if( nVal!=5 ){
     const char *zErr = "wrong number of arguments to function snippet()";
@@ -407,8 +407,8 @@ static int fts5Bm25GetData(
   p = pApi->xGetAuxdata(pFts, 0);
   if( p==0 ){
     int nPhrase;                  /* Number of phrases in query */
-    sqlite3_int64 nRow;           /* Number of rows in table */
-    sqlite3_int64 nToken;         /* Number of tokens in table */
+    sqlite3_int64 nRow = 0;       /* Number of rows in table */
+    sqlite3_int64 nToken = 0;     /* Number of tokens in table */
     int nByte;                    /* Bytes of space to allocate */
     int i;
 
@@ -481,9 +481,9 @@ static void fts5Bm25Function(
   double score = 0.0;             /* SQL function return value */
   Fts5Bm25Data *pData;            /* Values allocated/calculated once only */
   int i;                          /* Iterator variable */
-  int nInst;                      /* Value returned by xInstCount() */
-  double D;                       /* Total number of tokens in row */
-  double *aFreq;                  /* Array of phrase freq. for current row */
+  int nInst = 0;                  /* Value returned by xInstCount() */
+  double D = 0.0;                 /* Total number of tokens in row */
+  double *aFreq = 0;              /* Array of phrase freq. for current row */
 
   /* Calculate the phrase frequency (symbol "f(qi,D)" in the documentation)
   ** for each phrase in the query for the current row. */

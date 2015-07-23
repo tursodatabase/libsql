@@ -15,33 +15,33 @@ if {![info exists testdir]} {
 }
 source $testdir/tester.tcl
 source $testdir/malloc_common.tcl
-set ::testprefix otafault2
+set ::testprefix rbufault2
 
-forcedelete ota.db
+forcedelete rbu.db
 do_execsql_test 1.0 {
   CREATE TABLE target(x UNIQUE, y, z, PRIMARY KEY(y));
   INSERT INTO target VALUES(1, 2, 3);
   INSERT INTO target VALUES(4, 5, 6);
 
-  ATTACH 'ota.db' AS ota;
-  CREATE TABLE ota.data_target(x, y, z, ota_control);
+  ATTACH 'rbu.db' AS rbu;
+  CREATE TABLE rbu.data_target(x, y, z, rbu_control);
   INSERT INTO data_target VALUES(7, 8, 9, 0);
   INSERT INTO data_target VALUES(1, 11, 12, 0);
-  DETACH ota;
+  DETACH rbu;
 }
 db close
 
 forcecopy test.db test.db-bak 
-forcecopy ota.db ota.db-bak 
+forcecopy rbu.db rbu.db-bak 
 
 do_faultsim_test 1 -faults oom* -prep {
   forcecopy test.db-bak test.db
-  forcecopy ota.db-bak ota.db
-  forcedelete test.db-oal test.db-wal ota.db-journal
-  sqlite3ota ota test.db ota.db
+  forcecopy rbu.db-bak rbu.db
+  forcedelete test.db-oal test.db-wal rbu.db-journal
+  sqlite3rbu rbu test.db rbu.db
 } -body {
-  while {[ota step]=="SQLITE_OK"} { }
-  ota close
+  while {[rbu step]=="SQLITE_OK"} { }
+  rbu close
 } -test {
   faultsim_test_result      \
       {1 {SQLITE_CONSTRAINT - UNIQUE constraint failed: target.x}} \

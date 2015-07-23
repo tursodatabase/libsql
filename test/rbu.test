@@ -5,14 +5,13 @@
 #    May you share freely, never taking more than you give.
 #
 #***********************************************************************
-# This file runs all rtree related tests.
+# This file runs all RBU related tests.
 #
 
 set testdir [file dirname $argv0]
 source $testdir/permutations.test
 
-ifcapable !ota { finish_test ; return }
+ifcapable !rbu { finish_test ; return }
 
-run_test_suite ota
+run_test_suite rbu
 finish_test
-

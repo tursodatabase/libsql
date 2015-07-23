@@ -14,17 +14,17 @@ if {![info exists testdir]} {
   set testdir [file join [file dirname [info script]] .. .. test]
 }
 source $testdir/tester.tcl
-set ::testprefix ota11
+set ::testprefix rbu11
 
 
 #--------------------------------------------------------------------
-# Test that the xAccess() method of an ota vfs handles queries other
+# Test that the xAccess() method of an rbu vfs handles queries other
 # than SQLITE_ACCESS_EXISTS correctly. The test code below causes
 # SQLite to call xAccess(SQLITE_ACCESS_READWRITE) on the directory
 # path argument passed to "PRAGMA temp_store_directory".
 #
 do_test 1.1 {
-  sqlite3ota_create_vfs -default ota ""
+  sqlite3rbu_create_vfs -default rbu ""
   reset_db
   catchsql { PRAGMA temp_store_directory = '/no/such/directory' }
 } {1 {not a writable directory}}
@@ -39,11 +39,11 @@ do_test 1.3 {
 
 do_test 1.4 {
   db close
-  sqlite3ota_destroy_vfs ota
+  sqlite3rbu_destroy_vfs rbu
 } {}
 
 #--------------------------------------------------------------------
-# Try to trick ota into operating on a database opened in wal mode.
+# Try to trick rbu into operating on a database opened in wal mode.
 #
 reset_db
 do_execsql_test 2.1 {
@@ -57,10 +57,10 @@ do_test 2.2 {
   db_save 
   db close
 
-  forcedelete ota.db
-  sqlite3 dbo ota.db
+  forcedelete rbu.db
+  sqlite3 dbo rbu.db
   dbo eval {
-    CREATE TABLE data_t1(a, b, c, ota_control);
+    CREATE TABLE data_t1(a, b, c, rbu_control);
     INSERT INTO data_t1 VALUES(4, 5, 6, 0);
     INSERT INTO data_t1 VALUES(7, 8, 9, 0);
   }
@@ -72,12 +72,12 @@ do_test 2.2 {
 } {1}
 
 do_test 2.3 {
-  sqlite3ota ota test.db ota.db
-  ota step
+  sqlite3rbu rbu test.db rbu.db
+  rbu step
 } {SQLITE_ERROR}
 
 do_test 2.4 {
-  list [catch {ota close} msg] $msg
+  list [catch {rbu close} msg] $msg
 } {1 {SQLITE_ERROR - cannot update wal mode database}}
 
 #--------------------------------------------------------------------
@@ -94,26 +94,26 @@ do_execsql_test 3.1 {
 db close
 
 do_test 3.2 {
-  forcedelete ota.db
-  sqlite3 dbo ota.db
+  forcedelete rbu.db
+  sqlite3 dbo rbu.db
   dbo eval {
-    CREATE TABLE "data_(t1)"(a, b, c, ota_control);
+    CREATE TABLE "data_(t1)"(a, b, c, rbu_control);
     INSERT INTO "data_(t1)" VALUES(4, 8, 9, 0);
   }
   dbo close
 
-  sqlite3ota ota test.db ota.db
-  ota step
-  ota step
+  sqlite3rbu rbu test.db rbu.db
+  rbu step
+  rbu step
 } {SQLITE_CONSTRAINT}
 
 do_test 3.3 {
-  list [catch {ota close} msg] $msg
+  list [catch {rbu close} msg] $msg
 } {1 {SQLITE_CONSTRAINT - UNIQUE constraint failed: (t1).a}}
 
 #--------------------------------------------------------------------
-# Check that once an OTA update has been applied, attempting to apply
-# it a second time is a no-op (as the state stored in the OTA database is
+# Check that once an RBU update has been applied, attempting to apply
+# it a second time is a no-op (as the state stored in the RBU database is
 # "all steps completed").
 #
 reset_db
@@ -125,74 +125,74 @@ do_execsql_test 4.1 {
 db close
 
 do_test 4.2 {
-  forcedelete ota.db
-  sqlite3 dbo ota.db
+  forcedelete rbu.db
+  sqlite3 dbo rbu.db
   dbo eval {
-    CREATE TABLE "data_(t1)"(a, b, c, ota_control);
+    CREATE TABLE "data_(t1)"(a, b, c, rbu_control);
     INSERT INTO "data_(t1)" VALUES(7, 8, 9, 0);
     INSERT INTO "data_(t1)" VALUES(1, 2, 3, 1);
   }
   dbo close
 
-  sqlite3ota ota test.db ota.db
-  while {[ota step]=="SQLITE_OK"} { }
-  ota close
+  sqlite3rbu rbu test.db rbu.db
+  while {[rbu step]=="SQLITE_OK"} { }
+  rbu close
 } {SQLITE_DONE}
 
 do_test 4.3 {
-  sqlite3ota ota test.db ota.db
-  ota step
+  sqlite3rbu rbu test.db rbu.db
+  rbu step
 } {SQLITE_DONE}
 
 do_test 4.4 {
-  ota close
+  rbu close
 } {SQLITE_DONE}
 
 do_test 4.5.1 {
-  sqlite3 dbo ota.db
-  dbo eval { INSERT INTO ota_state VALUES(100, 100) }
+  sqlite3 dbo rbu.db
+  dbo eval { INSERT INTO rbu_state VALUES(100, 100) }
   dbo close
-  sqlite3ota ota test.db ota.db
-  ota step
+  sqlite3rbu rbu test.db rbu.db
+  rbu step
 } {SQLITE_CORRUPT}
 do_test 4.5.2 {
-  list [catch {ota close} msg] $msg
+  list [catch {rbu close} msg] $msg
 } {1 SQLITE_CORRUPT}
 do_test 4.5.3 {
-  sqlite3 dbo ota.db
-  dbo eval { DELETE FROM ota_state WHERE k = 100 }
+  sqlite3 dbo rbu.db
+  dbo eval { DELETE FROM rbu_state WHERE k = 100 }
   dbo close 
 } {}
 
-# Also, check that an invalid state value in the ota_state table is
+# Also, check that an invalid state value in the rbu_state table is
 # detected and reported as corruption.
 do_test 4.6.1 {
-  sqlite3 dbo ota.db
-  dbo eval { UPDATE ota_state SET v = v*-1 WHERE k = 1 }
+  sqlite3 dbo rbu.db
+  dbo eval { UPDATE rbu_state SET v = v*-1 WHERE k = 1 }
   dbo close
-  sqlite3ota ota test.db ota.db
-  ota step
+  sqlite3rbu rbu test.db rbu.db
+  rbu step
 } {SQLITE_CORRUPT}
 do_test 4.6.2 {
-  list [catch {ota close} msg] $msg
+  list [catch {rbu close} msg] $msg
 } {1 SQLITE_CORRUPT}
 do_test 4.6.3 {
-  sqlite3 dbo ota.db
-  dbo eval { UPDATE ota_state SET v = v*-1 WHERE k = 1 }
+  sqlite3 dbo rbu.db
+  dbo eval { UPDATE rbu_state SET v = v*-1 WHERE k = 1 }
   dbo close 
 } {}
 
 do_test 4.7.1 {
-  sqlite3 dbo ota.db
-  dbo eval { UPDATE ota_state SET v = 1 WHERE k = 1 }
-  dbo eval { UPDATE ota_state SET v = 'nosuchtable' WHERE k = 2 }
+  sqlite3 dbo rbu.db
+  dbo eval { UPDATE rbu_state SET v = 1 WHERE k = 1 }
+  dbo eval { UPDATE rbu_state SET v = 'nosuchtable' WHERE k = 2 }
   dbo close
-  sqlite3ota ota test.db ota.db
-  ota step
+  sqlite3rbu rbu test.db rbu.db
+  rbu step
 } {SQLITE_ERROR}
 do_test 4.7.2 {
-  list [catch {ota close} msg] $msg
-} {1 {SQLITE_ERROR - ota_state mismatch error}}
+  list [catch {rbu close} msg] $msg
+} {1 {SQLITE_ERROR - rbu_state mismatch error}}
 
 finish_test
 
