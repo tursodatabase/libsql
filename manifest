@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarning\sin\sMSVC\s2015.
-D 2015-07-21T19:22:35.266
+C The\ssqlite3ExprCodeGetColumn()\sis\snot\sguaranteed\sto\sput\sthe\sresult\sin\sthe\nregister\srequested.\s\s\sFix\sthe\sskip-scan\scode\sgenerator\sfor\sWITHOUT\sROWID\ntables\sso\sthat\sit\salways\schecks\sthe\sregister\sand\scopies\sthe\sresult\sif\sit\nlands\sin\sthe\swrong\sregister.\s\sFix\sfor\sticket\s[8fd39115d8f46ece70e7d4b3].
+D 2015-07-23T16:39:33.653
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6b439e21d6dabede337772b85959340d37bb17bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -406,7 +406,7 @@ F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
 F src/where.c 909eba3b6db984eb2adfbca9de2c237ee7056adb
 F src/whereInt.h 5f87e3c4b0551747d119730dfebddd3c54f04047
-F src/wherecode.c 0669481cabaf5caf934b6bb825df15bc57f60d40
+F src/wherecode.c 5da5049224f12db314931ae7e0919b4914a2a0b1
 F src/whereexpr.c 9ce1c9cfedbf80c93c7d899497025ec8256ce652
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -985,7 +985,7 @@ F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/show_speedtest1_rtree.tcl 32e6c5f073d7426148a6936a0408f4b5b169aba5
 F test/shrink.test 06deac10d591186017466ce67d10645150bfdeec
 F test/sidedelete.test f0ad71abe6233e3b153100f3b8d679b19a488329
-F test/skipscan1.test 2ddfe5d168462170c4487f534e2a99fb006b2076
+F test/skipscan1.test d37a75b4be4eb9dedeb69b4f38b1d0a74b5021d7
 F test/skipscan2.test d1d1450952b7275f0b0a3a981f0230532743951a
 F test/skipscan3.test ec5bab3f81c7038b43450e7b3062e04a198bdbb5
 F test/skipscan5.test 67817a4b6857c47e0e33ba3e506da6f23ef68de2
@@ -1365,7 +1365,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e0a9978077a1b4e5988681438e4efff93920e574
-R cbf3f19f824b2b3f6f21c8e30bb2d4e0
-U mistachkin
-Z 106701e31e609f92431b2c0ad60fc867
+P 01c8b9ccfa0f336dfead7c004de3de571753f707
+R 23f175ee7b2eb2636faea6e0fbfacef1
+U drh
+Z 1c321a77d86fb7457929725064e82b93
