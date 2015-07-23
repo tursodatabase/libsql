@@ -1,5 +1,5 @@
-C The\ssqlite3ExprCodeGetColumn()\sis\snot\sguaranteed\sto\sput\sthe\sresult\sin\sthe\nregister\srequested.\s\s\sFix\sthe\sskip-scan\scode\sgenerator\sfor\sWITHOUT\sROWID\ntables\sso\sthat\sit\salways\schecks\sthe\sregister\sand\scopies\sthe\sresult\sif\sit\nlands\sin\sthe\swrong\sregister.\s\sFix\sfor\sticket\s[8fd39115d8f46ece70e7d4b3].
-D 2015-07-23T16:39:33.653
+C When\sSQLITE_OMIT_LOOKASIDE\sis\sset,\sdo\snot\sallocate\sany\slookaside\smemory\ssince\nit\swill\snever\sbe\sused.
+D 2015-07-23T17:16:27.642
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6b439e21d6dabede337772b85959340d37bb17bb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -292,7 +292,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 92bafa308607dd985ca389a788cd9e0a2b608712
 F src/loadext.c e722f4b832f923744788365df5fb8515c0bc8a47
-F src/main.c 92d79bfa1a36c7c554700bb58eb8327abff1ac5c
+F src/main.c 0a60b7ca8252c3a6f95438fa4ce8fe5b275c69f2
 F src/malloc.c 19461e159bccf0e2cf06a50e867963d0a7b124a8
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c abe6ee469b6c5a35c7f22bfeb9c9bac664a1c987
@@ -1365,7 +1365,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 01c8b9ccfa0f336dfead7c004de3de571753f707
-R 23f175ee7b2eb2636faea6e0fbfacef1
+P 793e206f9032d9205bdb3f447b136bed9a25fa22
+R 9158ac1eaf08b6ce5d701ee4b9a1ddba
 U drh
-Z 1c321a77d86fb7457929725064e82b93
+Z 6817e7006180b52519c297d18e3556cf
