@@ -345,8 +345,8 @@ SRC += \
   $(TOP)/ext/rtree/rtree.h \
   $(TOP)/ext/rtree/rtree.c
 SRC += \
-  $(TOP)/ext/ota/sqlite3ota.h \
-  $(TOP)/ext/ota/sqlite3ota.c
+  $(TOP)/ext/rbu/sqlite3rbu.h \
+  $(TOP)/ext/rbu/sqlite3rbu.c
 
 
 # Generated source code files
@@ -404,7 +404,7 @@ TESTSRC = \
   $(TOP)/src/test_wsd.c       \
   $(TOP)/ext/fts3/fts3_term.c \
   $(TOP)/ext/fts3/fts3_test.c \
-  $(TOP)/ext/ota/test_ota.c 
+  $(TOP)/ext/rbu/test_rbu.c 
 
 # Statically linked extensions
 #

@@ -51,8 +51,8 @@ static const char zHelp[] =
 #if SQLITE_VERSION_NUMBER<3005000
 # define sqlite3_int64 sqlite_int64
 #endif
-#ifdef SQLITE_ENABLE_OTA
-# include "sqlite3ota.h"
+#ifdef SQLITE_ENABLE_RBU
+# include "sqlite3rbu.h"
 #endif
 
 /* All global state is held in this structure */
@@ -1240,10 +1240,10 @@ int main(int argc, char **argv){
         noSync = 1;
       }else if( strcmp(z,"notnull")==0 ){
         g.zNN = "NOT NULL";
-#ifdef SQLITE_ENABLE_OTA
-      }else if( strcmp(z,"ota")==0 ){
-        sqlite3ota_create_vfs("ota", 0);
-        sqlite3_vfs_register(sqlite3_vfs_find("ota"), 1);
+#ifdef SQLITE_ENABLE_RBU
+      }else if( strcmp(z,"rbu")==0 ){
+        sqlite3ota_create_vfs("rbu", 0);
+        sqlite3_vfs_register(sqlite3_vfs_find("rbu"), 1);
 #endif
       }else if( strcmp(z,"pagesize")==0 ){
         if( i>=argc-1 ) fatal_error("missing argument on %s\n", argv[i]);

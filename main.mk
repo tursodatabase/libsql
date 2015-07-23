@@ -65,7 +65,7 @@ LIBOBJ+= vdbe.o parse.o \
          mutex.o mutex_noop.o mutex_unix.o mutex_w32.o \
          notify.o opcodes.o os.o os_unix.o os_win.o \
          pager.o pcache.o pcache1.o pragma.o prepare.o printf.o \
-         random.o resolve.o rowset.o rtree.o select.o sqlite3ota.o status.o \
+         random.o resolve.o rowset.o rtree.o select.o sqlite3rbu.o status.o \
          table.o threads.o tokenize.o treeview.o trigger.o \
          update.o userauth.o util.o vacuum.o \
          vdbeapi.o vdbeaux.o vdbeblob.o vdbemem.o vdbesort.o \
@@ -226,8 +226,8 @@ SRC += \
   $(TOP)/ext/userauth/sqlite3userauth.h 
 
 SRC += \
-  $(TOP)/ext/ota/sqlite3ota.c \
-  $(TOP)/ext/ota/sqlite3ota.h
+  $(TOP)/ext/rbu/sqlite3rbu.c \
+  $(TOP)/ext/rbu/sqlite3rbu.h
 
 
 # Generated source code files
@@ -246,7 +246,7 @@ SRC += \
 TESTSRC = \
   $(TOP)/ext/fts3/fts3_term.c \
   $(TOP)/ext/fts3/fts3_test.c \
-  $(TOP)/ext/ota/test_ota.c \
+  $(TOP)/ext/rbu/test_rbu.c \
   $(TOP)/src/test1.c \
   $(TOP)/src/test2.c \
   $(TOP)/src/test3.c \
@@ -666,8 +666,8 @@ fts5.c: $(FTS5_SRC)
 userauth.o:	$(TOP)/ext/userauth/userauth.c $(HDR) $(EXTHDR)
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/userauth/userauth.c
 
-sqlite3ota.o:	$(TOP)/ext/ota/sqlite3ota.c $(HDR) $(EXTHDR)
-	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/ota/sqlite3ota.c
+sqlite3rbu.o:	$(TOP)/ext/rbu/sqlite3rbu.c $(HDR) $(EXTHDR)
+	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/rbu/sqlite3rbu.c
 
 
 # Rules for building test programs and for running tests
@@ -811,8 +811,8 @@ wordcount$(EXE):	$(TOP)/test/wordcount.c sqlite3.c
 speedtest1$(EXE):	$(TOP)/test/speedtest1.c sqlite3.o
 	$(TCC) -I. $(OTAFLAGS) -o speedtest1$(EXE) $(TOP)/test/speedtest1.c sqlite3.o $(THREADLIB) 
 
-ota$(EXE): $(TOP)/ext/ota/ota.c $(TOP)/ext/ota/sqlite3ota.c sqlite3.o 
-	$(TCC) -I. -o ota$(EXE) $(TOP)/ext/ota/ota.c sqlite3.o \
+rbu$(EXE): $(TOP)/ext/rbu/rbu.c $(TOP)/ext/rbu/sqlite3rbu.c sqlite3.o 
+	$(TCC) -I. -o rbu$(EXE) $(TOP)/ext/rbu/rbu.c sqlite3.o \
 	  $(THREADLIB)
 
 loadfts: $(TOP)/tool/loadfts.c libsqlite3.a

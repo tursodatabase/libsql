@@ -14,16 +14,16 @@ if {![info exists testdir]} {
   set testdir [file join [file dirname [info script]] .. .. test]
 }
 source $testdir/tester.tcl
-set ::testprefix otacrash
+set ::testprefix rbucrash
 
 db close
-forcedelete test.db-oal ota.db
+forcedelete test.db-oal rbu.db
 sqlite3_shutdown
 sqlite3_config_uri 1
 reset_db
 
-# Set up a target database and an ota update database. The target
-# db is the usual "test.db", the ota db is "test.db2".
+# Set up a target database and an rbu update database. The target
+# db is the usual "test.db", the rbu db is "test.db2".
 #
 forcedelete test.db2
 do_execsql_test 1.0 {
@@ -32,8 +32,8 @@ do_execsql_test 1.0 {
   INSERT INTO t1 VALUES(4, 5, 6);
   INSERT INTO t1 VALUES(7, 8, 9);
 
-  ATTACH 'test.db2' AS ota;
-  CREATE TABLE ota.data_t1(a, b, c, ota_control);
+  ATTACH 'test.db2' AS rbu;
+  CREATE TABLE rbu.data_t1(a, b, c, rbu_control);
   INSERT INTO data_t1 VALUES(10, 11, 12, 0);
   INSERT INTO data_t1 VALUES(13, 14, 15, 0);
   INSERT INTO data_t1 VALUES(4, NULL, NULL, 1);
@@ -42,63 +42,63 @@ do_execsql_test 1.0 {
 db_save_and_close
 
 
-# Determine the number of steps in applying the ota update to the test
-# target database created above. Set $::ota_num_steps accordingly
+# Determine the number of steps in applying the rbu update to the test
+# target database created above. Set $::rbu_num_steps accordingly
 #
-# Check that the same number of steps are required to apply the ota
-# update using many calls to sqlite3ota_step() on a single ota handle
-# as required to apply it using a series of ota handles, on each of 
-# which sqlite3ota_step() is called once.
+# Check that the same number of steps are required to apply the rbu
+# update using many calls to sqlite3rbu_step() on a single rbu handle
+# as required to apply it using a series of rbu handles, on each of 
+# which sqlite3rbu_step() is called once.
 #
 do_test 1.1 {
   db_restore
-  sqlite3ota ota test.db test.db2
+  sqlite3rbu rbu test.db test.db2
   breakpoint
   set nStep 0
-  while {[ota step]=="SQLITE_OK"} { incr nStep }
-  ota close
+  while {[rbu step]=="SQLITE_OK"} { incr nStep }
+  rbu close
 } {SQLITE_DONE}
-set ota_num_steps $nStep
+set rbu_num_steps $nStep
 do_test 1.2 {
   db_restore
   set nStep 0
   while {1} {
-    sqlite3ota ota test.db test.db2
-    ota step
-    if {[ota close]=="SQLITE_DONE"} break
+    sqlite3rbu rbu test.db test.db2
+    rbu step
+    if {[rbu close]=="SQLITE_DONE"} break
     incr nStep
   }
   set nStep
-} $ota_num_steps
+} $rbu_num_steps
 
 
-# Run one or more tests using the target (test.db) and ota (test.db2)
+# Run one or more tests using the target (test.db) and rbu (test.db2)
 # databases created above. As follows:
 #
-#   1. This process starts the ota update and calls sqlite3ota_step()
-#      $nPre times. Then closes the ota update handle.
+#   1. This process starts the rbu update and calls sqlite3rbu_step()
+#      $nPre times. Then closes the rbu update handle.
 #
-#   2. A second process resumes the ota update and attempts to call 
-#      sqlite3ota_step() $nStep times before closing the handle. A
+#   2. A second process resumes the rbu update and attempts to call 
+#      sqlite3rbu_step() $nStep times before closing the handle. A
 #      crash is simulated during each xSync() of file test.db2.
 #
-#   3. This process attempts to resume the ota update from whatever
+#   3. This process attempts to resume the rbu update from whatever
 #      state it was left in by step (2). Test that it is successful
 #      in doing so and that the final target database is as expected.
 #
 # In total (nSync+1) tests are run, where nSync is the number of times
 # xSync() is called on test.db2.
 #
-proc do_ota_crash_test {tn nPre nStep} {
+proc do_rbu_crash_test {tn nPre nStep} {
 
   set script [subst -nocommands {
-    sqlite3ota ota test.db file:test.db2?vfs=crash
+    sqlite3rbu rbu test.db file:test.db2?vfs=crash
     set i 0
     while {[set i] < $nStep} {
-      if {[ota step]!="SQLITE_OK"} break
+      if {[rbu step]!="SQLITE_OK"} break
       incr i
     }
-    ota close
+    rbu close
   }]
 
   set bDone 0
@@ -107,12 +107,12 @@ proc do_ota_crash_test {tn nPre nStep} {
     db_restore
 
     if {$nPre>0} {
-      sqlite3ota ota test.db file:test.db2
+      sqlite3rbu rbu test.db file:test.db2
       set i 0
       for {set i 0} {$i < $nPre} {incr i} { 
-        if {[ota step]!="SQLITE_OK"} break
+        if {[rbu step]!="SQLITE_OK"} break
       }
-      ota close
+      rbu close
     }
 
     set res [
@@ -126,9 +126,9 @@ proc do_ota_crash_test {tn nPre nStep} {
       error "unexected catchsql result: $res"
     }
 
-    sqlite3ota ota test.db test.db2
-    while {[ota step]=="SQLITE_OK"} {}
-    ota close
+    sqlite3rbu rbu test.db test.db2
+    while {[rbu step]=="SQLITE_OK"} {}
+    rbu close
 
     sqlite3 db test.db
     do_execsql_test $tn.delay=$iDelay {
@@ -139,9 +139,9 @@ proc do_ota_crash_test {tn nPre nStep} {
   }
 }
 
-for {set nPre 0} {$nPre < $ota_num_steps} {incr nPre} {
-  for {set is 1} {$is <= ($ota_num_steps - $nPre)} {incr is} {
-    do_ota_crash_test 2.pre=$nPre.step=$is $nPre $is
+for {set nPre 0} {$nPre < $rbu_num_steps} {incr nPre} {
+  for {set is 1} {$is <= ($rbu_num_steps - $nPre)} {incr is} {
+    do_rbu_crash_test 2.pre=$nPre.step=$is $nPre $is
   }
 }
 

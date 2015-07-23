@@ -9,33 +9,33 @@
 #
 #***********************************************************************
 #
-# Test some properties of the pager_ota_mode and ota_mode pragmas.
+# Test some properties of the pager_rbu_mode and rbu_mode pragmas.
 #
 
 if {![info exists testdir]} {
   set testdir [file join [file dirname [info script]] .. .. test]
 }
 source $testdir/tester.tcl
-set ::testprefix ota5
+set ::testprefix rbu5
 
 
-# Run the OTA in file $ota on target database $target until completion.
+# Run the RBU in file $rbu on target database $target until completion.
 #
-proc run_ota {target ota} {
-  sqlite3ota ota $target $ota
-  while { [ota step]=="SQLITE_OK" } {}
-  ota close
+proc run_rbu {target rbu} {
+  sqlite3rbu rbu $target $rbu
+  while { [rbu step]=="SQLITE_OK" } {}
+  rbu close
 }
 
 
-# Run the OTA in file $ota on target database $target one step at a
+# Run the RBU in file $rbu on target database $target one step at a
 # time until completion.
 #
-proc step_ota {target ota} {
+proc step_rbu {target rbu} {
   while 1 {
-    sqlite3ota ota $target $ota
-    set rc [ota step]
-    ota close
+    sqlite3rbu rbu $target $rbu
+    set rc [rbu step]
+    rbu close
     if {$rc != "SQLITE_OK"} break
   }
   set rc
@@ -99,31 +99,31 @@ proc ucontrol {args} {
 
 # Argument $target is the name of an SQLite database file. $sql is an SQL
 # script containing INSERT, UPDATE and DELETE statements to execute against
-# it. This command creates an OTA update database in file $ota that has
+# it. This command creates an RBU update database in file $rbu that has
 # the same effect as the script. The target database is not modified by
 # this command.
 #
-proc generate_ota_db {target ota sql} {
+proc generate_rbu_db {target rbu sql} {
 
-  forcedelete $ota
+  forcedelete $rbu
   forcecopy $target copy.db
 
   # Evaluate the SQL script to modify the contents of copy.db.
   #
-  sqlite3 dbOta copy.db
-  dbOta eval $sql
+  sqlite3 dbRbu copy.db
+  dbRbu eval $sql
 
-  dbOta function ucontrol ucontrol
+  dbRbu function ucontrol ucontrol
   
   # Evaluate the SQL script to modify the contents of copy.db.
-  set ret [datacksum dbOta]
+  set ret [datacksum dbRbu]
 
-  dbOta eval { ATTACH $ota AS ota }
-  dbOta eval { ATTACH $target AS orig }
+  dbRbu eval { ATTACH $rbu AS rbu }
+  dbRbu eval { ATTACH $target AS orig }
 
-  dbOta eval { SELECT name AS tbl FROM sqlite_master WHERE type = 'table' } {
-    set pk [pkcols dbOta $tbl]
-    set cols [allcols dbOta $tbl]
+  dbRbu eval { SELECT name AS tbl FROM sqlite_master WHERE type = 'table' } {
+    set pk [pkcols dbRbu $tbl]
+    set cols [allcols dbRbu $tbl]
 
     # A WHERE clause to test that the PK columns match.
     #
@@ -138,25 +138,25 @@ proc generate_ota_db {target ota sql} {
     set ucontrol "ucontrol([join $where2 ,])"
     set where2 [join $where2 " AND "]
 
-    # Create a data_xxx table in the OTA update database.
-    dbOta eval "
-      CREATE TABLE ota.data_$tbl AS SELECT *, '' AS ota_control 
+    # Create a data_xxx table in the RBU update database.
+    dbRbu eval "
+      CREATE TABLE rbu.data_$tbl AS SELECT *, '' AS rbu_control 
       FROM main.$tbl LIMIT 0
     "
 
     # Find all new rows INSERTed by the script.
-    dbOta eval "
-      INSERT INTO ota.data_$tbl 
-          SELECT *, 0 AS ota_control FROM main.$tbl
+    dbRbu eval "
+      INSERT INTO rbu.data_$tbl 
+          SELECT *, 0 AS rbu_control FROM main.$tbl
           WHERE NOT EXISTS (
             SELECT 1 FROM orig.$tbl WHERE $where
           )
     "
     
     # Find all old rows DELETEd by the script.
-    dbOta eval "
-      INSERT INTO ota.data_$tbl 
-          SELECT *, 1 AS ota_control FROM orig.$tbl
+    dbRbu eval "
+      INSERT INTO rbu.data_$tbl 
+          SELECT *, 1 AS rbu_control FROM orig.$tbl
           WHERE NOT EXISTS (
             SELECT 1 FROM main.$tbl WHERE $where
           )
@@ -166,16 +166,16 @@ proc generate_ota_db {target ota sql} {
     set origcols [list]
     foreach c $cols { lappend origcols "main.$tbl.$c" }
     set origcols [join $origcols ,]
-    dbOta eval "
-      INSERT INTO ota.data_$tbl
-          SELECT $origcols, $ucontrol AS ota_control 
+    dbRbu eval "
+      INSERT INTO rbu.data_$tbl
+          SELECT $origcols, $ucontrol AS rbu_control 
           FROM orig.$tbl, main.$tbl
           WHERE $where AND NOT ($where2)
     "
 
   }
 
-  dbOta close
+  dbRbu close
   forcedelete copy.db
 
   return $ret
@@ -197,7 +197,7 @@ do_execsql_test 1.0 {
 }
 db close
 
-set cksum [generate_ota_db test.db ota.db {
+set cksum [generate_rbu_db test.db rbu.db {
   INSERT INTO t1 VALUES(4, 8, 12);
   DELETE FROM t1 WHERE a = 2;
   UPDATE t1 SET c = 15 WHERE a=3;
@@ -217,13 +217,13 @@ foreach {tn idx} {
 } {
   foreach cmd {run step} {
     forcecopy test.db test.db2
-    forcecopy ota.db ota.db2
+    forcecopy rbu.db rbu.db2
 
     sqlite3 db test.db2
     db eval $idx
 
     do_test 1.$tn.$cmd.1 {
-      ${cmd}_ota test.db2 ota.db2
+      ${cmd}_rbu test.db2 rbu.db2
       datacksum db
     } $cksum
 
@@ -265,7 +265,7 @@ do_execsql_test 2.0 {
 }
 db close
 
-set cksum [generate_ota_db test.db ota.db {
+set cksum [generate_rbu_db test.db rbu.db {
 INSERT INTO t2 VALUES(222916.23,'idh',X'472C517405',X'E3',X'7C4F31824669');
 INSERT INTO t2 VALUES('xcndjwafcoxwxizoktd',-319567.21,NULL,-720906.43,-577170);
 INSERT INTO t2 VALUES(376369.99,-536058,'yoaiurfqupdscwc',X'29EC8A2542EC3953E9',-740485.22);
@@ -305,13 +305,13 @@ foreach {tn idx} {
 } {
   foreach cmd {run step} {
     forcecopy test.db test.db2
-    forcecopy ota.db ota.db2
+    forcecopy rbu.db rbu.db2
 
     sqlite3 db test.db2
     db eval $idx
 
     do_test 2.$tn.$cmd.1 {
-      ${cmd}_ota test.db2 ota.db2
+      ${cmd}_rbu test.db2 rbu.db2
       datacksum db
     } $cksum
 
