@@ -1,5 +1,5 @@
-C Fix\swarnings\sin\sfts5\scode.
-D 2015-07-24T20:34:40.671
+C For\sWindows\sCE,\sa\sdifferent\sheader\sis\srequired\sfor\sthe\sbyteswap\sintrinsics.
+D 2015-07-24T20:43:18.969
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4de3ef40c8b3b75c0c55ff4242a43c8ce1ad90ee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -333,7 +333,7 @@ F src/shell.c 8af3cced094aebb5f57a8ad739b9dafc7867eed7
 F src/sqlite.h.in f623dd30a4fb7df2fb44a2a85e27813d25e486c2
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h a0b948ebc89bac13941254641326a6aa248c2cc4
-F src/sqliteInt.h c67d0a1368484dd156e7d13caa62862adc2ebefa
+F src/sqliteInt.h 81f458941cfb30c5536c37930fb6f41e66171284
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c f266ad8a2892d659b74f0f50cb6a88b6e7c12179
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
@@ -1366,7 +1366,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P de281a4fac0de3700e754c17976a8497587ca797
-R 9f5835f29597640f91f1991255534eae
-U dan
-Z de21ee64183472b78df2aada61fca8f4
+P bd4f156d07d0db1f063d42891965920fc2229352
+R 2d59310b8a12a1f1c165b9fca130a928
+U mistachkin
+Z 103ab03ee254c9c07747db619d6c6742
