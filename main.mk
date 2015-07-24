@@ -723,10 +723,13 @@ queryplantest:	testfixture$(EXE) sqlite3$(EXE)
 	./testfixture$(EXE) $(TOP)/test/permutations.test queryplanner $(TESTOPTS)
 
 fuzztest:	fuzzcheck$(EXE) $(FUZZDATA)
+	./fuzzcheck$(EXE) $(FUZZDATA)
+
+fastfuzztest:	fuzzcheck$(EXE) $(FUZZDATA)
 	./fuzzcheck$(EXE) --limit-mem 100M $(FUZZDATA)
 
 valgrindfuzz:	fuzzcheck$(EXE) $(FUZZDATA)
-	valgrind ./fuzzcheck$(EXE) --cell-size-check --limit-mem 100M $(FUZZDATA)
+	valgrind ./fuzzcheck$(EXE) --cell-size-check --limit-mem 10M $(FUZZDATA)
 
 # A very quick test using only testfixture and omitting all the slower
 # tests.  Designed to run in under 3 minutes on a workstation.
@@ -737,7 +740,7 @@ quicktest:	./testfixture$(EXE)
 # The default test case.  Runs most of the faster standard TCL tests,
 # and fuzz tests, and sqlite3_analyzer and sqldiff tests.
 #
-test:	$(TESTPROGS) fuzztest
+test:	$(TESTPROGS) fastfuzztest
 	./testfixture$(EXE) $(TOP)/test/veryquick.test $(TESTOPTS)
 
 # Run a test using valgrind.  This can take a really long time

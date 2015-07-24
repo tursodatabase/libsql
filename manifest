@@ -1,9 +1,9 @@
-C Fix\scompiler\swarnings.\s\sGet\sthe\snew\ssqlite3_result_zeroblob64()\sworking\non\sloadable\sextensions.
-D 2015-07-24T17:14:03.945
+C New\smakefile\starget\s"fastfuzztest"\sruns\sthe\ssame\stests\sas\s"fuzztest"\sbut\nwith\sa\s100M\smemory\ssize\slimit.\s\sThis\smore\sthan\sdoubles\sthe\sspeed.\s\sThe\noriginal\sunlimited\s"fuzztest"\sis\sstill\srun\son\sa\s"fulltest".
+D 2015-07-24T17:26:13.576
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in 6a2355cacb04337e6f29a95200512b1cdd8c1857
+F Makefile.in 4de3ef40c8b3b75c0c55ff4242a43c8ce1ad90ee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc ae4aebdc5581367a3c4b107f395b8a39cae69f0c
+F Makefile.msc 3c258b2f98adb08c7ca5950bee2d6670d6ee3f9a
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION ce0ae95abd7121c534f6917c1c8f2b70d9acd4db
@@ -248,7 +248,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk c94f70684cebc5108c73d5ac3af10297f296f373
+F main.mk 538244d18f37f30a45da813a7bc43294e6fda8cc
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
 F mkopcodeh.awk 0e7f04a8eb90f92259e47d80110e4e98d7ce337a
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
@@ -1365,7 +1365,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c6445b9fb4d7d1a8479436d7d183bad754a01615
-R 4554c2a546ef01870bbadda282212131
+P f8991e6f726485301c80d2dbb05e7d5c0d283b5d
+R 5b7cdbc8a797f7286663b9eb72acbd15
 U drh
-Z a0627092df24698ce25e2ad5d492680b
+Z 4fdeea847ec9dd14145b4857e3d98a62

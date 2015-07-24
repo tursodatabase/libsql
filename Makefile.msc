@@ -1736,6 +1736,9 @@ queryplantest:	testfixture.exe sqlite3.exe
 	.\testfixture.exe $(TOP)\test\permutations.test queryplanner $(TESTOPTS)
 
 fuzztest:	fuzzcheck.exe
+	.\fuzzcheck.exe $(FUZZDATA)
+
+fastfuzztest:	fuzzcheck.exe
 	.\fuzzcheck.exe --limit-mem 100M $(FUZZDATA)
 
 # Minimal testing that runs in less than 3 minutes (on a fast machine)
@@ -1746,7 +1749,7 @@ quicktest:	testfixture.exe
 # This is the common case.  Run many tests that do not take too long,
 # including fuzzcheck, sqlite3_analyzer, and sqldiff tests.
 #
-test:	$(TESTPROGS) fuzztest
+test:	$(TESTPROGS) fastfuzztest
 	.\testfixture.exe $(TOP)\test\veryquick.test $(TESTOPTS)
 
 smoketest:	$(TESTPROGS)
