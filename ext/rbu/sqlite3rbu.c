@@ -568,7 +568,7 @@ static int rbuObjIterFirst(sqlite3rbu *p, RbuObjIter *pIter){
 
   rc = prepareAndCollectError(p->dbRbu, &pIter->pTblIter, &p->zErrmsg, 
       "SELECT substr(name, 6) FROM sqlite_master "
-      "WHERE type='table' AND name LIKE 'data_%'"
+      "WHERE type IN ('table', 'view') AND name LIKE 'data_%'"
   );
 
   if( rc==SQLITE_OK ){

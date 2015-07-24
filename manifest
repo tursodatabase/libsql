@@ -1,5 +1,5 @@
-C Fix\sa\stest\sscript\sbug\sintroduced\sby\s[562687d9].
-D 2015-07-24T18:22:29.438
+C Allow\sthe\sRBU\smodule\sto\sread\sdata\sfrom\sappropriately\snamed\sSQL\sviews\screated\swithin\sthe\sRBU\sdatabase.
+D 2015-07-24T18:58:59.288
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4de3ef40c8b3b75c0c55ff4242a43c8ce1ad90ee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -206,6 +206,7 @@ F ext/rbu/rbu10.test 046b0980041d30700464a800bbf6733ed2df515d
 F ext/rbu/rbu11.test 9bc68c2d3dbeb1720153626e3bd0466dcc017702
 F ext/rbu/rbu12.test bde22ed0004dd5d1888c72a84ae407e574aeae16
 F ext/rbu/rbu13.test 462ff799c4afedc3ef8a47ff818c0ffbf14ae4f2
+F ext/rbu/rbu14.test 01f5dcba904aecadbaea69d4ccdc2ea43dd30560
 F ext/rbu/rbu3.test 8bd4c6b87367c358981b6a47dc3d654fa60bff90
 F ext/rbu/rbu5.test 2e24fee3e615aecd99bbdd46967935a641e866f7
 F ext/rbu/rbu6.test 32e8ed60631b6facdb6366bd2b5f5f25245e7edb
@@ -216,7 +217,7 @@ F ext/rbu/rbuA.test c1a7b3e2d926b8f8448bb3b4ae787e314ee4b2b3
 F ext/rbu/rbucrash.test 8d2ed5d4b05fef6c00c2a6b5f7ead71fa172a695
 F ext/rbu/rbufault.test cc0be8d5d392d98b0c2d6a51be377ea989250a89
 F ext/rbu/rbufault2.test 9a7f19edd6ea35c4c9f807d8a3db0a03a5670c06
-F ext/rbu/sqlite3rbu.c d37e1ca2d13e439cb3df7cd9d98db90458f21433
+F ext/rbu/sqlite3rbu.c 7a0ca8fca2d0c9a72f0b7b96618c2ea9f7b4bc1d
 F ext/rbu/sqlite3rbu.h 6a280298e9eeb8ef59841a620f07f4f844651545
 F ext/rbu/test_rbu.c f99698956cc9158d6bf865e461e2d15876538ac1
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
@@ -1365,7 +1366,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1997ee548b2e569a39e73319b661c1a78dfe5dae
-R f8b9545e94c6fbffbe67ad49b98674a7
+P a343745d99cf4bccb2f5582735cc2f88b03e847d
+R 7ce8a63d79686096fb6b7851b4b14217
 U dan
-Z 7d7fc23acf815710c2dab9adf78529b1
+Z 6032c3754b57e07594e126d07ba72107
