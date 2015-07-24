@@ -1,5 +1,5 @@
-C Allow\sthe\sRBU\smodule\sto\sread\sdata\sfrom\sappropriately\snamed\sSQL\sviews\screated\swithin\sthe\sRBU\sdatabase.
-D 2015-07-24T18:58:59.288
+C Fix\sthe\spragma2.test\smodule\sso\sthat\sit\sworks\swith\nSQLITE_ENABLE_MEMORY_MANAGEMENT.
+D 2015-07-24T19:56:44.063
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4de3ef40c8b3b75c0c55ff4242a43c8ce1ad90ee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -905,7 +905,7 @@ F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
 F test/permutations.test ac3b00c299250cc087d4a527b5c75a0f8aef4e54
 F test/pragma.test be7195f0aa72bdb8a512133e9640ac40f15b57a2
-F test/pragma2.test f624a496a95ee878e81e59961eade66d5c00c028
+F test/pragma2.test 8e72df3a16c0fda748ad52abf79cb8256b04a6fe
 F test/pragma3.test 6f849ccffeee7e496d2f2b5e74152306c0b8757c
 F test/printf.test b3ff34e73d59124140eaf89f7672e21bc2ca5fcc
 F test/printf2.test 0b61566dd1c0f0b802f59dffa228c5dc5aa6b054
@@ -1366,7 +1366,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a343745d99cf4bccb2f5582735cc2f88b03e847d
-R 7ce8a63d79686096fb6b7851b4b14217
-U dan
-Z 6032c3754b57e07594e126d07ba72107
+P 45c6a760ca63d19a7ccc352c7e35d8391025b515
+R b34dc4c50f1bfa3fd0a2eba7ed5d3d7e
+U drh
+Z 5930bfafd4fdba60474a9bcfe789d368
