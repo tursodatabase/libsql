@@ -938,7 +938,7 @@ static int test_config_pagecache(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-  int sz, N, rc;
+  int sz, N;
   Tcl_Obj *pRes;
   static char *buf = 0;
   if( objc!=3 ){
@@ -957,10 +957,10 @@ static int test_config_pagecache(
   Tcl_SetObjResult(interp, pRes);
 
   if( sz<0 ){
-    rc = sqlite3_config(SQLITE_CONFIG_PAGECACHE, 0, 0, 0);
+    sqlite3_config(SQLITE_CONFIG_PAGECACHE, 0, 0, 0);
   }else{
     buf = malloc( sz*N );
-    rc = sqlite3_config(SQLITE_CONFIG_PAGECACHE, buf, sz, N);
+    sqlite3_config(SQLITE_CONFIG_PAGECACHE, buf, sz, N);
   }
   return TCL_OK;
 }

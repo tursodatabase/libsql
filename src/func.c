@@ -1123,12 +1123,9 @@ static void zeroblobFunc(
 ){
   i64 n;
   int rc;
-  sqlite3 *db = sqlite3_context_db_handle(context);
   assert( argc==1 );
   UNUSED_PARAMETER(argc);
   n = sqlite3_value_int64(argv[0]);
-  testcase( n==db->aLimit[SQLITE_LIMIT_LENGTH] );
-  testcase( n==db->aLimit[SQLITE_LIMIT_LENGTH]+1 );
   if( n<0 ) n = 0;
   rc = sqlite3_result_zeroblob64(context, n); /* IMP: R-00293-64994 */
   if( rc ){

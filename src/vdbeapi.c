@@ -430,7 +430,7 @@ void sqlite3_result_zeroblob(sqlite3_context *pCtx, int n){
 int sqlite3_result_zeroblob64(sqlite3_context *pCtx, u64 n){
   Mem *pOut = pCtx->pOut;
   assert( sqlite3_mutex_held(pOut->db->mutex) );
-  if( n>pOut->db->aLimit[SQLITE_LIMIT_LENGTH] ){
+  if( n>(u64)pOut->db->aLimit[SQLITE_LIMIT_LENGTH] ){
     return SQLITE_TOOBIG;
   }
   sqlite3VdbeMemSetZeroBlob(pCtx->pOut, (int)n);
