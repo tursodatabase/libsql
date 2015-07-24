@@ -1,5 +1,5 @@
-C Fix\sthe\spragma2.test\smodule\sso\sthat\sit\sworks\swith\nSQLITE_ENABLE_MEMORY_MANAGEMENT.
-D 2015-07-24T19:56:44.063
+C Fix\swarnings\sin\sfts5\scode.
+D 2015-07-24T20:34:40.671
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4de3ef40c8b3b75c0c55ff4242a43c8ce1ad90ee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -110,9 +110,9 @@ F ext/fts5/fts5Int.h 8d9bce1847a10df2e4ed9492ea4f3868276748fb
 F ext/fts5/fts5_aux.c 044cb176a815f4388308738437f6e130aa384fb0
 F ext/fts5/fts5_buffer.c 80f9ba4431848cb857e3d2158f5280093dcd8015
 F ext/fts5/fts5_config.c b2456e9625bca41c51d54c363e369c6356895c90
-F ext/fts5/fts5_expr.c ac0614f843cf5c80a85c4c6aa44bbede62a51bb2
+F ext/fts5/fts5_expr.c 56dcbcbdc9029dd76a31360de664559839f4be41
 F ext/fts5/fts5_hash.c ff07722c73587c12781213133edbdb22cd156378
-F ext/fts5/fts5_index.c d6ad9293280f39c56343ef5035b0475ff2a6be12
+F ext/fts5/fts5_index.c 892c13a7f44b68e962a91af62f2078f23fabb241
 F ext/fts5/fts5_main.c 0de7ba81488d2c502c8e794eaf7983d468e4c6e9
 F ext/fts5/fts5_storage.c 1c35a38a564ee9cadcbd7ae0b13a806bdda722bd
 F ext/fts5/fts5_tcl.c 85eb4e0d0fefa9420b78151496ad4599a1783e20
@@ -1366,7 +1366,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 45c6a760ca63d19a7ccc352c7e35d8391025b515
-R b34dc4c50f1bfa3fd0a2eba7ed5d3d7e
-U drh
-Z 5930bfafd4fdba60474a9bcfe789d368
+P de281a4fac0de3700e754c17976a8497587ca797
+R 9f5835f29597640f91f1991255534eae
+U dan
+Z de21ee64183472b78df2aada61fca8f4

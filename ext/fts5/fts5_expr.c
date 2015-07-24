@@ -60,7 +60,7 @@ struct Fts5ExprNode {
   /* Child nodes. For a NOT node, this array always contains 2 entries. For 
   ** AND or OR nodes, it contains 2 or more entries.  */
   int nChild;                     /* Number of child nodes */
-  Fts5ExprNode *apChild[0];       /* Array of child nodes */
+  Fts5ExprNode *apChild[1];       /* Array of child nodes */
 };
 
 #define Fts5NodeIsString(p) ((p)->eType==FTS5_TERM || (p)->eType==FTS5_STRING)
@@ -1619,7 +1619,7 @@ Fts5ExprNode *sqlite3Fts5ParseNode(
       if( pRight->eType==eType ) nChild += pRight->nChild-1;
     }
 
-    nByte = sizeof(Fts5ExprNode) + sizeof(Fts5ExprNode*)*nChild;
+    nByte = sizeof(Fts5ExprNode) + sizeof(Fts5ExprNode*)*(nChild-1);
     pRet = (Fts5ExprNode*)sqlite3Fts5MallocZero(&pParse->rc, nByte);
 
     if( pRet ){
