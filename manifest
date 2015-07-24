@@ -1,5 +1,5 @@
-C For\sWindows\sCE,\sa\sdifferent\sheader\sis\srequired\sfor\sthe\sbyteswap\sintrinsics.
-D 2015-07-24T20:43:18.969
+C Enable\sthe\sRBU\sextension\sto\scompile\scleanly\son\sWindows\susing\sMSVC.
+D 2015-07-24T21:19:25.937
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4de3ef40c8b3b75c0c55ff4242a43c8ce1ad90ee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -200,7 +200,7 @@ F ext/misc/totype.c 4a167594e791abeed95e0a8db028822b5e8fe512
 F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
-F ext/rbu/rbu.c e04e7baea76b6dd719a4f290f8a58166efc8d234
+F ext/rbu/rbu.c e572f7ddef2ef3a73d03e7b44d36448e466772b7
 F ext/rbu/rbu1.test 57601977588603e82700a43c279bd55282ffa482
 F ext/rbu/rbu10.test 046b0980041d30700464a800bbf6733ed2df515d
 F ext/rbu/rbu11.test 9bc68c2d3dbeb1720153626e3bd0466dcc017702
@@ -217,7 +217,7 @@ F ext/rbu/rbuA.test c1a7b3e2d926b8f8448bb3b4ae787e314ee4b2b3
 F ext/rbu/rbucrash.test 8d2ed5d4b05fef6c00c2a6b5f7ead71fa172a695
 F ext/rbu/rbufault.test cc0be8d5d392d98b0c2d6a51be377ea989250a89
 F ext/rbu/rbufault2.test 9a7f19edd6ea35c4c9f807d8a3db0a03a5670c06
-F ext/rbu/sqlite3rbu.c 7a0ca8fca2d0c9a72f0b7b96618c2ea9f7b4bc1d
+F ext/rbu/sqlite3rbu.c dbd7e4b31821398dcdeb21492970401ff1027881
 F ext/rbu/sqlite3rbu.h 6a280298e9eeb8ef59841a620f07f4f844651545
 F ext/rbu/test_rbu.c f99698956cc9158d6bf865e461e2d15876538ac1
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
@@ -1366,7 +1366,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P bd4f156d07d0db1f063d42891965920fc2229352
-R 2d59310b8a12a1f1c165b9fca130a928
+P 2d572b8cdc67679cc95e69677a87e7b4a82f6c2d
+R 7ad7b2938e518b64d413cdd1d26d7b2c
 U mistachkin
-Z 103ab03ee254c9c07747db619d6c6742
+Z 50750fa0b6e34b0305f7afdd413b595e

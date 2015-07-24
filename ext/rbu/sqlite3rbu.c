@@ -83,7 +83,10 @@
 #include <assert.h>
 #include <string.h>
 #include <stdio.h>
-#include <unistd.h>
+
+#if !defined(_WIN32)
+#  include <unistd.h>
+#endif
 
 #include "sqlite3.h"
 
@@ -620,8 +623,9 @@ static char *rbuMPrintf(sqlite3rbu *p, const char *zFmt, ...){
 */
 static int rbuMPrintfExec(sqlite3rbu *p, sqlite3 *db, const char *zFmt, ...){
   va_list ap;
+  char *zSql;
   va_start(ap, zFmt);
-  char *zSql = sqlite3_vmprintf(zFmt, ap);
+  zSql = sqlite3_vmprintf(zFmt, ap);
   if( p->rc==SQLITE_OK ){
     if( zSql==0 ){
       p->rc = SQLITE_NOMEM;
@@ -2640,7 +2644,7 @@ static void rbuCreateVfs(sqlite3rbu *p){
 
   assert( p->rc==SQLITE_OK );
   sqlite3_randomness(sizeof(int), (void*)&rnd);
-  sprintf(zRnd, "rbu_vfs_%d", rnd);
+  sqlite3_snprintf(sizeof(zRnd), zRnd, "rbu_vfs_%d", rnd);
   p->rc = sqlite3rbu_create_vfs(zRnd, 0);
   if( p->rc==SQLITE_OK ){
     sqlite3_vfs *pVfs = sqlite3_vfs_find(zRnd);
@@ -3525,7 +3529,7 @@ static void (*rbuVfsDlSym(
 */
 static void rbuVfsDlClose(sqlite3_vfs *pVfs, void *pHandle){
   sqlite3_vfs *pRealVfs = ((rbu_vfs*)pVfs)->pRealVfs;
-  return pRealVfs->xDlClose(pRealVfs, pHandle);
+  pRealVfs->xDlClose(pRealVfs, pHandle);
 }
 #endif /* SQLITE_OMIT_LOAD_EXTENSION */
 
