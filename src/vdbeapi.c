@@ -162,7 +162,7 @@ int sqlite3_clear_bindings(sqlite3_stmt *pStmt){
 const void *sqlite3_value_blob(sqlite3_value *pVal){
   Mem *p = (Mem*)pVal;
   if( p->flags & (MEM_Blob|MEM_Str) ){
-    sqlite3VdbeMemExpandBlob(p);
+    if( sqlite3VdbeMemExpandBlob(p)!=SQLITE_OK ) return 0;
     p->flags |= MEM_Blob;
     return p->n ? p->z : 0;
   }else{

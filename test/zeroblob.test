@@ -45,7 +45,7 @@ do_test zeroblob-1.1 {
 } {10}
 
 do_test zeroblob-1.1.1 {
-  expr {[sqlite3_memory_highwater]<$::memused+25000}
+  expr {[sqlite3_memory_highwater]<$::memused+35000}
 } {1}
 do_test zeroblob-1.2 {
   execsql {

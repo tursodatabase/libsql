@@ -1131,6 +1131,7 @@ static void zeroblobFunc(
   if( n>db->aLimit[SQLITE_LIMIT_LENGTH] ){
     sqlite3_result_error_toobig(context);
   }else{
+    if( n<0 ) n = 0;
     sqlite3_result_zeroblob(context, (int)n); /* IMP: R-00293-64994 */
   }
 }

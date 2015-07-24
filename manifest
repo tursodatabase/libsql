@@ -1,9 +1,9 @@
-C Modify\sa\sfew\stest\sscripts\sto\savoid\sleaving\sthe\ssqlite3Config\sstructure\sin\sa\snon-default\sstate.
-D 2015-07-24T14:17:17.027
+C More\srobust\shandling\sof\szeroblob()\swith\soversized\sarguments.\s\sFix\sfuzzcheck\nso\sthat\sit\scan\sbe\srun\swith\slimited\sheap\smemory.
+D 2015-07-24T15:49:23.313
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in b13c653ee215cb0d294ffa4f10ac4d14255767e0
+F Makefile.in 6a2355cacb04337e6f29a95200512b1cdd8c1857
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc cddf142cac25c011aadd69a371399db9a8892ccd
+F Makefile.msc ae4aebdc5581367a3c4b107f395b8a39cae69f0c
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION ce0ae95abd7121c534f6917c1c8f2b70d9acd4db
@@ -248,7 +248,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 4affd40e93db8e0063c2a0768c1887b3e2a272a1
+F main.mk c94f70684cebc5108c73d5ac3af10297f296f373
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
 F mkopcodeh.awk 0e7f04a8eb90f92259e47d80110e4e98d7ce337a
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
@@ -282,7 +282,7 @@ F src/delete.c 8857a6f27560718f65d43bdbec86c967ae1f8dfa
 F src/expr.c c5c58e4d01c7ceb2266791d8d877f1b23a88e316
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c c9b63a217d86582c22121699a47f22f524608869
-F src/func.c a98ea5880dc50e9ca6dd6f57079a37b9cfcdecf1
+F src/func.c d08d2106ba10dddbee45e001b8516f4d1df2b20e
 F src/global.c 508e4087f7b41d688e4762dcf4d4fe28cfbc87f9
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
 F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
@@ -390,10 +390,10 @@ F src/update.c 487747b328b7216bb7f6af0695d6937d5c9e605f
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c 46358a204b35971a839341cf64599d65b151ba88
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c 5ee4a2bf871418f61d06dc256b9b3a0084b5ec46
+F src/vdbe.c 86be40a4568f5385048ea6623adfd11ddb7bf710
 F src/vdbe.h 7a75045d879118b9d3af7e8b3c108f2f27c51473
 F src/vdbeInt.h 8b54e01ad0463590e7cffabce0bc36da9ee4f816
-F src/vdbeapi.c 2fa7ed7520313d6dd1dc6e6495999201c630adfc
+F src/vdbeapi.c 082746d4c4788d889a2a62b858d753453e9c9c6d
 F src/vdbeaux.c 787f5f9d58f4c6f39294ed06909ba602d1a402e6
 F src/vdbeblob.c 4f2e8e075d238392df98c5e03a64342465b03f90
 F src/vdbemem.c ae38a0d35ae71cf604381a887c170466ba518090
@@ -735,7 +735,7 @@ F test/fuzz2.test 76dc35b32b6d6f965259508508abce75a6c4d7e1
 F test/fuzz3.test 53fabcd5f0f430f8b221282f6c12c4d0903c21eb
 F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
 F test/fuzz_malloc.test 328f70aaca63adf29b4c6f06505ed0cf57ca7c26
-F test/fuzzcheck.c b973b06b500e6fc052d7059257cdf70df1f3a986
+F test/fuzzcheck.c 79980bbc00e19ad44c3ba6699e643348572757a2
 F test/fuzzdata1.db 7ee3227bad0e7ccdeb08a9e6822916777073c664
 F test/fuzzdata2.db f03a420d3b822cc82e4f894ca957618fbe9c4973
 F test/fuzzdata3.db 1d6044c33a114007f02b6e6846f1fa232f607bfd
@@ -1307,7 +1307,7 @@ F test/without_rowid4.test 4e08bcbaee0399f35d58b5581881e7a6243d458a
 F test/without_rowid5.test 61256715b686359df48ca1742db50cc7e3e7b862
 F test/without_rowid6.test db0dbf03c49030aa3c1ba5f618620334bd2baf5f
 F test/wordcount.c 9915e06cb33d8ca8109b8700791afe80d305afda
-F test/zeroblob.test dcffae9583ac7a6683e814cc7a9c85b2fd73ddd8
+F test/zeroblob.test 202dbc81129a4a1509f829384b2b8aaf091635a9
 F test/zerodamage.test cf6748bad89553cc1632be51a6f54e487e4039ac
 F tool/build-all-msvc.bat 9058bd90a3c078a3d8c17d40e853aaa0f47885f4 x
 F tool/build-shell.sh 950f47c6174f1eea171319438b93ba67ff5bf367
@@ -1365,7 +1365,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 119883a21bdcab66c15d1e80f3da20addda328ad
-R f93dc01dd263cc307f98235646fce28d
-U dan
-Z 1717e31dfb28e99256b065adb47b07f0
+P 562687d9f56bf4bb0f5f07f97cbbb7649c81faf8
+R 1786aea7f8e6749074e67e1af5c8c763
+U drh
+Z 01a0292cb698589e36de0afbd61cb525

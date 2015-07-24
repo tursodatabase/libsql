@@ -1736,7 +1736,7 @@ queryplantest:	testfixture.exe sqlite3.exe
 	.\testfixture.exe $(TOP)\test\permutations.test queryplanner $(TESTOPTS)
 
 fuzztest:	fuzzcheck.exe
-	.\fuzzcheck.exe $(FUZZDATA)
+	.\fuzzcheck.exe --limit-mem 100M $(FUZZDATA)
 
 # Minimal testing that runs in less than 3 minutes (on a fast machine)
 #

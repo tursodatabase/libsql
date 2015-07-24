@@ -446,11 +446,12 @@ sqldiff$(EXE):	$(TOP)/tool/sqldiff.c sqlite3.c sqlite3.h
 		$(TOP)/tool/sqldiff.c sqlite3.c $(TLIBS) $(THREADLIB)
 
 fuzzershell$(EXE):	$(TOP)/tool/fuzzershell.c sqlite3.c sqlite3.h
-	$(TCCX) -o fuzzershell$(EXE) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION\
+	$(TCCX) -o fuzzershell$(EXE) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
 		$(TOP)/tool/fuzzershell.c sqlite3.c $(TLIBS) $(THREADLIB)
 
 fuzzcheck$(EXE):	$(TOP)/test/fuzzcheck.c sqlite3.c sqlite3.h
-	$(TCCX) -o fuzzcheck$(EXE) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION\
+	$(TCCX) -o fuzzcheck$(EXE) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
+		-DSQLITE_ENABLE_MEMSYS5 \
 		$(TOP)/test/fuzzcheck.c sqlite3.c $(TLIBS) $(THREADLIB)
 
 mptester$(EXE):	sqlite3.c $(TOP)/mptest/mptest.c
@@ -722,10 +723,10 @@ queryplantest:	testfixture$(EXE) sqlite3$(EXE)
 	./testfixture$(EXE) $(TOP)/test/permutations.test queryplanner $(TESTOPTS)
 
 fuzztest:	fuzzcheck$(EXE) $(FUZZDATA)
-	./fuzzcheck$(EXE) $(FUZZDATA)
+	./fuzzcheck$(EXE) --limit-mem 100M $(FUZZDATA)
 
 valgrindfuzz:	fuzzcheck$(EXE) $(FUZZDATA)
-	valgrind ./fuzzcheck$(EXE) --cell-size-check --quiet $(FUZZDATA)
+	valgrind ./fuzzcheck$(EXE) --cell-size-check --limit-mem 100M $(FUZZDATA)
 
 # A very quick test using only testfixture and omitting all the slower
 # tests.  Designed to run in under 3 minutes on a workstation.

@@ -1044,10 +1044,10 @@ fulltestonly:	$(TESTPROGS)
 
 # Fuzz testing
 fuzztest:	fuzzcheck$(TEXE) $(FUZZDATA)
-	./fuzzcheck$(TEXE) $(FUZZDATA)
+	./fuzzcheck$(TEXE) --limit-mem 100M $(FUZZDATA)
 
 valgrindfuzz:	fuzzcheck$(TEXT) $(FUZZDATA)
-	valgrind ./fuzzcheck$(TEXE) --cell-size-check --quiet $(FUZZDATA)
+	valgrind ./fuzzcheck$(TEXE) --cell-size-check --limit-mem 100M $(FUZZDATA)
 
 # Minimal testing that runs in less than 3 minutes
 #

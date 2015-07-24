@@ -683,6 +683,64 @@ static void rebuild_database(sqlite3 *db){
 }
 
 /*
+** Return the value of a hexadecimal digit.  Return -1 if the input
+** is not a hex digit.
+*/
+static int hexDigitValue(char c){
+  if( c>='0' && c<='9' ) return c - '0';
+  if( c>='a' && c<='f' ) return c - 'a' + 10;
+  if( c>='A' && c<='F' ) return c - 'A' + 10;
+  return -1;
+}
+
+/*
+** Interpret zArg as an integer value, possibly with suffixes.
+*/
+static int integerValue(const char *zArg){
+  sqlite3_int64 v = 0;
+  static const struct { char *zSuffix; int iMult; } aMult[] = {
+    { "KiB", 1024 },
+    { "MiB", 1024*1024 },
+    { "GiB", 1024*1024*1024 },
+    { "KB",  1000 },
+    { "MB",  1000000 },
+    { "GB",  1000000000 },
+    { "K",   1000 },
+    { "M",   1000000 },
+    { "G",   1000000000 },
+  };
+  int i;
+  int isNeg = 0;
+  if( zArg[0]=='-' ){
+    isNeg = 1;
+    zArg++;
+  }else if( zArg[0]=='+' ){
+    zArg++;
+  }
+  if( zArg[0]=='0' && zArg[1]=='x' ){
+    int x;
+    zArg += 2;
+    while( (x = hexDigitValue(zArg[0]))>=0 ){
+      v = (v<<4) + x;
+      zArg++;
+    }
+  }else{
+    while( isdigit(zArg[0]) ){
+      v = v*10 + zArg[0] - '0';
+      zArg++;
+    }
+  }
+  for(i=0; i<sizeof(aMult)/sizeof(aMult[0]); i++){
+    if( sqlite3_stricmp(aMult[i].zSuffix, zArg)==0 ){
+      v *= aMult[i].iMult;
+      break;
+    }
+  }
+  if( v>0x7fffffff ) fatalError("parameter too large - max 2147483648");
+  return (int)(isNeg? -v : v);
+}
+
+/*
 ** Print sketchy documentation for this utility program
 */
 static void showHelp(void){
@@ -696,6 +754,7 @@ static void showHelp(void){
 "  --help                Show this help text\n"
 "  -q                    Reduced output\n"
 "  --quiet               Reduced output\n"
+"  --limit-mem N         Limit memory used by test SQLite instance to N bytes\n"
 "  --limit-vdbe          Panic if an sync SQL runs for more than 100,000 cycles\n"
 "  --load-sql ARGS...    Load SQL scripts fro files into SOURCE-DB\n"
 "  --load-db ARGS...     Load template databases from files into SOURCE_DB\n"
@@ -739,6 +798,7 @@ int main(int argc, char **argv){
   int cellSzCkFlag = 0;        /* --cell-size-check */
   int sqlFuzz = 0;             /* True for SQL fuzz testing. False for DB fuzz */
   int iTimeout = 120;          /* Default 120-second timeout */
+  int nMem = 0;                /* Memory limit */
 
   iBegin = timeOfDay();
 #ifdef __unix__
@@ -756,11 +816,15 @@ int main(int argc, char **argv){
       }else
       if( strcmp(z,"dbid")==0 ){
         if( i>=argc-1 ) fatalError("missing arguments on %s", argv[i]);
-        onlyDbid = atoi(argv[++i]);
+        onlyDbid = integerValue(argv[++i]);
       }else
       if( strcmp(z,"help")==0 ){
         showHelp();
         return 0;
+      }else
+      if( strcmp(z,"limit-mem")==0 ){
+        if( i>=argc-1 ) fatalError("missing arguments on %s", argv[i]);
+        nMem = integerValue(argv[++i]);
       }else
       if( strcmp(z,"limit-vdbe")==0 ){
         vdbeLimitFlag = 1;
@@ -794,11 +858,11 @@ int main(int argc, char **argv){
       }else
       if( strcmp(z,"sqlid")==0 ){
         if( i>=argc-1 ) fatalError("missing arguments on %s", argv[i]);
-        onlySqlid = atoi(argv[++i]);
+        onlySqlid = integerValue(argv[++i]);
       }else
       if( strcmp(z,"timeout")==0 ){
         if( i>=argc-1 ) fatalError("missing arguments on %s", argv[i]);
-        iTimeout = atoi(argv[++i]);
+        iTimeout = integerValue(argv[++i]);
       }else
       if( strcmp(z,"timeout-test")==0 ){
         timeoutTest = 1;
@@ -927,6 +991,17 @@ int main(int argc, char **argv){
     sqlite3_close(db);
     if( sqlite3_memory_used()>0 ){
       fatalError("SQLite has memory in use before the start of testing");
+    }
+
+    /* Limit available memory, if requested */
+    if( nMem>0 ){
+      void *pHeap;
+      sqlite3_shutdown();
+      pHeap = malloc(nMem);
+      if( pHeap==0 ){
+        fatalError("failed to allocate %d bytes of heap memory", nMem);
+      }
+      sqlite3_config(SQLITE_CONFIG_HEAP, pHeap, nMem, 128);
     }
   
     /* Register the in-memory virtual filesystem
