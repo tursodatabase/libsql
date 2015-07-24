@@ -421,16 +421,16 @@ test_suite "memsubsys1" -description {
 } -files [
   test_set $::allquicktests -exclude ioerr5.test malloc5.test mmap1.test
 ] -initialize {
+  test_set_config_pagecache 4096 24
   catch {db close}
   sqlite3_shutdown
-  sqlite3_config_pagecache 4096 24
   sqlite3_config_scratch 25000 1
   sqlite3_initialize
   autoinstall_test_functions
 } -shutdown {
+  test_restore_config_pagecache
   catch {db close}
   sqlite3_shutdown
-  sqlite3_config_pagecache 0 0
   sqlite3_config_scratch 0 0
   sqlite3_initialize
   autoinstall_test_functions
@@ -448,16 +448,16 @@ test_suite "memsubsys2" -description {
 } -files [
   test_set $::allquicktests -exclude ioerr5.test malloc5.test
 ] -initialize {
+  test_set_config_pagecache 512 5
   catch {db close}
   sqlite3_shutdown
-  sqlite3_config_pagecache 512 5
   sqlite3_config_scratch 1000 1
   sqlite3_initialize
   autoinstall_test_functions
 } -shutdown {
+  test_restore_config_pagecache
   catch {db close}
   sqlite3_shutdown
-  sqlite3_config_pagecache 0 0
   sqlite3_config_scratch 0 0
   sqlite3_initialize
   autoinstall_test_functions

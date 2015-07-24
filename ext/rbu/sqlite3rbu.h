@@ -47,7 +47,7 @@
 ** to read from the original database snapshot. In other words, partially 
 ** applied transactions are not visible to other clients. 
 **
-** "RBU" stands for "Over The Air" update. As in a large database update
+** "RBU" stands for "Resumable Bulk Update". As in a large database update
 ** transmitted via a wireless network to a mobile device. A transaction
 ** applied using this extension is hence refered to as an "RBU update".
 **

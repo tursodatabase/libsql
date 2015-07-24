@@ -1050,15 +1050,18 @@ soaktest:	$(TESTPROGS)
 	./testfixture$(TEXE) $(TOP)/test/all.test -soak=1 $(TESTOPTS)
 
 # Do extra testing but not everything.
-fulltestonly:	$(TESTPROGS)
+fulltestonly:	$(TESTPROGS) fuzztest
 	./testfixture$(TEXE) $(TOP)/test/full.test
 
 # Fuzz testing
 fuzztest:	fuzzcheck$(TEXE) $(FUZZDATA)
 	./fuzzcheck$(TEXE) $(FUZZDATA)
 
+fastfuzztest:	fuzzcheck$(TEXE) $(FUZZDATA)
+	./fuzzcheck$(TEXE) --limit-mem 100M $(FUZZDATA)
+
 valgrindfuzz:	fuzzcheck$(TEXT) $(FUZZDATA)
-	valgrind ./fuzzcheck$(TEXE) --cell-size-check --quiet $(FUZZDATA)
+	valgrind ./fuzzcheck$(TEXE) --cell-size-check --limit-mem 10M $(FUZZDATA)
 
 # Minimal testing that runs in less than 3 minutes
 #
@@ -1068,7 +1071,7 @@ quicktest:	./testfixture$(TEXE)
 # This is the common case.  Run many tests that do not take too long,
 # including fuzzcheck, sqlite3_analyzer, and sqldiff tests.
 #
-test:	$(TESTPROGS) fuzztest
+test:	$(TESTPROGS) fastfuzztest
 	./testfixture$(TEXE) $(TOP)/test/veryquick.test $(TESTOPTS)
 
 # Run a test using valgrind.  This can take a really long time

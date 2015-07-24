@@ -2047,6 +2047,45 @@ proc db_delete_and_reopen {{file test.db}} {
   sqlite3 db $file
 }
 
+# Close any connections named [db], [db2] or [db3]. Then use sqlite3_config
+# to configure the size of the PAGECACHE allocation using the parameters
+# provided to this command. Save the old PAGECACHE parameters in a global 
+# variable so that [test_restore_config_pagecache] can restore the previous
+# configuration.
+#
+# Before returning, reopen connection [db] on file test.db.
+#
+proc test_set_config_pagecache {sz nPg} {
+  catch {db close}
+  catch {db2 close}
+  catch {db3 close}
+
+  sqlite3_shutdown
+  set ::old_pagecache_config [sqlite3_config_pagecache $sz $nPg]
+  sqlite3_initialize
+  autoinstall_test_functions
+  reset_db
+}
+
+# Close any connections named [db], [db2] or [db3]. Then use sqlite3_config
+# to configure the size of the PAGECACHE allocation to the size saved in
+# the global variable by an earlier call to [test_set_config_pagecache].
+#
+# Before returning, reopen connection [db] on file test.db.
+#
+proc test_restore_config_pagecache {} {
+  catch {db close}
+  catch {db2 close}
+  catch {db3 close}
+
+  sqlite3_shutdown
+  eval sqlite3_config_pagecache $::old_pagecache_config
+  unset ::old_pagecache_config 
+  sqlite3_initialize
+  autoinstall_test_functions
+  sqlite3 db test.db
+}
+
 # If the library is compiled with the SQLITE_DEFAULT_AUTOVACUUM macro set
 # to non-zero, then set the global variable $AUTOVACUUM to 1.
 set AUTOVACUUM $sqlite_options(default_autovacuum)

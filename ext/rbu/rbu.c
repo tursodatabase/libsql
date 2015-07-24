@@ -65,6 +65,7 @@ int main(int argc, char **argv){
   int i;
   const char *zTarget;            /* Target database to apply RBU to */
   const char *zRbu;               /* Database containing RBU */
+  char zBuf[200];                 /* Buffer for printf() */
   char *zErrmsg;                  /* Error message, if any */
   sqlite3rbu *pRbu;               /* RBU handle */
   int nStep = 0;                  /* Maximum number of step() calls */
@@ -98,17 +99,19 @@ int main(int argc, char **argv){
   /* Let the user know what happened. */
   switch( rc ){
     case SQLITE_OK:
-      fprintf(stdout, 
+      sqlite3_snprintf(sizeof(zBuf), zBuf,
           "SQLITE_OK: rbu update incomplete (%lld operations so far)\n",
           nProgress
       );
+      fprintf(stdout, zBuf);
       break;
 
     case SQLITE_DONE:
-      fprintf(stdout, 
+      sqlite3_snprintf(sizeof(zBuf), zBuf,
           "SQLITE_DONE: rbu update completed (%lld operations)\n",
           nProgress
       );
+      fprintf(stdout, zBuf);
       break;
 
     default:
