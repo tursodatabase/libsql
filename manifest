@@ -1,5 +1,5 @@
-C Add\sthe\ssqlite3_bind_zeroblob64()\sAPI.
-D 2015-07-24T17:36:34.275
+C Fix\sa\stest\sscript\sbug\sintroduced\sby\s[562687d9].
+D 2015-07-24T18:22:29.438
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4de3ef40c8b3b75c0c55ff4242a43c8ce1ad90ee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1028,7 +1028,7 @@ F test/tclsqlite.test 7fb866443c7deceed22b63948ccd6f76b52ad054
 F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
 F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptrigger.test 8ec228b0db5d7ebc4ee9b458fc28cb9e7873f5e1
-F test/tester.tcl 6d0df5c4e39b76390d967c37c1855cb1d0c454c2
+F test/tester.tcl 83cc29c89259490b25d2d7e47535d6f2ed5a57c7
 F test/thread001.test 9f22fd3525a307ff42a326b6bc7b0465be1745a5
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -1365,7 +1365,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P cfeb1b1c294c58222549d06819e9df2e300388fd
-R be55ecd95e11079a1d74a40086198667
+P 1997ee548b2e569a39e73319b661c1a78dfe5dae
+R f8b9545e94c6fbffbe67ad49b98674a7
 U dan
-Z 9412dcdb73ce7aff94945d2816a795b2
+Z 7d7fc23acf815710c2dab9adf78529b1

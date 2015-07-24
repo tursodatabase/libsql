@@ -2058,7 +2058,7 @@ proc test_set_config_pagecache {sz nPg} {
   set ::old_pagecache_config [sqlite3_config_pagecache $sz $nPg]
   sqlite3_initialize
   autoinstall_test_functions
-  sqlite3 db test.db
+  reset_db
 }
 
 # Close any connections named [db], [db2] or [db3]. Then use sqlite3_config
