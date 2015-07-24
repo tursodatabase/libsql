@@ -1,5 +1,5 @@
-C Enable\sthe\sRBU\sextension\sto\scompile\scleanly\son\sWindows\susing\sMSVC.
-D 2015-07-24T21:19:25.937
+C Fix\sthe\szeroblob.test\sscript\sso\sthat\sit\sworks\seven\son\sbuilds\swhere\sthe\nSQLITE_MAX_LENGTH\shas\sbeen\sraised\sto\s2147483645.
+D 2015-07-24T23:28:05.055
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4de3ef40c8b3b75c0c55ff4242a43c8ce1ad90ee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1308,7 +1308,7 @@ F test/without_rowid4.test 4e08bcbaee0399f35d58b5581881e7a6243d458a
 F test/without_rowid5.test 61256715b686359df48ca1742db50cc7e3e7b862
 F test/without_rowid6.test db0dbf03c49030aa3c1ba5f618620334bd2baf5f
 F test/wordcount.c 9915e06cb33d8ca8109b8700791afe80d305afda
-F test/zeroblob.test c54bc7a95df5fb2d463e00822e1377384954c161
+F test/zeroblob.test 3857870fe681b8185654414a9bccfde80b62a0fa
 F test/zerodamage.test cf6748bad89553cc1632be51a6f54e487e4039ac
 F tool/build-all-msvc.bat 9058bd90a3c078a3d8c17d40e853aaa0f47885f4 x
 F tool/build-shell.sh 950f47c6174f1eea171319438b93ba67ff5bf367
@@ -1366,7 +1366,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2d572b8cdc67679cc95e69677a87e7b4a82f6c2d
-R 7ad7b2938e518b64d413cdd1d26d7b2c
-U mistachkin
-Z 50750fa0b6e34b0305f7afdd413b595e
+P cca79fdc3dff65907c2a59369057265b4512058f
+R 2f4a57e20b923c179d4f6b0e22b81699
+U drh
+Z 02c1293eee45da79ac6f43a77574bc90
