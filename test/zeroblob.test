@@ -23,6 +23,8 @@ ifcapable !incrblob {
   return
 }
 
+test_set_config_pagecache 0 0
+
 # When zeroblob() is used for the last field of a column, then the
 # content of the zeroblob is never instantiated on the VDBE stack.
 # But it does get inserted into the database correctly.
@@ -41,6 +43,7 @@ do_test zeroblob-1.1 {
   }
   set ::sqlite3_max_blobsize
 } {10}
+
 do_test zeroblob-1.1.1 {
   expr {[sqlite3_memory_highwater]<$::memused+25000}
 } {1}
@@ -265,4 +268,5 @@ do_test zeroblob-10.1 {
 } {1 {string or blob too big}}
 
 
+test_restore_config_pagecache
 finish_test

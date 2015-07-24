@@ -21,12 +21,7 @@ source $testdir/tester.tcl
 # These tests deal with corrupt database files
 #
 database_may_be_corrupt
-db close
-sqlite3_shutdown
-sqlite3_config_pagecache 0 0
-sqlite3_initialize
-autoinstall_test_functions
-sqlite3 db test.db
+test_set_config_pagecache 0 0
 
 
 expr srand(123)
@@ -176,4 +171,6 @@ for {set ii 0} {$ii < 5000} {incr ii} {
   } $::cksum
 }
 
+test_restore_config_pagecache
 finish_test
+

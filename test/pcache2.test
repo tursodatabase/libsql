@@ -16,6 +16,8 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+test_set_config_pagecache 0 0
+
 # Set up a pcache memory pool so that we can easily track how many
 # pages are being used for cache.
 #
@@ -78,4 +80,5 @@ sqlite3_config serialized
 sqlite3_initialize
 autoinstall_test_functions
 
+test_restore_config_pagecache
 finish_test

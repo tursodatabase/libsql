@@ -20,11 +20,6 @@
 #
 # $Id: malloc5.test,v 1.22 2009/04/11 19:09:54 drh Exp $
 
-sqlite3_shutdown
-sqlite3_config_pagecache 0 100
-sqlite3_initialize
-autoinstall_test_functions
-
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 source $testdir/malloc_common.tcl
@@ -43,6 +38,8 @@ ifcapable !memorymanage {
    finish_test
    return
 }
+
+test_set_config_pagecache 0 100
 
 sqlite3_soft_heap_limit 0
 sqlite3 db test.db
@@ -415,5 +412,6 @@ do_test malloc5-6.3.6 {
 db2 close
 
 sqlite3_soft_heap_limit $::soft_limit
+test_restore_config_pagecache
 finish_test
 catch {db close}

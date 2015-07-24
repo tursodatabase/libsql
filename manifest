@@ -1,5 +1,5 @@
-C Update\sRBU\sdescription\scomment\sin\sthe\sheader\sfile.\s\sNo\schanges\sto\scode.
-D 2015-07-24T00:02:15.028
+C Modify\sa\sfew\stest\sscripts\sto\savoid\sleaving\sthe\ssqlite3Config\sstructure\sin\sa\snon-default\sstate.
+D 2015-07-24T14:17:17.027
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in b13c653ee215cb0d294ffa4f10ac4d14255767e0
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -362,7 +362,7 @@ F src/test_intarray.c 870124b95ec4c645d4eb84f15efb7133528fb1a5
 F src/test_intarray.h 9dc57417fb65bc7835cc18548852cc08cc062202
 F src/test_journal.c 5360fbe1d1e4416ca36290562fd5a2e3f70f32aa
 F src/test_loadext.c a5251f956ab6af21e138dc1f9c0399394a510cb4
-F src/test_malloc.c 208f09a4e21defa496bc1094fcfadea19385a112
+F src/test_malloc.c e19790f6bdc9be7b75147682153520df7843487a
 F src/test_multiplex.c 9fefd23f6cc3fa9bf0748a5e453167e7b9f193ce
 F src/test_multiplex.h c08e4e8f8651f0c5e0509b138ff4d5b43ed1f5d3
 F src/test_mutex.c dbdfaff8580071f2212a0deae3325a93a737819c
@@ -732,7 +732,7 @@ F test/func5.test cdd224400bc3e48d891827cc913a57051a426fa4
 F test/fuzz-oss1.test 4912e528ec9cf2f42134456933659d371c9e0d74
 F test/fuzz.test 96083052bf5765e4518c1ba686ce2bab785670d1
 F test/fuzz2.test 76dc35b32b6d6f965259508508abce75a6c4d7e1
-F test/fuzz3.test 0d13010d1c13003a3aa57dda2f69b6b71ccac46e
+F test/fuzz3.test 53fabcd5f0f430f8b221282f6c12c4d0903c21eb
 F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
 F test/fuzz_malloc.test 328f70aaca63adf29b4c6f06505ed0cf57ca7c26
 F test/fuzzcheck.c b973b06b500e6fc052d7059257cdf70df1f3a986
@@ -817,13 +817,13 @@ F test/lock5.test c6c5e0ebcb21c61a572870cc86c0cb9f14cede38
 F test/lock6.test ad5b387a3a8096afd3c68a55b9535056431b0cf5
 F test/lock7.test 49f1eaff1cdc491cc5dee3669f3c671d9f172431
 F test/lock_common.tcl 7ffb45accf6ee91c736df9bafe0806a44358f035
-F test/lookaside.test 93f07bac140c5bb1d49f3892d2684decafdc7af2
+F test/lookaside.test 90052e87282de256d613fcf8c9cbb845e4001d2f
 F test/main.test 16131264ea0c2b93b95201f0c92958e85f2ba11a
 F test/make-where7.tcl 05c16b5d4f5d6512881dfec560cb793915932ef9
 F test/malloc.test 21c213365f2cca95ab2d7dc078dc8525f96065f8
 F test/malloc3.test e3b32c724b5a124b57cb0ed177f675249ad0c66a
 F test/malloc4.test 957337613002b7058a85116493a262f679f3a261
-F test/malloc5.test 4e87e596a28908c034eb5777fc33dd921bb44fc3
+F test/malloc5.test 02ed7c5313f0a68d95f2dfca8c8962132bd1f04b
 F test/malloc6.test 2f039d9821927eacae43e1831f815e157659a151
 F test/malloc7.test 7c68a32942858bc715284856c5507446bba88c3a
 F test/malloc8.test 9b7a3f8cb9cf0b12fff566e80a980b1767bd961d
@@ -846,7 +846,7 @@ F test/manydb.test 28385ae2087967aa05c38624cec7d96ec74feb3e
 F test/mem5.test c6460fba403c5703141348cd90de1c294188c68f
 F test/memdb.test c1f2a343ad14398d5d6debda6ea33e80d0dafcc7
 F test/memleak.test 10b9c6c57e19fc68c32941495e9ba1c50123f6e2
-F test/memsubsys1.test 1733c617e246642db5bf3b9f78c18e2b14fac96c
+F test/memsubsys1.test d2b2d6ca37890b26703a2258df8fd66f9869da02
 F test/memsubsys2.test 3a1c1a9de48e5726faa85108b02459fae8cb9ee9
 F test/minmax.test 42fbad0e81afaa6e0de41c960329f2b2c3526efd
 F test/minmax2.test b44bae787fc7b227597b01b0ca5575c7cb54d3bc
@@ -900,9 +900,9 @@ F test/pagerfault3.test 1003fcda009bf48a8e22a516e193b6ef0dd1bbd8
 F test/pageropt.test 6b8f6a123a5572c195ad4ae40f2987007923bbd6
 F test/pagesize.test 5769fc62d8c890a83a503f67d47508dfdc543305
 F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
-F test/pcache2.test c70d92547550136ba6f818e6a44fe246d2738604
+F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
-F test/permutations.test 04004bd977f66c064f27e6d18edadce486cf5074
+F test/permutations.test ac3b00c299250cc087d4a527b5c75a0f8aef4e54
 F test/pragma.test be7195f0aa72bdb8a512133e9640ac40f15b57a2
 F test/pragma2.test f624a496a95ee878e81e59961eade66d5c00c028
 F test/pragma3.test 6f849ccffeee7e496d2f2b5e74152306c0b8757c
@@ -1028,7 +1028,7 @@ F test/tclsqlite.test 7fb866443c7deceed22b63948ccd6f76b52ad054
 F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
 F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptrigger.test 8ec228b0db5d7ebc4ee9b458fc28cb9e7873f5e1
-F test/tester.tcl b3a41e20f98a029a76e930b33d0711c5854267bb
+F test/tester.tcl 6d0df5c4e39b76390d967c37c1855cb1d0c454c2
 F test/thread001.test 9f22fd3525a307ff42a326b6bc7b0465be1745a5
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -1307,7 +1307,7 @@ F test/without_rowid4.test 4e08bcbaee0399f35d58b5581881e7a6243d458a
 F test/without_rowid5.test 61256715b686359df48ca1742db50cc7e3e7b862
 F test/without_rowid6.test db0dbf03c49030aa3c1ba5f618620334bd2baf5f
 F test/wordcount.c 9915e06cb33d8ca8109b8700791afe80d305afda
-F test/zeroblob.test fb3c0e4ab172d386954deda24c03f500e121d80d
+F test/zeroblob.test dcffae9583ac7a6683e814cc7a9c85b2fd73ddd8
 F test/zerodamage.test cf6748bad89553cc1632be51a6f54e487e4039ac
 F tool/build-all-msvc.bat 9058bd90a3c078a3d8c17d40e853aaa0f47885f4 x
 F tool/build-shell.sh 950f47c6174f1eea171319438b93ba67ff5bf367
@@ -1365,7 +1365,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 017c5019e1ce042025d4f327e50ec50af49f9fa4
-R a8265770104c472748ff94ce6fcf731e
-U mistachkin
-Z 023cdb466d093d6177a784bd88dec4ce
+P 119883a21bdcab66c15d1e80f3da20addda328ad
+R f93dc01dd263cc307f98235646fce28d
+U dan
+Z 1717e31dfb28e99256b065adb47b07f0
