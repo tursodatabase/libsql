@@ -1415,6 +1415,20 @@ int sqlite3_bind_zeroblob(sqlite3_stmt *pStmt, int i, int n){
   }
   return rc;
 }
+int sqlite3_bind_zeroblob64(sqlite3_stmt *pStmt, int i, sqlite3_uint64 n){
+  int rc;
+  Vdbe *p = (Vdbe *)pStmt;
+  sqlite3_mutex_enter(p->db->mutex);
+  if( n>(u64)p->db->aLimit[SQLITE_LIMIT_LENGTH] ){
+    rc = SQLITE_TOOBIG;
+  }else{
+    assert( (n & 0x7FFFFFFF)==n );
+    rc = sqlite3_bind_zeroblob(pStmt, i, n);
+  }
+  rc = sqlite3ApiExit(p->db, rc);
+  sqlite3_mutex_leave(p->db->mutex);
+  return rc;
+}
 
 /*
 ** Return the number of wildcards that can be potentially bound to.

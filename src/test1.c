@@ -3009,6 +3009,43 @@ static int test_bind_zeroblob(
 }
 
 /*
+** Usage:   sqlite3_bind_zeroblob64  STMT IDX N
+**
+** Test the sqlite3_bind_zeroblob64 interface.  STMT is a prepared statement.
+** IDX is the index of a wildcard in the prepared statement.  This command
+** binds a N-byte zero-filled BLOB to the wildcard.
+*/
+static int test_bind_zeroblob64(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_stmt *pStmt;
+  int idx;
+  i64 n;
+  int rc;
+
+  if( objc!=4 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "STMT IDX N");
+    return TCL_ERROR;
+  }
+
+  if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[2], &idx) ) return TCL_ERROR;
+  if( Tcl_GetWideIntFromObj(interp, objv[3], &n) ) return TCL_ERROR;
+
+  rc = sqlite3_bind_zeroblob64(pStmt, idx, n);
+  if( sqlite3TestErrCode(interp, StmtToDb(pStmt), rc) ) return TCL_ERROR;
+  if( rc!=SQLITE_OK ){
+    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
+    return TCL_ERROR;
+  }
+
+  return TCL_OK;
+}
+
+/*
 ** Usage:   sqlite3_bind_int  STMT N VALUE
 **
 ** Test the sqlite3_bind_int interface.  STMT is a prepared statement.
@@ -6796,6 +6833,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_connection_pointer",    get_sqlite_pointer, 0 },
      { "sqlite3_bind_int",              test_bind_int,      0 },
      { "sqlite3_bind_zeroblob",         test_bind_zeroblob, 0 },
+     { "sqlite3_bind_zeroblob64",       test_bind_zeroblob64, 0 },
      { "sqlite3_bind_int64",            test_bind_int64,    0 },
      { "sqlite3_bind_double",           test_bind_double,   0 },
      { "sqlite3_bind_null",             test_bind_null     ,0 },

@@ -269,9 +269,9 @@ do_test zeroblob-10.1 {
 } {1 {string or blob too big}}
 
 #-------------------------------------------------------------------------
-## Test the zeroblob() function on its own with negative or oversized 
-## arguments.
-##
+# Test the zeroblob() function on its own with negative or oversized 
+# arguments.
+#
 do_execsql_test 11.0 { 
   SELECT length(zeroblob(-1444444444444444));
 } {0}
@@ -287,6 +287,34 @@ do_catchsql_test 11.3 {
 do_catchsql_test 11.4 {
   SELECT quote(test_zeroblob(-1));
 } {0 X''}
+
+#-------------------------------------------------------------------------
+# Test the sqlite3_bind_zeroblob64() API.
+#
+proc bind_and_run {stmt nZero} {
+  sqlite3_bind_zeroblob64 $stmt 1 $nZero
+  sqlite3_step $stmt
+  set ret [sqlite3_column_int $stmt 0]
+  sqlite3_reset $stmt
+  set ret
+}
+set stmt [sqlite3_prepare db "SELECT length(?)" -1 dummy]
+
+do_test 12.1 { bind_and_run $stmt 40 } 40
+do_test 12.2 { bind_and_run $stmt  0 }  0
+do_test 12.3 { bind_and_run $stmt 1000 } 1000
+
+do_test 12.4 { 
+  list [catch { bind_and_run $stmt [expr 1500 * 1024 * 1024] } msg] $msg 
+} {1 SQLITE_TOOBIG}
+do_test 12.5 {
+  sqlite3_step $stmt
+  set ret [sqlite3_column_int $stmt 0]
+  sqlite3_reset $stmt
+  set ret
+} {1000}
+
+sqlite3_finalize $stmt
 
 test_restore_config_pagecache
 finish_test
