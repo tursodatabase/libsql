@@ -1,5 +1,5 @@
-C More\srobust\shandling\sof\szeroblob()\swith\soversized\sarguments.\s\sFix\sfuzzcheck\nso\sthat\sit\scan\sbe\srun\swith\slimited\sheap\smemory.
-D 2015-07-24T15:49:23.313
+C Add\sthe\ssqlite3_result_zeroblob64()\sAPI.\sUse\sit\sin\sthe\sSQL\szeroblob()\sfunction.
+D 2015-07-24T16:24:37.673
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6a2355cacb04337e6f29a95200512b1cdd8c1857
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -282,7 +282,7 @@ F src/delete.c 8857a6f27560718f65d43bdbec86c967ae1f8dfa
 F src/expr.c c5c58e4d01c7ceb2266791d8d877f1b23a88e316
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c c9b63a217d86582c22121699a47f22f524608869
-F src/func.c d08d2106ba10dddbee45e001b8516f4d1df2b20e
+F src/func.c 7810a7e88340f1fc1173cd0ac1461dc809c32039
 F src/global.c 508e4087f7b41d688e4762dcf4d4fe28cfbc87f9
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
 F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
@@ -329,9 +329,9 @@ F src/resolve.c 2d47554370de8de6dd5be060cef9559eec315005
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 57ef3d98c4400b93eea318813be41b2af2da2217
 F src/shell.c 8af3cced094aebb5f57a8ad739b9dafc7867eed7
-F src/sqlite.h.in ae2a0ceb9d65880437d56dfa9bd9ed1af7d36fce
+F src/sqlite.h.in f589633da2c6b55bb9eef525eb8ab918693a95a2
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
-F src/sqlite3ext.h be1a718b7d2ce40ceba725ae92c8eb5f18003066
+F src/sqlite3ext.h 3d12a31e2346ce8c00c189bc5816d056d4f36c5f
 F src/sqliteInt.h c67d0a1368484dd156e7d13caa62862adc2ebefa
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c f266ad8a2892d659b74f0f50cb6a88b6e7c12179
@@ -393,7 +393,7 @@ F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
 F src/vdbe.c 86be40a4568f5385048ea6623adfd11ddb7bf710
 F src/vdbe.h 7a75045d879118b9d3af7e8b3c108f2f27c51473
 F src/vdbeInt.h 8b54e01ad0463590e7cffabce0bc36da9ee4f816
-F src/vdbeapi.c 082746d4c4788d889a2a62b858d753453e9c9c6d
+F src/vdbeapi.c a0ffa364a7a65a401a1784d4cae60b4fbb5851a9
 F src/vdbeaux.c 787f5f9d58f4c6f39294ed06909ba602d1a402e6
 F src/vdbeblob.c 4f2e8e075d238392df98c5e03a64342465b03f90
 F src/vdbemem.c ae38a0d35ae71cf604381a887c170466ba518090
@@ -1307,7 +1307,7 @@ F test/without_rowid4.test 4e08bcbaee0399f35d58b5581881e7a6243d458a
 F test/without_rowid5.test 61256715b686359df48ca1742db50cc7e3e7b862
 F test/without_rowid6.test db0dbf03c49030aa3c1ba5f618620334bd2baf5f
 F test/wordcount.c 9915e06cb33d8ca8109b8700791afe80d305afda
-F test/zeroblob.test 202dbc81129a4a1509f829384b2b8aaf091635a9
+F test/zeroblob.test de0bf437a28a0b46f25bf735a0b83f74d46256ed
 F test/zerodamage.test cf6748bad89553cc1632be51a6f54e487e4039ac
 F tool/build-all-msvc.bat 9058bd90a3c078a3d8c17d40e853aaa0f47885f4 x
 F tool/build-shell.sh 950f47c6174f1eea171319438b93ba67ff5bf367
@@ -1365,7 +1365,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 562687d9f56bf4bb0f5f07f97cbbb7649c81faf8
-R 1786aea7f8e6749074e67e1af5c8c763
-U drh
-Z 01a0292cb698589e36de0afbd61cb525
+P 4e3e516a42059c97f42a7eb59bdf5cded0ff843a
+R bcc4b0d19f8b6f51dfb98e4327642a62
+U dan
+Z 5486cc6a4cbcc5894497bb04b4f0e89b

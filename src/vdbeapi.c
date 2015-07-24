@@ -162,7 +162,10 @@ int sqlite3_clear_bindings(sqlite3_stmt *pStmt){
 const void *sqlite3_value_blob(sqlite3_value *pVal){
   Mem *p = (Mem*)pVal;
   if( p->flags & (MEM_Blob|MEM_Str) ){
-    if( sqlite3VdbeMemExpandBlob(p)!=SQLITE_OK ) return 0;
+    if( sqlite3VdbeMemExpandBlob(p)!=SQLITE_OK ){
+      assert( p->flags==MEM_Null && p->z==0 );
+      return 0;
+    }
     p->flags |= MEM_Blob;
     return p->n ? p->z : 0;
   }else{
@@ -423,6 +426,15 @@ void sqlite3_result_value(sqlite3_context *pCtx, sqlite3_value *pValue){
 void sqlite3_result_zeroblob(sqlite3_context *pCtx, int n){
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
   sqlite3VdbeMemSetZeroBlob(pCtx->pOut, n);
+}
+int sqlite3_result_zeroblob64(sqlite3_context *pCtx, u64 n){
+  Mem *pOut = pCtx->pOut;
+  assert( sqlite3_mutex_held(pOut->db->mutex) );
+  if( n>pOut->db->aLimit[SQLITE_LIMIT_LENGTH] ){
+    return SQLITE_TOOBIG;
+  }
+  sqlite3VdbeMemSetZeroBlob(pCtx->pOut, (int)n);
+  return SQLITE_OK;
 }
 void sqlite3_result_error_code(sqlite3_context *pCtx, int errCode){
   pCtx->isError = errCode;
