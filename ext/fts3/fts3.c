@@ -4231,7 +4231,6 @@ static int fts3EvalPhraseStart(Fts3Cursor *pCsr, int bOptOk, Fts3Phrase *p){
   int bIncrOk = (bOptOk 
    && pCsr->bDesc==pTab->bDescIdx 
    && p->nToken<=MAX_INCR_PHRASE_TOKENS && p->nToken>0
-   && p->nToken<=MAX_INCR_PHRASE_TOKENS && p->nToken>0
 #ifdef SQLITE_TEST
    && pTab->bNoIncrDoclist==0
 #endif

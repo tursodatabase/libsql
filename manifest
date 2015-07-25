@@ -1,5 +1,5 @@
-C Fix\sthe\srowallock.test\sscript\sso\sthat\sit\sworks\swith\sbuilds\sthat\sdo\snot\ssupport\smmap\smode.
-D 2015-07-25T14:26:17.310
+C Remove\sa\sduplicated\s"if"\scondition\sfrom\sfts3.c.
+D 2015-07-25T19:26:52.805
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4de3ef40c8b3b75c0c55ff4242a43c8ce1ad90ee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -78,7 +78,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c d2f7981f4d7dfeb76aac82a15c7f37f425329c0f
+F ext/fts3/fts3.c b04b0c57761fdba2ae562d9d9ba50c7c4a95d9ea
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 601743955ac43a0e82e6828a931c07bb3b0c95ff
 F ext/fts3/fts3_aux.c 9edc3655fcb287f0467d0a4b886a01c6185fe9f1
@@ -1366,7 +1366,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P af85b01d93d3043f2e1a38d289ca00a5ef24520c
-R db94ec1d73cc23ba4e670b88b84d4747
+P 7efed5786bb6a7a452f5aece9d6c6a09e6930939
+R 02cd6ad3aa414fdb248eb64044a0f9b8
 U dan
-Z b8835290039c2a6fa5a2ed83d159201f
+Z 8274b8233f11154aae74796194660376
