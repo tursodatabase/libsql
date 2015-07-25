@@ -1,5 +1,5 @@
-C Fix\sa\stest\sscript\sproblem\sin\smemsubsys2.test.
-D 2015-07-25T12:03:57.079
+C Fix\sthe\swal3.test\smodule\sso\sthat\sit\sworks\swith\sthe\smemsubsys1\spermutation.
+D 2015-07-25T14:12:26.528
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4de3ef40c8b3b75c0c55ff4242a43c8ce1ad90ee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1247,7 +1247,7 @@ F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test ea8778d5b0df200adef2ca7c00c3c37d4375f772
 F test/wal.test dbfc482e10c7263298833bb1fc60b3ac9d6340a1
 F test/wal2.test 1f841d2048080d32f552942e333fd99ce541dada
-F test/wal3.test b22eb662bcbc148c5f6d956eaf94b047f7afe9c0
+F test/wal3.test 2b5445e5da44780b9b44712f5a38523f7aeb0941
 F test/wal4.test 4744e155cd6299c6bd99d3eab1c82f77db9cdb3c
 F test/wal5.test 88b5d9a6a3d1532497ee9f4296f010d66f07e33c
 F test/wal6.test 527581f5527bf9c24394991e2be83000aace5f9e
@@ -1366,7 +1366,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3418f1f165a0746cdf130e6a19fa0e1eb56df1d4
-R 7676a8d79aa51b2ee7a4dacd49bb1b0d
-U dan
-Z bdde88cb988ed254dc712c749efa5efc
+P 70885729b7488474e7294212f9b334382675b112
+R 250ee79575b07f5905c70272d3f0725d
+U drh
+Z 6e6235b4067a27fa859f391ef1f319aa
