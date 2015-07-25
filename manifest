@@ -1,5 +1,5 @@
-C Fix\sthe\szeroblob.test\sscript\sso\sthat\sit\sworks\seven\son\sbuilds\swhere\sthe\nSQLITE_MAX_LENGTH\shas\sbeen\sraised\sto\s2147483645.
-D 2015-07-24T23:28:05.055
+C Disable\sthe\spage\scache\sbulk\sallocation\sfor\sthe\sshrink.test\sand\swal.test\nmodules.
+D 2015-07-25T03:10:12.895
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4de3ef40c8b3b75c0c55ff4242a43c8ce1ad90ee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -984,7 +984,7 @@ F test/shell4.test ddf0a99044e2245a87fc17423e3aaa1445b3243b
 F test/shell5.test c04e9f9f948305706b88377c464c7f08ce7479f9
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/show_speedtest1_rtree.tcl 32e6c5f073d7426148a6936a0408f4b5b169aba5
-F test/shrink.test 06deac10d591186017466ce67d10645150bfdeec
+F test/shrink.test 1b4330b1fd9e818c04726d45cb28db73087535ce
 F test/sidedelete.test f0ad71abe6233e3b153100f3b8d679b19a488329
 F test/skipscan1.test d37a75b4be4eb9dedeb69b4f38b1d0a74b5021d7
 F test/skipscan2.test d1d1450952b7275f0b0a3a981f0230532743951a
@@ -1245,7 +1245,7 @@ F test/vtabF.test fd5ad376f5a34fe0891df1f3cddb4fe7c3eb077e
 F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test ea8778d5b0df200adef2ca7c00c3c37d4375f772
-F test/wal.test 885f32b2b390b30b4aa3dbb0e568f8f78d40f5cc
+F test/wal.test dbfc482e10c7263298833bb1fc60b3ac9d6340a1
 F test/wal2.test 1f841d2048080d32f552942e333fd99ce541dada
 F test/wal3.test b22eb662bcbc148c5f6d956eaf94b047f7afe9c0
 F test/wal4.test 4744e155cd6299c6bd99d3eab1c82f77db9cdb3c
@@ -1366,7 +1366,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P cca79fdc3dff65907c2a59369057265b4512058f
-R 2f4a57e20b923c179d4f6b0e22b81699
+P db129149812cb4eadb4cd79ad293d14962d2638d
+R 4b700a6e9f158f95117e24139d4c4e0f
 U drh
-Z 02c1293eee45da79ac6f43a77574bc90
+Z 98395cb601dbd44708ff301e37a39dbf

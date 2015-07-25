@@ -22,6 +22,7 @@ source $testdir/wal_common.tcl
 set testprefix wal
 
 ifcapable !wal {finish_test ; return }
+test_set_config_pagecache 0 0
 
 proc reopen_db {} {
   catch { db close }
@@ -1587,4 +1588,5 @@ foreach mode {OFF MEMORY PERSIST DELETE TRUNCATE WAL} {
   db close
 }
 
+test_restore_config_pagecache
 finish_test
