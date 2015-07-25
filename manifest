@@ -1,5 +1,5 @@
-C Fix\sthe\swal3.test\smodule\sso\sthat\sit\sworks\swith\sthe\smemsubsys1\spermutation.
-D 2015-07-25T14:12:26.528
+C Fix\sthe\srowallock.test\sscript\sso\sthat\sit\sworks\swith\sbuilds\sthat\sdo\snot\ssupport\smmap\smode.
+D 2015-07-25T14:26:17.310
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4de3ef40c8b3b75c0c55ff4242a43c8ce1ad90ee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -928,7 +928,7 @@ F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
 F test/rollback.test 458fe73eb3ffdfdf9f6ba3e9b7350a6220414dea
 F test/rollback2.test fc14cf6d1a2b250d2735ef16124b971bce152f14
 F test/rollbackfault.test 6a004f71087cc399296cffbb5429ea6da655ae65
-F test/rowallock.test f7f834125f11ff62f6e1ae7d0b07fd9228f2d5a2
+F test/rowallock.test 3f88ec6819489d0b2341c7a7528ae17c053ab7cc
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
 F test/rowid.test 742b5741584a8a44fd83e856cc2896688401d645
 F test/rtree.test 0c8d9dd458d6824e59683c19ab2ffa9ef946f798
@@ -1366,7 +1366,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 70885729b7488474e7294212f9b334382675b112
-R 250ee79575b07f5905c70272d3f0725d
-U drh
-Z 6e6235b4067a27fa859f391ef1f319aa
+P af85b01d93d3043f2e1a38d289ca00a5ef24520c
+R db94ec1d73cc23ba4e670b88b84d4747
+U dan
+Z b8835290039c2a6fa5a2ed83d159201f
