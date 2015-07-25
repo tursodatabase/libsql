@@ -80,8 +80,11 @@ do_test memsubsys2-2.1 {
   sqlite3_free [set x [sqlite3_malloc 100000]]
   expr {$x!="0"}
 } {1}
-do_test memsubsys2-2.2 {
-  expr {[sqlite3_memory_highwater 0]>=[sqlite3_memory_used]+$highwater}
+do_test memsubsys2-2.2.1 {
+  expr {[sqlite3_memory_highwater 0]>=[sqlite3_memory_used]+100000}
+} {1}
+do_test memsubsys2-2.2.2 {
+  expr {[sqlite3_memory_highwater 0]>=$highwater+50000}
 } {1}
 
 # Test 3: Verify that turning of memstatus disables the statistics

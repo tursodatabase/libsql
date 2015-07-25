@@ -1,5 +1,5 @@
-C Disable\sthe\spage\scache\sbulk\sallocation\sfor\sthe\sshrink.test\sand\swal.test\nmodules.
-D 2015-07-25T03:10:12.895
+C Fix\sa\stest\sscript\sproblem\sin\smemsubsys2.test.
+D 2015-07-25T12:03:57.079
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4de3ef40c8b3b75c0c55ff4242a43c8ce1ad90ee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -848,7 +848,7 @@ F test/mem5.test c6460fba403c5703141348cd90de1c294188c68f
 F test/memdb.test c1f2a343ad14398d5d6debda6ea33e80d0dafcc7
 F test/memleak.test 10b9c6c57e19fc68c32941495e9ba1c50123f6e2
 F test/memsubsys1.test d2b2d6ca37890b26703a2258df8fd66f9869da02
-F test/memsubsys2.test 3a1c1a9de48e5726faa85108b02459fae8cb9ee9
+F test/memsubsys2.test 3e4a8d0c05fd3e5fa92017c64666730a520c7e08
 F test/minmax.test 42fbad0e81afaa6e0de41c960329f2b2c3526efd
 F test/minmax2.test b44bae787fc7b227597b01b0ca5575c7cb54d3bc
 F test/minmax3.test cc1e8b010136db0d01a6f2a29ba5a9f321034354
@@ -1366,7 +1366,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P db129149812cb4eadb4cd79ad293d14962d2638d
-R 4b700a6e9f158f95117e24139d4c4e0f
-U drh
-Z 98395cb601dbd44708ff301e37a39dbf
+P 3418f1f165a0746cdf130e6a19fa0e1eb56df1d4
+R 7676a8d79aa51b2ee7a4dacd49bb1b0d
+U dan
+Z bdde88cb988ed254dc712c749efa5efc
