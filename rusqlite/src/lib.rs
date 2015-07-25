@@ -568,6 +568,20 @@ impl<'conn> SqliteStatement<'conn> {
         SqliteStatement{ conn: conn, stmt: stmt, needs_reset: false }
     }
 
+    /// Get all the column names in the result set of the prepared statement.
+    pub fn column_names(&self) -> Vec<&str> {
+        let n = unsafe { ffi::sqlite3_column_count(self.stmt) };
+        let mut cols = Vec::with_capacity(n as usize);
+        for i in 0..n {
+            let slice = unsafe {
+                CStr::from_ptr(ffi::sqlite3_column_name(self.stmt, i))
+            };
+            let s = str::from_utf8(slice.to_bytes()).unwrap();
+            cols.push(s);
+        }
+        cols
+    }
+
     /// Execute the prepared statement.
     ///
     /// On success, returns the number of rows that were changed or inserted or deleted (via
@@ -967,6 +981,18 @@ mod test {
         assert_eq!(db.execute("INSERT INTO foo(x) VALUES (?)", &[&2i32]).unwrap(), 1);
 
         assert_eq!(3i32, db.query_row("SELECT SUM(x) FROM foo", &[], |r| r.get(0)).unwrap());
+    }
+
+    #[test]
+    fn test_prepare_column_names() {
+        let db = checked_memory_handle();
+        db.execute_batch("CREATE TABLE foo(x INTEGER);").unwrap();
+
+        let stmt = db.prepare("SELECT * FROM foo").unwrap();
+        assert_eq!(stmt.column_names(), vec!["x"]);
+
+        let stmt = db.prepare("SELECT x AS a, x AS b FROM foo").unwrap();
+        assert_eq!(stmt.column_names(), vec!["a", "b"]);
     }
 
     #[test]
