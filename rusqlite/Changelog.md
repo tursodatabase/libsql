@@ -1,3 +1,11 @@
+# Version 0.2.0 (2015-07-26)
+
+* Add `column_names()` to `SqliteStatement`.
+* By default, include `SQLITE_OPEN_NO_MUTEX` and `SQLITE_OPEN_URI` flags when opening a
+  new conneciton.
+* Fix generated bindings (e.g., `sqlite3_exec` was wrong).
+* Use now-generated `sqlite3_destructor_type` to define `SQLITE_STATIC` and `SQLITE_TRANSIENT`.
+
 # Version 0.1.0 (2015-05-11)
 
 * [breaking-change] Modify `query_row` to return a `Result` instead of unwrapping.
