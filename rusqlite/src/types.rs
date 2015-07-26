@@ -104,7 +104,7 @@ impl<'a> ToSql for &'a str {
     unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
         match str_to_cstring(self) {
             Ok(c_str) => ffi::sqlite3_bind_text(stmt, col, c_str.as_ptr(), -1,
-                                                Some(ffi::SQLITE_TRANSIENT())),
+                                                ffi::SQLITE_TRANSIENT()),
             Err(_)    => ffi::SQLITE_MISUSE,
         }
     }
@@ -119,8 +119,7 @@ impl ToSql for String {
 impl<'a> ToSql for &'a [u8] {
     unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
         ffi::sqlite3_bind_blob(
-            stmt, col, mem::transmute(self.as_ptr()), self.len() as c_int,
-            Some(ffi::SQLITE_TRANSIENT()))
+            stmt, col, mem::transmute(self.as_ptr()), self.len() as c_int, ffi::SQLITE_TRANSIENT())
     }
 }
 
