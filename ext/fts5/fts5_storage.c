@@ -180,7 +180,9 @@ static int fts5ExecPrintf(
 int sqlite3Fts5DropAll(Fts5Config *pConfig){
   int rc = fts5ExecPrintf(pConfig->db, 0, 
       "DROP TABLE IF EXISTS %Q.'%q_data';"
+      "DROP TABLE IF EXISTS %Q.'%q_idx';"
       "DROP TABLE IF EXISTS %Q.'%q_config';",
+      pConfig->zDb, pConfig->zName,
       pConfig->zDb, pConfig->zName,
       pConfig->zDb, pConfig->zName
   );
@@ -218,6 +220,7 @@ int sqlite3Fts5StorageRename(Fts5Storage *pStorage, const char *zName){
   int rc = sqlite3Fts5StorageSync(pStorage, 1);
 
   fts5StorageRenameOne(pConfig, &rc, "data", zName);
+  fts5StorageRenameOne(pConfig, &rc, "idx", zName);
   fts5StorageRenameOne(pConfig, &rc, "config", zName);
   if( pConfig->bColumnsize ){
     fts5StorageRenameOne(pConfig, &rc, "docsize", zName);
@@ -601,7 +604,9 @@ int sqlite3Fts5StorageDeleteAll(Fts5Storage *p){
 
   /* Delete the contents of the %_data and %_docsize tables. */
   rc = fts5ExecPrintf(pConfig->db, 0,
-      "DELETE FROM %Q.'%q_data';",
+      "DELETE FROM %Q.'%q_data';" 
+      "DELETE FROM %Q.'%q_idx';",
+      pConfig->zDb, pConfig->zName,
       pConfig->zDb, pConfig->zName
   );
   if( rc==SQLITE_OK && pConfig->bColumnsize ){
