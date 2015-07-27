@@ -1,5 +1,5 @@
-C Remove\sa\spotentially\sundefined\sbehaviour\sinvolving\ssigned\sintegers\sand\sbitshift\soperations\sfrom\sfts5_hash.c.
-D 2015-07-27T11:01:19.255
+C Minor\stweak\sto\sthe\sSQL\sschema\sused\sby\sfts5.
+D 2015-07-27T11:43:36.660
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4de3ef40c8b3b75c0c55ff4242a43c8ce1ad90ee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -112,9 +112,9 @@ F ext/fts5/fts5_buffer.c 80f9ba4431848cb857e3d2158f5280093dcd8015
 F ext/fts5/fts5_config.c fdfa63ae8e527ecfaa50f94063c610429cc887cf
 F ext/fts5/fts5_expr.c 56dcbcbdc9029dd76a31360de664559839f4be41
 F ext/fts5/fts5_hash.c 4bf4b99708848357b8a2b5819e509eb6d3df9246
-F ext/fts5/fts5_index.c e0580e54ce3f44f516231d07be6ce21a550fc9dc
+F ext/fts5/fts5_index.c 02b4d8b0ca77cb00af6cbedd3aa1aaaa18608e3f
 F ext/fts5/fts5_main.c 0de7ba81488d2c502c8e794eaf7983d468e4c6e9
-F ext/fts5/fts5_storage.c 877399c557f273a725b5e4fc26f07e67ca90570a
+F ext/fts5/fts5_storage.c 22ec9b5d35a39e2b5b65daf4ba7cd47fbb2d0df5
 F ext/fts5/fts5_tcl.c 85eb4e0d0fefa9420b78151496ad4599a1783e20
 F ext/fts5/fts5_tokenize.c 30f97a8c74683797b4cd233790444fbefb3b0708
 F ext/fts5/fts5_unicode2.c 78273fbd588d1d9bd0a7e4e0ccc9207348bae33c
@@ -123,7 +123,7 @@ F ext/fts5/fts5_vocab.c 4e268a3fcbc099e50e335a1135be985a41ff6f7f
 F ext/fts5/fts5parse.y 833db1101b78c0c47686ab1b84918e38c36e9452
 F ext/fts5/mkportersteps.tcl 5acf962d2e0074f701620bb5308155fa1e4a63ba
 F ext/fts5/test/fts5_common.tcl e0b4a846a7670f6232a644ece69ef25a5c19c0e8
-F ext/fts5/test/fts5aa.test 8dac4216e5ad8fd240cff078d1893520bb1f5fb2
+F ext/fts5/test/fts5aa.test c6e680a0d1b6c2616a382f1006d5d91eca697bd0
 F ext/fts5/test/fts5ab.test 6fe3a56731d15978afbb74ae51b355fc9310f2ad
 F ext/fts5/test/fts5ac.test 9737992d08c56bfd4803e933744d2d764e23795c
 F ext/fts5/test/fts5ad.test b2edee8b7de0c21d2c88f8a18c195034aad6952d
@@ -1366,7 +1366,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5ec933c257884019484db7f533ce920012e47a1c
-R 9f928401b669a6c07f568b37deea414f
+P ad6286ab1f40e4716456a67b719f9cd733f988eb
+R c68925a95e6de88396d9c6895e046f42
 U dan
-Z 20f258f623b78af69c3c22c9b7050053
+Z 7e591d2a7d163efa89020980b07c1f9a

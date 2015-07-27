@@ -604,7 +604,9 @@ int sqlite3Fts5StorageDeleteAll(Fts5Storage *p){
 
   /* Delete the contents of the %_data and %_docsize tables. */
   rc = fts5ExecPrintf(pConfig->db, 0,
-      "DELETE FROM %Q.'%q_data';",
+      "DELETE FROM %Q.'%q_data';" 
+      "DELETE FROM %Q.'%q_idx';",
+      pConfig->zDb, pConfig->zName,
       pConfig->zDb, pConfig->zName
   );
   if( rc==SQLITE_OK && pConfig->bColumnsize ){

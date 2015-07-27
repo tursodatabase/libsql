@@ -2329,7 +2329,7 @@ static void fts5SegIterSeekInit(
   if( p->pIdxSelect==0 ){
     Fts5Config *pConfig = p->pConfig;
     fts5IndexPrepareStmt(p, &p->pIdxSelect, sqlite3_mprintf(
-          "SELECT pgno, dlidx FROM '%q'.'%q_idx' WHERE "
+          "SELECT pgno FROM '%q'.'%q_idx' WHERE "
           "segid=? AND term<=? ORDER BY term DESC LIMIT 1",
           pConfig->zDb, pConfig->zName
     ));
@@ -2338,8 +2338,9 @@ static void fts5SegIterSeekInit(
   sqlite3_bind_int(p->pIdxSelect, 1, pSeg->iSegid);
   sqlite3_bind_blob(p->pIdxSelect, 2, pTerm, nTerm, SQLITE_STATIC);
   if( SQLITE_ROW==sqlite3_step(p->pIdxSelect) ){
-    iPg = sqlite3_column_int(p->pIdxSelect, 0);
-    bDlidx = sqlite3_column_int(p->pIdxSelect, 1);
+    i64 val = sqlite3_column_int(p->pIdxSelect, 0);
+    iPg = (val>>1);
+    bDlidx = (val & 0x0001);
   }
   p->rc = sqlite3_reset(p->pIdxSelect);
 
@@ -3211,8 +3212,7 @@ static void fts5WriteFlushBtree(Fts5Index *p, Fts5SegWriter *pWriter){
     /* The following was already done in fts5WriteInit(): */
     /* sqlite3_bind_int(p->pIdxWriter, 1, pWriter->iSegid); */
     sqlite3_bind_blob(p->pIdxWriter, 2, z, pWriter->btterm.n, SQLITE_STATIC);
-    sqlite3_bind_int(p->pIdxWriter, 3, pWriter->iBtPage);
-    sqlite3_bind_int(p->pIdxWriter, 4, bFlag);
+    sqlite3_bind_int64(p->pIdxWriter, 3, bFlag + ((i64)pWriter->iBtPage<<1));
     sqlite3_step(p->pIdxWriter);
     p->rc = sqlite3_reset(p->pIdxWriter);
   }
@@ -3559,7 +3559,7 @@ static void fts5WriteInit(
   if( p->pIdxWriter==0 ){
     Fts5Config *pConfig = p->pConfig;
     fts5IndexPrepareStmt(p, &p->pIdxWriter, sqlite3_mprintf(
-          "INSERT INTO '%q'.'%q_idx'(segid,term,pgno,dlidx) VALUES(?,?,?,?)", 
+          "INSERT INTO '%q'.'%q_idx'(segid,term,pgno) VALUES(?,?,?)", 
           pConfig->zDb, pConfig->zName
     ));
   }
@@ -4498,7 +4498,7 @@ int sqlite3Fts5IndexOpen(
       );
       if( rc==SQLITE_OK ){
         rc = sqlite3Fts5CreateTable(pConfig, "idx", 
-            "segid, term, pgno, dlidx, PRIMARY KEY(segid, term)", 
+            "segid, term, pgno, PRIMARY KEY(segid, term)", 
             1, pzErr
         );
       }
@@ -5067,7 +5067,7 @@ static void fts5IndexIntegrityCheckSegment(
   if( pSeg->pgnoFirst==0 ) return;
 
   fts5IndexPrepareStmt(p, &pStmt, sqlite3_mprintf(
-      "SELECT segid, term, pgno, dlidx FROM '%q'.'%q_idx' WHERE segid=%d",
+      "SELECT segid, term, (pgno>>1), (pgno & 1) FROM '%q'.'%q_idx' WHERE segid=%d",
       pConfig->zDb, pConfig->zName, pSeg->iSegid
   ));
 
