@@ -1,5 +1,5 @@
-C Merge\slatest\strunk\schanges\swith\sthis\sbranch.
-D 2015-07-27T10:46:48.669
+C Remove\sa\spotentially\sundefined\sbehaviour\sinvolving\ssigned\sintegers\sand\sbitshift\soperations\sfrom\sfts5_hash.c.
+D 2015-07-27T11:01:19.255
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4de3ef40c8b3b75c0c55ff4242a43c8ce1ad90ee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -111,7 +111,7 @@ F ext/fts5/fts5_aux.c 044cb176a815f4388308738437f6e130aa384fb0
 F ext/fts5/fts5_buffer.c 80f9ba4431848cb857e3d2158f5280093dcd8015
 F ext/fts5/fts5_config.c fdfa63ae8e527ecfaa50f94063c610429cc887cf
 F ext/fts5/fts5_expr.c 56dcbcbdc9029dd76a31360de664559839f4be41
-F ext/fts5/fts5_hash.c ff07722c73587c12781213133edbdb22cd156378
+F ext/fts5/fts5_hash.c 4bf4b99708848357b8a2b5819e509eb6d3df9246
 F ext/fts5/fts5_index.c e0580e54ce3f44f516231d07be6ce21a550fc9dc
 F ext/fts5/fts5_main.c 0de7ba81488d2c502c8e794eaf7983d468e4c6e9
 F ext/fts5/fts5_storage.c 877399c557f273a725b5e4fc26f07e67ca90570a
@@ -200,26 +200,26 @@ F ext/misc/totype.c 4a167594e791abeed95e0a8db028822b5e8fe512
 F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
-F ext/rbu/rbu.c e572f7ddef2ef3a73d03e7b44d36448e466772b7 w ext/ota/ota.c
-F ext/rbu/rbu1.test 57601977588603e82700a43c279bd55282ffa482 w ext/ota/ota1.test
-F ext/rbu/rbu10.test 046b0980041d30700464a800bbf6733ed2df515d w ext/ota/ota10.test
-F ext/rbu/rbu11.test 9bc68c2d3dbeb1720153626e3bd0466dcc017702 w ext/ota/ota11.test
-F ext/rbu/rbu12.test bde22ed0004dd5d1888c72a84ae407e574aeae16 w ext/ota/ota12.test
-F ext/rbu/rbu13.test 462ff799c4afedc3ef8a47ff818c0ffbf14ae4f2 w ext/ota/ota13.test
+F ext/rbu/rbu.c e572f7ddef2ef3a73d03e7b44d36448e466772b7
+F ext/rbu/rbu1.test 57601977588603e82700a43c279bd55282ffa482
+F ext/rbu/rbu10.test 046b0980041d30700464a800bbf6733ed2df515d
+F ext/rbu/rbu11.test 9bc68c2d3dbeb1720153626e3bd0466dcc017702
+F ext/rbu/rbu12.test bde22ed0004dd5d1888c72a84ae407e574aeae16
+F ext/rbu/rbu13.test 462ff799c4afedc3ef8a47ff818c0ffbf14ae4f2
 F ext/rbu/rbu14.test 01f5dcba904aecadbaea69d4ccdc2ea43dd30560
-F ext/rbu/rbu3.test 8bd4c6b87367c358981b6a47dc3d654fa60bff90 w ext/ota/ota3.test
-F ext/rbu/rbu5.test 2e24fee3e615aecd99bbdd46967935a641e866f7 w ext/ota/ota5.test
-F ext/rbu/rbu6.test 32e8ed60631b6facdb6366bd2b5f5f25245e7edb w ext/ota/ota6.test
-F ext/rbu/rbu7.test fd025d5ba440fcfe151fbb0e3835e1e7fe964fa1 w ext/ota/ota7.test
-F ext/rbu/rbu8.test 3bbf2c35d71a843c463efe93946f14ad10c3ede0 w ext/ota/ota8.test
-F ext/rbu/rbu9.test 0806d1772c9f4981774ff028de6656e4183082af w ext/ota/ota9.test
-F ext/rbu/rbuA.test c1a7b3e2d926b8f8448bb3b4ae787e314ee4b2b3 w ext/ota/otaA.test
-F ext/rbu/rbucrash.test 8d2ed5d4b05fef6c00c2a6b5f7ead71fa172a695 w ext/ota/otacrash.test
-F ext/rbu/rbufault.test cc0be8d5d392d98b0c2d6a51be377ea989250a89 w ext/ota/otafault.test
-F ext/rbu/rbufault2.test 9a7f19edd6ea35c4c9f807d8a3db0a03a5670c06 w ext/ota/otafault2.test
-F ext/rbu/sqlite3rbu.c dbd7e4b31821398dcdeb21492970401ff1027881 w ext/ota/sqlite3ota.c
-F ext/rbu/sqlite3rbu.h 6a280298e9eeb8ef59841a620f07f4f844651545 w ext/ota/sqlite3ota.h
-F ext/rbu/test_rbu.c f99698956cc9158d6bf865e461e2d15876538ac1 w ext/ota/test_ota.c
+F ext/rbu/rbu3.test 8bd4c6b87367c358981b6a47dc3d654fa60bff90
+F ext/rbu/rbu5.test 2e24fee3e615aecd99bbdd46967935a641e866f7
+F ext/rbu/rbu6.test 32e8ed60631b6facdb6366bd2b5f5f25245e7edb
+F ext/rbu/rbu7.test fd025d5ba440fcfe151fbb0e3835e1e7fe964fa1
+F ext/rbu/rbu8.test 3bbf2c35d71a843c463efe93946f14ad10c3ede0
+F ext/rbu/rbu9.test 0806d1772c9f4981774ff028de6656e4183082af
+F ext/rbu/rbuA.test c1a7b3e2d926b8f8448bb3b4ae787e314ee4b2b3
+F ext/rbu/rbucrash.test 8d2ed5d4b05fef6c00c2a6b5f7ead71fa172a695
+F ext/rbu/rbufault.test cc0be8d5d392d98b0c2d6a51be377ea989250a89
+F ext/rbu/rbufault2.test 9a7f19edd6ea35c4c9f807d8a3db0a03a5670c06
+F ext/rbu/sqlite3rbu.c dbd7e4b31821398dcdeb21492970401ff1027881
+F ext/rbu/sqlite3rbu.h 6a280298e9eeb8ef59841a620f07f4f844651545
+F ext/rbu/test_rbu.c f99698956cc9158d6bf865e461e2d15876538ac1
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 0f9b595bd0debcbedf1d7a63d0e0678d619e6c9c
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
@@ -919,7 +919,7 @@ F test/quota2.test 7dc12e08b11cbc4c16c9ba2aa2e040ea8d8ab4b8
 F test/quote.test 215897dbe8de1a6f701265836d6601cc6ed103e6
 F test/randexpr1.tcl 40dec52119ed3a2b8b2a773bce24b63a3a746459
 F test/randexpr1.test eda062a97e60f9c38ae8d806b03b0ddf23d796df
-F test/rbu.test 168573d353cd0fd10196b87b0caa322c144ef736 w test/ota.test
+F test/rbu.test 168573d353cd0fd10196b87b0caa322c144ef736
 F test/rdonly.test 64e2696c322e3538df0b1ed624e21f9a23ed9ff8
 F test/regexp1.test 497ea812f264d12b6198d6e50a76be4a1973a9d8
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
@@ -1366,7 +1366,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7190d79ba452ceb1af77ce1375278b097816a8be ee348b12754abda1fe13231c1868faca9d78481c
-R 40e42aeae28824a45cc18d6d2ef8dc07
+P 5ec933c257884019484db7f533ce920012e47a1c
+R 9f928401b669a6c07f568b37deea414f
 U dan
-Z 349213ca34455d17cf2d8b985651aa92
+Z 20f258f623b78af69c3c22c9b7050053

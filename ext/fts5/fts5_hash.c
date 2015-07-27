@@ -133,7 +133,7 @@ void sqlite3Fts5HashClear(Fts5Hash *pHash){
   pHash->nEntry = 0;
 }
 
-static unsigned int fts5HashKey(int nSlot, const char *p, int n){
+static unsigned int fts5HashKey(int nSlot, const u8 *p, int n){
   int i;
   unsigned int h = 13;
   for(i=n-1; i>=0; i--){
@@ -142,7 +142,7 @@ static unsigned int fts5HashKey(int nSlot, const char *p, int n){
   return (h % nSlot);
 }
 
-static unsigned int fts5HashKey2(int nSlot, char b, const char *p, int n){
+static unsigned int fts5HashKey2(int nSlot, u8 b, const u8 *p, int n){
   int i;
   unsigned int h = 13;
   for(i=n-1; i>=0; i--){
@@ -170,7 +170,7 @@ static int fts5HashResize(Fts5Hash *pHash){
       int iHash;
       Fts5HashEntry *p = apOld[i];
       apOld[i] = p->pHashNext;
-      iHash = fts5HashKey(nNew, p->zKey, strlen(p->zKey));
+      iHash = fts5HashKey(nNew, (u8*)p->zKey, strlen(p->zKey));
       p->pHashNext = apNew[iHash];
       apNew[iHash] = p;
     }
@@ -210,12 +210,13 @@ int sqlite3Fts5HashWrite(
   char bByte,                     /* First byte of token */
   const char *pToken, int nToken  /* Token to add or remove to or from index */
 ){
-  unsigned int iHash = fts5HashKey2(pHash->nSlot, bByte, pToken, nToken);
+  unsigned int iHash;
   Fts5HashEntry *p;
   u8 *pPtr;
   int nIncr = 0;                  /* Amount to increment (*pHash->pnByte) by */
 
   /* Attempt to locate an existing hash entry */
+  iHash = fts5HashKey2(pHash->nSlot, (u8)bByte, (const u8*)pToken, nToken);
   for(p=pHash->aSlot[iHash]; p; p=p->pHashNext){
     if( p->zKey[0]==bByte 
      && memcmp(&p->zKey[1], pToken, nToken)==0 
@@ -233,7 +234,7 @@ int sqlite3Fts5HashWrite(
     if( (pHash->nEntry*2)>=pHash->nSlot ){
       int rc = fts5HashResize(pHash);
       if( rc!=SQLITE_OK ) return rc;
-      iHash = fts5HashKey2(pHash->nSlot, bByte, pToken, nToken);
+      iHash = fts5HashKey2(pHash->nSlot, (u8)bByte, (const u8*)pToken, nToken);
     }
 
     p = (Fts5HashEntry*)sqlite3_malloc(nByte);
@@ -242,7 +243,7 @@ int sqlite3Fts5HashWrite(
     p->nAlloc = nByte;
     p->zKey[0] = bByte;
     memcpy(&p->zKey[1], pToken, nToken);
-    assert( iHash==fts5HashKey(pHash->nSlot, p->zKey, nToken+1) );
+    assert( iHash==fts5HashKey(pHash->nSlot, (u8*)p->zKey, nToken+1) );
     p->zKey[nToken+1] = '\0';
     p->nData = nToken+1 + 1 + FTS5_HASHENTRYSIZE;
     p->nData += sqlite3Fts5PutVarint(&((u8*)p)[p->nData], iRowid);
@@ -414,7 +415,7 @@ int sqlite3Fts5HashQuery(
   const u8 **ppDoclist,           /* OUT: Pointer to doclist for pTerm */
   int *pnDoclist                  /* OUT: Size of doclist in bytes */
 ){
-  unsigned int iHash = fts5HashKey(pHash->nSlot, pTerm, nTerm);
+  unsigned int iHash = fts5HashKey(pHash->nSlot, (const u8*)pTerm, nTerm);
   Fts5HashEntry *p;
 
   for(p=pHash->aSlot[iHash]; p; p=p->pHashNext){
