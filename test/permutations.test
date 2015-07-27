@@ -113,7 +113,7 @@ set allquicktests [test_set $alltests -exclude {
   vtab_err.test walslow.test walcrash.test walcrash3.test
   walthread.test rtree3.test indexfault.test securedel2.test
   sort3.test sort4.test fts4growth.test fts4growth2.test
-  bigsort.test ota.test
+  bigsort.test rbu.test
 }]
 if {[info exists ::env(QUICKTEST_INCLUDE)]} {
   set allquicktests [concat $allquicktests $::env(QUICKTEST_INCLUDE)]
@@ -417,16 +417,16 @@ test_suite "memsubsys1" -description {
 } -files [
   test_set $::allquicktests -exclude ioerr5.test malloc5.test mmap1.test
 ] -initialize {
+  test_set_config_pagecache 4096 24
   catch {db close}
   sqlite3_shutdown
-  sqlite3_config_pagecache 4096 24
   sqlite3_config_scratch 25000 1
   sqlite3_initialize
   autoinstall_test_functions
 } -shutdown {
+  test_restore_config_pagecache
   catch {db close}
   sqlite3_shutdown
-  sqlite3_config_pagecache 0 0
   sqlite3_config_scratch 0 0
   sqlite3_initialize
   autoinstall_test_functions
@@ -444,16 +444,16 @@ test_suite "memsubsys2" -description {
 } -files [
   test_set $::allquicktests -exclude ioerr5.test malloc5.test
 ] -initialize {
+  test_set_config_pagecache 512 5
   catch {db close}
   sqlite3_shutdown
-  sqlite3_config_pagecache 512 5
   sqlite3_config_scratch 1000 1
   sqlite3_initialize
   autoinstall_test_functions
 } -shutdown {
+  test_restore_config_pagecache
   catch {db close}
   sqlite3_shutdown
-  sqlite3_config_pagecache 0 0
   sqlite3_config_scratch 0 0
   sqlite3_initialize
   autoinstall_test_functions
@@ -962,10 +962,10 @@ test_suite "rtree" -description {
   All R-tree related tests. Provides coverage of source file rtree.c.
 } -files [glob -nocomplain $::testdir/../ext/rtree/*.test]
 
-test_suite "ota" -description {
-  OTA tests.
+test_suite "rbu" -description {
+  RBU tests.
 } -files [
-  test_set [glob -nocomplain $::testdir/../ext/ota/*.test] -exclude ota.test
+  test_set [glob -nocomplain $::testdir/../ext/rbu/*.test] -exclude rbu.test
 ]
 
 test_suite "no_optimization" -description {

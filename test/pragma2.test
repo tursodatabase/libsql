@@ -30,6 +30,8 @@ ifcapable !pragma||!schema_pragmas {
   return
 }
 
+test_set_config_pagecache 0 0
+
 # Delete the preexisting database to avoid the special setup
 # that the "all.test" script does.
 #
@@ -208,5 +210,5 @@ do_execsql_test pragma2-4.8 {
   PRAGMA lock_status;
 } {main unlocked temp unknown aux1 exclusive}
    
-
+test_restore_config_pagecache
 finish_test

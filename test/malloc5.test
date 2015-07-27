@@ -39,6 +39,8 @@ ifcapable !memorymanage {
    return
 }
 
+test_set_config_pagecache 0 100
+
 sqlite3_soft_heap_limit 0
 sqlite3 db test.db
 db eval {PRAGMA cache_size=1}
@@ -410,5 +412,6 @@ do_test malloc5-6.3.6 {
 db2 close
 
 sqlite3_soft_heap_limit $::soft_limit
+test_restore_config_pagecache
 finish_test
 catch {db close}

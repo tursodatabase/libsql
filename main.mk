@@ -65,7 +65,7 @@ LIBOBJ+= vdbe.o parse.o \
          mutex.o mutex_noop.o mutex_unix.o mutex_w32.o \
          notify.o opcodes.o os.o os_unix.o os_win.o \
          pager.o pcache.o pcache1.o pragma.o prepare.o printf.o \
-         random.o resolve.o rowset.o rtree.o select.o sqlite3ota.o status.o \
+         random.o resolve.o rowset.o rtree.o select.o sqlite3rbu.o status.o \
          table.o threads.o tokenize.o treeview.o trigger.o \
          update.o userauth.o util.o vacuum.o \
          vdbeapi.o vdbeaux.o vdbeblob.o vdbemem.o vdbesort.o \
@@ -226,8 +226,8 @@ SRC += \
   $(TOP)/ext/userauth/sqlite3userauth.h 
 
 SRC += \
-  $(TOP)/ext/ota/sqlite3ota.c \
-  $(TOP)/ext/ota/sqlite3ota.h
+  $(TOP)/ext/rbu/sqlite3rbu.c \
+  $(TOP)/ext/rbu/sqlite3rbu.h
 
 
 # Generated source code files
@@ -246,7 +246,7 @@ SRC += \
 TESTSRC = \
   $(TOP)/ext/fts3/fts3_term.c \
   $(TOP)/ext/fts3/fts3_test.c \
-  $(TOP)/ext/ota/test_ota.c \
+  $(TOP)/ext/rbu/test_rbu.c \
   $(TOP)/src/test1.c \
   $(TOP)/src/test2.c \
   $(TOP)/src/test3.c \
@@ -446,11 +446,12 @@ sqldiff$(EXE):	$(TOP)/tool/sqldiff.c sqlite3.c sqlite3.h
 		$(TOP)/tool/sqldiff.c sqlite3.c $(TLIBS) $(THREADLIB)
 
 fuzzershell$(EXE):	$(TOP)/tool/fuzzershell.c sqlite3.c sqlite3.h
-	$(TCCX) -o fuzzershell$(EXE) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION\
+	$(TCCX) -o fuzzershell$(EXE) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
 		$(TOP)/tool/fuzzershell.c sqlite3.c $(TLIBS) $(THREADLIB)
 
 fuzzcheck$(EXE):	$(TOP)/test/fuzzcheck.c sqlite3.c sqlite3.h
-	$(TCCX) -o fuzzcheck$(EXE) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION\
+	$(TCCX) -o fuzzcheck$(EXE) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
+		-DSQLITE_ENABLE_MEMSYS5 \
 		$(TOP)/test/fuzzcheck.c sqlite3.c $(TLIBS) $(THREADLIB)
 
 mptester$(EXE):	sqlite3.c $(TOP)/mptest/mptest.c
@@ -666,8 +667,8 @@ fts5.c: $(FTS5_SRC)
 userauth.o:	$(TOP)/ext/userauth/userauth.c $(HDR) $(EXTHDR)
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/userauth/userauth.c
 
-sqlite3ota.o:	$(TOP)/ext/ota/sqlite3ota.c $(HDR) $(EXTHDR)
-	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/ota/sqlite3ota.c
+sqlite3rbu.o:	$(TOP)/ext/rbu/sqlite3rbu.c $(HDR) $(EXTHDR)
+	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/rbu/sqlite3rbu.c
 
 
 # Rules for building test programs and for running tests
@@ -724,8 +725,11 @@ queryplantest:	testfixture$(EXE) sqlite3$(EXE)
 fuzztest:	fuzzcheck$(EXE) $(FUZZDATA)
 	./fuzzcheck$(EXE) $(FUZZDATA)
 
+fastfuzztest:	fuzzcheck$(EXE) $(FUZZDATA)
+	./fuzzcheck$(EXE) --limit-mem 100M $(FUZZDATA)
+
 valgrindfuzz:	fuzzcheck$(EXE) $(FUZZDATA)
-	valgrind ./fuzzcheck$(EXE) --cell-size-check --quiet $(FUZZDATA)
+	valgrind ./fuzzcheck$(EXE) --cell-size-check --limit-mem 10M $(FUZZDATA)
 
 # A very quick test using only testfixture and omitting all the slower
 # tests.  Designed to run in under 3 minutes on a workstation.
@@ -736,7 +740,7 @@ quicktest:	./testfixture$(EXE)
 # The default test case.  Runs most of the faster standard TCL tests,
 # and fuzz tests, and sqlite3_analyzer and sqldiff tests.
 #
-test:	$(TESTPROGS) fuzztest
+test:	$(TESTPROGS) fastfuzztest
 	./testfixture$(EXE) $(TOP)/test/veryquick.test $(TESTOPTS)
 
 # Run a test using valgrind.  This can take a really long time
@@ -811,8 +815,8 @@ wordcount$(EXE):	$(TOP)/test/wordcount.c sqlite3.c
 speedtest1$(EXE):	$(TOP)/test/speedtest1.c sqlite3.o
 	$(TCC) -I. $(OTAFLAGS) -o speedtest1$(EXE) $(TOP)/test/speedtest1.c sqlite3.o $(THREADLIB) 
 
-ota$(EXE): $(TOP)/ext/ota/ota.c $(TOP)/ext/ota/sqlite3ota.c sqlite3.o 
-	$(TCC) -I. -o ota$(EXE) $(TOP)/ext/ota/ota.c sqlite3.o \
+rbu$(EXE): $(TOP)/ext/rbu/rbu.c $(TOP)/ext/rbu/sqlite3rbu.c sqlite3.o 
+	$(TCC) -I. -o rbu$(EXE) $(TOP)/ext/rbu/rbu.c sqlite3.o \
 	  $(THREADLIB)
 
 loadfts: $(TOP)/tool/loadfts.c libsqlite3.a

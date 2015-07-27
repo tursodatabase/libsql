@@ -15,7 +15,7 @@ if {![info exists testdir]} {
 }
 source $testdir/tester.tcl
 source $testdir/malloc_common.tcl
-set ::testprefix otafault
+set ::testprefix rbufault
 
 proc copy_if_exists {src target} {
   if {[file exists $src]} {
@@ -33,7 +33,7 @@ foreach {tn2 setup sql expect} {
     INSERT INTO t1 VALUES(2, 2, 2);
     INSERT INTO t1 VALUES(3, 3, 3);
 
-    CREATE TABLE ota.data_t1(a, b, c, ota_control);
+    CREATE TABLE rbu.data_t1(a, b, c, rbu_control);
     INSERT INTO data_t1 VALUES(2, NULL, NULL, 1);
     INSERT INTO data_t1 VALUES(3, 'three', NULL, '.x.');
     INSERT INTO data_t1 VALUES(4, 4, 4, 0);
@@ -48,7 +48,7 @@ foreach {tn2 setup sql expect} {
     INSERT INTO t2 VALUES('b', 'b', 'b');
     INSERT INTO t2 VALUES('c', 'c', 'c');
 
-    CREATE TABLE ota.data_t2(a, b, c, ota_control);
+    CREATE TABLE rbu.data_t2(a, b, c, rbu_control);
     INSERT INTO data_t2 VALUES('b', NULL, NULL, 1);
     INSERT INTO data_t2 VALUES('c', 'see', NULL, '.x.');
     INSERT INTO data_t2 VALUES('d', 'd', 'd', 0);
@@ -62,8 +62,8 @@ foreach {tn2 setup sql expect} {
     CREATE INDEX t1cb ON t1(c, b);
     CREATE INDEX t2cb ON t2(c, b);
 
-    CREATE TABLE ota.data_t1(a, b, c, ota_control);
-    CREATE TABLE ota.data_t2(a, b, c, ota_control);
+    CREATE TABLE rbu.data_t1(a, b, c, rbu_control);
+    CREATE TABLE rbu.data_t2(a, b, c, rbu_control);
     INSERT INTO data_t1 VALUES(1, 2, 3, 0);
     INSERT INTO data_t2 VALUES(4, 5, 6, 0);
   } {
@@ -76,7 +76,7 @@ foreach {tn2 setup sql expect} {
     INSERT INTO t1 VALUES('A', 'B', 'C');
     INSERT INTO t1 VALUES('D', 'E', 'F');
 
-    CREATE TABLE ota.data_t1(a, b, c, ota_control);
+    CREATE TABLE rbu.data_t1(a, b, c, rbu_control);
     INSERT INTO data_t1 VALUES('D', NULL, NULL, 1);
     INSERT INTO data_t1 VALUES('A', 'Z', NULL, '.x.');
     INSERT INTO data_t1 VALUES('G', 'H', 'I', 0);
@@ -88,7 +88,7 @@ foreach {tn2 setup sql expect} {
     CREATE TABLE t1(a, b, c);
     CREATE INDEX t1c ON t1(c, b);
 
-    CREATE TABLE ota.data_t1(a, b, c, ota_rowid, ota_control);
+    CREATE TABLE rbu.data_t1(a, b, c, rbu_rowid, rbu_control);
     INSERT INTO data_t1 VALUES('a', 'b', 'c', 1, 0);
     INSERT INTO data_t1 VALUES('d', 'e', 'f', '2', 0);
   } {
@@ -97,17 +97,17 @@ foreach {tn2 setup sql expect} {
 
 } {
   catch {db close}
-  forcedelete ota.db test.db
+  forcedelete rbu.db test.db
   sqlite3 db test.db
   execsql {
     PRAGMA encoding = utf16;
-    ATTACH 'ota.db' AS ota;
+    ATTACH 'rbu.db' AS rbu;
   }
   execsql $setup
   db close
 
   forcecopy test.db test.db.bak
-  forcecopy ota.db ota.db.bak
+  forcecopy rbu.db rbu.db.bak
 
   foreach {tn f reslist} {
     1 oom-tra*  {
@@ -126,8 +126,8 @@ foreach {tn2 setup sql expect} {
       {1 SQLITE_IOERR_READ}
       {1 SQLITE_IOERR_FSYNC}
       {1 {SQLITE_ERROR - SQL logic error or missing database}}
-      {1 {SQLITE_ERROR - unable to open database: ota.db}}
-      {1 {SQLITE_IOERR - unable to open database: ota.db}}
+      {1 {SQLITE_ERROR - unable to open database: rbu.db}}
+      {1 {SQLITE_IOERR - unable to open database: rbu.db}}
     }
 
     3 shmerr-*  {
@@ -145,13 +145,13 @@ foreach {tn2 setup sql expect} {
 
     do_faultsim_test 2.$tn2 -faults $::f -prep {
       catch { db close }
-      forcedelete test.db-journal test.db-wal ota.db-journal ota.db-wal
+      forcedelete test.db-journal test.db-wal rbu.db-journal rbu.db-wal
       forcecopy test.db.bak test.db
-      forcecopy ota.db.bak  ota.db
+      forcecopy rbu.db.bak  rbu.db
     } -body {
-      sqlite3ota ota test.db ota.db
-      while {[ota step]=="SQLITE_OK"} {}
-      ota close
+      sqlite3rbu rbu test.db rbu.db
+      while {[rbu step]=="SQLITE_OK"} {}
+      rbu close
     } -test {
       faultsim_test_result {*}$::reslist
       if {$testrc==0} {
@@ -176,46 +176,46 @@ foreach {tn2 setup sql expect} {
 
     for {set iStep 0} {$iStep<=21} {incr iStep} {
     
-      forcedelete test.db-journal test.db-wal ota.db-journal ota.db-wal
+      forcedelete test.db-journal test.db-wal rbu.db-journal rbu.db-wal
     
       copy_if_exists test.db.bak test.db
-      copy_if_exists ota.db.bak ota.db
+      copy_if_exists rbu.db.bak rbu.db
     
-      sqlite3ota ota test.db ota.db
-      for {set x 0} {$x < $::iStep} {incr x} { ota step }
-      ota close
+      sqlite3rbu rbu test.db rbu.db
+      for {set x 0} {$x < $::iStep} {incr x} { rbu step }
+      rbu close
   
-# sqlite3 x ota.db ; puts "XYZ [x eval { SELECT * FROM ota_state } ]" ; x close
+# sqlite3 x rbu.db ; puts "XYZ [x eval { SELECT * FROM rbu_state } ]" ; x close
     
       copy_if_exists test.db     test.db.bak.2
       copy_if_exists test.db-wal test.db.bak.2-wal
       copy_if_exists test.db-oal test.db.bak.2-oal
-      copy_if_exists ota.db      ota.db.bak.2
+      copy_if_exists rbu.db      rbu.db.bak.2
     
       do_faultsim_test 3.$tn.$iStep -faults $::f -prep {
         catch { db close }
-        forcedelete test.db-journal test.db-wal ota.db-journal ota.db-wal
+        forcedelete test.db-journal test.db-wal rbu.db-journal rbu.db-wal
         copy_if_exists test.db.bak.2 test.db
         copy_if_exists test.db.bak.2-wal test.db-wal
         copy_if_exists test.db.bak.2-oal test.db-oal
-        copy_if_exists ota.db.bak.2  ota.db
+        copy_if_exists rbu.db.bak.2  rbu.db
       } -body {
-        sqlite3ota ota test.db ota.db
-        ota step
-        ota close
+        sqlite3rbu rbu test.db rbu.db
+        rbu step
+        rbu close
       } -test {
 
         if {$testresult=="SQLITE_OK"} {set testresult "SQLITE_DONE"}
         faultsim_test_result {*}$::reslist
       
         if {$testrc==0} {
-          # No error occurred. If the OTA has not already been fully applied,
+          # No error occurred. If the RBU has not already been fully applied,
           # apply the rest of it now. Then ensure that the final state of the
           # target db is as expected. And that "PRAGMA integrity_check"
           # passes.
-          sqlite3ota ota test.db ota.db
-          while {[ota step] == "SQLITE_OK"} {}
-          ota close
+          sqlite3rbu rbu test.db rbu.db
+          while {[rbu step] == "SQLITE_OK"} {}
+          rbu close
 
           sqlite3 db test.db
           faultsim_integrity_check

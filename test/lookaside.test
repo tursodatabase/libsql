@@ -29,9 +29,10 @@ if {[info exists ::G(perm:presql)]} {
   return
 }
 
+test_set_config_pagecache 0 0
+
 catch {db close}
 sqlite3_shutdown
-sqlite3_config_pagecache 0 0
 sqlite3_config_scratch 0 0
 sqlite3_initialize
 autoinstall_test_functions
@@ -129,4 +130,5 @@ do_test lookaside-4.1 {
 sqlite3_initialize
 autoinstall_test_functions
 
+test_restore_config_pagecache
 finish_test

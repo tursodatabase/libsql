@@ -14,7 +14,7 @@ if {![info exists testdir]} {
   set testdir [file join [file dirname [info script]] .. .. test]
 }
 source $testdir/tester.tcl
-set ::testprefix ota10
+set ::testprefix rbu10
 
 
 #--------------------------------------------------------------------
@@ -26,19 +26,19 @@ do_execsql_test 1.0 {
   INSERT INTO t1 VALUES(1, 'b', 'c');
 }
 
-proc apply_ota {sql} {
-  forcedelete ota.db
-  sqlite3 db2 ota.db
+proc apply_rbu {sql} {
+  forcedelete rbu.db
+  sqlite3 db2 rbu.db
   db2 eval $sql
   db2 close
-  sqlite3ota ota test.db ota.db
-  while { [ota step]=="SQLITE_OK" } {}
-  ota close
+  sqlite3rbu rbu test.db rbu.db
+  while { [rbu step]=="SQLITE_OK" } {}
+  rbu close
 }
 
 do_test 1.1 {
-  apply_ota {
-    CREATE TABLE data_t1(a, c, b, ota_control);
+  apply_rbu {
+    CREATE TABLE data_t1(a, c, b, rbu_control);
     INSERT INTO data_t1 VALUES(1, 'xxx', NULL, '.x.');
   }
   db eval { SELECT * FROM t1 }
@@ -53,8 +53,8 @@ ifcapable fts3 {
     CREATE VIRTUAL TABLE ft USING fts4(a, b, languageid='langid');
   }
   do_test 2.1 {
-    apply_ota {
-      CREATE TABLE data_ft(a, b, ota_rowid, langid, ota_control);
+    apply_rbu {
+      CREATE TABLE data_ft(a, b, rbu_rowid, langid, rbu_control);
       INSERT INTO data_ft VALUES('a', 'b', 22, 1, 0);    -- insert
       INSERT INTO data_ft VALUES('a', 'b', 23, 10, 0);   -- insert
       INSERT INTO data_ft VALUES('a', 'b', 24, 100, 0);  -- insert
@@ -70,8 +70,8 @@ ifcapable fts3 {
   # defaults to 0.
   #
   do_test 2.2 {
-    apply_ota {
-      CREATE TABLE data_ft(a, b, ota_rowid, ota_control);
+    apply_rbu {
+      CREATE TABLE data_ft(a, b, rbu_rowid, rbu_control);
       INSERT INTO data_ft VALUES('a', 'b', 25, 0);    -- insert
     }
     db eval { SELECT a, b, rowid, langid FROM ft }
@@ -85,8 +85,8 @@ ifcapable fts3 {
   # Update langid.
   #
   do_test 2.3 {
-    apply_ota {
-      CREATE TABLE data_ft(a, b, ota_rowid, langid, ota_control);
+    apply_rbu {
+      CREATE TABLE data_ft(a, b, rbu_rowid, langid, rbu_control);
       INSERT INTO data_ft VALUES(NULL, NULL, 23, 50, '..x');
       INSERT INTO data_ft VALUES(NULL, NULL, 25, 500, '..x');
     }
@@ -101,7 +101,7 @@ ifcapable fts3 {
 
 #--------------------------------------------------------------------
 # Test that if writing a hidden virtual table column is an error, 
-# attempting to do so via ota is also an error.
+# attempting to do so via rbu is also an error.
 #
 ifcapable fts3 {
   do_execsql_test 3.0 {
@@ -109,8 +109,8 @@ ifcapable fts3 {
   }
   do_test 3.1 {
     list [catch {
-      apply_ota {
-        CREATE TABLE data_xt(a, xt, ota_rowid, ota_control);
+      apply_rbu {
+        CREATE TABLE data_xt(a, xt, rbu_rowid, rbu_control);
         INSERT INTO data_xt VALUES('a', 'b', 1, 0);
       }
     } msg] $msg
@@ -119,7 +119,7 @@ ifcapable fts3 {
 
 #--------------------------------------------------------------------
 # Test that it is not possible to violate a NOT NULL constraint by
-# applying an OTA update.
+# applying an RBU update.
 #
 do_execsql_test 4.1 {
   CREATE TABLE t2(a INTEGER NOT NULL, b TEXT NOT NULL, c PRIMARY KEY);
@@ -131,7 +131,7 @@ do_execsql_test 4.1 {
   INSERT INTO t4 VALUES(10, 10);
 }
 
-foreach {tn error ota} {
+foreach {tn error rbu} {
   2 {SQLITE_CONSTRAINT - NOT NULL constraint failed: t2.a} {
     INSERT INTO data_t2 VALUES(NULL, 'abc', 1, 0);
   }
@@ -163,24 +163,24 @@ foreach {tn error ota} {
     INSERT INTO data_t3 VALUES(1, 'abc', 'text', 0);
   }
 } {
-  set ota "
-    CREATE TABLE data_t2(a, b, c, ota_control);
-    CREATE TABLE data_t3(a, b, c, ota_control);
-    CREATE TABLE data_t4(a, b, ota_control);
-    $ota
+  set rbu "
+    CREATE TABLE data_t2(a, b, c, rbu_control);
+    CREATE TABLE data_t3(a, b, c, rbu_control);
+    CREATE TABLE data_t4(a, b, rbu_control);
+    $rbu
   "
   do_test 4.2.$tn {
-    list [catch { apply_ota $ota } msg] $msg
+    list [catch { apply_rbu $rbu } msg] $msg
   } [list 1 $error]
 }
 
 do_test 4.3 {
-  set ota {
-    CREATE TABLE data_t3(a, b, c, ota_control);
+  set rbu {
+    CREATE TABLE data_t3(a, b, c, rbu_control);
     INSERT INTO data_t3 VALUES(1, 'abc', '5', 0);
     INSERT INTO data_t3 VALUES(1, 'abc', '-6.0', 0);
   }
-  list [catch { apply_ota $ota } msg] $msg
+  list [catch { apply_rbu $rbu } msg] $msg
 } {0 SQLITE_DONE}
 
 

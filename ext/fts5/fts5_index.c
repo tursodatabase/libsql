@@ -3690,13 +3690,13 @@ static void fts5IndexMergeLevel(
       fts5MultiIterEof(p, pIter)==0;
       fts5MultiIterNext(p, pIter, 0, 0)
   ){
-    Fts5SegIter *pSeg = &pIter->aSeg[ pIter->aFirst[1].iFirst ];
+    Fts5SegIter *pSegIter = &pIter->aSeg[ pIter->aFirst[1].iFirst ];
     int nPos;                     /* position-list size field value */
     int nTerm;
     const u8 *pTerm;
 
     /* Check for key annihilation. */
-    if( pSeg->nPos==0 && (bOldest || pSeg->bDel==0) ) continue;
+    if( pSegIter->nPos==0 && (bOldest || pSegIter->bDel==0) ) continue;
 
     pTerm = fts5MultiIterTerm(pIter, &nTerm);
     if( nTerm!=term.n || memcmp(pTerm, term.p, nTerm) ){
@@ -3715,11 +3715,11 @@ static void fts5IndexMergeLevel(
 
     /* Append the rowid to the output */
     /* WRITEPOSLISTSIZE */
-    nPos = pSeg->nPos*2 + pSeg->bDel;
+    nPos = pSegIter->nPos*2 + pSegIter->bDel;
     fts5WriteAppendRowid(p, &writer, fts5MultiIterRowid(pIter), nPos);
 
     /* Append the position-list data to the output */
-    fts5ChunkIterate(p, pSeg, (void*)&writer, fts5MergeChunkCallback);
+    fts5ChunkIterate(p, pSegIter, (void*)&writer, fts5MergeChunkCallback);
   }
 
   /* Flush the last leaf page to disk. Set the output segment b-tree height

@@ -405,7 +405,9 @@ static const sqlite3_api_routines sqlite3Apis = {
   sqlite3_strglob,
   /* Version 3.8.11 and later */
   (sqlite3_value*(*)(const sqlite3_value*))sqlite3_value_dup,
-  sqlite3_value_free
+  sqlite3_value_free,
+  sqlite3_result_zeroblob64,
+  sqlite3_bind_zeroblob64
 };
 
 /*

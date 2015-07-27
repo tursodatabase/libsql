@@ -436,10 +436,10 @@ Tcl_SetVar2(interp, "sqlite_options", "mergesort", "1", TCL_GLOBAL_ONLY);
   Tcl_SetVar2(interp, "sqlite_options", "or_opt", "1", TCL_GLOBAL_ONLY);
 #endif
 
-#ifdef SQLITE_ENABLE_OTA
-  Tcl_SetVar2(interp, "sqlite_options", "ota", "1", TCL_GLOBAL_ONLY);
+#ifdef SQLITE_ENABLE_RBU
+  Tcl_SetVar2(interp, "sqlite_options", "rbu", "1", TCL_GLOBAL_ONLY);
 #else
-  Tcl_SetVar2(interp, "sqlite_options", "ota", "0", TCL_GLOBAL_ONLY);
+  Tcl_SetVar2(interp, "sqlite_options", "rbu", "0", TCL_GLOBAL_ONLY);
 #endif
 
 #ifdef SQLITE_OMIT_PAGER_PRAGMAS

@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# This file contains tests for the OTA module.
+# This file contains tests for the RBU module.
 #
 
 
@@ -17,12 +17,12 @@ if {![info exists testdir]} {
   set testdir [file join [file dirname [info script]] .. .. test]
 }
 source $testdir/tester.tcl
-set ::testprefix ota7
+set ::testprefix rbu7
 
 # Test index:
 #
 #   1.*: That affinities are correctly applied to values within the 
-#        OTA database.
+#        RBU database.
 #
 #   2.*: Tests for multi-column primary keys.
 #
@@ -34,19 +34,19 @@ do_test 1.0 {
     INSERT INTO t1 VALUES(2, 'def');
   }
 
-  forcedelete ota.db
-  sqlite3 ota ota.db
-  ota eval {
-    CREATE TABLE data_t1(a, b, ota_control);
+  forcedelete rbu.db
+  sqlite3 rbu rbu.db
+  rbu eval {
+    CREATE TABLE data_t1(a, b, rbu_control);
     INSERT INTO data_t1 VALUES('1', NULL, 1);
   }
-  ota close
+  rbu close
 } {}
 
 do_test 1.1 {
-  sqlite3ota ota test.db ota.db
-  while { [ota step]=="SQLITE_OK" } {}
-  ota close
+  sqlite3rbu rbu test.db rbu.db
+  while { [rbu step]=="SQLITE_OK" } {}
+  rbu close
 } {SQLITE_DONE}
 
 sqlite3 db test.db
@@ -72,24 +72,24 @@ foreach {tn tbl} {
   }
 
   do_test 2.$tn.2 {
-    forcedelete ota.db
-    sqlite3 ota ota.db
+    forcedelete rbu.db
+    sqlite3 rbu rbu.db
     execsql {
-      CREATE TABLE data_t1(a, b, c, ota_control);
+      CREATE TABLE data_t1(a, b, c, rbu_control);
       INSERT INTO data_t1 VALUES(3, 1, 'e', 0);
       INSERT INTO data_t1 VALUES(3, 2, 'f', 0);
       INSERT INTO data_t1 VALUES(1, 2, NULL, 1);
       INSERT INTO data_t1 VALUES(2, 1, 'X', '..x');
-    } ota
-    ota close
+    } rbu
+    rbu close
   } {}
 
   do_test 2.$tn.3 {
     set rc "SQLITE_OK"
     while {$rc == "SQLITE_OK"} {
-      sqlite3ota ota test.db ota.db
-      ota step
-      set rc [ota close]
+      sqlite3rbu rbu test.db rbu.db
+      rbu step
+      set rc [rbu close]
     } 
     set rc
   } {SQLITE_DONE}

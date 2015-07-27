@@ -2702,7 +2702,7 @@ case OP_MakeRecord: {
     len = sqlite3VdbeSerialTypeLen(serial_type);
     if( pRec->flags & MEM_Zero ){
       if( nData ){
-        sqlite3VdbeMemExpandBlob(pRec);
+        if( sqlite3VdbeMemExpandBlob(pRec) ) goto no_mem;
       }else{
         nZero += pRec->u.nZero;
         len -= pRec->u.nZero;

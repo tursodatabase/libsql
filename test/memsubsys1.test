@@ -25,6 +25,8 @@ if {[permutation] == "memsubsys1"} {
   return
 }
 
+test_set_config_pagecache 0 0
+
 # This procedure constructs a new database in test.db.  It fills
 # this database with many small records (enough to force multiple
 # rebalance operations in the btree-layer and to require a large
@@ -310,10 +312,11 @@ do_test memsubsys1-8.4 {
 db close
 sqlite3_shutdown
 sqlite3_config_memstatus 1
-sqlite3_config_pagecache 0 0
 sqlite3_config_scratch 0 0
 sqlite3_config_lookaside 100 500
 sqlite3_config serialized
 sqlite3_initialize
 autoinstall_test_functions
+
+test_restore_config_pagecache
 finish_test

@@ -648,9 +648,9 @@ static void walIndexWriteHdr(Wal *pWal){
   pWal->hdr.isInit = 1;
   pWal->hdr.iVersion = WALINDEX_MAX_VERSION;
   walChecksumBytes(1, (u8*)&pWal->hdr, nCksum, 0, pWal->hdr.aCksum);
-  memcpy((void *)&aHdr[1], (void *)&pWal->hdr, sizeof(WalIndexHdr));
+  memcpy((void*)&aHdr[1], (const void*)&pWal->hdr, sizeof(WalIndexHdr));
   walShmBarrier(pWal);
-  memcpy((void *)&aHdr[0], (void *)&pWal->hdr, sizeof(WalIndexHdr));
+  memcpy((void*)&aHdr[0], (const void*)&pWal->hdr, sizeof(WalIndexHdr));
 }
 
 /*
@@ -952,13 +952,13 @@ static void walCleanupHash(Wal *pWal){
   ** via the hash table even after the cleanup.
   */
   if( iLimit ){
-    int i;           /* Loop counter */
+    int j;           /* Loop counter */
     int iKey;        /* Hash key */
-    for(i=1; i<=iLimit; i++){
-      for(iKey=walHash(aPgno[i]); aHash[iKey]; iKey=walNextHash(iKey)){
-        if( aHash[iKey]==i ) break;
+    for(j=1; j<=iLimit; j++){
+      for(iKey=walHash(aPgno[j]); aHash[iKey]; iKey=walNextHash(iKey)){
+        if( aHash[iKey]==j ) break;
       }
-      assert( aHash[iKey]==i );
+      assert( aHash[iKey]==j );
     }
   }
 #endif /* SQLITE_ENABLE_EXPENSIVE_ASSERT */

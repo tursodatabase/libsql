@@ -17,6 +17,11 @@ source $testdir/tester.tcl
 source $testdir/lock_common.tcl
 set testprefix rowallock
 
+set mmap_res 1000000
+ifcapable !mmap {
+  set mmap_res 0
+}
+
 do_multiclient_test tn {
   code2 { db2 close }
   code3 { db3 close }
@@ -36,7 +41,7 @@ do_multiclient_test tn {
 
   do_execsql_test 1.$tn.2 {
     PRAGMA mmap_size = 1000000;
-  } {1000000}
+  } $mmap_res
   do_execsql_test 1.$tn.2.1 {
     SELECT * FROM t1;
   } {1 2 3 4}
