@@ -1,5 +1,5 @@
-C Minor\stweak\sto\sthe\sSQL\sschema\sused\sby\sfts5.
-D 2015-07-27T11:43:36.660
+C Bump\sthe\s"version"\sfield\sin\sthe\sfts5\sconfig\stable.
+D 2015-07-27T11:49:01.364
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4de3ef40c8b3b75c0c55ff4242a43c8ce1ad90ee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -106,7 +106,7 @@ F ext/fts3/unicode/mkunicode.tcl 95cf7ec186e48d4985e433ff8a1c89090a774252
 F ext/fts3/unicode/parseunicode.tcl da577d1384810fb4e2b209bf3313074353193e95
 F ext/fts5/extract_api_docs.tcl 06583c935f89075ea0b32f85efa5dd7619fcbd03
 F ext/fts5/fts5.h 81d1a92fc2b4bd477af7e4e0b38b456f3e199fba
-F ext/fts5/fts5Int.h 8d9bce1847a10df2e4ed9492ea4f3868276748fb
+F ext/fts5/fts5Int.h 4d669e2ef0f8d51380c78403fd310ee69ce0f70e
 F ext/fts5/fts5_aux.c 044cb176a815f4388308738437f6e130aa384fb0
 F ext/fts5/fts5_buffer.c 80f9ba4431848cb857e3d2158f5280093dcd8015
 F ext/fts5/fts5_config.c fdfa63ae8e527ecfaa50f94063c610429cc887cf
@@ -1366,7 +1366,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ad6286ab1f40e4716456a67b719f9cd733f988eb
-R c68925a95e6de88396d9c6895e046f42
+P 427bf09ba41158041d774aac2b5ffbd062c6eabe
+R dd5f4cbec3d919d6d2cbe693849f483e
 U dan
-Z 7e591d2a7d163efa89020980b07c1f9a
+Z 155465e09dceab5a219267d7a2262f60
