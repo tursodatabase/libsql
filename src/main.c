@@ -2737,6 +2737,7 @@ static int openDatabase(
   memcpy(db->aLimit, aHardLimit, sizeof(db->aLimit));
   db->aLimit[SQLITE_LIMIT_WORKER_THREADS] = SQLITE_DEFAULT_WORKER_THREADS;
   db->autoCommit = 1;
+  db->bUnlocked = 0;
   db->nextAutovac = -1;
   db->szMmap = sqlite3GlobalConfig.szMmap;
   db->nextPagesize = 0;

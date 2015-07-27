@@ -262,6 +262,7 @@ static Keyword aKeywordTable[] = {
   { "TRIGGER",          "TK_TRIGGER",      TRIGGER                },
   { "UNION",            "TK_UNION",        COMPOUND               },
   { "UNIQUE",           "TK_UNIQUE",       ALWAYS                 },
+  { "UNLOCKED",         "TK_UNLOCKED",     ALWAYS                 },
   { "UPDATE",           "TK_UPDATE",       ALWAYS                 },
   { "USING",            "TK_USING",        ALWAYS                 },
   { "VACUUM",           "TK_VACUUM",       VACUUM                 },

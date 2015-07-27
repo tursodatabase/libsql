@@ -2020,11 +2020,24 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
     if( sqlite3BtreeIsInTrans(pBt) ){
       needXcommit = 1;
       if( i!=1 ) nTrans++;
-      sqlite3BtreeEnter(pBt);
-      rc = sqlite3PagerExclusiveLock(sqlite3BtreePager(pBt));
-      sqlite3BtreeLeave(pBt);
+      rc = sqlite3BtreeExclusiveLock(pBt);
     }
   }
+
+  if( db->bUnlocked && (rc & 0xFF)==SQLITE_BUSY ){
+    /* An SQLITE_BUSY or SQLITE_BUSY_SNAPSHOT was encountered while 
+    ** attempting to take the WRITER lock on a wal file. Release the
+    ** WRITER locks on all wal files and return early.  */
+    for(i=0; i<db->nDb; i++){
+      Btree *pBt = db->aDb[i].pBt;
+      if( sqlite3BtreeIsInTrans(pBt) ){
+        sqlite3BtreeEnter(pBt);
+        sqlite3PagerDropExclusiveLock(sqlite3BtreePager(pBt));
+        sqlite3BtreeLeave(pBt);
+      }
+    }
+  }
+
   if( rc!=SQLITE_OK ){
     return rc;
   }
@@ -2427,6 +2440,7 @@ int sqlite3VdbeHalt(Vdbe *p){
           sqlite3RollbackAll(db, SQLITE_ABORT_ROLLBACK);
           sqlite3CloseSavepoints(db);
           db->autoCommit = 1;
+          db->bUnlocked = 0;
           p->nChange = 0;
         }
       }
@@ -2462,9 +2476,9 @@ int sqlite3VdbeHalt(Vdbe *p){
           ** is required. */
           rc = vdbeCommit(db, p);
         }
-        if( rc==SQLITE_BUSY && p->readOnly ){
+        if( (rc & 0xFF)==SQLITE_BUSY && p->readOnly ){
           sqlite3VdbeLeave(p);
-          return SQLITE_BUSY;
+          return rc;
         }else if( rc!=SQLITE_OK ){
           p->rc = rc;
           sqlite3RollbackAll(db, SQLITE_OK);
@@ -2489,6 +2503,7 @@ int sqlite3VdbeHalt(Vdbe *p){
         sqlite3RollbackAll(db, SQLITE_ABORT_ROLLBACK);
         sqlite3CloseSavepoints(db);
         db->autoCommit = 1;
+        db->bUnlocked = 0;
         p->nChange = 0;
       }
     }
@@ -2510,6 +2525,7 @@ int sqlite3VdbeHalt(Vdbe *p){
         sqlite3RollbackAll(db, SQLITE_ABORT_ROLLBACK);
         sqlite3CloseSavepoints(db);
         db->autoCommit = 1;
+        db->bUnlocked = 0;
         p->nChange = 0;
       }
     }
@@ -2554,7 +2570,7 @@ int sqlite3VdbeHalt(Vdbe *p){
   }
 
   assert( db->nVdbeActive>0 || db->autoCommit==0 || db->nStatement==0 );
-  return (p->rc==SQLITE_BUSY ? SQLITE_BUSY : SQLITE_OK);
+  return ((p->rc & 0xFF)==SQLITE_BUSY ? SQLITE_BUSY : SQLITE_OK);
 }
 
 

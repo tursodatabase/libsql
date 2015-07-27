@@ -3142,7 +3142,10 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag){
       if( (pBt->btsFlags & BTS_READ_ONLY)!=0 ){
         rc = SQLITE_READONLY;
       }else{
-        rc = sqlite3PagerBegin(pBt->pPager,wrflag>1,sqlite3TempInMemory(p->db));
+        int bSubjInMem = sqlite3TempInMemory(p->db);
+        int exFlag = p->db->bUnlocked ? -1 : (wrflag>1);
+        assert( p->db->bUnlocked==0 || wrflag==1 );
+        rc = sqlite3PagerBegin(pBt->pPager, exFlag, bSubjInMem);
         if( rc==SQLITE_OK ){
           rc = newDatabase(pBt);
         }
@@ -3670,8 +3673,15 @@ int sqlite3BtreeCommitPhaseOne(Btree *p, const char *zMaster){
   if( p->inTrans==TRANS_WRITE ){
     BtShared *pBt = p->pBt;
     sqlite3BtreeEnter(p);
+
 #ifndef SQLITE_OMIT_AUTOVACUUM
-    if( pBt->autoVacuum ){
+    /* Figure out if this is a commit of an UNLOCKED transaction that 
+    ** requires a snapshot upgrade. If so, skip any auto-vacuum 
+    ** processing.  */
+    if( pBt->autoVacuum && (
+        0==pBt->db->bUnlocked
+     || 0==sqlite3PagerCommitRequiresUpgrade(pBt->pPager) 
+    )){
       rc = autoVacuumCommit(pBt);
       if( rc!=SQLITE_OK ){
         sqlite3BtreeLeave(p);
@@ -3682,7 +3692,9 @@ int sqlite3BtreeCommitPhaseOne(Btree *p, const char *zMaster){
       sqlite3PagerTruncateImage(pBt->pPager, pBt->nPage);
     }
 #endif
-    rc = sqlite3PagerCommitPhaseOne(pBt->pPager, zMaster, 0);
+    if( rc==SQLITE_OK ){
+      rc = sqlite3PagerCommitPhaseOne(pBt->pPager, zMaster, 0);
+    }
     sqlite3BtreeLeave(p);
   }
   return rc;
@@ -9578,3 +9590,15 @@ int sqlite3BtreeIsReadonly(Btree *p){
 ** Return the size of the header added to each page by this module.
 */
 int sqlite3HeaderSizeBtree(void){ return ROUND8(sizeof(MemPage)); }
+
+int sqlite3BtreeExclusiveLock(Btree *p){
+  int rc;
+  BtShared *pBt = p->pBt;
+  sqlite3BtreeEnter(p);
+  rc = sqlite3PagerExclusiveLock(pBt->pPager, pBt->pPage1->pDbPage);
+  sqlite3BtreeLeave(p);
+  return rc;
+}
+
+
+

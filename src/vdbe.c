@@ -2899,6 +2899,7 @@ case OP_Savepoint: {
         if( (rc = sqlite3VdbeCheckFk(p, 1))!=SQLITE_OK ){
           goto vdbe_return;
         }
+        assert( db->bUnlocked==0 );
         db->autoCommit = 1;
         if( sqlite3VdbeHalt(p)==SQLITE_BUSY ){
           p->pc = (int)(pOp - aOp);
@@ -2970,12 +2971,15 @@ case OP_Savepoint: {
   break;
 }
 
-/* Opcode: AutoCommit P1 P2 * * *
+/* Opcode: AutoCommit P1 P2 P3 * *
 **
 ** Set the database auto-commit flag to P1 (1 or 0). If P2 is true, roll
 ** back any currently active btree transactions. If there are any active
 ** VMs (apart from this one), then a ROLLBACK fails.  A COMMIT fails if
 ** there are active writing VMs or active VMs that use shared cache.
+**
+** If P3 is non-zero, then this instruction is being executed as part of
+** a "BEGIN UNLOCKED" command.
 **
 ** This instruction causes the VM to halt.
 */
@@ -2983,16 +2987,23 @@ case OP_AutoCommit: {
   int desiredAutoCommit;
   int iRollback;
   int turnOnAC;
+  int bUnlocked;
+  int hrc;
 
   desiredAutoCommit = pOp->p1;
   iRollback = pOp->p2;
+  bUnlocked = pOp->p3;
   turnOnAC = desiredAutoCommit && !db->autoCommit;
   assert( desiredAutoCommit==1 || desiredAutoCommit==0 );
   assert( desiredAutoCommit==1 || iRollback==0 );
+  assert( desiredAutoCommit==0 || bUnlocked==0 );
+  assert( db->autoCommit==0 || db->bUnlocked==0 );
   assert( db->nVdbeActive>0 );  /* At least this one VM is active */
   assert( p->bIsReader );
 
-  if( turnOnAC && !iRollback && db->nVdbeWrite>0 ){
+  if( turnOnAC && !iRollback && 
+      (db->nVdbeWrite>0 || (db->bUnlocked && db->nVdbeActive>1))
+  ){
     /* If this instruction implements a COMMIT and other VMs are writing
     ** return an error indicating that the other VMs must complete first. 
     */
@@ -3004,16 +3015,20 @@ case OP_AutoCommit: {
       assert( desiredAutoCommit==1 );
       sqlite3RollbackAll(db, SQLITE_ABORT_ROLLBACK);
       db->autoCommit = 1;
+      db->bUnlocked = 0;
     }else if( (rc = sqlite3VdbeCheckFk(p, 1))!=SQLITE_OK ){
       goto vdbe_return;
     }else{
       db->autoCommit = (u8)desiredAutoCommit;
-      if( sqlite3VdbeHalt(p)==SQLITE_BUSY ){
+      hrc = sqlite3VdbeHalt(p);
+      if( (hrc & 0xFF)==SQLITE_BUSY ){
         p->pc = (int)(pOp - aOp);
         db->autoCommit = (u8)(1-desiredAutoCommit);
-        p->rc = rc = SQLITE_BUSY;
+        p->rc = hrc;
+        rc = SQLITE_BUSY;
         goto vdbe_return;
       }
+      db->bUnlocked = (u8)bUnlocked;
     }
     assert( db->nStatement==0 );
     sqlite3CloseSavepoints(db);
@@ -3208,9 +3223,16 @@ case OP_SetCookie: {       /* in3 */
   /* See note about index shifting on OP_ReadCookie */
   rc = sqlite3BtreeUpdateMeta(pDb->pBt, pOp->p2, (int)pIn3->u.i);
   if( pOp->p2==BTREE_SCHEMA_VERSION ){
-    /* When the schema cookie changes, record the new cookie internally */
-    pDb->pSchema->schema_cookie = (int)pIn3->u.i;
-    db->flags |= SQLITE_InternChanges;
+    if( db->bUnlocked ){
+      sqlite3VdbeError(p, "cannot modify database schema - "
+          "UNLOCKED transaction"
+      );
+      rc = SQLITE_ERROR;
+    }else{
+      /* When the schema cookie changes, record the new cookie internally */
+      pDb->pSchema->schema_cookie = (int)pIn3->u.i;
+      db->flags |= SQLITE_InternChanges;
+    }
   }else if( pOp->p2==BTREE_FILE_FORMAT ){
     /* Record changes in the file format */
     pDb->pSchema->file_format = (u8)pIn3->u.i;

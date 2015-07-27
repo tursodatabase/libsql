@@ -3066,6 +3066,7 @@ static int pagerWalFrames(
     ** list here. */
     PgHdr **ppNext = &pList;
     nList = 0;
+
     for(p=pList; (*ppNext = p)!=0; p=p->pDirty){
       if( p->pgno<=nTruncate ){
         ppNext = &p->pDirty;
@@ -4081,7 +4082,7 @@ static int syncJournal(Pager *pPager, int newHdr){
   assert( assert_pager_state(pPager) );
   assert( !pagerUseWal(pPager) );
 
-  rc = sqlite3PagerExclusiveLock(pPager);
+  rc = sqlite3PagerExclusiveLock(pPager, 0);
   if( rc!=SQLITE_OK ) return rc;
 
   if( !pPager->noSync ){
@@ -4429,6 +4430,10 @@ static int pagerStress(void *p, PgHdr *pPg){
 
   pPg->pDirty = 0;
   if( pagerUseWal(pPager) ){
+    /* If the transaction is a "BEGIN UNLOCKED" transaction, the page 
+    ** cannot be flushed to disk. Return early in this case. */
+    if( sqlite3WalIsInTrans(pPager->pWal)==0 ) return SQLITE_OK;
+
     /* Write a single frame for this page to the log. */
     rc = subjournalPageIfRequired(pPg); 
     if( rc==SQLITE_OK ){
@@ -5548,10 +5553,13 @@ static int pager_open_journal(Pager *pPager){
 ** Begin a write-transaction on the specified pager object. If a 
 ** write-transaction has already been opened, this function is a no-op.
 **
-** If the exFlag argument is false, then acquire at least a RESERVED
-** lock on the database file. If exFlag is true, then acquire at least
+** If the exFlag argument is 0, then acquire at least a RESERVED
+** lock on the database file. If exFlag is >0, then acquire at least
 ** an EXCLUSIVE lock. If such a lock is already held, no locking 
 ** functions need be called.
+**
+** If (exFlag<0) and the database is in WAL mode, do not take any locks.
+** The transaction will run in UNLOCKED mode instead.
 **
 ** If the subjInMemory argument is non-zero, then any sub-journal opened
 ** within this transaction will be opened as an in-memory file. This
@@ -5588,7 +5596,9 @@ int sqlite3PagerBegin(Pager *pPager, int exFlag, int subjInMemory){
       ** The busy-handler is not invoked if another connection already
       ** holds the write-lock. If possible, the upper layer will call it.
       */
-      rc = sqlite3WalBeginWriteTransaction(pPager->pWal);
+      if( exFlag>=0 ){
+        rc = sqlite3WalBeginWriteTransaction(pPager->pWal);
+      }
     }else{
       /* Obtain a RESERVED lock on the database file. If the exFlag parameter
       ** is true, then immediately upgrade this to an EXCLUSIVE lock. The
@@ -5596,7 +5606,7 @@ int sqlite3PagerBegin(Pager *pPager, int exFlag, int subjInMemory){
       ** lock, but not when obtaining the RESERVED lock.
       */
       rc = pagerLockDb(pPager, RESERVED_LOCK);
-      if( rc==SQLITE_OK && exFlag ){
+      if( rc==SQLITE_OK && exFlag>0 ){
         rc = pager_wait_on_lock(pPager, EXCLUSIVE_LOCK);
       }
     }
@@ -6056,7 +6066,7 @@ int sqlite3PagerSync(Pager *pPager, const char *zMaster){
 ** Otherwise, either SQLITE_BUSY or an SQLITE_IOERR_XXX error code is 
 ** returned.
 */
-int sqlite3PagerExclusiveLock(Pager *pPager){
+int sqlite3PagerExclusiveLock(Pager *pPager, PgHdr *pPage1){
   int rc = SQLITE_OK;
   assert( pPager->eState==PAGER_WRITER_CACHEMOD 
        || pPager->eState==PAGER_WRITER_DBMOD 
@@ -6065,8 +6075,50 @@ int sqlite3PagerExclusiveLock(Pager *pPager){
   assert( assert_pager_state(pPager) );
   if( 0==pagerUseWal(pPager) ){
     rc = pager_wait_on_lock(pPager, EXCLUSIVE_LOCK);
+  }else{
+    Wal *pWal = pPager->pWal;
+    if( 0==sqlite3WalIsInTrans(pWal) ){
+      /* TODO: There must be an optimization opportunity here, as this call 
+      ** to PcacheDirtyList() sorts the list of dirty pages, even though it 
+      ** is not really required - and will be sorted again in CommitPhaseOne()
+      ** in any case.  */
+      PgHdr *pList = sqlite3PcacheDirtyList(pPager->pPCache);
+
+      /* This is an UNLOCKED transaction. Attempt to lock the wal database
+      ** here. If SQLITE_BUSY (but not SQLITE_BUSY_SNAPSHOT) is returned,
+      ** invoke the busy-handler and try again for as long as it returns
+      ** non-zero.  */
+      do {
+        /* rc = sqlite3WalBeginWriteTransaction(pWal); */
+        rc = sqlite3WalLockForCommit(pWal, pList, pPage1); 
+      }while( rc==SQLITE_BUSY 
+           && pPager->xBusyHandler(pPager->pBusyHandlerArg) 
+      );
+    }
   }
   return rc;
+}
+
+/*
+** If this is a WAL mode connection and the WRITER lock is currently held,
+** relinquish it.
+*/
+void sqlite3PagerDropExclusiveLock(Pager *pPager){
+  if( pagerUseWal(pPager) ){
+    sqlite3WalEndWriteTransaction(pPager->pWal);
+  }
+}
+
+/*
+** Return true if this is a WAL database and snapshot upgrade is required
+** before the current transaction can be committed.
+*/
+int sqlite3PagerCommitRequiresUpgrade(Pager *pPager){
+  int res = 0;
+  if( pagerUseWal(pPager) ){
+    res = sqlite3WalCommitRequiresUpgrade(pPager->pWal);
+  }
+  return res;
 }
 
 /*

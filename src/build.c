@@ -3828,13 +3828,13 @@ void sqlite3BeginTransaction(Parse *pParse, int type){
   }
   v = sqlite3GetVdbe(pParse);
   if( !v ) return;
-  if( type!=TK_DEFERRED ){
+  if( type==TK_IMMEDIATE || type==TK_EXCLUSIVE ){
     for(i=0; i<db->nDb; i++){
       sqlite3VdbeAddOp2(v, OP_Transaction, i, (type==TK_EXCLUSIVE)+1);
       sqlite3VdbeUsesBtree(v, i);
     }
   }
-  sqlite3VdbeAddOp2(v, OP_AutoCommit, 0, 0);
+  sqlite3VdbeAddOp3(v, OP_AutoCommit, 0, 0, (type==TK_UNLOCKED));
 }
 
 /*

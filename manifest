@@ -1,5 +1,5 @@
-C Version\s3.8.11
-D 2015-07-27T13:49:41.754
+C Add\san\sexperimental\s"BEGIN\sUNLOCKED"\scommand.
+D 2015-07-27T19:31:45.102
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4de3ef40c8b3b75c0c55ff4242a43c8ce1ad90ee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -270,10 +270,10 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 4d9134dc988a87838c06056c89c0e8c4700a0452
 F src/bitvec.c d1f21d7d91690747881f03940584f4cc548c9d3d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c f48b3ef91676c06a90a8832987ecef6b94c931ee
-F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
+F src/btree.c b184ce6d483dfadc53126a4b7994633ec0d5ef5f
+F src/btree.h 550e8447684013a69196ec664142f67538da8ef1
 F src/btreeInt.h 2ad754dd4528baa8d0946a593cc373b890bf859e
-F src/build.c b3f15255d5b16e42dafeaa638fd4f8a47c94ed70
+F src/build.c 28c15c43eefc0066ff64040526ff649c32fe5523
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
 F src/ctime.c 5a0b735dc95604766f5dac73973658eef782ee8b
@@ -293,7 +293,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 92bafa308607dd985ca389a788cd9e0a2b608712
 F src/loadext.c dfcee8c7c032cd0fd55af3e0fc1fcfb01e426df2
-F src/main.c 0a60b7ca8252c3a6f95438fa4ce8fe5b275c69f2
+F src/main.c ebbd5a45caf66ce0ebdf1b6c0bc4784e3cfcd768
 F src/malloc.c 19461e159bccf0e2cf06a50e867963d0a7b124a8
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c abe6ee469b6c5a35c7f22bfeb9c9bac664a1c987
@@ -315,9 +315,9 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c 388c023582b17890f10c980b30ec1922b471753b
 F src/os_win.c 40b3af7a47eb1107d0d69e592bec345a3b7b798a
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
-F src/pager.c aa916ca28606ccf4b6877dfc2b643ccbca86589f
-F src/pager.h 6d435f563b3f7fcae4b84433b76a6ac2730036e2
-F src/parse.y 6d60dda8f8d418b6dc034f1fbccd816c459983a8
+F src/pager.c c9f22eb831851220c1095863c5797a88f71bea8a
+F src/pager.h b6cf6e9552c5b1e7d6d0d8cd7ca51be7802bec72
+F src/parse.y 199145cd982587d70fa3db2f9b11f7ab118f0acd
 F src/pcache.c cde06aa50962595e412d497e22fd2e07878ba1f0
 F src/pcache.h 9968603796240cdf83da7e7bef76edf90619cea9
 F src/pcache1.c d08939800abf3031bd0affd5a13fbc4d7ba3fb68
@@ -333,7 +333,7 @@ F src/shell.c 8af3cced094aebb5f57a8ad739b9dafc7867eed7
 F src/sqlite.h.in f623dd30a4fb7df2fb44a2a85e27813d25e486c2
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h a0b948ebc89bac13941254641326a6aa248c2cc4
-F src/sqliteInt.h 81f458941cfb30c5536c37930fb6f41e66171284
+F src/sqliteInt.h f14033fa6da3ca70f7dde5ba19dc1ed58055a2d7
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c f266ad8a2892d659b74f0f50cb6a88b6e7c12179
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
@@ -390,20 +390,20 @@ F src/trigger.c 322f23aad694e8f31d384dcfa386d52a48d3c52f
 F src/update.c 487747b328b7216bb7f6af0695d6937d5c9e605f
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c 46358a204b35971a839341cf64599d65b151ba88
-F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c 86be40a4568f5385048ea6623adfd11ddb7bf710
+F src/vacuum.c 4e7e18d889662eda281855a7125e56269069f215
+F src/vdbe.c fd6832408d9621ad347a65b01a05380fe766232f
 F src/vdbe.h 7a75045d879118b9d3af7e8b3c108f2f27c51473
 F src/vdbeInt.h 8b54e01ad0463590e7cffabce0bc36da9ee4f816
 F src/vdbeapi.c adabbd66eb2e3a10f3998485ee0be7e326d06ee4
-F src/vdbeaux.c 787f5f9d58f4c6f39294ed06909ba602d1a402e6
+F src/vdbeaux.c 27feae106f3f4db298e65d37a9da4962aaff724b
 F src/vdbeblob.c 4f2e8e075d238392df98c5e03a64342465b03f90
 F src/vdbemem.c ae38a0d35ae71cf604381a887c170466ba518090
 F src/vdbesort.c f5009e7a35e3065635d8918b9a31f498a499976b
 F src/vdbetrace.c 8befe829faff6d9e6f6e4dee5a7d3f85cc85f1a0
 F src/vtab.c 082b35a25a26e3d36f365ca8cd73c1922532f05e
 F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
-F src/wal.c 6fb6b68969e4692593c2552c4e7bff5882de2cb8
-F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
+F src/wal.c d588e26ed0d912584551dfe65d644d8c27cc2d1f
+F src/wal.h 5188cd85398dc612ae5ed2ed02d193377218be56
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
 F src/where.c 909eba3b6db984eb2adfbca9de2c237ee7056adb
 F src/whereInt.h 5f87e3c4b0551747d119730dfebddd3c54f04047
@@ -1215,6 +1215,7 @@ F test/types3.test 99e009491a54f4dc02c06bdbc0c5eea56ae3e25a
 F test/unique.test 93f8b2ef5ea51b9495f8d6493429b1fd0f465264
 F test/unique2.test 41e7f83c6827605991160a31380148a9fc5f1339
 F test/unixexcl.test cd6c765f75e50e8e2c2ba763149e5d340ea19825
+F test/unlocked.test edd4ed073ab16c0f8c9f5124e039100657b422c9
 F test/unordered.test ca7adce0419e4ca0c50f039885e76ed2c531eda8
 F test/update.test 6c68446b8a0a33d522a7c72b320934596a2d7d32
 F test/uri.test 23662b7b61958b0f0e47082de7d06341ccf85d5b
@@ -1326,7 +1327,7 @@ F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
 F tool/logest.c eef612f8adf4d0993dafed0416064cf50d5d33c6
 F tool/mkautoconfamal.sh d1a2da0e15b2ed33d60af35c7e9d483f13a8eb9f
-F tool/mkkeywordhash.c dfff09dbbfaf950e89af294f48f902181b144670
+F tool/mkkeywordhash.c de4a823fe66f9e8c39c86e465ac7285fd6935bb8
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkpragmatab.tcl 84af2b180484323a2ea22a2279e8bd9e3e1e492e
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
@@ -1366,10 +1367,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9f1dcdc3e1644c21762dacf619fac70afe6318c5
-R 8f58f88db8a7564cc507b9707cc8c853
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.8.11 *
-U drh
-Z ff777afb71751a2633799d5aca45576d
+P b8e92227a469de677a66da62e4361f099c0b79d0
+R 889966cd4fab23d4f4355c880be4edd8
+T *branch * experimental-begin-unlocked
+T *sym-experimental-begin-unlocked *
+T -sym-trunk *
+U dan
+Z 55f5e7a6a42bdc95bbb980b319cd8658

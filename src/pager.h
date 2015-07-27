@@ -150,13 +150,16 @@ void *sqlite3PagerGetExtra(DbPage *);
 void sqlite3PagerPagecount(Pager*, int*);
 int sqlite3PagerBegin(Pager*, int exFlag, int);
 int sqlite3PagerCommitPhaseOne(Pager*,const char *zMaster, int);
-int sqlite3PagerExclusiveLock(Pager*);
+int sqlite3PagerExclusiveLock(Pager*, DbPage *pPage1);
 int sqlite3PagerSync(Pager *pPager, const char *zMaster);
 int sqlite3PagerCommitPhaseTwo(Pager*);
 int sqlite3PagerRollback(Pager*);
 int sqlite3PagerOpenSavepoint(Pager *pPager, int n);
 int sqlite3PagerSavepoint(Pager *pPager, int op, int iSavepoint);
 int sqlite3PagerSharedLock(Pager *pPager);
+
+void sqlite3PagerDropExclusiveLock(Pager*);
+int sqlite3PagerCommitRequiresUpgrade(Pager*);
 
 #ifndef SQLITE_OMIT_WAL
   int sqlite3PagerCheckpoint(Pager *pPager, int, int*, int*);
