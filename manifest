@@ -1,5 +1,5 @@
-C Version\s3.8.11
-D 2015-07-27T13:49:41.754
+C Clarification\sto\sthe\sdocumentation\sfor\ssqlite3_result_zeroblob64().\s\sNo\nchanges\sto\scode.
+D 2015-07-27T19:57:13.183
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4de3ef40c8b3b75c0c55ff4242a43c8ce1ad90ee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -330,7 +330,7 @@ F src/resolve.c 2d47554370de8de6dd5be060cef9559eec315005
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 57ef3d98c4400b93eea318813be41b2af2da2217
 F src/shell.c 8af3cced094aebb5f57a8ad739b9dafc7867eed7
-F src/sqlite.h.in f623dd30a4fb7df2fb44a2a85e27813d25e486c2
+F src/sqlite.h.in 68e13bc5b835c541a4505ed87bf2b6093f068a31
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h a0b948ebc89bac13941254641326a6aa248c2cc4
 F src/sqliteInt.h 81f458941cfb30c5536c37930fb6f41e66171284
@@ -1366,10 +1366,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9f1dcdc3e1644c21762dacf619fac70afe6318c5
-R 8f58f88db8a7564cc507b9707cc8c853
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.8.11 *
+P b8e92227a469de677a66da62e4361f099c0b79d0
+R b6cc25a8d396560ec92caa20a13dbf83
 U drh
-Z ff777afb71751a2633799d5aca45576d
+Z d3da0fc8d97fcea23988cd11e6220d2f
