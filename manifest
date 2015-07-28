@@ -1,5 +1,5 @@
-C Clarification\sto\sthe\sdocumentation\sfor\ssqlite3_result_zeroblob64().\s\sNo\nchanges\sto\scode.
-D 2015-07-27T19:57:13.183
+C Fix\sthe\sxfer\soptimization\sfor\sWITHOUT\sROWID\stables\sso\sthat\sit\scorrectly\nupdates\sthe\schange\scount\sreturned\sby\ssqlite3_changes().
+D 2015-07-28T18:53:37.424
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4de3ef40c8b3b75c0c55ff4242a43c8ce1ad90ee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -288,7 +288,7 @@ F src/global.c 508e4087f7b41d688e4762dcf4d4fe28cfbc87f9
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
 F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c b5f8b35a1b7924020e48cade5b2b5017bca7906b
+F src/insert.c 842026863c726df5420f896a8c10eb3e150f9864
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 92bafa308607dd985ca389a788cd9e0a2b608712
@@ -1303,7 +1303,7 @@ F test/with2.test ee227a663586aa09771cafd4fa269c5217eaf775
 F test/withM.test e97f2a8c506ab3ea9eab94e6f6072f6cc924c991
 F test/without_rowid1.test 1a7b9bd51b899928d327052df9741d2fe8dbe701
 F test/without_rowid2.test af260339f79d13cb220288b67cd287fbcf81ad99
-F test/without_rowid3.test 1081aabf60a1e1123b7f9a8f6ae19954351843b0
+F test/without_rowid3.test aad4f9d383e199349b6c7e508a778f7dff5dff79
 F test/without_rowid4.test 4e08bcbaee0399f35d58b5581881e7a6243d458a
 F test/without_rowid5.test 61256715b686359df48ca1742db50cc7e3e7b862
 F test/without_rowid6.test db0dbf03c49030aa3c1ba5f618620334bd2baf5f
@@ -1366,7 +1366,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b8e92227a469de677a66da62e4361f099c0b79d0
-R b6cc25a8d396560ec92caa20a13dbf83
+P c98175e900cdda0c81fb559fed4cc5f27c34e368
+R e96dcbd757ba5f6ebb95dab5feb99125
 U drh
-Z d3da0fc8d97fcea23988cd11e6220d2f
+Z 39b41622c8bd60fb5611285cfd384da5
