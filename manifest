@@ -1,5 +1,5 @@
-C Add\san\sexperimental\s"BEGIN\sUNLOCKED"\scommand.
-D 2015-07-27T19:31:45.102
+C Add\ssome\stest\scases\sand\sfix\ssome\ssmall\sproblems\swith\sBEGIN\sUNLOCKED\stransactions.
+D 2015-07-28T16:46:49.291
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4de3ef40c8b3b75c0c55ff4242a43c8ce1ad90ee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -402,7 +402,7 @@ F src/vdbesort.c f5009e7a35e3065635d8918b9a31f498a499976b
 F src/vdbetrace.c 8befe829faff6d9e6f6e4dee5a7d3f85cc85f1a0
 F src/vtab.c 082b35a25a26e3d36f365ca8cd73c1922532f05e
 F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
-F src/wal.c d588e26ed0d912584551dfe65d644d8c27cc2d1f
+F src/wal.c a2e35f042103519ce22050acaf167960446963c7
 F src/wal.h 5188cd85398dc612ae5ed2ed02d193377218be56
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
 F src/where.c 909eba3b6db984eb2adfbca9de2c237ee7056adb
@@ -1215,7 +1215,7 @@ F test/types3.test 99e009491a54f4dc02c06bdbc0c5eea56ae3e25a
 F test/unique.test 93f8b2ef5ea51b9495f8d6493429b1fd0f465264
 F test/unique2.test 41e7f83c6827605991160a31380148a9fc5f1339
 F test/unixexcl.test cd6c765f75e50e8e2c2ba763149e5d340ea19825
-F test/unlocked.test edd4ed073ab16c0f8c9f5124e039100657b422c9
+F test/unlocked.test 854f3f428bb2e0ae91cb2400596a8f1ab7eaa409
 F test/unordered.test ca7adce0419e4ca0c50f039885e76ed2c531eda8
 F test/update.test 6c68446b8a0a33d522a7c72b320934596a2d7d32
 F test/uri.test 23662b7b61958b0f0e47082de7d06341ccf85d5b
@@ -1367,10 +1367,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b8e92227a469de677a66da62e4361f099c0b79d0
-R 889966cd4fab23d4f4355c880be4edd8
-T *branch * experimental-begin-unlocked
-T *sym-experimental-begin-unlocked *
-T -sym-trunk *
+P 8079421604dbd40d03471dad6d12115119b554c2
+R 52e6230fe0fe2d8cb4434e54d864e964
 U dan
-Z 55f5e7a6a42bdc95bbb980b319cd8658
+Z 849da1cda4069d7075ecc7190a9058c5

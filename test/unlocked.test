@@ -279,7 +279,6 @@ do_multiclient_test tn {
   # 3. Attempt to commit the UNLOCKED write. This is an SQLITE_BUSY_SNAPSHOT,
   #    even though there is no page collision.
   #
-  
   do_test 2.$tn.5.1 {
     sql1 {
       BEGIN UNLOCKED;
@@ -299,6 +298,71 @@ do_multiclient_test tn {
     sql2 { PRAGMA integrity_check }
   } {ok}
   catch { sql1 ROLLBACK }
+
+  #-----------------------------------------------------------------------
+  # The "schema cookie" issue.
+  #
+  # 1. Begin an UNLOCKED write to "t1" using [db]
+  #
+  # 2. Lots of inserts into t2. Enough to grow the db file.
+  #
+  # 3. Check that the UNLOCKED transaction can still be committed.
+  #
+  do_test 2.$tn.6.1 {
+    sql1 {
+      BEGIN UNLOCKED;
+        INSERT INTO t1 VALUES(6, 'six');
+    }
+  } {}
+
+  do_test 2.$tn.6.2 {
+    sql2 { 
+      WITH src(a,b) AS (
+        VALUES(1,1) UNION ALL SELECT a+1,b+1 FROM src WHERE a<10000
+      ) INSERT INTO t2 SELECT * FROM src;
+    }
+  } {}
+
+  do_test 2.$tn.6.3 {
+    sql1 {
+      SELECT count(*) FROM t2;
+      COMMIT;
+      SELECT count(*) FROM t2;
+    }
+  } {1 10001}
+
+  #-----------------------------------------------------------------------
+  # 
+  # 1. Begin an big UNLOCKED write to "t1" using [db] - large enough to
+  #    grow the db file.
+  #
+  # 2. Lots of inserts into t2. Also enough to grow the db file.
+  #
+  # 3. Check that the UNLOCKED transaction cannot be committed (due to a clash
+  #    on page 1 - the db size field).
+  #
+  do_test 2.$tn.7.1 {
+    sql1 {
+      BEGIN UNLOCKED;
+        WITH src(a,b) AS (
+          VALUES(10000,10000) UNION ALL SELECT a+1,b+1 FROM src WHERE a<20000
+        ) INSERT INTO t1 SELECT * FROM src;
+    }
+  } {}
+
+  do_test 2.$tn.7.2 {
+    sql2 { 
+      WITH src(a,b) AS (
+        VALUES(1,1) UNION ALL SELECT a+1,b+1 FROM src WHERE a<10000
+      ) INSERT INTO t2 SELECT * FROM src;
+    }
+  } {}
+
+  do_test 2.$tn.7.3 {
+    list [catch { sql1 { COMMIT } } msg] $msg [sqlite3_errcode db]
+  } {1 {database is locked} SQLITE_BUSY_SNAPSHOT}
+  sql1 ROLLBACK
+
 
 }
 

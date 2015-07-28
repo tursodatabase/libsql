@@ -2508,6 +2508,34 @@ Pgno sqlite3WalDbsize(Wal *pWal){
   return 0;
 }
 
+/*
+** Take the WRITER lock on the WAL file. Return SQLITE_OK if successful,
+** or an SQLite error code otherwise. This routine does not invoke any
+** busy-handler callbacks, that is done at a higher level.
+*/
+static int walWriteLock(Wal *pWal){
+  int rc;
+
+  /* Cannot start a write transaction without first holding a read lock */
+  assert( pWal->readLock>=0 );
+  assert( pWal->writeLock==0 );
+
+  /* If this is a read-only connection, obtaining a write-lock is not
+  ** possible. In this case return SQLITE_READONLY. Otherwise, attempt
+  ** to grab the WRITER lock. Set Wal.writeLock to true and return
+  ** SQLITE_OK if successful, or leave Wal.writeLock clear and return 
+  ** an SQLite error code (possibly SQLITE_BUSY) otherwise. */
+  if( pWal->readOnly ){
+    rc = SQLITE_READONLY;
+  }else{
+    rc = walLockExclusive(pWal, WAL_WRITE_LOCK, 1, 0);
+    if( rc==SQLITE_OK ){
+      pWal->writeLock = 1;
+    }
+  }
+
+  return rc;
+}
 
 /* 
 ** This function starts a write transaction on the WAL.
@@ -2523,35 +2551,18 @@ Pgno sqlite3WalDbsize(Wal *pWal){
 ** There can only be a single writer active at a time.
 */
 int sqlite3WalBeginWriteTransaction(Wal *pWal){
-  int rc;
-
-  /* Cannot start a write transaction without first holding a read
-  ** transaction. */
-  assert( pWal->readLock>=0 );
-
-  if( pWal->readOnly ){
-    return SQLITE_READONLY;
+  int rc = walWriteLock(pWal);
+  if( rc==SQLITE_OK ){
+    /* If another connection has written to the database file since the
+    ** time the read transaction on this connection was started, then
+    ** the write is disallowed. Release the WRITER lock and return
+    ** SQLITE_BUSY_SNAPSHOT in this case.  */
+    if( memcmp(&pWal->hdr, (void *)walIndexHdr(pWal), sizeof(WalIndexHdr))!=0 ){
+      walUnlockExclusive(pWal, WAL_WRITE_LOCK, 1);
+      pWal->writeLock = 0;
+      rc = SQLITE_BUSY_SNAPSHOT;
+    }
   }
-
-  /* Only one writer allowed at a time.  Get the write lock.  Return
-  ** SQLITE_BUSY if unable.
-  */
-  rc = walLockExclusive(pWal, WAL_WRITE_LOCK, 1, 0);
-  if( rc ){
-    return rc;
-  }
-  pWal->writeLock = 1;
-
-  /* If another connection has written to the database file since the
-  ** time the read transaction on this connection was started, then
-  ** the write is disallowed.
-  */
-  if( memcmp(&pWal->hdr, (void *)walIndexHdr(pWal), sizeof(WalIndexHdr))!=0 ){
-    walUnlockExclusive(pWal, WAL_WRITE_LOCK, 1);
-    pWal->writeLock = 0;
-    rc = SQLITE_BUSY_SNAPSHOT;
-  }
-
   return rc;
 }
 
@@ -2563,25 +2574,7 @@ int sqlite3WalBeginWriteTransaction(Wal *pWal){
 ** the wal file.
 */
 int sqlite3WalLockForCommit(Wal *pWal, PgHdr *pList, PgHdr *pPage1){
-  volatile WalIndexHdr *pHead;    /* Head of the wal file */
-  int rc;
-
-  /* Cannot start a write transaction without first holding a read
-  ** transaction. */
-  assert( pWal->readLock>=0 );
-
-  if( pWal->readOnly ){
-    return SQLITE_READONLY;
-  }
-
-  /* Only one writer allowed at a time.  Get the write lock.  Return
-  ** SQLITE_BUSY if unable.
-  */
-  rc = walLockExclusive(pWal, WAL_WRITE_LOCK, 1, 0);
-  if( rc ){
-    return rc;
-  }
-  pWal->writeLock = 1;
+  int rc = walWriteLock(pWal);
 
   /* If the database has been modified since this transaction was started,
   ** check if it is still possible to commit. The transaction can be 
@@ -2593,40 +2586,52 @@ int sqlite3WalLockForCommit(Wal *pWal, PgHdr *pList, PgHdr *pPage1){
   **   b) The database schema cookie has not been modified since the
   **      transaction was started.
   */
-  pHead = walIndexHdr(pWal);
-  if( memcmp(&pWal->hdr, (void*)pHead, sizeof(WalIndexHdr))!=0 ){
-    /* TODO: Is this safe? Because it holds the WRITER lock this thread
-    ** has exclusive access to the live header, but might it be corrupt? */
-    PgHdr *pPg;
-    u32 iLast = pHead->mxFrame;
-    for(pPg=pList; rc==SQLITE_OK && pPg; pPg=pPg->pDirty){
-      u32 iSlot = 0;
-      rc = walFindFrame(pWal, pPg->pgno, iLast, &iSlot);
-      if( iSlot>pWal->hdr.mxFrame ){
-        sqlite3_log(SQLITE_OK,
-            "cannot commit UNLOCKED transaction (conflict at page %d)",
-            (int)pPg->pgno
-        );
-        rc = SQLITE_BUSY_SNAPSHOT;
-      }
-    }
-
-    if( rc==SQLITE_OK ){
-      /* Read the newest schema cookie from the wal file. */
-      u32 iSlot = 0;
-      rc = walFindFrame(pWal, 1, iLast, &iSlot);
-      if( rc==SQLITE_OK && iSlot>pWal->hdr.mxFrame ){
-        u8 aNew[4];
-        u8 *aOld = &((u8*)pPage1->pData)[40];
-        int sz;
-        i64 iOffset;
-        sz = pWal->hdr.szPage;
-        sz = (sz&0xfe00) + ((sz&0x0001)<<16);
-        iOffset = walFrameOffset(iSlot, sz) + WAL_FRAME_HDRSIZE + 40;
-        rc = sqlite3OsRead(pWal->pWalFd, aNew, sizeof(aNew), iOffset);
-        if( rc==SQLITE_OK && memcmp(aOld, aNew, sizeof(aNew)) ){
-          /* TODO: New error code? SQLITE_BUSY_SCHEMA. */
+  if( rc==SQLITE_OK ){
+    volatile WalIndexHdr *pHead;    /* Head of the wal file */
+    pHead = walIndexHdr(pWal);
+    if( memcmp(&pWal->hdr, (void*)pHead, sizeof(WalIndexHdr))!=0 ){
+      int bSeenPage1 = 0;           /* True if page 1 is in list pList */
+  
+      /* TODO: Is this safe? Because it holds the WRITER lock this thread
+      ** has exclusive access to the live header, but might it be corrupt? */
+      PgHdr *pPg;
+      u32 iLast = pHead->mxFrame;
+      for(pPg=pList; rc==SQLITE_OK && pPg; pPg=pPg->pDirty){
+        u32 iSlot = 0;
+        rc = walFindFrame(pWal, pPg->pgno, iLast, &iSlot);
+        if( iSlot>pWal->hdr.mxFrame ){
+          sqlite3_log(SQLITE_OK,
+              "cannot commit UNLOCKED transaction (conflict at page %d)",
+              (int)pPg->pgno
+          );
           rc = SQLITE_BUSY_SNAPSHOT;
+        }
+        if( pPg->pgno==1 ) bSeenPage1 = 1;
+      }
+  
+      /* If the current transaction does not modify page 1 of the database,
+      ** check if page 1 has been modified since the transaction was started.
+      ** If it has, check if the schema cookie value (the 4 bytes beginning at
+      ** byte offset 40) is the same as it is on pPage1. If not, this indicates
+      ** that the current head of the wal file uses a different schema than 
+      ** the snapshot against which the current transaction was prepared. Return
+      ** SQLITE_BUSY_SNAPSHOT in this case.  */
+      if( rc==SQLITE_OK && bSeenPage1==0 ){
+        u32 iSlot = 0;
+        rc = walFindFrame(pWal, 1, iLast, &iSlot);
+        if( rc==SQLITE_OK && iSlot>pWal->hdr.mxFrame ){
+          u8 aNew[4];
+          u8 *aOld = &((u8*)pPage1->pData)[40];
+          int sz;
+          i64 iOffset;
+          sz = pWal->hdr.szPage;
+          sz = (sz&0xfe00) + ((sz&0x0001)<<16);
+          iOffset = walFrameOffset(iSlot, sz) + WAL_FRAME_HDRSIZE + 40;
+          rc = sqlite3OsRead(pWal->pWalFd, aNew, sizeof(aNew), iOffset);
+          if( rc==SQLITE_OK && memcmp(aOld, aNew, sizeof(aNew)) ){
+            /* TODO: New error code? SQLITE_BUSY_SCHEMA. */
+            rc = SQLITE_BUSY_SNAPSHOT;
+          }
         }
       }
     }
@@ -2636,9 +2641,18 @@ int sqlite3WalLockForCommit(Wal *pWal, PgHdr *pList, PgHdr *pPage1){
 }
 
 /*
-** The caller holds the WRITER lock. This function returns true if a snapshot
-** upgrade is required before the transaction can be committed, or false
-** otherwise.
+** This function is only ever called while committing an UNLOCKED 
+** transaction, after the caller has already obtained the WRITER lock
+** (by calling the sqlite3WalLockForCommit() routine). This function 
+** returns true if the transaction was prepared against a database 
+** snapshot older than the current head of the wal file.
+**
+** Note that this will only work as described if the database is 
+** currently executing an UNLOCKED transaction, as it assumes that 
+** pWal->hdr has not been modified since the beginning of the 
+** transaction. This may not be true for a non-UNLOCKED transaction,
+** as pWal->hdr is updated if any pages are spilled to the wal file
+** while the transaction is executing.
 */
 int sqlite3WalCommitRequiresUpgrade(Wal *pWal){
   assert( pWal->writeLock );
@@ -2711,7 +2725,6 @@ int sqlite3WalUndo(Wal *pWal, int (*xUndo)(void *, Pgno), void *pUndoCtx){
 ** point in the event of a savepoint rollback (via WalSavepointUndo()).
 */
 void sqlite3WalSavepoint(Wal *pWal, u32 *aWalData){
-  /* assert( pWal->writeLock ); */
   aWalData[0] = pWal->hdr.mxFrame;
   aWalData[1] = pWal->hdr.aFrameCksum[0];
   aWalData[2] = pWal->hdr.aFrameCksum[1];
