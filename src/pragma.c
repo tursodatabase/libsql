@@ -727,6 +727,7 @@ void sqlite3Pragma(
       int size = sqlite3Atoi(zRight);
       pDb->pSchema->cache_size = size;
       sqlite3BtreeSetCacheSize(pDb->pBt, pDb->pSchema->cache_size);
+      if( sqlite3ReadSchema(pParse) ) goto pragma_out;
     }
     break;
   }
