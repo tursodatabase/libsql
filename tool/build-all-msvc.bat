@@ -313,6 +313,13 @@ IF "%VisualStudioVersion%" == "11.0" (
 )
 
 REM
+REM NOTE: This is the name of the sub-directory where the Windows 10.0 SDK
+REM       libraries may be found.  It is only used when compiling with the
+REM       Windows 10.0 SDK.
+REM
+SET WIN10LIBDIR=10.0.10240.0
+
+REM
 REM NOTE: Check if this is the Windows Phone SDK.  If so, a different batch
 REM       file is necessary to setup the build environment.  Since the variable
 REM       values involved here may contain parenthesis, using GOTO instead of
@@ -482,9 +489,9 @@ FOR %%P IN (%PLATFORMS%) DO (
             REM       different directory naming conventions.
             REM
             IF DEFINED USE_WINV100_NSDKLIBPATH (
-              CALL :fn_AppendVariable NSDKLIBPATH \..\10\lib\10.0.10030.0\um\x86
+              CALL :fn_AppendVariable NSDKLIBPATH \..\10\lib\%WIN10LIBDIR%\um\x86
               CALL :fn_CopyVariable UniversalCRTSdkDir PSDKLIBPATH
-              CALL :fn_AppendVariable PSDKLIBPATH Lib\10.0.10030.0\um\%%D
+              CALL :fn_AppendVariable PSDKLIBPATH Lib\%WIN10LIBDIR%\um\%%D
             ) ELSE IF DEFINED USE_WINV63_NSDKLIBPATH (
               CALL :fn_AppendVariable NSDKLIBPATH \lib\winv6.3\um\x86
             ) ELSE IF "%VisualStudioVersion%" == "12.0" (
@@ -507,7 +514,7 @@ FOR %%P IN (%PLATFORMS%) DO (
         IF DEFINED SET_NUCRTLIBPATH (
           IF DEFINED UniversalCRTSdkDir (
             CALL :fn_CopyVariable UniversalCRTSdkDir NUCRTLIBPATH
-            CALL :fn_AppendVariable NUCRTLIBPATH \lib\winv10.0\ucrt\x86
+            CALL :fn_AppendVariable NUCRTLIBPATH \lib\%WIN10LIBDIR%\ucrt\x86
           )
         )
 

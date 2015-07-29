@@ -1,5 +1,5 @@
-C Add\sSQLITE_DISABLE_INTRINSIC\sdefine\sto\sdisable\suse\sof\sintrinsic\sfunctions\s(e.g.\sfor\scertain\solder\scompilers\sand/or\splatforms).
-D 2015-07-29T21:47:39.241
+C Support\sbuilding\sVSIX\spackages\sfor\sUAP\susing\sVisual\sStudio\s2015\sand\sthe\sWindows\s10\sSDK.
+D 2015-07-29T22:38:45.344
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4de3ef40c8b3b75c0c55ff4242a43c8ce1ad90ee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1310,7 +1310,7 @@ F test/without_rowid6.test db0dbf03c49030aa3c1ba5f618620334bd2baf5f
 F test/wordcount.c 9915e06cb33d8ca8109b8700791afe80d305afda
 F test/zeroblob.test 3857870fe681b8185654414a9bccfde80b62a0fa
 F test/zerodamage.test cf6748bad89553cc1632be51a6f54e487e4039ac
-F tool/build-all-msvc.bat 9058bd90a3c078a3d8c17d40e853aaa0f47885f4 x
+F tool/build-all-msvc.bat 60dbf6021d3de0a98575f6dfe4e12bd80b3edcf0 x
 F tool/build-shell.sh 950f47c6174f1eea171319438b93ba67ff5bf367
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
@@ -1366,7 +1366,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a0020c57859fd452a2b5c943f9c5cf5ec6f997e3
-R 5a6ddfb8bcd2fea3a3231e453fd3229f
+P f0075d735a76ce326619b6ba7f0d556e492f1c41 80ab338cc6fe920ad7edbb86672ff3d704152f52
+R 8d1cdcbdea8abf0626ef1def3269a0a9
+T +closed 80ab338cc6fe920ad7edbb86672ff3d704152f52
 U mistachkin
-Z a9b90588c9fec8f20f9a91e8dc1f9405
+Z b8f4b6c0fc48f7a7355ce89ed1eabdd6
