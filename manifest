@@ -1,5 +1,5 @@
-C Restore\san\sundocumented\sside-effect\sof\sPRAGMA\scache_size:\sit\sforces\sthe\ndatabase\sschema\sto\sbe\sparsed.\s\sAlso\sincrease\sthe\sversion\snumber\sto\s3.8.11.1.
-D 2015-07-29T15:22:49.443
+C Version\s3.8.11.1
+D 2015-07-29T20:00:57.496
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4de3ef40c8b3b75c0c55ff4242a43c8ce1ad90ee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1366,8 +1366,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a623eb55d1583bcfe360a8dabd29f2a583c61e64 326d746dee3589a4e2ee06f3285285856e734b87
+P e4628de3ce2b556fb46f0eb6eaac4809d17738f0
 R 77a04e83036a7e278e10b68484c9130e
-T +closed 326d746dee3589a4e2ee06f3285285856e734b87
+T +bgcolor * #d0c0ff
+T +sym-release *
+T +sym-version-3.8.11.1 *
 U drh
-Z fe2e7921cdff5ce622465d6a2afac6d5
+Z 44c1c8754cdcdab6f7686596d4fbf96d
