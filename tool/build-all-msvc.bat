@@ -317,7 +317,7 @@ REM NOTE: This is the name of the sub-directory where the Windows 10.0 SDK
 REM       libraries may be found.  It is only used when compiling with the
 REM       Windows 10.0 SDK.
 REM
-SET WIN10LIBDIR=10.0.10150.0
+SET WIN10LIBDIR=10.0.10240.0
 
 REM
 REM NOTE: Check if this is the Windows Phone SDK.  If so, a different batch

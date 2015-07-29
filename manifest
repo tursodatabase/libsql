@@ -1,5 +1,5 @@
-C Update\sbatch\sbuild\stool\slibrary\spaths\sfor\sMSVC\s2015.
-D 2015-07-28T19:35:26.153
+C Update\sWindows\s10\sSDK\sversion\sfor\sRTM.
+D 2015-07-29T22:37:06.889
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4de3ef40c8b3b75c0c55ff4242a43c8ce1ad90ee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1310,7 +1310,7 @@ F test/without_rowid6.test db0dbf03c49030aa3c1ba5f618620334bd2baf5f
 F test/wordcount.c 9915e06cb33d8ca8109b8700791afe80d305afda
 F test/zeroblob.test 3857870fe681b8185654414a9bccfde80b62a0fa
 F test/zerodamage.test cf6748bad89553cc1632be51a6f54e487e4039ac
-F tool/build-all-msvc.bat 5335cc89307513da8d795e31792011f79b953a3c x
+F tool/build-all-msvc.bat 60dbf6021d3de0a98575f6dfe4e12bd80b3edcf0 x
 F tool/build-shell.sh 950f47c6174f1eea171319438b93ba67ff5bf367
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
@@ -1366,10 +1366,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P eff43715d1a3a9ce3fe5da194dbb76ec0c06e13c
-R fcbab18774acd57d2be87895170a725d
-T *branch * msvc2015
-T *sym-msvc2015 *
-T -sym-trunk *
+P d431d4e11a6006473ac223e58806ac26050934d5
+R bba96ee4bfa7266f587a69ae40d150b4
 U mistachkin
-Z 17993e8e393f9f96ce3dc43c11e7dc1a
+Z 0e752c7240a3757bdc5121f788a2f192
