@@ -1,5 +1,5 @@
-C Fix\sthe\sreleasetest.tcl\sscript\sso\sthat\sit\signore\scast\soverflow\serrors\sthat\nrecent\sversions\sof\sclang\sgenerate\sbut\swhich\sare\sunavoidable\sgiven\sthe\stest\ninput.
-D 2015-07-29T20:24:39.864
+C Add\sSQLITE_DISABLE_INTRINSIC\sdefine\sto\sdisable\suse\sof\sintrinsic\sfunctions\s(e.g.\sfor\scertain\solder\scompilers\sand/or\splatforms).
+D 2015-07-29T21:47:39.241
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4de3ef40c8b3b75c0c55ff4242a43c8ce1ad90ee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -272,7 +272,7 @@ F src/bitvec.c d1f21d7d91690747881f03940584f4cc548c9d3d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
 F src/btree.c f48b3ef91676c06a90a8832987ecef6b94c931ee
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
-F src/btreeInt.h 2ad754dd4528baa8d0946a593cc373b890bf859e
+F src/btreeInt.h 8177c9ab90d772d6d2c6c517e05bed774b7c92c0
 F src/build.c b3f15255d5b16e42dafeaa638fd4f8a47c94ed70
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
@@ -333,7 +333,7 @@ F src/shell.c 8af3cced094aebb5f57a8ad739b9dafc7867eed7
 F src/sqlite.h.in 68e13bc5b835c541a4505ed87bf2b6093f068a31
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h a0b948ebc89bac13941254641326a6aa248c2cc4
-F src/sqliteInt.h 81f458941cfb30c5536c37930fb6f41e66171284
+F src/sqliteInt.h 9401d7d9124210dfd5d283af45e0addbc1455c2e
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c f266ad8a2892d659b74f0f50cb6a88b6e7c12179
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
@@ -389,7 +389,7 @@ F src/treeview.c c84b1a8ebc7f1d00cd76ce4958eeb3ae1021beed
 F src/trigger.c 322f23aad694e8f31d384dcfa386d52a48d3c52f
 F src/update.c 487747b328b7216bb7f6af0695d6937d5c9e605f
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
-F src/util.c 46358a204b35971a839341cf64599d65b151ba88
+F src/util.c bc9dd64b5db544218b871b66243871c202b2781f
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
 F src/vdbe.c 86be40a4568f5385048ea6623adfd11ddb7bf710
 F src/vdbe.h 7a75045d879118b9d3af7e8b3c108f2f27c51473
@@ -1366,7 +1366,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P cf538e2783e468bbc25e7cb2a9ee64d3e0e80b2f
-R 14440986c7260b60a1e4a464b62bd937
-U drh
-Z 0e0e3be04892344fb2c827282c599b29
+P a0020c57859fd452a2b5c943f9c5cf5ec6f997e3
+R 5a6ddfb8bcd2fea3a3231e453fd3229f
+U mistachkin
+Z a9b90588c9fec8f20f9a91e8dc1f9405

@@ -187,15 +187,18 @@
 
 /*
 ** Make sure that the compiler intrinsics we desire are enabled when
-** compiling with an appropriate version of MSVC.
+** compiling with an appropriate version of MSVC unless prevented by
+** the SQLITE_DISABLE_INTRINSIC define.
 */
-#if defined(_MSC_VER) && _MSC_VER>=1300
-#  if !defined(_WIN32_WCE)
-#    include <intrin.h>
-#    pragma intrinsic(_byteswap_ushort)
-#    pragma intrinsic(_byteswap_ulong)
-#  else
-#    include <cmnintrin.h>
+#if !defined(SQLITE_DISABLE_INTRINSIC)
+#  if defined(_MSC_VER) && _MSC_VER>=1300
+#    if !defined(_WIN32_WCE)
+#      include <intrin.h>
+#      pragma intrinsic(_byteswap_ushort)
+#      pragma intrinsic(_byteswap_ulong)
+#    else
+#      include <cmnintrin.h>
+#    endif
 #  endif
 #endif
 
