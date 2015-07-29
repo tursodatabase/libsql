@@ -1,12 +1,12 @@
-C The\s"PRAGMA\scache_size"\sreads\sthe\sdatabase\sschema,\sas\sit\shas\sdown\sin\sall\sprior\nversions\sof\sSQLite.\s\sThis\sside-effect\sof\scache_size\sis\sundocumented,\sbut\s\napparently\sit\sdoes\sget\sused\sand\sits\sabsence\sfrom\s3.8.11\swas\scausing\sproblems.
-D 2015-07-29T14:10:43.686
+C Increase\sthe\sversion\snumber\sto\s3.8.11.1
+D 2015-07-29T14:46:46.330
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4de3ef40c8b3b75c0c55ff4242a43c8ce1ad90ee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc 3c258b2f98adb08c7ca5950bee2d6670d6ee3f9a
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
-F VERSION ce0ae95abd7121c534f6917c1c8f2b70d9acd4db
+F VERSION 02caf9f357b853703c26f259c94cdc95033356a6
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 9eb448a552d5c0185cf62c463f9c173cedae3811
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -38,7 +38,7 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 42b71ad3fe21c9e88fa59e8458ca1a6bc72eb0c0
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 17bd8dc3e35c718df68d04f53bf7dacf2b639732 x
+F configure d977dc5648ce12638336c4ffea90e3a6a8366605 x
 F configure.ac 713de38000413e469188db2cb85bed759b56f322
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 334dbf6621b8fb8790297ec1abf3cfa4621709d1
@@ -1366,10 +1366,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b8e92227a469de677a66da62e4361f099c0b79d0
-R 3876a06188adf0d8a5a1f130dc4be3ea
-T *branch * branch-3.8.11
-T *sym-branch-3.8.11 *
-T -sym-trunk *
+P 4489722a6b560355ef13f091e5c9dcf0b00072f0
+R b57ecacb6f548cd309cb80aa3d867de6
 U drh
-Z a04bc97930dddfd11b5773b036bde6ba
+Z 51911916c2af8d67047f25d22e55b714
