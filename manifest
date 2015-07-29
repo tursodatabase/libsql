@@ -1,12 +1,12 @@
-C Update\scomments\sin\sfts5.h\sdescribing\sthe\sxColumnCount()\sAPI\sfunction.
-D 2015-07-29T14:58:47.798
+C Restore\san\sundocumented\sside-effect\sof\sPRAGMA\scache_size:\sit\sforces\sthe\ndatabase\sschema\sto\sbe\sparsed.\s\sAlso\sincrease\sthe\sversion\snumber\sto\s3.8.11.1.
+D 2015-07-29T15:22:49.443
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4de3ef40c8b3b75c0c55ff4242a43c8ce1ad90ee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc 3c258b2f98adb08c7ca5950bee2d6670d6ee3f9a
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
-F VERSION ce0ae95abd7121c534f6917c1c8f2b70d9acd4db
+F VERSION 02caf9f357b853703c26f259c94cdc95033356a6
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 9eb448a552d5c0185cf62c463f9c173cedae3811
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -38,7 +38,7 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 42b71ad3fe21c9e88fa59e8458ca1a6bc72eb0c0
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 17bd8dc3e35c718df68d04f53bf7dacf2b639732 x
+F configure d977dc5648ce12638336c4ffea90e3a6a8366605 x
 F configure.ac 713de38000413e469188db2cb85bed759b56f322
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 334dbf6621b8fb8790297ec1abf3cfa4621709d1
@@ -321,7 +321,7 @@ F src/parse.y 6d60dda8f8d418b6dc034f1fbccd816c459983a8
 F src/pcache.c cde06aa50962595e412d497e22fd2e07878ba1f0
 F src/pcache.h 9968603796240cdf83da7e7bef76edf90619cea9
 F src/pcache1.c d08939800abf3031bd0affd5a13fbc4d7ba3fb68
-F src/pragma.c e52084b37a08a88f258830518461e94627af2621
+F src/pragma.c 669bc0fdb3fb5554e18330e8dd9743319bac16f4
 F src/pragma.h 631a91c8b0e6ca8f051a1d8a4a0da4150e04620a
 F src/prepare.c 82e5db1013846a819f198336fed72c44c974e7b1
 F src/printf.c 2bc439ff20a4aad0e0ad50a37a67b5eae7d20edc
@@ -1366,7 +1366,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P eff43715d1a3a9ce3fe5da194dbb76ec0c06e13c
-R 856c96af80d5201f19374f23ebd8c251
-U dan
-Z 01873dbb7ade1c793202762a942d94e3
+P a623eb55d1583bcfe360a8dabd29f2a583c61e64 326d746dee3589a4e2ee06f3285285856e734b87
+R 77a04e83036a7e278e10b68484c9130e
+T +closed 326d746dee3589a4e2ee06f3285285856e734b87
+U drh
+Z fe2e7921cdff5ce622465d6a2afac6d5
