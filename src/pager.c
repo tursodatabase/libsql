@@ -657,6 +657,7 @@ struct Pager {
   u32 cksumInit;              /* Quasi-random value added to every checksum */
   u32 nSubRec;                /* Number of records written to sub-journal */
   Bitvec *pInJournal;         /* One bit for each page in the database file */
+  Bitvec *pAllRead;           /* Pages read within current UNLOCKED trans. */
   sqlite3_file *fd;           /* File descriptor for database */
   sqlite3_file *jfd;          /* File descriptor for main journal */
   sqlite3_file *sjfd;         /* File descriptor for sub-journal */
@@ -1739,6 +1740,16 @@ static int addToSavepointBitvecs(Pager *pPager, Pgno pgno){
 }
 
 /*
+** Free the Pager.pInJournal and Pager.pAllRead bitvec objects.
+*/
+static void pagerFreeBitvecs(Pager *pPager){
+  sqlite3BitvecDestroy(pPager->pInJournal);
+  sqlite3BitvecDestroy(pPager->pAllRead);
+  pPager->pInJournal = 0;
+  pPager->pAllRead = 0;
+}
+
+/*
 ** This function is a no-op if the pager is in exclusive mode and not
 ** in the ERROR state. Otherwise, it switches the pager to PAGER_OPEN
 ** state.
@@ -1762,8 +1773,7 @@ static void pager_unlock(Pager *pPager){
        || pPager->eState==PAGER_ERROR 
   );
 
-  sqlite3BitvecDestroy(pPager->pInJournal);
-  pPager->pInJournal = 0;
+  pagerFreeBitvecs(pPager);
   releaseAllSavepoints(pPager);
 
   if( pagerUseWal(pPager) ){
@@ -1999,8 +2009,7 @@ static int pager_end_transaction(Pager *pPager, int hasMaster, int bCommit){
   }
 #endif
 
-  sqlite3BitvecDestroy(pPager->pInJournal);
-  pPager->pInJournal = 0;
+  pagerFreeBitvecs(pPager);
   pPager->nRec = 0;
   sqlite3PcacheCleanAll(pPager->pPCache);
   sqlite3PcacheTruncate(pPager->pPCache, pPager->dbSize);
@@ -4082,7 +4091,7 @@ static int syncJournal(Pager *pPager, int newHdr){
   assert( assert_pager_state(pPager) );
   assert( !pagerUseWal(pPager) );
 
-  rc = sqlite3PagerExclusiveLock(pPager, 0);
+  rc = sqlite3PagerExclusiveLock(pPager);
   if( rc!=SQLITE_OK ) return rc;
 
   if( !pPager->noSync ){
@@ -4432,7 +4441,7 @@ static int pagerStress(void *p, PgHdr *pPg){
   if( pagerUseWal(pPager) ){
     /* If the transaction is a "BEGIN UNLOCKED" transaction, the page 
     ** cannot be flushed to disk. Return early in this case. */
-    if( sqlite3WalIsInTrans(pPager->pWal)==0 ) return SQLITE_OK;
+    if( pPager->pAllRead ) return SQLITE_OK;
 
     /* Write a single frame for this page to the log. */
     rc = subjournalPageIfRequired(pPg); 
@@ -5274,6 +5283,14 @@ int sqlite3PagerAcquire(
   }
   pPager->hasBeenUsed = 1;
 
+  /* If this is an UNLOCKED transaction and the page being read was
+  ** present in the database file when the transaction was opened,
+  ** mark it as read in the pAllRead vector.  */
+  if( pPager->pAllRead && pgno<=pPager->dbOrigSize ){
+    rc = sqlite3BitvecSet(pPager->pAllRead, pgno);
+    if( rc!=SQLITE_OK ) goto pager_acquire_err;
+  }
+
   /* If the pager is in the error state, return an error immediately. 
   ** Otherwise, request the page from the PCache layer. */
   if( pPager->errCode!=SQLITE_OK ){
@@ -5578,6 +5595,7 @@ int sqlite3PagerBegin(Pager *pPager, int exFlag, int subjInMemory){
 
   if( ALWAYS(pPager->eState==PAGER_READER) ){
     assert( pPager->pInJournal==0 );
+    assert( pPager->pAllRead==0 );
 
     if( pagerUseWal(pPager) ){
       /* If the pager is configured to use locking_mode=exclusive, and an
@@ -5598,6 +5616,13 @@ int sqlite3PagerBegin(Pager *pPager, int exFlag, int subjInMemory){
       */
       if( exFlag>=0 ){
         rc = sqlite3WalBeginWriteTransaction(pPager->pWal);
+      }else{
+        pPager->pAllRead = sqlite3BitvecCreate(pPager->dbSize);
+        if( pPager->pAllRead==0 ){
+          rc = SQLITE_NOMEM;
+        }else{
+          rc = sqlite3BitvecSet(pPager->pAllRead, 1);
+        }
       }
     }else{
       /* Obtain a RESERVED lock on the database file. If the exFlag parameter
@@ -6066,7 +6091,7 @@ int sqlite3PagerSync(Pager *pPager, const char *zMaster){
 ** Otherwise, either SQLITE_BUSY or an SQLITE_IOERR_XXX error code is 
 ** returned.
 */
-int sqlite3PagerExclusiveLock(Pager *pPager, PgHdr *pPage1){
+int sqlite3PagerExclusiveLock(Pager *pPager){
   int rc = SQLITE_OK;
   assert( pPager->eState==PAGER_WRITER_CACHEMOD 
        || pPager->eState==PAGER_WRITER_DBMOD 
@@ -6076,21 +6101,14 @@ int sqlite3PagerExclusiveLock(Pager *pPager, PgHdr *pPage1){
   if( 0==pagerUseWal(pPager) ){
     rc = pager_wait_on_lock(pPager, EXCLUSIVE_LOCK);
   }else{
-    Wal *pWal = pPager->pWal;
-    if( 0==sqlite3WalIsInTrans(pWal) ){
-      /* TODO: There must be an optimization opportunity here, as this call 
-      ** to PcacheDirtyList() sorts the list of dirty pages, even though it 
-      ** is not really required - and will be sorted again in CommitPhaseOne()
-      ** in any case.  */
-      PgHdr *pList = sqlite3PcacheDirtyList(pPager->pPCache);
-
+    if( pPager->pAllRead ){
       /* This is an UNLOCKED transaction. Attempt to lock the wal database
       ** here. If SQLITE_BUSY (but not SQLITE_BUSY_SNAPSHOT) is returned,
       ** invoke the busy-handler and try again for as long as it returns
       ** non-zero.  */
       do {
         /* rc = sqlite3WalBeginWriteTransaction(pWal); */
-        rc = sqlite3WalLockForCommit(pWal, pList, pPage1); 
+        rc = sqlite3WalLockForCommit(pPager->pWal, pPager->pAllRead);
       }while( rc==SQLITE_BUSY 
            && pPager->xBusyHandler(pPager->pBusyHandlerArg) 
       );

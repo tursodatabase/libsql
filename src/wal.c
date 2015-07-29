@@ -2573,7 +2573,7 @@ int sqlite3WalBeginWriteTransaction(Wal *pWal){
 ** transaction. It may be assumed that no frames have been written to
 ** the wal file.
 */
-int sqlite3WalLockForCommit(Wal *pWal, PgHdr *pList, PgHdr *pPage1){
+int sqlite3WalLockForCommit(Wal *pWal, Bitvec *pAllRead){
   int rc = walWriteLock(pWal);
 
   /* If the database has been modified since this transaction was started,
@@ -2590,49 +2590,35 @@ int sqlite3WalLockForCommit(Wal *pWal, PgHdr *pList, PgHdr *pPage1){
     volatile WalIndexHdr *pHead;    /* Head of the wal file */
     pHead = walIndexHdr(pWal);
     if( memcmp(&pWal->hdr, (void*)pHead, sizeof(WalIndexHdr))!=0 ){
-      int bSeenPage1 = 0;           /* True if page 1 is in list pList */
-  
       /* TODO: Is this safe? Because it holds the WRITER lock this thread
-      ** has exclusive access to the live header, but might it be corrupt? */
-      PgHdr *pPg;
-      u32 iLast = pHead->mxFrame;
-      for(pPg=pList; rc==SQLITE_OK && pPg; pPg=pPg->pDirty){
-        u32 iSlot = 0;
-        rc = walFindFrame(pWal, pPg->pgno, iLast, &iSlot);
-        if( iSlot>pWal->hdr.mxFrame ){
-          sqlite3_log(SQLITE_OK,
-              "cannot commit UNLOCKED transaction (conflict at page %d)",
-              (int)pPg->pgno
-          );
-          rc = SQLITE_BUSY_SNAPSHOT;
-        }
-        if( pPg->pgno==1 ) bSeenPage1 = 1;
-      }
-  
-      /* If the current transaction does not modify page 1 of the database,
-      ** check if page 1 has been modified since the transaction was started.
-      ** If it has, check if the schema cookie value (the 4 bytes beginning at
-      ** byte offset 40) is the same as it is on pPage1. If not, this indicates
-      ** that the current head of the wal file uses a different schema than 
-      ** the snapshot against which the current transaction was prepared. Return
-      ** SQLITE_BUSY_SNAPSHOT in this case.  */
-      if( rc==SQLITE_OK && bSeenPage1==0 ){
-        u32 iSlot = 0;
-        rc = walFindFrame(pWal, 1, iLast, &iSlot);
-        if( rc==SQLITE_OK && iSlot>pWal->hdr.mxFrame ){
-          u8 aNew[4];
-          u8 *aOld = &((u8*)pPage1->pData)[40];
-          int sz;
-          i64 iOffset;
-          sz = pWal->hdr.szPage;
-          sz = (sz&0xfe00) + ((sz&0x0001)<<16);
-          iOffset = walFrameOffset(iSlot, sz) + WAL_FRAME_HDRSIZE + 40;
-          rc = sqlite3OsRead(pWal->pWalFd, aNew, sizeof(aNew), iOffset);
-          if( rc==SQLITE_OK && memcmp(aOld, aNew, sizeof(aNew)) ){
-            /* TODO: New error code? SQLITE_BUSY_SCHEMA. */
-            rc = SQLITE_BUSY_SNAPSHOT;
+      ** has exclusive access to the live header, but might it be corrupt? 
+      ** This code should check that the wal-index-header is Ok, and return
+      ** SQLITE_BUSY_SNAPSHOT if it is not. */
+      int iHash;
+      int iLastHash = walFramePage(pHead->mxFrame);
+      for(iHash=walFramePage(pWal->hdr.mxFrame+1); iHash<=iLastHash; iHash++){
+        volatile ht_slot *aHash;
+        volatile u32 *aPgno;
+        u32 iZero;
+
+        rc = walHashGet(pWal, iHash, &aHash, &aPgno, &iZero);
+        if( rc==SQLITE_OK ){
+          int i;
+          int iMin = (pWal->hdr.mxFrame+1 - iZero);
+          int iMax = (iHash==0) ? HASHTABLE_NPAGE_ONE : HASHTABLE_NPAGE;
+          if( iMin<1 ) iMin = 1;
+          if( iMax>pHead->mxFrame ) iMax = pHead->mxFrame;
+          for(i=iMin; i<=iMax; i++){
+            if( sqlite3BitvecTestNotNull(pAllRead, aPgno[i]) ){
+              sqlite3_log(SQLITE_OK,
+                  "cannot commit UNLOCKED transaction (conflict at page %d)",
+                  (int)aPgno[i]
+              );
+              rc = SQLITE_BUSY_SNAPSHOT;
+            }
           }
         }
+        if( rc!=SQLITE_OK ) break;
       }
     }
   }
@@ -3291,13 +3277,6 @@ int sqlite3WalExclusiveMode(Wal *pWal, int op){
 */
 int sqlite3WalHeapMemory(Wal *pWal){
   return (pWal && pWal->exclusiveMode==WAL_HEAPMEMORY_MODE );
-}
-
-/*
-** Return true if in a write transaction, false otherwise.
-*/
-int sqlite3WalIsInTrans(Wal *pWal){
-  return (int)pWal->writeLock;
 }
 
 #ifdef SQLITE_ENABLE_ZIPVFS

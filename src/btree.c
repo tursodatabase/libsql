@@ -9590,15 +9590,3 @@ int sqlite3BtreeIsReadonly(Btree *p){
 ** Return the size of the header added to each page by this module.
 */
 int sqlite3HeaderSizeBtree(void){ return ROUND8(sizeof(MemPage)); }
-
-int sqlite3BtreeExclusiveLock(Btree *p){
-  int rc;
-  BtShared *pBt = p->pBt;
-  sqlite3BtreeEnter(p);
-  rc = sqlite3PagerExclusiveLock(pBt->pPager, pBt->pPage1->pDbPage);
-  sqlite3BtreeLeave(p);
-  return rc;
-}
-
-
-

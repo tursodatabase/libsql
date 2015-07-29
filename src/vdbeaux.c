@@ -2020,7 +2020,9 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
     if( sqlite3BtreeIsInTrans(pBt) ){
       needXcommit = 1;
       if( i!=1 ) nTrans++;
-      rc = sqlite3BtreeExclusiveLock(pBt);
+      sqlite3BtreeEnter(pBt);
+      rc = sqlite3PagerExclusiveLock(sqlite3BtreePager(pBt));
+      sqlite3BtreeLeave(pBt);
     }
   }
 
