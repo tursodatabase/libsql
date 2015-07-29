@@ -310,10 +310,15 @@ proc count_tests_and_errors {logfile rcVar errmsgVar} {
       }
     }
     if {[regexp {runtime error: +(.*)} $line all msg]} {
-      incr ::NERRCASE
-      if {$rc==0} {
-        set rc 1
-        set errmsg $msg
+      # skip over "value is outside range" errors
+      if {[regexp {value .* is outside the range of representable} $line]} {
+         # noop
+      } else {
+        incr ::NERRCASE
+        if {$rc==0} {
+          set rc 1
+          set errmsg $msg
+        }
       }
     }
     if {[regexp {fatal error +(.*)} $line all msg]} {

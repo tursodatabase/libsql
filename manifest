@@ -1,5 +1,5 @@
-C Version\s3.8.11.1
-D 2015-07-29T20:00:57.496
+C Fix\sthe\sreleasetest.tcl\sscript\sso\sthat\sit\signore\scast\soverflow\serrors\sthat\nrecent\sversions\sof\sclang\sgenerate\sbut\swhich\sare\sunavoidable\sgiven\sthe\stest\ninput.
+D 2015-07-29T20:24:39.864
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4de3ef40c8b3b75c0c55ff4242a43c8ce1ad90ee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -923,7 +923,7 @@ F test/rbu.test 168573d353cd0fd10196b87b0caa322c144ef736
 F test/rdonly.test 64e2696c322e3538df0b1ed624e21f9a23ed9ff8
 F test/regexp1.test 497ea812f264d12b6198d6e50a76be4a1973a9d8
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
-F test/releasetest.tcl 8eb718bca8bca71c0c0145384f9915bb7e53fca3
+F test/releasetest.tcl b46812b9506f22d69c26f66808b90eb1b0318eec
 F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
 F test/rollback.test 458fe73eb3ffdfdf9f6ba3e9b7350a6220414dea
 F test/rollback2.test fc14cf6d1a2b250d2735ef16124b971bce152f14
@@ -1366,10 +1366,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e4628de3ce2b556fb46f0eb6eaac4809d17738f0
-R 77a04e83036a7e278e10b68484c9130e
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.8.11.1 *
+P cf538e2783e468bbc25e7cb2a9ee64d3e0e80b2f
+R 14440986c7260b60a1e4a464b62bd937
 U drh
-Z 44c1c8754cdcdab6f7686596d4fbf96d
+Z 0e0e3be04892344fb2c827282c599b29
