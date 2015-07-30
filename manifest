@@ -1,5 +1,5 @@
-C Allow\sRBU\stables\sto\sbe\snamed\s"data[0-9]*_<target>"\sinstead\sof\sstrictly\s"data_<target>".\sAlso\supdate\sRBU\sso\sthat\sit\salways\sprocesses\sdata\stables\sin\sorder\ssorted\sby\sname.
-D 2015-07-30T11:38:19.207
+C Add\sthe\s--rbu\sswitch\sto\sthe\s"sqldiff"\sutility.
+D 2015-07-30T20:26:16.763
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4de3ef40c8b3b75c0c55ff4242a43c8ce1ad90ee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -215,6 +215,7 @@ F ext/rbu/rbu8.test 3bbf2c35d71a843c463efe93946f14ad10c3ede0
 F ext/rbu/rbu9.test 0806d1772c9f4981774ff028de6656e4183082af
 F ext/rbu/rbuA.test c1a7b3e2d926b8f8448bb3b4ae787e314ee4b2b3
 F ext/rbu/rbucrash.test 8d2ed5d4b05fef6c00c2a6b5f7ead71fa172a695
+F ext/rbu/rbudiff.test deba11b97a41163e39de49d7455eb6429d0bd510
 F ext/rbu/rbufault.test cc0be8d5d392d98b0c2d6a51be377ea989250a89
 F ext/rbu/rbufault2.test 9a7f19edd6ea35c4c9f807d8a3db0a03a5670c06
 F ext/rbu/rbufts.test 17db7d968b3d073788bcba044c498d09e830726b
@@ -1356,7 +1357,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
-F tool/sqldiff.c 0748c0daed08f31e5a8eab6de98ca57500e61ecf
+F tool/sqldiff.c 7ed3a042126755e87266c3e1dbbce39a20455a1f
 F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
 F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
 F tool/symbols.sh fec58532668296d7c7dc48be9c87f75ccdb5814f
@@ -1367,7 +1368,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8e818b8985c0196cd9671a6491796faaeebeb16e
-R d2e717e7df793b66cba7be5b1c5545b9
+P 287aa30601506f168d355c35176a3383474444ca
+R 4b1cd3413787b049b8357f11d80a75d6
 U dan
-Z b15734d6bf397de4fcabb387cb6f82da
+Z 5d367f3cdab2e7ca1b015457b0b5954e

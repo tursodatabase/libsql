@@ -1,0 +1,100 @@
+# 2015-07-31
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# Tests for the [sqldiff --rbu] command.
+#
+#
+if {![info exists testdir]} {
+  set testdir [file join [file dirname [info script]] .. .. test]
+}
+source $testdir/tester.tcl
+set testprefix rbudiff
+
+if {$tcl_platform(platform)=="windows"} {
+  set PROG "sqldiff.exe"
+} else {
+  set PROG "./sqldiff"
+}
+if {![file exe $PROG]} {
+  puts "rbudiff.test cannot run because $PROG is not available"
+  finish_test
+  return
+}
+db close
+
+proc get_rbudiff_sql {db1 db2} {
+  exec $::PROG --rbu $db1 $db2
+}
+
+proc step_rbu {target rbu} {
+  while 1 {
+    sqlite3rbu rbu $target $rbu
+    set rc [rbu step]
+    rbu close
+    if {$rc != "SQLITE_OK"} break
+  }
+  set rc
+}
+
+proc apply_rbudiff {sql target} {
+  forcedelete rbu.db
+  sqlite3 rbudb rbu.db
+  rbudb eval $sql
+  rbudb close
+  step_rbu $target rbu.db
+}
+
+proc rbudiff_cksum {db1} {
+  sqlite3 dbtmp $db1
+  set txt [dbtmp eval {
+    SELECT a || '.' || b || '.' || c FROM t1 ORDER BY 1;
+    SELECT a || '.' || b || '.' || c FROM t2 ORDER BY 1;
+  }]
+  dbtmp close
+  md5 $txt
+}
+
+sqlite3 db test.db
+do_execsql_test 1.0 {
+  CREATE TABLE t1(a PRIMARY KEY, b, c);
+  INSERT INTO t1 VALUES(1, 2, 3);
+  INSERT INTO t1 VALUES(4, 5, 6);
+
+  CREATE TABLE t2(a, b, c, PRIMARY KEY(b, c));
+  INSERT INTO t2 VALUES(1, 2, 3);
+  INSERT INTO t2 VALUES(4, 5, 6);
+}
+
+db close
+forcedelete test.db2
+forcecopy test.db test.db2
+
+sqlite3 db test.db
+do_execsql_test 1.1 {
+  INSERT INTO t1 VALUES(7, 8, 9);
+  DELETE FROM t1 WHERE a=4;
+  UPDATE t1 SET c = 11 WHERE a = 1;
+
+  INSERT INTO t2 VALUES(7, 8, 9);
+  DELETE FROM t2 WHERE a=4;
+  UPDATE t2 SET c = 11 WHERE a = 1;
+}
+db close
+
+do_test 1.2 {
+  set sql [get_rbudiff_sql test.db test.db2]
+  apply_rbudiff $sql test.db
+} {SQLITE_DONE}
+
+do_test 1.3 { rbudiff_cksum test.db } [rbudiff_cksum test.db2]
+
+finish_test
+

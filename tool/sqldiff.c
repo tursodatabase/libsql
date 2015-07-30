@@ -259,7 +259,12 @@ static void namelistFree(char **az){
 **    CREATE TABLE t5(rowid,_rowid_,oid);
 **    az = 0     // The rowid is not accessible
 */
-static char **columnNames(const char *zDb, const char *zTab, int *pnPKey){
+static char **columnNames(
+  const char *zDb,                /* Database ("main" or "aux") to query */
+  const char *zTab,               /* Name of table to return details of */
+  int *pnPKey,                    /* OUT: Number of PK columns */
+  int *pbRowid                    /* OUT: True if PK is an implicit rowid */
+){
   char **az = 0;           /* List of column names to be returned */
   int naz = 0;             /* Number of entries in az[] */
   sqlite3_stmt *pStmt;     /* SQL statement being run */
@@ -338,6 +343,15 @@ static char **columnNames(const char *zDb, const char *zTab, int *pnPKey){
   }
   sqlite3_finalize(pStmt);
   if( az ) az[naz] = 0;
+
+  /* If it is non-NULL, set *pbRowid to indicate whether or not the PK of 
+  ** this table is an implicit rowid (*pbRowid==1) or not (*pbRowid==0).  */
+  if( pbRowid ) *pbRowid = (az[0]==0);
+
+  /* If this table has an implicit rowid for a PK, figure out how to refer
+  ** to it. There are three options - "rowid", "_rowid_" and "oid". Any
+  ** of these will work, unless the table has an explicit column of the
+  ** same name.  */
   if( az[0]==0 ){
     const char *azRowid[] = { "rowid", "_rowid_", "oid" };
     for(i=0; i<sizeof(azRowid)/sizeof(azRowid[0]); i++){
@@ -434,7 +448,7 @@ static void dump_table(const char *zTab, FILE *out){
   }
   sqlite3_finalize(pStmt);
   if( !g.bSchemaOnly ){
-    az = columnNames("aux", zTab, &nPk);
+    az = columnNames("aux", zTab, &nPk, 0);
     strInit(&ins);
     if( az==0 ){
       pStmt = db_prepare("SELECT * FROM aux.%s", zId);
@@ -511,7 +525,7 @@ static void diff_one_table(const char *zTab, FILE *out){
     ** database and show the results.  This is used for testing
     ** and debugging of the columnNames() function.
     */
-    az = columnNames("aux",zTab, &nPk);
+    az = columnNames("aux",zTab, &nPk, 0);
     if( az==0 ){
       printf("Rowid not accessible for %s\n", zId);
     }else{
@@ -540,8 +554,8 @@ static void diff_one_table(const char *zTab, FILE *out){
     goto end_diff_one_table;
   }
 
-  az = columnNames("main", zTab, &nPk);
-  az2 = columnNames("aux", zTab, &nPk2);
+  az = columnNames("main", zTab, &nPk, 0);
+  az2 = columnNames("aux", zTab, &nPk2, 0);
   if( az && az2 ){
     for(n=0; az[n]; n++){
       if( sqlite3_stricmp(az[n],az2[n])!=0 ) break;
@@ -720,6 +734,164 @@ end_diff_one_table:
 }
 
 /*
+** Check that table zTab exists and has the same schema in both the "main"
+** and "aux" databases currently opened by the global db handle. If they
+** do not, output an error message on stderr and exit(1). Otherwise, if
+** the schemas do match, return control to the caller.
+*/
+static void checkSchemasMatch(const char *zTab){
+  sqlite3_stmt *pStmt = db_prepare(
+      "SELECT A.sql=B.sql FROM main.sqlite_master A, aux.sqlite_master B"
+      " WHERE A.name=%Q AND B.name=%Q", zTab, zTab
+  );
+  if( SQLITE_ROW==sqlite3_step(pStmt) ){
+    if( sqlite3_column_int(pStmt,0)==0 ){
+      runtimeError("schema changes for table %s", safeId(zTab));
+    }
+  }else{
+    runtimeError("table %s missing from one or both databases", safeId(zTab));
+  }
+  sqlite3_finalize(pStmt);
+}
+
+static void strPrintfArray(
+  Str *pStr,                      /* String object to append to */
+  const char *zSep,               /* Separator string */
+  const char *zFmt,               /* Format for each entry */
+  char **az, int n                /* Array of strings & its size (or -1) */
+){
+  int i;
+  for(i=0; az[i] && (i<n || n<0); i++){
+    if( i!=0 ) strPrintf(pStr, "%s", zSep);
+    strPrintf(pStr, zFmt, az[i], az[i], az[i]);
+  }
+}
+
+static void getRbudiffQuery(
+  const char *zTab,
+  char **azCol,
+  int nPK,
+  int bOtaRowid,
+  Str *pSql
+){
+  int i;
+
+  /* First the newly inserted rows: **/ 
+  strPrintf(pSql, "SELECT ");
+  strPrintfArray(pSql, ", ", "%s", azCol, -1);
+  strPrintf(pSql, ", 0");         /* Set ota_control to 0 for an insert */
+  strPrintf(pSql, " FROM aux.%Q AS n WHERE NOT EXISTS (\n", zTab);
+  strPrintf(pSql, "    SELECT 1 FROM ", zTab);
+  strPrintf(pSql, " main.%Q AS o WHERE ", zTab);
+  strPrintfArray(pSql, " AND ", "(n.%Q IS o.%Q)", azCol, nPK);
+  strPrintf(pSql, "\n)");
+
+  /* Deleted rows: */
+  strPrintf(pSql, "\nUNION ALL\nSELECT ");
+  strPrintfArray(pSql, ", ", "%s", azCol, nPK);
+  strPrintf(pSql, ", ");
+  strPrintfArray(pSql, ", ", "NULL", &azCol[nPK], -1);
+  strPrintf(pSql, ", 1");         /* Set ota_control to 1 for a delete */
+  strPrintf(pSql, " FROM main.%Q AS n WHERE NOT EXISTS (\n", zTab);
+  strPrintf(pSql, "    SELECT 1 FROM ", zTab);
+  strPrintf(pSql, " aux.%Q AS o WHERE ", zTab);
+  strPrintfArray(pSql, " AND ", "(n.%Q IS o.%Q)", azCol, nPK);
+  strPrintf(pSql, "\n) ");
+
+  /* Updated rows: */
+  strPrintf(pSql, "\nUNION ALL\nSELECT ");
+  strPrintfArray(pSql, ", ", "n.%s", azCol, nPK);
+  strPrintf(pSql, ",\n");
+  strPrintfArray(pSql, " ,\n", 
+      "    CASE WHEN n.%s IS o.%s THEN NULL ELSE n.%s END", &azCol[nPK], -1
+  );
+
+  if( bOtaRowid==0 ){
+    strPrintf(pSql, ", '");
+    strPrintfArray(pSql, "", ".", azCol, nPK);
+    strPrintf(pSql, "' ||\n");
+  }else{
+    strPrintf(pSql, ",\n");
+  }
+  strPrintfArray(pSql, " ||\n", 
+      "    CASE WHEN n.%s IS o.%s THEN '.' ELSE 'x' END", &azCol[nPK], -1
+  );
+  strPrintf(pSql, "\nAS ota_control");
+
+  strPrintf(pSql, "\nFROM main.%Q AS o, aux.%Q AS n\nWHERE ", zTab, zTab);
+  strPrintfArray(pSql, " AND ", "(n.%Q IS o.%Q)", azCol, nPK);
+  strPrintf(pSql, " AND ota_control LIKE '%%x%%'");
+
+  /* Now add an ORDER BY clause to sort everything by PK. */
+  strPrintf(pSql, "\nORDER BY ");
+  for(i=1; i<=nPK; i++) strPrintf(pSql, "%s%d", ((i>1)?", ":""), i);
+}
+
+static void rbudiff_one_table(const char *zTab, FILE *out){
+  int bOtaRowid;                  /* True to use an ota_rowid column */
+  int nPK;                        /* Number of primary key columns in table */
+  char **azCol;                   /* NULL terminated array of col names */
+  int i;
+  int nCol;
+  Str ct = {0, 0, 0};             /* The "CREATE TABLE data_xxx" statement */
+  Str sql = {0, 0, 0};            /* Query to find differences */
+  Str insert = {0, 0, 0};         /* First part of output INSERT statement */
+  sqlite3_stmt *pStmt = 0;
+
+  /* --rbu mode must use real primary keys. */
+  g.bSchemaPK = 1;
+
+  /* Check that the schemas of the two tables match. Exit early otherwise. */
+  checkSchemasMatch(zTab);
+
+  /* Grab the column names and PK details for the table(s). If no usable PK
+  ** columns are found, bail out early.  */
+  azCol = columnNames("main", zTab, &nPK, &bOtaRowid);
+  if( azCol==0 ){
+    runtimeError("table %s has no usable PK columns", zTab);
+  }
+
+  /* Build and output the CREATE TABLE statement for the data_xxx table */
+  strPrintf(&ct, "CREATE TABLE IF NOT EXISTS 'data_%q'(", zTab);
+  if( bOtaRowid ) strPrintf(&ct, "rbu_rowid, ");
+  strPrintfArray(&ct, ", ", "%s", &azCol[bOtaRowid], -1);
+  strPrintf(&ct, ", rbu_control);");
+
+
+  /* Get the SQL for the query to retrieve data from the two databases */
+  getRbudiffQuery(zTab, azCol, nPK, bOtaRowid, &sql);
+
+  /* Build the first part of the INSERT statement output for each row
+  ** in the data_xxx table. */
+  strPrintf(&insert, "INSERT INTO 'data_%q' (", zTab);
+  if( bOtaRowid ) strPrintf(&insert, "rbu_rowid, ");
+  strPrintfArray(&insert, ", ", "%s", &azCol[bOtaRowid], -1);
+  strPrintf(&insert, ", rbu_control) VALUES(");
+
+  pStmt = db_prepare("%s", sql.z);
+  nCol = sqlite3_column_count(pStmt);
+  while( sqlite3_step(pStmt)==SQLITE_ROW ){
+    if( ct.z ){
+      fprintf(out, "%s\n", ct.z);
+      strFree(&ct);
+    }
+
+    fprintf(out, "%s", insert.z);
+    for(i=0; i<nCol; i++){
+      if( i>0 ) fprintf(out, ", ");
+      printQuoted(out, sqlite3_column_value(pStmt, i));
+    }
+    fprintf(out, ");\n");
+  }
+
+  sqlite3_finalize(pStmt);
+
+  strFree(&ct);
+  strFree(&sql);
+  strFree(&insert);
+}
+
+/*
 ** Display a summary of differences between two versions of the same
 ** table table.
 **
@@ -760,8 +932,8 @@ static void summarize_one_table(const char *zTab, FILE *out){
     goto end_summarize_one_table;
   }
 
-  az = columnNames("main", zTab, &nPk);
-  az2 = columnNames("aux", zTab, &nPk2);
+  az = columnNames("main", zTab, &nPk, 0);
+  az2 = columnNames("aux", zTab, &nPk2, 0);
   if( az && az2 ){
     for(n=0; az[n]; n++){
       if( sqlite3_stricmp(az[n],az2[n])!=0 ) break;
@@ -931,18 +1103,9 @@ static void changeset_one_table(const char *zTab, FILE *out){
   int i, k;                     /* Loop counters */
   const char *zSep;             /* List separator */
 
-  pStmt = db_prepare(
-      "SELECT A.sql=B.sql FROM main.sqlite_master A, aux.sqlite_master B"
-      " WHERE A.name=%Q AND B.name=%Q", zTab, zTab
-  );
-  if( SQLITE_ROW==sqlite3_step(pStmt) ){
-    if( sqlite3_column_int(pStmt,0)==0 ){
-      runtimeError("schema changes for table %s", safeId(zTab));
-    }
-  }else{
-    runtimeError("table %s missing from one or both databases", safeId(zTab));
-  }
-  sqlite3_finalize(pStmt);
+  /* Check that the schemas of the two tables match. Exit early otherwise. */
+  checkSchemasMatch(zTab);
+
   pStmt = db_prepare("PRAGMA main.table_info=%Q", zTab);
   while( SQLITE_ROW==sqlite3_step(pStmt) ){
     nCol++;
@@ -1118,6 +1281,7 @@ static void showHelp(void){
 "  --changeset FILE      Write a CHANGESET into FILE\n"
 "  -L|--lib LIBRARY      Load an SQLite extension library\n"
 "  --primarykey          Use schema-defined PRIMARY KEYs\n"
+"  --rbu                 Output SQL to create/populate RBU table(s)\n"
 "  --schema              Show only differences in the schema\n"
 "  --summary             Show only a summary of the differences\n"
 "  --table TAB           Show only differences in table TAB\n"
@@ -1169,6 +1333,9 @@ int main(int argc, char **argv){
 #endif
       if( strcmp(z,"primarykey")==0 ){
         g.bSchemaPK = 1;
+      }else
+      if( strcmp(z,"rbu")==0 ){
+        xDiff = rbudiff_one_table;
       }else
       if( strcmp(z,"schema")==0 ){
         g.bSchemaOnly = 1;
