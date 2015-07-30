@@ -1865,6 +1865,15 @@ static void fts5ExprFunction(
   Fts5Config *pConfig = 0;
   int iArg = 1;
 
+  if( nArg<1 ){
+    char *zErr = sqlite3_mprintf("wrong number of arguments to function %s",
+        bTcl ? "fts5_expr_tcl" : "fts5_expr"
+    );
+    sqlite3_result_error(pCtx, zErr, -1);
+    sqlite3_free(zErr);
+    return;
+  }
+
   if( bTcl && nArg>1 ){
     zNearsetCmd = (const char*)sqlite3_value_text(apVal[1]);
     iArg = 2;

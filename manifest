@@ -1,5 +1,5 @@
-C Support\sbuilding\sVSIX\spackages\sfor\sUAP\susing\sVisual\sStudio\s2015\sand\sthe\sWindows\s10\sSDK.
-D 2015-07-29T22:38:45.344
+C Return\san\serror\smessage\s(instead\sof\ssegfaulting)\sif\stest\sfunction\sfts5_expr()\sis\sinvoked\swith\sno\sarguments.
+D 2015-07-30T11:26:10.463
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4de3ef40c8b3b75c0c55ff4242a43c8ce1ad90ee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -110,7 +110,7 @@ F ext/fts5/fts5Int.h 4d669e2ef0f8d51380c78403fd310ee69ce0f70e
 F ext/fts5/fts5_aux.c 044cb176a815f4388308738437f6e130aa384fb0
 F ext/fts5/fts5_buffer.c 80f9ba4431848cb857e3d2158f5280093dcd8015
 F ext/fts5/fts5_config.c fdfa63ae8e527ecfaa50f94063c610429cc887cf
-F ext/fts5/fts5_expr.c 56dcbcbdc9029dd76a31360de664559839f4be41
+F ext/fts5/fts5_expr.c 59bea726ffa2099318d050b3ded0a0254814d4fd
 F ext/fts5/fts5_hash.c 4bf4b99708848357b8a2b5819e509eb6d3df9246
 F ext/fts5/fts5_index.c f5b25da3a2eef71f2024a08323a1575eb55f7aad
 F ext/fts5/fts5_main.c 0de7ba81488d2c502c8e794eaf7983d468e4c6e9
@@ -149,7 +149,7 @@ F ext/fts5/test/fts5corrupt3.test 1ccf575f5126e79f9fec7979fd02a1f40a076be3
 F ext/fts5/test/fts5dlidx.test 59b80bbe34169a082c575d9c26f0a7019a7b79c1
 F ext/fts5/test/fts5doclist.test 8edb5b57e5f144030ed74ec00ef6fa4294fed79b
 F ext/fts5/test/fts5ea.test 451bb37310ee6df8ef72e4354fda5621b3b51448
-F ext/fts5/test/fts5eb.test 728a1f23f263548f5c29b29dfb851b5f2dbe723e
+F ext/fts5/test/fts5eb.test 46f49497edc25ef3b2bff9fb6d75b6d201e2b39e
 F ext/fts5/test/fts5fault1.test 7a562367cb4a735b57b410dbdb62dcc8d971faec
 F ext/fts5/test/fts5fault2.test 28c36c843bb39ae855ba79827417ecc37f114341
 F ext/fts5/test/fts5fault3.test d6e9577d4312e331a913c72931bf131704efc8f3
@@ -1366,8 +1366,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f0075d735a76ce326619b6ba7f0d556e492f1c41 80ab338cc6fe920ad7edbb86672ff3d704152f52
-R 8d1cdcbdea8abf0626ef1def3269a0a9
-T +closed 80ab338cc6fe920ad7edbb86672ff3d704152f52
-U mistachkin
-Z b8f4b6c0fc48f7a7355ce89ed1eabdd6
+P 96559adbf18bbbf25ff4e1579ee3ff2afef4c4d7
+R 47e11f7f15f9372decc5bbb9c166f3bf
+U dan
+Z e4fcfe99ec97c4ebc5a25850df719a0d
