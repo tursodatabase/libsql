@@ -1,5 +1,5 @@
-C Return\san\serror\smessage\s(instead\sof\ssegfaulting)\sif\stest\sfunction\sfts5_expr()\sis\sinvoked\swith\sno\sarguments.
-D 2015-07-30T11:26:10.463
+C Allow\sRBU\stables\sto\sbe\snamed\s"data[0-9]*_<target>"\sinstead\sof\sstrictly\s"data_<target>".\sAlso\supdate\sRBU\sso\sthat\sit\salways\sprocesses\sdata\stables\sin\sorder\ssorted\sby\sname.
+D 2015-07-30T11:38:19.207
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4de3ef40c8b3b75c0c55ff4242a43c8ce1ad90ee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -217,8 +217,9 @@ F ext/rbu/rbuA.test c1a7b3e2d926b8f8448bb3b4ae787e314ee4b2b3
 F ext/rbu/rbucrash.test 8d2ed5d4b05fef6c00c2a6b5f7ead71fa172a695
 F ext/rbu/rbufault.test cc0be8d5d392d98b0c2d6a51be377ea989250a89
 F ext/rbu/rbufault2.test 9a7f19edd6ea35c4c9f807d8a3db0a03a5670c06
-F ext/rbu/sqlite3rbu.c dbd7e4b31821398dcdeb21492970401ff1027881
-F ext/rbu/sqlite3rbu.h 6a280298e9eeb8ef59841a620f07f4f844651545
+F ext/rbu/rbufts.test 17db7d968b3d073788bcba044c498d09e830726b
+F ext/rbu/sqlite3rbu.c 75409b33f20ef6acd3689206a707de79e17a8628
+F ext/rbu/sqlite3rbu.h 67977687c3acf995295f5f461809cac030098afd
 F ext/rbu/test_rbu.c f99698956cc9158d6bf865e461e2d15876538ac1
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 0f9b595bd0debcbedf1d7a63d0e0678d619e6c9c
@@ -1366,7 +1367,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 96559adbf18bbbf25ff4e1579ee3ff2afef4c4d7
-R 47e11f7f15f9372decc5bbb9c166f3bf
+P 8e818b8985c0196cd9671a6491796faaeebeb16e
+R d2e717e7df793b66cba7be5b1c5545b9
 U dan
-Z e4fcfe99ec97c4ebc5a25850df719a0d
+Z b15734d6bf397de4fcabb387cb6f82da

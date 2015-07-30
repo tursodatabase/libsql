@@ -239,6 +239,7 @@ struct RbuObjIter {
   /* Output variables. zTbl==0 implies EOF. */
   int bCleanup;                   /* True in "cleanup" state */
   const char *zTbl;               /* Name of target db table */
+  const char *zDataTbl;           /* Name of rbu db table (or null) */
   const char *zIdx;               /* Name of target db index (or null) */
   int iTnum;                      /* Root page of current object */
   int iPkTnum;                    /* If eType==EXTERNAL, root of PK index */
@@ -249,7 +250,7 @@ struct RbuObjIter {
   sqlite3_stmt *pSelect;          /* Source data */
   sqlite3_stmt *pInsert;          /* Statement for INSERT operations */
   sqlite3_stmt *pDelete;          /* Statement for DELETE ops */
-  sqlite3_stmt *pTmpInsert;       /* Insert into rbu_tmp_$zTbl */
+  sqlite3_stmt *pTmpInsert;       /* Insert into rbu_tmp_$zDataTbl */
 
   /* Last UPDATE used (for PK b-tree updates only), or NULL. */
   RbuUpdateStmt *pRbuUpdate;
@@ -526,7 +527,8 @@ static int rbuObjIterNext(sqlite3rbu *p, RbuObjIter *pIter){
           pIter->zTbl = 0;
         }else{
           pIter->zTbl = (const char*)sqlite3_column_text(pIter->pTblIter, 0);
-          rc = pIter->zTbl ? SQLITE_OK : SQLITE_NOMEM;
+          pIter->zDataTbl = (const char*)sqlite3_column_text(pIter->pTblIter,1);
+          rc = (pIter->zDataTbl && pIter->zTbl) ? SQLITE_OK : SQLITE_NOMEM;
         }
       }else{
         if( pIter->zIdx==0 ){
@@ -557,6 +559,40 @@ static int rbuObjIterNext(sqlite3rbu *p, RbuObjIter *pIter){
   return rc;
 }
 
+
+/*
+** The implementation of the rbu_target_name() SQL function. This function
+** accepts one argument - the name of a table in the RBU database. If the
+** table name matches the pattern:
+**
+**     data[0-9]_<name>
+**
+** where <name> is any sequence of 1 or more characters, <name> is returned.
+** Otherwise, if the only argument does not match the above pattern, an SQL
+** NULL is returned.
+**
+**     "data_t1"     -> "t1"
+**     "data0123_t2" -> "t2"
+**     "dataAB_t3"   -> NULL
+*/
+static void rbuTargetNameFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  const char *zIn;
+  assert( argc==1 );
+
+  zIn = (const char*)sqlite3_value_text(argv[0]);
+  if( zIn && strlen(zIn)>4 && memcmp("data", zIn, 4)==0 ){
+    int i;
+    for(i=4; zIn[i]>='0' && zIn[i]<='9'; i++);
+    if( zIn[i]=='_' && zIn[i+1] ){
+      sqlite3_result_text(context, &zIn[i+1], -1, SQLITE_STATIC);
+    }
+  }
+}
+
 /*
 ** Initialize the iterator structure passed as the second argument.
 **
@@ -570,8 +606,9 @@ static int rbuObjIterFirst(sqlite3rbu *p, RbuObjIter *pIter){
   memset(pIter, 0, sizeof(RbuObjIter));
 
   rc = prepareAndCollectError(p->dbRbu, &pIter->pTblIter, &p->zErrmsg, 
-      "SELECT substr(name, 6) FROM sqlite_master "
-      "WHERE type IN ('table', 'view') AND name LIKE 'data_%'"
+      "SELECT rbu_target_name(name) AS target, name FROM sqlite_master "
+      "WHERE type IN ('table', 'view') AND target IS NOT NULL "
+      "ORDER BY name"
   );
 
   if( rc==SQLITE_OK ){
@@ -917,7 +954,7 @@ static int rbuObjIterCacheTableInfo(sqlite3rbu *p, RbuObjIter *pIter){
     ** of the input table. Ignore any input table columns that begin with
     ** "rbu_".  */
     p->rc = prepareFreeAndCollectError(p->dbRbu, &pStmt, &p->zErrmsg, 
-        sqlite3_mprintf("SELECT * FROM 'data_%q'", pIter->zTbl)
+        sqlite3_mprintf("SELECT * FROM '%q'", pIter->zDataTbl)
     );
     if( p->rc==SQLITE_OK ){
       nCol = sqlite3_column_count(pStmt);
@@ -942,7 +979,7 @@ static int rbuObjIterCacheTableInfo(sqlite3rbu *p, RbuObjIter *pIter){
     ){
       p->rc = SQLITE_ERROR;
       p->zErrmsg = sqlite3_mprintf(
-          "table data_%q %s rbu_rowid column", pIter->zTbl,
+          "table %q %s rbu_rowid column", pIter->zDataTbl,
           (bRbuRowid ? "may not have" : "requires")
       );
     }
@@ -963,8 +1000,8 @@ static int rbuObjIterCacheTableInfo(sqlite3rbu *p, RbuObjIter *pIter){
       }
       if( i==pIter->nTblCol ){
         p->rc = SQLITE_ERROR;
-        p->zErrmsg = sqlite3_mprintf("column missing from data_%q: %s",
-            pIter->zTbl, zName
+        p->zErrmsg = sqlite3_mprintf("column missing from %q: %s",
+            pIter->zDataTbl, zName
         );
       }else{
         int iPk = sqlite3_column_int(pStmt, 5);
@@ -1519,7 +1556,7 @@ static void rbuObjIterPrepareTmpInsert(
     p->rc = prepareFreeAndCollectError(
         p->dbRbu, &pIter->pTmpInsert, &p->zErrmsg, sqlite3_mprintf(
           "INSERT INTO %s.'rbu_tmp_%q'(rbu_control,%s%s) VALUES(%z)", 
-          p->zStateDb, pIter->zTbl, zCollist, zRbuRowid, zBind
+          p->zStateDb, pIter->zDataTbl, zCollist, zRbuRowid, zBind
     ));
   }
 }
@@ -1615,18 +1652,18 @@ static int rbuObjIterPrepareAll(
         if( pIter->eType==RBU_PK_EXTERNAL || pIter->eType==RBU_PK_NONE ){
           zSql = sqlite3_mprintf(
               "SELECT %s, rbu_control FROM %s.'rbu_tmp_%q' ORDER BY %s%s",
-              zCollist, p->zStateDb, pIter->zTbl,
+              zCollist, p->zStateDb, pIter->zDataTbl,
               zCollist, zLimit
           );
         }else{
           zSql = sqlite3_mprintf(
-              "SELECT %s, rbu_control FROM 'data_%q' "
+              "SELECT %s, rbu_control FROM '%q' "
               "WHERE typeof(rbu_control)='integer' AND rbu_control!=1 "
               "UNION ALL "
               "SELECT %s, rbu_control FROM %s.'rbu_tmp_%q' "
               "ORDER BY %s%s",
-              zCollist, pIter->zTbl, 
-              zCollist, p->zStateDb, pIter->zTbl, 
+              zCollist, pIter->zDataTbl, 
+              zCollist, p->zStateDb, pIter->zDataTbl, 
               zCollist, zLimit
           );
         }
@@ -1654,8 +1691,9 @@ static int rbuObjIterPrepareAll(
       if( p->rc==SQLITE_OK ){
         p->rc = prepareFreeAndCollectError(p->dbRbu, &pIter->pSelect, pz,
             sqlite3_mprintf(
-              "SELECT %s, rbu_control%s FROM 'data_%q'%s", 
-              zCollist, (bRbuRowid ? ", rbu_rowid" : ""), zTbl, zLimit
+              "SELECT %s, rbu_control%s FROM '%q'%s", 
+              zCollist, (bRbuRowid ? ", rbu_rowid" : ""), 
+              pIter->zDataTbl, zLimit
             )
         );
       }
@@ -1693,10 +1731,10 @@ static int rbuObjIterPrepareAll(
         /* Create the rbu_tmp_xxx table and the triggers to populate it. */
         rbuMPrintfExec(p, p->dbRbu,
             "CREATE TABLE IF NOT EXISTS %s.'rbu_tmp_%q' AS "
-            "SELECT *%s FROM 'data_%q' WHERE 0;"
-            , p->zStateDb
-            , zTbl, (pIter->eType==RBU_PK_EXTERNAL ? ", 0 AS rbu_rowid" : "")
-            , zTbl
+            "SELECT *%s FROM '%q' WHERE 0;"
+            , p->zStateDb, pIter->zDataTbl
+            , (pIter->eType==RBU_PK_EXTERNAL ? ", 0 AS rbu_rowid" : "")
+            , pIter->zDataTbl
         );
 
         rbuMPrintfExec(p, p->dbMain,
@@ -1859,6 +1897,12 @@ static void rbuOpenDatabase(sqlite3rbu *p){
   if( p->rc==SQLITE_OK ){
     p->rc = sqlite3_create_function(p->dbMain, 
         "rbu_tmp_insert", -1, SQLITE_UTF8, (void*)p, rbuTmpInsertFunc, 0, 0
+    );
+  }
+
+  if( p->rc==SQLITE_OK ){
+    p->rc = sqlite3_create_function(p->dbRbu, 
+        "rbu_target_name", 1, SQLITE_UTF8, (void*)p, rbuTargetNameFunc, 0, 0
     );
   }
 
@@ -2403,7 +2447,7 @@ int sqlite3rbu_step(sqlite3rbu *p){
             ** But the contents can be deleted.  */
             if( pIter->abIndexed ){
               rbuMPrintfExec(p, p->dbRbu, 
-                  "DELETE FROM %s.'rbu_tmp_%q'", p->zStateDb, pIter->zTbl
+                  "DELETE FROM %s.'rbu_tmp_%q'", p->zStateDb, pIter->zDataTbl
               );
             }
           }else{

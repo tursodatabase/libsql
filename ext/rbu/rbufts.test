@@ -1,0 +1,80 @@
+# 2014 August 30
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# This file contains tests for the RBU module. More specifically, it
+# contains tests to ensure that RBU works with FTS tables.
+#
+
+if {![info exists testdir]} {
+  set testdir [file join [file dirname [info script]] .. .. test]
+}
+source $testdir/tester.tcl
+set ::testprefix rbufts
+
+ifcapable !fts3 {
+  finish_test
+  return
+}
+
+proc step_rbu {target rbu} {
+  while 1 {
+    sqlite3rbu rbu $target $rbu
+    set rc [rbu step]
+    rbu close
+    if {$rc != "SQLITE_OK"} break
+  }
+  set rc
+}
+
+do_execsql_test 1.0 {
+  CREATE TABLE t1(i INTEGER PRIMARY KEY, a, b);
+  CREATE VIRTUAL TABLE xx USING fts4(content=t1, a, b);
+  INSERT INTO t1(rowid, a, b) VALUES(10, 'a b c', 'c b a');
+  INSERT INTO t1(rowid, a, b) VALUES(20, 'a b c', 'd e f');
+  INSERT INTO t1(rowid, a, b) VALUES(30, 'd e f', 'a b c');
+  INSERT INTO t1(rowid, a, b) VALUES(40, 'd e f', 'd e f');
+}
+
+do_execsql_test 1.1 {
+  INSERT INTO xx(xx) VALUES('rebuild');
+  INSERT INTO xx(xx) VALUES('integrity-check');
+}
+
+forcedelete rbu.db
+do_test 2.0 {
+  sqlite3 dbrbu rbu.db
+  dbrbu eval {
+    CREATE TABLE data_t1(i, a, b, rbu_control);
+    INSERT INTO data_t1 VALUES(20, NULL, NULL, 1);        -- delete
+    INSERT INTO data_t1 VALUES(30, 'x y z', NULL, '.x.'); -- update
+    INSERT INTO data_t1 VALUES(50, '1 2 3', 'x y z', 0);  -- insert
+
+    CREATE VIEW data0_xx AS 
+    SELECT i AS rbu_rowid, a, b, 
+    CASE WHEN rbu_control IN (0, 1) 
+    THEN rbu_control ELSE substr(rbu_control, 2) END AS rbu_control
+    FROM data_t1;
+
+  }
+  dbrbu close
+
+  step_rbu test.db rbu.db
+} {SQLITE_DONE}
+
+do_execsql_test 2.1 {
+  INSERT INTO xx(xx) VALUES('integrity-check');
+}
+
+
+
+
+finish_test
+

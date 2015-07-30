@@ -97,6 +97,18 @@
 **
 ** The order of the columns in the data_% table does not matter.
 **
+** Instead of a regular table, the RBU database may also contain virtual
+** tables or view named using the data_<target> naming scheme. 
+**
+** Instead of the plain data_<target> naming scheme, RBU database tables 
+** may also be named data<integer>_<target>, where <integer> is any sequence
+** of zero or more numeric characters (0-9). This can be significant because
+** tables within the RBU database are always processed in order sorted by 
+** name. By judicious selection of the the <integer> portion of the names
+** of the RBU tables the user can therefore control the order in which they
+** are processed. This can be useful, for example, to ensure that "external
+** content" FTS4 tables are updated before their underlying content tables.
+**
 ** If the target database table is a virtual table or a table that has no
 ** PRIMARY KEY declaration, the data_% table must also contain a column 
 ** named "rbu_rowid". This column is mapped to the tables implicit primary 
