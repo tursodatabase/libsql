@@ -1,5 +1,5 @@
-C When\sbuilding\sthe\sVSIX\spackage\sfor\sUAP,\somit\sthe\sAppLocal\ssuffix\sfor\sthe\sMSVC\sruntime\slibrary\sbecause\sit\sis\sno\slonger\sneeded.
-D 2015-07-31T15:14:14.861
+C Remove\sa\sduplicate\s"typedef\sstruct\sFts5Global\sFts5Global;"\sfrom\sfts5_main.c\s(duplicate\sis\sin\sfts5Int.h).
+D 2015-07-31T17:48:07.617
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4de3ef40c8b3b75c0c55ff4242a43c8ce1ad90ee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -113,7 +113,7 @@ F ext/fts5/fts5_config.c fdfa63ae8e527ecfaa50f94063c610429cc887cf
 F ext/fts5/fts5_expr.c 59bea726ffa2099318d050b3ded0a0254814d4fd
 F ext/fts5/fts5_hash.c 4bf4b99708848357b8a2b5819e509eb6d3df9246
 F ext/fts5/fts5_index.c f5b25da3a2eef71f2024a08323a1575eb55f7aad
-F ext/fts5/fts5_main.c 0de7ba81488d2c502c8e794eaf7983d468e4c6e9
+F ext/fts5/fts5_main.c 4518fa10947f683f0963f7802559c69ec923d489
 F ext/fts5/fts5_storage.c 22ec9b5d35a39e2b5b65daf4ba7cd47fbb2d0df5
 F ext/fts5/fts5_tcl.c 85eb4e0d0fefa9420b78151496ad4599a1783e20
 F ext/fts5/fts5_tokenize.c 2836f6728bd74c7efac7487f5d9c27ca3e1b509c
@@ -1368,7 +1368,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 93449e7046d60cad020ca439ded82e759c2e3cd9
-R cd57d0b0869cd0e1887a9a270b6325b3
-U mistachkin
-Z 1aa9b155686f1dc69d831b4c7c5d4ec2
+P fee7ad73c10e9353c3ac298d254ab77ad85a210d
+R 8effa90ca0e2086bde23be5598276033
+U dan
+Z bdec76584075a5122c97c46a016bfa55

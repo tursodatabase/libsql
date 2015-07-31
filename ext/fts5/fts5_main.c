@@ -27,7 +27,6 @@ int sqlite3_fts5_may_be_corrupt = 1;
 
 typedef struct Fts5Table Fts5Table;
 typedef struct Fts5Cursor Fts5Cursor;
-typedef struct Fts5Global Fts5Global;
 typedef struct Fts5Auxiliary Fts5Auxiliary;
 typedef struct Fts5Auxdata Fts5Auxdata;
 
