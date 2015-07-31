@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\sfts5\sporter\stokenizer\spreventing\sit\sfrom\spassing\sxCreate()\sarguments\sthrough\sto\sits\sparent\stokenizer.
-D 2015-07-31T14:43:02.175
+C Fix\sa\sproblem\scausing\s[sqldiff\s--rbu]\sto\sfail\son\stables\sfor\swhich\sall\scolumns\sare\spart\sof\sthe\sPRIMARY\sKEY.
+D 2015-07-31T15:13:29.192
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4de3ef40c8b3b75c0c55ff4242a43c8ce1ad90ee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -215,7 +215,7 @@ F ext/rbu/rbu8.test 3bbf2c35d71a843c463efe93946f14ad10c3ede0
 F ext/rbu/rbu9.test 0806d1772c9f4981774ff028de6656e4183082af
 F ext/rbu/rbuA.test c1a7b3e2d926b8f8448bb3b4ae787e314ee4b2b3
 F ext/rbu/rbucrash.test 8d2ed5d4b05fef6c00c2a6b5f7ead71fa172a695
-F ext/rbu/rbudiff.test deba11b97a41163e39de49d7455eb6429d0bd510
+F ext/rbu/rbudiff.test fbc3aa567927ac0141d4fe2d92c182e39a7b761f
 F ext/rbu/rbufault.test cc0be8d5d392d98b0c2d6a51be377ea989250a89
 F ext/rbu/rbufault2.test 9a7f19edd6ea35c4c9f807d8a3db0a03a5670c06
 F ext/rbu/rbufts.test 17db7d968b3d073788bcba044c498d09e830726b
@@ -1357,7 +1357,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
-F tool/sqldiff.c 7ed3a042126755e87266c3e1dbbce39a20455a1f
+F tool/sqldiff.c 664fbb0e99c0feea42512aaab544b635892b1813
 F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
 F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
 F tool/symbols.sh fec58532668296d7c7dc48be9c87f75ccdb5814f
@@ -1368,7 +1368,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 098bea26da4533d9ad97a85687cca56fb0d764a4
-R 8a1feb7aa96f289823fcad1b81aa7445
+P c3c672af97edf2ae5d793f6fa47364370aa4f4ec
+R b15a02058aabdd16b9a14979e1d956cd
 U dan
-Z c5878e3f2569723ede9a1179817f20fd
+Z f7d27995d6acc03880e556f3a3ff2a8c
