@@ -1,5 +1,5 @@
-C Add\sthe\s--rbu\sswitch\sto\sthe\s"sqldiff"\sutility.
-D 2015-07-30T20:26:16.763
+C Fix\sa\sbug\sin\sthe\sfts5\sporter\stokenizer\spreventing\sit\sfrom\spassing\sxCreate()\sarguments\sthrough\sto\sits\sparent\stokenizer.
+D 2015-07-31T14:43:02.175
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4de3ef40c8b3b75c0c55ff4242a43c8ce1ad90ee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -116,7 +116,7 @@ F ext/fts5/fts5_index.c f5b25da3a2eef71f2024a08323a1575eb55f7aad
 F ext/fts5/fts5_main.c 0de7ba81488d2c502c8e794eaf7983d468e4c6e9
 F ext/fts5/fts5_storage.c 22ec9b5d35a39e2b5b65daf4ba7cd47fbb2d0df5
 F ext/fts5/fts5_tcl.c 85eb4e0d0fefa9420b78151496ad4599a1783e20
-F ext/fts5/fts5_tokenize.c 30f97a8c74683797b4cd233790444fbefb3b0708
+F ext/fts5/fts5_tokenize.c 2836f6728bd74c7efac7487f5d9c27ca3e1b509c
 F ext/fts5/fts5_unicode2.c 78273fbd588d1d9bd0a7e4e0ccc9207348bae33c
 F ext/fts5/fts5_varint.c 3f86ce09cab152e3d45490d7586b7ed2e40c13f1
 F ext/fts5/fts5_vocab.c 4e268a3fcbc099e50e335a1135be985a41ff6f7f
@@ -170,7 +170,7 @@ F ext/fts5/test/fts5rank.test 11dcebba31d822f7e99685b4ea2c2ae3ec0b16f1
 F ext/fts5/test/fts5rebuild.test 03935f617ace91ed23a6099c7c74d905227ff29b
 F ext/fts5/test/fts5restart.test c17728fdea26e7d0f617d22ad5b4b2862b994c17
 F ext/fts5/test/fts5rowid.test 6f9833b23b176dc4aa15b7fc02afeb2b220fd460
-F ext/fts5/test/fts5tokenizer.test 83e7e01a21ec7fdf814d51f6184cc26bb77d7695
+F ext/fts5/test/fts5tokenizer.test ea4df698b35cc427ebf2ba22829d0e28386d8c89
 F ext/fts5/test/fts5unicode.test fbef8d8a3b4b88470536cc57604a82ca52e51841
 F ext/fts5/test/fts5unicode2.test c1dd890ba32b7609adba78e420faa847abe43b59
 F ext/fts5/test/fts5unicode3.test 35c3d02aa7acf7d43d8de3bfe32c15ba96e8928e
@@ -1368,7 +1368,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 287aa30601506f168d355c35176a3383474444ca
-R 4b1cd3413787b049b8357f11d80a75d6
+P 098bea26da4533d9ad97a85687cca56fb0d764a4
+R 8a1feb7aa96f289823fcad1b81aa7445
 U dan
-Z 5d367f3cdab2e7ca1b015457b0b5954e
+Z c5878e3f2569723ede9a1179817f20fd
