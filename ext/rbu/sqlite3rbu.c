@@ -361,6 +361,252 @@ struct rbu_file {
 };
 
 
+/*************************************************************************
+** The following three functions, found below:
+**
+**   rbuDeltaGetInt()
+**   rbuDeltaChecksum()
+**   rbuDeltaApply()
+**
+** are lifted from the fossil source code (http://fossil-scm.org). They
+** are used to implement the scalar SQL function rbu_fossil_delta().
+*/
+
+/*
+** Read bytes from *pz and convert them into a positive integer.  When
+** finished, leave *pz pointing to the first character past the end of
+** the integer.  The *pLen parameter holds the length of the string
+** in *pz and is decremented once for each character in the integer.
+*/
+static unsigned int rbuDeltaGetInt(const char **pz, int *pLen){
+  static const signed char zValue[] = {
+    -1, -1, -1, -1, -1, -1, -1, -1,   -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1,   -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1,   -1, -1, -1, -1, -1, -1, -1, -1,
+     0,  1,  2,  3,  4,  5,  6,  7,    8,  9, -1, -1, -1, -1, -1, -1,
+    -1, 10, 11, 12, 13, 14, 15, 16,   17, 18, 19, 20, 21, 22, 23, 24,
+    25, 26, 27, 28, 29, 30, 31, 32,   33, 34, 35, -1, -1, -1, -1, 36,
+    -1, 37, 38, 39, 40, 41, 42, 43,   44, 45, 46, 47, 48, 49, 50, 51,
+    52, 53, 54, 55, 56, 57, 58, 59,   60, 61, 62, -1, -1, -1, 63, -1,
+  };
+  unsigned int v = 0;
+  int c;
+  unsigned char *z = (unsigned char*)*pz;
+  unsigned char *zStart = z;
+  while( (c = zValue[0x7f&*(z++)])>=0 ){
+     v = (v<<6) + c;
+  }
+  z--;
+  *pLen -= z - zStart;
+  *pz = (char*)z;
+  return v;
+}
+
+/*
+** Compute a 32-bit checksum on the N-byte buffer.  Return the result.
+*/
+static unsigned int rbuDeltaChecksum(const char *zIn, size_t N){
+  const unsigned char *z = (const unsigned char *)zIn;
+  unsigned sum0 = 0;
+  unsigned sum1 = 0;
+  unsigned sum2 = 0;
+  unsigned sum3 = 0;
+  while(N >= 16){
+    sum0 += ((unsigned)z[0] + z[4] + z[8] + z[12]);
+    sum1 += ((unsigned)z[1] + z[5] + z[9] + z[13]);
+    sum2 += ((unsigned)z[2] + z[6] + z[10]+ z[14]);
+    sum3 += ((unsigned)z[3] + z[7] + z[11]+ z[15]);
+    z += 16;
+    N -= 16;
+  }
+  while(N >= 4){
+    sum0 += z[0];
+    sum1 += z[1];
+    sum2 += z[2];
+    sum3 += z[3];
+    z += 4;
+    N -= 4;
+  }
+  sum3 += (sum2 << 8) + (sum1 << 16) + (sum0 << 24);
+  switch(N){
+    case 3:   sum3 += (z[2] << 8);
+    case 2:   sum3 += (z[1] << 16);
+    case 1:   sum3 += (z[0] << 24);
+    default:  ;
+  }
+  return sum3;
+}
+
+/*
+** Apply a delta.
+**
+** The output buffer should be big enough to hold the whole output
+** file and a NUL terminator at the end.  The delta_output_size()
+** routine will determine this size for you.
+**
+** The delta string should be null-terminated.  But the delta string
+** may contain embedded NUL characters (if the input and output are
+** binary files) so we also have to pass in the length of the delta in
+** the lenDelta parameter.
+**
+** This function returns the size of the output file in bytes (excluding
+** the final NUL terminator character).  Except, if the delta string is
+** malformed or intended for use with a source file other than zSrc,
+** then this routine returns -1.
+**
+** Refer to the delta_create() documentation above for a description
+** of the delta file format.
+*/
+static int rbuDeltaApply(
+  const char *zSrc,      /* The source or pattern file */
+  int lenSrc,            /* Length of the source file */
+  const char *zDelta,    /* Delta to apply to the pattern */
+  int lenDelta,          /* Length of the delta */
+  char *zOut             /* Write the output into this preallocated buffer */
+){
+  unsigned int limit;
+  unsigned int total = 0;
+#ifndef FOSSIL_OMIT_DELTA_CKSUM_TEST
+  char *zOrigOut = zOut;
+#endif
+
+  limit = rbuDeltaGetInt(&zDelta, &lenDelta);
+  if( *zDelta!='\n' ){
+    /* ERROR: size integer not terminated by "\n" */
+    return -1;
+  }
+  zDelta++; lenDelta--;
+  while( *zDelta && lenDelta>0 ){
+    unsigned int cnt, ofst;
+    cnt = rbuDeltaGetInt(&zDelta, &lenDelta);
+    switch( zDelta[0] ){
+      case '@': {
+        zDelta++; lenDelta--;
+        ofst = rbuDeltaGetInt(&zDelta, &lenDelta);
+        if( lenDelta>0 && zDelta[0]!=',' ){
+          /* ERROR: copy command not terminated by ',' */
+          return -1;
+        }
+        zDelta++; lenDelta--;
+        total += cnt;
+        if( total>limit ){
+          /* ERROR: copy exceeds output file size */
+          return -1;
+        }
+        if( ofst+cnt > lenSrc ){
+          /* ERROR: copy extends past end of input */
+          return -1;
+        }
+        memcpy(zOut, &zSrc[ofst], cnt);
+        zOut += cnt;
+        break;
+      }
+      case ':': {
+        zDelta++; lenDelta--;
+        total += cnt;
+        if( total>limit ){
+          /* ERROR:  insert command gives an output larger than predicted */
+          return -1;
+        }
+        if( cnt>lenDelta ){
+          /* ERROR: insert count exceeds size of delta */
+          return -1;
+        }
+        memcpy(zOut, zDelta, cnt);
+        zOut += cnt;
+        zDelta += cnt;
+        lenDelta -= cnt;
+        break;
+      }
+      case ';': {
+        zDelta++; lenDelta--;
+        zOut[0] = 0;
+#ifndef FOSSIL_OMIT_DELTA_CKSUM_TEST
+        if( cnt!=rbuDeltaChecksum(zOrigOut, total) ){
+          /* ERROR:  bad checksum */
+          return -1;
+        }
+#endif
+        if( total!=limit ){
+          /* ERROR: generated size does not match predicted size */
+          return -1;
+        }
+        return total;
+      }
+      default: {
+        /* ERROR: unknown delta operator */
+        return -1;
+      }
+    }
+  }
+  /* ERROR: unterminated delta */
+  return -1;
+}
+
+static int rbuDeltaOutputSize(const char *zDelta, int lenDelta){
+  int size;
+  size = rbuDeltaGetInt(&zDelta, &lenDelta);
+  if( *zDelta!='\n' ){
+    /* ERROR: size integer not terminated by "\n" */
+    return -1;
+  }
+  return size;
+}
+
+/*
+** End of code taken from fossil.
+*************************************************************************/
+
+/*
+** Implementation of SQL scalar function rbu_fossil_delta().
+**
+** This function applies a fossil delta patch to a blob. Exactly two
+** arguments must be passed to this function. The first is the blob to
+** patch and the second the patch to apply. If no error occurs, this
+** function returns the patched blob.
+*/
+static void rbuFossilDeltaFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  const char *aDelta;
+  int nDelta;
+  const char *aOrig;
+  int nOrig;
+
+  int nOut;
+  int nOut2;
+  char *aOut;
+
+  assert( argc==2 );
+
+  nOrig = sqlite3_value_bytes(argv[0]);
+  aOrig = (const char*)sqlite3_value_blob(argv[0]);
+  nDelta = sqlite3_value_bytes(argv[1]);
+  aDelta = (const char*)sqlite3_value_blob(argv[1]);
+
+  /* Figure out the size of the output */
+  nOut = rbuDeltaOutputSize(aDelta, nDelta);
+  if( nOut<0 ){
+    sqlite3_result_error(context, "corrupt fossil delta", -1);
+    return;
+  }
+
+  aOut = sqlite3_malloc(nOut+1);
+  if( aOut==0 ){
+    sqlite3_result_error_nomem(context);
+  }else{
+    int nOut2 = rbuDeltaApply(aOrig, nOrig, aDelta, nDelta, aOut);
+    if( nOut2!=nOut ){
+      sqlite3_result_error(context, "corrupt fossil delta", -1);
+    }else{
+      sqlite3_result_blob(context, aOut, nOut, sqlite3_free);
+    }
+  }
+}
+
+
 /*
 ** Prepare the SQL statement in buffer zSql against database handle db.
 ** If successful, set *ppStmt to point to the new statement and return
@@ -1300,8 +1546,14 @@ static char *rbuObjIterGetSetlist(
           );
           zSep = ", ";
         }
-        if( c=='d' ){
+        else if( c=='d' ){
           zList = rbuMPrintf(p, "%z%s\"%w\"=rbu_delta(\"%w\", ?%d)", 
+              zList, zSep, pIter->azTblCol[i], pIter->azTblCol[i], i+1
+          );
+          zSep = ", ";
+        }
+        else if( c=='f' ){
+          zList = rbuMPrintf(p, "%z%s\"%w\"=rbu_fossil_delta(\"%w\", ?%d)", 
               zList, zSep, pIter->azTblCol[i], pIter->azTblCol[i], i+1
           );
           zSep = ", ";
@@ -1901,6 +2153,12 @@ static void rbuOpenDatabase(sqlite3rbu *p){
   }
 
   if( p->rc==SQLITE_OK ){
+    p->rc = sqlite3_create_function(p->dbMain, 
+        "rbu_fossil_delta", 2, SQLITE_UTF8, 0, rbuFossilDeltaFunc, 0, 0
+    );
+  }
+
+  if( p->rc==SQLITE_OK ){
     p->rc = sqlite3_create_function(p->dbRbu, 
         "rbu_target_name", 1, SQLITE_UTF8, (void*)p, rbuTargetNameFunc, 0, 0
     );
@@ -2335,7 +2593,7 @@ static int rbuStep(sqlite3rbu *p){
         for(i=0; p->rc==SQLITE_OK && i<pIter->nCol; i++){
           char c = zMask[pIter->aiSrcOrder[i]];
           pVal = sqlite3_column_value(pIter->pSelect, i);
-          if( pIter->abTblPk[i] || c=='x' || c=='d' ){
+          if( pIter->abTblPk[i] || c!='.' ){
             p->rc = sqlite3_bind_value(pUpdate, i+1, pVal);
           }
         }

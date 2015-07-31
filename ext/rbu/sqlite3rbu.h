@@ -189,6 +189,14 @@
 **
 **   UPDATE t1 SET c = rbu_delta(c, 'usa') WHERE a = 4;
 **
+** Finally, if an 'f' character appears in place of a 'd' or 's' in an 
+** ota_control string, the contents of the data_xxx table column is assumed
+** to be a "fossil delta" - a patch to be applied to a blob value in the
+** format used by the fossil source-code management system. In this case
+** the existing value within the target database table must be of type BLOB. 
+** It is replaced by the result of applying the specified fossil delta to
+** itself.
+**
 ** If the target database table is a virtual table or a table with no PRIMARY
 ** KEY, the rbu_control value should not include a character corresponding 
 ** to the rbu_rowid value. For example, this:

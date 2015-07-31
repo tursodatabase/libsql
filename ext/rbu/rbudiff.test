@@ -57,8 +57,10 @@ proc rbudiff_cksum {db1} {
 
   sqlite3 dbtmp $db1
   foreach tbl [dbtmp eval {SELECT name FROM sqlite_master WHERE type='table'}] {
+    set cols [list]
+    dbtmp eval "PRAGMA table_info = $tbl" { lappend cols "quote( $name )" }
     append txt [dbtmp eval \
-      "SELECT a || '.' || b || '.' || c FROM $tbl ORDER BY 1"
+      "SELECT [join $cols {||'.'||}] FROM $tbl ORDER BY 1"
     ]
   }
   dbtmp close
@@ -94,8 +96,27 @@ foreach {tn init mod} {
     INSERT INTO t1 VALUES('a', 'b', 'c');
   }
 
+  3 {
+    CREATE TABLE t1(i INTEGER PRIMARY KEY, x);
+    INSERT INTO t1 VALUES(1,
+      X'0000000000000000111111111111111122222222222222223333333333333333'
+    );
+    CREATE TABLE t2(y INTEGER PRIMARY KEY, x);
+    INSERT INTO t2 VALUES(1,
+        X'0000000000000000111111111111111122222222222222223333333333333333'
+    );
+  } {
+    DELETE FROM t1;
+    INSERT INTO t1 VALUES(1,
+      X'0000000000000000111111111111111122222555555552223333333333333333'
+    );
+    DELETE FROM t2;
+    INSERT INTO t2 VALUES(1,
+        X'0000000000000000111111111111111122222222222222223333333FFF333333'
+    );
+  }
+
 } {
-  
   catch { db close }
 
   forcedelete test.db test.db2
