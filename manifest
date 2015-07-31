@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\scausing\s[sqldiff\s--rbu]\sto\sfail\son\stables\sfor\swhich\sall\scolumns\sare\spart\sof\sthe\sPRIMARY\sKEY.
-D 2015-07-31T15:13:29.192
+C When\sbuilding\sthe\sVSIX\spackage\sfor\sUAP,\somit\sthe\sAppLocal\ssuffix\sfor\sthe\sMSVC\sruntime\slibrary\sbecause\sit\sis\sno\slonger\sneeded.
+D 2015-07-31T15:14:14.861
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4de3ef40c8b3b75c0c55ff4242a43c8ce1ad90ee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1336,7 +1336,7 @@ F tool/mksqlite3c-noext.tcl 87240b09c20042999b41d5fabe091b7111287835
 F tool/mksqlite3c.tcl 421ecbd437d8cd7123e67430ee8146218396680d
 F tool/mksqlite3h.tcl 44730d586c9031638cdd2eb443b801c0d2dbd9f8
 F tool/mksqlite3internalh.tcl eb994013e833359137eb53a55acdad0b5ae1049b
-F tool/mkvsix.tcl 3b58b9398f91c7dbf18d49eb87cefeee9efdbce1
+F tool/mkvsix.tcl bbe57cd9ae11c6cc70319241101ef8d2b8c3765b
 F tool/offsets.c fe4262fdfa378e8f5499a42136d17bf3b98f6091
 F tool/omittest.tcl 34d7ac01fe4fd18e3637f64abe12c40eca0f6b97
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
@@ -1368,7 +1368,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c3c672af97edf2ae5d793f6fa47364370aa4f4ec
-R b15a02058aabdd16b9a14979e1d956cd
-U dan
-Z f7d27995d6acc03880e556f3a3ff2a8c
+P 93449e7046d60cad020ca439ded82e759c2e3cd9
+R cd57d0b0869cd0e1887a9a270b6325b3
+U mistachkin
+Z 1aa9b155686f1dc69d831b4c7c5d4ec2
