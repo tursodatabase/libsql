@@ -161,11 +161,11 @@ do_test capi3d-4.2.1 {
 
 do_test capi3d-4.2.2 {
   sqlite3_stmt_busy $::s1
-} {1}
+} {0}
 
 do_catchsql_test capi3d-4.2.3 {
   VACUUM
-} {1 {cannot VACUUM - SQL statements in progress}}
+} {0 {}}
 
 do_test capi3d-4.2.4 {
   sqlite3_reset $::s1

@@ -1,5 +1,5 @@
-C Remove\sa\sduplicate\s"typedef\sstruct\sFts5Global\sFts5Global;"\sfrom\sfts5_main.c\s(duplicate\sis\sin\sfts5Int.h).
-D 2015-07-31T17:48:07.617
+C Fix\sthe\ssqlite3_stmt_busy()\sinterface\sso\sthat\sit\salways\sreturns\sFALSE\safter\nthe\sstatement\shas\sreturned\sSQLITE_DONE,\seven\sfor\sROLLBACK\sstatements.\nClarify\sthe\sdocumentation.
+D 2015-07-31T18:59:56.800
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4de3ef40c8b3b75c0c55ff4242a43c8ce1ad90ee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -332,7 +332,7 @@ F src/resolve.c 2d47554370de8de6dd5be060cef9559eec315005
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 57ef3d98c4400b93eea318813be41b2af2da2217
 F src/shell.c 8af3cced094aebb5f57a8ad739b9dafc7867eed7
-F src/sqlite.h.in 68e13bc5b835c541a4505ed87bf2b6093f068a31
+F src/sqlite.h.in 447ead0a6b3293206f04a0896553955d07cfb4b9
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h a0b948ebc89bac13941254641326a6aa248c2cc4
 F src/sqliteInt.h 9401d7d9124210dfd5d283af45e0addbc1455c2e
@@ -393,7 +393,7 @@ F src/update.c 487747b328b7216bb7f6af0695d6937d5c9e605f
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c bc9dd64b5db544218b871b66243871c202b2781f
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c 86be40a4568f5385048ea6623adfd11ddb7bf710
+F src/vdbe.c 2ab1decd98925f8cd846993dde9dccaa69cdf0ef
 F src/vdbe.h 7a75045d879118b9d3af7e8b3c108f2f27c51473
 F src/vdbeInt.h 8b54e01ad0463590e7cffabce0bc36da9ee4f816
 F src/vdbeapi.c adabbd66eb2e3a10f3998485ee0be7e326d06ee4
@@ -497,7 +497,7 @@ F test/capi2.test 011c16da245fdc0106a2785035de6b242c05e738
 F test/capi3.test bf6f0308bbbba1e770dac13aa08e5c2ac61c7324
 F test/capi3b.test efb2b9cfd127efa84433cd7a2d72ce0454ae0dc4
 F test/capi3c.test fdc0d67a2cb8e8fc400d5b7735e330161ea057a2
-F test/capi3d.test a82b6321c50a1cfc848e386fa2c851893606f68c
+F test/capi3d.test 485048dc5cd07bc68011e4917ad035ad6047ab82
 F test/capi3e.test 3d49c01ef2a1a55f41d73cba2b23b5059ec460fe
 F test/cast.test 4c275cbdc8202d6f9c54a3596701719868ac7dc3
 F test/check.test 5831ddb6f2c687782eaf2e1a07b6e17f24c4f763
@@ -1368,7 +1368,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fee7ad73c10e9353c3ac298d254ab77ad85a210d
-R 8effa90ca0e2086bde23be5598276033
-U dan
-Z bdec76584075a5122c97c46a016bfa55
+P 54a771fe2c2b3c1cc2914a527a825934fe114c49
+R 719f0e876f6a610cf71ea7669afc9986
+U drh
+Z a0214b099853a2b8f63fc04fdc3cf017
