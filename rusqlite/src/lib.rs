@@ -580,7 +580,7 @@ impl<'conn> SqliteStatement<'conn> {
 
     /// Get all the column names in the result set of the prepared statement.
     pub fn column_names(&self) -> Vec<&str> {
-        let n = unsafe { ffi::sqlite3_column_count(self.stmt) };
+        let n = self.column_count();
         let mut cols = Vec::with_capacity(n as usize);
         for i in 0..n {
             let slice = unsafe {
@@ -625,11 +625,13 @@ impl<'conn> SqliteStatement<'conn> {
 
             self.needs_reset = true;
             let r = ffi::sqlite3_step(self.stmt);
-            match r {
-                ffi::SQLITE_DONE => Ok(self.conn.changes()),
-                ffi::SQLITE_ROW => Err(SqliteError{ code: r,
-                    message: "Unexpected row result - did you mean to call query?".to_string() }),
-                _ => Err(self.conn.decode_result(r).unwrap_err()),
+            if r == ffi::SQLITE_ROW || self.column_count() != 0 {
+                Err(SqliteError{ code: r,
+                    message: "Unexpected row result - did you mean to call query?".to_string() })
+            } else if r == ffi::SQLITE_DONE {
+                Ok(self.conn.changes())
+            } else {
+                Err(self.conn.decode_result(r).unwrap_err())
             }
         }
     }
@@ -708,6 +710,10 @@ impl<'conn> SqliteStatement<'conn> {
             unsafe { ffi::sqlite3_reset(self.stmt); };
             self.needs_reset = false;
         }
+    }
+
+    fn column_count(&self) -> c_int {
+        unsafe { ffi::sqlite3_column_count(self.stmt) }
     }
 
     fn finalize_(&mut self) -> SqliteResult<()> {
@@ -895,7 +901,7 @@ impl<'stmt> SqliteRow<'stmt> {
                 message: "Cannot get values from a row after advancing to next row".to_string() });
         }
         unsafe {
-            if idx < 0 || idx >= ffi::sqlite3_column_count(self.stmt.stmt) {
+            if idx < 0 || idx >= self.stmt.column_count() {
                 return Err(SqliteError{ code: ffi::SQLITE_MISUSE,
                     message: "Invalid column index".to_string() });
             }
@@ -991,6 +997,14 @@ mod test {
         assert_eq!(db.execute("INSERT INTO foo(x) VALUES (?)", &[&2i32]).unwrap(), 1);
 
         assert_eq!(3i32, db.query_row("SELECT SUM(x) FROM foo", &[], |r| r.get(0)).unwrap());
+    }
+
+    #[test]
+    fn test_execute_select() {
+        let db = checked_memory_handle();
+        let err = db.execute("SELECT 1 WHERE 1 < ?", &[&1i32]).unwrap_err();
+        assert!(err.code == ffi::SQLITE_DONE);
+        assert!(err.message == "Unexpected row result - did you mean to call query?");
     }
 
     #[test]
