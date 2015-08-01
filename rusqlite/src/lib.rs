@@ -625,13 +625,18 @@ impl<'conn> SqliteStatement<'conn> {
 
             self.needs_reset = true;
             let r = ffi::sqlite3_step(self.stmt);
-            if r == ffi::SQLITE_ROW || self.column_count() != 0 {
-                Err(SqliteError{ code: r,
-                    message: "Unexpected row result - did you mean to call query?".to_string() })
-            } else if r == ffi::SQLITE_DONE {
-                Ok(self.conn.changes())
-            } else {
-                Err(self.conn.decode_result(r).unwrap_err())
+            match r {
+                ffi::SQLITE_DONE => {
+                    if self.column_count() != 0 {
+                        Err(SqliteError{ code: ffi::SQLITE_MISUSE,
+                            message: "Unexpected column count - did you mean to call query?".to_string() })
+                    } else {
+                        Ok(self.conn.changes())
+                    }
+                },
+                ffi::SQLITE_ROW => Err(SqliteError{ code: r,
+                    message: "Unexpected row result - did you mean to call query?".to_string() }),
+                _ => Err(self.conn.decode_result(r).unwrap_err()),
             }
         }
     }
@@ -1003,8 +1008,8 @@ mod test {
     fn test_execute_select() {
         let db = checked_memory_handle();
         let err = db.execute("SELECT 1 WHERE 1 < ?", &[&1i32]).unwrap_err();
-        assert!(err.code == ffi::SQLITE_DONE);
-        assert!(err.message == "Unexpected row result - did you mean to call query?");
+        assert!(err.code == ffi::SQLITE_MISUSE);
+        assert!(err.message == "Unexpected column count - did you mean to call query?");
     }
 
     #[test]
