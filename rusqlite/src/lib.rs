@@ -80,7 +80,7 @@ pub use transaction::{SqliteTransactionBehavior,
 pub mod types;
 mod transaction;
 #[cfg(feature = "load_extension")] mod load_extension_guard;
-#[cfg(feature = "trace_extension")] pub mod trace_extension;
+#[cfg(feature = "trace")] pub mod trace;
 
 /// A typedef of the result returned by many methods.
 pub type SqliteResult<T> = Result<T, SqliteError>;
