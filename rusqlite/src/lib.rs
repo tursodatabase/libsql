@@ -50,6 +50,7 @@
 //!     }
 //! }
 //! ```
+#![cfg_attr(test, feature(duration))]
 extern crate libc;
 extern crate libsqlite3_sys as ffi;
 #[macro_use] extern crate bitflags;
@@ -79,6 +80,7 @@ pub use transaction::{SqliteTransactionBehavior,
 pub mod types;
 mod transaction;
 #[cfg(feature = "load_extension")] mod load_extension_guard;
+#[cfg(feature = "trace_extension")] pub mod trace_extension;
 
 /// A typedef of the result returned by many methods.
 pub type SqliteResult<T> = Result<T, SqliteError>;
@@ -664,7 +666,7 @@ impl<'conn> SqliteStatement<'conn> {
     }
 
     /// Executes the prepared statement and maps a function over the resulting
-    /// rows. 
+    /// rows.
     ///
     /// Unlike the iterator produced by `query`, the returned iterator does not expose the possibility
     /// for accessing stale rows.
