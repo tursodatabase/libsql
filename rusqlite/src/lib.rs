@@ -571,16 +571,18 @@ pub struct SqliteStatement<'conn> {
     conn: &'conn SqliteConnection,
     stmt: *mut ffi::sqlite3_stmt,
     needs_reset: bool,
+    column_count: c_int,
 }
 
 impl<'conn> SqliteStatement<'conn> {
     fn new(conn: &SqliteConnection, stmt: *mut ffi::sqlite3_stmt) -> SqliteStatement {
-        SqliteStatement{ conn: conn, stmt: stmt, needs_reset: false }
+        SqliteStatement{ conn: conn, stmt: stmt, needs_reset: false,
+            column_count: unsafe { ffi::sqlite3_column_count(stmt) }}
     }
 
     /// Get all the column names in the result set of the prepared statement.
     pub fn column_names(&self) -> Vec<&str> {
-        let n = self.column_count();
+        let n = self.column_count;
         let mut cols = Vec::with_capacity(n as usize);
         for i in 0..n {
             let slice = unsafe {
@@ -627,7 +629,7 @@ impl<'conn> SqliteStatement<'conn> {
             let r = ffi::sqlite3_step(self.stmt);
             match r {
                 ffi::SQLITE_DONE => {
-                    if self.column_count() != 0 {
+                    if self.column_count != 0 {
                         Err(SqliteError{ code: ffi::SQLITE_MISUSE,
                             message: "Unexpected column count - did you mean to call query?".to_string() })
                     } else {
@@ -715,10 +717,6 @@ impl<'conn> SqliteStatement<'conn> {
             unsafe { ffi::sqlite3_reset(self.stmt); };
             self.needs_reset = false;
         }
-    }
-
-    fn column_count(&self) -> c_int {
-        unsafe { ffi::sqlite3_column_count(self.stmt) }
     }
 
     fn finalize_(&mut self) -> SqliteResult<()> {
@@ -906,7 +904,7 @@ impl<'stmt> SqliteRow<'stmt> {
                 message: "Cannot get values from a row after advancing to next row".to_string() });
         }
         unsafe {
-            if idx < 0 || idx >= self.stmt.column_count() {
+            if idx < 0 || idx >= self.stmt.column_count {
                 return Err(SqliteError{ code: ffi::SQLITE_MISUSE,
                     message: "Invalid column index".to_string() });
             }
