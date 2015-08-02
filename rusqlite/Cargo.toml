@@ -14,6 +14,7 @@ name = "rusqlite"
 
 [features]
 load_extension = ["libsqlite3-sys/load_extension"]
+cache = ["lru-cache"]
 
 [dependencies]
 time = "~0.1.0"
@@ -26,3 +27,7 @@ tempdir = "~0.3.4"
 [dependencies.libsqlite3-sys]
 path = "libsqlite3-sys"
 version = "0.2.0"
+
+[dependencies.lru-cache]
+version = "~0.0.4"
+optional = true

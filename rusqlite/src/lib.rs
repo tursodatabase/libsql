@@ -79,6 +79,7 @@ pub use transaction::{SqliteTransactionBehavior,
 pub mod types;
 mod transaction;
 #[cfg(feature = "load_extension")] mod load_extension_guard;
+#[cfg(feature = "cache")] pub mod cache;
 
 /// A typedef of the result returned by many methods.
 pub type SqliteResult<T> = Result<T, SqliteError>;
@@ -707,6 +708,14 @@ impl<'conn> SqliteStatement<'conn> {
         if self.needs_reset {
             unsafe { ffi::sqlite3_reset(self.stmt); };
             self.needs_reset = false;
+        }
+    }
+
+    fn sql(&self) -> String { // TODO Maybe SQL should by kept as an SqliteStatement field ?
+        unsafe {
+            let c_slice = CStr::from_ptr(ffi::sqlite3_sql(self.stmt)).to_bytes();
+            let utf8_str = str::from_utf8(c_slice);
+            utf8_str.unwrap().to_string()
         }
     }
 
