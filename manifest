@@ -1,5 +1,5 @@
-C Add\sextra\stests\sfor\sRBU\sand\sFTS3/4.
-D 2015-08-01T18:18:21.762
+C Allow\sa\sVIEW\sto\sreference\sundefined\stables\sand\sfunctions\swhen\sinitially\ncreated.\s\sThe\serror\sreport\sis\sdeferred\suntil\sthe\sVIEW\sis\sused.\s\sThis\sallows\nviews\sto\sbe\screated\sbefore\ssubviews\sand\stables\sthat\sthe\sview\sreferences.
+D 2015-08-03T13:44:45.941
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4de3ef40c8b3b75c0c55ff4242a43c8ce1ad90ee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -275,7 +275,7 @@ F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
 F src/btree.c f48b3ef91676c06a90a8832987ecef6b94c931ee
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 8177c9ab90d772d6d2c6c517e05bed774b7c92c0
-F src/build.c b3f15255d5b16e42dafeaa638fd4f8a47c94ed70
+F src/build.c 70a18e12291c49f4c1a0512fb6af4b3eab902ff8
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
 F src/ctime.c 5a0b735dc95604766f5dac73973658eef782ee8b
@@ -1228,7 +1228,7 @@ F test/vacuum3.test 77ecdd54592b45a0bcb133339f99f1ae0ae94d0d
 F test/vacuum4.test d3f8ecff345f166911568f397d2432c16d2867d9
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/veryquick.test 57ab846bacf7b90cf4e9a672721ea5c5b669b661
-F test/view.test f311691d696a5cc27e3c1b875cec1b0866b4ccd9
+F test/view.test f44014f78d7650fb4bfb8ef96a5e4dc8f25eb083
 F test/vtab1.test 6210e076997f176bedc300a87ad6404651b601dd
 F test/vtab2.test f8cd1bb9aba7143eba97812d9617880a36d247ad
 F test/vtab3.test b45f47d20f225ccc9c28dc915d92740c2dee311e
@@ -1368,7 +1368,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e26ef165fe2f7524684af0d269d38475ea8b9489
-R a8062197815293d95ee75be10aab949e
-U dan
-Z 718074b6f56d626d9a6bdf32588261dd
+P 3419044967258e3ed65f71528e06952ee102dcc7
+R a7ce110cce77b8da537a48fa80ac6f4f
+U drh
+Z 0cbd7829b00ada6a24c23b51a4093668

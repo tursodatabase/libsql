@@ -2088,9 +2088,6 @@ void sqlite3CreateView(
   if( db->mallocFailed ){
     return;
   }
-  if( !db->init.busy ){
-    sqlite3ViewGetColumnNames(pParse, p);
-  }
 
   /* Locate the end of the CREATE VIEW statement.  Make sEnd point to
   ** the end.
