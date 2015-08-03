@@ -1,5 +1,5 @@
-C Allow\sa\sVIEW\sto\sreference\sundefined\stables\sand\sfunctions\swhen\sinitially\ncreated.\s\sThe\serror\sreport\sis\sdeferred\suntil\sthe\sVIEW\sis\sused.\s\sThis\sallows\nviews\sto\sbe\screated\sbefore\ssubviews\sand\stables\sthat\sthe\sview\sreferences.
-D 2015-08-03T13:44:45.941
+C Add\sthe\s"--uri"\soption\sto\sutility\sprogram\s"showdb".\sThis\soption\scauses\sshowdb\sto\suse\ssqlite\swith\sthe\sSQLITE_OPEN_URI\soption\sto\sopen\sthe\sdatabase\sfile,\sinstead\sof\sopening\sit\sdirectly\susing\sthe\sOS\sopen()\sfunction.
+D 2015-08-03T17:03:31.462
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4de3ef40c8b3b75c0c55ff4242a43c8ce1ad90ee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1343,7 +1343,7 @@ F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/pagesig.c ff0ca355fd3c2398e933da5e22439bbff89b803b
 F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
-F tool/showdb.c 3b5d335d537e4dc44d0c86967023819453c87dc6
+F tool/showdb.c 8b65966a80f30b95d3dcd9d7c13caaeb4dc21473
 F tool/showjournal.c 053eb1cc774710c6890b7dd6293300cc297b16a5
 F tool/showlocks.c 9920bcc64f58378ff1118caead34147201f48c68
 F tool/showstat4.c 9515faa8ec176599d4a8288293ba8ec61f7b728a
@@ -1368,7 +1368,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3419044967258e3ed65f71528e06952ee102dcc7
-R a7ce110cce77b8da537a48fa80ac6f4f
-U drh
-Z 0cbd7829b00ada6a24c23b51a4093668
+P 70b57dafb3216feb21091883196831fa1252e7bf
+R 16122b1df3219db3f18abec519d4455c
+T *branch * showdb-uri-option
+T *sym-showdb-uri-option *
+T -sym-trunk *
+U dan
+Z 0bf8c605dcc175d4e077bbfb11ad015a
