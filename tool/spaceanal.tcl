@@ -26,7 +26,7 @@ proc is_without_rowid {tname} {
 #
 proc usage {} {
   set argv0 [file rootname [file tail [info nameofexecutable]]]
-  puts stderr "Usage: $argv0 database-name"
+  puts stderr "Usage: $argv0 \[--pageinfo] \[--stats] database-name"
   exit 1
 }
 set file_to_analyze {}

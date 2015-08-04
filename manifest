@@ -1,5 +1,5 @@
-C Update\sthe\s[showdb]\sprogram\sso\sthat\sthe\sdatabase\sfile\sis\sread\sdirectly\s(bypassing\sthe\sSQLite\sVFS)\sonly\sif\sthe\s--raw\soption\sis\sspecified.\sOtherwise,\sit\sis\sread\susing\sthe\sdefault\sVFS.\sAlso,\sthe\sURI\ssyntax\smay\sbe\sused\son\sthe\scommand\sline\sto\sspecify\sthe\sname\sof\sthe\sdatabase\sfile\sto\sexamine,\sso\san\salternative\sVFS\smay\sbe\srequested\susing\sa\sURI\sparameter.
-D 2015-08-04T15:29:43.068
+C Improve\sthe\susage\scomment\son\ssqlite3_analyzer:\sshow\sthe\savailable\sswitches.
+D 2015-08-04T19:06:50.512
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4de3ef40c8b3b75c0c55ff4242a43c8ce1ad90ee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1350,7 +1350,7 @@ F tool/showstat4.c 9515faa8ec176599d4a8288293ba8ec61f7b728a
 F tool/showwal.c 85cb36d4fe3e93e2fbd63e786e0d1ce42d0c4fad
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
 F tool/space_used.tcl f714c41a59e326b8b9042f415b628b561bafa06b
-F tool/spaceanal.tcl ac584838dc14782eff7c165eb70c36533fb3f1f8
+F tool/spaceanal.tcl 63a415385a66fdbf736bfd204a31c6d851ed8da6
 F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355
 F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
@@ -1361,14 +1361,14 @@ F tool/sqldiff.c 4fe09e784cf2ec8b8e6ff7357b17f890ff9c78b4
 F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
 F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
 F tool/symbols.sh fec58532668296d7c7dc48be9c87f75ccdb5814f
-F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
+F tool/tostr.awk 11760e1b94a5d3dcd42378f3cc18544c06cfa576
 F tool/varint.c 5d94cb5003db9dbbcbcc5df08d66f16071aee003
 F tool/vdbe-compress.tcl 5926c71f9c12d2ab73ef35c29376e756eb68361c
 F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P cd997770013e923ac3fa34b1546b97681923c8b1 9699e9bd9a0e813d04c9d37422920670697c46ed
-R 7b43c0477e767bd928070744aae8eca7
-U dan
-Z 8f4e8fe91dd9aa3d32924c08cf340019
+P e3c6d4b6e738c7ea015c0c809a5f7d1a94dda945
+R 9d1259ae9dfc5b130a73da5571ccf238
+U drh
+Z c3498853cb626c1a563db294f9147107
