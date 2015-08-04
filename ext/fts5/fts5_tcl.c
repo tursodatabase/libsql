@@ -946,6 +946,31 @@ static int f5tTokenHash(
   return TCL_OK;
 }
 
+static int f5tRegisterMatchinfo(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int rc;
+  sqlite3 *db = 0;
+
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB");
+    return TCL_ERROR;
+  }
+  if( f5tDbPointer(interp, objv[1], &db) ){
+    return TCL_ERROR;
+  }
+
+  rc = sqlite3Fts5TestRegisterMatchinfo(db);
+  if( rc!=SQLITE_OK ){
+    Tcl_SetResult(interp, (char*)sqlite3ErrName(rc), TCL_VOLATILE);
+    return TCL_ERROR;
+  }
+  return TCL_OK;
+}
+
 /*
 ** Entry point.
 */
@@ -955,12 +980,13 @@ int Fts5tcl_Init(Tcl_Interp *interp){
     Tcl_ObjCmdProc *xProc;
     int bTokenizeCtx;
   } aCmd[] = {
-    { "sqlite3_fts5_create_tokenizer", f5tCreateTokenizer, 1 },
-    { "sqlite3_fts5_token",            f5tTokenizerReturn, 1 },
-    { "sqlite3_fts5_tokenize",         f5tTokenize, 0 },
-    { "sqlite3_fts5_create_function",  f5tCreateFunction, 0 },
-    { "sqlite3_fts5_may_be_corrupt",   f5tMayBeCorrupt, 0 },
-    { "sqlite3_fts5_token_hash",       f5tTokenHash, 0 }
+    { "sqlite3_fts5_create_tokenizer",   f5tCreateTokenizer, 1 },
+    { "sqlite3_fts5_token",              f5tTokenizerReturn, 1 },
+    { "sqlite3_fts5_tokenize",           f5tTokenize, 0 },
+    { "sqlite3_fts5_create_function",    f5tCreateFunction, 0 },
+    { "sqlite3_fts5_may_be_corrupt",     f5tMayBeCorrupt, 0 },
+    { "sqlite3_fts5_token_hash",         f5tTokenHash, 0 },
+    { "sqlite3_fts5_register_matchinfo", f5tRegisterMatchinfo, 0 }
   };
   int i;
   F5tTokenizerContext *pContext;

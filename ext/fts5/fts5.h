@@ -60,7 +60,10 @@ typedef void (*fts5_extension_function)(
 **   an OOM condition or IO error), an appropriate SQLite error code is 
 **   returned.
 **
-** xColumnCount(pFts, iCol, pnToken):
+** xColumnCount(pFts):
+**   Return the number of columns in the table.
+**
+** xColumnSize(pFts, iCol, pnToken):
 **   If parameter iCol is less than zero, set output variable *pnToken
 **   to the total number of tokens in the current row. Or, if iCol is
 **   non-negative but less than the number of columns in the table, set
@@ -70,9 +73,6 @@ typedef void (*fts5_extension_function)(
 **   in the table, SQLITE_RANGE is returned. Or, if an error occurs (e.g.
 **   an OOM condition or IO error), an appropriate SQLite error code is 
 **   returned.
-**
-** xColumnSize:
-**   Reports the size in tokens of a column value from the current row.
 **
 ** xColumnText:
 **   This function attempts to retrieve the text of column iCol of the
