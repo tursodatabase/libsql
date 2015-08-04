@@ -79,6 +79,7 @@ pub use transaction::{SqliteTransactionBehavior,
 pub mod types;
 mod transaction;
 #[cfg(feature = "load_extension")] mod load_extension_guard;
+#[cfg(feature = "named_params")] pub mod named_params;
 
 /// A typedef of the result returned by many methods.
 pub type SqliteResult<T> = Result<T, SqliteError>;
@@ -615,15 +616,18 @@ impl<'conn> SqliteStatement<'conn> {
 
         unsafe {
             try!(self.bind_parameters(params));
+            self.execute_()
+        }
+    }
 
-            self.needs_reset = true;
-            let r = ffi::sqlite3_step(self.stmt);
-            match r {
-                ffi::SQLITE_DONE => Ok(self.conn.changes()),
-                ffi::SQLITE_ROW => Err(SqliteError{ code: r,
-                    message: "Unexpected row result - did you mean to call query?".to_string() }),
-                _ => Err(self.conn.decode_result(r).unwrap_err()),
-            }
+    unsafe fn execute_(&mut self) -> SqliteResult<c_int> {
+        let r = ffi::sqlite3_step(self.stmt);
+        ffi::sqlite3_reset(self.stmt);
+        match r {
+            ffi::SQLITE_DONE => Ok(self.conn.changes()),
+            ffi::SQLITE_ROW => Err(SqliteError{ code: r,
+                message: "Unexpected row result - did you mean to call query?".to_string() }),
+            _ => Err(self.conn.decode_result(r).unwrap_err()),
         }
     }
 
