@@ -1,5 +1,5 @@
-C In\sthe\ssqlite3_analyzer.exe\sutility,\sshow\sthe\sdepth\sof\seach\sbtree\sand\sreport\nthe\saverage\sfanout\sof\sindexes\sand\sWITHOUT\sROWID\stables.
-D 2015-08-04T14:18:10.060
+C Update\sthe\s[showdb]\sprogram\sso\sthat\sthe\sdatabase\sfile\sis\sread\sdirectly\s(bypassing\sthe\sSQLite\sVFS)\sonly\sif\sthe\s--raw\soption\sis\sspecified.\sOtherwise,\sit\sis\sread\susing\sthe\sdefault\sVFS.\sAlso,\sthe\sURI\ssyntax\smay\sbe\sused\son\sthe\scommand\sline\sto\sspecify\sthe\sname\sof\sthe\sdatabase\sfile\sto\sexamine,\sso\san\salternative\sVFS\smay\sbe\srequested\susing\sa\sURI\sparameter.
+D 2015-08-04T15:29:43.068
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4de3ef40c8b3b75c0c55ff4242a43c8ce1ad90ee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1343,7 +1343,7 @@ F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/pagesig.c ff0ca355fd3c2398e933da5e22439bbff89b803b
 F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
-F tool/showdb.c 3b5d335d537e4dc44d0c86967023819453c87dc6
+F tool/showdb.c b1e16174385d5bd0815823a7fda1ecc82ed6088b
 F tool/showjournal.c 053eb1cc774710c6890b7dd6293300cc297b16a5
 F tool/showlocks.c 9920bcc64f58378ff1118caead34147201f48c68
 F tool/showstat4.c 9515faa8ec176599d4a8288293ba8ec61f7b728a
@@ -1368,7 +1368,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 70b57dafb3216feb21091883196831fa1252e7bf
-R 13388672818fef0d2cb76a948959a6c9
-U drh
-Z 06142420513d4bba3f9f1464c1f7a39e
+P cd997770013e923ac3fa34b1546b97681923c8b1 9699e9bd9a0e813d04c9d37422920670697c46ed
+R 7b43c0477e767bd928070744aae8eca7
+U dan
+Z 8f4e8fe91dd9aa3d32924c08cf340019
