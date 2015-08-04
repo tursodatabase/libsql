@@ -1,5 +1,5 @@
-C Allow\sa\sVIEW\sto\sreference\sundefined\stables\sand\sfunctions\swhen\sinitially\ncreated.\s\sThe\serror\sreport\sis\sdeferred\suntil\sthe\sVIEW\sis\sused.\s\sThis\sallows\nviews\sto\sbe\screated\sbefore\ssubviews\sand\stables\sthat\sthe\sview\sreferences.
-D 2015-08-03T13:44:45.941
+C In\sthe\ssqlite3_analyzer.exe\sutility,\sshow\sthe\sdepth\sof\seach\sbtree\sand\sreport\nthe\saverage\sfanout\sof\sindexes\sand\sWITHOUT\sROWID\stables.
+D 2015-08-04T14:18:10.060
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4de3ef40c8b3b75c0c55ff4242a43c8ce1ad90ee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1350,7 +1350,7 @@ F tool/showstat4.c 9515faa8ec176599d4a8288293ba8ec61f7b728a
 F tool/showwal.c 85cb36d4fe3e93e2fbd63e786e0d1ce42d0c4fad
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
 F tool/space_used.tcl f714c41a59e326b8b9042f415b628b561bafa06b
-F tool/spaceanal.tcl 713c587a057334de42c41ad9566f10e255d3ad27
+F tool/spaceanal.tcl ac584838dc14782eff7c165eb70c36533fb3f1f8
 F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355
 F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
@@ -1368,7 +1368,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3419044967258e3ed65f71528e06952ee102dcc7
-R a7ce110cce77b8da537a48fa80ac6f4f
+P 70b57dafb3216feb21091883196831fa1252e7bf
+R 13388672818fef0d2cb76a948959a6c9
 U drh
-Z 0cbd7829b00ada6a24c23b51a4093668
+Z 06142420513d4bba3f9f1464c1f7a39e
