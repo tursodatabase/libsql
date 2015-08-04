@@ -1,5 +1,5 @@
-C Add\sthe\s"--uri"\soption\sto\sutility\sprogram\s"showdb".\sThis\soption\scauses\sshowdb\sto\suse\ssqlite\swith\sthe\sSQLITE_OPEN_URI\soption\sto\sopen\sthe\sdatabase\sfile,\sinstead\sof\sopening\sit\sdirectly\susing\sthe\sOS\sopen()\sfunction.
-D 2015-08-03T17:03:31.462
+C Update\sthe\s[showdb]\sprogram\sso\sthat\sthe\sdatabase\sfile\sis\sread\sdirectly\s(bypassing\sthe\sSQLite\sVFS)\sonly\sif\sthe\s--raw\soption\sis\sspecified.\sOtherwise,\sit\sis\sread\susing\sthe\sdefault\sVFS.\sAn\salternative\sVFS\smay\sbe\sspecified\sby\sspecifying\sthe\sdatabase\sfile\sto\sopen\susing\sthe\sURI\ssyntax.
+D 2015-08-04T15:23:49.470
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4de3ef40c8b3b75c0c55ff4242a43c8ce1ad90ee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1343,7 +1343,7 @@ F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/pagesig.c ff0ca355fd3c2398e933da5e22439bbff89b803b
 F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
-F tool/showdb.c 8b65966a80f30b95d3dcd9d7c13caaeb4dc21473
+F tool/showdb.c 95ed172060f91dd881c65f3906cbb8a43861f3ac
 F tool/showjournal.c 053eb1cc774710c6890b7dd6293300cc297b16a5
 F tool/showlocks.c 9920bcc64f58378ff1118caead34147201f48c68
 F tool/showstat4.c 9515faa8ec176599d4a8288293ba8ec61f7b728a
@@ -1368,10 +1368,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 70b57dafb3216feb21091883196831fa1252e7bf
-R 16122b1df3219db3f18abec519d4455c
-T *branch * showdb-uri-option
-T *sym-showdb-uri-option *
-T -sym-trunk *
+P 90e34d5119f720496e86a3a6de7771ea87b7dcbb
+R 9d7c9f8de5d6d6fb5bb80e2cb324c919
 U dan
-Z 0bf8c605dcc175d4e077bbfb11ad015a
+Z dbdc532b6b382833636acb3f205bead9

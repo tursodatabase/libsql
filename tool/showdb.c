@@ -24,8 +24,7 @@ static struct GlobalData {
   int dbfd;                       /* File descriptor for reading the DB */
   int mxPage;                     /* Last page number */
   int perLine;                    /* HEX elements to print per line */
-
-  int bUri;                       /* True for URI mode */
+  int bRaw;                       /* True to access db file via OS APIs */
   sqlite3_file *pFd;              /* File descriptor for URI mode */
   sqlite3 *pDb;                   /* Database handle that owns pFd */
 } g = {1024, -1, 0, 16,   0, 0, 0};
@@ -97,7 +96,7 @@ static sqlite3 *openDatabase(const char *zPrg, const char *zName){
 */
 static void fileOpen(const char *zPrg, const char *zName){
   assert( g.dbfd<0 );
-  if( g.bUri ){
+  if( g.bRaw==0 ){
     int rc;
     void *pArg = (void *)(&g.pFd);
     g.pDb = openDatabase(zPrg, zName);
@@ -121,7 +120,7 @@ static void fileOpen(const char *zPrg, const char *zName){
 ** Close the database file opened by fileOpen()
 */
 static void fileClose(){
-  if( g.bUri ){
+  if( g.bRaw==0 ){
     sqlite3_close(g.pDb);
     g.pDb = 0;
     g.pFd = 0;
@@ -143,7 +142,7 @@ static unsigned char *fileRead(sqlite3_int64 ofst, int nByte){
   aData = sqlite3_malloc(nByte+32);
   if( aData==0 ) out_of_memory();
   memset(aData, 0, nByte+32);
-  if( g.bUri ){
+  if( g.bRaw==0 ){
     int rc = g.pFd->pMethods->xRead(g.pFd, (void*)aData, nByte, ofst);
     if( rc!=SQLITE_OK && rc!=SQLITE_IOERR_SHORT_READ ){
       fprintf(stderr, "error in xRead() - %d\n", rc);
@@ -162,7 +161,7 @@ static unsigned char *fileRead(sqlite3_int64 ofst, int nByte){
 */
 static sqlite3_int64 fileGetsize(void){
   sqlite3_int64 res = 0;
-  if( g.bUri ){
+  if( g.bRaw==0 ){
     int rc = g.pFd->pMethods->xFileSize(g.pFd, &res);
     if( rc!=SQLITE_OK ){
       fprintf(stderr, "error in xFileSize() - %d\n", rc);
@@ -1048,7 +1047,7 @@ static void usage(const char *argv0){
   fprintf(stderr, "Usage %s ?--uri? FILENAME ?args...?\n\n", argv0);
   fprintf(stderr,
     "switches:\n"
-    "    --uri           FILENAME is a URI\n"
+    "    --raw           Read db file directly, bypassing SQLite VFS\n"
     "args:\n"
     "    dbheader        Show database header\n"
     "    pgidx           Index of how each page is used\n"
@@ -1074,10 +1073,10 @@ int main(int argc, char **argv){
 
   /* Check for the "--uri" or "-uri" switch. */
   if( nArg>1 ){
-    if( sqlite3_stricmp("-uri", azArg[1])==0 
-     || sqlite3_stricmp("--uri", azArg[1])==0
+    if( sqlite3_stricmp("-raw", azArg[1])==0 
+     || sqlite3_stricmp("--raw", azArg[1])==0
     ){
-      g.bUri = 1;
+      g.bRaw = 1;
       azArg++;
       nArg--;
     }
@@ -1088,7 +1087,7 @@ int main(int argc, char **argv){
     exit(1);
   }
 
-  fileOpen(azArg[0], azArg[1]);
+  fileOpen(zPrg, azArg[1]);
   szFile = fileGetsize();
 
   zPgSz = fileRead(16, 2);
@@ -1121,11 +1120,11 @@ int main(int argc, char **argv){
         continue;
       }
       if( strcmp(azArg[i], "help")==0 ){
-        usage(azArg[0]);
+        usage(zPrg);
         continue;
       }
       if( !isdigit(azArg[i][0]) ){
-        fprintf(stderr, "%s: unknown option: [%s]\n", azArg[0], azArg[i]);
+        fprintf(stderr, "%s: unknown option: [%s]\n", zPrg, azArg[i]);
         continue;
       }
       iStart = strtol(azArg[i], &zLeft, 0);
