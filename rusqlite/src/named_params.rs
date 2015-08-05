@@ -4,7 +4,7 @@ use libc::{c_int};
 
 use super::ffi;
 
-use {SqliteResult, SqliteError, SqliteConnection, SqliteStatement};
+use {SqliteResult, SqliteError, SqliteConnection, SqliteStatement, SqliteRows};
 use types::{ToSql};
 
 impl SqliteConnection {
@@ -44,15 +44,32 @@ impl<'conn> SqliteStatement<'conn> {
     /// `sqlite3_changes`).
     pub fn named_execute(&mut self, params: &[(&str, &ToSql)]) -> SqliteResult<c_int> {
         unsafe {
-            for &(name, value) in params {
-                let i = try!(self.parameter_index(name).ok_or(SqliteError{
-                    code: ffi::SQLITE_MISUSE,
-                    message: format!("Invalid parameter name: {}", name)
-                }));
-                try!(self.conn.decode_result(value.bind_parameter(self.stmt, i)));
-            }
+            try!(self.bind_named_parameters(params));
             self.execute_()
         }
+    }
+
+    /// Execute the prepared statement with named parameter(s), returning an iterator over the resulting rows.
+    pub fn named_query<'a>(&'a mut self, params: &[(&str, &ToSql)]) -> SqliteResult<SqliteRows<'a>> {
+        self.reset_if_needed();
+
+        unsafe {
+            try!(self.bind_named_parameters(params));
+        }
+
+        self.needs_reset = true;
+        Ok(SqliteRows::new(self))
+    }
+
+    unsafe fn bind_named_parameters(&mut self, params: &[(&str, &ToSql)]) -> SqliteResult<()> {
+        for &(name, value) in params {
+            let i = try!(self.parameter_index(name).ok_or(SqliteError{
+                code: ffi::SQLITE_MISUSE,
+                message: format!("Invalid parameter name: {}", name)
+            }));
+            try!(self.conn.decode_result(value.bind_parameter(self.stmt, i)));
+        }
+        Ok(())
     }
 }
 
@@ -68,5 +85,15 @@ mod test {
 
         let mut stmt = db.prepare("INSERT INTO test (id, name, flag) VALUES (:id, :name, :flag)").unwrap();
         stmt.named_execute(&[(":name", &"one")]).unwrap();
+    }
+
+   #[test]
+    fn test_named_query() {
+        let db = SqliteConnection::open_in_memory().unwrap();
+        let sql = "CREATE TABLE test (id INTEGER PRIMARY KEY NOT NULL, name TEXT NOT NULL, flag INTEGER)";
+        db.execute_batch(sql).unwrap();
+
+        let mut stmt = db.prepare("SELECT * FROM test where name = :name").unwrap();
+        stmt.named_query(&[(":name", &"one")]).unwrap();
     }
 }
