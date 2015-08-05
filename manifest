@@ -1,5 +1,5 @@
-C Fix\ssome\sproblems\sin\stest\scode\sdetected\sby\scppcheck.
-D 2015-08-05T08:01:46.351
+C Update\sthe\sspellfix\svirtual\stable\sextension\sso\sthat\san\sexplicit\s"top\s=\s?"\sconstraint\sworks\seven\sif\sthere\sis\salso\sa\s"distance\s<\s?"\sor\s"distance\s<=\s?"\sconstraint.
+D 2015-08-05T15:29:32.743
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2fc9ca6bf5949d415801c007ed3004a4bdb7c380
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -196,7 +196,7 @@ F ext/misc/percentile.c bcbee3c061b884eccb80e21651daaae8e1e43c63
 F ext/misc/regexp.c af92cdaa5058fcec1451e49becc7ba44dba023dc
 F ext/misc/rot13.c 1ac6f95f99b575907b9b09c81a349114cf9be45a
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
-F ext/misc/spellfix.c de9181ec188294dd2a1087b329ca55cfaa76a29d
+F ext/misc/spellfix.c 86998fb73aefb7b5dc346ba8a58912f312da4996
 F ext/misc/totype.c 4a167594e791abeed95e0a8db028822b5e8fe512
 F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
@@ -1369,7 +1369,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P dffd358f6cbf575d3b1045b1ce53429d15bade2a
-R 03d664fe9a880098c608c861d0111d6e
+P c9ff4ca4a0b44bbb8d6676144ddf77b04426e619
+R 180a25ce6d192ff71ad9fad98491dc51
 U dan
-Z d772c3ac7a9d41bdcded0f7d87a12476
+Z 9568c0ed64c13f8590f8982853b1718d
