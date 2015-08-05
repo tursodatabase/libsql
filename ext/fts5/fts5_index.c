@@ -33,7 +33,7 @@
 **     doclist, without loading it into memory.
 **
 **   * large doclists that span many pages have associated "doclist index"
-**     records that contain a copy of the first docid on each page spanned by
+**     records that contain a copy of the first rowid on each page spanned by
 **     the doclist. This is used to speed up seek operations, and merges of
 **     large doclists with very small doclists.
 **
@@ -210,10 +210,10 @@
 **
 **     * Page number of fts index leaf page. As a varint.
 **
-**     * First docid on page indicated by previous field. As a varint.
+**     * First rowid on page indicated by previous field. As a varint.
 **
 **     * A list of varints, one for each subsequent termless page. A 
-**       positive delta if the termless page contains at least one docid, 
+**       positive delta if the termless page contains at least one rowid, 
 **       or an 0x00 byte otherwise.
 **
 **   Internal doclist index nodes are:
@@ -223,9 +223,9 @@
 **
 **     * Page number of first child page. As a varint.
 **
-**     * Copy of first docid on page indicated by previous field. As a varint.
+**     * Copy of first rowid on page indicated by previous field. As a varint.
 **
-**     * A list of delta-encoded varints - the first docid on each subsequent
+**     * A list of delta-encoded varints - the first rowid on each subsequent
 **       child page. 
 **
 */
@@ -384,13 +384,13 @@ struct Fts5PageWriter {
 struct Fts5DlidxWriter {
   int pgno;                       /* Page number for this page */
   int bPrevValid;                 /* True if iPrev is valid */
-  i64 iPrev;                      /* Previous docid value written to page */
+  i64 iPrev;                      /* Previous rowid value written to page */
   Fts5Buffer buf;                 /* Buffer containing page data */
 };
 struct Fts5SegWriter {
   int iSegid;                     /* Segid to write to */
   Fts5PageWriter writer;          /* PageWriter object */
-  i64 iPrevRowid;                 /* Previous docid written to current leaf */
+  i64 iPrevRowid;                 /* Previous rowid written to current leaf */
   u8 bFirstRowidInDoclist;        /* True if next rowid is first in doclist */
   u8 bFirstRowidInPage;           /* True if next rowid is first in page */
   u8 bFirstTermInPage;            /* True if next term will be first in leaf */
@@ -407,7 +407,7 @@ struct Fts5SegWriter {
 
 /*
 ** Object for iterating through the merged results of one or more segments,
-** visiting each term/docid pair in the merged data.
+** visiting each term/rowid pair in the merged data.
 **
 ** nSeg is always a power of two greater than or equal to the number of
 ** segments that this object is merging data from. Both the aSeg[] and
@@ -432,7 +432,7 @@ struct Fts5CResult {
 };
 
 /*
-** Object for iterating through a single segment, visiting each term/docid
+** Object for iterating through a single segment, visiting each term/rowid
 ** pair in the segment.
 **
 ** pSeg:
@@ -464,7 +464,7 @@ struct Fts5CResult {
 **
 **   FTS5_SEGITER_REVERSE:
 **     This flag is only ever set if FTS5_SEGITER_ONETERM is also set. If
-**     it is set, iterate through docids in descending order instead of the
+**     it is set, iterate through rowid in descending order instead of the
 **     default ascending order.
 **
 ** iRowidOffset/nRowidOffset/aRowidOffset:
@@ -2239,7 +2239,7 @@ static void fts5LeafSeek(
     while( 1 ){
       int nPos;
 
-      /* Skip past docid delta */
+      /* Skip past rowid delta */
       fts5IndexSkipVarint(a, iOff);
 
       /* Skip past position list */
@@ -3377,7 +3377,7 @@ static void fts5WriteAppendTerm(
 
   assert( pPage->buf.n==0 || pPage->buf.n>4 );
   if( pPage->buf.n==0 ){
-    /* Zero the first term and first docid fields */
+    /* Zero the first term and first rowid fields */
     static const u8 zero[] = { 0x00, 0x00, 0x00, 0x00 };
     fts5BufferAppendBlob(&p->rc, &pPage->buf, 4, zero);
     assert( pWriter->bFirstTermInPage );
@@ -3437,7 +3437,7 @@ static void fts5WriteAppendTerm(
 }
 
 /*
-** Append a docid and position-list size field to the writers output. 
+** Append a rowid and position-list size field to the writers output. 
 */
 static void fts5WriteAppendRowid(
   Fts5Index *p, 
@@ -3448,15 +3448,15 @@ static void fts5WriteAppendRowid(
   if( p->rc==SQLITE_OK ){
     Fts5PageWriter *pPage = &pWriter->writer;
 
-    /* If this is to be the first docid written to the page, set the 
-    ** docid-pointer in the page-header. Also append a value to the dlidx
+    /* If this is to be the first rowid written to the page, set the 
+    ** rowid-pointer in the page-header. Also append a value to the dlidx
     ** buffer, in case a doclist-index is required.  */
     if( pWriter->bFirstRowidInPage ){
       fts5PutU16(pPage->buf.p, pPage->buf.n);
       fts5WriteDlidxAppend(p, pWriter, iRowid);
     }
 
-    /* Write the docid. */
+    /* Write the rowid. */
     if( pWriter->bFirstRowidInDoclist || pWriter->bFirstRowidInPage ){
       fts5BufferAppendVarint(&p->rc, &pPage->buf, iRowid);
     }else{
@@ -4003,7 +4003,7 @@ static void fts5FlushOneHash(Fts5Index *p){
           iRowid += iDelta;
           
           if( writer.bFirstRowidInPage ){
-            fts5PutU16(&pBuf->p[0], pBuf->n);   /* first docid on page */
+            fts5PutU16(&pBuf->p[0], pBuf->n);   /* first rowid on page */
             pBuf->n += sqlite3Fts5PutVarint(&pBuf->p[pBuf->n], iRowid);
             writer.bFirstRowidInPage = 0;
             fts5WriteDlidxAppend(p, &writer, iRowid);
@@ -4609,7 +4609,7 @@ int sqlite3Fts5IndexWrite(
 }
 
 /*
-** Open a new iterator to iterate though all docids that match the 
+** Open a new iterator to iterate though all rowid that match the 
 ** specified token or token prefix.
 */
 int sqlite3Fts5IndexQuery(

@@ -34,7 +34,7 @@ void sqlite3Fts5Parser(void*, int, Fts5Token, Fts5Parse*);
 struct Fts5Expr {
   Fts5Index *pIndex;
   Fts5ExprNode *pRoot;
-  int bDesc;                      /* Iterate in descending docid order */
+  int bDesc;                      /* Iterate in descending rowid order */
   int nPhrase;                    /* Number of phrases in expression */
   Fts5ExprPhrase **apExprPhrase;  /* Pointers to phrase objects */
 };
