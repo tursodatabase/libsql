@@ -2012,7 +2012,7 @@ int sqlite3Fts5ExprInit(Fts5Global *pGlobal, sqlite3 *db){
 ** Return the number of phrases in expression pExpr.
 */
 int sqlite3Fts5ExprPhraseCount(Fts5Expr *pExpr){
-  return pExpr->nPhrase;
+  return (pExpr ? pExpr->nPhrase : 0);
 }
 
 /*

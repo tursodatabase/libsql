@@ -30,7 +30,9 @@
 **     they are not (as the "b AND c" sub-tree does not match the current
 **     row.
 **
-**  2) ...
+**  2) For the values returned by 'x' that apply to all rows of the table, 
+**     NEAR constraints are not considered. But for the number of hits in
+**     the current row, they are.
 **     
 ** This file exports a single function that may be called to register the
 ** matchinfo() implementation with a database handle:
@@ -82,13 +84,13 @@ static fts5_api *fts5_api_from_db(sqlite3 *db){
 
 /*
 ** Argument f should be a flag accepted by matchinfo() (a valid character
-** in the string passed as the second argument). If it is not, 0 is 
+** in the string passed as the second argument). If it is not, -1 is 
 ** returned. Otherwise, if f is a valid matchinfo flag, the value returned
 ** is the number of 32-bit integers added to the output array if the
 ** table has nCol columns and the query nPhrase phrases.
 */
 static int fts5MatchinfoFlagsize(int nCol, int nPhrase, char f){
-  int ret = 0;
+  int ret = -1;
   switch( f ){
     case 'p': ret = 1; break;
     case 'c': ret = 1; break;
@@ -247,9 +249,38 @@ static int fts5MatchinfoLocalCb(
       break;
     }
 
-    case 's':
+    case 's': {
+      int nInst;
+
       memset(aOut, 0, sizeof(u32) * p->nCol);
+
+      rc = pApi->xInstCount(pFts, &nInst);
+      for(i=0; rc==SQLITE_OK && i<nInst; i++){
+        int iPhrase, iOff, iCol = 0;
+        int iNextPhrase;
+        int iNextOff;
+        int nSeq = 1;
+        int j;
+
+        rc = pApi->xInst(pFts, i, &iPhrase, &iCol, &iOff);
+        iNextPhrase = iPhrase+1;
+        iNextOff = iOff+pApi->xPhraseSize(pFts, 0);
+        for(j=i+1; rc==SQLITE_OK && j<nInst; j++){
+          int ip, ic, io;
+          rc = pApi->xInst(pFts, j, &ip, &ic, &io);
+          if( ic!=iCol || io>iNextOff ) break;
+          if( ip==iNextPhrase && io==iNextOff ){
+            nSeq++;
+            iNextPhrase = ip+1;
+            iNextOff = io + pApi->xPhraseSize(pFts, ip);
+          }
+        }
+
+        if( nSeq>aOut[iCol] ) aOut[iCol] = nSeq;
+      }
+
       break;
+    }
   }
   return rc;
 }
@@ -274,7 +305,7 @@ static Fts5MatchinfoCtx *fts5MatchinfoNew(
   nInt = 0;
   for(i=0; zArg[i]; i++){
     int n = fts5MatchinfoFlagsize(nCol, nPhrase, zArg[i]);
-    if( n==0 ){
+    if( n<0 ){
       char *zErr = sqlite3_mprintf("unrecognized matchinfo flag: %c", zArg[i]);
       sqlite3_result_error(pCtx, zErr, -1);
       sqlite3_free(zErr);

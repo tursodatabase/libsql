@@ -3944,7 +3944,7 @@ static void fts5FlushOneHash(Fts5Index *p){
 
       /* Decide if the term will fit on the current leaf. If it will not, 
       ** flush the leaf to disk here.  */
-      if( (pBuf->n + nTerm + 2) > pgsz ){
+      if( pBuf->n>4 && (pBuf->n + nTerm + 2) > pgsz ){
         fts5WriteFlushLeaf(p, &writer);
         pBuf = &writer.writer.buf;
         if( (nTerm + 32) > pBuf->nSpace ){

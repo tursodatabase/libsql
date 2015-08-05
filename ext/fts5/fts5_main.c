@@ -169,6 +169,11 @@ struct Fts5Sorter {
 */
 struct Fts5Cursor {
   sqlite3_vtab_cursor base;       /* Base class used by SQLite core */
+  Fts5Cursor *pNext;              /* Next cursor in Fts5Cursor.pCsr list */
+  int *aColumnSize;               /* Values for xColumnSize() */
+  i64 iCsrId;                     /* Cursor id */
+
+  /* Zero from this point onwards on cursor reset */
   int ePlan;                      /* FTS5_PLAN_XXX value */
   int bDesc;                      /* True for "ORDER BY rowid DESC" queries */
   i64 iFirstRowid;                /* Return no rowids earlier than this */
@@ -177,7 +182,6 @@ struct Fts5Cursor {
   Fts5Expr *pExpr;                /* Expression for MATCH queries */
   Fts5Sorter *pSorter;            /* Sorter for "ORDER BY rank" queries */
   int csrflags;                   /* Mask of cursor flags (see below) */
-  Fts5Cursor *pNext;              /* Next cursor in Fts5Cursor.pCsr list */
   i64 iSpecial;                   /* Result of special query */
 
   /* "rank" function. Populated on demand from vtab.xColumn(). */
@@ -188,11 +192,9 @@ struct Fts5Cursor {
   sqlite3_value **apRankArg;      /* Array of trailing arguments */
   sqlite3_stmt *pRankArgStmt;     /* Origin of objects in apRankArg[] */
 
-  /* Variables used by auxiliary functions */
-  i64 iCsrId;                     /* Cursor id */
+  /* Auxiliary data storage */
   Fts5Auxiliary *pAux;            /* Currently executing extension function */
   Fts5Auxdata *pAuxdata;          /* First in linked list of saved aux-data */
-  int *aColumnSize;               /* Values for xColumnSize() */
 
   /* Cache used by auxiliary functions xInst() and xInstCount() */
   int nInstCount;                 /* Number of phrase instances */
@@ -429,12 +431,12 @@ static int fts5CreateMethod(
 /*
 ** The different query plans.
 */
-#define FTS5_PLAN_MATCH          0       /* (<tbl> MATCH ?) */
-#define FTS5_PLAN_SOURCE         1       /* A source cursor for SORTED_MATCH */
-#define FTS5_PLAN_SPECIAL        2       /* An internal query */
-#define FTS5_PLAN_SORTED_MATCH   3       /* (<tbl> MATCH ? ORDER BY rank) */
-#define FTS5_PLAN_SCAN           4       /* No usable constraint */
-#define FTS5_PLAN_ROWID          5       /* (rowid = ?) */
+#define FTS5_PLAN_MATCH          1       /* (<tbl> MATCH ?) */
+#define FTS5_PLAN_SOURCE         2       /* A source cursor for SORTED_MATCH */
+#define FTS5_PLAN_SPECIAL        3       /* An internal query */
+#define FTS5_PLAN_SORTED_MATCH   4       /* (<tbl> MATCH ? ORDER BY rank) */
+#define FTS5_PLAN_SCAN           5       /* No usable constraint */
+#define FTS5_PLAN_ROWID          6       /* (rowid = ?) */
 
 /*
 ** Implementation of the xBestIndex method for FTS5 tables. Within the 
@@ -610,6 +612,44 @@ static void fts5CsrNewrow(Fts5Cursor *pCsr){
   );
 }
 
+static void fts5FreeCursorComponents(Fts5Cursor *pCsr){
+  Fts5Table *pTab = (Fts5Table*)(pCsr->base.pVtab);
+  Fts5Auxdata *pData;
+  Fts5Auxdata *pNext;
+
+  sqlite3_free(pCsr->aInst);
+  if( pCsr->pStmt ){
+    int eStmt = fts5StmtType(pCsr);
+    sqlite3Fts5StorageStmtRelease(pTab->pStorage, eStmt, pCsr->pStmt);
+  }
+  if( pCsr->pSorter ){
+    Fts5Sorter *pSorter = pCsr->pSorter;
+    sqlite3_finalize(pSorter->pStmt);
+    sqlite3_free(pSorter);
+  }
+
+  if( pCsr->ePlan!=FTS5_PLAN_SOURCE ){
+    sqlite3Fts5ExprFree(pCsr->pExpr);
+  }
+
+  for(pData=pCsr->pAuxdata; pData; pData=pNext){
+    pNext = pData->pNext;
+    if( pData->xDelete ) pData->xDelete(pData->pPtr);
+    sqlite3_free(pData);
+  }
+
+  sqlite3_finalize(pCsr->pRankArgStmt);
+  sqlite3_free(pCsr->apRankArg);
+
+  if( CsrFlagTest(pCsr, FTS5CSR_FREE_ZRANK) ){
+    sqlite3_free(pCsr->zRank);
+    sqlite3_free(pCsr->zRankArgs);
+  }
+
+  memset(&pCsr->ePlan, 0, sizeof(Fts5Cursor) - ((u8*)&pCsr->ePlan - (u8*)pCsr));
+}
+
+
 /*
 ** Close the cursor.  For additional information see the documentation
 ** on the xClose method of the virtual table interface.
@@ -619,41 +659,12 @@ static int fts5CloseMethod(sqlite3_vtab_cursor *pCursor){
     Fts5Table *pTab = (Fts5Table*)(pCursor->pVtab);
     Fts5Cursor *pCsr = (Fts5Cursor*)pCursor;
     Fts5Cursor **pp;
-    Fts5Auxdata *pData;
-    Fts5Auxdata *pNext;
 
-    sqlite3_free(pCsr->aInst);
-    if( pCsr->pStmt ){
-      int eStmt = fts5StmtType(pCsr);
-      sqlite3Fts5StorageStmtRelease(pTab->pStorage, eStmt, pCsr->pStmt);
-    }
-    if( pCsr->pSorter ){
-      Fts5Sorter *pSorter = pCsr->pSorter;
-      sqlite3_finalize(pSorter->pStmt);
-      sqlite3_free(pSorter);
-    }
-
-    if( pCsr->ePlan!=FTS5_PLAN_SOURCE ){
-      sqlite3Fts5ExprFree(pCsr->pExpr);
-    }
-
-    for(pData=pCsr->pAuxdata; pData; pData=pNext){
-      pNext = pData->pNext;
-      if( pData->xDelete ) pData->xDelete(pData->pPtr);
-      sqlite3_free(pData);
-    }
-
+    fts5FreeCursorComponents(pCsr);
     /* Remove the cursor from the Fts5Global.pCsr list */
     for(pp=&pTab->pGlobal->pCsr; (*pp)!=pCsr; pp=&(*pp)->pNext);
     *pp = pCsr->pNext;
 
-    sqlite3_finalize(pCsr->pRankArgStmt);
-    sqlite3_free(pCsr->apRankArg);
-
-    if( CsrFlagTest(pCsr, FTS5CSR_FREE_ZRANK) ){
-      sqlite3_free(pCsr->zRank);
-      sqlite3_free(pCsr->zRankArgs);
-    }
     sqlite3_free(pCsr);
   }
   return SQLITE_OK;
@@ -757,11 +768,11 @@ static int fts5NextMethod(sqlite3_vtab_cursor *pCursor){
   Fts5Cursor *pCsr = (Fts5Cursor*)pCursor;
   int rc = SQLITE_OK;
 
-  assert( (pCsr->ePlan<2)==
+  assert( (pCsr->ePlan<3)==
           (pCsr->ePlan==FTS5_PLAN_MATCH || pCsr->ePlan==FTS5_PLAN_SOURCE) 
   );
 
-  if( pCsr->ePlan<2 ){
+  if( pCsr->ePlan<3 ){
     int bSkip = 0;
     if( (rc = fts5CursorReseek(pCsr, &bSkip)) || bSkip ) return rc;
     rc = sqlite3Fts5ExprNext(pCsr->pExpr, pCsr->iLastRowid);
@@ -1041,6 +1052,11 @@ static int fts5FilterMethod(
   sqlite3_value *pRowidLe = 0;    /* rowid <= ? expression (or NULL) */
   sqlite3_value *pRowidGe = 0;    /* rowid >= ? expression (or NULL) */
   char **pzErrmsg = pConfig->pzErrmsg;
+
+  if( pCsr->ePlan ){
+    fts5FreeCursorComponents(pCsr);
+    memset(&pCsr->ePlan, 0, sizeof(Fts5Cursor) - ((u8*)&pCsr->ePlan-(u8*)pCsr));
+  }
 
   assert( pCsr->pStmt==0 );
   assert( pCsr->pExpr==0 );
