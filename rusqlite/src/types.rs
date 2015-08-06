@@ -122,6 +122,9 @@ impl ToSql for String {
 
 impl<'a> ToSql for &'a [u8] {
     unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
+        if self.len() > ::std::i32::MAX as usize {
+            return ffi::SQLITE_TOOBIG;
+        }
         ffi::sqlite3_bind_blob(
             stmt, col, mem::transmute(self.as_ptr()), self.len() as c_int, ffi::SQLITE_TRANSIENT())
     }
