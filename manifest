@@ -1,5 +1,5 @@
-C Fix\sduplicate\stest\snumbering\sin\sthe\sFTS5\smatchinfo\stests.
-D 2015-08-06T03:09:49.411
+C Fix\sharmless\scompiler\swarnings\sin\sFTS5\scode.
+D 2015-08-06T03:19:14.454
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2fc9ca6bf5949d415801c007ed3004a4bdb7c380
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -112,11 +112,11 @@ F ext/fts5/fts5_buffer.c 80f9ba4431848cb857e3d2158f5280093dcd8015
 F ext/fts5/fts5_config.c fdfa63ae8e527ecfaa50f94063c610429cc887cf
 F ext/fts5/fts5_expr.c 495b24f47f4d71b63339572a5beaf9f6e1b486fe
 F ext/fts5/fts5_hash.c 4bf4b99708848357b8a2b5819e509eb6d3df9246
-F ext/fts5/fts5_index.c 28718af591ec59df0c3804cefdccd619b44a0e38
+F ext/fts5/fts5_index.c 076c4995bf06a6d1559a6e31f9a86b90f2105374
 F ext/fts5/fts5_main.c 4c8af0015aaf1db2c81df4f617840a921360ef50
 F ext/fts5/fts5_storage.c 22ec9b5d35a39e2b5b65daf4ba7cd47fbb2d0df5
-F ext/fts5/fts5_tcl.c fac2c0a30e708696bd5130324968eef9021c0235
-F ext/fts5/fts5_test_mi.c f27e865f492b96a115bc37b3e2d149ab9a1c05be
+F ext/fts5/fts5_tcl.c 96a3b9e982c4a64a242eefd752fa6669cd405a67
+F ext/fts5/fts5_test_mi.c c42a34590d9393d2aa0b959398261810ca976d05
 F ext/fts5/fts5_tokenize.c 2836f6728bd74c7efac7487f5d9c27ca3e1b509c
 F ext/fts5/fts5_unicode2.c 78273fbd588d1d9bd0a7e4e0ccc9207348bae33c
 F ext/fts5/fts5_varint.c 3f86ce09cab152e3d45490d7586b7ed2e40c13f1
@@ -1370,7 +1370,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9e3aafe44a0813aa2a0c6172fdba1440b8a973ec
-R 0a338678968e0db0c0daa1dc85f9bc1d
+P 483ebe8989ed7dbe197fe84e3eef6e76fa828e14
+R 2cffeaf7c9a72e7585a8552d3dbd52fa
+T *branch * fts5NoWarn
+T *sym-fts5NoWarn *
+T -sym-trunk *
 U mistachkin
-Z 9f49f4f4d726a5d5b1216b6df7ab8b37
+Z c163b66ce8f67976ab7189b5c285d710

@@ -259,7 +259,7 @@ static int fts5MatchinfoLocalCb(
         int iPhrase, iOff, iCol = 0;
         int iNextPhrase;
         int iNextOff;
-        int nSeq = 1;
+        u32 nSeq = 1;
         int j;
 
         rc = pApi->xInst(pFts, i, &iPhrase, &iCol, &iOff);

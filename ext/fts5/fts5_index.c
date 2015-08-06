@@ -2312,7 +2312,6 @@ static void fts5SegIterSeekInit(
   Fts5SegIter *pIter              /* Object to populate */
 ){
   int iPg = 1;
-  int h;
   int bGe = (flags & FTS5INDEX_QUERY_SCAN);
   int bDlidx = 0;                 /* True if there is a doclist-index */
 
@@ -2339,7 +2338,7 @@ static void fts5SegIterSeekInit(
   sqlite3_bind_blob(p->pIdxSelect, 2, pTerm, nTerm, SQLITE_STATIC);
   if( SQLITE_ROW==sqlite3_step(p->pIdxSelect) ){
     i64 val = sqlite3_column_int(p->pIdxSelect, 0);
-    iPg = (val>>1);
+    iPg = (int)(val>>1);
     bDlidx = (val & 0x0001);
   }
   p->rc = sqlite3_reset(p->pIdxSelect);
@@ -5076,7 +5075,6 @@ static void fts5IndexIntegrityCheckSegment(
     i64 iRow;                     /* Rowid for this leaf */
     Fts5Data *pLeaf;              /* Data for this leaf */
     int iOff;                     /* Offset of first term on leaf */
-    int i;                        /* Used to iterate through empty leaves */
 
     int nIdxTerm = sqlite3_column_bytes(pStmt, 1);
     const char *zIdxTerm = (const char*)sqlite3_column_text(pStmt, 1);
@@ -5128,7 +5126,7 @@ static void fts5IndexIntegrityCheckSegment(
       Fts5DlidxIter *pDlidx = 0;  /* For iterating through doclist index */
       int iPrevLeaf = iIdxLeaf;
       int iSegid = pSeg->iSegid;
-      int iPg;
+      int iPg = 0;
       i64 iKey;
 
       for(pDlidx=fts5DlidxIterInit(p, 0, iSegid, iIdxLeaf);
