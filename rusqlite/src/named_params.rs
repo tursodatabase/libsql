@@ -4,10 +4,31 @@ use libc::{c_int};
 
 use super::ffi;
 
-use {SqliteResult, SqliteError, SqliteConnection, SqliteStatement, SqliteRows};
+use {SqliteResult, SqliteError, SqliteConnection, SqliteStatement, SqliteRows, SqliteRow};
 use types::{ToSql};
 
 impl SqliteConnection {
+    /// Convenience method to prepare and execute a single SQL statement with named parameter(s).
+    pub fn execute_named(&self, sql: &str, params: &[(&str, &ToSql)]) -> SqliteResult<c_int> {
+        self.prepare(sql).and_then(|mut stmt| stmt.execute_named(params))
+    }
+
+    /// Convenience method to execute a query with named parameter(s) that is expected to return a single row.
+    ///
+    /// If the query returns more than one row, all rows except the first are ignored.
+    pub fn query_named_row<T, F>(&self, sql: &str, params: &[(&str, &ToSql)], f: F) -> SqliteResult<T>
+                           where F: FnOnce(SqliteRow) -> T {
+        let mut stmt = try!(self.prepare(sql));
+        let mut rows = try!(stmt.query_named(params));
+
+        match rows.next() {
+            Some(row) => row.map(f),
+            None      => Err(SqliteError{
+                code: ffi::SQLITE_NOTICE,
+                message: "Query did not return a row".to_string(),
+            })
+        }
+    }
 }
 
 impl<'conn> SqliteStatement<'conn> {
@@ -42,7 +63,7 @@ impl<'conn> SqliteStatement<'conn> {
     ///
     /// On success, returns the number of rows that were changed or inserted or deleted (via
     /// `sqlite3_changes`).
-    pub fn named_execute(&mut self, params: &[(&str, &ToSql)]) -> SqliteResult<c_int> {
+    pub fn execute_named(&mut self, params: &[(&str, &ToSql)]) -> SqliteResult<c_int> {
         unsafe {
             try!(self.bind_named_parameters(params));
             self.execute_()
@@ -50,7 +71,7 @@ impl<'conn> SqliteStatement<'conn> {
     }
 
     /// Execute the prepared statement with named parameter(s), returning an iterator over the resulting rows.
-    pub fn named_query<'a>(&'a mut self, params: &[(&str, &ToSql)]) -> SqliteResult<SqliteRows<'a>> {
+    pub fn query_named<'a>(&'a mut self, params: &[(&str, &ToSql)]) -> SqliteResult<SqliteRows<'a>> {
         self.reset_if_needed();
 
         unsafe {
@@ -77,23 +98,34 @@ impl<'conn> SqliteStatement<'conn> {
 mod test {
     use SqliteConnection;
 
+    #[test]
+    fn test_execute_named() {
+        let db = SqliteConnection::open_in_memory().unwrap();
+        db.execute_batch("CREATE TABLE foo(x INTEGER)").unwrap();
+
+        assert_eq!(db.execute_named("INSERT INTO foo(x) VALUES (:x)", &[(":x", &1i32)]).unwrap(), 1);
+        assert_eq!(db.execute_named("INSERT INTO foo(x) VALUES (:x)", &[(":x", &2i32)]).unwrap(), 1);
+
+        assert_eq!(3i32, db.query_named_row("SELECT SUM(x) FROM foo WHERE x > :x", &[(":x", &0i32)], |r| r.get(0)).unwrap());
+    }
+
    #[test]
-    fn test_named_execute() {
+    fn test_stmt_execute_named() {
         let db = SqliteConnection::open_in_memory().unwrap();
         let sql = "CREATE TABLE test (id INTEGER PRIMARY KEY NOT NULL, name TEXT NOT NULL, flag INTEGER)";
         db.execute_batch(sql).unwrap();
 
         let mut stmt = db.prepare("INSERT INTO test (id, name, flag) VALUES (:id, :name, :flag)").unwrap();
-        stmt.named_execute(&[(":name", &"one")]).unwrap();
+        stmt.execute_named(&[(":name", &"one")]).unwrap();
     }
 
    #[test]
-    fn test_named_query() {
+    fn test_query_named() {
         let db = SqliteConnection::open_in_memory().unwrap();
         let sql = "CREATE TABLE test (id INTEGER PRIMARY KEY NOT NULL, name TEXT NOT NULL, flag INTEGER)";
         db.execute_batch(sql).unwrap();
 
         let mut stmt = db.prepare("SELECT * FROM test where name = :name").unwrap();
-        stmt.named_query(&[(":name", &"one")]).unwrap();
+        stmt.query_named(&[(":name", &"one")]).unwrap();
     }
 }
