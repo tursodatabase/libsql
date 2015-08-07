@@ -345,5 +345,35 @@ do_execsql_test index6-9.2 {
   SELECT a,b,c,'|' FROM t9 ORDER BY a;
 } {1 1 9 | 10 35 35 | 11 15 82 | 20 5 5 |}
 
+# AND-connected terms in the WHERE clause of a partial index
+#
+do_execsql_test index6-10.1 {
+  CREATE TABLE t10(a,b,c,d,e INTEGER PRIMARY KEY);
+  INSERT INTO t10 VALUES
+    (1,2,3,4,5),
+    (2,3,4,5,6),
+    (3,4,5,6,7),
+    (1,2,3,8,9);
+  CREATE INDEX t10x ON t10(d) WHERE a=1 AND b=2 AND c=3;
+  SELECT e FROM t10 WHERE a=1 AND b=2 AND c=3 ORDER BY d;
+} {5 9}
+do_execsql_test index6-10.1eqp {
+  EXPLAIN QUERY PLAN
+  SELECT e FROM t10 WHERE a=1 AND b=2 AND c=3 ORDER BY d;
+} {/USING INDEX t10x/}
+do_execsql_test index6-10.2 {
+  SELECT e FROM t10 WHERE c=3 AND 2=b AND a=1 ORDER BY d DESC;
+} {9 5}
+do_execsql_test index6-10.2eqp {
+  EXPLAIN QUERY PLAN
+  SELECT e FROM t10 WHERE c=3 AND 2=b AND a=1 ORDER BY d DESC;
+} {/USING INDEX t10x/}
+do_execsql_test index6-10.3 {
+  SELECT e FROM t10 WHERE a=1 AND b=2 ORDER BY d DESC;
+} {9 5}
+do_execsql_test index6-10.3eqp {
+  EXPLAIN QUERY PLAN
+  SELECT e FROM t10 WHERE a=1 AND b=2 ORDER BY d DESC;
+} {~/USING INDEX t10x/}
 
 finish_test

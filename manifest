@@ -1,5 +1,5 @@
-C Add\sa\sspecially\sformatted\scomment\sto\sshell.c\sto\smake\sit\seasier\sfor\sscripts\sto\sedit.\sNo\scode\schanges.
-D 2015-08-07T20:06:14.915
+C Enhance\sthe\squery\splanner\sso\sthat\sit\sis\sable\sto\suse\spartial\sindexes\sthat\suse\nAND-connected\sterms\sin\sthe\sWHERE\sclause.
+D 2015-08-07T20:57:00.566
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2fc9ca6bf5949d415801c007ed3004a4bdb7c380
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -409,7 +409,7 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 6fb6b68969e4692593c2552c4e7bff5882de2cb8
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
-F src/where.c 909eba3b6db984eb2adfbca9de2c237ee7056adb
+F src/where.c c745d3aa78ad1aa8982febb99f2f17ee5cbac069
 F src/whereInt.h 5f87e3c4b0551747d119730dfebddd3c54f04047
 F src/wherecode.c 5da5049224f12db314931ae7e0919b4914a2a0b1
 F src/whereexpr.c 9ce1c9cfedbf80c93c7d899497025ec8256ce652
@@ -772,7 +772,7 @@ F test/index2.test ee83c6b5e3173a3d7137140d945d9a5d4fdfb9d6
 F test/index3.test b6ec456cf3b81d9a32123fe7e449bde434db338b
 F test/index4.test ab92e736d5946840236cd61ac3191f91a7856bf6
 F test/index5.test 8621491915800ec274609e42e02a97d67e9b13e7
-F test/index6.test fbf45ceb39eb8a01b837d22623b93b208e6509ef
+F test/index6.test 7102ec371414c42dfb1d5ca37eb4519aa9edc23a
 F test/index7.test 9c6765a74fc3fcde7aebc5b3bd40d98df14a527c
 F test/indexedby.test 5f527a78bae74c61b8046ae3037f9dfb0bf0c353
 F test/indexfault.test 31d4ab9a7d2f6e9616933eb079722362a883eb1d
@@ -1370,7 +1370,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e596a6b63f3a18c26352b1b3e67bb282fdec8055
-R c653c71174c2ae0a492775d5d9b3d666
-U dan
-Z 3cba3a9aa49841042097db6ccc896adf
+P 6d47b35ad10e85f27d1c446586e8c798cce4911d
+R fdd864785e0da38c46a7cc06076b1085
+U drh
+Z b15fdab6d1d5c81e8422dc64f4cbe4bc
