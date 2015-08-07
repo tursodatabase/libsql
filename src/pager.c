@@ -5274,33 +5274,32 @@ int sqlite3PagerAcquire(
   if( pPager->errCode!=SQLITE_OK ){
     rc = pPager->errCode;
   }else{
-    if( bMmapOk && pagerUseWal(pPager) ){
-      rc = sqlite3WalFindFrame(pPager->pWal, pgno, &iFrame);
-      if( rc!=SQLITE_OK ) goto pager_acquire_err;
-    }
+    if( bMmapOk ){
+      if( pPager->eState>PAGER_READER ){
+        pPg = sqlite3PagerLookup(pPager, pgno);
+      }
 
-    if( bMmapOk && iFrame==0 ){
-      void *pData = 0;
+      if( pPg==0 && pagerUseWal(pPager) ){
+        rc = sqlite3WalFindFrame(pPager->pWal, pgno, &iFrame);
+        if( rc!=SQLITE_OK ) goto pager_acquire_err;
+      }
 
-      rc = sqlite3OsFetch(pPager->fd, 
-          (i64)(pgno-1) * pPager->pageSize, pPager->pageSize, &pData
-      );
-
-      if( rc==SQLITE_OK && pData ){
-        if( pPager->eState>PAGER_READER ){
-          pPg = sqlite3PagerLookup(pPager, pgno);
-        }
-        if( pPg==0 ){
+      if( pPg==0 && iFrame==0 ){
+        void *pData = 0;
+        rc = sqlite3OsFetch(pPager->fd, 
+            (i64)(pgno-1) * pPager->pageSize, pPager->pageSize, &pData
+        );
+        if( rc==SQLITE_OK && pData ){
           rc = pagerAcquireMapPage(pPager, pgno, pData, &pPg);
-        }else{
-          sqlite3OsUnfetch(pPager->fd, (i64)(pgno-1)*pPager->pageSize, pData);
-        }
-        if( pPg ){
-          assert( rc==SQLITE_OK );
-          *ppPage = pPg;
-          return SQLITE_OK;
         }
       }
+
+      if( pPg ){
+        assert( rc==SQLITE_OK );
+        *ppPage = pPg;
+        return SQLITE_OK;
+      }
+
       if( rc!=SQLITE_OK ){
         goto pager_acquire_err;
       }
