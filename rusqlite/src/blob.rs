@@ -1,15 +1,18 @@
+//! incremental BLOB I/O
 use std::mem;
 use std::ptr;
 
 use super::ffi;
 use {SqliteError, SqliteResult, SqliteConnection};
 
+/// Handle to an open BLOB
 pub struct SqliteBlob<'conn> {
     conn: &'conn SqliteConnection,
     blob: *mut ffi::sqlite3_blob,
     pos: i32,
 }
 
+/// Enumeration of possible methods to seek within an BLOB.
 pub enum SeekFrom {
     Start(i32),
     End(i32),
@@ -17,6 +20,7 @@ pub enum SeekFrom {
 }
 
 impl SqliteConnection {
+    /// Open a handle to the BLOB located in `row`, `column`, `table` in database `db` ('main', 'temp', ...)
     pub fn blob_open<'a>(&'a self, db: &str, table: &str, column: &str, row: i64, read_only: bool) -> SqliteResult<SqliteBlob<'a>> {
         let mut c = self.db.borrow_mut();
         let mut blob = ptr::null_mut();
@@ -31,6 +35,7 @@ impl SqliteConnection {
 }
 
 impl<'conn> SqliteBlob<'conn> {
+    /// Move a BLOB handle to a new row
     pub fn reopen(&mut self, row: i64) -> SqliteResult<()> {
         let rc = unsafe{ ffi::sqlite3_blob_reopen(self.blob, row) };
         if rc != ffi::SQLITE_OK {
@@ -40,10 +45,12 @@ impl<'conn> SqliteBlob<'conn> {
         Ok(())
     }
 
+    /// Return the size in bytes of the BLOB
     pub fn size(&self) -> i32 {
         unsafe{ ffi::sqlite3_blob_bytes(self.blob) }
     }
 
+    /// Read data from a BLOB incrementally
     pub fn read(&mut self, buf: &mut [u8]) -> SqliteResult<i32> {
         if buf.len() > ::std::i32::MAX as usize {
             return Err(SqliteError {
@@ -66,6 +73,9 @@ impl<'conn> SqliteBlob<'conn> {
         })
     }
 
+    /// Write data into a BLOB incrementally
+    ///
+    /// This function may only modify the contents of the BLOB; it is not possible to increase the size of a BLOB using this API.
     pub fn write(&mut self, buf: &[u8]) -> SqliteResult<i32> {
         if buf.len() > ::std::i32::MAX as usize {
             return Err(SqliteError {
@@ -88,6 +98,7 @@ impl<'conn> SqliteBlob<'conn> {
         })
     }
 
+    /// Seek to an offset, in bytes, in BLOB.
     pub fn seek(&mut self, pos: SeekFrom) {
         self.pos  = match pos {
             SeekFrom::Start(offset) => offset,
@@ -96,6 +107,7 @@ impl<'conn> SqliteBlob<'conn> {
         };
     }
 
+    /// Close a BLOB handle
     pub fn close(mut self) -> SqliteResult<()> {
         self.close_()
     }
