@@ -542,6 +542,12 @@ impl InnerSqliteConnection {
     fn prepare<'a>(&mut self,
                    conn: &'a SqliteConnection,
                    sql: &str) -> SqliteResult<SqliteStatement<'a>> {
+        if sql.len() >= ::std::i32::MAX as usize {
+            return Err(SqliteError {
+                code: ffi::SQLITE_TOOBIG,
+                message: "statement too long".to_string()
+            });
+        }
         let mut c_stmt: *mut ffi::sqlite3_stmt = unsafe { mem::uninitialized() };
         let c_sql = try!(str_to_cstring(sql));
         let r = unsafe {
