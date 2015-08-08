@@ -45,6 +45,12 @@ impl<'conn> SqliteBlob<'conn> {
     }
 
     pub fn read(&mut self, buf: &mut [u8]) -> SqliteResult<i32> {
+        if buf.len() > ::std::i32::MAX as usize {
+            return Err(SqliteError {
+                code: ffi::SQLITE_TOOBIG,
+                message: "buffer too long".to_string()
+            });
+        }
         let mut n = buf.len() as i32;
         let size = self.size();
         if self.pos + n > size {
@@ -61,6 +67,12 @@ impl<'conn> SqliteBlob<'conn> {
     }
 
     pub fn write(&mut self, buf: &[u8]) -> SqliteResult<i32> {
+        if buf.len() > ::std::i32::MAX as usize {
+            return Err(SqliteError {
+                code: ffi::SQLITE_TOOBIG,
+                message: "buffer too long".to_string()
+            });
+        }
         let n = buf.len() as i32;
         let size = self.size();
         if self.pos + n > size {
