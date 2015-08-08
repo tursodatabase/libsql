@@ -1,5 +1,5 @@
-C Fix\scompiler\swarnings\sand\sremove\sunreachable\scode.
-D 2015-08-08T22:47:47.511
+C Fix\san\sassert()\sthat\swas\sin\sthe\swrong\sspot.
+D 2015-08-08T23:23:33.787
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2fc9ca6bf5949d415801c007ed3004a4bdb7c380
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -279,7 +279,7 @@ F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
 F src/btree.c f48b3ef91676c06a90a8832987ecef6b94c931ee
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 8177c9ab90d772d6d2c6c517e05bed774b7c92c0
-F src/build.c 31782da5c79d38c04ee761fba1cb0b606431dda6
+F src/build.c 4acc35c4e0a2d94c906abd164568cd6fc989cfbb
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
 F src/ctime.c 5a0b735dc95604766f5dac73973658eef782ee8b
@@ -1372,7 +1372,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1d75a41bb2f7fcd32f9f08768517b814e452e456
-R aba5c14bf2c68b28cc52b65e65f7a0e4
+P be190fe7826d157fc5acd84210095725b059e4f6
+R 9515e6f89ec29f4ddd4e24f2f6aa441a
 U drh
-Z de04371715be8dc36aa7df7c7bd4ee40
+Z b61fd59578180c6e9e4171800bfd67be
