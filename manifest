@@ -1,5 +1,5 @@
-C Update\sRBU\sto\savoid\srepreparing\sa\sstatement\simmediately\safter\sit\sis\sprepared.
-D 2015-08-08T15:13:08.522
+C Fix\scompiler\swarnings\sand\sremove\sunreachable\scode.
+D 2015-08-08T22:47:47.511
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2fc9ca6bf5949d415801c007ed3004a4bdb7c380
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -223,7 +223,7 @@ F ext/rbu/rbudiff.test 6cc806dc36389292f2a8f5842d0103721df4a07d
 F ext/rbu/rbufault.test cc0be8d5d392d98b0c2d6a51be377ea989250a89
 F ext/rbu/rbufault2.test 9a7f19edd6ea35c4c9f807d8a3db0a03a5670c06
 F ext/rbu/rbufts.test 828cd689da825f0a7b7c53ffc1f6f7fdb6fa5bda
-F ext/rbu/sqlite3rbu.c df8658bc7a2545290681790bb85cb7ed44014d35
+F ext/rbu/sqlite3rbu.c 07cef1986347694306b82cb61de27e00fde6ce23
 F ext/rbu/sqlite3rbu.h f0754a19fcc155f6d39d72b38bdbeb1d7623f02e
 F ext/rbu/test_rbu.c f99698956cc9158d6bf865e461e2d15876538ac1
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
@@ -279,7 +279,7 @@ F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
 F src/btree.c f48b3ef91676c06a90a8832987ecef6b94c931ee
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 8177c9ab90d772d6d2c6c517e05bed774b7c92c0
-F src/build.c 70a18e12291c49f4c1a0512fb6af4b3eab902ff8
+F src/build.c 31782da5c79d38c04ee761fba1cb0b606431dda6
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
 F src/ctime.c 5a0b735dc95604766f5dac73973658eef782ee8b
@@ -1361,7 +1361,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
-F tool/sqldiff.c 4fe09e784cf2ec8b8e6ff7357b17f890ff9c78b4
+F tool/sqldiff.c a6988cc6e10e08662d73df28538df43b01dc371e
 F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
 F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
 F tool/symbols.sh fec58532668296d7c7dc48be9c87f75ccdb5814f
@@ -1372,7 +1372,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 065765902d2774d7432b9c00ea2efed26e0aaa5e
-R 2765017da5ae3c60aa92dacb0d16c018
-U dan
-Z eb512e32ba2a4fc03cf96df6b1123d12
+P 1d75a41bb2f7fcd32f9f08768517b814e452e456
+R aba5c14bf2c68b28cc52b65e65f7a0e4
+U drh
+Z de04371715be8dc36aa7df7c7bd4ee40

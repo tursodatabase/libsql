@@ -1816,7 +1816,8 @@ void sqlite3EndTable(
   int iDb;                  /* Database in which the table lives */
   Index *pIdx;              /* An implied index of the table */
 
-  if( (pEnd==0 && pSelect==0) || db->mallocFailed ){
+  assert( !db->mallocFailed );
+  if( pEnd==0 && pSelect==0 ){
     return;
   }
   p = pParse->pNewTable;
