@@ -79,7 +79,7 @@ pub use transaction::{SqliteTransactionBehavior,
 pub mod types;
 mod transaction;
 #[cfg(feature = "load_extension")] mod load_extension_guard;
-#[cfg(feature = "named_params")] pub mod named_params;
+#[cfg(feature = "named_params")] mod named_params;
 
 /// A typedef of the result returned by many methods.
 pub type SqliteResult<T> = Result<T, SqliteError>;

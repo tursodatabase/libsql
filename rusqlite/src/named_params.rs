@@ -46,6 +46,8 @@ impl<'conn> SqliteStatement<'conn> {
     }*/
 
     /// Return the index of an SQL parameter given its name.
+    ///
+    /// ## Failures
     /// Return None if `name` is invalid (NulError) or if no matching parameter is found.
     pub fn parameter_index(&self, name: &str) -> Option<i32> {
         unsafe {
