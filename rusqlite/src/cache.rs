@@ -1,9 +1,11 @@
+//! Prepared statements cache for faster execution.
 extern crate lru_cache;
 
 use {SqliteResult, SqliteConnection, SqliteStatement};
 use self::lru_cache::LruCache;
 
-/// Prepared statements are cached for faster execution.
+/// Prepared statements cache.
+///
 /// FIXME limitation: the same SQL can be cached only once...
 #[derive(Debug)]
 pub struct StatementCache<'conn> {
@@ -12,6 +14,7 @@ pub struct StatementCache<'conn> {
 }
 
 impl<'conn> StatementCache<'conn> {
+    /// Create a statement cache.
     pub fn new(conn: &'conn SqliteConnection, capacity: usize) -> StatementCache<'conn> {
         StatementCache{ conn: conn,  cache: LruCache::new(capacity) }
     }
