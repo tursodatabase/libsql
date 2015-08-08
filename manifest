@@ -1,5 +1,5 @@
-C Enhance\sthe\squery\splanner\sso\sthat\sit\sis\sable\sto\suse\spartial\sindexes\sthat\suse\nAND-connected\sterms\sin\sthe\sWHERE\sclause.
-D 2015-08-07T20:57:00.566
+C Update\sRBU\sto\savoid\srepreparing\sa\sstatement\simmediately\safter\sit\sis\sprepared.
+D 2015-08-08T15:13:08.522
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2fc9ca6bf5949d415801c007ed3004a4bdb7c380
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -216,12 +216,14 @@ F ext/rbu/rbu7.test fd025d5ba440fcfe151fbb0e3835e1e7fe964fa1
 F ext/rbu/rbu8.test 3bbf2c35d71a843c463efe93946f14ad10c3ede0
 F ext/rbu/rbu9.test 0806d1772c9f4981774ff028de6656e4183082af
 F ext/rbu/rbuA.test c1a7b3e2d926b8f8448bb3b4ae787e314ee4b2b3
+F ext/rbu/rbuB.test c25bc325b8072a766e56bb76c001866b405925c2
+F ext/rbu/rbu_common.tcl 0398545fed614f807d5f0ba55a85a51f08ba8f1a
 F ext/rbu/rbucrash.test 8d2ed5d4b05fef6c00c2a6b5f7ead71fa172a695
 F ext/rbu/rbudiff.test 6cc806dc36389292f2a8f5842d0103721df4a07d
 F ext/rbu/rbufault.test cc0be8d5d392d98b0c2d6a51be377ea989250a89
 F ext/rbu/rbufault2.test 9a7f19edd6ea35c4c9f807d8a3db0a03a5670c06
 F ext/rbu/rbufts.test 828cd689da825f0a7b7c53ffc1f6f7fdb6fa5bda
-F ext/rbu/sqlite3rbu.c ffabbb80a1ea796965036e5f7c4a46fbbc86e4b2
+F ext/rbu/sqlite3rbu.c df8658bc7a2545290681790bb85cb7ed44014d35
 F ext/rbu/sqlite3rbu.h f0754a19fcc155f6d39d72b38bdbeb1d7623f02e
 F ext/rbu/test_rbu.c f99698956cc9158d6bf865e461e2d15876538ac1
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
@@ -1370,7 +1372,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6d47b35ad10e85f27d1c446586e8c798cce4911d
-R fdd864785e0da38c46a7cc06076b1085
-U drh
-Z b15fdab6d1d5c81e8422dc64f4cbe4bc
+P 065765902d2774d7432b9c00ea2efed26e0aaa5e
+R 2765017da5ae3c60aa92dacb0d16c018
+U dan
+Z eb512e32ba2a4fc03cf96df6b1123d12

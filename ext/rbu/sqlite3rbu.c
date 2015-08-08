@@ -1939,17 +1939,6 @@ static int rbuObjIterPrepareAll(
       zCollist = rbuObjIterGetCollist(p, pIter);
       pIter->nCol = pIter->nTblCol;
 
-      /* Create the SELECT statement to read keys from data_xxx */
-      if( p->rc==SQLITE_OK ){
-        p->rc = prepareFreeAndCollectError(p->dbRbu, &pIter->pSelect, pz,
-            sqlite3_mprintf(
-              "SELECT %s, rbu_control%s FROM '%q'%s", 
-              zCollist, (bRbuRowid ? ", rbu_rowid" : ""), 
-              pIter->zDataTbl, zLimit
-            )
-        );
-      }
-
       /* Create the imposter table or tables (if required). */
       rbuCreateImposterTable(p, pIter);
       rbuCreateImposterTable2(p, pIter);
@@ -2020,6 +2009,17 @@ static int rbuObjIterPrepareAll(
         }
 
         rbuObjIterPrepareTmpInsert(p, pIter, zCollist, zRbuRowid);
+      }
+
+      /* Create the SELECT statement to read keys from data_xxx */
+      if( p->rc==SQLITE_OK ){
+        p->rc = prepareFreeAndCollectError(p->dbRbu, &pIter->pSelect, pz,
+            sqlite3_mprintf(
+              "SELECT %s, rbu_control%s FROM '%q'%s", 
+              zCollist, (bRbuRowid ? ", rbu_rowid" : ""), 
+              pIter->zDataTbl, zLimit
+            )
+        );
       }
 
       sqlite3_free(zWhere);
