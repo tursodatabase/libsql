@@ -92,3 +92,6 @@ pub fn code_to_str(code: c_int) -> &'static str {
         _                => "Unknown error code",
     }
 }
+
+pub const SQLITE_UTF8  : c_int = 1;
+pub const SQLITE_DETERMINISTIC  : c_int = 0x800;
