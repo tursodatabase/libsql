@@ -17,13 +17,13 @@ use {SqliteResult, SqliteError, SqliteConnection, str_to_cstring, InnerSqliteCon
 
 /// A trait for types that can be converted into the result of an SQL function.
 pub trait ToResult {
-    unsafe fn result(&self, ctx: *mut sqlite3_context);
+    unsafe fn set_result(&self, ctx: *mut sqlite3_context);
 }
 
 macro_rules! raw_to_impl(
     ($t:ty, $f:ident) => (
         impl ToResult for $t {
-            unsafe fn result(&self, ctx: *mut sqlite3_context) {
+            unsafe fn set_result(&self, ctx: *mut sqlite3_context) {
                 ffi::$f(ctx, *self)
             }
         }
@@ -34,9 +34,18 @@ raw_to_impl!(c_int, sqlite3_result_int);
 raw_to_impl!(i64, sqlite3_result_int64);
 raw_to_impl!(c_double, sqlite3_result_double);
 
+impl<'a> ToResult for bool {
+    unsafe fn set_result(&self, ctx: *mut sqlite3_context) {
+        match *self {
+            true => ffi::sqlite3_result_int(ctx, 1),
+            _ => ffi::sqlite3_result_int(ctx, 0),
+        }
+    }
+}
+
 
 impl<'a> ToResult for &'a str {
-    unsafe fn result(&self, ctx: *mut sqlite3_context) {
+    unsafe fn set_result(&self, ctx: *mut sqlite3_context) {
         let length = self.len();
         if length > ::std::i32::MAX as usize {
             ffi::sqlite3_result_error_toobig(ctx);
@@ -51,13 +60,13 @@ impl<'a> ToResult for &'a str {
 }
 
 impl ToResult for String {
-    unsafe fn result(&self, ctx: *mut sqlite3_context) {
-        (&self[..]).result(ctx)
+    unsafe fn set_result(&self, ctx: *mut sqlite3_context) {
+        (&self[..]).set_result(ctx)
     }
 }
 
 impl<'a> ToResult for &'a [u8] {
-    unsafe fn result(&self, ctx: *mut sqlite3_context) {
+    unsafe fn set_result(&self, ctx: *mut sqlite3_context) {
         if self.len() > ::std::i32::MAX as usize {
             ffi::sqlite3_result_error_toobig(ctx);
             return
@@ -68,22 +77,22 @@ impl<'a> ToResult for &'a [u8] {
 }
 
 impl ToResult for Vec<u8> {
-    unsafe fn result(&self, ctx: *mut sqlite3_context) {
-        (&self[..]).result(ctx)
+    unsafe fn set_result(&self, ctx: *mut sqlite3_context) {
+        (&self[..]).set_result(ctx)
     }
 }
 
 impl<T: ToResult> ToResult for Option<T> {
-    unsafe fn result(&self, ctx: *mut sqlite3_context) {
+    unsafe fn set_result(&self, ctx: *mut sqlite3_context) {
         match *self {
             None => ffi::sqlite3_result_null(ctx),
-            Some(ref t) => t.result(ctx),
+            Some(ref t) => t.set_result(ctx),
         }
     }
 }
 
 impl ToResult for Null {
-    unsafe fn result(&self, ctx: *mut sqlite3_context) {
+    unsafe fn set_result(&self, ctx: *mut sqlite3_context) {
         ffi::sqlite3_result_null(ctx)
     }
 }
@@ -126,6 +135,19 @@ macro_rules! raw_from_impl(
 
 raw_from_impl!(c_int, sqlite3_value_int, ffi::SQLITE_INTEGER);
 raw_from_impl!(i64, sqlite3_value_int64, ffi::SQLITE_INTEGER);
+
+impl FromValue for bool {
+    unsafe fn parameter_value(v: *mut sqlite3_value) -> SqliteResult<bool> {
+        match ffi::sqlite3_value_int(v) {
+            0 => Ok(false),
+            _ => Ok(true),
+        }
+    }
+
+    unsafe fn parameter_has_valid_sqlite_type(v: *mut sqlite3_value) -> bool {
+        sqlite3_value_numeric_type(v) == ffi::SQLITE_INTEGER
+    }
+}
 
 impl FromValue for c_double {
     unsafe fn parameter_value(v: *mut sqlite3_value) -> SqliteResult<c_double> {
@@ -218,7 +240,14 @@ impl InnerSqliteConnection {
 
 #[cfg(test)]
 mod test {
-    use libc::{c_int, c_double};
+    extern crate regex;
+
+    use std::boxed::Box;
+    use std::ffi::{CString};
+    use std::mem;
+    use libc::{c_int, c_double, c_void};
+    use self::regex::Regex;
+
     use SqliteConnection;
     use ffi;
     use ffi::sqlite3_context as sqlite3_context;
@@ -230,7 +259,7 @@ mod test {
             let arg = *argv.offset(0);
             if c_double::parameter_has_valid_sqlite_type(arg) {
                 let value = c_double::parameter_value(arg).unwrap() / 2f64;
-                value.result(ctx);
+                value.set_result(ctx);
             } else {
                 ffi::sqlite3_result_error_code(ctx, ffi::SQLITE_MISMATCH);
             }
@@ -246,5 +275,56 @@ mod test {
                                            |r| r.get::<f64>(0));
 
         assert_eq!(3f64, result.unwrap());
+    }
+
+    extern "C" fn regexp_free(raw: *mut c_void) {
+        unsafe {
+            Box::from_raw(raw);
+        }
+    }
+
+    extern "C" fn regexp(ctx: *mut sqlite3_context, _: c_int, argv: *mut *mut sqlite3_value) {
+        unsafe {
+            let mut re_ptr = ffi::sqlite3_get_auxdata(ctx, 0) as *const Regex;
+            let mut re_opt = None;
+            if re_ptr.is_null() {
+                let raw = String::parameter_value(*argv.offset(0));
+                if raw.is_err() {
+                    let msg = CString::new(format!("{}", raw.unwrap_err())).unwrap();
+                    ffi::sqlite3_result_error(ctx, msg.as_ptr(), -1);
+                    return
+                }
+                let comp = Regex::new(raw.unwrap().as_ref());
+                if comp.is_err() {
+                    let msg = CString::new(format!("{}", comp.unwrap_err())).unwrap();
+                    ffi::sqlite3_result_error(ctx, msg.as_ptr(), -1);
+                    return
+                }
+                let re = comp.unwrap();
+                re_ptr = &re as *const Regex;
+                re_opt = Some(re);
+            }
+
+            let text = String::parameter_value(*argv.offset(1));
+            if text.is_ok() {
+                let text = text.unwrap();
+                (*re_ptr).is_match(text.as_ref()).set_result(ctx);
+            }
+
+            if re_opt.is_some() {
+                ffi::sqlite3_set_auxdata(ctx, 0, mem::transmute(Box::into_raw(Box::new(re_opt.unwrap()))), Some(regexp_free));
+            }
+        }
+    }
+
+    #[test]
+    fn test_regexp() {
+        let db = SqliteConnection::open_in_memory().unwrap();
+        db.create_scalar_function("regexp", 2, true, Some(regexp)).unwrap();
+        let result = db.query_row("SELECT regexp('l.s[aeiouy]', 'lisa')",
+                                           &[],
+                                           |r| r.get::<bool>(0));
+
+        assert_eq!(true, result.unwrap());
     }
 }

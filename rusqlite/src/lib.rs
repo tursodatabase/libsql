@@ -50,6 +50,7 @@
 //!     }
 //! }
 //! ```
+#![cfg_attr(test, feature(box_raw))]
 extern crate libc;
 extern crate libsqlite3_sys as ffi;
 #[macro_use] extern crate bitflags;

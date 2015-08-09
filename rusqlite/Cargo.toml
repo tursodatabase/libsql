@@ -23,6 +23,7 @@ libc = "~0.1"
 
 [dev-dependencies]
 tempdir = "~0.3.4"
+regex = "~0.1.41"
 
 [dependencies.libsqlite3-sys]
 path = "libsqlite3-sys"
