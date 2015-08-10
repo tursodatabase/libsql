@@ -5565,6 +5565,9 @@ static int allocateBtreePage(
         memcpy(&pPage1->aData[32], &pTrunk->aData[0], 4);
         *ppPage = pTrunk;
         pTrunk = 0;
+        if( pBt->pLog ){
+          sqlite3ExperimentalLog(pBt->pLog, "freelist-trunk-alloc %d", iTrunk);
+        }
         TRACE(("ALLOCATE: %d trunk - %d free pages left\n", *pPgno, n-1));
       }else if( k>(u32)(pBt->usableSize/4 - 2) ){
         /* Value of k is out of range.  Database corruption */
