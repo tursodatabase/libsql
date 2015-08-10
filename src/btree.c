@@ -3194,6 +3194,8 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag){
       }
     }
   }
+  sqlite3ExperimentalLog(p->pLog, "%s TM",
+    wrflag==0 ? "begin-read" : (wrflag>2 ? "begin-exclusive" : "begin-write"));
 
 
 trans_begun:
@@ -3682,6 +3684,7 @@ int sqlite3BtreeCommitPhaseOne(Btree *p, const char *zMaster){
       sqlite3PagerTruncateImage(pBt->pPager, pBt->nPage);
     }
 #endif
+    sqlite3ExperimentalLog(p->pLog, "commit-start TM");
     rc = sqlite3PagerCommitPhaseOne(pBt->pPager, zMaster, 0);
     sqlite3BtreeLeave(p);
   }
@@ -3724,6 +3727,7 @@ static void btreeEndTransaction(Btree *p){
     p->inTrans = TRANS_NONE;
     unlockBtreeIfUnused(pBt);
   }
+  sqlite3ExperimentalLog(p->pLog, "end-transaction TM");
 
   btreeIntegrity(p);
 }
@@ -6104,6 +6108,9 @@ static int fillInCell(
       }
 #endif
       rc = allocateBtreePage(pBt, &pOvfl, &pgnoOvfl, pgnoOvfl, 0);
+      if( rc==SQLITE_OK ){
+        sqlite3ExperimentalLog(pBt->pLog, "allocate %d overflow", pgnoOvfl);
+      }
 #ifndef SQLITE_OMIT_AUTOVACUUM
       /* If the database supports auto-vacuum, and the second or subsequent
       ** overflow page is being allocated, add an entry to the pointer-map
@@ -6704,6 +6711,10 @@ static int balance_quick(MemPage *pParent, MemPage *pPage, u8 *pSpace){
   ** may be inserted. If both these operations are successful, proceed.
   */
   rc = allocateBtreePage(pBt, &pNew, &pgnoNew, 0, 0);
+  if( rc==SQLITE_OK ){
+    sqlite3ExperimentalLog(pPage->pBt->pLog,
+                           "allocate %d quickbalance", pgnoNew);
+  }
 
   if( rc==SQLITE_OK ){
 
@@ -7327,6 +7338,7 @@ static int balance_nonroot(
       assert( i>0 );
       rc = allocateBtreePage(pBt, &pNew, &pgno, (bBulk ? 1 : pgno), 0);
       if( rc ) goto balance_cleanup;
+      sqlite3ExperimentalLog(pBt->pLog, "allocate %d balance", pgno);
       zeroPage(pNew, pageFlags);
       apNew[i] = pNew;
       nNew++;
@@ -7697,6 +7709,9 @@ static int balance_deeper(MemPage *pRoot, MemPage **ppChild){
   rc = sqlite3PagerWrite(pRoot->pDbPage);
   if( rc==SQLITE_OK ){
     rc = allocateBtreePage(pBt,&pChild,&pgnoChild,pRoot->pgno,0);
+    if( rc==SQLITE_OK ){
+      sqlite3ExperimentalLog(pBt->pLog, "allocate %d balancedeeper", pgnoChild);
+    }
     copyNodeContent(pRoot, pChild, &rc);
     if( ISAUTOVACUUM ){
       ptrmapPut(pBt, pgnoChild, PTRMAP_BTREE, pRoot->pgno, &rc);
@@ -8166,6 +8181,8 @@ static int btreeCreateTable(Btree *p, int *piTable, int createTabFlags){
   rc = allocateBtreePage(pBt, &pRoot, &pgnoRoot, 1, 0);
   if( rc ){
     return rc;
+  }else{
+    sqlite3ExperimentalLog(p->pLog, "allocate %d createtable", pgnoRoot);
   }
 #else
   if( pBt->autoVacuum ){
@@ -8203,6 +8220,8 @@ static int btreeCreateTable(Btree *p, int *piTable, int createTabFlags){
     rc = allocateBtreePage(pBt, &pPageMove, &pgnoMove, pgnoRoot, BTALLOC_EXACT);
     if( rc!=SQLITE_OK ){
       return rc;
+    }else{
+      sqlite3ExperimentalLog(p->pLog, "allocate %d createtable", pgnoMove);
     }
 
     if( pgnoMove!=pgnoRoot ){
@@ -8280,6 +8299,7 @@ static int btreeCreateTable(Btree *p, int *piTable, int createTabFlags){
   }else{
     rc = allocateBtreePage(pBt, &pRoot, &pgnoRoot, 1, 0);
     if( rc ) return rc;
+    sqlite3ExperimentalLog(p->pLog, "allocate %d createtable", pgnoRoot);
   }
 #endif
   assert( sqlite3PagerIswriteable(pRoot->pDbPage) );
@@ -9578,3 +9598,14 @@ int sqlite3BtreeIsReadonly(Btree *p){
 ** Return the size of the header added to each page by this module.
 */
 int sqlite3HeaderSizeBtree(void){ return ROUND8(sizeof(MemPage)); }
+
+
+/*
+** Set the Btree ExperimentalLog
+*/
+ExperimentalLog *sqlite3BtreeExperimentalLog(Btree *p, ExperimentalLog *pLog){
+  ExperimentalLog *pOld = p->pLog;
+  p->pLog = pLog;
+  p->pBt->pLog = pLog;
+  return pOld;
+}

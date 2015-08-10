@@ -7728,6 +7728,8 @@ int sqlite3_stmt_scanstatus(
 */
 void sqlite3_stmt_scanstatus_reset(sqlite3_stmt*);
 
+/* Experimental logging APIs.  Not for release. */
+void sqlite3_experimental_log_open(sqlite3*, const char *zFilename);
 
 /*
 ** Undo the hack that converts floating point types to integer for

@@ -978,6 +978,7 @@ static int sqlite3Close(sqlite3 *db, int forceZombie){
     return SQLITE_MISUSE_BKPT;
   }
   sqlite3_mutex_enter(db->mutex);
+  sqlite3_experimental_log_open(db, 0);
 
   /* Force xDisconnect calls on all virtual tables */
   disconnectAllVtab(db);
@@ -3785,4 +3786,67 @@ int sqlite3_db_readonly(sqlite3 *db, const char *zDbName){
 #endif
   pBt = sqlite3DbNameToBtree(db, zDbName);
   return pBt ? sqlite3BtreeIsReadonly(pBt) : -1;
+}
+
+/*
+** Turn on logging for the main database of database connection db.
+** Disable logging if zFilename is NULL.
+*/
+void sqlite3_experimental_log_open(sqlite3 *db, const char *zFilename){
+  Btree *pBtree;
+  Pager *pPager;
+  ExperimentalLog *pLog;
+
+  sqlite3_mutex_enter(db->mutex);
+  pBtree = db->aDb[0].pBt;
+  if( pBtree ){
+    pPager = sqlite3BtreePager(pBtree);
+    pLog = sqlite3BtreeExperimentalLog(pBtree, 0);
+    if( pLog ){
+      sqlite3ExperimentalLog(pLog, "close TM");
+      fclose(pLog->out);
+      sqlite3_free(pLog);
+      pLog = 0;
+    }
+    if( zFilename ){
+      pLog = sqlite3_malloc( sizeof(*pLog) );
+      if( pLog ){ 
+        pLog->out = fopen(zFilename, "a+");
+        pLog->pVfs = db->pVfs;
+        if( pLog->out==0 ){
+          sqlite3_free(pLog);
+          pLog = 0;
+        }else{
+          sqlite3ExperimentalLog(pLog, "open %s TM", zFilename);
+        }
+      }
+    }
+    db->pLog = pLog;
+    sqlite3BtreeExperimentalLog(pBtree, pLog);
+    sqlite3PagerExperimentalLog(pPager, pLog);
+  }
+  sqlite3_mutex_leave(db->mutex);
+}
+
+/*
+** Write a message on the given ExperimentalLog if it is open
+*/
+void sqlite3ExperimentalLog(ExperimentalLog *pLog, const char *zFormat, ...){
+  if( pLog ){
+    va_list ap;
+    StrAccum acc;
+    sqlite3_int64 iTime = 0;
+    char zMsg[200];
+    va_start(ap, zFormat);
+    sqlite3StrAccumInit(&acc, 0, zMsg, sizeof(zMsg), 0);
+    sqlite3VXPrintf(&acc, 0, zFormat, ap);
+    if( acc.nChar>2 && strncmp(zMsg+acc.nChar-2, "TM", 2)==0 ){
+      acc.nChar -= 2;
+      sqlite3OsCurrentTimeInt64(pLog->pVfs, &iTime);
+      sqlite3XPrintf(&acc, 0, "%lld", iTime);
+    }
+    sqlite3StrAccumAppend(&acc, "\n", 1);
+    sqlite3StrAccumFinish(&acc);
+    fwrite(zMsg, 1, sqlite3Strlen30(zMsg), pLog->out);
+  }
 }

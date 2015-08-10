@@ -270,5 +270,6 @@ void sqlite3BtreeCursorList(Btree*);
 # define sqlite3SchemaMutexHeld(X,Y,Z) 1
 #endif
 
+ExperimentalLog *sqlite3BtreeExperimentalLog(Btree*,ExperimentalLog*);
 
 #endif /* _BTREE_H_ */

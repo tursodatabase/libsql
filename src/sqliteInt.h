@@ -923,6 +923,7 @@ typedef struct Schema Schema;
 typedef struct Expr Expr;
 typedef struct ExprList ExprList;
 typedef struct ExprSpan ExprSpan;
+typedef struct ExperimentalLog ExperimentalLog;
 typedef struct FKey FKey;
 typedef struct FuncDestructor FuncDestructor;
 typedef struct FuncDef FuncDef;
@@ -1247,7 +1248,17 @@ struct sqlite3 {
 #ifdef SQLITE_USER_AUTHENTICATION
   sqlite3_userauth auth;        /* User authentication information */
 #endif
+  ExperimentalLog *pLog;        /* Write experimental log messages here */
 };
+
+/*
+** Information needed by the experimental log
+*/
+struct ExperimentalLog {
+  FILE *out;                    /* Write on this file descriptor */
+  sqlite3_vfs *pVfs;            /* Used to get current time of day */
+};
+void sqlite3ExperimentalLog(ExperimentalLog*, const char *zFormat, ...);
 
 /*
 ** A macro to discover the encoding of a database.

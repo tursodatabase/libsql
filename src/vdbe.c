@@ -6521,6 +6521,15 @@ case OP_Init: {          /* jump */
   char *zTrace;
   char *z;
 
+  if( db->pLog && p->zSql ){
+    char *z = sqlite3DbStrDup(db, p->zSql);
+    int ii;
+    for(ii=0; z[ii]; ii++){
+      if( sqlite3Isspace(z[ii]) ) z[ii] = ' ';
+    }
+    sqlite3ExperimentalLog(db->pLog, "sql {%s}", z);
+    sqlite3DbFree(db, z);
+  }
 #ifndef SQLITE_OMIT_TRACE
   if( db->xTrace
    && !p->doingRerun

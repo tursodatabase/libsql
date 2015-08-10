@@ -2849,6 +2849,18 @@ static int do_meta_command(char *zLine, ShellState *p){
     rc = 2;
   }else
 
+  if( c=='e' && strncmp(azArg[0], "explog", n)==0 ){
+    open_db(p, 0);
+    if( nArg!=2 ){
+      fprintf(stderr, "Usage: .explog FILENAME|off\n");
+      rc = 1;
+    }else if( strcmp(azArg[1],"off")==0 ){
+      sqlite3_experimental_log_open(p->db, 0);
+    }else{
+      sqlite3_experimental_log_open(p->db, azArg[1]);
+    }
+  }else
+
   if( c=='e' && strncmp(azArg[0], "explain", n)==0 ){
     int val = nArg>=2 ? booleanValue(azArg[1]) : 1;
     if(val == 1) {

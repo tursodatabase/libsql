@@ -703,6 +703,7 @@ struct Pager {
   Wal *pWal;                  /* Write-ahead log used by "journal_mode=wal" */
   char *zWal;                 /* File name for write-ahead log */
 #endif
+  ExperimentalLog *pLog;      /* Output logging */
 };
 
 /*
@@ -4427,6 +4428,9 @@ static int pagerStress(void *p, PgHdr *pPg){
     return SQLITE_OK;
   }
 
+  if( pPager->pLog ){
+    sqlite3ExperimentalLog(pPager->pLog, "spill %d", pPg->pgno);
+  }
   pPg->pDirty = 0;
   if( pagerUseWal(pPager) ){
     /* Write a single frame for this page to the log. */
@@ -5268,6 +5272,9 @@ int sqlite3PagerAcquire(
     return SQLITE_CORRUPT_BKPT;
   }
   pPager->hasBeenUsed = 1;
+  if( pPager->pLog ){
+    sqlite3ExperimentalLog(pPager->pLog, "read %d", pgno);
+  }
 
   /* If the pager is in the error state, return an error immediately. 
   ** Otherwise, request the page from the PCache layer. */
@@ -5703,6 +5710,9 @@ static int pager_write(PgHdr *pPg){
   assert( pPager->errCode==0 );
   assert( pPager->readOnly==0 );
   CHECK_PAGE(pPg);
+  if( pPager->pLog ){
+    sqlite3ExperimentalLog(pPager->pLog, "write %d", pPg->pgno);
+  }
 
   /* The journal file needs to be opened. Higher level routines have already
   ** obtained the necessary locks to begin the write-transaction, but the
@@ -5887,6 +5897,12 @@ int sqlite3PagerWrite(PgHdr *pPg){
   }else{
     return pager_write(pPg);
   }
+}
+
+/* Set experimental logging for this pager
+*/
+void sqlite3PagerExperimentalLog(Pager *p, ExperimentalLog *pLog){
+  p->pLog = pLog;
 }
 
 /*
@@ -7088,6 +7104,11 @@ int sqlite3PagerCheckpoint(Pager *pPager, int eMode, int *pnLog, int *pnCkpt){
         pPager->ckptSyncFlags, pPager->pageSize, (u8 *)pPager->pTmpSpace,
         pnLog, pnCkpt
     );
+    if( pPager->pLog ){
+      const char *azType[] = { "passive", "full", "restart", "truncate" };
+      sqlite3ExperimentalLog(pPager->pLog, "checkpoint %s %d %d",
+                             azType[eMode], *pnLog, *pnCkpt);
+    }
   }
   return rc;
 }
@@ -7265,6 +7286,5 @@ int sqlite3PagerWalFramesize(Pager *pPager){
   return sqlite3WalFramesize(pPager->pWal);
 }
 #endif
-
 
 #endif /* SQLITE_OMIT_DISKIO */

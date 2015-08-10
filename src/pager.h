@@ -193,6 +193,8 @@ void sqlite3PagerTruncateImage(Pager*,Pgno);
 
 void sqlite3PagerRekey(DbPage*, Pgno, u16);
 
+void sqlite3PagerExperimentalLog(Pager*, ExperimentalLog*);
+
 #if defined(SQLITE_HAS_CODEC) && !defined(SQLITE_OMIT_WAL)
 void *sqlite3PagerCodec(DbPage *);
 #endif

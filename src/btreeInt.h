@@ -363,6 +363,7 @@ struct Btree {
 #ifndef SQLITE_OMIT_SHARED_CACHE
   BtLock lock;       /* Object used to lock page 1 */
 #endif
+  ExperimentalLog *pLog; /* Write various actions to this experimental log */
 };
 
 /*
@@ -414,6 +415,7 @@ struct Btree {
 struct BtShared {
   Pager *pPager;        /* The page cache */
   sqlite3 *db;          /* Database connection currently using this Btree */
+  ExperimentalLog *pLog; /* Log activities here */
   BtCursor *pCursor;    /* A list of all open cursors */
   MemPage *pPage1;      /* First page of the database */
   u8 openFlags;         /* Flags to sqlite3BtreeOpen() */

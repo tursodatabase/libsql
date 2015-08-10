@@ -1,5 +1,5 @@
-C Fix\scompiler\swarnings\sand\sremove\sunreachable\scode.
-D 2015-08-08T23:30:56.001
+C Add\sthe\ssqlite3_experimental_log_open()\sinterface.\s\sThis\sis\sfor\sdiagnostic\nuse\sonly\sand\sis\snot\sintended\sto\sever\sgo\son\strunk.
+D 2015-08-10T20:22:07.840
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2fc9ca6bf5949d415801c007ed3004a4bdb7c380
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -276,9 +276,9 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 4d9134dc988a87838c06056c89c0e8c4700a0452
 F src/bitvec.c d1f21d7d91690747881f03940584f4cc548c9d3d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c f48b3ef91676c06a90a8832987ecef6b94c931ee
-F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
-F src/btreeInt.h 8177c9ab90d772d6d2c6c517e05bed774b7c92c0
+F src/btree.c 304e7b5a8f93ec7c9ed79de1620a542e4b29ab99
+F src/btree.h 4c2590d2b5649b283b653053621965c3bb8020d1
+F src/btreeInt.h d28997e3b752f2b0bbe4508229a423fd3f1cbc43
 F src/build.c 4acc35c4e0a2d94c906abd164568cd6fc989cfbb
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
@@ -299,7 +299,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 92bafa308607dd985ca389a788cd9e0a2b608712
 F src/loadext.c dfcee8c7c032cd0fd55af3e0fc1fcfb01e426df2
-F src/main.c 0a60b7ca8252c3a6f95438fa4ce8fe5b275c69f2
+F src/main.c acfb7cf332d41a36cc6efeefb3fa571dcd30ed87
 F src/malloc.c 19461e159bccf0e2cf06a50e867963d0a7b124a8
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c abe6ee469b6c5a35c7f22bfeb9c9bac664a1c987
@@ -321,8 +321,8 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c 388c023582b17890f10c980b30ec1922b471753b
 F src/os_win.c 40b3af7a47eb1107d0d69e592bec345a3b7b798a
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
-F src/pager.c aa916ca28606ccf4b6877dfc2b643ccbca86589f
-F src/pager.h 6d435f563b3f7fcae4b84433b76a6ac2730036e2
+F src/pager.c 751cd2f0240be797de5d1d448a3a7d62fb244df3
+F src/pager.h ad181d413ffc47069ec2f3b0dbf5c24fec957ea7
 F src/parse.y 6d60dda8f8d418b6dc034f1fbccd816c459983a8
 F src/pcache.c cde06aa50962595e412d497e22fd2e07878ba1f0
 F src/pcache.h 9968603796240cdf83da7e7bef76edf90619cea9
@@ -335,11 +335,11 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 2d47554370de8de6dd5be060cef9559eec315005
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 57ef3d98c4400b93eea318813be41b2af2da2217
-F src/shell.c b1f91e60918df3a68efad1e3a11696b9a7e23d23
-F src/sqlite.h.in 447ead0a6b3293206f04a0896553955d07cfb4b9
+F src/shell.c 5e8e1115a543de8003ce9d23173e01948d831ff5
+F src/sqlite.h.in fdf8a6a1fa43e3c3f75d5a61dcd14d617f8a8c44
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h a0b948ebc89bac13941254641326a6aa248c2cc4
-F src/sqliteInt.h 9401d7d9124210dfd5d283af45e0addbc1455c2e
+F src/sqliteInt.h e1a5cfe6c44606429838fa9bbd1824e119e05533
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c f266ad8a2892d659b74f0f50cb6a88b6e7c12179
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
@@ -397,7 +397,7 @@ F src/update.c 487747b328b7216bb7f6af0695d6937d5c9e605f
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c bc9dd64b5db544218b871b66243871c202b2781f
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c 2ab1decd98925f8cd846993dde9dccaa69cdf0ef
+F src/vdbe.c 0f6fc42b122e61e5b98565496a524065c805837d
 F src/vdbe.h 7a75045d879118b9d3af7e8b3c108f2f27c51473
 F src/vdbeInt.h 8b54e01ad0463590e7cffabce0bc36da9ee4f816
 F src/vdbeapi.c adabbd66eb2e3a10f3998485ee0be7e326d06ee4
@@ -1372,8 +1372,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1d75a41bb2f7fcd32f9f08768517b814e452e456 962b6cd6bbc1ef82ae98cb2ddf41e7a1116e70f5
-R 9515e6f89ec29f4ddd4e24f2f6aa441a
-T +closed 962b6cd6bbc1ef82ae98cb2ddf41e7a1116e70f5
+P fd5608fb20831f1f1946c8941445b7acc463a143
+R 11798389c9e9a9f35cf98460536895f1
+T *branch * experimentalIoLog
+T *sym-experimentalIoLog *
+T -sym-trunk *
 U drh
-Z 835c78eb4169c17715bf2b1e3d1fbe33
+Z c08861a2a032f7f296a6940f57523f0b
