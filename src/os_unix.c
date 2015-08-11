@@ -1775,12 +1775,14 @@ static int unixFileLock(unixFile *pFile, struct flock *pLock, int nRetry){
     }
   }else{
     int i = 0;                      
-    do {
+    for(;;){
       rc = osFcntl(pFile->h, F_SETLK, pLock);
-      if( rc && nRetry ){
-         usleep(100 * (++i));
+      if( rc && nRetry-- ){
+        usleep(100 * (++i));
+      }else{
+        break;
       }
-    }while( !rc && nRetry-- );
+    }
   }
   return rc;
 }
