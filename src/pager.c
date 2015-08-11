@@ -7098,6 +7098,10 @@ void sqlite3PagerClearCache(Pager *pPager){
 int sqlite3PagerCheckpoint(Pager *pPager, int eMode, int *pnLog, int *pnCkpt){
   int rc = SQLITE_OK;
   if( pPager->pWal ){
+    if( pPager->pLog ){
+      const char *az[] = { "passive", "full", "restart", "truncate" };
+      sqlite3ExperimentalLog(pPager->pLog, "start-checkpoint %s TM", az[eMode]);
+    }
     rc = sqlite3WalCheckpoint(pPager->pWal, eMode,
         (eMode==SQLITE_CHECKPOINT_PASSIVE ? 0 : pPager->xBusyHandler),
         pPager->pBusyHandlerArg,
@@ -7105,9 +7109,8 @@ int sqlite3PagerCheckpoint(Pager *pPager, int eMode, int *pnLog, int *pnCkpt){
         pnLog, pnCkpt
     );
     if( pPager->pLog ){
-      const char *azType[] = { "passive", "full", "restart", "truncate" };
-      sqlite3ExperimentalLog(pPager->pLog, "checkpoint %s %d %d",
-                             azType[eMode], *pnLog, *pnCkpt);
+      sqlite3ExperimentalLog(pPager->pLog, "end-checkpoint %d %d TM", 
+          *pnLog, *pnCkpt);
     }
   }
   return rc;

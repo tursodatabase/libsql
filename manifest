@@ -1,5 +1,5 @@
-C Add\sa\stcl\sinterface\sfor\sthe\sexperimental\slogging\sfunctionality.
-D 2015-08-11T10:59:10.502
+C Add\ssome\sextra\stimestamps\sto\sthe\sexperimental\slog\soutput.
+D 2015-08-11T13:41:44.948
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2fc9ca6bf5949d415801c007ed3004a4bdb7c380
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -321,7 +321,7 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c 388c023582b17890f10c980b30ec1922b471753b
 F src/os_win.c 40b3af7a47eb1107d0d69e592bec345a3b7b798a
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
-F src/pager.c 751cd2f0240be797de5d1d448a3a7d62fb244df3
+F src/pager.c f2318f0577257cd38705b4f2fed61896072e99ae
 F src/pager.h ad181d413ffc47069ec2f3b0dbf5c24fec957ea7
 F src/parse.y 6d60dda8f8d418b6dc034f1fbccd816c459983a8
 F src/pcache.c cde06aa50962595e412d497e22fd2e07878ba1f0
@@ -397,7 +397,7 @@ F src/update.c 487747b328b7216bb7f6af0695d6937d5c9e605f
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c bc9dd64b5db544218b871b66243871c202b2781f
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c 0f6fc42b122e61e5b98565496a524065c805837d
+F src/vdbe.c 6281c0f806318f51e43fec4a74aad8a1e240e6ca
 F src/vdbe.h 7a75045d879118b9d3af7e8b3c108f2f27c51473
 F src/vdbeInt.h 8b54e01ad0463590e7cffabce0bc36da9ee4f816
 F src/vdbeapi.c adabbd66eb2e3a10f3998485ee0be7e326d06ee4
@@ -1372,7 +1372,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 56ff336e0ae258f4ac0b221602012f5fa9b4fc13
-R 5629348888d243af0301b3978d508e8e
+P e844304de7c7d50c4c22c2633bbfef146dfc0be1
+R 478ca33d6f9c24a062db3dabfe78c8fc
 U dan
-Z 1b223765ca5b62bf8b60ddefbeb58e37
+Z 41fbe673838f8c22a020d24e68c725f9

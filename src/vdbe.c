@@ -6527,7 +6527,7 @@ case OP_Init: {          /* jump */
     for(ii=0; z[ii]; ii++){
       if( sqlite3Isspace(z[ii]) ) z[ii] = ' ';
     }
-    sqlite3ExperimentalLog(db->pLog, "sql {%s}", z);
+    sqlite3ExperimentalLog(db->pLog, "sql {%s} TM", z);
     sqlite3DbFree(db, z);
   }
 #ifndef SQLITE_OMIT_TRACE
