@@ -1636,6 +1636,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     "collate",            "collation_needed",  "commit_hook",
     "complete",           "copy",              "enable_load_extension",
     "errorcode",          "eval",              "exists",
+    "experimental_log_open",
     "function",           "incrblob",          "interrupt",
     "last_insert_rowid",  "nullvalue",         "onecolumn",
     "profile",            "progress",          "rekey",
@@ -1650,6 +1651,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     DB_COLLATE,           DB_COLLATION_NEEDED, DB_COMMIT_HOOK,
     DB_COMPLETE,          DB_COPY,             DB_ENABLE_LOAD_EXTENSION,
     DB_ERRORCODE,         DB_EVAL,             DB_EXISTS,
+    DB_EXPERIMENTAL_LOG_OPEN,
     DB_FUNCTION,          DB_INCRBLOB,         DB_INTERRUPT,
     DB_LAST_INSERT_ROWID, DB_NULLVALUE,        DB_ONECOLUMN,
     DB_PROFILE,           DB_PROGRESS,         DB_REKEY,
@@ -2316,6 +2318,25 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       cd2[1] = (void *)pScript;
       rc = DbEvalNextCmd(cd2, interp, TCL_OK);
     }
+    break;
+  }
+
+  /*
+  **     $db experimental_log_open ?FILENAME?
+  **
+  ** Invoke the sqlite3_experimental_log_open() API. This code is not for
+  ** release.
+  */
+  case DB_EXPERIMENTAL_LOG_OPEN: {
+    char *zFile = 0;
+    if( objc>3 ){
+      Tcl_WrongNumArgs(interp, 2, objv, "?FILENAME?");
+      return TCL_ERROR;
+    }
+    if( objc==3 ){
+      zFile = Tcl_GetString(objv[2]);
+    }
+    sqlite3_experimental_log_open(pDb->db, zFile);
     break;
   }
 

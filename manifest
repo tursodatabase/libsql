@@ -1,5 +1,5 @@
-C Two\smore\splaces\swhere\slogging\sof\sfreelist\strunk\spages\sis\sneeded.
-D 2015-08-11T01:45:40.842
+C Add\sa\stcl\sinterface\sfor\sthe\sexperimental\slogging\sfunctionality.
+D 2015-08-11T10:59:10.502
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2fc9ca6bf5949d415801c007ed3004a4bdb7c380
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -343,7 +343,7 @@ F src/sqliteInt.h e1a5cfe6c44606429838fa9bbd1824e119e05533
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c f266ad8a2892d659b74f0f50cb6a88b6e7c12179
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
-F src/tclsqlite.c d9439b6a910985b7fff43ba6756bcef00de22649
+F src/tclsqlite.c 1a7b57f3ae892d1a1395b5f1399b6da017b6ad07
 F src/test1.c d339ae9b9baf9221c657c9628c9061d88bd831f6
 F src/test2.c 577961fe48961b2f2e5c8b56ee50c3f459d3359d
 F src/test3.c 64d2afdd68feac1bb5e2ffb8226c8c639f798622
@@ -1372,7 +1372,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P bb5d7782bdc73748e54d202ddd7b082c6ee58ebf
-R 7e2f12926f4b9606ffb30253d4c3e54d
-U drh
-Z 73ca44279f623e57ac6764f7bf62b8d1
+P 56ff336e0ae258f4ac0b221602012f5fa9b4fc13
+R 5629348888d243af0301b3978d508e8e
+U dan
+Z 1b223765ca5b62bf8b60ddefbeb58e37
