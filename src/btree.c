@@ -5547,6 +5547,9 @@ static int allocateBtreePage(
         pTrunk = 0;
         goto end_allocate_page;
       }
+      if( pBt->pLog ){
+        sqlite3ExperimentalLog(pBt->pLog, "freelist-trunk %d", iTrunk);
+      }
       assert( pTrunk!=0 );
       assert( pTrunk->aData!=0 );
       /* EVIDENCE-OF: R-13523-04394 The second integer on a freelist trunk page
@@ -5851,6 +5854,9 @@ static int freePage2(BtShared *pBt, MemPage *pMemPage, Pgno iPage){
     if( nLeaf > (u32)pBt->usableSize/4 - 2 ){
       rc = SQLITE_CORRUPT_BKPT;
       goto freepage_out;
+    }
+    if( pBt->pLog ){
+      sqlite3ExperimentalLog(pBt->pLog, "freelist-trunk %d", iTrunk);
     }
     if( nLeaf < (u32)pBt->usableSize/4 - 8 ){
       /* In this case there is room on the trunk page to insert the page

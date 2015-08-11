@@ -1,5 +1,5 @@
-C Record\swhen\san\sallocated\spage\sis\staken\sfrom\sthe\sfreelist\strunk.
-D 2015-08-10T20:53:22.887
+C Two\smore\splaces\swhere\slogging\sof\sfreelist\strunk\spages\sis\sneeded.
+D 2015-08-11T01:45:40.842
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2fc9ca6bf5949d415801c007ed3004a4bdb7c380
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -276,7 +276,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 4d9134dc988a87838c06056c89c0e8c4700a0452
 F src/bitvec.c d1f21d7d91690747881f03940584f4cc548c9d3d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c 546be5b4244b5bc0d9e5a25706db5c1a3c682400
+F src/btree.c 37d3bece89a45a2e938d16f249c09519758153f6
 F src/btree.h 4c2590d2b5649b283b653053621965c3bb8020d1
 F src/btreeInt.h d28997e3b752f2b0bbe4508229a423fd3f1cbc43
 F src/build.c 4acc35c4e0a2d94c906abd164568cd6fc989cfbb
@@ -1372,7 +1372,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ac5d2e9d760bb376e828e3d39ee070b567e59d58
-R ede1797350c23e02b3c4e094ca132a04
+P bb5d7782bdc73748e54d202ddd7b082c6ee58ebf
+R 7e2f12926f4b9606ffb30253d4c3e54d
 U drh
-Z e89471a5d997125c2b52f7b61a1b8921
+Z 73ca44279f623e57ac6764f7bf62b8d1
