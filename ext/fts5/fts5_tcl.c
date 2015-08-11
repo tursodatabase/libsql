@@ -23,6 +23,7 @@
 #include <assert.h>
 
 extern int sqlite3_fts5_may_be_corrupt;
+extern int sqlite3Fts5TestRegisterMatchinfo(sqlite3 *);
 
 /*************************************************************************
 ** This is a copy of the first part of the SqliteDb structure in 
