@@ -194,7 +194,70 @@ static void jsonArrayFunc(
     }
   }
   jsonAppendRaw(&jx, "]", 1);
-  jsonResult(&jx);      
+  jsonResult(&jx);
+}
+
+/*
+** Implementation of the json_object(NAME,VALUE,...) function.  Return a JSON
+** object that contains all name/value given in arguments.  Or if any name
+** is not a string or if any value is a BLOB, throw an error.
+*/
+static void jsonObjectFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  int i;
+  Json jx;
+  char cSep = '{';
+  const char *z;
+  u32 n;
+
+  if( argc&1 ){
+    sqlite3_result_error(context, "json_object() requires an even number "
+                                  "of arguments", -1);
+    return;
+  }
+  jsonInit(&jx, context);
+  for(i=0; i<argc; i+=2){
+    jsonAppendRaw(&jx, &cSep, 1);
+    cSep = ',';
+    if( sqlite3_value_type(argv[i])!=SQLITE_TEXT ){
+      sqlite3_result_error(context, "json_object() labels must be TEXT", -1);
+      jsonZero(&jx);
+      return;
+    }
+    z = (const char*)sqlite3_value_text(argv[i]);
+    n = (u32)sqlite3_value_bytes(argv[i]);
+    jsonAppendString(&jx, z, n);
+    jsonAppendRaw(&jx, ":", 1);
+    switch( sqlite3_value_type(argv[i+1]) ){
+      case SQLITE_NULL: {
+        jsonAppendRaw(&jx, "null", 4);
+        break;
+      }
+      case SQLITE_INTEGER:
+      case SQLITE_FLOAT: {
+        z = (const char*)sqlite3_value_text(argv[i+1]);
+        n = (u32)sqlite3_value_bytes(argv[i+1]);
+        jsonAppendRaw(&jx, z, n);
+        break;
+      }
+      case SQLITE_TEXT: {
+        z = (const char*)sqlite3_value_text(argv[i+1]);
+        n = (u32)sqlite3_value_bytes(argv[i+1]);
+        jsonAppendString(&jx, z, n);
+        break;
+      }
+      default: {
+        jsonZero(&jx);
+        sqlite3_result_error(context, "JSON cannot hold BLOB values", -1);
+        return;
+      }
+    }
+  }
+  jsonAppendRaw(&jx, "}", 1);
+  jsonResult(&jx);
 }
 
 #ifdef _WIN32
@@ -212,7 +275,8 @@ int sqlite3_json_init(
      int nArg;
      void (*xFunc)(sqlite3_context*,int,sqlite3_value**);
   } aFunc[] = {
-    { "json_array",  -1,  jsonArrayFunc },
+    { "json_array",     -1,    jsonArrayFunc     },
+    { "json_object",    -1,    jsonObjectFunc    },
   };
   SQLITE_EXTENSION_INIT2(pApi);
   (void)pzErrMsg;  /* Unused parameter */
