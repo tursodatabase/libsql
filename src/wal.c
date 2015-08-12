@@ -2372,6 +2372,8 @@ int sqlite3WalFindFrame(
   u32 iRead = 0;                  /* If !=0, WAL frame to return data from */
   u32 iLast = pWal->hdr.mxFrame;  /* Last page in WAL for this reader */
   int iHash;                      /* Used to loop through N hash tables */
+  u32 iFirst;
+  int iMinHash;
 
   /* This routine is only be called from within a read transaction. */
   assert( pWal->readLock>=0 || pWal->lockError );
@@ -2382,7 +2384,10 @@ int sqlite3WalFindFrame(
   ** then the WAL is ignored by the reader so return early, as if the 
   ** WAL were empty.
   */
-  if( iLast==0 || pWal->readLock==0 ){
+  if( iLast==0 
+   || pWal->readLock==0 
+   || iLast==(iFirst = walCkptInfo(pWal)->nBackfill)
+  ){
     *piRead = 0;
     return SQLITE_OK;
   }
@@ -2412,7 +2417,8 @@ int sqlite3WalFindFrame(
   **     This condition filters out entries that were added to the hash
   **     table after the current read-transaction had started.
   */
-  for(iHash=walFramePage(iLast); iHash>=0 && iRead==0; iHash--){
+  iMinHash = walFramePage(iFirst);
+  for(iHash=walFramePage(iLast); iHash>=iMinHash && iRead==0; iHash--){
     volatile ht_slot *aHash;      /* Pointer to hash table */
     volatile u32 *aPgno;          /* Pointer to array of page numbers */
     u32 iZero;                    /* Frame number corresponding to aPgno[0] */
@@ -2427,7 +2433,7 @@ int sqlite3WalFindFrame(
     nCollide = HASHTABLE_NSLOT;
     for(iKey=walHash(pgno); aHash[iKey]; iKey=walNextHash(iKey)){
       u32 iFrame = aHash[iKey] + iZero;
-      if( iFrame<=iLast && aPgno[aHash[iKey]]==pgno ){
+      if( iFrame<=iLast && iFrame>iFirst && aPgno[aHash[iKey]]==pgno ){
         assert( iFrame>iRead || CORRUPT_DB );
         iRead = iFrame;
       }
