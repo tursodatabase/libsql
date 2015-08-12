@@ -128,23 +128,21 @@ static int fts5MatchinfoXCb(
   Fts5Context *pFts,
   void *pUserData
 ){
+  Fts5PhraseIter iter;
+  int iCol, iOff;
   u32 *aOut = (u32*)pUserData;
-  int nCol = pApi->xColumnCount(pFts);
-  int nInst;
   int iPrev = -1;
-  int rc;
-  int i;
 
-  rc = pApi->xInstCount(pFts, &nInst);
-  for(i=0; rc==SQLITE_OK && i<nInst; i++){
-    int iPhrase, iCol, iOff;
-    rc = pApi->xInst(pFts, i, &iPhrase, &iCol, &iOff);
-    aOut[iCol*3 + 1]++;
+  for(pApi->xPhraseFirst(pFts, 0, &iter, &iCol, &iOff); 
+      iOff>=0; 
+      pApi->xPhraseNext(pFts, &iter, &iCol, &iOff)
+  ){
+    aOut[iCol*3+1]++;
     if( iCol!=iPrev ) aOut[iCol*3 + 2]++;
     iPrev = iCol;
   }
 
-  return rc;
+  return SQLITE_OK;
 }
 
 static int fts5MatchinfoGlobalCb(
@@ -216,8 +214,8 @@ static int fts5MatchinfoLocalCb(
     case 'b': 
     case 'x':
     case 'y': {
-      int nInst;
       int nMul = (f=='x' ? 3 : 1);
+      int iPhrase;
 
       if( f=='b' ){
         int nInt = ((p->nCol + 31) / 32) * p->nPhrase;
@@ -226,14 +224,18 @@ static int fts5MatchinfoLocalCb(
         for(i=0; i<(p->nCol*p->nPhrase); i++) aOut[i*nMul] = 0;
       }
 
-      rc = pApi->xInstCount(pFts, &nInst);
-      for(i=0; rc==SQLITE_OK && i<nInst; i++){
-        int iPhrase, iOff, iCol = 0;
-        rc = pApi->xInst(pFts, i, &iPhrase, &iCol, &iOff);
-        if( f=='b' ){
-          aOut[iPhrase * ((p->nCol+31)/32) + iCol/32] |= ((u32)1 << (iCol%32));
-        }else{
-          aOut[nMul * (iCol + iPhrase * p->nCol)]++;
+      for(iPhrase=0; iPhrase<p->nPhrase; iPhrase++){
+        Fts5PhraseIter iter;
+        int iOff, iCol;
+        for(pApi->xPhraseFirst(pFts, iPhrase, &iter, &iCol, &iOff); 
+            iOff>=0; 
+            pApi->xPhraseNext(pFts, &iter, &iCol, &iOff)
+        ){
+          if( f=='b' ){
+            aOut[iPhrase * ((p->nCol+31)/32) + iCol/32] |= ((u32)1 << iCol%32);
+          }else{
+            aOut[nMul * (iCol + iPhrase * p->nCol)]++;
+          }
         }
       }
 
@@ -387,9 +389,8 @@ int sqlite3Fts5TestRegisterMatchinfo(sqlite3 *db){
   /* If fts5_api_from_db() returns NULL, then either FTS5 is not registered
   ** with this database handle, or an error (OOM perhaps?) has occurred.
   **
-  ** Also check that the fts5_api object is version 1 or newer (there 
-  ** is no actual version of FTS5 that would return an API object of version
-  ** 0, but FTS5 extensions should check the API version before using it). */
+  ** Also check that the fts5_api object is version 2 or newer.  
+  */ 
   if( pApi==0 || pApi->iVersion<1 ){
     return SQLITE_ERROR;
   }

@@ -197,6 +197,8 @@ struct Fts5Cursor {
   Fts5Auxdata *pAuxdata;          /* First in linked list of saved aux-data */
 
   /* Cache used by auxiliary functions xInst() and xInstCount() */
+  Fts5PoslistReader *aInstIter;   /* One for each phrase */
+  int nInstAlloc;                 /* Size of aInst[] array (entries / 3) */
   int nInstCount;                 /* Number of phrase instances */
   int *aInst;                     /* 3 integers per phrase instance */
 };
@@ -617,6 +619,7 @@ static void fts5FreeCursorComponents(Fts5Cursor *pCsr){
   Fts5Auxdata *pData;
   Fts5Auxdata *pNext;
 
+  sqlite3_free(pCsr->aInstIter);
   sqlite3_free(pCsr->aInst);
   if( pCsr->pStmt ){
     int eStmt = fts5StmtType(pCsr);
@@ -1535,13 +1538,15 @@ static int fts5CacheInstArray(Fts5Cursor *pCsr){
   if( CsrFlagTest(pCsr, FTS5CSR_REQUIRE_INST) ){
     Fts5PoslistReader *aIter;     /* One iterator for each phrase */
     int nIter;                    /* Number of iterators/phrases */
-    int nByte;
     
     nIter = sqlite3Fts5ExprPhraseCount(pCsr->pExpr);
-    nByte = sizeof(Fts5PoslistReader) * nIter;
-    aIter = (Fts5PoslistReader*)sqlite3Fts5MallocZero(&rc, nByte);
+    if( pCsr->aInstIter==0 ){
+      int nByte = sizeof(Fts5PoslistReader) * nIter;
+      pCsr->aInstIter = (Fts5PoslistReader*)sqlite3Fts5MallocZero(&rc, nByte);
+    }
+    aIter = pCsr->aInstIter;
+
     if( aIter ){
-      Fts5Buffer buf = {0, 0, 0}; /* Build up aInst[] here */
       int nInst = 0;              /* Number instances seen so far */
       int i;
 
@@ -1562,22 +1567,30 @@ static int fts5CacheInstArray(Fts5Cursor *pCsr){
             iBest = i;
           }
         }
-
         if( iBest<0 ) break;
-        nInst++;
-        if( sqlite3Fts5BufferGrow(&rc, &buf, nInst * sizeof(int) * 3) ) break;
 
-        aInst = &((int*)buf.p)[3 * (nInst-1)];
+        nInst++;
+        if( nInst>=pCsr->nInstAlloc ){
+          pCsr->nInstAlloc = pCsr->nInstAlloc ? pCsr->nInstAlloc*2 : 32;
+          aInst = (int*)sqlite3_realloc(
+              pCsr->aInst, pCsr->nInstAlloc*sizeof(int)*3
+          );
+          if( aInst ){
+            pCsr->aInst = aInst;
+          }else{
+            rc = SQLITE_NOMEM;
+            break;
+          }
+        }
+
+        aInst = &pCsr->aInst[3 * (nInst-1)];
         aInst[0] = iBest;
         aInst[1] = FTS5_POS2COLUMN(aIter[iBest].iPos);
         aInst[2] = FTS5_POS2OFFSET(aIter[iBest].iPos);
         sqlite3Fts5PoslistReaderNext(&aIter[iBest]);
       }
 
-      sqlite3_free(pCsr->aInst);
-      pCsr->aInst = (int*)buf.p;
       pCsr->nInstCount = nInst;
-      sqlite3_free(aIter);
       CsrFlagClear(pCsr, FTS5CSR_REQUIRE_INST);
     }
   }
@@ -1757,12 +1770,47 @@ static void *fts5ApiGetAuxdata(Fts5Context *pCtx, int bClear){
   return pRet;
 }
 
+static void fts5ApiPhraseNext(
+  Fts5Context *pCtx, 
+  Fts5PhraseIter *pIter, 
+  int *piCol, int *piOff
+){
+  if( pIter->a>=pIter->b ){
+    *piCol = -1;
+    *piOff = -1;
+  }else{
+    int iVal;
+    pIter->a += fts5GetVarint32(pIter->a, iVal);
+    if( iVal==1 ){
+      pIter->a += fts5GetVarint32(pIter->a, iVal);
+      *piCol = iVal;
+      *piOff = 0;
+      pIter->a += fts5GetVarint32(pIter->a, iVal);
+    }
+    *piOff += (iVal-2);
+  }
+}
+
+static void fts5ApiPhraseFirst(
+  Fts5Context *pCtx, 
+  int iPhrase, 
+  Fts5PhraseIter *pIter, 
+  int *piCol, int *piOff
+){
+  Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
+  int n = fts5CsrPoslist(pCsr, iPhrase, &pIter->a);
+  pIter->b = &pIter->a[n];
+  *piCol = 0;
+  *piOff = 0;
+  fts5ApiPhraseNext(pCtx, pIter, piCol, piOff);
+}
+
 static int fts5ApiQueryPhrase(Fts5Context*, int, void*, 
     int(*)(const Fts5ExtensionApi*, Fts5Context*, void*)
 );
 
 static const Fts5ExtensionApi sFts5Api = {
-  1,                            /* iVersion */
+  2,                            /* iVersion */
   fts5ApiUserData,
   fts5ApiColumnCount,
   fts5ApiRowCount,
@@ -1778,6 +1826,8 @@ static const Fts5ExtensionApi sFts5Api = {
   fts5ApiQueryPhrase,
   fts5ApiSetAuxdata,
   fts5ApiGetAuxdata,
+  fts5ApiPhraseFirst,
+  fts5ApiPhraseNext,
 };
 
 

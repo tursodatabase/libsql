@@ -1,5 +1,5 @@
-C Merge\sfixes\sfrom\sthe\sfts5NoWarn\sbranch.
-D 2015-08-11T14:25:34.036
+C Add\sthe\sxPhraseFirst()\sand\sxPhraseNext()\sfts5\sAPIs,\sfor\sfaster\siteration\sthrough\sa\ssingle\sphrases\sposition\slist.\sAlso\soptimize\sxInst()\sand\sxInstCount()\sa\sbit.
+D 2015-08-12T12:11:28.744
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2fc9ca6bf5949d415801c007ed3004a4bdb7c380
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -105,7 +105,7 @@ F ext/fts3/unicode/UnicodeData.txt cd07314edb62d49fde34debdaf92fa2aa69011e7
 F ext/fts3/unicode/mkunicode.tcl 95cf7ec186e48d4985e433ff8a1c89090a774252
 F ext/fts3/unicode/parseunicode.tcl da577d1384810fb4e2b209bf3313074353193e95
 F ext/fts5/extract_api_docs.tcl 06583c935f89075ea0b32f85efa5dd7619fcbd03
-F ext/fts5/fts5.h 458a044344e96a7a3df38839f756aee105829303
+F ext/fts5/fts5.h 1950ec0544de667a24c1d8af9b2fde5db7db3bc9
 F ext/fts5/fts5Int.h 45f2ceb3c030f70e2cc4c199e9f700c2f2367f77
 F ext/fts5/fts5_aux.c 044cb176a815f4388308738437f6e130aa384fb0
 F ext/fts5/fts5_buffer.c 80f9ba4431848cb857e3d2158f5280093dcd8015
@@ -113,10 +113,10 @@ F ext/fts5/fts5_config.c fdfa63ae8e527ecfaa50f94063c610429cc887cf
 F ext/fts5/fts5_expr.c 495b24f47f4d71b63339572a5beaf9f6e1b486fe
 F ext/fts5/fts5_hash.c 4bf4b99708848357b8a2b5819e509eb6d3df9246
 F ext/fts5/fts5_index.c 076c4995bf06a6d1559a6e31f9a86b90f2105374
-F ext/fts5/fts5_main.c 4c8af0015aaf1db2c81df4f617840a921360ef50
+F ext/fts5/fts5_main.c c5ff6eb7de5fe8e062b54bbee2b1936901533685
 F ext/fts5/fts5_storage.c 22ec9b5d35a39e2b5b65daf4ba7cd47fbb2d0df5
 F ext/fts5/fts5_tcl.c 96a3b9e982c4a64a242eefd752fa6669cd405a67
-F ext/fts5/fts5_test_mi.c c42a34590d9393d2aa0b959398261810ca976d05
+F ext/fts5/fts5_test_mi.c 80a9e86fb4c5b6b58f8fefac05e9b96d1a6574e1
 F ext/fts5/fts5_tokenize.c 2836f6728bd74c7efac7487f5d9c27ca3e1b509c
 F ext/fts5/fts5_unicode2.c 78273fbd588d1d9bd0a7e4e0ccc9207348bae33c
 F ext/fts5/fts5_varint.c 3f86ce09cab152e3d45490d7586b7ed2e40c13f1
@@ -1372,7 +1372,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fd5608fb20831f1f1946c8941445b7acc463a143 0ddb2532b2daaaf1b0109ac360822f84cb999b7f
-R f656c6f9b0efdad10e9de9eeca5d30e2
+P 61cb2fc6c12810863c965c74e90bc502e20cf810
+R d3b6dadb6d0d16c8d1ad296c14b96300
 U dan
-Z a8d5c370bccbd577084eb4f30439c21a
+Z 2a4c5177ad3c19913de9e61965a0ba07
