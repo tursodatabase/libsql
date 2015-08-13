@@ -324,11 +324,43 @@ do_test incrblob2-6.2 {
   sqlite3_blob_read $rdHandle 0 2
 } {AB}
 
+if {$::tcl_platform(pointerSize)>=8} {
+  do_test incrblob2-6.2b {
+    set rc [catch {
+      # Prior to 2015-02-07, the following caused a segfault due to
+      # integer overflow.
+      sqlite3_blob_read $rdHandle 2147483647 2147483647
+    } errmsg]
+    lappend rc $errmsg
+  } {1 SQLITE_ERROR}
+}
+do_test incrblob2-6.2c {
+  set rc [catch {
+    # Prior to 2015-02-07, the following caused a segfault due to
+    # integer overflow.
+    sqlite3_blob_read $rdHandle 2147483647 100
+  } errmsg]
+  lappend rc $errmsg
+} {1 SQLITE_ERROR}
+
 do_test incrblob2-6.3 {
   set wrHandle [db incrblob t1 data 1]
   sqlite3_blob_write $wrHandle 0 ZZZZZZZZZZ
   sqlite3_blob_read $rdHandle 2 4
 } {ZZZZ}
+
+do_test incrblob2-6.3b {
+  set rc [catch {
+    # Prior to 2015-02-07, the following caused a segfault due to
+    # integer overflow.
+    sqlite3_blob_write $wrHandle 2147483647 YYYYYYYYYYYYYYYYYY
+  } errmsg]
+  lappend rc $errmsg
+} {1 SQLITE_ERROR}
+do_test incrblob2-6.3c {
+  sqlite3_blob_read $rdHandle 2 4
+} {ZZZZ}
+
 
 do_test incrblob2-6.4 {
   close $wrHandle

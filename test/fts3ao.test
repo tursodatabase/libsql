@@ -219,4 +219,32 @@ do_execsql_test 5.2 {
   SELECT count(*) FROM sqlite_master WHERE name LIKE 't8%';
 } {0 6}
 
+# At one point this was causing a memory leak.
+#
+foreach {tn sql} {
+  1 {}
+  2 { INSERT INTO ft(ft) VALUES('merge=2,2'); }
+} {
+  reset_db
+  do_execsql_test 6.$tn.1 "
+    CREATE TABLE t1(x);
+    CREATE VIRTUAL TABLE ft USING fts3;
+    INSERT INTO ft VALUES('hello world');
+    $sql
+  "
+
+  db close
+  sqlite3 db test.db
+  do_execsql_test 6.$tn.2 { SELECT * FROM t1 } {}
+
+  do_test 6.$tn.3 {
+    sqlite3 db2 test.db
+    db2 eval { DROP TABLE t1 }
+    db2 close
+    set stmt [sqlite3_prepare db { SELECT * FROM ft } -1 dummy]
+    sqlite3_finalize $stmt
+  } {SQLITE_OK}
+  db close
+}
+
 finish_test

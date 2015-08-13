@@ -30,6 +30,7 @@ do_test savepoint7-1.1 {
   db eval {SELECT * FROM t1} {
     db eval {
       SAVEPOINT x2;
+      CREATE TABLE IF NOT EXISTS t3(xyz);
       INSERT INTO t2 VALUES($a,$b,$c);
       RELEASE x2;
     }
@@ -46,7 +47,7 @@ do_test savepoint7-1.2 {
       RELEASE x2;
     }
   }
-  db eval {SELECT * FROM t2}
+  db eval {SELECT * FROM t2;}
 } {1 2 3 4 5 6 7 8 9}
 
 do_test savepoint7-1.3 {
@@ -65,7 +66,7 @@ do_test savepoint7-1.3 {
 # queries in outer contexts.
 #
 do_test savepoint7-2.1 {
-  db eval {DELETE FROM t2; SAVEPOINT x1;}
+  db eval {DELETE FROM t2; SAVEPOINT x1; CREATE TABLE t4(abc);}
   set rc [catch {
     db eval {SELECT * FROM t1} {
       db eval {
@@ -77,7 +78,7 @@ do_test savepoint7-2.1 {
   } msg]
   db eval {RELEASE x1}
   list $rc $msg [db eval {SELECT * FROM t2}]
-} {1 {callback requested query abort} {}}
+} {1 {abort due to ROLLBACK} {}}
 
 do_test savepoint7-2.2 {
   db eval {DELETE FROM t2;}
@@ -85,12 +86,13 @@ do_test savepoint7-2.2 {
     db eval {SELECT * FROM t1} {
       db eval {
         SAVEPOINT x2;
+        CREATE TABLE t5(pqr);
         INSERT INTO t2 VALUES($a,$b,$c);
         ROLLBACK TO x2;
       }
     }
   } msg]
   list $rc $msg [db eval {SELECT * FROM t2}]
-} {1 {callback requested query abort} {}}
+} {1 {abort due to ROLLBACK} {}}
 
 finish_test

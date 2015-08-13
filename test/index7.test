@@ -21,6 +21,31 @@ ifcapable !vtab {
   return
 }
 
+# Capture the output of a pragma in a TEMP table.
+#
+proc capture_pragma {db tabname sql} {
+  $db eval "DROP TABLE IF EXISTS temp.$tabname"
+  set once 1
+  $db eval $sql x {
+    if {$once} {
+      set once 0
+      set ins "INSERT INTO $tabname VALUES"
+      set crtab "CREATE TEMP TABLE $tabname "
+      set sep "("
+      foreach col $x(*) {
+        append ins ${sep}\$x($col)
+        append crtab ${sep}\"$col\"
+        set sep ,
+      }
+      append ins )
+      append crtab )
+      $db eval $crtab
+    }
+    $db eval $ins
+  }
+}
+
+
 load_static_extension db wholenumber;
 do_test index7-1.1 {
   # Able to parse and manage partial indices
@@ -36,6 +61,15 @@ do_test index7-1.1 {
     PRAGMA integrity_check;
   }
 } {14 20 ok}
+
+# (The "partial" column of the PRAGMA index_list output is...)
+# EVIDENCE-OF: R-34457-09668 "1" if the index is a partial index and "0"
+# if not.
+#
+do_test index7-1.1a {
+  capture_pragma db out {PRAGMA index_list(t1)}
+  db eval {SELECT "name", "partial", '|' FROM out ORDER BY "name"}
+} {sqlite_autoindex_t1_1 0 | t1a 1 | t1b 1 |}
 
 # Make sure the count(*) optimization works correctly with
 # partial indices.  Ticket [a5c8ed66cae16243be6] 2013-10-03.
@@ -247,5 +281,39 @@ do_execsql_test index7-5.0 {
   SELECT count(*) FROM t3 WHERE t3.b BETWEEN 5 AND 10;
   SELECT stat+0 FROM sqlite_stat1 WHERE idx='t3b';
 } {6 6}
+
+# Verify that the problem identified by ticket [98d973b8f5] has been fixed.
+#
+do_execsql_test index7-6.1 {
+  CREATE TABLE t5(a, b);
+  CREATE TABLE t4(c, d);
+  INSERT INTO t5 VALUES(1, 'xyz');
+  INSERT INTO t4 VALUES('abc', 'not xyz');
+  SELECT * FROM (SELECT * FROM t5 WHERE a=1 AND b='xyz'), t4 WHERE c='abc';
+} {
+  1 xyz abc {not xyz}
+}
+do_execsql_test index7-6.2 {
+  CREATE INDEX i4 ON t4(c) WHERE d='xyz';
+  SELECT * FROM (SELECT * FROM t5 WHERE a=1 AND b='xyz'), t4 WHERE c='abc';
+} {
+  1 xyz abc {not xyz}
+}
+do_execsql_test index7-6.3 {
+  CREATE VIEW v4 AS SELECT * FROM t4;
+  INSERT INTO t4 VALUES('def', 'xyz');
+  SELECT * FROM v4 WHERE d='xyz' AND c='def'
+} {
+  def xyz
+}
+do_eqp_test index7-6.4 {
+  SELECT * FROM v4 WHERE d='xyz' AND c='def'
+} {
+  0 0 0 {SEARCH TABLE t4 USING INDEX i4 (c=?)}
+}
+do_catchsql_test index7-6.5 {
+  CREATE INDEX t5a ON t5(a) WHERE a=#1;
+} {1 {near "#1": syntax error}}
+
 
 finish_test

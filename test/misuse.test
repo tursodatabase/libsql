@@ -171,37 +171,40 @@ do_test misuse-4.3 {
   } msg]
   lappend v $msg $r
 } {0 {} SQLITE_BUSY}
-do_test misuse-4.4 {
+
+if {[clang_sanitize_address]==0} {
+  do_test misuse-4.4 {
   # Flush the TCL statement cache here, otherwise the sqlite3_close() will
   # fail because there are still un-finalized() VDBEs.
-  db cache flush
-  sqlite3_close $::DB
-  catchsql2 {SELECT * FROM t1}
-} {1 {library routine called out of sequence}}
-do_test misuse-4.5 {
-  catchsql {
-    SELECT * FROM t1
-  }
-} {1 {library routine called out of sequence}}
+    db cache flush
+      sqlite3_close $::DB
+      catchsql2 {SELECT * FROM t1}
+  } {1 {library routine called out of sequence}}
+  do_test misuse-4.5 {
+    catchsql {
+      SELECT * FROM t1
+    }
+  } {1 {library routine called out of sequence}}
 
-# Attempt to use a database after it has been closed.
-#
-do_test misuse-5.1 {
-  db close
-  sqlite3 db test2.db; set ::DB [sqlite3_connection_pointer db]
-  execsql {
-    SELECT * FROM t1
-  }
-} {1 2}
-do_test misuse-5.2 {
-  catchsql2 {SELECT * FROM t1}
-} {0 {a b 1 2}}
-do_test misuse-5.3 {
-  db close
-  set r [catch {
-    sqlite3_prepare $::DB {SELECT * FROM t1} -1 TAIL
-  } msg]
-  lappend r $msg
-} {1 {(21) library routine called out of sequence}}
+  # Attempt to use a database after it has been closed.
+  #
+  do_test misuse-5.1 {
+    db close
+      sqlite3 db test2.db; set ::DB [sqlite3_connection_pointer db]
+      execsql {
+        SELECT * FROM t1
+      }
+  } {1 2}
+  do_test misuse-5.2 {
+    catchsql2 {SELECT * FROM t1}
+  } {0 {a b 1 2}}
+  do_test misuse-5.3 {
+    db close
+      set r [catch {
+        sqlite3_prepare $::DB {SELECT * FROM t1} -1 TAIL
+      } msg]
+    lappend r $msg
+  } {1 {(21) library routine called out of sequence}}
+}
 
 finish_test

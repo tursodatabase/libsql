@@ -31,12 +31,6 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#if SQLITE_OS_UNIX
-# include <unistd.h>
-#endif
-#if SQLITE_OS_WIN
-# include <windows.h>
-#endif
 
 /* Make this callable from C++ */
 #ifdef __cplusplus

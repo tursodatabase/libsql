@@ -165,7 +165,6 @@ do_test fts3near-3.6 {
     SELECT offsets(t1) FROM t1 WHERE content MATCH 'three NEAR/0 "two four"'
   }
 } {{0 0 8 5 0 1 14 3 0 2 18 4}}
-breakpoint
 do_test fts3near-3.7 {
   execsql {
     SELECT offsets(t1) FROM t1 WHERE content MATCH '"two four" NEAR/0 three'}

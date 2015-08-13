@@ -450,7 +450,7 @@ do_execsql_test e_expr-10.3.4 { SELECT typeof('isn''t') } {text}
 # containing hexadecimal data and preceded by a single "x" or "X"
 # character.
 #
-# EVIDENCE-OF: R-39344-59787 For example: X'53514C697465'
+# EVIDENCE-OF: R-19836-11244 Example: X'53514C697465'
 #
 do_execsql_test e_expr-10.4.1 { SELECT typeof(X'0123456789ABCDEF') } blob
 do_execsql_test e_expr-10.4.2 { SELECT typeof(x'0123456789ABCDEF') } blob
@@ -1595,6 +1595,13 @@ do_expr_test e_expr-30.3.4 { CAST('     1 2 3 4' AS INT) } integer 1
 do_expr_test e_expr-30.4.1 { CAST('' AS INTEGER) } integer 0
 do_expr_test e_expr-30.4.2 { CAST('not a number' AS INTEGER) } integer 0
 do_expr_test e_expr-30.4.3 { CAST('XXI' AS INTEGER) } integer 0
+
+# EVIDENCE-OF: R-08980-53124 The CAST operator understands decimal
+# integers only &mdash; conversion of hexadecimal integers stops at
+# the "x" in the "0x" prefix of the hexadecimal integer string and thus
+# result of the CAST is always zero.
+do_expr_test e_expr-30.5.1 { CAST('0x1234' AS INTEGER) } integer 0
+do_expr_test e_expr-30.5.2 { CAST('0X1234' AS INTEGER) } integer 0
 
 # EVIDENCE-OF: R-02752-50091 A cast of a REAL value into an INTEGER
 # results in the integer between the REAL value and zero that is closest

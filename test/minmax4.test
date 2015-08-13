@@ -56,14 +56,16 @@ do_test minmax4-1.5 {
 do_test minmax4-1.6 {
   db eval {
     SELECT p, min(q) FROM t1;
+    SELECT p FROM (SELECT p, min(q) FROM t1);
   }
-} {1 2}
+} {1 2 1}
 do_test minmax4-1.7 {
   db eval {
     INSERT INTO t1 VALUES(5,0);
     SELECT p, max(q) FROM t1;
+    SELECT p FROM (SELECT max(q), p FROM t1);
   }
-} {3 4}
+} {3 4 3}
 do_test minmax4-1.8 {
   db eval {
     SELECT p, min(q) FROM t1;
@@ -73,8 +75,9 @@ do_test minmax4-1.9 {
   db eval {
     INSERT INTO t1 VALUES(6,1);
     SELECT p, max(q) FROM t1;
+    SELECT p FROM (SELECT max(q), p FROM t1);
   }
-} {3 4}
+} {3 4 3}
 do_test minmax4-1.10 {
   db eval {
     SELECT p, min(q) FROM t1;

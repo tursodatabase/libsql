@@ -231,6 +231,7 @@ do_execsql_test where3-3.0 {
   CREATE TABLE t301(a INTEGER PRIMARY KEY,b,c);
   CREATE INDEX t301c ON t301(c);
   INSERT INTO t301 VALUES(1,2,3);
+  INSERT INTO t301 VALUES(2,2,3);
   CREATE TABLE t302(x, y);
   INSERT INTO t302 VALUES(4,5);
   ANALYZE;
@@ -251,7 +252,7 @@ do_execsql_test where3-3.2 {
 } {}
 do_execsql_test where3-3.3 {
   SELECT * FROM t301 WHERE c=3 AND a IS NOT NULL;
-} {1 2 3}
+} {1 2 3 2 2 3}
 
 if 0 {  # Query planner no longer does this
 # Verify that when there are multiple tables in a join which must be

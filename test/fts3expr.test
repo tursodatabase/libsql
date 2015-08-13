@@ -509,4 +509,9 @@ do_test fts3expr-8.7 { test_fts3expr "((((blah!))))" } {PHRASE 3 0 blah}
 do_test fts3expr-8.8 { test_fts3expr "(,(blah-),)" } {PHRASE 3 0 blah}
 
 set sqlite_fts3_enable_parentheses 0
+
+do_test fts3expr-9.1 {
+  test_fts3expr "f (e NEAR/2 a)"
+} {AND {PHRASE 3 0 f} {NEAR/2 {PHRASE 3 0 e} {PHRASE 3 0 a}}}
+
 finish_test

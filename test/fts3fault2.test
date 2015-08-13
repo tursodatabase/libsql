@@ -155,4 +155,23 @@ ifcapable fts3_unicode {
   }
 }
 
+reset_db
+do_test 6.0 {
+  execsql {
+    CREATE VIRTUAL TABLE t6 USING fts4(x,order=DESC);
+    INSERT INTO t6(docid, x) VALUES(-1,'a b');
+    INSERT INTO t6(docid, x) VALUES(1, 'b');
+  }
+  faultsim_save_and_close
+} {}
+
+do_faultsim_test 6.1 -faults oom* -prep {
+  faultsim_restore_and_reopen
+  db eval {SELECT * FROM sqlite_master}
+} -body {
+  execsql { SELECT docid FROM t6 WHERE t6 MATCH '"a* b"' }
+} -test {
+  faultsim_test_result {0 -1}
+}
+
 finish_test

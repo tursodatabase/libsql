@@ -15,50 +15,67 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix closure01
 
-ifcapable !vtab { finish_test ; return }
+ifcapable !vtab||!cte { finish_test ; return }
 
 load_static_extension db closure
 
 do_execsql_test 1.0 {
   BEGIN;
   CREATE TABLE t1(x INTEGER PRIMARY KEY, y INTEGER);
+  WITH RECURSIVE
+    cnt(i) AS (VALUES(1) UNION ALL SELECT i+1 FROM cnt LIMIT 131072)
+  INSERT INTO t1(x, y) SELECT i, nullif(i,1)/2 FROM cnt;
   CREATE INDEX t1y ON t1(y);
-  INSERT INTO t1(x) VALUES(1),(2);
-  INSERT INTO t1(x) SELECT x+2 FROM t1;
-  INSERT INTO t1(x) SELECT x+4 FROM t1;
-  INSERT INTO t1(x) SELECT x+8 FROM t1;
-  INSERT INTO t1(x) SELECT x+16 FROM t1;
-  INSERT INTO t1(x) SELECT x+32 FROM t1;
-  INSERT INTO t1(x) SELECT x+64 FROM t1;
-  INSERT INTO t1(x) SELECT x+128 FROM t1;
-  INSERT INTO t1(x) SELECT x+256 FROM t1;
-  INSERT INTO t1(x) SELECT x+512 FROM t1;
-  INSERT INTO t1(x) SELECT x+1024 FROM t1;
-  INSERT INTO t1(x) SELECT x+2048 FROM t1;
-  INSERT INTO t1(x) SELECT x+4096 FROM t1;
-  INSERT INTO t1(x) SELECT x+8192 FROM t1;
-  INSERT INTO t1(x) SELECT x+16384 FROM t1;
-  INSERT INTO t1(x) SELECT x+32768 FROM t1;
-  INSERT INTO t1(x) SELECT x+65536 FROM t1;
-  UPDATE t1 SET y=x/2 WHERE x>1;
   COMMIT;
   CREATE VIRTUAL TABLE cx 
    USING transitive_closure(tablename=t1, idcolumn=x, parentcolumn=y);
 } {}
 
 # The entire table
-do_execsql_test 1.1 {
+do_timed_execsql_test 1.1 {
   SELECT count(*), depth FROM cx WHERE root=1 GROUP BY depth ORDER BY 1;
+} {/1 0 1 17 2 1 4 2 8 3 16 4 .* 65536 16/}
+do_timed_execsql_test 1.1-cte {
+  WITH RECURSIVE
+    below(id,depth) AS (
+      VALUES(1,0)
+       UNION ALL
+      SELECT t1.x, below.depth+1
+        FROM t1 JOIN below on t1.y=below.id
+    )
+  SELECT count(*), depth FROM below GROUP BY depth ORDER BY 1;
 } {/1 0 1 17 2 1 4 2 8 3 16 4 .* 65536 16/}
 
 # descendents of 32768
-do_execsql_test 1.2 {
+do_timed_execsql_test 1.2 {
   SELECT * FROM cx WHERE root=32768 ORDER BY id;
+} {32768 0 65536 1 65537 1 131072 2}
+do_timed_execsql_test 1.2-cte {
+  WITH RECURSIVE
+    below(id,depth) AS (
+      VALUES(32768,0)
+       UNION ALL
+      SELECT t1.x, below.depth+1
+        FROM t1 JOIN below on t1.y=below.id
+       WHERE below.depth<2
+    )
+  SELECT id, depth FROM below ORDER BY id;
 } {32768 0 65536 1 65537 1 131072 2}
 
 # descendents of 16384
-do_execsql_test 1.3 {
+do_timed_execsql_test 1.3 {
   SELECT * FROM cx WHERE root=16384 AND depth<=2 ORDER BY id;
+} {16384 0 32768 1 32769 1 65536 2 65537 2 65538 2 65539 2}
+do_timed_execsql_test 1.3-cte {
+  WITH RECURSIVE
+    below(id,depth) AS (
+      VALUES(16384,0)
+       UNION ALL
+      SELECT t1.x, below.depth+1
+        FROM t1 JOIN below on t1.y=below.id
+       WHERE below.depth<2
+    )
+  SELECT id, depth FROM below ORDER BY id;
 } {16384 0 32768 1 32769 1 65536 2 65537 2 65538 2 65539 2}
 
 # children of 16384
@@ -70,18 +87,40 @@ do_execsql_test 1.4 {
 } {32768 1 {} t1 x y 32769 1 {} t1 x y}
 
 # great-grandparent of 16384
-do_execsql_test 1.5 {
+do_timed_execsql_test 1.5 {
   SELECT id, depth, root, tablename, idcolumn, parentcolumn FROM cx
    WHERE root=16384
      AND depth=3
      AND idcolumn='Y'
      AND parentcolumn='X';
 } {2048 3 {} t1 Y X}
+do_timed_execsql_test 1.5-cte {
+  WITH RECURSIVE
+    above(id,depth) AS (
+      VALUES(16384,0)
+      UNION ALL
+      SELECT t1.y, above.depth+1
+        FROM t1 JOIN above ON t1.x=above.id
+       WHERE above.depth<3
+    )
+  SELECT id FROM above WHERE depth=3;
+} {2048}
 
 # depth<5
-do_execsql_test 1.6 {
+do_timed_execsql_test 1.6 {
   SELECT count(*), depth FROM cx WHERE root=1 AND depth<5
    GROUP BY depth ORDER BY 1;
+} {1 0 2 1 4 2 8 3 16 4}
+do_timed_execsql_test 1.6-cte {
+  WITH RECURSIVE
+    below(id,depth) AS (
+      VALUES(1,0)
+      UNION ALL
+      SELECT t1.x, below.depth+1
+        FROM t1 JOIN below ON t1.y=below.id
+       WHERE below.depth<4
+    )
+  SELECT count(*), depth FROM below GROUP BY depth ORDER BY 1;
 } {1 0 2 1 4 2 8 3 16 4}
 
 # depth<=5
@@ -103,8 +142,19 @@ do_execsql_test 1.9 {
 } {8 3 16 4 32 5}
 
 # depth==5 with min() and max()
-do_execsql_test 1.10 {
+do_timed_execsql_test 1.10 {
   SELECT count(*), min(id), max(id) FROM cx WHERE root=1 AND depth=5;
+} {32 32 63}
+do_timed_execsql_test 1.10-cte {
+  WITH RECURSIVE
+    below(id,depth) AS (
+      VALUES(1,0)
+      UNION ALL
+      SELECT t1.x, below.depth+1
+        FROM t1 JOIN below ON t1.y=below.id
+       WHERE below.depth<5
+    )
+  SELECT count(*), min(id), max(id) FROM below WHERE depth=5;
 } {32 32 63}
 
 # Create a much smaller table t2 with only 32 elements 

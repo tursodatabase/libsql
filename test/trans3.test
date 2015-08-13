@@ -52,7 +52,7 @@ do_test trans3-1.4 {
   db eval {SELECT * FROM t1}
 } {1 2 3 4}
 do_test trans3-1.5 {
-  db eval BEGIN
+  db eval {BEGIN; CREATE TABLE xyzzy(abc);}
   db eval {INSERT INTO t1 VALUES(5);}
   set ::ecode {}
   set x [catch {

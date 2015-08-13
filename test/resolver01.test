@@ -11,9 +11,11 @@
 #
 # This file tests features of the name resolver (the component that
 # figures out what identifiers in the SQL statement refer to) that
-# were fixed by ticket [2500cdb9be]
+# were fixed by ticket [2500cdb9be].
 #
 # See also tickets [1c69be2daf] and [f617ea3125] from 2013-08-14.
+#
+# Also a fuzzer-discovered problem on 2015-04-23.
 #
 
 set testdir [file dirname $argv0]
@@ -201,6 +203,12 @@ do_execsql_test resolver01-6.3 {
    GROUP BY lower(name);
 } {1 {} 1 {}}
 
+do_execsql_test resolver01-7.1 {
+  SELECT 2 AS x WHERE (SELECT x AS y WHERE 3>y);
+} {2}
+do_execsql_test resolver01-7.2 {
+  SELECT 2 AS x WHERE (SELECT x AS y WHERE 1>y);
+} {}
 
 
 

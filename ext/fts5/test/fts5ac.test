@@ -1,0 +1,359 @@
+# 2014 June 17
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this script is testing the FTS5 module.
+#
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+set testprefix fts5ac
+
+# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+
+set data {
+    0   {p o q e z k z p n f y u z y n y}   {l o o l v v k}
+    1   {p k h h p y l l h i p v n}         {p p l u r i f a j g e r r x w}
+    2   {l s z j k i m p s}                 {l w e j t j e e i t w r o p o}
+    3   {x g y m y m h p}                   {k j j b r e y y a k y}
+    4   {q m a i y i z}                     {o w a g k x g j m w e u k}
+    5   {k o a w y b s z}                   {s g l m m l m g p}
+    6   {d a q i z h b l c p k j g k}       {p x u j x t v c z}
+    7   {f d a g o c t i}                   {w f c x l d r k i j}
+    8   {y g w u b q p o m j y b p a e k}   {r i d k y w o z q m a t p}
+    9   {r k o m c c j s x m x m x m q r}   {y r c a q d z k n x n}
+    10  {k j q m g q a j d}                 {d d e z g w h c d o o g x d}
+    11  {j z u m o y q j f w e e w t r j w} {g m o r x n t n w i f g l z f}
+    12  {s y w a w d o h x m k}             {c w k z b p o r a}
+    13  {u t h x e g s k n g i}             {f j w g c s r}
+    14  {b f i c s u z t k}                 {c k q s j u i z o}
+    15  {n a f n u s w h y n s i q e w}     {x g e g a s s h n}
+    16  {k s q e j n p}                     {t r j f t o e k k l m i}
+    17  {g d t u w r o p m n m n p h b o u} {h s w o s l j e}
+    18  {f l q y q q g e e x j r}           {n b r r g e i r t x q k}
+    19  {f i r g o a w e p i l o a w}       {e k r z t d g h g i b d i e m}
+    20  {l d u u f p y}                     {g o m m u x m g l j t t x x u}
+    21  {m c d k x i c z l}                 {m i a i e u h}
+    22  {w b f o c g x y j}                 {z d w x d f h i p}
+    23  {w u i u x t c h k i b}             {b y k h b v r t g j}
+    24  {h f d j s w s b a p k}             {a q y u z e y m m j q r}
+    25  {d i x y x x k i y f s d j h z p n} {l l q m e t c w g y h t s v g}
+    26  {g s q w t d k x g f m j p k y}     {r m b x e l t d}
+    27  {j l s q u g y v e c l o}           {m f l m m m h g x x l n c}
+    28  {c t j g v r s b z j}               {l c f y d t q n}
+    29  {e x z y w i h l}                   {b n b x e y q e n u m}
+    30  {g y y h j b w r}                   {q b q f u s k c k g r}
+    31  {g u l x l b r c m z b u c}         {k g t b x k x n t e z d h o}
+    32  {w g v l z f b z h p s c v h}       {g e w v m h k r g w a r f q}
+    33  {c g n f u d o y o b}               {e y o h x x y y i z s b h a j}
+    34  {v y h c q u u s q y x x k s q}     {d n r m y k n t i r n w e}
+    35  {o u c x l e b t a}                 {y b a x y f z x r}
+    36  {x p h l j a a u u j h}             {x o f s z m b c q p}
+    37  {k q t i c a q n m v v}             {v r z e f m y o}
+    38  {r w t t t t r v v o e p g h}       {l w x a g a u h y}
+    39  {o p v g v b a g o}                 {j t q c r b b g y z}
+    40  {f s o r o d t h q f x l}           {r d b m k i f s t d l m y x j w}
+    41  {t m o t m f m f}                   {i p i q j v n v m b q}
+    42  {t x w a r l w d t b c o d o}       {a h f h w z d n s}
+    43  {t u q c d g p q x j o l c x c}     {m n t o z z j a y}
+    44  {v d i i k b f s z r v r z y}       {g n q y s x x m b x c l w}
+    45  {p v v a c s z y e o l}             {m v t u d k m k q b d c v z r}
+    46  {f y k l d r q w r s t r e}         {h m v r r l r r t f q e x y}
+    47  {w l n l t y x}                     {n h s l a f c h u f l x x m v n o}
+    48  {t n v i k e b p z p d j j l i o}   {i v z p g u e j s i k n h w d c}
+    49  {z v x p n l t a j c}               {e j l e n c e t a d}
+    50  {w u b x u i v h a i y m m r p m s} {s r h d o g z y f f x e}
+    51  {d c c x b c a x g}                 {p r a j v u y}
+    52  {f w g r c o d l t u e z h i}       {j l l s s b j m}
+    53  {p m t f k i x}                     {u v y a z g w v v m x h i}
+    54  {l c z g l o j i c d e b}           {b f v y w u i b e i y}
+    55  {r h c x f x a d s}                 {z x y k f l r b q c v}
+    56  {v x x c y h z x b g m o q n c}     {h n b i t g h a q b c o r u}
+    57  {d g l o h t b s b r}               {n u e p t i m u}
+    58  {t d y e t d c w u o s w x f c h}   {i o s v y b r d r}
+    59  {l b a p q n d r}                   {k d c c d n y q h g a o p e x}
+    60  {f r z v m p k r}                   {x x r i s b a g f c}
+    61  {s a z i e r f i w c n y v z t k s} {y y i r y n l s b w i e k n}
+    62  {n x p r e x q r m v i b y}         {f o o z n b s r q j}
+    63  {y j s u j x o n r q t f}           {f v k n v x u s o a d e f e}
+    64  {u s i l y c x q}                   {r k c h p c h b o s s u s p b}
+    65  {m p i o s h o}                     {s w h u n d m n q t y k b w c}
+    66  {l d f g m x x x o}                 {s w d d f b y j j h h t i y p j o}
+    67  {c b m h f n v w n h}               {i r w i e x r w l z p x u g u l s}
+    68  {y a h u h i m a y q}               {d d r x h e v q n z y c j}
+    69  {c x f d x o n p o b r t b l p l}   {m i t k b x v f p t m l l y r o}
+    70  {u t l w w m s}                     {m f m o l t k o p e}
+    71  {f g q e l n d m z x q}             {z s i i i m f w w f n g p e q}
+    72  {n l h a v u o d f j d e x}         {v v s l f g d g r a j x i f z x}
+    73  {x v m v f i g q e w}               {r y s j i k m j j e d g r n o i f}
+    74  {g d y n o h p s y q z j d w n h w} {x o d l t j i b r d o r y}
+    75  {p g b i u r b e q d v o a g w m k} {q y z s f q o h}
+    76  {u z a q u f i f f b}               {b s p b a a d x r r i q f}
+    77  {w h h z t h p o a h h e e}         {h w r p h k z v y f r x}
+    78  {c a r k i a p u x}                 {f w l p t e m l}
+    79  {q q u k o t r k z}                 {f b m c w p s s o z}
+    80  {t i g v y q s r x m r x z e f}     {x o j w a u e y s j c b u p p r o}
+    81  {n j n h r l a r e o z w e}         {v o r r j a v b}
+    82  {i f i d k w d n h}                 {o i d z i z l m w s b q v u}
+    83  {m d g q q b k b w f q q p p}       {j m q f b y c i z k y q p l e a}
+    84  {m x o n y f g}                     {y c n x n q j i y c l h b r q z}
+    85  {v o z l n p c}                     {g n j n t b b x n c l d a g j v}
+    86  {z n a y f b t k k t d b z a v}     {r p c n r u k u}
+    87  {b q t x z e c w}                   {q a o a l o a h i m j r}
+    88  {j f h o x x a z g b a f a m i b}   {j z c z y x e x w t}
+    89  {t c t p r s u c q n}               {z x l i k n f q l n t}
+    90  {w t d q j g m r f k n}             {l e w f w w a l y q k i q t p c t}
+    91  {c b o k l i c b s j n m b l}       {y f p q o w g}
+    92  {f y d j o q t c c q m f j s t}     {f h e d y m o k}
+    93  {k x j r m a d o i z j}             {r t t t f e b r x i v j v g o}
+    94  {s f e a e t i h h d q p z t q}     {b k m k w h c}
+    95  {h b n j t k i h o q u}             {w n g i t o k c a m y p f l x c p}
+    96  {f c x p y r b m o l m o a}         {p c a q s u n n x d c f a o}
+    97  {u h h k m n k}                     {u b v n u a o c}
+    98  {s p e t c z d f n w f}             {l s f j b l c e s h}
+    99  {r c v w i v h a t a c v c r e}     {h h u m g o f b a e o}
+}
+
+# Argument $expr is an FTS5 match expression designed to be executed against
+# an FTS5 table with the following schema:
+# 
+#   CREATE VIRTUAL TABLE xy USING fts5(x, y);
+#
+# Assuming the table contains the same records as stored int the global 
+# $::data array (see above), this function returns a list containing one
+# element for each match in the dataset. The elements are themselves lists
+# formatted as follows:
+#
+#   <rowid> {<phrase 0 matches> <phrase 1 matches>...}
+#
+# where each <phrase X matches> element is a list of phrase matches in the
+# same form as returned by auxiliary scalar function fts5_test().
+#
+proc matchdata {bPos expr {bAsc 1}} {
+
+  set tclexpr [db one {
+    SELECT fts5_expr_tcl($expr, 'nearset $cols -pc ::pc', 'x', 'y')
+  }]
+  set res [list]
+
+  #puts $tclexpr
+  foreach {id x y} $::data {
+    set cols [list $x $y]
+    set ::pc 0
+    #set hits [lsort -command instcompare [eval $tclexpr]]
+    set hits [eval $tclexpr]
+    if {[llength $hits]>0} {
+      if {$bPos} {
+        lappend res [list $id $hits]
+      } else {
+        lappend res $id
+      }
+    }
+  }
+
+  if {$bAsc} {
+    set res [lsort -integer -increasing -index 0 $res]
+  } else {
+    set res [lsort -integer -decreasing -index 0 $res]
+  }
+
+  return [concat {*}$res]
+}
+
+#
+# End of test code
+#-------------------------------------------------------------------------
+
+proc fts5_test_poslist {cmd} {
+  set res [list]
+  for {set i 0} {$i < [$cmd xInstCount]} {incr i} {
+    lappend res [string map {{ } .} [$cmd xInst $i]]
+  }
+  set res
+}
+
+
+foreach {tn2 sql} {
+  1  {}
+  2  {BEGIN}
+} {
+  reset_db
+  sqlite3_fts5_create_function db fts5_test_poslist fts5_test_poslist
+
+  do_execsql_test 1.0 {
+    CREATE VIRTUAL TABLE xx USING fts5(x,y);
+    INSERT INTO xx(xx, rank) VALUES('pgsz', 32);
+  }
+
+  execsql $sql
+
+  do_test $tn2.1.1 {
+    foreach {id x y} $data {
+      execsql { INSERT INTO xx(rowid, x, y) VALUES($id, $x, $y) }
+    }
+    execsql { INSERT INTO xx(xx) VALUES('integrity-check') }
+  } {}
+
+
+  #-------------------------------------------------------------------------
+  # Test phrase queries.
+  #
+  foreach {tn phrase} {
+    1 "o"
+    2 "b q"
+    3 "e a e"
+    4 "m d g q q b k b w f q q p p"
+    5 "l o o l v v k"
+    6 "a"
+    7 "b"
+    8 "c"
+    9 "no"
+    10 "L O O L V V K"
+  } {
+    set expr "\"$phrase\""
+    set res [matchdata 1 $expr]
+
+    do_execsql_test $tn2.1.2.$tn.[llength $res] { 
+      SELECT rowid, fts5_test_poslist(xx) FROM xx WHERE xx match $expr
+    } $res
+  }
+
+  #-------------------------------------------------------------------------
+  # Test some AND and OR queries.
+  #
+  foreach {tn expr} {
+    1.1 "a   AND b"
+    1.2 "a+b AND c"
+    1.3 "d+c AND u"
+    1.4 "d+c AND u+d"
+
+    2.1 "a   OR b"
+    2.2 "a+b OR c"
+    2.3 "d+c OR u"
+    2.4 "d+c OR u+d"
+
+    3.1 { a AND b AND c }
+  } {
+    set res [matchdata 1 $expr]
+    do_execsql_test $tn2.2.$tn.[llength $res] { 
+      SELECT rowid, fts5_test_poslist(xx) FROM xx WHERE xx match $expr
+    } $res
+  }
+
+  #-------------------------------------------------------------------------
+  # Queries on a specific column.
+  #
+  foreach {tn expr} {
+    1.1 "x:a"
+    1.2 "y:a"
+    1.3 "x:b"
+    1.4 "y:b"
+    2.1 "{x}:a"
+    2.2 "{y}:a"
+    2.3 "{x}:b"
+    2.4 "{y}:b"
+
+    3.1 "{x y}:a"
+    3.2 "{y x}:a"
+    3.3 "{x x}:b"
+    3.4 "{y y}:b"
+
+    4.1 {{"x" "y"}:a}
+    4.2 {{"y" x}:a}
+    4.3 {{x "x"}:b}
+    4.4 {{"y" y}:b}
+  } {
+    set res [matchdata 1 $expr]
+    do_execsql_test $tn2.3.$tn.[llength $res] { 
+      SELECT rowid, fts5_test_poslist(xx) FROM xx WHERE xx match $expr
+    } $res
+  }
+
+  #-------------------------------------------------------------------------
+  # Some NEAR queries.
+  #
+  foreach {tn expr} {
+    1 "NEAR(a b)"
+    2 "NEAR(r c)"
+    2 { NEAR(r c, 5) }
+    3 { NEAR(r c, 3) }
+    4 { NEAR(r c, 2) }
+    5 { NEAR(r c, 0) }
+    6 { NEAR(a b c) }
+    7 { NEAR(a b c, 8) }
+    8  { x : NEAR(r c) }
+    9  { y : NEAR(r c) }
+  } {
+    set res [matchdata 1 $expr]
+    do_execsql_test $tn2.4.1.$tn.[llength $res] { 
+      SELECT rowid, fts5_test_poslist(xx) FROM xx WHERE xx match $expr
+    } $res
+  }
+
+  do_test $tn2.4.1  { nearset {{a b c}} -- a } {0.0.0}
+  do_test $tn2.4.2  { nearset {{a b c}} -- c } {0.0.2}
+
+  foreach {tn expr tclexpr} {
+    1 {a b} {AND [N $x -- {a}] [N $x -- {b}]}
+  } {
+    do_execsql_test $tn2.5.$tn {
+      SELECT fts5_expr_tcl($expr, 'N $x')
+    } [list $tclexpr]
+  }
+
+  #-------------------------------------------------------------------------
+  #
+  do_execsql_test $tn2.6.integrity {
+    INSERT INTO xx(xx) VALUES('integrity-check');
+  }
+  #db eval {SELECT rowid, fts5_decode(rowid, block) aS r FROM xx_data} {puts $r}
+  foreach {bAsc sql} {
+    1 {SELECT rowid FROM xx WHERE xx MATCH $expr}
+    0 {SELECT rowid FROM xx WHERE xx MATCH $expr ORDER BY rowid DESC}
+  } {
+    foreach {tn expr} {
+      0.1 x
+      1 { NEAR(r c) }
+      2 { NEAR(r c, 5) }
+      3 { NEAR(r c, 3) }
+      4 { NEAR(r c, 2) }
+      5 { NEAR(r c, 0) }
+      6 { NEAR(a b c) }
+      7 { NEAR(a b c, 8) }
+      8  { x : NEAR(r c) }
+      9  { y : NEAR(r c) }
+      10 { x : "r c" }
+      11 { y : "r c" }
+      12 { a AND b }
+      13 { a AND b AND c }
+      14a { a }
+      14b { a OR b }
+      15 { a OR b AND c }
+      16 { c AND b OR a }
+      17 { c AND (b OR a) }
+      18 { c NOT (b OR a) }
+      19 { c NOT b OR a AND d }
+    } {
+      set res [matchdata 0 $expr $bAsc]
+      do_execsql_test $tn2.6.$bAsc.$tn.[llength $res] $sql $res
+    }
+  }
+}
+
+do_execsql_test 3.1 {
+  SELECT fts5_expr_tcl('a AND b');
+} {{AND [nearset -- {a}] [nearset -- {b}]}}
+
+finish_test
+

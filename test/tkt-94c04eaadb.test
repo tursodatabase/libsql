@@ -44,7 +44,6 @@ do_test tkt-94c94-2.1 {
   execsql { CREATE TABLE t2(x, y) } db
 } {}
 do_test tkt-94c94-2.2 {
-breakpoint
   execsql { INSERT INTO t2 VALUES(1, 2) } db2
 } {}
 do_test tkt-94c94-2.3 {

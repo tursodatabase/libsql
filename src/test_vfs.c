@@ -127,8 +127,10 @@ struct Testvfs {
 #define TESTVFS_FULLPATHNAME_MASK 0x00008000
 #define TESTVFS_READ_MASK         0x00010000
 #define TESTVFS_UNLOCK_MASK       0x00020000
+#define TESTVFS_LOCK_MASK         0x00040000
+#define TESTVFS_CKLOCK_MASK       0x00080000
 
-#define TESTVFS_ALL_MASK          0x0003FFFF
+#define TESTVFS_ALL_MASK          0x000FFFFF
 
 
 #define TESTVFS_MAX_PAGES 1024
@@ -419,7 +421,7 @@ static int tvfsSync(sqlite3_file *pFile, int flags){
   Testvfs *p = (Testvfs *)pFd->pVfs->pAppData;
 
   if( p->pScript && p->mask&TESTVFS_SYNC_MASK ){
-    char *zFlags;
+    char *zFlags = 0;
 
     switch( flags ){
       case SQLITE_SYNC_NORMAL:
@@ -466,8 +468,15 @@ static int tvfsFileSize(sqlite3_file *pFile, sqlite_int64 *pSize){
 ** Lock an tvfs-file.
 */
 static int tvfsLock(sqlite3_file *pFile, int eLock){
-  TestvfsFd *p = tvfsGetFd(pFile);
-  return sqlite3OsLock(p->pReal, eLock);
+  TestvfsFd *pFd = tvfsGetFd(pFile);
+  Testvfs *p = (Testvfs *)pFd->pVfs->pAppData;
+  if( p->pScript && p->mask&TESTVFS_LOCK_MASK ){
+    char zLock[30];
+    sqlite3_snprintf(sizeof(zLock),zLock,"%d",eLock);
+    tvfsExecTcl(p, "xLock", Tcl_NewStringObj(pFd->zFilename, -1), 
+                   Tcl_NewStringObj(zLock, -1), 0, 0);
+  }
+  return sqlite3OsLock(pFd->pReal, eLock);
 }
 
 /*
@@ -476,6 +485,12 @@ static int tvfsLock(sqlite3_file *pFile, int eLock){
 static int tvfsUnlock(sqlite3_file *pFile, int eLock){
   TestvfsFd *pFd = tvfsGetFd(pFile);
   Testvfs *p = (Testvfs *)pFd->pVfs->pAppData;
+  if( p->pScript && p->mask&TESTVFS_UNLOCK_MASK ){
+    char zLock[30];
+    sqlite3_snprintf(sizeof(zLock),zLock,"%d",eLock);
+    tvfsExecTcl(p, "xUnlock", Tcl_NewStringObj(pFd->zFilename, -1), 
+                   Tcl_NewStringObj(zLock, -1), 0, 0);
+  }
   if( p->mask&TESTVFS_WRITE_MASK && tvfsInjectIoerr(p) ){
     return SQLITE_IOERR_UNLOCK;
   }
@@ -486,8 +501,13 @@ static int tvfsUnlock(sqlite3_file *pFile, int eLock){
 ** Check if another file-handle holds a RESERVED lock on an tvfs-file.
 */
 static int tvfsCheckReservedLock(sqlite3_file *pFile, int *pResOut){
-  TestvfsFd *p = tvfsGetFd(pFile);
-  return sqlite3OsCheckReservedLock(p->pReal, pResOut);
+  TestvfsFd *pFd = tvfsGetFd(pFile);
+  Testvfs *p = (Testvfs *)pFd->pVfs->pAppData;
+  if( p->pScript && p->mask&TESTVFS_CKLOCK_MASK ){
+    tvfsExecTcl(p, "xCheckReservedLock", Tcl_NewStringObj(pFd->zFilename, -1),
+                   0, 0, 0);
+  }
+  return sqlite3OsCheckReservedLock(pFd->pReal, pResOut);
 }
 
 /*
@@ -803,11 +823,12 @@ static int tvfsShmOpen(sqlite3_file *pFile){
     if( 0==strcmp(pFd->zFilename, pBuffer->zFile) ) break;
   }
   if( !pBuffer ){
-    int nByte = sizeof(TestvfsBuffer) + (int)strlen(pFd->zFilename) + 1;
+    int szName = (int)strlen(pFd->zFilename);
+    int nByte = sizeof(TestvfsBuffer) + szName + 1;
     pBuffer = (TestvfsBuffer *)ckalloc(nByte);
     memset(pBuffer, 0, nByte);
     pBuffer->zFile = (char *)&pBuffer[1];
-    strcpy(pBuffer->zFile, pFd->zFilename);
+    memcpy(pBuffer->zFile, pFd->zFilename, szName+1);
     pBuffer->pNext = p->pBuffer;
     p->pBuffer = pBuffer;
   }
@@ -946,15 +967,14 @@ static void tvfsShmBarrier(sqlite3_file *pFile){
   TestvfsFd *pFd = tvfsGetFd(pFile);
   Testvfs *p = (Testvfs *)(pFd->pVfs->pAppData);
 
+  if( p->pScript && p->mask&TESTVFS_SHMBARRIER_MASK ){
+    const char *z = pFd->pShm ? pFd->pShm->zFile : "";
+    tvfsExecTcl(p, "xShmBarrier", Tcl_NewStringObj(z, -1), pFd->pShmId, 0, 0);
+  }
+
   if( p->isFullshm ){
     sqlite3OsShmBarrier(pFd->pReal);
     return;
-  }
-
-  if( p->pScript && p->mask&TESTVFS_SHMBARRIER_MASK ){
-    tvfsExecTcl(p, "xShmBarrier", 
-        Tcl_NewStringObj(pFd->pShm->zFile, -1), pFd->pShmId, 0, 0
-    );
   }
 }
 
@@ -1060,7 +1080,7 @@ static int testvfs_obj_cmd(
   switch( aSubcmd[i].eCmd ){
     case CMD_SHM: {
       Tcl_Obj *pObj;
-      int i, rc;
+      int rc;
       TestvfsBuffer *pBuffer;
       char *zName;
       if( objc!=3 && objc!=4 ){
@@ -1111,30 +1131,35 @@ static int testvfs_obj_cmd(
       break;
     }
 
+    /*  TESTVFS filter METHOD-LIST
+    **
+    **     Activate special processing for those methods contained in the list
+    */
     case CMD_FILTER: {
       static struct VfsMethod {
         char *zName;
         int mask;
       } vfsmethod [] = {
-        { "xShmOpen",      TESTVFS_SHMOPEN_MASK },
-        { "xShmLock",      TESTVFS_SHMLOCK_MASK },
-        { "xShmBarrier",   TESTVFS_SHMBARRIER_MASK },
-        { "xShmUnmap",     TESTVFS_SHMCLOSE_MASK },
-        { "xShmMap",       TESTVFS_SHMMAP_MASK },
-        { "xSync",         TESTVFS_SYNC_MASK },
-        { "xDelete",       TESTVFS_DELETE_MASK },
-        { "xWrite",        TESTVFS_WRITE_MASK },
-        { "xRead",         TESTVFS_READ_MASK },
-        { "xTruncate",     TESTVFS_TRUNCATE_MASK },
-        { "xOpen",         TESTVFS_OPEN_MASK },
-        { "xClose",        TESTVFS_CLOSE_MASK },
-        { "xAccess",       TESTVFS_ACCESS_MASK },
-        { "xFullPathname", TESTVFS_FULLPATHNAME_MASK },
-        { "xUnlock",       TESTVFS_UNLOCK_MASK },
+        { "xShmOpen",           TESTVFS_SHMOPEN_MASK },
+        { "xShmLock",           TESTVFS_SHMLOCK_MASK },
+        { "xShmBarrier",        TESTVFS_SHMBARRIER_MASK },
+        { "xShmUnmap",          TESTVFS_SHMCLOSE_MASK },
+        { "xShmMap",            TESTVFS_SHMMAP_MASK },
+        { "xSync",              TESTVFS_SYNC_MASK },
+        { "xDelete",            TESTVFS_DELETE_MASK },
+        { "xWrite",             TESTVFS_WRITE_MASK },
+        { "xRead",              TESTVFS_READ_MASK },
+        { "xTruncate",          TESTVFS_TRUNCATE_MASK },
+        { "xOpen",              TESTVFS_OPEN_MASK },
+        { "xClose",             TESTVFS_CLOSE_MASK },
+        { "xAccess",            TESTVFS_ACCESS_MASK },
+        { "xFullPathname",      TESTVFS_FULLPATHNAME_MASK },
+        { "xUnlock",            TESTVFS_UNLOCK_MASK },
+        { "xLock",              TESTVFS_LOCK_MASK },
+        { "xCheckReservedLock", TESTVFS_CKLOCK_MASK },
       };
       Tcl_Obj **apElem = 0;
       int nElem = 0;
-      int i;
       int mask = 0;
       if( objc!=3 ){
         Tcl_WrongNumArgs(interp, 2, objv, "LIST");
@@ -1162,6 +1187,12 @@ static int testvfs_obj_cmd(
       break;
     }
 
+    /*
+    **  TESTVFS script ?SCRIPT?
+    **
+    **  Query or set the script to be run when filtered VFS events
+    **  occur.
+    */
     case CMD_SCRIPT: {
       if( objc==3 ){
         int nByte;
@@ -1193,7 +1224,7 @@ static int testvfs_obj_cmd(
     case CMD_CANTOPENERR:
     case CMD_IOERR:
     case CMD_FULLERR: {
-      TestFaultInject *pTest;
+      TestFaultInject *pTest = 0;
       int iRet;
 
       switch( aSubcmd[i].eCmd ){
@@ -1248,6 +1279,7 @@ static int testvfs_obj_cmd(
         { "safe_append",           SQLITE_IOCAP_SAFE_APPEND           },
         { "undeletable_when_open", SQLITE_IOCAP_UNDELETABLE_WHEN_OPEN },
         { "powersafe_overwrite",   SQLITE_IOCAP_POWERSAFE_OVERWRITE   },
+        { "immutable",             SQLITE_IOCAP_IMMUTABLE             },
         { 0, 0 }
       };
       Tcl_Obj *pRet;
@@ -1498,7 +1530,7 @@ static int testvfs_cmd(
   return TCL_OK;
 
  bad_args:
-  Tcl_WrongNumArgs(interp, 1, objv, "VFSNAME ?-noshm BOOL? ?-default BOOL? ?-mxpathname INT? ?-szosfile INT? ?-iversion INT?");
+  Tcl_WrongNumArgs(interp, 1, objv, "VFSNAME ?-noshm BOOL? ?-fullshm BOOL? ?-default BOOL? ?-mxpathname INT? ?-szosfile INT? ?-iversion INT?");
   return TCL_ERROR;
 }
 

@@ -25,7 +25,7 @@ set ::auth_fail 0
 set ::auth_log [list]
 set ::auth_filter [list SQLITE_READ SQLITE_UPDATE SQLITE_SELECT SQLITE_PRAGMA]
 
-proc auth {code arg1 arg2 arg3 arg4} {
+proc auth {code arg1 arg2 arg3 arg4 args} {
   if {[lsearch $::auth_filter $code]>-1} {
     return SQLITE_OK
   }

@@ -162,7 +162,7 @@ do_execsql_test 2.0 {
 foreach {tn sql temptables res} {
   1   "a, b FROM t1"                                       {}      {A B a b}
   2   "b, a FROM t1"                                       {}      {B A b a}
-  3   "a, b, c FROM t1"                                    {hash}  {a b c A B C}
+  3   "a, b, c FROM t1"                                    {hash}  {A B C a b c}
   4   "a, b, c FROM t1 ORDER BY a, b, c"                   {btree} {A B C a b c}
   5   "b FROM t1 WHERE a = 'a'"                            {}      {b}
   6   "b FROM t1 ORDER BY +b COLLATE binary"          {btree hash} {B b}
@@ -196,5 +196,60 @@ do_test 3.1 {
     EXPLAIN SELECT DISTINCT a, b FROM t3 ORDER BY +a, +b;
   }]
 } {0}
+
+#-------------------------------------------------------------------------
+# Ticket  [fccbde530a6583bf2748400919f1603d5425995c] (2014-01-08)
+# The logic that computes DISTINCT sometimes thinks that a zeroblob()
+# and a blob of all zeros are different when they should be the same. 
+#
+do_execsql_test 4.1 {
+  DROP TABLE IF EXISTS t1;
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t1(a INTEGER);
+  INSERT INTO t1 VALUES(3);
+  INSERT INTO t1 VALUES(2);
+  INSERT INTO t1 VALUES(1);
+  INSERT INTO t1 VALUES(2);
+  INSERT INTO t1 VALUES(3);
+  INSERT INTO t1 VALUES(1);
+  CREATE TABLE t2(x);
+  INSERT INTO t2
+    SELECT DISTINCT
+      CASE a WHEN 1 THEN x'0000000000'
+             WHEN 2 THEN zeroblob(5)
+             ELSE 'xyzzy' END
+      FROM t1;
+  SELECT quote(x) FROM t2 ORDER BY 1;
+} {'xyzzy' X'0000000000'}
+
+#----------------------------------------------------------------------------
+# Ticket [c5ea805691bfc4204b1cb9e9aa0103bd48bc7d34] (2014-12-04)
+# Make sure that DISTINCT works together with ORDER BY and descending
+# indexes.
+#
+do_execsql_test 5.1 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(x);
+  INSERT INTO t1(x) VALUES(3),(1),(5),(2),(6),(4),(5),(1),(3);
+  CREATE INDEX t1x ON t1(x DESC);
+  SELECT DISTINCT x FROM t1 ORDER BY x ASC;
+} {1 2 3 4 5 6}
+do_execsql_test 5.2 {
+  SELECT DISTINCT x FROM t1 ORDER BY x DESC;
+} {6 5 4 3 2 1}
+do_execsql_test 5.3 {
+  SELECT DISTINCT x FROM t1 ORDER BY x;
+} {1 2 3 4 5 6}
+do_execsql_test 5.4 {
+  DROP INDEX t1x;
+  CREATE INDEX t1x ON t1(x ASC);
+  SELECT DISTINCT x FROM t1 ORDER BY x ASC;
+} {1 2 3 4 5 6}
+do_execsql_test 5.5 {
+  SELECT DISTINCT x FROM t1 ORDER BY x DESC;
+} {6 5 4 3 2 1}
+do_execsql_test 5.6 {
+  SELECT DISTINCT x FROM t1 ORDER BY x;
+} {1 2 3 4 5 6}
 
 finish_test

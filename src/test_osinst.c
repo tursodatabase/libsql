@@ -70,6 +70,12 @@
 */
 
 #include "sqlite3.h"
+
+#include "os_setup.h"
+#if SQLITE_OS_WIN
+#  include "os_win.h"
+#endif
+
 #include <string.h>
 #include <assert.h>
 
@@ -221,7 +227,6 @@ static sqlite3_uint64 vfslog_time(){
   return sTime.tv_usec + (sqlite3_uint64)sTime.tv_sec * 1000000;
 }
 #elif SQLITE_OS_WIN
-#include <windows.h>
 #include <time.h>
 static sqlite3_uint64 vfslog_time(){
   FILETIME ft;
@@ -1126,7 +1131,6 @@ static int test_vfslog(
 
   switch( (enum VL_enum)iSub ){
     case VL_ANNOTATE: {
-      int rc;
       char *zVfs;
       char *zMsg;
       if( objc!=4 ){
@@ -1143,7 +1147,6 @@ static int test_vfslog(
       break;
     }
     case VL_FINALIZE: {
-      int rc;
       char *zVfs;
       if( objc!=3 ){
         Tcl_WrongNumArgs(interp, 2, objv, "VFS");
@@ -1159,7 +1162,6 @@ static int test_vfslog(
     };
 
     case VL_NEW: {
-      int rc;
       char *zVfs;
       char *zParent;
       char *zLog;

@@ -285,7 +285,7 @@ do_test fuzz-1.18 {
         )
      ))
   }
-} {0 -4294967298}
+} {0 {{}}}
 
 # At one point the following INSERT statement caused an assert() to fail.
 # 

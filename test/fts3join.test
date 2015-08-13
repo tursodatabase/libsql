@@ -1,0 +1,66 @@
+# 2014 January 4
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this script is testing the FTS3 module.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set ::testprefix fts3join
+
+# If SQLITE_ENABLE_FTS3 is defined, omit this file.
+ifcapable !fts3 {
+  finish_test
+  return
+}
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE ft1 USING fts4(x);
+  INSERT INTO ft1 VALUES('aaa aaa');
+  INSERT INTO ft1 VALUES('aaa bbb');
+  INSERT INTO ft1 VALUES('bbb aaa');
+  INSERT INTO ft1 VALUES('bbb bbb');
+
+  CREATE TABLE t1(id, y);
+  INSERT INTO t1 VALUES(1, 'aaa');
+  INSERT INTO t1 VALUES(2, 'bbb');
+}
+
+do_execsql_test 1.1 {
+  SELECT docid FROM ft1, t1 WHERE ft1 MATCH y AND id=1;
+} {1 2 3}
+
+do_execsql_test 1.2 {
+  SELECT docid FROM ft1, t1 WHERE ft1 MATCH y AND id=1 ORDER BY docid;
+} {1 2 3}
+
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE ft2 USING fts4(x);
+  CREATE VIRTUAL TABLE ft3 USING fts4(y);
+
+  INSERT INTO ft2 VALUES('abc');
+  INSERT INTO ft2 VALUES('def');
+  INSERT INTO ft3 VALUES('ghi');
+  INSERT INTO ft3 VALUES('abc');
+}
+
+do_execsql_test 2.1 { SELECT * FROM ft2, ft3 WHERE x MATCH y; } {abc abc}
+do_execsql_test 2.2 { SELECT * FROM ft2, ft3 WHERE y MATCH x; } {abc abc}
+do_execsql_test 2.3 { SELECT * FROM ft3, ft2 WHERE x MATCH y; } {abc abc}
+do_execsql_test 2.4 { SELECT * FROM ft3, ft2 WHERE y MATCH x; } {abc abc}
+
+do_catchsql_test 2.5 { 
+  SELECT * FROM ft3, ft2 WHERE y MATCH x AND x MATCH y; 
+} {1 {unable to use function MATCH in the requested context}}
+
+finish_test
+
+

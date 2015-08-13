@@ -14,7 +14,7 @@
 */
 
 #include "tcl.h"
-#include <sqlite3.h>
+#include "sqlite3.h"
 #include <assert.h>
 
 /* These functions are implemented in main.c. */

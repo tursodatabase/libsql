@@ -211,15 +211,15 @@ static int faultsimInstall(int install){
         faultsimBeginBenign, faultsimEndBenign
     );
   }else{
-    sqlite3_mem_methods m;
+    sqlite3_mem_methods m2;
     assert(memfault.m.xMalloc);
 
     /* One should be able to reset the default memory allocator by storing
     ** a zeroed allocator then calling GETMALLOC. */
-    memset(&m, 0, sizeof(m));
-    sqlite3_config(SQLITE_CONFIG_MALLOC, &m);
-    sqlite3_config(SQLITE_CONFIG_GETMALLOC, &m);
-    assert( memcmp(&m, &memfault.m, sizeof(m))==0 );
+    memset(&m2, 0, sizeof(m2));
+    sqlite3_config(SQLITE_CONFIG_MALLOC, &m2);
+    sqlite3_config(SQLITE_CONFIG_GETMALLOC, &m2);
+    assert( memcmp(&m2, &memfault.m, sizeof(m2))==0 );
 
     rc = sqlite3_config(SQLITE_CONFIG_MALLOC, &memfault.m);
     sqlite3_test_control(SQLITE_TESTCTRL_BENIGN_MALLOC_HOOKS, 0, 0);
@@ -696,6 +696,12 @@ static int test_memdebug_pending(
   return TCL_OK;
 }
 
+/*
+** The following global variable keeps track of the number of tests
+** that have run.  This variable is only useful when running in the
+** debugger.
+*/
+static int sqlite3_memdebug_title_count = 0;
 
 /*
 ** Usage:    sqlite3_memdebug_settitle TITLE
@@ -713,6 +719,7 @@ static int test_memdebug_settitle(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
+  sqlite3_memdebug_title_count++;
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "TITLE");
     return TCL_ERROR;
@@ -880,7 +887,7 @@ static int test_memdebug_log(
 **
 ** Set the scratch memory buffer using SQLITE_CONFIG_SCRATCH.
 ** The buffer is static and is of limited size.  N might be
-** adjusted downward as needed to accomodate the requested size.
+** adjusted downward as needed to accommodate the requested size.
 ** The revised value of N is returned.
 **
 ** A negative SIZE causes the buffer pointer to be NULL.
@@ -920,7 +927,7 @@ static int test_config_scratch(
 **
 ** Set the page-cache memory buffer using SQLITE_CONFIG_PAGECACHE.
 ** The buffer is static and is of limited size.  N might be
-** adjusted downward as needed to accomodate the requested size.
+** adjusted downward as needed to accommodate the requested size.
 ** The revised value of N is returned.
 **
 ** A negative SIZE causes the buffer pointer to be NULL.
@@ -931,8 +938,8 @@ static int test_config_pagecache(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-  int sz, N, rc;
-  Tcl_Obj *pResult;
+  int sz, N;
+  Tcl_Obj *pRes;
   static char *buf = 0;
   if( objc!=3 ){
     Tcl_WrongNumArgs(interp, 1, objv, "SIZE N");
@@ -941,17 +948,20 @@ static int test_config_pagecache(
   if( Tcl_GetIntFromObj(interp, objv[1], &sz) ) return TCL_ERROR;
   if( Tcl_GetIntFromObj(interp, objv[2], &N) ) return TCL_ERROR;
   free(buf);
+  buf = 0;
+
+  /* Set the return value */
+  pRes = Tcl_NewObj();
+  Tcl_ListObjAppendElement(0, pRes, Tcl_NewIntObj(sqlite3GlobalConfig.szPage));
+  Tcl_ListObjAppendElement(0, pRes, Tcl_NewIntObj(sqlite3GlobalConfig.nPage));
+  Tcl_SetObjResult(interp, pRes);
+
   if( sz<0 ){
-    buf = 0;
-    rc = sqlite3_config(SQLITE_CONFIG_PAGECACHE, 0, 0, 0);
+    sqlite3_config(SQLITE_CONFIG_PAGECACHE, 0, 0, 0);
   }else{
     buf = malloc( sz*N );
-    rc = sqlite3_config(SQLITE_CONFIG_PAGECACHE, buf, sz, N);
+    sqlite3_config(SQLITE_CONFIG_PAGECACHE, buf, sz, N);
   }
-  pResult = Tcl_NewObj();
-  Tcl_ListObjAppendElement(0, pResult, Tcl_NewIntObj(rc));
-  Tcl_ListObjAppendElement(0, pResult, Tcl_NewIntObj(N));
-  Tcl_SetObjResult(interp, pResult);
   return TCL_OK;
 }
 
@@ -1254,6 +1264,35 @@ static int test_config_cis(
 }
 
 /*
+** Usage:    sqlite3_config_pmasz  INTEGER
+**
+** Set the minimum PMA size.
+*/
+static int test_config_pmasz(
+  void * clientData, 
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int rc;
+  int iPmaSz;
+
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "BOOL");
+    return TCL_ERROR;
+  }
+  if( Tcl_GetIntFromObj(interp, objv[1], &iPmaSz) ){
+    return TCL_ERROR;
+  }
+
+  rc = sqlite3_config(SQLITE_CONFIG_PMASZ, iPmaSz);
+  Tcl_SetResult(interp, (char *)sqlite3ErrName(rc), TCL_VOLATILE);
+
+  return TCL_OK;
+}
+
+
+/*
 ** Usage:    sqlite3_dump_memsys3  FILENAME
 **           sqlite3_dump_memsys5  FILENAME
 **
@@ -1302,7 +1341,7 @@ static int test_status(
   Tcl_Obj *CONST objv[]
 ){
   int rc, iValue, mxValue;
-  int i, op, resetFlag;
+  int i, op = 0, resetFlag;
   const char *zOpName;
   static const struct {
     const char *zName;
@@ -1359,7 +1398,7 @@ static int test_db_status(
   Tcl_Obj *CONST objv[]
 ){
   int rc, iValue, mxValue;
-  int i, op, resetFlag;
+  int i, op = 0, resetFlag;
   const char *zOpName;
   sqlite3 *db;
   extern int getDbPointer(Tcl_Interp*, const char*, sqlite3**);
@@ -1506,6 +1545,7 @@ int Sqlitetest_malloc_Init(Tcl_Interp *interp){
      { "sqlite3_config_error",       test_config_error             ,0 },
      { "sqlite3_config_uri",         test_config_uri               ,0 },
      { "sqlite3_config_cis",         test_config_cis               ,0 },
+     { "sqlite3_config_pmasz",       test_config_pmasz             ,0 },
      { "sqlite3_db_config_lookaside",test_db_config_lookaside      ,0 },
      { "sqlite3_dump_memsys3",       test_dump_memsys3             ,3 },
      { "sqlite3_dump_memsys5",       test_dump_memsys3             ,5 },

@@ -62,13 +62,13 @@ mkdir -p tea/generic
 echo "#ifdef USE_SYSTEM_SQLITE"      > tea/generic/tclsqlite3.c 
 echo "# include <sqlite3.h>"        >> tea/generic/tclsqlite3.c
 echo "#else"                        >> tea/generic/tclsqlite3.c
-echo "#include \"../../sqlite3.c\"" >> tea/generic/tclsqlite3.c
+echo "#include \"sqlite3.c\""       >> tea/generic/tclsqlite3.c
 echo "#endif"                       >> tea/generic/tclsqlite3.c
 cat  $TOP/src/tclsqlite.c           >> tea/generic/tclsqlite3.c
 
-cat tea/configure.in | 
+cat tea/configure.ac | 
   sed "s/AC_INIT(\[sqlite\], .*)/AC_INIT([sqlite], [$VERSION])/" > tmp
-mv tmp tea/configure.in
+mv tmp tea/configure.ac
 
 cd tea
 autoconf
@@ -80,4 +80,3 @@ tar -xzf sqlite-$VERSION.tar.gz
 mv sqlite-$VERSION sqlite-autoconf-$ARTIFACT
 tar -czf sqlite-autoconf-$ARTIFACT.tar.gz sqlite-autoconf-$ARTIFACT
 mv sqlite-autoconf-$ARTIFACT.tar.gz ..
-

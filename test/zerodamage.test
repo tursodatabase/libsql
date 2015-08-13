@@ -115,7 +115,7 @@ ifcapable wal {
        UPDATE t1 SET y=randomblob(50) WHERE x=124;
     }
     file size test.db-wal
-  } {8416}
+  } {16800}
 }
 
 finish_test

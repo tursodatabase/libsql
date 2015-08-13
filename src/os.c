@@ -107,7 +107,21 @@ int sqlite3OsCheckReservedLock(sqlite3_file *id, int *pResOut){
 ** routine has no return value since the return value would be meaningless.
 */
 int sqlite3OsFileControl(sqlite3_file *id, int op, void *pArg){
-  DO_OS_MALLOC_TEST(id);
+#ifdef SQLITE_TEST
+  if( op!=SQLITE_FCNTL_COMMIT_PHASETWO ){
+    /* Faults are not injected into COMMIT_PHASETWO because, assuming SQLite
+    ** is using a regular VFS, it is called after the corresponding 
+    ** transaction has been committed. Injecting a fault at this point 
+    ** confuses the test scripts - the COMMIT comand returns SQLITE_NOMEM
+    ** but the transaction is committed anyway.
+    **
+    ** The core must call OsFileControl() though, not OsFileControlHint(),
+    ** as if a custom VFS (e.g. zipvfs) returns an error here, it probably
+    ** means the commit really has failed and an error should be returned
+    ** to the user.  */
+    DO_OS_MALLOC_TEST(id);
+  }
+#endif
   return id->pMethods->xFileControl(id, op, pArg);
 }
 void sqlite3OsFileControlHint(sqlite3_file *id, int op, void *pArg){
@@ -347,6 +361,10 @@ int sqlite3_vfs_register(sqlite3_vfs *pVfs, int makeDflt){
   int rc = sqlite3_initialize();
   if( rc ) return rc;
 #endif
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( pVfs==0 ) return SQLITE_MISUSE_BKPT;
+#endif
+
   MUTEX_LOGIC( mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER); )
   sqlite3_mutex_enter(mutex);
   vfsUnlink(pVfs);

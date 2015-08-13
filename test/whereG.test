@@ -9,11 +9,12 @@
 #
 #***********************************************************************
 # 
-# Test cases for query planning decisions and the unlikely() and
+# Test cases for query planning decisions and the likely(), unlikely(), and
 # likelihood() functions.
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix whereG
 
 do_execsql_test whereG-1.0 {
   CREATE TABLE composer(
@@ -95,7 +96,7 @@ do_eqp_test whereG-1.5 {
    WHERE cname LIKE '%bach%'
      AND composer.cid=track.cid
      AND album.aid=track.aid;
-} {/.*track.*composer.*album.*/}
+} {/.*track.*(composer.*album|album.*composer).*/}
 do_execsql_test whereG-1.6 {
   SELECT DISTINCT aname
     FROM album, composer, track
@@ -110,7 +111,7 @@ do_eqp_test whereG-1.7 {
    WHERE cname LIKE '%bach%'
      AND unlikely(composer.cid=track.cid)
      AND unlikely(album.aid=track.aid);
-} {/.*track.*composer.*album.*/}
+} {/.*track.*(composer.*album|album.*composer).*/}
 do_execsql_test whereG-1.8 {
   SELECT DISTINCT aname
     FROM album, composer, track
@@ -165,6 +166,105 @@ do_eqp_test whereG-3.3 {
 do_eqp_test whereG-3.4 {
   SELECT * FROM a, b WHERE a2=5 AND a1=b1;
 } {/.*SCAN TABLE a.*SEARCH TABLE b USING INDEX .*b_1 .b1=..*/}
+
+# Ticket [1e64dd782a126f48d78c43a664844a41d0e6334e]:
+# Incorrect result in a nested GROUP BY/DISTINCT due to the use of an OP_SCopy
+# where an OP_Copy was needed.
+#
+do_execsql_test whereG-4.0 {
+  CREATE TABLE t4(x);
+  INSERT INTO t4 VALUES('right'),('wrong');
+  SELECT DISTINCT x
+   FROM (SELECT x FROM t4 GROUP BY x)
+   WHERE x='right'
+   ORDER BY x;
+} {right}
+
+#-------------------------------------------------------------------------
+# Test that likelihood() specifications on indexed terms are taken into 
+# account by various forms of loops.
+#
+#   5.1.*: open ended range scans
+#   5.2.*: skip-scans
+#
+reset_db
+
+do_execsql_test 5.1 {
+  CREATE TABLE t1(a, b, c);
+  CREATE INDEX i1 ON t1(a, b);
+}
+do_eqp_test 5.1.2 {
+  SELECT * FROM t1 WHERE a>?
+} {0 0 0 {SEARCH TABLE t1 USING INDEX i1 (a>?)}}
+do_eqp_test 5.1.3 {
+  SELECT * FROM t1 WHERE likelihood(a>?, 0.9)
+} {0 0 0 {SCAN TABLE t1}}
+do_eqp_test 5.1.4 {
+  SELECT * FROM t1 WHERE likely(a>?)
+} {0 0 0 {SCAN TABLE t1}}
+
+do_test 5.2 {
+  for {set i 0} {$i < 100} {incr i} {
+    execsql { INSERT INTO t1 VALUES('abc', $i, $i); }
+  }
+  execsql { INSERT INTO t1 SELECT 'def', b, c FROM t1; }
+  execsql { ANALYZE }
+} {}
+do_eqp_test 5.2.2 {
+  SELECT * FROM t1 WHERE likelihood(b>?, 0.01)
+} {0 0 0 {SEARCH TABLE t1 USING INDEX i1 (ANY(a) AND b>?)}}
+do_eqp_test 5.2.3 {
+  SELECT * FROM t1 WHERE likelihood(b>?, 0.9)
+} {0 0 0 {SCAN TABLE t1}}
+do_eqp_test 5.2.4 {
+  SELECT * FROM t1 WHERE likely(b>?)
+} {0 0 0 {SCAN TABLE t1}}
+
+do_eqp_test 5.3.1 {
+  SELECT * FROM t1 WHERE a=?
+} {0 0 0 {SEARCH TABLE t1 USING INDEX i1 (a=?)}}
+do_eqp_test 5.3.2 {
+  SELECT * FROM t1 WHERE likelihood(a=?, 0.9)
+} {0 0 0 {SCAN TABLE t1}}
+do_eqp_test 5.3.3 {
+  SELECT * FROM t1 WHERE likely(a=?)
+} {0 0 0 {SCAN TABLE t1}}
+
+# 2015-06-18
+# Ticket [https://www.sqlite.org/see/tktview/472f0742a1868fb58862bc588ed70]
+#
+do_execsql_test 6.0 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(i int, x, y, z);
+  INSERT INTO t1 VALUES (1,1,1,1), (2,2,2,2), (3,3,3,3), (4,4,4,4);
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t2(i int, bool char);
+  INSERT INTO t2 VALUES(1,'T'), (2,'F');
+  SELECT count(*) FROM t1 LEFT JOIN t2 ON t1.i=t2.i AND bool='T';
+  SELECT count(*) FROM t1 LEFT JOIN t2 ON likely(t1.i=t2.i) AND bool='T';
+} {4 4}
+
+# 2015-06-20
+# Crash discovered by AFL
+#
+do_execsql_test 7.0 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a, b, PRIMARY KEY(a,b));
+  INSERT INTO t1 VALUES(9,1),(1,2);
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t2(x, y, PRIMARY KEY(x,y));
+  INSERT INTO t2 VALUES(3,3),(4,4);
+  SELECT likely(a), x FROM t1, t2 ORDER BY 1, 2;
+} {1 3 1 4 9 3 9 4}
+do_execsql_test 7.1 {
+  SELECT unlikely(a), x FROM t1, t2 ORDER BY 1, 2;
+} {1 3 1 4 9 3 9 4}
+do_execsql_test 7.2 {
+  SELECT likelihood(a,0.5), x FROM t1, t2 ORDER BY 1, 2;
+} {1 3 1 4 9 3 9 4}
+do_execsql_test 7.3 {
+  SELECT coalesce(a,a), x FROM t1, t2 ORDER BY 1, 2;
+} {1 3 1 4 9 3 9 4}
 
 
 finish_test

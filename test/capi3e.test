@@ -20,7 +20,11 @@ source $testdir/tester.tcl
 # Make sure the system encoding is utf-8. Otherwise, if the system encoding
 # is other than utf-8, [file isfile $x] may not refer to the same file
 # as [sqlite3 db $x].
-encoding system utf-8
+#
+# This is no longer needed here because it should be done within the test
+# fixture executable itself, via Tcl_SetSystemEncoding.
+#
+# encoding system utf-8
 
 # Do not use a codec for tests in this file, as the database file is
 # manipulated directly using tcl scripts (using the [hexio_write] command).

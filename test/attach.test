@@ -859,4 +859,16 @@ do_test attach-10.2 {
   }] 9 end
 } {4 noname {} 5 inmem {}}
 
+# Attach with a very long URI filename.
+#
+db close
+sqlite3 db test.db -uri 1
+do_execsql_test attach-11.1 {
+  ATTACH printf('file:%09000x/x.db?mode=memory&cache=shared',1) AS aux1;
+  CREATE TABLE aux1.t1(x,y);
+  INSERT INTO aux1.t1(x,y) VALUES(1,2),(3,4);
+  SELECT * FROM aux1.t1;
+} {1 2 3 4}
+
+
 finish_test

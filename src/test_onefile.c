@@ -595,9 +595,9 @@ static int fsOpen(
   int rc = SQLITE_OK;
 
   if( 0==(flags&(SQLITE_OPEN_MAIN_DB|SQLITE_OPEN_MAIN_JOURNAL)) ){
-    tmp_file *p = (tmp_file *)pFile;
-    memset(p, 0, sizeof(*p));
-    p->base.pMethods = &tmp_io_methods;
+    tmp_file *p2 = (tmp_file *)pFile;
+    memset(p2, 0, sizeof(*p2));
+    p2->base.pMethods = &tmp_io_methods;
     return SQLITE_OK;
   }
 

@@ -66,6 +66,12 @@ if {$::tcl_platform(os) eq "Darwin"} {
   set dlerror_nosymbol   {dlsym(XXX, %2$s): symbol not found}
 }
 
+if {$::tcl_platform(platform) eq "windows"} {
+  set dlerror_nosuchfile {The specified module could not be found.*}
+  set dlerror_notadll    {%%1 is not a valid Win32 application.*}
+  set dlerror_nosymbol   {The specified procedure could not be found.*}
+}
+
 # Make sure the test extension actually exists.  If it does not
 # exist, try to create it.  If unable to create it, then skip this
 # test file.
@@ -167,7 +173,7 @@ do_test loadext-2.3 {
     regsub {0x[1234567890abcdefABCDEF]*} $msg XXX msg
   }
   list $rc $msg
-} [list 1 [format $dlerror_nosymbol $testextension icecream]]
+} /[list 1 [format $dlerror_nosymbol $testextension icecream]]/
 
 # Try to load an extension for which the entry point fails (returns non-zero) 
 #
@@ -267,10 +273,17 @@ do_malloc_test loadext-5 -tclprep {
 } -tclbody {
   if {[autoinstall_test_functions]==7} {error "out of memory"}
 }
-do_malloc_test loadext-6 -tclbody {
-  db enable_load_extension 1
-  sqlite3_load_extension db $::testextension testloadext_init
+
+# On Windows, this malloc test must be skipped because the winDlOpen
+# function itself can fail due to "out of memory" conditions.
+#
+if {$::tcl_platform(platform) ne "windows"} {
+  do_malloc_test loadext-6 -tclbody {
+    db enable_load_extension 1
+    sqlite3_load_extension db $::testextension testloadext_init
+  }
 }
+
 autoinstall_test_functions
 
 finish_test

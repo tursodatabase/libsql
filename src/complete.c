@@ -70,7 +70,7 @@ extern const char sqlite3IsEbcdicIdChar[];
 **                 a statement.
 **
 **   (4) CREATE    The keyword CREATE has been seen at the beginning of a
-**                 statement, possibly preceeded by EXPLAIN and/or followed by
+**                 statement, possibly preceded by EXPLAIN and/or followed by
 **                 TEMP or TEMPORARY
 **
 **   (5) TRIGGER   We are in the middle of a trigger definition that must be
@@ -80,7 +80,7 @@ extern const char sqlite3IsEbcdicIdChar[];
 **                 the end of a trigger definition.
 **
 **   (7) END       We've seen the ";END" of the ";END;" that occurs at the end
-**                 of a trigger difinition.
+**                 of a trigger definition.
 **
 ** Transitions between states above are determined by tokens extracted
 ** from the input.  The following tokens are significant:
@@ -123,7 +123,7 @@ int sqlite3_complete(const char *zSql){
   };
 #else
   /* If triggers are not supported by this compile then the statement machine
-  ** used to detect the end of a statement is much simplier
+  ** used to detect the end of a statement is much simpler
   */
   static const u8 trans[3][3] = {
                      /* Token:           */
@@ -133,6 +133,13 @@ int sqlite3_complete(const char *zSql){
      /* 2  NORMAL: */ {    1,  2,     2, },
   };
 #endif /* SQLITE_OMIT_TRIGGER */
+
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( zSql==0 ){
+    (void)SQLITE_MISUSE_BKPT;
+    return 0;
+  }
+#endif
 
   while( *zSql ){
     switch( *zSql ){
@@ -262,7 +269,7 @@ int sqlite3_complete(const char *zSql){
 int sqlite3_complete16(const void *zSql){
   sqlite3_value *pVal;
   char const *zSql8;
-  int rc = SQLITE_NOMEM;
+  int rc;
 
 #ifndef SQLITE_OMIT_AUTOINIT
   rc = sqlite3_initialize();
@@ -277,7 +284,7 @@ int sqlite3_complete16(const void *zSql){
     rc = SQLITE_NOMEM;
   }
   sqlite3ValueFree(pVal);
-  return sqlite3ApiExit(0, rc);
+  return rc & 0xff;
 }
 #endif /* SQLITE_OMIT_UTF16 */
 #endif /* SQLITE_OMIT_COMPLETE */

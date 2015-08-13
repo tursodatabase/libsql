@@ -91,7 +91,7 @@ do_test analyze6-2.3 {
 } {0 0 0 {SEARCH TABLE t201 USING INTEGER PRIMARY KEY (rowid=?)}}
 do_test analyze6-2.4 {
   execsql {
-    INSERT INTO t201 VALUES(1,2,3);
+    INSERT INTO t201 VALUES(1,2,3),(2,3,4),(3,4,5);
     ANALYZE t201;
   }
   eqp {SELECT * FROM t201 WHERE z=5}

@@ -24,7 +24,7 @@ db close
 sqlite3_shutdown
 test_sqlite3_log xLog
 proc xLog {error_code msg} {
-  lappend ::log $msg 
+  lappend ::log $msg
 }
 sqlite3 db test.db
 db eval {PRAGMA mmap_size=0}
@@ -64,6 +64,7 @@ while {1} {
     if {[info exists ::log] && $::log!=""} {
       do_test win32lock-1.2-$delay1-log1 {
         regsub {\d+} $::log # x
+        regsub { at line \d+} $x "" x
         set x
       } {{delayed #ms for lock/sharing conflict}}
     }
@@ -112,6 +113,7 @@ while {1} {
     if {[info exists ::log] && $::log!=""} {
       do_test win32lock-2.2-$delay1-log1 {
         regsub {\d+} $::log # x
+        regsub { at line \d+} $x "" x
         set x
       } {{delayed #ms for lock/sharing conflict}}
     }
@@ -128,7 +130,53 @@ while {1} {
 file_control_win32_av_retry db 10 25
 sqlite3_test_control_pending_byte $old_pending_byte
 db close
+forcedelete test.db
+
+sqlite3 db test.db
+sqlite3 db2 test.db
+
+do_test win32lock-3.0 {
+  db eval {
+    CREATE TABLE t1(x);
+    INSERT INTO t1 VALUES(1);
+    INSERT INTO t1 VALUES(2);
+    INSERT INTO t1 VALUES(3);
+  }
+} {}
+
+do_test win32lock-3.1 {
+  db eval {
+    BEGIN EXCLUSIVE;
+    INSERT INTO t1 VALUES(4);
+  }
+} {}
+
+do_test win32lock-3.2 {
+  catchsql {
+    BEGIN EXCLUSIVE;
+    INSERT INTO t1 VALUES(5);
+    COMMIT;
+  } db2
+} {1 {database is locked}}
+
+do_test win32lock-3.3 {
+  db eval {
+    COMMIT;
+  }
+} {}
+
+do_test win32lock-3.4 {
+  set handle [lindex [file_control_win32_set_handle db 0] end]
+  list [catchsql {
+    BEGIN EXCLUSIVE;
+    INSERT INTO t1 VALUES(6);
+    COMMIT;
+  }] [file_control_win32_set_handle db $handle] [sqlite3_extended_errcode db]
+} {{1 {disk I/O error}} {0 0} SQLITE_IOERR_LOCK}
+
+db2 close
+db close
 sqlite3_shutdown
-test_sqlite3_log 
+test_sqlite3_log
 sqlite3_initialize
 finish_test

@@ -45,9 +45,14 @@ int sqlite3MutexInit(void){
     }else{
       pFrom = sqlite3NoopMutex();
     }
-    memcpy(pTo, pFrom, offsetof(sqlite3_mutex_methods, xMutexAlloc));
-    memcpy(&pTo->xMutexFree, &pFrom->xMutexFree,
-           sizeof(*pTo) - offsetof(sqlite3_mutex_methods, xMutexFree));
+    pTo->xMutexInit = pFrom->xMutexInit;
+    pTo->xMutexEnd = pFrom->xMutexEnd;
+    pTo->xMutexFree = pFrom->xMutexFree;
+    pTo->xMutexEnter = pFrom->xMutexEnter;
+    pTo->xMutexTry = pFrom->xMutexTry;
+    pTo->xMutexLeave = pFrom->xMutexLeave;
+    pTo->xMutexHeld = pFrom->xMutexHeld;
+    pTo->xMutexNotheld = pFrom->xMutexNotheld;
     pTo->xMutexAlloc = pFrom->xMutexAlloc;
   }
   rc = sqlite3GlobalConfig.mutex.xMutexInit();
@@ -81,7 +86,8 @@ int sqlite3MutexEnd(void){
 */
 sqlite3_mutex *sqlite3_mutex_alloc(int id){
 #ifndef SQLITE_OMIT_AUTOINIT
-  if( sqlite3_initialize() ) return 0;
+  if( id<=SQLITE_MUTEX_RECURSIVE && sqlite3_initialize() ) return 0;
+  if( id>SQLITE_MUTEX_RECURSIVE && sqlite3MutexInit() ) return 0;
 #endif
   return sqlite3GlobalConfig.mutex.xMutexAlloc(id);
 }

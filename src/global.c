@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** This file contains definitions of global variables and contants.
+** This file contains definitions of global variables and constants.
 */
 #include "sqliteInt.h"
 
@@ -46,16 +46,16 @@ const unsigned char sqlite3UpperToLower[] = {
      48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, /* 3x */
      64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, /* 4x */
      80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, /* 5x */
-     96, 97, 66, 67, 68, 69, 70, 71, 72, 73,106,107,108,109,110,111, /* 6x */
-    112, 81, 82, 83, 84, 85, 86, 87, 88, 89,122,123,124,125,126,127, /* 7x */
+     96, 97, 98, 99,100,101,102,103,104,105,106,107,108,109,110,111, /* 6x */
+    112,113,114,115,116,117,118,119,120,121,122,123,124,125,126,127, /* 7x */
     128,129,130,131,132,133,134,135,136,137,138,139,140,141,142,143, /* 8x */
-    144,145,146,147,148,149,150,151,152,153,154,155,156,157,156,159, /* 9x */
+    144,145,146,147,148,149,150,151,152,153,154,155,156,157,158,159, /* 9x */
     160,161,162,163,164,165,166,167,168,169,170,171,140,141,142,175, /* Ax */
     176,177,178,179,180,181,182,183,184,185,186,187,188,189,190,191, /* Bx */
     192,129,130,131,132,133,134,135,136,137,202,203,204,205,206,207, /* Cx */
     208,145,146,147,148,149,150,151,152,153,218,219,220,221,222,223, /* Dx */
-    224,225,162,163,164,165,166,167,168,169,232,203,204,205,206,207, /* Ex */
-    239,240,241,242,243,244,245,246,247,248,249,219,220,221,222,255, /* Fx */
+    224,225,162,163,164,165,166,167,168,169,234,235,236,237,238,239, /* Ex */
+    240,241,242,243,244,245,246,247,248,249,250,251,252,253,254,255, /* Fx */
 #endif
 };
 
@@ -129,12 +129,34 @@ const unsigned char sqlite3CtypeMap[256] = {
 };
 #endif
 
+/* EVIDENCE-OF: R-02982-34736 In order to maintain full backwards
+** compatibility for legacy applications, the URI filename capability is
+** disabled by default.
+**
+** EVIDENCE-OF: R-38799-08373 URI filenames can be enabled or disabled
+** using the SQLITE_USE_URI=1 or SQLITE_USE_URI=0 compile-time options.
+**
+** EVIDENCE-OF: R-43642-56306 By default, URI handling is globally
+** disabled. The default value may be changed by compiling with the
+** SQLITE_USE_URI symbol defined.
+*/
 #ifndef SQLITE_USE_URI
 # define  SQLITE_USE_URI 0
 #endif
 
+/* EVIDENCE-OF: R-38720-18127 The default setting is determined by the
+** SQLITE_ALLOW_COVERING_INDEX_SCAN compile-time option, or is "on" if
+** that compile-time option is omitted.
+*/
 #ifndef SQLITE_ALLOW_COVERING_INDEX_SCAN
 # define SQLITE_ALLOW_COVERING_INDEX_SCAN 1
+#endif
+
+/* The minimum PMA size is set to this value multiplied by the database
+** page size in bytes.
+*/
+#ifndef SQLITE_SORTER_PMASZ
+# define SQLITE_SORTER_PMASZ 250
 #endif
 
 /*
@@ -164,24 +186,32 @@ SQLITE_WSD struct Sqlite3Config sqlite3Config = {
    0,                         /* nScratch */
    (void*)0,                  /* pPage */
    0,                         /* szPage */
-   0,                         /* nPage */
+   SQLITE_DEFAULT_PCACHE_INITSZ, /* nPage */
    0,                         /* mxParserStack */
    0,                         /* sharedCacheEnabled */
+   SQLITE_SORTER_PMASZ,       /* szPma */
    /* All the rest should always be initialized to zero */
    0,                         /* isInit */
    0,                         /* inProgress */
    0,                         /* isMutexInit */
    0,                         /* isMallocInit */
    0,                         /* isPCacheInit */
-   0,                         /* pInitMutex */
    0,                         /* nRefInitMutex */
+   0,                         /* pInitMutex */
    0,                         /* xLog */
    0,                         /* pLogArg */
-   0,                         /* bLocaltimeFault */
 #ifdef SQLITE_ENABLE_SQLLOG
    0,                         /* xSqllog */
-   0                          /* pSqllogArg */
+   0,                         /* pSqllogArg */
 #endif
+#ifdef SQLITE_VDBE_COVERAGE
+   0,                         /* xVdbeBranch */
+   0,                         /* pVbeBranchArg */
+#endif
+#ifndef SQLITE_OMIT_BUILTIN_TEST
+   0,                         /* xTestCallback */
+#endif
+   0                          /* bLocaltimeFault */
 };
 
 /*
@@ -215,8 +245,8 @@ const Token sqlite3IntTokens[] = {
 **
 ** IMPORTANT:  Changing the pending byte to any value other than
 ** 0x40000000 results in an incompatible database file format!
-** Changing the pending byte during operating results in undefined
-** and dileterious behavior.
+** Changing the pending byte during operation will result in undefined
+** and incorrect behavior.
 */
 #ifndef SQLITE_OMIT_WSD
 int sqlite3PendingByte = 0x40000000;

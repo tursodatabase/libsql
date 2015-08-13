@@ -238,12 +238,14 @@ ifcapable wal {
   tvfs1 script tvfs1_callback
   proc tvfs1_callback {method filename args} { 
     set ::T1([file tail $filename]) 1 
+    return SQLITE_OK
   }
   testvfs tvfs2 
   tvfs2 filter {xOpen xDelete xAccess xFullPathname}
   tvfs2 script tvfs2_callback
   proc tvfs2_callback {method filename args} { 
     set ::T2([file tail $filename]) 1 
+    return SQLITE_OK
   }
   
   catch {db close}

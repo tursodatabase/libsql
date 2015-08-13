@@ -209,5 +209,87 @@ do_catchsql_test 5.1 {
 do_catchsql_test 5.2 {
   CREATE VIRTUAL TABLE t4 USING fts4(prefix="");
 } {0 {}}
+do_catchsql_test 5.3 {
+  CREATE VIRTUAL TABLE t5 USING fts4(prefix="-1");
+} {1 {error parsing prefix parameter: -1}}
+
+#-------------------------------------------------------------------------
+# Prefix indexes of size 0 are ignored. Demonstrate this by showing that
+# adding prefix=0 does not change the contents of the %_segdir table.
+#
+reset_db
+do_execsql_test 6.1.1 {
+  CREATE VIRTUAL TABLE t1 USING fts4(prefix=0);
+  CREATE VIRTUAL TABLE t2 USING fts4;
+  INSERT INTO t1 VALUES('Twas Mulga Bill, from Eaglehawk, ');
+  INSERT INTO t2 VALUES('Twas Mulga Bill, from Eaglehawk, ');
+} {}
+do_execsql_test 6.1.2 {
+  SELECT md5sum(quote(root)) FROM t1_segdir;
+} [db eval {SELECT md5sum(quote(root)) FROM t2_segdir}]
+
+reset_db
+do_execsql_test 6.2.1 {
+  CREATE VIRTUAL TABLE t1 USING fts4(prefix="1,0,2");
+  CREATE VIRTUAL TABLE t2 USING fts4(prefix="1,2");
+  INSERT INTO t1 VALUES('that caught the cycling craze;');
+  INSERT INTO t2 VALUES('that caught the cycling craze;');
+} {}
+do_execsql_test 6.2.2 {
+  SELECT md5sum(quote(root)) FROM t1_segdir;
+} [db eval {SELECT md5sum(quote(root)) FROM t2_segdir}]
+
+reset_db
+do_execsql_test 6.3.1 {
+  CREATE VIRTUAL TABLE t1 USING fts4(prefix="1,3,2");
+  CREATE VIRTUAL TABLE t2 USING fts4(prefix="1,2");
+  INSERT INTO t1 VALUES('He turned away the good old horse');
+  INSERT INTO t2 VALUES('He turned away the good old horse');
+} {}
+do_test 6.3.2 {
+  set one [db eval {SELECT md5sum(quote(root)) FROM t1_segdir}]
+  set two [db eval {SELECT md5sum(quote(root)) FROM t2_segdir}]
+  expr {$one == $two}
+} 0
+
+reset_db
+do_execsql_test 6.4.1 {
+  CREATE VIRTUAL TABLE t1 USING fts4(prefix="1,600,2");
+  CREATE VIRTUAL TABLE t2 USING fts4(prefix="1,2");
+  INSERT INTO t1 VALUES('that served him many days;');
+  INSERT INTO t2 VALUES('that served him many days;');
+} {}
+do_execsql_test 6.4.2 {
+  SELECT md5sum(quote(root)) FROM t1_segdir;
+} [db eval {SELECT md5sum(quote(root)) FROM t2_segdir}]
+
+reset_db
+do_execsql_test 6.5.1 {
+  CREATE VIRTUAL TABLE t1 USING fts4(prefix="2147483647,2147483648,2147483649");
+  CREATE VIRTUAL TABLE t2 USING fts4(prefix=);
+  INSERT INTO t1 VALUES('He dressed himself in cycling clothes');
+  INSERT INTO t2 VALUES('He dressed himself in cycling clothes');
+} {}
+do_execsql_test 6.5.2 {
+  SELECT md5sum(quote(root)) FROM t1_segdir;
+} [db eval {SELECT md5sum(quote(root)) FROM t2_segdir}]
+
+
+do_execsql_test 7.0 {
+  CREATE VIRTUAL TABLE t6 USING fts4(x,order=DESC);
+  INSERT INTO t6(docid, x) VALUES(-1,'a b');
+  INSERT INTO t6(docid, x) VALUES(1, 'b');
+}
+do_execsql_test 7.1 {
+  SELECT docid FROM t6 WHERE t6 MATCH '"a* b"';
+} {-1}
+do_execsql_test 7.2 {
+  SELECT docid FROM t6 WHERE t6 MATCH 'a*';
+} {-1}
+do_execsql_test 7.3 {
+  SELECT docid FROM t6 WHERE t6 MATCH 'a* b';
+} {-1}
+
+
 
 finish_test

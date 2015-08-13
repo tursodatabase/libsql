@@ -49,7 +49,7 @@ static char *exprToString(Mem *aMem, Expr *pExpr){
         zRet = sqlite3_mprintf("%lld", pMem->u.i);
       }
       else if( pMem->flags & MEM_Real ){
-        zRet = sqlite3_mprintf("%f", pMem->r);
+        zRet = sqlite3_mprintf("%f", pMem->u.r);
       }
       else if( pMem->flags & MEM_Str ){
         zRet = sqlite3_mprintf("%.*Q", pMem->n, pMem->z);

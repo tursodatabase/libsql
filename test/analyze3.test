@@ -16,6 +16,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix analyze3
 
 ifcapable !stat4&&!stat3 {
   finish_test
@@ -45,6 +46,9 @@ ifcapable !stat4&&!stat3 {
 #               using the clear_bindings() or transfer_bindings() APIs.
 # 
 # analyze3-6.*: Test that the problem fixed by commit [127a5b776d] is fixed.
+#
+# analyze3-7.*: Test that some memory leaks discovered by fuzz testing 
+#               have been fixed.
 #
 
 proc getvar {varname} { uplevel #0 set $varname }
@@ -103,12 +107,21 @@ do_test analyze3-1.1.1 {
   }
 } {1}
 
+do_execsql_test analyze3-1.1.x {
+  SELECT count(*) FROM t1 WHERE x>200 AND x<300;
+  SELECT count(*) FROM t1 WHERE x>0 AND x<1100;
+} {99 1000}
+
+# The first of the following two SELECT statements visits 99 rows. So
+# it is better to use the index. But the second visits every row in 
+# the table (1000 in total) so it is better to do a full-table scan.
+#
 do_eqp_test analyze3-1.1.2 {
   SELECT sum(y) FROM t1 WHERE x>200 AND x<300
 } {0 0 0 {SEARCH TABLE t1 USING INDEX i1 (x>? AND x<?)}}
 do_eqp_test analyze3-1.1.3 {
   SELECT sum(y) FROM t1 WHERE x>0 AND x<1100 
-} {0 0 0 {SEARCH TABLE t1 USING INDEX i1 (x>? AND x<?)}}
+} {0 0 0 {SCAN TABLE t1}}
 
 do_test analyze3-1.1.4 {
   sf_execsql { SELECT sum(y) FROM t1 WHERE x>200 AND x<300 }
@@ -125,17 +138,17 @@ do_test analyze3-1.1.6 {
 } {199 0 14850}
 do_test analyze3-1.1.7 {
   sf_execsql { SELECT sum(y) FROM t1 WHERE x>0 AND x<1100 }
-} {2000 0 499500}
+} {999 999 499500}
 do_test analyze3-1.1.8 {
   set l [string range "0" 0 end]
   set u [string range "1100" 0 end]
   sf_execsql { SELECT sum(y) FROM t1 WHERE x>$l AND x<$u }
-} {2000 0 499500}
+} {999 999 499500}
 do_test analyze3-1.1.9 {
   set l [expr int(0)]
   set u [expr int(1100)]
   sf_execsql { SELECT sum(y) FROM t1 WHERE x>$l AND x<$u }
-} {2000 0 499500}
+} {999 999 499500}
 
 
 # The following tests are similar to the block above. The difference is
@@ -152,12 +165,17 @@ do_test analyze3-1.2.1 {
     ANALYZE;
   }
 } {}
+do_execsql_test analyze3-2.1.x {
+  SELECT count(*) FROM t2 WHERE x>1 AND x<2;
+  SELECT count(*) FROM t2 WHERE x>0 AND x<99;
+} {200 990}
 do_eqp_test analyze3-1.2.2 {
   SELECT sum(y) FROM t2 WHERE x>1 AND x<2
 } {0 0 0 {SEARCH TABLE t2 USING INDEX i2 (x>? AND x<?)}}
 do_eqp_test analyze3-1.2.3 {
   SELECT sum(y) FROM t2 WHERE x>0 AND x<99
-} {0 0 0 {SEARCH TABLE t2 USING INDEX i2 (x>? AND x<?)}}
+} {0 0 0 {SCAN TABLE t2}}
+
 do_test analyze3-1.2.4 {
   sf_execsql { SELECT sum(y) FROM t2 WHERE x>12 AND x<20 }
 } {161 0 4760}
@@ -173,17 +191,17 @@ do_test analyze3-1.2.6 {
 } {161 0 integer integer 4760}
 do_test analyze3-1.2.7 {
   sf_execsql { SELECT sum(y) FROM t2 WHERE x>0 AND x<99 }
-} {1981 0 490555}
+} {999 999 490555}
 do_test analyze3-1.2.8 {
   set l [string range "0" 0 end]
   set u [string range "99" 0 end]
   sf_execsql {SELECT typeof($l), typeof($u), sum(y) FROM t2 WHERE x>$l AND x<$u}
-} {1981 0 text text 490555}
+} {999 999 text text 490555}
 do_test analyze3-1.2.9 {
   set l [expr int(0)]
   set u [expr int(99)]
   sf_execsql {SELECT typeof($l), typeof($u), sum(y) FROM t2 WHERE x>$l AND x<$u}
-} {1981 0 integer integer 490555}
+} {999 999 integer integer 490555}
 
 # Same tests a third time. This time, column x has INTEGER affinity and
 # is not the leftmost column of the table. This triggered a bug causing
@@ -199,12 +217,16 @@ do_test analyze3-1.3.1 {
     ANALYZE;
   }
 } {}
+do_execsql_test analyze3-1.3.x {
+  SELECT count(*) FROM t3 WHERE x>200 AND x<300;
+  SELECT count(*) FROM t3 WHERE x>0 AND x<1100
+} {99 1000}
 do_eqp_test analyze3-1.3.2 {
   SELECT sum(y) FROM t3 WHERE x>200 AND x<300
 } {0 0 0 {SEARCH TABLE t3 USING INDEX i3 (x>? AND x<?)}}
 do_eqp_test analyze3-1.3.3 {
   SELECT sum(y) FROM t3 WHERE x>0 AND x<1100
-} {0 0 0 {SEARCH TABLE t3 USING INDEX i3 (x>? AND x<?)}}
+} {0 0 0 {SCAN TABLE t3}}
 
 do_test analyze3-1.3.4 {
   sf_execsql { SELECT sum(y) FROM t3 WHERE x>200 AND x<300 }
@@ -221,17 +243,17 @@ do_test analyze3-1.3.6 {
 } {199 0 14850}
 do_test analyze3-1.3.7 {
   sf_execsql { SELECT sum(y) FROM t3 WHERE x>0 AND x<1100 }
-} {2000 0 499500}
+} {999 999 499500}
 do_test analyze3-1.3.8 {
   set l [string range "0" 0 end]
   set u [string range "1100" 0 end]
   sf_execsql { SELECT sum(y) FROM t3 WHERE x>$l AND x<$u }
-} {2000 0 499500}
+} {999 999 499500}
 do_test analyze3-1.3.9 {
   set l [expr int(0)]
   set u [expr int(1100)]
   sf_execsql { SELECT sum(y) FROM t3 WHERE x>$l AND x<$u }
-} {2000 0 499500}
+} {999 999 499500}
 
 #-------------------------------------------------------------------------
 # Test that the values of bound SQL variables may be used for the LIKE
@@ -263,35 +285,35 @@ do_eqp_test analyze3-2.3 {
 
 do_test analyze3-2.4 {
   sf_execsql { SELECT count(*) FROM t1 WHERE b LIKE 'a%' }
-} {101 0 100}
+} {102 0 100}
 do_test analyze3-2.5 {
   sf_execsql { SELECT count(*) FROM t1 WHERE b LIKE '%a' }
 } {999 999 100}
 
-do_test analyze3-2.4 {
+do_test analyze3-2.6 {
   set like "a%"
   sf_execsql { SELECT count(*) FROM t1 WHERE b LIKE $like }
-} {101 0 100}
-do_test analyze3-2.5 {
+} {102 0 100}
+do_test analyze3-2.7 {
   set like "%a"
   sf_execsql { SELECT count(*) FROM t1 WHERE b LIKE $like }
 } {999 999 100}
-do_test analyze3-2.6 {
+do_test analyze3-2.8 {
   set like "a"
   sf_execsql { SELECT count(*) FROM t1 WHERE b LIKE $like }
-} {101 0 0}
-do_test analyze3-2.7 {
+} {102 0 0}
+do_test analyze3-2.9 {
   set like "ab"
   sf_execsql { SELECT count(*) FROM t1 WHERE b LIKE $like }
-} {11 0 0}
-do_test analyze3-2.8 {
+} {12 0 0}
+do_test analyze3-2.10 {
   set like "abc"
   sf_execsql { SELECT count(*) FROM t1 WHERE b LIKE $like }
-} {2 0 1}
-do_test analyze3-2.9 {
+} {3 0 1}
+do_test analyze3-2.11 {
   set like "a_c"
   sf_execsql { SELECT count(*) FROM t1 WHERE b LIKE $like }
-} {101 0 10}
+} {102 0 10}
 
 
 #-------------------------------------------------------------------------
@@ -643,5 +665,31 @@ do_eqp_test analyze3-6-3 {
 do_eqp_test analyze3-6-2 {
   SELECT * FROM t1 WHERE a = 5 AND b > 'w' AND c = 13;
 } {0 0 0 {SEARCH TABLE t1 USING INDEX i2 (c=?)}}
+
+#-----------------------------------------------------------------------------
+# 2015-04-20.
+# Memory leak in sqlite3Stat4ProbeFree().  (Discovered while fuzzing.)
+#
+do_execsql_test analyze-7.1 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+  INSERT INTO t1 VALUES(1,1,'0000');
+  CREATE INDEX t0b ON t1(b);
+  ANALYZE;
+  SELECT c FROM t1 WHERE b=3 AND a BETWEEN 30 AND hex(1);
+} {}
+
+# At one point duplicate stat1 entries were causing a memory leak.
+#
+reset_db
+do_execsql_test 7.2 {
+  CREATE TABLE t1(a,b,c);
+  CREATE INDEX t1a ON t1(a);
+  ANALYZE;
+  SELECT * FROM sqlite_stat1;
+  INSERT INTO sqlite_stat1(tbl,idx,stat) VALUES('t1','t1a','12000');
+  INSERT INTO sqlite_stat1(tbl,idx,stat) VALUES('t1','t1a','12000');
+  ANALYZE sqlite_master;
+}
 
 finish_test

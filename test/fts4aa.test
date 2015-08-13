@@ -170,7 +170,7 @@ foreach {q r} [array get fts4aa_res] {
 # Should get the same search results when an authorizer prevents
 # all PRAGMA statements.
 #
-proc no_pragma_auth {code arg1 arg2 arg3 arg4} {
+proc no_pragma_auth {code arg1 arg2 arg3 arg4 args} {
   if {$code=="SQLITE_PRAGMA"} {return SQLITE_DENY}
   return SQLITE_OK;
 }

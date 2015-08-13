@@ -149,8 +149,42 @@ do_execsql_test func3-5.35 {
 # the code generator optimizes away so that it consumes no CPU cycles at
 # run-time (that is, during calls to sqlite3_step()).
 #
-do_test func3-5.40 {
+do_test func3-5.39 {
   db eval {EXPLAIN SELECT unlikely(min(1.0+'2.0',4*11))}
 } [db eval {EXPLAIN SELECT min(1.0+'2.0',4*11)}]
+
+
+# EVIDENCE-OF: R-23735-03107 The likely(X) function returns the argument
+# X unchanged.
+#
+do_execsql_test func3-5.50 {
+  SELECT likely(9223372036854775807);
+} {9223372036854775807}
+do_execsql_test func3-5.51 {
+  SELECT likely(-9223372036854775808);
+} {-9223372036854775808}
+do_execsql_test func3-5.52 {
+  SELECT likely(14.125);
+} {14.125}
+do_execsql_test func3-5.53 {
+  SELECT likely(NULL);
+} {{}}
+do_execsql_test func3-5.54 {
+  SELECT likely('test-string');
+} {test-string}
+do_execsql_test func3-5.55 {
+  SELECT quote(likely(x'010203000405'));
+} {X'010203000405'}
+
+# EVIDENCE-OF: R-43464-09689 The likely(X) function is a no-op that the
+# code generator optimizes away so that it consumes no CPU cycles at
+# run-time (that is, during calls to sqlite3_step()).
+#
+do_test func3-5.59 {
+  db eval {EXPLAIN SELECT likely(min(1.0+'2.0',4*11))}
+} [db eval {EXPLAIN SELECT min(1.0+'2.0',4*11)}]
+
+
+
 
 finish_test

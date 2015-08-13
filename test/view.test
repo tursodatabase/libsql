@@ -599,7 +599,7 @@ do_test view-21.1 {
     CREATE VIEW v8192 AS SELECT * FROM v4096 UNION SELECT * FROM v4096;
     CREATE VIEW v16384 AS SELECT * FROM v8192 UNION SELECT * FROM v8192;
     CREATE VIEW v32768 AS SELECT * FROM v16384 UNION SELECT * FROM v16384;
-    CREATE VIEW vx AS SELECT * FROM v32768 UNION SELECT * FROM v32768;
+    SELECT * FROM v32768 UNION SELECT * FROM v32768;
   }
 } {1 {too many references to "v1": max 65535}}
 ifcapable progress {
@@ -610,5 +610,18 @@ ifcapable progress {
     }
   } {1 interrupted}
 }
+
+db close
+sqlite3 db :memory:
+do_execsql_test view-22.1 {
+  CREATE VIEW x1 AS SELECT 123 AS '', 234 AS '', 345 AS '';
+  SELECT * FROM x1;
+} {123 234 345}
+do_test view-22.2 {
+  unset -nocomplain x
+  db eval {SELECT * FROM x1} x break
+  lsort [array names x]
+} {{} * :1 :2}
+
 
 finish_test

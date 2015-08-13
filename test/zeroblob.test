@@ -17,11 +17,14 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix zeroblob
 
 ifcapable !incrblob {
   finish_test
   return
 }
+
+test_set_config_pagecache 0 0
 
 # When zeroblob() is used for the last field of a column, then the
 # content of the zeroblob is never instantiated on the VDBE stack.
@@ -41,8 +44,9 @@ do_test zeroblob-1.1 {
   }
   set ::sqlite3_max_blobsize
 } {10}
+
 do_test zeroblob-1.1.1 {
-  expr {[sqlite3_memory_highwater]<$::memused+25000}
+  expr {[sqlite3_memory_highwater]<$::memused+35000}
 } {1}
 do_test zeroblob-1.2 {
   execsql {
@@ -255,5 +259,62 @@ do_test zeroblob-9.8 {
   db eval {SELECT zeroblob(2) IN (zeroblob(2))}
 } {1}
 
+# Oversized zeroblob records
+#
+do_test zeroblob-10.1 {
+  db eval {
+    CREATE TABLE t10(a,b,c);
+  }
+  catchsql {INSERT INTO t10 VALUES(zeroblob(1e9),zeroblob(1e9),zeroblob(1e9))}
+} {1 {string or blob too big}}
 
+#-------------------------------------------------------------------------
+# Test the zeroblob() function on its own with negative or oversized 
+# arguments.
+#
+do_execsql_test 11.0 { 
+  SELECT length(zeroblob(-1444444444444444));
+} {0}
+do_catchsql_test 11.1 { 
+  SELECT zeroblob(5000 * 1024 * 1024);
+} {1 {string or blob too big}}
+do_catchsql_test 11.2 { 
+  SELECT quote(zeroblob(5000 * 1024 * 1024));
+} {1 {string or blob too big}}
+do_catchsql_test 11.3 { 
+  SELECT quote(zeroblob(-1444444444444444));
+} {0 X''}
+do_catchsql_test 11.4 {
+  SELECT quote(test_zeroblob(-1));
+} {0 X''}
+
+#-------------------------------------------------------------------------
+# Test the sqlite3_bind_zeroblob64() API.
+#
+proc bind_and_run {stmt nZero} {
+  sqlite3_bind_zeroblob64 $stmt 1 $nZero
+  sqlite3_step $stmt
+  set ret [sqlite3_column_int $stmt 0]
+  sqlite3_reset $stmt
+  set ret
+}
+set stmt [sqlite3_prepare db "SELECT length(?)" -1 dummy]
+
+do_test 12.1 { bind_and_run $stmt 40 } 40
+do_test 12.2 { bind_and_run $stmt  0 }  0
+do_test 12.3 { bind_and_run $stmt 1000 } 1000
+
+do_test 12.4 { 
+  list [catch { bind_and_run $stmt [expr 5000 * 1024 * 1024] } msg] $msg 
+} {1 SQLITE_TOOBIG}
+do_test 12.5 {
+  sqlite3_step $stmt
+  set ret [sqlite3_column_int $stmt 0]
+  sqlite3_reset $stmt
+  set ret
+} {1000}
+
+sqlite3_finalize $stmt
+
+test_restore_config_pagecache
 finish_test

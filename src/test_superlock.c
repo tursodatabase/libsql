@@ -18,7 +18,7 @@
 **   sqlite3demo_superunlock()
 */
 
-#include <sqlite3.h>
+#include "sqlite3.h"
 #include <string.h>               /* memset(), strlen() */
 #include <assert.h>               /* assert() */
 

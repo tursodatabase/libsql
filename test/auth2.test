@@ -31,7 +31,7 @@ do_test auth2-1.1 {
     INSERT INTO t1 VALUES(1,2,3);
   }
   set ::flist {}
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_FUNCTION"} {
       lappend ::flist $arg2
       if {$arg2=="max"} {
@@ -80,7 +80,7 @@ sqlite3 db test.db
 sqlite3 db2 test.db
 proc auth {args} {
   global authargs
-  append authargs $args\n
+  append authargs [lrange $args 0 4]\n
   return SQLITE_OK
 }
 db auth auth

@@ -251,6 +251,12 @@ do_test limit-6.8 {
 # Make sure LIMIT works well with compound SELECT statements.
 # Ticket #393
 #
+# EVIDENCE-OF: R-13512-64012 In a compound SELECT, only the last or
+# right-most simple SELECT may contain a LIMIT clause.
+#
+# EVIDENCE-OF: R-03782-50113 In a compound SELECT, the LIMIT clause
+# applies to the entire compound, not just the final SELECT.
+#
 ifcapable compound {
 do_test limit-7.1.1 {
   catchsql {
@@ -615,5 +621,25 @@ do_test limit-13.72 {
 do_test limit-13.81 {
   db eval {SELECT z FROM v13c LIMIT 1 OFFSET 8}
 } {}
+
+do_execsql_test limit-14.1 {
+  SELECT 123 LIMIT 1 OFFSET 0
+} {123}
+do_execsql_test limit-14.2 {
+  SELECT 123 LIMIT 1 OFFSET 1
+} {}
+do_execsql_test limit-14.3 {
+  SELECT 123 LIMIT 0 OFFSET 0
+} {}
+do_execsql_test limit-14.4 {
+  SELECT 123 LIMIT 0 OFFSET 1
+} {}
+do_execsql_test limit-14.6 {
+  SELECT 123 LIMIT -1 OFFSET 0
+} {123}
+do_execsql_test limit-14.7 {
+  SELECT 123 LIMIT -1 OFFSET 1
+} {}
+
 
 finish_test

@@ -65,6 +65,7 @@ set kwlist {
   pragma
   query
   raise
+  recursive
   regexp
   reindex
   release
@@ -80,6 +81,8 @@ set kwlist {
   vacuum
   view
   virtual
+  with
+  without
 };
 set exprkw {
   cast

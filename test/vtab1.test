@@ -56,9 +56,6 @@ ifcapable !vtab||!schema_pragmas {
 # We cannot create a virtual table if the module has not been registered.
 #
 do_test vtab1-1.1.1 {
-  explain {
-    CREATE VIRTUAL TABLE t1 USING echo;
-  }
   catchsql {
     CREATE VIRTUAL TABLE t1 USING echo;
   }
@@ -1085,9 +1082,20 @@ do_test vtab1.13-3 {
     SELECT * FROM echo_c WHERE b IS NULL 
   }
 } {15 {} 16}
-do_test vtab1.13-3 {
+do_test vtab1.13-4 {
+  unset -nocomplain null
+  execsql { 
+    SELECT * FROM echo_c WHERE b IS $null
+  }
+} {15 {} 16}
+do_test vtab1.13-5 {
   execsql { 
     SELECT * FROM echo_c WHERE b IS NULL AND a = 15;
+  }
+} {15 {} 16}
+do_test vtab1.13-6 {
+  execsql { 
+    SELECT * FROM echo_c WHERE NULL IS b AND a IS 15;
   }
 } {15 {} 16}
 
@@ -1375,5 +1383,157 @@ do_execsql_test 20.4 {
   )
   ORDER BY 1, 2;
 } {5 5 6 6 11 11 12 12}
+
+#-------------------------------------------------------------------------
+#
+do_execsql_test 21.1 {
+  CREATE TABLE t9(a,b,c);
+  CREATE VIRTUAL TABLE t9v USING echo(t9);
+
+  INSERT INTO t9 VALUES(1,2,3);
+  INSERT INTO t9 VALUES(3,2,1);
+  INSERT INTO t9 VALUES(2,2,2);
+}
+
+do_execsql_test 21.2 {
+  SELECT * FROM t9v WHERE a<b;
+} {1 2 3}
+
+do_execsql_test 21.3 {
+  SELECT * FROM t9v WHERE a=b;
+} {2 2 2}
+
+#-------------------------------------------------------------------------
+# At one point executing a CREATE VIRTUAL TABLE statement that specified 
+# a database name but no virtual table arguments was causing an internal
+# buffer overread. Valgrind would report errors while running the following 
+# tests. Specifically:
+#
+#   CREATE VIRTUAL TABLE t1 USING fts4;          -- Ok - no db name.
+#   CREATE VIRTUAL TABLE main.t1 USING fts4(x);  -- Ok - has vtab arguments.
+#   CREATE VIRTUAL TABLE main.t1 USING fts4;     -- Had the problem. 
+#
+ifcapable fts3 {
+  forcedelete test.db2
+  set nm [string repeat abcdefghij 100]
+  do_execsql_test 22.1 {
+    ATTACH 'test.db2' AS $nm
+  }
+  
+  execsql "SELECT * FROM sqlite_master"
+  do_execsql_test 22.2 "CREATE VIRTUAL TABLE ${nm}.t1 USING fts4"
+  
+  do_test 22.3.1 {
+    set sql "CREATE VIRTUAL TABLE ${nm}.t2 USING fts4"
+    set stmt [sqlite3_prepare_v2 db $sql -1 dummy]
+    sqlite3_step $stmt
+  } {SQLITE_DONE}
+  
+  do_test 22.3.2 {
+    sqlite3_finalize $stmt
+  } {SQLITE_OK}
+  
+  do_test 22.4.1 {
+    set sql "CREATE VIRTUAL TABLE ${nm}.t3 USING fts4"
+    set n [string length $sql]
+    set stmt [sqlite3_prepare db "${sql}xyz" $n dummy]
+    sqlite3_step $stmt
+  } {SQLITE_DONE}
+  
+  do_test 22.4.2 {
+    sqlite3_finalize $stmt
+  } {SQLITE_OK}
+}
+
+
+#-------------------------------------------------------------------------
+# The following tests verify that a DROP TABLE command on a virtual
+# table does not cause other operations to crash.
+#
+#   23.1: Dropping a vtab while a SELECT is running on it.
+#
+#   23.2: Dropping a vtab while a SELECT that will, but has not yet,
+#         open a cursor on the vtab, is running. In this case the
+#         DROP TABLE succeeds and the SELECT hits an error.
+#   
+#   23.3: Dropping a vtab from within a user-defined-function callback
+#         in the middle of an "INSERT INTO vtab SELECT ..." statement.
+#
+reset_db
+load_static_extension db wholenumber
+load_static_extension db eval
+register_echo_module db
+
+do_test 23.1 {
+  execsql { CREATE VIRTUAL TABLE t1 USING wholenumber }
+  set res ""
+  db eval { SELECT value FROM t1 WHERE value<10 } {
+    if {$value == 5} {
+      set res [catchsql { DROP TABLE t1 }]
+    }
+  }
+  set res
+} {1 {database table is locked}}
+
+do_test 23.2 {
+  execsql { 
+    CREATE TABLE t2(value);
+    INSERT INTO t2 VALUES(1), (2), (3);
+  }
+
+  set res2 [list [catch {
+    db eval {
+      SELECT value FROM t2 UNION ALL 
+      SELECT value FROM t1 WHERE value<10
+    } {
+      if {$value == 2} { set res1 [catchsql { DROP TABLE t1 }] }
+    }
+  } msg] $msg]
+  list $res1 $res2
+} {{0 {}} {1 {database table is locked}}}
+
+do_test 23.3.1 {
+  execsql { CREATE VIRTUAL TABLE t1e USING echo(t2) }
+  execsql { INSERT INTO t1e SELECT 4 }
+  catchsql { INSERT INTO t1e SELECT eval('DROP TABLE t1e') }
+} {1 {database table is locked}}
+do_execsql_test 23.3.2 { SELECT * FROM t1e } {1 2 3 4}
+
+#-------------------------------------------------------------------------
+# At one point SQL like this:
+#
+#   SAVEPOINT xyz;       -- Opens SQL transaction
+#     INSERT INTO vtab   -- Write to virtual table
+#     ROLLBACK TO xyz;
+#   RELEASE xyz;
+#
+# was not invoking the xRollbackTo() callback for the ROLLBACK TO 
+# operation. Which meant that virtual tables like FTS3 would incorrectly 
+# commit the results of the INSERT as part of the "RELEASE xyz" command.
+#
+# The following tests check that this has been fixed.
+#
+ifcapable fts3 {
+  do_execsql_test 24.0 {
+    CREATE VIRTUAL TABLE t4 USING fts3();
+    SAVEPOINT a;
+    INSERT INTO t4 VALUES('a b c');
+    ROLLBACK TO a;
+    RELEASE a;
+    SELECT * FROM t4;
+  } {}
+
+  do_execsql_test 24.1 { SELECT * FROM t4 WHERE t4 MATCH 'b' } {}
+  do_execsql_test 24.2 { INSERT INTO t4(t4) VALUES('integrity-check') } {}
+
+  do_execsql_test 24.3 {
+    SAVEPOINT a;
+    CREATE VIRTUAL TABLE t5 USING fts3();
+    SAVEPOINT b;
+    ROLLBACK TO a;
+    SAVEPOINT c;
+    RELEASE a;
+  }
+}
 
 finish_test

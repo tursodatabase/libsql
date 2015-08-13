@@ -11,6 +11,9 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing automatic index creation logic.
 #
+# EVIDENCE-OF: R-34271-33106 PRAGMA automatic_index; PRAGMA
+# automatic_index = boolean; Query, set, or clear the automatic indexing
+# capability.
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -97,6 +100,8 @@ do_test autoindex1-210 {
     PRAGMA automatic_index=ON;
     ANALYZE;
     UPDATE sqlite_stat1 SET stat='10000' WHERE tbl='t1';
+    -- Table t2 actually contains 8 rows.
+    UPDATE sqlite_stat1 SET stat='16' WHERE tbl='t2';
     ANALYZE sqlite_master;
     SELECT b, (SELECT d FROM t2 WHERE c=a) FROM t1;
   }
@@ -410,5 +415,109 @@ do_execsql_test autoindex1-801 {
              JOIN accounts ON (raw_contacts.account_id=accounts._id)
    WHERE mimetypes._id=10 AND data14 IS NOT NULL;
 } {/SEARCH TABLE data .*SEARCH TABLE raw_contacts/}
+
+# Another test case from an important user of SQLite.  The key feature of
+# this test is that the "aggindex" subquery should make use of an
+# automatic index.  If it does, the query is fast.  If it does not, the
+# query is deathly slow.  It worked OK in 3.7.17 but started going slow
+# with version 3.8.0.  The problem was fixed for 3.8.7 by reducing the
+# cost estimate for automatic indexes on views and subqueries.
+#
+db close
+forcedelete test.db
+sqlite3 db test.db
+do_execsql_test autoindex1-900 {
+  CREATE TABLE messages (ROWID INTEGER PRIMARY KEY AUTOINCREMENT, message_id, document_id BLOB, in_reply_to, remote_id INTEGER, sender INTEGER, subject_prefix, subject INTEGER, date_sent INTEGER, date_received INTEGER, date_created INTEGER, date_last_viewed INTEGER, mailbox INTEGER, remote_mailbox INTEGER, original_mailbox INTEGER, flags INTEGER, read, flagged, size INTEGER, color, encoding, type INTEGER, pad, conversation_id INTEGER DEFAULT -1, snippet TEXT DEFAULT NULL, fuzzy_ancestor INTEGER DEFAULT NULL, automated_conversation INTEGER DEFAULT 0, root_status INTEGER DEFAULT -1, conversation_position INTEGER DEFAULT -1);
+  CREATE INDEX date_index ON messages(date_received);
+  CREATE INDEX date_last_viewed_index ON messages(date_last_viewed);
+  CREATE INDEX date_created_index ON messages(date_created);
+  CREATE INDEX message_message_id_mailbox_index ON messages(message_id, mailbox);
+  CREATE INDEX message_document_id_index ON messages(document_id);
+  CREATE INDEX message_read_index ON messages(read);
+  CREATE INDEX message_flagged_index ON messages(flagged);
+  CREATE INDEX message_mailbox_index ON messages(mailbox, date_received);
+  CREATE INDEX message_remote_mailbox_index ON messages(remote_mailbox, remote_id);
+  CREATE INDEX message_type_index ON messages(type);
+  CREATE INDEX message_conversation_id_conversation_position_index ON messages(conversation_id, conversation_position);
+  CREATE INDEX message_fuzzy_ancestor_index ON messages(fuzzy_ancestor);
+  CREATE INDEX message_subject_fuzzy_ancestor_index ON messages(subject, fuzzy_ancestor);
+  CREATE INDEX message_sender_subject_automated_conversation_index ON messages(sender, subject, automated_conversation);
+  CREATE INDEX message_sender_index ON messages(sender);
+  CREATE INDEX message_root_status ON messages(root_status);
+  CREATE TABLE subjects (ROWID INTEGER PRIMARY KEY, subject COLLATE RTRIM, normalized_subject COLLATE RTRIM);
+  CREATE INDEX subject_subject_index ON subjects(subject);
+  CREATE INDEX subject_normalized_subject_index ON subjects(normalized_subject);
+  CREATE TABLE addresses (ROWID INTEGER PRIMARY KEY, address COLLATE NOCASE, comment, UNIQUE(address, comment));
+  CREATE INDEX addresses_address_index ON addresses(address);
+  CREATE TABLE mailboxes (ROWID INTEGER PRIMARY KEY, url UNIQUE, total_count INTEGER DEFAULT 0, unread_count INTEGER DEFAULT 0, unseen_count INTEGER DEFAULT 0, deleted_count INTEGER DEFAULT 0, unread_count_adjusted_for_duplicates INTEGER DEFAULT 0, change_identifier, source INTEGER, alleged_change_identifier);
+  CREATE INDEX mailboxes_source_index ON mailboxes(source);
+  CREATE TABLE labels (ROWID INTEGER PRIMARY KEY, message_id INTEGER NOT NULL, mailbox_id INTEGER NOT NULL, UNIQUE(message_id, mailbox_id));
+  CREATE INDEX labels_message_id_mailbox_id_index ON labels(message_id, mailbox_id);
+  CREATE INDEX labels_mailbox_id_index ON labels(mailbox_id);
+  
+  explain query plan
+  SELECT messages.ROWID,
+         messages.message_id,
+         messages.remote_id,
+         messages.date_received,
+         messages.date_sent,
+         messages.flags,
+         messages.size,
+         messages.color,
+         messages.date_last_viewed,
+         messages.subject_prefix,
+         subjects.subject,
+         sender.comment,
+         sender.address,
+         NULL,
+         messages.mailbox,
+         messages.original_mailbox,
+         NULL,
+         NULL,
+         messages.type,
+         messages.document_id,
+         sender,
+         NULL,
+         messages.conversation_id,
+         messages.conversation_position,
+         agglabels.labels
+   FROM mailboxes AS mailbox
+        JOIN messages ON mailbox.ROWID = messages.mailbox
+        LEFT OUTER JOIN subjects ON messages.subject = subjects.ROWID
+        LEFT OUTER JOIN addresses AS sender ON messages.sender = sender.ROWID
+        LEFT OUTER JOIN (
+               SELECT message_id, group_concat(mailbox_id) as labels
+               FROM labels GROUP BY message_id
+             ) AS agglabels ON messages.ROWID = agglabels.message_id
+  WHERE (mailbox.url = 'imap://email.app@imap.gmail.com/%5BGmail%5D/All%20Mail')
+    AND (messages.ROWID IN (
+            SELECT labels.message_id
+              FROM labels JOIN mailboxes ON labels.mailbox_id = mailboxes.ROWID
+             WHERE mailboxes.url = 'imap://email.app@imap.gmail.com/INBOX'))
+    AND messages.mailbox in (6,12,18,24,30,36,42,1,7,13,19,25,31,37,43,2,8,
+                             14,20,26,32,38,3,9,15,21,27,33,39,4,10,16,22,28,
+                             34,40,5,11,17,23,35,41)
+   ORDER BY date_received DESC;
+} {/agglabels USING AUTOMATIC COVERING INDEX/}
+
+# A test case for VIEWs
+#
+do_execsql_test autoindex1-901 {
+  CREATE TABLE t1(x INTEGER PRIMARY KEY, y, z);
+  CREATE TABLE t2(a, b);
+  CREATE VIEW agg2 AS SELECT a, sum(b) AS m FROM t2 GROUP BY a;
+  EXPLAIN QUERY PLAN
+  SELECT t1.z, agg2.m
+    FROM t1 JOIN agg2 ON t1.y=agg2.m
+   WHERE t1.x IN (1,2,3);
+} {/USING AUTOMATIC COVERING INDEX/}
+
+# 2015-04-15:  A NULL CollSeq pointer in automatic index creation.
+#
+do_execsql_test autoindex1-920 {
+  CREATE TABLE t920(x);
+  INSERT INTO t920 VALUES(3),(4),(5);
+  SELECT * FROM t920,(SELECT 0 FROM t920),(VALUES(9)) WHERE 5 IN (x);
+} {5 0 9 5 0 9 5 0 9}
 
 finish_test

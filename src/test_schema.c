@@ -189,7 +189,7 @@ static int schemaNext(sqlite3_vtab_cursor *cur){
 
       /* Set zSql to the SQL to pull the list of tables from the 
       ** sqlite_master (or sqlite_temp_master) table of the database
-      ** identfied by the row pointed to by the SQL statement pCur->pDbList
+      ** identified by the row pointed to by the SQL statement pCur->pDbList
       ** (iterating through a "PRAGMA database_list;" statement).
       */
       if( sqlite3_column_int(pCur->pDbList, 0)==1 ){

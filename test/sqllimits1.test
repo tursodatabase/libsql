@@ -51,6 +51,13 @@ do_test sqllimits1-1.9 {
 do_test sqllimits1-1.10 {
   sqlite3_limit db SQLITE_LIMIT_VARIABLE_NUMBER -1
 } $SQLITE_MAX_VARIABLE_NUMBER
+do_test sqllimits1-1.11 {
+  sqlite3_limit db SQLITE_LIMIT_TRIGGER_DEPTH -1
+} $SQLITE_MAX_TRIGGER_DEPTH
+do_test sqllimits1-1.12 {
+  sqlite3_limit db SQLITE_LIMIT_WORKER_THREADS 99999
+  sqlite3_limit db SQLITE_LIMIT_WORKER_THREADS -1
+} $SQLITE_MAX_WORKER_THREADS
 
 # Limit parameters out of range.
 #
@@ -243,6 +250,9 @@ do_test sqllimits1-4.10.1 {
 # Test cases sqllimits1-5.* test that the SQLITE_MAX_LENGTH limit
 # is enforced.
 #
+# EVIDENCE-OF: R-61987-00541 SQLITE_LIMIT_LENGTH The maximum size of any
+# string or BLOB or table row, in bytes.
+#
 db close
 sqlite3 db test.db
 set LARGESIZE 99999
@@ -398,6 +408,9 @@ unset strvalue
 #--------------------------------------------------------------------
 # Test cases sqllimits1-6.* test that the SQLITE_MAX_SQL_LENGTH limit
 # is enforced.
+#
+# EVIDENCE-OF: R-09808-17554 SQLITE_LIMIT_SQL_LENGTH The maximum length
+# of an SQL statement, in bytes.
 #
 do_test sqllimits1-6.1 {
   sqlite3_limit db SQLITE_LIMIT_SQL_LENGTH 50000
@@ -560,6 +573,11 @@ do_test sqllimits1-7.7.4 {
 #--------------------------------------------------------------------
 # Test cases sqllimits1-8.* test the SQLITE_MAX_COLUMN limit.
 #
+# EVIDENCE-OF: R-43996-29471 SQLITE_LIMIT_COLUMN The maximum number of
+# columns in a table definition or in the result set of a SELECT or the
+# maximum number of columns in an index or in an ORDER BY or GROUP BY
+# clause.
+#
 set SQLITE_LIMIT_COLUMN 200
 sqlite3_limit db SQLITE_LIMIT_COLUMN $SQLITE_LIMIT_COLUMN
 do_test sqllimits1-8.1 {
@@ -663,6 +681,9 @@ do_test sqllimits1-8.11 {
 # limit is enforced. The limit refers to the number of terms in 
 # the expression.
 #
+# EVIDENCE-OF: R-12723-08526 SQLITE_LIMIT_EXPR_DEPTH The maximum depth
+# of the parse tree on any expression.
+#
 if {$SQLITE_MAX_EXPR_DEPTH==0} {
   puts -nonewline stderr "WARNING: Compile with -DSQLITE_MAX_EXPR_DEPTH to run "
   puts stderr "tests sqllimits1-9.X"
@@ -722,6 +743,9 @@ if 0 {
 # Test the SQLITE_LIMIT_FUNCTION_ARG limit works. Test case names
 # match the pattern "sqllimits1-11.*".
 #
+# EVIDENCE-OF: R-59001-45278 SQLITE_LIMIT_FUNCTION_ARG The maximum
+# number of arguments on a function.
+#
 for {set max 5} {$max<=$SQLITE_MAX_FUNCTION_ARG} {incr max} {
   do_test sqllimits1-11.$max.1 {
     set vals [list]
@@ -755,6 +779,9 @@ for {set max 5} {$max<=$SQLITE_MAX_FUNCTION_ARG} {incr max} {
 #--------------------------------------------------------------------
 # Test cases sqllimits1-12.*: Test the SQLITE_MAX_ATTACHED limit.
 #
+# EVIDENCE-OF: R-41778-26203 SQLITE_LIMIT_ATTACHED The maximum number of
+# attached databases.
+#
 ifcapable attach {
   do_test sqllimits1-12.1 {
     set max $::SQLITE_MAX_ATTACHED
@@ -778,6 +805,9 @@ ifcapable attach {
 # Test cases sqllimits1-13.*: Check that the SQLITE_MAX_VARIABLE_NUMBER 
 # limit works.
 #
+# EVIDENCE-OF: R-42363-29104 SQLITE_LIMIT_VARIABLE_NUMBER The maximum
+# index number of any parameter in an SQL statement.
+#
 do_test sqllimits1-13.1 {
   set max $::SQLITE_MAX_VARIABLE_NUMBER
   catchsql "SELECT ?[expr {$max+1}] FROM t1"
@@ -798,6 +828,9 @@ do_test sqllimits1-13.2 {
 # applies to the built-in LIKE operator, supplying an external 
 # implementation by overriding the like() scalar function bypasses
 # this limitation.
+#
+# EVIDENCE-OF: R-12940-37052 SQLITE_LIMIT_LIKE_PATTERN_LENGTH The
+# maximum length of the pattern argument to the LIKE or GLOB operators.
 #
 # These tests check that the limit is not incorrectly applied to
 # the left-hand-side of the LIKE operator (the string being tested

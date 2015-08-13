@@ -292,7 +292,7 @@ do_test corruptC-2.15 {
   hexio_write test.db 986 b9
   sqlite3 db test.db
   catchsql {SELECT count(*) FROM sqlite_master;}
-} {1 {malformed database schema (t1i1) - no such table: main.t1}}
+} {1 {database disk image is malformed}}
 
 #
 # Now test for a series of quasi-random seeds.

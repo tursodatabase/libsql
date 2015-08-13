@@ -10,10 +10,10 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library.
 #
-# $Id: vtab2.test,v 1.9 2008/10/13 10:37:50 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix vtab2
 
 ifcapable !vtab||!schema_pragmas {
   finish_test
@@ -104,6 +104,14 @@ do_test vtab2-3.2 {
      WHERE a.rowid=1
   }
 } {main schema 0 database {} 0 {} 0 {} {} {} {} {} {} {} {} {}}
+do_test vtab2-3.3 {
+  execsql {
+    SELECT *, b.rowid
+      FROM schema a LEFT JOIN schema b ON a.dflt_value IS b.dflt_value
+                                      AND a.dflt_value IS NOT NULL
+     WHERE a.rowid=1
+  }
+} {main schema 0 database {} 0 {} 0 {} {} {} {} {} {} {} {} {}}
 
 do_test vtab2-4.1 {
   execsql {
@@ -132,5 +140,24 @@ do_test vtab2-4.4 {
 do_test vtab2-4.5 {
   execsql { SELECT * FROM fkey }
 } {t1 a}
+
+#-------------------------------------------------------------------------
+#
+ifcapable fts3 {
+  reset_db
+  do_execsql_test 5.1 {
+    PRAGMA encoding='UTF16';
+  }
+
+  do_test 5.2 {
+    sqlite3_exec_hex db { CREATE VIRTUAL TABLE %C8 USING fts3 }
+  } {0 {}}
+
+  do_test 5.3 {
+    sqlite3_exec_hex db { CREATE VIRTUAL TABLE %C9 USING s }
+  } {/1 {malformed database schema.* already exists}/}
+}
+
+
 
 finish_test

@@ -15,6 +15,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix select7
 
 ifcapable compound {
 
@@ -138,21 +139,23 @@ ifcapable {subquery && compound} {
 # Verify that an error occurs if you have too many terms on a
 # compound select statement.
 #
-ifcapable compound {
-  if {$SQLITE_MAX_COMPOUND_SELECT>0} {
-    set sql {SELECT 0}
-    set result 0
-    for {set i 1} {$i<$SQLITE_MAX_COMPOUND_SELECT} {incr i} {
-      append sql " UNION ALL SELECT $i"
-      lappend result $i
+if {[clang_sanitize_address]==0} {
+  ifcapable compound {
+    if {$SQLITE_MAX_COMPOUND_SELECT>0} {
+      set sql {SELECT 0}
+      set result 0
+        for {set i 1} {$i<$SQLITE_MAX_COMPOUND_SELECT} {incr i} {
+          append sql " UNION ALL SELECT $i"
+            lappend result $i
+        }
+      do_test select7-6.1 {
+        catchsql $sql
+      } [list 0 $result]
+      append sql { UNION ALL SELECT 99999999}
+      do_test select7-6.2 {
+        catchsql $sql
+      } {1 {too many terms in compound SELECT}}
     }
-    do_test select7-6.1 {
-      catchsql $sql
-    } [list 0 $result]
-    append sql { UNION ALL SELECT 99999999}
-    do_test select7-6.2 {
-      catchsql $sql
-    } {1 {too many terms in compound SELECT}}
   }
 }
 
@@ -199,4 +202,23 @@ do_test select7-7.7 {
   }
 } {text 123}
 
+do_execsql_test 8.0 { 
+  CREATE TABLE t01(x, y);
+  CREATE TABLE t02(x, y);
+}
+
+do_catchsql_test 8.1 {
+  SELECT * FROM (
+    SELECT * FROM t01 UNION SELECT x FROM t02
+  ) WHERE y=1
+} {1 {SELECTs to the left and right of UNION do not have the same number of result columns}}
+
+do_catchsql_test 8.2 {
+  CREATE VIEW v0 as SELECT x, y FROM t01 UNION SELECT x FROM t02;
+  EXPLAIN QUERY PLAN SELECT * FROM v0 WHERE x='0' OR y;
+} {1 {SELECTs to the left and right of UNION do not have the same number of result columns}}
+
+
 finish_test
+
+

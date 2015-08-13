@@ -452,6 +452,80 @@ do_test 4.0 {
   }
 } {1 13 1 14 1 15 1 16}
 
+# No sorting of queries that omit the FROM clause.
+#
+do_execsql_test 5.0 {
+  EXPLAIN QUERY PLAN SELECT 5 ORDER BY 1
+} {}
+do_execsql_test 5.1 {
+  EXPLAIN QUERY PLAN SELECT 5 UNION ALL SELECT 3 ORDER BY 1
+} {~/B-TREE/}
+do_execsql_test 5.2 {
+  SELECT 5 UNION ALL SELECT 3 ORDER BY 1
+} {3 5}
+do_execsql_test 5.3 {
+  SELECT 986 AS x GROUP BY X ORDER BY X
+} {986}
 
+# The following test (originally derived from a single test within fuzz.test)
+# verifies that a PseudoTable cursor is not closed prematurely in a deeply
+# nested query.  This test caused a segfault on 3.8.5 beta.
+#
+do_execsql_test 6.0 {
+  CREATE TABLE abc(a, b, c);
+  INSERT INTO abc VALUES(1, 2, 3);
+  INSERT INTO abc VALUES(4, 5, 6);
+  INSERT INTO abc VALUES(7, 8, 9);
+  SELECT (
+    SELECT 'hardware' FROM ( 
+      SELECT 'software' ORDER BY 'firmware' ASC, 'sportswear' DESC 
+    ) GROUP BY 1 HAVING length(b)
+  )
+  FROM abc;
+} {hardware hardware hardware}
+
+# Here is a test for a query-planner problem reported on the SQLite
+# mailing list on 2014-09-18 by "Merike".  Beginning with version 3.8.0,
+# a separate sort was being used rather than using the single-column
+# index.  This was due to an oversight in the indexMightHelpWithOrderby()
+# routine in where.c.
+#
+do_execsql_test 7.0 {
+  CREATE TABLE t7(a,b);
+  CREATE INDEX t7a ON t7(a);
+  CREATE INDEX t7ab ON t7(a,b);
+  EXPLAIN QUERY PLAN
+  SELECT * FROM t7 WHERE a=?1 ORDER BY rowid;
+} {~/ORDER BY/}
+
+#-------------------------------------------------------------------------
+# Test a partial sort large enough to cause the sorter to spill data
+# to disk.
+#
+reset_db
+do_execsql_test 8.0 {
+  PRAGMA cache_size = 5;
+  CREATE TABLE t1(a, b);
+  CREATE INDEX i1 ON t1(a);
+}
+
+do_eqp_test 8.1 {
+  SELECT * FROM t1 ORDER BY a, b;
+} {
+  0 0 0 {SCAN TABLE t1 USING INDEX i1} 
+  0 0 0 {USE TEMP B-TREE FOR RIGHT PART OF ORDER BY}
+}
+
+do_execsql_test 8.2 {
+  WITH cnt(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM cnt WHERE i<10000
+  )
+  INSERT INTO t1 SELECT i%2, randomblob(500) FROM cnt;
+}
+
+do_test 8.3 {
+  db eval { SELECT * FROM t1 ORDER BY a, b } { incr res $a }
+  set res
+} 5000
 
 finish_test

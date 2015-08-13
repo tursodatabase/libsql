@@ -15,9 +15,11 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-do_test misc7-1-misuse {
-  c_misuse_test
-} {}
+if {[clang_sanitize_address]==0} {
+  do_test misc7-1-misuse {
+    c_misuse_test
+  } {}
+}
 
 do_test misc7-2 {
   c_realloc_test

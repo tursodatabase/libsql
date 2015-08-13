@@ -61,6 +61,7 @@ foreach s {
     fcntl read pread write pwrite fchmod fallocate
     pread64 pwrite64 unlink openDirectory mkdir rmdir 
     statvfs fchown umask mmap munmap mremap
+    getpagesize
 } {
   if {[test_syscall exists $s]} {lappend syscall_list $s}
 }

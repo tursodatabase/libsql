@@ -67,6 +67,11 @@
 **   test_syscall list
 **     Return a list of all system calls. The list is constructed using
 **     the xNextSystemCall() VFS method.
+**
+**   test_syscall pagesize PGSZ
+**     If PGSZ is a power of two greater than 256, install a wrapper around
+**     OS function getpagesize() that reports the system page size as PGSZ.
+**     Or, if PGSZ is less than zero, remove any wrapper already installed.
 */
 
 #include "sqliteInt.h"
@@ -89,7 +94,9 @@ static struct TestSyscallGlobal {
   int bPersist;                   /* 1 for persistent errors, 0 for transient */
   int nCount;                     /* Fail after this many more calls */
   int nFail;                      /* Number of failures that have occurred */
-} gSyscall = { 0, 0 };
+  int pgsz;
+  sqlite3_syscall_ptr orig_getpagesize;
+} gSyscall = { 0, 0, 0, 0, 0 };
 
 static int ts_open(const char *, int, int);
 static int ts_close(int fd);
@@ -650,6 +657,45 @@ static int test_syscall_defaultvfs(
   return TCL_OK;
 }
 
+static int ts_getpagesize(void){
+  return gSyscall.pgsz;
+}
+
+static int test_syscall_pagesize(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_vfs *pVfs = sqlite3_vfs_find(0);
+  int pgsz;
+  if( objc!=3 ){
+    Tcl_WrongNumArgs(interp, 2, objv, "PGSZ");
+    return TCL_ERROR;
+  }
+  if( Tcl_GetIntFromObj(interp, objv[2], &pgsz) ){
+    return TCL_ERROR;
+  }
+
+  if( pgsz<0 ){
+    if( gSyscall.orig_getpagesize ){
+      pVfs->xSetSystemCall(pVfs, "getpagesize", gSyscall.orig_getpagesize);
+    }
+  }else{
+    if( pgsz<512 || (pgsz & (pgsz-1)) ){
+      Tcl_AppendResult(interp, "pgsz out of range", 0);
+      return TCL_ERROR;
+    }
+    gSyscall.orig_getpagesize = pVfs->xGetSystemCall(pVfs, "getpagesize");
+    gSyscall.pgsz = pgsz;
+    pVfs->xSetSystemCall(
+        pVfs, "getpagesize", (sqlite3_syscall_ptr)ts_getpagesize
+    );
+  }
+
+  return TCL_OK;
+}
+
 static int test_syscall(
   void * clientData,
   Tcl_Interp *interp,
@@ -668,6 +714,7 @@ static int test_syscall(
     { "exists",     test_syscall_exists },
     { "list",       test_syscall_list },
     { "defaultvfs", test_syscall_defaultvfs },
+    { "pagesize",   test_syscall_pagesize },
     { 0, 0 }
   };
   int iCmd;

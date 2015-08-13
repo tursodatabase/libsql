@@ -278,6 +278,23 @@ do_test null-8.15 {
   }
 } {1}
 
+do_execsql_test null-9.1 {
+  CREATE TABLE t5(a, b, c);
+  CREATE UNIQUE INDEX t5ab ON t5(a, b);
+
+  INSERT INTO t5 VALUES(1, NULL, 'one');
+  INSERT INTO t5 VALUES(1, NULL, 'i');
+  INSERT INTO t5 VALUES(NULL, 'x', 'two');
+  INSERT INTO t5 VALUES(NULL, 'x', 'ii');
+}
+
+do_execsql_test null-9.2 {
+  SELECT * FROM t5 WHERE a = 1 AND b IS NULL;
+} {1 {} one 1 {} i}
+
+do_execsql_test null-9.3 {
+  SELECT * FROM t5 WHERE a IS NULL AND b = 'x';
+} {{} x two {} x ii}
 
 
 finish_test

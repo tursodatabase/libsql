@@ -33,7 +33,7 @@ proc register_rblob_code {dbname seed} {
     set ::rcnt $seed
     proc rblob {n} {
       set ::rcnt [expr (([set ::rcnt] << 3) + [set ::rcnt] + 456) & 0xFFFFFFFF]
-      set str [format %.8x [expr [set ::rcnt] ^ 0xbdf20da3]] 
+      set str [format %.8x [expr [set ::rcnt] ^ 0xbdf20da3]]
       string range [string repeat [set str] [expr [set n]/4]] 1 [set n]
     }
     $dbname func rblob rblob
@@ -42,7 +42,7 @@ proc register_rblob_code {dbname seed} {
 
 # For cases 1.1 and 1.4, the number of pages read using xRead() is 4 on
 # unix and 9 on windows. The difference is that windows only ever maps
-# an integer number of OS pages (i.e. creates mappings that are a multiple 
+# an integer number of OS pages (i.e. creates mappings that are a multiple
 # of 4KB in size). Whereas on unix any sized mapping may be created.
 #
 foreach {t mmap_size nRead c2init} {
@@ -106,50 +106,52 @@ foreach {t mmap_size nRead c2init} {
 set ::rcnt 0
 proc rblob {n} {
   set ::rcnt [expr (($::rcnt << 3) + $::rcnt + 456) & 0xFFFFFFFF]
-  set str [format %.8x [expr $::rcnt ^ 0xbdf20da3]] 
+  set str [format %.8x [expr $::rcnt ^ 0xbdf20da3]]
   string range [string repeat $str [expr $n/4]] 1 $n
 }
 
 reset_db
 db func rblob rblob
 
-do_execsql_test 2.1 {
-  PRAGMA auto_vacuum = 1;
-  PRAGMA mmap_size = 67108864;
-  PRAGMA journal_mode = wal;
-  CREATE TABLE t1(a, b, UNIQUE(a, b));
-  INSERT INTO t1 VALUES(rblob(500), rblob(500));
-  INSERT INTO t1 SELECT rblob(500), rblob(500) FROM t1; --    2
-  INSERT INTO t1 SELECT rblob(500), rblob(500) FROM t1; --    4
-  INSERT INTO t1 SELECT rblob(500), rblob(500) FROM t1; --    8
-  INSERT INTO t1 SELECT rblob(500), rblob(500) FROM t1; --   16
-  INSERT INTO t1 SELECT rblob(500), rblob(500) FROM t1; --   32
-  PRAGMA wal_checkpoint;
-} {67108864 wal 0 103 103}
-
-do_execsql_test 2.2 {
-  PRAGMA auto_vacuum;
-  SELECT count(*) FROM t1;
-} {1 32}
-
-if {[permutation] != "inmemory_journal"} {
-  do_test 2.3 {
-    sqlite3 db2 test.db
-    db2 func rblob rblob
-    db2 eval { 
-      DELETE FROM t1 WHERE (rowid%4);
-        PRAGMA wal_checkpoint;
-    }
-    db2 eval { 
-      INSERT INTO t1 SELECT rblob(500), rblob(500) FROM t1; --    16
-      SELECT count(*) FROM t1;
-    }
-  } {16}
-
-  do_execsql_test 2.4 {
+ifcapable wal {
+  do_execsql_test 2.1 {
+    PRAGMA auto_vacuum = 1;
+    PRAGMA mmap_size = 67108864;
+    PRAGMA journal_mode = wal;
+    CREATE TABLE t1(a, b, UNIQUE(a, b));
+    INSERT INTO t1 VALUES(rblob(500), rblob(500));
+    INSERT INTO t1 SELECT rblob(500), rblob(500) FROM t1; --    2
+    INSERT INTO t1 SELECT rblob(500), rblob(500) FROM t1; --    4
+    INSERT INTO t1 SELECT rblob(500), rblob(500) FROM t1; --    8
+    INSERT INTO t1 SELECT rblob(500), rblob(500) FROM t1; --   16
+    INSERT INTO t1 SELECT rblob(500), rblob(500) FROM t1; --   32
     PRAGMA wal_checkpoint;
-  } {0 24 24}
-  db2 close
+  } {67108864 wal 0 103 103}
+
+  do_execsql_test 2.2 {
+    PRAGMA auto_vacuum;
+    SELECT count(*) FROM t1;
+  } {1 32}
+
+  if {[permutation] != "inmemory_journal"} {
+    do_test 2.3 {
+      sqlite3 db2 test.db
+      db2 func rblob rblob
+      db2 eval {
+        DELETE FROM t1 WHERE (rowid%4);
+          PRAGMA wal_checkpoint;
+      }
+      db2 eval {
+        INSERT INTO t1 SELECT rblob(500), rblob(500) FROM t1; --    16
+        SELECT count(*) FROM t1;
+      }
+    } {16}
+
+    do_execsql_test 2.4 {
+      PRAGMA wal_checkpoint;
+    } {0 24 24}
+    db2 close
+  }
 }
 
 reset_db
@@ -227,7 +229,7 @@ do_test 4.4 {
 do_execsql_test 4.5 { COMMIT }
 
 #-------------------------------------------------------------------------
-# Ensure that existing cursors holding xFetch() references are not 
+# Ensure that existing cursors holding xFetch() references are not
 # confused if those pages are moved to make way for the root page of a
 # new table or index.
 #
@@ -296,7 +298,7 @@ foreach {tn1 mmap1 mmap2} {
     sql1 "PRAGMA mmap_size = $mmap1"
     sql2 "PRAGMA mmap_size = $mmap2"
 
-    do_test $tn1.$tn { 
+    do_test $tn1.$tn {
       for {set i 1} {$i <= 100} {incr i} {
         if {$i % 2} {
           set c1 sql1
@@ -311,7 +313,7 @@ foreach {tn1 mmap1 mmap2} {
           UPDATE t2 SET x = (SELECT md5sum(a) FROM t1);
         }
 
-        set res [$c2 { 
+        set res [$c2 {
             SELECT count(*) FROM t1;
             SELECT x == (SELECT md5sum(a) FROM t1) FROM t2;
             PRAGMA integrity_check;

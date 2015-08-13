@@ -419,11 +419,10 @@ ifcapable autovacuum {
       INSERT INTO t1 VALUES(randstr(1000,1000));
       INSERT INTO t1 VALUES(randstr(1000,1000));
     }
-    set memused [lindex [sqlite3_status SQLITE_STATUS_MEMORY_USED 0] 1]
-    set pgovfl [lindex [sqlite3_status SQLITE_STATUS_PAGECACHE_OVERFLOW 0] 1]
+    set before [db one {PRAGMA page_count}]
     execsql { DELETE FROM t1 }
-    set memused2 [lindex [sqlite3_status SQLITE_STATUS_MEMORY_USED 0] 1]
-    expr {($memused2 + 2048 < $memused) || $pgovfl==0}
+    set after [db one {PRAGMA page_count}]
+    expr {$before>$after}
   } {1}
 }
 

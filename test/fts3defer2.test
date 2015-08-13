@@ -59,6 +59,7 @@ do_execsql_test 1.2.1 {
   SELECT content FROM t1 WHERE t1 MATCH 'f (e NEAR/2 a)';
 } {{a b c d e f a x y}}
 
+
 do_execsql_test 1.2.2 {
   SELECT snippet(t1, '[', ']'), offsets(t1), mit(matchinfo(t1, 'pcxnal'))
   FROM t1 WHERE t1 MATCH 'f (e NEAR/2 a)';
@@ -120,6 +121,12 @@ foreach {tn sql} {
     [list 1 2 2  1 2 2   0 54 54]               \
   ]
   set sqlite_fts3_enable_parentheses 0
+
+  do_execsql_test 2.2.$tn.4 {
+    SELECT mit(matchinfo(t2, 'x')) FROM t2 WHERE t2 MATCH 'e "g z"';
+  } [list                                       \
+    [list 1 2 2  1 2 2]                         \
+  ]
 }
 
 do_execsql_test 2.3.1 {

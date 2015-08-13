@@ -520,5 +520,43 @@ do_execsql_test 2.6 {
   {[one] two three [four] five}
 }
 
+#-------------------------------------------------------------------------
+do_execsql_test 3 {
+  CREATE VIRTUAL TABLE t3 USING fts4;
+  INSERT INTO t3 VALUES('[one two three]');
+}
+do_execsql_test 3.1 {
+  SELECT snippet(t3) FROM t3 WHERE t3 MATCH 'one';
+} {{[<b>one</b> two three]}}
+do_execsql_test 3.2 {
+  SELECT snippet(t3) FROM t3 WHERE t3 MATCH 'two';
+} {{[one <b>two</b> three]}}
+do_execsql_test 3.3 {
+  SELECT snippet(t3) FROM t3 WHERE t3 MATCH 'three';
+} {{[one two <b>three</b>]}}
+do_execsql_test 3.4 {
+  SELECT snippet(t3) FROM t3 WHERE t3 MATCH 'one OR two OR three';
+} {{[<b>one</b> <b>two</b> <b>three</b>]}}
+
+#-------------------------------------------------------------------------
+# Request a snippet 0 tokens in size. This is always an empty string.
+do_execsql_test 4.1 {
+  CREATE VIRTUAL TABLE t4 USING fts4;
+  INSERT INTO t4 VALUES('a b c d');
+  SELECT snippet(t4, '[', ']', '...', 0, 0) FROM t4 WHERE t4 MATCH 'b';
+} {{}}
+
+do_test 4.2 {
+  set x35 [string trim [string repeat "x " 35]]
+  execsql "INSERT INTO t4 VALUES('$x35 E $x35 F $x35 G $x35');"
+  llength [db one {
+    SELECT snippet(t4, '', '', '', 0, 64) FROM t4 WHERE t4 MATCH 'E'
+  }]
+} {64}
+
+
+
+
 set sqlite_fts3_enable_parentheses 0
 finish_test
+

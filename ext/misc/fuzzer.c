@@ -342,7 +342,8 @@ static int fuzzerLoadOneRule(
       rc = SQLITE_NOMEM;
     }else{
       memset(pRule, 0, sizeof(*pRule));
-      pRule->zFrom = &pRule->zTo[nTo+1];
+      pRule->zFrom = pRule->zTo;
+      pRule->zFrom += nTo + 1;
       pRule->nFrom = nFrom;
       memcpy(pRule->zFrom, zFrom, nFrom+1);
       memcpy(pRule->zTo, zTo, nTo+1);
@@ -875,7 +876,7 @@ static fuzzer_stem *fuzzerNewStem(
   if( pNew==0 ) return 0;
   memset(pNew, 0, sizeof(*pNew));
   pNew->zBasis = (char*)&pNew[1];
-  pNew->nBasis = (int)strlen(zWord);
+  pNew->nBasis = (fuzzer_len)strlen(zWord);
   memcpy(pNew->zBasis, zWord, pNew->nBasis+1);
   pRule = pCur->pVtab->pRule;
   while( fuzzerSkipRule(pRule, pNew, pCur->iRuleset) ){

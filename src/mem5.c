@@ -28,7 +28,7 @@
 **   1.  All memory allocations sizes are rounded up to a power of 2.
 **
 **   2.  If two adjacent free blocks are the halves of a larger block,
-**       then the two blocks are coalesed into the single larger block.
+**       then the two blocks are coalesced into the single larger block.
 **
 **   3.  New memory is allocated from the first available free block.
 **
@@ -248,7 +248,7 @@ static void *memsys5MallocUnsafe(int nByte){
   ** block.  If not, then split a block of the next larger power of
   ** two in order to create a new free block of size iLogsize.
   */
-  for(iBin=iLogsize; mem5.aiFreelist[iBin]<0 && iBin<=LOGMAX; iBin++){}
+  for(iBin=iLogsize; iBin<=LOGMAX && mem5.aiFreelist[iBin]<0; iBin++){}
   if( iBin>LOGMAX ){
     testcase( sqlite3GlobalConfig.xLog!=0 );
     sqlite3_log(SQLITE_NOMEM, "failed to allocate %u bytes", nByte);
@@ -274,6 +274,12 @@ static void *memsys5MallocUnsafe(int nByte){
   mem5.currentOut += iFullSz;
   if( mem5.maxCount<mem5.currentCount ) mem5.maxCount = mem5.currentCount;
   if( mem5.maxOut<mem5.currentOut ) mem5.maxOut = mem5.currentOut;
+
+#ifdef SQLITE_DEBUG
+  /* Make sure the allocated memory does not assume that it is set to zero
+  ** or retains a value from a previous allocation */
+  memset(&mem5.zPool[i*mem5.szAtom], 0xAA, iFullSz);
+#endif
 
   /* Return a pointer to the allocated memory. */
   return (void*)&mem5.zPool[i*mem5.szAtom];
@@ -332,6 +338,13 @@ static void memsys5FreeUnsafe(void *pOld){
     }
     size *= 2;
   }
+
+#ifdef SQLITE_DEBUG
+  /* Overwrite freed memory with the 0x55 bit pattern to verify that it is
+  ** not used after being freed */
+  memset(&mem5.zPool[iBlock*mem5.szAtom], 0x55, size);
+#endif
+
   memsys5Link(iBlock, iLogsize);
 }
 

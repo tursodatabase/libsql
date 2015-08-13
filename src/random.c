@@ -48,9 +48,23 @@ void sqlite3_randomness(int N, void *pBuf){
 #endif
 
 #if SQLITE_THREADSAFE
-  sqlite3_mutex *mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_PRNG);
-  sqlite3_mutex_enter(mutex);
+  sqlite3_mutex *mutex;
 #endif
+
+#ifndef SQLITE_OMIT_AUTOINIT
+  if( sqlite3_initialize() ) return;
+#endif
+
+#if SQLITE_THREADSAFE
+  mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_PRNG);
+#endif
+
+  sqlite3_mutex_enter(mutex);
+  if( N<=0 || pBuf==0 ){
+    wsdPrng.isInit = 0;
+    sqlite3_mutex_leave(mutex);
+    return;
+  }
 
   /* Initialize the state of the random number generator once,
   ** the first time this routine is called.  The seed value does
@@ -79,7 +93,8 @@ void sqlite3_randomness(int N, void *pBuf){
     wsdPrng.isInit = 1;
   }
 
-  while( N-- ){
+  assert( N>0 );
+  do{
     wsdPrng.i++;
     t = wsdPrng.s[wsdPrng.i];
     wsdPrng.j += t;
@@ -87,7 +102,7 @@ void sqlite3_randomness(int N, void *pBuf){
     wsdPrng.s[wsdPrng.j] = t;
     t += wsdPrng.s[wsdPrng.i];
     *(zBuf++) = wsdPrng.s[t];
-  }
+  }while( --N );
   sqlite3_mutex_leave(mutex);
 }
 
@@ -115,8 +130,5 @@ void sqlite3PrngRestoreState(void){
     &GLOBAL(struct sqlite3PrngType, sqlite3SavedPrng),
     sizeof(sqlite3Prng)
   );
-}
-void sqlite3PrngResetState(void){
-  GLOBAL(struct sqlite3PrngType, sqlite3Prng).isInit = 0;
 }
 #endif /* SQLITE_OMIT_BUILTIN_TEST */

@@ -160,6 +160,10 @@ do_execsql_test tkt-80e031a00f.322 {SELECT 'b' IN t8} 1
 do_execsql_test tkt-80e031a00f.323 {SELECT 'c' NOT IN t8} 0
 do_execsql_test tkt-80e031a00f.324 {SELECT 'c' IN t8n} 1
 do_execsql_test tkt-80e031a00f.325 {SELECT 'd' NOT IN t8n} 0
+do_execsql_test tkt-80e031a00f.326 {SELECT 'a' IN (NULL,'a')} 1
+do_execsql_test tkt-80e031a00f.327 {SELECT 'a' IN (NULL,'b')} {{}}
+do_execsql_test tkt-80e031a00f.328 {SELECT 'a' NOT IN (NULL,'a')} 0
+do_execsql_test tkt-80e031a00f.329 {SELECT 'a' NOT IN (NULL,'b')} {{}}
 #
 # Row 4:
 do_execsql_test tkt-80e031a00f.400 {SELECT 1 IN (2,3,4,null)} {{}}

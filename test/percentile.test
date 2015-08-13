@@ -200,7 +200,7 @@ ifcapable vtab {
   } {
     do_test percentile-2.1.$in {
       execsql {
-        SELECT percentile(x, $in) from t3;
+        SELECT round(percentile(x, $in),1) from t3;
       }
     } $out
   }

@@ -376,7 +376,7 @@ static void showSegmentStats(sqlite3 *db, const char *zTab){
   sqlite3_finalize(pStmt);
   nLeaf = nSeg - nIdx;
   printf("Leaf segments larger than %5d bytes.... %9d   %5.2f%%\n",
-         pgsz-45, n, n*100.0/nLeaf);
+         pgsz-45, n, nLeaf>0 ? n*100.0/nLeaf : 0.0);
 
   pStmt = prepare(db, "SELECT max(level%%1024) FROM '%q_segdir'", zTab);
   mxLevel = 0;
@@ -504,7 +504,7 @@ static void showSegdirMap(sqlite3 *db, const char *zTab){
                        sqlite3_column_int64(pStmt,5));
       printf("  root   %9s\n", rtag);
       if( iLEnd>iStart ){
-        sqlite3_int64 iLower, iPrev, iX;
+        sqlite3_int64 iLower, iPrev = 0, iX;
         if( iLEnd+1<=iEnd ){
           sqlite3_bind_int64(pStmt2, 1, iLEnd+1);
           sqlite3_bind_int64(pStmt2, 2, iEnd);
@@ -548,13 +548,13 @@ static void decodeSegment(
   const unsigned char *aData,   /* Content to print */
   int nData                     /* Number of bytes of content */
 ){
-  sqlite3_int64 iChild;
+  sqlite3_int64 iChild = 0;
   sqlite3_int64 iPrefix;
   sqlite3_int64 nTerm;
   sqlite3_int64 n;
   sqlite3_int64 iDocsz;
   int iHeight;
-  int i = 0;
+  sqlite3_int64 i = 0;
   int cnt = 0;
   char zTerm[1000];
 
@@ -576,12 +576,12 @@ static void decodeSegment(
       fprintf(stderr, "term to long\n");
       exit(1);
     }
-    memcpy(zTerm+iPrefix, aData+i, nTerm);
+    memcpy(zTerm+iPrefix, aData+i, (size_t)nTerm);
     zTerm[iPrefix+nTerm] = 0;
     i += nTerm;
     if( iHeight==0 ){
       i += getVarint(aData+i, &iDocsz);
-      printf("term: %-25s doclist %7lld bytes offset %d\n", zTerm, iDocsz, i);
+      printf("term: %-25s doclist %7lld bytes offset %lld\n", zTerm, iDocsz, i);
       i += iDocsz;
     }else{
       printf("term: %-25s child %lld\n", zTerm, ++iChild);
@@ -749,18 +749,19 @@ static void decodeDoclist(
 */
 static void showDoclist(sqlite3 *db, const char *zTab){
   const unsigned char *aData;
-  sqlite3_int64 offset, nData;
+  sqlite3_int64 offset;
+  int nData;
   sqlite3_stmt *pStmt;
 
   offset = atoi64(azExtra[1]);
-  nData = atoi64(azExtra[2]);
+  nData = atoi(azExtra[2]);
   pStmt = prepareToGetSegment(db, zTab, azExtra[0]);
   if( sqlite3_step(pStmt)!=SQLITE_ROW ){
     sqlite3_finalize(pStmt);
     return;
   }
   aData = sqlite3_column_blob(pStmt, 0);
-  printf("Doclist at %s offset %lld of size %lld bytes:\n",
+  printf("Doclist at %s offset %lld of size %d bytes:\n",
          azExtra[0], offset, nData);
   if( findOption("raw", 0, 0)!=0 ){
     printBlob(aData+offset, nData);

@@ -11,7 +11,6 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE TABLE statement.
 #
-# $Id: table.test,v 1.53 2009/06/05 17:09:12 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -272,6 +271,25 @@ do_test table-5.2.1 {
     SELECT name FROM sqlite_master WHERE name GLOB 'sqlite_stat*';
   }
 } {}
+
+do_test table-5.2.2 {
+  db close
+  forcedelete test.db
+  sqlite3 db test.db
+  db eval {
+    CREATE TABLE t0(a,b);
+    CREATE INDEX t ON t0(a);
+    PRAGMA writable_schema=ON;
+    UPDATE sqlite_master SET sql='CREATE TABLE a.b(a UNIQUE';
+    BEGIN;
+    CREATE TABLE t1(x);
+    ROLLBACK;
+    DROP TABLE IF EXISTS t99;
+  }
+} {}
+db close
+forcedelete test.db
+sqlite3 db test.db
 
 # Make sure an EXPLAIN does not really create a new table
 #
@@ -725,5 +743,85 @@ do_test table-15.2 {
   }
   execsql {COMMIT}
 } {}
+
+# Ticket 3a88d85f36704eebe134f7f48aebf00cd6438c1a (2014-08-05)
+# The following SQL script segfaults while running the INSERT statement:
+#
+#    CREATE TABLE t1(x DEFAULT(max(1)));
+#    INSERT INTO t1(rowid) VALUES(1);
+#
+# The problem appears to be the use of an aggregate function as part of
+# the default value for a column. This problem has been in the code since
+# at least 2006-01-01 and probably before that. This problem was detected
+# and reported on the sqlite-users@sqlite.org mailing list by Zsbán Ambrus. 
+#
+do_execsql_test table-16.1 {
+  CREATE TABLE t16(x DEFAULT(max(1)));
+  INSERT INTO t16(x) VALUES(123);
+  SELECT rowid, x FROM t16;
+} {1 123}
+do_catchsql_test table-16.2 {
+  INSERT INTO t16(rowid) VALUES(4);
+} {1 {unknown function: max()}}
+do_execsql_test table-16.3 {
+  DROP TABLE t16;
+  CREATE TABLE t16(x DEFAULT(abs(1)));
+  INSERT INTO t16(rowid) VALUES(4);
+  SELECT rowid, x FROM t16;
+} {4 1}
+do_catchsql_test table-16.4 {
+  DROP TABLE t16;
+  CREATE TABLE t16(x DEFAULT(avg(1)));
+  INSERT INTO t16(rowid) VALUES(123);
+  SELECT rowid, x FROM t16;
+} {1 {unknown function: avg()}}
+do_catchsql_test table-16.5 {
+  DROP TABLE t16;
+  CREATE TABLE t16(x DEFAULT(count()));
+  INSERT INTO t16(rowid) VALUES(123);
+  SELECT rowid, x FROM t16;
+} {1 {unknown function: count()}}
+do_catchsql_test table-16.6 {
+  DROP TABLE t16;
+  CREATE TABLE t16(x DEFAULT(group_concat('x',',')));
+  INSERT INTO t16(rowid) VALUES(123);
+  SELECT rowid, x FROM t16;
+} {1 {unknown function: group_concat()}}
+do_catchsql_test table-16.7 {
+  INSERT INTO t16 DEFAULT VALUES;
+} {1 {unknown function: group_concat()}}
+
+# Ticket [https://www.sqlite.org/src/info/094d39a4c95ee4abbc417f04214617675ba15c63]
+# describes a assertion fault that occurs on a CREATE TABLE .. AS SELECT statement.
+# the following test verifies that the problem has been fixed.
+#
+do_execsql_test table-17.1 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a TEXT);
+  INSERT INTO t1(a) VALUES(1),(2);
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t2(x TEXT, y TEXT);
+  INSERT INTO t2(x,y) VALUES(3,4);
+  DROP TABLE IF EXISTS t3;
+  CREATE TABLE t3 AS
+    SELECT a AS p, coalesce(y,a) AS q FROM t1 LEFT JOIN t2 ON a=x;
+  SELECT p, q, '|' FROM t3 ORDER BY p;
+} {1 1 | 2 2 |}
+
+# 2015-06-16
+# Ticket [https://www.sqlite.org/src/tktview/873cae2b6e25b1991ce5e9b782f9cd0409b96063]
+# Make sure a CREATE TABLE AS statement correctly rolls back partial changes to the
+# sqlite_master table when the SELECT on the right-hand side aborts.
+#
+do_catchsql_test table-18.1 {
+  DROP TABLE IF EXISTS t1;
+  BEGIN;
+  CREATE TABLE t1 AS SELECT zeroblob(2e20);
+} {1 {string or blob too big}}
+do_execsql_test table-18.2 {
+  COMMIT;
+  PRAGMA integrity_check;
+} {ok}
+
 
 finish_test

@@ -33,6 +33,7 @@ set testprefix rtree1
 #   rtree-8.*: Test constrained scans of r-tree data.
 #
 #   rtree-12.*: Test that on-conflict clauses are supported.
+#   rtree-13.*: Test that bug [d2889096e7bdeac6d] has been fixed.
 #
 
 ifcapable !rtree {
@@ -120,12 +121,13 @@ proc execsql_intout {sql} {
 # Test that it is possible to open an existing database that contains
 # r-tree tables.
 #
-do_test rtree-1.4.1 {
-  execsql {
-    CREATE VIRTUAL TABLE t1 USING rtree(ii, x1, x2);
-    INSERT INTO t1 VALUES(1, 5.0, 10.0);
-    INSERT INTO t1 VALUES(2, 15.0, 20.0);
-  }
+do_execsql_test rtree-1.4.1a {
+  CREATE VIRTUAL TABLE t1 USING rtree(ii, x1, x2);
+  INSERT INTO t1 VALUES(1, 5.0, 10.0);
+  SELECT substr(hex(data),1,40) FROM t1_node;
+} {00000001000000000000000140A0000041200000}
+do_execsql_test rtree-1.4.1b {
+  INSERT INTO t1 VALUES(2, 15.0, 20.0);
 } {}
 do_test rtree-1.4.2 {
   db close
@@ -435,16 +437,18 @@ do_test rtree-11.2 {
 # Test on-conflict clause handling.
 #
 db_delete_and_reopen
-do_execsql_test 12.0 {
+do_execsql_test 12.0.1 {
   CREATE VIRTUAL TABLE t1 USING rtree_i32(idx, x1, x2, y1, y2);
   INSERT INTO t1 VALUES(1,   1, 2, 3, 4);
+  SELECT substr(hex(data),1,56) FROM t1_node;
+} {00000001000000000000000100000001000000020000000300000004}
+do_execsql_test 12.0.2 {
   INSERT INTO t1 VALUES(2,   2, 3, 4, 5);
   INSERT INTO t1 VALUES(3,   3, 4, 5, 6);
 
   CREATE TABLE source(idx, x1, x2, y1, y2);
   INSERT INTO source VALUES(5, 8, 8, 8, 8);
   INSERT INTO source VALUES(2, 7, 7, 7, 7);
-  
 }
 db_save_and_close
 foreach {tn sql_template testdata} {
@@ -510,4 +514,25 @@ foreach {tn sql_template testdata} {
     db close
   }
 }
+
+#-------------------------------------------------------------------------
+# Test that bug [d2889096e7bdeac6d] has been fixed.
+#
+reset_db
+do_execsql_test 13.1 {
+  CREATE VIRTUAL TABLE t9 USING rtree(id, xmin, xmax);
+  INSERT INTO t9 VALUES(1,0,0);            
+  INSERT INTO t9 VALUES(2,0,0);
+  SELECT * FROM t9 WHERE id IN (1, 2);
+} {1 0.0 0.0 2 0.0 0.0}
+
+do_execsql_test 13.2 {
+  WITH r(x) AS (
+    SELECT 1 UNION ALL
+    SELECT 2 UNION ALL
+    SELECT 3
+  )
+  SELECT * FROM r CROSS JOIN t9 WHERE id=x;
+} {1 1 0.0 0.0 2 2 0.0 0.0}
+
 finish_test

@@ -152,4 +152,62 @@ foreach {tn disruption} {
   do_execsql_test  3.2.3.$tn "ROLLBACK"
 }
 
+#--------------------------------------------------------------------------
+# Test case 4.*
+#
+# Test that the integrity-check works if there are "notindexed" columns.
+#
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE t4 USING fts4(a, b, c, notindexed=b);
+  INSERT INTO t4 VALUES('text one', 'text two', 'text three');
+  INSERT INTO t4(t4) VALUES('integrity-check');
+}
+
+do_execsql_test 4.1 {
+  PRAGMA writable_schema = 1;
+  UPDATE sqlite_master 
+    SET sql = 'CREATE VIRTUAL TABLE t4 USING fts4(a, b, c)' 
+    WHERE name = 't4';
+}
+
+do_test 4.2 {
+  db close
+  sqlite3 db test.db
+  catchsql {
+    INSERT INTO t4(t4) VALUES('integrity-check');
+  }
+} {1 {database disk image is malformed}}
+reset_db
+
+#--------------------------------------------------------------------------
+# Test case 5.*
+#
+# Test that the integrity-check works if there is uncommitted data.
+#
+do_execsql_test 5.0 {
+  BEGIN;
+  CREATE VIRTUAL TABLE t5 USING fts4(a, prefix="1,2,3");
+  INSERT INTO t5 VALUES('And down by Kosiosko, where the reed-banks sweep');
+  INSERT INTO t5 VALUES('and sway, and the rolling plains are wide, the');
+  INSERT INTO t5 VALUES('man from snowy river is a household name today,');
+  INSERT INTO t5 VALUES('and the stockmen tell the story of his ride');
+}
+
+do_execsql_test 5.1 {
+  INSERT INTO t5(t5) VALUES('integrity-check');
+} {}
+
+do_catchsql_test 5.2 {
+  INSERT INTO t5_content VALUES(5, 'his hardy mountain pony');
+  INSERT INTO t5(t5) VALUES('integrity-check');
+} {1 {database disk image is malformed}}
+
+do_execsql_test 5.3 ROLLBACK
+
+do_execsql_test 5.4 {
+  CREATE VIRTUAL TABLE t5 USING fts4(a, prefix="1,2,3");
+  INSERT INTO t5(t5) VALUES('integrity-check');
+} {}
+
 finish_test
+

@@ -11,5 +11,5 @@ SQLite3 is a self-contains, zero-configuration, transactional SQL database
 engine.  This extension provides an easy to use interface for accessing
 SQLite database files from Tcl.
 .PP
-For full documentation see http://www.sqlite.org/ and
-in particular http://www.sqlite.org/tclsqlite.html.
+For full documentation see \fIhttp://www.sqlite.org/\fR and
+in particular \fIhttp://www.sqlite.org/tclsqlite.html\fR.

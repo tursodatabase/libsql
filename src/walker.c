@@ -19,7 +19,7 @@
 
 /*
 ** Walk an expression tree.  Invoke the callback once for each node
-** of the expression, while decending.  (In other words, the callback
+** of the expression, while descending.  (In other words, the callback
 ** is invoked before visiting children.)
 **
 ** The return value from the callback should be one of the WRC_*
@@ -113,9 +113,12 @@ int sqlite3WalkSelectFrom(Walker *pWalker, Select *p){
 /*
 ** Call sqlite3WalkExpr() for every expression in Select statement p.
 ** Invoke sqlite3WalkSelect() for subqueries in the FROM clause and
-** on the compound select chain, p->pPrior.  Invoke the xSelectCallback()
-** either before or after the walk of expressions and FROM clause, depending
-** on whether pWalker->bSelectDepthFirst is false or true, respectively.
+** on the compound select chain, p->pPrior. 
+**
+** If it is not NULL, the xSelectCallback() callback is invoked before
+** the walk of the expressions and FROM clause. The xSelectCallback2()
+** method, if it is not NULL, is invoked following the walk of the 
+** expressions and FROM clause.
 **
 ** Return WRC_Continue under normal conditions.  Return WRC_Abort if
 ** there is an abort request.
@@ -125,11 +128,13 @@ int sqlite3WalkSelectFrom(Walker *pWalker, Select *p){
 */
 int sqlite3WalkSelect(Walker *pWalker, Select *p){
   int rc;
-  if( p==0 || pWalker->xSelectCallback==0 ) return WRC_Continue;
+  if( p==0 || (pWalker->xSelectCallback==0 && pWalker->xSelectCallback2==0) ){
+    return WRC_Continue;
+  }
   rc = WRC_Continue;
   pWalker->walkerDepth++;
   while( p ){
-    if( !pWalker->bSelectDepthFirst ){
+    if( pWalker->xSelectCallback ){
        rc = pWalker->xSelectCallback(pWalker, p);
        if( rc ) break;
     }
@@ -139,12 +144,8 @@ int sqlite3WalkSelect(Walker *pWalker, Select *p){
       pWalker->walkerDepth--;
       return WRC_Abort;
     }
-    if( pWalker->bSelectDepthFirst ){
-      rc = pWalker->xSelectCallback(pWalker, p);
-      /* Depth-first search is currently only used for
-      ** selectAddSubqueryTypeInfo() and that routine always returns
-      ** WRC_Continue (0).  So the following branch is never taken. */
-      if( NEVER(rc) ) break;
+    if( pWalker->xSelectCallback2 ){
+      pWalker->xSelectCallback2(pWalker, p);
     }
     p = p->pPrior;
   }

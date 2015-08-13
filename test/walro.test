@@ -32,9 +32,6 @@ ifcapable !wal {
 }
 
 do_multiclient_test tn {
-  # Do not run tests with the connections in the same process.
-  #
-  if {$tn==2} continue
   
   # Close all connections and delete the database.
   #
@@ -43,6 +40,10 @@ do_multiclient_test tn {
   code3 { db3 close }
   forcedelete test.db
   forcedelete walro
+  
+  # Do not run tests with the connections in the same process.
+  #
+  if {$tn==2} continue
 
   foreach c {code1 code2 code3} {
     $c {
@@ -232,9 +233,6 @@ forcedelete test.db
 # database file while a checkpoint operation is ongoing.
 #
 do_multiclient_test tn {
-  # Do not run tests with the connections in the same process.
-  #
-  if {$tn==2} continue
   
   # Close all connections and delete the database.
   #
@@ -243,6 +241,10 @@ do_multiclient_test tn {
   code3 { db3 close }
   forcedelete test.db
   forcedelete walro
+  
+  # Do not run tests with the connections in the same process.
+  #
+  if {$tn==2} continue
 
   foreach c {code1 code2 code3} {
     $c {

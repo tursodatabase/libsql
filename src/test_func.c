@@ -499,13 +499,12 @@ static void test_extract(
     mem.enc = ENC(db);
     pHdr += sqlite3GetVarint(pHdr, &iSerialType);
     pBody += sqlite3VdbeSerialGet(pBody, (u32)iSerialType, &mem);
-    sqlite3VdbeMemStoreType(&mem);
 
     if( iCurrent==iIdx ){
       sqlite3_result_value(context, &mem);
     }
 
-    sqlite3DbFree(db, mem.zMalloc);
+    if( mem.szMalloc ) sqlite3DbFree(db, mem.zMalloc);
   }
 }
 
@@ -549,7 +548,6 @@ static void test_decode(
     pHdr += sqlite3GetVarint(pHdr, &iSerialType);
     pBody += sqlite3VdbeSerialGet(pBody, (u32)iSerialType, &mem);
 
-    sqlite3VdbeMemStoreType(&mem);
     switch( sqlite3_value_type(&mem) ){
       case SQLITE_TEXT:
         pVal = Tcl_NewStringObj((const char*)sqlite3_value_text(&mem), -1);
@@ -593,7 +591,7 @@ static void test_decode(
 
     Tcl_ListObjAppendElement(0, pRet, pVal);
 
-    if( mem.zMalloc ){
+    if( mem.szMalloc ){
       sqlite3DbFree(db, mem.zMalloc);
     }
   }
@@ -602,12 +600,26 @@ static void test_decode(
   Tcl_DecrRefCount(pRet);
 }
 
+/*
+** The implementation of scalar SQL function "test_zeroblob()". This is
+** similar to the built-in zeroblob() function, except that it does not
+** check that the integer parameter is within range before passing it
+** to sqlite3_result_zeroblob().
+*/
+static void test_zeroblob(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  int nZero = sqlite3_value_int(argv[0]);
+  sqlite3_result_zeroblob(context, nZero);
+}
 
 static int registerTestFunctions(sqlite3 *db){
   static const struct {
      char *zName;
      signed char nArg;
-     unsigned char eTextRep; /* 1: UTF-16.  0: UTF-8 */
+     unsigned int eTextRep; /* 1: UTF-16.  0: UTF-8 */
      void (*xFunc)(sqlite3_context*,int,sqlite3_value **);
   } aFuncs[] = {
     { "randstr",               2, SQLITE_UTF8, randStr    },
@@ -628,6 +640,7 @@ static int registerTestFunctions(sqlite3 *db){
     { "real2hex",              1, SQLITE_UTF8, real2hex},
     { "test_decode",           1, SQLITE_UTF8, test_decode},
     { "test_extract",          2, SQLITE_UTF8, test_extract},
+    { "test_zeroblob",  1, SQLITE_UTF8|SQLITE_DETERMINISTIC, test_zeroblob},
   };
   int i;
 

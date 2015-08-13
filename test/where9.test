@@ -781,7 +781,12 @@ do_test where9-6.8.2 {
         OR (b NOT NULL AND c NOT NULL AND d IS NULL)
   }
 } {1 {no query solution}}
+
+set solution_possible 0
 ifcapable stat4||stat3 {
+  if {[permutation] != "no_optimization"} { set solution_possible 1 }
+}
+if $solution_possible {
   # When STAT3 is enabled, the "b NOT NULL" terms get translated
   # into b>NULL, which can be satified by the index t1b.  It is a very
   # expensive way to do the query, but it works, and so a solution is possible.

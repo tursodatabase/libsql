@@ -103,5 +103,50 @@ do_execsql_test 2.2 {
   LIMIT (SELECT a FROM t5)
 } {2 3   3 6   4 10}
 
+############################################################################
+# Ticket http://www.sqlite.org/src/info/d11a6e908f (2014-09-20)
+# Query planner fault on three-way nested join with compound inner SELECT 
+#
+do_execsql_test 3.0 {
+  DROP TABLE IF EXISTS t1;
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t1 (id INTEGER PRIMARY KEY, data TEXT);
+  INSERT INTO t1(id,data) VALUES(9,'nine-a');
+  INSERT INTO t1(id,data) VALUES(10,'ten-a');
+  INSERT INTO t1(id,data) VALUES(11,'eleven-a');
+  CREATE TABLE t2 (id INTEGER PRIMARY KEY, data TEXT);
+  INSERT INTO t2(id,data) VALUES(9,'nine-b');
+  INSERT INTO t2(id,data) VALUES(10,'ten-b');
+  INSERT INTO t2(id,data) VALUES(11,'eleven-b');
+  
+  SELECT id FROM (
+    SELECT id,data FROM (
+       SELECT * FROM t1 UNION ALL SELECT * FROM t2
+    )
+    WHERE id=10 ORDER BY data
+  );
+} {10 10}
+do_execsql_test 3.1 {
+  SELECT data FROM (
+     SELECT 'dummy', data FROM (
+       SELECT data FROM t1 UNION ALL SELECT data FROM t1
+     ) ORDER BY data
+  );
+} {eleven-a eleven-a nine-a nine-a ten-a ten-a}
+do_execsql_test 3.2 {
+  DROP TABLE IF EXISTS t3;
+  DROP TABLE IF EXISTS t4;
+  CREATE TABLE t3(id INTEGER, data TEXT);
+  CREATE TABLE t4(id INTEGER, data TEXT);
+  INSERT INTO t3 VALUES(4, 'a'),(2,'c');
+  INSERT INTO t4 VALUES(3, 'b'),(1,'d');
+
+  SELECT data, id FROM (
+    SELECT id, data FROM (
+       SELECT * FROM t3 UNION ALL SELECT * FROM t4
+    ) ORDER BY data
+  );
+} {a 4 b 3 c 2 d 1}
+
 
 finish_test

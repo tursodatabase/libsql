@@ -145,7 +145,7 @@ do_test alter4-2.6 {
 } {1 {Cannot add a column with non-constant default}}
 do_test alter4-2.7 {
   catchsql {
-    alter table t1 add column d default (-+1);
+    alter table t1 add column d default (-5+1);
   }
 } {1 {Cannot add a column with non-constant default}}
 do_test alter4-2.99 {
@@ -333,5 +333,26 @@ do_test alter4-8.2 {
     SELECT sql FROM sqlite_temp_master WHERE name = 't4';
   }
 } [list $::sql]
+
+
+# Test that a default value equal to -1 multipied by the smallest possible
+# 64-bit integer is correctly converted to a real.
+do_execsql_test alter4-9.1 {
+  CREATE TABLE t5(
+    a INTEGER DEFAULT -9223372036854775808,
+    b INTEGER DEFAULT (-(-9223372036854775808))
+  );
+  INSERT INTO t5 DEFAULT VALUES;
+}
+
+do_execsql_test alter4-9.2 { SELECT typeof(a), a, typeof(b), b FROM t5; } {
+  integer -9223372036854775808
+  real     9.22337203685478e+18
+}
+
+do_execsql_test alter4-9.3 { 
+  ALTER TABLE t5 ADD COLUMN c INTEGER DEFAULT (-(-9223372036854775808));
+  SELECT typeof(c), c FROM t5;
+} {real 9.22337203685478e+18}
 
 finish_test

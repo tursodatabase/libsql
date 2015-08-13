@@ -1,0 +1,107 @@
+# 2015 Jan 13
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# This file containst tests focused on the integrity-check procedure.
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+set testprefix fts5integrity
+
+# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE xx USING fts5(x);
+  INSERT INTO xx VALUES('term');
+}
+do_execsql_test 1.1 {
+  INSERT INTO xx(xx) VALUES('integrity-check');
+}
+
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE yy USING fts5(x, prefix=1);
+  INSERT INTO yy VALUES('term');
+}
+do_execsql_test 2.1 {
+  INSERT INTO yy(yy) VALUES('integrity-check');
+}
+
+#--------------------------------------------------------------------
+#
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE zz USING fts5(z);
+  INSERT INTO zz(zz, rank) VALUES('pgsz', 32);
+  INSERT INTO zz VALUES('b b b b b b b b b b b b b b');
+  INSERT INTO zz SELECT z FROM zz;
+  INSERT INTO zz SELECT z FROM zz;
+  INSERT INTO zz SELECT z FROM zz;
+  INSERT INTO zz SELECT z FROM zz;
+  INSERT INTO zz SELECT z FROM zz;
+  INSERT INTO zz SELECT z FROM zz;
+  INSERT INTO zz(zz) VALUES('optimize');
+}
+
+do_execsql_test 3.1 { INSERT INTO zz(zz) VALUES('integrity-check'); }
+
+#--------------------------------------------------------------------
+# Mess around with a docsize record. And the averages record. Then
+# check that integrity-check picks it up.
+#
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE aa USING fts5(zz);
+  INSERT INTO aa(zz) VALUES('a b c d e');
+  INSERT INTO aa(zz) VALUES('a b c d');
+  INSERT INTO aa(zz) VALUES('a b c');
+  INSERT INTO aa(zz) VALUES('a b');
+  INSERT INTO aa(zz) VALUES('a');
+  SELECT length(sz) FROM aa_docsize;
+} {1 1 1 1 1}
+do_execsql_test 4.1 { 
+  INSERT INTO aa(aa) VALUES('integrity-check'); 
+}
+
+do_catchsql_test 4.2 { 
+  BEGIN;
+    UPDATE aa_docsize SET sz = X'44' WHERE rowid = 3;
+    INSERT INTO aa(aa) VALUES('integrity-check'); 
+} {1 {database disk image is malformed}}
+
+do_catchsql_test 4.3 { 
+  ROLLBACK;
+  BEGIN;
+    UPDATE aa_data SET block = X'44' WHERE rowid = 1;
+    INSERT INTO aa(aa) VALUES('integrity-check'); 
+} {1 {database disk image is malformed}}
+
+do_catchsql_test 4.4 { 
+  ROLLBACK;
+  BEGIN;
+    INSERT INTO aa_docsize VALUES(23, X'04');
+    INSERT INTO aa(aa) VALUES('integrity-check'); 
+} {1 {database disk image is malformed}}
+
+do_catchsql_test 4.5 { 
+  ROLLBACK;
+  BEGIN;
+    INSERT INTO aa_docsize VALUES(23, X'00');
+    INSERT INTO aa_content VALUES(23, '');
+    INSERT INTO aa(aa) VALUES('integrity-check'); 
+} {1 {database disk image is malformed}}
+
+#db eval {SELECT rowid, fts5_decode(rowid, block) aS r FROM zz_data} {puts $r}
+#exit
+
+
+finish_test
+

@@ -115,7 +115,7 @@
 
 #if !defined(SQLITE_TEST) || SQLITE_OS_UNIX
 
-#include <sqlite3.h>
+#include "sqlite3.h"
 
 #include <assert.h>
 #include <string.h>

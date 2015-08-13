@@ -1194,6 +1194,18 @@ do_test func-24.12 {
                           WHEN 'program' THEN null ELSE t1 END) FROM tbl1
   }
 } {,is,free,software}
+# Tests to verify ticket http://www.sqlite.org/src/tktview/55746f9e65f8587c0
+do_test func-24.13 {
+  execsql {
+    SELECT typeof(group_concat(x)) FROM (SELECT '' AS x);
+  }
+} {text}
+do_test func-24.14 {
+  execsql {
+    SELECT typeof(group_concat(x,''))
+      FROM (SELECT '' AS x UNION ALL SELECT '');
+  }
+} {text}
 
 
 # Use the test_isolation function to make sure that type conversions
@@ -1301,11 +1313,13 @@ do_test func-29.3 {
   db eval {SELECT typeof(+x) FROM t29 ORDER BY id}
 } {integer null real blob text}
 if {[permutation] != "mmap"} {
-  do_test func-29.4 {
-    set x [lindex [sqlite3_db_status db CACHE_MISS 1] 1]
-    if {$x>100} {set x many}
-    set x
-  } {many}
+  ifcapable !direct_read {
+    do_test func-29.4 {
+      set x [lindex [sqlite3_db_status db CACHE_MISS 1] 1]
+      if {$x>100} {set x many}
+      set x
+    } {many}
+  }
 }
 do_test func-29.5 {
   db close
@@ -1361,4 +1375,9 @@ for {set i 65536} {$i<=0x10ffff} {incr i 139} {
   do_execsql_test func-30.5.$i {SELECT unicode(char($i))} $i
 }
 
+# Test char().
+#
+do_execsql_test func-31.1 { 
+  SELECT char(), length(char()), typeof(char()) 
+} {{} 0 text}
 finish_test

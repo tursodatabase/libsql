@@ -19,11 +19,19 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix win32longpath
 
+do_test 1.0 {
+  file_control_vfsname db
+} win32
+
 db close
 set path [file nativename [get_pwd]]
 sqlite3 db [file join $path test.db] -vfs win32-longpath
 
 do_test 1.1 {
+  file_control_vfsname db
+} win32-longpath
+
+do_test 1.2 {
   db eval {
     BEGIN EXCLUSIVE;
     CREATE TABLE t1(x);
@@ -47,13 +55,13 @@ make_win32_dir $longPath(3)
 
 set fileName $longPath(3)\\test.db
 
-do_test 1.2 {
+do_test 1.3 {
   list [catch {sqlite3 db2 [string range $fileName 4 end]} msg] $msg
 } {1 {unable to open database file}}
 
 sqlite3 db3 $fileName -vfs win32-longpath
 
-do_test 1.3 {
+do_test 1.4 {
   db3 eval {
     BEGIN EXCLUSIVE;
     CREATE TABLE t1(x);
@@ -71,13 +79,13 @@ db3 close
 
 sqlite3 db3 $fileName -vfs win32-longpath
 
-do_test 1.4 {
+do_test 1.5 {
   db3 eval {
     PRAGMA journal_mode = WAL;
   }
 } {wal}
 
-do_test 1.5 {
+do_test 1.6 {
   db3 eval {
     BEGIN EXCLUSIVE;
     INSERT INTO t1 VALUES(9);

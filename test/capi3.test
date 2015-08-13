@@ -16,6 +16,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set ::testprefix capi3
 
 # Do not use a codec for tests in this file, as the database file is
 # manipulated directly using tcl scripts (using the [hexio_write] command).
@@ -179,16 +180,18 @@ do_test capi3-3.4 {
 do_test capi3-3.5 {
   sqlite3_close $db2
 } {SQLITE_OK}
-do_test capi3-3.6.1-misuse {
-  sqlite3_close $db2
-} {SQLITE_MISUSE}
-do_test capi3-3.6.2-misuse {
-  sqlite3_errmsg $db2
-} {library routine called out of sequence}
-ifcapable {utf16} {
-  do_test capi3-3.6.3-misuse {
-    utf8 [sqlite3_errmsg16 $db2]
+if {[clang_sanitize_address]==0} {
+  do_test capi3-3.6.1-misuse {
+    sqlite3_close $db2
+  } {SQLITE_MISUSE}
+  do_test capi3-3.6.2-misuse {
+    sqlite3_errmsg $db2
   } {library routine called out of sequence}
+  ifcapable {utf16} {
+    do_test capi3-3.6.3-misuse {
+      utf8 [sqlite3_errmsg16 $db2]
+    } {library routine called out of sequence}
+  }
 }
 
 do_test capi3-3.7 {
@@ -449,9 +452,21 @@ proc check_data {STMT test types ints doubles strings} {
 # types
 do_test $test.1 {
   set types [list]
-  foreach i $idxlist {lappend types [sqlite3_column_type $STMT $i]}
+  foreach i $idxlist {
+    set x [sqlite3_column_type $STMT $i]
+    # EVIDENCE-OF: R-12793-43283 Every value in SQLite has one of five
+    # fundamental datatypes: 64-bit signed integer 64-bit IEEE floating
+    # point number string BLOB NULL
+    if {[lsearch {INTEGER FLOAT TEXT BLOB NULL} $x]<0} {
+      set types ERROR
+      break
+    } else {
+      lappend types $x
+    }
+  }
   set types
 } $types
+ 
 
 # Integers
 do_test $test.2 {
@@ -661,10 +676,12 @@ do_test capi3-6.3 {
   sqlite3_finalize $STMT
 } {SQLITE_OK}
 
-do_test capi3-6.4-misuse {
-  db cache flush
-  sqlite3_close $DB
-} {SQLITE_OK}
+if {[clang_sanitize_address]==0} {
+  do_test capi3-6.4-misuse {
+    db cache flush
+    sqlite3_close $DB
+  } {SQLITE_OK}
+}
 db close
 
 # This procedure sets the value of the file-format in file 'test.db'
@@ -907,7 +924,7 @@ do_test capi3-11.9.3 {
 } 1
 do_test capi3-11.10 {
   sqlite3_step $STMT
-} {SQLITE_ERROR}
+} {SQLITE_ROW}
 ifcapable !autoreset {
   # If SQLITE_OMIT_AUTORESET is defined, then the statement must be
   # reset() before it can be passed to step() again.
@@ -916,11 +933,11 @@ ifcapable !autoreset {
 }
 do_test capi3-11.11 {
   sqlite3_step $STMT
-} {SQLITE_ROW}
+} {SQLITE_DONE}
 do_test capi3-11.12 {
   sqlite3_step $STMT
   sqlite3_step $STMT
-} {SQLITE_DONE}
+} {SQLITE_ROW}
 do_test capi3-11.13 {
   sqlite3_finalize $STMT
 } {SQLITE_OK}
@@ -1060,11 +1077,13 @@ if {[llength [info commands sqlite3_sleep]]>0} {
 }
 
 # Ticket #1219:  Make sure binding APIs can handle a NULL pointer.
-#
-do_test capi3-14.1-misuse {
-  set rc [catch {sqlite3_bind_text 0 1 hello 5} msg]
-  lappend rc $msg
-} {1 SQLITE_MISUSE}
+# 
+if {[clang_sanitize_address]==0} {
+  do_test capi3-14.1-misuse {
+    set rc [catch {sqlite3_bind_text 0 1 hello 5} msg]
+      lappend rc $msg
+  } {1 SQLITE_MISUSE}
+}
 
 # Ticket #1650:  Honor the nBytes parameter to sqlite3_prepare.
 #
@@ -1214,6 +1233,23 @@ sqlite3_finalize $STMT
 do_test capi3-19.1 {
   sqlite3_prepare_tkt3134 db
 } {}
+
+# Test that calling sqlite3_column_blob() on a TEXT value does not change
+# the return type of subsequent calls to sqlite3_column_type().
+#
+do_execsql_test 20.1 {
+  CREATE TABLE t4(x);
+  INSERT INTO t4 VALUES('abcdefghij');
+}
+do_test 20.2 {
+  set stmt [sqlite3_prepare db "SELECT * FROM t4" -1 dummy]
+  sqlite3_step $stmt
+} {SQLITE_ROW}
+do_test 20.3 { sqlite3_column_type $stmt 0 } {TEXT}
+do_test 20.4 { sqlite3_column_blob $stmt 0 } {abcdefghij}
+do_test 20.5 { sqlite3_column_type $stmt 0 } {TEXT}
+do_test 20.6 { sqlite3_finalize $stmt } SQLITE_OK
+
 
 # Tests of the interface when no VFS is registered.
 #

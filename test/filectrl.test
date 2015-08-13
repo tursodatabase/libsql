@@ -39,7 +39,6 @@ do_test filectrl-1.5 {
 do_test filectrl-1.6 {
   sqlite3 db test.db
   set fn [file_control_tempfilename db]
-  puts -nonewline \[$fn\]
   set fn
 } {/etilqs_/}
 db close

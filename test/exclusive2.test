@@ -301,7 +301,6 @@ do_test exclusive2-3.3 {
   readPagerChangeCounter test.db
 } {4}
 do_test exclusive2-3.4 {
-breakpoint
   execsql {
     INSERT INTO t1 VALUES(randstr(200, 200));
   }

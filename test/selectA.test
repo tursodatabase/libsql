@@ -21,6 +21,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix selectA
 
 ifcapable !compound {
   finish_test
@@ -1292,5 +1293,146 @@ do_test selectA-3.97 {
       ORDER BY y COLLATE NOCASE DESC,x,z)))
   }
 } {MAD}
+do_execsql_test selectA-3.98 {
+  WITH RECURSIVE
+    xyz(n) AS (
+      SELECT upper((SELECT x FROM (
+        SELECT x,y,z FROM t2
+        INTERSECT SELECT a,b,c FROM t3
+        EXCEPT SELECT c,b,a FROM t1
+        UNION SELECT a,b,c FROM t3
+        INTERSECT SELECT a,b,c FROM t3
+        EXCEPT SELECT c,b,a FROM t1
+        UNION SELECT a,b,c FROM t3
+        ORDER BY y COLLATE NOCASE DESC,x,z)))
+      UNION ALL
+      SELECT n || '+' FROM xyz WHERE length(n)<5
+    )
+  SELECT n FROM xyz ORDER BY +n;
+} {MAD MAD+ MAD++}
+
+#-------------------------------------------------------------------------
+# At one point the following code exposed a temp register reuse problem.
+#
+proc f {args} { return 1 }
+db func f f
+
+do_execsql_test 4.1.1 {
+  CREATE TABLE t4(a, b);
+  CREATE TABLE t5(c, d);
+
+  INSERT INTO t5 VALUES(1, 'x');
+  INSERT INTO t5 VALUES(2, 'x');
+  INSERT INTO t4 VALUES(3, 'x');
+  INSERT INTO t4 VALUES(4, 'x');
+
+  CREATE INDEX i1 ON t4(a);
+  CREATE INDEX i2 ON t5(c);
+}
+
+do_eqp_test 4.1.2 {
+  SELECT c, d FROM t5 
+  UNION ALL
+  SELECT a, b FROM t4 WHERE f()==f()
+  ORDER BY 1,2
+} {
+  1 0 0 {SCAN TABLE t5 USING INDEX i2} 
+  1 0 0 {USE TEMP B-TREE FOR RIGHT PART OF ORDER BY}
+  2 0 0 {SCAN TABLE t4 USING INDEX i1} 
+  2 0 0 {USE TEMP B-TREE FOR RIGHT PART OF ORDER BY}
+  0 0 0 {COMPOUND SUBQUERIES 1 AND 2 (UNION ALL)}
+}
+
+do_execsql_test 4.1.3 {
+  SELECT c, d FROM t5 
+  UNION ALL
+  SELECT a, b FROM t4 WHERE f()==f()
+  ORDER BY 1,2
+} {
+  1 x 2 x 3 x 4 x
+}
+
+do_execsql_test 4.2.1 {
+  CREATE TABLE t6(a, b);
+  CREATE TABLE t7(c, d);
+
+  INSERT INTO t7 VALUES(2, 9);
+  INSERT INTO t6 VALUES(3, 0);
+  INSERT INTO t6 VALUES(4, 1);
+  INSERT INTO t7 VALUES(5, 6);
+  INSERT INTO t6 VALUES(6, 0);
+  INSERT INTO t7 VALUES(7, 6);
+
+  CREATE INDEX i6 ON t6(a);
+  CREATE INDEX i7 ON t7(c);
+}
+
+do_execsql_test 4.2.2 {
+  SELECT c, f(d,c,d,c,d) FROM t7
+  UNION ALL
+  SELECT a, b FROM t6 
+  ORDER BY 1,2
+} {/2 . 3 . 4 . 5 . 6 . 7 ./}
+
+
+proc strip_rnd {explain} {
+  regexp -all {sqlite_sq_[0123456789ABCDEF]*} $explain sqlite_sq
+}
+
+proc do_same_test {tn q1 args} {
+  set r2 [strip_rnd [db eval "EXPLAIN $q1"]]
+  set i 1
+  foreach q $args {
+    set tst [subst -nocommands {strip_rnd [db eval "EXPLAIN $q"]}]
+    uplevel do_test $tn.$i [list $tst] [list $r2]
+    incr i
+  }
+}
+
+do_execsql_test 5.0 {
+  CREATE TABLE t8(a, b);
+  CREATE TABLE t9(c, d);
+} {}
+
+do_same_test 5.1 {
+  SELECT a, b FROM t8 INTERSECT SELECT c, d FROM t9 ORDER BY a;
+} {
+  SELECT a, b FROM t8 INTERSECT SELECT c, d FROM t9 ORDER BY t8.a;
+} {
+  SELECT a, b FROM t8 INTERSECT SELECT c, d FROM t9 ORDER BY 1;
+} {
+  SELECT a, b FROM t8 INTERSECT SELECT c, d FROM t9 ORDER BY c;
+} {
+  SELECT a, b FROM t8 INTERSECT SELECT c, d FROM t9 ORDER BY t9.c;
+}
+
+do_same_test 5.2 {
+  SELECT a, b FROM t8 UNION SELECT c, d FROM t9 ORDER BY a COLLATE NOCASE
+} {
+  SELECT a, b FROM t8 UNION SELECT c, d FROM t9 ORDER BY t8.a COLLATE NOCASE
+} {
+  SELECT a, b FROM t8 UNION SELECT c, d FROM t9 ORDER BY 1 COLLATE NOCASE
+} {
+  SELECT a, b FROM t8 UNION SELECT c, d FROM t9 ORDER BY c COLLATE NOCASE
+} {
+  SELECT a, b FROM t8 UNION SELECT c, d FROM t9 ORDER BY t9.c COLLATE NOCASE
+}
+
+do_same_test 5.3 {
+  SELECT a, b FROM t8 EXCEPT SELECT c, d FROM t9 ORDER BY b, c COLLATE NOCASE
+} {
+  SELECT a, b FROM t8 EXCEPT SELECT c, d FROM t9 ORDER BY 2, 1 COLLATE NOCASE
+} {
+  SELECT a, b FROM t8 EXCEPT SELECT c, d FROM t9 ORDER BY d, a COLLATE NOCASE
+} {
+  SELECT a, b FROM t8 EXCEPT SELECT * FROM t9 ORDER BY t9.d, c COLLATE NOCASE
+} {
+  SELECT * FROM t8 EXCEPT SELECT c, d FROM t9 ORDER BY d, t8.a COLLATE NOCASE
+}
+
+do_catchsql_test 5.4 {
+  SELECT * FROM t8 UNION SELECT * FROM t9 ORDER BY a+b COLLATE NOCASE
+} {1 {1st ORDER BY term does not match any column in the result set}}
+
 
 finish_test

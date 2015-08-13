@@ -811,7 +811,13 @@ do_test wal2-7.1.1 {
 do_test wal2-7.1.2 {
   forcecopy test.db test2.db
   forcecopy test.db-wal test2.db-wal
-  hexio_write test2.db-wal 48 FF
+  # The first 32 bytes of the WAL file contain the WAL header. Offset 48
+  # is the first byte of the checksum for the first frame in the WAL. 
+  # The following three lines replaces the contents of that byte with 
+  # a different value.
+  set newval FF
+  if {$newval == [hexio_read test2.db-wal 48 1]} { set newval 00 }
+  hexio_write test2.db-wal 48 $newval
 } {1}
 do_test wal2-7.1.3 {
   sqlite3 db2 test2.db
@@ -1279,7 +1285,6 @@ foreach {tn settings restart_sync commit_sync ckpt_sync} {
     PRAGMA synchronous = [lindex $settings 2];
   " {0 wal}
 
-if { $tn==2} breakpoint
   do_test 15.$tn.2 {
     set sync(normal) 0
     set sync(full) 0

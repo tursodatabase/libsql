@@ -326,6 +326,7 @@ do_execsql_test 6.2 {
 reset_db
 sqlite3_db_config_lookaside db 0 0 0
 
+database_may_be_corrupt
 do_execsql_test 7.1 {
   CREATE TABLE t1(a, b);
   CREATE INDEX i1 ON t1(a, b);
@@ -365,6 +366,8 @@ do_execsql_test 7.5 {
   ANALYZE sqlite_master;
   SELECT * FROM t1 WHERE a = 5;
 } {5 5}
+
+database_never_corrupt
 
 #-------------------------------------------------------------------------
 #
@@ -563,7 +566,7 @@ foreach {tn schema} {
 drop_all_tables
 do_test 13.1 {
   execsql {
-    CREATE TABLE t1(a, b, c);
+    CREATE TABLE t1(a, b, c, d);
     CREATE INDEX i1 ON t1(a);
     CREATE INDEX i2 ON t1(b, c);
   }
@@ -574,16 +577,16 @@ do_test 13.1 {
   execsql ANALYZE
 } {}
 do_eqp_test 13.2.1 {
-  SELECT * FROM t1 WHERE a='abc' AND rowid<15 AND b<20
+  SELECT * FROM t1 WHERE a='abc' AND rowid<15 AND b<12
 } {/SEARCH TABLE t1 USING INDEX i1/}
 do_eqp_test 13.2.2 {
-  SELECT * FROM t1 WHERE a='abc' AND rowid<'15' AND b<20
+  SELECT * FROM t1 WHERE a='abc' AND rowid<'15' AND b<12
 } {/SEARCH TABLE t1 USING INDEX i1/}
 do_eqp_test 13.3.1 {
-  SELECT * FROM t1 WHERE a='abc' AND rowid<100 AND b<20
+  SELECT * FROM t1 WHERE a='abc' AND rowid<100 AND b<12
 } {/SEARCH TABLE t1 USING INDEX i2/}
 do_eqp_test 13.3.2 {
-  SELECT * FROM t1 WHERE a='abc' AND rowid<'100' AND b<20
+  SELECT * FROM t1 WHERE a='abc' AND rowid<'100' AND b<12
 } {/SEARCH TABLE t1 USING INDEX i2/}
 
 #-------------------------------------------------------------------------
@@ -950,4 +953,297 @@ for {set i 0} {$i<16} {incr i} {
     } {1}
 }
 
+#-------------------------------------------------------------------------
+#
+reset_db
+
+do_execsql_test 21.0 {
+  CREATE TABLE t2(a, b);
+  CREATE INDEX i2 ON t2(a);
+}
+
+do_test 21.1 {
+  for {set i 1} {$i < 100} {incr i} {
+    execsql { 
+      INSERT INTO t2 VALUES(CASE WHEN $i < 80 THEN 'one' ELSE 'two' END, $i) 
+    }
+  }
+  execsql ANALYZE
+} {}
+
+# Condition (a='one') matches 80% of the table. (rowid<10) reduces this to
+# 10%, but (rowid<50) only reduces it to 50%. So in the first case below
+# the index is used. In the second, it is not. 
+#
+do_eqp_test 21.2 {
+  SELECT * FROM t2 WHERE a='one' AND rowid < 10
+} {/*USING INDEX i2 (a=? AND rowid<?)*/}
+do_eqp_test 21.3 {
+  SELECT * FROM t2 WHERE a='one' AND rowid < 50
+} {/*USING INTEGER PRIMARY KEY*/}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 22.0 {
+  CREATE TABLE t3(a, b, c, d, PRIMARY KEY(a, b)) WITHOUT ROWID;
+}
+do_execsql_test 22.1 {
+  WITH r(x) AS (
+    SELECT 1
+    UNION ALL
+    SELECT x+1 FROM r WHERE x<=100
+  )
+
+  INSERT INTO t3 SELECT
+    CASE WHEN (x>45 AND x<96) THEN 'B' ELSE 'A' END,  /* Column "a" */
+    x,                                                /* Column "b" */
+    CASE WHEN (x<51) THEN 'one' ELSE 'two' END,       /* Column "c" */
+    x                                                 /* Column "d" */
+  FROM r;
+
+  CREATE INDEX i3 ON t3(c);
+  CREATE INDEX i4 ON t3(d);
+  ANALYZE;
+}
+
+# Expression (c='one' AND a='B') matches 5 table rows. But (c='one' AND a=A')
+# matches 45. Expression (d<?) matches 20. Neither index is a covering index.
+#
+# Therefore, with stat4 data, SQLite prefers (c='one' AND a='B') over (d<20),
+# and (d<20) over (c='one' AND a='A').
+foreach {tn where res} {
+  1 "c='one' AND a='B' AND d < 20"   {/*INDEX i3 (c=? AND a=?)*/}
+  2 "c='one' AND a='A' AND d < 20"   {/*INDEX i4 (d<?)*/}
+} {
+  do_eqp_test 22.2.$tn "SELECT * FROM t3 WHERE $where" $res
+}
+
+proc int_to_char {i} {
+  set ret ""
+  set char [list a b c d e f g h i j]
+  foreach {div} {1000 100 10 1} {
+    append ret [lindex $char [expr ($i / $div) % 10]]
+  }
+  set ret
+}
+db func int_to_char int_to_char
+
+do_execsql_test 23.0 {
+  CREATE TABLE t4(
+    a COLLATE nocase, b, c, 
+    d, e, f, 
+    PRIMARY KEY(c, b, a)
+  ) WITHOUT ROWID;
+  CREATE INDEX i41 ON t4(e);
+  CREATE INDEX i42 ON t4(f);
+
+  WITH data(a, b, c, d, e, f) AS (
+    SELECT int_to_char(0), 'xyz', 'zyx', '*', 0, 0
+    UNION ALL
+    SELECT 
+      int_to_char(f+1), b, c, d, (e+1) % 2, f+1
+    FROM data WHERE f<1024
+  )
+  INSERT INTO t4 SELECT a, b, c, d, e, f FROM data;
+  ANALYZE;
+} {}
+
+do_eqp_test 23.1 {
+  SELECT * FROM t4 WHERE 
+    (e=1 AND b='xyz' AND c='zyx' AND a<'AEA') AND f<300
+} {
+  0 0 0 {SEARCH TABLE t4 USING INDEX i41 (e=? AND c=? AND b=? AND a<?)}
+}
+do_eqp_test 23.2 {
+  SELECT * FROM t4 WHERE 
+    (e=1 AND b='xyz' AND c='zyx' AND a<'JJJ') AND f<300
+} {
+  0 0 0 {SEARCH TABLE t4 USING INDEX i42 (f<?)}
+}
+
+do_execsql_test 24.0 {
+  CREATE TABLE t5(c, d, b, e, a, PRIMARY KEY(a, b, c)) WITHOUT ROWID;
+  WITH data(a, b, c, d, e) AS (
+    SELECT 'z', 'y', 0, 0, 0
+    UNION ALL
+    SELECT 
+      a, CASE WHEN b='y' THEN 'n' ELSE 'y' END, c+1, e/250, e+1 
+    FROM data
+    WHERE e<1000
+  )
+  INSERT INTO t5(a, b, c, d, e) SELECT * FROM data;
+  CREATE INDEX t5d ON t5(d);
+  CREATE INDEX t5e ON t5(e);
+  ANALYZE;
+}
+
+foreach {tn where eqp} {
+  1 "d=0 AND a='z' AND b='n' AND e<200" {/*t5d (d=? AND a=? AND b=?)*/}
+  2 "d=0 AND a='z' AND b='n' AND e<100" {/*t5e (e<?)*/}
+
+  3 "d=0 AND e<300"                     {/*t5d (d=?)*/}
+  4 "d=0 AND e<200"                     {/*t5e (e<?)*/}
+} {
+  do_eqp_test 24.$tn "SeLeCt * FROM t5 WHERE $where" $eqp
+}
+
+#-------------------------------------------------------------------------
+# Test that if stat4 data is available but cannot be used because the
+# rhs of a range constraint is a complex expression, the default estimates
+# are used instead.
+ifcapable stat4&&cte {
+  do_execsql_test 25.1 {
+    CREATE TABLE t6(a, b);
+    WITH ints(i,j) AS (
+      SELECT 1,1 UNION ALL SELECT i+1,j+1 FROM ints WHERE i<100
+    ) INSERT INTO t6 SELECT * FROM ints;
+    CREATE INDEX aa ON t6(a);
+    CREATE INDEX bb ON t6(b);
+    ANALYZE;
+  }
+
+  # Term (b<?) is estimated at 25%. Better than (a<30) but not as
+  # good as (a<20).
+  do_eqp_test 25.2.1 { SELECT * FROM t6 WHERE a<30 AND b<? } {
+    0 0 0 {SEARCH TABLE t6 USING INDEX bb (b<?)}
+  }
+  do_eqp_test 25.2.2 { SELECT * FROM t6 WHERE a<20 AND b<? } {
+    0 0 0 {SEARCH TABLE t6 USING INDEX aa (a<?)}
+  }
+
+  # Term (b BETWEEN ? AND ?) is estimated at 1/64.
+  do_eqp_test 25.3.1 { 
+    SELECT * FROM t6 WHERE a BETWEEN 5 AND 10 AND b BETWEEN ? AND ? 
+  } {
+    0 0 0 {SEARCH TABLE t6 USING INDEX bb (b>? AND b<?)}
+  }
+  
+  # Term (b BETWEEN ? AND 60) is estimated to return roughly 15 rows -
+  # 60 from (b<=60) multiplied by 0.25 for the b>=? term. Better than
+  # (a<20) but not as good as (a<10).
+  do_eqp_test 25.4.1 { 
+    SELECT * FROM t6 WHERE a < 10 AND (b BETWEEN ? AND 60)
+  } {
+    0 0 0 {SEARCH TABLE t6 USING INDEX aa (a<?)}
+  }
+  do_eqp_test 25.4.2 { 
+    SELECT * FROM t6 WHERE a < 20 AND (b BETWEEN ? AND 60)
+  } {
+    0 0 0 {SEARCH TABLE t6 USING INDEX bb (b>? AND b<?)}
+  }
+}
+
+#-------------------------------------------------------------------------
+# Check that a problem in they way stat4 data is used has been 
+# resolved (see below).
+#
+reset_db
+do_test 26.1.1 {
+  db transaction {
+    execsql { 
+      CREATE TABLE t1(x, y, z);
+      CREATE INDEX t1xy ON t1(x, y);
+      CREATE INDEX t1z ON t1(z);
+    }
+    for {set i 0} {$i < 10000} {incr i} {
+      execsql { INSERT INTO t1(x, y) VALUES($i, $i) }
+    }
+    for {set i 0} {$i < 10} {incr i} {
+      execsql {
+        WITH cnt(x) AS (SELECT 1 UNION ALL SELECT x+1 FROM cnt WHERE x<100)
+        INSERT INTO t1(x, y) SELECT 10000+$i, x FROM cnt;
+        INSERT INTO t1(x, y) SELECT 10000+$i, 100;
+      }
+    }
+    execsql {
+      UPDATE t1 SET z = rowid / 20;
+      ANALYZE;
+    }
+  }
+} {}
+
+do_execsql_test 26.1.2 {
+  SELECT count(*) FROM t1 WHERE x = 10000 AND y < 50;
+} {49}
+do_execsql_test 26.1.3 {
+  SELECT count(*) FROM t1 WHERE z = 444;
+} {20}
+
+# The analyzer knows that any (z=?) expression matches 20 rows. So it
+# will use index "t1z" if the estimate of hits for (x=10000 AND y<50)
+# is greater than 20 rows.
+#
+# And it should be. The analyzer has a stat4 sample as follows:
+#
+#   sample=(x=10000, y=100) nLt=(10000 10099)
+#
+# There should be no other samples that start with (x=10000). So it knows 
+# that (x=10000 AND y<50) must match somewhere between 0 and 99 rows, but
+# know more than that. Guessing less than 20 is therefore unreasonable.
+#
+# At one point though, due to a problem in whereKeyStats(), the planner was
+# estimating that (x=10000 AND y<50) would match only 2 rows.
+#
+do_eqp_test 26.1.4 {
+  SELECT * FROM t1 WHERE x = 10000 AND y < 50 AND z = 444;
+} {
+  0 0 0 {SEARCH TABLE t1 USING INDEX t1z (z=?)}
+}
+
+
+# This test - 26.2.* - tests that another manifestation of the same problem
+# is no longer present in the library. Assuming:
+# 
+#   CREATE INDEX t1xy ON t1(x, y)
+#
+# and that have samples for index t1xy as follows:
+#
+#
+#   sample=('A', 70)        nEq=(100, 2)        nLt=(900, 970)
+#   sample=('B', 70)        nEq=(100, 2)        nLt=(1000, 1070)    
+#
+# the planner should estimate that (x = 'B' AND y > 25) matches 76 rows
+# (70 * 2/3 + 30). Before, due to the problem, the planner was estimating 
+# that this matched 100 rows.
+# 
+reset_db
+do_execsql_test 26.2.1 {
+  BEGIN;
+    CREATE TABLE t1(x, y, z);
+    CREATE INDEX i1 ON t1(x, y);
+    CREATE INDEX i2 ON t1(z);
+  
+    WITH 
+    cnt(y) AS (SELECT 0 UNION ALL SELECT y+1 FROM cnt WHERE y<99),
+    letters(x) AS (
+      SELECT 'A' UNION SELECT 'B' UNION SELECT 'C' UNION SELECT 'D'
+    )
+    INSERT INTO t1(x, y) SELECT x, y FROM letters, cnt;
+  
+    WITH
+    letters(x) AS (
+      SELECT 'A' UNION SELECT 'B' UNION SELECT 'C' UNION SELECT 'D'
+    )
+    INSERT INTO t1(x, y) SELECT x, 70 FROM letters;
+  
+    WITH
+    cnt(i) AS (SELECT 0 UNION ALL SELECT i+1 FROM cnt WHERE i<9999)
+    INSERT INTO t1(x, y) SELECT i, i FROM cnt;
+  
+    UPDATE t1 SET z = (rowid / 95);
+    ANALYZE;
+  COMMIT;
+}
+
+do_eqp_test 26.2.2 {
+  SELECT * FROM t1 WHERE x='B' AND y>25 AND z=?;
+} {
+  0 0 0 {SEARCH TABLE t1 USING INDEX i1 (x=? AND y>?)}
+}
+
+
 finish_test
+
+
+

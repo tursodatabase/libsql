@@ -241,6 +241,9 @@ execsql {ROLLBACK}
 
 # Test the built-in busy timeout handler
 #
+# EVIDENCE-OF: R-23579-05241 PRAGMA busy_timeout; PRAGMA busy_timeout =
+# milliseconds; Query or change the setting of the busy timeout.
+#
 do_test lock-2.8 {
   db2 timeout 400
   execsql BEGIN

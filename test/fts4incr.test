@@ -47,7 +47,9 @@ foreach {tn q res} {
     do_execsql_test 2.$tn.$s $q $res
     set t($s) [lindex [time [list execsql $q] 100] 0]
   }
-  puts "with optimization: $t(0)    without: $t(1)"
+  if {0} {
+    puts "with optimization: $t(0)    without: $t(1)"
+  }
 }
 
 do_test 2.1 {

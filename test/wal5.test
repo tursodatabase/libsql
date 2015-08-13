@@ -55,7 +55,8 @@ foreach {testprefix do_wal_checkpoint} {
         if {[lsearch {-mode -db} $key]<0} { error "unknown switch: $key" }
       }
 
-      if {$a(-mode)!="restart" && $a(-mode)!="full"} { set a(-mode) passive }
+      set vals {restart full truncate}
+      if {[lsearch -exact $vals $a(-mode)]<0} { set a(-mode) passive }
 
       set cmd [list sqlite3_wal_checkpoint_v2 $dbhandle $a(-mode)]
       if {[info exists a(-db)]} { lappend sql $a(-db) }
@@ -278,6 +279,11 @@ foreach {testprefix do_wal_checkpoint} {
     9   RESTART   2   {1 4 3}   2
     10  RESTART   3   {1 4 4}   3
 
+    11  TRUNCATE  -   {0 0 0}   3
+    12  TRUNCATE  1   {1 3 3}   1
+    13  TRUNCATE  2   {1 4 3}   2
+    14  TRUNCATE  3   {1 4 4}   3
+
   } {
     do_multiclient_test tn {
       setup_and_attach_aux
@@ -348,6 +354,123 @@ foreach {testprefix do_wal_checkpoint} {
 
     do_test 3.$tn.6 { code3 { do_wal_checkpoint db3 } } {0 0 0}
   }
+
+  # Test SQLITE_CHECKPOINT_TRUNCATE.
+  #
+  do_multiclient_test tn {
+
+    code1 $do_wal_checkpoint
+    code2 $do_wal_checkpoint
+    code3 $do_wal_checkpoint
+
+    do_test 4.$tn.1 {
+      sql1 {
+        PRAGMA page_size = 1024;
+        PRAGMA auto_vacuum = 0;
+        PRAGMA journal_mode = WAL;
+        PRAGMA synchronous = normal;
+        CREATE TABLE t1(x, y);
+        CREATE INDEX i1 ON t1(x, y);
+        INSERT INTO t1 VALUES(1, 2);
+        INSERT INTO t1 VALUES(3, 4);
+      }
+      file size test.db-wal
+    } [wal_file_size 8 1024]
+
+    do_test 4.$tn.2 { do_wal_checkpoint db -mode truncate } {0 0 0}
+    do_test 4.$tn.3 { file size test.db-wal } 0
+
+    do_test 4.$tn.4 {
+      sql2 { SELECT * FROM t1 }
+    } {1 2 3 4}
+
+    do_test 4.$tn.5 {
+      sql2 { INSERT INTO t1 VALUES('a', 'b') }
+      file size test.db-wal
+    } [wal_file_size 2 1024]
+
+  }
+  
+  # Test that FULL, RESTART and TRUNCATE callbacks block on other clients
+  # and truncate the wal file as required even if the entire wal file has
+  # already been checkpointed when they are invoked.
+  #
+  do_multiclient_test tn {
+
+    code1 $do_wal_checkpoint
+    code2 $do_wal_checkpoint
+    code3 $do_wal_checkpoint
+
+    do_test 5.$tn.1 {
+      sql1 {
+        PRAGMA page_size = 1024;
+        PRAGMA auto_vacuum = 0;
+        PRAGMA journal_mode = WAL;
+        PRAGMA synchronous = normal;
+        CREATE TABLE t1(x, y);
+        CREATE INDEX i1 ON t1(x, y);
+        INSERT INTO t1 VALUES(1, 2);
+        INSERT INTO t1 VALUES(3, 4);
+        INSERT INTO t1 VALUES(5, 6);
+      }
+      file size test.db-wal
+    } [wal_file_size 10 1024]
+
+    do_test 5.$tn.2 { 
+      sql2 { BEGIN; SELECT * FROM t1 }
+    } {1 2 3 4 5 6}
+
+    do_test 5.$tn.3 { do_wal_checkpoint db -mode passive } {0 10 10}
+
+    do_test 5.$tn.4 { 
+      sql3 { BEGIN; INSERT INTO t1 VALUES(7, 8); }
+    } {}
+
+    do_test 5.$tn.5 { do_wal_checkpoint db -mode passive  } {0 10 10}
+    do_test 5.$tn.6 { do_wal_checkpoint db -mode full     } {1 10 10}
+
+    do_test 5.$tn.7 { sql3 { ROLLBACK } } {}
+
+    do_test 5.$tn.8 { do_wal_checkpoint db -mode full     } {0 10 10}
+    do_test 5.$tn.9 { do_wal_checkpoint db -mode truncate } {1 10 10}
+
+    do_test 5.$tn.10 { 
+      file size test.db-wal
+    } [wal_file_size 10 1024]
+
+    proc xBusyHandler {n} { sql2 { COMMIT } ; return 0 }
+    db busy xBusyHandler
+
+    do_test 5.$tn.11 { do_wal_checkpoint db -mode truncate } {0 0 0}
+    do_test 5.$tn.12 { file size test.db-wal } 0
+
+    do_test 5.$tn.13 {
+      sql1 {
+        INSERT INTO t1 VALUES(7, 8);
+        INSERT INTO t1 VALUES(9, 10);
+        SELECT * FROM t1;
+      }
+    } {1 2 3 4 5 6 7 8 9 10}
+
+    do_test 5.$tn.14 { 
+      sql2 { BEGIN; SELECT * FROM t1 }
+    } {1 2 3 4 5 6 7 8 9 10}
+
+    proc xBusyHandler {n} { return 1 }
+    do_test 5.$tn.15 { do_wal_checkpoint db -mode truncate } {1 4 4}
+    do_test 5.$tn.16 { file size test.db-wal } [wal_file_size 4 1024]
+
+    do_test 5.$tn.17 { do_wal_checkpoint db -mode restart } {1 4 4}
+
+    proc xBusyHandler {n} { sql2 { COMMIT } ; return 0 }
+    db busy xBusyHandler
+    do_test 5.$tn.18 { do_wal_checkpoint db -mode restart } {0 4 4}
+    do_test 5.$tn.19 { file size test.db-wal } [wal_file_size 4 1024]
+
+    do_test 5.$tn.20 { do_wal_checkpoint db -mode truncate } {0 0 0}
+    do_test 5.$tn.21 { file size test.db-wal } 0
+  }
+
 }
 
 

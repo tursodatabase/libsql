@@ -41,7 +41,6 @@ do_test 1-pre {
 do_faultsim_test 1 -prep {
   faultsim_restore_and_reopen
   db func a_string a_string
-  breakpoint
   execsql {
     PRAGMA mmap_size = 1000000;
     PRAGMA cache_size = 5;

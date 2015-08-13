@@ -174,9 +174,9 @@ do_insert_tests e_insert-1.2 -error {
     4    "INSERT INTO a2 VALUES(1,2,3,4,5)" {a2 3 5}
 }
 
-# EVIDENCE-OF: R-34231-22576 In this case the result of evaluating the
-# left-most expression in each term of the VALUES list is inserted into
-# the left-most column of the each new row, and forth for each
+# EVIDENCE-OF: R-29730-42609 In this case the result of evaluating the
+# left-most expression from each term of the VALUES list is inserted
+# into the left-most column of each new row, and so forth for each
 # subsequent expression.
 #
 delete_all_data
@@ -348,9 +348,9 @@ do_insert_tests e_insert-3.2 {
     6.2    "SELECT * FROM a1"                  {{} {} {} {}}
 }
 
-# EVIDENCE-OF: R-46928-50290 The optional conflict-clause allows the
-# specification of an alternative constraint conflict resolution
-# algorithm to use during this one INSERT command.
+# EVIDENCE-OF: R-03235-45250 The "REPLACE" and "INSERT OR action" forms
+# specify an alternative constraint conflict resolution algorithm to use
+# during this one INSERT command.
 #
 # EVIDENCE-OF: R-23110-47146 the parser allows the use of the single
 # keyword REPLACE as an alias for "INSERT OR REPLACE".

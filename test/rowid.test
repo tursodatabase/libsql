@@ -679,9 +679,9 @@ do_test rowid-12.2 {
   save_prng_state
   execsql {
     INSERT INTO t7 VALUES(NULL,'b');
-    SELECT x, y FROM t7;
+    SELECT x, y FROM t7 ORDER BY x;
   }
-} {1 b 9223372036854775807 a}
+} {/\d+ b 9223372036854775807 a/}
 execsql {INSERT INTO t7 VALUES(2,'y');}
 for {set i 1} {$i<100} {incr i} {
   do_test rowid-12.3.$i {
@@ -701,5 +701,19 @@ do_test rowid-12.4 {
   }
 } {1 {database or disk is full}}
 
+# INSERTs that happen inside of nested function calls are recorded
+# by last_insert_rowid.
+#
+proc rowid_addrow_func {n} {
+  db eval {INSERT INTO t13(rowid,x) VALUES($n,$n*$n)}
+  return [db last_insert_rowid]
+}
+db function addrow rowid_addrow_func
+do_execsql_test rowid-13.1 {
+  CREATE TABLE t13(x);
+  INSERT INTO t13(rowid,x) VALUES(1234,5);
+  SELECT rowid, x, addrow(rowid+1000), '|' FROM t13 LIMIT 3;
+  SELECT last_insert_rowid();
+} {1234 5 2234 | 2234 4990756 3234 | 3234 10458756 4234 | 4234}
 
 finish_test

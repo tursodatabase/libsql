@@ -12,7 +12,6 @@
 static int pageSize = 1024;
 static int sectorSize = 512;
 static FILE *db = 0;
-static int showPageContent = 0;
 static int fileSize = 0;
 static unsigned cksumNonce = 0;
 
@@ -26,9 +25,9 @@ static void out_of_memory(void){
 ** Read N bytes of memory starting at iOfst into space obtained
 ** from malloc().
 */
-static char *read_content(int N, int iOfst){
+static unsigned char *read_content(int N, int iOfst){
   int got;
-  char *pBuf = malloc(N);
+  unsigned char *pBuf = malloc(N);
   if( pBuf==0 ) out_of_memory();
   fseek(db, iOfst, SEEK_SET);
   got = fread(pBuf, 1, N, db);
@@ -46,14 +45,14 @@ static char *read_content(int N, int iOfst){
 /* Print a line of decode output showing a 4-byte integer.
 */
 static unsigned print_decode_line(
-  unsigned char *aData,      /* Content being decoded */
-  int ofst, int nByte,       /* Start and size of decode */
-  const char *zMsg           /* Message to append */
+  const unsigned char *aData,  /* Content being decoded */
+  int ofst, int nByte,         /* Start and size of decode */
+  const char *zMsg             /* Message to append */
 ){
   int i, j;
   unsigned val = aData[ofst];
   char zBuf[100];
-  sprintf(zBuf, " %03x: %02x", ofst, aData[ofst]);
+  sprintf(zBuf, " %05x: %02x", ofst, aData[ofst]);
   i = strlen(zBuf);
   for(j=1; j<4; j++){
     if( j>=nByte ){
@@ -74,7 +73,7 @@ static unsigned print_decode_line(
 ** in global variables.
 */
 static unsigned decode_journal_header(int iOfst){
-  char *pHdr = read_content(64, iOfst);
+  unsigned char *pHdr = read_content(64, iOfst);
   unsigned nPage;
   printf("Header at offset %d:\n", iOfst);
   print_decode_line(pHdr, 0, 4, "Header part 1 (3654616569)");
@@ -101,12 +100,11 @@ static void print_page(int iOfst){
   char zTitle[50];
   aData = read_content(pageSize+8, iOfst);
   sprintf(zTitle, "page number for page at offset %d", iOfst);
-  print_decode_line(aData, 0, 4, zTitle);
+  print_decode_line(aData-iOfst, iOfst, 4, zTitle);
   free(aData);
 }
 
 int main(int argc, char **argv){
-  int rc;
   int nPage, cnt;
   int iOfst;
   if( argc!=2 ){
@@ -136,4 +134,5 @@ int main(int argc, char **argv){
     iOfst = (iOfst/sectorSize + 1)*sectorSize;
   }
   fclose(db);
+  return 0;
 }

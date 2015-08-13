@@ -121,6 +121,42 @@ do_test where2-2.3 {
   }
 } {85 6 7396 7402 nosort t1 *}
 
+# Ticket [65bdeb9739605cc22966f49208452996ff29a640] 2014-02-26
+# Make sure "ORDER BY random" does not gets optimized out.
+#
+do_test where2-2.4 {
+  db eval {
+    CREATE TABLE x1(a INTEGER PRIMARY KEY, b DEFAULT 1);
+    WITH RECURSIVE
+       cnt(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM cnt WHERE x<50)
+    INSERT INTO x1 SELECT x, 1 FROM cnt;
+    CREATE TABLE x2(x INTEGER PRIMARY KEY);
+    INSERT INTO x2 VALUES(1);
+  }
+  set sql {SELECT * FROM x1, x2 WHERE x=1 ORDER BY random()}
+  set out1 [db eval $sql]
+  set out2 [db eval $sql]
+  set out3 [db eval $sql]
+  expr {$out1!=$out2 && $out2!=$out3}
+} {1}
+do_execsql_test where2-2.5 {
+  -- random() is not optimized out
+  EXPLAIN SELECT * FROM x1, x2 WHERE x=1 ORDER BY random();
+} {/ random/}
+do_execsql_test where2-2.5b {
+  -- random() is not optimized out
+  EXPLAIN SELECT * FROM x1, x2 WHERE x=1 ORDER BY random();
+} {/ SorterOpen /}
+do_execsql_test where2-2.6 {
+  -- other constant functions are optimized out
+  EXPLAIN SELECT * FROM x1, x2 WHERE x=1 ORDER BY abs(5);
+} {~/ abs/}
+do_execsql_test where2-2.6b {
+  -- other constant functions are optimized out
+  EXPLAIN SELECT * FROM x1, x2 WHERE x=1 ORDER BY abs(5);
+} {~/ SorterOpen /}
+
+
 
 # Efficient handling of forward and reverse table scans.
 #
@@ -715,5 +751,13 @@ do_execsql_test where2-12.1 {
 } {/.*SEARCH TABLE t12 AS b .*SEARCH TABLE t12 AS b .*/}
 }
 
+# Verify that all necessary OP_OpenRead opcodes occur in the OR optimization.
+#
+do_execsql_test where2-13.1 {
+  CREATE TABLE t13(a,b);
+  CREATE INDEX t13a ON t13(a);
+  INSERT INTO t13 VALUES(4,5);
+  SELECT * FROM t13 WHERE (1=2 AND a=3) OR a=4;
+} {4 5}
 
 finish_test

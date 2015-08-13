@@ -36,6 +36,17 @@ do_test join-1.2 {
   }  
 } {1 2 3 2 3 4 3 4 5}
 
+# A FROM clause of the form:  "<table>, <table> ON <expr>" is not
+# allowed by the SQLite syntax diagram, nor by any other SQL database
+# engine that we are aware of.  Nevertheless, historic versions of
+# SQLite have allowed it.  We need to continue to support it moving
+# forward to prevent breakage of legacy applications.  Though, we will
+# not advertise it as being supported.
+#
+do_execsql_test join-1.2.1 {
+  SELECT t1.rowid, t2.rowid, '|' FROM t1, t2 ON t1.a=t2.b;
+} {1 1 | 2 2 | 3 3 |}
+
 do_test join-1.3 {
   execsql2 {
     SELECT * FROM t1 NATURAL JOIN t2;
@@ -640,5 +651,66 @@ do_test join-11.9 {
 do_test join-11.10 {
   execsql { SELECT * FROM t2 NATURAL JOIN t1 }
 } {1 one 2 two}
+
+#-------------------------------------------------------------------------
+# Test that at most 64 tables are allowed in a join.
+#
+do_execsql_test join-12.1 {
+  CREATE TABLE t14(x);
+  INSERT INTO t14 VALUES('abcdefghij');
+}
+
+proc jointest {tn nTbl res} {
+  set sql "SELECT 1 FROM [string repeat t14, [expr $nTbl-1]] t14;"
+  uplevel [list do_catchsql_test $tn $sql $res]
+}
+
+jointest join-12.2 30 {0 1}
+jointest join-12.3 63 {0 1}
+jointest join-12.4 64 {0 1}
+jointest join-12.5 65 {1 {at most 64 tables in a join}}
+jointest join-12.6 66 {1 {at most 64 tables in a join}}
+jointest join-12.7 127 {1 {at most 64 tables in a join}}
+jointest join-12.8 128 {1 {at most 64 tables in a join}}
+jointest join-12.9 1000 {1 {at most 64 tables in a join}}
+
+# If SQLite is built with SQLITE_MEMDEBUG, then the huge number of realloc()
+# calls made by the following test cases are too time consuming to run.
+# Without SQLITE_MEMDEBUG, realloc() is fast enough that these are not
+# a problem.
+ifcapable pragma&&compileoption_diags {
+  if {[lsearch [db eval {PRAGMA compile_options}] MEMDEBUG]<0} {
+    jointest join-12.10 65534 {1 {at most 64 tables in a join}}
+    jointest join-12.11 65535 {1 {too many references to "t14": max 65535}}
+    jointest join-12.12 65536 {1 {too many references to "t14": max 65535}}
+    jointest join-12.13 65537 {1 {too many references to "t14": max 65535}}
+  }
+}
+
+
+#-------------------------------------------------------------------------
+# Test a problem with reordering tables following a LEFT JOIN.
+#
+do_execsql_test join-13.0 {
+  CREATE TABLE aa(a);
+  CREATE TABLE bb(b);
+  CREATE TABLE cc(c);
+
+  INSERT INTO aa VALUES(45);
+  INSERT INTO cc VALUES(45);
+  INSERT INTO cc VALUES(45);
+}
+
+do_execsql_test join-13.1 {
+  SELECT * FROM aa LEFT JOIN bb, cc WHERE cc.c=aa.a;
+} {45 {} 45 45 {} 45}
+
+# In the following, the order of [cc] and [bb] must not be exchanged, even
+# though this would be helpful if the query used an inner join.
+do_execsql_test join-13.2 {
+  CREATE INDEX ccc ON cc(c);
+  SELECT * FROM aa LEFT JOIN bb, cc WHERE cc.c=aa.a;
+} {45 {} 45 45 {} 45}
+
 
 finish_test

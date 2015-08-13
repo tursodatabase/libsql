@@ -1,5 +1,5 @@
 /*
-** 2001 September 15
+** 2011-02-02
 **
 ** The author disclaims copyright to this source code.  In place of
 ** a legal notice, here is a blessing:
@@ -66,7 +66,7 @@ static int checkpoint_starvation_walhook(
   return SQLITE_OK;
 }
 
-static char *checkpoint_starvation_reader(int iTid, int iArg){
+static char *checkpoint_starvation_reader(int iTid, void *pArg){
   Error err = {0};
   Sqlite db = {0};
 
@@ -146,5 +146,3 @@ static void checkpoint_starvation_2(int nMs){
   }
   print_and_free_err(&err);
 }
-
-

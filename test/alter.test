@@ -875,4 +875,51 @@ do_execsql_test alter-16.2 {
   SELECT * FROM t16a_rn ORDER BY a;
 } {abc 1.25 99 xyzzy cba 5.5 98 fizzle}
 
+#-------------------------------------------------------------------------
+# Verify that NULL values into the internal-use-only sqlite_rename_*()
+# functions do not cause problems.
+#
+do_execsql_test alter-17.1 {
+  SELECT sqlite_rename_table('CREATE TABLE xyz(a,b,c)','abc');
+} {{CREATE TABLE "abc"(a,b,c)}}
+do_execsql_test alter-17.2 {
+  SELECT sqlite_rename_table('CREATE TABLE xyz(a,b,c)',NULL);
+} {{CREATE TABLE "(NULL)"(a,b,c)}}
+do_execsql_test alter-17.3 {
+  SELECT sqlite_rename_table(NULL,'abc');
+} {{}}
+do_execsql_test alter-17.4 {
+  SELECT sqlite_rename_trigger('CREATE TRIGGER r1 ON xyz WHEN','abc');
+} {{CREATE TRIGGER r1 ON "abc" WHEN}}
+do_execsql_test alter-17.5 {
+  SELECT sqlite_rename_trigger('CREATE TRIGGER r1 ON xyz WHEN',NULL);
+} {{CREATE TRIGGER r1 ON "(NULL)" WHEN}}
+do_execsql_test alter-17.6 {
+  SELECT sqlite_rename_trigger(NULL,'abc');
+} {{}}
+do_execsql_test alter-17.7 {
+  SELECT sqlite_rename_parent('CREATE TABLE t1(a REFERENCES "xyzzy")',
+         'xyzzy','lmnop');
+} {{CREATE TABLE t1(a REFERENCES "lmnop")}}
+do_execsql_test alter-17.8 {
+  SELECT sqlite_rename_parent('CREATE TABLE t1(a REFERENCES "xyzzy")',
+         'xyzzy',NULL);
+} {{CREATE TABLE t1(a REFERENCES "(NULL)")}}
+do_execsql_test alter-17.9 {
+  SELECT sqlite_rename_parent('CREATE TABLE t1(a REFERENCES "xyzzy")',
+         NULL, 'lmnop');
+} {{}}
+do_execsql_test alter-17.10 {
+  SELECT sqlite_rename_parent(NULL,'abc','xyz');
+} {{}}
+do_execsql_test alter-17.11 {
+  SELECT sqlite_rename_parent('create references ''','abc','xyz');
+} {{create references '}}
+do_execsql_test alter-17.12 {
+  SELECT sqlite_rename_parent('create references "abc"123" ','abc','xyz');
+} {{create references "xyz"123" }}
+do_execsql_test alter-17.13 {
+  SELECT sqlite_rename_parent("references '''",'abc','xyz');
+} {{references '''}}
+
 finish_test

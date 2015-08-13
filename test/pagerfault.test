@@ -1544,5 +1544,6 @@ do_faultsim_test pagerfault-36 -prep {
 
 sqlite3_shutdown
 sqlite3_config_uri 0
+sqlite3_initialize
 
 finish_test

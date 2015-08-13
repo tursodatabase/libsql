@@ -862,11 +862,11 @@ do_createtable_tests 3.2.3 -query {
   3   "INSERT INTO t1 DEFAULT VALUES"               {NULL NULL NULL}
 }
 
-# EVIDENCE-OF: R-62940-43005 An explicit DEFAULT clause may specify that
+# EVIDENCE-OF: R-07343-35026 An explicit DEFAULT clause may specify that
 # the default value is NULL, a string constant, a blob constant, a
-# signed-number, or any constant expression enclosed in parentheses. An
-# explicit default value may also be one of the special case-independent
-# keywords CURRENT_TIME, CURRENT_DATE or CURRENT_TIMESTAMP.
+# signed-number, or any constant expression enclosed in parentheses. A
+# default value may also be one of the special case-independent keywords
+# CURRENT_TIME, CURRENT_DATE or CURRENT_TIMESTAMP.
 #
 do_execsql_test e_createtable-3.3.1 {
   CREATE TABLE t4(
@@ -884,9 +884,10 @@ do_execsql_test e_createtable-3.3.1 {
   );
 } {}
 
-# EVIDENCE-OF: R-10288-43169 For the purposes of the DEFAULT clause, an
-# expression is considered constant provided that it does not contain
-# any sub-queries or string constants enclosed in double quotes.
+# EVIDENCE-OF: R-18415-27776 For the purposes of the DEFAULT clause, an
+# expression is considered constant if it does contains no sub-queries,
+# column or table references, bound parameters, or string literals
+# enclosed in double-quotes instead of single-quotes.
 #
 do_createtable_tests 3.4.1 -error {
   default value of column [x] is not constant
@@ -895,6 +896,7 @@ do_createtable_tests 3.4.1 -error {
   2   {CREATE TABLE t5(x DEFAULT ( "abc" ))}  {}
   3   {CREATE TABLE t5(x DEFAULT ( 1 IN (SELECT 1) ))}  {}
   4   {CREATE TABLE t5(x DEFAULT ( EXISTS (SELECT 1) ))}  {}
+  5   {CREATE TABLE t5(x DEFAULT ( x!=?1 ))}  {}
 }
 do_createtable_tests 3.4.2 -repair {
   catchsql { DROP TABLE t5 }
@@ -1174,9 +1176,9 @@ do_createtable_tests 4.2 -repair {
 # EVIDENCE-OF: R-59124-61339 Each row in a table with a primary key must
 # have a unique combination of values in its primary key columns.
 #
-# EVIDENCE-OF: R-39102-06737 If an INSERT or UPDATE statement attempts
-# to modify the table content so that two or more rows feature identical
-# primary key values, it is a constraint violation.
+# EVIDENCE-OF: R-06471-16287 If an INSERT or UPDATE statement attempts
+# to modify the table content so that two or more rows have identical
+# primary key values, that is a constraint violation.
 #
 drop_all_tables
 do_execsql_test 4.3.0 {

@@ -101,6 +101,8 @@ set sql $zSql
   # This loop runs for ~20 seconds.
   #
   set iStart [clock_seconds]
+  set nOp 0
+  set nAttempt 0
   while { ([clock_seconds]-$iStart) < $nSecond } {
 
     # Each transaction does 3 operations. Each operation is either a read
@@ -128,6 +130,7 @@ set sql $zSql
 
     # Execute the SQL transaction.
     #
+    incr nAttempt
     set rc [catch { execsql_blocking $::DB "
         BEGIN;
           $SQL(1);
@@ -154,13 +157,14 @@ set sql $zSql
       # returned "1". Otherwise, the invariant was false, indicating that
       # some malfunction has occurred.
       foreach r $msg { if {$r != 1} { puts "Invariant check failed: $msg" } }
+      incr nOp
     }
   }
 
   # Close the database connection and return 0.
   #
   sqlite3_close $::DB
-  expr 0
+  list $nOp $nAttempt
 }
 
 foreach {iTest xStep xPrepare} {
@@ -204,7 +208,9 @@ foreach {iTest xStep xPrepare} {
   for {set ii 0} {$ii < $nThread} {incr ii} {
     do_test notify2-$iTest.2.$ii {
       if {![info exists finished($ii)]} { vwait finished($ii) }
-      set finished($ii)
+      incr anSuccess($xStep) [lindex $finished($ii) 0]
+      incr anAttempt($xStep) [lindex $finished($ii) 1]
+      expr 0
     } {0}
   }
 
@@ -225,17 +231,36 @@ foreach {iTest xStep xPrepare} {
 }
 
 # The following tests checks to make sure sqlite3_blocking_step() is
-# faster than sqlite3_step().  blocking_step() is always faster on
-# multi-core and is usually faster on single-core.  But sometimes, by
-# chance, step() will be faster on a single core, in which case the
+# faster than sqlite3_step(). "Faster" in this case means uses fewer
+# CPU cycles. This is not always the same as faster in wall-clock time 
+# for this type of test. The number of CPU cycles per transaction is 
+# roughly proportional to the number of attempts made (i.e. one plus the 
+# number of SQLITE_BUSY or SQLITE_LOCKED errors that require the transaction 
+# to be retried). So this test just measures that a greater percentage of
+# transactions attempted using blocking_step() succeed.
+#
+# The blocking_step() function is almost always faster on multi-core and is
+# usually faster on single-core.  But sometimes, by chance, step() will be
+# faster on a single core, in which case the
 # following test will fail.
 #
 puts "The following test seeks to demonstrate that the sqlite3_unlock_notify()"
-puts "interface helps multi-core systems to run faster.  This test sometimes"
-puts "fails on single-core machines."
+puts "interface helps multi-core systems to run more efficiently.  This test"
+puts "sometimes fails on single-core machines."
 puts [array get anWrite]
 do_test notify2-3 {
-  expr {$anWrite(sqlite3_blocking_step) > $anWrite(sqlite3_step)}
+  set blocking [expr {
+    double($anSuccess(sqlite3_blocking_step)) /
+    double($anAttempt(sqlite3_blocking_step)) 
+  }]
+  set non [expr {
+    double($anSuccess(sqlite3_step)) /
+    double($anAttempt(sqlite3_step)) 
+  }]
+  puts -nonewline [format " blocking: %.1f%% non-blocking %.1f%% ..." \
+    [expr $blocking*100.0] [expr $non*100.0]]
+
+  expr {$blocking > $non}
 } {1}
 
 sqlite3_enable_shared_cache $::enable_shared_cache

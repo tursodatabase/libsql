@@ -1621,7 +1621,7 @@ ifcapable auth {
     }
   } {}
 
-  proc auth {args} {eval lappend ::authargs $args ; return SQLITE_OK}
+  proc auth {args} {eval lappend ::authargs [lrange $args 0 4]; return SQLITE_OK}
   db auth auth
 
   # An insert on the parent table must read the child key of any deferred
@@ -2080,5 +2080,21 @@ do_test without_rowid3-ce7c13.1.6 {
     UPDATE tce73 set a = 101 where a = 100;
   }
 } {1 {FOREIGN KEY constraint failed}}
+
+# Confirm that changes() works on WITHOUT ROWID tables that use the
+# xfer optimization.
+#
+db close
+sqlite3 db :memory:
+do_execsql_test without_rowid3-30.1 {
+  CREATE TABLE t1(a,b,PRIMARY KEY(a,b)) WITHOUT ROWID;
+  CREATE TABLE t2(a,b,PRIMARY KEY(a,b)) WITHOUT ROWID;
+  INSERT INTO t1 VALUES(1,2),(3,4),(5,6);
+  SELECT changes();
+} {3}
+do_execsql_test without_rowid3-30.2 {
+  INSERT INTO t2 SELECT * FROM t1;
+  SELECT changes();
+} {3}
 
 finish_test

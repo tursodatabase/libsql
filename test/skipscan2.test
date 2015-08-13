@@ -74,6 +74,7 @@ do_execsql_test skipscan2-1.4 {
   -- of a skip-scan.  So make a manual adjustment to the stat1 table
   -- to make it seem like there are many more.
   UPDATE sqlite_stat1 SET stat='10000 5000 20' WHERE idx='people_idx1';
+  UPDATE sqlite_stat1 SET stat='10000 1' WHERE idx='sqlite_autoindex_people_1';
   ANALYZE sqlite_master;
 }
 db cache flush
@@ -185,6 +186,20 @@ do_execsql_test skipscan2-2.5eqp {
   SELECT name FROM peoplew WHERE height>=180 ORDER BY +name;
 } {/*INDEX peoplew_idx1 */}
 
+# A skip-scan on a PK index of a WITHOUT ROWID table.
+#
+do_execsql_test skipscan2-3.1 {
+  CREATE TABLE t3(a, b, c, PRIMARY KEY(a, b)) WITHOUT ROWID;
+}
+do_test skipscan2-3.2 {
+  for {set i 0} {$i < 1000} {incr i} {
+    execsql { INSERT INTO t3 VALUES($i%2, $i, 'xyz') }
+  }
+  execsql { ANALYZE }
+} {}
+do_eqp_test skipscan2-3.3eqp {
+  SELECT * FROM t3 WHERE b=42;
+} {0 0 0 {SEARCH TABLE t3 USING PRIMARY KEY (ANY(a) AND b=?)}}
 
 
 finish_test

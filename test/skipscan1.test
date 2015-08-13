@@ -181,10 +181,145 @@ do_execsql_test skipscan1-3.2 {
 do_execsql_test skipscan1-3.2eqp {
   EXPLAIN QUERY PLAN
   SELECT a,b,c,d,'|' FROM t3 WHERE b=345 ORDER BY a;
-} {/* INDEX sqlite_autoindex_t3_1 (ANY(a) AND b=?)*/}
+} {/* PRIMARY KEY (ANY(a) AND b=?)*/}
 do_execsql_test skipscan1-3.2sort {
   EXPLAIN QUERY PLAN
   SELECT a,b,c,d,'|' FROM t3 WHERE b=345 ORDER BY a;
 } {~/*ORDER BY*/}
+
+# Ticket 520070ec7fbaac: Array overrun in the skip-scan optimization
+# 2013-12-22
+#
+do_execsql_test skipscan1-4.1 {
+  CREATE TABLE t4(a,b,c,d,e,f,g,h,i);
+  CREATE INDEX t4all ON t4(a,b,c,d,e,f,g,h);
+  INSERT INTO t4 VALUES(1,2,3,4,5,6,7,8,9);
+  ANALYZE;
+  DELETE FROM sqlite_stat1;
+  INSERT INTO sqlite_stat1 
+    VALUES('t4','t4all','655360 163840 40960 10240 2560 640 160 40 10');
+  ANALYZE sqlite_master;
+  SELECT i FROM t4 WHERE a=1;
+  SELECT i FROM t4 WHERE b=2;
+  SELECT i FROM t4 WHERE c=3;
+  SELECT i FROM t4 WHERE d=4;
+  SELECT i FROM t4 WHERE e=5;
+  SELECT i FROM t4 WHERE f=6;
+  SELECT i FROM t4 WHERE g=7;
+  SELECT i FROM t4 WHERE h=8;
+} {9 9 9 9 9 9 9 9}
+
+# Make sure skip-scan cost computation in the query planner takes into
+# account the fact that the seek must occur multiple times.
+#
+# Prior to 2014-03-10, the costs were computed incorrectly which would
+# cause index t5i2 to be used instead of t5i1 on the skipscan1-5.3.
+#
+do_execsql_test skipscan1-5.1 {
+  CREATE TABLE t5(
+    id INTEGER PRIMARY KEY,
+    loc TEXT,
+    lang INTEGER,
+    utype INTEGER,
+    xa INTEGER,
+    xd INTEGER,
+    xh INTEGER
+  );
+  CREATE INDEX t5i1 on t5(loc, xh, xa, utype, lang);
+  CREATE INDEX t5i2 ON t5(xd,loc,utype,lang);
+  EXPLAIN QUERY PLAN
+    SELECT xh, loc FROM t5 WHERE loc >= 'M' AND loc < 'N';
+} {/.*COVERING INDEX t5i1 .*/}
+do_execsql_test skipscan1-5.2 {
+  ANALYZE;
+  DELETE FROM sqlite_stat1;
+  DROP TABLE IF EXISTS sqlite_stat4;
+  DROP TABLE IF EXISTS sqlite_stat3;
+  INSERT INTO sqlite_stat1 VALUES('t5','t5i1','2702931 3 2 2 2 2');
+  INSERT INTO sqlite_stat1 VALUES('t5','t5i2','2702931 686 2 2 2');
+  ANALYZE sqlite_master;
+} {}
+db cache flush
+do_execsql_test skipscan1-5.3 {
+  EXPLAIN QUERY PLAN
+    SELECT xh, loc FROM t5 WHERE loc >= 'M' AND loc < 'N';
+} {/.*COVERING INDEX t5i1 .*/}
+
+# The column used by the skip-scan needs to be sufficiently selective.
+# See the private email from Adi Zaimi to drh@sqlite.org on 2014-09-22.
+#
+db close
+forcedelete test.db
+sqlite3 db test.db
+do_execsql_test skipscan1-6.1 {
+  CREATE TABLE t1(a,b,c,d,e,f,g,h varchar(300));
+  CREATE INDEX t1ab ON t1(a,b);
+  ANALYZE sqlite_master;
+  -- Only two distinct values for the skip-scan column.  Skip-scan is not used.
+  INSERT INTO sqlite_stat1 VALUES('t1','t1ab','500000 250000 125000');
+  ANALYZE sqlite_master;
+  EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE b=1;
+} {~/ANY/}
+do_execsql_test skipscan1-6.2 {
+  -- Four distinct values for the skip-scan column.  Skip-scan is used.
+  UPDATE sqlite_stat1 SET stat='500000 250000 62500';
+  ANALYZE sqlite_master;
+  EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE b=1;
+} {/ANY.a. AND b=/}
+do_execsql_test skipscan1-6.3 {
+  -- Two distinct values for the skip-scan column again.  Skip-scan is not used.
+  UPDATE sqlite_stat1 SET stat='500000 125000 62500';
+  ANALYZE sqlite_master;
+  EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE b=1;
+} {~/ANY/}
+
+# If the sqlite_stat1 entry includes the "noskipscan" token, then never use
+# skipscan with that index.
+#
+do_execsql_test skipscan1-7.1 {
+  UPDATE sqlite_stat1 SET stat='500000 125000 1 sz=100';
+  ANALYZE sqlite_master;
+  EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE b=1;
+} {/ANY/}
+do_execsql_test skipscan1-7.2 {
+  UPDATE sqlite_stat1 SET stat='500000 125000 1 noskipscan sz=100';
+  ANALYZE sqlite_master;
+  EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE b=1;
+} {~/ANY/}
+do_execsql_test skipscan1-7.3 {
+  UPDATE sqlite_stat1 SET stat='500000 125000 1 sz=100 noskipscan';
+  ANALYZE sqlite_master;
+  EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE b=1;
+} {~/ANY/}
+
+# Ticket 8fd39115d8f46ece70e7d4b3c481d1bd86194746  2015-07-23
+# Incorrect code generated for a skipscan within an OR optimization
+# on a WITHOUT ROWID table.
+#
+do_execsql_test skipscan1-8.1 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(x, y, PRIMARY KEY(x,y)) WITHOUT ROWID;
+  INSERT INTO t1(x,y) VALUES(1,'AB');
+  INSERT INTO t1(x,y) VALUES(2,'CD');
+  ANALYZE;
+  DROP TABLE IF EXISTS sqlite_stat4;
+  DELETE FROM sqlite_stat1;
+  INSERT INTO sqlite_stat1(tbl,idx,stat) VALUES('t1','t1','1000000 100 1');
+  ANALYZE sqlite_master;
+  SELECT * FROM t1
+   WHERE (y = 'AB' AND x <= 4)
+      OR (y = 'EF' AND x = 5);
+} {1 AB}
+do_execsql_test skipscan1-8.1eqp {
+  EXPLAIN QUERY PLAN
+  SELECT * FROM t1
+   WHERE (y = 'AB' AND x <= 4)
+      OR (y = 'EF' AND x = 5);
+} {/ANY/}
+do_execsql_test skipscan1-8.2 {
+  SELECT * FROM t1
+   WHERE y = 'AB' OR (y = 'CD' AND x = 2)
+  ORDER BY +x;
+} {1 AB 2 CD}
 
 finish_test
