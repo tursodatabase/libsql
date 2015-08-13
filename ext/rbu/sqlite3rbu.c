@@ -84,10 +84,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#if !defined(_WIN32)
-#  include <unistd.h>
-#endif
-
 #include "sqlite3.h"
 
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_RBU)
@@ -2928,10 +2924,13 @@ static void rbuSetupOal(sqlite3rbu *p, RbuState *pState){
 ** leave an error code and error message in the rbu handle.
 */
 static void rbuDeleteOalFile(sqlite3rbu *p){
-  char *zOal = sqlite3_mprintf("%s-oal", p->zTarget);
-  assert( p->rc==SQLITE_OK && p->zErrmsg==0 );
-  unlink(zOal);
-  sqlite3_free(zOal);
+  char *zOal = rbuMPrintf(p, "%s-oal", p->zTarget);
+  if( zOal ){
+    sqlite3_vfs *pVfs = sqlite3_vfs_find(0);
+    assert( pVfs && p->rc==SQLITE_OK && p->zErrmsg==0 );
+    pVfs->xDelete(pVfs, zOal, 0);
+    sqlite3_free(zOal);
+  }
 }
 
 /*

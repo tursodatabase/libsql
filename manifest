@@ -1,5 +1,5 @@
-C Minor\soptimization\sfor\sfts5\sAPI\sxInst().
-D 2015-08-12T15:36:58.855
+C Avoid\sinvoking\ssystem\scall\sunlink()\sdirectly\sfrom\sRBU\scode.\sUse\sthe\sxDelete\smethod\sof\sthe\sdefault\sVFS\sinstead.
+D 2015-08-13T11:46:21.944
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2fc9ca6bf5949d415801c007ed3004a4bdb7c380
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -223,7 +223,7 @@ F ext/rbu/rbudiff.test 6cc806dc36389292f2a8f5842d0103721df4a07d
 F ext/rbu/rbufault.test cc0be8d5d392d98b0c2d6a51be377ea989250a89
 F ext/rbu/rbufault2.test 9a7f19edd6ea35c4c9f807d8a3db0a03a5670c06
 F ext/rbu/rbufts.test 828cd689da825f0a7b7c53ffc1f6f7fdb6fa5bda
-F ext/rbu/sqlite3rbu.c 07cef1986347694306b82cb61de27e00fde6ce23
+F ext/rbu/sqlite3rbu.c e2ebcebfd0c363b8f90aba5a91cba0b3e93044ea
 F ext/rbu/sqlite3rbu.h f0754a19fcc155f6d39d72b38bdbeb1d7623f02e
 F ext/rbu/test_rbu.c f99698956cc9158d6bf865e461e2d15876538ac1
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
@@ -1372,7 +1372,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f7682435278419829a46bb4cc9b5625d46549e22
-R 5c7dc1bc59e7a8c21161b1ef8857c7b8
+P efb7c9c5d0015c8c966f8d6742c05cda82fc146a
+R 574927013afdd5b82f7f2aa79787da64
 U dan
-Z c11fd987f7eb5e43e308c10674f8c3b9
+Z c9a8f55e34994965e95a262cdf26fc13
