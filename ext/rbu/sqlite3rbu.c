@@ -3164,6 +3164,32 @@ sqlite3_int64 sqlite3rbu_progress(sqlite3rbu *pRbu){
   return pRbu->nProgress;
 }
 
+int sqlite3rbu_savestate(sqlite3rbu *p){
+  int rc = p->rc;
+  
+  if( rc==SQLITE_DONE ) return SQLITE_OK;
+
+  assert( p->eStage>=RBU_STAGE_OAL && p->eStage<=RBU_STAGE_DONE );
+  if( p->eStage==RBU_STAGE_OAL ){
+    assert( rc!=SQLITE_DONE );
+    if( rc==SQLITE_OK ) rc = sqlite3_exec(p->dbMain, "COMMIT", 0, 0, 0);
+  }
+
+  p->rc = rc;
+  rbuSaveState(p, p->eStage);
+  rc = p->rc;
+
+  if( p->eStage==RBU_STAGE_OAL ){
+    assert( rc!=SQLITE_DONE );
+    if( rc==SQLITE_OK ) rc = sqlite3_exec(p->dbRbu, "COMMIT", 0, 0, 0);
+    if( rc==SQLITE_OK ) rc = sqlite3_exec(p->dbRbu, "BEGIN IMMEDIATE", 0, 0, 0);
+    if( rc==SQLITE_OK ) rc = sqlite3_exec(p->dbMain, "BEGIN IMMEDIATE", 0, 0,0);
+  }
+
+  p->rc = rc;
+  return rc;
+}
+
 /**************************************************************************
 ** Beginning of RBU VFS shim methods. The VFS shim modifies the behaviour
 ** of a standard VFS in the following ways:
