@@ -1,5 +1,5 @@
-C Add\ssimple\stests\sfor\snew\ssqlite3BtreeCursorHint()\sfunctionality.
-D 2014-07-15T11:59:44.612
+C Convert\sthe\shint\sexpression\sof\sthe\sCursorHint\sopcode\sinto\sa\sstring\sfor\ndisplay\sby\sEXPLAIN.
+D 2015-08-13T21:43:19.244
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -283,9 +283,9 @@ F src/util.c 76ed0519296e3f62e97e57dab1999e34184c8e49
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
 F src/vdbe.c 54e269c6268a6f37697e27d6bc572674f14b1581
 F src/vdbe.h 57b87844270b2e92647b8b82a8948f7a29efae8d
-F src/vdbeInt.h 05fbda0e061dbc4aaa2709a8cccf3515c245b263
+F src/vdbeInt.h 9ad955ca89d4dc4b6056cece1896b4b85a8521fe
 F src/vdbeapi.c 93a22a9ba2abe292d5c2cf304d7eb2e894dde0ed
-F src/vdbeaux.c c7c9219cb31cef9917db3b3b41604ac74c5bc41b
+F src/vdbeaux.c f4ed66c45336e42e7f1bdaccf7586c84eba06bac
 F src/vdbeblob.c 8cd05a5630e6d5563ad017bf82edaf812b28acde
 F src/vdbemem.c 20e349d2ca928802fc8f2d42a2cc488fd6981d3f
 F src/vdbesort.c 9d83601f9d6243fe70dd0169a2820c5ddfd48147
@@ -1148,7 +1148,11 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P f9dddd008c6ef7940a1d66363fbb456cff7207c1
-R 9fb1051a18f0e187efee634c86c45e62
-U dan
-Z 04e07c13931dc702da8721e6980ca969
+P 1efa6ed584172291edce78faf9021e577583d03b
+Q +206884718782331a7aaacc2c811e4e9d2effae91
+R fcae2238c266b3818e83c96b2fcbbede
+T *branch * cursor-hints-displayP4
+T *sym-cursor-hints-displayP4 *
+T -sym-cursor-hints *
+U drh
+Z 41561b125b2ba8dcbfb094780611e534

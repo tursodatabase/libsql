@@ -27,6 +27,17 @@
 #endif
 
 /*
+** VDBE_DISPLAY_P4 is true or false depending on whether or not the
+** "explain" P4 display logic is enabled.
+*/
+#if !defined(SQLITE_OMIT_EXPLAIN) || !defined(NDEBUG) \
+     || defined(VDBE_PROFILE) || defined(SQLITE_DEBUG)
+# define VDBE_DISPLAY_P4 1
+#else
+# define VDBE_DISPLAY_P4 0
+#endif
+
+/*
 ** SQL is translated into a sequence of instructions to be
 ** executed by a virtual machine.  Each instruction is an instance
 ** of the following structure.
