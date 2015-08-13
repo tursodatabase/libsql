@@ -1084,9 +1084,78 @@ static int displayComment(
 }
 #endif /* SQLITE_DEBUG */
 
+#if VDBE_DISPLAY_P4 && defined(SQLITE_ENABLE_CURSOR_HINTS)
+/*
+** Translate the P4.pExpr value for an OP_CursorHint opcode into text
+** that can be displayed in the P4 column of EXPLAIN output.
+*/
+static int displayP4Expr(int nTemp, char *zTemp, Expr *pExpr){
+  const char *zBinOp = 0;
+  switch( pExpr->op ){
+    case TK_STRING:
+      sqlite3_snprintf(nTemp, zTemp, "%Q", pExpr->u.zToken);
+      break;
 
-#if !defined(SQLITE_OMIT_EXPLAIN) || !defined(NDEBUG) \
-     || defined(VDBE_PROFILE) || defined(SQLITE_DEBUG)
+    case TK_INTEGER:
+      sqlite3_snprintf(nTemp, zTemp, "%d", pExpr->u.iValue);
+      break;
+
+    case TK_NULL:
+      sqlite3_snprintf(nTemp, zTemp, "NULL");
+      break;
+
+    case TK_REGISTER: {
+      sqlite3_snprintf(nTemp, zTemp, "r[%d]", pExpr->iTable);
+      break;
+    }
+
+    case TK_COLUMN: {
+      sqlite3_snprintf(nTemp, zTemp, "c%d", (int)pExpr->iColumn);
+      break;
+    }
+
+    case TK_LT:      zBinOp = "<";        break;
+    case TK_LE:      zBinOp = "<=";       break;
+    case TK_GT:      zBinOp = ">";        break;
+    case TK_GE:      zBinOp = ">=";       break;
+    case TK_NE:      zBinOp = "!=";       break;
+    case TK_EQ:      zBinOp = "==";       break;
+    case TK_IS:      zBinOp = " IS ";     break;
+    case TK_ISNOT:   zBinOp = " IS NOT "; break;
+    case TK_AND:     zBinOp = " AND ";    break;
+    case TK_OR:      zBinOp = " OR ";     break;
+    case TK_PLUS:    zBinOp = "+";        break;
+    case TK_STAR:    zBinOp = "*";        break;
+    case TK_MINUS:   zBinOp = "-";        break;
+    case TK_REM:     zBinOp = "%";        break;
+    case TK_BITAND:  zBinOp = "&";        break;
+    case TK_BITOR:   zBinOp = "|";        break;
+    case TK_SLASH:   zBinOp = "/";        break;
+    case TK_LSHIFT:  zBinOp = "<<";       break;
+    case TK_RSHIFT:  zBinOp = ">>";       break;
+    case TK_CONCAT:  zBinOp = "||";       break;
+
+    default:
+      sqlite3_snprintf(nTemp, zTemp, "%s", "expr");
+      break;
+  }
+
+  if( zBinOp && nTemp>5 ){
+    int n = 1;
+    zTemp[0] = '(';
+    n += displayP4Expr(nTemp-n, zTemp+n, pExpr->pLeft);
+    sqlite3_snprintf(nTemp-n, zTemp+n, "%s", zBinOp);
+    n += sqlite3Strlen30(zTemp+n);
+    n += displayP4Expr(nTemp-n, zTemp+n, pExpr->pRight);
+    sqlite3_snprintf(nTemp-n, zTemp+n, ")");
+  }
+
+  return sqlite3Strlen30(zTemp);
+}
+#endif /* VDBE_DISPLAY_P4 && defined(SQLITE_ENABLE_CURSOR_HINTS) */
+
+
+#if VDBE_DISPLAY_P4
 /*
 ** Compute a string that describes the P4 parameter for an opcode.
 ** Use zTemp for any required temporary buffer space.
@@ -1127,7 +1196,7 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
     }
 #ifdef SQLITE_ENABLE_CURSOR_HINTS
     case P4_EXPR: {
-      sqlite3_snprintf(nTemp, zTemp, "(expr)");
+      displayP4Expr(nTemp, zTemp, pOp->p4.pExpr);
       break;
     }
 #endif
@@ -1206,7 +1275,7 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
   assert( zP4!=0 );
   return zP4;
 }
-#endif
+#endif /* VDBE_DISPLAY_P4 */
 
 /*
 ** Declare to the Vdbe that the BTree object at db->aDb[i] is used.

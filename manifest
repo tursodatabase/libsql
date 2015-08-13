@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\ssqlite3ExprContainsSubquery().
-D 2015-08-13T20:34:41.283
+C Convert\sthe\shint\sexpression\sof\sthe\sCursorHint\sopcode\sinto\sa\sstring\sfor\ndisplay\sby\sEXPLAIN.
+D 2015-08-13T21:32:41.246
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2fc9ca6bf5949d415801c007ed3004a4bdb7c380
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -401,9 +401,9 @@ F src/util.c bc9dd64b5db544218b871b66243871c202b2781f
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
 F src/vdbe.c eeef2e6ee7c377c31a1b3f6c2b2812f3f711c2d7
 F src/vdbe.h 529bb4a7bedcd28dccba5abb3927e3c5cb70a832
-F src/vdbeInt.h 8b54e01ad0463590e7cffabce0bc36da9ee4f816
+F src/vdbeInt.h 7258d75fc2dad0bccdef14d7d8d2fd50fd1bf2d2
 F src/vdbeapi.c adabbd66eb2e3a10f3998485ee0be7e326d06ee4
-F src/vdbeaux.c 6194de3a1c44acc4027612240e1d9d664070814f
+F src/vdbeaux.c 56077f78bfc96e80f31ad595a05d4d73ac45f5c0
 F src/vdbeblob.c 4f2e8e075d238392df98c5e03a64342465b03f90
 F src/vdbemem.c ae38a0d35ae71cf604381a887c170466ba518090
 F src/vdbesort.c f5009e7a35e3065635d8918b9a31f498a499976b
@@ -1375,7 +1375,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 82a7a61bc0883b1e7432548e4890791717aa1bb3
-R c0d78b933f8c8505165f8dab4ed556fa
+P be254715b5f56900e57ed57a179ca8d7bb68685d
+R 35eb49e0fc9f5ab493d2ccd36c0aabff
 U drh
-Z 08da2f71cfba0ab0d4b8feee8d71be50
+Z c266af41e61c50699b530df37cf4ff5a
