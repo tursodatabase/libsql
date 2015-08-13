@@ -1,5 +1,5 @@
-C Avoid\sreading\sframes\sthat\shave\salready\sbeen\scheckpointed\sfrom\sthe\swal\sfile.
-D 2015-08-12T19:42:08.239
+C When\ssearching\sthe\swal\sfile\sfor\sa\sframe,\sdo\snot\ssearch\sthat\spart\sthat\swas\salready\scheckpointed\swhen\sthe\ssnapshot\sbeing\sread\swas\sat\sthe\shead\sof\sthe\swal\sfile.
+D 2015-08-13T20:23:46.835
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2fc9ca6bf5949d415801c007ed3004a4bdb7c380
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -408,7 +408,7 @@ F src/vdbesort.c f5009e7a35e3065635d8918b9a31f498a499976b
 F src/vdbetrace.c 8befe829faff6d9e6f6e4dee5a7d3f85cc85f1a0
 F src/vtab.c 082b35a25a26e3d36f365ca8cd73c1922532f05e
 F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
-F src/wal.c 9eb487483eed48310f999d9735263f33c71026b3
+F src/wal.c 8cd07f1f99e1a81346db1c9da879bef6c6f97cf6
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
 F src/where.c c745d3aa78ad1aa8982febb99f2f17ee5cbac069
@@ -1372,10 +1372,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P efb7c9c5d0015c8c966f8d6742c05cda82fc146a
-R 91c715455a10615960997cdbeb286182
-T *branch * wal-read-change
-T *sym-wal-read-change *
-T -sym-trunk *
+P 5669ac4a40429abc3f44540fc9d2f3b79b404bdf
+R 0be4044b3773f95bd61300112256d197
 U dan
-Z 265f3376267bf1285595a2e2dc6d13aa
+Z f0c98bb462164518b46029fee8374b58
