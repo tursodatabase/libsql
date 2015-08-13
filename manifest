@@ -1,11 +1,11 @@
-C Merge\sin\sall\sthe\strunk\schanges\sfrom\sthe\sprevious\syear.\s\sThis\sbreaks\sthe\ncursor-hint\smechanism,\sbut\sprovides\sa\sbaseline\sfor\strouble-shooting.
-D 2015-08-13T20:07:13.412
+C Fix\sa\sbug\sin\ssqlite3ExprContainsSubquery().
+D 2015-08-13T20:34:41.283
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2fc9ca6bf5949d415801c007ed3004a4bdb7c380
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc 5f7861c62c41fe8e3205ef14b90ebed28fa21f1b
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
-F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7 w README
+F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION ccfc4d1576dbfdeece0a4372a2e6a2e37d3e7975
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 9eb448a552d5c0185cf62c463f9c173cedae3811
@@ -26,7 +26,7 @@ F autoconf/missing d7c9981a81af13370d4ed152b24c0a82b7028585 x
 F autoconf/tea/Makefile.in b438a7020446c8a8156e8d97c8914a04833da6fd
 F autoconf/tea/README 3e9a3c060f29a44344ab50aec506f4db903fb873
 F autoconf/tea/aclocal.m4 52c47aac44ce0ddb1f918b6993e8beb8eee88f43
-F autoconf/tea/configure.ac 93d43c79e936fb16556e22498177d7e8571efa04 w autoconf/tea/configure.in
+F autoconf/tea/configure.ac 93d43c79e936fb16556e22498177d7e8571efa04
 F autoconf/tea/doc/sqlite3.n e1fe45d4f5286ee3d0ccc877aca2a0def488e9bb
 F autoconf/tea/license.terms 13bd403c9610fd2b76ece0ab50c4c5eda933d523
 F autoconf/tea/pkgIndex.tcl.in 3ef61715cf1c7bdcff56947ffadb26bc991ca39d
@@ -285,9 +285,9 @@ F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
 F src/ctime.c 5a0b735dc95604766f5dac73973658eef782ee8b
 F src/date.c 8ec787fed4929d8ccdf6b1bc360fccc3e1d2ca58
-F src/dbstat.c f402e77e25089c6003d0c60b3233b9b3947d599a w src/test_stat.c
+F src/dbstat.c f402e77e25089c6003d0c60b3233b9b3947d599a
 F src/delete.c 8857a6f27560718f65d43bdbec86c967ae1f8dfa
-F src/expr.c 0cd7fabb57cb42a9eacd7e8224add005786ae428
+F src/expr.c e1fc69ce92a27bbb8074db56eece7914393b3ef6
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c c9b63a217d86582c22121699a47f22f524608869
 F src/func.c 824bea430d3a2b7dbc62806ad54da8fdb8ed9e3f
@@ -1375,7 +1375,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1efa6ed584172291edce78faf9021e577583d03b 851a875ad6b81f90960caf4d03b116afc911858d
-R cf16c1d2c53a66a19fa5c8a95e530360
+P 82a7a61bc0883b1e7432548e4890791717aa1bb3
+R c0d78b933f8c8505165f8dab4ed556fa
 U drh
-Z da64436fc89077040f5c1e43409c46ff
+Z 08da2f71cfba0ab0d4b8feee8d71be50

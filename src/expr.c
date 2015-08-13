@@ -1411,7 +1411,7 @@ int sqlite3ExprContainsSubquery(Expr *p){
   w.xExprCallback = sqlite3ExprWalkNoop;
   w.xSelectCallback = selectNodeIsConstant;
   sqlite3WalkExpr(&w, p);
-  return w.u.n==0;
+  return w.eCode==0;
 }
 #endif
 
