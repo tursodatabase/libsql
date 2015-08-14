@@ -150,8 +150,47 @@ int sqlite3BtreeNewDb(Btree *p);
 #define BTREE_DATA_VERSION        15  /* A virtual meta-value */
 
 /*
-** Values that may be OR'd together to form the second argument of an
-** sqlite3BtreeCursorHints() call.
+** Kinds of hints that can be passed into the sqlite3BtreeCursorHint()
+** interface.
+**
+** Note that cursor hints are not used by the canonical SQLite b-tree
+** ayer.  Cursor hints are provided so that systems that substitute their
+** on custom b-tree layer can have access to additional information that might
+** boost performance.  Hints are only provided if SQLite is compiled with
+** SQLITE_ENABLE_CURSOR_HINTS.  The hinting interface is undocumented
+** (except for comments such as this) and is subject to change from one
+** release of SQLite to the next.
+**
+** BTREE_HINT_FLAGS  (arguments: unsigned int)
+**
+**     Some combinatation of BTREE_BULKLOAD and BTREE_SEEK_EQ flags.  The
+**     argument is a single unsigned integer which overwrites all prior
+**     flag settings.
+**
+** BTREE_HINT_RANGE  (arguments: Expr*, Mem*)
+**
+**     The first argument is an Expr* (which is guaranteed to be constant for
+**     the lifetime of the cursor) that defines constraints on which rows
+**     might be fetched with this cursor.  The Expr* tree may contain
+**     TK_REGISTER nodes that refer to values stored in the array of registers
+**     passed as the second parameter.  In other words, if Expr.op==TK_REGISTER
+**     then the value of the node is the value in Mem[pExpr.iTable].  Any
+**     TK_COLUMN node in the expression tree refers to the Expr.iColumn-th
+**     column of the b-tree of the cursor.  The Expr tree will not contain
+**     any function calls nor subqueries nor references to b-trees other than
+**     the cursor being hinted.
+**
+**     The design of the _RANGE hint is aid b-tree implementations that try
+**     to prefetch content from remote machines - to provide those
+**     implementations with limits on what needs to be prefetched and thereby
+**     reduce network bandwidth.
+*/
+#define BTREE_HINT_FLAGS 1       /* Set flags indicating cursor usage */
+#define BTREE_HINT_RANGE 2       /* Range constraints on queries */
+
+/*
+** Values that may be OR'd together to form the argument to the
+** BTREE_HINT_FLAGS hint for sqlite3BtreeCursorHint():
 **
 ** The BTREE_BULKLOAD flag is set on index cursors when the index is going
 ** to be filled with content that is already in sorted order.
@@ -164,6 +203,10 @@ int sqlite3BtreeNewDb(Btree *p);
 */
 #define BTREE_BULKLOAD 0x00000001  /* Used to full index in sorted order */
 #define BTREE_SEEK_EQ  0x00000002  /* EQ seeks only - no range seeks */
+
+#ifdef SQLITE_ENABLE_CURSOR_HINTS
+void sqlite3BtreeCursorHint(BtCursor*, int, ...);
+#endif
 
 int sqlite3BtreeCursor(
   Btree*,                              /* BTree containing table to open */
@@ -185,9 +228,6 @@ int sqlite3BtreeMovetoUnpacked(
 );
 int sqlite3BtreeCursorHasMoved(BtCursor*);
 int sqlite3BtreeCursorRestore(BtCursor*, int*);
-#ifdef SQLITE_ENABLE_CURSOR_HINTS
-void sqlite3BtreeCursorHint(BtCursor*, int, const Expr*);
-#endif
 int sqlite3BtreeDelete(BtCursor*);
 int sqlite3BtreeInsert(BtCursor*, const void *pKey, i64 nKey,
                                   const void *pData, int nData,
@@ -211,7 +251,6 @@ int sqlite3BtreePutData(BtCursor*, u32 offset, u32 amt, void*);
 void sqlite3BtreeIncrblobCursor(BtCursor *);
 void sqlite3BtreeClearCursor(BtCursor *);
 int sqlite3BtreeSetVersion(Btree *pBt, int iVersion);
-void sqlite3BtreeCursorHints(BtCursor *, unsigned int mask);
 #ifdef SQLITE_DEBUG
 int sqlite3BtreeCursorHasHint(BtCursor*, unsigned int mask);
 #endif

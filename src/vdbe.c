@@ -3384,8 +3384,10 @@ case OP_OpenWrite:
 open_cursor_set_hints:
   assert( OPFLAG_BULKCSR==BTREE_BULKLOAD );
   assert( OPFLAG_SEEKEQ==BTREE_SEEK_EQ );
-  sqlite3BtreeCursorHints(pCur->pCursor,
-                          (pOp->p5 & (OPFLAG_BULKCSR|OPFLAG_SEEKEQ)));
+#ifdef SQLITE_ENABLE_CURSOR_HINTS
+  sqlite3BtreeCursorHint(pCur->pCursor, BTREE_HINT_FLAGS,
+                         (pOp->p5 & (OPFLAG_BULKCSR|OPFLAG_SEEKEQ)));
+#endif
   break;
 }
 
@@ -6553,12 +6555,12 @@ case OP_Init: {          /* jump */
 }
 
 #ifdef SQLITE_ENABLE_CURSOR_HINTS
-/* Opcode: CursorHint P1 P2 * P4 *
+/* Opcode: CursorHint P1 * * P4 *
 **
 ** Provide a hint to cursor P1 that it only needs to return rows that
-** satisfy the Expr tree given in P4.  P2 is the table number of cursor P1
-** such that references to cursor P1 in the Expr tree are given by
-** Expr.iTable==P2.
+** satisfy the Expr in P4.  TK_REGISTER terms in the P4 expression refer
+** to values currently held in registers.  TK_COLUMN terms in the P4
+** expression refer to columns in the b-tree to which cursor P1 is pointing.
 */
 case OP_CursorHint: {
   VdbeCursor *pC;
@@ -6567,7 +6569,7 @@ case OP_CursorHint: {
   assert( pOp->p4type==P4_EXPR );
   pC = p->apCsr[pOp->p1];
   if( pC ){
-    sqlite3BtreeCursorHint(pC->pCursor, pOp->p2, pOp->p4.pExpr);
+    sqlite3BtreeCursorHint(pC->pCursor, BTREE_HINT_RANGE, pOp->p4.pExpr, aMem);
 #ifdef SQLITE_TEST
     void sqlite3BtreeCursorHintTest(Mem*, Expr*);
     sqlite3BtreeCursorHintTest(p->aMem, pOp->p4.pExpr);

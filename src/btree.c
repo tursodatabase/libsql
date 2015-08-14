@@ -839,16 +839,32 @@ int sqlite3BtreeCursorRestore(BtCursor *pCur, int *pDifferentRow){
 
 #ifdef SQLITE_ENABLE_CURSOR_HINTS
 /*
-** Give a hint to the cursor that it only has to deliver rows for which
-** the expression pExpr is true.  Within this expression, rows of the
-** cursor are identified by Expr.op==TK_COLUMN with Expr.iTable==iTable.
+** Provide hints to the cursor.  The particular hint given (and the type
+** and number of the varargs parameters) is determined by the eHintType
+** parameter.  See the definitions of the BTREE_HINT_* macros for details.
 **
-** This interfaces is not used by the standard storage engine of SQLite.
-** It is only useful to application that replace SQLite's built-in storage
-** engine with their own.
+** Hints are not (currently) used by the native SQLite implementation.
+** This mechanism is provided for systems that substitute an alternative
+** storage engine.
 */
-void sqlite3BtreeCursorHint(BtCursor *pCur, int iTable, const Expr *pExpr){
-  /* Alternative storage engines might use this. */
+void sqlite3BtreeCursorHint(BtCursor *pCur, int eHintType, ...){
+  va_list ap;
+  va_start(ap, eHintType);
+  switch( eHintType ){
+    case BTREE_HINT_FLAGS: {
+      pCur->hints = va_arg(ap, unsigned int);
+      assert( pCur->hints==BTREE_SEEK_EQ || pCur->hints==BTREE_BULKLOAD
+                  || pCur->hints==0 );
+      break;
+    }
+    case BTREE_HINT_RANGE: {
+      (void)va_arg(ap, Expr*);
+      (void)va_arg(ap, struct Mem*);
+      /* Range expression not used in this implementation */
+      break;
+    }
+  }
+  va_end(ap);
 }
 #endif /* SQLITE_ENABLE_CURSOR_HINTS */
 
@@ -9562,14 +9578,6 @@ int sqlite3BtreeSetVersion(Btree *pBtree, int iVersion){
 
   pBt->btsFlags &= ~BTS_NO_WAL;
   return rc;
-}
-
-/*
-** set the mask of hint flags for cursor pCsr.
-*/
-void sqlite3BtreeCursorHints(BtCursor *pCsr, unsigned int mask){
-  assert( mask==BTREE_BULKLOAD || mask==BTREE_SEEK_EQ || mask==0 );
-  pCsr->hints = mask;
 }
 
 #ifdef SQLITE_DEBUG

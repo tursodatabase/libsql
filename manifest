@@ -1,5 +1,5 @@
-C Fix\sthe\sCursorHint\sso\sthat\sit\sincludes\sthe\sscan\sboundary\sconstraints.\nOn\sthe\sexpression\stext\sfor\sthe\sCursorHint\sopcode,\sshow\srowid\scorrectly.
-D 2015-08-14T01:03:21.023
+C Refactor\sthe\ssqlite3BtreeCursorHint()\sinterface\sfor\simproved\smaintainability.
+D 2015-08-14T15:05:55.881
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2fc9ca6bf5949d415801c007ed3004a4bdb7c380
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -277,8 +277,8 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 4d9134dc988a87838c06056c89c0e8c4700a0452
 F src/bitvec.c d1f21d7d91690747881f03940584f4cc548c9d3d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c 060f2482ef871363617b13c68a1d1c09faf356cc
-F src/btree.h 88803367b892853c05052e12a946b66508eb6610
+F src/btree.c 84ae3d2d5b0f74257ecb95badc9c9516e6bf6cb6
+F src/btree.h a1f058c495f5020068b864b67b89b13896174137
 F src/btreeInt.h 8177c9ab90d772d6d2c6c517e05bed774b7c92c0
 F src/build.c 4acc35c4e0a2d94c906abd164568cd6fc989cfbb
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
@@ -399,7 +399,7 @@ F src/update.c 487747b328b7216bb7f6af0695d6937d5c9e605f
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c bc9dd64b5db544218b871b66243871c202b2781f
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c eeef2e6ee7c377c31a1b3f6c2b2812f3f711c2d7
+F src/vdbe.c 74561c2d15895f930f08e4216d454efaaaf530c4
 F src/vdbe.h 529bb4a7bedcd28dccba5abb3927e3c5cb70a832
 F src/vdbeInt.h 7258d75fc2dad0bccdef14d7d8d2fd50fd1bf2d2
 F src/vdbeapi.c adabbd66eb2e3a10f3998485ee0be7e326d06ee4
@@ -415,7 +415,7 @@ F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
 F src/where.c c745d3aa78ad1aa8982febb99f2f17ee5cbac069
 F src/whereInt.h 5f87e3c4b0551747d119730dfebddd3c54f04047
-F src/wherecode.c 28d838348209430566640907b4c59eb51dc34493
+F src/wherecode.c 3180ac6422b82e4d71fbaae8727f9dd036efd320
 F src/whereexpr.c 9ce1c9cfedbf80c93c7d899497025ec8256ce652
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -1375,7 +1375,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 608ab4ac1911d5f32a17ea043bd5f0748598691d
-R f6a8eae9d2bc039b93361863b21e0bb5
+P f0d428d13a787251c2ca7685fec2a91b550eefba
+R 3107bb0cdaaeeac152b5b9d7e7511034
 U drh
-Z f7fd48c7e80e896401cf3a4f28b4906c
+Z 84636ad24c17c3565bc4b3192fff4413

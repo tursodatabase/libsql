@@ -592,7 +592,7 @@ static void whereLikeOptimizationStringFixup(
 /*
 ** This function is called on every node of an expression tree used as an
 ** argument to the OP_CursorHint instruction. If the node is a TK_COLUMN
-** that accesses any cursor other than (pWalker->u.i), do the following:
+** that accesses any cursor other than (pWalker->u.n), do the following:
 **
 **   1) allocate a register and code an OP_Column instruction to read 
 **      the specified column into the new register, and
@@ -638,12 +638,10 @@ static void codeCursorHint(
   int iCur;
   WhereClause *pWC;
   WhereTerm *pTerm;
-  WhereLoop *pWLoop;
-  int i, j;
+  int i;
 
   if( OptimizationDisabled(db, SQLITE_CursorHints) ) return;
   pLevel = &pWInfo->a[iLevel];
-  pWLoop = pLevel->pWLoop;
   iCur = pWInfo->pTabList->a[pLevel->iFrom].iCursor;
   pWC = &pWInfo->sWC;
   for(i=0; i<pWC->nTerm; i++){
