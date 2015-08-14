@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\scompiler\swarning.
-D 2015-08-13T21:38:09.150
+C Fix\sthe\sCursorHint\sso\sthat\sit\sincludes\sthe\sscan\sboundary\sconstraints.\nOn\sthe\sexpression\stext\sfor\sthe\sCursorHint\sopcode,\sshow\srowid\scorrectly.
+D 2015-08-14T01:03:21.023
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2fc9ca6bf5949d415801c007ed3004a4bdb7c380
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -403,7 +403,7 @@ F src/vdbe.c eeef2e6ee7c377c31a1b3f6c2b2812f3f711c2d7
 F src/vdbe.h 529bb4a7bedcd28dccba5abb3927e3c5cb70a832
 F src/vdbeInt.h 7258d75fc2dad0bccdef14d7d8d2fd50fd1bf2d2
 F src/vdbeapi.c adabbd66eb2e3a10f3998485ee0be7e326d06ee4
-F src/vdbeaux.c 56077f78bfc96e80f31ad595a05d4d73ac45f5c0
+F src/vdbeaux.c 8bb1ef79af006d02d218171af15b73b9005095d4
 F src/vdbeblob.c 4f2e8e075d238392df98c5e03a64342465b03f90
 F src/vdbemem.c ae38a0d35ae71cf604381a887c170466ba518090
 F src/vdbesort.c f5009e7a35e3065635d8918b9a31f498a499976b
@@ -415,7 +415,7 @@ F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
 F src/where.c c745d3aa78ad1aa8982febb99f2f17ee5cbac069
 F src/whereInt.h 5f87e3c4b0551747d119730dfebddd3c54f04047
-F src/wherecode.c 00a5d75121f528e03c96a48b2bd46d91ec41c866
+F src/wherecode.c 28d838348209430566640907b4c59eb51dc34493
 F src/whereexpr.c 9ce1c9cfedbf80c93c7d899497025ec8256ce652
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -1375,7 +1375,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 206884718782331a7aaacc2c811e4e9d2effae91
-R f5dc80740c0c127675d801f8d87e4c24
+P 608ab4ac1911d5f32a17ea043bd5f0748598691d
+R f6a8eae9d2bc039b93361863b21e0bb5
 U drh
-Z b21aee07c484f8ec189fb6d6a7ed9bda
+Z f7fd48c7e80e896401cf3a4f28b4906c

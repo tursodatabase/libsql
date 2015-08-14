@@ -1110,7 +1110,11 @@ static int displayP4Expr(int nTemp, char *zTemp, Expr *pExpr){
     }
 
     case TK_COLUMN: {
-      sqlite3_snprintf(nTemp, zTemp, "c%d", (int)pExpr->iColumn);
+      if( pExpr->iColumn<0 ){
+        sqlite3_snprintf(nTemp, zTemp, "rowid");
+      }else{
+        sqlite3_snprintf(nTemp, zTemp, "c%d", (int)pExpr->iColumn);
+      }
       break;
     }
 
