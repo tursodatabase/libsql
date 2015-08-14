@@ -1,5 +1,5 @@
-C Add\sthe\ssqlite3rbu_savestate()\sfunction\sto\sthe\srbu\sextension.\sTo\sforce\srbu\sto\ssave\sits\sstate\sto\sdisk\swithout\sclosing\sthe\ssqlite3rbu*\shandle.
-D 2015-08-13T18:26:09.242
+C Duplicate\sthe\soutput\sof\sreleasetest.tcl\sinto\sreleasetest-out.txt
+D 2015-08-14T12:53:37.201
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2fc9ca6bf5949d415801c007ed3004a4bdb7c380
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -930,7 +930,7 @@ F test/rbu.test 168573d353cd0fd10196b87b0caa322c144ef736
 F test/rdonly.test 64e2696c322e3538df0b1ed624e21f9a23ed9ff8
 F test/regexp1.test 497ea812f264d12b6198d6e50a76be4a1973a9d8
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
-F test/releasetest.tcl b46812b9506f22d69c26f66808b90eb1b0318eec
+F test/releasetest.tcl cd2de2749aab7f45b2fe91b4a05431fc08e1692a
 F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
 F test/rollback.test 458fe73eb3ffdfdf9f6ba3e9b7350a6220414dea
 F test/rollback2.test fc14cf6d1a2b250d2735ef16124b971bce152f14
@@ -1373,7 +1373,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ee966af8ff79189f8b90f3557dea21059517dfe2
-R 5dcd61cef4d3f59a3e6f61e4cf60159a
-U dan
-Z bdea05956aba407287af182409a84a65
+P 851a875ad6b81f90960caf4d03b116afc911858d
+R 516c4f09812f47621a9f17c1076f8b21
+U drh
+Z 7ae775e3576234c15153da91a23c9d24
