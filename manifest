@@ -1,5 +1,5 @@
-C Fix\sthe\scursor\shint\smechanism\sso\sthat\sit\sdoes\sthe\sright\sthing\sfor\sindexed\nlookups.
-D 2015-08-14T18:50:04.420
+C Updated\stesting\sof\scursor-hints.\s\sRemove\sthe\stest_cursorhint.c\sfile\sand\nassociated\slogic\sin\sthe\score\sand\sdo\stests\sbased\spurely\son\sthe\snewly\senhanced\nEXPLAIN\soutput.
+D 2015-08-14T20:08:13.528
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2fc9ca6bf5949d415801c007ed3004a4bdb7c380
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -256,7 +256,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 389329247c56b23329a9285155106cd6b6ebad42
+F main.mk 73167b34b0e67c0be32c1da2d988a376851c9ab1
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
 F mkopcodeh.awk 0e7f04a8eb90f92259e47d80110e4e98d7ce337a
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
@@ -344,7 +344,7 @@ F src/sqliteInt.h cbd6d166c5f8aa17e4be463ccefef41cd1d40286
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c f266ad8a2892d659b74f0f50cb6a88b6e7c12179
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
-F src/tclsqlite.c 72f4dd747d5604a508bbb6935817d3afe5ffd6e2
+F src/tclsqlite.c d9439b6a910985b7fff43ba6756bcef00de22649
 F src/test1.c d339ae9b9baf9221c657c9628c9061d88bd831f6
 F src/test2.c 577961fe48961b2f2e5c8b56ee50c3f459d3359d
 F src/test3.c 64d2afdd68feac1bb5e2ffb8226c8c639f798622
@@ -360,7 +360,6 @@ F src/test_backup.c 2e6e6a081870150f20c526a2e9d0d29cda47d803
 F src/test_blob.c e5a7a81d61a780da79101aeb1e60d300af169e07
 F src/test_btree.c 2e9978eca99a9a4bfa8cae949efb00886860a64f
 F src/test_config.c fb2e5d354d9a077f5fbb261652eff4787deb104f
-F src/test_cursorhint.c bba837177d1693037f5c83dcb443cf453ee656ed
 F src/test_demovfs.c 0de72c2c89551629f58486fde5734b7d90758852
 F src/test_devsym.c e7498904e72ba7491d142d5c83b476c4e76993bc
 F src/test_fs.c ced436e3d4b8e4681328409b8081051ce614e28f
@@ -399,7 +398,7 @@ F src/update.c 487747b328b7216bb7f6af0695d6937d5c9e605f
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c bc9dd64b5db544218b871b66243871c202b2781f
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c 74561c2d15895f930f08e4216d454efaaaf530c4
+F src/vdbe.c 882cac44eb4f53d18e31c79fc1741d400016f867
 F src/vdbe.h 529bb4a7bedcd28dccba5abb3927e3c5cb70a832
 F src/vdbeInt.h 7258d75fc2dad0bccdef14d7d8d2fd50fd1bf2d2
 F src/vdbeapi.c adabbd66eb2e3a10f3998485ee0be7e326d06ee4
@@ -561,7 +560,7 @@ F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/createtab.test b5de160630b209c4b8925bdcbbaf48cc90b67fe8
 F test/cse.test 277350a26264495e86b1785f34d2d0c8600e021c
 F test/ctime.test 7bd009071e242aac4f18521581536b652b789a47
-F test/cursorhint.test e55ad8c466327ffb3511b60007102bca22314d0a
+F test/cursorhint.test c3844bed3eec3506b38b98ab5f0ca22a4ab9ecb4
 F test/date.test 42973251b9429f2c41b77eb98a7b0b0ba2d3b2c0
 F test/dbstatus.test 8de104bb5606f19537d23cd553b41349b5ab1204
 F test/dbstatus2.test 10418e62b3db5dca070f0c3eef3ea13946f339c2
@@ -1375,7 +1374,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fc3fb5cd0d2c123a069e5b18b62bb1f708c8698a
-R 020be40332ddb39fbaad6fc302316e47
+P 581e3d4988e98975fea5daaeb9f854c54a4976b7
+R 32fb6312a84d28df618932a2d55ba493
 U drh
-Z 56068f8a083e66d3150e6ce38cb011fe
+Z 247ce995f99250cbca60587acaa0c7c9

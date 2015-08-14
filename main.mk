@@ -262,7 +262,6 @@ TESTSRC = \
   $(TOP)/src/test_blob.c \
   $(TOP)/src/test_btree.c \
   $(TOP)/src/test_config.c \
-  $(TOP)/src/test_cursorhint.c \
   $(TOP)/src/test_demovfs.c \
   $(TOP)/src/test_devsym.c \
   $(TOP)/src/test_fs.c \

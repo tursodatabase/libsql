@@ -6570,10 +6570,6 @@ case OP_CursorHint: {
   pC = p->apCsr[pOp->p1];
   if( pC ){
     sqlite3BtreeCursorHint(pC->pCursor, BTREE_HINT_RANGE, pOp->p4.pExpr, aMem);
-#ifdef SQLITE_TEST
-    void sqlite3BtreeCursorHintTest(Mem*, Expr*);
-    sqlite3BtreeCursorHintTest(p->aMem, pOp->p4.pExpr);
-#endif
   }
   break;
 }
