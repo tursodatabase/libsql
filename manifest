@@ -1,5 +1,5 @@
-C Updated\stesting\sof\scursor-hints.\s\sRemove\sthe\stest_cursorhint.c\sfile\sand\nassociated\slogic\sin\sthe\score\sand\sdo\stests\sbased\spurely\son\sthe\snewly\senhanced\nEXPLAIN\soutput.
-D 2015-08-14T20:08:13.528
+C Always\sprovide\sthe\sBTREE_BULKLOAD\shint,\seven\swhen\sSQLITE_ENABLE_CURSOR_HINTS\nis\snot\sdefined,\sas\sthat\shint\sgives\sa\s4%\sperformance\sincrease.
+D 2015-08-14T23:57:04.215
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2fc9ca6bf5949d415801c007ed3004a4bdb7c380
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -277,8 +277,8 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 4d9134dc988a87838c06056c89c0e8c4700a0452
 F src/bitvec.c d1f21d7d91690747881f03940584f4cc548c9d3d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c 84ae3d2d5b0f74257ecb95badc9c9516e6bf6cb6
-F src/btree.h a1f058c495f5020068b864b67b89b13896174137
+F src/btree.c b8083a37c09df6a30af497086d7ba05c1526d359
+F src/btree.h 6310645beddbd3eef89fa9b6d1062065976a93c8
 F src/btreeInt.h 8177c9ab90d772d6d2c6c517e05bed774b7c92c0
 F src/build.c 4acc35c4e0a2d94c906abd164568cd6fc989cfbb
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
@@ -398,7 +398,7 @@ F src/update.c 487747b328b7216bb7f6af0695d6937d5c9e605f
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c bc9dd64b5db544218b871b66243871c202b2781f
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c 882cac44eb4f53d18e31c79fc1741d400016f867
+F src/vdbe.c 4dbcceb38f5c3e42c0725a56e7c76eb12adedebb
 F src/vdbe.h 529bb4a7bedcd28dccba5abb3927e3c5cb70a832
 F src/vdbeInt.h 7258d75fc2dad0bccdef14d7d8d2fd50fd1bf2d2
 F src/vdbeapi.c adabbd66eb2e3a10f3998485ee0be7e326d06ee4
@@ -1374,7 +1374,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 581e3d4988e98975fea5daaeb9f854c54a4976b7
-R 32fb6312a84d28df618932a2d55ba493
+P bf383e665a191a4f33a540d1240960a922e22813
+R 87aadf49a7545642a0a9fb9a1d94cce7
 U drh
-Z 247ce995f99250cbca60587acaa0c7c9
+Z 44853a09e3a1d8da8995535278d599e8

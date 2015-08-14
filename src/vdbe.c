@@ -3384,10 +3384,12 @@ case OP_OpenWrite:
 open_cursor_set_hints:
   assert( OPFLAG_BULKCSR==BTREE_BULKLOAD );
   assert( OPFLAG_SEEKEQ==BTREE_SEEK_EQ );
-#ifdef SQLITE_ENABLE_CURSOR_HINTS
+  testcase( pOp->p5 & OPFLAG_BULKCSR );
+#ifdef SQLITE_ENABLE_CURSOR_HINT
+  testcase( pOp->p2 & OPFLAG_SEEKEQ );
+#endif
   sqlite3BtreeCursorHint(pCur->pCursor, BTREE_HINT_FLAGS,
                          (pOp->p5 & (OPFLAG_BULKCSR|OPFLAG_SEEKEQ)));
-#endif
   break;
 }
 

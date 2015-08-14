@@ -837,36 +837,26 @@ int sqlite3BtreeCursorRestore(BtCursor *pCur, int *pDifferentRow){
   return SQLITE_OK;
 }
 
-#ifdef SQLITE_ENABLE_CURSOR_HINTS
 /*
 ** Provide hints to the cursor.  The particular hint given (and the type
 ** and number of the varargs parameters) is determined by the eHintType
 ** parameter.  See the definitions of the BTREE_HINT_* macros for details.
-**
-** Hints are not (currently) used by the native SQLite implementation.
-** This mechanism is provided for systems that substitute an alternative
-** storage engine.
 */
 void sqlite3BtreeCursorHint(BtCursor *pCur, int eHintType, ...){
   va_list ap;
   va_start(ap, eHintType);
-  switch( eHintType ){
-    case BTREE_HINT_FLAGS: {
-      pCur->hints = va_arg(ap, unsigned int);
-      assert( pCur->hints==BTREE_SEEK_EQ || pCur->hints==BTREE_BULKLOAD
-                  || pCur->hints==0 );
-      break;
-    }
-    case BTREE_HINT_RANGE: {
-      (void)va_arg(ap, Expr*);
-      (void)va_arg(ap, struct Mem*);
-      /* Range expression not used in this implementation */
-      break;
-    }
+#ifdef SQLITE_ENABLE_CURSOR_HINTS
+  if( eHintType==BTREE_HINT_FLAGS )
+#else
+  assert( eHintType==BTREE_HINT_FLAGS );
+#endif
+  {
+    pCur->hints = va_arg(ap, unsigned int);
+    assert( pCur->hints==BTREE_SEEK_EQ || pCur->hints==BTREE_BULKLOAD
+                || pCur->hints==0 );
   }
   va_end(ap);
 }
-#endif /* SQLITE_ENABLE_CURSOR_HINTS */
 
 #ifndef SQLITE_OMIT_AUTOVACUUM
 /*

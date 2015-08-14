@@ -153,14 +153,6 @@ int sqlite3BtreeNewDb(Btree *p);
 ** Kinds of hints that can be passed into the sqlite3BtreeCursorHint()
 ** interface.
 **
-** Note that cursor hints are not used by the canonical SQLite b-tree
-** ayer.  Cursor hints are provided so that systems that substitute their
-** on custom b-tree layer can have access to additional information that might
-** boost performance.  Hints are only provided if SQLite is compiled with
-** SQLITE_ENABLE_CURSOR_HINTS.  The hinting interface is undocumented
-** (except for comments such as this) and is subject to change from one
-** release of SQLite to the next.
-**
 ** BTREE_HINT_FLAGS  (arguments: unsigned int)
 **
 **     Some combinatation of BTREE_BULKLOAD and BTREE_SEEK_EQ flags.  The
@@ -184,6 +176,11 @@ int sqlite3BtreeNewDb(Btree *p);
 **     to prefetch content from remote machines - to provide those
 **     implementations with limits on what needs to be prefetched and thereby
 **     reduce network bandwidth.
+**
+** Note that BTREE_HINT_FLAGS with BTREE_BULKLOAD is the only hint used by
+** standard SQLite.  The other hints are provided for extentions that use
+** the SQLite parser and code generator but substitute their own storage
+** engine.
 */
 #define BTREE_HINT_FLAGS 1       /* Set flags indicating cursor usage */
 #define BTREE_HINT_RANGE 2       /* Range constraints on queries */
@@ -204,10 +201,6 @@ int sqlite3BtreeNewDb(Btree *p);
 #define BTREE_BULKLOAD 0x00000001  /* Used to full index in sorted order */
 #define BTREE_SEEK_EQ  0x00000002  /* EQ seeks only - no range seeks */
 
-#ifdef SQLITE_ENABLE_CURSOR_HINTS
-void sqlite3BtreeCursorHint(BtCursor*, int, ...);
-#endif
-
 int sqlite3BtreeCursor(
   Btree*,                              /* BTree containing table to open */
   int iTable,                          /* Index of root page */
@@ -217,6 +210,7 @@ int sqlite3BtreeCursor(
 );
 int sqlite3BtreeCursorSize(void);
 void sqlite3BtreeCursorZero(BtCursor*);
+void sqlite3BtreeCursorHint(BtCursor*, int, ...);
 
 int sqlite3BtreeCloseCursor(BtCursor*);
 int sqlite3BtreeMovetoUnpacked(
