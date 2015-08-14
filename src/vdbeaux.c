@@ -1593,12 +1593,12 @@ int sqlite3VdbeList(
     pMem->u.i = pOp->p3;                          /* P3 */
     pMem++;
 
-    if( sqlite3VdbeMemClearAndResize(pMem, 32) ){ /* P4 */
+    if( sqlite3VdbeMemClearAndResize(pMem, 100) ){ /* P4 */
       assert( p->db->mallocFailed );
       return SQLITE_ERROR;
     }
     pMem->flags = MEM_Str|MEM_Term;
-    zP4 = displayP4(pOp, pMem->z, 32);
+    zP4 = displayP4(pOp, pMem->z, pMem->szMalloc);
     if( zP4!=pMem->z ){
       sqlite3VdbeMemSetStr(pMem, zP4, -1, SQLITE_UTF8, 0);
     }else{

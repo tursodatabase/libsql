@@ -4217,6 +4217,9 @@ WhereInfo *sqlite3WhereBegin(
                             SQLITE_INT_TO_PTR(n), P4_INT32);
         assert( n<=pTab->nCol );
       }
+#ifdef SQLITE_ENABLE_CURSOR_HINTS
+      if( pLoop->u.btree.pIndex!=0 ) sqlite3VdbeChangeP5(v, OPFLAG_SEEKEQ);
+#endif
 #ifdef SQLITE_ENABLE_COLUMN_USED_MASK
       sqlite3VdbeAddOp4Dup8(v, OP_ColumnsUsed, pTabItem->iCursor, 0, 0,
                             (const u8*)&pTabItem->colUsed, P4_INT64);

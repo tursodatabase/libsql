@@ -2994,6 +2994,7 @@ struct Walker {
     int iCur;                                  /* A cursor number */
     SrcList *pSrcList;                         /* FROM clause */
     struct SrcCount *pSrcCount;                /* Counting column references */
+    struct CCurHint *pCCurHint;                /* Used by codeCursorHint() */
   } u;
 };
 

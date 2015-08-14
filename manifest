@@ -1,5 +1,5 @@
-C Refactor\sthe\ssqlite3BtreeCursorHint()\sinterface\sfor\simproved\smaintainability.
-D 2015-08-14T15:05:55.881
+C Fix\sthe\scursor\shint\smechanism\sso\sthat\sit\sdoes\sthe\sright\sthing\sfor\sindexed\nlookups.
+D 2015-08-14T18:50:04.420
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2fc9ca6bf5949d415801c007ed3004a4bdb7c380
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -340,7 +340,7 @@ F src/shell.c b1f91e60918df3a68efad1e3a11696b9a7e23d23
 F src/sqlite.h.in 447ead0a6b3293206f04a0896553955d07cfb4b9
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h a0b948ebc89bac13941254641326a6aa248c2cc4
-F src/sqliteInt.h ea5885ac6df1de2444846d0a79c6252e2fa444ab
+F src/sqliteInt.h cbd6d166c5f8aa17e4be463ccefef41cd1d40286
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c f266ad8a2892d659b74f0f50cb6a88b6e7c12179
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
@@ -403,7 +403,7 @@ F src/vdbe.c 74561c2d15895f930f08e4216d454efaaaf530c4
 F src/vdbe.h 529bb4a7bedcd28dccba5abb3927e3c5cb70a832
 F src/vdbeInt.h 7258d75fc2dad0bccdef14d7d8d2fd50fd1bf2d2
 F src/vdbeapi.c adabbd66eb2e3a10f3998485ee0be7e326d06ee4
-F src/vdbeaux.c 8bb1ef79af006d02d218171af15b73b9005095d4
+F src/vdbeaux.c 9f726265d3c4a64264c9aa80d35aa19c51a3c6f4
 F src/vdbeblob.c 4f2e8e075d238392df98c5e03a64342465b03f90
 F src/vdbemem.c ae38a0d35ae71cf604381a887c170466ba518090
 F src/vdbesort.c f5009e7a35e3065635d8918b9a31f498a499976b
@@ -413,9 +413,9 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 6fb6b68969e4692593c2552c4e7bff5882de2cb8
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
-F src/where.c c745d3aa78ad1aa8982febb99f2f17ee5cbac069
+F src/where.c ef95e56b6e7cdfa3ae0b6f72e3578391addfa965
 F src/whereInt.h 5f87e3c4b0551747d119730dfebddd3c54f04047
-F src/wherecode.c 3180ac6422b82e4d71fbaae8727f9dd036efd320
+F src/wherecode.c 16045545fb44878a7ba61db645521f30f9265893
 F src/whereexpr.c 9ce1c9cfedbf80c93c7d899497025ec8256ce652
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -1375,7 +1375,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f0d428d13a787251c2ca7685fec2a91b550eefba
-R 3107bb0cdaaeeac152b5b9d7e7511034
+P fc3fb5cd0d2c123a069e5b18b62bb1f708c8698a
+R 020be40332ddb39fbaad6fc302316e47
 U drh
-Z 84636ad24c17c3565bc4b3192fff4413
+Z 56068f8a083e66d3150e6ce38cb011fe

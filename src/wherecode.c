@@ -588,28 +588,70 @@ static void whereLikeOptimizationStringFixup(
 }
 
 #ifdef SQLITE_ENABLE_CURSOR_HINTS
+/*
+** Information is passed from codeCursorHint() down to individual nodes of
+** the expression tree (by sqlite3WalkExpr()) using an instance of this
+** structure.
+*/
+struct CCurHint {
+  int iTabCur;    /* Cursor for the main table */
+  int iIdxCur;    /* Cursor for the index, if pIdx!=0.  Unused otherwise */
+  Index *pIdx;    /* The index used to access the table */
+};
+
+/*
+** This function is called for every node of an expression that is a candidate
+** for a cursor hint on an index cursor.  For TK_COLUMN nodes that reference
+** the table CCurHint.iTabCur, verify that the same column can be
+** accessed through the index.  If it cannot, then set pWalker->eCode to 1.
+*/
+static int codeCursorHintCheckExpr(Walker *pWalker, Expr *pExpr){
+  struct CCurHint *pHint = pWalker->u.pCCurHint;
+  assert( pHint->pIdx!=0 );
+  if( pExpr->op==TK_COLUMN
+   && pExpr->iTable==pHint->iTabCur
+   && sqlite3ColumnOfIndex(pHint->pIdx, pExpr->iColumn)<0
+  ){
+    pWalker->eCode = 1;
+  }
+  return WRC_Continue;
+}
+
 
 /*
 ** This function is called on every node of an expression tree used as an
 ** argument to the OP_CursorHint instruction. If the node is a TK_COLUMN
-** that accesses any cursor other than (pWalker->u.n), do the following:
+** that accesses any table other than the one identified by
+** CCurHint.iTabCur, then do the following:
 **
 **   1) allocate a register and code an OP_Column instruction to read 
 **      the specified column into the new register, and
 **
 **   2) transform the expression node to a TK_REGISTER node that reads 
 **      from the newly populated register.
+**
+** Also, if the node is a TK_COLUMN that does access the table idenified
+** by pCCurHint.iTabCur, and an index is being used (which we will
+** know because CCurHint.pIdx!=0) then transform the TK_COLUMN into
+** an access of the index rather than the original table.
 */
 static int codeCursorHintFixExpr(Walker *pWalker, Expr *pExpr){
   int rc = WRC_Continue;
-  if( pExpr->op==TK_COLUMN && pExpr->iTable!=pWalker->u.n ){
-    Vdbe *v = pWalker->pParse->pVdbe;
-    int reg = ++pWalker->pParse->nMem;   /* Register for column value */
-    sqlite3ExprCodeGetColumnOfTable(
-        v, pExpr->pTab, pExpr->iTable, pExpr->iColumn, reg
-    );
-    pExpr->op = TK_REGISTER;
-    pExpr->iTable = reg;
+  struct CCurHint *pHint = pWalker->u.pCCurHint;
+  if( pExpr->op==TK_COLUMN ){
+    if( pExpr->iTable!=pHint->iTabCur ){
+      Vdbe *v = pWalker->pParse->pVdbe;
+      int reg = ++pWalker->pParse->nMem;   /* Register for column value */
+      sqlite3ExprCodeGetColumnOfTable(
+          v, pExpr->pTab, pExpr->iTable, pExpr->iColumn, reg
+      );
+      pExpr->op = TK_REGISTER;
+      pExpr->iTable = reg;
+    }else if( pHint->pIdx!=0 ){
+      pExpr->iTable = pHint->iIdxCur;
+      pExpr->iColumn = sqlite3ColumnOfIndex(pHint->pIdx, pExpr->iColumn);
+      assert( pExpr->iColumn>=0 );
+    }
   }else if( pExpr->op==TK_AGG_FUNCTION ){
     /* An aggregate function in the WHERE clause of a query means this must
     ** be a correlated sub-query, and expression pExpr is an aggregate from
@@ -628,21 +670,29 @@ static int codeCursorHintFixExpr(Walker *pWalker, Expr *pExpr){
 */
 static void codeCursorHint(
   WhereInfo *pWInfo,
-  int iLevel
+  WhereLevel *pLevel
 ){
   Parse *pParse = pWInfo->pParse;
   sqlite3 *db = pParse->db;
   Vdbe *v = pParse->pVdbe;
-  WhereLevel *pLevel;
   Expr *pExpr = 0;
+  WhereLoop *pLoop = pLevel->pWLoop;
   int iCur;
   WhereClause *pWC;
   WhereTerm *pTerm;
   int i;
+  struct CCurHint sHint;
+  Walker sWalker;
 
   if( OptimizationDisabled(db, SQLITE_CursorHints) ) return;
-  pLevel = &pWInfo->a[iLevel];
-  iCur = pWInfo->pTabList->a[pLevel->iFrom].iCursor;
+  iCur = pLevel->iTabCur;
+  assert( iCur==pWInfo->pTabList->a[pLevel->iFrom].iCursor );
+  sHint.iTabCur = iCur;
+  sHint.iIdxCur = pLevel->iIdxCur;
+  sHint.pIdx = pLoop->u.btree.pIndex;
+  memset(&sWalker, 0, sizeof(sWalker));
+  sWalker.pParse = pParse;
+  sWalker.u.pCCurHint = &sHint;
   pWC = &pWInfo->sWC;
   for(i=0; i<pWC->nTerm; i++){
     pTerm = &pWC->a[i];
@@ -650,17 +700,20 @@ static void codeCursorHint(
     if( pTerm->prereqAll & pLevel->notReady ) continue;
     if( ExprHasProperty(pTerm->pExpr, EP_FromJoin) ) continue;
     if( sqlite3ExprContainsSubquery(pTerm->pExpr) ) continue;
+    if( sHint.pIdx!=0 ){
+      sWalker.eCode = 0;
+      sWalker.xExprCallback = codeCursorHintCheckExpr;
+      sqlite3WalkExpr(&sWalker, pTerm->pExpr);
+      if( sWalker.eCode ) continue;
+    }
     pExpr = sqlite3ExprAnd(db, pExpr, sqlite3ExprDup(db, pTerm->pExpr, 0));
   }
   if( pExpr!=0 ){
-    const char *a = (const char*)pExpr;
-    Walker sWalker;
-    memset(&sWalker, 0, sizeof(sWalker));
     sWalker.xExprCallback = codeCursorHintFixExpr;
-    sWalker.pParse = pParse;
-    sWalker.u.n = pLevel->iTabCur;
     sqlite3WalkExpr(&sWalker, pExpr);
-    sqlite3VdbeAddOp4(v, OP_CursorHint, pLevel->iTabCur, iCur, 0, a, P4_EXPR);
+    sqlite3VdbeAddOp4(v, OP_CursorHint, 
+                      (sHint.pIdx ? sHint.iIdxCur : sHint.iTabCur), 0, 0,
+                      (const char*)pExpr, P4_EXPR);
   }
 }
 #else
@@ -830,7 +883,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       pStart = pEnd;
       pEnd = pTerm;
     }
-    codeCursorHint(pWInfo, iLevel);
+    codeCursorHint(pWInfo, pLevel);
     if( pStart ){
       Expr *pX;             /* The expression that defines the start bound */
       int r1, rTemp;        /* Registers for holding the start boundary */
@@ -1053,7 +1106,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     start_constraints = pRangeStart || nEq>0;
 
     /* Seek the index cursor to the start of the range. */
-    codeCursorHint(pWInfo, iLevel);
+    codeCursorHint(pWInfo, pLevel);
     nConstraint = nEq;
     if( pRangeStart ){
       Expr *pRight = pRangeStart->pExpr->pRight;
@@ -1481,7 +1534,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       ** a pseudo-cursor.  No need to Rewind or Next such cursors. */
       pLevel->op = OP_Noop;
     }else{
-      codeCursorHint(pWInfo, iLevel);
+      codeCursorHint(pWInfo, pLevel);
       pLevel->op = aStep[bRev];
       pLevel->p1 = iCur;
       pLevel->p2 = 1 + sqlite3VdbeAddOp2(v, aStart[bRev], iCur, addrBrk);
