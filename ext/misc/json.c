@@ -77,6 +77,7 @@
 SQLITE_EXTENSION_INIT1
 #include <assert.h>
 #include <string.h>
+#include <ctype.h>
 
 /* Unsigned integer types */
 typedef sqlite3_uint64 u64;
@@ -93,20 +94,41 @@ struct Json {
   u64 nAlloc;              /* Bytes of storage available in zBuf[] */
   u64 nUsed;               /* Bytes of zBuf[] currently used */
   u8 bStatic;              /* True if zBuf is static space */
-  u8 mallocFailed;         /* True if an OOM has been encountered */
+  u8 oom;                  /* True if an OOM has been encountered */
   char zSpace[100];        /* Initial static space */
 };
 
-/* JSONB type values
+/* JSON type values
 */
-#define JSONB_NULL     0
-#define JSONB_TRUE     1
-#define JSONB_FALSE    2
-#define JSONB_INT      3
-#define JSONB_REAL     4
-#define JSONB_STRING   5
-#define JSONB_ARRAY    6
-#define JSONB_OBJECT   7
+#define JSON_NULL     0
+#define JSON_TRUE     1
+#define JSON_FALSE    2
+#define JSON_INT      3
+#define JSON_REAL     4
+#define JSON_STRING   5
+#define JSON_ARRAY    6
+#define JSON_OBJECT   7
+
+/* A single node of parsed JSON
+*/
+typedef struct JsonNode JsonNode;
+struct JsonNode {
+  u32 eType;             /* One of the JSON_ type values */
+  u32 n;                 /* Bytes of content, or number of sub-nodes */
+  const char *zContent;  /* Content for JSON_INT, JSON_REAL, or JSON_STRING */
+};
+
+/* A completely parsed JSON string
+*/
+typedef struct JsonParse JsonParse;
+struct JsonParse {
+  u32 nNode;         /* Number of slots of aNode[] used */
+  u32 nAlloc;        /* Number of slots of aNode[] allocated */
+  JsonNode *aNode;   /* Array of nodes containing the parse */
+  const char *zJson; /* Original JSON string */
+  u8 oom;            /* Set to true if out of memory */
+};
+
 
 #if 0
 /*
@@ -177,7 +199,7 @@ static void jsonZero(Json *p){
 */
 static void jsonInit(Json *p, sqlite3_context *pCtx){
   p->pCtx = pCtx;
-  p->mallocFailed = 0;
+  p->oom = 0;
   jsonZero(p);
 }
 
@@ -194,7 +216,7 @@ static void jsonReset(Json *p){
 /* Report an out-of-memory (OOM) condition 
 */
 static void jsonOom(Json *p){
-  p->mallocFailed = 1;
+  p->oom = 1;
   sqlite3_result_error_nomem(p->pCtx);
   jsonReset(p);
 }
@@ -206,7 +228,7 @@ static int jsonGrow(Json *p, u32 N){
   u64 nTotal = N<p->nAlloc ? p->nAlloc*2 : p->nAlloc+N+100;
   char *zNew;
   if( p->bStatic ){
-    if( p->mallocFailed ) return SQLITE_NOMEM;
+    if( p->oom ) return SQLITE_NOMEM;
     zNew = sqlite3_malloc64(nTotal);
     if( zNew==0 ){
       jsonOom(p);
@@ -233,6 +255,12 @@ static void jsonAppendRaw(Json *p, const char *zIn, u32 N){
   if( (N+p->nUsed >= p->nAlloc) && jsonGrow(p,N)!=0 ) return;
   memcpy(p->zBuf+p->nUsed, zIn, N);
   p->nUsed += N;
+}
+
+/* Append the zero-terminated string zIn
+*/
+static void jsonAppend(Json *p, const char *zIn){
+  jsonAppendRaw(p, zIn, (u32)strlen(zIn));
 }
 
 /* Append the N-byte string in zIn to the end of the Json string
@@ -343,7 +371,7 @@ static void jsonAppendVarint(Json *p, u64 X){
 /* Make the JSON in p the result of the SQL function.
 */
 static void jsonResult(Json *p){
-  if( p->mallocFailed==0 ){
+  if( p->oom==0 ){
     sqlite3_result_text64(p->pCtx, p->zBuf, p->nUsed, 
                           p->bStatic ? SQLITE_TRANSIENT : sqlite3_free,
                           SQLITE_UTF8);
@@ -355,7 +383,7 @@ static void jsonResult(Json *p){
 /* Make the JSONB in p the result of the SQL function.
 */
 static void jsonbResult(Json *p){
-  if( p->mallocFailed==0 ){
+  if( p->oom==0 ){
     sqlite3_result_blob(p->pCtx, p->zBuf, p->nUsed, 
                         p->bStatic ? SQLITE_TRANSIENT : sqlite3_free);
     jsonZero(p);
@@ -428,7 +456,7 @@ static void jsonbArrayFunc(
   for(i=0; i<argc; i++){
     switch( sqlite3_value_type(argv[i]) ){
       case SQLITE_NULL: {
-        jsonAppendVarint(&jx, JSONB_NULL);
+        jsonAppendVarint(&jx, JSON_NULL);
         break;
       }
       case SQLITE_INTEGER:
@@ -441,7 +469,7 @@ static void jsonbArrayFunc(
       case SQLITE_TEXT: {
         const char *z = (const char*)sqlite3_value_text(argv[i]);
         u32 n = (u32)sqlite3_value_bytes(argv[i]);
-        jsonAppendVarint(&jx, JSONB_STRING + 4*(u64)n);
+        jsonAppendVarint(&jx, JSON_STRING + 4*(u64)n);
         jsonAppendString(&jx, z, n);
         break;
       }
@@ -452,7 +480,7 @@ static void jsonbArrayFunc(
       }
     }
   }
-  if( jx.mallocFailed==0 ){
+  if( jx.oom==0 ){
     jx.zBuf[0] = 251;
     jsonPutInt32((unsigned char*)(jx.zBuf+1), jx.nUsed-5);
     jsonbResult(&jx);
@@ -522,6 +550,243 @@ static void jsonObjectFunc(
   jsonResult(&jx);
 }
 
+/*
+** Create a new JsonNode instance based on the arguments and append that
+** instance to the JsonParse.  Return the index in pParse->aNode[] of the
+** new node, or -1 if a memory allocation fails.
+*/
+static int jsonParseAddNode(
+  JsonParse *pParse,        /* Append the node to this object */
+  u32 eType,                /* Node type */
+  u32 n,                    /* Content size or sub-node count */
+  const char *zContent      /* Content */
+){
+  JsonNode *p;
+  if( pParse->nNode>=pParse->nAlloc ){
+    u32 nNew;
+    JsonNode *pNew;
+    if( pParse->oom ) return -1;
+    nNew = pParse->nAlloc*2 + 10;
+    if( nNew<=pParse->nNode ){
+      pParse->oom = 1;
+      return -1;
+    }
+    pNew = sqlite3_realloc(pParse->aNode, sizeof(JsonNode)*nNew);
+    if( pNew==0 ){
+      pParse->oom = 1;
+      return -1;
+    }
+    pParse->nAlloc = nNew;
+    pParse->aNode = pNew;
+  }
+  p = &pParse->aNode[pParse->nNode];
+  p->eType = eType;
+  p->n = n;
+  p->zContent = zContent;
+  return pParse->nNode++;
+}
+
+/*
+** Parse a single JSON value which begins at pParse->zJson[i].  Return the
+** index of the first character past the end of the value parsed.
+**
+** Return negative for a syntax error.  Special cases:  return -2 if the
+** first non-whitespace character is '}' and return -3 if the first
+** non-whitespace character is ']'.
+*/
+static int jsonParseValue(JsonParse *pParse, u32 i){
+  char c;
+  u32 j;
+  u32 iThis;
+  int x;
+  while( isspace(pParse->zJson[i]) ){ i++; }
+  if( (c = pParse->zJson[i])==0 ) return 0;
+  if( c=='{' ){
+    /* Parse object */
+    iThis = jsonParseAddNode(pParse, JSON_OBJECT, 0, 0);
+    if( iThis<0 ) return -1;
+    for(j=i+1;;j++){
+      while( isspace(pParse->zJson[j]) ){ j++; }
+      x = jsonParseValue(pParse, j);
+      if( x<0 ){
+        if( x==(-2) && pParse->nNode==iThis+1 ) return j+1;
+        return -1;
+      }
+      if( pParse->aNode[pParse->nNode-1].eType!=JSON_STRING ) return -1;
+      j = x;
+      while( isspace(pParse->zJson[j]) ){ j++; }
+      if( pParse->zJson[j]!=':' ) return -1;
+      j++;
+      x = jsonParseValue(pParse, j);
+      if( x<0 ) return -1;
+      j = x;
+      while( isspace(pParse->zJson[j]) ){ j++; }
+      c = pParse->zJson[j];
+      if( c==',' ) continue;
+      if( c!='}' ) return -1;
+      break;
+    }
+    pParse->aNode[iThis].n = pParse->nNode - iThis - 1;
+    return j+1;
+  }else if( c=='[' ){
+    /* Parse array */
+    iThis = jsonParseAddNode(pParse, JSON_ARRAY, 0, 0);
+    if( iThis<0 ) return -1;
+    for(j=i+1;;j++){
+      while( isspace(pParse->zJson[j]) ){ j++; }
+      x = jsonParseValue(pParse, j);
+      if( x<0 ){
+        if( x==(-3) && pParse->nNode==iThis+1 ) return j+1;
+        return -1;
+      }
+      j = x;
+      while( isspace(pParse->zJson[j]) ){ j++; }
+      c = pParse->zJson[j];
+      if( c==',' ) continue;
+      if( c!=']' ) return -1;
+      break;
+    }
+    pParse->aNode[iThis].n = pParse->nNode - iThis - 1;
+    return j+1;
+  }else if( c=='"' ){
+    /* Parse string */
+    j = i+1;
+    for(;;){
+      c = pParse->zJson[j];
+      if( c==0 ) return -1;
+      if( c=='\\' ){
+        c = pParse->zJson[++j];
+        if( c==0 ) return -1;
+      }else if( c=='"' ){
+        break;
+      }
+      j++;
+    }
+    jsonParseAddNode(pParse, JSON_STRING, j+1-i, &pParse->zJson[i]);
+    return j+1;
+  }else if( c=='n'
+         && strncmp(pParse->zJson+i,"null",4)==0
+         && !isalnum(pParse->zJson[i+5]) ){
+    jsonParseAddNode(pParse, JSON_NULL, 0, 0);
+    return i+4;
+  }else if( c=='t'
+         && strncmp(pParse->zJson+i,"true",4)==0
+         && !isalnum(pParse->zJson[i+5]) ){
+    jsonParseAddNode(pParse, JSON_TRUE, 0, 0);
+    return i+4;
+  }else if( c=='f'
+         && strncmp(pParse->zJson+i,"false",5)==0
+         && !isalnum(pParse->zJson[i+6]) ){
+    jsonParseAddNode(pParse, JSON_FALSE, 0, 0);
+    return i+5;
+  }else if( c=='-' || (c>='0' && c<='9') ){
+    /* Parse number */
+    u8 seenDP = 0;
+    u8 seenE = 0;
+    j = i+1;
+    for(;; j++){
+      c = pParse->zJson[j];
+      if( c>='0' && c<='9' ) continue;
+      if( c=='.' ){
+        if( pParse->zJson[j-1]=='-' ) return -1;
+        if( seenDP ) return -1;
+        seenDP = 1;
+        continue;
+      }
+      if( c=='e' || c=='E' ){
+        if( pParse->zJson[j-1]<'0' ) return -1;
+        if( seenE ) return -1;
+        seenDP = seenE = 1;
+        c = pParse->zJson[j+1];
+        if( c=='+' || c=='-' ) j++;
+        continue;
+      }
+      break;
+    }
+    if( pParse->zJson[j-1]<'0' ) return -1;
+    jsonParseAddNode(pParse, seenDP ? JSON_REAL : JSON_INT,
+                        j - i, &pParse->zJson[i]);
+    return j;
+  }else if( c=='}' ){
+    return -2;  /* End of {...} */
+  }else if( c==']' ){
+    return -3;  /* End of [...] */
+  }else{
+    return -1;  /* Syntax error */
+  }
+}
+
+/*
+** Parse a complete JSON string.  Return 0 on success or non-zero if there
+** are any errors.  If an error occurs, free all memory associated with
+** pParse.
+**
+** pParse is uninitialized when this routine is called.
+*/
+static int jsonParse(JsonParse *pParse, const char *zJson){
+  int i;
+  if( zJson==0 ) return 1;
+  memset(pParse, 0, sizeof(*pParse));
+  pParse->zJson = zJson;
+  i = jsonParseValue(pParse, 0);
+  if( i>0 ){
+    while( isspace(zJson[i]) ) i++;
+    if( zJson[i] ) i = -1;
+  }
+  if( i<0 ){
+    sqlite3_free(pParse->aNode);
+    pParse->aNode = 0;
+    pParse->nNode = 0;
+    pParse->nAlloc = 0;
+    return 1;
+  }
+  return 0;
+}
+
+/*
+** The json_debug(JSON) function returns a string which describes
+** a parse of the JSON provided.  Or it returns NULL if JSON is not
+** well-formed.
+*/
+static void jsonDebugFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  Json s;       /* Output string - not real JSON */
+  JsonParse x;  /* The parse */
+  u32 i;
+  char zBuf[50];
+  static const char *azType[] = {
+    "NULL", "TRUE", "FALSE", "INT", "REAL", "STRING", "ARRAY", "OBJECT"
+  };
+
+  assert( argc==1 );
+  if( jsonParse(&x, (const char*)sqlite3_value_text(argv[0])) ) return;
+  jsonInit(&s, context);
+  for(i=0; i<x.nNode; i++){
+    sqlite3_snprintf(sizeof(zBuf), zBuf, "node %u:\n", i);
+    jsonAppend(&s, zBuf);
+    sqlite3_snprintf(sizeof(zBuf), zBuf, "  type: %s\n",
+                     azType[x.aNode[i].eType]);
+    jsonAppend(&s, zBuf);
+    if( x.aNode[i].eType>=JSON_INT ){
+      sqlite3_snprintf(sizeof(zBuf), zBuf, "     n: %u\n", x.aNode[i].n);
+      jsonAppend(&s, zBuf);
+    }
+    if( x.aNode[i].zContent!=0 ){
+      sqlite3_snprintf(sizeof(zBuf), zBuf, "  ofst: %u\n",
+                       (u32)(x.aNode[i].zContent - x.zJson));
+      jsonAppend(&s, zBuf);
+      jsonAppendRaw(&s, "  text: ", 8);
+      jsonAppendRaw(&s, x.aNode[i].zContent, x.aNode[i].n);
+      jsonAppendRaw(&s, "\n", 1);
+    }
+  }
+  sqlite3_free(x.aNode);
+  jsonResult(&s);
+}
+
 #ifdef _WIN32
 __declspec(dllexport)
 #endif
@@ -540,6 +805,7 @@ int sqlite3_json_init(
     { "json_array",     -1,    jsonArrayFunc     },
     { "jsonb_array",    -1,    jsonbArrayFunc    },
     { "json_object",    -1,    jsonObjectFunc    },
+    { "json_debug",      1,    jsonDebugFunc     },
   };
   SQLITE_EXTENSION_INIT2(pApi);
   (void)pzErrMsg;  /* Unused parameter */

@@ -1,5 +1,5 @@
-C Experimental\scode\s(untested)\sfor\sa\sJSONB\sdatatype.
-D 2015-08-13T13:54:59.587
+C Add\sa\sprototype\sJSON\sparser.
+D 2015-08-15T21:25:37.000
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7669f34c487f5b328de6b508f374ee1e56558bb0
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -192,7 +192,7 @@ F ext/misc/eval.c f971962e92ebb8b0a4e6b62949463ee454d88fa2
 F ext/misc/fileio.c d4171c815d6543a9edef8308aab2951413cd8d0f
 F ext/misc/fuzzer.c 4c84635c71c26cfa7c2e5848cf49fe2d2cfcd767
 F ext/misc/ieee754.c b0362167289170627659e84173f5d2e8fee8566e
-F ext/misc/json.c 748c5bffa8840f1b0bdc4b5ff672949c31c7f436
+F ext/misc/json.c f4fa58cb8c6a7e13ae9a357e8c5783f43c60f595
 F ext/misc/nextchar.c 35c8b8baacb96d92abbb34a83a997b797075b342
 F ext/misc/percentile.c bcbee3c061b884eccb80e21651daaae8e1e43c63
 F ext/misc/regexp.c af92cdaa5058fcec1451e49becc7ba44dba023dc
@@ -1374,7 +1374,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 414a95f3b79359f167858b2325fd2be223569c66
-R 45e5df2bce81d8e555551bffb25d0cb6
+P e3596ac7b1dd5bde3f9cae5781a6806d8d9f7166
+R 45c6bd1bef56b998d07e7b3125f794b3
 U drh
-Z 62911abad9701038f8848b5004ef4c38
+Z e2e8ec51bb6080feb16e3eda35039c7d
