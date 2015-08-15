@@ -666,17 +666,17 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
     return j+1;
   }else if( c=='n'
          && strncmp(pParse->zJson+i,"null",4)==0
-         && !isalnum(pParse->zJson[i+5]) ){
+         && !isalnum(pParse->zJson[i+4]) ){
     jsonParseAddNode(pParse, JSON_NULL, 0, 0);
     return i+4;
   }else if( c=='t'
          && strncmp(pParse->zJson+i,"true",4)==0
-         && !isalnum(pParse->zJson[i+5]) ){
+         && !isalnum(pParse->zJson[i+4]) ){
     jsonParseAddNode(pParse, JSON_TRUE, 0, 0);
     return i+4;
   }else if( c=='f'
          && strncmp(pParse->zJson+i,"false",5)==0
-         && !isalnum(pParse->zJson[i+6]) ){
+         && !isalnum(pParse->zJson[i+5]) ){
     jsonParseAddNode(pParse, JSON_FALSE, 0, 0);
     return i+5;
   }else if( c=='-' || (c>='0' && c<='9') ){
