@@ -1090,25 +1090,22 @@ static int displayComment(
 ** that can be displayed in the P4 column of EXPLAIN output.
 */
 static int displayP4Expr(int nTemp, char *zTemp, Expr *pExpr){
-  const char *zBinOp = 0;
+  const char *zOp = 0;
+  int n;
   switch( pExpr->op ){
     case TK_STRING:
       sqlite3_snprintf(nTemp, zTemp, "%Q", pExpr->u.zToken);
       break;
-
     case TK_INTEGER:
       sqlite3_snprintf(nTemp, zTemp, "%d", pExpr->u.iValue);
       break;
-
     case TK_NULL:
       sqlite3_snprintf(nTemp, zTemp, "NULL");
       break;
-
     case TK_REGISTER: {
       sqlite3_snprintf(nTemp, zTemp, "r[%d]", pExpr->iTable);
       break;
     }
-
     case TK_COLUMN: {
       if( pExpr->iColumn<0 ){
         sqlite3_snprintf(nTemp, zTemp, "rowid");
@@ -1117,43 +1114,48 @@ static int displayP4Expr(int nTemp, char *zTemp, Expr *pExpr){
       }
       break;
     }
-
-    case TK_LT:      zBinOp = "<";        break;
-    case TK_LE:      zBinOp = "<=";       break;
-    case TK_GT:      zBinOp = ">";        break;
-    case TK_GE:      zBinOp = ">=";       break;
-    case TK_NE:      zBinOp = "!=";       break;
-    case TK_EQ:      zBinOp = "==";       break;
-    case TK_IS:      zBinOp = " IS ";     break;
-    case TK_ISNOT:   zBinOp = " IS NOT "; break;
-    case TK_AND:     zBinOp = " AND ";    break;
-    case TK_OR:      zBinOp = " OR ";     break;
-    case TK_PLUS:    zBinOp = "+";        break;
-    case TK_STAR:    zBinOp = "*";        break;
-    case TK_MINUS:   zBinOp = "-";        break;
-    case TK_REM:     zBinOp = "%";        break;
-    case TK_BITAND:  zBinOp = "&";        break;
-    case TK_BITOR:   zBinOp = "|";        break;
-    case TK_SLASH:   zBinOp = "/";        break;
-    case TK_LSHIFT:  zBinOp = "<<";       break;
-    case TK_RSHIFT:  zBinOp = ">>";       break;
-    case TK_CONCAT:  zBinOp = "||";       break;
+    case TK_LT:      zOp = "LT";      break;
+    case TK_LE:      zOp = "LE";      break;
+    case TK_GT:      zOp = "GT";      break;
+    case TK_GE:      zOp = "GE";      break;
+    case TK_NE:      zOp = "NE";      break;
+    case TK_EQ:      zOp = "EQ";      break;
+    case TK_IS:      zOp = "IS";      break;
+    case TK_ISNOT:   zOp = "ISNOT";   break;
+    case TK_AND:     zOp = "AND";     break;
+    case TK_OR:      zOp = "OR";      break;
+    case TK_PLUS:    zOp = "ADD";     break;
+    case TK_STAR:    zOp = "MUL";     break;
+    case TK_MINUS:   zOp = "SUB";     break;
+    case TK_REM:     zOp = "REM";     break;
+    case TK_BITAND:  zOp = "BITAND";  break;
+    case TK_BITOR:   zOp = "BITOR";   break;
+    case TK_SLASH:   zOp = "DIV";     break;
+    case TK_LSHIFT:  zOp = "LSHIFT";  break;
+    case TK_RSHIFT:  zOp = "RSHIFT";  break;
+    case TK_CONCAT:  zOp = "CONCAT";  break;
+    case TK_UMINUS:  zOp = "MINUS";   break;
+    case TK_UPLUS:   zOp = "PLUS";    break;
+    case TK_BITNOT:  zOp = "BITNOT";  break;
+    case TK_NOT:     zOp = "NOT";     break;
+    case TK_ISNULL:  zOp = "ISNULL";  break;
+    case TK_NOTNULL: zOp = "NOTNULL"; break;
 
     default:
       sqlite3_snprintf(nTemp, zTemp, "%s", "expr");
       break;
   }
 
-  if( zBinOp && nTemp>5 ){
-    int n = 1;
-    zTemp[0] = '(';
+  if( zOp ){
+    sqlite3_snprintf(nTemp, zTemp, "%s(", zOp);
+    n = sqlite3Strlen30(zTemp);
     n += displayP4Expr(nTemp-n, zTemp+n, pExpr->pLeft);
-    sqlite3_snprintf(nTemp-n, zTemp+n, "%s", zBinOp);
-    n += sqlite3Strlen30(zTemp+n);
-    n += displayP4Expr(nTemp-n, zTemp+n, pExpr->pRight);
+    if( n<nTemp-1 && pExpr->pRight ){
+      zTemp[n++] = ',';
+      n += displayP4Expr(nTemp-n, zTemp+n, pExpr->pRight);
+    }
     sqlite3_snprintf(nTemp-n, zTemp+n, ")");
   }
-
   return sqlite3Strlen30(zTemp);
 }
 #endif /* VDBE_DISPLAY_P4 && defined(SQLITE_ENABLE_CURSOR_HINTS) */

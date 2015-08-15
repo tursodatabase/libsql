@@ -1,5 +1,5 @@
-C Always\sprovide\sthe\sBTREE_BULKLOAD\shint,\seven\swhen\sSQLITE_ENABLE_CURSOR_HINTS\nis\snot\sdefined,\sas\sthat\shint\sgives\sa\s4%\sperformance\sincrease.
-D 2015-08-14T23:57:04.215
+C Change\sthe\sdisplay\sof\sthe\sP4\soperand\sof\sCursorHint\sin\sEXPLAIN\soutput\sto\nfunction\snotation.
+D 2015-08-15T00:51:23.737
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2fc9ca6bf5949d415801c007ed3004a4bdb7c380
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -402,7 +402,7 @@ F src/vdbe.c 4dbcceb38f5c3e42c0725a56e7c76eb12adedebb
 F src/vdbe.h 529bb4a7bedcd28dccba5abb3927e3c5cb70a832
 F src/vdbeInt.h 7258d75fc2dad0bccdef14d7d8d2fd50fd1bf2d2
 F src/vdbeapi.c adabbd66eb2e3a10f3998485ee0be7e326d06ee4
-F src/vdbeaux.c 9f726265d3c4a64264c9aa80d35aa19c51a3c6f4
+F src/vdbeaux.c e8dbcc838ca29f0d2767e789f4fe5883541e4f6e
 F src/vdbeblob.c 4f2e8e075d238392df98c5e03a64342465b03f90
 F src/vdbemem.c ae38a0d35ae71cf604381a887c170466ba518090
 F src/vdbesort.c f5009e7a35e3065635d8918b9a31f498a499976b
@@ -560,7 +560,7 @@ F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/createtab.test b5de160630b209c4b8925bdcbbaf48cc90b67fe8
 F test/cse.test 277350a26264495e86b1785f34d2d0c8600e021c
 F test/ctime.test 7bd009071e242aac4f18521581536b652b789a47
-F test/cursorhint.test c3844bed3eec3506b38b98ab5f0ca22a4ab9ecb4
+F test/cursorhint.test 0d79cce943e4e61910d9a5cf73b1e57b2b42429f
 F test/date.test 42973251b9429f2c41b77eb98a7b0b0ba2d3b2c0
 F test/dbstatus.test 8de104bb5606f19537d23cd553b41349b5ab1204
 F test/dbstatus2.test 10418e62b3db5dca070f0c3eef3ea13946f339c2
@@ -1374,7 +1374,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P bf383e665a191a4f33a540d1240960a922e22813
-R 87aadf49a7545642a0a9fb9a1d94cce7
+P 83a844357e132683ab3d88eee0fe32a8beeb6662
+R 64f1f656f75dd3e1a8b619dc73ce4cbc
 U drh
-Z 44853a09e3a1d8da8995535278d599e8
+Z 780f279750b73ad9a07ce3a651ba66ad
