@@ -115,6 +115,41 @@ foreach {tn sql} {
   do_execsql_test 1.7.$tn.2 ROLLBACK
 }
 
+#-------------------------------------------------------------------------
+# If an auto-vacuum database is written within an UNLOCKED transaction, it
+# is handled in the same way as for a non-UNLOCKED transaction.
+#
+reset_db
+do_execsql_test 1.8.1 {
+  PRAGMA auto_vacuum = 1;
+  PRAGMA journal_mode = wal;
+  CREATE TABLE t1(x, y);
+  INSERT INTO t1 VALUES('x', 'y');
+} {wal}
+
+do_execsql_test 1.8.2 {
+  BEGIN UNLOCKED;
+    SELECT * FROM t1;
+  COMMIT;
+} {x y}
+
+do_catchsql_test 1.8.3 {
+  BEGIN UNLOCKED;
+    INSERT INTO t1 VALUES('a', 'b');
+} {0 {}}
+
+do_test 1.8.4 {
+  sqlite3 db2 test.db
+  catchsql {
+    BEGIN UNLOCKED;
+      INSERT INTO t1 VALUES('c', 'd');
+  } db2
+} {1 {database is locked}}
+
+do_test 1.8.5 {
+  db eval COMMIT
+  db2 eval COMMIT
+} {}
 
 do_multiclient_test tn {
 

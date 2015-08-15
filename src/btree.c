@@ -3142,8 +3142,8 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag){
       if( (pBt->btsFlags & BTS_READ_ONLY)!=0 ){
         rc = SQLITE_READONLY;
       }else{
+        int exFlag = (p->db->bUnlocked && !ISAUTOVACUUM) ? -1 : (wrflag>1);
         int bSubjInMem = sqlite3TempInMemory(p->db);
-        int exFlag = p->db->bUnlocked ? -1 : (wrflag>1);
         assert( p->db->bUnlocked==0 || wrflag==1 );
         rc = sqlite3PagerBegin(pBt->pPager, exFlag, bSubjInMem);
         if( rc==SQLITE_OK ){

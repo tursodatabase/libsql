@@ -1,5 +1,5 @@
-C Only\sallow\sUNLOCKED\stransactions\sto\scommit\sif\snone\sof\sthe\spages\sread\sby\sthe\stransaction\shave\sbeen\smodified\ssince\sit\swas\sopened.
-D 2015-07-29T12:14:28.276
+C Handle\swrites\sto\sauto-vacuum\sdatabases\swithin\sUNLOCKED\stransactions\sin\sthe\ssame\sway\sas\sfor\snon-UNLOCKED\stransactions.
+D 2015-08-15T18:16:46.463
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4de3ef40c8b3b75c0c55ff4242a43c8ce1ad90ee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -270,7 +270,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 4d9134dc988a87838c06056c89c0e8c4700a0452
 F src/bitvec.c d1f21d7d91690747881f03940584f4cc548c9d3d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c 5087b0a1358abd1449165dd14d49962bc3ad9f44
+F src/btree.c c1bbc83539de1e749aa36ce9c283f95b50543bcb
 F src/btree.h 40bd41ef0b71d6f7502725dc159fa0d6bebd8bb3
 F src/btreeInt.h 2ad754dd4528baa8d0946a593cc373b890bf859e
 F src/build.c 28c15c43eefc0066ff64040526ff649c32fe5523
@@ -1215,7 +1215,7 @@ F test/types3.test 99e009491a54f4dc02c06bdbc0c5eea56ae3e25a
 F test/unique.test 93f8b2ef5ea51b9495f8d6493429b1fd0f465264
 F test/unique2.test 41e7f83c6827605991160a31380148a9fc5f1339
 F test/unixexcl.test cd6c765f75e50e8e2c2ba763149e5d340ea19825
-F test/unlocked.test 2da6645c3532985715d17dfcb240ef5f09c2e9d4
+F test/unlocked.test 644a84d7f032ca029d490f0b0bc8fb9f86c7a1a5
 F test/unordered.test ca7adce0419e4ca0c50f039885e76ed2c531eda8
 F test/update.test 6c68446b8a0a33d522a7c72b320934596a2d7d32
 F test/uri.test 23662b7b61958b0f0e47082de7d06341ccf85d5b
@@ -1367,7 +1367,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6da0e962ad2aa5e52c1f1b5c3dbf77a2cb16ac2d
-R 74dcd93afc2d7e4cc222b666276012ce
+P 0b9718426e44df092850c5d095ce1b84a1e567cf
+R ac1d3857424ab06ed70d671704c3737d
 U dan
-Z 3bd2cb4e2cf9d30cb919b0a0d11717fa
+Z 12da9addf6141c212c3c7cdffe33d767
