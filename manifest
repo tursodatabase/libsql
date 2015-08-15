@@ -1,5 +1,5 @@
-C Duplicate\sthe\soutput\sof\sreleasetest.tcl\sinto\sreleasetest-out.txt
-D 2015-08-14T12:53:37.201
+C Minor\sfix\sto\sthe\sdisplay\sof\soversized\sKeyInfo\sstructures\sin\sthe\sP4\soperand\nof\sOpen\sopcodes\sin\sEXPLAIN\soutput.
+D 2015-08-15T16:32:50.350
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2fc9ca6bf5949d415801c007ed3004a4bdb7c380
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -402,7 +402,7 @@ F src/vdbe.c 2ab1decd98925f8cd846993dde9dccaa69cdf0ef
 F src/vdbe.h 7a75045d879118b9d3af7e8b3c108f2f27c51473
 F src/vdbeInt.h 8b54e01ad0463590e7cffabce0bc36da9ee4f816
 F src/vdbeapi.c adabbd66eb2e3a10f3998485ee0be7e326d06ee4
-F src/vdbeaux.c 787f5f9d58f4c6f39294ed06909ba602d1a402e6
+F src/vdbeaux.c af2d86b2b114a106c94fc656503fc5c89594f5af
 F src/vdbeblob.c 4f2e8e075d238392df98c5e03a64342465b03f90
 F src/vdbemem.c ae38a0d35ae71cf604381a887c170466ba518090
 F src/vdbesort.c f5009e7a35e3065635d8918b9a31f498a499976b
@@ -1373,7 +1373,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 851a875ad6b81f90960caf4d03b116afc911858d
-R 516c4f09812f47621a9f17c1076f8b21
+P 5e06a9c186f4b7478c73155613de219d702e0241
+R e2d0516338dae0688a20852b1e6916a7
 U drh
-Z 7ae775e3576234c15153da91a23c9d24
+Z 80e45157bf277dcf2578e84040f9a7f0
