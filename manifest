@@ -1,5 +1,5 @@
-C Add\san\sinitial\simplementation\sfor\sjson_remove().
-D 2015-08-17T20:14:19.276
+C Initial\simplementation\sof\sjson_replace().
+D 2015-08-17T21:22:32.495
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7669f34c487f5b328de6b508f374ee1e56558bb0
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -192,7 +192,7 @@ F ext/misc/eval.c f971962e92ebb8b0a4e6b62949463ee454d88fa2
 F ext/misc/fileio.c d4171c815d6543a9edef8308aab2951413cd8d0f
 F ext/misc/fuzzer.c 4c84635c71c26cfa7c2e5848cf49fe2d2cfcd767
 F ext/misc/ieee754.c b0362167289170627659e84173f5d2e8fee8566e
-F ext/misc/json.c 30fd85ea1fba24031952aa0c635156cfd8ca02ea
+F ext/misc/json.c d96116de8aafdb117b99712b2a83144d86755350
 F ext/misc/nextchar.c 35c8b8baacb96d92abbb34a83a997b797075b342
 F ext/misc/percentile.c bcbee3c061b884eccb80e21651daaae8e1e43c63
 F ext/misc/regexp.c af92cdaa5058fcec1451e49becc7ba44dba023dc
@@ -1374,7 +1374,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 39983204515837e7bd574cf47918e493acc03d1f
-R 9ed2e57314d456e476aa0e6edd9d8c55
+P 2a8267209dbda36a37c1b5f65000b2f763c62341
+R f98c8d887493a196dac50851b7b4599f
 U drh
-Z 25ffed392c0fb3616f3b027e2b1bb1db
+Z 432e296535146c125ab741ef125c263a
