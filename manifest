@@ -1,5 +1,5 @@
-C Abandon\sthe\sJSONB\sformat\sfor\snow.\s\s(We\smay\sreturn\sto\sit\sin\sthe\sfuture.)\s\sAdd\na\sfunction\sto\srender\sa\sJSON\sparse.
-D 2015-08-17T11:28:03.070
+C Initial\simplementation\sfor\sjson_array_length(),\sjson_extract(),\sand\njson_type().
+D 2015-08-17T15:17:37.780
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 7669f34c487f5b328de6b508f374ee1e56558bb0
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -192,7 +192,7 @@ F ext/misc/eval.c f971962e92ebb8b0a4e6b62949463ee454d88fa2
 F ext/misc/fileio.c d4171c815d6543a9edef8308aab2951413cd8d0f
 F ext/misc/fuzzer.c 4c84635c71c26cfa7c2e5848cf49fe2d2cfcd767
 F ext/misc/ieee754.c b0362167289170627659e84173f5d2e8fee8566e
-F ext/misc/json.c fce2fee3ac62dd53cc502cf2673b2ee5947d702d
+F ext/misc/json.c f26cbaa8ba1e396b3bf1e29aa116abed2a27ef95
 F ext/misc/nextchar.c 35c8b8baacb96d92abbb34a83a997b797075b342
 F ext/misc/percentile.c bcbee3c061b884eccb80e21651daaae8e1e43c63
 F ext/misc/regexp.c af92cdaa5058fcec1451e49becc7ba44dba023dc
@@ -1374,7 +1374,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 42c15c1e36b5077646fef99028cf12e587a45023
-R 4717cf337d2cdc65a44f3f6bb72a9c97
+P 9703c0aa18ae43375af876474b818e504e1c10a5
+R cfeb418e7f67bb21a131fd01c852e6d6
 U drh
-Z 1ecceeb77cb551a38df879c773148819
+Z 903f29a5c61013c958dfe3ed9e5ebef0

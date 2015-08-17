@@ -24,6 +24,7 @@ SQLITE_EXTENSION_INIT1
 #include <assert.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdlib.h>
 
 /* Unsigned integer types */
 typedef sqlite3_uint64 u64;
@@ -56,12 +57,21 @@ struct Json {
 #define JSON_ARRAY    6
 #define JSON_OBJECT   7
 
+/*
+** Names of the various JSON types:
+*/
+static const char * const jsonType[] = {
+  "null", "true", "false", "integer", "real", "text", "array", "object"
+};
+
+
 /* A single node of parsed JSON
 */
 typedef struct JsonNode JsonNode;
 struct JsonNode {
   u8 eType;              /* One of the JSON_ type values */
   u8 bRaw;               /* Content is raw, rather than JSON encoded */
+  u8 bBackslash;         /* Formatted JSON_STRING contains \ escapes */
   u32 n;                 /* Bytes of content, or number of sub-nodes */
   const char *zJContent; /* JSON content */
 };
@@ -268,22 +278,89 @@ static void jsonReturn(JsonNode *pNode, sqlite3_context *pCtx){
       sqlite3_result_int(pCtx, 0);
       break;
     }
-
-    /* FIXME:  We really want to do text->numeric conversion on these.
-    ** Doing so would be easy if these were internal routines, but the
-    ** necessary interfaces are not exposed for doing it as a loadable
-    ** extension. */
-    case JSON_REAL:
-    case JSON_INT: {
-      sqlite3_result_text(pCtx, pNode->zJContent, pNode->n, SQLITE_TRANSIENT);
+    case JSON_REAL: {
+      double r = strtod(pNode->zJContent, 0);
+      sqlite3_result_double(pCtx, r);
       break;
     }
-
+    case JSON_INT: {
+      sqlite3_int64 i = 0;
+      const char *z = pNode->zJContent;
+      if( z[0]=='-' ){ z++; }
+      while( z[0]>='0' && z[0]<='9' ){ i = i*10 + *(z++) - '0'; }
+      if( pNode->zJContent[0]=='-' ){ i = -i; }
+      sqlite3_result_int64(pCtx, i);
+      break;
+    }
     case JSON_STRING: {
       if( pNode->bRaw ){
         sqlite3_result_text(pCtx, pNode->zJContent, pNode->n, SQLITE_TRANSIENT);
+      }else if( !pNode->bBackslash ){
+        /* JSON formatted without any backslash-escapes */
+        sqlite3_result_text(pCtx, pNode->zJContent+1, pNode->n-2,
+                            SQLITE_TRANSIENT);
       }else{
         /* Translate JSON formatted string into raw text */
+        u32 i;
+        u32 n = pNode->n;
+        const char *z = pNode->zJContent;
+        char *zOut;
+        u32 j;
+        zOut = sqlite3_malloc( n+1 );
+        if( zOut==0 ){
+          sqlite3_result_error_nomem(pCtx);
+          break;
+        }
+        for(i=1, j=0; i<n-1; i++){
+          char c = z[i];
+          if( c!='\\' && z[i+1] ){
+            zOut[j++] = c;
+          }else{
+            c = z[++i];
+            if( c=='u' && z[1] ){
+              u32 v = 0, k;
+              z++;
+              for(k=0; k<4 && z[k]; k++){
+                c = z[0];
+                if( c>='0' && c<='9' ) v = v*16 + c - '0';
+                else if( c>='A' && c<='F' ) v = v*16 + c - 'A' + 10;
+                else if( c>='a' && c<='f' ) v = v*16 + c - 'a' + 10;
+                else break;
+                z++;
+              }
+              if( v<=0x7f ){
+                zOut[j++] = v;
+              }else if( v<=0x7ff ){
+                zOut[j++] = 0xc0 | (v>>6);
+                zOut[j++] = 0x80 | (v&0x3f);
+              }else if( v<=0xffff ){
+                zOut[j++] = 0xe0 | (v>>12);
+                zOut[j++] = 0x80 | ((v>>6)&0x3f);
+                zOut[j++] = 0x80 | (v&0x3f);
+              }else if( v<=0x10ffff ){
+                zOut[j++] = 0xf0 | (v>>18);
+                zOut[j++] = 0x80 | ((v>>12)&0x3f);
+                zOut[j++] = 0x80 | ((v>>6)&0x3f);
+                zOut[j++] = 0x80 | (v&0x3f);
+              }
+            }else{
+              if( c=='b' ){
+                c = '\b';
+              }else if( c=='f' ){
+                c = '\f';
+              }else if( c=='n' ){
+                c = '\n';
+              }else if( c=='r' ){
+                c = '\r';
+              }else if( c=='t' ){
+                c = '\t';
+              }
+              zOut[j++] = c;
+            }
+          }
+        }
+        zOut[j] = 0;
+        sqlite3_result_text(pCtx, zOut, j, sqlite3_free);
       }
       break;
     }
@@ -296,116 +373,6 @@ static void jsonReturn(JsonNode *pNode, sqlite3_context *pCtx){
       break;
     }
   }
-}
-
-/*
-** Implementation of the json_array(VALUE,...) function.  Return a JSON
-** array that contains all values given in arguments.  Or if any argument
-** is a BLOB, throw an error.
-*/
-static void jsonArrayFunc(
-  sqlite3_context *context,
-  int argc,
-  sqlite3_value **argv
-){
-  int i;
-  Json jx;
-  char cSep = '[';
-
-  jsonInit(&jx, context);
-  for(i=0; i<argc; i++){
-    jsonAppendRaw(&jx, &cSep, 1);
-    cSep = ',';
-    switch( sqlite3_value_type(argv[i]) ){
-      case SQLITE_NULL: {
-        jsonAppendRaw(&jx, "null", 4);
-        break;
-      }
-      case SQLITE_INTEGER:
-      case SQLITE_FLOAT: {
-        const char *z = (const char*)sqlite3_value_text(argv[i]);
-        u32 n = (u32)sqlite3_value_bytes(argv[i]);
-        jsonAppendRaw(&jx, z, n);
-        break;
-      }
-      case SQLITE_TEXT: {
-        const char *z = (const char*)sqlite3_value_text(argv[i]);
-        u32 n = (u32)sqlite3_value_bytes(argv[i]);
-        jsonAppendString(&jx, z, n);
-        break;
-      }
-      default: {
-        jsonZero(&jx);
-        sqlite3_result_error(context, "JSON cannot hold BLOB values", -1);
-        return;
-      }
-    }
-  }
-  jsonAppendRaw(&jx, "]", 1);
-  jsonResult(&jx);
-}
-
-/*
-** Implementation of the json_object(NAME,VALUE,...) function.  Return a JSON
-** object that contains all name/value given in arguments.  Or if any name
-** is not a string or if any value is a BLOB, throw an error.
-*/
-static void jsonObjectFunc(
-  sqlite3_context *context,
-  int argc,
-  sqlite3_value **argv
-){
-  int i;
-  Json jx;
-  char cSep = '{';
-  const char *z;
-  u32 n;
-
-  if( argc&1 ){
-    sqlite3_result_error(context, "json_object() requires an even number "
-                                  "of arguments", -1);
-    return;
-  }
-  jsonInit(&jx, context);
-  for(i=0; i<argc; i+=2){
-    jsonAppendRaw(&jx, &cSep, 1);
-    cSep = ',';
-    if( sqlite3_value_type(argv[i])!=SQLITE_TEXT ){
-      sqlite3_result_error(context, "json_object() labels must be TEXT", -1);
-      jsonZero(&jx);
-      return;
-    }
-    z = (const char*)sqlite3_value_text(argv[i]);
-    n = (u32)sqlite3_value_bytes(argv[i]);
-    jsonAppendString(&jx, z, n);
-    jsonAppendRaw(&jx, ":", 1);
-    switch( sqlite3_value_type(argv[i+1]) ){
-      case SQLITE_NULL: {
-        jsonAppendRaw(&jx, "null", 4);
-        break;
-      }
-      case SQLITE_INTEGER:
-      case SQLITE_FLOAT: {
-        z = (const char*)sqlite3_value_text(argv[i+1]);
-        n = (u32)sqlite3_value_bytes(argv[i+1]);
-        jsonAppendRaw(&jx, z, n);
-        break;
-      }
-      case SQLITE_TEXT: {
-        z = (const char*)sqlite3_value_text(argv[i+1]);
-        n = (u32)sqlite3_value_bytes(argv[i+1]);
-        jsonAppendString(&jx, z, n);
-        break;
-      }
-      default: {
-        jsonZero(&jx);
-        sqlite3_result_error(context, "JSON cannot hold BLOB values", -1);
-        return;
-      }
-    }
-  }
-  jsonAppendRaw(&jx, "}", 1);
-  jsonResult(&jx);
 }
 
 /*
@@ -440,6 +407,7 @@ static int jsonParseAddNode(
   p = &pParse->aNode[pParse->nNode];
   p->eType = (u8)eType;
   p->bRaw = 0;
+  p->bBackslash = 0;
   p->n = n;
   p->zJContent = zContent;
   return pParse->nNode++;
@@ -509,6 +477,7 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
     return j+1;
   }else if( c=='"' ){
     /* Parse string */
+    u8 bBackslash = 0;
     j = i+1;
     for(;;){
       c = pParse->zJson[j];
@@ -516,12 +485,14 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
       if( c=='\\' ){
         c = pParse->zJson[++j];
         if( c==0 ) return -1;
+        bBackslash = 1;
       }else if( c=='"' ){
         break;
       }
       j++;
     }
     jsonParseAddNode(pParse, JSON_STRING, j+1-i, &pParse->zJson[i]);
+    if( bBackslash ) pParse->aNode[pParse->nNode-1].bBackslash = 1;
     return j+1;
   }else if( c=='n'
          && strncmp(pParse->zJson+i,"null",4)==0
@@ -601,6 +572,60 @@ static int jsonParse(JsonParse *pParse, const char *zJson){
   }
   return 0;
 }
+/*
+** Search along zPath to find the node specified.  Return a pointer
+** to that node, or NULL if zPath is malformed or if there is no such
+** node.
+*/
+static JsonNode *jsonLookup(JsonNode *pRoot, const char *zPath){
+  u32 i, j;
+  if( zPath[0]==0 ) return pRoot;
+  if( zPath[0]=='.' ){
+    if( pRoot->eType!=JSON_OBJECT ) return 0;
+    zPath++;
+    for(i=0; isalnum(zPath[i]); i++){}
+    if( i==0 ) return 0;
+    j = 1;
+    while( j<=pRoot->n ){
+      if( pRoot[j].n==i+2
+       && strncmp(&pRoot[j].zJContent[1],zPath,i)==0
+      ){
+        return jsonLookup(&pRoot[j+1], &zPath[i]);
+      }
+      j++;
+      if( pRoot[j].eType==JSON_ARRAY || pRoot[j].eType==JSON_OBJECT ){
+        j += pRoot[j].n;
+      }
+      j++;
+    }
+  }else if( zPath[0]=='[' && isdigit(zPath[1]) ){
+    if( pRoot->eType!=JSON_ARRAY ) return 0;
+    i = 0;
+    zPath++;
+    while( isdigit(zPath[0]) ){
+      i = i + zPath[0] - '0';
+      zPath++;
+    }
+    if( zPath[0]!=']' ) return 0;
+    zPath++;
+    j = 1;
+    while( i>0 && j<=pRoot->n ){
+      if( pRoot[j].eType==JSON_ARRAY || pRoot[j].eType==JSON_OBJECT ){
+        j += pRoot[j].n;
+      }
+      j++;
+      i--;
+    }
+    if( j<=pRoot->n ){
+      return jsonLookup(&pRoot[j], zPath);
+    }
+  }
+  return 0;
+}
+
+/****************************************************************************
+** SQL functions used for testing and debugging
+****************************************************************************/
 
 /*
 ** The json_parse(JSON) function returns a string which describes
@@ -616,9 +641,6 @@ static void jsonParseFunc(
   JsonParse x;  /* The parse */
   u32 i;
   char zBuf[50];
-  static const char *azType[] = {
-    "NULL", "TRUE", "FALSE", "INT", "REAL", "STRING", "ARRAY", "OBJECT"
-  };
 
   assert( argc==1 );
   if( jsonParse(&x, (const char*)sqlite3_value_text(argv[0])) ) return;
@@ -627,7 +649,7 @@ static void jsonParseFunc(
     sqlite3_snprintf(sizeof(zBuf), zBuf, "node %u:\n", i);
     jsonAppend(&s, zBuf);
     sqlite3_snprintf(sizeof(zBuf), zBuf, "  type: %s\n",
-                     azType[x.aNode[i].eType]);
+                     jsonType[x.aNode[i].eType]);
     jsonAppend(&s, zBuf);
     if( x.aNode[i].eType>=JSON_INT ){
       sqlite3_snprintf(sizeof(zBuf), zBuf, "     n: %u\n", x.aNode[i].n);
@@ -675,6 +697,222 @@ static void jsonNodeCountFunc(
   sqlite3_free(x.aNode);
 }
 
+/****************************************************************************
+** SQL function implementations
+****************************************************************************/
+
+/*
+** Implementation of the json_array(VALUE,...) function.  Return a JSON
+** array that contains all values given in arguments.  Or if any argument
+** is a BLOB, throw an error.
+*/
+static void jsonArrayFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  int i;
+  Json jx;
+  char cSep = '[';
+
+  jsonInit(&jx, context);
+  for(i=0; i<argc; i++){
+    jsonAppendRaw(&jx, &cSep, 1);
+    cSep = ',';
+    switch( sqlite3_value_type(argv[i]) ){
+      case SQLITE_NULL: {
+        jsonAppendRaw(&jx, "null", 4);
+        break;
+      }
+      case SQLITE_INTEGER:
+      case SQLITE_FLOAT: {
+        const char *z = (const char*)sqlite3_value_text(argv[i]);
+        u32 n = (u32)sqlite3_value_bytes(argv[i]);
+        jsonAppendRaw(&jx, z, n);
+        break;
+      }
+      case SQLITE_TEXT: {
+        const char *z = (const char*)sqlite3_value_text(argv[i]);
+        u32 n = (u32)sqlite3_value_bytes(argv[i]);
+        jsonAppendString(&jx, z, n);
+        break;
+      }
+      default: {
+        jsonZero(&jx);
+        sqlite3_result_error(context, "JSON cannot hold BLOB values", -1);
+        return;
+      }
+    }
+  }
+  jsonAppendRaw(&jx, "]", 1);
+  jsonResult(&jx);
+}
+
+
+/*
+** json_array_length(JSON)
+** json_array_length(JSON, PATH)
+**
+** Return the number of elements in the top-level JSON array.  
+** Return 0 if the input is not a well-formed JSON array.
+*/
+static void jsonArrayLengthFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  JsonParse x;          /* The parse */
+  sqlite3_int64 n = 0;
+  u32 i;
+  const char *zPath;
+
+  if( argc==2 ){
+    zPath = (const char*)sqlite3_value_text(argv[1]);
+    if( zPath==0 ) return;
+    if( zPath[0]!='$' ) return;
+    zPath++;
+  }else{
+    zPath = 0;
+  }
+  if( jsonParse(&x, (const char*)sqlite3_value_text(argv[0]))==0 ){
+    if( x.nNode ){
+      JsonNode *pNode = x.aNode;
+      if( zPath ) pNode = jsonLookup(pNode, zPath);
+      if( pNode->eType==JSON_ARRAY ){
+        for(i=1; i<=pNode->n; i++, n++){
+          if( pNode[i].eType==JSON_ARRAY || pNode[i].eType==JSON_OBJECT ){
+            i += pNode[i].n;
+          }
+        }
+      }
+    }
+    sqlite3_free(x.aNode);
+  }
+  sqlite3_result_int64(context, n);
+}
+
+/*
+** json_extract(JSON, PATH)
+**
+** Return the element described by PATH.  Return NULL if JSON is not
+** valid JSON or if there is no PATH element or if PATH is malformed.
+*/
+static void jsonExtractFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  JsonParse x;          /* The parse */
+  JsonNode *pNode;
+  const char *zPath;
+  assert( argc==2 );
+  zPath = (const char*)sqlite3_value_text(argv[1]);
+  if( zPath==0 ) return;
+  if( zPath[0]!='$' ) return;
+  zPath++;
+  if( jsonParse(&x, (const char*)sqlite3_value_text(argv[0])) ) return;
+  pNode = jsonLookup(x.aNode, zPath);
+  if( pNode ){
+    jsonReturn(pNode, context);
+  }
+  sqlite3_free(x.aNode);
+}
+
+/*
+** Implementation of the json_object(NAME,VALUE,...) function.  Return a JSON
+** object that contains all name/value given in arguments.  Or if any name
+** is not a string or if any value is a BLOB, throw an error.
+*/
+static void jsonObjectFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  int i;
+  Json jx;
+  char cSep = '{';
+  const char *z;
+  u32 n;
+
+  if( argc&1 ){
+    sqlite3_result_error(context, "json_object() requires an even number "
+                                  "of arguments", -1);
+    return;
+  }
+  jsonInit(&jx, context);
+  for(i=0; i<argc; i+=2){
+    jsonAppendRaw(&jx, &cSep, 1);
+    cSep = ',';
+    if( sqlite3_value_type(argv[i])!=SQLITE_TEXT ){
+      sqlite3_result_error(context, "json_object() labels must be TEXT", -1);
+      jsonZero(&jx);
+      return;
+    }
+    z = (const char*)sqlite3_value_text(argv[i]);
+    n = (u32)sqlite3_value_bytes(argv[i]);
+    jsonAppendString(&jx, z, n);
+    jsonAppendRaw(&jx, ":", 1);
+    switch( sqlite3_value_type(argv[i+1]) ){
+      case SQLITE_NULL: {
+        jsonAppendRaw(&jx, "null", 4);
+        break;
+      }
+      case SQLITE_INTEGER:
+      case SQLITE_FLOAT: {
+        z = (const char*)sqlite3_value_text(argv[i+1]);
+        n = (u32)sqlite3_value_bytes(argv[i+1]);
+        jsonAppendRaw(&jx, z, n);
+        break;
+      }
+      case SQLITE_TEXT: {
+        z = (const char*)sqlite3_value_text(argv[i+1]);
+        n = (u32)sqlite3_value_bytes(argv[i+1]);
+        jsonAppendString(&jx, z, n);
+        break;
+      }
+      default: {
+        jsonZero(&jx);
+        sqlite3_result_error(context, "JSON cannot hold BLOB values", -1);
+        return;
+      }
+    }
+  }
+  jsonAppendRaw(&jx, "}", 1);
+  jsonResult(&jx);
+}
+
+
+/*
+** json_type(JSON)
+** json_type(JSON, PATH)
+**
+** Return the top-level "type" of a JSON string.  Return NULL if the
+** input is not a well-formed JSON string.
+*/
+static void jsonTypeFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  JsonParse x;          /* The parse */
+  const char *zPath;
+
+  if( argc==2 ){
+    zPath = (const char*)sqlite3_value_text(argv[1]);
+    if( zPath==0 ) return;
+    if( zPath[0]!='$' ) return;
+    zPath++;
+  }else{
+    zPath = 0;
+  }
+  if( jsonParse(&x, (const char*)sqlite3_value_text(argv[0])) ) return;
+  if( x.nNode ){
+    JsonNode *pNode = x.aNode;
+    if( zPath ) pNode = jsonLookup(pNode, zPath);
+    sqlite3_result_text(context, jsonType[pNode->eType], -1, SQLITE_STATIC);
+  }
+  sqlite3_free(x.aNode);
+}
 
 #ifdef _WIN32
 __declspec(dllexport)
@@ -691,11 +929,18 @@ int sqlite3_json_init(
      int nArg;
      void (*xFunc)(sqlite3_context*,int,sqlite3_value**);
   } aFunc[] = {
-    { "json_array",     -1,    jsonArrayFunc     },
-    { "json_object",    -1,    jsonObjectFunc    },
-    { "json_parse",      1,    jsonParseFunc     },  /* DEBUG */
-    { "json_test1",      1,    jsonTest1Func     },  /* DEBUG */
-    { "json_nodecount",  1,    jsonNodeCountFunc },  /* DEBUG */
+    { "json_array",          -1,    jsonArrayFunc         },
+    { "json_array_length",    1,    jsonArrayLengthFunc   },
+    { "json_array_length",    2,    jsonArrayLengthFunc   },
+    { "json_extract",         2,    jsonExtractFunc       },
+    { "json_object",         -1,    jsonObjectFunc        },
+    { "json_type",            1,    jsonTypeFunc          },
+    { "json_type",            2,    jsonTypeFunc          },
+
+    /* DEBUG and TESTING functions */
+    { "json_parse",           1,    jsonParseFunc     },
+    { "json_test1",           1,    jsonTest1Func     },
+    { "json_nodecount",       1,    jsonNodeCountFunc },
   };
   SQLITE_EXTENSION_INIT2(pApi);
   (void)pzErrMsg;  /* Unused parameter */
