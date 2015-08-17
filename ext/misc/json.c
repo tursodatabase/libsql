@@ -15,63 +15,9 @@
 **
 **     https://dev.mysql.com/doc/refman/5.7/en/json.html
 **
-** JSON is pure text.  JSONB is a binary encoding that is smaller and easier
-** to parse but which holds the equivalent information.  Conversions between
-** JSON and JSONB are lossless.
-**
-** Most of the functions here will accept either JSON or JSONB input.  The
-** input is understood to be JSONB if it a BLOB and JSON if the input is
-** of any other type.  Functions that begin with the "json_" prefix return
-** JSON and functions that begin with "jsonb_" return JSONB.
-**
-** JSONB format:
-**
-** A JSONB blob is a sequence of terms.  Each term begins with a single
-** variable length integer X which determines the type and size of the term.
-**
-**      type = X%8
-**      size = X>>3
-**
-** Term types are 0 through 7 for null, true, false, integer, real, string,
-** array, and object.  The meaning of size depends on the type.
-**
-** For null, true, and false terms, the size is always 0.
-**
-** For integer terms, the size is the number of bytes that contains the
-** integer value.  The value is stored as big-endian twos-complement.
-**
-** For real terms, the size is always 8 and the value is a big-ending
-** double-precision floating-point number.
-**
-** For string terms, the size is the number of bytes in the string.  The
-** string itself immediately follows the X integer.  There are no escapes
-** and the string is not zero-terminated.  The string is always stored as
-** UTF8.
-**
-** For array terms, the size is the number of bytes in content.  The
-** content consists of zero or more additional terms that are the elements
-** of the array.
-**
-** For object terms, the size is the number of bytes of content.  The 
-** content is zero or more pairs of terms.  The first element of each
-** pair is a string term which is the label and the second element is
-** the value.
-**
-** Variable Length Integers:
-**
-** The variable length integer encoding is the 64-bit unsigned integer encoding
-** originally developed for SQLite4.  The encoding for each integer is between
-** 1 and 9 bytes.  Call those bytes A0 through A8.  The encoding is as follows:
-**
-**    If A0 is between 0 and 240 inclusive, then the value is A0.
-** 
-**    If A0 is between 241 and 248 inclusive, then the value is
-**    240+256*(A0-241)+A1.
-** 
-**    If A0 is 249 then the value is 2288+256*A1+A2.
-** 
-**    If A0 is 250 or more then the value is a (A0-247)-byte big-endian
-**    integer taken from starting at A1.
+** For the time being, all JSON is stored as pure text.  (We might add
+** a JSONB type in the future which stores a binary encoding of JSON in
+** a BLOB, but there is no support for JSONB in the current implementation.)
 */
 #include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT1
@@ -84,13 +30,14 @@ typedef sqlite3_uint64 u64;
 typedef unsigned int u32;
 typedef unsigned char u8;
 
-/* An instance of this object represents a JSON string or
-** JSONB blob under construction.
+/* An instance of this object represents a JSON string
+** under construction.  Really, this is a generic string accumulator
+** that can be and is used to create strings other than JSON.
 */
 typedef struct Json Json;
 struct Json {
   sqlite3_context *pCtx;   /* Function context - put error messages here */
-  char *zBuf;              /* Append JSON or JSONB content here */
+  char *zBuf;              /* Append JSON content here */
   u64 nAlloc;              /* Bytes of storage available in zBuf[] */
   u64 nUsed;               /* Bytes of zBuf[] currently used */
   u8 bStatic;              /* True if zBuf is static space */
@@ -113,9 +60,10 @@ struct Json {
 */
 typedef struct JsonNode JsonNode;
 struct JsonNode {
-  u32 eType;             /* One of the JSON_ type values */
+  u8 eType;              /* One of the JSON_ type values */
+  u8 bRaw;               /* Content is raw, rather than JSON encoded */
   u32 n;                 /* Bytes of content, or number of sub-nodes */
-  const char *zContent;  /* Content for JSON_INT, JSON_REAL, or JSON_STRING */
+  const char *zJContent; /* JSON content */
 };
 
 /* A completely parsed JSON string
@@ -128,63 +76,6 @@ struct JsonParse {
   const char *zJson; /* Original JSON string */
   u8 oom;            /* Set to true if out of memory */
 };
-
-
-#if 0
-/*
-** Decode the varint in the first n bytes z[].  Write the integer value
-** into *pResult and return the number of bytes in the varint.
-**
-** If the decode fails because there are not enough bytes in z[] then
-** return 0;
-*/
-static int jsonGetVarint64(
-  const unsigned char *z,
-  int n,
-  u64 *pResult
-){
-  unsigned int x;
-  if( n<1 ) return 0;
-  if( z[0]<=240 ){
-    *pResult = z[0];
-    return 1;
-  }
-  if( z[0]<=248 ){
-    if( n<2 ) return 0;
-    *pResult = (z[0]-241)*256 + z[1] + 240;
-    return 2;
-  }
-  if( n<z[0]-246 ) return 0;
-  if( z[0]==249 ){
-    *pResult = 2288 + 256*z[1] + z[2];
-    return 3;
-  }
-  if( z[0]==250 ){
-    *pResult = (z[1]<<16) + (z[2]<<8) + z[3];
-    return 4;
-  }
-  x = (z[1]<<24) + (z[2]<<16) + (z[3]<<8) + z[4];
-  if( z[0]==251 ){
-    *pResult = x;
-    return 5;
-  }
-  if( z[0]==252 ){
-    *pResult = (((u64)x)<<8) + z[5];
-    return 6;
-  }
-  if( z[0]==253 ){
-    *pResult = (((u64)x)<<16) + (z[5]<<8) + z[6];
-    return 7;
-  }
-  if( z[0]==254 ){
-    *pResult = (((u64)x)<<24) + (z[5]<<16) + (z[6]<<8) + z[7];
-    return 8;
-  }
-  *pResult = (((u64)x)<<32) +
-               (0xffffffff & ((z[5]<<24) + (z[6]<<16) + (z[7]<<8) + z[8]));
-  return 9;
-}
-#endif
 
 /* Set the Json object to an empty string
 */
@@ -263,6 +154,13 @@ static void jsonAppend(Json *p, const char *zIn){
   jsonAppendRaw(p, zIn, (u32)strlen(zIn));
 }
 
+/* Append a single character
+*/
+static void jsonAppendChar(Json *p, char c){
+  if( p->nUsed>=p->nAlloc && jsonGrow(p,1)!=0 ) return;
+  p->zBuf[p->nUsed++] = c;
+}
+
 /* Append the N-byte string in zIn to the end of the Json string
 ** under construction.  Enclose the string in "..." and escape
 ** any double-quotes or backslash characters contained within the
@@ -283,91 +181,6 @@ static void jsonAppendString(Json *p, const char *zIn, u32 N){
   p->zBuf[p->nUsed++] = '"';
 }
 
-/*
-** Write a 32-bit unsigned integer as 4 big-endian bytes.
-*/
-static void jsonPutInt32(unsigned char *z, unsigned int y){
-  z[0] = (unsigned char)(y>>24);
-  z[1] = (unsigned char)(y>>16);
-  z[2] = (unsigned char)(y>>8);
-  z[3] = (unsigned char)(y);
-}
-
-
-/* Write integer X as a variable-length integer into the buffer z[].
-** z[] is guaranteed to be at least 9 bytes in length.  Return the
-** number of bytes written.
-*/
-int jsonPutVarint64(char *zIn, u64 x){
-  unsigned char *z = (unsigned char*)zIn;
-  unsigned int w, y;
-  if( x<=240 ){
-    z[0] = (unsigned char)x;
-    return 1;
-  }
-  if( x<=2287 ){
-    y = (unsigned int)(x - 240);
-    z[0] = (unsigned char)(y/256 + 241);
-    z[1] = (unsigned char)(y%256);
-    return 2;
-  }
-  if( x<=67823 ){
-    y = (unsigned int)(x - 2288);
-    z[0] = 249;
-    z[1] = (unsigned char)(y/256);
-    z[2] = (unsigned char)(y%256);
-    return 3;
-  }
-  y = (unsigned int)x;
-  w = (unsigned int)(x>>32);
-  if( w==0 ){
-    if( y<=16777215 ){
-      z[0] = 250;
-      z[1] = (unsigned char)(y>>16);
-      z[2] = (unsigned char)(y>>8);
-      z[3] = (unsigned char)(y);
-      return 4;
-    }
-    z[0] = 251;
-    jsonPutInt32(z+1, y);
-    return 5;
-  }
-  if( w<=255 ){
-    z[0] = 252;
-    z[1] = (unsigned char)w;
-    jsonPutInt32(z+2, y);
-    return 6;
-  }
-  if( w<=65535 ){
-    z[0] = 253;
-    z[1] = (unsigned char)(w>>8);
-    z[2] = (unsigned char)w;
-    jsonPutInt32(z+3, y);
-    return 7;
-  }
-  if( w<=16777215 ){
-    z[0] = 254;
-    z[1] = (unsigned char)(w>>16);
-    z[2] = (unsigned char)(w>>8);
-    z[3] = (unsigned char)w;
-    jsonPutInt32(z+4, y);
-    return 8;
-  }
-  z[0] = 255;
-  jsonPutInt32(z+1, w);
-  jsonPutInt32(z+5, y);
-  return 9;
-}
-
-
-/* Append integer X as a variable-length integer on the JSONB currently
-** under construction in p.
-*/
-static void jsonAppendVarint(Json *p, u64 X){
-  if( (p->nUsed+9 > p->nAlloc) && jsonGrow(p,9)!=0 ) return;
-  p->nUsed += jsonPutVarint64(p->zBuf+p->nUsed, X);
-}
-
 /* Make the JSON in p the result of the SQL function.
 */
 static void jsonResult(Json *p){
@@ -380,15 +193,109 @@ static void jsonResult(Json *p){
   assert( p->bStatic );
 }
 
-/* Make the JSONB in p the result of the SQL function.
+/*
+** Convert the JsonNode pNode into a pure JSON string and
+** append to pOut.  Subsubstructure is also included.  Return
+** the number of JsonNode objects that are encoded.
 */
-static void jsonbResult(Json *p){
-  if( p->oom==0 ){
-    sqlite3_result_blob(p->pCtx, p->zBuf, p->nUsed, 
-                        p->bStatic ? SQLITE_TRANSIENT : sqlite3_free);
-    jsonZero(p);
+static int jsonRenderNode(JsonNode *pNode, Json *pOut){
+  u32 j = 0;
+  switch( pNode->eType ){
+    case JSON_NULL: {
+      jsonAppendRaw(pOut, "null", 4);
+      break;
+    }
+    case JSON_TRUE: {
+      jsonAppendRaw(pOut, "true", 4);
+      break;
+    }
+    case JSON_FALSE: {
+      jsonAppendRaw(pOut, "false", 5);
+      break;
+    }
+    case JSON_STRING: {
+      if( pNode->bRaw ){
+        jsonAppendString(pOut, pNode->zJContent, pNode->n);
+        break;
+      }
+      /* Fall through into the next case */
+    }
+    case JSON_REAL:
+    case JSON_INT: {
+      jsonAppendRaw(pOut, pNode->zJContent, pNode->n);
+      break;
+    }
+    case JSON_ARRAY: {
+      jsonAppendChar(pOut, '[');
+      j = 0;
+      while( j<pNode->n ){
+        if( j>0 ) jsonAppendChar(pOut, ',');
+        j += jsonRenderNode(&pNode[j+1], pOut);
+      }
+      jsonAppendChar(pOut, ']');
+      break;
+    }
+    case JSON_OBJECT: {
+      jsonAppendChar(pOut, '{');
+      j = 0;
+      while( j<pNode->n ){
+        if( j>0 ) jsonAppendChar(pOut, ',');
+        j += jsonRenderNode(&pNode[j+1], pOut);
+        jsonAppendChar(pOut, ':');
+        j += jsonRenderNode(&pNode[j+1], pOut);
+      }
+      jsonAppendChar(pOut, '}');
+      break;
+    }
   }
-  assert( p->bStatic );
+  return j+1;
+}
+
+/*
+** Make the JsonNode the return value of the function.
+*/
+static void jsonReturn(JsonNode *pNode, sqlite3_context *pCtx){
+  switch( pNode->eType ){
+    case JSON_NULL: {
+      sqlite3_result_null(pCtx);
+      break;
+    }
+    case JSON_TRUE: {
+      sqlite3_result_int(pCtx, 1);
+      break;
+    }
+    case JSON_FALSE: {
+      sqlite3_result_int(pCtx, 0);
+      break;
+    }
+
+    /* FIXME:  We really want to do text->numeric conversion on these.
+    ** Doing so would be easy if these were internal routines, but the
+    ** necessary interfaces are not exposed for doing it as a loadable
+    ** extension. */
+    case JSON_REAL:
+    case JSON_INT: {
+      sqlite3_result_text(pCtx, pNode->zJContent, pNode->n, SQLITE_TRANSIENT);
+      break;
+    }
+
+    case JSON_STRING: {
+      if( pNode->bRaw ){
+        sqlite3_result_text(pCtx, pNode->zJContent, pNode->n, SQLITE_TRANSIENT);
+      }else{
+        /* Translate JSON formatted string into raw text */
+      }
+      break;
+    }
+    case JSON_ARRAY:
+    case JSON_OBJECT: {
+      Json s;
+      jsonInit(&s, pCtx);
+      jsonRenderNode(pNode, &s);
+      jsonResult(&s);
+      break;
+    }
+  }
 }
 
 /*
@@ -436,55 +343,6 @@ static void jsonArrayFunc(
   }
   jsonAppendRaw(&jx, "]", 1);
   jsonResult(&jx);
-}
-
-/*
-** Implementation of the jsonb_array(VALUE,...) function.  Return a JSON
-** array that contains all values given in arguments.  Or if any argument
-** is a BLOB, throw an error.
-*/
-static void jsonbArrayFunc(
-  sqlite3_context *context,
-  int argc,
-  sqlite3_value **argv
-){
-  int i;
-  Json jx;
-
-  jsonInit(&jx, context);
-  jx.nUsed = 5;
-  for(i=0; i<argc; i++){
-    switch( sqlite3_value_type(argv[i]) ){
-      case SQLITE_NULL: {
-        jsonAppendVarint(&jx, JSON_NULL);
-        break;
-      }
-      case SQLITE_INTEGER:
-      case SQLITE_FLOAT: {
-        const char *z = (const char*)sqlite3_value_text(argv[i]);
-        u32 n = (u32)sqlite3_value_bytes(argv[i]);
-        jsonAppendRaw(&jx, z, n);
-        break;
-      }
-      case SQLITE_TEXT: {
-        const char *z = (const char*)sqlite3_value_text(argv[i]);
-        u32 n = (u32)sqlite3_value_bytes(argv[i]);
-        jsonAppendVarint(&jx, JSON_STRING + 4*(u64)n);
-        jsonAppendString(&jx, z, n);
-        break;
-      }
-      default: {
-        jsonZero(&jx);
-        sqlite3_result_error(context, "JSON cannot hold BLOB values", -1);
-        return;
-      }
-    }
-  }
-  if( jx.oom==0 ){
-    jx.zBuf[0] = 251;
-    jsonPutInt32((unsigned char*)(jx.zBuf+1), jx.nUsed-5);
-    jsonbResult(&jx);
-  }
 }
 
 /*
@@ -580,9 +438,10 @@ static int jsonParseAddNode(
     pParse->aNode = pNew;
   }
   p = &pParse->aNode[pParse->nNode];
-  p->eType = eType;
+  p->eType = (u8)eType;
+  p->bRaw = 0;
   p->n = n;
-  p->zContent = zContent;
+  p->zJContent = zContent;
   return pParse->nNode++;
 }
 
@@ -744,11 +603,11 @@ static int jsonParse(JsonParse *pParse, const char *zJson){
 }
 
 /*
-** The json_debug(JSON) function returns a string which describes
+** The json_parse(JSON) function returns a string which describes
 ** a parse of the JSON provided.  Or it returns NULL if JSON is not
 ** well-formed.
 */
-static void jsonDebugFunc(
+static void jsonParseFunc(
   sqlite3_context *context,
   int argc,
   sqlite3_value **argv
@@ -774,18 +633,48 @@ static void jsonDebugFunc(
       sqlite3_snprintf(sizeof(zBuf), zBuf, "     n: %u\n", x.aNode[i].n);
       jsonAppend(&s, zBuf);
     }
-    if( x.aNode[i].zContent!=0 ){
+    if( x.aNode[i].zJContent!=0 ){
       sqlite3_snprintf(sizeof(zBuf), zBuf, "  ofst: %u\n",
-                       (u32)(x.aNode[i].zContent - x.zJson));
+                       (u32)(x.aNode[i].zJContent - x.zJson));
       jsonAppend(&s, zBuf);
       jsonAppendRaw(&s, "  text: ", 8);
-      jsonAppendRaw(&s, x.aNode[i].zContent, x.aNode[i].n);
+      jsonAppendRaw(&s, x.aNode[i].zJContent, x.aNode[i].n);
       jsonAppendRaw(&s, "\n", 1);
     }
   }
   sqlite3_free(x.aNode);
   jsonResult(&s);
 }
+
+/*
+** The json_test1(JSON) function parses and rebuilds the JSON string.
+*/
+static void jsonTest1Func(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  JsonParse x;  /* The parse */
+  if( jsonParse(&x, (const char*)sqlite3_value_text(argv[0])) ) return;
+  jsonReturn(x.aNode, context);
+  sqlite3_free(x.aNode);
+}
+
+/*
+** The json_nodecount(JSON) function returns the number of nodes in the
+** input JSON string.
+*/
+static void jsonNodeCountFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  JsonParse x;  /* The parse */
+  if( jsonParse(&x, (const char*)sqlite3_value_text(argv[0])) ) return;
+  sqlite3_result_int64(context, x.nNode);
+  sqlite3_free(x.aNode);
+}
+
 
 #ifdef _WIN32
 __declspec(dllexport)
@@ -803,9 +692,10 @@ int sqlite3_json_init(
      void (*xFunc)(sqlite3_context*,int,sqlite3_value**);
   } aFunc[] = {
     { "json_array",     -1,    jsonArrayFunc     },
-    { "jsonb_array",    -1,    jsonbArrayFunc    },
     { "json_object",    -1,    jsonObjectFunc    },
-    { "json_debug",      1,    jsonDebugFunc     },
+    { "json_parse",      1,    jsonParseFunc     },  /* DEBUG */
+    { "json_test1",      1,    jsonTest1Func     },  /* DEBUG */
+    { "json_nodecount",  1,    jsonNodeCountFunc },  /* DEBUG */
   };
   SQLITE_EXTENSION_INIT2(pApi);
   (void)pzErrMsg;  /* Unused parameter */
