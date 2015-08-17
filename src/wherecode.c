@@ -669,8 +669,9 @@ static int codeCursorHintFixExpr(Walker *pWalker, Expr *pExpr){
 ** Insert an OP_CursorHint instruction if it is appropriate to do so.
 */
 static void codeCursorHint(
-  WhereInfo *pWInfo,
-  WhereLevel *pLevel
+  WhereInfo *pWInfo,    /* The where clause */
+  WhereLevel *pLevel,   /* Which loop to provide hints for */
+  WhereTerm *pEndRange  /* Hint this end-of-scan boundary term if not NULL */
 ){
   Parse *pParse = pWInfo->pParse;
   sqlite3 *db = pParse->db;
@@ -680,7 +681,8 @@ static void codeCursorHint(
   int iCur;
   WhereClause *pWC;
   WhereTerm *pTerm;
-  int i;
+  WhereLoop *pWLoop;
+  int i, j;
   struct CCurHint sHint;
   Walker sWalker;
 
@@ -694,18 +696,33 @@ static void codeCursorHint(
   sWalker.pParse = pParse;
   sWalker.u.pCCurHint = &sHint;
   pWC = &pWInfo->sWC;
+  pWLoop = pLevel->pWLoop;
   for(i=0; i<pWC->nTerm; i++){
     pTerm = &pWC->a[i];
     if( pTerm->wtFlags & (TERM_VIRTUAL|TERM_CODED) ) continue;
     if( pTerm->prereqAll & pLevel->notReady ) continue;
     if( ExprHasProperty(pTerm->pExpr, EP_FromJoin) ) continue;
+
+    /* All terms in pWLoop->aLTerm[] except pEndRange are used to initialize
+    ** the cursor.  No need to hint initialization terms. */
+    if( pTerm!=pEndRange ){
+      for(j=0; j<pWLoop->nLTerm && pWLoop->aLTerm[j]!=pTerm; j++){}
+      if( j<pWLoop->nLTerm ) continue;
+    }
+
+    /* No subqueries or non-deterministic functions allowed */
     if( sqlite3ExprContainsSubquery(pTerm->pExpr) ) continue;
+
+    /* For an index scan, make sure referenced columns are actually in
+    ** the index. */
     if( sHint.pIdx!=0 ){
       sWalker.eCode = 0;
       sWalker.xExprCallback = codeCursorHintCheckExpr;
       sqlite3WalkExpr(&sWalker, pTerm->pExpr);
       if( sWalker.eCode ) continue;
     }
+
+    /* If we survive all prior tests, that means this term is worth hinting */
     pExpr = sqlite3ExprAnd(db, pExpr, sqlite3ExprDup(db, pTerm->pExpr, 0));
   }
   if( pExpr!=0 ){
@@ -717,7 +734,7 @@ static void codeCursorHint(
   }
 }
 #else
-# define codeCursorHint(A,B)  /* No-op */
+# define codeCursorHint(A,B,C)  /* No-op */
 #endif /* SQLITE_ENABLE_CURSOR_HINTS */
 
 /*
@@ -883,7 +900,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       pStart = pEnd;
       pEnd = pTerm;
     }
-    codeCursorHint(pWInfo, pLevel);
+    codeCursorHint(pWInfo, pLevel, pEnd);
     if( pStart ){
       Expr *pX;             /* The expression that defines the start bound */
       int r1, rTemp;        /* Registers for holding the start boundary */
@@ -1106,7 +1123,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     start_constraints = pRangeStart || nEq>0;
 
     /* Seek the index cursor to the start of the range. */
-    codeCursorHint(pWInfo, pLevel);
+    codeCursorHint(pWInfo, pLevel, pRangeEnd);
     nConstraint = nEq;
     if( pRangeStart ){
       Expr *pRight = pRangeStart->pExpr->pRight;
@@ -1534,7 +1551,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       ** a pseudo-cursor.  No need to Rewind or Next such cursors. */
       pLevel->op = OP_Noop;
     }else{
-      codeCursorHint(pWInfo, pLevel);
+      codeCursorHint(pWInfo, pLevel, 0);
       pLevel->op = aStep[bRev];
       pLevel->p1 = iCur;
       pLevel->p2 = 1 + sqlite3VdbeAddOp2(v, aStart[bRev], iCur, addrBrk);

@@ -94,13 +94,18 @@ do_test 3.2 {
 
 # Indexed queries
 #
-do_test 4.1 {
+do_test 4.1asc {
   db eval {
     CREATE INDEX t1bc ON t1(b,c);
     CREATE INDEX t2yz ON t2(y,z);
   }
   p4_of_opcode db CursorHint {
-    SELECT * FROM t1 WHERE b>11;
+    SELECT * FROM t1 WHERE b>11 ORDER BY b ASC;
+  }
+} {}
+do_test 4.1desc {
+  p4_of_opcode db CursorHint {
+    SELECT * FROM t1 WHERE b>11 ORDER BY b DESC;
   }
 } {GT(c0,11)}
 do_test 4.2 {
@@ -108,16 +113,41 @@ do_test 4.2 {
     SELECT * FROM t1 WHERE b>11;
   }
 } {02 00}
-do_test 4.3 {
+do_test 4.3asc {
   p4_of_opcode db CursorHint {
-    SELECT c FROM t1 WHERE b>11;
+    SELECT c FROM t1 WHERE b<11 ORDER BY b ASC;
   }
-} {GT(c0,11)}
+} {LT(c0,11)}
+do_test 4.3desc {
+  p4_of_opcode db CursorHint {
+    SELECT c FROM t1 WHERE b<11 ORDER BY b DESC;
+  }
+} {}
 do_test 4.4 {
   p5_of_opcode db OpenRead . {
-    SELECT c FROM t1 WHERE b>11;
+    SELECT c FROM t1 WHERE b<11;
   }
 } {00}
 
+do_test 4.5asc {
+  p4_of_opcode db CursorHint {
+    SELECT c FROM t1 WHERE b>=10 AND b<=20 ORDER BY b ASC;
+  }
+} {LE(c0,20)}
+do_test 4.5desc {
+  p4_of_opcode db CursorHint {
+    SELECT c FROM t1 WHERE b>=10 AND b<=20 ORDER BY b DESC;
+  }
+} {GE(c0,10)}
+do_test 4.6asc {
+  p4_of_opcode db CursorHint {
+    SELECT rowid FROM t1 WHERE b=22 AND c>=10 AND c<=20 ORDER BY b,c ASC;
+  }
+} {LE(c1,20)}
+do_test 4.6desc {
+  p4_of_opcode db CursorHint {
+    SELECT rowid FROM t1 WHERE b=22 AND c>=10 AND c<=20 ORDER BY b,c DESC;
+  }
+} {GE(c1,10)}
 
 finish_test
