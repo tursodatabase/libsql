@@ -85,8 +85,8 @@ struct JsonNode {
   u8 iVal;               /* Replacement value when JNODE_REPLACE */
   u32 n;                 /* Bytes of content, or number of sub-nodes */
   union {
-    const char *zJContent; /* JSON content */
-    u32 iAppend;           /* Appended content */
+    const char *zJContent; /* Content for INT, REAL, and STRING */
+    u32 iAppend;           /* More terms for ARRAY and OBJECT */
   } u;
 };
 
