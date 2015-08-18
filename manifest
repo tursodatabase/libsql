@@ -1,5 +1,5 @@
-C Avoid\sgenerating\shints\susing\sconstraints\sthat\sare\salso\sused\sto\sinitialize\sthe\ncursor,\ssince\spresumably\sthe\scursor\salready\sknows\sabout\sthose\sconstraints.
-D 2015-08-17T17:19:28.483
+C Provide\shints\sfor\sall\sterms\sin\sa\srange\sconstraint\sif\sthere\sare\sany\sequality\nterms\sanywhere\sin\sthe\sconstraint.\s\sRange\sconstraint\sterms\sare\sonly\somitted\nfor\sa\spure\srange\sconstraint\swith\sno\sequality\sprefix.
+D 2015-08-18T15:58:05.895
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2fc9ca6bf5949d415801c007ed3004a4bdb7c380
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -414,7 +414,7 @@ F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
 F src/where.c ef95e56b6e7cdfa3ae0b6f72e3578391addfa965
 F src/whereInt.h 5f87e3c4b0551747d119730dfebddd3c54f04047
-F src/wherecode.c 148c5dc225551309f489a5c44b8a0f7800c9794b
+F src/wherecode.c ec90321e51bd13a0396f305403bc8ced2af7407e
 F src/whereexpr.c 9ce1c9cfedbf80c93c7d899497025ec8256ce652
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -560,7 +560,7 @@ F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/createtab.test b5de160630b209c4b8925bdcbbaf48cc90b67fe8
 F test/cse.test 277350a26264495e86b1785f34d2d0c8600e021c
 F test/ctime.test 7bd009071e242aac4f18521581536b652b789a47
-F test/cursorhint.test b1f86e9c959231094d8fe214518667548083063e
+F test/cursorhint.test 7d94f7602e22ec129ca51836f333b5ff994a2b02
 F test/date.test 42973251b9429f2c41b77eb98a7b0b0ba2d3b2c0
 F test/dbstatus.test 8de104bb5606f19537d23cd553b41349b5ab1204
 F test/dbstatus2.test 10418e62b3db5dca070f0c3eef3ea13946f339c2
@@ -1374,7 +1374,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P bee73d429cb0e99b43fb191ac15e298d0353b135
-R f415b0a9be4e26d1aeb927a138261bed
+P 142b048ac778620dd4e448c2e969982eb8188501
+R e232e29543e31c41650c4e43b7879d83
 U drh
-Z dbc2b5253d321af49bf9c502e3a1dded
+Z 6f609828180274045282332efd8f8026

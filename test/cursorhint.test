@@ -139,15 +139,19 @@ do_test 4.5desc {
     SELECT c FROM t1 WHERE b>=10 AND b<=20 ORDER BY b DESC;
   }
 } {GE(c0,10)}
+
+# If there are any equality terms used in the constraint, then all terms
+# should be hinted.
+#
 do_test 4.6asc {
   p4_of_opcode db CursorHint {
     SELECT rowid FROM t1 WHERE b=22 AND c>=10 AND c<=20 ORDER BY b,c ASC;
   }
-} {LE(c1,20)}
+} {AND(AND(EQ(c0,22),GE(c1,10)),LE(c1,20))}
 do_test 4.6desc {
   p4_of_opcode db CursorHint {
     SELECT rowid FROM t1 WHERE b=22 AND c>=10 AND c<=20 ORDER BY b,c DESC;
   }
-} {GE(c1,10)}
+} {AND(AND(EQ(c0,22),GE(c1,10)),LE(c1,20))}
 
 finish_test

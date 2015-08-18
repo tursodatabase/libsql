@@ -681,7 +681,6 @@ static void codeCursorHint(
   int iCur;
   WhereClause *pWC;
   WhereTerm *pTerm;
-  WhereLoop *pWLoop;
   int i, j;
   struct CCurHint sHint;
   Walker sWalker;
@@ -696,7 +695,6 @@ static void codeCursorHint(
   sWalker.pParse = pParse;
   sWalker.u.pCCurHint = &sHint;
   pWC = &pWInfo->sWC;
-  pWLoop = pLevel->pWLoop;
   for(i=0; i<pWC->nTerm; i++){
     pTerm = &pWC->a[i];
     if( pTerm->wtFlags & (TERM_VIRTUAL|TERM_CODED) ) continue;
@@ -704,10 +702,11 @@ static void codeCursorHint(
     if( ExprHasProperty(pTerm->pExpr, EP_FromJoin) ) continue;
 
     /* All terms in pWLoop->aLTerm[] except pEndRange are used to initialize
-    ** the cursor.  No need to hint initialization terms. */
-    if( pTerm!=pEndRange ){
-      for(j=0; j<pWLoop->nLTerm && pWLoop->aLTerm[j]!=pTerm; j++){}
-      if( j<pWLoop->nLTerm ) continue;
+    ** the cursor.  These terms are not needed as hints for a pure range
+    ** scan (that has no == terms) so omit them. */
+    if( pLoop->u.btree.nEq==0 && pTerm!=pEndRange ){
+      for(j=0; j<pLoop->nLTerm && pLoop->aLTerm[j]!=pTerm; j++){}
+      if( j<pLoop->nLTerm ) continue;
     }
 
     /* No subqueries or non-deterministic functions allowed */
@@ -1094,15 +1093,6 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     }
     assert( pRangeEnd==0 || (pRangeEnd->wtFlags & TERM_VNULL)==0 );
 
-    /* Generate code to evaluate all constraint terms using == or IN
-    ** and store the values of those terms in an array of registers
-    ** starting at regBase.
-    */
-    regBase = codeAllEqualityTerms(pParse,pLevel,bRev,nExtraReg,&zStartAff);
-    assert( zStartAff==0 || sqlite3Strlen30(zStartAff)>=nEq );
-    if( zStartAff ) cEndAff = zStartAff[nEq];
-    addrNxt = pLevel->addrNxt;
-
     /* If we are doing a reverse order scan on an ascending index, or
     ** a forward order scan on a descending index, interchange the 
     ** start and end terms (pRangeStart and pRangeEnd).
@@ -1114,6 +1104,16 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       SWAP(u8, bSeekPastNull, bStopAtNull);
     }
 
+    /* Generate code to evaluate all constraint terms using == or IN
+    ** and store the values of those terms in an array of registers
+    ** starting at regBase.
+    */
+    codeCursorHint(pWInfo, pLevel, pRangeEnd);
+    regBase = codeAllEqualityTerms(pParse,pLevel,bRev,nExtraReg,&zStartAff);
+    assert( zStartAff==0 || sqlite3Strlen30(zStartAff)>=nEq );
+    if( zStartAff ) cEndAff = zStartAff[nEq];
+    addrNxt = pLevel->addrNxt;
+
     testcase( pRangeStart && (pRangeStart->eOperator & WO_LE)!=0 );
     testcase( pRangeStart && (pRangeStart->eOperator & WO_GE)!=0 );
     testcase( pRangeEnd && (pRangeEnd->eOperator & WO_LE)!=0 );
@@ -1123,7 +1123,6 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     start_constraints = pRangeStart || nEq>0;
 
     /* Seek the index cursor to the start of the range. */
-    codeCursorHint(pWInfo, pLevel, pRangeEnd);
     nConstraint = nEq;
     if( pRangeStart ){
       Expr *pRight = pRangeStart->pExpr->pRight;
