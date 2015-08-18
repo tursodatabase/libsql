@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarning\sin\sFTS5.
-D 2015-08-18T16:32:45.211
+C Add\stest\sfile\sspellfix2.test,\swhich\sshould\shave\sbeen\schecked\sin\ssome\stime\sago.
+D 2015-08-18T19:09:28.809
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2fc9ca6bf5949d415801c007ed3004a4bdb7c380
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1016,6 +1016,7 @@ F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
 F test/speedtest1.c 857439869d1cb4db35e1c720ee9c2756eb9ea2a0
 F test/spellfix.test 0597065ff57042df1f138e6a2611ae19c2698135
+F test/spellfix2.test e5f2bc1dae046dbdd8008f2a84ed7749ff9b325e
 F test/sqldiff1.test 8f6bc7c6a5b3585d350d779c6078869ba402f8f5
 F test/sqllimits1.test e05786eaed7950ff6a2d00031d001d8a26131e68
 F test/stat.test 8de91498c99f5298b303f70f1d1f3b9557af91bf
@@ -1373,7 +1374,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f65a9b4ab2c6f0b7028e16e2a0f83fd6d58ae1cd
-R 991670fb0c06e37ef5a984fb7f069a97
-U mistachkin
-Z 6b28dc07256cbacd1d8439eff1dbe32a
+P 02448a9fccd4532daa667e4ba6ff1dbb7f68008a
+R e8ec4f5131e6ed0a1e842df7f619d541
+U dan
+Z 8dc6a1f25685915b0d47708aa8d01a68
