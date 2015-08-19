@@ -276,7 +276,6 @@ void sqlite3VtabClear(sqlite3 *db, Table *p){
       if( i!=1 ) sqlite3DbFree(db, p->azModuleArg[i]);
     }
     sqlite3DbFree(db, p->azModuleArg);
-    p->azModuleArg = 0;
   }
 }
 
@@ -287,23 +286,17 @@ void sqlite3VtabClear(sqlite3 *db, Table *p){
 ** deleted.
 */
 static void addModuleArgument(sqlite3 *db, Table *pTable, char *zArg){
-  int i = pTable->nModuleArg++;
-  int nBytes = sizeof(char *)*(1+pTable->nModuleArg);
+  int nBytes = sizeof(char *)*(2+pTable->nModuleArg);
   char **azModuleArg;
   azModuleArg = sqlite3DbRealloc(db, pTable->azModuleArg, nBytes);
   if( azModuleArg==0 ){
-    int j;
-    for(j=0; j<i; j++){
-      sqlite3DbFree(db, pTable->azModuleArg[j]);
-    }
     sqlite3DbFree(db, zArg);
-    sqlite3DbFree(db, pTable->azModuleArg);
-    pTable->nModuleArg = 0;
   }else{
+    int i = pTable->nModuleArg++;
     azModuleArg[i] = zArg;
     azModuleArg[i+1] = 0;
+    pTable->azModuleArg = azModuleArg;
   }
-  pTable->azModuleArg = azModuleArg;
 }
 
 /*

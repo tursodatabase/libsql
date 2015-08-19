@@ -1,5 +1,5 @@
-C Initial\simplementation\sof\seponymous\svirtual\stable\sinstances.
-D 2015-08-19T02:32:25.892
+C Merge\schanges\sfrom\strunk.
+D 2015-08-19T12:52:51.679
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2fc9ca6bf5949d415801c007ed3004a4bdb7c380
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -224,7 +224,7 @@ F ext/rbu/rbufault.test cc0be8d5d392d98b0c2d6a51be377ea989250a89
 F ext/rbu/rbufault2.test 9a7f19edd6ea35c4c9f807d8a3db0a03a5670c06
 F ext/rbu/rbufts.test 828cd689da825f0a7b7c53ffc1f6f7fdb6fa5bda
 F ext/rbu/rbusave.test 0f43b6686084f426ddd040b878426452fd2c2f48
-F ext/rbu/sqlite3rbu.c 08fddeae6b89aeb1e960f9330a2228968210170a
+F ext/rbu/sqlite3rbu.c 1650e682b3568db0ed97ff2c7ba5d1c8ea060a84
 F ext/rbu/sqlite3rbu.h 5357f070cd8c0bcad459b620651ec1656859e4d0
 F ext/rbu/test_rbu.c 2a3652241fa45d5eaa141775e4ae68c1d3582c03
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
@@ -407,7 +407,7 @@ F src/vdbeblob.c 4f2e8e075d238392df98c5e03a64342465b03f90
 F src/vdbemem.c ae38a0d35ae71cf604381a887c170466ba518090
 F src/vdbesort.c f5009e7a35e3065635d8918b9a31f498a499976b
 F src/vdbetrace.c 8befe829faff6d9e6f6e4dee5a7d3f85cc85f1a0
-F src/vtab.c be5a43432b78ddea55bd9f81f23e791da7282814
+F src/vtab.c fddb32423d824831fbc42b8358ffadc2437edd97
 F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 6fb6b68969e4692593c2552c4e7bff5882de2cb8
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
@@ -1016,6 +1016,7 @@ F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
 F test/speedtest1.c 857439869d1cb4db35e1c720ee9c2756eb9ea2a0
 F test/spellfix.test 0597065ff57042df1f138e6a2611ae19c2698135
+F test/spellfix2.test e5f2bc1dae046dbdd8008f2a84ed7749ff9b325e
 F test/sqldiff1.test 8f6bc7c6a5b3585d350d779c6078869ba402f8f5
 F test/sqllimits1.test e05786eaed7950ff6a2d00031d001d8a26131e68
 F test/stat.test 8de91498c99f5298b303f70f1d1f3b9557af91bf
@@ -1373,10 +1374,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 02448a9fccd4532daa667e4ba6ff1dbb7f68008a
-R ae3efec9cf124146c8c51adef7f17b8d
-T *branch * eponymous-vtab
-T *sym-eponymous-vtab *
-T -sym-trunk *
+P c1f43a7799a9298abea01b2f8531fc7cdadc4594 c573b0a1aa3ba509234f07520fa94d008bcbb330
+R 04d75ba2dfa13388a455ec59c68a148d
 U drh
-Z fd6dce9accc0175e77ceea23601f0413
+Z d53ae36484d8828c21b5f9a23ee68eb5
