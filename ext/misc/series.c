@@ -84,6 +84,7 @@ typedef struct series_cursor series_cursor;
 struct series_cursor {
   sqlite3_vtab_cursor base;  /* Base class - must be first */
   int isDesc;                /* True to count down rather than up */
+  sqlite3_int64 iRowid;      /* The rowid */
   sqlite3_int64 iValue;      /* Current value ("value") */
   sqlite3_int64 mnValue;     /* Mimimum value ("start") */
   sqlite3_int64 mxValue;     /* Maximum value ("stop") */
@@ -165,6 +166,7 @@ static int seriesNext(sqlite3_vtab_cursor *cur){
   }else{
     pCur->iValue += pCur->iStep;
   }
+  pCur->iRowid++;
   return SQLITE_OK;
 }
 
@@ -195,7 +197,7 @@ static int seriesColumn(
 */
 static int seriesRowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){
   series_cursor *pCur = (series_cursor*)cur;
-  *pRowid = pCur->iValue;
+  *pRowid = pCur->iRowid;
   return SQLITE_OK;
 }
 
@@ -266,6 +268,7 @@ static int seriesFilter(
     pCur->isDesc = 0;
     pCur->iValue = pCur->mnValue;
   }
+  pCur->iRowid = 1;
   return SQLITE_OK;
 }
 

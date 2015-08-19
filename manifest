@@ -1,5 +1,5 @@
-C Merge\ssupport\sfor\stable-valued\sfunctions.
-D 2015-08-19T18:31:11.805
+C Merge\sthe\stable-valued-function\srowid\sfix.
+D 2015-08-19T19:26:13.526
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 90f3097efb9a53f5fc59a4f8a08be07cf9f52c02
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -197,7 +197,7 @@ F ext/misc/nextchar.c 35c8b8baacb96d92abbb34a83a997b797075b342
 F ext/misc/percentile.c bcbee3c061b884eccb80e21651daaae8e1e43c63
 F ext/misc/regexp.c af92cdaa5058fcec1451e49becc7ba44dba023dc
 F ext/misc/rot13.c 1ac6f95f99b575907b9b09c81a349114cf9be45a
-F ext/misc/series.c 1484bc674b5cd0fcf18cb803514101799800c0c8
+F ext/misc/series.c 5b84c6584af085b55ae07e2ee7b133b6db03e323
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c 86998fb73aefb7b5dc346ba8a58912f312da4996
 F ext/misc/totype.c 4a167594e791abeed95e0a8db028822b5e8fe512
@@ -409,7 +409,7 @@ F src/vdbeblob.c 4f2e8e075d238392df98c5e03a64342465b03f90
 F src/vdbemem.c ae38a0d35ae71cf604381a887c170466ba518090
 F src/vdbesort.c f5009e7a35e3065635d8918b9a31f498a499976b
 F src/vdbetrace.c 8befe829faff6d9e6f6e4dee5a7d3f85cc85f1a0
-F src/vtab.c 1e3405f78e9f248bdee6ef7a8903fadaa7222f9c
+F src/vtab.c 05395350f947ec0b1af25e8502b9cfec84f17ea7
 F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 6fb6b68969e4692593c2552c4e7bff5882de2cb8
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
@@ -1033,7 +1033,7 @@ F test/superlock.test 1cde669f68d2dd37d6c9bd35eee1d95491ae3fc2
 F test/sync.test a34cd43e98b7fb84eabbf38f7ed8f7349b3f3d85
 F test/syscall.test d2fdaad713f103ac611fe7ef9b724c7b69f8149c
 F test/sysfault.test fa776e60bf46bdd3ae69f0b73e46ee3977a58ae6
-F test/tabfunc01.test d69034069c911094cfcd58abba60bf431e1be6b4
+F test/tabfunc01.test 61d185dde74aa2ff70085d33bc5f9a0ce8d6a318
 F test/table.test 33bf0d1fd07f304582695184b8e6feb017303816
 F test/tableapi.test 2674633fa95d80da917571ebdd759a14d9819126
 F test/tableopts.test dba698ba97251017b7c80d738c198d39ab747930
@@ -1378,7 +1378,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 71a966952cf8f1d699cf8362ea3f6204c6e16384 fef44c37f31ca9fd7891cecdbe95cc46a987067b
-R c5f483398026c1f31469538c82351663
+P 96a5d44d9fcb7b159c04630ad2d956fe27df5a43 a325a08599759471047e234ef9cfcc3cb110aafd
+R dcfe96af8a1b65c426e62b553bd60db8
 U drh
-Z 387c99525eb324d1b43c55b082d9a722
+Z 00eb910bc67976561bafd5a76ff4be3d
