@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarning\sin\sFTS5.
-D 2015-08-18T16:32:45.211
+C Initial\simplementation\sof\seponymous\svirtual\stable\sinstances.
+D 2015-08-19T02:32:25.892
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2fc9ca6bf5949d415801c007ed3004a4bdb7c380
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -280,7 +280,7 @@ F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
 F src/btree.c f48b3ef91676c06a90a8832987ecef6b94c931ee
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 8177c9ab90d772d6d2c6c517e05bed774b7c92c0
-F src/build.c 4acc35c4e0a2d94c906abd164568cd6fc989cfbb
+F src/build.c 77a9683d9202c091349d8d0bb40922c8dcc4784d
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
 F src/ctime.c 5a0b735dc95604766f5dac73973658eef782ee8b
@@ -300,7 +300,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 92bafa308607dd985ca389a788cd9e0a2b608712
 F src/loadext.c dfcee8c7c032cd0fd55af3e0fc1fcfb01e426df2
-F src/main.c 0a60b7ca8252c3a6f95438fa4ce8fe5b275c69f2
+F src/main.c e17fcffae4306a9b8334faf3bac80d7396850b54
 F src/malloc.c 19461e159bccf0e2cf06a50e867963d0a7b124a8
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c abe6ee469b6c5a35c7f22bfeb9c9bac664a1c987
@@ -340,7 +340,7 @@ F src/shell.c b1f91e60918df3a68efad1e3a11696b9a7e23d23
 F src/sqlite.h.in 447ead0a6b3293206f04a0896553955d07cfb4b9
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h a0b948ebc89bac13941254641326a6aa248c2cc4
-F src/sqliteInt.h 9401d7d9124210dfd5d283af45e0addbc1455c2e
+F src/sqliteInt.h 683b48027374e20bea20e36180984be07bb03031
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c f266ad8a2892d659b74f0f50cb6a88b6e7c12179
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
@@ -407,7 +407,7 @@ F src/vdbeblob.c 4f2e8e075d238392df98c5e03a64342465b03f90
 F src/vdbemem.c ae38a0d35ae71cf604381a887c170466ba518090
 F src/vdbesort.c f5009e7a35e3065635d8918b9a31f498a499976b
 F src/vdbetrace.c 8befe829faff6d9e6f6e4dee5a7d3f85cc85f1a0
-F src/vtab.c 082b35a25a26e3d36f365ca8cd73c1922532f05e
+F src/vtab.c be5a43432b78ddea55bd9f81f23e791da7282814
 F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 6fb6b68969e4692593c2552c4e7bff5882de2cb8
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
@@ -1373,7 +1373,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f65a9b4ab2c6f0b7028e16e2a0f83fd6d58ae1cd
-R 991670fb0c06e37ef5a984fb7f069a97
-U mistachkin
-Z 6b28dc07256cbacd1d8439eff1dbe32a
+P 02448a9fccd4532daa667e4ba6ff1dbb7f68008a
+R ae3efec9cf124146c8c51adef7f17b8d
+T *branch * eponymous-vtab
+T *sym-eponymous-vtab *
+T -sym-trunk *
+U drh
+Z fd6dce9accc0175e77ceea23601f0413
