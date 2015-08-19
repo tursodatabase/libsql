@@ -10,17 +10,63 @@
 **
 *************************************************************************
 **
-** This file implements a virtual table that tries to replicate the 
-** behavior of the generate_series() table-valued-function in Postgres.
+** This file demonstrates how to create a table-valued-function using
+** a virtual table.  This demo implements the generate_series() function
+** which gives similar results to the eponymous function in PostgreSQL.
+** Examples:
 **
-** Example:
+**      SELECT * FROM generate_series(0,100,5);
 **
-**     SELECT * FROM generate_series WHERE start=1 AND stop=9 AND step=2
+** The query above returns integers from 0 through 100 counting by steps
+** of 5.
 **
-** Results in:
+**      SELECT * FROM generate_series(0,100);
 **
-**     1 3 5 7 9
+** Integers from 0 through 100 with a step size of 1.
 **
+**      SELECT * FROM generate_series(20) LIMIT 10;
+**
+** Integers 20 through 29.
+**
+** HOW IT WORKS
+**
+** The generate_series "function" is really a virtual table with the
+** following schema:
+**
+**     CREATE FUNCTION generate_series(
+**       value,
+**       start HIDDEN,
+**       stop HIDDEN,
+**       step HIDDEN
+**     );
+**
+** Function arguments in queries against this virtual table are translated
+** into equality constraints against successive hidden columns.  In other
+** words, the following pairs of queries are equivalent to each other:
+**
+**    SELECT * FROM generate_series(0,100,5);
+**    SELECT * FROM generate_series WHERE start=0 AND stop=100 AND step=5;
+**
+**    SELECT * FROM generate_series(0,100);
+**    SELECT * FROM generate_series WHERE start=0 AND stop=100;
+**
+**    SELECT * FROM generate_series(20) LIMIT 10;
+**    SELECT * FROM generate_series WHERE start=20 LIMIT 10;
+**
+** The generate_series virtual table implementation leaves the xCreate method
+** set to NULL.  This means that it is not possible to do a CREATE VIRTUAL
+** TABLE command with "generate_series" as the USING argument.  Instead, there
+** is a single generate_series virtual table that is always available without
+** having to be created first.
+**
+** The xBestIndex method looks for equality constraints against the hidden
+** start, stop, and step columns, and if present, it uses those constraints
+** to bound the sequence of generated values.  If the equality constraints
+** are missing, it uses 0 for start, 4294967295 for stop, and 1 for step.
+** xBestIndex returns a small cost when both start and stop are available,
+** and a very large cost if either start or stop are unavailable.  This
+** encourages the query planner to order joins such that the bounds of the
+** series are well-defined.
 */
 #include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT1
@@ -30,17 +76,33 @@ SQLITE_EXTENSION_INIT1
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 
 
-/* A series cursor object */
+/* series_cursor is a subclas of sqlite3_vtab_cursor which will
+** serve as the underlying representation of a cursor that scans
+** over rows of the result
+*/
 typedef struct series_cursor series_cursor;
 struct series_cursor {
   sqlite3_vtab_cursor base;  /* Base class - must be first */
-  sqlite3_int64 iValue;      /* Current value */
-  sqlite3_int64 mnValue;     /* Mimimum value */
-  sqlite3_int64 mxValue;     /* Maximum value */
-  sqlite3_int64 iStep;       /* How much to increment on each step */
+  int isDesc;                /* True to count down rather than up */
+  sqlite3_int64 iValue;      /* Current value ("value") */
+  sqlite3_int64 mnValue;     /* Mimimum value ("start") */
+  sqlite3_int64 mxValue;     /* Maximum value ("stop") */
+  sqlite3_int64 iStep;       /* Increment ("step") */
 };
 
-/* Methods for the series module */
+/*
+** The seriesConnect() method is invoked to create a new
+** series_vtab that describes the generate_series virtual table.
+**
+** Think of this routine as the constructor for series_vtab objects.
+**
+** All this routine needs to do is:
+**
+**    (1) Allocate the series_vtab object and initialize all fields.
+**
+**    (2) Tell SQLite (via the sqlite3_declare_vtab() interface) what the
+**        result set of queries against generate_series will look like.
+*/
 static int seriesConnect(
   sqlite3 *db,
   void *pAux,
@@ -52,6 +114,7 @@ static int seriesConnect(
   pNew = *ppVtab = sqlite3_malloc( sizeof(*pNew) );
   if( pNew==0 ) return SQLITE_NOMEM;
 
+/* Column numbers */
 #define SERIES_COLUMN_VALUE 0
 #define SERIES_COLUMN_START 1
 #define SERIES_COLUMN_STOP  2
@@ -63,13 +126,16 @@ static int seriesConnect(
   return SQLITE_OK;
 }
 
+/*
+** This method is the destructor for series_cursor objects.
+*/
 static int seriesDisconnect(sqlite3_vtab *pVtab){
   sqlite3_free(pVtab);
   return SQLITE_OK;
 }
 
 /*
-** Open a new series cursor.
+** Constructor for a new series_cursor object.
 */
 static int seriesOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
   series_cursor *pCur;
@@ -81,7 +147,7 @@ static int seriesOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
 }
 
 /*
-** Close a series cursor.
+** Destructor for a series_cursor.
 */
 static int seriesClose(sqlite3_vtab_cursor *cur){
   sqlite3_free(cur);
@@ -90,36 +156,42 @@ static int seriesClose(sqlite3_vtab_cursor *cur){
 
 
 /*
-** Advance a cursor to its next row of output
+** Advance a series_cursor to its next row of output.
 */
 static int seriesNext(sqlite3_vtab_cursor *cur){
   series_cursor *pCur = (series_cursor*)cur;
-  pCur->iValue += pCur->iStep;
+  if( pCur->isDesc ){
+    pCur->iValue -= pCur->iStep;
+  }else{
+    pCur->iValue += pCur->iStep;
+  }
   return SQLITE_OK;
 }
 
 /*
-** Return the value associated with a series.
+** Return values of columns for the row at which the series_cursor
+** is currently pointing.
 */
 static int seriesColumn(
-  sqlite3_vtab_cursor *cur,
-  sqlite3_context *ctx,
-  int i
+  sqlite3_vtab_cursor *cur,   /* The cursor */
+  sqlite3_context *ctx,       /* First argument to sqlite3_result_...() */
+  int i                       /* Which column to return */
 ){
   series_cursor *pCur = (series_cursor*)cur;
-  sqlite3_int64 x;
+  sqlite3_int64 x = 0;
   switch( i ){
-    case 0:  x = pCur->iValue;  break;
-    case 1:  x = pCur->mnValue; break;
-    case 2:  x = pCur->mxValue; break;
-    case 3:  x = pCur->iStep;   break;
+    case SERIES_COLUMN_START:  x = pCur->mnValue; break;
+    case SERIES_COLUMN_STOP:   x = pCur->mxValue; break;
+    case SERIES_COLUMN_STEP:   x = pCur->iStep;   break;
+    default:                   x = pCur->iValue;  break;
   }
   sqlite3_result_int64(ctx, x);
   return SQLITE_OK;
 }
 
 /*
-** The rowid.
+** Return the rowid for the current row.  In this implementation, the
+** rowid is the same as the output value.
 */
 static int seriesRowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){
   series_cursor *pCur = (series_cursor*)cur;
@@ -128,24 +200,38 @@ static int seriesRowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){
 }
 
 /*
-** Return TRUE if the last row has been output.
+** Return TRUE if the cursor has been moved off of the last
+** row of output.
 */
 static int seriesEof(sqlite3_vtab_cursor *cur){
   series_cursor *pCur = (series_cursor*)cur;
-  return pCur->iValue>pCur->mxValue;
+  if( pCur->isDesc ){
+    return pCur->iValue < pCur->mnValue;
+  }else{
+    return pCur->iValue > pCur->mxValue;
+  }
 }
 
 /*
-** Called to "rewind" a cursor back to the beginning so that
-** it starts its output over again.  Always called at least once
-** prior to any seriesColumn, seriesRowid, or seriesEof call.
+** This method is called to "rewind" the series_cursor object back
+** to the first row of output.  This method is always called at least
+** once prior to any call to seriesColumn() or seriesRowid() or 
+** seriesEof().
 **
-** idxNum is a bitmask showing which constraints are available:
+** The query plan selected by seriesBestIndex is passed in the idxNum
+** parameter.  (idxStr is not used in this implementation.)  idxNum
+** is a bitmask showing which constraints are available:
 **
 **    1:    start=VALUE
 **    2:    stop=VALUE
 **    4:    step=VALUE
 **
+** Also, if bit 8 is set, that means that the series should be output
+** in descending order rather than in ascending order.
+**
+** This routine should initialize the cursor and position it so that it
+** is pointing at the first row, or pointing off the end of the table
+** (so that seriesEof() will return true) if the table is empty.
 */
 static int seriesFilter(
   sqlite3_vtab_cursor *pVtabCursor, 
@@ -159,7 +245,6 @@ static int seriesFilter(
   }else{
     pCur->mnValue = 0;
   }
-  pCur->iValue = pCur->mnValue;
   if( idxNum & 2 ){
     pCur->mxValue = sqlite3_value_int64(argv[i++]);
   }else{
@@ -167,31 +252,49 @@ static int seriesFilter(
   }
   if( idxNum & 4 ){
     pCur->iStep = sqlite3_value_int64(argv[i++]);
+    if( pCur->iStep<1 ) pCur->iStep = 1;
   }else{
     pCur->iStep = 1;
+  }
+  if( idxNum & 8 ){
+    pCur->isDesc = 1;
+    pCur->iValue = pCur->mxValue;
+    if( pCur->iStep>0 ){
+      pCur->iValue -= (pCur->mxValue - pCur->mnValue)%pCur->iStep;
+    }
+  }else{
+    pCur->isDesc = 0;
+    pCur->iValue = pCur->mnValue;
   }
   return SQLITE_OK;
 }
 
 /*
-** Search for terms of these forms:
+** SQLite will invoke this method one or more times while planning a query
+** that uses the generate_series virtual table.  This routine needs to create
+** a query plan for each invocation and compute an estimated cost for that
+** plan.
 **
-**  (1)  start = $value
-**  (2)  stop = $value
-**  (4)  step = $value
+** In this implementation idxNum is used to represent the
+** query plan.  idxStr is unused.
 **
-** idxNum is an ORed combination of 1, 2,  4.
+** The query plan is represented by bits in idxNum:
+**
+**  (1)  start = $value  -- constraint exists
+**  (2)  stop = $value   -- constraint exists
+**  (4)  step = $value   -- constraint exists
+**  (8)  output in descending order
 */
 static int seriesBestIndex(
   sqlite3_vtab *tab,
   sqlite3_index_info *pIdxInfo
 ){
-  int i;
-  int idxNum = 0;
-  int startIdx = -1;
-  int stopIdx = -1;
-  int stepIdx = -1;
-  int nArg = 0;
+  int i;                 /* Loop over constraints */
+  int idxNum = 0;        /* The query plan bitmask */
+  int startIdx = -1;     /* Index of the start= constraint, or -1 if none */
+  int stopIdx = -1;      /* Index of the stop= constraint, or -1 if none */
+  int stepIdx = -1;      /* Index of the step= constraint, or -1 if none */
+  int nArg = 0;          /* Number of arguments that seriesFilter() expects */
 
   const struct sqlite3_index_constraint *pConstraint;
   pConstraint = pIdxInfo->aConstraint;
@@ -213,7 +316,6 @@ static int seriesBestIndex(
         break;
     }
   }
-  pIdxInfo->idxNum = idxNum;
   if( startIdx>=0 ){
     pIdxInfo->aConstraintUsage[startIdx].argvIndex = ++nArg;
     pIdxInfo->aConstraintUsage[startIdx].omit = 1;
@@ -226,9 +328,8 @@ static int seriesBestIndex(
     pIdxInfo->aConstraintUsage[stepIdx].argvIndex = ++nArg;
     pIdxInfo->aConstraintUsage[stepIdx].omit = 1;
   }
-  if( pIdxInfo->nOrderBy==1
-   && pIdxInfo->aOrderBy[0].desc==0
-  ){
+  if( pIdxInfo->nOrderBy==1 ){
+    if( pIdxInfo->aOrderBy[0].desc ) idxNum |= 8;
     pIdxInfo->orderByConsumed = 1;
   }
   if( (idxNum & 3)==3 ){
@@ -241,19 +342,20 @@ static int seriesBestIndex(
     ** planner will work hard to avoid it. */
     pIdxInfo->estimatedCost = (double)2000000000;
   }
+  pIdxInfo->idxNum = idxNum;
   return SQLITE_OK;
 }
 
 /*
-** A virtual table module that provides read-only access to a
-** Tcl global variable namespace.
+** This following structure defines all the methods for the 
+** generate_series virtual table.
 */
 static sqlite3_module seriesModule = {
   0,                         /* iVersion */
   0,                         /* xCreate */
-  seriesConnect,
-  seriesBestIndex,
-  seriesDisconnect, 
+  seriesConnect,             /* xConnect */
+  seriesBestIndex,           /* xBestIndex */
+  seriesDisconnect,          /* xDisconnect */
   0,                         /* xDestroy */
   seriesOpen,                /* xOpen - open a cursor */
   seriesClose,               /* xClose - close a cursor */
