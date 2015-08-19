@@ -1,5 +1,5 @@
-C Add\stest\sfile\sspellfix2.test,\swhich\sshould\shave\sbeen\schecked\sin\ssome\stime\sago.
-D 2015-08-18T19:09:28.809
+C When\supdating\sa\szipvfs\sdatabase\swith\sRBU,\sset\sjournal_mode=off\sto\sprevent\sthe\supper-level\spager\sfrom\screating\sa\slarge\stemporary\sfile.
+D 2015-08-19T08:34:34.195
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2fc9ca6bf5949d415801c007ed3004a4bdb7c380
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -224,7 +224,7 @@ F ext/rbu/rbufault.test cc0be8d5d392d98b0c2d6a51be377ea989250a89
 F ext/rbu/rbufault2.test 9a7f19edd6ea35c4c9f807d8a3db0a03a5670c06
 F ext/rbu/rbufts.test 828cd689da825f0a7b7c53ffc1f6f7fdb6fa5bda
 F ext/rbu/rbusave.test 0f43b6686084f426ddd040b878426452fd2c2f48
-F ext/rbu/sqlite3rbu.c 08fddeae6b89aeb1e960f9330a2228968210170a
+F ext/rbu/sqlite3rbu.c 1650e682b3568db0ed97ff2c7ba5d1c8ea060a84
 F ext/rbu/sqlite3rbu.h 5357f070cd8c0bcad459b620651ec1656859e4d0
 F ext/rbu/test_rbu.c 2a3652241fa45d5eaa141775e4ae68c1d3582c03
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
@@ -1374,7 +1374,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 02448a9fccd4532daa667e4ba6ff1dbb7f68008a
-R e8ec4f5131e6ed0a1e842df7f619d541
+P 8599402092537ab3df8926eb900661c12d738d4c
+R 79cd53df2dc51b1e184555145183f89d
 U dan
-Z 8dc6a1f25685915b0d47708aa8d01a68
+Z 080d9b0837b12f78f74559ebadf2ade0
