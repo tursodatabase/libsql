@@ -355,6 +355,18 @@ sqlite3 *sqlite3rbu_db(sqlite3rbu*, int bRbu);
 int sqlite3rbu_step(sqlite3rbu *pRbu);
 
 /*
+** Force RBU to save its state to disk.
+**
+** If a power failure or application crash occurs during an update, following
+** system recovery RBU may resume the update from the point at which the state
+** was last saved. In other words, from the most recent successful call to 
+** sqlite3rbu_close() or this function.
+**
+** SQLITE_OK is returned if successful, or an SQLite error code otherwise.
+*/
+int sqlite3rbu_savestate(sqlite3rbu *pRbu);
+
+/*
 ** Close an RBU handle. 
 **
 ** If the RBU update has been completely applied, mark the RBU database

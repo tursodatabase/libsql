@@ -286,6 +286,22 @@ foreach {key value} [array get ::Platforms] {
   }
 }
 
+# Output log
+#
+set LOG [open releasetest-out.txt w]
+proc PUTS {args} {
+  if {[llength $args]==2} {
+    puts [lindex $args 0] [lindex $args 1]
+    puts [lindex $args 0] $::LOG [lindex $args 1]
+  } else {
+    puts [lindex $args 0]
+    puts $::LOG [lindex $args 0]
+  }
+}
+puts $LOG "$argv0 $argv"
+set tm0 [clock format [clock seconds] -format {%Y-%m-%d %H:%M:%S} -gmt 1]
+puts $LOG "start-time: $tm0 UTC"
+
 # Open the file $logfile and look for a report on the number of errors
 # and the number of test cases run.  Add these values to the global
 # $::NERRCASE and $::NTESTCASE variables.
@@ -408,7 +424,7 @@ proc run_test_suite {name testtarget config} {
 
   if {!$::TRACE} {
     set n [string length $title]
-    puts -nonewline "${title}[string repeat . [expr {63-$n}]]"
+    PUTS -nonewline "${title}[string repeat . [expr {63-$n}]]"
     flush stdout
   }
 
@@ -433,12 +449,12 @@ proc run_test_suite {name testtarget config} {
     set seconds [expr {($tm2-$tm1)%60}]
     set tm [format (%02d:%02d:%02d) $hours $minutes $seconds]
     if {$rc} {
-      puts " FAIL $tm"
+      PUTS " FAIL $tm"
       incr ::NERR
     } else {
-      puts " Ok   $tm"
+      PUTS " Ok   $tm"
     }
-    if {$errmsg!=""} {puts "     $errmsg"}
+    if {$errmsg!=""} {PUTS "     $errmsg"}
   }
 }
 
@@ -480,7 +496,7 @@ proc makeCommand { targets cflags opts } {
 #
 proc trace_cmd {args} {
   if {$::TRACE} {
-    puts $args
+    PUTS $args
   }
   if {!$::DRYRUN} {
     uplevel 1 $args
@@ -548,25 +564,25 @@ proc process_options {argv} {
       }
 
       -info {
-        puts "Command-line Options:"
-        puts "   --srcdir $::SRCDIR"
-        puts "   --platform [list $platform]"
-        puts "   --config [list $config]"
+        PUTS "Command-line Options:"
+        PUTS "   --srcdir $::SRCDIR"
+        PUTS "   --platform [list $platform]"
+        PUTS "   --config [list $config]"
         if {$::QUICK} {
-          if {$::QUICK==1} {puts "   --quick"}
-          if {$::QUICK==2} {puts "   --veryquick"}
+          if {$::QUICK==1} {PUTS "   --quick"}
+          if {$::QUICK==2} {PUTS "   --veryquick"}
         }
-        if {$::MSVC}      {puts "   --msvc"}
-        if {$::BUILDONLY} {puts "   --buildonly"}
-        if {$::DRYRUN}    {puts "   --dryrun"}
-        if {$::TRACE}     {puts "   --trace"}
-        puts "\nAvailable --platform options:"
+        if {$::MSVC}      {PUTS "   --msvc"}
+        if {$::BUILDONLY} {PUTS "   --buildonly"}
+        if {$::DRYRUN}    {PUTS "   --dryrun"}
+        if {$::TRACE}     {PUTS "   --trace"}
+        PUTS "\nAvailable --platform options:"
         foreach y [lsort [array names ::Platforms]] {
-          puts "   [list $y]"
+          PUTS "   [list $y]"
         }
-        puts "\nAvailable --config options:"
+        PUTS "\nAvailable --config options:"
         foreach y [lsort [array names ::Configs]] {
-          puts "   [list $y]"
+          PUTS "   [list $y]"
         }
         exit
       }
@@ -592,22 +608,22 @@ proc process_options {argv} {
       }
 
       default {
-        puts stderr ""
-        puts stderr [string trim $::USAGE_MESSAGE]
+        PUTS stderr ""
+        PUTS stderr [string trim $::USAGE_MESSAGE]
         exit -1
       }
     }
   }
 
   if {0==[info exists ::Platforms($platform)]} {
-    puts "Unknown platform: $platform"
-    puts -nonewline "Set the -platform option to "
+    PUTS "Unknown platform: $platform"
+    PUTS -nonewline "Set the -platform option to "
     set print [list]
     foreach p [array names ::Platforms] {
       lappend print "\"$p\""
     }
     lset print end "or [lindex $print end]"
-    puts "[join $print {, }]."
+    PUTS "[join $print {, }]."
     exit
   }
 
@@ -617,17 +633,17 @@ proc process_options {argv} {
   } else {
     set ::CONFIGLIST $::Platforms($platform)
   }
-  puts "Running the following test configurations for $platform:"
-  puts "    [string trim $::CONFIGLIST]"
-  puts -nonewline "Flags:"
-  if {$::DRYRUN} {puts -nonewline " --dryrun"}
-  if {$::BUILDONLY} {puts -nonewline " --buildonly"}
-  if {$::MSVC} {puts -nonewline " --msvc"}
+  PUTS "Running the following test configurations for $platform:"
+  PUTS "    [string trim $::CONFIGLIST]"
+  PUTS -nonewline "Flags:"
+  if {$::DRYRUN} {PUTS -nonewline " --dryrun"}
+  if {$::BUILDONLY} {PUTS -nonewline " --buildonly"}
+  if {$::MSVC} {PUTS -nonewline " --msvc"}
   switch -- $::QUICK {
-     1 {puts -nonewline " --quick"}
-     2 {puts -nonewline " --veryquick"}
+     1 {PUTS -nonewline " --quick"}
+     2 {PUTS -nonewline " --veryquick"}
   }
-  puts ""
+  PUTS ""
 }
 
 # Main routine.
@@ -637,7 +653,7 @@ proc main {argv} {
   # Process any command line options.
   set ::EXTRACONFIG {}
   process_options $argv
-  puts [string repeat * 79]
+  PUTS [string repeat * 79]
 
   set ::NERR 0
   set ::NTEST 0
@@ -648,7 +664,7 @@ proc main {argv} {
   foreach {zConfig target} $::CONFIGLIST {
     if {$::MSVC && ($zConfig eq "Sanitize" || "checksymbols" in $target
            || "valgrindtest" in $target)} {
-      puts "Skipping $zConfig / $target for MSVC..."
+      PUTS "Skipping $zConfig / $target for MSVC..."
       continue
     }
     if {$target ne "checksymbols"} {
@@ -693,10 +709,10 @@ proc main {argv} {
   set min [expr {($elapsetime/60)%60}]
   set sec [expr {$elapsetime%60}]
   set etime [format (%02d:%02d:%02d) $hr $min $sec]
-  puts [string repeat * 79]
-  puts "$::NERRCASE failures out of $::NTESTCASE tests in $etime"
+  PUTS [string repeat * 79]
+  PUTS "$::NERRCASE failures out of $::NTESTCASE tests in $etime"
   if {$::SQLITE_VERSION ne ""} {
-    puts "SQLite $::SQLITE_VERSION"
+    PUTS "SQLite $::SQLITE_VERSION"
   }
 }
 

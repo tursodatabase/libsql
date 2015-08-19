@@ -1535,72 +1535,71 @@ static int fts5CsrPoslist(Fts5Cursor *pCsr, int iPhrase, const u8 **pa){
 */
 static int fts5CacheInstArray(Fts5Cursor *pCsr){
   int rc = SQLITE_OK;
-  if( CsrFlagTest(pCsr, FTS5CSR_REQUIRE_INST) ){
-    Fts5PoslistReader *aIter;     /* One iterator for each phrase */
-    int nIter;                    /* Number of iterators/phrases */
-    
-    nIter = sqlite3Fts5ExprPhraseCount(pCsr->pExpr);
-    if( pCsr->aInstIter==0 ){
-      int nByte = sizeof(Fts5PoslistReader) * nIter;
-      pCsr->aInstIter = (Fts5PoslistReader*)sqlite3Fts5MallocZero(&rc, nByte);
+  Fts5PoslistReader *aIter;       /* One iterator for each phrase */
+  int nIter;                      /* Number of iterators/phrases */
+  
+  nIter = sqlite3Fts5ExprPhraseCount(pCsr->pExpr);
+  if( pCsr->aInstIter==0 ){
+    int nByte = sizeof(Fts5PoslistReader) * nIter;
+    pCsr->aInstIter = (Fts5PoslistReader*)sqlite3Fts5MallocZero(&rc, nByte);
+  }
+  aIter = pCsr->aInstIter;
+
+  if( aIter ){
+    int nInst = 0;                /* Number instances seen so far */
+    int i;
+
+    /* Initialize all iterators */
+    for(i=0; i<nIter; i++){
+      const u8 *a;
+      int n = fts5CsrPoslist(pCsr, i, &a);
+      sqlite3Fts5PoslistReaderInit(-1, a, n, &aIter[i]);
     }
-    aIter = pCsr->aInstIter;
 
-    if( aIter ){
-      int nInst = 0;              /* Number instances seen so far */
-      int i;
-
-      /* Initialize all iterators */
+    while( 1 ){
+      int *aInst;
+      int iBest = -1;
       for(i=0; i<nIter; i++){
-        const u8 *a;
-        int n = fts5CsrPoslist(pCsr, i, &a);
-        sqlite3Fts5PoslistReaderInit(-1, a, n, &aIter[i]);
+        if( (aIter[i].bEof==0) 
+         && (iBest<0 || aIter[i].iPos<aIter[iBest].iPos) 
+        ){
+          iBest = i;
+        }
+      }
+      if( iBest<0 ) break;
+
+      nInst++;
+      if( nInst>=pCsr->nInstAlloc ){
+        pCsr->nInstAlloc = pCsr->nInstAlloc ? pCsr->nInstAlloc*2 : 32;
+        aInst = (int*)sqlite3_realloc(
+            pCsr->aInst, pCsr->nInstAlloc*sizeof(int)*3
+        );
+        if( aInst ){
+          pCsr->aInst = aInst;
+        }else{
+          rc = SQLITE_NOMEM;
+          break;
+        }
       }
 
-      while( 1 ){
-        int *aInst;
-        int iBest = -1;
-        for(i=0; i<nIter; i++){
-          if( (aIter[i].bEof==0) 
-           && (iBest<0 || aIter[i].iPos<aIter[iBest].iPos) 
-          ){
-            iBest = i;
-          }
-        }
-        if( iBest<0 ) break;
-
-        nInst++;
-        if( nInst>=pCsr->nInstAlloc ){
-          pCsr->nInstAlloc = pCsr->nInstAlloc ? pCsr->nInstAlloc*2 : 32;
-          aInst = (int*)sqlite3_realloc(
-              pCsr->aInst, pCsr->nInstAlloc*sizeof(int)*3
-          );
-          if( aInst ){
-            pCsr->aInst = aInst;
-          }else{
-            rc = SQLITE_NOMEM;
-            break;
-          }
-        }
-
-        aInst = &pCsr->aInst[3 * (nInst-1)];
-        aInst[0] = iBest;
-        aInst[1] = FTS5_POS2COLUMN(aIter[iBest].iPos);
-        aInst[2] = FTS5_POS2OFFSET(aIter[iBest].iPos);
-        sqlite3Fts5PoslistReaderNext(&aIter[iBest]);
-      }
-
-      pCsr->nInstCount = nInst;
-      CsrFlagClear(pCsr, FTS5CSR_REQUIRE_INST);
+      aInst = &pCsr->aInst[3 * (nInst-1)];
+      aInst[0] = iBest;
+      aInst[1] = FTS5_POS2COLUMN(aIter[iBest].iPos);
+      aInst[2] = FTS5_POS2OFFSET(aIter[iBest].iPos);
+      sqlite3Fts5PoslistReaderNext(&aIter[iBest]);
     }
+
+    pCsr->nInstCount = nInst;
+    CsrFlagClear(pCsr, FTS5CSR_REQUIRE_INST);
   }
   return rc;
 }
 
 static int fts5ApiInstCount(Fts5Context *pCtx, int *pnInst){
   Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
-  int rc;
-  if( SQLITE_OK==(rc = fts5CacheInstArray(pCsr)) ){
+  int rc = SQLITE_OK;
+  if( CsrFlagTest(pCsr, FTS5CSR_REQUIRE_INST)==0 
+   || SQLITE_OK==(rc = fts5CacheInstArray(pCsr)) ){
     *pnInst = pCsr->nInstCount;
   }
   return rc;
@@ -1614,8 +1613,10 @@ static int fts5ApiInst(
   int *piOff
 ){
   Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
-  int rc;
-  if( SQLITE_OK==(rc = fts5CacheInstArray(pCsr)) ){
+  int rc = SQLITE_OK;
+  if( CsrFlagTest(pCsr, FTS5CSR_REQUIRE_INST)==0 
+   || SQLITE_OK==(rc = fts5CacheInstArray(pCsr)) 
+  ){
     if( iIdx<0 || iIdx>=pCsr->nInstCount ){
       rc = SQLITE_RANGE;
     }else{

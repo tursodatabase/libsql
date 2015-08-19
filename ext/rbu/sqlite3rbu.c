@@ -84,10 +84,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#if !defined(_WIN32)
-#  include <unistd.h>
-#endif
-
 #include "sqlite3.h"
 
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_RBU)
@@ -2928,10 +2924,13 @@ static void rbuSetupOal(sqlite3rbu *p, RbuState *pState){
 ** leave an error code and error message in the rbu handle.
 */
 static void rbuDeleteOalFile(sqlite3rbu *p){
-  char *zOal = sqlite3_mprintf("%s-oal", p->zTarget);
-  assert( p->rc==SQLITE_OK && p->zErrmsg==0 );
-  unlink(zOal);
-  sqlite3_free(zOal);
+  char *zOal = rbuMPrintf(p, "%s-oal", p->zTarget);
+  if( zOal ){
+    sqlite3_vfs *pVfs = sqlite3_vfs_find(0);
+    assert( pVfs && p->rc==SQLITE_OK && p->zErrmsg==0 );
+    pVfs->xDelete(pVfs, zOal, 0);
+    sqlite3_free(zOal);
+  }
 }
 
 /*
@@ -3044,14 +3043,25 @@ sqlite3rbu *sqlite3rbu_open(
 
     if( p->rc==SQLITE_OK ){
       if( p->eStage==RBU_STAGE_OAL ){
+        sqlite3 *db = p->dbMain;
 
         /* Open transactions both databases. The *-oal file is opened or
         ** created at this point. */
-        p->rc = sqlite3_exec(p->dbMain, "BEGIN IMMEDIATE", 0, 0, &p->zErrmsg);
+        p->rc = sqlite3_exec(db, "BEGIN IMMEDIATE", 0, 0, &p->zErrmsg);
         if( p->rc==SQLITE_OK ){
           p->rc = sqlite3_exec(p->dbRbu, "BEGIN IMMEDIATE", 0, 0, &p->zErrmsg);
         }
-  
+
+        /* Check if the main database is a zipvfs db. If it is, set the upper
+        ** level pager to use "journal_mode=off". This prevents it from 
+        ** generating a large journal using a temp file.  */
+        if( p->rc==SQLITE_OK ){
+          int frc = sqlite3_file_control(db, "main", SQLITE_FCNTL_ZIPVFS, 0);
+          if( frc==SQLITE_OK ){
+            p->rc = sqlite3_exec(db, "PRAGMA journal_mode=off",0,0,&p->zErrmsg);
+          }
+        }
+
         /* Point the object iterator at the first object */
         if( p->rc==SQLITE_OK ){
           p->rc = rbuObjIterFirst(p, &p->objiter);
@@ -3163,6 +3173,32 @@ int sqlite3rbu_close(sqlite3rbu *p, char **pzErrmsg){
 */
 sqlite3_int64 sqlite3rbu_progress(sqlite3rbu *pRbu){
   return pRbu->nProgress;
+}
+
+int sqlite3rbu_savestate(sqlite3rbu *p){
+  int rc = p->rc;
+  
+  if( rc==SQLITE_DONE ) return SQLITE_OK;
+
+  assert( p->eStage>=RBU_STAGE_OAL && p->eStage<=RBU_STAGE_DONE );
+  if( p->eStage==RBU_STAGE_OAL ){
+    assert( rc!=SQLITE_DONE );
+    if( rc==SQLITE_OK ) rc = sqlite3_exec(p->dbMain, "COMMIT", 0, 0, 0);
+  }
+
+  p->rc = rc;
+  rbuSaveState(p, p->eStage);
+  rc = p->rc;
+
+  if( p->eStage==RBU_STAGE_OAL ){
+    assert( rc!=SQLITE_DONE );
+    if( rc==SQLITE_OK ) rc = sqlite3_exec(p->dbRbu, "COMMIT", 0, 0, 0);
+    if( rc==SQLITE_OK ) rc = sqlite3_exec(p->dbRbu, "BEGIN IMMEDIATE", 0, 0, 0);
+    if( rc==SQLITE_OK ) rc = sqlite3_exec(p->dbMain, "BEGIN IMMEDIATE", 0, 0,0);
+  }
+
+  p->rc = rc;
+  return rc;
 }
 
 /**************************************************************************

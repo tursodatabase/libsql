@@ -1866,7 +1866,7 @@ static void fts5ExprFunction(
   int iArg = 1;
 
   if( nArg<1 ){
-    char *zErr = sqlite3_mprintf("wrong number of arguments to function %s",
+    zErr = sqlite3_mprintf("wrong number of arguments to function %s",
         bTcl ? "fts5_expr_tcl" : "fts5_expr"
     );
     sqlite3_result_error(pCtx, zErr, -1);
