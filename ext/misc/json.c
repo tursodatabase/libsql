@@ -703,19 +703,29 @@ static JsonNode *jsonLookup(
   const char *zPath,      /* The path to search */
   int *pApnd              /* Append nodes to complete path if not NULL */
 ){
-  u32 i, j, k;
+  u32 i, j, k, nKey;
+  const char *zKey;
   JsonNode *pRoot = &pParse->aNode[iRoot];
   if( zPath[0]==0 ) return pRoot;
   if( zPath[0]=='.' ){
     if( pRoot->eType!=JSON_OBJECT ) return 0;
     zPath++;
-    for(i=0; isalnum(zPath[i]); i++){}
-    if( i==0 ) return 0;
+    if( zPath[0]=='"' ){
+      zKey = zPath + 1;
+      for(i=1; zPath[i] && zPath[i]!='"'; i++){}
+      nKey = i-1;
+      if( zPath[i] ) i++;
+    }else{
+      zKey = zPath;
+      for(i=0; zPath[i] && zPath[i]!='.' && zPath[i]!='['; i++){}
+      nKey = i;
+    }
+    if( nKey==0 ) return 0;
     j = 1;
     for(;;){
       while( j<=pRoot->n ){
-        if( pRoot[j].n==i+2
-         && strncmp(&pRoot[j].u.zJContent[1],zPath,i)==0
+        if( pRoot[j].n==nKey+2
+         && strncmp(&pRoot[j].u.zJContent[1],zKey,nKey)==0
         ){
           return jsonLookup(pParse, iRoot+j+1, &zPath[i], pApnd);
         }
