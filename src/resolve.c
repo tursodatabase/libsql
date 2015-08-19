@@ -1142,7 +1142,6 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
   int isCompound;         /* True if p is a compound select */
   int nCompound;          /* Number of compound terms processed so far */
   Parse *pParse;          /* Parsing context */
-  ExprList *pEList;       /* Result set expression list */
   int i;                  /* Loop counter */
   ExprList *pGroupBy;     /* The GROUP BY clause */
   Select *pLeftmost;      /* Left-most of SELECT of a compound */
@@ -1237,14 +1236,7 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
     sNC.pNext = pOuterNC;
   
     /* Resolve names in the result set. */
-    pEList = p->pEList;
-    assert( pEList!=0 );
-    for(i=0; i<pEList->nExpr; i++){
-      Expr *pX = pEList->a[i].pExpr;
-      if( sqlite3ResolveExprNames(&sNC, pX) ){
-        return WRC_Abort;
-      }
-    }
+    if( sqlite3ResolveExprListNames(&sNC, p->pEList) ) return WRC_Abort;
   
     /* If there are no aggregate functions in the result-set, and no GROUP BY 
     ** expression, do not allow aggregates in any of the other expressions.
@@ -1276,6 +1268,16 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
     sNC.pEList = p->pEList;
     if( sqlite3ResolveExprNames(&sNC, p->pHaving) ) return WRC_Abort;
     if( sqlite3ResolveExprNames(&sNC, p->pWhere) ) return WRC_Abort;
+
+    /* Resolve names in table-valued-function arguments */
+    for(i=0; i<p->pSrc->nSrc; i++){
+      struct SrcList_item *pItem = &p->pSrc->a[i];
+      if( pItem->fg.isTabFunc
+       && sqlite3ResolveExprListNames(&sNC, pItem->u1.pFuncArg) 
+      ){
+        return WRC_Abort;
+      }
+    }
 
     /* The ORDER BY and GROUP BY clauses may not refer to terms in
     ** outer queries 
@@ -1440,6 +1442,21 @@ int sqlite3ResolveExprNames(
   return ExprHasProperty(pExpr, EP_Error);
 }
 
+/*
+** Resolve all names for all expression in an expression list.  This is
+** just like sqlite3ResolveExprNames() except that it works for an expression
+** list rather than a single expression.
+*/
+int sqlite3ResolveExprListNames( 
+  NameContext *pNC,       /* Namespace to resolve expressions in. */
+  ExprList *pList         /* The expression list to be analyzed. */
+){
+  int i;
+  for(i=0; i<pList->nExpr; i++){
+    if( sqlite3ResolveExprNames(pNC, pList->a[i].pExpr) ) return WRC_Abort;
+  }
+  return WRC_Continue;
+}
 
 /*
 ** Resolve all names in all expressions of a SELECT and in all

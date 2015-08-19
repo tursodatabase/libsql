@@ -4030,6 +4030,7 @@ WhereInfo *sqlite3WhereBegin(
   */
   for(ii=0; ii<pTabList->nSrc; ii++){
     createMask(pMaskSet, pTabList->a[ii].iCursor);
+    sqlite3WhereTabFuncArgs(pParse, &pTabList->a[ii], &pWInfo->sWC);
   }
 #ifndef NDEBUG
   {

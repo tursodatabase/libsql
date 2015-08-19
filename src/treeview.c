@@ -128,6 +128,9 @@ void sqlite3TreeViewSelect(TreeView *pView, const Select *p, u8 moreToFollow){
       if( pItem->pSelect ){
         sqlite3TreeViewSelect(pView, pItem->pSelect, 0);
       }
+      if( pItem->fg.isTabFunc ){
+        sqlite3TreeViewExprList(pView, pItem->u1.pFuncArg, 0, "func-args:");
+      }
       sqlite3TreeViewPop(pView);
     }
     sqlite3TreeViewPop(pView);

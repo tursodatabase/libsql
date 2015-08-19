@@ -3798,6 +3798,21 @@ void sqlite3SrcListIndexedBy(Parse *pParse, SrcList *p, Token *pIndexedBy){
 }
 
 /*
+** Add the list of function arguments to the SrcList entry for a
+** table-valued-function.
+*/
+void sqlite3SrcListFuncArgs(Parse *pParse, SrcList *p, ExprList *pList){
+  if( p && ALWAYS(p->nSrc>0) ){
+    struct SrcList_item *pItem = &p->a[p->nSrc-1];
+    assert( pItem->fg.notIndexed==0 );
+    assert( pItem->fg.isIndexedBy==0 );
+    assert( pItem->fg.isTabFunc==0 );
+    pItem->u1.pFuncArg = pList;
+    pItem->fg.isTabFunc = 1;
+  }
+}
+
+/*
 ** When building up a FROM clause in the parser, the join operator
 ** is initially attached to the left operand.  But the code generator
 ** expects the join operator to be on the right operand.  This routine
