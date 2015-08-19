@@ -17,7 +17,9 @@
 **
 ** For the time being, all JSON is stored as pure text.  (We might add
 ** a JSONB type in the future which stores a binary encoding of JSON in
-** a BLOB, but there is no support for JSONB in the current implementation.)
+** a BLOB, but there is no support for JSONB in the current implementation.
+** This implementation parses JSON text at 250 MB/s, so it is hard to see
+** how JSONB might improve on that.)
 */
 #include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT1
@@ -1156,6 +1158,276 @@ static void jsonTypeFunc(
   sqlite3_free(x.aNode);
 }
 
+/****************************************************************************
+** The json_each virtual table
+****************************************************************************/
+typedef struct JsonEachCursor JsonEachCursor;
+struct JsonEachCursor {
+  sqlite3_vtab_cursor base;  /* Base class - must be first */
+  u32 iRowid;         /* The rowid */
+  u32 i;              /* Index in sParse.aNode[] of current row */
+  u32 iEnd;           /* EOF when i equals or exceeds this value */
+  u8 eType;           /* Type of top-level element */
+  char *zJson;        /* Input json */
+  char *zPath;        /* Path by which to filter zJson */
+  JsonParse sParse;   /* The input json */
+};
+
+/* Constructor for the json_each virtual table */
+static int jsonEachConnect(
+  sqlite3 *db,
+  void *pAux,
+  int argc, const char *const*argv,
+  sqlite3_vtab **ppVtab,
+  char **pzErr
+){
+  sqlite3_vtab *pNew;
+  pNew = *ppVtab = sqlite3_malloc( sizeof(*pNew) );
+  if( pNew==0 ) return SQLITE_NOMEM;
+
+/* Column numbers */
+#define JEACH_KEY    0
+#define JEACH_VALUE  1
+#define JEACH_JSON   2
+#define JEACH_PATH   3
+
+  sqlite3_declare_vtab(db, "CREATE TABLE x(key,value,json hidden,path hidden)");
+  memset(pNew, 0, sizeof(*pNew));
+  return SQLITE_OK;
+}
+
+/* destructor for json_each virtual table */
+static int jsonEachDisconnect(sqlite3_vtab *pVtab){
+  sqlite3_free(pVtab);
+  return SQLITE_OK;
+}
+
+/* constructor for a JsonEachCursor object. */
+static int jsonEachOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
+  JsonEachCursor *pCur;
+  pCur = sqlite3_malloc( sizeof(*pCur) );
+  if( pCur==0 ) return SQLITE_NOMEM;
+  memset(pCur, 0, sizeof(*pCur));
+  *ppCursor = &pCur->base;
+  return SQLITE_OK;
+}
+
+/* Reset a JsonEachCursor back to its original state.  Free any memory
+** held. */
+static void jsonEachCursorReset(JsonEachCursor *p){
+  sqlite3_free(p->zJson);
+  sqlite3_free(p->zPath);
+  sqlite3_free(p->sParse.aNode);
+  p->iRowid = 0;
+  p->i = 0;
+  p->iEnd = 0;
+  p->eType = 0;
+  memset(&p->sParse, 0, sizeof(p->sParse));
+  p->zJson = 0;
+  p->zPath = 0;
+}
+
+/* Destructor for a jsonEachCursor object */
+static int jsonEachClose(sqlite3_vtab_cursor *cur){
+  JsonEachCursor *p = (JsonEachCursor*)cur;
+  jsonEachCursorReset(p);
+  sqlite3_free(cur);
+  return SQLITE_OK;
+}
+
+/* Return TRUE if the jsonEachCursor object has been advanced off the end
+** of the JSON object */
+static int jsonEachEof(sqlite3_vtab_cursor *cur){
+  JsonEachCursor *p = (JsonEachCursor*)cur;
+  return p->i >= p->iEnd;
+}
+
+/* Advance the cursor to the next top-level element of the current
+** JSON string */
+static int jsonEachNext(sqlite3_vtab_cursor *cur){
+  JsonEachCursor *p = (JsonEachCursor*)cur;
+  switch( p->eType ){
+    case JSON_ARRAY: {
+      p->i += jsonSize(&p->sParse.aNode[p->i]);
+      p->iRowid++;
+      break;
+    }
+    case JSON_OBJECT: {
+      p->i += 1 + jsonSize(&p->sParse.aNode[p->i+1]);
+      p->iRowid++;
+      break;
+    }
+    default: {
+      p->i = p->iEnd;
+      break;
+    }
+  }
+  return SQLITE_OK;
+}
+
+/* Return the value of a column */
+static int jsonEachColumn(
+  sqlite3_vtab_cursor *cur,   /* The cursor */
+  sqlite3_context *ctx,       /* First argument to sqlite3_result_...() */
+  int i                       /* Which column to return */
+){
+  JsonEachCursor *p = (JsonEachCursor*)cur;
+  switch( i ){
+    case JEACH_KEY: {
+      if( p->eType==JSON_OBJECT ){
+        jsonReturn(&p->sParse.aNode[p->i], ctx, 0);
+      }else{
+        sqlite3_result_int64(ctx, p->iRowid);
+      }
+      break;
+    }
+    case JEACH_VALUE: {
+      if( p->eType==JSON_OBJECT ){
+        jsonReturn(&p->sParse.aNode[p->i+1], ctx, 0);
+      }else{
+        jsonReturn(&p->sParse.aNode[p->i], ctx, 0);
+      }
+      break;
+    }
+    case JEACH_PATH: {
+      const char *zPath = p->zPath;
+      if( zPath==0 ) zPath = "$";
+      sqlite3_result_text(ctx, zPath, -1, SQLITE_STATIC);
+      break;
+    }
+    default: {
+      sqlite3_result_text(ctx, p->sParse.zJson, -1, SQLITE_STATIC);
+      break;
+    }
+  }
+  return SQLITE_OK;
+}
+
+/* Return the current rowid value */
+static int jsonEachRowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){
+  JsonEachCursor *p = (JsonEachCursor*)cur;
+  *pRowid = p->iRowid;
+  return SQLITE_OK;
+}
+
+/* The query strategy is to look for an equality constraint on the json
+** column.  Without such a constraint, the table cannot operate.  idxNum is
+** 1 if the constraint is found, 3 if the constraint and zPath are found,
+** and 0 otherwise.
+*/
+static int jsonEachBestIndex(
+  sqlite3_vtab *tab,
+  sqlite3_index_info *pIdxInfo
+){
+  int i;
+  int jsonIdx = -1;
+  int pathIdx = -1;
+  const struct sqlite3_index_constraint *pConstraint;
+  pConstraint = pIdxInfo->aConstraint;
+  for(i=0; i<pIdxInfo->nConstraint; i++, pConstraint++){
+    if( pConstraint->usable==0 ) continue;
+    if( pConstraint->op!=SQLITE_INDEX_CONSTRAINT_EQ ) continue;
+    switch( pConstraint->iColumn ){
+      case JEACH_JSON:   jsonIdx = i;    break;
+      case JEACH_PATH:   pathIdx = i;    break;
+      default:           /* no-op */     break;
+    }
+  }
+  if( jsonIdx<0 ){
+    pIdxInfo->idxNum = 0;
+    pIdxInfo->estimatedCost = (double)2000000000;
+  }else{
+    pIdxInfo->estimatedCost = (double)1;
+    pIdxInfo->aConstraintUsage[jsonIdx].argvIndex = 1;
+    pIdxInfo->aConstraintUsage[jsonIdx].omit = 1;
+    if( pathIdx<0 ){
+      pIdxInfo->idxNum = 1;
+    }else{
+      pIdxInfo->aConstraintUsage[pathIdx].argvIndex = 2;
+      pIdxInfo->aConstraintUsage[pathIdx].omit = 1;
+      pIdxInfo->idxNum = 3;
+    }
+  }
+  return SQLITE_OK;
+}
+
+/* Start a search on a new JSON string */
+static int jsonEachFilter(
+  sqlite3_vtab_cursor *cur,
+  int idxNum, const char *idxStr,
+  int argc, sqlite3_value **argv
+){
+  JsonEachCursor *p = (JsonEachCursor*)cur;
+  const char *z;
+  const char *zPath;
+  sqlite3_int64 n;
+
+  jsonEachCursorReset(p);
+  if( idxNum==0 ) return SQLITE_OK;
+  z = (const char*)sqlite3_value_text(argv[0]);
+  if( z==0 ) return SQLITE_OK;
+  if( idxNum&2 ){
+    zPath = (const char*)sqlite3_value_text(argv[1]);
+    if( zPath==0 || zPath[0]!='$' ) return SQLITE_OK;
+  }
+  n = sqlite3_value_bytes(argv[0]);
+  p->zJson = sqlite3_malloc( n+1 );
+  if( p->zJson==0 ) return SQLITE_NOMEM;
+  memcpy(p->zJson, z, n+1);
+  if( jsonParse(&p->sParse, p->zJson) ){
+    jsonEachCursorReset(p);
+  }else{
+    JsonNode *pNode;
+    if( idxNum==3 ){
+      n = sqlite3_value_bytes(argv[1]);
+      p->zPath = sqlite3_malloc( n+1 );
+      if( p->zPath==0 ) return SQLITE_NOMEM;
+      memcpy(p->zPath, zPath, n+1);
+      pNode = jsonLookup(&p->sParse, 0, p->zPath+1, 0);
+      if( pNode==0 ){
+        jsonEachCursorReset(p);
+        return SQLITE_OK;
+      }
+    }else{
+      pNode = p->sParse.aNode;
+    }
+    p->i = (int)(pNode - p->sParse.aNode);
+    p->eType = pNode->eType;
+    if( p->eType>=JSON_ARRAY ){
+      p->i++;
+      p->iEnd = p->i + pNode->n;
+    }else{
+      p->iEnd = p->i+1;
+    }
+  }
+  return SQLITE_OK;
+}
+
+/* The methods of the json_each virtual table */
+static sqlite3_module jsonEachModule = {
+  0,                         /* iVersion */
+  0,                         /* xCreate */
+  jsonEachConnect,           /* xConnect */
+  jsonEachBestIndex,         /* xBestIndex */
+  jsonEachDisconnect,        /* xDisconnect */
+  0,                         /* xDestroy */
+  jsonEachOpen,              /* xOpen - open a cursor */
+  jsonEachClose,             /* xClose - close a cursor */
+  jsonEachFilter,            /* xFilter - configure scan constraints */
+  jsonEachNext,              /* xNext - advance a cursor */
+  jsonEachEof,               /* xEof - check for end of scan */
+  jsonEachColumn,            /* xColumn - read data */
+  jsonEachRowid,             /* xRowid - read data */
+  0,                         /* xUpdate */
+  0,                         /* xBegin */
+  0,                         /* xSync */
+  0,                         /* xCommit */
+  0,                         /* xRollback */
+  0,                         /* xFindMethod */
+  0,                         /* xRename */
+};
+
+
 #ifdef _WIN32
 __declspec(dllexport)
 #endif
@@ -1198,6 +1470,9 @@ int sqlite3_json_init(
                                  SQLITE_UTF8 | SQLITE_DETERMINISTIC, 
                                  (void*)&aFunc[i].flag,
                                  aFunc[i].xFunc, 0, 0);
+  }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_module(db, "json_each", &jsonEachModule, 0);
   }
   return rc;
 }
