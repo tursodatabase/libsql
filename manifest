@@ -1,9 +1,9 @@
-C Merge\schanges\sfrom\strunk.
-D 2015-08-19T12:52:51.679
+C Virtual\stable\smodules\swith\sa\snull\sxCreate\smethod\sact\sas\seponymous-only\smodules\s-\nthey\scannot\sbe\sused\sin\sa\sCREATE\sVIRTUAL\sTABLE\sstatement.\s\sAdd\sthe\sseries.c\nextension\sthat\simplements\sa\spostgres-like\sgenerate_series\svirtual\stable\sto\ndemonstrate\sthis\scapability.
+D 2015-08-19T13:54:20.227
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in 2fc9ca6bf5949d415801c007ed3004a4bdb7c380
+F Makefile.in 4f663b6b4954b9b1eb0e6f08387688a93b57542d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 5f7861c62c41fe8e3205ef14b90ebed28fa21f1b
+F Makefile.msc cf63e11a5395cf887515ac7b78e2057dfe442fcd
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION ccfc4d1576dbfdeece0a4372a2e6a2e37d3e7975
@@ -196,6 +196,7 @@ F ext/misc/nextchar.c 35c8b8baacb96d92abbb34a83a997b797075b342
 F ext/misc/percentile.c bcbee3c061b884eccb80e21651daaae8e1e43c63
 F ext/misc/regexp.c af92cdaa5058fcec1451e49becc7ba44dba023dc
 F ext/misc/rot13.c 1ac6f95f99b575907b9b09c81a349114cf9be45a
+F ext/misc/series.c c2be7ee41963cd2fcc1d7a226f5348fbe5f4f657
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c 86998fb73aefb7b5dc346ba8a58912f312da4996
 F ext/misc/totype.c 4a167594e791abeed95e0a8db028822b5e8fe512
@@ -256,7 +257,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 73167b34b0e67c0be32c1da2d988a376851c9ab1
+F main.mk 702135e71d4438ea38c64b22fd6545a0fd87425c
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
 F mkopcodeh.awk 0e7f04a8eb90f92259e47d80110e4e98d7ce337a
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
@@ -345,7 +346,7 @@ F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c f266ad8a2892d659b74f0f50cb6a88b6e7c12179
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
 F src/tclsqlite.c d9439b6a910985b7fff43ba6756bcef00de22649
-F src/test1.c d339ae9b9baf9221c657c9628c9061d88bd831f6
+F src/test1.c c12ed85c22ac95f87f79de2ec9553334d115f71e
 F src/test2.c 577961fe48961b2f2e5c8b56ee50c3f459d3359d
 F src/test3.c 64d2afdd68feac1bb5e2ffb8226c8c639f798622
 F src/test4.c d168f83cc78d02e8d35567bb5630e40dcd85ac1e
@@ -407,7 +408,7 @@ F src/vdbeblob.c 4f2e8e075d238392df98c5e03a64342465b03f90
 F src/vdbemem.c ae38a0d35ae71cf604381a887c170466ba518090
 F src/vdbesort.c f5009e7a35e3065635d8918b9a31f498a499976b
 F src/vdbetrace.c 8befe829faff6d9e6f6e4dee5a7d3f85cc85f1a0
-F src/vtab.c fddb32423d824831fbc42b8358ffadc2437edd97
+F src/vtab.c 1e3405f78e9f248bdee6ef7a8903fadaa7222f9c
 F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 6fb6b68969e4692593c2552c4e7bff5882de2cb8
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
@@ -1030,6 +1031,7 @@ F test/superlock.test 1cde669f68d2dd37d6c9bd35eee1d95491ae3fc2
 F test/sync.test a34cd43e98b7fb84eabbf38f7ed8f7349b3f3d85
 F test/syscall.test d2fdaad713f103ac611fe7ef9b724c7b69f8149c
 F test/sysfault.test fa776e60bf46bdd3ae69f0b73e46ee3977a58ae6
+F test/tabfunc01.test 239e336a556c92c6f81431f4f144f16311184880
 F test/table.test 33bf0d1fd07f304582695184b8e6feb017303816
 F test/tableapi.test 2674633fa95d80da917571ebdd759a14d9819126
 F test/tableopts.test dba698ba97251017b7c80d738c198d39ab747930
@@ -1374,7 +1376,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c1f43a7799a9298abea01b2f8531fc7cdadc4594 c573b0a1aa3ba509234f07520fa94d008bcbb330
-R 04d75ba2dfa13388a455ec59c68a148d
+P dddd792dedf0c73ebe74b4ff8d303e6216c16b6a
+R 5f16282689e1192bf9396f5e61d5d753
 U drh
-Z d53ae36484d8828c21b5f9a23ee68eb5
+Z 970ed95f4f43231f807975375b2847aa

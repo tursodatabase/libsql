@@ -699,7 +699,7 @@ int sqlite3VtabCallCreate(sqlite3 *db, int iDb, const char *zTab, char **pzErr){
   ** invoke it now. If the module has not been registered, return an 
   ** error. Otherwise, do nothing.
   */
-  if( !pMod ){
+  if( pMod==0 || pMod->pModule->xCreate==0 ){
     *pzErr = sqlite3MPrintf(db, "no such module: %s", zMod);
     rc = SQLITE_ERROR;
   }else{
@@ -1109,7 +1109,7 @@ int sqlite3VtabEponymousTableInit(Parse *pParse, Module *pMod){
   int rc;
   sqlite3 *db = pParse->db;
   if( pMod->pEpoTab ) return 1;
-  if( pModule->xCreate!=pModule->xConnect ) return 0;
+  if( pModule->xCreate!=0 && pModule->xCreate!=pModule->xConnect ) return 0;
   nName = sqlite3Strlen30(pMod->zName) + 1;
   pTab = sqlite3DbMallocZero(db, sizeof(Table) + nName);
   if( pTab==0 ) return 0;
