@@ -215,6 +215,8 @@ int sqlite3BtreeCursorHasHint(BtCursor*, unsigned int mask);
 int sqlite3BtreeIsReadonly(Btree *pBt);
 int sqlite3HeaderSizeBtree(void);
 
+int sqlite3BtreeExclusiveLock(Btree *pBt);
+
 #ifndef NDEBUG
 int sqlite3BtreeCursorIsValid(BtCursor*);
 #endif

@@ -145,12 +145,13 @@ int sqlite3PagerMovepage(Pager*,DbPage*,Pgno,int);
 int sqlite3PagerPageRefcount(DbPage*);
 void *sqlite3PagerGetData(DbPage *); 
 void *sqlite3PagerGetExtra(DbPage *); 
+int sqlite3PagerIsDirty(DbPage*);
 
 /* Functions used to manage pager transactions and savepoints. */
 void sqlite3PagerPagecount(Pager*, int*);
 int sqlite3PagerBegin(Pager*, int exFlag, int);
 int sqlite3PagerCommitPhaseOne(Pager*,const char *zMaster, int);
-int sqlite3PagerExclusiveLock(Pager*);
+int sqlite3PagerExclusiveLock(Pager*, DbPage *pPage1);
 int sqlite3PagerSync(Pager *pPager, const char *zMaster);
 int sqlite3PagerCommitPhaseTwo(Pager*);
 int sqlite3PagerRollback(Pager*);
@@ -159,7 +160,7 @@ int sqlite3PagerSavepoint(Pager *pPager, int op, int iSavepoint);
 int sqlite3PagerSharedLock(Pager *pPager);
 
 void sqlite3PagerDropExclusiveLock(Pager*);
-int sqlite3PagerCommitRequiresUpgrade(Pager*);
+int sqlite3PagerIsUnlocked(Pager*);
 
 #ifndef SQLITE_OMIT_WAL
   int sqlite3PagerCheckpoint(Pager *pPager, int, int*, int*);
@@ -196,6 +197,10 @@ void sqlite3PagerTruncateImage(Pager*,Pgno);
 
 void sqlite3PagerRekey(DbPage*, Pgno, u16);
 
+int sqlite3PagerIswriteable(DbPage*);
+int sqlite3PagerUpgradeSnapshot(Pager *pPager, DbPage*);
+void sqlite3PagerSetDbsize(Pager *pPager, Pgno);
+
 #if defined(SQLITE_HAS_CODEC) && !defined(SQLITE_OMIT_WAL)
 void *sqlite3PagerCodec(DbPage *);
 #endif
@@ -203,7 +208,6 @@ void *sqlite3PagerCodec(DbPage *);
 /* Functions to support testing and debugging. */
 #if !defined(NDEBUG) || defined(SQLITE_TEST)
   Pgno sqlite3PagerPagenumber(DbPage*);
-  int sqlite3PagerIswriteable(DbPage*);
 #endif
 #ifdef SQLITE_TEST
   int *sqlite3PagerStats(Pager*);

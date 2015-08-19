@@ -232,6 +232,7 @@
 typedef struct MemPage MemPage;
 typedef struct BtLock BtLock;
 typedef struct CellInfo CellInfo;
+typedef struct BtreePtrmap BtreePtrmap;
 
 /*
 ** This is a magic string that appears at the beginning of every
@@ -447,6 +448,9 @@ struct BtShared {
   Btree *pWriter;       /* Btree with currently open write transaction */
 #endif
   u8 *pTmpSpace;        /* Temp space sufficient to hold a single cell */
+#ifdef SQLITE_ENABLE_UNLOCKED
+  BtreePtrmap *pMap;
+#endif
 };
 
 /*
@@ -657,6 +661,12 @@ struct BtCursor {
 #define ISAUTOVACUUM (pBt->autoVacuum)
 #else
 #define ISAUTOVACUUM 0
+#endif
+
+#ifdef SQLITE_ENABLE_UNLOCKED
+# define REQUIRE_PTRMAP (ISAUTOVACUUM || pBt->pMap)
+#else
+# define REQUIRE_PTRMAP ISAUTOVACUUM
 #endif
 
 

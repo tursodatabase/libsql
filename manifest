@@ -1,5 +1,5 @@
-C Handle\swrites\sto\sauto-vacuum\sdatabases\swithin\sUNLOCKED\stransactions\sin\sthe\ssame\sway\sas\sfor\snon-UNLOCKED\stransactions.
-D 2015-08-15T18:16:46.463
+C When\scommitting\san\sunlocked\stransaction,\srelocate\snewly\sallocated\sdatabase\spages\swithin\sthe\sfile\sto\savoid\sconflicting\swith\scommitted\stransactions.\sThere\sare\slots\sof\sthings\sstill\sto\sfix\sin\sthis\scode.
+D 2015-08-19T20:27:05.840
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4de3ef40c8b3b75c0c55ff4242a43c8ce1ad90ee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -270,9 +270,9 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 4d9134dc988a87838c06056c89c0e8c4700a0452
 F src/bitvec.c d1f21d7d91690747881f03940584f4cc548c9d3d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c c1bbc83539de1e749aa36ce9c283f95b50543bcb
-F src/btree.h 40bd41ef0b71d6f7502725dc159fa0d6bebd8bb3
-F src/btreeInt.h 2ad754dd4528baa8d0946a593cc373b890bf859e
+F src/btree.c a00a7c4809d642bf6c63979e73face9fed53dc66
+F src/btree.h 00d4cdb747c4172a5566faf037116985dbbc377e
+F src/btreeInt.h 9f77bac260d81cc74ecd96cccf73a8c5af1688c4
 F src/build.c 28c15c43eefc0066ff64040526ff649c32fe5523
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
@@ -315,8 +315,8 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c 388c023582b17890f10c980b30ec1922b471753b
 F src/os_win.c 40b3af7a47eb1107d0d69e592bec345a3b7b798a
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
-F src/pager.c 18aa67541bd2c7d7963f180669ea4e48cd5246f4
-F src/pager.h 41938212a5d80a7068883bb29ea6ac0d4ef3a6d8
+F src/pager.c fe82e368600278cfd35024c20b888e945236f675
+F src/pager.h 3fc23bca2e7d606ca4fbdd923713cdcdcec48297
 F src/parse.y 199145cd982587d70fa3db2f9b11f7ab118f0acd
 F src/pcache.c cde06aa50962595e412d497e22fd2e07878ba1f0
 F src/pcache.h 9968603796240cdf83da7e7bef76edf90619cea9
@@ -395,15 +395,15 @@ F src/vdbe.c fd6832408d9621ad347a65b01a05380fe766232f
 F src/vdbe.h 7a75045d879118b9d3af7e8b3c108f2f27c51473
 F src/vdbeInt.h 8b54e01ad0463590e7cffabce0bc36da9ee4f816
 F src/vdbeapi.c adabbd66eb2e3a10f3998485ee0be7e326d06ee4
-F src/vdbeaux.c 24a03ccbadc8d4cfecf25b6399db95851b10dd21
+F src/vdbeaux.c 27feae106f3f4db298e65d37a9da4962aaff724b
 F src/vdbeblob.c 4f2e8e075d238392df98c5e03a64342465b03f90
 F src/vdbemem.c ae38a0d35ae71cf604381a887c170466ba518090
 F src/vdbesort.c f5009e7a35e3065635d8918b9a31f498a499976b
 F src/vdbetrace.c 8befe829faff6d9e6f6e4dee5a7d3f85cc85f1a0
 F src/vtab.c 082b35a25a26e3d36f365ca8cd73c1922532f05e
 F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
-F src/wal.c 4497b466fee8ed56c31672bb35741dd0321ec999
-F src/wal.h cd7ea52439d56571d549b7d4eacdeed58d841385
+F src/wal.c 8bb1130dc1876e1c1c3fa082a5b0ec6437feb8e8
+F src/wal.h 5aaed8ca6cad1406088042ff8767951a6a3c7b56
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
 F src/where.c 909eba3b6db984eb2adfbca9de2c237ee7056adb
 F src/whereInt.h 5f87e3c4b0551747d119730dfebddd3c54f04047
@@ -1215,7 +1215,8 @@ F test/types3.test 99e009491a54f4dc02c06bdbc0c5eea56ae3e25a
 F test/unique.test 93f8b2ef5ea51b9495f8d6493429b1fd0f465264
 F test/unique2.test 41e7f83c6827605991160a31380148a9fc5f1339
 F test/unixexcl.test cd6c765f75e50e8e2c2ba763149e5d340ea19825
-F test/unlocked.test 644a84d7f032ca029d490f0b0bc8fb9f86c7a1a5
+F test/unlocked.test d143a871bd874311d4e5c98ce458218ca6b579fd
+F test/unlocked2.test fc4c730a44c3650250467ecacca6ddb969f64405
 F test/unordered.test ca7adce0419e4ca0c50f039885e76ed2c531eda8
 F test/update.test 6c68446b8a0a33d522a7c72b320934596a2d7d32
 F test/uri.test 23662b7b61958b0f0e47082de7d06341ccf85d5b
@@ -1367,7 +1368,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0b9718426e44df092850c5d095ce1b84a1e567cf
-R ac1d3857424ab06ed70d671704c3737d
+P de1ea450db33b140b11af5b801ea6a15875e774e
+R db05422c8fb37e882a7e6cc4bd7c8ffb
 U dan
-Z 12da9addf6141c212c3c7cdffe33d767
+Z cccfd407eb244cf1cd3b5cab72e65fda

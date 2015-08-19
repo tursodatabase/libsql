@@ -657,7 +657,9 @@ struct Pager {
   u32 cksumInit;              /* Quasi-random value added to every checksum */
   u32 nSubRec;                /* Number of records written to sub-journal */
   Bitvec *pInJournal;         /* One bit for each page in the database file */
+#ifdef SQLITE_ENABLE_UNLOCKED
   Bitvec *pAllRead;           /* Pages read within current UNLOCKED trans. */
+#endif
   sqlite3_file *fd;           /* File descriptor for database */
   sqlite3_file *jfd;          /* File descriptor for main journal */
   sqlite3_file *sjfd;         /* File descriptor for sub-journal */
@@ -4091,7 +4093,7 @@ static int syncJournal(Pager *pPager, int newHdr){
   assert( assert_pager_state(pPager) );
   assert( !pagerUseWal(pPager) );
 
-  rc = sqlite3PagerExclusiveLock(pPager);
+  rc = sqlite3PagerExclusiveLock(pPager, 0);
   if( rc!=SQLITE_OK ) return rc;
 
   if( !pPager->noSync ){
@@ -5929,11 +5931,9 @@ int sqlite3PagerWrite(PgHdr *pPg){
 ** to sqlite3PagerWrite().  In other words, return TRUE if it is ok
 ** to change the content of the page.
 */
-#ifndef NDEBUG
 int sqlite3PagerIswriteable(DbPage *pPg){
   return pPg->flags & PGHDR_WRITEABLE;
 }
-#endif
 
 /*
 ** A call to this routine tells the pager that it is not necessary to
@@ -6091,7 +6091,7 @@ int sqlite3PagerSync(Pager *pPager, const char *zMaster){
 ** Otherwise, either SQLITE_BUSY or an SQLITE_IOERR_XXX error code is 
 ** returned.
 */
-int sqlite3PagerExclusiveLock(Pager *pPager){
+int sqlite3PagerExclusiveLock(Pager *pPager, PgHdr *pPage1){
   int rc = SQLITE_OK;
   assert( pPager->eState==PAGER_WRITER_CACHEMOD 
        || pPager->eState==PAGER_WRITER_DBMOD 
@@ -6108,13 +6108,31 @@ int sqlite3PagerExclusiveLock(Pager *pPager){
       ** non-zero.  */
       do {
         /* rc = sqlite3WalBeginWriteTransaction(pWal); */
-        rc = sqlite3WalLockForCommit(pPager->pWal, pPager->pAllRead);
+        rc = sqlite3WalLockForCommit(pPager->pWal, pPage1, pPager->pAllRead);
       }while( rc==SQLITE_BUSY 
            && pPager->xBusyHandler(pPager->pBusyHandlerArg) 
       );
     }
   }
   return rc;
+}
+
+int sqlite3PagerUpgradeSnapshot(Pager *pPager, DbPage *pPage1){
+  int rc;
+  u32 iFrame = 0;
+
+  assert( pPager->pWal && pPager->pAllRead );
+  sqlite3WalUpgradeSnapshot(pPager->pWal);
+  rc = sqlite3WalFindFrame(pPager->pWal, 1, &iFrame);
+  if( rc==SQLITE_OK ){
+    rc = readDbPage(pPage1, iFrame);
+  }
+
+  return rc;
+}
+
+void sqlite3PagerSetDbsize(Pager *pPager, Pgno nFinal){
+  pPager->dbSize = nFinal;
 }
 
 /*
@@ -6131,13 +6149,10 @@ void sqlite3PagerDropExclusiveLock(Pager *pPager){
 ** Return true if this is a WAL database and snapshot upgrade is required
 ** before the current transaction can be committed.
 */
-int sqlite3PagerCommitRequiresUpgrade(Pager *pPager){
-  int res = 0;
-  if( pagerUseWal(pPager) ){
-    res = sqlite3WalCommitRequiresUpgrade(pPager->pWal);
-  }
-  return res;
+int sqlite3PagerIsUnlocked(Pager *pPager){
+  return pPager->pAllRead!=0;
 }
+
 
 /*
 ** Sync the database file for the pager pPager. zMaster points to the name

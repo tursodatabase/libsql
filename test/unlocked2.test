@@ -1,0 +1,101 @@
+# 2015 July 26
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+source $testdir/lock_common.tcl
+set ::testprefix unlocked2
+
+
+do_multiclient_test tn {
+
+  do_test 1.$tn.1 {
+    sql1 {
+      PRAGMA journal_mode = wal;
+      CREATE TABLE t1(x);
+      CREATE TABLE t2(y);
+    }
+  } {wal}
+
+  # Test that an UNLOCKED transaction that allocates/frees no pages does
+  # not conflict with a transaction that does allocate pages.
+  do_test 1.$tn.2  {
+    sql1 { 
+      BEGIN UNLOCKED;
+        INSERT INTO t1 VALUES(4);
+    }
+    sql2 {
+      INSERT INTO t2 VALUES(randomblob(1500));
+    }
+    sql1 {
+      COMMIT;
+    }
+  } {}
+  
+  # But that an UNLOCKED transaction does conflict with a transaction
+  # that modifies the db schema.
+  do_test 1.$tn.3  {
+    sql1 {
+      BEGIN UNLOCKED;
+        INSERT INTO t1 VALUES(5);
+    }
+    sql2 {
+      CREATE TABLE t3(z);
+    }
+    list [catch { sql1 COMMIT } msg] $msg
+  } {1 {database is locked}}
+  
+  # Test that an UNLOCKED transaction that allocates at least one page 
+  # does not conflict with a transaction that allocates no pages.
+  do_test 1.$tn.4  {
+    sql1 { 
+      ROLLBACK;
+      BEGIN UNLOCKED;
+        INSERT INTO t1 VALUES(randomblob(1500));
+    }
+    sql2 {
+      INSERT INTO t2 VALUES(8);
+    }
+    sql1 {
+      COMMIT;
+    }
+  } {}
+
+  do_test 1.$tn.5 { sql3 { PRAGMA integrity_check } } {ok}
+}
+
+do_multiclient_test tn {
+  do_test 2.$tn.1 {
+    sql1 {
+      PRAGMA journal_mode = wal;
+      CREATE TABLE t1(x UNIQUE);
+      CREATE TABLE t2(y UNIQUE);
+    }
+  } {wal}
+
+  do_test 2.$tn.2  {
+    sql1 { 
+      BEGIN UNLOCKED;
+        INSERT INTO t1 VALUES(randomblob(1500));
+    }
+    sql2 {
+      INSERT INTO t2 VALUES(randomblob(1500));
+    }
+    sql1 {
+      COMMIT;
+    }
+  } {}
+
+  do_test 2.$tn.3 { sql3 { PRAGMA integrity_check } } {ok}
+}
+
+finish_test

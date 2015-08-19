@@ -2573,7 +2573,8 @@ int sqlite3WalBeginWriteTransaction(Wal *pWal){
 ** transaction. It may be assumed that no frames have been written to
 ** the wal file.
 */
-int sqlite3WalLockForCommit(Wal *pWal, Bitvec *pAllRead){
+int sqlite3WalLockForCommit(Wal *pWal, PgHdr *pPage1, Bitvec *pAllRead){
+  Pager *pPager = pPage1->pPager;
   int rc = walWriteLock(pWal);
 
   /* If the database has been modified since this transaction was started,
@@ -2589,6 +2590,9 @@ int sqlite3WalLockForCommit(Wal *pWal, Bitvec *pAllRead){
   if( rc==SQLITE_OK ){
     volatile WalIndexHdr *pHead;    /* Head of the wal file */
     pHead = walIndexHdr(pWal);
+
+    /* TODO: Check header checksum is good here. */
+
     if( memcmp(&pWal->hdr, (void*)pHead, sizeof(WalIndexHdr))!=0 ){
       /* TODO: Is this safe? Because it holds the WRITER lock this thread
       ** has exclusive access to the live header, but might it be corrupt? 
@@ -2609,12 +2613,33 @@ int sqlite3WalLockForCommit(Wal *pWal, Bitvec *pAllRead){
           if( iMin<1 ) iMin = 1;
           if( iMax>pHead->mxFrame ) iMax = pHead->mxFrame;
           for(i=iMin; i<=iMax; i++){
-            if( sqlite3BitvecTestNotNull(pAllRead, aPgno[i]) ){
+            PgHdr *pPg;
+            if( aPgno[i]==1 ){
+              /* Check that the schema cookie has not been modified. If
+              ** it has not, the commit can proceed. */
+              u8 aNew[4];
+              u8 *aOld = &((u8*)pPage1->pData)[40];
+              int sz;
+              i64 iOffset;
+              sz = pWal->hdr.szPage;
+              sz = (sz&0xfe00) + ((sz&0x0001)<<16);
+              iOffset = walFrameOffset(i+iZero, sz) + WAL_FRAME_HDRSIZE + 40;
+              rc = sqlite3OsRead(pWal->pWalFd, aNew, sizeof(aNew), iOffset);
+              if( rc==SQLITE_OK && memcmp(aOld, aNew, sizeof(aNew)) ){
+                rc = SQLITE_BUSY_SNAPSHOT;
+              }
+            }else if( sqlite3BitvecTestNotNull(pAllRead, aPgno[i]) ){
               sqlite3_log(SQLITE_OK,
                   "cannot commit UNLOCKED transaction (conflict at page %d)",
                   (int)aPgno[i]
               );
               rc = SQLITE_BUSY_SNAPSHOT;
+            }else if( (pPg = sqlite3PagerLookup(pPager, aPgno[i])) ){
+              if( sqlite3PagerIswriteable(pPg)==0 ){
+                sqlite3PcacheDrop(pPg);
+              }else{
+                sqlite3PagerUnref(pPg);
+              }
             }
           }
         }
@@ -2624,6 +2649,11 @@ int sqlite3WalLockForCommit(Wal *pWal, Bitvec *pAllRead){
   }
 
   return rc;
+}
+
+void sqlite3WalUpgradeSnapshot(Wal *pWal){
+  assert( pWal->writeLock );
+  memcpy(&pWal->hdr, (void*)walIndexHdr(pWal), sizeof(WalIndexHdr));
 }
 
 /*
@@ -2890,7 +2920,6 @@ int sqlite3WalFrames(
   int szFrame;                    /* The size of a single frame */
   i64 iOffset;                    /* Next byte to write in WAL file */
   WalWriter w;                    /* The writer */
-  int bUpgrade = 0;               /* True if commit requires snapshot upgrade */
 
   assert( pList );
   assert( pWal->writeLock );
@@ -2905,22 +2934,6 @@ int sqlite3WalFrames(
               pWal, cnt, pWal->hdr.mxFrame, isCommit ? "Commit" : "Spill"));
   }
 #endif
-
-  if( isCommit ){
-    volatile WalIndexHdr *pHead = walIndexHdr(pWal);
-    if( pHead->mxFrame>pWal->hdr.mxFrame ){
-      if( memcmp((void*)&pHead[0], (void*)&pHead[1], sizeof(WalIndexHdr))!=0 ){
-        /* TODO: Deal with this case. It's quite possible, but fiddly. */
-        return SQLITE_CORRUPT_BKPT;
-      }
-      memcpy(&pWal->hdr, (void*)pHead, sizeof(WalIndexHdr));
-      if( nTruncate<pWal->hdr.nPage ){
-        /* Do not truncate the database file in this case */
-        nTruncate = pWal->hdr.nPage;
-      }
-      bUpgrade = 1;
-    }
-  }
 
   /* See if it is possible to write these frames into the start of the
   ** log file, instead of appending to it at pWal->hdr.mxFrame.
@@ -3068,14 +3081,6 @@ int sqlite3WalFrames(
       walIndexWriteHdr(pWal);
       pWal->iCallback = iFrame;
     }
-  }
-
-  if( rc==SQLITE_OK && bUpgrade ){
-    /* If this commit required a snapshot upgrade, the pager cache is 
-    ** not currently consistent with the head of the wal file. Zeroing
-    ** Wal.hdr here forces the next transaction to reset the cache 
-    ** before beginning to read the db. */
-    memset(&pWal->hdr, 0, sizeof(WalIndexHdr));
   }
 
   WALTRACE(("WAL%p: frame write %s\n", pWal, rc ? "failed" : "ok"));

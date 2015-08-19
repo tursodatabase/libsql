@@ -399,10 +399,9 @@ do_multiclient_test tn {
 
   do_test 2.$tn.7.3 {
     list [catch { sql1 { COMMIT } } msg] $msg [sqlite3_errcode db]
-  } {1 {database is locked} SQLITE_BUSY_SNAPSHOT}
-  sql1 ROLLBACK
+  } {0 {} SQLITE_OK}
 
-
+  do_test 2.$tn.7.4 { sql3 { PRAGMA integrity_check } } ok
 }
 
 

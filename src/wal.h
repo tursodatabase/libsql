@@ -127,8 +127,9 @@ int sqlite3WalExclusiveMode(Wal *pWal, int op);
 int sqlite3WalHeapMemory(Wal *pWal);
 
 /* Return true if the WRITER lock is held. False otherwise. */
-int sqlite3WalLockForCommit(Wal *pWal, Bitvec *pRead);
+int sqlite3WalLockForCommit(Wal *pWal, PgHdr *pPg, Bitvec *pRead);
 int sqlite3WalCommitRequiresUpgrade(Wal *pWal);
+void sqlite3WalUpgradeSnapshot(Wal *pWal);
 
 #ifdef SQLITE_ENABLE_ZIPVFS
 /* If the WAL file is not empty, return the number of bytes of content
