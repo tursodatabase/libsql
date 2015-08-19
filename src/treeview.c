@@ -120,7 +120,7 @@ void sqlite3TreeViewSelect(TreeView *pView, const Select *p, u8 moreToFollow){
       if( pItem->zAlias ){
         sqlite3XPrintf(&x, 0, " (AS %s)", pItem->zAlias);
       }
-      if( pItem->jointype & JT_LEFT ){
+      if( pItem->fg.jointype & JT_LEFT ){
         sqlite3XPrintf(&x, 0, " LEFT-JOIN");
       }
       sqlite3StrAccumFinish(&x);

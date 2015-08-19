@@ -3709,7 +3709,8 @@ void sqlite3SrcListDelete(sqlite3 *db, SrcList *pList){
     sqlite3DbFree(db, pItem->zDatabase);
     sqlite3DbFree(db, pItem->zName);
     sqlite3DbFree(db, pItem->zAlias);
-    sqlite3DbFree(db, pItem->zIndexedBy);
+    if( pItem->fg.isIndexedBy ) sqlite3DbFree(db, pItem->u1.zIndexedBy);
+    if( pItem->fg.isTabFunc ) sqlite3ExprListDelete(db, pItem->u1.pFuncArg);
     sqlite3DeleteTable(db, pItem->pTab);
     sqlite3SelectDelete(db, pItem->pSelect);
     sqlite3ExprDelete(db, pItem->pOn);
@@ -3782,13 +3783,16 @@ void sqlite3SrcListIndexedBy(Parse *pParse, SrcList *p, Token *pIndexedBy){
   assert( pIndexedBy!=0 );
   if( p && ALWAYS(p->nSrc>0) ){
     struct SrcList_item *pItem = &p->a[p->nSrc-1];
-    assert( pItem->notIndexed==0 && pItem->zIndexedBy==0 );
+    assert( pItem->fg.notIndexed==0 );
+    assert( pItem->fg.isIndexedBy==0 );
+    assert( pItem->fg.isTabFunc==0 );
     if( pIndexedBy->n==1 && !pIndexedBy->z ){
       /* A "NOT INDEXED" clause was supplied. See parse.y 
       ** construct "indexed_opt" for details. */
-      pItem->notIndexed = 1;
+      pItem->fg.notIndexed = 1;
     }else{
-      pItem->zIndexedBy = sqlite3NameFromToken(pParse->db, pIndexedBy);
+      pItem->u1.zIndexedBy = sqlite3NameFromToken(pParse->db, pIndexedBy);
+      pItem->fg.isIndexedBy = (pItem->u1.zIndexedBy!=0);
     }
   }
 }
@@ -3812,9 +3816,9 @@ void sqlite3SrcListShiftJoinType(SrcList *p){
   if( p ){
     int i;
     for(i=p->nSrc-1; i>0; i--){
-      p->a[i].jointype = p->a[i-1].jointype;
+      p->a[i].fg.jointype = p->a[i-1].fg.jointype;
     }
-    p->a[0].jointype = 0;
+    p->a[0].fg.jointype = 0;
   }
 }
 

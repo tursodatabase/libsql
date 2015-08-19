@@ -1650,7 +1650,7 @@ struct Table {
 #endif
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   int nModuleArg;      /* Number of arguments to the module */
-  char **azModuleArg;  /* Text of all module args. [0] is module name */
+  char **azModuleArg;  /* 0: module 1: schema 2: vtab name 3...: args */
   VTable *pVTable;     /* List of VTable objects. */
 #endif
   Trigger *pTrigger;   /* List of triggers stored in pSchema */
@@ -2285,11 +2285,15 @@ struct SrcList {
     int addrFillSub;  /* Address of subroutine to manifest a subquery */
     int regReturn;    /* Register holding return address of addrFillSub */
     int regResult;    /* Registers holding results of a co-routine */
-    u8 jointype;      /* Type of join between this able and the previous */
-    unsigned notIndexed :1;    /* True if there is a NOT INDEXED clause */
-    unsigned isCorrelated :1;  /* True if sub-query is correlated */
-    unsigned viaCoroutine :1;  /* Implemented as a co-routine */
-    unsigned isRecursive :1;   /* True for recursive reference in WITH */
+    struct {
+      u8 jointype;      /* Type of join between this able and the previous */
+      unsigned notIndexed :1;    /* True if there is a NOT INDEXED clause */
+      unsigned isIndexedBy :1;   /* True if there is an INDEXED BY clause */
+      unsigned isTabFunc :1;     /* True if table-valued-function syntax */
+      unsigned isCorrelated :1;  /* True if sub-query is correlated */
+      unsigned viaCoroutine :1;  /* Implemented as a co-routine */
+      unsigned isRecursive :1;   /* True for recursive reference in WITH */
+    } fg;
 #ifndef SQLITE_OMIT_EXPLAIN
     u8 iSelectId;     /* If pSelect!=0, the id of the sub-select in EQP */
 #endif
@@ -2297,8 +2301,11 @@ struct SrcList {
     Expr *pOn;        /* The ON clause of a join */
     IdList *pUsing;   /* The USING clause of a join */
     Bitmask colUsed;  /* Bit N (1<<N) set if column N of pTab is used */
-    char *zIndexedBy; /* Identifier from "INDEXED BY <zIndex>" clause */
-    Index *pIndex;    /* Index structure corresponding to zIndex, if any */
+    union {
+      char *zIndexedBy;    /* Identifier from "INDEXED BY <zIndex>" clause */
+      ExprList *pFuncArg;  /* Arguments to table-valued-function */
+    } u1;
+    Index *pIBIndex;  /* Index structure corresponding to u1.zIndexedBy */
   } a[1];             /* One entry for each identifier on the list */
 };
 
