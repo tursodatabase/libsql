@@ -1120,6 +1120,7 @@ int sqlite3VtabEponymousTableInit(Parse *pParse, Module *pMod){
   pTab->pSchema = db->aDb[0].pSchema;
   pTab->tabFlags |= TF_Virtual;
   pTab->nModuleArg = 0;
+  pTab->iPKey = -1;
   addModuleArgument(db, pTab, pTab->zName);
   addModuleArgument(db, pTab, 0);
   addModuleArgument(db, pTab, pTab->zName);
