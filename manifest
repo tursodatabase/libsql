@@ -1,5 +1,5 @@
-C When\supdating\sa\szipvfs\sdatabase\swith\sRBU,\sset\sjournal_mode=off\sto\sprevent\sthe\supper-level\spager\sfrom\screating\sa\slarge\stemporary\sfile.
-D 2015-08-19T08:34:34.195
+C Simplification\sto\serror\shandling\sin\saddModuleArgument()\sin\sthe\svirtual\stable\nprocessing.
+D 2015-08-19T12:45:57.389
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2fc9ca6bf5949d415801c007ed3004a4bdb7c380
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -407,7 +407,7 @@ F src/vdbeblob.c 4f2e8e075d238392df98c5e03a64342465b03f90
 F src/vdbemem.c ae38a0d35ae71cf604381a887c170466ba518090
 F src/vdbesort.c f5009e7a35e3065635d8918b9a31f498a499976b
 F src/vdbetrace.c 8befe829faff6d9e6f6e4dee5a7d3f85cc85f1a0
-F src/vtab.c 082b35a25a26e3d36f365ca8cd73c1922532f05e
+F src/vtab.c 964dffd59c756874a2d73f74039344e63af6d80f
 F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 6fb6b68969e4692593c2552c4e7bff5882de2cb8
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
@@ -1374,7 +1374,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8599402092537ab3df8926eb900661c12d738d4c
-R 79cd53df2dc51b1e184555145183f89d
-U dan
-Z 080d9b0837b12f78f74559ebadf2ade0
+P dec14a3980dcf6c61b0b9ac4ba82fa963ac346d4
+R 9e79c5c3619781e4dd0837447f8e7872
+U drh
+Z 95e599ba5e8b06b741ae2fef900bf405
