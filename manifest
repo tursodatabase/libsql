@@ -1,5 +1,5 @@
-C Fix\sa\scouple\sC99-isms\sthat\scause\scompile\serrors\son\sMSVC.
-D 2015-08-20T23:28:18.956
+C Compiler-warning\sfixes\sin\sthe\ssqldiff.exe\sutility.
+D 2015-08-20T23:33:09.816
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4f663b6b4954b9b1eb0e6f08387688a93b57542d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1365,7 +1365,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
-F tool/sqldiff.c a6988cc6e10e08662d73df28538df43b01dc371e
+F tool/sqldiff.c b318efc2eaf7a7fac4d281a0ce736193cb2506df
 F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
 F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
 F tool/symbols.sh fec58532668296d7c7dc48be9c87f75ccdb5814f
@@ -1376,7 +1376,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 774e6a14b124bbae4da0e188b62aee9ffb8c3745
-R a705c27f52160ef69f13084e79416a63
+P bc577fe6cbbe5385d81d6fa0f3c34bb1c833f0d6 072279d458fbb74a812a9ee723041d6b7c662a88
+R 945241c39c0e2b8c88fe2d95b8e90177
+T +closed 072279d458fbb74a812a9ee723041d6b7c662a88
 U drh
-Z 3baa7e86161b56868138f2b0a38c7271
+Z 016c7dc0deb1c398804e42d942b63fbc
