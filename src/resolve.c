@@ -1451,11 +1451,10 @@ int sqlite3ResolveExprListNames(
   NameContext *pNC,       /* Namespace to resolve expressions in. */
   ExprList *pList         /* The expression list to be analyzed. */
 ){
-  if( pList ){
-    int i;
-    for(i=0; i<pList->nExpr; i++){
-      if( sqlite3ResolveExprNames(pNC, pList->a[i].pExpr) ) return WRC_Abort;
-    }
+  assert( pList!=0 );
+  int i;
+  for(i=0; i<pList->nExpr; i++){
+    if( sqlite3ResolveExprNames(pNC, pList->a[i].pExpr) ) return WRC_Abort;
   }
   return WRC_Continue;
 }

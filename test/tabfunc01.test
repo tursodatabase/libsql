@@ -43,7 +43,7 @@ do_execsql_test tabfunc01-1.6 {
 } {1 4 7 10}
 do_catchsql_test tabfunc01-1.7 {
   SELECT * FROM generate_series(1,9,2,11);
-} {1 {too many arguments on generate_series - max 3}}
+} {1 {too many arguments on generate_series() - max 3}}
 
 do_execsql_test tabfunc01-1.8 {
   SELECT * FROM generate_series(0,32,5) ORDER BY rowid DESC;

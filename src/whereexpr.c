@@ -1273,7 +1273,7 @@ void sqlite3WhereTabFuncArgs(
   for(j=k=0; j<pArgs->nExpr; j++){
     while( k<pTab->nCol && (pTab->aCol[k].colFlags & COLFLAG_HIDDEN)==0 ){ k++; }
     if( k>=pTab->nCol ){
-      sqlite3ErrorMsg(pParse, "too many arguments on %s - max %d",
+      sqlite3ErrorMsg(pParse, "too many arguments on %s() - max %d",
                       pTab->zName, j);
       return;
     }

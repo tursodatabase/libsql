@@ -112,8 +112,7 @@ static int seriesConnect(
   char **pzErr
 ){
   sqlite3_vtab *pNew;
-  pNew = *ppVtab = sqlite3_malloc( sizeof(*pNew) );
-  if( pNew==0 ) return SQLITE_NOMEM;
+  int rc;
 
 /* Column numbers */
 #define SERIES_COLUMN_VALUE 0
@@ -121,10 +120,14 @@ static int seriesConnect(
 #define SERIES_COLUMN_STOP  2
 #define SERIES_COLUMN_STEP  3
 
-  sqlite3_declare_vtab(db,
+  rc = sqlite3_declare_vtab(db,
      "CREATE TABLE x(value,start hidden,stop hidden,step hidden)");
-  memset(pNew, 0, sizeof(*pNew));
-  return SQLITE_OK;
+  if( rc==SQLITE_OK ){
+    pNew = *ppVtab = sqlite3_malloc( sizeof(*pNew) );
+    if( pNew==0 ) return SQLITE_NOMEM;
+    memset(pNew, 0, sizeof(*pNew));
+  }
+  return rc;
 }
 
 /*

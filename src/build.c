@@ -355,7 +355,6 @@ Table *sqlite3LocateTable(
 
   p = sqlite3FindTable(pParse->db, zName, zDbase);
   if( p==0 ){
-    const char *zMsg;
 #ifndef SQLITE_OMIT_VIRTUAL_TABLE
     /* If zName is the not the name of a table in the schema created using
     ** CREATE, then check to see if it is the name of an virtual table that
@@ -365,7 +364,7 @@ Table *sqlite3LocateTable(
       return pMod->pEpoTab;
     }
 #endif
-    zMsg = isView ? "no such view" : "no such table";
+    const char *zMsg = isView ? "no such view" : "no such table";
     if( zDbase ){
       sqlite3ErrorMsg(pParse, "%s: %s.%s", zMsg, zDbase, zName);
     }else{
@@ -3803,13 +3802,15 @@ void sqlite3SrcListIndexedBy(Parse *pParse, SrcList *p, Token *pIndexedBy){
 ** table-valued-function.
 */
 void sqlite3SrcListFuncArgs(Parse *pParse, SrcList *p, ExprList *pList){
-  if( p && ALWAYS(p->nSrc>0) && pList ){
+  if( p && pList ){
     struct SrcList_item *pItem = &p->a[p->nSrc-1];
     assert( pItem->fg.notIndexed==0 );
     assert( pItem->fg.isIndexedBy==0 );
     assert( pItem->fg.isTabFunc==0 );
     pItem->u1.pFuncArg = pList;
     pItem->fg.isTabFunc = 1;
+  }else{
+    sqlite3ExprListDelete(pParse->db, pList);
   }
 }
 
