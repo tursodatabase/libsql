@@ -120,13 +120,16 @@ void sqlite3TreeViewSelect(TreeView *pView, const Select *p, u8 moreToFollow){
       if( pItem->zAlias ){
         sqlite3XPrintf(&x, 0, " (AS %s)", pItem->zAlias);
       }
-      if( pItem->jointype & JT_LEFT ){
+      if( pItem->fg.jointype & JT_LEFT ){
         sqlite3XPrintf(&x, 0, " LEFT-JOIN");
       }
       sqlite3StrAccumFinish(&x);
       sqlite3TreeViewItem(pView, zLine, i<p->pSrc->nSrc-1); 
       if( pItem->pSelect ){
         sqlite3TreeViewSelect(pView, pItem->pSelect, 0);
+      }
+      if( pItem->fg.isTabFunc ){
+        sqlite3TreeViewExprList(pView, pItem->u1.pFuncArg, 0, "func-args:");
       }
       sqlite3TreeViewPop(pView);
     }
