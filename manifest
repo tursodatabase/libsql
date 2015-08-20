@@ -1,5 +1,5 @@
-C Fix\scorner-case\smemory\smanagement\sissues\sin\stable-valued\sfunctions.\s\sChange\nvirtual\stable\shandling\sso\sthat\sif\sxDestroy\sis\smissing\sthe\stable\sis\neponymous\sonly\seven\sif\sxCreate\sis\spresent.
-D 2015-08-20T23:21:34.475
+C Fix\sa\scouple\sC99-isms\sthat\scause\scompile\serrors\son\sMSVC.
+D 2015-08-20T23:28:18.956
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4f663b6b4954b9b1eb0e6f08387688a93b57542d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -281,7 +281,7 @@ F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
 F src/btree.c f48b3ef91676c06a90a8832987ecef6b94c931ee
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 8177c9ab90d772d6d2c6c517e05bed774b7c92c0
-F src/build.c 0ebd9d21500311ff4b7df52fe927e5f235ad1867
+F src/build.c 5eb5d055a1d1cdaaea25e01b12607aa894bc0911
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
 F src/ctime.c 5a0b735dc95604766f5dac73973658eef782ee8b
@@ -334,7 +334,7 @@ F src/pragma.h 631a91c8b0e6ca8f051a1d8a4a0da4150e04620a
 F src/prepare.c 82e5db1013846a819f198336fed72c44c974e7b1
 F src/printf.c 2bc439ff20a4aad0e0ad50a37a67b5eae7d20edc
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
-F src/resolve.c 02e2c9ed5f45a22d41e799739c17b770dbb31866
+F src/resolve.c 7a67cd2aebc9a9eeecd1d104eb6a9237388eb452
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c c46de38c1b66355f02a839bb72eb13f277e6d19c
 F src/shell.c b1f91e60918df3a68efad1e3a11696b9a7e23d23
@@ -1376,7 +1376,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b73ad305a6b7cb84fe0a1efb334b8e4592e21c40
-R f600d04c9db5494b68811630044e0207
+P 774e6a14b124bbae4da0e188b62aee9ffb8c3745
+R a705c27f52160ef69f13084e79416a63
 U drh
-Z 52a18320de00f5816e7cb149e8e4308c
+Z 3baa7e86161b56868138f2b0a38c7271

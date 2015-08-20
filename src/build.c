@@ -355,6 +355,7 @@ Table *sqlite3LocateTable(
 
   p = sqlite3FindTable(pParse->db, zName, zDbase);
   if( p==0 ){
+    const char *zMsg = isView ? "no such view" : "no such table";
 #ifndef SQLITE_OMIT_VIRTUAL_TABLE
     /* If zName is the not the name of a table in the schema created using
     ** CREATE, then check to see if it is the name of an virtual table that
@@ -364,7 +365,6 @@ Table *sqlite3LocateTable(
       return pMod->pEpoTab;
     }
 #endif
-    const char *zMsg = isView ? "no such view" : "no such table";
     if( zDbase ){
       sqlite3ErrorMsg(pParse, "%s: %s.%s", zMsg, zDbase, zName);
     }else{
