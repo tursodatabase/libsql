@@ -76,7 +76,7 @@ SQLITE_EXTENSION_INIT1
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 
 
-/* series_cursor is a subclas of sqlite3_vtab_cursor which will
+/* series_cursor is a subclass of sqlite3_vtab_cursor which will
 ** serve as the underlying representation of a cursor that scans
 ** over rows of the result
 */
