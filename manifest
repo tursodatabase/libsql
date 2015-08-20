@@ -1,5 +1,5 @@
-C Simplification\sto\serror\shandling\sin\saddModuleArgument()\sin\sthe\svirtual\stable\nprocessing.
-D 2015-08-19T12:45:57.389
+C Make\sSQLITE_BUSY_SNAPSHOT\sand\sSQLITE_BUSY_RECOVERY\sretryable,\sjust\sas\sa\splain\nSQLITE_BUSY\sis.
+D 2015-08-20T17:18:32.370
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2fc9ca6bf5949d415801c007ed3004a4bdb7c380
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -398,10 +398,10 @@ F src/update.c 487747b328b7216bb7f6af0695d6937d5c9e605f
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c bc9dd64b5db544218b871b66243871c202b2781f
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c 2ab1decd98925f8cd846993dde9dccaa69cdf0ef
+F src/vdbe.c 6d85be995bd2308a5aa2a68c7b564c5d4cc1a6fb
 F src/vdbe.h 7a75045d879118b9d3af7e8b3c108f2f27c51473
 F src/vdbeInt.h 8b54e01ad0463590e7cffabce0bc36da9ee4f816
-F src/vdbeapi.c adabbd66eb2e3a10f3998485ee0be7e326d06ee4
+F src/vdbeapi.c bda74ef4b5103d7b4a4be36f936d3cf2b56a7d6f
 F src/vdbeaux.c af2d86b2b114a106c94fc656503fc5c89594f5af
 F src/vdbeblob.c 4f2e8e075d238392df98c5e03a64342465b03f90
 F src/vdbemem.c ae38a0d35ae71cf604381a887c170466ba518090
@@ -1374,7 +1374,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P dec14a3980dcf6c61b0b9ac4ba82fa963ac346d4
-R 9e79c5c3619781e4dd0837447f8e7872
+P c573b0a1aa3ba509234f07520fa94d008bcbb330
+R 1e0943db53cafa4eb98e44dc50fad14a
 U drh
-Z 95e599ba5e8b06b741ae2fef900bf405
+Z 77fc4debeb34981fd43290820f00ea8a
