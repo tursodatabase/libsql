@@ -699,7 +699,7 @@ int sqlite3VtabCallCreate(sqlite3 *db, int iDb, const char *zTab, char **pzErr){
   ** invoke it now. If the module has not been registered, return an 
   ** error. Otherwise, do nothing.
   */
-  if( pMod==0 || pMod->pModule->xCreate==0 ){
+  if( pMod==0 || pMod->pModule->xCreate==0 || pMod->pModule->xDestroy==0 ){
     *pzErr = sqlite3MPrintf(db, "no such module: %s", zMod);
     rc = SQLITE_ERROR;
   }else{
@@ -801,6 +801,7 @@ int sqlite3VtabCallDestroy(sqlite3 *db, int iDb, const char *zTab){
   pTab = sqlite3FindTable(db, zTab, db->aDb[iDb].zName);
   if( ALWAYS(pTab!=0 && pTab->pVTable!=0) ){
     VTable *p;
+    int (*xDestroy)(sqlite3_vtab *);
     for(p=pTab->pVTable; p; p=p->pNext){
       assert( p->pVtab );
       if( p->pVtab->nRef>0 ){
@@ -808,7 +809,9 @@ int sqlite3VtabCallDestroy(sqlite3 *db, int iDb, const char *zTab){
       }
     }
     p = vtabDisconnectAll(db, pTab);
-    rc = p->pMod->pModule->xDestroy(p->pVtab);
+    xDestroy = p->pMod->pModule->xDestroy;
+    assert( xDestroy!=0 );  /* Checked before the virtual table is created */
+    rc = xDestroy(p->pVtab);
     /* Remove the sqlite3_vtab* from the aVTrans[] array, if applicable */
     if( rc==SQLITE_OK ){
       assert( pTab->pVTable==p && p->pNext==0 );
@@ -1121,9 +1124,9 @@ int sqlite3VtabEponymousTableInit(Parse *pParse, Module *pMod){
   pTab->tabFlags |= TF_Virtual;
   pTab->nModuleArg = 0;
   pTab->iPKey = -1;
-  addModuleArgument(db, pTab, pTab->zName);
+  addModuleArgument(db, pTab, sqlite3DbStrDup(db, pTab->zName));
   addModuleArgument(db, pTab, 0);
-  addModuleArgument(db, pTab, pTab->zName);
+  addModuleArgument(db, pTab, sqlite3DbStrDup(db, pTab->zName));
   rc = vtabCallConstructor(db, pTab, pMod, pModule->xConnect, &zErr);
   if( rc ){
     sqlite3ErrorMsg(pParse, "%s", zErr);
@@ -1142,7 +1145,7 @@ void sqlite3VtabEponymousTableClear(sqlite3 *db, Module *pMod){
   Table *pTab = pMod->pEpoTab;
   if( (pTab = pMod->pEpoTab)!=0 ){
     sqlite3DeleteColumnNames(db, pTab);
-    sqlite3DbFree(db, pTab->azModuleArg);
+    sqlite3VtabClear(db, pTab);
     sqlite3DbFree(db, pTab);
     pMod->pEpoTab = 0;
   }

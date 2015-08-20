@@ -1452,6 +1452,7 @@ int sqlite3ResolveExprListNames(
   ExprList *pList         /* The expression list to be analyzed. */
 ){
   int i;
+  assert( pList!=0 );
   for(i=0; i<pList->nExpr; i++){
     if( sqlite3ResolveExprNames(pNC, pList->a[i].pExpr) ) return WRC_Abort;
   }

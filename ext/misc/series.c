@@ -76,7 +76,7 @@ SQLITE_EXTENSION_INIT1
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 
 
-/* series_cursor is a subclas of sqlite3_vtab_cursor which will
+/* series_cursor is a subclass of sqlite3_vtab_cursor which will
 ** serve as the underlying representation of a cursor that scans
 ** over rows of the result
 */
@@ -112,8 +112,7 @@ static int seriesConnect(
   char **pzErr
 ){
   sqlite3_vtab *pNew;
-  pNew = *ppVtab = sqlite3_malloc( sizeof(*pNew) );
-  if( pNew==0 ) return SQLITE_NOMEM;
+  int rc;
 
 /* Column numbers */
 #define SERIES_COLUMN_VALUE 0
@@ -121,10 +120,14 @@ static int seriesConnect(
 #define SERIES_COLUMN_STOP  2
 #define SERIES_COLUMN_STEP  3
 
-  sqlite3_declare_vtab(db,
+  rc = sqlite3_declare_vtab(db,
      "CREATE TABLE x(value,start hidden,stop hidden,step hidden)");
-  memset(pNew, 0, sizeof(*pNew));
-  return SQLITE_OK;
+  if( rc==SQLITE_OK ){
+    pNew = *ppVtab = sqlite3_malloc( sizeof(*pNew) );
+    if( pNew==0 ) return SQLITE_NOMEM;
+    memset(pNew, 0, sizeof(*pNew));
+  }
+  return rc;
 }
 
 /*
@@ -389,6 +392,11 @@ int sqlite3_series_init(
   int rc = SQLITE_OK;
   SQLITE_EXTENSION_INIT2(pApi);
 #ifndef SQLITE_OMIT_VIRTUALTABLE
+  if( sqlite3_libversion_number()<3008012 ){
+    *pzErrMsg = sqlite3_mprintf(
+        "generate_series() requires SQLite 3.8.12 or later");
+    return SQLITE_ERROR;
+  }
   rc = sqlite3_create_module(db, "generate_series", &seriesModule, 0);
 #endif
   return rc;
