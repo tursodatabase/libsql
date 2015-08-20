@@ -148,7 +148,7 @@ struct Fts5Config {
 };
 
 /* Current expected value of %_config table 'version' field */
-#define FTS5_CURRENT_VERSION 2
+#define FTS5_CURRENT_VERSION 3
 
 #define FTS5_CONTENT_NORMAL   0
 #define FTS5_CONTENT_NONE     1
@@ -301,7 +301,7 @@ int sqlite3Fts5IndexClose(Fts5Index *p);
 */
 
 /*
-** Open a new iterator to iterate though all docids that match the 
+** Open a new iterator to iterate though all rowids that match the 
 ** specified token or token prefix.
 */
 int sqlite3Fts5IndexQuery(

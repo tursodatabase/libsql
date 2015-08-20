@@ -2008,7 +2008,7 @@ static int xferOptimization(
     sqlite3TableLock(pParse, iDbSrc, pSrc->tnum, 0, pSrc->zName);
   }
   for(pDestIdx=pDest->pIndex; pDestIdx; pDestIdx=pDestIdx->pNext){
-    u8 useSeekResult = 0;
+    u8 idxInsFlags = 0;
     for(pSrcIdx=pSrc->pIndex; ALWAYS(pSrcIdx); pSrcIdx=pSrcIdx->pNext){
       if( xferCompatibleIndex(pDestIdx, pSrcIdx) ) break;
     }
@@ -2043,12 +2043,15 @@ static int xferOptimization(
         if( sqlite3_stricmp("BINARY", zColl) ) break;
       }
       if( i==pSrcIdx->nColumn ){
-        useSeekResult = OPFLAG_USESEEKRESULT;
+        idxInsFlags = OPFLAG_USESEEKRESULT;
         sqlite3VdbeAddOp3(v, OP_Last, iDest, 0, -1);
       }
     }
+    if( !HasRowid(pSrc) && pDestIdx->idxType==2 ){
+      idxInsFlags |= OPFLAG_NCHANGE;
+    }
     sqlite3VdbeAddOp3(v, OP_IdxInsert, iDest, regData, 1);
-    sqlite3VdbeChangeP5(v, useSeekResult);
+    sqlite3VdbeChangeP5(v, idxInsFlags);
     sqlite3VdbeAddOp2(v, OP_Next, iSrc, addr1+1); VdbeCoverage(v);
     sqlite3VdbeJumpHere(v, addr1);
     sqlite3VdbeAddOp2(v, OP_Close, iSrc, 0);

@@ -338,7 +338,7 @@ static int test_exec_hex(
   int rc, i, j;
   char *zErr = 0;
   char *zHex;
-  char zSql[500];
+  char zSql[501];
   char zBuf[30];
   if( argc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], 
@@ -347,7 +347,7 @@ static int test_exec_hex(
   }
   if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
   zHex = argv[2];
-  for(i=j=0; i<sizeof(zSql) && zHex[j]; i++, j++){
+  for(i=j=0; i<(sizeof(zSql)-1) && zHex[j]; i++, j++){
     if( zHex[j]=='%' && zHex[j+2] && zHex[j+2] ){
       zSql[i] = (testHexToInt(zHex[j+1])<<4) + testHexToInt(zHex[j+2]);
       j += 2;
@@ -6380,6 +6380,7 @@ static int tclLoadStaticExtensionCmd(
   extern int sqlite3_nextchar_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_percentile_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_regexp_init(sqlite3*,char**,const sqlite3_api_routines*);
+  extern int sqlite3_series_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_spellfix_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_totype_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_wholenumber_init(sqlite3*,char**,const sqlite3_api_routines*);
@@ -6400,6 +6401,7 @@ static int tclLoadStaticExtensionCmd(
     { "nextchar",              sqlite3_nextchar_init             },
     { "percentile",            sqlite3_percentile_init           },
     { "regexp",                sqlite3_regexp_init               },
+    { "series",                sqlite3_series_init               },
     { "spellfix",              sqlite3_spellfix_init             },
     { "totype",                sqlite3_totype_init               },
     { "wholenumber",           sqlite3_wholenumber_init          },

@@ -247,5 +247,20 @@ do_execsql_test 8.2 [subst {
   brown dog fox jumped lazy over quick the \u0E08 \u0E09
 }]
 
+# Test that the porter tokenizer correctly passes arguments through to
+# its parent tokenizer.
+do_execsql_test 8.3 {
+  BEGIN;
+  CREATE VIRTUAL TABLE e6 USING fts5(x,
+    tokenize="porter unicode61 separators ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+  );
+  INSERT INTO e6 VALUES('theAquickBbrownCfoxDjumpedWoverXtheYlazyZdog');
+  CREATE VIRTUAL TABLE e7 USING fts5vocab(e6, 'row');
+  SELECT term FROM e7;
+  ROLLBACK;
+} {
+  brown dog fox jump lazi over quick the
+}
+
 finish_test
 

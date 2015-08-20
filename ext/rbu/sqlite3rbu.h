@@ -97,6 +97,18 @@
 **
 ** The order of the columns in the data_% table does not matter.
 **
+** Instead of a regular table, the RBU database may also contain virtual
+** tables or view named using the data_<target> naming scheme. 
+**
+** Instead of the plain data_<target> naming scheme, RBU database tables 
+** may also be named data<integer>_<target>, where <integer> is any sequence
+** of zero or more numeric characters (0-9). This can be significant because
+** tables within the RBU database are always processed in order sorted by 
+** name. By judicious selection of the the <integer> portion of the names
+** of the RBU tables the user can therefore control the order in which they
+** are processed. This can be useful, for example, to ensure that "external
+** content" FTS4 tables are updated before their underlying content tables.
+**
 ** If the target database table is a virtual table or a table that has no
 ** PRIMARY KEY declaration, the data_% table must also contain a column 
 ** named "rbu_rowid". This column is mapped to the tables implicit primary 
@@ -176,6 +188,14 @@
 ** is similar to an UPDATE statement such as: 
 **
 **   UPDATE t1 SET c = rbu_delta(c, 'usa') WHERE a = 4;
+**
+** Finally, if an 'f' character appears in place of a 'd' or 's' in an 
+** ota_control string, the contents of the data_xxx table column is assumed
+** to be a "fossil delta" - a patch to be applied to a blob value in the
+** format used by the fossil source-code management system. In this case
+** the existing value within the target database table must be of type BLOB. 
+** It is replaced by the result of applying the specified fossil delta to
+** itself.
 **
 ** If the target database table is a virtual table or a table with no PRIMARY
 ** KEY, the rbu_control value should not include a character corresponding 
@@ -333,6 +353,18 @@ sqlite3 *sqlite3rbu_db(sqlite3rbu*, int bRbu);
 ** that immediately return the same value.
 */
 int sqlite3rbu_step(sqlite3rbu *pRbu);
+
+/*
+** Force RBU to save its state to disk.
+**
+** If a power failure or application crash occurs during an update, following
+** system recovery RBU may resume the update from the point at which the state
+** was last saved. In other words, from the most recent successful call to 
+** sqlite3rbu_close() or this function.
+**
+** SQLITE_OK is returned if successful, or an SQLite error code otherwise.
+*/
+int sqlite3rbu_savestate(sqlite3rbu *pRbu);
 
 /*
 ** Close an RBU handle. 

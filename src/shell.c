@@ -1336,6 +1336,8 @@ static int display_stats(
     fprintf(pArg->out, "Virtual Machine Steps:               %d\n", iCur);
   }
 
+  /* Do not remove this machine readable comment: extra-stats-output-here */
+
   return 0;
 }
 

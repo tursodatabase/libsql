@@ -306,7 +306,7 @@ static int lookupName(
             ** USING clause, then skip this match.
             */
             if( cnt==1 ){
-              if( pItem->jointype & JT_NATURAL ) continue;
+              if( pItem->fg.jointype & JT_NATURAL ) continue;
               if( nameInUsingClause(pItem->pUsing, zCol) ) continue;
             }
             cnt++;
@@ -321,8 +321,8 @@ static int lookupName(
         pExpr->iTable = pMatch->iCursor;
         pExpr->pTab = pMatch->pTab;
         /* RIGHT JOIN not (yet) supported */
-        assert( (pMatch->jointype & JT_RIGHT)==0 );
-        if( (pMatch->jointype & JT_LEFT)!=0 ){
+        assert( (pMatch->fg.jointype & JT_RIGHT)==0 );
+        if( (pMatch->fg.jointype & JT_LEFT)!=0 ){
           ExprSetProperty(pExpr, EP_CanBeNull);
         }
         pSchema = pExpr->pTab->pSchema;
@@ -1142,7 +1142,6 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
   int isCompound;         /* True if p is a compound select */
   int nCompound;          /* Number of compound terms processed so far */
   Parse *pParse;          /* Parsing context */
-  ExprList *pEList;       /* Result set expression list */
   int i;                  /* Loop counter */
   ExprList *pGroupBy;     /* The GROUP BY clause */
   Select *pLeftmost;      /* Left-most of SELECT of a compound */
@@ -1215,7 +1214,7 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
         ** parent contexts. After resolving references to expressions in
         ** pItem->pSelect, check if this value has changed. If so, then
         ** SELECT statement pItem->pSelect must be correlated. Set the
-        ** pItem->isCorrelated flag if this is the case. */
+        ** pItem->fg.isCorrelated flag if this is the case. */
         for(pNC=pOuterNC; pNC; pNC=pNC->pNext) nRef += pNC->nRef;
 
         if( pItem->zName ) pParse->zAuthContext = pItem->zName;
@@ -1224,8 +1223,8 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
         if( pParse->nErr || db->mallocFailed ) return WRC_Abort;
 
         for(pNC=pOuterNC; pNC; pNC=pNC->pNext) nRef -= pNC->nRef;
-        assert( pItem->isCorrelated==0 && nRef<=0 );
-        pItem->isCorrelated = (nRef!=0);
+        assert( pItem->fg.isCorrelated==0 && nRef<=0 );
+        pItem->fg.isCorrelated = (nRef!=0);
       }
     }
   
@@ -1237,14 +1236,7 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
     sNC.pNext = pOuterNC;
   
     /* Resolve names in the result set. */
-    pEList = p->pEList;
-    assert( pEList!=0 );
-    for(i=0; i<pEList->nExpr; i++){
-      Expr *pX = pEList->a[i].pExpr;
-      if( sqlite3ResolveExprNames(&sNC, pX) ){
-        return WRC_Abort;
-      }
-    }
+    if( sqlite3ResolveExprListNames(&sNC, p->pEList) ) return WRC_Abort;
   
     /* If there are no aggregate functions in the result-set, and no GROUP BY 
     ** expression, do not allow aggregates in any of the other expressions.
@@ -1276,6 +1268,16 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
     sNC.pEList = p->pEList;
     if( sqlite3ResolveExprNames(&sNC, p->pHaving) ) return WRC_Abort;
     if( sqlite3ResolveExprNames(&sNC, p->pWhere) ) return WRC_Abort;
+
+    /* Resolve names in table-valued-function arguments */
+    for(i=0; i<p->pSrc->nSrc; i++){
+      struct SrcList_item *pItem = &p->pSrc->a[i];
+      if( pItem->fg.isTabFunc
+       && sqlite3ResolveExprListNames(&sNC, pItem->u1.pFuncArg) 
+      ){
+        return WRC_Abort;
+      }
+    }
 
     /* The ORDER BY and GROUP BY clauses may not refer to terms in
     ** outer queries 
@@ -1440,6 +1442,22 @@ int sqlite3ResolveExprNames(
   return ExprHasProperty(pExpr, EP_Error);
 }
 
+/*
+** Resolve all names for all expression in an expression list.  This is
+** just like sqlite3ResolveExprNames() except that it works for an expression
+** list rather than a single expression.
+*/
+int sqlite3ResolveExprListNames( 
+  NameContext *pNC,       /* Namespace to resolve expressions in. */
+  ExprList *pList         /* The expression list to be analyzed. */
+){
+  int i;
+  assert( pList!=0 );
+  for(i=0; i<pList->nExpr; i++){
+    if( sqlite3ResolveExprNames(pNC, pList->a[i].pExpr) ) return WRC_Abort;
+  }
+  return WRC_Continue;
+}
 
 /*
 ** Resolve all names in all expressions of a SELECT and in all

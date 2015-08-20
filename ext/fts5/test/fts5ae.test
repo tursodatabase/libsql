@@ -277,5 +277,28 @@ foreach {tn q res} {
   } $res
 }
 
+#-------------------------------------------------------------------------
+# Test xPhraseCount() for some different queries.
+#
+do_test 9.1 {
+  execsql { CREATE VIRTUAL TABLE t9 USING fts5(x) }
+  foreach x {
+    "a b c" "d e f"
+  } {
+    execsql { INSERT INTO t9 VALUES($x) }
+  }
+} {}
+
+foreach {tn q cnt} {
+  1 {a AND b}      2
+  2 {a OR b}       2
+  3 {a OR b OR c}  3
+  4 {NEAR(a b)}    2
+} {
+  do_execsql_test 9.2.$tn {
+    SELECT fts5_test_phrasecount(t9) FROM t9 WHERE t9 MATCH $q LIMIT 1
+  } $cnt
+}
+
 finish_test
 

@@ -537,7 +537,9 @@ static int fts5PorterCreate(
     rc = SQLITE_NOMEM;
   }
   if( rc==SQLITE_OK ){
-    rc = pRet->tokenizer.xCreate(pUserdata, 0, 0, &pRet->pTokenizer);
+    int nArg2 = (nArg>0 ? nArg-1 : 0);
+    const char **azArg2 = (nArg2 ? &azArg[1] : 0);
+    rc = pRet->tokenizer.xCreate(pUserdata, azArg2, nArg2, &pRet->pTokenizer);
   }
 
   if( rc!=SQLITE_OK ){

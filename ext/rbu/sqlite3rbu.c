@@ -84,10 +84,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#if !defined(_WIN32)
-#  include <unistd.h>
-#endif
-
 #include "sqlite3.h"
 
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_RBU)
@@ -239,6 +235,7 @@ struct RbuObjIter {
   /* Output variables. zTbl==0 implies EOF. */
   int bCleanup;                   /* True in "cleanup" state */
   const char *zTbl;               /* Name of target db table */
+  const char *zDataTbl;           /* Name of rbu db table (or null) */
   const char *zIdx;               /* Name of target db index (or null) */
   int iTnum;                      /* Root page of current object */
   int iPkTnum;                    /* If eType==EXTERNAL, root of PK index */
@@ -249,7 +246,7 @@ struct RbuObjIter {
   sqlite3_stmt *pSelect;          /* Source data */
   sqlite3_stmt *pInsert;          /* Statement for INSERT operations */
   sqlite3_stmt *pDelete;          /* Statement for DELETE ops */
-  sqlite3_stmt *pTmpInsert;       /* Insert into rbu_tmp_$zTbl */
+  sqlite3_stmt *pTmpInsert;       /* Insert into rbu_tmp_$zDataTbl */
 
   /* Last UPDATE used (for PK b-tree updates only), or NULL. */
   RbuUpdateStmt *pRbuUpdate;
@@ -358,6 +355,252 @@ struct rbu_file {
   rbu_file *pWalFd;               /* Wal file descriptor for this main db */
   rbu_file *pMainNext;            /* Next MAIN_DB file */
 };
+
+
+/*************************************************************************
+** The following three functions, found below:
+**
+**   rbuDeltaGetInt()
+**   rbuDeltaChecksum()
+**   rbuDeltaApply()
+**
+** are lifted from the fossil source code (http://fossil-scm.org). They
+** are used to implement the scalar SQL function rbu_fossil_delta().
+*/
+
+/*
+** Read bytes from *pz and convert them into a positive integer.  When
+** finished, leave *pz pointing to the first character past the end of
+** the integer.  The *pLen parameter holds the length of the string
+** in *pz and is decremented once for each character in the integer.
+*/
+static unsigned int rbuDeltaGetInt(const char **pz, int *pLen){
+  static const signed char zValue[] = {
+    -1, -1, -1, -1, -1, -1, -1, -1,   -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1,   -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1,   -1, -1, -1, -1, -1, -1, -1, -1,
+     0,  1,  2,  3,  4,  5,  6,  7,    8,  9, -1, -1, -1, -1, -1, -1,
+    -1, 10, 11, 12, 13, 14, 15, 16,   17, 18, 19, 20, 21, 22, 23, 24,
+    25, 26, 27, 28, 29, 30, 31, 32,   33, 34, 35, -1, -1, -1, -1, 36,
+    -1, 37, 38, 39, 40, 41, 42, 43,   44, 45, 46, 47, 48, 49, 50, 51,
+    52, 53, 54, 55, 56, 57, 58, 59,   60, 61, 62, -1, -1, -1, 63, -1,
+  };
+  unsigned int v = 0;
+  int c;
+  unsigned char *z = (unsigned char*)*pz;
+  unsigned char *zStart = z;
+  while( (c = zValue[0x7f&*(z++)])>=0 ){
+     v = (v<<6) + c;
+  }
+  z--;
+  *pLen -= z - zStart;
+  *pz = (char*)z;
+  return v;
+}
+
+/*
+** Compute a 32-bit checksum on the N-byte buffer.  Return the result.
+*/
+static unsigned int rbuDeltaChecksum(const char *zIn, size_t N){
+  const unsigned char *z = (const unsigned char *)zIn;
+  unsigned sum0 = 0;
+  unsigned sum1 = 0;
+  unsigned sum2 = 0;
+  unsigned sum3 = 0;
+  while(N >= 16){
+    sum0 += ((unsigned)z[0] + z[4] + z[8] + z[12]);
+    sum1 += ((unsigned)z[1] + z[5] + z[9] + z[13]);
+    sum2 += ((unsigned)z[2] + z[6] + z[10]+ z[14]);
+    sum3 += ((unsigned)z[3] + z[7] + z[11]+ z[15]);
+    z += 16;
+    N -= 16;
+  }
+  while(N >= 4){
+    sum0 += z[0];
+    sum1 += z[1];
+    sum2 += z[2];
+    sum3 += z[3];
+    z += 4;
+    N -= 4;
+  }
+  sum3 += (sum2 << 8) + (sum1 << 16) + (sum0 << 24);
+  switch(N){
+    case 3:   sum3 += (z[2] << 8);
+    case 2:   sum3 += (z[1] << 16);
+    case 1:   sum3 += (z[0] << 24);
+    default:  ;
+  }
+  return sum3;
+}
+
+/*
+** Apply a delta.
+**
+** The output buffer should be big enough to hold the whole output
+** file and a NUL terminator at the end.  The delta_output_size()
+** routine will determine this size for you.
+**
+** The delta string should be null-terminated.  But the delta string
+** may contain embedded NUL characters (if the input and output are
+** binary files) so we also have to pass in the length of the delta in
+** the lenDelta parameter.
+**
+** This function returns the size of the output file in bytes (excluding
+** the final NUL terminator character).  Except, if the delta string is
+** malformed or intended for use with a source file other than zSrc,
+** then this routine returns -1.
+**
+** Refer to the delta_create() documentation above for a description
+** of the delta file format.
+*/
+static int rbuDeltaApply(
+  const char *zSrc,      /* The source or pattern file */
+  int lenSrc,            /* Length of the source file */
+  const char *zDelta,    /* Delta to apply to the pattern */
+  int lenDelta,          /* Length of the delta */
+  char *zOut             /* Write the output into this preallocated buffer */
+){
+  unsigned int limit;
+  unsigned int total = 0;
+#ifndef FOSSIL_OMIT_DELTA_CKSUM_TEST
+  char *zOrigOut = zOut;
+#endif
+
+  limit = rbuDeltaGetInt(&zDelta, &lenDelta);
+  if( *zDelta!='\n' ){
+    /* ERROR: size integer not terminated by "\n" */
+    return -1;
+  }
+  zDelta++; lenDelta--;
+  while( *zDelta && lenDelta>0 ){
+    unsigned int cnt, ofst;
+    cnt = rbuDeltaGetInt(&zDelta, &lenDelta);
+    switch( zDelta[0] ){
+      case '@': {
+        zDelta++; lenDelta--;
+        ofst = rbuDeltaGetInt(&zDelta, &lenDelta);
+        if( lenDelta>0 && zDelta[0]!=',' ){
+          /* ERROR: copy command not terminated by ',' */
+          return -1;
+        }
+        zDelta++; lenDelta--;
+        total += cnt;
+        if( total>limit ){
+          /* ERROR: copy exceeds output file size */
+          return -1;
+        }
+        if( ofst+cnt > lenSrc ){
+          /* ERROR: copy extends past end of input */
+          return -1;
+        }
+        memcpy(zOut, &zSrc[ofst], cnt);
+        zOut += cnt;
+        break;
+      }
+      case ':': {
+        zDelta++; lenDelta--;
+        total += cnt;
+        if( total>limit ){
+          /* ERROR:  insert command gives an output larger than predicted */
+          return -1;
+        }
+        if( cnt>lenDelta ){
+          /* ERROR: insert count exceeds size of delta */
+          return -1;
+        }
+        memcpy(zOut, zDelta, cnt);
+        zOut += cnt;
+        zDelta += cnt;
+        lenDelta -= cnt;
+        break;
+      }
+      case ';': {
+        zDelta++; lenDelta--;
+        zOut[0] = 0;
+#ifndef FOSSIL_OMIT_DELTA_CKSUM_TEST
+        if( cnt!=rbuDeltaChecksum(zOrigOut, total) ){
+          /* ERROR:  bad checksum */
+          return -1;
+        }
+#endif
+        if( total!=limit ){
+          /* ERROR: generated size does not match predicted size */
+          return -1;
+        }
+        return total;
+      }
+      default: {
+        /* ERROR: unknown delta operator */
+        return -1;
+      }
+    }
+  }
+  /* ERROR: unterminated delta */
+  return -1;
+}
+
+static int rbuDeltaOutputSize(const char *zDelta, int lenDelta){
+  int size;
+  size = rbuDeltaGetInt(&zDelta, &lenDelta);
+  if( *zDelta!='\n' ){
+    /* ERROR: size integer not terminated by "\n" */
+    return -1;
+  }
+  return size;
+}
+
+/*
+** End of code taken from fossil.
+*************************************************************************/
+
+/*
+** Implementation of SQL scalar function rbu_fossil_delta().
+**
+** This function applies a fossil delta patch to a blob. Exactly two
+** arguments must be passed to this function. The first is the blob to
+** patch and the second the patch to apply. If no error occurs, this
+** function returns the patched blob.
+*/
+static void rbuFossilDeltaFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  const char *aDelta;
+  int nDelta;
+  const char *aOrig;
+  int nOrig;
+
+  int nOut;
+  int nOut2;
+  char *aOut;
+
+  assert( argc==2 );
+
+  nOrig = sqlite3_value_bytes(argv[0]);
+  aOrig = (const char*)sqlite3_value_blob(argv[0]);
+  nDelta = sqlite3_value_bytes(argv[1]);
+  aDelta = (const char*)sqlite3_value_blob(argv[1]);
+
+  /* Figure out the size of the output */
+  nOut = rbuDeltaOutputSize(aDelta, nDelta);
+  if( nOut<0 ){
+    sqlite3_result_error(context, "corrupt fossil delta", -1);
+    return;
+  }
+
+  aOut = sqlite3_malloc(nOut+1);
+  if( aOut==0 ){
+    sqlite3_result_error_nomem(context);
+  }else{
+    nOut2 = rbuDeltaApply(aOrig, nOrig, aDelta, nDelta, aOut);
+    if( nOut2!=nOut ){
+      sqlite3_result_error(context, "corrupt fossil delta", -1);
+    }else{
+      sqlite3_result_blob(context, aOut, nOut, sqlite3_free);
+    }
+  }
+}
 
 
 /*
@@ -526,7 +769,8 @@ static int rbuObjIterNext(sqlite3rbu *p, RbuObjIter *pIter){
           pIter->zTbl = 0;
         }else{
           pIter->zTbl = (const char*)sqlite3_column_text(pIter->pTblIter, 0);
-          rc = pIter->zTbl ? SQLITE_OK : SQLITE_NOMEM;
+          pIter->zDataTbl = (const char*)sqlite3_column_text(pIter->pTblIter,1);
+          rc = (pIter->zDataTbl && pIter->zTbl) ? SQLITE_OK : SQLITE_NOMEM;
         }
       }else{
         if( pIter->zIdx==0 ){
@@ -557,6 +801,40 @@ static int rbuObjIterNext(sqlite3rbu *p, RbuObjIter *pIter){
   return rc;
 }
 
+
+/*
+** The implementation of the rbu_target_name() SQL function. This function
+** accepts one argument - the name of a table in the RBU database. If the
+** table name matches the pattern:
+**
+**     data[0-9]_<name>
+**
+** where <name> is any sequence of 1 or more characters, <name> is returned.
+** Otherwise, if the only argument does not match the above pattern, an SQL
+** NULL is returned.
+**
+**     "data_t1"     -> "t1"
+**     "data0123_t2" -> "t2"
+**     "dataAB_t3"   -> NULL
+*/
+static void rbuTargetNameFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  const char *zIn;
+  assert( argc==1 );
+
+  zIn = (const char*)sqlite3_value_text(argv[0]);
+  if( zIn && strlen(zIn)>4 && memcmp("data", zIn, 4)==0 ){
+    int i;
+    for(i=4; zIn[i]>='0' && zIn[i]<='9'; i++);
+    if( zIn[i]=='_' && zIn[i+1] ){
+      sqlite3_result_text(context, &zIn[i+1], -1, SQLITE_STATIC);
+    }
+  }
+}
+
 /*
 ** Initialize the iterator structure passed as the second argument.
 **
@@ -570,8 +848,9 @@ static int rbuObjIterFirst(sqlite3rbu *p, RbuObjIter *pIter){
   memset(pIter, 0, sizeof(RbuObjIter));
 
   rc = prepareAndCollectError(p->dbRbu, &pIter->pTblIter, &p->zErrmsg, 
-      "SELECT substr(name, 6) FROM sqlite_master "
-      "WHERE type IN ('table', 'view') AND name LIKE 'data_%'"
+      "SELECT rbu_target_name(name) AS target, name FROM sqlite_master "
+      "WHERE type IN ('table', 'view') AND target IS NOT NULL "
+      "ORDER BY name"
   );
 
   if( rc==SQLITE_OK ){
@@ -917,7 +1196,7 @@ static int rbuObjIterCacheTableInfo(sqlite3rbu *p, RbuObjIter *pIter){
     ** of the input table. Ignore any input table columns that begin with
     ** "rbu_".  */
     p->rc = prepareFreeAndCollectError(p->dbRbu, &pStmt, &p->zErrmsg, 
-        sqlite3_mprintf("SELECT * FROM 'data_%q'", pIter->zTbl)
+        sqlite3_mprintf("SELECT * FROM '%q'", pIter->zDataTbl)
     );
     if( p->rc==SQLITE_OK ){
       nCol = sqlite3_column_count(pStmt);
@@ -942,7 +1221,7 @@ static int rbuObjIterCacheTableInfo(sqlite3rbu *p, RbuObjIter *pIter){
     ){
       p->rc = SQLITE_ERROR;
       p->zErrmsg = sqlite3_mprintf(
-          "table data_%q %s rbu_rowid column", pIter->zTbl,
+          "table %q %s rbu_rowid column", pIter->zDataTbl,
           (bRbuRowid ? "may not have" : "requires")
       );
     }
@@ -963,8 +1242,8 @@ static int rbuObjIterCacheTableInfo(sqlite3rbu *p, RbuObjIter *pIter){
       }
       if( i==pIter->nTblCol ){
         p->rc = SQLITE_ERROR;
-        p->zErrmsg = sqlite3_mprintf("column missing from data_%q: %s",
-            pIter->zTbl, zName
+        p->zErrmsg = sqlite3_mprintf("column missing from %q: %s",
+            pIter->zDataTbl, zName
         );
       }else{
         int iPk = sqlite3_column_int(pStmt, 5);
@@ -1263,8 +1542,14 @@ static char *rbuObjIterGetSetlist(
           );
           zSep = ", ";
         }
-        if( c=='d' ){
+        else if( c=='d' ){
           zList = rbuMPrintf(p, "%z%s\"%w\"=rbu_delta(\"%w\", ?%d)", 
+              zList, zSep, pIter->azTblCol[i], pIter->azTblCol[i], i+1
+          );
+          zSep = ", ";
+        }
+        else if( c=='f' ){
+          zList = rbuMPrintf(p, "%z%s\"%w\"=rbu_fossil_delta(\"%w\", ?%d)", 
               zList, zSep, pIter->azTblCol[i], pIter->azTblCol[i], i+1
           );
           zSep = ", ";
@@ -1519,7 +1804,7 @@ static void rbuObjIterPrepareTmpInsert(
     p->rc = prepareFreeAndCollectError(
         p->dbRbu, &pIter->pTmpInsert, &p->zErrmsg, sqlite3_mprintf(
           "INSERT INTO %s.'rbu_tmp_%q'(rbu_control,%s%s) VALUES(%z)", 
-          p->zStateDb, pIter->zTbl, zCollist, zRbuRowid, zBind
+          p->zStateDb, pIter->zDataTbl, zCollist, zRbuRowid, zBind
     ));
   }
 }
@@ -1615,18 +1900,18 @@ static int rbuObjIterPrepareAll(
         if( pIter->eType==RBU_PK_EXTERNAL || pIter->eType==RBU_PK_NONE ){
           zSql = sqlite3_mprintf(
               "SELECT %s, rbu_control FROM %s.'rbu_tmp_%q' ORDER BY %s%s",
-              zCollist, p->zStateDb, pIter->zTbl,
+              zCollist, p->zStateDb, pIter->zDataTbl,
               zCollist, zLimit
           );
         }else{
           zSql = sqlite3_mprintf(
-              "SELECT %s, rbu_control FROM 'data_%q' "
+              "SELECT %s, rbu_control FROM '%q' "
               "WHERE typeof(rbu_control)='integer' AND rbu_control!=1 "
               "UNION ALL "
               "SELECT %s, rbu_control FROM %s.'rbu_tmp_%q' "
               "ORDER BY %s%s",
-              zCollist, pIter->zTbl, 
-              zCollist, p->zStateDb, pIter->zTbl, 
+              zCollist, pIter->zDataTbl, 
+              zCollist, p->zStateDb, pIter->zDataTbl, 
               zCollist, zLimit
           );
         }
@@ -1649,16 +1934,6 @@ static int rbuObjIterPrepareAll(
 
       zCollist = rbuObjIterGetCollist(p, pIter);
       pIter->nCol = pIter->nTblCol;
-
-      /* Create the SELECT statement to read keys from data_xxx */
-      if( p->rc==SQLITE_OK ){
-        p->rc = prepareFreeAndCollectError(p->dbRbu, &pIter->pSelect, pz,
-            sqlite3_mprintf(
-              "SELECT %s, rbu_control%s FROM 'data_%q'%s", 
-              zCollist, (bRbuRowid ? ", rbu_rowid" : ""), zTbl, zLimit
-            )
-        );
-      }
 
       /* Create the imposter table or tables (if required). */
       rbuCreateImposterTable(p, pIter);
@@ -1693,10 +1968,10 @@ static int rbuObjIterPrepareAll(
         /* Create the rbu_tmp_xxx table and the triggers to populate it. */
         rbuMPrintfExec(p, p->dbRbu,
             "CREATE TABLE IF NOT EXISTS %s.'rbu_tmp_%q' AS "
-            "SELECT *%s FROM 'data_%q' WHERE 0;"
-            , p->zStateDb
-            , zTbl, (pIter->eType==RBU_PK_EXTERNAL ? ", 0 AS rbu_rowid" : "")
-            , zTbl
+            "SELECT *%s FROM '%q' WHERE 0;"
+            , p->zStateDb, pIter->zDataTbl
+            , (pIter->eType==RBU_PK_EXTERNAL ? ", 0 AS rbu_rowid" : "")
+            , pIter->zDataTbl
         );
 
         rbuMPrintfExec(p, p->dbMain,
@@ -1730,6 +2005,17 @@ static int rbuObjIterPrepareAll(
         }
 
         rbuObjIterPrepareTmpInsert(p, pIter, zCollist, zRbuRowid);
+      }
+
+      /* Create the SELECT statement to read keys from data_xxx */
+      if( p->rc==SQLITE_OK ){
+        p->rc = prepareFreeAndCollectError(p->dbRbu, &pIter->pSelect, pz,
+            sqlite3_mprintf(
+              "SELECT %s, rbu_control%s FROM '%q'%s", 
+              zCollist, (bRbuRowid ? ", rbu_rowid" : ""), 
+              pIter->zDataTbl, zLimit
+            )
+        );
       }
 
       sqlite3_free(zWhere);
@@ -1859,6 +2145,18 @@ static void rbuOpenDatabase(sqlite3rbu *p){
   if( p->rc==SQLITE_OK ){
     p->rc = sqlite3_create_function(p->dbMain, 
         "rbu_tmp_insert", -1, SQLITE_UTF8, (void*)p, rbuTmpInsertFunc, 0, 0
+    );
+  }
+
+  if( p->rc==SQLITE_OK ){
+    p->rc = sqlite3_create_function(p->dbMain, 
+        "rbu_fossil_delta", 2, SQLITE_UTF8, 0, rbuFossilDeltaFunc, 0, 0
+    );
+  }
+
+  if( p->rc==SQLITE_OK ){
+    p->rc = sqlite3_create_function(p->dbRbu, 
+        "rbu_target_name", 1, SQLITE_UTF8, (void*)p, rbuTargetNameFunc, 0, 0
     );
   }
 
@@ -2291,7 +2589,7 @@ static int rbuStep(sqlite3rbu *p){
         for(i=0; p->rc==SQLITE_OK && i<pIter->nCol; i++){
           char c = zMask[pIter->aiSrcOrder[i]];
           pVal = sqlite3_column_value(pIter->pSelect, i);
-          if( pIter->abTblPk[i] || c=='x' || c=='d' ){
+          if( pIter->abTblPk[i] || c!='.' ){
             p->rc = sqlite3_bind_value(pUpdate, i+1, pVal);
           }
         }
@@ -2403,7 +2701,7 @@ int sqlite3rbu_step(sqlite3rbu *p){
             ** But the contents can be deleted.  */
             if( pIter->abIndexed ){
               rbuMPrintfExec(p, p->dbRbu, 
-                  "DELETE FROM %s.'rbu_tmp_%q'", p->zStateDb, pIter->zTbl
+                  "DELETE FROM %s.'rbu_tmp_%q'", p->zStateDb, pIter->zDataTbl
               );
             }
           }else{
@@ -2626,10 +2924,13 @@ static void rbuSetupOal(sqlite3rbu *p, RbuState *pState){
 ** leave an error code and error message in the rbu handle.
 */
 static void rbuDeleteOalFile(sqlite3rbu *p){
-  char *zOal = sqlite3_mprintf("%s-oal", p->zTarget);
-  assert( p->rc==SQLITE_OK && p->zErrmsg==0 );
-  unlink(zOal);
-  sqlite3_free(zOal);
+  char *zOal = rbuMPrintf(p, "%s-oal", p->zTarget);
+  if( zOal ){
+    sqlite3_vfs *pVfs = sqlite3_vfs_find(0);
+    assert( pVfs && p->rc==SQLITE_OK && p->zErrmsg==0 );
+    pVfs->xDelete(pVfs, zOal, 0);
+    sqlite3_free(zOal);
+  }
 }
 
 /*
@@ -2742,14 +3043,25 @@ sqlite3rbu *sqlite3rbu_open(
 
     if( p->rc==SQLITE_OK ){
       if( p->eStage==RBU_STAGE_OAL ){
+        sqlite3 *db = p->dbMain;
 
         /* Open transactions both databases. The *-oal file is opened or
         ** created at this point. */
-        p->rc = sqlite3_exec(p->dbMain, "BEGIN IMMEDIATE", 0, 0, &p->zErrmsg);
+        p->rc = sqlite3_exec(db, "BEGIN IMMEDIATE", 0, 0, &p->zErrmsg);
         if( p->rc==SQLITE_OK ){
           p->rc = sqlite3_exec(p->dbRbu, "BEGIN IMMEDIATE", 0, 0, &p->zErrmsg);
         }
-  
+
+        /* Check if the main database is a zipvfs db. If it is, set the upper
+        ** level pager to use "journal_mode=off". This prevents it from 
+        ** generating a large journal using a temp file.  */
+        if( p->rc==SQLITE_OK ){
+          int frc = sqlite3_file_control(db, "main", SQLITE_FCNTL_ZIPVFS, 0);
+          if( frc==SQLITE_OK ){
+            p->rc = sqlite3_exec(db, "PRAGMA journal_mode=off",0,0,&p->zErrmsg);
+          }
+        }
+
         /* Point the object iterator at the first object */
         if( p->rc==SQLITE_OK ){
           p->rc = rbuObjIterFirst(p, &p->objiter);
@@ -2861,6 +3173,32 @@ int sqlite3rbu_close(sqlite3rbu *p, char **pzErrmsg){
 */
 sqlite3_int64 sqlite3rbu_progress(sqlite3rbu *pRbu){
   return pRbu->nProgress;
+}
+
+int sqlite3rbu_savestate(sqlite3rbu *p){
+  int rc = p->rc;
+  
+  if( rc==SQLITE_DONE ) return SQLITE_OK;
+
+  assert( p->eStage>=RBU_STAGE_OAL && p->eStage<=RBU_STAGE_DONE );
+  if( p->eStage==RBU_STAGE_OAL ){
+    assert( rc!=SQLITE_DONE );
+    if( rc==SQLITE_OK ) rc = sqlite3_exec(p->dbMain, "COMMIT", 0, 0, 0);
+  }
+
+  p->rc = rc;
+  rbuSaveState(p, p->eStage);
+  rc = p->rc;
+
+  if( p->eStage==RBU_STAGE_OAL ){
+    assert( rc!=SQLITE_DONE );
+    if( rc==SQLITE_OK ) rc = sqlite3_exec(p->dbRbu, "COMMIT", 0, 0, 0);
+    if( rc==SQLITE_OK ) rc = sqlite3_exec(p->dbRbu, "BEGIN IMMEDIATE", 0, 0, 0);
+    if( rc==SQLITE_OK ) rc = sqlite3_exec(p->dbMain, "BEGIN IMMEDIATE", 0, 0,0);
+  }
+
+  p->rc = rc;
+  return rc;
 }
 
 /**************************************************************************

@@ -43,7 +43,7 @@ int check_callback(void *pid, int argc, char **argv, char **notUsed2){
   int id = (int)pid;
   if( strcmp(argv[0],"ok") ){
     all_stop = 1;
-    fprintf(stderr,"id: %s\n", id, argv[0]);
+    fprintf(stderr,"%d: %s\n", id, argv[0]);
   }else{
     /* fprintf(stderr,"%d: OK\n", id); */
   }

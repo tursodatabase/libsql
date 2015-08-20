@@ -611,7 +611,7 @@ end_of_step:
   ** were called on statement p.
   */
   assert( rc==SQLITE_ROW  || rc==SQLITE_DONE   || rc==SQLITE_ERROR 
-       || rc==SQLITE_BUSY || rc==SQLITE_MISUSE
+       || (rc&0xff)==SQLITE_BUSY || rc==SQLITE_MISUSE
   );
   assert( (p->rc!=SQLITE_ROW && p->rc!=SQLITE_DONE) || p->rc==p->rcApp );
   if( p->isPrepareV2 && rc!=SQLITE_ROW && rc!=SQLITE_DONE ){

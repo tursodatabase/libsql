@@ -46,6 +46,13 @@ foreach {tn expr res} {
   do_execsql_test 1.$tn {SELECT fts5_expr($expr)} [list $res]
 }
 
+do_catchsql_test 2.1 {
+  SELECT fts5_expr()
+} {1 {wrong number of arguments to function fts5_expr}}
+
+do_catchsql_test 2.1 {
+  SELECT fts5_expr_tcl()
+} {1 {wrong number of arguments to function fts5_expr_tcl}}
 
 finish_test
 

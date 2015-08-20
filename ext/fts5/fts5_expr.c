@@ -34,7 +34,7 @@ void sqlite3Fts5Parser(void*, int, Fts5Token, Fts5Parse*);
 struct Fts5Expr {
   Fts5Index *pIndex;
   Fts5ExprNode *pRoot;
-  int bDesc;                      /* Iterate in descending docid order */
+  int bDesc;                      /* Iterate in descending rowid order */
   int nPhrase;                    /* Number of phrases in expression */
   Fts5ExprPhrase **apExprPhrase;  /* Pointers to phrase objects */
 };
@@ -1865,6 +1865,15 @@ static void fts5ExprFunction(
   Fts5Config *pConfig = 0;
   int iArg = 1;
 
+  if( nArg<1 ){
+    zErr = sqlite3_mprintf("wrong number of arguments to function %s",
+        bTcl ? "fts5_expr_tcl" : "fts5_expr"
+    );
+    sqlite3_result_error(pCtx, zErr, -1);
+    sqlite3_free(zErr);
+    return;
+  }
+
   if( bTcl && nArg>1 ){
     zNearsetCmd = (const char*)sqlite3_value_text(apVal[1]);
     iArg = 2;
@@ -2003,7 +2012,7 @@ int sqlite3Fts5ExprInit(Fts5Global *pGlobal, sqlite3 *db){
 ** Return the number of phrases in expression pExpr.
 */
 int sqlite3Fts5ExprPhraseCount(Fts5Expr *pExpr){
-  return pExpr->nPhrase;
+  return (pExpr ? pExpr->nPhrase : 0);
 }
 
 /*

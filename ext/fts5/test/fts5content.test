@@ -247,7 +247,7 @@ reset_db
 do_execsql_test 6.1 {
   CREATE VIRTUAL TABLE xx USING fts5(x, y, content="");
   SELECT name FROM sqlite_master;
-} {xx xx_data xx_docsize xx_config}
+} {xx xx_data xx_idx xx_docsize xx_config}
 do_execsql_test 6.2 {
   DROP TABLE xx;
   SELECT name FROM sqlite_master;

@@ -307,11 +307,13 @@ TESTSRC += \
   $(TOP)/ext/misc/nextchar.c \
   $(TOP)/ext/misc/percentile.c \
   $(TOP)/ext/misc/regexp.c \
+  $(TOP)/ext/misc/series.c \
   $(TOP)/ext/misc/spellfix.c \
   $(TOP)/ext/misc/totype.c \
   $(TOP)/ext/misc/wholenumber.c \
   $(TOP)/ext/misc/vfslog.c \
   $(TOP)/ext/fts5/fts5_tcl.c \
+  $(TOP)/ext/fts5/fts5_test_mi.c \
   fts5.c
 
 

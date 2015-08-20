@@ -93,6 +93,10 @@ proc fts5_test_queryphrase {cmd} {
   set res
 }
 
+proc fts5_test_phrasecount {cmd} {
+  $cmd xPhraseCount
+}
+
 proc fts5_test_all {cmd} {
   set res [list]
   lappend res columnsize      [fts5_test_columnsize $cmd]
@@ -115,6 +119,7 @@ proc fts5_aux_test_functions {db} {
     fts5_test_all
 
     fts5_test_queryphrase
+    fts5_test_phrasecount
   } {
     sqlite3_fts5_create_function $db $f $f
   }
