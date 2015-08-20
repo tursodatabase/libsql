@@ -1,5 +1,5 @@
-C Fix\sstray\svariable\sdeclaration\sfor\sC89.
-D 2015-08-20T20:21:06.528
+C Skip\scalling\sthe\svirtual\stable\sxDestroy\smethod\swhen\sit\sis\snull.
+D 2015-08-20T21:14:31.239
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4f663b6b4954b9b1eb0e6f08387688a93b57542d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -408,7 +408,7 @@ F src/vdbeblob.c 4f2e8e075d238392df98c5e03a64342465b03f90
 F src/vdbemem.c ae38a0d35ae71cf604381a887c170466ba518090
 F src/vdbesort.c f5009e7a35e3065635d8918b9a31f498a499976b
 F src/vdbetrace.c 8befe829faff6d9e6f6e4dee5a7d3f85cc85f1a0
-F src/vtab.c 05395350f947ec0b1af25e8502b9cfec84f17ea7
+F src/vtab.c ab36813224d5551cb60f87f3c7e58e0b32541e12
 F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 6fb6b68969e4692593c2552c4e7bff5882de2cb8
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
@@ -1376,7 +1376,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a7acc7878b8bb8e27a0da67b2dbb7bd51df4859b
-R ab9999ab7b4e03861512ce91d476cfe4
+P 17eb7f18cb76170e109977a94b259b763cd86c47
+R 25130809f3babeec0691a193d02e4069
 U mistachkin
-Z 6bb10870cccae9f7d2b7bc147f067428
+Z f2d173175579a2040d53483e92ff71ba

@@ -801,6 +801,7 @@ int sqlite3VtabCallDestroy(sqlite3 *db, int iDb, const char *zTab){
   pTab = sqlite3FindTable(db, zTab, db->aDb[iDb].zName);
   if( ALWAYS(pTab!=0 && pTab->pVTable!=0) ){
     VTable *p;
+    int (*xDestroy)(sqlite3_vtab *);
     for(p=pTab->pVTable; p; p=p->pNext){
       assert( p->pVtab );
       if( p->pVtab->nRef>0 ){
@@ -808,7 +809,8 @@ int sqlite3VtabCallDestroy(sqlite3 *db, int iDb, const char *zTab){
       }
     }
     p = vtabDisconnectAll(db, pTab);
-    rc = p->pMod->pModule->xDestroy(p->pVtab);
+    xDestroy = p->pMod->pModule->xDestroy;
+    rc = xDestroy ? xDestroy(p->pVtab) : SQLITE_OK;
     /* Remove the sqlite3_vtab* from the aVTrans[] array, if applicable */
     if( rc==SQLITE_OK ){
       assert( pTab->pVTable==p && p->pNext==0 );
