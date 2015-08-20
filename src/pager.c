@@ -3021,6 +3021,7 @@ static int pagerUndoCallback(void *pCtx, Pgno iPg){
 static int pagerRollbackWal(Pager *pPager){
   int rc;                         /* Return Code */
   PgHdr *pList;                   /* List of dirty pages to revert */
+  int bPage1 = 0;                 /* True if page 1 has been undone */
 
   /* For all pages in the cache that are currently dirty or have already
   ** been written (but not committed) to the log file, do one of the 
@@ -3034,8 +3035,16 @@ static int pagerRollbackWal(Pager *pPager){
   pList = sqlite3PcacheDirtyList(pPager->pPCache);
   while( pList && rc==SQLITE_OK ){
     PgHdr *pNext = pList->pDirty;
+    if( pList->pgno==1 ) bPage1 = 1;
     rc = pagerUndoCallback((void *)pPager, pList->pgno);
     pList = pNext;
+  }
+
+  /* If this is an UNLOCKED transaction, then page 1 must be reread from the
+  ** db file, even if it is not dirty. This is because the b-tree layer may
+  ** have already zeroed the nFree and iTrunk header fields.  */
+  if( rc==SQLITE_OK && bPage1==0 && pPager->pAllRead ){
+    rc = pagerUndoCallback((void*)pPager, 1);
   }
 
   return rc;

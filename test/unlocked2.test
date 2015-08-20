@@ -90,12 +90,72 @@ do_multiclient_test tn {
     sql2 {
       INSERT INTO t2 VALUES(randomblob(1500));
     }
-    sql1 {
-      COMMIT;
-    }
+    sql1 COMMIT
   } {}
 
   do_test 2.$tn.3 { sql3 { PRAGMA integrity_check } } {ok}
+
+  do_test 2.$tn.4  {
+    sql1 { 
+      BEGIN UNLOCKED;
+        DELETE FROM t1;
+    }
+    sql2 {
+      DELETE FROM t2;
+    }
+    sql1 COMMIT
+  } {}
+
+  do_test 2.$tn.5 { sql3 { PRAGMA integrity_check } } {ok}
+
+  do_test 2.$tn.6 {
+    sql1 {
+      INSERT INTO t1 VALUES(randomblob(1500));
+      INSERT INTO t1 VALUES(randomblob(1500));
+      INSERT INTO t2 VALUES(randomblob(1500));
+      DELETE FROM t1 WHERE rowid=1;
+    }
+
+    sql1 {
+      BEGIN UNLOCKED;
+        DELETE FROM t1 WHERE rowid=2;
+    }
+
+    sql2 {
+      DELETE FROM t2;
+    }
+
+    sql1 COMMIT
+  } {}
+
+  do_test 2.$tn.7 { sql3 { PRAGMA integrity_check } } {ok}
 }
 
+reset_db
+do_execsql_test 3.0 {
+  PRAGMA journal_mode = wal;
+  CREATE TABLE t1(x, y);
+  INSERT INTO t1 VALUES(randomblob(1500), randomblob(1500));
+  DELETE FROM t1;
+} {wal}
+
+db close
+sqlite3 db test.db
+breakpoint
+
+do_execsql_test 3.1 {
+  BEGIN UNLOCKED;
+    INSERT INTO t1 VALUES(1, 2);
+  ROLLBACK;
+}
+
+do_execsql_test 3.2 {
+  PRAGMA integrity_check;
+} {ok}
+
+do_execsql_test 3.3 {
+  PRAGMA freelist_count;
+} {2}
+
 finish_test
+

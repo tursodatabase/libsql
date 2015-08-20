@@ -1,5 +1,5 @@
-C When\scommitting\san\sunlocked\stransaction,\srelocate\snewly\sallocated\sdatabase\spages\swithin\sthe\sfile\sto\savoid\sconflicting\swith\scommitted\stransactions.\sThere\sare\slots\sof\sthings\sstill\sto\sfix\sin\sthis\scode.
-D 2015-08-19T20:27:05.840
+C Fix\sa\sproblem\scausing\scorruption\swhen\san\sUNLOCKED\stransaction\sis\srolled\sback.
+D 2015-08-20T20:25:56.029
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4de3ef40c8b3b75c0c55ff4242a43c8ce1ad90ee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -315,7 +315,7 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c 388c023582b17890f10c980b30ec1922b471753b
 F src/os_win.c 40b3af7a47eb1107d0d69e592bec345a3b7b798a
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
-F src/pager.c fe82e368600278cfd35024c20b888e945236f675
+F src/pager.c 48a76f16a75112c9b064e21e1d1ecf0b4d87b5cd
 F src/pager.h 3fc23bca2e7d606ca4fbdd923713cdcdcec48297
 F src/parse.y 199145cd982587d70fa3db2f9b11f7ab118f0acd
 F src/pcache.c cde06aa50962595e412d497e22fd2e07878ba1f0
@@ -1216,7 +1216,7 @@ F test/unique.test 93f8b2ef5ea51b9495f8d6493429b1fd0f465264
 F test/unique2.test 41e7f83c6827605991160a31380148a9fc5f1339
 F test/unixexcl.test cd6c765f75e50e8e2c2ba763149e5d340ea19825
 F test/unlocked.test d143a871bd874311d4e5c98ce458218ca6b579fd
-F test/unlocked2.test fc4c730a44c3650250467ecacca6ddb969f64405
+F test/unlocked2.test 06a7d5a366bfc6fcaf472a2411f6d45fd9255ed4
 F test/unordered.test ca7adce0419e4ca0c50f039885e76ed2c531eda8
 F test/update.test 6c68446b8a0a33d522a7c72b320934596a2d7d32
 F test/uri.test 23662b7b61958b0f0e47082de7d06341ccf85d5b
@@ -1368,7 +1368,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P de1ea450db33b140b11af5b801ea6a15875e774e
-R db05422c8fb37e882a7e6cc4bd7c8ffb
+P 3bbc31d515ba9fc920c5cbc7059d3eb1ba9c7f8e
+R 9ac18b47cee85e97c9fcd4362b958c7d
 U dan
-Z cccfd407eb244cf1cd3b5cab72e65fda
+Z 032a41c4b1c95657db216d02c5116d23
