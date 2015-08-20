@@ -586,13 +586,18 @@ from(A) ::= FROM seltablist(X). {
 //
 stl_prefix(A) ::= seltablist(X) joinop(Y).    {
    A = X;
-   if( ALWAYS(A && A->nSrc>0) ) A->a[A->nSrc-1].jointype = (u8)Y;
+   if( ALWAYS(A && A->nSrc>0) ) A->a[A->nSrc-1].fg.jointype = (u8)Y;
 }
 stl_prefix(A) ::= .                           {A = 0;}
 seltablist(A) ::= stl_prefix(X) nm(Y) dbnm(D) as(Z) indexed_opt(I)
                   on_opt(N) using_opt(U). {
   A = sqlite3SrcListAppendFromTerm(pParse,X,&Y,&D,&Z,0,N,U);
   sqlite3SrcListIndexedBy(pParse, A, &I);
+}
+seltablist(A) ::= stl_prefix(X) nm(Y) dbnm(D) LP exprlist(E) RP as(Z)
+                  on_opt(N) using_opt(U). {
+  A = sqlite3SrcListAppendFromTerm(pParse,X,&Y,&D,&Z,0,N,U);
+  sqlite3SrcListFuncArgs(pParse, A, E);
 }
 %ifndef SQLITE_OMIT_SUBQUERY
   seltablist(A) ::= stl_prefix(X) LP select(S) RP

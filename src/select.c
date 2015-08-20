@@ -406,12 +406,12 @@ static int sqliteProcessJoin(Parse *pParse, Select *p){
     int isOuter;
 
     if( NEVER(pLeftTab==0 || pRightTab==0) ) continue;
-    isOuter = (pRight->jointype & JT_OUTER)!=0;
+    isOuter = (pRight->fg.jointype & JT_OUTER)!=0;
 
     /* When the NATURAL keyword is present, add WHERE clause terms for
     ** every column that the two tables have in common.
     */
-    if( pRight->jointype & JT_NATURAL ){
+    if( pRight->fg.jointype & JT_NATURAL ){
       if( pRight->pOn || pRight->pUsing ){
         sqlite3ErrorMsg(pParse, "a NATURAL join may not have "
            "an ON or USING clause", 0);
@@ -1933,7 +1933,7 @@ static KeyInfo *multiSelectOrderByKeyInfo(Parse *pParse, Select *p, int nExtra){
 **
 **
 ** There is exactly one reference to the recursive-table in the FROM clause
-** of recursive-query, marked with the SrcList->a[].isRecursive flag.
+** of recursive-query, marked with the SrcList->a[].fg.isRecursive flag.
 **
 ** The setup-query runs once to generate an initial set of rows that go
 ** into a Queue table.  Rows are extracted from the Queue table one by
@@ -1998,7 +1998,7 @@ static void generateWithRecursiveQuery(
 
   /* Locate the cursor number of the Current table */
   for(i=0; ALWAYS(i<pSrc->nSrc); i++){
-    if( pSrc->a[i].isRecursive ){
+    if( pSrc->a[i].fg.isRecursive ){
       iCurrent = pSrc->a[i].iCursor;
       break;
     }
@@ -3413,7 +3413,7 @@ static int flattenSubquery(
   ** is fraught with danger.  Best to avoid the whole thing.  If the
   ** subquery is the right term of a LEFT JOIN, then do not flatten.
   */
-  if( (pSubitem->jointype & JT_OUTER)!=0 ){
+  if( (pSubitem->fg.jointype & JT_OUTER)!=0 ){
     return 0;
   }
 
@@ -3584,7 +3584,7 @@ static int flattenSubquery(
 
     if( pSrc ){
       assert( pParent==p );  /* First time through the loop */
-      jointype = pSubitem->jointype;
+      jointype = pSubitem->fg.jointype;
     }else{
       assert( pParent!=p );  /* 2nd and subsequent times through the loop */
       pSrc = pParent->pSrc = sqlite3SrcListAppend(db, 0, 0, 0);
@@ -3624,7 +3624,7 @@ static int flattenSubquery(
       pSrc->a[i+iFrom] = pSubSrc->a[i];
       memset(&pSubSrc->a[i], 0, sizeof(pSubSrc->a[i]));
     }
-    pSrc->a[iFrom].jointype = jointype;
+    pSrc->a[iFrom].fg.jointype = jointype;
   
     /* Now begin substituting subquery result set expressions for 
     ** references to the iParent in the outer query.
@@ -3875,9 +3875,9 @@ static Table *isSimpleCount(Select *p, AggInfo *pAggInfo){
 ** pFrom->pIndex and return SQLITE_OK.
 */
 int sqlite3IndexedByLookup(Parse *pParse, struct SrcList_item *pFrom){
-  if( pFrom->pTab && pFrom->zIndexedBy ){
+  if( pFrom->pTab && pFrom->fg.isIndexedBy ){
     Table *pTab = pFrom->pTab;
-    char *zIndexedBy = pFrom->zIndexedBy;
+    char *zIndexedBy = pFrom->u1.zIndexedBy;
     Index *pIdx;
     for(pIdx=pTab->pIndex; 
         pIdx && sqlite3StrICmp(pIdx->zName, zIndexedBy); 
@@ -3888,7 +3888,7 @@ int sqlite3IndexedByLookup(Parse *pParse, struct SrcList_item *pFrom){
       pParse->checkSchema = 1;
       return SQLITE_ERROR;
     }
-    pFrom->pIndex = pIdx;
+    pFrom->pIBIndex = pIdx;
   }
   return SQLITE_OK;
 }
@@ -4083,7 +4083,7 @@ static int withExpand(
          && 0==sqlite3StrICmp(pItem->zName, pCte->zName)
           ){
           pItem->pTab = pTab;
-          pItem->isRecursive = 1;
+          pItem->fg.isRecursive = 1;
           pTab->nRef++;
           pSel->selFlags |= SF_Recursive;
         }
@@ -4213,8 +4213,8 @@ static int selectExpander(Walker *pWalker, Select *p){
   */
   for(i=0, pFrom=pTabList->a; i<pTabList->nSrc; i++, pFrom++){
     Table *pTab;
-    assert( pFrom->isRecursive==0 || pFrom->pTab );
-    if( pFrom->isRecursive ) continue;
+    assert( pFrom->fg.isRecursive==0 || pFrom->pTab );
+    if( pFrom->fg.isRecursive ) continue;
     if( pFrom->pTab!=0 ){
       /* This statement has already been prepared.  There is no need
       ** to go further. */
@@ -4377,7 +4377,7 @@ static int selectExpander(Walker *pWalker, Select *p){
             tableSeen = 1;
 
             if( i>0 && zTName==0 ){
-              if( (pFrom->jointype & JT_NATURAL)!=0
+              if( (pFrom->fg.jointype & JT_NATURAL)!=0
                 && tableAndColumnIndex(pTabList, i, zName, 0, 0)
               ){
                 /* In a NATURAL join, omit the join columns from the 
@@ -4904,7 +4904,7 @@ int sqlite3Select(
     ** is sufficient, though the subroutine to manifest the view does need
     ** to be invoked again. */
     if( pItem->addrFillSub ){
-      if( pItem->viaCoroutine==0 ){
+      if( pItem->fg.viaCoroutine==0 ){
         sqlite3VdbeAddOp2(v, OP_Gosub, pItem->regReturn, pItem->addrFillSub);
       }
       continue;
@@ -4922,7 +4922,7 @@ int sqlite3Select(
     /* Make copies of constant WHERE-clause terms in the outer query down
     ** inside the subquery.  This can help the subquery to run more efficiently.
     */
-    if( (pItem->jointype & JT_OUTER)==0
+    if( (pItem->fg.jointype & JT_OUTER)==0
      && pushDownWhereTerms(db, pSub, p->pWhere, pItem->iCursor)
     ){
 #if SELECTTRACE_ENABLED
@@ -4951,7 +4951,7 @@ int sqlite3Select(
       explainSetInteger(pItem->iSelectId, (u8)pParse->iNextSelectId);
       sqlite3Select(pParse, pSub, &dest);
       pItem->pTab->nRowLogEst = sqlite3LogEst(pSub->nSelectRow);
-      pItem->viaCoroutine = 1;
+      pItem->fg.viaCoroutine = 1;
       pItem->regResult = dest.iSdst;
       sqlite3VdbeAddOp1(v, OP_EndCoroutine, pItem->regReturn);
       sqlite3VdbeJumpHere(v, addrTop-1);
@@ -4969,7 +4969,7 @@ int sqlite3Select(
       pItem->regReturn = ++pParse->nMem;
       topAddr = sqlite3VdbeAddOp2(v, OP_Integer, 0, pItem->regReturn);
       pItem->addrFillSub = topAddr+1;
-      if( pItem->isCorrelated==0 ){
+      if( pItem->fg.isCorrelated==0 ){
         /* If the subquery is not correlated and if we are not inside of
         ** a trigger, then we only need to compute the value of the subquery
         ** once. */

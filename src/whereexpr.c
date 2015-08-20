@@ -1247,3 +1247,42 @@ void sqlite3WhereExprAnalyze(
     exprAnalyze(pTabList, pWC, i);
   }
 }
+
+/*
+** For table-valued-functions, transform the function arguments into
+** new WHERE clause terms.  
+**
+** Each function argument translates into an equality constraint against
+** a HIDDEN column in the table.
+*/
+void sqlite3WhereTabFuncArgs(
+  Parse *pParse,                    /* Parsing context */
+  struct SrcList_item *pItem,       /* The FROM clause term to process */
+  WhereClause *pWC                  /* Xfer function arguments to here */
+){
+  Table *pTab;
+  int j, k;
+  ExprList *pArgs;
+  Expr *pColRef;
+  Expr *pTerm;
+  if( pItem->fg.isTabFunc==0 ) return;
+  pTab = pItem->pTab;
+  assert( pTab!=0 );
+  pArgs = pItem->u1.pFuncArg;
+  assert( pArgs!=0 );
+  for(j=k=0; j<pArgs->nExpr; j++){
+    while( k<pTab->nCol && (pTab->aCol[k].colFlags & COLFLAG_HIDDEN)==0 ){ k++; }
+    if( k>=pTab->nCol ){
+      sqlite3ErrorMsg(pParse, "too many arguments on %s() - max %d",
+                      pTab->zName, j);
+      return;
+    }
+    pColRef = sqlite3PExpr(pParse, TK_COLUMN, 0, 0, 0);
+    if( pColRef==0 ) return;
+    pColRef->iTable = pItem->iCursor;
+    pColRef->iColumn = k++;
+    pTerm = sqlite3PExpr(pParse, TK_EQ, pColRef,
+                         sqlite3ExprDup(pParse->db, pArgs->a[j].pExpr, 0), 0);
+    whereClauseInsert(pWC, pTerm, TERM_DYNAMIC);
+  }
+}

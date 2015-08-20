@@ -1034,16 +1034,18 @@ SrcList *sqlite3SrcListDup(sqlite3 *db, SrcList *p, int flags){
     pNewItem->zDatabase = sqlite3DbStrDup(db, pOldItem->zDatabase);
     pNewItem->zName = sqlite3DbStrDup(db, pOldItem->zName);
     pNewItem->zAlias = sqlite3DbStrDup(db, pOldItem->zAlias);
-    pNewItem->jointype = pOldItem->jointype;
+    pNewItem->fg = pOldItem->fg;
     pNewItem->iCursor = pOldItem->iCursor;
     pNewItem->addrFillSub = pOldItem->addrFillSub;
     pNewItem->regReturn = pOldItem->regReturn;
-    pNewItem->isCorrelated = pOldItem->isCorrelated;
-    pNewItem->viaCoroutine = pOldItem->viaCoroutine;
-    pNewItem->isRecursive = pOldItem->isRecursive;
-    pNewItem->zIndexedBy = sqlite3DbStrDup(db, pOldItem->zIndexedBy);
-    pNewItem->notIndexed = pOldItem->notIndexed;
-    pNewItem->pIndex = pOldItem->pIndex;
+    if( pNewItem->fg.isIndexedBy ){
+      pNewItem->u1.zIndexedBy = sqlite3DbStrDup(db, pOldItem->u1.zIndexedBy);
+    }
+    pNewItem->pIBIndex = pOldItem->pIBIndex;
+    if( pNewItem->fg.isTabFunc ){
+      pNewItem->u1.pFuncArg = 
+          sqlite3ExprListDup(db, pOldItem->u1.pFuncArg, flags);
+    }
     pTab = pNewItem->pTab = pOldItem->pTab;
     if( pTab ){
       pTab->nRef++;

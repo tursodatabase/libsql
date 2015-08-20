@@ -709,7 +709,7 @@ static void constructAutomaticIndex(
   /* Fill the automatic index with content */
   sqlite3ExprCachePush(pParse);
   pTabItem = &pWC->pWInfo->pTabList->a[pLevel->iFrom];
-  if( pTabItem->viaCoroutine ){
+  if( pTabItem->fg.viaCoroutine ){
     int regYield = pTabItem->regReturn;
     sqlite3VdbeAddOp3(v, OP_InitCoroutine, regYield, 0, pTabItem->addrFillSub);
     addrTop =  sqlite3VdbeAddOp1(v, OP_Yield, regYield);
@@ -728,10 +728,10 @@ static void constructAutomaticIndex(
   sqlite3VdbeAddOp2(v, OP_IdxInsert, pLevel->iIdxCur, regRecord);
   sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
   if( pPartial ) sqlite3VdbeResolveLabel(v, iContinue);
-  if( pTabItem->viaCoroutine ){
+  if( pTabItem->fg.viaCoroutine ){
     translateColumnToCopy(v, addrTop, pLevel->iTabCur, pTabItem->regResult);
     sqlite3VdbeAddOp2(v, OP_Goto, 0, addrTop);
-    pTabItem->viaCoroutine = 0;
+    pTabItem->fg.viaCoroutine = 0;
   }else{
     sqlite3VdbeAddOp2(v, OP_Next, pLevel->iTabCur, addrTop+1); VdbeCoverage(v);
   }
@@ -2128,7 +2128,7 @@ static int whereLoopAddBtreeIndex(
   assert( (pNew->wsFlags & WHERE_TOP_LIMIT)==0 );
   if( pNew->wsFlags & WHERE_BTM_LIMIT ){
     opMask = WO_LT|WO_LE;
-  }else if( /*pProbe->tnum<=0 ||*/ (pSrc->jointype & JT_LEFT)!=0 ){
+  }else if( /*pProbe->tnum<=0 ||*/ (pSrc->fg.jointype & JT_LEFT)!=0 ){
     opMask = WO_EQ|WO_IN|WO_GT|WO_GE|WO_LT|WO_LE;
   }else{
     opMask = WO_EQ|WO_IN|WO_GT|WO_GE|WO_LT|WO_LE|WO_ISNULL|WO_IS;
@@ -2502,9 +2502,9 @@ static int whereLoopAddBtree(
   pWC = pBuilder->pWC;
   assert( !IsVirtual(pSrc->pTab) );
 
-  if( pSrc->pIndex ){
+  if( pSrc->pIBIndex ){
     /* An INDEXED BY clause specifies a particular index to use */
-    pProbe = pSrc->pIndex;
+    pProbe = pSrc->pIBIndex;
   }else if( !HasRowid(pTab) ){
     pProbe = pTab->pIndex;
   }else{
@@ -2524,7 +2524,7 @@ static int whereLoopAddBtree(
     aiRowEstPk[0] = pTab->nRowLogEst;
     aiRowEstPk[1] = 0;
     pFirst = pSrc->pTab->pIndex;
-    if( pSrc->notIndexed==0 ){
+    if( pSrc->fg.notIndexed==0 ){
       /* The real indices of the table are only considered if the
       ** NOT INDEXED qualifier is omitted from the FROM clause */
       sPk.pNext = pFirst;
@@ -2536,14 +2536,14 @@ static int whereLoopAddBtree(
 
 #ifndef SQLITE_OMIT_AUTOMATIC_INDEX
   /* Automatic indexes */
-  if( !pBuilder->pOrSet   /* Not part of an OR optimization */
+  if( !pBuilder->pOrSet      /* Not part of an OR optimization */
    && (pWInfo->wctrlFlags & WHERE_NO_AUTOINDEX)==0
    && (pWInfo->pParse->db->flags & SQLITE_AutoIndex)!=0
-   && pSrc->pIndex==0     /* Has no INDEXED BY clause */
-   && !pSrc->notIndexed   /* Has no NOT INDEXED clause */
-   && HasRowid(pTab)      /* Is not a WITHOUT ROWID table. (FIXME: Why not?) */
-   && !pSrc->isCorrelated /* Not a correlated subquery */
-   && !pSrc->isRecursive  /* Not a recursive common table expression. */
+   && pSrc->pIBIndex==0      /* Has no INDEXED BY clause */
+   && !pSrc->fg.notIndexed   /* Has no NOT INDEXED clause */
+   && HasRowid(pTab)         /* Is not a WITHOUT ROWID table. (FIXME: Why not?) */
+   && !pSrc->fg.isCorrelated /* Not a correlated subquery */
+   && !pSrc->fg.isRecursive  /* Not a recursive common table expression. */
   ){
     /* Generate auto-index WhereLoops */
     WhereTerm *pTerm;
@@ -2664,7 +2664,7 @@ static int whereLoopAddBtree(
 
     /* If there was an INDEXED BY clause, then only that one index is
     ** considered. */
-    if( pSrc->pIndex ) break;
+    if( pSrc->pIBIndex ) break;
   }
   return rc;
 }
@@ -3010,16 +3010,16 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
     Bitmask mUnusable = 0;
     pNew->iTab = iTab;
     pNew->maskSelf = sqlite3WhereGetMask(&pWInfo->sMaskSet, pItem->iCursor);
-    if( ((pItem->jointype|priorJointype) & (JT_LEFT|JT_CROSS))!=0 ){
+    if( ((pItem->fg.jointype|priorJointype) & (JT_LEFT|JT_CROSS))!=0 ){
       /* This condition is true when pItem is the FROM clause term on the
       ** right-hand-side of a LEFT or CROSS JOIN.  */
       mExtra = mPrior;
     }
-    priorJointype = pItem->jointype;
+    priorJointype = pItem->fg.jointype;
     if( IsVirtual(pItem->pTab) ){
       struct SrcList_item *p;
       for(p=&pItem[1]; p<pEnd; p++){
-        if( mUnusable || (p->jointype & (JT_LEFT|JT_CROSS)) ){
+        if( mUnusable || (p->fg.jointype & (JT_LEFT|JT_CROSS)) ){
           mUnusable |= sqlite3WhereGetMask(&pWInfo->sMaskSet, p->iCursor);
         }
       }
@@ -3749,7 +3749,7 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
   pItem = pWInfo->pTabList->a;
   pTab = pItem->pTab;
   if( IsVirtual(pTab) ) return 0;
-  if( pItem->zIndexedBy ) return 0;
+  if( pItem->fg.isIndexedBy ) return 0;
   iCur = pItem->iCursor;
   pWC = &pWInfo->sWC;
   pLoop = pBuilder->pNew;
@@ -4030,6 +4030,7 @@ WhereInfo *sqlite3WhereBegin(
   */
   for(ii=0; ii<pTabList->nSrc; ii++){
     createMask(pMaskSet, pTabList->a[ii].iCursor);
+    sqlite3WhereTabFuncArgs(pParse, &pTabList->a[ii], &pWInfo->sWC);
   }
 #ifndef NDEBUG
   {
@@ -4136,7 +4137,7 @@ WhereInfo *sqlite3WhereBegin(
     while( pWInfo->nLevel>=2 ){
       WhereTerm *pTerm, *pEnd;
       pLoop = pWInfo->a[pWInfo->nLevel-1].pWLoop;
-      if( (pWInfo->pTabList->a[pLoop->iTab].jointype & JT_LEFT)==0 ) break;
+      if( (pWInfo->pTabList->a[pLoop->iTab].fg.jointype & JT_LEFT)==0 ) break;
       if( (wctrlFlags & WHERE_WANT_DISTINCT)==0
        && (pLoop->wsFlags & WHERE_ONEROW)==0
       ){
@@ -4432,7 +4433,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     ** the co-routine into OP_Copy of result contained in a register.
     ** OP_Rowid becomes OP_Null.
     */
-    if( pTabItem->viaCoroutine && !db->mallocFailed ){
+    if( pTabItem->fg.viaCoroutine && !db->mallocFailed ){
       translateColumnToCopy(v, pLevel->addrBody, pLevel->iTabCur,
                             pTabItem->regResult);
       continue;

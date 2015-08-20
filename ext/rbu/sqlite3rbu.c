@@ -3043,14 +3043,25 @@ sqlite3rbu *sqlite3rbu_open(
 
     if( p->rc==SQLITE_OK ){
       if( p->eStage==RBU_STAGE_OAL ){
+        sqlite3 *db = p->dbMain;
 
         /* Open transactions both databases. The *-oal file is opened or
         ** created at this point. */
-        p->rc = sqlite3_exec(p->dbMain, "BEGIN IMMEDIATE", 0, 0, &p->zErrmsg);
+        p->rc = sqlite3_exec(db, "BEGIN IMMEDIATE", 0, 0, &p->zErrmsg);
         if( p->rc==SQLITE_OK ){
           p->rc = sqlite3_exec(p->dbRbu, "BEGIN IMMEDIATE", 0, 0, &p->zErrmsg);
         }
-  
+
+        /* Check if the main database is a zipvfs db. If it is, set the upper
+        ** level pager to use "journal_mode=off". This prevents it from 
+        ** generating a large journal using a temp file.  */
+        if( p->rc==SQLITE_OK ){
+          int frc = sqlite3_file_control(db, "main", SQLITE_FCNTL_ZIPVFS, 0);
+          if( frc==SQLITE_OK ){
+            p->rc = sqlite3_exec(db, "PRAGMA journal_mode=off",0,0,&p->zErrmsg);
+          }
+        }
+
         /* Point the object iterator at the first object */
         if( p->rc==SQLITE_OK ){
           p->rc = rbuObjIterFirst(p, &p->objiter);

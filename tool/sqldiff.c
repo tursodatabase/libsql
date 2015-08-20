@@ -810,9 +810,9 @@ static void hash_init(hash *pHash, const char *z){
 */
 static void hash_next(hash *pHash, int c){
   u16 old = pHash->z[pHash->i];
-  pHash->z[pHash->i] = c;
+  pHash->z[pHash->i] = (char)c;
   pHash->i = (pHash->i+1)&(NHASH-1);
-  pHash->a = pHash->a - old + c;
+  pHash->a = pHash->a - old + (char)c;
   pHash->b = pHash->b - NHASH*old + pHash->a;
 }
 
@@ -849,7 +849,7 @@ static void putInt(unsigned int v, char **pz){
 */
 static int digit_count(int v){
   unsigned int i, x;
-  for(i=1, x=64; v>=x; i++, x <<= 6){}
+  for(i=1, x=64; (unsigned int)v>=x; i++, x <<= 6){}
   return i;
 }
 
@@ -956,7 +956,7 @@ static int rbuDeltaCreate(
   unsigned int lenOut,   /* Length of the target file */
   char *zDelta           /* Write the delta into this buffer */
 ){
-  int i, base;
+  unsigned int i, base;
   char *zOrigDelta = zDelta;
   hash h;
   int nHash;                 /* Number of hash table entries */
@@ -1005,7 +1005,7 @@ static int rbuDeltaCreate(
   base = 0;    /* We have already generated everything before zOut[base] */
   while( base+NHASH<lenOut ){
     int iSrc, iBlock;
-    unsigned int bestCnt, bestOfst=0, bestLitsz=0;
+    int bestCnt, bestOfst=0, bestLitsz=0;
     hash_init(&h, &zOut[base]);
     i = 0;     /* Trying to match a landmark against zOut[base+i] */
     bestCnt = 0;
@@ -1038,14 +1038,18 @@ static int rbuDeltaCreate(
         /* Beginning at iSrc, match forwards as far as we can.  j counts
         ** the number of characters that match */
         iSrc = iBlock*NHASH;
-        for(j=0, x=iSrc, y=base+i; x<lenSrc && y<lenOut; j++, x++, y++){
+        for(
+          j=0, x=iSrc, y=base+i;
+          (unsigned int)x<lenSrc && (unsigned int)y<lenOut;
+          j++, x++, y++
+        ){
           if( zSrc[x]!=zOut[y] ) break;
         }
         j--;
 
         /* Beginning at iSrc-1, match backwards as far as we can.  k counts
         ** the number of characters that match */
-        for(k=1; k<iSrc && k<=i; k++){
+        for(k=1; k<iSrc && (unsigned int)k<=i; k++){
           if( zSrc[iSrc-k]!=zOut[base+i-k] ) break;
         }
         k--;
