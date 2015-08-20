@@ -3802,7 +3802,7 @@ void sqlite3SrcListIndexedBy(Parse *pParse, SrcList *p, Token *pIndexedBy){
 ** table-valued-function.
 */
 void sqlite3SrcListFuncArgs(Parse *pParse, SrcList *p, ExprList *pList){
-  if( p && ALWAYS(p->nSrc>0) ){
+  if( p && ALWAYS(p->nSrc>0) && pList ){
     struct SrcList_item *pItem = &p->a[p->nSrc-1];
     assert( pItem->fg.notIndexed==0 );
     assert( pItem->fg.isIndexedBy==0 );
