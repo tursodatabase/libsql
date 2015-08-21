@@ -1,5 +1,5 @@
-C Compiler-warning\sfixes\sin\sthe\ssqldiff.exe\sutility.
-D 2015-08-20T23:33:09.816
+C Fix\stypo\sin\scomment.\s\sNo\schanges\sto\scode.
+D 2015-08-21T12:37:49.414
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4f663b6b4954b9b1eb0e6f08387688a93b57542d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -328,7 +328,7 @@ F src/pager.h 6d435f563b3f7fcae4b84433b76a6ac2730036e2
 F src/parse.y ad9af8552f6f340bd646577ca63356a6f82b6a7e
 F src/pcache.c cde06aa50962595e412d497e22fd2e07878ba1f0
 F src/pcache.h 9968603796240cdf83da7e7bef76edf90619cea9
-F src/pcache1.c d08939800abf3031bd0affd5a13fbc4d7ba3fb68
+F src/pcache1.c a3fe31b17e841ec70beee72a2c960e9c787a8857
 F src/pragma.c 669bc0fdb3fb5554e18330e8dd9743319bac16f4
 F src/pragma.h 631a91c8b0e6ca8f051a1d8a4a0da4150e04620a
 F src/prepare.c 82e5db1013846a819f198336fed72c44c974e7b1
@@ -1376,8 +1376,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P bc577fe6cbbe5385d81d6fa0f3c34bb1c833f0d6 072279d458fbb74a812a9ee723041d6b7c662a88
-R 945241c39c0e2b8c88fe2d95b8e90177
-T +closed 072279d458fbb74a812a9ee723041d6b7c662a88
+P 64d13339d44d1b7ec6768a33421f2138cb7872d8
+R 260ec5cb722f012aed82a5e5217a1778
 U drh
-Z 016c7dc0deb1c398804e42d942b63fbc
+Z 32b72495e2d0c8597a1f587799e93112
