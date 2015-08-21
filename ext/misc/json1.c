@@ -29,6 +29,8 @@ SQLITE_EXTENSION_INIT1
 #include <stdlib.h>
 #include <stdarg.h>
 
+#define UNUSED_PARAM(X)  (void)(X)
+
 /* Unsigned integer types */
 typedef sqlite3_uint64 u64;
 typedef unsigned int u32;
@@ -159,7 +161,7 @@ static int jsonGrow(JsonString *p, u32 N){
       jsonOom(p);
       return SQLITE_NOMEM;
     }
-    memcpy(zNew, p->zBuf, p->nUsed);
+    memcpy(zNew, p->zBuf, (size_t)p->nUsed);
     p->zBuf = zNew;
     p->bStatic = 0;
   }else{
@@ -578,7 +580,6 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
   if( c=='{' ){
     /* Parse object */
     iThis = jsonParseAddNode(pParse, JSON_OBJECT, 0, 0);
-    if( iThis<0 ) return -1;
     for(j=i+1;;j++){
       while( isspace(pParse->zJson[j]) ){ j++; }
       x = jsonParseValue(pParse, j);
@@ -605,7 +606,6 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
   }else if( c=='[' ){
     /* Parse array */
     iThis = jsonParseAddNode(pParse, JSON_ARRAY, 0, 0);
-    if( iThis<0 ) return -1;
     for(j=i+1;;j++){
       while( isspace(pParse->zJson[j]) ){ j++; }
       x = jsonParseValue(pParse, j);
@@ -938,7 +938,7 @@ static void jsonNodeCountFunc(
 ){
   JsonParse x;  /* The parse */
   if( jsonParse(&x, (const char*)sqlite3_value_text(argv[0])) ) return;
-  sqlite3_result_int64(context, x.nNode);
+  sqlite3_result_int64(context, (sqlite3_int64)x.nNode);
   jsonParseReset(&x);
 }
 #endif /* SQLITE_DEBUG */
@@ -1099,7 +1099,7 @@ static void jsonRemoveFunc(
   if( argc<1 ) return;
   if( jsonParse(&x, (const char*)sqlite3_value_text(argv[0])) ) return;
   if( x.nNode ){
-    for(i=1; i<argc; i++){
+    for(i=1; i<(u32)argc; i++){
       zPath = (const char*)sqlite3_value_text(argv[i]);
       if( zPath==0 ) continue;
       if( zPath[0]!='$' ) continue;
@@ -1137,7 +1137,7 @@ static void jsonReplaceFunc(
   }
   if( jsonParse(&x, (const char*)sqlite3_value_text(argv[0])) ) return;
   if( x.nNode ){
-    for(i=1; i<argc; i+=2){
+    for(i=1; i<(u32)argc; i+=2){
       zPath = (const char*)sqlite3_value_text(argv[i]);
       if( zPath==0 ) continue;
       if( zPath[0]!='$' ) continue;
@@ -1188,7 +1188,7 @@ static void jsonSetFunc(
   }
   if( jsonParse(&x, (const char*)sqlite3_value_text(argv[0])) ) return;
   if( x.nNode ){
-    for(i=1; i<argc; i+=2){
+    for(i=1; i<(u32)argc; i+=2){
       zPath = (const char*)sqlite3_value_text(argv[i]);
       if( zPath==0 ) continue;
       if( zPath[0]!='$' ) continue;
@@ -1278,6 +1278,10 @@ static int jsonEachConnect(
 #define JEACH_JSON    7
 #define JEACH_PATH    8
 
+  UNUSED_PARAM(pzErr);
+  UNUSED_PARAM(argv);
+  UNUSED_PARAM(argc);
+  UNUSED_PARAM(pAux);
   rc = sqlite3_declare_vtab(db, 
      "CREATE TABLE x(key,value,type,atom,id,parent,fullkey,"
                     "json HIDDEN,path HIDDEN)");
@@ -1298,6 +1302,8 @@ static int jsonEachDisconnect(sqlite3_vtab *pVtab){
 /* constructor for a JsonEachCursor object for json_each(). */
 static int jsonEachOpenEach(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
   JsonEachCursor *pCur;
+
+  UNUSED_PARAM(p);
   pCur = sqlite3_malloc( sizeof(*pCur) );
   if( pCur==0 ) return SQLITE_NOMEM;
   memset(pCur, 0, sizeof(*pCur));
@@ -1432,7 +1438,7 @@ static int jsonEachColumn(
         }else{
           iKey = p->iRowid;
         }
-        sqlite3_result_int64(ctx, iKey);
+        sqlite3_result_int64(ctx, (sqlite3_int64)iKey);
       }
       break;
     }
@@ -1453,12 +1459,12 @@ static int jsonEachColumn(
       break;
     }
     case JEACH_ID: {
-      sqlite3_result_int64(ctx, p->i + (p->eType==JSON_OBJECT));
+      sqlite3_result_int64(ctx, (sqlite3_int64)p->i + (p->eType==JSON_OBJECT));
       break;
     }
     case JEACH_PARENT: {
       if( p->i>0 && p->bRecursive ){
-        sqlite3_result_int64(ctx, p->sParse.aUp[p->i]);
+        sqlite3_result_int64(ctx, (sqlite3_int64)p->sParse.aUp[p->i]);
       }
       break;
     }
@@ -1526,6 +1532,8 @@ static int jsonEachBestIndex(
   int jsonIdx = -1;
   int pathIdx = -1;
   const struct sqlite3_index_constraint *pConstraint;
+
+  UNUSED_PARAM(tab);
   pConstraint = pIdxInfo->aConstraint;
   for(i=0; i<pIdxInfo->nConstraint; i++, pConstraint++){
     if( pConstraint->usable==0 ) continue;
@@ -1565,6 +1573,8 @@ static int jsonEachFilter(
   const char *zPath;
   sqlite3_int64 n;
 
+  UNUSED_PARAM(idxStr);
+  UNUSED_PARAM(argc);
   jsonEachCursorReset(p);
   if( idxNum==0 ) return SQLITE_OK;
   z = (const char*)sqlite3_value_text(argv[0]);
@@ -1574,9 +1584,9 @@ static int jsonEachFilter(
     if( zPath==0 || zPath[0]!='$' ) return SQLITE_OK;
   }
   n = sqlite3_value_bytes(argv[0]);
-  p->zJson = sqlite3_malloc( n+1 );
+  p->zJson = sqlite3_malloc64( n+1 );
   if( p->zJson==0 ) return SQLITE_NOMEM;
-  memcpy(p->zJson, z, n+1);
+  memcpy(p->zJson, z, (size_t)n+1);
   if( jsonParse(&p->sParse, p->zJson) 
    || (p->bRecursive && jsonParseFindParents(&p->sParse))
   ){
@@ -1586,9 +1596,9 @@ static int jsonEachFilter(
     if( idxNum==3 ){
       p->bRecursive = 0;
       n = sqlite3_value_bytes(argv[1]);
-      p->zPath = sqlite3_malloc( n+1 );
+      p->zPath = sqlite3_malloc64( n+1 );
       if( p->zPath==0 ) return SQLITE_NOMEM;
-      memcpy(p->zPath, zPath, n+1);
+      memcpy(p->zPath, zPath, (size_t)n+1);
       pNode = jsonLookup(&p->sParse, 0, p->zPath+1, 0);
       if( pNode==0 ){
         jsonEachCursorReset(p);
@@ -1631,6 +1641,9 @@ static sqlite3_module jsonEachModule = {
   0,                         /* xRollback */
   0,                         /* xFindMethod */
   0,                         /* xRename */
+  0,                         /* xSavepoint */
+  0,                         /* xRelease */
+  0                          /* xRollbackTo */
 };
 
 /* The methods of the json_tree virtual table. */
@@ -1655,6 +1668,9 @@ static sqlite3_module jsonTreeModule = {
   0,                         /* xRollback */
   0,                         /* xFindMethod */
   0,                         /* xRename */
+  0,                         /* xSavepoint */
+  0,                         /* xRelease */
+  0                          /* xRollbackTo */
 };
 
 /****************************************************************************
@@ -1672,7 +1688,7 @@ int sqlite3_json_init(
   const sqlite3_api_routines *pApi
 ){
   int rc = SQLITE_OK;
-  int i;
+  unsigned int i;
   static const struct {
      const char *zName;
      int nArg;
