@@ -5631,8 +5631,6 @@ int sqlite3PagerBegin(Pager *pPager, int exFlag, int subjInMemory){
         pPager->pAllRead = sqlite3BitvecCreate(pPager->dbSize);
         if( pPager->pAllRead==0 ){
           rc = SQLITE_NOMEM;
-        }else{
-          rc = sqlite3BitvecSet(pPager->pAllRead, 1);
         }
       }
     }else{
@@ -6155,8 +6153,7 @@ void sqlite3PagerDropExclusiveLock(Pager *pPager){
 }
 
 /*
-** Return true if this is a WAL database and snapshot upgrade is required
-** before the current transaction can be committed.
+** Return true if this pager is currently within an UNLOCKED transaction.
 */
 int sqlite3PagerIsUnlocked(Pager *pPager){
   return pPager->pAllRead!=0;

@@ -2672,25 +2672,6 @@ void sqlite3WalUpgradeSnapshot(Wal *pWal){
 }
 
 /*
-** This function is only ever called while committing an UNLOCKED 
-** transaction, after the caller has already obtained the WRITER lock
-** (by calling the sqlite3WalLockForCommit() routine). This function 
-** returns true if the transaction was prepared against a database 
-** snapshot older than the current head of the wal file.
-**
-** Note that this will only work as described if the database is 
-** currently executing an UNLOCKED transaction, as it assumes that 
-** pWal->hdr has not been modified since the beginning of the 
-** transaction. This may not be true for a non-UNLOCKED transaction,
-** as pWal->hdr is updated if any pages are spilled to the wal file
-** while the transaction is executing.
-*/
-int sqlite3WalCommitRequiresUpgrade(Wal *pWal){
-  assert( pWal->writeLock );
-  return memcmp(&pWal->hdr, (void*)walIndexHdr(pWal), sizeof(WalIndexHdr))!=0;
-}
-
-/*
 ** End a write transaction.  The commit has already been done.  This
 ** routine merely releases the lock.
 */

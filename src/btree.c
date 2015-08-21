@@ -3906,8 +3906,8 @@ static int btreeFixUnlocked(Btree *p){
         Pgno iLast = MIN(nPage, nHPage);    /* Last page to move */
         Pgno iPg;
         Pgno nCurrent;                      /* Current size of db */
-
         nCurrent = MAX(nPage, nHPage);
+
         for(iPg=pMap->iFirst; iPg<=iLast && rc==SQLITE_OK; iPg++){
           MemPage *pPg = 0;
           Pgno iNew;              /* New page number for pPg */

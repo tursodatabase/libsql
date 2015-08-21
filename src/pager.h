@@ -145,7 +145,6 @@ int sqlite3PagerMovepage(Pager*,DbPage*,Pgno,int);
 int sqlite3PagerPageRefcount(DbPage*);
 void *sqlite3PagerGetData(DbPage *); 
 void *sqlite3PagerGetExtra(DbPage *); 
-int sqlite3PagerIsDirty(DbPage*);
 
 /* Functions used to manage pager transactions and savepoints. */
 void sqlite3PagerPagecount(Pager*, int*);
@@ -159,8 +158,6 @@ int sqlite3PagerOpenSavepoint(Pager *pPager, int n);
 int sqlite3PagerSavepoint(Pager *pPager, int op, int iSavepoint);
 int sqlite3PagerSharedLock(Pager *pPager);
 
-void sqlite3PagerDropExclusiveLock(Pager*);
-int sqlite3PagerIsUnlocked(Pager*);
 
 #ifndef SQLITE_OMIT_WAL
   int sqlite3PagerCheckpoint(Pager *pPager, int, int*, int*);
@@ -197,6 +194,8 @@ void sqlite3PagerTruncateImage(Pager*,Pgno);
 
 void sqlite3PagerRekey(DbPage*, Pgno, u16);
 
+void sqlite3PagerDropExclusiveLock(Pager*);
+int sqlite3PagerIsUnlocked(Pager*);
 int sqlite3PagerIswriteable(DbPage*);
 int sqlite3PagerUpgradeSnapshot(Pager *pPager, DbPage*);
 void sqlite3PagerSetDbsize(Pager *pPager, Pgno);

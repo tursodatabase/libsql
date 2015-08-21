@@ -2571,7 +2571,7 @@ int sqlite3VdbeHalt(Vdbe *p){
   }
 
   assert( db->nVdbeActive>0 || db->autoCommit==0 || db->nStatement==0 );
-  return ((p->rc & 0xFF)==SQLITE_BUSY ? SQLITE_BUSY : SQLITE_OK);
+  return (p->rc==SQLITE_BUSY ? SQLITE_BUSY : SQLITE_OK);
 }
 
 
