@@ -1,5 +1,5 @@
-C Fix\sa\scorner-case\sbug\sin\stable-valued\sfunctions.\s\sUpdate\sthe\sgenerate_series()\nvirtual\stable\sto\sincrease\sthe\sperformance\sestimate\spenalty\sfor\sbeing\nunderspecified.
-D 2015-08-21T17:14:48.307
+C Reserve\sthe\sSQLITE_IOERR_VNODE\serror\scode\sname.
+D 2015-08-21T17:39:35.092
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4f663b6b4954b9b1eb0e6f08387688a93b57542d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -338,7 +338,7 @@ F src/resolve.c 7a67cd2aebc9a9eeecd1d104eb6a9237388eb452
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c c46de38c1b66355f02a839bb72eb13f277e6d19c
 F src/shell.c b1f91e60918df3a68efad1e3a11696b9a7e23d23
-F src/sqlite.h.in 447ead0a6b3293206f04a0896553955d07cfb4b9
+F src/sqlite.h.in 378bebc8fe6a88bade25e5f23b7e6123fdc64b00
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h a0b948ebc89bac13941254641326a6aa248c2cc4
 F src/sqliteInt.h 89e68539d645db597366a91411468b51e73c21a0
@@ -1376,7 +1376,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7b8d17dd840f64dac9a018a4547a97de799e94ab
-R 9cda90020c632a4b5578f3716c43ea3f
+P 552bc9cb88bbe54b4cf5fdf66d1217e7a2047110
+R 7e195d8a93b6662d59cab96efed45d96
 U drh
-Z 56572d82de750944343824c6ac2ac974
+Z cc2b20b9f86d6ace20a4a1a638a837d0
