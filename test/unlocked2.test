@@ -187,5 +187,39 @@ do_execsql_test 3.5.2 {
 } {2}
 do_execsql_test 3.5.3 { PRAGMA integrity_check } {ok}
 
+#-------------------------------------------------------------------------
+# Test that nothing goes wrong if an UNLOCKED transaction allocates a
+# page at the end of the file, frees it within the same transaction, and
+# then has to move the same page to avoid a conflict on COMMIT.
+#
+do_multiclient_test tn {
+  do_test 4.$tn.1 {
+    sql1 {
+      PRAGMA journal_mode = wal;
+      CREATE TABLE t1(x);
+      CREATE TABLE t2(x);
+    }
+  } {wal}
+
+  do_test 4.$tn.2 {
+    sql1 {
+      BEGIN UNLOCKED;
+        INSERT INTO t1 VALUES(randomblob(1500));
+        INSERT INTO t1 VALUES(randomblob(1500));
+        DELETE FROM t1 WHERE rowid = 1;
+    }
+
+    sql2 {
+      INSERT INTO t2 VALUES(randomblob(1500));
+      INSERT INTO t2 VALUES(randomblob(1500));
+      INSERT INTO t2 VALUES(randomblob(1500));
+      INSERT INTO t2 VALUES(randomblob(1500));
+      DELETE FROM t2 WHERE rowid IN (1, 2);
+    }
+
+    sql1 COMMIT
+  } {}
+}
+
 finish_test
 

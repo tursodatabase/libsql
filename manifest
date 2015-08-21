@@ -1,5 +1,5 @@
-C Merge\strunk\schanges\swith\sthis\sbranch.
-D 2015-08-21T16:22:04.553
+C Fix\sa\sproblem\swith\sUNLOCKED\stransactions\sthat\sfree\spages\sallocated\swithin\sthe\ssame\stransaction.
+D 2015-08-21T17:57:16.096
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4f663b6b4954b9b1eb0e6f08387688a93b57542d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -278,7 +278,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 4d9134dc988a87838c06056c89c0e8c4700a0452
 F src/bitvec.c d1f21d7d91690747881f03940584f4cc548c9d3d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c a00a7c4809d642bf6c63979e73face9fed53dc66
+F src/btree.c fca7884ea849190eff530f358f96c7304fcd2595
 F src/btree.h 00d4cdb747c4172a5566faf037116985dbbc377e
 F src/btreeInt.h 1f7258e1f35ba3cc2197f9019f523dd20d59a0d8
 F src/build.c e47b6fffe14a28d9050e6747beebb01597d37542
@@ -1226,7 +1226,7 @@ F test/unique.test 93f8b2ef5ea51b9495f8d6493429b1fd0f465264
 F test/unique2.test 41e7f83c6827605991160a31380148a9fc5f1339
 F test/unixexcl.test cd6c765f75e50e8e2c2ba763149e5d340ea19825
 F test/unlocked.test d143a871bd874311d4e5c98ce458218ca6b579fd
-F test/unlocked2.test aca373d7639fd11c946a8e1a78c57bab0f18bc8e
+F test/unlocked2.test 4861218039ca2481613d7e6a999226185222c93a
 F test/unordered.test ca7adce0419e4ca0c50f039885e76ed2c531eda8
 F test/update.test 6c68446b8a0a33d522a7c72b320934596a2d7d32
 F test/uri.test 23662b7b61958b0f0e47082de7d06341ccf85d5b
@@ -1378,7 +1378,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 82cd837e72ed4cf5821be717369694be29a2997e 7b8d17dd840f64dac9a018a4547a97de799e94ab
-R a6aada1e15ca09028aeff07fdb262305
+P deaf3b18569025d8d168da29fae76142cfffe9e5
+R f09b37f1aebb9ccbb19d5d48d89374eb
 U dan
-Z 957a88b73b652ebea177f80c25ee0401
+Z 1ea7f2e6e188cedc2dae0825d7ceb725

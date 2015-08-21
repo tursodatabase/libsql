@@ -3870,7 +3870,7 @@ static int btreeFixUnlocked(Btree *p){
 
   if( rc==SQLITE_OK ){
     Pgno nHPage = get4byte(&p1[28]);
-    Pgno nFinal = nHPage;
+    Pgno nFinal = nHPage;         /* Size of db after transaction merge */
 
     if( sqlite3PagerIswriteable(pPage1->pDbPage) ){
       Pgno iHTrunk = get4byte(&p1[32]);
@@ -3892,6 +3892,9 @@ static int btreeFixUnlocked(Btree *p){
       }
 
       if( nHPage<nOrig ){
+        /* An unlocked transaction may not be executed on an auto-vacuum 
+        ** database. Therefore the db should not have shrunk since the
+        ** transaction was opened.  */
         rc = SQLITE_CORRUPT_BKPT;
       }else{
         /* The current transaction allocated pages pMap->iFirst through
@@ -3902,22 +3905,28 @@ static int btreeFixUnlocked(Btree *p){
         Pgno iLast = MIN(nPage, nHPage);    /* Last page to move */
         Pgno iPg;
 
-        nFinal = MAX(nPage, nHPage);   /* Final size of database */
+        nFinal = MAX(nPage, nHPage);
         for(iPg=pMap->iFirst; iPg<=iLast && rc==SQLITE_OK; iPg++){
           MemPage *pPg = 0;
           Pgno iNew;              /* New page number for pPg */
           PtrmapEntry *pEntry;    /* Pointer map entry for page iPg */
 
-          btreeGetPage(pBt, iPg, &pPg, 0);
-          assert( sqlite3PagerIswriteable(pPg->pDbPage) );
-          assert( sqlite3PagerPageRefcount(pPg->pDbPage)==1 );
           pEntry = &pMap->aPtr[iPg - pMap->iFirst];
-          iNew = ++nFinal;
-
-          rc = relocatePage(pBt, pPg, pEntry->eType, pEntry->parent, iNew, 1);
-          releasePageNotNull(pPg);
+          if( pEntry->eType==PTRMAP_FREEPAGE ){
+            MemPage *pFree = 0;
+            Pgno dummy;
+            rc = allocateBtreePage(pBt, &pFree, &dummy, iPg, BTALLOC_EXACT);
+            releasePage(pFree);
+            assert( rc!=SQLITE_OK || dummy==iPg );
+          }else{
+            btreeGetPage(pBt, iPg, &pPg, 0);
+            assert( sqlite3PagerIswriteable(pPg->pDbPage) );
+            assert( sqlite3PagerPageRefcount(pPg->pDbPage)==1 );
+            iNew = ++nFinal;
+            rc = relocatePage(pBt, pPg, pEntry->eType, pEntry->parent, iNew, 1);
+            releasePageNotNull(pPg);
+          }
         }
-
         put4byte(&p1[28], nFinal);
       }
     }
@@ -5775,14 +5784,16 @@ static int allocateBtreePage(
   Pgno mxPage;     /* Total size of the database file */
 
   assert( sqlite3_mutex_held(pBt->mutex) );
-  assert( eMode==BTALLOC_ANY || (nearby>0 && IfNotOmitAV(pBt->autoVacuum)) );
+  assert( eMode==BTALLOC_ANY || (nearby>0 && ISAUTOVACUUM) 
+      || (eMode==BTALLOC_EXACT && sqlite3PagerIsUnlocked(pBt->pPager))
+  );
   pPage1 = pBt->pPage1;
   mxPage = btreePagecount(pBt);
   /* EVIDENCE-OF: R-05119-02637 The 4-byte big-endian integer at offset 36
   ** stores stores the total number of pages on the freelist. */
   n = get4byte(&pPage1->aData[36]);
   testcase( n==mxPage-1 );
-  if( n>=mxPage ){
+  if( sqlite3PagerIsUnlocked(pBt->pPager)==0 && n>=mxPage ){
     return SQLITE_CORRUPT_BKPT;
   }
 
@@ -5791,7 +5802,6 @@ static int allocateBtreePage(
   ** of these operations involve modifying page 1 header fields, page 1
   ** will definitely be written by this transaction. If this is an UNLOCKED
   ** transaction, ensure the BtreePtrmap structure has been allocated.  */
-  assert( eMode!=BTALLOC_EXACT || sqlite3PagerIsUnlocked(pBt->pPager)==0 );
   rc = sqlite3PagerWrite(pPage1->pDbPage);
   if( rc ) return rc;
 
@@ -5805,19 +5815,25 @@ static int allocateBtreePage(
     ** shows that the page 'nearby' is somewhere on the free-list, then
     ** the entire-list will be searched for that page.
     */
-#ifndef SQLITE_OMIT_AUTOVACUUM
     if( eMode==BTALLOC_EXACT ){
-      if( nearby<=mxPage ){
-        u8 eType;
-        assert( nearby>0 );
-        assert( pBt->autoVacuum );
-        rc = ptrmapGet(pBt, nearby, &eType, 0);
-        if( rc ) return rc;
-        if( eType==PTRMAP_FREEPAGE ){
-          searchList = 1;
+      assert( ISAUTOVACUUM==!sqlite3PagerIsUnlocked(pBt->pPager) );
+      if( ISAUTOVACUUM ){
+        if( nearby<=mxPage ){
+          u8 eType;
+          assert( nearby>0 );
+          assert( pBt->autoVacuum );
+          rc = ptrmapGet(pBt, nearby, &eType, 0);
+          if( rc ) return rc;
+          if( eType==PTRMAP_FREEPAGE ){
+            searchList = 1;
+          }
         }
+      }else{
+        searchList = 1;
       }
-    }else if( eMode==BTALLOC_LE ){
+    }
+#ifndef SQLITE_OMIT_AUTOVACUUM
+    else if( eMode==BTALLOC_LE ){
       searchList = 1;
     }
 #endif
