@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\scausing\scorruption\swhen\san\sUNLOCKED\stransaction\sis\srolled\sback.
-D 2015-08-20T20:25:56.029
+C Add\sextra\stests\sand\sa\sfix\sfor\srollbacks\sof\sUNLOCKED\stransactions.
+D 2015-08-21T14:21:22.365
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4de3ef40c8b3b75c0c55ff4242a43c8ce1ad90ee
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -402,7 +402,7 @@ F src/vdbesort.c f5009e7a35e3065635d8918b9a31f498a499976b
 F src/vdbetrace.c 8befe829faff6d9e6f6e4dee5a7d3f85cc85f1a0
 F src/vtab.c 082b35a25a26e3d36f365ca8cd73c1922532f05e
 F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
-F src/wal.c 8bb1130dc1876e1c1c3fa082a5b0ec6437feb8e8
+F src/wal.c 37b25bbb52d6a736397d11e85068b1a496970fb2
 F src/wal.h 5aaed8ca6cad1406088042ff8767951a6a3c7b56
 F src/walker.c c253b95b4ee44b21c406e2a1052636c31ea27804
 F src/where.c 909eba3b6db984eb2adfbca9de2c237ee7056adb
@@ -1216,7 +1216,7 @@ F test/unique.test 93f8b2ef5ea51b9495f8d6493429b1fd0f465264
 F test/unique2.test 41e7f83c6827605991160a31380148a9fc5f1339
 F test/unixexcl.test cd6c765f75e50e8e2c2ba763149e5d340ea19825
 F test/unlocked.test d143a871bd874311d4e5c98ce458218ca6b579fd
-F test/unlocked2.test 06a7d5a366bfc6fcaf472a2411f6d45fd9255ed4
+F test/unlocked2.test aca373d7639fd11c946a8e1a78c57bab0f18bc8e
 F test/unordered.test ca7adce0419e4ca0c50f039885e76ed2c531eda8
 F test/update.test 6c68446b8a0a33d522a7c72b320934596a2d7d32
 F test/uri.test 23662b7b61958b0f0e47082de7d06341ccf85d5b
@@ -1368,7 +1368,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3bbc31d515ba9fc920c5cbc7059d3eb1ba9c7f8e
-R 9ac18b47cee85e97c9fcd4362b958c7d
+P 7c36147846484c96023939864417b5624f3bc5f8
+R d431131c35d67ee146c27b397321fd1c
 U dan
-Z 032a41c4b1c95657db216d02c5116d23
+Z 6bf329345f5b33de62ef6fd5bfd9b35f

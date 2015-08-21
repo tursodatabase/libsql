@@ -131,6 +131,18 @@ do_multiclient_test tn {
   do_test 2.$tn.7 { sql3 { PRAGMA integrity_check } } {ok}
 }
 
+#-------------------------------------------------------------------------
+# When an UNLOCKED transaction is opened on a database, the nFree and 
+# iTrunk header fields of the cached version of page 1 are both set 
+# to 0. This allows an UNLOCKED transaction to use its own private 
+# free-page-list, which is merged with the main database free-list when
+# the transaction is committed.
+#
+# The following tests check that nFree/iTrunk are correctly restored if
+# an UNLOCKED transaction is rolled back, and that savepoint rollbacks
+# that occur within UNLOCKED transactions do not incorrectly restore
+# these fields to their on-disk values.
+#
 reset_db
 do_execsql_test 3.0 {
   PRAGMA journal_mode = wal;
@@ -139,23 +151,41 @@ do_execsql_test 3.0 {
   DELETE FROM t1;
 } {wal}
 
-db close
-sqlite3 db test.db
-breakpoint
-
 do_execsql_test 3.1 {
   BEGIN UNLOCKED;
     INSERT INTO t1 VALUES(1, 2);
   ROLLBACK;
 }
 
-do_execsql_test 3.2 {
-  PRAGMA integrity_check;
-} {ok}
+do_execsql_test 3.2 { PRAGMA integrity_check } {ok}
+do_execsql_test 3.3 { PRAGMA freelist_count } {2}
 
-do_execsql_test 3.3 {
+do_execsql_test 3.4.1 {
+  BEGIN UNLOCKED;
+    PRAGMA freelist_count;
+} {2}
+do_execsql_test 3.4.2 {
+  SAVEPOINT xyz;
+    INSERT INTO t1 VALUES(randomblob(1500), NULL);
+    PRAGMA freelist_count;
+} {0}
+do_execsql_test 3.4.3 {
+  ROLLBACK TO xyz;
+} {}
+do_execsql_test 3.4.4 { PRAGMA freelist_count } {0}
+do_execsql_test 3.4.5 { COMMIT; PRAGMA freelist_count } {2}
+do_execsql_test 3.4.6 { PRAGMA integrity_check } {ok}
+
+do_execsql_test 3.5.1 {
+  BEGIN UNLOCKED;
+    UPDATE t1 SET x=randomblob(10) WHERE y=555;
+    PRAGMA freelist_count;
+} {0}
+do_execsql_test 3.5.2 {
+  ROLLBACK;
   PRAGMA freelist_count;
 } {2}
+do_execsql_test 3.5.3 { PRAGMA integrity_check } {ok}
 
 finish_test
 

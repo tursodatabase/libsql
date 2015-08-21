@@ -2635,10 +2635,25 @@ int sqlite3WalLockForCommit(Wal *pWal, PgHdr *pPage1, Bitvec *pAllRead){
               );
               rc = SQLITE_BUSY_SNAPSHOT;
             }else if( (pPg = sqlite3PagerLookup(pPager, aPgno[i])) ){
-              if( sqlite3PagerIswriteable(pPg)==0 ){
-                sqlite3PcacheDrop(pPg);
-              }else{
+              /* Page aPgno[i], which is present in the pager cache, has been
+              ** modified since the current UNLOCKED transaction was started.
+              ** However it was not read by the current transaction, so is not
+              ** a conflict. There are two possibilities: (a) the page was
+              ** allocated at the of the file by the current transaction or 
+              ** (b) was present in the cache at the start of the transaction.
+              **
+              ** For case (a), do nothing. This page will be moved within the
+              ** database file by the commit code to avoid the conflict. The
+              ** call to PagerUnref() is to release the reference grabbed by
+              ** the sqlite3PagerLookup() above.  
+              **
+              ** In case (b), drop the page from the cache - otherwise
+              ** following the snapshot upgrade the cache would be inconsistent
+              ** with the database as stored on disk. */
+              if( sqlite3PagerIswriteable(pPg) ){
                 sqlite3PagerUnref(pPg);
+              }else{
+                sqlite3PcacheDrop(pPg);
               }
             }
           }
