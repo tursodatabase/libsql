@@ -1,5 +1,5 @@
-C Reserve\sthe\sSQLITE_IOERR_VNODE\serror\scode\sname.
-D 2015-08-21T17:39:35.092
+C Add\sa\smissing\s#define\sfor\ssqlite3_vsnprintf\sto\ssqlite3ext.h.
+D 2015-08-21T19:53:06.112
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4f663b6b4954b9b1eb0e6f08387688a93b57542d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -340,7 +340,7 @@ F src/select.c c46de38c1b66355f02a839bb72eb13f277e6d19c
 F src/shell.c b1f91e60918df3a68efad1e3a11696b9a7e23d23
 F src/sqlite.h.in 378bebc8fe6a88bade25e5f23b7e6123fdc64b00
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
-F src/sqlite3ext.h a0b948ebc89bac13941254641326a6aa248c2cc4
+F src/sqlite3ext.h f700e6a9dd1fdcccc9951ab022b366fb66b9e413
 F src/sqliteInt.h 89e68539d645db597366a91411468b51e73c21a0
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c f266ad8a2892d659b74f0f50cb6a88b6e7c12179
@@ -1376,7 +1376,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 552bc9cb88bbe54b4cf5fdf66d1217e7a2047110
-R 7e195d8a93b6662d59cab96efed45d96
+P 53b593fcae178f2e08f758ae6fd100869f771bfd
+R ebc4801d5f618bfa6944c04f2d984190
 U drh
-Z cc2b20b9f86d6ace20a4a1a638a837d0
+Z 0c4320af06ae345cfafae29306ed4bea
