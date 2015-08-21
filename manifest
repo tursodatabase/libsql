@@ -1,5 +1,5 @@
-C Fix\stypo\sin\scomment.\s\sNo\schanges\sto\scode.
-D 2015-08-21T12:37:49.414
+C Fix\sa\scorner-case\sbug\sin\stable-valued\sfunctions.\s\sUpdate\sthe\sgenerate_series()\nvirtual\stable\sto\sincrease\sthe\sperformance\sestimate\spenalty\sfor\sbeing\nunderspecified.
+D 2015-08-21T17:14:48.307
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 4f663b6b4954b9b1eb0e6f08387688a93b57542d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -196,7 +196,7 @@ F ext/misc/nextchar.c 35c8b8baacb96d92abbb34a83a997b797075b342
 F ext/misc/percentile.c bcbee3c061b884eccb80e21651daaae8e1e43c63
 F ext/misc/regexp.c af92cdaa5058fcec1451e49becc7ba44dba023dc
 F ext/misc/rot13.c 1ac6f95f99b575907b9b09c81a349114cf9be45a
-F ext/misc/series.c 6f94daf590d0668187631dee2a4d7e1d8f3095c3
+F ext/misc/series.c b8fb7befd85b3a9b4a10e701b30b2b79ca92b6d4
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c 86998fb73aefb7b5dc346ba8a58912f312da4996
 F ext/misc/totype.c 4a167594e791abeed95e0a8db028822b5e8fe512
@@ -416,7 +416,7 @@ F src/walker.c 2e14d17f592d176b6dc879c33fbdec4fbccaa2ba
 F src/where.c 66518a14a1238611aa0744d6980b6b7f544f4816
 F src/whereInt.h 880a8599226ac1c00203490d934f3ed79b292572
 F src/wherecode.c 69f19535a6de0cceb10e16b31a3a03463e31bc24
-F src/whereexpr.c f9dbd159127452150c92b558e184827ecb8f9229
+F src/whereexpr.c 1a308d1ee5144890d21ea9cf70d49bc96a83432b
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1031,7 +1031,7 @@ F test/superlock.test 1cde669f68d2dd37d6c9bd35eee1d95491ae3fc2
 F test/sync.test a34cd43e98b7fb84eabbf38f7ed8f7349b3f3d85
 F test/syscall.test d2fdaad713f103ac611fe7ef9b724c7b69f8149c
 F test/sysfault.test fa776e60bf46bdd3ae69f0b73e46ee3977a58ae6
-F test/tabfunc01.test d556af2def6af10b0a759b2f8a8f41135c2b634e
+F test/tabfunc01.test a12eba3f48a03a6626f985734ecc28132381fa9b
 F test/table.test 33bf0d1fd07f304582695184b8e6feb017303816
 F test/tableapi.test 2674633fa95d80da917571ebdd759a14d9819126
 F test/tableopts.test dba698ba97251017b7c80d738c198d39ab747930
@@ -1376,7 +1376,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 64d13339d44d1b7ec6768a33421f2138cb7872d8
-R 260ec5cb722f012aed82a5e5217a1778
+P 7b8d17dd840f64dac9a018a4547a97de799e94ab
+R 9cda90020c632a4b5578f3716c43ea3f
 U drh
-Z 32b72495e2d0c8597a1f587799e93112
+Z 56572d82de750944343824c6ac2ac974
