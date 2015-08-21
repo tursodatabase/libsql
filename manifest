@@ -1,5 +1,5 @@
-C Merge\sheader\sfile\sfixes\sfrom\strunk.
-D 2015-08-21T19:56:45.243
+C Add\sthe\sfullkey\scolumn\sto\sboth\sjson_each()\sand\sjson_tree().
+D 2015-08-21T20:02:48.424
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 90f3097efb9a53f5fc59a4f8a08be07cf9f52c02
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -192,7 +192,7 @@ F ext/misc/eval.c f971962e92ebb8b0a4e6b62949463ee454d88fa2
 F ext/misc/fileio.c d4171c815d6543a9edef8308aab2951413cd8d0f
 F ext/misc/fuzzer.c 4c84635c71c26cfa7c2e5848cf49fe2d2cfcd767
 F ext/misc/ieee754.c b0362167289170627659e84173f5d2e8fee8566e
-F ext/misc/json.c 522d833e6c4ae55b345cf25776aab335323d2f59
+F ext/misc/json.c 92bb4e5fe2956564d23f933e2140ce8e086d988b
 F ext/misc/nextchar.c 35c8b8baacb96d92abbb34a83a997b797075b342
 F ext/misc/percentile.c bcbee3c061b884eccb80e21651daaae8e1e43c63
 F ext/misc/regexp.c af92cdaa5058fcec1451e49becc7ba44dba023dc
@@ -1378,7 +1378,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 08c36e45f0d3a7b89caf823652d7543b76ac802a da3c9df09c46564353218d0163e378b880a3ce62
-R 7de9031da9783d58b8a952bc530228c5
+P 7c2713e98ffb5f0d96eb7de9514eab43f0712011
+R a1c5d56719dd38b21713ad204a82abd5
 U drh
-Z 5f4a9a3778df860327f346518d686e5d
+Z 8567373ad141fc34581702b17b3fb646

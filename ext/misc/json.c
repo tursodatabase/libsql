@@ -27,6 +27,7 @@ SQLITE_EXTENSION_INIT1
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
+#include <stdarg.h>
 
 /* Unsigned integer types */
 typedef sqlite3_uint64 u64;
@@ -179,6 +180,17 @@ static void jsonAppendRaw(JsonString *p, const char *zIn, u32 N){
   if( (N+p->nUsed >= p->nAlloc) && jsonGrow(p,N)!=0 ) return;
   memcpy(p->zBuf+p->nUsed, zIn, N);
   p->nUsed += N;
+}
+
+/* Append formatted text (not to exceed N bytes) to the JsonString.
+*/
+static void jsonPrintf(int N, JsonString *p, const char *zFormat, ...){
+  va_list ap;
+  if( (p->nUsed + N >= p->nAlloc) && jsonGrow(p, N) ) return;
+  va_start(ap, zFormat);
+  sqlite3_vsnprintf(N, p->zBuf+p->nUsed, zFormat, ap);
+  va_end(ap);
+  p->nUsed += (int)strlen(p->zBuf+p->nUsed);
 }
 
 #ifdef SQLITE_DEBUG
@@ -1256,17 +1268,19 @@ static int jsonEachConnect(
   int rc;
 
 /* Column numbers */
-#define JEACH_KEY    0
-#define JEACH_VALUE  1
-#define JEACH_TYPE   2
-#define JEACH_ATOM   3
-#define JEACH_ID     4
-#define JEACH_PARENT 5
-#define JEACH_JSON   6
-#define JEACH_PATH   7
+#define JEACH_KEY     0
+#define JEACH_VALUE   1
+#define JEACH_TYPE    2
+#define JEACH_ATOM    3
+#define JEACH_ID      4
+#define JEACH_PARENT  5
+#define JEACH_FULLKEY 6
+#define JEACH_JSON    7
+#define JEACH_PATH    8
 
   rc = sqlite3_declare_vtab(db, 
-     "CREATE TABLE x(key,value,type,atom,id,parent,json hidden,path hidden)");
+     "CREATE TABLE x(key,value,type,atom,id,parent,fullkey,"
+                    "json HIDDEN,path HIDDEN)");
   if( rc==SQLITE_OK ){
     pNew = *ppVtab = sqlite3_malloc( sizeof(*pNew) );
     if( pNew==0 ) return SQLITE_NOMEM;
@@ -1331,47 +1345,71 @@ static int jsonEachEof(sqlite3_vtab_cursor *cur){
 }
 
 /* Advance the cursor to the next element for json_tree() */
-static int jsonEachNextTree(sqlite3_vtab_cursor *cur){
+static int jsonEachNext(sqlite3_vtab_cursor *cur){
   JsonEachCursor *p = (JsonEachCursor*)cur;
-  if( p->i==0 ){
-    p->i = 1;
-  }else if( p->sParse.aNode[p->sParse.aUp[p->i]].eType==JSON_OBJECT ){
-    p->i += 2;
+  if( p->bRecursive ){
+    if( p->i==0 ){
+      p->i = 1;
+    }else if( p->sParse.aNode[p->sParse.aUp[p->i]].eType==JSON_OBJECT ){
+      p->i += 2;
+    }else{
+      p->i++;
+    }
+    p->iRowid++;
+    if( p->i<p->sParse.nNode ){
+      JsonNode *pUp = &p->sParse.aNode[p->sParse.aUp[p->i]];
+      p->eType = pUp->eType;
+      if( pUp->eType==JSON_ARRAY ) pUp->u.iKey++;
+      if( p->sParse.aNode[p->i].eType==JSON_ARRAY ){
+        p->sParse.aNode[p->i].u.iKey = 0;
+      }
+    }
   }else{
-    p->i++;
-  }
-  p->iRowid++;
-  if( p->i<p->sParse.nNode ){
-    JsonNode *pUp = &p->sParse.aNode[p->sParse.aUp[p->i]];
-    p->eType = pUp->eType;
-    if( pUp->eType==JSON_ARRAY ) pUp->u.iKey++;
-    if( p->sParse.aNode[p->i].eType==JSON_ARRAY ){
-      p->sParse.aNode[p->i].u.iKey = 0;
+    switch( p->eType ){
+      case JSON_ARRAY: {
+        p->i += jsonNodeSize(&p->sParse.aNode[p->i]);
+        p->iRowid++;
+        break;
+      }
+      case JSON_OBJECT: {
+        p->i += 1 + jsonNodeSize(&p->sParse.aNode[p->i+1]);
+        p->iRowid++;
+        break;
+      }
+      default: {
+        p->i = p->iEnd;
+        break;
+      }
     }
   }
   return SQLITE_OK;
 }
 
-/* Advance the cursor to the next element for json_each() */
-static int jsonEachNextEach(sqlite3_vtab_cursor *cur){
-  JsonEachCursor *p = (JsonEachCursor*)cur;
-  switch( p->eType ){
-    case JSON_ARRAY: {
-      p->i += jsonNodeSize(&p->sParse.aNode[p->i]);
-      p->iRowid++;
-      break;
-    }
-    case JSON_OBJECT: {
-      p->i += 1 + jsonNodeSize(&p->sParse.aNode[p->i+1]);
-      p->iRowid++;
-      break;
-    }
-    default: {
-      p->i = p->iEnd;
-      break;
-    }
+/* Append the name of the path for element i to pStr
+*/
+static void jsonEachComputePath(
+  JsonEachCursor *p,       /* The cursor */
+  JsonString *pStr,        /* Write the path here */
+  u32 i                    /* Path to this element */
+){
+  JsonNode *pNode, *pUp;
+  u32 iUp;
+  if( i==0 ){
+    jsonAppendChar(pStr, '$');
+    return;
   }
-  return SQLITE_OK;
+  iUp = p->sParse.aUp[i];
+  jsonEachComputePath(p, pStr, iUp);
+  pNode = &p->sParse.aNode[i];
+  pUp = &p->sParse.aNode[iUp];
+  if( pUp->eType==JSON_ARRAY ){
+    jsonPrintf(30, pStr, "[%d]", pUp->u.iKey);
+  }else{
+    assert( pUp->eType==JSON_OBJECT );
+    if( pNode->eType>=JSON_ARRAY ) pNode--;
+    assert( pNode->eType==JSON_STRING );
+    jsonPrintf(pNode->n+1, pStr, ".%.*s", pNode->n-2, pNode->u.zJContent+1);
+  }
 }
 
 /* Return the value of a column */
@@ -1424,9 +1462,38 @@ static int jsonEachColumn(
       }
       break;
     }
+    case JEACH_FULLKEY: {
+      JsonString x;
+      jsonInit(&x, ctx);
+      if( p->bRecursive ){
+        jsonEachComputePath(p, &x, p->i);
+      }else{
+        if( p->zPath ){
+          jsonAppendRaw(&x, p->zPath, (int)strlen(p->zPath));
+        }else{
+          jsonAppendChar(&x, '$');
+        }
+        if( p->eType==JSON_ARRAY ){
+          jsonPrintf(30, &x, "[%d]", p->iRowid);
+        }else{
+          jsonPrintf(pThis->n, &x, ".%.*s", pThis->n-2, pThis->u.zJContent+1);
+        }
+      }
+      jsonResult(&x);
+      break;
+    }
     case JEACH_PATH: {
       const char *zPath = p->zPath;
-      if( zPath==0 ) zPath = "$";
+       if( zPath==0 ){
+        if( p->bRecursive ){
+          JsonString x;
+          jsonInit(&x, ctx);
+          jsonEachComputePath(p, &x, p->sParse.aUp[p->i]);
+          jsonResult(&x);
+          break;
+        }
+        zPath = "$";
+      }
       sqlite3_result_text(ctx, zPath, -1, SQLITE_STATIC);
       break;
     }
@@ -1517,6 +1584,7 @@ static int jsonEachFilter(
   }else{
     JsonNode *pNode;
     if( idxNum==3 ){
+      p->bRecursive = 0;
       n = sqlite3_value_bytes(argv[1]);
       p->zPath = sqlite3_malloc( n+1 );
       if( p->zPath==0 ) return SQLITE_NOMEM;
@@ -1552,7 +1620,7 @@ static sqlite3_module jsonEachModule = {
   jsonEachOpenEach,          /* xOpen - open a cursor */
   jsonEachClose,             /* xClose - close a cursor */
   jsonEachFilter,            /* xFilter - configure scan constraints */
-  jsonEachNextEach,          /* xNext - advance a cursor */
+  jsonEachNext,              /* xNext - advance a cursor */
   jsonEachEof,               /* xEof - check for end of scan */
   jsonEachColumn,            /* xColumn - read data */
   jsonEachRowid,             /* xRowid - read data */
@@ -1576,7 +1644,7 @@ static sqlite3_module jsonTreeModule = {
   jsonEachOpenTree,          /* xOpen - open a cursor */
   jsonEachClose,             /* xClose - close a cursor */
   jsonEachFilter,            /* xFilter - configure scan constraints */
-  jsonEachNextTree,          /* xNext - advance a cursor */
+  jsonEachNext,              /* xNext - advance a cursor */
   jsonEachEof,               /* xEof - check for end of scan */
   jsonEachColumn,            /* xColumn - read data */
   jsonEachRowid,             /* xRowid - read data */
