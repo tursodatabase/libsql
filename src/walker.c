@@ -105,6 +105,11 @@ int sqlite3WalkSelectFrom(Walker *pWalker, Select *p){
       if( sqlite3WalkSelect(pWalker, pItem->pSelect) ){
         return WRC_Abort;
       }
+      if( pItem->fg.isTabFunc
+       && sqlite3WalkExprList(pWalker, pItem->u1.pFuncArg)
+      ){
+        return WRC_Abort;
+      }
     }
   }
   return WRC_Continue;

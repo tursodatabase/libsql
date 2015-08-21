@@ -261,12 +261,9 @@ proc getExtraFileListXmlChunk { packageFlavor vsVersion } {
           "\r\n    " {DependsOn="Microsoft.VCLibs, version=12.0"}]
     }
     2015 {
-      #
-      # TODO: Is the ".AppLocal" suffix always needed here?
-      #
       return [appendArgs \
           "\r\n    " AppliesTo=\" $appliesTo \" \
-          "\r\n    " {DependsOn="Microsoft.VCLibs.AppLocal, version=14.0"}]
+          "\r\n    " {DependsOn="Microsoft.VCLibs, version=14.0"}]
     }
     default {
       return ""

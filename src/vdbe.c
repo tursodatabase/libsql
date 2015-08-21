@@ -571,7 +571,7 @@ int sqlite3VdbeExec(
     ** sqlite3_column_text16() failed.  */
     goto no_mem;
   }
-  assert( p->rc==SQLITE_OK || p->rc==SQLITE_BUSY );
+  assert( p->rc==SQLITE_OK || (p->rc&0xff)==SQLITE_BUSY );
   assert( p->bIsReader || p->readOnly!=0 );
   p->rc = SQLITE_OK;
   p->iCurrentTime = 0;
@@ -2895,11 +2895,11 @@ case OP_Savepoint: {
       ** is committed. 
       */
       int isTransaction = pSavepoint->pNext==0 && db->isTransactionSavepoint;
+      assert( db->bUnlocked==0 || db->isTransactionSavepoint==0 );
       if( isTransaction && p1==SAVEPOINT_RELEASE ){
         if( (rc = sqlite3VdbeCheckFk(p, 1))!=SQLITE_OK ){
           goto vdbe_return;
         }
-        assert( db->bUnlocked==0 );
         db->autoCommit = 1;
         if( sqlite3VdbeHalt(p)==SQLITE_BUSY ){
           p->pc = (int)(pOp - aOp);
@@ -3001,12 +3001,17 @@ case OP_AutoCommit: {
   assert( db->nVdbeActive>0 );  /* At least this one VM is active */
   assert( p->bIsReader );
 
-  if( turnOnAC && !iRollback && 
-      (db->nVdbeWrite>0 || (db->bUnlocked && db->nVdbeActive>1))
+  if( turnOnAC && !iRollback 
+   && (db->nVdbeWrite>0 || (db->bUnlocked && db->nVdbeActive>1))
   ){
-    /* If this instruction implements a COMMIT and other VMs are writing
-    ** return an error indicating that the other VMs must complete first. 
-    */
+    /* A transaction may only be committed if there are no other active
+    ** writer VMs. If the transaction is UNLOCKED, then it may only be
+    ** committed if there are no active VMs at all (readers or writers).
+    **
+    ** If this instruction is a COMMIT and the transaction may not be
+    ** committed due to one of the conditions above, return an error
+    ** indicating that other VMs must complete before the COMMIT can 
+    ** be processed.  */
     sqlite3VdbeError(p, "cannot commit transaction - "
                         "SQL statements in progress");
     rc = SQLITE_BUSY;
@@ -3020,16 +3025,16 @@ case OP_AutoCommit: {
       goto vdbe_return;
     }else{
       db->autoCommit = (u8)desiredAutoCommit;
-      hrc = sqlite3VdbeHalt(p);
-      if( (hrc & 0xFF)==SQLITE_BUSY ){
-        p->pc = (int)(pOp - aOp);
-        db->autoCommit = (u8)(1-desiredAutoCommit);
-        p->rc = hrc;
-        rc = SQLITE_BUSY;
-        goto vdbe_return;
-      }
-      db->bUnlocked = (u8)bUnlocked;
     }
+    hrc = sqlite3VdbeHalt(p);
+    if( (hrc & 0xFF)==SQLITE_BUSY ){
+      p->pc = (int)(pOp - aOp);
+      db->autoCommit = (u8)(1-desiredAutoCommit);
+      p->rc = hrc;
+      rc = SQLITE_BUSY;
+      goto vdbe_return;
+    }
+    db->bUnlocked = (u8)bUnlocked;
     assert( db->nStatement==0 );
     sqlite3CloseSavepoints(db);
     if( p->rc==SQLITE_OK ){
@@ -3100,9 +3105,11 @@ case OP_Transaction: {
 
   if( pBt ){
     rc = sqlite3BtreeBeginTrans(pBt, pOp->p2);
-    if( rc==SQLITE_BUSY ){
+    testcase( rc==SQLITE_BUSY_SNAPSHOT );
+    testcase( rc==SQLITE_BUSY_RECOVERY );
+    if( (rc&0xff)==SQLITE_BUSY ){
       p->pc = (int)(pOp - aOp);
-      p->rc = rc = SQLITE_BUSY;
+      p->rc = rc;
       goto vdbe_return;
     }
     if( rc!=SQLITE_OK ){

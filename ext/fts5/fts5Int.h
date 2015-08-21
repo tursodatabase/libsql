@@ -301,7 +301,7 @@ int sqlite3Fts5IndexClose(Fts5Index *p);
 */
 
 /*
-** Open a new iterator to iterate though all docids that match the 
+** Open a new iterator to iterate though all rowids that match the 
 ** specified token or token prefix.
 */
 int sqlite3Fts5IndexQuery(

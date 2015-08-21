@@ -23,6 +23,7 @@
 #include <stdarg.h>
 #include <ctype.h>
 #include <string.h>
+#include <assert.h>
 #include "sqlite3.h"
 
 /*
@@ -259,7 +260,12 @@ static void namelistFree(char **az){
 **    CREATE TABLE t5(rowid,_rowid_,oid);
 **    az = 0     // The rowid is not accessible
 */
-static char **columnNames(const char *zDb, const char *zTab, int *pnPKey){
+static char **columnNames(
+  const char *zDb,                /* Database ("main" or "aux") to query */
+  const char *zTab,               /* Name of table to return details of */
+  int *pnPKey,                    /* OUT: Number of PK columns */
+  int *pbRowid                    /* OUT: True if PK is an implicit rowid */
+){
   char **az = 0;           /* List of column names to be returned */
   int naz = 0;             /* Number of entries in az[] */
   sqlite3_stmt *pStmt;     /* SQL statement being run */
@@ -338,6 +344,15 @@ static char **columnNames(const char *zDb, const char *zTab, int *pnPKey){
   }
   sqlite3_finalize(pStmt);
   if( az ) az[naz] = 0;
+
+  /* If it is non-NULL, set *pbRowid to indicate whether or not the PK of 
+  ** this table is an implicit rowid (*pbRowid==1) or not (*pbRowid==0).  */
+  if( pbRowid ) *pbRowid = (az[0]==0);
+
+  /* If this table has an implicit rowid for a PK, figure out how to refer
+  ** to it. There are three options - "rowid", "_rowid_" and "oid". Any
+  ** of these will work, unless the table has an explicit column of the
+  ** same name.  */
   if( az[0]==0 ){
     const char *azRowid[] = { "rowid", "_rowid_", "oid" };
     for(i=0; i<sizeof(azRowid)/sizeof(azRowid[0]); i++){
@@ -434,7 +449,7 @@ static void dump_table(const char *zTab, FILE *out){
   }
   sqlite3_finalize(pStmt);
   if( !g.bSchemaOnly ){
-    az = columnNames("aux", zTab, &nPk);
+    az = columnNames("aux", zTab, &nPk, 0);
     strInit(&ins);
     if( az==0 ){
       pStmt = db_prepare("SELECT * FROM aux.%s", zId);
@@ -511,7 +526,7 @@ static void diff_one_table(const char *zTab, FILE *out){
     ** database and show the results.  This is used for testing
     ** and debugging of the columnNames() function.
     */
-    az = columnNames("aux",zTab, &nPk);
+    az = columnNames("aux",zTab, &nPk, 0);
     if( az==0 ){
       printf("Rowid not accessible for %s\n", zId);
     }else{
@@ -540,8 +555,8 @@ static void diff_one_table(const char *zTab, FILE *out){
     goto end_diff_one_table;
   }
 
-  az = columnNames("main", zTab, &nPk);
-  az2 = columnNames("aux", zTab, &nPk2);
+  az = columnNames("main", zTab, &nPk, 0);
+  az2 = columnNames("aux", zTab, &nPk2, 0);
   if( az && az2 ){
     for(n=0; az[n]; n++){
       if( sqlite3_stricmp(az[n],az2[n])!=0 ) break;
@@ -720,6 +735,606 @@ end_diff_one_table:
 }
 
 /*
+** Check that table zTab exists and has the same schema in both the "main"
+** and "aux" databases currently opened by the global db handle. If they
+** do not, output an error message on stderr and exit(1). Otherwise, if
+** the schemas do match, return control to the caller.
+*/
+static void checkSchemasMatch(const char *zTab){
+  sqlite3_stmt *pStmt = db_prepare(
+      "SELECT A.sql=B.sql FROM main.sqlite_master A, aux.sqlite_master B"
+      " WHERE A.name=%Q AND B.name=%Q", zTab, zTab
+  );
+  if( SQLITE_ROW==sqlite3_step(pStmt) ){
+    if( sqlite3_column_int(pStmt,0)==0 ){
+      runtimeError("schema changes for table %s", safeId(zTab));
+    }
+  }else{
+    runtimeError("table %s missing from one or both databases", safeId(zTab));
+  }
+  sqlite3_finalize(pStmt);
+}
+
+/**************************************************************************
+** The following code is copied from fossil. It is used to generate the
+** fossil delta blobs sometimes used in RBU update records.
+*/
+
+typedef unsigned short u16;
+typedef unsigned int u32;
+typedef unsigned char u8;
+
+/*
+** The width of a hash window in bytes.  The algorithm only works if this
+** is a power of 2.
+*/
+#define NHASH 16
+
+/*
+** The current state of the rolling hash.
+**
+** z[] holds the values that have been hashed.  z[] is a circular buffer.
+** z[i] is the first entry and z[(i+NHASH-1)%NHASH] is the last entry of
+** the window.
+**
+** Hash.a is the sum of all elements of hash.z[].  Hash.b is a weighted
+** sum.  Hash.b is z[i]*NHASH + z[i+1]*(NHASH-1) + ... + z[i+NHASH-1]*1.
+** (Each index for z[] should be module NHASH, of course.  The %NHASH operator
+** is omitted in the prior expression for brevity.)
+*/
+typedef struct hash hash;
+struct hash {
+  u16 a, b;         /* Hash values */
+  u16 i;            /* Start of the hash window */
+  char z[NHASH];    /* The values that have been hashed */
+};
+
+/*
+** Initialize the rolling hash using the first NHASH characters of z[]
+*/
+static void hash_init(hash *pHash, const char *z){
+  u16 a, b, i;
+  a = b = 0;
+  for(i=0; i<NHASH; i++){
+    a += z[i];
+    b += (NHASH-i)*z[i];
+    pHash->z[i] = z[i];
+  }
+  pHash->a = a & 0xffff;
+  pHash->b = b & 0xffff;
+  pHash->i = 0;
+}
+
+/*
+** Advance the rolling hash by a single character "c"
+*/
+static void hash_next(hash *pHash, int c){
+  u16 old = pHash->z[pHash->i];
+  pHash->z[pHash->i] = (char)c;
+  pHash->i = (pHash->i+1)&(NHASH-1);
+  pHash->a = pHash->a - old + (char)c;
+  pHash->b = pHash->b - NHASH*old + pHash->a;
+}
+
+/*
+** Return a 32-bit hash value
+*/
+static u32 hash_32bit(hash *pHash){
+  return (pHash->a & 0xffff) | (((u32)(pHash->b & 0xffff))<<16);
+}
+
+/*
+** Write an base-64 integer into the given buffer.
+*/
+static void putInt(unsigned int v, char **pz){
+  static const char zDigits[] =
+    "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz~";
+  /*  123456789 123456789 123456789 123456789 123456789 123456789 123 */
+  int i, j;
+  char zBuf[20];
+  if( v==0 ){
+    *(*pz)++ = '0';
+    return;
+  }
+  for(i=0; v>0; i++, v>>=6){
+    zBuf[i] = zDigits[v&0x3f];
+  }
+  for(j=i-1; j>=0; j--){
+    *(*pz)++ = zBuf[j];
+  }
+}
+
+/*
+** Return the number digits in the base-64 representation of a positive integer
+*/
+static int digit_count(int v){
+  unsigned int i, x;
+  for(i=1, x=64; (unsigned int)v>=x; i++, x <<= 6){}
+  return i;
+}
+
+/*
+** Compute a 32-bit checksum on the N-byte buffer.  Return the result.
+*/
+static unsigned int checksum(const char *zIn, size_t N){
+  const unsigned char *z = (const unsigned char *)zIn;
+  unsigned sum0 = 0;
+  unsigned sum1 = 0;
+  unsigned sum2 = 0;
+  unsigned sum3 = 0;
+  while(N >= 16){
+    sum0 += ((unsigned)z[0] + z[4] + z[8] + z[12]);
+    sum1 += ((unsigned)z[1] + z[5] + z[9] + z[13]);
+    sum2 += ((unsigned)z[2] + z[6] + z[10]+ z[14]);
+    sum3 += ((unsigned)z[3] + z[7] + z[11]+ z[15]);
+    z += 16;
+    N -= 16;
+  }
+  while(N >= 4){
+    sum0 += z[0];
+    sum1 += z[1];
+    sum2 += z[2];
+    sum3 += z[3];
+    z += 4;
+    N -= 4;
+  }
+  sum3 += (sum2 << 8) + (sum1 << 16) + (sum0 << 24);
+  switch(N){
+    case 3:   sum3 += (z[2] << 8);
+    case 2:   sum3 += (z[1] << 16);
+    case 1:   sum3 += (z[0] << 24);
+    default:  ;
+  }
+  return sum3;
+}
+
+/*
+** Create a new delta.
+**
+** The delta is written into a preallocated buffer, zDelta, which
+** should be at least 60 bytes longer than the target file, zOut.
+** The delta string will be NUL-terminated, but it might also contain
+** embedded NUL characters if either the zSrc or zOut files are
+** binary.  This function returns the length of the delta string
+** in bytes, excluding the final NUL terminator character.
+**
+** Output Format:
+**
+** The delta begins with a base64 number followed by a newline.  This
+** number is the number of bytes in the TARGET file.  Thus, given a
+** delta file z, a program can compute the size of the output file
+** simply by reading the first line and decoding the base-64 number
+** found there.  The delta_output_size() routine does exactly this.
+**
+** After the initial size number, the delta consists of a series of
+** literal text segments and commands to copy from the SOURCE file.
+** A copy command looks like this:
+**
+**     NNN@MMM,
+**
+** where NNN is the number of bytes to be copied and MMM is the offset
+** into the source file of the first byte (both base-64).   If NNN is 0
+** it means copy the rest of the input file.  Literal text is like this:
+**
+**     NNN:TTTTT
+**
+** where NNN is the number of bytes of text (base-64) and TTTTT is the text.
+**
+** The last term is of the form
+**
+**     NNN;
+**
+** In this case, NNN is a 32-bit bigendian checksum of the output file
+** that can be used to verify that the delta applied correctly.  All
+** numbers are in base-64.
+**
+** Pure text files generate a pure text delta.  Binary files generate a
+** delta that may contain some binary data.
+**
+** Algorithm:
+**
+** The encoder first builds a hash table to help it find matching
+** patterns in the source file.  16-byte chunks of the source file
+** sampled at evenly spaced intervals are used to populate the hash
+** table.
+**
+** Next we begin scanning the target file using a sliding 16-byte
+** window.  The hash of the 16-byte window in the target is used to
+** search for a matching section in the source file.  When a match
+** is found, a copy command is added to the delta.  An effort is
+** made to extend the matching section to regions that come before
+** and after the 16-byte hash window.  A copy command is only issued
+** if the result would use less space that just quoting the text
+** literally. Literal text is added to the delta for sections that
+** do not match or which can not be encoded efficiently using copy
+** commands.
+*/
+static int rbuDeltaCreate(
+  const char *zSrc,      /* The source or pattern file */
+  unsigned int lenSrc,   /* Length of the source file */
+  const char *zOut,      /* The target file */
+  unsigned int lenOut,   /* Length of the target file */
+  char *zDelta           /* Write the delta into this buffer */
+){
+  unsigned int i, base;
+  char *zOrigDelta = zDelta;
+  hash h;
+  int nHash;                 /* Number of hash table entries */
+  int *landmark;             /* Primary hash table */
+  int *collide;              /* Collision chain */
+  int lastRead = -1;         /* Last byte of zSrc read by a COPY command */
+
+  /* Add the target file size to the beginning of the delta
+  */
+  putInt(lenOut, &zDelta);
+  *(zDelta++) = '\n';
+
+  /* If the source file is very small, it means that we have no
+  ** chance of ever doing a copy command.  Just output a single
+  ** literal segment for the entire target and exit.
+  */
+  if( lenSrc<=NHASH ){
+    putInt(lenOut, &zDelta);
+    *(zDelta++) = ':';
+    memcpy(zDelta, zOut, lenOut);
+    zDelta += lenOut;
+    putInt(checksum(zOut, lenOut), &zDelta);
+    *(zDelta++) = ';';
+    return zDelta - zOrigDelta;
+  }
+
+  /* Compute the hash table used to locate matching sections in the
+  ** source file.
+  */
+  nHash = lenSrc/NHASH;
+  collide = sqlite3_malloc( nHash*2*sizeof(int) );
+  landmark = &collide[nHash];
+  memset(landmark, -1, nHash*sizeof(int));
+  memset(collide, -1, nHash*sizeof(int));
+  for(i=0; i<lenSrc-NHASH; i+=NHASH){
+    int hv;
+    hash_init(&h, &zSrc[i]);
+    hv = hash_32bit(&h) % nHash;
+    collide[i/NHASH] = landmark[hv];
+    landmark[hv] = i/NHASH;
+  }
+
+  /* Begin scanning the target file and generating copy commands and
+  ** literal sections of the delta.
+  */
+  base = 0;    /* We have already generated everything before zOut[base] */
+  while( base+NHASH<lenOut ){
+    int iSrc, iBlock;
+    int bestCnt, bestOfst=0, bestLitsz=0;
+    hash_init(&h, &zOut[base]);
+    i = 0;     /* Trying to match a landmark against zOut[base+i] */
+    bestCnt = 0;
+    while( 1 ){
+      int hv;
+      int limit = 250;
+
+      hv = hash_32bit(&h) % nHash;
+      iBlock = landmark[hv];
+      while( iBlock>=0 && (limit--)>0 ){
+        /*
+        ** The hash window has identified a potential match against
+        ** landmark block iBlock.  But we need to investigate further.
+        **
+        ** Look for a region in zOut that matches zSrc. Anchor the search
+        ** at zSrc[iSrc] and zOut[base+i].  Do not include anything prior to
+        ** zOut[base] or after zOut[outLen] nor anything after zSrc[srcLen].
+        **
+        ** Set cnt equal to the length of the match and set ofst so that
+        ** zSrc[ofst] is the first element of the match.  litsz is the number
+        ** of characters between zOut[base] and the beginning of the match.
+        ** sz will be the overhead (in bytes) needed to encode the copy
+        ** command.  Only generate copy command if the overhead of the
+        ** copy command is less than the amount of literal text to be copied.
+        */
+        int cnt, ofst, litsz;
+        int j, k, x, y;
+        int sz;
+
+        /* Beginning at iSrc, match forwards as far as we can.  j counts
+        ** the number of characters that match */
+        iSrc = iBlock*NHASH;
+        for(
+          j=0, x=iSrc, y=base+i;
+          (unsigned int)x<lenSrc && (unsigned int)y<lenOut;
+          j++, x++, y++
+        ){
+          if( zSrc[x]!=zOut[y] ) break;
+        }
+        j--;
+
+        /* Beginning at iSrc-1, match backwards as far as we can.  k counts
+        ** the number of characters that match */
+        for(k=1; k<iSrc && (unsigned int)k<=i; k++){
+          if( zSrc[iSrc-k]!=zOut[base+i-k] ) break;
+        }
+        k--;
+
+        /* Compute the offset and size of the matching region */
+        ofst = iSrc-k;
+        cnt = j+k+1;
+        litsz = i-k;  /* Number of bytes of literal text before the copy */
+        /* sz will hold the number of bytes needed to encode the "insert"
+        ** command and the copy command, not counting the "insert" text */
+        sz = digit_count(i-k)+digit_count(cnt)+digit_count(ofst)+3;
+        if( cnt>=sz && cnt>bestCnt ){
+          /* Remember this match only if it is the best so far and it
+          ** does not increase the file size */
+          bestCnt = cnt;
+          bestOfst = iSrc-k;
+          bestLitsz = litsz;
+        }
+
+        /* Check the next matching block */
+        iBlock = collide[iBlock];
+      }
+
+      /* We have a copy command that does not cause the delta to be larger
+      ** than a literal insert.  So add the copy command to the delta.
+      */
+      if( bestCnt>0 ){
+        if( bestLitsz>0 ){
+          /* Add an insert command before the copy */
+          putInt(bestLitsz,&zDelta);
+          *(zDelta++) = ':';
+          memcpy(zDelta, &zOut[base], bestLitsz);
+          zDelta += bestLitsz;
+          base += bestLitsz;
+        }
+        base += bestCnt;
+        putInt(bestCnt, &zDelta);
+        *(zDelta++) = '@';
+        putInt(bestOfst, &zDelta);
+        *(zDelta++) = ',';
+        if( bestOfst + bestCnt -1 > lastRead ){
+          lastRead = bestOfst + bestCnt - 1;
+        }
+        bestCnt = 0;
+        break;
+      }
+
+      /* If we reach this point, it means no match is found so far */
+      if( base+i+NHASH>=lenOut ){
+        /* We have reached the end of the file and have not found any
+        ** matches.  Do an "insert" for everything that does not match */
+        putInt(lenOut-base, &zDelta);
+        *(zDelta++) = ':';
+        memcpy(zDelta, &zOut[base], lenOut-base);
+        zDelta += lenOut-base;
+        base = lenOut;
+        break;
+      }
+
+      /* Advance the hash by one character.  Keep looking for a match */
+      hash_next(&h, zOut[base+i+NHASH]);
+      i++;
+    }
+  }
+  /* Output a final "insert" record to get all the text at the end of
+  ** the file that does not match anything in the source file.
+  */
+  if( base<lenOut ){
+    putInt(lenOut-base, &zDelta);
+    *(zDelta++) = ':';
+    memcpy(zDelta, &zOut[base], lenOut-base);
+    zDelta += lenOut-base;
+  }
+  /* Output the final checksum record. */
+  putInt(checksum(zOut, lenOut), &zDelta);
+  *(zDelta++) = ';';
+  sqlite3_free(collide);
+  return zDelta - zOrigDelta;
+}
+
+/*
+** End of code copied from fossil.
+**************************************************************************/
+
+static void strPrintfArray(
+  Str *pStr,                      /* String object to append to */
+  const char *zSep,               /* Separator string */
+  const char *zFmt,               /* Format for each entry */
+  char **az, int n                /* Array of strings & its size (or -1) */
+){
+  int i;
+  for(i=0; az[i] && (i<n || n<0); i++){
+    if( i!=0 ) strPrintf(pStr, "%s", zSep);
+    strPrintf(pStr, zFmt, az[i], az[i], az[i]);
+  }
+}
+
+static void getRbudiffQuery(
+  const char *zTab,
+  char **azCol,
+  int nPK,
+  int bOtaRowid,
+  Str *pSql
+){
+  int i;
+
+  /* First the newly inserted rows: **/ 
+  strPrintf(pSql, "SELECT ");
+  strPrintfArray(pSql, ", ", "%s", azCol, -1);
+  strPrintf(pSql, ", 0, ");       /* Set ota_control to 0 for an insert */
+  strPrintfArray(pSql, ", ", "NULL", azCol, -1);
+  strPrintf(pSql, " FROM aux.%Q AS n WHERE NOT EXISTS (\n", zTab);
+  strPrintf(pSql, "    SELECT 1 FROM ", zTab);
+  strPrintf(pSql, " main.%Q AS o WHERE ", zTab);
+  strPrintfArray(pSql, " AND ", "(n.%Q IS o.%Q)", azCol, nPK);
+  strPrintf(pSql, "\n)");
+
+  /* Deleted rows: */
+  strPrintf(pSql, "\nUNION ALL\nSELECT ");
+  strPrintfArray(pSql, ", ", "%s", azCol, nPK);
+  if( azCol[nPK] ){
+    strPrintf(pSql, ", ");
+    strPrintfArray(pSql, ", ", "NULL", &azCol[nPK], -1);
+  }
+  strPrintf(pSql, ", 1, ");       /* Set ota_control to 1 for a delete */
+  strPrintfArray(pSql, ", ", "NULL", azCol, -1);
+  strPrintf(pSql, " FROM main.%Q AS n WHERE NOT EXISTS (\n", zTab);
+  strPrintf(pSql, "    SELECT 1 FROM ", zTab);
+  strPrintf(pSql, " aux.%Q AS o WHERE ", zTab);
+  strPrintfArray(pSql, " AND ", "(n.%Q IS o.%Q)", azCol, nPK);
+  strPrintf(pSql, "\n) ");
+
+  /* Updated rows. If all table columns are part of the primary key, there 
+  ** can be no updates. In this case this part of the compound SELECT can
+  ** be omitted altogether. */
+  if( azCol[nPK] ){
+    strPrintf(pSql, "\nUNION ALL\nSELECT ");
+    strPrintfArray(pSql, ", ", "n.%s", azCol, nPK);
+    strPrintf(pSql, ",\n");
+    strPrintfArray(pSql, " ,\n", 
+        "    CASE WHEN n.%s IS o.%s THEN NULL ELSE n.%s END", &azCol[nPK], -1
+    );
+
+    if( bOtaRowid==0 ){
+      strPrintf(pSql, ", '");
+      strPrintfArray(pSql, "", ".", azCol, nPK);
+      strPrintf(pSql, "' ||\n");
+    }else{
+      strPrintf(pSql, ",\n");
+    }
+    strPrintfArray(pSql, " ||\n", 
+        "    CASE WHEN n.%s IS o.%s THEN '.' ELSE 'x' END", &azCol[nPK], -1
+    );
+    strPrintf(pSql, "\nAS ota_control, ");
+    strPrintfArray(pSql, ", ", "NULL", azCol, nPK);
+    strPrintf(pSql, ",\n");
+    strPrintfArray(pSql, " ,\n", 
+        "    CASE WHEN n.%s IS o.%s THEN NULL ELSE o.%s END", &azCol[nPK], -1
+    );
+
+    strPrintf(pSql, "\nFROM main.%Q AS o, aux.%Q AS n\nWHERE ", zTab, zTab);
+    strPrintfArray(pSql, " AND ", "(n.%Q IS o.%Q)", azCol, nPK);
+    strPrintf(pSql, " AND ota_control LIKE '%%x%%'");
+  }
+
+  /* Now add an ORDER BY clause to sort everything by PK. */
+  strPrintf(pSql, "\nORDER BY ");
+  for(i=1; i<=nPK; i++) strPrintf(pSql, "%s%d", ((i>1)?", ":""), i);
+}
+
+static void rbudiff_one_table(const char *zTab, FILE *out){
+  int bOtaRowid;                  /* True to use an ota_rowid column */
+  int nPK;                        /* Number of primary key columns in table */
+  char **azCol;                   /* NULL terminated array of col names */
+  int i;
+  int nCol;
+  Str ct = {0, 0, 0};             /* The "CREATE TABLE data_xxx" statement */
+  Str sql = {0, 0, 0};            /* Query to find differences */
+  Str insert = {0, 0, 0};         /* First part of output INSERT statement */
+  sqlite3_stmt *pStmt = 0;
+
+  /* --rbu mode must use real primary keys. */
+  g.bSchemaPK = 1;
+
+  /* Check that the schemas of the two tables match. Exit early otherwise. */
+  checkSchemasMatch(zTab);
+
+  /* Grab the column names and PK details for the table(s). If no usable PK
+  ** columns are found, bail out early.  */
+  azCol = columnNames("main", zTab, &nPK, &bOtaRowid);
+  if( azCol==0 ){
+    runtimeError("table %s has no usable PK columns", zTab);
+  }
+  for(nCol=0; azCol[nCol]; nCol++);
+
+  /* Build and output the CREATE TABLE statement for the data_xxx table */
+  strPrintf(&ct, "CREATE TABLE IF NOT EXISTS 'data_%q'(", zTab);
+  if( bOtaRowid ) strPrintf(&ct, "rbu_rowid, ");
+  strPrintfArray(&ct, ", ", "%s", &azCol[bOtaRowid], -1);
+  strPrintf(&ct, ", rbu_control);");
+
+  /* Get the SQL for the query to retrieve data from the two databases */
+  getRbudiffQuery(zTab, azCol, nPK, bOtaRowid, &sql);
+
+  /* Build the first part of the INSERT statement output for each row
+  ** in the data_xxx table. */
+  strPrintf(&insert, "INSERT INTO 'data_%q' (", zTab);
+  if( bOtaRowid ) strPrintf(&insert, "rbu_rowid, ");
+  strPrintfArray(&insert, ", ", "%s", &azCol[bOtaRowid], -1);
+  strPrintf(&insert, ", rbu_control) VALUES(");
+
+  pStmt = db_prepare("%s", sql.z);
+
+  while( sqlite3_step(pStmt)==SQLITE_ROW ){
+    
+    /* If this is the first row output, print out the CREATE TABLE 
+    ** statement first. And then set ct.z to NULL so that it is not 
+    ** printed again.  */
+    if( ct.z ){
+      fprintf(out, "%s\n", ct.z);
+      strFree(&ct);
+    }
+
+    /* Output the first part of the INSERT statement */
+    fprintf(out, "%s", insert.z);
+
+    if( sqlite3_column_type(pStmt, nCol)==SQLITE_INTEGER ){
+      for(i=0; i<=nCol; i++){
+        if( i>0 ) fprintf(out, ", ");
+        printQuoted(out, sqlite3_column_value(pStmt, i));
+      }
+    }else{
+      char *zOtaControl;
+      int nOtaControl = sqlite3_column_bytes(pStmt, nCol);
+
+      zOtaControl = (char*)sqlite3_malloc(nOtaControl);
+      memcpy(zOtaControl, sqlite3_column_text(pStmt, nCol), nOtaControl+1);
+
+      for(i=0; i<nCol; i++){
+        int bDone = 0;
+        if( i>=nPK 
+            && sqlite3_column_type(pStmt, i)==SQLITE_BLOB
+            && sqlite3_column_type(pStmt, nCol+1+i)==SQLITE_BLOB
+        ){
+          const char *aSrc = sqlite3_column_blob(pStmt, nCol+1+i);
+          int nSrc = sqlite3_column_bytes(pStmt, nCol+1+i);
+          const char *aFinal = sqlite3_column_blob(pStmt, i);
+          int nFinal = sqlite3_column_bytes(pStmt, i);
+          char *aDelta;
+          int nDelta;
+
+          aDelta = sqlite3_malloc(nFinal + 60);
+          nDelta = rbuDeltaCreate(aSrc, nSrc, aFinal, nFinal, aDelta);
+          if( nDelta<nFinal ){
+            int j;
+            fprintf(out, "x'");
+            for(j=0; j<nDelta; j++) fprintf(out, "%02x", (u8)aDelta[j]);
+            fprintf(out, "'");
+            zOtaControl[i-bOtaRowid] = 'f';
+            bDone = 1;
+          }
+          sqlite3_free(aDelta);
+        }
+
+        if( bDone==0 ){
+          printQuoted(out, sqlite3_column_value(pStmt, i));
+        }
+        fprintf(out, ", ");
+      }
+      fprintf(out, "'%s'", zOtaControl);
+      sqlite3_free(zOtaControl);
+    }
+
+    /* And the closing bracket of the insert statement */
+    fprintf(out, ");\n");
+  }
+
+  sqlite3_finalize(pStmt);
+
+  strFree(&ct);
+  strFree(&sql);
+  strFree(&insert);
+}
+
+/*
 ** Display a summary of differences between two versions of the same
 ** table table.
 **
@@ -760,8 +1375,8 @@ static void summarize_one_table(const char *zTab, FILE *out){
     goto end_summarize_one_table;
   }
 
-  az = columnNames("main", zTab, &nPk);
-  az2 = columnNames("aux", zTab, &nPk2);
+  az = columnNames("main", zTab, &nPk, 0);
+  az2 = columnNames("aux", zTab, &nPk2, 0);
   if( az && az2 ){
     for(n=0; az[n]; n++){
       if( sqlite3_stricmp(az[n],az2[n])!=0 ) break;
@@ -931,18 +1546,9 @@ static void changeset_one_table(const char *zTab, FILE *out){
   int i, k;                     /* Loop counters */
   const char *zSep;             /* List separator */
 
-  pStmt = db_prepare(
-      "SELECT A.sql=B.sql FROM main.sqlite_master A, aux.sqlite_master B"
-      " WHERE A.name=%Q AND B.name=%Q", zTab, zTab
-  );
-  if( SQLITE_ROW==sqlite3_step(pStmt) ){
-    if( sqlite3_column_int(pStmt,0)==0 ){
-      runtimeError("schema changes for table %s", safeId(zTab));
-    }
-  }else{
-    runtimeError("table %s missing from one or both databases", safeId(zTab));
-  }
-  sqlite3_finalize(pStmt);
+  /* Check that the schemas of the two tables match. Exit early otherwise. */
+  checkSchemasMatch(zTab);
+
   pStmt = db_prepare("PRAGMA main.table_info=%Q", zTab);
   while( SQLITE_ROW==sqlite3_step(pStmt) ){
     nCol++;
@@ -1118,6 +1724,7 @@ static void showHelp(void){
 "  --changeset FILE      Write a CHANGESET into FILE\n"
 "  -L|--lib LIBRARY      Load an SQLite extension library\n"
 "  --primarykey          Use schema-defined PRIMARY KEYs\n"
+"  --rbu                 Output SQL to create/populate RBU table(s)\n"
 "  --schema              Show only differences in the schema\n"
 "  --summary             Show only a summary of the differences\n"
 "  --table TAB           Show only differences in table TAB\n"
@@ -1169,6 +1776,9 @@ int main(int argc, char **argv){
 #endif
       if( strcmp(z,"primarykey")==0 ){
         g.bSchemaPK = 1;
+      }else
+      if( strcmp(z,"rbu")==0 ){
+        xDiff = rbudiff_one_table;
       }else
       if( strcmp(z,"schema")==0 ){
         g.bSchemaOnly = 1;

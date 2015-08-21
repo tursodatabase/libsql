@@ -56,7 +56,9 @@ static int test_sqlite3rbu_cmd(
 ){
   int ret = TCL_OK;
   sqlite3rbu *pRbu = (sqlite3rbu*)clientData;
-  const char *azMethod[] = { "step", "close", "create_rbu_delta", 0 };
+  const char *azMethod[] = { 
+    "step", "close", "create_rbu_delta", "savestate", 0 
+  };
   int iMethod;
 
   if( objc!=2 ){
@@ -98,6 +100,13 @@ static int test_sqlite3rbu_cmd(
       int rc = sqlite3_create_function(
           db, "rbu_delta", -1, SQLITE_UTF8, (void*)interp, test_rbu_delta, 0, 0
       );
+      Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
+      ret = (rc==SQLITE_OK ? TCL_OK : TCL_ERROR);
+      break;
+    }
+
+    case 3: /* savestate */ {
+      int rc = sqlite3rbu_savestate(pRbu);
       Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
       ret = (rc==SQLITE_OK ? TCL_OK : TCL_ERROR);
       break;

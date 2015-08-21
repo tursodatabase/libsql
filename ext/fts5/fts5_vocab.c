@@ -442,8 +442,7 @@ static int fts5VocabColumnMethod(
 
 /* 
 ** This is the xRowid method. The SQLite core calls this routine to
-** retrieve the rowid for the current row of the result set. fts5
-** exposes %_content.docid as the rowid for the virtual table. The
+** retrieve the rowid for the current row of the result set. The
 ** rowid should be written to *pRowid.
 */
 static int fts5VocabRowidMethod(

@@ -1,0 +1,150 @@
+# 2015-07-31
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# Tests for the [sqldiff --rbu] command.
+#
+#
+if {![info exists testdir]} {
+  set testdir [file join [file dirname [info script]] .. .. test]
+}
+source $testdir/tester.tcl
+set testprefix rbudiff
+
+if {$tcl_platform(platform)=="windows"} {
+  set PROG "sqldiff.exe"
+} else {
+  set PROG "./sqldiff"
+}
+if {![file exe $PROG]} {
+  puts "rbudiff.test cannot run because $PROG is not available"
+  finish_test
+  return
+}
+db close
+
+proc get_rbudiff_sql {db1 db2} {
+  exec $::PROG --rbu $db1 $db2
+}
+
+proc step_rbu {target rbu} {
+  while 1 {
+    sqlite3rbu rbu $target $rbu
+    set rc [rbu step]
+    rbu close
+    if {$rc != "SQLITE_OK"} break
+  }
+  set rc
+}
+
+proc apply_rbudiff {sql target} {
+  forcedelete rbu.db
+  sqlite3 rbudb rbu.db
+  rbudb eval $sql
+  rbudb close
+  step_rbu $target rbu.db
+}
+
+proc rbudiff_cksum {db1} {
+  set txt ""
+
+  sqlite3 dbtmp $db1
+  foreach tbl [dbtmp eval {SELECT name FROM sqlite_master WHERE type='table'}] {
+    set cols [list]
+    dbtmp eval "PRAGMA table_info = $tbl" { lappend cols "quote( $name )" }
+    append txt [dbtmp eval \
+      "SELECT [join $cols {||'.'||}] FROM $tbl ORDER BY 1"
+    ]
+  }
+  dbtmp close
+
+  md5 $txt
+}
+
+foreach {tn init mod} {
+  1 {
+    CREATE TABLE t1(a PRIMARY KEY, b, c);
+    INSERT INTO t1 VALUES(1, 2, 3);
+    INSERT INTO t1 VALUES(4, 5, 6);
+  
+    CREATE TABLE t2(a, b, c, PRIMARY KEY(b, c));
+    INSERT INTO t2 VALUES(1, 2, 3);
+    INSERT INTO t2 VALUES(4, 5, 6);
+  } {
+    INSERT INTO t1 VALUES(7, 8, 9);
+    DELETE FROM t1 WHERE a=4;
+    UPDATE t1 SET c = 11 WHERE a = 1;
+  
+    INSERT INTO t2 VALUES(7, 8, 9);
+    DELETE FROM t2 WHERE a=4;
+    UPDATE t2 SET c = 11 WHERE a = 1;
+  }
+
+  2 {
+    CREATE TABLE t1(a, b, c, PRIMARY KEY(a, b, c));
+    INSERT INTO t1 VALUES('u', 'v', 'w');
+    INSERT INTO t1 VALUES('x', 'y', 'z');
+  } {
+    DELETE FROM t1 WHERE a='u';
+    INSERT INTO t1 VALUES('a', 'b', 'c');
+  }
+
+  3 {
+    CREATE TABLE t1(i INTEGER PRIMARY KEY, x);
+    INSERT INTO t1 VALUES(1,
+      X'0000000000000000111111111111111122222222222222223333333333333333'
+    );
+    CREATE TABLE t2(y INTEGER PRIMARY KEY, x);
+    INSERT INTO t2 VALUES(1,
+        X'0000000000000000111111111111111122222222222222223333333333333333'
+    );
+  } {
+    DELETE FROM t1;
+    INSERT INTO t1 VALUES(1,
+      X'0000000000000000111111111111111122222555555552223333333333333333'
+    );
+    DELETE FROM t2;
+    INSERT INTO t2 VALUES(1,
+        X'0000000000000000111111111111111122222222222222223333333FFF333333'
+    );
+  }
+
+} {
+  catch { db close }
+
+  forcedelete test.db test.db2
+  sqlite3 db test.db
+  db eval "$init"
+  sqlite3 db test.db2
+  db eval "$init ; $mod"
+  db close
+
+  do_test 1.$tn.2 {
+    set sql [get_rbudiff_sql test.db test.db2]
+    apply_rbudiff $sql test.db
+  } {SQLITE_DONE}
+  do_test 1.$tn.3 { rbudiff_cksum test.db } [rbudiff_cksum test.db2]
+
+  forcedelete test.db test.db2
+  sqlite3 db test.db
+  db eval "$init ; $mod"
+  sqlite3 db test.db2
+  db eval "$init"
+  db close
+
+  do_test 1.$tn.4 {
+    set sql [get_rbudiff_sql test.db test.db2]
+    apply_rbudiff $sql test.db
+  } {SQLITE_DONE}
+  do_test 1.$tn.5 { rbudiff_cksum test.db } [rbudiff_cksum test.db2]
+}
+
+finish_test
+
