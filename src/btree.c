@@ -3860,7 +3860,6 @@ static int btreeFixUnlocked(Btree *p){
   BtreePtrmap *pMap = pBt->pMap;
   Pgno iTrunk = get4byte(&p1[32]);
   Pgno nPage = btreePagecount(pBt);
-  Pgno nOrig = pMap->iFirst-1;
   u32 nFree = get4byte(&p1[36]);
 
   assert( sqlite3PagerIsUnlocked(pPager) );
@@ -3891,10 +3890,12 @@ static int btreeFixUnlocked(Btree *p){
         };
       }
 
-      if( nHPage<nOrig ){
-        /* An unlocked transaction may not be executed on an auto-vacuum 
-        ** database. Therefore the db should not have shrunk since the
-        ** transaction was opened.  */
+      if( nHPage<(pMap->iFirst-1) ){
+        /* The database consisted of (pMap->iFirst-1) pages when the current
+        ** unlocked transaction was opened. And an unlocked transaction may
+        ** not be executed on an auto-vacuum database - so the db should 
+        ** not have shrunk since the transaction was opened. Therefore nHPage
+        ** should be set to (pMap->iFirst-1) or greater. */
         rc = SQLITE_CORRUPT_BKPT;
       }else{
         /* The current transaction allocated pages pMap->iFirst through
@@ -3904,8 +3905,9 @@ static int btreeFixUnlocked(Btree *p){
         */
         Pgno iLast = MIN(nPage, nHPage);    /* Last page to move */
         Pgno iPg;
+        Pgno nCurrent;                      /* Current size of db */
 
-        nFinal = MAX(nPage, nHPage);
+        nCurrent = MAX(nPage, nHPage);
         for(iPg=pMap->iFirst; iPg<=iLast && rc==SQLITE_OK; iPg++){
           MemPage *pPg = 0;
           Pgno iNew;              /* New page number for pPg */
@@ -3922,9 +3924,33 @@ static int btreeFixUnlocked(Btree *p){
             btreeGetPage(pBt, iPg, &pPg, 0);
             assert( sqlite3PagerIswriteable(pPg->pDbPage) );
             assert( sqlite3PagerPageRefcount(pPg->pDbPage)==1 );
-            iNew = ++nFinal;
+            iNew = ++nCurrent;
             rc = relocatePage(pBt, pPg, pEntry->eType, pEntry->parent, iNew, 1);
             releasePageNotNull(pPg);
+          }
+        }
+        sqlite3PagerSetDbsize(pPager, nCurrent);
+
+        nFree = get4byte(&p1[36]);
+        nFinal = MAX(nCurrent-nFree, nHPage);
+
+        for(iPg=nFinal+1; rc==SQLITE_OK && iPg<nCurrent; iPg++){
+          Pgno iNew;              /* New page number for pPg */
+          MemPage *pFree;
+          PtrmapEntry *pEntry;    /* Pointer map entry for page iPg */
+
+          pEntry = &pMap->aPtr[iPg - pMap->iFirst];
+          if( pEntry->eType==PTRMAP_FREEPAGE ){
+            rc = allocateBtreePage(pBt, &pFree, &iNew, iPg, BTALLOC_EXACT);
+            releasePage(pFree);
+          }else{
+            rc = allocateBtreePage(pBt, &pFree, &iNew, nFinal, BTALLOC_LE);
+            releasePage(pFree);
+            if( rc==SQLITE_OK ){
+              MemPage *pPg = 0;
+              btreeGetPage(pBt, iPg, &pPg, 0);
+              rc = relocatePage(pBt, pPg, pEntry->eType, pEntry->parent,iNew,1);
+            }
           }
         }
         put4byte(&p1[28], nFinal);
@@ -5784,9 +5810,7 @@ static int allocateBtreePage(
   Pgno mxPage;     /* Total size of the database file */
 
   assert( sqlite3_mutex_held(pBt->mutex) );
-  assert( eMode==BTALLOC_ANY || (nearby>0 && ISAUTOVACUUM) 
-      || (eMode==BTALLOC_EXACT && sqlite3PagerIsUnlocked(pBt->pPager))
-  );
+  assert( eMode==BTALLOC_ANY || (nearby>0 && REQUIRE_PTRMAP ) );
   pPage1 = pBt->pPage1;
   mxPage = btreePagecount(pBt);
   /* EVIDENCE-OF: R-05119-02637 The 4-byte big-endian integer at offset 36
@@ -5831,12 +5855,9 @@ static int allocateBtreePage(
       }else{
         searchList = 1;
       }
-    }
-#ifndef SQLITE_OMIT_AUTOVACUUM
-    else if( eMode==BTALLOC_LE ){
+    }else if( eMode==BTALLOC_LE ){
       searchList = 1;
     }
-#endif
 
     /* Decrement the free-list count by 1. Set iTrunk to the index of the
     ** first free-list trunk page. iPrevTrunk is initially 1.
