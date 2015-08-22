@@ -664,11 +664,12 @@ struct BtCursor {
 #endif
 
 #ifdef SQLITE_ENABLE_UNLOCKED
-# define REQUIRE_PTRMAP (ISAUTOVACUUM || pBt->pMap)
+# define ISUNLOCKED (pBt->pMap!=0)
 #else
-# define REQUIRE_PTRMAP ISAUTOVACUUM
+# define ISUNLOCKED 0
 #endif
 
+#define REQUIRE_PTRMAP (ISAUTOVACUUM || ISUNLOCKED)
 
 /*
 ** This structure is passed around through all the sanity checking routines

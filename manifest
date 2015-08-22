@@ -1,5 +1,5 @@
-C Merge\sfurther\strunk\schanges.
-D 2015-08-22T07:56:49.673
+C Add\sfurther\stests\sfor\sdeferred\spage\sallocation.\sAnd\sfixes\sfor\sthe\ssame.
+D 2015-08-22T17:28:55.533
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e2218eb228374422969de7b1680eda6864affcef
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -279,9 +279,9 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 4d9134dc988a87838c06056c89c0e8c4700a0452
 F src/bitvec.c d1f21d7d91690747881f03940584f4cc548c9d3d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c dc80ac8374105e3caf298a6533e3312101691330
+F src/btree.c 245bc696824d5107f3570905325c6ac5b05c18f8
 F src/btree.h 00d4cdb747c4172a5566faf037116985dbbc377e
-F src/btreeInt.h 1f7258e1f35ba3cc2197f9019f523dd20d59a0d8
+F src/btreeInt.h 0c19847f87ab82e4f5e67750a069f10829475da6
 F src/build.c e47b6fffe14a28d9050e6747beebb01597d37542
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
@@ -1228,7 +1228,8 @@ F test/unique.test 93f8b2ef5ea51b9495f8d6493429b1fd0f465264
 F test/unique2.test 41e7f83c6827605991160a31380148a9fc5f1339
 F test/unixexcl.test cd6c765f75e50e8e2c2ba763149e5d340ea19825
 F test/unlocked.test d143a871bd874311d4e5c98ce458218ca6b579fd
-F test/unlocked2.test 1e645e6f6808e4303f1766d8c615c22714f31541
+F test/unlocked2.test 7f913b404cda03f22bc7b299e8eb82a34d2880c5
+F test/unlocked3.test 4facd06286885faa9bd53713fa3d701ca403aeb2
 F test/unordered.test ca7adce0419e4ca0c50f039885e76ed2c531eda8
 F test/update.test 6c68446b8a0a33d522a7c72b320934596a2d7d32
 F test/uri.test 23662b7b61958b0f0e47082de7d06341ccf85d5b
@@ -1380,7 +1381,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9021f7369f4b32db6126b3dc0ac75d11039625be 213a6c5ccbcfe4495d45e3608e99a6398751aeed
-R d0dd8783a44e8da0a2326d10e188c817
+P c2327a3b8e5d604ab948b1e9f6cfc401429e51db
+R c62a3f455b34280d099a1332c1c4f1e4
 U dan
-Z dd4c495d35a4ec7386b2f6d290b0dddd
+Z 1442e612d3eba52580ab50755ceb943f
