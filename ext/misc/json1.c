@@ -587,6 +587,7 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
         if( x==(-2) && pParse->nNode==iThis+1 ) return j+1;
         return -1;
       }
+      if( pParse->oom ) return -1;
       if( pParse->aNode[pParse->nNode-1].eType!=JSON_STRING ) return -1;
       j = x;
       while( isspace(pParse->zJson[j]) ){ j++; }
@@ -639,7 +640,7 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
       j++;
     }
     jsonParseAddNode(pParse, JSON_STRING, j+1-i, &pParse->zJson[i]);
-    pParse->aNode[pParse->nNode-1].jnFlags = jnFlags;
+    if( !pParse->oom ) pParse->aNode[pParse->nNode-1].jnFlags = jnFlags;
     return j+1;
   }else if( c=='n'
          && strncmp(pParse->zJson+i,"null",4)==0
