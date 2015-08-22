@@ -55,6 +55,22 @@ proc do_sql_op {iTbl iOp} {
       "
     }
 
+    "D" {
+      set sql "
+        DELETE FROM t$iTbl WHERE rowid IN (
+          SELECT rowid FROM t$iTbl o WHERE (
+            SELECT count(*) FROM t$iTbl i WHERE i.rowid<o.rowid
+          ) % 2
+        )
+      "
+    }
+
+    "I" {
+      set sql "
+        INSERT INTO t$iTbl SELECT randomblob(800), randomblob(800) FROM t$iTbl;
+      "
+    }
+
     default {
       error "bad iOp parameter: $iOp"
     }
@@ -78,7 +94,9 @@ foreach {tn oplist} {
   6 {1iii 2iii 3iii 4iii}
   7 {1di  2id  3iii 4ddd}
   8 {1iii 2iii 3iii 4iii}
+
 } {
+  # 9 {1D  2II}
   if {[string range $oplist 0 0]=="-"} {
     reset_db
     create_schema

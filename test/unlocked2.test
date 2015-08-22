@@ -257,5 +257,40 @@ do_multiclient_test tn {
   do_test 5.$tn.5 { sql3 { PRAGMA integrity_check } } {ok}
 }
 
+#-------------------------------------------------------------------------
+#
+do_multiclient_test tn {
+  do_test 6.$tn.1 {
+    sql1 {
+      PRAGMA journal_mode = wal;
+      CREATE TABLE t1(x);
+      INSERT INTO t1 VALUES(randomblob(1500));
+      PRAGMA wal_checkpoint;
+    }
+  } {wal 0 5 5}
+
+  do_test 6.$tn.2 {
+    sql1 { 
+      BEGIN UNLOCKED;
+        INSERT INTO t1 VALUES(randomblob(1500));
+        INSERT INTO t1 VALUES(randomblob(1500));
+    }
+  } {}
+
+  do_test 6.$tn.3 {
+    sql2 {
+      BEGIN;
+        INSERT INTO t1 VALUES(randomblob(1500));
+        INSERT INTO t1 VALUES(randomblob(1500));
+      COMMIT;
+    }
+  } {}
+
+  do_test 6.$tn.4 { 
+    list [catch { sql1 COMMIT } msg] $msg
+  } {1 {database is locked}}
+  do_test 6.$tn.5 { sql3 { PRAGMA integrity_check } } {ok}
+  do_test 6.$tn.5 { sql3 { SELECT count(*) from t1 } } {3}
+}
 finish_test
 

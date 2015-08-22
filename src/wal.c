@@ -2594,13 +2594,14 @@ int sqlite3WalLockForCommit(Wal *pWal, PgHdr *pPage1, Bitvec *pAllRead){
     /* TODO: Check header checksum is good here. */
 
     if( memcmp(&pWal->hdr, (void*)pHead, sizeof(WalIndexHdr))!=0 ){
-      /* TODO: Is this safe? Because it holds the WRITER lock this thread
-      ** has exclusive access to the live header, but might it be corrupt? 
-      ** This code should check that the wal-index-header is Ok, and return
-      ** SQLITE_BUSY_SNAPSHOT if it is not. */
       int iHash;
       int iLastHash = walFramePage(pHead->mxFrame);
-      for(iHash=walFramePage(pWal->hdr.mxFrame+1); iHash<=iLastHash; iHash++){
+      u32 iFirst = pWal->hdr.mxFrame+1;     /* First wal frame to check */
+      if( memcmp(pWal->hdr.aSalt, (u32*)pHead->aSalt, sizeof(u32)*2) ){
+        assert( pWal->readLock==0 );
+        iFirst = 1;
+      }
+      for(iHash=walFramePage(iFirst); iHash<=iLastHash; iHash++){
         volatile ht_slot *aHash;
         volatile u32 *aPgno;
         u32 iZero;
@@ -2608,7 +2609,7 @@ int sqlite3WalLockForCommit(Wal *pWal, PgHdr *pPage1, Bitvec *pAllRead){
         rc = walHashGet(pWal, iHash, &aHash, &aPgno, &iZero);
         if( rc==SQLITE_OK ){
           int i;
-          int iMin = (pWal->hdr.mxFrame+1 - iZero);
+          int iMin = (iFirst - iZero);
           int iMax = (iHash==0) ? HASHTABLE_NPAGE_ONE : HASHTABLE_NPAGE;
           if( iMin<1 ) iMin = 1;
           if( iMax>pHead->mxFrame ) iMax = pHead->mxFrame;
