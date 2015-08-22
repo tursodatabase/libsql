@@ -1,5 +1,5 @@
-C Add\sextension\sfunctions\sfor\sprocessing\sJSON.
-D 2015-08-21T20:43:32.515
+C Do\snot\sapply\sthe\sWHERE-clause\spushdown\soptimization\sto\sterms\sthat\soriginate\nin\sthe\sON\sor\sUSING\sclause\sof\sa\sLEFT\sJOIN.\s\sFix\sfor\sticket\n[6df18e949d3676290].
+D 2015-08-22T01:32:29.479
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e2218eb228374422969de7b1680eda6864affcef
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -337,7 +337,7 @@ F src/printf.c 2bc439ff20a4aad0e0ad50a37a67b5eae7d20edc
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 7a67cd2aebc9a9eeecd1d104eb6a9237388eb452
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c c46de38c1b66355f02a839bb72eb13f277e6d19c
+F src/select.c 24323faace224dce1e6b65276605de1db39d77a4
 F src/shell.c b1f91e60918df3a68efad1e3a11696b9a7e23d23
 F src/sqlite.h.in 378bebc8fe6a88bade25e5f23b7e6123fdc64b00
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
@@ -802,7 +802,7 @@ F test/join.test f9d4a28dec81c6e9dc21b73518e024d73b5ebf57
 F test/join2.test f2171c265e57ee298a27e57e7051d22962f9f324
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
-F test/join5.test 5df23eba184f159ed9705a954957e765a10c141d
+F test/join5.test 8a5c0be6f0c260a5c7177c3b8f07c7856141038a
 F test/join6.test cfe6503791ceb0cbb509966740286ec423cbf10b
 F test/journal1.test 69abc726c51b4a0409189f9a85191205297c0577
 F test/journal2.test ae06f566c28552c313ded3fee79a6c69e6d049b1
@@ -1378,8 +1378,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P da3c9df09c46564353218d0163e378b880a3ce62 9ff6ccde5f26f18073587c320290570854ffc833
-R 0dbca2db2baae780df721a60ce2b8302
-T +closed 9ff6ccde5f26f18073587c320290570854ffc833
+P 178f9a352c6c9e15e809e1a47530c6592d18578d
+R 3f8fa8b32979f76f9659e6c12a12d079
 U drh
-Z 2864a0dca372e608c85df3d0df7cbffa
+Z fe48d12321db6aa71a1dc8fdceeea2c3

@@ -3757,6 +3757,9 @@ static int flattenSubquery(
 **       enforces this restriction since this routine does not have enough
 **       information to know.)
 **
+**   (5) The WHERE clause expression originates in the ON or USING clause
+**       of a LEFT JOIN.
+**
 ** Return 0 if no changes are made and non-zero if one or more WHERE clause
 ** terms are duplicated into the subquery.
 */
@@ -3779,6 +3782,7 @@ static int pushDownWhereTerms(
     nChng += pushDownWhereTerms(db, pSubq, pWhere->pRight, iCursor);
     pWhere = pWhere->pLeft;
   }
+  if( ExprHasProperty(pWhere,EP_FromJoin) ) return 0; /* restriction 5 */
   if( sqlite3ExprIsTableConstant(pWhere, iCursor) ){
     nChng++;
     while( pSubq ){
