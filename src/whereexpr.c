@@ -1281,6 +1281,7 @@ void sqlite3WhereTabFuncArgs(
     if( pColRef==0 ) return;
     pColRef->iTable = pItem->iCursor;
     pColRef->iColumn = k++;
+    pColRef->pTab = pTab;
     pTerm = sqlite3PExpr(pParse, TK_EQ, pColRef,
                          sqlite3ExprDup(pParse->db, pArgs->a[j].pExpr, 0), 0);
     whereClauseInsert(pWC, pTerm, TERM_DYNAMIC);
