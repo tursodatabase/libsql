@@ -703,10 +703,11 @@ static int jsonParse(
   const char *zJson            /* Input JSON text to be parsed */
 ){
   int i;
-  if( zJson==0 ) return 1;
   memset(pParse, 0, sizeof(*pParse));
+  if( zJson==0 ) return 1;
   pParse->zJson = zJson;
   i = jsonParseValue(pParse, 0);
+  if( pParse->oom ) i = -1;
   if( i>0 ){
     while( isspace(zJson[i]) ) i++;
     if( zJson[i] ) i = -1;
@@ -753,7 +754,10 @@ static int jsonParseFindParents(JsonParse *pParse){
   u32 *aUp;
   assert( pParse->aUp==0 );
   aUp = pParse->aUp = sqlite3_malloc( sizeof(u32)*pParse->nNode );
-  if( aUp==0 ) return SQLITE_NOMEM;
+  if( aUp==0 ){
+    pParse->oom = 1;
+    return SQLITE_NOMEM;
+  }
   jsonParseFillInParentage(pParse, 0, 0);
   return SQLITE_OK;
 }
@@ -1672,8 +1676,8 @@ static int jsonEachFilter(
     p->eType = pNode->eType;
     if( p->eType>=JSON_ARRAY ){
       pNode->u.iKey = 0;
+      p->iEnd = p->i + pNode->n + 1;
       if( !p->bRecursive ) p->i++;
-      p->iEnd = p->i + pNode->n;
     }else{
       p->iEnd = p->i+1;
     }
