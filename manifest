@@ -1,5 +1,5 @@
-C Fix\sminor\sglitches\sin\sthe\sjson1.c\sextension,\smostly\shaving\sto\sdo\swith\sOOM\nbehavior.
-D 2015-08-23T20:44:59.358
+C Fix\sa\scomment\stypo\son\ssqlite3ExprAlloc().\s\sNo\scode\schanges.
+D 2015-08-23T20:48:29.272
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e2218eb228374422969de7b1680eda6864affcef
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -289,7 +289,7 @@ F src/ctime.c 5a0b735dc95604766f5dac73973658eef782ee8b
 F src/date.c 8ec787fed4929d8ccdf6b1bc360fccc3e1d2ca58
 F src/dbstat.c f402e77e25089c6003d0c60b3233b9b3947d599a
 F src/delete.c 8857a6f27560718f65d43bdbec86c967ae1f8dfa
-F src/expr.c 9b9fa7f825290dee945007edc9fe8fdd9b8ce49e
+F src/expr.c c34408e0ac1c57cf58ffa2003b339715ee9bda57
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c c9b63a217d86582c22121699a47f22f524608869
 F src/func.c 824bea430d3a2b7dbc62806ad54da8fdb8ed9e3f
@@ -1378,7 +1378,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fc1b24f316af07a64672f6edc14ebcff487dffbb
-R f3f5a4cd7433351edd3f5e216e8c6ba5
+P cc5204149c4053b9e529a72102d8df0925ad1ea1
+R 45301f1702fbfadcb1473edb5c388742
 U drh
-Z 19ea95791c67f4fad1659a43be075b46
+Z a9752167ae3428587580d2325e13d760
