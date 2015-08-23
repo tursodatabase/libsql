@@ -195,14 +195,6 @@ static void jsonPrintf(int N, JsonString *p, const char *zFormat, ...){
   p->nUsed += (int)strlen(p->zBuf+p->nUsed);
 }
 
-#ifdef SQLITE_DEBUG
-/* Append the zero-terminated string zIn
-*/
-static void jsonAppend(JsonString *p, const char *zIn){
-  jsonAppendRaw(p, zIn, (u32)strlen(zIn));
-}
-#endif
-
 /* Append a single character
 */
 static void jsonAppendChar(JsonString *p, char c){
@@ -468,14 +460,12 @@ static void jsonReturn(
             c = z[++i];
             if( c=='u' && z[1] ){
               u32 v = 0, k;
-              z++;
-              for(k=0; k<4 && z[k]; k++){
-                c = z[0];
+              for(k=0; k<4 && z[i+1]; i++, k++){
+                c = z[i+1];
                 if( c>='0' && c<='9' ) v = v*16 + c - '0';
                 else if( c>='A' && c<='F' ) v = v*16 + c - 'A' + 10;
                 else if( c>='a' && c<='f' ) v = v*16 + c - 'a' + 10;
                 else break;
-                z++;
               }
               if( v<=0x7f ){
                 zOut[j++] = v;
@@ -678,7 +668,11 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
         if( seenE ) return -1;
         seenDP = seenE = 1;
         c = pParse->zJson[j+1];
-        if( c=='+' || c=='-' ) j++;
+        if( c=='+' || c=='-' ){
+          j++;
+          c = pParse->zJson[j+1];
+        }
+        if( c<'0' || c>'0' ) return -1;
         continue;
       }
       break;
@@ -837,7 +831,7 @@ static JsonNode *jsonLookup(
     i = 0;
     zPath++;
     while( isdigit(zPath[0]) ){
-      i = i + zPath[0] - '0';
+      i = i*10 + zPath[0] - '0';
       zPath++;
     }
     if( zPath[0]!=']' ) return 0;
@@ -930,15 +924,14 @@ static void jsonParseFunc(
   JsonString s;       /* Output string - not real JSON */
   JsonParse x;        /* The parse */
   u32 i;
-  char zBuf[100];
 
   assert( argc==1 );
   if( jsonParse(&x, ctx, (const char*)sqlite3_value_text(argv[0])) ) return;
+  jsonParseFindParents(&x);
   jsonInit(&s, ctx);
   for(i=0; i<x.nNode; i++){
-    sqlite3_snprintf(sizeof(zBuf), zBuf, "node %3u: %7s n=%d\n",
-                     i, jsonType[x.aNode[i].eType], x.aNode[i].n);
-    jsonAppend(&s, zBuf);
+    jsonPrintf(100, &s,"node %3u: %7s n=%-4d up=%d\n",
+               i, jsonType[x.aNode[i].eType], x.aNode[i].n, x.aUp[i]);
     if( x.aNode[i].u.zJContent!=0 ){
       jsonAppendRaw(&s, "    text: ", 10);
       jsonAppendRaw(&s, x.aNode[i].u.zJContent, x.aNode[i].n);
@@ -1418,18 +1411,23 @@ static int jsonEachNext(sqlite3_vtab_cursor *cur){
   if( p->bRecursive ){
     if( p->i==0 ){
       p->i = 1;
-    }else if( p->sParse.aNode[p->sParse.aUp[p->i]].eType==JSON_OBJECT ){
-      p->i += 2;
     }else{
+      u32 iUp = p->sParse.aUp[p->i];
+      JsonNode *pUp = &p->sParse.aNode[iUp];
       p->i++;
+      if( pUp->eType==JSON_OBJECT && (pUp->n + iUp >= p->i) ) p->i++;
     }
     p->iRowid++;
     if( p->i<p->sParse.nNode ){
-      JsonNode *pUp = &p->sParse.aNode[p->sParse.aUp[p->i]];
+      u32 iUp = p->sParse.aUp[p->i];
+      JsonNode *pUp = &p->sParse.aNode[iUp];
       p->eType = pUp->eType;
-      if( pUp->eType==JSON_ARRAY ) pUp->u.iKey++;
-      if( p->sParse.aNode[p->i].eType==JSON_ARRAY ){
-        p->sParse.aNode[p->i].u.iKey = 0;
+      if( pUp->eType==JSON_ARRAY ){
+        if( iUp==p->i-1 ){
+          pUp->u.iKey = 0;
+        }else{
+          pUp->u.iKey++;
+        }
       }
     }
   }else{
@@ -1490,13 +1488,14 @@ static int jsonEachColumn(
   JsonNode *pThis = &p->sParse.aNode[p->i];
   switch( i ){
     case JEACH_KEY: {
+      if( p->i==0 ) break;
       if( p->eType==JSON_OBJECT ){
         jsonReturn(pThis, ctx, 0);
       }else if( p->eType==JSON_ARRAY ){
         u32 iKey;
         if( p->bRecursive ){
           if( p->iRowid==0 ) break;
-          iKey = p->sParse.aNode[p->sParse.aUp[p->i]].u.iKey - 1;
+          iKey = p->sParse.aNode[p->sParse.aUp[p->i]].u.iKey;
         }else{
           iKey = p->iRowid;
         }
@@ -1505,7 +1504,7 @@ static int jsonEachColumn(
       break;
     }
     case JEACH_VALUE: {
-      if( p->eType==JSON_OBJECT ) pThis++;
+      if( p->eType==JSON_OBJECT && p->i>0 ) pThis++;
       jsonReturn(pThis, ctx, 0);
       break;
     }
@@ -1672,7 +1671,8 @@ static int jsonEachFilter(
     p->i = (int)(pNode - p->sParse.aNode);
     p->eType = pNode->eType;
     if( p->eType>=JSON_ARRAY ){
-      p->i++;
+      pNode->u.iKey = 0;
+      if( !p->bRecursive ) p->i++;
       p->iEnd = p->i + pNode->n;
     }else{
       p->iEnd = p->i+1;
