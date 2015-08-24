@@ -1,5 +1,5 @@
-C Disallow\sthe\suse\sof\sCOLLATE\sclauses\sand\sthe\sASC\sand\sDESC\skeywords\swithin\nforeign\skey\sconstraints\sand\sin\sthe\sargument\slist\sto\scommon\stable\sexpressions.
-D 2015-08-24T15:39:42.405
+C Enhancements\sto\sthe\sbatch\sbuild\stool\sfor\sMSVC.
+D 2015-08-24T17:18:43.705
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e2218eb228374422969de7b1680eda6864affcef
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1323,7 +1323,7 @@ F test/without_rowid6.test db0dbf03c49030aa3c1ba5f618620334bd2baf5f
 F test/wordcount.c 9915e06cb33d8ca8109b8700791afe80d305afda
 F test/zeroblob.test 3857870fe681b8185654414a9bccfde80b62a0fa
 F test/zerodamage.test cf6748bad89553cc1632be51a6f54e487e4039ac
-F tool/build-all-msvc.bat 60dbf6021d3de0a98575f6dfe4e12bd80b3edcf0 x
+F tool/build-all-msvc.bat 761d8c82a1a529261291812732a853a1b4256d85 x
 F tool/build-shell.sh 950f47c6174f1eea171319438b93ba67ff5bf367
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
@@ -1379,7 +1379,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 196d66d34d9783622e6f2f79eafea1488fc6f5cf
-R 2a74528f51d8172b5387a3b7f110bb2b
-U drh
-Z ffc4f8e604c67b08cae8ed1eda808a43
+P 83cbc4d8761498647794affffa961a4fca311be7
+R 854ee56e3c07dedcc4aa69e0f36f6060
+U mistachkin
+Z 2aa32a441452e19f6c0e00af3c0b6972
