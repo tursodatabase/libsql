@@ -15,6 +15,10 @@ source $testdir/tester.tcl
 source $testdir/lock_common.tcl
 set ::testprefix unlocked2
 
+ifcapable !unlocked {
+  finish_test
+  return
+}
 
 do_multiclient_test tn {
 

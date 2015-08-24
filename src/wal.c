@@ -2566,12 +2566,60 @@ int sqlite3WalBeginWriteTransaction(Wal *pWal){
   return rc;
 }
 
-/* 
-** TODO: Combine some code with BeginWriteTransaction()
+/*
+** This function is called by a writer that has a read-lock on aReadmark[0]
+** (pWal->readLock==0). This function relinquishes that lock and takes a
+** lock on a different aReadmark[] slot. 
 **
+** SQLITE_OK is returned if successful, or an SQLite error code otherwise.
+*/
+static int walUpgradeReadlock(Wal *pWal){
+  int cnt;
+  int rc;
+  assert( pWal->writeLock && pWal->readLock==0 );
+  walUnlockShared(pWal, WAL_READ_LOCK(0));
+  pWal->readLock = -1;
+  cnt = 0;
+  do{
+    int notUsed;
+    rc = walTryBeginRead(pWal, &notUsed, 1, ++cnt);
+  }while( rc==WAL_RETRY );
+  assert( (rc&0xff)!=SQLITE_BUSY ); /* BUSY not possible when useWal==1 */
+  testcase( (rc&0xff)==SQLITE_IOERR );
+  testcase( rc==SQLITE_PROTOCOL );
+  testcase( rc==SQLITE_OK );
+  return rc;
+}
+
+
+#ifdef SQLITE_ENABLE_UNLOCKED
+/* 
 ** This function is only ever called when committing a "BEGIN UNLOCKED"
 ** transaction. It may be assumed that no frames have been written to
-** the wal file.
+** the wal file. The second parameter is a pointer to the in-memory 
+** representation of page 1 of the database (which may or may not be
+** dirty). The third is a bitvec with a bit set for each page in the
+** database file that was read by the current unlocked transaction.
+**
+** This function performs three tasks:
+**
+**   1) It obtains the WRITER lock on the wal file,
+**
+**   2) It checks that there are no conflicts between the current
+**      transaction and any transactions committed to the wal file since
+**      it was opened, and
+**
+**   3) It ejects any non-dirty pages from the page-cache that have been
+**      written by another client since the UNLOCKED transaction was started
+**      (so as to avoid ending up with an inconsistent cache after the
+**      current transaction is committed).
+**
+** If no error occurs and the caller may proceed with committing the 
+** transaction, SQLITE_OK is returned. SQLITE_BUSY is returned if the WRITER
+** lock cannot be obtained. Or, if the WRITER lock can be obtained but there
+** are conflicts with a committed transaction, SQLITE_BUSY_SNAPSHOT. Finally,
+** if an error (i.e. an OOM condition or IO error), an SQLite error code
+** is returned.
 */
 int sqlite3WalLockForCommit(Wal *pWal, PgHdr *pPage1, Bitvec *pAllRead){
   Pager *pPager = pPage1->pPager;
@@ -2668,30 +2716,17 @@ int sqlite3WalLockForCommit(Wal *pWal, PgHdr *pPage1, Bitvec *pAllRead){
 }
 
 /*
-** This function is called by a writer that has a read-lock on aReadmark[0]
-** (pWal->readLock==0). This function relinquishes that lock and takes a
-** lock on a different aReadmark[] slot. 
+** This function is called as part of committing an UNLOCKED transaction.
+** It is assumed that sqlite3WalLockForCommit() has already been successfully
+** called and so (a) the WRITER lock is held and (b) it is known that the
+** wal-index-header stored in shared memory is not corrupt.
+**
+** Before returning, this function upgrades the client so that it is 
+** operating on the database snapshot currently at the head of the wal file
+** (even if the UNLOCKED transaction ran against an older snapshot).
 **
 ** SQLITE_OK is returned if successful, or an SQLite error code otherwise.
 */
-static int walUpgradeReadlock(Wal *pWal){
-  int cnt;
-  int rc;
-  assert( pWal->writeLock && pWal->readLock==0 );
-  walUnlockShared(pWal, WAL_READ_LOCK(0));
-  pWal->readLock = -1;
-  cnt = 0;
-  do{
-    int notUsed;
-    rc = walTryBeginRead(pWal, &notUsed, 1, ++cnt);
-  }while( rc==WAL_RETRY );
-  assert( (rc&0xff)!=SQLITE_BUSY ); /* BUSY not possible when useWal==1 */
-  testcase( (rc&0xff)==SQLITE_IOERR );
-  testcase( rc==SQLITE_PROTOCOL );
-  testcase( rc==SQLITE_OK );
-  return rc;
-}
-
 int sqlite3WalUpgradeSnapshot(Wal *pWal){
   int rc = SQLITE_OK;
   assert( pWal->writeLock );
@@ -2706,6 +2741,7 @@ int sqlite3WalUpgradeSnapshot(Wal *pWal){
   }
   return rc;
 }
+#endif   /* SQLITE_ENABLE_UNLOCKED */
 
 /*
 ** End a write transaction.  The commit has already been done.  This

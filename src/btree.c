@@ -3346,9 +3346,11 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag){
         if( rc==SQLITE_OK ){
           rc = newDatabase(pBt);
         }
+#ifdef SQLITE_ENABLE_UNLOCKED
         if( rc==SQLITE_OK && sqlite3PagerIsUnlocked(pBt->pPager) ){
           rc = btreePtrmapAllocate(pBt);
         }
+#endif
       }
     }
   

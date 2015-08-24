@@ -1746,9 +1746,11 @@ static int addToSavepointBitvecs(Pager *pPager, Pgno pgno){
 */
 static void pagerFreeBitvecs(Pager *pPager){
   sqlite3BitvecDestroy(pPager->pInJournal);
-  sqlite3BitvecDestroy(pPager->pAllRead);
   pPager->pInJournal = 0;
+#ifdef SQLITE_ENABLE_UNLOCKED
+  sqlite3BitvecDestroy(pPager->pAllRead);
   pPager->pAllRead = 0;
+#endif
 }
 
 /*
@@ -3021,7 +3023,6 @@ static int pagerUndoCallback(void *pCtx, Pgno iPg){
 static int pagerRollbackWal(Pager *pPager){
   int rc;                         /* Return Code */
   PgHdr *pList;                   /* List of dirty pages to revert */
-  int bPage1 = 0;                 /* True if page 1 has been undone */
 
   /* For all pages in the cache that are currently dirty or have already
   ** been written (but not committed) to the log file, do one of the 
@@ -3033,18 +3034,20 @@ static int pagerRollbackWal(Pager *pPager){
   pPager->dbSize = pPager->dbOrigSize;
   rc = sqlite3WalUndo(pPager->pWal, pagerUndoCallback, (void *)pPager);
   pList = sqlite3PcacheDirtyList(pPager->pPCache);
+
+  /* If this is an UNLOCKED transaction, then page 1 must be reread from 
+  ** the db file, even if it is not dirty. This is because the b-tree layer 
+  ** may have already zeroed the nFree and iTrunk header fields.  */
+#ifdef SQLITE_ENABLE_UNLOCKED
+  if( rc==SQLITE_OK && (pList==0 || pList->pgno!=1) && pPager->pAllRead ){
+    rc = pagerUndoCallback((void*)pPager, 1);
+  }
+#endif
+
   while( pList && rc==SQLITE_OK ){
     PgHdr *pNext = pList->pDirty;
-    if( pList->pgno==1 ) bPage1 = 1;
     rc = pagerUndoCallback((void *)pPager, pList->pgno);
     pList = pNext;
-  }
-
-  /* If this is an UNLOCKED transaction, then page 1 must be reread from the
-  ** db file, even if it is not dirty. This is because the b-tree layer may
-  ** have already zeroed the nFree and iTrunk header fields.  */
-  if( rc==SQLITE_OK && bPage1==0 && pPager->pAllRead ){
-    rc = pagerUndoCallback((void*)pPager, 1);
   }
 
   return rc;
@@ -3086,7 +3089,6 @@ static int pagerWalFrames(
     ** list here. */
     PgHdr **ppNext = &pList;
     nList = 0;
-
     for(p=pList; (*ppNext = p)!=0; p=p->pDirty){
       if( p->pgno<=nTruncate ){
         ppNext = &p->pDirty;
@@ -4452,7 +4454,9 @@ static int pagerStress(void *p, PgHdr *pPg){
   if( pagerUseWal(pPager) ){
     /* If the transaction is a "BEGIN UNLOCKED" transaction, the page 
     ** cannot be flushed to disk. Return early in this case. */
+#ifdef SQLITE_ENABLE_UNLOCKED
     if( pPager->pAllRead ) return SQLITE_OK;
+#endif
 
     /* Write a single frame for this page to the log. */
     rc = subjournalPageIfRequired(pPg); 
@@ -5297,10 +5301,12 @@ int sqlite3PagerAcquire(
   /* If this is an UNLOCKED transaction and the page being read was
   ** present in the database file when the transaction was opened,
   ** mark it as read in the pAllRead vector.  */
+#ifdef SQLITE_ENABLE_UNLOCKED
   if( pPager->pAllRead && pgno<=pPager->dbOrigSize ){
     rc = sqlite3BitvecSet(pPager->pAllRead, pgno);
     if( rc!=SQLITE_OK ) goto pager_acquire_err;
   }
+#endif
 
   /* If the pager is in the error state, return an error immediately. 
   ** Otherwise, request the page from the PCache layer. */
@@ -5606,7 +5612,9 @@ int sqlite3PagerBegin(Pager *pPager, int exFlag, int subjInMemory){
 
   if( ALWAYS(pPager->eState==PAGER_READER) ){
     assert( pPager->pInJournal==0 );
+#ifdef SQLITE_ENABLE_UNLOCKED
     assert( pPager->pAllRead==0 );
+#endif
 
     if( pagerUseWal(pPager) ){
       /* If the pager is configured to use locking_mode=exclusive, and an
@@ -5625,13 +5633,16 @@ int sqlite3PagerBegin(Pager *pPager, int exFlag, int subjInMemory){
       ** The busy-handler is not invoked if another connection already
       ** holds the write-lock. If possible, the upper layer will call it.
       */
-      if( exFlag>=0 ){
-        rc = sqlite3WalBeginWriteTransaction(pPager->pWal);
-      }else{
+#ifdef SQLITE_ENABLE_UNLOCKED
+      if( exFlag<0 ){
         pPager->pAllRead = sqlite3BitvecCreate(pPager->dbSize);
         if( pPager->pAllRead==0 ){
           rc = SQLITE_NOMEM;
         }
+      }else
+#endif
+      {
+        rc = sqlite3WalBeginWriteTransaction(pPager->pWal);
       }
     }else{
       /* Obtain a RESERVED lock on the database file. If the exFlag parameter
@@ -5938,9 +5949,11 @@ int sqlite3PagerWrite(PgHdr *pPg){
 ** to sqlite3PagerWrite().  In other words, return TRUE if it is ok
 ** to change the content of the page.
 */
+#if defined(SQLITE_ENABLE_UNLOCKED) || !defined(NDEBUG)
 int sqlite3PagerIswriteable(DbPage *pPg){
   return pPg->flags & PGHDR_WRITEABLE;
 }
+#endif
 
 /*
 ** A call to this routine tells the pager that it is not necessary to
@@ -6088,15 +6101,24 @@ int sqlite3PagerSync(Pager *pPager, const char *zMaster){
 }
 
 /*
-** This function may only be called while a write-transaction is active in
-** rollback. If the connection is in WAL mode, this call is a no-op. 
-** Otherwise, if the connection does not already have an EXCLUSIVE lock on 
-** the database file, an attempt is made to obtain one.
+** This function is called to ensure that all locks required to commit the
+** current write-transaction to the database file are held. If the db is
+** in rollback mode, this means the EXCLUSIVE lock on the database file.
 **
-** If the EXCLUSIVE lock is already held or the attempt to obtain it is
-** successful, or the connection is in WAL mode, SQLITE_OK is returned.
-** Otherwise, either SQLITE_BUSY or an SQLITE_IOERR_XXX error code is 
-** returned.
+** Or, if this is a non-UNLOCKED transaction on a wal-mode database, this
+** function is a no-op.
+**
+** If this is an UNLOCKED transaction on a wal-mode database, this function
+** attempts to obtain the WRITER lock on the wal file and also checks to
+** see that the transaction can be safely committed (does not commit with 
+** any other transaction committed since it was opened).
+**
+** If the required locks are already held or successfully obtained and
+** the transaction can be committed, SQLITE_OK is returned. If a required lock
+** cannot be obtained, SQLITE_BUSY is returned. Or, if the current transaction
+** is UNLOCKED and cannot be committed due to a conflict, SQLITE_BUSY_SNAPSHOT
+** is returned. Otherwise, if some other error occurs (IO error, OOM etc.),
+** and SQLite error code is returned.
 */
 int sqlite3PagerExclusiveLock(Pager *pPager, PgHdr *pPage1){
   int rc = SQLITE_OK;
@@ -6107,23 +6129,38 @@ int sqlite3PagerExclusiveLock(Pager *pPager, PgHdr *pPage1){
   assert( assert_pager_state(pPager) );
   if( 0==pagerUseWal(pPager) ){
     rc = pager_wait_on_lock(pPager, EXCLUSIVE_LOCK);
-  }else{
+  }
+#ifdef SQLITE_ENABLE_UNLOCKED
+  else{
     if( pPager->pAllRead ){
       /* This is an UNLOCKED transaction. Attempt to lock the wal database
       ** here. If SQLITE_BUSY (but not SQLITE_BUSY_SNAPSHOT) is returned,
       ** invoke the busy-handler and try again for as long as it returns
       ** non-zero.  */
       do {
-        /* rc = sqlite3WalBeginWriteTransaction(pWal); */
         rc = sqlite3WalLockForCommit(pPager->pWal, pPage1, pPager->pAllRead);
       }while( rc==SQLITE_BUSY 
            && pPager->xBusyHandler(pPager->pBusyHandlerArg) 
       );
     }
   }
+#endif
   return rc;
 }
 
+#ifdef SQLITE_ENABLE_UNLOCKED
+/*
+** This function is called as part of committing an UNLOCKED transaction.
+** At this point the wal WRITER lock is held, and all pages in the cache 
+** except for page 1 are compatible with the snapshot at the head of the
+** wal file. 
+**
+** This function updates the in-memory data structures and reloads the
+** contents of page 1 so that the client is operating on the snapshot 
+** at the head of the wal file.
+**
+** SQLITE_OK is returned if successful, or an SQLite error code otherwise.
+*/
 int sqlite3PagerUpgradeSnapshot(Pager *pPager, DbPage *pPage1){
   int rc;
   u32 iFrame = 0;
@@ -6140,8 +6177,18 @@ int sqlite3PagerUpgradeSnapshot(Pager *pPager, DbPage *pPage1){
   return rc;
 }
 
-void sqlite3PagerSetDbsize(Pager *pPager, Pgno nFinal){
-  pPager->dbSize = nFinal;
+/*
+** Set the in-memory cache of the database file size to nSz pages.
+*/
+void sqlite3PagerSetDbsize(Pager *pPager, Pgno nSz){
+  pPager->dbSize = nSz;
+}
+
+/*
+** Return true if this pager is currently within an UNLOCKED transaction.
+*/
+int sqlite3PagerIsUnlocked(Pager *pPager){
+  return pPager->pAllRead!=0;
 }
 
 /*
@@ -6153,13 +6200,7 @@ void sqlite3PagerDropExclusiveLock(Pager *pPager){
     sqlite3WalEndWriteTransaction(pPager->pWal);
   }
 }
-
-/*
-** Return true if this pager is currently within an UNLOCKED transaction.
-*/
-int sqlite3PagerIsUnlocked(Pager *pPager){
-  return pPager->pAllRead!=0;
-}
+#endif   /* ifdef SQLITE_ENABLE_UNLOCKED */
 
 
 /*

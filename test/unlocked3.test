@@ -19,6 +19,10 @@ source $testdir/lock_common.tcl
 set ::testprefix unlocked3
 
 if {$AUTOVACUUM} { finish_test ; return }
+ifcapable !unlocked {
+  finish_test
+  return
+}
 
 proc create_schema {} {
   db eval {

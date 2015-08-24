@@ -2025,6 +2025,7 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
     }
   }
 
+#ifdef SQLITE_ENABLE_UNLOCKED
   if( db->bUnlocked && (rc & 0xFF)==SQLITE_BUSY ){
     /* An SQLITE_BUSY or SQLITE_BUSY_SNAPSHOT was encountered while 
     ** attempting to take the WRITER lock on a wal file. Release the
@@ -2038,6 +2039,7 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
       }
     }
   }
+#endif
 
   if( rc!=SQLITE_OK ){
     return rc;
