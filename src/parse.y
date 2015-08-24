@@ -386,8 +386,9 @@ ifexists(A) ::= .            {A = 0;}
 ///////////////////// The CREATE VIEW statement /////////////////////////////
 //
 %ifndef SQLITE_OMIT_VIEW
-cmd ::= createkw(X) temp(T) VIEW ifnotexists(E) nm(Y) dbnm(Z) AS select(S). {
-  sqlite3CreateView(pParse, &X, &Y, &Z, S, T, E);
+cmd ::= createkw(X) temp(T) VIEW ifnotexists(E) nm(Y) dbnm(Z) idxlist_opt(C)
+          AS select(S). {
+  sqlite3CreateView(pParse, &X, &Y, &Z, C, S, T, E);
 }
 cmd ::= DROP VIEW ifexists(E) fullname(X). {
   sqlite3DropTable(pParse, X, 1, E);
@@ -784,11 +785,11 @@ setlist(A) ::= nm(X) EQ expr(Y). {
 
 ////////////////////////// The INSERT command /////////////////////////////////
 //
-cmd ::= with(W) insert_cmd(R) INTO fullname(X) inscollist_opt(F) select(S). {
+cmd ::= with(W) insert_cmd(R) INTO fullname(X) idlist_opt(F) select(S). {
   sqlite3WithPush(pParse, W, 1);
   sqlite3Insert(pParse, X, S, F, R);
 }
-cmd ::= with(W) insert_cmd(R) INTO fullname(X) inscollist_opt(F) DEFAULT VALUES.
+cmd ::= with(W) insert_cmd(R) INTO fullname(X) idlist_opt(F) DEFAULT VALUES.
 {
   sqlite3WithPush(pParse, W, 1);
   sqlite3Insert(pParse, X, 0, F, R);
@@ -798,13 +799,13 @@ cmd ::= with(W) insert_cmd(R) INTO fullname(X) inscollist_opt(F) DEFAULT VALUES.
 insert_cmd(A) ::= INSERT orconf(R).   {A = R;}
 insert_cmd(A) ::= REPLACE.            {A = OE_Replace;}
 
-%type inscollist_opt {IdList*}
-%destructor inscollist_opt {sqlite3IdListDelete(pParse->db, $$);}
+%type idlist_opt {IdList*}
+%destructor idlist_opt {sqlite3IdListDelete(pParse->db, $$);}
 %type idlist {IdList*}
 %destructor idlist {sqlite3IdListDelete(pParse->db, $$);}
 
-inscollist_opt(A) ::= .                       {A = 0;}
-inscollist_opt(A) ::= LP idlist(X) RP.    {A = X;}
+idlist_opt(A) ::= .                       {A = 0;}
+idlist_opt(A) ::= LP idlist(X) RP.    {A = X;}
 idlist(A) ::= idlist(X) COMMA nm(Y).
     {A = sqlite3IdListAppend(pParse->db,X,&Y);}
 idlist(A) ::= nm(Y).
@@ -1369,7 +1370,7 @@ trigger_cmd(A) ::=
    { A = sqlite3TriggerUpdateStep(pParse->db, &X, Y, Z, R); }
 
 // INSERT
-trigger_cmd(A) ::= insert_cmd(R) INTO trnm(X) inscollist_opt(F) select(S).
+trigger_cmd(A) ::= insert_cmd(R) INTO trnm(X) idlist_opt(F) select(S).
                {A = sqlite3TriggerInsertStep(pParse->db, &X, F, S, R);}
 
 // DELETE

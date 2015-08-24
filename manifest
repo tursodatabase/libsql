@@ -1,5 +1,5 @@
-C Enhancements\sto\sthe\sbatch\sbuild\stool\sfor\sMSVC.
-D 2015-08-24T17:18:43.705
+C Enhance\sthe\sCREATE\sVIEW\ssyntax\sso\sthat\sthe\snames\sof\scolumns\sof\sthe\sview\scan\nbe\sspecified\safter\sthe\sview\sname.
+D 2015-08-24T17:42:49.622
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e2218eb228374422969de7b1680eda6864affcef
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -282,7 +282,7 @@ F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
 F src/btree.c f48b3ef91676c06a90a8832987ecef6b94c931ee
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 8177c9ab90d772d6d2c6c517e05bed774b7c92c0
-F src/build.c f49c55c1fba430c2d6af5039d0bf14de5ae6a427
+F src/build.c a4e2669bc59729589b7e3867c58eae5a4f2419ff
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
 F src/ctime.c 5a0b735dc95604766f5dac73973658eef782ee8b
@@ -326,7 +326,7 @@ F src/os_win.c 40b3af7a47eb1107d0d69e592bec345a3b7b798a
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c aa916ca28606ccf4b6877dfc2b643ccbca86589f
 F src/pager.h 6d435f563b3f7fcae4b84433b76a6ac2730036e2
-F src/parse.y b5e0a5f8bb9ec33a58aa34850b6fae46aac51fdd
+F src/parse.y 07f2084f9ec157b108f1bf12466277d6f17b59d1
 F src/pcache.c cde06aa50962595e412d497e22fd2e07878ba1f0
 F src/pcache.h 9968603796240cdf83da7e7bef76edf90619cea9
 F src/pcache1.c a3fe31b17e841ec70beee72a2c960e9c787a8857
@@ -337,12 +337,12 @@ F src/printf.c 2bc439ff20a4aad0e0ad50a37a67b5eae7d20edc
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 7a67cd2aebc9a9eeecd1d104eb6a9237388eb452
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c 24323faace224dce1e6b65276605de1db39d77a4
+F src/select.c da6d1e7a4f1c8d713ed5415b5ed21d82ef465c0f
 F src/shell.c b1f91e60918df3a68efad1e3a11696b9a7e23d23
 F src/sqlite.h.in 378bebc8fe6a88bade25e5f23b7e6123fdc64b00
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h f700e6a9dd1fdcccc9951ab022b366fb66b9e413
-F src/sqliteInt.h 1741691824491c330dda1e49f370920bfd3aa230
+F src/sqliteInt.h 79a8e76bcbe67170d371ae2a08c85cc2d7cd0caf
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c f266ad8a2892d659b74f0f50cb6a88b6e7c12179
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
@@ -1239,7 +1239,7 @@ F test/vacuum3.test 77ecdd54592b45a0bcb133339f99f1ae0ae94d0d
 F test/vacuum4.test d3f8ecff345f166911568f397d2432c16d2867d9
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/veryquick.test 57ab846bacf7b90cf4e9a672721ea5c5b669b661
-F test/view.test f44014f78d7650fb4bfb8ef96a5e4dc8f25eb083
+F test/view.test 3930ae94042d702ab15a6a0ef692cfa5c9f9b68b
 F test/vtab1.test 6210e076997f176bedc300a87ad6404651b601dd
 F test/vtab2.test f8cd1bb9aba7143eba97812d9617880a36d247ad
 F test/vtab3.test b45f47d20f225ccc9c28dc915d92740c2dee311e
@@ -1379,7 +1379,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 83cbc4d8761498647794affffa961a4fca311be7
-R 854ee56e3c07dedcc4aa69e0f36f6060
-U mistachkin
-Z 2aa32a441452e19f6c0e00af3c0b6972
+P a1ae20cd97456a1126cfa1a9bedce0bac0940ad6
+R 7c6b5f2ebead0dd2f6f395aca9a96d64
+U drh
+Z 9176898b8b319f8964514d527c2d8cd5

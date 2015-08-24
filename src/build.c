@@ -2056,6 +2056,7 @@ void sqlite3CreateView(
   Token *pBegin,     /* The CREATE token that begins the statement */
   Token *pName1,     /* The token that holds the name of the view */
   Token *pName2,     /* The token that holds the name of the view */
+  ExprList *pCNames, /* Optional list of view column names */
   Select *pSelect,   /* A SELECT statement that will become the new view */
   int isTemp,        /* TRUE for a TEMPORARY view */
   int noErr          /* Suppress error messages if VIEW already exists */
@@ -2075,18 +2076,13 @@ void sqlite3CreateView(
     return;
   }
   sqlite3StartTable(pParse, pName1, pName2, isTemp, 1, 0, noErr);
+  sqlite3RestrictColumnListSyntax(pParse, pCNames);
   p = pParse->pNewTable;
-  if( p==0 || pParse->nErr ){
-    sqlite3SelectDelete(db, pSelect);
-    return;
-  }
+  if( p==0 || pParse->nErr ) goto create_view_fail;
   sqlite3TwoPartName(pParse, pName1, pName2, &pName);
   iDb = sqlite3SchemaToIndex(db, p->pSchema);
   sqlite3FixInit(&sFix, pParse, iDb, "view", pName);
-  if( sqlite3FixSelect(&sFix, pSelect) ){
-    sqlite3SelectDelete(db, pSelect);
-    return;
-  }
+  if( sqlite3FixSelect(&sFix, pSelect) ) goto create_view_fail;
 
   /* Make a copy of the entire SELECT statement that defines the view.
   ** This will force all the Expr.token.z values to be dynamically
@@ -2094,27 +2090,31 @@ void sqlite3CreateView(
   ** they will persist after the current sqlite3_exec() call returns.
   */
   p->pSelect = sqlite3SelectDup(db, pSelect, EXPRDUP_REDUCE);
-  sqlite3SelectDelete(db, pSelect);
-  if( db->mallocFailed ){
-    return;
-  }
+  p->pCheck = sqlite3ExprListDup(db, pCNames, EXPRDUP_REDUCE);
+  if( db->mallocFailed ) goto create_view_fail;
 
   /* Locate the end of the CREATE VIEW statement.  Make sEnd point to
   ** the end.
   */
   sEnd = pParse->sLastToken;
-  if( ALWAYS(sEnd.z[0]!=0) && sEnd.z[0]!=';' ){
+  assert( sEnd.z[0]!=0 );
+  if( sEnd.z[0]!=';' ){
     sEnd.z += sEnd.n;
   }
   sEnd.n = 0;
   n = (int)(sEnd.z - pBegin->z);
+  assert( n>0 );
   z = pBegin->z;
-  while( ALWAYS(n>0) && sqlite3Isspace(z[n-1]) ){ n--; }
+  while( sqlite3Isspace(z[n-1]) ){ n--; }
   sEnd.z = &z[n-1];
   sEnd.n = 1;
 
   /* Use sqlite3EndTable() to add the view to the SQLITE_MASTER table */
   sqlite3EndTable(pParse, 0, &sEnd, 0, 0);
+
+create_view_fail:
+  sqlite3SelectDelete(db, pSelect);
+  sqlite3ExprListDelete(db, pCNames);
   return;
 }
 #endif /* SQLITE_OMIT_VIEW */
@@ -2132,6 +2132,7 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
   int n;            /* Temporarily holds the number of cursors assigned */
   sqlite3 *db = pParse->db;  /* Database connection for malloc errors */
   sqlite3_xauth xAuth;       /* Saved xAuth pointer */
+  u8 bEnabledLA;             /* Saved db->lookaside.bEnabled state */
 
   assert( pTable );
 
@@ -2177,40 +2178,46 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
   ** statement that defines the view.
   */
   assert( pTable->pSelect );
-  pSel = sqlite3SelectDup(db, pTable->pSelect, 0);
-  if( pSel ){
-    u8 enableLookaside = db->lookaside.bEnabled;
-    n = pParse->nTab;
-    sqlite3SrcListAssignCursors(pParse, pSel->pSrc);
-    pTable->nCol = -1;
+  bEnabledLA = db->lookaside.bEnabled;
+  if( pTable->pCheck ){
     db->lookaside.bEnabled = 0;
+    sqlite3ColumnsFromExprList(pParse, pTable->pCheck, 
+                               &pTable->nCol, &pTable->aCol);
+  }else{
+    pSel = sqlite3SelectDup(db, pTable->pSelect, 0);
+    if( pSel ){
+      n = pParse->nTab;
+      sqlite3SrcListAssignCursors(pParse, pSel->pSrc);
+      pTable->nCol = -1;
+      db->lookaside.bEnabled = 0;
 #ifndef SQLITE_OMIT_AUTHORIZATION
-    xAuth = db->xAuth;
-    db->xAuth = 0;
-    pSelTab = sqlite3ResultSetOfSelect(pParse, pSel);
-    db->xAuth = xAuth;
+      xAuth = db->xAuth;
+      db->xAuth = 0;
+      pSelTab = sqlite3ResultSetOfSelect(pParse, pSel);
+      db->xAuth = xAuth;
 #else
-    pSelTab = sqlite3ResultSetOfSelect(pParse, pSel);
+      pSelTab = sqlite3ResultSetOfSelect(pParse, pSel);
 #endif
-    db->lookaside.bEnabled = enableLookaside;
-    pParse->nTab = n;
-    if( pSelTab ){
-      assert( pTable->aCol==0 );
-      pTable->nCol = pSelTab->nCol;
-      pTable->aCol = pSelTab->aCol;
-      pSelTab->nCol = 0;
-      pSelTab->aCol = 0;
-      sqlite3DeleteTable(db, pSelTab);
-      assert( sqlite3SchemaMutexHeld(db, 0, pTable->pSchema) );
-      pTable->pSchema->schemaFlags |= DB_UnresetViews;
-    }else{
-      pTable->nCol = 0;
+      pParse->nTab = n;
+      if( pSelTab ){
+        assert( pTable->aCol==0 );
+        pTable->nCol = pSelTab->nCol;
+        pTable->aCol = pSelTab->aCol;
+        pSelTab->nCol = 0;
+        pSelTab->aCol = 0;
+        sqlite3DeleteTable(db, pSelTab);
+        assert( sqlite3SchemaMutexHeld(db, 0, pTable->pSchema) );
+      }else{
+        pTable->nCol = 0;
+        nErr++;
+      }
+      sqlite3SelectDelete(db, pSel);
+    } else {
       nErr++;
     }
-    sqlite3SelectDelete(db, pSel);
-  } else {
-    nErr++;
   }
+  db->lookaside.bEnabled = bEnabledLA;
+  pTable->pSchema->schemaFlags |= DB_UnresetViews;
 #endif /* SQLITE_OMIT_VIEW */
   return nErr;  
 }

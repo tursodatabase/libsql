@@ -1587,7 +1587,7 @@ static void generateColumnNames(
 ** Return SQLITE_OK on success.  If a memory allocation error occurs,
 ** store NULL in *paCol and 0 in *pnCol and return SQLITE_NOMEM.
 */
-static int selectColumnsFromExprList(
+int sqlite3ColumnsFromExprList(
   Parse *pParse,          /* Parsing context */
   ExprList *pEList,       /* Expr list from which to derive column names */
   i16 *pnCol,             /* Write the number of columns here */
@@ -1754,7 +1754,7 @@ Table *sqlite3ResultSetOfSelect(Parse *pParse, Select *pSelect){
   pTab->nRef = 1;
   pTab->zName = 0;
   pTab->nRowLogEst = 200; assert( 200==sqlite3LogEst(1048576) );
-  selectColumnsFromExprList(pParse, pSelect->pEList, &pTab->nCol, &pTab->aCol);
+  sqlite3ColumnsFromExprList(pParse, pSelect->pEList, &pTab->nCol, &pTab->aCol);
   selectAddColumnTypeAndCollation(pParse, pTab, pSelect);
   pTab->iPKey = -1;
   if( db->mallocFailed ){
@@ -4121,7 +4121,7 @@ static int withExpand(
       pEList = pCte->pCols;
     }
 
-    selectColumnsFromExprList(pParse, pEList, &pTab->nCol, &pTab->aCol);
+    sqlite3ColumnsFromExprList(pParse, pEList, &pTab->nCol, &pTab->aCol);
     if( bMayRecursive ){
       if( pSel->selFlags & SF_Recursive ){
         pCte->zErr = "multiple recursive references: %s";
@@ -4244,7 +4244,7 @@ static int selectExpander(Walker *pWalker, Select *p){
       pTab->nRef = 1;
       pTab->zName = sqlite3MPrintf(db, "sqlite_sq_%p", (void*)pTab);
       while( pSel->pPrior ){ pSel = pSel->pPrior; }
-      selectColumnsFromExprList(pParse, pSel->pEList, &pTab->nCol, &pTab->aCol);
+      sqlite3ColumnsFromExprList(pParse, pSel->pEList,&pTab->nCol,&pTab->aCol);
       pTab->iPKey = -1;
       pTab->nRowLogEst = 200; assert( 200==sqlite3LogEst(1048576) );
       pTab->tabFlags |= TF_Ephemeral;
