@@ -1950,6 +1950,49 @@ int sqlite3WalClose(
 }
 
 /*
+** Try to copy the wal-index header from shared-memory into (*pHdr). Return
+** zero if successful or non-zero otherwise. If the header is corrupted
+** (either because the two copies are inconsistent or because the checksum 
+** values are incorrect), the read fails and non-zero is returned.
+*/
+static int walIndexLoadHdr(Wal *pWal, WalIndexHdr *pHdr){
+  u32 aCksum[2];                  /* Checksum on the header content */
+  WalIndexHdr h2;                 /* Second copy of the header content */
+  WalIndexHdr volatile *aHdr;     /* Header in shared memory */
+
+  /* The first page of the wal-index must be mapped at this point. */
+  assert( pWal->nWiData>0 && pWal->apWiData[0] );
+
+  /* Read the header. This might happen concurrently with a write to the
+  ** same area of shared memory on a different CPU in a SMP,
+  ** meaning it is possible that an inconsistent snapshot is read
+  ** from the file. If this happens, return non-zero.
+  **
+  ** There are two copies of the header at the beginning of the wal-index.
+  ** When reading, read [0] first then [1].  Writes are in the reverse order.
+  ** Memory barriers are used to prevent the compiler or the hardware from
+  ** reordering the reads and writes.
+  */
+  aHdr = walIndexHdr(pWal);
+  memcpy(pHdr, (void *)&aHdr[0], sizeof(h2));
+  walShmBarrier(pWal);
+  memcpy(&h2, (void *)&aHdr[1], sizeof(h2));
+
+  if( memcmp(&h2, pHdr, sizeof(h2))!=0 ){
+    return 1;   /* Dirty read */
+  }  
+  if( h2.isInit==0 ){
+    return 1;   /* Malformed header - probably all zeros */
+  }
+  walChecksumBytes(1, (u8*)&h2, sizeof(h2)-sizeof(h2.aCksum), 0, aCksum);
+  if( aCksum[0]!=h2.aCksum[0] || aCksum[1]!=h2.aCksum[1] ){
+    return 1;   /* Checksum does not match */
+  }
+
+  return 0;
+}
+
+/*
 ** Try to read the wal-index header.  Return 0 on success and 1 if
 ** there is a problem.
 **
@@ -1967,37 +2010,10 @@ int sqlite3WalClose(
 ** is read successfully and the checksum verified, return zero.
 */
 static int walIndexTryHdr(Wal *pWal, int *pChanged){
-  u32 aCksum[2];                  /* Checksum on the header content */
-  WalIndexHdr h1, h2;             /* Two copies of the header content */
-  WalIndexHdr volatile *aHdr;     /* Header in shared memory */
+  WalIndexHdr h1;                 /* Copy of the header content */
 
-  /* The first page of the wal-index must be mapped at this point. */
-  assert( pWal->nWiData>0 && pWal->apWiData[0] );
-
-  /* Read the header. This might happen concurrently with a write to the
-  ** same area of shared memory on a different CPU in a SMP,
-  ** meaning it is possible that an inconsistent snapshot is read
-  ** from the file. If this happens, return non-zero.
-  **
-  ** There are two copies of the header at the beginning of the wal-index.
-  ** When reading, read [0] first then [1].  Writes are in the reverse order.
-  ** Memory barriers are used to prevent the compiler or the hardware from
-  ** reordering the reads and writes.
-  */
-  aHdr = walIndexHdr(pWal);
-  memcpy(&h1, (void *)&aHdr[0], sizeof(h1));
-  walShmBarrier(pWal);
-  memcpy(&h2, (void *)&aHdr[1], sizeof(h2));
-
-  if( memcmp(&h1, &h2, sizeof(h1))!=0 ){
-    return 1;   /* Dirty read */
-  }  
-  if( h1.isInit==0 ){
-    return 1;   /* Malformed header - probably all zeros */
-  }
-  walChecksumBytes(1, (u8*)&h1, sizeof(h1)-sizeof(h1.aCksum), 0, aCksum);
-  if( aCksum[0]!=h1.aCksum[0] || aCksum[1]!=h1.aCksum[1] ){
-    return 1;   /* Checksum does not match */
+  if( walIndexLoadHdr(pWal, &h1) ){
+    return 1;
   }
 
   if( memcmp(&pWal->hdr, &h1, sizeof(WalIndexHdr)) ){
@@ -2636,16 +2652,19 @@ int sqlite3WalLockForCommit(Wal *pWal, PgHdr *pPage1, Bitvec *pAllRead){
   **      transaction was started.
   */
   if( rc==SQLITE_OK ){
-    volatile WalIndexHdr *pHead;    /* Head of the wal file */
-    pHead = walIndexHdr(pWal);
+    WalIndexHdr head;
 
-    /* TODO: Check header checksum is good here. */
-
-    if( memcmp(&pWal->hdr, (void*)pHead, sizeof(WalIndexHdr))!=0 ){
+    if( walIndexLoadHdr(pWal, &head) ){
+      /* This branch is taken if the wal-index header is corrupted. This 
+      ** occurs if some other writer has crashed while committing a 
+      ** transaction to this database since the current unlocked transaction
+      ** was opened.  */
+      rc = SQLITE_BUSY_SNAPSHOT;
+    }else if( memcmp(&pWal->hdr, (void*)&head, sizeof(WalIndexHdr))!=0 ){
       int iHash;
-      int iLastHash = walFramePage(pHead->mxFrame);
+      int iLastHash = walFramePage(head.mxFrame);
       u32 iFirst = pWal->hdr.mxFrame+1;     /* First wal frame to check */
-      if( memcmp(pWal->hdr.aSalt, (u32*)pHead->aSalt, sizeof(u32)*2) ){
+      if( memcmp(pWal->hdr.aSalt, (u32*)head.aSalt, sizeof(u32)*2) ){
         assert( pWal->readLock==0 );
         iFirst = 1;
       }
@@ -2660,7 +2679,7 @@ int sqlite3WalLockForCommit(Wal *pWal, PgHdr *pPage1, Bitvec *pAllRead){
           int iMin = (iFirst - iZero);
           int iMax = (iHash==0) ? HASHTABLE_NPAGE_ONE : HASHTABLE_NPAGE;
           if( iMin<1 ) iMin = 1;
-          if( iMax>pHead->mxFrame ) iMax = pHead->mxFrame;
+          if( iMax>head.mxFrame ) iMax = head.mxFrame;
           for(i=iMin; i<=iMax; i++){
             PgHdr *pPg;
             if( aPgno[i]==1 ){

@@ -110,13 +110,21 @@ foreach {tn trans commit_ok} {
 foreach {tn sql} {
   1 { CREATE TABLE xx(a, b) }
   2 { DROP TABLE t1 }
+  3 { CREATE INDEX i1 ON t1(a) }
+  4 { CREATE VIEW v1 AS SELECT * FROM t1 }
+  5 { CREATE TEMP TABLE xx(a, b) }
 } {
   do_catchsql_test 1.7.$tn.1 "
     BEGIN UNLOCKED;
     $sql
-  " {1 {cannot modify database schema - UNLOCKED transaction}}
+  " {1 {cannot modify database schema within UNLOCKED transaction}}
 
-  do_execsql_test 1.7.$tn.2 ROLLBACK
+  do_execsql_test 1.7.$tn.2 {
+    SELECT sql FROM sqlite_master;
+    SELECT sql FROM sqlite_temp_master;
+  } {{CREATE TABLE t1(a, b)}}
+
+  do_execsql_test 1.7.$tn.3 COMMIT
 }
 
 #-------------------------------------------------------------------------
@@ -408,6 +416,37 @@ do_multiclient_test tn {
   do_test 2.$tn.7.4 { sql3 { PRAGMA integrity_check } } ok
 }
 
-
+#-------------------------------------------------------------------------
+# Unlocked transactions may not modify the user_version or application_id.
+#
+reset_db
+do_execsql_test 3.0 {
+  PRAGMA journal_mode = wal;
+  CREATE TABLE t1(x, y);
+  INSERT INTO t1 VALUES('a', 'b');
+  PRAGMA user_version = 10;
+} {wal}
+do_execsql_test 3.1 {
+  BEGIN UNLOCKED;
+    INSERT INTO t1 VALUES('c', 'd');
+    SELECT * FROM t1;
+} {a b c d}
+do_catchsql_test 3.2 {
+  PRAGMA user_version = 11;
+} {1 {cannot modify user_version within UNLOCKED transaction}}
+do_execsql_test 3.3 {
+  PRAGMA user_version;
+  SELECT * FROM t1;
+} {10 a b c d}
+do_catchsql_test 3.4 {
+  PRAGMA application_id = 11;
+} {1 {cannot modify application_id within UNLOCKED transaction}}
+do_execsql_test 3.5 {
+  COMMIT;
+  PRAGMA user_version;
+  PRAGMA application_id;
+  SELECT * FROM t1;
+} {10 0 a b c d}
 
 finish_test
+

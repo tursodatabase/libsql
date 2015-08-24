@@ -3227,19 +3227,24 @@ case OP_SetCookie: {       /* in3 */
   assert( sqlite3SchemaMutexHeld(db, pOp->p1, 0) );
   pIn3 = &aMem[pOp->p3];
   sqlite3VdbeMemIntegerify(pIn3);
+#ifdef SQLITE_ENABLE_UNLOCKED
+  if( db->bUnlocked 
+   && (pOp->p2==BTREE_USER_VERSION || pOp->p2==BTREE_APPLICATION_ID)
+  ){
+    rc = SQLITE_ERROR;
+    sqlite3VdbeError(p, "cannot modify %s within UNLOCKED transaction",
+        pOp->p2==BTREE_USER_VERSION ? "user_version" : "application_id"
+    );
+    break; 
+  }
+#endif
   /* See note about index shifting on OP_ReadCookie */
   rc = sqlite3BtreeUpdateMeta(pDb->pBt, pOp->p2, (int)pIn3->u.i);
   if( pOp->p2==BTREE_SCHEMA_VERSION ){
-    if( db->bUnlocked ){
-      sqlite3VdbeError(p, "cannot modify database schema - "
-          "UNLOCKED transaction"
-      );
-      rc = SQLITE_ERROR;
-    }else{
-      /* When the schema cookie changes, record the new cookie internally */
-      pDb->pSchema->schema_cookie = (int)pIn3->u.i;
-      db->flags |= SQLITE_InternChanges;
-    }
+    /* When the schema cookie changes, record the new cookie internally */
+    assert( db->bUnlocked==0 );
+    pDb->pSchema->schema_cookie = (int)pIn3->u.i;
+    db->flags |= SQLITE_InternChanges;
   }else if( pOp->p2==BTREE_FILE_FORMAT ){
     /* Record changes in the file format */
     pDb->pSchema->file_format = (u8)pIn3->u.i;
@@ -6110,6 +6115,15 @@ case OP_Expire: {
 */
 case OP_TableLock: {
   u8 isWriteLock = (u8)pOp->p3;
+#ifdef SQLITE_ENABLE_UNLOCKED
+  if( isWriteLock && db->bUnlocked && pOp->p2==1 ){
+    rc = SQLITE_ERROR;
+    sqlite3VdbeError(p, 
+        "cannot modify database schema within UNLOCKED transaction");
+    rc = SQLITE_ERROR;
+    break;
+  }
+#endif
   if( isWriteLock || 0==(db->flags&SQLITE_ReadUncommitted) ){
     int p1 = pOp->p1; 
     assert( p1>=0 && p1<db->nDb );
