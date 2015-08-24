@@ -1310,11 +1310,15 @@ void sqlite3AddPrimaryKey(
   }else{
     nTerm = pList->nExpr;
     for(i=0; i<nTerm; i++){
-      for(iCol=0; iCol<pTab->nCol; iCol++){
-        if( sqlite3StrICmp(pList->a[i].zName, pTab->aCol[iCol].zName)==0 ){
-          pTab->aCol[iCol].colFlags |= COLFLAG_PRIMKEY;
-          zType = pTab->aCol[iCol].zType;
-          break;
+      Expr *pCExpr = sqlite3ExprSkipCollate(pList->a[i].pExpr);
+      if( pCExpr && pCExpr->op==TK_ID ){
+        const char *zCName = pCExpr->u.zToken;
+        for(iCol=0; iCol<pTab->nCol; iCol++){
+          if( sqlite3StrICmp(zCName, pTab->aCol[iCol].zName)==0 ){
+            pTab->aCol[iCol].colFlags |= COLFLAG_PRIMKEY;
+            zType = pTab->aCol[iCol].zType;
+            break;
+          }
         }
       }
     }
@@ -1696,10 +1700,12 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
   */
   if( pTab->iPKey>=0 ){
     ExprList *pList;
-    pList = sqlite3ExprListAppend(pParse, 0, 0);
+    Token ipkToken;
+    ipkToken.z = pTab->aCol[pTab->iPKey].zName;
+    ipkToken.n = sqlite3Strlen30(ipkToken.z);
+    pList = sqlite3ExprListAppend(pParse, 0, 
+                  sqlite3ExprAlloc(db, TK_ID, &ipkToken, 0));
     if( pList==0 ) return;
-    pList->a[0].zName = sqlite3DbStrDup(pParse->db,
-                                        pTab->aCol[pTab->iPKey].zName);
     pList->a[0].sortOrder = pParse->iPkSortOrder;
     assert( pParse->pNewTable==pTab );
     pPk = sqlite3CreateIndex(pParse, 0, 0, 0, pList, pTab->keyConf, 0, 0, 0, 0);
@@ -2076,7 +2082,6 @@ void sqlite3CreateView(
     return;
   }
   sqlite3StartTable(pParse, pName1, pName2, isTemp, 1, 0, noErr);
-  sqlite3RestrictColumnListSyntax(pParse, pCNames);
   p = pParse->pNewTable;
   if( p==0 || pParse->nErr ) goto create_view_fail;
   sqlite3TwoPartName(pParse, pName1, pName2, &pName);
@@ -2607,8 +2612,6 @@ void sqlite3CreateForeignKey(
 
   assert( pTo!=0 );
   if( p==0 || IN_DECLARE_VTAB ) goto fk_end;
-  sqlite3RestrictColumnListSyntax(pParse, pFromCol);
-  sqlite3RestrictColumnListSyntax(pParse, pToCol);
   if( pFromCol==0 ){
     int iCol = p->nCol-1;
     if( NEVER(iCol<0) ) goto fk_end;
@@ -3043,12 +3046,16 @@ Index *sqlite3CreateIndex(
   ** So create a fake list to simulate this.
   */
   if( pList==0 ){
-    pList = sqlite3ExprListAppend(pParse, 0, 0);
+    Token prevCol;
+    prevCol.z = pTab->aCol[pTab->nCol-1].zName;
+    prevCol.n = sqlite3Strlen30(prevCol.z);
+    pList = sqlite3ExprListAppend(pParse, 0,
+              sqlite3ExprAlloc(db, TK_ID, &prevCol, 0));
     if( pList==0 ) goto exit_create_index;
-    pList->a[0].zName = sqlite3DbStrDup(pParse->db,
-                                        pTab->aCol[pTab->nCol-1].zName);
     assert( pList->nExpr==1 );
     sqlite3ExprListSetSortOrder(pList, sortOrder);
+  }else{
+    sqlite3ExprListCheckLength(pParse, pList, "index");
   }
 
   /* Figure out how many bytes of space are required to store explicitly
@@ -3056,8 +3063,7 @@ Index *sqlite3CreateIndex(
   */
   for(i=0; i<pList->nExpr; i++){
     Expr *pExpr = pList->a[i].pExpr;
-    if( pExpr ){
-      assert( pExpr->op==TK_COLLATE );
+    if( pExpr && pExpr->op==TK_COLLATE ){
       nExtra += (1 + sqlite3Strlen30(pExpr->u.zToken));
     }
   }
@@ -3109,10 +3115,17 @@ Index *sqlite3CreateIndex(
   ** break backwards compatibility - it needs to be a warning.
   */
   for(i=0, pListItem=pList->a; i<pList->nExpr; i++, pListItem++){
-    const char *zColName = pListItem->zName;
+    const char *zColName;
+    Expr *pCExpr;
     int requestedSortOrder;
     char *zColl;                   /* Collation sequence name */
 
+    pCExpr = sqlite3ExprSkipCollate(pListItem->pExpr);
+    if( pCExpr->op!=TK_ID ){
+      sqlite3ErrorMsg(pParse, "indexes on expressions not yet supported");
+      continue;
+    }
+    zColName = pCExpr->u.zToken;
     for(j=0, pTabCol=pTab->aCol; j<pTab->nCol; j++, pTabCol++){
       if( sqlite3StrICmp(zColName, pTabCol->zName)==0 ) break;
     }
@@ -3124,9 +3137,8 @@ Index *sqlite3CreateIndex(
     }
     assert( j<=0x7fff );
     pIndex->aiColumn[i] = (i16)j;
-    if( pListItem->pExpr ){
+    if( pListItem->pExpr->op==TK_COLLATE ){
       int nColl;
-      assert( pListItem->pExpr->op==TK_COLLATE );
       zColl = pListItem->pExpr->u.zToken;
       nColl = sqlite3Strlen30(zColl) + 1;
       assert( nExtra>=nColl );
@@ -4293,32 +4305,6 @@ KeyInfo *sqlite3KeyInfoOfIndex(Parse *pParse, Index *pIdx){
   return pKey;
 }
 
-/*
-** Generate a syntax error if the expression list provided contains
-** any COLLATE or ASC or DESC keywords.
-**
-** Some legacy versions of SQLite allowed constructs like:
-**
-**      CREATE TABLE x(..., FOREIGN KEY(x COLLATE binary DESC) REFERENCES...);
-**                                        ^^^^^^^^^^^^^^^^^^^
-**
-** The COLLATE and sort order terms were ignored.  To prevent compatibility
-** problems in case something like this appears in a legacy sqlite_master
-** table, only enforce the restriction on new SQL statements, not when
-** parsing the schema out of the sqlite_master table.
-*/
-void sqlite3RestrictColumnListSyntax(Parse *pParse, ExprList *p){
-  int i;
-  if( p==0 || pParse->db->init.busy ) return;
-  for(i=0; i<p->nExpr; i++){
-    if( p->a[i].pExpr!=0 || p->a[i].bDefinedSO ){
-      sqlite3ErrorMsg(pParse, "syntax error after column name \"%w\"",
-                      p->a[i].zName);
-      return;
-    }
-  }
-}
-
 #ifndef SQLITE_OMIT_CTE
 /* 
 ** This routine is invoked once per CTE by the parser while parsing a 
@@ -4334,8 +4320,6 @@ With *sqlite3WithAdd(
   sqlite3 *db = pParse->db;
   With *pNew;
   char *zName;
-
-  sqlite3RestrictColumnListSyntax(pParse, pArglist);
 
   /* Check that the CTE name is unique within this WITH clause. If
   ** not, store an error in the Parse structure. */

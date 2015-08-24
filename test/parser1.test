@@ -21,7 +21,13 @@ do_catchsql_test parser1-1.1 {
     b TEXT,
     FOREIGN KEY(b COLLATE nocase DESC) REFERENCES t1(a COLLATE binary ASC)
   );
-} {1 {syntax error after column name "a"}}
+} {1 {syntax error after column name "b"}}
+
+
+# Verify that a legacy schema in the sqlite_master file is allowed to have
+# COLLATE, ASC, and DESC keywords on the id list of a FK constraint, and that
+# those keywords are silently ignored.
+#
 do_execsql_test parser1-1.2 {
   CREATE TABLE t1(
     a TEXT PRIMARY KEY,
@@ -42,7 +48,22 @@ do_test parser1-1.3 {
   sqlite3 db2 test.db
   db2 eval {SELECT * FROM t1 ORDER BY 1}
 } {abc {} xyz abc}
+db2 close
 
+do_execsql_test parser1-1.4 {
+  UPDATE sqlite_master SET sql='CREATE TABLE t1(
+    a TEXT PRIMARY KEY,
+    b TEXT,
+    FOREIGN KEY(b ASC) REFERENCES t1(a)
+  )' WHERE name='t1';
+  SELECT name FROM sqlite_master WHERE sql LIKE '%ASC%';
+} {t1}
+sqlite3 db2 test.db
+do_test parser1-1.5 {
+  sqlite3 db2 test.db
+  db2 eval {SELECT * FROM t1 ORDER BY 1}
+} {abc {} xyz abc}
+db2 close
 
 do_catchsql_test parser1-2.1 {
   WITH RECURSIVE

@@ -1172,7 +1172,6 @@ void sqlite3ExprListSetSortOrder(ExprList *p, int iSortOrder){
     return;
   }
   p->a[p->nExpr-1].sortOrder = (u8)iSortOrder;
-  p->a[p->nExpr-1].bDefinedSO = 1;
 }
 
 /*

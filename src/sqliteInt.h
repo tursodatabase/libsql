@@ -2189,7 +2189,6 @@ struct ExprList {
     unsigned done :1;       /* A flag to indicate when processing is finished */
     unsigned bSpanIsTab :1; /* zSpan holds DB.TABLE.COLUMN */
     unsigned reusable :1;   /* Constant expression is reusable */
-    unsigned bDefinedSO :1; /* True if either DESC or ASC keywords present */
     union {
       struct {
         u16 iOrderByCol;      /* For ORDER BY, column number in result set */
@@ -3758,7 +3757,6 @@ const char *sqlite3JournalModename(int);
   int sqlite3Checkpoint(sqlite3*, int, int, int*, int*);
   int sqlite3WalDefaultHook(void*,sqlite3*,const char*,int);
 #endif
-void sqlite3RestrictColumnListSyntax(Parse*,ExprList*);
 #ifndef SQLITE_OMIT_CTE
   With *sqlite3WithAdd(Parse*,With*,Token*,ExprList*,Select*);
   void sqlite3WithDelete(sqlite3*,With*);
