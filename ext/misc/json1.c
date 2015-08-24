@@ -1513,12 +1513,12 @@ static int jsonEachColumn(
       break;
     }
     case JEACH_TYPE: {
-      if( p->eType==JSON_OBJECT ) pThis++;
+      if( p->eType==JSON_OBJECT && p->i>0 ) pThis++;
       sqlite3_result_text(ctx, jsonType[pThis->eType], -1, SQLITE_STATIC);
       break;
     }
     case JEACH_ATOM: {
-      if( p->eType==JSON_OBJECT ) pThis++;
+      if( p->eType==JSON_OBJECT && p->i>0 ) pThis++;
       if( pThis->eType>=JSON_ARRAY ) break;
       jsonReturn(pThis, ctx, 0);
       break;
