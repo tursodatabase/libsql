@@ -1,5 +1,5 @@
-C Improvements\sto\sJSON\sstring\sdequoting.
-D 2015-08-24T12:42:41.080
+C Disallow\sthe\suse\sof\sCOLLATE\sclauses\sand\sthe\sASC\sand\sDESC\skeywords\swithin\nforeign\skey\sconstraints\sand\sin\sthe\sargument\slist\sto\scommon\stable\sexpressions.
+D 2015-08-24T15:39:42.405
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e2218eb228374422969de7b1680eda6864affcef
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -282,14 +282,14 @@ F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
 F src/btree.c f48b3ef91676c06a90a8832987ecef6b94c931ee
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 8177c9ab90d772d6d2c6c517e05bed774b7c92c0
-F src/build.c 5eb5d055a1d1cdaaea25e01b12607aa894bc0911
+F src/build.c f49c55c1fba430c2d6af5039d0bf14de5ae6a427
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
 F src/ctime.c 5a0b735dc95604766f5dac73973658eef782ee8b
 F src/date.c 8ec787fed4929d8ccdf6b1bc360fccc3e1d2ca58
 F src/dbstat.c f402e77e25089c6003d0c60b3233b9b3947d599a
 F src/delete.c 8857a6f27560718f65d43bdbec86c967ae1f8dfa
-F src/expr.c c34408e0ac1c57cf58ffa2003b339715ee9bda57
+F src/expr.c c05d67f1a03c097d5c29839d5a538cfde9c472ce
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c c9b63a217d86582c22121699a47f22f524608869
 F src/func.c 824bea430d3a2b7dbc62806ad54da8fdb8ed9e3f
@@ -326,7 +326,7 @@ F src/os_win.c 40b3af7a47eb1107d0d69e592bec345a3b7b798a
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c aa916ca28606ccf4b6877dfc2b643ccbca86589f
 F src/pager.h 6d435f563b3f7fcae4b84433b76a6ac2730036e2
-F src/parse.y ad9af8552f6f340bd646577ca63356a6f82b6a7e
+F src/parse.y b5e0a5f8bb9ec33a58aa34850b6fae46aac51fdd
 F src/pcache.c cde06aa50962595e412d497e22fd2e07878ba1f0
 F src/pcache.h 9968603796240cdf83da7e7bef76edf90619cea9
 F src/pcache1.c a3fe31b17e841ec70beee72a2c960e9c787a8857
@@ -342,7 +342,7 @@ F src/shell.c b1f91e60918df3a68efad1e3a11696b9a7e23d23
 F src/sqlite.h.in 378bebc8fe6a88bade25e5f23b7e6123fdc64b00
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h f700e6a9dd1fdcccc9951ab022b366fb66b9e413
-F src/sqliteInt.h 89e68539d645db597366a91411468b51e73c21a0
+F src/sqliteInt.h 1741691824491c330dda1e49f370920bfd3aa230
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c f266ad8a2892d659b74f0f50cb6a88b6e7c12179
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
@@ -910,6 +910,7 @@ F test/pagerfault2.test caf4c7facb914fd3b03a17b31ae2b180c8d6ca1f
 F test/pagerfault3.test 1003fcda009bf48a8e22a516e193b6ef0dd1bbd8
 F test/pageropt.test 6b8f6a123a5572c195ad4ae40f2987007923bbd6
 F test/pagesize.test 5769fc62d8c890a83a503f67d47508dfdc543305
+F test/parser1.test 23867b6f2c4758c7774108826d9f17e9cd17bcde
 F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
@@ -1378,7 +1379,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f0aba0e120074430cd7ad93291fcc97b8a25a054
-R 3625d17566ea8cc316dd4952d6bffb99
+P 196d66d34d9783622e6f2f79eafea1488fc6f5cf
+R 2a74528f51d8172b5387a3b7f110bb2b
 U drh
-Z 6090b9f6d755a9917a579931aff72e9d
+Z ffc4f8e604c67b08cae8ed1eda808a43

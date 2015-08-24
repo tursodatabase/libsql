@@ -680,18 +680,18 @@ orderby_opt(A) ::= .                          {A = 0;}
 orderby_opt(A) ::= ORDER BY sortlist(X).      {A = X;}
 sortlist(A) ::= sortlist(X) COMMA expr(Y) sortorder(Z). {
   A = sqlite3ExprListAppend(pParse,X,Y.pExpr);
-  if( A ) A->a[A->nExpr-1].sortOrder = (u8)Z;
+  sqlite3ExprListSetSortOrder(A,Z);
 }
 sortlist(A) ::= expr(Y) sortorder(Z). {
   A = sqlite3ExprListAppend(pParse,0,Y.pExpr);
-  if( A && ALWAYS(A->a) ) A->a[0].sortOrder = (u8)Z;
+  sqlite3ExprListSetSortOrder(A,Z);
 }
 
 %type sortorder {int}
 
 sortorder(A) ::= ASC.           {A = SQLITE_SO_ASC;}
 sortorder(A) ::= DESC.          {A = SQLITE_SO_DESC;}
-sortorder(A) ::= .              {A = SQLITE_SO_ASC;}
+sortorder(A) ::= .              {A = SQLITE_SO_UNDEFINED;}
 
 %type groupby_opt {ExprList*}
 %destructor groupby_opt {sqlite3ExprListDelete(pParse->db, $$);}
@@ -1229,14 +1229,14 @@ idxlist(A) ::= idxlist(X) COMMA nm(Y) collate(C) sortorder(Z).  {
   A = sqlite3ExprListAppend(pParse,X, p);
   sqlite3ExprListSetName(pParse,A,&Y,1);
   sqlite3ExprListCheckLength(pParse, A, "index");
-  if( A ) A->a[A->nExpr-1].sortOrder = (u8)Z;
+  sqlite3ExprListSetSortOrder(A,Z);
 }
 idxlist(A) ::= nm(Y) collate(C) sortorder(Z). {
   Expr *p = sqlite3ExprAddCollateToken(pParse, 0, &C, 1);
   A = sqlite3ExprListAppend(pParse,0, p);
   sqlite3ExprListSetName(pParse, A, &Y, 1);
   sqlite3ExprListCheckLength(pParse, A, "index");
-  if( A ) A->a[A->nExpr-1].sortOrder = (u8)Z;
+  sqlite3ExprListSetSortOrder(A,Z);
 }
 
 %type collate {Token}
