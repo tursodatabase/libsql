@@ -6120,7 +6120,6 @@ case OP_TableLock: {
     rc = SQLITE_ERROR;
     sqlite3VdbeError(p, 
         "cannot modify database schema within CONCURRENT transaction");
-    rc = SQLITE_ERROR;
     break;
   }
 #endif

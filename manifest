@@ -1,5 +1,5 @@
-C Change\s"BEGIN\sUNLOCKED"\sto\s"BEGIN\sCONCURRENT".
-D 2015-08-24T19:56:04.567
+C Remove\sduplicated\sline\sof\scode.
+D 2015-08-24T22:06:02.586
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e2218eb228374422969de7b1680eda6864affcef
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -400,7 +400,7 @@ F src/update.c 487747b328b7216bb7f6af0695d6937d5c9e605f
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c bc9dd64b5db544218b871b66243871c202b2781f
 F src/vacuum.c 983cc3754718ef169a6ea9aef86798bd28106f21
-F src/vdbe.c 84ac0688d7e1921d8e802f2e4e1a38273e069d0c
+F src/vdbe.c 791a28761cf6176d11ec3e41cdf8e749c65384ff
 F src/vdbe.h 7a75045d879118b9d3af7e8b3c108f2f27c51473
 F src/vdbeInt.h 8b54e01ad0463590e7cffabce0bc36da9ee4f816
 F src/vdbeapi.c bda74ef4b5103d7b4a4be36f936d3cf2b56a7d6f
@@ -523,9 +523,9 @@ F test/collate9.test 3adcc799229545940df2f25308dd1ad65869145a
 F test/collateA.test b8218ab90d1fa5c59dcf156efabb1b2599c580d6
 F test/colmeta.test 2c765ea61ee37bc43bbe6d6047f89004e6508eb1
 F test/colname.test 08948a4809d22817e0e5de89c7c0a8bd90cb551b
-F test/concurrent.test 631e398b127a13ddfbcc8e64f438d9f82b261ffe w test/unlocked.test
-F test/concurrent2.test 21a15630192ba92287070a1a58a6e497d393c55d w test/unlocked2.test
-F test/concurrent3.test 7dcf81372c06cbac58e7e630aebf7292945947bb w test/unlocked3.test
+F test/concurrent.test 631e398b127a13ddfbcc8e64f438d9f82b261ffe
+F test/concurrent2.test 21a15630192ba92287070a1a58a6e497d393c55d
+F test/concurrent3.test 7dcf81372c06cbac58e7e630aebf7292945947bb
 F test/conflict.test 841bcf7cabbfca39c577eb8411ea8601843b46a8
 F test/conflict2.test 0d3af4fb534fa1bd020c79960bb56e4d52655f09
 F test/conflict3.test dec0634c0f31dec9a4b01c63063e939f0cd21b6b
@@ -1381,7 +1381,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5b9f272113d21fd606903509d6f830fe60fac039
-R 7a2246f9f176c887e1e1da04647372c5
-U dan
-Z f0bce293b4f554fd07229d405fb3ff97
+P ba1ab858e2997c88dd7eee6e6893a8616d85c665
+R 9abcd1f9df86b1795253bff8998d1e7d
+U mistachkin
+Z ced970d02bef7e6e65b8cf8ae80899c7
