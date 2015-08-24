@@ -2667,9 +2667,44 @@ int sqlite3WalLockForCommit(Wal *pWal, PgHdr *pPage1, Bitvec *pAllRead){
   return rc;
 }
 
-void sqlite3WalUpgradeSnapshot(Wal *pWal){
+/*
+** This function is called by a writer that has a read-lock on aReadmark[0]
+** (pWal->readLock==0). This function relinquishes that lock and takes a
+** lock on a different aReadmark[] slot. 
+**
+** SQLITE_OK is returned if successful, or an SQLite error code otherwise.
+*/
+static int walUpgradeReadlock(Wal *pWal){
+  int cnt;
+  int rc;
+  assert( pWal->writeLock && pWal->readLock==0 );
+  walUnlockShared(pWal, WAL_READ_LOCK(0));
+  pWal->readLock = -1;
+  cnt = 0;
+  do{
+    int notUsed;
+    rc = walTryBeginRead(pWal, &notUsed, 1, ++cnt);
+  }while( rc==WAL_RETRY );
+  assert( (rc&0xff)!=SQLITE_BUSY ); /* BUSY not possible when useWal==1 */
+  testcase( (rc&0xff)==SQLITE_IOERR );
+  testcase( rc==SQLITE_PROTOCOL );
+  testcase( rc==SQLITE_OK );
+  return rc;
+}
+
+int sqlite3WalUpgradeSnapshot(Wal *pWal){
+  int rc = SQLITE_OK;
   assert( pWal->writeLock );
   memcpy(&pWal->hdr, (void*)walIndexHdr(pWal), sizeof(WalIndexHdr));
+
+  /* If this client has its read-lock on slot aReadmark[0] and the entire
+  ** wal has not been checkpointed, switch it to a different slot. Otherwise
+  ** any reads performed between now and committing the transaction will
+  ** read from the old snapshot - not the one just upgraded to.  */
+  if( pWal->readLock==0 && pWal->hdr.mxFrame!=walCkptInfo(pWal)->nBackfill ){
+    rc = walUpgradeReadlock(pWal);
+  }
+  return rc;
 }
 
 /*
@@ -2789,7 +2824,6 @@ int sqlite3WalSavepointUndo(Wal *pWal, u32 *aWalData){
 */
 static int walRestartLog(Wal *pWal){
   int rc = SQLITE_OK;
-  int cnt;
 
   if( pWal->readLock==0 ){
     volatile WalCkptInfo *pInfo = walCkptInfo(pWal);
@@ -2814,17 +2848,16 @@ static int walRestartLog(Wal *pWal){
         return rc;
       }
     }
-    walUnlockShared(pWal, WAL_READ_LOCK(0));
-    pWal->readLock = -1;
-    cnt = 0;
-    do{
-      int notUsed;
-      rc = walTryBeginRead(pWal, &notUsed, 1, ++cnt);
-    }while( rc==WAL_RETRY );
-    assert( (rc&0xff)!=SQLITE_BUSY ); /* BUSY not possible when useWal==1 */
-    testcase( (rc&0xff)==SQLITE_IOERR );
-    testcase( rc==SQLITE_PROTOCOL );
-    testcase( rc==SQLITE_OK );
+
+    /* Regardless of whether or not the wal file was restarted, change the
+    ** read-lock held by this client to a slot other than aReadmark[0]. 
+    ** Clients with a lock on aReadmark[0] read from the database file 
+    ** only - never from the wal file. This means that if a writer holding
+    ** a lock on aReadmark[0] were to commit a transaction but not close the
+    ** read-transaction, subsequent read operations would read directly from
+    ** the database file - ignoring the new pages just appended
+    ** to the wal file. */
+    rc = walUpgradeReadlock(pWal);
   }
   return rc;
 }

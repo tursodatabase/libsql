@@ -127,7 +127,7 @@ int sqlite3WalExclusiveMode(Wal *pWal, int op);
 int sqlite3WalHeapMemory(Wal *pWal);
 
 int sqlite3WalLockForCommit(Wal *pWal, PgHdr *pPg, Bitvec *pRead);
-void sqlite3WalUpgradeSnapshot(Wal *pWal);
+int sqlite3WalUpgradeSnapshot(Wal *pWal);
 
 #ifdef SQLITE_ENABLE_ZIPVFS
 /* If the WAL file is not empty, return the number of bytes of content

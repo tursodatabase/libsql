@@ -6129,8 +6129,10 @@ int sqlite3PagerUpgradeSnapshot(Pager *pPager, DbPage *pPage1){
   u32 iFrame = 0;
 
   assert( pPager->pWal && pPager->pAllRead );
-  sqlite3WalUpgradeSnapshot(pPager->pWal);
-  rc = sqlite3WalFindFrame(pPager->pWal, 1, &iFrame);
+  rc = sqlite3WalUpgradeSnapshot(pPager->pWal);
+  if( rc==SQLITE_OK ){
+    rc = sqlite3WalFindFrame(pPager->pWal, 1, &iFrame);
+  }
   if( rc==SQLITE_OK ){
     rc = readDbPage(pPage1, iFrame);
   }

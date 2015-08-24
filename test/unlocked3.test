@@ -94,9 +94,8 @@ foreach {tn oplist} {
   6 {1iii 2iii 3iii 4iii}
   7 {1di  2id  3iii 4ddd}
   8 {1iii 2iii 3iii 4iii}
-
+  9 {1D  2II}
 } {
-  # 9 {1D  2II}
   if {[string range $oplist 0 0]=="-"} {
     reset_db
     create_schema
@@ -119,7 +118,6 @@ foreach {tn oplist} {
   } {ok}
 
   foreach db $DBLIST { 
-    if {$db=="db2"} breakpoint
     $db close 
   }
 }
