@@ -3848,6 +3848,73 @@ static int autoVacuumCommit(BtShared *pBt){
 
 #ifdef SQLITE_ENABLE_UNLOCKED
 /*
+** This function is called as part of merging an UNLOCKED transaction with
+** the snapshot at the head of the wal file. It relocates all pages in the
+** range iFirst..iLast, inclusive. It is assumed that the BtreePtrmap 
+** structure at BtShared.pMap contains the location of the pointers to each
+** page in the range.
+**
+** If pnCurrent is NULL, then all pages in the range are moved to currently
+** free locations (i.e. free-list entries) within the database file before page
+** iFirst.
+**
+** Or, if pnCurrent is not NULL, then it points to a value containing the
+** current size of the database file in pages. In this case, all pages are
+** relocated to the end of the database file - page iFirst is relocated to
+** page (*pnCurrent+1), page iFirst+1 to page (*pnCurrent+2), and so on.
+** Value *pnCurrent is set to the new size of the database before this 
+** function returns.
+**
+** If no error occurs, SQLITE_OK is returned. Otherwise, an SQLite error code.
+*/
+static int btreeRelocateRange(
+  BtShared *pBt,                  /* B-tree handle */
+  Pgno iFirst,                    /* First page to relocate */
+  Pgno iLast,                     /* Last page to relocate */
+  Pgno *pnCurrent                 /* If not NULL, IN/OUT: Database size */
+){
+  int rc = SQLITE_OK;
+  BtreePtrmap *pMap = pBt->pMap;
+  Pgno iPg;
+
+  for(iPg=iFirst; iPg<=iLast && rc==SQLITE_OK; iPg++){
+    MemPage *pFree = 0;     /* Page allocated from free-list */
+    MemPage *pPg = 0;
+    Pgno iNew;              /* New page number for pPg */
+    PtrmapEntry *pEntry;    /* Pointer map entry for page iPg */
+
+    if( iPg==PENDING_BYTE_PAGE(pBt) ) continue;
+    pEntry = &pMap->aPtr[iPg - pMap->iFirst];
+
+    if( pEntry->eType==PTRMAP_FREEPAGE ){
+      Pgno dummy;
+      rc = allocateBtreePage(pBt, &pFree, &dummy, iPg, BTALLOC_EXACT);
+      releasePage(pFree);
+      assert( rc!=SQLITE_OK || dummy==iPg );
+    }else if( pnCurrent ){
+      btreeGetPage(pBt, iPg, &pPg, 0);
+      assert( sqlite3PagerIswriteable(pPg->pDbPage) );
+      assert( sqlite3PagerPageRefcount(pPg->pDbPage)==1 );
+      iNew = ++(*pnCurrent);
+      if( iNew==PENDING_BYTE_PAGE(pBt) ) iNew = ++(*pnCurrent);
+      rc = relocatePage(pBt, pPg, pEntry->eType, pEntry->parent, iNew, 1);
+      releasePageNotNull(pPg);
+    }else{
+      rc = allocateBtreePage(pBt, &pFree, &iNew, iFirst-1, BTALLOC_LE);
+      assert( rc!=SQLITE_OK || iNew<iFirst );
+      releasePage(pFree);
+      if( rc==SQLITE_OK ){
+        MemPage *pPg = 0;
+        btreeGetPage(pBt, iPg, &pPg, 0);
+        rc = relocatePage(pBt, pPg, pEntry->eType, pEntry->parent,iNew,1);
+        releasePage(pPg);
+      }
+    }
+  }
+  return rc;
+}
+
+/*
 ** The b-tree handle passed as the only argument is about to commit an
 ** UNLOCKED transaction. At this point it is guaranteed that this is 
 ** possible - the wal WRITER lock is held and it is known that there are 
@@ -3875,7 +3942,7 @@ static int btreeFixUnlocked(Btree *p){
 
   if( rc==SQLITE_OK ){
     Pgno nHPage = get4byte(&p1[28]);
-    Pgno nFinal = nHPage;         /* Size of db after transaction merge */
+    Pgno nFin = nHPage;         /* Size of db after transaction merge */
 
     if( sqlite3PagerIswriteable(pPage1->pDbPage) ){
       Pgno iHTrunk = get4byte(&p1[32]);
@@ -3907,71 +3974,32 @@ static int btreeFixUnlocked(Btree *p){
         /* The current transaction allocated pages pMap->iFirst through
         ** nPage (inclusive) at the end of the database file. Meanwhile,
         ** other transactions have allocated (iFirst..nHPage). So move
-        ** pages (iFirst..MIN(nPage,nHPage)) to (MAX(nPage,nHPage)+1).
-        */
+        ** pages (iFirst..MIN(nPage,nHPage)) to (MAX(nPage,nHPage)+1).  */
         Pgno iLast = MIN(nPage, nHPage);    /* Last page to move */
-        Pgno iPg;
         Pgno nCurrent;                      /* Current size of db */
         nCurrent = MAX(nPage, nHPage);
+        rc = btreeRelocateRange(pBt, pMap->iFirst, iLast, &nCurrent);
 
-        for(iPg=pMap->iFirst; iPg<=iLast && rc==SQLITE_OK; iPg++){
-          MemPage *pPg = 0;
-          Pgno iNew;              /* New page number for pPg */
-          PtrmapEntry *pEntry;    /* Pointer map entry for page iPg */
-
-          if( iPg==PENDING_BYTE_PAGE(pBt) ) continue;
-          pEntry = &pMap->aPtr[iPg - pMap->iFirst];
-          if( pEntry->eType==PTRMAP_FREEPAGE ){
-            MemPage *pFree = 0;
-            Pgno dummy;
-            rc = allocateBtreePage(pBt, &pFree, &dummy, iPg, BTALLOC_EXACT);
-            releasePage(pFree);
-            assert( rc!=SQLITE_OK || dummy==iPg );
-          }else{
-            btreeGetPage(pBt, iPg, &pPg, 0);
-            assert( sqlite3PagerIswriteable(pPg->pDbPage) );
-            assert( sqlite3PagerPageRefcount(pPg->pDbPage)==1 );
-            iNew = ++nCurrent;
-            if( iNew==PENDING_BYTE_PAGE(pBt) ) iNew = ++nCurrent;
-            rc = relocatePage(pBt, pPg, pEntry->eType, pEntry->parent, iNew, 1);
-            releasePageNotNull(pPg);
+        /* There are now no collisions with the snapshot at the head of the
+        ** database file. So at this point it would be possible to write
+        ** the transaction out to disk. Before doing so though, attempt to
+        ** relocate some of the new pages to free locations within the body
+        ** of the database file (i.e. free-list entries). */
+        if( rc==SQLITE_OK ){
+          assert( nCurrent!=PENDING_BYTE_PAGE(pBt) );
+          sqlite3PagerSetDbsize(pBt->pPager, nCurrent);
+          nFree = get4byte(&p1[36]);
+          nFin = MAX(nCurrent-nFree, nHPage);
+          if( nCurrent>PENDING_BYTE_PAGE(pBt) && nFin<=PENDING_BYTE_PAGE(pBt) ){
+            nFin--;
           }
-        }
-        sqlite3PagerSetDbsize(pPager, nCurrent);
-        assert( nCurrent!=PENDING_BYTE_PAGE(pBt) );
-
-        nFree = get4byte(&p1[36]);
-        nFinal = MAX(nCurrent-nFree, nHPage);
-        if( nCurrent>PENDING_BYTE_PAGE(pBt) && nFinal<=PENDING_BYTE_PAGE(pBt) ){
-          nFinal--;
+          rc = btreeRelocateRange(pBt, nFin+1, nCurrent, 0);
         }
 
-        for(iPg=nFinal+1; rc==SQLITE_OK && iPg<=nCurrent; iPg++){
-          Pgno iNew;              /* New page number for pPg */
-          MemPage *pFree;
-          PtrmapEntry *pEntry;    /* Pointer map entry for page iPg */
-
-          if( iPg==PENDING_BYTE_PAGE(pBt) ) continue;
-          pEntry = &pMap->aPtr[iPg - pMap->iFirst];
-          if( pEntry->eType==PTRMAP_FREEPAGE ){
-            rc = allocateBtreePage(pBt, &pFree, &iNew, iPg, BTALLOC_EXACT);
-            releasePage(pFree);
-          }else{
-            rc = allocateBtreePage(pBt, &pFree, &iNew, nFinal, BTALLOC_LE);
-            assert( rc!=SQLITE_OK || iNew<=nFinal );
-            releasePage(pFree);
-            if( rc==SQLITE_OK ){
-              MemPage *pPg = 0;
-              btreeGetPage(pBt, iPg, &pPg, 0);
-              rc = relocatePage(pBt, pPg, pEntry->eType, pEntry->parent,iNew,1);
-              releasePage(pPg);
-            }
-          }
-        }
-        put4byte(&p1[28], nFinal);
+        put4byte(&p1[28], nFin);
       }
     }
-    sqlite3PagerSetDbsize(pPager, nFinal);
+    sqlite3PagerSetDbsize(pPager, nFin);
   }
 
   return rc;

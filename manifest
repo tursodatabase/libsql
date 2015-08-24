@@ -1,5 +1,5 @@
-C Merge\strunk\schanges\swith\sthis\sbranch.
-D 2015-08-24T06:44:17.840
+C Consolidate\stwo\sblocks\sof\ssimilar\scode\sin\sbtreeFixUnlocked().
+D 2015-08-24T10:05:03.012
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e2218eb228374422969de7b1680eda6864affcef
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -279,7 +279,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 4d9134dc988a87838c06056c89c0e8c4700a0452
 F src/bitvec.c d1f21d7d91690747881f03940584f4cc548c9d3d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c 245bc696824d5107f3570905325c6ac5b05c18f8
+F src/btree.c e807409602996359211c855078fa5cbcf59da032
 F src/btree.h 00d4cdb747c4172a5566faf037116985dbbc377e
 F src/btreeInt.h 0c19847f87ab82e4f5e67750a069f10829475da6
 F src/build.c e47b6fffe14a28d9050e6747beebb01597d37542
@@ -1229,7 +1229,7 @@ F test/unique2.test 41e7f83c6827605991160a31380148a9fc5f1339
 F test/unixexcl.test cd6c765f75e50e8e2c2ba763149e5d340ea19825
 F test/unlocked.test d143a871bd874311d4e5c98ce458218ca6b579fd
 F test/unlocked2.test aaa42a08052a146466220b6c3a062ff3c4776ad6
-F test/unlocked3.test 1bc4e3ad8693302639e50b4833a527807ee4863b
+F test/unlocked3.test 2cacc31742561f6924706ed9472d0095839da9e4
 F test/unordered.test ca7adce0419e4ca0c50f039885e76ed2c531eda8
 F test/update.test 6c68446b8a0a33d522a7c72b320934596a2d7d32
 F test/uri.test 23662b7b61958b0f0e47082de7d06341ccf85d5b
@@ -1381,7 +1381,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4460764ea8fc948fe02f0a09476857839b3aa1ae f0aba0e120074430cd7ad93291fcc97b8a25a054
-R c9a4c2c74a91d952dffb223e6caf31f7
+P 876810c28b3ad573ae46050ec699ef7eea4e313d
+R 11d77b8f4d3f6d9b5ad54020bb4092ee
 U dan
-Z 9a4849fb712895f27dbf139db01b2763
+Z 46d9657b2162cb9e544c380eb188ec18
