@@ -454,31 +454,27 @@ static void jsonReturn(
         }
         for(i=1, j=0; i<n-1; i++){
           char c = z[i];
-          if( c!='\\' && z[i+1] ){
+          if( c!='\\' ){
             zOut[j++] = c;
           }else{
             c = z[++i];
-            if( c=='u' && z[1] ){
+            if( c=='u' ){
               u32 v = 0, k;
-              for(k=0; k<4 && z[i+1]; i++, k++){
+              for(k=0; k<4 && i<n-2; i++, k++){
                 c = z[i+1];
                 if( c>='0' && c<='9' ) v = v*16 + c - '0';
                 else if( c>='A' && c<='F' ) v = v*16 + c - 'A' + 10;
                 else if( c>='a' && c<='f' ) v = v*16 + c - 'a' + 10;
                 else break;
               }
+              if( v==0 ) break;
               if( v<=0x7f ){
                 zOut[j++] = v;
               }else if( v<=0x7ff ){
                 zOut[j++] = 0xc0 | (v>>6);
                 zOut[j++] = 0x80 | (v&0x3f);
-              }else if( v<=0xffff ){
+              }else{
                 zOut[j++] = 0xe0 | (v>>12);
-                zOut[j++] = 0x80 | ((v>>6)&0x3f);
-                zOut[j++] = 0x80 | (v&0x3f);
-              }else if( v<=0x10ffff ){
-                zOut[j++] = 0xf0 | (v>>18);
-                zOut[j++] = 0x80 | ((v>>12)&0x3f);
                 zOut[j++] = 0x80 | ((v>>6)&0x3f);
                 zOut[j++] = 0x80 | (v&0x3f);
               }
