@@ -448,7 +448,7 @@ struct BtShared {
   Btree *pWriter;       /* Btree with currently open write transaction */
 #endif
   u8 *pTmpSpace;        /* Temp space sufficient to hold a single cell */
-#ifdef SQLITE_ENABLE_UNLOCKED
+#ifdef SQLITE_ENABLE_CONCURRENT
   BtreePtrmap *pMap;
 #endif
 };
@@ -663,13 +663,13 @@ struct BtCursor {
 #define ISAUTOVACUUM 0
 #endif
 
-#ifdef SQLITE_ENABLE_UNLOCKED
-# define ISUNLOCKED (pBt->pMap!=0)
+#ifdef SQLITE_ENABLE_CONCURRENT
+# define ISCONCURRENT (pBt->pMap!=0)
 #else
-# define ISUNLOCKED 0
+# define ISCONCURRENT 0
 #endif
 
-#define REQUIRE_PTRMAP (ISAUTOVACUUM || ISUNLOCKED)
+#define REQUIRE_PTRMAP (ISAUTOVACUUM || ISCONCURRENT)
 
 /*
 ** This structure is passed around through all the sanity checking routines

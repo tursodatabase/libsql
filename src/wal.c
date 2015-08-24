@@ -768,7 +768,7 @@ static const char *walLockName(int lockIdx){
 /*
 ** Set or release locks on the WAL.  Locks are either shared or exclusive.
 ** A lock cannot be moved directly between shared and exclusive - it must go
-** through the unlocked state first.
+** through the concurrent state first.
 **
 ** In locking_mode=EXCLUSIVE, all of these routines become no-ops.
 */
@@ -1068,7 +1068,7 @@ static int walIndexRecover(Wal *pWal){
   /* Obtain an exclusive lock on all byte in the locking range not already
   ** locked by the caller. The caller is guaranteed to have locked the
   ** WAL_WRITE_LOCK byte, and may have also locked the WAL_CKPT_LOCK byte.
-  ** If successful, the same bytes that are locked here are unlocked before
+  ** If successful, the same bytes that are locked here are concurrent before
   ** this function returns.
   */
   assert( pWal->ckptLock==1 || pWal->ckptLock==0 );
@@ -2608,14 +2608,14 @@ static int walUpgradeReadlock(Wal *pWal){
 }
 
 
-#ifdef SQLITE_ENABLE_UNLOCKED
+#ifdef SQLITE_ENABLE_CONCURRENT
 /* 
-** This function is only ever called when committing a "BEGIN UNLOCKED"
+** This function is only ever called when committing a "BEGIN CONCURRENT"
 ** transaction. It may be assumed that no frames have been written to
 ** the wal file. The second parameter is a pointer to the in-memory 
 ** representation of page 1 of the database (which may or may not be
 ** dirty). The third is a bitvec with a bit set for each page in the
-** database file that was read by the current unlocked transaction.
+** database file that was read by the current concurrent transaction.
 **
 ** This function performs three tasks:
 **
@@ -2626,7 +2626,7 @@ static int walUpgradeReadlock(Wal *pWal){
 **      it was opened, and
 **
 **   3) It ejects any non-dirty pages from the page-cache that have been
-**      written by another client since the UNLOCKED transaction was started
+**      written by another client since the CONCURRENT transaction was started
 **      (so as to avoid ending up with an inconsistent cache after the
 **      current transaction is committed).
 **
@@ -2657,7 +2657,7 @@ int sqlite3WalLockForCommit(Wal *pWal, PgHdr *pPage1, Bitvec *pAllRead){
     if( walIndexLoadHdr(pWal, &head) ){
       /* This branch is taken if the wal-index header is corrupted. This 
       ** occurs if some other writer has crashed while committing a 
-      ** transaction to this database since the current unlocked transaction
+      ** transaction to this database since the current concurrent transaction
       ** was opened.  */
       rc = SQLITE_BUSY_SNAPSHOT;
     }else if( memcmp(&pWal->hdr, (void*)&head, sizeof(WalIndexHdr))!=0 ){
@@ -2698,13 +2698,13 @@ int sqlite3WalLockForCommit(Wal *pWal, PgHdr *pPage1, Bitvec *pAllRead){
               }
             }else if( sqlite3BitvecTestNotNull(pAllRead, aPgno[i]) ){
               sqlite3_log(SQLITE_OK,
-                  "cannot commit UNLOCKED transaction (conflict at page %d)",
+                  "cannot commit CONCURRENT transaction (conflict at page %d)",
                   (int)aPgno[i]
               );
               rc = SQLITE_BUSY_SNAPSHOT;
             }else if( (pPg = sqlite3PagerLookup(pPager, aPgno[i])) ){
               /* Page aPgno[i], which is present in the pager cache, has been
-              ** modified since the current UNLOCKED transaction was started.
+              ** modified since the current CONCURRENT transaction was started.
               ** However it was not read by the current transaction, so is not
               ** a conflict. There are two possibilities: (a) the page was
               ** allocated at the of the file by the current transaction or 
@@ -2735,14 +2735,14 @@ int sqlite3WalLockForCommit(Wal *pWal, PgHdr *pPage1, Bitvec *pAllRead){
 }
 
 /*
-** This function is called as part of committing an UNLOCKED transaction.
+** This function is called as part of committing an CONCURRENT transaction.
 ** It is assumed that sqlite3WalLockForCommit() has already been successfully
 ** called and so (a) the WRITER lock is held and (b) it is known that the
 ** wal-index-header stored in shared memory is not corrupt.
 **
 ** Before returning, this function upgrades the client so that it is 
 ** operating on the database snapshot currently at the head of the wal file
-** (even if the UNLOCKED transaction ran against an older snapshot).
+** (even if the CONCURRENT transaction ran against an older snapshot).
 **
 ** SQLITE_OK is returned if successful, or an SQLite error code otherwise.
 */
@@ -2760,7 +2760,7 @@ int sqlite3WalUpgradeSnapshot(Wal *pWal){
   }
   return rc;
 }
-#endif   /* SQLITE_ENABLE_UNLOCKED */
+#endif   /* SQLITE_ENABLE_CONCURRENT */
 
 /*
 ** End a write transaction.  The commit has already been done.  This

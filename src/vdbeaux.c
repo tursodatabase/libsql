@@ -2025,8 +2025,8 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
     }
   }
 
-#ifdef SQLITE_ENABLE_UNLOCKED
-  if( db->bUnlocked && (rc & 0xFF)==SQLITE_BUSY ){
+#ifdef SQLITE_ENABLE_CONCURRENT
+  if( db->bConcurrent && (rc & 0xFF)==SQLITE_BUSY ){
     /* An SQLITE_BUSY or SQLITE_BUSY_SNAPSHOT was encountered while 
     ** attempting to take the WRITER lock on a wal file. Release the
     ** WRITER locks on all wal files and return early.  */
@@ -2443,7 +2443,7 @@ int sqlite3VdbeHalt(Vdbe *p){
           sqlite3RollbackAll(db, SQLITE_ABORT_ROLLBACK);
           sqlite3CloseSavepoints(db);
           db->autoCommit = 1;
-          db->bUnlocked = 0;
+          db->bConcurrent = 0;
           p->nChange = 0;
         }
       }
@@ -2506,7 +2506,7 @@ int sqlite3VdbeHalt(Vdbe *p){
         sqlite3RollbackAll(db, SQLITE_ABORT_ROLLBACK);
         sqlite3CloseSavepoints(db);
         db->autoCommit = 1;
-        db->bUnlocked = 0;
+        db->bConcurrent = 0;
         p->nChange = 0;
       }
     }
@@ -2528,7 +2528,7 @@ int sqlite3VdbeHalt(Vdbe *p){
         sqlite3RollbackAll(db, SQLITE_ABORT_ROLLBACK);
         sqlite3CloseSavepoints(db);
         db->autoCommit = 1;
-        db->bUnlocked = 0;
+        db->bConcurrent = 0;
         p->nChange = 0;
       }
     }

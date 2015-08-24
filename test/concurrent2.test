@@ -13,9 +13,9 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 source $testdir/lock_common.tcl
-set ::testprefix unlocked2
+set ::testprefix concurrent2
 
-ifcapable !unlocked {
+ifcapable !concurrent {
   finish_test
   return
 }
@@ -31,11 +31,11 @@ do_multiclient_test tn {
   } {wal}
   do_test 1.$tn.5 { sql3 { PRAGMA integrity_check } } {ok}
 
-  # Test that an UNLOCKED transaction that allocates/frees no pages does
+  # Test that an CONCURRENT transaction that allocates/frees no pages does
   # not conflict with a transaction that does allocate pages.
   do_test 1.$tn.2  {
     sql1 { 
-      BEGIN UNLOCKED;
+      BEGIN CONCURRENT;
         INSERT INTO t1 VALUES(4);
     }
     sql2 {
@@ -47,11 +47,11 @@ do_multiclient_test tn {
   } {}
   do_test 1.$tn.5 { sql3 { PRAGMA integrity_check } } {ok}
   
-  # But that an UNLOCKED transaction does conflict with a transaction
+  # But that an CONCURRENT transaction does conflict with a transaction
   # that modifies the db schema.
   do_test 1.$tn.3  {
     sql1 {
-      BEGIN UNLOCKED;
+      BEGIN CONCURRENT;
         INSERT INTO t1 VALUES(5);
     }
     sql2 {
@@ -61,12 +61,12 @@ do_multiclient_test tn {
   } {1 {database is locked}}
   do_test 1.$tn.5 { sql3 { PRAGMA integrity_check } } {ok}
   
-  # Test that an UNLOCKED transaction that allocates at least one page 
+  # Test that an CONCURRENT transaction that allocates at least one page 
   # does not conflict with a transaction that allocates no pages.
   do_test 1.$tn.4  {
     sql1 { 
       ROLLBACK;
-      BEGIN UNLOCKED;
+      BEGIN CONCURRENT;
         INSERT INTO t1 VALUES(randomblob(1500));
     }
     sql2 {
@@ -91,7 +91,7 @@ do_multiclient_test tn {
 
   do_test 2.$tn.2  {
     sql1 { 
-      BEGIN UNLOCKED;
+      BEGIN CONCURRENT;
         INSERT INTO t1 VALUES(randomblob(1500));
     }
     sql2 {
@@ -104,7 +104,7 @@ do_multiclient_test tn {
 
   do_test 2.$tn.4  {
     sql1 { 
-      BEGIN UNLOCKED;
+      BEGIN CONCURRENT;
         DELETE FROM t1;
     }
     sql2 {
@@ -124,7 +124,7 @@ do_multiclient_test tn {
     }
 
     sql1 {
-      BEGIN UNLOCKED;
+      BEGIN CONCURRENT;
         DELETE FROM t1 WHERE rowid=2;
     }
 
@@ -139,15 +139,15 @@ do_multiclient_test tn {
 }
 
 #-------------------------------------------------------------------------
-# When an UNLOCKED transaction is opened on a database, the nFree and 
+# When an CONCURRENT transaction is opened on a database, the nFree and 
 # iTrunk header fields of the cached version of page 1 are both set 
-# to 0. This allows an UNLOCKED transaction to use its own private 
+# to 0. This allows an CONCURRENT transaction to use its own private 
 # free-page-list, which is merged with the main database free-list when
 # the transaction is committed.
 #
 # The following tests check that nFree/iTrunk are correctly restored if
-# an UNLOCKED transaction is rolled back, and that savepoint rollbacks
-# that occur within UNLOCKED transactions do not incorrectly restore
+# an CONCURRENT transaction is rolled back, and that savepoint rollbacks
+# that occur within CONCURRENT transactions do not incorrectly restore
 # these fields to their on-disk values.
 #
 reset_db
@@ -159,7 +159,7 @@ do_execsql_test 3.0 {
 } {wal}
 
 do_execsql_test 3.1 {
-  BEGIN UNLOCKED;
+  BEGIN CONCURRENT;
     INSERT INTO t1 VALUES(1, 2);
   ROLLBACK;
 }
@@ -168,7 +168,7 @@ do_execsql_test 3.2 { PRAGMA integrity_check } {ok}
 do_execsql_test 3.3 { PRAGMA freelist_count } {2}
 
 do_execsql_test 3.4.1 {
-  BEGIN UNLOCKED;
+  BEGIN CONCURRENT;
     PRAGMA freelist_count;
 } {2}
 do_execsql_test 3.4.2 {
@@ -184,7 +184,7 @@ do_execsql_test 3.4.5 { COMMIT; PRAGMA freelist_count } {2}
 do_execsql_test 3.4.6 { PRAGMA integrity_check } {ok}
 
 do_execsql_test 3.5.1 {
-  BEGIN UNLOCKED;
+  BEGIN CONCURRENT;
     UPDATE t1 SET x=randomblob(10) WHERE y=555;
     PRAGMA freelist_count;
 } {0}
@@ -195,7 +195,7 @@ do_execsql_test 3.5.2 {
 do_execsql_test 3.5.3 { PRAGMA integrity_check } {ok}
 
 #-------------------------------------------------------------------------
-# Test that nothing goes wrong if an UNLOCKED transaction allocates a
+# Test that nothing goes wrong if an CONCURRENT transaction allocates a
 # page at the end of the file, frees it within the same transaction, and
 # then has to move the same page to avoid a conflict on COMMIT.
 #
@@ -210,7 +210,7 @@ do_multiclient_test tn {
 
   do_test 4.$tn.2 {
     sql1 {
-      BEGIN UNLOCKED;
+      BEGIN CONCURRENT;
         INSERT INTO t1 VALUES(randomblob(1500));
         INSERT INTO t1 VALUES(randomblob(1500));
         DELETE FROM t1 WHERE rowid = 1;
@@ -243,7 +243,7 @@ do_multiclient_test tn {
 
   do_test 5.$tn.2 {
     sql1 {
-      BEGIN UNLOCKED;
+      BEGIN CONCURRENT;
         INSERT INTO t2 VALUES(randomblob(1500));
         PRAGMA page_count;
     }
@@ -275,7 +275,7 @@ do_multiclient_test tn {
 
   do_test 6.$tn.2 {
     sql1 { 
-      BEGIN UNLOCKED;
+      BEGIN CONCURRENT;
         INSERT INTO t1 VALUES(randomblob(1500));
         INSERT INTO t1 VALUES(randomblob(1500));
     }

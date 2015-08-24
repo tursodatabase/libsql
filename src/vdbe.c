@@ -2895,7 +2895,7 @@ case OP_Savepoint: {
       ** is committed. 
       */
       int isTransaction = pSavepoint->pNext==0 && db->isTransactionSavepoint;
-      assert( db->bUnlocked==0 || db->isTransactionSavepoint==0 );
+      assert( db->bConcurrent==0 || db->isTransactionSavepoint==0 );
       if( isTransaction && p1==SAVEPOINT_RELEASE ){
         if( (rc = sqlite3VdbeCheckFk(p, 1))!=SQLITE_OK ){
           goto vdbe_return;
@@ -2979,7 +2979,7 @@ case OP_Savepoint: {
 ** there are active writing VMs or active VMs that use shared cache.
 **
 ** If P3 is non-zero, then this instruction is being executed as part of
-** a "BEGIN UNLOCKED" command.
+** a "BEGIN CONCURRENT" command.
 **
 ** This instruction causes the VM to halt.
 */
@@ -2987,25 +2987,25 @@ case OP_AutoCommit: {
   int desiredAutoCommit;
   int iRollback;
   int turnOnAC;
-  int bUnlocked;
+  int bConcurrent;
   int hrc;
 
   desiredAutoCommit = pOp->p1;
   iRollback = pOp->p2;
-  bUnlocked = pOp->p3;
+  bConcurrent = pOp->p3;
   turnOnAC = desiredAutoCommit && !db->autoCommit;
   assert( desiredAutoCommit==1 || desiredAutoCommit==0 );
   assert( desiredAutoCommit==1 || iRollback==0 );
-  assert( desiredAutoCommit==0 || bUnlocked==0 );
-  assert( db->autoCommit==0 || db->bUnlocked==0 );
+  assert( desiredAutoCommit==0 || bConcurrent==0 );
+  assert( db->autoCommit==0 || db->bConcurrent==0 );
   assert( db->nVdbeActive>0 );  /* At least this one VM is active */
   assert( p->bIsReader );
 
   if( turnOnAC && !iRollback 
-   && (db->nVdbeWrite>0 || (db->bUnlocked && db->nVdbeActive>1))
+   && (db->nVdbeWrite>0 || (db->bConcurrent && db->nVdbeActive>1))
   ){
     /* A transaction may only be committed if there are no other active
-    ** writer VMs. If the transaction is UNLOCKED, then it may only be
+    ** writer VMs. If the transaction is CONCURRENT, then it may only be
     ** committed if there are no active VMs at all (readers or writers).
     **
     ** If this instruction is a COMMIT and the transaction may not be
@@ -3020,7 +3020,7 @@ case OP_AutoCommit: {
       assert( desiredAutoCommit==1 );
       sqlite3RollbackAll(db, SQLITE_ABORT_ROLLBACK);
       db->autoCommit = 1;
-      db->bUnlocked = 0;
+      db->bConcurrent = 0;
     }else if( (rc = sqlite3VdbeCheckFk(p, 1))!=SQLITE_OK ){
       goto vdbe_return;
     }else{
@@ -3034,7 +3034,7 @@ case OP_AutoCommit: {
       rc = SQLITE_BUSY;
       goto vdbe_return;
     }
-    db->bUnlocked = (u8)bUnlocked;
+    db->bConcurrent = (u8)bConcurrent;
     assert( db->nStatement==0 );
     sqlite3CloseSavepoints(db);
     if( p->rc==SQLITE_OK ){
@@ -3227,12 +3227,12 @@ case OP_SetCookie: {       /* in3 */
   assert( sqlite3SchemaMutexHeld(db, pOp->p1, 0) );
   pIn3 = &aMem[pOp->p3];
   sqlite3VdbeMemIntegerify(pIn3);
-#ifdef SQLITE_ENABLE_UNLOCKED
-  if( db->bUnlocked 
+#ifdef SQLITE_ENABLE_CONCURRENT
+  if( db->bConcurrent 
    && (pOp->p2==BTREE_USER_VERSION || pOp->p2==BTREE_APPLICATION_ID)
   ){
     rc = SQLITE_ERROR;
-    sqlite3VdbeError(p, "cannot modify %s within UNLOCKED transaction",
+    sqlite3VdbeError(p, "cannot modify %s within CONCURRENT transaction",
         pOp->p2==BTREE_USER_VERSION ? "user_version" : "application_id"
     );
     break; 
@@ -3242,7 +3242,7 @@ case OP_SetCookie: {       /* in3 */
   rc = sqlite3BtreeUpdateMeta(pDb->pBt, pOp->p2, (int)pIn3->u.i);
   if( pOp->p2==BTREE_SCHEMA_VERSION ){
     /* When the schema cookie changes, record the new cookie internally */
-    assert( db->bUnlocked==0 );
+    assert( db->bConcurrent==0 );
     pDb->pSchema->schema_cookie = (int)pIn3->u.i;
     db->flags |= SQLITE_InternChanges;
   }else if( pOp->p2==BTREE_FILE_FORMAT ){
@@ -6115,11 +6115,11 @@ case OP_Expire: {
 */
 case OP_TableLock: {
   u8 isWriteLock = (u8)pOp->p3;
-#ifdef SQLITE_ENABLE_UNLOCKED
-  if( isWriteLock && db->bUnlocked && pOp->p2==1 ){
+#ifdef SQLITE_ENABLE_CONCURRENT
+  if( isWriteLock && db->bConcurrent && pOp->p2==1 ){
     rc = SQLITE_ERROR;
     sqlite3VdbeError(p, 
-        "cannot modify database schema within UNLOCKED transaction");
+        "cannot modify database schema within CONCURRENT transaction");
     rc = SQLITE_ERROR;
     break;
   }

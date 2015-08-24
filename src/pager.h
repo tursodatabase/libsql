@@ -195,7 +195,7 @@ void sqlite3PagerTruncateImage(Pager*,Pgno);
 void sqlite3PagerRekey(DbPage*, Pgno, u16);
 
 void sqlite3PagerDropExclusiveLock(Pager*);
-int sqlite3PagerIsUnlocked(Pager*);
+int sqlite3PagerIsConcurrent(Pager*);
 int sqlite3PagerIswriteable(DbPage*);
 int sqlite3PagerUpgradeSnapshot(Pager *pPager, DbPage*);
 void sqlite3PagerSetDbsize(Pager *pPager, Pgno);

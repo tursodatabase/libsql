@@ -13,9 +13,9 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 source $testdir/lock_common.tcl
-set ::testprefix unlocked
+set ::testprefix concurrent
 
-ifcapable !unlocked {
+ifcapable !concurrent {
   finish_test
   return
 }
@@ -26,7 +26,7 @@ do_execsql_test 1.0 {
 
 do_execsql_test 1.1 {
   CREATE TABLE t1(k INTEGER PRIMARY KEY, v);
-  BEGIN UNLOCKED;
+  BEGIN CONCURRENT;
     INSERT INTO t1 VALUES(1, 'abcd');
   COMMIT;
 }
@@ -36,7 +36,7 @@ do_execsql_test 1.2 {
 } {1 abcd}
 
 do_execsql_test 1.3 {
-  BEGIN UNLOCKED;
+  BEGIN CONCURRENT;
     INSERT INTO t1 VALUES(2, 'efgh');
   ROLLBACK;
 }
@@ -47,10 +47,10 @@ do_execsql_test 1.4 {
 
 
 #-------------------------------------------------------------------------
-# UNLOCKED transactions cannot do cache spills.
+# CONCURRENT transactions cannot do cache spills.
 #
 foreach {tn trans spill} {
-  1 {BEGIN UNLOCKED}  0
+  1 {BEGIN CONCURRENT}  0
   2 {BEGIN}           1
 } {
   do_test 1.5.$tn {
@@ -72,7 +72,7 @@ foreach {tn trans spill} {
 }
 
 #-------------------------------------------------------------------------
-# UNLOCKED transactions man not be committed while there are active
+# CONCURRENT transactions man not be committed while there are active
 # readers.
 do_execsql_test 1.6.setup {
   DROP TABLE t1;
@@ -82,7 +82,7 @@ do_execsql_test 1.6.setup {
   INSERT INTO t1 VALUES(5, 6);
 }
 foreach {tn trans commit_ok} {
-  1 {BEGIN UNLOCKED}  0
+  1 {BEGIN CONCURRENT}  0
   2 {BEGIN}           1
 } {
   do_test 1.6.$tn.1 {
@@ -105,7 +105,7 @@ foreach {tn trans commit_ok} {
 }
 
 #-------------------------------------------------------------------------
-# UNLOCKED transactions may not modify the db schema.
+# CONCURRENT transactions may not modify the db schema.
 #
 foreach {tn sql} {
   1 { CREATE TABLE xx(a, b) }
@@ -115,9 +115,9 @@ foreach {tn sql} {
   5 { CREATE TEMP TABLE xx(a, b) }
 } {
   do_catchsql_test 1.7.$tn.1 "
-    BEGIN UNLOCKED;
+    BEGIN CONCURRENT;
     $sql
-  " {1 {cannot modify database schema within UNLOCKED transaction}}
+  " {1 {cannot modify database schema within CONCURRENT transaction}}
 
   do_execsql_test 1.7.$tn.2 {
     SELECT sql FROM sqlite_master;
@@ -128,8 +128,8 @@ foreach {tn sql} {
 }
 
 #-------------------------------------------------------------------------
-# If an auto-vacuum database is written within an UNLOCKED transaction, it
-# is handled in the same way as for a non-UNLOCKED transaction.
+# If an auto-vacuum database is written within an CONCURRENT transaction, it
+# is handled in the same way as for a non-CONCURRENT transaction.
 #
 reset_db
 do_execsql_test 1.8.1 {
@@ -140,20 +140,20 @@ do_execsql_test 1.8.1 {
 } {wal}
 
 do_execsql_test 1.8.2 {
-  BEGIN UNLOCKED;
+  BEGIN CONCURRENT;
     SELECT * FROM t1;
   COMMIT;
 } {x y}
 
 do_catchsql_test 1.8.3 {
-  BEGIN UNLOCKED;
+  BEGIN CONCURRENT;
     INSERT INTO t1 VALUES('a', 'b');
 } {0 {}}
 
 do_test 1.8.4 {
   sqlite3 db2 test.db
   catchsql {
-    BEGIN UNLOCKED;
+    BEGIN CONCURRENT;
       INSERT INTO t1 VALUES('c', 'd');
   } db2
 } {1 {database is locked}}
@@ -166,10 +166,10 @@ do_test 1.8.5 {
 do_multiclient_test tn {
 
   #-----------------------------------------------------------------------
-  # 1. Start an UNLOCKED transaction using [db1].
+  # 1. Start an CONCURRENT transaction using [db1].
   #
   # 2. Start and then rollback a regular transaction using [db2]. This 
-  #    can be done as the ongoing [db1] transaction is UNLOCKED.
+  #    can be done as the ongoing [db1] transaction is CONCURRENT.
   #
   # 3. The [db1] transaction can now be committed, as [db2] has relinquished
   #    the write lock.
@@ -181,7 +181,7 @@ do_multiclient_test tn {
       INSERT INTO t1 VALUES(1, 'one');
     }
     sql1 { 
-      BEGIN UNLOCKED;
+      BEGIN CONCURRENT;
         INSERT INTO t1 VALUES(2, 'two');
     }
     code1 { sqlite3_get_autocommit db }
@@ -201,7 +201,7 @@ do_multiclient_test tn {
   } {1 one 2 two}
   
   #-----------------------------------------------------------------------
-  # 1. Start an UNLOCKED transaction using [db1].
+  # 1. Start an CONCURRENT transaction using [db1].
   #
   # 2. Commit a transaction using [db2].
   #
@@ -210,7 +210,7 @@ do_multiclient_test tn {
   #
   do_test 2.$tn.2.1 {
     sql1 {
-      BEGIN UNLOCKED;
+      BEGIN CONCURRENT;
         INSERT INTO t1 VALUES(-1, 'hello world');
     }
   } {}
@@ -238,7 +238,7 @@ do_multiclient_test tn {
   } {-1 {hello world} 1 one 2 two}
   
   #-----------------------------------------------------------------------
-  # 1. Start an UNLOCKED transaction using [db1].
+  # 1. Start an CONCURRENT transaction using [db1].
   #
   # 2. Open a transaction using [db2].
   #
@@ -250,7 +250,7 @@ do_multiclient_test tn {
   #
   do_test 2.$tn.3.1 {
     sql1 {
-      BEGIN UNLOCKED;
+      BEGIN CONCURRENT;
         INSERT INTO t1 VALUES(4, 'four');
     }
   } {}
@@ -293,12 +293,12 @@ do_multiclient_test tn {
   } {}
   do_test 2.$tn.4.2 {
     sql2 {
-      BEGIN UNLOCKED;
+      BEGIN CONCURRENT;
         INSERT INTO t2 VALUES('i', 'n');
     }
 
     sql1 {
-      BEGIN UNLOCKED;
+      BEGIN CONCURRENT;
         INSERT INTO t1 VALUES(5, 'five');
       COMMIT;
     }
@@ -319,16 +319,16 @@ do_multiclient_test tn {
   #-----------------------------------------------------------------------
   # The "schema cookie" issue.
   #
-  # 1. Begin and UNLOCKED write to "t1" using [db]
+  # 1. Begin and CONCURRENT write to "t1" using [db]
   #
   # 2. Create an index on t1 using [db2].
   #
-  # 3. Attempt to commit the UNLOCKED write. This is an SQLITE_BUSY_SNAPSHOT,
+  # 3. Attempt to commit the CONCURRENT write. This is an SQLITE_BUSY_SNAPSHOT,
   #    even though there is no page collision.
   #
   do_test 2.$tn.5.1 {
     sql1 {
-      BEGIN UNLOCKED;
+      BEGIN CONCURRENT;
         INSERT INTO t1 VALUES(6, 'six');
     }
   } {}
@@ -348,15 +348,15 @@ do_multiclient_test tn {
 
   #-----------------------------------------------------------------------
   #
-  # 1. Begin an UNLOCKED write to "t1" using [db]
+  # 1. Begin an CONCURRENT write to "t1" using [db]
   #
   # 2. Lots of inserts into t2. Enough to grow the db file and modify page 1.
   #
-  # 3. Check that the UNLOCKED transaction can not be committed.
+  # 3. Check that the CONCURRENT transaction can not be committed.
   #
   do_test 2.$tn.6.1 {
     sql1 {
-      BEGIN UNLOCKED;
+      BEGIN CONCURRENT;
         INSERT INTO t1 VALUES(6, 'six');
     }
   } {}
@@ -384,17 +384,17 @@ do_multiclient_test tn {
 
   #-----------------------------------------------------------------------
   # 
-  # 1. Begin an big UNLOCKED write to "t1" using [db] - large enough to
+  # 1. Begin an big CONCURRENT write to "t1" using [db] - large enough to
   #    grow the db file.
   #
   # 2. Lots of inserts into t2. Also enough to grow the db file.
   #
-  # 3. Check that the UNLOCKED transaction cannot be committed (due to a clash
+  # 3. Check that the CONCURRENT transaction cannot be committed (due to a clash
   #    on page 1 - the db size field).
   #
   do_test 2.$tn.7.1 {
     sql1 {
-      BEGIN UNLOCKED;
+      BEGIN CONCURRENT;
         WITH src(a,b) AS (
           VALUES(10000,10000) UNION ALL SELECT a+1,b+1 FROM src WHERE a<20000
         ) INSERT INTO t1 SELECT * FROM src;
@@ -427,20 +427,20 @@ do_execsql_test 3.0 {
   PRAGMA user_version = 10;
 } {wal}
 do_execsql_test 3.1 {
-  BEGIN UNLOCKED;
+  BEGIN CONCURRENT;
     INSERT INTO t1 VALUES('c', 'd');
     SELECT * FROM t1;
 } {a b c d}
 do_catchsql_test 3.2 {
   PRAGMA user_version = 11;
-} {1 {cannot modify user_version within UNLOCKED transaction}}
+} {1 {cannot modify user_version within CONCURRENT transaction}}
 do_execsql_test 3.3 {
   PRAGMA user_version;
   SELECT * FROM t1;
 } {10 a b c d}
 do_catchsql_test 3.4 {
   PRAGMA application_id = 11;
-} {1 {cannot modify application_id within UNLOCKED transaction}}
+} {1 {cannot modify application_id within CONCURRENT transaction}}
 do_execsql_test 3.5 {
   COMMIT;
   PRAGMA user_version;

@@ -9,17 +9,17 @@
 #
 #***********************************************************************
 #
-# Tests for transactions started with BEGIN UNLOCKED. The tests in this
+# Tests for transactions started with BEGIN CONCURRENT. The tests in this
 # file focus on testing that deferred page allocation works properly.
 #
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 source $testdir/lock_common.tcl
-set ::testprefix unlocked3
+set ::testprefix concurrent3
 
 if {$AUTOVACUUM} { finish_test ; return }
-ifcapable !unlocked {
+ifcapable !concurrent {
   finish_test
   return
 }
@@ -110,7 +110,7 @@ foreach {tn oplist} {
   foreach db $DBLIST { sqlite3 $db test.db }
 
   do_test 1.$tn {
-    foreach db $DBLIST { $db eval "BEGIN UNLOCKED" } 
+    foreach db $DBLIST { $db eval "BEGIN CONCURRENT" } 
 
     foreach op $oplist {
       set iTbl [string range $op 0 0]

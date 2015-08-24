@@ -440,10 +440,10 @@ static void downgradeAllSharedCacheTableLocks(Btree *p){
 #endif /* SQLITE_OMIT_SHARED_CACHE */
 
 
-#ifdef SQLITE_ENABLE_UNLOCKED
+#ifdef SQLITE_ENABLE_CONCURRENT
 /*
 ** The following structure - BtreePtrmap - stores the in-memory pointer map
-** used for newly allocated pages in UNLOCKED transactions. Such pages are
+** used for newly allocated pages in CONCURRENT transactions. Such pages are
 ** always allocated in a contiguous block (from the end of the file) starting
 ** with page BtreePtrmap.iFirst.
 */
@@ -588,7 +588,7 @@ static void btreePtrmapEnd(BtShared *pBt, int op, int iSvpt){
 }
 
 /*
-** This function is called after an UNLOCKED transaction is opened on the
+** This function is called after an CONCURRENT transaction is opened on the
 ** database. It allocates the BtreePtrmap structure used to track pointers
 ** to allocated pages and zeroes the nFree/iTrunk fields in the database 
 ** header on page 1.
@@ -596,7 +596,7 @@ static void btreePtrmapEnd(BtShared *pBt, int op, int iSvpt){
 static int btreePtrmapAllocate(BtShared *pBt){
   int rc = SQLITE_OK;
   BtreePtrmap *pMap = sqlite3_malloc(sizeof(BtreePtrmap));
-  assert( pBt->pMap==0 && sqlite3PagerIsUnlocked(pBt->pPager) );
+  assert( pBt->pMap==0 && sqlite3PagerIsConcurrent(pBt->pPager) );
   if( pMap==0 ){
     rc = SQLITE_NOMEM;
   }else{
@@ -1074,7 +1074,7 @@ static void ptrmapPut(BtShared *pBt, Pgno key, u8 eType, Pgno parent, int *pRC){
   /* The master-journal page number is never added to a pointer-map page */
   assert( 0==PTRMAP_ISPAGE(pBt, PENDING_BYTE_PAGE(pBt)) );
 
-#ifdef SQLITE_ENABLE_UNLOCKED
+#ifdef SQLITE_ENABLE_CONCURRENT
   if( pBt->pMap ){
     *pRC = btreePtrmapStore(pBt, key, eType, parent);
     return;
@@ -3339,15 +3339,15 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag){
       if( (pBt->btsFlags & BTS_READ_ONLY)!=0 ){
         rc = SQLITE_READONLY;
       }else{
-        int exFlag = (p->db->bUnlocked && !ISAUTOVACUUM) ? -1 : (wrflag>1);
+        int exFlag = (p->db->bConcurrent && !ISAUTOVACUUM) ? -1 : (wrflag>1);
         int bSubjInMem = sqlite3TempInMemory(p->db);
-        assert( p->db->bUnlocked==0 || wrflag==1 );
+        assert( p->db->bConcurrent==0 || wrflag==1 );
         rc = sqlite3PagerBegin(pBt->pPager, exFlag, bSubjInMem);
         if( rc==SQLITE_OK ){
           rc = newDatabase(pBt);
         }
-#ifdef SQLITE_ENABLE_UNLOCKED
-        if( rc==SQLITE_OK && sqlite3PagerIsUnlocked(pBt->pPager) ){
+#ifdef SQLITE_ENABLE_CONCURRENT
+        if( rc==SQLITE_OK && sqlite3PagerIsConcurrent(pBt->pPager) ){
           rc = btreePtrmapAllocate(pBt);
         }
 #endif
@@ -3848,9 +3848,9 @@ static int autoVacuumCommit(BtShared *pBt){
 # define setChildPtrmaps(x) SQLITE_OK
 #endif
 
-#ifdef SQLITE_ENABLE_UNLOCKED
+#ifdef SQLITE_ENABLE_CONCURRENT
 /*
-** This function is called as part of merging an UNLOCKED transaction with
+** This function is called as part of merging an CONCURRENT transaction with
 ** the snapshot at the head of the wal file. It relocates all pages in the
 ** range iFirst..iLast, inclusive. It is assumed that the BtreePtrmap 
 ** structure at BtShared.pMap contains the location of the pointers to each
@@ -3918,7 +3918,7 @@ static int btreeRelocateRange(
 
 /*
 ** The b-tree handle passed as the only argument is about to commit an
-** UNLOCKED transaction. At this point it is guaranteed that this is 
+** CONCURRENT transaction. At this point it is guaranteed that this is 
 ** possible - the wal WRITER lock is held and it is known that there are 
 ** no conflicts with committed transactions.
 */
@@ -3937,7 +3937,7 @@ static int btreeFixUnlocked(Btree *p){
   Pgno nPage = btreePagecount(pBt);
   u32 nFree = get4byte(&p1[36]);
 
-  assert( sqlite3PagerIsUnlocked(pPager) );
+  assert( sqlite3PagerIsConcurrent(pPager) );
   assert( pBt->pMap );
   rc = sqlite3PagerUpgradeSnapshot(pPager, pPage1->pDbPage);
   assert( p1==pPage1->aData );
@@ -3967,7 +3967,7 @@ static int btreeFixUnlocked(Btree *p){
 
       if( nHPage<(pMap->iFirst-1) ){
         /* The database consisted of (pMap->iFirst-1) pages when the current
-        ** unlocked transaction was opened. And an unlocked transaction may
+        ** concurrent transaction was opened. And an concurrent transaction may
         ** not be executed on an auto-vacuum database - so the db should 
         ** not have shrunk since the transaction was opened. Therefore nHPage
         ** should be set to (pMap->iFirst-1) or greater. */
@@ -4042,7 +4042,7 @@ int sqlite3BtreeCommitPhaseOne(Btree *p, const char *zMaster){
 
 #ifndef SQLITE_OMIT_AUTOVACUUM
     if( pBt->autoVacuum ){
-      assert( ISUNLOCKED==0 );
+      assert( ISCONCURRENT==0 );
       rc = autoVacuumCommit(pBt);
       if( rc!=SQLITE_OK ){
         sqlite3BtreeLeave(p);
@@ -4053,7 +4053,7 @@ int sqlite3BtreeCommitPhaseOne(Btree *p, const char *zMaster){
       sqlite3PagerTruncateImage(pBt->pPager, pBt->nPage);
     }
 #endif
-    if( rc==SQLITE_OK && ISUNLOCKED ){
+    if( rc==SQLITE_OK && ISCONCURRENT ){
       rc = btreeFixUnlocked(p);
     }
     if( rc==SQLITE_OK ){
@@ -4101,7 +4101,7 @@ static void btreeEndTransaction(Btree *p){
     unlockBtreeIfUnused(pBt);
   }
 
-  /* If this was an UNLOCKED transaction, delete the pBt->pMap object */
+  /* If this was an CONCURRENT transaction, delete the pBt->pMap object */
   btreePtrmapDelete(pBt);
   btreeIntegrity(p);
 }
@@ -5860,14 +5860,14 @@ static int allocateBtreePage(
   ** stores stores the total number of pages on the freelist. */
   n = get4byte(&pPage1->aData[36]);
   testcase( n==mxPage-1 );
-  if( ISUNLOCKED==0 && n>=mxPage ){
+  if( ISCONCURRENT==0 && n>=mxPage ){
     return SQLITE_CORRUPT_BKPT;
   }
 
   /* Ensure page 1 is writable. This function will either change the number
   ** of pages in the free-list or the size of the database file. Since both
   ** of these operations involve modifying page 1 header fields, page 1
-  ** will definitely be written by this transaction. If this is an UNLOCKED
+  ** will definitely be written by this transaction. If this is an CONCURRENT
   ** transaction, ensure the BtreePtrmap structure has been allocated.  */
   rc = sqlite3PagerWrite(pPage1->pDbPage);
   if( rc ) return rc;
@@ -5883,7 +5883,7 @@ static int allocateBtreePage(
     ** the entire-list will be searched for that page.
     */
     if( eMode==BTALLOC_EXACT ){
-      assert( ISAUTOVACUUM!=ISUNLOCKED );
+      assert( ISAUTOVACUUM!=ISCONCURRENT );
       if( ISAUTOVACUUM ){
         if( nearby<=mxPage ){
           u8 eType;
@@ -9974,14 +9974,14 @@ int sqlite3HeaderSizeBtree(void){ return ROUND8(sizeof(MemPage)); }
 ** current write-transaction to the database file are held. If the db is
 ** in rollback mode, this means the EXCLUSIVE lock on the database file.
 **
-** Or, if this is an UNLOCKED transaction on a wal-mode database, the WRITER
+** Or, if this is an CONCURRENT transaction on a wal-mode database, the WRITER
 ** lock on the wal file. In this case this function also checks that the
-** UNLOCKED transaction can be safely committed (does not commit with any
+** CONCURRENT transaction can be safely committed (does not commit with any
 ** other transaction committed since it was opened).
 **
 ** SQLITE_OK is returned if successful. SQLITE_BUSY if the required locks
 ** cannot be obtained due to a conflicting lock. If the locks cannot be
-** obtained for an UNLOCKED transaction due to a conflict with an already
+** obtained for an CONCURRENT transaction due to a conflict with an already
 ** committed transaction, SQLITE_BUSY_SNAPSHOT is returned. Otherwise, if
 ** some other error (OOM, IO, etc.) occurs, the relevant SQLite error code
 ** is returned.
