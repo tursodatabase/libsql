@@ -640,9 +640,7 @@ void sqlite3DeleteTable(sqlite3 *db, Table *pTable){
   sqlite3DbFree(db, pTable->zName);
   sqlite3DbFree(db, pTable->zColAff);
   sqlite3SelectDelete(db, pTable->pSelect);
-#ifndef SQLITE_OMIT_CHECK
   sqlite3ExprListDelete(db, pTable->pCheck);
-#endif
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   sqlite3VtabClear(db, pTable);
 #endif
