@@ -1161,6 +1161,20 @@ no_mem:
 }
 
 /*
+** Set the sort order for the last element on the given ExprList.
+*/
+void sqlite3ExprListSetSortOrder(ExprList *p, int iSortOrder){
+  if( p==0 ) return;
+  assert( SQLITE_SO_UNDEFINED<0 && SQLITE_SO_ASC>=0 && SQLITE_SO_DESC>0 );
+  assert( p->nExpr>0 );
+  if( iSortOrder<0 ){
+    assert( p->a[p->nExpr-1].sortOrder==SQLITE_SO_ASC );
+    return;
+  }
+  p->a[p->nExpr-1].sortOrder = (u8)iSortOrder;
+}
+
+/*
 ** Set the ExprList.a[].zName element of the most recently added item
 ** on the expression list.
 **

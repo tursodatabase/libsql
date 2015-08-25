@@ -1507,7 +1507,6 @@ void sqlite3ResolveSelfReference(
 ){
   SrcList sSrc;                   /* Fake SrcList for pParse->pNewTable */
   NameContext sNC;                /* Name context for pParse->pNewTable */
-  int i;                          /* Loop counter */
 
   assert( type==NC_IsCheck || type==NC_PartIdx );
   memset(&sNC, 0, sizeof(sNC));
@@ -1520,11 +1519,5 @@ void sqlite3ResolveSelfReference(
   sNC.pSrcList = &sSrc;
   sNC.ncFlags = type;
   if( sqlite3ResolveExprNames(&sNC, pExpr) ) return;
-  if( pList ){
-    for(i=0; i<pList->nExpr; i++){
-      if( sqlite3ResolveExprNames(&sNC, pList->a[i].pExpr) ){
-        return;
-      }
-    }
-  }
+  if( pList ) sqlite3ResolveExprListNames(&sNC, pList);
 }

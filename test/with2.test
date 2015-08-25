@@ -250,7 +250,8 @@ do_execsql_test  4.4 [genstmt 255] 1
 set nLimit [sqlite3_limit db SQLITE_LIMIT_COLUMN -1]
 do_execsql_test  4.5 [genstmt [expr $nLimit-1]] 1
 do_execsql_test  4.6 [genstmt $nLimit] 1
-do_catchsql_test 4.7 [genstmt [expr $nLimit+1]] {1 {too many columns in index}}
+do_catchsql_test 4.7 [genstmt [expr $nLimit+1]] \
+  {1 {too many columns in result set}}
 
 #---------------------------------------------------------------------------
 # Check that adding a WITH clause to an INSERT disables the xfer 
@@ -415,4 +416,3 @@ do_execsql_test 8.3 {
 
 
 finish_test
-
