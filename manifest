@@ -1,5 +1,5 @@
-C Merge\slatest\strunk\schanges\swith\sthis\sbranch.
-D 2015-08-25T11:16:02.604
+C Fix\sa\ssegfault\sthat\scould\soccur\sfollowing\san\sOOM\scondition\sin\sthe\sconcurrent\stransaction\scode.
+D 2015-08-25T14:37:39.823
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e2218eb228374422969de7b1680eda6864affcef
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -279,7 +279,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 4d9134dc988a87838c06056c89c0e8c4700a0452
 F src/bitvec.c d1f21d7d91690747881f03940584f4cc548c9d3d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c f4db20fab7bf5ebd9f12ef7e3a925ca3c2c34fa8
+F src/btree.c a76329691503fc68ec374791aaf4074dc8686b3a
 F src/btree.h 00d4cdb747c4172a5566faf037116985dbbc377e
 F src/btreeInt.h 171864bcd81635583dab7b8a04b19b454b18ef80
 F src/build.c 1b5814e0eeaba096ae3ee17ebd139d2a25af7250
@@ -523,7 +523,8 @@ F test/collate9.test 3adcc799229545940df2f25308dd1ad65869145a
 F test/collateA.test b8218ab90d1fa5c59dcf156efabb1b2599c580d6
 F test/colmeta.test 2c765ea61ee37bc43bbe6d6047f89004e6508eb1
 F test/colname.test 08948a4809d22817e0e5de89c7c0a8bd90cb551b
-F test/concurrent.test 631e398b127a13ddfbcc8e64f438d9f82b261ffe
+F test/concfault.test 500f17c3fcfe7705114422bcc6ddd3c740001a43
+F test/concurrent.test 26c2d49abbf4847ceed9bf8cf7fbe9a2a4ffc70c
 F test/concurrent2.test 21a15630192ba92287070a1a58a6e497d393c55d
 F test/concurrent3.test 7dcf81372c06cbac58e7e630aebf7292945947bb
 F test/conflict.test 841bcf7cabbfca39c577eb8411ea8601843b46a8
@@ -1381,7 +1382,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 47280f2a2b7cc83bf11ab86284204f565c278c55 8f1d9f1f308518522ebb1eaebb9b184b4ac30924
-R 4996e84b0ad088ebe2e29da93ebd1db4
+P 3e7d6dd62dfa63d7def00bd00ac055a606a0c80d
+R 7e8bf99bd9ee49e1baaabce6c0c30e59
 U dan
-Z 753c22f173f485729e70306b30e77d72
+Z 16262c3600df8d68cd85cb26ef84be69

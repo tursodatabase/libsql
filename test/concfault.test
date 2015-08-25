@@ -1,0 +1,86 @@
+# 2015 Aug 25
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# This file contains fault injection tests designed to test the concurrent
+# transactions feature.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+source $testdir/malloc_common.tcl
+set testprefix concfault
+
+# This test will not work with an in-memory journal, as the database will
+# become corrupt if an error is injected into a transaction after it starts
+# writing data out to the db file.
+ifcapable !concurrent {
+  finish_test
+  return
+}
+
+do_test 1-pre1 {
+  execsql {
+    PRAGMA journal_mode = wal;
+    CREATE TABLE t1(a PRIMARY KEY, b);
+    INSERT INTO t1 VALUES(randomblob(1000), randomblob(100));
+    INSERT INTO t1 SELECT randomblob(1000), randomblob(1000) FROM t1;
+    INSERT INTO t1 SELECT randomblob(1000), randomblob(1000) FROM t1;
+    INSERT INTO t1 SELECT randomblob(1000), randomblob(1000) FROM t1;
+    INSERT INTO t1 SELECT randomblob(1000), randomblob(1000) FROM t1;
+    DELETE FROM t1 WHERE rowid%2;
+  }
+  faultsim_save_and_close
+} {}
+
+do_faultsim_test 1.1 -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql { 
+    BEGIN CONCURRENT;
+      INSERT INTO t1 VALUES(randomblob(1000), randomblob(100));
+    COMMIT;
+  }
+} -test {
+  faultsim_test_result {0 {}} 
+  catchsql { ROLLBACK }
+  faultsim_integrity_check
+}
+
+do_faultsim_test 1.2 -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql { 
+    BEGIN CONCURRENT;
+      INSERT INTO t1 VALUES(randomblob(1000), randomblob(100));
+    ROLLBACK;
+  }
+} -test {
+  faultsim_test_result {0 {}} 
+  catchsql { ROLLBACK }
+  faultsim_integrity_check
+}
+
+do_faultsim_test 1.3 -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql { 
+    BEGIN CONCURRENT;
+      DELETE FROM t1;
+    COMMIT;
+  }
+} -test {
+  faultsim_test_result {0 {}} 
+  catchsql { ROLLBACK }
+  faultsim_integrity_check
+}
+
+finish_test
+
