@@ -69,7 +69,7 @@ void sqlite3OpenTable(
 ** is managed along with the rest of the Index structure. It will be
 ** released when sqlite3DeleteIndex() is called.
 */
-const char *sqlite3IndexAffinityStr(Vdbe *v, Index *pIdx){
+const char *sqlite3IndexAffinityStr(sqlite3 *db, Index *pIdx){
   if( !pIdx->zColAff ){
     /* The first time a column affinity string for a particular index is
     ** required, it is allocated and populated here. It is then stored as
@@ -81,7 +81,6 @@ const char *sqlite3IndexAffinityStr(Vdbe *v, Index *pIdx){
     */
     int n;
     Table *pTab = pIdx->pTable;
-    sqlite3 *db = sqlite3VdbeDb(v);
     pIdx->zColAff = (char *)sqlite3DbMallocRaw(0, pIdx->nColumn+1);
     if( !pIdx->zColAff ){
       db->mallocFailed = 1;
@@ -95,6 +94,16 @@ const char *sqlite3IndexAffinityStr(Vdbe *v, Index *pIdx){
   }
  
   return pIdx->zColAff;
+}
+
+/*
+** Return the affinity for a single column of an index.
+*/
+char sqlite3IndexColumnAffinity(sqlite3 *db, Index *pIdx, int iCol){
+  if( !pIdx->zColAff ){
+    if( sqlite3IndexAffinityStr(db, pIdx)==0 ) return SQLITE_AFF_BLOB;
+  }
+  return pIdx->zColAff[iCol];
 }
 
 /*
