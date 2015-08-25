@@ -272,7 +272,9 @@ void sqlite3Update(
 
   /* There is one entry in the aRegIdx[] array for each index on the table
   ** being updated.  Fill in aRegIdx[] with a register number that will hold
-  ** the key for accessing each index.  
+  ** the key for accessing each index.
+  **
+  ** FIXME:  Be smarter about omitting indexes that use expressions.
   */
   for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
     int reg;
@@ -281,7 +283,8 @@ void sqlite3Update(
     }else{
       reg = 0;
       for(i=0; i<pIdx->nKeyCol; i++){
-        if( aXRef[pIdx->aiColumn[i]]>=0 ){
+        i16 iIdxCol = pIdx->aiColumn[i];
+        if( iIdxCol<0 || aXRef[iIdxCol]>=0 ){
           reg = ++pParse->nMem;
           break;
         }
@@ -381,6 +384,7 @@ void sqlite3Update(
     if( pWInfo==0 ) goto update_cleanup;
     okOnePass = sqlite3WhereOkOnePass(pWInfo, aiCurOnePass);
     for(i=0; i<nPk; i++){
+      assert( pPk->aiColumn[i]>=(-1) );
       sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur, pPk->aiColumn[i],
                                       iPk+i);
     }

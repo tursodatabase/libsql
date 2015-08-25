@@ -654,7 +654,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
 
       /* if( pSrcList==0 ) break; */
       notValid(pParse, pNC, "the \".\" operator", NC_IdxExpr, 0);
-      notValid(pParse, pNC, "the \".\" operator", NC_PartIdx|NC_IsCheck, 1);
+      /*notValid(pParse, pNC, "the \".\" operator", NC_PartIdx|NC_IsCheck, 1);*/
       pRight = pExpr->pRight;
       if( pRight->op==TK_ID ){
         zDb = 0;

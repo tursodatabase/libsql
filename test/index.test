@@ -56,11 +56,11 @@ do_test index-2.1 {
 # Try adding an index on a column of a table where the table
 # exists but the column does not.
 #
-do_test index-2.1 {
+do_test index-2.1b {
   execsql {CREATE TABLE test1(f1 int, f2 int, f3 int)}
   set v [catch {execsql {CREATE INDEX index1 ON test1(f4)}} msg]
   lappend v $msg
-} {1 {table test1 has no column named f4}}
+} {1 {no such column: f4}}
 
 # Try an index with some columns that match and others that do now.
 #
@@ -68,7 +68,7 @@ do_test index-2.2 {
   set v [catch {execsql {CREATE INDEX index1 ON test1(f1, f2, f4, f3)}} msg]
   execsql {DROP TABLE test1}
   lappend v $msg
-} {1 {table test1 has no column named f4}}
+} {1 {no such column: f4}}
 
 # Try creating a bunch of indices on the same table
 #

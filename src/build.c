@@ -443,6 +443,7 @@ static void freeIndex(sqlite3 *db, Index *p){
   sqlite3DeleteIndexSamples(db, p);
 #endif
   sqlite3ExprDelete(db, p->pPartIdxWhere);
+  sqlite3ExprListDelete(db, p->aColExpr);
   sqlite3DbFree(db, p->zColAff);
   if( p->isResized ) sqlite3DbFree(db, p->azColl);
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
@@ -3101,32 +3102,47 @@ Index *sqlite3CreateIndex(
     sortOrderMask = 0;    /* Ignore DESC */
   }
 
-  /* Scan the names of the columns of the table to be indexed and
-  ** load the column indices into the Index structure.  Report an error
-  ** if any column is not found.
+  /* Analyze the list of expressions that form the terms of the index and
+  ** report any errors.  In the common case where the expression is exactly
+  ** a table column, store that column in aiColumn[].  For general expressions,
+  ** populate pIndex->aColExpr and store -2 in aiColumn[].
   **
-  ** TODO:  Add a test to make sure that the same column is not named
-  ** more than once within the same index.  Only the first instance of
-  ** the column will ever be used by the optimizer.  Note that using the
-  ** same column more than once cannot be an error because that would 
-  ** break backwards compatibility - it needs to be a warning.
+  ** TODO: Issue a warning if two or more columns of the index are identical.
+  ** TODO: Issue a warning if the table primary key is used as part of the
+  ** index key.
   */
   for(i=0, pListItem=pList->a; i<pList->nExpr; i++, pListItem++){
-    Expr *pCExpr;
-    int requestedSortOrder;
+    Expr *pCExpr;                  /* The i-th index expression */
+    int requestedSortOrder;        /* ASC or DESC on the i-th expression */
     char *zColl;                   /* Collation sequence name */
 
     sqlite3ResolveSelfReference(pParse, pTab, NC_IdxExpr, pListItem->pExpr, 0);
     if( pParse->nErr ) goto exit_create_index;
     pCExpr = sqlite3ExprSkipCollate(pListItem->pExpr);
     if( pCExpr->op!=TK_COLUMN ){
-      sqlite3ErrorMsg(pParse, "indexes on expressions not yet supported");
-      continue;
+      if( pTab==pParse->pNewTable ){
+        sqlite3ErrorMsg(pParse, "expressions prohibited in PRIMARY KEY and "
+                                "UNIQUE constraints");
+        goto exit_create_index;
+      }
+      if( pIndex->aColExpr==0 ){
+        pIndex->aColExpr = sqlite3ExprListDup(db, pList, 0);
+      }
+      j = -2;
+      pIndex->aiColumn[i] = -2;
+      if( sqlite3ExprCanBeNull(pList->a[i].pExpr) ){
+        pIndex->uniqNotNull = 1;
+      }
+    }else{
+      j = pCExpr->iColumn;
+      assert( j<=0x7fff );
+      if( j<0 ){
+        j = pTab->iPKey;
+      }else if( pTab->aCol[j].notNull==0 ){
+        pIndex->uniqNotNull = 0;
+      }
+      pIndex->aiColumn[i] = (i16)j;
     }
-    j = pCExpr->iColumn;
-    assert( j<=0x7fff );
-    if( j<0 ) j = pTab->iPKey;
-    pIndex->aiColumn[i] = (i16)j;
     zColl = 0;
     if( pListItem->pExpr->op==TK_COLLATE ){
       int nColl;
@@ -3147,11 +3163,16 @@ Index *sqlite3CreateIndex(
     pIndex->azColl[i] = zColl;
     requestedSortOrder = pListItem->sortOrder & sortOrderMask;
     pIndex->aSortOrder[i] = (u8)requestedSortOrder;
-    if( pTab->aCol[j].notNull==0 ) pIndex->uniqNotNull = 0;
   }
+
+  /* Append the table key to the end of the index.  For WITHOUT ROWID
+  ** tables (when pPk!=0) this will be the declared PRIMARY KEY.  For
+  ** normal tables (when pPk==0) this will be the rowid.
+  */
   if( pPk ){
     for(j=0; j<pPk->nKeyCol; j++){
       int x = pPk->aiColumn[j];
+      assert( x>=0 );
       if( hasColumn(pIndex->aiColumn, pIndex->nKeyCol, x) ){
         pIndex->nColumn--; 
       }else{
@@ -3202,6 +3223,7 @@ Index *sqlite3CreateIndex(
       for(k=0; k<pIdx->nKeyCol; k++){
         const char *z1;
         const char *z2;
+        assert( pIdx->aiColumn[k]>=0 );
         if( pIdx->aiColumn[k]!=pIndex->aiColumn[k] ) break;
         z1 = pIdx->azColl[k];
         z2 = pIndex->azColl[k];
@@ -4093,7 +4115,9 @@ void sqlite3UniqueConstraint(
 
   sqlite3StrAccumInit(&errMsg, pParse->db, 0, 0, 200);
   for(j=0; j<pIdx->nKeyCol; j++){
-    char *zCol = pTab->aCol[pIdx->aiColumn[j]].zName;
+    char *zCol;
+    assert( pIdx->aiColumn[j]>=0 );
+    zCol = pTab->aCol[pIdx->aiColumn[j]].zName;
     if( j ) sqlite3StrAccumAppend(&errMsg, ", ", 2);
     sqlite3StrAccumAppendAll(&errMsg, pTab->zName);
     sqlite3StrAccumAppend(&errMsg, ".", 1);
