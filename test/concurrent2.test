@@ -336,6 +336,38 @@ do_execsql_test 7.3.2 {
   SELECT * FROM t1;
 } {1 2 3 4}
 
+#-------------------------------------------------------------------------
+# Test that "PRAGMA integrity_check" works within a concurrent 
+# transaction. Within a concurrent transaction, "PRAGMA integrity_check"
+# is unable to detect unused database pages, but can detect other types
+# of corruption.
+#
+reset_db
+do_execsql_test 8.1 {
+  PRAGMA journal_mode = wal;
+  CREATE TABLE kv(k INTEGER PRIMARY KEY, v UNIQUE);
+  INSERT INTO kv VALUES(NULL, randomblob(750));
+  INSERT INTO kv SELECT NULL, randomblob(750) FROM kv;
+  INSERT INTO kv SELECT NULL, randomblob(750) FROM kv;
+  INSERT INTO kv SELECT NULL, randomblob(750) FROM kv;
+  INSERT INTO kv SELECT NULL, randomblob(750) FROM kv;
+  INSERT INTO kv SELECT NULL, randomblob(750) FROM kv;
+  DELETE FROM kv WHERE rowid%2;
+  PRAGMA freelist_count;
+} {wal 33}
+do_execsql_test 8.2 { PRAGMA integrity_check } ok
+do_execsql_test 8.3 { 
+  BEGIN CONCURRENT;
+    PRAGMA integrity_check;
+} {ok}
+do_execsql_test 8.4 { 
+    INSERT INTO kv VALUES(1100, 1100);
+    PRAGMA integrity_check;
+} {ok}
+do_execsql_test 8.5 { 
+  COMMIT;
+  PRAGMA integrity_check;
+} {ok}
 
 finish_test
 

@@ -1,5 +1,5 @@
-C Test\sthat\sif\sa\scorrupt\swal-index\sheader\sis\sencountered\swhen\sattempting\sto\scommit\sa\sconcurrent\stransaction,\sSQLITE_BUSY_SNAPSHOT\sis\sreturned\sto\sthe\scaller.
-D 2015-08-25T16:01:04.106
+C If\s"PRAGMA\sintegrity_check"\sis\srun\swhile\sthe\sdatabase\sis\sbeing\swritten\sby\sa\sCONCURRENT\stransaction,\sdo\snot\sconsider\sunreferenced\spages\sto\sbe\san\serror.\sThey\smay\sbe\spart\sof\sthe\sfree-page\slist,\swhich\sis\snot\svisible\sat\sthe\sb-tree\slayer\swhen\srunning\sa\sCONCURRENT\stransaction.
+D 2015-08-25T17:16:33.362
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e2218eb228374422969de7b1680eda6864affcef
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -279,7 +279,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 4d9134dc988a87838c06056c89c0e8c4700a0452
 F src/bitvec.c d1f21d7d91690747881f03940584f4cc548c9d3d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c a76329691503fc68ec374791aaf4074dc8686b3a
+F src/btree.c aacef0cd0c57c2a1b2ed8a27794fc9e20b6e7a90
 F src/btree.h 00d4cdb747c4172a5566faf037116985dbbc377e
 F src/btreeInt.h 171864bcd81635583dab7b8a04b19b454b18ef80
 F src/build.c 1b5814e0eeaba096ae3ee17ebd139d2a25af7250
@@ -525,7 +525,7 @@ F test/colmeta.test 2c765ea61ee37bc43bbe6d6047f89004e6508eb1
 F test/colname.test 08948a4809d22817e0e5de89c7c0a8bd90cb551b
 F test/concfault.test 500f17c3fcfe7705114422bcc6ddd3c740001a43
 F test/concurrent.test 26c2d49abbf4847ceed9bf8cf7fbe9a2a4ffc70c
-F test/concurrent2.test 4b9d1cc7126bb83bb08aca0e7fa10e0eab54b0c7
+F test/concurrent2.test fa570bf9723f5c30fe40d9f2b1faa55c3c712c41
 F test/concurrent3.test 7dcf81372c06cbac58e7e630aebf7292945947bb
 F test/conflict.test 841bcf7cabbfca39c577eb8411ea8601843b46a8
 F test/conflict2.test 0d3af4fb534fa1bd020c79960bb56e4d52655f09
@@ -1382,7 +1382,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 231b5880228cf01efe3981bc8be3150d79b422e5
-R f2d97f3b3defb10cf5a80dc03134f727
+P c746e0bd20cb136eed2b691f326657d266e2f1ed
+R e20e0a06f63966f8ec3b7d9acf7660a9
 U dan
-Z ef5936cdf16a4565acadeed2265c73bc
+Z 220f77062430ec96f6fa5ad5d41eac8b

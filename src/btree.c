@@ -9653,9 +9653,11 @@ char *sqlite3BtreeIntegrityCheck(
   }
   pBt->db->flags = savedDbFlags;
 
-  /* Make sure every page in the file is referenced
-  */
-  for(i=1; i<=sCheck.nPage && sCheck.mxErr; i++){
+  /* Make sure every page in the file is referenced. Skip this if the
+  ** database is currently being written by a CONCURRENT transaction (it 
+  ** may fail as pages that were part of the free-list when the transaction
+  ** was opened cannot be counted).  */
+  for(i=1; ISCONCURRENT==0 && i<=sCheck.nPage && sCheck.mxErr; i++){
 #ifdef SQLITE_OMIT_AUTOVACUUM
     if( getPageReferenced(&sCheck, i)==0 ){
       checkAppendMsg(&sCheck, "Page %d is never used", i);
