@@ -1,5 +1,5 @@
-C If\s"PRAGMA\sintegrity_check"\sis\srun\swhile\sthe\sdatabase\sis\sbeing\swritten\sby\sa\sCONCURRENT\stransaction,\sdo\snot\sconsider\sunreferenced\spages\sto\sbe\san\serror.\sThey\smay\sbe\spart\sof\sthe\sfree-page\slist,\swhich\sis\snot\svisible\sat\sthe\sb-tree\slayer\swhen\srunning\sa\sCONCURRENT\stransaction.
-D 2015-08-25T17:16:33.362
+C Add\smiscellaneous\stest\scases\sfor\sconcurrent\stransactions.
+D 2015-08-25T19:10:29.114
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e2218eb228374422969de7b1680eda6864affcef
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -524,8 +524,8 @@ F test/collateA.test b8218ab90d1fa5c59dcf156efabb1b2599c580d6
 F test/colmeta.test 2c765ea61ee37bc43bbe6d6047f89004e6508eb1
 F test/colname.test 08948a4809d22817e0e5de89c7c0a8bd90cb551b
 F test/concfault.test 500f17c3fcfe7705114422bcc6ddd3c740001a43
-F test/concurrent.test 26c2d49abbf4847ceed9bf8cf7fbe9a2a4ffc70c
-F test/concurrent2.test fa570bf9723f5c30fe40d9f2b1faa55c3c712c41
+F test/concurrent.test ecf97fdcfb11dda1db52b2714d7d52d0922789f1
+F test/concurrent2.test de43cd6703360dc6268907f1617f0d353d8a43c1
 F test/concurrent3.test 7dcf81372c06cbac58e7e630aebf7292945947bb
 F test/conflict.test 841bcf7cabbfca39c577eb8411ea8601843b46a8
 F test/conflict2.test 0d3af4fb534fa1bd020c79960bb56e4d52655f09
@@ -1382,7 +1382,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c746e0bd20cb136eed2b691f326657d266e2f1ed
-R e20e0a06f63966f8ec3b7d9acf7660a9
+P f32b57b49311693eb0c0c9f6f14859e7b1fa93d8
+R cbe24c6dda59af48460d1125c5ffff88
 U dan
-Z 220f77062430ec96f6fa5ad5d41eac8b
+Z 967a64b7790792e3ecfbe18cee7c81a2

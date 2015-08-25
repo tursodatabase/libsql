@@ -369,5 +369,64 @@ do_execsql_test 8.5 {
   PRAGMA integrity_check;
 } {ok}
 
+#-------------------------------------------------------------------------
+# Test that concurrent transactions do not allow foreign-key constraints
+# to be bypassed.
+#
+do_multiclient_test tn {
+  do_test 9.$tn.1 {
+    sql1 {
+      PRAGMA journal_mode = wal;
+      CREATE TABLE pp(i INTEGER PRIMARY KEY, j);
+      CREATE TABLE cc(a, b REFERENCES pp);
+
+      WITH seq(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM seq WHERE i<100)
+      INSERT INTO pp SELECT i, randomblob(1000) FROM seq;
+
+      PRAGMA foreign_keys = 1;
+    }
+  } {wal}
+
+
+  do_test 9.$tn.2.1 {
+    sql1 {
+      BEGIN CONCURRENT;
+        INSERT INTO cc VALUES(42, 42);
+    }
+  } {}
+  do_test 9.$tn.2.2 {
+    sql2 { DELETE FROM pp WHERE i=42 }
+    list [catch { sql1 COMMIT } msg] $msg
+  } {1 {database is locked}}
+  do_test 9.$tn.2.3 {
+    sql1 ROLLBACK
+  } {}
+
+  do_test 9.$tn.3.1 {
+    sql1 {
+      PRAGMA foreign_keys = 0;
+      BEGIN CONCURRENT;
+        INSERT INTO cc VALUES(43, 43);
+    }
+  } {}
+  do_test 9.$tn.3.2 {
+    sql2 { DELETE FROM pp WHERE i=43 }
+    list [catch { sql1 COMMIT } msg] $msg
+  } {0 {}}
+
+  do_test 9.$tn.4.1 {
+    sql1 {
+      PRAGMA foreign_keys = on;
+      BEGIN CONCURRENT;
+        INSERT INTO cc VALUES(44, 44);
+    }
+  } {}
+  do_test 9.$tn.4.2 {
+    sql2 { DELETE FROM pp WHERE i=1 }
+    list [catch { sql1 COMMIT } msg] $msg
+  } {0 {}}
+}
+
+
 finish_test
 

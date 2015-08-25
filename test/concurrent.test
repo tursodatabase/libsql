@@ -417,7 +417,7 @@ do_multiclient_test tn {
 }
 
 #-------------------------------------------------------------------------
-# Unlocked transactions may not modify the user_version or application_id.
+# Concurrent transactions may not modify the user_version or application_id.
 #
 reset_db
 do_execsql_test 3.0 {
@@ -448,6 +448,62 @@ do_execsql_test 3.5 {
   SELECT * FROM t1;
 } {10 0 a b c d}
 
+#-------------------------------------------------------------------------
+# However, another transaction modifying the user_version or application_id
+# should not cause a conflict. And committing a concurrent transaction does not
+# clobber the modification - even if the concurrent transaction allocates or
+# frees database pages.
+#
+do_multiclient_test tn {
+  do_test 4.$tn.1 {
+    sql1 {
+      PRAGMA journal_mode = wal;
+      CREATE TABLE ttt(y UNIQUE, z UNIQUE);
+      PRAGMA user_version = 14;
+      BEGIN CONCURRENT;
+        INSERT INTO ttt VALUES('y', 'z');
+    }
+  } {wal}
+  do_test 4.$tn.2 {
+    sql2 { PRAGMA user_version = 16 }
+    sql1 COMMIT
+    sql1 { PRAGMA user_version }
+  } {16}
+
+  do_test 4.$tn.3 {
+    sql1 {
+      BEGIN CONCURRENT;
+        INSERT INTO ttt VALUES(randomblob(10000), randomblob(4));
+        PRAGMA user_version;
+    }
+  } {16}
+  do_test 4.$tn.4 {
+    sql2 { PRAGMA user_version = 1234 }
+    sql1 {
+        PRAGMA user_version;
+      COMMIT;
+      PRAGMA user_version;
+      PRAGMA integrity_check;
+    }
+  } {16 1234 ok}
+
+  do_test 4.$tn.5 {
+    sql1 {
+      BEGIN CONCURRENT;
+        DELETE FROM ttt;
+        PRAGMA user_version;
+    }
+  } {1234}
+  do_test 4.$tn.4 {
+    sql2 { PRAGMA user_version = 5678 }
+    sql1 {
+        PRAGMA user_version;
+      COMMIT;
+      PRAGMA user_version;
+      PRAGMA integrity_check;
+    }
+  } {1234 5678 ok}
+}
 
 finish_test
 
