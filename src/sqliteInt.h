@@ -2391,6 +2391,7 @@ struct NameContext {
 #define NC_IsCheck   0x0004  /* True if resolving names in a CHECK constraint */
 #define NC_InAggFunc 0x0008  /* True if analyzing arguments to an agg func */
 #define NC_PartIdx   0x0010  /* True if resolving a partial index WHERE */
+#define NC_IdxExpr   0x0020  /* True if resolving columns of CREATE INDEX */
 #define NC_MinMaxAgg 0x1000  /* min/max aggregates seen.  See note above */
 
 /*

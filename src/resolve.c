@@ -547,36 +547,28 @@ Expr *sqlite3CreateColumnExpr(sqlite3 *db, SrcList *pSrc, int iSrc, int iCol){
 }
 
 /*
-** Report an error that an expression is not valid for a partial index WHERE
-** clause.
+** Report an error that an expression is not valid for some set of
+** pNC->ncFlags values determined by validMask.  If 
 */
-static void notValidPartIdxWhere(
+static void notValid(
   Parse *pParse,       /* Leave error message here */
   NameContext *pNC,    /* The name context */
-  const char *zMsg     /* Type of error */
+  const char *zMsg,    /* Type of error */
+  int validMask,       /* Set of contexts for which prohibited */
+  int okForInit        /* No error if pParse->db->init.busy is true */
 ){
-  if( (pNC->ncFlags & NC_PartIdx)!=0 ){
-    sqlite3ErrorMsg(pParse, "%s prohibited in partial index WHERE clauses",
-                    zMsg);
-  }
-}
-
+  assert( (validMask&~(NC_IsCheck|NC_PartIdx|NC_IdxExpr))==0 );
+  if( (pNC->ncFlags & validMask)!=0 
+   && (pParse->db->init.busy==0 || !okForInit)
+  ){
+    const char *zIn = "partial index WHERE clauses";
+    if( pNC->ncFlags & NC_IdxExpr )      zIn = "index expressions";
 #ifndef SQLITE_OMIT_CHECK
-/*
-** Report an error that an expression is not valid for a CHECK constraint.
-*/
-static void notValidCheckConstraint(
-  Parse *pParse,       /* Leave error message here */
-  NameContext *pNC,    /* The name context */
-  const char *zMsg     /* Type of error */
-){
-  if( (pNC->ncFlags & NC_IsCheck)!=0 ){
-    sqlite3ErrorMsg(pParse,"%s prohibited in CHECK constraints", zMsg);
+    else if( pNC->ncFlags & NC_IsCheck ) zIn = "CHECK constraints";
+#endif
+    sqlite3ErrorMsg(pParse, "%s prohibited in %s", zMsg, zIn);
   }
 }
-#else
-# define notValidCheckConstraint(P,N,M)
-#endif
 
 /*
 ** Expression p should encode a floating point value between 1.0 and 0.0.
@@ -661,6 +653,8 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       Expr *pRight;
 
       /* if( pSrcList==0 ) break; */
+      notValid(pParse, pNC, "the \".\" operator", NC_IdxExpr, 0);
+      notValid(pParse, pNC, "the \".\" operator", NC_PartIdx|NC_IsCheck, 1);
       pRight = pExpr->pRight;
       if( pRight->op==TK_ID ){
         zDb = 0;
@@ -690,7 +684,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       u8 enc = ENC(pParse->db);   /* The database encoding */
 
       assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
-      notValidPartIdxWhere(pParse, pNC, "functions");
+      notValid(pParse, pNC, "functions", NC_PartIdx, 0);
       zId = pExpr->u.zToken;
       nId = sqlite3Strlen30(zId);
       pDef = sqlite3FindFunction(pParse->db, zId, nId, n, enc, 0);
@@ -740,6 +734,8 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
 #endif
         if( pDef->funcFlags & SQLITE_FUNC_CONSTANT ){
           ExprSetProperty(pExpr,EP_ConstFunc);
+        }else{
+          notValid(pParse, pNC, "non-deterministic functions", NC_IdxExpr, 0);
         }
       }
       if( is_agg && (pNC->ncFlags & NC_AllowAgg)==0 ){
@@ -786,8 +782,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       testcase( pExpr->op==TK_IN );
       if( ExprHasProperty(pExpr, EP_xIsSelect) ){
         int nRef = pNC->nRef;
-        notValidCheckConstraint(pParse, pNC, "subqueries");
-        notValidPartIdxWhere(pParse, pNC, "subqueries");
+        notValid(pParse, pNC, "subqueries", NC_IsCheck|NC_PartIdx|NC_IdxExpr,0);
         sqlite3WalkSelect(pWalker, pExpr->x.pSelect);
         assert( pNC->nRef>=nRef );
         if( nRef!=pNC->nRef ){
@@ -797,8 +792,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       break;
     }
     case TK_VARIABLE: {
-      notValidCheckConstraint(pParse, pNC, "parameters");
-      notValidPartIdxWhere(pParse, pNC, "parameters");
+      notValid(pParse, pNC, "parameters", NC_IsCheck|NC_PartIdx|NC_IdxExpr, 0);
       break;
     }
   }
@@ -1501,14 +1495,14 @@ void sqlite3ResolveSelectNames(
 void sqlite3ResolveSelfReference(
   Parse *pParse,      /* Parsing context */
   Table *pTab,        /* The table being referenced */
-  int type,           /* NC_IsCheck or NC_PartIdx */
+  int type,           /* NC_IsCheck or NC_PartIdx or NC_IdxExpr */
   Expr *pExpr,        /* Expression to resolve.  May be NULL. */
   ExprList *pList     /* Expression list to resolve.  May be NUL. */
 ){
   SrcList sSrc;                   /* Fake SrcList for pParse->pNewTable */
   NameContext sNC;                /* Name context for pParse->pNewTable */
 
-  assert( type==NC_IsCheck || type==NC_PartIdx );
+  assert( type==NC_IsCheck || type==NC_PartIdx || type==NC_IdxExpr );
   memset(&sNC, 0, sizeof(sNC));
   memset(&sSrc, 0, sizeof(sSrc));
   sSrc.nSrc = 1;

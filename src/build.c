@@ -640,9 +640,7 @@ void sqlite3DeleteTable(sqlite3 *db, Table *pTable){
   sqlite3DbFree(db, pTable->zName);
   sqlite3DbFree(db, pTable->zColAff);
   sqlite3SelectDelete(db, pTable->pSelect);
-#ifndef SQLITE_OMIT_CHECK
   sqlite3ExprListDelete(db, pTable->pCheck);
-#endif
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   sqlite3VtabClear(db, pTable);
 #endif
@@ -2891,7 +2889,6 @@ Index *sqlite3CreateIndex(
   int iDb;             /* Index of the database that is being written */
   Token *pName = 0;    /* Unqualified name of the index to create */
   struct ExprList_item *pListItem; /* For looping over pList */
-  const Column *pTabCol;           /* A column in the table */
   int nExtra = 0;                  /* Space allocated for zExtra[] */
   int nExtraCol;                   /* Number of extra columns needed */
   char *zExtra = 0;                /* Extra space after the Index object */
@@ -3115,28 +3112,22 @@ Index *sqlite3CreateIndex(
   ** break backwards compatibility - it needs to be a warning.
   */
   for(i=0, pListItem=pList->a; i<pList->nExpr; i++, pListItem++){
-    const char *zColName;
     Expr *pCExpr;
     int requestedSortOrder;
     char *zColl;                   /* Collation sequence name */
 
+    sqlite3ResolveSelfReference(pParse, pTab, NC_IdxExpr, pListItem->pExpr, 0);
+    if( pParse->nErr ) goto exit_create_index;
     pCExpr = sqlite3ExprSkipCollate(pListItem->pExpr);
-    if( pCExpr->op!=TK_ID ){
+    if( pCExpr->op!=TK_COLUMN ){
       sqlite3ErrorMsg(pParse, "indexes on expressions not yet supported");
       continue;
     }
-    zColName = pCExpr->u.zToken;
-    for(j=0, pTabCol=pTab->aCol; j<pTab->nCol; j++, pTabCol++){
-      if( sqlite3StrICmp(zColName, pTabCol->zName)==0 ) break;
-    }
-    if( j>=pTab->nCol ){
-      sqlite3ErrorMsg(pParse, "table %s has no column named %s",
-        pTab->zName, zColName);
-      pParse->checkSchema = 1;
-      goto exit_create_index;
-    }
+    j = pCExpr->iColumn;
     assert( j<=0x7fff );
+    if( j<0 ) j = pTab->iPKey;
     pIndex->aiColumn[i] = (i16)j;
+    zColl = 0;
     if( pListItem->pExpr->op==TK_COLLATE ){
       int nColl;
       zColl = pListItem->pExpr->u.zToken;
@@ -3146,10 +3137,10 @@ Index *sqlite3CreateIndex(
       zColl = zExtra;
       zExtra += nColl;
       nExtra -= nColl;
-    }else{
+    }else if( j>=0 ){
       zColl = pTab->aCol[j].zColl;
-      if( !zColl ) zColl = "BINARY";
     }
+    if( !zColl ) zColl = "BINARY";
     if( !db->init.busy && !sqlite3LocateCollSeq(pParse, zColl) ){
       goto exit_create_index;
     }

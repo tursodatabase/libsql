@@ -1,5 +1,5 @@
-C Remove\ssome\sredundant\scode:\s\sCall\ssqlite3ResolveExprListNames()\srather\sthan\ncalling\ssqlite3ResolveExprNames()\sin\sa\sloop\s-\sin\stwo\splaces.
-D 2015-08-24T20:54:06.120
+C Changes\stoward\sbeing\sabld\sto\sprocess\sindexes\son\sexpressions.\s\sNot\sthere\syet\s-\s\nthis\scheck-in\sis\sjust\smovement\sin\sthat\sdirection.\s\sSome\stests\sare\sfailing.
+D 2015-08-25T00:27:06.624
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e2218eb228374422969de7b1680eda6864affcef
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -282,7 +282,7 @@ F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
 F src/btree.c f48b3ef91676c06a90a8832987ecef6b94c931ee
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 8177c9ab90d772d6d2c6c517e05bed774b7c92c0
-F src/build.c 789e75f3478ac63c0f398a131c49a0802c356c2b
+F src/build.c d9d53c7318117e04cfb79bc498b45f4982092f0c
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
 F src/ctime.c 5a0b735dc95604766f5dac73973658eef782ee8b
@@ -335,14 +335,14 @@ F src/pragma.h 631a91c8b0e6ca8f051a1d8a4a0da4150e04620a
 F src/prepare.c 82e5db1013846a819f198336fed72c44c974e7b1
 F src/printf.c 2bc439ff20a4aad0e0ad50a37a67b5eae7d20edc
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
-F src/resolve.c 66b2740075fdb8baf90155180d33d9850cbcc976
+F src/resolve.c ad9404cfa6f698aa530cca1c86570fa92cb65a12
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c da6d1e7a4f1c8d713ed5415b5ed21d82ef465c0f
 F src/shell.c b1f91e60918df3a68efad1e3a11696b9a7e23d23
 F src/sqlite.h.in 378bebc8fe6a88bade25e5f23b7e6123fdc64b00
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h f700e6a9dd1fdcccc9951ab022b366fb66b9e413
-F src/sqliteInt.h edbcd0c0787541a636a25ab1d1eaf847dbd043f1
+F src/sqliteInt.h 5e2ce12324eb03b75d5b8a37084550eb66dbef78
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c f266ad8a2892d659b74f0f50cb6a88b6e7c12179
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
@@ -1379,7 +1379,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P bed42116addabcf3dfdc2e2d51ae183965704988
-R 455d327d4502b1aadc3594ff31ef63f2
+P bdaf66465b6b1bdad10c08d9527b98e7000a41e4
+R 3888db9ab5ffaaee9ce833f48e49ed84
+T *branch * index-expr
+T *sym-index-expr *
+T -sym-trunk *
 U drh
-Z 983b791d1ba8013f2148572b484fe05d
+Z 80441a5a4abd6f0065befff78e2e1eff
