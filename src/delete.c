@@ -444,7 +444,7 @@ void sqlite3DeleteFrom(
       iKey = ++pParse->nMem;
       nKey = 0;   /* Zero tells OP_Found to use a composite key */
       sqlite3VdbeAddOp4(v, OP_MakeRecord, iPk, nPk, iKey,
-                        sqlite3IndexAffinityStr(v, pPk), nPk);
+                        sqlite3IndexAffinityStr(pParse->db, pPk), nPk);
       sqlite3VdbeAddOp2(v, OP_IdxInsert, iEphCur, iKey);
     }else{
       /* Get the rowid of the row to be deleted and remember it in the RowSet */

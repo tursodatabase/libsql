@@ -1177,7 +1177,7 @@ static int whereRangeSkipScanEst(
   int nUpper = p->nSample+1;
   int rc = SQLITE_OK;
   int iCol = p->aiColumn[nEq];
-  u8 aff = iCol>=0 ? p->pTable->aCol[iCol].affinity : SQLITE_AFF_INTEGER;
+  u8 aff = sqlite3IndexColumnAffinity(db, p, iCol);
   CollSeq *pColl;
   
   sqlite3_value *p1 = 0;          /* Value extracted from pLower */
@@ -1325,11 +1325,8 @@ static int whereRangeScanEst(
         testcase( pRec->nField!=pBuilder->nRecValid );
         pRec->nField = pBuilder->nRecValid;
       }
-      if( nEq==p->nKeyCol ){
-        aff = SQLITE_AFF_INTEGER;
-      }else{
-        aff = p->pTable->aCol[p->aiColumn[nEq]].affinity;
-      }
+      aff = sqlite3IndexColumnAffinity(pParse->db, p, nEq);
+      assert( nEq!=p->nKeyCol || aff==SQLITE_AFF_INTEGER );
       /* Determine iLower and iUpper using ($P) only. */
       if( nEq==0 ){
         iLower = 0;
@@ -1487,7 +1484,7 @@ static int whereEqualScanEst(
     return SQLITE_OK;
   }
 
-  aff = p->pTable->aCol[p->aiColumn[nEq-1]].affinity;
+  aff = sqlite3IndexColumnAffinity(pParse->db, p, nEq-1);
   rc = sqlite3Stat4ProbeSetValue(pParse, p, &pRec, pExpr, aff, nEq-1, &bOk);
   pBuilder->pRec = pRec;
   if( rc!=SQLITE_OK ) return rc;

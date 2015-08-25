@@ -1342,7 +1342,7 @@ void sqlite3Pragma(
           }
           if( pParent ){
             sqlite3VdbeAddOp4(v, OP_MakeRecord, regRow, pFK->nCol, regKey,
-                              sqlite3IndexAffinityStr(v,pIdx), pFK->nCol);
+                              sqlite3IndexAffinityStr(db,pIdx), pFK->nCol);
             sqlite3VdbeAddOp4Int(v, OP_Found, i, addrOk, regKey, 0);
             VdbeCoverage(v);
           }
