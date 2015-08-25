@@ -9,10 +9,13 @@
 #
 #***********************************************************************
 #
+# Miscellaneous tests for transactions started with BEGIN CONCURRENT. 
+#
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 source $testdir/lock_common.tcl
+source $testdir/wal_common.tcl
 set ::testprefix concurrent2
 
 ifcapable !concurrent {
@@ -296,5 +299,43 @@ do_multiclient_test tn {
   do_test 6.$tn.5 { sql3 { PRAGMA integrity_check } } {ok}
   do_test 6.$tn.5 { sql3 { SELECT count(*) from t1 } } {3}
 }
+
+#-------------------------------------------------------------------------
+# Test that if a corrupt wal-index-header is encountered when attempting
+# to commit a CONCURRENT transaction, the transaction is not committed
+# (or rolled back) and that SQLITE_BUSY_SNAPSHOT is returned to the user.
+#
+catch { db close }
+forcedelete test.db
+testvfs tvfs
+sqlite3 db test.db -vfs tvfs
+do_execsql_test 7.1 {
+  PRAGMA journal_mode = wal;
+  BEGIN;
+    CREATE TABLE t1(a, b, PRIMARY KEY(a));
+    INSERT INTO t1 VALUES(1, 2);
+    INSERT INTO t1 VALUES(3, 4);
+  COMMIT;
+  BEGIN CONCURRENT;
+    INSERT INTO t1 VALUES(5, 6);
+    INSERT INTO t1 VALUES(7, 8);
+    SELECT * FROM t1;
+} {wal 1 2 3 4 5 6 7 8}
+
+# Corrupt the wal-index header
+incr_tvfs_hdr test.db 11 1
+
+do_catchsql_test 7.2.1 { COMMIT } {1 {database is locked}}
+do_test 7.2.2 { sqlite3_extended_errcode db } SQLITE_BUSY_SNAPSHOT
+
+do_execsql_test 7.3.1 {
+  SELECT * FROM t1;
+  ROLLBACK;
+} {1 2 3 4 5 6 7 8}
+do_execsql_test 7.3.2 {
+  SELECT * FROM t1;
+} {1 2 3 4}
+
+
 finish_test
 

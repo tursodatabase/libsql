@@ -1,5 +1,5 @@
-C Fix\sa\ssegfault\sthat\scould\soccur\sfollowing\san\sOOM\scondition\sin\sthe\sconcurrent\stransaction\scode.
-D 2015-08-25T14:37:39.823
+C Test\sthat\sif\sa\scorrupt\swal-index\sheader\sis\sencountered\swhen\sattempting\sto\scommit\sa\sconcurrent\stransaction,\sSQLITE_BUSY_SNAPSHOT\sis\sreturned\sto\sthe\scaller.
+D 2015-08-25T16:01:04.106
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e2218eb228374422969de7b1680eda6864affcef
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -525,7 +525,7 @@ F test/colmeta.test 2c765ea61ee37bc43bbe6d6047f89004e6508eb1
 F test/colname.test 08948a4809d22817e0e5de89c7c0a8bd90cb551b
 F test/concfault.test 500f17c3fcfe7705114422bcc6ddd3c740001a43
 F test/concurrent.test 26c2d49abbf4847ceed9bf8cf7fbe9a2a4ffc70c
-F test/concurrent2.test 21a15630192ba92287070a1a58a6e497d393c55d
+F test/concurrent2.test 4b9d1cc7126bb83bb08aca0e7fa10e0eab54b0c7
 F test/concurrent3.test 7dcf81372c06cbac58e7e630aebf7292945947bb
 F test/conflict.test 841bcf7cabbfca39c577eb8411ea8601843b46a8
 F test/conflict2.test 0d3af4fb534fa1bd020c79960bb56e4d52655f09
@@ -1262,7 +1262,7 @@ F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test ea8778d5b0df200adef2ca7c00c3c37d4375f772
 F test/wal.test dbfc482e10c7263298833bb1fc60b3ac9d6340a1
-F test/wal2.test 1f841d2048080d32f552942e333fd99ce541dada
+F test/wal2.test dc801f6d3f8f39d1534ffbd15a715b0b287508db
 F test/wal3.test 2b5445e5da44780b9b44712f5a38523f7aeb0941
 F test/wal4.test 4744e155cd6299c6bd99d3eab1c82f77db9cdb3c
 F test/wal5.test 88b5d9a6a3d1532497ee9f4296f010d66f07e33c
@@ -1271,7 +1271,7 @@ F test/wal64k.test 163655ecd2cb8afef4737cac2a40fdd2eeaf20b8
 F test/wal7.test 2ae8f427d240099cc4b2dfef63cff44e2a68a1bd
 F test/wal8.test 75c42e1bc4545c277fed212f8fc9b7723cd02216
 F test/wal9.test 378e76a9ad09cd9bee06c172ad3547b0129a6750
-F test/wal_common.tcl a98f17fba96206122eff624db0ab13ec377be4fe
+F test/wal_common.tcl 37902864b63794e9bf59393b8887e21a9cbd4db8
 F test/walbak.test b9f68e39646375c2b877be906babcc15d38b4877
 F test/walbig.test f437473a16cfb314867c6b5d1dbcd519e73e3434
 F test/walblock.test be48f3a75eff0b4456209f26b3ce186c2015497d
@@ -1382,7 +1382,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3e7d6dd62dfa63d7def00bd00ac055a606a0c80d
-R 7e8bf99bd9ee49e1baaabce6c0c30e59
+P 231b5880228cf01efe3981bc8be3150d79b422e5
+R f2d97f3b3defb10cf5a80dc03134f727
 U dan
-Z 16262c3600df8d68cd85cb26ef84be69
+Z ef5936cdf16a4565acadeed2265c73bc
