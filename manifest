@@ -1,5 +1,5 @@
-C Update\sthe\sTreeView\soutput\sfor\scompound\sSELECT\sstatements\sso\sthat\sall\sentries\nare\sshown\svertically\saligned\srather\sthan\seach\ssuccessive\sentry\sbeing\sindented.
-D 2015-08-26T11:34:31.015
+C Refactor\sWith.a.zErr\sinto\sWith.a.zCteErr.\s\sNo\slogic\schanges.
+D 2015-08-26T11:40:11.832
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e2218eb228374422969de7b1680eda6864affcef
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -282,7 +282,7 @@ F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
 F src/btree.c f48b3ef91676c06a90a8832987ecef6b94c931ee
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 8177c9ab90d772d6d2c6c517e05bed774b7c92c0
-F src/build.c 6debb6244f38bdcadaed1042a71bdb8e6a471daf
+F src/build.c 97f682229876834abad515a0a48759a967999ed0
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
 F src/ctime.c 5a0b735dc95604766f5dac73973658eef782ee8b
@@ -337,12 +337,12 @@ F src/printf.c 2bc439ff20a4aad0e0ad50a37a67b5eae7d20edc
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 66b2740075fdb8baf90155180d33d9850cbcc976
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c da6d1e7a4f1c8d713ed5415b5ed21d82ef465c0f
+F src/select.c 50b0f02ec4482f92749e6630de9cd0d175a040e1
 F src/shell.c b1f91e60918df3a68efad1e3a11696b9a7e23d23
 F src/sqlite.h.in 378bebc8fe6a88bade25e5f23b7e6123fdc64b00
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h f700e6a9dd1fdcccc9951ab022b366fb66b9e413
-F src/sqliteInt.h 424a2020efc9736c47667db06a95e5c580782798
+F src/sqliteInt.h d76e7c90775efeec72ea254a5da0a9f1ddcff765
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c f266ad8a2892d659b74f0f50cb6a88b6e7c12179
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
@@ -1379,7 +1379,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b3732a4e1b42a86675d89766cb8089914e2fab9a
-R df971f9d2c0125dc9d07b8638209a38a
+P 65a8918776aa395009a690fa86bfc7d99eb973f9
+R a6b3114ece5e49154c10e2c8118e9866
 U drh
-Z 2faf27f44155dca5bb6f2deaf5ffdfce
+Z b1a98f3cfbd2154f3cffafb179efca91
