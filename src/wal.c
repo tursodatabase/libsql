@@ -2680,7 +2680,7 @@ int sqlite3WalLockForCommit(Wal *pWal, PgHdr *pPage1, Bitvec *pAllRead){
           int iMax = (iHash==0) ? HASHTABLE_NPAGE_ONE : HASHTABLE_NPAGE;
           if( iMin<1 ) iMin = 1;
           if( iMax>head.mxFrame ) iMax = head.mxFrame;
-          for(i=iMin; i<=iMax; i++){
+          for(i=iMin; rc==SQLITE_OK && i<=iMax; i++){
             PgHdr *pPg;
             if( aPgno[i]==1 ){
               /* Check that the schema cookie has not been modified. If

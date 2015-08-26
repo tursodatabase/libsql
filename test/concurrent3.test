@@ -24,6 +24,12 @@ ifcapable !concurrent {
   return
 }
 
+db close
+sqlite3_shutdown
+#test_sqlite3_log xLog
+#proc xLog {error_code msg} { puts "$error_code: $msg" }
+reset_db
+
 proc create_schema {} {
   db eval {
     PRAGMA journal_mode = wal;
@@ -127,6 +133,97 @@ foreach {tn oplist} {
     $db close 
   }
 }
+
+#-------------------------------------------------------------------------
+#
+proc create_schema2 {} {
+  db eval {
+    PRAGMA journal_mode = wal;
+    CREATE TABLE t1(x INTEGER PRIMARY KEY, y);
+    CREATE INDEX i1 ON t1(y);
+  }
+}
+
+proc randint {nMax} {
+  db eval {SELECT abs(random() % $nMax)}
+}
+
+proc do_sql_op2 {db iOp} {
+  switch -- $iOp {
+    i {
+      # Insert 1 rows.
+      set r [randint 1000000000]
+      set ::rows($r) 1
+      #puts "insert row $r"
+      $db eval { INSERT OR IGNORE INTO t1 VALUES($r, randomblob(50)); }
+    }
+
+    d {
+      # Insert 1 row
+      set keys [array names ::rows]
+      set r [randint [llength $keys]]
+      set rowid [lindex $keys $r]
+      $db eval { DELETE FROM t1 WHERE x=$rowid }
+      unset ::rows($rowid)
+    }
+  }
+}
+
+foreach {tn nRepeat oplist} {
+  - - ----------------------------
+  1 100 { 1iiiiiiiiii }
+  2 100 { 1i 2d }
+  3 100 { 1d 2i }
+  4  50 { 1d 2i 3d }
+  5 500 { 1i 2i 3i 4i }
+} {
+  if {[string range $oplist 0 0]=="-"} {
+    array unset rows
+    reset_db
+    create_schema2
+    continue
+  }
+
+  foreach db $DBLIST { 
+    sqlite3 $db test.db 
+    set stats($db,0) 0
+    set stats($db,1) 0
+  }
+  array unset used
+
+  do_test 2.$tn {
+
+    for {set i 0} {$i < $nRepeat} {incr i} {
+      foreach db $DBLIST { $db eval "BEGIN CONCURRENT" } 
+
+      foreach op $oplist {
+        set iDb [string range $op 0 0]
+        set used(db$iDb) 1
+        foreach char [split [string range $op 1 end] {}] {
+          do_sql_op2 "db$iDb" $char
+        }
+      }
+
+      foreach db $DBLIST { 
+        if {$i==272 && $db=="db4"} breakpoint
+        set rc [catch { $db eval COMMIT } msg]
+        if {$rc} { $db eval ROLLBACK }
+        incr stats($db,$rc)
+      }
+      set res [db eval {PRAGMA integrity_check}]
+      if {$res != "ok"} { puts "after $db $rc: $res" ; after 1000000 }
+    }
+  } {}
+
+  foreach db $DBLIST { 
+    $db close 
+  }
+  foreach k [lsort [array names used]] {
+    puts "$k: $stats($k,0) committed, $stats($k,1) rolled back"
+  }
+}
+
+
 
 finish_test
 
