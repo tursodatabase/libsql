@@ -1,5 +1,5 @@
-C Evaluate\sexpressions\sonly\sonce\swhen\sthe\ssame\sexpression\sis\sused\sin\sboth\sthe\nresult\sset\sand\sin\sthe\sORDER\sBY\sclause.
-D 2015-08-26T14:01:41.658
+C Reduce\sthe\ssize\sof\sthe\sWhereScan\sobject\sby\s24\sbytes\swhile\salso\sclarifying\sits\noperation.
+D 2015-08-26T21:08:04.505
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e2218eb228374422969de7b1680eda6864affcef
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -414,8 +414,8 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 6fb6b68969e4692593c2552c4e7bff5882de2cb8
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 2e14d17f592d176b6dc879c33fbdec4fbccaa2ba
-F src/where.c fb8546b8053433bfb39f6c39fdc99c111a6f97c5
-F src/whereInt.h 880a8599226ac1c00203490d934f3ed79b292572
+F src/where.c caabc9ec1e86168d7717833700cfed01a75f687a
+F src/whereInt.h 901c17c1e3c82745ad9b85b4471543fa59c980e9
 F src/wherecode.c 3d9113cc307ffeed58db41fe9f2d807c94787ab5
 F src/whereexpr.c 1a308d1ee5144890d21ea9cf70d49bc96a83432b
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1380,7 +1380,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 58ba73630ecc4bc58b03a7962dd45b305ef605ef
-R 657299463d01da646731fb6b8ab7d9fe
+P c2f3bbad778504681b39ab9399a1eb3c1a35ab3f
+R f5f6b9b31662d17ccccce315f9a81df1
 U drh
-Z 83e3936f8767c9500521d2082aa870a1
+Z be2744e78cce20e5ac9fa855b3738fc2
