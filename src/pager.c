@@ -906,7 +906,7 @@ static int assert_pager_state(Pager *p){
       if( !pagerUseWal(pPager) ){
         assert( p->eLock>=RESERVED_LOCK );
       }
-      assert( pPager->dbSize==pPager->dbOrigSize );
+      assert( pPager->dbSize==pPager->dbOrigSize || pPager->pAllRead );
       assert( pPager->dbOrigSize==pPager->dbFileSize );
       assert( pPager->dbOrigSize==pPager->dbHintSize );
       assert( pPager->setMaster==0 );

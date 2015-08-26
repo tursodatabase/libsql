@@ -505,5 +505,26 @@ do_multiclient_test tn {
   } {1234 5678 ok}
 }
 
+do_multiclient_test tn {
+  do_test 5.$tn.1 {
+    sql1 {
+      PRAGMA journal_mode = wal;
+      CREATE TABLE tt(a INTEGER PRIMARY KEY, b);
+      CREATE TABLE t2(a INTEGER PRIMARY KEY, b);
+      INSERT INTO tt VALUES(1, randomblob(400));
+      BEGIN CONCURRENT;
+    }
+  } {wal}
+
+  do_test 5.$tn.2 {
+    sql1 { UPDATE t2 SET b=5 WHERE a=3 }
+    sql2 { INSERT INTO tt VALUES(2, randomblob(6000)) }
+  } {}
+
+  do_test 5.$tn.3 {
+    sql1 { COMMIT }
+  } {}
+}
+
 finish_test
 

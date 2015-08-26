@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sallowing\ssome\sconflicting\stransactions\sto\sbe\scommitted.
-D 2015-08-26T18:02:20.162
+C Fix\san\sassert()\sin\spager.c\sthat\scould\sfail\sin\sa\sconcurrent\stransaction.
+D 2015-08-26T18:54:45.787
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e2218eb228374422969de7b1680eda6864affcef
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -324,7 +324,7 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c 388c023582b17890f10c980b30ec1922b471753b
 F src/os_win.c 40b3af7a47eb1107d0d69e592bec345a3b7b798a
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
-F src/pager.c 2e2559e64e825e39c033c0744237733cec70d636
+F src/pager.c bb8e237a54d162a6cc22503f71895851dae9a0bb
 F src/pager.h 1335b624cd540815c8c977172589d208d1c251a6
 F src/parse.y 1e645cacb93979c59f2a510ee2c100e769bd5e3c
 F src/pcache.c cde06aa50962595e412d497e22fd2e07878ba1f0
@@ -524,9 +524,9 @@ F test/collateA.test b8218ab90d1fa5c59dcf156efabb1b2599c580d6
 F test/colmeta.test 2c765ea61ee37bc43bbe6d6047f89004e6508eb1
 F test/colname.test 08948a4809d22817e0e5de89c7c0a8bd90cb551b
 F test/concfault.test 500f17c3fcfe7705114422bcc6ddd3c740001a43
-F test/concurrent.test ecf97fdcfb11dda1db52b2714d7d52d0922789f1
+F test/concurrent.test 634b6a88f1942f5d68cc89d4d5efa2b11ba7913c
 F test/concurrent2.test de43cd6703360dc6268907f1617f0d353d8a43c1
-F test/concurrent3.test 8474b7ac80bc977bab4fe014c0b036c16779d8cb
+F test/concurrent3.test 0a5f7e3036d1eccf0782d7153ac21f5f222e9468
 F test/conflict.test 841bcf7cabbfca39c577eb8411ea8601843b46a8
 F test/conflict2.test 0d3af4fb534fa1bd020c79960bb56e4d52655f09
 F test/conflict3.test dec0634c0f31dec9a4b01c63063e939f0cd21b6b
@@ -1382,7 +1382,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 779b1d0e17bc54062b2b09cdbf94e9e2f4bae4f7
-R 522c73a54721e2428308711f9566b92e
+P a0566382d564ca17fd13475a44fed8f714742d97
+R 82cb8297df85a5e2338dab90f8e6448e
 U dan
-Z 5afacf522fa16d68d46082708ed9d148
+Z 29e210082fd7b7d5f83c5decd49ba489
