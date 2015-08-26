@@ -432,7 +432,13 @@ void sqlite3TreeViewExprList(
   }else{
     sqlite3TreeViewLine(pView, "%s", zLabel);
     for(i=0; i<pList->nExpr; i++){
+      int j = pList->a[i].u.x.iOrderByCol;
+      if( j ){
+        sqlite3TreeViewPush(pView, 0);
+        sqlite3TreeViewLine(pView, "iOrderByCol=%d", j);
+      }
       sqlite3TreeViewExpr(pView, pList->a[i].pExpr, i<pList->nExpr-1);
+      if( j ) sqlite3TreeViewPop(pView);
     }
   }
   sqlite3TreeViewPop(pView);
