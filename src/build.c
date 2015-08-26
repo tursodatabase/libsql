@@ -4366,7 +4366,7 @@ With *sqlite3WithAdd(
     pNew->a[pNew->nCte].pSelect = pQuery;
     pNew->a[pNew->nCte].pCols = pArglist;
     pNew->a[pNew->nCte].zName = zName;
-    pNew->a[pNew->nCte].zErr = 0;
+    pNew->a[pNew->nCte].zCteErr = 0;
     pNew->nCte++;
   }
 

@@ -1127,6 +1127,20 @@ static LogEst whereRangeAdjust(WhereTerm *pTerm, LogEst nNew){
   return nRet;
 }
 
+
+#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
+/*
+** Return the affinity for a single column of an index.
+*/
+static char sqlite3IndexColumnAffinity(sqlite3 *db, Index *pIdx, int iCol){
+  if( !pIdx->zColAff ){
+    if( sqlite3IndexAffinityStr(db, pIdx)==0 ) return SQLITE_AFF_BLOB;
+  }
+  return pIdx->zColAff[iCol];
+}
+#endif
+
+
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
 /* 
 ** This function is called to estimate the number of rows visited by a

@@ -105,16 +105,6 @@ const char *sqlite3IndexAffinityStr(sqlite3 *db, Index *pIdx){
 }
 
 /*
-** Return the affinity for a single column of an index.
-*/
-char sqlite3IndexColumnAffinity(sqlite3 *db, Index *pIdx, int iCol){
-  if( !pIdx->zColAff ){
-    if( sqlite3IndexAffinityStr(db, pIdx)==0 ) return SQLITE_AFF_BLOB;
-  }
-  return pIdx->zColAff[iCol];
-}
-
-/*
 ** Compute the affinity string for table pTab, if it has not already been
 ** computed.  As an optimization, omit trailing SQLITE_AFF_BLOB affinities.
 **
