@@ -1,5 +1,5 @@
-C Move\ssqlite3IndexColumnAffinity()\sinside\sof\sSQLITE_ENABLE_STAT3_OR_STAT4.
-D 2015-08-25T19:42:28.613
+C Update\sthe\sTreeView\soutput\sfor\scompound\sSELECT\sstatements\sso\sthat\sall\sentries\nare\sshown\svertically\saligned\srather\sthan\seach\ssuccessive\sentry\sbeing\sindented.
+D 2015-08-26T11:34:31.015
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e2218eb228374422969de7b1680eda6864affcef
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -394,7 +394,7 @@ F src/test_vfstrace.c bab9594adc976cbe696ff3970728830b4c5ed698
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 6bbcc9fe50c917864d48287b4792d46d6e873481
 F src/tokenize.c 57cb3720f53f84d811def2069c2b169b6be539a5
-F src/treeview.c c15df00728034549ff92d78ae851b44952736d3b
+F src/treeview.c 24950c6a79583016c83c43c8b741b3b79a096ce8
 F src/trigger.c 322f23aad694e8f31d384dcfa386d52a48d3c52f
 F src/update.c adc8b4b2b6fd2cca2e0d2b803e0cf6956aa3a030
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
@@ -1379,7 +1379,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1ee089a72d789002a0a377347fc51e08ab32fb14
-R ae8d80bca7ce576313f5297ac0cf95e0
+P b3732a4e1b42a86675d89766cb8089914e2fab9a
+R df971f9d2c0125dc9d07b8638209a38a
 U drh
-Z 2b2ee5ff170c2b474ba393d9405c67b9
+Z 2faf27f44155dca5bb6f2deaf5ffdfce
