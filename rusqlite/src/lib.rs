@@ -55,6 +55,7 @@ extern crate libsqlite3_sys as ffi;
 #[macro_use] extern crate bitflags;
 
 use std::default::Default;
+use std::convert;
 use std::mem;
 use std::ptr;
 use std::fmt;
@@ -90,7 +91,7 @@ unsafe fn errmsg_to_string(errmsg: *const c_char) -> String {
 }
 
 /// Encompasses an error result from a call to the SQLite C API.
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct SqliteError {
     /// The error code returned by a SQLite C API call. See [SQLite Result
     /// Codes](http://www.sqlite.org/rescode.html) for details.
@@ -664,7 +665,7 @@ impl<'conn> SqliteStatement<'conn> {
     }
 
     /// Executes the prepared statement and maps a function over the resulting
-    /// rows. 
+    /// rows.
     ///
     /// Unlike the iterator produced by `query`, the returned iterator does not expose the possibility
     /// for accessing stale rows.
@@ -675,6 +676,25 @@ impl<'conn> SqliteStatement<'conn> {
         let row_iter = try!(self.query(params));
 
         Ok(MappedRows{
+            rows: row_iter,
+            map: f,
+        })
+    }
+
+    /// Executes the prepared statement and maps a function over the resulting
+    /// rows, where the function returns a `Result` with `Error` type implementing
+    /// `std::convert::From<SqliteError>` (so errors can be unified).
+    ///
+    /// Unlike the iterator produced by `query`, the returned iterator does not expose the possibility
+    /// for accessing stale rows.
+    pub fn query_and_then<'a, T, E, F>(&'a mut self, params: &[&ToSql], f: F)
+                                     -> SqliteResult<AndThenRows<'a, F>>
+                                     where T: 'static,
+                                           E: convert::From<SqliteError>,
+                                           F: FnMut(SqliteRow) -> Result<T, E> {
+        let row_iter = try!(self.query(params));
+
+        Ok(AndThenRows{
             rows: row_iter,
             map: f,
         })
@@ -743,6 +763,28 @@ impl<'stmt, T, F> Iterator for MappedRows<'stmt, F>
 
     fn next(&mut self) -> Option<SqliteResult<T>> {
         self.rows.next().map(|row_result| row_result.map(|row| (self.map)(row)))
+    }
+}
+
+/// An iterator over the mapped resulting rows of a query, with an Error type
+/// unifying with SqliteError.
+pub struct AndThenRows<'stmt, F> {
+    rows: SqliteRows<'stmt>,
+    map: F,
+}
+
+impl<'stmt, T, E, F> Iterator for AndThenRows<'stmt, F>
+                        where T: 'static,
+                              E: convert::From<SqliteError>,
+                              F: FnMut(SqliteRow) -> Result<T, E> {
+    type Item = Result<T, E>;
+
+    // Through the magic of FromIterator, if F returns a Result<T, E>,
+    // you can collect that to a Result<Vec<T>, E>
+    fn next(&mut self) -> Option<Self::Item> {
+        self.rows.next().map(|row_result| row_result
+                             .map_err(E::from)
+                             .and_then(|row| (self.map)(row)))
     }
 }
 
@@ -920,6 +962,8 @@ mod test {
     extern crate tempdir;
     use super::*;
     use self::tempdir::TempDir;
+    use std::error::Error as StdError;
+    use std::fmt;
 
     // this function is never called, but is still type checked; in
     // particular, calls with specific instantiations will require
@@ -1079,6 +1123,184 @@ mod test {
             .collect();
 
         assert_eq!(results.unwrap().concat(), "hello, world!");
+    }
+
+    #[test]
+    fn test_query_and_then() {
+        let db = checked_memory_handle();
+        let sql = "BEGIN;
+                   CREATE TABLE foo(x INTEGER, y TEXT);
+                   INSERT INTO foo VALUES(4, \"hello\");
+                   INSERT INTO foo VALUES(3, \", \");
+                   INSERT INTO foo VALUES(2, \"world\");
+                   INSERT INTO foo VALUES(1, \"!\");
+                   END;";
+        db.execute_batch(sql).unwrap();
+
+        let mut query = db.prepare("SELECT x, y FROM foo ORDER BY x DESC").unwrap();
+        let results: SqliteResult<Vec<String>> = query
+            .query_and_then(&[], |row| row.get_checked(1))
+            .unwrap()
+            .collect();
+
+        assert_eq!(results.unwrap().concat(), "hello, world!");
+    }
+
+    #[test]
+    fn test_query_and_then_fails() {
+        let db = checked_memory_handle();
+        let sql = "BEGIN;
+                   CREATE TABLE foo(x INTEGER, y TEXT);
+                   INSERT INTO foo VALUES(4, \"hello\");
+                   INSERT INTO foo VALUES(3, \", \");
+                   INSERT INTO foo VALUES(2, \"world\");
+                   INSERT INTO foo VALUES(1, \"!\");
+                   END;";
+        db.execute_batch(sql).unwrap();
+
+        let mut query = db.prepare("SELECT x, y FROM foo ORDER BY x DESC").unwrap();
+        let bad_type: SqliteResult<Vec<f64>> = query
+            .query_and_then(&[], |row| row.get_checked(1))
+            .unwrap()
+            .collect();
+
+        assert_eq!(bad_type, Err(SqliteError{
+            code: ffi::SQLITE_MISMATCH,
+            message: "Invalid column type".to_owned(),
+        }));
+
+        let bad_idx: SqliteResult<Vec<String>> = query
+            .query_and_then(&[], |row| row.get_checked(3))
+            .unwrap()
+            .collect();
+
+        assert_eq!(bad_idx, Err(SqliteError{
+            code: ffi::SQLITE_MISUSE,
+            message: "Invalid column index".to_owned(),
+        }));
+    }
+
+    #[test]
+    fn test_query_and_then_custom_error() {
+        #[derive(Debug)]
+        enum CustomError {
+            Sqlite(SqliteError),
+        };
+
+        impl fmt::Display for CustomError {
+            fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+                match *self {
+                    CustomError::Sqlite(ref se) => write!(f, "{}: {}", self.description(), se),
+                }
+            }
+        }
+
+        impl StdError for CustomError {
+            fn description(&self) -> &str { "my custom error" }
+            fn cause(&self) -> Option<&StdError> {
+                match *self {
+                    CustomError::Sqlite(ref se) => Some(se),
+                }
+            }
+        }
+
+        impl From<SqliteError> for CustomError {
+            fn from(se: SqliteError) -> CustomError {
+                CustomError::Sqlite(se)
+            }
+        }
+        type CustomResult<T> = Result<T, CustomError>;
+
+        let db = checked_memory_handle();
+        let sql = "BEGIN;
+                   CREATE TABLE foo(x INTEGER, y TEXT);
+                   INSERT INTO foo VALUES(4, \"hello\");
+                   INSERT INTO foo VALUES(3, \", \");
+                   INSERT INTO foo VALUES(2, \"world\");
+                   INSERT INTO foo VALUES(1, \"!\");
+                   END;";
+        db.execute_batch(sql).unwrap();
+
+        let mut query = db.prepare("SELECT x, y FROM foo ORDER BY x DESC").unwrap();
+        let results: CustomResult<Vec<String>> = query
+            .query_and_then(&[], |row| row.get_checked(1).map_err(CustomError::Sqlite))
+            .unwrap()
+            .collect();
+
+        assert_eq!(results.unwrap().concat(), "hello, world!");
+    }
+
+    #[test]
+    fn test_query_and_then_custom_error_fails() {
+        #[derive(Debug, PartialEq)]
+        enum CustomError {
+            SomeError,
+            Sqlite(SqliteError),
+        };
+
+        impl fmt::Display for CustomError {
+            fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+                match *self {
+                    CustomError::SomeError      => write!(f, "{}", self.description()),
+                    CustomError::Sqlite(ref se) => write!(f, "{}: {}", self.description(), se),
+                }
+            }
+        }
+
+        impl StdError for CustomError {
+            fn description(&self) -> &str { "my custom error" }
+            fn cause(&self) -> Option<&StdError> {
+                match *self {
+                    CustomError::SomeError      => None,
+                    CustomError::Sqlite(ref se) => Some(se),
+                }
+            }
+        }
+
+        impl From<SqliteError> for CustomError {
+            fn from(se: SqliteError) -> CustomError {
+                CustomError::Sqlite(se)
+            }
+        }
+        type CustomResult<T> = Result<T, CustomError>;
+
+        let db = checked_memory_handle();
+        let sql = "BEGIN;
+                   CREATE TABLE foo(x INTEGER, y TEXT);
+                   INSERT INTO foo VALUES(4, \"hello\");
+                   INSERT INTO foo VALUES(3, \", \");
+                   INSERT INTO foo VALUES(2, \"world\");
+                   INSERT INTO foo VALUES(1, \"!\");
+                   END;";
+        db.execute_batch(sql).unwrap();
+
+        let mut query = db.prepare("SELECT x, y FROM foo ORDER BY x DESC").unwrap();
+        let bad_type: CustomResult<Vec<f64>> = query
+            .query_and_then(&[], |row| row.get_checked(1).map_err(CustomError::Sqlite))
+            .unwrap()
+            .collect();
+
+        assert_eq!(bad_type, Err(CustomError::Sqlite(SqliteError{
+            code: ffi::SQLITE_MISMATCH,
+            message: "Invalid column type".to_owned(),
+        })));
+
+        let bad_idx: CustomResult<Vec<String>> = query
+            .query_and_then(&[], |row| row.get_checked(3).map_err(CustomError::Sqlite))
+            .unwrap()
+            .collect();
+
+        assert_eq!(bad_idx, Err(CustomError::Sqlite(SqliteError{
+            code: ffi::SQLITE_MISUSE,
+            message: "Invalid column index".to_owned(),
+        })));
+
+        let non_sqlite_err: CustomResult<Vec<String>> = query
+            .query_and_then(&[], |_| Err(CustomError::SomeError))
+            .unwrap()
+            .collect();
+
+        assert_eq!(non_sqlite_err, Err(CustomError::SomeError));
     }
 
     #[test]
