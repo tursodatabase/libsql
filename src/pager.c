@@ -1741,16 +1741,35 @@ static int addToSavepointBitvecs(Pager *pPager, Pgno pgno){
   return rc;
 }
 
+#ifdef SQLITE_ENABLE_CONCURRENT
+int sqlite3PagerBeginConcurrent(Pager *pPager){
+  int rc = SQLITE_OK;
+  if( pPager->pAllRead==0 ){
+    pPager->pAllRead = sqlite3BitvecCreate(pPager->dbSize);
+    if( pPager->pAllRead==0 ){
+      rc = SQLITE_NOMEM;
+    }
+  }
+  return rc;
+}
+
+void sqlite3PagerEndConcurrent(Pager *pPager){
+  sqlite3BitvecDestroy(pPager->pAllRead);
+  pPager->pAllRead = 0;
+}
+
+int sqlite3PagerIsWal(Pager *pPager){
+  return pPager->pWal!=0;
+}
+#endif
+
 /*
 ** Free the Pager.pInJournal and Pager.pAllRead bitvec objects.
 */
 static void pagerFreeBitvecs(Pager *pPager){
   sqlite3BitvecDestroy(pPager->pInJournal);
   pPager->pInJournal = 0;
-#ifdef SQLITE_ENABLE_CONCURRENT
-  sqlite3BitvecDestroy(pPager->pAllRead);
-  pPager->pAllRead = 0;
-#endif
+  sqlite3PagerEndConcurrent(pPager);
 }
 
 /*
@@ -5612,10 +5631,6 @@ int sqlite3PagerBegin(Pager *pPager, int exFlag, int subjInMemory){
 
   if( ALWAYS(pPager->eState==PAGER_READER) ){
     assert( pPager->pInJournal==0 );
-#ifdef SQLITE_ENABLE_CONCURRENT
-    assert( pPager->pAllRead==0 );
-#endif
-
     if( pagerUseWal(pPager) ){
       /* If the pager is configured to use locking_mode=exclusive, and an
       ** exclusive lock on the database is not already held, obtain it now.
@@ -5631,17 +5646,8 @@ int sqlite3PagerBegin(Pager *pPager, int exFlag, int subjInMemory){
       /* Grab the write lock on the log file. If successful, upgrade to
       ** PAGER_RESERVED state. Otherwise, return an error code to the caller.
       ** The busy-handler is not invoked if another connection already
-      ** holds the write-lock. If possible, the upper layer will call it.
-      */
-#ifdef SQLITE_ENABLE_CONCURRENT
-      if( exFlag<0 ){
-        pPager->pAllRead = sqlite3BitvecCreate(pPager->dbSize);
-        if( pPager->pAllRead==0 ){
-          rc = SQLITE_NOMEM;
-        }
-      }else
-#endif
-      {
+      ** holds the write-lock. If possible, the upper layer will call it.  */
+      if( exFlag>=0 ){
         rc = sqlite3WalBeginWriteTransaction(pPager->pWal);
       }
     }else{
@@ -6182,13 +6188,6 @@ int sqlite3PagerUpgradeSnapshot(Pager *pPager, DbPage *pPage1){
 */
 void sqlite3PagerSetDbsize(Pager *pPager, Pgno nSz){
   pPager->dbSize = nSz;
-}
-
-/*
-** Return true if this pager is currently within an CONCURRENT transaction.
-*/
-int sqlite3PagerIsConcurrent(Pager *pPager){
-  return pPager->pAllRead!=0;
 }
 
 /*

@@ -427,6 +427,31 @@ do_multiclient_test tn {
   } {0 {}}
 }
 
+do_multiclient_test tn {
+  do_test 10.$tn.1 {
+    sql1 {
+      PRAGMA journal_mode = wal;
+      CREATE TABLE t1(a);
+      CREATE TABLE t2(b);
+      INSERT INTO t1 VALUES(1), (2), (3);
+      INSERT INTO t2 VALUES(1), (2), (3);
+    }
+  } {wal}
+
+  do_test 10.$tn.2 {
+    sql1 {
+      BEGIN CONCURRENT;
+        SELECT * FROM t1;
+        INSERT INTO t2 VALUES(4);
+    }
+  } {1 2 3}
+
+  do_test 10.$tn.3 {
+    sql2 { INSERT INTO t1 VALUES(4) }
+    list [catch {sql1 COMMIT} msg] $msg
+  } {1 {database is locked}}
+}
+
 
 finish_test
 

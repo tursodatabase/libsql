@@ -595,15 +595,16 @@ static void btreePtrmapEnd(BtShared *pBt, int op, int iSvpt){
 */
 static int btreePtrmapAllocate(BtShared *pBt){
   int rc = SQLITE_OK;
-  BtreePtrmap *pMap = sqlite3_malloc(sizeof(BtreePtrmap));
-  assert( pBt->pMap==0 && sqlite3PagerIsConcurrent(pBt->pPager) );
-  if( pMap==0 ){
-    rc = SQLITE_NOMEM;
-  }else{
-    memset(&pBt->pPage1->aData[32], 0, sizeof(u32)*2);
-    memset(pMap, 0, sizeof(BtreePtrmap));
-    pMap->iFirst = pBt->nPage + 1;
-    pBt->pMap = pMap;
+  if( pBt->pMap==0 ){
+    BtreePtrmap *pMap = sqlite3_malloc(sizeof(BtreePtrmap));
+    if( pMap==0 ){
+      rc = SQLITE_NOMEM;
+    }else{
+      memset(&pBt->pPage1->aData[32], 0, sizeof(u32)*2);
+      memset(pMap, 0, sizeof(BtreePtrmap));
+      pMap->iFirst = pBt->nPage + 1;
+      pBt->pMap = pMap;
+    }
   }
   return rc;
 }
@@ -3273,6 +3274,7 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag){
   sqlite3 *pBlock = 0;
   BtShared *pBt = p->pBt;
   int rc = SQLITE_OK;
+  int bConcurrent = (p->db->bConcurrent && !ISAUTOVACUUM);
 
   sqlite3BtreeEnter(p);
   btreeIntegrity(p);
@@ -3339,18 +3341,11 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag){
       if( (pBt->btsFlags & BTS_READ_ONLY)!=0 ){
         rc = SQLITE_READONLY;
       }else{
-        int exFlag = (p->db->bConcurrent && !ISAUTOVACUUM) ? -1 : (wrflag>1);
-        int bSubjInMem = sqlite3TempInMemory(p->db);
-        assert( p->db->bConcurrent==0 || wrflag==1 );
-        rc = sqlite3PagerBegin(pBt->pPager, exFlag, bSubjInMem);
+        int exFlag = bConcurrent ? -1 : (wrflag>1);
+        rc = sqlite3PagerBegin(pBt->pPager, exFlag, sqlite3TempInMemory(p->db));
         if( rc==SQLITE_OK ){
           rc = newDatabase(pBt);
         }
-#ifdef SQLITE_ENABLE_CONCURRENT
-        if( rc==SQLITE_OK && sqlite3PagerIsConcurrent(pBt->pPager) ){
-          rc = btreePtrmapAllocate(pBt);
-        }
-#endif
       }
     }
   
@@ -3402,6 +3397,15 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag){
 
 
 trans_begun:
+#ifdef SQLITE_ENABLE_CONCURRENT
+  if( bConcurrent && rc==SQLITE_OK && sqlite3PagerIsWal(pBt->pPager) ){
+    rc = sqlite3PagerBeginConcurrent(pBt->pPager);
+    if( rc==SQLITE_OK && wrflag ){
+      rc = btreePtrmapAllocate(pBt);
+    }
+  }
+#endif
+
   if( rc==SQLITE_OK && wrflag ){
     /* This call makes sure that the pager has the correct number of
     ** open savepoints. If the second parameter is greater than 0 and
@@ -3937,7 +3941,6 @@ static int btreeFixUnlocked(Btree *p){
   Pgno nPage = btreePagecount(pBt);
   u32 nFree = get4byte(&p1[36]);
 
-  assert( sqlite3PagerIsConcurrent(pPager) );
   assert( pBt->pMap );
   rc = sqlite3PagerUpgradeSnapshot(pPager, pPage1->pDbPage);
   assert( p1==pPage1->aData );
@@ -4101,8 +4104,11 @@ static void btreeEndTransaction(Btree *p){
     unlockBtreeIfUnused(pBt);
   }
 
-  /* If this was an CONCURRENT transaction, delete the pBt->pMap object */
+  /* If this was an CONCURRENT transaction, delete the pBt->pMap object.
+  ** Also call PagerEndConcurrent() to ensure that the pager has discarded
+  ** the record of all pages read within the transaction.  */
   btreePtrmapDelete(pBt);
+  sqlite3PagerEndConcurrent(pBt->pPager);
   btreeIntegrity(p);
 }
 

@@ -194,11 +194,17 @@ void sqlite3PagerTruncateImage(Pager*,Pgno);
 
 void sqlite3PagerRekey(DbPage*, Pgno, u16);
 
+#ifdef SQLITE_ENABLE_CONCURRENT
+void sqlite3PagerEndConcurrent(Pager*);
+int sqlite3PagerBeginConcurrent(Pager*);
 void sqlite3PagerDropExclusiveLock(Pager*);
-int sqlite3PagerIsConcurrent(Pager*);
-int sqlite3PagerIswriteable(DbPage*);
 int sqlite3PagerUpgradeSnapshot(Pager *pPager, DbPage*);
 void sqlite3PagerSetDbsize(Pager *pPager, Pgno);
+#else
+# define sqlite3PagerEndConcurrent(x)
+#endif
+
+int sqlite3PagerIswriteable(DbPage*);
 
 #if defined(SQLITE_HAS_CODEC) && !defined(SQLITE_OMIT_WAL)
 void *sqlite3PagerCodec(DbPage *);
