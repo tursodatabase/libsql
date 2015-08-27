@@ -866,9 +866,19 @@ impl<'stmt> SqliteRow<'stmt> {
     /// Returns a `SQLITE_MISMATCH`-coded `SqliteError` if the underlying SQLite column
     /// type is not a valid type as a source for `T`.
     ///
-    /// Panics if `idx` is outside the range of columns in the returned query or if this row
-    /// is stale.
+    /// Returns a `SQLITE_MISUSE`-coded `SqliteError` if `idx` is outside the valid column range
+    /// for this row or if this row is stale.
     pub fn get_checked<T: FromSql>(&self, idx: c_int) -> SqliteResult<T> {
+        if self.row_idx != self.current_row.get() {
+            return Err(SqliteError{ code: ffi::SQLITE_MISUSE,
+                message: "Cannot get values from a row after advancing to next row".to_string() });
+        }
+        unsafe {
+            if idx < 0 || idx >= ffi::sqlite3_column_count(self.stmt.stmt) {
+                return Err(SqliteError{ code: ffi::SQLITE_MISUSE,
+                    message: "Invalid column index".to_string() });
+            }
+        }
         let valid_column_type = unsafe {
             T::column_has_valid_sqlite_type(self.stmt.stmt, idx)
         };
