@@ -1,5 +1,5 @@
-C Add\stest\scases\sfor\sconcurrent\stransactions\sand\slong-lived\sSELECT\sstatements.
-D 2015-08-27T19:22:56.303
+C Add\sheader\scomments\sfor\snew\smethods\sin\spager.c.
+D 2015-08-27T19:57:16.810
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e2218eb228374422969de7b1680eda6864affcef
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -324,7 +324,7 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c 388c023582b17890f10c980b30ec1922b471753b
 F src/os_win.c 40b3af7a47eb1107d0d69e592bec345a3b7b798a
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
-F src/pager.c 732f3b107ac7180e4c628114a5d06dda00393080
+F src/pager.c 4343baff2f7e35f11988deb9c213870432ded1b1
 F src/pager.h f00930ca3bfc0f3298b08a69ed7b920e89b531de
 F src/parse.y 1e645cacb93979c59f2a510ee2c100e769bd5e3c
 F src/pcache.c cde06aa50962595e412d497e22fd2e07878ba1f0
@@ -1382,7 +1382,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fc17f73170a27c2fe511ed6b6d488535c4e35bae
-R 54233c250c37b5d4c5cad57267aa2abd
+P fd4798cb7af263409c20d3cf81236b830bd68570
+R f446f1e219f1b69d13fe21a44df99a43
 U dan
-Z 1ef37227dc1b9c5caa6e609be7886347
+Z 0a2b89af585f5781988dd453201696be

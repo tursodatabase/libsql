@@ -1742,6 +1742,12 @@ static int addToSavepointBitvecs(Pager *pPager, Pgno pgno){
 }
 
 #ifdef SQLITE_ENABLE_CONCURRENT
+/*
+** If they are not already, begin recording all pages read from the pager layer
+** by the b-tree layer This is used by concurrent transactions. Return
+** SQLITE_OK if successful, or an SQLite error code (SQLITE_NOMEM) if an error
+** occurs.
+*/
 int sqlite3PagerBeginConcurrent(Pager *pPager){
   int rc = SQLITE_OK;
   if( pPager->pAllRead==0 ){
@@ -1753,11 +1759,18 @@ int sqlite3PagerBeginConcurrent(Pager *pPager){
   return rc;
 }
 
+/*
+** Stop recording all pages read from the pager layer by the b-tree layer
+** and discard any current records.
+*/
 void sqlite3PagerEndConcurrent(Pager *pPager){
   sqlite3BitvecDestroy(pPager->pAllRead);
   pPager->pAllRead = 0;
 }
 
+/*
+** Return true if the database is in wal mode. False otherwise.
+*/
 int sqlite3PagerIsWal(Pager *pPager){
   return pPager->pWal!=0;
 }
