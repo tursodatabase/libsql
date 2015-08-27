@@ -1,5 +1,5 @@
-C Fix\sproblems\sin\sthe\sindexed-expression\shandling\sin\sthe\soptimizer.
-D 2015-08-27T19:56:49.408
+C Fix\sEXPLAIN\sQUERY\sPLAN\soutput\sfor\sindexed-expressions.\s\sFix\sanother\nobscure\sfault\sin\sthe\sWHERE\sterm\sscanner.
+D 2015-08-27T20:33:38.975
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e2218eb228374422969de7b1680eda6864affcef
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -414,9 +414,9 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 6fb6b68969e4692593c2552c4e7bff5882de2cb8
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 2e14d17f592d176b6dc879c33fbdec4fbccaa2ba
-F src/where.c fcdded4bf274bf527020436e8895b33d575f18f6
+F src/where.c b22b416694905555a0cbbd7d8881179392a56aba
 F src/whereInt.h 292d3ac90da4eab1e03ac8452f1add746bcafaa1
-F src/wherecode.c 3d9113cc307ffeed58db41fe9f2d807c94787ab5
+F src/wherecode.c b0bf45ca49e62fde68ba2e2ad2939d9cdeb4e409
 F src/whereexpr.c 990ed42b5940d4000e7e61887a4bbed412c80488
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -1380,7 +1380,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 42f93f582eccd8a778189aa6c113874f995ab751
-R 475d6e7258921a9c57642e7cd0e82c9c
+P 03375017691d5b480e73d712c4318632e835060c
+R 8aa1e38f792c255d32b6cb36a0f80565
 U drh
-Z 29a0c57d5a3080634424e9023a9fd1e9
+Z dc558ff8656aec58d6de7d38d850c48a
