@@ -302,6 +302,37 @@ impl SqliteConnection {
         }
     }
 
+    /// Convenience method to execute a query that is expected to return a single row,
+    /// and execute a mapping via `f` on that returned row with the possibility of failure.
+    /// The `Result` type of `f` must implement `std::convert::From<SqliteError>`.
+    ///
+    /// ## Example
+    ///
+    /// ```rust,no_run
+    /// # use rusqlite::{SqliteResult,SqliteConnection};
+    /// fn preferred_locale(conn: &SqliteConnection) -> SqliteResult<String> {
+    ///     conn.query_row_and_then("SELECT value FROM preferences WHERE name='locale'", &[], |row| {
+    ///         row.get_checked(0)
+    ///     })
+    /// }
+    /// ```
+    ///
+    /// If the query returns more than one row, all rows except the first are ignored.
+    pub fn query_row_and_then<T, E, F>(&self, sql: &str, params: &[&ToSql], f: F) -> Result<T, E>
+                           where F: FnOnce(SqliteRow) -> Result<T, E>,
+                                 E: convert::From<SqliteError> {
+        let mut stmt = try!(self.prepare(sql));
+        let mut rows = try!(stmt.query(params));
+
+        match rows.next() {
+            Some(row) => row.map_err(E::from).and_then(f),
+            None      => Err(E::from(SqliteError{
+                code: ffi::SQLITE_NOTICE,
+                message: "Query did not return a row".to_string(),
+            }))
+        }
+    }
+
     /// Convenience method to execute a query that is expected to return a single row.
     ///
     /// ## Example
@@ -779,8 +810,6 @@ impl<'stmt, T, E, F> Iterator for AndThenRows<'stmt, F>
                               F: FnMut(SqliteRow) -> Result<T, E> {
     type Item = Result<T, E>;
 
-    // Through the magic of FromIterator, if F returns a Result<T, E>,
-    // you can collect that to a Result<Vec<T>, E>
     fn next(&mut self) -> Option<Self::Item> {
         self.rows.next().map(|row_result| row_result
                              .map_err(E::from)
