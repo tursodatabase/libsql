@@ -180,7 +180,7 @@ static WhereTerm *whereScanNext(WhereScan *pScan){
   while( pScan->iEquiv<=pScan->nEquiv ){
     iCur = pScan->aiCur[pScan->iEquiv-1];
     iColumn = pScan->aiColumn[pScan->iEquiv-1];
-    assert( iColumn!=(-2) || pScan->pIdxExpr!=0 );
+    if( iColumn==(-2) && pScan->pIdxExpr==0 ) return 0;
     while( (pWC = pScan->pWC)!=0 ){
       for(pTerm=pWC->a+k; k<pWC->nTerm; k++, pTerm++){
         if( pTerm->leftCursor==iCur
@@ -804,6 +804,7 @@ static sqlite3_index_info *allocateIndexInfo(
     testcase( pTerm->eOperator & WO_ALL );
     if( (pTerm->eOperator & ~(WO_ISNULL|WO_EQUIV|WO_IS))==0 ) continue;
     if( pTerm->wtFlags & TERM_VNULL ) continue;
+    if( pTerm->u.leftColumn<(-1) ) continue;
     nTerm++;
   }
 
@@ -859,6 +860,7 @@ static sqlite3_index_info *allocateIndexInfo(
     testcase( pTerm->eOperator & WO_ALL );
     if( (pTerm->eOperator & ~(WO_ISNULL|WO_EQUIV|WO_IS))==0 ) continue;
     if( pTerm->wtFlags & TERM_VNULL ) continue;
+    if( pTerm->u.leftColumn<(-1) ) continue;
     pIdxCons[j].iColumn = pTerm->u.leftColumn;
     pIdxCons[j].iTermOffset = i;
     op = (u8)pTerm->eOperator & WO_ALL;
