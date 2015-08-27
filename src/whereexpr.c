@@ -872,6 +872,12 @@ static void exprAnalyze(
       pTerm->leftCursor = pLeft->iTable;
       pTerm->u.leftColumn = pLeft->iColumn;
       pTerm->eOperator = operatorMask(op) & opMask;
+    }else if( prereqLeft!=0 && (prereqLeft&(prereqLeft-1))==0 ){
+      int i;
+      for(i=0; (prereqLeft>>i)<1; i++){}
+      pTerm->leftCursor = pMaskSet->ix[i];
+      pTerm->u.leftColumn = -2;
+      pTerm->eOperator = operatorMask(op) & opMask;
     }
     if( op==TK_IS ) pTerm->wtFlags |= TERM_IS;
     if( pRight && pRight->op==TK_COLUMN ){

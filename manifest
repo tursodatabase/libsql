@@ -1,5 +1,5 @@
-C Merge\schanges\sfrom\strunk.
-D 2015-08-27T16:07:02.026
+C Activate\sthe\sability\sto\suse\sexpressions\sin\sindexes\sin\sa\squery.\s\sThere\sare\ssome\ntest\sfailures,\sbut\smostly\sthis\sseems\sto\swork.
+D 2015-08-27T18:24:02.056
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e2218eb228374422969de7b1680eda6864affcef
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -297,7 +297,7 @@ F src/global.c 508e4087f7b41d688e4762dcf4d4fe28cfbc87f9
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
 F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c b459da1440fd10cb839c716685701f619e3d86a5
+F src/insert.c ef4da9af15ed852509fe49ff9570da6bf4819db6
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 92bafa308607dd985ca389a788cd9e0a2b608712
@@ -414,10 +414,10 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 6fb6b68969e4692593c2552c4e7bff5882de2cb8
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 2e14d17f592d176b6dc879c33fbdec4fbccaa2ba
-F src/where.c 7b62bfb9a6d98cbba33bfc7914f823a9ad854b33
-F src/whereInt.h 901c17c1e3c82745ad9b85b4471543fa59c980e9
+F src/where.c 29851b4a1a93934fef1bde3d0a1e7407efd57543
+F src/whereInt.h 292d3ac90da4eab1e03ac8452f1add746bcafaa1
 F src/wherecode.c 3d9113cc307ffeed58db41fe9f2d807c94787ab5
-F src/whereexpr.c 1a308d1ee5144890d21ea9cf70d49bc96a83432b
+F src/whereexpr.c 990ed42b5940d4000e7e61887a4bbed412c80488
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1380,7 +1380,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5611130a595e7f0b6d5f21d76f2755e9c09c7810 cbc3c9a8bf169ae0b21f26855038502c6cc25cfe
-R 5eb2cbc19058900f308a8789aae8ba36
+P c80e9e8e8cc1e7676d7c782ee0827726875db79e
+R ff3e8c131dda72b26dbe6f001a80b515
 U drh
-Z a8340d48ea4d99e733a68ecfeafbe44a
+Z 3e34cddbe64a99afb651902a91a49bea
