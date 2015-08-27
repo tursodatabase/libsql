@@ -1,5 +1,5 @@
-C Fix\sEXPLAIN\sQUERY\sPLAN\soutput\sfor\sindexed-expressions.\s\sFix\sanother\nobscure\sfault\sin\sthe\sWHERE\sterm\sscanner.
-D 2015-08-27T20:33:38.975
+C Fix\sthe\sOR-optimization\sso\sthat\sit\salways\signores\ssubplans\sthat\sdo\snot\suse\san\sindex.
+D 2015-08-27T23:42:43.629
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e2218eb228374422969de7b1680eda6864affcef
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -414,7 +414,7 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 6fb6b68969e4692593c2552c4e7bff5882de2cb8
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 2e14d17f592d176b6dc879c33fbdec4fbccaa2ba
-F src/where.c b22b416694905555a0cbbd7d8881179392a56aba
+F src/where.c acec45dc602a4f58e80e6fa088b9379ccfffd3a4
 F src/whereInt.h 292d3ac90da4eab1e03ac8452f1add746bcafaa1
 F src/wherecode.c b0bf45ca49e62fde68ba2e2ad2939d9cdeb4e409
 F src/whereexpr.c 990ed42b5940d4000e7e61887a4bbed412c80488
@@ -1287,7 +1287,7 @@ F test/walshared.test 0befc811dcf0b287efae21612304d15576e35417
 F test/walslow.test e7be6d9888f83aa5d3d3c7c08aa9b5c28b93609a
 F test/walthread.test de8dbaf6d9e41481c460ba31ca61e163d7348f8e
 F test/where.test 1ff3d9f8da0a6c0dc5ccfd38d9225b2cdb5b6afb
-F test/where2.test 23fdb5d8e756554aad4ca7ae03de9dd8367a2c6e
+F test/where2.test af78c55589cbc82d793449493adba0dc3d659f23
 F test/where3.test 1ad55ba900bd7747f98b6082e65bd3e442c5004e
 F test/where4.test 68aa5ad796e33816db2078bc0f6de719c7a0e21f
 F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
@@ -1380,7 +1380,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 03375017691d5b480e73d712c4318632e835060c
-R 8aa1e38f792c255d32b6cb36a0f80565
+P 73d361ce9e4d72c943def8b0b3caa227f9199aed 66f92a16866e5825363636b9cc4b8f9b29d9e84d
+R b576dddb4c7e794820789b114785ae51
 U drh
-Z dc558ff8656aec58d6de7d38d850c48a
+Z e54726d52fd301793beed6904550b28b
