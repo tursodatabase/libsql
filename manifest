@@ -1,5 +1,5 @@
-C Merge\senhancements\sfrom\strunk.
-D 2015-08-26T18:04:23.442
+C Adjustments\sto\sthe\sWHERE\sterm\sscanning,\sto\sbetter\shandle\sscanning\sterms\sof\nan\sindex.
+D 2015-08-27T15:58:51.073
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e2218eb228374422969de7b1680eda6864affcef
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -414,7 +414,7 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 6fb6b68969e4692593c2552c4e7bff5882de2cb8
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 2e14d17f592d176b6dc879c33fbdec4fbccaa2ba
-F src/where.c fb8546b8053433bfb39f6c39fdc99c111a6f97c5
+F src/where.c 0709bbc33117a21db57a031b1452a35de14bf86b
 F src/whereInt.h 880a8599226ac1c00203490d934f3ed79b292572
 F src/wherecode.c 3d9113cc307ffeed58db41fe9f2d807c94787ab5
 F src/whereexpr.c 1a308d1ee5144890d21ea9cf70d49bc96a83432b
@@ -1380,7 +1380,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e8b02902c48f3668dcff7b1767347ac7ef3c971e c2f3bbad778504681b39ab9399a1eb3c1a35ab3f
-R 81693495b2084fce0fa08431d5ef28b1
+P ec6ddb3d481d005c304a26c948c9c808586750e9
+R e5ffdfd8fde6c8b7686cb0a9ca3923f7
 U drh
-Z bec0cbafd7b79403eeb50b2f9a3289c8
+Z 4ee413196597973385c2eb895ecb052b
