@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swhereby\sconcurrent\stransactions\swould\snot\sconsider\spages\sread\sby\sthe\stransaction\sbefore\sthe\sfirst\swrite\sstatement.
-D 2015-08-27T17:42:38.260
+C Add\stest\scases\sfor\sconcurrent\stransactions\sand\slong-lived\sSELECT\sstatements.
+D 2015-08-27T19:22:56.303
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e2218eb228374422969de7b1680eda6864affcef
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -525,7 +525,7 @@ F test/colmeta.test 2c765ea61ee37bc43bbe6d6047f89004e6508eb1
 F test/colname.test 08948a4809d22817e0e5de89c7c0a8bd90cb551b
 F test/concfault.test 500f17c3fcfe7705114422bcc6ddd3c740001a43
 F test/concurrent.test 634b6a88f1942f5d68cc89d4d5efa2b11ba7913c
-F test/concurrent2.test d42aaa1d0aaf2c41c8d5de204962b125b411557d
+F test/concurrent2.test f20913d376d993a85f28ef3323f09d4cba37206a
 F test/concurrent3.test 0a5f7e3036d1eccf0782d7153ac21f5f222e9468
 F test/conflict.test 841bcf7cabbfca39c577eb8411ea8601843b46a8
 F test/conflict2.test 0d3af4fb534fa1bd020c79960bb56e4d52655f09
@@ -1382,7 +1382,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 69394ddaa2bc9d26477b4359c676c598b733ac9f
-R aacab69ab35db4167de1724271774606
+P fc17f73170a27c2fe511ed6b6d488535c4e35bae
+R 54233c250c37b5d4c5cad57267aa2abd
 U dan
-Z d9ef073e0b6bc6533e113c00c2daa9fc
+Z 1ef37227dc1b9c5caa6e609be7886347
