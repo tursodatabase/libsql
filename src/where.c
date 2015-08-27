@@ -1923,18 +1923,20 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
   ** and prereqs.
   */
   if( pBuilder->pOrSet!=0 ){
+    if( pTemplate->nLTerm ){
 #if WHERETRACE_ENABLED
-    u16 n = pBuilder->pOrSet->n;
-    int x =
+      u16 n = pBuilder->pOrSet->n;
+      int x =
 #endif
-    whereOrInsert(pBuilder->pOrSet, pTemplate->prereq, pTemplate->rRun,
+      whereOrInsert(pBuilder->pOrSet, pTemplate->prereq, pTemplate->rRun,
                                     pTemplate->nOut);
 #if WHERETRACE_ENABLED /* 0x8 */
-    if( sqlite3WhereTrace & 0x8 ){
-      sqlite3DebugPrintf(x?"   or-%d:  ":"   or-X:  ", n);
-      whereLoopPrint(pTemplate, pBuilder->pWC);
-    }
+      if( sqlite3WhereTrace & 0x8 ){
+        sqlite3DebugPrintf(x?"   or-%d:  ":"   or-X:  ", n);
+        whereLoopPrint(pTemplate, pBuilder->pWC);
+      }
 #endif
+    }
     return SQLITE_OK;
   }
 
