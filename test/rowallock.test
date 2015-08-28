@@ -11,11 +11,17 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing locks on read-only WAL-mode databases.
+#
+# Note that the apple-osx branch does not allow read-only WAL-mode
+# databases (per check-in from Adam Swift on 2011-06-24 20:47:06) and
+# so this test module is disabled in the apple-osx branch.
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 source $testdir/lock_common.tcl
 set testprefix rowallock
+
+finish_test; return ;# This test module disabled in the apple-osx branch
 
 set mmap_res 1000000
 ifcapable !mmap {

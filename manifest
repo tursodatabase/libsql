@@ -1,5 +1,5 @@
-C Merge\strunk\senhancements\sinto\sthe\sapple-osx\sbranch.\s\sMost\stests\sworks,\sbut\nthere\sare\syet\sa\sfew\sissues\sto\sbe\sresolved.
-D 2015-08-28T02:12:45.599
+C Disable\sthe\sread-only\sWAL-mode\sdatabase\stests\son\sthe\sapple-osx\sbranch\sbecause\nread-only\sWAL-mode\sdatabases\sare\sspecifically\sdisallowed\sby\sApple-specific\nchanges.
+D 2015-08-28T13:27:00.523
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in fbef0c6d0c4d58e7c0983d1c3a789bbe3b20dc81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -290,7 +290,7 @@ F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
 F src/ctime.c 5a0b735dc95604766f5dac73973658eef782ee8b
 F src/date.c 8ec787fed4929d8ccdf6b1bc360fccc3e1d2ca58
-F src/dbstat.c f402e77e25089c6003d0c60b3233b9b3947d599a w src/test_stat.c
+F src/dbstat.c f402e77e25089c6003d0c60b3233b9b3947d599a
 F src/delete.c 813be7b5659d7658c8a71b5ae194b45c8f739c8b
 F src/expr.c 5944e529891416f482250e16c598d8c26e149eb0
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
@@ -945,7 +945,7 @@ F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
 F test/rollback.test 458fe73eb3ffdfdf9f6ba3e9b7350a6220414dea
 F test/rollback2.test fc14cf6d1a2b250d2735ef16124b971bce152f14
 F test/rollbackfault.test 6a004f71087cc399296cffbb5429ea6da655ae65
-F test/rowallock.test 3f88ec6819489d0b2341c7a7528ae17c053ab7cc
+F test/rowallock.test e8c576ebc92f6b9211662f495658fd39bbcacb5b
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
 F test/rowid.test 742b5741584a8a44fd83e856cc2896688401d645
 F test/rtree.test 0c8d9dd458d6824e59683c19ab2ffa9ef946f798
@@ -1385,7 +1385,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 600df309fc547db3dc21cfc41609eb3dcaa67273 66f92a16866e5825363636b9cc4b8f9b29d9e84d
-R 65de7830a3af5a82f4e8e422a3fc6f4d
+P da8646582a9a8c800ff2962d40ca215381d846dc
+R 8f28867ddebcb6b6d33533e2b7b9408a
 U drh
-Z 5c887a626f3ea4b7f5813551ec6019f5
+Z 98ebbb2a8d55c1e050bf570a538510cb
