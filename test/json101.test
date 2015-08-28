@@ -50,5 +50,17 @@ do_catchsql_test json1-2.4 {
   SELECT json_object('a',1,'b',x'abcd');
 } {1 {JSON cannot hold BLOB values}}
 
+do_execsql_test json1-3.1 {
+  SELECT json_replace('{"a":1,"b":2}','$.a','[3,4,5]');
+} {{{"a":"[3,4,5]","b":2}}}
+do_execsql_test json1-3.2 {
+  SELECT json_replace('{"a":1,"b":2}','$$.a','[3,4,5]');
+} {{{"a":[3,4,5],"b":2}}}
+do_execsql_test json1-3.3 {
+  SELECT json_type(json_set('{"a":1,"b":2}','$.b','{"x":3,"y":4}'),'$.b');
+} {text}
+do_execsql_test json1-3.4 {
+  SELECT json_type(json_set('{"a":1,"b":2}','$$.b','{"x":3,"y":4}'),'$.b');
+} {object}
 
 finish_test

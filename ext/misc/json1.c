@@ -80,6 +80,7 @@ static const char * const jsonType[] = {
 #define JNODE_REMOVE  0x04         /* Do not output */
 #define JNODE_REPLACE 0x08         /* Replace with JsonNode.iVal */
 #define JNODE_APPEND  0x10         /* More ARRAY/OBJECT entries at u.iAppend */
+#define JNODE_JSON    0x20         /* Treat REPLACE as JSON text */
 
 
 /* A single node of parsed JSON
@@ -238,7 +239,8 @@ static void jsonAppendString(JsonString *p, const char *zIn, u32 N){
 */
 static void jsonAppendValue(
   JsonString *p,                 /* Append to this JSON string */
-  sqlite3_value *pValue          /* Value to append */
+  sqlite3_value *pValue,         /* Value to append */
+  u8 textIsJson                  /* Try to treat text values as JSON */
 ){
   switch( sqlite3_value_type(pValue) ){
     case SQLITE_NULL: {
@@ -255,7 +257,11 @@ static void jsonAppendValue(
     case SQLITE_TEXT: {
       const char *z = (const char*)sqlite3_value_text(pValue);
       u32 n = (u32)sqlite3_value_bytes(pValue);
-      jsonAppendString(p, z, n);
+      if( textIsJson ){
+        jsonAppendRaw(p, z, n);
+      }else{
+        jsonAppendString(p, z, n);
+      }
       break;
     }
     default: {
@@ -355,7 +361,8 @@ static void jsonRenderNode(
           if( pNode[j].jnFlags & (JNODE_REMOVE|JNODE_REPLACE) ){
             if( pNode[j].jnFlags & JNODE_REPLACE ){
               jsonAppendSeparator(pOut);
-              jsonAppendValue(pOut, aReplace[pNode[j].iVal]);
+              jsonAppendValue(pOut, aReplace[pNode[j].iVal],
+                              (pNode[j].jnFlags & JNODE_JSON)!=0);
             }
           }else{
             jsonAppendSeparator(pOut);
@@ -380,7 +387,8 @@ static void jsonRenderNode(
             jsonRenderNode(&pNode[j], pOut, aReplace);
             jsonAppendChar(pOut, ':');
             if( pNode[j+1].jnFlags & JNODE_REPLACE ){
-              jsonAppendValue(pOut, aReplace[pNode[j+1].iVal]);
+              jsonAppendValue(pOut, aReplace[pNode[j+1].iVal],
+                              (pNode[j+1].jnFlags & JNODE_JSON)!=0);
             }else{
               jsonRenderNode(&pNode[j+1], pOut, aReplace);
             }
@@ -993,7 +1001,7 @@ static void jsonArrayFunc(
   jsonAppendChar(&jx, '[');
   for(i=0; i<argc; i++){
     jsonAppendSeparator(&jx);
-    jsonAppendValue(&jx, argv[i]);
+    jsonAppendValue(&jx, argv[i], 0);
   }
   jsonAppendChar(&jx, ']');
   jsonResult(&jx);
@@ -1101,7 +1109,7 @@ static void jsonObjectFunc(
     n = (u32)sqlite3_value_bytes(argv[i]);
     jsonAppendString(&jx, z, n);
     jsonAppendChar(&jx, ':');
-    jsonAppendValue(&jx, argv[i+1]);
+    jsonAppendValue(&jx, argv[i+1], 0);
   }
   jsonAppendChar(&jx, '}');
   jsonResult(&jx);
@@ -1166,12 +1174,18 @@ static void jsonReplaceFunc(
   if( jsonParse(&x, ctx, (const char*)sqlite3_value_text(argv[0])) ) return;
   if( x.nNode ){
     for(i=1; i<(u32)argc; i+=2){
+      u8 jnFlags = JNODE_REPLACE;
       zPath = (const char*)sqlite3_value_text(argv[i]);
       if( zPath==0 ) continue;
       if( zPath[0]!='$' ) continue;
+      if( zPath[1]=='$' ){
+        zPath++;
+        jnFlags = JNODE_REPLACE|JNODE_JSON;
+      }
       pNode = jsonLookup(&x, 0, &zPath[1], 0);
       if( pNode ){
-        pNode->jnFlags |= JNODE_REPLACE;
+        pNode->jnFlags &= ~JNODE_JSON;
+        pNode->jnFlags |= jnFlags;
         pNode->iVal = i+1;
       }
     }
@@ -1216,16 +1230,22 @@ static void jsonSetFunc(
   if( jsonParse(&x, ctx, (const char*)sqlite3_value_text(argv[0])) ) return;
   if( x.nNode ){
     for(i=1; i<(u32)argc; i+=2){
+      u8 jnFlags = JNODE_REPLACE;
       zPath = (const char*)sqlite3_value_text(argv[i]);
       if( zPath==0 ) continue;
       if( zPath[0]!='$' ) continue;
+      if( zPath[1]=='$' ){
+        zPath++;
+        jnFlags = JNODE_REPLACE|JNODE_JSON;
+      }
       bApnd = 0;
       pNode = jsonLookup(&x, 0, &zPath[1], &bApnd);
       if( x.oom ){
         sqlite3_result_error_nomem(ctx);
         goto jsonSetDone;
       }else if( pNode && (bApnd || bIsSet) ){
-        pNode->jnFlags |= JNODE_REPLACE;
+        pNode->jnFlags &= ~JNODE_JSON;
+        pNode->jnFlags |= jnFlags;
         pNode->iVal = i+1;
       }
     }
