@@ -217,7 +217,7 @@ struct Fts5ExtensionApi {
   int (*xTokenize)(Fts5Context*, 
     const char *pText, int nText, /* Text to tokenize */
     void *pCtx,                   /* Context passed to xToken() */
-    int (*xToken)(void*, const char*, int, int, int)       /* Callback */
+    int (*xToken)(void*, const char*, int, int, int, int)       /* Callback */
   );
 
   int (*xPhraseCount)(Fts5Context*);
@@ -309,16 +309,23 @@ struct fts5_tokenizer {
   void (*xDelete)(Fts5Tokenizer*);
   int (*xTokenize)(Fts5Tokenizer*, 
       void *pCtx,
+      int flags,
       const char *pText, int nText, 
       int (*xToken)(
         void *pCtx,         /* Copy of 2nd argument to xTokenize() */
         const char *pToken, /* Pointer to buffer containing token */
         int nToken,         /* Size of token in bytes */
         int iStart,         /* Byte offset of token within input text */
-        int iEnd            /* Byte offset of end of token within input text */
+        int iEnd,           /* Byte offset of end of token within input text */
+        int iPos            /* Number of tokens before this one in input text */
       )
   );
 };
+
+#define FTS5_TOKENIZE_QUERY     0x0001
+#define FTS5_TOKENIZE_PREFIX    0x0002
+#define FTS5_TOKENIZE_DOCUMENT  0x0004
+#define FTS5_TOKENIZE_AUX       0x0008
 
 /*
 ** END OF CUSTOM TOKENIZERS
@@ -329,7 +336,7 @@ struct fts5_tokenizer {
 */
 typedef struct fts5_api fts5_api;
 struct fts5_api {
-  int iVersion;                   /* Currently always set to 1 */
+  int iVersion;                   /* Currently always set to 2 */
 
   /* Create a new tokenizer */
   int (*xCreateTokenizer)(

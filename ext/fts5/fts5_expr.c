@@ -1341,7 +1341,8 @@ static int fts5ParseTokenize(
   const char *pToken,             /* Buffer containing token */
   int nToken,                     /* Size of token in bytes */
   int iStart,                     /* Start offset of token */
-  int iEnd                        /* End offset of token */
+  int iEnd,                       /* End offset of token */
+  int iPos
 ){
   int rc = SQLITE_OK;
   const int SZALLOC = 8;
@@ -1417,8 +1418,11 @@ Fts5ExprPhrase *sqlite3Fts5ParseTerm(
 
   rc = fts5ParseStringFromToken(pToken, &z);
   if( rc==SQLITE_OK ){
+    int flags = FTS5_TOKENIZE_QUERY | (bPrefix ? FTS5_TOKENIZE_QUERY : 0);
+    int n;
     sqlite3Fts5Dequote(z);
-    rc = sqlite3Fts5Tokenize(pConfig, z, strlen(z), &sCtx, fts5ParseTokenize);
+    n = strlen(z);
+    rc = sqlite3Fts5Tokenize(pConfig, flags, z, n, &sCtx, fts5ParseTokenize);
   }
   sqlite3_free(z);
   if( rc ){

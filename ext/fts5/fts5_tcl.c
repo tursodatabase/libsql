@@ -142,7 +142,7 @@ struct F5tAuxData {
 static int xTokenizeCb(
   void *pCtx, 
   const char *zToken, int nToken, 
-  int iStart, int iEnd
+  int iStart, int iEnd, int iPos
 ){
   F5tFunction *p = (F5tFunction*)pCtx;
   Tcl_Obj *pEval = Tcl_DuplicateObj(p->pScript);
@@ -585,7 +585,7 @@ struct F5tTokenizeCtx {
 static int xTokenizeCb2(
   void *pCtx, 
   const char *zToken, int nToken, 
-  int iStart, int iEnd
+  int iStart, int iEnd, int iPos
 ){
   F5tTokenizeCtx *p = (F5tTokenizeCtx*)pCtx;
   if( p->bSubst ){
@@ -666,7 +666,9 @@ static int f5tTokenize(
   ctx.bSubst = (objc==5);
   ctx.pRet = pRet;
   ctx.zInput = zText;
-  rc = tokenizer.xTokenize(pTok, (void*)&ctx, zText, nText, xTokenizeCb2);
+  rc = tokenizer.xTokenize(
+      pTok, (void*)&ctx, FTS5_TOKENIZE_DOCUMENT, zText, nText, xTokenizeCb2
+  );
   tokenizer.xDelete(pTok);
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, "error in tokenizer.xTokenize()", 0);
@@ -748,8 +750,9 @@ static void f5tTokenizerDelete(Fts5Tokenizer *p){
 static int f5tTokenizerTokenize(
   Fts5Tokenizer *p, 
   void *pCtx,
+  int flags,
   const char *pText, int nText, 
-  int (*xToken)(void*, const char*, int, int, int)
+  int (*xToken)(void*, const char*, int, int, int, int)
 ){
   F5tTokenizerInstance *pInst = (F5tTokenizerInstance*)p;
   void *pOldCtx;

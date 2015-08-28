@@ -1498,11 +1498,13 @@ static int fts5ApiTokenize(
   Fts5Context *pCtx, 
   const char *pText, int nText, 
   void *pUserData,
-  int (*xToken)(void*, const char*, int, int, int)
+  int (*xToken)(void*, const char*, int, int, int, int)
 ){
   Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
   Fts5Table *pTab = (Fts5Table*)(pCsr->base.pVtab);
-  return sqlite3Fts5Tokenize(pTab->pConfig, pText, nText, pUserData, xToken);
+  return sqlite3Fts5Tokenize(
+      pTab->pConfig, FTS5_TOKENIZE_AUX, pText, nText, pUserData, xToken
+  );
 }
 
 static int fts5ApiPhraseCount(Fts5Context *pCtx){
@@ -1658,10 +1660,11 @@ static int fts5ColumnSizeCb(
   const char *pToken,             /* Buffer containing token */
   int nToken,                     /* Size of token in bytes */
   int iStart,                     /* Start offset of token */
-  int iEnd                        /* End offset of token */
+  int iEnd,                       /* End offset of token */
+  int iPos
 ){
   int *pCnt = (int*)pContext;
-  *pCnt = *pCnt + 1;
+  *pCnt = iPos+1;
   return SQLITE_OK;
 }
 
@@ -1691,7 +1694,9 @@ static int fts5ApiColumnSize(Fts5Context *pCtx, int iCol, int *pnToken){
           pCsr->aColumnSize[i] = 0;
           rc = fts5ApiColumnText(pCtx, i, &z, &n);
           if( rc==SQLITE_OK ){
-            rc = sqlite3Fts5Tokenize(pConfig, z, n, p, fts5ColumnSizeCb);
+            rc = sqlite3Fts5Tokenize(
+                pConfig, FTS5_TOKENIZE_AUX, z, n, p, fts5ColumnSizeCb
+            );
           }
         }
       }
@@ -2344,7 +2349,7 @@ int sqlite3_fts5_init(
     void *p = (void*)pGlobal;
     memset(pGlobal, 0, sizeof(Fts5Global));
     pGlobal->db = db;
-    pGlobal->api.iVersion = 1;
+    pGlobal->api.iVersion = 2;
     pGlobal->api.xCreateFunction = fts5CreateAux;
     pGlobal->api.xCreateTokenizer = fts5CreateTokenizer;
     pGlobal->api.xFindTokenizer = fts5FindTokenizer;

@@ -166,9 +166,10 @@ int sqlite3Fts5ConfigDeclareVtab(Fts5Config *pConfig);
 
 int sqlite3Fts5Tokenize(
   Fts5Config *pConfig,            /* FTS5 Configuration object */
+  int flags,                      /* FTS5_TOKENIZE_* flags */
   const char *pText, int nText,   /* Text to tokenize */
   void *pCtx,                     /* Context passed to xToken() */
-  int (*xToken)(void*, const char*, int, int, int)    /* Callback */
+  int (*xToken)(void*, const char*, int, int, int, int)    /* Callback */
 );
 
 void sqlite3Fts5Dequote(char *z);

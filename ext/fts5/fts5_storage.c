@@ -362,11 +362,13 @@ static int fts5StorageInsertCallback(
   const char *pToken,             /* Buffer containing token */
   int nToken,                     /* Size of token in bytes */
   int iStart,                     /* Start offset of token */
-  int iEnd                        /* End offset of token */
+  int iEnd,                       /* End offset of token */
+  int iPos
 ){
   Fts5InsertCtx *pCtx = (Fts5InsertCtx*)pContext;
   Fts5Index *pIdx = pCtx->pStorage->pIndex;
-  int iPos = pCtx->szCol++;
+  assert( iPos+1>=pCtx->szCol );
+  pCtx->szCol = iPos+1;
   return sqlite3Fts5IndexWrite(pIdx, pCtx->iCol, iPos, pToken, nToken);
 }
 
@@ -394,6 +396,7 @@ static int fts5StorageDeleteFromIndex(Fts5Storage *p, i64 iDel){
         if( pConfig->abUnindexed[iCol-1] ) continue;
         ctx.szCol = 0;
         rc = sqlite3Fts5Tokenize(pConfig, 
+            FTS5_TOKENIZE_DOCUMENT,
             (const char*)sqlite3_column_text(pSeek, iCol),
             sqlite3_column_bytes(pSeek, iCol),
             (void*)&ctx,
@@ -565,6 +568,7 @@ int sqlite3Fts5StorageSpecialDelete(
       if( pConfig->abUnindexed[iCol] ) continue;
       ctx.szCol = 0;
       rc = sqlite3Fts5Tokenize(pConfig, 
+        FTS5_TOKENIZE_DOCUMENT,
         (const char*)sqlite3_value_text(apVal[iCol]),
         sqlite3_value_bytes(apVal[iCol]),
         (void*)&ctx,
@@ -654,6 +658,7 @@ int sqlite3Fts5StorageRebuild(Fts5Storage *p){
       ctx.szCol = 0;
       if( pConfig->abUnindexed[ctx.iCol]==0 ){
         rc = sqlite3Fts5Tokenize(pConfig, 
+            FTS5_TOKENIZE_DOCUMENT,
             (const char*)sqlite3_column_text(pScan, ctx.iCol+1),
             sqlite3_column_bytes(pScan, ctx.iCol+1),
             (void*)&ctx,
@@ -771,6 +776,7 @@ int sqlite3Fts5StorageInsert(
     ctx.szCol = 0;
     if( pConfig->abUnindexed[ctx.iCol]==0 ){
       rc = sqlite3Fts5Tokenize(pConfig, 
+          FTS5_TOKENIZE_DOCUMENT,
           (const char*)sqlite3_value_text(apVal[ctx.iCol+2]),
           sqlite3_value_bytes(apVal[ctx.iCol+2]),
           (void*)&ctx,
@@ -841,10 +847,12 @@ static int fts5StorageIntegrityCallback(
   const char *pToken,             /* Buffer containing token */
   int nToken,                     /* Size of token in bytes */
   int iStart,                     /* Start offset of token */
-  int iEnd                        /* End offset of token */
+  int iEnd,                       /* End offset of token */
+  int iPos
 ){
   Fts5IntegrityCtx *pCtx = (Fts5IntegrityCtx*)pContext;
-  int iPos = pCtx->szCol++;
+  assert( iPos+1>=pCtx->szCol );
+  pCtx->szCol = iPos+1;
   pCtx->cksum ^= sqlite3Fts5IndexCksum(
       pCtx->pConfig, pCtx->iRowid, pCtx->iCol, iPos, pToken, nToken
   );
@@ -886,8 +894,8 @@ int sqlite3Fts5StorageIntegrity(Fts5Storage *p){
         if( pConfig->abUnindexed[i] ) continue;
         ctx.iCol = i;
         ctx.szCol = 0;
-        rc = sqlite3Fts5Tokenize(
-            pConfig, 
+        rc = sqlite3Fts5Tokenize(pConfig, 
+            FTS5_TOKENIZE_DOCUMENT,
             (const char*)sqlite3_column_text(pScan, i+1),
             sqlite3_column_bytes(pScan, i+1),
             (void*)&ctx,

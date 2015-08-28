@@ -151,11 +151,14 @@ static int fts5HighlightCb(
   const char *pToken,             /* Buffer containing token */
   int nToken,                     /* Size of token in bytes */
   int iStartOff,                  /* Start offset of token */
-  int iEndOff                     /* End offset of token */
+  int iEndOff,                    /* End offset of token */
+  int iPos
 ){
   HighlightContext *p = (HighlightContext*)pContext;
   int rc = SQLITE_OK;
-  int iPos = p->iPos++;
+
+  if( iPos<p->iPos ) return SQLITE_OK;
+  p->iPos = iPos+1;
 
   if( p->iRangeEnd>0 ){
     if( iPos<p->iRangeStart || iPos>p->iRangeEnd ) return SQLITE_OK;
