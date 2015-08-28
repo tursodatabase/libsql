@@ -327,4 +327,53 @@ do_execsql_test index6-8.2 {
   3 three value 3
 }
 
+# 2015-06-11.  Assertion fault found by AFL
+#
+do_execsql_test index6-9.1 {
+  CREATE TABLE t9(a int, b int, c int);
+  CREATE INDEX t9ca ON t9(c,a) WHERE a in (10,12,20);
+  INSERT INTO t9 VALUES(1,1,9),(10,2,35),(11,15,82),(20,19,5),(NULL,7,3);
+  UPDATE t9 SET b=c WHERE a in (10,12,20);
+  SELECT a,b,c,'|' FROM t9 ORDER BY a;
+} {{} 7 3 | 1 1 9 | 10 35 35 | 11 15 82 | 20 5 5 |}
+do_execsql_test index6-9.2 {
+  DROP TABLE t9;
+  CREATE TABLE t9(a int, b int, c int, PRIMARY KEY(a)) WITHOUT ROWID;
+  CREATE INDEX t9ca ON t9(c,a) WHERE a in (10,12,20);
+  INSERT INTO t9 VALUES(1,1,9),(10,2,35),(11,15,82),(20,19,5);
+  UPDATE t9 SET b=c WHERE a in (10,12,20);
+  SELECT a,b,c,'|' FROM t9 ORDER BY a;
+} {1 1 9 | 10 35 35 | 11 15 82 | 20 5 5 |}
+
+# AND-connected terms in the WHERE clause of a partial index
+#
+do_execsql_test index6-10.1 {
+  CREATE TABLE t10(a,b,c,d,e INTEGER PRIMARY KEY);
+  INSERT INTO t10 VALUES
+    (1,2,3,4,5),
+    (2,3,4,5,6),
+    (3,4,5,6,7),
+    (1,2,3,8,9);
+  CREATE INDEX t10x ON t10(d) WHERE a=1 AND b=2 AND c=3;
+  SELECT e FROM t10 WHERE a=1 AND b=2 AND c=3 ORDER BY d;
+} {5 9}
+do_execsql_test index6-10.1eqp {
+  EXPLAIN QUERY PLAN
+  SELECT e FROM t10 WHERE a=1 AND b=2 AND c=3 ORDER BY d;
+} {/USING INDEX t10x/}
+do_execsql_test index6-10.2 {
+  SELECT e FROM t10 WHERE c=3 AND 2=b AND a=1 ORDER BY d DESC;
+} {9 5}
+do_execsql_test index6-10.2eqp {
+  EXPLAIN QUERY PLAN
+  SELECT e FROM t10 WHERE c=3 AND 2=b AND a=1 ORDER BY d DESC;
+} {/USING INDEX t10x/}
+do_execsql_test index6-10.3 {
+  SELECT e FROM t10 WHERE a=1 AND b=2 ORDER BY d DESC;
+} {9 5}
+do_execsql_test index6-10.3eqp {
+  EXPLAIN QUERY PLAN
+  SELECT e FROM t10 WHERE a=1 AND b=2 ORDER BY d DESC;
+} {~/USING INDEX t10x/}
+
 finish_test

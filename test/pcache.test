@@ -73,7 +73,7 @@ do_test pcache-1.4 {
 
 do_test pcache-1.5 {
   sqlite3 db2 test.db
-  execsql "PRAGMA cache_size=10" db2
+  execsql "PRAGMA cache_size; PRAGMA cache_size=10" db2
   pcache_stats
 } {current 11 max 22 min 20 recyclable 1}
 

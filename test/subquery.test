@@ -584,4 +584,14 @@ do_test subquery-7.11 {
 } {30303}
 }  ;############# Disabled
 
+# 2015-04-21.
+# Verify that a memory leak in the table column type and collation analysis
+# is plugged.
+#
+do_execsql_test subquery-8.1 {
+  CREATE TABLE t8(a TEXT, b INT);
+  SELECT (SELECT 0 FROM (SELECT * FROM t1)) AS x WHERE x;
+  SELECT (SELECT 0 FROM (SELECT * FROM (SELECT 0))) AS x WHERE x;
+} {}
+
 finish_test

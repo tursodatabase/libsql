@@ -86,7 +86,7 @@ static const struct sPragmaNames {
 #if !defined(SQLITE_OMIT_PAGER_PRAGMAS)
   { /* zName:     */ "cache_size",
     /* ePragTyp:  */ PragTyp_CACHE_SIZE,
-    /* ePragFlag: */ PragFlag_NeedSchema,
+    /* ePragFlag: */ 0,
     /* iArg:      */ 0 },
 #endif
 #if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
@@ -99,6 +99,10 @@ static const struct sPragmaNames {
     /* ePragTyp:  */ PragTyp_CASE_SENSITIVE_LIKE,
     /* ePragFlag: */ 0,
     /* iArg:      */ 0 },
+  { /* zName:     */ "cell_size_check",
+    /* ePragTyp:  */ PragTyp_FLAG,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ SQLITE_CellSizeCk },
 #if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
   { /* zName:     */ "checkpoint_fullfsync",
     /* ePragTyp:  */ PragTyp_FLAG,
@@ -456,4 +460,4 @@ static const struct sPragmaNames {
     /* iArg:      */ SQLITE_WriteSchema|SQLITE_RecoveryMode },
 #endif
 };
-/* Number of pragmas: 59 on by default, 72 total. */
+/* Number of pragmas: 60 on by default, 73 total. */

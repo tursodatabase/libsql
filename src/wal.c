@@ -522,7 +522,7 @@ static int walIndexPage(Wal *pWal, int iPage, volatile u32 **ppPage){
   if( pWal->nWiData<=iPage ){
     int nByte = sizeof(u32*)*(iPage+1);
     volatile u32 **apNew;
-    apNew = (volatile u32 **)sqlite3_realloc((void *)pWal->apWiData, nByte);
+    apNew = (volatile u32 **)sqlite3_realloc64((void *)pWal->apWiData, nByte);
     if( !apNew ){
       *ppPage = 0;
       return SQLITE_NOMEM;
@@ -648,9 +648,9 @@ static void walIndexWriteHdr(Wal *pWal){
   pWal->hdr.isInit = 1;
   pWal->hdr.iVersion = WALINDEX_MAX_VERSION;
   walChecksumBytes(1, (u8*)&pWal->hdr, nCksum, 0, pWal->hdr.aCksum);
-  memcpy((void *)&aHdr[1], (void *)&pWal->hdr, sizeof(WalIndexHdr));
+  memcpy((void*)&aHdr[1], (const void*)&pWal->hdr, sizeof(WalIndexHdr));
   walShmBarrier(pWal);
-  memcpy((void *)&aHdr[0], (void *)&pWal->hdr, sizeof(WalIndexHdr));
+  memcpy((void*)&aHdr[0], (const void*)&pWal->hdr, sizeof(WalIndexHdr));
 }
 
 /*
@@ -952,13 +952,13 @@ static void walCleanupHash(Wal *pWal){
   ** via the hash table even after the cleanup.
   */
   if( iLimit ){
-    int i;           /* Loop counter */
+    int j;           /* Loop counter */
     int iKey;        /* Hash key */
-    for(i=1; i<=iLimit; i++){
-      for(iKey=walHash(aPgno[i]); aHash[iKey]; iKey=walNextHash(iKey)){
-        if( aHash[iKey]==i ) break;
+    for(j=1; j<=iLimit; j++){
+      for(iKey=walHash(aPgno[j]); aHash[iKey]; iKey=walNextHash(iKey)){
+        if( aHash[iKey]==j ) break;
       }
-      assert( aHash[iKey]==i );
+      assert( aHash[iKey]==j );
     }
   }
 #endif /* SQLITE_ENABLE_EXPENSIVE_ASSERT */
@@ -1147,7 +1147,7 @@ static int walIndexRecover(Wal *pWal){
 
     /* Malloc a buffer to read frames into. */
     szFrame = szPage + WAL_FRAME_HDRSIZE;
-    aFrame = (u8 *)sqlite3_malloc(szFrame);
+    aFrame = (u8 *)sqlite3_malloc64(szFrame);
     if( !aFrame ){
       rc = SQLITE_NOMEM;
       goto recovery_error;
@@ -1465,7 +1465,7 @@ static void walMergesort(
   int nMerge = 0;                 /* Number of elements in list aMerge */
   ht_slot *aMerge = 0;            /* List to be merged */
   int iList;                      /* Index into input list */
-  int iSub = 0;                   /* Index into aSub array */
+  u32 iSub = 0;                   /* Index into aSub array */
   struct Sublist aSub[13];        /* Array of sub-lists */
 
   memset(aSub, 0, sizeof(aSub));
@@ -1476,7 +1476,9 @@ static void walMergesort(
     nMerge = 1;
     aMerge = &aList[iList];
     for(iSub=0; iList & (1<<iSub); iSub++){
-      struct Sublist *p = &aSub[iSub];
+      struct Sublist *p;
+      assert( iSub<ArraySize(aSub) );
+      p = &aSub[iSub];
       assert( p->aList && p->nList<=(1<<iSub) );
       assert( p->aList==&aList[iList&~((2<<iSub)-1)] );
       walMerge(aContent, p->aList, p->nList, &aMerge, &nMerge, aBuffer);
@@ -1487,7 +1489,9 @@ static void walMergesort(
 
   for(iSub++; iSub<ArraySize(aSub); iSub++){
     if( nList & (1<<iSub) ){
-      struct Sublist *p = &aSub[iSub];
+      struct Sublist *p;
+      assert( iSub<ArraySize(aSub) );
+      p = &aSub[iSub];
       assert( p->nList<=(1<<iSub) );
       assert( p->aList==&aList[nList&~((2<<iSub)-1)] );
       walMerge(aContent, p->aList, p->nList, &aMerge, &nMerge, aBuffer);
@@ -1545,7 +1549,7 @@ static int walIteratorInit(Wal *pWal, WalIterator **pp){
   nByte = sizeof(WalIterator) 
         + (nSegment-1)*sizeof(struct WalSegment)
         + iLast*sizeof(ht_slot);
-  p = (WalIterator *)sqlite3_malloc(nByte);
+  p = (WalIterator *)sqlite3_malloc64(nByte);
   if( !p ){
     return SQLITE_NOMEM;
   }
@@ -1555,7 +1559,7 @@ static int walIteratorInit(Wal *pWal, WalIterator **pp){
   /* Allocate temporary space used by the merge-sort routine. This block
   ** of memory will be freed before this function returns.
   */
-  aTmp = (ht_slot *)sqlite3_malloc(
+  aTmp = (ht_slot *)sqlite3_malloc64(
       sizeof(ht_slot) * (iLast>HASHTABLE_NPAGE?HASHTABLE_NPAGE:iLast)
   );
   if( !aTmp ){

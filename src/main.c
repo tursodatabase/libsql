@@ -58,6 +58,18 @@ int sqlite3_libversion_number(void){ return SQLITE_VERSION_NUMBER; }
 */
 int sqlite3_threadsafe(void){ return SQLITE_THREADSAFE; }
 
+/*
+** When compiling the test fixture or with debugging enabled (on Win32),
+** this variable being set to non-zero will cause OSTRACE macros to emit
+** extra diagnostic information.
+*/
+#ifdef SQLITE_HAVE_OS_TRACE
+# ifndef SQLITE_DEBUG_OS_TRACE
+#   define SQLITE_DEBUG_OS_TRACE 0
+# endif
+  int sqlite3OSTrace = SQLITE_DEBUG_OS_TRACE;
+#endif
+
 #if !defined(SQLITE_OMIT_TRACE) && defined(SQLITE_ENABLE_IOTRACE)
 /*
 ** If the following function pointer is not NULL and if
@@ -633,6 +645,7 @@ int sqlite3_config(int op, ...){
 ** the lookaside memory.
 */
 static int setupLookaside(sqlite3 *db, void *pBuf, int sz, int cnt){
+#ifndef SQLITE_OMIT_LOOKASIDE
   void *pStart;
   if( db->lookaside.nOut ){
     return SQLITE_BUSY;
@@ -683,6 +696,7 @@ static int setupLookaside(sqlite3 *db, void *pBuf, int sz, int cnt){
     db->lookaside.bEnabled = 0;
     db->lookaside.bMalloced = 0;
   }
+#endif /* SQLITE_OMIT_LOOKASIDE */
   return SQLITE_OK;
 }
 
@@ -921,15 +935,21 @@ static void functionDestroy(sqlite3 *db, FuncDef *p){
 static void disconnectAllVtab(sqlite3 *db){
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   int i;
+  HashElem *p;
   sqlite3BtreeEnterAll(db);
   for(i=0; i<db->nDb; i++){
     Schema *pSchema = db->aDb[i].pSchema;
     if( db->aDb[i].pSchema ){
-      HashElem *p;
       for(p=sqliteHashFirst(&pSchema->tblHash); p; p=sqliteHashNext(p)){
         Table *pTab = (Table *)sqliteHashData(p);
         if( IsVirtual(pTab) ) sqlite3VtabDisconnect(db, pTab);
       }
+    }
+  }
+  for(p=sqliteHashFirst(&db->aModule); p; p=sqliteHashNext(p)){
+    Module *pMod = (Module *)sqliteHashData(p);
+    if( pMod->pEpoTab ){
+      sqlite3VtabDisconnect(db, pMod->pEpoTab);
     }
   }
   sqlite3VtabUnlockList(db);
@@ -1109,6 +1129,7 @@ void sqlite3LeaveMutexAndCloseZombie(sqlite3 *db){
     if( pMod->xDestroy ){
       pMod->xDestroy(pMod->pAux);
     }
+    sqlite3VtabEponymousTableClear(db, pMod);
     sqlite3DbFree(db, pMod);
   }
   sqlite3HashClear(&db->aModule);
@@ -1201,7 +1222,7 @@ void sqlite3RollbackAll(sqlite3 *db, int tripCode){
 ** Return a static string containing the name corresponding to the error code
 ** specified in the argument.
 */
-#if (defined(SQLITE_DEBUG) && SQLITE_OS_WIN) || defined(SQLITE_TEST)
+#if defined(SQLITE_NEED_ERR_NAME)
 const char *sqlite3ErrName(int rc){
   const char *zName = 0;
   int i, origRc = rc;
@@ -2077,9 +2098,11 @@ int sqlite3TempInMemory(const sqlite3 *db){
   return ( db->temp_store!=1 );
 #endif
 #if SQLITE_TEMP_STORE==3
+  UNUSED_PARAMETER(db);
   return 1;
 #endif
 #if SQLITE_TEMP_STORE<1 || SQLITE_TEMP_STORE>3
+  UNUSED_PARAMETER(db);
   return 0;
 #endif
 }
@@ -2464,14 +2487,14 @@ int sqlite3ParseUri(
     int eState;                   /* Parser state when parsing URI */
     int iIn;                      /* Input character index */
     int iOut = 0;                 /* Output character index */
-    int nByte = nUri+2;           /* Bytes of space to allocate */
+    u64 nByte = nUri+2;           /* Bytes of space to allocate */
 
     /* Make sure the SQLITE_OPEN_URI flag is set to indicate to the VFS xOpen 
     ** method that there may be extra parameters following the file-name.  */
     flags |= SQLITE_OPEN_URI;
 
     for(iIn=0; iIn<nUri; iIn++) nByte += (zUri[iIn]=='&');
-    zFile = sqlite3_malloc(nByte);
+    zFile = sqlite3_malloc64(nByte);
     if( !zFile ) return SQLITE_NOMEM;
 
     iIn = 5;
@@ -2637,7 +2660,7 @@ int sqlite3ParseUri(
     }
 
   }else{
-    zFile = sqlite3_malloc(nUri+2);
+    zFile = sqlite3_malloc64(nUri+2);
     if( !zFile ) return SQLITE_NOMEM;
     memcpy(zFile, zUri, nUri);
     zFile[nUri] = '\0';
@@ -2843,6 +2866,9 @@ static int openDatabase(
 #if defined(SQLITE_REVERSE_UNORDERED_SELECTS)
                  | SQLITE_ReverseOrder
 #endif
+#if defined(SQLITE_ENABLE_OVERSIZE_CELL_CHECK)
+                 | SQLITE_CellSizeCk
+#endif
       ;
   sqlite3HashInit(&db->aCollSeq);
 #ifndef SQLITE_OMIT_VIRTUALTABLE
@@ -2960,6 +2986,12 @@ static int openDatabase(
   }
 #endif
 
+#ifdef SQLITE_ENABLE_DBSTAT_VTAB
+  if( !db->mallocFailed && rc==SQLITE_OK){
+    rc = sqlite3DbstatRegister(db);
+  }
+#endif
+
   /* -DSQLITE_DEFAULT_LOCKING_MODE=1 makes EXCLUSIVE the default locking
   ** mode.  -DSQLITE_DEFAULT_LOCKING_MODE=0 make NORMAL the default locking
   ** mode.  Doing nothing at all also makes NORMAL the default.
@@ -3024,7 +3056,7 @@ opendb_out:
     sqlite3GlobalConfig.xSqllog(pArg, db, zFilename, 0);
   }
 #endif
-  return sqlite3ApiExit(0, rc);
+  return rc & 0xff;
 }
 
 /*
@@ -3082,7 +3114,7 @@ int sqlite3_open16(
   }
   sqlite3ValueFree(pVal);
 
-  return sqlite3ApiExit(0, rc);
+  return rc & 0xff;
 }
 #endif /* SQLITE_OMIT_UTF16 */
 
@@ -3463,7 +3495,9 @@ int sqlite3_file_control(sqlite3 *db, const char *zDbName, int op, void *pArg){
 */
 int sqlite3_test_control(int op, ...){
   int rc = 0;
-#ifndef SQLITE_OMIT_BUILTIN_TEST
+#ifdef SQLITE_OMIT_BUILTIN_TEST
+  UNUSED_PARAMETER(op);
+#else
   va_list ap;
   va_start(ap, op);
   switch( op ){

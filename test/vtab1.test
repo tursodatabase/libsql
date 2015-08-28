@@ -56,9 +56,6 @@ ifcapable !vtab||!schema_pragmas {
 # We cannot create a virtual table if the module has not been registered.
 #
 do_test vtab1-1.1.1 {
-  explain {
-    CREATE VIRTUAL TABLE t1 USING echo;
-  }
   catchsql {
     CREATE VIRTUAL TABLE t1 USING echo;
   }
@@ -1085,9 +1082,20 @@ do_test vtab1.13-3 {
     SELECT * FROM echo_c WHERE b IS NULL 
   }
 } {15 {} 16}
-do_test vtab1.13-3 {
+do_test vtab1.13-4 {
+  unset -nocomplain null
+  execsql { 
+    SELECT * FROM echo_c WHERE b IS $null
+  }
+} {15 {} 16}
+do_test vtab1.13-5 {
   execsql { 
     SELECT * FROM echo_c WHERE b IS NULL AND a = 15;
+  }
+} {15 {} 16}
+do_test vtab1.13-6 {
+  execsql { 
+    SELECT * FROM echo_c WHERE NULL IS b AND a IS 15;
   }
 } {15 {} 16}
 

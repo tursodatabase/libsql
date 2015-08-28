@@ -267,6 +267,11 @@ struct sqlite3_api_routines {
   void (*result_text64)(sqlite3_context*,const char*,sqlite3_uint64,
                          void(*)(void*), unsigned char);
   int (*strglob)(const char*,const char*);
+  /* Version 3.8.11 and later */
+  sqlite3_value *(*value_dup)(const sqlite3_value*);
+  void (*value_free)(sqlite3_value*);
+  int (*result_zeroblob64)(sqlite3_context*,sqlite3_uint64);
+  int (*bind_zeroblob64)(sqlite3_stmt*, int, sqlite3_uint64);
 };
 
 /*
@@ -407,6 +412,7 @@ struct sqlite3_api_routines {
 #define sqlite3_value_text16le         sqlite3_api->value_text16le
 #define sqlite3_value_type             sqlite3_api->value_type
 #define sqlite3_vmprintf               sqlite3_api->vmprintf
+#define sqlite3_vsnprintf              sqlite3_api->vsnprintf
 #define sqlite3_overload_function      sqlite3_api->overload_function
 #define sqlite3_prepare_v2             sqlite3_api->prepare_v2
 #define sqlite3_prepare16_v2           sqlite3_api->prepare16_v2
@@ -497,6 +503,11 @@ struct sqlite3_api_routines {
 #define sqlite3_result_blob64          sqlite3_api->result_blob64
 #define sqlite3_result_text64          sqlite3_api->result_text64
 #define sqlite3_strglob                sqlite3_api->strglob
+/* Version 3.8.11 and later */
+#define sqlite3_value_dup              sqlite3_api->value_dup
+#define sqlite3_value_free             sqlite3_api->value_free
+#define sqlite3_result_zeroblob64      sqlite3_api->result_zeroblob64
+#define sqlite3_bind_zeroblob64        sqlite3_api->bind_zeroblob64
 #endif /* SQLITE_CORE */
 
 #ifndef SQLITE_CORE

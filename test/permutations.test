@@ -96,7 +96,7 @@ if {$::tcl_platform(platform)!="unix"} {
 set alltests [test_set $alltests -exclude {
   all.test        async.test         quick.test  veryquick.test
   memleak.test    permutations.test  soak.test   fts3.test
-  mallocAll.test  rtree.test         full.test
+  mallocAll.test  rtree.test         full.test   extraquick.test
 }]
 
 set allquicktests [test_set $alltests -exclude {
@@ -113,7 +113,7 @@ set allquicktests [test_set $alltests -exclude {
   vtab_err.test walslow.test walcrash.test walcrash3.test
   walthread.test rtree3.test indexfault.test securedel2.test
   sort3.test sort4.test fts4growth.test fts4growth2.test
-  bigsort.test
+  bigsort.test rbu.test
 }]
 if {[info exists ::env(QUICKTEST_INCLUDE)]} {
   set allquicktests [concat $allquicktests $::env(QUICKTEST_INCLUDE)]
@@ -146,11 +146,22 @@ if {[info exists ::env(TEST_FAILURE)]} {
 lappend ::testsuitelist xxx
 
 test_suite "veryquick" -prefix "" -description {
-  "Very" quick test suite. Runs in less than 5 minutes on a workstation. 
+  "Very" quick test suite. Runs in minutes on a workstation.
   This test suite is the same as the "quick" tests, except that some files
   that test malloc and IO errors are omitted.
 } -files [
-  test_set $allquicktests -exclude *malloc* *ioerr* *fault*
+  test_set $allquicktests -exclude *malloc* *ioerr* *fault* *bigfile*
+]
+
+test_suite "extraquick" -prefix "" -description {
+  "Extra" quick test suite. Runs in a few minutes on a workstation.
+  This test suite is the same as the "veryquick" tests, except that
+  slower tests are omitted.
+} -files [
+  test_set $allquicktests -exclude *malloc* *ioerr* *fault* *bigfile* \
+     wal3.test fts4merge* sort2.test mmap1.test walcrash* \
+     percentile.test where8m.test walcksum.test savepoint3.test \
+     fuzzer1.test fuzzer3.test fts3expr3.test
 ]
 
 test_suite "mmap" -prefix "mm-" -description {
@@ -237,6 +248,18 @@ test_suite "fts3" -prefix "" -description {
   fts3varint.test
   fts4growth.test fts4growth2.test
 }
+
+test_suite "fts5" -prefix "" -description {
+  All FTS5 tests.
+} -files [glob -nocomplain $::testdir/../ext/fts5/test/*.test]
+
+test_suite "fts5-light" -prefix "" -description {
+  All FTS5 tests.
+} -files [
+  test_set \
+      [glob -nocomplain $::testdir/../ext/fts5/test/*.test] \
+      -exclude *corrupt* *fault* *big* *fts5aj*
+]
 
 test_suite "nofaultsim" -prefix "" -description {
   "Very" quick test suite. Runs in less than 5 minutes on a workstation. 
@@ -394,16 +417,16 @@ test_suite "memsubsys1" -description {
 } -files [
   test_set $::allquicktests -exclude ioerr5.test malloc5.test mmap1.test
 ] -initialize {
+  test_set_config_pagecache 4096 24
   catch {db close}
   sqlite3_shutdown
-  sqlite3_config_pagecache 4096 24
   sqlite3_config_scratch 25000 1
   sqlite3_initialize
   autoinstall_test_functions
 } -shutdown {
+  test_restore_config_pagecache
   catch {db close}
   sqlite3_shutdown
-  sqlite3_config_pagecache 0 0
   sqlite3_config_scratch 0 0
   sqlite3_initialize
   autoinstall_test_functions
@@ -421,16 +444,16 @@ test_suite "memsubsys2" -description {
 } -files [
   test_set $::allquicktests -exclude ioerr5.test malloc5.test
 ] -initialize {
+  test_set_config_pagecache 512 5
   catch {db close}
   sqlite3_shutdown
-  sqlite3_config_pagecache 512 5
   sqlite3_config_scratch 1000 1
   sqlite3_initialize
   autoinstall_test_functions
 } -shutdown {
+  test_restore_config_pagecache
   catch {db close}
   sqlite3_shutdown
-  sqlite3_config_pagecache 0 0
   sqlite3_config_scratch 0 0
   sqlite3_initialize
   autoinstall_test_functions
@@ -705,7 +728,7 @@ test_suite "inmemory_journal" -description {
   zerodamage.test
 
   # WAL mode is different.
-  wal* tkt-2d1a5c67d.test backcompat.test e_wal*
+  wal* tkt-2d1a5c67d.test backcompat.test e_wal* rowallock.test
 }]
 
 ifcapable mem3 {
@@ -938,6 +961,12 @@ test_suite "wal" -description {
 test_suite "rtree" -description {
   All R-tree related tests. Provides coverage of source file rtree.c.
 } -files [glob -nocomplain $::testdir/../ext/rtree/*.test]
+
+test_suite "rbu" -description {
+  RBU tests.
+} -files [
+  test_set [glob -nocomplain $::testdir/../ext/rbu/*.test] -exclude rbu.test
+]
 
 test_suite "no_optimization" -description {
   Run test scripts with optimizations disabled using the

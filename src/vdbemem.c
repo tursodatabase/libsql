@@ -200,10 +200,11 @@ int sqlite3VdbeMemMakeWriteable(Mem *pMem){
     pMem->z[pMem->n] = 0;
     pMem->z[pMem->n+1] = 0;
     pMem->flags |= MEM_Term;
-#ifdef SQLITE_DEBUG
-    pMem->pScopyFrom = 0;
-#endif
   }
+  pMem->flags &= ~MEM_Ephem;
+#ifdef SQLITE_DEBUG
+  pMem->pScopyFrom = 0;
+#endif
 
   return SQLITE_OK;
 }
@@ -587,7 +588,7 @@ int sqlite3VdbeMemNumerify(Mem *pMem){
 void sqlite3VdbeMemCast(Mem *pMem, u8 aff, u8 encoding){
   if( pMem->flags & MEM_Null ) return;
   switch( aff ){
-    case SQLITE_AFF_NONE: {   /* Really a cast to BLOB */
+    case SQLITE_AFF_BLOB: {   /* Really a cast to BLOB */
       if( (pMem->flags & MEM_Blob)==0 ){
         sqlite3ValueApplyAffinity(pMem, SQLITE_AFF_TEXT, encoding);
         assert( pMem->flags & MEM_Str || pMem->db->mallocFailed );
@@ -769,10 +770,6 @@ void sqlite3VdbeMemAboutToChange(Vdbe *pVdbe, Mem *pMem){
 }
 #endif /* SQLITE_DEBUG */
 
-/*
-** Size of struct Mem not including the Mem.zMalloc member.
-*/
-#define MEMCELLSIZE offsetof(Mem,zMalloc)
 
 /*
 ** Make an shallow copy of pFrom into pTo.  Prior contents of
@@ -780,10 +777,15 @@ void sqlite3VdbeMemAboutToChange(Vdbe *pVdbe, Mem *pMem){
 ** pFrom->z is used, then pTo->z points to the same thing as pFrom->z
 ** and flags gets srcType (either MEM_Ephem or MEM_Static).
 */
+static SQLITE_NOINLINE void vdbeClrCopy(Mem *pTo, const Mem *pFrom, int eType){
+  vdbeMemClearExternAndSetNull(pTo);
+  assert( !VdbeMemDynamic(pTo) );
+  sqlite3VdbeMemShallowCopy(pTo, pFrom, eType);
+}
 void sqlite3VdbeMemShallowCopy(Mem *pTo, const Mem *pFrom, int srcType){
   assert( (pFrom->flags & MEM_RowSet)==0 );
   assert( pTo->db==pFrom->db );
-  if( VdbeMemDynamic(pTo) ) vdbeMemClearExternAndSetNull(pTo);
+  if( VdbeMemDynamic(pTo) ){ vdbeClrCopy(pTo,pFrom,srcType); return; }
   memcpy(pTo, pFrom, MEMCELLSIZE);
   if( (pFrom->flags&MEM_Static)==0 ){
     pTo->flags &= ~(MEM_Dyn|MEM_Static|MEM_Ephem);
@@ -799,7 +801,10 @@ void sqlite3VdbeMemShallowCopy(Mem *pTo, const Mem *pFrom, int srcType){
 int sqlite3VdbeMemCopy(Mem *pTo, const Mem *pFrom){
   int rc = SQLITE_OK;
 
-  assert( pTo->db==pFrom->db );
+  /* The pFrom==0 case in the following assert() is when an sqlite3_value
+  ** from sqlite3_value_dup() is used as the argument
+  ** to sqlite3_result_value(). */
+  assert( pTo->db==pFrom->db || pFrom->db==0 );
   assert( (pFrom->flags & MEM_RowSet)==0 );
   if( VdbeMemDynamic(pTo) ) vdbeMemClearExternAndSetNull(pTo);
   memcpy(pTo, pFrom, MEMCELLSIZE);
@@ -946,6 +951,32 @@ int sqlite3VdbeMemSetStr(
 ** If this routine fails for any reason (malloc returns NULL or unable
 ** to read from the disk) then the pMem is left in an inconsistent state.
 */
+static SQLITE_NOINLINE int vdbeMemFromBtreeResize(
+  BtCursor *pCur,   /* Cursor pointing at record to retrieve. */
+  u32 offset,       /* Offset from the start of data to return bytes from. */
+  u32 amt,          /* Number of bytes to return. */
+  int key,          /* If true, retrieve from the btree key, not data. */
+  Mem *pMem         /* OUT: Return data in this Mem structure. */
+){
+  int rc;
+  pMem->flags = MEM_Null;
+  if( SQLITE_OK==(rc = sqlite3VdbeMemClearAndResize(pMem, amt+2)) ){
+    if( key ){
+      rc = sqlite3BtreeKey(pCur, offset, amt, pMem->z);
+    }else{
+      rc = sqlite3BtreeData(pCur, offset, amt, pMem->z);
+    }
+    if( rc==SQLITE_OK ){
+      pMem->z[amt] = 0;
+      pMem->z[amt+1] = 0;
+      pMem->flags = MEM_Blob|MEM_Term;
+      pMem->n = (int)amt;
+    }else{
+      sqlite3VdbeMemRelease(pMem);
+    }
+  }
+  return rc;
+}
 int sqlite3VdbeMemFromBtree(
   BtCursor *pCur,   /* Cursor pointing at record to retrieve. */
   u32 offset,       /* Offset from the start of data to return bytes from. */
@@ -975,22 +1006,7 @@ int sqlite3VdbeMemFromBtree(
     pMem->flags = MEM_Blob|MEM_Ephem;
     pMem->n = (int)amt;
   }else{
-    pMem->flags = MEM_Null;
-    if( SQLITE_OK==(rc = sqlite3VdbeMemClearAndResize(pMem, amt+2)) ){
-      if( key ){
-        rc = sqlite3BtreeKey(pCur, offset, amt, pMem->z);
-      }else{
-        rc = sqlite3BtreeData(pCur, offset, amt, pMem->z);
-      }
-      if( rc==SQLITE_OK ){
-        pMem->z[amt] = 0;
-        pMem->z[amt+1] = 0;
-        pMem->flags = MEM_Blob|MEM_Term;
-        pMem->n = (int)amt;
-      }else{
-        sqlite3VdbeMemRelease(pMem);
-      }
-    }
+    rc = vdbeMemFromBtreeResize(pCur, offset, amt, key, pMem);
   }
 
   return rc;
@@ -1311,7 +1327,7 @@ static int valueFromExpr(
       if( zVal==0 ) goto no_mem;
       sqlite3ValueSetStr(pVal, -1, zVal, SQLITE_UTF8, SQLITE_DYNAMIC);
     }
-    if( (op==TK_INTEGER || op==TK_FLOAT ) && affinity==SQLITE_AFF_NONE ){
+    if( (op==TK_INTEGER || op==TK_FLOAT ) && affinity==SQLITE_AFF_BLOB ){
       sqlite3ValueApplyAffinity(pVal, SQLITE_AFF_NUMERIC, SQLITE_UTF8);
     }else{
       sqlite3ValueApplyAffinity(pVal, affinity, SQLITE_UTF8);
@@ -1647,7 +1663,7 @@ void sqlite3Stat4ProbeFree(UnpackedRecord *pRec){
     Mem *aMem = pRec->aMem;
     sqlite3 *db = aMem[0].db;
     for(i=0; i<nCol; i++){
-      if( aMem[i].szMalloc ) sqlite3DbFree(db, aMem[i].zMalloc);
+      sqlite3VdbeMemRelease(&aMem[i]);
     }
     sqlite3KeyInfoUnref(pRec->pKeyInfo);
     sqlite3DbFree(db, pRec);
@@ -1678,17 +1694,26 @@ void sqlite3ValueFree(sqlite3_value *v){
 }
 
 /*
-** Return the number of bytes in the sqlite3_value object assuming
-** that it uses the encoding "enc"
+** The sqlite3ValueBytes() routine returns the number of bytes in the
+** sqlite3_value object assuming that it uses the encoding "enc".
+** The valueBytes() routine is a helper function.
 */
+static SQLITE_NOINLINE int valueBytes(sqlite3_value *pVal, u8 enc){
+  return valueToText(pVal, enc)!=0 ? pVal->n : 0;
+}
 int sqlite3ValueBytes(sqlite3_value *pVal, u8 enc){
   Mem *p = (Mem*)pVal;
-  if( (p->flags & MEM_Blob)!=0 || sqlite3ValueText(pVal, enc) ){
+  assert( (p->flags & MEM_Null)==0 || (p->flags & (MEM_Str|MEM_Blob))==0 );
+  if( (p->flags & MEM_Str)!=0 && pVal->enc==enc ){
+    return p->n;
+  }
+  if( (p->flags & MEM_Blob)!=0 ){
     if( p->flags & MEM_Zero ){
       return p->n + p->u.nZero;
     }else{
       return p->n;
     }
   }
-  return 0;
+  if( p->flags & MEM_Null ) return 0;
+  return valueBytes(pVal, enc);
 }

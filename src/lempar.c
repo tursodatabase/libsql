@@ -329,7 +329,7 @@ static int yy_pop_parser_stack(yyParser *pParser){
 
   /* There is no mechanism by which the parser stack can be popped below
   ** empty in SQLite.  */
-  if( NEVER(pParser->yyidx<0) ) return 0;
+  assert( pParser->yyidx>=0 );
 #ifndef NDEBUG
   if( yyTraceFILE && pParser->yyidx>=0 ){
     fprintf(yyTraceFILE,"%sPopping %s\n",

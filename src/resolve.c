@@ -79,7 +79,7 @@ static void incrAggFunctionDepth(Expr *pExpr, int N){
 **     SELECT a+b, c+d FROM t1 ORDER BY (a+b) COLLATE nocase;
 **
 ** The nSubquery parameter specifies how many levels of subquery the
-** alias is removed from the original expression.  The usually value is
+** alias is removed from the original expression.  The usual value is
 ** zero but it might be more if the alias is contained within a subquery
 ** of the original expression.  The Expr.op2 field of TK_AGG_FUNCTION
 ** structures must be increased by the nSubquery amount.
@@ -99,7 +99,6 @@ static void resolveAlias(
   assert( iCol>=0 && iCol<pEList->nExpr );
   pOrig = pEList->a[iCol].pExpr;
   assert( pOrig!=0 );
-  assert( pOrig->flags & EP_Resolved );
   db = pParse->db;
   pDup = sqlite3ExprDup(db, pOrig, 0);
   if( pDup==0 ) return;
@@ -307,7 +306,7 @@ static int lookupName(
             ** USING clause, then skip this match.
             */
             if( cnt==1 ){
-              if( pItem->jointype & JT_NATURAL ) continue;
+              if( pItem->fg.jointype & JT_NATURAL ) continue;
               if( nameInUsingClause(pItem->pUsing, zCol) ) continue;
             }
             cnt++;
@@ -322,8 +321,8 @@ static int lookupName(
         pExpr->iTable = pMatch->iCursor;
         pExpr->pTab = pMatch->pTab;
         /* RIGHT JOIN not (yet) supported */
-        assert( (pMatch->jointype & JT_RIGHT)==0 );
-        if( (pMatch->jointype & JT_LEFT)!=0 ){
+        assert( (pMatch->fg.jointype & JT_RIGHT)==0 );
+        if( (pMatch->fg.jointype & JT_LEFT)!=0 ){
           ExprSetProperty(pExpr, EP_CanBeNull);
         }
         pSchema = pExpr->pTab->pSchema;
@@ -359,7 +358,7 @@ static int lookupName(
             break;
           }
         }
-        if( iCol>=pTab->nCol && sqlite3IsRowid(zCol) && HasRowid(pTab) ){
+        if( iCol>=pTab->nCol && sqlite3IsRowid(zCol) && VisibleRowid(pTab) ){
           /* IMP: R-51414-32910 */
           /* IMP: R-44911-55124 */
           iCol = -1;
@@ -389,7 +388,7 @@ static int lookupName(
     ** Perhaps the name is a reference to the ROWID
     */
     if( cnt==0 && cntTab==1 && pMatch && sqlite3IsRowid(zCol)
-     && HasRowid(pMatch->pTab) ){
+     && VisibleRowid(pMatch->pTab) ){
       cnt = 1;
       pExpr->iColumn = -1;     /* IMP: R-44911-55124 */
       pExpr->affinity = SQLITE_AFF_INTEGER;
@@ -408,9 +407,9 @@ static int lookupName(
     ** resolved by the time the WHERE clause is resolved.
     **
     ** The ability to use an output result-set column in the WHERE, GROUP BY,
-    ** or HAVING clauses, or as part of a larger expression in the ORDRE BY
+    ** or HAVING clauses, or as part of a larger expression in the ORDER BY
     ** clause is not standard SQL.  This is a (goofy) SQLite extension, that
-    ** is supported for backwards compatibility only.  TO DO: Issue a warning
+    ** is supported for backwards compatibility only. Hence, we issue a warning
     ** on sqlite3_log() whenever the capability is used.
     */
     if( (pEList = pNC->pEList)!=0
@@ -1143,7 +1142,6 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
   int isCompound;         /* True if p is a compound select */
   int nCompound;          /* Number of compound terms processed so far */
   Parse *pParse;          /* Parsing context */
-  ExprList *pEList;       /* Result set expression list */
   int i;                  /* Loop counter */
   ExprList *pGroupBy;     /* The GROUP BY clause */
   Select *pLeftmost;      /* Left-most of SELECT of a compound */
@@ -1216,7 +1214,7 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
         ** parent contexts. After resolving references to expressions in
         ** pItem->pSelect, check if this value has changed. If so, then
         ** SELECT statement pItem->pSelect must be correlated. Set the
-        ** pItem->isCorrelated flag if this is the case. */
+        ** pItem->fg.isCorrelated flag if this is the case. */
         for(pNC=pOuterNC; pNC; pNC=pNC->pNext) nRef += pNC->nRef;
 
         if( pItem->zName ) pParse->zAuthContext = pItem->zName;
@@ -1225,8 +1223,8 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
         if( pParse->nErr || db->mallocFailed ) return WRC_Abort;
 
         for(pNC=pOuterNC; pNC; pNC=pNC->pNext) nRef -= pNC->nRef;
-        assert( pItem->isCorrelated==0 && nRef<=0 );
-        pItem->isCorrelated = (nRef!=0);
+        assert( pItem->fg.isCorrelated==0 && nRef<=0 );
+        pItem->fg.isCorrelated = (nRef!=0);
       }
     }
   
@@ -1238,14 +1236,7 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
     sNC.pNext = pOuterNC;
   
     /* Resolve names in the result set. */
-    pEList = p->pEList;
-    assert( pEList!=0 );
-    for(i=0; i<pEList->nExpr; i++){
-      Expr *pX = pEList->a[i].pExpr;
-      if( sqlite3ResolveExprNames(&sNC, pX) ){
-        return WRC_Abort;
-      }
-    }
+    if( sqlite3ResolveExprListNames(&sNC, p->pEList) ) return WRC_Abort;
   
     /* If there are no aggregate functions in the result-set, and no GROUP BY 
     ** expression, do not allow aggregates in any of the other expressions.
@@ -1277,6 +1268,16 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
     sNC.pEList = p->pEList;
     if( sqlite3ResolveExprNames(&sNC, p->pHaving) ) return WRC_Abort;
     if( sqlite3ResolveExprNames(&sNC, p->pWhere) ) return WRC_Abort;
+
+    /* Resolve names in table-valued-function arguments */
+    for(i=0; i<p->pSrc->nSrc; i++){
+      struct SrcList_item *pItem = &p->pSrc->a[i];
+      if( pItem->fg.isTabFunc
+       && sqlite3ResolveExprListNames(&sNC, pItem->u1.pFuncArg) 
+      ){
+        return WRC_Abort;
+      }
+    }
 
     /* The ORDER BY and GROUP BY clauses may not refer to terms in
     ** outer queries 
@@ -1330,6 +1331,13 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
           return WRC_Abort;
         }
       }
+    }
+
+    /* If this is part of a compound SELECT, check that it has the right
+    ** number of expressions in the select list. */
+    if( p->pNext && p->pEList->nExpr!=p->pNext->pEList->nExpr ){
+      sqlite3SelectWrongNumTermsError(pParse, p->pNext);
+      return WRC_Abort;
     }
 
     /* Advance to the next term of the compound
@@ -1434,6 +1442,22 @@ int sqlite3ResolveExprNames(
   return ExprHasProperty(pExpr, EP_Error);
 }
 
+/*
+** Resolve all names for all expression in an expression list.  This is
+** just like sqlite3ResolveExprNames() except that it works for an expression
+** list rather than a single expression.
+*/
+int sqlite3ResolveExprListNames( 
+  NameContext *pNC,       /* Namespace to resolve expressions in. */
+  ExprList *pList         /* The expression list to be analyzed. */
+){
+  int i;
+  assert( pList!=0 );
+  for(i=0; i<pList->nExpr; i++){
+    if( sqlite3ResolveExprNames(pNC, pList->a[i].pExpr) ) return WRC_Abort;
+  }
+  return WRC_Continue;
+}
 
 /*
 ** Resolve all names in all expressions of a SELECT and in all
@@ -1483,7 +1507,6 @@ void sqlite3ResolveSelfReference(
 ){
   SrcList sSrc;                   /* Fake SrcList for pParse->pNewTable */
   NameContext sNC;                /* Name context for pParse->pNewTable */
-  int i;                          /* Loop counter */
 
   assert( type==NC_IsCheck || type==NC_PartIdx );
   memset(&sNC, 0, sizeof(sNC));
@@ -1496,11 +1519,5 @@ void sqlite3ResolveSelfReference(
   sNC.pSrcList = &sSrc;
   sNC.ncFlags = type;
   if( sqlite3ResolveExprNames(&sNC, pExpr) ) return;
-  if( pList ){
-    for(i=0; i<pList->nExpr; i++){
-      if( sqlite3ResolveExprNames(&sNC, pList->a[i].pExpr) ){
-        return;
-      }
-    }
-  }
+  if( pList ) sqlite3ResolveExprListNames(&sNC, pList);
 }

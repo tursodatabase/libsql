@@ -390,7 +390,7 @@ void sqlite3Update(
       regKey = iPk;
     }else{
       sqlite3VdbeAddOp4(v, OP_MakeRecord, iPk, nPk, regKey,
-                        sqlite3IndexAffinityStr(v, pPk), nPk);
+                        sqlite3IndexAffinityStr(db, pPk), nPk);
       sqlite3VdbeAddOp2(v, OP_IdxInsert, iEph, regKey);
     }
     sqlite3WhereEnd(pWInfo);
@@ -743,12 +743,10 @@ static void updateVirtualTable(
   */
   assert( v );
   ephemTab = pParse->nTab++;
-  sqlite3VdbeAddOp2(v, OP_OpenEphemeral, ephemTab, pTab->nCol+1+(pRowid!=0));
-  sqlite3VdbeChangeP5(v, BTREE_UNORDERED);
 
   /* fill the ephemeral table 
   */
-  sqlite3SelectDestInit(&dest, SRT_Table, ephemTab);
+  sqlite3SelectDestInit(&dest, SRT_EphemTab, ephemTab);
   sqlite3Select(pParse, pSelect, &dest);
 
   /* Generate code to scan the ephemeral table and call VUpdate. */

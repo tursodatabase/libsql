@@ -58,6 +58,7 @@ static int createModule(
       pMod->pModule = pModule;
       pMod->pAux = pAux;
       pMod->xDestroy = xDestroy;
+      pMod->pEpoTab = 0;
       pDel = (Module *)sqlite3HashInsert(&db->aModule,zCopy,(void*)pMod);
       assert( pDel==0 || pDel==pMod );
       if( pDel ){
@@ -285,23 +286,17 @@ void sqlite3VtabClear(sqlite3 *db, Table *p){
 ** deleted.
 */
 static void addModuleArgument(sqlite3 *db, Table *pTable, char *zArg){
-  int i = pTable->nModuleArg++;
-  int nBytes = sizeof(char *)*(1+pTable->nModuleArg);
+  int nBytes = sizeof(char *)*(2+pTable->nModuleArg);
   char **azModuleArg;
   azModuleArg = sqlite3DbRealloc(db, pTable->azModuleArg, nBytes);
   if( azModuleArg==0 ){
-    int j;
-    for(j=0; j<i; j++){
-      sqlite3DbFree(db, pTable->azModuleArg[j]);
-    }
     sqlite3DbFree(db, zArg);
-    sqlite3DbFree(db, pTable->azModuleArg);
-    pTable->nModuleArg = 0;
   }else{
+    int i = pTable->nModuleArg++;
     azModuleArg[i] = zArg;
     azModuleArg[i+1] = 0;
+    pTable->azModuleArg = azModuleArg;
   }
-  pTable->azModuleArg = azModuleArg;
 }
 
 /*
@@ -704,7 +699,7 @@ int sqlite3VtabCallCreate(sqlite3 *db, int iDb, const char *zTab, char **pzErr){
   ** invoke it now. If the module has not been registered, return an 
   ** error. Otherwise, do nothing.
   */
-  if( !pMod ){
+  if( pMod==0 || pMod->pModule->xCreate==0 || pMod->pModule->xDestroy==0 ){
     *pzErr = sqlite3MPrintf(db, "no such module: %s", zMod);
     rc = SQLITE_ERROR;
   }else{
@@ -806,6 +801,7 @@ int sqlite3VtabCallDestroy(sqlite3 *db, int iDb, const char *zTab){
   pTab = sqlite3FindTable(db, zTab, db->aDb[iDb].zName);
   if( ALWAYS(pTab!=0 && pTab->pVTable!=0) ){
     VTable *p;
+    int (*xDestroy)(sqlite3_vtab *);
     for(p=pTab->pVTable; p; p=p->pNext){
       assert( p->pVtab );
       if( p->pVtab->nRef>0 ){
@@ -813,7 +809,9 @@ int sqlite3VtabCallDestroy(sqlite3 *db, int iDb, const char *zTab){
       }
     }
     p = vtabDisconnectAll(db, pTab);
-    rc = p->pMod->pModule->xDestroy(p->pVtab);
+    xDestroy = p->pMod->pModule->xDestroy;
+    assert( xDestroy!=0 );  /* Checked before the virtual table is created */
+    rc = xDestroy(p->pVtab);
     /* Remove the sqlite3_vtab* from the aVTrans[] array, if applicable */
     if( rc==SQLITE_OK ){
       assert( pTab->pVTable==p && p->pNext==0 );
@@ -837,8 +835,10 @@ int sqlite3VtabCallDestroy(sqlite3 *db, int iDb, const char *zTab){
 static void callFinaliser(sqlite3 *db, int offset){
   int i;
   if( db->aVTrans ){
+    VTable **aVTrans = db->aVTrans;
+    db->aVTrans = 0;
     for(i=0; i<db->nVTrans; i++){
-      VTable *pVTab = db->aVTrans[i];
+      VTable *pVTab = aVTrans[i];
       sqlite3_vtab *p = pVTab->pVtab;
       if( p ){
         int (*x)(sqlite3_vtab *);
@@ -848,9 +848,8 @@ static void callFinaliser(sqlite3 *db, int offset){
       pVTab->iSavepoint = 0;
       sqlite3VtabUnlock(pVTab);
     }
-    sqlite3DbFree(db, db->aVTrans);
+    sqlite3DbFree(db, aVTrans);
     db->nVTrans = 0;
-    db->aVTrans = 0;
   }
 }
 
@@ -1082,12 +1081,73 @@ void sqlite3VtabMakeWritable(Parse *pParse, Table *pTab){
     if( pTab==pToplevel->apVtabLock[i] ) return;
   }
   n = (pToplevel->nVtabLock+1)*sizeof(pToplevel->apVtabLock[0]);
-  apVtabLock = sqlite3_realloc(pToplevel->apVtabLock, n);
+  apVtabLock = sqlite3_realloc64(pToplevel->apVtabLock, n);
   if( apVtabLock ){
     pToplevel->apVtabLock = apVtabLock;
     pToplevel->apVtabLock[pToplevel->nVtabLock++] = pTab;
   }else{
     pToplevel->db->mallocFailed = 1;
+  }
+}
+
+/*
+** Check to see if virtual tale module pMod can be have an eponymous
+** virtual table instance.  If it can, create one if one does not already
+** exist. Return non-zero if the eponymous virtual table instance exists
+** when this routine returns, and return zero if it does not exist.
+**
+** An eponymous virtual table instance is one that is named after its
+** module, and more importantly, does not require a CREATE VIRTUAL TABLE
+** statement in order to come into existance.  Eponymous virtual table
+** instances always exist.  They cannot be DROP-ed.
+**
+** Any virtual table module for which xConnect and xCreate are the same
+** method can have an eponymous virtual table instance.
+*/
+int sqlite3VtabEponymousTableInit(Parse *pParse, Module *pMod){
+  const sqlite3_module *pModule = pMod->pModule;
+  Table *pTab;
+  char *zErr = 0;
+  int nName;
+  int rc;
+  sqlite3 *db = pParse->db;
+  if( pMod->pEpoTab ) return 1;
+  if( pModule->xCreate!=0 && pModule->xCreate!=pModule->xConnect ) return 0;
+  nName = sqlite3Strlen30(pMod->zName) + 1;
+  pTab = sqlite3DbMallocZero(db, sizeof(Table) + nName);
+  if( pTab==0 ) return 0;
+  pMod->pEpoTab = pTab;
+  pTab->zName = (char*)&pTab[1];
+  memcpy(pTab->zName, pMod->zName, nName);
+  pTab->nRef = 1;
+  pTab->pSchema = db->aDb[0].pSchema;
+  pTab->tabFlags |= TF_Virtual;
+  pTab->nModuleArg = 0;
+  pTab->iPKey = -1;
+  addModuleArgument(db, pTab, sqlite3DbStrDup(db, pTab->zName));
+  addModuleArgument(db, pTab, 0);
+  addModuleArgument(db, pTab, sqlite3DbStrDup(db, pTab->zName));
+  rc = vtabCallConstructor(db, pTab, pMod, pModule->xConnect, &zErr);
+  if( rc ){
+    sqlite3ErrorMsg(pParse, "%s", zErr);
+    sqlite3DbFree(db, zErr);
+    sqlite3VtabEponymousTableClear(db, pMod);
+    return 0;
+  }
+  return 1;
+}
+
+/*
+** Erase the eponymous virtual table instance associated with
+** virtual table module pMod, if it exists.
+*/
+void sqlite3VtabEponymousTableClear(sqlite3 *db, Module *pMod){
+  Table *pTab = pMod->pEpoTab;
+  if( (pTab = pMod->pEpoTab)!=0 ){
+    sqlite3DeleteColumnNames(db, pTab);
+    sqlite3VtabClear(db, pTab);
+    sqlite3DbFree(db, pTab);
+    pMod->pEpoTab = 0;
   }
 }
 

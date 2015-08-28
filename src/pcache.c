@@ -28,7 +28,6 @@ struct PCache {
   int (*xStress)(void*,PgHdr*);       /* Call to try make a page clean */
   void *pStress;                      /* Argument to xStress */
   sqlite3_pcache *pCache;             /* Pluggable cache module */
-  PgHdr *pPage1;                      /* Reference to page 1 */
 };
 
 /********************************** Linked List Management ********************/
@@ -106,9 +105,6 @@ static void pcacheManageDirtyList(PgHdr *pPage, u8 addRemove){
 */
 static void pcacheUnpin(PgHdr *p){
   if( p->pCache->bPurgeable ){
-    if( p->pgno==1 ){
-      p->pCache->pPage1 = 0;
-    }
     sqlite3GlobalConfig.pcache2.xUnpin(p->pCache->pCache, p->pPage, 0);
   }
 }
@@ -201,7 +197,6 @@ int sqlite3PcacheSetPageSize(PCache *pCache, int szPage){
       sqlite3GlobalConfig.pcache2.xDestroy(pCache->pCache);
     }
     pCache->pCache = pNew;
-    pCache->pPage1 = 0;
     pCache->szPage = szPage;
   }
   return SQLITE_OK;
@@ -326,13 +321,14 @@ static SQLITE_NOINLINE PgHdr *pcacheFetchFinishWithInit(
   assert( pPage!=0 );
   pPgHdr = (PgHdr*)pPage->pExtra;
   assert( pPgHdr->pPage==0 );
- memset(pPgHdr, 0, sizeof(PgHdr));
+  memset(pPgHdr, 0, sizeof(PgHdr));
   pPgHdr->pPage = pPage;
   pPgHdr->pData = pPage->pBuf;
   pPgHdr->pExtra = (void *)&pPgHdr[1];
   memset(pPgHdr->pExtra, 0, pCache->szExtra);
   pPgHdr->pCache = pCache;
   pPgHdr->pgno = pgno;
+  pPgHdr->flags = PGHDR_CLEAN;
   return sqlite3PcacheFetchFinish(pCache,pgno,pPage);
 }
 
@@ -349,7 +345,7 @@ PgHdr *sqlite3PcacheFetchFinish(
 ){
   PgHdr *pPgHdr;
 
-  if( pPage==0 ) return 0;
+  assert( pPage!=0 );
   pPgHdr = (PgHdr *)pPage->pExtra;
 
   if( !pPgHdr->pPage ){
@@ -359,9 +355,6 @@ PgHdr *sqlite3PcacheFetchFinish(
     pCache->nRef++;
   }
   pPgHdr->nRef++;
-  if( pgno==1 ){
-    pCache->pPage1 = pPgHdr;
-  }
   return pPgHdr;
 }
 
@@ -374,7 +367,7 @@ void SQLITE_NOINLINE sqlite3PcacheRelease(PgHdr *p){
   p->nRef--;
   if( p->nRef==0 ){
     p->pCache->nRef--;
-    if( (p->flags&PGHDR_DIRTY)==0 ){
+    if( p->flags&PGHDR_CLEAN ){
       pcacheUnpin(p);
     }else if( p->pDirtyPrev!=0 ){
       /* Move the page to the head of the dirty list. */
@@ -402,9 +395,6 @@ void sqlite3PcacheDrop(PgHdr *p){
     pcacheManageDirtyList(p, PCACHE_DIRTYLIST_REMOVE);
   }
   p->pCache->nRef--;
-  if( p->pgno==1 ){
-    p->pCache->pPage1 = 0;
-  }
   sqlite3GlobalConfig.pcache2.xUnpin(p->pCache->pCache, p->pPage, 1);
 }
 
@@ -413,11 +403,14 @@ void sqlite3PcacheDrop(PgHdr *p){
 ** make it so.
 */
 void sqlite3PcacheMakeDirty(PgHdr *p){
-  p->flags &= ~PGHDR_DONT_WRITE;
   assert( p->nRef>0 );
-  if( 0==(p->flags & PGHDR_DIRTY) ){
-    p->flags |= PGHDR_DIRTY;
-    pcacheManageDirtyList(p, PCACHE_DIRTYLIST_ADD);
+  if( p->flags & (PGHDR_CLEAN|PGHDR_DONT_WRITE) ){
+    p->flags &= ~PGHDR_DONT_WRITE;
+    if( p->flags & PGHDR_CLEAN ){
+      p->flags ^= (PGHDR_DIRTY|PGHDR_CLEAN);
+      assert( (p->flags & (PGHDR_DIRTY|PGHDR_CLEAN))==PGHDR_DIRTY );
+      pcacheManageDirtyList(p, PCACHE_DIRTYLIST_ADD);
+    }
   }
 }
 
@@ -427,8 +420,10 @@ void sqlite3PcacheMakeDirty(PgHdr *p){
 */
 void sqlite3PcacheMakeClean(PgHdr *p){
   if( (p->flags & PGHDR_DIRTY) ){
+    assert( (p->flags & PGHDR_CLEAN)==0 );
     pcacheManageDirtyList(p, PCACHE_DIRTYLIST_REMOVE);
-    p->flags &= ~(PGHDR_DIRTY|PGHDR_NEED_SYNC);
+    p->flags &= ~(PGHDR_DIRTY|PGHDR_NEED_SYNC|PGHDR_WRITEABLE);
+    p->flags |= PGHDR_CLEAN;
     if( p->nRef==0 ){
       pcacheUnpin(p);
     }
@@ -495,9 +490,14 @@ void sqlite3PcacheTruncate(PCache *pCache, Pgno pgno){
         sqlite3PcacheMakeClean(p);
       }
     }
-    if( pgno==0 && pCache->pPage1 ){
-      memset(pCache->pPage1->pData, 0, pCache->szPage);
-      pgno = 1;
+    if( pgno==0 && pCache->nRef ){
+      sqlite3_pcache_page *pPage1;
+      pPage1 = sqlite3GlobalConfig.pcache2.xFetch(pCache->pCache,1,0);
+      if( ALWAYS(pPage1) ){  /* Page 1 is always available in cache, because
+                             ** pCache->nRef>0 */
+        memset(pPage1->pBuf, 0, pCache->szPage);
+        pgno = 1;
+      }
     }
     sqlite3GlobalConfig.pcache2.xTruncate(pCache->pCache, pgno+1);
   }

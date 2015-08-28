@@ -274,6 +274,9 @@ static int clang_sanitize_address(
   res = 1;
 # endif
 #endif
+#ifdef __SANITIZE_ADDRESS__
+  res = 1;
+#endif
   if( res==0 && getenv("OMIT_MISUSE")!=0 ) res = 1;
   Tcl_SetObjResult(interp, Tcl_NewIntObj(res));
   return TCL_OK;
@@ -335,7 +338,7 @@ static int test_exec_hex(
   int rc, i, j;
   char *zErr = 0;
   char *zHex;
-  char zSql[500];
+  char zSql[501];
   char zBuf[30];
   if( argc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], 
@@ -344,7 +347,7 @@ static int test_exec_hex(
   }
   if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
   zHex = argv[2];
-  for(i=j=0; i<sizeof(zSql) && zHex[j]; i++, j++){
+  for(i=j=0; i<(sizeof(zSql)-1) && zHex[j]; i++, j++){
     if( zHex[j]=='%' && zHex[j+2] && zHex[j+2] ){
       zSql[i] = (testHexToInt(zHex[j+1])<<4) + testHexToInt(zHex[j+2]);
       j += 2;
@@ -2999,6 +3002,43 @@ static int test_bind_zeroblob(
   rc = sqlite3_bind_zeroblob(pStmt, idx, n);
   if( sqlite3TestErrCode(interp, StmtToDb(pStmt), rc) ) return TCL_ERROR;
   if( rc!=SQLITE_OK ){
+    return TCL_ERROR;
+  }
+
+  return TCL_OK;
+}
+
+/*
+** Usage:   sqlite3_bind_zeroblob64  STMT IDX N
+**
+** Test the sqlite3_bind_zeroblob64 interface.  STMT is a prepared statement.
+** IDX is the index of a wildcard in the prepared statement.  This command
+** binds a N-byte zero-filled BLOB to the wildcard.
+*/
+static int test_bind_zeroblob64(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_stmt *pStmt;
+  int idx;
+  i64 n;
+  int rc;
+
+  if( objc!=4 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "STMT IDX N");
+    return TCL_ERROR;
+  }
+
+  if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[2], &idx) ) return TCL_ERROR;
+  if( Tcl_GetWideIntFromObj(interp, objv[3], &n) ) return TCL_ERROR;
+
+  rc = sqlite3_bind_zeroblob64(pStmt, idx, n);
+  if( sqlite3TestErrCode(interp, StmtToDb(pStmt), rc) ) return TCL_ERROR;
+  if( rc!=SQLITE_OK ){
+    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
     return TCL_ERROR;
   }
 
@@ -6529,12 +6569,15 @@ static int tclLoadStaticExtensionCmd(
   extern int sqlite3_fileio_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_fuzzer_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_ieee_init(sqlite3*,char**,const sqlite3_api_routines*);
+  extern int sqlite3_json_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_nextchar_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_percentile_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_regexp_init(sqlite3*,char**,const sqlite3_api_routines*);
+  extern int sqlite3_series_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_spellfix_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_totype_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_wholenumber_init(sqlite3*,char**,const sqlite3_api_routines*);
+  extern int sqlite3_fts5_init(sqlite3*,char**,const sqlite3_api_routines*);
   static const struct {
     const char *zExtName;
     int (*pInit)(sqlite3*,char**,const sqlite3_api_routines*);
@@ -6542,12 +6585,17 @@ static int tclLoadStaticExtensionCmd(
     { "amatch",                sqlite3_amatch_init               },
     { "closure",               sqlite3_closure_init              },
     { "eval",                  sqlite3_eval_init                 },
+#ifdef SQLITE_ENABLE_FTS5
+    { "fts5",                  sqlite3_fts5_init                 },
+#endif
     { "fileio",                sqlite3_fileio_init               },
     { "fuzzer",                sqlite3_fuzzer_init               },
     { "ieee754",               sqlite3_ieee_init                 },
+    { "json",                  sqlite3_json_init                 },
     { "nextchar",              sqlite3_nextchar_init             },
     { "percentile",            sqlite3_percentile_init           },
     { "regexp",                sqlite3_regexp_init               },
+    { "series",                sqlite3_series_init               },
     { "spellfix",              sqlite3_spellfix_init             },
     { "totype",                sqlite3_totype_init               },
     { "wholenumber",           sqlite3_wholenumber_init          },
@@ -6872,7 +6920,40 @@ static int test_bad_behavior(
   }
   return TCL_OK;
 }  
-  
+
+/*
+** tclcmd:   register_dbstat_vtab DB
+**
+** Cause the dbstat virtual table to be available on the connection DB
+*/
+static int test_register_dbstat_vtab(
+  void *clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+#ifdef SQLITE_OMIT_VIRTUALTABLE
+  Tcl_AppendResult(interp, "dbstat not available because of "
+                           "SQLITE_OMIT_VIRTUALTABLE", (void*)0);
+  return TCL_ERROR;
+#else
+  struct SqliteDb { sqlite3 *db; };
+  char *zDb;
+  Tcl_CmdInfo cmdInfo;
+
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB");
+    return TCL_ERROR;
+  }
+
+  zDb = Tcl_GetString(objv[1]);
+  if( Tcl_GetCommandInfo(interp, zDb, &cmdInfo) ){
+    sqlite3* db = ((struct SqliteDb*)cmdInfo.objClientData)->db;
+    sqlite3DbstatRegister(db);
+  }
+  return TCL_OK;
+#endif /* SQLITE_OMIT_VIRTUALTABLE */
+}
 
 /*
 ** Register commands with the TCL interpreter.
@@ -6944,9 +7025,11 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      void *clientData;
   } aObjCmd[] = {
      { "bad_behavior",                  test_bad_behavior,  (void*)&iZero },
+     { "register_dbstat_vtab",          test_register_dbstat_vtab  },
      { "sqlite3_connection_pointer",    get_sqlite_pointer, 0 },
      { "sqlite3_bind_int",              test_bind_int,      0 },
      { "sqlite3_bind_zeroblob",         test_bind_zeroblob, 0 },
+     { "sqlite3_bind_zeroblob64",       test_bind_zeroblob64, 0 },
      { "sqlite3_bind_int64",            test_bind_int64,    0 },
      { "sqlite3_bind_double",           test_bind_double,   0 },
      { "sqlite3_bind_null",             test_bind_null     ,0 },

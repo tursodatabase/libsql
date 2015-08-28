@@ -46,13 +46,14 @@ struct VdbeOp {
   int p1;             /* First operand */
   int p2;             /* Second parameter (often the jump destination) */
   int p3;             /* The third parameter */
-  union {             /* fourth parameter */
+  union p4union {     /* fourth parameter */
     int i;                 /* Integer value if p4type==P4_INT32 */
     void *p;               /* Generic pointer */
     char *z;               /* Pointer to data for string (char array) types */
     i64 *pI64;             /* Used when p4type is P4_INT64 */
     double *pReal;         /* Used when p4type is P4_REAL */
     FuncDef *pFunc;        /* Used when p4type is P4_FUNCDEF */
+    sqlite3_context *pCtx; /* Used when p4type is P4_FUNCCTX */
     CollSeq *pColl;        /* Used when p4type is P4_COLLSEQ */
     Mem *pMem;             /* Used when p4type is P4_MEM */
     VTable *pVtab;         /* Used when p4type is P4_VTAB */
@@ -119,6 +120,7 @@ typedef struct VdbeOpList VdbeOpList;
 #define P4_INTARRAY (-15) /* P4 is a vector of 32-bit integers */
 #define P4_SUBPROGRAM  (-18) /* P4 is a pointer to a SubProgram structure */
 #define P4_ADVANCE  (-19) /* P4 is a pointer to BtreeNext() or BtreePrev() */
+#define P4_FUNCCTX  (-20) /* P4 is a pointer to an sqlite3_context object */
 
 /* Error message codes for OP_Halt */
 #define P5_ConstraintNotNull 1
@@ -169,6 +171,7 @@ int sqlite3VdbeAddOp1(Vdbe*,int,int);
 int sqlite3VdbeAddOp2(Vdbe*,int,int,int);
 int sqlite3VdbeAddOp3(Vdbe*,int,int,int,int);
 int sqlite3VdbeAddOp4(Vdbe*,int,int,int,int,const char *zP4,int);
+int sqlite3VdbeAddOp4Dup8(Vdbe*,int,int,int,int,const u8*,int);
 int sqlite3VdbeAddOp4Int(Vdbe*,int,int,int,int,int);
 int sqlite3VdbeAddOpList(Vdbe*, int nOp, VdbeOpList const *aOp, int iLineno);
 void sqlite3VdbeAddParseSchemaOp(Vdbe*,int,char*);

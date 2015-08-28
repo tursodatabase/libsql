@@ -83,6 +83,9 @@ struct VdbeCursor {
   i64 seqCount;         /* Sequence counter */
   i64 movetoTarget;     /* Argument to the deferred sqlite3BtreeMoveto() */
   VdbeSorter *pSorter;  /* Sorter object for OP_SorterOpen cursors */
+#ifdef SQLITE_ENABLE_COLUMN_USED_MASK
+  u64 maskUsed;         /* Mask of columns used by this cursor */
+#endif
 
   /* Cached information about the header for the data record that the
   ** cursor is currently pointing to.  Only valid if cacheStatus matches
@@ -186,6 +189,12 @@ struct Mem {
 #endif
 };
 
+/*
+** Size of struct Mem not including the Mem.zMalloc member or anything that
+** follows.
+*/
+#define MEMCELLSIZE offsetof(Mem,zMalloc)
+
 /* One or more of the following flags are set to indicate the validOK
 ** representations of the value stored in the Mem struct.
 **
@@ -270,14 +279,16 @@ struct AuxData {
 ** (Mem) which are only defined there.
 */
 struct sqlite3_context {
-  Mem *pOut;            /* The return value is stored here */
-  FuncDef *pFunc;       /* Pointer to function information */
-  Mem *pMem;            /* Memory cell used to store aggregate context */
-  Vdbe *pVdbe;          /* The VM that owns this context */
-  int iOp;              /* Instruction number of OP_Function */
-  int isError;          /* Error code returned by the function. */
-  u8 skipFlag;          /* Skip accumulator loading if true */
-  u8 fErrorOrAux;       /* isError!=0 or pVdbe->pAuxData modified */
+  Mem *pOut;              /* The return value is stored here */
+  FuncDef *pFunc;         /* Pointer to function information */
+  Mem *pMem;              /* Memory cell used to store aggregate context */
+  Vdbe *pVdbe;            /* The VM that owns this context */
+  int iOp;                /* Instruction number of OP_Function */
+  int isError;            /* Error code returned by the function. */
+  u8 skipFlag;            /* Skip accumulator loading if true */
+  u8 fErrorOrAux;         /* isError!=0 or pVdbe->pAuxData modified */
+  u8 argc;                /* Number of arguments */
+  sqlite3_value *argv[1]; /* Argument set */
 };
 
 /*
@@ -391,6 +402,7 @@ struct Vdbe {
 /*
 ** Function prototypes
 */
+void sqlite3VdbeError(Vdbe*, const char *, ...);
 void sqlite3VdbeFreeCursor(Vdbe *, VdbeCursor*);
 void sqliteVdbePopStack(Vdbe*,int);
 int sqlite3VdbeCursorMoveto(VdbeCursor*);

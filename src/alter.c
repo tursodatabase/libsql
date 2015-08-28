@@ -126,6 +126,7 @@ static void renameParentFunc(
         n = sqlite3GetToken(z, &token);
       }while( token==TK_SPACE );
 
+      if( token==TK_ILLEGAL ) break;
       zParent = sqlite3DbStrNDup(db, (const char *)z, n);
       if( zParent==0 ) break;
       sqlite3Dequote(zParent);
@@ -691,7 +692,7 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
   if( pDflt ){
     sqlite3_value *pVal = 0;
     int rc;
-    rc = sqlite3ValueFromExpr(db, pDflt, SQLITE_UTF8, SQLITE_AFF_NONE, &pVal);
+    rc = sqlite3ValueFromExpr(db, pDflt, SQLITE_UTF8, SQLITE_AFF_BLOB, &pVal);
     assert( rc==SQLITE_OK || rc==SQLITE_NOMEM );
     if( rc!=SQLITE_OK ){
       db->mallocFailed = 1;

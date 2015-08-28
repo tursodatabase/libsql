@@ -1770,6 +1770,7 @@ struct spellfix1_cursor {
   sqlite3_vtab_cursor base;    /* Base class - must be first */
   spellfix1_vtab *pVTab;       /* The table to which this cursor belongs */
   char *zPattern;              /* rhs of MATCH clause */
+  int idxNum;                  /* idxNum value passed to xFilter() */
   int nRow;                    /* Number of rows of content */
   int nAlloc;                  /* Number of allocated rows */
   int iRow;                    /* Current row of content */
@@ -2040,26 +2041,19 @@ static int spellfix1Close(sqlite3_vtab_cursor *cur){
   return SQLITE_OK;
 }
 
+#define SPELLFIX_IDXNUM_MATCH  0x01         /* word MATCH $str */
+#define SPELLFIX_IDXNUM_LANGID 0x02         /* langid == $langid */
+#define SPELLFIX_IDXNUM_TOP    0x04         /* top = $top */
+#define SPELLFIX_IDXNUM_SCOPE  0x08         /* scope = $scope */
+#define SPELLFIX_IDXNUM_DISTLT 0x10         /* distance < $distance */
+#define SPELLFIX_IDXNUM_DISTLE 0x20         /* distance <= $distance */
+#define SPELLFIX_IDXNUM_ROWID  0x40         /* rowid = $rowid */
+#define SPELLFIX_IDXNUM_DIST   (0x10|0x20)  /* DISTLT and DISTLE */
+
 /*
-** Search for terms of these forms:
 **
-**   (A)    word MATCH $str
-**   (B)    langid == $langid
-**   (C)    top = $top
-**   (D)    scope = $scope
-**   (E)    distance < $distance
-**   (F)    distance <= $distance
-**   (G)    rowid = $rowid
-**
-** The plan number is a bit mask formed with these bits:
-**
-**   0x01   (A) is found
-**   0x02   (B) is found
-**   0x04   (C) is found
-**   0x08   (D) is found
-**   0x10   (E) is found
-**   0x20   (F) is found
-**   0x40   (G) is found
+** The plan number is a bitmask of the SPELLFIX_IDXNUM_* values defined
+** above.
 **
 ** filter.argv[*] values contains $str, $langid, $top, $scope and $rowid
 ** if specified and in that order.
@@ -2078,62 +2072,66 @@ static int spellfix1BestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
     if( pConstraint->usable==0 ) continue;
 
     /* Terms of the form:  word MATCH $str */
-    if( (iPlan & 1)==0 
+    if( (iPlan & SPELLFIX_IDXNUM_MATCH)==0 
      && pConstraint->iColumn==SPELLFIX_COL_WORD
      && pConstraint->op==SQLITE_INDEX_CONSTRAINT_MATCH
     ){
-      iPlan |= 1;
+      iPlan |= SPELLFIX_IDXNUM_MATCH;
       pIdxInfo->aConstraintUsage[i].argvIndex = 1;
       pIdxInfo->aConstraintUsage[i].omit = 1;
     }
 
     /* Terms of the form:  langid = $langid  */
-    if( (iPlan & 2)==0
+    if( (iPlan & SPELLFIX_IDXNUM_LANGID)==0
      && pConstraint->iColumn==SPELLFIX_COL_LANGID
      && pConstraint->op==SQLITE_INDEX_CONSTRAINT_EQ
     ){
-      iPlan |= 2;
+      iPlan |= SPELLFIX_IDXNUM_LANGID;
       iLangTerm = i;
     }
 
     /* Terms of the form:  top = $top */
-    if( (iPlan & 4)==0
+    if( (iPlan & SPELLFIX_IDXNUM_TOP)==0
      && pConstraint->iColumn==SPELLFIX_COL_TOP
      && pConstraint->op==SQLITE_INDEX_CONSTRAINT_EQ
     ){
-      iPlan |= 4;
+      iPlan |= SPELLFIX_IDXNUM_TOP;
       iTopTerm = i;
     }
 
     /* Terms of the form:  scope = $scope */
-    if( (iPlan & 8)==0
+    if( (iPlan & SPELLFIX_IDXNUM_SCOPE)==0
      && pConstraint->iColumn==SPELLFIX_COL_SCOPE
      && pConstraint->op==SQLITE_INDEX_CONSTRAINT_EQ
     ){
-      iPlan |= 8;
+      iPlan |= SPELLFIX_IDXNUM_SCOPE;
       iScopeTerm = i;
     }
 
     /* Terms of the form:  distance < $dist or distance <= $dist */
-    if( (iPlan & (16|32))==0
+    if( (iPlan & SPELLFIX_IDXNUM_DIST)==0
      && pConstraint->iColumn==SPELLFIX_COL_DISTANCE
      && (pConstraint->op==SQLITE_INDEX_CONSTRAINT_LT
           || pConstraint->op==SQLITE_INDEX_CONSTRAINT_LE)
     ){
-      iPlan |= pConstraint->op==SQLITE_INDEX_CONSTRAINT_LT ? 16 : 32;
+      if( pConstraint->op==SQLITE_INDEX_CONSTRAINT_LT ){
+        iPlan |= SPELLFIX_IDXNUM_DISTLT;
+      }else{
+        iPlan |= SPELLFIX_IDXNUM_DISTLE;
+      }
       iDistTerm = i;
     }
 
     /* Terms of the form:  distance < $dist or distance <= $dist */
-    if( (iPlan & 64)==0
+    if( (iPlan & SPELLFIX_IDXNUM_ROWID)==0
      && pConstraint->iColumn<0
      && pConstraint->op==SQLITE_INDEX_CONSTRAINT_EQ
     ){
-      iPlan |= 64;
+      iPlan |= SPELLFIX_IDXNUM_ROWID;
       iRowidTerm = i;
     }
   }
-  if( iPlan&1 ){
+  if( iPlan&SPELLFIX_IDXNUM_MATCH ){
     int idx = 2;
     pIdxInfo->idxNum = iPlan;
     if( pIdxInfo->nOrderBy==1
@@ -2142,25 +2140,25 @@ static int spellfix1BestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
     ){
       pIdxInfo->orderByConsumed = 1;  /* Default order by iScore */
     }
-    if( iPlan&2 ){
+    if( iPlan&SPELLFIX_IDXNUM_LANGID ){
       pIdxInfo->aConstraintUsage[iLangTerm].argvIndex = idx++;
       pIdxInfo->aConstraintUsage[iLangTerm].omit = 1;
     }
-    if( iPlan&4 ){
+    if( iPlan&SPELLFIX_IDXNUM_TOP ){
       pIdxInfo->aConstraintUsage[iTopTerm].argvIndex = idx++;
       pIdxInfo->aConstraintUsage[iTopTerm].omit = 1;
     }
-    if( iPlan&8 ){
+    if( iPlan&SPELLFIX_IDXNUM_SCOPE ){
       pIdxInfo->aConstraintUsage[iScopeTerm].argvIndex = idx++;
       pIdxInfo->aConstraintUsage[iScopeTerm].omit = 1;
     }
-    if( iPlan&(16|32) ){
+    if( iPlan&SPELLFIX_IDXNUM_DIST ){
       pIdxInfo->aConstraintUsage[iDistTerm].argvIndex = idx++;
       pIdxInfo->aConstraintUsage[iDistTerm].omit = 1;
     }
     pIdxInfo->estimatedCost = 1e5;
-  }else if( (iPlan & 64) ){
-    pIdxInfo->idxNum = 64;
+  }else if( (iPlan & SPELLFIX_IDXNUM_ROWID) ){
+    pIdxInfo->idxNum = SPELLFIX_IDXNUM_ROWID;
     pIdxInfo->aConstraintUsage[iRowidTerm].argvIndex = 1;
     pIdxInfo->aConstraintUsage[iRowidTerm].omit = 1;
     pIdxInfo->estimatedCost = 5;
@@ -2311,15 +2309,24 @@ static void spellfix1RunQuery(MatchQuery *p, const char *zQuery, int nQuery){
       break;
     }
     pCur->nSearch++;
-    iScore = spellfix1Score(iDist,iRank);
+    
+    /* If there is a "distance < $dist" or "distance <= $dist" constraint,
+    ** check if this row meets it. If not, jump back up to the top of the
+    ** loop to process the next row. Otherwise, if the row does match the
+    ** distance constraint, check if the pCur->a[] array is already full.
+    ** If it is and no explicit "top = ?" constraint was present in the
+    ** query, grow the array to ensure there is room for the new entry. */
+    assert( (p->iMaxDist>=0)==((pCur->idxNum & SPELLFIX_IDXNUM_DIST) ? 1 : 0) );
     if( p->iMaxDist>=0 ){
       if( iDist>p->iMaxDist ) continue;
-      if( pCur->nRow>=pCur->nAlloc-1 ){
+      if( pCur->nRow>=pCur->nAlloc && (pCur->idxNum & SPELLFIX_IDXNUM_TOP)==0 ){
         spellfix1ResizeCursor(pCur, pCur->nAlloc*2 + 10);
         if( pCur->a==0 ) break;
       }
-      idx = pCur->nRow;
-    }else if( pCur->nRow<pCur->nAlloc ){
+    }
+
+    iScore = spellfix1Score(iDist,iRank);
+    if( pCur->nRow<pCur->nAlloc ){
       idx = pCur->nRow;
     }else if( iScore<iWorst ){
       idx = idxWorst;
@@ -2327,6 +2334,7 @@ static void spellfix1RunQuery(MatchQuery *p, const char *zQuery, int nQuery){
     }else{
       continue;
     }
+
     pCur->a[idx].zWord = sqlite3_mprintf("%s", sqlite3_column_text(pStmt, 1));
     if( pCur->a[idx].zWord==0 ){
       p->rc = SQLITE_NOMEM;
@@ -2361,10 +2369,10 @@ static void spellfix1RunQuery(MatchQuery *p, const char *zQuery, int nQuery){
 */
 static int spellfix1FilterForMatch(
   spellfix1_cursor *pCur,
-  int idxNum,
   int argc,
   sqlite3_value **argv
 ){
+  int idxNum = pCur->idxNum;
   const unsigned char *zMatchThis;   /* RHS of the MATCH operator */
   EditDist3FromString *pMatchStr3 = 0; /* zMatchThis as an editdist string */
   char *zPattern;                    /* Transliteration of zMatchThis */
@@ -2476,11 +2484,11 @@ filter_exit:
 */
 static int spellfix1FilterForFullScan(
   spellfix1_cursor *pCur,
-  int idxNum,
   int argc,
   sqlite3_value **argv
 ){
   int rc = SQLITE_OK;
+  int idxNum = pCur->idxNum;
   char *zSql;
   spellfix1_vtab *pVTab = pCur->pVTab;
   spellfix1ResetCursor(pCur);
@@ -2521,10 +2529,11 @@ static int spellfix1Filter(
 ){
   spellfix1_cursor *pCur = (spellfix1_cursor *)cur;
   int rc;
+  pCur->idxNum = idxNum;
   if( idxNum & 1 ){
-    rc = spellfix1FilterForMatch(pCur, idxNum, argc, argv);
+    rc = spellfix1FilterForMatch(pCur, argc, argv);
   }else{
-    rc = spellfix1FilterForFullScan(pCur, idxNum, argc, argv);
+    rc = spellfix1FilterForFullScan(pCur, argc, argv);
   }
   return rc;
 }
@@ -2656,6 +2665,31 @@ static int spellfix1Rowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){
 }
 
 /*
+** This function is called by the xUpdate() method. It returns a string
+** containing the conflict mode that xUpdate() should use for the current
+** operation. One of: "ROLLBACK", "IGNORE", "ABORT" or "REPLACE".
+*/
+static const char *spellfix1GetConflict(sqlite3 *db){
+  static const char *azConflict[] = {
+    /* Note: Instead of "FAIL" - "ABORT". */
+    "ROLLBACK", "IGNORE", "ABORT", "ABORT", "REPLACE"
+  };
+  int eConflict = sqlite3_vtab_on_conflict(db);
+
+  assert( eConflict==SQLITE_ROLLBACK || eConflict==SQLITE_IGNORE
+       || eConflict==SQLITE_FAIL || eConflict==SQLITE_ABORT
+       || eConflict==SQLITE_REPLACE
+  );
+  assert( SQLITE_ROLLBACK==1 );
+  assert( SQLITE_IGNORE==2 );
+  assert( SQLITE_FAIL==3 );
+  assert( SQLITE_ABORT==4 );
+  assert( SQLITE_REPLACE==5 );
+
+  return azConflict[eConflict-1];
+}
+
+/*
 ** The xUpdate() method.
 */
 static int spellfix1Update(
@@ -2686,6 +2720,7 @@ static int spellfix1Update(
     char *zK1, *zK2;
     int i;
     char c;
+    const char *zConflict = spellfix1GetConflict(db);
 
     if( zWord==0 ){
       /* Inserts of the form:  INSERT INTO table(command) VALUES('xyzzy');
@@ -2746,10 +2781,10 @@ static int spellfix1Update(
       }else{
         newRowid = sqlite3_value_int64(argv[1]);
         spellfix1DbExec(&rc, db,
-               "INSERT INTO \"%w\".\"%w_vocab\"(id,rank,langid,word,k1,k2) "
-               "VALUES(%lld,%d,%d,%Q,%Q,%Q)",
-               p->zDbName, p->zTableName,
-               newRowid, iRank, iLang, zWord, zK1, zK2
+            "INSERT OR %s INTO \"%w\".\"%w_vocab\"(id,rank,langid,word,k1,k2) "
+            "VALUES(%lld,%d,%d,%Q,%Q,%Q)",
+            zConflict, p->zDbName, p->zTableName,
+            newRowid, iRank, iLang, zWord, zK1, zK2
         );
       }
       *pRowid = sqlite3_last_insert_rowid(db);
@@ -2757,9 +2792,9 @@ static int spellfix1Update(
       rowid = sqlite3_value_int64(argv[0]);
       newRowid = *pRowid = sqlite3_value_int64(argv[1]);
       spellfix1DbExec(&rc, db,
-             "UPDATE \"%w\".\"%w_vocab\" SET id=%lld, rank=%d, langid=%d,"
+             "UPDATE OR %s \"%w\".\"%w_vocab\" SET id=%lld, rank=%d, langid=%d,"
              " word=%Q, k1=%Q, k2=%Q WHERE id=%lld",
-             p->zDbName, p->zTableName, newRowid, iRank, iLang,
+             zConflict, p->zDbName, p->zTableName, newRowid, iRank, iLang,
              zWord, zK1, zK2, rowid
       );
     }

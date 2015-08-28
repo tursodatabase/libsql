@@ -876,7 +876,7 @@ static fuzzer_stem *fuzzerNewStem(
   if( pNew==0 ) return 0;
   memset(pNew, 0, sizeof(*pNew));
   pNew->zBasis = (char*)&pNew[1];
-  pNew->nBasis = (int)strlen(zWord);
+  pNew->nBasis = (fuzzer_len)strlen(zWord);
   memcpy(pNew->zBasis, zWord, pNew->nBasis+1);
   pRule = pCur->pVtab->pRule;
   while( fuzzerSkipRule(pRule, pNew, pCur->iRuleset) ){

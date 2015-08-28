@@ -164,15 +164,15 @@ static int changeTempStorage(Parse *pParse, const char *zStorageType){
 */
 static void returnSingleInt(Parse *pParse, const char *zLabel, i64 value){
   Vdbe *v = sqlite3GetVdbe(pParse);
-  int mem = ++pParse->nMem;
+  int nMem = ++pParse->nMem;
   i64 *pI64 = sqlite3DbMallocRaw(pParse->db, sizeof(value));
   if( pI64 ){
     memcpy(pI64, &value, sizeof(value));
   }
-  sqlite3VdbeAddOp4(v, OP_Int64, 0, mem, 0, (char*)pI64, P4_INT64);
+  sqlite3VdbeAddOp4(v, OP_Int64, 0, nMem, 0, (char*)pI64, P4_INT64);
   sqlite3VdbeSetNumCols(v, 1);
   sqlite3VdbeSetColName(v, 0, COLNAME_NAME, zLabel, SQLITE_STATIC);
-  sqlite3VdbeAddOp2(v, OP_ResultRow, mem, 1);
+  sqlite3VdbeAddOp2(v, OP_ResultRow, nMem, 1);
 }
 
 
@@ -337,11 +337,11 @@ void sqlite3Pragma(
   rc = sqlite3_file_control(db, zDb, SQLITE_FCNTL_PRAGMA, (void*)aFcntl);
   if( rc==SQLITE_OK ){
     if( aFcntl[0] ){
-      int mem = ++pParse->nMem;
-      sqlite3VdbeAddOp4(v, OP_String8, 0, mem, 0, aFcntl[0], 0);
+      int nMem = ++pParse->nMem;
+      sqlite3VdbeAddOp4(v, OP_String8, 0, nMem, 0, aFcntl[0], 0);
       sqlite3VdbeSetNumCols(v, 1);
       sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "result", SQLITE_STATIC);
-      sqlite3VdbeAddOp2(v, OP_ResultRow, mem, 1);
+      sqlite3VdbeAddOp2(v, OP_ResultRow, nMem, 1);
       sqlite3_free(aFcntl[0]);
     }
     goto pragma_out;
@@ -735,11 +735,13 @@ void sqlite3Pragma(
   case PragTyp_CACHE_SIZE: {
     assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
     if( !zRight ){
+      if( sqlite3ReadSchema(pParse) ) goto pragma_out;
       returnSingleInt(pParse, "cache_size", pDb->pSchema->cache_size);
     }else{
       int size = sqlite3Atoi(zRight);
       pDb->pSchema->cache_size = size;
       sqlite3BtreeSetCacheSize(pDb->pBt, pDb->pSchema->cache_size);
+      if( sqlite3ReadSchema(pParse) ) goto pragma_out;
     }
     break;
   }
@@ -1357,7 +1359,7 @@ void sqlite3Pragma(
           }
           if( pParent ){
             sqlite3VdbeAddOp4(v, OP_MakeRecord, regRow, pFK->nCol, regKey,
-                              sqlite3IndexAffinityStr(v,pIdx), pFK->nCol);
+                              sqlite3IndexAffinityStr(db,pIdx), pFK->nCol);
             sqlite3VdbeAddOp4Int(v, OP_Found, i, addrOk, regKey, 0);
             VdbeCoverage(v);
           }

@@ -197,6 +197,8 @@ typedef struct Fts3DeferredToken Fts3DeferredToken;
 typedef struct Fts3SegReader Fts3SegReader;
 typedef struct Fts3MultiSegReader Fts3MultiSegReader;
 
+typedef struct MatchinfoBuffer MatchinfoBuffer;
+
 /*
 ** A connection to a fulltext index is an instance of the following
 ** structure. The xCreate and xConnect methods create an instance
@@ -306,9 +308,7 @@ struct Fts3Cursor {
   i64 iMinDocid;                  /* Minimum docid to return */
   i64 iMaxDocid;                  /* Maximum docid to return */
   int isMatchinfoNeeded;          /* True when aMatchinfo[] needs filling in */
-  u32 *aMatchinfo;                /* Information about most recent match */
-  int nMatchinfo;                 /* Number of elements in aMatchinfo[] */
-  char *zMatchinfo;               /* Matchinfo specification */
+  MatchinfoBuffer *pMIBuffer;     /* Buffer for matchinfo data */
 };
 
 #define FTS3_EVAL_FILTER    0
@@ -428,7 +428,9 @@ struct Fts3Expr {
   u8 bStart;                 /* True if iDocid is valid */
   u8 bDeferred;              /* True if this expression is entirely deferred */
 
-  u32 *aMI;
+  /* The following are used by the fts3_snippet.c module. */
+  int iPhrase;               /* Index of this phrase in matchinfo() results */
+  u32 *aMI;                  /* See above */
 };
 
 /*
@@ -539,6 +541,7 @@ int sqlite3Fts3Incrmerge(Fts3Table*,int,int);
 )
 
 /* fts3.c */
+void sqlite3Fts3ErrMsg(char**,const char*,...);
 int sqlite3Fts3PutVarint(char *, sqlite3_int64);
 int sqlite3Fts3GetVarint(const char *, sqlite_int64 *);
 int sqlite3Fts3GetVarint32(const char *, int *);
@@ -548,6 +551,7 @@ void sqlite3Fts3DoclistPrev(int,char*,int,char**,sqlite3_int64*,int*,u8*);
 int sqlite3Fts3EvalPhraseStats(Fts3Cursor *, Fts3Expr *, u32 *);
 int sqlite3Fts3FirstFilter(sqlite3_int64, char *, int, char *);
 void sqlite3Fts3CreateStatTable(int*, Fts3Table*);
+int sqlite3Fts3EvalTestDeferred(Fts3Cursor *pCsr, int *pRc);
 
 /* fts3_tokenizer.c */
 const char *sqlite3Fts3NextToken(const char *, int *);
@@ -563,6 +567,7 @@ void sqlite3Fts3Snippet(sqlite3_context *, Fts3Cursor *, const char *,
   const char *, const char *, int, int
 );
 void sqlite3Fts3Matchinfo(sqlite3_context *, Fts3Cursor *, const char *);
+void sqlite3Fts3MIBufferFree(MatchinfoBuffer *p);
 
 /* fts3_expr.c */
 int sqlite3Fts3ExprParse(sqlite3_tokenizer *, int,

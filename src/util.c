@@ -105,10 +105,8 @@ int sqlite3IsNaN(double x){
 ** than 1GiB) the value returned might be less than the true string length.
 */
 int sqlite3Strlen30(const char *z){
-  const char *z2 = z;
   if( z==0 ) return 0;
-  while( *z2 ){ z2++; }
-  return 0x3fffffff & (int)(z2 - z);
+  return 0x3fffffff & (int)strlen(z);
 }
 
 /*
@@ -1080,14 +1078,40 @@ int sqlite3VarintLen(u64 v){
 ** Read or write a four-byte big-endian integer value.
 */
 u32 sqlite3Get4byte(const u8 *p){
+#if SQLITE_BYTEORDER==4321
+  u32 x;
+  memcpy(&x,p,4);
+  return x;
+#elif SQLITE_BYTEORDER==1234 && !defined(SQLITE_DISABLE_INTRINSIC) \
+    && defined(__GNUC__) && GCC_VERSION>=4003000
+  u32 x;
+  memcpy(&x,p,4);
+  return __builtin_bswap32(x);
+#elif SQLITE_BYTEORDER==1234 && !defined(SQLITE_DISABLE_INTRINSIC) \
+    && defined(_MSC_VER) && _MSC_VER>=1300
+  u32 x;
+  memcpy(&x,p,4);
+  return _byteswap_ulong(x);
+#else
   testcase( p[0]&0x80 );
   return ((unsigned)p[0]<<24) | (p[1]<<16) | (p[2]<<8) | p[3];
+#endif
 }
 void sqlite3Put4byte(unsigned char *p, u32 v){
+#if SQLITE_BYTEORDER==4321
+  memcpy(p,&v,4);
+#elif SQLITE_BYTEORDER==1234 && defined(__GNUC__) && GCC_VERSION>=4003000
+  u32 x = __builtin_bswap32(v);
+  memcpy(p,&x,4);
+#elif SQLITE_BYTEORDER==1234 && defined(_MSC_VER) && _MSC_VER>=1300
+  u32 x = _byteswap_ulong(v);
+  memcpy(p,&x,4);
+#else
   p[0] = (u8)(v>>24);
   p[1] = (u8)(v>>16);
   p[2] = (u8)(v>>8);
   p[3] = (u8)v;
+#endif
 }
 
 

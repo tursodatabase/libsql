@@ -912,5 +912,14 @@ do_execsql_test alter-17.9 {
 do_execsql_test alter-17.10 {
   SELECT sqlite_rename_parent(NULL,'abc','xyz');
 } {{}}
+do_execsql_test alter-17.11 {
+  SELECT sqlite_rename_parent('create references ''','abc','xyz');
+} {{create references '}}
+do_execsql_test alter-17.12 {
+  SELECT sqlite_rename_parent('create references "abc"123" ','abc','xyz');
+} {{create references "xyz"123" }}
+do_execsql_test alter-17.13 {
+  SELECT sqlite_rename_parent("references '''",'abc','xyz');
+} {{references '''}}
 
 finish_test

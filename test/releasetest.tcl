@@ -18,6 +18,7 @@ optional) are:
     --buildonly                        (Just build testfixture - do not run)
     --dryrun                           (Print what would have happened)
     --info                             (Show diagnostic info)
+    --with-tcl=DIR                     (Use TCL build at DIR)
 
 The default value for --srcdir is the parent of the directory holding
 this script.
@@ -110,6 +111,14 @@ array set ::Configs [strip_comments {
     -DSQLITE_ENABLE_STAT4
     -DSQLITE_MAX_ATTACHED=125
   }
+  "Fast-One" {
+    -O6
+    -DSQLITE_ENABLE_FTS4=1
+    -DSQLITE_ENABLE_RTREE=1
+    -DSQLITE_ENABLE_STAT4
+    -DSQLITE_ENABLE_RBU
+    -DSQLITE_MAX_ATTACHED=125
+  }
   "Device-One" {
     -O2
     -DSQLITE_DEBUG=1
@@ -199,6 +208,8 @@ array set ::Configs [strip_comments {
   Fail2 {-O0}
   Fail3 {-O0}
   Fail4 {-O0}
+  FuzzFail1 {-O0}
+  FuzzFail2 {-O0}
 }]
 
 array set ::Platforms [strip_comments {
@@ -214,6 +225,7 @@ array set ::Platforms [strip_comments {
     "No-lookaside"            test
     "Devkit"                  test
     "Sanitize"                {QUICKTEST_OMIT=func4.test,nan.test test}
+    "Fast-One"                fuzztest
     "Valgrind"                valgrindtest
     "Default"                 "threadtest fulltest"
     "Device-One"              fulltest
@@ -255,6 +267,8 @@ array set ::Platforms [strip_comments {
     Fail2     "TEST_FAILURE=2 valgrindtest"
     Fail3     "TEST_FAILURE=3 valgrindtest"
     Fail4     "TEST_FAILURE=4 test"
+    FuzzFail1 "TEST_FAILURE=5 test"
+    FuzzFail2 "TEST_FAILURE=5 valgrindtest"
   }
 }]
 
@@ -271,6 +285,22 @@ foreach {key value} [array get ::Platforms] {
     }
   }
 }
+
+# Output log
+#
+set LOG [open releasetest-out.txt w]
+proc PUTS {args} {
+  if {[llength $args]==2} {
+    puts [lindex $args 0] [lindex $args 1]
+    puts [lindex $args 0] $::LOG [lindex $args 1]
+  } else {
+    puts [lindex $args 0]
+    puts $::LOG [lindex $args 0]
+  }
+}
+puts $LOG "$argv0 $argv"
+set tm0 [clock format [clock seconds] -format {%Y-%m-%d %H:%M:%S} -gmt 1]
+puts $LOG "start-time: $tm0 UTC"
 
 # Open the file $logfile and look for a report on the number of errors
 # and the number of test cases run.  Add these values to the global
@@ -296,10 +326,15 @@ proc count_tests_and_errors {logfile rcVar errmsgVar} {
       }
     }
     if {[regexp {runtime error: +(.*)} $line all msg]} {
-      incr ::NERRCASE
-      if {$rc==0} {
-        set rc 1
-        set errmsg $msg
+      # skip over "value is outside range" errors
+      if {[regexp {value .* is outside the range of representable} $line]} {
+         # noop
+      } else {
+        incr ::NERRCASE
+        if {$rc==0} {
+          set rc 1
+          set errmsg $msg
+        }
       }
     }
     if {[regexp {fatal error +(.*)} $line all msg]} {
@@ -351,7 +386,7 @@ proc run_test_suite {name testtarget config} {
   set cflags [expr {$::MSVC ? "-Zi" : "-g"}]
   set opts ""
   set title ${name}($testtarget)
-  set configOpts ""
+  set configOpts $::WITHTCL
 
   regsub -all {#[^\n]*\n} $config \n config
   foreach arg $config {
@@ -389,7 +424,7 @@ proc run_test_suite {name testtarget config} {
 
   if {!$::TRACE} {
     set n [string length $title]
-    puts -nonewline "${title}[string repeat . [expr {63-$n}]]"
+    PUTS -nonewline "${title}[string repeat . [expr {63-$n}]]"
     flush stdout
   }
 
@@ -414,12 +449,12 @@ proc run_test_suite {name testtarget config} {
     set seconds [expr {($tm2-$tm1)%60}]
     set tm [format (%02d:%02d:%02d) $hours $minutes $seconds]
     if {$rc} {
-      puts " FAIL $tm"
+      PUTS " FAIL $tm"
       incr ::NERR
     } else {
-      puts " Ok   $tm"
+      PUTS " Ok   $tm"
     }
-    if {$errmsg!=""} {puts "     $errmsg"}
+    if {$errmsg!=""} {PUTS "     $errmsg"}
   }
 }
 
@@ -461,7 +496,7 @@ proc makeCommand { targets cflags opts } {
 #
 proc trace_cmd {args} {
   if {$::TRACE} {
-    puts $args
+    PUTS $args
   }
   if {!$::DRYRUN} {
     uplevel 1 $args
@@ -482,6 +517,7 @@ proc process_options {argv} {
   set ::DRYRUN    0
   set ::EXEC      exec
   set ::TRACE     0
+  set ::WITHTCL   {}
   set config {}
   set platform $::tcl_platform(os)-$::tcl_platform(machine)
 
@@ -528,22 +564,25 @@ proc process_options {argv} {
       }
 
       -info {
-        puts "Command-line Options:"
-        puts "   --srcdir $::SRCDIR"
-        puts "   --platform [list $platform]"
-        puts "   --config [list $config]"
-        if {$::QUICK}     {puts "   --quick"}
-        if {$::MSVC}      {puts "   --msvc"}
-        if {$::BUILDONLY} {puts "   --buildonly"}
-        if {$::DRYRUN}    {puts "   --dryrun"}
-        if {$::TRACE}     {puts "   --trace"}
-        puts "\nAvailable --platform options:"
-        foreach y [lsort [array names ::Platforms]] {
-          puts "   [list $y]"
+        PUTS "Command-line Options:"
+        PUTS "   --srcdir $::SRCDIR"
+        PUTS "   --platform [list $platform]"
+        PUTS "   --config [list $config]"
+        if {$::QUICK} {
+          if {$::QUICK==1} {PUTS "   --quick"}
+          if {$::QUICK==2} {PUTS "   --veryquick"}
         }
-        puts "\nAvailable --config options:"
+        if {$::MSVC}      {PUTS "   --msvc"}
+        if {$::BUILDONLY} {PUTS "   --buildonly"}
+        if {$::DRYRUN}    {PUTS "   --dryrun"}
+        if {$::TRACE}     {PUTS "   --trace"}
+        PUTS "\nAvailable --platform options:"
+        foreach y [lsort [array names ::Platforms]] {
+          PUTS "   [list $y]"
+        }
+        PUTS "\nAvailable --config options:"
         foreach y [lsort [array names ::Configs]] {
-          puts "   [list $y]"
+          PUTS "   [list $y]"
         }
         exit
       }
@@ -556,6 +595,10 @@ proc process_options {argv} {
         }
       }
 
+      -with-tcl=* {
+        set ::WITHTCL -$x
+      }
+
       -D* -
       -O* -
       -enable-* -
@@ -565,22 +608,22 @@ proc process_options {argv} {
       }
 
       default {
-        puts stderr ""
-        puts stderr [string trim $::USAGE_MESSAGE]
+        PUTS stderr ""
+        PUTS stderr [string trim $::USAGE_MESSAGE]
         exit -1
       }
     }
   }
 
   if {0==[info exists ::Platforms($platform)]} {
-    puts "Unknown platform: $platform"
-    puts -nonewline "Set the -platform option to "
+    PUTS "Unknown platform: $platform"
+    PUTS -nonewline "Set the -platform option to "
     set print [list]
     foreach p [array names ::Platforms] {
       lappend print "\"$p\""
     }
     lset print end "or [lindex $print end]"
-    puts "[join $print {, }]."
+    PUTS "[join $print {, }]."
     exit
   }
 
@@ -590,17 +633,17 @@ proc process_options {argv} {
   } else {
     set ::CONFIGLIST $::Platforms($platform)
   }
-  puts "Running the following test configurations for $platform:"
-  puts "    [string trim $::CONFIGLIST]"
-  puts -nonewline "Flags:"
-  if {$::DRYRUN} {puts -nonewline " --dryrun"}
-  if {$::BUILDONLY} {puts -nonewline " --buildonly"}
-  if {$::MSVC} {puts -nonewline " --msvc"}
+  PUTS "Running the following test configurations for $platform:"
+  PUTS "    [string trim $::CONFIGLIST]"
+  PUTS -nonewline "Flags:"
+  if {$::DRYRUN} {PUTS -nonewline " --dryrun"}
+  if {$::BUILDONLY} {PUTS -nonewline " --buildonly"}
+  if {$::MSVC} {PUTS -nonewline " --msvc"}
   switch -- $::QUICK {
-     1 {puts -nonewline " --quick"}
-     2 {puts -nonewline " --veryquick"}
+     1 {PUTS -nonewline " --quick"}
+     2 {PUTS -nonewline " --veryquick"}
   }
-  puts ""
+  PUTS ""
 }
 
 # Main routine.
@@ -610,7 +653,7 @@ proc main {argv} {
   # Process any command line options.
   set ::EXTRACONFIG {}
   process_options $argv
-  puts [string repeat * 79]
+  PUTS [string repeat * 79]
 
   set ::NERR 0
   set ::NTEST 0
@@ -621,12 +664,12 @@ proc main {argv} {
   foreach {zConfig target} $::CONFIGLIST {
     if {$::MSVC && ($zConfig eq "Sanitize" || "checksymbols" in $target
            || "valgrindtest" in $target)} {
-      puts "Skipping $zConfig / $target for MSVC..."
+      PUTS "Skipping $zConfig / $target for MSVC..."
       continue
     }
     if {$target ne "checksymbols"} {
       switch -- $::QUICK {
-         1 {set target test}
+         1 {set target quicktest}
          2 {set target smoketest}
       }
       if {$::BUILDONLY} {
@@ -643,10 +686,11 @@ proc main {argv} {
     # it and run veryquick.test. If it did not include the SQLITE_DEBUG option
     # add it and run veryquick.test.
     if {$target!="checksymbols" && $target!="valgrindtest"
-           && !$::BUILDONLY && $::QUICK<2} {
+           && $target!="fuzzoomtest" && !$::BUILDONLY && $::QUICK<2} {
       set debug_idx [lsearch -glob $config_options -DSQLITE_DEBUG*]
       set xtarget $target
       regsub -all {fulltest[a-z]*} $xtarget test xtarget
+      regsub -all {fuzzoomtest} $xtarget fuzztest xtarget
       if {$debug_idx < 0} {
         incr NTEST
         append config_options " -DSQLITE_DEBUG=1"
@@ -665,10 +709,10 @@ proc main {argv} {
   set min [expr {($elapsetime/60)%60}]
   set sec [expr {$elapsetime%60}]
   set etime [format (%02d:%02d:%02d) $hr $min $sec]
-  puts [string repeat * 79]
-  puts "$::NERRCASE failures out of $::NTESTCASE tests in $etime"
+  PUTS [string repeat * 79]
+  PUTS "$::NERRCASE failures out of $::NTESTCASE tests in $etime"
   if {$::SQLITE_VERSION ne ""} {
-    puts "SQLite $::SQLITE_VERSION"
+    PUTS "SQLite $::SQLITE_VERSION"
   }
 }
 

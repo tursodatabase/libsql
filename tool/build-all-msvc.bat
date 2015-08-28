@@ -28,6 +28,11 @@ REM In the example above, "C:\dev\sqlite\core" represents the root of the
 REM source tree for SQLite and "C:\Temp" represents the final destination
 REM directory for the generated output files.
 REM
+REM Please note that the SQLite build process performed by the Makefile
+REM associated with this batch script requires both Gawk ^(gawk.exe^) and Tcl
+REM 8.5 ^(tclsh85.exe^) to be present in a directory contained in the PATH
+REM environment variable unless a pre-existing amalgamation file is used.
+REM
 REM There are several environment variables that may be set to modify the
 REM behavior of this batch script and its associated Makefile.  The list of
 REM platforms to build may be overriden by using the PLATFORMS environment
@@ -37,17 +42,58 @@ REM being used.  The list of configurations to build may be overridden by
 REM setting the CONFIGURATIONS environment variable, which should contain a
 REM list of configurations to build ^(e.g. Debug Retail^).  Neither of these
 REM variable values may contain any double quotes, surrounding or embedded.
-REM Finally, the NCRTLIBPATH and NSDKLIBPATH environment variables may be set
-REM to specify the location of the CRT and SDK, respectively, needed to compile
-REM executables native to the architecture of the build machine during any
-REM cross-compilation that may be necessary, depending on the platforms to be
-REM built.  These values in these two variables should be surrounded by double
-REM quotes if they contain spaces.
 REM
-REM Please note that the SQLite build process performed by the Makefile
-REM associated with this batch script requires both Gawk ^(gawk.exe^) and Tcl
-REM 8.5 ^(tclsh85.exe^) to be present in a directory contained in the PATH
-REM environment variable unless a pre-existing amalgamation file is used.
+REM Finally, the NCRTLIBPATH, NUCRTLIBPATH, and NSDKLIBPATH environment
+REM variables may be set to specify the location of the CRT, Universal CRT, and
+REM Windows SDK, respectively, that may be needed to compile executables native
+REM to the architecture of the build machine during any cross-compilation that
+REM may be necessary, depending on the platforms to be built.  These values in
+REM these three variables should be surrounded by double quotes if they contain
+REM spaces.
+REM
+REM There are a few other environment variables that impact the build process
+REM when set ^(to anything^), they are:
+REM
+REM                        NOCLEAN
+REM
+REM When set, the "clean" target will not be used during each build iteration.
+REM However, the target binaries, if any, will still be deleted manually prior
+REM to being rebuilt.  Setting this environment variable is only rarely needed
+REM and could cause issues in some circumstances; therefore, setting it is not
+REM recommended.
+REM
+REM                        NOSYMBOLS
+REM
+REM When set, copying of symbol files ^(*.pdb^) created during the build will
+REM be skipped and they will not appear in the final destination directory.
+REM Setting this environment variable is never strictly needed and could cause
+REM issues in some circumstances; therefore, setting it is not recommended.
+REM
+REM                        BUILD_ALL_SHELL
+REM
+REM When set, the command line shell will be built for each selected platform
+REM and configuration as well.  In addition, the command line shell binaries
+REM will be copied, with their symbols, to the final destination directory.
+REM
+REM                        USE_WINV63_NSDKLIBPATH
+REM
+REM When set, modifies how the NSDKLIBPATH environment variable is built, based
+REM on the WindowsSdkDir environment variable.  It forces this batch script to
+REM assume the Windows 8.1 SDK location should be used.
+REM
+REM                        USE_WINV100_NSDKLIBPATH
+REM
+REM When set, modifies how the NSDKLIBPATH environment variable is built, based
+REM on the WindowsSdkDir environment variable.  It causes this batch script to
+REM assume the Windows 10.0 SDK location should be used.
+REM
+REM                        NMAKE_ARGS
+REM
+REM When set, the value is expanded and passed to the NMAKE command line, after
+REM its other arguments.  This is used to specify additional NMAKE options, for
+REM example:
+REM
+REM                        SET NMAKE_ARGS=FOR_WINRT=1
 REM
 SETLOCAL
 
@@ -217,8 +263,20 @@ SET TOOLPATH=%gawk.exe_PATH%;%tclsh85.exe_PATH%
 %_VECHO% ToolPath = '%TOOLPATH%'
 
 REM
-REM NOTE: Check for MSVC 2012/2013 because the Windows SDK directory handling
-REM       is slightly different for those versions.
+REM NOTE: Setting the Windows SDK library path is only required for MSVC
+REM       2012, 2013, and 2015.
+REM
+CALL :fn_UnsetVariable SET_NSDKLIBPATH
+
+REM
+REM NOTE: Setting the Universal CRT library path is only required for MSVC
+REM       2015.
+REM
+CALL :fn_UnsetVariable SET_NUCRTLIBPATH
+
+REM
+REM NOTE: Check for MSVC 2012, 2013, and 2015 specially because the Windows
+REM       SDK directory handling is slightly different for those versions.
 REM
 IF "%VisualStudioVersion%" == "11.0" (
   REM
@@ -236,8 +294,43 @@ IF "%VisualStudioVersion%" == "11.0" (
   IF NOT DEFINED NSDKLIBPATH (
     SET SET_NSDKLIBPATH=1
   )
+) ELSE IF "%VisualStudioVersion%" == "14.0" (
+  REM
+  REM NOTE: If the Windows SDK library path has already been set, do not set
+  REM       it to something else later on.
+  REM
+  IF NOT DEFINED NSDKLIBPATH (
+    SET SET_NSDKLIBPATH=1
+  )
+
+  REM
+  REM NOTE: If the Universal CRT library path has already been set, do not set
+  REM       it to something else later on.
+  REM
+  IF NOT DEFINED NUCRTLIBPATH (
+    SET SET_NUCRTLIBPATH=1
+  )
+)
+
+REM
+REM NOTE: This is the name of the sub-directory where the UCRT libraries may
+REM       be found.  It is only used when compiling against the UCRT.
+REM
+IF DEFINED UCRTVersion (
+  SET NUCRTVER=%UCRTVersion%
 ) ELSE (
-  CALL :fn_UnsetVariable SET_NSDKLIBPATH
+  SET NUCRTVER=10.0.10240.0
+)
+
+REM
+REM NOTE: This is the name of the sub-directory where the Windows 10.0 SDK
+REM       libraries may be found.  It is only used when compiling with the
+REM       Windows 10.0 SDK.
+REM
+IF DEFINED WindowsSDKLibVersion (
+  SET WIN10SDKVER=%WindowsSDKLibVersion:\=%
+) ELSE (
+  SET WIN10SDKVER=%NUCRTVER%
 )
 
 REM
@@ -282,6 +375,7 @@ FOR %%P IN (%PLATFORMS%) DO (
     REM
     CALL :fn_UnsetVariable CommandPromptType
     CALL :fn_UnsetVariable DevEnvDir
+    CALL :fn_UnsetVariable DNX_HOME
     CALL :fn_UnsetVariable ExtensionSdkDir
     CALL :fn_UnsetVariable Framework35Version
     CALL :fn_UnsetVariable Framework40Version
@@ -293,13 +387,19 @@ FOR %%P IN (%PLATFORMS%) DO (
     CALL :fn_UnsetVariable INCLUDE
     CALL :fn_UnsetVariable LIB
     CALL :fn_UnsetVariable LIBPATH
+    CALL :fn_UnsetVariable NETFXSDKDir
     CALL :fn_UnsetVariable Platform
+    CALL :fn_UnsetVariable UCRTVersion
+    CALL :fn_UnsetVariable UniversalCRTSdkDir
     REM CALL :fn_UnsetVariable VCINSTALLDIR
     CALL :fn_UnsetVariable VSINSTALLDIR
+    CALL :fn_UnsetVariable WindowsLibPath
     CALL :fn_UnsetVariable WindowsPhoneKitDir
     CALL :fn_UnsetVariable WindowsSdkDir
     CALL :fn_UnsetVariable WindowsSdkDir_35
     CALL :fn_UnsetVariable WindowsSdkDir_old
+    CALL :fn_UnsetVariable WindowsSDKLibVersion
+    CALL :fn_UnsetVariable WindowsSDKVersion
     CALL :fn_UnsetVariable WindowsSDK_ExecutablePath_x86
     CALL :fn_UnsetVariable WindowsSDK_ExecutablePath_x64
 
@@ -385,8 +485,8 @@ FOR %%P IN (%PLATFORMS%) DO (
         )
 
         REM
-        REM NOTE: When using MSVC 2012 and/or 2013, the native SDK path cannot
-        REM       simply use the "lib" sub-directory beneath the location
+        REM NOTE: When using MSVC 2012, 2013, or 2015, the native SDK path
+        REM       cannot simply be the "lib" sub-directory beneath the location
         REM       specified in the WindowsSdkDir environment variable because
         REM       that location does not actually contain the necessary library
         REM       files for x86.  This must be done for each iteration because
@@ -405,16 +505,36 @@ FOR %%P IN (%PLATFORMS%) DO (
             CALL :fn_CopyVariable WindowsSdkDir NSDKLIBPATH
 
             REM
-            REM NOTE: The Windows 8.1 SDK has a slightly different directory
-            REM       naming convention.
+            REM NOTE: The Windows 8.x and Windows 10.0 SDKs have a slightly
+            REM       different directory naming conventions.
             REM
-            IF DEFINED USE_WINV63_NSDKLIBPATH (
+            IF DEFINED USE_WINV100_NSDKLIBPATH (
+              CALL :fn_AppendVariable NSDKLIBPATH \..\10\lib\%WIN10SDKVER%\um\x86
+              CALL :fn_CopyVariable WindowsSdkDir PSDKLIBPATH
+              CALL :fn_AppendVariable PSDKLIBPATH lib\%WIN10SDKVER%\um\%%D
+            ) ELSE IF DEFINED USE_WINV63_NSDKLIBPATH (
               CALL :fn_AppendVariable NSDKLIBPATH \lib\winv6.3\um\x86
             ) ELSE IF "%VisualStudioVersion%" == "12.0" (
+              CALL :fn_AppendVariable NSDKLIBPATH \..\8.0\lib\win8\um\x86
+            ) ELSE IF "%VisualStudioVersion%" == "14.0" (
               CALL :fn_AppendVariable NSDKLIBPATH \..\8.0\lib\win8\um\x86
             ) ELSE (
               CALL :fn_AppendVariable NSDKLIBPATH \lib\win8\um\x86
             )
+          )
+        )
+
+        REM
+        REM NOTE: When using MSVC 2015, setting the Universal CRT library path
+        REM       for x86 may be required as well.  This must also be done for
+        REM       each iteration because it relies upon the UniversalCRTSdkDir
+        REM       environment variable being set by the batch file used to
+        REM       setup the MSVC environment.
+        REM
+        IF DEFINED SET_NUCRTLIBPATH (
+          IF DEFINED UniversalCRTSdkDir (
+            CALL :fn_CopyVariable UniversalCRTSdkDir NUCRTLIBPATH
+            CALL :fn_AppendVariable NUCRTLIBPATH \lib\%NUCRTVER%\ucrt\x86
           )
         )
 
@@ -574,6 +694,19 @@ REM
 REM NOTE: If we get to this point, we have succeeded.
 REM
 GOTO no_errors
+
+:fn_ShowVariable
+  SETLOCAL
+  SET __ECHO_CMD=ECHO %%%2%%
+  FOR /F "delims=" %%V IN ('%__ECHO_CMD%') DO (
+    IF NOT "%%V" == "" (
+      IF NOT "%%V" == "%%%2%%" (
+        %_VECHO% %1 = '%%V'
+      )
+    )
+  )
+  ENDLOCAL
+  GOTO :EOF
 
 :fn_ResetErrorLevel
   VERIFY > NUL

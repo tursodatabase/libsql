@@ -39,6 +39,17 @@ Vdbe *sqlite3VdbeCreate(Parse *pParse){
 }
 
 /*
+** Change the error string stored in Vdbe.zErrMsg
+*/
+void sqlite3VdbeError(Vdbe *p, const char *zFormat, ...){
+  va_list ap;
+  sqlite3DbFree(p->db, p->zErrMsg);
+  va_start(ap, zFormat);
+  p->zErrMsg = sqlite3VMPrintf(p->db, zFormat, ap);
+  va_end(ap);
+}
+
+/*
 ** Remember the SQL string for a prepared statement.
 */
 void sqlite3VdbeSetSql(Vdbe *p, const char *z, int n, int isPrepareV2){
@@ -223,6 +234,23 @@ int sqlite3VdbeAddOp4(
 }
 
 /*
+** Add an opcode that includes the p4 value with a P4_INT64 type.
+*/
+int sqlite3VdbeAddOp4Dup8(
+  Vdbe *p,            /* Add the opcode to this VM */
+  int op,             /* The new opcode */
+  int p1,             /* The P1 operand */
+  int p2,             /* The P2 operand */
+  int p3,             /* The P3 operand */
+  const u8 *zP4,      /* The P4 operand */
+  int p4type          /* P4 operand type */
+){
+  char *p4copy = sqlite3DbMallocRaw(sqlite3VdbeDb(p), 8);
+  if( p4copy ) memcpy(p4copy, zP4, 8);
+  return sqlite3VdbeAddOp4(p, op, p1, p2, p3, p4copy, p4type);
+}
+
+/*
 ** Add an OP_ParseSchema opcode.  This routine is broken out from
 ** sqlite3VdbeAddOp4() since it needs to also needs to mark all btrees
 ** as having been used.
@@ -386,6 +414,7 @@ static Op *opIterNext(VdbeOpIter *p){
 **   *  OP_VUpdate
 **   *  OP_VRename
 **   *  OP_FkCounter with P2==0 (immediate foreign key constraint)
+**   *  OP_CreateTable and OP_InitCoroutine (for CREATE TABLE AS SELECT ...)
 **
 ** Then check that the value of Parse.mayAbort is true if an
 ** ABORT may be thrown, or false otherwise. Return true if it does
@@ -397,6 +426,8 @@ static Op *opIterNext(VdbeOpIter *p){
 int sqlite3VdbeAssertMayAbort(Vdbe *v, int mayAbort){
   int hasAbort = 0;
   int hasFkCounter = 0;
+  int hasCreateTable = 0;
+  int hasInitCoroutine = 0;
   Op *pOp;
   VdbeOpIter sIter;
   memset(&sIter, 0, sizeof(sIter));
@@ -411,6 +442,8 @@ int sqlite3VdbeAssertMayAbort(Vdbe *v, int mayAbort){
       hasAbort = 1;
       break;
     }
+    if( opcode==OP_CreateTable ) hasCreateTable = 1;
+    if( opcode==OP_InitCoroutine ) hasInitCoroutine = 1;
 #ifndef SQLITE_OMIT_FOREIGN_KEY
     if( opcode==OP_FkCounter && pOp->p1==0 && pOp->p2==1 ){
       hasFkCounter = 1;
@@ -424,7 +457,8 @@ int sqlite3VdbeAssertMayAbort(Vdbe *v, int mayAbort){
   ** through all opcodes and hasAbort may be set incorrectly. Return
   ** true for this case to prevent the assert() in the callers frame
   ** from failing.  */
-  return ( v->db->mallocFailed || hasAbort==mayAbort || hasFkCounter );
+  return ( v->db->mallocFailed || hasAbort==mayAbort || hasFkCounter
+              || (hasCreateTable && hasInitCoroutine) );
 }
 #endif /* SQLITE_DEBUG - the sqlite3AssertMayAbort() function */
 
@@ -455,11 +489,6 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
     /* NOTE: Be sure to update mkopcodeh.awk when adding or removing
     ** cases from this switch! */
     switch( opcode ){
-      case OP_Function:
-      case OP_AggStep: {
-        if( pOp->p5>nMaxArgs ) nMaxArgs = pOp->p5;
-        break;
-      }
       case OP_Transaction: {
         if( pOp->p2!=0 ) p->readOnly = 0;
         /* fall thru */
@@ -703,6 +732,10 @@ static void freeP4(sqlite3 *db, int p4type, void *p4){
   if( p4 ){
     assert( db );
     switch( p4type ){
+      case P4_FUNCCTX: {
+        freeEphemeralFunction(db, ((sqlite3_context*)p4)->pFunc);
+        /* Fall through into the next case */
+      }
       case P4_REAL:
       case P4_INT64:
       case P4_DYNAMIC:
@@ -1061,8 +1094,9 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
           zColl = "B";
           n = 1;
         }
-        if( i+n>nTemp-6 ){
+        if( i+n>nTemp-7 ){
           memcpy(&zTemp[i],",...",4);
+          i += 4;
           break;
         }
         zTemp[i++] = ',';
@@ -1087,6 +1121,13 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
       sqlite3_snprintf(nTemp, zTemp, "%s(%d)", pDef->zName, pDef->nArg);
       break;
     }
+#ifdef SQLITE_DEBUG
+    case P4_FUNCCTX: {
+      FuncDef *pDef = pOp->p4.pCtx->pFunc;
+      sqlite3_snprintf(nTemp, zTemp, "%s(%d)", pDef->zName, pDef->nArg);
+      break;
+    }
+#endif
     case P4_INT64: {
       sqlite3_snprintf(nTemp, zTemp, "%lld", *pOp->p4.pI64);
       break;
@@ -1207,12 +1248,11 @@ void sqlite3VdbeEnter(Vdbe *p){
 /*
 ** Unlock all of the btrees previously locked by a call to sqlite3VdbeEnter().
 */
-void sqlite3VdbeLeave(Vdbe *p){
+static SQLITE_NOINLINE void vdbeLeave(Vdbe *p){
   int i;
   sqlite3 *db;
   Db *aDb;
   int nDb;
-  if( DbMaskAllZero(p->lockMask) ) return;  /* The common case */
   db = p->db;
   aDb = db->aDb;
   nDb = db->nDb;
@@ -1221,6 +1261,10 @@ void sqlite3VdbeLeave(Vdbe *p){
       sqlite3BtreeLeave(aDb[i].pBt);
     }
   }
+}
+void sqlite3VdbeLeave(Vdbe *p){
+  if( DbMaskAllZero(p->lockMask) ) return;  /* The common case */
+  vdbeLeave(p);
 }
 #endif
 
@@ -1394,7 +1438,7 @@ int sqlite3VdbeList(
   }else if( db->u1.isInterrupted ){
     p->rc = SQLITE_INTERRUPT;
     rc = SQLITE_ERROR;
-    sqlite3SetString(&p->zErrMsg, db, "%s", sqlite3ErrStr(p->rc));
+    sqlite3VdbeError(p, sqlite3ErrStr(p->rc));
   }else{
     char *zP4;
     Op *pOp;
@@ -2299,7 +2343,7 @@ int sqlite3VdbeCheckFk(Vdbe *p, int deferred){
   ){
     p->rc = SQLITE_CONSTRAINT_FOREIGNKEY;
     p->errorAction = OE_Abort;
-    sqlite3SetString(&p->zErrMsg, db, "FOREIGN KEY constraint failed");
+    sqlite3VdbeError(p, "FOREIGN KEY constraint failed");
     return SQLITE_ERROR;
   }
   return SQLITE_OK;
@@ -2921,14 +2965,20 @@ u32 sqlite3VdbeSerialType(Mem *pMem, int file_format){
 }
 
 /*
+** The sizes for serial types less than 12
+*/
+static const u8 sqlite3SmallTypeSizes[] = {
+  0, 1, 2, 3, 4, 6, 8, 8, 0, 0, 0, 0
+};
+
+/*
 ** Return the length of the data corresponding to the supplied serial-type.
 */
 u32 sqlite3VdbeSerialTypeLen(u32 serial_type){
   if( serial_type>=12 ){
     return (serial_type-12)/2;
   }else{
-    static const u8 aSize[] = { 0, 1, 2, 3, 4, 6, 8, 8, 0, 0, 0, 0 };
-    return aSize[serial_type];
+    return sqlite3SmallTypeSizes[serial_type];
   }
 }
 
@@ -3012,7 +3062,7 @@ u32 sqlite3VdbeSerialPut(u8 *buf, Mem *pMem, u32 serial_type){
     }else{
       v = pMem->u.i;
     }
-    len = i = sqlite3VdbeSerialTypeLen(serial_type);
+    len = i = sqlite3SmallTypeSizes[serial_type];
     assert( i>0 );
     do{
       buf[--i] = (u8)(v&0xFF);
@@ -3297,6 +3347,7 @@ static int vdbeRecordCompareDebug(
   /*  mem1.u.i = 0;  // not needed, here to silence compiler warning */
   
   idx1 = getVarint32(aKey1, szHdr1);
+  if( szHdr1>98307 ) return SQLITE_CORRUPT;
   d1 = szHdr1;
   assert( pKeyInfo->nField+pKeyInfo->nXField>=pPKey2->nField || CORRUPT_DB );
   assert( pKeyInfo->aSortOrder!=0 );
@@ -3642,7 +3693,7 @@ int sqlite3VdbeRecordCompareWithSkip(
     if( pRhs->flags & MEM_Int ){
       serial_type = aKey1[idx1];
       testcase( serial_type==12 );
-      if( serial_type>=12 ){
+      if( serial_type>=10 ){
         rc = +1;
       }else if( serial_type==0 ){
         rc = -1;
@@ -3668,7 +3719,11 @@ int sqlite3VdbeRecordCompareWithSkip(
     /* RHS is real */
     else if( pRhs->flags & MEM_Real ){
       serial_type = aKey1[idx1];
-      if( serial_type>=12 ){
+      if( serial_type>=10 ){
+        /* Serial types 12 or greater are strings and blobs (greater than
+        ** numbers). Types 10 and 11 are currently "reserved for future 
+        ** use", so it doesn't really matter what the results of comparing
+        ** them to numberic values are.  */
         rc = +1;
       }else if( serial_type==0 ){
         rc = -1;
@@ -4037,7 +4092,7 @@ int sqlite3VdbeIdxRowid(sqlite3 *db, BtCursor *pCur, i64 *rowid){
   if( unlikely(typeRowid<1 || typeRowid>9 || typeRowid==7) ){
     goto idx_rowid_corruption;
   }
-  lenRowid = sqlite3VdbeSerialTypeLen(typeRowid);
+  lenRowid = sqlite3SmallTypeSizes[typeRowid];
   testcase( (u32)m.n==szHdr+lenRowid );
   if( unlikely((u32)m.n<szHdr+lenRowid) ){
     goto idx_rowid_corruption;

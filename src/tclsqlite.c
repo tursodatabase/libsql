@@ -1191,7 +1191,7 @@ static int dbPrepareAndBind(
         int n;
         u8 *data;
         const char *zType = (pVar->typePtr ? pVar->typePtr->name : "");
-        char c = zType[0];
+        c = zType[0];
         if( zVar[0]=='@' ||
            (c=='b' && strcmp(zType,"bytearray")==0 && pVar->bytes==0) ){
           /* Load a BLOB type if the Tcl variable is a bytearray and
@@ -2298,7 +2298,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       }
       Tcl_DecrRefCount(pRet);
     }else{
-      ClientData cd[2];
+      ClientData cd2[2];
       DbEvalContext *p;
       Tcl_Obj *pArray = 0;
       Tcl_Obj *pScript;
@@ -2312,9 +2312,9 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       p = (DbEvalContext *)Tcl_Alloc(sizeof(DbEvalContext));
       dbEvalInit(p, pDb, objv[2], pArray);
 
-      cd[0] = (void *)p;
-      cd[1] = (void *)pScript;
-      rc = DbEvalNextCmd(cd, interp, TCL_OK);
+      cd2[0] = (void *)p;
+      cd2[1] = (void *)pScript;
+      rc = DbEvalNextCmd(cd2, interp, TCL_OK);
     }
     break;
   }
@@ -3704,7 +3704,7 @@ static int db_last_stmt_ptr(
 
   return TCL_OK;
 }
-#endif
+#endif /* SQLITE_TEST */
 
 /*
 ** Configure the interpreter passed as the first argument to have access
@@ -3722,17 +3722,6 @@ static void init_all(Tcl_Interp *interp){
 
 #if defined(SQLITE_TEST) || defined(SQLITE_TCLMD5)
   Md5_Init(interp);
-#endif
-
-  /* Install the [register_dbstat_vtab] command to access the implementation
-  ** of virtual table dbstat (source file test_stat.c). This command is
-  ** required for testfixture and sqlite3_analyzer, but not by the production
-  ** Tcl extension.  */
-#if defined(SQLITE_TEST) || TCLSH==2
-  {
-    extern int SqlitetestStat_Init(Tcl_Interp*);
-    SqlitetestStat_Init(interp);
-  }
 #endif
 
 #ifdef SQLITE_TEST
@@ -3771,7 +3760,8 @@ static void init_all(Tcl_Interp *interp){
     extern int Sqlitemultiplex_Init(Tcl_Interp*);
     extern int SqliteSuperlock_Init(Tcl_Interp*);
     extern int SqlitetestSyscall_Init(Tcl_Interp*);
-
+    extern int Fts5tcl_Init(Tcl_Interp *);
+    extern int SqliteRbu_Init(Tcl_Interp*);
 #if defined(SQLITE_ENABLE_FTS3) || defined(SQLITE_ENABLE_FTS4)
     extern int Sqlitetestfts3_Init(Tcl_Interp *interp);
 #endif
@@ -3814,6 +3804,8 @@ static void init_all(Tcl_Interp *interp){
     Sqlitemultiplex_Init(interp);
     SqliteSuperlock_Init(interp);
     SqlitetestSyscall_Init(interp);
+    Fts5tcl_Init(interp);
+    SqliteRbu_Init(interp);
 
 #if defined(SQLITE_ENABLE_FTS3) || defined(SQLITE_ENABLE_FTS4)
     Sqlitetestfts3_Init(interp);

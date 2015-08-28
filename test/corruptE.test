@@ -14,7 +14,6 @@
 # segfault if it sees a corrupt database file.  It specifcally
 # focuses on rowid order corruption.
 #
-# $Id: corruptE.test,v 1.14 2009/07/11 06:55:34 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -79,12 +78,8 @@ do_test corruptE-2.1 {
 
   sqlite3 db test.db
 
-  set res [ catchsql {PRAGMA integrity_check} ]
-  set ans [lindex $res 1]
-
-  list [regexp {out of order.*previous was} $ans] \
-       [regexp {out of order.*max larger than parent max} $ans]
-} {1 1}
+  catchsql {PRAGMA integrity_check}
+} {/ out of order/}
 
 do_test corruptE-2.2 {
   db close
@@ -95,12 +90,8 @@ do_test corruptE-2.2 {
 
   sqlite3 db test.db
 
-  set res [ catchsql {PRAGMA integrity_check} ]
-  set ans [lindex $res 1]
-
-  list [regexp {out of order.*previous was} $ans] \
-       [regexp {out of order.*min less than parent min} $ans]
-} {1 1}
+  catchsql {PRAGMA integrity_check}
+} {/ Extends off end of page/}
 
 do_test corruptE-2.3 {
   db close
@@ -112,11 +103,8 @@ do_test corruptE-2.3 {
 
   sqlite3 db test.db
 
-  set res [ catchsql {PRAGMA integrity_check} ]
-  set ans [lindex $res 1]
-
-  list [regexp {out of order.*max larger than parent min} $ans]
-} {1}
+  catchsql {PRAGMA integrity_check}
+} {/out of order/}
 
 do_test corruptE-2.4 {
   db close
@@ -127,33 +115,22 @@ do_test corruptE-2.4 {
 
   sqlite3 db test.db
 
-  set res [ catchsql {PRAGMA integrity_check} ]
-  set ans [lindex $res 1]
-
-  list [regexp {out of order.*min less than parent max} $ans]
-} {1}
+  catchsql {PRAGMA integrity_check}
+} {/out of order/}
 
 
 set tests [list {10233 0xd0} \
                 {941 0x42} \
-                {1028 0x53} \
                 {2041 0xd0} \
                 {2042 0x1f} \
-                {2047 0xaa} \
-                {2263 0x29} \
                 {2274 0x75} \
                 {3267 0xf2} \
-                {4104 0x2c} \
                 {5113 0x36} \
                 {10233 0x84} \
                 {10234 0x74} \
                 {10239 0x41} \
-                {10453 0x11} \
                 {11273 0x28} \
-                {11455 0x11} \
                 {11461 0xe6} \
-                {12281 0x99} \
-                {12296 0x9e} \
                 {12297 0xd7} \
                 {13303 0x53} ]
 
@@ -168,11 +145,8 @@ foreach test $tests {
 
     sqlite3 db test.db
 
-    set res [ catchsql {PRAGMA integrity_check} ]
-    set ans [lindex $res 1]
-
-    list [regexp {out of order} $ans]
-  } {1}
+    catchsql {PRAGMA integrity_check}
+  } {/out of order/}
   incr tc 1
 }
 

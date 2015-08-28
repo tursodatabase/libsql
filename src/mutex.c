@@ -45,9 +45,14 @@ int sqlite3MutexInit(void){
     }else{
       pFrom = sqlite3NoopMutex();
     }
-    memcpy(pTo, pFrom, offsetof(sqlite3_mutex_methods, xMutexAlloc));
-    memcpy(&pTo->xMutexFree, &pFrom->xMutexFree,
-           sizeof(*pTo) - offsetof(sqlite3_mutex_methods, xMutexFree));
+    pTo->xMutexInit = pFrom->xMutexInit;
+    pTo->xMutexEnd = pFrom->xMutexEnd;
+    pTo->xMutexFree = pFrom->xMutexFree;
+    pTo->xMutexEnter = pFrom->xMutexEnter;
+    pTo->xMutexTry = pFrom->xMutexTry;
+    pTo->xMutexLeave = pFrom->xMutexLeave;
+    pTo->xMutexHeld = pFrom->xMutexHeld;
+    pTo->xMutexNotheld = pFrom->xMutexNotheld;
     pTo->xMutexAlloc = pFrom->xMutexAlloc;
   }
   rc = sqlite3GlobalConfig.mutex.xMutexInit();

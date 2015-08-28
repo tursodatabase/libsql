@@ -193,10 +193,9 @@ int sqlite3MallocInit(void){
     sqlite3GlobalConfig.nScratch = 0;
   }
   if( sqlite3GlobalConfig.pPage==0 || sqlite3GlobalConfig.szPage<512
-      || sqlite3GlobalConfig.nPage<1 ){
+      || sqlite3GlobalConfig.nPage<=0 ){
     sqlite3GlobalConfig.pPage = 0;
     sqlite3GlobalConfig.szPage = 0;
-    sqlite3GlobalConfig.nPage = 0;
   }
   rc = sqlite3GlobalConfig.m.xInit(sqlite3GlobalConfig.m.pAppData);
   if( rc!=SQLITE_OK ) memset(&mem0, 0, sizeof(mem0));
@@ -226,10 +225,8 @@ void sqlite3MallocEnd(void){
 ** Return the amount of memory currently checked out.
 */
 sqlite3_int64 sqlite3_memory_used(void){
-  int n, mx;
-  sqlite3_int64 res;
-  sqlite3_status(SQLITE_STATUS_MEMORY_USED, &n, &mx, 0);
-  res = (sqlite3_int64)n;  /* Work around bug in Borland C. Ticket #3216 */
+  sqlite3_int64 res, mx;
+  sqlite3_status64(SQLITE_STATUS_MEMORY_USED, &res, &mx, 0);
   return res;
 }
 
@@ -239,11 +236,9 @@ sqlite3_int64 sqlite3_memory_used(void){
 ** or since the most recent reset.
 */
 sqlite3_int64 sqlite3_memory_highwater(int resetFlag){
-  int n, mx;
-  sqlite3_int64 res;
-  sqlite3_status(SQLITE_STATUS_MEMORY_USED, &n, &mx, resetFlag);
-  res = (sqlite3_int64)mx;  /* Work around bug in Borland C. Ticket #3216 */
-  return res;
+  sqlite3_int64 res, mx;
+  sqlite3_status64(SQLITE_STATUS_MEMORY_USED, &res, &mx, resetFlag);
+  return mx;
 }
 
 /*
@@ -775,19 +770,11 @@ char *sqlite3DbStrNDup(sqlite3 *db, const char *z, u64 n){
 }
 
 /*
-** Create a string from the zFromat argument and the va_list that follows.
-** Store the string in memory obtained from sqliteMalloc() and make *pz
-** point to that string.
+** Free any prior content in *pz and replace it with a copy of zNew.
 */
-void sqlite3SetString(char **pz, sqlite3 *db, const char *zFormat, ...){
-  va_list ap;
-  char *z;
-
-  va_start(ap, zFormat);
-  z = sqlite3VMPrintf(db, zFormat, ap);
-  va_end(ap);
+void sqlite3SetString(char **pz, sqlite3 *db, const char *zNew){
   sqlite3DbFree(db, *pz);
-  *pz = z;
+  *pz = sqlite3DbStrDup(db, zNew);
 }
 
 /*
@@ -808,17 +795,16 @@ static SQLITE_NOINLINE int apiOomError(sqlite3 *db){
 ** function. However, if a malloc() failure has occurred since the previous
 ** invocation SQLITE_NOMEM is returned instead. 
 **
-** If the first argument, db, is not NULL and a malloc() error has occurred,
-** then the connection error-code (the value returned by sqlite3_errcode())
-** is set to SQLITE_NOMEM.
+** If an OOM as occurred, then the connection error-code (the value
+** returned by sqlite3_errcode()) is set to SQLITE_NOMEM.
 */
 int sqlite3ApiExit(sqlite3* db, int rc){
-  /* If the db handle is not NULL, then we must hold the connection handle
-  ** mutex here. Otherwise the read (and possible write) of db->mallocFailed 
+  /* If the db handle must hold the connection handle mutex here.
+  ** Otherwise the read (and possible write) of db->mallocFailed 
   ** is unsafe, as is the call to sqlite3Error().
   */
-  assert( !db || sqlite3_mutex_held(db->mutex) );
-  if( db==0 ) return rc & 0xff;
+  assert( db!=0 );
+  assert( sqlite3_mutex_held(db->mutex) );
   if( db->mallocFailed || rc==SQLITE_IOERR_NOMEM ){
     return apiOomError(db);
   }

@@ -180,6 +180,10 @@ proc copy_file {filename} {
           copy_file tsrc/$hdr
           section_comment "Continuing where we left off in $tail"
           if {$linemacros} {puts $out "#line [expr {$ln+1}] \"$filename\""}
+        } else {
+          # Comment out the entire line, replacing any nested comment
+          # begin/end markers with the harmless substring "**".
+          puts $out "/* [string map [list /* ** */ **] $line] */"
         }
       } elseif {![info exists seen_hdr($hdr)]} {
         if {![regexp {/\*\s+amalgamator:\s+dontcache\s+\*/} $line]} {

@@ -173,7 +173,9 @@ int sqlite3PagerSharedLock(Pager *pPager);
 /* Functions used to query pager state and configuration. */
 u8 sqlite3PagerIsreadonly(Pager*);
 u32 sqlite3PagerDataVersion(Pager*);
-int sqlite3PagerRefcount(Pager*);
+#ifdef SQLITE_DEBUG
+  int sqlite3PagerRefcount(Pager*);
+#endif
 int sqlite3PagerMemUsed(Pager*);
 const char *sqlite3PagerFilename(Pager*, int);
 const sqlite3_vfs *sqlite3PagerVfs(Pager*);

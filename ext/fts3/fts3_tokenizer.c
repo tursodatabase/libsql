@@ -172,7 +172,7 @@ int sqlite3Fts3InitTokenizer(
 
   m = (sqlite3_tokenizer_module *)sqlite3Fts3HashFind(pHash,z,(int)strlen(z)+1);
   if( !m ){
-    *pzErr = sqlite3_mprintf("unknown tokenizer: %s", z);
+    sqlite3Fts3ErrMsg(pzErr, "unknown tokenizer: %s", z);
     rc = SQLITE_ERROR;
   }else{
     char const **aArg = 0;
@@ -195,7 +195,7 @@ int sqlite3Fts3InitTokenizer(
     rc = m->xCreate(iArg, aArg, ppTok);
     assert( rc!=SQLITE_OK || *ppTok );
     if( rc!=SQLITE_OK ){
-      *pzErr = sqlite3_mprintf("unknown tokenizer");
+      sqlite3Fts3ErrMsg(pzErr, "unknown tokenizer");
     }else{
       (*ppTok)->pModule = m; 
     }
@@ -279,9 +279,9 @@ static void testFunc(
   p = (sqlite3_tokenizer_module *)sqlite3Fts3HashFind(pHash, zName, nName+1);
 
   if( !p ){
-    char *zErr = sqlite3_mprintf("unknown tokenizer: %s", zName);
-    sqlite3_result_error(context, zErr, -1);
-    sqlite3_free(zErr);
+    char *zErr2 = sqlite3_mprintf("unknown tokenizer: %s", zName);
+    sqlite3_result_error(context, zErr2, -1);
+    sqlite3_free(zErr2);
     return;
   }
 

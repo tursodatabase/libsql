@@ -36,6 +36,13 @@ USE_STDCALL = 0
 DYNAMIC_SHELL = 0
 !ENDIF
 
+# Set this non-0 to enable extra code that attempts to detect misuse of the
+# SQLite API.
+#
+!IFNDEF API_ARMOR
+API_ARMOR = 0
+!ENDIF
+
 # If necessary, create a list of harmless compiler warnings to disable when
 # compiling the various tools.  For the SQLite source code itself, warnings,
 # if any, will be disabled from within it.
@@ -115,6 +122,14 @@ USE_RC = 1
 FOR_WINRT = 0
 !ENDIF
 
+# Set this non-0 to compile binaries suitable for the UAP environment.
+# This setting does not apply to any binaries that require Tcl to operate
+# properly (i.e. the text fixture, etc).
+#
+!IFNDEF FOR_UAP
+FOR_UAP = 0
+!ENDIF
+
 # Set this non-0 to skip attempting to look for and/or link with the Tcl
 # runtime library.
 #
@@ -138,6 +153,13 @@ MEMDEBUG = 0
 #
 !IFNDEF WIN32HEAP
 WIN32HEAP = 0
+!ENDIF
+
+# Set this to non-0 to enable OSTRACE() macros, which can be useful when
+# debugging.
+#
+!IFNDEF OSTRACE
+OSTRACE = 0
 !ENDIF
 
 # Set this to one of the following values to enable various debugging
@@ -288,6 +310,11 @@ BCC = $(BCC) -FAcs
 #
 !IF $(USE_NATIVE_LIBPATHS)!=0
 NLTLIBPATHS = "/LIBPATH:$(NCRTLIBPATH)" "/LIBPATH:$(NSDKLIBPATH)"
+
+!IFDEF NUCRTLIBPATH
+NUCRTLIBPATH = $(NUCRTLIBPATH:\\=\)
+NLTLIBPATHS = $(NLTLIBPATHS) "/LIBPATH:$(NUCRTLIBPATH)"
+!ENDIF
 !ENDIF
 
 # C compiler and options for use in building executables that
@@ -471,24 +498,24 @@ BCC = $(BCC) -DNDEBUG
 RCC = $(RCC) -DNDEBUG
 !ENDIF
 
-!IF $(DEBUG)>0
-TCC = $(TCC) -DSQLITE_ENABLE_API_ARMOR
-RCC = $(RCC) -DSQLITE_ENABLE_API_ARMOR
+!IF $(DEBUG)>0 || $(API_ARMOR)!=0
+TCC = $(TCC) -DSQLITE_ENABLE_API_ARMOR=1
+RCC = $(RCC) -DSQLITE_ENABLE_API_ARMOR=1
 !ENDIF
 
 !IF $(DEBUG)>2
-TCC = $(TCC) -DSQLITE_DEBUG
-RCC = $(RCC) -DSQLITE_DEBUG
+TCC = $(TCC) -DSQLITE_DEBUG=1
+RCC = $(RCC) -DSQLITE_DEBUG=1
 !ENDIF
 
-!IF $(DEBUG)>4
-TCC = $(TCC) -DSQLITE_DEBUG_OS_TRACE=1
-RCC = $(RCC) -DSQLITE_DEBUG_OS_TRACE=1
+!IF $(DEBUG)>4 || $(OSTRACE)!=0
+TCC = $(TCC) -DSQLITE_FORCE_OS_TRACE=1 -DSQLITE_DEBUG_OS_TRACE=1
+RCC = $(RCC) -DSQLITE_FORCE_OS_TRACE=1 -DSQLITE_DEBUG_OS_TRACE=1
 !ENDIF
 
 !IF $(DEBUG)>5
-TCC = $(TCC) -DSQLITE_ENABLE_IOTRACE
-RCC = $(RCC) -DSQLITE_ENABLE_IOTRACE
+TCC = $(TCC) -DSQLITE_ENABLE_IOTRACE=1
+RCC = $(RCC) -DSQLITE_ENABLE_IOTRACE=1
 !ENDIF
 
 # Prevent warnings about "insecure" MSVC runtime library functions
@@ -708,7 +735,7 @@ LTLIBOPTS = /NOLOGO
 #
 !IF $(FOR_WINRT)!=0
 LTLINKOPTS = $(LTLINKOPTS) /APPCONTAINER
-!IF "$(VISUALSTUDIOVERSION)"=="12.0"
+!IF "$(VISUALSTUDIOVERSION)"=="12.0" || "$(VISUALSTUDIOVERSION)"=="14.0"
 !IFNDEF STORELIBPATH
 !IF "$(PLATFORM)"=="x86"
 STORELIBPATH = $(CRTLIBPATH)\store
@@ -752,6 +779,16 @@ LTLINKOPTS = $(LTLINKOPTS) WindowsPhoneCore.lib RuntimeObject.lib PhoneAppModelH
 LTLINKOPTS = $(LTLINKOPTS) /NODEFAULTLIB:kernel32.lib /NODEFAULTLIB:ole32.lib
 !ENDIF
 
+# When compiling for UAP, some extra linker options are also required.
+#
+!IF $(FOR_UAP)!=0
+LTLINKOPTS = $(LTLINKOPTS) /DYNAMICBASE /NODEFAULTLIB:kernel32.lib
+LTLINKOPTS = $(LTLINKOPTS) mincore.lib
+!IFDEF PSDKLIBPATH
+LTLINKOPTS = $(LTLINKOPTS) "/LIBPATH:$(PSDKLIBPATH)"
+!ENDIF
+!ENDIF
+
 # If either debugging or symbols are enabled, enable PDBs.
 #
 !IF $(DEBUG)>1 || $(SYMBOLS)!=0
@@ -785,11 +822,12 @@ NAWK = gawk.exe
 #
 LIBOBJS0 = vdbe.lo parse.lo alter.lo analyze.lo attach.lo auth.lo \
          backup.lo bitvec.lo btmutex.lo btree.lo build.lo \
-         callback.lo complete.lo ctime.lo date.lo delete.lo \
+         callback.lo complete.lo ctime.lo date.lo dbstat.lo delete.lo \
          expr.lo fault.lo fkey.lo \
          fts3.lo fts3_aux.lo fts3_expr.lo fts3_hash.lo fts3_icu.lo \
          fts3_porter.lo fts3_snippet.lo fts3_tokenizer.lo fts3_tokenizer1.lo \
          fts3_tokenize_vtab.lo fts3_unicode.lo fts3_unicode2.lo fts3_write.lo \
+         fts5.lo \
          func.lo global.lo hash.lo \
          icu.lo insert.lo journal.lo legacy.lo loadext.lo \
          main.lo malloc.lo mem0.lo mem1.lo mem2.lo mem3.lo mem5.lo \
@@ -798,10 +836,11 @@ LIBOBJS0 = vdbe.lo parse.lo alter.lo analyze.lo attach.lo auth.lo \
          notify.lo opcodes.lo os.lo os_unix.lo os_win.lo \
          pager.lo pcache.lo pcache1.lo pragma.lo prepare.lo printf.lo \
          random.lo resolve.lo rowset.lo rtree.lo select.lo status.lo \
-         table.lo threads.lo tokenize.lo trigger.lo \
+         table.lo threads.lo tokenize.lo treeview.lo trigger.lo \
          update.lo util.lo vacuum.lo \
          vdbeapi.lo vdbeaux.lo vdbeblob.lo vdbemem.lo vdbesort.lo \
-         vdbetrace.lo wal.lo walker.lo where.lo utf.lo vtab.lo
+         vdbetrace.lo wal.lo walker.lo where.lo wherecode.lo whereexpr.lo \
+         utf.lo vtab.lo
 
 # Object files for the amalgamation.
 #
@@ -841,6 +880,7 @@ SRC1 = \
   $(TOP)\src\complete.c \
   $(TOP)\src\ctime.c \
   $(TOP)\src\date.c \
+  $(TOP)\src\dbstat.c \
   $(TOP)\src\delete.c \
   $(TOP)\src\expr.c \
   $(TOP)\src\fault.c \
@@ -901,6 +941,7 @@ SRC2 = \
   $(TOP)\src\threads.c \
   $(TOP)\src\tclsqlite.c \
   $(TOP)\src\tokenize.c \
+  $(TOP)\src\treeview.c \
   $(TOP)\src\trigger.c \
   $(TOP)\src\utf.c \
   $(TOP)\src\update.c \
@@ -921,6 +962,8 @@ SRC2 = \
   $(TOP)\src\wal.h \
   $(TOP)\src\walker.c \
   $(TOP)\src\where.c \
+  $(TOP)\src\wherecode.c \
+  $(TOP)\src\whereexpr.c \
   $(TOP)\src\whereInt.h
 
 # Source code for extensions
@@ -963,7 +1006,9 @@ SRC4 = \
   $(TOP)\ext\icu\sqliteicu.h \
   $(TOP)\ext\icu\icu.c \
   $(TOP)\ext\rtree\rtree.h \
-  $(TOP)\ext\rtree\rtree.c
+  $(TOP)\ext\rtree\rtree.c \
+  $(TOP)\ext\rbu\sqlite3rbu.h \
+  $(TOP)\ext\rbu\sqlite3rbu.c
 
 
 # Generated source code files
@@ -1018,13 +1063,13 @@ TESTSRC = \
   $(TOP)\src\test_server.c \
   $(TOP)\src\test_superlock.c \
   $(TOP)\src\test_syscall.c \
-  $(TOP)\src\test_stat.c \
   $(TOP)\src\test_tclvar.c \
   $(TOP)\src\test_thread.c \
   $(TOP)\src\test_vfs.c \
   $(TOP)\src\test_wsd.c \
   $(TOP)\ext\fts3\fts3_term.c \
-  $(TOP)\ext\fts3\fts3_test.c
+  $(TOP)\ext\fts3\fts3_test.c \
+  $(TOP)\ext\rbu\test_rbu.c
 
 # Statically linked extensions
 #
@@ -1034,10 +1079,15 @@ TESTEXT = \
   $(TOP)\ext\misc\eval.c \
   $(TOP)\ext\misc\fileio.c \
   $(TOP)\ext\misc\fuzzer.c \
+  fts5.c \
+  $(TOP)\ext\fts5\fts5_tcl.c \
+  $(TOP)\ext\fts5\fts5_test_mi.c \
   $(TOP)\ext\misc\ieee754.c \
+  $(TOP)\ext\misc\json1.c \
   $(TOP)\ext\misc\nextchar.c \
   $(TOP)\ext\misc\percentile.c \
   $(TOP)\ext\misc\regexp.c \
+  $(TOP)\ext\misc\series.c \
   $(TOP)\ext\misc\spellfix.c \
   $(TOP)\ext\misc\totype.c \
   $(TOP)\ext\misc\wholenumber.c
@@ -1053,6 +1103,7 @@ TESTSRC2 = \
   $(TOP)\src\build.c \
   $(TOP)\src\ctime.c \
   $(TOP)\src\date.c \
+  $(TOP)\src\dbstat.c \
   $(TOP)\src\expr.c \
   $(TOP)\src\func.c \
   $(TOP)\src\insert.c \
@@ -1080,6 +1131,8 @@ TESTSRC2 = \
   $(TOP)\src\vdbesort.c \
   $(TOP)\src\vdbetrace.c \
   $(TOP)\src\where.c \
+  $(TOP)\src\wherecode.c \
+  $(TOP)\src\whereexpr.c \
   parse.c \
   $(TOP)\ext\fts3\fts3.c \
   $(TOP)\ext\fts3\fts3_aux.c \
@@ -1141,6 +1194,25 @@ EXTHDR = $(EXTHDR) \
 EXTHDR = $(EXTHDR) \
   $(TOP)\ext\rtree\sqlite3rtree.h
 
+# executables needed for testing
+#
+TESTPROGS = \
+  testfixture.exe \
+  sqlite3.exe \
+  sqlite3_analyzer.exe \
+  sqldiff.exe
+
+# Databases containing fuzzer test cases
+#
+FUZZDATA = \
+  $(TOP)\test\fuzzdata1.db \
+  $(TOP)\test\fuzzdata2.db \
+  $(TOP)\test\fuzzdata3.db
+
+# Standard options to testfixture
+#
+TESTOPTS = --verbose=file --output=test-out.txt
+
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
 #
@@ -1157,13 +1229,16 @@ sqlite3.exe:	$(TOP)\src\shell.c $(SHELL_CORE_DEP) $(LIBRESOBJS) sqlite3.h
 		/link /pdb:sqlite3sh.pdb $(LTLINKOPTS) $(SHELL_LINK_OPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LIBREADLINE) $(LTLIBS) $(TLIBS)
 
 sqldiff.exe:	$(TOP)\tool\sqldiff.c sqlite3.c sqlite3.h
-	$(LTLINK) $(TOP)\tool\sqldiff.c sqlite3.c
+	$(LTLINK) $(NO_WARN) $(TOP)\tool\sqldiff.c sqlite3.c
 
 fuzzershell.exe:	$(TOP)\tool\fuzzershell.c sqlite3.c sqlite3.h
-	$(LTLINK) $(TOP)\tool\fuzzershell.c sqlite3.c
+	$(LTLINK) $(NO_WARN) $(TOP)\tool\fuzzershell.c sqlite3.c
+
+fuzzcheck.exe:	$(TOP)\test\fuzzcheck.c sqlite3.c sqlite3.h
+	$(LTLINK) $(NO_WARN) $(TOP)\test\fuzzcheck.c sqlite3.c
 
 mptester.exe:	$(TOP)\mptest\mptest.c $(SHELL_CORE_DEP) $(LIBRESOBJS) sqlite3.h
-	$(LTLINK) $(SHELL_COMPILE_OPTS) $(TOP)\mptest\mptest.c \
+	$(LTLINK) $(NO_WARN) $(SHELL_COMPILE_OPTS) $(TOP)\mptest\mptest.c \
 		/link $(LTLINKOPTS) $(LTLIBPATHS) $(SHELL_LINK_OPTS) $(LIBRESOBJS) $(LIBREADLINE) $(LTLIBS) $(TLIBS)
 
 MPTEST1 = mptester mptest.db $(TOP)\mptest\crash01.test --repeat 20
@@ -1296,6 +1371,9 @@ ctime.lo:	$(TOP)\src\ctime.c $(HDR)
 date.lo:	$(TOP)\src\date.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\date.c
 
+dbstat.lo:	$(TOP)\src\date.c $(HDR)
+	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\dbstat.c
+
 delete.lo:	$(TOP)\src\delete.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\delete.c
 
@@ -1419,6 +1497,9 @@ threads.lo:	$(TOP)\src\threads.c $(HDR)
 tokenize.lo:	$(TOP)\src\tokenize.c keywordhash.h $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\tokenize.c
 
+treeview.lo:	$(TOP)\src\treeview.c $(HDR)
+	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\treeview.c
+
 trigger.lo:	$(TOP)\src\trigger.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\trigger.c
 
@@ -1466,6 +1547,12 @@ walker.lo:	$(TOP)\src\walker.c $(HDR)
 
 where.lo:	$(TOP)\src\where.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\where.c
+
+wherecode.lo:	$(TOP)\src\wherecode.c $(HDR)
+	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\wherecode.c
+
+whereexpr.lo:	$(TOP)\src\whereexpr.c $(HDR)
+	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\whereexpr.c
 
 tclsqlite.lo:	$(TOP)\src\tclsqlite.c $(HDR)
 	$(LTCOMPILE) $(NO_WARN) -DUSE_TCL_STUBS=1 -DBUILD_sqlite -I$(TCLINCDIR) -c $(TOP)\src\tclsqlite.c
@@ -1572,6 +1659,44 @@ fts3_write.lo:	$(TOP)\ext\fts3\fts3_write.c $(HDR) $(EXTHDR)
 rtree.lo:	$(TOP)\ext\rtree\rtree.c $(HDR) $(EXTHDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) $(NO_WARN) -DSQLITE_CORE -c $(TOP)\ext\rtree\rtree.c
 
+# FTS5 things
+#
+FTS5_SRC = \
+   $(TOP)\ext\fts5\fts5.h \
+   $(TOP)\ext\fts5\fts5Int.h \
+   $(TOP)\ext\fts5\fts5_aux.c \
+   $(TOP)\ext\fts5\fts5_buffer.c \
+   $(TOP)\ext\fts5\fts5_main.c \
+   $(TOP)\ext\fts5\fts5_config.c \
+   $(TOP)\ext\fts5\fts5_expr.c \
+   $(TOP)\ext\fts5\fts5_hash.c \
+   $(TOP)\ext\fts5\fts5_index.c \
+   fts5parse.c fts5parse.h \
+   $(TOP)\ext\fts5\fts5_storage.c \
+   $(TOP)\ext\fts5\fts5_tokenize.c \
+   $(TOP)\ext\fts5\fts5_unicode2.c \
+   $(TOP)\ext\fts5\fts5_varint.c \
+   $(TOP)\ext\fts5\fts5_vocab.c
+
+fts5parse.c:	$(TOP)\ext\fts5\fts5parse.y lemon.exe
+	copy $(TOP)\ext\fts5\fts5parse.y .
+	del /Q fts5parse.h 2>NUL
+	.\lemon.exe $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS) $(OPTS) fts5parse.y
+
+fts5parse.h: fts5parse.c
+
+fts5.c: $(FTS5_SRC)
+	$(TCLSH_CMD) $(TOP)\ext\fts5\tool\mkfts5c.tcl
+	copy $(TOP)\ext\fts5\fts5.h .
+
+fts5.lo:	fts5.c $(HDR) $(EXTHDR)
+	$(LTCOMPILE) $(CORE_COMPILE_OPTS) $(NO_WARN) -DSQLITE_CORE -c fts5.c
+
+fts5_ext.lo:	fts5.c $(HDR) $(EXTHDR)
+	$(LTCOMPILE) $(NO_WARN) -c fts5.c
+
+fts5.dll:	fts5_ext.lo
+	$(LD) $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) /DLL /OUT:$@ fts5_ext.lo
 
 # Rules to build the 'testfixture' application.
 #
@@ -1599,35 +1724,51 @@ testfixture.exe:	$(TESTFIXTURE_SRC) $(LIBRESOBJS) $(HDR)
 		/link $(LTLINKOPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LTLIBS) $(TLIBS)
 
 extensiontest: testfixture.exe testloadext.dll
-	.\testfixture.exe $(TOP)\test\loadext.test
+	.\testfixture.exe $(TOP)\test\loadext.test $(TESTOPTS)
 
-fulltest:	testfixture.exe sqlite3.exe
-	.\testfixture.exe $(TOP)\test\all.test
+fulltest:	$(TESTPROGS) fuzztest
+	.\testfixture.exe $(TOP)\test\all.test $(TESTOPTS)
 
-soaktest:	testfixture.exe sqlite3.exe
-	.\testfixture.exe $(TOP)\test\all.test -soak=1
+soaktest:	$(TESTPROGS)
+	.\testfixture.exe $(TOP)\test\all.test -soak=1 $(TESTOPTS)
 
-fulltestonly:	testfixture.exe sqlite3.exe
+fulltestonly:	$(TESTPROGS) fuzztest
 	.\testfixture.exe $(TOP)\test\full.test
 
 queryplantest:	testfixture.exe sqlite3.exe
-	.\testfixture.exe $(TOP)\test\permutations.test queryplanner
+	.\testfixture.exe $(TOP)\test\permutations.test queryplanner $(TESTOPTS)
 
-test:	testfixture.exe sqlite3.exe
-	.\testfixture.exe $(TOP)\test\veryquick.test
+fuzztest:	fuzzcheck.exe
+	.\fuzzcheck.exe $(FUZZDATA)
 
-smoketest:	testfixture.exe
-	.\testfixture.exe $(TOP)\test\main.test
+fastfuzztest:	fuzzcheck.exe
+	.\fuzzcheck.exe --limit-mem 100M $(FUZZDATA)
 
-sqlite3_analyzer.c: $(SQLITE3C) $(TOP)\src\test_stat.c $(TOP)\src\tclsqlite.c $(TOP)\tool\spaceanal.tcl
-	copy $(SQLITE3C) + $(TOP)\src\test_stat.c + $(TOP)\src\tclsqlite.c $@
+# Minimal testing that runs in less than 3 minutes (on a fast machine)
+#
+quicktest:	testfixture.exe
+	.\testfixture.exe $(TOP)\test\extraquick.test $(TESTOPTS)
+
+# This is the common case.  Run many tests that do not take too long,
+# including fuzzcheck, sqlite3_analyzer, and sqldiff tests.
+#
+test:	$(TESTPROGS) fastfuzztest
+	.\testfixture.exe $(TOP)\test\veryquick.test $(TESTOPTS)
+
+smoketest:	$(TESTPROGS)
+	.\testfixture.exe $(TOP)\test\main.test $(TESTOPTS)
+
+sqlite3_analyzer.c: $(SQLITE3C) $(TOP)\src\tclsqlite.c $(TOP)\tool\spaceanal.tcl
+	echo #define TCLSH 2 > $@
+	echo #define SQLITE_ENABLE_DBSTAT_VTAB 1 >> $@
+	copy $@ + $(SQLITE3C) + $(TOP)\src\tclsqlite.c $@
 	echo static const char *tclsh_main_loop(void){ >> $@
 	echo static const char *zMainloop = >> $@
 	$(NAWK) -f $(TOP)\tool\tostr.awk $(TOP)\tool\spaceanal.tcl >> $@
 	echo ; return zMainloop; } >> $@
 
 sqlite3_analyzer.exe:	sqlite3_analyzer.c $(LIBRESOBJS)
-	$(LTLINK) $(NO_WARN) -DBUILD_sqlite -DTCLSH=2 -I$(TCLINCDIR) sqlite3_analyzer.c \
+	$(LTLINK) $(NO_WARN) -DBUILD_sqlite -I$(TCLINCDIR) sqlite3_analyzer.c \
 		/link $(LTLINKOPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LTLIBS) $(TLIBS)
 
 testloadext.lo:	$(TOP)\src\test_loadext.c
@@ -1672,8 +1813,8 @@ speedtest1.exe:	$(TOP)\test\speedtest1.c $(SQLITE3C)
 		$(TOP)\test\speedtest1.c $(SQLITE3C)
 
 clean:
-	del /Q *.exp *.lo *.ilk *.lib *.obj *.pdb 2>NUL
-	del /Q *.cod *.da *.bb *.bbg gmon.out 2>NUL
+	del /Q *.exp *.lo *.ilk *.lib *.obj *.ncb *.pdb *.sdf *.suo 2>NUL
+	del /Q *.bsc *.cod *.da *.bb *.bbg gmon.out 2>NUL
 	del /Q sqlite3.h opcodes.c opcodes.h 2>NUL
 	del /Q lemon.* lempar.c parse.* 2>NUL
 	del /Q mkkeywordhash.* keywordhash.h 2>NUL
@@ -1697,6 +1838,8 @@ clean:
 	del /Q shell.c sqlite3ext.h 2>NUL
 	del /Q sqlite3_analyzer.exe sqlite3_analyzer.c 2>NUL
 	del /Q sqlite-*-output.vsix 2>NUL
+	del /Q fuzzershell.exe fuzzcheck.exe sqldiff.exe 2>NUL
+	del /Q fts5.* fts5parse.* 2>NUL
 
 # Dynamic link library section.
 #

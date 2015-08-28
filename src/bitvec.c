@@ -126,10 +126,10 @@ Bitvec *sqlite3BitvecCreate(u32 iSize){
 ** If p is NULL (if the bitmap has not been created) or if
 ** i is out of range, then return false.
 */
-int sqlite3BitvecTest(Bitvec *p, u32 i){
-  if( p==0 ) return 0;
-  if( i>p->iSize || i==0 ) return 0;
+int sqlite3BitvecTestNotNull(Bitvec *p, u32 i){
+  assert( p!=0 );
   i--;
+  if( i>=p->iSize ) return 0;
   while( p->iDivisor ){
     u32 bin = i/p->iDivisor;
     i = i%p->iDivisor;
@@ -148,6 +148,9 @@ int sqlite3BitvecTest(Bitvec *p, u32 i){
     }
     return 0;
   }
+}
+int sqlite3BitvecTest(Bitvec *p, u32 i){
+  return p!=0 && sqlite3BitvecTestNotNull(p,i);
 }
 
 /*
@@ -341,7 +344,7 @@ int sqlite3BitvecBuiltinTest(int sz, int *aOp){
   ** bits to act as the reference */
   pBitvec = sqlite3BitvecCreate( sz );
   pV = sqlite3MallocZero( (sz+7)/8 + 1 );
-  pTmpSpace = sqlite3_malloc(BITVEC_SZ);
+  pTmpSpace = sqlite3_malloc64(BITVEC_SZ);
   if( pBitvec==0 || pV==0 || pTmpSpace==0  ) goto bitvec_end;
 
   /* NULL pBitvec tests */

@@ -362,11 +362,17 @@ ifcapable icu { lappend tokenizers icu }
 # Some tests to check that the tokenizers can both identify white-space 
 # codepoints. All codepoints tested below are of type "Zs" in the
 # UnicodeData.txt file.
+#
+# Note that codepoint 6158 has changed from Zs to Cf in recent versions
+# of UnicodeData.txt.  So take that into account for the "icu" tests.
+#
 foreach T $tokenizers {
   do_isspace_test 6.$T.1 $T    32
   do_isspace_test 6.$T.2 $T    160
   do_isspace_test 6.$T.3 $T    5760
-  do_isspace_test 6.$T.4 $T    6158
+  if {$T!="icu"} {
+    do_isspace_test 6.$T.4 $T    6158
+  }
   do_isspace_test 6.$T.5 $T    8192
   do_isspace_test 6.$T.6 $T    8193
   do_isspace_test 6.$T.7 $T    8194
@@ -382,7 +388,11 @@ foreach T $tokenizers {
   do_isspace_test 6.$T.17 $T    8287
   do_isspace_test 6.$T.18 $T   12288
 
-  do_isspace_test 6.$T.19 $T   {32 160 5760 6158}
+  if {$T!="icu"} {
+    do_isspace_test 6.$T.19 $T   {32 160 5760 6158}
+  } else {
+    do_isspace_test 6.$T.19 $T   {32 160 5760 8192}
+  }
   do_isspace_test 6.$T.20 $T   {8192 8193 8194 8195}
   do_isspace_test 6.$T.21 $T   {8196 8197 8198 8199}
   do_isspace_test 6.$T.22 $T   {8200 8201 8202 8239}

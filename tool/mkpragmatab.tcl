@@ -136,6 +136,10 @@ set pragma_def {
   IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
   IF:   !defined(SQLITE_OMIT_FOREIGN_KEY) && !defined(SQLITE_OMIT_TRIGGER)
 
+  NAME: cell_size_check
+  TYPE: FLAG
+  ARG:  SQLITE_CellSizeCk
+
   NAME: default_cache_size
   FLAG: NeedSchema
   IF:   !defined(SQLITE_OMIT_PAGER_PRAGMAS) && !defined(SQLITE_OMIT_DEPRECATED)
@@ -166,7 +170,6 @@ set pragma_def {
   IF:   !defined(SQLITE_OMIT_PAGER_PRAGMAS)
 
   NAME: cache_size
-  FLAG: NeedSchema
   IF:   !defined(SQLITE_OMIT_PAGER_PRAGMAS)
 
   NAME: mmap_size

@@ -85,7 +85,7 @@ static int fts3tokQueryTokenizer(
 
   p = (sqlite3_tokenizer_module *)sqlite3Fts3HashFind(pHash, zName, nName+1);
   if( !p ){
-    *pzErr = sqlite3_mprintf("unknown tokenizer: %s", zName);
+    sqlite3Fts3ErrMsg(pzErr, "unknown tokenizer: %s", zName);
     return SQLITE_ERROR;
   }
 

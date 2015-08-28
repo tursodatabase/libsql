@@ -450,28 +450,42 @@ do_test in-12.10 {
       SELECT a FROM t3 UNION ALL SELECT a, b FROM t2
     );
   }
-} {1 {only a single result allowed for a SELECT that is part of an expression}}
+} {1 {SELECTs to the left and right of UNION ALL do not have the same number of result columns}}
 do_test in-12.11 {
   catchsql {
     SELECT * FROM t2 WHERE a IN (
       SELECT a FROM t3 UNION SELECT a, b FROM t2
     );
   }
-} {1 {only a single result allowed for a SELECT that is part of an expression}}
+} {1 {SELECTs to the left and right of UNION do not have the same number of result columns}}
 do_test in-12.12 {
   catchsql {
     SELECT * FROM t2 WHERE a IN (
       SELECT a FROM t3 EXCEPT SELECT a, b FROM t2
     );
   }
-} {1 {only a single result allowed for a SELECT that is part of an expression}}
+} {1 {SELECTs to the left and right of EXCEPT do not have the same number of result columns}}
 do_test in-12.13 {
   catchsql {
     SELECT * FROM t2 WHERE a IN (
       SELECT a FROM t3 INTERSECT SELECT a, b FROM t2
     );
   }
+} {1 {SELECTs to the left and right of INTERSECT do not have the same number of result columns}}
+do_test in-12.14 {
+  catchsql {
+    SELECT * FROM t2 WHERE a IN (
+      SELECT a, b FROM t3 UNION ALL SELECT a, b FROM t2
+    );
+  }
 } {1 {only a single result allowed for a SELECT that is part of an expression}}
+do_test in-12.15 {
+  catchsql {
+    SELECT * FROM t2 WHERE a IN (
+      SELECT a, b FROM t3 UNION ALL SELECT a FROM t2
+    );
+  }
+} {1 {SELECTs to the left and right of UNION ALL do not have the same number of result columns}}
 }; #ifcapable compound
 
 

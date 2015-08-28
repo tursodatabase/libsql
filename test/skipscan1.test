@@ -292,4 +292,34 @@ do_execsql_test skipscan1-7.3 {
   EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE b=1;
 } {~/ANY/}
 
+# Ticket 8fd39115d8f46ece70e7d4b3c481d1bd86194746  2015-07-23
+# Incorrect code generated for a skipscan within an OR optimization
+# on a WITHOUT ROWID table.
+#
+do_execsql_test skipscan1-8.1 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(x, y, PRIMARY KEY(x,y)) WITHOUT ROWID;
+  INSERT INTO t1(x,y) VALUES(1,'AB');
+  INSERT INTO t1(x,y) VALUES(2,'CD');
+  ANALYZE;
+  DROP TABLE IF EXISTS sqlite_stat4;
+  DELETE FROM sqlite_stat1;
+  INSERT INTO sqlite_stat1(tbl,idx,stat) VALUES('t1','t1','1000000 100 1');
+  ANALYZE sqlite_master;
+  SELECT * FROM t1
+   WHERE (y = 'AB' AND x <= 4)
+      OR (y = 'EF' AND x = 5);
+} {1 AB}
+do_execsql_test skipscan1-8.1eqp {
+  EXPLAIN QUERY PLAN
+  SELECT * FROM t1
+   WHERE (y = 'AB' AND x <= 4)
+      OR (y = 'EF' AND x = 5);
+} {/ANY/}
+do_execsql_test skipscan1-8.2 {
+  SELECT * FROM t1
+   WHERE y = 'AB' OR (y = 'CD' AND x = 2)
+  ORDER BY +x;
+} {1 AB 2 CD}
+
 finish_test

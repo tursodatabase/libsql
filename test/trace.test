@@ -169,6 +169,14 @@ do_test trace-4.5 {
 } {{SELECT * FROM t1}}
 catch {sqlite3_finalize $STMT}
 
+# 3.8.11: Profile output even if the statement is not run to completion.
+do_test trace-4.6 {
+  set TRACE_OUT {}
+  db eval {SELECT * FROM t1} {} {if {$a>=1} break}
+  set TRACE_OUT
+} {{SELECT * FROM t1}}
+
+
 # Trigger tracing.
 #
 ifcapable trigger {
