@@ -1,5 +1,5 @@
-C When\ssearching\sthe\swal\sfile\sfor\sa\sframe,\sdo\snot\ssearch\sthat\spart\sthat\swas\salready\scheckpointed\swhen\sthe\stransaction\swas\sopened.
-D 2015-08-28T16:18:45.828
+C Fix\scompiler\swarnings\sin\srbu\scode.
+D 2015-08-28T16:41:45.530
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e2218eb228374422969de7b1680eda6864affcef
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -226,7 +226,7 @@ F ext/rbu/rbufault.test cc0be8d5d392d98b0c2d6a51be377ea989250a89
 F ext/rbu/rbufault2.test 9a7f19edd6ea35c4c9f807d8a3db0a03a5670c06
 F ext/rbu/rbufts.test 828cd689da825f0a7b7c53ffc1f6f7fdb6fa5bda
 F ext/rbu/rbusave.test 0f43b6686084f426ddd040b878426452fd2c2f48
-F ext/rbu/sqlite3rbu.c 1650e682b3568db0ed97ff2c7ba5d1c8ea060a84
+F ext/rbu/sqlite3rbu.c 4ba82bd850aa012f73c31dd242d570f18c9cc35a
 F ext/rbu/sqlite3rbu.h 5357f070cd8c0bcad459b620651ec1656859e4d0
 F ext/rbu/test_rbu.c 2a3652241fa45d5eaa141775e4ae68c1d3582c03
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
@@ -1380,7 +1380,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 64abb65d4df11e5b3bcc4afc8e7c18e907c6080a ab93024da7bd577d8850b417aff8597a8b3807fc
-R 3ba2e96fe96df838d1a765a1a1eb0bee
+P a84cf4f5d326270a61faf4ff867260f2dd1e68a6
+R 25627e3633787096f1c6a6ac573b9337
 U dan
-Z e63e6f4df8bd62c2964d64d0b85672a7
+Z 8fac2bb28cf0b676d514df6920f608e8
