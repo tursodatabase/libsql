@@ -21,7 +21,9 @@
 ** This implementation parses JSON text at 250 MB/s, so it is hard to see
 ** how JSONB might improve on that.)
 */
+#if !defined(_SQLITEINT_H_)
 #include "sqlite3ext.h"
+#endif
 SQLITE_EXTENSION_INIT1
 #include <assert.h>
 #include <string.h>
@@ -406,6 +408,20 @@ static void jsonRenderNode(
 }
 
 /*
+** Return a JsonNode and all its descendents as a JSON string.
+*/
+static void jsonReturnJson(
+  JsonNode *pNode,            /* Node to return */
+  sqlite3_context *pCtx,      /* Return value for this function */
+  sqlite3_value **aReplace    /* Array of replacement values */
+){
+  JsonString s;
+  jsonInit(&s, pCtx);
+  jsonRenderNode(pNode, &s, aReplace);
+  jsonResult(&s);
+}
+
+/*
 ** Make the JsonNode the return value of the function.
 */
 static void jsonReturn(
@@ -509,10 +525,7 @@ static void jsonReturn(
     }
     case JSON_ARRAY:
     case JSON_OBJECT: {
-      JsonString s;
-      jsonInit(&s, pCtx);
-      jsonRenderNode(pNode, &s, aReplace);
-      jsonResult(&s);
+      jsonReturnJson(pNode, pCtx, aReplace);
       break;
     }
   }
@@ -717,7 +730,13 @@ static int jsonParse(
     if( zJson[i] ) i = -1;
   }
   if( i<0 ){
-    if( pParse->oom && pCtx!=0 ) sqlite3_result_error_nomem(pCtx);
+    if( pCtx!=0 ){
+      if( pParse->oom ){
+        sqlite3_result_error_nomem(pCtx);
+      }else{
+        sqlite3_result_error(pCtx, "malformed JSON", -1);
+      }
+    }
     jsonParseReset(pParse);
     return 1;
   }
@@ -960,7 +979,7 @@ static void jsonTest1Func(
 ){
   JsonParse x;  /* The parse */
   if( jsonParse(&x, ctx, (const char*)sqlite3_value_text(argv[0])) ) return;
-  jsonReturn(x.aNode, ctx, 0);
+  jsonReturnJson(x.aNode, ctx, 0);
   jsonParseReset(&x);
 }
 
@@ -1033,42 +1052,19 @@ static void jsonArrayLengthFunc(
   }else{
     zPath = 0;
   }
-  if( jsonParse(&x, ctx, (const char*)sqlite3_value_text(argv[0]))==0 ){
-    if( x.nNode ){
-      JsonNode *pNode = x.aNode;
-      if( zPath ) pNode = jsonLookup(&x, 0, zPath, 0);
-      if( pNode->eType==JSON_ARRAY ){
-        assert( (pNode->jnFlags & JNODE_APPEND)==0 );
-        for(i=1; i<=pNode->n; n++){
-          i += jsonNodeSize(&pNode[i]);
-        }
+  if( jsonParse(&x, ctx, (const char*)sqlite3_value_text(argv[0])) ) return;
+  if( x.nNode ){
+    JsonNode *pNode = x.aNode;
+    if( zPath ) pNode = jsonLookup(&x, 0, zPath, 0);
+    if( pNode->eType==JSON_ARRAY ){
+      assert( (pNode->jnFlags & JNODE_APPEND)==0 );
+      for(i=1; i<=pNode->n; n++){
+        i += jsonNodeSize(&pNode[i]);
       }
     }
-    jsonParseReset(&x);
   }
-  if( !x.oom ) sqlite3_result_int64(ctx, n);
-}
-
-/*
-** json_check(JSON)
-**
-** Check the JSON argument to verify that it is well-formed.  Return a
-** compacted version of the argument (with white-space removed) if the
-** argument is well-formed.  Through an error if the argument is not
-** correctly formatted JSON.
-*/
-static void jsonCheckFunc(
-  sqlite3_context *ctx,
-  int argc,
-  sqlite3_value **argv
-){
-  JsonParse x;          /* The parse */
-  if( jsonParse(&x, ctx, (const char*)sqlite3_value_text(argv[0])) ){
-    sqlite3_result_error(ctx, "malformed JSON", -1);
-    return;
-  }
-  jsonReturn(x.aNode, ctx, argv);
   jsonParseReset(&x);
+  sqlite3_result_int64(ctx, n);
 }
 
 /*
@@ -1166,7 +1162,7 @@ static void jsonRemoveFunc(
       if( pNode ) pNode->jnFlags |= JNODE_REMOVE;
     }
     if( (x.aNode[0].jnFlags & JNODE_REMOVE)==0 ){
-      jsonReturn(x.aNode, ctx, 0);
+      jsonReturnJson(x.aNode, ctx, 0);
     }
   }
   jsonParseReset(&x);
@@ -1214,7 +1210,7 @@ static void jsonReplaceFunc(
     if( x.aNode[0].jnFlags & JNODE_REPLACE ){
       sqlite3_result_value(ctx, argv[x.aNode[0].iVal]);
     }else{
-      jsonReturn(x.aNode, ctx, argv);
+      jsonReturnJson(x.aNode, ctx, argv);
     }
   }
   jsonParseReset(&x);
@@ -1274,7 +1270,7 @@ static void jsonSetFunc(
     if( x.aNode[0].jnFlags & JNODE_REPLACE ){
       sqlite3_result_value(ctx, argv[x.aNode[0].iVal]);
     }else{
-      jsonReturn(x.aNode, ctx, argv);
+      jsonReturnJson(x.aNode, ctx, argv);
     }
   }
 jsonSetDone:
@@ -1328,7 +1324,7 @@ static void jsonValidFunc(
   JsonParse x;          /* The parse */
   int rc = 0;
 
-  if( jsonParse(&x, ctx, (const char*)sqlite3_value_text(argv[0]))==0 
+  if( jsonParse(&x, 0, (const char*)sqlite3_value_text(argv[0]))==0 
    && x.nNode>0
   ){
     rc = 1;
@@ -1802,7 +1798,6 @@ int sqlite3_json_init(
     { "json_array",          -1, 0,   jsonArrayFunc         },
     { "json_array_length",    1, 0,   jsonArrayLengthFunc   },
     { "json_array_length",    2, 0,   jsonArrayLengthFunc   },
-    { "json_check",           1, 0,   jsonCheckFunc         },
     { "json_extract",         2, 0,   jsonExtractFunc       },
     { "json_insert",         -1, 0,   jsonSetFunc           },
     { "json_object",         -1, 0,   jsonObjectFunc        },

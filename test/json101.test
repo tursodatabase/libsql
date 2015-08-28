@@ -63,11 +63,4 @@ do_execsql_test json1-3.4 {
   SELECT json_type(json_set('{"a":1,"b":2}','$$.b','{"x":3,"y":4}'),'$.b');
 } {object}
 
-do_execsql_test json1-4.1 {
-  SELECT json_check('  [  1,   2]   ');
-} {[1,2]}
-do_catchsql_test json1-4.2 {
-  SELECT json_check('  [  1,   2    ');
-} {1 {malformed JSON}}
-
 finish_test
