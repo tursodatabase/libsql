@@ -571,7 +571,7 @@ int sqlite3VdbeExec(
     ** sqlite3_column_text16() failed.  */
     goto no_mem;
   }
-  assert( p->rc==SQLITE_OK || p->rc==SQLITE_BUSY );
+  assert( p->rc==SQLITE_OK || (p->rc&0xff)==SQLITE_BUSY );
   assert( p->bIsReader || p->readOnly!=0 );
   p->rc = SQLITE_OK;
   p->iCurrentTime = 0;
@@ -3085,9 +3085,11 @@ case OP_Transaction: {
 
   if( pBt ){
     rc = sqlite3BtreeBeginTrans(pBt, pOp->p2);
-    if( rc==SQLITE_BUSY ){
+    testcase( rc==SQLITE_BUSY_SNAPSHOT );
+    testcase( rc==SQLITE_BUSY_RECOVERY );
+    if( (rc&0xff)==SQLITE_BUSY ){
       p->pc = (int)(pOp - aOp);
-      p->rc = rc = SQLITE_BUSY;
+      p->rc = rc;
       goto vdbe_return;
     }
     if( rc!=SQLITE_OK ){

@@ -291,7 +291,8 @@ struct WhereScan {
   unsigned char iEquiv;      /* Next unused slot in aEquiv[] */
   u32 opMask;                /* Acceptable operators */
   int k;                     /* Resume scanning at this->pWC->a[this->k] */
-  int aEquiv[22];            /* Cursor,Column pairs for equivalence classes */
+  int aiCur[11];             /* Cursors in the equivalence class */
+  i16 aiColumn[11];          /* Corresponding column number in the eq-class */
 };
 
 /*
@@ -475,6 +476,7 @@ void sqlite3WhereSplit(WhereClause*,Expr*,u8);
 Bitmask sqlite3WhereExprUsage(WhereMaskSet*, Expr*);
 Bitmask sqlite3WhereExprListUsage(WhereMaskSet*, ExprList*);
 void sqlite3WhereExprAnalyze(SrcList*, WhereClause*);
+void sqlite3WhereTabFuncArgs(Parse*, struct SrcList_item*, WhereClause*);
 
 
 

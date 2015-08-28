@@ -1094,8 +1094,9 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
           zColl = "B";
           n = 1;
         }
-        if( i+n>nTemp-6 ){
+        if( i+n>nTemp-7 ){
           memcpy(&zTemp[i],",...",4);
+          i += 4;
           break;
         }
         zTemp[i++] = ',';

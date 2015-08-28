@@ -322,9 +322,14 @@ do_test where2-6.3 {
 } {6 2 49 51 99 6 10000 10006 100 6 10201 10207 sort t1 *}
 do_test where2-6.4 {
   queryplan {
-    SELECT * FROM t1 WHERE w=99 OR +w=100 OR 6=w ORDER BY +w
+    SELECT *, '|' FROM t1 WHERE w=99 OR +w=100 OR 6=w ORDER BY +w
   }
-} {6 2 49 51 99 6 10000 10006 100 6 10201 10207 sort t1 *}
+} {6 2 49 51 | 99 6 10000 10006 | 100 6 10201 10207 | sort t1 *}
+do_test where2-6.5 {
+  queryplan {
+    SELECT *, '|' FROM t1 WHERE w=99 OR y=10201 OR 6=w ORDER BY +w
+  }
+} {6 2 49 51 | 99 6 10000 10006 | 100 6 10201 10207 | sort t1 *}
 
 set ::idx {}
 ifcapable subquery {set ::idx i1zyx}

@@ -1479,6 +1479,7 @@ struct Module {
   const char *zName;                   /* Name passed to create_module() */
   void *pAux;                          /* pAux passed to create_module() */
   void (*xDestroy)(void *);            /* Module destructor function */
+  Table *pEpoTab;                      /* Eponymous table for this module */
 };
 
 /*
@@ -1524,6 +1525,7 @@ struct CollSeq {
 */
 #define SQLITE_SO_ASC       0  /* Sort in ascending order */
 #define SQLITE_SO_DESC      1  /* Sort in ascending order */
+#define SQLITE_SO_UNDEFINED -1 /* No sort order specified */
 
 /*
 ** Column affinity types.
@@ -1630,9 +1632,8 @@ struct Table {
   Select *pSelect;     /* NULL for tables.  Points to definition if a view. */
   FKey *pFKey;         /* Linked list of all foreign keys in this table */
   char *zColAff;       /* String defining the affinity of each column */
-#ifndef SQLITE_OMIT_CHECK
   ExprList *pCheck;    /* All CHECK constraints */
-#endif
+                       /*   ... also used as column name list in a VIEW */
   int tnum;            /* Root BTree page for this table */
   i16 iPKey;           /* If not negative, use aCol[iPKey] as the rowid */
   i16 nCol;            /* Number of columns in this table */
@@ -1649,7 +1650,7 @@ struct Table {
 #endif
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   int nModuleArg;      /* Number of arguments to the module */
-  char **azModuleArg;  /* Text of all module args. [0] is module name */
+  char **azModuleArg;  /* 0: module 1: schema 2: vtab name 3...: args */
   VTable *pVTable;     /* List of VTable objects. */
 #endif
   Trigger *pTrigger;   /* List of triggers stored in pSchema */
@@ -2284,11 +2285,15 @@ struct SrcList {
     int addrFillSub;  /* Address of subroutine to manifest a subquery */
     int regReturn;    /* Register holding return address of addrFillSub */
     int regResult;    /* Registers holding results of a co-routine */
-    u8 jointype;      /* Type of join between this able and the previous */
-    unsigned notIndexed :1;    /* True if there is a NOT INDEXED clause */
-    unsigned isCorrelated :1;  /* True if sub-query is correlated */
-    unsigned viaCoroutine :1;  /* Implemented as a co-routine */
-    unsigned isRecursive :1;   /* True for recursive reference in WITH */
+    struct {
+      u8 jointype;      /* Type of join between this able and the previous */
+      unsigned notIndexed :1;    /* True if there is a NOT INDEXED clause */
+      unsigned isIndexedBy :1;   /* True if there is an INDEXED BY clause */
+      unsigned isTabFunc :1;     /* True if table-valued-function syntax */
+      unsigned isCorrelated :1;  /* True if sub-query is correlated */
+      unsigned viaCoroutine :1;  /* Implemented as a co-routine */
+      unsigned isRecursive :1;   /* True for recursive reference in WITH */
+    } fg;
 #ifndef SQLITE_OMIT_EXPLAIN
     u8 iSelectId;     /* If pSelect!=0, the id of the sub-select in EQP */
 #endif
@@ -2296,8 +2301,11 @@ struct SrcList {
     Expr *pOn;        /* The ON clause of a join */
     IdList *pUsing;   /* The USING clause of a join */
     Bitmask colUsed;  /* Bit N (1<<N) set if column N of pTab is used */
-    char *zIndexedBy; /* Identifier from "INDEXED BY <zIndex>" clause */
-    Index *pIndex;    /* Index structure corresponding to zIndex, if any */
+    union {
+      char *zIndexedBy;    /* Identifier from "INDEXED BY <zIndex>" clause */
+      ExprList *pFuncArg;  /* Arguments to table-valued-function */
+    } u1;
+    Index *pIBIndex;  /* Index structure corresponding to u1.zIndexedBy */
   } a[1];             /* One entry for each identifier on the list */
 };
 
@@ -3022,7 +3030,7 @@ struct With {
     char *zName;                    /* Name of this CTE */
     ExprList *pCols;                /* List of explicit column names, or NULL */
     Select *pSelect;                /* The definition of this CTE */
-    const char *zErr;               /* Error message for circular references */
+    const char *zCteErr;            /* Error message for circular references */
   } a[1];
 };
 
@@ -3236,6 +3244,7 @@ Expr *sqlite3ExprFunction(Parse*,ExprList*, Token*);
 void sqlite3ExprAssignVarNumber(Parse*, Expr*);
 void sqlite3ExprDelete(sqlite3*, Expr*);
 ExprList *sqlite3ExprListAppend(Parse*,ExprList*,Expr*);
+void sqlite3ExprListSetSortOrder(ExprList*,int);
 void sqlite3ExprListSetName(Parse*,ExprList*,Token*,int);
 void sqlite3ExprListSetSpan(Parse*,ExprList*,ExprSpan*);
 void sqlite3ExprListDelete(sqlite3*, ExprList*);
@@ -3248,6 +3257,8 @@ void sqlite3ResetOneSchema(sqlite3*,int);
 void sqlite3CollapseDatabaseArray(sqlite3*);
 void sqlite3BeginParse(Parse*,int);
 void sqlite3CommitInternalChanges(sqlite3*);
+void sqlite3DeleteColumnNames(sqlite3*,Table*);
+int sqlite3ColumnsFromExprList(Parse*,ExprList*,i16*,Column**);
 Table *sqlite3ResultSetOfSelect(Parse*,Select*);
 void sqlite3OpenMasterTable(Parse *, int);
 Index *sqlite3PrimaryKeyIndex(Table*);
@@ -3289,7 +3300,7 @@ void sqlite3RowSetInsert(RowSet*, i64);
 int sqlite3RowSetTest(RowSet*, int iBatch, i64);
 int sqlite3RowSetNext(RowSet*, i64*);
 
-void sqlite3CreateView(Parse*,Token*,Token*,Token*,Select*,int,int);
+void sqlite3CreateView(Parse*,Token*,Token*,Token*,ExprList*,Select*,int,int);
 
 #if !defined(SQLITE_OMIT_VIEW) || !defined(SQLITE_OMIT_VIRTUALTABLE)
   int sqlite3ViewGetColumnNames(Parse*,Table*);
@@ -3319,6 +3330,7 @@ SrcList *sqlite3SrcListAppend(sqlite3*, SrcList*, Token*, Token*);
 SrcList *sqlite3SrcListAppendFromTerm(Parse*, SrcList*, Token*, Token*,
                                       Token*, Select*, Expr*, IdList*);
 void sqlite3SrcListIndexedBy(Parse *, SrcList *, Token *);
+void sqlite3SrcListFuncArgs(Parse*, SrcList*, ExprList*);
 int sqlite3IndexedByLookup(Parse *, struct SrcList_item *);
 void sqlite3SrcListShiftJoinType(SrcList*);
 void sqlite3SrcListAssignCursors(Parse*, SrcList*);
@@ -3364,9 +3376,10 @@ void sqlite3ExprCodeAtInit(Parse*, Expr*, int, u8);
 int sqlite3ExprCodeTemp(Parse*, Expr*, int*);
 int sqlite3ExprCodeTarget(Parse*, Expr*, int);
 void sqlite3ExprCodeAndCache(Parse*, Expr*, int);
-int sqlite3ExprCodeExprList(Parse*, ExprList*, int, u8);
+int sqlite3ExprCodeExprList(Parse*, ExprList*, int, int, u8);
 #define SQLITE_ECEL_DUP      0x01  /* Deep, not shallow copies */
 #define SQLITE_ECEL_FACTOR   0x02  /* Factor out constant terms */
+#define SQLITE_ECEL_REF      0x04  /* Use ExprList.u.x.iOrderByCol */
 void sqlite3ExprIfTrue(Parse*, Expr*, int, int);
 void sqlite3ExprIfFalse(Parse*, Expr*, int, int);
 void sqlite3ExprIfFalseDup(Parse*, Expr*, int, int);
@@ -3538,7 +3551,7 @@ int sqlite3VarintLen(u64 v);
 #define putVarint    sqlite3PutVarint
 
 
-const char *sqlite3IndexAffinityStr(Vdbe *, Index *);
+const char *sqlite3IndexAffinityStr(sqlite3*, Index*);
 void sqlite3TableAffinity(Vdbe*, Table*, int);
 char sqlite3CompareAffinity(Expr *pExpr, char aff2);
 int sqlite3IndexAffinityOk(Expr *pExpr, char idx_affinity);
@@ -3610,6 +3623,7 @@ void sqlite3SelectPrep(Parse*, Select*, NameContext*);
 void sqlite3SelectWrongNumTermsError(Parse *pParse, Select *p);
 int sqlite3MatchSpanName(const char*, const char*, const char*, const char*);
 int sqlite3ResolveExprNames(NameContext*, Expr*);
+int sqlite3ResolveExprListNames(NameContext*, ExprList*);
 void sqlite3ResolveSelectNames(Parse*, Select*, NameContext*);
 void sqlite3ResolveSelfReference(Parse*,Table*,int,Expr*,ExprList*);
 int sqlite3ResolveOrderGroupBy(Parse*, Select*, ExprList*, const char*);
@@ -3718,6 +3732,8 @@ void sqlite3AutoLoadExtensions(sqlite3*);
    VTable *sqlite3GetVTable(sqlite3*, Table*);
 #  define sqlite3VtabInSync(db) ((db)->nVTrans>0 && (db)->aVTrans==0)
 #endif
+int sqlite3VtabEponymousTableInit(Parse*,Module*);
+void sqlite3VtabEponymousTableClear(sqlite3*,Module*);
 void sqlite3VtabMakeWritable(Parse*,Table*);
 void sqlite3VtabBeginParse(Parse*, Token*, Token*, Token*, int);
 void sqlite3VtabFinishParse(Parse*, Token*);
