@@ -1,5 +1,5 @@
-C Add\sthe\sjson_check()\sfunction,\swhich\sreturns\sits\sargument\sif\sthe\sargument\nis\swell-formed\sJSON\sor\swhich\sthrows\san\serror\sotherwise.
-D 2015-08-28T03:48:04.807
+C When\ssearching\sthe\swal\sfile\sfor\sa\sframe,\sdo\snot\ssearch\sthat\spart\sthat\swas\salready\scheckpointed\swhen\sthe\stransaction\swas\sopened.
+D 2015-08-28T16:18:45.828
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e2218eb228374422969de7b1680eda6864affcef
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -411,7 +411,7 @@ F src/vdbesort.c f5009e7a35e3065635d8918b9a31f498a499976b
 F src/vdbetrace.c 8befe829faff6d9e6f6e4dee5a7d3f85cc85f1a0
 F src/vtab.c d31174e4c8f592febab3fa7f69e18320b4fd657a
 F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
-F src/wal.c 6fb6b68969e4692593c2552c4e7bff5882de2cb8
+F src/wal.c 8cd07f1f99e1a81346db1c9da879bef6c6f97cf6
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 2e14d17f592d176b6dc879c33fbdec4fbccaa2ba
 F src/where.c 91e73ffc699c140a59baa03a6b7b060db02bed81
@@ -1264,7 +1264,7 @@ F test/wal2.test 1f841d2048080d32f552942e333fd99ce541dada
 F test/wal3.test 2b5445e5da44780b9b44712f5a38523f7aeb0941
 F test/wal4.test 4744e155cd6299c6bd99d3eab1c82f77db9cdb3c
 F test/wal5.test 88b5d9a6a3d1532497ee9f4296f010d66f07e33c
-F test/wal6.test 527581f5527bf9c24394991e2be83000aace5f9e
+F test/wal6.test 4421cd5a2fa99d29cc91ef12fb23bed171ed3a4c
 F test/wal64k.test 163655ecd2cb8afef4737cac2a40fdd2eeaf20b8
 F test/wal7.test 2ae8f427d240099cc4b2dfef63cff44e2a68a1bd
 F test/wal8.test 75c42e1bc4545c277fed212f8fc9b7723cd02216
@@ -1380,7 +1380,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 44f103d8862abc2d5613bac04dc2ea8e625b1f40
-R 204205d2daf18b22608467b1b10a8a77
-U drh
-Z 4f534e8322ceee4fbcec765d09d17add
+P 64abb65d4df11e5b3bcc4afc8e7c18e907c6080a ab93024da7bd577d8850b417aff8597a8b3807fc
+R 3ba2e96fe96df838d1a765a1a1eb0bee
+U dan
+Z e63e6f4df8bd62c2964d64d0b85672a7
