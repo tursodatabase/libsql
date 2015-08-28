@@ -1050,6 +1050,28 @@ static void jsonArrayLengthFunc(
 }
 
 /*
+** json_check(JSON)
+**
+** Check the JSON argument to verify that it is well-formed.  Return a
+** compacted version of the argument (with white-space removed) if the
+** argument is well-formed.  Through an error if the argument is not
+** correctly formatted JSON.
+*/
+static void jsonCheckFunc(
+  sqlite3_context *ctx,
+  int argc,
+  sqlite3_value **argv
+){
+  JsonParse x;          /* The parse */
+  if( jsonParse(&x, ctx, (const char*)sqlite3_value_text(argv[0])) ){
+    sqlite3_result_error(ctx, "malformed JSON", -1);
+    return;
+  }
+  jsonReturn(x.aNode, ctx, argv);
+  jsonParseReset(&x);
+}
+
+/*
 ** json_extract(JSON, PATH)
 **
 ** Return the element described by PATH.  Return NULL if JSON is not
@@ -1780,6 +1802,7 @@ int sqlite3_json_init(
     { "json_array",          -1, 0,   jsonArrayFunc         },
     { "json_array_length",    1, 0,   jsonArrayLengthFunc   },
     { "json_array_length",    2, 0,   jsonArrayLengthFunc   },
+    { "json_check",           1, 0,   jsonCheckFunc         },
     { "json_extract",         2, 0,   jsonExtractFunc       },
     { "json_insert",         -1, 0,   jsonSetFunc           },
     { "json_object",         -1, 0,   jsonObjectFunc        },
