@@ -1,5 +1,5 @@
-C Disable\sthe\sread-only\sWAL-mode\sdatabase\stests\son\sthe\sapple-osx\sbranch\sbecause\nread-only\sWAL-mode\sdatabases\sare\sspecifically\sdisallowed\sby\sApple-specific\nchanges.
-D 2015-08-28T13:27:00.523
+C Fix\sa\spotential\ssegfault\sin\sthe\sVFS\slogic\sthat\schecks\sfor\sfail\srenames\sout\nfrom\sunder\sSQLite.
+D 2015-08-28T15:35:30.777
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in fbef0c6d0c4d58e7c0983d1c3a789bbe3b20dc81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -324,7 +324,7 @@ F src/os.c 5822c2b843a77219bba1e28887cdc816b27ca29d
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h abdb9a191a367793268fe553d25bab894e986a0e
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c 70dc7e3ac3227b1f129ec08538c095a3f3dbc909
+F src/os_unix.c ea4f5f4864101735f626e1e38faf74aa042979ee
 F src/os_win.c 8a586f1f7e829e361a41a45fd6cf6a7cc44e7314
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 4e202d93e77cfc8f316a99b5b8b0cd11bc65eb32
@@ -1385,7 +1385,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P da8646582a9a8c800ff2962d40ca215381d846dc
-R 8f28867ddebcb6b6d33533e2b7b9408a
+P bd911496cb2343d9640c131d905c9f0bee8fc428
+R 98a4f87f6749b2b3414cd856e8af931e
 U drh
-Z 98ebbb2a8d55c1e050bf570a538510cb
+Z d901d81dcf678e36a8e33c11812867cb

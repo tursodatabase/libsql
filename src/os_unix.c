@@ -1651,6 +1651,7 @@ static int fileHasMoved(unixFile *pFile){
 static void verifyDbFile(unixFile *pFile){
   struct stat buf;
   int rc;
+  assert( pFile->zPath!=0 || pFile->pInode==0 );
   if( pFile->ctrlFlags & UNIXFILE_WARNED ){
     /* One or more of the following warnings have already been issued.  Do not
     ** repeat them so as not to clutter the error log */
@@ -2386,20 +2387,18 @@ static int nolockClose(sqlite3_file *id) {
   int rc = SQLITE_OK;
   unixFile *pFile = (unixFile *)id;
   unixEnterMutex();
-  
-  /* unixFile.pInode is always valid here. Otherwise, a different close
-  ** routine (e.g. nolockClose()) would be called instead.
-  */
-  assert( pFile->pInode->nLock>0 || pFile->pInode->bProcessLock==0 );
-  if( ALWAYS(pFile->pInode) && pFile->pInode->nLock ){
-    /* If there are outstanding locks, do not actually close the file just
-    ** yet because that would clear those locks.  Instead, add the file
-    ** descriptor to pInode->pUnused list.  It will be automatically closed 
-    ** when the last lock is cleared.
-    */
-    setPendingFd(pFile);
+  if( pFile->pInode ){  
+    assert( pFile->pInode->nLock>0 || pFile->pInode->bProcessLock==0 );
+    if( pFile->pInode->nLock ){
+      /* If there are outstanding locks, do not actually close the file just
+      ** yet because that would clear those locks.  Instead, add the file
+      ** descriptor to pInode->pUnused list.  It will be automatically closed 
+      ** when the last lock is cleared.
+      */
+      setPendingFd(pFile);
+    }
+    releaseInodeInfo(pFile);
   }
-  releaseInodeInfo(pFile);
   rc = closeUnixFile(id);
   unixLeaveMutex();
   return rc;
@@ -6484,7 +6483,7 @@ static int fillInUnixFile(
     || pLockingStyle == &nfsIoMethods
 #endif
      /* support WAL mode on read only mounted filesystem */
-    || pLockingStyle == &nolockIoMethods 
+    || (pLockingStyle == &nolockIoMethods && zFilename!=0)
   ){
     unixEnterMutex();
     rc = findInodeInfo(pNew, &pNew->pInode);
