@@ -1145,10 +1145,12 @@ static void jsonArrayLengthFunc(
 }
 
 /*
-** json_extract(JSON, PATH)
+** json_extract(JSON, PATH, ...)
 **
-** Return the element described by PATH.  Return NULL if JSON is not
-** valid JSON or if there is no PATH element or if PATH is malformed.
+** Return the element described by PATH.  Return NULL if there is no
+** PATH element.  If there are multiple PATHs, then return a JSON array
+** with the result from each path.  Throw an error if the JSON or any PATH
+** is malformed.
 */
 static void jsonExtractFunc(
   sqlite3_context *ctx,
@@ -1158,13 +1160,33 @@ static void jsonExtractFunc(
   JsonParse x;          /* The parse */
   JsonNode *pNode;
   const char *zPath;
-  assert( argc==2 );
-  zPath = (const char*)sqlite3_value_text(argv[1]);
+  JsonString jx;
+  int i;
+
+  if( argc<2 ) return;
   if( jsonParse(&x, ctx, (const char*)sqlite3_value_text(argv[0])) ) return;
-  pNode = jsonLookup(&x, zPath, 0, ctx, 0);
-  if( pNode ){
-    jsonReturn(pNode, ctx, 0);
+  jsonInit(&jx, ctx);
+  jsonAppendChar(&jx, '[');
+  for(i=1; i<argc; i++){
+    zPath = (const char*)sqlite3_value_text(argv[i]);
+    pNode = jsonLookup(&x, zPath, 0, ctx, 0);
+    if( x.nErr ) break;
+    if( argc>2 ){
+      jsonAppendSeparator(&jx);
+      if( pNode ){
+        jsonRenderNode(pNode, &jx, 0);
+      }else{
+        jsonAppendRaw(&jx, "null", 4);
+      }
+    }else if( pNode ){
+      jsonReturn(pNode, ctx, 0);
+    }
   }
+  if( argc>2 && i==argc ){
+    jsonAppendChar(&jx, ']');
+    jsonResult(&jx);
+  }
+  jsonReset(&jx);
   jsonParseReset(&x);
 }
 
@@ -1211,9 +1233,8 @@ static void jsonObjectFunc(
 /*
 ** json_remove(JSON, PATH, ...)
 **
-** Remove the named elements from JSON and return the result.  Ill-formed
-** PATH arguments are silently ignored.  If JSON is ill-formed, then NULL
-** is returned.
+** Remove the named elements from JSON and return the result.  malformed
+** JSON or PATH arguments result in an error.
 */
 static void jsonRemoveFunc(
   sqlite3_context *ctx,
@@ -1247,7 +1268,7 @@ remove_done:
 ** json_replace(JSON, PATH, VALUE, ...)
 **
 ** Replace the value at PATH with VALUE.  If PATH does not already exist,
-** this routine is a no-op.  If JSON is ill-formed, return NULL.
+** this routine is a no-op.  If JSON or PATH is malformed, throw an error.
 */
 static void jsonReplaceFunc(
   sqlite3_context *ctx,
@@ -1292,12 +1313,12 @@ replace_err:
 **
 ** Set the value at PATH to VALUE.  Create the PATH if it does not already
 ** exist.  Overwrite existing values that do exist.
-** If JSON is ill-formed, return NULL.
+** If JSON or PATH is malformed, throw an error.
 **
 ** json_insert(JSON, PATH, VALUE, ...)
 **
 ** Create PATH and initialize it to VALUE.  If PATH already exists, this
-** routine is a no-op.  If JSON is ill-formed, return NULL.
+** routine is a no-op.  If JSON or PATH is malformed, throw an error.
 */
 static void jsonSetFunc(
   sqlite3_context *ctx,
@@ -1348,8 +1369,8 @@ jsonSetDone:
 ** json_type(JSON)
 ** json_type(JSON, PATH)
 **
-** Return the top-level "type" of a JSON string.  Return NULL if the
-** input is not a well-formed JSON string.
+** Return the top-level "type" of a JSON string.  Throw an error if
+** either the JSON or PATH inputs are not well-formed.
 */
 static void jsonTypeFunc(
   sqlite3_context *ctx,
@@ -1378,7 +1399,8 @@ static void jsonTypeFunc(
 /*
 ** json_valid(JSON)
 **
-** Return 1 if JSON is a valid JSON string.  Return 0 otherwise.
+** Return 1 if JSON is a well-formed JSON string according to RFC-7159.
+** Return 0 otherwise.
 */
 static void jsonValidFunc(
   sqlite3_context *ctx,
@@ -1882,7 +1904,7 @@ int sqlite3_json_init(
     { "json_array",          -1, 0,   jsonArrayFunc         },
     { "json_array_length",    1, 0,   jsonArrayLengthFunc   },
     { "json_array_length",    2, 0,   jsonArrayLengthFunc   },
-    { "json_extract",         2, 0,   jsonExtractFunc       },
+    { "json_extract",        -1, 0,   jsonExtractFunc       },
     { "json_insert",         -1, 0,   jsonSetFunc           },
     { "json_object",         -1, 0,   jsonObjectFunc        },
     { "json_remove",         -1, 0,   jsonRemoveFunc        },
