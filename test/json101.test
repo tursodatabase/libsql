@@ -63,4 +63,54 @@ do_execsql_test json1-3.4 {
   SELECT json_type(json_set('{"a":1,"b":2}','$$.b','{"x":3,"y":4}'),'$.b');
 } {object}
 
+# Per rfc7159, any JSON value is allowed at the top level, and whitespace
+# is permitting before and/or after that value.
+#
+do_execsql_test json1-4.1 {
+  CREATE TABLE j1(x);
+  INSERT INTO j1(x)
+   VALUES('true'),('false'),('null'),('123'),('-234'),('34.5e+6'),
+         ('""'),('"\""'),('"\\"'),('"abcdefghijlmnopqrstuvwxyz"'),
+         ('[]'),('{}'),('[true,false,null,123,-234,34.5e+6,{},[]]'),
+         ('{"a":true,"b":{"c":false}}');
+  SELECT * FROM j1 WHERE NOT json_valid(x);
+} {}
+do_execsql_test json1-4.2 {
+  SELECT * FROM j1 WHERE NOT json_valid(char(0x20,0x09,0x0a,0x0d)||x);
+} {}
+do_execsql_test json1-4.3 {
+  SELECT * FROM j1 WHERE NOT json_valid(x||char(0x20,0x09,0x0a,0x0d));
+} {}
+
+# But an empty string, or a string of pure whitespace is not valid JSON.
+#
+do_execsql_test json1-4.4 {
+  SELECT json_valid(''), json_valid(char(0x20,0x09,0x0a,0x0d));
+} {0 0}
+
+# json_remove() and similar functions with no edit operations return their
+# input unchanged.
+#
+do_execsql_test json1-4.5 {
+  SELECT x FROM j1 WHERE json_remove(x)<>x;
+} {}
+do_execsql_test json1-4.6 {
+  SELECT x FROM j1 WHERE json_replace(x)<>x;
+} {}
+do_execsql_test json1-4.7 {
+  SELECT x FROM j1 WHERE json_set(x)<>x;
+} {}
+do_execsql_test json1-4.8 {
+  SELECT x FROM j1 WHERE json_insert(x)<>x;
+} {}
+
+# json_extract(JSON,'$') will return objects and arrays without change.
+#
+do_execsql_test json-4.10 {
+  SELECT count(*) FROM j1 WHERE json_type(x) IN ('object','array');
+  SELECT x FROM j1
+   WHERE json_extract(x,'$')<>x
+     AND json_type(x) IN ('object','array');
+} {4}
+
 finish_test

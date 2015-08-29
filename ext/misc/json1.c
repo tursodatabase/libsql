@@ -690,7 +690,7 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
           j++;
           c = pParse->zJson[j+1];
         }
-        if( c<'0' || c>'0' ) return -1;
+        if( c<'0' || c>'9' ) return -1;
         continue;
       }
       break;
@@ -730,7 +730,7 @@ static int jsonParse(
     while( isspace(zJson[i]) ) i++;
     if( zJson[i] ) i = -1;
   }
-  if( i<0 ){
+  if( i<=0 ){
     if( pCtx!=0 ){
       if( pParse->oom ){
         sqlite3_result_error_nomem(pCtx);
