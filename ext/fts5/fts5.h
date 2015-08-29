@@ -217,7 +217,7 @@ struct Fts5ExtensionApi {
   int (*xTokenize)(Fts5Context*, 
     const char *pText, int nText, /* Text to tokenize */
     void *pCtx,                   /* Context passed to xToken() */
-    int (*xToken)(void*, const char*, int, int, int, int)       /* Callback */
+    int (*xToken)(void*, int, const char*, int, int, int)       /* Callback */
   );
 
   int (*xPhraseCount)(Fts5Context*);
@@ -313,19 +313,24 @@ struct fts5_tokenizer {
       const char *pText, int nText, 
       int (*xToken)(
         void *pCtx,         /* Copy of 2nd argument to xTokenize() */
+        int tflags,         /* Mask of FTS5_TOKEN_* flags */
         const char *pToken, /* Pointer to buffer containing token */
         int nToken,         /* Size of token in bytes */
         int iStart,         /* Byte offset of token within input text */
-        int iEnd,           /* Byte offset of end of token within input text */
-        int iPos            /* Number of tokens before this one in input text */
+        int iEnd            /* Byte offset of end of token within input text */
       )
   );
 };
 
+/* Flags that may be passed as the third argument to xTokenize() */
 #define FTS5_TOKENIZE_QUERY     0x0001
 #define FTS5_TOKENIZE_PREFIX    0x0002
 #define FTS5_TOKENIZE_DOCUMENT  0x0004
 #define FTS5_TOKENIZE_AUX       0x0008
+
+/* Flags that may be passed by the tokenizer implementation back to FTS5
+** as the third argument to the supplied xToken callback. */
+#define FTS5_TOKEN_COLOCATED    0x0001      /* Same position as prev. token */
 
 /*
 ** END OF CUSTOM TOKENIZERS

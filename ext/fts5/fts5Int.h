@@ -169,7 +169,7 @@ int sqlite3Fts5Tokenize(
   int flags,                      /* FTS5_TOKENIZE_* flags */
   const char *pText, int nText,   /* Text to tokenize */
   void *pCtx,                     /* Context passed to xToken() */
-  int (*xToken)(void*, const char*, int, int, int, int)    /* Callback */
+  int (*xToken)(void*, int, const char*, int, int, int)    /* Callback */
 );
 
 void sqlite3Fts5Dequote(char *z);

@@ -148,17 +148,18 @@ static void fts5HighlightAppend(
 */
 static int fts5HighlightCb(
   void *pContext,                 /* Pointer to HighlightContext object */
+  int tflags,                     /* Mask of FTS5_TOKEN_* flags */
   const char *pToken,             /* Buffer containing token */
   int nToken,                     /* Size of token in bytes */
   int iStartOff,                  /* Start offset of token */
-  int iEndOff,                    /* End offset of token */
-  int iPos
+  int iEndOff                     /* End offset of token */
 ){
   HighlightContext *p = (HighlightContext*)pContext;
   int rc = SQLITE_OK;
+  int iPos;
 
-  if( iPos<p->iPos ) return SQLITE_OK;
-  p->iPos = iPos+1;
+  if( tflags & FTS5_TOKEN_COLOCATED ) return SQLITE_OK;
+  iPos = p->iPos++;
 
   if( p->iRangeEnd>0 ){
     if( iPos<p->iRangeStart || iPos>p->iRangeEnd ) return SQLITE_OK;

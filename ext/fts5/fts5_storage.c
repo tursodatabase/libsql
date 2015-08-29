@@ -359,17 +359,18 @@ struct Fts5InsertCtx {
 */
 static int fts5StorageInsertCallback(
   void *pContext,                 /* Pointer to Fts5InsertCtx object */
+  int tflags,
   const char *pToken,             /* Buffer containing token */
   int nToken,                     /* Size of token in bytes */
   int iStart,                     /* Start offset of token */
-  int iEnd,                       /* End offset of token */
-  int iPos
+  int iEnd                        /* End offset of token */
 ){
   Fts5InsertCtx *pCtx = (Fts5InsertCtx*)pContext;
   Fts5Index *pIdx = pCtx->pStorage->pIndex;
-  assert( iPos+1>=pCtx->szCol );
-  pCtx->szCol = iPos+1;
-  return sqlite3Fts5IndexWrite(pIdx, pCtx->iCol, iPos, pToken, nToken);
+  if( (tflags & FTS5_TOKEN_COLOCATED)==0 ){
+    pCtx->szCol++;
+  }
+  return sqlite3Fts5IndexWrite(pIdx, pCtx->iCol, pCtx->szCol-1, pToken, nToken);
 }
 
 /*
@@ -844,17 +845,18 @@ struct Fts5IntegrityCtx {
 */
 static int fts5StorageIntegrityCallback(
   void *pContext,                 /* Pointer to Fts5InsertCtx object */
+  int tflags,
   const char *pToken,             /* Buffer containing token */
   int nToken,                     /* Size of token in bytes */
   int iStart,                     /* Start offset of token */
-  int iEnd,                       /* End offset of token */
-  int iPos
+  int iEnd                        /* End offset of token */
 ){
   Fts5IntegrityCtx *pCtx = (Fts5IntegrityCtx*)pContext;
-  assert( iPos+1>=pCtx->szCol );
-  pCtx->szCol = iPos+1;
+  if( (tflags & FTS5_TOKEN_COLOCATED)==0 ){
+    pCtx->szCol++;
+  }
   pCtx->cksum ^= sqlite3Fts5IndexCksum(
-      pCtx->pConfig, pCtx->iRowid, pCtx->iCol, iPos, pToken, nToken
+      pCtx->pConfig, pCtx->iRowid, pCtx->iCol, pCtx->szCol-1, pToken, nToken
   );
   return SQLITE_OK;
 }

@@ -118,13 +118,12 @@ static int fts5AsciiTokenize(
   void *pCtx,
   int flags,
   const char *pText, int nText,
-  int (*xToken)(void*, const char*, int nToken, int iStart, int iEnd, int iPos)
+  int (*xToken)(void*, int, const char*, int nToken, int iStart, int iEnd)
 ){
   AsciiTokenizer *p = (AsciiTokenizer*)pTokenizer;
   int rc = SQLITE_OK;
   int ie;
   int is = 0;
-  int iPos = 0;
 
   char aFold[64];
   int nFold = sizeof(aFold);
@@ -160,7 +159,7 @@ static int fts5AsciiTokenize(
     asciiFold(pFold, &pText[is], nByte);
 
     /* Invoke the token callback */
-    rc = xToken(pCtx, pFold, nByte, is, ie, iPos++);
+    rc = xToken(pCtx, 0, pFold, nByte, is, ie);
     is = ie+1;
   }
   
@@ -389,12 +388,11 @@ static int fts5UnicodeTokenize(
   void *pCtx,
   int flags,
   const char *pText, int nText,
-  int (*xToken)(void*, const char*, int nToken, int iStart, int iEnd, int iPos)
+  int (*xToken)(void*, int, const char*, int nToken, int iStart, int iEnd)
 ){
   Unicode61Tokenizer *p = (Unicode61Tokenizer*)pTokenizer;
   int rc = SQLITE_OK;
   unsigned char *a = p->aTokenChar;
-  int iPos = 0;
 
   unsigned char *zTerm = (unsigned char*)&pText[nText];
   unsigned char *zCsr = (unsigned char *)pText;
@@ -479,7 +477,7 @@ static int fts5UnicodeTokenize(
     }
 
     /* Invoke the token callback */
-    rc = xToken(pCtx, aFold, zOut-aFold, is, ie, iPos++);
+    rc = xToken(pCtx, 0, aFold, zOut-aFold, is, ie); 
   }
   
  tokenize_done:
@@ -557,7 +555,7 @@ static int fts5PorterCreate(
 typedef struct PorterContext PorterContext;
 struct PorterContext {
   void *pCtx;
-  int (*xToken)(void*, const char*, int, int, int, int);
+  int (*xToken)(void*, int, const char*, int, int, int);
   char *aBuf;
 };
 
@@ -1122,11 +1120,11 @@ static void fts5PorterStep1A(char *aBuf, int *pnBuf){
 
 static int fts5PorterCb(
   void *pCtx, 
+  int tflags,
   const char *pToken, 
   int nToken, 
   int iStart, 
-  int iEnd,
-  int iPos
+  int iEnd
 ){
   PorterContext *p = (PorterContext*)pCtx;
 
@@ -1180,10 +1178,10 @@ static int fts5PorterCb(
     nBuf--;
   }
 
-  return p->xToken(p->pCtx, aBuf, nBuf, iStart, iEnd, iPos);
+  return p->xToken(p->pCtx, tflags, aBuf, nBuf, iStart, iEnd);
 
  pass_through:
-  return p->xToken(p->pCtx, pToken, nToken, iStart, iEnd, iPos);
+  return p->xToken(p->pCtx, tflags, pToken, nToken, iStart, iEnd);
 }
 
 /*
@@ -1194,7 +1192,7 @@ static int fts5PorterTokenize(
   void *pCtx,
   int flags,
   const char *pText, int nText,
-  int (*xToken)(void*, const char*, int nToken, int iStart, int iEnd, int iPos)
+  int (*xToken)(void*, int, const char*, int nToken, int iStart, int iEnd)
 ){
   PorterTokenizer *p = (PorterTokenizer*)pTokenizer;
   PorterContext sCtx;

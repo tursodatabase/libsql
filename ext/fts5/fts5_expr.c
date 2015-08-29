@@ -1338,17 +1338,19 @@ struct TokenCtx {
 */
 static int fts5ParseTokenize(
   void *pContext,                 /* Pointer to Fts5InsertCtx object */
+  int tflags,                     /* Mask of FTS5_TOKEN_* flags */
   const char *pToken,             /* Buffer containing token */
   int nToken,                     /* Size of token in bytes */
   int iStart,                     /* Start offset of token */
-  int iEnd,                       /* End offset of token */
-  int iPos
+  int iEnd                        /* End offset of token */
 ){
   int rc = SQLITE_OK;
   const int SZALLOC = 8;
   TokenCtx *pCtx = (TokenCtx*)pContext;
   Fts5ExprPhrase *pPhrase = pCtx->pPhrase;
   Fts5ExprTerm *pTerm;
+
+  if( tflags & FTS5_TOKEN_COLOCATED ) return rc;
 
   if( pPhrase==0 || (pPhrase->nTerm % SZALLOC)==0 ){
     Fts5ExprPhrase *pNew;

@@ -141,8 +141,9 @@ struct F5tAuxData {
 
 static int xTokenizeCb(
   void *pCtx, 
+  int tflags,
   const char *zToken, int nToken, 
-  int iStart, int iEnd, int iPos
+  int iStart, int iEnd
 ){
   F5tFunction *p = (F5tFunction*)pCtx;
   Tcl_Obj *pEval = Tcl_DuplicateObj(p->pScript);
@@ -584,8 +585,9 @@ struct F5tTokenizeCtx {
 
 static int xTokenizeCb2(
   void *pCtx, 
+  int tflags,
   const char *zToken, int nToken, 
-  int iStart, int iEnd, int iPos
+  int iStart, int iEnd
 ){
   F5tTokenizeCtx *p = (F5tTokenizeCtx*)pCtx;
   if( p->bSubst ){
@@ -694,7 +696,7 @@ typedef struct F5tTokenizerModule F5tTokenizerInstance;
 
 struct F5tTokenizerContext {
   void *pCtx;
-  int (*xToken)(void*, const char*, int, int, int);
+  int (*xToken)(void*, int, const char*, int, int, int);
 };
 
 struct F5tTokenizerModule {
@@ -752,11 +754,11 @@ static int f5tTokenizerTokenize(
   void *pCtx,
   int flags,
   const char *pText, int nText, 
-  int (*xToken)(void*, const char*, int, int, int, int)
+  int (*xToken)(void*, int, const char*, int, int, int)
 ){
   F5tTokenizerInstance *pInst = (F5tTokenizerInstance*)p;
   void *pOldCtx;
-  int (*xOldToken)(void*, const char*, int, int, int);
+  int (*xOldToken)(void*, int, const char*, int, int, int);
   Tcl_Obj *pEval;
   int rc;
 
@@ -813,7 +815,7 @@ static int f5tTokenizerReturn(
     return TCL_ERROR;
   }
 
-  rc = p->xToken(p->pCtx, zToken, nToken, iStart, iEnd);
+  rc = p->xToken(p->pCtx, 0, zToken, nToken, iStart, iEnd);
   Tcl_SetResult(interp, (char*)sqlite3ErrName(rc), TCL_VOLATILE);
   return TCL_OK;
 }

@@ -1498,7 +1498,7 @@ static int fts5ApiTokenize(
   Fts5Context *pCtx, 
   const char *pText, int nText, 
   void *pUserData,
-  int (*xToken)(void*, const char*, int, int, int, int)
+  int (*xToken)(void*, int, const char*, int, int, int)
 ){
   Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
   Fts5Table *pTab = (Fts5Table*)(pCsr->base.pVtab);
@@ -1657,14 +1657,16 @@ static int fts5ApiColumnText(
 
 static int fts5ColumnSizeCb(
   void *pContext,                 /* Pointer to int */
+  int tflags,
   const char *pToken,             /* Buffer containing token */
   int nToken,                     /* Size of token in bytes */
   int iStart,                     /* Start offset of token */
-  int iEnd,                       /* End offset of token */
-  int iPos
+  int iEnd                        /* End offset of token */
 ){
   int *pCnt = (int*)pContext;
-  *pCnt = iPos+1;
+  if( (tflags & FTS5_TOKEN_COLOCATED)==0 ){
+    (*pCnt)++;
+  }
   return SQLITE_OK;
 }
 
