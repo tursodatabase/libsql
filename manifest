@@ -1,9 +1,9 @@
-C New\stest\scases\sfor\sthe\sjson1\sextension.
-D 2015-08-29T18:30:30.457
+C Link\sthe\sjson1\sextension\sinto\sthe\scommand-line\sshell\sby\sdefault.
+D 2015-08-29T19:03:33.633
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in e2218eb228374422969de7b1680eda6864affcef
+F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 10af19cc089862481d49b347acd99c02635ddc49
+F Makefile.msc b268d8be2e800b9d35f074b1ed6b2f698deebdd6
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION ccfc4d1576dbfdeece0a4372a2e6a2e37d3e7975
@@ -258,7 +258,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 04840e8277ab5159af16172eafd214dae7cffff5
+F main.mk 8da13ed011a7ae19450b7554910ff4afa3bd22b7
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
 F mkopcodeh.awk 0e7f04a8eb90f92259e47d80110e4e98d7ce337a
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
@@ -338,7 +338,7 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c f2ef256786a6435efddd64a632fea89c8be62215
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c b52c80f2b1bdb62491f9ce40eea0c5f80c78d105
-F src/shell.c b1f91e60918df3a68efad1e3a11696b9a7e23d23
+F src/shell.c bbe2bab590b7dd04dd8f9119d4473cb8c52906e3
 F src/sqlite.h.in 378bebc8fe6a88bade25e5f23b7e6123fdc64b00
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h f700e6a9dd1fdcccc9951ab022b366fb66b9e413
@@ -1380,7 +1380,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 752918def7231f7846b3e985c9953a1cc825ab6b
-R 4e95d91aa0ecccfdfe103208bb14f5d9
+P daff4832af963f98bcc1d2c2f84bd815d384f850
+R 082d6d0f70d8c030232efb6a589595f2
 U drh
-Z dd982e2b56c4c4ec66263dd341e5829e
+Z 988619e0978b399609ee7513adf0867a

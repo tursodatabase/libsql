@@ -390,9 +390,9 @@ CORE_LINK_OPTS = /DEF:sqlite3.def
 #
 !IFNDEF SHELL_COMPILE_OPTS
 !IF $(DYNAMIC_SHELL)!=0
-SHELL_COMPILE_OPTS = $(SHELL_CCONV_OPTS) -DSQLITE_API=__declspec(dllimport)
+SHELL_COMPILE_OPTS = -DSQLITE_ENABLE_JSON1 $(SHELL_CCONV_OPTS) -DSQLITE_API=__declspec(dllimport)
 !ELSE
-SHELL_COMPILE_OPTS = $(SHELL_CCONV_OPTS)
+SHELL_COMPILE_OPTS = -DSQLITE_ENABLE_JSON1 $(SHELL_CCONV_OPTS)
 !ENDIF
 !ENDIF
 
@@ -1224,8 +1224,8 @@ libsqlite3.lib:	$(LIBOBJ)
 libtclsqlite3.lib:	tclsqlite.lo libsqlite3.lib
 	$(LTLIB) $(LTLIBOPTS) $(LTLIBPATHS) /OUT:$@ tclsqlite.lo libsqlite3.lib $(LIBTCL:tcl=tclstub) $(TLIBS)
 
-sqlite3.exe:	$(TOP)\src\shell.c $(SHELL_CORE_DEP) $(LIBRESOBJS) sqlite3.h
-	$(LTLINK) $(SHELL_COMPILE_OPTS) $(READLINE_FLAGS) $(TOP)\src\shell.c \
+sqlite3.exe:	$(TOP)\src\shell.c $(TOP)\ext\misc\json1.c $(SHELL_CORE_DEP) $(LIBRESOBJS) sqlite3.h
+	$(LTLINK) $(SHELL_COMPILE_OPTS) $(READLINE_FLAGS) $(TOP)\src\shell.c $(TOP)\ext\misc\json1.c \
 		/link /pdb:sqlite3sh.pdb $(LTLINKOPTS) $(SHELL_LINK_OPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LIBREADLINE) $(LTLIBS) $(TLIBS)
 
 sqldiff.exe:	$(TOP)\tool\sqldiff.c sqlite3.c sqlite3.h
