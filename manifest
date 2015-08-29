@@ -1,5 +1,5 @@
-C Fix\sthe\sbuild\swith\s-DSQLITE_OMIT_VIRTUALTABLE.
-D 2015-08-29T17:22:33.763
+C New\stest\scases\sfor\sthe\sjson1\sextension.
+D 2015-08-29T18:30:30.457
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e2218eb228374422969de7b1680eda6864affcef
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -810,7 +810,7 @@ F test/journal3.test ff8af941f9e06161d3db1b46bb9f965ff0e7f307
 F test/jrnlmode.test 7864d59cf7f6e552b9b99ba0f38acd167edc10fa
 F test/jrnlmode2.test 81610545a4e6ed239ea8fa661891893385e23a1d
 F test/jrnlmode3.test 556b447a05be0e0963f4311e95ab1632b11c9eaa
-F test/json101.test ef8fb3ac6a59b9a435c9fec7a4eb6413ecf76531
+F test/json101.test 11535d8986184500f4c30cc2f0b154b4ab05cc4e
 F test/keyword1.test 37ef6bba5d2ed5b07ecdd6810571de2956599dff
 F test/lastinsert.test 42e948fd6442f07d60acbd15d33fb86473e0ef63
 F test/laststmtchanges.test ae613f53819206b3222771828d024154d51db200
@@ -1380,7 +1380,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fd19ff029f128f478f69910352a6f8b84262ce1d
-R 9a4be85e9706d5dbc0e9b26aa7664d5f
+P 752918def7231f7846b3e985c9953a1cc825ab6b
+R 4e95d91aa0ecccfdfe103208bb14f5d9
 U drh
-Z 792dcf72d6ff70af8eda2770d6871186
+Z dd982e2b56c4c4ec66263dd341e5829e
