@@ -1397,6 +1397,7 @@ static void jsonValidFunc(
   sqlite3_result_int(ctx, rc);
 }
 
+#ifndef SQLITE_OMIT_VIRTUALTABLE
 /****************************************************************************
 ** The json_each virtual table
 ****************************************************************************/
@@ -1854,6 +1855,7 @@ static sqlite3_module jsonTreeModule = {
   0,                         /* xRelease */
   0                          /* xRollbackTo */
 };
+#endif /* SQLITE_OMIT_VIRTUALTABLE */
 
 /****************************************************************************
 ** The following routine is the only publically visible identifier in this
@@ -1897,6 +1899,7 @@ int sqlite3_json_init(
     { "json_nodecount",       1, 0,   jsonNodeCountFunc     },
 #endif
   };
+#ifndef SQLITE_OMIT_VIRTUALTABLE
   static const struct {
      const char *zName;
      sqlite3_module *pModule;
@@ -1904,6 +1907,7 @@ int sqlite3_json_init(
     { "json_each",            &jsonEachModule               },
     { "json_tree",            &jsonTreeModule               },
   };
+#endif
   SQLITE_EXTENSION_INIT2(pApi);
   (void)pzErrMsg;  /* Unused parameter */
   for(i=0; i<sizeof(aFunc)/sizeof(aFunc[0]) && rc==SQLITE_OK; i++){
@@ -1912,8 +1916,10 @@ int sqlite3_json_init(
                                  (void*)&aFunc[i].flag,
                                  aFunc[i].xFunc, 0, 0);
   }
+#ifndef SQLITE_OMIT_VIRTUALTABLE
   for(i=0; i<sizeof(aMod)/sizeof(aMod[0]) && rc==SQLITE_OK; i++){
     rc = sqlite3_create_module(db, aMod[i].zName, aMod[i].pModule, 0);
   }
+#endif
   return rc;
 }
