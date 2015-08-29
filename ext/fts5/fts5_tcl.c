@@ -692,7 +692,7 @@ static int f5tTokenize(
 typedef struct F5tTokenizerContext F5tTokenizerContext;
 typedef struct F5tTokenizerCb F5tTokenizerCb;
 typedef struct F5tTokenizerModule F5tTokenizerModule;
-typedef struct F5tTokenizerModule F5tTokenizerInstance;
+typedef struct F5tTokenizerInstance F5tTokenizerInstance;
 
 struct F5tTokenizerContext {
   void *pCtx;
@@ -700,6 +700,12 @@ struct F5tTokenizerContext {
 };
 
 struct F5tTokenizerModule {
+  Tcl_Interp *interp;
+  Tcl_Obj *pScript;
+  F5tTokenizerContext *pContext;
+};
+
+struct F5tTokenizerInstance {
   Tcl_Interp *interp;
   Tcl_Obj *pScript;
   F5tTokenizerContext *pContext;
@@ -761,18 +767,44 @@ static int f5tTokenizerTokenize(
   int (*xOldToken)(void*, int, const char*, int, int, int);
   Tcl_Obj *pEval;
   int rc;
+  const char *zFlags;
 
   pOldCtx = pInst->pContext->pCtx;
   xOldToken = pInst->pContext->xToken;
 
+  pInst->pContext->pCtx = pCtx;
+  pInst->pContext->xToken = xToken;
+
+  assert( 
+      flags==FTS5_TOKENIZE_DOCUMENT
+   || flags==FTS5_TOKENIZE_AUX
+   || flags==FTS5_TOKENIZE_QUERY
+   || flags==(FTS5_TOKENIZE_QUERY | FTS5_TOKENIZE_PREFIX)
+  );
   pEval = Tcl_DuplicateObj(pInst->pScript);
   Tcl_IncrRefCount(pEval);
-  rc = Tcl_ListObjAppendElement(
-      pInst->interp, pEval, Tcl_NewStringObj(pText, nText)
-  );
-  if( rc==TCL_OK ){
-    rc = Tcl_EvalObjEx(pInst->interp, pEval, TCL_GLOBAL_ONLY);
+  switch( flags ){
+    case FTS5_TOKENIZE_DOCUMENT:
+      zFlags = "document";
+      break;
+    case FTS5_TOKENIZE_AUX:
+      zFlags = "aux";
+      break;
+    case FTS5_TOKENIZE_QUERY:
+      zFlags = "query";
+      break;
+    case (FTS5_TOKENIZE_PREFIX | FTS5_TOKENIZE_QUERY):
+      zFlags = "prefixquery";
+      break;
+    default:
+      assert( 0 );
+      zFlags = "invalid";
+      break;
   }
+
+  Tcl_ListObjAppendElement(pInst->interp, pEval, Tcl_NewStringObj(zFlags, -1));
+  Tcl_ListObjAppendElement(pInst->interp, pEval, Tcl_NewStringObj(pText,nText));
+  rc = Tcl_EvalObjEx(pInst->interp, pEval, TCL_GLOBAL_ONLY);
   Tcl_DecrRefCount(pEval);
 
   pInst->pContext->pCtx = pOldCtx;
@@ -781,7 +813,7 @@ static int f5tTokenizerTokenize(
 }
 
 /*
-** sqlite3_fts5_token TEXT START END POS
+** sqlite3_fts5_token ?-colocated? TEXT START END
 */
 static int f5tTokenizerReturn(
   void * clientData,
@@ -793,14 +825,29 @@ static int f5tTokenizerReturn(
   int iStart;
   int iEnd;
   int nToken;
+  int tflags = 0;
   char *zToken;
   int rc;
 
-  assert( p );
-  if( objc!=4 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "TEXT START END");
+  if( objc==5 ){
+    int nArg;
+    char *zArg = Tcl_GetStringFromObj(objv[1], &nArg);
+    if( nArg<=10 && nArg>=2 && memcmp("-colocated", zArg, nArg)==0 ){
+      tflags |= FTS5_TOKEN_COLOCATED;
+    }else{
+      goto usage;
+    }
+  }else if( objc!=4 ){
+    goto usage;
+  }
+
+  zToken = Tcl_GetStringFromObj(objv[objc-3], &nToken);
+  if( Tcl_GetIntFromObj(interp, objv[objc-2], &iStart) 
+   || Tcl_GetIntFromObj(interp, objv[objc-1], &iEnd) 
+  ){
     return TCL_ERROR;
   }
+
   if( p->xToken==0 ){
     Tcl_AppendResult(interp, 
         "sqlite3_fts5_token may only be used by tokenizer callback", 0
@@ -808,16 +855,13 @@ static int f5tTokenizerReturn(
     return TCL_ERROR;
   }
 
-  zToken = Tcl_GetStringFromObj(objv[1], &nToken);
-  if( Tcl_GetIntFromObj(interp, objv[2], &iStart) 
-   || Tcl_GetIntFromObj(interp, objv[3], &iEnd) 
-  ){
-    return TCL_ERROR;
-  }
-
-  rc = p->xToken(p->pCtx, 0, zToken, nToken, iStart, iEnd);
+  rc = p->xToken(p->pCtx, tflags, zToken, nToken, iStart, iEnd);
   Tcl_SetResult(interp, (char*)sqlite3ErrName(rc), TCL_VOLATILE);
   return TCL_OK;
+
+ usage:
+  Tcl_WrongNumArgs(interp, 1, objv, "?-colocated? TEXT START END");
+  return TCL_ERROR;
 }
 
 static void f5tDelTokenizer(void *pCtx){

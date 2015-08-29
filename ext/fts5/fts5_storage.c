@@ -367,7 +367,7 @@ static int fts5StorageInsertCallback(
 ){
   Fts5InsertCtx *pCtx = (Fts5InsertCtx*)pContext;
   Fts5Index *pIdx = pCtx->pStorage->pIndex;
-  if( (tflags & FTS5_TOKEN_COLOCATED)==0 ){
+  if( (tflags & FTS5_TOKEN_COLOCATED)==0 || pCtx->szCol==0 ){
     pCtx->szCol++;
   }
   return sqlite3Fts5IndexWrite(pIdx, pCtx->iCol, pCtx->szCol-1, pToken, nToken);
@@ -852,7 +852,7 @@ static int fts5StorageIntegrityCallback(
   int iEnd                        /* End offset of token */
 ){
   Fts5IntegrityCtx *pCtx = (Fts5IntegrityCtx*)pContext;
-  if( (tflags & FTS5_TOKEN_COLOCATED)==0 ){
+  if( (tflags & FTS5_TOKEN_COLOCATED)==0 || pCtx->szCol==0 ){
     pCtx->szCol++;
   }
   pCtx->cksum ^= sqlite3Fts5IndexCksum(
