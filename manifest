@@ -1,5 +1,5 @@
-C Make\sthe\sdistinction\sbetween\struly\sdeterministic\sfunctions\sand\sdate/time\nfunctions\swhich\sonly\sreturn\sthe\ssame\sanswer\sfor\sa\ssingle\squery.\s\sOnly\struly\ndeterministic\sfunctions\sare\sallowed\sin\sindexes.\s\sAdd\snew\sexpression\sindex\ntest\scases.
-D 2015-08-31T17:34:41.308
+C Case\sshould\snot\sbe\ssignificant\swhen\scomparing\sfunction\snames.
+D 2015-08-31T18:13:01.161
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -289,7 +289,7 @@ F src/ctime.c 5a0b735dc95604766f5dac73973658eef782ee8b
 F src/date.c fb1c99172017dcc8e237339132c91a21a0788584
 F src/dbstat.c f402e77e25089c6003d0c60b3233b9b3947d599a
 F src/delete.c 224e5c9a0eae7fbdd3b461ca971465c992851354
-F src/expr.c cf0c5ef6467d3eb65e3ff5c88eb2f602ba3b5163
+F src/expr.c 500c0ee6ac2e5d60c10df62b8c9b96dc75c2cbb1
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 3ce33dd49f12c72376cec9adc7a4d8e7111cedcc
 F src/func.c 824bea430d3a2b7dbc62806ad54da8fdb8ed9e3f
@@ -780,7 +780,7 @@ F test/index5.test 8621491915800ec274609e42e02a97d67e9b13e7
 F test/index6.test 7102ec371414c42dfb1d5ca37eb4519aa9edc23a
 F test/index7.test 9c6765a74fc3fcde7aebc5b3bd40d98df14a527c
 F test/indexedby.test 5f527a78bae74c61b8046ae3037f9dfb0bf0c353
-F test/indexexpr1.test 1e57b4bb93b65a451803e7547a51f685af1c35db
+F test/indexexpr1.test d04a3905275fb9a0fb82447e7d43773f98fad282
 F test/indexfault.test 31d4ab9a7d2f6e9616933eb079722362a883eb1d
 F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
 F test/insert.test 38742b5e9601c8f8d76e9b7555f7270288c2d371
@@ -1381,7 +1381,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f8893696387cba9d293a05a68dc38228077b3dc5
-R 73b6719fd207957d3d30c3e1b6c218bc
+P c77554b5c42327106a7b90334e9cc3c07b007c76
+R 0c8c1c66a00ef8c41547d29bee27b359
 U drh
-Z fe2263cb4a747333f78b4cc6eb661f66
+Z 0525f466a18434624bccbe0dbed916be

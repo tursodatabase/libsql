@@ -18,6 +18,7 @@ source $testdir/tester.tcl
 do_execsql_test indexexpr1-100 {
   CREATE TABLE t1(a,b,c);
   INSERT INTO t1(a,b,c)
+      /*  123456789 123456789 123456789 123456789 123456789 123456789 */ 
   VALUES('In_the_beginning_was_the_Word',1,1),
         ('and_the_Word_was_with_God',1,2),
         ('and_the_Word_was_God',1,3),
@@ -73,6 +74,20 @@ do_execsql_test indexexpr1-150eqp {
   SELECT rowid FROM t1 WHERE substr(a,b,3) IN ('and','l_t','xyz')
    ORDER BY +rowid;
 } {/USING INDEX t1abx/}
+
+do_execsql_test indexexpr1-160 {
+  ALTER TABLE t1 ADD COLUMN d;
+  UPDATE t1 SET d=length(a);
+  CREATE INDEX t1a2 ON t1(SUBSTR(a, 27, 3)) WHERE d>=29;
+  SELECT rowid, b, c FROM t1
+   WHERE substr(a,27,3)=='ord' AND d>=29;
+} {1 1 1}
+do_execsql_test indexexpr1-160eqp {
+  EXPLAIN QUERY PLAN
+  SELECT rowid, b, c FROM t1
+   WHERE substr(a,27,3)=='ord' AND d>=29;
+} {/USING INDEX t1a2/}
+
 
 do_execsql_test indexexpr1-200 {
   DROP TABLE t1;
@@ -134,6 +149,20 @@ do_execsql_test indexexpr1-250eqp {
    ORDER BY +id;
 } {/USING INDEX t1abx/}
 
+do_execsql_test indexexpr1-260 {
+  ALTER TABLE t1 ADD COLUMN d;
+  UPDATE t1 SET d=length(a);
+  CREATE INDEX t1a2 ON t1(SUBSTR(a, 27, 3)) WHERE d>=29;
+  SELECT id, b, c FROM t1
+   WHERE substr(a,27,3)=='ord' AND d>=29;
+} {1 1 1}
+do_execsql_test indexexpr1-260eqp {
+  EXPLAIN QUERY PLAN
+  SELECT id, b, c FROM t1
+   WHERE substr(a,27,3)=='ord' AND d>=29;
+} {/USING INDEX t1a2/}
+
+
 do_catchsql_test indexexpr1-300 {
   CREATE TABLE t2(a,b,c);
   CREATE INDEX t2x1 ON t2(a,b+random());
@@ -144,5 +173,17 @@ do_catchsql_test indexexpr1-301 {
 do_catchsql_test indexexpr1-310 {
   CREATE INDEX t2x2 ON t2(a,b+(SELECT 15));
 } {1 {subqueries prohibited in index expressions}}
+do_catchsql_test indexexpr1-320 {
+  CREATE TABLE e1(x,y,UNIQUE(y,substr(x,1,5)));
+} {1 {expressions prohibited in PRIMARY KEY and UNIQUE constraints}}
+do_catchsql_test indexexpr1-330 {
+  CREATE TABLE e1(x,y,PRIMARY KEY(y,substr(x,1,5)));
+} {1 {expressions prohibited in PRIMARY KEY and UNIQUE constraints}}
+do_catchsql_test indexexpr1-331 {
+  CREATE TABLE e1(x,y,PRIMARY KEY(y,substr(x,1,5))) WITHOUT ROWID;
+} {1 {expressions prohibited in PRIMARY KEY and UNIQUE constraints}}
+do_catchsql_test indexexpr1-340 {
+  CREATE TABLE e1(x,y,FOREIGN KEY(substr(y,1,5)) REFERENCES t1);
+} {1 {near "(": syntax error}}
 
 finish_test
