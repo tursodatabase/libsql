@@ -236,7 +236,7 @@ struct Fts5PoslistReader {
   int i;                          /* Current offset in a[] */
 
   /* Output variables */
-  int bEof;                       /* Set to true at EOF */
+  u8 bEof;                        /* Set to true at EOF */
   i64 iPos;                       /* (iCol<<32) + iPos */
 };
 int sqlite3Fts5PoslistReaderInit(

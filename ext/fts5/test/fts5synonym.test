@@ -21,6 +21,24 @@ ifcapable !fts5 {
   return
 }
 
+foreach S {
+  {zero 0}
+  {one 1}
+  {two 2}
+  {three 3 iii}
+  {four 4}
+  {five 5}
+  {six 6}
+  {seven 7}
+  {eight 8}
+  {nine 9}
+} {
+  foreach s $S {
+    set o [list]
+    foreach x $S {if {$x!=$s} {lappend o $x}}
+    set ::syn($s) $o
+  }
+}
 
 proc gobble_whitespace {textvar} {
   upvar $textvar t
@@ -75,24 +93,6 @@ do_execsql_test 1.0 {
 # Test a tokenizer that supports synonyms by adding extra entries to the
 # FTS index.
 #
-foreach S {
-  {zero 0}
-  {one 1}
-  {two 2}
-  {three 3 iii}
-  {four 4}
-  {five 5}
-  {six 6}
-  {seven 7}
-  {eight 8}
-  {nine 9}
-} {
-  foreach s $S {
-    set o [list]
-    foreach x $S {if {$x!=$s} {lappend o $x}}
-    set ::syn($s) $o
-  }
-}
 
 proc tcl_tokenize {tflags text} {
   foreach {w iStart iEnd} [do_tokenize_split $text] {
@@ -193,6 +193,31 @@ do_execsql_test 3.2.2 {
   SELECT rowid FROM ft WHERE ft MATCH 'one two two three';
   SELECT rowid FROM ft WHERE ft MATCH 'one + two + two + three';
 } {1}
+
+#-------------------------------------------------------------------------
+# Check that expressions with synonyms can be parsed.
+#
+reset_db
+sqlite3_fts5_create_tokenizer db tcl tcl_create
+proc tcl_tokenize {tflags text} {
+  foreach {w iStart iEnd} [do_tokenize_split $text] {
+    sqlite3_fts5_token $w $iStart $iEnd
+    if {$tflags=="query" && [info exists ::syn($w)]} {
+      foreach s $::syn($w) {
+        sqlite3_fts5_token -colo $s $iStart $iEnd
+      }
+    }
+  }
+}
+
+foreach {tn expr res} {
+  1  {abc}                           {"abc"}
+  2  {one}                           {"one"|"1"}
+  3  {3}                             {"3"|"iii"|"three"}
+  4  {3*}                            {"3"|"iii"|"three" *}
+} {
+  do_execsql_test 4.$tn {SELECT fts5_expr($expr, 'tokenize=tcl')} [list $res]
+}
 
 finish_test
 

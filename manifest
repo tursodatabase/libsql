@@ -1,5 +1,5 @@
-C Add\sa\stest\sfor\san\sfts5\stokenizer\sthat\ssupports\ssynonyms\sby\sadding\smultiple\sentries\sto\sthe\sfts\sindex.
-D 2015-08-29T18:46:12.456
+C Begin\schanges\sto\sallow\ssynonym\ssupport\sby\sadding\smultiple\sterms\sto\sa\squery\s(an\salternative\sto\sadding\smultiple\sterms\sto\sthe\sFTS\sindex).
+D 2015-08-31T20:06:06.235
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e2218eb228374422969de7b1680eda6864affcef
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -106,11 +106,11 @@ F ext/fts3/unicode/mkunicode.tcl 95cf7ec186e48d4985e433ff8a1c89090a774252
 F ext/fts3/unicode/parseunicode.tcl da577d1384810fb4e2b209bf3313074353193e95
 F ext/fts5/extract_api_docs.tcl 06583c935f89075ea0b32f85efa5dd7619fcbd03
 F ext/fts5/fts5.h 0784692f406588e6c90e13a78e1f36e7e3236e42
-F ext/fts5/fts5Int.h 9fd31e682acae32806f77e7c3b543c4294274c92
+F ext/fts5/fts5Int.h 9c538f0fcc1c3bc2fa12f7199d1326bd2362ce9c
 F ext/fts5/fts5_aux.c 7a307760a9c57c750d043188ec0bad59f5b5ec7e
 F ext/fts5/fts5_buffer.c 80f9ba4431848cb857e3d2158f5280093dcd8015
 F ext/fts5/fts5_config.c 80b61fd2c6844b64a3e72a64572d50a812da9384
-F ext/fts5/fts5_expr.c 7ea46f676491989069d31ae1f75c9439b0858711
+F ext/fts5/fts5_expr.c 1458c3e33c1ec3ad99284f9692edfc49c44afd7c
 F ext/fts5/fts5_hash.c 4bf4b99708848357b8a2b5819e509eb6d3df9246
 F ext/fts5/fts5_index.c 076c4995bf06a6d1559a6e31f9a86b90f2105374
 F ext/fts5/fts5_main.c b00834ac543431dc35edbe18018b4befe0c7fd42
@@ -124,7 +124,7 @@ F ext/fts5/fts5_vocab.c 4622e0b7d84a488a1585aaa56eb214ee67a988bc
 F ext/fts5/fts5parse.y 833db1101b78c0c47686ab1b84918e38c36e9452
 F ext/fts5/mkportersteps.tcl 5acf962d2e0074f701620bb5308155fa1e4a63ba
 F ext/fts5/test/fts5_common.tcl 3338968de1880ca12b0451ae8f9b8b12d14e0ba7
-F ext/fts5/test/fts5aa.test c6e680a0d1b6c2616a382f1006d5d91eca697bd0
+F ext/fts5/test/fts5aa.test caa44c528f7270aa4e325c4f2c28d355c1e8c307
 F ext/fts5/test/fts5ab.test 6fe3a56731d15978afbb74ae51b355fc9310f2ad
 F ext/fts5/test/fts5ac.test 9737992d08c56bfd4803e933744d2d764e23795c
 F ext/fts5/test/fts5ad.test b2edee8b7de0c21d2c88f8a18c195034aad6952d
@@ -149,8 +149,8 @@ F ext/fts5/test/fts5corrupt2.test 1a830ccd6dbe1b601c7e3f5bbc1cf77bd8c8803b
 F ext/fts5/test/fts5corrupt3.test 1ccf575f5126e79f9fec7979fd02a1f40a076be3
 F ext/fts5/test/fts5dlidx.test 59b80bbe34169a082c575d9c26f0a7019a7b79c1
 F ext/fts5/test/fts5doclist.test 8edb5b57e5f144030ed74ec00ef6fa4294fed79b
-F ext/fts5/test/fts5ea.test 451bb37310ee6df8ef72e4354fda5621b3b51448
-F ext/fts5/test/fts5eb.test 46f49497edc25ef3b2bff9fb6d75b6d201e2b39e
+F ext/fts5/test/fts5ea.test b01e3a18cdfabbff8104a96a5242a06a68a998a0
+F ext/fts5/test/fts5eb.test 3e5869af2008cbc4ad03a175a0b6f6e58134cd43
 F ext/fts5/test/fts5fault1.test 7a562367cb4a735b57b410dbdb62dcc8d971faec
 F ext/fts5/test/fts5fault2.test 28c36c843bb39ae855ba79827417ecc37f114341
 F ext/fts5/test/fts5fault3.test d6e9577d4312e331a913c72931bf131704efc8f3
@@ -172,7 +172,7 @@ F ext/fts5/test/fts5rank.test 11dcebba31d822f7e99685b4ea2c2ae3ec0b16f1
 F ext/fts5/test/fts5rebuild.test 03935f617ace91ed23a6099c7c74d905227ff29b
 F ext/fts5/test/fts5restart.test c17728fdea26e7d0f617d22ad5b4b2862b994c17
 F ext/fts5/test/fts5rowid.test 6f9833b23b176dc4aa15b7fc02afeb2b220fd460
-F ext/fts5/test/fts5synonym.test 6f1cfa5022bdae999f018075254e9fc51da2e618
+F ext/fts5/test/fts5synonym.test 3343a05f7b1d3fc6fa4559bd3bd0ee979928c30d
 F ext/fts5/test/fts5tokenizer.test ea4df698b35cc427ebf2ba22829d0e28386d8c89
 F ext/fts5/test/fts5unicode.test fbef8d8a3b4b88470536cc57604a82ca52e51841
 F ext/fts5/test/fts5unicode2.test c1dd890ba32b7609adba78e420faa847abe43b59
@@ -1381,7 +1381,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fc71868496f45f9c7a79ed2bf2d164a7c4718ce1
-R 8d19f3ef91012c48b3ad32684321db98
+P 98d07d16cab92f1e7001afbe370df3ec6343fc1f
+R e2a3883c4d0440bf5b53c5a71ba46260
 U dan
-Z 14116ac3039ffa0cba068c002654bc88
+Z 7c01c61f2a729597f3365ce7db7a6ce6

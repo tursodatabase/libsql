@@ -73,6 +73,7 @@ struct Fts5ExprTerm {
   int bPrefix;                    /* True for a prefix term */
   char *zTerm;                    /* nul-terminated term */
   Fts5IndexIter *pIter;           /* Iterator for this term */
+  Fts5ExprTerm *pSynonym;         /* Pointer to first in list of synonyms */
 };
 
 /*
@@ -181,6 +182,10 @@ static int fts5ExprGetToken(
 
     default: {
       const char *z2;
+      if( sqlite3Fts5IsBareword(z[0])==0 ){
+        sqlite3Fts5ParseError(pParse, "fts5: syntax error near \"%.1s\"", z);
+        return FTS5_EOF;
+      }
       tok = FTS5_STRING;
       for(z2=&z[1]; sqlite3Fts5IsBareword(*z2); z2++);
       pToken->n = (z2 - z);
@@ -351,6 +356,60 @@ static int fts5ExprColsetTest(Fts5ExprColset *pColset, int iCol){
 }
 
 /*
+** Argument pTerm must be a synonym iterator. Return the current rowid
+** that it points to.
+*/
+static i64 fts5ExprSynonymRowid(Fts5ExprTerm *pTerm, int bDesc){
+  i64 iRet;
+  int bRetValid = 0;
+  Fts5ExprTerm *p;
+
+  assert( pTerm->pSynonym );
+  assert( bDesc==0 || bDesc==1 );
+  for(p=pTerm; p; p=p->pSynonym){
+    if( 0==sqlite3Fts5IterEof(p->pIter) ){
+      i64 iRowid = sqlite3Fts5IterRowid(p->pIter);
+      if( bRetValid==0 || (bDesc!=(iRowid<iRet)) ){
+        iRet = iRowid;
+        bRetValid = 1;
+      }
+    }
+  }
+
+  assert( bRetValid );
+  return iRet;
+}
+
+/*
+** Argument pTerm must be a synonym iterator.
+*/
+static int fts5ExprSynonymPoslist(
+  Fts5ExprTerm *pTerm, 
+  i64 iRowid,
+  u8 **pa, int *pn
+){
+  Fts5PoslistWriter writer = {0};
+  Fts5PoslistReader aStatic[4];
+  Fts5PoslistReader *aIter = aStatic;
+  int nIter = 0;
+  Fts5ExprTerm *p;
+
+  assert( pTerm->pSynonym );
+  for(p=pTerm; p; p=p->pSynonym){
+    Fts5IndexIter *pIter = p->pIter;
+    if( sqlite3Fts5IterEof(pIter)==0 && sqlite3Fts5IterRowid(pIter)==iRowid ){
+      i64 dummy;
+      int rc = sqlite3Fts5IterPoslist(pIter, (const u8**)pa, pn, &dummy);
+      return rc;
+    }
+  }
+
+  assert( 0 );
+  return SQLITE_ERROR;
+}
+
+
+/*
 ** All individual term iterators in pPhrase are guaranteed to be valid and
 ** pointing to the same rowid when this function is called. This function 
 ** checks if the current rowid really is a match, and if so populates
@@ -362,7 +421,7 @@ static int fts5ExprColsetTest(Fts5ExprColset *pColset, int iCol){
 ** not a match.
 */
 static int fts5ExprPhraseIsMatch(
-  Fts5Expr *pExpr,                /* Expression pPhrase belongs to */
+  Fts5ExprNode *pNode,            /* Node pPhrase belongs to */
   Fts5ExprColset *pColset,        /* Restrict matches to these columns */
   Fts5ExprPhrase *pPhrase,        /* Phrase object to initialize */
   int *pbMatch                    /* OUT: Set to true if really a match */
@@ -391,10 +450,15 @@ static int fts5ExprPhraseIsMatch(
 
   /* Initialize a term iterator for each term in the phrase */
   for(i=0; i<pPhrase->nTerm; i++){
+    Fts5ExprTerm *pTerm = &pPhrase->aTerm[i];
     i64 dummy;
     int n;
     const u8 *a;
-    rc = sqlite3Fts5IterPoslist(pPhrase->aTerm[i].pIter, &a, &n, &dummy);
+    if( pTerm->pSynonym ){
+      rc = fts5ExprSynonymPoslist(pTerm, pNode->iRowid, (u8**)&a, &n);
+    }else{
+      rc = sqlite3Fts5IterPoslist(pTerm->pIter, &a, &n, &dummy);
+    }
     if( rc || sqlite3Fts5PoslistReaderInit(iCol, a, n, &aIter[i]) ){
       goto ismatch_out;
     }
@@ -598,17 +662,43 @@ static int fts5ExprNearAdvanceFirst(
   int bFromValid,
   i64 iFrom 
 ){
-  Fts5IndexIter *pIter = pNode->pNear->apPhrase[0]->aTerm[0].pIter;
+  Fts5ExprTerm *pTerm = &pNode->pNear->apPhrase[0]->aTerm[0];
   int rc;
 
-  assert( Fts5NodeIsString(pNode) );
-  if( bFromValid ){
-    rc = sqlite3Fts5IterNextFrom(pIter, iFrom);
+  if( pTerm->pSynonym ){
+    int bEof = 1;
+    Fts5ExprTerm *p;
+
+    /* Find the firstest rowid any synonym points to. */
+    i64 iRowid = fts5ExprSynonymRowid(pTerm, pExpr->bDesc);
+
+    /* Advance each iterator that currently points to iRowid */
+    for(p=pTerm; p; p=p->pSynonym){
+      if( sqlite3Fts5IterEof(p->pIter)==0 ){
+        bEof = 0;
+        if( sqlite3Fts5IterRowid(p->pIter)==iRowid ){
+          rc = sqlite3Fts5IterNext(p->pIter);
+          if( rc!=SQLITE_OK ) break;
+        }
+      }
+    }
+
+    /* Set the EOF flag if either all synonym iterators are at EOF or an
+    ** error has occurred.  */
+    pNode->bEof = (rc || bEof);
   }else{
-    rc = sqlite3Fts5IterNext(pIter);
+    Fts5IndexIter *pIter = pTerm->pIter;
+
+    assert( Fts5NodeIsString(pNode) );
+    if( bFromValid ){
+      rc = sqlite3Fts5IterNextFrom(pIter, iFrom);
+    }else{
+      rc = sqlite3Fts5IterNext(pIter);
+    }
+
+    pNode->bEof = (rc || sqlite3Fts5IterEof(pIter));
   }
 
-  pNode->bEof = (rc || sqlite3Fts5IterEof(pIter));
   return rc;
 }
 
@@ -719,7 +809,7 @@ static int fts5ExprNearTest(
     Fts5ExprPhrase *pPhrase = pNear->apPhrase[i];
     if( pPhrase->nTerm>1 || pNear->pColset ){
       int bMatch = 0;
-      rc = fts5ExprPhraseIsMatch(pExpr, pNear->pColset, pPhrase, &bMatch);
+      rc = fts5ExprPhraseIsMatch(pNode, pNear->pColset, pPhrase, &bMatch);
       if( bMatch==0 ) break;
     }else{
       rc = sqlite3Fts5IterPoslistBuffer(
@@ -755,6 +845,7 @@ static int fts5ExprTokenTest(
 
   assert( pNode->eType==FTS5_TERM );
   assert( pNear->nPhrase==1 && pPhrase->nTerm==1 );
+  assert( pPhrase->aTerm[0].pSynonym==0 );
 
   rc = sqlite3Fts5IterPoslist(pIter, &pPos, &nPos, &pNode->iRowid);
 
@@ -801,69 +892,107 @@ static int fts5ExprNearNextMatch(
   i64 iLast;                      /* Lastest rowid any iterator points to */
   int i, j;                       /* Phrase and token index, respectively */
   int bMatch;                     /* True if all terms are at the same rowid */
+  const int bDesc = pExpr->bDesc;
 
-  assert( pNear->nPhrase>1 || pNear->apPhrase[0]->nTerm>1 );
+  /* Check that this node should not be FTS5_TERM */
+  assert( pNear->nPhrase>1 
+       || pNear->apPhrase[0]->nTerm>1 
+       || pNear->apPhrase[0]->aTerm[0].pSynonym
+  );
 
   /* Initialize iLast, the "lastest" rowid any iterator points to. If the
   ** iterator skips through rowids in the default ascending order, this means
   ** the maximum rowid. Or, if the iterator is "ORDER BY rowid DESC", then it
   ** means the minimum rowid.  */
-  iLast = sqlite3Fts5IterRowid(pLeft->aTerm[0].pIter);
+  if( pLeft->aTerm[0].pSynonym ){
+    iLast = fts5ExprSynonymRowid(&pLeft->aTerm[0], bDesc);
+  }else{
+    iLast = sqlite3Fts5IterRowid(pLeft->aTerm[0].pIter);
+  }
 
   do {
     bMatch = 1;
     for(i=0; i<pNear->nPhrase; i++){
       Fts5ExprPhrase *pPhrase = pNear->apPhrase[i];
       for(j=0; j<pPhrase->nTerm; j++){
-        Fts5IndexIter *pIter = pPhrase->aTerm[j].pIter;
-        i64 iRowid = sqlite3Fts5IterRowid(pIter);
-        if( iRowid!=iLast ) bMatch = 0;
-        if( fts5ExprAdvanceto(pIter, pExpr->bDesc, &iLast,&rc,&pNode->bEof) ){
-          return rc;
+        Fts5ExprTerm *pTerm = &pPhrase->aTerm[j];
+        if( pTerm->pSynonym ){
+          Fts5ExprTerm *p;
+          int bEof = 1;
+          i64 iRowid = fts5ExprSynonymRowid(pTerm, bDesc);
+          if( iRowid==iLast ) continue;
+          for(p=pTerm; p; p=p->pSynonym){
+            Fts5IndexIter *pIter = p->pIter;
+            int dummy;
+            if( 0==sqlite3Fts5IterEof(pIter)
+             && 0==fts5ExprAdvanceto(pIter, bDesc, &iLast, &rc, &dummy)==0 
+            ){
+              bEof = 0;
+            }
+          }
+          if( bEof || rc ){
+            pNode->bEof = 1;
+            return rc;
+          }
+        }else{
+          Fts5IndexIter *pIter = pPhrase->aTerm[j].pIter;
+          i64 iRowid = sqlite3Fts5IterRowid(pIter);
+          if( iRowid==iLast ) continue;
+          bMatch = 0;
+          if( fts5ExprAdvanceto(pIter, bDesc, &iLast, &rc, &pNode->bEof) ){
+            return rc;
+          }
         }
       }
     }
   }while( bMatch==0 );
 
-  pNode->bNomatch = (0==fts5ExprNearTest(&rc, pExpr, pNode));
   pNode->iRowid = iLast;
+  pNode->bNomatch = (0==fts5ExprNearTest(&rc, pExpr, pNode));
 
   return rc;
 }
 
 /*
 ** Initialize all term iterators in the pNear object. If any term is found
-** to match no documents at all, set *pbEof to true and return immediately,
-** without initializing any further iterators.
+** to match no documents at all, return immediately without initializing any
+** further iterators.
 */
 static int fts5ExprNearInitAll(
   Fts5Expr *pExpr,
   Fts5ExprNode *pNode
 ){
   Fts5ExprNearset *pNear = pNode->pNear;
-  Fts5ExprTerm *pTerm;
-  Fts5ExprPhrase *pPhrase;
   int i, j;
   int rc = SQLITE_OK;
 
   for(i=0; rc==SQLITE_OK && i<pNear->nPhrase; i++){
-    pPhrase = pNear->apPhrase[i];
+    Fts5ExprPhrase *pPhrase = pNear->apPhrase[i];
     for(j=0; j<pPhrase->nTerm; j++){
-      pTerm = &pPhrase->aTerm[j];
-      if( pTerm->pIter ){
-        sqlite3Fts5IterClose(pTerm->pIter);
-        pTerm->pIter = 0;
+      Fts5ExprTerm *pTerm = &pPhrase->aTerm[j];
+      Fts5ExprTerm *p;
+      int bEof = 1;
+
+      for(p=pTerm; p && rc==SQLITE_OK; p=p->pSynonym){
+        if( p->pIter ){
+          sqlite3Fts5IterClose(p->pIter);
+          p->pIter = 0;
+        }
+        rc = sqlite3Fts5IndexQuery(
+            pExpr->pIndex, p->zTerm, strlen(p->zTerm),
+            (pTerm->bPrefix ? FTS5INDEX_QUERY_PREFIX : 0) |
+            (pExpr->bDesc ? FTS5INDEX_QUERY_DESC : 0),
+            &p->pIter
+        );
+        assert( rc==SQLITE_OK || p->pIter==0 );
+        if( p->pIter && 0==sqlite3Fts5IterEof(pTerm->pIter) ){
+          bEof = 0;
+        }
       }
-      rc = sqlite3Fts5IndexQuery(
-          pExpr->pIndex, pTerm->zTerm, strlen(pTerm->zTerm),
-          (pTerm->bPrefix ? FTS5INDEX_QUERY_PREFIX : 0) |
-          (pExpr->bDesc ? FTS5INDEX_QUERY_DESC : 0),
-          &pTerm->pIter
-      );
-      assert( rc==SQLITE_OK || pTerm->pIter==0 );
-      if( pTerm->pIter==0 || sqlite3Fts5IterEof(pTerm->pIter) ){
+
+      if( bEof ){
         pNode->bEof = 1;
-        break;
+        return rc;
       }
     }
   }
@@ -1266,10 +1395,16 @@ static void fts5ExprPhraseFree(Fts5ExprPhrase *pPhrase){
   if( pPhrase ){
     int i;
     for(i=0; i<pPhrase->nTerm; i++){
+      Fts5ExprTerm *pSyn;
+      Fts5ExprTerm *pNext;
       Fts5ExprTerm *pTerm = &pPhrase->aTerm[i];
       sqlite3_free(pTerm->zTerm);
-      if( pTerm->pIter ){
-        sqlite3Fts5IterClose(pTerm->pIter);
+      sqlite3Fts5IterClose(pTerm->pIter);
+
+      for(pSyn=pTerm->pSynonym; pSyn; pSyn=pNext){
+        pNext = pSyn->pSynonym;
+        sqlite3Fts5IterClose(pSyn->pIter);
+        sqlite3_free(pSyn);
       }
     }
     if( pPhrase->poslist.nSpace>0 ) fts5BufferFree(&pPhrase->poslist);
@@ -1348,27 +1483,37 @@ static int fts5ParseTokenize(
   const int SZALLOC = 8;
   TokenCtx *pCtx = (TokenCtx*)pContext;
   Fts5ExprPhrase *pPhrase = pCtx->pPhrase;
-  Fts5ExprTerm *pTerm;
 
-  if( tflags & FTS5_TOKEN_COLOCATED ) return rc;
+  assert( pPhrase==0 || pPhrase->nTerm>0 );
+  if( pPhrase && (tflags & FTS5_TOKEN_COLOCATED) ){
+    Fts5ExprTerm *pSyn;
+    int nByte = sizeof(Fts5ExprTerm) + nToken+1;
+    pSyn = (Fts5ExprTerm*)sqlite3_malloc(nByte);
+    if( pSyn==0 ) return SQLITE_NOMEM;
+    memset(pSyn, 0, nByte);
+    pSyn->zTerm = (char*)&pSyn[1];
+    memcpy(pSyn->zTerm, pToken, nToken);
+    pSyn->pSynonym = pPhrase->aTerm[pPhrase->nTerm-1].pSynonym;
+    pPhrase->aTerm[pPhrase->nTerm-1].pSynonym = pSyn;
+  }else{
+    Fts5ExprTerm *pTerm;
+    if( pPhrase==0 || (pPhrase->nTerm % SZALLOC)==0 ){
+      Fts5ExprPhrase *pNew;
+      int nNew = SZALLOC + (pPhrase ? pPhrase->nTerm : 0);
 
-  if( pPhrase==0 || (pPhrase->nTerm % SZALLOC)==0 ){
-    Fts5ExprPhrase *pNew;
-    int nNew = SZALLOC + (pPhrase ? pPhrase->nTerm : 0);
+      pNew = (Fts5ExprPhrase*)sqlite3_realloc(pPhrase, 
+          sizeof(Fts5ExprPhrase) + sizeof(Fts5ExprTerm) * nNew
+          );
+      if( pNew==0 ) return SQLITE_NOMEM;
+      if( pPhrase==0 ) memset(pNew, 0, sizeof(Fts5ExprPhrase));
+      pCtx->pPhrase = pPhrase = pNew;
+      pNew->nTerm = nNew - SZALLOC;
+    }
 
-    pNew = (Fts5ExprPhrase*)sqlite3_realloc(pPhrase, 
-        sizeof(Fts5ExprPhrase) + sizeof(Fts5ExprTerm) * nNew
-    );
-    if( pNew==0 ) return SQLITE_NOMEM;
-    if( pPhrase==0 ) memset(pNew, 0, sizeof(Fts5ExprPhrase));
-    pCtx->pPhrase = pPhrase = pNew;
-    pNew->nTerm = nNew - SZALLOC;
+    pTerm = &pPhrase->aTerm[pPhrase->nTerm++];
+    memset(pTerm, 0, sizeof(Fts5ExprTerm));
+    pTerm->zTerm = sqlite3Fts5Strndup(&rc, pToken, nToken);
   }
-
-  pTerm = &pPhrase->aTerm[pPhrase->nTerm++];
-  memset(pTerm, 0, sizeof(Fts5ExprTerm));
-  pTerm->zTerm = sqlite3Fts5Strndup(&rc, pToken, nToken);
-
   return rc;
 }
 
@@ -1636,7 +1781,10 @@ Fts5ExprNode *sqlite3Fts5ParseNode(
         for(iPhrase=0; iPhrase<pNear->nPhrase; iPhrase++){
           pNear->apPhrase[iPhrase]->pNode = pRet;
         }
-        if( pNear->nPhrase==1 && pNear->apPhrase[0]->nTerm==1 ){
+        if( pNear->nPhrase==1 
+         && pNear->apPhrase[0]->nTerm==1 
+         && pNear->apPhrase[0]->aTerm[0].pSynonym==0
+        ){
           pRet->eType = FTS5_TERM;
         }
       }else{
@@ -1656,16 +1804,28 @@ Fts5ExprNode *sqlite3Fts5ParseNode(
 }
 
 static char *fts5ExprTermPrint(Fts5ExprTerm *pTerm){
-  char *zQuoted = sqlite3_malloc(strlen(pTerm->zTerm) * 2 + 3 + 2);
+  int nByte = 0;
+  Fts5ExprTerm *p;
+  char *zQuoted;
+
+  /* Determine the maximum amount of space required. */
+  for(p=pTerm; p; p=p->pSynonym){
+    nByte += strlen(pTerm->zTerm) * 2 + 3 + 2;
+  }
+  zQuoted = sqlite3_malloc(nByte);
+
   if( zQuoted ){
     int i = 0;
-    char *zIn = pTerm->zTerm;
-    zQuoted[i++] = '"';
-    while( *zIn ){
-      if( *zIn=='"' ) zQuoted[i++] = '"';
-      zQuoted[i++] = *zIn++;
+    for(p=pTerm; p; p=p->pSynonym){
+      char *zIn = p->zTerm;
+      zQuoted[i++] = '"';
+      while( *zIn ){
+        if( *zIn=='"' ) zQuoted[i++] = '"';
+        zQuoted[i++] = *zIn++;
+      }
+      zQuoted[i++] = '"';
+      if( p->pSynonym ) zQuoted[i++] = '|';
     }
-    zQuoted[i++] = '"';
     if( pTerm->bPrefix ){
       zQuoted[i++] = ' ';
       zQuoted[i++] = '*';
