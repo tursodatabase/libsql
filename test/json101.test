@@ -50,5 +50,246 @@ do_catchsql_test json1-2.4 {
   SELECT json_object('a',1,'b',x'abcd');
 } {1 {JSON cannot hold BLOB values}}
 
+do_execsql_test json1-3.1 {
+  SELECT json_replace('{"a":1,"b":2}','$.a','[3,4,5]');
+} {{{"a":"[3,4,5]","b":2}}}
+do_execsql_test json1-3.2 {
+  SELECT json_replace('{"a":1,"b":2}','$$.a','[3,4,5]');
+} {{{"a":[3,4,5],"b":2}}}
+do_execsql_test json1-3.3 {
+  SELECT json_type(json_set('{"a":1,"b":2}','$.b','{"x":3,"y":4}'),'$.b');
+} {text}
+do_execsql_test json1-3.4 {
+  SELECT json_type(json_set('{"a":1,"b":2}','$$.b','{"x":3,"y":4}'),'$.b');
+} {object}
+
+# Per rfc7159, any JSON value is allowed at the top level, and whitespace
+# is permitting before and/or after that value.
+#
+do_execsql_test json1-4.1 {
+  CREATE TABLE j1(x);
+  INSERT INTO j1(x)
+   VALUES('true'),('false'),('null'),('123'),('-234'),('34.5e+6'),
+         ('""'),('"\""'),('"\\"'),('"abcdefghijlmnopqrstuvwxyz"'),
+         ('[]'),('{}'),('[true,false,null,123,-234,34.5e+6,{},[]]'),
+         ('{"a":true,"b":{"c":false}}');
+  SELECT * FROM j1 WHERE NOT json_valid(x);
+} {}
+do_execsql_test json1-4.2 {
+  SELECT * FROM j1 WHERE NOT json_valid(char(0x20,0x09,0x0a,0x0d)||x);
+} {}
+do_execsql_test json1-4.3 {
+  SELECT * FROM j1 WHERE NOT json_valid(x||char(0x20,0x09,0x0a,0x0d));
+} {}
+
+# But an empty string, or a string of pure whitespace is not valid JSON.
+#
+do_execsql_test json1-4.4 {
+  SELECT json_valid(''), json_valid(char(0x20,0x09,0x0a,0x0d));
+} {0 0}
+
+# json_remove() and similar functions with no edit operations return their
+# input unchanged.
+#
+do_execsql_test json1-4.5 {
+  SELECT x FROM j1 WHERE json_remove(x)<>x;
+} {}
+do_execsql_test json1-4.6 {
+  SELECT x FROM j1 WHERE json_replace(x)<>x;
+} {}
+do_execsql_test json1-4.7 {
+  SELECT x FROM j1 WHERE json_set(x)<>x;
+} {}
+do_execsql_test json1-4.8 {
+  SELECT x FROM j1 WHERE json_insert(x)<>x;
+} {}
+
+# json_extract(JSON,'$') will return objects and arrays without change.
+#
+do_execsql_test json-4.10 {
+  SELECT count(*) FROM j1 WHERE json_type(x) IN ('object','array');
+  SELECT x FROM j1
+   WHERE json_extract(x,'$')<>x
+     AND json_type(x) IN ('object','array');
+} {4}
+
+do_execsql_test json-5.1 {
+  CREATE TABLE j2(id INTEGER PRIMARY KEY, json, src);
+  INSERT INTO j2(id,json,src)
+  VALUES(1,'{
+    "firstName": "John",
+    "lastName": "Smith",
+    "isAlive": true,
+    "age": 25,
+    "address": {
+      "streetAddress": "21 2nd Street",
+      "city": "New York",
+      "state": "NY",
+      "postalCode": "10021-3100"
+    },
+    "phoneNumbers": [
+      {
+        "type": "home",
+        "number": "212 555-1234"
+      },
+      {
+        "type": "office",
+        "number": "646 555-4567"
+      }
+    ],
+    "children": [],
+    "spouse": null
+  }','https://en.wikipedia.org/wiki/JSON');
+  INSERT INTO j2(id,json,src)
+  VALUES(2, '{
+	"id": "0001",
+	"type": "donut",
+	"name": "Cake",
+	"ppu": 0.55,
+	"batters":
+		{
+			"batter":
+				[
+					{ "id": "1001", "type": "Regular" },
+					{ "id": "1002", "type": "Chocolate" },
+					{ "id": "1003", "type": "Blueberry" },
+					{ "id": "1004", "type": "Devil''s Food" }
+				]
+		},
+	"topping":
+		[
+			{ "id": "5001", "type": "None" },
+			{ "id": "5002", "type": "Glazed" },
+			{ "id": "5005", "type": "Sugar" },
+			{ "id": "5007", "type": "Powdered Sugar" },
+			{ "id": "5006", "type": "Chocolate with Sprinkles" },
+			{ "id": "5003", "type": "Chocolate" },
+			{ "id": "5004", "type": "Maple" }
+		]
+   }','https://adobe.github.io/Spry/samples/data_region/JSONDataSetSample.html');
+   INSERT INTO j2(id,json,src)
+   VALUES(3,'[
+	{
+		"id": "0001",
+		"type": "donut",
+		"name": "Cake",
+		"ppu": 0.55,
+		"batters":
+			{
+				"batter":
+					[
+						{ "id": "1001", "type": "Regular" },
+						{ "id": "1002", "type": "Chocolate" },
+						{ "id": "1003", "type": "Blueberry" },
+						{ "id": "1004", "type": "Devil''s Food" }
+					]
+			},
+		"topping":
+			[
+				{ "id": "5001", "type": "None" },
+				{ "id": "5002", "type": "Glazed" },
+				{ "id": "5005", "type": "Sugar" },
+				{ "id": "5007", "type": "Powdered Sugar" },
+				{ "id": "5006", "type": "Chocolate with Sprinkles" },
+				{ "id": "5003", "type": "Chocolate" },
+				{ "id": "5004", "type": "Maple" }
+			]
+	},
+	{
+		"id": "0002",
+		"type": "donut",
+		"name": "Raised",
+		"ppu": 0.55,
+		"batters":
+			{
+				"batter":
+					[
+						{ "id": "1001", "type": "Regular" }
+					]
+			},
+		"topping":
+			[
+				{ "id": "5001", "type": "None" },
+				{ "id": "5002", "type": "Glazed" },
+				{ "id": "5005", "type": "Sugar" },
+				{ "id": "5003", "type": "Chocolate" },
+				{ "id": "5004", "type": "Maple" }
+			]
+	},
+	{
+		"id": "0003",
+		"type": "donut",
+		"name": "Old Fashioned",
+		"ppu": 0.55,
+		"batters":
+			{
+				"batter":
+					[
+						{ "id": "1001", "type": "Regular" },
+						{ "id": "1002", "type": "Chocolate" }
+					]
+			},
+		"topping":
+			[
+				{ "id": "5001", "type": "None" },
+				{ "id": "5002", "type": "Glazed" },
+				{ "id": "5003", "type": "Chocolate" },
+				{ "id": "5004", "type": "Maple" }
+			]
+	}
+   ]','https://adobe.github.io/Spry/samples/data_region/JSONDataSetSample.html');
+   SELECT count(*) FROM j2;
+} {3}
+
+do_execsql_test json-5.2 {
+  SELECT id, json_valid(json), json_type(json), '|' FROM j2 ORDER BY id;
+} {1 1 object | 2 1 object | 3 1 array |}
+
+ifcapable !vtab {
+  finish_test
+  return
+}
+
+# fullkey is always the same as path+key (with appropriate formatting)
+#
+do_execsql_test json-5.3 {
+  SELECT j2.rowid, jx.rowid, fullkey, path, key
+    FROM j2, json_tree(j2.json) AS jx
+   WHERE fullkey!=(path || CASE WHEN typeof(key)=='integer' THEN '['||key||']'
+                                ELSE '.'||key END);
+} {}
+do_execsql_test json-5.4 {
+  SELECT j2.rowid, jx.rowid, fullkey, path, key
+    FROM j2, json_each(j2.json) AS jx
+   WHERE fullkey!=(path || CASE WHEN typeof(key)=='integer' THEN '['||key||']'
+                                ELSE '.'||key END);
+} {}
+
+
+# Verify that the json_each.json and json_tree.json output is always the
+# same as input.
+#
+do_execsql_test json-5.5 {
+  SELECT j2.rowid, jx.rowid, fullkey, path, key
+    FROM j2, json_each(j2.json) AS jx
+   WHERE jx.json<>j2.json;
+} {}
+do_execsql_test json-5.6 {
+  SELECT j2.rowid, jx.rowid, fullkey, path, key
+    FROM j2, json_tree(j2.json) AS jx
+   WHERE jx.json<>j2.json;
+} {}
+do_execsql_test json-5.7 {
+  SELECT j2.rowid, jx.rowid, fullkey, path, key
+    FROM j2, json_each(j2.json) AS jx
+   WHERE jx.value<>jx.atom AND type NOT IN ('array','object');
+} {}
+do_execsql_test json-5.8 {
+  SELECT j2.rowid, jx.rowid, fullkey, path, key
+    FROM j2, json_tree(j2.json) AS jx
+   WHERE jx.value<>jx.atom AND type NOT IN ('array','object');
+} {}
+
+
 
 finish_test
