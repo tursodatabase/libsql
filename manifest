@@ -1,5 +1,5 @@
-C Merge\sthe\slatest\senhancements\sfrom\strunk.
-D 2015-08-31T14:27:29.928
+C Improved\sanalysis\sand\susage\sof\sindexed\sexpressions\sin\sthe\squery\splanner.
+D 2015-08-31T15:58:06.350
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -414,10 +414,10 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 8cd07f1f99e1a81346db1c9da879bef6c6f97cf6
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 2e14d17f592d176b6dc879c33fbdec4fbccaa2ba
-F src/where.c acec45dc602a4f58e80e6fa088b9379ccfffd3a4
+F src/where.c 385f927f06a89d06de6a4ce7627fbd1684f157bb
 F src/whereInt.h 292d3ac90da4eab1e03ac8452f1add746bcafaa1
 F src/wherecode.c b0bf45ca49e62fde68ba2e2ad2939d9cdeb4e409
-F src/whereexpr.c 990ed42b5940d4000e7e61887a4bbed412c80488
+F src/whereexpr.c 2473e4350e30f9b55d1c6a8f66ca23c689f23f1d
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -780,6 +780,7 @@ F test/index5.test 8621491915800ec274609e42e02a97d67e9b13e7
 F test/index6.test 7102ec371414c42dfb1d5ca37eb4519aa9edc23a
 F test/index7.test 9c6765a74fc3fcde7aebc5b3bd40d98df14a527c
 F test/indexedby.test 5f527a78bae74c61b8046ae3037f9dfb0bf0c353
+F test/indexexpr1.test 36b7aab1fdb03710b99ee876ff764b92c7b96e3e
 F test/indexfault.test 31d4ab9a7d2f6e9616933eb079722362a883eb1d
 F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
 F test/insert.test 38742b5e9601c8f8d76e9b7555f7270288c2d371
@@ -1380,7 +1381,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P cf452028d1be2c5578a07f6e21b4d8b613373eb8 1da60c3dda4254620052a83c853c2d2b6dd5009f
-R 64522485917d5b93eb19dc63143d2895
+P 7bde6d4d8cf05e1beb9bdf20b85760dc3e7a76c9
+R b7744e5a00368fcccd1913a83a0521e8
 U drh
-Z 590b51e0f03c976eccd82950be2fb3fc
+Z 32945199df036dc2360847bdab3537ac

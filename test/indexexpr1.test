@@ -1,0 +1,45 @@
+# 2015-08-31
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing indexes on expressions.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+do_execsql_test indexexpr1-100 {
+  CREATE TABLE t1(a,b,c);
+  INSERT INTO t1(a,b,c)
+  VALUES('In the beginning was the Word',1,1),
+        ('and the Word was with God',1,2),
+        ('and the Word was God',1,3),
+        ('The same was in the beginning with God',2,1),
+        ('All things were made by him',3,1),
+        ('and without him was not any thing made that was made',3,2);
+  CREATE INDEX t1a1 ON t1(substr(a,1,12));
+} {}
+do_execsql_test indexexpr1-110 {
+  SELECT b, c, '|' FROM t1 WHERE substr(a,1,12)=='and the Word' ORDER BY b, c;
+} {1 2 | 1 3 |}
+do_execsql_test indexexpr1-110eqp {
+  EXPLAIN QUERY PLAN
+  SELECT b, c, '|' FROM t1 WHERE substr(a,1,12)=='and the Word' ORDER BY b, c;
+} {/USING INDEX t1a1/}
+do_execsql_test indexexpr1-120 {
+  SELECT b, c, '|' FROM t1 WHERE 'and the Word'==substr(a,1,12) ORDER BY b, c;
+} {1 2 | 1 3 |}
+do_execsql_test indexexpr1-120eqp {
+  EXPLAIN QUERY PLAN
+  SELECT b, c, '|' FROM t1 WHERE 'and the Word'==substr(a,1,12) ORDER BY b, c;
+} {/USING INDEX t1a1/}
+
+
+finish_test
