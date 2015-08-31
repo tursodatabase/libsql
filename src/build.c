@@ -4117,14 +4117,16 @@ void sqlite3UniqueConstraint(
   Table *pTab = pIdx->pTable;
 
   sqlite3StrAccumInit(&errMsg, pParse->db, 0, 0, 200);
-  for(j=0; j<pIdx->nKeyCol; j++){
-    char *zCol;
-    assert( pIdx->aiColumn[j]>=0 );
-    zCol = pTab->aCol[pIdx->aiColumn[j]].zName;
-    if( j ) sqlite3StrAccumAppend(&errMsg, ", ", 2);
-    sqlite3StrAccumAppendAll(&errMsg, pTab->zName);
-    sqlite3StrAccumAppend(&errMsg, ".", 1);
-    sqlite3StrAccumAppendAll(&errMsg, zCol);
+  if( pIdx->aColExpr ){
+    sqlite3XPrintf(&errMsg, 0, "index '%q'", pIdx->zName);
+  }else{
+    for(j=0; j<pIdx->nKeyCol; j++){
+      char *zCol;
+      assert( pIdx->aiColumn[j]>=0 );
+      zCol = pTab->aCol[pIdx->aiColumn[j]].zName;
+      if( j ) sqlite3StrAccumAppend(&errMsg, ", ", 2);
+      sqlite3XPrintf(&errMsg, 0, "%s.%s", pTab->zName, zCol);
+    }
   }
   zErr = sqlite3StrAccumFinish(&errMsg);
   sqlite3HaltConstraint(pParse, 

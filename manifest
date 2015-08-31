@@ -1,5 +1,5 @@
-C Not\sonly\sdate/time\sfunctions,\sbut\salso\sfunctions\slike\ssqlite_version()\sand\nchanges()\sneed\sto\sbe\sprohibited\sfrom\suse\sinside\sof\sindexes.
-D 2015-08-31T21:16:36.552
+C Fix\sa\sbug\sin\serror\sreporting\swhen\sa\sUNIQUE\sindex\son\sexpressions\sfails\sits\nuniqueness\stest.
+D 2015-08-31T23:09:42.268
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -282,7 +282,7 @@ F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
 F src/btree.c f48b3ef91676c06a90a8832987ecef6b94c931ee
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 8177c9ab90d772d6d2c6c517e05bed774b7c92c0
-F src/build.c 9e7216acaf612d371c1b4a6bf9711886472f7ac6
+F src/build.c f85ede9d6dbf833f8f8d43bd78619c2a112ab161
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
 F src/ctime.c 5a0b735dc95604766f5dac73973658eef782ee8b
@@ -780,7 +780,7 @@ F test/index5.test 8621491915800ec274609e42e02a97d67e9b13e7
 F test/index6.test 7102ec371414c42dfb1d5ca37eb4519aa9edc23a
 F test/index7.test 9c6765a74fc3fcde7aebc5b3bd40d98df14a527c
 F test/indexedby.test 5f527a78bae74c61b8046ae3037f9dfb0bf0c353
-F test/indexexpr1.test d04a3905275fb9a0fb82447e7d43773f98fad282
+F test/indexexpr1.test 3c5033412f851f225e3a37d6795709df71bea638
 F test/indexfault.test 31d4ab9a7d2f6e9616933eb079722362a883eb1d
 F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
 F test/insert.test 38742b5e9601c8f8d76e9b7555f7270288c2d371
@@ -1381,7 +1381,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P cc60321a67bf9f169c090b47afb505f589a6925e
-R d6937d2b3277ce224a948b2dc07646a7
+P 487131303980f15dd5e1b6695b4f29efda229eb8
+R 9ef09a7ae54b897d1ff4fd4dfc1065a6
 U drh
-Z c474b9a8c6f81c985226d970f2d27c66
+Z 8fa9de950d104f084061f9372f8e6439
