@@ -732,9 +732,15 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           return WRC_Prune;
         }
 #endif
-        if( pDef->funcFlags & SQLITE_FUNC_CONSTANT ){
+        if( pDef->funcFlags & (SQLITE_FUNC_CONSTANT|SQLITE_FUNC_DATETIME) ){
+          /* For the purposes of the EP_ConstFunc flag, date and time
+          ** functions are considered constant because the the time does
+          ** not change for the duration of a query. */
           ExprSetProperty(pExpr,EP_ConstFunc);
-        }else{
+        }
+        if( (pDef->funcFlags & SQLITE_FUNC_CONSTANT)==0 ){
+          /* DATETIME functions are considered non-deterministic because of
+          ** the 'now' capability */
           notValid(pParse, pNC, "non-deterministic functions", NC_IdxExpr, 0);
         }
       }
