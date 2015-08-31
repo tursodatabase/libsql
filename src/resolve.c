@@ -548,19 +548,16 @@ Expr *sqlite3CreateColumnExpr(sqlite3 *db, SrcList *pSrc, int iSrc, int iCol){
 
 /*
 ** Report an error that an expression is not valid for some set of
-** pNC->ncFlags values determined by validMask.  If 
+** pNC->ncFlags values determined by validMask.
 */
 static void notValid(
   Parse *pParse,       /* Leave error message here */
   NameContext *pNC,    /* The name context */
   const char *zMsg,    /* Type of error */
-  int validMask,       /* Set of contexts for which prohibited */
-  int okForInit        /* No error if pParse->db->init.busy is true */
+  int validMask        /* Set of contexts for which prohibited */
 ){
   assert( (validMask&~(NC_IsCheck|NC_PartIdx|NC_IdxExpr))==0 );
-  if( (pNC->ncFlags & validMask)!=0 
-   && (pParse->db->init.busy==0 || !okForInit)
-  ){
+  if( (pNC->ncFlags & validMask)!=0 ){
     const char *zIn = "partial index WHERE clauses";
     if( pNC->ncFlags & NC_IdxExpr )      zIn = "index expressions";
 #ifndef SQLITE_OMIT_CHECK
@@ -653,7 +650,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       Expr *pRight;
 
       /* if( pSrcList==0 ) break; */
-      notValid(pParse, pNC, "the \".\" operator", NC_IdxExpr, 0);
+      notValid(pParse, pNC, "the \".\" operator", NC_IdxExpr);
       /*notValid(pParse, pNC, "the \".\" operator", NC_PartIdx|NC_IsCheck, 1);*/
       pRight = pExpr->pRight;
       if( pRight->op==TK_ID ){
@@ -684,7 +681,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       u8 enc = ENC(pParse->db);   /* The database encoding */
 
       assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
-      notValid(pParse, pNC, "functions", NC_PartIdx, 0);
+      notValid(pParse, pNC, "functions", NC_PartIdx);
       zId = pExpr->u.zToken;
       nId = sqlite3Strlen30(zId);
       pDef = sqlite3FindFunction(pParse->db, zId, nId, n, enc, 0);
@@ -732,16 +729,16 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           return WRC_Prune;
         }
 #endif
-        if( pDef->funcFlags & (SQLITE_FUNC_CONSTANT|SQLITE_FUNC_DATETIME) ){
+        if( pDef->funcFlags & (SQLITE_FUNC_CONSTANT|SQLITE_FUNC_VARYING) ){
           /* For the purposes of the EP_ConstFunc flag, date and time
-          ** functions are considered constant because the the time does
-          ** not change for the duration of a query. */
+          ** functions and other functions that change slowly are considered
+          ** constant because they are constant for the duration of one query */
           ExprSetProperty(pExpr,EP_ConstFunc);
         }
         if( (pDef->funcFlags & SQLITE_FUNC_CONSTANT)==0 ){
           /* DATETIME functions are considered non-deterministic because of
           ** the 'now' capability */
-          notValid(pParse, pNC, "non-deterministic functions", NC_IdxExpr, 0);
+          notValid(pParse, pNC, "non-deterministic functions", NC_IdxExpr);
         }
       }
       if( is_agg && (pNC->ncFlags & NC_AllowAgg)==0 ){
@@ -788,7 +785,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       testcase( pExpr->op==TK_IN );
       if( ExprHasProperty(pExpr, EP_xIsSelect) ){
         int nRef = pNC->nRef;
-        notValid(pParse, pNC, "subqueries", NC_IsCheck|NC_PartIdx|NC_IdxExpr,0);
+        notValid(pParse, pNC, "subqueries", NC_IsCheck|NC_PartIdx|NC_IdxExpr);
         sqlite3WalkSelect(pWalker, pExpr->x.pSelect);
         assert( pNC->nRef>=nRef );
         if( nRef!=pNC->nRef ){
@@ -798,7 +795,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       break;
     }
     case TK_VARIABLE: {
-      notValid(pParse, pNC, "parameters", NC_IsCheck|NC_PartIdx|NC_IdxExpr, 0);
+      notValid(pParse, pNC, "parameters", NC_IsCheck|NC_PartIdx|NC_IdxExpr);
       break;
     }
   }
