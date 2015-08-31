@@ -3126,13 +3126,16 @@ Index *sqlite3CreateIndex(
         goto exit_create_index;
       }
       if( pIndex->aColExpr==0 ){
-        pIndex->aColExpr = sqlite3ExprListDup(db, pList, 0);
+        ExprList *pCopy = sqlite3ExprListDup(db, pList, 0);
+        pIndex->aColExpr = pCopy;
+        if( !db->mallocFailed ){
+          assert( pCopy!=0 );
+          pListItem = &pCopy->a[i];
+        }
       }
       j = -2;
       pIndex->aiColumn[i] = -2;
-      if( sqlite3ExprCanBeNull(pList->a[i].pExpr) ){
-        pIndex->uniqNotNull = 1;
-      }
+      pIndex->uniqNotNull = 0;
     }else{
       j = pCExpr->iColumn;
       assert( j<=0x7fff );

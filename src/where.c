@@ -395,7 +395,7 @@ static int indexColumnNotNull(Index *pIdx, int iCol){
     return 1;
   }else{
     assert( j==(-2) );
-    return !sqlite3ExprCanBeNull(pIdx->aColExpr->a[iCol].pExpr);
+    return 0;  /* Assume an indexed expression can always yield a NULL */
   }
 }
 

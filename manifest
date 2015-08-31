@@ -1,5 +1,5 @@
-C Case\sshould\snot\sbe\ssignificant\swhen\scomparing\sfunction\snames.
-D 2015-08-31T18:13:01.161
+C Always\sassume\sthat\sindexed\sexpressions\scan\sgenerate\sa\sNULL.\s\sGet\nindexed\sexpressions\sworking\sfor\sthe\scase\sof\stwo\sor\smore\sexpressions\sin\nthe\ssame\sindex.
+D 2015-08-31T19:38:42.715
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -282,7 +282,7 @@ F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
 F src/btree.c f48b3ef91676c06a90a8832987ecef6b94c931ee
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 8177c9ab90d772d6d2c6c517e05bed774b7c92c0
-F src/build.c e0902658fc86dbd60a5c6772ca45429c69ee81fe
+F src/build.c 9e7216acaf612d371c1b4a6bf9711886472f7ac6
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
 F src/ctime.c 5a0b735dc95604766f5dac73973658eef782ee8b
@@ -414,7 +414,7 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 8cd07f1f99e1a81346db1c9da879bef6c6f97cf6
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 2e14d17f592d176b6dc879c33fbdec4fbccaa2ba
-F src/where.c 385f927f06a89d06de6a4ce7627fbd1684f157bb
+F src/where.c 04e0f87e4d82a85c283176958465bed6ea5434e0
 F src/whereInt.h 292d3ac90da4eab1e03ac8452f1add746bcafaa1
 F src/wherecode.c b0bf45ca49e62fde68ba2e2ad2939d9cdeb4e409
 F src/whereexpr.c 2473e4350e30f9b55d1c6a8f66ca23c689f23f1d
@@ -1381,7 +1381,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c77554b5c42327106a7b90334e9cc3c07b007c76
-R 0c8c1c66a00ef8c41547d29bee27b359
+P e2f1caf117b0a9632d52246717ab202852982339
+R 9a8972907f2a35dc9161585e1e0d88b8
 U drh
-Z 0525f466a18434624bccbe0dbed916be
+Z 7baf4f251bc37ea5f508ac4ed0b603b4
