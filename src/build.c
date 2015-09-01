@@ -1310,7 +1310,8 @@ void sqlite3AddPrimaryKey(
     nTerm = pList->nExpr;
     for(i=0; i<nTerm; i++){
       Expr *pCExpr = sqlite3ExprSkipCollate(pList->a[i].pExpr);
-      if( pCExpr && pCExpr->op==TK_ID ){
+      assert( pCExpr!=0 );
+      if( pCExpr->op==TK_ID ){
         const char *zCName = pCExpr->u.zToken;
         for(iCol=0; iCol<pTab->nCol; iCol++){
           if( sqlite3StrICmp(zCName, pTab->aCol[iCol].zName)==0 ){
@@ -3061,7 +3062,8 @@ Index *sqlite3CreateIndex(
   */
   for(i=0; i<pList->nExpr; i++){
     Expr *pExpr = pList->a[i].pExpr;
-    if( pExpr && pExpr->op==TK_COLLATE ){
+    assert( pExpr!=0 );
+    if( pExpr->op==TK_COLLATE ){
       nExtra += (1 + sqlite3Strlen30(pExpr->u.zToken));
     }
   }
@@ -3258,6 +3260,7 @@ Index *sqlite3CreateIndex(
   /* Link the new Index structure to its table and to the other
   ** in-memory database structures. 
   */
+  assert( pParse->nErr==0 );
   if( db->init.busy ){
     Index *p;
     assert( sqlite3SchemaMutexHeld(db, 0, pIndex->pSchema) );
@@ -3287,7 +3290,7 @@ Index *sqlite3CreateIndex(
   ** has just been created, it contains no data and the index initialization
   ** step can be skipped.
   */
-  else if( pParse->nErr==0 && (HasRowid(pTab) || pTblName!=0) ){
+  else if( HasRowid(pTab) || pTblName!=0 ){
     Vdbe *v;
     char *zStmt;
     int iMem = ++pParse->nMem;

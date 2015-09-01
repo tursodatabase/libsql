@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\serror\sreporting\swhen\sa\sUNIQUE\sindex\son\sexpressions\sfails\sits\nuniqueness\stest.
-D 2015-08-31T23:09:42.268
+C Remove\sunreachable\sbranches.
+D 2015-09-01T00:42:52.453
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -282,7 +282,7 @@ F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
 F src/btree.c f48b3ef91676c06a90a8832987ecef6b94c931ee
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 8177c9ab90d772d6d2c6c517e05bed774b7c92c0
-F src/build.c f85ede9d6dbf833f8f8d43bd78619c2a112ab161
+F src/build.c c6926497c50c8005c75d4ca476b254978d195a0d
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
 F src/ctime.c 5a0b735dc95604766f5dac73973658eef782ee8b
@@ -414,7 +414,7 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 8cd07f1f99e1a81346db1c9da879bef6c6f97cf6
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 2e14d17f592d176b6dc879c33fbdec4fbccaa2ba
-F src/where.c 04e0f87e4d82a85c283176958465bed6ea5434e0
+F src/where.c 567b96aa00e7a13ae379a48e10c2911087159e7d
 F src/whereInt.h 292d3ac90da4eab1e03ac8452f1add746bcafaa1
 F src/wherecode.c b0bf45ca49e62fde68ba2e2ad2939d9cdeb4e409
 F src/whereexpr.c 2473e4350e30f9b55d1c6a8f66ca23c689f23f1d
@@ -1381,7 +1381,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 487131303980f15dd5e1b6695b4f29efda229eb8
-R 9ef09a7ae54b897d1ff4fd4dfc1065a6
+P 5a2c0e90a1933545b4768d91d8f7c42c8f391019
+R 43c7fa01f20234523219b9eb18641ef8
 U drh
-Z 8fa9de950d104f084061f9372f8e6439
+Z e43aaed9b864f00cd6aff5655ab5ae6d
