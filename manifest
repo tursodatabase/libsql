@@ -1,5 +1,5 @@
-C Reduce\sthe\snumber\sof\scalls\sto\ssqlite3BeginBenignMalloc().
-D 2015-09-01T19:51:37.710
+C Small\ssize\sreduction\sand\sperformance\sincrease\sin\ssqlite3DbMallocSize().
+D 2015-09-01T20:09:33.590
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -303,7 +303,7 @@ F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 92bafa308607dd985ca389a788cd9e0a2b608712
 F src/loadext.c dfcee8c7c032cd0fd55af3e0fc1fcfb01e426df2
 F src/main.c e17fcffae4306a9b8334faf3bac80d7396850b54
-F src/malloc.c 19461e159bccf0e2cf06a50e867963d0a7b124a8
+F src/malloc.c 7de3bb83deb27fb4a874d2905efe8e5f7c553b10
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c abe6ee469b6c5a35c7f22bfeb9c9bac664a1c987
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
@@ -1380,7 +1380,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1da60c3dda4254620052a83c853c2d2b6dd5009f
-R a8dadc2be409ee0f9230c079f3e60bef
+P 0bee6583665782fac5d9e82bdf19b6f07e7bd03f
+R 39af4bc3b2575cd9ee7302f5efa55d4c
 U drh
-Z e7045dcb0c08a97552c700c3dabf771a
+Z 1747b3c93823be844ad623868b80b161
