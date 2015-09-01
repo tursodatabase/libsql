@@ -729,15 +729,16 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           return WRC_Prune;
         }
 #endif
-        if( pDef->funcFlags & (SQLITE_FUNC_CONSTANT|SQLITE_FUNC_VARYING) ){
+        if( pDef->funcFlags & (SQLITE_FUNC_CONSTANT|SQLITE_FUNC_SLOCHNG) ){
           /* For the purposes of the EP_ConstFunc flag, date and time
           ** functions and other functions that change slowly are considered
           ** constant because they are constant for the duration of one query */
           ExprSetProperty(pExpr,EP_ConstFunc);
         }
         if( (pDef->funcFlags & SQLITE_FUNC_CONSTANT)==0 ){
-          /* DATETIME functions are considered non-deterministic because of
-          ** the 'now' capability */
+          /* Date/time functions that use 'now', and other functions like
+          ** sqlite_version() that might change over time cannot be used
+          ** in an index. */
           notValid(pParse, pNC, "non-deterministic functions", NC_IdxExpr);
         }
       }

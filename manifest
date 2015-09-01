@@ -1,5 +1,5 @@
-C Remove\sunreachable\sbranches.
-D 2015-09-01T00:42:52.453
+C Rename\sSQLITE_FUNC_VARYING\sto\sSQLITE_FUNC_SLOCHNG\s-\sa\smore\sdescriptive\sname\nfor\swhat\sthat\sbit\smeans.
+D 2015-09-01T13:17:17.375
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -335,14 +335,14 @@ F src/pragma.h 631a91c8b0e6ca8f051a1d8a4a0da4150e04620a
 F src/prepare.c 82e5db1013846a819f198336fed72c44c974e7b1
 F src/printf.c 2bc439ff20a4aad0e0ad50a37a67b5eae7d20edc
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
-F src/resolve.c 203146a9adfed08c94cdb4bd59421b066a00e03f
+F src/resolve.c 47c00ca0ab24d4b8113c6c05aa07bc6cf6eac9af
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c b52c80f2b1bdb62491f9ce40eea0c5f80c78d105
 F src/shell.c 6332ef06db1390ef812cfdff1fc97b4fd76cdd42
 F src/sqlite.h.in 378bebc8fe6a88bade25e5f23b7e6123fdc64b00
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h f700e6a9dd1fdcccc9951ab022b366fb66b9e413
-F src/sqliteInt.h fde5d96c3d547084f7c9ba85b87bad3e4a9a613f
+F src/sqliteInt.h e7e92112a71aeb214c66ebdea1366560535614d1
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c f266ad8a2892d659b74f0f50cb6a88b6e7c12179
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
@@ -1381,7 +1381,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5a2c0e90a1933545b4768d91d8f7c42c8f391019
-R 43c7fa01f20234523219b9eb18641ef8
+P fd4da2318cc032d7c355376e440d4a05d7ab8793
+R 56bc6d7502c6fcf5fea0759746df8b8f
 U drh
-Z e43aaed9b864f00cd6aff5655ab5ae6d
+Z 5fd0e1fb2f0e68b5cb95600541b3c11a
