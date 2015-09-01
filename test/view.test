@@ -152,6 +152,15 @@ do_test view-3.3.2 {
     SELECT * FROM v1b LIMIT 1
   }
 } {a 2 b+c 7 c 4}
+do_test view-3.3.3 {
+  execsql2 {
+    CREATE VIEW v1c(x,y,z) AS SELECT a, b+c, c-b FROM t1;
+    SELECT * FROM v1c LIMIT 1;
+  }
+} {x 2 y 7 z 1}
+do_catchsql_test view-3.3.4 {
+  CREATE VIEW v1err(x,y DESC,z) AS SELECT a, b+c, c-b FROM t1;
+} {1 {syntax error after column name "y"}}
 
 ifcapable compound {
 do_test  view-3.4 {
@@ -337,7 +346,7 @@ do_test view-8.2 {
 } {7 2 13 5 19 8 27 12}
 do_test view-8.3 {
   execsql {
-    CREATE VIEW v7 AS SELECT pqr+xyz AS a FROM v6;
+    CREATE VIEW v7(a) AS SELECT pqr+xyz FROM v6;
     SELECT * FROM v7 ORDER BY a;
   }
 } {9 18 27 39}

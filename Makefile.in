@@ -417,6 +417,7 @@ TESTSRC += \
   $(TOP)/ext/fts5/fts5_tcl.c \
   $(TOP)/ext/fts5/fts5_test_mi.c \
   $(TOP)/ext/misc/ieee754.c \
+  $(TOP)/ext/misc/json1.c \
   $(TOP)/ext/misc/nextchar.c \
   $(TOP)/ext/misc/percentile.c \
   $(TOP)/ext/misc/regexp.c \
@@ -565,9 +566,9 @@ libtclsqlite3.la:	tclsqlite.lo libsqlite3.la
 		-version-info "8:6:8" \
 		-avoid-version
 
-sqlite3$(TEXE):	$(TOP)/src/shell.c libsqlite3.la sqlite3.h
-	$(LTLINK) $(READLINE_FLAGS) \
-		-o $@ $(TOP)/src/shell.c libsqlite3.la \
+sqlite3$(TEXE):	$(TOP)/src/shell.c libsqlite3.la sqlite3.h $(TOP)/ext/misc/json1.c
+	$(LTLINK) $(READLINE_FLAGS) -DSQLITE_ENABLE_JSON1 -o $@ \
+		$(TOP)/src/shell.c $(TOP)/ext/misc/json1.c libsqlite3.la \
 		$(LIBREADLINE) $(TLIBS) -rpath "$(libdir)"
 
 sqldiff$(TEXE):	$(TOP)/tool/sqldiff.c sqlite3.c sqlite3.h
