@@ -489,7 +489,7 @@ static int rbuDeltaApply(
           /* ERROR: copy exceeds output file size */
           return -1;
         }
-        if( ofst+cnt > lenSrc ){
+        if( (int)(ofst+cnt) > lenSrc ){
           /* ERROR: copy extends past end of input */
           return -1;
         }
@@ -504,7 +504,7 @@ static int rbuDeltaApply(
           /* ERROR:  insert command gives an output larger than predicted */
           return -1;
         }
-        if( cnt>lenDelta ){
+        if( (int)cnt>lenDelta ){
           /* ERROR: insert count exceeds size of delta */
           return -1;
         }
@@ -1117,7 +1117,7 @@ static void rbuTableType(
   }
 
 rbuTableType_end: {
-    int i;
+    unsigned int i;
     for(i=0; i<sizeof(aStmt)/sizeof(aStmt[0]); i++){
       rbuFinalize(p, aStmt[i]);
     }
@@ -1530,7 +1530,7 @@ static char *rbuObjIterGetSetlist(
   if( p->rc==SQLITE_OK ){
     int i;
 
-    if( strlen(zMask)!=pIter->nTblCol ){
+    if( (int)strlen(zMask)!=pIter->nTblCol ){
       rbuBadControlError(p);
     }else{
       const char *zSep = "";
@@ -3680,7 +3680,8 @@ static int rbuVfsOpen(
     rbuVfsShmMap,                 /* xShmMap */
     rbuVfsShmLock,                /* xShmLock */
     rbuVfsShmBarrier,             /* xShmBarrier */
-    rbuVfsShmUnmap                /* xShmUnmap */
+    rbuVfsShmUnmap,               /* xShmUnmap */
+    0, 0                          /* xFetch, xUnfetch */
   };
   rbu_vfs *pRbuVfs = (rbu_vfs*)pVfs;
   sqlite3_vfs *pRealVfs = pRbuVfs->pRealVfs;
