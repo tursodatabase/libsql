@@ -492,7 +492,7 @@ static int codeAllEqualityTerms(
   nReg = pLoop->u.btree.nEq + nExtraReg;
   pParse->nMem += nReg;
 
-  zAff = sqlite3DbStrDup(pParse->db, sqlite3IndexAffinityStr(v, pIdx));
+  zAff = sqlite3DbStrDup(pParse->db,sqlite3IndexAffinityStr(pParse->db,pIdx));
   if( !zAff ){
     pParse->db->mallocFailed = 1;
   }

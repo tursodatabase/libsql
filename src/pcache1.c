@@ -65,7 +65,7 @@
 ** that is allocated when the page cache is created.  The size of the local
 ** bulk allocation can be adjusted using 
 **
-**     sqlite3_config(SQLITE_CONFIG_PCACHE, 0, 0, N).
+**     sqlite3_config(SQLITE_CONFIG_PAGECACHE, 0, 0, N).
 **
 ** If N is positive, then N pages worth of memory are allocated using a single
 ** sqlite3Malloc() call and that memory is used for the first N pages allocated.
