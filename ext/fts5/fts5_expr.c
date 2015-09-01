@@ -395,6 +395,7 @@ static int fts5ExprSynonymPoslist(
   Fts5PoslistReader aStatic[4];
   Fts5PoslistReader *aIter = aStatic;
   int nIter = 0;
+  int nAlloc = 4;
   int rc = SQLITE_OK;
   Fts5ExprTerm *p;
 
@@ -406,7 +407,18 @@ static int fts5ExprSynonymPoslist(
       int n;
       i64 dummy;
       rc = sqlite3Fts5IterPoslist(pIter, &a, &n, &dummy);
-      if( rc!=SQLITE_OK ) return rc;
+      if( rc!=SQLITE_OK ) goto synonym_poslist_out;
+      if( nIter==nAlloc ){
+        int nByte = sizeof(Fts5PoslistReader) * nAlloc * 2;
+        Fts5PoslistReader *aNew = (Fts5PoslistReader*)sqlite3_malloc(nByte);
+        if( aNew==0 ){
+          rc = SQLITE_NOMEM;
+          goto synonym_poslist_out;
+        }
+        memcpy(aNew, aIter, sizeof(Fts5PoslistReader) * nIter);
+        nAlloc = nAlloc*2;
+        aIter = aNew;
+      }
       if( sqlite3Fts5PoslistReaderInit(-1, a, n, &aIter[nIter])==0 ){
         nIter++;
       }
@@ -447,6 +459,8 @@ static int fts5ExprSynonymPoslist(
     }
   }
 
+ synonym_poslist_out:
+  if( aIter!=aStatic ) sqlite3_free(aIter);
   return rc;
 }
 

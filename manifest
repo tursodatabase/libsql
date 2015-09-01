@@ -1,5 +1,5 @@
-C Add\stests\sfor\sfts5\ssynonyms\simplemented\sby\sadding\sextra\sterms\sto\squeries.\sAnd\sfixes\sfor\sthe\ssame.
-D 2015-09-01T18:08:36.324
+C Fix\sa\sproblem\sthat\soccurs\swhen\smore\sthan\s4\ssynonyms\sfor\sa\sterm\sappear\swithin\sa\ssingle\srow.
+D 2015-09-01T18:44:33.194
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e2218eb228374422969de7b1680eda6864affcef
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -110,7 +110,7 @@ F ext/fts5/fts5Int.h d46f89aeb357fbcf5b268d71b0d2c5000cd27bd9
 F ext/fts5/fts5_aux.c 7a307760a9c57c750d043188ec0bad59f5b5ec7e
 F ext/fts5/fts5_buffer.c 80f9ba4431848cb857e3d2158f5280093dcd8015
 F ext/fts5/fts5_config.c 80b61fd2c6844b64a3e72a64572d50a812da9384
-F ext/fts5/fts5_expr.c 99560f28339b635ba0e0b13f80586c0be58fc680
+F ext/fts5/fts5_expr.c 44caa0ccd7e9a392864fda0c14e9b9829a395a84
 F ext/fts5/fts5_hash.c 4bf4b99708848357b8a2b5819e509eb6d3df9246
 F ext/fts5/fts5_index.c 076c4995bf06a6d1559a6e31f9a86b90f2105374
 F ext/fts5/fts5_main.c b00834ac543431dc35edbe18018b4befe0c7fd42
@@ -172,7 +172,7 @@ F ext/fts5/test/fts5rank.test 11dcebba31d822f7e99685b4ea2c2ae3ec0b16f1
 F ext/fts5/test/fts5rebuild.test 03935f617ace91ed23a6099c7c74d905227ff29b
 F ext/fts5/test/fts5restart.test c17728fdea26e7d0f617d22ad5b4b2862b994c17
 F ext/fts5/test/fts5rowid.test 6f9833b23b176dc4aa15b7fc02afeb2b220fd460
-F ext/fts5/test/fts5synonym.test a2b0fb9a584417a9c02554aa465ed9084653cdde
+F ext/fts5/test/fts5synonym.test 4321e59c29186d9187cf8ab576e70530176eae49
 F ext/fts5/test/fts5tokenizer.test ea4df698b35cc427ebf2ba22829d0e28386d8c89
 F ext/fts5/test/fts5unicode.test fbef8d8a3b4b88470536cc57604a82ca52e51841
 F ext/fts5/test/fts5unicode2.test c1dd890ba32b7609adba78e420faa847abe43b59
@@ -1381,7 +1381,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ad7feaed4cd6b1d6e6376bb82d1f5664ddd083f3
-R 7ab2a9e80bd7422fd7466024fe59c669
+P dbcb73802b88f76be17f09f3eb83ffac542de633
+R 07c5ba5d7a2806d5caa7dc123b3f32ad
 U dan
-Z 679d87b3074cd417fe8a5b64a65c64bd
+Z fc32f7df10846658b7b8e62d59624854

@@ -280,12 +280,100 @@ foreach {tn q res} {
     8 {2 ii i two 3 three 2} {two [iv] [v] iii 3 [five]}
     9 {i 2 [iv] 3 [five] [four] [v]} {iii [4] three i three ii 1}
   }
+  3 {one OR two OR iii OR 4 OR v} {
+    1 {[four] [v] [4] [i] [three]} {[1] [3] [five] [five] [4] [one]}
+    2 {[5] [1] [3] [4] [i]} {[2] [2] [v] [two] [4]}
+    3 {[5] [i] [5] [2] [four] [4] [1]} {[iii] [ii] [five] [two] [1]}
+    4 {[ii] [four] [4] [one] [5] [three] [five]} {[one] [5] [1] [iii] [4] [3]}
+    5 {[three] [i] [v] [i] [four] [4] [1]} {[ii] [five] [five] [five] [iii]}
+    6 {[4] [2] [ii] [two] [2] [iii]} {[three] [1] [four] [4] [iv] [1] [iv]}
+    7 {[ii] [ii] [two] [three] [2] [5]} {[iii] [i] [ii] [iii] [iii] [one] [one]}
+    8 {[2] [ii] [i] [two] [3] [three] [2]} {[two] [iv] [v] [iii] [3] [five]}
+    9 {[i] [2] [iv] [3] [five] [four] [v]} {[iii] [4] [three] [i] [three] [ii] [1]}
+  }
 } {
   do_execsql_test 5.1.$tn {
     SELECT rowid, highlight(t1, 0, '[', ']'), highlight(t1, 1, '[', ']')
     FROM t1 WHERE t1 MATCH $q
   } $res
 }
+
+#-------------------------------------------------------------------------
+# Test terms with more than 4 synonyms.
+#
+reset_db
+sqlite3_fts5_create_tokenizer db tcl tcl_create
+proc tcl_tokenize {tflags text} {
+  foreach {w iStart iEnd} [do_tokenize_split $text] {
+    sqlite3_fts5_token $w $iStart $iEnd
+    if {$tflags=="query" && [string length $w]==1} {
+      for {set i 2} {$i<=10} {incr i} {
+        sqlite3_fts5_token -colo [string repeat $w $i] $iStart $iEnd
+      }
+    }
+  }
+}
+
+do_test 6.0 {
+  execsql { 
+    CREATE VIRTUAL TABLE t2 USING fts5(a, b, tokenize=tcl)
+  }
+  foreach {rowid a b} {
+    1 {yyyy vvvvv qq oo yyyyyy vvvv eee} {ffff uu r qq aaaa}
+    2 {ww oooooo bbbbb ssssss mm} {ffffff yy iiii rr s ccc qqqqq}
+    3 {zzzz llll gggggg cccc uu} {hhhhhh aaaa ppppp rr ee jjjj}
+    4 {r f i rrrrrr ww hhh} {aa yyy t x aaaaa ii}
+    5 {fffff mm vvvv ooo ffffff kkkk tttt} {cccccc bb e zzz d n}
+    6 {iii dddd hh qqqq ddd ooo} {ttt d c b aaaaaa qqqq}
+    7 {jjjj rrrr v zzzzz u tt t} {ppppp pp dddd mm hhh uuu}
+    8 {gggg rrrrrr kkkk vvvv gggg jjjjjj b} {dddddd jj r w cccc wwwwww ss}
+    9 {kkkkk qqq oooo e tttttt mmm} {e ss qqqqqq hhhh llllll gg}
+  } {
+    execsql { INSERT INTO t2(rowid, a, b) VALUES($rowid, $a, $b) }
+  }
+} {}
+
+foreach {tn q res} {
+  1 {a} {
+    1 {yyyy vvvvv qq oo yyyyyy vvvv eee} {ffff uu r qq [aaaa]}
+    3 {zzzz llll gggggg cccc uu} {hhhhhh [aaaa] ppppp rr ee jjjj}
+    4 {r f i rrrrrr ww hhh} {[aa] yyy t x [aaaaa] ii}
+    6 {iii dddd hh qqqq ddd ooo} {ttt d c b [aaaaaa] qqqq}
+  }
+
+  2 {a AND q} {
+    1 {yyyy vvvvv [qq] oo yyyyyy vvvv eee} {ffff uu r [qq] [aaaa]}
+    6 {iii dddd hh [qqqq] ddd ooo} {ttt d c b [aaaaaa] [qqqq]}
+  }
+
+  3 {o OR (q AND a)} {
+    1 {yyyy vvvvv [qq] [oo] yyyyyy vvvv eee} {ffff uu r [qq] [aaaa]}
+    2 {ww [oooooo] bbbbb ssssss mm} {ffffff yy iiii rr s ccc qqqqq}
+    5 {fffff mm vvvv [ooo] ffffff kkkk tttt} {cccccc bb e zzz d n}
+    6 {iii dddd hh [qqqq] ddd [ooo]} {ttt d c b [aaaaaa] [qqqq]}
+    9 {kkkkk qqq [oooo] e tttttt mmm} {e ss qqqqqq hhhh llllll gg}
+  }
+} {
+  do_execsql_test 6.1.$tn {
+    SELECT rowid, highlight(t2, 0, '[', ']'), highlight(t2, 1, '[', ']')
+    FROM t2 WHERE t2 MATCH $q
+  } $res
+}
+
+do_execsql_test 6.2.1 {
+  INSERT INTO t2(rowid, a, b) VALUES(13,
+      'x xx xxx xxxx xxxxx xxxxxx xxxxxxx', 'y yy yyy yyyy yyyyy yyyyyy yyyyyyy'
+  );
+  SELECT rowid, highlight(t2, 0, '<', '>'), highlight(t2, 1, '(', ')')
+  FROM t2 WHERE t2 MATCH 'x OR y'
+} {
+  1 {<yyyy> vvvvv qq oo <yyyyyy> vvvv eee} {ffff uu r qq aaaa}
+  2 {ww oooooo bbbbb ssssss mm} {ffffff (yy) iiii rr s ccc qqqqq}
+  4 {r f i rrrrrr ww hhh} {aa (yyy) t (x) aaaaa ii}
+  13 {<x> <xx> <xxx> <xxxx> <xxxxx> <xxxxxx> <xxxxxxx>}
+     {(y) (yy) (yyy) (yyyy) (yyyyy) (yyyyyy) (yyyyyyy)}
+}
+
 
 finish_test
 
