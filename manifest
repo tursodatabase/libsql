@@ -1,5 +1,5 @@
-C Small\ssize\sreduction\sand\sperformance\sincrease\sin\ssqlite3DbMallocSize().
-D 2015-09-01T20:09:33.590
+C Performance\simprovement\sin\ssqlite3VarintLen().
+D 2015-09-01T22:29:07.506
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -398,7 +398,7 @@ F src/treeview.c 46036cbbceada0836833531b2d963edbca3d9cfa
 F src/trigger.c 322f23aad694e8f31d384dcfa386d52a48d3c52f
 F src/update.c adc8b4b2b6fd2cca2e0d2b803e0cf6956aa3a030
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
-F src/util.c bc9dd64b5db544218b871b66243871c202b2781f
+F src/util.c fc612367108b74573c5fd13a85d0a23027f438bd
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
 F src/vdbe.c 6d85be995bd2308a5aa2a68c7b564c5d4cc1a6fb
 F src/vdbe.h 7a75045d879118b9d3af7e8b3c108f2f27c51473
@@ -1380,7 +1380,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0bee6583665782fac5d9e82bdf19b6f07e7bd03f
-R 39af4bc3b2575cd9ee7302f5efa55d4c
+P 8a80967f849eed002a701235ed7fb406099d566e
+R f6fa5fc612cf465d55de62b1cff01312
 U drh
-Z 1747b3c93823be844ad623868b80b161
+Z 09ba603411590b2095375d5c2fdf1bdd
