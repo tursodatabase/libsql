@@ -4009,7 +4009,9 @@ static int btreeFixUnlocked(Btree *p){
 
   return rc;
 }
-#endif
+#else
+# define btreeFixUnlocked(X)  SQLITE_OK
+#endif /* ENABLE_CONCURRENT */
 
 /*
 ** This routine does the first phase of a two-phase commit.  This routine

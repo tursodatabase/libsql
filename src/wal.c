@@ -2489,7 +2489,7 @@ int sqlite3WalFindFrame(
 #endif
 
   *piRead = iRead;
-  return SQLITE_OK;
+  return rc;
 }
 
 /*

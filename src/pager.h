@@ -200,6 +200,7 @@ int sqlite3PagerBeginConcurrent(Pager*);
 void sqlite3PagerDropExclusiveLock(Pager*);
 int sqlite3PagerUpgradeSnapshot(Pager *pPager, DbPage*);
 void sqlite3PagerSetDbsize(Pager *pPager, Pgno);
+int sqlite3PagerIsWal(Pager*);
 #else
 # define sqlite3PagerEndConcurrent(x)
 #endif

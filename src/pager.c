@@ -906,7 +906,9 @@ static int assert_pager_state(Pager *p){
       if( !pagerUseWal(pPager) ){
         assert( p->eLock>=RESERVED_LOCK );
       }
+#ifdef SQLITE_ENABLE_CONCURRENT
       assert( pPager->dbSize==pPager->dbOrigSize || pPager->pAllRead );
+#endif
       assert( pPager->dbOrigSize==pPager->dbFileSize );
       assert( pPager->dbOrigSize==pPager->dbHintSize );
       assert( pPager->setMaster==0 );
