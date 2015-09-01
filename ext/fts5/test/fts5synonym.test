@@ -23,15 +23,15 @@ ifcapable !fts5 {
 
 foreach S {
   {zero 0}
-  {one 1}
-  {two 2}
+  {one 1 i}
+  {two 2 ii}
   {three 3 iii}
-  {four 4}
-  {five 5}
-  {six 6}
-  {seven 7}
-  {eight 8}
-  {nine 9}
+  {four 4 iv}
+  {five 5 v}
+  {six 6 vi}
+  {seven 7 vii}
+  {eight 8 viii}
+  {nine 9 ix}
 } {
   foreach s $S {
     set o [list]
@@ -186,16 +186,23 @@ do_execsql_test 3.2.0 {
   one 1 4   three 1 2   two 1 2
 }
 do_execsql_test 3.2.1 {
-  SELECT rowid FROM ft WHERE ft MATCH 'one two three';
-  SELECT rowid FROM ft WHERE ft MATCH 'one + one + two + three';
-} {1 1}
-do_execsql_test 3.2.2 {
-  SELECT rowid FROM ft WHERE ft MATCH 'one two two three';
-  SELECT rowid FROM ft WHERE ft MATCH 'one + two + two + three';
+  SELECT rowid FROM ft WHERE ft MATCH 'one';
 } {1}
+do_execsql_test 3.2.2 {
+  SELECT rowid FROM ft WHERE ft MATCH 'one two three';
+} {1}
+do_execsql_test 3.2.3 {
+  SELECT rowid FROM ft WHERE ft MATCH 'one + one + two + three';
+} {1}
+do_execsql_test 3.2.4 {
+  SELECT rowid FROM ft WHERE ft MATCH 'one two two three';
+} {1}
+do_execsql_test 3.2.5 {
+  SELECT rowid FROM ft WHERE ft MATCH 'one + two + two + three';
+} {}
 
 #-------------------------------------------------------------------------
-# Check that expressions with synonyms can be parsed.
+# Check that expressions with synonyms can be parsed and executed.
 #
 reset_db
 sqlite3_fts5_create_tokenizer db tcl tcl_create
@@ -212,11 +219,72 @@ proc tcl_tokenize {tflags text} {
 
 foreach {tn expr res} {
   1  {abc}                           {"abc"}
-  2  {one}                           {"one"|"1"}
+  2  {one}                           {"one"|"i"|"1"}
   3  {3}                             {"3"|"iii"|"three"}
   4  {3*}                            {"3"|"iii"|"three" *}
 } {
-  do_execsql_test 4.$tn {SELECT fts5_expr($expr, 'tokenize=tcl')} [list $res]
+  do_execsql_test 4.1.$tn {SELECT fts5_expr($expr, 'tokenize=tcl')} [list $res]
+}
+
+do_execsql_test 4.2.1 {
+  CREATE VIRTUAL TABLE xx USING fts5(x, tokenize=tcl);
+  INSERT INTO xx VALUES('one two');
+  INSERT INTO xx VALUES('three four');
+}
+
+do_execsql_test 4.2.2 {
+  SELECT rowid FROM xx WHERE xx MATCH '2'
+} {1}
+
+do_execsql_test 4.2.3 {
+  SELECT rowid FROM xx WHERE xx MATCH '3'
+} {2}
+
+do_test 5.0 {
+  execsql { 
+    CREATE VIRTUAL TABLE t1 USING fts5(a, b, tokenize=tcl)
+  }
+  foreach {rowid a b} {
+    1 {four v 4 i three} {1 3 five five 4 one}
+    2 {5 1 3 4 i} {2 2 v two 4}
+    3 {5 i 5 2 four 4 1} {iii ii five two 1}
+    4 {ii four 4 one 5 three five} {one 5 1 iii 4 3}
+    5 {three i v i four 4 1} {ii five five five iii}
+    6 {4 2 ii two 2 iii} {three 1 four 4 iv 1 iv}
+    7 {ii ii two three 2 5} {iii i ii iii iii one one}
+    8 {2 ii i two 3 three 2} {two iv v iii 3 five}
+    9 {i 2 iv 3 five four v} {iii 4 three i three ii 1}
+  } {
+    execsql { INSERT INTO t1(rowid, a, b) VALUES($rowid, $a, $b) }
+  }
+} {}
+
+foreach {tn q res} {
+  1 {one} {
+    1 {four v 4 [i] three} {[1] 3 five five 4 [one]}
+    2 {5 [1] 3 4 [i]} {2 2 v two 4}
+    3 {5 [i] 5 2 four 4 [1]} {iii ii five two [1]}
+    4 {ii four 4 [one] 5 three five} {[one] 5 [1] iii 4 3}
+    5 {three [i] v [i] four 4 [1]} {ii five five five iii}
+    6 {4 2 ii two 2 iii} {three [1] four 4 iv [1] iv}
+    7 {ii ii two three 2 5} {iii [i] ii iii iii [one] [one]}
+    8 {2 ii [i] two 3 three 2} {two iv v iii 3 five}
+    9 {[i] 2 iv 3 five four v} {iii 4 three [i] three ii [1]}
+  }
+  2 {five four} {
+    1 {[four] [v] [4] i three} {1 3 [five] [five] [4] one}
+    2 {[5] 1 3 [4] i} {2 2 [v] two [4]}
+    3 {[5] i [5] 2 [four] [4] 1} {iii ii [five] two 1}
+    4 {ii [four] [4] one [5] three [five]} {one [5] 1 iii [4] 3}
+    5 {three i [v] i [four] [4] 1} {ii [five] [five] [five] iii}
+    8 {2 ii i two 3 three 2} {two [iv] [v] iii 3 [five]}
+    9 {i 2 [iv] 3 [five] [four] [v]} {iii [4] three i three ii 1}
+  }
+} {
+  do_execsql_test 5.1.$tn {
+    SELECT rowid, highlight(t1, 0, '[', ']'), highlight(t1, 1, '[', ']')
+    FROM t1 WHERE t1 MATCH $q
+  } $res
 }
 
 finish_test

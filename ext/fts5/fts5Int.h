@@ -235,6 +235,8 @@ struct Fts5PoslistReader {
   int n;                          /* Size of buffer at a[] in bytes */
   int i;                          /* Current offset in a[] */
 
+  u8 bFlag;                       /* For client use (any custom purpose) */
+
   /* Output variables */
   u8 bEof;                        /* Set to true at EOF */
   i64 iPos;                       /* (iCol<<32) + iPos */
