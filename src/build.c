@@ -1690,7 +1690,7 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
   */
   if( pParse->addrCrTab ){
     assert( v );
-    sqlite3VdbeGetOp(v, pParse->addrCrTab)->opcode = OP_CreateIndex;
+    sqlite3VdbeChangeOpcode(v, pParse->addrCrTab, OP_CreateIndex);
   }
 
   /* Locate the PRIMARY KEY index.  Or, if this table was originally
@@ -1719,7 +1719,7 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
     ** a database schema).  */
     if( v ){
       assert( db->init.busy==0 );
-      sqlite3VdbeGetOp(v, pPk->tnum)->opcode = OP_Goto;
+      sqlite3VdbeChangeOpcode(v, pPk->tnum, OP_Goto);
     }
 
     /*

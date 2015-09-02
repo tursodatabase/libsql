@@ -176,6 +176,7 @@ int sqlite3VdbeAddOp4Dup8(Vdbe*,int,int,int,int,const u8*,int);
 int sqlite3VdbeAddOp4Int(Vdbe*,int,int,int,int,int);
 int sqlite3VdbeAddOpList(Vdbe*, int nOp, VdbeOpList const *aOp, int iLineno);
 void sqlite3VdbeAddParseSchemaOp(Vdbe*,int,char*);
+void sqlite3VdbeChangeOpcode(Vdbe*, u32 addr, u8);
 void sqlite3VdbeChangeP1(Vdbe*, u32 addr, int P1);
 void sqlite3VdbeChangeP2(Vdbe*, u32 addr, int P2);
 void sqlite3VdbeChangeP3(Vdbe*, u32 addr, int P3);

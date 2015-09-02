@@ -5075,7 +5075,7 @@ int sqlite3Select(
   p->nSelectRow = LARGEST_INT64;
   computeLimitRegisters(pParse, p, iEnd);
   if( p->iLimit==0 && sSort.addrSortIndex>=0 ){
-    sqlite3VdbeGetOp(v, sSort.addrSortIndex)->opcode = OP_SorterOpen;
+    sqlite3VdbeChangeOpcode(v, sSort.addrSortIndex, OP_SorterOpen);
     sSort.sortFlags |= SORTFLAG_UseSorter;
   }
 

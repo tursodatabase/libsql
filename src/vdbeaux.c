@@ -664,49 +664,23 @@ void sqlite3VdbeScanStatus(
 
 
 /*
-** Change the value of the P1 operand for a specific instruction.
-** This routine is useful when a large program is loaded from a
-** static array using sqlite3VdbeAddOpList but we want to make a
-** few minor changes to the program.
+** Change the value of the opcode, or P1, P2, P3, or P5 operands
+** for a specific instruction.
 */
+void sqlite3VdbeChangeOpcode(Vdbe *p, u32 addr, u8 iNewOpcode){
+  sqlite3VdbeGetOp(p,addr)->opcode = iNewOpcode;
+}
 void sqlite3VdbeChangeP1(Vdbe *p, u32 addr, int val){
-  assert( p!=0 );
-  if( ((u32)p->nOp)>addr ){
-    p->aOp[addr].p1 = val;
-  }
+  sqlite3VdbeGetOp(p,addr)->p1 = val;
 }
-
-/*
-** Change the value of the P2 operand for a specific instruction.
-** This routine is useful for setting a jump destination.
-*/
 void sqlite3VdbeChangeP2(Vdbe *p, u32 addr, int val){
-  assert( p!=0 );
-  if( ((u32)p->nOp)>addr ){
-    p->aOp[addr].p2 = val;
-  }
+  sqlite3VdbeGetOp(p,addr)->p2 = val;
 }
-
-/*
-** Change the value of the P3 operand for a specific instruction.
-*/
 void sqlite3VdbeChangeP3(Vdbe *p, u32 addr, int val){
-  assert( p!=0 );
-  if( ((u32)p->nOp)>addr ){
-    p->aOp[addr].p3 = val;
-  }
+  sqlite3VdbeGetOp(p,addr)->p3 = val;
 }
-
-/*
-** Change the value of the P5 operand for the most recently
-** added operation.
-*/
-void sqlite3VdbeChangeP5(Vdbe *p, u8 val){
-  assert( p!=0 );
-  if( p->aOp ){
-    assert( p->nOp>0 );
-    p->aOp[p->nOp-1].p5 = val;
-  }
+void sqlite3VdbeChangeP5(Vdbe *p, u8 p5){
+  sqlite3VdbeGetOp(p,-1)->p5 = p5;
 }
 
 /*
@@ -714,8 +688,8 @@ void sqlite3VdbeChangeP5(Vdbe *p, u8 val){
 ** the address of the next instruction to be coded.
 */
 void sqlite3VdbeJumpHere(Vdbe *p, int addr){
-  sqlite3VdbeChangeP2(p, addr, p->nOp);
   p->pParse->iFixedOp = p->nOp - 1;
+  sqlite3VdbeChangeP2(p, addr, p->nOp);
 }
 
 
