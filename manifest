@@ -1,5 +1,5 @@
-C Add\sand\suse\sthe\ssqlite3VdbeChangeOpcode()\sroutine.\s\sSimplify\sthe\simplementation\nof\sthe\sother\ssqlite3VdbeChange*()\sroutines.
-D 2015-09-02T18:40:33.669
+C Optimizations\sto\sthe\sprintf\sformatter.
+D 2015-09-02T21:00:48.651
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -333,7 +333,7 @@ F src/pcache1.c b31af9dbc83b9c68e87d681b8453a9605f28e734
 F src/pragma.c 5d84bdb3798dddb4828a3e4925f53840ff06bb82
 F src/pragma.h 631a91c8b0e6ca8f051a1d8a4a0da4150e04620a
 F src/prepare.c 82e5db1013846a819f198336fed72c44c974e7b1
-F src/printf.c e66737e0e460aa7a765d1dbc3834c1ed91fbf36b
+F src/printf.c 0c4bcdd1c2e2521024f0a69cb5eb334f86b3652a
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c f2ef256786a6435efddd64a632fea89c8be62215
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
@@ -1380,7 +1380,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P be78f413df1b0d874b44a866ef6bf17543d7e8a2
-R 138106b5d1592d7b3ab07c4b2a8bef1c
+P 0a5b00e493efae58252f9fc7bde5a469645942d5
+R c3f6d7912ae748700d66714a924c7560
 U drh
-Z b950fd2bf2820566755471b0217b6e9b
+Z 20ed1b27f691567d47268151076d8428
