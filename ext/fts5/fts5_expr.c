@@ -662,7 +662,7 @@ static int fts5ExprNearAdvanceFirst(
     i64 iRowid = fts5ExprSynonymRowid(pTerm, pExpr->bDesc, 0);
 
     /* Advance each iterator that currently points to iRowid. Or, if iFrom
-      ** is valid - each iterator that points to a rowid before iFrom.  */
+    ** is valid - each iterator that points to a rowid before iFrom.  */
     for(p=pTerm; p; p=p->pSynonym){
       if( sqlite3Fts5IterEof(p->pIter)==0 ){
         i64 ii = sqlite3Fts5IterRowid(p->pIter);

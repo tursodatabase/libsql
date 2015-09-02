@@ -1229,7 +1229,7 @@ int sqlite3Fts5TokenizerInit(fts5_api *pApi){
     );
   }
 
-  return SQLITE_OK;
+  return rc;
 }
 
 

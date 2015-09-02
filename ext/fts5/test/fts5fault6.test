@@ -22,7 +22,6 @@ ifcapable !fts5 {
   return
 }
 
-if 1 {
 
 #-------------------------------------------------------------------------
 # OOM while rebuilding an FTS5 table.
@@ -150,8 +149,6 @@ do_faultsim_test 4.1 -faults oom-t* -prep {
   faultsim_test_result {0 {}}
 }
 
-}
-
 #-------------------------------------------------------------------------
 #
 # 5.2.* OOM while running a query that includes synonyms and matchinfo().
@@ -224,6 +221,8 @@ do_test 5.0 {
     47 {dd dd dddddd ddddd fffff dddddd ddd ddddd eeeeee ffff eeee eee ee}
     48 {ffff ffff e dddd ffffff dd dd dddd f fffff}
     49 {ffffff d dddddd ffff eeeee f ffff ffff d dd fffff eeeee}
+
+    50 {x e}
   } {
     execsql { INSERT INTO t1(rowid, a) VALUES($rowid, $text) }
   }
@@ -268,5 +267,31 @@ do_faultsim_test 5.3 -faults oom* -prep {
   faultsim_test_result {0 29}
 }
 
+do_faultsim_test 5.4 -faults oom* -prep {
+  faultsim_restore_and_reopen
+  sqlite3_fts5_create_tokenizer db tcl tcl_create
+} -body {
+  db eval { 
+    SELECT count(*) FROM t1 WHERE t1 MATCH 'x + e'
+  }
+} -test {
+  faultsim_test_result {0 1}
+}
+
+#-------------------------------------------------------------------------
+catch { db close }
+breakpoint
+do_faultsim_test 6 -faults oom* -prep {
+  sqlite_orig db test.db
+  sqlite3_db_config_lookaside db 0 0 0
+} -body {
+  load_static_extension db fts5
+} -test {
+  faultsim_test_result {0 {}} {1 {initialization of fts5 failed: }}
+  if {$testrc==0} {
+    db eval { CREATE VIRTUAL TABLE temp.t1 USING fts5(x) }
+  }
+  db close
+}
 finish_test
 

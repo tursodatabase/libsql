@@ -506,6 +506,16 @@ do_execsql_test 18.3 {
   SELECT t1.rowid, t2.rowid FROM t2, t1 WHERE t2 MATCH t1.a AND t1.rowid = t2.c
 } {1 1}
 
+#--------------------------------------------------------------------
+# fts5 table in the temp schema.
+#
+reset_db
+do_execsql_test 19.0 {
+  CREATE VIRTUAL TABLE temp.t1 USING fts5(x);
+  INSERT INTO t1 VALUES('x y z');
+  INSERT INTO t1 VALUES('w x 1');
+  SELECT rowid FROM t1 WHERE t1 MATCH 'x';
+} {1 2}
 finish_test
 
 

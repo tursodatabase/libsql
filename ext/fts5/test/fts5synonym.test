@@ -387,10 +387,20 @@ foreach {tn q res} {
     2 {ww oooooo bbbbb ssssss mm} {ffffff [yy] iiii rr s ccc [qqqqq]}
   }
 } {
-  do_execsql_test 6.1.$tn {
+  do_execsql_test 6.1.$tn.asc {
     SELECT rowid, highlight(t2, 0, '[', ']'), highlight(t2, 1, '[', ']')
     FROM t2 WHERE t2 MATCH $q
   } $res
+
+  set res2 [list]
+  foreach {rowid a b} $res {
+    set res2 [concat [list $rowid $a $b] $res2]
+  }
+
+  do_execsql_test 6.1.$tn.desc {
+    SELECT rowid, highlight(t2, 0, '[', ']'), highlight(t2, 1, '[', ']')
+    FROM t2 WHERE t2 MATCH $q ORDER BY rowid DESC
+  } $res2
 }
 
 do_execsql_test 6.2.1 {
