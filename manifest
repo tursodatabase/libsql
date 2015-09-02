@@ -1,5 +1,5 @@
-C Very\sminor\soptimizations\sin\sthe\sunix\sVFS.
-D 2015-09-01T23:51:53.351
+C The\ssqlite3_memory_alarm()\sinterface\shas\sbeen\sdeprecated\sand\sundocumented\nfor\salmost\s8\syears\s(since\sversion\s3.5.3).\s\sChange\sit\sinto\sa\sno-op.
+D 2015-09-02T14:56:56.653
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -303,7 +303,7 @@ F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c 92bafa308607dd985ca389a788cd9e0a2b608712
 F src/loadext.c dfcee8c7c032cd0fd55af3e0fc1fcfb01e426df2
 F src/main.c e17fcffae4306a9b8334faf3bac80d7396850b54
-F src/malloc.c 7de3bb83deb27fb4a874d2905efe8e5f7c553b10
+F src/malloc.c 021012e28a81ffdabf4c30ec3df6ce1f6cc93f1d
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c abe6ee469b6c5a35c7f22bfeb9c9bac664a1c987
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
@@ -1380,7 +1380,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P adf9fefb00ae1dbb07a921c6796cb0a9505c6d19
-R 15ed1e546d27e5e6e36f3f7a000cba56
+P 6db3ff45bc15ece29cb2c7a736e5c6d005dde200
+R fb43199c7de8d8215fceefa0991f495e
 U drh
-Z d46ac269d8c66ccb24de8ee93f61442e
+Z 048512fff9b9f8d1311c6e43a6f32096
