@@ -288,8 +288,8 @@ static int fts5ExprColsetTest(Fts5ExprColset *pColset, int iCol){
 ** Argument pTerm must be a synonym iterator. Return the current rowid
 ** that it points to.
 */
-static i64 fts5ExprSynonymRowid(Fts5ExprTerm *pTerm, int bDesc){
-  i64 iRet;
+static i64 fts5ExprSynonymRowid(Fts5ExprTerm *pTerm, int bDesc, int *pbEof){
+  i64 iRet = 0;
   int bRetValid = 0;
   Fts5ExprTerm *p;
 
@@ -305,7 +305,7 @@ static i64 fts5ExprSynonymRowid(Fts5ExprTerm *pTerm, int bDesc){
     }
   }
 
-  assert( bRetValid );
+  if( pbEof && bRetValid==0 ) *pbEof = 1;
   return iRet;
 }
 
@@ -346,9 +346,9 @@ static int fts5ExprSynonymPoslist(
         nAlloc = nAlloc*2;
         aIter = aNew;
       }
-      if( sqlite3Fts5PoslistReaderInit(-1, a, n, &aIter[nIter])==0 ){
-        nIter++;
-      }
+      sqlite3Fts5PoslistReaderInit(-1, a, n, &aIter[nIter]);
+      assert( aIter[nIter].bEof==0 );
+      nIter++;
     }
   }
 
@@ -659,7 +659,7 @@ static int fts5ExprNearAdvanceFirst(
     Fts5ExprTerm *p;
 
     /* Find the firstest rowid any synonym points to. */
-    i64 iRowid = fts5ExprSynonymRowid(pTerm, pExpr->bDesc);
+    i64 iRowid = fts5ExprSynonymRowid(pTerm, pExpr->bDesc, 0);
 
     /* Advance each iterator that currently points to iRowid. Or, if iFrom
       ** is valid - each iterator that points to a rowid before iFrom.  */
@@ -736,6 +736,35 @@ static int fts5ExprAdvanceto(
   *piLast = iRowid;
 
   return 0;
+}
+
+static int fts5ExprSynonymAdvanceto(
+  Fts5ExprTerm *pTerm,            /* Term iterator to advance */
+  int bDesc,                      /* True if iterator is "rowid DESC" */
+  i64 *piLast,                    /* IN/OUT: Lastest rowid seen so far */
+  int *pRc,                       /* OUT: Error code */
+  int *pbEof                      /* OUT: Set to true if EOF */
+){
+  int rc = SQLITE_OK;
+  i64 iLast = *piLast;
+  Fts5ExprTerm *p;
+
+  for(p=pTerm; rc==SQLITE_OK && p; p=p->pSynonym){
+    if( sqlite3Fts5IterEof(p->pIter)==0 ){
+      i64 iRowid = sqlite3Fts5IterRowid(p->pIter);
+      if( (bDesc==0 && iLast>iRowid) || (bDesc && iLast<iRowid) ){
+        rc = sqlite3Fts5IterNextFrom(p->pIter, iLast);
+      }
+    }
+  }
+
+  if( rc!=SQLITE_OK ){
+    *pbEof = 1;
+  }else{
+    *piLast = fts5ExprSynonymRowid(pTerm, bDesc, pbEof);
+  }
+
+  return rc;
 }
 
 /*
@@ -906,7 +935,7 @@ static int fts5ExprNearNextMatch(
   ** the maximum rowid. Or, if the iterator is "ORDER BY rowid DESC", then it
   ** means the minimum rowid.  */
   if( pLeft->aTerm[0].pSynonym ){
-    iLast = fts5ExprSynonymRowid(&pLeft->aTerm[0], bDesc);
+    iLast = fts5ExprSynonymRowid(&pLeft->aTerm[0], bDesc, 0);
   }else{
     iLast = sqlite3Fts5IterRowid(pLeft->aTerm[0].pIter);
   }
@@ -920,21 +949,13 @@ static int fts5ExprNearNextMatch(
         if( pTerm->pSynonym ){
           Fts5ExprTerm *p;
           int bEof = 1;
-          i64 iRowid = fts5ExprSynonymRowid(pTerm, bDesc);
+          i64 iRowid = fts5ExprSynonymRowid(pTerm, bDesc, 0);
           if( iRowid==iLast ) continue;
-          for(p=pTerm; p; p=p->pSynonym){
-            Fts5IndexIter *pIter = p->pIter;
-            int dummy;
-            if( 0==sqlite3Fts5IterEof(pIter)
-             && 0==fts5ExprAdvanceto(pIter, bDesc, &iLast, &rc, &dummy)==0 
-            ){
-              bEof = 0;
-            }
-          }
-          if( bEof || rc ){
-            pNode->bEof = 1;
+          bMatch = 0;
+          if( fts5ExprSynonymAdvanceto(pTerm,bDesc,&iLast,&rc,&pNode->bEof) ){
             return rc;
           }
+
         }else{
           Fts5IndexIter *pIter = pPhrase->aTerm[j].pIter;
           i64 iRowid = sqlite3Fts5IterRowid(pIter);

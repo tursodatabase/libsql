@@ -93,6 +93,7 @@ foreach {tn expr res} {
   2 "eight OR 8 OR 5" {2 3}
   3 "10" {}
   4 "1*" {1}
+  5 "1 + 2" {1}
 } {
   do_execsql_test 2.1.$tn {
     SELECT rowid FROM ft WHERE ft MATCH $expr
@@ -233,6 +234,7 @@ do_test 5.0 {
   }
 } {}
 
+
 foreach {tn q res} {
   1 {one} {
     1 {four v 4 [i] three} {[1] 3 five five 4 [one]}
@@ -264,6 +266,23 @@ foreach {tn q res} {
     7 {[ii] [ii] [two] [three] [2] [5]} {[iii] [i] [ii] [iii] [iii] [one] [one]}
     8 {[2] [ii] [i] [two] [3] [three] [2]} {[two] [iv] [v] [iii] [3] [five]}
     9 {[i] [2] [iv] [3] [five] [four] [v]} {[iii] [4] [three] [i] [three] [ii] [1]}
+  }
+
+  4 {5 + 1} {
+    2 {[5 1] 3 4 i} {2 2 v two 4} 
+    3 {[5 i] 5 2 four 4 1} {iii ii five two 1} 
+    4 {ii four 4 one 5 three five} {one [5 1] iii 4 3} 
+    5 {three i [v i] four 4 1} {ii five five five iii}
+  }
+
+  5 {one + two + three} {
+    7 {ii ii two three 2 5} {iii [i ii iii] iii one one}
+    8 {2 ii [i two 3] three 2} {two iv v iii 3 five}
+  }
+
+  6 {"v v"} {
+    1 {four v 4 i three} {1 3 [five five] 4 one}
+    5 {three i v i four 4 1} {ii [five five five] iii}
   }
 } {
   do_execsql_test 5.1.$tn {
