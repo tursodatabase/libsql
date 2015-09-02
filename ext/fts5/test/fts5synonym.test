@@ -298,6 +298,32 @@ foreach {tn q res} {
   } $res
 }
 
+# Test that the xQueryPhrase() API works with synonyms.
+#
+proc mit {blob} {
+  set scan(littleEndian) i*
+  set scan(bigEndian) I*
+  binary scan $blob $scan($::tcl_platform(byteOrder)) r
+  return $r
+}
+db func mit mit
+sqlite3_fts5_register_matchinfo db
+
+foreach {tn q res} {
+  1 {one} {
+      1 {1 11 7 2 12 6}     2 {2 11 7 0 12 6} 
+      3 {2 11 7 1 12 6}     4 {1 11 7 2 12 6} 
+      5 {3 11 7 0 12 6}     6 {0 11 7 2 12 6} 
+      7 {0 11 7 3 12 6}     8 {1 11 7 0 12 6} 
+      9 {1 11 7 2 12 6}
+  }
+} {
+  do_execsql_test 5.2.$tn {
+    SELECT rowid, mit(matchinfo(t1, 'x')) FROM t1 WHERE t1 MATCH $q
+  } $res
+}
+
+
 #-------------------------------------------------------------------------
 # Test terms with more than 4 synonyms.
 #

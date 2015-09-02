@@ -599,7 +599,7 @@ int sqlite3Fts5ExprPhraseCount(Fts5Expr*);
 int sqlite3Fts5ExprPhraseSize(Fts5Expr*, int iPhrase);
 int sqlite3Fts5ExprPoslist(Fts5Expr*, int, const u8 **);
 
-int sqlite3Fts5ExprPhraseExpr(Fts5Config*, Fts5Expr*, int, Fts5Expr**);
+int sqlite3Fts5ExprClonePhrase(Fts5Config*, Fts5Expr*, int, Fts5Expr**);
 
 /*******************************************
 ** The fts5_expr.c API above this point is used by the other hand-written

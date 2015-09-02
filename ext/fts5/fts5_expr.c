@@ -252,79 +252,6 @@ int sqlite3Fts5ExprNew(
 }
 
 /*
-** Create a new FTS5 expression by cloning phrase iPhrase of the
-** expression passed as the second argument.
-*/
-int sqlite3Fts5ExprPhraseExpr(
-  Fts5Config *pConfig,
-  Fts5Expr *pExpr, 
-  int iPhrase, 
-  Fts5Expr **ppNew
-){
-  int rc = SQLITE_OK;             /* Return code */
-  Fts5ExprPhrase *pOrig;          /* The phrase extracted from pExpr */
-  Fts5ExprPhrase *pCopy;          /* Copy of pOrig */
-  Fts5Expr *pNew = 0;             /* Expression to return via *ppNew */
-
-  pOrig = pExpr->apExprPhrase[iPhrase];
-  pCopy = (Fts5ExprPhrase*)sqlite3Fts5MallocZero(&rc, 
-      sizeof(Fts5ExprPhrase) + sizeof(Fts5ExprTerm) * pOrig->nTerm
-  );
-  if( pCopy ){
-    int i;                          /* Used to iterate through phrase terms */
-    Fts5ExprPhrase **apPhrase;
-    Fts5ExprNode *pNode;
-    Fts5ExprNearset *pNear;
-
-    pNew = (Fts5Expr*)sqlite3Fts5MallocZero(&rc, sizeof(Fts5Expr));
-    apPhrase = (Fts5ExprPhrase**)sqlite3Fts5MallocZero(&rc, 
-        sizeof(Fts5ExprPhrase*)
-    );
-    pNode = (Fts5ExprNode*)sqlite3Fts5MallocZero(&rc, sizeof(Fts5ExprNode));
-    pNear = (Fts5ExprNearset*)sqlite3Fts5MallocZero(&rc, 
-        sizeof(Fts5ExprNearset) + sizeof(Fts5ExprPhrase*)
-    );
-
-    for(i=0; i<pOrig->nTerm; i++){
-      pCopy->aTerm[i].zTerm = sqlite3Fts5Strndup(&rc, pOrig->aTerm[i].zTerm,-1);
-      pCopy->aTerm[i].bPrefix = pOrig->aTerm[i].bPrefix;
-    }
-
-    if( rc==SQLITE_OK ){
-      /* All the allocations succeeded. Put the expression object together. */
-      pNew->pIndex = pExpr->pIndex;
-      pNew->pRoot = pNode;
-      pNew->nPhrase = 1;
-      pNew->apExprPhrase = apPhrase;
-      pNew->apExprPhrase[0] = pCopy;
-
-      pNode->eType = (pOrig->nTerm==1 ? FTS5_TERM : FTS5_STRING);
-      pNode->pNear = pNear;
-
-      pNear->nPhrase = 1;
-      pNear->apPhrase[0] = pCopy;
-
-      pCopy->nTerm = pOrig->nTerm;
-      pCopy->pNode = pNode;
-    }else{
-      /* At least one allocation failed. Free them all. */
-      for(i=0; i<pOrig->nTerm; i++){
-        sqlite3_free(pCopy->aTerm[i].zTerm);
-      }
-      sqlite3_free(pCopy);
-      sqlite3_free(pNear);
-      sqlite3_free(pNode);
-      sqlite3_free(apPhrase);
-      sqlite3_free(pNew);
-      pNew = 0;
-    }
-  }
-
-  *ppNew = pNew;
-  return rc;
-}
-
-/*
 ** Free the expression node object passed as the only argument.
 */
 void sqlite3Fts5ParseNodeFree(Fts5ExprNode *p){
@@ -1550,8 +1477,8 @@ static int fts5ParseTokenize(
   int tflags,                     /* Mask of FTS5_TOKEN_* flags */
   const char *pToken,             /* Buffer containing token */
   int nToken,                     /* Size of token in bytes */
-  int iStart,                     /* Start offset of token */
-  int iEnd                        /* End offset of token */
+  int iUnused1,                   /* Start offset of token */
+  int iUnused2                    /* End offset of token */
 ){
   int rc = SQLITE_OK;
   const int SZALLOC = 8;
@@ -1577,7 +1504,7 @@ static int fts5ParseTokenize(
 
       pNew = (Fts5ExprPhrase*)sqlite3_realloc(pPhrase, 
           sizeof(Fts5ExprPhrase) + sizeof(Fts5ExprTerm) * nNew
-          );
+      );
       if( pNew==0 ) return SQLITE_NOMEM;
       if( pPhrase==0 ) memset(pNew, 0, sizeof(Fts5ExprPhrase));
       pCtx->pPhrase = pPhrase = pNew;
@@ -1674,6 +1601,83 @@ Fts5ExprPhrase *sqlite3Fts5ParseTerm(
 
   return sCtx.pPhrase;
 }
+
+/*
+** Create a new FTS5 expression by cloning phrase iPhrase of the
+** expression passed as the second argument.
+*/
+int sqlite3Fts5ExprClonePhrase(
+  Fts5Config *pConfig,
+  Fts5Expr *pExpr, 
+  int iPhrase, 
+  Fts5Expr **ppNew
+){
+  int rc = SQLITE_OK;             /* Return code */
+  Fts5ExprPhrase *pOrig;          /* The phrase extracted from pExpr */
+  Fts5ExprPhrase *pCopy;          /* Copy of pOrig */
+  int i;                          /* Used to iterate through phrase terms */
+
+  Fts5Expr *pNew = 0;             /* Expression to return via *ppNew */
+  Fts5ExprPhrase **apPhrase;      /* pNew->apPhrase */
+  Fts5ExprNode *pNode;            /* pNew->pRoot */
+  Fts5ExprNearset *pNear;         /* pNew->pRoot->pNear */
+
+  TokenCtx sCtx = {0};            /* Context object for fts5ParseTokenize */
+
+
+  pOrig = pExpr->apExprPhrase[iPhrase];
+
+  pNew = (Fts5Expr*)sqlite3Fts5MallocZero(&rc, sizeof(Fts5Expr));
+  if( rc==SQLITE_OK ){
+    pNew->apExprPhrase = (Fts5ExprPhrase**)sqlite3Fts5MallocZero(&rc, 
+        sizeof(Fts5ExprPhrase*));
+  }
+  if( rc==SQLITE_OK ){
+    pNew->pRoot = (Fts5ExprNode*)sqlite3Fts5MallocZero(&rc, 
+        sizeof(Fts5ExprNode));
+  }
+  if( rc==SQLITE_OK ){
+    pNew->pRoot->pNear = (Fts5ExprNearset*)sqlite3Fts5MallocZero(&rc, 
+        sizeof(Fts5ExprNearset) + sizeof(Fts5ExprPhrase*));
+  }
+
+  for(i=0; rc==SQLITE_OK && i<pOrig->nTerm; i++){
+    int tflags = 0;
+    Fts5ExprTerm *p;
+    for(p=&pOrig->aTerm[i]; p && rc==SQLITE_OK; p=p->pSynonym){
+      const char *zTerm = p->zTerm;
+      rc = fts5ParseTokenize((void*)&sCtx, tflags, zTerm, strlen(zTerm), 0, 0);
+      tflags = FTS5_TOKEN_COLOCATED;
+    }
+    if( rc==SQLITE_OK ){
+      sCtx.pPhrase->aTerm[i].bPrefix = pOrig->aTerm[i].bPrefix;
+    }
+  }
+
+  if( rc==SQLITE_OK ){
+    /* All the allocations succeeded. Put the expression object together. */
+    pNew->pIndex = pExpr->pIndex;
+    pNew->nPhrase = 1;
+    pNew->apExprPhrase[0] = sCtx.pPhrase;
+    pNew->pRoot->pNear->apPhrase[0] = sCtx.pPhrase;
+    pNew->pRoot->pNear->nPhrase = 1;
+    sCtx.pPhrase->pNode = pNew->pRoot;
+
+    if( pOrig->nTerm==1 && pOrig->aTerm[0].pSynonym==0 ){
+      pNew->pRoot->eType = FTS5_TERM;
+    }else{
+      pNew->pRoot->eType = FTS5_STRING;
+    }
+  }else{
+    sqlite3Fts5ExprFree(pNew);
+    fts5ExprPhraseFree(sCtx.pPhrase);
+    pNew = 0;
+  }
+
+  *ppNew = pNew;
+  return rc;
+}
+
 
 /*
 ** Token pTok has appeared in a MATCH expression where the NEAR operator

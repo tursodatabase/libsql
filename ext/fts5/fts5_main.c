@@ -1860,7 +1860,7 @@ static int fts5ApiQueryPhrase(
     pNew->iFirstRowid = SMALLEST_INT64;
     pNew->iLastRowid = LARGEST_INT64;
     pNew->base.pVtab = (sqlite3_vtab*)pTab;
-    rc = sqlite3Fts5ExprPhraseExpr(pConf, pCsr->pExpr, iPhrase, &pNew->pExpr);
+    rc = sqlite3Fts5ExprClonePhrase(pConf, pCsr->pExpr, iPhrase, &pNew->pExpr);
   }
 
   if( rc==SQLITE_OK ){
