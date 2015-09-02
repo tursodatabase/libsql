@@ -148,5 +148,71 @@ do_faultsim_test 4.1 -faults oom-t* -prep {
   faultsim_test_result {0 {}}
 }
 
+#-------------------------------------------------------------------------
+# OOM while running a query that includes synonyms and matchinfo().
+#
+proc mit {blob} {
+  set scan(littleEndian) i*
+  set scan(bigEndian) I*
+  binary scan $blob $scan($::tcl_platform(byteOrder)) r
+  return $r
+}
+proc tcl_tokenize {tflags text} {
+  foreach {w iStart iEnd} [fts5_tokenize_split $text] {
+    sqlite3_fts5_token $w $iStart $iEnd
+    if {$tflags=="query" && [string length $w]==1} {
+      for {set i 2} {$i < 7} {incr i} {
+        sqlite3_fts5_token -colo [string repeat $w $i] $iStart $iEnd
+      }
+    }
+  }
+}
+proc tcl_create {args} { return "tcl_tokenize" }
+reset_db
+sqlite3_fts5_create_tokenizer db tcl tcl_create
+db func mit mit
+sqlite3_fts5_register_matchinfo db
+do_test 5.0 {
+  execsql { CREATE VIRTUAL TABLE t1 USING fts5(a, tokenize=tcl) }
+  foreach {rowid text} {
+    1 {aaaa cc b aaaaa cc aa} 
+    2 {aa aa bb a bbb}
+    3 {bb aaaaa aaaaa b aaaa aaaaa}
+    4 {aa a b aaaa aa}
+    5 {aa b ccc aaaaa cc}
+    6 {aa aaaaa bbbb cc aaa}
+    7 {aaaaa aa aa ccccc bb}
+    8 {ccc bbbbb ccccc bbb c}
+    9 {cccccc bbbb a aaa cccc c}
+  } {
+    execsql { INSERT INTO t1(rowid, a) VALUES($rowid, $text) }
+  }
+} {}
+
+set res [list {*}{
+  1 {3 24 8 2 12 6}
+  5 {2 24 8 2 12 6}
+  6 {3 24 8 1 12 6}
+  7 {3 24 8 1 12 6}
+  9 {2 24 8 3 12 6}
+}]
+do_execsql_test 5.1 {
+  SELECT rowid, mit(matchinfo(t1, 'x')) FROM t1 WHERE t1 MATCH 'a AND c'
+} $res
+
+faultsim_save_and_close
+do_faultsim_test 5.2 -faults oom* -prep {
+  faultsim_restore_and_reopen
+  sqlite3_fts5_create_tokenizer db tcl tcl_create
+  sqlite3_fts5_register_matchinfo db
+  db func mit mit
+} -body {
+  db eval { 
+    SELECT rowid, mit(matchinfo(t1, 'x')) FROM t1 WHERE t1 MATCH 'a AND c'
+  }
+} -test {
+  faultsim_test_result [list 0 $::res]
+}
+
 finish_test
 

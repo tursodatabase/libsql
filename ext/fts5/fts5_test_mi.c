@@ -352,7 +352,7 @@ static void fts5MatchinfoFunc(
 ){
   const char *zArg;
   Fts5MatchinfoCtx *p;
-  int rc;
+  int rc = SQLITE_OK;
 
   if( nVal>0 ){
     zArg = (const char*)sqlite3_value_text(apVal[0]);
@@ -363,11 +363,16 @@ static void fts5MatchinfoFunc(
   p = (Fts5MatchinfoCtx*)pApi->xGetAuxdata(pFts, 0);
   if( p==0 || sqlite3_stricmp(zArg, p->zArg) ){
     p = fts5MatchinfoNew(pApi, pFts, pCtx, zArg);
-    pApi->xSetAuxdata(pFts, p, sqlite3_free);
-    if( p==0 ) return;
+    if( p==0 ){
+      rc = SQLITE_NOMEM;
+    }else{
+      rc = pApi->xSetAuxdata(pFts, p, sqlite3_free);
+    }
   }
 
-  rc = fts5MatchinfoIter(pApi, pFts, p, fts5MatchinfoLocalCb);
+  if( rc==SQLITE_OK ){
+    rc = fts5MatchinfoIter(pApi, pFts, p, fts5MatchinfoLocalCb);
+  }
   if( rc!=SQLITE_OK ){
     sqlite3_result_error_code(pCtx, rc);
   }else{

@@ -40,34 +40,8 @@ foreach S {
   }
 }
 
-proc gobble_whitespace {textvar} {
-  upvar $textvar t
-  regexp {([ ]*)(.*)} $t -> space t
-  return [string length $space]
-}
-
-proc gobble_text {textvar wordvar} {
-  upvar $textvar t
-  upvar $wordvar w
-  regexp {([^ ]*)(.*)} $t -> w t
-  return [string length $w]
-}
-
-proc do_tokenize_split {text} {
-  set token ""
-  set ret [list]
-  set iOff [gobble_whitespace text]
-  while {[set nToken [gobble_text text word]]} {
-    lappend ret $word $iOff [expr $iOff+$nToken]
-    incr iOff $nToken
-    incr iOff [gobble_whitespace text]
-  }
-
-  set ret
-}
-
 proc tcl_tokenize {tflags text} {
-  foreach {w iStart iEnd} [do_tokenize_split $text] {
+  foreach {w iStart iEnd} [fts5_tokenize_split $text] {
     sqlite3_fts5_token $w $iStart $iEnd
   }
 }
@@ -95,7 +69,7 @@ do_execsql_test 1.0 {
 #
 
 proc tcl_tokenize {tflags text} {
-  foreach {w iStart iEnd} [do_tokenize_split $text] {
+  foreach {w iStart iEnd} [fts5_tokenize_split $text] {
     sqlite3_fts5_token $w $iStart $iEnd
     if {$tflags=="document" && [info exists ::syn($w)]} {
       foreach s $::syn($w) {
@@ -137,7 +111,7 @@ reset_db
 sqlite3_fts5_create_tokenizer db tcl tcl_create
 proc tcl_tokenize {tflags text} {
   set bColo 1
-  foreach {w iStart iEnd} [do_tokenize_split $text] {
+  foreach {w iStart iEnd} [fts5_tokenize_split $text] {
     if {$bColo} {
       sqlite3_fts5_token -colo $w $iStart $iEnd
       set bColo 0
@@ -160,7 +134,7 @@ do_execsql_test 3.1.1 {
 } {}
 
 proc tcl_tokenize {tflags text} {
-  foreach {w iStart iEnd} [do_tokenize_split $text] {
+  foreach {w iStart iEnd} [fts5_tokenize_split $text] {
     sqlite3_fts5_token $w $iStart $iEnd
   }
 }
@@ -172,7 +146,7 @@ do_execsql_test 3.1.2 {
 reset_db
 sqlite3_fts5_create_tokenizer db tcl tcl_create
 proc tcl_tokenize {tflags text} {
-  foreach {w iStart iEnd} [do_tokenize_split $text] {
+  foreach {w iStart iEnd} [fts5_tokenize_split $text] {
     sqlite3_fts5_token $w $iStart $iEnd
     sqlite3_fts5_token -colo $w $iStart $iEnd
   }
@@ -207,7 +181,7 @@ do_execsql_test 3.2.5 {
 reset_db
 sqlite3_fts5_create_tokenizer db tcl tcl_create
 proc tcl_tokenize {tflags text} {
-  foreach {w iStart iEnd} [do_tokenize_split $text] {
+  foreach {w iStart iEnd} [fts5_tokenize_split $text] {
     sqlite3_fts5_token $w $iStart $iEnd
     if {$tflags=="query" && [info exists ::syn($w)]} {
       foreach s $::syn($w) {
@@ -330,7 +304,7 @@ foreach {tn q res} {
 reset_db
 sqlite3_fts5_create_tokenizer db tcl tcl_create
 proc tcl_tokenize {tflags text} {
-  foreach {w iStart iEnd} [do_tokenize_split $text] {
+  foreach {w iStart iEnd} [fts5_tokenize_split $text] {
     sqlite3_fts5_token $w $iStart $iEnd
     if {$tflags=="query" && [string length $w]==1} {
       for {set i 2} {$i<=10} {incr i} {

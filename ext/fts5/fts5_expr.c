@@ -1467,6 +1467,7 @@ Fts5ExprNearset *sqlite3Fts5ParseNearset(
 typedef struct TokenCtx TokenCtx;
 struct TokenCtx {
   Fts5ExprPhrase *pPhrase;
+  int rc;
 };
 
 /*
@@ -1485,17 +1486,23 @@ static int fts5ParseTokenize(
   TokenCtx *pCtx = (TokenCtx*)pContext;
   Fts5ExprPhrase *pPhrase = pCtx->pPhrase;
 
+  /* If an error has already occurred, this is a no-op */
+  if( pCtx->rc!=SQLITE_OK ) return pCtx->rc;
+
   assert( pPhrase==0 || pPhrase->nTerm>0 );
   if( pPhrase && (tflags & FTS5_TOKEN_COLOCATED) ){
     Fts5ExprTerm *pSyn;
     int nByte = sizeof(Fts5ExprTerm) + nToken+1;
     pSyn = (Fts5ExprTerm*)sqlite3_malloc(nByte);
-    if( pSyn==0 ) return SQLITE_NOMEM;
-    memset(pSyn, 0, nByte);
-    pSyn->zTerm = (char*)&pSyn[1];
-    memcpy(pSyn->zTerm, pToken, nToken);
-    pSyn->pSynonym = pPhrase->aTerm[pPhrase->nTerm-1].pSynonym;
-    pPhrase->aTerm[pPhrase->nTerm-1].pSynonym = pSyn;
+    if( pSyn==0 ){
+      rc = SQLITE_NOMEM;
+    }else{
+      memset(pSyn, 0, nByte);
+      pSyn->zTerm = (char*)&pSyn[1];
+      memcpy(pSyn->zTerm, pToken, nToken);
+      pSyn->pSynonym = pPhrase->aTerm[pPhrase->nTerm-1].pSynonym;
+      pPhrase->aTerm[pPhrase->nTerm-1].pSynonym = pSyn;
+    }
   }else{
     Fts5ExprTerm *pTerm;
     if( pPhrase==0 || (pPhrase->nTerm % SZALLOC)==0 ){
@@ -1505,16 +1512,23 @@ static int fts5ParseTokenize(
       pNew = (Fts5ExprPhrase*)sqlite3_realloc(pPhrase, 
           sizeof(Fts5ExprPhrase) + sizeof(Fts5ExprTerm) * nNew
       );
-      if( pNew==0 ) return SQLITE_NOMEM;
-      if( pPhrase==0 ) memset(pNew, 0, sizeof(Fts5ExprPhrase));
-      pCtx->pPhrase = pPhrase = pNew;
-      pNew->nTerm = nNew - SZALLOC;
+      if( pNew==0 ){
+        rc = SQLITE_NOMEM;
+      }else{
+        if( pPhrase==0 ) memset(pNew, 0, sizeof(Fts5ExprPhrase));
+        pCtx->pPhrase = pPhrase = pNew;
+        pNew->nTerm = nNew - SZALLOC;
+      }
     }
 
-    pTerm = &pPhrase->aTerm[pPhrase->nTerm++];
-    memset(pTerm, 0, sizeof(Fts5ExprTerm));
-    pTerm->zTerm = sqlite3Fts5Strndup(&rc, pToken, nToken);
+    if( rc==SQLITE_OK ){
+      pTerm = &pPhrase->aTerm[pPhrase->nTerm++];
+      memset(pTerm, 0, sizeof(Fts5ExprTerm));
+      pTerm->zTerm = sqlite3Fts5Strndup(&rc, pToken, nToken);
+    }
   }
+
+  pCtx->rc = rc;
   return rc;
 }
 
@@ -1573,7 +1587,7 @@ Fts5ExprPhrase *sqlite3Fts5ParseTerm(
     rc = sqlite3Fts5Tokenize(pConfig, flags, z, n, &sCtx, fts5ParseTokenize);
   }
   sqlite3_free(z);
-  if( rc ){
+  if( rc || (rc = sCtx.rc) ){
     pParse->rc = rc;
     fts5ExprPhraseFree(sCtx.pPhrase);
     sCtx.pPhrase = 0;
@@ -1622,7 +1636,7 @@ int sqlite3Fts5ExprClonePhrase(
   Fts5ExprNode *pNode;            /* pNew->pRoot */
   Fts5ExprNearset *pNear;         /* pNew->pRoot->pNear */
 
-  TokenCtx sCtx = {0};            /* Context object for fts5ParseTokenize */
+  TokenCtx sCtx = {0,0};          /* Context object for fts5ParseTokenize */
 
 
   pOrig = pExpr->apExprPhrase[iPhrase];
