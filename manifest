@@ -1,5 +1,5 @@
-C Small\ssimplification\sto\sthe\sEXPLAIN\sQUERY\sPLAN\slogic.
-D 2015-09-02T16:51:37.514
+C Change\ssqlite3_sql()\sso\sthat\sit\salways\sreturns\sthe\sSQL\stext\sof\sthe\sprepared\nstatement,\sif\sthe\stext\sis\savailable,\seven\sif\sthe\sthe\sprepared\sstatement\swas\ngenerated\susing\ssqlite3_prepare()\sinstead\sof\ssqlite3_prepare_v2().\s\sAlso\ninclude\ssome\sminor\scomment\sfixes\sand\scode\ssimplifications.
+D 2015-09-02T17:55:12.694
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -404,7 +404,7 @@ F src/vdbe.c 6d85be995bd2308a5aa2a68c7b564c5d4cc1a6fb
 F src/vdbe.h 7a75045d879118b9d3af7e8b3c108f2f27c51473
 F src/vdbeInt.h 8b54e01ad0463590e7cffabce0bc36da9ee4f816
 F src/vdbeapi.c bda74ef4b5103d7b4a4be36f936d3cf2b56a7d6f
-F src/vdbeaux.c af2d86b2b114a106c94fc656503fc5c89594f5af
+F src/vdbeaux.c a5d98e1d6443d96666af8134b35c72a6c7262b96
 F src/vdbeblob.c 4f2e8e075d238392df98c5e03a64342465b03f90
 F src/vdbemem.c ae38a0d35ae71cf604381a887c170466ba518090
 F src/vdbesort.c f5009e7a35e3065635d8918b9a31f498a499976b
@@ -1380,7 +1380,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 82355e41084387fa11b7b531e4d660dd3b4cd984
-R 24d6bc28c6b4612282a7c50341fa4c3b
+P d1592d201afea20cb2ca94fe2bf5ae031bd29ede
+R 5c0a36335a16d9c6f40f2328ad880c60
 U drh
-Z 2e9b16d5ccccceea14352a27b62cdb47
+Z 02a692c7e94743745a23778fec8a8ab8

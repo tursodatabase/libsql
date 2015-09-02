@@ -68,7 +68,7 @@ void sqlite3VdbeSetSql(Vdbe *p, const char *z, int n, int isPrepareV2){
 */
 const char *sqlite3_sql(sqlite3_stmt *pStmt){
   Vdbe *p = (Vdbe *)pStmt;
-  return (p && p->isPrepareV2) ? p->zSql : 0;
+  return p ? p->zSql : 0;
 }
 
 /*
@@ -319,7 +319,8 @@ void sqlite3VdbeResolveLabel(Vdbe *v, int x){
   int j = -1-x;
   assert( v->magic==VDBE_MAGIC_INIT );
   assert( j<p->nLabel );
-  if( ALWAYS(j>=0) && p->aLabel ){
+  assert( j>=0 );
+  if( p->aLabel ){
     p->aLabel[j] = v->nOp;
   }
   p->iFixedOp = v->nOp - 1;
@@ -463,17 +464,21 @@ int sqlite3VdbeAssertMayAbort(Vdbe *v, int mayAbort){
 #endif /* SQLITE_DEBUG - the sqlite3AssertMayAbort() function */
 
 /*
-** Loop through the program looking for P2 values that are negative
-** on jump instructions.  Each such value is a label.  Resolve the
-** label by setting the P2 value to its correct non-zero value.
+** This routine is called after all opcodes have been inserted.  It loops
+** through all the opcodes and fixes up some details.
 **
-** This routine is called once after all opcodes have been inserted.
+** (1) For each jump instruction with a negative P2 value (a label)
+**     resolve the P2 value to an actual address.
 **
-** Variable *pMaxFuncArgs is set to the maximum value of any P2 argument 
-** to an OP_Function, OP_AggStep or OP_VFilter opcode. This is used by 
-** sqlite3VdbeMakeReady() to size the Vdbe.apArg[] array.
+** (2) Compute the maximum number of arguments used by any SQL function
+**     and store that value in *pMaxFuncArgs.
 **
-** The Op.opflags field is set on all opcodes.
+** (3) Update the Vdbe.readOnly and Vdbe.bIsReader flags to accurately
+**     indicate what the prepared statement actually does.
+**
+** (4) Initialize the p4.xAdvance pointer on opcodes that use it.
+**
+** (5) Reclaim the memory allocated for storing labels.
 */
 static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
   int i;
@@ -586,46 +591,44 @@ VdbeOp *sqlite3VdbeTakeOpArray(Vdbe *p, int *pnOp, int *pnMaxArg){
 ** address of the first operation added.
 */
 int sqlite3VdbeAddOpList(Vdbe *p, int nOp, VdbeOpList const *aOp, int iLineno){
-  int addr;
+  int addr, i;
+  VdbeOp *pOut;
+  assert( nOp>0 );
   assert( p->magic==VDBE_MAGIC_INIT );
   if( p->nOp + nOp > p->pParse->nOpAlloc && growOpArray(p, nOp) ){
     return 0;
   }
   addr = p->nOp;
-  if( ALWAYS(nOp>0) ){
-    int i;
-    VdbeOpList const *pIn = aOp;
-    for(i=0; i<nOp; i++, pIn++){
-      int p2 = pIn->p2;
-      VdbeOp *pOut = &p->aOp[i+addr];
-      pOut->opcode = pIn->opcode;
-      pOut->p1 = pIn->p1;
-      if( p2<0 ){
-        assert( sqlite3OpcodeProperty[pOut->opcode] & OPFLG_JUMP );
-        pOut->p2 = addr + ADDR(p2);
-      }else{
-        pOut->p2 = p2;
-      }
-      pOut->p3 = pIn->p3;
-      pOut->p4type = P4_NOTUSED;
-      pOut->p4.p = 0;
-      pOut->p5 = 0;
+  pOut = &p->aOp[addr];
+  for(i=0; i<nOp; i++, aOp++, pOut++){
+    int p2 = aOp->p2;
+    pOut->opcode = aOp->opcode;
+    pOut->p1 = aOp->p1;
+    if( p2<0 ){
+      assert( sqlite3OpcodeProperty[pOut->opcode] & OPFLG_JUMP );
+      pOut->p2 = addr + ADDR(p2);
+    }else{
+      pOut->p2 = p2;
+    }
+    pOut->p3 = aOp->p3;
+    pOut->p4type = P4_NOTUSED;
+    pOut->p4.p = 0;
+    pOut->p5 = 0;
 #ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
-      pOut->zComment = 0;
+    pOut->zComment = 0;
 #endif
 #ifdef SQLITE_VDBE_COVERAGE
-      pOut->iSrcLine = iLineno+i;
+    pOut->iSrcLine = iLineno+i;
 #else
-      (void)iLineno;
+    (void)iLineno;
 #endif
 #ifdef SQLITE_DEBUG
-      if( p->db->flags & SQLITE_VdbeAddopTrace ){
-        sqlite3VdbePrintOp(0, i+addr, &p->aOp[i+addr]);
-      }
-#endif
+    if( p->db->flags & SQLITE_VdbeAddopTrace ){
+      sqlite3VdbePrintOp(0, i+addr, &p->aOp[i+addr]);
     }
-    p->nOp += nOp;
+#endif
   }
+  p->nOp += nOp;
   return addr;
 }
 
