@@ -1,5 +1,5 @@
-C The\ssqlite3_memory_alarm()\sinterface\shas\sbeen\sdeprecated\sand\sundocumented\nfor\salmost\s8\syears\s(since\sversion\s3.5.3).\s\sChange\sit\sinto\sa\sno-op.
-D 2015-09-02T14:56:56.653
+C Use\ssqlite3XPrintf()\sinstead\sof\ssqlite3StrAccumAppend()\sin\sa\sfew\splaces\nfor\sbetter\sperformance\sand\sa\ssmaller\sfootprint.
+D 2015-09-02T15:37:50.515
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -279,7 +279,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 4d9134dc988a87838c06056c89c0e8c4700a0452
 F src/bitvec.c d1f21d7d91690747881f03940584f4cc548c9d3d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c f48b3ef91676c06a90a8832987ecef6b94c931ee
+F src/btree.c 4084d9eed2817331f6e6a82230ba30e448cad497
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 8177c9ab90d772d6d2c6c517e05bed774b7c92c0
 F src/build.c 511b02138eddc3cf68dab1016da4998260093e9f
@@ -333,7 +333,7 @@ F src/pcache1.c b31af9dbc83b9c68e87d681b8453a9605f28e734
 F src/pragma.c a239d2c8c6d87d589927547f234b0f6259c69f62
 F src/pragma.h 631a91c8b0e6ca8f051a1d8a4a0da4150e04620a
 F src/prepare.c 82e5db1013846a819f198336fed72c44c974e7b1
-F src/printf.c 2bc439ff20a4aad0e0ad50a37a67b5eae7d20edc
+F src/printf.c e66737e0e460aa7a765d1dbc3834c1ed91fbf36b
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c f2ef256786a6435efddd64a632fea89c8be62215
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
@@ -416,7 +416,7 @@ F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 2e14d17f592d176b6dc879c33fbdec4fbccaa2ba
 F src/where.c 91e73ffc699c140a59baa03a6b7b060db02bed81
 F src/whereInt.h 901c17c1e3c82745ad9b85b4471543fa59c980e9
-F src/wherecode.c 3d9113cc307ffeed58db41fe9f2d807c94787ab5
+F src/wherecode.c f749795d059a71dd7b33af1b11bf65a30d085233
 F src/whereexpr.c 1a308d1ee5144890d21ea9cf70d49bc96a83432b
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -1380,7 +1380,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6db3ff45bc15ece29cb2c7a736e5c6d005dde200
-R fb43199c7de8d8215fceefa0991f495e
+P 5d3f5df4da9f40d5897b5c23b2ea9333fc18ac2c
+R 015478dce7d3b6dcb9b04185a9d6060b
 U drh
-Z 048512fff9b9f8d1311c6e43a6f32096
+Z 3e1b692f08d8bff51066d541f96997b7

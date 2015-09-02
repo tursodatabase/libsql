@@ -1062,7 +1062,8 @@ void sqlite3DebugPrintf(const char *zFormat, ...){
 
 
 /*
-** variable-argument wrapper around sqlite3VXPrintf().
+** variable-argument wrapper around sqlite3VXPrintf().  The bFlags argument
+** can contain the bit SQLITE_PRINTF_INTERNAL enable internal formats.
 */
 void sqlite3XPrintf(StrAccum *p, u32 bFlags, const char *zFormat, ...){
   va_list ap;

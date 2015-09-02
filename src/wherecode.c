@@ -165,19 +165,18 @@ int sqlite3WhereExplainOneScan(
         explainIndexRange(&str, pLoop, pItem->pTab);
       }
     }else if( (flags & WHERE_IPK)!=0 && (flags & WHERE_CONSTRAINT)!=0 ){
-      const char *zRange;
+      const char *zRangeOp;
       if( flags&(WHERE_COLUMN_EQ|WHERE_COLUMN_IN) ){
-        zRange = "(rowid=?)";
+        zRangeOp = "=";
       }else if( (flags&WHERE_BOTH_LIMIT)==WHERE_BOTH_LIMIT ){
-        zRange = "(rowid>? AND rowid<?)";
+        zRangeOp = ">? AND rowid<";
       }else if( flags&WHERE_BTM_LIMIT ){
-        zRange = "(rowid>?)";
+        zRangeOp = ">";
       }else{
         assert( flags&WHERE_TOP_LIMIT);
-        zRange = "(rowid<?)";
+        zRangeOp = "<";
       }
-      sqlite3StrAccumAppendAll(&str, " USING INTEGER PRIMARY KEY ");
-      sqlite3StrAccumAppendAll(&str, zRange);
+      sqlite3XPrintf(&str, 0, " USING INTEGER PRIMARY KEY (rowid%s?)",zRangeOp);
     }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
     else if( (flags & WHERE_VIRTUALTABLE)!=0 ){
