@@ -333,7 +333,16 @@ proc tcl_tokenize {tflags text} {
   }
 }
 
-do_test 6.0 {
+do_execsql_test 6.0.1 {
+  CREATE VIRTUAL TABLE t1 USING fts5(x, tokenize=tcl);
+  INSERT INTO t1 VALUES('yy xx qq');
+  INSERT INTO t1 VALUES('yy xx xx');
+}
+do_execsql_test 6.0.2 {
+  SELECT * FROM t1 WHERE t1 MATCH 'NEAR(y q)';
+} {{yy xx qq}}
+
+do_test 6.0.3 {
   execsql { 
     CREATE VIRTUAL TABLE t2 USING fts5(a, b, tokenize=tcl)
   }
@@ -371,6 +380,11 @@ foreach {tn q res} {
     5 {fffff mm vvvv [ooo] ffffff kkkk tttt} {cccccc bb e zzz d n}
     6 {iii dddd hh [qqqq] ddd [ooo]} {ttt d c b [aaaaaa] [qqqq]}
     9 {kkkkk qqq [oooo] e tttttt mmm} {e ss qqqqqq hhhh llllll gg}
+  }
+
+  4 {NEAR(q y, 20)} {
+    1 {[yyyy] vvvvv [qq] oo [yyyyyy] vvvv eee} {ffff uu r qq aaaa}
+    2 {ww oooooo bbbbb ssssss mm} {ffffff [yy] iiii rr s ccc [qqqqq]}
   }
 } {
   do_execsql_test 6.1.$tn {

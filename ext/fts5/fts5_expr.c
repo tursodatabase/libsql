@@ -742,12 +742,12 @@ static int fts5ExprSynonymAdvanceto(
   Fts5ExprTerm *pTerm,            /* Term iterator to advance */
   int bDesc,                      /* True if iterator is "rowid DESC" */
   i64 *piLast,                    /* IN/OUT: Lastest rowid seen so far */
-  int *pRc,                       /* OUT: Error code */
-  int *pbEof                      /* OUT: Set to true if EOF */
+  int *pRc                        /* OUT: Error code */
 ){
   int rc = SQLITE_OK;
   i64 iLast = *piLast;
   Fts5ExprTerm *p;
+  int bEof = 0;
 
   for(p=pTerm; rc==SQLITE_OK && p; p=p->pSynonym){
     if( sqlite3Fts5IterEof(p->pIter)==0 ){
@@ -759,12 +759,12 @@ static int fts5ExprSynonymAdvanceto(
   }
 
   if( rc!=SQLITE_OK ){
-    *pbEof = 1;
+    *pRc = rc;
+    bEof = 1;
   }else{
-    *piLast = fts5ExprSynonymRowid(pTerm, bDesc, pbEof);
+    *piLast = fts5ExprSynonymRowid(pTerm, bDesc, &bEof);
   }
-
-  return rc;
+  return bEof;
 }
 
 /*
@@ -952,10 +952,10 @@ static int fts5ExprNearNextMatch(
           i64 iRowid = fts5ExprSynonymRowid(pTerm, bDesc, 0);
           if( iRowid==iLast ) continue;
           bMatch = 0;
-          if( fts5ExprSynonymAdvanceto(pTerm,bDesc,&iLast,&rc,&pNode->bEof) ){
+          if( fts5ExprSynonymAdvanceto(pTerm, bDesc, &iLast, &rc) ){
+            pNode->bEof = 1;
             return rc;
           }
-
         }else{
           Fts5IndexIter *pIter = pPhrase->aTerm[j].pIter;
           i64 iRowid = sqlite3Fts5IterRowid(pIter);

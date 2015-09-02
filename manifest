@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sfts5\ssynonyms\sand\sphrase\squeries.\sAlso\sfix\san\sOOM\shandling\sbug\sin\sfts5.
-D 2015-09-02T17:34:22.663
+C Fix\san\sissue\swith\sfts5\ssynonyms\sand\sNEAR(...)\squeries.
+D 2015-09-02T18:56:01.484
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e2218eb228374422969de7b1680eda6864affcef
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -110,7 +110,7 @@ F ext/fts5/fts5Int.h c6f035091fc9fa12a92c7066bf0c266c08cb508b
 F ext/fts5/fts5_aux.c 7a307760a9c57c750d043188ec0bad59f5b5ec7e
 F ext/fts5/fts5_buffer.c 80f9ba4431848cb857e3d2158f5280093dcd8015
 F ext/fts5/fts5_config.c 80b61fd2c6844b64a3e72a64572d50a812da9384
-F ext/fts5/fts5_expr.c 408384b2f540dcf72a363e1cde4c3e9896e8d41d
+F ext/fts5/fts5_expr.c 1a6dbdab7a1035210b04f9ddccc019fccefe77d5
 F ext/fts5/fts5_hash.c 4bf4b99708848357b8a2b5819e509eb6d3df9246
 F ext/fts5/fts5_index.c 076c4995bf06a6d1559a6e31f9a86b90f2105374
 F ext/fts5/fts5_main.c e9d0892424bb7f0a8b58613d4ff75cb650cf286e
@@ -172,7 +172,7 @@ F ext/fts5/test/fts5rank.test 11dcebba31d822f7e99685b4ea2c2ae3ec0b16f1
 F ext/fts5/test/fts5rebuild.test 03935f617ace91ed23a6099c7c74d905227ff29b
 F ext/fts5/test/fts5restart.test c17728fdea26e7d0f617d22ad5b4b2862b994c17
 F ext/fts5/test/fts5rowid.test 6f9833b23b176dc4aa15b7fc02afeb2b220fd460
-F ext/fts5/test/fts5synonym.test 88efc3de51a2c46aff984d74f06c833e4def0493
+F ext/fts5/test/fts5synonym.test 4bc555107abb16df3873d23d1f735eeab4d24010
 F ext/fts5/test/fts5tokenizer.test ea4df698b35cc427ebf2ba22829d0e28386d8c89
 F ext/fts5/test/fts5unicode.test fbef8d8a3b4b88470536cc57604a82ca52e51841
 F ext/fts5/test/fts5unicode2.test c1dd890ba32b7609adba78e420faa847abe43b59
@@ -1381,7 +1381,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 11fa980897c6c7be218bbd9c4cd8253272d2c300
-R 6df2cc151a0891be96a1f7bf13aeaf04
+P a4c35fa2c94fe34b376670244fe72303c99868c1
+R 95a88bfdbba18ffe1c3b172dc2ad91be
 U dan
-Z 72b6e5381768fc37d01c74eff21e6a40
+Z d85f21bea0d3a94f93f876bfbe641651
