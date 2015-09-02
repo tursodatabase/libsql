@@ -169,6 +169,7 @@ Vdbe *sqlite3VdbeCreate(Parse*);
 int sqlite3VdbeAddOp0(Vdbe*,int);
 int sqlite3VdbeAddOp1(Vdbe*,int,int);
 int sqlite3VdbeAddOp2(Vdbe*,int,int,int);
+int sqlite3VdbeAddGoto(Vdbe*,int);
 int sqlite3VdbeAddOp3(Vdbe*,int,int,int,int);
 int sqlite3VdbeAddOp4(Vdbe*,int,int,int,int,const char *zP4,int);
 int sqlite3VdbeAddOp4Dup8(Vdbe*,int,int,int,int,const u8*,int);

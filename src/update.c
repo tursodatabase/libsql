@@ -627,7 +627,7 @@ void sqlite3Update(
     sqlite3VdbeResolveLabel(v, labelContinue);
     sqlite3VdbeAddOp2(v, OP_Next, iEph, addrTop); VdbeCoverage(v);
   }else{
-    sqlite3VdbeAddOp2(v, OP_Goto, 0, labelContinue);
+    sqlite3VdbeAddGoto(v, labelContinue);
   }
   sqlite3VdbeResolveLabel(v, labelBreak);
 

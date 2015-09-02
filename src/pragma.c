@@ -1332,7 +1332,7 @@ void sqlite3Pragma(
             sqlite3VdbeAddOp2(v, OP_Rowid, 0, regRow);
           }
           sqlite3VdbeAddOp3(v, OP_NotExists, i, 0, regRow); VdbeCoverage(v);
-          sqlite3VdbeAddOp2(v, OP_Goto, 0, addrOk);
+          sqlite3VdbeAddGoto(v, addrOk);
           sqlite3VdbeJumpHere(v, sqlite3VdbeCurrentAddr(v)-2);
         }else{
           for(j=0; j<pFK->nCol; j++){
@@ -1576,14 +1576,14 @@ void sqlite3Pragma(
               VdbeCoverage(v);
             }
             jmp6 = sqlite3VdbeAddOp1(v, OP_Next, iIdxCur+j); VdbeCoverage(v);
-            sqlite3VdbeAddOp2(v, OP_Goto, 0, uniqOk);
+            sqlite3VdbeAddGoto(v, uniqOk);
             sqlite3VdbeJumpHere(v, jmp6);
             sqlite3VdbeAddOp4Int(v, OP_IdxGT, iIdxCur+j, uniqOk, r1,
                                  pIdx->nKeyCol); VdbeCoverage(v);
             sqlite3VdbeAddOp2(v, OP_AddImm, 1, -1); /* Decrement error limit */
             sqlite3VdbeAddOp4(v, OP_String8, 0, 3, 0,
                               "non-unique entry in index ", P4_STATIC);
-            sqlite3VdbeAddOp2(v, OP_Goto, 0, jmp5);
+            sqlite3VdbeAddGoto(v, jmp5);
             sqlite3VdbeResolveLabel(v, uniqOk);
           }
           sqlite3VdbeJumpHere(v, jmp4);

@@ -1150,7 +1150,7 @@ static void analyzeOneTable(
         VdbeCoverage(v);
       }
       sqlite3VdbeAddOp2(v, OP_Integer, nColTest, regChng);
-      sqlite3VdbeAddOp2(v, OP_Goto, 0, endDistinctTest);
+      sqlite3VdbeAddGoto(v, endDistinctTest);
   
   
       /*

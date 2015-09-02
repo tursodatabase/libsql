@@ -221,7 +221,7 @@ void sqlite3FinishCoding(Parse *pParse){
       }
 
       /* Finally, jump back to the beginning of the executable code. */
-      sqlite3VdbeAddOp2(v, OP_Goto, 0, 1);
+      sqlite3VdbeAddGoto(v, 1);
     }
   }
 
@@ -1963,7 +1963,7 @@ void sqlite3EndTable(
       sqlite3TableAffinity(v, p, 0);
       sqlite3VdbeAddOp2(v, OP_NewRowid, 1, regRowid);
       sqlite3VdbeAddOp3(v, OP_Insert, 1, regRec, regRowid);
-      sqlite3VdbeAddOp2(v, OP_Goto, 0, addrInsLoop);
+      sqlite3VdbeAddGoto(v, addrInsLoop);
       sqlite3VdbeJumpHere(v, addrInsLoop);
       sqlite3VdbeAddOp1(v, OP_Close, 1);
     }
@@ -2792,7 +2792,7 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
   assert( pKey!=0 || db->mallocFailed || pParse->nErr );
   if( IsUniqueIndex(pIndex) && pKey!=0 ){
     int j2 = sqlite3VdbeCurrentAddr(v) + 3;
-    sqlite3VdbeAddOp2(v, OP_Goto, 0, j2);
+    sqlite3VdbeAddGoto(v, j2);
     addr2 = sqlite3VdbeCurrentAddr(v);
     sqlite3VdbeAddOp4Int(v, OP_SorterCompare, iSorter, j2, regRecord,
                          pIndex->nKeyCol); VdbeCoverage(v);

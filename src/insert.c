@@ -266,7 +266,7 @@ void sqlite3AutoincrementBegin(Parse *pParse){
     sqlite3VdbeChangeP5(v, SQLITE_JUMPIFNULL);
     sqlite3VdbeAddOp2(v, OP_Rowid, 0, memId+1);
     sqlite3VdbeAddOp3(v, OP_Column, 0, 1, memId);
-    sqlite3VdbeAddOp2(v, OP_Goto, 0, addr+9);
+    sqlite3VdbeAddGoto(v, addr+9);
     sqlite3VdbeAddOp2(v, OP_Next, 0, addr+2); VdbeCoverage(v);
     sqlite3VdbeAddOp2(v, OP_Integer, 0, memId);
     sqlite3VdbeAddOp0(v, OP_Close);
@@ -690,7 +690,7 @@ void sqlite3Insert(
       sqlite3VdbeAddOp3(v, OP_MakeRecord, regFromSelect, nColumn, regRec);
       sqlite3VdbeAddOp2(v, OP_NewRowid, srcTab, regTempRowid);
       sqlite3VdbeAddOp3(v, OP_Insert, srcTab, regRec, regTempRowid);
-      sqlite3VdbeAddOp2(v, OP_Goto, 0, addrL);
+      sqlite3VdbeAddGoto(v, addrL);
       sqlite3VdbeJumpHere(v, addrL);
       sqlite3ReleaseTempReg(pParse, regRec);
       sqlite3ReleaseTempReg(pParse, regTempRowid);
@@ -991,7 +991,7 @@ void sqlite3Insert(
     sqlite3VdbeJumpHere(v, addrInsTop);
     sqlite3VdbeAddOp1(v, OP_Close, srcTab);
   }else if( pSelect ){
-    sqlite3VdbeAddOp2(v, OP_Goto, 0, addrCont);
+    sqlite3VdbeAddGoto(v, addrCont);
     sqlite3VdbeJumpHere(v, addrInsTop);
   }
 
@@ -1238,7 +1238,7 @@ void sqlite3GenerateConstraintChecks(
       int allOk = sqlite3VdbeMakeLabel(v);
       sqlite3ExprIfTrue(pParse, pCheck->a[i].pExpr, allOk, SQLITE_JUMPIFNULL);
       if( onError==OE_Ignore ){
-        sqlite3VdbeAddOp2(v, OP_Goto, 0, ignoreDest);
+        sqlite3VdbeAddGoto(v, ignoreDest);
       }else{
         char *zName = pCheck->a[i].zName;
         if( zName==0 ) zName = pTab->zName;
@@ -1346,7 +1346,7 @@ void sqlite3GenerateConstraintChecks(
       }
       case OE_Ignore: {
         /*assert( seenReplace==0 );*/
-        sqlite3VdbeAddOp2(v, OP_Goto, 0, ignoreDest);
+        sqlite3VdbeAddGoto(v, ignoreDest);
         break;
       }
     }
@@ -1499,7 +1499,7 @@ void sqlite3GenerateConstraintChecks(
         break;
       }
       case OE_Ignore: {
-        sqlite3VdbeAddOp2(v, OP_Goto, 0, ignoreDest);
+        sqlite3VdbeAddGoto(v, ignoreDest);
         break;
       }
       default: {
@@ -1520,7 +1520,7 @@ void sqlite3GenerateConstraintChecks(
     if( regR!=regIdx ) sqlite3ReleaseTempRange(pParse, regR, nPkField);
   }
   if( ipkTop ){
-    sqlite3VdbeAddOp2(v, OP_Goto, 0, ipkTop+1);
+    sqlite3VdbeAddGoto(v, ipkTop+1);
     sqlite3VdbeJumpHere(v, ipkBottom);
   }
   
@@ -1966,7 +1966,7 @@ static int xferOptimization(
     ** (3) onError is something other than OE_Abort and OE_Rollback.
     */
     addr1 = sqlite3VdbeAddOp2(v, OP_Rewind, iDest, 0); VdbeCoverage(v);
-    emptyDestTest = sqlite3VdbeAddOp2(v, OP_Goto, 0, 0);
+    emptyDestTest = sqlite3VdbeAddOp0(v, OP_Goto);
     sqlite3VdbeJumpHere(v, addr1);
   }
   if( HasRowid(pSrc) ){
