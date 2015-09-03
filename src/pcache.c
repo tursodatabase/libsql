@@ -19,7 +19,7 @@
 struct PCache {
   PgHdr *pDirty, *pDirtyTail;         /* List of dirty pages in LRU order */
   PgHdr *pSynced;                     /* Last synced page in dirty page list */
-  int nRef;                           /* Number of referenced pages */
+  int nRefSum;                        /* Sum of ref counts over all pages */
   int szCache;                        /* Configured cache size */
   int szPage;                         /* Size of every page in this cache */
   int szExtra;                        /* Size of extra space for each page */
@@ -184,7 +184,7 @@ int sqlite3PcacheOpen(
 ** are no outstanding page references when this function is called.
 */
 int sqlite3PcacheSetPageSize(PCache *pCache, int szPage){
-  assert( pCache->nRef==0 && pCache->pDirty==0 );
+  assert( pCache->nRefSum==0 && pCache->pDirty==0 );
   if( pCache->szPage ){
     sqlite3_pcache *pNew;
     pNew = sqlite3GlobalConfig.pcache2.xCreate(
@@ -351,9 +351,7 @@ PgHdr *sqlite3PcacheFetchFinish(
   if( !pPgHdr->pPage ){
     return pcacheFetchFinishWithInit(pCache, pgno, pPage);
   }
-  if( 0==pPgHdr->nRef ){
-    pCache->nRef++;
-  }
+  pCache->nRefSum++;
   pPgHdr->nRef++;
   return pPgHdr;
 }
@@ -364,9 +362,8 @@ PgHdr *sqlite3PcacheFetchFinish(
 */
 void SQLITE_NOINLINE sqlite3PcacheRelease(PgHdr *p){
   assert( p->nRef>0 );
-  p->nRef--;
-  if( p->nRef==0 ){
-    p->pCache->nRef--;
+  p->pCache->nRefSum--;
+  if( (--p->nRef)==0 ){
     if( p->flags&PGHDR_CLEAN ){
       pcacheUnpin(p);
     }else if( p->pDirtyPrev!=0 ){
@@ -382,6 +379,7 @@ void SQLITE_NOINLINE sqlite3PcacheRelease(PgHdr *p){
 void sqlite3PcacheRef(PgHdr *p){
   assert(p->nRef>0);
   p->nRef++;
+  p->pCache->nRefSum++;
 }
 
 /*
@@ -394,7 +392,7 @@ void sqlite3PcacheDrop(PgHdr *p){
   if( p->flags&PGHDR_DIRTY ){
     pcacheManageDirtyList(p, PCACHE_DIRTYLIST_REMOVE);
   }
-  p->pCache->nRef--;
+  p->pCache->nRefSum--;
   sqlite3GlobalConfig.pcache2.xUnpin(p->pCache->pCache, p->pPage, 1);
 }
 
@@ -490,11 +488,11 @@ void sqlite3PcacheTruncate(PCache *pCache, Pgno pgno){
         sqlite3PcacheMakeClean(p);
       }
     }
-    if( pgno==0 && pCache->nRef ){
+    if( pgno==0 && pCache->nRefSum ){
       sqlite3_pcache_page *pPage1;
       pPage1 = sqlite3GlobalConfig.pcache2.xFetch(pCache->pCache,1,0);
       if( ALWAYS(pPage1) ){  /* Page 1 is always available in cache, because
-                             ** pCache->nRef>0 */
+                             ** pCache->nRefSum>0 */
         memset(pPage1->pBuf, 0, pCache->szPage);
         pgno = 1;
       }
@@ -600,10 +598,13 @@ PgHdr *sqlite3PcacheDirtyList(PCache *pCache){
 }
 
 /* 
-** Return the total number of referenced pages held by the cache.
+** Return the total number of references to all pages held by the cache.
+**
+** This is not the total number of pages referenced, but the sum of the
+** reference count for all pages.
 */
 int sqlite3PcacheRefCount(PCache *pCache){
-  return pCache->nRef;
+  return pCache->nRefSum;
 }
 
 /*

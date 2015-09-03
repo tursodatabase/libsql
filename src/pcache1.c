@@ -961,7 +961,10 @@ static PgHdr1 *pcache1FetchNoMutex(
   pPage = pCache->apHash[iKey % pCache->nHash];
   while( pPage && pPage->iKey!=iKey ){ pPage = pPage->pNext; }
 
-  /* Step 2: Abort if no existing page is found and createFlag is 0 */
+  /* Step 2: If the page was found in the hash table, then return it.
+  ** If the page was not in the hash table and createFlag is 0, abort.
+  ** Otherwise (page not in hash and createFlag!=0) continue with
+  ** subsequent steps to try to create the page. */
   if( pPage ){
     if( !pPage->isPinned ){
       return pcache1PinPage(pPage);

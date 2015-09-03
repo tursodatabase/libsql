@@ -1,5 +1,5 @@
-C Changes\sfrom\sENABLE_CONCURRENT\s(default\soff)\sto\sOMIT_CONCURRENT\s(default\son).\nThis\sis\snot\sa\sclear-cut\sdecision\sand\smight\sbe\schanged\sback.
-D 2015-09-03T15:17:12.457
+C Merge\sperformance\senhancements\sfrom\strunk.\s\sThis\sbranch\snow\sruns\s(slightly)\nfaster\sthan\sthe\s3.8.11.1\srelease,\sthough\sstill\sslightly\sslower\sthan\strunk.
+D 2015-09-03T20:52:44.863
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -324,12 +324,12 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c 76f493ed71c4154338049dee1bf6e47f69c74a55
 F src/os_win.c 40b3af7a47eb1107d0d69e592bec345a3b7b798a
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
-F src/pager.c 567093b5d35cba6e5a4316e1611f6bd44415c0d7
+F src/pager.c 06e10a0b736ba22df52e0f56fa67a42de41a0445
 F src/pager.h 244606cccd4293a2bc4be20bb37bf730028c5c18
 F src/parse.y 1e645cacb93979c59f2a510ee2c100e769bd5e3c
-F src/pcache.c cde06aa50962595e412d497e22fd2e07878ba1f0
+F src/pcache.c 24be750c79272e0ca7b6e007bc94999700f3e5ef
 F src/pcache.h 9968603796240cdf83da7e7bef76edf90619cea9
-F src/pcache1.c b31af9dbc83b9c68e87d681b8453a9605f28e734
+F src/pcache1.c e1529369c047ac645e6a28196f25b7e936c46b82
 F src/pragma.c d71b813e67bf03f3116b9dd5164fbfd81ec673a2
 F src/pragma.h 631a91c8b0e6ca8f051a1d8a4a0da4150e04620a
 F src/prepare.c 82e5db1013846a819f198336fed72c44c974e7b1
@@ -1383,7 +1383,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 71e7299e8d501618b10f8c1f78572789b1b6853a
-R cf8206aeb5613d1354992f43b08834e8
+P f8ae9bfd05abc35293ad6bc62ab1bdbe357d964e f00a9e1e998c4bd249a45444dc2d71a7e4903b8b
+R 26478d9405c36063665d5a8b96df78bb
 U drh
-Z 1d56cb0a736729e62628d2ca4ac46f41
+Z 60e0d06fc5e4f945ca55d9cbf383722d
