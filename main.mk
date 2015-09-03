@@ -463,9 +463,9 @@ libsqlite3.a:	$(LIBOBJ)
 	$(AR) libsqlite3.a $(LIBOBJ)
 	$(RANLIB) libsqlite3.a
 
-sqlite3$(EXE):	$(TOP)/src/shell.c libsqlite3.a sqlite3.h
-	$(TCCX) $(READLINE_FLAGS) -o sqlite3$(EXE)                  \
-		$(TOP)/src/shell.c                                  \
+sqlite3$(EXE):	$(TOP)/src/shell.c libsqlite3.a sqlite3.h $(TOP)/ext/misc/json1.c
+	$(TCCX) $(READLINE_FLAGS) -DSQLITE_ENABLE_JSON1 -o sqlite3$(EXE)  \
+		$(TOP)/src/shell.c $(TOP)/ext/misc/json1.c                \
 		libsqlite3.a $(LIBREADLINE) $(TLIBS) $(THREADLIB)
 
 sqldiff$(EXE):	$(TOP)/tool/sqldiff.c sqlite3.c sqlite3.h

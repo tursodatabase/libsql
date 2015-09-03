@@ -221,7 +221,7 @@ void sqlite3FinishCoding(Parse *pParse){
       }
 
       /* Finally, jump back to the beginning of the executable code. */
-      sqlite3VdbeAddOp2(v, OP_Goto, 0, 1);
+      sqlite3VdbeGoto(v, 1);
     }
   }
 
@@ -356,7 +356,7 @@ Table *sqlite3LocateTable(
   p = sqlite3FindTable(pParse->db, zName, zDbase);
   if( p==0 ){
     const char *zMsg = isView ? "no such view" : "no such table";
-#ifndef SQLITE_OMIT_VIRTUAL_TABLE
+#ifndef SQLITE_OMIT_VIRTUALTABLE
     /* If zName is the not the name of a table in the schema created using
     ** CREATE, then check to see if it is the name of an virtual table that
     ** can be an eponymous virtual table. */
@@ -1690,7 +1690,7 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
   */
   if( pParse->addrCrTab ){
     assert( v );
-    sqlite3VdbeGetOp(v, pParse->addrCrTab)->opcode = OP_CreateIndex;
+    sqlite3VdbeChangeOpcode(v, pParse->addrCrTab, OP_CreateIndex);
   }
 
   /* Locate the PRIMARY KEY index.  Or, if this table was originally
@@ -1719,7 +1719,7 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
     ** a database schema).  */
     if( v ){
       assert( db->init.busy==0 );
-      sqlite3VdbeGetOp(v, pPk->tnum)->opcode = OP_Goto;
+      sqlite3VdbeChangeOpcode(v, pPk->tnum, OP_Goto);
     }
 
     /*
@@ -1963,7 +1963,7 @@ void sqlite3EndTable(
       sqlite3TableAffinity(v, p, 0);
       sqlite3VdbeAddOp2(v, OP_NewRowid, 1, regRowid);
       sqlite3VdbeAddOp3(v, OP_Insert, 1, regRec, regRowid);
-      sqlite3VdbeAddOp2(v, OP_Goto, 0, addrInsLoop);
+      sqlite3VdbeGoto(v, addrInsLoop);
       sqlite3VdbeJumpHere(v, addrInsLoop);
       sqlite3VdbeAddOp1(v, OP_Close, 1);
     }
@@ -2792,7 +2792,7 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
   assert( pKey!=0 || db->mallocFailed || pParse->nErr );
   if( IsUniqueIndex(pIndex) && pKey!=0 ){
     int j2 = sqlite3VdbeCurrentAddr(v) + 3;
-    sqlite3VdbeAddOp2(v, OP_Goto, 0, j2);
+    sqlite3VdbeGoto(v, j2);
     addr2 = sqlite3VdbeCurrentAddr(v);
     sqlite3VdbeAddOp4Int(v, OP_SorterCompare, iSorter, j2, regRecord,
                          pIndex->nKeyCol); VdbeCoverage(v);

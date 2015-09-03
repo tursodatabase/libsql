@@ -1065,11 +1065,8 @@ u8 sqlite3GetVarint32(const unsigned char *p, u32 *v){
 ** 64-bit integer.
 */
 int sqlite3VarintLen(u64 v){
-  int i = 0;
-  do{
-    i++;
-    v >>= 7;
-  }while( v!=0 && ALWAYS(i<9) );
+  int i;
+  for(i=1; (v >>= 7)!=0; i++){ assert( i<9 ); }
   return i;
 }
 
