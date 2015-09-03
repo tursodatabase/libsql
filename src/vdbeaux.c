@@ -2041,7 +2041,7 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
     }
   }
 
-#ifdef SQLITE_ENABLE_CONCURRENT
+#ifndef SQLITE_OMIT_CONCURRENT
   if( db->bConcurrent && (rc & 0xFF)==SQLITE_BUSY ){
     /* An SQLITE_BUSY or SQLITE_BUSY_SNAPSHOT was encountered while 
     ** attempting to take the WRITER lock on a wal file. Release the

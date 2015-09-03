@@ -3227,7 +3227,7 @@ case OP_SetCookie: {       /* in3 */
   assert( sqlite3SchemaMutexHeld(db, pOp->p1, 0) );
   pIn3 = &aMem[pOp->p3];
   sqlite3VdbeMemIntegerify(pIn3);
-#ifdef SQLITE_ENABLE_CONCURRENT
+#ifndef SQLITE_OMIT_CONCURRENT
   if( db->bConcurrent 
    && (pOp->p2==BTREE_USER_VERSION || pOp->p2==BTREE_APPLICATION_ID)
   ){
@@ -6115,7 +6115,7 @@ case OP_Expire: {
 */
 case OP_TableLock: {
   u8 isWriteLock = (u8)pOp->p3;
-#ifdef SQLITE_ENABLE_CONCURRENT
+#ifndef SQLITE_OMIT_CONCURRENT
   if( isWriteLock && db->bConcurrent && pOp->p2==1 ){
     rc = SQLITE_ERROR;
     sqlite3VdbeError(p, 

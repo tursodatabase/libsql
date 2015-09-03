@@ -448,7 +448,7 @@ struct BtShared {
   Btree *pWriter;       /* Btree with currently open write transaction */
 #endif
   u8 *pTmpSpace;        /* Temp space sufficient to hold a single cell */
-#ifdef SQLITE_ENABLE_CONCURRENT
+#ifndef SQLITE_OMIT_CONCURRENT
   BtreePtrmap *pMap;
 #endif
 };
@@ -657,16 +657,16 @@ struct BtCursor {
 ** (sqliteMallocRaw), it is not possible to use conditional compilation.
 ** So, this macro is defined instead.
 */
-#ifndef SQLITE_OMIT_AUTOVACUUM
-#define ISAUTOVACUUM (pBt->autoVacuum)
-#else
+#ifdef SQLITE_OMIT_AUTOVACUUM
 #define ISAUTOVACUUM 0
+#else
+#define ISAUTOVACUUM (pBt->autoVacuum)
 #endif
 
-#ifdef SQLITE_ENABLE_CONCURRENT
-# define ISCONCURRENT (pBt->pMap!=0)
-#else
+#ifdef SQLITE_OMIT_CONCURRENT
 # define ISCONCURRENT 0
+#else
+# define ISCONCURRENT (pBt->pMap!=0)
 #endif
 
 #define REQUIRE_PTRMAP (ISAUTOVACUUM || ISCONCURRENT)

@@ -2626,7 +2626,7 @@ static int walUpgradeReadlock(Wal *pWal){
 }
 
 
-#ifdef SQLITE_ENABLE_CONCURRENT
+#ifndef SQLITE_OMIT_CONCURRENT
 /* 
 ** This function is only ever called when committing a "BEGIN CONCURRENT"
 ** transaction. It may be assumed that no frames have been written to
@@ -2752,7 +2752,8 @@ int sqlite3WalLockForCommit(Wal *pWal, PgHdr *pPage1, Bitvec *pAllRead){
   return rc;
 }
 
-/*
+/* !defined(SQLITE_OMIT_CONCURRENT)
+**
 ** This function is called as part of committing an CONCURRENT transaction.
 ** It is assumed that sqlite3WalLockForCommit() has already been successfully
 ** called and so (a) the WRITER lock is held and (b) it is known that the
@@ -2778,7 +2779,7 @@ int sqlite3WalUpgradeSnapshot(Wal *pWal){
   }
   return rc;
 }
-#endif   /* SQLITE_ENABLE_CONCURRENT */
+#endif   /* SQLITE_OMIT_CONCURRENT */
 
 /*
 ** End a write transaction.  The commit has already been done.  This

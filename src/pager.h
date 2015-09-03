@@ -194,7 +194,7 @@ void sqlite3PagerTruncateImage(Pager*,Pgno);
 
 void sqlite3PagerRekey(DbPage*, Pgno, u16);
 
-#ifdef SQLITE_ENABLE_CONCURRENT
+#ifndef SQLITE_OMIT_CONCURRENT
 void sqlite3PagerEndConcurrent(Pager*);
 int sqlite3PagerBeginConcurrent(Pager*);
 void sqlite3PagerDropExclusiveLock(Pager*);

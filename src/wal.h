@@ -126,14 +126,14 @@ int sqlite3WalExclusiveMode(Wal *pWal, int op);
 */
 int sqlite3WalHeapMemory(Wal *pWal);
 
-#ifdef SQLITE_ENABLE_CONCURRENT
+#ifndef SQLITE_OMIT_CONCURRENT
 /* Tell the wal layer that we want to commit a concurrent transaction */
 int sqlite3WalLockForCommit(Wal *pWal, PgHdr *pPg, Bitvec *pRead);
 
 /* Upgrade the state of the client to take into account changes written
 ** by other connections */
 int sqlite3WalUpgradeSnapshot(Wal *pWal);
-#endif
+#endif /* SQLITE_OMIT_CONCURRENT */
 
 #ifdef SQLITE_ENABLE_ZIPVFS
 /* If the WAL file is not empty, return the number of bytes of content

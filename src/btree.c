@@ -440,7 +440,7 @@ static void downgradeAllSharedCacheTableLocks(Btree *p){
 #endif /* SQLITE_OMIT_SHARED_CACHE */
 
 
-#ifdef SQLITE_ENABLE_CONCURRENT
+#ifndef SQLITE_OMIT_CONCURRENT
 /*
 ** The following structure - BtreePtrmap - stores the in-memory pointer map
 ** used for newly allocated pages in CONCURRENT transactions. Such pages are
@@ -473,7 +473,8 @@ struct BtreePtrmap {
   RollbackEntry *aRollback;       /* Array of rollback entries */
 };
 
-/*
+/* !defined(SQLITE_OMIT_CONCURRENT)
+**
 ** If page number pgno is greater than or equal to BtreePtrmap.iFirst, 
 ** store an entry for it in the pointer-map structure.
 */
@@ -531,7 +532,8 @@ static int btreePtrmapStore(
   return SQLITE_OK;
 }
 
-/*
+/* !defined(SQLITE_OMIT_CONCURRENT)
+**
 ** Open savepoint iSavepoint, if it is not already open.
 */
 static int btreePtrmapBegin(BtShared *pBt, int nSvpt){
@@ -558,7 +560,8 @@ static int btreePtrmapBegin(BtShared *pBt, int nSvpt){
   return SQLITE_OK;
 }
 
-/*
+/* !defined(SQLITE_OMIT_CONCURRENT)
+**
 ** Rollback (if op==SAVEPOINT_ROLLBACK) or release (if op==SAVEPOINT_RELEASE)
 ** savepoint iSvpt.
 */
@@ -587,7 +590,8 @@ static void btreePtrmapEnd(BtShared *pBt, int op, int iSvpt){
   }
 }
 
-/*
+/* !defined(SQLITE_OMIT_CONCURRENT)
+**
 ** This function is called after an CONCURRENT transaction is opened on the
 ** database. It allocates the BtreePtrmap structure used to track pointers
 ** to allocated pages and zeroes the nFree/iTrunk fields in the database 
@@ -609,7 +613,8 @@ static int btreePtrmapAllocate(BtShared *pBt){
   return rc;
 }
 
-/*
+/* !defined(SQLITE_OMIT_CONCURRENT)
+**
 ** Free any BtreePtrmap structure allocated by an earlier call to
 ** btreePtrmapAllocate().
 */
@@ -623,12 +628,12 @@ static void btreePtrmapDelete(BtShared *pBt){
     pBt->pMap = 0;
   }
 }
-#else
+#else  /* SQLITE_OMIT_CONCURRENT */
 # define btreePtrmapAllocate(x) SQLITE_OK
 # define btreePtrmapDelete(x) 
 # define btreePtrmapBegin(x,y)  SQLITE_OK
 # define btreePtrmapEnd(x,y,z) 
-#endif
+#endif /* SQLITE_OMIT_CONCURRENT */
 
 static void releasePage(MemPage *pPage);  /* Forward reference */
 
@@ -1075,7 +1080,7 @@ static void ptrmapPut(BtShared *pBt, Pgno key, u8 eType, Pgno parent, int *pRC){
   /* The master-journal page number is never added to a pointer-map page */
   assert( 0==PTRMAP_ISPAGE(pBt, PENDING_BYTE_PAGE(pBt)) );
 
-#ifdef SQLITE_ENABLE_CONCURRENT
+#ifndef SQLITE_OMIT_CONCURRENT
   if( pBt->pMap ){
     *pRC = btreePtrmapStore(pBt, key, eType, parent);
     return;
@@ -3397,7 +3402,7 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag){
 
 
 trans_begun:
-#ifdef SQLITE_ENABLE_CONCURRENT
+#ifndef SQLITE_OMIT_CONCURRENT
   if( bConcurrent && rc==SQLITE_OK && sqlite3PagerIsWal(pBt->pPager) ){
     rc = sqlite3PagerBeginConcurrent(pBt->pPager);
     if( rc==SQLITE_OK && wrflag ){
@@ -3852,7 +3857,7 @@ static int autoVacuumCommit(BtShared *pBt){
 # define setChildPtrmaps(x) SQLITE_OK
 #endif
 
-#ifdef SQLITE_ENABLE_CONCURRENT
+#ifndef SQLITE_OMIT_CONCURRENT
 /*
 ** This function is called as part of merging an CONCURRENT transaction with
 ** the snapshot at the head of the wal file. It relocates all pages in the
@@ -3920,7 +3925,8 @@ static int btreeRelocateRange(
   return rc;
 }
 
-/*
+/* !defined(SQLITE_OMIT_CONCURRENT)
+**
 ** The b-tree handle passed as the only argument is about to commit an
 ** CONCURRENT transaction. At this point it is guaranteed that this is 
 ** possible - the wal WRITER lock is held and it is known that there are 
@@ -4011,7 +4017,7 @@ static int btreeFixUnlocked(Btree *p){
 }
 #else
 # define btreeFixUnlocked(X)  SQLITE_OK
-#endif /* ENABLE_CONCURRENT */
+#endif /* SQLITE_OMIT_CONCURRENT */
 
 /*
 ** This routine does the first phase of a two-phase commit.  This routine
