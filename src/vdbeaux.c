@@ -237,7 +237,8 @@ int sqlite3VdbeAddOp4(
 }
 
 /*
-** Add an opcode that includes the p4 value with a P4_INT64 type.
+** Add an opcode that includes the p4 value with a P4_INT64 or
+** P4_REAL type.
 */
 int sqlite3VdbeAddOp4Dup8(
   Vdbe *p,            /* Add the opcode to this VM */

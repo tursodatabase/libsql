@@ -180,16 +180,25 @@ static void setOneColumnName(Vdbe *v, const char *z){
 /*
 ** Generate code to return a single integer value.
 */
-static void returnSingleInt(Parse *pParse, const char *zLabel, i64 value){
-  Vdbe *v = sqlite3GetVdbe(pParse);
-  int nMem = ++pParse->nMem;
-  i64 *pI64 = sqlite3DbMallocRaw(pParse->db, sizeof(value));
-  if( pI64 ){
-    memcpy(pI64, &value, sizeof(value));
-  }
-  sqlite3VdbeAddOp4(v, OP_Int64, 0, nMem, 0, (char*)pI64, P4_INT64);
+static void returnSingleInt(Vdbe *v, const char *zLabel, i64 value){
+  sqlite3VdbeAddOp4Dup8(v, OP_Int64, 0, 1, 0, (const u8*)&value, P4_INT64);
   setOneColumnName(v, zLabel);
-  sqlite3VdbeAddOp2(v, OP_ResultRow, nMem, 1);
+  sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 1);
+}
+
+/*
+** Generate code to return a single text value.
+*/
+static void returnSingleText(
+  Vdbe *v,                /* Prepared statement under construction */
+  const char *zLabel,     /* Name of the result column */
+  const char *zValue      /* Value to be returned */
+){
+  if( zValue ){
+    sqlite3VdbeAddOp4(v, OP_String8, 0, 1, 0, (const char*)zValue, 0);
+    setOneColumnName(v, zLabel);
+    sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 1);
+  }
 }
 
 
@@ -353,13 +362,8 @@ void sqlite3Pragma(
   db->busyHandler.nBusy = 0;
   rc = sqlite3_file_control(db, zDb, SQLITE_FCNTL_PRAGMA, (void*)aFcntl);
   if( rc==SQLITE_OK ){
-    if( aFcntl[0] ){
-      int nMem = ++pParse->nMem;
-      sqlite3VdbeAddOp4(v, OP_String8, 0, nMem, 0, aFcntl[0], 0);
-      setOneColumnName(v, "result");
-      sqlite3VdbeAddOp2(v, OP_ResultRow, nMem, 1);
-      sqlite3_free(aFcntl[0]);
-    }
+    returnSingleText(v, "result", aFcntl[0]);
+    sqlite3_free(aFcntl[0]);
     goto pragma_out;
   }
   if( rc!=SQLITE_NOTFOUND ){
@@ -463,7 +467,7 @@ void sqlite3Pragma(
     assert( pBt!=0 );
     if( !zRight ){
       int size = ALWAYS(pBt) ? sqlite3BtreeGetPageSize(pBt) : 0;
-      returnSingleInt(pParse, "page_size", size);
+      returnSingleInt(v, "page_size", size);
     }else{
       /* Malloc may fail when setting the page-size, as there is an internal
       ** buffer that the pager module resizes using sqlite3_realloc().
@@ -498,7 +502,7 @@ void sqlite3Pragma(
       }
     }
     b = sqlite3BtreeSecureDelete(pBt, b);
-    returnSingleInt(pParse, "secure_delete", b);
+    returnSingleInt(v, "secure_delete", b);
     break;
   }
 
@@ -577,9 +581,7 @@ void sqlite3Pragma(
     if( eMode==PAGER_LOCKINGMODE_EXCLUSIVE ){
       zRet = "exclusive";
     }
-    setOneColumnName(v, "locking_mode");
-    sqlite3VdbeAddOp4(v, OP_String8, 0, 1, 0, zRet, 0);
-    sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 1);
+    returnSingleText(v, "locking_mode", zRet);
     break;
   }
 
@@ -638,7 +640,7 @@ void sqlite3Pragma(
       if( iLimit<-1 ) iLimit = -1;
     }
     iLimit = sqlite3PagerJournalSizeLimit(pPager, iLimit);
-    returnSingleInt(pParse, "journal_size_limit", iLimit);
+    returnSingleInt(v, "journal_size_limit", iLimit);
     break;
   }
 
@@ -656,7 +658,7 @@ void sqlite3Pragma(
     Btree *pBt = pDb->pBt;
     assert( pBt!=0 );
     if( !zRight ){
-      returnSingleInt(pParse, "auto_vacuum", sqlite3BtreeGetAutoVacuum(pBt));
+      returnSingleInt(v, "auto_vacuum", sqlite3BtreeGetAutoVacuum(pBt));
     }else{
       int eAuto = getAutoVacuum(zRight);
       assert( eAuto>=0 && eAuto<=2 );
@@ -734,7 +736,7 @@ void sqlite3Pragma(
     assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
     if( !zRight ){
       if( sqlite3ReadSchema(pParse) ) goto pragma_out;
-      returnSingleInt(pParse, "cache_size", pDb->pSchema->cache_size);
+      returnSingleInt(v, "cache_size", pDb->pSchema->cache_size);
     }else{
       int size = sqlite3Atoi(zRight);
       pDb->pSchema->cache_size = size;
@@ -780,7 +782,7 @@ void sqlite3Pragma(
     rc = SQLITE_OK;
 #endif
     if( rc==SQLITE_OK ){
-      returnSingleInt(pParse, "mmap_size", sz);
+      returnSingleInt(v, "mmap_size", sz);
     }else if( rc!=SQLITE_NOTFOUND ){
       pParse->nErr++;
       pParse->rc = rc;
@@ -801,7 +803,7 @@ void sqlite3Pragma(
   */
   case PragTyp_TEMP_STORE: {
     if( !zRight ){
-      returnSingleInt(pParse, "temp_store", db->temp_store);
+      returnSingleInt(v, "temp_store", db->temp_store);
     }else{
       changeTempStorage(pParse, zRight);
     }
@@ -820,11 +822,7 @@ void sqlite3Pragma(
   */
   case PragTyp_TEMP_STORE_DIRECTORY: {
     if( !zRight ){
-      if( sqlite3_temp_directory ){
-        setOneColumnName(v, "temp_store_diretory");
-        sqlite3VdbeAddOp4(v, OP_String8, 0, 1, 0, sqlite3_temp_directory, 0);
-        sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 1);
-      }
+      returnSingleText(v, "temp_store_directory", sqlite3_temp_directory);
     }else{
 #ifndef SQLITE_OMIT_WSD
       if( zRight[0] ){
@@ -868,11 +866,7 @@ void sqlite3Pragma(
   */
   case PragTyp_DATA_STORE_DIRECTORY: {
     if( !zRight ){
-      if( sqlite3_data_directory ){
-        setOneColumnName(v, "data_store_directory");
-        sqlite3VdbeAddOp4(v, OP_String8, 0, 1, 0, sqlite3_data_directory, 0);
-        sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 1);
-      }
+      returnSingleText(v, "data_store_directory", sqlite3_data_directory);
     }else{
 #ifndef SQLITE_OMIT_WSD
       if( zRight[0] ){
@@ -911,12 +905,7 @@ void sqlite3Pragma(
       sqlite3_file *pFile = sqlite3PagerFile(pPager);
       sqlite3OsFileControlHint(pFile, SQLITE_GET_LOCKPROXYFILE, 
                            &proxy_file_path);
-      
-      if( proxy_file_path ){
-        setOneColumnName(v, "lock_proxy_file");
-        sqlite3VdbeAddOp4(v, OP_String8, 0, 1, 0, proxy_file_path, 0);
-        sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 1);
-      }
+      returnSingleText(v, "lock_proxy_file", proxy_file_path);
     }else{
       Pager *pPager = sqlite3BtreePager(pDb->pBt);
       sqlite3_file *pFile = sqlite3PagerFile(pPager);
@@ -948,7 +937,7 @@ void sqlite3Pragma(
   */
   case PragTyp_SYNCHRONOUS: {
     if( !zRight ){
-      returnSingleInt(pParse, "synchronous", pDb->safety_level-1);
+      returnSingleInt(v, "synchronous", pDb->safety_level-1);
     }else{
       if( !db->autoCommit ){
         sqlite3ErrorMsg(pParse, 
@@ -967,7 +956,7 @@ void sqlite3Pragma(
 #ifndef SQLITE_OMIT_FLAG_PRAGMAS
   case PragTyp_FLAG: {
     if( zRight==0 ){
-      returnSingleInt(pParse, pPragma->zName, (db->flags & pPragma->iArg)!=0 );
+      returnSingleInt(v, pPragma->zName, (db->flags & pPragma->iArg)!=0 );
     }else{
       int mask = pPragma->iArg;    /* Mask of bits to set or clear. */
       if( db->autoCommit==0 ){
@@ -1641,13 +1630,10 @@ void sqlite3Pragma(
     const struct EncName *pEnc;
     if( !zRight ){    /* "PRAGMA encoding" */
       if( sqlite3ReadSchema(pParse) ) goto pragma_out;
-      setOneColumnName(v, "encoding");
-      sqlite3VdbeAddOp2(v, OP_String8, 0, 1);
       assert( encnames[SQLITE_UTF8].enc==SQLITE_UTF8 );
       assert( encnames[SQLITE_UTF16LE].enc==SQLITE_UTF16LE );
       assert( encnames[SQLITE_UTF16BE].enc==SQLITE_UTF16BE );
-      sqlite3VdbeChangeP4(v, -1, encnames[ENC(pParse->db)].zName, P4_STATIC);
-      sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 1);
+      returnSingleText(v, "encoding", encnames[ENC(pParse->db)].zName);
     }else{                        /* "PRAGMA encoding = XXX" */
       /* Only change the value of sqlite.enc if the database handle is not
       ** initialized. If the main database exists, the new sqlite.enc value
@@ -1796,7 +1782,7 @@ void sqlite3Pragma(
     if( zRight ){
       sqlite3_wal_autocheckpoint(db, sqlite3Atoi(zRight));
     }
-    returnSingleInt(pParse, "wal_autocheckpoint", 
+    returnSingleInt(v, "wal_autocheckpoint", 
        db->xWalCallback==sqlite3WalDefaultHook ? 
            SQLITE_PTR_TO_INT(db->pWalArg) : 0);
   }
@@ -1829,7 +1815,7 @@ void sqlite3Pragma(
     if( zRight ){
       sqlite3_busy_timeout(db, sqlite3Atoi(zRight));
     }
-    returnSingleInt(pParse, "timeout",  db->busyTimeout);
+    returnSingleInt(v, "timeout",  db->busyTimeout);
     break;
   }
 
@@ -1849,7 +1835,7 @@ void sqlite3Pragma(
     if( zRight && sqlite3DecOrHexToI64(zRight, &N)==SQLITE_OK ){
       sqlite3_soft_heap_limit64(N);
     }
-    returnSingleInt(pParse, "soft_heap_limit",  sqlite3_soft_heap_limit64(-1));
+    returnSingleInt(v, "soft_heap_limit",  sqlite3_soft_heap_limit64(-1));
     break;
   }
 
@@ -1868,7 +1854,7 @@ void sqlite3Pragma(
     ){
       sqlite3_limit(db, SQLITE_LIMIT_WORKER_THREADS, (int)(N&0x7fffffff));
     }
-    returnSingleInt(pParse, "threads",
+    returnSingleInt(v, "threads",
                     sqlite3_limit(db, SQLITE_LIMIT_WORKER_THREADS, -1));
     break;
   }
