@@ -1,5 +1,5 @@
-C A\ssimple\soptimization\sand\ssize\sreduction\sin\ssqlite3PagerAcquire().
-D 2015-09-03T18:20:10.962
+C Change\sthe\spcache\smodule\sto\skeep\strack\sof\sthe\stotal\snumber\sof\sreferences\sto\nall\spages\srather\sthan\sthe\snumber\sof\spages\sreferences,\sfor\sa\sperformance\nimprovement\sand\ssize\sreduction.
+D 2015-09-03T20:43:55.204
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -324,12 +324,12 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c 76f493ed71c4154338049dee1bf6e47f69c74a55
 F src/os_win.c 40b3af7a47eb1107d0d69e592bec345a3b7b798a
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
-F src/pager.c 748ff3e183e0a311328af902c0819c6a8e3f22ca
+F src/pager.c 4784012f80b2197c61ff6eaf4f5c7026d93253fd
 F src/pager.h 6d435f563b3f7fcae4b84433b76a6ac2730036e2
 F src/parse.y f599aa5e871a493330d567ced93de696f61f48f7
-F src/pcache.c cde06aa50962595e412d497e22fd2e07878ba1f0
+F src/pcache.c 24be750c79272e0ca7b6e007bc94999700f3e5ef
 F src/pcache.h 9968603796240cdf83da7e7bef76edf90619cea9
-F src/pcache1.c b31af9dbc83b9c68e87d681b8453a9605f28e734
+F src/pcache1.c e1529369c047ac645e6a28196f25b7e936c46b82
 F src/pragma.c d71b813e67bf03f3116b9dd5164fbfd81ec673a2
 F src/pragma.h 631a91c8b0e6ca8f051a1d8a4a0da4150e04620a
 F src/prepare.c 82e5db1013846a819f198336fed72c44c974e7b1
@@ -1380,7 +1380,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b79096be7cb02aae2f303db33a8bf19e69204374
-R d1173d7149bc899e819d5c3a3bb552ec
+P 618d8dd4ff44cce10cc4688a2134715ff66cc562
+R 7304361de7c7fa82f683343fecc699dd
 U drh
-Z 442809bedf9761a63ee7744b080363fa
+Z 8da3824804c6c5593515c7564fca1c5b
