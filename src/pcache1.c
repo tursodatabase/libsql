@@ -392,7 +392,7 @@ static int pcache1MemSize(void *p){
 /*
 ** Allocate a new page object initially associated with cache pCache.
 */
-static PgHdr1 *pcache1AllocPage(PCache1 *pCache){
+static PgHdr1 *pcache1AllocPage(PCache1 *pCache, int benignMalloc){
   PgHdr1 *p = 0;
   void *pPg;
 
@@ -410,6 +410,7 @@ static PgHdr1 *pcache1AllocPage(PCache1 *pCache){
     assert( pCache->pGroup==&pcache1.grp );
     pcache1LeaveMutex(pCache->pGroup);
 #endif
+    if( benignMalloc ) sqlite3BeginBenignMalloc();
 #ifdef SQLITE_PCACHE_SEPARATE_HEADER
     pPg = pcache1Alloc(pCache->szPage);
     p = sqlite3Malloc(sizeof(PgHdr1) + pCache->szExtra);
@@ -422,6 +423,7 @@ static PgHdr1 *pcache1AllocPage(PCache1 *pCache){
     pPg = pcache1Alloc(pCache->szAlloc);
     p = (PgHdr1 *)&((u8 *)pPg)[pCache->szPage];
 #endif
+    if( benignMalloc ) sqlite3EndBenignMalloc();
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
     pcache1EnterMutex(pCache->pGroup);
 #endif
@@ -867,9 +869,7 @@ static SQLITE_NOINLINE PgHdr1 *pcache1FetchStage2(
   ** attempt to allocate a new one. 
   */
   if( !pPage ){
-    if( createFlag==1 ){ sqlite3BeginBenignMalloc(); }
-    pPage = pcache1AllocPage(pCache);
-    if( createFlag==1 ){ sqlite3EndBenignMalloc(); }
+    pPage = pcache1AllocPage(pCache, createFlag==1);
   }
 
   if( pPage ){
