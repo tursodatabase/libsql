@@ -647,7 +647,7 @@ struct Pager {
   u8 doNotSpill;              /* Do not spill the cache when non-zero */
   u8 subjInMemory;            /* True to use in-memory sub-journals */
   u8 bUseFetch;               /* True to use xFetch() */
-  u8 hasBeenUsed;             /* True if any content previously read */
+  u8 hasHeldSharedLock;       /* True if a shared lock has ever been held */
   Pgno dbSize;                /* Number of pages in the database */
   Pgno dbOrigSize;            /* dbSize before the current transaction */
   Pgno dbFileSize;            /* Number of pages in the database file */
@@ -5097,10 +5097,10 @@ int sqlite3PagerSharedLock(Pager *pPager){
       );
     }
 
-    if( !pPager->tempFile && pPager->hasBeenUsed ){
+    if( !pPager->tempFile && pPager->hasHeldSharedLock ){
       /* The shared-lock has just been acquired then check to
       ** see if the database has been modified.  If the database has changed,
-      ** flush the cache.  The pPager->hasBeenUsed flag prevents this from
+      ** flush the cache.  The hasHeldSharedLock flag prevents this from
       ** occurring on the very first access to a file, in order to save a
       ** single unnecessary sqlite3OsRead() call at the start-up.
       **
@@ -5170,6 +5170,7 @@ int sqlite3PagerSharedLock(Pager *pPager){
     assert( pPager->eState==PAGER_OPEN );
   }else{
     pPager->eState = PAGER_READER;
+    pPager->hasHeldSharedLock = 1;
   }
   return rc;
 }
@@ -5267,7 +5268,7 @@ int sqlite3PagerAcquire(
   if( pgno==0 ){
     return SQLITE_CORRUPT_BKPT;
   }
-  pPager->hasBeenUsed = 1;
+  assert( pPager->hasHeldSharedLock==1 );
 
   /* If the pager is in the error state, return an error immediately. 
   ** Otherwise, request the page from the PCache layer. */
@@ -5422,7 +5423,7 @@ DbPage *sqlite3PagerLookup(Pager *pPager, Pgno pgno){
   assert( pgno!=0 );
   assert( pPager->pPCache!=0 );
   pPage = sqlite3PcacheFetch(pPager->pPCache, pgno, 0);
-  assert( pPage==0 || pPager->hasBeenUsed );
+  assert( pPage==0 || pPager->hasHeldSharedLock );
   if( pPage==0 ) return 0;
   return sqlite3PcacheFetchFinish(pPager->pPCache, pgno, pPage);
 }
