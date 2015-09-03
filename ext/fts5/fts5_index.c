@@ -554,23 +554,6 @@ struct Fts5DlidxIter {
   Fts5DlidxLvl aLvl[1];
 };
 
-
-
-/*
-** The first argument passed to this macro is a pointer to an Fts5Buffer
-** object.
-*/
-#define fts5BufferSize(pBuf,n) {                \
-  if( pBuf->nSpace<n ) {                        \
-    u8 *pNew = sqlite3_realloc(pBuf->p, n);     \
-    if( pNew==0 ){                              \
-      sqlite3_free(pBuf->p);                    \
-    }                                           \
-    pBuf->nSpace = n;                           \
-    pBuf->p = pNew;                             \
-  }                                             \
-}
-
 static void fts5PutU16(u8 *aOut, u16 iVal){
   aOut[0] = (iVal>>8);
   aOut[1] = (iVal&0xFF);
@@ -647,11 +630,14 @@ static void fts5CloseReader(Fts5Index *p){
   }
 }
 
-static Fts5Data *fts5DataReadOrBuffer(
-  Fts5Index *p, 
-  Fts5Buffer *pBuf, 
-  i64 iRowid
-){
+
+/*
+** Retrieve a record from the %_data table.
+**
+** If an error occurs, NULL is returned and an error left in the 
+** Fts5Index object.
+*/
+static Fts5Data *fts5DataRead(Fts5Index *p, i64 iRowid){
   Fts5Data *pRet = 0;
   if( p->rc==SQLITE_OK ){
     int rc = SQLITE_OK;
@@ -671,8 +657,8 @@ static Fts5Data *fts5DataReadOrBuffer(
       if( rc==SQLITE_ABORT ) rc = SQLITE_OK;
     }
 
-    /* If the blob handle is not yet open, open and seek it. Otherwise, use
-    ** the blob_reopen() API to reseek the existing blob handle.  */
+    /* If the blob handle is not open at this point, open it and seek 
+    ** to the requested entry.  */
     if( p->pReader==0 && rc==SQLITE_OK ){
       Fts5Config *pConfig = p->pConfig;
       rc = sqlite3_blob_open(pConfig->db, 
@@ -690,22 +676,13 @@ static Fts5Data *fts5DataReadOrBuffer(
     if( rc==SQLITE_OK ){
       u8 *aOut = 0;               /* Read blob data into this buffer */
       int nByte = sqlite3_blob_bytes(p->pReader);
-      if( pBuf ){
-        fts5BufferSize(pBuf, MAX(nByte, p->pConfig->pgsz) + 20);
-        pBuf->n = nByte;
-        aOut = pBuf->p;
-        if( aOut==0 ){
-          rc = SQLITE_NOMEM;
-        }
+      int nAlloc = sizeof(Fts5Data) + nByte + FTS5_DATA_PADDING;
+      pRet = (Fts5Data*)sqlite3_malloc(nAlloc);
+      if( pRet ){
+        pRet->n = nByte;
+        aOut = pRet->p = (u8*)&pRet[1];
       }else{
-        int nSpace = nByte + FTS5_DATA_PADDING;
-        pRet = (Fts5Data*)sqlite3_malloc(nSpace+sizeof(Fts5Data));
-        if( pRet ){
-          pRet->n = nByte;
-          aOut = pRet->p = (u8*)&pRet[1];
-        }else{
-          rc = SQLITE_NOMEM;
-        }
+        rc = SQLITE_NOMEM;
       }
 
       if( rc==SQLITE_OK ){
@@ -720,31 +697,8 @@ static Fts5Data *fts5DataReadOrBuffer(
     p->nRead++;
   }
 
-  return pRet;
-}
-
-/*
-** Retrieve a record from the %_data table.
-**
-** If an error occurs, NULL is returned and an error left in the 
-** Fts5Index object.
-*/
-static Fts5Data *fts5DataRead(Fts5Index *p, i64 iRowid){
-  Fts5Data *pRet = fts5DataReadOrBuffer(p, 0, iRowid);
   assert( (pRet==0)==(p->rc!=SQLITE_OK) );
   return pRet;
-}
-
-/*
-** Read a record from the %_data table into the buffer supplied as the
-** second argument.
-**
-** If an error occurs, an error is left in the Fts5Index object. If an
-** error has already occurred when this function is called, it is a 
-** no-op.
-*/
-static void fts5DataBuffer(Fts5Index *p, Fts5Buffer *pBuf, i64 iRowid){
-  (void)fts5DataReadOrBuffer(p, pBuf, iRowid);
 }
 
 /*
@@ -1015,19 +969,18 @@ static Fts5Structure *fts5StructureRead(Fts5Index *p){
   Fts5Config *pConfig = p->pConfig;
   Fts5Structure *pRet = 0;        /* Object to return */
   int iCookie;                    /* Configuration cookie */
+  Fts5Data *pData;
   Fts5Buffer buf = {0, 0, 0};
 
-  fts5DataBuffer(p, &buf, FTS5_STRUCTURE_ROWID);
-  if( buf.p==0 ) return 0;
-  assert( buf.nSpace>=(buf.n + FTS5_DATA_ZERO_PADDING) );
-  memset(&buf.p[buf.n], 0, FTS5_DATA_ZERO_PADDING);
-  p->rc = fts5StructureDecode(buf.p, buf.n, &iCookie, &pRet);
-
+  pData = fts5DataRead(p, FTS5_STRUCTURE_ROWID);
+  if( p->rc ) return 0;
+  memset(&pData->p[pData->n], 0, FTS5_DATA_PADDING);
+  p->rc = fts5StructureDecode(pData->p, pData->n, &iCookie, &pRet);
   if( p->rc==SQLITE_OK && pConfig->iCookie!=iCookie ){
     p->rc = sqlite3Fts5ConfigLoad(pConfig, iCookie);
   }
 
-  fts5BufferFree(&buf);
+  fts5DataRelease(pData);
   if( p->rc!=SQLITE_OK ){
     fts5StructureRelease(pRet);
     pRet = 0;
@@ -2490,13 +2443,13 @@ static void fts5SegIterNextFrom(
     }
   }
 
-  while( p->rc==SQLITE_OK ){
+  do{
     if( bMove ) fts5SegIterNext(p, pIter, 0);
     if( pIter->pLeaf==0 ) break;
     if( bRev==0 && pIter->iRowid>=iMatch ) break;
     if( bRev!=0 && pIter->iRowid<=iMatch ) break;
     bMove = 1;
-  }
+  }while( p->rc==SQLITE_OK );
 }
 
 
@@ -4272,13 +4225,9 @@ int sqlite3Fts5IndexRollback(Fts5Index *p){
 */
 int sqlite3Fts5IndexReinit(Fts5Index *p){
   Fts5Structure s;
-
-  assert( p->rc==SQLITE_OK );
-  p->rc = sqlite3Fts5IndexSetAverages(p, (const u8*)"", 0);
-
   memset(&s, 0, sizeof(Fts5Structure));
+  fts5DataWrite(p, FTS5_AVERAGES_ROWID, (const u8*)"", 0);
   fts5StructureWrite(p, &s);
-
   return fts5IndexReturn(p);
 }
 
@@ -4600,13 +4549,28 @@ void sqlite3Fts5IterClose(Fts5IndexIter *pIter){
 }
 
 /*
-** Read the "averages" record into the buffer supplied as the second 
-** argument. Return SQLITE_OK if successful, or an SQLite error code
-** if an error occurs.
+** Read and decode the "averages" record from the database. 
+**
+** Parameter anSize must point to an array of size nCol, where nCol is
+** the number of user defined columns in the FTS table.
 */
-int sqlite3Fts5IndexGetAverages(Fts5Index *p, Fts5Buffer *pBuf){
-  assert( p->rc==SQLITE_OK );
-  fts5DataReadOrBuffer(p, pBuf, FTS5_AVERAGES_ROWID);
+int sqlite3Fts5IndexGetAverages(Fts5Index *p, i64 *pnRow, i64 *anSize){
+  int nCol = p->pConfig->nCol;
+  Fts5Data *pData;
+
+  *pnRow = 0;
+  memset(anSize, 0, sizeof(i64) * nCol);
+  pData = fts5DataRead(p, FTS5_AVERAGES_ROWID);
+  if( p->rc==SQLITE_OK && pData->n ){
+    int i = 0;
+    int iCol;
+    i += fts5GetVarint(&pData->p[i], (u64*)pnRow);
+    for(iCol=0; i<pData->n && iCol<nCol; iCol++){
+      i += fts5GetVarint(&pData->p[i], (u64*)&anSize[iCol]);
+    }
+  }
+
+  fts5DataRelease(pData);
   return fts5IndexReturn(p);
 }
 

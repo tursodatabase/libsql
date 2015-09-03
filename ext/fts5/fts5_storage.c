@@ -455,22 +455,7 @@ static int fts5StorageInsertDocsize(
 static int fts5StorageLoadTotals(Fts5Storage *p, int bCache){
   int rc = SQLITE_OK;
   if( p->bTotalsValid==0 ){
-    int nCol = p->pConfig->nCol;
-    Fts5Buffer buf;
-    memset(&buf, 0, sizeof(buf));
-
-    memset(p->aTotalSize, 0, sizeof(i64) * nCol);
-    p->nTotalRow = 0;
-    rc = sqlite3Fts5IndexGetAverages(p->pIndex, &buf);
-    if( rc==SQLITE_OK && buf.n ){
-      int i = 0;
-      int iCol;
-      i += fts5GetVarint(&buf.p[i], (u64*)&p->nTotalRow);
-      for(iCol=0; i<buf.n && iCol<nCol; iCol++){
-        i += fts5GetVarint(&buf.p[i], (u64*)&p->aTotalSize[iCol]);
-      }
-    }
-    sqlite3_free(buf.p);
+    rc = sqlite3Fts5IndexGetAverages(p->pIndex, &p->nTotalRow, p->aTotalSize);
     p->bTotalsValid = bCache;
   }
   return rc;

@@ -1,5 +1,5 @@
-C Remove\sdead\scode\sfrom\sfts5_index.c.
-D 2015-09-03T11:17:52.904
+C Remove\ssome\smore\scode\sfrom\sfts5_index.c\sby\sconsolidating\ssimilar\sfunctions.
+D 2015-09-03T14:22:27.810
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e2218eb228374422969de7b1680eda6864affcef
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -106,15 +106,15 @@ F ext/fts3/unicode/mkunicode.tcl 95cf7ec186e48d4985e433ff8a1c89090a774252
 F ext/fts3/unicode/parseunicode.tcl da577d1384810fb4e2b209bf3313074353193e95
 F ext/fts5/extract_api_docs.tcl 06583c935f89075ea0b32f85efa5dd7619fcbd03
 F ext/fts5/fts5.h 0784692f406588e6c90e13a78e1f36e7e3236e42
-F ext/fts5/fts5Int.h c6f035091fc9fa12a92c7066bf0c266c08cb508b
+F ext/fts5/fts5Int.h f65d41f66accad0a289d6bd66b13c07d2932f9be
 F ext/fts5/fts5_aux.c 7a307760a9c57c750d043188ec0bad59f5b5ec7e
 F ext/fts5/fts5_buffer.c 80f9ba4431848cb857e3d2158f5280093dcd8015
 F ext/fts5/fts5_config.c 80b61fd2c6844b64a3e72a64572d50a812da9384
 F ext/fts5/fts5_expr.c 0c36c1db8eccdeb006e3c8d1499d05015f6e11a6
 F ext/fts5/fts5_hash.c 4bf4b99708848357b8a2b5819e509eb6d3df9246
-F ext/fts5/fts5_index.c df98f39c0f6e9d06e144dde5a0751ab14ee9d0fd
+F ext/fts5/fts5_index.c febb68173333ae3248eb15928a18b21112d45135
 F ext/fts5/fts5_main.c e9d0892424bb7f0a8b58613d4ff75cb650cf286e
-F ext/fts5/fts5_storage.c 4b883f592ffdc6bcefba6fa03580228379a1333f
+F ext/fts5/fts5_storage.c 120f7b143688b5b7710dacbd48cff211609b8059
 F ext/fts5/fts5_tcl.c 6da58d6e8f42a93c4486b5ba9b187a7f995dee37
 F ext/fts5/fts5_test_mi.c e96be827aa8f571031e65e481251dc1981d608bf
 F ext/fts5/fts5_tokenize.c f380f46f341af9c9a9908e1aade685ba1eaa157a
@@ -1382,7 +1382,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 11b887b15eaee57ea2577c763e70494f1e251275
-R 97c9a99cb5cabc51c42bc2a29210372f
+P 8a0a9b01e74072ee52fe393311ad591208fbbf7c
+R e26c002d3fbf39ced0ec480a25b8c1b8
 U dan
-Z 9499a3a8b1a7472d387dbda943ee05af
+Z cd2601a80f5a8baa4e1506c2cddafc82

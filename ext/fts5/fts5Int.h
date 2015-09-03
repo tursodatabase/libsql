@@ -384,9 +384,9 @@ int sqlite3Fts5IndexErrcode(Fts5Index*);
 void sqlite3Fts5IndexReset(Fts5Index*);
 
 /*
-** Get or set the "averages" record.
+** Get or set the "averages" values.
 */
-int sqlite3Fts5IndexGetAverages(Fts5Index *p, Fts5Buffer *pBuf);
+int sqlite3Fts5IndexGetAverages(Fts5Index *p, i64 *pnRow, i64 *anSize);
 int sqlite3Fts5IndexSetAverages(Fts5Index *p, const u8*, int);
 
 /*
