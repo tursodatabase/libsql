@@ -1181,10 +1181,17 @@ static int fts5ExprNodeNext(
       };
 
       case FTS5_TERM: {
-        rc = fts5ExprNearAdvanceFirst(pExpr, pNode, bFromValid, iFrom);
-        if( pNode->bEof==0 ){
+        Fts5IndexIter *pIter = pNode->pNear->apPhrase[0]->aTerm[0].pIter;
+        if( bFromValid ){
+          rc = sqlite3Fts5IterNextFrom(pIter, iFrom);
+        }else{
+          rc = sqlite3Fts5IterNext(pIter);
+        }
+        if( rc==SQLITE_OK && sqlite3Fts5IterEof(pIter)==0 ){
           assert( rc==SQLITE_OK );
           rc = fts5ExprTokenTest(pExpr, pNode);
+        }else{
+          pNode->bEof = 1;
         }
         return rc;
       };

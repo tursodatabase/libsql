@@ -1,5 +1,5 @@
-C Merge\senhancements\sfrom\strunk.
-D 2015-09-03T18:57:52.309
+C Rearrange\scode\sin\sfts5_expr.c\sso\sthat\ssynonym\ssupport\sdoes\snot\sslow\sdown\sthe\scommon\scase.
+D 2015-09-03T19:48:02.456
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -110,7 +110,7 @@ F ext/fts5/fts5Int.h f65d41f66accad0a289d6bd66b13c07d2932f9be
 F ext/fts5/fts5_aux.c 7a307760a9c57c750d043188ec0bad59f5b5ec7e
 F ext/fts5/fts5_buffer.c 80f9ba4431848cb857e3d2158f5280093dcd8015
 F ext/fts5/fts5_config.c 80b61fd2c6844b64a3e72a64572d50a812da9384
-F ext/fts5/fts5_expr.c 0c36c1db8eccdeb006e3c8d1499d05015f6e11a6
+F ext/fts5/fts5_expr.c 1c24e1a2ffb286bfe37e537a43b7fadabfe993d4
 F ext/fts5/fts5_hash.c 4bf4b99708848357b8a2b5819e509eb6d3df9246
 F ext/fts5/fts5_index.c febb68173333ae3248eb15928a18b21112d45135
 F ext/fts5/fts5_main.c e9d0892424bb7f0a8b58613d4ff75cb650cf286e
@@ -1382,7 +1382,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 58aa1f435959852df74f1bca8e0bdbc4f47c256a 618d8dd4ff44cce10cc4688a2134715ff66cc562
-R 38e68c75949f5efa3d52c01a80d7f0aa
+P 4b49fe996989fe42d2bb1c24e7193fef09c5fc50
+R 0fe79065145fa2e8621202f9c4e41627
 U dan
-Z 9f85937304cd0ef1147cd11d7113913e
+Z fe72ec30c1ce282b0a02c9b8970f9360
