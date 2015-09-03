@@ -1,5 +1,5 @@
-C Optimizations\sto\sthe\sprintf\sformatter.
-D 2015-09-02T21:00:48.651
+C For\sPRAGMAs,\sfactor\sout\sthe\scode\sthat\ssets\sthe\sresult\sset\scolumn\snames\sinto\na\ssubroutine.
+D 2015-09-03T03:29:51.139
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -330,7 +330,7 @@ F src/parse.y f599aa5e871a493330d567ced93de696f61f48f7
 F src/pcache.c cde06aa50962595e412d497e22fd2e07878ba1f0
 F src/pcache.h 9968603796240cdf83da7e7bef76edf90619cea9
 F src/pcache1.c b31af9dbc83b9c68e87d681b8453a9605f28e734
-F src/pragma.c 5d84bdb3798dddb4828a3e4925f53840ff06bb82
+F src/pragma.c a5a100adba96b061e3cb1e0ca0598add70ab1b04
 F src/pragma.h 631a91c8b0e6ca8f051a1d8a4a0da4150e04620a
 F src/prepare.c 82e5db1013846a819f198336fed72c44c974e7b1
 F src/printf.c 0c4bcdd1c2e2521024f0a69cb5eb334f86b3652a
@@ -1380,7 +1380,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0a5b00e493efae58252f9fc7bde5a469645942d5
-R c3f6d7912ae748700d66714a924c7560
+P a3b35ddeca8f459e81105ab6477f3c5afb9b96d5
+R 14d3a3b046e1487e842b98a1bd4b8e73
 U drh
-Z 20ed1b27f691567d47268151076d8428
+Z 1260ec354aa98cd7f6537c5c76a659cf

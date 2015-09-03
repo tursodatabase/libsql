@@ -160,6 +160,24 @@ static int changeTempStorage(Parse *pParse, const char *zStorageType){
 #endif /* SQLITE_PAGER_PRAGMAS */
 
 /*
+** Set the names of the first N columns to the values in azCol[]
+*/
+static void setAllColumnNames(
+  Vdbe *v,               /* The query under construction */
+  int N,                 /* Number of columns */
+  const char **azCol     /* Names of columns */
+){
+  int i;
+  sqlite3VdbeSetNumCols(v, N);
+  for(i=0; i<N; i++){
+    sqlite3VdbeSetColName(v, i, COLNAME_NAME, azCol[i], SQLITE_STATIC);
+  }
+}
+static void setOneColumnName(Vdbe *v, const char *z){
+  setAllColumnNames(v, 1, &z);
+}
+
+/*
 ** Generate code to return a single integer value.
 */
 static void returnSingleInt(Parse *pParse, const char *zLabel, i64 value){
@@ -170,8 +188,7 @@ static void returnSingleInt(Parse *pParse, const char *zLabel, i64 value){
     memcpy(pI64, &value, sizeof(value));
   }
   sqlite3VdbeAddOp4(v, OP_Int64, 0, nMem, 0, (char*)pI64, P4_INT64);
-  sqlite3VdbeSetNumCols(v, 1);
-  sqlite3VdbeSetColName(v, 0, COLNAME_NAME, zLabel, SQLITE_STATIC);
+  setOneColumnName(v, zLabel);
   sqlite3VdbeAddOp2(v, OP_ResultRow, nMem, 1);
 }
 
@@ -339,8 +356,7 @@ void sqlite3Pragma(
     if( aFcntl[0] ){
       int nMem = ++pParse->nMem;
       sqlite3VdbeAddOp4(v, OP_String8, 0, nMem, 0, aFcntl[0], 0);
-      sqlite3VdbeSetNumCols(v, 1);
-      sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "result", SQLITE_STATIC);
+      setOneColumnName(v, "result");
       sqlite3VdbeAddOp2(v, OP_ResultRow, nMem, 1);
       sqlite3_free(aFcntl[0]);
     }
@@ -413,8 +429,7 @@ void sqlite3Pragma(
     int addr;
     sqlite3VdbeUsesBtree(v, iDb);
     if( !zRight ){
-      sqlite3VdbeSetNumCols(v, 1);
-      sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "cache_size", SQLITE_STATIC);
+      setOneColumnName(v, "cache_size");
       pParse->nMem += 2;
       addr = sqlite3VdbeAddOpList(v, ArraySize(getCacheSize), getCacheSize,iLn);
       sqlite3VdbeChangeP1(v, addr, iDb);
@@ -562,8 +577,7 @@ void sqlite3Pragma(
     if( eMode==PAGER_LOCKINGMODE_EXCLUSIVE ){
       zRet = "exclusive";
     }
-    sqlite3VdbeSetNumCols(v, 1);
-    sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "locking_mode", SQLITE_STATIC);
+    setOneColumnName(v, "locking_mode");
     sqlite3VdbeAddOp4(v, OP_String8, 0, 1, 0, zRet, 0);
     sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 1);
     break;
@@ -578,9 +592,7 @@ void sqlite3Pragma(
     int eMode;        /* One of the PAGER_JOURNALMODE_XXX symbols */
     int ii;           /* Loop counter */
 
-    sqlite3VdbeSetNumCols(v, 1);
-    sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "journal_mode", SQLITE_STATIC);
-
+    setOneColumnName(v, "journal_mode");
     if( zRight==0 ){
       /* If there is no "=MODE" part of the pragma, do a query for the
       ** current mode */
@@ -809,9 +821,7 @@ void sqlite3Pragma(
   case PragTyp_TEMP_STORE_DIRECTORY: {
     if( !zRight ){
       if( sqlite3_temp_directory ){
-        sqlite3VdbeSetNumCols(v, 1);
-        sqlite3VdbeSetColName(v, 0, COLNAME_NAME, 
-            "temp_store_directory", SQLITE_STATIC);
+        setOneColumnName(v, "temp_store_diretory");
         sqlite3VdbeAddOp4(v, OP_String8, 0, 1, 0, sqlite3_temp_directory, 0);
         sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 1);
       }
@@ -859,9 +869,7 @@ void sqlite3Pragma(
   case PragTyp_DATA_STORE_DIRECTORY: {
     if( !zRight ){
       if( sqlite3_data_directory ){
-        sqlite3VdbeSetNumCols(v, 1);
-        sqlite3VdbeSetColName(v, 0, COLNAME_NAME, 
-            "data_store_directory", SQLITE_STATIC);
+        setOneColumnName(v, "data_store_directory");
         sqlite3VdbeAddOp4(v, OP_String8, 0, 1, 0, sqlite3_data_directory, 0);
         sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 1);
       }
@@ -905,9 +913,7 @@ void sqlite3Pragma(
                            &proxy_file_path);
       
       if( proxy_file_path ){
-        sqlite3VdbeSetNumCols(v, 1);
-        sqlite3VdbeSetColName(v, 0, COLNAME_NAME, 
-                              "lock_proxy_file", SQLITE_STATIC);
+        setOneColumnName(v, "lock_proxy_file");
         sqlite3VdbeAddOp4(v, OP_String8, 0, 1, 0, proxy_file_path, 0);
         sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 1);
       }
@@ -1011,19 +1017,16 @@ void sqlite3Pragma(
     Table *pTab;
     pTab = sqlite3FindTable(db, zRight, zDb);
     if( pTab ){
+      static const char *azCol[] = {
+         "cid", "name", "type", "notnull", "dflt_value", "pk"
+      };
       int i, k;
       int nHidden = 0;
       Column *pCol;
       Index *pPk = sqlite3PrimaryKeyIndex(pTab);
-      sqlite3VdbeSetNumCols(v, 6);
       pParse->nMem = 6;
       sqlite3CodeVerifySchema(pParse, iDb);
-      sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "cid", SQLITE_STATIC);
-      sqlite3VdbeSetColName(v, 1, COLNAME_NAME, "name", SQLITE_STATIC);
-      sqlite3VdbeSetColName(v, 2, COLNAME_NAME, "type", SQLITE_STATIC);
-      sqlite3VdbeSetColName(v, 3, COLNAME_NAME, "notnull", SQLITE_STATIC);
-      sqlite3VdbeSetColName(v, 4, COLNAME_NAME, "dflt_value", SQLITE_STATIC);
-      sqlite3VdbeSetColName(v, 5, COLNAME_NAME, "pk", SQLITE_STATIC);
+      setAllColumnNames(v, 6, azCol);
       sqlite3ViewGetColumnNames(pParse, pTab);
       for(i=0, pCol=pTab->aCol; i<pTab->nCol; i++, pCol++){
         if( IsHiddenColumn(pCol) ){
@@ -1055,16 +1058,13 @@ void sqlite3Pragma(
   break;
 
   case PragTyp_STATS: {
+    static const char *azCol[] = { "table", "index", "width", "height" };
     Index *pIdx;
     HashElem *i;
     v = sqlite3GetVdbe(pParse);
-    sqlite3VdbeSetNumCols(v, 4);
     pParse->nMem = 4;
     sqlite3CodeVerifySchema(pParse, iDb);
-    sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "table", SQLITE_STATIC);
-    sqlite3VdbeSetColName(v, 1, COLNAME_NAME, "index", SQLITE_STATIC);
-    sqlite3VdbeSetColName(v, 2, COLNAME_NAME, "width", SQLITE_STATIC);
-    sqlite3VdbeSetColName(v, 3, COLNAME_NAME, "height", SQLITE_STATIC);
+    setAllColumnNames(v, 4, azCol);
     for(i=sqliteHashFirst(&pDb->pSchema->tblHash); i; i=sqliteHashNext(i)){
       Table *pTab = sqliteHashData(i);
       sqlite3VdbeAddOp4(v, OP_String8, 0, 1, 0, pTab->zName, 0);
@@ -1091,6 +1091,9 @@ void sqlite3Pragma(
     Table *pTab;
     pIdx = sqlite3FindIndex(db, zRight, zDb);
     if( pIdx ){
+      static const char *azCol[] = {
+         "seqno", "cid", "name", "desc", "coll", "key"
+      };
       int i;
       int mx;
       if( pPragma->iArg ){
@@ -1103,16 +1106,8 @@ void sqlite3Pragma(
         pParse->nMem = 3;
       }
       pTab = pIdx->pTable;
-      sqlite3VdbeSetNumCols(v, pParse->nMem);
       sqlite3CodeVerifySchema(pParse, iDb);
-      sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "seqno", SQLITE_STATIC);
-      sqlite3VdbeSetColName(v, 1, COLNAME_NAME, "cid", SQLITE_STATIC);
-      sqlite3VdbeSetColName(v, 2, COLNAME_NAME, "name", SQLITE_STATIC);
-      if( pPragma->iArg ){
-        sqlite3VdbeSetColName(v, 3, COLNAME_NAME, "desc", SQLITE_STATIC);
-        sqlite3VdbeSetColName(v, 4, COLNAME_NAME, "coll", SQLITE_STATIC);
-        sqlite3VdbeSetColName(v, 5, COLNAME_NAME, "key", SQLITE_STATIC);
-      }
+      setAllColumnNames(v, pParse->nMem, azCol);
       for(i=0; i<mx; i++){
         i16 cnum = pIdx->aiColumn[i];
         sqlite3VdbeAddOp2(v, OP_Integer, i, 1);
@@ -1139,15 +1134,13 @@ void sqlite3Pragma(
     int i;
     pTab = sqlite3FindTable(db, zRight, zDb);
     if( pTab ){
+      static const char *azCol[] = {
+        "seq", "name", "unique", "origin", "partial"
+      };
       v = sqlite3GetVdbe(pParse);
-      sqlite3VdbeSetNumCols(v, 5);
       pParse->nMem = 5;
       sqlite3CodeVerifySchema(pParse, iDb);
-      sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "seq", SQLITE_STATIC);
-      sqlite3VdbeSetColName(v, 1, COLNAME_NAME, "name", SQLITE_STATIC);
-      sqlite3VdbeSetColName(v, 2, COLNAME_NAME, "unique", SQLITE_STATIC);
-      sqlite3VdbeSetColName(v, 3, COLNAME_NAME, "origin", SQLITE_STATIC);
-      sqlite3VdbeSetColName(v, 4, COLNAME_NAME, "partial", SQLITE_STATIC);
+      setAllColumnNames(v, 5, azCol);
       for(pIdx=pTab->pIndex, i=0; pIdx; pIdx=pIdx->pNext, i++){
         const char *azOrigin[] = { "c", "u", "pk" };
         sqlite3VdbeAddOp2(v, OP_Integer, i, 1);
@@ -1162,12 +1155,10 @@ void sqlite3Pragma(
   break;
 
   case PragTyp_DATABASE_LIST: {
+    static const char *azCol[] = { "seq", "name", "file" };
     int i;
-    sqlite3VdbeSetNumCols(v, 3);
     pParse->nMem = 3;
-    sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "seq", SQLITE_STATIC);
-    sqlite3VdbeSetColName(v, 1, COLNAME_NAME, "name", SQLITE_STATIC);
-    sqlite3VdbeSetColName(v, 2, COLNAME_NAME, "file", SQLITE_STATIC);
+    setAllColumnNames(v, 3, azCol);
     for(i=0; i<db->nDb; i++){
       if( db->aDb[i].pBt==0 ) continue;
       assert( db->aDb[i].zName!=0 );
@@ -1181,12 +1172,11 @@ void sqlite3Pragma(
   break;
 
   case PragTyp_COLLATION_LIST: {
+    static const char *azCol[] = { "seq", "name" };
     int i = 0;
     HashElem *p;
-    sqlite3VdbeSetNumCols(v, 2);
     pParse->nMem = 2;
-    sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "seq", SQLITE_STATIC);
-    sqlite3VdbeSetColName(v, 1, COLNAME_NAME, "name", SQLITE_STATIC);
+    setAllColumnNames(v, 2, azCol);
     for(p=sqliteHashFirst(&db->aCollSeq); p; p=sqliteHashNext(p)){
       CollSeq *pColl = (CollSeq *)sqliteHashData(p);
       sqlite3VdbeAddOp2(v, OP_Integer, i++, 1);
@@ -1206,18 +1196,14 @@ void sqlite3Pragma(
       v = sqlite3GetVdbe(pParse);
       pFK = pTab->pFKey;
       if( pFK ){
+        static const char *azCol[] = {
+           "id", "seq", "table", "from", "to", "on_update", "on_delete",
+           "match"
+        };
         int i = 0; 
-        sqlite3VdbeSetNumCols(v, 8);
         pParse->nMem = 8;
         sqlite3CodeVerifySchema(pParse, iDb);
-        sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "id", SQLITE_STATIC);
-        sqlite3VdbeSetColName(v, 1, COLNAME_NAME, "seq", SQLITE_STATIC);
-        sqlite3VdbeSetColName(v, 2, COLNAME_NAME, "table", SQLITE_STATIC);
-        sqlite3VdbeSetColName(v, 3, COLNAME_NAME, "from", SQLITE_STATIC);
-        sqlite3VdbeSetColName(v, 4, COLNAME_NAME, "to", SQLITE_STATIC);
-        sqlite3VdbeSetColName(v, 5, COLNAME_NAME, "on_update", SQLITE_STATIC);
-        sqlite3VdbeSetColName(v, 6, COLNAME_NAME, "on_delete", SQLITE_STATIC);
-        sqlite3VdbeSetColName(v, 7, COLNAME_NAME, "match", SQLITE_STATIC);
+        setAllColumnNames(v, 8, azCol);
         while(pFK){
           int j;
           for(j=0; j<pFK->nCol; j++){
@@ -1261,17 +1247,14 @@ void sqlite3Pragma(
     int addrTop;           /* Top of a loop checking foreign keys */
     int addrOk;            /* Jump here if the key is OK */
     int *aiCols;           /* child to parent column mapping */
+    static const char *azCol[] = { "table", "rowid", "parent", "fkid" };
 
     regResult = pParse->nMem+1;
     pParse->nMem += 4;
     regKey = ++pParse->nMem;
     regRow = ++pParse->nMem;
     v = sqlite3GetVdbe(pParse);
-    sqlite3VdbeSetNumCols(v, 4);
-    sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "table", SQLITE_STATIC);
-    sqlite3VdbeSetColName(v, 1, COLNAME_NAME, "rowid", SQLITE_STATIC);
-    sqlite3VdbeSetColName(v, 2, COLNAME_NAME, "parent", SQLITE_STATIC);
-    sqlite3VdbeSetColName(v, 3, COLNAME_NAME, "fkid", SQLITE_STATIC);
+    setAllColumnNames(v, 4, azCol);
     sqlite3CodeVerifySchema(pParse, iDb);
     k = sqliteHashFirst(&db->aDb[iDb].pSchema->tblHash);
     while( k ){
@@ -1426,8 +1409,7 @@ void sqlite3Pragma(
 
     /* Initialize the VDBE program */
     pParse->nMem = 6;
-    sqlite3VdbeSetNumCols(v, 1);
-    sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "integrity_check", SQLITE_STATIC);
+    setOneColumnName(v, "integrity_check");
 
     /* Set the maximum error count */
     mxErr = SQLITE_INTEGRITY_CHECK_ERROR_MAX;
@@ -1659,8 +1641,7 @@ void sqlite3Pragma(
     const struct EncName *pEnc;
     if( !zRight ){    /* "PRAGMA encoding" */
       if( sqlite3ReadSchema(pParse) ) goto pragma_out;
-      sqlite3VdbeSetNumCols(v, 1);
-      sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "encoding", SQLITE_STATIC);
+      setOneColumnName(v, "encoding");
       sqlite3VdbeAddOp2(v, OP_String8, 0, 1);
       assert( encnames[SQLITE_UTF8].enc==SQLITE_UTF8 );
       assert( encnames[SQLITE_UTF16LE].enc==SQLITE_UTF16LE );
@@ -1767,9 +1748,8 @@ void sqlite3Pragma(
   case PragTyp_COMPILE_OPTIONS: {
     int i = 0;
     const char *zOpt;
-    sqlite3VdbeSetNumCols(v, 1);
     pParse->nMem = 1;
-    sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "compile_option", SQLITE_STATIC);
+    setOneColumnName(v, "compile_option");
     while( (zOpt = sqlite3_compileoption_get(i++))!=0 ){
       sqlite3VdbeAddOp4(v, OP_String8, 0, 1, 0, zOpt, 0);
       sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 1);
@@ -1785,6 +1765,7 @@ void sqlite3Pragma(
   ** Checkpoint the database.
   */
   case PragTyp_WAL_CHECKPOINT: {
+    static const char *azCol[] = { "busy", "log", "checkpointed" };
     int iBt = (pId2->z?iDb:SQLITE_MAX_ATTACHED);
     int eMode = SQLITE_CHECKPOINT_PASSIVE;
     if( zRight ){
@@ -1796,12 +1777,8 @@ void sqlite3Pragma(
         eMode = SQLITE_CHECKPOINT_TRUNCATE;
       }
     }
-    sqlite3VdbeSetNumCols(v, 3);
+    setAllColumnNames(v, 3, azCol);
     pParse->nMem = 3;
-    sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "busy", SQLITE_STATIC);
-    sqlite3VdbeSetColName(v, 1, COLNAME_NAME, "log", SQLITE_STATIC);
-    sqlite3VdbeSetColName(v, 2, COLNAME_NAME, "checkpointed", SQLITE_STATIC);
-
     sqlite3VdbeAddOp3(v, OP_Checkpoint, iBt, eMode, 1);
     sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 3);
   }
@@ -1904,11 +1881,10 @@ void sqlite3Pragma(
     static const char *const azLockName[] = {
       "unlocked", "shared", "reserved", "pending", "exclusive"
     };
+    static const char *azCol[] = { "database", "status" };
     int i;
-    sqlite3VdbeSetNumCols(v, 2);
+    setAllColumnNames(v, 2, azCol);
     pParse->nMem = 2;
-    sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "database", SQLITE_STATIC);
-    sqlite3VdbeSetColName(v, 1, COLNAME_NAME, "status", SQLITE_STATIC);
     for(i=0; i<db->nDb; i++){
       Btree *pBt;
       const char *zState = "unknown";
