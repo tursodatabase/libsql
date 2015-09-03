@@ -5254,20 +5254,20 @@ int sqlite3PagerAcquire(
   ** page 1 if there is no write-transaction open or the ACQUIRE_READONLY
   ** flag was specified by the caller. And so long as the db is not a 
   ** temporary or in-memory database.  */
-  const int bMmapOk = (pgno!=1 && USEFETCH(pPager)
+  const int bMmapOk = (pgno>1 && USEFETCH(pPager)
    && (pPager->eState==PAGER_READER || (flags & PAGER_GET_READONLY))
 #ifdef SQLITE_HAS_CODEC
    && pPager->xCodec==0
 #endif
   );
 
+  if( pgno<=1 && pgno==0 ){
+    return SQLITE_CORRUPT_BKPT;
+  }
   assert( pPager->eState>=PAGER_READER );
   assert( assert_pager_state(pPager) );
   assert( noContent==0 || bMmapOk==0 );
 
-  if( pgno==0 ){
-    return SQLITE_CORRUPT_BKPT;
-  }
   assert( pPager->hasHeldSharedLock==1 );
 
   /* If the pager is in the error state, return an error immediately. 

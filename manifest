@@ -1,5 +1,5 @@
-C Change\sthe\sPager.hasBeenUsed\sflag\sinto\sPager.hasHeldSharedLock\sin\sorder\sto\ntake\sit\soff\sthe\scritical\spath\sin\ssqlite3PagerAcquire().
-D 2015-09-03T17:54:32.014
+C A\ssimple\soptimization\sand\ssize\sreduction\sin\ssqlite3PagerAcquire().
+D 2015-09-03T18:20:10.962
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -324,7 +324,7 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c 76f493ed71c4154338049dee1bf6e47f69c74a55
 F src/os_win.c 40b3af7a47eb1107d0d69e592bec345a3b7b798a
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
-F src/pager.c 2a9d77ac483a684c4187ec9ca786b551d3adfda5
+F src/pager.c 748ff3e183e0a311328af902c0819c6a8e3f22ca
 F src/pager.h 6d435f563b3f7fcae4b84433b76a6ac2730036e2
 F src/parse.y f599aa5e871a493330d567ced93de696f61f48f7
 F src/pcache.c cde06aa50962595e412d497e22fd2e07878ba1f0
@@ -1380,7 +1380,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 847387ec8e6fef283899578fb232b2c23b00ee5b
-R 530c1d1d05feba269ca8969115207173
+P b79096be7cb02aae2f303db33a8bf19e69204374
+R d1173d7149bc899e819d5c3a3bb552ec
 U drh
-Z e28985417ac4a7094ed6187f7e395585
+Z 442809bedf9761a63ee7744b080363fa
