@@ -433,12 +433,28 @@ proc tcl_tokenize {tflags text} {
     }
   }
 }
-do_execsql_test 7.0 {
-  CREATE VIRTUAL TABLE t1 USING fts5(a, b, columnsize=0, tokenize=tcl);
+
+do_execsql_test 7.0.1 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a, b, columnsize=1, tokenize=tcl);
   INSERT INTO t1 VALUES('0 2 3', '4 5 6 7');
   INSERT INTO t1 VALUES('8 9', '0 0 0 0 0 0 0 0 0 0');
   SELECT fts5_test_columnsize(t1) FROM t1 WHERE t1 MATCH '000 AND 00 AND 0';
 } {{3 4} {2 10}}
+
+do_execsql_test 7.0.2 {
+  INSERT INTO t1(t1) VALUES('integrity-check');
+}
+
+do_execsql_test 7.1.1 {
+  CREATE VIRTUAL TABLE t2 USING fts5(a, b, columnsize=0, tokenize=tcl);
+  INSERT INTO t2 VALUES('0 2 3', '4 5 6 7');
+  INSERT INTO t2 VALUES('8 9', '0 0 0 0 0 0 0 0 0 0');
+  SELECT fts5_test_columnsize(t2) FROM t2 WHERE t2 MATCH '000 AND 00 AND 0';
+} {{3 4} {2 10}}
+
+do_execsql_test 7.1.2 {
+  INSERT INTO t2(t2) VALUES('integrity-check');
+}
 
 finish_test
 

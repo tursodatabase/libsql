@@ -891,7 +891,9 @@ int sqlite3Fts5StorageIntegrity(Fts5Storage *p){
       int i;
       ctx.iRowid = sqlite3_column_int64(pScan, 0);
       ctx.szCol = 0;
-      rc = sqlite3Fts5StorageDocsize(p, ctx.iRowid, aColSize);
+      if( pConfig->bColumnsize ){
+        rc = sqlite3Fts5StorageDocsize(p, ctx.iRowid, aColSize);
+      }
       for(i=0; rc==SQLITE_OK && i<pConfig->nCol; i++){
         if( pConfig->abUnindexed[i] ) continue;
         ctx.iCol = i;
@@ -903,7 +905,9 @@ int sqlite3Fts5StorageIntegrity(Fts5Storage *p){
             (void*)&ctx,
             fts5StorageIntegrityCallback
         );
-        if( ctx.szCol!=aColSize[i] ) rc = FTS5_CORRUPT;
+        if( pConfig->bColumnsize && ctx.szCol!=aColSize[i] ){
+          rc = FTS5_CORRUPT;
+        }
         aTotalSize[i] += ctx.szCol;
       }
       if( rc!=SQLITE_OK ) break;
@@ -928,7 +932,7 @@ int sqlite3Fts5StorageIntegrity(Fts5Storage *p){
     rc = fts5StorageCount(p, "content", &nRow);
     if( rc==SQLITE_OK && nRow!=p->nTotalRow ) rc = FTS5_CORRUPT;
   }
-  if( rc==SQLITE_OK ){
+  if( rc==SQLITE_OK && pConfig->bColumnsize ){
     i64 nRow;
     rc = fts5StorageCount(p, "docsize", &nRow);
     if( rc==SQLITE_OK && nRow!=p->nTotalRow ) rc = FTS5_CORRUPT;
@@ -1012,9 +1016,12 @@ static int fts5StorageDecodeSizeArray(
 ** otherwise.
 */
 int sqlite3Fts5StorageDocsize(Fts5Storage *p, i64 iRowid, int *aCol){
-  int nCol = p->pConfig->nCol;
-  sqlite3_stmt *pLookup = 0;
-  int rc = fts5StorageGetStmt(p, FTS5_STMT_LOOKUP_DOCSIZE, &pLookup, 0);
+  int nCol = p->pConfig->nCol;    /* Number of user columns in table */
+  sqlite3_stmt *pLookup = 0;      /* Statement to query %_docsize */
+  int rc;                         /* Return Code */
+
+  assert( p->pConfig->bColumnsize );
+  rc = fts5StorageGetStmt(p, FTS5_STMT_LOOKUP_DOCSIZE, &pLookup, 0);
   if( rc==SQLITE_OK ){
     int bCorrupt = 1;
     sqlite3_bind_int64(pLookup, 1, iRowid);
