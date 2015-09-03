@@ -1,5 +1,5 @@
-C Fix\sthe\sfts5\sintegrity-check\sso\sthat\sit\sworks\swith\scolumnsize=0\stables.
-D 2015-09-03T11:00:50.518
+C Remove\sdead\scode\sfrom\sfts5_index.c.
+D 2015-09-03T11:17:52.904
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e2218eb228374422969de7b1680eda6864affcef
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -112,7 +112,7 @@ F ext/fts5/fts5_buffer.c 80f9ba4431848cb857e3d2158f5280093dcd8015
 F ext/fts5/fts5_config.c 80b61fd2c6844b64a3e72a64572d50a812da9384
 F ext/fts5/fts5_expr.c 0c36c1db8eccdeb006e3c8d1499d05015f6e11a6
 F ext/fts5/fts5_hash.c 4bf4b99708848357b8a2b5819e509eb6d3df9246
-F ext/fts5/fts5_index.c 076c4995bf06a6d1559a6e31f9a86b90f2105374
+F ext/fts5/fts5_index.c df98f39c0f6e9d06e144dde5a0751ab14ee9d0fd
 F ext/fts5/fts5_main.c e9d0892424bb7f0a8b58613d4ff75cb650cf286e
 F ext/fts5/fts5_storage.c 4b883f592ffdc6bcefba6fa03580228379a1333f
 F ext/fts5/fts5_tcl.c 6da58d6e8f42a93c4486b5ba9b187a7f995dee37
@@ -1382,7 +1382,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 399932a181437d84cd57234e76c4b65da1e4ac5f
-R 71ce956d6d1c9e126c469db6cf4c4e29
+P 11b887b15eaee57ea2577c763e70494f1e251275
+R 97c9a99cb5cabc51c42bc2a29210372f
 U dan
-Z 54ee3fa6162283338bf35bd792c52ef7
+Z 9499a3a8b1a7472d387dbda943ee05af

@@ -293,7 +293,6 @@ typedef struct Fts5Data Fts5Data;
 typedef struct Fts5DlidxIter Fts5DlidxIter;
 typedef struct Fts5DlidxLvl Fts5DlidxLvl;
 typedef struct Fts5DlidxWriter Fts5DlidxWriter;
-typedef struct Fts5NodeIter Fts5NodeIter;
 typedef struct Fts5PageWriter Fts5PageWriter;
 typedef struct Fts5SegIter Fts5SegIter;
 typedef struct Fts5DoclistIter Fts5DoclistIter;
@@ -527,24 +526,6 @@ struct Fts5IndexIter {
 
 
 /*
-** Object for iterating through the conents of a single internal node in 
-** memory.
-*/
-struct Fts5NodeIter {
-  /* Internal. Set and managed by fts5NodeIterXXX() functions. Except, 
-  ** the EOF test for the iterator is (Fts5NodeIter.aData==0).  */
-  const u8 *aData;
-  int nData;
-  int iOff;
-
-  /* Output variables */
-  Fts5Buffer term;
-  int nEmpty;
-  int iChild;
-  int bDlidx;
-};
-
-/*
 ** An instance of the following type is used to iterate through the contents
 ** of a doclist-index record.
 **
@@ -617,6 +598,7 @@ static void *fts5IdxMalloc(Fts5Index *p, int nByte){
 **
 **     res = *pLeft - *pRight
 */
+#ifdef SQLITE_DEBUG
 static int fts5BufferCompareBlob(
   Fts5Buffer *pLeft,              /* Left hand side of comparison */
   const u8 *pRight, int nRight    /* Right hand side of comparison */
@@ -625,7 +607,7 @@ static int fts5BufferCompareBlob(
   int res = memcmp(pLeft->p, pRight, nCmp);
   return (res==0 ? (pLeft->n - nRight) : res);
 }
-
+#endif
 
 /*
 ** Compare the contents of the two buffers using memcmp(). If one buffer
@@ -1227,62 +1209,6 @@ static void fts5StructurePromote(
   }
 }
 
-
-/*
-** If the pIter->iOff offset currently points to an entry indicating one
-** or more term-less nodes, advance past it and set pIter->nEmpty to
-** the number of empty child nodes.
-*/
-static void fts5NodeIterGobbleNEmpty(Fts5NodeIter *pIter){
-  if( pIter->iOff<pIter->nData && 0==(pIter->aData[pIter->iOff] & 0xfe) ){
-    pIter->bDlidx = pIter->aData[pIter->iOff] & 0x01;
-    pIter->iOff++;
-    pIter->iOff += fts5GetVarint32(&pIter->aData[pIter->iOff], pIter->nEmpty);
-  }else{
-    pIter->nEmpty = 0;
-    pIter->bDlidx = 0;
-  }
-}
-
-/*
-** Advance to the next entry within the node.
-*/
-static void fts5NodeIterNext(int *pRc, Fts5NodeIter *pIter){
-  if( pIter->iOff>=pIter->nData ){
-    pIter->aData = 0;
-    pIter->iChild += pIter->nEmpty;
-  }else{
-    int nPre, nNew;
-    pIter->iOff += fts5GetVarint32(&pIter->aData[pIter->iOff], nPre);
-    pIter->iOff += fts5GetVarint32(&pIter->aData[pIter->iOff], nNew);
-    pIter->term.n = nPre-2;
-    fts5BufferAppendBlob(pRc, &pIter->term, nNew, pIter->aData+pIter->iOff);
-    pIter->iOff += nNew;
-    pIter->iChild += (1 + pIter->nEmpty);
-    fts5NodeIterGobbleNEmpty(pIter);
-    if( *pRc ) pIter->aData = 0;
-  }
-}
-
-
-/*
-** Initialize the iterator object pIter to iterate through the internal
-** segment node in pData.
-*/
-static void fts5NodeIterInit(const u8 *aData, int nData, Fts5NodeIter *pIter){
-  memset(pIter, 0, sizeof(*pIter));
-  pIter->aData = aData;
-  pIter->nData = nData;
-  pIter->iOff = fts5GetVarint32(aData, pIter->iChild);
-  fts5NodeIterGobbleNEmpty(pIter);
-}
-
-/*
-** Free any memory allocated by the iterator object.
-*/
-static void fts5NodeIterFree(Fts5NodeIter *pIter){
-  fts5BufferFree(&pIter->term);
-}
 
 /*
 ** Advance the iterator passed as the only argument. If the end of the 
@@ -2039,119 +1965,6 @@ static void fts5SegIterLoadDlidx(Fts5Index *p, Fts5SegIter *pIter){
   }
 
   pIter->pDlidx = fts5DlidxIterInit(p, bRev, iSeg, pIter->iTermLeafPgno);
-}
-
-#ifdef SQLITE_DEBUG
-static void fts5AssertNodeSeekOk(
-  Fts5Buffer *pNode,
-  const u8 *pTerm, int nTerm,     /* Term to search for */
-  int iExpectPg,
-  int bExpectDlidx
-){
-  int bDlidx;
-  int iPg;
-  int rc = SQLITE_OK;
-  Fts5NodeIter node;
-
-  fts5NodeIterInit(pNode->p, pNode->n, &node);
-  assert( node.term.n==0 );
-  iPg = node.iChild;
-  bDlidx = node.bDlidx;
-  for(fts5NodeIterNext(&rc, &node);
-      node.aData && fts5BufferCompareBlob(&node.term, pTerm, nTerm)<=0;
-      fts5NodeIterNext(&rc, &node)
-  ){
-    iPg = node.iChild;
-    bDlidx = node.bDlidx;
-  }
-  fts5NodeIterFree(&node);
-
-  assert( rc!=SQLITE_OK || iPg==iExpectPg );
-  assert( rc!=SQLITE_OK || bDlidx==bExpectDlidx );
-}
-#else
-#define fts5AssertNodeSeekOk(v,w,x,y,z)
-#endif
-
-/*
-** Argument pNode is an internal b-tree node. This function searches
-** within the node for the largest term that is smaller than or equal
-** to (pTerm/nTerm).
-**
-** It returns the associated page number. Or, if (pTerm/nTerm) is smaller
-** than all terms within the node, the leftmost child page number. 
-**
-** Before returning, (*pbDlidx) is set to true if the last term on the
-** returned child page number has a doclist-index. Or left as is otherwise.
-*/
-static int fts5NodeSeek(
-  Fts5Buffer *pNode,              /* Node to search */
-  const u8 *pTerm, int nTerm,     /* Term to search for */
-  int *pbDlidx                    /* OUT: True if dlidx flag is set */
-){
-  int iPg;
-  u8 *pPtr = pNode->p;
-  u8 *pEnd = &pPtr[pNode->n];
-  int nMatch = 0;                 /* Number of bytes of pTerm already matched */
-  
-  assert( *pbDlidx==0 );
-
-  pPtr += fts5GetVarint32(pPtr, iPg);
-  while( pPtr<pEnd ){
-    int nEmpty = 0;
-    int nKeep;
-    int nNew;
-
-    /* If there is a "no terms" record at pPtr, read it now. Store the
-    ** number of termless pages in nEmpty. If it indicates a doclist-index, 
-    ** set (*pbDlidx) to true.*/
-    if( *pPtr<2 ){
-      *pbDlidx = (*pPtr==0x01);
-      pPtr++;
-      pPtr += fts5GetVarint32(pPtr, nEmpty);
-      if( pPtr>=pEnd ) break;
-    }
-
-    /* Read the next "term" pointer. Set nKeep to the number of bytes to
-    ** keep from the previous term, and nNew to the number of bytes of
-    ** new data that will be appended to it. */
-    nKeep = (int)*pPtr++;
-    nNew = (int)*pPtr++;
-    if( (nKeep | nNew) & 0x0080 ){
-      pPtr -= 2;
-      pPtr += fts5GetVarint32(pPtr, nKeep);
-      pPtr += fts5GetVarint32(pPtr, nNew);
-    }
-    nKeep -= 2;
-
-    /* Compare (pTerm/nTerm) to the current term on the node (the one described
-    ** by nKeep/nNew). If the node term is larger, break out of the while()
-    ** loop. 
-    **
-    ** Otherwise, if (pTerm/nTerm) is larger or the two terms are equal, 
-    ** leave variable nMatch set to the size of the largest prefix common to
-    ** both terms in bytes.  */
-    if( nKeep==nMatch ){
-      int nTst = MIN(nNew, nTerm-nMatch);
-      int i;
-      for(i=0; i<nTst; i++){
-        if( pTerm[nKeep+i]!=pPtr[i] ) break;
-      }
-      nMatch += i;
-      assert( nMatch<=nTerm );
-
-      if( i<nNew && (nMatch==nTerm || pPtr[i] > pTerm[nMatch]) ) break;
-    }else if( nKeep<nMatch ){
-      break;
-    }
-
-    iPg += 1 + nEmpty;
-    *pbDlidx = 0;
-    pPtr += nNew;
-  }
-
-  fts5AssertNodeSeekOk(pNode, pTerm, nTerm, iPg, *pbDlidx);
-  return iPg;
 }
 
 #define fts5IndexGetVarint32(a, iOff, nVal) {     \
@@ -5487,73 +5300,53 @@ static void fts5DecodeFunction(
       fts5DecodeStructure(&rc, &s, a, n);
     }
   }else{
-
     Fts5Buffer term;
+    int iTermOff = 0;
+    int iRowidOff = 0;
+    int iOff;
+    int nKeep = 0;
+
     memset(&term, 0, sizeof(Fts5Buffer));
 
-    if( iHeight==0 ){
-      int iTermOff = 0;
-      int iRowidOff = 0;
-      int iOff;
-      int nKeep = 0;
-
-      if( n>=4 ){
-        iRowidOff = fts5GetU16(&a[0]);
-        iTermOff = fts5GetU16(&a[2]);
-      }else{
-        sqlite3Fts5BufferSet(&rc, &s, 8, (const u8*)"corrupt");
-        goto decode_out;
-      }
-
-      if( iRowidOff ){
-        iOff = iRowidOff;
-      }else if( iTermOff ){
-        iOff = iTermOff;
-      }else{
-        iOff = n;
-      }
-      fts5DecodePoslist(&rc, &s, &a[4], iOff-4);
-
-      assert( iRowidOff==0 || iOff==iRowidOff );
-      if( iRowidOff ){
-        iOff += fts5DecodeDoclist(&rc, &s, &a[iOff], n-iOff);
-      }
-
-      assert( iTermOff==0 || iOff==iTermOff );
-      while( iOff<n ){
-        int nByte;
-        iOff += fts5GetVarint32(&a[iOff], nByte);
-        term.n= nKeep;
-        fts5BufferAppendBlob(&rc, &term, nByte, &a[iOff]);
-        iOff += nByte;
-
-        sqlite3Fts5BufferAppendPrintf(
-            &rc, &s, " term=%.*s", term.n, (const char*)term.p
-        );
-        iOff += fts5DecodeDoclist(&rc, &s, &a[iOff], n-iOff);
-        if( iOff<n ){
-          iOff += fts5GetVarint32(&a[iOff], nKeep);
-        }
-      }
-      fts5BufferFree(&term);
+    if( n>=4 ){
+      iRowidOff = fts5GetU16(&a[0]);
+      iTermOff = fts5GetU16(&a[2]);
     }else{
-      Fts5NodeIter ss;
-      for(fts5NodeIterInit(a, n, &ss); ss.aData; fts5NodeIterNext(&rc, &ss)){
-        if( ss.term.n==0 ){
-          sqlite3Fts5BufferAppendPrintf(&rc, &s, " left=%d", ss.iChild);
-        }else{
-          sqlite3Fts5BufferAppendPrintf(&rc,&s, " \"%.*s\"", 
-              ss.term.n, ss.term.p
-          );
-        }
-        if( ss.nEmpty ){
-          sqlite3Fts5BufferAppendPrintf(&rc, &s, " empty=%d%s", ss.nEmpty,
-              ss.bDlidx ? "*" : ""
-          );
-        }
-      }
-      fts5NodeIterFree(&ss);
+      sqlite3Fts5BufferSet(&rc, &s, 8, (const u8*)"corrupt");
+      goto decode_out;
     }
+
+    if( iRowidOff ){
+      iOff = iRowidOff;
+    }else if( iTermOff ){
+      iOff = iTermOff;
+    }else{
+      iOff = n;
+    }
+    fts5DecodePoslist(&rc, &s, &a[4], iOff-4);
+
+    assert( iRowidOff==0 || iOff==iRowidOff );
+    if( iRowidOff ){
+      iOff += fts5DecodeDoclist(&rc, &s, &a[iOff], n-iOff);
+    }
+
+    assert( iTermOff==0 || iOff==iTermOff );
+    while( iOff<n ){
+      int nByte;
+      iOff += fts5GetVarint32(&a[iOff], nByte);
+      term.n= nKeep;
+      fts5BufferAppendBlob(&rc, &term, nByte, &a[iOff]);
+      iOff += nByte;
+
+      sqlite3Fts5BufferAppendPrintf(
+          &rc, &s, " term=%.*s", term.n, (const char*)term.p
+          );
+      iOff += fts5DecodeDoclist(&rc, &s, &a[iOff], n-iOff);
+      if( iOff<n ){
+        iOff += fts5GetVarint32(&a[iOff], nKeep);
+      }
+    }
+    fts5BufferFree(&term);
   }
   
  decode_out:
