@@ -1,5 +1,5 @@
-C Remove\ssome\smore\scode\sfrom\sfts5_index.c\sby\sconsolidating\ssimilar\sfunctions.
-D 2015-09-03T14:22:27.810
+C Add\stests\sto\simprove\scoverage\sof\sfts5_varint.c.
+D 2015-09-03T15:37:26.095
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e2218eb228374422969de7b1680eda6864affcef
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -124,7 +124,7 @@ F ext/fts5/fts5_vocab.c 4622e0b7d84a488a1585aaa56eb214ee67a988bc
 F ext/fts5/fts5parse.y 833db1101b78c0c47686ab1b84918e38c36e9452
 F ext/fts5/mkportersteps.tcl 5acf962d2e0074f701620bb5308155fa1e4a63ba
 F ext/fts5/test/fts5_common.tcl b6e6a40ef5d069c8e86ca4fbad491e1195485dbc
-F ext/fts5/test/fts5aa.test 86def30ff5e76eb6db66f0833c4aefe0b765d590
+F ext/fts5/test/fts5aa.test be961d10b0eff5e973c37b3b7a32a18cda87a77c
 F ext/fts5/test/fts5ab.test 6fe3a56731d15978afbb74ae51b355fc9310f2ad
 F ext/fts5/test/fts5ac.test 9737992d08c56bfd4803e933744d2d764e23795c
 F ext/fts5/test/fts5ad.test b2edee8b7de0c21d2c88f8a18c195034aad6952d
@@ -1382,7 +1382,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8a0a9b01e74072ee52fe393311ad591208fbbf7c
-R e26c002d3fbf39ced0ec480a25b8c1b8
+P 59ae30b97b40faa363c55aa2664dead9eaeeddc0
+R e54371f57da08ab0c80326ea4baedd7e
 U dan
-Z cd2601a80f5a8baa4e1506c2cddafc82
+Z 416751bdad2bf139cde3272ad789aa1a

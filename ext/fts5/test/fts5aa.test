@@ -516,6 +516,26 @@ do_execsql_test 19.0 {
   INSERT INTO t1 VALUES('w x 1');
   SELECT rowid FROM t1 WHERE t1 MATCH 'x';
 } {1 2}
+
+#--------------------------------------------------------------------
+# Test that 6 and 7 byte varints can be read.
+#
+reset_db
+do_execsql_test 20.0 {
+  CREATE VIRTUAL TABLE temp.tmp USING fts5(x);
+}
+set ::ids [list \
+  0 [expr 1<<36] [expr 2<<36] [expr 1<<43] [expr 2<<43]
+]
+do_test 20.1 {
+  foreach id $::ids {
+    execsql { INSERT INTO tmp(rowid, x) VALUES($id, 'x y z') }
+  }
+  execsql { SELECT rowid FROM tmp WHERE tmp MATCH 'y' }
+} $::ids
+
+
+
 finish_test
 
 
