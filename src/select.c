@@ -597,7 +597,7 @@ static void codeOffset(
   if( iOffset>0 ){
     int addr;
     addr = sqlite3VdbeAddOp3(v, OP_IfNeg, iOffset, 0, -1); VdbeCoverage(v);
-    sqlite3VdbeAddOp2(v, OP_Goto, 0, iContinue);
+    sqlite3VdbeGoto(v, iContinue);
     VdbeComment((v, "skip OFFSET records"));
     sqlite3VdbeJumpHere(v, addr);
   }
@@ -1206,7 +1206,7 @@ static void generateSortTail(
 
   if( pSort->labelBkOut ){
     sqlite3VdbeAddOp2(v, OP_Gosub, pSort->regReturn, pSort->labelBkOut);
-    sqlite3VdbeAddOp2(v, OP_Goto, 0, addrBreak);
+    sqlite3VdbeGoto(v, addrBreak);
     sqlite3VdbeResolveLabel(v, pSort->labelBkOut);
   }
   iTab = pSort->iECursor;
@@ -1834,7 +1834,7 @@ static void computeLimitRegisters(Parse *pParse, Select *p, int iBreak){
       sqlite3VdbeAddOp2(v, OP_Integer, n, iLimit);
       VdbeComment((v, "LIMIT counter"));
       if( n==0 ){
-        sqlite3VdbeAddOp2(v, OP_Goto, 0, iBreak);
+        sqlite3VdbeGoto(v, iBreak);
       }else if( n>=0 && p->nSelectRow>(u64)n ){
         p->nSelectRow = n;
       }
@@ -2082,7 +2082,7 @@ static void generateWithRecursiveQuery(
   }
 
   /* Keep running the loop until the Queue is empty */
-  sqlite3VdbeAddOp2(v, OP_Goto, 0, addrTop);
+  sqlite3VdbeGoto(v, addrTop);
   sqlite3VdbeResolveLabel(v, addrBreak);
 
 end_of_recursive_query:
@@ -2991,7 +2991,7 @@ static int multiSelectOrderBy(
     addrEofA = sqlite3VdbeAddOp2(v, OP_Gosub, regOutB, addrOutB);
     addrEofA_noB = sqlite3VdbeAddOp2(v, OP_Yield, regAddrB, labelEnd);
                                      VdbeCoverage(v);
-    sqlite3VdbeAddOp2(v, OP_Goto, 0, addrEofA);
+    sqlite3VdbeGoto(v, addrEofA);
     p->nSelectRow += pPrior->nSelectRow;
   }
 
@@ -3005,7 +3005,7 @@ static int multiSelectOrderBy(
     VdbeNoopComment((v, "eof-B subroutine"));
     addrEofB = sqlite3VdbeAddOp2(v, OP_Gosub, regOutA, addrOutA);
     sqlite3VdbeAddOp2(v, OP_Yield, regAddrA, labelEnd); VdbeCoverage(v);
-    sqlite3VdbeAddOp2(v, OP_Goto, 0, addrEofB);
+    sqlite3VdbeGoto(v, addrEofB);
   }
 
   /* Generate code to handle the case of A<B
@@ -3013,7 +3013,7 @@ static int multiSelectOrderBy(
   VdbeNoopComment((v, "A-lt-B subroutine"));
   addrAltB = sqlite3VdbeAddOp2(v, OP_Gosub, regOutA, addrOutA);
   sqlite3VdbeAddOp2(v, OP_Yield, regAddrA, addrEofA); VdbeCoverage(v);
-  sqlite3VdbeAddOp2(v, OP_Goto, 0, labelCmpr);
+  sqlite3VdbeGoto(v, labelCmpr);
 
   /* Generate code to handle the case of A==B
   */
@@ -3026,7 +3026,7 @@ static int multiSelectOrderBy(
     VdbeNoopComment((v, "A-eq-B subroutine"));
     addrAeqB =
     sqlite3VdbeAddOp2(v, OP_Yield, regAddrA, addrEofA); VdbeCoverage(v);
-    sqlite3VdbeAddOp2(v, OP_Goto, 0, labelCmpr);
+    sqlite3VdbeGoto(v, labelCmpr);
   }
 
   /* Generate code to handle the case of A>B
@@ -3037,7 +3037,7 @@ static int multiSelectOrderBy(
     sqlite3VdbeAddOp2(v, OP_Gosub, regOutB, addrOutB);
   }
   sqlite3VdbeAddOp2(v, OP_Yield, regAddrB, addrEofB); VdbeCoverage(v);
-  sqlite3VdbeAddOp2(v, OP_Goto, 0, labelCmpr);
+  sqlite3VdbeGoto(v, labelCmpr);
 
   /* This code runs once to initialize everything.
   */
@@ -5075,7 +5075,7 @@ int sqlite3Select(
   p->nSelectRow = LARGEST_INT64;
   computeLimitRegisters(pParse, p, iEnd);
   if( p->iLimit==0 && sSort.addrSortIndex>=0 ){
-    sqlite3VdbeGetOp(v, sSort.addrSortIndex)->opcode = OP_SorterOpen;
+    sqlite3VdbeChangeOpcode(v, sSort.addrSortIndex, OP_SorterOpen);
     sSort.sortFlags |= SORTFLAG_UseSorter;
   }
 
@@ -5403,7 +5403,7 @@ int sqlite3Select(
 
       /* Jump over the subroutines
       */
-      sqlite3VdbeAddOp2(v, OP_Goto, 0, addrEnd);
+      sqlite3VdbeGoto(v, addrEnd);
 
       /* Generate a subroutine that outputs a single row of the result
       ** set.  This subroutine first looks at the iUseFlag.  If iUseFlag
@@ -5557,7 +5557,7 @@ int sqlite3Select(
         updateAccumulator(pParse, &sAggInfo);
         assert( pMinMax==0 || pMinMax->nExpr==1 );
         if( sqlite3WhereIsOrdered(pWInfo)>0 ){
-          sqlite3VdbeAddOp2(v, OP_Goto, 0, sqlite3WhereBreakLabel(pWInfo));
+          sqlite3VdbeGoto(v, sqlite3WhereBreakLabel(pWInfo));
           VdbeComment((v, "%s() by index",
                 (flag==WHERE_ORDERBY_MIN?"min":"max")));
         }

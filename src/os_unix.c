@@ -3146,7 +3146,6 @@ static int seekAndRead(unixFile *id, sqlite3_int64 offset, void *pBuf, int cnt){
   TIMER_START;
   assert( cnt==(cnt&0x1ffff) );
   assert( id->h>2 );
-  cnt &= 0x1ffff;
   do{
 #if defined(USE_PREAD)
     got = osPread(id->h, pBuf, cnt, offset);
@@ -3363,8 +3362,8 @@ static int unixWrite(
     }
   }
 #endif
-
-  while( amt>0 && (wrote = seekAndWrite(pFile, offset, pBuf, amt))>0 ){
+ 
+  while( (wrote = seekAndWrite(pFile, offset, pBuf, amt))<amt && wrote>0 ){
     amt -= wrote;
     offset += wrote;
     pBuf = &((char*)pBuf)[wrote];
@@ -3372,7 +3371,7 @@ static int unixWrite(
   SimulateIOError(( wrote=(-1), amt=1 ));
   SimulateDiskfullError(( wrote=0, amt=1 ));
 
-  if( amt>0 ){
+  if( amt>wrote ){
     if( wrote<0 && pFile->lastErrno!=ENOSPC ){
       /* lastErrno set by seekAndWrite */
       return SQLITE_IOERR_WRITE;

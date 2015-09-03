@@ -456,7 +456,7 @@ void sqlite3DeleteFrom(
     if( okOnePass ){
       /* Bypass the delete logic below if the WHERE loop found zero rows */
       addrBypass = sqlite3VdbeMakeLabel(v);
-      sqlite3VdbeAddOp2(v, OP_Goto, 0, addrBypass);
+      sqlite3VdbeGoto(v, addrBypass);
       sqlite3VdbeJumpHere(v, addrDelete);
     }
   
@@ -518,7 +518,7 @@ void sqlite3DeleteFrom(
       sqlite3VdbeAddOp2(v, OP_Next, iEphCur, addrLoop+1); VdbeCoverage(v);
       sqlite3VdbeJumpHere(v, addrLoop);
     }else{
-      sqlite3VdbeAddOp2(v, OP_Goto, 0, addrLoop);
+      sqlite3VdbeGoto(v, addrLoop);
       sqlite3VdbeJumpHere(v, addrLoop);
     }     
   
