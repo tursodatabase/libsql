@@ -68,7 +68,7 @@ void sqlite3VdbeSetSql(Vdbe *p, const char *z, int n, int isPrepareV2){
 */
 const char *sqlite3_sql(sqlite3_stmt *pStmt){
   Vdbe *p = (Vdbe *)pStmt;
-  return (p && p->isPrepareV2) ? p->zSql : 0;
+  return p ? p->zSql : 0;
 }
 
 /*
@@ -215,6 +215,44 @@ int sqlite3VdbeAddOp2(Vdbe *p, int op, int p1, int p2){
   return sqlite3VdbeAddOp3(p, op, p1, p2, 0);
 }
 
+/* Generate code for an unconditional jump to instruction iDest
+*/
+int sqlite3VdbeGoto(Vdbe *p, int iDest){
+  return sqlite3VdbeAddOp3(p, OP_Goto, 0, iDest, 0);
+}
+
+/* Generate code to cause the string zStr to be loaded into
+** register iDest
+*/
+int sqlite3VdbeLoadString(Vdbe *p, int iDest, const char *zStr){
+  return sqlite3VdbeAddOp4(p, OP_String8, 0, iDest, 0, zStr, 0);
+}
+
+/*
+** Generate code that initializes multiple registers to string or integer
+** constants.  The registers begin with iDest and increase consecutively.
+** One register is initialized for each characgter in zTypes[].  For each
+** "s" character in zTypes[], the register is a string if the argument is
+** not NULL, or OP_Null if the value is a null pointer.  For each "i" character
+** in zTypes[], the register is initialized to an integer.
+*/
+void sqlite3VdbeMultiLoad(Vdbe *p, int iDest, const char *zTypes, ...){
+  va_list ap;
+  int i;
+  char c;
+  va_start(ap, zTypes);
+  for(i=0; (c = zTypes[i])!=0; i++){
+    if( c=='s' ){
+      const char *z = va_arg(ap, const char*);
+      int addr = sqlite3VdbeAddOp2(p, z==0 ? OP_Null : OP_String8, 0, iDest++);
+      if( z ) sqlite3VdbeChangeP4(p, addr, z, 0);
+    }else{
+      assert( c=='i' );
+      sqlite3VdbeAddOp2(p, OP_Integer, va_arg(ap, int), iDest++);
+    }
+  }
+  va_end(ap);
+}
 
 /*
 ** Add an opcode that includes the p4 value as a pointer.
@@ -234,7 +272,8 @@ int sqlite3VdbeAddOp4(
 }
 
 /*
-** Add an opcode that includes the p4 value with a P4_INT64 type.
+** Add an opcode that includes the p4 value with a P4_INT64 or
+** P4_REAL type.
 */
 int sqlite3VdbeAddOp4Dup8(
   Vdbe *p,            /* Add the opcode to this VM */
@@ -319,7 +358,8 @@ void sqlite3VdbeResolveLabel(Vdbe *v, int x){
   int j = -1-x;
   assert( v->magic==VDBE_MAGIC_INIT );
   assert( j<p->nLabel );
-  if( ALWAYS(j>=0) && p->aLabel ){
+  assert( j>=0 );
+  if( p->aLabel ){
     p->aLabel[j] = v->nOp;
   }
   p->iFixedOp = v->nOp - 1;
@@ -463,17 +503,21 @@ int sqlite3VdbeAssertMayAbort(Vdbe *v, int mayAbort){
 #endif /* SQLITE_DEBUG - the sqlite3AssertMayAbort() function */
 
 /*
-** Loop through the program looking for P2 values that are negative
-** on jump instructions.  Each such value is a label.  Resolve the
-** label by setting the P2 value to its correct non-zero value.
+** This routine is called after all opcodes have been inserted.  It loops
+** through all the opcodes and fixes up some details.
 **
-** This routine is called once after all opcodes have been inserted.
+** (1) For each jump instruction with a negative P2 value (a label)
+**     resolve the P2 value to an actual address.
 **
-** Variable *pMaxFuncArgs is set to the maximum value of any P2 argument 
-** to an OP_Function, OP_AggStep or OP_VFilter opcode. This is used by 
-** sqlite3VdbeMakeReady() to size the Vdbe.apArg[] array.
+** (2) Compute the maximum number of arguments used by any SQL function
+**     and store that value in *pMaxFuncArgs.
 **
-** The Op.opflags field is set on all opcodes.
+** (3) Update the Vdbe.readOnly and Vdbe.bIsReader flags to accurately
+**     indicate what the prepared statement actually does.
+**
+** (4) Initialize the p4.xAdvance pointer on opcodes that use it.
+**
+** (5) Reclaim the memory allocated for storing labels.
 */
 static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
   int i;
@@ -586,46 +630,44 @@ VdbeOp *sqlite3VdbeTakeOpArray(Vdbe *p, int *pnOp, int *pnMaxArg){
 ** address of the first operation added.
 */
 int sqlite3VdbeAddOpList(Vdbe *p, int nOp, VdbeOpList const *aOp, int iLineno){
-  int addr;
+  int addr, i;
+  VdbeOp *pOut;
+  assert( nOp>0 );
   assert( p->magic==VDBE_MAGIC_INIT );
   if( p->nOp + nOp > p->pParse->nOpAlloc && growOpArray(p, nOp) ){
     return 0;
   }
   addr = p->nOp;
-  if( ALWAYS(nOp>0) ){
-    int i;
-    VdbeOpList const *pIn = aOp;
-    for(i=0; i<nOp; i++, pIn++){
-      int p2 = pIn->p2;
-      VdbeOp *pOut = &p->aOp[i+addr];
-      pOut->opcode = pIn->opcode;
-      pOut->p1 = pIn->p1;
-      if( p2<0 ){
-        assert( sqlite3OpcodeProperty[pOut->opcode] & OPFLG_JUMP );
-        pOut->p2 = addr + ADDR(p2);
-      }else{
-        pOut->p2 = p2;
-      }
-      pOut->p3 = pIn->p3;
-      pOut->p4type = P4_NOTUSED;
-      pOut->p4.p = 0;
-      pOut->p5 = 0;
+  pOut = &p->aOp[addr];
+  for(i=0; i<nOp; i++, aOp++, pOut++){
+    int p2 = aOp->p2;
+    pOut->opcode = aOp->opcode;
+    pOut->p1 = aOp->p1;
+    if( p2<0 ){
+      assert( sqlite3OpcodeProperty[pOut->opcode] & OPFLG_JUMP );
+      pOut->p2 = addr + ADDR(p2);
+    }else{
+      pOut->p2 = p2;
+    }
+    pOut->p3 = aOp->p3;
+    pOut->p4type = P4_NOTUSED;
+    pOut->p4.p = 0;
+    pOut->p5 = 0;
 #ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
-      pOut->zComment = 0;
+    pOut->zComment = 0;
 #endif
 #ifdef SQLITE_VDBE_COVERAGE
-      pOut->iSrcLine = iLineno+i;
+    pOut->iSrcLine = iLineno+i;
 #else
-      (void)iLineno;
+    (void)iLineno;
 #endif
 #ifdef SQLITE_DEBUG
-      if( p->db->flags & SQLITE_VdbeAddopTrace ){
-        sqlite3VdbePrintOp(0, i+addr, &p->aOp[i+addr]);
-      }
-#endif
+    if( p->db->flags & SQLITE_VdbeAddopTrace ){
+      sqlite3VdbePrintOp(0, i+addr, &p->aOp[i+addr]);
     }
-    p->nOp += nOp;
+#endif
   }
+  p->nOp += nOp;
   return addr;
 }
 
@@ -658,49 +700,23 @@ void sqlite3VdbeScanStatus(
 
 
 /*
-** Change the value of the P1 operand for a specific instruction.
-** This routine is useful when a large program is loaded from a
-** static array using sqlite3VdbeAddOpList but we want to make a
-** few minor changes to the program.
+** Change the value of the opcode, or P1, P2, P3, or P5 operands
+** for a specific instruction.
 */
+void sqlite3VdbeChangeOpcode(Vdbe *p, u32 addr, u8 iNewOpcode){
+  sqlite3VdbeGetOp(p,addr)->opcode = iNewOpcode;
+}
 void sqlite3VdbeChangeP1(Vdbe *p, u32 addr, int val){
-  assert( p!=0 );
-  if( ((u32)p->nOp)>addr ){
-    p->aOp[addr].p1 = val;
-  }
+  sqlite3VdbeGetOp(p,addr)->p1 = val;
 }
-
-/*
-** Change the value of the P2 operand for a specific instruction.
-** This routine is useful for setting a jump destination.
-*/
 void sqlite3VdbeChangeP2(Vdbe *p, u32 addr, int val){
-  assert( p!=0 );
-  if( ((u32)p->nOp)>addr ){
-    p->aOp[addr].p2 = val;
-  }
+  sqlite3VdbeGetOp(p,addr)->p2 = val;
 }
-
-/*
-** Change the value of the P3 operand for a specific instruction.
-*/
 void sqlite3VdbeChangeP3(Vdbe *p, u32 addr, int val){
-  assert( p!=0 );
-  if( ((u32)p->nOp)>addr ){
-    p->aOp[addr].p3 = val;
-  }
+  sqlite3VdbeGetOp(p,addr)->p3 = val;
 }
-
-/*
-** Change the value of the P5 operand for the most recently
-** added operation.
-*/
-void sqlite3VdbeChangeP5(Vdbe *p, u8 val){
-  assert( p!=0 );
-  if( p->aOp ){
-    assert( p->nOp>0 );
-    p->aOp[p->nOp-1].p5 = val;
-  }
+void sqlite3VdbeChangeP5(Vdbe *p, u8 p5){
+  sqlite3VdbeGetOp(p,-1)->p5 = p5;
 }
 
 /*
@@ -708,8 +724,8 @@ void sqlite3VdbeChangeP5(Vdbe *p, u8 val){
 ** the address of the next instruction to be coded.
 */
 void sqlite3VdbeJumpHere(Vdbe *p, int addr){
-  sqlite3VdbeChangeP2(p, addr, p->nOp);
   p->pParse->iFixedOp = p->nOp - 1;
+  sqlite3VdbeChangeP2(p, addr, p->nOp);
 }
 
 

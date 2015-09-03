@@ -374,7 +374,7 @@ static void fkLookupParent(
   
       sqlite3OpenTable(pParse, iCur, iDb, pTab, OP_OpenRead);
       sqlite3VdbeAddOp3(v, OP_NotExists, iCur, 0, regTemp); VdbeCoverage(v);
-      sqlite3VdbeAddOp2(v, OP_Goto, 0, iOk);
+      sqlite3VdbeGoto(v, iOk);
       sqlite3VdbeJumpHere(v, sqlite3VdbeCurrentAddr(v)-2);
       sqlite3VdbeJumpHere(v, iMustBeInt);
       sqlite3ReleaseTempReg(pParse, regTemp);
@@ -412,7 +412,7 @@ static void fkLookupParent(
           sqlite3VdbeAddOp3(v, OP_Ne, iChild, iJump, iParent); VdbeCoverage(v);
           sqlite3VdbeChangeP5(v, SQLITE_JUMPIFNULL);
         }
-        sqlite3VdbeAddOp2(v, OP_Goto, 0, iOk);
+        sqlite3VdbeGoto(v, iOk);
       }
   
       sqlite3VdbeAddOp4(v, OP_MakeRecord, regTemp, nCol, regRec,
