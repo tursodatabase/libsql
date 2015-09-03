@@ -468,21 +468,16 @@ void sqlite3VXPrintf(
         if( realvalue>0.0 ){
           LONGDOUBLE_TYPE scale = 1.0;
           while( realvalue>=1e100*scale && exp<=350 ){ scale *= 1e100;exp+=100;}
-          while( realvalue>=1e64*scale && exp<=350 ){ scale *= 1e64; exp+=64; }
-          while( realvalue>=1e8*scale && exp<=350 ){ scale *= 1e8; exp+=8; }
+          while( realvalue>=1e10*scale && exp<=350 ){ scale *= 1e10; exp+=10; }
           while( realvalue>=10.0*scale && exp<=350 ){ scale *= 10.0; exp++; }
           realvalue /= scale;
           while( realvalue<1e-8 ){ realvalue *= 1e8; exp-=8; }
           while( realvalue<1.0 ){ realvalue *= 10.0; exp--; }
           if( exp>350 ){
-            if( prefix=='-' ){
-              bufpt = "-Inf";
-            }else if( prefix=='+' ){
-              bufpt = "+Inf";
-            }else{
-              bufpt = "Inf";
-            }
-            length = sqlite3Strlen30(bufpt);
+            bufpt = buf;
+            buf[0] = prefix;
+            memcpy(buf+(prefix!=0),"Inf",4);
+            length = 3+(prefix!=0);
             break;
           }
         }
@@ -631,12 +626,13 @@ void sqlite3VXPrintf(
       case etDYNSTRING:
         if( bArgList ){
           bufpt = getTextArg(pArgList);
+          xtype = etSTRING;
         }else{
           bufpt = va_arg(ap,char*);
         }
         if( bufpt==0 ){
           bufpt = "";
-        }else if( xtype==etDYNSTRING && !bArgList ){
+        }else if( xtype==etDYNSTRING ){
           zExtra = bufpt;
         }
         if( precision>=0 ){
@@ -645,9 +641,9 @@ void sqlite3VXPrintf(
           length = sqlite3Strlen30(bufpt);
         }
         break;
-      case etSQLESCAPE:
-      case etSQLESCAPE2:
-      case etSQLESCAPE3: {
+      case etSQLESCAPE:           /* Escape ' characters */
+      case etSQLESCAPE2:          /* Escape ' and enclose in '...' */
+      case etSQLESCAPE3: {        /* Escape " characters */
         int i, j, k, n, isnull;
         int needQuote;
         char ch;
@@ -666,7 +662,7 @@ void sqlite3VXPrintf(
           if( ch==q )  n++;
         }
         needQuote = !isnull && xtype==etSQLESCAPE2;
-        n += i + 1 + needQuote*2;
+        n += i + 3;
         if( n>etBUFSIZE ){
           bufpt = zExtra = sqlite3Malloc( n );
           if( bufpt==0 ){
@@ -1062,7 +1058,8 @@ void sqlite3DebugPrintf(const char *zFormat, ...){
 
 
 /*
-** variable-argument wrapper around sqlite3VXPrintf().
+** variable-argument wrapper around sqlite3VXPrintf().  The bFlags argument
+** can contain the bit SQLITE_PRINTF_INTERNAL enable internal formats.
 */
 void sqlite3XPrintf(StrAccum *p, u32 bFlags, const char *zFormat, ...){
   va_list ap;

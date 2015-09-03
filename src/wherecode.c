@@ -67,12 +67,8 @@ static void explainIndexRange(StrAccum *pStr, WhereLoop *pLoop, Table *pTab){
   sqlite3StrAccumAppend(pStr, " (", 2);
   for(i=0; i<nEq; i++){
     char *z = aiColumn[i] < 0 ? "rowid" : aCol[aiColumn[i]].zName;
-    if( i>=nSkip ){
-      explainAppendTerm(pStr, i, z, "=");
-    }else{
-      if( i ) sqlite3StrAccumAppend(pStr, " AND ", 5);
-      sqlite3XPrintf(pStr, 0, "ANY(%s)", z);
-    }
+    if( i ) sqlite3StrAccumAppend(pStr, " AND ", 5);
+    sqlite3XPrintf(pStr, 0, i>=nSkip ? "%s=?" : "ANY(%s)", z);
   }
 
   j = i;
@@ -165,19 +161,18 @@ int sqlite3WhereExplainOneScan(
         explainIndexRange(&str, pLoop, pItem->pTab);
       }
     }else if( (flags & WHERE_IPK)!=0 && (flags & WHERE_CONSTRAINT)!=0 ){
-      const char *zRange;
+      const char *zRangeOp;
       if( flags&(WHERE_COLUMN_EQ|WHERE_COLUMN_IN) ){
-        zRange = "(rowid=?)";
+        zRangeOp = "=";
       }else if( (flags&WHERE_BOTH_LIMIT)==WHERE_BOTH_LIMIT ){
-        zRange = "(rowid>? AND rowid<?)";
+        zRangeOp = ">? AND rowid<";
       }else if( flags&WHERE_BTM_LIMIT ){
-        zRange = "(rowid>?)";
+        zRangeOp = ">";
       }else{
         assert( flags&WHERE_TOP_LIMIT);
-        zRange = "(rowid<?)";
+        zRangeOp = "<";
       }
-      sqlite3StrAccumAppendAll(&str, " USING INTEGER PRIMARY KEY ");
-      sqlite3StrAccumAppendAll(&str, zRange);
+      sqlite3XPrintf(&str, 0, " USING INTEGER PRIMARY KEY (rowid%s?)",zRangeOp);
     }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
     else if( (flags & WHERE_VIRTUALTABLE)!=0 ){
@@ -1380,7 +1375,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       sqlite3ExprDelete(db, pAndExpr);
     }
     sqlite3VdbeChangeP1(v, iRetInit, sqlite3VdbeCurrentAddr(v));
-    sqlite3VdbeAddOp2(v, OP_Goto, 0, pLevel->addrBrk);
+    sqlite3VdbeGoto(v, pLevel->addrBrk);
     sqlite3VdbeResolveLabel(v, iLoopBody);
 
     if( pWInfo->nLevel>1 ) sqlite3StackFree(db, pOrTab);
