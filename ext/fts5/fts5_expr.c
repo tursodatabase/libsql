@@ -344,6 +344,7 @@ static int fts5ExprSynonymPoslist(
         }
         memcpy(aNew, aIter, sizeof(Fts5PoslistReader) * nIter);
         nAlloc = nAlloc*2;
+        if( aIter!=aStatic ) sqlite3_free(aIter);
         aIter = aNew;
       }
       sqlite3Fts5PoslistReaderInit(-1, a, n, &aIter[nIter]);

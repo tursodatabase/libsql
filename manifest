@@ -1,5 +1,5 @@
-C Further\stests\sto\sraise\scoverage\sof\sfts5\ssynonym\scode\sto\s100%.\sFix\sa\sdropped\serror\scode\sin\sthe\ssame.
-D 2015-09-02T19:48:55.424
+C Fix\sa\smemory\sleak\sin\sfts5_expr.c.
+D 2015-09-03T10:27:02.747
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e2218eb228374422969de7b1680eda6864affcef
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -110,7 +110,7 @@ F ext/fts5/fts5Int.h c6f035091fc9fa12a92c7066bf0c266c08cb508b
 F ext/fts5/fts5_aux.c 7a307760a9c57c750d043188ec0bad59f5b5ec7e
 F ext/fts5/fts5_buffer.c 80f9ba4431848cb857e3d2158f5280093dcd8015
 F ext/fts5/fts5_config.c 80b61fd2c6844b64a3e72a64572d50a812da9384
-F ext/fts5/fts5_expr.c 45a1d1865b648ca0797f98a5f3a50a0f3a282fbb
+F ext/fts5/fts5_expr.c 0c36c1db8eccdeb006e3c8d1499d05015f6e11a6
 F ext/fts5/fts5_hash.c 4bf4b99708848357b8a2b5819e509eb6d3df9246
 F ext/fts5/fts5_index.c 076c4995bf06a6d1559a6e31f9a86b90f2105374
 F ext/fts5/fts5_main.c e9d0892424bb7f0a8b58613d4ff75cb650cf286e
@@ -172,7 +172,7 @@ F ext/fts5/test/fts5rank.test 11dcebba31d822f7e99685b4ea2c2ae3ec0b16f1
 F ext/fts5/test/fts5rebuild.test 03935f617ace91ed23a6099c7c74d905227ff29b
 F ext/fts5/test/fts5restart.test c17728fdea26e7d0f617d22ad5b4b2862b994c17
 F ext/fts5/test/fts5rowid.test 6f9833b23b176dc4aa15b7fc02afeb2b220fd460
-F ext/fts5/test/fts5synonym.test 4b6387dcc12fc4e7216db06402375326ae4a28aa
+F ext/fts5/test/fts5synonym.test e9ef0e6d59e6050020e0a805c37edde623bf289e
 F ext/fts5/test/fts5tokenizer.test ea4df698b35cc427ebf2ba22829d0e28386d8c89
 F ext/fts5/test/fts5unicode.test fbef8d8a3b4b88470536cc57604a82ca52e51841
 F ext/fts5/test/fts5unicode2.test c1dd890ba32b7609adba78e420faa847abe43b59
@@ -1381,7 +1381,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f2e590700d8eb30da8ac3a92f6ca92a2bbe9c1fe
-R 5fe3995e4cfcebadaed779600452a235
+P bdedd838bb3028c586bcc9f643852ce1364adb49
+R 780ceea4c7fd3021fab9ec34a27ddefc
 U dan
-Z 535c1d64e133dff7ac9edd44481e77b4
+Z ba334b6166e1647cafa078f408fcb3d8

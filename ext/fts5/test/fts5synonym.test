@@ -417,6 +417,28 @@ do_execsql_test 6.2.1 {
      {(y) (yy) (yyy) (yyyy) (yyyyy) (yyyyyy) (yyyyyyy)}
 }
 
+#-------------------------------------------------------------------------
+# Test that the xColumnSize() API is not confused by colocated tokens.
+#
+reset_db
+sqlite3_fts5_create_tokenizer db tcl tcl_create
+fts5_aux_test_functions db
+proc tcl_tokenize {tflags text} {
+  foreach {w iStart iEnd} [fts5_tokenize_split $text] {
+    sqlite3_fts5_token $w $iStart $iEnd
+    if {[string length $w]==1} {
+      for {set i 2} {$i<=10} {incr i} {
+        sqlite3_fts5_token -colo [string repeat $w $i] $iStart $iEnd
+      }
+    }
+  }
+}
+do_execsql_test 7.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a, b, columnsize=0, tokenize=tcl);
+  INSERT INTO t1 VALUES('0 2 3', '4 5 6 7');
+  INSERT INTO t1 VALUES('8 9', '0 0 0 0 0 0 0 0 0 0');
+  SELECT fts5_test_columnsize(t1) FROM t1 WHERE t1 MATCH '000 AND 00 AND 0';
+} {{3 4} {2 10}}
 
 finish_test
 
