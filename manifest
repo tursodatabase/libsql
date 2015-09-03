@@ -1,5 +1,5 @@
-C Add\stests\sto\simprove\scoverage\sof\sfts5_varint.c.
-D 2015-09-03T15:37:26.095
+C Add\sdocumentation\sfor\sfts5\ssynonym\ssupport.
+D 2015-09-03T18:05:09.505
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e2218eb228374422969de7b1680eda6864affcef
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -104,8 +104,8 @@ F ext/fts3/unicode/CaseFolding.txt 8c678ca52ecc95e16bc7afc2dbf6fc9ffa05db8c
 F ext/fts3/unicode/UnicodeData.txt cd07314edb62d49fde34debdaf92fa2aa69011e7
 F ext/fts3/unicode/mkunicode.tcl 95cf7ec186e48d4985e433ff8a1c89090a774252
 F ext/fts3/unicode/parseunicode.tcl da577d1384810fb4e2b209bf3313074353193e95
-F ext/fts5/extract_api_docs.tcl 06583c935f89075ea0b32f85efa5dd7619fcbd03
-F ext/fts5/fts5.h 0784692f406588e6c90e13a78e1f36e7e3236e42
+F ext/fts5/extract_api_docs.tcl a36e54ec777172ddd3f9a88daf593b00848368e0
+F ext/fts5/fts5.h f04659e0df5af83731b102189a32280f74f4a6bc
 F ext/fts5/fts5Int.h f65d41f66accad0a289d6bd66b13c07d2932f9be
 F ext/fts5/fts5_aux.c 7a307760a9c57c750d043188ec0bad59f5b5ec7e
 F ext/fts5/fts5_buffer.c 80f9ba4431848cb857e3d2158f5280093dcd8015
@@ -1382,7 +1382,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 59ae30b97b40faa363c55aa2664dead9eaeeddc0
-R e54371f57da08ab0c80326ea4baedd7e
+P 89f24f31a8f7d7cb0a66ee53523881f566dcb035
+R 763079caf8ff69ca16b541c2d3f4f0ad
 U dan
-Z 416751bdad2bf139cde3272ad789aa1a
+Z 726cf8268b191707cc8a3f300ac29036
