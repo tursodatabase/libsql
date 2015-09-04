@@ -32,7 +32,7 @@
 %syntax_error {
   UNUSED_PARAMETER(yymajor);  /* Silence some compiler warnings */
   assert( TOKEN.z[0] );  /* The tokenizer always gives us a token */
-  sqlite3ErrorMsg(pParse, "near \"%T\": syntax error", &TOKEN);
+  parserSyntaxError(pParse, &TOKEN);
 }
 %stack_overflow {
   UNUSED_PARAMETER(yypMinor); /* Silence some compiler warnings */
@@ -94,6 +94,13 @@ struct TrigEvent { int a; IdList * b; };
 */
 struct AttachKey { int type;  Token key; };
 
+/*
+** Generate a syntax error
+*/
+static void parserSyntaxError(Parse *pParse, Token *p){
+  sqlite3ErrorMsg(pParse, "near \"%T\": syntax error", p);
+}
+
 } // end %include
 
 // Input is a single SQL command
@@ -118,10 +125,18 @@ trans_opt ::= TRANSACTION.
 trans_opt ::= TRANSACTION nm.
 %type transtype {int}
 transtype(A) ::= .             {A = TK_DEFERRED;}
-transtype(A) ::= DEFERRED(X).  {A = @X;}
-transtype(A) ::= IMMEDIATE(X). {A = @X;}
-transtype(A) ::= EXCLUSIVE(X). {A = @X;}
-transtype(A) ::= CONCURRENT(X).  {A = @X;}
+transtype(A) ::= DEFERRED(X).         {A = @X;}
+transtype(A) ::= IMMEDIATE(X).        {A = @X;}
+transtype(A) ::= ID(X). {
+   Token *p = &X;
+   if( p->n==9 && sqlite3_strnicmp(p->z,"exclusive",9)==0 ){
+     A = TK_EXCLUSIVE;
+   }else if( p->n==10 && sqlite3_strnicmp(p->z,"concurrent",10)==0 ){
+     A = TK_CONCURRENT;
+   }else{
+     parserSyntaxError(pParse, p);
+   }
+}
 cmd ::= COMMIT trans_opt.      {sqlite3CommitTransaction(pParse);}
 cmd ::= END trans_opt.         {sqlite3CommitTransaction(pParse);}
 cmd ::= ROLLBACK trans_opt.    {sqlite3RollbackTransaction(pParse);}
@@ -203,10 +218,11 @@ columnid(A) ::= nm(X). {
 //
 %fallback ID
   ABORT ACTION AFTER ANALYZE ASC ATTACH BEFORE BEGIN BY CASCADE CAST COLUMNKW
-  CONFLICT DATABASE DEFERRED DESC DETACH EACH END EXCLUSIVE EXPLAIN FAIL FOR
+  CONFLICT DATABASE DEFERRED DESC DETACH EACH END EXPLAIN FAIL FOR
   IGNORE IMMEDIATE INITIALLY INSTEAD LIKE_KW MATCH NO PLAN
   QUERY KEY OF OFFSET PRAGMA RAISE RECURSIVE RELEASE REPLACE RESTRICT ROW
-  ROLLBACK SAVEPOINT TEMP TRIGGER VACUUM VIEW VIRTUAL WITH WITHOUT
+  ROLLBACK SAVEPOINT TEMP TRIGGER VACUUM VIEW VIRTUAL
+  WITH WITHOUT
 %ifdef SQLITE_OMIT_COMPOUND_SELECT
   EXCEPT INTERSECT UNION
 %endif SQLITE_OMIT_COMPOUND_SELECT
@@ -873,7 +889,7 @@ expr(A) ::= VARIABLE(X).     {
     ** that look like this:   #1 #2 ...  These terms refer to registers
     ** in the virtual machine.  #N is the N-th register. */
     if( pParse->nested==0 ){
-      sqlite3ErrorMsg(pParse, "near \"%T\": syntax error", &X);
+      parserSyntaxError(pParse, &X);
       A.pExpr = 0;
     }else{
       A.pExpr = sqlite3PExpr(pParse, TK_REGISTER, 0, 0, &X);

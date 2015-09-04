@@ -1,5 +1,5 @@
-C Merge\sperformance\senhancements\sfrom\strunk.\s\sThis\sbranch\snow\sruns\s(slightly)\nfaster\sthan\sthe\s3.8.11.1\srelease,\sthough\sstill\sslightly\sslower\sthan\strunk.
-D 2015-09-03T20:52:44.863
+C Remove\sthe\sEXCLUSIVE\sand\sCONCURRENT\stokens\sfrom\sthe\stokenizer.\s\sLet\sthe\nBEGIN\sstatement\sbe\sfollowed\sby\san\sID,\sbut\sthrow\sa\ssyntax\serror\sif\sthe\sID\nis\sanything\sother\sthan\sEXCLUSIVE\sor\sCONCURRENT.
+D 2015-09-04T16:39:16.988
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -8,7 +8,7 @@ F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION ccfc4d1576dbfdeece0a4372a2e6a2e37d3e7975
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
-F addopcodes.awk 9eb448a552d5c0185cf62c463f9c173cedae3811
+F addopcodes.awk 694f522754f0a32dc53bc73ccebf02f28ab10a54
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
@@ -326,7 +326,7 @@ F src/os_win.c 40b3af7a47eb1107d0d69e592bec345a3b7b798a
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 06e10a0b736ba22df52e0f56fa67a42de41a0445
 F src/pager.h 244606cccd4293a2bc4be20bb37bf730028c5c18
-F src/parse.y 1e645cacb93979c59f2a510ee2c100e769bd5e3c
+F src/parse.y 0dcce0ae4e106cdaad4053f73b3bc2dedca9c6d6
 F src/pcache.c 24be750c79272e0ca7b6e007bc94999700f3e5ef
 F src/pcache.h 9968603796240cdf83da7e7bef76edf90619cea9
 F src/pcache1.c e1529369c047ac645e6a28196f25b7e936c46b82
@@ -1343,7 +1343,7 @@ F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
 F tool/logest.c eef612f8adf4d0993dafed0416064cf50d5d33c6
 F tool/mkautoconfamal.sh d1a2da0e15b2ed33d60af35c7e9d483f13a8eb9f
-F tool/mkkeywordhash.c 8d78ea188240bc08ec080adf3af84717f013e69a
+F tool/mkkeywordhash.c ff6fc41e733204e289b38b9cd3808701725c6793
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkpragmatab.tcl 84af2b180484323a2ea22a2279e8bd9e3e1e492e
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
@@ -1383,7 +1383,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f8ae9bfd05abc35293ad6bc62ab1bdbe357d964e f00a9e1e998c4bd249a45444dc2d71a7e4903b8b
-R 26478d9405c36063665d5a8b96df78bb
+P c490bfb150c66763226a35e30ba289abbf29906d
+R 1a77cff5bf225c8f1af4050df926d2bd
 U drh
-Z 60e0d06fc5e4f945ca55d9cbf383722d
+Z 4bd187d1d0f74fd2a4074d09ae209a9a
