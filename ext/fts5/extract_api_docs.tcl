@@ -108,13 +108,15 @@ proc get_tokenizer_docs {data} {
       append res "<dt><b>$line</b></dt><dd><p style=margin-top:0>\n"
       continue
     }
+    if {[regexp {SYNONYM SUPPORT} $line]} {
+      set line "</dl><h3>Synonym Support</h3>"
+    }
     if {[string trim $line] == ""} {
       append res "<p>\n"
     } else {
       append res "$line\n"
     }
   }
-  append res "</dl>\n"
 
   set res
 }
@@ -208,6 +210,10 @@ proc main {data} {
 
     fts5_tokenizer {
       output [get_fts5_struct $data "typedef struct Fts5Tokenizer" "^\};"]
+      output [get_fts5_struct $data \
+        "Flags that may be passed as the third argument to xTokenize()" \
+        "#define FTS5_TOKEN_COLOCATED"
+      ]
     }
 
     fts5_extension {
