@@ -1,5 +1,5 @@
-C Change\sthe\spcache\smodule\sto\skeep\strack\sof\sthe\stotal\snumber\sof\sreferences\sto\nall\spages\srather\sthan\sthe\snumber\sof\spages\sreferences,\sfor\sa\sperformance\nimprovement\sand\ssize\sreduction.
-D 2015-09-03T20:43:55.204
+C Simplification\sof\sthe\sLRU\slist\shandling\sin\spcache1.
+D 2015-09-04T04:31:56.886
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -329,7 +329,7 @@ F src/pager.h 6d435f563b3f7fcae4b84433b76a6ac2730036e2
 F src/parse.y f599aa5e871a493330d567ced93de696f61f48f7
 F src/pcache.c 24be750c79272e0ca7b6e007bc94999700f3e5ef
 F src/pcache.h 9968603796240cdf83da7e7bef76edf90619cea9
-F src/pcache1.c e1529369c047ac645e6a28196f25b7e936c46b82
+F src/pcache1.c bf2afe64a3dedb8643c8dcbd94a145cc80ab2a67
 F src/pragma.c d71b813e67bf03f3116b9dd5164fbfd81ec673a2
 F src/pragma.h 631a91c8b0e6ca8f051a1d8a4a0da4150e04620a
 F src/prepare.c 82e5db1013846a819f198336fed72c44c974e7b1
@@ -1380,7 +1380,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 618d8dd4ff44cce10cc4688a2134715ff66cc562
-R 7304361de7c7fa82f683343fecc699dd
+P f00a9e1e998c4bd249a45444dc2d71a7e4903b8b
+R 231caff1c142ba151d728fb853afd78c
 U drh
-Z 8da3824804c6c5593515c7564fca1c5b
+Z ce45274979109dc4b492f06dc4bc7386
