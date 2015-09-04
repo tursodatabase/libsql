@@ -5104,13 +5104,13 @@ static void fts5DebugRowid(int *pRc, Fts5Buffer *pBuf, i64 iKey){
 
   if( iSegid==0 ){
     if( iKey==FTS5_AVERAGES_ROWID ){
-      sqlite3Fts5BufferAppendPrintf(pRc, pBuf, "(averages) ");
+      sqlite3Fts5BufferAppendPrintf(pRc, pBuf, "{averages} ");
     }else{
-      sqlite3Fts5BufferAppendPrintf(pRc, pBuf, "(structure)");
+      sqlite3Fts5BufferAppendPrintf(pRc, pBuf, "{structure}");
     }
   }
   else{
-    sqlite3Fts5BufferAppendPrintf(pRc, pBuf, "(%ssegid=%d h=%d pgno=%d)",
+    sqlite3Fts5BufferAppendPrintf(pRc, pBuf, "{%ssegid=%d h=%d pgno=%d}",
         bDlidx ? "dlidx " : "", iSegid, iHeight, iPgno
     );
   }
