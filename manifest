@@ -1,5 +1,5 @@
-C Enhance\sshowfts5.tcl\sso\sthat\sit\scan\soptionally\sdisplay\sthe\snumber\sof\sterms\sin\seach\ssegment.
-D 2015-09-04T11:13:00.822
+C Continue\sto\ssupport\sthe\s(broken)\slegacy\ssyntax\sof\sallowing\sstrings\sfor\ncolumn\snames\sin\sCREATE\sINDEX\sstatements\sand\sin\sUNIQUE\sand\sPRIMARY\sKEY\nconstraints.
+D 2015-09-04T12:54:01.394
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -284,7 +284,7 @@ F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
 F src/btree.c 4084d9eed2817331f6e6a82230ba30e448cad497
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 8177c9ab90d772d6d2c6c517e05bed774b7c92c0
-F src/build.c 6c3a8a9b21402a6be98126f7d86b76527e68ca67
+F src/build.c 3f6176b3af04b85715559d435097c556ba473801
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
 F src/ctime.c 5a0b735dc95604766f5dac73973658eef782ee8b
@@ -775,8 +775,8 @@ F test/incrvacuum2.test 676c41428765d58f1da7dbe659ef27726d3d30ac
 F test/incrvacuum3.test 75256fb1377e7c39ef2de62bfc42bbff67be295a
 F test/incrvacuum_ioerr.test 6ae2f783424e47a0033304808fe27789cf93e635
 F test/index.test 4d990005a67a36984e4f1a5f1bdccea8d08da4ee
-F test/index2.test ee83c6b5e3173a3d7137140d945d9a5d4fdfb9d6
-F test/index3.test b6ec456cf3b81d9a32123fe7e449bde434db338b
+F test/index2.test f835d5e13ca163bd78c4459ca15fd2e4ed487407
+F test/index3.test fa3e49bbaa4f38091c9c742e36a1abe67c4ef1fc
 F test/index4.test ab92e736d5946840236cd61ac3191f91a7856bf6
 F test/index5.test 8621491915800ec274609e42e02a97d67e9b13e7
 F test/index6.test 7102ec371414c42dfb1d5ca37eb4519aa9edc23a
@@ -1288,10 +1288,10 @@ F test/walro.test 34422d1d95aaff0388f0791ec20edb34e2a3ed57
 F test/walshared.test 0befc811dcf0b287efae21612304d15576e35417
 F test/walslow.test e7be6d9888f83aa5d3d3c7c08aa9b5c28b93609a
 F test/walthread.test de8dbaf6d9e41481c460ba31ca61e163d7348f8e
-F test/where.test 1ff3d9f8da0a6c0dc5ccfd38d9225b2cdb5b6afb
+F test/where.test 66d4c107e82dfe86c01a96277b77e7a8809aff0b
 F test/where2.test af78c55589cbc82d793449493adba0dc3d659f23
 F test/where3.test 1ad55ba900bd7747f98b6082e65bd3e442c5004e
-F test/where4.test 68aa5ad796e33816db2078bc0f6de719c7a0e21f
+F test/where4.test 44f506bf1737cf0fa4fc795e340208250f1fcd89
 F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
 F test/where6.test 5da5a98cec820d488e82708301b96cb8c18a258b
 F test/where7.test 5a4b0abc207d71da4deecd734ad8579e8dd40aa8
@@ -1382,7 +1382,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0b7e4ab8abde3ae32459233df115c433dd58d2c1
-R bc4ba10677c1404768969390b0481a23
-U dan
-Z d0a91d26d23415f8f905dbc22cf63e6b
+P d648ddd93de039820f5abe064c7bc1318cd9d6b1
+R d6ad877a8d4dd88a7ffbb10ce1648f9a
+U drh
+Z fa2f98c7a26d464055290dbf8522fd2e

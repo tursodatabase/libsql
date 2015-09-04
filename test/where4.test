@@ -136,7 +136,7 @@ do_test where4-3.1 {
     INSERT INTO t2 VALUES(1);
     INSERT INTO t2 VALUES(2);
     INSERT INTO t2 VALUES(3);
-    CREATE TABLE t3(x,y,UNIQUE(x,y));
+    CREATE TABLE t3(x,y,UNIQUE("x",'y' ASC)); -- Goofy syntax allowed
     INSERT INTO t3 VALUES(1,11);
     INSERT INTO t3 VALUES(2,NULL);
  
@@ -200,7 +200,8 @@ do_test where4-4.4 {
 ifcapable subquery {
 do_test where4-5.1 {
   execsql {
-    CREATE TABLE t4(x,y,z,PRIMARY KEY(x,y));
+    -- Allow the 'x' syntax for backwards compatibility
+    CREATE TABLE t4(x,y,z,PRIMARY KEY('x' ASC, "y" ASC));
   }
   execsql {
     SELECT *
@@ -304,4 +305,3 @@ do_execsql_test 8.2 { SELECT * FROM u9 WHERE a IS $null } {{} 1 {} 2}
 
 
 finish_test
-
