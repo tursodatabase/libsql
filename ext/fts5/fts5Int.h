@@ -166,9 +166,10 @@ int sqlite3Fts5ConfigDeclareVtab(Fts5Config *pConfig);
 
 int sqlite3Fts5Tokenize(
   Fts5Config *pConfig,            /* FTS5 Configuration object */
+  int flags,                      /* FTS5_TOKENIZE_* flags */
   const char *pText, int nText,   /* Text to tokenize */
   void *pCtx,                     /* Context passed to xToken() */
-  int (*xToken)(void*, const char*, int, int, int)    /* Callback */
+  int (*xToken)(void*, int, const char*, int, int, int)    /* Callback */
 );
 
 void sqlite3Fts5Dequote(char *z);
@@ -234,8 +235,10 @@ struct Fts5PoslistReader {
   int n;                          /* Size of buffer at a[] in bytes */
   int i;                          /* Current offset in a[] */
 
+  u8 bFlag;                       /* For client use (any custom purpose) */
+
   /* Output variables */
-  int bEof;                       /* Set to true at EOF */
+  u8 bEof;                        /* Set to true at EOF */
   i64 iPos;                       /* (iCol<<32) + iPos */
 };
 int sqlite3Fts5PoslistReaderInit(
@@ -381,9 +384,9 @@ int sqlite3Fts5IndexErrcode(Fts5Index*);
 void sqlite3Fts5IndexReset(Fts5Index*);
 
 /*
-** Get or set the "averages" record.
+** Get or set the "averages" values.
 */
-int sqlite3Fts5IndexGetAverages(Fts5Index *p, Fts5Buffer *pBuf);
+int sqlite3Fts5IndexGetAverages(Fts5Index *p, i64 *pnRow, i64 *anSize);
 int sqlite3Fts5IndexSetAverages(Fts5Index *p, const u8*, int);
 
 /*
@@ -596,7 +599,7 @@ int sqlite3Fts5ExprPhraseCount(Fts5Expr*);
 int sqlite3Fts5ExprPhraseSize(Fts5Expr*, int iPhrase);
 int sqlite3Fts5ExprPoslist(Fts5Expr*, int, const u8 **);
 
-int sqlite3Fts5ExprPhraseExpr(Fts5Config*, Fts5Expr*, int, Fts5Expr**);
+int sqlite3Fts5ExprClonePhrase(Fts5Config*, Fts5Expr*, int, Fts5Expr**);
 
 /*******************************************
 ** The fts5_expr.c API above this point is used by the other hand-written
