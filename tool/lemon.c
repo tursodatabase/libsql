@@ -55,7 +55,7 @@ static char *msort(char*,char**,int(*)(const char*,const char*));
 ** saying they are unsafe.  So we define our own versions of those routines too.
 **
 ** There are three routines here:  lemon_sprintf(), lemon_vsprintf(), and
-** lemon_addtext().  The first two are replacements for sprintf() and vsprintf().
+** lemon_addtext(). The first two are replacements for sprintf() and vsprintf().
 ** The third is a helper routine for vsnprintf() that adds texts to the end of a
 ** buffer, making sure the buffer is always zero-terminated.
 **
@@ -1375,14 +1375,16 @@ void Configlist_closure(struct lemon *lemp)
 
 /* Sort the configuration list */
 void Configlist_sort(){
-  current = (struct config *)msort((char *)current,(char **)&(current->next),Configcmp);
+  current = (struct config*)msort((char*)current,(char**)&(current->next),
+                                  Configcmp);
   currentend = 0;
   return;
 }
 
 /* Sort the basis configuration list */
 void Configlist_sortbasis(){
-  basis = (struct config *)msort((char *)current,(char **)&(current->bp),Configcmp);
+  basis = (struct config*)msort((char*)current,(char**)&(current->bp),
+                                Configcmp);
   basisend = 0;
   return;
 }
@@ -1613,7 +1615,8 @@ int main(int argc, char **argv)
   if( statistics ){
     printf("Parser statistics: %d terminals, %d nonterminals, %d rules\n",
       lem.nterminal, lem.nsymbol - lem.nterminal, lem.nrule);
-    printf("                   %d states, %d parser table entries, %d conflicts\n",
+    printf("                   %d states, %d parser table entries,"
+                                                        " %d conflicts\n",
       lem.nstate, lem.tablesize, lem.nconflict);
   }
   if( lem.nconflict > 0 ){
@@ -1873,7 +1876,8 @@ static int handleswitch(int i, FILE *err)
         dv = strtod(cp,&end);
         if( *end ){
           if( err ){
-            fprintf(err,"%sillegal character in floating-point argument.\n",emsg);
+            fprintf(err,
+               "%sillegal character in floating-point argument.\n",emsg);
             errline(i,(int)((char*)end-(char*)argv[i]),err);
           }
           errcnt++;
@@ -3228,7 +3232,8 @@ PRIVATE FILE *tplt_open(struct lemon *lemp)
     }
     in = fopen(user_templatename,"rb");
     if( in==0 ){
-      fprintf(stderr,"Can't open the template file \"%s\".\n",user_templatename);
+      fprintf(stderr,"Can't open the template file \"%s\".\n",
+              user_templatename);
       lemp->errorcnt++;
       return 0;
     }
@@ -3313,7 +3318,10 @@ void emit_destructor_code(
  }else if( sp->destructor ){
    cp = sp->destructor;
    fprintf(out,"{\n"); (*lineno)++;
-   if (!lemp->nolinenosflag) { (*lineno)++; tplt_linedir(out,sp->destLineno,lemp->filename); }
+   if( !lemp->nolinenosflag ){
+     (*lineno)++;
+     tplt_linedir(out,sp->destLineno,lemp->filename);
+   }
  }else if( lemp->vardest ){
    cp = lemp->vardest;
    if( cp==0 ) return;
@@ -3510,13 +3518,19 @@ PRIVATE void emit_code(
 
  /* Generate code to do the reduce action */
  if( rp->code ){
-   if (!lemp->nolinenosflag) { (*lineno)++; tplt_linedir(out,rp->line,lemp->filename); }
+   if( !lemp->nolinenosflag ){
+     (*lineno)++;
+     tplt_linedir(out,rp->line,lemp->filename);
+   }
    fprintf(out,"{%s",rp->code);
    for(cp=rp->code; *cp; cp++){
      if( *cp=='\n' ) (*lineno)++;
    } /* End loop */
    fprintf(out,"}\n"); (*lineno)++;
-   if (!lemp->nolinenosflag) { (*lineno)++; tplt_linedir(out,*lineno,lemp->outname); }
+   if( !lemp->nolinenosflag ){
+     (*lineno)++;
+     tplt_linedir(out,*lineno,lemp->outname);
+   }
  } /* End if( rp->code ) */
 
  return;
