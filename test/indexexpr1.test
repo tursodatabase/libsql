@@ -1,0 +1,201 @@
+# 2015-08-31
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing indexes on expressions.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+do_execsql_test indexexpr1-100 {
+  CREATE TABLE t1(a,b,c);
+  INSERT INTO t1(a,b,c)
+      /*  123456789 123456789 123456789 123456789 123456789 123456789 */ 
+  VALUES('In_the_beginning_was_the_Word',1,1),
+        ('and_the_Word_was_with_God',1,2),
+        ('and_the_Word_was_God',1,3),
+        ('The_same_was_in_the_beginning_with_God',2,1),
+        ('All_things_were_made_by_him',3,1),
+        ('and_without_him_was_not_any_thing_made_that_was_made',3,2);
+  CREATE INDEX t1a1 ON t1(substr(a,1,12));
+} {}
+do_execsql_test indexexpr1-110 {
+  SELECT b, c, '|' FROM t1 WHERE substr(a,1,12)=='and_the_Word' ORDER BY b, c;
+} {1 2 | 1 3 |}
+do_execsql_test indexexpr1-110eqp {
+  EXPLAIN QUERY PLAN
+  SELECT b, c, '|' FROM t1 WHERE substr(a,1,12)=='and_the_Word' ORDER BY b, c;
+} {/USING INDEX t1a1/}
+do_execsql_test indexexpr1-120 {
+  SELECT b, c, '|' FROM t1 WHERE 'and_the_Word'==substr(a,1,12) ORDER BY b, c;
+} {1 2 | 1 3 |}
+do_execsql_test indexexpr1-120eqp {
+  EXPLAIN QUERY PLAN
+  SELECT b, c, '|' FROM t1 WHERE 'and_the_Word'==substr(a,1,12) ORDER BY b, c;
+} {/USING INDEX t1a1/}
+
+do_execsql_test indexexpr1-130 {
+  CREATE INDEX t1ba ON t1(b,substr(a,2,3),c);
+  SELECT c FROM t1 WHERE b=1 AND substr(a,2,3)='nd_' ORDER BY c;
+} {2 3}
+do_execsql_test indexexpr1-130eqp {
+  EXPLAIN QUERY PLAN
+  SELECT c FROM t1 WHERE b=1 AND substr(a,2,3)='nd_' ORDER BY c;
+} {/USING INDEX t1ba/}
+
+do_execsql_test indexexpr1-140 {
+  SELECT rowid, substr(a,b,3), '|' FROM t1 ORDER BY 2;
+} {1 In_ | 2 and | 3 and | 6 d_w | 4 he_ | 5 l_t |}
+do_execsql_test indexexpr1-141 {
+  CREATE INDEX t1abx ON t1(substr(a,b,3));
+  SELECT rowid FROM t1 WHERE substr(a,b,3)<='and' ORDER BY +rowid;
+} {1 2 3}
+do_execsql_test indexexpr1-141eqp {
+  EXPLAIN QUERY PLAN
+  SELECT rowid FROM t1 WHERE substr(a,b,3)<='and' ORDER BY +rowid;
+} {/USING INDEX t1abx/}
+do_execsql_test indexexpr1-142 {
+  SELECT rowid FROM t1 WHERE +substr(a,b,3)<='and' ORDER BY +rowid;
+} {1 2 3}
+do_execsql_test indexexpr1-150 {
+  SELECT rowid FROM t1 WHERE substr(a,b,3) IN ('and','l_t','xyz')
+   ORDER BY +rowid;
+} {2 3 5}
+do_execsql_test indexexpr1-150eqp {
+  EXPLAIN QUERY PLAN
+  SELECT rowid FROM t1 WHERE substr(a,b,3) IN ('and','l_t','xyz')
+   ORDER BY +rowid;
+} {/USING INDEX t1abx/}
+
+do_execsql_test indexexpr1-160 {
+  ALTER TABLE t1 ADD COLUMN d;
+  UPDATE t1 SET d=length(a);
+  CREATE INDEX t1a2 ON t1(SUBSTR(a, 27, 3)) WHERE d>=29;
+  SELECT rowid, b, c FROM t1
+   WHERE substr(a,27,3)=='ord' AND d>=29;
+} {1 1 1}
+do_execsql_test indexexpr1-160eqp {
+  EXPLAIN QUERY PLAN
+  SELECT rowid, b, c FROM t1
+   WHERE substr(a,27,3)=='ord' AND d>=29;
+} {/USING INDEX t1a2/}
+
+
+do_execsql_test indexexpr1-200 {
+  DROP TABLE t1;
+  CREATE TABLE t1(id ANY PRIMARY KEY, a,b,c) WITHOUT ROWID;
+  INSERT INTO t1(id,a,b,c)
+  VALUES(1,'In_the_beginning_was_the_Word',1,1),
+        (2,'and_the_Word_was_with_God',1,2),
+        (3,'and_the_Word_was_God',1,3),
+        (4,'The_same_was_in_the_beginning_with_God',2,1),
+        (5,'All_things_were_made_by_him',3,1),
+        (6,'and_without_him_was_not_any_thing_made_that_was_made',3,2);
+  CREATE INDEX t1a1 ON t1(substr(a,1,12));
+} {}
+do_execsql_test indexexpr1-210 {
+  SELECT b, c, '|' FROM t1 WHERE substr(a,1,12)=='and_the_Word' ORDER BY b, c;
+} {1 2 | 1 3 |}
+do_execsql_test indexexpr1-210eqp {
+  EXPLAIN QUERY PLAN
+  SELECT b, c, '|' FROM t1 WHERE substr(a,1,12)=='and_the_Word' ORDER BY b, c;
+} {/USING INDEX t1a1/}
+do_execsql_test indexexpr1-220 {
+  SELECT b, c, '|' FROM t1 WHERE 'and_the_Word'==substr(a,1,12) ORDER BY b, c;
+} {1 2 | 1 3 |}
+do_execsql_test indexexpr1-220eqp {
+  EXPLAIN QUERY PLAN
+  SELECT b, c, '|' FROM t1 WHERE 'and_the_Word'==substr(a,1,12) ORDER BY b, c;
+} {/USING INDEX t1a1/}
+
+do_execsql_test indexexpr1-230 {
+  CREATE INDEX t1ba ON t1(b,substr(a,2,3),c);
+  SELECT c FROM t1 WHERE b=1 AND substr(a,2,3)='nd_' ORDER BY c;
+} {2 3}
+do_execsql_test indexexpr1-230eqp {
+  EXPLAIN QUERY PLAN
+  SELECT c FROM t1 WHERE b=1 AND substr(a,2,3)='nd_' ORDER BY c;
+} {/USING INDEX t1ba/}
+
+do_execsql_test indexexpr1-240 {
+  SELECT id, substr(a,b,3), '|' FROM t1 ORDER BY 2;
+} {1 In_ | 2 and | 3 and | 6 d_w | 4 he_ | 5 l_t |}
+do_execsql_test indexexpr1-241 {
+  CREATE INDEX t1abx ON t1(substr(a,b,3));
+  SELECT id FROM t1 WHERE substr(a,b,3)<='and' ORDER BY +id;
+} {1 2 3}
+do_execsql_test indexexpr1-241eqp {
+  EXPLAIN QUERY PLAN
+  SELECT id FROM t1 WHERE substr(a,b,3)<='and' ORDER BY +id;
+} {/USING INDEX t1abx/}
+do_execsql_test indexexpr1-242 {
+  SELECT id FROM t1 WHERE +substr(a,b,3)<='and' ORDER BY +id;
+} {1 2 3}
+do_execsql_test indexexpr1-250 {
+  SELECT id FROM t1 WHERE substr(a,b,3) IN ('and','l_t','xyz')
+   ORDER BY +id;
+} {2 3 5}
+do_execsql_test indexexpr1-250eqp {
+  EXPLAIN QUERY PLAN
+  SELECT id FROM t1 WHERE substr(a,b,3) IN ('and','l_t','xyz')
+   ORDER BY +id;
+} {/USING INDEX t1abx/}
+
+do_execsql_test indexexpr1-260 {
+  ALTER TABLE t1 ADD COLUMN d;
+  UPDATE t1 SET d=length(a);
+  CREATE INDEX t1a2 ON t1(SUBSTR(a, 27, 3)) WHERE d>=29;
+  SELECT id, b, c FROM t1
+   WHERE substr(a,27,3)=='ord' AND d>=29;
+} {1 1 1}
+do_execsql_test indexexpr1-260eqp {
+  EXPLAIN QUERY PLAN
+  SELECT id, b, c FROM t1
+   WHERE substr(a,27,3)=='ord' AND d>=29;
+} {/USING INDEX t1a2/}
+
+
+do_catchsql_test indexexpr1-300 {
+  CREATE TABLE t2(a,b,c);
+  CREATE INDEX t2x1 ON t2(a,b+random());
+} {1 {non-deterministic functions prohibited in index expressions}}
+do_catchsql_test indexexpr1-301 {
+  CREATE INDEX t2x1 ON t2(a+julianday('now'));
+} {1 {non-deterministic functions prohibited in index expressions}}
+do_catchsql_test indexexpr1-310 {
+  CREATE INDEX t2x2 ON t2(a,b+(SELECT 15));
+} {1 {subqueries prohibited in index expressions}}
+do_catchsql_test indexexpr1-320 {
+  CREATE TABLE e1(x,y,UNIQUE(y,substr(x,1,5)));
+} {1 {expressions prohibited in PRIMARY KEY and UNIQUE constraints}}
+do_catchsql_test indexexpr1-330 {
+  CREATE TABLE e1(x,y,PRIMARY KEY(y,substr(x,1,5)));
+} {1 {expressions prohibited in PRIMARY KEY and UNIQUE constraints}}
+do_catchsql_test indexexpr1-331 {
+  CREATE TABLE e1(x,y,PRIMARY KEY(y,substr(x,1,5))) WITHOUT ROWID;
+} {1 {expressions prohibited in PRIMARY KEY and UNIQUE constraints}}
+do_catchsql_test indexexpr1-340 {
+  CREATE TABLE e1(x,y,FOREIGN KEY(substr(y,1,5)) REFERENCES t1);
+} {1 {near "(": syntax error}}
+
+do_execsql_test indexexpr1-400 {
+  CREATE TABLE t3(a,b,c);
+  WITH RECURSIVE c(x) AS (VALUES(1) UNION SELECT x+1 FROM c WHERE x<30)
+  INSERT INTO t3(a,b,c)
+    SELECT x, printf('ab%04xyz',x), random() FROM c;
+  CREATE UNIQUE INDEX t3abc ON t3(CAST(a AS text), b, substr(c,1,3));
+  SELECT a FROM t3 WHERE CAST(a AS text)<='10' ORDER BY +a;
+} {1 10}
+do_catchsql_test indexexpr1-410 {
+  INSERT INTO t3 SELECT * FROM t3 WHERE rowid=10;
+} {1 {UNIQUE constraint failed: index 't3abc'}}
+
+finish_test

@@ -1737,15 +1737,15 @@ void sqlite3RegisterGlobalFunctions(void){
     VFUNCTION(random,            0, 0, 0, randomFunc       ),
     VFUNCTION(randomblob,        1, 0, 0, randomBlob       ),
     FUNCTION(nullif,             2, 0, 1, nullifFunc       ),
-    FUNCTION(sqlite_version,     0, 0, 0, versionFunc      ),
-    FUNCTION(sqlite_source_id,   0, 0, 0, sourceidFunc     ),
+    DFUNCTION(sqlite_version,    0, 0, 0, versionFunc      ),
+    DFUNCTION(sqlite_source_id,  0, 0, 0, sourceidFunc     ),
     FUNCTION(sqlite_log,         2, 0, 0, errlogFunc       ),
 #if SQLITE_USER_AUTHENTICATION
     FUNCTION(sqlite_crypt,       2, 0, 0, sqlite3CryptFunc ),
 #endif
 #ifndef SQLITE_OMIT_COMPILEOPTION_DIAGS
-    FUNCTION(sqlite_compileoption_used,1, 0, 0, compileoptionusedFunc  ),
-    FUNCTION(sqlite_compileoption_get, 1, 0, 0, compileoptiongetFunc  ),
+    DFUNCTION(sqlite_compileoption_used,1, 0, 0, compileoptionusedFunc  ),
+    DFUNCTION(sqlite_compileoption_get, 1, 0, 0, compileoptiongetFunc  ),
 #endif /* SQLITE_OMIT_COMPILEOPTION_DIAGS */
     FUNCTION(quote,              1, 0, 0, quoteFunc        ),
     VFUNCTION(last_insert_rowid, 0, 0, 0, last_insert_rowid),
@@ -1757,8 +1757,8 @@ void sqlite3RegisterGlobalFunctions(void){
     FUNCTION(soundex,            1, 0, 0, soundexFunc      ),
   #endif
   #ifndef SQLITE_OMIT_LOAD_EXTENSION
-    FUNCTION(load_extension,     1, 0, 0, loadExt          ),
-    FUNCTION(load_extension,     2, 0, 0, loadExt          ),
+    VFUNCTION(load_extension,    1, 0, 0, loadExt          ),
+    VFUNCTION(load_extension,    2, 0, 0, loadExt          ),
   #endif
     AGGREGATE(sum,               1, 0, 0, sumStep,         sumFinalize    ),
     AGGREGATE(total,             1, 0, 0, sumStep,         totalFinalize    ),
