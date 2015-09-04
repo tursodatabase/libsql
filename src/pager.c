@@ -5261,6 +5261,10 @@ int sqlite3PagerAcquire(
 #endif
   );
 
+  /* Optimization note:  Adding the "pgno<=1" term before "pgno==0" here
+  ** allows the compiler optimizer to reuse the results of the "pgno>1"
+  ** test in the previous statement, and avoid testing pgno==0 in the
+  ** common case where pgno is large. */
   if( pgno<=1 && pgno==0 ){
     return SQLITE_CORRUPT_BKPT;
   }
@@ -6390,7 +6394,7 @@ u8 sqlite3PagerIsreadonly(Pager *pPager){
 
 #ifdef SQLITE_DEBUG
 /*
-** Return the number of references to the pager.
+** Return the sum of the reference counts for all pages held by pPager.
 */
 int sqlite3PagerRefcount(Pager *pPager){
   return sqlite3PcacheRefCount(pPager->pPCache);

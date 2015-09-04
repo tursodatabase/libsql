@@ -87,6 +87,24 @@ typedef struct PgHdr1 PgHdr1;
 typedef struct PgFreeslot PgFreeslot;
 typedef struct PGroup PGroup;
 
+/*
+** Each cache entry is represented by an instance of the following 
+** structure. Unless SQLITE_PCACHE_SEPARATE_HEADER is defined, a buffer of
+** PgHdr1.pCache->szPage bytes is allocated directly before this structure 
+** in memory.
+*/
+struct PgHdr1 {
+  sqlite3_pcache_page page;      /* Base class. Must be first. pBuf & pExtra */
+  unsigned int iKey;             /* Key value (page number) */
+  u8 isPinned;                   /* Page in use, not on the LRU list */
+  u8 isBulkLocal;                /* This page from bulk local storage */
+  u8 isAnchor;                   /* This is the PGroup.lru element */
+  PgHdr1 *pNext;                 /* Next in hash table chain */
+  PCache1 *pCache;               /* Cache that currently owns this page */
+  PgHdr1 *pLruNext;              /* Next in LRU list of unpinned pages */
+  PgHdr1 *pLruPrev;              /* Previous in LRU list of unpinned pages */
+};
+
 /* Each page cache (or PCache) belongs to a PGroup.  A PGroup is a set 
 ** of one or more PCaches that are able to recycle each other's unpinned
 ** pages when they are under memory pressure.  A PGroup is an instance of
@@ -115,7 +133,7 @@ struct PGroup {
   unsigned int nMinPage;         /* Sum of nMin for purgeable caches */
   unsigned int mxPinned;         /* nMaxpage + 10 - nMinPage */
   unsigned int nCurrentPage;     /* Number of purgeable pages allocated */
-  PgHdr1 *pLruHead, *pLruTail;   /* LRU list of unpinned pages */
+  PgHdr1 lru;                    /* The beginning and end of the LRU list */
 };
 
 /* Each page cache is an instance of the following object.  Every
@@ -151,23 +169,6 @@ struct PCache1 {
   PgHdr1 **apHash;                    /* Hash table for fast lookup by key */
   PgHdr1 *pFree;                      /* List of unused pcache-local pages */
   void *pBulk;                        /* Bulk memory used by pcache-local */
-};
-
-/*
-** Each cache entry is represented by an instance of the following 
-** structure. Unless SQLITE_PCACHE_SEPARATE_HEADER is defined, a buffer of
-** PgHdr1.pCache->szPage bytes is allocated directly before this structure 
-** in memory.
-*/
-struct PgHdr1 {
-  sqlite3_pcache_page page;
-  unsigned int iKey;             /* Key value (page number) */
-  u8 isPinned;                   /* Page in use, not on the LRU list */
-  u8 isBulkLocal;                /* This page from bulk local storage */
-  PgHdr1 *pNext;                 /* Next in hash table chain */
-  PCache1 *pCache;               /* Cache that currently owns this page */
-  PgHdr1 *pLruNext;              /* Next in LRU list of unpinned pages */
-  PgHdr1 *pLruPrev;              /* Previous in LRU list of unpinned pages */
 };
 
 /*
@@ -230,6 +231,7 @@ static SQLITE_WSD struct PCacheGlobal {
 /******************************************************************************/
 /******** Page Allocation/SQLITE_CONFIG_PCACHE Related Functions **************/
 
+
 /*
 ** This function is called during initialization if a static buffer is 
 ** supplied to use for the page-cache by passing the SQLITE_CONFIG_PAGECACHE
@@ -289,6 +291,7 @@ static int pcache1InitBulk(PCache1 *pCache){
       pX->page.pBuf = zBulk;
       pX->page.pExtra = &pX[1];
       pX->isBulkLocal = 1;
+      pX->isAnchor = 0;
       pX->pNext = pCache->pFree;
       pCache->pFree = pX;
       zBulk += pCache->szAlloc;
@@ -431,6 +434,7 @@ static PgHdr1 *pcache1AllocPage(PCache1 *pCache, int benignMalloc){
     p->page.pBuf = pPg;
     p->page.pExtra = &p[1];
     p->isBulkLocal = 0;
+    p->isAnchor = 0;
   }
   if( pCache->bPurgeable ){
     pCache->pGroup->nCurrentPage++;
@@ -557,22 +561,16 @@ static PgHdr1 *pcache1PinPage(PgHdr1 *pPage){
   assert( pPage!=0 );
   assert( pPage->isPinned==0 );
   pCache = pPage->pCache;
-  assert( pPage->pLruNext || pPage==pCache->pGroup->pLruTail );
-  assert( pPage->pLruPrev || pPage==pCache->pGroup->pLruHead );
+  assert( pPage->pLruNext );
+  assert( pPage->pLruPrev );
   assert( sqlite3_mutex_held(pCache->pGroup->mutex) );
-  if( pPage->pLruPrev ){
-    pPage->pLruPrev->pLruNext = pPage->pLruNext;
-  }else{
-    pCache->pGroup->pLruHead = pPage->pLruNext;
-  }
-  if( pPage->pLruNext ){
-    pPage->pLruNext->pLruPrev = pPage->pLruPrev;
-  }else{
-    pCache->pGroup->pLruTail = pPage->pLruPrev;
-  }
+  pPage->pLruPrev->pLruNext = pPage->pLruNext;
+  pPage->pLruNext->pLruPrev = pPage->pLruPrev;
   pPage->pLruNext = 0;
   pPage->pLruPrev = 0;
   pPage->isPinned = 1;
+  assert( pPage->isAnchor==0 );
+  assert( pCache->pGroup->lru.isAnchor==1 );
   pCache->nRecyclable--;
   return pPage;
 }
@@ -605,9 +603,11 @@ static void pcache1RemoveFromHash(PgHdr1 *pPage, int freeFlag){
 */
 static void pcache1EnforceMaxPage(PCache1 *pCache){
   PGroup *pGroup = pCache->pGroup;
+  PgHdr1 *p;
   assert( sqlite3_mutex_held(pGroup->mutex) );
-  while( pGroup->nCurrentPage>pGroup->nMaxPage && pGroup->pLruTail ){
-    PgHdr1 *p = pGroup->pLruTail;
+  while( pGroup->nCurrentPage>pGroup->nMaxPage
+      && (p=pGroup->lru.pLruPrev)->isAnchor==0
+  ){
     assert( p->pCache->pGroup==pGroup );
     assert( p->isPinned==0 );
     pcache1PinPage(p);
@@ -741,6 +741,10 @@ static sqlite3_pcache *pcache1Create(int szPage, int szExtra, int bPurgeable){
     }else{
       pGroup = &pcache1.grp;
     }
+    if( pGroup->lru.isAnchor==0 ){
+      pGroup->lru.isAnchor = 1;
+      pGroup->lru.pLruPrev = pGroup->lru.pLruNext = &pGroup->lru;
+    }
     pCache->pGroup = pGroup;
     pCache->szPage = szPage;
     pCache->szExtra = szExtra;
@@ -848,11 +852,11 @@ static SQLITE_NOINLINE PgHdr1 *pcache1FetchStage2(
 
   /* Step 4. Try to recycle a page. */
   if( pCache->bPurgeable
-   && pGroup->pLruTail
+   && !pGroup->lru.pLruPrev->isAnchor
    && ((pCache->nPage+1>=pCache->nMax) || pcache1UnderMemoryPressure(pCache))
   ){
     PCache1 *pOther;
-    pPage = pGroup->pLruTail;
+    pPage = pGroup->lru.pLruPrev;
     assert( pPage->isPinned==0 );
     pcache1RemoveFromHash(pPage, 0);
     pcache1PinPage(pPage);
@@ -961,7 +965,10 @@ static PgHdr1 *pcache1FetchNoMutex(
   pPage = pCache->apHash[iKey % pCache->nHash];
   while( pPage && pPage->iKey!=iKey ){ pPage = pPage->pNext; }
 
-  /* Step 2: Abort if no existing page is found and createFlag is 0 */
+  /* Step 2: If the page was found in the hash table, then return it.
+  ** If the page was not in the hash table and createFlag is 0, abort.
+  ** Otherwise (page not in hash and createFlag!=0) continue with
+  ** subsequent steps to try to create the page. */
   if( pPage ){
     if( !pPage->isPinned ){
       return pcache1PinPage(pPage);
@@ -1038,21 +1045,16 @@ static void pcache1Unpin(
   ** part of the PGroup LRU list.
   */
   assert( pPage->pLruPrev==0 && pPage->pLruNext==0 );
-  assert( pGroup->pLruHead!=pPage && pGroup->pLruTail!=pPage );
   assert( pPage->isPinned==1 );
 
   if( reuseUnlikely || pGroup->nCurrentPage>pGroup->nMaxPage ){
     pcache1RemoveFromHash(pPage, 1);
   }else{
     /* Add the page to the PGroup LRU list. */
-    if( pGroup->pLruHead ){
-      pGroup->pLruHead->pLruPrev = pPage;
-      pPage->pLruNext = pGroup->pLruHead;
-      pGroup->pLruHead = pPage;
-    }else{
-      pGroup->pLruTail = pPage;
-      pGroup->pLruHead = pPage;
-    }
+    PgHdr1 **ppFirst = &pGroup->lru.pLruNext;
+    pPage->pLruPrev = &pGroup->lru;
+    (pPage->pLruNext = *ppFirst)->pLruPrev = pPage;
+    *ppFirst = pPage;
     pCache->nRecyclable++;
     pPage->isPinned = 0;
   }
@@ -1190,7 +1192,9 @@ int sqlite3PcacheReleaseMemory(int nReq){
   if( sqlite3GlobalConfig.nPage==0 ){
     PgHdr1 *p;
     pcache1EnterMutex(&pcache1.grp);
-    while( (nReq<0 || nFree<nReq) && ((p=pcache1.grp.pLruTail)!=0) ){
+    while( (nReq<0 || nFree<nReq)
+       &&  (p=pcache1.grp.lru.pLruPrev)->isAnchor==0
+    ){
       nFree += pcache1MemSize(p->page.pBuf);
 #ifdef SQLITE_PCACHE_SEPARATE_HEADER
       nFree += sqlite3MemSize(p);
@@ -1218,7 +1222,7 @@ void sqlite3PcacheStats(
 ){
   PgHdr1 *p;
   int nRecyclable = 0;
-  for(p=pcache1.grp.pLruHead; p; p=p->pLruNext){
+  for(p=pcache1.grp.lru.pLruNext; !p->isAnchor; p=p->pLruNext){
     assert( p->isPinned==0 );
     nRecyclable++;
   }
