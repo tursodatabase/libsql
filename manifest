@@ -1,5 +1,5 @@
-C Get\sSTAT4\srange\sscan\sestimates\swork\sagain\swhen\sthe\sbounds\sare\sdetermined\nby\sdate/time\sfunctions.
-D 2015-09-05T19:07:08.860
+C Fix\san\sunreachable\sconditional\sin\sthe\sWHERE\sclause\sanalysis\slogic.
+D 2015-09-05T19:21:00.671
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -416,7 +416,7 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 8cd07f1f99e1a81346db1c9da879bef6c6f97cf6
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 2e14d17f592d176b6dc879c33fbdec4fbccaa2ba
-F src/where.c e6efbb9e5f0c20943cd03909b3894ad5b105dedf
+F src/where.c ed1cd1cb0434bca9f4a5379582c637bf393b34ac
 F src/whereInt.h 292d3ac90da4eab1e03ac8452f1add746bcafaa1
 F src/wherecode.c 6ac8599523f4840d9efac335329f627ebf3f79fd
 F src/whereexpr.c 2473e4350e30f9b55d1c6a8f66ca23c689f23f1d
@@ -1383,7 +1383,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1efece95ff8777b89558be59277732ba2a68d5ab
-R 33b468f201c817bccc2bf5f080039adb
+P d2761357a0496ec1e590c7c9e397c5b5c904f91a
+R 9921ff0c69ded6987711a9a840df906d
 U drh
-Z 535e2ce68f49a8491abd9f8ccc62b768
+Z 612add4179403f74341dc4eb50c9c3d3
