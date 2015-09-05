@@ -1,5 +1,5 @@
-C Fix\sover-length\ssource\scode\slines\sin\sLemon.
-D 2015-09-04T18:03:45.061
+C Get\sSTAT4\srange\sscan\sestimates\swork\sagain\swhen\sthe\sbounds\sare\sdetermined\nby\sdate/time\sfunctions.
+D 2015-09-05T19:07:08.860
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -408,7 +408,7 @@ F src/vdbeInt.h 8b54e01ad0463590e7cffabce0bc36da9ee4f816
 F src/vdbeapi.c bda74ef4b5103d7b4a4be36f936d3cf2b56a7d6f
 F src/vdbeaux.c fd00b489ab3f44f2dca1e4344faf289b7bfcf649
 F src/vdbeblob.c 1d7b97115e7bbac4c318db416d2ca83fc779544a
-F src/vdbemem.c ae38a0d35ae71cf604381a887c170466ba518090
+F src/vdbemem.c 19b3036aa4d676e7103b0fb5efd6327da455f915
 F src/vdbesort.c f5009e7a35e3065635d8918b9a31f498a499976b
 F src/vdbetrace.c 8befe829faff6d9e6f6e4dee5a7d3f85cc85f1a0
 F src/vtab.c 2ecfe020c10e0a0c7b078203fdba2fae844744bc
@@ -1383,7 +1383,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2131a5ca53f0e9b0b98a9dd9a20e495d54d146a7
-R c504fcfc7ca364ef5b7aec55028c181c
+P 1efece95ff8777b89558be59277732ba2a68d5ab
+R 33b468f201c817bccc2bf5f080039adb
 U drh
-Z 31da7673766f0dcc42d3887f78dbee2d
+Z 535e2ce68f49a8491abd9f8ccc62b768
