@@ -258,7 +258,7 @@ test_suite "fts5-light" -prefix "" -description {
 } -files [
   test_set \
       [glob -nocomplain $::testdir/../ext/fts5/test/*.test] \
-      -exclude *corrupt* *fault* *big* *fts5aj*
+      -exclude *corrupt*
 ]
 
 test_suite "nofaultsim" -prefix "" -description {

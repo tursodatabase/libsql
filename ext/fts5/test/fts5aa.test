@@ -139,7 +139,6 @@ foreach {i x y} {
 
 #-------------------------------------------------------------------------
 #
-breakpoint
 reset_db
 do_execsql_test 6.0 {
   CREATE VIRTUAL TABLE t1 USING fts5(x,y);
@@ -201,7 +200,13 @@ for {set i 1} {$i <= 10} {incr i} {
     }
     execsql { INSERT INTO t1(t1) VALUES('integrity-check'); }
   } {}
+  if {[set_test_counter errors]} break
 }
+
+#db eval { SELECT fts5_decode(rowid, block) as x FROM t1_data } { puts $x }
+#puts [db eval {SELECT rowid FROM t1 WHERE t1 MATCH 'aaa' ORDER BY rowid ASC}]
+#puts [db eval {SELECT rowid FROM t1 WHERE t1 MATCH 'aaa' ORDER BY rowid DESC}]
+#exit
 
 #-------------------------------------------------------------------------
 #

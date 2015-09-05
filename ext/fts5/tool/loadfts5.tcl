@@ -104,6 +104,7 @@ if {$O(delete)} { file delete -force $dbfile }
 sqlite3 db $dbfile
 catch { load_static_extension db fts5 }
 db func loadfile loadfile
+db eval "PRAGMA page_size=4096"
 
 db transaction {
   set pref ""

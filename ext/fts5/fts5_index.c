@@ -303,7 +303,8 @@ typedef struct Fts5StructureSegment Fts5StructureSegment;
 
 struct Fts5Data {
   u8 *p;                          /* Pointer to buffer containing record */
-  int n;                          /* Size of record in bytes */
+  int nn;                         /* Size of record in bytes */
+  int szLeaf;                     /* Size of leaf without page-index */
 };
 
 /*
@@ -377,7 +378,8 @@ struct Fts5Structure {
 */
 struct Fts5PageWriter {
   int pgno;                       /* Page number for this page */
-  Fts5Buffer buf;                 /* Buffer containing page data */
+  Fts5Buffer buf;                 /* Buffer containing leaf data */
+  Fts5Buffer pgidx;               /* Buffer containing page-index */
   Fts5Buffer term;                /* Buffer containing previous term on page */
 };
 struct Fts5DlidxWriter {
@@ -392,6 +394,7 @@ struct Fts5SegWriter {
   i64 iPrevRowid;                 /* Previous rowid written to current leaf */
   u8 bFirstRowidInDoclist;        /* True if next rowid is first in doclist */
   u8 bFirstRowidInPage;           /* True if next rowid is first in page */
+  /* TODO1: Can use (writer.pgidx.n==0) instead of bFirstTermInPage */
   u8 bFirstTermInPage;            /* True if next term will be first in leaf */
   int nLeafWritten;               /* Number of leaf pages written */
   int nEmpty;                     /* Number of contiguous term-less nodes */
@@ -500,9 +503,26 @@ struct Fts5SegIter {
   int bDel;                       /* True if the delete flag is set */
 };
 
+/*
+** Argument is a pointer to an Fts5Data structure that contains a 
+** leaf page.
+*/
+#define ASSERT_SZLEAF_OK(x) assert( \
+    (x)->szLeaf==fts5GetU16(&(x)->p[2]) || (x)->szLeaf==(x)->nn \
+)
+
 #define FTS5_SEGITER_ONETERM 0x01
 #define FTS5_SEGITER_REVERSE 0x02
 
+
+/* 
+** Argument is a pointer to an Fts5Data structure that contains a leaf
+** page. This macro evaluates to true if the leaf contains no terms, or
+** false if it contains at least one term.
+*/
+#define fts5LeafIsTermless(x) ((x)->szLeaf >= (x)->nn)
+
+#define fts5LeafFirstTermOff(x) (fts5GetU16(&x->p[(x)->szLeaf]))
 
 /*
 ** poslist:
@@ -679,7 +699,7 @@ static Fts5Data *fts5DataRead(Fts5Index *p, i64 iRowid){
       int nAlloc = sizeof(Fts5Data) + nByte + FTS5_DATA_PADDING;
       pRet = (Fts5Data*)sqlite3_malloc(nAlloc);
       if( pRet ){
-        pRet->n = nByte;
+        pRet->nn = nByte;
         aOut = pRet->p = (u8*)&pRet[1];
       }else{
         rc = SQLITE_NOMEM;
@@ -691,6 +711,9 @@ static Fts5Data *fts5DataRead(Fts5Index *p, i64 iRowid){
       if( rc!=SQLITE_OK ){
         sqlite3_free(pRet);
         pRet = 0;
+      }else{
+        /* TODO1: Fix this */
+        pRet->szLeaf = fts5GetU16(&pRet->p[2]);
       }
     }
     p->rc = rc;
@@ -974,8 +997,9 @@ static Fts5Structure *fts5StructureRead(Fts5Index *p){
 
   pData = fts5DataRead(p, FTS5_STRUCTURE_ROWID);
   if( p->rc ) return 0;
-  memset(&pData->p[pData->n], 0, FTS5_DATA_PADDING);
-  p->rc = fts5StructureDecode(pData->p, pData->n, &iCookie, &pRet);
+  /* TODO: Do we need this if the leaf-index is appended? Probably... */
+  memset(&pData->p[pData->nn], 0, FTS5_DATA_PADDING);
+  p->rc = fts5StructureDecode(pData->p, pData->nn, &iCookie, &pRet);
   if( p->rc==SQLITE_OK && pConfig->iCookie!=iCookie ){
     p->rc = sqlite3Fts5ConfigLoad(pConfig, iCookie);
   }
@@ -1178,11 +1202,11 @@ static int fts5DlidxLvlNext(Fts5DlidxLvl *pLvl){
     pLvl->iFirstOff = pLvl->iOff;
   }else{
     int iOff;
-    for(iOff=pLvl->iOff; iOff<pData->n; iOff++){
+    for(iOff=pLvl->iOff; iOff<pData->nn; iOff++){
       if( pData->p[iOff] ) break; 
     }
 
-    if( iOff<pData->n ){
+    if( iOff<pData->nn ){
       i64 iVal;
       pLvl->iLeafPgno += (iOff - pLvl->iOff) + 1;
       iOff += fts5GetVarint(&pData->p[iOff], (u64*)&iVal);
@@ -1470,7 +1494,8 @@ static int fts5GetPoslistSize(const u8 *p, int *pnSz, int *pbDel){
 static void fts5SegIterLoadNPos(Fts5Index *p, Fts5SegIter *pIter){
   if( p->rc==SQLITE_OK ){
     int iOff = pIter->iLeafOffset;  /* Offset to read at */
-    if( iOff>=pIter->pLeaf->n ){
+    ASSERT_SZLEAF_OK(pIter->pLeaf);
+    if( iOff>=pIter->pLeaf->szLeaf ){
       p->rc = FTS5_CORRUPT;
     }else{
       const u8 *a = &pIter->pLeaf->p[iOff];
@@ -1483,7 +1508,8 @@ static void fts5SegIterLoadRowid(Fts5Index *p, Fts5SegIter *pIter){
   u8 *a = pIter->pLeaf->p;        /* Buffer to read data from */
   int iOff = pIter->iLeafOffset;
 
-  if( iOff>=pIter->pLeaf->n ){
+  ASSERT_SZLEAF_OK(pIter->pLeaf);
+  if( iOff>=pIter->pLeaf->szLeaf ){
     fts5SegIterNextPage(p, pIter);
     if( pIter->pLeaf==0 ){
       if( p->rc==SQLITE_OK ) p->rc = FTS5_CORRUPT;
@@ -1559,7 +1585,8 @@ static void fts5SegIterInit(
 
   if( p->rc==SQLITE_OK ){
     u8 *a = pIter->pLeaf->p;
-    pIter->iLeafOffset = fts5GetU16(&a[2]);
+    pIter->iLeafOffset = fts5GetU16(&a[pIter->pLeaf->szLeaf]);
+    assert( pIter->iLeafOffset==4 );
     fts5SegIterLoadTerm(p, pIter, 0);
     fts5SegIterLoadNPos(p, pIter);
   }
@@ -1581,11 +1608,12 @@ static void fts5SegIterInit(
 ** byte of the position list content associated with said rowid.
 */
 static void fts5SegIterReverseInitPage(Fts5Index *p, Fts5SegIter *pIter){
-  int n = pIter->pLeaf->n;
+  int n = pIter->pLeaf->szLeaf;
   int i = pIter->iLeafOffset;
   u8 *a = pIter->pLeaf->p;
   int iRowidOffset = 0;
 
+  ASSERT_SZLEAF_OK(pIter->pLeaf);
   while( 1 ){
     i64 iDelta = 0;
     int nPos;
@@ -1633,7 +1661,7 @@ static void fts5SegIterReverseNewPage(Fts5Index *p, Fts5SegIter *pIter){
     ));
     if( pNew ){
       if( pIter->iLeafPgno==pIter->iTermLeafPgno ){
-        if( pIter->iTermLeafOffset<pNew->n ){
+        if( pIter->iTermLeafOffset<pNew->szLeaf ){
           pIter->pLeaf = pNew;
           pIter->iLeafOffset = pIter->iTermLeafOffset;
         }
@@ -1712,8 +1740,9 @@ static void fts5SegIterNext(
 
       /* Search for the end of the position list within the current page. */
       u8 *a = pLeaf->p;
-      int n = pLeaf->n;
+      int n = pLeaf->szLeaf;
 
+      ASSERT_SZLEAF_OK(pLeaf);
       iOff = pIter->iLeafOffset + pIter->nPos;
 
       if( iOff<n ){
@@ -1726,7 +1755,7 @@ static void fts5SegIterNext(
           if( iOff>=n ){
             fts5SegIterNextPage(p, pIter);
             pIter->iLeafOffset = 4;
-          }else if( iOff!=fts5GetU16(&a[2]) ){
+          }else if( iOff!=fts5LeafFirstTermOff(pLeaf) ){
             pIter->iLeafOffset += fts5GetVarint32(&a[iOff], nKeep);
           }
         }else{
@@ -1745,7 +1774,8 @@ static void fts5SegIterNext(
           pIter->pLeaf = 0;
         }else{
           pIter->pLeaf->p = (u8*)pList;
-          pIter->pLeaf->n = nList;
+          pIter->pLeaf->nn = nList;
+          pIter->pLeaf->szLeaf = nList;
           sqlite3Fts5BufferSet(&p->rc, &pIter->term, strlen(zTerm), (u8*)zTerm);
           pIter->iLeafOffset = fts5GetVarint(pList, (u64*)&pIter->iRowid);
         }
@@ -1756,15 +1786,17 @@ static void fts5SegIterNext(
           fts5SegIterNextPage(p, pIter);
           pLeaf = pIter->pLeaf;
           if( pLeaf==0 ) break;
-          if( (iOff = fts5GetU16(&pLeaf->p[0])) && iOff<pLeaf->n ){
+          ASSERT_SZLEAF_OK(pLeaf);
+          if( (iOff = fts5GetU16(&pLeaf->p[0])) && iOff<pLeaf->szLeaf ){
             iOff += sqlite3Fts5GetVarint(&pLeaf->p[iOff], (u64*)&pIter->iRowid);
             pIter->iLeafOffset = iOff;
           }
-          else if( (iOff = fts5GetU16(&pLeaf->p[2])) ){
+          else if( pLeaf->nn>pLeaf->szLeaf ){
+            iOff = fts5GetU16(&pLeaf->p[pLeaf->szLeaf]);
             pIter->iLeafOffset = iOff;
             bNewTerm = 1;
           }
-          if( iOff>=pLeaf->n ){
+          if( iOff>=pLeaf->szLeaf ){
             p->rc = FTS5_CORRUPT;
             return;
           }
@@ -1819,7 +1851,7 @@ static void fts5SegIterReverse(Fts5Index *p, Fts5SegIter *pIter){
 
     /* Search for a new term within the current leaf. If one can be found,
     ** then this page contains the largest rowid for the current term. */
-    while( iOff<pLeaf->n ){
+    while( iOff<pLeaf->szLeaf ){
       int nPos;
       i64 iDelta;
       int bDummy;
@@ -1827,7 +1859,7 @@ static void fts5SegIterReverse(Fts5Index *p, Fts5SegIter *pIter){
       /* Read the position-list size field */
       iOff += fts5GetPoslistSize(&pLeaf->p[iOff], &nPos, &bDummy);
       iOff += nPos;
-      if( iOff>=pLeaf->n ) break;
+      if( iOff>=pLeaf->szLeaf ) break;
 
       /* Rowid delta. Or, if 0x00, the end of doclist marker. */
       nPos = fts5GetVarint(&pLeaf->p[iOff], (u64*)&iDelta);
@@ -1838,7 +1870,7 @@ static void fts5SegIterReverse(Fts5Index *p, Fts5SegIter *pIter){
     /* If this condition is true then the largest rowid for the current
     ** term may not be stored on the current page. So search forward to
     ** see where said rowid really is.  */
-    if( iOff>=pLeaf->n ){
+    if( iOff>=pLeaf->szLeaf ){
       int pgno;
       Fts5StructureSegment *pSeg = pIter->pSeg;
 
@@ -1848,14 +1880,15 @@ static void fts5SegIterReverse(Fts5Index *p, Fts5SegIter *pIter){
         i64 iAbs = FTS5_SEGMENT_ROWID(pSeg->iSegid, 0, pgno);
         Fts5Data *pNew = fts5DataRead(p, iAbs);
         if( pNew ){
-          int iRowid, iTerm;
-          fts5LeafHeader(pNew, &iRowid, &iTerm);
+          int iRowid, bTermless;
+          iRowid = fts5GetU16(pNew->p);
+          bTermless = fts5LeafIsTermless(pNew);
           if( iRowid ){
             SWAPVAL(Fts5Data*, pNew, pLast);
             pgnoLast = pgno;
           }
           fts5DataRelease(pNew);
-          if( iTerm ) break;
+          if( bTermless==0 ) break;
         }
       }
     }
@@ -1903,7 +1936,7 @@ static void fts5SegIterLoadDlidx(Fts5Index *p, Fts5SegIter *pIter){
   ** term. */
   if( pIter->iTermLeafPgno==pIter->iLeafPgno ){
     int iOff = pIter->iLeafOffset + pIter->nPos;
-    while( iOff<pLeaf->n ){
+    while( iOff<pLeaf->szLeaf ){
       int bDummy;
       int nPos;
       i64 iDelta;
@@ -1911,7 +1944,7 @@ static void fts5SegIterLoadDlidx(Fts5Index *p, Fts5SegIter *pIter){
       /* iOff is currently the offset of the start of position list data */
       iOff += fts5GetVarint(&pLeaf->p[iOff], (u64*)&iDelta);
       if( iDelta==0 ) return;
-      assert_nc( iOff<pLeaf->n );
+      assert_nc( iOff<pLeaf->szLeaf );
       iOff += fts5GetPoslistSize(&pLeaf->p[iOff], &nPos, &bDummy);
       iOff += nPos;
     }
@@ -1955,16 +1988,18 @@ static void fts5LeafSeek(
 ){
   int iOff;
   const u8 *a = pIter->pLeaf->p;
-  int n = pIter->pLeaf->n;
+  int n = pIter->pLeaf->szLeaf;
 
   int nMatch = 0;
   int nKeep = 0;
   int nNew = 0;
+  int iTerm = 0;
+  int nPgTerm = (pIter->pLeaf->nn - pIter->pLeaf->szLeaf) >> 1;
 
   assert( p->rc==SQLITE_OK );
   assert( pIter->pLeaf );
 
-  iOff = fts5GetU16(&a[2]);
+  iOff = fts5GetU16(&a[n]);
   if( iOff<4 || iOff>=n ){
     p->rc = FTS5_CORRUPT;
     return;
@@ -2001,6 +2036,7 @@ static void fts5LeafSeek(
     }
     iOff += nNew;
 
+#if 0
     /* Skip past the doclist. If the end of the page is reached, bail out. */
     while( 1 ){
       int nPos;
@@ -2023,6 +2059,19 @@ static void fts5LeafSeek(
       }
     };
 
+    iTerm++;
+    assert( iTerm<nPgTerm );
+    assert( iOff==fts5GetU16(&a[n + iTerm*2]) );
+
+#else
+    iTerm++;
+    if( iTerm>=nPgTerm ){
+      iOff = n;
+      break;
+    }
+    iOff = fts5GetU16(&a[n + iTerm*2]);
+#endif
+
     /* Read the nKeep field of the next term. */
     fts5IndexGetVarint32(a, iOff, nKeep);
   }
@@ -2037,9 +2086,9 @@ static void fts5LeafSeek(
       fts5SegIterNextPage(p, pIter);
       if( pIter->pLeaf==0 ) return;
       a = pIter->pLeaf->p;
-      iOff = fts5GetU16(&a[2]);
-      if( iOff ){
-        if( iOff<4 || iOff>=n ){
+      if( fts5LeafIsTermless(pIter->pLeaf)==0 ){
+        iOff = fts5LeafFirstTermOff(pIter->pLeaf);
+        if( iOff<4 || iOff>=pIter->pLeaf->szLeaf ){
           p->rc = FTS5_CORRUPT;
         }else{
           nKeep = 0;
@@ -2190,7 +2239,7 @@ static void fts5SegIterHashInit(
     pLeaf = fts5IdxMalloc(p, sizeof(Fts5Data));
     if( pLeaf==0 ) return;
     pLeaf->p = (u8*)pList;
-    pLeaf->n = nList;
+    pLeaf->nn = pLeaf->szLeaf = nList;
     pIter->pLeaf = pLeaf;
     pIter->iLeafOffset = fts5GetVarint(pLeaf->p, (u64*)&pIter->iRowid);
 
@@ -2383,7 +2432,7 @@ static void fts5SegIterGotoPage(
     if( p->rc==SQLITE_OK ){
       int iOff;
       u8 *a = pIter->pLeaf->p;
-      int n = pIter->pLeaf->n;
+      int n = pIter->pLeaf->szLeaf;
 
       iOff = fts5GetU16(&a[0]);
       if( iOff<4 || iOff>=n ){
@@ -2717,7 +2766,7 @@ static void fts5MultiIterNew2(
     Fts5SegIter *pIter = &pNew->aSeg[1];
 
     pIter->flags = FTS5_SEGITER_ONETERM;
-    if( pData->n>0 ){
+    if( pData->szLeaf>0 ){
       pIter->pLeaf = pData;
       pIter->iLeafOffset = fts5GetVarint(pData->p, (u64*)&pIter->iRowid);
       pNew->aFirst[1].iFirst = 1;
@@ -2797,7 +2846,7 @@ static void fts5ChunkIterate(
   int nRem = pSeg->nPos;          /* Number of bytes still to come */
   Fts5Data *pData = 0;
   u8 *pChunk = &pSeg->pLeaf->p[pSeg->iLeafOffset];
-  int nChunk = MIN(nRem, pSeg->pLeaf->n - pSeg->iLeafOffset);
+  int nChunk = MIN(nRem, pSeg->pLeaf->szLeaf - pSeg->iLeafOffset);
   int pgno = pSeg->iLeafPgno;
   int pgnoSave = 0;
 
@@ -2816,7 +2865,7 @@ static void fts5ChunkIterate(
       pData = fts5DataRead(p, FTS5_SEGMENT_ROWID(pSeg->pSeg->iSegid, 0, pgno));
       if( pData==0 ) break;
       pChunk = &pData->p[4];
-      nChunk = MIN(nRem, pData->n - 4);
+      nChunk = MIN(nRem, pData->szLeaf - 4);
       if( pgno==pgnoSave ){
         assert( pSeg->pNextLeaf==0 );
         pSeg->pNextLeaf = pData;
@@ -3102,18 +3151,28 @@ static void fts5WriteFlushLeaf(Fts5Index *p, Fts5SegWriter *pWriter){
   Fts5PageWriter *pPage = &pWriter->writer;
   i64 iRowid;
 
+  assert( (pPage->pgidx.n==0)==(pWriter->bFirstTermInPage) );
+
+  /* Set the szLeaf header field. */
+  assert( 0==fts5GetU16(&pPage->buf.p[2]) );
+  fts5PutU16(&pPage->buf.p[2], pPage->buf.n);
+
   if( pWriter->bFirstTermInPage ){
     /* No term was written to this page. */
-    assert( 0==fts5GetU16(&pPage->buf.p[2]) );
+    assert( pPage->pgidx.n==0 );
     fts5WriteBtreeNoTerm(p, pWriter);
+  }else{
+    /* Append the pgidx to the page buffer. Set the szLeaf header field. */
+    fts5BufferAppendBlob(&p->rc, &pPage->buf, pPage->pgidx.n, pPage->pgidx.p);
   }
 
-  /* Write the current page to the db. */
+  /* Write the page out to disk */
   iRowid = FTS5_SEGMENT_ROWID(pWriter->iSegid, 0, pPage->pgno);
   fts5DataWrite(p, iRowid, pPage->buf.p, pPage->buf.n);
 
   /* Initialize the next page. */
   fts5BufferZero(&pPage->buf);
+  fts5BufferZero(&pPage->pgidx);
   fts5BufferAppendBlob(&p->rc, &pPage->buf, 4, zero);
   pPage->pgno++;
 
@@ -3139,6 +3198,7 @@ static void fts5WriteAppendTerm(
 ){
   int nPrefix;                    /* Bytes of prefix compression for term */
   Fts5PageWriter *pPage = &pWriter->writer;
+  Fts5Buffer *pPgidx = &pWriter->writer.pgidx;
 
   assert( pPage->buf.n==0 || pPage->buf.n>4 );
   if( pPage->buf.n==0 ){
@@ -3149,10 +3209,16 @@ static void fts5WriteAppendTerm(
   }
   if( p->rc ) return;
   
+  /* TODO1: Can this be consolidated with FlushOneHash version? */
+  fts5PutU16(&pPgidx->p[pPgidx->n], pPage->buf.n);
+  pPgidx->n += 2;
+
   if( pWriter->bFirstTermInPage ){
     /* Update the "first term" field of the page header. */
+#if 0
     assert( pPage->buf.p[2]==0 && pPage->buf.p[3]==0 );
     fts5PutU16(&pPage->buf.p[2], pPage->buf.n);
+#endif
     nPrefix = 0;
     if( pPage->pgno!=1 ){
       /* This is the first term on a leaf that is not the leftmost leaf in
@@ -3196,7 +3262,7 @@ static void fts5WriteAppendTerm(
   pWriter->aDlidx[0].pgno = pPage->pgno;
 
   /* If the current leaf page is full, flush it to disk. */
-  if( pPage->buf.n>=p->pConfig->pgsz ){
+  if( (pPage->buf.n + pPage->pgidx.n)>=p->pConfig->pgsz ){
     fts5WriteFlushLeaf(p, pWriter);
   }
 }
@@ -3234,7 +3300,7 @@ static void fts5WriteAppendRowid(
 
     fts5BufferAppendVarint(&p->rc, &pPage->buf, nPos);
 
-    if( pPage->buf.n>=p->pConfig->pgsz ){
+    if( (pPage->buf.n + pPage->pgidx.n)>=p->pConfig->pgsz ){
       fts5WriteFlushLeaf(p, pWriter);
     }
   }
@@ -3251,8 +3317,10 @@ static void fts5WriteAppendPoslistData(
   int n = nData;
   
   assert( p->pConfig->pgsz>0 );
-  while( p->rc==SQLITE_OK && (pPage->buf.n + n)>=p->pConfig->pgsz ){
-    int nReq = p->pConfig->pgsz - pPage->buf.n;
+  while( p->rc==SQLITE_OK 
+     && (pPage->buf.n + pPage->pgidx.n + n)>=p->pConfig->pgsz 
+  ){
+    int nReq = p->pConfig->pgsz - pPage->buf.n - pPage->pgidx.n;
     int nCopy = 0;
     while( nCopy<nReq ){
       i64 dummy;
@@ -3300,6 +3368,7 @@ static void fts5WriteFinish(
   }
   fts5BufferFree(&pLeaf->term);
   fts5BufferFree(&pLeaf->buf);
+  fts5BufferFree(&pLeaf->pgidx);
   fts5BufferFree(&pWriter->btterm);
 
   for(i=0; i<pWriter->nDlidx; i++){
@@ -3321,6 +3390,7 @@ static void fts5WriteInit(
   pWriter->bFirstTermInPage = 1;
   pWriter->iBtPage = 1;
 
+  fts5BufferGrow(&p->rc, &pWriter->writer.pgidx, p->pConfig->pgsz + 20);
   if( p->pIdxWriter==0 ){
     Fts5Config *pConfig = p->pConfig;
     fts5IndexPrepareStmt(p, &p->pIdxWriter, sqlite3_mprintf(
@@ -3331,6 +3401,51 @@ static void fts5WriteInit(
 
   if( p->rc==SQLITE_OK ){
     sqlite3_bind_int(p->pIdxWriter, 1, pWriter->iSegid);
+  }
+}
+
+/*
+** The buffer passed as the second argument contains a leaf page that is
+** missing its page-idx array. The first term is guaranteed to start at
+** byte offset 4 of the buffer. The szLeaf field of the leaf page header
+** is already populated.
+**
+** This function appends a page-index to the buffer. The buffer is 
+** guaranteed to be large enough to fit the page-index.
+*/
+static void fts5MakePageidx(Fts5Index *p, Fts5Buffer *pBuf){
+  if( p->rc==SQLITE_OK ){
+    u8 *a = pBuf->p;
+    int szLeaf = pBuf->n;
+    int iOff = 4;
+    int nTerm;
+
+    fts5PutU16(&pBuf->p[pBuf->n], iOff);
+    pBuf->n += 2;
+    fts5IndexGetVarint32(a, iOff, nTerm);
+    iOff += nTerm;
+
+    while( iOff<szLeaf ){
+      /* Skip the rowid delta rowid delta. */
+      fts5IndexSkipVarint(a, iOff);
+      if( iOff>=szLeaf ) break;
+
+      /* Skip past position list */
+      fts5IndexGetVarint32(a, iOff, nTerm);
+      iOff += (nTerm >> 1);
+
+      if( iOff>=(szLeaf-2) ) break;
+
+      /* If this is the end of the doclist, break out of the loop */
+      if( a[iOff]==0x00 ){
+        iOff++;
+        fts5PutU16(&pBuf->p[pBuf->n], iOff);
+        pBuf->n += 2;
+        fts5IndexGetVarint32(a, iOff, nTerm);
+        fts5IndexGetVarint32(a, iOff, nTerm);
+        iOff += nTerm;
+      }
+    }
   }
 }
 
@@ -3358,16 +3473,25 @@ static void fts5TrimSegments(Fts5Index *p, Fts5IndexIter *pIter){
       i64 iLeafRowid;
       Fts5Data *pData;
       int iId = pSeg->pSeg->iSegid;
-      u8 aHdr[4] = {0x00, 0x00, 0x00, 0x04};
+      u8 aHdr[4] = {0x00, 0x00, 0x00, 0x00};
 
       iLeafRowid = FTS5_SEGMENT_ROWID(iId, 0, pSeg->iTermLeafPgno);
       pData = fts5DataRead(p, iLeafRowid);
       if( pData ){
         fts5BufferZero(&buf);
+        fts5BufferGrow(&p->rc, &buf, pData->nn);
         fts5BufferAppendBlob(&p->rc, &buf, sizeof(aHdr), aHdr);
         fts5BufferAppendVarint(&p->rc, &buf, pSeg->term.n);
         fts5BufferAppendBlob(&p->rc, &buf, pSeg->term.n, pSeg->term.p);
-        fts5BufferAppendBlob(&p->rc, &buf, pData->n - iOff, &pData->p[iOff]);
+        fts5BufferAppendBlob(&p->rc, &buf, pData->szLeaf-iOff, &pData->p[iOff]);
+        if( p->rc==SQLITE_OK ){
+          /* Set the szLeaf field */
+          fts5PutU16(&buf.p[2], buf.n);
+        }
+
+        /* Set up the new page-index array */
+        fts5MakePageidx(p, &buf);
+
         fts5DataRelease(pData);
         pSeg->pSeg->pgnoFirst = pSeg->iTermLeafPgno;
         fts5DataDelete(p, FTS5_SEGMENT_ROWID(iId, 0, 1), iLeafRowid);
@@ -3679,6 +3803,7 @@ static void fts5FlushOneHash(Fts5Index *p){
     Fts5StructureSegment *pSeg;   /* New segment within pStruct */
     int nHeight;                  /* Height of new segment b-tree */
     Fts5Buffer *pBuf;             /* Buffer in which to assemble leaf page */
+    Fts5Buffer *pPgidx;           /* Buffer in which to assemble pgidx */
     const u8 *zPrev = 0;
 
     Fts5SegWriter writer;
@@ -3688,6 +3813,7 @@ static void fts5FlushOneHash(Fts5Index *p){
     ** page size.  */
     assert( pgsz>0 );
     pBuf = &writer.writer.buf;
+    pPgidx = &writer.writer.pgidx;
     fts5BufferGrow(&p->rc, pBuf, pgsz + 20);
 
     /* Begin scanning through hash table entries. This loop runs once for each
@@ -3707,11 +3833,11 @@ static void fts5FlushOneHash(Fts5Index *p){
       sqlite3Fts5HashScanEntry(pHash, &zTerm, &pDoclist, &nDoclist);
       nTerm = strlen(zTerm);
 
-      /* Decide if the term will fit on the current leaf. If it will not, 
-      ** flush the leaf to disk here.  */
-      if( pBuf->n>4 && (pBuf->n + nTerm + 2) > pgsz ){
+      /* Decide if the term will fit on the current leaf. If it will not,
+      ** flush the leaf to disk here.  
+      ** TODO1: Is this calculation still correct?  */
+      if( pBuf->n>4 && (pBuf->n + nTerm + 2 + pPgidx->n + 2) > pgsz ){
         fts5WriteFlushLeaf(p, &writer);
-        pBuf = &writer.writer.buf;
         if( (nTerm + 32) > pBuf->nSpace ){
           fts5BufferGrow(&p->rc, pBuf, nTerm + 32 - pBuf->n);
           if( p->rc ) break;
@@ -3721,12 +3847,15 @@ static void fts5FlushOneHash(Fts5Index *p){
       /* Write the term to the leaf. And if it is the first on the leaf, and
       ** the leaf is not page number 1, push it up into the b-tree hierarchy 
       ** as well.  */
+
+      /* TODO1: Writing pgidx here! */
+      fts5PutU16(&pPgidx->p[pPgidx->n], pBuf->n);
+      pPgidx->n += 2;
       if( writer.bFirstTermInPage==0 ){
         int nPre = fts5PrefixCompress(nTerm, zPrev, nTerm, (const u8*)zTerm);
         pBuf->n += sqlite3Fts5PutVarint(&pBuf->p[pBuf->n], nPre);
         nSuffix = nTerm - nPre;
       }else{
-        fts5PutU16(&pBuf->p[2], pBuf->n);
         writer.bFirstTermInPage = 0;
         if( writer.writer.pgno!=1 ){
           int nPre = fts5PrefixCompress(nTerm, zPrev, nTerm, (const u8*)zTerm);
@@ -3745,7 +3874,7 @@ static void fts5FlushOneHash(Fts5Index *p){
       assert( writer.nDlidx>0 && writer.aDlidx[0].buf.n==0 );
       writer.aDlidx[0].pgno = writer.writer.pgno;
 
-      if( pgsz>=(pBuf->n + nDoclist + 1) ){
+      if( pgsz>=(pBuf->n + pPgidx->n + nDoclist + 1) ){
         /* The entire doclist will fit on the current leaf. */
         fts5BufferSafeAppendBlob(pBuf, pDoclist, nDoclist);
       }else{
@@ -3777,7 +3906,7 @@ static void fts5FlushOneHash(Fts5Index *p){
           }
           assert( pBuf->n<=pBuf->nSpace );
 
-          if( (pBuf->n + nCopy) <= pgsz ){
+          if( (pBuf->n + pPgidx->n + nCopy) <= pgsz ){
             /* The entire poslist will fit on the current leaf. So copy
             ** it in one go. */
             fts5BufferSafeAppendBlob(pBuf, &pDoclist[iOff], nCopy);
@@ -3788,7 +3917,7 @@ static void fts5FlushOneHash(Fts5Index *p){
             const u8 *pPoslist = &pDoclist[iOff];
             int iPos = 0;
             while( p->rc==SQLITE_OK ){
-              int nSpace = pgsz - pBuf->n;
+              int nSpace = pgsz - pBuf->n - pPgidx->n;
               int n = 0;
               if( (nCopy - iPos)<=nSpace ){
                 n = nCopy - iPos;
@@ -3798,9 +3927,8 @@ static void fts5FlushOneHash(Fts5Index *p){
               assert( n>0 );
               fts5BufferSafeAppendBlob(pBuf, &pPoslist[iPos], n);
               iPos += n;
-              if( pBuf->n>=pgsz ){
+              if( (pBuf->n + pPgidx->n)>=pgsz ){
                 fts5WriteFlushLeaf(p, &writer);
-                pBuf = &writer.writer.buf;
               }
               if( iPos>=nCopy ) break;
             }
@@ -4163,7 +4291,7 @@ static void fts5SetupPrefixIter(
     pData = fts5IdxMalloc(p, sizeof(Fts5Data) + doclist.n);
     if( pData ){
       pData->p = (u8*)&pData[1];
-      pData->n = doclist.n;
+      pData->nn = pData->szLeaf = doclist.n;
       memcpy(pData->p, doclist.p, doclist.n);
       fts5MultiIterNew2(p, pData, bDesc, ppIter);
     }
@@ -4393,6 +4521,11 @@ int sqlite3Fts5IndexQuery(
     memcpy(&buf.p[1], pToken, nToken);
 
 #ifdef SQLITE_DEBUG
+    /* If the QUERY_TEST_NOIDX flag was specified, then this must be a
+    ** prefix-query. Instead of using a prefix-index (if one exists), 
+    ** evaluate the prefix query using the main FTS index. This is used
+    ** for internal sanity checking by the integrity-check in debug 
+    ** mode only.  */
     if( flags & FTS5INDEX_QUERY_TEST_NOIDX ){
       assert( flags & FTS5INDEX_QUERY_PREFIX );
       iIdx = 1+pConfig->nPrefix;
@@ -4513,7 +4646,7 @@ int sqlite3Fts5IterPoslist(
   assert( pIter->pIndex->rc==SQLITE_OK );
   *piRowid = pSeg->iRowid;
   *pn = pSeg->nPos;
-  if( pSeg->iLeafOffset+pSeg->nPos <= pSeg->pLeaf->n ){
+  if( pSeg->iLeafOffset+pSeg->nPos <= pSeg->pLeaf->szLeaf ){
     *pp = &pSeg->pLeaf->p[pSeg->iLeafOffset];
   }else{
     fts5BufferZero(&pIter->poslist);
@@ -4561,11 +4694,11 @@ int sqlite3Fts5IndexGetAverages(Fts5Index *p, i64 *pnRow, i64 *anSize){
   *pnRow = 0;
   memset(anSize, 0, sizeof(i64) * nCol);
   pData = fts5DataRead(p, FTS5_AVERAGES_ROWID);
-  if( p->rc==SQLITE_OK && pData->n ){
+  if( p->rc==SQLITE_OK && pData->nn ){
     int i = 0;
     int iCol;
     i += fts5GetVarint(&pData->p[i], (u64*)pnRow);
-    for(iCol=0; i<pData->n && iCol<nCol; iCol++){
+    for(iCol=0; i<pData->nn && iCol<nCol; iCol++){
       i += fts5GetVarint(&pData->p[i], (u64*)&anSize[iCol]);
     }
   }
@@ -4770,18 +4903,25 @@ static void fts5TestTerm(
     if( rc==SQLITE_OK && ck1!=ck2 ) rc = FTS5_CORRUPT;
 
     /* If this is a prefix query, check that the results returned if the
-    ** the index is disabled are the same. In both ASC and DESC order. */
-    if( iIdx>0 && rc==SQLITE_OK ){
-      int f = flags|FTS5INDEX_QUERY_TEST_NOIDX;
-      ck2 = 0;
-      rc = fts5QueryCksum(p, iIdx, zTerm, nTerm, f, &ck2);
-      if( rc==SQLITE_OK && ck1!=ck2 ) rc = FTS5_CORRUPT;
-    }
-    if( iIdx>0 && rc==SQLITE_OK ){
-      int f = flags|FTS5INDEX_QUERY_TEST_NOIDX|FTS5INDEX_QUERY_DESC;
-      ck2 = 0;
-      rc = fts5QueryCksum(p, iIdx, zTerm, nTerm, f, &ck2);
-      if( rc==SQLITE_OK && ck1!=ck2 ) rc = FTS5_CORRUPT;
+    ** the index is disabled are the same. In both ASC and DESC order. 
+    **
+    ** This check may only be performed if the hash table is empty. This
+    ** is because the hash table only supports a single scan query at
+    ** a time, and the multi-iter loop from which this function is called
+    ** is already performing such a scan. */
+    if( p->nPendingData==0 ){
+      if( iIdx>0 && rc==SQLITE_OK ){
+        int f = flags|FTS5INDEX_QUERY_TEST_NOIDX;
+        ck2 = 0;
+        rc = fts5QueryCksum(p, iIdx, zTerm, nTerm, f, &ck2);
+        if( rc==SQLITE_OK && ck1!=ck2 ) rc = FTS5_CORRUPT;
+      }
+      if( iIdx>0 && rc==SQLITE_OK ){
+        int f = flags|FTS5INDEX_QUERY_TEST_NOIDX|FTS5INDEX_QUERY_DESC;
+        ck2 = 0;
+        rc = fts5QueryCksum(p, iIdx, zTerm, nTerm, f, &ck2);
+        if( rc==SQLITE_OK && ck1!=ck2 ) rc = FTS5_CORRUPT;
+      }
     }
 
     cksum3 ^= ck1;
@@ -4822,7 +4962,7 @@ static void fts5IndexIntegrityCheckEmpty(
   for(i=iFirst; p->rc==SQLITE_OK && i<=iLast; i++){
     Fts5Data *pLeaf = fts5DataRead(p, FTS5_SEGMENT_ROWID(pSeg->iSegid, 0, i));
     if( pLeaf ){
-      if( 0!=fts5GetU16(&pLeaf->p[2]) ) p->rc = FTS5_CORRUPT;
+      if( !fts5LeafIsTermless(pLeaf) ) p->rc = FTS5_CORRUPT;
       if( i>=iNoRowid && 0!=fts5GetU16(&pLeaf->p[0]) ) p->rc = FTS5_CORRUPT;
     }
     fts5DataRelease(pLeaf);
@@ -4851,7 +4991,6 @@ static void fts5IndexIntegrityCheckSegment(
   while( p->rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
     i64 iRow;                     /* Rowid for this leaf */
     Fts5Data *pLeaf;              /* Data for this leaf */
-    int iOff;                     /* Offset of first term on leaf */
 
     int nIdxTerm = sqlite3_column_bytes(pStmt, 1);
     const char *zIdxTerm = (const char*)sqlite3_column_text(pStmt, 1);
@@ -4869,14 +5008,15 @@ static void fts5IndexIntegrityCheckSegment(
     ** to or larger than the split-key in zIdxTerm.  Also check that if there
     ** is also a rowid pointer within the leaf page header, it points to a
     ** location before the term.  */
-    iOff = fts5GetU16(&pLeaf->p[2]);
-    if( iOff==0 ){
+    if( pLeaf->nn<=pLeaf->szLeaf ){
       p->rc = FTS5_CORRUPT;
     }else{
-      int iRowidOff;
+      int iOff;                   /* Offset of first term on leaf */
+      int iRowidOff;              /* Offset of first rowid on leaf */
       int nTerm;                  /* Size of term on leaf in bytes */
       int res;                    /* Comparison of term and split-key */
 
+      iOff = fts5LeafFirstTermOff(pLeaf);
       iRowidOff = fts5GetU16(&pLeaf->p[0]);
       if( iRowidOff>=iOff ){
         p->rc = FTS5_CORRUPT;
@@ -4929,7 +5069,8 @@ static void fts5IndexIntegrityCheckSegment(
         if( pLeaf ){
           i64 iRowid;
           int iRowidOff = fts5GetU16(&pLeaf->p[0]);
-          if( iRowidOff>=pLeaf->n ){
+          ASSERT_SZLEAF_OK(pLeaf);
+          if( iRowidOff>=pLeaf->szLeaf ){
             p->rc = FTS5_CORRUPT;
           }else{
             fts5GetVarint(&pLeaf->p[iRowidOff], (u64*)&iRowid);
@@ -5193,8 +5334,10 @@ static int fts5DecodeDoclist(int *pRc, Fts5Buffer *pBuf, const u8 *a, int n){
   i64 iDocid;
   int iOff = 0;
 
-  iOff = sqlite3Fts5GetVarint(&a[iOff], (u64*)&iDocid);
-  sqlite3Fts5BufferAppendPrintf(pRc, pBuf, " rowid=%lld", iDocid);
+  if( n>0 ){
+    iOff = sqlite3Fts5GetVarint(a, (u64*)&iDocid);
+    sqlite3Fts5BufferAppendPrintf(pRc, pBuf, " id=%lld", iDocid);
+  }
   while( iOff<n ){
     int nPos;
     int bDummy;
@@ -5205,7 +5348,7 @@ static int fts5DecodeDoclist(int *pRc, Fts5Buffer *pBuf, const u8 *a, int n){
       iOff += sqlite3Fts5GetVarint(&a[iOff], (u64*)&iDelta);
       if( iDelta==0 ) return iOff;
       iDocid += iDelta;
-      sqlite3Fts5BufferAppendPrintf(pRc, pBuf, " rowid=%lld", iDocid);
+      sqlite3Fts5BufferAppendPrintf(pRc, pBuf, " id=%lld", iDocid);
     }
   }
 
@@ -5231,13 +5374,18 @@ static void fts5DecodeFunction(
   assert( nArg==2 );
   memset(&s, 0, sizeof(Fts5Buffer));
   iRowid = sqlite3_value_int64(apVal[0]);
+
+  /* Make a copy of the second argument (a blob) in aBlob[]. The aBlob[]
+  ** copy is followed by FTS5_DATA_ZERO_PADDING 0x00 bytes, which prevents
+  ** buffer overreads even if the record is corrupt.  */
   n = sqlite3_value_bytes(apVal[1]);
   aBlob = sqlite3_value_blob(apVal[1]);
-
   nSpace = n + FTS5_DATA_ZERO_PADDING;
   a = (u8*)sqlite3Fts5MallocZero(&rc, nSpace);
   if( a==0 ) goto decode_out;
   memcpy(a, aBlob, n);
+
+
   fts5DecodeRowid(iRowid, &iSegid, &bDlidx, &iHeight, &iPgno);
 
   fts5DebugRowid(&rc, &s, iRowid);
@@ -5246,7 +5394,7 @@ static void fts5DecodeFunction(
     Fts5DlidxLvl lvl;
 
     dlidx.p = a;
-    dlidx.n = n;
+    dlidx.nn = n;
 
     memset(&lvl, 0, sizeof(Fts5DlidxLvl));
     lvl.pData = &dlidx;
@@ -5266,6 +5414,7 @@ static void fts5DecodeFunction(
   }else{
     Fts5Buffer term;
     int iTermOff = 0;
+    int szLeaf = 0;
     int iRowidOff = 0;
     int iOff;
     int nKeep = 0;
@@ -5274,7 +5423,10 @@ static void fts5DecodeFunction(
 
     if( n>=4 ){
       iRowidOff = fts5GetU16(&a[0]);
-      iTermOff = fts5GetU16(&a[2]);
+      szLeaf = fts5GetU16(&a[2]);
+      if( szLeaf<n ){
+        iTermOff = fts5GetU16(&a[szLeaf]);
+      }
     }else{
       sqlite3Fts5BufferSet(&rc, &s, 8, (const u8*)"corrupt");
       goto decode_out;
@@ -5285,17 +5437,17 @@ static void fts5DecodeFunction(
     }else if( iTermOff ){
       iOff = iTermOff;
     }else{
-      iOff = n;
+      iOff = szLeaf;
     }
     fts5DecodePoslist(&rc, &s, &a[4], iOff-4);
 
     assert( iRowidOff==0 || iOff==iRowidOff );
     if( iRowidOff ){
-      iOff += fts5DecodeDoclist(&rc, &s, &a[iOff], n-iOff);
+      iOff += fts5DecodeDoclist(&rc, &s, &a[iOff], szLeaf-iOff);
     }
 
     assert( iTermOff==0 || iOff==iTermOff );
-    while( iOff<n ){
+    while( iOff<szLeaf ){
       int nByte;
       iOff += fts5GetVarint32(&a[iOff], nByte);
       term.n= nKeep;
@@ -5304,9 +5456,9 @@ static void fts5DecodeFunction(
 
       sqlite3Fts5BufferAppendPrintf(
           &rc, &s, " term=%.*s", term.n, (const char*)term.p
-          );
-      iOff += fts5DecodeDoclist(&rc, &s, &a[iOff], n-iOff);
-      if( iOff<n ){
+      );
+      iOff += fts5DecodeDoclist(&rc, &s, &a[iOff], szLeaf-iOff);
+      if( iOff<szLeaf ){
         iOff += fts5GetVarint32(&a[iOff], nKeep);
       }
     }
