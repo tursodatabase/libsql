@@ -2135,6 +2135,7 @@ struct Expr {
 #define EP_ConstFunc 0x080000 /* A SQLITE_FUNC_CONSTANT or _SLOCHNG function */
 #define EP_CanBeNull 0x100000 /* Can be null despite NOT NULL constraint */
 #define EP_Subquery  0x200000 /* Tree contains a TK_SELECT operator */
+#define EP_Alias     0x400000 /* Is an alias for a result set column */
 
 /*
 ** Combinations of two or more EP_* flags
