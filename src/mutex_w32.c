@@ -81,7 +81,13 @@ static int winMutexNotheld(sqlite3_mutex *p){
 ** Try to provide a memory barrier operation, needed for initialization only.
 */
 void sqlite3MemoryBarrier(void){
+#if defined(SQLITE_MEMORY_BARRIER)
+  SQLITE_MEMORY_BARRIER;
+#elif defined(__GNUC__)
+  __sync_synchronize();
+#else
   MemoryBarrier();
+#endif
 }
 
 /*

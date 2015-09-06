@@ -1,5 +1,5 @@
-C Add\sa\smemory\sbarrier\sto\sthe\smutex\sinitialization\slogic,\stry\sto\swork\saround\nan\sissue\sreported\sby\sWebKit.
-D 2015-09-06T02:51:04.140
+C Improved\smemory\sbarrier\sthat\sshould\swork\swith\sMinGW\son\solder\sversions\sof\nWindows.
+D 2015-09-06T10:31:37.987
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -316,8 +316,8 @@ F src/msvc.h d9ba56c6851227ab44b3f228a35f3f5772296495
 F src/mutex.c a39809c6c33f1ebc9cc781186c338ad90433e1e7
 F src/mutex.h 012503b51ccfcf85b8b3846709a4c60a5839f16c
 F src/mutex_noop.c 9d4309c075ba9cc7249e19412d3d62f7f94839c4
-F src/mutex_unix.c c3f415ebd3c1a7952d24f46f748aef796beabdcc
-F src/mutex_w32.c 0f323eb53f092393be9d1fa91c9730baf56c4718
+F src/mutex_unix.c 7762c8ec907379204f2ed751a0e33663ab1c14d7
+F src/mutex_w32.c 2e025e6642eaf27597403690980f560d1a91f62c
 F src/notify.c 9711a7575036f0d3040ba61bc6e217f13a9888e7
 F src/os.c 8fd25588eeba74068d41102d26810e216999b6c8
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
@@ -1383,7 +1383,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7ab0b258eabfcfb7f1b0bd1b12e166d2f267823d
-R b2a67150d05e13e20516640b31b0c7ad
+P 11a9a786ec06403addb47f5c6fb142b382fae522
+R ddcc46edb79b17bfa61348716fbd1950
 U drh
-Z b9d369a816ef742a733a926cd28b24f3
+Z 19a2121ad81300b8c56d01dcfbdbe0e2
