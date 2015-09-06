@@ -53,6 +53,7 @@ int sqlite3MutexInit(void){
     pTo->xMutexLeave = pFrom->xMutexLeave;
     pTo->xMutexHeld = pFrom->xMutexHeld;
     pTo->xMutexNotheld = pFrom->xMutexNotheld;
+    sqlite3MemoryBarrier();
     pTo->xMutexAlloc = pFrom->xMutexAlloc;
   }
   rc = sqlite3GlobalConfig.mutex.xMutexInit();

@@ -1,5 +1,5 @@
-C Omit\sall\suse\sof\sExpr\snodes\sfor\sTK_AS,\sas\sthose\snodes\sno\slonger\sserved\sa\suseful\npurpose\sand\sin\sfact\sinterferred\swith\sthe\squery\splanner.
-D 2015-09-05T22:36:07.095
+C Add\sa\smemory\sbarrier\sto\sthe\smutex\sinitialization\slogic,\stry\sto\swork\saround\nan\sissue\sreported\sby\sWebKit.
+D 2015-09-06T02:51:04.140
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -313,11 +313,11 @@ F src/mem3.c 61c9d47b792908c532ca3a62b999cf21795c6534
 F src/mem5.c 61eeb90134f9a5be6c2e68d8daae7628b25953fb
 F src/memjournal.c 3eb2c0b51adbd869cb6a44780323f05fa904dc85
 F src/msvc.h d9ba56c6851227ab44b3f228a35f3f5772296495
-F src/mutex.c 529e95739f815300a33c73fd8a7d6bdf0c24bd18
-F src/mutex.h 779d588e3b7756ec3ecf7d78cde1d84aba414f85
+F src/mutex.c a39809c6c33f1ebc9cc781186c338ad90433e1e7
+F src/mutex.h 012503b51ccfcf85b8b3846709a4c60a5839f16c
 F src/mutex_noop.c 9d4309c075ba9cc7249e19412d3d62f7f94839c4
-F src/mutex_unix.c b0d280089df0f49545f1318f45d61d07d2f674a8
-F src/mutex_w32.c b601f9e3073f7bd2c1f42a8c0ce59e42d6a08f85
+F src/mutex_unix.c c3f415ebd3c1a7952d24f46f748aef796beabdcc
+F src/mutex_w32.c 0f323eb53f092393be9d1fa91c9730baf56c4718
 F src/notify.c 9711a7575036f0d3040ba61bc6e217f13a9888e7
 F src/os.c 8fd25588eeba74068d41102d26810e216999b6c8
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
@@ -344,7 +344,7 @@ F src/shell.c 6332ef06db1390ef812cfdff1fc97b4fd76cdd42
 F src/sqlite.h.in 378bebc8fe6a88bade25e5f23b7e6123fdc64b00
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h f700e6a9dd1fdcccc9951ab022b366fb66b9e413
-F src/sqliteInt.h ad5504745ef37aca44365a2b91173bc399d71e7e
+F src/sqliteInt.h dba8add0b95fcea1047af7a6875a1e305fcb96d7
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c f266ad8a2892d659b74f0f50cb6a88b6e7c12179
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
@@ -1383,7 +1383,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 24924a58197e558a9e8800cc5c91dc8fb32f3557
-R 7e67010ff7c10ab44fd6cfd6cc975796
+P 7ab0b258eabfcfb7f1b0bd1b12e166d2f267823d
+R b2a67150d05e13e20516640b31b0c7ad
 U drh
-Z 8a5f85b9c3f71859f18b9284198b5fad
+Z b9d369a816ef742a733a926cd28b24f3

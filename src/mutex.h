@@ -64,6 +64,7 @@
 #define sqlite3MutexAlloc(X)      ((sqlite3_mutex*)8)
 #define sqlite3MutexInit()        SQLITE_OK
 #define sqlite3MutexEnd()
+#define sqlite3MemoryBarrier()    
 #define MUTEX_LOGIC(X)
 #else
 #define MUTEX_LOGIC(X)            X

@@ -81,6 +81,18 @@ static int pthreadMutexNotheld(sqlite3_mutex *p){
 #endif
 
 /*
+** Try to provide a memory barrier operation, needed for initialization only.
+*/
+void sqlite3MemoryBarrier(void){
+#if defined(__GNUC__)
+  __sync_synchronize();
+#endif
+#ifdef SQLITE_MEMORY_BARRIER
+  SQLITE_MEMORY_BARRIER;
+#endif
+}
+
+/*
 ** Initialize and deinitialize the mutex subsystem.
 */
 static int pthreadMutexInit(void){ return SQLITE_OK; }

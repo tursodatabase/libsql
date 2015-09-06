@@ -78,6 +78,13 @@ static int winMutexNotheld(sqlite3_mutex *p){
 #endif
 
 /*
+** Try to provide a memory barrier operation, needed for initialization only.
+*/
+void sqlite3MemoryBarrier(void){
+  MemoryBarrier();
+}
+
+/*
 ** Initialize and deinitialize the mutex subsystem.
 */
 static sqlite3_mutex winMutex_staticMutexes[] = {
