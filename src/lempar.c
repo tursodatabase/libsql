@@ -56,15 +56,19 @@
 **    ParseARG_PDECL     A parameter declaration for the %extra_argument
 **    ParseARG_STORE     Code to store %extra_argument into yypParser
 **    ParseARG_FETCH     Code to extract %extra_argument from yypParser
-**    YYNSTATE           the combined number of states.
-**    YYNRULE            the number of rules in the grammar
 **    YYERRORSYMBOL      is the code number of the error symbol.  If not
 **                       defined, then do no error processing.
+**    YYNSTATE           the combined number of states.
+**    YYNRULE            the number of rules in the grammar
+**    YY_MAX_SHIFT       Maximum value for shift actions
+**    YY_MIN_SHIFTREDUCE Minimum value for shift-reduce actions
+**    YY_MAX_SHIFTREDUCE Maximum value for shift-reduce actions
+**    YY_MIN_REDUCE      Maximum value for reduce actions
+**    YY_ERROR_ACTION    The yy_action[] code for syntax error
+**    YY_ACCEPT_ACTION   The yy_action[] code for accept
+**    YY_NO_ACTION       The yy_action[] code for no-op
 */
 %%
-#define YY_NO_ACTION      (YYNSTATE+YYNRULE+2)
-#define YY_ACCEPT_ACTION  (YYNSTATE+YYNRULE+1)
-#define YY_ERROR_ACTION   (YYNSTATE+YYNRULE)
 
 /* The yyzerominor constant is used to initialize instances of
 ** YYMINORTYPE objects to zero. */
@@ -91,16 +95,20 @@ static const YYMINORTYPE yyzerominor = { 0 };
 ** Suppose the action integer is N.  Then the action is determined as
 ** follows
 **
-**   0 <= N < YYNSTATE                  Shift N.  That is, push the lookahead
+**   0 <= N <= YY_MAX_SHIFT             Shift N.  That is, push the lookahead
 **                                      token onto the stack and goto state N.
 **
-**   YYNSTATE <= N < YYNSTATE+YYNRULE   Reduce by rule N-YYNSTATE.
+**   N between YY_MIN_SHIFTREDUCE       Shift to an arbitrary state then
+**     and YY_MAX_SHIFTREDUCE           reduce by rule N-YY_MIN_SHIFTREDUCE.
 **
-**   N == YYNSTATE+YYNRULE              A syntax error has occurred.
+**   N between YY_MIN_REDUCE            Reduce by rule N-YY_MIN_REDUCE
+**     and YY_MAX_REDUCE
+
+**   N == YY_ERROR_ACTION               A syntax error has occurred.
 **
-**   N == YYNSTATE+YYNRULE+1            The parser accepts its input.
+**   N == YY_ACCEPT_ACTION              The parser accepts its input.
 **
-**   N == YYNSTATE+YYNRULE+2            No such action.  Denotes unused
+**   N == YY_NO_ACTION                  No such action.  Denotes unused
 **                                      slots in the yy_action[] table.
 **
 ** The action table is constructed as a single large table named yy_action[].
@@ -499,9 +507,9 @@ static void yyStackOverflow(yyParser *yypParser, YYMINORTYPE *yypMinor){
 }
 
 /*
-** Perform a shift action.
+** Perform a shift action.  Return the number of errors.
 */
-static void yy_shift(
+static int yy_shift(
   yyParser *yypParser,          /* The parser to be shifted */
   int yyNewState,               /* The new state to shift in */
   int yyMajor,                  /* The major token to shift in */
@@ -517,14 +525,14 @@ static void yy_shift(
 #if YYSTACKDEPTH>0 
   if( yypParser->yyidx>=YYSTACKDEPTH ){
     yyStackOverflow(yypParser, yypMinor);
-    return;
+    return 1;
   }
 #else
   if( yypParser->yyidx>=yypParser->yystksz ){
     yyGrowStack(yypParser);
     if( yypParser->yyidx>=yypParser->yystksz ){
       yyStackOverflow(yypParser, yypMinor);
-      return;
+      return 1;
     }
   }
 #endif
@@ -535,13 +543,18 @@ static void yy_shift(
 #ifndef NDEBUG
   if( yyTraceFILE && yypParser->yyidx>0 ){
     int i;
-    fprintf(yyTraceFILE,"%sShift %d\n",yyTracePrompt,yyNewState);
-    fprintf(yyTraceFILE,"%sStack:",yyTracePrompt);
-    for(i=1; i<=yypParser->yyidx; i++)
-      fprintf(yyTraceFILE," %s",yyTokenName[yypParser->yystack[i].major]);
-    fprintf(yyTraceFILE,"\n");
+    if( yyNewState<YYNSTATE ){
+      fprintf(yyTraceFILE,"%sShift %d\n",yyTracePrompt,yyNewState);
+      fprintf(yyTraceFILE,"%sStack:",yyTracePrompt);
+      for(i=1; i<=yypParser->yyidx; i++)
+        fprintf(yyTraceFILE," %s",yyTokenName[yypParser->yystack[i].major]);
+      fprintf(yyTraceFILE,"\n");
+    }else{
+      fprintf(yyTraceFILE,"%sShift *\n",yyTracePrompt);
+    }
   }
 #endif
+  return 0;
 }
 
 /* The following table contains information about every rule that
@@ -574,8 +587,9 @@ static void yy_reduce(
 #ifndef NDEBUG
   if( yyTraceFILE && yyruleno>=0 
         && yyruleno<(int)(sizeof(yyRuleName)/sizeof(yyRuleName[0])) ){
-    fprintf(yyTraceFILE, "%sReduce [%s].\n", yyTracePrompt,
-      yyRuleName[yyruleno]);
+    yysize = yyRuleInfo[yyruleno].nrhs;
+    fprintf(yyTraceFILE, "%sReduce [%s] -> state %d.\n", yyTracePrompt,
+      yyRuleName[yyruleno], yymsp[-yysize].stateno);
   }
 #endif /* NDEBUG */
 
@@ -613,9 +627,8 @@ static void yy_reduce(
   yysize = yyRuleInfo[yyruleno].nrhs;
   yypParser->yyidx -= yysize;
   yyact = yy_find_reduce_action(yymsp[-yysize].stateno,(YYCODETYPE)yygoto);
-  if( yyact < YYNSTATE ){
-#ifdef NDEBUG
-    /* If we are not debugging and the reduce action popped at least
+  if( yyact <= YY_MAX_SHIFTREDUCE ){
+    /* If the reduce action popped at least
     ** one element off the stack, then we can push the new element back
     ** onto the stack here, and skip the stack overflow test in yy_shift().
     ** That gives a significant speed improvement. */
@@ -625,13 +638,19 @@ static void yy_reduce(
       yymsp->stateno = (YYACTIONTYPE)yyact;
       yymsp->major = (YYCODETYPE)yygoto;
       yymsp->minor = yygotominor;
-    }else
+#ifndef NDEBUG
+      if( yyTraceFILE ){
+        fprintf(yyTraceFILE,"%sShift %d\n",yyTracePrompt,yyact);
+      }
 #endif
-    {
-      yy_shift(yypParser,yyact,yygoto,&yygotominor);
+    }else{
+      if( yy_shift(yypParser,yyact,yygoto,&yygotominor) ) yyact = 0;
+    }
+    if( yyact>=YY_MIN_SHIFTREDUCE ){
+      yy_reduce(yypParser, yyact - YY_MIN_SHIFTREDUCE);
     }
   }else{
-    assert( yyact == YYNSTATE + YYNRULE + 1 );
+    assert( yyact == YY_ACCEPT_ACTION );
     yy_accept(yypParser);
   }
 }
@@ -755,12 +774,16 @@ void Parse(
 
   do{
     yyact = yy_find_shift_action(yypParser,(YYCODETYPE)yymajor);
-    if( yyact<YYNSTATE ){
-      yy_shift(yypParser,yyact,yymajor,&yyminorunion);
-      yypParser->yyerrcnt--;
-      yymajor = YYNOCODE;
-    }else if( yyact < YYNSTATE + YYNRULE ){
-      yy_reduce(yypParser,yyact-YYNSTATE);
+    if( yyact <= YY_MAX_SHIFTREDUCE ){
+      if( yy_shift(yypParser,yyact,yymajor,&yyminorunion)==0 ){
+        yypParser->yyerrcnt--;
+        yymajor = YYNOCODE;
+        if( yyact > YY_MAX_SHIFT ){
+          yy_reduce(yypParser, yyact-YY_MIN_SHIFTREDUCE);
+        }
+      }
+    }else if( yyact <= YY_MAX_REDUCE ){
+      yy_reduce(yypParser,yyact-YY_MIN_REDUCE);
     }else{
       assert( yyact == YY_ERROR_ACTION );
 #ifdef YYERRORSYMBOL
@@ -810,7 +833,7 @@ void Parse(
           yymx != YYERRORSYMBOL &&
           (yyact = yy_find_reduce_action(
                         yypParser->yystack[yypParser->yyidx].stateno,
-                        YYERRORSYMBOL)) >= YYNSTATE
+                        YYERRORSYMBOL)) >= YY_MIN_REDUCE
         ){
           yy_pop_parser_stack(yypParser);
         }
@@ -860,5 +883,10 @@ void Parse(
 #endif
     }
   }while( yymajor!=YYNOCODE && yypParser->yyidx>=0 );
+#ifdef SQLITE_DEBUG
+  if( yyTraceFILE ){
+    fprintf(yyTraceFILE,"%sReturn\n",yyTracePrompt);
+  }
+#endif
   return;
 }

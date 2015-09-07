@@ -403,6 +403,7 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   pParse->zTail = zSql;
   i = 0;
   assert( pzErrMsg!=0 );
+  /* sqlite3ParserTrace(stdout, "parser: "); */
   pEngine = sqlite3ParserAlloc(sqlite3Malloc);
   if( pEngine==0 ){
     db->mallocFailed = 1;
@@ -458,12 +459,12 @@ abort_parse:
     assert( zSql[i]==0 );
     if( lastTokenParsed!=TK_SEMI ){
       sqlite3Parser(pEngine, TK_SEMI, pParse->sLastToken, pParse);
-      pParse->zTail = &zSql[i];
     }
     if( pParse->rc==SQLITE_OK && db->mallocFailed==0 ){
       sqlite3Parser(pEngine, 0, pParse->sLastToken, pParse);
     }
   }
+  pParse->zTail = &zSql[i];
 #ifdef YYTRACKMAXSTACKDEPTH
   sqlite3_mutex_enter(sqlite3MallocMutex());
   sqlite3StatusSet(SQLITE_STATUS_PARSER_STACK,
