@@ -1,5 +1,5 @@
-C In\sthe\s"parse.out"\soutput\sfile\sfrom\sLemon,\sshow\saddition\sthe\scomplete\stext\nof\srules\son\sreduce\sactions.
-D 2015-09-07T14:22:24.531
+C Enhance\sthe\sLemon\sparser\sgenerator\sto\sadd\sSHIFTREDUCE\sstates\sthat\sreduce\sthe\nsizes\sof\ssome\sof\sthe\sparser\stables.
+D 2015-09-07T20:11:30.937
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -302,7 +302,7 @@ F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
 F src/insert.c 076dc5876e261a9908603d54cfc5344cd680166c
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
-F src/lempar.c 92bafa308607dd985ca389a788cd9e0a2b608712
+F src/lempar.c d344a95d60c24e2f490ee59db9784b1b17439012
 F src/loadext.c dfcee8c7c032cd0fd55af3e0fc1fcfb01e426df2
 F src/main.c e17fcffae4306a9b8334faf3bac80d7396850b54
 F src/malloc.c 021012e28a81ffdabf4c30ec3df6ce1f6cc93f1d
@@ -395,7 +395,7 @@ F src/test_vfs.c 3b65d42e18b262805716bd96178c81da8f2d9283
 F src/test_vfstrace.c bab9594adc976cbe696ff3970728830b4c5ed698
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 6bbcc9fe50c917864d48287b4792d46d6e873481
-F src/tokenize.c 57cb3720f53f84d811def2069c2b169b6be539a5
+F src/tokenize.c 83c6ed569423a3af83a83973b444cf7123be33a6
 F src/treeview.c 154f0acc622fa3514de8777dcedf4c8a8802b4ce
 F src/trigger.c 322f23aad694e8f31d384dcfa386d52a48d3c52f
 F src/update.c 3c5bc9570df3bfafa0db36828406a8a14e4c426e
@@ -1338,8 +1338,8 @@ F tool/fuzzershell.c f2fc86dd22df654b28851b85019d3bd007361751
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
-F tool/lemon.c a110c3850af6b91a553e153141186c32dee58f0d
-F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
+F tool/lemon.c 0c455691cc1e59a8f782d51a83dd6bbd7c5c44e7
+F tool/lempar.c 3617143ddb9b176c3605defe6a9c798793280120
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
 F tool/logest.c eef612f8adf4d0993dafed0416064cf50d5d33c6
 F tool/mkautoconfamal.sh d1a2da0e15b2ed33d60af35c7e9d483f13a8eb9f
@@ -1383,7 +1383,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 809503e4efcdb498d176e8c0794a5ba0882adef2
-R fba651a02e6066be297178ded140cace
+P b6ffb7e471e51ff69668154ad2c8790e466c9d37 e9d604b4306a86faae315ac3cba59bf07d1b665c
+R c7dbe034ff98374fe795187c44f7caee
+T +closed e9d604b4306a86faae315ac3cba59bf07d1b665c
 U drh
-Z 5f03c60d31dd0f570ea326a36f822715
+Z 0877e196b03066e842bcbf4d8e5b634a
