@@ -1,5 +1,5 @@
-C Experiment\swith\sa\sdifferent\sfts5\sleaf\spage\sformat\sthat\sallows\sfaster\sseeks.
-D 2015-09-05T19:52:08.105
+C Use\smacros\sto\smake\sthe\scode\sin\sfts5_index.c\seasier\sto\sread.
+D 2015-09-07T08:14:30.857
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -112,7 +112,7 @@ F ext/fts5/fts5_buffer.c 80f9ba4431848cb857e3d2158f5280093dcd8015
 F ext/fts5/fts5_config.c 80b61fd2c6844b64a3e72a64572d50a812da9384
 F ext/fts5/fts5_expr.c 1c24e1a2ffb286bfe37e537a43b7fadabfe993d4
 F ext/fts5/fts5_hash.c 4bf4b99708848357b8a2b5819e509eb6d3df9246
-F ext/fts5/fts5_index.c c34a64666c3b573aaed0fe103ce739ca2c0b88e5
+F ext/fts5/fts5_index.c 213e5aea27100a2ebb7a576d6574bcc28c594520
 F ext/fts5/fts5_main.c e9d0892424bb7f0a8b58613d4ff75cb650cf286e
 F ext/fts5/fts5_storage.c 120f7b143688b5b7710dacbd48cff211609b8059
 F ext/fts5/fts5_tcl.c 6da58d6e8f42a93c4486b5ba9b187a7f995dee37
@@ -1384,10 +1384,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 24924a58197e558a9e8800cc5c91dc8fb32f3557
-R 00e6b769eaa54af1e95eef69109c890a
-T *branch * fts5-incompatible
-T *sym-fts5-incompatible *
-T -sym-trunk *
+P a1f4c3b543eed84e808f6b901a38179786fffe16
+R d9f9c87817152716ded47406f74ba235
 U dan
-Z 9f2973699597cf834c49e709dc04f160
+Z 4c8df884c6ae97a50d0e8662a6ca4b0e

@@ -522,7 +522,8 @@ struct Fts5SegIter {
 */
 #define fts5LeafIsTermless(x) ((x)->szLeaf >= (x)->nn)
 
-#define fts5LeafFirstTermOff(x) (fts5GetU16(&x->p[(x)->szLeaf]))
+#define fts5LeafFirstTermOff(x) (fts5GetU16(&(x)->p[(x)->szLeaf]))
+#define fts5LeafFirstRowidOff(x) (fts5GetU16((x)->p))
 
 /*
 ** poslist:
@@ -1585,8 +1586,8 @@ static void fts5SegIterInit(
 
   if( p->rc==SQLITE_OK ){
     u8 *a = pIter->pLeaf->p;
-    pIter->iLeafOffset = fts5GetU16(&a[pIter->pLeaf->szLeaf]);
-    assert( pIter->iLeafOffset==4 );
+    pIter->iLeafOffset = 4;
+    assert( fts5LeafFirstTermOff(pIter->pLeaf)==4 );
     fts5SegIterLoadTerm(p, pIter, 0);
     fts5SegIterLoadNPos(p, pIter);
   }
@@ -1787,12 +1788,12 @@ static void fts5SegIterNext(
           pLeaf = pIter->pLeaf;
           if( pLeaf==0 ) break;
           ASSERT_SZLEAF_OK(pLeaf);
-          if( (iOff = fts5GetU16(&pLeaf->p[0])) && iOff<pLeaf->szLeaf ){
+          if( (iOff = fts5LeafFirstRowidOff(pLeaf)) && iOff<pLeaf->szLeaf ){
             iOff += sqlite3Fts5GetVarint(&pLeaf->p[iOff], (u64*)&pIter->iRowid);
             pIter->iLeafOffset = iOff;
           }
           else if( pLeaf->nn>pLeaf->szLeaf ){
-            iOff = fts5GetU16(&pLeaf->p[pLeaf->szLeaf]);
+            iOff = fts5LeafFirstTermOff(pLeaf);
             pIter->iLeafOffset = iOff;
             bNewTerm = 1;
           }
@@ -1881,7 +1882,7 @@ static void fts5SegIterReverse(Fts5Index *p, Fts5SegIter *pIter){
         Fts5Data *pNew = fts5DataRead(p, iAbs);
         if( pNew ){
           int iRowid, bTermless;
-          iRowid = fts5GetU16(pNew->p);
+          iRowid = fts5LeafFirstRowidOff(pNew);
           bTermless = fts5LeafIsTermless(pNew);
           if( iRowid ){
             SWAPVAL(Fts5Data*, pNew, pLast);
@@ -1999,7 +2000,7 @@ static void fts5LeafSeek(
   assert( p->rc==SQLITE_OK );
   assert( pIter->pLeaf );
 
-  iOff = fts5GetU16(&a[n]);
+  iOff = fts5LeafFirstTermOff(pIter->pLeaf);
   if( iOff<4 || iOff>=n ){
     p->rc = FTS5_CORRUPT;
     return;
@@ -2434,7 +2435,7 @@ static void fts5SegIterGotoPage(
       u8 *a = pIter->pLeaf->p;
       int n = pIter->pLeaf->szLeaf;
 
-      iOff = fts5GetU16(&a[0]);
+      iOff = fts5LeafFirstRowidOff(pIter->pLeaf);
       if( iOff<4 || iOff>=n ){
         p->rc = FTS5_CORRUPT;
       }else{
@@ -4963,7 +4964,7 @@ static void fts5IndexIntegrityCheckEmpty(
     Fts5Data *pLeaf = fts5DataRead(p, FTS5_SEGMENT_ROWID(pSeg->iSegid, 0, i));
     if( pLeaf ){
       if( !fts5LeafIsTermless(pLeaf) ) p->rc = FTS5_CORRUPT;
-      if( i>=iNoRowid && 0!=fts5GetU16(&pLeaf->p[0]) ) p->rc = FTS5_CORRUPT;
+      if( i>=iNoRowid && 0!=fts5LeafFirstRowidOff(pLeaf) ) p->rc = FTS5_CORRUPT;
     }
     fts5DataRelease(pLeaf);
     if( p->rc ) break;
@@ -5017,7 +5018,7 @@ static void fts5IndexIntegrityCheckSegment(
       int res;                    /* Comparison of term and split-key */
 
       iOff = fts5LeafFirstTermOff(pLeaf);
-      iRowidOff = fts5GetU16(&pLeaf->p[0]);
+      iRowidOff = fts5LeafFirstRowidOff(pLeaf);
       if( iRowidOff>=iOff ){
         p->rc = FTS5_CORRUPT;
       }else{
@@ -5056,7 +5057,7 @@ static void fts5IndexIntegrityCheckSegment(
           iKey = FTS5_SEGMENT_ROWID(iSegid, 0, iPg);
           pLeaf = fts5DataRead(p, iKey);
           if( pLeaf ){
-            if( fts5GetU16(&pLeaf->p[0])!=0 ) p->rc = FTS5_CORRUPT;
+            if( fts5LeafFirstRowidOff(pLeaf)!=0 ) p->rc = FTS5_CORRUPT;
             fts5DataRelease(pLeaf);
           }
         }
@@ -5068,7 +5069,7 @@ static void fts5IndexIntegrityCheckSegment(
         pLeaf = fts5DataRead(p, iKey);
         if( pLeaf ){
           i64 iRowid;
-          int iRowidOff = fts5GetU16(&pLeaf->p[0]);
+          int iRowidOff = fts5LeafFirstRowidOff(pLeaf);
           ASSERT_SZLEAF_OK(pLeaf);
           if( iRowidOff>=pLeaf->szLeaf ){
             p->rc = FTS5_CORRUPT;
