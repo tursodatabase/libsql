@@ -340,7 +340,7 @@ struct state {
   struct action *ap;       /* Array of actions for this state */
   int nTknAct, nNtAct;     /* Number of actions on terminals and nonterminals */
   int iTknOfst, iNtOfst;   /* yy_action[] offset for terminals and nonterms */
-  int iDflt;               /* Default action */
+  int iDflt;               /* Default action is reduce by this rule */
 };
 #define NO_OFFSET (-2147483647)
 
@@ -2960,15 +2960,14 @@ void Reprint(struct lemon *lemp)
   }
 }
 
-void ConfigPrint(FILE *fp, struct config *cfp)
-{
-  struct rule *rp;
+/* Print a single rule.
+*/
+void RulePrint(FILE *fp, struct rule *rp, int iCursor){
   struct symbol *sp;
   int i, j;
-  rp = cfp->rp;
   fprintf(fp,"%s ::=",rp->lhs->name);
   for(i=0; i<=rp->nrhs; i++){
-    if( i==cfp->dot ) fprintf(fp," *");
+    if( i==iCursor ) fprintf(fp," *");
     if( i==rp->nrhs ) break;
     sp = rp->rhs[i];
     if( sp->type==MULTITERMINAL ){
@@ -2980,6 +2979,12 @@ void ConfigPrint(FILE *fp, struct config *cfp)
       fprintf(fp," %s", sp->name);
     }
   }
+}
+
+/* Print the rule for a configuration.
+*/
+void ConfigPrint(FILE *fp, struct config *cfp){
+  RulePrint(fp, cfp->rp, cfp->dot);
 }
 
 /* #define TEST */
@@ -3021,15 +3026,29 @@ char *tag;
 /* Print an action to the given file descriptor.  Return FALSE if
 ** nothing was actually printed.
 */
-int PrintAction(struct action *ap, FILE *fp, int indent){
+int PrintAction(
+  struct action *ap,          /* The action to print */
+  FILE *fp,                   /* Print the action here */
+  int indent,                 /* Indent by this amount */
+  struct rule **apRule        /* All rules by index */
+){
   int result = 1;
   switch( ap->type ){
-    case SHIFT:
-      fprintf(fp,"%*s shift  %d",indent,ap->sp->name,ap->x.stp->statenum);
+    case SHIFT: {
+      struct state *stp = ap->x.stp;
+      fprintf(fp,"%*s shift  %-7d",indent,ap->sp->name,stp->statenum);
+      if( stp->nTknAct==0 && stp->nNtAct==0 && apRule ){
+        fprintf(fp,"then reduce %d: ", stp->iDflt);
+        RulePrint(fp, apRule[stp->iDflt], -1);
+      }
       break;
-    case REDUCE:
-      fprintf(fp,"%*s reduce %d",indent,ap->sp->name,ap->x.rp->index);
+    }
+    case REDUCE: {
+      struct rule *rp = ap->x.rp;
+      fprintf(fp,"%*s reduce %-7d",indent,ap->sp->name,rp->index);
+      if( apRule ) RulePrint(fp, apRule[rp->index], -1);
       break;
+    }
     case ACCEPT:
       fprintf(fp,"%*s accept",indent,ap->sp->name);
       break;
@@ -3038,16 +3057,16 @@ int PrintAction(struct action *ap, FILE *fp, int indent){
       break;
     case SRCONFLICT:
     case RRCONFLICT:
-      fprintf(fp,"%*s reduce %-3d ** Parsing conflict **",
+      fprintf(fp,"%*s reduce %-7d ** Parsing conflict **",
         indent,ap->sp->name,ap->x.rp->index);
       break;
     case SSCONFLICT:
-      fprintf(fp,"%*s shift  %-3d ** Parsing conflict **", 
+      fprintf(fp,"%*s shift  %-7d ** Parsing conflict **", 
         indent,ap->sp->name,ap->x.stp->statenum);
       break;
     case SH_RESOLVED:
       if( showPrecedenceConflict ){
-        fprintf(fp,"%*s shift  %-3d -- dropped by precedence",
+        fprintf(fp,"%*s shift  %-7d -- dropped by precedence",
                 indent,ap->sp->name,ap->x.stp->statenum);
       }else{
         result = 0;
@@ -3055,7 +3074,7 @@ int PrintAction(struct action *ap, FILE *fp, int indent){
       break;
     case RD_RESOLVED:
       if( showPrecedenceConflict ){
-        fprintf(fp,"%*s reduce %-3d -- dropped by precedence",
+        fprintf(fp,"%*s reduce %-7d -- dropped by precedence",
                 indent,ap->sp->name,ap->x.rp->index);
       }else{
         result = 0;
@@ -3076,7 +3095,17 @@ void ReportOutput(struct lemon *lemp)
   struct config *cfp;
   struct action *ap;
   FILE *fp;
+  struct rule **apRule;
 
+  apRule = malloc( sizeof(apRule[0])*(lemp->nrule+1) );
+  if( apRule ){
+    struct rule *x;
+    memset(apRule, 0, sizeof(apRule[0])*(lemp->nrule+1) );
+    for(x=lemp->rule; x; x=x->next){
+      assert( x->index>=0 && x->index<(lemp->nrule+1) );
+      apRule[x->index] = x;
+    }
+  }
   fp = file_open(lemp,".out","wb");
   if( fp==0 ) return;
   for(i=0; i<lemp->nstate; i++){
@@ -3104,7 +3133,7 @@ void ReportOutput(struct lemon *lemp)
     }
     fprintf(fp,"\n");
     for(ap=stp->ap; ap; ap=ap->next){
-      if( PrintAction(ap,fp,30) ) fprintf(fp,"\n");
+      if( PrintAction(ap,fp,30,apRule) ) fprintf(fp,"\n");
     }
     fprintf(fp,"\n");
   }
@@ -3130,6 +3159,7 @@ void ReportOutput(struct lemon *lemp)
     fprintf(fp, "\n");
   }
   fclose(fp);
+  free(apRule);
   return;
 }
 
@@ -4021,7 +4051,7 @@ void ReportTable(
   for(i=j=0; i<n; i++){
     stp = lemp->sorted[i];
     if( j==0 ) fprintf(out," /* %5d */ ", i);
-    fprintf(out, " %4d,", stp->iDflt);
+    fprintf(out, " %4d,", stp->iDflt+n);
     if( j==9 || i==n-1 ){
       fprintf(out, "\n"); lineno++;
       j = 0;
@@ -4342,7 +4372,7 @@ void ResortStates(struct lemon *lemp)
   for(i=0; i<lemp->nstate; i++){
     stp = lemp->sorted[i];
     stp->nTknAct = stp->nNtAct = 0;
-    stp->iDflt = lemp->nstate + lemp->nrule;
+    stp->iDflt = lemp->nrule;
     stp->iTknOfst = NO_OFFSET;
     stp->iNtOfst = NO_OFFSET;
     for(ap=stp->ap; ap; ap=ap->next){
@@ -4352,7 +4382,7 @@ void ResortStates(struct lemon *lemp)
         }else if( ap->sp->index<lemp->nsymbol ){
           stp->nNtAct++;
         }else{
-          stp->iDflt = compute_action(lemp, ap);
+          stp->iDflt = compute_action(lemp, ap) - lemp->nstate;
         }
       }
     }
