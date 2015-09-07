@@ -385,7 +385,8 @@ struct lemon {
   char *outname;           /* Name of the current output file */
   char *tokenprefix;       /* A prefix added to token names in the .h file */
   int nconflict;           /* Number of parsing conflicts */
-  int tablesize;           /* Size of the parse tables */
+  int nactiontab;          /* Number of entries in the yy_action[] table */
+  int tablesize;           /* Total table size of all tables in bytes */
   int basisflag;           /* Print only basis configurations */
   int has_fallback;        /* True if any %fallback is seen in the grammar */
   int nolinenosflag;       /* True if #line statements should not be printed */
@@ -1482,6 +1483,18 @@ static void handle_T_option(char *z){
   lemon_strcpy(user_templatename, z);
 }
 
+/* forward reference */
+static const char *minimum_size_type(int lwr, int upr, int *pnByte);
+
+/* Print a single line of the "Parser Stats" output
+*/
+static void stats_line(const char *zLabel, int iValue){
+  int nLabel = lemonStrlen(zLabel);
+  printf("  %s%.*s %5d\n", zLabel,
+         35-nLabel, "................................",
+         iValue);
+}
+
 /* The main program.  Parse the command line and do it... */
 int main(int argc, char **argv)
 {
@@ -1613,11 +1626,15 @@ int main(int argc, char **argv)
     if( !mhflag ) ReportHeader(&lem);
   }
   if( statistics ){
-    printf("Parser statistics: %d terminals, %d nonterminals, %d rules\n",
-      lem.nterminal, lem.nsymbol - lem.nterminal, lem.nrule);
-    printf("                   %d states, %d parser table entries,"
-                                                        " %d conflicts\n",
-      lem.nstate, lem.tablesize, lem.nconflict);
+    printf("Parser statistics:\n");
+    stats_line("terminal symbols", lem.nterminal);
+    stats_line("non-terminal symbols", lem.nsymbol - lem.nterminal);
+    stats_line("total symbols", lem.nsymbol);
+    stats_line("rules", lem.nrule);
+    stats_line("states", lem.nstate);
+    stats_line("conflicts", lem.nconflict);
+    stats_line("action table entries", lem.nactiontab);
+    stats_line("total table size (bytes)", lem.tablesize);
   }
   if( lem.nconflict > 0 ){
     fprintf(stderr,"%d parsing conflicts.\n",lem.nconflict);
@@ -3661,24 +3678,32 @@ void print_stack_union(
 
 /*
 ** Return the name of a C datatype able to represent values between
-** lwr and upr, inclusive.
+** lwr and upr, inclusive.  If pnByte!=NULL then also write the sizeof
+** for that type (1, 2, or 4) into *pnByte.
 */
-static const char *minimum_size_type(int lwr, int upr){
+static const char *minimum_size_type(int lwr, int upr, int *pnByte){
+  const char *zType = "int";
+  int nByte = 4;
   if( lwr>=0 ){
     if( upr<=255 ){
-      return "unsigned char";
+      zType = "unsigned char";
+      nByte = 1;
     }else if( upr<65535 ){
-      return "unsigned short int";
+      zType = "unsigned short int";
+      nByte = 2;
     }else{
-      return "unsigned int";
+      zType = "unsigned int";
+      nByte = 4;
     }
   }else if( lwr>=-127 && upr<=127 ){
-    return "signed char";
+    zType = "signed char";
+    nByte = 1;
   }else if( lwr>=-32767 && upr<32767 ){
-    return "short";
-  }else{
-    return "int";
+    zType = "short";
+    nByte = 2;
   }
+  if( pnByte ) *pnByte = nByte;
+  return zType;
 }
 
 /*
@@ -3742,7 +3767,9 @@ void ReportTable(
   struct action *ap;
   struct rule *rp;
   struct acttab *pActtab;
-  int i, j, n;
+  int i, j, n, sz;
+  int szActionType;     /* sizeof(YYACTIONTYPE) */
+  int szCodeType;       /* sizeof(YYCODETYPE)   */
   const char *name;
   int mnTknOfst, mxTknOfst;
   int mnNtOfst, mxNtOfst;
@@ -3783,10 +3810,10 @@ void ReportTable(
 
   /* Generate the defines */
   fprintf(out,"#define YYCODETYPE %s\n",
-    minimum_size_type(0, lemp->nsymbol+1)); lineno++;
+    minimum_size_type(0, lemp->nsymbol+1, &szCodeType)); lineno++;
   fprintf(out,"#define YYNOCODE %d\n",lemp->nsymbol+1);  lineno++;
   fprintf(out,"#define YYACTIONTYPE %s\n",
-    minimum_size_type(0, lemp->nstate+lemp->nrule+5));  lineno++;
+    minimum_size_type(0, lemp->nstate+lemp->nrule+5, &szActionType)); lineno++;
   if( lemp->wildcard ){
     fprintf(out,"#define YYWILDCARD %d\n",
        lemp->wildcard->index); lineno++;
@@ -3900,7 +3927,8 @@ void ReportTable(
   free(ax);
 
   /* Output the yy_action table */
-  n = acttab_size(pActtab);
+  lemp->nactiontab = n = acttab_size(pActtab);
+  lemp->tablesize += n*szActionType;
   fprintf(out,"#define YY_ACTTAB_COUNT (%d)\n", n); lineno++;
   fprintf(out,"static const YYACTIONTYPE yy_action[] = {\n"); lineno++;
   for(i=j=0; i<n; i++){
@@ -3918,6 +3946,7 @@ void ReportTable(
   fprintf(out, "};\n"); lineno++;
 
   /* Output the yy_lookahead table */
+  lemp->tablesize += n*szCodeType;
   fprintf(out,"static const YYCODETYPE yy_lookahead[] = {\n"); lineno++;
   for(i=j=0; i<n; i++){
     int la = acttab_yylookahead(pActtab, i);
@@ -3941,7 +3970,8 @@ void ReportTable(
   fprintf(out, "#define YY_SHIFT_MIN   (%d)\n", mnTknOfst); lineno++;
   fprintf(out, "#define YY_SHIFT_MAX   (%d)\n", mxTknOfst); lineno++;
   fprintf(out, "static const %s yy_shift_ofst[] = {\n", 
-          minimum_size_type(mnTknOfst-1, mxTknOfst)); lineno++;
+          minimum_size_type(mnTknOfst-1, mxTknOfst, &sz)); lineno++;
+  lemp->tablesize += n*sz;
   for(i=j=0; i<n; i++){
     int ofst;
     stp = lemp->sorted[i];
@@ -3966,7 +3996,8 @@ void ReportTable(
   fprintf(out, "#define YY_REDUCE_MIN   (%d)\n", mnNtOfst); lineno++;
   fprintf(out, "#define YY_REDUCE_MAX   (%d)\n", mxNtOfst); lineno++;
   fprintf(out, "static const %s yy_reduce_ofst[] = {\n", 
-          minimum_size_type(mnNtOfst-1, mxNtOfst)); lineno++;
+          minimum_size_type(mnNtOfst-1, mxNtOfst, &sz)); lineno++;
+  lemp->tablesize += n*sz;
   for(i=j=0; i<n; i++){
     int ofst;
     stp = lemp->sorted[i];
@@ -3986,6 +4017,7 @@ void ReportTable(
   /* Output the default action table */
   fprintf(out, "static const YYACTIONTYPE yy_default[] = {\n"); lineno++;
   n = lemp->nstate;
+  lemp->tablesize += n*szActionType;
   for(i=j=0; i<n; i++){
     stp = lemp->sorted[i];
     if( j==0 ) fprintf(out," /* %5d */ ", i);
@@ -4005,6 +4037,7 @@ void ReportTable(
   if( lemp->has_fallback ){
     int mx = lemp->nterminal - 1;
     while( mx>0 && lemp->symbols[mx]->fallback==0 ){ mx--; }
+    lemp->tablesize += (mx+1)*szCodeType;
     for(i=0; i<=mx; i++){
       struct symbol *p = lemp->symbols[i];
       if( p->fallback==0 ){
