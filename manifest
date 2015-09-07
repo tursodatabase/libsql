@@ -1,5 +1,5 @@
-C Change\sthe\sparser\sengine\sso\sthat\sit\s(once\sagain)\swaits\sfor\sa\slookahead\stoken\nbefore\sreducing,\seven\sin\sa\sSHIFTREDUCE\saction.
-D 2015-09-07T19:52:55.484
+C Fix\san\sunreachable\sbranch\sin\sthe\snew\sparse\sautomaton.
+D 2015-09-07T20:02:39.726
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -302,7 +302,7 @@ F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
 F src/insert.c 076dc5876e261a9908603d54cfc5344cd680166c
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
-F src/lempar.c d98d6c2229d5ed5e628a63819fc53ed5b292d4bd
+F src/lempar.c d344a95d60c24e2f490ee59db9784b1b17439012
 F src/loadext.c dfcee8c7c032cd0fd55af3e0fc1fcfb01e426df2
 F src/main.c e17fcffae4306a9b8334faf3bac80d7396850b54
 F src/malloc.c 021012e28a81ffdabf4c30ec3df6ce1f6cc93f1d
@@ -1339,7 +1339,7 @@ F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/lemon.c 0c455691cc1e59a8f782d51a83dd6bbd7c5c44e7
-F tool/lempar.c 9bec5f85673746e5ed92084e79931afae443a6be
+F tool/lempar.c 3617143ddb9b176c3605defe6a9c798793280120
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
 F tool/logest.c eef612f8adf4d0993dafed0416064cf50d5d33c6
 F tool/mkautoconfamal.sh d1a2da0e15b2ed33d60af35c7e9d483f13a8eb9f
@@ -1383,7 +1383,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 531c3974b3d586c1989cde905b2fb4681239a570
-R 9764b1afa291a8128703e02e85f419ca
+P 2c17a1358353a0845b039283be79353f033e2491
+R c7dbe034ff98374fe795187c44f7caee
 U drh
-Z 7cd6903444e24935012e1ca631512fff
+Z f008d623d9e778806c4a18c7c6cec2d4
