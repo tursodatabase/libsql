@@ -411,6 +411,7 @@ void sqlite3DeleteFrom(
     /* Extract the rowid or primary key for the current row */
     if( pPk ){
       for(i=0; i<nPk; i++){
+        assert( pPk->aiColumn[i]>=(-1) );
         sqlite3ExprCodeGetColumnOfTable(v, pTab, iTabCur,
                                         pPk->aiColumn[i], iPk+i);
       }
@@ -789,14 +790,13 @@ int sqlite3GenerateIndexKey(
 ){
   Vdbe *v = pParse->pVdbe;
   int j;
-  Table *pTab = pIdx->pTable;
   int regBase;
   int nCol;
 
   if( piPartIdxLabel ){
     if( pIdx->pPartIdxWhere ){
       *piPartIdxLabel = sqlite3VdbeMakeLabel(v);
-      pParse->iPartIdxTab = iDataCur;
+      pParse->iSelfTab = iDataCur;
       sqlite3ExprCachePush(pParse);
       sqlite3ExprIfFalseDup(pParse, pIdx->pPartIdxWhere, *piPartIdxLabel, 
                             SQLITE_JUMPIFNULL);
@@ -808,9 +808,14 @@ int sqlite3GenerateIndexKey(
   regBase = sqlite3GetTempRange(pParse, nCol);
   if( pPrior && (regBase!=regPrior || pPrior->pPartIdxWhere) ) pPrior = 0;
   for(j=0; j<nCol; j++){
-    if( pPrior && pPrior->aiColumn[j]==pIdx->aiColumn[j] ) continue;
-    sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur, pIdx->aiColumn[j],
-                                    regBase+j);
+    if( pPrior
+     && pPrior->aiColumn[j]==pIdx->aiColumn[j]
+     && pPrior->aiColumn[j]>=(-1)
+    ){
+      /* This column was already computed by the previous index */
+      continue;
+    }
+    sqlite3ExprCodeLoadIndexColumn(pParse, pIdx, iDataCur, j, regBase+j);
     /* If the column affinity is REAL but the number is an integer, then it
     ** might be stored in the table as an integer (using a compact
     ** representation) then converted to REAL by an OP_RealAffinity opcode.

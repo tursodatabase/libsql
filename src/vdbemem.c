@@ -1155,7 +1155,7 @@ static sqlite3_value *valueNew(sqlite3 *db, struct ValueNewStat4Ctx *p){
 ** to be a scalar SQL function. If
 **
 **   * all function arguments are SQL literals,
-**   * the SQLITE_FUNC_CONSTANT function flag is set, and
+**   * one of the SQLITE_FUNC_CONSTANT or _SLOCHNG function flags is set, and
 **   * the SQLITE_FUNC_NEEDCOLL function flag is not set,
 **
 ** then this routine attempts to invoke the SQL function. Assuming no
@@ -1196,7 +1196,7 @@ static int valueFromFunction(
   nName = sqlite3Strlen30(p->u.zToken);
   pFunc = sqlite3FindFunction(db, p->u.zToken, nName, nVal, enc, 0);
   assert( pFunc );
-  if( (pFunc->funcFlags & SQLITE_FUNC_CONSTANT)==0 
+  if( (pFunc->funcFlags & (SQLITE_FUNC_CONSTANT|SQLITE_FUNC_SLOCHNG))==0 
    || (pFunc->funcFlags & SQLITE_FUNC_NEEDCOLL)
   ){
     return SQLITE_OK;

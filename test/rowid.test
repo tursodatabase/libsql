@@ -144,6 +144,8 @@ do_test rowid-2.8 {
   execsql {SELECT x FROM t1 ORDER BY x}
 } {1 3 5 7 9}
 
+if 0 {  # With the index-on-expressions enhancement, creating
+        # an index on ROWID has become possible.
 # We cannot index by ROWID
 #
 do_test rowid-2.9 {
@@ -162,6 +164,7 @@ do_test rowid-2.12 {
   set v [catch {execsql {CREATE INDEX idxt1 ON t1(x, rowid)}} msg]
   lappend v $msg
 } {1 {table t1 has no column named rowid}}
+}
 
 # Columns defined in the CREATE statement override the buildin ROWID
 # column names.
