@@ -1,5 +1,5 @@
-C Enhance\sthe\sLemon\sparser\sgenerator\sto\sadd\sSHIFTREDUCE\sstates\sthat\sreduce\sthe\nsizes\sof\ssome\sof\sthe\sparser\stables.
-D 2015-09-07T20:11:30.937
+C Minor\stweaks\sto\sLemon.
+D 2015-09-07T23:40:42.492
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1338,7 +1338,7 @@ F tool/fuzzershell.c f2fc86dd22df654b28851b85019d3bd007361751
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
-F tool/lemon.c 0c455691cc1e59a8f782d51a83dd6bbd7c5c44e7
+F tool/lemon.c d7c82de603f5cd5a8b84a522f8170a73d00dce68
 F tool/lempar.c 3617143ddb9b176c3605defe6a9c798793280120
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
 F tool/logest.c eef612f8adf4d0993dafed0416064cf50d5d33c6
@@ -1383,8 +1383,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b6ffb7e471e51ff69668154ad2c8790e466c9d37 e9d604b4306a86faae315ac3cba59bf07d1b665c
-R c7dbe034ff98374fe795187c44f7caee
-T +closed e9d604b4306a86faae315ac3cba59bf07d1b665c
+P 99b992fa840707711d99f8d05b62412f7008cd93
+R a2ce2475394d66c086e10e908ff421dc
 U drh
-Z 0877e196b03066e842bcbf4d8e5b634a
+Z ef0c58cd9e9be4bb6c273d1f71ee47c5

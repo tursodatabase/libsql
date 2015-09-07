@@ -3753,7 +3753,7 @@ static int axset_compare(const void *a, const void *b){
   int c;
   c = p2->nAction - p1->nAction;
   if( c==0 ){
-    c = p2->iOrder - p1->iOrder;
+    c = p1->iOrder - p2->iOrder;
   }
   assert( c!=0 || p1==p2 );
   return c;
@@ -3933,6 +3933,16 @@ void ReportTable(
       if( stp->iNtOfst<mnNtOfst ) mnNtOfst = stp->iNtOfst;
       if( stp->iNtOfst>mxNtOfst ) mxNtOfst = stp->iNtOfst;
     }
+#if 0  /* Uncomment for a trace of how the yy_action[] table fills out */
+    { int jj, nn;
+      for(jj=nn=0; jj<pActtab->nAction; jj++){
+        if( pActtab->aAction[jj].action<0 ) nn++;
+      }
+      printf("%4d: State %3d %s n: %2d size: %5d freespace: %d\n",
+             i, stp->statenum, ax[i].isTkn ? "Token" : "Var  ",
+             ax[i].nAction, pActtab->nAction, nn);
+    }
+#endif
   }
   free(ax);
 
@@ -3940,7 +3950,7 @@ void ReportTable(
   ** been computed */
   fprintf(out,"#define YYNSTATE             %d\n",lemp->nxstate);  lineno++;
   fprintf(out,"#define YYNRULE              %d\n",lemp->nrule);  lineno++;
-  fprintf(out,"#define YY_MAX_SHIFT         %d\n",lemp->nstate-1);  lineno++;
+  fprintf(out,"#define YY_MAX_SHIFT         %d\n",lemp->nxstate-1); lineno++;
   fprintf(out,"#define YY_MIN_SHIFTREDUCE   %d\n",lemp->nstate); lineno++;
   i = lemp->nstate + lemp->nrule;
   fprintf(out,"#define YY_MAX_SHIFTREDUCE   %d\n", i-1); lineno++;
