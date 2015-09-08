@@ -11,7 +11,7 @@
 #
 
 source [file join [file dirname [info script]] fts5_common.tcl]
-set testprefix fts5aa
+set testprefix fts5simple
 
 # If SQLITE_ENABLE_FTS5 is defined, omit this file.
 ifcapable !fts5 {
@@ -50,7 +50,6 @@ do_execsql_test 2.1 {
   INSERT INTO t1(t1) VALUES('integrity-check');
 } {}
 
-}
 
 #-------------------------------------------------------------------------
 #
@@ -63,12 +62,58 @@ do_execsql_test 3.0 {
   SELECT * FROM t1 WHERE t1 MATCH 'o*';
 } {one}
 
-breakpoint
 do_execsql_test 3.1 {
   INSERT INTO t1(t1) VALUES('integrity-check');
 } {}
 
-# db eval { SELECT fts5_decode(rowid, block) as x FROM t1_data } { puts $x }
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 4.1 {
+  CREATE VIRTUAL TABLE t11 USING fts5(content);
+  INSERT INTO t11(t11, rank) VALUES('pgsz', 32);
+  INSERT INTO t11 VALUES('another');
+  INSERT INTO t11 VALUES('string');
+  INSERT INTO t11 VALUES('of');
+  INSERT INTO t11 VALUES('text');
+}
+do_test 4.2 {
+  execsql { INSERT INTO t11(t11) VALUES('optimize') }
+} {}
+do_execsql_test 4.3 {
+  INSERT INTO t11(t11) VALUES('integrity-check');
+} {}
+
+#db eval { SELECT fts5_decode(rowid, block) as x FROM t11_data } { puts $x }
+
+#-------------------------------------------------------------------------
+reset_db
+set doc [string repeat "x y " 5]
+do_execsql_test 5.1 {
+  CREATE VIRTUAL TABLE yy USING fts5(content);
+  INSERT INTO yy(yy, rank) VALUES('pgsz', 32);
+  BEGIN;
+    INSERT INTO yy VALUES($doc);
+    INSERT INTO yy VALUES($doc);
+    INSERT INTO yy VALUES($doc);
+    INSERT INTO yy VALUES($doc);
+    INSERT INTO yy VALUES($doc);
+    INSERT INTO yy VALUES($doc);
+    INSERT INTO yy VALUES($doc);
+    INSERT INTO yy VALUES($doc);
+  COMMIT;
+}
+
+do_execsql_test 5.2 {
+  SELECT rowid FROM yy WHERE yy MATCH 'y' ORDER BY rowid ASC
+} {1 2 3 4 5 6 7 8}
+
+do_execsql_test 5.3 {
+  SELECT rowid FROM yy WHERE yy MATCH 'y' ORDER BY rowid DESC
+} {8 7 6 5 4 3 2 1}
+
+#db eval { SELECT fts5_decode(rowid, block) as x FROM yy_data } { puts $x }
 
 finish_test
 
