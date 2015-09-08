@@ -160,7 +160,7 @@ impl SqliteConnection {
     ///
     /// `SqliteConnection::open(path)` is equivalent to `SqliteConnection::open_with_flags(path,
     /// SQLITE_OPEN_READ_WRITE | SQLITE_OPEN_CREATE)`.
-    pub fn open<P: AsRef<Path>>(path: &P) -> SqliteResult<SqliteConnection> {
+    pub fn open<P: AsRef<Path>>(path: P) -> SqliteResult<SqliteConnection> {
         let flags = Default::default();
         SqliteConnection::open_with_flags(path, flags)
     }
@@ -175,7 +175,7 @@ impl SqliteConnection {
     ///
     /// Database Connection](http://www.sqlite.org/c3ref/open.html) for a description of valid
     /// flag combinations.
-    pub fn open_with_flags<P: AsRef<Path>>(path: &P, flags: SqliteOpenFlags)
+    pub fn open_with_flags<P: AsRef<Path>>(path: P, flags: SqliteOpenFlags)
             -> SqliteResult<SqliteConnection> {
         let c_path = try!(path_to_cstring(path.as_ref()));
         InnerSqliteConnection::open_with_flags(&c_path, flags).map(|db| {
@@ -393,10 +393,10 @@ impl SqliteConnection {
     /// fn load_my_extension(conn: &SqliteConnection) -> SqliteResult<()> {
     ///     let _guard = try!(SqliteLoadExtensionGuard::new(conn));
     ///
-    ///     conn.load_extension(Path::new("my_sqlite_extension"), None)
+    ///     conn.load_extension("my_sqlite_extension", None)
     /// }
     #[cfg(feature = "load_extension")]
-    pub fn load_extension<P: AsRef<Path>>(&self, dylib_path: &P, entry_point: Option<&str>) -> SqliteResult<()> {
+    pub fn load_extension<P: AsRef<Path>>(&self, dylib_path: P, entry_point: Option<&str>) -> SqliteResult<()> {
         self.db.borrow_mut().load_extension(dylib_path, entry_point)
     }
 
