@@ -1,5 +1,5 @@
-C Eponymous\svirtual\stables\sexist\sin\sthe\s"main"\sschema\sonly.\s\sEnforce\sthis\srule.
-D 2015-09-08T20:26:09.245
+C Enhance\sthe\sDBSTAT\svirtual\stable\swith\sa\snew\shidden\stable\s"schema"\sthat\sif\nset\swill\scause\sthe\stable\sto\sreport\son\sthe\sspecified\sschema\srather\sthan\son\n"main".\s\sAlso:\s\sFix\sa\sfaulty\sassert\sin\ssqlite3_context_db_handle().
+D 2015-09-08T21:12:53.186
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -289,7 +289,7 @@ F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
 F src/ctime.c 5a0b735dc95604766f5dac73973658eef782ee8b
 F src/date.c fb1c99172017dcc8e237339132c91a21a0788584
-F src/dbstat.c f402e77e25089c6003d0c60b3233b9b3947d599a
+F src/dbstat.c e637e7a7ff40ef32132a418c6fdf1cfb63aa27c7
 F src/delete.c 6792c80d7fb54c4df9f7680413952600e7439492
 F src/expr.c 3a76afcdac925294c39903b7002ddb9e5fd29863
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
@@ -405,7 +405,7 @@ F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
 F src/vdbe.c 6d85be995bd2308a5aa2a68c7b564c5d4cc1a6fb
 F src/vdbe.h 4bc88bd0e06f8046ee6ab7487c0015e85ad949ad
 F src/vdbeInt.h 8b54e01ad0463590e7cffabce0bc36da9ee4f816
-F src/vdbeapi.c bda74ef4b5103d7b4a4be36f936d3cf2b56a7d6f
+F src/vdbeapi.c b821d530bcb2900b4604cf5206f2177f3f881d15
 F src/vdbeaux.c fd00b489ab3f44f2dca1e4344faf289b7bfcf649
 F src/vdbeblob.c 1d7b97115e7bbac4c318db416d2ca83fc779544a
 F src/vdbemem.c 19b3036aa4d676e7103b0fb5efd6327da455f915
@@ -1383,7 +1383,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 33a14e7be1004abca7a30f675459138d7f8d72b1
-R 1f56442884ee3ab877d3d3fe559d09f2
+P 06f90bb274c4bb0c30585024c8d365d43c4162f2
+R 0484df860261efad073810ad511e031a
 U drh
-Z b9e298f3b9bca3ea8a0b0e129438890a
+Z 217b27586d12b1e6acf8f38c50e52968

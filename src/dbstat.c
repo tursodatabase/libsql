@@ -16,6 +16,9 @@
 ** information from an SQLite database in order to implement the
 ** "sqlite3_analyzer" utility.  See the ../tool/spaceanal.tcl script
 ** for an example implementation.
+**
+** Additional information is available on the "dbstat.html" page of the
+** official SQLite documentation.
 */
 
 #include "sqliteInt.h"   /* Requires access to internal data structures */
@@ -64,7 +67,8 @@
   "  unused     INTEGER,          /* Bytes of unused space on this page */" \
   "  mx_payload INTEGER,          /* Largest payload size of all cells */"  \
   "  pgoffset   INTEGER,          /* Offset of page in file */"             \
-  "  pgsize     INTEGER           /* Size of the page */"                   \
+  "  pgsize     INTEGER,          /* Size of the page */"                   \
+  "  schema     TEXT HIDDEN       /* Database schema being analyzed */"     \
   ");"
 
 
@@ -102,6 +106,7 @@ struct StatCursor {
   sqlite3_vtab_cursor base;
   sqlite3_stmt *pStmt;            /* Iterates through set of root pages */
   int isEof;                      /* After pStmt has returned SQLITE_DONE */
+  int iDb;                        /* Schema used for this query */
 
   StatPage aPage[32];
   int iPage;                      /* Current entry in aPage[] */
@@ -179,9 +184,32 @@ static int statDisconnect(sqlite3_vtab *pVtab){
 
 /*
 ** There is no "best-index". This virtual table always does a linear
-** scan of the binary VFS log file.
+** scan.  However, a schema=? constraint should cause this table to
+** operate on a different database schema, so check for it.
+**
+** idxNum is normally 0, but will be 1 if a schema=? constraint exists.
 */
 static int statBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
+  int i;
+
+  pIdxInfo->estimatedCost = 1.0e6;  /* Initial cost estimate */
+
+  /* Look for a valid schema=? constraint.  If found, change the idxNum to
+  ** 1 and request the value of that constraint be sent to xFilter.  And
+  ** lower the cost estimate to encourage the constrained version to be
+  ** used.
+  */
+  for(i=0; i<pIdxInfo->nConstraint; i++){
+    if( pIdxInfo->aConstraint[i].usable==0 ) continue;
+    if( pIdxInfo->aConstraint[i].op!=SQLITE_INDEX_CONSTRAINT_EQ ) continue;
+    if( pIdxInfo->aConstraint[i].iColumn!=10 ) continue;
+    pIdxInfo->idxNum = 1;
+    pIdxInfo->estimatedCost = 1.0;
+    pIdxInfo->aConstraintUsage[i].argvIndex = 1;
+    pIdxInfo->aConstraintUsage[i].omit = 1;
+    break;
+  }
+
 
   /* Records are always returned in ascending order of (name, path). 
   ** If this will satisfy the client, set the orderByConsumed flag so that 
@@ -201,7 +229,6 @@ static int statBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
     pIdxInfo->orderByConsumed = 1;
   }
 
-  pIdxInfo->estimatedCost = 10.0;
   return SQLITE_OK;
 }
 
@@ -211,36 +238,18 @@ static int statBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
 static int statOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
   StatTable *pTab = (StatTable *)pVTab;
   StatCursor *pCsr;
-  int rc;
 
   pCsr = (StatCursor *)sqlite3_malloc64(sizeof(StatCursor));
   if( pCsr==0 ){
-    rc = SQLITE_NOMEM;
+    return SQLITE_NOMEM;
   }else{
-    char *zSql;
     memset(pCsr, 0, sizeof(StatCursor));
     pCsr->base.pVtab = pVTab;
-
-    zSql = sqlite3_mprintf(
-        "SELECT 'sqlite_master' AS name, 1 AS rootpage, 'table' AS type"
-        "  UNION ALL  "
-        "SELECT name, rootpage, type"
-        "  FROM \"%w\".sqlite_master WHERE rootpage!=0"
-        "  ORDER BY name", pTab->db->aDb[pTab->iDb].zName);
-    if( zSql==0 ){
-      rc = SQLITE_NOMEM;
-    }else{
-      rc = sqlite3_prepare_v2(pTab->db, zSql, -1, &pCsr->pStmt, 0);
-      sqlite3_free(zSql);
-    }
-    if( rc!=SQLITE_OK ){
-      sqlite3_free(pCsr);
-      pCsr = 0;
-    }
+    pCsr->iDb = pTab->iDb;
   }
 
   *ppCursor = (sqlite3_vtab_cursor *)pCsr;
-  return rc;
+  return SQLITE_OK;
 }
 
 static void statClearPage(StatPage *p){
@@ -265,6 +274,7 @@ static void statResetCsr(StatCursor *pCsr){
   pCsr->iPage = 0;
   sqlite3_free(pCsr->zPath);
   pCsr->zPath = 0;
+  pCsr->isEof = 0;
 }
 
 /*
@@ -427,7 +437,7 @@ static int statNext(sqlite3_vtab_cursor *pCursor){
   char *z;
   StatCursor *pCsr = (StatCursor *)pCursor;
   StatTable *pTab = (StatTable *)pCursor->pVtab;
-  Btree *pBt = pTab->db->aDb[pTab->iDb].pBt;
+  Btree *pBt = pTab->db->aDb[pCsr->iDb].pBt;
   Pager *pPager = sqlite3BtreePager(pBt);
 
   sqlite3_free(pCsr->zPath);
@@ -565,9 +575,43 @@ static int statFilter(
   int argc, sqlite3_value **argv
 ){
   StatCursor *pCsr = (StatCursor *)pCursor;
+  StatTable *pTab = (StatTable*)(pCursor->pVtab);
+  char *zSql;
+  int rc = SQLITE_OK;
+  char *zMaster;
 
+  if( idxNum==1 ){
+    const char *zDbase = (const char*)sqlite3_value_text(argv[0]);
+    pCsr->iDb = sqlite3FindDbName(pTab->db, zDbase);
+    if( pCsr->iDb<0 ){
+      sqlite3_free(pCursor->pVtab->zErrMsg);
+      pCursor->pVtab->zErrMsg = sqlite3_mprintf("no such schema: %s", zDbase);
+      return pCursor->pVtab->zErrMsg ? SQLITE_ERROR : SQLITE_NOMEM;
+    }
+  }else{
+    pCsr->iDb = pTab->iDb;
+  }
   statResetCsr(pCsr);
-  return statNext(pCursor);
+  sqlite3_finalize(pCsr->pStmt);
+  pCsr->pStmt = 0;
+  zMaster = pCsr->iDb==1 ? "sqlite_temp_master" : "sqlite_master";
+  zSql = sqlite3_mprintf(
+      "SELECT 'sqlite_master' AS name, 1 AS rootpage, 'table' AS type"
+      "  UNION ALL  "
+      "SELECT name, rootpage, type"
+      "  FROM \"%w\".%s WHERE rootpage!=0"
+      "  ORDER BY name", pTab->db->aDb[pCsr->iDb].zName, zMaster);
+  if( zSql==0 ){
+    return SQLITE_NOMEM;
+  }else{
+    rc = sqlite3_prepare_v2(pTab->db, zSql, -1, &pCsr->pStmt, 0);
+    sqlite3_free(zSql);
+  }
+
+  if( rc==SQLITE_OK ){
+    rc = statNext(pCursor);
+  }
+  return rc;
 }
 
 static int statColumn(
@@ -604,10 +648,15 @@ static int statColumn(
     case 8:            /* pgoffset */
       sqlite3_result_int64(ctx, pCsr->iOffset);
       break;
-    default:           /* pgsize */
-      assert( i==9 );
+    case 9:            /* pgsize */
       sqlite3_result_int(ctx, pCsr->szPage);
       break;
+    default: {          /* schema */
+      sqlite3 *db = sqlite3_context_db_handle(ctx);
+      int iDb = pCsr->iDb;
+      sqlite3_result_text(ctx, db->aDb[iDb].zName, -1, SQLITE_STATIC);
+      break;
+    }
   }
   return SQLITE_OK;
 }
