@@ -4302,7 +4302,7 @@ void CompressTables(struct lemon *lemp)
   struct state *stp;
   struct action *ap, *ap2;
   struct rule *rp, *rp2, *rbest;
-  int nbest, n, nshift;
+  int nbest, n;
   int i;
   int usesWildcard;
 
