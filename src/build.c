@@ -357,12 +357,14 @@ Table *sqlite3LocateTable(
   if( p==0 ){
     const char *zMsg = isView ? "no such view" : "no such table";
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-    /* If zName is the not the name of a table in the schema created using
-    ** CREATE, then check to see if it is the name of an virtual table that
-    ** can be an eponymous virtual table. */
-    Module *pMod = (Module*)sqlite3HashFind(&pParse->db->aModule, zName);
-    if( pMod && sqlite3VtabEponymousTableInit(pParse, pMod) ){
-      return pMod->pEpoTab;
+    if( sqlite3FindDbName(pParse->db, zDbase)<1 ){
+      /* If zName is the not the name of a table in the schema created using
+      ** CREATE, then check to see if it is the name of an virtual table that
+      ** can be an eponymous virtual table. */
+      Module *pMod = (Module*)sqlite3HashFind(&pParse->db->aModule, zName);
+      if( pMod && sqlite3VtabEponymousTableInit(pParse, pMod) ){
+        return pMod->pEpoTab;
+      }
     }
 #endif
     if( zDbase ){
