@@ -1,5 +1,5 @@
-C When\srunning\sa\sCREATE\sTABLE\sAS,\smake\sthe\sinitial\stemporary\ssqlite_master\sentry\s\nfor\sthe\snew\stable\sa\sreal\srecord\srather\sthan\sa\sNULL,\sin\scase\sthe\squery\safter\s\nthe\sAS\sactually\stries\sto\sread\sthe\ssqlite_master\stable.\nFix\sfor\sticket\s[acd12990885d9276].
-D 2015-09-09T13:28:06.029
+C Fix\sharmless\scompiler\swarnings\sin\sFTS5.
+D 2015-09-09T17:17:22.204
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -110,7 +110,7 @@ F ext/fts5/fts5Int.h f65d41f66accad0a289d6bd66b13c07d2932f9be
 F ext/fts5/fts5_aux.c 7a307760a9c57c750d043188ec0bad59f5b5ec7e
 F ext/fts5/fts5_buffer.c 80f9ba4431848cb857e3d2158f5280093dcd8015
 F ext/fts5/fts5_config.c 80b61fd2c6844b64a3e72a64572d50a812da9384
-F ext/fts5/fts5_expr.c 1c24e1a2ffb286bfe37e537a43b7fadabfe993d4
+F ext/fts5/fts5_expr.c 3f10e630dcdc90f1851ab21f8144d96c7f3a504f
 F ext/fts5/fts5_hash.c 4bf4b99708848357b8a2b5819e509eb6d3df9246
 F ext/fts5/fts5_index.c 950e37028cc81ae21534819e79c73aea7efa6c8e
 F ext/fts5/fts5_main.c e9d0892424bb7f0a8b58613d4ff75cb650cf286e
@@ -1383,7 +1383,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fe9ffe5eed7d376f3f08c78c1ce5514c886f3479
-R 3da43b6baf65219c2aa2e7ef155b204b
-U drh
-Z 28f0a6c435a4256f78d56b3bdcebab87
+P 4a18d8bd4cc66eb08c6198cdf6e14f1bce0ec05a
+R c19171a4b0839ea44fb7f32fd3fd60cd
+U mistachkin
+Z f42efae15b7a6bd4c85d55b2c5dd8a8e
