@@ -1,5 +1,5 @@
-C Fix\san\sassert()\senabled\sby\sSQLITE_ENABLE_EXPENSIVE_ASSERT\sin\swal.c.
-D 2015-09-09T19:44:33.776
+C Fix\sharmless\scompiler\swarning\sin\sFTS5.
+D 2015-09-09T23:54:46.415
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -110,7 +110,7 @@ F ext/fts5/fts5Int.h f65d41f66accad0a289d6bd66b13c07d2932f9be
 F ext/fts5/fts5_aux.c 7a307760a9c57c750d043188ec0bad59f5b5ec7e
 F ext/fts5/fts5_buffer.c 80f9ba4431848cb857e3d2158f5280093dcd8015
 F ext/fts5/fts5_config.c 80b61fd2c6844b64a3e72a64572d50a812da9384
-F ext/fts5/fts5_expr.c 3f10e630dcdc90f1851ab21f8144d96c7f3a504f
+F ext/fts5/fts5_expr.c a7726fe7045eec7caca8a074af747c8ea3545b83
 F ext/fts5/fts5_hash.c 4bf4b99708848357b8a2b5819e509eb6d3df9246
 F ext/fts5/fts5_index.c 950e37028cc81ae21534819e79c73aea7efa6c8e
 F ext/fts5/fts5_main.c e9d0892424bb7f0a8b58613d4ff75cb650cf286e
@@ -1383,7 +1383,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 89bfdbfe943adce8e02c84ede014fcfed504c5d3
-R d3f44bc9ae925ae28349d99ef74ecbc2
-U dan
-Z 689075f9d506170808fdd1fd6d304ed8
+P 8d2ed150a7a15626965cf994ef48c3ab61eca6ec
+R 9c684262bd2bed914ee53743d3728f7e
+U mistachkin
+Z 5aaf25a787ca8169e60e163e7c3cad6b

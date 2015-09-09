@@ -318,7 +318,6 @@ static int fts5ExprSynonymPoslist(
   int *pbDel,                     /* OUT: Caller should sqlite3_free(*pa) */
   u8 **pa, int *pn
 ){
-  Fts5PoslistWriter writer = {0};
   Fts5PoslistReader aStatic[4];
   Fts5PoslistReader *aIter = aStatic;
   int nIter = 0;
