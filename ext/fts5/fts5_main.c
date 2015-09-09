@@ -1317,7 +1317,7 @@ static int fts5SpecialInsert(
     rc = sqlite3Fts5StorageMerge(pTab->pStorage, nMerge);
   }else if( 0==sqlite3_stricmp("integrity-check", z) ){
     rc = sqlite3Fts5StorageIntegrity(pTab->pStorage);
-#ifdef SQLITE_TEST
+#ifdef SQLITE_DEBUG
   }else if( 0==sqlite3_stricmp("prefix-index", z) ){
     pConfig->bPrefixIndex = sqlite3_value_int(pVal);
 #endif
