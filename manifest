@@ -1,5 +1,5 @@
-C Fix\sa\spossible\sNULL\spointer\sderef\swhen\susing\sSQLITE_ENABLE_MEMORY_MANAGEMENT.
-D 2015-09-09T19:27:10.029
+C Fix\san\sassert()\senabled\sby\sSQLITE_ENABLE_EXPENSIVE_ASSERT\sin\swal.c.
+D 2015-09-09T19:44:33.776
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -413,7 +413,7 @@ F src/vdbesort.c f5009e7a35e3065635d8918b9a31f498a499976b
 F src/vdbetrace.c 8befe829faff6d9e6f6e4dee5a7d3f85cc85f1a0
 F src/vtab.c 2ecfe020c10e0a0c7b078203fdba2fae844744bc
 F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
-F src/wal.c 8cd07f1f99e1a81346db1c9da879bef6c6f97cf6
+F src/wal.c 18b0ed49830cf04fe2d68224b41838a73ac6cd24
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 2e14d17f592d176b6dc879c33fbdec4fbccaa2ba
 F src/where.c 1227687e7892d4009f3c3433e974eb9c9e3c4d6a
@@ -1383,7 +1383,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 280fd3a482978b4a488a8b425721e451c2a30745
-R 931638393b6c80a6b7791df11d019edc
-U drh
-Z 7c6427f02c08a37206c926b94f51cdad
+P 89bfdbfe943adce8e02c84ede014fcfed504c5d3
+R d3f44bc9ae925ae28349d99ef74ecbc2
+U dan
+Z 689075f9d506170808fdd1fd6d304ed8
