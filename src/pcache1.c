@@ -1193,7 +1193,8 @@ int sqlite3PcacheReleaseMemory(int nReq){
     PgHdr1 *p;
     pcache1EnterMutex(&pcache1.grp);
     while( (nReq<0 || nFree<nReq)
-       &&  (p=pcache1.grp.lru.pLruPrev)->isAnchor==0
+       &&  (p=pcache1.grp.lru.pLruPrev)!=0
+       &&  p->isAnchor==0
     ){
       nFree += pcache1MemSize(p->page.pBuf);
 #ifdef SQLITE_PCACHE_SEPARATE_HEADER

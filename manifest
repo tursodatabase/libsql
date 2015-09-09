@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarning.
-D 2015-09-09T17:23:48.211
+C Fix\sa\spossible\sNULL\spointer\sderef\swhen\susing\sSQLITE_ENABLE_MEMORY_MANAGEMENT.
+D 2015-09-09T19:27:10.029
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -331,7 +331,7 @@ F src/pager.h 6d435f563b3f7fcae4b84433b76a6ac2730036e2
 F src/parse.y f599aa5e871a493330d567ced93de696f61f48f7
 F src/pcache.c 24be750c79272e0ca7b6e007bc94999700f3e5ef
 F src/pcache.h 9968603796240cdf83da7e7bef76edf90619cea9
-F src/pcache1.c bf2afe64a3dedb8643c8dcbd94a145cc80ab2a67
+F src/pcache1.c ca0eeaaf9ffab7a9ded47d54639d8ab147d442e6
 F src/pragma.c d71b813e67bf03f3116b9dd5164fbfd81ec673a2
 F src/pragma.h 631a91c8b0e6ca8f051a1d8a4a0da4150e04620a
 F src/prepare.c 82e5db1013846a819f198336fed72c44c974e7b1
@@ -1383,7 +1383,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2cdb18778f20baa902e54f218ba26d2bacf0801e
-R acfdd2857f10498b6f74f8764b68244c
-U mistachkin
-Z 4d9c06d0e6e18e1cffef7b0cc1d40a2c
+P 280fd3a482978b4a488a8b425721e451c2a30745
+R 931638393b6c80a6b7791df11d019edc
+U drh
+Z 7c6427f02c08a37206c926b94f51cdad
