@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sin\sFTS5.
-D 2015-09-09T17:17:22.204
+C Fix\sharmless\scompiler\swarning.
+D 2015-09-09T17:23:48.211
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -416,7 +416,7 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 8cd07f1f99e1a81346db1c9da879bef6c6f97cf6
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 2e14d17f592d176b6dc879c33fbdec4fbccaa2ba
-F src/where.c ed1cd1cb0434bca9f4a5379582c637bf393b34ac
+F src/where.c 1227687e7892d4009f3c3433e974eb9c9e3c4d6a
 F src/whereInt.h 292d3ac90da4eab1e03ac8452f1add746bcafaa1
 F src/wherecode.c 6ac8599523f4840d9efac335329f627ebf3f79fd
 F src/whereexpr.c 2473e4350e30f9b55d1c6a8f66ca23c689f23f1d
@@ -1383,7 +1383,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4a18d8bd4cc66eb08c6198cdf6e14f1bce0ec05a
-R c19171a4b0839ea44fb7f32fd3fd60cd
+P 2cdb18778f20baa902e54f218ba26d2bacf0801e
+R acfdd2857f10498b6f74f8764b68244c
 U mistachkin
-Z f42efae15b7a6bd4c85d55b2c5dd8a8e
+Z 4d9c06d0e6e18e1cffef7b0cc1d40a2c

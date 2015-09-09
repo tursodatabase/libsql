@@ -271,7 +271,7 @@ static WhereTerm *whereScanInit(
   u32 opMask,             /* Operator(s) to scan for */
   Index *pIdx             /* Must be compatible with this index */
 ){
-  int j;
+  int j = 0;
 
   /* memset(pScan, 0, sizeof(*pScan)); */
   pScan->pOrigWC = pWC;
