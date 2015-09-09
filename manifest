@@ -1,5 +1,5 @@
-C Remove\san\sunused\slocal\svariable\sfrom\sLemon.
-D 2015-09-08T21:16:46.221
+C When\srunning\sa\sCREATE\sTABLE\sAS,\smake\sthe\sinitial\stemporary\ssqlite_master\sentry\s\nfor\sthe\snew\stable\sa\sreal\srecord\srather\sthan\sa\sNULL,\sin\scase\sthe\squery\safter\s\nthe\sAS\sactually\stries\sto\sread\sthe\ssqlite_master\stable.\nFix\sfor\sticket\s[acd12990885d9276].
+D 2015-09-09T13:28:06.029
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -284,7 +284,7 @@ F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
 F src/btree.c 4084d9eed2817331f6e6a82230ba30e448cad497
 F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
 F src/btreeInt.h 8177c9ab90d772d6d2c6c517e05bed774b7c92c0
-F src/build.c ba9e1529730407cdf491480745716d6fbdc28cd3
+F src/build.c f81380bc4d5d239c18b42982a9866a94489fd444
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
 F src/ctime.c 5a0b735dc95604766f5dac73973658eef782ee8b
@@ -1039,7 +1039,7 @@ F test/sync.test a34cd43e98b7fb84eabbf38f7ed8f7349b3f3d85
 F test/syscall.test d2fdaad713f103ac611fe7ef9b724c7b69f8149c
 F test/sysfault.test fa776e60bf46bdd3ae69f0b73e46ee3977a58ae6
 F test/tabfunc01.test fa9d8dfc75747019e0be98d3b6ac68d18632d328
-F test/table.test 33bf0d1fd07f304582695184b8e6feb017303816
+F test/table.test b708f3e5fa2542fa51dfab21fc07b36ea445cb2f
 F test/tableapi.test 2674633fa95d80da917571ebdd759a14d9819126
 F test/tableopts.test dba698ba97251017b7c80d738c198d39ab747930
 F test/tclsqlite.test 7fb866443c7deceed22b63948ccd6f76b52ad054
@@ -1383,7 +1383,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6beb512c7a3c3649b56f0df1ca77855535a87ba7
-R 0ee50599e53bafcea0ab0d2587bdc748
+P fe9ffe5eed7d376f3f08c78c1ce5514c886f3479
+R 3da43b6baf65219c2aa2e7ef155b204b
 U drh
-Z b332ec0feed7e0dc71dd5e410ae1a5f1
+Z 28f0a6c435a4256f78d56b3bdcebab87
