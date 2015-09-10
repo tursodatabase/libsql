@@ -1,5 +1,5 @@
-C Fix\san\sfts5\sproblem\sthat\scould\soccur\sif\sa\sterm\sand\sthe\sfirst\sassociated\srowid\sare\son\sdifferent\sleaf\spages.
-D 2015-09-10T10:01:30.421
+C Revert\san\saccidentally\scommitted\smakefile\schange.
+D 2015-09-10T10:40:00.846
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -261,7 +261,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk e67b73755e1f28c2d18d7953ca75c901c0be617b
+F main.mk 3dc03c972b9d2b2561b2b43563c88eb115ce6a4c
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
 F mkopcodeh.awk 0e7f04a8eb90f92259e47d80110e4e98d7ce337a
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
@@ -1384,7 +1384,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fab245bea4f283714c17bca22428d5eb4db5935a
-R 4069a06076810ffdc49a2b6325563d3b
+P ffe2796ac9244c62325fce4960f26c653321623c
+R 3e993cd63203ea495a25a013f0d29e9a
 U dan
-Z ba033d01ce03ffe119d3bd7a8ead0adc
+Z 2b689e116b6ca00fda3dee55158d2d46
