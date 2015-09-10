@@ -2135,6 +2135,7 @@ struct Expr {
 #define EP_ConstFunc 0x080000 /* A SQLITE_FUNC_CONSTANT or _SLOCHNG function */
 #define EP_CanBeNull 0x100000 /* Can be null despite NOT NULL constraint */
 #define EP_Subquery  0x200000 /* Tree contains a TK_SELECT operator */
+#define EP_Alias     0x400000 /* Is an alias for a result set column */
 
 /*
 ** Combinations of two or more EP_* flags
@@ -3190,6 +3191,11 @@ const sqlite3_mem_methods *sqlite3MemGetMemsys5(void);
   sqlite3_mutex *sqlite3MutexAlloc(int);
   int sqlite3MutexInit(void);
   int sqlite3MutexEnd(void);
+#endif
+#if !defined(SQLITE_MUTEX_OMIT) && !defined(SQLITE_MUTEX_NOOP)
+  void sqlite3MemoryBarrier(void);
+#else
+# define sqlite3MemoryBarrier();
 #endif
 
 sqlite3_int64 sqlite3StatusValue(int);

@@ -83,6 +83,7 @@ static const char * const jsonType[] = {
 #define JNODE_REPLACE 0x08         /* Replace with JsonNode.iVal */
 #define JNODE_APPEND  0x10         /* More ARRAY/OBJECT entries at u.iAppend */
 #define JNODE_JSON    0x20         /* Treat REPLACE as JSON text */
+#define JNODE_LABEL   0x40         /* Is a label of an object */
 
 
 /* A single node of parsed JSON
@@ -583,6 +584,7 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
   u32 j;
   int iThis;
   int x;
+  JsonNode *pNode;
   while( isspace(pParse->zJson[i]) ){ i++; }
   if( (c = pParse->zJson[i])==0 ) return 0;
   if( c=='{' ){
@@ -597,7 +599,9 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
         return -1;
       }
       if( pParse->oom ) return -1;
-      if( pParse->aNode[pParse->nNode-1].eType!=JSON_STRING ) return -1;
+      pNode = &pParse->aNode[pParse->nNode-1];
+      if( pNode->eType!=JSON_STRING ) return -1;
+      pNode->jnFlags |= JNODE_LABEL;
       j = x;
       while( isspace(pParse->zJson[j]) ){ j++; }
       if( pParse->zJson[j]!=':' ) return -1;
@@ -1036,13 +1040,20 @@ static void jsonParseFunc(
   jsonParseFindParents(&x);
   jsonInit(&s, ctx);
   for(i=0; i<x.nNode; i++){
-    jsonPrintf(100, &s,"node %3u: %7s n=%-4d up=%d\n",
-               i, jsonType[x.aNode[i].eType], x.aNode[i].n, x.aUp[i]);
-    if( x.aNode[i].u.zJContent!=0 ){
-      jsonAppendRaw(&s, "    text: ", 10);
-      jsonAppendRaw(&s, x.aNode[i].u.zJContent, x.aNode[i].n);
-      jsonAppendRaw(&s, "\n", 1);
+    const char *zType;
+    if( x.aNode[i].jnFlags & JNODE_LABEL ){
+      assert( x.aNode[i].eType==JSON_STRING );
+      zType = "label";
+    }else{
+      zType = jsonType[x.aNode[i].eType];
     }
+    jsonPrintf(100, &s,"node %3u: %7s n=%-4d up=%-4d",
+               i, zType, x.aNode[i].n, x.aUp[i]);
+    if( x.aNode[i].u.zJContent!=0 ){
+      jsonAppendRaw(&s, " ", 1);
+      jsonAppendRaw(&s, x.aNode[i].u.zJContent, x.aNode[i].n);
+    }
+    jsonAppendRaw(&s, "\n", 1);
   }
   jsonParseReset(&x);
   jsonResult(&s);
@@ -1427,6 +1438,7 @@ typedef struct JsonEachCursor JsonEachCursor;
 struct JsonEachCursor {
   sqlite3_vtab_cursor base;  /* Base class - must be first */
   u32 iRowid;                /* The rowid */
+  u32 iBegin;                /* The first node of the scan */
   u32 i;                     /* Index in sParse.aNode[] of current row */
   u32 iEnd;                  /* EOF when i equals or exceeds this value */
   u8 eType;                  /* Type of top-level element */
@@ -1534,16 +1546,10 @@ static int jsonEachEof(sqlite3_vtab_cursor *cur){
 static int jsonEachNext(sqlite3_vtab_cursor *cur){
   JsonEachCursor *p = (JsonEachCursor*)cur;
   if( p->bRecursive ){
-    if( p->i==0 ){
-      p->i = 1;
-    }else{
-      u32 iUp = p->sParse.aUp[p->i];
-      JsonNode *pUp = &p->sParse.aNode[iUp];
-      p->i++;
-      if( pUp->eType==JSON_OBJECT && (pUp->n + iUp >= p->i) ) p->i++;
-    }
+    if( p->sParse.aNode[p->i].jnFlags & JNODE_LABEL ) p->i++;
+    p->i++;
     p->iRowid++;
-    if( p->i<p->sParse.nNode ){
+    if( p->i<p->iEnd ){
       u32 iUp = p->sParse.aUp[p->i];
       JsonNode *pUp = &p->sParse.aNode[iUp];
       p->eType = pUp->eType;
@@ -1597,8 +1603,9 @@ static void jsonEachComputePath(
     jsonPrintf(30, pStr, "[%d]", pUp->u.iKey);
   }else{
     assert( pUp->eType==JSON_OBJECT );
-    if( pNode->eType>=JSON_ARRAY ) pNode--;
+    if( (pNode->jnFlags & JNODE_LABEL)==0 ) pNode--;
     assert( pNode->eType==JSON_STRING );
+    assert( pNode->jnFlags & JNODE_LABEL );
     jsonPrintf(pNode->n+1, pStr, ".%.*s", pNode->n-2, pNode->u.zJContent+1);
   }
 }
@@ -1629,27 +1636,28 @@ static int jsonEachColumn(
       break;
     }
     case JEACH_VALUE: {
-      if( p->eType==JSON_OBJECT && p->i>0 ) pThis++;
+      if( pThis->jnFlags & JNODE_LABEL ) pThis++;
       jsonReturn(pThis, ctx, 0);
       break;
     }
     case JEACH_TYPE: {
-      if( p->eType==JSON_OBJECT && p->i>0 ) pThis++;
+      if( pThis->jnFlags & JNODE_LABEL ) pThis++;
       sqlite3_result_text(ctx, jsonType[pThis->eType], -1, SQLITE_STATIC);
       break;
     }
     case JEACH_ATOM: {
-      if( p->eType==JSON_OBJECT && p->i>0 ) pThis++;
+      if( pThis->jnFlags & JNODE_LABEL ) pThis++;
       if( pThis->eType>=JSON_ARRAY ) break;
       jsonReturn(pThis, ctx, 0);
       break;
     }
     case JEACH_ID: {
-      sqlite3_result_int64(ctx, (sqlite3_int64)p->i + (p->eType==JSON_OBJECT));
+      sqlite3_result_int64(ctx, 
+         (sqlite3_int64)p->i + ((pThis->jnFlags & JNODE_LABEL)!=0));
       break;
     }
     case JEACH_PARENT: {
-      if( p->i>0 && p->bRecursive ){
+      if( p->i>p->iBegin && p->bRecursive ){
         sqlite3_result_int64(ctx, (sqlite3_int64)p->sParse.aUp[p->i]);
       }
       break;
@@ -1794,7 +1802,6 @@ static int jsonEachFilter(
     JsonNode *pNode;
     if( idxNum==3 ){
       const char *zErr = 0;
-      p->bRecursive = 0;
       n = sqlite3_value_bytes(argv[1]);
       p->zPath = sqlite3_malloc64( n+1 );
       if( p->zPath==0 ) return SQLITE_NOMEM;
@@ -1811,12 +1818,18 @@ static int jsonEachFilter(
     }else{
       pNode = p->sParse.aNode;
     }
-    p->i = (int)(pNode - p->sParse.aNode);
+    p->iBegin = p->i = (int)(pNode - p->sParse.aNode);
     p->eType = pNode->eType;
     if( p->eType>=JSON_ARRAY ){
       pNode->u.iKey = 0;
       p->iEnd = p->i + pNode->n + 1;
-      if( !p->bRecursive ) p->i++;
+      if( p->bRecursive ){
+        if( p->i>0 && (p->sParse.aNode[p->i-1].jnFlags & JNODE_LABEL)!=0 ){
+          p->i--;
+        }
+      }else{
+        p->i++;
+      }
     }else{
       p->iEnd = p->i+1;
     }

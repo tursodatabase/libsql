@@ -823,5 +823,17 @@ do_execsql_test table-18.2 {
   PRAGMA integrity_check;
 } {ok}
 
+# 2015-09-09
+# Ticket [https://www.sqlite.org/src/info/acd12990885d9276]
+# "CREATE TABLE ... AS SELECT ... FROM sqlite_master" fails because the row
+# in the sqlite_master table for the next table is initially populated
+# with a NULL instead of a record created by OP_Record.
+#
+do_execsql_test table-19.1 {
+  CREATE TABLE t19 AS SELECT * FROM sqlite_master;
+  SELECT name FROM t19 ORDER BY name;
+} {{} savepoint t10 t11 t12 t13 t16 t2 t3 t3\"xyz t4\"abc t7 t8 t9 tablet8 test1 weird}
+
+
 
 finish_test
