@@ -1,5 +1,5 @@
-C Fix\sthe\sjson_tree()\sscan\sfor\sthe\scase\swhen\sa\spath\sis\ssupplied.\s\sAdd\snew\njson1\stest\scases.
-D 2015-09-10T03:29:11.778
+C Attempt\sto\sdeclare\ssqlite3MemoryBarrier()\scorrectly\sfor\sall\spossible\nbuild\sconfigurations.
+D 2015-09-10T04:17:06.273
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -314,7 +314,7 @@ F src/mem5.c 61eeb90134f9a5be6c2e68d8daae7628b25953fb
 F src/memjournal.c 3eb2c0b51adbd869cb6a44780323f05fa904dc85
 F src/msvc.h d9ba56c6851227ab44b3f228a35f3f5772296495
 F src/mutex.c a39809c6c33f1ebc9cc781186c338ad90433e1e7
-F src/mutex.h 012503b51ccfcf85b8b3846709a4c60a5839f16c
+F src/mutex.h 779d588e3b7756ec3ecf7d78cde1d84aba414f85
 F src/mutex_noop.c 9d4309c075ba9cc7249e19412d3d62f7f94839c4
 F src/mutex_unix.c 7762c8ec907379204f2ed751a0e33663ab1c14d7
 F src/mutex_w32.c 2e025e6642eaf27597403690980f560d1a91f62c
@@ -344,7 +344,7 @@ F src/shell.c 6332ef06db1390ef812cfdff1fc97b4fd76cdd42
 F src/sqlite.h.in 378bebc8fe6a88bade25e5f23b7e6123fdc64b00
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h f700e6a9dd1fdcccc9951ab022b366fb66b9e413
-F src/sqliteInt.h dba8add0b95fcea1047af7a6875a1e305fcb96d7
+F src/sqliteInt.h 788dc0ea7ba32ec9fec06c628c1792d7b4753d86
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c f266ad8a2892d659b74f0f50cb6a88b6e7c12179
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
@@ -1384,7 +1384,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8250e2a487ee12c9a2dea5603ab60aed51e5dc7b
-R c3aaad669751ca08269190cf668389ec
+P 6adc7de76acee6cfb5ff761739e7a8de7b5bf4b2
+R ab2159c48cb0bcac4127d05e9b297a43
 U drh
-Z cc385c8c27ee83d7a7141ac119ad0322
+Z 09155c7a88a3966f473df9eae10e03b4

@@ -3191,7 +3191,11 @@ const sqlite3_mem_methods *sqlite3MemGetMemsys5(void);
   sqlite3_mutex *sqlite3MutexAlloc(int);
   int sqlite3MutexInit(void);
   int sqlite3MutexEnd(void);
+#endif
+#if !defined(SQLITE_MUTEX_OMIT) && !defined(SQLITE_MUTEX_NOOP)
   void sqlite3MemoryBarrier(void);
+#else
+# define sqlite3MemoryBarrier();
 #endif
 
 sqlite3_int64 sqlite3StatusValue(int);
