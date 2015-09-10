@@ -3970,7 +3970,10 @@ static void fts5PoslistCallback(
   void *pCtx, 
   const u8 *pChunk, int nChunk
 ){
-  fts5BufferAppendBlob(&p->rc, (Fts5Buffer*)pCtx, nChunk, pChunk);
+  assert_nc( nChunk>=0 );
+  if( nChunk>0 ){
+    fts5BufferAppendBlob(&p->rc, (Fts5Buffer*)pCtx, nChunk, pChunk);
+  }
 }
 
 /*
