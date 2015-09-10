@@ -1,5 +1,5 @@
-C Experimental\simplementation\sof\ssqlite3_result_subtype()\sand\nsqlite3_value_subtype()\sinterfaces.
-D 2015-09-10T20:34:56.434
+C Make\sthe\ssqlite3_value_subtype()\sand\ssqlite3_result_subtype()\sinterfaces\navailable\sto\sloadable\sextensions.
+D 2015-09-10T20:40:21.038
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -304,7 +304,7 @@ F src/insert.c 076dc5876e261a9908603d54cfc5344cd680166c
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c d344a95d60c24e2f490ee59db9784b1b17439012
-F src/loadext.c dfcee8c7c032cd0fd55af3e0fc1fcfb01e426df2
+F src/loadext.c f0b66d28e377fd6c6d36cc9d92df1ff251ebee44
 F src/main.c e17fcffae4306a9b8334faf3bac80d7396850b54
 F src/malloc.c 3a37ce6979a40f499d8cea9e9ab4e8517854d35d
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
@@ -344,7 +344,7 @@ F src/select.c c17613385bc6b095c421b1f30548814f5fd8a9b2
 F src/shell.c 6332ef06db1390ef812cfdff1fc97b4fd76cdd42
 F src/sqlite.h.in 65ff1449e8c181da9ec752e8304e0a1efffaf47f
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
-F src/sqlite3ext.h 5088f0b63491677da848c0d07d5711781302d362
+F src/sqlite3ext.h 64350bf36833a56ad675e27392a913f417c5c308
 F src/sqliteInt.h 788dc0ea7ba32ec9fec06c628c1792d7b4753d86
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c f266ad8a2892d659b74f0f50cb6a88b6e7c12179
@@ -1386,10 +1386,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f5580f08538636ffb1367e717a33756288ccddde
-R a16668bbab7e8bb266cf503c6d51d6a9
-T *branch * subtypes
-T *sym-subtypes *
-T -sym-trunk *
+P 7b5be299c617a3d3ed327ed30ef0a66a62c85b1f
+R 3b51d146c21b59a26b4bd6730fa2e17a
 U drh
-Z 5917071f863dd81d33499ad8df67eb85
+Z 3c2729e75edd6da9e7ec99089fe2f222
