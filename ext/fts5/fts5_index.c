@@ -87,7 +87,6 @@
 **     + total number of segments in level.
 **     + for each segment from oldest to newest:
 **         + segment id (always > 0)
-**         + b-tree height (1 -> root is leaf, 2 -> root is parent of leaf etc.)
 **         + first leaf page number (often 1, always greater than 0)
 **         + final leaf page number
 **
@@ -95,15 +94,16 @@
 **
 **   A single record within the %_data table. The data is a list of varints.
 **   The first value is the number of rows in the index. Then, for each column
-**   from left to right, the total number of tokens in the column for all 
+**   from left to right, the total number of tokens in the column for all
 **   rows of the table.
 **
 ** 3. Segment leaves:
 **
-**   TERM DOCLIST FORMAT:
+**   TERM/DOCLIST FORMAT:
 **
 **     Most of each segment leaf is taken up by term/doclist data. The 
-**     general format of the term/doclist data is:
+**     general format of term/doclist, starting with the first term
+**     on the leaf page, is:
 **
 **         varint : size of first term
 **         blob:    first term data
@@ -123,7 +123,6 @@
 **           varint:  rowid delta (always > 0)
 **           poslist: next poslist
 **         }
-**         0x00 byte
 **
 **     poslist format:
 **
@@ -143,11 +142,28 @@
 **           varint: offset delta + 2
 **         }
 **
-**   PAGINATION
+**   PAGE FORMAT
 **
-**     The format described above is only accurate if the entire term/doclist
-**     data fits on a single leaf page. If this is not the case, the format
-**     is changed in two ways:
+**     Each leaf page begins with a 4-byte header containing 2 16-bit 
+**     unsigned integer fields in big-endian format. They are:
+**
+**       * The byte offset of the first rowid on the page, if it exists
+**         and occurs before the first term (otherwise 0).
+**
+**       * The byte offset of the start of the page footer. If the page
+**         footer is 0 bytes in size, then this field is the same as the
+**         size of the leaf page in bytes.
+**
+**     The page footer consists of a single varint for each term located
+**     on the page. Each varint is the byte offset of the current term
+**     within the page, delta-compressed against the previous value. In
+**     other words, the first varint in the footer is the byte offset of
+**     the first term, the second is the byte offset of the second less that
+**     of the first, and so on.
+**
+**     The term/doclist format described above is accurate if the entire
+**     term/doclist data fits on a single leaf page. If this is not the case,
+**     the format is changed in two ways:
 **
 **       + if the first rowid on a page occurs before the first term, it
 **         is stored as a literal value:
@@ -159,45 +175,6 @@
 **
 **             varint : size of first term
 **             blob:    first term data
-**
-**     Each leaf page begins with:
-**
-**       + 2-byte unsigned containing offset to first rowid (or 0).
-**       + 2-byte unsigned containing offset to first term (or 0).
-**
-**   Followed by term/doclist data.
-**
-** 4. Segment interior nodes:
-**
-**   The interior nodes turn the list of leaves into a b+tree. 
-**
-**   Each interior node begins with a varint - the page number of the left
-**   most child node. Following this, for each leaf page except the first,
-**   the interior nodes contain:
-**
-**     a) If the leaf page contains at least one term, then a term-prefix that
-**        is greater than all previous terms, and less than or equal to the
-**        first term on the leaf page.
-**
-**     b) If the leaf page no terms, a record indicating how many consecutive
-**        leaves contain no terms, and whether or not there is an associated
-**        by-rowid index record.
-**
-**   By definition, there is never more than one type (b) record in a row.
-**   Type (b) records only ever appear on height=1 pages - immediate parents
-**   of leaves. Only type (a) records are pushed to higher levels.
-**
-**   Term format:
-**
-**     * Number of bytes in common with previous term plus 2, as a varint.
-**     * Number of bytes of new term data, as a varint.
-**     * new term data.
-**
-**   No-term format:
-**
-**     * either an 0x00 or 0x01 byte. If the value 0x01 is used, then there 
-**       is an associated index-by-rowid record.
-**     * the number of zero-term leaves as a varint.
 **
 ** 5. Segment doclist indexes:
 **
@@ -237,28 +214,19 @@
 #define FTS5_STRUCTURE_ROWID   10    /* The structure record */
 
 /*
-** Macros determining the rowids used by segment nodes. All nodes in all
-** segments for all indexes (the regular FTS index and any prefix indexes)
-** are stored in the %_data table with large positive rowids.
+** Macros determining the rowids used by segment leaves and dlidx leaves
+** and nodes. All nodes and leaves are stored in the %_data table with large
+** positive rowids.
 **
-** The %_data table may contain up to (1<<FTS5_SEGMENT_INDEX_BITS) 
-** indexes - one regular term index and zero or more prefix indexes.
+** Each segment has a unique non-zero 16-bit id.
 **
-** Each segment in an index has a unique id greater than zero.
-**
-** Each node in a segment b-tree is assigned a "page number" that is unique
-** within nodes of its height within the segment (leaf nodes have a height 
-** of 0, parents 1, etc.). Page numbers are allocated sequentially so that
-** a nodes page number is always one more than its left sibling.
-**
-** The rowid for a node is then found using the FTS5_SEGMENT_ROWID() macro
-** below. The FTS5_SEGMENT_*_BITS macros define the number of bits used
-** to encode the three FTS5_SEGMENT_ROWID() arguments. This module returns
-** SQLITE_FULL and fails the current operation if they ever prove too small.
+** The rowid for each segment leaf is found by passing the segment id and 
+** the leaf page number to the FTS5_SEGMENT_ROWID macro. Leaves are numbered
+** sequentially starting from 1.
 */
 #define FTS5_DATA_ID_B     16     /* Max seg id number 65535 */
 #define FTS5_DATA_DLI_B     1     /* Doclist-index flag (1 bit) */
-#define FTS5_DATA_HEIGHT_B  5     /* Max b-tree height of 32 */
+#define FTS5_DATA_HEIGHT_B  5     /* Max dlidx tree height of 32 */
 #define FTS5_DATA_PAGE_B   31     /* Max page number of 2147483648 */
 
 #define fts5_dri(segid, dlidx, height, pgno) (                                 \
@@ -268,8 +236,8 @@
  ((i64)(pgno))                                                                 \
 )
 
-#define FTS5_SEGMENT_ROWID(segid, height, pgno) fts5_dri(segid, 0, height, pgno)
-#define FTS5_DLIDX_ROWID(segid, height, pgno)   fts5_dri(segid, 1, height, pgno)
+#define FTS5_SEGMENT_ROWID(segid, pgno)       fts5_dri(segid, 0, 0, pgno)
+#define FTS5_DLIDX_ROWID(segid, height, pgno) fts5_dri(segid, 1, height, pgno)
 
 /*
 ** Maximum segments permitted in a single index 
@@ -356,7 +324,6 @@ struct Fts5DoclistIter {
 */
 struct Fts5StructureSegment {
   int iSegid;                     /* Segment id */
-  int nHeight;                    /* Height of segment b-tree */
   int pgnoFirst;                  /* First leaf page number in segment */
   int pgnoLast;                   /* Last leaf page number in segment */
 };
@@ -822,8 +789,8 @@ static void fts5DataDelete(Fts5Index *p, i64 iFirst, i64 iLast){
 ** Remove all records associated with segment iSegid.
 */
 static void fts5DataRemoveSegment(Fts5Index *p, int iSegid){
-  i64 iFirst = FTS5_SEGMENT_ROWID(iSegid, 0, 0);
-  i64 iLast = FTS5_SEGMENT_ROWID(iSegid+1, 0, 0)-1;
+  i64 iFirst = FTS5_SEGMENT_ROWID(iSegid, 0);
+  i64 iLast = FTS5_SEGMENT_ROWID(iSegid+1, 0)-1;
   fts5DataDelete(p, iFirst, iLast);
   if( p->pIdxDeleter==0 ){
     Fts5Config *pConfig = p->pConfig;
@@ -920,7 +887,6 @@ static int fts5StructureDecode(
         pLvl->nSeg = nTotal;
         for(iSeg=0; iSeg<nTotal; iSeg++){
           i += fts5GetVarint32(&pData[i], pLvl->aSeg[iSeg].iSegid);
-          i += fts5GetVarint32(&pData[i], pLvl->aSeg[iSeg].nHeight);
           i += fts5GetVarint32(&pData[i], pLvl->aSeg[iSeg].pgnoFirst);
           i += fts5GetVarint32(&pData[i], pLvl->aSeg[iSeg].pgnoLast);
         }
@@ -1077,7 +1043,6 @@ static void fts5StructureWrite(Fts5Index *p, Fts5Structure *pStruct){
 
       for(iSeg=0; iSeg<pLvl->nSeg; iSeg++){
         fts5BufferAppendVarint(&p->rc, &buf, pLvl->aSeg[iSeg].iSegid);
-        fts5BufferAppendVarint(&p->rc, &buf, pLvl->aSeg[iSeg].nHeight);
         fts5BufferAppendVarint(&p->rc, &buf, pLvl->aSeg[iSeg].pgnoFirst);
         fts5BufferAppendVarint(&p->rc, &buf, pLvl->aSeg[iSeg].pgnoLast);
       }
@@ -1474,7 +1439,7 @@ static void fts5SegIterNextPage(
     pIter->pNextLeaf = 0;
   }else if( pIter->iLeafPgno<=pSeg->pgnoLast ){
     pIter->pLeaf = fts5DataRead(p, 
-        FTS5_SEGMENT_ROWID(pSeg->iSegid, 0, pIter->iLeafPgno)
+        FTS5_SEGMENT_ROWID(pSeg->iSegid, pIter->iLeafPgno)
     );
   }else{
     pIter->pLeaf = 0;
@@ -1697,7 +1662,7 @@ static void fts5SegIterReverseNewPage(Fts5Index *p, Fts5SegIter *pIter){
     Fts5Data *pNew;
     pIter->iLeafPgno--;
     pNew = fts5DataRead(p, FTS5_SEGMENT_ROWID(
-          pIter->pSeg->iSegid, 0, pIter->iLeafPgno
+          pIter->pSeg->iSegid, pIter->iLeafPgno
     ));
     if( pNew ){
       if( pIter->iLeafPgno==pIter->iTermLeafPgno ){
@@ -1890,7 +1855,7 @@ static void fts5SegIterReverse(Fts5Index *p, Fts5SegIter *pIter){
   if( pDlidx ){
     int iSegid = pIter->pSeg->iSegid;
     pgnoLast = fts5DlidxIterPgno(pDlidx);
-    pLast = fts5DataRead(p, FTS5_SEGMENT_ROWID(iSegid, 0, pgnoLast));
+    pLast = fts5DataRead(p, FTS5_SEGMENT_ROWID(iSegid, pgnoLast));
   }else{
     int iOff;                               /* Byte offset within pLeaf */
     Fts5Data *pLeaf = pIter->pLeaf;         /* Current leaf data */
@@ -1910,7 +1875,7 @@ static void fts5SegIterReverse(Fts5Index *p, Fts5SegIter *pIter){
       /* The last rowid in the doclist may not be on the current page. Search
       ** forward to find the page containing the last rowid.  */
       for(pgno=pIter->iLeafPgno+1; !p->rc && pgno<=pSeg->pgnoLast; pgno++){
-        i64 iAbs = FTS5_SEGMENT_ROWID(pSeg->iSegid, 0, pgno);
+        i64 iAbs = FTS5_SEGMENT_ROWID(pSeg->iSegid, pgno);
         Fts5Data *pNew = fts5DataRead(p, iAbs);
         if( pNew ){
           int iRowid, bTermless;
@@ -2875,7 +2840,7 @@ static void fts5ChunkIterate(
       break;
     }else{
       pgno++;
-      pData = fts5DataRead(p, FTS5_SEGMENT_ROWID(pSeg->pSeg->iSegid, 0, pgno));
+      pData = fts5DataRead(p, FTS5_SEGMENT_ROWID(pSeg->pSeg->iSegid, pgno));
       if( pData==0 ) break;
       pChunk = &pData->p[4];
       nChunk = MIN(nRem, pData->szLeaf - 4);
@@ -3180,7 +3145,7 @@ static void fts5WriteFlushLeaf(Fts5Index *p, Fts5SegWriter *pWriter){
   }
 
   /* Write the page out to disk */
-  iRowid = FTS5_SEGMENT_ROWID(pWriter->iSegid, 0, pPage->pgno);
+  iRowid = FTS5_SEGMENT_ROWID(pWriter->iSegid, pPage->pgno);
   fts5DataWrite(p, iRowid, pPage->buf.p, pPage->buf.n);
 
   /* Initialize the next page. */
@@ -3360,7 +3325,6 @@ static void fts5WriteAppendZerobyte(Fts5Index *p, Fts5SegWriter *pWriter){
 static void fts5WriteFinish(
   Fts5Index *p, 
   Fts5SegWriter *pWriter,         /* Writer object */
-  int *pnHeight,                  /* OUT: Height of the b-tree */
   int *pnLeaf                     /* OUT: Number of leaf pages in b-tree */
 ){
   int i;
@@ -3368,7 +3332,6 @@ static void fts5WriteFinish(
   if( p->rc==SQLITE_OK ){
     if( pLeaf->pgno==1 && pLeaf->buf.n==0 ){
       *pnLeaf = 0;
-      *pnHeight = 0;
     }else{
       if( pLeaf->buf.n>4 ){
         fts5WriteFlushLeaf(p, pWriter);
@@ -3376,7 +3339,6 @@ static void fts5WriteFinish(
       *pnLeaf = pLeaf->pgno-1;
 
       fts5WriteFlushBtree(p, pWriter);
-      *pnHeight = 0;
     }
   }
   fts5BufferFree(&pLeaf->term);
@@ -3455,7 +3417,7 @@ static void fts5TrimSegments(Fts5Index *p, Fts5IndexIter *pIter){
       int iId = pSeg->pSeg->iSegid;
       u8 aHdr[4] = {0x00, 0x00, 0x00, 0x00};
 
-      iLeafRowid = FTS5_SEGMENT_ROWID(iId, 0, pSeg->iTermLeafPgno);
+      iLeafRowid = FTS5_SEGMENT_ROWID(iId, pSeg->iTermLeafPgno);
       pData = fts5DataRead(p, iLeafRowid);
       if( pData ){
         fts5BufferZero(&buf);
@@ -3483,7 +3445,7 @@ static void fts5TrimSegments(Fts5Index *p, Fts5IndexIter *pIter){
 
         fts5DataRelease(pData);
         pSeg->pSeg->pgnoFirst = pSeg->iTermLeafPgno;
-        fts5DataDelete(p, FTS5_SEGMENT_ROWID(iId, 0, 1), iLeafRowid);
+        fts5DataDelete(p, FTS5_SEGMENT_ROWID(iId, 1), iLeafRowid);
         fts5DataWrite(p, iLeafRowid, buf.p, buf.n);
       }
     }
@@ -3603,7 +3565,7 @@ static void fts5IndexMergeLevel(
 
   /* Flush the last leaf page to disk. Set the output segment b-tree height
   ** and last leaf page number at the same time.  */
-  fts5WriteFinish(p, &writer, &pSeg->nHeight, &pSeg->pgnoLast);
+  fts5WriteFinish(p, &writer, &pSeg->pgnoLast);
 
   if( fts5MultiIterEof(p, pIter) ){
     int i;
@@ -3794,7 +3756,6 @@ static void fts5FlushOneHash(Fts5Index *p){
     const int pgsz = p->pConfig->pgsz;
 
     Fts5StructureSegment *pSeg;   /* New segment within pStruct */
-    int nHeight;                  /* Height of new segment b-tree */
     Fts5Buffer *pBuf;             /* Buffer in which to assemble leaf page */
     Fts5Buffer *pPgidx;           /* Buffer in which to assemble pgidx */
     const u8 *zPrev = 0;
@@ -3897,7 +3858,7 @@ static void fts5FlushOneHash(Fts5Index *p){
       sqlite3Fts5HashScanNext(pHash);
     }
     sqlite3Fts5HashClear(pHash);
-    fts5WriteFinish(p, &writer, &nHeight, &pgnoLast);
+    fts5WriteFinish(p, &writer, &pgnoLast);
 
     /* Update the Fts5Structure. It is written back to the database by the
     ** fts5StructureRelease() call below.  */
@@ -3908,7 +3869,6 @@ static void fts5FlushOneHash(Fts5Index *p){
     if( p->rc==SQLITE_OK ){
       pSeg = &pStruct->aLevel[0].aSeg[ pStruct->aLevel[0].nSeg++ ];
       pSeg->iSegid = iSegid;
-      pSeg->nHeight = nHeight;
       pSeg->pgnoFirst = 1;
       pSeg->pgnoLast = pgnoLast;
       pStruct->nSegment++;
@@ -4914,7 +4874,7 @@ static void fts5IndexIntegrityCheckEmpty(
   /* Now check that the iter.nEmpty leaves following the current leaf
   ** (a) exist and (b) contain no terms. */
   for(i=iFirst; p->rc==SQLITE_OK && i<=iLast; i++){
-    Fts5Data *pLeaf = fts5DataRead(p, FTS5_SEGMENT_ROWID(pSeg->iSegid, 0, i));
+    Fts5Data *pLeaf = fts5DataRead(p, FTS5_SEGMENT_ROWID(pSeg->iSegid, i));
     if( pLeaf ){
       if( !fts5LeafIsTermless(pLeaf) ) p->rc = FTS5_CORRUPT;
       if( i>=iNoRowid && 0!=fts5LeafFirstRowidOff(pLeaf) ) p->rc = FTS5_CORRUPT;
@@ -5005,7 +4965,7 @@ static void fts5IndexIntegrityCheckSegment(
     /* If the leaf in question has already been trimmed from the segment, 
     ** ignore this b-tree entry. Otherwise, load it into memory. */
     if( iIdxLeaf<pSeg->pgnoFirst ) continue;
-    iRow = FTS5_SEGMENT_ROWID(pSeg->iSegid, 0, iIdxLeaf);
+    iRow = FTS5_SEGMENT_ROWID(pSeg->iSegid, iIdxLeaf);
     pLeaf = fts5DataRead(p, iRow);
     if( pLeaf==0 ) break;
 
@@ -5060,7 +5020,7 @@ static void fts5IndexIntegrityCheckSegment(
 
         /* Check any rowid-less pages that occur before the current leaf. */
         for(iPg=iPrevLeaf+1; iPg<fts5DlidxIterPgno(pDlidx); iPg++){
-          iKey = FTS5_SEGMENT_ROWID(iSegid, 0, iPg);
+          iKey = FTS5_SEGMENT_ROWID(iSegid, iPg);
           pLeaf = fts5DataRead(p, iKey);
           if( pLeaf ){
             if( fts5LeafFirstRowidOff(pLeaf)!=0 ) p->rc = FTS5_CORRUPT;
@@ -5071,7 +5031,7 @@ static void fts5IndexIntegrityCheckSegment(
 
         /* Check that the leaf page indicated by the iterator really does
         ** contain the rowid suggested by the same. */
-        iKey = FTS5_SEGMENT_ROWID(iSegid, 0, iPrevLeaf);
+        iKey = FTS5_SEGMENT_ROWID(iSegid, iPrevLeaf);
         pLeaf = fts5DataRead(p, iKey);
         if( pLeaf ){
           i64 iRowid;
@@ -5278,9 +5238,8 @@ static void fts5DebugStructure(
     );
     for(iSeg=0; iSeg<pLvl->nSeg; iSeg++){
       Fts5StructureSegment *pSeg = &pLvl->aSeg[iSeg];
-      sqlite3Fts5BufferAppendPrintf(pRc, pBuf, 
-          " {id=%d h=%d leaves=%d..%d}", pSeg->iSegid, pSeg->nHeight, 
-          pSeg->pgnoFirst, pSeg->pgnoLast
+      sqlite3Fts5BufferAppendPrintf(pRc, pBuf, " {id=%d leaves=%d..%d}", 
+          pSeg->iSegid, pSeg->pgnoFirst, pSeg->pgnoLast
       );
     }
     sqlite3Fts5BufferAppendPrintf(pRc, pBuf, "}");
@@ -5515,22 +5474,19 @@ static void fts5RowidFunction(
     if( 0==sqlite3_stricmp(zArg, "segment") ){
       i64 iRowid;
       int segid, height, pgno;
-      if( nArg!=4 ){
+      if( nArg!=3 ){
         sqlite3_result_error(pCtx, 
-            "should be: fts5_rowid('segment', segid, height, pgno))", -1
+            "should be: fts5_rowid('segment', segid, pgno))", -1
         );
       }else{
         segid = sqlite3_value_int(apVal[1]);
-        height = sqlite3_value_int(apVal[2]);
-        pgno = sqlite3_value_int(apVal[3]);
-        iRowid = FTS5_SEGMENT_ROWID(segid, height, pgno);
+        pgno = sqlite3_value_int(apVal[2]);
+        iRowid = FTS5_SEGMENT_ROWID(segid, pgno);
         sqlite3_result_int64(pCtx, iRowid);
       }
-    }else {
+    }else{
       sqlite3_result_error(pCtx, 
-        "first arg to fts5_rowid() must be 'segment' "
-        "or 'start-of-index'"
-        , -1
+        "first arg to fts5_rowid() must be 'segment'" , -1
       );
     }
   }

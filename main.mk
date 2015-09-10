@@ -332,7 +332,10 @@ TESTSRC += \
   $(TOP)/ext/misc/vfslog.c \
   $(TOP)/ext/fts5/fts5_tcl.c \
   $(TOP)/ext/fts5/fts5_test_mi.c \
-  fts5.c
+  $(FTS5_SRC)
+
+
+#  fts5.c
 
 
 
