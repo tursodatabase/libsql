@@ -1,5 +1,5 @@
-C No-op\sthe\ssqlite3_memory_alarm()\sinterface\sin\sa\sdifferent\sway,\sthat\sdoes\nnot\sbreak\slegacy\smemory\sbehavior.\s\sThis\sis\sa\sre-do\sof\ncheck-in\s[5d3f5df4da9f40d5].
-D 2015-09-10T01:22:09.178
+C Fix\sthe\sjson_tree()\sscan\sfor\sthe\scase\swhen\sa\spath\sis\ssupplied.\s\sAdd\snew\njson1\stest\scases.
+D 2015-09-10T03:29:11.778
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -194,7 +194,7 @@ F ext/misc/eval.c f971962e92ebb8b0a4e6b62949463ee454d88fa2
 F ext/misc/fileio.c d4171c815d6543a9edef8308aab2951413cd8d0f
 F ext/misc/fuzzer.c 4c84635c71c26cfa7c2e5848cf49fe2d2cfcd767
 F ext/misc/ieee754.c b0362167289170627659e84173f5d2e8fee8566e
-F ext/misc/json1.c bd51e8c1e8ce580e6f21493bd8e94ed5aca3d777
+F ext/misc/json1.c 46c2aff110eb8241591cd29267ddb57a8d0ab337
 F ext/misc/nextchar.c 35c8b8baacb96d92abbb34a83a997b797075b342
 F ext/misc/percentile.c bcbee3c061b884eccb80e21651daaae8e1e43c63
 F ext/misc/regexp.c af92cdaa5058fcec1451e49becc7ba44dba023dc
@@ -814,6 +814,7 @@ F test/jrnlmode.test 7864d59cf7f6e552b9b99ba0f38acd167edc10fa
 F test/jrnlmode2.test 81610545a4e6ed239ea8fa661891893385e23a1d
 F test/jrnlmode3.test 556b447a05be0e0963f4311e95ab1632b11c9eaa
 F test/json101.test 11535d8986184500f4c30cc2f0b154b4ab05cc4e
+F test/json102.test ab2ea59639ecf2ad95101015c3357b1ba53ebd98
 F test/keyword1.test 37ef6bba5d2ed5b07ecdd6810571de2956599dff
 F test/lastinsert.test 42e948fd6442f07d60acbd15d33fb86473e0ef63
 F test/laststmtchanges.test ae613f53819206b3222771828d024154d51db200
@@ -1383,7 +1384,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 86146a731d75eb25279c0e072c0bdda593de905d
-R 7c5553c63d5721a9d16f1642ebb06bea
+P 8250e2a487ee12c9a2dea5603ab60aed51e5dc7b
+R c3aaad669751ca08269190cf668389ec
 U drh
-Z 0fce0dbaade5235ccf22a67355771bfc
+Z cc385c8c27ee83d7a7141ac119ad0322
