@@ -1444,7 +1444,7 @@ struct JsonEachCursor {
   u8 eType;                  /* Type of top-level element */
   u8 bRecursive;             /* True for json_tree().  False for json_each() */
   char *zJson;               /* Input JSON */
-  char *zPath;               /* Path by which to filter zJson */
+  char *zRoot;               /* Path by which to filter zJson */
   JsonParse sParse;          /* Parse of the input JSON */
 };
 
@@ -1467,16 +1467,17 @@ static int jsonEachConnect(
 #define JEACH_ID      4
 #define JEACH_PARENT  5
 #define JEACH_FULLKEY 6
-#define JEACH_JSON    7
-#define JEACH_PATH    8
+#define JEACH_PATH    7
+#define JEACH_JSON    8
+#define JEACH_ROOT    9
 
   UNUSED_PARAM(pzErr);
   UNUSED_PARAM(argv);
   UNUSED_PARAM(argc);
   UNUSED_PARAM(pAux);
   rc = sqlite3_declare_vtab(db, 
-     "CREATE TABLE x(key,value,type,atom,id,parent,fullkey,"
-                    "json HIDDEN,path HIDDEN)");
+     "CREATE TABLE x(key,value,type,atom,id,parent,fullkey,path,"
+                    "json HIDDEN,root HIDDEN)");
   if( rc==SQLITE_OK ){
     pNew = *ppVtab = sqlite3_malloc( sizeof(*pNew) );
     if( pNew==0 ) return SQLITE_NOMEM;
@@ -1517,14 +1518,14 @@ static int jsonEachOpenTree(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
 ** held. */
 static void jsonEachCursorReset(JsonEachCursor *p){
   sqlite3_free(p->zJson);
-  sqlite3_free(p->zPath);
+  sqlite3_free(p->zRoot);
   jsonParseReset(&p->sParse);
   p->iRowid = 0;
   p->i = 0;
   p->iEnd = 0;
   p->eType = 0;
   p->zJson = 0;
-  p->zPath = 0;
+  p->zRoot = 0;
 }
 
 /* Destructor for a jsonEachCursor object */
@@ -1668,8 +1669,8 @@ static int jsonEachColumn(
       if( p->bRecursive ){
         jsonEachComputePath(p, &x, p->i);
       }else{
-        if( p->zPath ){
-          jsonAppendRaw(&x, p->zPath, (int)strlen(p->zPath));
+        if( p->zRoot ){
+          jsonAppendRaw(&x, p->zRoot, (int)strlen(p->zRoot));
         }else{
           jsonAppendChar(&x, '$');
         }
@@ -1683,18 +1684,20 @@ static int jsonEachColumn(
       break;
     }
     case JEACH_PATH: {
-      const char *zPath = p->zPath;
-       if( zPath==0 ){
-        if( p->bRecursive ){
-          JsonString x;
-          jsonInit(&x, ctx);
-          jsonEachComputePath(p, &x, p->sParse.aUp[p->i]);
-          jsonResult(&x);
-          break;
-        }
-        zPath = "$";
+      if( p->bRecursive ){
+        JsonString x;
+        jsonInit(&x, ctx);
+        jsonEachComputePath(p, &x, p->sParse.aUp[p->i]);
+        jsonResult(&x);
+        break;
       }
-      sqlite3_result_text(ctx, zPath, -1, SQLITE_STATIC);
+      /* For json_each() path and root are the same so fall through
+      ** into the root case */
+    }
+    case JEACH_ROOT: {
+      const char *zRoot = p->zRoot;
+       if( zRoot==0 ) zRoot = "$";
+      sqlite3_result_text(ctx, zRoot, -1, SQLITE_STATIC);
       break;
     }
     default: {
@@ -1715,7 +1718,7 @@ static int jsonEachRowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){
 
 /* The query strategy is to look for an equality constraint on the json
 ** column.  Without such a constraint, the table cannot operate.  idxNum is
-** 1 if the constraint is found, 3 if the constraint and zPath are found,
+** 1 if the constraint is found, 3 if the constraint and zRoot are found,
 ** and 0 otherwise.
 */
 static int jsonEachBestIndex(
@@ -1724,7 +1727,7 @@ static int jsonEachBestIndex(
 ){
   int i;
   int jsonIdx = -1;
-  int pathIdx = -1;
+  int rootIdx = -1;
   const struct sqlite3_index_constraint *pConstraint;
 
   UNUSED_PARAM(tab);
@@ -1734,7 +1737,7 @@ static int jsonEachBestIndex(
     if( pConstraint->op!=SQLITE_INDEX_CONSTRAINT_EQ ) continue;
     switch( pConstraint->iColumn ){
       case JEACH_JSON:   jsonIdx = i;    break;
-      case JEACH_PATH:   pathIdx = i;    break;
+      case JEACH_ROOT:   rootIdx = i;    break;
       default:           /* no-op */     break;
     }
   }
@@ -1745,11 +1748,11 @@ static int jsonEachBestIndex(
     pIdxInfo->estimatedCost = 1.0;
     pIdxInfo->aConstraintUsage[jsonIdx].argvIndex = 1;
     pIdxInfo->aConstraintUsage[jsonIdx].omit = 1;
-    if( pathIdx<0 ){
+    if( rootIdx<0 ){
       pIdxInfo->idxNum = 1;
     }else{
-      pIdxInfo->aConstraintUsage[pathIdx].argvIndex = 2;
-      pIdxInfo->aConstraintUsage[pathIdx].omit = 1;
+      pIdxInfo->aConstraintUsage[rootIdx].argvIndex = 2;
+      pIdxInfo->aConstraintUsage[rootIdx].omit = 1;
       pIdxInfo->idxNum = 3;
     }
   }
@@ -1764,7 +1767,7 @@ static int jsonEachFilter(
 ){
   JsonEachCursor *p = (JsonEachCursor*)cur;
   const char *z;
-  const char *zPath;
+  const char *zRoot;
   sqlite3_int64 n;
 
   UNUSED_PARAM(idxStr);
@@ -1774,11 +1777,11 @@ static int jsonEachFilter(
   z = (const char*)sqlite3_value_text(argv[0]);
   if( z==0 ) return SQLITE_OK;
   if( idxNum&2 ){
-    zPath = (const char*)sqlite3_value_text(argv[1]);
-    if( zPath==0 ) return SQLITE_OK;
-    if( zPath[0]!='$' ){
+    zRoot = (const char*)sqlite3_value_text(argv[1]);
+    if( zRoot==0 ) return SQLITE_OK;
+    if( zRoot[0]!='$' ){
       sqlite3_free(cur->pVtab->zErrMsg);
-      cur->pVtab->zErrMsg = jsonPathSyntaxError(zPath);
+      cur->pVtab->zErrMsg = jsonPathSyntaxError(zRoot);
       return cur->pVtab->zErrMsg ? SQLITE_ERROR : SQLITE_NOMEM;
     }
   }
@@ -1803,10 +1806,10 @@ static int jsonEachFilter(
     if( idxNum==3 ){
       const char *zErr = 0;
       n = sqlite3_value_bytes(argv[1]);
-      p->zPath = sqlite3_malloc64( n+1 );
-      if( p->zPath==0 ) return SQLITE_NOMEM;
-      memcpy(p->zPath, zPath, (size_t)n+1);
-      pNode = jsonLookupStep(&p->sParse, 0, p->zPath+1, 0, &zErr);
+      p->zRoot = sqlite3_malloc64( n+1 );
+      if( p->zRoot==0 ) return SQLITE_NOMEM;
+      memcpy(p->zRoot, zRoot, (size_t)n+1);
+      pNode = jsonLookupStep(&p->sParse, 0, p->zRoot+1, 0, &zErr);
       if( p->sParse.nErr ){
         sqlite3_free(cur->pVtab->zErrMsg);
         cur->pVtab->zErrMsg = jsonPathSyntaxError(zErr);
