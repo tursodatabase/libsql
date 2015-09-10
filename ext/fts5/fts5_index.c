@@ -1464,6 +1464,7 @@ static void fts5SegIterNextPage(
   Fts5Index *p,                   /* FTS5 backend object */
   Fts5SegIter *pIter              /* Iterator to advance to next page */
 ){
+  Fts5Data *pLeaf;
   Fts5StructureSegment *pSeg = pIter->pSeg;
   fts5DataRelease(pIter->pLeaf);
   pIter->iLeafPgno++;
@@ -1478,12 +1479,16 @@ static void fts5SegIterNextPage(
   }else{
     pIter->pLeaf = 0;
   }
+  pLeaf = pIter->pLeaf;
 
-  if( pIter->pLeaf ){
-    if( fts5LeafIsTermless(pIter->pLeaf) ){
-      pIter->iEndofDoclist = pIter->pLeaf->nn+1;
+  if( pLeaf ){
+    pIter->iPgidxOff = pLeaf->szLeaf;
+    if( fts5LeafIsTermless(pLeaf) ){
+      pIter->iEndofDoclist = pLeaf->nn+1;
     }else{
-      pIter->iEndofDoclist = fts5LeafFirstTermOff(pIter->pLeaf);
+      pIter->iPgidxOff += fts5GetVarint32(&pLeaf->p[pIter->iPgidxOff],
+          pIter->iEndofDoclist
+      );
     }
   }
 }

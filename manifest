@@ -1,5 +1,5 @@
-C Change\sthe\sarray\sof\s16-bit\soffsets\sat\sthe\send\sof\seach\spage\sto\san\sarray\sof\svarints.
-D 2015-09-10T05:40:17.756
+C Fix\san\sfts5\sproblem\sthat\scould\soccur\sif\sa\sterm\sand\sthe\sfirst\sassociated\srowid\sare\son\sdifferent\sleaf\spages.
+D 2015-09-10T10:01:30.421
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -112,7 +112,7 @@ F ext/fts5/fts5_buffer.c 64dcaf36a3ebda9e84b7c3b8788887ec325e12a4
 F ext/fts5/fts5_config.c 57ee5fe71578cb494574fc0e6e51acb9a22a8695
 F ext/fts5/fts5_expr.c 1c24e1a2ffb286bfe37e537a43b7fadabfe993d4
 F ext/fts5/fts5_hash.c 4bf4b99708848357b8a2b5819e509eb6d3df9246
-F ext/fts5/fts5_index.c a13a652f042d2c88f74ad5edea893e68aadc1d99
+F ext/fts5/fts5_index.c 5d59a136b76ee10ef4e4850d128deab27c432c0e
 F ext/fts5/fts5_main.c 4b04c934084ea24a858438a04b5be8af3a9e0311
 F ext/fts5/fts5_storage.c 120f7b143688b5b7710dacbd48cff211609b8059
 F ext/fts5/fts5_tcl.c 6da58d6e8f42a93c4486b5ba9b187a7f995dee37
@@ -1384,7 +1384,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0eb2b9521fad6fa36e6fa374c2bc1f70b5180f7c
-R 25079dc3a625e241875e08ccc405324e
+P fab245bea4f283714c17bca22428d5eb4db5935a
+R 4069a06076810ffdc49a2b6325563d3b
 U dan
-Z c053aed547ab3325e91f842560bd3190
+Z ba033d01ce03ffe119d3bd7a8ead0adc
