@@ -1,5 +1,5 @@
-C Fix\sthe\s--help\soption\son\stest/releasetest.tcl.\s\sAlso\sfix\sthe\sfinal\serror\ncount\sso\sthat\sit\sincludes\sa\scount\sof\ssubtest\scrashes.
-D 2015-09-10T15:20:49.998
+C Disable\stests\sfor\sjson_each()\sand\sjson_tree()\son\sbuilds\swhere\nvirtual\stables\sare\snot\ssupported
+D 2015-09-10T15:22:35.046
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -814,7 +814,7 @@ F test/jrnlmode.test 7864d59cf7f6e552b9b99ba0f38acd167edc10fa
 F test/jrnlmode2.test 81610545a4e6ed239ea8fa661891893385e23a1d
 F test/jrnlmode3.test 556b447a05be0e0963f4311e95ab1632b11c9eaa
 F test/json101.test 11535d8986184500f4c30cc2f0b154b4ab05cc4e
-F test/json102.test ab2ea59639ecf2ad95101015c3357b1ba53ebd98
+F test/json102.test 12ef6d7d7c02c526fa3c2be1e933e7eb2a497cea
 F test/keyword1.test 37ef6bba5d2ed5b07ecdd6810571de2956599dff
 F test/lastinsert.test 42e948fd6442f07d60acbd15d33fb86473e0ef63
 F test/laststmtchanges.test ae613f53819206b3222771828d024154d51db200
@@ -1384,7 +1384,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P da8a288f8ef4be34281519b4b4db9b857b9d168b
-R 7545e2ffdc9d93dfa2c3ab60e4d1ade2
+P 9ecf684dfe0cd7e3b058d208aca7eb600bf1d21b
+R d6180d648d1042cce846185220b94bc9
 U drh
-Z df71bf3f5c9a465760678d7dca77ac27
+Z 9344fe97d94688fb2bfac0fb4d626f52

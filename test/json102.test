@@ -137,6 +137,7 @@ do_execsql_test json102-480 {
   SELECT json_valid('{"x":35'); -- }
 } {{0}}
 
+ifcapable vtab {
 do_execsql_test json102-500 {
   CREATE TABLE user(name,phone);
   INSERT INTO user(name,phone) VALUES
@@ -233,6 +234,6 @@ do_execsql_test json102-632 {
    WHERE json_tree.key='uuid'
      AND json_tree.value='6fa5181e-5721-11e5-a04e-57f3d7b32808';
 } {123}
-
+} ;# end ifcapable vtab
 
 finish_test
