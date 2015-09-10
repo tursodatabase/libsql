@@ -66,8 +66,6 @@ do_execsql_test 3.1 {
   INSERT INTO t1(t1) VALUES('integrity-check');
 } {}
 
-}
-
 #-------------------------------------------------------------------------
 reset_db
 do_execsql_test 4.1 {
@@ -114,6 +112,62 @@ do_execsql_test 5.3 {
 } {8 7 6 5 4 3 2 1}
 
 #db eval { SELECT fts5_decode(rowid, block) as x FROM yy_data } { puts $x }
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 5.1 {
+  CREATE VIRTUAL TABLE tt USING fts5(content);
+  INSERT INTO tt(tt, rank) VALUES('pgsz', 32);
+  INSERT INTO tt VALUES('aa');
+}
+
+do_execsql_test 5.2 {
+  SELECT rowid FROM tt WHERE tt MATCH 'a*';
+} {1}
+
+do_execsql_test 5.3 {
+  DELETE FROM tt;
+  BEGIN;
+    INSERT INTO tt VALUES('aa');
+    INSERT INTO tt VALUES('ab');
+  COMMIT;
+} {}
+
+do_execsql_test 5.4 {
+  SELECT rowid FROM tt WHERE tt MATCH 'a*';
+} {1 2}
+
+}
+
+do_execsql_test 5.5 {
+  DELETE FROM tt;
+  BEGIN;
+    INSERT INTO tt VALUES('aa');
+    INSERT INTO tt VALUES('ab');
+    INSERT INTO tt VALUES('aa');
+    INSERT INTO tt VALUES('ab');
+    INSERT INTO tt VALUES('aa');
+    INSERT INTO tt VALUES('ab');
+    INSERT INTO tt VALUES('aa');
+    INSERT INTO tt VALUES('ab');
+  COMMIT;
+  SELECT rowid FROM tt WHERE tt MATCH 'a*';
+} {1 2 3 4 5 6 7 8}
+
+do_execsql_test 5.6 {
+  INSERT INTO tt(tt) VALUES('integrity-check');
+}
+
+reset_db
+do_execsql_test 5.7 {
+  CREATE VIRTUAL TABLE tt USING fts5(content);
+  INSERT INTO tt(tt, rank) VALUES('pgsz', 32);
+  INSERT INTO tt VALUES('aa ab ac ad ae af');
+}
+
+do_execsql_test 5.8 {
+  SELECT rowid FROM tt WHERE tt MATCH 'a*';
+} {1}
 
 finish_test
 

@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\spreprocessor\smacros\swithin\sfts5_main.c.
-D 2015-09-09T08:15:06.914
+C Change\sthe\sarray\sof\s16-bit\soffsets\sat\sthe\send\sof\seach\spage\sto\san\sarray\sof\svarints.
+D 2015-09-10T05:40:17.756
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -112,7 +112,7 @@ F ext/fts5/fts5_buffer.c 64dcaf36a3ebda9e84b7c3b8788887ec325e12a4
 F ext/fts5/fts5_config.c 57ee5fe71578cb494574fc0e6e51acb9a22a8695
 F ext/fts5/fts5_expr.c 1c24e1a2ffb286bfe37e537a43b7fadabfe993d4
 F ext/fts5/fts5_hash.c 4bf4b99708848357b8a2b5819e509eb6d3df9246
-F ext/fts5/fts5_index.c 677c859b2064e00903a9ad847a1cfca8d36ce595
+F ext/fts5/fts5_index.c a13a652f042d2c88f74ad5edea893e68aadc1d99
 F ext/fts5/fts5_main.c 4b04c934084ea24a858438a04b5be8af3a9e0311
 F ext/fts5/fts5_storage.c 120f7b143688b5b7710dacbd48cff211609b8059
 F ext/fts5/fts5_tcl.c 6da58d6e8f42a93c4486b5ba9b187a7f995dee37
@@ -173,7 +173,7 @@ F ext/fts5/test/fts5rank.test 11dcebba31d822f7e99685b4ea2c2ae3ec0b16f1
 F ext/fts5/test/fts5rebuild.test 03935f617ace91ed23a6099c7c74d905227ff29b
 F ext/fts5/test/fts5restart.test c17728fdea26e7d0f617d22ad5b4b2862b994c17
 F ext/fts5/test/fts5rowid.test 6f9833b23b176dc4aa15b7fc02afeb2b220fd460
-F ext/fts5/test/fts5simple.test 40b76f77d56524a882473664c792bd4e8f2f2a0a
+F ext/fts5/test/fts5simple.test f629e24a35a9f31cfb16c9920e8c2316e3d93e94
 F ext/fts5/test/fts5synonym.test cf88c0a56d5ea9591e3939ef1f6e294f7f2d0671
 F ext/fts5/test/fts5tokenizer.test ea4df698b35cc427ebf2ba22829d0e28386d8c89
 F ext/fts5/test/fts5unicode.test fbef8d8a3b4b88470536cc57604a82ca52e51841
@@ -182,7 +182,7 @@ F ext/fts5/test/fts5unicode3.test 35c3d02aa7acf7d43d8de3bfe32c15ba96e8928e
 F ext/fts5/test/fts5unindexed.test e9539d5b78c677315e7ed8ea911d4fd25437c680
 F ext/fts5/test/fts5version.test 205beb2a67d9496af64df959e6a19238f69b83e8
 F ext/fts5/test/fts5vocab.test cdf97b9678484e9bad5062edf9c9106e5c3b0c5c
-F ext/fts5/tool/loadfts5.tcl 78253d64562774e7fd62b72ce866eeb3fcac4d0e
+F ext/fts5/tool/loadfts5.tcl 58e90407cc5c2b1770460119488fd7c0090d4dd3
 F ext/fts5/tool/mkfts5c.tcl 5745072c7de346e18c7f491e4c3281fe8a1cfe51
 F ext/fts5/tool/showfts5.tcl 9eaf6c3df352f98a2ab5ce1921dd94128ab1381d
 F ext/icu/README.txt d9fbbad0c2f647c3fdf715fc9fd64af53aedfc43
@@ -1384,7 +1384,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 00d990061dec3661b0376bd167082942d5563bfe
-R 9536c4653d5903bd9893d3d3b5a1950d
+P 0eb2b9521fad6fa36e6fa374c2bc1f70b5180f7c
+R 25079dc3a625e241875e08ccc405324e
 U dan
-Z 248c3a89f7d69902ace7cabd0e5d1724
+Z c053aed547ab3325e91f842560bd3190
