@@ -1,5 +1,5 @@
-C Fix\sa\spotential\sNULL\spointer\sderef\sin\sthe\stesting\slogic\sof\spcache1.\nNB:\sThe\s-DSQLITE_TEST\scompile-time\soption\sis\sneeded\sto\shit\sthe\sproblem.
-D 2015-09-10T19:22:25.531
+C Experimental\simplementation\sof\ssqlite3_result_subtype()\sand\nsqlite3_value_subtype()\sinterfaces.
+D 2015-09-10T20:34:56.434
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -342,7 +342,7 @@ F src/resolve.c 3126f7694b8ce0f97282d7dd3a5198b8fa18dce9
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c c17613385bc6b095c421b1f30548814f5fd8a9b2
 F src/shell.c 6332ef06db1390ef812cfdff1fc97b4fd76cdd42
-F src/sqlite.h.in 378bebc8fe6a88bade25e5f23b7e6123fdc64b00
+F src/sqlite.h.in 65ff1449e8c181da9ec752e8304e0a1efffaf47f
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 5088f0b63491677da848c0d07d5711781302d362
 F src/sqliteInt.h 788dc0ea7ba32ec9fec06c628c1792d7b4753d86
@@ -368,7 +368,7 @@ F src/test_config.c fb2e5d354d9a077f5fbb261652eff4787deb104f
 F src/test_demovfs.c 0de72c2c89551629f58486fde5734b7d90758852
 F src/test_devsym.c e7498904e72ba7491d142d5c83b476c4e76993bc
 F src/test_fs.c ced436e3d4b8e4681328409b8081051ce614e28f
-F src/test_func.c f1ac201465472e76a73e2f3695c3553c63e7322a
+F src/test_func.c 0d9c25956152adefee8881c6fadc8354793764d0
 F src/test_hexio.c abfdecb6fa58c354623978efceb088ca18e379cd
 F src/test_init.c 66b33120ffe9cd853b5a905ec850d51151337b32
 F src/test_intarray.c 870124b95ec4c645d4eb84f15efb7133528fb1a5
@@ -405,8 +405,8 @@ F src/util.c fc612367108b74573c5fd13a85d0a23027f438bd
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
 F src/vdbe.c 6d85be995bd2308a5aa2a68c7b564c5d4cc1a6fb
 F src/vdbe.h 4bc88bd0e06f8046ee6ab7487c0015e85ad949ad
-F src/vdbeInt.h 8b54e01ad0463590e7cffabce0bc36da9ee4f816
-F src/vdbeapi.c b821d530bcb2900b4604cf5206f2177f3f881d15
+F src/vdbeInt.h 8b867eac234e28627ffcace3cd4b4b79bbec664b
+F src/vdbeapi.c 0d890f57caf143b114a95ce699e59af51359c508
 F src/vdbeaux.c fd00b489ab3f44f2dca1e4344faf289b7bfcf649
 F src/vdbeblob.c 1d7b97115e7bbac4c318db416d2ca83fc779544a
 F src/vdbemem.c 19b3036aa4d676e7103b0fb5efd6327da455f915
@@ -1036,6 +1036,7 @@ F test/subquery.test d7268d193dd33d5505df965399d3a594e76ae13f
 F test/subquery2.test 438f8a7da1457277b22e4176510f7659b286995f
 F test/subselect.test d24fd8757daf97dafd2e889c73ea4c4272dcf4e4
 F test/substr.test 18f57c4ca8a598805c4d64e304c418734d843c1a
+F test/subtype1.test 7fe09496352f97053af1437150751be2d0a0cae8
 F test/superlock.test 1cde669f68d2dd37d6c9bd35eee1d95491ae3fc2
 F test/sync.test a34cd43e98b7fb84eabbf38f7ed8f7349b3f3d85
 F test/syscall.test d2fdaad713f103ac611fe7ef9b724c7b69f8149c
@@ -1385,7 +1386,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0c0c4ae971e54efc526eed7bd071c90dfadb95ff
-R 3ba34701e76f91459126301401d510a6
+P f5580f08538636ffb1367e717a33756288ccddde
+R a16668bbab7e8bb266cf503c6d51d6a9
+T *branch * subtypes
+T *sym-subtypes *
+T -sym-trunk *
 U drh
-Z c5b1b6a1894a9ad25bccddfa15233f55
+Z 5917071f863dd81d33499ad8df67eb85
