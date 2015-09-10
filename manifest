@@ -1,5 +1,5 @@
-C Modify\sthe\sfts5\sleaf\spage\sformat\sto\spermit\sfaster\sseek\soperations.\sThis\sis\sa\sfile-format\schange.\sAny\sexisting\sdatabases\scan\sbe\supgraded\sby\srunning\sthe\sfts5\s'rebuild'\scommand.
-D 2015-09-10T17:23:37.872
+C Fix\sa\spotential\sNULL\spointer\sderef\sin\sthe\stesting\slogic\sof\spcache1.\nNB:\sThe\s-DSQLITE_TEST\scompile-time\soption\sis\sneeded\sto\shit\sthe\sproblem.
+D 2015-09-10T19:22:25.531
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -332,7 +332,7 @@ F src/pager.h 6d435f563b3f7fcae4b84433b76a6ac2730036e2
 F src/parse.y f599aa5e871a493330d567ced93de696f61f48f7
 F src/pcache.c 24be750c79272e0ca7b6e007bc94999700f3e5ef
 F src/pcache.h 9968603796240cdf83da7e7bef76edf90619cea9
-F src/pcache1.c ca0eeaaf9ffab7a9ded47d54639d8ab147d442e6
+F src/pcache1.c a0c0bb29f7bd720743a16a95eb5dedba3ade15bc
 F src/pragma.c d71b813e67bf03f3116b9dd5164fbfd81ec673a2
 F src/pragma.h 631a91c8b0e6ca8f051a1d8a4a0da4150e04620a
 F src/prepare.c 82e5db1013846a819f198336fed72c44c974e7b1
@@ -1385,7 +1385,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 127cce3eb96b819005832997e0a082df9fb96f0b 99de5e3613d557728dd196353516bc7cf64a0e6c
-R 94d00b9df8244e9367669b9ccbab9a5c
-U dan
-Z a63610a6f3469795714a7c77d99e36a6
+P 0c0c4ae971e54efc526eed7bd071c90dfadb95ff
+R 3ba34701e76f91459126301401d510a6
+U drh
+Z c5b1b6a1894a9ad25bccddfa15233f55
