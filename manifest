@@ -1,5 +1,5 @@
-C Fix\ssome\scompiler\swarnings\sin\sfts5\scode.
-D 2015-09-11T14:15:46.470
+C More\stest\scases\sin\stest/json102.test\scorresponding\sto\snew\sexamples\sin\sthe\njson1\sdocumentation.
+D 2015-09-11T15:32:33.147
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -815,7 +815,7 @@ F test/jrnlmode.test 7864d59cf7f6e552b9b99ba0f38acd167edc10fa
 F test/jrnlmode2.test 81610545a4e6ed239ea8fa661891893385e23a1d
 F test/jrnlmode3.test 556b447a05be0e0963f4311e95ab1632b11c9eaa
 F test/json101.test e20d2421c531db32fad59c5e06e80af0b1b002c8
-F test/json102.test b5da30aef253102ad63f2186c9319e4b5d505a1b
+F test/json102.test 4e1403cb06481ab160cf471c3c139820498e0563
 F test/keyword1.test 37ef6bba5d2ed5b07ecdd6810571de2956599dff
 F test/lastinsert.test 42e948fd6442f07d60acbd15d33fb86473e0ef63
 F test/laststmtchanges.test ae613f53819206b3222771828d024154d51db200
@@ -1386,7 +1386,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d6cadbe9fefce9a7af6b2d0cb83362f967d7d89a
-R 142f8055af436e9c39db41b2b1d79675
-U dan
-Z 56f93ac2844adc1c45e33937963b4c3d
+P 0dc436116e55e3fd55eb6085ada71e099069b32d
+R 6a1dee4bd5e0067c0115e5b47549c01a
+U drh
+Z 3b3b3aa659d24a2dd31ae86f119af47f
