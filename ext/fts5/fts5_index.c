@@ -5275,7 +5275,7 @@ static int fts5DecodePoslist(int *pRc, Fts5Buffer *pBuf, const u8 *a, int n){
 ** The return value is the number of bytes read from the input buffer.
 */
 static int fts5DecodeDoclist(int *pRc, Fts5Buffer *pBuf, const u8 *a, int n){
-  i64 iDocid;
+  i64 iDocid = 0;
   int iOff = 0;
 
   if( n>0 ){

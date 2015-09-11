@@ -1,5 +1,5 @@
-C More\stest\scases\sin\stest/json102.test\scorresponding\sto\snew\sexamples\sin\sthe\njson1\sdocumentation.
-D 2015-09-11T15:32:33.147
+C Fix\sharmless\scompiler\swarnings.
+D 2015-09-11T18:05:01.352
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -112,7 +112,7 @@ F ext/fts5/fts5_buffer.c 64dcaf36a3ebda9e84b7c3b8788887ec325e12a4
 F ext/fts5/fts5_config.c 57ee5fe71578cb494574fc0e6e51acb9a22a8695
 F ext/fts5/fts5_expr.c 667faaf14a69a5683ac383acdc8d942cf32c3f93
 F ext/fts5/fts5_hash.c 4bf4b99708848357b8a2b5819e509eb6d3df9246
-F ext/fts5/fts5_index.c c07522cc5632d0d211402c0e6273ecb7493886d4
+F ext/fts5/fts5_index.c 62a682a70ea2e84fa67c7786ead892b201116ad1
 F ext/fts5/fts5_main.c 3fa906f6c0177caf8f82862bc70f37b28bb3305c
 F ext/fts5/fts5_storage.c 120f7b143688b5b7710dacbd48cff211609b8059
 F ext/fts5/fts5_tcl.c 6da58d6e8f42a93c4486b5ba9b187a7f995dee37
@@ -195,7 +195,7 @@ F ext/misc/eval.c f971962e92ebb8b0a4e6b62949463ee454d88fa2
 F ext/misc/fileio.c d4171c815d6543a9edef8308aab2951413cd8d0f
 F ext/misc/fuzzer.c 4c84635c71c26cfa7c2e5848cf49fe2d2cfcd767
 F ext/misc/ieee754.c b0362167289170627659e84173f5d2e8fee8566e
-F ext/misc/json1.c 96490b8e34299a416ab221f827e0369344d95c53
+F ext/misc/json1.c f35d00fbd79a7e23af18d7630a2fcf22dce3692b
 F ext/misc/nextchar.c 35c8b8baacb96d92abbb34a83a997b797075b342
 F ext/misc/percentile.c bcbee3c061b884eccb80e21651daaae8e1e43c63
 F ext/misc/regexp.c af92cdaa5058fcec1451e49becc7ba44dba023dc
@@ -1386,7 +1386,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0dc436116e55e3fd55eb6085ada71e099069b32d
-R 6a1dee4bd5e0067c0115e5b47549c01a
-U drh
-Z 3b3b3aa659d24a2dd31ae86f119af47f
+P f599a42e190b4b89d74055402143c5487985cd90
+R 0604cd6b1b67b982add6999f3d35855f
+U mistachkin
+Z 360c245eb92b0ddf2395cd1ae9027341

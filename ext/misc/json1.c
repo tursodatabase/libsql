@@ -495,12 +495,12 @@ static void jsonReturn(
               }
               if( v==0 ) break;
               if( v<=0x7f ){
-                zOut[j++] = v;
+                zOut[j++] = (char)v;
               }else if( v<=0x7ff ){
-                zOut[j++] = 0xc0 | (v>>6);
+                zOut[j++] = (char)(0xc0 | (v>>6));
                 zOut[j++] = 0x80 | (v&0x3f);
               }else{
-                zOut[j++] = 0xe0 | (v>>12);
+                zOut[j++] = (char)(0xe0 | (v>>12));
                 zOut[j++] = 0x80 | ((v>>6)&0x3f);
                 zOut[j++] = 0x80 | (v&0x3f);
               }
@@ -1053,6 +1053,7 @@ static void jsonTest1Func(
   int argc,
   sqlite3_value **argv
 ){
+  UNUSED_PARAM(argc);
   sqlite3_result_int(ctx, sqlite3_value_subtype(argv[0])==JSON_SUBTYPE);
 }
 #endif /* SQLITE_DEBUG */
@@ -1274,8 +1275,8 @@ static void jsonReplaceFunc(
       pNode = jsonLookup(&x, zPath, 0, ctx);
       if( x.nErr ) goto replace_err;
       if( pNode ){
-        pNode->jnFlags |= JNODE_REPLACE;
-        pNode->iVal = i+1;
+        pNode->jnFlags |= (u8)JNODE_REPLACE;
+        pNode->iVal = (u8)(i+1);
       }
     }
     if( x.aNode[0].jnFlags & JNODE_REPLACE ){
@@ -1329,8 +1330,8 @@ static void jsonSetFunc(
       }else if( x.nErr ){
         goto jsonSetDone;
       }else if( pNode && (bApnd || bIsSet) ){
-        pNode->jnFlags |= JNODE_REPLACE;
-        pNode->iVal = i+1;
+        pNode->jnFlags |= (u8)JNODE_REPLACE;
+        pNode->iVal = (u8)(i+1);
       }
     }
     if( x.aNode[0].jnFlags & JNODE_REPLACE ){
@@ -1388,6 +1389,7 @@ static void jsonValidFunc(
   JsonParse x;          /* The parse */
   int rc = 0;
 
+  UNUSED_PARAM(argc);
   if( jsonParse(&x, 0, (const char*)sqlite3_value_text(argv[0]))==0 
    && x.nNode>0
   ){
@@ -1734,7 +1736,7 @@ static int jsonEachFilter(
 ){
   JsonEachCursor *p = (JsonEachCursor*)cur;
   const char *z;
-  const char *zRoot;
+  const char *zRoot = 0;
   sqlite3_int64 n;
 
   UNUSED_PARAM(idxStr);
