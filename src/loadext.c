@@ -407,7 +407,10 @@ static const sqlite3_api_routines sqlite3Apis = {
   (sqlite3_value*(*)(const sqlite3_value*))sqlite3_value_dup,
   sqlite3_value_free,
   sqlite3_result_zeroblob64,
-  sqlite3_bind_zeroblob64
+  sqlite3_bind_zeroblob64,
+  /* Version 3.8.12 and later */
+  sqlite3_value_subtype,
+  sqlite3_result_subtype
 };
 
 /*
