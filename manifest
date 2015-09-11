@@ -1,5 +1,5 @@
-C Add\snew\sinterfaces\ssqlite3_value_subtype()\sand\ssqlite3_result_subtype().\nUpdate\sthe\sjson1.c\sextension\sto\stake\sadvantages\sof\sthose\sinterfaces\sto\savoid\nthe\sgoofy\s'$$'\spath\ssyntax\sand\sto\sallow\snested\scalls\sto\sjson_array()\sand\njson_object()\sthat\swork\sas\sexpected.
-D 2015-09-11T00:26:04.863
+C Updates\sto\sthe\ssqlite3_value_subtype()\sand\ssqlite3_result_subtype()\ndocumentation\sand\sto\stest\scases\sfor\sjson1\sdealing\swith\sthose\sinterfaces.
+D 2015-09-11T01:22:41.498
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -342,7 +342,7 @@ F src/resolve.c 3126f7694b8ce0f97282d7dd3a5198b8fa18dce9
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c c17613385bc6b095c421b1f30548814f5fd8a9b2
 F src/shell.c 6332ef06db1390ef812cfdff1fc97b4fd76cdd42
-F src/sqlite.h.in 65ff1449e8c181da9ec752e8304e0a1efffaf47f
+F src/sqlite.h.in dbaf8c3796e80221de4395b5f4f872abddb5f89f
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 64350bf36833a56ad675e27392a913f417c5c308
 F src/sqliteInt.h 788dc0ea7ba32ec9fec06c628c1792d7b4753d86
@@ -815,7 +815,7 @@ F test/jrnlmode.test 7864d59cf7f6e552b9b99ba0f38acd167edc10fa
 F test/jrnlmode2.test 81610545a4e6ed239ea8fa661891893385e23a1d
 F test/jrnlmode3.test 556b447a05be0e0963f4311e95ab1632b11c9eaa
 F test/json101.test e20d2421c531db32fad59c5e06e80af0b1b002c8
-F test/json102.test 12ef6d7d7c02c526fa3c2be1e933e7eb2a497cea
+F test/json102.test b5da30aef253102ad63f2186c9319e4b5d505a1b
 F test/keyword1.test 37ef6bba5d2ed5b07ecdd6810571de2956599dff
 F test/lastinsert.test 42e948fd6442f07d60acbd15d33fb86473e0ef63
 F test/laststmtchanges.test ae613f53819206b3222771828d024154d51db200
@@ -1386,8 +1386,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f5580f08538636ffb1367e717a33756288ccddde 8a80d6459e246ec1b38325e1cbd1e862157138b3
-R 6298ef57aadddbd507dac61cb4572ea0
-T +closed 8a80d6459e246ec1b38325e1cbd1e862157138b3
+P db4152aef2253ed2a33e3cad01e0c6758e03f900
+R 1bba7f6a951d63c0429f61e7df8f5c7d
 U drh
-Z 2fd3a23a70bcc4f4e537cdb3e485fd63
+Z 186760bb5fa5f9976b74dfde02dde033
