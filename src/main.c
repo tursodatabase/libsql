@@ -334,6 +334,7 @@ int sqlite3_shutdown(void){
     sqlite3MutexEnd();
     sqlite3GlobalConfig.isMutexInit = 0;
   }
+  sqlite3GlobalConfig.pMutex = 0;
 
   return SQLITE_OK;
 }

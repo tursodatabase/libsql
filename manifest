@@ -1,5 +1,5 @@
-C Enhance\smutex\sinitialization\sto\sprevent\spossible\srace\sconditions\sbetween\ssqlite3_initialize()\sand\ssqlite3_config().\s\sAlso,\sre-check\ssqlite3GlobalConfig.isInit\safter\sthe\smutex\ssubsystem\shas\sbeen\sinitialized.
-D 2015-09-11T05:06:15.636
+C Make\ssure\sthat\sthe\smutex\simplementation\scan\sbe\saltered\safter\scalling\ssqlite3_shutdown().
+D 2015-09-11T23:24:50.447
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -305,7 +305,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c d344a95d60c24e2f490ee59db9784b1b17439012
 F src/loadext.c f0b66d28e377fd6c6d36cc9d92df1ff251ebee44
-F src/main.c ff612656f1c0e4676f5da919ecc8e39a8d7b857a
+F src/main.c ea3915d99187e56d1d18c6cb964be4b901875d8a
 F src/malloc.c 3a37ce6979a40f499d8cea9e9ab4e8517854d35d
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c abe6ee469b6c5a35c7f22bfeb9c9bac664a1c987
@@ -1386,10 +1386,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d6cadbe9fefce9a7af6b2d0cb83362f967d7d89a
-R 4ed3244c4cf92a71208fc6495549ac56
-T *branch * mutexInitCmpSwap
-T *sym-mutexInitCmpSwap *
-T -sym-trunk *
+P f6a8f577957769171acd72df3cc9aa5ad474d84b
+R e8f57a2631a3ab06404c76440fea79b4
 U mistachkin
-Z b1c2ac01d3f97f9d2891430a375f1a69
+Z dbd7d71bc038f088924755d8c448d5dd
