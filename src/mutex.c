@@ -22,39 +22,50 @@
 ** allocate a mutex while the system is uninitialized.
 */
 static SQLITE_WSD int mutexIsInit = 0;
-#endif /* SQLITE_DEBUG */
+#endif /* SQLITE_DEBUG && !defined(SQLITE_MUTEX_OMIT) */
 
 
 #ifndef SQLITE_MUTEX_OMIT
 /*
+** Copies a mutex implementation.  Both arguments must point to valid
+** memory.
+*/
+static void mutexCopy(
+  sqlite3_mutex_methods *pTo,
+  sqlite3_mutex_methods const *pFrom
+){
+  pTo->xMutexInit = pFrom->xMutexInit;
+  pTo->xMutexEnd = pFrom->xMutexEnd;
+  pTo->xMutexFree = pFrom->xMutexFree;
+  pTo->xMutexEnter = pFrom->xMutexEnter;
+  pTo->xMutexTry = pFrom->xMutexTry;
+  pTo->xMutexLeave = pFrom->xMutexLeave;
+  pTo->xMutexHeld = pFrom->xMutexHeld;
+  pTo->xMutexNotheld = pFrom->xMutexNotheld;
+  pTo->xMutexAlloc = pFrom->xMutexAlloc;
+}
+
+/*
 ** Initialize the mutex system.
 */
 int sqlite3MutexInit(void){ 
-  int rc = SQLITE_OK;
-  if( !sqlite3GlobalConfig.mutex.xMutexAlloc ){
+  int rc;
+  if( sqlite3CompareAndSwap((void * volatile *)&sqlite3GlobalConfig.pMutex,
+                            0, &sqlite3GlobalConfig.mutex)==0 ){
     /* If the xMutexAlloc method has not been set, then the user did not
     ** install a mutex implementation via sqlite3_config() prior to 
     ** sqlite3_initialize() being called. This block copies pointers to
     ** the default implementation into the sqlite3GlobalConfig structure.
     */
     sqlite3_mutex_methods const *pFrom;
-    sqlite3_mutex_methods *pTo = &sqlite3GlobalConfig.mutex;
 
     if( sqlite3GlobalConfig.bCoreMutex ){
       pFrom = sqlite3DefaultMutex();
     }else{
       pFrom = sqlite3NoopMutex();
     }
-    pTo->xMutexInit = pFrom->xMutexInit;
-    pTo->xMutexEnd = pFrom->xMutexEnd;
-    pTo->xMutexFree = pFrom->xMutexFree;
-    pTo->xMutexEnter = pFrom->xMutexEnter;
-    pTo->xMutexTry = pFrom->xMutexTry;
-    pTo->xMutexLeave = pFrom->xMutexLeave;
-    pTo->xMutexHeld = pFrom->xMutexHeld;
-    pTo->xMutexNotheld = pFrom->xMutexNotheld;
+    mutexCopy(&sqlite3GlobalConfig.mutex, pFrom);
     sqlite3MemoryBarrier();
-    pTo->xMutexAlloc = pFrom->xMutexAlloc;
   }
   rc = sqlite3GlobalConfig.mutex.xMutexInit();
 

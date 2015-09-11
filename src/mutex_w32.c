@@ -91,6 +91,28 @@ void sqlite3MemoryBarrier(void){
 }
 
 /*
+** Try to provide an atomic compare-and-swap operation on a void pointer,
+** needed for initialization only.
+*/
+void *sqlite3CompareAndSwap(
+  void * volatile *pCurVal,
+  void *cmpVal,
+  void *swapVal
+){
+#if defined(SQLITE_COMPARE_AND_SWAP)
+  return SQLITE_COMPARE_AND_SWAP(pCurVal, cmpVal, swapVal);
+#elif SQLITE_PTRSIZE>4
+  return (void *)InterlockedCompareExchange64(
+      (LONGLONG SQLITE_WIN32_VOLATILE *)pCurVal, (LONGLONG)cmpVal,
+      (LONGLONG)swapVal);
+#else
+  return (void *)InterlockedCompareExchange(
+      (LONG SQLITE_WIN32_VOLATILE *)pCurVal, (LONG)cmpVal,
+      (LONG)swapVal);
+#endif
+}
+
+/*
 ** Initialize and deinitialize the mutex subsystem.
 */
 static sqlite3_mutex winMutex_staticMutexes[] = {

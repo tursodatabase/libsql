@@ -2937,6 +2937,7 @@ struct Sqlite3Config {
   int szLookaside;                  /* Default lookaside buffer size */
   int nLookaside;                   /* Default lookaside buffer count */
   sqlite3_mem_methods m;            /* Low-level memory allocation interface */
+  sqlite3_mutex_methods *pMutex;    /* Address of mutex member or zero. */
   sqlite3_mutex_methods mutex;      /* Low-level mutex interface */
   sqlite3_pcache_methods2 pcache2;  /* Low-level page-cache interface */
   void *pHeap;                      /* Heap storage space */
@@ -3188,6 +3189,7 @@ const sqlite3_mem_methods *sqlite3MemGetMemsys5(void);
 #ifndef SQLITE_MUTEX_OMIT
   sqlite3_mutex_methods const *sqlite3DefaultMutex(void);
   sqlite3_mutex_methods const *sqlite3NoopMutex(void);
+  void *sqlite3NoopCompareAndSwap(void * volatile *, void *, void *);
   sqlite3_mutex *sqlite3MutexAlloc(int);
   int sqlite3MutexInit(void);
   int sqlite3MutexEnd(void);
@@ -3195,7 +3197,16 @@ const sqlite3_mem_methods *sqlite3MemGetMemsys5(void);
 #if !defined(SQLITE_MUTEX_OMIT) && !defined(SQLITE_MUTEX_NOOP)
   void sqlite3MemoryBarrier(void);
 #else
-# define sqlite3MemoryBarrier();
+# define sqlite3MemoryBarrier()
+#endif
+#if !defined(SQLITE_MUTEX_OMIT)
+# if !defined(SQLITE_MUTEX_NOOP)
+   void *sqlite3CompareAndSwap(void * volatile *, void *, void *);
+# else
+#  define sqlite3CompareAndSwap sqlite3NoopCompareAndSwap
+# endif
+#else
+# define sqlite3CompareAndSwap(x,y,z)
 #endif
 
 sqlite3_int64 sqlite3StatusValue(int);

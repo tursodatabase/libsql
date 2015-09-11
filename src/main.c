@@ -171,7 +171,13 @@ int sqlite3_initialize(void){
   */
   MUTEX_LOGIC( pMaster = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER); )
   sqlite3_mutex_enter(pMaster);
-  sqlite3GlobalConfig.isMutexInit = 1;
+  if( sqlite3GlobalConfig.isInit ){
+    assert( sqlite3GlobalConfig.isMutexInit );
+    assert( sqlite3GlobalConfig.isMallocInit );
+    sqlite3_mutex_leave(pMaster);
+    return SQLITE_OK;
+  }
+  sqlite3GlobalConfig.isMutexInit = 1; /* possibly redundant */
   if( !sqlite3GlobalConfig.isMallocInit ){
     rc = sqlite3MallocInit();
   }
@@ -384,8 +390,15 @@ int sqlite3_config(int op, ...){
 #endif
 #if defined(SQLITE_THREADSAFE) && SQLITE_THREADSAFE>0 /* IMP: R-63666-48755 */
     case SQLITE_CONFIG_MUTEX: {
-      /* Specify an alternative mutex implementation */
-      sqlite3GlobalConfig.mutex = *va_arg(ap, sqlite3_mutex_methods*);
+      /* Atomically compare-and-swap the mutex implementation pointer to
+       * help prevent a race condition with sqlite3MutexInit(). */
+      if( sqlite3CompareAndSwap((void * volatile *)&sqlite3GlobalConfig.pMutex,
+                                0, &sqlite3GlobalConfig.mutex)==0 ){
+        /* Specify an alternative mutex implementation */
+        sqlite3GlobalConfig.mutex = *va_arg(ap, sqlite3_mutex_methods*);
+      }else{
+        rc = SQLITE_ERROR;
+      }
       break;
     }
 #endif

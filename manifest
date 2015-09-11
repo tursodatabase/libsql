@@ -1,5 +1,5 @@
-C Updates\sto\sthe\ssqlite3_value_subtype()\sand\ssqlite3_result_subtype()\ndocumentation\sand\sto\stest\scases\sfor\sjson1\sdealing\swith\sthose\sinterfaces.
-D 2015-09-11T01:22:41.498
+C Enhance\smutex\sinitialization\sto\sprevent\spossible\srace\sconditions\sbetween\ssqlite3_initialize()\sand\ssqlite3_config().\s\sAlso,\sre-check\ssqlite3GlobalConfig.isInit\safter\sthe\smutex\ssubsystem\shas\sbeen\sinitialized.
+D 2015-09-11T05:06:15.636
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -296,7 +296,7 @@ F src/expr.c 3a76afcdac925294c39903b7002ddb9e5fd29863
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 83e1baba999bed3144ea5a2143fc922edf51135f
 F src/func.c ecdd69ec6a1e406f04cc73324be2ebbf6354197f
-F src/global.c 508e4087f7b41d688e4762dcf4d4fe28cfbc87f9
+F src/global.c d824163680839be79b53204105a78e5be5d4ac4a
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
 F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
@@ -305,7 +305,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c d344a95d60c24e2f490ee59db9784b1b17439012
 F src/loadext.c f0b66d28e377fd6c6d36cc9d92df1ff251ebee44
-F src/main.c e17fcffae4306a9b8334faf3bac80d7396850b54
+F src/main.c ff612656f1c0e4676f5da919ecc8e39a8d7b857a
 F src/malloc.c 3a37ce6979a40f499d8cea9e9ab4e8517854d35d
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c abe6ee469b6c5a35c7f22bfeb9c9bac664a1c987
@@ -314,11 +314,11 @@ F src/mem3.c 61c9d47b792908c532ca3a62b999cf21795c6534
 F src/mem5.c 61eeb90134f9a5be6c2e68d8daae7628b25953fb
 F src/memjournal.c 3eb2c0b51adbd869cb6a44780323f05fa904dc85
 F src/msvc.h d9ba56c6851227ab44b3f228a35f3f5772296495
-F src/mutex.c a39809c6c33f1ebc9cc781186c338ad90433e1e7
+F src/mutex.c de4293e5feb5dae2a1786283a2ae971e899f6745
 F src/mutex.h 779d588e3b7756ec3ecf7d78cde1d84aba414f85
-F src/mutex_noop.c 9d4309c075ba9cc7249e19412d3d62f7f94839c4
-F src/mutex_unix.c 7762c8ec907379204f2ed751a0e33663ab1c14d7
-F src/mutex_w32.c 2e025e6642eaf27597403690980f560d1a91f62c
+F src/mutex_noop.c f03e26ba8258399da23b51234f6b6a97197c1900
+F src/mutex_unix.c a72043f2560147d8e85fe48a6aef682896deb3a0
+F src/mutex_w32.c a784f7c278770e80f951be1a84c0d5bb227748d9
 F src/notify.c 9711a7575036f0d3040ba61bc6e217f13a9888e7
 F src/os.c 8fd25588eeba74068d41102d26810e216999b6c8
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
@@ -345,7 +345,7 @@ F src/shell.c 6332ef06db1390ef812cfdff1fc97b4fd76cdd42
 F src/sqlite.h.in dbaf8c3796e80221de4395b5f4f872abddb5f89f
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 64350bf36833a56ad675e27392a913f417c5c308
-F src/sqliteInt.h 788dc0ea7ba32ec9fec06c628c1792d7b4753d86
+F src/sqliteInt.h d7b2c30947a49a7538f24c0dca253c0e456c849c
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c f266ad8a2892d659b74f0f50cb6a88b6e7c12179
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
@@ -1386,7 +1386,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P db4152aef2253ed2a33e3cad01e0c6758e03f900
-R 1bba7f6a951d63c0429f61e7df8f5c7d
-U drh
-Z 186760bb5fa5f9976b74dfde02dde033
+P d6cadbe9fefce9a7af6b2d0cb83362f967d7d89a
+R 4ed3244c4cf92a71208fc6495549ac56
+T *branch * mutexInitCmpSwap
+T *sym-mutexInitCmpSwap *
+T -sym-trunk *
+U mistachkin
+Z b1c2ac01d3f97f9d2891430a375f1a69

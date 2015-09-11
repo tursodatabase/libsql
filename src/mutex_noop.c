@@ -29,6 +29,28 @@
 
 #ifndef SQLITE_MUTEX_OMIT
 
+/*
+** Try to provide an atomic compare-and-swap operation on a void pointer,
+** needed for initialization only.
+*/
+void *sqlite3NoopCompareAndSwap(
+  void *volatile *pCurVal,
+  void *cmpVal,
+  void *swapVal
+){
+  /*
+  ** This platform may not have a way to perform an atomic compare-and-swap
+  ** operation; therefore, use the fallback algorithm.
+  **
+  ** WARNING: This code is almost certainly not thread-safe.
+  */
+  void *oldVal = *pCurVal;
+  if( oldVal==cmpVal ){
+    *pCurVal = swapVal;
+  }
+  return oldVal;
+}
+
 #ifndef SQLITE_DEBUG
 /*
 ** Stub routines for all mutex methods.

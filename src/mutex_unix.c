@@ -86,8 +86,36 @@ static int pthreadMutexNotheld(sqlite3_mutex *p){
 void sqlite3MemoryBarrier(void){
 #if defined(SQLITE_MEMORY_BARRIER)
   SQLITE_MEMORY_BARRIER;
-#elif defined(__GNUC__)
+#elif defined(__GNUC__) && GCC_VERSION>=4001000
   __sync_synchronize();
+#endif
+}
+
+/*
+** Try to provide an atomic compare-and-swap operation on a void pointer,
+** needed for initialization only.
+*/
+void *sqlite3CompareAndSwap(
+  void *volatile *pCurVal,
+  void *cmpVal,
+  void *swapVal
+){
+#if defined(SQLITE_COMPARE_AND_SWAP)
+  return SQLITE_COMPARE_AND_SWAP(pCurVal, cmpVal, swapVal);
+#elif defined(__GNUC__) && GCC_VERSION>=4001000 && SQLITE_PTRSIZE>4
+  return (void *)__sync_val_compare_and_swap_8(
+      (u64 volatile *)pCurVal, (u64)cmpVal, (u64)swapVal);
+#elif defined(__GNUC__) && GCC_VERSION>=4001000
+  return (void *)__sync_val_compare_and_swap_4(
+      (u32 volatile *)pCurVal, (u32)cmpVal, (u32)swapVal);
+#else
+  /*
+  ** This platform may not have a way to perform an atomic compare-and-swap
+  ** operation; therefore, use the fallback algorithm.
+  **
+  ** WARNING: This code is almost certainly not thread-safe.
+  */
+  return sqlite3NoopCompareAndSwap(pCurVal, cmpVal, swapVal);
 #endif
 }
 
