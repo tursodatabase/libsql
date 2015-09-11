@@ -12,8 +12,8 @@
 #
 # This file tests the PRAGMA foreign_key_check command.
 #
-# EVIDENCE-OF: R-01427-50262 PRAGMA database.foreign_key_check; PRAGMA
-# database.foreign_key_check(table-name);
+# EVIDENCE-OF: R-15402-03103 PRAGMA schema.foreign_key_check; PRAGMA
+# schema.foreign_key_check(table-name);
 #
 # EVIDENCE-OF: R-23918-17301 The foreign_key_check pragma checks the
 # database, or the table called "table-name", for foreign key
