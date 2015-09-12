@@ -1,5 +1,5 @@
-C Add\smore\sasserts\sto\sthe\smutex\ssubsystem.
-D 2015-09-12T03:35:55.815
+C Clarify\sthe\snew\smutex\simplementation\sreset\slogic\sin\ssqlite3_shutdown().
+D 2015-09-12T03:40:13.463
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -305,7 +305,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c d344a95d60c24e2f490ee59db9784b1b17439012
 F src/loadext.c f0b66d28e377fd6c6d36cc9d92df1ff251ebee44
-F src/main.c ea3915d99187e56d1d18c6cb964be4b901875d8a
+F src/main.c 9f196a4364270af28ab97c1d62046e56e32dd11d
 F src/malloc.c 3a37ce6979a40f499d8cea9e9ab4e8517854d35d
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c abe6ee469b6c5a35c7f22bfeb9c9bac664a1c987
@@ -1386,7 +1386,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 31a26a1dd796e073e847e1e9c636f1976ffbb085
-R 5a995daaaa1ffe3e122fa4de7896505a
+P 7562f1fbede70b19bbbb928e0a534203528b5b65
+R 3ac5767399d8383f18e381780f08b08c
 U mistachkin
-Z daf6fb5d405d4ff4a4a1528517fc9961
+Z fd5ef4befe69774364afb3ff74061ec0

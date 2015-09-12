@@ -334,7 +334,17 @@ int sqlite3_shutdown(void){
     sqlite3MutexEnd();
     sqlite3GlobalConfig.isMutexInit = 0;
   }
+
+  /*
+  ** Force the state of the mutex subsystem to be completely reset now, even
+  ** if the configured xMutexEnd(), if any, failed.  This is not thread-safe.
+  ** This is necessary even if the xMutexInit() was never called, due to the
+  ** possiblity of this state being changed via SQLITE_CONFIG_MUTEX.  After
+  ** this point, the application must enable any custom mutex implementation
+  ** again via SQLITE_CONFIG_MUTEX, if necessary.
+  */
   sqlite3GlobalConfig.pMutex = 0;
+  memset(&sqlite3GlobalConfig.mutex, 0, sizeof(sqlite3_mutex_methods));
 
   return SQLITE_OK;
 }
