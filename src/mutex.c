@@ -27,6 +27,32 @@ static SQLITE_WSD int mutexIsInit = 0;
 
 #ifndef SQLITE_MUTEX_OMIT
 /*
+** This structure is for use by sqlite3MutexInit() only.  It represents an
+** invalid mutex implementation (i.e. one where all the function pointers
+** are null).
+*/
+static const sqlite3_mutex_methods mutexNullMethods = {
+  0, /* xMutexInit */
+  0, /* xMutexEnd */
+  0, /* xMutexAlloc */
+  0, /* xMutexFree */
+  0, /* xMutexEnter */
+  0, /* xMutexTry */
+  0, /* xMutexLeave */
+  0, /* xMutexHeld */
+  0  /* xMutexNotheld */
+};
+
+/*
+** Returns non-zero if the currently configured mutex implemention is
+** invalid (i.e. all of its function pointers are null).
+*/
+static int mutexIsInvalid(void){
+  return memcmp(&sqlite3GlobalConfig.mutex, &mutexNullMethods,
+                sizeof(sqlite3_mutex_methods))==0;
+}
+
+/*
 ** Copies a mutex implementation.  Both arguments must point to valid
 ** memory.
 */
@@ -51,7 +77,7 @@ static void mutexCopy(
 int sqlite3MutexInit(void){ 
   int rc;
   if( sqlite3CompareAndSwap((void * volatile *)&sqlite3GlobalConfig.pMutex,
-                            0, &sqlite3GlobalConfig.mutex)==0 ){
+                   0, &sqlite3GlobalConfig.mutex)==0 || mutexIsInvalid() ){
     /* If the xMutexAlloc method has not been set, then the user did not
     ** install a mutex implementation via sqlite3_config() prior to 
     ** sqlite3_initialize() being called. This block copies pointers to
