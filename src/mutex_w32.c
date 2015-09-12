@@ -103,12 +103,12 @@ void *sqlite3CompareAndSwap(
   return SQLITE_COMPARE_AND_SWAP(pCurVal, cmpVal, swapVal);
 #elif SQLITE_PTRSIZE>4
   return (void *)InterlockedCompareExchange64(
-      (LONGLONG SQLITE_WIN32_VOLATILE *)pCurVal, (LONGLONG)cmpVal,
-      (LONGLONG)swapVal);
+      (LONGLONG SQLITE_WIN32_VOLATILE *)pCurVal, (LONGLONG)swapVal,
+      (LONGLONG)cmpVal);
 #else
   return (void *)InterlockedCompareExchange(
-      (LONG SQLITE_WIN32_VOLATILE *)pCurVal, (LONG)cmpVal,
-      (LONG)swapVal);
+      (LONG SQLITE_WIN32_VOLATILE *)pCurVal, (LONG)swapVal,
+      (LONG)cmpVal);
 #endif
 }
 

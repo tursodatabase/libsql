@@ -1,5 +1,5 @@
-C Make\ssure\sthat\sthe\smutex\simplementation\scan\sbe\saltered\safter\scalling\ssqlite3_shutdown().
-D 2015-09-11T23:24:50.447
+C Fix\stypo\sin\sthe\sWin32\simplementation\sof\ssqlite3CompareAndSwap.
+D 2015-09-12T01:17:20.881
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -318,7 +318,7 @@ F src/mutex.c de4293e5feb5dae2a1786283a2ae971e899f6745
 F src/mutex.h 779d588e3b7756ec3ecf7d78cde1d84aba414f85
 F src/mutex_noop.c f03e26ba8258399da23b51234f6b6a97197c1900
 F src/mutex_unix.c a72043f2560147d8e85fe48a6aef682896deb3a0
-F src/mutex_w32.c a784f7c278770e80f951be1a84c0d5bb227748d9
+F src/mutex_w32.c 928c889408e3196f325d23fa4d115b3bc59d8eb6
 F src/notify.c 9711a7575036f0d3040ba61bc6e217f13a9888e7
 F src/os.c 8fd25588eeba74068d41102d26810e216999b6c8
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
@@ -1386,7 +1386,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f6a8f577957769171acd72df3cc9aa5ad474d84b
-R e8f57a2631a3ab06404c76440fea79b4
+P dc2cf8974337ca1ef705aee4efd4a96b91ca3edd
+R 3b92b5e82a5c0ea068da80dc7d0da694
 U mistachkin
-Z dbd7d71bc038f088924755d8c448d5dd
+Z 476438ea83dd42d3fd5d143255ab7dd1
