@@ -86,7 +86,7 @@ static int pthreadMutexNotheld(sqlite3_mutex *p){
 void sqlite3MemoryBarrier(void){
 #if defined(SQLITE_MEMORY_BARRIER)
   SQLITE_MEMORY_BARRIER;
-#elif defined(__GNUC__)
+#elif defined(__GNUC__) && GCC_VERSION>=4001000
   __sync_synchronize();
 #endif
 }
