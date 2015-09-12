@@ -587,7 +587,7 @@ void sqlite3Update(
       }
       VdbeCoverageNeverTaken(v);
     }
-    sqlite3GenerateRowIndexDelete(pParse, pTab, iDataCur, iIdxCur, aRegIdx);
+    sqlite3GenerateRowIndexDelete(pParse, pTab, iDataCur, iIdxCur, aRegIdx, -1);
   
     /* If changing the record number, delete the old record.  */
     if( hasFK || chngKey || pPk!=0 ){

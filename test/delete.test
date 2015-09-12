@@ -68,7 +68,6 @@ do_test delete-3.1.7 {
 } {1 2 4 16}
 integrity_check delete-3.2
 
-
 # Semantic errors in the WHERE clause
 #
 do_test delete-4.1 {

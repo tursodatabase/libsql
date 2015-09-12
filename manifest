@@ -1,5 +1,5 @@
-C Import\scommon\schanges\sfrom\sthe\smutex\sinitialization\sbranch.
-D 2015-09-12T18:57:45.818
+C Experimental\schange\sto\suse\sa\ssingle-pass\sapproach\sfor\sDELETE\sstatements\son\snon-virtual\stables\sthat\sdo\snot\sfire\striggers\sor\srequire\sforiegn-key\sprocessing.
+D 2015-09-12T19:26:11.066
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -282,8 +282,8 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 4d9134dc988a87838c06056c89c0e8c4700a0452
 F src/bitvec.c d1f21d7d91690747881f03940584f4cc548c9d3d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c 4084d9eed2817331f6e6a82230ba30e448cad497
-F src/btree.h 969adc948e89e449220ff0ff724c94bb2a52e9f1
+F src/btree.c 38ed0262d1c66d21bb084f086650e6106ae43d98
+F src/btree.h 40189aefdc2b830d25c8b58fd7d56538481bfdd7
 F src/btreeInt.h 8177c9ab90d772d6d2c6c517e05bed774b7c92c0
 F src/build.c f81380bc4d5d239c18b42982a9866a94489fd444
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
@@ -291,7 +291,7 @@ F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
 F src/ctime.c 5a0b735dc95604766f5dac73973658eef782ee8b
 F src/date.c fb1c99172017dcc8e237339132c91a21a0788584
 F src/dbstat.c e637e7a7ff40ef32132a418c6fdf1cfb63aa27c7
-F src/delete.c 6792c80d7fb54c4df9f7680413952600e7439492
+F src/delete.c d5a2dc4a4663225abbcab042478dc37a5749b7d7
 F src/expr.c 3a76afcdac925294c39903b7002ddb9e5fd29863
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 83e1baba999bed3144ea5a2143fc922edf51135f
@@ -300,7 +300,7 @@ F src/global.c 508e4087f7b41d688e4762dcf4d4fe28cfbc87f9
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
 F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c 076dc5876e261a9908603d54cfc5344cd680166c
+F src/insert.c db8a34cf8ba600ac1cebb3c03e93c92154d0fc4c
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c d344a95d60c24e2f490ee59db9784b1b17439012
@@ -345,7 +345,7 @@ F src/shell.c 6332ef06db1390ef812cfdff1fc97b4fd76cdd42
 F src/sqlite.h.in dbaf8c3796e80221de4395b5f4f872abddb5f89f
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 64350bf36833a56ad675e27392a913f417c5c308
-F src/sqliteInt.h b3e590f374b376a793b93e2387b8d5aca0fc92c4
+F src/sqliteInt.h 91bf09de55402157d1476a61df46ef6cfbc0bbc3
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c f266ad8a2892d659b74f0f50cb6a88b6e7c12179
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
@@ -399,11 +399,11 @@ F src/threads.c 6bbcc9fe50c917864d48287b4792d46d6e873481
 F src/tokenize.c 83c6ed569423a3af83a83973b444cf7123be33a6
 F src/treeview.c 154f0acc622fa3514de8777dcedf4c8a8802b4ce
 F src/trigger.c 322f23aad694e8f31d384dcfa386d52a48d3c52f
-F src/update.c 3c5bc9570df3bfafa0db36828406a8a14e4c426e
+F src/update.c eb7ab3ff2928628692a4f14be397c95f4a681d97
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c fc612367108b74573c5fd13a85d0a23027f438bd
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c 6d85be995bd2308a5aa2a68c7b564c5d4cc1a6fb
+F src/vdbe.c 5587d76bd5a4fb4f7ca023f161a6c6adbb1de26c
 F src/vdbe.h 4bc88bd0e06f8046ee6ab7487c0015e85ad949ad
 F src/vdbeInt.h 8b867eac234e28627ffcace3cd4b4b79bbec664b
 F src/vdbeapi.c 0d890f57caf143b114a95ce699e59af51359c508
@@ -417,7 +417,7 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 18b0ed49830cf04fe2d68224b41838a73ac6cd24
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 2e14d17f592d176b6dc879c33fbdec4fbccaa2ba
-F src/where.c 1227687e7892d4009f3c3433e974eb9c9e3c4d6a
+F src/where.c 98cbedead64380fc26a098350f43d92237c8fa17
 F src/whereInt.h 292d3ac90da4eab1e03ac8452f1add746bcafaa1
 F src/wherecode.c 6ac8599523f4840d9efac335329f627ebf3f79fd
 F src/whereexpr.c 2473e4350e30f9b55d1c6a8f66ca23c689f23f1d
@@ -569,9 +569,10 @@ F test/date.test 42973251b9429f2c41b77eb98a7b0b0ba2d3b2c0
 F test/dbstatus.test 8de104bb5606f19537d23cd553b41349b5ab1204
 F test/dbstatus2.test 10418e62b3db5dca070f0c3eef3ea13946f339c2
 F test/default.test 0cb49b1c315a0d81c81d775e407f66906a2a604d
-F test/delete.test a065b05d2ebf60fd16639c579a4adfb7c381c701
+F test/delete.test e1bcdf8926234e27aac24b346ad83d3329ec8b6f
 F test/delete2.test 3a03f2cca1f9a67ec469915cb8babd6485db43fa
 F test/delete3.test 555e84a00a99230b7d049d477a324a631126a6ab
+F test/delete4.test d9e7d553a939597b27d205b022d769469f361c1f
 F test/descidx1.test 6d03b44c8538fe0eb4924e19fba10cdd8f3c9240
 F test/descidx2.test 9f1a0c83fd57f8667c82310ca21b30a350888b5d
 F test/descidx3.test 09ddbe3f5295f482d2f8b687cf6db8bad7acd9a2
@@ -782,7 +783,7 @@ F test/index4.test ab92e736d5946840236cd61ac3191f91a7856bf6
 F test/index5.test 8621491915800ec274609e42e02a97d67e9b13e7
 F test/index6.test 7102ec371414c42dfb1d5ca37eb4519aa9edc23a
 F test/index7.test 9c6765a74fc3fcde7aebc5b3bd40d98df14a527c
-F test/indexedby.test 69d2292dfdabe85aa7c5df577c71bb4325607ec2
+F test/indexedby.test 9c4cd331224e57f79fbf411ae245e6272d415985
 F test/indexexpr1.test 4feec154aadacb033b41acc1760a18edc4c60470
 F test/indexfault.test 31d4ab9a7d2f6e9616933eb079722362a883eb1d
 F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
@@ -1386,7 +1387,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 86781093bdb4c4fdedd228cb1c8961db48a483bb
-R 65cef7a212785e2c4ed01bbc55ee07c1
-U mistachkin
-Z 122b4ea017ab904cde327a85d32df791
+P 334720c01722478af0d3dfd6fe8bafd88ba09f49
+R 7f7d9f32d96ad1f6004a92150fc6799e
+T *branch * onepass-delete
+T *sym-onepass-delete *
+T -sym-trunk *
+U dan
+Z 9a0d15a0b8fdf4a99fe6f2640c27db22
