@@ -388,12 +388,6 @@ int sqlite3Fts5IndexSync(Fts5Index *p, int bCommit);
 int sqlite3Fts5IndexRollback(Fts5Index *p);
 
 /*
-** Retrieve and clear the current error code, respectively.
-*/
-int sqlite3Fts5IndexErrcode(Fts5Index*);
-void sqlite3Fts5IndexReset(Fts5Index*);
-
-/*
 ** Get or set the "averages" values.
 */
 int sqlite3Fts5IndexGetAverages(Fts5Index *p, i64 *pnRow, i64 *anSize);
@@ -676,17 +670,6 @@ int sqlite3Fts5AuxInit(fts5_api*);
 int sqlite3Fts5TokenizerInit(fts5_api*);
 /*
 ** End of interface to code in fts5_tokenizer.c.
-**************************************************************************/
-
-/**************************************************************************
-** Interface to code in fts5_sorter.c. 
-*/
-typedef struct Fts5Sorter Fts5Sorter;
-
-int sqlite3Fts5SorterNew(Fts5Expr *pExpr, Fts5Sorter **pp);
-
-/*
-** End of interface to code in fts5_sorter.c.
 **************************************************************************/
 
 /**************************************************************************

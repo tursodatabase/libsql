@@ -25,11 +25,11 @@
 int sqlite3_fts5_may_be_corrupt = 1;
 
 
-typedef struct Fts5Table Fts5Table;
-typedef struct Fts5Cursor Fts5Cursor;
-typedef struct Fts5Auxiliary Fts5Auxiliary;
 typedef struct Fts5Auxdata Fts5Auxdata;
-
+typedef struct Fts5Auxiliary Fts5Auxiliary;
+typedef struct Fts5Cursor Fts5Cursor;
+typedef struct Fts5Sorter Fts5Sorter;
+typedef struct Fts5Table Fts5Table;
 typedef struct Fts5TokenizerModule Fts5TokenizerModule;
 
 /*

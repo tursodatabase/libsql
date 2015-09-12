@@ -947,7 +947,6 @@ static int fts5ExprNearNextMatch(
       for(j=0; j<pPhrase->nTerm; j++){
         Fts5ExprTerm *pTerm = &pPhrase->aTerm[j];
         if( pTerm->pSynonym ){
-          int bEof = 1;
           i64 iRowid = fts5ExprSynonymRowid(pTerm, bDesc, 0);
           if( iRowid==iLast ) continue;
           bMatch = 0;

@@ -1426,16 +1426,16 @@ do_execsql_test e_expr-27.1.2 {
     typeof(CAST(4.5 as INTEGER)), CAST(4.5 as INTEGER)
 } {text UVU real 1.23 integer 4}
 
-# EVIDENCE-OF: R-27225-65050 If the value of <expr> is NULL, then
-# the result of the CAST expression is also NULL.
+# EVIDENCE-OF: R-32434-09092 If the value of expr is NULL, then the
+# result of the CAST expression is also NULL.
 #
 do_expr_test e_expr-27.2.1 { CAST(NULL AS integer) } null {}
 do_expr_test e_expr-27.2.2 { CAST(NULL AS text) }    null {}
 do_expr_test e_expr-27.2.3 { CAST(NULL AS blob) }    null {}
 do_expr_test e_expr-27.2.4 { CAST(NULL AS number) }  null {}
 
-# EVIDENCE-OF: R-31076-23575 Casting a value to a <type-name> with
-# no affinity causes the value to be converted into a BLOB.
+# EVIDENCE-OF: R-43522-35548 Casting a value to a type-name with no
+# affinity causes the value to be converted into a BLOB.
 #
 do_expr_test e_expr-27.3.1 { CAST('abc' AS blob)       } blob abc
 do_expr_test e_expr-27.3.2 { CAST('def' AS shobblob_x) } blob def
