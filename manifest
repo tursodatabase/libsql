@@ -1,5 +1,5 @@
-C Specifying\san\sinvalid\smutex\simplementation\s(via\sSQLITE_CONFIG_MUTEX)\sshould\scause\sthe\sdefault\sone\sto\sbe\sused\sinstead.
-D 2015-09-12T04:19:51.382
+C Fix\scomments.
+D 2015-09-12T04:22:01.762
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -314,7 +314,7 @@ F src/mem3.c 61c9d47b792908c532ca3a62b999cf21795c6534
 F src/mem5.c 61eeb90134f9a5be6c2e68d8daae7628b25953fb
 F src/memjournal.c 3eb2c0b51adbd869cb6a44780323f05fa904dc85
 F src/msvc.h d9ba56c6851227ab44b3f228a35f3f5772296495
-F src/mutex.c 87bd895b69359cf01d611fa72849237087151e21
+F src/mutex.c a5c7d63f595ef4e2c7411fc627f1f6e3e8ee089b
 F src/mutex.h 779d588e3b7756ec3ecf7d78cde1d84aba414f85
 F src/mutex_noop.c f03e26ba8258399da23b51234f6b6a97197c1900
 F src/mutex_unix.c a72043f2560147d8e85fe48a6aef682896deb3a0
@@ -1386,7 +1386,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f9a034834e6c6e32ac350cf48bec981490e533ad
-R bf73c19c36cb2ae09dd34d5e1c1598fa
+P 1a97bc81ccfc88f2dd527dff16e9e395718675bc
+R 7da2877070c61e4e7804a32fa3d7ad69
 U mistachkin
-Z 7d9d0679bd87dd4450cebce4f9dd2531
+Z 7f1031460ebf4d5a4e025d650694c0fb
