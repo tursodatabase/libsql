@@ -1,5 +1,5 @@
-C Experimental\schange\sto\suse\sa\ssingle-pass\sapproach\sfor\sDELETE\sstatements\son\snon-virtual\stables\sthat\sdo\snot\sfire\striggers\sor\srequire\sforiegn-key\sprocessing.
-D 2015-09-12T19:26:11.066
+C Fix\scompiler\swarnings\sin\sdelete.c.
+D 2015-09-12T19:50:58.177
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -291,7 +291,7 @@ F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
 F src/ctime.c 5a0b735dc95604766f5dac73973658eef782ee8b
 F src/date.c fb1c99172017dcc8e237339132c91a21a0788584
 F src/dbstat.c e637e7a7ff40ef32132a418c6fdf1cfb63aa27c7
-F src/delete.c d5a2dc4a4663225abbcab042478dc37a5749b7d7
+F src/delete.c 18b9c93ef552adc12b7127707b10deefc0c1d451
 F src/expr.c 3a76afcdac925294c39903b7002ddb9e5fd29863
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 83e1baba999bed3144ea5a2143fc922edf51135f
@@ -1387,10 +1387,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 334720c01722478af0d3dfd6fe8bafd88ba09f49
-R 7f7d9f32d96ad1f6004a92150fc6799e
-T *branch * onepass-delete
-T *sym-onepass-delete *
-T -sym-trunk *
+P eaeb2b80f6f8f83679c8323a81bb39570ec946fe
+R eb15fa201d3086c36456da6232a12264
 U dan
-Z 9a0d15a0b8fdf4a99fe6f2640c27db22
+Z 7f9a5cfb9accd4d1fdad39fe13d7d9ec

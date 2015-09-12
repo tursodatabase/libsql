@@ -247,7 +247,6 @@ void sqlite3DeleteFrom(
   int iRowSet = 0;       /* Register for rowset of rows to delete */
   int addrBypass = 0;    /* Address of jump over the delete logic */
   int addrLoop = 0;      /* Top of the delete loop */
-  int addrDelete = 0;    /* Jump directly to the delete logic */
   int addrEphOpen = 0;   /* Instruction to open the Ephemeral table */
  
 #ifndef SQLITE_OMIT_TRIGGER
@@ -473,7 +472,7 @@ void sqlite3DeleteFrom(
     ** triggers.
     */
     if( !isView ){
-      int iAddrOnce;
+      int iAddrOnce = 0;
       if( eOnePass==2 ) iAddrOnce = sqlite3CodeOnce(pParse);
       testcase( IsVirtual(pTab) );
       sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenWrite, iTabCur, aToOpen,
