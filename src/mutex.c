@@ -75,6 +75,7 @@ static void mutexCopy(
 ** Initialize the mutex system.
 */
 int sqlite3MutexInit(void){ 
+  static int initPending = 0;
   int rc;
   if( sqlite3CompareAndSwap((void * volatile *)&sqlite3GlobalConfig.pMutex,
                    0, &sqlite3GlobalConfig.mutex)==0 || mutexIsInvalid() ){
@@ -93,8 +94,12 @@ int sqlite3MutexInit(void){
     mutexCopy(&sqlite3GlobalConfig.mutex, pFrom);
     sqlite3MemoryBarrier();
   }
-  assert( sqlite3GlobalConfig.mutex.xMutexInit );
-  rc = sqlite3GlobalConfig.mutex.xMutexInit();
+  if( !initPending ){
+    assert( sqlite3GlobalConfig.mutex.xMutexInit );
+    initPending = 1;
+    rc = sqlite3GlobalConfig.mutex.xMutexInit();
+    initPending = 0;
+  }
 
 #ifdef SQLITE_DEBUG
   GLOBAL(int, mutexIsInit) = 1;
