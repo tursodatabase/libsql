@@ -1,5 +1,5 @@
-C Fix\sAPI\sdocumentation\stypos.\s\sEmphasize\sthat\sthe\ssqlite3_config()\sroutine\sis\nnot\sthreadsafe.
-D 2015-09-12T19:27:41.193
+C Add\sstatic\sVFS\smutexes\sto\sthe\sprimary\sheader\sfile\scomments.
+D 2015-09-13T20:15:01.158
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -342,7 +342,7 @@ F src/resolve.c 3126f7694b8ce0f97282d7dd3a5198b8fa18dce9
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c c17613385bc6b095c421b1f30548814f5fd8a9b2
 F src/shell.c 6332ef06db1390ef812cfdff1fc97b4fd76cdd42
-F src/sqlite.h.in b7386d2bae6a43ba35be56e0d495b8725998101e
+F src/sqlite.h.in 50f83145c6543000b7d27525ecaec59a23d8280b
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 64350bf36833a56ad675e27392a913f417c5c308
 F src/sqliteInt.h b3e590f374b376a793b93e2387b8d5aca0fc92c4
@@ -1386,7 +1386,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 334720c01722478af0d3dfd6fe8bafd88ba09f49
-R 584c0e6cff093a89c297ea7dca4357da
-U drh
-Z 4de500fe7cfddcd5498eea834d793093
+P 786333e05a75406bbd0b5c9c7beb8f16022eabec
+R 1a3f3f98d74800359cb14e46ec6e0053
+U mistachkin
+Z 7262f2bc6346d75912550091a71aa522
