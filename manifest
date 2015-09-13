@@ -1,5 +1,5 @@
 C Merge\supdates\sfrom\strunk.
-D 2015-09-12T18:58:32.998
+D 2015-09-13T18:43:53.759
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -342,7 +342,7 @@ F src/resolve.c 3126f7694b8ce0f97282d7dd3a5198b8fa18dce9
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c c17613385bc6b095c421b1f30548814f5fd8a9b2
 F src/shell.c 6332ef06db1390ef812cfdff1fc97b4fd76cdd42
-F src/sqlite.h.in dbaf8c3796e80221de4395b5f4f872abddb5f89f
+F src/sqlite.h.in b7386d2bae6a43ba35be56e0d495b8725998101e
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 64350bf36833a56ad675e27392a913f417c5c308
 F src/sqliteInt.h d7b2c30947a49a7538f24c0dca253c0e456c849c
@@ -1386,7 +1386,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4859778900a99e7e50ce3d56910ad4c5469f2cdb 334720c01722478af0d3dfd6fe8bafd88ba09f49
-R cfc16eded5405e1561a759b6078e93d0
+P d8051f611acabc2aaf8d23e8707c2a45961be416 786333e05a75406bbd0b5c9c7beb8f16022eabec
+R c5f00344bef9784bebe4d7d63d1f470a
 U mistachkin
-Z 39e49f321343f38df06dd77bd41d446b
+Z ed5385a43675afcca5c372bcd0fa06ab
