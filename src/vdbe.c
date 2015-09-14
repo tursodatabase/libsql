@@ -4003,6 +4003,7 @@ case OP_NotExists: {        /* jump, in3 */
   res = 0;
   iKey = pIn3->u.i;
   rc = sqlite3BtreeMovetoUnpacked(pCrsr, 0, iKey, 0, &res);
+  assert( rc==SQLITE_OK || res==0 );
   pC->movetoTarget = iKey;  /* Used by OP_Delete */
   pC->nullRow = 0;
   pC->cacheStatus = CACHE_STALE;
@@ -4010,8 +4011,12 @@ case OP_NotExists: {        /* jump, in3 */
   VdbeBranchTaken(res!=0,2);
   pC->seekResult = res;
   if( res!=0 ){
-    if( pOp->p2==0 && rc==SQLITE_OK ) rc = SQLITE_CORRUPT_BKPT;
-    goto jump_to_p2;
+    assert( rc==SQLITE_OK );
+    if( pOp->p2==0 ){
+      rc = SQLITE_CORRUPT_BKPT;
+    }else{
+      goto jump_to_p2;
+    }
   }
   break;
 }
@@ -4301,6 +4306,7 @@ case OP_InsertInt: {
 */
 case OP_Delete: {
   VdbeCursor *pC;
+  u8 hasUpdateCallback;
 
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
@@ -4308,7 +4314,8 @@ case OP_Delete: {
   assert( pC->pCursor!=0 );  /* Only valid for real tables, no pseudotables */
   assert( pC->deferredMoveto==0 );
 
-  if( pOp->p5 && db->xUpdateCallback && pOp->p4.z && pC->isTable ){
+  hasUpdateCallback = db->xUpdateCallback && pOp->p4.z && pC->isTable;
+  if( pOp->p5 && hasUpdateCallback ){
     sqlite3BtreeKeySize(pC->pCursor, &pC->movetoTarget);
   }
 
@@ -4327,7 +4334,7 @@ case OP_Delete: {
   pC->cacheStatus = CACHE_STALE;
 
   /* Invoke the update-hook if required. */
-  if( rc==SQLITE_OK && db->xUpdateCallback && pOp->p4.z && pC->isTable ){
+  if( rc==SQLITE_OK && hasUpdateCallback ){
     db->xUpdateCallback(db->pUpdateArg, SQLITE_DELETE,
                         db->aDb[pC->iDb].zName, pOp->p4.z, pC->movetoTarget);
     assert( pC->iDb>=0 );

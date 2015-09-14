@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\san\sSQLITE_USER_AUTHENTICATION\smacro.
-D 2015-09-14T14:49:23.201
+C Testability\simprovements\sfor\sthe\sONEPASS_MULTI\senhancement.
+D 2015-09-14T19:26:37.988
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -403,7 +403,7 @@ F src/update.c eb7ab3ff2928628692a4f14be397c95f4a681d97
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c fc612367108b74573c5fd13a85d0a23027f438bd
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c a8a5cb1126bf79104e00326abd6a7d22ac3bc4c3
+F src/vdbe.c 5048103aa6bc9c01bf1a4620729256d1e873bb6c
 F src/vdbe.h 4bc88bd0e06f8046ee6ab7487c0015e85ad949ad
 F src/vdbeInt.h 8b867eac234e28627ffcace3cd4b4b79bbec664b
 F src/vdbeapi.c 0d890f57caf143b114a95ce699e59af51359c508
@@ -1387,7 +1387,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 16e56bdadef903c6439a487f2683388aeeb0c625
-R f8fa410ffd0eb073e2e43d46c84640d3
+P 379455af9fdfb299a857d46f35f0a76ed6daa08a
+R 240d53905959924a39a1969f0c2c4fad
 U drh
-Z 5de1b91d25cb0490451927525818647a
+Z db76ee6590838fdbed88f2282d6173bf
