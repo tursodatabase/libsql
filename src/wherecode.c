@@ -1071,6 +1071,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       sqlite3ExprCacheStore(pParse, iCur, -1, iRowidReg);
       if( pWInfo->okOnePass ){
         sqlite3VdbeAddOp3(v, OP_NotExists, iCur, 0, iRowidReg);
+        VdbeCoverage(v);
       }else{
         sqlite3VdbeAddOp2(v, OP_Seek, iCur, iRowidReg);  /* Deferred seek */
       }

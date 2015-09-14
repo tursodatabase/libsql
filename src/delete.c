@@ -473,7 +473,9 @@ void sqlite3DeleteFrom(
     */
     if( !isView ){
       int iAddrOnce = 0;
-      if( eOnePass==2 ) iAddrOnce = sqlite3CodeOnce(pParse);
+      if( eOnePass==2 ){
+        iAddrOnce = sqlite3CodeOnce(pParse); VdbeCoverage(v);
+      }
       testcase( IsVirtual(pTab) );
       sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenWrite, iTabCur, aToOpen,
                                  &iDataCur, &iIdxCur);

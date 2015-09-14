@@ -1,5 +1,5 @@
-C Use\sa\ssingle-pass\sapproach\sfor\sDELETE\sstatements\son\snon-virtual\stables\sthat\sdo\snot\srequire\strigger\sor\sforeign\skey\sprocessing.
-D 2015-09-14T11:09:58.319
+C Fix\sa\scompiler\swarning\sand\sproviding\smissing\sVdbeCoverage()\scalls.
+D 2015-09-14T14:08:25.548
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -282,7 +282,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 4d9134dc988a87838c06056c89c0e8c4700a0452
 F src/bitvec.c d1f21d7d91690747881f03940584f4cc548c9d3d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c 38ed0262d1c66d21bb084f086650e6106ae43d98
+F src/btree.c d31008cfbf83e3ae5cb96bae3a00f4b57f244a16
 F src/btree.h 40189aefdc2b830d25c8b58fd7d56538481bfdd7
 F src/btreeInt.h 8177c9ab90d772d6d2c6c517e05bed774b7c92c0
 F src/build.c f81380bc4d5d239c18b42982a9866a94489fd444
@@ -291,7 +291,7 @@ F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
 F src/ctime.c 5a0b735dc95604766f5dac73973658eef782ee8b
 F src/date.c fb1c99172017dcc8e237339132c91a21a0788584
 F src/dbstat.c e637e7a7ff40ef32132a418c6fdf1cfb63aa27c7
-F src/delete.c 18b9c93ef552adc12b7127707b10deefc0c1d451
+F src/delete.c 33dedc277b1b7267734b41580c280ebb7610270d
 F src/expr.c 3a76afcdac925294c39903b7002ddb9e5fd29863
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 83e1baba999bed3144ea5a2143fc922edf51135f
@@ -419,7 +419,7 @@ F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 2e14d17f592d176b6dc879c33fbdec4fbccaa2ba
 F src/where.c 98cbedead64380fc26a098350f43d92237c8fa17
 F src/whereInt.h 292d3ac90da4eab1e03ac8452f1add746bcafaa1
-F src/wherecode.c 780cccf12a07ddc1ea0c6f6eb95895a3d8f79a6e
+F src/wherecode.c 91c50036928edf53bdfe7a2db13f2a40342b4f46
 F src/whereexpr.c 2473e4350e30f9b55d1c6a8f66ca23c689f23f1d
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -1387,8 +1387,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9a867d9fbe74fe2b33d55e32737a66e9a77b7466 166d5af8914c6954fb24a06e9686f194c0d0acde
-R c69d19f4812c097d21c7641aacc08fe2
-T +closed 166d5af8914c6954fb24a06e9686f194c0d0acde
-U dan
-Z 2b1ef5f5371b990363dc017742f1aae5
+P 8b93cc5937000535c35c763c9326507a19892a6e
+R 761047ba83700d06df34cef492a4fea0
+U drh
+Z 4b77c33ded83fae554d0e60cce550d5b

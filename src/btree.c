@@ -8117,7 +8117,7 @@ int sqlite3BtreeDelete(BtCursor *pCur, int bPreserve){
   ** before or after the deleted entry. In this case set bSkipnext to true.  */
   if( bPreserve ){
     if( !pPage->leaf 
-     || (pPage->nFree + cellSizePtr(pPage, pCell) + 2)>(pBt->usableSize*2/3)
+     || (pPage->nFree+cellSizePtr(pPage,pCell)+2)>(int)(pBt->usableSize*2/3)
     ){
       /* A b-tree rebalance will be required after deleting this entry.
       ** Save the cursor key.  */
