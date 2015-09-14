@@ -3958,6 +3958,10 @@ WhereInfo *sqlite3WhereBegin(
   sqlite3 *db;               /* Database connection */
   int rc;                    /* Return code */
 
+  assert( (wctrlFlags & WHERE_ONEPASS_MULTIROW)==0 || (
+        (wctrlFlags & WHERE_ONEPASS_DESIRED)!=0 
+     && (wctrlFlags & WHERE_OMIT_OPEN_CLOSE)==0 
+  ));
 
   /* Variable initialization */
   db = pParse->db;
@@ -4199,11 +4203,16 @@ WhereInfo *sqlite3WhereBegin(
   ** the statement to update or delete a single row.
   */
   assert( (wctrlFlags & WHERE_ONEPASS_DESIRED)==0 || pWInfo->nLevel==1 );
-  if( (wctrlFlags & WHERE_ONEPASS_DESIRED)!=0 
-   && (pWInfo->a[0].pWLoop->wsFlags & WHERE_ONEROW)!=0 ){
-    pWInfo->okOnePass = 1;
-    if( HasRowid(pTabList->a[0].pTab) ){
-      pWInfo->a[0].pWLoop->wsFlags &= ~WHERE_IDX_ONLY;
+  if( (wctrlFlags & WHERE_ONEPASS_DESIRED)!=0 ){
+    int wsFlags = pWInfo->a[0].pWLoop->wsFlags;
+    int bOnerow = (wsFlags & WHERE_ONEROW)!=0;
+    if( bOnerow || ( (wctrlFlags & WHERE_ONEPASS_MULTIROW)
+       && 0==(wsFlags & WHERE_VIRTUALTABLE)
+    )){
+      pWInfo->okOnePass = bOnerow ? 1 : 2;
+      if( HasRowid(pTabList->a[0].pTab) ){
+        pWInfo->a[0].pWLoop->wsFlags &= ~WHERE_IDX_ONLY;
+      }
     }
   }
 

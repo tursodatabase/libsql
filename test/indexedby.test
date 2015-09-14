@@ -231,13 +231,13 @@ do_execsql_test indexedby-6.2 {
 # 
 do_execsql_test indexedby-7.1 {
   EXPLAIN QUERY PLAN DELETE FROM t1 WHERE a = 5 
-} {0 0 0 {SEARCH TABLE t1 USING COVERING INDEX i1 (a=?)}}
+} {0 0 0 {SEARCH TABLE t1 USING INDEX i1 (a=?)}}
 do_execsql_test indexedby-7.2 {
   EXPLAIN QUERY PLAN DELETE FROM t1 NOT INDEXED WHERE a = 5 
 } {0 0 0 {SCAN TABLE t1}}
 do_execsql_test indexedby-7.3 {
   EXPLAIN QUERY PLAN DELETE FROM t1 INDEXED BY i1 WHERE a = 5 
-} {0 0 0 {SEARCH TABLE t1 USING COVERING INDEX i1 (a=?)}}
+} {0 0 0 {SEARCH TABLE t1 USING INDEX i1 (a=?)}}
 do_execsql_test indexedby-7.4 {
   EXPLAIN QUERY PLAN DELETE FROM t1 INDEXED BY i1 WHERE a = 5 AND b = 10
 } {0 0 0 {SEARCH TABLE t1 USING INDEX i1 (a=?)}}
