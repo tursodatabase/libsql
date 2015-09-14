@@ -187,6 +187,9 @@ int sqlite3_value_int(sqlite3_value *pVal){
 sqlite_int64 sqlite3_value_int64(sqlite3_value *pVal){
   return sqlite3VdbeIntValue((Mem*)pVal);
 }
+unsigned int sqlite3_value_subtype(sqlite3_value *pVal){
+  return ((Mem*)pVal)->eSubtype;
+}
 const unsigned char *sqlite3_value_text(sqlite3_value *pVal){
   return (const unsigned char *)sqlite3ValueText(pVal, SQLITE_UTF8);
 }
@@ -364,6 +367,10 @@ void sqlite3_result_int64(sqlite3_context *pCtx, i64 iVal){
 void sqlite3_result_null(sqlite3_context *pCtx){
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
   sqlite3VdbeMemSetNull(pCtx->pOut);
+}
+void sqlite3_result_subtype(sqlite3_context *pCtx, unsigned int eSubtype){
+  assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
+  pCtx->pOut->eSubtype = eSubtype & 0xff;
 }
 void sqlite3_result_text(
   sqlite3_context *pCtx, 
@@ -696,7 +703,7 @@ void *sqlite3_user_data(sqlite3_context *p){
 ** application defined function.
 */
 sqlite3 *sqlite3_context_db_handle(sqlite3_context *p){
-  assert( p && p->pFunc );
+  assert( p && p->pOut );
   return p->pOut->db;
 }
 

@@ -91,7 +91,7 @@ Expr *sqlite3ExprAddCollateString(Parse *pParse, Expr *pExpr, const char *zC){
 }
 
 /*
-** Skip over any TK_COLLATE or TK_AS operators and any unlikely()
+** Skip over any TK_COLLATE operators and any unlikely()
 ** or likelihood() function at the root of an expression.
 */
 Expr *sqlite3ExprSkipCollate(Expr *pExpr){
@@ -102,7 +102,7 @@ Expr *sqlite3ExprSkipCollate(Expr *pExpr){
       assert( pExpr->op==TK_FUNCTION );
       pExpr = pExpr->x.pList->a[0].pExpr;
     }else{
-      assert( pExpr->op==TK_COLLATE || pExpr->op==TK_AS );
+      assert( pExpr->op==TK_COLLATE );
       pExpr = pExpr->pLeft;
     }
   }   
@@ -2432,6 +2432,28 @@ static void sqlite3ExprCachePinRegister(Parse *pParse, int iReg){
   }
 }
 
+/* Generate code that will load into register regOut a value that is
+** appropriate for the iIdxCol-th column of index pIdx.
+*/
+void sqlite3ExprCodeLoadIndexColumn(
+  Parse *pParse,  /* The parsing context */
+  Index *pIdx,    /* The index whose column is to be loaded */
+  int iTabCur,    /* Cursor pointing to a table row */
+  int iIdxCol,    /* The column of the index to be loaded */
+  int regOut      /* Store the index column value in this register */
+){
+  i16 iTabCol = pIdx->aiColumn[iIdxCol];
+  if( iTabCol>=(-1) ){
+    sqlite3ExprCodeGetColumnOfTable(pParse->pVdbe, pIdx->pTable, iTabCur,
+                                    iTabCol, regOut);
+    return;
+  }
+  assert( pIdx->aColExpr );
+  assert( pIdx->aColExpr->nExpr>iIdxCol );
+  pParse->iSelfTab = iTabCur;
+  sqlite3ExprCode(pParse, pIdx->aColExpr->a[iIdxCol].pExpr, regOut);
+}
+
 /*
 ** Generate code to extract the value of the iCol-th column of a table.
 */
@@ -2617,8 +2639,9 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
           inReg = pExpr->iColumn + pParse->ckBase;
           break;
         }else{
-          /* Deleting from a partial index */
-          iTab = pParse->iPartIdxTab;
+          /* Coding an expression that is part of an index where column names
+          ** in the index refer to the table to which the index belongs */
+          iTab = pParse->iSelfTab;
         }
       }
       inReg = sqlite3ExprCodeGetColumn(pParse, pExpr->pTab,
@@ -2676,10 +2699,6 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
     }
     case TK_REGISTER: {
       inReg = pExpr->iTable;
-      break;
-    }
-    case TK_AS: {
-      inReg = sqlite3ExprCodeTarget(pParse, pExpr->pLeft, target);
       break;
     }
 #ifndef SQLITE_OMIT_CAST
@@ -3765,7 +3784,9 @@ int sqlite3ExprCompare(Expr *pA, Expr *pB, int iTab){
     return 2;
   }
   if( pA->op!=TK_COLUMN && ALWAYS(pA->op!=TK_AGG_COLUMN) && pA->u.zToken ){
-    if( strcmp(pA->u.zToken,pB->u.zToken)!=0 ){
+    if( pA->op==TK_FUNCTION ){
+      if( sqlite3StrICmp(pA->u.zToken,pB->u.zToken)!=0 ) return 2;
+    }else if( strcmp(pA->u.zToken,pB->u.zToken)!=0 ){
       return pA->op==TK_COLLATE ? 1 : 2;
     }
   }

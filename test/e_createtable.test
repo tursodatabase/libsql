@@ -373,8 +373,8 @@ do_createtable_tests 1.1.2 {
 }
 
 
-# EVIDENCE-OF: R-10195-31023 If a <database-name> is specified, it
-# must be either "main", "temp", or the name of an attached database.
+# EVIDENCE-OF: R-18448-33677 If a schema-name is specified, it must be
+# either "main", "temp", or the name of an attached database.
 #
 # EVIDENCE-OF: R-39822-07822 In this case the new table is created in
 # the named database.
@@ -422,9 +422,9 @@ do_createtable_tests 1.4 -tclquery {
   2    "CREATE TEMPORARY TABLE t2(a, b)" {{} {t1 t2} {} {}}
 }
 
-# EVIDENCE-OF: R-49439-47561 It is an error to specify both a
-# <database-name> and the TEMP or TEMPORARY keyword, unless the
-# <database-name> is "temp".
+# EVIDENCE-OF: R-23976-43329 It is an error to specify both a
+# schema-name and the TEMP or TEMPORARY keyword, unless the schema-name
+# is "temp".
 #
 drop_all_tables
 do_createtable_tests 1.5.1 -error {
@@ -447,9 +447,8 @@ do_createtable_tests 1.5.2 -tclquery {
   4    "CREATE TEMPORARY TABLE TEMP.xxx(x)"     {{} {t1 t2 t3 xxx} {} {}}
 }
 
-# EVIDENCE-OF: R-00917-09393 If no database name is specified and the
-# TEMP keyword is not present then the table is created in the main
-# database.
+# EVIDENCE-OF: R-31997-24564 If no schema name is specified and the TEMP
+# keyword is not present then the table is created in the main database.
 #
 drop_all_tables
 do_createtable_tests 1.6 -tclquery {

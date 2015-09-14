@@ -4533,8 +4533,8 @@ static int process_input(ShellState *p, FILE *in){
       fprintf(stderr, "Error: incomplete SQL: %s\n", zSql);
       errCnt++;
     }
-    free(zSql);
   }
+  free(zSql);
   free(zLine);
   return errCnt>0;
 }

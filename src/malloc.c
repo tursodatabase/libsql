@@ -45,7 +45,7 @@ typedef struct ScratchFreeslot {
 */
 static SQLITE_WSD struct Mem0Global {
   sqlite3_mutex *mutex;         /* Mutex to serialize access */
-  sqlite3_int64 alarmThreshold;  /* The soft heap limit */
+  sqlite3_int64 alarmThreshold; /* The soft heap limit */
 
   /*
   ** Pointers to the end of sqlite3GlobalConfig.pScratch memory
@@ -73,59 +73,20 @@ sqlite3_mutex *sqlite3MallocMutex(void){
   return mem0.mutex;
 }
 
-/*
-** Return the amount of memory currently in use.
-*/
-static sqlite3_int64 memInUse(void){
-  assert( sqlite3_mutex_held(mem0.mutex) );
-  return sqlite3StatusValue(SQLITE_STATUS_MEMORY_USED);
-}
-
-/*
-** Called when the soft heap limit is exceeded for an allocation
-** of nBytes.
-*/
-#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
-static void sqlite3HeapLimitExceeded(int nByte){
-  sqlite3_int64 excess = memInUse() + nByte - mem0.alarmThreshold;
-  sqlite3_mutex_leave(mem0.mutex);
-  sqlite3_release_memory((int)(excess & 0x7fffffff));
-  sqlite3_mutex_enter(mem0.mutex);
-}
-#else
-# define sqlite3HeapLimitExceeded(X)  /* no-op */
-#endif
-
-/*
-** Check to see if increasing the total memory usage by nNew bytes
-** will exceed the soft heap limit.  
-**
-** If the soft heap limit is exceeded, set the mem0.nearlyFull flag
-** and invoke sqlite3HeapLimitExceeded() to try to free up some
-** memory.
-*/
-static void sqlite3CheckSoftHeapLimit(int nNew){
-  assert( sqlite3_mutex_held(mem0.mutex) );
-  if( mem0.alarmThreshold>0 ){
-    if( mem0.alarmThreshold-nNew >= memInUse() ){
-      mem0.nearlyFull = 1;
-      sqlite3HeapLimitExceeded(nNew);
-    }else{
-      mem0.nearlyFull = 0;
-    }
-  }
-}
-
 #ifndef SQLITE_OMIT_DEPRECATED
 /*
-** Deprecated external interface.  First deprecated 2007-11-05.  Changed
-** into a no-op on 2015-09-02.
+** Deprecated external interface.  It used to set an alarm callback
+** that was invoked when memory usage grew too large.  Now it is a
+** no-op.
 */
 int sqlite3_memory_alarm(
   void(*xCallback)(void *pArg, sqlite3_int64 used,int N),
   void *pArg,
   sqlite3_int64 iThreshold
 ){
+  (void)xCallback;
+  (void)pArg;
+  (void)iThreshold;
   return SQLITE_OK;
 }
 #endif
@@ -136,20 +97,24 @@ int sqlite3_memory_alarm(
 */
 sqlite3_int64 sqlite3_soft_heap_limit64(sqlite3_int64 n){
   sqlite3_int64 priorLimit;
+  sqlite3_int64 excess;
+  sqlite3_int64 nUsed;
 #ifndef SQLITE_OMIT_AUTOINIT
   int rc = sqlite3_initialize();
   if( rc ) return -1;
 #endif
   sqlite3_mutex_enter(mem0.mutex);
   priorLimit = mem0.alarmThreshold;
-  if( n>0 ){
-    mem0.alarmThreshold = n;
-    sqlite3CheckSoftHeapLimit(0);
-  }else if( n==0 ){
-    mem0.alarmThreshold = 0;
-    mem0.nearlyFull = 0;
+  if( n<0 ){
+    sqlite3_mutex_leave(mem0.mutex);
+    return priorLimit;
   }
+  mem0.alarmThreshold = n;
+  nUsed = sqlite3StatusValue(SQLITE_STATUS_MEMORY_USED);
+  mem0.nearlyFull = (n>0 && n<=nUsed);
   sqlite3_mutex_leave(mem0.mutex);
+  excess = sqlite3_memory_used() - n;
+  if( excess>0 ) sqlite3_release_memory((int)(excess & 0x7fffffff));
   return priorLimit;
 }
 void sqlite3_soft_heap_limit(int n){
@@ -241,6 +206,16 @@ sqlite3_int64 sqlite3_memory_highwater(int resetFlag){
 }
 
 /*
+** Trigger the alarm 
+*/
+static void sqlite3MallocAlarm(int nByte){
+  if( mem0.alarmThreshold<=0 ) return;
+  sqlite3_mutex_leave(mem0.mutex);
+  sqlite3_release_memory(nByte);
+  sqlite3_mutex_enter(mem0.mutex);
+}
+
+/*
 ** Do a memory allocation with statistics and alarms.  Assume the
 ** lock is already held.
 */
@@ -250,11 +225,19 @@ static int mallocWithAlarm(int n, void **pp){
   assert( sqlite3_mutex_held(mem0.mutex) );
   nFull = sqlite3GlobalConfig.m.xRoundup(n);
   sqlite3StatusSet(SQLITE_STATUS_MALLOC_SIZE, n);
-  sqlite3CheckSoftHeapLimit(nFull);
+  if( mem0.alarmThreshold>0 ){
+    sqlite3_int64 nUsed = sqlite3StatusValue(SQLITE_STATUS_MEMORY_USED);
+    if( nUsed >= mem0.alarmThreshold - nFull ){
+      mem0.nearlyFull = 1;
+      sqlite3MallocAlarm(nFull);
+    }else{
+      mem0.nearlyFull = 0;
+    }
+  }
   p = sqlite3GlobalConfig.m.xMalloc(nFull);
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
-  if( p==0 && mem0.alarmThreshold ){
-    sqlite3HeapLimitExceeded(nFull);
+  if( p==0 && mem0.alarmThreshold>0 ){
+    sqlite3MallocAlarm(nFull);
     p = sqlite3GlobalConfig.m.xMalloc(nFull);
   }
 #endif
@@ -537,14 +520,15 @@ void *sqlite3Realloc(void *pOld, u64 nBytes){
     sqlite3_mutex_enter(mem0.mutex);
     sqlite3StatusSet(SQLITE_STATUS_MALLOC_SIZE, (int)nBytes);
     nDiff = nNew - nOld;
-    sqlite3CheckSoftHeapLimit(nDiff);
+    if( sqlite3StatusValue(SQLITE_STATUS_MEMORY_USED) >= 
+          mem0.alarmThreshold-nDiff ){
+      sqlite3MallocAlarm(nDiff);
+    }
     pNew = sqlite3GlobalConfig.m.xRealloc(pOld, nNew);
-#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
-    if( pNew==0 && mem0.alarmThreshold ){
-      sqlite3HeapLimitExceeded((int)nBytes);
+    if( pNew==0 && mem0.alarmThreshold>0 ){
+      sqlite3MallocAlarm((int)nBytes);
       pNew = sqlite3GlobalConfig.m.xRealloc(pOld, nNew);
     }
-#endif
     if( pNew ){
       nNew = sqlite3MallocSize(pNew);
       sqlite3StatusUp(SQLITE_STATUS_MEMORY_USED, nNew-nOld);

@@ -134,5 +134,18 @@ do_execsql_test 3.2.1 {
   1 {-1 0 -1} 2 {-1 0 -1}
 }
 
+#-------------------------------------------------------------------------
+# Test the integrity-check
+#
+do_execsql_test 4.1.1 {
+  CREATE VIRTUAL TABLE t5 USING fts5(x, columnsize=0);
+  INSERT INTO t5 VALUES('1 2 3 4');
+  INSERT INTO t5 VALUES('2 4 6 8');
+}
+
+breakpoint
+do_execsql_test 4.1.2 {
+  INSERT INTO t5(t5) VALUES('integrity-check');
+}
 
 finish_test

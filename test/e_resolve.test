@@ -65,9 +65,9 @@ do_execsql_test 1.2 { SELECT * FROM n2 } {main n2}
 do_execsql_test 1.3 { SELECT * FROM n3 } {at1  n3}
 do_execsql_test 1.4 { SELECT * FROM n4 } {at2  n4}
 
-# EVIDENCE-OF: R-54577-28142 If a database name is specified as part of
-# an object reference, it must be either "main", or "temp" or the name
-# of an attached database.
+# EVIDENCE-OF: R-00634-08585 If a schema name is specified as part of an
+# object reference, it must be either "main", or "temp" or the
+# schema-name of an attached database.
 #
 #   Or else it is a "no such table: xxx" error.
 #
@@ -79,7 +79,7 @@ do_execsql_test 2.1.4 { SELECT * FROM at2.n1 } {at2 n1}
 
 do_catchsql_test 2.2 { SELECT * FROM xxx.n1 } {1 {no such table: xxx.n1}}
 
-# EVIDENCE-OF: R-26223-47623 Like other SQL identifiers, database names
+# EVIDENCE-OF: R-17446-42210 Like other SQL identifiers, schema names
 # are case-insensitive.
 #
 resolve_reopen_db
@@ -88,8 +88,8 @@ do_execsql_test 3.2 { SELECT * FROM tEmP.n1 } {temp n1}
 do_execsql_test 3.3 { SELECT * FROM aT1.n1 } {at1 n1}
 do_execsql_test 3.4 { SELECT * FROM At2.n1 } {at2 n1}
 
-# EVIDENCE-OF: R-15639-28392 If a database name is specified, then only
-# the named database is searched for the named object.
+# EVIDENCE-OF: R-14755-58619 If a schema name is specified, then only
+# that one schema is searched for the named object.
 #
 do_catchsql_test 4.1 { SELECT * FROM temp.n2 } {1 {no such table: temp.n2}}
 do_catchsql_test 4.2 { SELECT * FROM main.n2 } {0 {main n2}}

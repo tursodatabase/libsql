@@ -251,7 +251,8 @@ int sqlite3_blob_open(
       for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
         int j;
         for(j=0; j<pIdx->nKeyCol; j++){
-          if( pIdx->aiColumn[j]==iCol ){
+          /* FIXME: Be smarter about indexes that use expressions */
+          if( pIdx->aiColumn[j]==iCol || pIdx->aiColumn[j]==(-2) ){
             zFault = "indexed";
           }
         }

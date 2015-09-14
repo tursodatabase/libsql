@@ -175,6 +175,7 @@ struct Mem {
   } u;
   u16 flags;          /* Some combination of MEM_Null, MEM_Str, MEM_Dyn, etc. */
   u8  enc;            /* SQLITE_UTF8, SQLITE_UTF16BE, SQLITE_UTF16LE */
+  u8  eSubtype;       /* Subtype for this value */
   int n;              /* Number of characters in string value, excluding '\0' */
   char *z;            /* String or BLOB value */
   /* ShallowCopy only needs to copy the information above */

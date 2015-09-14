@@ -146,9 +146,8 @@ do_update_tests e_update-1.2 {
      {greek roman  greek roman  greek roman}
 }
 
-# EVIDENCE-OF: R-42117-40023 Otherwise, the UPDATE affects only those
-# rows for which the result of evaluating the WHERE clause expression as
-# a boolean expression is true.
+# EVIDENCE-OF: R-58095-46013 Otherwise, the UPDATE affects only those
+# rows for which the WHERE clause boolean expression is true.
 #
 do_execsql_test e_update-1.3.0 {
   DELETE FROM main.t1;
@@ -265,9 +264,10 @@ do_update_tests e_update-1.7 -query {
   3   "UPDATE t2 SET a=c||c, c=NULL" {44 5 {}  99 14 {}  55 11 {}}
 }
 
-# EVIDENCE-OF: R-12619-24112 The optional conflict-clause allows the
-# user to nominate a specific constraint conflict resolution algorithm
-# to use during this one UPDATE command.
+# EVIDENCE-OF: R-28518-13457 The optional "OR action" conflict clause
+# that follows the UPDATE keyword allows the user to nominate a specific
+# constraint conflict resolution algorithm to use during this one UPDATE
+# command.
 #
 do_execsql_test e_update-1.8.0 {
   DELETE FROM t3;
@@ -322,8 +322,8 @@ foreach {tn sql error ac data } {
 # EVIDENCE-OF: R-12123-54095 The table-name specified as part of an
 # UPDATE statement within a trigger body must be unqualified.
 #
-# EVIDENCE-OF: R-09690-36749 In other words, the database-name. prefix
-# on the table name of the UPDATE is not allowed within triggers.
+# EVIDENCE-OF: R-43190-62442 In other words, the schema-name. prefix on
+# the table name of the UPDATE is not allowed within triggers.
 #
 do_update_tests e_update-2.1 -error {
   qualified table names are not allowed on INSERT, UPDATE, and DELETE statements within triggers
