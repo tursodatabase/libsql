@@ -235,7 +235,7 @@ void sqlite3DeleteFrom(
   int iDb;               /* Database number */
   int memCnt = -1;       /* Memory cell used for change counting */
   int rcauth;            /* Value returned by authorization callback */
-  int eOnePass;          /* Non-zero for one-pass algorithm without the FIFO */
+  int eOnePass;          /* ONEPASS_OFF or _SINGLE or _MULTI */
   int aiCurOnePass[2];   /* The write cursors opened by WHERE_ONEPASS */
   u8 *aToOpen = 0;       /* Open cursor iTabCur+j if aToOpen[j] is true */
   Index *pPk;            /* The PRIMARY KEY index on the table */
@@ -400,14 +400,14 @@ void sqlite3DeleteFrom(
     ** to be deleted, based on the WHERE clause. Set variable eOnePass
     ** to indicate the strategy used to implement this delete:
     **
-    **   0: Two-pass approach - use a FIFO for rowids/PK values.
-    **   1: One-pass approach - at most one row deleted.
-    **   2: One-pass approach - any number of rows may be deleted.
+    **  ONEPASS_OFF:    Two-pass approach - use a FIFO for rowids/PK values.
+    **  ONEPASS_SINGLE: One-pass approach - at most one row deleted.
+    **  ONEPASS_MULTI:  One-pass approach - any number of rows may be deleted.
     */
     pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, 0, 0, wcf, iTabCur+1);
     if( pWInfo==0 ) goto delete_from_cleanup;
     eOnePass = sqlite3WhereOkOnePass(pWInfo, aiCurOnePass);
-    assert( IsVirtual(pTab)==0 || eOnePass==0 );
+    assert( IsVirtual(pTab)==0 || eOnePass==ONEPASS_OFF );
   
     /* Keep track of the number of rows to be deleted */
     if( db->flags & SQLITE_CountRows ){
@@ -428,7 +428,7 @@ void sqlite3DeleteFrom(
       if( iKey>pParse->nMem ) pParse->nMem = iKey;
     }
   
-    if( eOnePass ){
+    if( eOnePass!=ONEPASS_OFF ){
       /* For ONEPASS, no need to store the rowid/primary-key. There is only
       ** one, so just keep it in its register(s) and fall through to the
       ** delete code.  */
@@ -460,7 +460,7 @@ void sqlite3DeleteFrom(
   
     /* If this DELETE cannot use the ONEPASS strategy, this is the 
     ** end of the WHERE loop */
-    if( eOnePass ){
+    if( eOnePass!=ONEPASS_OFF ){
       addrBypass = sqlite3VdbeMakeLabel(v);
     }else{
       sqlite3WhereEnd(pWInfo);
@@ -473,7 +473,7 @@ void sqlite3DeleteFrom(
     */
     if( !isView ){
       int iAddrOnce = 0;
-      if( eOnePass==2 ){
+      if( eOnePass==ONEPASS_MULTI ){
         iAddrOnce = sqlite3CodeOnce(pParse); VdbeCoverage(v);
       }
       testcase( IsVirtual(pTab) );
@@ -481,13 +481,13 @@ void sqlite3DeleteFrom(
                                  &iDataCur, &iIdxCur);
       assert( pPk || IsVirtual(pTab) || iDataCur==iTabCur );
       assert( pPk || IsVirtual(pTab) || iIdxCur==iDataCur+1 );
-      if( eOnePass==2 ) sqlite3VdbeJumpHere(v, iAddrOnce);
+      if( eOnePass==ONEPASS_MULTI ) sqlite3VdbeJumpHere(v, iAddrOnce);
     }
   
     /* Set up a loop over the rowids/primary-keys that were found in the
     ** where-clause loop above.
     */
-    if( eOnePass ){
+    if( eOnePass!=ONEPASS_OFF ){
       assert( nKey==nPk );  /* OP_Found will use an unpacked key */
       if( aToOpen[iDataCur-iTabCur] ){
         assert( pPk!=0 || pTab->pSelect!=0 );
@@ -525,7 +525,7 @@ void sqlite3DeleteFrom(
     }
   
     /* End of the loop over all rowids/primary-keys. */
-    if( eOnePass ){
+    if( eOnePass!=ONEPASS_OFF ){
       sqlite3VdbeResolveLabel(v, addrBypass);
       sqlite3WhereEnd(pWInfo);
     }else if( pPk ){
@@ -601,13 +601,13 @@ delete_from_cleanup:
 **       single memory location iPk.
 **
 ** eMode:
-**   Parameter eMode may be passed either 0, 1 or 2. If it is passed a 
-**   non-zero value, then it is guaranteed that cursor iDataCur already 
-**   points to the row to delete. If it is passed 0, then this function 
-**   must seek iDataCur to the entry identified by iPk and nPk before
-**   reading from it.
+**   Parameter eMode may be passed either ONEPASS_OFF (0), ONEPASS_SINGLE, or
+**   ONEPASS_MULTI.  If eMode is not ONEPASS_OFF, then the cursor
+**   iDataCur already points to the row to delete. If eMode is ONEPASS_OFF
+**   then this function must seek iDataCur to the entry identified by iPk
+**   and nPk before reading from it.
 **
-**   If eMode is passed the value 2, then this call is being made as part
+**   If eMode is ONEPASS_MULTI, then this call is being made as part
 **   of a ONEPASS delete that affects multiple rows. In this case, if 
 **   iIdxNoSeek is a valid cursor number (>=0), then its position should
 **   be preserved following the delete operation. Or, if iIdxNoSeek is not
@@ -629,7 +629,7 @@ void sqlite3GenerateRowDelete(
   i16 nPk,           /* Number of PRIMARY KEY memory cells */
   u8 count,          /* If non-zero, increment the row change counter */
   u8 onconf,         /* Default ON CONFLICT policy for triggers */
-  u8 eMode,          /* See explanation above */
+  u8 eMode,          /* ONEPASS_OFF, _SINGLE, or _MULTI.  See above */
   int iIdxNoSeek     /* Cursor number of cursor that does not need seeking */
 ){
   Vdbe *v = pParse->pVdbe;        /* Vdbe */
@@ -647,7 +647,7 @@ void sqlite3GenerateRowDelete(
   ** not attempt to delete it or fire any DELETE triggers.  */
   iLabel = sqlite3VdbeMakeLabel(v);
   opSeek = HasRowid(pTab) ? OP_NotExists : OP_NotFound;
-  if( eMode==0 ){
+  if( eMode==ONEPASS_OFF ){
     sqlite3VdbeAddOp4Int(v, opSeek, iDataCur, iLabel, iPk, nPk);
     VdbeCoverageIf(v, opSeek==OP_NotExists);
     VdbeCoverageIf(v, opSeek==OP_NotFound);
@@ -715,7 +715,7 @@ void sqlite3GenerateRowDelete(
     if( iIdxNoSeek>=0 ){
       sqlite3VdbeAddOp1(v, OP_Delete, iIdxNoSeek);
     }
-    sqlite3VdbeChangeP5(v, eMode==2);
+    sqlite3VdbeChangeP5(v, eMode==ONEPASS_MULTI);
   }
 
   /* Do any ON CASCADE, SET NULL or SET DEFAULT operations required to

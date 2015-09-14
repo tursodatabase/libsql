@@ -69,9 +69,11 @@ int sqlite3WhereBreakLabel(WhereInfo *pWInfo){
 }
 
 /*
-** Return TRUE if an UPDATE or DELETE statement can operate directly on
-** the rowids returned by a WHERE clause.  Return FALSE if doing an
-** UPDATE or DELETE might change subsequent WHERE clause results.
+** Return ONEPASS_OFF (0) if an UPDATE or DELETE statement is unable to
+** operate directly on the rowis returned by a WHERE clause.  Return
+** ONEPASS_SINGLE (1) if the statement can operation directly because only
+** a single row is to be changed.  Return ONEPASS_MULTI (2) if the one-pass
+** optimization can be used on multiple 
 **
 ** If the ONEPASS optimization is used (if this routine returns true)
 ** then also write the indices of open cursors used by ONEPASS
@@ -85,7 +87,7 @@ int sqlite3WhereBreakLabel(WhereInfo *pWInfo){
 */
 int sqlite3WhereOkOnePass(WhereInfo *pWInfo, int *aiCur){
   memcpy(aiCur, pWInfo->aiCurOnePass, sizeof(int)*2);
-  return pWInfo->okOnePass;
+  return pWInfo->eOnePass;
 }
 
 /*
@@ -4017,6 +4019,7 @@ WhereInfo *sqlite3WhereBegin(
   pWInfo->iBreak = pWInfo->iContinue = sqlite3VdbeMakeLabel(v);
   pWInfo->wctrlFlags = wctrlFlags;
   pWInfo->savedNQueryLoop = pParse->nQueryLoop;
+  assert( pWInfo->eOnePass==ONEPASS_OFF );  /* ONEPASS defaults to OFF */
   pMaskSet = &pWInfo->sMaskSet;
   sWLB.pWInfo = pWInfo;
   sWLB.pWC = &pWInfo->sWC;
@@ -4209,7 +4212,7 @@ WhereInfo *sqlite3WhereBegin(
     if( bOnerow || ( (wctrlFlags & WHERE_ONEPASS_MULTIROW)
        && 0==(wsFlags & WHERE_VIRTUALTABLE)
     )){
-      pWInfo->okOnePass = bOnerow ? 1 : 2;
+      pWInfo->eOnePass = bOnerow ? ONEPASS_SINGLE : ONEPASS_MULTI;
       if( HasRowid(pTabList->a[0].pTab) ){
         pWInfo->a[0].pWLoop->wsFlags &= ~WHERE_IDX_ONLY;
       }
@@ -4243,15 +4246,15 @@ WhereInfo *sqlite3WhereBegin(
     if( (pLoop->wsFlags & WHERE_IDX_ONLY)==0
          && (wctrlFlags & WHERE_OMIT_OPEN_CLOSE)==0 ){
       int op = OP_OpenRead;
-      if( pWInfo->okOnePass ){
+      if( pWInfo->eOnePass!=ONEPASS_OFF ){
         op = OP_OpenWrite;
         pWInfo->aiCurOnePass[0] = pTabItem->iCursor;
       };
       sqlite3OpenTable(pParse, pTabItem->iCursor, iDb, pTab, op);
       assert( pTabItem->iCursor==pLevel->iTabCur );
-      testcase( !pWInfo->okOnePass && pTab->nCol==BMS-1 );
-      testcase( !pWInfo->okOnePass && pTab->nCol==BMS );
-      if( !pWInfo->okOnePass && pTab->nCol<BMS && HasRowid(pTab) ){
+      testcase( pWInfo->eOnePass==ONEPASS_OFF && pTab->nCol==BMS-1 );
+      testcase( pWInfo->eOnePass==ONEPASS_OFF && pTab->nCol==BMS );
+      if( pWInfo->eOnePass==ONEPASS_OFF && pTab->nCol<BMS && HasRowid(pTab) ){
         Bitmask b = pTabItem->colUsed;
         int n = 0;
         for(; b; b=b>>1, n++){}
@@ -4279,7 +4282,7 @@ WhereInfo *sqlite3WhereBegin(
         ** WITHOUT ROWID table.  No need for a separate index */
         iIndexCur = pLevel->iTabCur;
         op = 0;
-      }else if( pWInfo->okOnePass ){
+      }else if( pWInfo->eOnePass!=ONEPASS_OFF ){
         Index *pJ = pTabItem->pTab->pIndex;
         iIndexCur = iIdxCur;
         assert( wctrlFlags & WHERE_ONEPASS_DESIRED );
@@ -4487,7 +4490,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
      && (pWInfo->wctrlFlags & WHERE_OMIT_OPEN_CLOSE)==0
     ){
       int ws = pLoop->wsFlags;
-      if( !pWInfo->okOnePass && (ws & WHERE_IDX_ONLY)==0 ){
+      if( pWInfo->eOnePass==ONEPASS_OFF && (ws & WHERE_IDX_ONLY)==0 ){
         sqlite3VdbeAddOp1(v, OP_Close, pTabItem->iCursor);
       }
       if( (ws & WHERE_INDEXED)!=0
