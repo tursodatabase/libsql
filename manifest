@@ -1,5 +1,5 @@
-C Use\ssymbolic\snames\sONEPASS_OFF,\sONEPASS_SINGLE,\sand\sONEPASS_MULTI\sfor\sthe\nvarious\smodes\sof\sthe\sone-pass\soptimization.
-D 2015-09-14T14:45:50.973
+C Fix\sa\stypo\sin\san\sSQLITE_USER_AUTHENTICATION\smacro.
+D 2015-09-14T14:49:23.201
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -285,7 +285,7 @@ F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
 F src/btree.c d31008cfbf83e3ae5cb96bae3a00f4b57f244a16
 F src/btree.h 40189aefdc2b830d25c8b58fd7d56538481bfdd7
 F src/btreeInt.h 8177c9ab90d772d6d2c6c517e05bed774b7c92c0
-F src/build.c f81380bc4d5d239c18b42982a9866a94489fd444
+F src/build.c 8a86f4203ac8a9ac0734f242a96f043edffb6018
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
 F src/ctime.c 5a0b735dc95604766f5dac73973658eef782ee8b
@@ -1387,7 +1387,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2edd2e5edd60210e18db58bce1e096dd211b6ece
-R 664fd3c2c4c1207a1dc899fd67c056b8
+P 16e56bdadef903c6439a487f2683388aeeb0c625
+R f8fa410ffd0eb073e2e43d46c84640d3
 U drh
-Z ed742f4af7607da542ef263fbb0dcf2e
+Z 5de1b91d25cb0490451927525818647a
