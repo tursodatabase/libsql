@@ -1,5 +1,5 @@
-C Merge\supdates\sfrom\strunk.
-D 2015-09-14T22:53:07.363
+C Remove\sa\scomment\sthat\sis\sno\slonger\saccurate.
+D 2015-09-14T22:54:52.967
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -305,7 +305,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c d344a95d60c24e2f490ee59db9784b1b17439012
 F src/loadext.c f0b66d28e377fd6c6d36cc9d92df1ff251ebee44
-F src/main.c babadd4638315032625ad64139a0b8c09ac77f5d
+F src/main.c dce50d88aa993f1c47b9d9591f67a292fe927b37
 F src/malloc.c 3a37ce6979a40f499d8cea9e9ab4e8517854d35d
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c abe6ee469b6c5a35c7f22bfeb9c9bac664a1c987
@@ -1387,7 +1387,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fea8c0b281b374f2e0b82bec8788275e963a9401 c1f76686cee3918b1be785a4071d68cb3afda0ef
-R 4f41e308e2b7a2e17cf667a1113add7d
+P 25c157714dc1e89988543d9b7df6b1791911e8a1
+R 28a9cf9a9f41f43274194ec4eaf211e0
 U mistachkin
-Z e592361607c7e9d2e01634b576352f14
+Z fe0396cbf97fccdad9b70f17864f9d97

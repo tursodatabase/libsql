@@ -177,7 +177,7 @@ int sqlite3_initialize(void){
     sqlite3_mutex_leave(pMaster);
     return SQLITE_OK;
   }
-  sqlite3GlobalConfig.isMutexInit = 1; /* possibly redundant */
+  sqlite3GlobalConfig.isMutexInit = 1;
   if( !sqlite3GlobalConfig.isMallocInit ){
     rc = sqlite3MallocInit();
   }
