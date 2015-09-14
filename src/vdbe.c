@@ -3968,9 +3968,10 @@ case OP_Found: {        /* jump, in3 */
 **
 ** P1 is the index of a cursor open on an SQL table btree (with integer
 ** keys).  P3 is an integer rowid.  If P1 does not contain a record with
-** rowid P3 then jump immediately to P2.  If P1 does contain a record
-** with rowid P3 then leave the cursor pointing at that record and fall
-** through to the next instruction.
+** rowid P3 then jump immediately to P2.  Or, if P2 is 0, raise an
+** SQLITE_CORRUPT error. If P1 does contain a record with rowid P3 then 
+** leave the cursor pointing at that record and fall through to the next
+** instruction.
 **
 ** The OP_NotFound opcode performs the same operation on index btrees
 ** (with arbitrary multi-value keys).
@@ -4008,7 +4009,10 @@ case OP_NotExists: {        /* jump, in3 */
   pC->deferredMoveto = 0;
   VdbeBranchTaken(res!=0,2);
   pC->seekResult = res;
-  if( res!=0 ) goto jump_to_p2;
+  if( res!=0 ){
+    if( pOp->p2==0 && rc==SQLITE_OK ) rc = SQLITE_CORRUPT_BKPT;
+    goto jump_to_p2;
+  }
   break;
 }
 
@@ -4302,11 +4306,9 @@ case OP_Delete: {
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
   assert( pC->pCursor!=0 );  /* Only valid for real tables, no pseudotables */
+  assert( pC->deferredMoveto==0 );
 
-  if( pC->deferredMoveto ){
-    rc = sqlite3VdbeCursorMoveto(pC);
-    if( rc!=SQLITE_OK ) goto abort_due_to_error;
-  }else if( pOp->p5 && db->xUpdateCallback && pOp->p4.z && pC->isTable ){
+  if( pOp->p5 && db->xUpdateCallback && pOp->p4.z && pC->isTable ){
     sqlite3BtreeKeySize(pC->pCursor, &pC->movetoTarget);
   }
 

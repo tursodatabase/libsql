@@ -1,5 +1,5 @@
-C Fix\scompiler\swarnings\sin\sdelete.c.
-D 2015-09-12T19:50:58.177
+C Avoid\scalling\ssqlite3VdbeCursorMoveto()\sfrom\smore\sthan\sone\spoint\sin\svdbe.c.\sDoing\sso\sprevents\sit\sfrom\sbeing\sinlined\sas\spart\sof\sOP_Column.
+D 2015-09-14T09:23:47.876
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -403,7 +403,7 @@ F src/update.c eb7ab3ff2928628692a4f14be397c95f4a681d97
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c fc612367108b74573c5fd13a85d0a23027f438bd
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c 5587d76bd5a4fb4f7ca023f161a6c6adbb1de26c
+F src/vdbe.c a8a5cb1126bf79104e00326abd6a7d22ac3bc4c3
 F src/vdbe.h 4bc88bd0e06f8046ee6ab7487c0015e85ad949ad
 F src/vdbeInt.h 8b867eac234e28627ffcace3cd4b4b79bbec664b
 F src/vdbeapi.c 0d890f57caf143b114a95ce699e59af51359c508
@@ -419,7 +419,7 @@ F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 2e14d17f592d176b6dc879c33fbdec4fbccaa2ba
 F src/where.c 98cbedead64380fc26a098350f43d92237c8fa17
 F src/whereInt.h 292d3ac90da4eab1e03ac8452f1add746bcafaa1
-F src/wherecode.c 6ac8599523f4840d9efac335329f627ebf3f79fd
+F src/wherecode.c 780cccf12a07ddc1ea0c6f6eb95895a3d8f79a6e
 F src/whereexpr.c 2473e4350e30f9b55d1c6a8f66ca23c689f23f1d
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -1387,7 +1387,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P eaeb2b80f6f8f83679c8323a81bb39570ec946fe
-R eb15fa201d3086c36456da6232a12264
+P 0a4d285e18b78cd529483ba5c8c607ab62a443d4
+R 96a467fbd50feb4126a3810f2f5f97d3
 U dan
-Z 7f9a5cfb9accd4d1fdad39fe13d7d9ec
+Z 9af565931700230812c8ce5da8bff453
