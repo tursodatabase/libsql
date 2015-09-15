@@ -1427,7 +1427,6 @@ static void fts5SegIterNextPage(
   fts5DataRelease(pIter->pLeaf);
   pIter->iLeafPgno++;
   if( pIter->pNextLeaf ){
-    assert( pIter->iLeafPgno<=pSeg->pgnoLast );
     pIter->pLeaf = pIter->pNextLeaf;
     pIter->pNextLeaf = 0;
   }else if( pIter->iLeafPgno<=pSeg->pgnoLast ){
@@ -1658,11 +1657,14 @@ static void fts5SegIterReverseNewPage(Fts5Index *p, Fts5SegIter *pIter){
           pIter->pSeg->iSegid, pIter->iLeafPgno
     ));
     if( pNew ){
-      if( pIter->iLeafPgno==pIter->iTermLeafPgno ){
-        if( pIter->iTermLeafOffset<pNew->szLeaf ){
-          pIter->pLeaf = pNew;
-          pIter->iLeafOffset = pIter->iTermLeafOffset;
-        }
+      /* iTermLeafOffset may be equal to szLeaf if the term is the last
+      ** thing on the page - i.e. the first rowid is on the following page.
+      ** In this case leaf pIter->pLeaf==0, this iterator is at EOF. */
+      if( pIter->iLeafPgno==pIter->iTermLeafPgno 
+       && pIter->iTermLeafOffset<pNew->szLeaf 
+      ){
+        pIter->pLeaf = pNew;
+        pIter->iLeafOffset = pIter->iTermLeafOffset;
       }else{
         int iRowidOff;
         iRowidOff = fts5LeafFirstRowidOff(pNew);
@@ -3168,7 +3170,7 @@ static void fts5WriteAppendTerm(
   Fts5PageWriter *pPage = &pWriter->writer;
   Fts5Buffer *pPgidx = &pWriter->writer.pgidx;
 
-  if( p->rc ) return;
+  assert( p->rc==SQLITE_OK );
   assert( pPage->buf.n>=4 );
   assert( pPage->buf.n>4 || pWriter->bFirstTermInPage );
 
@@ -3315,16 +3317,12 @@ static void fts5WriteFinish(
   int i;
   Fts5PageWriter *pLeaf = &pWriter->writer;
   if( p->rc==SQLITE_OK ){
-    if( pLeaf->pgno==1 && pLeaf->buf.n==0 ){
-      *pnLeaf = 0;
-    }else{
-      if( pLeaf->buf.n>4 ){
-        fts5WriteFlushLeaf(p, pWriter);
-      }
-      *pnLeaf = pLeaf->pgno-1;
-
-      fts5WriteFlushBtree(p, pWriter);
+    assert( pLeaf->pgno>=1 );
+    if( pLeaf->buf.n>4 ){
+      fts5WriteFlushLeaf(p, pWriter);
     }
+    *pnLeaf = pLeaf->pgno-1;
+    fts5WriteFlushBtree(p, pWriter);
   }
   fts5BufferFree(&pLeaf->term);
   fts5BufferFree(&pLeaf->buf);
@@ -3763,17 +3761,14 @@ static void fts5FlushOneHash(Fts5Index *p){
       sqlite3Fts5HashScanEntry(pHash, &zTerm, &pDoclist, &nDoclist);
       fts5WriteAppendTerm(p, &writer, strlen(zTerm), (const u8*)zTerm);
 
-      if( writer.bFirstRowidInPage==0 
-       && pgsz>=(pBuf->n + pPgidx->n + nDoclist + 1) 
-      ){
+      assert( writer.bFirstRowidInPage==0 );
+      if( pgsz>=(pBuf->n + pPgidx->n + nDoclist + 1) ){
         /* The entire doclist will fit on the current leaf. */
         fts5BufferSafeAppendBlob(pBuf, pDoclist, nDoclist);
       }else{
         i64 iRowid = 0;
         i64 iDelta = 0;
         int iOff = 0;
-
-        /*  writer.bFirstRowidInPage = 0; */
 
         /* The entire doclist will not fit on this leaf. The following 
         ** loop iterates through the poslists that make up the current 
@@ -4155,7 +4150,7 @@ static void fts5SetupPrefixIter(
       i64 iRowid = fts5MultiIterRowid(p1);
       int nTerm;
       const u8 *pTerm = fts5MultiIterTerm(p1, &nTerm);
-      assert( memcmp(pToken, pTerm, MIN(nToken, nTerm))<=0 );
+      assert_nc( memcmp(pToken, pTerm, MIN(nToken, nTerm))<=0 );
       if( nTerm<nToken || memcmp(pToken, pTerm, nToken) ) break;
 
       if( doclist.n>0 && iRowid<=iLastRowid ){
@@ -4859,7 +4854,6 @@ static void fts5IndexIntegrityCheckEmpty(
       if( i>=iNoRowid && 0!=fts5LeafFirstRowidOff(pLeaf) ) p->rc = FTS5_CORRUPT;
     }
     fts5DataRelease(pLeaf);
-    if( p->rc ) break;
   }
 }
 
@@ -4926,7 +4920,7 @@ static void fts5IndexIntegrityCheckSegment(
   if( pSeg->pgnoFirst==0 ) return;
 
   fts5IndexPrepareStmt(p, &pStmt, sqlite3_mprintf(
-      "SELECT segid, term, (pgno>>1), (pgno & 1) FROM '%q'.'%q_idx' WHERE segid=%d",
+      "SELECT segid, term, (pgno>>1), (pgno&1) FROM %Q.'%q_idx' WHERE segid=%d",
       pConfig->zDb, pConfig->zName, pSeg->iSegid
   ));
 
@@ -5290,7 +5284,6 @@ static int fts5DecodeDoclist(int *pRc, Fts5Buffer *pBuf, const u8 *a, int n){
     if( iOff<n ){
       i64 iDelta;
       iOff += sqlite3Fts5GetVarint(&a[iOff], (u64*)&iDelta);
-      if( iDelta==0 ) return iOff;
       iDocid += iDelta;
       sqlite3Fts5BufferAppendPrintf(pRc, pBuf, " id=%lld", iDocid);
     }

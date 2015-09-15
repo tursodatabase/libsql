@@ -374,7 +374,7 @@ Table *sqlite3LocateTable(
     }
     pParse->checkSchema = 1;
   }
-#if SQLITE_USER_AUTHENICATION
+#if SQLITE_USER_AUTHENTICATION
   else if( pParse->db->auth.authLevel<UAUTH_User ){
     sqlite3ErrorMsg(pParse, "user not authenticated");
     p = 0;

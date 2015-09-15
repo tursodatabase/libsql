@@ -24,18 +24,23 @@ ifcapable !fts5 {
 }
 sqlite3_fts5_may_be_corrupt 1
 
+proc create_t1 {} {
+  expr srand(0)
+  db func rnddoc fts5_rnddoc
+  db eval {
+    CREATE VIRTUAL TABLE t1 USING fts5(x);
+    INSERT INTO t1(t1, rank) VALUES('pgsz', 64);
+    WITH ii(i) AS (SELECT 1 UNION SELECT i+1 FROM ii WHERE i<100)
+      INSERT INTO t1 SELECT rnddoc(10) FROM ii;
+  }
+}
+
+if 1 {
+
 # Create a simple FTS5 table containing 100 documents. Each document 
 # contains 10 terms, each of which start with the character "x".
 #
-expr srand(0)
-db func rnddoc fts5_rnddoc
-do_execsql_test 1.0 {
-  CREATE VIRTUAL TABLE t1 USING fts5(x);
-  INSERT INTO t1(t1, rank) VALUES('pgsz', 64);
-  WITH ii(i) AS (SELECT 1 UNION SELECT i+1 FROM ii WHERE i<100)
-  INSERT INTO t1 SELECT rnddoc(10) FROM ii;
-}
-set mask [expr 31 << 31]
+do_test 1.0 { create_t1 } {}
 
 do_test 1.1 {
   # Pick out the rowid of the right-most b-tree leaf in the new segment.
@@ -74,6 +79,261 @@ do_execsql_test 2.2 {
   INSERT INTO t2 VALUES(rnddoc(10));
   SELECT length(block) FROM t2_data WHERE id=1;
 } {2}
+
+
+#-------------------------------------------------------------------------
+# Test that missing leaf pages are recognized as corruption.
+#
+reset_db
+do_test 3.0 { create_t1 } {}
+
+do_execsql_test 3.1 {
+  SELECT count(*) FROM t1_data;
+} {105}
+
+proc do_3_test {tn} {
+  set i 0
+  foreach ::rowid [db eval "SELECT rowid FROM t1_data WHERE rowid>100"] {
+    incr i
+    do_test $tn.$i {
+      db eval BEGIN
+      db eval {DELETE FROM t1_data WHERE rowid = $::rowid}
+      list [
+        catch { db eval {SELECT rowid FROM t1 WHERE t1 MATCH 'x*'} } msg
+      ] $msg
+    } {1 {database disk image is malformed}}
+    catch { db eval ROLLBACK }
+  }
+}
+
+do_3_test 3.2
+
+do_execsql_test 3.3 {
+  INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
+  INSERT INTO t1 SELECT x FROM t1;
+  INSERT INTO t1(t1) VALUES('optimize');
+} {}
+
+do_3_test 3.4
+
+do_test 3.5 {
+  execsql { 
+    DELETE FROM t1;
+    INSERT INTO t1(t1, rank) VALUES('pgsz', 40);
+  }
+  for {set i 0} {$i < 1000} {incr i} {
+    set rnd [expr int(rand() * 1000)]
+    set doc [string repeat "x$rnd " [expr int(rand() * 3) + 1]]
+    execsql { INSERT INTO t1(rowid, x) VALUES($i, $doc) }
+  }
+} {}
+
+do_3_test 3.6
+
+do_test 3.7 {
+  execsql {
+    INSERT INTO t1(t1, rank) VALUES('pgsz', 40);
+    INSERT INTO t1 SELECT x FROM t1;
+    INSERT INTO t1(t1) VALUES('optimize');
+  }
+} {}
+
+do_3_test 3.8
+
+do_test 3.9 {
+  execsql { 
+    DELETE FROM t1;
+    INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
+  }
+  for {set i 0} {$i < 100} {incr i} {
+    set rnd [expr int(rand() * 100)]
+    set doc "x[string repeat $rnd 20]"
+    execsql { INSERT INTO t1(rowid, x) VALUES($i, $doc) }
+  }
+} {}
+
+do_3_test 3.10
+
+#-------------------------------------------------------------------------
+# Test that segments that end unexpectedly are identified as corruption.
+#
+reset_db
+do_test 4.0 {
+  execsql { 
+    CREATE VIRTUAL TABLE t1 USING fts5(x);
+    INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
+  }
+  for {set i 0} {$i < 100} {incr i} {
+    set rnd [expr int(rand() * 100)]
+    set doc "x[string repeat $rnd 20]"
+    execsql { INSERT INTO t1(rowid, x) VALUES($i, $doc) }
+  }
+  execsql { INSERT INTO t1(t1) VALUES('optimize') }
+} {}
+
+set nErr 0
+for {set i 1} {1} {incr i} {
+  set struct [db one {SELECT block FROM t1_data WHERE id=10}]
+  binary scan $struct c* var
+  set end [lindex $var end]
+  if {$end<=$i} break
+  lset var end [expr $end - $i]
+  set struct [binary format c* $var]
+  db eval {
+    BEGIN;
+    UPDATE t1_data SET block = $struct WHERE id=10;
+  }
+  do_test 4.1.$i {
+    incr nErr [catch { db eval { SELECT rowid FROM t1 WHERE t1 MATCH 'x*' } }]
+    set {} {}
+  } {}
+  catch { db eval ROLLBACK }
+}
+do_test 4.1.x { expr $nErr>45 } 1
+
+#-------------------------------------------------------------------------
+#
+
+# The first argument passed to this command must be a binary blob 
+# containing an FTS5 leaf page. This command returns a copy of this
+# blob, with the pgidx of the leaf page replaced by a single varint
+# containing value $iVal.
+#
+proc rewrite_pgidx {blob iVal} {
+  binary scan $blob SS off1 szLeaf
+  if {$iVal<0 || $iVal>=128} {
+    error "$iVal out of range!"
+  } else {
+    set pgidx [binary format c $iVal]
+  }
+
+  binary format a${szLeaf}a* $blob $pgidx
+}
+
+reset_db
+do_execsql_test 5.1 {
+  CREATE VIRTUAL TABLE x1 USING fts5(x);
+  INSERT INTO x1(x1, rank) VALUES('pgsz', 40);
+  BEGIN;
+  INSERT INTO x1 VALUES('xaaa xabb xccc xcdd xeee xeff xggg xghh xiii xijj');
+  INSERT INTO x1 SELECT x FROM x1;
+  INSERT INTO x1 SELECT x FROM x1;
+  INSERT INTO x1 SELECT x FROM x1;
+  INSERT INTO x1 SELECT x FROM x1;
+  INSERT INTO x1(x1) VALUES('optimize');
+  COMMIT;
+}
+
+#db eval { SELECT fts5_decode(id, block) b from x1_data } { puts $b }
+#
+db func rewrite_pgidx rewrite_pgidx  
+set i 0
+foreach rowid [db eval {SELECT rowid FROM x1_data WHERE rowid>100}] {
+  foreach val {2 100} {
+    do_test 5.2.$val.[incr i] {
+      catchsql {
+        BEGIN;
+        UPDATE x1_data SET block=rewrite_pgidx(block, $val) WHERE id=$rowid;
+        SELECT rowid FROM x1 WHERE x1 MATCH 'xa*';
+        SELECT rowid FROM x1 WHERE x1 MATCH 'xb*';
+        SELECT rowid FROM x1 WHERE x1 MATCH 'xc*';
+        SELECT rowid FROM x1 WHERE x1 MATCH 'xd*';
+        SELECT rowid FROM x1 WHERE x1 MATCH 'xe*';
+        SELECT rowid FROM x1 WHERE x1 MATCH 'xf*';
+        SELECT rowid FROM x1 WHERE x1 MATCH 'xg*';
+        SELECT rowid FROM x1 WHERE x1 MATCH 'xh*';
+        SELECT rowid FROM x1 WHERE x1 MATCH 'xi*';
+      }
+      set {} {}
+    } {}
+    catch { db eval ROLLBACK }
+  }
+}
+
+}
+
+#------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 6.1.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a);
+  INSERT INTO t1 VALUES('bbbbb ccccc');
+  SELECT quote(block) FROM t1_data WHERE rowid>100;
+} {X'000000180630626262626201020201056363636363010203040A'}
+do_execsql_test 6.1.1 {
+  UPDATE t1_data SET block = 
+  X'000000180630626262626201020201056161616161010203040A'
+  WHERE rowid>100;
+}
+do_catchsql_test 6.1.2 {
+  INSERT INTO t1(t1) VALUES('integrity-check');
+} {1 {database disk image is malformed}}
+
+#-------
+reset_db
+do_execsql_test 6.2.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a);
+  INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
+  INSERT INTO t1 VALUES('aa bb cc dd ee');
+  SELECT pgno, quote(term) FROM t1_idx;
+} {2 X'' 4 X'3064'}
+do_execsql_test 6.2.1 {
+  UPDATE t1_idx SET term = X'3065' WHERE pgno=4;
+}
+do_catchsql_test 6.2.2 {
+  INSERT INTO t1(t1) VALUES('integrity-check');
+} {1 {database disk image is malformed}}
+
+#-------
+reset_db
+do_execsql_test 6.3.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a);
+  INSERT INTO t1 VALUES('abc abcdef abcdefghi');
+  SELECT quote(block) FROM t1_data WHERE id>100;
+}    {X'0000001C043061626301020204036465660102030703676869010204040808'}
+do_execsql_test 6.3.1 {
+  BEGIN;
+    UPDATE t1_data SET block = 
+      X'0000001C043061626301020204036465660102035003676869010204040808'
+      ------------------------------------------^^---------------------
+    WHERE id>100;
+}
+do_catchsql_test 6.3.2 {
+  INSERT INTO t1(t1) VALUES('integrity-check');
+} {1 {database disk image is malformed}}
+do_execsql_test 6.3.3 {
+  ROLLBACK;
+  BEGIN;
+    UPDATE t1_data SET block = 
+      X'0000001C043061626301020204036465660102030750676869010204040808'
+      --------------------------------------------^^-------------------
+    WHERE id>100;
+}
+do_catchsql_test 6.3.3 {
+  INSERT INTO t1(t1) VALUES('integrity-check');
+} {1 {database disk image is malformed}}
+do_execsql_test 6.3.4 {
+  ROLLBACK;
+  BEGIN;
+    UPDATE t1_data SET block = 
+      X'0000001C043061626301020204036465660102030707676869010204040850'
+      --------------------------------------------------------------^^-
+    WHERE id>100;
+}
+do_catchsql_test 6.3.5 {
+  INSERT INTO t1(t1) VALUES('integrity-check');
+} {1 {database disk image is malformed}}
+do_execsql_test 6.3.6 {
+  ROLLBACK;
+  BEGIN;
+    UPDATE t1_data SET block = 
+      X'0000001C503061626301020204036465660102030707676869010204040808'
+      ----------^^-----------------------------------------------------
+    WHERE id>100;
+}
+do_catchsql_test 6.3.5 {
+  INSERT INTO t1(t1) VALUES('integrity-check');
+} {1 {database disk image is malformed}}
 
 sqlite3_fts5_may_be_corrupt 0
 finish_test
