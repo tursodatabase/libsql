@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sfts5\s"ORDER\sBY\srowid\sDESC"\squeries\sand\slarge\sterms.
-D 2015-09-15T11:58:33.318
+C Reformat\ssome\scode\sto\smake\sit\seasier\sto\smerge\swith\ssessions.\s\sNo\slogic\schanges.
+D 2015-09-15T13:42:16.601
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -291,7 +291,7 @@ F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
 F src/ctime.c 5a0b735dc95604766f5dac73973658eef782ee8b
 F src/date.c fb1c99172017dcc8e237339132c91a21a0788584
 F src/dbstat.c e637e7a7ff40ef32132a418c6fdf1cfb63aa27c7
-F src/delete.c 249a287682dd6e7ab362dd81e4d65abe2d5c3ce4
+F src/delete.c 5ab483f15aaf202290227d5dd1f10a7ecce3d6b1
 F src/expr.c 3a76afcdac925294c39903b7002ddb9e5fd29863
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 83e1baba999bed3144ea5a2143fc922edf51135f
@@ -300,7 +300,7 @@ F src/global.c 508e4087f7b41d688e4762dcf4d4fe28cfbc87f9
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
 F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c ace93aa254f86b1bddb20eb9bf382f6b851bbda5
+F src/insert.c 9748a37e058256eb2ead69f028ab85ebf203ad15
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c d344a95d60c24e2f490ee59db9784b1b17439012
@@ -1387,7 +1387,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c1f76686cee3918b1be785a4071d68cb3afda0ef
-R d67808eb365cc1292d83338a5a6fd99f
-U dan
-Z c8f43a4f5db97e6a86a8018a67cf6238
+P b26d8f79c62cb71b4c3ea5df9d0e09558bbbd794
+R c60068330077cac7ec52227493b03ae0
+U drh
+Z 9a77e7bf5b2e60419df2346d70a9c648
