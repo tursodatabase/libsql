@@ -42,7 +42,7 @@ sqlite3 db test.db; set DB [sqlite3_connection_pointer db]
 db eval {PRAGMA auto_vacuum=0}
 
 
-# EVIDENCE-OF: R-17887-14874 PRAGMA database.freelist_count; Return the
+# EVIDENCE-OF: R-11211-21323 PRAGMA schema.freelist_count; Return the
 # number of unused pages in the database file.
 #
 do_test pragma2-1.1 {

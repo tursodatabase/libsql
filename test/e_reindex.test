@@ -265,10 +265,9 @@ test_index 5.40  t2     collB   value
 test_index 5.41  aux.t1 collA   length
 test_index 5.42  aux.t1 collB   value
 
-# EVIDENCE-OF: R-15639-02023 If no database-name is specified and there
-# exists both a table or index and a collation sequence of the specified
-# name, SQLite interprets this as a request to rebuild the indices that
-# use the named collation sequence.
+# EVIDENCE-OF: R-35892-30289 For a command of the form "REINDEX name", a
+# match against collation-name takes precedence over a match against
+# index-name or table-name.
 #
 set_collations value length
 do_execsql_test e_reindex-2.6.0 {

@@ -25,11 +25,11 @@
 int sqlite3_fts5_may_be_corrupt = 1;
 
 
-typedef struct Fts5Table Fts5Table;
-typedef struct Fts5Cursor Fts5Cursor;
-typedef struct Fts5Auxiliary Fts5Auxiliary;
 typedef struct Fts5Auxdata Fts5Auxdata;
-
+typedef struct Fts5Auxiliary Fts5Auxiliary;
+typedef struct Fts5Cursor Fts5Cursor;
+typedef struct Fts5Sorter Fts5Sorter;
+typedef struct Fts5Table Fts5Table;
 typedef struct Fts5TokenizerModule Fts5TokenizerModule;
 
 /*
@@ -1317,6 +1317,10 @@ static int fts5SpecialInsert(
     rc = sqlite3Fts5StorageMerge(pTab->pStorage, nMerge);
   }else if( 0==sqlite3_stricmp("integrity-check", z) ){
     rc = sqlite3Fts5StorageIntegrity(pTab->pStorage);
+#ifdef SQLITE_DEBUG
+  }else if( 0==sqlite3_stricmp("prefix-index", z) ){
+    pConfig->bPrefixIndex = sqlite3_value_int(pVal);
+#endif
   }else{
     rc = sqlite3Fts5IndexLoadConfig(pTab->pIndex);
     if( rc==SQLITE_OK ){

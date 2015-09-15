@@ -357,12 +357,14 @@ Table *sqlite3LocateTable(
   if( p==0 ){
     const char *zMsg = isView ? "no such view" : "no such table";
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-    /* If zName is the not the name of a table in the schema created using
-    ** CREATE, then check to see if it is the name of an virtual table that
-    ** can be an eponymous virtual table. */
-    Module *pMod = (Module*)sqlite3HashFind(&pParse->db->aModule, zName);
-    if( pMod && sqlite3VtabEponymousTableInit(pParse, pMod) ){
-      return pMod->pEpoTab;
+    if( sqlite3FindDbName(pParse->db, zDbase)<1 ){
+      /* If zName is the not the name of a table in the schema created using
+      ** CREATE, then check to see if it is the name of an virtual table that
+      ** can be an eponymous virtual table. */
+      Module *pMod = (Module*)sqlite3HashFind(&pParse->db->aModule, zName);
+      if( pMod && sqlite3VtabEponymousTableInit(pParse, pMod) ){
+        return pMod->pEpoTab;
+      }
     }
 #endif
     if( zDbase ){
@@ -372,7 +374,7 @@ Table *sqlite3LocateTable(
     }
     pParse->checkSchema = 1;
   }
-#if SQLITE_USER_AUTHENICATION
+#if SQLITE_USER_AUTHENTICATION
   else if( pParse->db->auth.authLevel<UAUTH_User ){
     sqlite3ErrorMsg(pParse, "user not authenticated");
     p = 0;
@@ -984,6 +986,8 @@ void sqlite3StartTable(
     int j1;
     int fileFormat;
     int reg1, reg2, reg3;
+    /* nullRow[] is an OP_Record encoding of a row containing 5 NULLs */
+    static const char nullRow[] = { 6, 0, 0, 0, 0, 0 };
     sqlite3BeginWriteOperation(pParse, 1, iDb);
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
@@ -1028,7 +1032,7 @@ void sqlite3StartTable(
     }
     sqlite3OpenMasterTable(pParse, iDb);
     sqlite3VdbeAddOp2(v, OP_NewRowid, 0, reg1);
-    sqlite3VdbeAddOp2(v, OP_Null, 0, reg3);
+    sqlite3VdbeAddOp4(v, OP_Blob, 6, reg3, 0, nullRow, P4_STATIC);
     sqlite3VdbeAddOp3(v, OP_Insert, 0, reg3, reg1);
     sqlite3VdbeChangeP5(v, OPFLAG_APPEND);
     sqlite3VdbeAddOp0(v, OP_Close);

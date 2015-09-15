@@ -117,6 +117,12 @@ typedef struct Fts5Config Fts5Config;
 ** bColumnsize:
 **   True if the %_docsize table is created.
 **
+** bPrefixIndex:
+**   This is only used for debugging. If set to false, any prefix indexes
+**   are ignored. This value is configured using:
+**
+**       INSERT INTO tbl(tbl, rank) VALUES('prefix-index', $bPrefixIndex);
+**
 */
 struct Fts5Config {
   sqlite3 *db;                    /* Database handle */
@@ -145,10 +151,14 @@ struct Fts5Config {
 
   /* If non-NULL, points to sqlite3_vtab.base.zErrmsg. Often NULL. */
   char **pzErrmsg;
+
+#ifdef SQLITE_DEBUG
+  int bPrefixIndex;               /* True to use prefix-indexes */
+#endif
 };
 
 /* Current expected value of %_config table 'version' field */
-#define FTS5_CURRENT_VERSION 3
+#define FTS5_CURRENT_VERSION 4
 
 #define FTS5_CONTENT_NORMAL   0
 #define FTS5_CONTENT_NONE     1
@@ -376,12 +386,6 @@ int sqlite3Fts5IndexSync(Fts5Index *p, int bCommit);
 ** records must be invalidated.
 */
 int sqlite3Fts5IndexRollback(Fts5Index *p);
-
-/*
-** Retrieve and clear the current error code, respectively.
-*/
-int sqlite3Fts5IndexErrcode(Fts5Index*);
-void sqlite3Fts5IndexReset(Fts5Index*);
 
 /*
 ** Get or set the "averages" values.
@@ -666,17 +670,6 @@ int sqlite3Fts5AuxInit(fts5_api*);
 int sqlite3Fts5TokenizerInit(fts5_api*);
 /*
 ** End of interface to code in fts5_tokenizer.c.
-**************************************************************************/
-
-/**************************************************************************
-** Interface to code in fts5_sorter.c. 
-*/
-typedef struct Fts5Sorter Fts5Sorter;
-
-int sqlite3Fts5SorterNew(Fts5Expr *pExpr, Fts5Sorter **pp);
-
-/*
-** End of interface to code in fts5_sorter.c.
 **************************************************************************/
 
 /**************************************************************************

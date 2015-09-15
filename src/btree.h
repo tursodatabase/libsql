@@ -185,7 +185,7 @@ int sqlite3BtreeMovetoUnpacked(
 );
 int sqlite3BtreeCursorHasMoved(BtCursor*);
 int sqlite3BtreeCursorRestore(BtCursor*, int*);
-int sqlite3BtreeDelete(BtCursor*);
+int sqlite3BtreeDelete(BtCursor*, int);
 int sqlite3BtreeInsert(BtCursor*, const void *pKey, i64 nKey,
                                   const void *pData, int nData,
                                   int nZero, int bias, int seekResult);

@@ -1193,7 +1193,8 @@ int sqlite3PcacheReleaseMemory(int nReq){
     PgHdr1 *p;
     pcache1EnterMutex(&pcache1.grp);
     while( (nReq<0 || nFree<nReq)
-       &&  (p=pcache1.grp.lru.pLruPrev)->isAnchor==0
+       &&  (p=pcache1.grp.lru.pLruPrev)!=0
+       &&  p->isAnchor==0
     ){
       nFree += pcache1MemSize(p->page.pBuf);
 #ifdef SQLITE_PCACHE_SEPARATE_HEADER
@@ -1222,7 +1223,7 @@ void sqlite3PcacheStats(
 ){
   PgHdr1 *p;
   int nRecyclable = 0;
-  for(p=pcache1.grp.lru.pLruNext; !p->isAnchor; p=p->pLruNext){
+  for(p=pcache1.grp.lru.pLruNext; p && !p->isAnchor; p=p->pLruNext){
     assert( p->isPinned==0 );
     nRecyclable++;
   }

@@ -318,7 +318,6 @@ static int fts5ExprSynonymPoslist(
   int *pbDel,                     /* OUT: Caller should sqlite3_free(*pa) */
   u8 **pa, int *pn
 ){
-  Fts5PoslistWriter writer = {0};
   Fts5PoslistReader aStatic[4];
   Fts5PoslistReader *aIter = aStatic;
   int nIter = 0;
@@ -653,7 +652,7 @@ static int fts5ExprNearAdvanceFirst(
   i64 iFrom 
 ){
   Fts5ExprTerm *pTerm = &pNode->pNear->apPhrase[0]->aTerm[0];
-  int rc;
+  int rc = SQLITE_OK;
 
   if( pTerm->pSynonym ){
     int bEof = 1;
@@ -948,8 +947,6 @@ static int fts5ExprNearNextMatch(
       for(j=0; j<pPhrase->nTerm; j++){
         Fts5ExprTerm *pTerm = &pPhrase->aTerm[j];
         if( pTerm->pSynonym ){
-          Fts5ExprTerm *p;
-          int bEof = 1;
           i64 iRowid = fts5ExprSynonymRowid(pTerm, bDesc, 0);
           if( iRowid==iLast ) continue;
           bMatch = 0;
@@ -1657,13 +1654,9 @@ int sqlite3Fts5ExprClonePhrase(
 ){
   int rc = SQLITE_OK;             /* Return code */
   Fts5ExprPhrase *pOrig;          /* The phrase extracted from pExpr */
-  Fts5ExprPhrase *pCopy;          /* Copy of pOrig */
   int i;                          /* Used to iterate through phrase terms */
 
   Fts5Expr *pNew = 0;             /* Expression to return via *ppNew */
-  Fts5ExprPhrase **apPhrase;      /* pNew->apPhrase */
-  Fts5ExprNode *pNode;            /* pNew->pRoot */
-  Fts5ExprNearset *pNear;         /* pNew->pRoot->pNear */
 
   TokenCtx sCtx = {0,0};          /* Context object for fts5ParseTokenize */
 

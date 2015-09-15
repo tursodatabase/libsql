@@ -480,6 +480,9 @@ int sqlite3Fts5ConfigParse(
   pRet->zDb = sqlite3Fts5Strndup(&rc, azArg[1], -1);
   pRet->zName = sqlite3Fts5Strndup(&rc, azArg[2], -1);
   pRet->bColumnsize = 1;
+#ifdef SQLITE_DEBUG
+  pRet->bPrefixIndex = 1;
+#endif
   if( rc==SQLITE_OK && sqlite3_stricmp(pRet->zName, FTS5_RANK_NAME)==0 ){
     *pzErr = sqlite3_mprintf("reserved fts5 table name: %s", pRet->zName);
     rc = SQLITE_ERROR;
