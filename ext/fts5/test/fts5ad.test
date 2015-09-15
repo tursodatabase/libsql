@@ -205,6 +205,9 @@ foreach {T create} {
     return $ret
   }
 
+  do_execsql_test $T.integrity {
+    INSERT INTO t1(t1) VALUES('integrity-check');
+  }
   
   foreach {bAsc sql} {
     1 {SELECT rowid FROM t1 WHERE t1 MATCH $prefix}

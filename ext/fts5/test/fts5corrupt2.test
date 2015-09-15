@@ -209,13 +209,13 @@ foreach {tn nCut} {
     execsql ROLLBACK
   }
 
-  do_test 4.$tn.x { expr $nCorrupt>0 } 1
+  # do_test 4.$tn.x { expr $nCorrupt>0 } 1
 }
 
 }
 
 set doc [string repeat "A B C " 1000]
-do_execsql_test 4.0 {
+do_execsql_test 5.0 {
   CREATE VIRTUAL TABLE x5 USING fts5(tt);
   INSERT INTO x5(x5, rank) VALUES('pgsz', 32);
   WITH ii(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM ii WHERE i<10) 
@@ -230,7 +230,7 @@ foreach {tn hdr} {
   foreach rowid [db eval {SELECT rowid FROM x5_data WHERE rowid>10}] {
     if {$rowid & $mask} continue
     incr tn2
-    do_test 4.$tn.$tn2 {
+    do_test 5.$tn.$tn2 {
       execsql BEGIN
 
       set fd [db incrblob main x5_data block $rowid]
@@ -248,7 +248,7 @@ foreach {tn hdr} {
 
 #--------------------------------------------------------------------
 reset_db
-do_execsql_test 5.1 {
+do_execsql_test 6.1 {
   CREATE VIRTUAL TABLE x5 USING fts5(tt);
   INSERT INTO x5 VALUES('a');
   INSERT INTO x5 VALUES('a a');
@@ -262,7 +262,7 @@ proc colsize {cmd i} {
 }
 sqlite3_fts5_create_function db colsize colsize
 
-do_catchsql_test 5.2 {
+do_catchsql_test 6.2 {
   SELECT colsize(x5, 0) FROM x5 WHERE x5 MATCH 'a'
 } {1 SQLITE_CORRUPT_VTAB}
 

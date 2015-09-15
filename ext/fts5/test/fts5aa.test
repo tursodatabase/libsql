@@ -51,7 +51,7 @@ do_execsql_test 2.1 {
 
 do_test 2.2 {
   execsql { SELECT fts5_decode(id, block) FROM t1_data WHERE id==10 }
-} {/{\(structure\) {lvl=0 nMerge=0 nSeg=1 {id=[0123456789]* h=0 leaves=1..1}}}/}
+} {/{{structure} {lvl=0 nMerge=0 nSeg=1 {id=[0123456789]* leaves=1..1}}}/}
 
 foreach w {a b c d e f} {
   do_execsql_test 2.3.$w.asc {
@@ -139,7 +139,6 @@ foreach {i x y} {
 
 #-------------------------------------------------------------------------
 #
-breakpoint
 reset_db
 do_execsql_test 6.0 {
   CREATE VIRTUAL TABLE t1 USING fts5(x,y);
@@ -201,6 +200,7 @@ for {set i 1} {$i <= 10} {incr i} {
     }
     execsql { INSERT INTO t1(t1) VALUES('integrity-check'); }
   } {}
+  if {[set_test_counter errors]} break
 }
 
 #-------------------------------------------------------------------------
@@ -343,7 +343,7 @@ do_execsql_test 13.5 {
 } {1}
 
 do_execsql_test 13.6 {
-  SELECT rowid FROM t1 WHERE t1 MATCH '.';
+  SELECT rowid FROM t1 WHERE t1 MATCH '""';
 } {}
 
 #-------------------------------------------------------------------------
@@ -505,6 +505,36 @@ do_execsql_test 18.2 {
 do_execsql_test 18.3 {
   SELECT t1.rowid, t2.rowid FROM t2, t1 WHERE t2 MATCH t1.a AND t1.rowid = t2.c
 } {1 1}
+
+#--------------------------------------------------------------------
+# fts5 table in the temp schema.
+#
+reset_db
+do_execsql_test 19.0 {
+  CREATE VIRTUAL TABLE temp.t1 USING fts5(x);
+  INSERT INTO t1 VALUES('x y z');
+  INSERT INTO t1 VALUES('w x 1');
+  SELECT rowid FROM t1 WHERE t1 MATCH 'x';
+} {1 2}
+
+#--------------------------------------------------------------------
+# Test that 6 and 7 byte varints can be read.
+#
+reset_db
+do_execsql_test 20.0 {
+  CREATE VIRTUAL TABLE temp.tmp USING fts5(x);
+}
+set ::ids [list \
+  0 [expr 1<<36] [expr 2<<36] [expr 1<<43] [expr 2<<43]
+]
+do_test 20.1 {
+  foreach id $::ids {
+    execsql { INSERT INTO tmp(rowid, x) VALUES($id, 'x y z') }
+  }
+  execsql { SELECT rowid FROM tmp WHERE tmp MATCH 'y' }
+} $::ids
+
+
 
 finish_test
 

@@ -16,12 +16,14 @@
 #include "fts5Int.h"
 
 int sqlite3Fts5BufferGrow(int *pRc, Fts5Buffer *pBuf, int nByte){
-  /* A no-op if an error has already occurred */
-  if( *pRc ) return 1;
 
   if( (pBuf->n + nByte) > pBuf->nSpace ){
     u8 *pNew;
     int nNew = pBuf->nSpace ? pBuf->nSpace*2 : 64;
+
+    /* A no-op if an error has already occurred */
+    if( *pRc ) return 1;
+
     while( nNew<(pBuf->n + nByte) ){
       nNew = nNew * 2;
     }

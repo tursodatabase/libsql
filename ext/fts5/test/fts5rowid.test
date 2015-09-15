@@ -27,15 +27,15 @@ do_catchsql_test 1.1 {
 
 do_catchsql_test 1.2 {
   SELECT fts5_rowid('segment')
-} {1 {should be: fts5_rowid('segment', segid, height, pgno))}}
+} {1 {should be: fts5_rowid('segment', segid, pgno))}}
 
 do_execsql_test 1.3 {
-  SELECT fts5_rowid('segment', 1, 1, 1)
-} {139586437121}
+  SELECT fts5_rowid('segment', 1, 1)
+} {137438953473}
 
 do_catchsql_test 1.4 {
   SELECT fts5_rowid('nosucharg');
-} {1 {first arg to fts5_rowid() must be 'segment' or 'start-of-index'}} 
+} {1 {first arg to fts5_rowid() must be 'segment'}} 
 
 
 #-------------------------------------------------------------------------
@@ -90,6 +90,10 @@ do_execsql_test 2.6 {
 #  UPDATE x1_data SET block = X'';
 #  SELECT count(fts5_decode(rowid, block)) FROM x1_data;
 #} $res
+
+do_execsql_test 2.8 {
+  SELECT fts5_decode(fts5_rowid('segment', 1000, 1), X'AB')
+} {corrupt}
 
 #-------------------------------------------------------------------------
 # Tests with very large tokens.

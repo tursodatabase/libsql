@@ -69,9 +69,11 @@ int sqlite3WhereBreakLabel(WhereInfo *pWInfo){
 }
 
 /*
-** Return TRUE if an UPDATE or DELETE statement can operate directly on
-** the rowids returned by a WHERE clause.  Return FALSE if doing an
-** UPDATE or DELETE might change subsequent WHERE clause results.
+** Return ONEPASS_OFF (0) if an UPDATE or DELETE statement is unable to
+** operate directly on the rowis returned by a WHERE clause.  Return
+** ONEPASS_SINGLE (1) if the statement can operation directly because only
+** a single row is to be changed.  Return ONEPASS_MULTI (2) if the one-pass
+** optimization can be used on multiple 
 **
 ** If the ONEPASS optimization is used (if this routine returns true)
 ** then also write the indices of open cursors used by ONEPASS
@@ -85,7 +87,7 @@ int sqlite3WhereBreakLabel(WhereInfo *pWInfo){
 */
 int sqlite3WhereOkOnePass(WhereInfo *pWInfo, int *aiCur){
   memcpy(aiCur, pWInfo->aiCurOnePass, sizeof(int)*2);
-  return pWInfo->okOnePass;
+  return pWInfo->eOnePass;
 }
 
 /*
@@ -180,10 +182,13 @@ static WhereTerm *whereScanNext(WhereScan *pScan){
   while( pScan->iEquiv<=pScan->nEquiv ){
     iCur = pScan->aiCur[pScan->iEquiv-1];
     iColumn = pScan->aiColumn[pScan->iEquiv-1];
+    assert( iColumn!=(-2) || pScan->pIdxExpr!=0 );
     while( (pWC = pScan->pWC)!=0 ){
       for(pTerm=pWC->a+k; k<pWC->nTerm; k++, pTerm++){
         if( pTerm->leftCursor==iCur
          && pTerm->u.leftColumn==iColumn
+         && (iColumn!=(-2)
+               || sqlite3ExprCompare(pTerm->pExpr->pLeft,pScan->pIdxExpr,iCur)==0)
          && (pScan->iEquiv<=1 || !ExprHasProperty(pTerm->pExpr, EP_FromJoin))
         ){
           if( (pTerm->eOperator & WO_EQUIV)!=0
@@ -268,16 +273,19 @@ static WhereTerm *whereScanInit(
   u32 opMask,             /* Operator(s) to scan for */
   Index *pIdx             /* Must be compatible with this index */
 ){
-  int j;
+  int j = 0;
 
   /* memset(pScan, 0, sizeof(*pScan)); */
   pScan->pOrigWC = pWC;
   pScan->pWC = pWC;
+  pScan->pIdxExpr = 0;
+  if( pIdx ){
+    j = iColumn;
+    iColumn = pIdx->aiColumn[j];
+    if( iColumn==(-2) ) pScan->pIdxExpr = pIdx->aColExpr->a[j].pExpr;
+  }
   if( pIdx && iColumn>=0 ){
     pScan->idxaff = pIdx->pTable->aCol[iColumn].affinity;
-    for(j=0; pIdx->aiColumn[j]!=iColumn; j++){
-      if( NEVER(j>pIdx->nColumn) ) return 0;
-    }
     pScan->zCollName = pIdx->azColl[j];
   }else{
     pScan->idxaff = 0;
@@ -297,6 +305,9 @@ static WhereTerm *whereScanInit(
 ** where X is a reference to the iColumn of table iCur and <op> is one of
 ** the WO_xx operator codes specified by the op parameter.
 ** Return a pointer to the term.  Return 0 if not found.
+**
+** If pIdx!=0 then search for terms matching the iColumn-th column of pIdx
+** rather than the iColumn-th column of table iCur.
 **
 ** The term returned might by Y=<expr> if there is another constraint in
 ** the WHERE clause that specifies that X=Y.  Any such constraints will be
@@ -374,6 +385,25 @@ static int findIndexCol(
 }
 
 /*
+** Return TRUE if the iCol-th column of index pIdx is NOT NULL
+*/
+static int indexColumnNotNull(Index *pIdx, int iCol){
+  int j;
+  assert( pIdx!=0 );
+  assert( iCol>=0 && iCol<pIdx->nColumn );
+  j = pIdx->aiColumn[iCol];
+  if( j>=0 ){
+    return pIdx->pTable->aCol[j].notNull;
+  }else if( j==(-1) ){
+    return 1;
+  }else{
+    assert( j==(-2) );
+    return 0;  /* Assume an indexed expression can always yield a NULL */
+
+  }
+}
+
+/*
 ** Return true if the DISTINCT expression-list passed as the third argument
 ** is redundant.
 **
@@ -423,12 +453,9 @@ static int isDistinctRedundant(
   for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
     if( !IsUniqueIndex(pIdx) ) continue;
     for(i=0; i<pIdx->nKeyCol; i++){
-      i16 iCol = pIdx->aiColumn[i];
-      if( 0==sqlite3WhereFindTerm(pWC, iBase, iCol, ~(Bitmask)0, WO_EQ, pIdx) ){
-        int iIdxCol = findIndexCol(pParse, pDistinct, iBase, pIdx, i);
-        if( iIdxCol<0 || pTab->aCol[iCol].notNull==0 ){
-          break;
-        }
+      if( 0==sqlite3WhereFindTerm(pWC, iBase, i, ~(Bitmask)0, WO_EQ, pIdx) ){
+        if( findIndexCol(pParse, pDistinct, iBase, pIdx, i)<0 ) break;
+        if( indexColumnNotNull(pIdx, i)==0 ) break;
       }
     }
     if( i==pIdx->nKeyCol ){
@@ -780,6 +807,7 @@ static sqlite3_index_info *allocateIndexInfo(
     testcase( pTerm->eOperator & WO_ALL );
     if( (pTerm->eOperator & ~(WO_ISNULL|WO_EQUIV|WO_IS))==0 ) continue;
     if( pTerm->wtFlags & TERM_VNULL ) continue;
+    assert( pTerm->u.leftColumn>=(-1) );
     nTerm++;
   }
 
@@ -835,6 +863,7 @@ static sqlite3_index_info *allocateIndexInfo(
     testcase( pTerm->eOperator & WO_ALL );
     if( (pTerm->eOperator & ~(WO_ISNULL|WO_EQUIV|WO_IS))==0 ) continue;
     if( pTerm->wtFlags & TERM_VNULL ) continue;
+    assert( pTerm->u.leftColumn>=(-1) );
     pIdxCons[j].iColumn = pTerm->u.leftColumn;
     pIdxCons[j].iTermOffset = i;
     op = (u8)pTerm->eOperator & WO_ALL;
@@ -2126,7 +2155,6 @@ static int whereLoopAddBtreeIndex(
   u16 saved_nSkip;                /* Original value of pNew->nSkip */
   u32 saved_wsFlags;              /* Original value of pNew->wsFlags */
   LogEst saved_nOut;              /* Original value of pNew->nOut */
-  int iCol;                       /* Index of the column in the table */
   int rc = SQLITE_OK;             /* Return code */
   LogEst rSize;                   /* Number of rows in the table */
   LogEst rLogSize;                /* Logarithm of table size */
@@ -2147,16 +2175,15 @@ static int whereLoopAddBtreeIndex(
   if( pProbe->bUnordered ) opMask &= ~(WO_GT|WO_GE|WO_LT|WO_LE);
 
   assert( pNew->u.btree.nEq<pProbe->nColumn );
-  iCol = pProbe->aiColumn[pNew->u.btree.nEq];
 
-  pTerm = whereScanInit(&scan, pBuilder->pWC, pSrc->iCursor, iCol,
-                        opMask, pProbe);
   saved_nEq = pNew->u.btree.nEq;
   saved_nSkip = pNew->nSkip;
   saved_nLTerm = pNew->nLTerm;
   saved_wsFlags = pNew->wsFlags;
   saved_prereq = pNew->prereq;
   saved_nOut = pNew->nOut;
+  pTerm = whereScanInit(&scan, pBuilder->pWC, pSrc->iCursor, saved_nEq,
+                        opMask, pProbe);
   pNew->rSetup = 0;
   rSize = pProbe->aiRowLogEst[0];
   rLogSize = estLog(rSize);
@@ -2169,7 +2196,7 @@ static int whereLoopAddBtreeIndex(
     int nRecValid = pBuilder->nRecValid;
 #endif
     if( (eOp==WO_ISNULL || (pTerm->wtFlags&TERM_VNULL)!=0)
-     && (iCol<0 || pSrc->pTab->aCol[iCol].notNull)
+     && indexColumnNotNull(pProbe, saved_nEq)
     ){
       continue; /* ignore IS [NOT] NULL constraints on NOT NULL columns */
     }
@@ -2206,8 +2233,10 @@ static int whereLoopAddBtreeIndex(
                         ** changes "x IN (?)" into "x=?". */
 
     }else if( eOp & (WO_EQ|WO_IS) ){
+      int iCol = pProbe->aiColumn[saved_nEq];
       pNew->wsFlags |= WHERE_COLUMN_EQ;
-      if( iCol<0 || (nInMul==0 && pNew->u.btree.nEq==pProbe->nKeyCol-1) ){
+      assert( saved_nEq==pNew->u.btree.nEq );
+      if( iCol==(-1) || (iCol>0 && nInMul==0 && saved_nEq==pProbe->nKeyCol-1) ){
         if( iCol>=0 && pProbe->uniqNotNull==0 ){
           pNew->wsFlags |= WHERE_UNQ_WANTED;
         }else{
@@ -2258,7 +2287,7 @@ static int whereLoopAddBtreeIndex(
       assert( eOp & (WO_ISNULL|WO_EQ|WO_IN|WO_IS) );
 
       assert( pNew->nOut==saved_nOut );
-      if( pTerm->truthProb<=0 && iCol>=0 ){
+      if( pTerm->truthProb<=0 && pProbe->aiColumn[saved_nEq]>=0 ){
         assert( (eOp & WO_IN) || nIn==0 );
         testcase( eOp & WO_IN );
         pNew->nOut += pTerm->truthProb;
@@ -3785,7 +3814,7 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
       ) continue;
       opMask = pIdx->uniqNotNull ? (WO_EQ|WO_IS) : WO_EQ;
       for(j=0; j<pIdx->nKeyCol; j++){
-        pTerm = sqlite3WhereFindTerm(pWC, iCur, pIdx->aiColumn[j], 0, opMask, pIdx);
+        pTerm = sqlite3WhereFindTerm(pWC, iCur, j, 0, opMask, pIdx);
         if( pTerm==0 ) break;
         testcase( pTerm->eOperator & WO_IS );
         pLoop->aLTerm[j] = pTerm;
@@ -3931,6 +3960,10 @@ WhereInfo *sqlite3WhereBegin(
   sqlite3 *db;               /* Database connection */
   int rc;                    /* Return code */
 
+  assert( (wctrlFlags & WHERE_ONEPASS_MULTIROW)==0 || (
+        (wctrlFlags & WHERE_ONEPASS_DESIRED)!=0 
+     && (wctrlFlags & WHERE_OMIT_OPEN_CLOSE)==0 
+  ));
 
   /* Variable initialization */
   db = pParse->db;
@@ -3986,6 +4019,7 @@ WhereInfo *sqlite3WhereBegin(
   pWInfo->iBreak = pWInfo->iContinue = sqlite3VdbeMakeLabel(v);
   pWInfo->wctrlFlags = wctrlFlags;
   pWInfo->savedNQueryLoop = pParse->nQueryLoop;
+  assert( pWInfo->eOnePass==ONEPASS_OFF );  /* ONEPASS defaults to OFF */
   pMaskSet = &pWInfo->sMaskSet;
   sWLB.pWInfo = pWInfo;
   sWLB.pWC = &pWInfo->sWC;
@@ -4025,14 +4059,12 @@ WhereInfo *sqlite3WhereBegin(
 
   /* Assign a bit from the bitmask to every term in the FROM clause.
   **
-  ** When assigning bitmask values to FROM clause cursors, it must be
-  ** the case that if X is the bitmask for the N-th FROM clause term then
-  ** the bitmask for all FROM clause terms to the left of the N-th term
-  ** is (X-1).   An expression from the ON clause of a LEFT JOIN can use
-  ** its Expr.iRightJoinTable value to find the bitmask of the right table
-  ** of the join.  Subtracting one from the right table bitmask gives a
-  ** bitmask for all tables to the left of the join.  Knowing the bitmask
-  ** for all tables to the left of a left join is important.  Ticket #3015.
+  ** The N-th term of the FROM clause is assigned a bitmask of 1<<N.
+  **
+  ** The rule of the previous sentence ensures thta if X is the bitmask for
+  ** a table T, then X-1 is the bitmask for all other tables to the left of T.
+  ** Knowing the bitmask for all tables to the left of a left join is
+  ** important.  Ticket #3015.
   **
   ** Note that bitmasks are created for all pTabList->nSrc tables in
   ** pTabList, not just the first nTabList tables.  nTabList is normally
@@ -4043,14 +4075,10 @@ WhereInfo *sqlite3WhereBegin(
     createMask(pMaskSet, pTabList->a[ii].iCursor);
     sqlite3WhereTabFuncArgs(pParse, &pTabList->a[ii], &pWInfo->sWC);
   }
-#ifndef NDEBUG
-  {
-    Bitmask toTheLeft = 0;
-    for(ii=0; ii<pTabList->nSrc; ii++){
-      Bitmask m = sqlite3WhereGetMask(pMaskSet, pTabList->a[ii].iCursor);
-      assert( (m-1)==toTheLeft );
-      toTheLeft |= m;
-    }
+#ifdef SQLITE_DEBUG
+  for(ii=0; ii<pTabList->nSrc; ii++){
+    Bitmask m = sqlite3WhereGetMask(pMaskSet, pTabList->a[ii].iCursor);
+    assert( m==MASKBIT(ii) );
   }
 #endif
 
@@ -4178,11 +4206,16 @@ WhereInfo *sqlite3WhereBegin(
   ** the statement to update or delete a single row.
   */
   assert( (wctrlFlags & WHERE_ONEPASS_DESIRED)==0 || pWInfo->nLevel==1 );
-  if( (wctrlFlags & WHERE_ONEPASS_DESIRED)!=0 
-   && (pWInfo->a[0].pWLoop->wsFlags & WHERE_ONEROW)!=0 ){
-    pWInfo->okOnePass = 1;
-    if( HasRowid(pTabList->a[0].pTab) ){
-      pWInfo->a[0].pWLoop->wsFlags &= ~WHERE_IDX_ONLY;
+  if( (wctrlFlags & WHERE_ONEPASS_DESIRED)!=0 ){
+    int wsFlags = pWInfo->a[0].pWLoop->wsFlags;
+    int bOnerow = (wsFlags & WHERE_ONEROW)!=0;
+    if( bOnerow || ( (wctrlFlags & WHERE_ONEPASS_MULTIROW)
+       && 0==(wsFlags & WHERE_VIRTUALTABLE)
+    )){
+      pWInfo->eOnePass = bOnerow ? ONEPASS_SINGLE : ONEPASS_MULTI;
+      if( HasRowid(pTabList->a[0].pTab) ){
+        pWInfo->a[0].pWLoop->wsFlags &= ~WHERE_IDX_ONLY;
+      }
     }
   }
 
@@ -4213,15 +4246,15 @@ WhereInfo *sqlite3WhereBegin(
     if( (pLoop->wsFlags & WHERE_IDX_ONLY)==0
          && (wctrlFlags & WHERE_OMIT_OPEN_CLOSE)==0 ){
       int op = OP_OpenRead;
-      if( pWInfo->okOnePass ){
+      if( pWInfo->eOnePass!=ONEPASS_OFF ){
         op = OP_OpenWrite;
         pWInfo->aiCurOnePass[0] = pTabItem->iCursor;
       };
       sqlite3OpenTable(pParse, pTabItem->iCursor, iDb, pTab, op);
       assert( pTabItem->iCursor==pLevel->iTabCur );
-      testcase( !pWInfo->okOnePass && pTab->nCol==BMS-1 );
-      testcase( !pWInfo->okOnePass && pTab->nCol==BMS );
-      if( !pWInfo->okOnePass && pTab->nCol<BMS && HasRowid(pTab) ){
+      testcase( pWInfo->eOnePass==ONEPASS_OFF && pTab->nCol==BMS-1 );
+      testcase( pWInfo->eOnePass==ONEPASS_OFF && pTab->nCol==BMS );
+      if( pWInfo->eOnePass==ONEPASS_OFF && pTab->nCol<BMS && HasRowid(pTab) ){
         Bitmask b = pTabItem->colUsed;
         int n = 0;
         for(; b; b=b>>1, n++){}
@@ -4252,7 +4285,7 @@ WhereInfo *sqlite3WhereBegin(
         ** WITHOUT ROWID table.  No need for a separate index */
         iIndexCur = pLevel->iTabCur;
         op = 0;
-      }else if( pWInfo->okOnePass ){
+      }else if( pWInfo->eOnePass!=ONEPASS_OFF ){
         Index *pJ = pTabItem->pTab->pIndex;
         iIndexCur = iIdxCur;
         assert( wctrlFlags & WHERE_ONEPASS_DESIRED );
@@ -4460,7 +4493,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
      && (pWInfo->wctrlFlags & WHERE_OMIT_OPEN_CLOSE)==0
     ){
       int ws = pLoop->wsFlags;
-      if( !pWInfo->okOnePass && (ws & WHERE_IDX_ONLY)==0 ){
+      if( pWInfo->eOnePass==ONEPASS_OFF && (ws & WHERE_IDX_ONLY)==0 ){
         sqlite3VdbeAddOp1(v, OP_Close, pTabItem->iCursor);
       }
       if( (ws & WHERE_INDEXED)!=0

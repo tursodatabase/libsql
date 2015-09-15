@@ -45,30 +45,6 @@ static void incrAggFunctionDepth(Expr *pExpr, int N){
 ** Turn the pExpr expression into an alias for the iCol-th column of the
 ** result set in pEList.
 **
-** If the result set column is a simple column reference, then this routine
-** makes an exact copy.  But for any other kind of expression, this
-** routine make a copy of the result set column as the argument to the
-** TK_AS operator.  The TK_AS operator causes the expression to be
-** evaluated just once and then reused for each alias.
-**
-** The reason for suppressing the TK_AS term when the expression is a simple
-** column reference is so that the column reference will be recognized as
-** usable by indices within the WHERE clause processing logic. 
-**
-** The TK_AS operator is inhibited if zType[0]=='G'.  This means
-** that in a GROUP BY clause, the expression is evaluated twice.  Hence:
-**
-**     SELECT random()%5 AS x, count(*) FROM tab GROUP BY x
-**
-** Is equivalent to:
-**
-**     SELECT random()%5 AS x, count(*) FROM tab GROUP BY random()%5
-**
-** The result of random()%5 in the GROUP BY clause is probably different
-** from the result in the result-set.  On the other hand Standard SQL does
-** not allow the GROUP BY clause to contain references to result-set columns.
-** So this should never come up in well-formed queries.
-**
 ** If the reference is followed by a COLLATE operator, then make sure
 ** the COLLATE operator is preserved.  For example:
 **
@@ -102,19 +78,11 @@ static void resolveAlias(
   db = pParse->db;
   pDup = sqlite3ExprDup(db, pOrig, 0);
   if( pDup==0 ) return;
-  if( pOrig->op!=TK_COLUMN && zType[0]!='G' ){
-    incrAggFunctionDepth(pDup, nSubquery);
-    pDup = sqlite3PExpr(pParse, TK_AS, pDup, 0, 0);
-    if( pDup==0 ) return;
-    ExprSetProperty(pDup, EP_Skip);
-    if( pEList->a[iCol].u.x.iAlias==0 ){
-      pEList->a[iCol].u.x.iAlias = (u16)(++pParse->nAlias);
-    }
-    pDup->iTable = pEList->a[iCol].u.x.iAlias;
-  }
+  if( zType[0]!='G' ) incrAggFunctionDepth(pDup, nSubquery);
   if( pExpr->op==TK_COLLATE ){
     pDup = sqlite3ExprAddCollateString(pParse, pDup, pExpr->u.zToken);
   }
+  ExprSetProperty(pDup, EP_Alias);
 
   /* Before calling sqlite3ExprDelete(), set the EP_Static flag. This 
   ** prevents ExprDelete() from deleting the Expr structure itself,
@@ -506,7 +474,7 @@ static int lookupName(
 lookupname_end:
   if( cnt==1 ){
     assert( pNC!=0 );
-    if( pExpr->op!=TK_AS ){
+    if( !ExprHasProperty(pExpr, EP_Alias) ){
       sqlite3AuthRead(pParse, pExpr, pSchema, pNC->pSrcList);
     }
     /* Increment the nRef value on all name contexts from TopNC up to
@@ -547,36 +515,25 @@ Expr *sqlite3CreateColumnExpr(sqlite3 *db, SrcList *pSrc, int iSrc, int iCol){
 }
 
 /*
-** Report an error that an expression is not valid for a partial index WHERE
-** clause.
+** Report an error that an expression is not valid for some set of
+** pNC->ncFlags values determined by validMask.
 */
-static void notValidPartIdxWhere(
+static void notValid(
   Parse *pParse,       /* Leave error message here */
   NameContext *pNC,    /* The name context */
-  const char *zMsg     /* Type of error */
+  const char *zMsg,    /* Type of error */
+  int validMask        /* Set of contexts for which prohibited */
 ){
-  if( (pNC->ncFlags & NC_PartIdx)!=0 ){
-    sqlite3ErrorMsg(pParse, "%s prohibited in partial index WHERE clauses",
-                    zMsg);
-  }
-}
-
+  assert( (validMask&~(NC_IsCheck|NC_PartIdx|NC_IdxExpr))==0 );
+  if( (pNC->ncFlags & validMask)!=0 ){
+    const char *zIn = "partial index WHERE clauses";
+    if( pNC->ncFlags & NC_IdxExpr )      zIn = "index expressions";
 #ifndef SQLITE_OMIT_CHECK
-/*
-** Report an error that an expression is not valid for a CHECK constraint.
-*/
-static void notValidCheckConstraint(
-  Parse *pParse,       /* Leave error message here */
-  NameContext *pNC,    /* The name context */
-  const char *zMsg     /* Type of error */
-){
-  if( (pNC->ncFlags & NC_IsCheck)!=0 ){
-    sqlite3ErrorMsg(pParse,"%s prohibited in CHECK constraints", zMsg);
+    else if( pNC->ncFlags & NC_IsCheck ) zIn = "CHECK constraints";
+#endif
+    sqlite3ErrorMsg(pParse, "%s prohibited in %s", zMsg, zIn);
   }
 }
-#else
-# define notValidCheckConstraint(P,N,M)
-#endif
 
 /*
 ** Expression p should encode a floating point value between 1.0 and 0.0.
@@ -661,6 +618,8 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       Expr *pRight;
 
       /* if( pSrcList==0 ) break; */
+      notValid(pParse, pNC, "the \".\" operator", NC_IdxExpr);
+      /*notValid(pParse, pNC, "the \".\" operator", NC_PartIdx|NC_IsCheck, 1);*/
       pRight = pExpr->pRight;
       if( pRight->op==TK_ID ){
         zDb = 0;
@@ -690,7 +649,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       u8 enc = ENC(pParse->db);   /* The database encoding */
 
       assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
-      notValidPartIdxWhere(pParse, pNC, "functions");
+      notValid(pParse, pNC, "functions", NC_PartIdx);
       zId = pExpr->u.zToken;
       nId = sqlite3Strlen30(zId);
       pDef = sqlite3FindFunction(pParse->db, zId, nId, n, enc, 0);
@@ -738,8 +697,17 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           return WRC_Prune;
         }
 #endif
-        if( pDef->funcFlags & SQLITE_FUNC_CONSTANT ){
+        if( pDef->funcFlags & (SQLITE_FUNC_CONSTANT|SQLITE_FUNC_SLOCHNG) ){
+          /* For the purposes of the EP_ConstFunc flag, date and time
+          ** functions and other functions that change slowly are considered
+          ** constant because they are constant for the duration of one query */
           ExprSetProperty(pExpr,EP_ConstFunc);
+        }
+        if( (pDef->funcFlags & SQLITE_FUNC_CONSTANT)==0 ){
+          /* Date/time functions that use 'now', and other functions like
+          ** sqlite_version() that might change over time cannot be used
+          ** in an index. */
+          notValid(pParse, pNC, "non-deterministic functions", NC_IdxExpr);
         }
       }
       if( is_agg && (pNC->ncFlags & NC_AllowAgg)==0 ){
@@ -786,8 +754,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       testcase( pExpr->op==TK_IN );
       if( ExprHasProperty(pExpr, EP_xIsSelect) ){
         int nRef = pNC->nRef;
-        notValidCheckConstraint(pParse, pNC, "subqueries");
-        notValidPartIdxWhere(pParse, pNC, "subqueries");
+        notValid(pParse, pNC, "subqueries", NC_IsCheck|NC_PartIdx|NC_IdxExpr);
         sqlite3WalkSelect(pWalker, pExpr->x.pSelect);
         assert( pNC->nRef>=nRef );
         if( nRef!=pNC->nRef ){
@@ -797,8 +764,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       break;
     }
     case TK_VARIABLE: {
-      notValidCheckConstraint(pParse, pNC, "parameters");
-      notValidPartIdxWhere(pParse, pNC, "parameters");
+      notValid(pParse, pNC, "parameters", NC_IsCheck|NC_PartIdx|NC_IdxExpr);
       break;
     }
   }
@@ -1501,14 +1467,14 @@ void sqlite3ResolveSelectNames(
 void sqlite3ResolveSelfReference(
   Parse *pParse,      /* Parsing context */
   Table *pTab,        /* The table being referenced */
-  int type,           /* NC_IsCheck or NC_PartIdx */
+  int type,           /* NC_IsCheck or NC_PartIdx or NC_IdxExpr */
   Expr *pExpr,        /* Expression to resolve.  May be NULL. */
   ExprList *pList     /* Expression list to resolve.  May be NUL. */
 ){
   SrcList sSrc;                   /* Fake SrcList for pParse->pNewTable */
   NameContext sNC;                /* Name context for pParse->pNewTable */
 
-  assert( type==NC_IsCheck || type==NC_PartIdx );
+  assert( type==NC_IsCheck || type==NC_PartIdx || type==NC_IdxExpr );
   memset(&sNC, 0, sizeof(sNC));
   memset(&sSrc, 0, sizeof(sSrc));
   sSrc.nSrc = 1;

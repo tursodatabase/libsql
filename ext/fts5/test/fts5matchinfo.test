@@ -355,10 +355,10 @@ do_execsql_test 10.1 {
 #---------------------------------------------------------------------------
 # Test the 'y' matchinfo flag
 #
-set sqlite_fts3_enable_parentheses 1
 reset_db
+sqlite3_fts5_register_matchinfo db
 do_execsql_test 11.0 {
-  CREATE VIRTUAL TABLE tt USING fts3(x, y);
+  CREATE VIRTUAL TABLE tt USING fts5(x, y);
   INSERT INTO tt VALUES('c d a c d d', 'e a g b d a');   -- 1
   INSERT INTO tt VALUES('c c g a e b', 'c g d g e c');   -- 2
   INSERT INTO tt VALUES('b e f d e g', 'b a c b c g');   -- 3
@@ -432,19 +432,18 @@ foreach {tn expr res} {
     SELECT rowid, mit(matchinfo(tt, 'b')) FROM tt WHERE tt MATCH $expr
   } $r2
 }
-set sqlite_fts3_enable_parentheses 0
 
 #---------------------------------------------------------------------------
 # Test the 'b' matchinfo flag
 #
-set sqlite_fts3_enable_parentheses 1
 reset_db
+sqlite3_fts5_register_matchinfo db
 db func mit mit
 
 do_test 12.0 {
   set cols [list]
   for {set i 0} {$i < 50} {incr i} { lappend cols "c$i" }
-  execsql "CREATE VIRTUAL TABLE tt USING fts3([join $cols ,])"
+  execsql "CREATE VIRTUAL TABLE tt USING fts5([join $cols ,])"
 } {}
 
 do_execsql_test 12.1 {
@@ -452,6 +451,5 @@ do_execsql_test 12.1 {
   SELECT mit(matchinfo(tt, 'b')) FROM tt WHERE tt MATCH 'abc';
 } [list [list [expr 1<<4] [expr 1<<(45-32)]]]
 
-set sqlite_fts3_enable_parentheses 0
 finish_test
 

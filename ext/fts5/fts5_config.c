@@ -480,6 +480,9 @@ int sqlite3Fts5ConfigParse(
   pRet->zDb = sqlite3Fts5Strndup(&rc, azArg[1], -1);
   pRet->zName = sqlite3Fts5Strndup(&rc, azArg[2], -1);
   pRet->bColumnsize = 1;
+#ifdef SQLITE_DEBUG
+  pRet->bPrefixIndex = 1;
+#endif
   if( rc==SQLITE_OK && sqlite3_stricmp(pRet->zName, FTS5_RANK_NAME)==0 ){
     *pzErr = sqlite3_mprintf("reserved fts5 table name: %s", pRet->zName);
     rc = SQLITE_ERROR;
@@ -645,12 +648,15 @@ int sqlite3Fts5ConfigDeclareVtab(Fts5Config *pConfig){
 */
 int sqlite3Fts5Tokenize(
   Fts5Config *pConfig,            /* FTS5 Configuration object */
+  int flags,                      /* FTS5_TOKENIZE_* flags */
   const char *pText, int nText,   /* Text to tokenize */
   void *pCtx,                     /* Context passed to xToken() */
-  int (*xToken)(void*, const char*, int, int, int)    /* Callback */
+  int (*xToken)(void*, int, const char*, int, int, int)    /* Callback */
 ){
   if( pText==0 ) return SQLITE_OK;
-  return pConfig->pTokApi->xTokenize(pConfig->pTok, pCtx, pText, nText, xToken);
+  return pConfig->pTokApi->xTokenize(
+      pConfig->pTok, pCtx, flags, pText, nText, xToken
+  );
 }
 
 /*
