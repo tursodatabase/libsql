@@ -1657,7 +1657,12 @@ static void fts5SegIterReverseNewPage(Fts5Index *p, Fts5SegIter *pIter){
           pIter->pSeg->iSegid, pIter->iLeafPgno
     ));
     if( pNew ){
-      if( pIter->iLeafPgno==pIter->iTermLeafPgno ){
+      /* iTermLeafOffset may be equal to szLeaf if the term is the last
+      ** thing on the page - i.e. the first rowid is on the following page.
+      ** In this case leaf pIter->pLeaf==0, this iterator is at EOF. */
+      if( pIter->iLeafPgno==pIter->iTermLeafPgno 
+       && pIter->iTermLeafOffset<pNew->szLeaf 
+      ){
         pIter->pLeaf = pNew;
         pIter->iLeafOffset = pIter->iTermLeafOffset;
       }else{
