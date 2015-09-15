@@ -88,7 +88,18 @@ const char *sqlite3IndexAffinityStr(sqlite3 *db, Index *pIdx){
     }
     for(n=0; n<pIdx->nColumn; n++){
       i16 x = pIdx->aiColumn[n];
-      pIdx->zColAff[n] = x<0 ? SQLITE_AFF_INTEGER : pTab->aCol[x].affinity;
+      if( x>=0 ){
+        pIdx->zColAff[n] = pTab->aCol[x].affinity;
+      }else if( x==(-1) ){
+        pIdx->zColAff[n] = SQLITE_AFF_INTEGER;
+      }else{
+        char aff;
+        assert( x==(-2) );
+        assert( pIdx->aColExpr!=0 );
+        aff = sqlite3ExprAffinity(pIdx->aColExpr->a[n].pExpr);
+        if( aff==0 ) aff = SQLITE_AFF_BLOB;
+        pIdx->zColAff[n] = aff;
+      }
     }
     pIdx->zColAff[n] = 0;
   }
@@ -1336,10 +1347,13 @@ void sqlite3GenerateConstraintChecks(
         if( pTrigger || sqlite3FkRequired(pParse, pTab, 0, 0) ){
           sqlite3MultiWrite(pParse);
           sqlite3GenerateRowDelete(pParse, pTab, pTrigger, iDataCur, iIdxCur,
-                                   regNewData, 1, 0, OE_Replace, 1);
-        }else if( pTab->pIndex ){
-          sqlite3MultiWrite(pParse);
-          sqlite3GenerateRowIndexDelete(pParse, pTab, iDataCur, iIdxCur, 0);
+                                   regNewData, 1, 0, OE_Replace,
+                                   ONEPASS_SINGLE, -1);
+        }else{
+          if( pTab->pIndex ){
+            sqlite3MultiWrite(pParse);
+            sqlite3GenerateRowIndexDelete(pParse, pTab, iDataCur, iIdxCur,0,-1);
+          }
         }
         seenReplace = 1;
         break;
@@ -1394,15 +1408,22 @@ void sqlite3GenerateConstraintChecks(
     for(i=0; i<pIdx->nColumn; i++){
       int iField = pIdx->aiColumn[i];
       int x;
-      if( iField<0 || iField==pTab->iPKey ){
-        if( regRowid==regIdx+i ) continue; /* ROWID already in regIdx+i */
-        x = regNewData;
-        regRowid =  pIdx->pPartIdxWhere ? -1 : regIdx+i;
+      if( iField==(-2) ){
+        pParse->ckBase = regNewData+1;
+        sqlite3ExprCode(pParse, pIdx->aColExpr->a[i].pExpr, regIdx+i);
+        pParse->ckBase = 0;
+        VdbeComment((v, "%s column %d", pIdx->zName, i));
       }else{
-        x = iField + regNewData + 1;
+        if( iField==(-1) || iField==pTab->iPKey ){
+          if( regRowid==regIdx+i ) continue; /* ROWID already in regIdx+i */
+          x = regNewData;
+          regRowid =  pIdx->pPartIdxWhere ? -1 : regIdx+i;
+        }else{
+          x = iField + regNewData + 1;
+        }
+        sqlite3VdbeAddOp2(v, OP_SCopy, x, regIdx+i);
+        VdbeComment((v, "%s", iField<0 ? "rowid" : pTab->aCol[iField].zName));
       }
-      sqlite3VdbeAddOp2(v, OP_SCopy, x, regIdx+i);
-      VdbeComment((v, "%s", iField<0 ? "rowid" : pTab->aCol[iField].zName));
     }
     sqlite3VdbeAddOp3(v, OP_MakeRecord, regIdx, pIdx->nColumn, aRegIdx[ix]);
     VdbeComment((v, "for %s", pIdx->zName));
@@ -1510,7 +1531,8 @@ void sqlite3GenerateConstraintChecks(
           pTrigger = sqlite3TriggersExist(pParse, pTab, TK_DELETE, 0, 0);
         }
         sqlite3GenerateRowDelete(pParse, pTab, pTrigger, iDataCur, iIdxCur,
-                                 regR, nPkField, 0, OE_Replace, pIdx==pPk);
+            regR, nPkField, 0, OE_Replace,
+            (pIdx==pPk ? ONEPASS_SINGLE : ONEPASS_OFF), -1);
         seenReplace = 1;
         break;
       }
@@ -1722,6 +1744,13 @@ static int xferCompatibleIndex(Index *pDest, Index *pSrc){
   for(i=0; i<pSrc->nKeyCol; i++){
     if( pSrc->aiColumn[i]!=pDest->aiColumn[i] ){
       return 0;   /* Different columns indexed */
+    }
+    if( pSrc->aiColumn[i]==(-2) ){
+      assert( pSrc->aColExpr!=0 && pDest->aColExpr!=0 );
+      if( sqlite3ExprCompare(pSrc->aColExpr->a[i].pExpr,
+                             pDest->aColExpr->a[i].pExpr, -1)!=0 ){
+        return 0;   /* Different expressions in the index */
+      }
     }
     if( pSrc->aSortOrder[i]!=pDest->aSortOrder[i] ){
       return 0;   /* Different sort orders */

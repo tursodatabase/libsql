@@ -3969,9 +3969,10 @@ case OP_Found: {        /* jump, in3 */
 **
 ** P1 is the index of a cursor open on an SQL table btree (with integer
 ** keys).  P3 is an integer rowid.  If P1 does not contain a record with
-** rowid P3 then jump immediately to P2.  If P1 does contain a record
-** with rowid P3 then leave the cursor pointing at that record and fall
-** through to the next instruction.
+** rowid P3 then jump immediately to P2.  Or, if P2 is 0, raise an
+** SQLITE_CORRUPT error. If P1 does contain a record with rowid P3 then 
+** leave the cursor pointing at that record and fall through to the next
+** instruction.
 **
 ** The OP_NotFound opcode performs the same operation on index btrees
 ** (with arbitrary multi-value keys).
@@ -4003,13 +4004,21 @@ case OP_NotExists: {        /* jump, in3 */
   res = 0;
   iKey = pIn3->u.i;
   rc = sqlite3BtreeMovetoUnpacked(pCrsr, 0, iKey, 0, &res);
+  assert( rc==SQLITE_OK || res==0 );
   pC->movetoTarget = iKey;  /* Used by OP_Delete */
   pC->nullRow = 0;
   pC->cacheStatus = CACHE_STALE;
   pC->deferredMoveto = 0;
   VdbeBranchTaken(res!=0,2);
   pC->seekResult = res;
-  if( res!=0 ) goto jump_to_p2;
+  if( res!=0 ){
+    assert( rc==SQLITE_OK );
+    if( pOp->p2==0 ){
+      rc = SQLITE_CORRUPT_BKPT;
+    }else{
+      goto jump_to_p2;
+    }
+  }
   break;
 }
 
@@ -4275,14 +4284,15 @@ case OP_InsertInt: {
   break;
 }
 
-/* Opcode: Delete P1 P2 * P4 *
+/* Opcode: Delete P1 P2 * P4 P5
 **
 ** Delete the record at which the P1 cursor is currently pointing.
 **
-** The cursor will be left pointing at either the next or the previous
-** record in the table. If it is left pointing at the next record, then
-** the next Next instruction will be a no-op.  Hence it is OK to delete
-** a record from within a Next loop.
+** If the P5 parameter is non-zero, the cursor will be left pointing at 
+** either the next or the previous record in the table. If it is left 
+** pointing at the next record, then the next Next instruction will be a 
+** no-op. As a result, in this case it is OK to delete a record from within a
+** Next loop. If P5 is zero, then the cursor is left in an undefined state.
 **
 ** If the OPFLAG_NCHANGE flag of P2 is set, then the row change count is
 ** incremented (otherwise not).
@@ -4297,6 +4307,7 @@ case OP_InsertInt: {
 */
 case OP_Delete: {
   VdbeCursor *pC;
+  u8 hasUpdateCallback;
 
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
@@ -4304,22 +4315,27 @@ case OP_Delete: {
   assert( pC->pCursor!=0 );  /* Only valid for real tables, no pseudotables */
   assert( pC->deferredMoveto==0 );
 
+  hasUpdateCallback = db->xUpdateCallback && pOp->p4.z && pC->isTable;
+  if( pOp->p5 && hasUpdateCallback ){
+    sqlite3BtreeKeySize(pC->pCursor, &pC->movetoTarget);
+  }
+
 #ifdef SQLITE_DEBUG
   /* The seek operation that positioned the cursor prior to OP_Delete will
   ** have also set the pC->movetoTarget field to the rowid of the row that
   ** is being deleted */
-  if( pOp->p4.z && pC->isTable ){
+  if( pOp->p4.z && pC->isTable && pOp->p5==0 ){
     i64 iKey = 0;
     sqlite3BtreeKeySize(pC->pCursor, &iKey);
     assert( pC->movetoTarget==iKey ); 
   }
 #endif
  
-  rc = sqlite3BtreeDelete(pC->pCursor);
+  rc = sqlite3BtreeDelete(pC->pCursor, pOp->p5);
   pC->cacheStatus = CACHE_STALE;
 
   /* Invoke the update-hook if required. */
-  if( rc==SQLITE_OK && db->xUpdateCallback && pOp->p4.z && pC->isTable ){
+  if( rc==SQLITE_OK && hasUpdateCallback ){
     db->xUpdateCallback(db->pUpdateArg, SQLITE_DELETE,
                         db->aDb[pC->iDb].zName, pOp->p4.z, pC->movetoTarget);
     assert( pC->iDb>=0 );
@@ -4858,7 +4874,7 @@ case OP_IdxDelete: {
 #endif
   rc = sqlite3BtreeMovetoUnpacked(pCrsr, &r, 0, 0, &res);
   if( rc==SQLITE_OK && res==0 ){
-    rc = sqlite3BtreeDelete(pCrsr);
+    rc = sqlite3BtreeDelete(pCrsr, 0);
   }
   assert( pC->deferredMoveto==0 );
   pC->cacheStatus = CACHE_STALE;

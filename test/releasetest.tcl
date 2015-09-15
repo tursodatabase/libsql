@@ -292,7 +292,7 @@ set LOG [open releasetest-out.txt w]
 proc PUTS {args} {
   if {[llength $args]==2} {
     puts [lindex $args 0] [lindex $args 1]
-    puts [lindex $args 0] $::LOG [lindex $args 1]
+    puts $::LOG [lindex $args 1]
   } else {
     puts [lindex $args 0]
     puts $::LOG [lindex $args 0]
@@ -710,6 +710,7 @@ proc main {argv} {
   set sec [expr {$elapsetime%60}]
   set etime [format (%02d:%02d:%02d) $hr $min $sec]
   PUTS [string repeat * 79]
+  incr ::NERRCASE $::NERR
   PUTS "$::NERRCASE failures out of $::NTESTCASE tests in $etime"
   if {$::SQLITE_VERSION ne ""} {
     PUTS "SQLite $::SQLITE_VERSION"

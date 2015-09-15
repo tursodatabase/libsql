@@ -83,8 +83,8 @@ delete_file test.db test.db-journal
 delete_file test3.db test3.db-journal
 sqlite3 db test.db; set DB [sqlite3_connection_pointer db]
 
-# EVIDENCE-OF: R-24197-42751 PRAGMA database.cache_size; PRAGMA
-# database.cache_size = pages; PRAGMA database.cache_size = -kibibytes;
+# EVIDENCE-OF: R-13861-56665 PRAGMA schema.cache_size; PRAGMA
+# schema.cache_size = pages; PRAGMA schema.cache_size = -kibibytes;
 # Query or change the suggested maximum number of database disk pages
 # that SQLite will hold in memory at once per open database file.
 #
@@ -697,8 +697,8 @@ do_test pragma-6.5.1b {
 } {0 0 a 1 1 b 2 -1 {}}
 
 
-# EVIDENCE-OF: R-62725-03366 PRAGMA database.index_info(index-name);
-# This pragma returns one row for each key column in the named index.
+# EVIDENCE-OF: R-29448-60346 PRAGMA schema.index_info(index-name); This
+# pragma returns one row for each key column in the named index.
 #
 # (The first column of output from PRAGMA index_info is...)
 # EVIDENCE-OF: R-34186-52914 The rank of the column within the index. (0
@@ -784,9 +784,9 @@ do_test pragma-6.8 {
 # Miscellaneous tests
 #
 ifcapable schema_pragmas {
-# EVIDENCE-OF: R-63500-32024 PRAGMA database.index_list(table-name);
-# This pragma returns one row for each index associated with the given
-# table.
+# EVIDENCE-OF: R-64103-17776 PRAGMA schema.index_list(table-name); This
+# pragma returns one row for each index associated with the given table.
+#
 do_test pragma-7.1.1 {
   # Make sure a pragma knows to read the schema if it needs to
   db close
@@ -1379,8 +1379,8 @@ ifcapable pager_pragmas {
   forcedelete test.db
   sqlite3 db test.db
  
-  # EVIDENCE-OF: R-13905-26312 PRAGMA database.page_count; Return the
-  # total number of pages in the database file.
+  # EVIDENCE-OF: R-15672-33611 PRAGMA schema.page_count; Return the total
+  # number of pages in the database file.
   #
   do_test pragma-14.1 {
     execsql { pragma auto_vacuum = 0 }
@@ -1922,8 +1922,8 @@ do_test 23.2a {
   db2 eval {SELECT cid, name, '|' FROM out ORDER BY seqno}
 } {2 c | 3 d | 1 b |}
 
-# EVIDENCE-OF: R-44874-46325 PRAGMA database.index_xinfo(index-name);
-# This pragma returns information about every column in an index.
+# EVIDENCE-OF: R-56143-29319 PRAGMA schema.index_xinfo(index-name); This
+# pragma returns information about every column in an index.
 #
 # EVIDENCE-OF: R-45970-35618 Unlike this index_info pragma, this pragma
 # returns information about every column in the index, not just the key
@@ -1966,9 +1966,8 @@ do_test 23.2d {
   db2 eval {PRAGMA index_xinfo(i2x)}
 } {0 3 d 0 nocase 1 1 2 c 1 BINARY 1 2 -1 {} 0 BINARY 0}
 
-# EVIDENCE-OF: R-63500-32024 PRAGMA database.index_list(table-name);
-# This pragma returns one row for each index associated with the given
-# table.
+# EVIDENCE-OF: R-64103-17776 PRAGMA schema.index_list(table-name); This
+# pragma returns one row for each index associated with the given table.
 #
 # (The first column of output from PRAGMA index_list is...)
 # EVIDENCE-OF: R-02753-24748 A sequence number assigned to each index

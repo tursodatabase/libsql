@@ -70,9 +70,12 @@ do_delete_tests e_delete-1.1 {
   2  "DELETE FROM main.t2  ; SELECT * FROM t2"       {}
 }
 
-# EVIDENCE-OF: R-30203-16177 If a WHERE clause is supplied, then only
-# those rows for which the result of evaluating the WHERE clause as a
-# boolean expression is true are deleted.
+# EVIDENCE-OF: R-26300-50198 If a WHERE clause is supplied, then only
+# those rows for which the WHERE clause boolean expression is true are
+# deleted.
+#
+# EVIDENCE-OF: R-23360-48280 Rows for which the expression is false or
+# NULL are retained.
 #
 do_delete_tests e_delete-1.2 {
   1  "DELETE FROM t3 WHERE 1       ; SELECT x FROM t3"       {}
@@ -117,8 +120,8 @@ do_execsql_test e_delete-2.0 {
 # EVIDENCE-OF: R-09681-58560 The table-name specified as part of a
 # DELETE statement within a trigger body must be unqualified.
 #
-# EVIDENCE-OF: R-36771-43788 In other words, the database-name. prefix
-# on the table name is not allowed within triggers.
+# EVIDENCE-OF: R-12275-20298 In other words, the schema-name. prefix on
+# the table name is not allowed within triggers.
 #
 do_delete_tests e_delete-2.1 -error {
   qualified table names are not allowed on INSERT, UPDATE, and DELETE statements within triggers

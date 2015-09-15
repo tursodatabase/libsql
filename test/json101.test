@@ -16,9 +16,21 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
 load_static_extension db json
-do_execsql_test json1-1.1 {
+do_execsql_test json1-1.1.00 {
   SELECT json_array(1,2.5,null,'hello');
 } {[1,2.5,null,"hello"]}
+do_execsql_test json1-1.1.01 {
+  SELECT json_array(1,'{"abc":2.5,"def":null,"ghi":hello}',99);
+  -- the second term goes in as a string:
+} {[1,"{\\"abc\\":2.5,\\"def\\":null,\\"ghi\\":hello}",99]}
+do_execsql_test json1-1.1.02 {
+  SELECT json_array(1,json('{"abc":2.5,"def":null,"ghi":"hello"}'),99);
+  -- the second term goes in as JSON
+} {[1,{"abc":2.5,"def":null,"ghi":"hello"},99]}
+do_execsql_test json1-1.1.03 {
+  SELECT json_array(1,json_object('abc',2.5,'def',null,'ghi','hello'),99);
+  -- the second term goes in as JSON
+} {[1,{"abc":2.5,"def":null,"ghi":"hello"},99]}
 do_execsql_test json1-1.2 {
   SELECT hex(json_array('String "\ Test'));
 } {5B22537472696E67205C225C5C2054657374225D}
@@ -54,13 +66,13 @@ do_execsql_test json1-3.1 {
   SELECT json_replace('{"a":1,"b":2}','$.a','[3,4,5]');
 } {{{"a":"[3,4,5]","b":2}}}
 do_execsql_test json1-3.2 {
-  SELECT json_replace('{"a":1,"b":2}','$$.a','[3,4,5]');
+  SELECT json_replace('{"a":1,"b":2}','$.a',json('[3,4,5]'));
 } {{{"a":[3,4,5],"b":2}}}
 do_execsql_test json1-3.3 {
   SELECT json_type(json_set('{"a":1,"b":2}','$.b','{"x":3,"y":4}'),'$.b');
 } {text}
 do_execsql_test json1-3.4 {
-  SELECT json_type(json_set('{"a":1,"b":2}','$$.b','{"x":3,"y":4}'),'$.b');
+  SELECT json_type(json_set('{"a":1,"b":2}','$.b',json('{"x":3,"y":4}')),'$.b');
 } {object}
 
 # Per rfc7159, any JSON value is allowed at the top level, and whitespace

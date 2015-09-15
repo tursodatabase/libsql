@@ -26,7 +26,19 @@ proc is_without_rowid {tname} {
 #
 proc usage {} {
   set argv0 [file rootname [file tail [info nameofexecutable]]]
-  puts stderr "Usage: $argv0 \[--pageinfo] \[--stats] database-name"
+  puts stderr "Usage: $argv0 ?--pageinfo? ?--stats? database-filename"
+  puts stderr {
+Analyze the SQLite3 database file specified by the "database-filename"
+argument and output a report detailing size and storage efficiency
+information for the database and its constituent tables and indexes.
+
+Options:
+
+   --stats        Output SQL text that creates a new database containing
+                  statistics about the database that was analyzed
+
+   --pageinfo     Show how each page of the database-file is used
+}
   exit 1
 }
 set file_to_analyze {}

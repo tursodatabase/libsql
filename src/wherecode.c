@@ -42,6 +42,16 @@ static void explainAppendTerm(
 }
 
 /*
+** Return the name of the i-th column of the pIdx index.
+*/
+static const char *explainIndexColumnName(Index *pIdx, int i){
+  i = pIdx->aiColumn[i];
+  if( i==(-2) ) return "<expr>";
+  if( i==(-1) ) return "rowid";
+  return pIdx->pTable->aCol[i].zName;
+}
+
+/*
 ** Argument pLevel describes a strategy for scanning table pTab. This 
 ** function appends text to pStr that describes the subset of table
 ** rows scanned by the strategy in the form of an SQL expression.
@@ -60,24 +70,22 @@ static void explainIndexRange(StrAccum *pStr, WhereLoop *pLoop, Table *pTab){
   u16 nEq = pLoop->u.btree.nEq;
   u16 nSkip = pLoop->nSkip;
   int i, j;
-  Column *aCol = pTab->aCol;
-  i16 *aiColumn = pIndex->aiColumn;
 
   if( nEq==0 && (pLoop->wsFlags&(WHERE_BTM_LIMIT|WHERE_TOP_LIMIT))==0 ) return;
   sqlite3StrAccumAppend(pStr, " (", 2);
   for(i=0; i<nEq; i++){
-    char *z = aiColumn[i] < 0 ? "rowid" : aCol[aiColumn[i]].zName;
+    const char *z = explainIndexColumnName(pIndex, i);
     if( i ) sqlite3StrAccumAppend(pStr, " AND ", 5);
     sqlite3XPrintf(pStr, 0, i>=nSkip ? "%s=?" : "ANY(%s)", z);
   }
 
   j = i;
   if( pLoop->wsFlags&WHERE_BTM_LIMIT ){
-    char *z = aiColumn[j] < 0 ? "rowid" : aCol[aiColumn[j]].zName;
+    const char *z = explainIndexColumnName(pIndex, i);
     explainAppendTerm(pStr, i++, z, ">");
   }
   if( pLoop->wsFlags&WHERE_TOP_LIMIT ){
-    char *z = aiColumn[j] < 0 ? "rowid" : aCol[aiColumn[j]].zName;
+    const char *z = explainIndexColumnName(pIndex, j);
     explainAppendTerm(pStr, i, z, "<");
   }
   sqlite3StrAccumAppend(pStr, ")", 1);
@@ -1061,7 +1069,12 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       iRowidReg = ++pParse->nMem;
       sqlite3VdbeAddOp2(v, OP_IdxRowid, iIdxCur, iRowidReg);
       sqlite3ExprCacheStore(pParse, iCur, -1, iRowidReg);
-      sqlite3VdbeAddOp2(v, OP_Seek, iCur, iRowidReg);  /* Deferred seek */
+      if( pWInfo->eOnePass!=ONEPASS_OFF ){
+        sqlite3VdbeAddOp3(v, OP_NotExists, iCur, 0, iRowidReg);
+        VdbeCoverage(v);
+      }else{
+        sqlite3VdbeAddOp2(v, OP_Seek, iCur, iRowidReg);  /* Deferred seek */
+      }
     }else if( iCur!=iIdxCur ){
       Index *pPk = sqlite3PrimaryKeyIndex(pIdx->pTable);
       iRowidReg = sqlite3GetTempRange(pParse, pPk->nKeyCol);

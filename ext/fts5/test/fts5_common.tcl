@@ -295,3 +295,36 @@ proc NOT {a b} {
   return $a
 }
 
+#-------------------------------------------------------------------------
+# This command is similar to [split], except that it also provides the
+# start and end offsets of each token. For example:
+#
+#   [fts5_tokenize_split "abc d ef"] -> {abc 0 3 d 4 5 ef 6 8}
+#
+
+proc gobble_whitespace {textvar} {
+  upvar $textvar t
+  regexp {([ ]*)(.*)} $t -> space t
+  return [string length $space]
+}
+
+proc gobble_text {textvar wordvar} {
+  upvar $textvar t
+  upvar $wordvar w
+  regexp {([^ ]*)(.*)} $t -> w t
+  return [string length $w]
+}
+
+proc fts5_tokenize_split {text} {
+  set token ""
+  set ret [list]
+  set iOff [gobble_whitespace text]
+  while {[set nToken [gobble_text text word]]} {
+    lappend ret $word $iOff [expr $iOff+$nToken]
+    incr iOff $nToken
+    incr iOff [gobble_whitespace text]
+  }
+
+  set ret
+}
+

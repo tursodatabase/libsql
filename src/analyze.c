@@ -1186,6 +1186,7 @@ static void analyzeOneTable(
       regKey = sqlite3GetTempRange(pParse, pPk->nKeyCol);
       for(j=0; j<pPk->nKeyCol; j++){
         k = sqlite3ColumnOfIndex(pIdx, pPk->aiColumn[j]);
+        assert( k>=0 && k<pTab->nCol );
         sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, k, regKey+j);
         VdbeComment((v, "%s", pTab->aCol[pPk->aiColumn[j]].zName));
       }
@@ -1235,12 +1236,10 @@ static void analyzeOneTable(
       ** be taken */
       VdbeCoverageNeverTaken(v);
 #ifdef SQLITE_ENABLE_STAT3
-      sqlite3ExprCodeGetColumnOfTable(v, pTab, iTabCur, 
-                                      pIdx->aiColumn[0], regSample);
+      sqlite3ExprCodeLoadIndexColumn(pParse, pIdx, iTabCur, 0, regSample);
 #else
       for(i=0; i<nCol; i++){
-        i16 iCol = pIdx->aiColumn[i];
-        sqlite3ExprCodeGetColumnOfTable(v, pTab, iTabCur, iCol, regCol+i);
+        sqlite3ExprCodeLoadIndexColumn(pParse, pIdx, iTabCur, i, regCol+i);
       }
       sqlite3VdbeAddOp3(v, OP_MakeRecord, regCol, nCol, regSample);
 #endif

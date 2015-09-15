@@ -47,6 +47,7 @@
 TCCX =  $(TCC) $(OPTS) -I. -I$(TOP)/src -I$(TOP) 
 TCCX += -I$(TOP)/ext/rtree -I$(TOP)/ext/icu -I$(TOP)/ext/fts3
 TCCX += -I$(TOP)/ext/async -I$(TOP)/ext/userauth
+TCCX += -I$(TOP)/ext/fts5
 
 # Object files for the SQLite library.
 #
@@ -230,6 +231,29 @@ SRC += \
 SRC += \
   $(TOP)/ext/rbu/sqlite3rbu.c \
   $(TOP)/ext/rbu/sqlite3rbu.h
+
+
+# FTS5 things
+#
+FTS5_HDR = \
+   $(TOP)/ext/fts5/fts5.h \
+   $(TOP)/ext/fts5/fts5Int.h \
+   fts5parse.h
+	   
+FTS5_SRC = \
+   $(TOP)/ext/fts5/fts5_aux.c \
+   $(TOP)/ext/fts5/fts5_buffer.c \
+   $(TOP)/ext/fts5/fts5_main.c \
+   $(TOP)/ext/fts5/fts5_config.c \
+   $(TOP)/ext/fts5/fts5_expr.c \
+   $(TOP)/ext/fts5/fts5_hash.c \
+   $(TOP)/ext/fts5/fts5_index.c \
+   fts5parse.c \
+   $(TOP)/ext/fts5/fts5_storage.c \
+   $(TOP)/ext/fts5/fts5_tokenize.c \
+   $(TOP)/ext/fts5/fts5_unicode2.c \
+   $(TOP)/ext/fts5/fts5_varint.c \
+   $(TOP)/ext/fts5/fts5_vocab.c  \
 
 
 # Generated source code files
@@ -545,7 +569,7 @@ parse.h:	parse.c
 parse.c:	$(TOP)/src/parse.y lemon $(TOP)/addopcodes.awk
 	cp $(TOP)/src/parse.y .
 	rm -f parse.h
-	./lemon $(OPTS) parse.y
+	./lemon -s $(OPTS) parse.y
 	mv parse.h parse.h.temp
 	$(NAWK) -f $(TOP)/addopcodes.awk parse.h.temp >parse.h
 
@@ -623,25 +647,6 @@ fts3_write.o:	$(TOP)/ext/fts3/fts3_write.c $(HDR) $(EXTHDR)
 rtree.o:	$(TOP)/ext/rtree/rtree.c $(HDR) $(EXTHDR)
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/rtree/rtree.c
 
-# FTS5 things
-#
-FTS5_SRC = \
-   $(TOP)/ext/fts5/fts5.h \
-   $(TOP)/ext/fts5/fts5Int.h \
-   $(TOP)/ext/fts5/fts5_aux.c \
-   $(TOP)/ext/fts5/fts5_buffer.c \
-   $(TOP)/ext/fts5/fts5_main.c \
-   $(TOP)/ext/fts5/fts5_config.c \
-   $(TOP)/ext/fts5/fts5_expr.c \
-   $(TOP)/ext/fts5/fts5_hash.c \
-   $(TOP)/ext/fts5/fts5_index.c \
-   fts5parse.c fts5parse.h \
-   $(TOP)/ext/fts5/fts5_storage.c \
-   $(TOP)/ext/fts5/fts5_tokenize.c \
-   $(TOP)/ext/fts5/fts5_unicode2.c \
-   $(TOP)/ext/fts5/fts5_varint.c \
-   $(TOP)/ext/fts5/fts5_vocab.c  \
-
 fts5parse.c:	$(TOP)/ext/fts5/fts5parse.y lemon 
 	cp $(TOP)/ext/fts5/fts5parse.y .
 	rm -f fts5parse.h
@@ -649,10 +654,9 @@ fts5parse.c:	$(TOP)/ext/fts5/fts5parse.y lemon
 
 fts5parse.h: fts5parse.c
 
-fts5.c: $(FTS5_SRC)
+fts5.c: $(FTS5_SRC) $(FTS5_HDR)
 	tclsh $(TOP)/ext/fts5/tool/mkfts5c.tcl
 	cp $(TOP)/ext/fts5/fts5.h .
-
 
 userauth.o:	$(TOP)/ext/userauth/userauth.c $(HDR) $(EXTHDR)
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/userauth/userauth.c

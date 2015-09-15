@@ -117,6 +117,12 @@ typedef struct Fts5Config Fts5Config;
 ** bColumnsize:
 **   True if the %_docsize table is created.
 **
+** bPrefixIndex:
+**   This is only used for debugging. If set to false, any prefix indexes
+**   are ignored. This value is configured using:
+**
+**       INSERT INTO tbl(tbl, rank) VALUES('prefix-index', $bPrefixIndex);
+**
 */
 struct Fts5Config {
   sqlite3 *db;                    /* Database handle */
@@ -145,10 +151,14 @@ struct Fts5Config {
 
   /* If non-NULL, points to sqlite3_vtab.base.zErrmsg. Often NULL. */
   char **pzErrmsg;
+
+#ifdef SQLITE_DEBUG
+  int bPrefixIndex;               /* True to use prefix-indexes */
+#endif
 };
 
 /* Current expected value of %_config table 'version' field */
-#define FTS5_CURRENT_VERSION 3
+#define FTS5_CURRENT_VERSION 4
 
 #define FTS5_CONTENT_NORMAL   0
 #define FTS5_CONTENT_NONE     1
@@ -166,9 +176,10 @@ int sqlite3Fts5ConfigDeclareVtab(Fts5Config *pConfig);
 
 int sqlite3Fts5Tokenize(
   Fts5Config *pConfig,            /* FTS5 Configuration object */
+  int flags,                      /* FTS5_TOKENIZE_* flags */
   const char *pText, int nText,   /* Text to tokenize */
   void *pCtx,                     /* Context passed to xToken() */
-  int (*xToken)(void*, const char*, int, int, int)    /* Callback */
+  int (*xToken)(void*, int, const char*, int, int, int)    /* Callback */
 );
 
 void sqlite3Fts5Dequote(char *z);
@@ -234,8 +245,10 @@ struct Fts5PoslistReader {
   int n;                          /* Size of buffer at a[] in bytes */
   int i;                          /* Current offset in a[] */
 
+  u8 bFlag;                       /* For client use (any custom purpose) */
+
   /* Output variables */
-  int bEof;                       /* Set to true at EOF */
+  u8 bEof;                        /* Set to true at EOF */
   i64 iPos;                       /* (iCol<<32) + iPos */
 };
 int sqlite3Fts5PoslistReaderInit(
@@ -375,15 +388,9 @@ int sqlite3Fts5IndexSync(Fts5Index *p, int bCommit);
 int sqlite3Fts5IndexRollback(Fts5Index *p);
 
 /*
-** Retrieve and clear the current error code, respectively.
+** Get or set the "averages" values.
 */
-int sqlite3Fts5IndexErrcode(Fts5Index*);
-void sqlite3Fts5IndexReset(Fts5Index*);
-
-/*
-** Get or set the "averages" record.
-*/
-int sqlite3Fts5IndexGetAverages(Fts5Index *p, Fts5Buffer *pBuf);
+int sqlite3Fts5IndexGetAverages(Fts5Index *p, i64 *pnRow, i64 *anSize);
 int sqlite3Fts5IndexSetAverages(Fts5Index *p, const u8*, int);
 
 /*
@@ -596,7 +603,7 @@ int sqlite3Fts5ExprPhraseCount(Fts5Expr*);
 int sqlite3Fts5ExprPhraseSize(Fts5Expr*, int iPhrase);
 int sqlite3Fts5ExprPoslist(Fts5Expr*, int, const u8 **);
 
-int sqlite3Fts5ExprPhraseExpr(Fts5Config*, Fts5Expr*, int, Fts5Expr**);
+int sqlite3Fts5ExprClonePhrase(Fts5Config*, Fts5Expr*, int, Fts5Expr**);
 
 /*******************************************
 ** The fts5_expr.c API above this point is used by the other hand-written
@@ -663,17 +670,6 @@ int sqlite3Fts5AuxInit(fts5_api*);
 int sqlite3Fts5TokenizerInit(fts5_api*);
 /*
 ** End of interface to code in fts5_tokenizer.c.
-**************************************************************************/
-
-/**************************************************************************
-** Interface to code in fts5_sorter.c. 
-*/
-typedef struct Fts5Sorter Fts5Sorter;
-
-int sqlite3Fts5SorterNew(Fts5Expr *pExpr, Fts5Sorter **pp);
-
-/*
-** End of interface to code in fts5_sorter.c.
 **************************************************************************/
 
 /**************************************************************************

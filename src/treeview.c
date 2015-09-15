@@ -253,11 +253,6 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
       sqlite3TreeViewLine(pView,"REGISTER(%d)", pExpr->iTable);
       break;
     }
-    case TK_AS: {
-      sqlite3TreeViewLine(pView,"AS %Q", pExpr->u.zToken);
-      sqlite3TreeViewExpr(pView, pExpr->pLeft, 0);
-      break;
-    }
     case TK_ID: {
       sqlite3TreeViewLine(pView,"ID \"%w\"", pExpr->u.zToken);
       break;

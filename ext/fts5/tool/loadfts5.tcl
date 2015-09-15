@@ -19,6 +19,12 @@ proc load_hierachy {dir} {
       db eval { INSERT INTO t1 VALUES($f, loadfile($f)) }
       incr ::nRow
 
+      if {$::O(trans) && ($::nRow % $::O(trans))==0} {
+        db eval { COMMIT }
+        db eval { INSERT INTO t1(t1) VALUES('integrity-check') }
+        db eval { BEGIN }
+      }
+
       if {($::nRow % $::nRowPerDot)==0} {
         puts -nonewline .
         if {($::nRow % (65*$::nRowPerDot))==0} { puts "" }
@@ -41,6 +47,7 @@ proc usage {} {
   puts stderr "  -automerge N (set the automerge parameter to N)"
   puts stderr "  -crisismerge N (set the crisismerge parameter to N)"
   puts stderr "  -prefix PREFIX (comma separated prefix= argument)"
+  puts stderr "  -trans N     (commit after N inserts - 0 == never)"
   exit 1
 }
 
@@ -51,6 +58,7 @@ set O(delete)     0
 set O(automerge)  -1
 set O(crisismerge)  -1
 set O(prefix)     ""
+set O(trans)      0
 
 if {[llength $argv]<2} usage
 set nOpt [expr {[llength $argv]-2}]
@@ -76,6 +84,11 @@ for {set i 0} {$i < $nOpt} {incr i} {
     -limit {
       if { [incr i]>=$nOpt } usage
       set O(limit) [lindex $argv $i]
+    }
+
+    -trans {
+      if { [incr i]>=$nOpt } usage
+      set O(trans) [lindex $argv $i]
     }
     
     -automerge {
@@ -104,8 +117,9 @@ if {$O(delete)} { file delete -force $dbfile }
 sqlite3 db $dbfile
 catch { load_static_extension db fts5 }
 db func loadfile loadfile
+db eval "PRAGMA page_size=4096"
 
-db transaction {
+db eval BEGIN
   set pref ""
   if {$O(prefix)!=""} { set pref ", prefix='$O(prefix)'" }
   catch {
@@ -126,7 +140,7 @@ db transaction {
     }
   }
   load_hierachy [lindex $argv end]
-}
+db eval COMMIT
 
 
 

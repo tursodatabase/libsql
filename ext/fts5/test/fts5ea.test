@@ -87,6 +87,12 @@ do_execsql_test 4.0 {
   SELECT fts5_expr('a AND """"', 'x', 'tokenize="unicode61 tokenchars ''""''"');
 } {{"a" AND """"}}
 
+#-------------------------------------------------------------------------
+# Experiment with a tokenizer that considers " to be a token character.
+#
+do_catchsql_test 5.0 {
+  SELECT fts5_expr('abc | def');
+} {1 {fts5: syntax error near "|"}}
 
 
 
