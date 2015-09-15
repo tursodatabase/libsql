@@ -154,8 +154,6 @@ do_test 3.9 {
 
 do_3_test 3.10
 
-}
-
 #-------------------------------------------------------------------------
 # Test that segments that end unexpectedly are identified as corruption.
 #
@@ -252,6 +250,90 @@ foreach rowid [db eval {SELECT rowid FROM x1_data WHERE rowid>100}] {
   }
 }
 
+}
+
+#------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 6.1.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a);
+  INSERT INTO t1 VALUES('bbbbb ccccc');
+  SELECT quote(block) FROM t1_data WHERE rowid>100;
+} {X'000000180630626262626201020201056363636363010203040A'}
+do_execsql_test 6.1.1 {
+  UPDATE t1_data SET block = 
+  X'000000180630626262626201020201056161616161010203040A'
+  WHERE rowid>100;
+}
+do_catchsql_test 6.1.2 {
+  INSERT INTO t1(t1) VALUES('integrity-check');
+} {1 {database disk image is malformed}}
+
+#-------
+reset_db
+do_execsql_test 6.2.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a);
+  INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
+  INSERT INTO t1 VALUES('aa bb cc dd ee');
+  SELECT pgno, quote(term) FROM t1_idx;
+} {2 X'' 4 X'3064'}
+do_execsql_test 6.2.1 {
+  UPDATE t1_idx SET term = X'3065' WHERE pgno=4;
+}
+do_catchsql_test 6.2.2 {
+  INSERT INTO t1(t1) VALUES('integrity-check');
+} {1 {database disk image is malformed}}
+
+#-------
+reset_db
+do_execsql_test 6.3.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a);
+  INSERT INTO t1 VALUES('abc abcdef abcdefghi');
+  SELECT quote(block) FROM t1_data WHERE id>100;
+}    {X'0000001C043061626301020204036465660102030703676869010204040808'}
+do_execsql_test 6.3.1 {
+  BEGIN;
+    UPDATE t1_data SET block = 
+      X'0000001C043061626301020204036465660102035003676869010204040808'
+      ------------------------------------------^^---------------------
+    WHERE id>100;
+}
+do_catchsql_test 6.3.2 {
+  INSERT INTO t1(t1) VALUES('integrity-check');
+} {1 {database disk image is malformed}}
+do_execsql_test 6.3.3 {
+  ROLLBACK;
+  BEGIN;
+    UPDATE t1_data SET block = 
+      X'0000001C043061626301020204036465660102030750676869010204040808'
+      --------------------------------------------^^-------------------
+    WHERE id>100;
+}
+do_catchsql_test 6.3.3 {
+  INSERT INTO t1(t1) VALUES('integrity-check');
+} {1 {database disk image is malformed}}
+do_execsql_test 6.3.4 {
+  ROLLBACK;
+  BEGIN;
+    UPDATE t1_data SET block = 
+      X'0000001C043061626301020204036465660102030707676869010204040850'
+      --------------------------------------------------------------^^-
+    WHERE id>100;
+}
+do_catchsql_test 6.3.5 {
+  INSERT INTO t1(t1) VALUES('integrity-check');
+} {1 {database disk image is malformed}}
+do_execsql_test 6.3.6 {
+  ROLLBACK;
+  BEGIN;
+    UPDATE t1_data SET block = 
+      X'0000001C503061626301020204036465660102030707676869010204040808'
+      ----------^^-----------------------------------------------------
+    WHERE id>100;
+}
+do_catchsql_test 6.3.5 {
+  INSERT INTO t1(t1) VALUES('integrity-check');
+} {1 {database disk image is malformed}}
 
 sqlite3_fts5_may_be_corrupt 0
 finish_test

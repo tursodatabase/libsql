@@ -1,5 +1,5 @@
-C Reformat\ssome\scode\sto\smake\sit\seasier\sto\smerge\swith\ssessions.\s\sNo\slogic\schanges.
-D 2015-09-15T13:42:16.601
+C Add\stest\scases\sto\scover\sfts5\sintegrity-check\scode.
+D 2015-09-15T14:39:17.597
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -112,7 +112,7 @@ F ext/fts5/fts5_buffer.c 64dcaf36a3ebda9e84b7c3b8788887ec325e12a4
 F ext/fts5/fts5_config.c 57ee5fe71578cb494574fc0e6e51acb9a22a8695
 F ext/fts5/fts5_expr.c 667faaf14a69a5683ac383acdc8d942cf32c3f93
 F ext/fts5/fts5_hash.c 4bf4b99708848357b8a2b5819e509eb6d3df9246
-F ext/fts5/fts5_index.c 437c907fec8b72c08394cda73cee84afca700a00
+F ext/fts5/fts5_index.c 4fdbc0a321e3a1d73741a623d7aea4db78d6a86d
 F ext/fts5/fts5_main.c 3fa906f6c0177caf8f82862bc70f37b28bb3305c
 F ext/fts5/fts5_storage.c 120f7b143688b5b7710dacbd48cff211609b8059
 F ext/fts5/fts5_tcl.c 6da58d6e8f42a93c4486b5ba9b187a7f995dee37
@@ -146,7 +146,7 @@ F ext/fts5/test/fts5config.test ad2ff42ddc856aed2d05bf89dc1c578c8a39ea3b
 F ext/fts5/test/fts5content.test 9a952c95518a14182dc3b59e3c8fa71cda82a4e1
 F ext/fts5/test/fts5corrupt.test c2ad090192708150d50d961278df10ae7a4b8b62
 F ext/fts5/test/fts5corrupt2.test 26c0a39dd9ff73207e6229f83b50b21d37c7658c
-F ext/fts5/test/fts5corrupt3.test 618a965b4fd2859f9ddb72413c9828a23828704b
+F ext/fts5/test/fts5corrupt3.test a1429635c30f922079189e35b2b631eb7463a2fb
 F ext/fts5/test/fts5dlidx.test ecba5e62ea8b26c33829961602069c546228046d
 F ext/fts5/test/fts5doclist.test 8edb5b57e5f144030ed74ec00ef6fa4294fed79b
 F ext/fts5/test/fts5ea.test b01e3a18cdfabbff8104a96a5242a06a68a998a0
@@ -1387,7 +1387,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b26d8f79c62cb71b4c3ea5df9d0e09558bbbd794
-R c60068330077cac7ec52227493b03ae0
-U drh
-Z 9a77e7bf5b2e60419df2346d70a9c648
+P eade355fafec558fc13dc4b08ca0b07713a2cd84
+R 1694ed50f41ea37a05fbcbd009cf49d5
+U dan
+Z ab887f4a44598b0175c78de8cb058da9
