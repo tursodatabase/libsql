@@ -1,5 +1,5 @@
-C Fix\stypo\sin\sfts5.h.
-D 2015-09-16T12:31:39.559
+C Add\sa\s"flush"\sto\sforce\sincremental\soutput\sto\sreleasetest-out.txt\swhile\srunning\nthe\stest/releasetest.tcl.\sscript.
+D 2015-09-16T17:46:11.531
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -941,7 +941,7 @@ F test/rbu.test 168573d353cd0fd10196b87b0caa322c144ef736
 F test/rdonly.test 64e2696c322e3538df0b1ed624e21f9a23ed9ff8
 F test/regexp1.test 497ea812f264d12b6198d6e50a76be4a1973a9d8
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
-F test/releasetest.tcl 5af0ca3d6a12471ffd9993c3efc00a553dfb2d41
+F test/releasetest.tcl afdac5c3429dceb034295617c0a51df9954d467a
 F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
 F test/rollback.test 458fe73eb3ffdfdf9f6ba3e9b7350a6220414dea
 F test/rollback2.test fc14cf6d1a2b250d2735ef16124b971bce152f14
@@ -1387,7 +1387,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1d018c35b9e81982df036f5e62a4a42219b54e02
-R d4dafc4d9210d5f3c145aaa752300d01
-U dan
-Z 39f6673add7b4bf65853408c84113225
+P 07721c6c24f651d8e281c29227b113d292f6b0de
+R b1ee4cf5cafac6421f20747901ab182b
+U drh
+Z f1ce9a80151e2cb0c06736d3869b387d

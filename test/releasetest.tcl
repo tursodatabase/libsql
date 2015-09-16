@@ -297,6 +297,7 @@ proc PUTS {args} {
     puts [lindex $args 0]
     puts $::LOG [lindex $args 0]
   }
+  flush $::LOG
 }
 puts $LOG "$argv0 $argv"
 set tm0 [clock format [clock seconds] -format {%Y-%m-%d %H:%M:%S} -gmt 1]
