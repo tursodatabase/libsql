@@ -1,5 +1,5 @@
-C Add\stest\scases\sto\scover\sfts5\sintegrity-check\scode.
-D 2015-09-15T14:39:17.597
+C Fix\stypo\sin\sfts5.h.
+D 2015-09-16T12:31:39.559
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -105,7 +105,7 @@ F ext/fts3/unicode/UnicodeData.txt cd07314edb62d49fde34debdaf92fa2aa69011e7
 F ext/fts3/unicode/mkunicode.tcl 95cf7ec186e48d4985e433ff8a1c89090a774252
 F ext/fts3/unicode/parseunicode.tcl da577d1384810fb4e2b209bf3313074353193e95
 F ext/fts5/extract_api_docs.tcl a36e54ec777172ddd3f9a88daf593b00848368e0
-F ext/fts5/fts5.h f04659e0df5af83731b102189a32280f74f4a6bc
+F ext/fts5/fts5.h 98f802fe41481f9d797fce496f0fefcad72c7782
 F ext/fts5/fts5Int.h 666aba8432940a8449a3bd4636e898fe906ed95d
 F ext/fts5/fts5_aux.c 7a307760a9c57c750d043188ec0bad59f5b5ec7e
 F ext/fts5/fts5_buffer.c 64dcaf36a3ebda9e84b7c3b8788887ec325e12a4
@@ -1387,7 +1387,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P eade355fafec558fc13dc4b08ca0b07713a2cd84
-R 1694ed50f41ea37a05fbcbd009cf49d5
+P 1d018c35b9e81982df036f5e62a4a42219b54e02
+R d4dafc4d9210d5f3c145aaa752300d01
 U dan
-Z ab887f4a44598b0175c78de8cb058da9
+Z 39f6673add7b4bf65853408c84113225
