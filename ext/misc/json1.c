@@ -33,6 +33,14 @@ SQLITE_EXTENSION_INIT1
 
 #define UNUSED_PARAM(X)  (void)(X)
 
+/*
+** Versions of isspace(), isalnum() and isdigit() to which it is safe
+** to pass signed char values.
+*/
+#define safe_isspace(x) isspace((unsigned char)(x))
+#define safe_isdigit(x) isdigit((unsigned char)(x))
+#define safe_isalnum(x) isalnum((unsigned char)(x))
+
 /* Unsigned integer types */
 typedef sqlite3_uint64 u64;
 typedef unsigned int u32;
@@ -585,14 +593,14 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
   int iThis;
   int x;
   JsonNode *pNode;
-  while( isspace(pParse->zJson[i]) ){ i++; }
+  while( safe_isspace(pParse->zJson[i]) ){ i++; }
   if( (c = pParse->zJson[i])==0 ) return 0;
   if( c=='{' ){
     /* Parse object */
     iThis = jsonParseAddNode(pParse, JSON_OBJECT, 0, 0);
     if( iThis<0 ) return -1;
     for(j=i+1;;j++){
-      while( isspace(pParse->zJson[j]) ){ j++; }
+      while( safe_isspace(pParse->zJson[j]) ){ j++; }
       x = jsonParseValue(pParse, j);
       if( x<0 ){
         if( x==(-2) && pParse->nNode==(u32)iThis+1 ) return j+1;
@@ -603,13 +611,13 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
       if( pNode->eType!=JSON_STRING ) return -1;
       pNode->jnFlags |= JNODE_LABEL;
       j = x;
-      while( isspace(pParse->zJson[j]) ){ j++; }
+      while( safe_isspace(pParse->zJson[j]) ){ j++; }
       if( pParse->zJson[j]!=':' ) return -1;
       j++;
       x = jsonParseValue(pParse, j);
       if( x<0 ) return -1;
       j = x;
-      while( isspace(pParse->zJson[j]) ){ j++; }
+      while( safe_isspace(pParse->zJson[j]) ){ j++; }
       c = pParse->zJson[j];
       if( c==',' ) continue;
       if( c!='}' ) return -1;
@@ -622,14 +630,14 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
     iThis = jsonParseAddNode(pParse, JSON_ARRAY, 0, 0);
     if( iThis<0 ) return -1;
     for(j=i+1;;j++){
-      while( isspace(pParse->zJson[j]) ){ j++; }
+      while( safe_isspace(pParse->zJson[j]) ){ j++; }
       x = jsonParseValue(pParse, j);
       if( x<0 ){
         if( x==(-3) && pParse->nNode==(u32)iThis+1 ) return j+1;
         return -1;
       }
       j = x;
-      while( isspace(pParse->zJson[j]) ){ j++; }
+      while( safe_isspace(pParse->zJson[j]) ){ j++; }
       c = pParse->zJson[j];
       if( c==',' ) continue;
       if( c!=']' ) return -1;
@@ -658,17 +666,17 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
     return j+1;
   }else if( c=='n'
          && strncmp(pParse->zJson+i,"null",4)==0
-         && !isalnum(pParse->zJson[i+4]) ){
+         && !safe_isalnum(pParse->zJson[i+4]) ){
     jsonParseAddNode(pParse, JSON_NULL, 0, 0);
     return i+4;
   }else if( c=='t'
          && strncmp(pParse->zJson+i,"true",4)==0
-         && !isalnum(pParse->zJson[i+4]) ){
+         && !safe_isalnum(pParse->zJson[i+4]) ){
     jsonParseAddNode(pParse, JSON_TRUE, 0, 0);
     return i+4;
   }else if( c=='f'
          && strncmp(pParse->zJson+i,"false",5)==0
-         && !isalnum(pParse->zJson[i+5]) ){
+         && !safe_isalnum(pParse->zJson[i+5]) ){
     jsonParseAddNode(pParse, JSON_FALSE, 0, 0);
     return i+5;
   }else if( c=='-' || (c>='0' && c<='9') ){
@@ -731,7 +739,7 @@ static int jsonParse(
   i = jsonParseValue(pParse, 0);
   if( pParse->oom ) i = -1;
   if( i>0 ){
-    while( isspace(zJson[i]) ) i++;
+    while( safe_isspace(zJson[i]) ) i++;
     if( zJson[i] ) i = -1;
   }
   if( i<=0 ){
@@ -862,11 +870,11 @@ static JsonNode *jsonLookupStep(
       }
       return pNode;
     }
-  }else if( zPath[0]=='[' && isdigit(zPath[1]) ){
+  }else if( zPath[0]=='[' && safe_isdigit(zPath[1]) ){
     if( pRoot->eType!=JSON_ARRAY ) return 0;
     i = 0;
     zPath++;
-    while( isdigit(zPath[0]) ){
+    while( safe_isdigit(zPath[0]) ){
       i = i*10 + zPath[0] - '0';
       zPath++;
     }

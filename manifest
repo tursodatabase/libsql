@@ -1,5 +1,5 @@
-C Fix\sa\scrash\sin\sFTS5\scaused\sby\sspecifying\sNULL\sas\sthe\srhs\sof\sa\sMATCH\soperator.
-D 2015-09-17T09:48:01.737
+C Avoid\spassing\s(signed\schar)\svalues\sdirectly\sto\sisspace(),\sisalnum()\sor\sisdigit()\sin\sjson1.c.\sCast\sthe\svalue\sto\s(unsigned\schar)\sfirst.
+D 2015-09-17T17:21:09.569
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -195,7 +195,7 @@ F ext/misc/eval.c f971962e92ebb8b0a4e6b62949463ee454d88fa2
 F ext/misc/fileio.c d4171c815d6543a9edef8308aab2951413cd8d0f
 F ext/misc/fuzzer.c 4c84635c71c26cfa7c2e5848cf49fe2d2cfcd767
 F ext/misc/ieee754.c b0362167289170627659e84173f5d2e8fee8566e
-F ext/misc/json1.c f35d00fbd79a7e23af18d7630a2fcf22dce3692b
+F ext/misc/json1.c 4b1048a7f4f2989d27c451cef80e06d77d69921e
 F ext/misc/nextchar.c 35c8b8baacb96d92abbb34a83a997b797075b342
 F ext/misc/percentile.c bcbee3c061b884eccb80e21651daaae8e1e43c63
 F ext/misc/regexp.c af92cdaa5058fcec1451e49becc7ba44dba023dc
@@ -816,7 +816,7 @@ F test/jrnlmode.test 7864d59cf7f6e552b9b99ba0f38acd167edc10fa
 F test/jrnlmode2.test 81610545a4e6ed239ea8fa661891893385e23a1d
 F test/jrnlmode3.test 556b447a05be0e0963f4311e95ab1632b11c9eaa
 F test/json101.test e20d2421c531db32fad59c5e06e80af0b1b002c8
-F test/json102.test 4e1403cb06481ab160cf471c3c139820498e0563
+F test/json102.test b6282433ac49c57ab00ed55e8b9fd5317e699b3d
 F test/keyword1.test 37ef6bba5d2ed5b07ecdd6810571de2956599dff
 F test/lastinsert.test 42e948fd6442f07d60acbd15d33fb86473e0ef63
 F test/laststmtchanges.test ae613f53819206b3222771828d024154d51db200
@@ -1387,7 +1387,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0f3de2d337a3113dbd0765aa5545bb586b780121
-R fedcc551e6201e5eaa9f1e4cebc37090
+P e8ed62f82e8acc40b818bf86fafe3d480687514e
+R b33f39da72f7f6726ef8bfa6df3023ed
 U dan
-Z 3e310c615687f1a54e1d7e8496a4b4b6
+Z 7dc427d84823f016abf1cb61f1158516
