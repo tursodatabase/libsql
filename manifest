@@ -1,5 +1,5 @@
-C Fix\ssqlilimits.test\smodule\sso\sthat\sit\sknows\sthat\sthe\sSELECT\sin\sa\sCREATE\sVIEW\nis\snot\schecked\suntil\sthe\sview\sis\sactually\sused.
-D 2015-09-18T15:13:29.071
+C Adjust\stwo\stest\scases\sso\sthat\sthey\sconform\sto\sthe\scurrent\scode.
+D 2015-09-18T15:35:16.971
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1268,7 +1268,7 @@ F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test ea8778d5b0df200adef2ca7c00c3c37d4375f772
 F test/wal.test dbfc482e10c7263298833bb1fc60b3ac9d6340a1
 F test/wal2.test 1f841d2048080d32f552942e333fd99ce541dada
-F test/wal3.test 2b5445e5da44780b9b44712f5a38523f7aeb0941
+F test/wal3.test 2ab8e490afe0164bfc89b185c8b2572e0d821f23
 F test/wal4.test 4744e155cd6299c6bd99d3eab1c82f77db9cdb3c
 F test/wal5.test 88b5d9a6a3d1532497ee9f4296f010d66f07e33c
 F test/wal6.test 4421cd5a2fa99d29cc91ef12fb23bed171ed3a4c
@@ -1387,7 +1387,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 26f64986d1ed59c554a7cb9e00e86a7f148f1fc6
-R 82f244e470a2bb4913dd14e1882f4561
+P acf5d87f9456a1d0d69fe0ebc753211e1be07eaf
+R 141d1a654d9f974ff538047620769354
 U drh
-Z 53ac50e0f18bed53a5a46f49ee27d502
+Z 160b1907f919b38f1bca6b1d6ca5c889
