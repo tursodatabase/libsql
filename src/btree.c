@@ -8921,6 +8921,10 @@ static void checkList(
 #endif
     iPage = get4byte(pOvflData);
     sqlite3PagerUnref(pOvflPage);
+
+    if( isFreeList && N<(iPage!=0) ){
+      checkAppendMsg(pCheck, "free-page count in header is too small");
+    }
   }
 }
 #endif /* SQLITE_OMIT_INTEGRITY_CHECK */

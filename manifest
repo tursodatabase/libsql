@@ -1,5 +1,5 @@
-C Fix\sthe\sorderby9.test\scase\sso\sthat\sit\sworks\swith\s32-bit\sversions\sof\sTCL
-D 2015-09-18T14:42:48.399
+C Ensure\sthat\s"PRAGMA\sintegrity_check"\sreports\san\serror\sif\sthe\sfree-list\scount\sheader\sfield\scontains\sa\svalue\ssmaller\sthan\sthe\sactual\snumber\sof\spages\son\sthe\sdatabase\sfree-list.
+D 2015-09-18T14:45:01.549
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -282,7 +282,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 4d9134dc988a87838c06056c89c0e8c4700a0452
 F src/bitvec.c d1f21d7d91690747881f03940584f4cc548c9d3d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c d31008cfbf83e3ae5cb96bae3a00f4b57f244a16
+F src/btree.c 0dc030ce71f62d6ec8305c660b432d8b4a7f2ae5
 F src/btree.h 40189aefdc2b830d25c8b58fd7d56538481bfdd7
 F src/btreeInt.h 8177c9ab90d772d6d2c6c517e05bed774b7c92c0
 F src/build.c 8a86f4203ac8a9ac0734f242a96f043edffb6018
@@ -531,7 +531,7 @@ F test/conflict2.test 0d3af4fb534fa1bd020c79960bb56e4d52655f09
 F test/conflict3.test dec0634c0f31dec9a4b01c63063e939f0cd21b6b
 F test/contrib01.test 2a1cbc0f2f48955d7d073f725765da6fbceda6b4
 F test/corrupt.test 141c39ea650c1365e85a49e402fa05cb9617fb97
-F test/corrupt2.test 08cec1e5ffa68a3610306d6068f112d08bc9f090
+F test/corrupt2.test cb787825d761b0f869764d6990531382840de872
 F test/corrupt3.test 4b548d0bbe2933bc81d3f54099a05fc4d28aff18
 F test/corrupt4.test b99652079d542b21f4965f6248703b983e40fe80
 F test/corrupt5.test 8ead52af76006f3286e9396cb41898018ccea107
@@ -1387,7 +1387,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c88b62c28cc7ac31b93f7df0c732e0bb6ca24f65
-R d7ae7141144938bfc8bce5fb809aed89
-U drh
-Z 2e0d2113b5f408a0d1fc7870da6f8192
+P 4b6af7743034546a407a3e4722645945a4efc8a1
+R 8f617f75843755643117296bdc790a84
+U dan
+Z 7ed8e4f96741fa0762b4a1c2e770ca35
