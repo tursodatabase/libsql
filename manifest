@@ -1,5 +1,5 @@
-C Avoid\spassing\s(signed\schar)\svalues\sdirectly\sto\sisspace(),\sisalnum()\sor\sisdigit()\sin\sjson1.c.\sCast\sthe\svalue\sto\s(unsigned\schar)\sfirst.
-D 2015-09-17T17:21:09.569
+C Remove\sa\stest\smade\sobsolete\sby\sthe\sONEPASS\sDELETE\soptimization.
+D 2015-09-18T14:22:34.377
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -541,7 +541,7 @@ F test/corrupt8.test 2399dfe40d2c0c63af86706e30f3e6302a8d0516
 F test/corrupt9.test 730a3db08d4ab9aa43392ea30d9c2b4879cbff85
 F test/corruptA.test 53e56dafd180addcdadb402244b8cb9771d2ba26
 F test/corruptB.test 73a8d6c0b9833697ecf16b63e3c5c05c945b5dec
-F test/corruptC.test 3fcc0f73d2cf2d69befe2d96332b942426a6aae2
+F test/corruptC.test 0c46574f8d4f27ecc799b1b5c4cbf9b1817bce9a
 F test/corruptD.test b3c205fac7952b1de645ce44bb02335cd9e3e040
 F test/corruptE.test be8e5088c369fc7979c662cd644efdaafc0f7f6d
 F test/corruptF.test be9fde98e4c93648f1ba52b74e5318edc8f59fe4
@@ -1387,7 +1387,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e8ed62f82e8acc40b818bf86fafe3d480687514e
-R b33f39da72f7f6726ef8bfa6df3023ed
-U dan
-Z 7dc427d84823f016abf1cb61f1158516
+P 6713e35b8a8c997aa2717e86ce6dcd63bb993477
+R 33f6635af41fcdd0bdf04c318e3b8dad
+U drh
+Z 9f636cce7563de973d71aa6f965f4052

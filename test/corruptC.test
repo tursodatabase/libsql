@@ -189,7 +189,11 @@ do_test corruptC-2.7 {
   catchsql {BEGIN; UPDATE t2 SET y='abcdef-uvwxyz'; ROLLBACK;}
 } {1 {database disk image is malformed}}
 
+
 # corruption (seed 179069)
+# Obsolete.  With single-pass DELETE the corruption in the
+# main database is not detected.
+if 0 {
 do_test corruptC-2.8 {
   db close
   forcecopy test.bu test.db
@@ -204,6 +208,7 @@ do_test corruptC-2.8 {
   sqlite3 db test.db
   catchsql {BEGIN; DELETE FROM t1 WHERE x>13; ROLLBACK;}
 } {1 {database disk image is malformed}}
+}
 
 # corruption (seed 170434)
 #
