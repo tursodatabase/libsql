@@ -1,5 +1,5 @@
-C Adjust\stwo\stest\scases\sso\sthat\sthey\sconform\sto\sthe\scurrent\scode.
-D 2015-09-18T15:35:16.971
+C Adjustments\sto\sthe\sspellfix2.test\smodule\sso\sthat\sit\sworks\sreliably\son\nwindows.
+D 2015-09-18T15:38:07.218
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1027,7 +1027,7 @@ F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
 F test/speedtest1.c 857439869d1cb4db35e1c720ee9c2756eb9ea2a0
 F test/spellfix.test 0597065ff57042df1f138e6a2611ae19c2698135
-F test/spellfix2.test e5f2bc1dae046dbdd8008f2a84ed7749ff9b325e
+F test/spellfix2.test 1ff48bb65b6198d21674ae24d19bb136e547585a
 F test/sqldiff1.test 8f6bc7c6a5b3585d350d779c6078869ba402f8f5
 F test/sqllimits1.test 89b3d5aad05b99f707ee3786bdd4416dccf83304
 F test/stat.test 8de91498c99f5298b303f70f1d1f3b9557af91bf
@@ -1387,7 +1387,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P acf5d87f9456a1d0d69fe0ebc753211e1be07eaf
-R 141d1a654d9f974ff538047620769354
+P 228e3d7c8f37c722aee3b589bdd5cfaa4b1f6f03
+R 1e960e9cfbefc895c283d1719c1f0aa0
 U drh
-Z 160b1907f919b38f1bca6b1d6ca5c889
+Z 92d8d40833eb01893db655f9a1fecb4b
