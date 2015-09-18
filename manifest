@@ -1,5 +1,5 @@
-C Remove\sa\stest\smade\sobsolete\sby\sthe\sONEPASS\sDELETE\soptimization.
-D 2015-09-18T14:22:34.377
+C Fix\sthe\sorderby9.test\scase\sso\sthat\sit\sworks\swith\s32-bit\sversions\sof\sTCL
+D 2015-09-18T14:42:48.399
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -905,7 +905,7 @@ F test/orderby5.test 8f08a54836d21fb7c70245360751aedd1c2286fb
 F test/orderby6.test 8b38138ab0972588240b3fca0985d2e400432859
 F test/orderby7.test 3d1383d52ade5b9eb3a173b3147fdd296f0202da
 F test/orderby8.test 23ef1a5d72bd3adcc2f65561c654295d1b8047bd
-F test/orderby9.test 88a330ea5fc7bed7e407b28beb0d2b79485ae2cc
+F test/orderby9.test 87fb9548debcc2cd141c5299002dd94672fa76a3
 F test/oserror.test 14fec2796c2b6fe431c7823750e8a18a761176d7
 F test/ovfl.test 4f7ca651cba5c059a12d8c67dddd49bec5747799
 F test/pager1.test 1acbdb14c5952a72dd43129cabdbf69aaa3ed1fa
@@ -1387,7 +1387,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6713e35b8a8c997aa2717e86ce6dcd63bb993477
-R 33f6635af41fcdd0bdf04c318e3b8dad
+P c88b62c28cc7ac31b93f7df0c732e0bb6ca24f65
+R d7ae7141144938bfc8bce5fb809aed89
 U drh
-Z 9f636cce7563de973d71aa6f965f4052
+Z 2e0d2113b5f408a0d1fc7870da6f8192
