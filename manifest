@@ -1,5 +1,5 @@
-C Ensure\sthat\s"PRAGMA\sintegrity_check"\sreports\san\serror\sif\sthe\sfree-list\scount\sheader\sfield\scontains\sa\svalue\ssmaller\sthan\sthe\sactual\snumber\sof\spages\son\sthe\sdatabase\sfree-list.
-D 2015-09-18T14:45:01.549
+C Fix\ssqlilimits.test\smodule\sso\sthat\sit\sknows\sthat\sthe\sSELECT\sin\sa\sCREATE\sVIEW\nis\snot\schecked\suntil\sthe\sview\sis\sactually\sused.
+D 2015-09-18T15:13:29.071
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1029,7 +1029,7 @@ F test/speedtest1.c 857439869d1cb4db35e1c720ee9c2756eb9ea2a0
 F test/spellfix.test 0597065ff57042df1f138e6a2611ae19c2698135
 F test/spellfix2.test e5f2bc1dae046dbdd8008f2a84ed7749ff9b325e
 F test/sqldiff1.test 8f6bc7c6a5b3585d350d779c6078869ba402f8f5
-F test/sqllimits1.test e05786eaed7950ff6a2d00031d001d8a26131e68
+F test/sqllimits1.test 89b3d5aad05b99f707ee3786bdd4416dccf83304
 F test/stat.test 8de91498c99f5298b303f70f1d1f3b9557af91bf
 F test/statfault.test f525a7bf633e50afd027700e9a486090684b1ac1
 F test/stmt.test 25d64e3dbf9a3ce89558667d7f39d966fe2a71b9
@@ -1387,7 +1387,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4b6af7743034546a407a3e4722645945a4efc8a1
-R 8f617f75843755643117296bdc790a84
-U dan
-Z 7ed8e4f96741fa0762b4a1c2e770ca35
+P 26f64986d1ed59c554a7cb9e00e86a7f148f1fc6
+R 82f244e470a2bb4913dd14e1882f4561
+U drh
+Z 53ac50e0f18bed53a5a46f49ee27d502
