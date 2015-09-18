@@ -514,8 +514,8 @@ static int codeAllEqualityTerms(
     sqlite3VdbeJumpHere(v, j);
     for(j=0; j<nSkip; j++){
       sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, j, regBase+j);
-      assert( pIdx->aiColumn[j]>=0 );
-      VdbeComment((v, "%s", pIdx->pTable->aCol[pIdx->aiColumn[j]].zName));
+      testcase( pIdx->aiColumn[j]==(-2) );
+      VdbeComment((v, "%s", explainIndexColumnName(pIdx, j)));
     }
   }    
 
