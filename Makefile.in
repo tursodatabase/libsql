@@ -540,6 +540,12 @@ FUZZDATA = \
   $(TOP)/test/fuzzdata2.db \
   $(TOP)/test/fuzzdata3.db
 
+# Extra arguments for including json1 in the build of tools
+#
+JSON1_DEP = $(TOP)/ext/misc/json1.c sqlite3ext.h
+JSON1_OPT = -DSQLITE_ENABLE_JSON1 -DSQLITE_CORE
+JSON1_SRC = $(TOP)/ext/misc/json1.c
+
 # Standard options to testfixture
 #
 TESTOPTS = --verbose=file --output=test-out.txt
@@ -566,19 +572,20 @@ libtclsqlite3.la:	tclsqlite.lo libsqlite3.la
 		-version-info "8:6:8" \
 		-avoid-version
 
-sqlite3$(TEXE):	$(TOP)/src/shell.c libsqlite3.la sqlite3.h $(TOP)/ext/misc/json1.c
-	$(LTLINK) $(READLINE_FLAGS) -DSQLITE_ENABLE_JSON1 -o $@ \
-		$(TOP)/src/shell.c $(TOP)/ext/misc/json1.c libsqlite3.la \
+sqlite3$(TEXE):	$(TOP)/src/shell.c libsqlite3.la sqlite3.h $(JSON1_DEP)
+	$(LTLINK) $(READLINE_FLAGS) $(JSON1_OPT) -o $@ \
+		$(TOP)/src/shell.c $(JSON1_SRC) libsqlite3.la \
 		$(LIBREADLINE) $(TLIBS) -rpath "$(libdir)"
 
 sqldiff$(TEXE):	$(TOP)/tool/sqldiff.c sqlite3.c sqlite3.h
 	$(LTLINK) -o $@ $(TOP)/tool/sqldiff.c sqlite3.c $(TLIBS)
 
-fuzzershell$(TEXE):	$(TOP)/tool/fuzzershell.c sqlite3.c sqlite3.h
-	$(LTLINK) -o $@ $(TOP)/tool/fuzzershell.c sqlite3.c $(TLIBS)
+fuzzershell$(TEXE):	$(TOP)/tool/fuzzershell.c sqlite3.c sqlite3.h $(JSON1_DEP)
+	$(LTLINK) -o $@ $(JSON1_OPT) \
+	  $(TOP)/tool/fuzzershell.c $(JSON1_SRC) sqlite3.c $(TLIBS)
 
-fuzzcheck$(TEXE):	$(TOP)/test/fuzzcheck.c sqlite3.c sqlite3.h
-	$(LTLINK) -o $@ $(TOP)/test/fuzzcheck.c sqlite3.c $(TLIBS)
+fuzzcheck$(TEXE):	$(TOP)/test/fuzzcheck.c sqlite3.c sqlite3.h $(JSON1_DEP)
+	$(LTLINK) -o $@ $(JSON1_OPT) $(TOP)/test/fuzzcheck.c $(JSON1_SRC) sqlite3.c $(TLIBS)
 
 mptester$(TEXE):	sqlite3.c $(TOP)/mptest/mptest.c
 	$(LTLINK) -o $@ -I. $(TOP)/mptest/mptest.c sqlite3.c \

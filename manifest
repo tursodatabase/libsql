@@ -1,9 +1,9 @@
-C Fix\sa\sdocumentation\stypo\sin\ssqlite3_bind_parameter_index().\s\sNo\scode\schanges.
-D 2015-09-19T12:04:27.400
+C Add\sjson1.c\sto\sthe\sfuzzer\stest\sshells.
+D 2015-09-19T16:51:58.703
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
+F Makefile.in 2047811644c5bac91ccdfc2720e49b60965a63a7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc b268d8be2e800b9d35f074b1ed6b2f698deebdd6
+F Makefile.msc 5f0e6b3a39f5c6a5e17ad41d7ea2ac816fb63743
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION ccfc4d1576dbfdeece0a4372a2e6a2e37d3e7975
@@ -261,7 +261,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 58eb74de702467c3b71cdf06f213cefe7f5ce544
+F main.mk 436f9b2442178303478e30eb9003b6afd08ce22a
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
 F mkopcodeh.awk 0e7f04a8eb90f92259e47d80110e4e98d7ce337a
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
@@ -749,7 +749,7 @@ F test/fuzz2.test 76dc35b32b6d6f965259508508abce75a6c4d7e1
 F test/fuzz3.test 53fabcd5f0f430f8b221282f6c12c4d0903c21eb
 F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
 F test/fuzz_malloc.test 328f70aaca63adf29b4c6f06505ed0cf57ca7c26
-F test/fuzzcheck.c 79980bbc00e19ad44c3ba6699e643348572757a2
+F test/fuzzcheck.c 01d2ca69f8ccfabd9bd7902e7db08e13a048dc32
 F test/fuzzdata1.db 7ee3227bad0e7ccdeb08a9e6822916777073c664
 F test/fuzzdata2.db f03a420d3b822cc82e4f894ca957618fbe9c4973
 F test/fuzzdata3.db 1d6044c33a114007f02b6e6846f1fa232f607bfd
@@ -1338,7 +1338,7 @@ F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/extract.c 054069d81b095fbdc189a6f5d4466e40380505e2
 F tool/fast_vacuum.c 5ba0d6f5963a0a63bdc42840f678bad75b2ebce1
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
-F tool/fuzzershell.c f2fc86dd22df654b28851b85019d3bd007361751
+F tool/fuzzershell.c 0e2a1dd0f955cf8d8b8ccc026241d64d19211f89
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
@@ -1387,7 +1387,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d2a027372a5a6efc0f9b6f605093d865ae1c6788
-R c41e9a084ff64ab3e810b45fed1e48ed
+P 650605a820f3860b1d6e955cdda23aaff01dfdb5 91682ac39e7db6a5dc8b75695a757449f068184a
+R 60742f729d8d1b5355e0fe1beff285a6
+T +closed 91682ac39e7db6a5dc8b75695a757449f068184a
 U drh
-Z 080732f46e4b4495cad0623b9691645c
+Z 24e2ef08db7fcb908a9735efd5bb2f32

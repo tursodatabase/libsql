@@ -450,6 +450,12 @@ FUZZDATA = \
   $(TOP)/test/fuzzdata2.db \
   $(TOP)/test/fuzzdata3.db
 
+# Extra arguments for including json1 in the build of tools
+#
+JSON1_DEP = $(TOP)/ext/misc/json1.c sqlite3ext.h
+JSON1_OPT = -DSQLITE_ENABLE_JSON1 -DSQLITE_CORE
+JSON1_SRC = $(TOP)/ext/misc/json1.c
+
 # Standard options to testfixture
 #
 TESTOPTS = --verbose=file --output=test-out.txt
@@ -463,23 +469,24 @@ libsqlite3.a:	$(LIBOBJ)
 	$(AR) libsqlite3.a $(LIBOBJ)
 	$(RANLIB) libsqlite3.a
 
-sqlite3$(EXE):	$(TOP)/src/shell.c libsqlite3.a sqlite3.h $(TOP)/ext/misc/json1.c
-	$(TCCX) $(READLINE_FLAGS) -DSQLITE_ENABLE_JSON1 -o sqlite3$(EXE)  \
-		$(TOP)/src/shell.c $(TOP)/ext/misc/json1.c                \
+sqlite3$(EXE):	$(TOP)/src/shell.c libsqlite3.a sqlite3.h $(JSON1_DEP)
+	$(TCCX) $(READLINE_FLAGS) $(JSON1_OPT) -o sqlite3$(EXE)  \
+		$(TOP)/src/shell.c $(JSON1_SRC) \
 		libsqlite3.a $(LIBREADLINE) $(TLIBS) $(THREADLIB)
 
 sqldiff$(EXE):	$(TOP)/tool/sqldiff.c sqlite3.c sqlite3.h
 	$(TCCX) -o sqldiff$(EXE) -DSQLITE_THREADSAFE=0 \
 		$(TOP)/tool/sqldiff.c sqlite3.c $(TLIBS) $(THREADLIB)
 
-fuzzershell$(EXE):	$(TOP)/tool/fuzzershell.c sqlite3.c sqlite3.h
+fuzzershell$(EXE):	$(TOP)/tool/fuzzershell.c sqlite3.c sqlite3.h $(JSON1_DEP)
 	$(TCCX) -o fuzzershell$(EXE) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
-		$(TOP)/tool/fuzzershell.c sqlite3.c $(TLIBS) $(THREADLIB)
+	  $(JSON1_OPT)	$(TOP)/tool/fuzzershell.c $(JSON1_SRC) sqlite3.c \
+	  $(TLIBS) $(THREADLIB)
 
-fuzzcheck$(EXE):	$(TOP)/test/fuzzcheck.c sqlite3.c sqlite3.h
+fuzzcheck$(EXE):	$(TOP)/test/fuzzcheck.c sqlite3.c sqlite3.h $(JSON1_DEP)
 	$(TCCX) -o fuzzcheck$(EXE) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
-		-DSQLITE_ENABLE_MEMSYS5 \
-		$(TOP)/test/fuzzcheck.c sqlite3.c $(TLIBS) $(THREADLIB)
+		-DSQLITE_ENABLE_MEMSYS5 $(JSON1_OPT) \
+		$(TOP)/test/fuzzcheck.c $(JSON1_SRC) sqlite3.c $(TLIBS) $(THREADLIB)
 
 mptester$(EXE):	sqlite3.c $(TOP)/mptest/mptest.c
 	$(TCCX) -o $@ -I. $(TOP)/mptest/mptest.c sqlite3.c \
