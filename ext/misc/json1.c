@@ -1206,7 +1206,7 @@ static void jsonObjectFunc(
   for(i=0; i<argc; i+=2){
     if( sqlite3_value_type(argv[i])!=SQLITE_TEXT ){
       sqlite3_result_error(ctx, "json_object() labels must be TEXT", -1);
-      jsonZero(&jx);
+      jsonReset(&jx);
       return;
     }
     jsonAppendSeparator(&jx);
