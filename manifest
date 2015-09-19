@@ -1,5 +1,5 @@
-C Add\sthe\s--disable-lookaside\soption\sto\sthe\sfuzzershell\sutility\sprogram.
-D 2015-09-19T19:36:13.945
+C Do\snot\sallow\stable-valued\sfunction\ssyntax\sto\sbe\sused\son\sa\sview.
+D 2015-09-19T20:27:08.425
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2047811644c5bac91ccdfc2720e49b60965a63a7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -340,7 +340,7 @@ F src/printf.c 0c4bcdd1c2e2521024f0a69cb5eb334f86b3652a
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 1954a0f01bf65d78d7d559aea3d5c67f33376d91
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c c17613385bc6b095c421b1f30548814f5fd8a9b2
+F src/select.c 36ee14d729e182cd8b6796f980b7ab3fc9bcee72
 F src/shell.c 6332ef06db1390ef812cfdff1fc97b4fd76cdd42
 F src/sqlite.h.in 4e06cb5fed36736242c66237991db6f3e2395eb9
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
@@ -1042,7 +1042,7 @@ F test/superlock.test 1cde669f68d2dd37d6c9bd35eee1d95491ae3fc2
 F test/sync.test a34cd43e98b7fb84eabbf38f7ed8f7349b3f3d85
 F test/syscall.test d2fdaad713f103ac611fe7ef9b724c7b69f8149c
 F test/sysfault.test fa776e60bf46bdd3ae69f0b73e46ee3977a58ae6
-F test/tabfunc01.test fa9d8dfc75747019e0be98d3b6ac68d18632d328
+F test/tabfunc01.test 83e63be7b6e3f67b6a03519c9c61bc68efb25f31
 F test/table.test b708f3e5fa2542fa51dfab21fc07b36ea445cb2f
 F test/tableapi.test 2674633fa95d80da917571ebdd759a14d9819126
 F test/tableopts.test dba698ba97251017b7c80d738c198d39ab747930
@@ -1387,7 +1387,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 394b81b11f261a9b179a034bc2a2d2dff0765e3b
-R 443476cdd6af13a6899d0e88c3fa1c6f
+P 0b04374449c8279ad038def7c18cd74f180a0515
+R dcc2e297f6f735858cfc1dccdf44c182
 U drh
-Z 50620285dcaba2caeb5f39eeec9cdbf4
+Z 508cc03a4319db6f58dd52d6ddeb8415
