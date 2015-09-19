@@ -601,13 +601,6 @@ int main(int argc, char **argv){
   zIn = malloc(nAlloc);
   if( zIn==0 ) fatalError("out of memory");
 
-#ifdef SQLITE_ENABLE_JSON1
-  {
-    extern int sqlite3_json_init(sqlite3*);
-    sqlite3_auto_extension((void(*)(void))sqlite3_json_init);
-  }
-#endif
-
   /* Loop over all input files */
   for(jj=0; jj<nInFile; jj++){
 
@@ -727,6 +720,12 @@ int main(int argc, char **argv){
     #ifndef SQLITE_OMIT_TRACE
         sqlite3_trace(db, verboseFlag ? traceCallback : traceNoop, 0);
     #endif
+#ifdef SQLITE_ENABLE_JSON1
+        {
+          extern int sqlite3_json_init(sqlite3*);
+          sqlite3_json_init(db);
+        }
+#endif
         sqlite3_create_function(db, "eval", 1, SQLITE_UTF8, 0, sqlEvalFunc, 0, 0);
         sqlite3_create_function(db, "eval", 2, SQLITE_UTF8, 0, sqlEvalFunc, 0, 0);
         sqlite3_limit(db, SQLITE_LIMIT_LENGTH, 1000000);
