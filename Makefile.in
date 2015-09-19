@@ -543,7 +543,7 @@ FUZZDATA = \
 # Extra arguments for including json1 in the build of tools
 #
 JSON1_DEP = $(TOP)/ext/misc/json1.c sqlite3ext.h
-JSON1_OPT = -DSQLITE_ENABLE_JSON1
+JSON1_OPT = -DSQLITE_ENABLE_JSON1 -DSQLITE_CORE
 JSON1_SRC = $(TOP)/ext/misc/json1.c
 
 # Standard options to testfixture

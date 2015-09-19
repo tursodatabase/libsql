@@ -1,9 +1,9 @@
-C Adjust\sfuzzershell\sso\sthat\sit\sadds\sthe\sjson1\sextension\sseparately\sfor\seach\nno\sconnection.
-D 2015-09-19T14:57:00.533
+C Adjust\sMakefiles\sto\suse\sSQLITE_CORE\swhen\sstatically\slinking\sjson1.c\sinto\ntest\sshells.
+D 2015-09-19T16:45:43.239
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in 8c58e3fb3db4deba588aeaf52ec7360127a108d1
+F Makefile.in 2047811644c5bac91ccdfc2720e49b60965a63a7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 2973da92ee9fb51cbe239a6e6b8fcb6ec59f22b1
+F Makefile.msc 5f0e6b3a39f5c6a5e17ad41d7ea2ac816fb63743
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION ccfc4d1576dbfdeece0a4372a2e6a2e37d3e7975
@@ -261,7 +261,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 4608fb4595a7fefea3cd75b9512f04640c7eb53a
+F main.mk 436f9b2442178303478e30eb9003b6afd08ce22a
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
 F mkopcodeh.awk 0e7f04a8eb90f92259e47d80110e4e98d7ce337a
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
@@ -1387,7 +1387,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c4b68eff7f8f5402a9abf378157767b1c96a6101
-R dd789be15f70c114ac3c8e5f362a9dfd
+P ca2d1e9036387d1514fe596a0b82a3d8409797c3
+R 60742f729d8d1b5355e0fe1beff285a6
 U drh
-Z de9e033a4646ac6291b261f0172dd95e
+Z 07ca9ba6c04d9f6e1ad4ec3897f0a1e8
