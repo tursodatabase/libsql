@@ -1,5 +1,5 @@
-C Fix\sa\scrash\sthat\scan\soccur\swith\sa\sskip-scan\son\san\sindex\swith\nexpressions\swhen\sSQLITE_ENABLE_EXPLAIN_COMMENTS\sis\sdefined.
-D 2015-09-18T18:09:28.498
+C Do\snot\sallow\srowid\sin\sa\sUNIQUE\sor\sPRIMARY\sKEY\sconstraint.\s\s(This\srestores\sthe\nsame\sbehavior\sexhibited\sby\sall\sprior\sreleases.)
+D 2015-09-19T03:07:30.685
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f85066ce844a28b671aaeeff320921cd0ce36239
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -338,7 +338,7 @@ F src/pragma.h 631a91c8b0e6ca8f051a1d8a4a0da4150e04620a
 F src/prepare.c 82e5db1013846a819f198336fed72c44c974e7b1
 F src/printf.c 0c4bcdd1c2e2521024f0a69cb5eb334f86b3652a
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
-F src/resolve.c 3126f7694b8ce0f97282d7dd3a5198b8fa18dce9
+F src/resolve.c 1954a0f01bf65d78d7d559aea3d5c67f33376d91
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c c17613385bc6b095c421b1f30548814f5fd8a9b2
 F src/shell.c 6332ef06db1390ef812cfdff1fc97b4fd76cdd42
@@ -1234,7 +1234,7 @@ F test/types.test bf816ce73c7dfcfe26b700c19f97ef4050d194ff
 F test/types2.test 3555aacf8ed8dc883356e59efc314707e6247a84
 F test/types3.test 99e009491a54f4dc02c06bdbc0c5eea56ae3e25a
 F test/unique.test 93f8b2ef5ea51b9495f8d6493429b1fd0f465264
-F test/unique2.test 41e7f83c6827605991160a31380148a9fc5f1339
+F test/unique2.test 3674e9f2a3f1fbbfd4772ac74b7a97090d0f77d2
 F test/unixexcl.test cd6c765f75e50e8e2c2ba763149e5d340ea19825
 F test/unordered.test ca7adce0419e4ca0c50f039885e76ed2c531eda8
 F test/update.test 6c68446b8a0a33d522a7c72b320934596a2d7d32
@@ -1327,7 +1327,7 @@ F test/without_rowid2.test af260339f79d13cb220288b67cd287fbcf81ad99
 F test/without_rowid3.test aad4f9d383e199349b6c7e508a778f7dff5dff79
 F test/without_rowid4.test 4e08bcbaee0399f35d58b5581881e7a6243d458a
 F test/without_rowid5.test 61256715b686359df48ca1742db50cc7e3e7b862
-F test/without_rowid6.test db0dbf03c49030aa3c1ba5f618620334bd2baf5f
+F test/without_rowid6.test 1f99644e6508447fb050f73697350c7ceca3392e
 F test/wordcount.c 9915e06cb33d8ca8109b8700791afe80d305afda
 F test/zeroblob.test 3857870fe681b8185654414a9bccfde80b62a0fa
 F test/zerodamage.test cf6748bad89553cc1632be51a6f54e487e4039ac
@@ -1387,7 +1387,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 09a313fb7f2c16b0253a439edb901a7bb201d7d3
-R e6b57e21ee9c6a029f06101550146ce6
+P 25f34cb9b576a2d4250a06a7dbf88010b1c11675
+R fd8d20dd4f43b078e61007ad89d6a2fb
 U drh
-Z 350cadf296cf903d8bdd5c50cd6dd61e
+Z 9e371c3a4b995f769acecd4879783adf

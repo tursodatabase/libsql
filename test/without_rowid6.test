@@ -113,5 +113,9 @@ do_execsql_test without_rowid6-520 {
   PRAGMA index_list(t1);
 } {/sqlite_autoindex_t1_1 1 pk/}
 
+do_catchsql_test without_rowid6-600 {
+  CREATE TABLE t6(a,b,c,PRIMARY KEY(a,rowid,b))WITHOUT ROWID;
+} {1 {no such column: rowid}}
+
 
 finish_test
