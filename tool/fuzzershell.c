@@ -601,6 +601,13 @@ int main(int argc, char **argv){
   zIn = malloc(nAlloc);
   if( zIn==0 ) fatalError("out of memory");
 
+#ifdef SQLITE_ENABLE_JSON1
+  {
+    extern int sqlite3_json_init(sqlite3*);
+    sqlite3_auto_extension((void(*)(void))sqlite3_json_init);
+  }
+#endif
+
   /* Loop over all input files */
   for(jj=0; jj<nInFile; jj++){
 
