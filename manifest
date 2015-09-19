@@ -1,5 +1,5 @@
-C Fix\sa\smemory\sleak\sin\sjson1.c\sthat\scould\soccur\safter\smisuse\sof\sjson_object().
-D 2015-09-19T18:54:39.661
+C Add\sthe\s--disable-lookaside\soption\sto\sthe\sfuzzershell\sutility\sprogram.
+D 2015-09-19T19:36:13.945
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2047811644c5bac91ccdfc2720e49b60965a63a7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1338,7 +1338,7 @@ F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/extract.c 054069d81b095fbdc189a6f5d4466e40380505e2
 F tool/fast_vacuum.c 5ba0d6f5963a0a63bdc42840f678bad75b2ebce1
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
-F tool/fuzzershell.c 0e2a1dd0f955cf8d8b8ccc026241d64d19211f89
+F tool/fuzzershell.c 87cc3d6f00239d786d231954289f106131989cc7
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
@@ -1387,7 +1387,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 40fce67ecf0e71db3c8f3da3f72cc80a3d0f8fb2
-R 6ee97186014c02a7619b2c663f4e3b82
+P 394b81b11f261a9b179a034bc2a2d2dff0765e3b
+R 443476cdd6af13a6899d0e88c3fa1c6f
 U drh
-Z 8aa08af4f5f205f4477c5ca72006e16f
+Z 50620285dcaba2caeb5f39eeec9cdbf4
