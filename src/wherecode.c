@@ -65,7 +65,7 @@ static const char *explainIndexColumnName(Index *pIdx, int i){
 **
 **   "a=? AND b>?"
 */
-static void explainIndexRange(StrAccum *pStr, WhereLoop *pLoop, Table *pTab){
+static void explainIndexRange(StrAccum *pStr, WhereLoop *pLoop){
   Index *pIndex = pLoop->u.btree.pIndex;
   u16 nEq = pLoop->u.btree.nEq;
   u16 nSkip = pLoop->nSkip;
@@ -166,7 +166,7 @@ int sqlite3WhereExplainOneScan(
       if( zFmt ){
         sqlite3StrAccumAppend(&str, " USING ", 7);
         sqlite3XPrintf(&str, 0, zFmt, pIdx->zName);
-        explainIndexRange(&str, pLoop, pItem->pTab);
+        explainIndexRange(&str, pLoop);
       }
     }else if( (flags & WHERE_IPK)!=0 && (flags & WHERE_CONSTRAINT)!=0 ){
       const char *zRangeOp;

@@ -1,5 +1,5 @@
-C Add\sjson1.c\sto\sthe\sfuzzer\stest\sshells.
-D 2015-09-19T16:51:58.703
+C Fix\scompiler\swarnings.
+D 2015-09-19T18:08:13.197
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2047811644c5bac91ccdfc2720e49b60965a63a7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -332,7 +332,7 @@ F src/pager.h 6d435f563b3f7fcae4b84433b76a6ac2730036e2
 F src/parse.y f599aa5e871a493330d567ced93de696f61f48f7
 F src/pcache.c 24be750c79272e0ca7b6e007bc94999700f3e5ef
 F src/pcache.h 9968603796240cdf83da7e7bef76edf90619cea9
-F src/pcache1.c a0c0bb29f7bd720743a16a95eb5dedba3ade15bc
+F src/pcache1.c e822007159d53a7ea7aa040d6e28964ddb6de083
 F src/pragma.c d71b813e67bf03f3116b9dd5164fbfd81ec673a2
 F src/pragma.h 631a91c8b0e6ca8f051a1d8a4a0da4150e04620a
 F src/prepare.c 82e5db1013846a819f198336fed72c44c974e7b1
@@ -406,7 +406,7 @@ F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
 F src/vdbe.c 5048103aa6bc9c01bf1a4620729256d1e873bb6c
 F src/vdbe.h 4bc88bd0e06f8046ee6ab7487c0015e85ad949ad
 F src/vdbeInt.h 8b867eac234e28627ffcace3cd4b4b79bbec664b
-F src/vdbeapi.c 0d890f57caf143b114a95ce699e59af51359c508
+F src/vdbeapi.c 020681b943e77766b32ae1cddf86d7831b7374ca
 F src/vdbeaux.c fd00b489ab3f44f2dca1e4344faf289b7bfcf649
 F src/vdbeblob.c 1d7b97115e7bbac4c318db416d2ca83fc779544a
 F src/vdbemem.c 19b3036aa4d676e7103b0fb5efd6327da455f915
@@ -419,7 +419,7 @@ F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 2e14d17f592d176b6dc879c33fbdec4fbccaa2ba
 F src/where.c 882fb44b36201fafc32dd7d59366f852806b7e70
 F src/whereInt.h 7892bb54cf9ca0ae5c7e6094491b94c9286dc647
-F src/wherecode.c 5b534714feb301628f7123c1c424689501746811
+F src/wherecode.c 7660e1ad16817a921b099af553f3e1349352d16f
 F src/whereexpr.c 2473e4350e30f9b55d1c6a8f66ca23c689f23f1d
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -1387,8 +1387,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 650605a820f3860b1d6e955cdda23aaff01dfdb5 91682ac39e7db6a5dc8b75695a757449f068184a
-R 60742f729d8d1b5355e0fe1beff285a6
-T +closed 91682ac39e7db6a5dc8b75695a757449f068184a
+P 809d67b61164b83bbb6962f0edee1793a483ccab
+R bab8c56b96d20ed3c77321003b4b9a52
 U drh
-Z 24e2ef08db7fcb908a9735efd5bb2f32
+Z 6a9fa43b557b8b4a775a8ba25a8484d8
