@@ -285,4 +285,13 @@ do_execsql_test json102-1132 {
 do_execsql_test json102-1201 { SELECT json_valid(char(32)  || '"xyz"') } 1
 do_execsql_test json102-1202 { SELECT json_valid(char(200) || '"xyz"') } 0
 
+# Off-by-one error in jsonAppendString()
+#
+for {set i 0} {$i<100} {incr i} {
+  set str abcdef[string repeat \" [expr {$i+50}]]uvwxyz
+  do_test json102-[format %d [expr {$i+1300}]] {
+    db eval {SELECT json_extract(json_array($::str),'$[0]')==$::str}
+  } {1}
+}
+
 finish_test

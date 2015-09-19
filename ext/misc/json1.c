@@ -239,12 +239,13 @@ static void jsonAppendString(JsonString *p, const char *zIn, u32 N){
   for(i=0; i<N; i++){
     char c = zIn[i];
     if( c=='"' || c=='\\' ){
-      if( (p->nUsed+N+1-i > p->nAlloc) && jsonGrow(p,N+1-i)!=0 ) return;
+      if( (p->nUsed+N+3-i > p->nAlloc) && jsonGrow(p,N+3-i)!=0 ) return;
       p->zBuf[p->nUsed++] = '\\';
     }
     p->zBuf[p->nUsed++] = c;
   }
   p->zBuf[p->nUsed++] = '"';
+  assert( p->nUsed<p->nAlloc );
 }
 
 /*
