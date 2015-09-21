@@ -1161,4 +1161,13 @@ mod test {
         }
         assert_eq!(db.last_insert_rowid(), 10);
     }
+
+    #[test]
+    fn test_statement_debugging() {
+        let db = checked_memory_handle();
+        let query = "SELECT 12345";
+        let stmt = db.prepare(query).unwrap();
+
+        assert!(format!("{:?}", stmt).contains(query));
+    }
 }
