@@ -1281,7 +1281,7 @@ mptest:	mptester.exe
 	move vdbe.new tsrc\vdbe.c
 	echo > .target_source
 
-sqlite3.c:	.target_source $(TOP)\tool\mksqlite3c.tcl
+sqlite3.c:	.target_source sqlite3ext.h $(TOP)\tool\mksqlite3c.tcl
 	$(TCLSH_CMD) $(TOP)\tool\mksqlite3c.tcl $(MKSQLITE3C_ARGS)
 	copy tsrc\shell.c .
 
