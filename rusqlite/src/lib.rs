@@ -941,7 +941,7 @@ impl<'stmt> SqliteRow<'stmt> {
     /// Panics if `idx` is outside the range of columns in the returned query or if this row
     /// is stale.
     pub fn get<T: FromSql>(&self, idx: c_int) -> T {
-        self.get_opt(idx).unwrap()
+        self.get_checked(idx).unwrap()
     }
 
     /// Get the value of a particular column of the result row.
@@ -959,42 +959,19 @@ impl<'stmt> SqliteRow<'stmt> {
                 message: "Cannot get values from a row after advancing to next row".to_string() });
         }
         unsafe {
-            if idx < 0 || idx >= ffi::sqlite3_column_count(self.stmt.stmt) {
-                return Err(SqliteError{ code: ffi::SQLITE_MISUSE,
-                    message: "Invalid column index".to_string() });
-            }
-        }
-        let valid_column_type = unsafe {
-            T::column_has_valid_sqlite_type(self.stmt.stmt, idx)
-        };
-
-        if valid_column_type {
-            Ok(self.get(idx))
-        } else {
-            Err(SqliteError{
-                code: ffi::SQLITE_MISMATCH,
-                message: "Invalid column type".to_string(),
-            })
-        }
-    }
-
-    /// Attempt to get the value of a particular column of the result row.
-    ///
-    /// ## Failure
-    ///
-    /// Returns a `SQLITE_MISUSE`-coded `SqliteError` if `idx` is outside the valid column range
-    /// for this row or if this row is stale.
-    pub fn get_opt<T: FromSql>(&self, idx: c_int) -> SqliteResult<T> {
-        if self.row_idx != self.current_row.get() {
-            return Err(SqliteError{ code: ffi::SQLITE_MISUSE,
-                message: "Cannot get values from a row after advancing to next row".to_string() });
-        }
-        unsafe {
             if idx < 0 || idx >= self.stmt.column_count {
                 return Err(SqliteError{ code: ffi::SQLITE_MISUSE,
                     message: "Invalid column index".to_string() });
             }
-            FromSql::column_result(self.stmt.stmt, idx)
+
+            if T::column_has_valid_sqlite_type(self.stmt.stmt, idx) {
+                FromSql::column_result(self.stmt.stmt, idx)
+            } else {
+                Err(SqliteError{
+                    code: ffi::SQLITE_MISMATCH,
+                    message: "Invalid column type".to_string(),
+                })
+            }
         }
     }
 }
@@ -1226,7 +1203,7 @@ mod test {
 
         assert_eq!(2i32, second.get(0));
 
-        let result = first.get_opt::<i32>(0);
+        let result = first.get_checked::<i32>(0);
         assert!(result.unwrap_err().message.contains("advancing to next row"));
     }
 
