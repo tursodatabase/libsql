@@ -1,9 +1,9 @@
-C Simplifications\sto\sthe\sjson1.c\slogic.
-D 2015-09-21T22:53:16.694
+C Fix\scompilation\sunder\solder\sversions\sof\sMSVC.
+D 2015-09-21T23:49:35.330
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2047811644c5bac91ccdfc2720e49b60965a63a7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 5f0e6b3a39f5c6a5e17ad41d7ea2ac816fb63743
+F Makefile.msc fce864fae74a0805dd93b9c7e90556a3d17e5575
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION ccfc4d1576dbfdeece0a4372a2e6a2e37d3e7975
@@ -1387,7 +1387,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 825ce3201df21c6b9d5c57dcc6726c306df05220
-R 0407e29107979175c5ef95d6530fb773
-U drh
-Z 3c9b1b14e7e53f7b1522a534f080ce63
+P 1646a2bd85f87d03a14fcaec288107f5f6411c6f
+R 551d8f52dc496e765eba216fa325841c
+U mistachkin
+Z 2a24f449d0c791892ffb0b69bdeb0617

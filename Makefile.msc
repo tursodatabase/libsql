@@ -1211,7 +1211,7 @@ FUZZDATA = \
 
 # Extra arguments for including json1 in the build of tools
 #
-JSON1_DEP = $(TOP)\ext\misc\json1.c sqlite3ext.h
+JSON1_DEP = sqlite3ext.h $(TOP)\ext\misc\json1.c
 JSON1_OPT = -DSQLITE_ENABLE_JSON1 -DSQLITE_CORE
 JSON1_SRC = $(TOP)\ext\misc\json1.c
 
@@ -1284,7 +1284,6 @@ mptest:	mptester.exe
 sqlite3.c:	.target_source $(TOP)\tool\mksqlite3c.tcl
 	$(TCLSH_CMD) $(TOP)\tool\mksqlite3c.tcl $(MKSQLITE3C_ARGS)
 	copy tsrc\shell.c .
-	copy tsrc\sqlite3ext.h .
 
 sqlite3-all.c:	sqlite3.c $(TOP)\tool\split-sqlite3c.tcl
 	$(TCLSH_CMD) $(TOP)\tool\split-sqlite3c.tcl
@@ -1591,6 +1590,9 @@ parse.c:	$(TOP)\src\parse.y lemon.exe $(TOP)\addopcodes.awk
 
 sqlite3.h:	$(TOP)\src\sqlite.h.in $(TOP)\manifest.uuid $(TOP)\VERSION
 	$(TCLSH_CMD) $(TOP)\tool\mksqlite3h.tcl $(TOP:\=/) > sqlite3.h
+
+sqlite3ext.h: .target_source
+	copy tsrc\sqlite3ext.h .
 
 mkkeywordhash.exe:	$(TOP)\tool\mkkeywordhash.c
 	$(BCC) $(NO_WARN) -Fe$@ $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS) $(OPTS) \
