@@ -1408,5 +1408,53 @@ mod test {
             assert_eq!(non_sqlite_err, Err(CustomError::SomeError));
         }
 
+        #[test]
+        fn test_query_row_and_then_custom_error() {
+            let db = checked_memory_handle();
+            let sql = "BEGIN;
+                       CREATE TABLE foo(x INTEGER, y TEXT);
+                       INSERT INTO foo VALUES(4, \"hello\");
+                       END;";
+            db.execute_batch(sql).unwrap();
+
+            let query = "SELECT x, y FROM foo ORDER BY x DESC";
+            let results: CustomResult<String> = db
+                .query_row_and_then(query, &[], |row| row.get_checked(1).map_err(CustomError::Sqlite));
+
+            assert_eq!(results.unwrap(), "hello");
+        }
+
+        #[test]
+        fn test_query_row_and_then_custom_error_fails() {
+            let db = checked_memory_handle();
+            let sql = "BEGIN;
+                       CREATE TABLE foo(x INTEGER, y TEXT);
+                       INSERT INTO foo VALUES(4, \"hello\");
+                       END;";
+            db.execute_batch(sql).unwrap();
+
+            let query = "SELECT x, y FROM foo ORDER BY x DESC";
+            let bad_type: CustomResult<f64> = db
+                .query_row_and_then(query, &[], |row| row.get_checked(1).map_err(CustomError::Sqlite));
+
+            assert_eq!(bad_type, Err(CustomError::Sqlite(SqliteError{
+                code: ffi::SQLITE_MISMATCH,
+                message: "Invalid column type".to_owned(),
+            })));
+
+            let bad_idx: CustomResult<String> = db
+                .query_row_and_then(query, &[], |row| row.get_checked(3).map_err(CustomError::Sqlite));
+
+            assert_eq!(bad_idx, Err(CustomError::Sqlite(SqliteError{
+                code: ffi::SQLITE_MISUSE,
+                message: "Invalid column index".to_owned(),
+            })));
+
+            let non_sqlite_err: CustomResult<String> = db
+                .query_row_and_then(query, &[], |_| Err(CustomError::SomeError));
+
+            assert_eq!(non_sqlite_err, Err(CustomError::SomeError));
+        }
+
     }
 }
