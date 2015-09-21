@@ -1003,10 +1003,10 @@ impl<'stmt> SqliteRow<'stmt> {
 mod test {
     extern crate libsqlite3_sys as ffi;
     extern crate tempdir;
-    use super::*;
+    pub use super::*;
     use self::tempdir::TempDir;
-    use std::error::Error as StdError;
-    use std::fmt;
+    pub use std::error::Error as StdError;
+    pub use std::fmt;
 
     // this function is never called, but is still type checked; in
     // particular, calls with specific instantiations will require
@@ -1016,7 +1016,7 @@ mod test {
         ensure_send::<SqliteConnection>();
     }
 
-    fn checked_memory_handle() -> SqliteConnection {
+    pub fn checked_memory_handle() -> SqliteConnection {
         SqliteConnection::open_in_memory().unwrap()
     }
 
@@ -1177,184 +1177,6 @@ mod test {
     }
 
     #[test]
-    fn test_query_and_then() {
-        let db = checked_memory_handle();
-        let sql = "BEGIN;
-                   CREATE TABLE foo(x INTEGER, y TEXT);
-                   INSERT INTO foo VALUES(4, \"hello\");
-                   INSERT INTO foo VALUES(3, \", \");
-                   INSERT INTO foo VALUES(2, \"world\");
-                   INSERT INTO foo VALUES(1, \"!\");
-                   END;";
-        db.execute_batch(sql).unwrap();
-
-        let mut query = db.prepare("SELECT x, y FROM foo ORDER BY x DESC").unwrap();
-        let results: SqliteResult<Vec<String>> = query
-            .query_and_then(&[], |row| row.get_checked(1))
-            .unwrap()
-            .collect();
-
-        assert_eq!(results.unwrap().concat(), "hello, world!");
-    }
-
-    #[test]
-    fn test_query_and_then_fails() {
-        let db = checked_memory_handle();
-        let sql = "BEGIN;
-                   CREATE TABLE foo(x INTEGER, y TEXT);
-                   INSERT INTO foo VALUES(4, \"hello\");
-                   INSERT INTO foo VALUES(3, \", \");
-                   INSERT INTO foo VALUES(2, \"world\");
-                   INSERT INTO foo VALUES(1, \"!\");
-                   END;";
-        db.execute_batch(sql).unwrap();
-
-        let mut query = db.prepare("SELECT x, y FROM foo ORDER BY x DESC").unwrap();
-        let bad_type: SqliteResult<Vec<f64>> = query
-            .query_and_then(&[], |row| row.get_checked(1))
-            .unwrap()
-            .collect();
-
-        assert_eq!(bad_type, Err(SqliteError{
-            code: ffi::SQLITE_MISMATCH,
-            message: "Invalid column type".to_owned(),
-        }));
-
-        let bad_idx: SqliteResult<Vec<String>> = query
-            .query_and_then(&[], |row| row.get_checked(3))
-            .unwrap()
-            .collect();
-
-        assert_eq!(bad_idx, Err(SqliteError{
-            code: ffi::SQLITE_MISUSE,
-            message: "Invalid column index".to_owned(),
-        }));
-    }
-
-    #[test]
-    fn test_query_and_then_custom_error() {
-        #[derive(Debug)]
-        enum CustomError {
-            Sqlite(SqliteError),
-        };
-
-        impl fmt::Display for CustomError {
-            fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-                match *self {
-                    CustomError::Sqlite(ref se) => write!(f, "{}: {}", self.description(), se),
-                }
-            }
-        }
-
-        impl StdError for CustomError {
-            fn description(&self) -> &str { "my custom error" }
-            fn cause(&self) -> Option<&StdError> {
-                match *self {
-                    CustomError::Sqlite(ref se) => Some(se),
-                }
-            }
-        }
-
-        impl From<SqliteError> for CustomError {
-            fn from(se: SqliteError) -> CustomError {
-                CustomError::Sqlite(se)
-            }
-        }
-        type CustomResult<T> = Result<T, CustomError>;
-
-        let db = checked_memory_handle();
-        let sql = "BEGIN;
-                   CREATE TABLE foo(x INTEGER, y TEXT);
-                   INSERT INTO foo VALUES(4, \"hello\");
-                   INSERT INTO foo VALUES(3, \", \");
-                   INSERT INTO foo VALUES(2, \"world\");
-                   INSERT INTO foo VALUES(1, \"!\");
-                   END;";
-        db.execute_batch(sql).unwrap();
-
-        let mut query = db.prepare("SELECT x, y FROM foo ORDER BY x DESC").unwrap();
-        let results: CustomResult<Vec<String>> = query
-            .query_and_then(&[], |row| row.get_checked(1).map_err(CustomError::Sqlite))
-            .unwrap()
-            .collect();
-
-        assert_eq!(results.unwrap().concat(), "hello, world!");
-    }
-
-    #[test]
-    fn test_query_and_then_custom_error_fails() {
-        #[derive(Debug, PartialEq)]
-        enum CustomError {
-            SomeError,
-            Sqlite(SqliteError),
-        };
-
-        impl fmt::Display for CustomError {
-            fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-                match *self {
-                    CustomError::SomeError      => write!(f, "{}", self.description()),
-                    CustomError::Sqlite(ref se) => write!(f, "{}: {}", self.description(), se),
-                }
-            }
-        }
-
-        impl StdError for CustomError {
-            fn description(&self) -> &str { "my custom error" }
-            fn cause(&self) -> Option<&StdError> {
-                match *self {
-                    CustomError::SomeError      => None,
-                    CustomError::Sqlite(ref se) => Some(se),
-                }
-            }
-        }
-
-        impl From<SqliteError> for CustomError {
-            fn from(se: SqliteError) -> CustomError {
-                CustomError::Sqlite(se)
-            }
-        }
-        type CustomResult<T> = Result<T, CustomError>;
-
-        let db = checked_memory_handle();
-        let sql = "BEGIN;
-                   CREATE TABLE foo(x INTEGER, y TEXT);
-                   INSERT INTO foo VALUES(4, \"hello\");
-                   INSERT INTO foo VALUES(3, \", \");
-                   INSERT INTO foo VALUES(2, \"world\");
-                   INSERT INTO foo VALUES(1, \"!\");
-                   END;";
-        db.execute_batch(sql).unwrap();
-
-        let mut query = db.prepare("SELECT x, y FROM foo ORDER BY x DESC").unwrap();
-        let bad_type: CustomResult<Vec<f64>> = query
-            .query_and_then(&[], |row| row.get_checked(1).map_err(CustomError::Sqlite))
-            .unwrap()
-            .collect();
-
-        assert_eq!(bad_type, Err(CustomError::Sqlite(SqliteError{
-            code: ffi::SQLITE_MISMATCH,
-            message: "Invalid column type".to_owned(),
-        })));
-
-        let bad_idx: CustomResult<Vec<String>> = query
-            .query_and_then(&[], |row| row.get_checked(3).map_err(CustomError::Sqlite))
-            .unwrap()
-            .collect();
-
-        assert_eq!(bad_idx, Err(CustomError::Sqlite(SqliteError{
-            code: ffi::SQLITE_MISUSE,
-            message: "Invalid column index".to_owned(),
-        })));
-
-        let non_sqlite_err: CustomResult<Vec<String>> = query
-            .query_and_then(&[], |_| Err(CustomError::SomeError))
-            .unwrap()
-            .collect();
-
-        assert_eq!(non_sqlite_err, Err(CustomError::SomeError));
-    }
-
-    #[test]
     fn test_query_row() {
         let db = checked_memory_handle();
         let sql = "BEGIN;
@@ -1430,5 +1252,161 @@ mod test {
         let stmt = db.prepare(query).unwrap();
 
         assert!(format!("{:?}", stmt).contains(query));
+    }
+
+    mod query_and_then_tests {
+        extern crate libsqlite3_sys as ffi;
+        use super::*;
+
+        #[derive(Debug, PartialEq)]
+        enum CustomError {
+            SomeError,
+            Sqlite(SqliteError),
+        }
+
+        impl fmt::Display for CustomError {
+            fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+                match *self {
+                    CustomError::SomeError      => write!(f, "{}", self.description()),
+                    CustomError::Sqlite(ref se) => write!(f, "{}: {}", self.description(), se),
+                }
+            }
+        }
+
+        impl StdError for CustomError {
+            fn description(&self) -> &str { "my custom error" }
+            fn cause(&self) -> Option<&StdError> {
+                match *self {
+                    CustomError::SomeError      => None,
+                    CustomError::Sqlite(ref se) => Some(se),
+                }
+            }
+        }
+
+        impl From<SqliteError> for CustomError {
+            fn from(se: SqliteError) -> CustomError {
+                CustomError::Sqlite(se)
+            }
+        }
+
+        type CustomResult<T> = Result<T, CustomError>;
+
+        #[test]
+        fn test_query_and_then() {
+            let db = checked_memory_handle();
+            let sql = "BEGIN;
+                       CREATE TABLE foo(x INTEGER, y TEXT);
+                       INSERT INTO foo VALUES(4, \"hello\");
+                       INSERT INTO foo VALUES(3, \", \");
+                       INSERT INTO foo VALUES(2, \"world\");
+                       INSERT INTO foo VALUES(1, \"!\");
+                       END;";
+            db.execute_batch(sql).unwrap();
+
+            let mut query = db.prepare("SELECT x, y FROM foo ORDER BY x DESC").unwrap();
+            let results: SqliteResult<Vec<String>> = query
+                .query_and_then(&[], |row| row.get_checked(1))
+                .unwrap()
+                .collect();
+
+            assert_eq!(results.unwrap().concat(), "hello, world!");
+        }
+
+        #[test]
+        fn test_query_and_then_fails() {
+            let db = checked_memory_handle();
+            let sql = "BEGIN;
+                       CREATE TABLE foo(x INTEGER, y TEXT);
+                       INSERT INTO foo VALUES(4, \"hello\");
+                       INSERT INTO foo VALUES(3, \", \");
+                       INSERT INTO foo VALUES(2, \"world\");
+                       INSERT INTO foo VALUES(1, \"!\");
+                       END;";
+            db.execute_batch(sql).unwrap();
+
+            let mut query = db.prepare("SELECT x, y FROM foo ORDER BY x DESC").unwrap();
+            let bad_type: SqliteResult<Vec<f64>> = query
+                .query_and_then(&[], |row| row.get_checked(1))
+                .unwrap()
+                .collect();
+
+            assert_eq!(bad_type, Err(SqliteError{
+                code: ffi::SQLITE_MISMATCH,
+                message: "Invalid column type".to_owned(),
+            }));
+
+            let bad_idx: SqliteResult<Vec<String>> = query
+                .query_and_then(&[], |row| row.get_checked(3))
+                .unwrap()
+                .collect();
+
+            assert_eq!(bad_idx, Err(SqliteError{
+                code: ffi::SQLITE_MISUSE,
+                message: "Invalid column index".to_owned(),
+            }));
+        }
+
+        #[test]
+        fn test_query_and_then_custom_error() {
+            let db = checked_memory_handle();
+            let sql = "BEGIN;
+                       CREATE TABLE foo(x INTEGER, y TEXT);
+                       INSERT INTO foo VALUES(4, \"hello\");
+                       INSERT INTO foo VALUES(3, \", \");
+                       INSERT INTO foo VALUES(2, \"world\");
+                       INSERT INTO foo VALUES(1, \"!\");
+                       END;";
+            db.execute_batch(sql).unwrap();
+
+            let mut query = db.prepare("SELECT x, y FROM foo ORDER BY x DESC").unwrap();
+            let results: CustomResult<Vec<String>> = query
+                .query_and_then(&[], |row| row.get_checked(1).map_err(CustomError::Sqlite))
+                .unwrap()
+                .collect();
+
+            assert_eq!(results.unwrap().concat(), "hello, world!");
+        }
+
+        #[test]
+        fn test_query_and_then_custom_error_fails() {
+            let db = checked_memory_handle();
+            let sql = "BEGIN;
+                       CREATE TABLE foo(x INTEGER, y TEXT);
+                       INSERT INTO foo VALUES(4, \"hello\");
+                       INSERT INTO foo VALUES(3, \", \");
+                       INSERT INTO foo VALUES(2, \"world\");
+                       INSERT INTO foo VALUES(1, \"!\");
+                       END;";
+            db.execute_batch(sql).unwrap();
+
+            let mut query = db.prepare("SELECT x, y FROM foo ORDER BY x DESC").unwrap();
+            let bad_type: CustomResult<Vec<f64>> = query
+                .query_and_then(&[], |row| row.get_checked(1).map_err(CustomError::Sqlite))
+                .unwrap()
+                .collect();
+
+            assert_eq!(bad_type, Err(CustomError::Sqlite(SqliteError{
+                code: ffi::SQLITE_MISMATCH,
+                message: "Invalid column type".to_owned(),
+            })));
+
+            let bad_idx: CustomResult<Vec<String>> = query
+                .query_and_then(&[], |row| row.get_checked(3).map_err(CustomError::Sqlite))
+                .unwrap()
+                .collect();
+
+            assert_eq!(bad_idx, Err(CustomError::Sqlite(SqliteError{
+                code: ffi::SQLITE_MISUSE,
+                message: "Invalid column index".to_owned(),
+            })));
+
+            let non_sqlite_err: CustomResult<Vec<String>> = query
+                .query_and_then(&[], |_| Err(CustomError::SomeError))
+                .unwrap()
+                .collect();
+
+            assert_eq!(non_sqlite_err, Err(CustomError::SomeError));
+        }
+
     }
 }
