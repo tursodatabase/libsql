@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\sthe\s--help\sscreen\sof\sthe\sfuzzcheck\sutility.
-D 2015-09-22T17:46:11.412
+C Add\sthe\s--export-sql\sand\s--export-db\soptions\sto\sthe\sfuzzcheck\sutility\sprogram.
+D 2015-09-22T18:51:17.054
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2047811644c5bac91ccdfc2720e49b60965a63a7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -749,7 +749,7 @@ F test/fuzz2.test 76dc35b32b6d6f965259508508abce75a6c4d7e1
 F test/fuzz3.test 53fabcd5f0f430f8b221282f6c12c4d0903c21eb
 F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
 F test/fuzz_malloc.test 328f70aaca63adf29b4c6f06505ed0cf57ca7c26
-F test/fuzzcheck.c ae800b0288688e403b9d41ae6666b49a5b4c174a
+F test/fuzzcheck.c b8eb7ee40f6d28548a0b028e0676293522f3427f
 F test/fuzzdata1.db 7ee3227bad0e7ccdeb08a9e6822916777073c664
 F test/fuzzdata2.db f03a420d3b822cc82e4f894ca957618fbe9c4973
 F test/fuzzdata3.db 1d6044c33a114007f02b6e6846f1fa232f607bfd
@@ -1387,7 +1387,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fcb1e327a64134e5ac539ec3d52733422d3061fd
-R f5e3ce74d9e1f17ec1b801d8a8e1e8b9
+P b6ae61fe3b3de3aa296b3e56cd2ec425a5141c73
+R 67147fe50bd6bcd304574882b2915749
 U drh
-Z b2d72598222b1fd845b80ebe0256ddec
+Z f2fe8ea148ad21aa4f5e236ec8c81968
