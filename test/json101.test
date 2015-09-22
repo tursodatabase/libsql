@@ -74,6 +74,9 @@ do_execsql_test json1-3.3 {
 do_execsql_test json1-3.4 {
   SELECT json_type(json_set('{"a":1,"b":2}','$.b',json('{"x":3,"y":4}')),'$.b');
 } {object}
+do_execsql_test json1-3.5 {
+  SELECT fullkey, atom, '|' FROM json_tree(json_set('{}','$.x',123,'$.x',456));
+} {{$} {} | {$.x} 456 |}
 
 # Per rfc7159, any JSON value is allowed at the top level, and whitespace
 # is permitting before and/or after that value.

@@ -807,6 +807,20 @@ static int jsonParseFindParents(JsonParse *pParse){
   return SQLITE_OK;
 }
 
+/*
+** Compare the OBJECT label at pNode against zKey,nKey.  Return true on
+** a match.
+*/
+static int jsonLabelCompare(JsonNode *pNode, const char *zKey, int nKey){
+  if( pNode->jnFlags & JNODE_RAW ){
+    if( pNode->n!=nKey ) return 0;
+    return strncmp(pNode->u.zJContent, zKey, nKey)==0;
+  }else{
+    if( pNode->n!=nKey+2 ) return 0;
+    return strncmp(pNode->u.zJContent+1, zKey, nKey)==0;
+  }
+}
+
 /* forward declaration */
 static JsonNode *jsonLookupAppend(JsonParse*,const char*,int*,const char**);
 
@@ -855,9 +869,7 @@ static JsonNode *jsonLookupStep(
     j = 1;
     for(;;){
       while( j<=pRoot->n ){
-        if( pRoot[j].n==nKey+2
-         && strncmp(&pRoot[j].u.zJContent[1],zKey,nKey)==0
-        ){
+        if( jsonLabelCompare(pRoot+j, zKey, nKey) ){
           return jsonLookupStep(pParse, iRoot+j+1, &zPath[i], pApnd, pzErr);
         }
         j++;
