@@ -763,7 +763,7 @@ static void showHelp(void){
 "  --rebuild             Rebuild and vacuum the database file\n"
 "  --result-trace        Show the results of each SQL command\n"
 "  --sqlid N             Use only SQL where sqlid=N\n"
-"  --timeline N          Abort if any single test case needs more than N seconds\n"
+"  --timeout N           Abort if any single test case needs more than N seconds\n"
 "  -v                    Increased output\n"
 "  --verbose             Increased output\n"
   );
