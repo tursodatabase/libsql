@@ -652,20 +652,11 @@ impl<'conn> SqliteStatement<'conn> {
     /// }
     /// ```
     pub fn execute(&mut self, params: &[&ToSql]) -> SqliteResult<c_int> {
-        self.reset_if_needed();
-
         unsafe {
-            assert!(params.len() as c_int == ffi::sqlite3_bind_parameter_count(self.stmt),
-                    "incorrect number of parameters to execute(): expected {}, got {}",
-                    ffi::sqlite3_bind_parameter_count(self.stmt),
-                    params.len());
+            try!(self.bind_parameters(params));
 
-            for (i, p) in params.iter().enumerate() {
-                try!(self.conn.decode_result(p.bind_parameter(self.stmt, (i + 1) as c_int)));
-            }
-
-            self.needs_reset = true;
             let r = ffi::sqlite3_step(self.stmt);
+            ffi::sqlite3_reset(self.stmt);
             match r {
                 ffi::SQLITE_DONE => {
                     if self.column_count != 0 {
@@ -708,6 +699,7 @@ impl<'conn> SqliteStatement<'conn> {
             try!(self.bind_parameters(params));
         }
 
+        self.needs_reset = true;
         Ok(SqliteRows::new(self))
     }
 
@@ -764,8 +756,6 @@ impl<'conn> SqliteStatement<'conn> {
         for (i, p) in params.iter().enumerate() {
             try!(self.conn.decode_result(p.bind_parameter(self.stmt, (i + 1) as c_int)));
         }
-
-        self.needs_reset = true;
 
         Ok(())
     }

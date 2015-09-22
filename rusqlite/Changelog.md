@@ -1,3 +1,8 @@
+# Version 0.3.1 (2015-09-22)
+
+* Reset underlying SQLite statements as soon as possible after executing, as recommended by
+  http://www.sqlite.org/cvstrac/wiki?p=ScrollingCursor.
+
 # Version 0.3.0 (2015-09-21)
 
 * Removes `get_opt`. Use `get_checked` instead.
