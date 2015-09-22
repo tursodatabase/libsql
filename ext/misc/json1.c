@@ -156,11 +156,9 @@ static void jsonReset(JsonString *p){
 /* Report an out-of-memory (OOM) condition 
 */
 static void jsonOom(JsonString *p){
-  if( !p->bErr ){
-    p->bErr = 1;
-    sqlite3_result_error_nomem(p->pCtx);
-    jsonReset(p);
-  }
+  p->bErr = 1;
+  sqlite3_result_error_nomem(p->pCtx);
+  jsonReset(p);
 }
 
 /* Enlarge pJson->zBuf so that it can hold at least N more bytes.
@@ -567,10 +565,6 @@ static int jsonParseAddNode(
     JsonNode *pNew;
     if( pParse->oom ) return -1;
     nNew = pParse->nAlloc*2 + 10;
-    if( nNew<=pParse->nNode ){
-      pParse->oom = 1;
-      return -1;
-    }
     pNew = sqlite3_realloc(pParse->aNode, sizeof(JsonNode)*nNew);
     if( pNew==0 ){
       pParse->oom = 1;
@@ -899,16 +893,16 @@ static JsonNode *jsonLookupStep(
   }else if( zPath[0]=='[' && safe_isdigit(zPath[1]) ){
     if( pRoot->eType!=JSON_ARRAY ) return 0;
     i = 0;
-    zPath++;
-    while( safe_isdigit(zPath[0]) ){
-      i = i*10 + zPath[0] - '0';
-      zPath++;
+    j = 1;
+    while( safe_isdigit(zPath[j]) ){
+      i = i*10 + zPath[j] - '0';
+      j++;
     }
-    if( zPath[0]!=']' ){
+    if( zPath[j]!=']' ){
       *pzErr = zPath;
       return 0;
     }
-    zPath++;
+    zPath += j + 1;
     j = 1;
     for(;;){
       while( j<=pRoot->n && (i>0 || (pRoot[j].jnFlags & JNODE_REMOVE)!=0) ){
@@ -936,7 +930,7 @@ static JsonNode *jsonLookupStep(
       }
       return pNode;
     }
-  }else if( zPath[0]!=0 ){
+  }else{
     *pzErr = zPath;
   }
   return 0;
@@ -1696,7 +1690,7 @@ static int jsonEachColumn(
       sqlite3_result_text(ctx, zRoot, -1, SQLITE_STATIC);
       break;
     }
-    default: {
+    case JEACH_JSON: {
       assert( i==JEACH_JSON );
       sqlite3_result_text(ctx, p->sParse.zJson, -1, SQLITE_STATIC);
       break;
@@ -1820,6 +1814,7 @@ static int jsonEachFilter(
       pNode->u.iKey = 0;
       p->iEnd = p->i + pNode->n + 1;
       if( p->bRecursive ){
+        p->eType = p->sParse.aNode[p->sParse.aUp[p->i]].eType;
         if( p->i>0 && (p->sParse.aNode[p->i-1].jnFlags & JNODE_LABEL)!=0 ){
           p->i--;
         }
