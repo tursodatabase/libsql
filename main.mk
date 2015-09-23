@@ -448,7 +448,8 @@ TESTPROGS = \
 FUZZDATA = \
   $(TOP)/test/fuzzdata1.db \
   $(TOP)/test/fuzzdata2.db \
-  $(TOP)/test/fuzzdata3.db
+  $(TOP)/test/fuzzdata3.db \
+  $(TOP)/test/fuzzdata4.db
 
 # Extra arguments for including json1 in the build of tools
 #
