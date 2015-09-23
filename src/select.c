@@ -4267,9 +4267,12 @@ static int selectExpander(Walker *pWalker, Select *p){
       pTab->nRef++;
 #if !defined(SQLITE_OMIT_VIEW) || !defined (SQLITE_OMIT_VIRTUALTABLE)
       if( pTab->pSelect || IsVirtual(pTab) ){
-        /* We reach here if the named table is a really a view */
         if( sqlite3ViewGetColumnNames(pParse, pTab) ) return WRC_Abort;
         assert( pFrom->pSelect==0 );
+        if( pFrom->fg.isTabFunc && !IsVirtual(pTab) ){
+          sqlite3ErrorMsg(pParse, "'%s' is not a function", pTab->zName);
+          return WRC_Abort;
+        }
         pFrom->pSelect = sqlite3SelectDup(db, pTab->pSelect, 0);
         sqlite3SelectSetName(pFrom->pSelect, pTab->zName);
         sqlite3WalkSelect(pWalker, pFrom->pSelect);

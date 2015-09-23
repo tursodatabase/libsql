@@ -1657,7 +1657,12 @@ static void fts5SegIterReverseNewPage(Fts5Index *p, Fts5SegIter *pIter){
           pIter->pSeg->iSegid, pIter->iLeafPgno
     ));
     if( pNew ){
-      if( pIter->iLeafPgno==pIter->iTermLeafPgno ){
+      /* iTermLeafOffset may be equal to szLeaf if the term is the last
+      ** thing on the page - i.e. the first rowid is on the following page.
+      ** In this case leaf pIter->pLeaf==0, this iterator is at EOF. */
+      if( pIter->iLeafPgno==pIter->iTermLeafPgno 
+       && pIter->iTermLeafOffset<pNew->szLeaf 
+      ){
         pIter->pLeaf = pNew;
         pIter->iLeafOffset = pIter->iTermLeafOffset;
       }else{
@@ -4849,7 +4854,6 @@ static void fts5IndexIntegrityCheckEmpty(
       if( i>=iNoRowid && 0!=fts5LeafFirstRowidOff(pLeaf) ) p->rc = FTS5_CORRUPT;
     }
     fts5DataRelease(pLeaf);
-    if( p->rc ) break;
   }
 }
 
@@ -4916,7 +4920,7 @@ static void fts5IndexIntegrityCheckSegment(
   if( pSeg->pgnoFirst==0 ) return;
 
   fts5IndexPrepareStmt(p, &pStmt, sqlite3_mprintf(
-      "SELECT segid, term, (pgno>>1), (pgno & 1) FROM '%q'.'%q_idx' WHERE segid=%d",
+      "SELECT segid, term, (pgno>>1), (pgno&1) FROM %Q.'%q_idx' WHERE segid=%d",
       pConfig->zDb, pConfig->zName, pSeg->iSegid
   ));
 

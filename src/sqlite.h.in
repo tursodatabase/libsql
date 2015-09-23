@@ -3630,7 +3630,7 @@ const char *sqlite3_bind_parameter_name(sqlite3_stmt*, int);
 **
 ** See also: [sqlite3_bind_blob|sqlite3_bind()],
 ** [sqlite3_bind_parameter_count()], and
-** [sqlite3_bind_parameter_index()].
+** [sqlite3_bind_parameter_name()].
 */
 int sqlite3_bind_parameter_index(sqlite3_stmt*, const char *zName);
 

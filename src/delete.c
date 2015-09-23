@@ -361,7 +361,11 @@ void sqlite3DeleteFrom(
   ** It is easier just to erase the whole table. Prior to version 3.6.5,
   ** this optimization caused the row change count (the value returned by 
   ** API function sqlite3_count_changes) to be set incorrectly.  */
-  if( rcauth==SQLITE_OK && pWhere==0 && !bComplex && !IsVirtual(pTab) ){
+  if( rcauth==SQLITE_OK
+   && pWhere==0
+   && !bComplex
+   && !IsVirtual(pTab)
+  ){
     assert( !isView );
     sqlite3TableLock(pParse, iDb, pTab->tnum, 1, pTab->zName);
     if( HasRowid(pTab) ){
@@ -408,6 +412,7 @@ void sqlite3DeleteFrom(
     if( pWInfo==0 ) goto delete_from_cleanup;
     eOnePass = sqlite3WhereOkOnePass(pWInfo, aiCurOnePass);
     assert( IsVirtual(pTab)==0 || eOnePass==ONEPASS_OFF );
+    assert( IsVirtual(pTab) || bComplex || eOnePass!=ONEPASS_OFF );
   
     /* Keep track of the number of rows to be deleted */
     if( db->flags & SQLITE_CountRows ){

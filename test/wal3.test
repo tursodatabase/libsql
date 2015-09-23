@@ -34,10 +34,6 @@ db func a_string a_string
 # of test cases tests that nothing appears to go wrong when this is
 # done.
 #
-set ans 4056
-if {[info exists G(perm:name)] && $G(perm:name)=="memsubsys1"} {
-  set ans 4251
-}
 do_test wal3-1.0 {
   execsql {
     PRAGMA cache_size = 2000;
@@ -64,8 +60,12 @@ do_test wal3-1.0 {
     COMMIT;
     PRAGMA cache_size = 10;
   }
-  wal_frame_count test.db-wal 1024
-} $ans
+  set x [wal_frame_count test.db-wal 1024]
+  if {$::G(perm:name)=="memsubsys1"} {
+    if {$x==4251 || $x==4290} {set x 4056}
+  }
+  set x
+} 4056
 
 for {set i 1} {$i < 50} {incr i} {
 

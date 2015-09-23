@@ -384,7 +384,7 @@ struct Fts5ExtensionApi {
 **            FTS index corresponding to both forms of the first token.
 **   </ol>
 **
-**   Whether is is parsing document or query text, any call to xToken that
+**   Whether it is parsing document or query text, any call to xToken that
 **   specifies a <i>tflags</i> argument with the FTS5_TOKEN_COLOCATED bit
 **   is considered to supply a synonym for the previous token. For example,
 **   when parsing the document "I won first place", a tokenizer that supports
