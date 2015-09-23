@@ -606,7 +606,7 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
       while( safe_isspace(pParse->zJson[j]) ){ j++; }
       x = jsonParseValue(pParse, j);
       if( x<0 ){
-        if( x==(-2) ) return j+1;
+        if( x==(-2) && pParse->nNode==(u32)iThis+1 ) return j+1;
         return -1;
       }
       if( pParse->oom ) return -1;
@@ -636,7 +636,7 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
       while( safe_isspace(pParse->zJson[j]) ){ j++; }
       x = jsonParseValue(pParse, j);
       if( x<0 ){
-        if( x==(-3) ) return j+1;
+        if( x==(-3) && pParse->nNode==(u32)iThis+1 ) return j+1;
         return -1;
       }
       j = x;

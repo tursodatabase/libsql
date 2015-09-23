@@ -305,6 +305,18 @@ do_execsql_test json-5.8 {
    WHERE jx.value<>jx.atom AND type NOT IN ('array','object');
 } {}
 
+do_execsql_test json-6.1 {
+  SELECT json_valid('{"a":55,"b":72,}');
+} {0}
+do_execsql_test json-6.2 {
+  SELECT json_valid('{"a":55,"b":72}');
+} {1}
+do_execsql_test json-6.3 {
+  SELECT json_valid('["a",55,"b",72,]');
+} {0}
+do_execsql_test json-6.4 {
+  SELECT json_valid('["a",55,"b",72]');
+} {1}
 
 
 finish_test
