@@ -1,5 +1,5 @@
-C Capture\sAFL-generated\sfuzz\stests\sfor\sjson1.c\sinto\sthe\stest/fuzzdata4.db\sfile.
-D 2015-09-23T11:59:50.725
+C Take\scare\sthat\sthe\snumber\sof\sreserved\sbits\sper\spage\sis\sconsistent\sbetween\s\nthe\ssource\sand\sdestination\sdatabases\swhen\sdoing\sthe\sback-copy\son\sa\sVACUUM.
+D 2015-09-23T19:17:23.388
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1afa6fb2de2bddd50e0ddae8166c2ee9d69b301
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -279,7 +279,7 @@ F src/alter.c 4911e1f18fc11b60edbc6410643e938762969a6a
 F src/analyze.c 4c308880cf53c558070cb8513bdff4ffb1a38a77
 F src/attach.c e944d0052b577703b9b83aac1638452ff42a8395
 F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
-F src/backup.c 4d9134dc988a87838c06056c89c0e8c4700a0452
+F src/backup.c c3a9c4209439b806c44cf30daf466955727bf46c
 F src/bitvec.c d1f21d7d91690747881f03940584f4cc548c9d3d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
 F src/btree.c 164583151135a3764672c2c25aa8e4fa06bdb12b
@@ -327,8 +327,8 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c 76f493ed71c4154338049dee1bf6e47f69c74a55
 F src/os_win.c 40b3af7a47eb1107d0d69e592bec345a3b7b798a
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
-F src/pager.c 4784012f80b2197c61ff6eaf4f5c7026d93253fd
-F src/pager.h 6d435f563b3f7fcae4b84433b76a6ac2730036e2
+F src/pager.c 2fbeeba28f4e6d08a15bc106f36c43346a81f09e
+F src/pager.h ac213f8143ebfee6a8bfb91cf4ca02c9a83343c5
 F src/parse.y f599aa5e871a493330d567ced93de696f61f48f7
 F src/pcache.c 24be750c79272e0ca7b6e007bc94999700f3e5ef
 F src/pcache.h 9968603796240cdf83da7e7bef76edf90619cea9
@@ -1388,7 +1388,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7c7a3f3e9bc2f7a7334d8d6eae183d83f22097be
-R 64646de8f025fcbfbac14050e58f6d8a
+P 10a214fdb3c13b25e0bdd15c975c21c8890c47ee
+R 2b1245a60b251810f1e390834307b519
 U drh
-Z 8d3625ca1ecc6df3eff60cf48fea0eb8
+Z 954cd22d559279a8020d621e1b476fcf
