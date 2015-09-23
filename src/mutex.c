@@ -27,36 +27,10 @@ static SQLITE_WSD int mutexIsInit = 0;
 
 #ifndef SQLITE_MUTEX_OMIT
 /*
-** This structure is for use by mutexIsInvalid() only.  It represents an
-** invalid mutex implementation (i.e. one where all the function pointers
-** are null).
-*/
-static const sqlite3_mutex_methods mutexNullMethods = {
-  0, /* xMutexInit */
-  0, /* xMutexEnd */
-  0, /* xMutexAlloc */
-  0, /* xMutexFree */
-  0, /* xMutexEnter */
-  0, /* xMutexTry */
-  0, /* xMutexLeave */
-  0, /* xMutexHeld */
-  0  /* xMutexNotheld */
-};
-
-/*
-** Returns non-zero if the currently configured mutex implemention is
-** invalid (i.e. all of its function pointers are null).
-*/
-static int mutexIsInvalid(void){
-  return memcmp(&sqlite3GlobalConfig.mutex, &mutexNullMethods,
-                sizeof(sqlite3_mutex_methods))==0;
-}
-
-/*
 ** Copies a mutex implementation.  Both arguments must point to valid
 ** memory.
 */
-static void mutexCopy(
+void sqlite3MutexCopy(
   sqlite3_mutex_methods *pTo,
   sqlite3_mutex_methods const *pFrom
 ){
@@ -75,31 +49,28 @@ static void mutexCopy(
 ** Initialize the mutex system.
 */
 int sqlite3MutexInit(void){ 
-  static int initPending = 0;
   int rc;
-  if( sqlite3CompareAndSwap((void * volatile *)&sqlite3GlobalConfig.pMutex,
-                   0, &sqlite3GlobalConfig.mutex)==0 || mutexIsInvalid() ){
-    /* If the mutex implementation pointer has not been set, then the user
-    ** did not install a mutex implementation via sqlite3_config() prior to
-    ** sqlite3_initialize() being called.  This block copies the pointers
-    ** for the default implementation into the sqlite3GlobalConfig structure.
+
+  sqlite3MemoryBarrier();
+  if( sqlite3CompareAndSwap(
+                   (void * volatile *)&sqlite3GlobalConfig.mutex.xMutexAlloc,
+                   0, sqlite3GlobalConfig.mutex.xMutexAlloc)==0 ){
+    /* If the xMutexAlloc method has not been set, then the user did not
+    ** install a mutex implementation via sqlite3_config() prior to 
+    ** sqlite3_initialize() being called. This block copies pointers to
+    ** the default implementation into the sqlite3GlobalConfig structure.
     */
     sqlite3_mutex_methods const *pFrom;
-
     if( sqlite3GlobalConfig.bCoreMutex ){
       pFrom = sqlite3DefaultMutex();
     }else{
       pFrom = sqlite3NoopMutex();
     }
-    mutexCopy(&sqlite3GlobalConfig.mutex, pFrom);
+    sqlite3MutexCopy(&sqlite3GlobalConfig.mutex, pFrom);
     sqlite3MemoryBarrier();
   }
-  if( !initPending ){
-    assert( sqlite3GlobalConfig.mutex.xMutexInit );
-    initPending = 1;
-    rc = sqlite3GlobalConfig.mutex.xMutexInit();
-    initPending = 0;
-  }
+  assert( sqlite3GlobalConfig.mutex.xMutexInit );
+  rc = sqlite3GlobalConfig.mutex.xMutexInit();
 
 #ifdef SQLITE_DEBUG
   GLOBAL(int, mutexIsInit) = 1;

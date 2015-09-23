@@ -171,13 +171,7 @@ int sqlite3_initialize(void){
   */
   MUTEX_LOGIC( pMaster = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER); )
   sqlite3_mutex_enter(pMaster);
-  if( sqlite3GlobalConfig.isInit ){
-    assert( sqlite3GlobalConfig.isMutexInit );
-    assert( sqlite3GlobalConfig.isMallocInit );
-    sqlite3_mutex_leave(pMaster);
-    return SQLITE_OK;
-  }
-  sqlite3GlobalConfig.isMutexInit = 1; /* possibly redundant */
+  sqlite3GlobalConfig.isMutexInit = 1;
   if( !sqlite3GlobalConfig.isMallocInit ){
     rc = sqlite3MallocInit();
   }
@@ -335,17 +329,6 @@ int sqlite3_shutdown(void){
     sqlite3GlobalConfig.isMutexInit = 0;
   }
 
-  /*
-  ** Force the state of the mutex subsystem to be completely reset now, even
-  ** if the configured xMutexEnd(), if any, failed.  This is not thread-safe.
-  ** This is necessary even if the xMutexInit() was never called, due to the
-  ** possiblity of this state being changed via SQLITE_CONFIG_MUTEX.  After
-  ** this point, the application must enable any custom mutex implementation
-  ** again via SQLITE_CONFIG_MUTEX, if necessary.
-  */
-  sqlite3GlobalConfig.pMutex = 0;
-  memset(&sqlite3GlobalConfig.mutex, 0, sizeof(sqlite3_mutex_methods));
-
   return SQLITE_OK;
 }
 
@@ -401,22 +384,19 @@ int sqlite3_config(int op, ...){
 #endif
 #if defined(SQLITE_THREADSAFE) && SQLITE_THREADSAFE>0 /* IMP: R-63666-48755 */
     case SQLITE_CONFIG_MUTEX: {
-      /* Atomically compare-and-swap the mutex implementation pointer to
-       * help prevent a race condition with sqlite3MutexInit(). */
-      if( sqlite3CompareAndSwap((void * volatile *)&sqlite3GlobalConfig.pMutex,
-                                0, &sqlite3GlobalConfig.mutex)==0 ){
-        /* Specify an alternative mutex implementation */
-        sqlite3GlobalConfig.mutex = *va_arg(ap, sqlite3_mutex_methods*);
-      }else{
-        rc = SQLITE_ERROR;
-      }
+      /* Specify an alternative mutex implementation */
+      sqlite3MutexCopy(&sqlite3GlobalConfig.mutex,
+                       va_arg(ap, sqlite3_mutex_methods*));
+      sqlite3MemoryBarrier();
       break;
     }
 #endif
 #if defined(SQLITE_THREADSAFE) && SQLITE_THREADSAFE>0 /* IMP: R-14450-37597 */
     case SQLITE_CONFIG_GETMUTEX: {
       /* Retrieve the current mutex implementation */
-      *va_arg(ap, sqlite3_mutex_methods*) = sqlite3GlobalConfig.mutex;
+      sqlite3MemoryBarrier();
+      sqlite3MutexCopy(va_arg(ap, sqlite3_mutex_methods*),
+                       &sqlite3GlobalConfig.mutex);
       break;
     }
 #endif
