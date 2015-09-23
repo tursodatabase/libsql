@@ -413,7 +413,7 @@ static PgHdr1 *pcache1AllocPage(PCache1 *pCache, int benignMalloc){
     assert( pCache->pGroup==&pcache1.grp );
     pcache1LeaveMutex(pCache->pGroup);
 #endif
-    if( benignMalloc ) sqlite3BeginBenignMalloc();
+    if( benignMalloc ){ sqlite3BeginBenignMalloc(); }
 #ifdef SQLITE_PCACHE_SEPARATE_HEADER
     pPg = pcache1Alloc(pCache->szPage);
     p = sqlite3Malloc(sizeof(PgHdr1) + pCache->szExtra);
@@ -426,7 +426,7 @@ static PgHdr1 *pcache1AllocPage(PCache1 *pCache, int benignMalloc){
     pPg = pcache1Alloc(pCache->szAlloc);
     p = (PgHdr1 *)&((u8 *)pPg)[pCache->szPage];
 #endif
-    if( benignMalloc ) sqlite3EndBenignMalloc();
+    if( benignMalloc ){ sqlite3EndBenignMalloc(); }
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
     pcache1EnterMutex(pCache->pGroup);
 #endif

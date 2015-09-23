@@ -643,7 +643,8 @@ do_test sqllimits1-8.8 {
   for {set i 0} {$i <= $SQLITE_LIMIT_COLUMN} {incr i} {
     lappend cols "c$i"
   }
-  catchsql "CREATE VIEW v1 AS SELECT [join $cols ,] FROM t1;"
+  execsql "CREATE VIEW v1 AS SELECT [join $cols ,] FROM t1;"
+  catchsql {SELECT * FROM v1}
 } {1 {too many columns in result set}}
 
 do_test sqllimits1-8.9 {
@@ -652,9 +653,12 @@ do_test sqllimits1-8.9 {
   for {set i 0} {$i < $SQLITE_LIMIT_COLUMN} {incr i} {
     lappend cols "c$i"
   }
+  execsql {DROP VIEW IF EXISTS v1}
   catchsql "CREATE TABLE t2([join $cols ,])"
   catchsql "CREATE VIEW v1 AS SELECT *, c1 AS o FROM t2;"
+  catchsql "SELECT * FROM v1"
 } {1 {too many columns in result set}}
+
 do_test sqllimits1-8.10 {
   # ORDER BY columns
   set cols [list]

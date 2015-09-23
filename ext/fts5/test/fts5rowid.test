@@ -91,6 +91,10 @@ do_execsql_test 2.6 {
 #  SELECT count(fts5_decode(rowid, block)) FROM x1_data;
 #} $res
 
+do_execsql_test 2.8 {
+  SELECT fts5_decode(fts5_rowid('segment', 1000, 1), X'AB')
+} {corrupt}
+
 #-------------------------------------------------------------------------
 # Tests with very large tokens.
 #

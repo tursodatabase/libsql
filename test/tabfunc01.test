@@ -55,6 +55,21 @@ do_execsql_test tabfunc01-1.10 {
   SELECT rowid, * FROM generate_series(0,32,5) ORDER BY +value DESC;
 } {7 30 6 25 5 20 4 15 3 10 2 5 1 0}
 
+do_execsql_test tabfunc01-1.20 {
+  CREATE VIEW v1(a,b) AS VALUES(1,2),(3,4);
+  SELECT * FROM v1;
+} {1 2 3 4}
+do_catchsql_test tabfunc01-1.21 {
+  SELECT * FROM v1(55);
+} {1 {'v1' is not a function}}
+do_execsql_test tabfunc01-1.22 {
+  CREATE VIEW v2(x) AS SELECT value FROM generate_series(1,5);
+  SELECT * FROM v2;
+} {1 2 3 4 5}
+do_catchsql_test tabfunc01-1.23 {
+  SELECT * FROM v2(55);
+} {1 {'v2' is not a function}}
+
 do_execsql_test tabfunc01-2.1 {
   CREATE TABLE t1(x);
   INSERT INTO t1(x) VALUES(2),(3);
