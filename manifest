@@ -1,5 +1,5 @@
-C Simplify\sthread-safety\sof\smutex\sinitialization.
-D 2015-09-23T16:24:19.976
+C Correct\ssuperfluous\swhitespace\sdifference.\s\sNo\sfunctional\schanges.
+D 2015-09-23T16:33:44.728
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1afa6fb2de2bddd50e0ddae8166c2ee9d69b301
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -314,7 +314,7 @@ F src/mem3.c 61c9d47b792908c532ca3a62b999cf21795c6534
 F src/mem5.c 61eeb90134f9a5be6c2e68d8daae7628b25953fb
 F src/memjournal.c 3eb2c0b51adbd869cb6a44780323f05fa904dc85
 F src/msvc.h d9ba56c6851227ab44b3f228a35f3f5772296495
-F src/mutex.c 7eb31a23d213416e6e0edafec1b949f9f4be32e4
+F src/mutex.c 40dc52f7525fa86f35dff2a7c9b6e6870240952a
 F src/mutex.h 779d588e3b7756ec3ecf7d78cde1d84aba414f85
 F src/mutex_noop.c f03e26ba8258399da23b51234f6b6a97197c1900
 F src/mutex_unix.c a72043f2560147d8e85fe48a6aef682896deb3a0
@@ -1388,10 +1388,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6b85f8cd4d87d616a3cb362647ae3869c45c2801
-R 6f093adcb01e89e126d8f89920b100ca
-T *branch * mutexInitSimpleCmpSwap
-T *sym-mutexInitSimpleCmpSwap *
-T -sym-mutexInitCmpSwap *
+P da0587c522163833e5e542f7722aeb69b3183ac1
+R 2c38e4ff296b8522f87a2833b62fffb5
 U mistachkin
-Z a42e1b6d07186b23163577b2bca4803f
+Z a6e6c550c142804be7b43775f66fc2a0

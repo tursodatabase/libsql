@@ -61,6 +61,7 @@ int sqlite3MutexInit(void){
     ** the default implementation into the sqlite3GlobalConfig structure.
     */
     sqlite3_mutex_methods const *pFrom;
+
     if( sqlite3GlobalConfig.bCoreMutex ){
       pFrom = sqlite3DefaultMutex();
     }else{
