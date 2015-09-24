@@ -233,6 +233,8 @@ do_execsql_test indexexpr1-600 {
   SELECT i FROM t4 WHERE e=5;
 } {9}
 
+# Indexed expressions on both sides of an == in a WHERE clause.
+#
 do_execsql_test indexexpr1-700 {
   DROP TABLE IF EXISTS t7;
   CREATE TABLE t7(a,b,c);
@@ -241,5 +243,16 @@ do_execsql_test indexexpr1-700 {
   CREATE INDEX t7c ON t7(+c);
   SELECT *, '|' FROM t7 WHERE +b=+c ORDER BY +a;
 } {1 2 2 | abc def def |}
+do_execsql_test indexexpr1-710 {
+  CREATE TABLE t71(a,b,c);
+  CREATE INDEX t71bc ON t71(b+c);
+  CREATE TABLE t72(x,y,z);
+  CREATE INDEX t72yz ON t72(y+z);
+  INSERT INTO t71(a,b,c) VALUES(1,11,2),(2,7,15),(3,5,4);
+  INSERT INTO t72(x,y,z) VALUES(1,10,3),(2,8,14),(3,9,9);
+  SELECT a, x, '|' FROM t71, t72
+   WHERE b+c=y+z
+  ORDER BY +a, +x;
+} {1 1 | 2 2 |}
 
 finish_test
