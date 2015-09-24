@@ -1,5 +1,5 @@
-C Another\s(smaller)\sperformance\soptimization\sfor\sthe\sJSON\sparser.
-D 2015-09-24T01:40:45.848
+C Fix\sa\sJSON1\stest\scase\sso\sthat\sit\sworks\son\sbuilds\sthat\somit\svirtual\stables.
+D 2015-09-24T11:06:26.506
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1afa6fb2de2bddd50e0ddae8166c2ee9d69b301
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -816,7 +816,7 @@ F test/journal3.test ff8af941f9e06161d3db1b46bb9f965ff0e7f307
 F test/jrnlmode.test 7864d59cf7f6e552b9b99ba0f38acd167edc10fa
 F test/jrnlmode2.test 81610545a4e6ed239ea8fa661891893385e23a1d
 F test/jrnlmode3.test 556b447a05be0e0963f4311e95ab1632b11c9eaa
-F test/json101.test 07f0d847d943bf5ad6e8fb60699a7f4c57317321
+F test/json101.test e8b50fbcdbf283cfafbc42632bf2c7dfa4541c46
 F test/json102.test 796b1c59894c6e0f38fc1a3acb0e690573b952a3
 F test/keyword1.test 37ef6bba5d2ed5b07ecdd6810571de2956599dff
 F test/lastinsert.test 42e948fd6442f07d60acbd15d33fb86473e0ef63
@@ -1388,7 +1388,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7dd4b07a42eb84589d34430b9d7bfa88fbd743eb
-R 35931ccc4bad18cd2e2cb0703934d351
+P c43daa8c78df99f62dd4d3c83708a3a8eff92496
+R 58ea6ba9d04066436f9d8f6b2170ec8e
 U drh
-Z 66f4794fa30512464c1e57a2a59bf55d
+Z 759cfd5c38ee08c1a1303bbe88ed012d
