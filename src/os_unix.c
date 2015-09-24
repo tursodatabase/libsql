@@ -5416,7 +5416,8 @@ static void unixShmBarrier(
   sqlite3_file *fd                /* Database file holding the shared memory */
 ){
   UNUSED_PARAMETER(fd);
-  unixEnterMutex();
+  sqlite3MemoryBarrier();         /* compiler-defined memory barrier */
+  unixEnterMutex();               /* Also mutex, for redundancy */
   unixLeaveMutex();
 }
 

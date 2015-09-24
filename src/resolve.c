@@ -355,8 +355,13 @@ static int lookupName(
     /*
     ** Perhaps the name is a reference to the ROWID
     */
-    if( cnt==0 && cntTab==1 && pMatch && sqlite3IsRowid(zCol)
-     && VisibleRowid(pMatch->pTab) ){
+    if( cnt==0
+     && cntTab==1
+     && pMatch
+     && (pNC->ncFlags & NC_IdxExpr)==0
+     && sqlite3IsRowid(zCol)
+     && VisibleRowid(pMatch->pTab)
+    ){
       cnt = 1;
       pExpr->iColumn = -1;     /* IMP: R-44911-55124 */
       pExpr->affinity = SQLITE_AFF_INTEGER;

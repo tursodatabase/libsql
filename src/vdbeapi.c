@@ -928,18 +928,19 @@ static const Mem *columnNullValue(void){
 #endif
     = {
         /* .u          = */ {0},
-        /* .flags      = */ MEM_Null,
-        /* .enc        = */ 0,
-        /* .n          = */ 0,
-        /* .z          = */ 0,
-        /* .zMalloc    = */ 0,
-        /* .szMalloc   = */ 0,
-        /* .iPadding1  = */ 0,
-        /* .db         = */ 0,
-        /* .xDel       = */ 0,
+        /* .flags      = */ (u16)MEM_Null,
+        /* .enc        = */ (u8)0,
+        /* .eSubtype   = */ (u8)0,
+        /* .n          = */ (int)0,
+        /* .z          = */ (char*)0,
+        /* .zMalloc    = */ (char*)0,
+        /* .szMalloc   = */ (int)0,
+        /* .uTemp      = */ (u32)0,
+        /* .db         = */ (sqlite3*)0,
+        /* .xDel       = */ (void(*)(void*))0,
 #ifdef SQLITE_DEBUG
-        /* .pScopyFrom = */ 0,
-        /* .pFiller    = */ 0,
+        /* .pScopyFrom = */ (Mem*)0,
+        /* .pFiller    = */ (void*)0,
 #endif
       };
   return &nullMem;

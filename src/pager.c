@@ -2116,6 +2116,20 @@ static void pagerReportSize(Pager *pPager){
 # define pagerReportSize(X)     /* No-op if we do not support a codec */
 #endif
 
+#ifdef SQLITE_HAS_CODEC
+/*
+** Make sure the number of reserved bits is the same in the destination
+** pager as it is in the source.  This comes up when a VACUUM changes the
+** number of reserved bits to the "optimal" amount.
+*/
+void sqlite3PagerAlignReserve(Pager *pDest, Pager *pSrc){
+  if( pDest->nReserve!=pSrc->nReserve ){
+    pDest->nReserve = pSrc->nReserve;
+    pagerReportSize(pDest);
+  }
+}
+#endif
+
 /*
 ** Read a single page from either the journal file (if isMainJrnl==1) or
 ** from the sub-journal (if isMainJrnl==0) and playback that page.
