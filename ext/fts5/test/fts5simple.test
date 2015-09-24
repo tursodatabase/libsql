@@ -169,5 +169,21 @@ do_execsql_test 5.8 {
   SELECT rowid FROM tt WHERE tt MATCH 'a*';
 } {1}
 
+#-------------------------------------------------------------------------
+
+reset_db
+do_execsql_test 6.1 {
+  CREATE VIRTUAL TABLE xyz USING fts5(x, y, z);
+  INSERT INTO xyz VALUES('x', 'y', 'z');
+}
+
+do_catchsql_test 6.2 { 
+  SELECT * FROM xyz WHERE xyz MATCH '' 
+} {1 {fts5: syntax error near ""}}
+do_catchsql_test 6.3 { 
+  SELECT * FROM xyz WHERE xyz MATCH NULL 
+} {1 {fts5: syntax error near ""}}
+
+
 finish_test
 

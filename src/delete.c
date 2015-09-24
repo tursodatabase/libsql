@@ -415,6 +415,7 @@ void sqlite3DeleteFrom(
     if( pWInfo==0 ) goto delete_from_cleanup;
     eOnePass = sqlite3WhereOkOnePass(pWInfo, aiCurOnePass);
     assert( IsVirtual(pTab)==0 || eOnePass==ONEPASS_OFF );
+    assert( IsVirtual(pTab) || bComplex || eOnePass!=ONEPASS_OFF );
   
     /* Keep track of the number of rows to be deleted */
     if( db->flags & SQLITE_CountRows ){
