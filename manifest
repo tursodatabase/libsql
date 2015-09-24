@@ -1,5 +1,5 @@
-C Strengthen\sthe\simplementations\sof\sxShmMemoryBarrier\son\sboth\sthe\sunix\sand\nwindows\sVFSes,\sso\sthat\sthey\slikely\swork\seven\sif\sSQLITE_THREADSAFE=0\sis\sused.
-D 2015-09-24T12:40:43.573
+C Fix\sover-length\ssource\scode\slines\sin\swhere.c.\s\sNo\slogic\schanges.
+D 2015-09-24T17:38:01.215
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1afa6fb2de2bddd50e0ddae8166c2ee9d69b301
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -417,7 +417,7 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 18b0ed49830cf04fe2d68224b41838a73ac6cd24
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 2e14d17f592d176b6dc879c33fbdec4fbccaa2ba
-F src/where.c d5eed2584542e7f3bc78ddef7809a9d76d14d811
+F src/where.c 6f7156dc7285c4ff4f625e4f4fee57a83f25f89c
 F src/whereInt.h 7892bb54cf9ca0ae5c7e6094491b94c9286dc647
 F src/wherecode.c 7660e1ad16817a921b099af553f3e1349352d16f
 F src/whereexpr.c 2473e4350e30f9b55d1c6a8f66ca23c689f23f1d
@@ -1388,7 +1388,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c2fcb03299f2872d7f97a540ea145519f8b2e5cc
-R 48a05a5fcfc27e989d0482f8603455ad
+P c6ab807b72ddfc1462f61aa91442b6fac04ace8a
+R 2adfc3245dccf622041366bbd2c07bc2
 U drh
-Z 5529d899992d962be9e3269522b69c12
+Z 1d5bb04c383d0f49d84249f8afd90c66
