@@ -1116,6 +1116,7 @@ static int fts5FilterMethod(
     rc = fts5CursorFirst(pTab, pCsr, bDesc);
   }else if( pMatch ){
     const char *zExpr = (const char*)sqlite3_value_text(apVal[0]);
+    if( zExpr==0 ) zExpr = "";
 
     rc = fts5CursorParseRank(pConfig, pCsr, pRank);
     if( rc==SQLITE_OK ){

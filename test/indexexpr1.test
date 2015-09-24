@@ -218,5 +218,41 @@ do_execsql_test indexexpr1-510eqp {
   SELECT substr(a,4,3) AS k FROM cnt, t5 WHERE k=printf('%03d',x);
 } {/USING INDEX t5ax/}
 
+# Skip-scan on an indexed expression
+#
+do_execsql_test indexexpr1-600 {
+  DROP TABLE IF EXISTS t4;
+  CREATE TABLE t4(a,b,c,d,e,f,g,h,i);
+  CREATE INDEX t4all ON t4(a,b,c<d,e,f,i,h);
+  INSERT INTO t4 VALUES(1,2,3,4,5,6,7,8,9);
+  ANALYZE;
+  DELETE FROM sqlite_stat1;
+  INSERT INTO sqlite_stat1
+    VALUES('t4','t4all','600000 160000 40000 10000 2000 600 100 40 10');
+  ANALYZE sqlite_master;
+  SELECT i FROM t4 WHERE e=5;
+} {9}
+
+# Indexed expressions on both sides of an == in a WHERE clause.
+#
+do_execsql_test indexexpr1-700 {
+  DROP TABLE IF EXISTS t7;
+  CREATE TABLE t7(a,b,c);
+  INSERT INTO t7(a,b,c) VALUES(1,2,2),('abc','def','def'),(4,5,6);
+  CREATE INDEX t7b ON t7(+b);
+  CREATE INDEX t7c ON t7(+c);
+  SELECT *, '|' FROM t7 WHERE +b=+c ORDER BY +a;
+} {1 2 2 | abc def def |}
+do_execsql_test indexexpr1-710 {
+  CREATE TABLE t71(a,b,c);
+  CREATE INDEX t71bc ON t71(b+c);
+  CREATE TABLE t72(x,y,z);
+  CREATE INDEX t72yz ON t72(y+z);
+  INSERT INTO t71(a,b,c) VALUES(1,11,2),(2,7,15),(3,5,4);
+  INSERT INTO t72(x,y,z) VALUES(1,10,3),(2,8,14),(3,9,9);
+  SELECT a, x, '|' FROM t71, t72
+   WHERE b+c=y+z
+  ORDER BY +a, +x;
+} {1 1 | 2 2 |}
 
 finish_test

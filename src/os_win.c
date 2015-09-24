@@ -3850,8 +3850,8 @@ static void winShmBarrier(
   sqlite3_file *fd          /* Database holding the shared memory */
 ){
   UNUSED_PARAMETER(fd);
-  /* MemoryBarrier(); // does not work -- do not know why not */
-  winShmEnterMutex();
+  sqlite3MemoryBarrier();   /* compiler-defined memory barrier */
+  winShmEnterMutex();       /* Also mutex, for redundancy */
   winShmLeaveMutex();
 }
 

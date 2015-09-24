@@ -322,6 +322,7 @@ static void showHelp(void){
 "Options:\n"
 "  --autovacuum          Enable AUTOVACUUM mode\n"
 "  --database FILE       Use database FILE instead of an in-memory database\n"
+"  --disable-lookaside   Turn off lookaside memory\n"
 "  --heap SZ MIN         Memory allocator uses SZ bytes & min allocation MIN\n"
 "  --help                Show this help text\n"    
 "  --lookaside N SZ      Configure lookaside for N slots of SZ bytes each\n"
@@ -457,6 +458,7 @@ int main(int argc, char **argv){
   const char *zDbName = 0;      /* Name of an on-disk database file to open */
 
   iBegin = timeOfDay();
+  sqlite3_shutdown();
   zFailCode = getenv("TEST_FAILURE");
   g.zArgv0 = argv[0];
   zPrompt = "<stdin>";
@@ -472,6 +474,10 @@ int main(int argc, char **argv){
         if( i>=argc-1 ) abendError("missing argument on %s\n", argv[i]);
         zDbName = argv[i+1];
         i += 1;
+      }else
+      if( strcmp(z,"disable-lookaside")==0 ){
+        nLook = 1;
+        szLook = 0;
       }else
       if( strcmp(z, "f")==0 && i+1<argc ){
         i++;
@@ -720,6 +726,12 @@ int main(int argc, char **argv){
     #ifndef SQLITE_OMIT_TRACE
         sqlite3_trace(db, verboseFlag ? traceCallback : traceNoop, 0);
     #endif
+#ifdef SQLITE_ENABLE_JSON1
+        {
+          extern int sqlite3_json_init(sqlite3*);
+          sqlite3_json_init(db);
+        }
+#endif
         sqlite3_create_function(db, "eval", 1, SQLITE_UTF8, 0, sqlEvalFunc, 0, 0);
         sqlite3_create_function(db, "eval", 2, SQLITE_UTF8, 0, sqlEvalFunc, 0, 0);
         sqlite3_limit(db, SQLITE_LIMIT_LENGTH, 1000000);
