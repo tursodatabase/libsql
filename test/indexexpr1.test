@@ -88,6 +88,23 @@ do_execsql_test indexexpr1-160eqp {
    WHERE substr(a,27,3)=='ord' AND d>=29;
 } {/USING INDEX t1a2/}
 
+# ORDER BY using an indexed expression
+#
+do_execsql_test indexexpr1-170 {
+  CREATE INDEX t1alen ON t1(length(a));
+  SELECT length(a) FROM t1 ORDER BY length(a);
+} {20 25 27 29 38 52}
+do_execsql_test indexexpr1-170eqp {
+  EXPLAIN QUERY PLAN
+  SELECT length(a) FROM t1 ORDER BY length(a);
+} {/SCAN TABLE t1 USING INDEX t1alen/}
+do_execsql_test indexexpr1-171 {
+  SELECT length(a) FROM t1 ORDER BY length(a) DESC;
+} {52 38 29 27 25 20}
+do_execsql_test indexexpr1-171eqp {
+  EXPLAIN QUERY PLAN
+  SELECT length(a) FROM t1 ORDER BY length(a) DESC;
+} {/SCAN TABLE t1 USING INDEX t1alen/}
 
 do_execsql_test indexexpr1-200 {
   DROP TABLE t1;
@@ -254,5 +271,25 @@ do_execsql_test indexexpr1-710 {
    WHERE b+c=y+z
   ORDER BY +a, +x;
 } {1 1 | 2 2 |}
+
+# Collating sequences on indexes of expressions
+#
+do_execsql_test indexexpr1-800 {
+  DROP TABLE IF EXISTS t8;
+  CREATE TABLE t8(a INTEGER PRIMARY KEY, b TEXT);
+  CREATE UNIQUE INDEX t8bx ON t8(substr(b,2,4) COLLATE nocase);
+  INSERT INTO t8(a,b) VALUES(1,'Alice'),(2,'Bartholemew'),(3,'Cynthia');
+  SELECT * FROM t8 WHERE substr(b,2,4)='ARTH' COLLATE nocase;
+} {2 Bartholemew}
+do_catchsql_test indexexpr1-810 {
+  INSERT INTO t8(a,b) VALUES(4,'BARTHMERE');
+} {1 {UNIQUE constraint failed: index 't8bx'}}
+do_catchsql_test indexexpr1-820 {
+  DROP INDEX t8bx;
+  CREATE UNIQUE INDEX t8bx ON t8(substr(b,2,4) COLLATE rtrim);
+  INSERT INTO t8(a,b) VALUES(4,'BARTHMERE');
+} {0 {}}
+
+
 
 finish_test

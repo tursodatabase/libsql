@@ -1,5 +1,5 @@
-C Fix\sover-length\ssource\scode\slines\sin\swhere.c.\s\sNo\slogic\schanges.
-D 2015-09-24T17:38:01.215
+C Enhance\sthe\squery\splanner\sso\sthat\sit\sis\sable\sto\suse\sindexed\sexpressions\nto\shelp\sfulfill\san\sORDER\sBY\sclause.
+D 2015-09-24T18:47:59.761
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1afa6fb2de2bddd50e0ddae8166c2ee9d69b301
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -417,7 +417,7 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 18b0ed49830cf04fe2d68224b41838a73ac6cd24
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 2e14d17f592d176b6dc879c33fbdec4fbccaa2ba
-F src/where.c 6f7156dc7285c4ff4f625e4f4fee57a83f25f89c
+F src/where.c 278073aabce8d2020d30dff2edb6fe9430e1762c
 F src/whereInt.h 7892bb54cf9ca0ae5c7e6094491b94c9286dc647
 F src/wherecode.c 7660e1ad16817a921b099af553f3e1349352d16f
 F src/whereexpr.c 2473e4350e30f9b55d1c6a8f66ca23c689f23f1d
@@ -785,7 +785,7 @@ F test/index5.test 8621491915800ec274609e42e02a97d67e9b13e7
 F test/index6.test 7102ec371414c42dfb1d5ca37eb4519aa9edc23a
 F test/index7.test 9c6765a74fc3fcde7aebc5b3bd40d98df14a527c
 F test/indexedby.test 9c4cd331224e57f79fbf411ae245e6272d415985
-F test/indexexpr1.test 203c83a05accf6f2b748834192f3564321b8c0d8
+F test/indexexpr1.test 4bce4e4b6b1a2d0c34e17d4e04f3957a3bcdc500
 F test/indexfault.test 31d4ab9a7d2f6e9616933eb079722362a883eb1d
 F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
 F test/insert.test 38742b5e9601c8f8d76e9b7555f7270288c2d371
@@ -1388,7 +1388,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c6ab807b72ddfc1462f61aa91442b6fac04ace8a
-R 2adfc3245dccf622041366bbd2c07bc2
+P 1c8c5380a8b45c9e04d9663c3cb8182ef3a61b81
+R 292146e62fe1cf1653fb27c4bd570968
 U drh
-Z 1d5bb04c383d0f49d84249f8afd90c66
+Z 3832f12930eca538f34541b12960504f
