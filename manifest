@@ -1,5 +1,5 @@
-C Make\ssure\sjoins\swork\scorrectly\swhen\sboth\ssides\sof\sthe\sjoin\sare\sconnected\nusing\sindexed\sexpressions.
-D 2015-09-24T12:19:17.384
+C Strengthen\sthe\simplementations\sof\sxShmMemoryBarrier\son\sboth\sthe\sunix\sand\nwindows\sVFSes,\sso\sthat\sthey\slikely\swork\seven\sif\sSQLITE_THREADSAFE=0\sis\sused.
+D 2015-09-24T12:40:43.573
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1afa6fb2de2bddd50e0ddae8166c2ee9d69b301
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -324,8 +324,8 @@ F src/os.c 8fd25588eeba74068d41102d26810e216999b6c8
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h abdb9a191a367793268fe553d25bab894e986a0e
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c 76f493ed71c4154338049dee1bf6e47f69c74a55
-F src/os_win.c 40b3af7a47eb1107d0d69e592bec345a3b7b798a
+F src/os_unix.c fc93d55f96bb978f0b0168c6ea7d6fc60b0e172c
+F src/os_win.c 1716291e5ec2dbfc5a1fe0b32182030f1f7d8acf
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 2fbeeba28f4e6d08a15bc106f36c43346a81f09e
 F src/pager.h ac213f8143ebfee6a8bfb91cf4ca02c9a83343c5
@@ -1388,7 +1388,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d9b716a6bd6145b2e7733c04d86227df777cd473
-R 59628b7ea7f835d00524019d5851df4e
+P c2fcb03299f2872d7f97a540ea145519f8b2e5cc
+R 48a05a5fcfc27e989d0482f8603455ad
 U drh
-Z 3e6728e37d51c43c629584a154f06e88
+Z 5529d899992d962be9e3269522b69c12
