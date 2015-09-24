@@ -37,9 +37,33 @@ SQLITE_EXTENSION_INIT1
 ** Versions of isspace(), isalnum() and isdigit() to which it is safe
 ** to pass signed char values.
 */
-#define safe_isspace(x) isspace((unsigned char)(x))
 #define safe_isdigit(x) isdigit((unsigned char)(x))
 #define safe_isalnum(x) isalnum((unsigned char)(x))
+
+/*
+** Growing our own isspace() routine this way is twice as fast as
+** the library isspace() function, resulting in a 7% overall performance
+** increase for the parser.  (Ubuntu14.10 gcc 4.8.4 x64 with -Os).
+*/
+static const char jsonIsSpace[] = {
+  0, 0, 0, 0, 0, 0, 0, 0,     0, 1, 1, 0, 1, 1, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
+  1, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
+};
+#define safe_isspace(x) (jsonIsSpace[(unsigned char)x])
 
 /* Unsigned integer types */
 typedef sqlite3_uint64 u64;
@@ -548,6 +572,44 @@ static void jsonReturn(
   }
 }
 
+/* Forward reference */
+static int jsonParseAddNode(JsonParse*,u32,u32,const char*);
+
+/*
+** A macro to hint to the compiler that a function should not be
+** inlined.
+*/
+#if defined(__GNUC__)
+#  define JSON_NOINLINE  __attribute__((noinline))
+#elif defined(_MSC_VER) && _MSC_VER>=1310
+#  define JSON_NOINLINE  __declspec(noinline)
+#else
+#  define JSON_NOINLINE
+#endif
+
+
+static JSON_NOINLINE int jsonParseAddNodeExpand(
+  JsonParse *pParse,        /* Append the node to this object */
+  u32 eType,                /* Node type */
+  u32 n,                    /* Content size or sub-node count */
+  const char *zContent      /* Content */
+){
+  u32 nNew;
+  JsonNode *pNew;
+  assert( pParse->nNode>=pParse->nAlloc );
+  if( pParse->oom ) return -1;
+  nNew = pParse->nAlloc*2 + 10;
+  pNew = sqlite3_realloc(pParse->aNode, sizeof(JsonNode)*nNew);
+  if( pNew==0 ){
+    pParse->oom = 1;
+    return -1;
+  }
+  pParse->nAlloc = nNew;
+  pParse->aNode = pNew;
+  assert( pParse->nNode<pParse->nAlloc );
+  return jsonParseAddNode(pParse, eType, n, zContent);
+}
+
 /*
 ** Create a new JsonNode instance based on the arguments and append that
 ** instance to the JsonParse.  Return the index in pParse->aNode[] of the
@@ -561,17 +623,7 @@ static int jsonParseAddNode(
 ){
   JsonNode *p;
   if( pParse->nNode>=pParse->nAlloc ){
-    u32 nNew;
-    JsonNode *pNew;
-    if( pParse->oom ) return -1;
-    nNew = pParse->nAlloc*2 + 10;
-    pNew = sqlite3_realloc(pParse->aNode, sizeof(JsonNode)*nNew);
-    if( pNew==0 ){
-      pParse->oom = 1;
-      return -1;
-    }
-    pParse->nAlloc = nNew;
-    pParse->aNode = pNew;
+    return jsonParseAddNodeExpand(pParse, eType, n, zContent);
   }
   p = &pParse->aNode[pParse->nNode];
   p->eType = (u8)eType;
@@ -1783,7 +1835,7 @@ static int jsonEachFilter(
     jsonEachCursorReset(p);
     return SQLITE_NOMEM;
   }else{
-    JsonNode *pNode;
+    JsonNode *pNode = 0;
     if( idxNum==3 ){
       const char *zErr = 0;
       zRoot = (const char*)sqlite3_value_text(argv[1]);
