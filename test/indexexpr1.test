@@ -233,7 +233,13 @@ do_execsql_test indexexpr1-600 {
   SELECT i FROM t4 WHERE e=5;
 } {9}
 
-
-
+do_execsql_test indexexpr1-700 {
+  DROP TABLE IF EXISTS t7;
+  CREATE TABLE t7(a,b,c);
+  INSERT INTO t7(a,b,c) VALUES(1,2,2),('abc','def','def'),(4,5,6);
+  CREATE INDEX t7b ON t7(+b);
+  CREATE INDEX t7c ON t7(+c);
+  SELECT *, '|' FROM t7 WHERE +b=+c ORDER BY +a;
+} {1 2 2 | abc def def |}
 
 finish_test

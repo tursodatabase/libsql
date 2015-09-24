@@ -193,10 +193,9 @@ static WhereTerm *whereScanNext(WhereScan *pScan){
         ){
           if( (pTerm->eOperator & WO_EQUIV)!=0
            && pScan->nEquiv<ArraySize(pScan->aiCur)
+           && (pX = sqlite3ExprSkipCollate(pTerm->pExpr->pRight))->op==TK_COLUMN
           ){
             int j;
-            pX = sqlite3ExprSkipCollate(pTerm->pExpr->pRight);
-            assert( pX->op==TK_COLUMN );
             for(j=0; j<pScan->nEquiv; j++){
               if( pScan->aiCur[j]==pX->iTable
                && pScan->aiColumn[j]==pX->iColumn ){
