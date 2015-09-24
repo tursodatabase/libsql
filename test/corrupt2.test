@@ -17,6 +17,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix corrupt2
 
 # Do not use a codec for tests in this file, as the database file is
 # manipulated directly using tcl scripts (using the [hexio_write] command).
@@ -557,5 +558,52 @@ ifcapable autovacuum {
     } {1 {database disk image is malformed}}
   }
 }
+
+#-------------------------------------------------------------------------
+# Test that PRAGMA integrity_check detects cases where the freelist-count
+# header field is smaller than the actual number of pages on the freelist.
+#
+
+reset_db
+do_execsql_test 14.0 {
+  PRAGMA auto_vacuum = 0;
+  CREATE TABLE t1(x);
+  INSERT INTO t1 VALUES(randomblob(3500));
+  DELETE FROM t1;
+}
+
+do_execsql_test 14.1 {
+  PRAGMA integrity_check;
+  PRAGMA freelist_count;
+} {ok 3}
+
+# There are now 3 free pages. Modify the header-field so that it 
+# (incorrectly) says that just 2 are free.
+do_test 14.2 {
+  db close
+  hexio_write test.db 36 [hexio_render_int32 2]
+  sqlite3 db test.db
+  execsql { PRAGMA freelist_count }
+} {2}
+
+do_execsql_test 14.3 {
+  PRAGMA integrity_check;
+} {{*** in database main ***
+Main freelist: free-page count in header is too small}}
+
+# Use 2 of the free pages on the free-list.
+#
+do_execsql_test 14.4 {
+  INSERT INTO t1 VALUES(randomblob(2500));
+  PRAGMA freelist_count;
+} {0}
+
+do_execsql_test 14.5 {
+  PRAGMA integrity_check;
+} {{*** in database main ***
+Page 3 is never used}}
+
+
+finish_test
 
 finish_test

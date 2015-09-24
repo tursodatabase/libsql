@@ -75,4 +75,12 @@ foreach {id sql} {
   } {1 {UNIQUE constraint failed: t1.y, t1.z}}
 }
 
+do_catchsql_test 13.1 {
+  CREATE TABLE err1(a,b,c,UNIQUE(rowid));
+} {1 {no such column: rowid}}
+do_catchsql_test 13.2 {
+  CREATE TABLE err1(a,b,c,PRIMARY KEY(rowid));
+} {1 {no such column: rowid}}
+
+
 finish_test
