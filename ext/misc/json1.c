@@ -649,8 +649,7 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
   int x;
   JsonNode *pNode;
   while( safe_isspace(pParse->zJson[i]) ){ i++; }
-  if( (c = pParse->zJson[i])==0 ) return 0;
-  if( c=='{' ){
+  if( (c = pParse->zJson[i])=='{' ){
     /* Parse object */
     iThis = jsonParseAddNode(pParse, JSON_OBJECT, 0, 0);
     if( iThis<0 ) return -1;
@@ -770,6 +769,8 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
     return -2;  /* End of {...} */
   }else if( c==']' ){
     return -3;  /* End of [...] */
+  }else if( c==0 ){
+    return 0;   /* End of file */
   }else{
     return -1;  /* Syntax error */
   }
