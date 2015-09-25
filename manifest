@@ -1,5 +1,5 @@
-C Disable\sthe\sSQLITE_TESTCTRL_BENIGN_MALLOC_HOOKS\smechanism\sand\sreplace\sit\s\nwith\sSQLITE_TESTCTRL_BENIGN_MALLOC_CTRL,\swhich\sgives\sbetter\scontrol.
-D 2015-09-25T16:29:49.729
+C Fix\sa\sfaulty\sassert()\son\sthe\sbenign-malloc\scontroller\scallback\sin\ntest_malloc.c.
+D 2015-09-25T20:18:52.262
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1afa6fb2de2bddd50e0ddae8166c2ee9d69b301
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -375,7 +375,7 @@ F src/test_intarray.c 870124b95ec4c645d4eb84f15efb7133528fb1a5
 F src/test_intarray.h 9dc57417fb65bc7835cc18548852cc08cc062202
 F src/test_journal.c 5360fbe1d1e4416ca36290562fd5a2e3f70f32aa
 F src/test_loadext.c a5251f956ab6af21e138dc1f9c0399394a510cb4
-F src/test_malloc.c 8d0ffe32a7e46aaab2bca5cce28e69678a9a3dc5
+F src/test_malloc.c 70ce9d5f727174a9bda41bee3252184e7c07ecb9
 F src/test_multiplex.c 9fefd23f6cc3fa9bf0748a5e453167e7b9f193ce
 F src/test_multiplex.h c08e4e8f8651f0c5e0509b138ff4d5b43ed1f5d3
 F src/test_mutex.c dbdfaff8580071f2212a0deae3325a93a737819c
@@ -1388,10 +1388,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6e4ac0be2de1a16fcbb2a314504122ad95aa257e
-R e9ff57918bb5645931e56acdf4a48d22
-T *branch * malloc-testing
-T *sym-malloc-testing *
-T -sym-trunk *
+P 2c57b2f38691356405b95245fc22fd5e6bfcb2f1
+R a6b0049bf1276cc2999d34791c56ef1b
 U drh
-Z ab3c9d2f368f9a4d4d11dc236e31f593
+Z 175f9b81eac8fdc51f6d8759cf3e7814

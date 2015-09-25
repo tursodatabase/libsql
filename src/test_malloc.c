@@ -186,7 +186,7 @@ static void faultsimBenignCtrl(int eOp){
       memfault.isBenignMode++;
       break;
     case 2:    /* Previous failure is benign */
-      assert( memfault.nFail>0 );
+      assert( memfault.nFail>0 || memfault.enable==0 );
       if( memfault.isBenignMode==0 ) memfault.nBenign++;
       break;
   }
