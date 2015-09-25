@@ -1159,6 +1159,7 @@ static LogEst whereRangeAdjust(WhereTerm *pTerm, LogEst nNew){
 ** Return the affinity for a single column of an index.
 */
 static char sqlite3IndexColumnAffinity(sqlite3 *db, Index *pIdx, int iCol){
+  assert( iCol>=0 && iCol<pIdx->nColumn );
   if( !pIdx->zColAff ){
     if( sqlite3IndexAffinityStr(db, pIdx)==0 ) return SQLITE_AFF_BLOB;
   }
@@ -1216,8 +1217,7 @@ static int whereRangeSkipScanEst(
   int nLower = -1;
   int nUpper = p->nSample+1;
   int rc = SQLITE_OK;
-  int iCol = p->aiColumn[nEq];
-  u8 aff = sqlite3IndexColumnAffinity(db, p, iCol);
+  u8 aff = sqlite3IndexColumnAffinity(db, p, nEq);
   CollSeq *pColl;
   
   sqlite3_value *p1 = 0;          /* Value extracted from pLower */
