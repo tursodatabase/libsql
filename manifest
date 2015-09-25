@@ -1,5 +1,5 @@
-C Report\san\serror\sif\sthe\snumber\sof\snamed\scolumns\sin\sa\sVIEW\sis\sdifferent\nfrom\sthe\snumber\sof\sresult\scolumns\sin\sthe\sSELECT\sstatement\sthat\simplements\nthe\sVIEW.
-D 2015-09-25T13:42:55.978
+C Disable\sthe\sSQLITE_TESTCTRL_BENIGN_MALLOC_HOOKS\smechanism\sand\sreplace\sit\s\nwith\sSQLITE_TESTCTRL_BENIGN_MALLOC_CTRL,\swhich\sgives\sbetter\scontrol.
+D 2015-09-25T16:29:49.729
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1afa6fb2de2bddd50e0ddae8166c2ee9d69b301
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -293,11 +293,11 @@ F src/date.c fb1c99172017dcc8e237339132c91a21a0788584
 F src/dbstat.c e637e7a7ff40ef32132a418c6fdf1cfb63aa27c7
 F src/delete.c 371df4fc86e96efeaed3d37565aef77f956be109
 F src/expr.c 3a76afcdac925294c39903b7002ddb9e5fd29863
-F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
+F src/fault.c a64e879e4713671b3b2bf1db70efa351d6ac9591
 F src/fkey.c 83e1baba999bed3144ea5a2143fc922edf51135f
 F src/func.c ecdd69ec6a1e406f04cc73324be2ebbf6354197f
 F src/global.c 508e4087f7b41d688e4762dcf4d4fe28cfbc87f9
-F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
+F src/hash.c 5b5ce67bc4fe533f49de10b3671fcb92d4d5c4e9
 F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
 F src/insert.c 9748a37e058256eb2ead69f028ab85ebf203ad15
@@ -305,8 +305,8 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c d344a95d60c24e2f490ee59db9784b1b17439012
 F src/loadext.c f0b66d28e377fd6c6d36cc9d92df1ff251ebee44
-F src/main.c e17fcffae4306a9b8334faf3bac80d7396850b54
-F src/malloc.c 3a37ce6979a40f499d8cea9e9ab4e8517854d35d
+F src/main.c 710b2e0433a340a10c40f4dbf29838e359a44427
+F src/malloc.c 76c62c8ee6b346aa10a373229a372ef2f2344fe9
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c abe6ee469b6c5a35c7f22bfeb9c9bac664a1c987
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
@@ -332,7 +332,7 @@ F src/pager.h ac213f8143ebfee6a8bfb91cf4ca02c9a83343c5
 F src/parse.y f599aa5e871a493330d567ced93de696f61f48f7
 F src/pcache.c 24be750c79272e0ca7b6e007bc94999700f3e5ef
 F src/pcache.h 9968603796240cdf83da7e7bef76edf90619cea9
-F src/pcache1.c e822007159d53a7ea7aa040d6e28964ddb6de083
+F src/pcache1.c 7f8630a2074997195b86f478840a603818b08d84
 F src/pragma.c d71b813e67bf03f3116b9dd5164fbfd81ec673a2
 F src/pragma.h 631a91c8b0e6ca8f051a1d8a4a0da4150e04620a
 F src/prepare.c 82e5db1013846a819f198336fed72c44c974e7b1
@@ -341,11 +341,11 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 1954a0f01bf65d78d7d559aea3d5c67f33376d91
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 33230303f5f32430ee971a6fcc6a370e4a93ae1a
-F src/shell.c 6332ef06db1390ef812cfdff1fc97b4fd76cdd42
-F src/sqlite.h.in 4e06cb5fed36736242c66237991db6f3e2395eb9
+F src/shell.c 15186317f2fcb670400f8d16d298ed18731375a0
+F src/sqlite.h.in a6f2cb7741fae0133b007843b65c96f7fcd4d7fd
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 64350bf36833a56ad675e27392a913f417c5c308
-F src/sqliteInt.h 5afc6e50402be1e0a870f28e1cd8b32eb9db590f
+F src/sqliteInt.h ca695ea39aa6d459a1b1d36391c5121c432f350f
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c f266ad8a2892d659b74f0f50cb6a88b6e7c12179
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
@@ -375,7 +375,7 @@ F src/test_intarray.c 870124b95ec4c645d4eb84f15efb7133528fb1a5
 F src/test_intarray.h 9dc57417fb65bc7835cc18548852cc08cc062202
 F src/test_journal.c 5360fbe1d1e4416ca36290562fd5a2e3f70f32aa
 F src/test_loadext.c a5251f956ab6af21e138dc1f9c0399394a510cb4
-F src/test_malloc.c 27d9e11b6e9d30267465d41ad81edbe24256408b
+F src/test_malloc.c 8d0ffe32a7e46aaab2bca5cce28e69678a9a3dc5
 F src/test_multiplex.c 9fefd23f6cc3fa9bf0748a5e453167e7b9f193ce
 F src/test_multiplex.h c08e4e8f8651f0c5e0509b138ff4d5b43ed1f5d3
 F src/test_mutex.c dbdfaff8580071f2212a0deae3325a93a737819c
@@ -1388,7 +1388,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1350dd42d056508337b1a07ad8b1c9c97593f8d3
-R 9672ebd00531833a09889a78098f4f34
+P 6e4ac0be2de1a16fcbb2a314504122ad95aa257e
+R e9ff57918bb5645931e56acdf4a48d22
+T *branch * malloc-testing
+T *sym-malloc-testing *
+T -sym-trunk *
 U drh
-Z 160c60a319774154e17ae3a2bf9d8f26
+Z ab3c9d2f368f9a4d4d11dc236e31f593

@@ -6418,7 +6418,7 @@ int sqlite3_test_control(int op, ...);
 #define SQLITE_TESTCTRL_PRNG_RESET               7
 #define SQLITE_TESTCTRL_BITVEC_TEST              8
 #define SQLITE_TESTCTRL_FAULT_INSTALL            9
-#define SQLITE_TESTCTRL_BENIGN_MALLOC_HOOKS     10
+#define SQLITE_TESTCTRL_BENIGN_MALLOC_HOOKS     10  /* NOT USED */
 #define SQLITE_TESTCTRL_PENDING_BYTE            11
 #define SQLITE_TESTCTRL_ASSERT                  12
 #define SQLITE_TESTCTRL_ALWAYS                  13
@@ -6434,7 +6434,8 @@ int sqlite3_test_control(int op, ...);
 #define SQLITE_TESTCTRL_ISINIT                  23
 #define SQLITE_TESTCTRL_SORTER_MMAP             24
 #define SQLITE_TESTCTRL_IMPOSTER                25
-#define SQLITE_TESTCTRL_LAST                    25
+#define SQLITE_TESTCTRL_BENIGN_MALLOC_CTRL      26
+#define SQLITE_TESTCTRL_LAST                    26
 
 /*
 ** CAPI3REF: SQLite Runtime Status

@@ -3156,7 +3156,7 @@ void *sqlite3PageMalloc(int);
 void sqlite3PageFree(void*);
 void sqlite3MemSetDefault(void);
 #ifndef SQLITE_OMIT_BUILTIN_TEST
-void sqlite3BenignMallocHooks(void (*)(void), void (*)(void));
+void sqlite3BenignMallocHooks(void (*)(int));
 #endif
 int sqlite3HeapNearlyFull(void);
 
@@ -3836,9 +3836,11 @@ const char *sqlite3JournalModename(int);
 #ifndef SQLITE_OMIT_BUILTIN_TEST
   void sqlite3BeginBenignMalloc(void);
   void sqlite3EndBenignMalloc(void);
+  void sqlite3PreviousBenignMalloc(void);
 #else
   #define sqlite3BeginBenignMalloc()
   #define sqlite3EndBenignMalloc()
+  #define sqlite3PreviousBenignMalloc()
 #endif
 
 /*

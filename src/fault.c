@@ -29,59 +29,42 @@
 #ifndef SQLITE_OMIT_BUILTIN_TEST
 
 /*
-** Global variables.
+** The default xBenignCtrl function is a no-op
 */
-typedef struct BenignMallocHooks BenignMallocHooks;
-static SQLITE_WSD struct BenignMallocHooks {
-  void (*xBenignBegin)(void);
-  void (*xBenignEnd)(void);
-} sqlite3Hooks = { 0, 0 };
-
-/* The "wsdHooks" macro will resolve to the appropriate BenignMallocHooks
-** structure.  If writable static data is unsupported on the target,
-** we have to locate the state vector at run-time.  In the more common
-** case where writable static data is supported, wsdHooks can refer directly
-** to the "sqlite3Hooks" state vector declared above.
-*/
-#ifdef SQLITE_OMIT_WSD
-# define wsdHooksInit \
-  BenignMallocHooks *x = &GLOBAL(BenignMallocHooks,sqlite3Hooks)
-# define wsdHooks x[0]
-#else
-# define wsdHooksInit
-# define wsdHooks sqlite3Hooks
-#endif
-
-
-/*
-** Register hooks to call when sqlite3BeginBenignMalloc() and
-** sqlite3EndBenignMalloc() are called, respectively.
-*/
-void sqlite3BenignMallocHooks(
-  void (*xBenignBegin)(void),
-  void (*xBenignEnd)(void)
-){
-  wsdHooksInit;
-  wsdHooks.xBenignBegin = xBenignBegin;
-  wsdHooks.xBenignEnd = xBenignEnd;
+static void sqlite3BenignCtrlNoop(int eOp){
+  (void)eOp;
 }
 
 /*
-** This (sqlite3EndBenignMalloc()) is called by SQLite code to indicate that
-** subsequent malloc failures are benign. A call to sqlite3EndBenignMalloc()
-** indicates that subsequent malloc failures are non-benign.
+** Global variable:  Pointer to the benign malloc control interface.
+*/
+static void (*sqlite3xBenignCtrl)(int) = sqlite3BenignCtrlNoop;
+
+/*
+** Register a pointer to the benign-malloc control interface function.
+** If the argument is a NULL pointer, register the default no-op controller.
+*/
+void sqlite3BenignMallocHooks(void (*xBenignCtrl)(int)){
+  sqlite3xBenignCtrl = xBenignCtrl ? xBenignCtrl : sqlite3BenignCtrlNoop;
+}
+
+/*
+** The sqlite3BeginBenignMalloc() and sqlite3EndBenignMalloc() calls bracket
+** sections of code for which malloc failures are non-fatal.  
 */
 void sqlite3BeginBenignMalloc(void){
-  wsdHooksInit;
-  if( wsdHooks.xBenignBegin ){
-    wsdHooks.xBenignBegin();
-  }
+  sqlite3xBenignCtrl(1);
 }
 void sqlite3EndBenignMalloc(void){
-  wsdHooksInit;
-  if( wsdHooks.xBenignEnd ){
-    wsdHooks.xBenignEnd();
-  }
+  sqlite3xBenignCtrl(0);
+}
+
+/*
+** The sqlite3PreviousBenignMalloc() call indicates that the previous
+** malloc call (which must have failed) was a benign failure.
+*/
+void sqlite3PreviousBenignMalloc(void){
+  sqlite3xBenignCtrl(2);
 }
 
 #endif   /* #ifndef SQLITE_OMIT_BUILTIN_TEST */

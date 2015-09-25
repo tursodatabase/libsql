@@ -169,12 +169,27 @@ static int faultsimPending(void){
   }
 }
 
-
-static void faultsimBeginBenign(void){
-  memfault.isBenignMode++;
-}
-static void faultsimEndBenign(void){
-  memfault.isBenignMode--;
+/*
+** The SQLITE_TESTCTRL_BENIGN_MALLOC_CTRL callback.  The eOp argument means:
+**
+**     0:      Leave benign malloc mode
+**     1:      Enter benign malloc mode (may be nested)
+**     2:      Make the previous malloc failure benign if it was not already so
+*/
+static void faultsimBenignCtrl(int eOp){
+  switch( eOp ){
+    case 0:    /* Leave benign malloc mode */
+      assert( memfault.isBenignMode>0 );
+      memfault.isBenignMode--;
+      break;
+    case 1:    /* Enter benign malloc mode */
+      memfault.isBenignMode++;
+      break;
+    case 2:    /* Previous failure is benign */
+      assert( memfault.nFail>0 );
+      if( memfault.isBenignMode==0 ) memfault.nBenign++;
+      break;
+  }
 }
 
 /*
@@ -207,9 +222,8 @@ static int faultsimInstall(int install){
     if( rc==SQLITE_OK ){
       rc = sqlite3_config(SQLITE_CONFIG_MALLOC, &m);
     }
-    sqlite3_test_control(SQLITE_TESTCTRL_BENIGN_MALLOC_HOOKS, 
-        faultsimBeginBenign, faultsimEndBenign
-    );
+    sqlite3_test_control(SQLITE_TESTCTRL_BENIGN_MALLOC_CTRL, 
+                        faultsimBenignCtrl);
   }else{
     sqlite3_mem_methods m2;
     assert(memfault.m.xMalloc);
@@ -222,7 +236,7 @@ static int faultsimInstall(int install){
     assert( memcmp(&m2, &memfault.m, sizeof(m2))==0 );
 
     rc = sqlite3_config(SQLITE_CONFIG_MALLOC, &memfault.m);
-    sqlite3_test_control(SQLITE_TESTCTRL_BENIGN_MALLOC_HOOKS, 0, 0);
+    sqlite3_test_control(SQLITE_TESTCTRL_BENIGN_MALLOC_CTRL, 0);
   }
 
   if( rc==SQLITE_OK ){

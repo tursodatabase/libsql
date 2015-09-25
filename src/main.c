@@ -664,10 +664,12 @@ static int setupLookaside(sqlite3 *db, void *pBuf, int sz, int cnt){
     sz = 0;
     pStart = 0;
   }else if( pBuf==0 ){
-    sqlite3BeginBenignMalloc();
     pStart = sqlite3Malloc( sz*cnt );  /* IMP: R-61949-35727 */
-    sqlite3EndBenignMalloc();
-    if( pStart ) cnt = sqlite3MallocSize(pStart)/sz;
+    if( pStart==0 ){
+      sqlite3PreviousBenignMalloc();
+    }else{
+      cnt = sqlite3MallocSize(pStart)/sz;
+    }
   }else{
     pStart = pBuf;
   }
@@ -3440,18 +3442,18 @@ int sqlite3_test_control(int op, ...){
     }
 
     /*
-    **  sqlite3_test_control(BENIGN_MALLOC_HOOKS, xBegin, xEnd)
+    **  sqlite3_test_control(BENIGN_MALLOC_CTRL, xCtrl)
     **
-    ** Register hooks to call to indicate which malloc() failures 
-    ** are benign.
+    ** Register a callback function that will handle calls to
+    ** sqlite3BeginBenignMalloc(), sqlite3EndBenignMalloc(), and
+    ** sqlite3PreviousBenignMalloc().  If the callback function pointer
+    ** is NULL, then a built-in default (no-op) handler is used.
     */
-    case SQLITE_TESTCTRL_BENIGN_MALLOC_HOOKS: {
-      typedef void (*void_function)(void);
-      void_function xBenignBegin;
-      void_function xBenignEnd;
-      xBenignBegin = va_arg(ap, void_function);
-      xBenignEnd = va_arg(ap, void_function);
-      sqlite3BenignMallocHooks(xBenignBegin, xBenignEnd);
+    case SQLITE_TESTCTRL_BENIGN_MALLOC_CTRL: {
+      typedef void (*void_function)(int);
+      void_function xBenignCtrl;
+      xBenignCtrl = va_arg(ap, void_function);
+      sqlite3BenignMallocHooks(xBenignCtrl);
       break;
     }
 

@@ -272,7 +272,6 @@ static int pcache1InitBulk(PCache1 *pCache){
   if( pcache1.nInitPage==0 ) return 0;
   /* Do not bother with a bulk allocation if the cache size very small */
   if( pCache->nMax<3 ) return 0;
-  sqlite3BeginBenignMalloc();
   if( pcache1.nInitPage>0 ){
     szBulk = pCache->szAlloc * (i64)pcache1.nInitPage;
   }else{
@@ -282,8 +281,9 @@ static int pcache1InitBulk(PCache1 *pCache){
     szBulk = pCache->szAlloc*pCache->nMax;
   }
   zBulk = pCache->pBulk = sqlite3Malloc( szBulk );
-  sqlite3EndBenignMalloc();
-  if( zBulk ){
+  if( zBulk==0 ){
+    sqlite3PreviousBenignMalloc();
+  }else{
     int nBulk = sqlite3MallocSize(zBulk)/pCache->szAlloc;
     int i;
     for(i=0; i<nBulk; i++){

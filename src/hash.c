@@ -118,11 +118,11 @@ static int rehash(Hash *pH, unsigned int new_size){
   ** use the actual amount of space allocated for the hash table (which
   ** may be larger than the requested amount).
   */
-  sqlite3BeginBenignMalloc();
   new_ht = (struct _ht *)sqlite3Malloc( new_size*sizeof(struct _ht) );
-  sqlite3EndBenignMalloc();
-
-  if( new_ht==0 ) return 0;
+  if( new_ht==0 ){
+    sqlite3PreviousBenignMalloc();
+    return 0;
+  }
   sqlite3_free(pH->ht);
   pH->ht = new_ht;
   pH->htsize = new_size = sqlite3MallocSize(new_ht)/sizeof(struct _ht);

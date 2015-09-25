@@ -526,6 +526,7 @@ void *sqlite3Realloc(void *pOld, u64 nBytes){
     }
     pNew = sqlite3GlobalConfig.m.xRealloc(pOld, nNew);
     if( pNew==0 && mem0.alarmThreshold>0 ){
+      sqlite3PreviousBenignMalloc();
       sqlite3MallocAlarm((int)nBytes);
       pNew = sqlite3GlobalConfig.m.xRealloc(pOld, nNew);
     }
