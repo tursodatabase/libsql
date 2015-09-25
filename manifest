@@ -1,5 +1,5 @@
-C Report\san\serror\sif\sthe\snumber\sof\snamed\scolumns\sin\sa\sVIEW\sis\sdifferent\nfrom\sthe\snumber\sof\sresult\scolumns\sin\sthe\sSELECT\sstatement\sthat\simplements\nthe\sVIEW.
-D 2015-09-25T13:42:55.978
+C Fix\sPRAGMA\sintegrity_check\sso\sthat\sit\sworks\swith\sa\sUNIQUE\sindex\sover\nexpressions.
+D 2015-09-25T20:49:16.032
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1afa6fb2de2bddd50e0ddae8166c2ee9d69b301
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -333,7 +333,7 @@ F src/parse.y f599aa5e871a493330d567ced93de696f61f48f7
 F src/pcache.c 24be750c79272e0ca7b6e007bc94999700f3e5ef
 F src/pcache.h 9968603796240cdf83da7e7bef76edf90619cea9
 F src/pcache1.c e822007159d53a7ea7aa040d6e28964ddb6de083
-F src/pragma.c d71b813e67bf03f3116b9dd5164fbfd81ec673a2
+F src/pragma.c 577f70c3899ee6fc2e5a4c37158c69c1c23f71e7
 F src/pragma.h 631a91c8b0e6ca8f051a1d8a4a0da4150e04620a
 F src/prepare.c 82e5db1013846a819f198336fed72c44c974e7b1
 F src/printf.c 0c4bcdd1c2e2521024f0a69cb5eb334f86b3652a
@@ -785,7 +785,7 @@ F test/index5.test 8621491915800ec274609e42e02a97d67e9b13e7
 F test/index6.test 7102ec371414c42dfb1d5ca37eb4519aa9edc23a
 F test/index7.test 9c6765a74fc3fcde7aebc5b3bd40d98df14a527c
 F test/indexedby.test 9c4cd331224e57f79fbf411ae245e6272d415985
-F test/indexexpr1.test 4bce4e4b6b1a2d0c34e17d4e04f3957a3bcdc500
+F test/indexexpr1.test bbb52b5d5717d9f23853826963b0af5110009366
 F test/indexfault.test 31d4ab9a7d2f6e9616933eb079722362a883eb1d
 F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
 F test/insert.test 38742b5e9601c8f8d76e9b7555f7270288c2d371
@@ -1388,7 +1388,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1350dd42d056508337b1a07ad8b1c9c97593f8d3
-R 9672ebd00531833a09889a78098f4f34
+P 6e4ac0be2de1a16fcbb2a314504122ad95aa257e
+R ddf8c16716e71dc2258fab1042b22895
 U drh
-Z 160c60a319774154e17ae3a2bf9d8f26
+Z 58a6b6e5eae00c6fe24fb1e13719f1e4
