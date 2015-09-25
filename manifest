@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\scomputing\saffinities\sfor\sindexes\sduring\sskip-scan\scode\s\ngeneration\swhen\sSQLITE_ENABLE_STAT4\sis\son.\s\sBug\sintroduced\sby\ncheck-in\s[1ee089a72d789002].
-D 2015-09-25T01:09:27.582
+C Report\san\serror\sif\sthe\snumber\sof\snamed\scolumns\sin\sa\sVIEW\sis\sdifferent\nfrom\sthe\snumber\sof\sresult\scolumns\sin\sthe\sSELECT\sstatement\sthat\simplements\nthe\sVIEW.
+D 2015-09-25T13:42:55.978
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1afa6fb2de2bddd50e0ddae8166c2ee9d69b301
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -340,7 +340,7 @@ F src/printf.c 0c4bcdd1c2e2521024f0a69cb5eb334f86b3652a
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 1954a0f01bf65d78d7d559aea3d5c67f33376d91
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c 36ee14d729e182cd8b6796f980b7ab3fc9bcee72
+F src/select.c 33230303f5f32430ee971a6fcc6a370e4a93ae1a
 F src/shell.c 6332ef06db1390ef812cfdff1fc97b4fd76cdd42
 F src/sqlite.h.in 4e06cb5fed36736242c66237991db6f3e2395eb9
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
@@ -1248,7 +1248,7 @@ F test/vacuum3.test 77ecdd54592b45a0bcb133339f99f1ae0ae94d0d
 F test/vacuum4.test d3f8ecff345f166911568f397d2432c16d2867d9
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/veryquick.test 57ab846bacf7b90cf4e9a672721ea5c5b669b661
-F test/view.test 3930ae94042d702ab15a6a0ef692cfa5c9f9b68b
+F test/view.test bfdec45ad4b2ed5dd5fddbc3dcafcfca2ab23574
 F test/vtab1.test 6210e076997f176bedc300a87ad6404651b601dd
 F test/vtab2.test f8cd1bb9aba7143eba97812d9617880a36d247ad
 F test/vtab3.test b45f47d20f225ccc9c28dc915d92740c2dee311e
@@ -1388,7 +1388,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 668fc1ebaf426f9eed3ed7865e41f1023dafebfb
-R e89f89bb659102a73737ed43d8a4eae7
+P 1350dd42d056508337b1a07ad8b1c9c97593f8d3
+R 9672ebd00531833a09889a78098f4f34
 U drh
-Z 28a6620004b61f128b9c9ee72c986f80
+Z 160c60a319774154e17ae3a2bf9d8f26

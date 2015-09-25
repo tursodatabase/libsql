@@ -4861,7 +4861,17 @@ int sqlite3Select(
     struct SrcList_item *pItem = &pTabList->a[i];
     Select *pSub = pItem->pSelect;
     int isAggSub;
+    Table *pTab = pItem->pTab;
     if( pSub==0 ) continue;
+
+    /* Catch mismatch in the declared columns of a view and the number of
+    ** columns in the SELECT on the RHS */
+    if( pTab->nCol!=pSub->pEList->nExpr ){
+      sqlite3ErrorMsg(pParse, "expected %d columns for '%s' but got %d",
+                      pTab->nCol, pTab->zName, pSub->pEList->nExpr);
+      goto select_end;
+    }
+
     isAggSub = (pSub->selFlags & SF_Aggregate)!=0;
     if( flattenSubquery(pParse, p, i, isAgg, isAggSub) ){
       /* This subquery can be absorbed into its parent. */

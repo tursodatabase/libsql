@@ -161,6 +161,16 @@ do_test view-3.3.3 {
 do_catchsql_test view-3.3.4 {
   CREATE VIEW v1err(x,y DESC,z) AS SELECT a, b+c, c-b FROM t1;
 } {1 {syntax error after column name "y"}}
+do_catchsql_test view-3.3.5 {
+  DROP VIEW IF EXISTS v1err;
+  CREATE VIEW v1err(x,y) AS SELECT a, b+c, c-b FROM t1;
+  SELECT * FROM v1err;
+} {1 {expected 2 columns for 'v1err' but got 3}}
+do_catchsql_test view-3.3.6 {
+  DROP VIEW IF EXISTS v1err;
+  CREATE VIEW v1err(w,x,y,z) AS SELECT a, b+c, c-b FROM t1;
+  SELECT * FROM v1err;
+} {1 {expected 4 columns for 'v1err' but got 3}}
 
 ifcapable compound {
 do_test  view-3.4 {
