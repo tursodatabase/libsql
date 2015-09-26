@@ -1,5 +1,5 @@
-C Fix\sthreads.c\sso\sthat\ssetting\ssqlite3FaultSim(200)\susing\sthe\nSQLITE_TESTCTRL_FAULT_INSTALL\scallback\scauses\sboth\sunix\sand\swindows\sworker\nthreads\sto\sbe\ssequential\sand\sdeterministic,\sso\sthat\sthey\scan\sbe\stested\nreliably.
-D 2015-09-25T23:40:01.663
+C Remove\san\sassert\sin\sthe\swindows\sworker-thread\slogic\sthat\scan\sfail\sin\sa\srace\ncondition.
+D 2015-09-26T01:28:46.988
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1afa6fb2de2bddd50e0ddae8166c2ee9d69b301
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -395,7 +395,7 @@ F src/test_thread.c af391ec03d23486dffbcc250b7e58e073f172af9
 F src/test_vfs.c 3b65d42e18b262805716bd96178c81da8f2d9283
 F src/test_vfstrace.c bab9594adc976cbe696ff3970728830b4c5ed698
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
-F src/threads.c 87639bc293d470f50d48c370028511ad3e1ccfd5
+F src/threads.c bbfb74450643cb5372a43ad4f6cffd7e9dfcecb0
 F src/tokenize.c 83c6ed569423a3af83a83973b444cf7123be33a6
 F src/treeview.c 154f0acc622fa3514de8777dcedf4c8a8802b4ce
 F src/trigger.c 322f23aad694e8f31d384dcfa386d52a48d3c52f
@@ -1388,7 +1388,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 113181cec4db418b07640d6b1967923992efd71a
-R c9cd2c770b7c10173d40a9ea442ad6dd
+P 2d867c054d6d3e1e841ba9ca524e986bc6993ac3
+R 1758ec9357330b0579141ecae96a2702
 U drh
-Z 0fbda38735b1950a4a02ae04b92eb3a5
+Z da76e4bf593addae8cb1880d2dd70b45
