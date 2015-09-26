@@ -474,6 +474,11 @@ do_test view-12.1 {
     CREATE VIEW v12 AS SELECT a FROM t1 WHERE b=?
   }
 } {1 {parameters are not allowed in views}}
+do_test view-12.2 {
+  catchsql {
+    CREATE VIEW v12(x) AS SELECT a FROM t1 WHERE b=?
+  }
+} {1 {parameters are not allowed in views}}
 
 ifcapable attach {
   do_test view-13.1 {

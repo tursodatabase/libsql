@@ -1,5 +1,5 @@
-C Fix\sthe\stitle\sof\sthe\sdocumentation\son\ssqlite3_value_subtype().\s\sThis\sis\sa\ncomment\schange\sonly.
-D 2015-09-26T03:31:47.786
+C Fix\sa\smemory\sleak\sthat\scan\soccur\sfollowing\sa\ssyntax\serror\sin\sCREATE\sVIEW.
+D 2015-09-26T11:15:44.897
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1afa6fb2de2bddd50e0ddae8166c2ee9d69b301
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -285,7 +285,7 @@ F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
 F src/btree.c 164583151135a3764672c2c25aa8e4fa06bdb12b
 F src/btree.h 40189aefdc2b830d25c8b58fd7d56538481bfdd7
 F src/btreeInt.h 8177c9ab90d772d6d2c6c517e05bed774b7c92c0
-F src/build.c 8a86f4203ac8a9ac0734f242a96f043edffb6018
+F src/build.c edc5a29cd55257b05be837c3613e2cade02b3e03
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
 F src/ctime.c 5a0b735dc95604766f5dac73973658eef782ee8b
@@ -1248,7 +1248,7 @@ F test/vacuum3.test 77ecdd54592b45a0bcb133339f99f1ae0ae94d0d
 F test/vacuum4.test d3f8ecff345f166911568f397d2432c16d2867d9
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/veryquick.test 57ab846bacf7b90cf4e9a672721ea5c5b669b661
-F test/view.test bfdec45ad4b2ed5dd5fddbc3dcafcfca2ab23574
+F test/view.test 0d8935e64867ae01492347884f5cbb47f056f4c8
 F test/vtab1.test 6210e076997f176bedc300a87ad6404651b601dd
 F test/vtab2.test f8cd1bb9aba7143eba97812d9617880a36d247ad
 F test/vtab3.test b45f47d20f225ccc9c28dc915d92740c2dee311e
@@ -1388,7 +1388,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b89495ae09aa0e9652475b2ba1943dfd87c73e07
-R 61d90f8d030c1e925088df624cbea8dd
+P b79023542458f7e839469c5e313694f1e4cf223a
+R 5bffdcb8f106214b20b1e8dd3d8300df
 U drh
-Z c6f8608e2016c08a0ff2908d96bb63fd
+Z 606c03f040a7d5d452758b762c64cca4

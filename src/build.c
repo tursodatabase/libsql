@@ -2082,8 +2082,7 @@ void sqlite3CreateView(
 
   if( pParse->nVar>0 ){
     sqlite3ErrorMsg(pParse, "parameters are not allowed in views");
-    sqlite3SelectDelete(db, pSelect);
-    return;
+    goto create_view_fail;
   }
   sqlite3StartTable(pParse, pName1, pName2, isTemp, 1, 0, noErr);
   p = pParse->pNewTable;
