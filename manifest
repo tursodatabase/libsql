@@ -1,9 +1,9 @@
-C Fix\sa\smemory\sleak\sthat\scan\soccur\sfollowing\sa\ssyntax\serror\sin\sCREATE\sVIEW.
-D 2015-09-26T11:15:44.897
+C Enable\sadding\sJSON1\sby\sappending\sthe\sjson1.c\ssource\sfile\sto\sthe\samalgamation\nand\scompiling\swith\s-DSQLITE_ENABLE_JSON1
+D 2015-09-26T17:44:59.245
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in e1afa6fb2de2bddd50e0ddae8166c2ee9d69b301
+F Makefile.in 2143eeef6d0cc26006ae5fc4bb242a4a8b973412
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc f090cdf036f3c07fb13aa2f4494e388c0b1ed1e4
+F Makefile.msc b9054642ab305be4174d8b0433c9951c2839701d
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION ccfc4d1576dbfdeece0a4372a2e6a2e37d3e7975
@@ -195,7 +195,7 @@ F ext/misc/eval.c f971962e92ebb8b0a4e6b62949463ee454d88fa2
 F ext/misc/fileio.c d4171c815d6543a9edef8308aab2951413cd8d0f
 F ext/misc/fuzzer.c 4c84635c71c26cfa7c2e5848cf49fe2d2cfcd767
 F ext/misc/ieee754.c b0362167289170627659e84173f5d2e8fee8566e
-F ext/misc/json1.c 557d6b2d0c3d26625e686a4b4ef8d4a50b8cec94
+F ext/misc/json1.c 263cac0292302b7cf7ecb2e8bd698a50d1aedecc
 F ext/misc/nextchar.c 35c8b8baacb96d92abbb34a83a997b797075b342
 F ext/misc/percentile.c bcbee3c061b884eccb80e21651daaae8e1e43c63
 F ext/misc/regexp.c af92cdaa5058fcec1451e49becc7ba44dba023dc
@@ -261,7 +261,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk d12601118f1d1dadebe1329a53a6d5c512b36d44
+F main.mk 151fcaba704fdeeb0a1941857ef6e1d6216732d8
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
 F mkopcodeh.awk 0e7f04a8eb90f92259e47d80110e4e98d7ce337a
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
@@ -305,7 +305,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c d344a95d60c24e2f490ee59db9784b1b17439012
 F src/loadext.c f0b66d28e377fd6c6d36cc9d92df1ff251ebee44
-F src/main.c e17fcffae4306a9b8334faf3bac80d7396850b54
+F src/main.c c80ea19ec71609ccbec21f334fbcf475bb6af2fc
 F src/malloc.c 3a37ce6979a40f499d8cea9e9ab4e8517854d35d
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c abe6ee469b6c5a35c7f22bfeb9c9bac664a1c987
@@ -341,7 +341,7 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 1954a0f01bf65d78d7d559aea3d5c67f33376d91
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 33230303f5f32430ee971a6fcc6a370e4a93ae1a
-F src/shell.c 6332ef06db1390ef812cfdff1fc97b4fd76cdd42
+F src/shell.c a11b20da4c6630e0e8f83c47ce36f717dd0422f0
 F src/sqlite.h.in 02f6ed7de3a96d10bd1e6e5803e4e4b786dff014
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 64350bf36833a56ad675e27392a913f417c5c308
@@ -1388,7 +1388,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b79023542458f7e839469c5e313694f1e4cf223a
-R 5bffdcb8f106214b20b1e8dd3d8300df
+P f4704035a6134f702c00110358e36f1579e2ea78
+R 6dd9af66a4beb7d52dbecad30f413fd3
 U drh
-Z 606c03f040a7d5d452758b762c64cca4
+Z 2dae51b0464af5412711a65e5f2d84bb

@@ -4619,7 +4619,7 @@ int SQLITE_CDECL main(int argc, char **argv){
   }
   data.out = stdout;
 
-#ifdef SQLITE_ENABLE_JSON1
+#ifdef SQLITE_SHELL_JSON1
   {
     extern int sqlite3_json_init(sqlite3*);
     sqlite3_auto_extension((void(*)(void))sqlite3_json_init);
