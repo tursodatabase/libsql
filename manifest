@@ -1,5 +1,5 @@
-C Expand\sthe\sheader\scomment\sto\sclarify\sthe\spurpose\sfor\sthe\nsqlite3MemoryBarrier()\sfunction.
-D 2015-09-26T03:23:29.340
+C Fix\sthe\stitle\sof\sthe\sdocumentation\son\ssqlite3_value_subtype().\s\sThis\sis\sa\ncomment\schange\sonly.
+D 2015-09-26T03:31:47.786
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1afa6fb2de2bddd50e0ddae8166c2ee9d69b301
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -342,7 +342,7 @@ F src/resolve.c 1954a0f01bf65d78d7d559aea3d5c67f33376d91
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 33230303f5f32430ee971a6fcc6a370e4a93ae1a
 F src/shell.c 6332ef06db1390ef812cfdff1fc97b4fd76cdd42
-F src/sqlite.h.in 4e06cb5fed36736242c66237991db6f3e2395eb9
+F src/sqlite.h.in 02f6ed7de3a96d10bd1e6e5803e4e4b786dff014
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 64350bf36833a56ad675e27392a913f417c5c308
 F src/sqliteInt.h 5afc6e50402be1e0a870f28e1cd8b32eb9db590f
@@ -1388,7 +1388,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d7bfb96092a6b812af194f32b22283a0f6a7da96
-R 53a860536ab1d397fede465244d51351
+P b89495ae09aa0e9652475b2ba1943dfd87c73e07
+R 61d90f8d030c1e925088df624cbea8dd
 U drh
-Z f65cf73c8cac5f871fc434c67cdccd1a
+Z c6f8608e2016c08a0ff2908d96bb63fd
