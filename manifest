@@ -1,5 +1,5 @@
-C Add\stest\scases\sto\sthe\sONEPASS\soptimization\scorruption\sproblem\sfixed\sby\sthe\nprevious\scheck-in.
-D 2015-09-28T15:08:28.795
+C Changes\sto\sallow\sDELETE\soperations\son\svirtual\stables\sto\suse\sthe\sonepass\sstrategy\sunder\ssome\scircumstances.
+D 2015-09-28T15:20:58.913
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2143eeef6d0cc26006ae5fc4bb242a4a8b973412
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -285,13 +285,13 @@ F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
 F src/btree.c 164583151135a3764672c2c25aa8e4fa06bdb12b
 F src/btree.h 40189aefdc2b830d25c8b58fd7d56538481bfdd7
 F src/btreeInt.h 8177c9ab90d772d6d2c6c517e05bed774b7c92c0
-F src/build.c edc5a29cd55257b05be837c3613e2cade02b3e03
+F src/build.c 361f58b73aad7804f5706bf62d210bd9cd608041
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
 F src/ctime.c 5a0b735dc95604766f5dac73973658eef782ee8b
 F src/date.c fb1c99172017dcc8e237339132c91a21a0788584
 F src/dbstat.c e637e7a7ff40ef32132a418c6fdf1cfb63aa27c7
-F src/delete.c 371df4fc86e96efeaed3d37565aef77f956be109
+F src/delete.c b454df59d57cb3f07118dfc68821760593fcaab3
 F src/expr.c 3a76afcdac925294c39903b7002ddb9e5fd29863
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 83e1baba999bed3144ea5a2143fc922edf51135f
@@ -342,7 +342,7 @@ F src/resolve.c 1954a0f01bf65d78d7d559aea3d5c67f33376d91
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 33230303f5f32430ee971a6fcc6a370e4a93ae1a
 F src/shell.c a11b20da4c6630e0e8f83c47ce36f717dd0422f0
-F src/sqlite.h.in 02f6ed7de3a96d10bd1e6e5803e4e4b786dff014
+F src/sqlite.h.in eade8bcc0456ff4d3f7ecfbbd3c4eec117314f26
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 64350bf36833a56ad675e27392a913f417c5c308
 F src/sqliteInt.h 5afc6e50402be1e0a870f28e1cd8b32eb9db590f
@@ -417,7 +417,7 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 18b0ed49830cf04fe2d68224b41838a73ac6cd24
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 2e14d17f592d176b6dc879c33fbdec4fbccaa2ba
-F src/where.c f2c4905e47fe80043a0c45f374f555615da365ba
+F src/where.c d07fb77010949be9b96e9120b4653712bf9f74ae
 F src/whereInt.h 7892bb54cf9ca0ae5c7e6094491b94c9286dc647
 F src/wherecode.c 7660e1ad16817a921b099af553f3e1349352d16f
 F src/whereexpr.c 2473e4350e30f9b55d1c6a8f66ca23c689f23f1d
@@ -1388,7 +1388,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9d057f52217e7ef9c3f3eb84117abe3365503f44
-R 075466467a3c577c7bea65d16a397b4e
-U drh
-Z a775dc5a399b71fca215b8951f694541
+P 5c14d447055bb337428eb1fe0a2934abee381829
+R 3d1a8d879c965d0f75999b9c5903a435
+T *branch * vtab-onepass
+T *sym-vtab-onepass *
+T -sym-trunk *
+U dan
+Z 049fa8c468f3a0165cbcd245b0299bac
