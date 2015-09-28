@@ -434,9 +434,8 @@ void sqlite3DeleteFrom(
     }
   
     if( eOnePass!=ONEPASS_OFF ){
-      /* For ONEPASS, no need to store the rowid/primary-key. There is only
-      ** one, so just keep it in its register(s) and fall through to the
-      ** delete code.  */
+      /* For ONEPASS, no need to store the rowid/primary-key because rows
+      ** are deleted as they are discovered */
       nKey = nPk; /* OP_Found will use an unpacked key */
       aToOpen = sqlite3DbMallocRaw(db, nIdx+2);
       if( aToOpen==0 ){
@@ -449,6 +448,8 @@ void sqlite3DeleteFrom(
       if( aiCurOnePass[1]>=0 ) aToOpen[aiCurOnePass[1]-iTabCur] = 0;
       if( addrEphOpen ) sqlite3VdbeChangeToNoop(v, addrEphOpen);
     }else{
+      /* For non-ONEPASS, remember the rowid/primary-key of the row to
+      ** be deleted */
       if( pPk ){
         /* Add the PK key for this row to the temporary table */
         iKey = ++pParse->nMem;
@@ -522,6 +523,9 @@ void sqlite3DeleteFrom(
     {
       int count = (pParse->nested==0);    /* True to count changes */
       int iIdxNoSeek = -1;
+      if( eOnePass!=ONEPASS_OFF ){
+        sqlite3WhereHenceforthUseTableCursor(pWInfo, sqlite3VdbeCurrentAddr(v));
+      }
       if( bComplex==0 && aiCurOnePass[1]!=iDataCur ){
         iIdxNoSeek = aiCurOnePass[1];
       }

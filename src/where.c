@@ -27,6 +27,18 @@ static int whereLoopResize(sqlite3*, WhereLoop*, int);
 /***/ int sqlite3WhereTrace = 0;
 #endif
 
+/*
+** When generating the end-of-WHERE-loop, do not transform references to
+** the main table into references to the index after this address.
+**
+** This interface is invoked by DELETE at a point after when the
+** table cursor is pointing to the correct address but before any
+** of the index cursors have been deleted.
+*/
+void sqlite3WhereHenceforthUseTableCursor(WhereInfo *pWInfo, int addr){
+  pWInfo->addrUseTabCur = addr;
+}
+
 
 /*
 ** Return the estimated number of output rows from a WHERE clause
@@ -4538,10 +4550,13 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       pIdx = pLevel->u.pCovidx;
     }
     if( pIdx
-     && (pWInfo->eOnePass==ONEPASS_OFF || !HasRowid(pIdx->pTable))
      && !db->mallocFailed
     ){
-      last = sqlite3VdbeCurrentAddr(v);
+      if( pWInfo->addrUseTabCur ){
+        last = pWInfo->addrUseTabCur;
+      }else{
+        last = sqlite3VdbeCurrentAddr(v);
+      }
       k = pLevel->addrBody;
       pOp = sqlite3VdbeGetOp(v, k);
       for(; k<last; k++, pOp++){

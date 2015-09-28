@@ -1680,8 +1680,12 @@ int sqlite3OpenTableAndIndices(
   for(i=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
     int iIdxCur = iBase++;
     assert( pIdx->pSchema==pTab->pSchema );
-    if( IsPrimaryKeyIndex(pIdx) && !HasRowid(pTab) && piDataCur ){
-      *piDataCur = iIdxCur;
+    if( IsPrimaryKeyIndex(pIdx) && !HasRowid(pTab) ){
+      if( aToOpen && aToOpen[0]==0 ){
+        iIdxCur = iDataCur;
+        aToOpen[i+1] = 0;
+      }
+      if( piDataCur ) *piDataCur = iIdxCur;
     }
     if( aToOpen==0 || aToOpen[i+1] ){
       sqlite3VdbeAddOp3(v, op, iIdxCur, pIdx->tnum, iDb);
