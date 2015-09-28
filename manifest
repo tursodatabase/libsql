@@ -1,5 +1,5 @@
-C Changes\sto\sallow\sDELETE\soperations\son\svirtual\stables\sto\suse\sthe\sonepass\sstrategy\sunder\ssome\scircumstances.
-D 2015-09-28T15:20:58.913
+C Update\sfts3\sto\suse\sthe\sonepass\sstrategy\sfor\sdelete\soperations.
+D 2015-09-28T15:23:29.191
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2143eeef6d0cc26006ae5fc4bb242a4a8b973412
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -78,9 +78,9 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c b04b0c57761fdba2ae562d9d9ba50c7c4a95d9ea
+F ext/fts3/fts3.c 52232f39bae8320c537f1d9ffd8d58b64dfaf21e
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h 601743955ac43a0e82e6828a931c07bb3b0c95ff
+F ext/fts3/fts3Int.h c84125c666ee54cef6efce6ff64abb0d0e2f4535
 F ext/fts3/fts3_aux.c 9edc3655fcb287f0467d0a4b886a01c6185fe9f1
 F ext/fts3/fts3_expr.c 71c063da9c2a4167fb54aec089dd5ef33a58c9cb
 F ext/fts3/fts3_hash.c 29b986e43f4e9dd40110eafa377dc0d63c422c60
@@ -96,7 +96,7 @@ F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c a93f5edc0aff44ef8b06d7cb55b52026541ca145
 F ext/fts3/fts3_unicode2.c c3d01968d497bd7001e7dc774ba75b372738c057
-F ext/fts3/fts3_write.c 4f005f78592a1447ca96c8475ef5342ab7dbe02a
+F ext/fts3/fts3_write.c 5d7857a6a454f210e4fabc2528e8a63e6ab98078
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/fts3/tool/fts3view.c 8e53d0190a7b3443764bbd32ad47be2bd852026d
@@ -727,7 +727,7 @@ F test/fts4aa.test 10aac8e9d62c7357590acfabe3fad01e9a9ce1cb
 F test/fts4check.test 9d9e818fd6cb29c0e007cd6d00447739d4fde430
 F test/fts4content.test abb0c77bc3da3df64fec72e00844d2257a90025d
 F test/fts4docid.test e33c383cfbdff0284685604d256f347a18fdbf01
-F test/fts4growth.test df10fde9f47cf5c71861e63fd8efcd573c4f7e53
+F test/fts4growth.test a73eab34dd9960d10603347fc77fefe2f9322e26
 F test/fts4growth2.test 2f063be1902a73cd087355837c52fed42ac11a5d
 F test/fts4incr.test 4e353a0bd886ea984e56fce9e77724fc923b8d0d
 F test/fts4langid.test 24a6e41063b416bbdf371ff6b4476fa41c194aa7
@@ -1388,10 +1388,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5c14d447055bb337428eb1fe0a2934abee381829
-R 3d1a8d879c965d0f75999b9c5903a435
-T *branch * vtab-onepass
-T *sym-vtab-onepass *
-T -sym-trunk *
+P e73f919fae1833c6ffb36eddbc76d9a8d9324214
+R 164b44f729dee0c8bb93a44bcf38cdec
 U dan
-Z 049fa8c468f3a0165cbcd245b0299bac
+Z 708fbaf265cb02c74fec8f06c877c6ce
