@@ -1,5 +1,5 @@
-C Enable\sadding\sJSON1\sby\sappending\sthe\sjson1.c\ssource\sfile\sto\sthe\samalgamation\nand\scompiling\swith\s-DSQLITE_ENABLE_JSON1
-D 2015-09-26T17:44:59.245
+C Fix\sa\sdatabase\scorruption\sbug\scaused\sby\sthe\sONEPASS\soptimization\sadded\nin\scheck-in\s[8b93cc5937000535].\s\sBug\sdetected\s(prior\sto\srelease)\sby\n[https://www.sqlite.org/sqllogictest|sqllogictest].\s\sTest\scases\sto\sfollow.
+D 2015-09-28T14:40:20.768
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2143eeef6d0cc26006ae5fc4bb242a4a8b973412
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -417,7 +417,7 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 18b0ed49830cf04fe2d68224b41838a73ac6cd24
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 2e14d17f592d176b6dc879c33fbdec4fbccaa2ba
-F src/where.c a7582b752d436d335bfb62f445e1c2771e7daa95
+F src/where.c f2c4905e47fe80043a0c45f374f555615da365ba
 F src/whereInt.h 7892bb54cf9ca0ae5c7e6094491b94c9286dc647
 F src/wherecode.c 7660e1ad16817a921b099af553f3e1349352d16f
 F src/whereexpr.c 2473e4350e30f9b55d1c6a8f66ca23c689f23f1d
@@ -1388,7 +1388,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f4704035a6134f702c00110358e36f1579e2ea78
-R 6dd9af66a4beb7d52dbecad30f413fd3
+P 33404b2029120d4aabe1e25d484871810777e934
+R 221ece26a434b0c8583fbc9c4416f571
 U drh
-Z 2dae51b0464af5412711a65e5f2d84bb
+Z d13c27a5f9aee35d4aed34621e7033a2

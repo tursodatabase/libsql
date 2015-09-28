@@ -4529,7 +4529,10 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     }else if( pLoop->wsFlags & WHERE_MULTI_OR ){
       pIdx = pLevel->u.pCovidx;
     }
-    if( pIdx && !db->mallocFailed ){
+    if( pIdx
+     && (pWInfo->eOnePass==ONEPASS_OFF || !HasRowid(pIdx->pTable))
+     && !db->mallocFailed
+    ){
       last = sqlite3VdbeCurrentAddr(v);
       k = pLevel->addrBody;
       pOp = sqlite3VdbeGetOp(v, k);
