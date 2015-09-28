@@ -1,5 +1,5 @@
-C Fix\sa\sdatabase\scorruption\sbug\scaused\sby\sthe\sONEPASS\soptimization\sadded\nin\scheck-in\s[8b93cc5937000535].\s\sBug\sdetected\s(prior\sto\srelease)\sby\n[https://www.sqlite.org/sqllogictest|sqllogictest].\s\sTest\scases\sto\sfollow.
-D 2015-09-28T14:40:20.768
+C Add\stest\scases\sto\sthe\sONEPASS\soptimization\scorruption\sproblem\sfixed\sby\sthe\nprevious\scheck-in.
+D 2015-09-28T15:08:28.795
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2143eeef6d0cc26006ae5fc4bb242a4a8b973412
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -572,7 +572,7 @@ F test/default.test 0cb49b1c315a0d81c81d775e407f66906a2a604d
 F test/delete.test e1bcdf8926234e27aac24b346ad83d3329ec8b6f
 F test/delete2.test 3a03f2cca1f9a67ec469915cb8babd6485db43fa
 F test/delete3.test 555e84a00a99230b7d049d477a324a631126a6ab
-F test/delete4.test d9e7d553a939597b27d205b022d769469f361c1f
+F test/delete4.test 3ac0b8d23689ba764c2e8b78c1b56b8f1b942fa2
 F test/descidx1.test 6d03b44c8538fe0eb4924e19fba10cdd8f3c9240
 F test/descidx2.test 9f1a0c83fd57f8667c82310ca21b30a350888b5d
 F test/descidx3.test 09ddbe3f5295f482d2f8b687cf6db8bad7acd9a2
@@ -1388,7 +1388,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 33404b2029120d4aabe1e25d484871810777e934
-R 221ece26a434b0c8583fbc9c4416f571
+P 9d057f52217e7ef9c3f3eb84117abe3365503f44
+R 075466467a3c577c7bea65d16a397b4e
 U drh
-Z d13c27a5f9aee35d4aed34621e7033a2
+Z a775dc5a399b71fca215b8951f694541
