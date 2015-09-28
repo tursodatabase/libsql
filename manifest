@@ -1,5 +1,5 @@
-C Add\stest\scases\sto\sthe\sONEPASS\soptimization\scorruption\sproblem\sfixed\sby\sthe\nprevious\scheck-in.
-D 2015-09-28T15:08:28.795
+C Extra\sinformation\sprovided\sby\s.wheretrace\son\sinput\sflags\sto\sthe\squery\splanner\nand\son\sthe\sresult\sof\ssqlite3WhereOkOnePass().
+D 2015-09-28T17:05:22.174
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2143eeef6d0cc26006ae5fc4bb242a4a8b973412
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -417,7 +417,7 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 18b0ed49830cf04fe2d68224b41838a73ac6cd24
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 2e14d17f592d176b6dc879c33fbdec4fbccaa2ba
-F src/where.c f2c4905e47fe80043a0c45f374f555615da365ba
+F src/where.c 25d7527226d63176b3cd4880a85119cda9f83844
 F src/whereInt.h 7892bb54cf9ca0ae5c7e6094491b94c9286dc647
 F src/wherecode.c 7660e1ad16817a921b099af553f3e1349352d16f
 F src/whereexpr.c 2473e4350e30f9b55d1c6a8f66ca23c689f23f1d
@@ -1388,7 +1388,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9d057f52217e7ef9c3f3eb84117abe3365503f44
-R 075466467a3c577c7bea65d16a397b4e
+P 5c14d447055bb337428eb1fe0a2934abee381829
+R afaa284829583439d3c828667e0babfd
 U drh
-Z a775dc5a399b71fca215b8951f694541
+Z 4d08d7f777c595957317ee86b8c88bc8
