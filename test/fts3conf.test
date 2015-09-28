@@ -86,11 +86,11 @@ foreach {tn sql uses constraint data} [subst {
   9    "INSERT OR IGNORE   $T2"   1 0 {{a b c d} {e f g h} {i j k l} z}
   10   "INSERT OR REPLACE  $T2"   1 0 {{a b c d} y {i j k l} z}
 
-  11   "UPDATE OR ROLLBACK $T3"   1 1 {{a b c d} {e f g h}}
-  12   "UPDATE OR ABORT    $T3"   1 1 {{a b c d} {e f g h} {i j k l}}
-  13   "UPDATE OR FAIL     $T3"   1 1 {{a b c d} {e f g h} {i j k l}}
-  14   "UPDATE OR IGNORE   $T3"   1 0 {{a b c d} {e f g h} {i j k l}}
-  15   "UPDATE OR REPLACE  $T3"   1 0 {{a b c d} {i j k l}}
+  11   "UPDATE OR ROLLBACK $T3"   0 1 {{a b c d} {e f g h}}
+  12   "UPDATE OR ABORT    $T3"   0 1 {{a b c d} {e f g h} {i j k l}}
+  13   "UPDATE OR FAIL     $T3"   0 1 {{a b c d} {e f g h} {i j k l}}
+  14   "UPDATE OR IGNORE   $T3"   0 0 {{a b c d} {e f g h} {i j k l}}
+  15   "UPDATE OR REPLACE  $T3"   0 0 {{a b c d} {i j k l}}
 
   16   "UPDATE OR ROLLBACK $T4"   1 1 {{a b c d} {e f g h}}
   17   "UPDATE OR ABORT    $T4"   1 1 {{a b c d} {e f g h} {i j k l}}

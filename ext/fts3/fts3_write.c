@@ -874,7 +874,7 @@ static int fts3PendingTermsDocid(
   ** generate longer doclists.
   */
   if( iDocid<p->iPrevDocid 
-   || (iDocid==p->iPrevLangid && p->bPrevDelete==0)
+   || (iDocid==p->iPrevDocid && p->bPrevDelete==0)
    || p->iPrevLangid!=iLangid
    || p->nPendingData>p->nMaxPendingData 
   ){
