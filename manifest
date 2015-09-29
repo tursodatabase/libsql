@@ -1,5 +1,5 @@
-C Fix\san\soff-by-one\serror\sin\stest\sfunction\sfts5_decode().
-D 2015-09-29T12:19:51.430
+C Ensure\sthat\sthe\sxSavepoint()\svirtual\stable\smethod\sis\scorrectly\sinvoked\sif\sthere\sare\salready\sopen\ssavepoints\s(or\sstatement\stransactions)\sthe\sfirst\stime\sa\svirtual\stable\sis\swritten\swithin\sa\stransaction.
+D 2015-09-29T16:41:23.689
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2143eeef6d0cc26006ae5fc4bb242a4a8b973412
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -412,7 +412,7 @@ F src/vdbeblob.c 1d7b97115e7bbac4c318db416d2ca83fc779544a
 F src/vdbemem.c 19b3036aa4d676e7103b0fb5efd6327da455f915
 F src/vdbesort.c f5009e7a35e3065635d8918b9a31f498a499976b
 F src/vdbetrace.c 8befe829faff6d9e6f6e4dee5a7d3f85cc85f1a0
-F src/vtab.c 2ecfe020c10e0a0c7b078203fdba2fae844744bc
+F src/vtab.c 9a6d8818c8a2477ce547f064701b5e955b25d894
 F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 18b0ed49830cf04fe2d68224b41838a73ac6cd24
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
@@ -690,7 +690,7 @@ F test/fts3aux2.test 7ae2b2c13aefdf4169279a27a5f51780ce57f6ba
 F test/fts3b.test e93bbb653e52afde110ad53bbd793f14fe7a8984
 F test/fts3c.test fc723a9cf10b397fdfc2b32e73c53c8b1ec02958
 F test/fts3comp1.test a0f5b16a2df44dd0b15751787130af2183167c0c
-F test/fts3conf.test ee8500c86dd58ec075e8831a1e216a79989436de
+F test/fts3conf.test 6c7faa66bfb0e90c2c073c029c08b58ea5023922
 F test/fts3corrupt.test 2710b77983cc7789295ddbffea52c1d3b7506dbb
 F test/fts3corrupt2.test 6d96efae2f8a6af3eeaf283aba437e6d0e5447ba
 F test/fts3cov.test e0fb00d8b715ddae4a94c305992dfc3ef70353d7
@@ -1388,7 +1388,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c5566bb39c8d9b58f77380b81a873429575c7d5c
-R 8c1c5df148af89b61b9ed44613e1cccf
+P 3a9f076250d9559d8ea94ba44095ba3ddbc5542d
+R 756fa6b717967f5524da70e2a3635809
 U dan
-Z c6128292281c17956918fd20bfe641c1
+Z 7ea154fd75a363e5d81a988ffd47237f
