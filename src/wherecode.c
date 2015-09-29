@@ -700,8 +700,8 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         disableTerm(pLevel, pLoop->aLTerm[j]);
       }
     }
-    pLevel->op = OP_VNext;
     pLevel->p1 = iCur;
+    pLevel->op = pWInfo->eOnePass ? OP_Noop : OP_VNext;
     pLevel->p2 = sqlite3VdbeCurrentAddr(v);
     sqlite3ReleaseTempRange(pParse, iReg, nConstraint+2);
     sqlite3ExprCachePop(pParse);
