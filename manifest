@@ -1,5 +1,5 @@
-C Merge\slatest\strunk\schange\sinto\sthis\sbranch.
-D 2015-09-29T11:59:25.306
+C Fix\scompiler\swarnings.
+D 2015-09-29T12:32:56.672
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2143eeef6d0cc26006ae5fc4bb242a4a8b973412
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -399,7 +399,7 @@ F src/threads.c bbfb74450643cb5372a43ad4f6cffd7e9dfcecb0
 F src/tokenize.c 83c6ed569423a3af83a83973b444cf7123be33a6
 F src/treeview.c 154f0acc622fa3514de8777dcedf4c8a8802b4ce
 F src/trigger.c 322f23aad694e8f31d384dcfa386d52a48d3c52f
-F src/update.c 4fb82a2440bd8d66f266ada1ef31a2fcde48bd4f
+F src/update.c e0169d20524cf3663c9c6d952e61baf3c03ae797
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c fc612367108b74573c5fd13a85d0a23027f438bd
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
@@ -1389,7 +1389,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f61203bc0fb0b62e12d6270e8d9063e445a5a252 c5566bb39c8d9b58f77380b81a873429575c7d5c
-R bc0d8f7ab7b6ff885dd78977e4d43e2a
-U dan
-Z 5823814221d6aa9768fead2d22b2e0e9
+P b519c0d67a8fc39d65c17eccc9300a6187bd5661
+R 3b0dc7b7710e7cf4f943bdd9f5967b17
+U drh
+Z 7521a63b646e7d2736834b9d13be676e

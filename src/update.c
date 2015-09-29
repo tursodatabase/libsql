@@ -134,9 +134,9 @@ void sqlite3Update(
 
   /* Register Allocations */
   int regRowCount = 0;   /* A count of rows changed */
-  int regOldRowid;       /* The old rowid */
-  int regNewRowid;       /* The new rowid */
-  int regNew;            /* Content of the NEW.* table in triggers */
+  int regOldRowid = 0;   /* The old rowid */
+  int regNewRowid = 0;   /* The new rowid */
+  int regNew = 0;        /* Content of the NEW.* table in triggers */
   int regOld = 0;        /* Content of OLD.* table in triggers */
   int regRowSet = 0;     /* Rowset of rows to be updated */
   int regKey = 0;        /* composite PRIMARY KEY value */
@@ -507,7 +507,6 @@ void sqlite3Update(
   newmask = sqlite3TriggerColmask(
       pParse, pTrigger, pChanges, 1, TRIGGER_BEFORE, pTab, onError
   );
-  /*sqlite3VdbeAddOp3(v, OP_Null, 0, regNew, regNew+pTab->nCol-1);*/
   for(i=0; i<pTab->nCol; i++){
     if( i==pTab->iPKey ){
       sqlite3VdbeAddOp2(v, OP_Null, 0, regNew+i);
@@ -727,7 +726,6 @@ static void updateVirtualTable(
   int aDummy[2];                  /* Unused arg for sqlite3WhereOkOnePass() */
   int bOnePass;                   /* True to use onepass strategy */
   int addr;                       /* Address of OP_OpenEphemeral */
-  NameContext sNC;
 
   /* Allocate nArg registers to martial the arguments to VUpdate. Then
   ** create and open the ephemeral table in which the records created from
