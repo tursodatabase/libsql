@@ -3136,7 +3136,7 @@ Index *sqlite3CreateIndex(
   /* Analyze the list of expressions that form the terms of the index and
   ** report any errors.  In the common case where the expression is exactly
   ** a table column, store that column in aiColumn[].  For general expressions,
-  ** populate pIndex->aColExpr and store -2 in aiColumn[].
+  ** populate pIndex->aColExpr and store XN_EXPR (-2) in aiColumn[].
   **
   ** TODO: Issue a warning if two or more columns of the index are identical.
   ** TODO: Issue a warning if the table primary key is used as part of the
@@ -3165,8 +3165,8 @@ Index *sqlite3CreateIndex(
           pListItem = &pCopy->a[i];
         }
       }
-      j = -2;
-      pIndex->aiColumn[i] = -2;
+      j = XN_EXPR;
+      pIndex->aiColumn[i] = XN_EXPR;
       pIndex->uniqNotNull = 0;
     }else{
       j = pCExpr->iColumn;
@@ -3219,7 +3219,7 @@ Index *sqlite3CreateIndex(
     }
     assert( i==pIndex->nColumn );
   }else{
-    pIndex->aiColumn[i] = -1;
+    pIndex->aiColumn[i] = XN_ROWID;
     pIndex->azColl[i] = "BINARY";
   }
   sqlite3DefaultRowEst(pIndex);

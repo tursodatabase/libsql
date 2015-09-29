@@ -422,7 +422,7 @@ void sqlite3DeleteFrom(
     /* Extract the rowid or primary key for the current row */
     if( pPk ){
       for(i=0; i<nPk; i++){
-        assert( pPk->aiColumn[i]>=(-1) );
+        assert( pPk->aiColumn[i]>=0 );
         sqlite3ExprCodeGetColumnOfTable(v, pTab, iTabCur,
                                         pPk->aiColumn[i], iPk+i);
       }
@@ -858,7 +858,7 @@ int sqlite3GenerateIndexKey(
   for(j=0; j<nCol; j++){
     if( pPrior
      && pPrior->aiColumn[j]==pIdx->aiColumn[j]
-     && pPrior->aiColumn[j]>=(-1)
+     && pPrior->aiColumn[j]!=XN_EXPR
     ){
       /* This column was already computed by the previous index */
       continue;

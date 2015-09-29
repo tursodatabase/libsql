@@ -1917,6 +1917,12 @@ struct Index {
 /* Return true if index X is a UNIQUE index */
 #define IsUniqueIndex(X)      ((X)->onError!=OE_None)
 
+/* The Index.aiColumn[] values are normally positive integer.  But
+** there are some negative values that have special meaning:
+*/
+#define XN_ROWID     (-1)     /* Indexed column is the rowid */
+#define XN_EXPR      (-2)     /* Indexed column is an expression */
+
 /*
 ** Each sample stored in the sqlite_stat3 table is represented in memory 
 ** using a structure of this type.  See documentation at the top of the

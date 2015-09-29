@@ -1524,7 +1524,7 @@ void sqlite3Pragma(
             int kk;
             for(kk=0; kk<pIdx->nKeyCol; kk++){
               int iCol = pIdx->aiColumn[kk];
-              assert( iCol!=(-1) && iCol<pTab->nCol );
+              assert( iCol!=XN_ROWID && iCol<pTab->nCol );
               if( iCol>=0 && pTab->aCol[iCol].notNull ) continue;
               sqlite3VdbeAddOp2(v, OP_IsNull, r1+kk, uniqOk);
               VdbeCoverage(v);
