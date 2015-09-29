@@ -764,7 +764,7 @@ static void updateVirtualTable(
     ** above. Also, if this is a top-level parse (not a trigger), clear the
     ** multi-write flag so that the VM does not open a statement journal */
     sqlite3VdbeChangeToNoop(v, addr);
-    if( sqlite3ParseToplevel(pParse)==pParse ){
+    if( sqlite3IsToplevel(pParse) ){
       pParse->isMultiWrite = 0;
     }
   }else{

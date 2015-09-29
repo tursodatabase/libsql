@@ -518,7 +518,7 @@ void sqlite3DeleteFrom(
       sqlite3VdbeChangeP5(v, OE_Abort);
       assert( eOnePass==ONEPASS_OFF || eOnePass==ONEPASS_SINGLE );
       sqlite3MayAbort(pParse);
-      if( eOnePass==ONEPASS_SINGLE && pParse==sqlite3ParseToplevel(pParse) ){
+      if( eOnePass==ONEPASS_SINGLE && sqlite3IsToplevel(pParse) ){
         pParse->isMultiWrite = 0;
       }
     }else
