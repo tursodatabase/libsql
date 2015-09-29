@@ -1,5 +1,5 @@
-C Change\sthe\sname\sof\sthe\snew\ssqlite3_index_info.flags\sfield\sto\s"idxFlags".\sAdd\sdocumentation\sfor\sthe\ssame\sto\ssqlite.h.in.
-D 2015-09-29T11:57:20.011
+C Merge\slatest\strunk\schange\sinto\sthis\sbranch.
+D 2015-09-29T11:59:25.306
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2143eeef6d0cc26006ae5fc4bb242a4a8b973412
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -417,7 +417,7 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 18b0ed49830cf04fe2d68224b41838a73ac6cd24
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 2e14d17f592d176b6dc879c33fbdec4fbccaa2ba
-F src/where.c 6491ebe811ee698793912f927b0fe3b662687e1b
+F src/where.c b7f928b6b8ce091f385ba5ac2394928608431550
 F src/whereInt.h 7892bb54cf9ca0ae5c7e6094491b94c9286dc647
 F src/wherecode.c a87238178f8c300fd27afec54326ea8d0a18baa2
 F src/whereexpr.c 2473e4350e30f9b55d1c6a8f66ca23c689f23f1d
@@ -1389,7 +1389,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 820c804468abff692742952de670c5d906a50956
-R 546729b46aaa02f7503bc91f6617e820
+P f61203bc0fb0b62e12d6270e8d9063e445a5a252 c5566bb39c8d9b58f77380b81a873429575c7d5c
+R bc0d8f7ab7b6ff885dd78977e4d43e2a
 U dan
-Z 84ab7e4ab7ab149e316240ec34018bc8
+Z 5823814221d6aa9768fead2d22b2e0e9
