@@ -777,12 +777,13 @@ static void updateVirtualTable(
     sqlite3VdbeAddOp3(v, OP_Insert, ephemTab, regRec, regRowid);
   }
 
-  /* End the virtual table scan */
-  sqlite3WhereEnd(pWInfo);
 
   if( bOnePass==0 ){
+    /* End the virtual table scan */
+    sqlite3WhereEnd(pWInfo);
+
     /* Begin scannning through the ephemeral table. */
-    addr = sqlite3VdbeAddOp2(v, OP_Rewind, ephemTab, 0); VdbeCoverage(v);
+    addr = sqlite3VdbeAddOp1(v, OP_Rewind, ephemTab); VdbeCoverage(v);
 
     /* Extract arguments from the current row of the ephemeral table and 
     ** invoke the VUpdate method.  */
@@ -795,11 +796,14 @@ static void updateVirtualTable(
   sqlite3VdbeChangeP5(v, onError==OE_Default ? OE_Abort : onError);
   sqlite3MayAbort(pParse);
 
-  /* End of the ephemeral table scan */
+  /* End of the ephemeral table scan. Or, if using the onepass strategy,
+  ** jump to here if the scan visited zero rows. */
   if( bOnePass==0 ){
     sqlite3VdbeAddOp2(v, OP_Next, ephemTab, addr+1); VdbeCoverage(v);
     sqlite3VdbeJumpHere(v, addr);
     sqlite3VdbeAddOp2(v, OP_Close, ephemTab, 0);
+  }else{
+    sqlite3WhereEnd(pWInfo);
   }
 }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */

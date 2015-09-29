@@ -465,7 +465,7 @@ void sqlite3DeleteFrom(
   
     /* If this DELETE cannot use the ONEPASS strategy, this is the 
     ** end of the WHERE loop */
-    if( eOnePass!=ONEPASS_OFF && !IsVirtual(pTab) ){
+    if( eOnePass!=ONEPASS_OFF ){
       addrBypass = sqlite3VdbeMakeLabel(v);
     }else{
       sqlite3WhereEnd(pWInfo);
@@ -535,10 +535,8 @@ void sqlite3DeleteFrom(
   
     /* End of the loop over all rowids/primary-keys. */
     if( eOnePass!=ONEPASS_OFF ){
-      if( !IsVirtual(pTab) ){
-        sqlite3VdbeResolveLabel(v, addrBypass);
-        sqlite3WhereEnd(pWInfo);
-      }
+      sqlite3VdbeResolveLabel(v, addrBypass);
+      sqlite3WhereEnd(pWInfo);
     }else if( pPk ){
       sqlite3VdbeAddOp2(v, OP_Next, iEphCur, addrLoop+1); VdbeCoverage(v);
       sqlite3VdbeJumpHere(v, addrLoop);

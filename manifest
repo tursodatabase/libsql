@@ -1,5 +1,5 @@
-C Also\sallow\sUPDATE\son\svirtual\stables\sto\suse\sthe\sonepass\sstrategy.
-D 2015-09-28T20:03:49.551
+C Add\stests\sfor\sfts3\sand\sonepass\supdate/delete\soperations.\sAlso\sfix\sa\sproblem\swith\sonepass\supdates\sthat\sdo\snot\saffect\sany\srows.
+D 2015-09-29T10:11:26.685
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2143eeef6d0cc26006ae5fc4bb242a4a8b973412
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -291,7 +291,7 @@ F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
 F src/ctime.c 5a0b735dc95604766f5dac73973658eef782ee8b
 F src/date.c fb1c99172017dcc8e237339132c91a21a0788584
 F src/dbstat.c e637e7a7ff40ef32132a418c6fdf1cfb63aa27c7
-F src/delete.c b454df59d57cb3f07118dfc68821760593fcaab3
+F src/delete.c 174b140317915e0e8c6e2eff28158eecf95c53d8
 F src/expr.c 3a76afcdac925294c39903b7002ddb9e5fd29863
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 83e1baba999bed3144ea5a2143fc922edf51135f
@@ -399,7 +399,7 @@ F src/threads.c bbfb74450643cb5372a43ad4f6cffd7e9dfcecb0
 F src/tokenize.c 83c6ed569423a3af83a83973b444cf7123be33a6
 F src/treeview.c 154f0acc622fa3514de8777dcedf4c8a8802b4ce
 F src/trigger.c 322f23aad694e8f31d384dcfa386d52a48d3c52f
-F src/update.c 779319e1d52c3dfb3b870c9acd26161b464fbe27
+F src/update.c 4fb82a2440bd8d66f266ada1ef31a2fcde48bd4f
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c fc612367108b74573c5fd13a85d0a23027f438bd
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
@@ -419,7 +419,7 @@ F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 2e14d17f592d176b6dc879c33fbdec4fbccaa2ba
 F src/where.c d07fb77010949be9b96e9120b4653712bf9f74ae
 F src/whereInt.h 7892bb54cf9ca0ae5c7e6094491b94c9286dc647
-F src/wherecode.c 7660e1ad16817a921b099af553f3e1349352d16f
+F src/wherecode.c a87238178f8c300fd27afec54326ea8d0a18baa2
 F src/whereexpr.c 2473e4350e30f9b55d1c6a8f66ca23c689f23f1d
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -736,6 +736,7 @@ F test/fts4merge2.test 5faa558d1b672f82b847d2a337465fa745e46891
 F test/fts4merge3.test aab02a09f50fe6baaddc2e159c3eabc116d45fc7
 F test/fts4merge4.test d895b1057a7798b67e03455d0fa50e9ea836c47b
 F test/fts4noti.test 524807f0c36d49deea7920cdd4cd687408b58849
+F test/fts4onepass.test bfca61f69c6ca74cd71e6dca12a0cdd47192fc24
 F test/fts4unicode.test 27378af76394542cf490cf001d8d1505fe55f6a9
 F test/full.test 6b3c8fb43c6beab6b95438c1675374b95fab245d
 F test/func.test ae97561957aba6ca9e3a7b8a13aac41830d701ef
@@ -1388,7 +1389,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fffab4f70f85eeb2acbb89534064a6e397c39384
-R 57289d0ecbc93a6cd377511502833368
+P 1aa27d706db9b2e21737ce4b94b47ecd12c2570f
+R 906a452cbd4322b894c4cf3888c881fe
 U dan
-Z 186d4cd8527ef990e771b3fd7444e8fc
+Z 392788408df553b8d21ff2f5c84b91d4
