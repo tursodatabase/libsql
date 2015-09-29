@@ -2832,7 +2832,7 @@ static int whereLoopAddVirtual(
     pIdxInfo->orderByConsumed = 0;
     pIdxInfo->estimatedCost = SQLITE_BIG_DBL / (double)2;
     pIdxInfo->estimatedRows = 25;
-    pIdxInfo->flags = 0;
+    pIdxInfo->idxFlags = 0;
     rc = vtabBestIndex(pParse, pTab, pIdxInfo);
     if( rc ) goto whereLoopAddVtab_exit;
     pIdxCons = *(struct sqlite3_index_constraint**)&pIdxInfo->aConstraint;
@@ -2878,7 +2878,7 @@ static int whereLoopAddVirtual(
           ** (2) Multiple outputs from a single IN value will not merge
           ** together.  */
           pIdxInfo->orderByConsumed = 0;
-          pIdxInfo->flags &= ~SQLITE_INDEX_SCAN_UNIQUE;
+          pIdxInfo->idxFlags &= ~SQLITE_INDEX_SCAN_UNIQUE;
         }
       }
     }
@@ -2897,7 +2897,7 @@ static int whereLoopAddVirtual(
 
       /* Set the WHERE_ONEROW flag if the xBestIndex() method indicated
       ** that the scan will visit at most one row. Clear it otherwise. */
-      if( pIdxInfo->flags & SQLITE_INDEX_SCAN_UNIQUE ){
+      if( pIdxInfo->idxFlags & SQLITE_INDEX_SCAN_UNIQUE ){
         pNew->wsFlags |= WHERE_ONEROW;
       }else{
         pNew->wsFlags &= ~WHERE_ONEROW;

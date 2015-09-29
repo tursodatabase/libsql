@@ -1525,7 +1525,7 @@ static void fts3SetEstimatedRows(sqlite3_index_info *pIdxInfo, i64 nRow){
 static void fts3SetUniqueFlag(sqlite3_index_info *pIdxInfo){
 #if SQLITE_VERSION_NUMBER>=3008012
   if( sqlite3_libversion_number()>=3008012 ){
-    pIdxInfo->flags |= SQLITE_INDEX_SCAN_UNIQUE;
+    pIdxInfo->idxFlags |= SQLITE_INDEX_SCAN_UNIQUE;
   }
 #endif
 }
