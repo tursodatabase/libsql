@@ -5361,7 +5361,7 @@ static void fts5DecodeFunction(
     memset(&term, 0, sizeof(Fts5Buffer));
 
     if( n<4 ){
-      sqlite3Fts5BufferSet(&rc, &s, 8, (const u8*)"corrupt");
+      sqlite3Fts5BufferSet(&rc, &s, 7, (const u8*)"corrupt");
       goto decode_out;
     }else{
       iRowidOff = fts5GetU16(&a[0]);
