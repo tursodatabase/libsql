@@ -1,5 +1,5 @@
-C Create\sthe\ssqlite3IsToplevel(Parse*)\sinterface\sto\scheck\sto\ssee\sif\sa\stop-level\nVDBE\sis\sbeing\scoded\s(versus\sa\strigger)\sand\suse\sthat\sinterface.
-D 2015-09-29T13:25:15.973
+C Remove\sdead\scode,\sreplacing\swith\sassert()\sstatements\sthat\smake\ssure\sthe\ncode\sreally\swas\sdead.
+D 2015-09-29T15:50:04.571
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2143eeef6d0cc26006ae5fc4bb242a4a8b973412
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -340,7 +340,7 @@ F src/printf.c 0c4bcdd1c2e2521024f0a69cb5eb334f86b3652a
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 1954a0f01bf65d78d7d559aea3d5c67f33376d91
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c 33230303f5f32430ee971a6fcc6a370e4a93ae1a
+F src/select.c e49f4af9748c9e0cc1bf864b4190aa94841c8409
 F src/shell.c a11b20da4c6630e0e8f83c47ce36f717dd0422f0
 F src/sqlite.h.in 4b76d74d69af48c534c58fb723137dc6944bdedc
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
@@ -1389,7 +1389,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d1a0783854d2e9272320d9ddfa58362532f58d1a
-R a4e26d59514db031d207946929f0dada
+P 59662cd2b65255a30e1a420331c07c51b644621a
+R cec1f3888d085a601a5cfb22d1afd716
 U drh
-Z ab43f3a6d7f071ac781590ae89cc31de
+Z 0ae71f6c4f92a526967039eb67c1881e
