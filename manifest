@@ -1,5 +1,5 @@
-C Use\ssymbolic\snames\sXN_ROWID\sand\sXN_EXPR\sin\splace\sof\sthe\s(-1)\sand\s(-2)\nmagic\snumbers\sin\sIndex.aiColumn[].\s\sAdd\sasserts\sto\shelp\sverify\sthat\nIndex.aiColumn[]\sis\salways\sused\scorrectly.\s\sFix\sone\splace\sin\sFK\sprocessing\nwhere\sIndex.aiColumn[]\swas\snot\sbeing\sused\scorrectly.
-D 2015-09-29T17:20:14.958
+C Improve\serror\shandling\sin\sshell\scommand\s".tables".
+D 2015-09-30T11:19:05.250
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2143eeef6d0cc26006ae5fc4bb242a4a8b973412
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -341,7 +341,7 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 1954a0f01bf65d78d7d559aea3d5c67f33376d91
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c e49f4af9748c9e0cc1bf864b4190aa94841c8409
-F src/shell.c a11b20da4c6630e0e8f83c47ce36f717dd0422f0
+F src/shell.c dfd18e56fcb88dd79378774e9bc3246a9bd52243
 F src/sqlite.h.in 4b76d74d69af48c534c58fb723137dc6944bdedc
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 64350bf36833a56ad675e27392a913f417c5c308
@@ -1389,7 +1389,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a1d08fd3d0419da8c22355d48c6d83eed6fd7e07
-R 52625b1830d3c09e89f8505fdc133a11
-U drh
-Z 6b238da064de6e3b5f5d0b4365b7caf0
+P 7d272aa62cd4cbbf4b5d04e3b918de27671e8301
+R 182210397719a41b40c126f91ca11c51
+U dan
+Z f61744228c664ef1bbc36bc13dfb9d49
