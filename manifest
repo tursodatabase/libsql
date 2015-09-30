@@ -1,5 +1,5 @@
-C Improve\serror\shandling\sin\sshell\scommand\s".tables".
-D 2015-09-30T11:19:05.250
+C Clear\sthe\sBTCF_ValidNKey\sflag\swhen\sputting\sa\scursor\sinto\sREQUIRESEEK\sstate.\sFix\sfor\s[1b266395].
+D 2015-09-30T12:59:12.171
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2143eeef6d0cc26006ae5fc4bb242a4a8b973412
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -282,7 +282,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c c3a9c4209439b806c44cf30daf466955727bf46c
 F src/bitvec.c d1f21d7d91690747881f03940584f4cc548c9d3d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c 164583151135a3764672c2c25aa8e4fa06bdb12b
+F src/btree.c dd877a85fc968c5f069d0cd133c6b420ec3112fa
 F src/btree.h 40189aefdc2b830d25c8b58fd7d56538481bfdd7
 F src/btreeInt.h 8177c9ab90d772d6d2c6c517e05bed774b7c92c0
 F src/build.c 0549b56722f15c146ca21f82a33838365c2031f0
@@ -621,7 +621,7 @@ F test/extraquick.test cb254400bd42bfb777ff675356aabf3287978f79
 F test/fallocate.test 3e979af17dfa7e5e9dda5eba1a696c04fa9d47f7
 F test/filectrl.test 7c13f96457435238da99aff7343ad6a3a4885787
 F test/filefmt.test cb34663f126cbc2d358af552dcaf5c72769b0146
-F test/fkey1.test de5b287f6a480b36bd51e8debcf48168e26e4ed2
+F test/fkey1.test 13e3d48236a2b9f5c5ebd232eef9b3ab682a8a2c
 F test/fkey2.test f3d27ecba480a348c328965d154214719bb158a9
 F test/fkey3.test 76d475c80b84ee7a5d062e56ccb6ea68882e2b49
 F test/fkey4.test 86446017011273aad8f9a99c1a65019e7bd9ca9d
@@ -1389,7 +1389,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7d272aa62cd4cbbf4b5d04e3b918de27671e8301
-R 182210397719a41b40c126f91ca11c51
+P 31a91ee7d32af8580a170903eb857ed9222fdb0a
+R 4a74a22a0c922f420238bb3d30a78646
 U dan
-Z f61744228c664ef1bbc36bc13dfb9d49
+Z 36f983bdf307cdff5171dc6e84fb5a56
