@@ -1937,19 +1937,12 @@ static sqlite3_module jsonTreeModule = {
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 
 /****************************************************************************
-** The following routine is the only publically visible identifier in this
-** file.  Call the following routine in order to register the various SQL
+** The following routines are the only publically visible identifiers in this
+** file.  Call the following routines in order to register the various SQL
 ** functions and the virtual table implemented by this file.
 ****************************************************************************/
 
-#ifdef _WIN32
-__declspec(dllexport)
-#endif
-int sqlite3_json_init(
-  sqlite3 *db, 
-  char **pzErrMsg, 
-  const sqlite3_api_routines *pApi
-){
+int sqlite3Json1Init(sqlite3 *db){
   int rc = SQLITE_OK;
   unsigned int i;
   static const struct {
@@ -1987,8 +1980,6 @@ int sqlite3_json_init(
     { "json_tree",            &jsonTreeModule               },
   };
 #endif
-  SQLITE_EXTENSION_INIT2(pApi);
-  (void)pzErrMsg;  /* Unused parameter */
   for(i=0; i<sizeof(aFunc)/sizeof(aFunc[0]) && rc==SQLITE_OK; i++){
     rc = sqlite3_create_function(db, aFunc[i].zName, aFunc[i].nArg,
                                  SQLITE_UTF8 | SQLITE_DETERMINISTIC, 
@@ -2001,4 +1992,18 @@ int sqlite3_json_init(
   }
 #endif
   return rc;
+}
+
+
+#ifdef _WIN32
+__declspec(dllexport)
+#endif
+int sqlite3_json_init(
+  sqlite3 *db, 
+  char **pzErrMsg, 
+  const sqlite3_api_routines *pApi
+){
+  SQLITE_EXTENSION_INIT2(pApi);
+  (void)pzErrMsg;  /* Unused parameter */
+  return sqlite3Json1Init(db);
 }

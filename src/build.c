@@ -192,6 +192,8 @@ void sqlite3FinishCoding(Parse *pParse){
           db->aDb[iDb].pSchema->iGeneration  /* P4 */
         );
         if( db->init.busy==0 ) sqlite3VdbeChangeP5(v, 1);
+        VdbeComment((v,
+              "usesStmtJournal=%d", pParse->mayAbort && pParse->isMultiWrite));
       }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
       for(i=0; i<pParse->nVtabLock; i++){
@@ -2082,8 +2084,7 @@ void sqlite3CreateView(
 
   if( pParse->nVar>0 ){
     sqlite3ErrorMsg(pParse, "parameters are not allowed in views");
-    sqlite3SelectDelete(db, pSelect);
-    return;
+    goto create_view_fail;
   }
   sqlite3StartTable(pParse, pName1, pName2, isTemp, 1, 0, noErr);
   p = pParse->pNewTable;
@@ -3135,7 +3136,7 @@ Index *sqlite3CreateIndex(
   /* Analyze the list of expressions that form the terms of the index and
   ** report any errors.  In the common case where the expression is exactly
   ** a table column, store that column in aiColumn[].  For general expressions,
-  ** populate pIndex->aColExpr and store -2 in aiColumn[].
+  ** populate pIndex->aColExpr and store XN_EXPR (-2) in aiColumn[].
   **
   ** TODO: Issue a warning if two or more columns of the index are identical.
   ** TODO: Issue a warning if the table primary key is used as part of the
@@ -3164,8 +3165,8 @@ Index *sqlite3CreateIndex(
           pListItem = &pCopy->a[i];
         }
       }
-      j = -2;
-      pIndex->aiColumn[i] = -2;
+      j = XN_EXPR;
+      pIndex->aiColumn[i] = XN_EXPR;
       pIndex->uniqNotNull = 0;
     }else{
       j = pCExpr->iColumn;
@@ -3218,7 +3219,7 @@ Index *sqlite3CreateIndex(
     }
     assert( i==pIndex->nColumn );
   }else{
-    pIndex->aiColumn[i] = -1;
+    pIndex->aiColumn[i] = XN_ROWID;
     pIndex->azColl[i] = "BINARY";
   }
   sqlite3DefaultRowEst(pIndex);

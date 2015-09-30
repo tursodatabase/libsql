@@ -90,11 +90,11 @@ const char *sqlite3IndexAffinityStr(sqlite3 *db, Index *pIdx){
       i16 x = pIdx->aiColumn[n];
       if( x>=0 ){
         pIdx->zColAff[n] = pTab->aCol[x].affinity;
-      }else if( x==(-1) ){
+      }else if( x==XN_ROWID ){
         pIdx->zColAff[n] = SQLITE_AFF_INTEGER;
       }else{
         char aff;
-        assert( x==(-2) );
+        assert( x==XN_EXPR );
         assert( pIdx->aColExpr!=0 );
         aff = sqlite3ExprAffinity(pIdx->aColExpr->a[n].pExpr);
         if( aff==0 ) aff = SQLITE_AFF_BLOB;
@@ -260,7 +260,7 @@ void sqlite3AutoincrementBegin(Parse *pParse){
   /* This routine is never called during trigger-generation.  It is
   ** only called from the top-level */
   assert( pParse->pTriggerTab==0 );
-  assert( pParse==sqlite3ParseToplevel(pParse) );
+  assert( sqlite3IsToplevel(pParse) );
 
   assert( v );   /* We failed long ago if this is not so */
   for(p = pParse->pAinc; p; p = p->pNext){
@@ -1417,13 +1417,13 @@ void sqlite3GenerateConstraintChecks(
     for(i=0; i<pIdx->nColumn; i++){
       int iField = pIdx->aiColumn[i];
       int x;
-      if( iField==(-2) ){
+      if( iField==XN_EXPR ){
         pParse->ckBase = regNewData+1;
         sqlite3ExprCode(pParse, pIdx->aColExpr->a[i].pExpr, regIdx+i);
         pParse->ckBase = 0;
         VdbeComment((v, "%s column %d", pIdx->zName, i));
       }else{
-        if( iField==(-1) || iField==pTab->iPKey ){
+        if( iField==XN_ROWID || iField==pTab->iPKey ){
           if( regRowid==regIdx+i ) continue; /* ROWID already in regIdx+i */
           x = regNewData;
           regRowid =  pIdx->pPartIdxWhere ? -1 : regIdx+i;
@@ -1482,6 +1482,7 @@ void sqlite3GenerateConstraintChecks(
         ** store it in registers regR..regR+nPk-1 */
         if( pIdx!=pPk ){
           for(i=0; i<pPk->nKeyCol; i++){
+            assert( pPk->aiColumn[i]>=0 );
             x = sqlite3ColumnOfIndex(pIdx, pPk->aiColumn[i]);
             sqlite3VdbeAddOp3(v, OP_Column, iThisCur, x, regR+i);
             VdbeComment((v, "%s.%s", pTab->zName,
@@ -1503,6 +1504,7 @@ void sqlite3GenerateConstraintChecks(
           for(i=0; i<pPk->nKeyCol; i++){
             char *p4 = (char*)sqlite3LocateCollSeq(pParse, pPk->azColl[i]);
             x = pPk->aiColumn[i];
+            assert( x>=0 );
             if( i==(pPk->nKeyCol-1) ){
               addrJump = addrUniqueOk;
               op = OP_Eq;
@@ -1754,7 +1756,7 @@ static int xferCompatibleIndex(Index *pDest, Index *pSrc){
     if( pSrc->aiColumn[i]!=pDest->aiColumn[i] ){
       return 0;   /* Different columns indexed */
     }
-    if( pSrc->aiColumn[i]==(-2) ){
+    if( pSrc->aiColumn[i]==XN_EXPR ){
       assert( pSrc->aColExpr!=0 && pDest->aColExpr!=0 );
       if( sqlite3ExprCompare(pSrc->aColExpr->a[i].pExpr,
                              pDest->aColExpr->a[i].pExpr, -1)!=0 ){

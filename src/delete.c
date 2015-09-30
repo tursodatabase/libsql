@@ -414,7 +414,7 @@ void sqlite3DeleteFrom(
     pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, 0, 0, wcf, iTabCur+1);
     if( pWInfo==0 ) goto delete_from_cleanup;
     eOnePass = sqlite3WhereOkOnePass(pWInfo, aiCurOnePass);
-    assert( IsVirtual(pTab)==0 || eOnePass==ONEPASS_OFF );
+    assert( IsVirtual(pTab)==0 || eOnePass!=ONEPASS_MULTI );
     assert( IsVirtual(pTab) || bComplex || eOnePass!=ONEPASS_OFF );
   
     /* Keep track of the number of rows to be deleted */
@@ -425,7 +425,7 @@ void sqlite3DeleteFrom(
     /* Extract the rowid or primary key for the current row */
     if( pPk ){
       for(i=0; i<nPk; i++){
-        assert( pPk->aiColumn[i]>=(-1) );
+        assert( pPk->aiColumn[i]>=0 );
         sqlite3ExprCodeGetColumnOfTable(v, pTab, iTabCur,
                                         pPk->aiColumn[i], iPk+i);
       }
@@ -497,7 +497,7 @@ void sqlite3DeleteFrom(
     */
     if( eOnePass!=ONEPASS_OFF ){
       assert( nKey==nPk );  /* OP_Found will use an unpacked key */
-      if( aToOpen[iDataCur-iTabCur] ){
+      if( !IsVirtual(pTab) && aToOpen[iDataCur-iTabCur] ){
         assert( pPk!=0 || pTab->pSelect!=0 );
         sqlite3VdbeAddOp4Int(v, OP_NotFound, iDataCur, addrBypass, iKey, nKey);
         VdbeCoverage(v);
@@ -519,7 +519,11 @@ void sqlite3DeleteFrom(
       sqlite3VtabMakeWritable(pParse, pTab);
       sqlite3VdbeAddOp4(v, OP_VUpdate, 0, 1, iKey, pVTab, P4_VTAB);
       sqlite3VdbeChangeP5(v, OE_Abort);
+      assert( eOnePass==ONEPASS_OFF || eOnePass==ONEPASS_SINGLE );
       sqlite3MayAbort(pParse);
+      if( eOnePass==ONEPASS_SINGLE && sqlite3IsToplevel(pParse) ){
+        pParse->isMultiWrite = 0;
+      }
     }else
 #endif
     {
@@ -862,7 +866,7 @@ int sqlite3GenerateIndexKey(
   for(j=0; j<nCol; j++){
     if( pPrior
      && pPrior->aiColumn[j]==pIdx->aiColumn[j]
-     && pPrior->aiColumn[j]>=(-1)
+     && pPrior->aiColumn[j]!=XN_EXPR
     ){
       /* This column was already computed by the previous index */
       continue;

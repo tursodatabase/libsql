@@ -2701,6 +2701,22 @@ static int shell_dbinfo_command(ShellState *p, int nArg, char **azArg){
   return 0;
 }
 
+/*
+** Print the current sqlite3_errmsg() value to stderr and return 1.
+*/
+static int shellDatabaseError(sqlite3 *db){
+  const char *zErr = sqlite3_errmsg(db);
+  fprintf(stderr, "Error: %s\n", zErr);
+  return 1;
+}
+
+/*
+** Print an out-of-memory message to stderr and return 1.
+*/
+static int shellNomemError(void){
+  fprintf(stderr, "Error: out of memory\n");
+  return 1;
+}
 
 /*
 ** If an input line begins with "." then invoke this routine to
@@ -3994,13 +4010,17 @@ static int do_meta_command(char *zLine, ShellState *p){
     int ii;
     open_db(p, 0);
     rc = sqlite3_prepare_v2(p->db, "PRAGMA database_list", -1, &pStmt, 0);
-    if( rc ) return rc;
+    if( rc ) return shellDatabaseError(p->db);
+
+    /* Create an SQL statement to query for the list of tables in the
+    ** main and all attached databases where the table name matches the
+    ** LIKE pattern bound to variable "?1". */
     zSql = sqlite3_mprintf(
         "SELECT name FROM sqlite_master"
         " WHERE type IN ('table','view')"
         "   AND name NOT LIKE 'sqlite_%%'"
         "   AND name LIKE ?1");
-    while( sqlite3_step(pStmt)==SQLITE_ROW ){
+    while( zSql && sqlite3_step(pStmt)==SQLITE_ROW ){
       const char *zDbName = (const char*)sqlite3_column_text(pStmt, 1);
       if( zDbName==0 || strcmp(zDbName,"main")==0 ) continue;
       if( strcmp(zDbName,"temp")==0 ){
@@ -4019,11 +4039,17 @@ static int do_meta_command(char *zLine, ShellState *p){
                  "   AND name LIKE ?1", zSql, zDbName, zDbName);
       }
     }
-    sqlite3_finalize(pStmt);
-    zSql = sqlite3_mprintf("%z ORDER BY 1", zSql);
-    rc = sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
+    rc = sqlite3_finalize(pStmt);
+    if( zSql && rc==SQLITE_OK ){
+      zSql = sqlite3_mprintf("%z ORDER BY 1", zSql);
+      if( zSql ) rc = sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
+    }
     sqlite3_free(zSql);
-    if( rc ) return rc;
+    if( !zSql ) return shellNomemError();
+    if( rc ) return shellDatabaseError(p->db);
+
+    /* Run the SQL statement prepared by the above block. Store the results
+    ** as an array of nul-terminated strings in azResult[].  */
     nRow = nAlloc = 0;
     azResult = 0;
     if( nArg>1 ){
@@ -4037,17 +4063,25 @@ static int do_meta_command(char *zLine, ShellState *p){
         int n2 = nAlloc*2 + 10;
         azNew = sqlite3_realloc64(azResult, sizeof(azResult[0])*n2);
         if( azNew==0 ){
-          fprintf(stderr, "Error: out of memory\n");
+          rc = shellNomemError();
           break;
         }
         nAlloc = n2;
         azResult = azNew;
       }
       azResult[nRow] = sqlite3_mprintf("%s", sqlite3_column_text(pStmt, 0));
-      if( azResult[nRow] ) nRow++;
+      if( 0==azResult[nRow] ){
+        rc = shellNomemError();
+        break;
+      }
+      nRow++;
     }
-    sqlite3_finalize(pStmt);        
-    if( nRow>0 ){
+    if( sqlite3_finalize(pStmt)!=SQLITE_OK ){
+      rc = shellDatabaseError(p->db);
+    }
+
+    /* Pretty-print the contents of array azResult[] to the output */
+    if( rc==0 && nRow>0 ){
       int len, maxlen = 0;
       int i, j;
       int nPrintCol, nPrintRow;
@@ -4066,6 +4100,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         fprintf(p->out, "\n");
       }
     }
+
     for(ii=0; ii<nRow; ii++) sqlite3_free(azResult[ii]);
     sqlite3_free(azResult);
   }else
@@ -4900,7 +4935,7 @@ int SQLITE_CDECL main(int argc, char **argv){
   }
   data.out = stdout;
 
-#ifdef SQLITE_ENABLE_JSON1
+#ifdef SQLITE_SHELL_JSON1
   {
     extern int sqlite3_json_init(sqlite3*);
     sqlite3_auto_extension((void(*)(void))sqlite3_json_init);

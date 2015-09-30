@@ -98,5 +98,48 @@ do_execsql_test 3.4 {
   PRAGMA integrity_check; 
 } {ok}
 
+# Between 2015-09-14 and 2015-09-28, the following test cases would result
+# in corruption (wrong # of entries in index) due to a bug in the ONEPASS
+# optimization.
+#
+do_execsql_test 4.1 {
+  DROP TABLE IF EXISTS t4;
+  CREATE TABLE t4(col0, col1);
+  INSERT INTO "t4" VALUES(14, 'abcde');
+  CREATE INDEX idx_t4_0 ON t4 (col1, col0);
+  CREATE INDEX idx_t4_3 ON t4 (col0);
+  DELETE FROM t4 WHERE col0=69 OR col0>7;
+  PRAGMA integrity_check;
+} {ok}
+do_execsql_test 4.2 {
+  DROP TABLE IF EXISTS t4;
+  CREATE TABLE t4(col0, col1);
+  INSERT INTO "t4" VALUES(14, 'abcde');
+  CREATE INDEX idx_t4_3 ON t4 (col0);
+  CREATE INDEX idx_t4_0 ON t4 (col1, col0);
+  DELETE FROM t4 WHERE col0=69 OR col0>7;
+  PRAGMA integrity_check;
+} {ok}
+do_execsql_test 4.11 {
+  DROP TABLE IF EXISTS t4;
+  CREATE TABLE t4(col0, col1, pk PRIMARY KEY) WITHOUT ROWID;
+  INSERT INTO t4 VALUES(14, 'abcde','xyzzy');
+  CREATE INDEX idx_t4_0 ON t4 (col1, col0);
+  CREATE INDEX idx_t4_3 ON t4 (col0);
+  DELETE FROM t4 WHERE col0=69 OR col0>7;
+  PRAGMA integrity_check;
+} {ok}
+do_execsql_test 4.12 {
+  DROP TABLE IF EXISTS t4;
+  CREATE TABLE t4(col0, col1, pk PRIMARY KEY) WITHOUT ROWID;
+  INSERT INTO t4 VALUES(14, 'abcde','xyzzy');
+  CREATE INDEX idx_t4_3 ON t4 (col0);
+  CREATE INDEX idx_t4_0 ON t4 (col1, col0);
+  DELETE FROM t4 WHERE col0=69 OR col0>7;
+  PRAGMA integrity_check;
+} {ok}
+
+
+
 
 finish_test

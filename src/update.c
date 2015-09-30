@@ -134,9 +134,9 @@ void sqlite3Update(
 
   /* Register Allocations */
   int regRowCount = 0;   /* A count of rows changed */
-  int regOldRowid;       /* The old rowid */
-  int regNewRowid;       /* The new rowid */
-  int regNew;            /* Content of the NEW.* table in triggers */
+  int regOldRowid = 0;   /* The old rowid */
+  int regNewRowid = 0;   /* The new rowid */
+  int regNew = 0;        /* Content of the NEW.* table in triggers */
   int regOld = 0;        /* Content of OLD.* table in triggers */
   int regRowSet = 0;     /* Rowset of rows to be updated */
   int regKey = 0;        /* composite PRIMARY KEY value */
@@ -300,29 +300,20 @@ void sqlite3Update(
   if( pParse->nested==0 ) sqlite3VdbeCountChanges(v);
   sqlite3BeginWriteOperation(pParse, 1, iDb);
 
-#ifndef SQLITE_OMIT_VIRTUALTABLE
-  /* Virtual tables must be handled separately */
-  if( IsVirtual(pTab) ){
-    updateVirtualTable(pParse, pTabList, pTab, pChanges, pRowidExpr, aXRef,
-                       pWhere, onError);
-    pWhere = 0;
-    pTabList = 0;
-    goto update_cleanup;
-  }
-#endif
-
   /* Allocate required registers. */
-  regRowSet = ++pParse->nMem;
-  regOldRowid = regNewRowid = ++pParse->nMem;
-  if( chngPk || pTrigger || hasFK ){
-    regOld = pParse->nMem + 1;
+  if( !IsVirtual(pTab) ){
+    regRowSet = ++pParse->nMem;
+    regOldRowid = regNewRowid = ++pParse->nMem;
+    if( chngPk || pTrigger || hasFK ){
+      regOld = pParse->nMem + 1;
+      pParse->nMem += pTab->nCol;
+    }
+    if( chngKey || pTrigger || hasFK ){
+      regNewRowid = ++pParse->nMem;
+    }
+    regNew = pParse->nMem + 1;
     pParse->nMem += pTab->nCol;
   }
-  if( chngKey || pTrigger || hasFK ){
-    regNewRowid = ++pParse->nMem;
-  }
-  regNew = pParse->nMem + 1;
-  pParse->nMem += pTab->nCol;
 
   /* Start the view context. */
   if( isView ){
@@ -344,6 +335,15 @@ void sqlite3Update(
   if( sqlite3ResolveExprNames(&sNC, pWhere) ){
     goto update_cleanup;
   }
+
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+  /* Virtual tables must be handled separately */
+  if( IsVirtual(pTab) ){
+    updateVirtualTable(pParse, pTabList, pTab, pChanges, pRowidExpr, aXRef,
+                       pWhere, onError);
+    goto update_cleanup;
+  }
+#endif
 
   /* Begin the database scan
   */
@@ -384,7 +384,7 @@ void sqlite3Update(
     if( pWInfo==0 ) goto update_cleanup;
     okOnePass = sqlite3WhereOkOnePass(pWInfo, aiCurOnePass);
     for(i=0; i<nPk; i++){
-      assert( pPk->aiColumn[i]>=(-1) );
+      assert( pPk->aiColumn[i]>=0 );
       sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur, pPk->aiColumn[i],
                                       iPk+i);
     }
@@ -507,7 +507,6 @@ void sqlite3Update(
   newmask = sqlite3TriggerColmask(
       pParse, pTrigger, pChanges, 1, TRIGGER_BEFORE, pTab, onError
   );
-  /*sqlite3VdbeAddOp3(v, OP_Null, 0, regNew, regNew+pTab->nCol-1);*/
   for(i=0; i<pTab->nCol; i++){
     if( i==pTab->iPKey ){
       sqlite3VdbeAddOp2(v, OP_Null, 0, regNew+i);
@@ -698,21 +697,23 @@ update_cleanup:
 /*
 ** Generate code for an UPDATE of a virtual table.
 **
-** The strategy is that we create an ephemeral table that contains
+** There are two possible strategies - the default and the special 
+** "onepass" strategy. Onepass is only used if the virtual table 
+** implementation indicates that pWhere may match at most one row.
+**
+** The default strategy is to create an ephemeral table that contains
 ** for each row to be changed:
 **
 **   (A)  The original rowid of that row.
-**   (B)  The revised rowid for the row. (note1)
+**   (B)  The revised rowid for the row.
 **   (C)  The content of every column in the row.
 **
-** Then we loop over this ephemeral table and for each row in
-** the ephemeral table call VUpdate.
+** Then loop through the contents of this ephemeral table executing a
+** VUpdate for each row. When finished, drop the ephemeral table.
 **
-** When finished, drop the ephemeral table.
-**
-** (note1) Actually, if we know in advance that (A) is always the same
-** as (B) we only store (A), then duplicate (A) when pulling
-** it out of the ephemeral table before calling VUpdate.
+** The "onepass" strategy does not use an ephemeral table. Instead, it
+** stores the same values (A, B and C above) in a register array and
+** makes a single invocation of VUpdate.
 */
 static void updateVirtualTable(
   Parse *pParse,       /* The parsing context */
@@ -725,65 +726,95 @@ static void updateVirtualTable(
   int onError          /* ON CONFLICT strategy */
 ){
   Vdbe *v = pParse->pVdbe;  /* Virtual machine under construction */
-  ExprList *pEList = 0;     /* The result set of the SELECT statement */
-  Select *pSelect = 0;      /* The SELECT statement */
-  Expr *pExpr;              /* Temporary expression */
   int ephemTab;             /* Table holding the result of the SELECT */
   int i;                    /* Loop counter */
-  int addr;                 /* Address of top of loop */
-  int iReg;                 /* First register in set passed to OP_VUpdate */
   sqlite3 *db = pParse->db; /* Database connection */
   const char *pVTab = (const char*)sqlite3GetVTable(db, pTab);
-  SelectDest dest;
+  WhereInfo *pWInfo;
+  int nArg = 2 + pTab->nCol;      /* Number of arguments to VUpdate */
+  int regArg;                     /* First register in VUpdate arg array */
+  int regRec;                     /* Register in which to assemble record */
+  int regRowid;                   /* Register for ephem table rowid */
+  int iCsr = pSrc->a[0].iCursor;  /* Cursor used for virtual table scan */
+  int aDummy[2];                  /* Unused arg for sqlite3WhereOkOnePass() */
+  int bOnePass;                   /* True to use onepass strategy */
+  int addr;                       /* Address of OP_OpenEphemeral */
 
-  /* Construct the SELECT statement that will find the new values for
-  ** all updated rows. 
-  */
-  pEList = sqlite3ExprListAppend(pParse, 0, sqlite3Expr(db, TK_ID, "_rowid_"));
-  if( pRowid ){
-    pEList = sqlite3ExprListAppend(pParse, pEList,
-                                   sqlite3ExprDup(db, pRowid, 0));
-  }
-  assert( pTab->iPKey<0 );
-  for(i=0; i<pTab->nCol; i++){
-    if( aXRef[i]>=0 ){
-      pExpr = sqlite3ExprDup(db, pChanges->a[aXRef[i]].pExpr, 0);
-    }else{
-      pExpr = sqlite3Expr(db, TK_ID, pTab->aCol[i].zName);
-    }
-    pEList = sqlite3ExprListAppend(pParse, pEList, pExpr);
-  }
-  pSelect = sqlite3SelectNew(pParse, pEList, pSrc, pWhere, 0, 0, 0, 0, 0, 0);
-  
-  /* Create the ephemeral table into which the update results will
-  ** be stored.
-  */
+  /* Allocate nArg registers to martial the arguments to VUpdate. Then
+  ** create and open the ephemeral table in which the records created from
+  ** these arguments will be temporarily stored. */
   assert( v );
   ephemTab = pParse->nTab++;
+  addr= sqlite3VdbeAddOp2(v, OP_OpenEphemeral, ephemTab, nArg);
+  regArg = pParse->nMem + 1;
+  pParse->nMem += nArg;
+  regRec = ++pParse->nMem;
+  regRowid = ++pParse->nMem;
 
-  /* fill the ephemeral table 
-  */
-  sqlite3SelectDestInit(&dest, SRT_EphemTab, ephemTab);
-  sqlite3Select(pParse, pSelect, &dest);
+  /* Start scanning the virtual table */
+  pWInfo = sqlite3WhereBegin(pParse, pSrc, pWhere, 0,0,WHERE_ONEPASS_DESIRED,0);
+  if( pWInfo==0 ) return;
 
-  /* Generate code to scan the ephemeral table and call VUpdate. */
-  iReg = ++pParse->nMem;
-  pParse->nMem += pTab->nCol+1;
-  addr = sqlite3VdbeAddOp2(v, OP_Rewind, ephemTab, 0); VdbeCoverage(v);
-  sqlite3VdbeAddOp3(v, OP_Column,  ephemTab, 0, iReg);
-  sqlite3VdbeAddOp3(v, OP_Column, ephemTab, (pRowid?1:0), iReg+1);
+  /* Populate the argument registers. */
+  sqlite3VdbeAddOp2(v, OP_Rowid, iCsr, regArg);
+  if( pRowid ){
+    sqlite3ExprCode(pParse, pRowid, regArg+1);
+  }else{
+    sqlite3VdbeAddOp2(v, OP_Rowid, iCsr, regArg+1);
+  }
   for(i=0; i<pTab->nCol; i++){
-    sqlite3VdbeAddOp3(v, OP_Column, ephemTab, i+1+(pRowid!=0), iReg+2+i);
+    if( aXRef[i]>=0 ){
+      sqlite3ExprCode(pParse, pChanges->a[aXRef[i]].pExpr, regArg+2+i);
+    }else{
+      sqlite3VdbeAddOp3(v, OP_VColumn, iCsr, i, regArg+2+i);
+    }
+  }
+
+  bOnePass = sqlite3WhereOkOnePass(pWInfo, aDummy);
+
+  if( bOnePass ){
+    /* If using the onepass strategy, no-op out the OP_OpenEphemeral coded
+    ** above. Also, if this is a top-level parse (not a trigger), clear the
+    ** multi-write flag so that the VM does not open a statement journal */
+    sqlite3VdbeChangeToNoop(v, addr);
+    if( sqlite3IsToplevel(pParse) ){
+      pParse->isMultiWrite = 0;
+    }
+  }else{
+    /* Create a record from the argument register contents and insert it into
+    ** the ephemeral table. */
+    sqlite3VdbeAddOp3(v, OP_MakeRecord, regArg, nArg, regRec);
+    sqlite3VdbeAddOp2(v, OP_NewRowid, ephemTab, regRowid);
+    sqlite3VdbeAddOp3(v, OP_Insert, ephemTab, regRec, regRowid);
+  }
+
+
+  if( bOnePass==0 ){
+    /* End the virtual table scan */
+    sqlite3WhereEnd(pWInfo);
+
+    /* Begin scannning through the ephemeral table. */
+    addr = sqlite3VdbeAddOp1(v, OP_Rewind, ephemTab); VdbeCoverage(v);
+
+    /* Extract arguments from the current row of the ephemeral table and 
+    ** invoke the VUpdate method.  */
+    for(i=0; i<nArg; i++){
+      sqlite3VdbeAddOp3(v, OP_Column, ephemTab, i, regArg+i);
+    }
   }
   sqlite3VtabMakeWritable(pParse, pTab);
-  sqlite3VdbeAddOp4(v, OP_VUpdate, 0, pTab->nCol+2, iReg, pVTab, P4_VTAB);
+  sqlite3VdbeAddOp4(v, OP_VUpdate, 0, nArg, regArg, pVTab, P4_VTAB);
   sqlite3VdbeChangeP5(v, onError==OE_Default ? OE_Abort : onError);
   sqlite3MayAbort(pParse);
-  sqlite3VdbeAddOp2(v, OP_Next, ephemTab, addr+1); VdbeCoverage(v);
-  sqlite3VdbeJumpHere(v, addr);
-  sqlite3VdbeAddOp2(v, OP_Close, ephemTab, 0);
 
-  /* Cleanup */
-  sqlite3SelectDelete(db, pSelect);  
+  /* End of the ephemeral table scan. Or, if using the onepass strategy,
+  ** jump to here if the scan visited zero rows. */
+  if( bOnePass==0 ){
+    sqlite3VdbeAddOp2(v, OP_Next, ephemTab, addr+1); VdbeCoverage(v);
+    sqlite3VdbeJumpHere(v, addr);
+    sqlite3VdbeAddOp2(v, OP_Close, ephemTab, 0);
+  }else{
+    sqlite3WhereEnd(pWInfo);
+  }
 }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
