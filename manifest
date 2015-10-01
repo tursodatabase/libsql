@@ -1,5 +1,5 @@
-C Add\sa\scorrupt\sdatabase\sto\stest/fuzzdata3.db\sto\svalidate\sthe\sprevious\ncheck-in.
-D 2015-09-30T14:30:19.646
+C Fix\san\sfts3\sbug\scausing\sNEAR\squeries\son\suncommitted\sdata\sto\smalfunction.
+D 2015-10-01T18:31:29.602
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2143eeef6d0cc26006ae5fc4bb242a4a8b973412
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -96,7 +96,7 @@ F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c a93f5edc0aff44ef8b06d7cb55b52026541ca145
 F ext/fts3/fts3_unicode2.c c3d01968d497bd7001e7dc774ba75b372738c057
-F ext/fts3/fts3_write.c 6f7233a06df17084d5cd968899053731bf953f94
+F ext/fts3/fts3_write.c f442223e4a1914dc1fc12b65af7e4f2c255fa47c
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/fts3/tool/fts3view.c 8e53d0190a7b3443764bbd32ad47be2bd852026d
@@ -1389,7 +1389,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 29f7227ff127202c53fe7c3b6558b3c101b0a7bc
-R b3d2e18288eecf437c1dfdc1db967b0d
-U drh
-Z 07034a5cbcc5358cdbeac30192aaba95
+P e796c0efb6cf17444b53af75046daf7d8fa82f78
+R 0cafe6c8cdead8895dc88237ddef8389
+U dan
+Z 654a1b4baa598b306106df1a114a779c

@@ -1322,14 +1322,19 @@ static int fts3SegReaderNext(
 
     if( fts3SegReaderIsPending(pReader) ){
       Fts3HashElem *pElem = *(pReader->ppNextElem);
-      if( pElem==0 ){
-        pReader->aNode = 0;
-      }else{
+      sqlite3_free(pReader->aNode);
+      pReader->aNode = 0;
+      if( pElem ){
+        char *aCopy;
         PendingList *pList = (PendingList *)fts3HashData(pElem);
+        int nCopy = pList->nData+1;
         pReader->zTerm = (char *)fts3HashKey(pElem);
         pReader->nTerm = fts3HashKeysize(pElem);
-        pReader->nNode = pReader->nDoclist = pList->nData + 1;
-        pReader->aNode = pReader->aDoclist = pList->aData;
+        aCopy = (char*)sqlite3_malloc(nCopy);
+        if( !aCopy ) return SQLITE_NOMEM;
+        memcpy(aCopy, pList->aData, nCopy);
+        pReader->nNode = pReader->nDoclist = nCopy;
+        pReader->aNode = pReader->aDoclist = aCopy;
         pReader->ppNextElem++;
         assert( pReader->aNode );
       }
@@ -1569,12 +1574,14 @@ int sqlite3Fts3MsrOvfl(
 ** second argument.
 */
 void sqlite3Fts3SegReaderFree(Fts3SegReader *pReader){
-  if( pReader && !fts3SegReaderIsPending(pReader) ){
-    sqlite3_free(pReader->zTerm);
+  if( pReader ){
+    if( !fts3SegReaderIsPending(pReader) ){
+      sqlite3_free(pReader->zTerm);
+    }
     if( !fts3SegReaderIsRootOnly(pReader) ){
       sqlite3_free(pReader->aNode);
-      sqlite3_blob_close(pReader->pBlob);
     }
+    sqlite3_blob_close(pReader->pBlob);
   }
   sqlite3_free(pReader);
 }
