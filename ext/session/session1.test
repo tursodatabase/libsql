@@ -20,17 +20,6 @@ ifcapable !session {finish_test; return}
 
 set testprefix session1
 
-proc do_changeset_invert_test {tn session res} {
-  set r [list]
-  foreach x $res {lappend r $x}
-  uplevel do_test $tn [list [subst -nocommands {
-    set x [list]
-    set changeset [sqlite3changeset_invert [$session changeset]]
-    sqlite3session_foreach c [set changeset] { lappend x [set c] }
-    set x
-  }]] [list $r]
-}
-
 do_execsql_test 1.0 {
   CREATE TABLE t1(x PRIMARY KEY, y);
   INSERT INTO t1 VALUES('abc', 'def');

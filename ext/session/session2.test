@@ -298,8 +298,8 @@ foreach {tn sql changeset} {
     DELETE FROM t1 WHERE 1;
     UPDATE t2 SET x = 34;
   } { 
-    {UPDATE t2 0 .X {i 36 i 37} {i 34 {} {}}}
     {DELETE t1 0 X {i 35} {}}
+    {UPDATE t2 0 .X {i 36 i 37} {i 34 {} {}}}
   }
 } {
   do_iterator_test 5.$tn * $sql $changeset
@@ -413,8 +413,8 @@ do_iterator_test 6.1.8 * {
   SELECT indirect(0);
   UPDATE t4 SET a = 'two' WHERE b = 1;
 } {
-  {INSERT t4 0 .X {} {t two i 1}} 
   {INSERT t3 1 .X {} {t two i 1}}
+  {INSERT t4 0 .X {} {t two i 1}} 
 }
 
 sqlite3session S db main

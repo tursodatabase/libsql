@@ -1,5 +1,5 @@
-C Merge\srecent\senhancements\sfrom\strunk,\sand\sespecially\sthe\sfix\sfor\nticket\s[1b266395d6bc10].
-D 2015-09-30T14:50:39.955
+C Changes\sto\sthe\ssesssions\smodule\sensure\sthat\stables\sappear\swithin\schangesets\sand\spatchsets\sin\sthe\ssame\sorder\sthat\sthey\swere\sattached\sto\sthe\ssessions\sobject.
+D 2015-10-01T16:35:57.175
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in fdcfdc361f0a3723da9b48b967f259f7aaff3ad5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -256,8 +256,8 @@ F ext/rtree/sqlite3rtree.h 9c5777af3d2921c7b4ae4954e8e5697502289d28
 F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F ext/session/changeset.c 4ccbaa4531944c24584bf6a61ba3a39c62b6267a
-F ext/session/session1.test d4f53b9b5add7eeb358e535d6e18552142092429
-F ext/session/session2.test a95a2d270b32638c1acba7cb9c81856712d469ac
+F ext/session/session1.test 5dab50ce55c859e829bae24f0787013f51775fc5
+F ext/session/session2.test 284de45abae4cc1082bc52012ee81521d5ac58e0
 F ext/session/session3.test a7a9ce59b8d1e49e2cc23d81421ac485be0eea01
 F ext/session/session4.test a6ed685da7a5293c5d6f99855bcf41dbc352ca84
 F ext/session/session5.test 716bc6fafd625ce60dfa62ae128971628c1a1169
@@ -265,14 +265,15 @@ F ext/session/session6.test 443789bc2fca12e4f7075cf692c60b8a2bea1a26
 F ext/session/session8.test 8e194b3f655d861ca36de5d4de53f702751bab3b
 F ext/session/session9.test 5409d90d8141881d08285ed1c2c0d8d10fb92069
 F ext/session/sessionA.test 1feeab0b8e03527f08f2f1defb442da25480138f
-F ext/session/sessionB.test 06961b7c3641151f5d23088250ecad132501113c
+F ext/session/sessionB.test 886252dcb7e692e62ef7e357456200912e367823
 F ext/session/sessionC.test 3982f8577b0744c5ce3aaef7cfeb5bd903f17fe4
 F ext/session/sessionD.test d4744c78334162851d2a2f285c7e603e31b49aa2
 F ext/session/sessionE.test e60a238c47f0feb3bb707e7f35e22be09c7e8f26
-F ext/session/session_common.tcl f4b7b59c617edf0c9b00d94cd93498d225d43837
+F ext/session/sessionF.test c2f178d4dfd723a5fd94a730ea2ccb44c669e3ce
+F ext/session/session_common.tcl a1293167d14774b5e728836720497f40fe4ea596
 F ext/session/sessionfault.test bef044d0952c0d62c31c8d2400be72c8684545cc
-F ext/session/sqlite3session.c 78e5b310cd6e655e9166f40dc8a319c0c866cfdc
-F ext/session/sqlite3session.h 772cffe38f11bd62f434eabf080157eabf3d553e
+F ext/session/sqlite3session.c 1ace1d1e4cb32cf60ca6e8ed1ae8d4c9f99ca458
+F ext/session/sqlite3session.h 64e9e7f185725ef43b97f4a9a0c0df0669844f1d
 F ext/session/test_session.c 187bd344c5ae9d5be85e22ef7c3010f0c17307ce
 F ext/userauth/sqlite3userauth.h 19cb6f0e31316d0ee4afdfb7a85ef9da3333a220
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
@@ -1409,7 +1410,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c91065f8edb1e54076791716fc20d3fcfe3070dc e796c0efb6cf17444b53af75046daf7d8fa82f78
-R 0237333bf6dc63bf0c4f4c66d7918366
-U drh
-Z 5f6cedfd7517312f688a69652091b608
+P b2face9aa95ade96a5666c70b6b31064c1ad0977
+R 67f4bc03b9ceb2707f867778f6790d70
+U dan
+Z c3622f418cca20fcda99ae888e36e276

@@ -31,16 +31,6 @@ set testprefix sessionB
 # 3.*: Test that sqlite3changeset_invert() works with patchset blobs. 
 #      Correct behaviour is to return SQLITE_CORRUPT.
 
-proc do_patchset_test {tn session res} {
-  set r [list]
-  foreach x $res {lappend r $x}
-  uplevel do_test $tn [list [subst -nocommands {
-    set x [list]
-    sqlite3session_foreach c [$session patchset] { lappend x [set c] }
-    set x
-  }]] [list $r]
-}
-
 proc do_sql2patchset_test {tn sql res} {
   sqlite3session S db main
   S attach *
