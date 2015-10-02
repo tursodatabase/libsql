@@ -19,7 +19,6 @@ ifcapable !fts5 {
   return
 }
 
-if 1 {
 #-------------------------------------------------------------------------
 #
 set doc "x x [string repeat {y } 50]z z"
@@ -137,8 +136,6 @@ do_execsql_test 5.4 {
   SELECT rowid FROM tt WHERE tt MATCH 'a*';
 } {1 2}
 
-}
-
 do_execsql_test 5.5 {
   DELETE FROM tt;
   BEGIN;
@@ -184,6 +181,44 @@ do_catchsql_test 6.3 {
   SELECT * FROM xyz WHERE xyz MATCH NULL 
 } {1 {fts5: syntax error near ""}}
 
+#-------------------------------------------------------------------------
+
+do_execsql_test 7.1 {
+  CREATE VIRTUAL TABLE ft2 USING fts5(content);
+  INSERT INTO ft2(rowid, content) VALUES(1, 'a b c');
+  INSERT INTO ft2(rowid, content) VALUES(2, 'a b d');
+} 
+
+do_catchsql_test 7.2 {
+  BEGIN;
+    UPDATE ft2 SET rowid=2 WHERE rowid=1;
+} {1 {constraint failed}} 
+
+do_execsql_test 7.3 {
+  COMMIT;
+  INSERT INTO ft2(ft2) VALUES('integrity-check');
+} {}
+
+do_execsql_test 7.4 {
+  SELECT * FROM ft2;
+} {{a b c} {a b d}}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 8.1 {
+  CREATE VIRTUAL TABLE ft2 USING fts5(content);
+  INSERT INTO ft2(rowid, content) VALUES(1, 'a b');
+}
+
+do_execsql_test 8.2 {
+  BEGIN;
+    INSERT INTO ft2(rowid, content) VALUES(4, 'a x');
+}
+
+do_execsql_test 8.3 {
+  INSERT INTO ft2(ft2) VALUES('integrity-check');
+}
 
 finish_test
 

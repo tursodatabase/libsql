@@ -291,7 +291,7 @@ struct Fts5Index {
   int nMaxPendingData;            /* Max pending data before flush to disk */
   int nPendingData;               /* Current bytes of pending data */
   i64 iWriteRowid;                /* Rowid for current doc being written */
-  Fts5Buffer scratch;
+  int bDelete;                    /* Current write is a delete */
 
   /* Error state. */
   int rc;                         /* Current error code */
@@ -1780,6 +1780,7 @@ static void fts5SegIterNext(
           pIter->iEndofDoclist = nList+1;
           sqlite3Fts5BufferSet(&p->rc, &pIter->term, strlen(zTerm), (u8*)zTerm);
           pIter->iLeafOffset = fts5GetVarint(pList, (u64*)&pIter->iRowid);
+          if( pbNewTerm ) *pbNewTerm = 1;
         }
       }else{
         iOff = 0;
@@ -4195,7 +4196,7 @@ static void fts5SetupPrefixIter(
 ** Indicate that all subsequent calls to sqlite3Fts5IndexWrite() pertain
 ** to the document with rowid iRowid.
 */
-int sqlite3Fts5IndexBeginWrite(Fts5Index *p, i64 iRowid){
+int sqlite3Fts5IndexBeginWrite(Fts5Index *p, int bDelete, i64 iRowid){
   assert( p->rc==SQLITE_OK );
 
   /* Allocate the hash table if it has not already been allocated */
@@ -4204,10 +4205,15 @@ int sqlite3Fts5IndexBeginWrite(Fts5Index *p, i64 iRowid){
   }
 
   /* Flush the hash table to disk if required */
-  if( iRowid<=p->iWriteRowid || (p->nPendingData > p->nMaxPendingData) ){
+  if( iRowid<p->iWriteRowid 
+   || (iRowid==p->iWriteRowid && p->bDelete==0)
+   || (p->nPendingData > p->nMaxPendingData) 
+  ){
     fts5IndexFlush(p);
   }
+
   p->iWriteRowid = iRowid;
+  p->bDelete = bDelete;
   return fts5IndexReturn(p);
 }
 
@@ -4306,7 +4312,6 @@ int sqlite3Fts5IndexClose(Fts5Index *p){
     sqlite3_finalize(p->pIdxDeleter);
     sqlite3_finalize(p->pIdxSelect);
     sqlite3Fts5HashFree(p->pHash);
-    sqlite3Fts5BufferFree(&p->scratch);
     sqlite3_free(p->zDataTbl);
     sqlite3_free(p);
   }
@@ -4367,6 +4372,7 @@ int sqlite3Fts5IndexWrite(
   Fts5Config *pConfig = p->pConfig;
 
   assert( p->rc==SQLITE_OK );
+  assert( (iCol<0)==p->bDelete );
 
   /* Add the entry to the main terms index. */
   rc = sqlite3Fts5HashWrite(
@@ -5244,6 +5250,29 @@ static void fts5DecodeStructure(
 }
 
 /*
+** This is part of the fts5_decode() debugging aid.
+**
+** Arguments pBlob/nBlob contain an "averages" record. This function 
+** appends a human-readable representation of record to the buffer passed 
+** as the second argument. 
+*/
+static void fts5DecodeAverages(
+  int *pRc,                       /* IN/OUT: error code */
+  Fts5Buffer *pBuf,
+  const u8 *pBlob, int nBlob
+){
+  int i = 0;
+  const char *zSpace = "";
+
+  while( i<nBlob ){
+    u64 iVal;
+    i += sqlite3Fts5GetVarint(&pBlob[i], &iVal);
+    sqlite3Fts5BufferAppendPrintf(pRc, pBuf, "%s%d", zSpace, (int)iVal);
+    zSpace = " ";
+  }
+}
+
+/*
 ** Buffer (a/n) is assumed to contain a list of serialized varints. Read
 ** each varint and append its string representation to buffer pBuf. Return
 ** after either the input buffer is exhausted or a 0 value is read.
@@ -5344,7 +5373,7 @@ static void fts5DecodeFunction(
     }
   }else if( iSegid==0 ){
     if( iRowid==FTS5_AVERAGES_ROWID ){
-      /* todo */
+      fts5DecodeAverages(&rc, &s, a, n);
     }else{
       fts5DecodeStructure(&rc, &s, a, n);
     }

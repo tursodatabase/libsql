@@ -370,6 +370,7 @@ int sqlite3Fts5IndexWrite(
 */
 int sqlite3Fts5IndexBeginWrite(
   Fts5Index *p,                   /* Index to write to */
+  int bDelete,                    /* True if current operation is a delete */
   i64 iDocid                      /* Docid to add or remove data from */
 );
 
@@ -526,7 +527,8 @@ int sqlite3Fts5DropAll(Fts5Config*);
 int sqlite3Fts5CreateTable(Fts5Config*, const char*, const char*, int, char **);
 
 int sqlite3Fts5StorageDelete(Fts5Storage *p, i64);
-int sqlite3Fts5StorageInsert(Fts5Storage *p, sqlite3_value **apVal, int, i64*);
+int sqlite3Fts5StorageContentInsert(Fts5Storage *p, sqlite3_value**, i64*);
+int sqlite3Fts5StorageIndexInsert(Fts5Storage *p, sqlite3_value**, i64);
 
 int sqlite3Fts5StorageIntegrity(Fts5Storage *p);
 
