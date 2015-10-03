@@ -220,5 +220,26 @@ do_execsql_test 8.3 {
   INSERT INTO ft2(ft2) VALUES('integrity-check');
 }
 
+#-------------------------------------------------------------------------
+# Check that the "table function" syntax works.
+#
+reset_db
+do_execsql_test 9.1 {
+  CREATE VIRTUAL TABLE ft2 USING fts5(content);
+  INSERT INTO ft2(rowid, content) VALUES(1, 'a b');
+  INSERT INTO ft2(rowid, content) VALUES(2, 'a b c d');
+  INSERT INTO ft2(rowid, content) VALUES(3, 'c d e f');
+}
+
+do_execsql_test 9.2 {
+  SELECT rowid FROM ft2('a');
+} {1 2}
+
+do_execsql_test 9.3 {
+  SELECT rowid FROM ft2('b AND c');
+} {2}
+
+
+
 finish_test
 

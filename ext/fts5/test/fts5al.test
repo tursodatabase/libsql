@@ -251,7 +251,6 @@ do_execsql_test 4.3.1 {
   INSERT INTO t3 VALUES('a five');
   INSERT INTO t3(t3, rank) VALUES('rank', 'bm25()');
 }
-breakpoint
 
 do_execsql_test 4.3.2 {
   SELECT * FROM t3
@@ -260,10 +259,23 @@ do_execsql_test 4.3.2 {
 } {
   {a four} {a one} {a five} {a two} {a three}
 }
+
 do_execsql_test 4.3.3 {
   SELECT *, rank FROM t3
   WHERE t3 MATCH 'a' AND rank MATCH 'rowidmod(3)' 
   ORDER BY rank ASC
+} {
+  {a three} 0 {a one} 1 {a four} 1 {a two} 2 {a five} 2 
+}
+
+do_execsql_test 4.3.4 {
+  SELECT * FROM t3('a', 'rowidmod(4)') ORDER BY rank ASC;
+} {
+  {a four} {a one} {a five} {a two} {a three}
+}
+
+do_execsql_test 4.3.5 {
+  SELECT *, rank FROM t3('a', 'rowidmod(3)') ORDER BY rank ASC
 } {
   {a three} 0 {a one} 1 {a four} 1 {a two} 2 {a five} 2 
 }
