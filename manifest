@@ -1,5 +1,5 @@
-C Add\sfts5txt2db.tcl,\sa\stool\sfor\screating\ssample\sfts4/5\sdatabases\sfrom\stext\sfiles.
-D 2015-10-05T11:57:09.832
+C Update\sfts3\sso\sthat\sexpressions\sto\sthe\sleft\sand\sright\sof\sa\sNOT\soperator\sare\sbalanced.\sThis\sprevents\srelatively\ssmall\sexpressions\s(a\sdozen\sterms\sor\sso)\sthat\sare\schildren\sof\sNOT\soperators\sfrom\striggering\sthe\s"expression\stree\sis\stoo\slarge"\serror.
+D 2015-10-05T15:39:45.681
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2143eeef6d0cc26006ae5fc4bb242a4a8b973412
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -82,7 +82,7 @@ F ext/fts3/fts3.c e028eb13432f108d2e22cded019fc980700e4e00
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h c84125c666ee54cef6efce6ff64abb0d0e2f4535
 F ext/fts3/fts3_aux.c 9edc3655fcb287f0467d0a4b886a01c6185fe9f1
-F ext/fts3/fts3_expr.c 71c063da9c2a4167fb54aec089dd5ef33a58c9cb
+F ext/fts3/fts3_expr.c dfd571a24412779ac01f25c01d888c6ef7b2d0ef
 F ext/fts3/fts3_hash.c 29b986e43f4e9dd40110eafa377dc0d63c422c60
 F ext/fts3/fts3_hash.h 39cf6874dc239d6b4e30479b1975fe5b22a3caaf
 F ext/fts3/fts3_icu.c deb46f7020d87ea7a14a433fb7a7f4bef42a9652
@@ -704,7 +704,7 @@ F test/fts3drop.test 1b906e293d6773812587b3dc458cb9e8f3f0c297
 F test/fts3e.test 1f6c6ac9cc8b772ca256e6b22aaeed50c9350851
 F test/fts3expr.test 3401d47b229c4504424caf362cc4ff704cad4162
 F test/fts3expr2.test 18da930352e5693eaa163a3eacf96233b7290d1a
-F test/fts3expr3.test 9e91b8edbcb197bf2e92161aa7696446d96dce5f
+F test/fts3expr3.test c4d4a7d6327418428c96e0a3a1137c251b8dfbf8
 F test/fts3expr4.test e1be1248566f43c252d4404d52914f1fc4bfa065
 F test/fts3expr5.test f9abfffbf5e53d48a33e12a1e8f8ba2c551c9b49
 F test/fts3fault.test da49627b280b210ebc6657f76344c7851f10ce66
@@ -1391,7 +1391,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 41d17d9e24303aed6d549ea23c62b93bf2f71691
-R 5e8c1254946bcba6c019e513b206067f
+P 44f1ce30d1e446c9ee5f8bd8a62119e00356aa0e
+R 0954493ffc80fb341b0df1cab997ace8
 U dan
-Z 56785af9a4f39d2ef982f38c897a3388
+Z 52900cdc8d31460ed8eb8d6276be0e92
