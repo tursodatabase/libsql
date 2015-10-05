@@ -233,13 +233,15 @@ int sqlite3Fts5PoslistWriterAppend(
 ){
   static const i64 colmask = ((i64)(0x7FFFFFFF)) << 32;
   int rc = SQLITE_OK;
-  if( (iPos & colmask) != (pWriter->iPrev & colmask) ){
-    fts5BufferAppendVarint(&rc, pBuf, 1);
-    fts5BufferAppendVarint(&rc, pBuf, (iPos >> 32));
-    pWriter->iPrev = (iPos & colmask);
+  if( 0==sqlite3Fts5BufferGrow(&rc, pBuf, 5+5+5) ){
+    if( (iPos & colmask) != (pWriter->iPrev & colmask) ){
+      pBuf->p[pBuf->n++] = 1;
+      pBuf->n += sqlite3Fts5PutVarint(&pBuf->p[pBuf->n], (iPos>>32));
+      pWriter->iPrev = (iPos & colmask);
+    }
+    pBuf->n += sqlite3Fts5PutVarint(&pBuf->p[pBuf->n], (iPos-pWriter->iPrev)+2);
+    pWriter->iPrev = iPos;
   }
-  fts5BufferAppendVarint(&rc, pBuf, (iPos - pWriter->iPrev) + 2);
-  pWriter->iPrev = iPos;
   return rc;
 }
 
