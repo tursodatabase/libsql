@@ -1,5 +1,5 @@
-C Update\sfts5\sto\ssupport\sthe\stable\sfunction\ssyntax.\s"...\sFROM\sfts5_tbl\sWHERE\sfts5_tbl\sMATCH\s?1\sAND\srank\sMATCH\s?1"\scan\snow\sbe\swritten\s"FROM\sfts5_tbl(?1,\s?2)".
-D 2015-10-03T15:38:57.855
+C Add\sfts5txt2db.tcl,\sa\stool\sfor\screating\ssample\sfts4/5\sdatabases\sfrom\stext\sfiles.
+D 2015-10-05T11:57:09.832
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2143eeef6d0cc26006ae5fc4bb242a4a8b973412
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -183,6 +183,7 @@ F ext/fts5/test/fts5unicode3.test 35c3d02aa7acf7d43d8de3bfe32c15ba96e8928e
 F ext/fts5/test/fts5unindexed.test e9539d5b78c677315e7ed8ea911d4fd25437c680
 F ext/fts5/test/fts5version.test 978f59541d8cef7e8591f8be2115ec5ccb863e2e
 F ext/fts5/test/fts5vocab.test cdf97b9678484e9bad5062edf9c9106e5c3b0c5c
+F ext/fts5/tool/fts5txt2db.tcl 3d19fb8ffb234031d33d7d2151acfbc55e9cfcc4
 F ext/fts5/tool/loadfts5.tcl 58e90407cc5c2b1770460119488fd7c0090d4dd3
 F ext/fts5/tool/mkfts5c.tcl 5745072c7de346e18c7f491e4c3281fe8a1cfe51
 F ext/fts5/tool/showfts5.tcl 9eaf6c3df352f98a2ab5ce1921dd94128ab1381d
@@ -1390,7 +1391,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f653fce90846b700441e8fa5f1930c1ec5e38e31
-R 2a1e06ad741b8341871247b55aface69
+P 41d17d9e24303aed6d549ea23c62b93bf2f71691
+R 5e8c1254946bcba6c019e513b206067f
 U dan
-Z 2e1c3b96f1b7a9a0a6f0aa6c18cff068
+Z 56785af9a4f39d2ef982f38c897a3388
