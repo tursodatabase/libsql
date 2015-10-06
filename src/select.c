@@ -2273,6 +2273,16 @@ static int multiSelect(
       if( p->iLimit ){
         addr = sqlite3VdbeAddOp1(v, OP_IfNot, p->iLimit); VdbeCoverage(v);
         VdbeComment((v, "Jump ahead if LIMIT reached"));
+        if( p->iOffset ){
+          int addr2;
+          sqlite3VdbeAddOp3(v, OP_Add, p->iLimit, p->iOffset, p->iOffset+1);
+          addr2 = sqlite3VdbeAddOp1(v, OP_IfPos, p->iOffset); VdbeCoverage(v);
+          sqlite3VdbeAddOp2(v, OP_SCopy, p->iLimit, p->iOffset+1);
+          sqlite3VdbeJumpHere(v, addr2);
+          addr2 = sqlite3VdbeAddOp1(v, OP_IfPos, p->iLimit); VdbeCoverage(v);
+          sqlite3VdbeAddOp2(v, OP_Integer, -1, p->iOffset+1);
+          sqlite3VdbeJumpHere(v, addr2);
+        }
       }
       explainSetInteger(iSub2, pParse->iNextSelectId);
       rc = sqlite3Select(pParse, p, &dest);

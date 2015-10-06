@@ -1,5 +1,5 @@
-C Adjustments\sto\ssqlite3MemoryBarrier()\swhen\scompiling\swith\sMSVC\sand/or\sWinCE.
-D 2015-10-06T01:44:53.212
+C Fix\sthe\sLIMIT\sand\sOFFSET\shandling\sfor\sUNION\sALL\squeries\sthat\scontain\sa\s\nsubquery\swith\sORDER\sBY\son\sthe\sright-hand\sside.\s\sFix\sfor\sticket\n[b65cb2c8d91f668584].
+D 2015-10-06T17:27:18.737
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2143eeef6d0cc26006ae5fc4bb242a4a8b973412
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -342,7 +342,7 @@ F src/printf.c 0c4bcdd1c2e2521024f0a69cb5eb334f86b3652a
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 1954a0f01bf65d78d7d559aea3d5c67f33376d91
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c e49f4af9748c9e0cc1bf864b4190aa94841c8409
+F src/select.c 8fb8cb0230aed9b12b3582ddc366ffbc549041d7
 F src/shell.c dfd18e56fcb88dd79378774e9bc3246a9bd52243
 F src/sqlite.h.in 4b76d74d69af48c534c58fb723137dc6944bdedc
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
@@ -900,6 +900,7 @@ F test/notify3.test 10ff25cde502e72a92053a2f215d64bece4ef934
 F test/notnull.test f8fcf58669ddba79274daa2770d61dfad8274f62
 F test/null.test 0dcce4f04284ec66108c503327ad6d224c0752b3
 F test/numcast.test 5d126f7f581432e86a90d1e35cac625164aec4a1
+F test/offset1.test f06b83657bcf26f9ce805e67450e189e282143b2
 F test/openv2.test 0d3040974bf402e19b7df4b783e447289d7ab394
 F test/orderby1.test 870e150450437d3980badbde3d0166b81d9e33f6
 F test/orderby2.test bc11009f7cd99d96b1b11e57b199b00633eb5b04
@@ -1391,7 +1392,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f2f0184e9e1c9f121ee2ac864cd28c8cd8efecb5
-R e9c328a2763ce5ce6b257c253eecdcc8
-U mistachkin
-Z 85dfdec3788a9562e3ed3a33e9d7dade
+P 3168326ebfa1c961d8fc6435453b02be23d910cc
+R 3e47dd30d61b7e1fff555418e15c6a1d
+U drh
+Z e6b33681aca5812f13faee0e253c4fc3
