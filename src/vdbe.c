@@ -5675,7 +5675,7 @@ case OP_MemMax: {        /* in2 */
 ** Synopsis: if r[P1]>0 then r[P1]-=P3, goto P2
 **
 ** Register P1 must contain an integer.
-** If the value of register P1 is 1 or greater, subtrace P3 from the
+** If the value of register P1 is 1 or greater, subtract P3 from the
 ** value in P1 and jump to P2.
 **
 ** If the initial value of register P1 is less than 1, then the
@@ -5713,7 +5713,7 @@ case OP_SetIfNotPos: {        /* in1, in2 */
 ** Synopsis: if r[P1]!=0 then r[P1]-=P3, goto P2
 **
 ** Register P1 must contain an integer.  If the content of register P1 is
-** initially nonzero, then subtrace P3 from the value in register P1 and
+** initially nonzero, then subtract P3 from the value in register P1 and
 ** jump to P2.  If register P1 is initially zero, leave it unchanged
 ** and fall through.
 */

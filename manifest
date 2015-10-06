@@ -1,5 +1,5 @@
-C Simplifications\sto\sthe\sVDBE\sbytecode\sthat\shandles\sLIMIT\sand\sOFFSET.
-D 2015-10-06T21:07:06.319
+C Fix\stypo\sin\scomments.\s\sNo\schanges\sto\scode.
+D 2015-10-06T21:49:55.351
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2143eeef6d0cc26006ae5fc4bb242a4a8b973412
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -405,7 +405,7 @@ F src/update.c a134027f59c7eb6e63ed18e2d5dd8ef0ce7f8ff8
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c fc612367108b74573c5fd13a85d0a23027f438bd
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c d263ec6b29d8e8e8178235b8403a00ccb48748d0
+F src/vdbe.c 1e0bf8d6a2308ce916d444ef399921407fd5d972
 F src/vdbe.h 4bc88bd0e06f8046ee6ab7487c0015e85ad949ad
 F src/vdbeInt.h 8b867eac234e28627ffcace3cd4b4b79bbec664b
 F src/vdbeapi.c 020681b943e77766b32ae1cddf86d7831b7374ca
@@ -1392,7 +1392,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P bf1607ac155018573ca40fb58aca62c5fea7e60b
-R f75f4370adf88bb173a9ed2d414ba858
-U drh
-Z 3f5b7bfbaf5afcf9be7e111589aea155
+P 041df7c2f14b95868a08090354ebb3308050790e
+R 72391e64c737a55be96785cd3a34723b
+U mistachkin
+Z 9b5c49931764975f112a79c84d53a6bb
