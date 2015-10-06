@@ -239,6 +239,17 @@ do_execsql_test 9.3 {
   SELECT rowid FROM ft2('b AND c');
 } {2}
 
+#-------------------------------------------------------------------------
+#
+do_execsql_test 10.0 {
+  CREATE VIRTUAL TABLE t3 USING fts5(a, b, c);
+  INSERT INTO t3 VALUES('bac aab bab', 'c bac c', 'acb aba abb'); -- 1
+  INSERT INTO t3 VALUES('bab abc c', 'acb c abb', 'c aaa c');     -- 2
+}
+
+do_execsql_test 10.1 {
+  SELECT rowid FROM t3('c: c*');
+} {2}
 
 
 finish_test

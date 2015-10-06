@@ -81,6 +81,20 @@ extern int sqlite3_fts5_may_be_corrupt;
 #endif
 
 typedef struct Fts5Global Fts5Global;
+typedef struct Fts5ExprColset Fts5ExprColset;
+
+/* If a NEAR() clump or phrase may only match a specific set of columns, 
+** then an object of the following type is used to record the set of columns.
+** Each entry in the aiCol[] array is a column that may be matched.
+**
+** This object is used by fts5_expr.c and fts5_index.c.
+*/
+struct Fts5ExprColset {
+  int nCol;
+  int aiCol[1];
+};
+
+
 
 /**************************************************************************
 ** Interface to code in fts5_config.c. fts5_config.c contains contains code
@@ -305,7 +319,7 @@ int sqlite3Fts5IndexClose(Fts5Index *p);
 
 /*
 ** for(
-**   pIter = sqlite3Fts5IndexQuery(p, "token", 5, 0);
+**   sqlite3Fts5IndexQuery(p, "token", 5, 0, 0, &pIter);
 **   0==sqlite3Fts5IterEof(pIter);
 **   sqlite3Fts5IterNext(pIter)
 ** ){
@@ -321,7 +335,8 @@ int sqlite3Fts5IndexQuery(
   Fts5Index *p,                   /* FTS index to query */
   const char *pToken, int nToken, /* Token (or prefix) to query for */
   int flags,                      /* Mask of FTS5INDEX_QUERY_X flags */
-  Fts5IndexIter **ppIter
+  Fts5ExprColset *pColset,        /* Match these columns only */
+  Fts5IndexIter **ppIter          /* OUT: New iterator object */
 );
 
 /*
@@ -567,7 +582,6 @@ typedef struct Fts5Parse Fts5Parse;
 typedef struct Fts5Token Fts5Token;
 typedef struct Fts5ExprPhrase Fts5ExprPhrase;
 typedef struct Fts5ExprNearset Fts5ExprNearset;
-typedef struct Fts5ExprColset Fts5ExprColset;
 
 struct Fts5Token {
   const char *p;                  /* Token text (not NULL terminated) */

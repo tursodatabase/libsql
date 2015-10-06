@@ -90,16 +90,6 @@ struct Fts5ExprPhrase {
 };
 
 /*
-** If a NEAR() clump may only match a specific set of columns, then
-** Fts5ExprNearset.pColset points to an object of the following type.
-** Each entry in the aiCol[] array
-*/
-struct Fts5ExprColset {
-  int nCol;
-  int aiCol[1];
-};
-
-/*
 ** One or more phrases that must appear within a certain token distance of
 ** each other within each matching document.
 */
@@ -1002,6 +992,7 @@ static int fts5ExprNearInitAll(
             pExpr->pIndex, p->zTerm, strlen(p->zTerm),
             (pTerm->bPrefix ? FTS5INDEX_QUERY_PREFIX : 0) |
             (pExpr->bDesc ? FTS5INDEX_QUERY_DESC : 0),
+            pNear->pColset,
             &p->pIter
         );
         assert( rc==SQLITE_OK || p->pIter==0 );
