@@ -1,5 +1,5 @@
-C Optimizations\sfor\sfts5\sexpressions\sthat\sfilter\son\scolumn.\sMore\sstill\sto\scome.
-D 2015-10-06T20:53:26.753
+C Simplifications\sto\sthe\sVDBE\sbytecode\sthat\shandles\sLIMIT\sand\sOFFSET.
+D 2015-10-06T21:07:06.319
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2143eeef6d0cc26006ae5fc4bb242a4a8b973412
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -335,14 +335,14 @@ F src/parse.y f599aa5e871a493330d567ced93de696f61f48f7
 F src/pcache.c 24be750c79272e0ca7b6e007bc94999700f3e5ef
 F src/pcache.h 9968603796240cdf83da7e7bef76edf90619cea9
 F src/pcache1.c e822007159d53a7ea7aa040d6e28964ddb6de083
-F src/pragma.c 234814978bcd35bce6e2874dfb2f5b5e28e7fb38
+F src/pragma.c dcfe3a35d2de935feeaba1455528b4a5c4f1208c
 F src/pragma.h 631a91c8b0e6ca8f051a1d8a4a0da4150e04620a
 F src/prepare.c 82e5db1013846a819f198336fed72c44c974e7b1
 F src/printf.c 0c4bcdd1c2e2521024f0a69cb5eb334f86b3652a
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 1954a0f01bf65d78d7d559aea3d5c67f33376d91
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c 8fb8cb0230aed9b12b3582ddc366ffbc549041d7
+F src/select.c 2c4bfdf7c797df9b43121ed7850bf939b6f27405
 F src/shell.c dfd18e56fcb88dd79378774e9bc3246a9bd52243
 F src/sqlite.h.in 4b76d74d69af48c534c58fb723137dc6944bdedc
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
@@ -405,7 +405,7 @@ F src/update.c a134027f59c7eb6e63ed18e2d5dd8ef0ce7f8ff8
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c fc612367108b74573c5fd13a85d0a23027f438bd
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c 5048103aa6bc9c01bf1a4620729256d1e873bb6c
+F src/vdbe.c d263ec6b29d8e8e8178235b8403a00ccb48748d0
 F src/vdbe.h 4bc88bd0e06f8046ee6ab7487c0015e85ad949ad
 F src/vdbeInt.h 8b867eac234e28627ffcace3cd4b4b79bbec664b
 F src/vdbeapi.c 020681b943e77766b32ae1cddf86d7831b7374ca
@@ -1392,7 +1392,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4b631364354068af95a01630469cb6fbfe8b52fd
-R 8d25a208807a117d422df371476abd9e
-U dan
-Z f7ba9c7b6fd75653c93e200489a4e473
+P bf1607ac155018573ca40fb58aca62c5fea7e60b
+R f75f4370adf88bb173a9ed2d414ba858
+U drh
+Z 3f5b7bfbaf5afcf9be7e111589aea155
