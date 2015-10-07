@@ -69,7 +69,7 @@ foreach {tn uri file} {
     #       (ADS) named "test.db" for the "http" file, causing some spurious
     #       failures of this test.
     #
-    if {$tn==12 && $::tcl_version>=8.6} break
+    if {$tn==12 && $::tcl_version>=8.6} continue
 
     #
     # NOTE: On Windows, we need to account for the fact that the current
