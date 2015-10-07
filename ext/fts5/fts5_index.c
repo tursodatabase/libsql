@@ -1939,14 +1939,6 @@ static void fts5SegIterLoadDlidx(Fts5Index *p, Fts5SegIter *pIter){
   pIter->pDlidx = fts5DlidxIterInit(p, bRev, iSeg, pIter->iTermLeafPgno);
 }
 
-#define fts5IndexGetVarint32(a, iOff, nVal) {     \
-  nVal = (a)[iOff++];                             \
-  if( nVal & 0x80 ){                              \
-    iOff--;                                       \
-    iOff += fts5GetVarint32(&(a)[iOff], nVal);    \
-  }                                               \
-}
-
 #define fts5IndexSkipVarint(a, iOff) {            \
   int iEnd = iOff+9;                              \
   while( (a[iOff++] & 0x80) && iOff<iEnd );       \
@@ -1993,7 +1985,7 @@ static void fts5LeafSeek(
   while( 1 ){
 
     /* Figure out how many new bytes are in this term */
-    fts5IndexGetVarint32(a, iOff, nNew);
+    fts5FastGetVarint32(a, iOff, nNew);
     if( nKeep<nMatch ){
       goto search_failed;
     }
@@ -2029,7 +2021,7 @@ static void fts5LeafSeek(
     iOff = iTermOff;
 
     /* Read the nKeep field of the next term. */
-    fts5IndexGetVarint32(a, iOff, nKeep);
+    fts5FastGetVarint32(a, iOff, nKeep);
   }
 
  search_failed:
@@ -3984,7 +3976,7 @@ static void fts5PoslistFilterCallback(
 
     if( pCtx->eState==2 ){
       int iCol;
-      fts5IndexGetVarint32(pChunk, i, iCol);
+      fts5FastGetVarint32(pChunk, i, iCol);
       if( fts5IndexColsetTest(pCtx->pColset, iCol) ){
         pCtx->eState = 1;
         fts5BufferAppendVarint(&p->rc, pCtx->pBuf, 1);
@@ -4008,7 +4000,7 @@ static void fts5PoslistFilterCallback(
         if( i>=nChunk ){
           pCtx->eState = 2;
         }else{
-          fts5IndexGetVarint32(pChunk, i, iCol);
+          fts5FastGetVarint32(pChunk, i, iCol);
           pCtx->eState = fts5IndexColsetTest(pCtx->pColset, iCol);
           if( pCtx->eState ){
             fts5BufferAppendBlob(&p->rc, pCtx->pBuf, i-iStart, &pChunk[iStart]);

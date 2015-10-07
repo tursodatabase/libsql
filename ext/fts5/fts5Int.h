@@ -450,6 +450,15 @@ int sqlite3Fts5PutVarint(unsigned char *p, u64 v);
 #define fts5GetVarint32(a,b) sqlite3Fts5GetVarint32(a,(u32*)&b)
 #define fts5GetVarint    sqlite3Fts5GetVarint
 
+#define fts5FastGetVarint32(a, iOff, nVal) {      \
+  nVal = (a)[iOff++];                             \
+  if( nVal & 0x80 ){                              \
+    iOff--;                                       \
+    iOff += fts5GetVarint32(&(a)[iOff], nVal);    \
+  }                                               \
+}
+
+
 /*
 ** End of interface to code in fts5_varint.c.
 **************************************************************************/
