@@ -4687,10 +4687,10 @@ int sqlite3Fts5IterPoslist(
 */
 int sqlite3Fts5IterPoslistBuffer(Fts5IndexIter *pIter, Fts5Buffer *pBuf){
   Fts5Index *p = pIter->pIndex;
-
+  Fts5SegIter *pSeg = &pIter->aSeg[ pIter->aFirst[1].iFirst ];
   assert( p->rc==SQLITE_OK );
   fts5BufferZero(pBuf);
-  fts5MultiIterPoslist(p, pIter, 0, 0, pBuf);
+  fts5SegiterPoslist(p, pSeg, 0, pBuf);
   return fts5IndexReturn(p);
 }
 

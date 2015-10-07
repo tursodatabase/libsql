@@ -251,6 +251,36 @@ do_execsql_test 10.1 {
   SELECT rowid FROM t3('c: c*');
 } {2}
 
+#-------------------------------------------------------------------------
+# Test that character 0x1A is allowed in fts5 barewords.
+#
+do_test 11.0 {
+  execsql "CREATE VIRTUAL TABLE t4 USING fts5(x, tokenize=\"ascii tokenchars '\x1A'\")"
+  execsql "
+    INSERT INTO t4 VALUES('a b c \x1A');
+    INSERT INTO t4 VALUES('a b c d\x1A');
+    INSERT INTO t4 VALUES('a b c \x1Ad');
+    INSERT INTO t4 VALUES('a b c d');
+  "
+} {}
+
+do_test 11.1 {
+  execsql "SELECT rowid FROM t4('\x1A')"
+} {1}
+do_test 11.2 {
+  execsql "SELECT rowid FROM t4('\x1A*')"
+} {1 3}
+do_test 11.3 {
+  execsql "SELECT rowid FROM t4('d\x1A')"
+} {2}
+
+do_test 11.4 {
+  catchsql "SELECT rowid FROM t4('d\x1B')"
+} {/fts5: syntax error/}
+do_test 11.5 {
+  catchsql "SELECT rowid FROM t4('d\x19')"
+} {/fts5: syntax error/}
+
 
 finish_test
 
