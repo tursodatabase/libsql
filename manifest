@@ -1,14 +1,13 @@
-C Convert\sthe\smkopcodec.awk\sscript\sinto\stool/mkopcodec.tcl.
-D 2015-10-07T12:11:36.664
+C Change\sthe\saddopcodes.awk\sscript\sinto\stool/addopcodes.tcl.
+D 2015-10-07T12:21:14.000
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in da829ae5a1f60e3ff7d76a979628ce4a1bfc5d7d
+F Makefile.in b33d44230974d2d5ea2f0599855c5e36bd79b90a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 5ae4a363bc7cfbd18814e077f67bb418e6e3378d
+F Makefile.msc b7d8a7efbbf38cee57bfc81d11ca28c42122ff81
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION ccfc4d1576dbfdeece0a4372a2e6a2e37d3e7975
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
-F addopcodes.awk 9eb448a552d5c0185cf62c463f9c173cedae3811
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
@@ -263,7 +262,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk b67cb215800e4602744db3c6abdb77aac8adbf5e
+F main.mk 1cb544e1b1943b8b6452a811869b3baee5bfcb13
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -1334,6 +1333,7 @@ F test/without_rowid6.test 1f99644e6508447fb050f73697350c7ceca3392e
 F test/wordcount.c 9915e06cb33d8ca8109b8700791afe80d305afda
 F test/zeroblob.test 3857870fe681b8185654414a9bccfde80b62a0fa
 F test/zerodamage.test cf6748bad89553cc1632be51a6f54e487e4039ac
+F tool/addopcodes.tcl 7cc82ecca456a6b3148abf492b0419b83140881a
 F tool/build-all-msvc.bat 761d8c82a1a529261291812732a853a1b4256d85 x
 F tool/build-shell.sh 950f47c6174f1eea171319438b93ba67ff5bf367
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
@@ -1389,7 +1389,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ed0ebc460b54939862e3bddee2bb9bcb9f69c747
-R 725a0812f70e1ffeb50dd24066c3fbf1
+P 1506cb33fcf61e2ef97b35b99e58fbf21f4f5496
+R d8eeb7e51eba4dfb24803600079d2858
 U drh
-Z a24c1f360278b392b8819db30361ce0f
+Z f02ffe1dfbcccf71e8c30b4fbe822892
