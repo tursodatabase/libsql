@@ -1,9 +1,9 @@
-C Remove\sthree\sobsolete\sand\sunused\sfiles\sfrom\stool/
-D 2015-10-07T00:35:18.445
+C Change\smkopcodeh.awk\sinto\stool/mkopcodeh.tcl.
+D 2015-10-07T02:52:09.315
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in 2143eeef6d0cc26006ae5fc4bb242a4a8b973412
+F Makefile.in dd1f363468240142a5be1c9d58014dc9b8eae2f4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc b9054642ab305be4174d8b0433c9951c2839701d
+F Makefile.msc 8fb99d7b4e8b2e812a2360b8356d956d26e0e953
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION ccfc4d1576dbfdeece0a4372a2e6a2e37d3e7975
@@ -263,9 +263,8 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 151fcaba704fdeeb0a1941857ef6e1d6216732d8
+F main.mk 9fe51a296a2550282db357d2b3825cc32fbc455b
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
-F mkopcodeh.awk 0e7f04a8eb90f92259e47d80110e4e98d7ce337a
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -1352,6 +1351,7 @@ F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
 F tool/logest.c eef612f8adf4d0993dafed0416064cf50d5d33c6
 F tool/mkautoconfamal.sh d1a2da0e15b2ed33d60af35c7e9d483f13a8eb9f
 F tool/mkkeywordhash.c dfff09dbbfaf950e89af294f48f902181b144670
+F tool/mkopcodeh.tcl e04177031532b7aa9379ded50e820231ac4abd6e
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkpragmatab.tcl 84af2b180484323a2ea22a2279e8bd9e3e1e492e
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
@@ -1389,7 +1389,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a05f903c64edeba8a9748aad68f5981943e68b3c
-R d4529eb5d734c0707e0a910200ff6fc6
+P 0abd65294e6e8db68e7ce6724f02f17ba1cb3422
+R 33730b016d975e72f95dcd99735ce552
+T *branch * omit-awk
+T *sym-omit-awk *
+T -sym-trunk *
 U drh
-Z 8d61b7e9a6e9a2f3b2856a04c9b6debc
+Z 05cb2395dd6fc47d133085b2716a644b

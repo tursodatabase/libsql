@@ -582,9 +582,9 @@ tclsqlite.o:	$(TOP)/src/tclsqlite.c $(HDR)
 opcodes.c:	opcodes.h $(TOP)/mkopcodec.awk
 	$(NAWK) -f $(TOP)/mkopcodec.awk opcodes.h >opcodes.c
 
-opcodes.h:	parse.h $(TOP)/src/vdbe.c $(TOP)/mkopcodeh.awk
+opcodes.h:	parse.h $(TOP)/src/vdbe.c $(TOP)/tool/mkopcodeh.tcl
 	cat parse.h $(TOP)/src/vdbe.c | \
-		$(NAWK) -f $(TOP)/mkopcodeh.awk >opcodes.h
+		tclsh $(TOP)/tool/mkopcodeh.tcl >opcodes.h
 
 # Rules to build parse.c and parse.h - the outputs of lemon.
 #
