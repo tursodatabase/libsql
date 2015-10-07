@@ -119,6 +119,22 @@ proc gmatch {col pattern} {
 }
 db func gmatch gmatch
 
+proc ghl {col pattern} {
+  foreach t $col {
+    if {[string match $pattern $t]} {
+      lappend res "*$t*"
+    } else {
+      lappend res $t
+    }
+  }
+  set res
+}
+db func ghl ghl
+
+set COLS(a) 0
+set COLS(b) 1
+set COLS(c) 2
+
 for {set x 0} {$x<2} {incr x} {
   foreach {tn pattern} {
     1  {xa*}
@@ -132,11 +148,46 @@ for {set x 0} {$x<2} {incr x} {
     9  {xi*}
     10 {xj*}
   } {
-    foreach col {b} {
+    foreach col {a b c} {
+
+      # Check that the list of returned rowids is correct.
+      #
       set res [db eval "SELECT rowid FROM t3 WHERE gmatch($col, '$pattern')"]
       set query "$col : $pattern"
-      do_execsql_test 3.3.$x.$tn.$col {
+      do_execsql_test 3.3.$x.$tn.$col.rowid {
         SELECT rowid FROM t3($query);
+      } $res
+
+      # Check that the highlight() function works.
+      #
+      set res [db eval \
+        "SELECT ghl($col, '$pattern') FROM t3 WHERE gmatch($col, '$pattern')"
+      ]
+      set idx $COLS($col)
+      do_execsql_test 3.3.$x.$tn.$col.highlight {
+        SELECT highlight(t3, $idx, '*', '*') FROM t3($query);
+      } $res
+    }
+
+    foreach colset {{a b} {b c} {c a} {a c} {b a}} {
+      # Check that the list of returned rowids is correct.
+      #
+      foreach {col1 col2} $colset {}
+      set expr "gmatch($col1, '$pattern') OR gmatch($col2, '$pattern')"
+      set res [db eval "SELECT rowid FROM t3 WHERE $expr"]
+      set query "{$colset} : $pattern"
+      do_execsql_test 3.3.$x.$tn.{$colset}.rowid {
+        SELECT rowid FROM t3($query);
+      } $res
+
+      set resq    "SELECT ghl($col1, '$pattern'), ghl($col2, '$pattern')"
+      append resq " FROM t3 WHERE $expr"
+      set res [db eval $resq]
+      set idx1 $COLS($col1)
+      set idx2 $COLS($col2)
+      do_execsql_test 3.3.$x.$tn.{$colset}.highlight {
+        SELECT highlight(t3, $idx1, '*', '*'), highlight(t3, $idx2, '*', '*')
+          FROM t3($query)
       } $res
     }
   }

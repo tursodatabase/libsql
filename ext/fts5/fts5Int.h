@@ -81,7 +81,7 @@ extern int sqlite3_fts5_may_be_corrupt;
 #endif
 
 typedef struct Fts5Global Fts5Global;
-typedef struct Fts5ExprColset Fts5ExprColset;
+typedef struct Fts5Colset Fts5Colset;
 
 /* If a NEAR() clump or phrase may only match a specific set of columns, 
 ** then an object of the following type is used to record the set of columns.
@@ -89,7 +89,7 @@ typedef struct Fts5ExprColset Fts5ExprColset;
 **
 ** This object is used by fts5_expr.c and fts5_index.c.
 */
-struct Fts5ExprColset {
+struct Fts5Colset {
   int nCol;
   int aiCol[1];
 };
@@ -335,7 +335,7 @@ int sqlite3Fts5IndexQuery(
   Fts5Index *p,                   /* FTS index to query */
   const char *pToken, int nToken, /* Token (or prefix) to query for */
   int flags,                      /* Mask of FTS5INDEX_QUERY_X flags */
-  Fts5ExprColset *pColset,        /* Match these columns only */
+  Fts5Colset *pColset,            /* Match these columns only */
   Fts5IndexIter **ppIter          /* OUT: New iterator object */
 );
 
@@ -649,9 +649,9 @@ Fts5ExprNearset *sqlite3Fts5ParseNearset(
   Fts5ExprPhrase* 
 );
 
-Fts5ExprColset *sqlite3Fts5ParseColset(
+Fts5Colset *sqlite3Fts5ParseColset(
   Fts5Parse*, 
-  Fts5ExprColset*, 
+  Fts5Colset*, 
   Fts5Token *
 );
 
@@ -660,7 +660,7 @@ void sqlite3Fts5ParseNearsetFree(Fts5ExprNearset*);
 void sqlite3Fts5ParseNodeFree(Fts5ExprNode*);
 
 void sqlite3Fts5ParseSetDistance(Fts5Parse*, Fts5ExprNearset*, Fts5Token*);
-void sqlite3Fts5ParseSetColset(Fts5Parse*, Fts5ExprNearset*, Fts5ExprColset*);
+void sqlite3Fts5ParseSetColset(Fts5Parse*, Fts5ExprNearset*, Fts5Colset*);
 void sqlite3Fts5ParseFinished(Fts5Parse *pParse, Fts5ExprNode *p);
 void sqlite3Fts5ParseNear(Fts5Parse *pParse, Fts5Token*);
 

@@ -3954,14 +3954,14 @@ static void fts5PoslistCallback(
 typedef struct PoslistCallbackCtx PoslistCallbackCtx;
 struct PoslistCallbackCtx {
   Fts5Buffer *pBuf;               /* Append to this buffer */
-  Fts5ExprColset *pColset;        /* Restrict matches to this column */
+  Fts5Colset *pColset;            /* Restrict matches to this column */
   int eState;                     /* See above */
 };
 
 /*
 ** TODO: Make this more efficient!
 */
-static int fts5IndexColsetTest(Fts5ExprColset *pColset, int iCol){
+static int fts5IndexColsetTest(Fts5Colset *pColset, int iCol){
   int i;
   for(i=0; i<pColset->nCol; i++){
     if( pColset->aiCol[i]==iCol ) return 1;
@@ -4029,7 +4029,7 @@ static void fts5PoslistFilterCallback(
 static void fts5SegiterPoslist(
   Fts5Index *p,
   Fts5SegIter *pSeg,
-  Fts5ExprColset *pColset,
+  Fts5Colset *pColset,
   Fts5Buffer *pBuf
 ){
   if( pColset==0 ){
@@ -4055,7 +4055,7 @@ static void fts5SegiterPoslist(
 static int fts5MultiIterPoslist(
   Fts5Index *p,
   Fts5IndexIter *pMulti,
-  Fts5ExprColset *pColset,
+  Fts5Colset *pColset,
   int bSz,                        /* Append a size field before the data */
   Fts5Buffer *pBuf
 ){
@@ -4251,7 +4251,7 @@ static void fts5SetupPrefixIter(
   int bDesc,                      /* True for "ORDER BY rowid DESC" */
   const u8 *pToken,               /* Buffer containing prefix to match */
   int nToken,                     /* Size of buffer pToken in bytes */
-  Fts5ExprColset *pColset,        /* Restrict matches to these columns */
+  Fts5Colset *pColset,            /* Restrict matches to these columns */
   Fts5IndexIter **ppIter          /* OUT: New iterator */
 ){
   Fts5Structure *pStruct;
@@ -4536,7 +4536,7 @@ int sqlite3Fts5IndexQuery(
   Fts5Index *p,                   /* FTS index to query */
   const char *pToken, int nToken, /* Token (or prefix) to query for */
   int flags,                      /* Mask of FTS5INDEX_QUERY_X flags */
-  Fts5ExprColset *pColset,        /* Match these columns only */
+  Fts5Colset *pColset,            /* Match these columns only */
   Fts5IndexIter **ppIter          /* OUT: New iterator object */
 ){
   Fts5Config *pConfig = p->pConfig;
