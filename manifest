@@ -1,5 +1,5 @@
-C Remove\sthree\sobsolete\sand\sunused\sfiles\sfrom\stool/
-D 2015-10-07T00:35:18.445
+C When\srunning\stests\son\sTcl\s8.6\sunder\sWindows,\sskip\stests\s'uri-1.12.*'\sdue\sto\sa\schange\sin\sTcl\sbehavior\srelated\sto\sNTFS\sADS\s(alternate\sdata\sstreams).
+D 2015-10-07T03:07:41.412
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2143eeef6d0cc26006ae5fc4bb242a4a8b973412
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1243,7 +1243,7 @@ F test/unique2.test 3674e9f2a3f1fbbfd4772ac74b7a97090d0f77d2
 F test/unixexcl.test cd6c765f75e50e8e2c2ba763149e5d340ea19825
 F test/unordered.test ca7adce0419e4ca0c50f039885e76ed2c531eda8
 F test/update.test 6c68446b8a0a33d522a7c72b320934596a2d7d32
-F test/uri.test 23662b7b61958b0f0e47082de7d06341ccf85d5b
+F test/uri.test 1864342401046f8741d6040da9dbc6fbd3c032a1
 F test/userauth01.test e740a2697a7b40d7c5003a7d7edaee16acd349a9
 F test/utf16align.test 54cd35a27c005a9b6e7815d887718780b6a462ae
 F test/vacuum.test ce91c39f7f91a4273bf620efad21086b5aa6ef1d
@@ -1389,7 +1389,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a05f903c64edeba8a9748aad68f5981943e68b3c
-R d4529eb5d734c0707e0a910200ff6fc6
-U drh
-Z 8d61b7e9a6e9a2f3b2856a04c9b6debc
+P 0abd65294e6e8db68e7ce6724f02f17ba1cb3422
+R 5358569f2baa63663f07678b869229da
+U mistachkin
+Z e72fb6725790034f4f337251024aae57
