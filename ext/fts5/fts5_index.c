@@ -313,6 +313,7 @@ struct Fts5DoclistIter {
   i64 iRowid;
   u8 *aPoslist;
   int nPoslist;
+  int nSize;
 };
 
 /*
@@ -4048,7 +4049,6 @@ static int fts5MultiIterPoslist(
   Fts5Index *p,
   Fts5IndexIter *pMulti,
   Fts5Colset *pColset,
-  int bSz,                        /* Append a size field before the data */
   Fts5Buffer *pBuf
 ){
   if( p->rc==SQLITE_OK ){
@@ -4058,16 +4058,14 @@ static int fts5MultiIterPoslist(
     Fts5SegIter *pSeg = &pMulti->aSeg[ pMulti->aFirst[1].iFirst ];
     assert( fts5MultiIterEof(p, pMulti)==0 );
 
-    if( bSz ){
-      /* WRITEPOSLISTSIZE */
-      iSz = pBuf->n;
-      fts5BufferAppendVarint(&p->rc, pBuf, pSeg->nPos*2);
-      iData = pBuf->n;
-    }
+    /* WRITEPOSLISTSIZE */
+    iSz = pBuf->n;
+    fts5BufferSafeAppendVarint(pBuf, pSeg->nPos*2);
+    iData = pBuf->n;
 
     fts5SegiterPoslist(p, pSeg, pColset, pBuf);
 
-    if( bSz && pColset ){
+    if( pColset ){
       int nActual = pBuf->n - iData;
       if( nActual!=pSeg->nPos ){
         /* WRITEPOSLISTSIZE */
@@ -4086,7 +4084,7 @@ static int fts5MultiIterPoslist(
 }
 
 static void fts5DoclistIterNext(Fts5DoclistIter *pIter){
-  u8 *p = pIter->aPoslist + pIter->nPoslist;
+  u8 *p = pIter->aPoslist + pIter->nSize + pIter->nPoslist;
 
   assert( pIter->aPoslist );
   if( p>=pIter->aEof ){
@@ -4100,11 +4098,11 @@ static void fts5DoclistIterNext(Fts5DoclistIter *pIter){
     /* Read position list size */
     if( p[0] & 0x80 ){
       int nPos;
-      p += fts5GetVarint32(p, nPos);
+      pIter->nSize = fts5GetVarint32(p, nPos);
       pIter->nPoslist = (nPos>>1);
     }else{
       pIter->nPoslist = ((int)(p[0])) >> 1;
-      p++;
+      pIter->nSize = 1;
     }
 
     pIter->aPoslist = p;
@@ -4174,17 +4172,13 @@ static void fts5MergePrefixLists(
       if( i2.aPoslist==0 || (i1.aPoslist && i1.iRowid<i2.iRowid) ){
         /* Copy entry from i1 */
         fts5MergeAppendDocid(&out, iLastRowid, i1.iRowid);
-        /* WRITEPOSLISTSIZE */
-        fts5BufferSafeAppendVarint(&out, i1.nPoslist * 2);
-        fts5BufferSafeAppendBlob(&out, i1.aPoslist, i1.nPoslist);
+        fts5BufferSafeAppendBlob(&out, i1.aPoslist, i1.nPoslist+i1.nSize);
         fts5DoclistIterNext(&i1);
       }
       else if( i1.aPoslist==0 || i2.iRowid!=i1.iRowid ){
         /* Copy entry from i2 */
         fts5MergeAppendDocid(&out, iLastRowid, i2.iRowid);
-        /* WRITEPOSLISTSIZE */
-        fts5BufferSafeAppendVarint(&out, i2.nPoslist * 2);
-        fts5BufferSafeAppendBlob(&out, i2.aPoslist, i2.nPoslist);
+        fts5BufferSafeAppendBlob(&out, i2.aPoslist, i2.nPoslist+i2.nSize);
         fts5DoclistIterNext(&i2);
       }
       else{
@@ -4192,6 +4186,8 @@ static void fts5MergePrefixLists(
         i64 iPos2 = 0;
         int iOff1 = 0;
         int iOff2 = 0;
+        u8 *a1 = &i1.aPoslist[i1.nSize];
+        u8 *a2 = &i2.aPoslist[i2.nSize];
 
         Fts5PoslistWriter writer;
         memset(&writer, 0, sizeof(writer));
@@ -4200,19 +4196,19 @@ static void fts5MergePrefixLists(
         fts5MergeAppendDocid(&out, iLastRowid, i2.iRowid);
         fts5BufferZero(&tmp);
 
-        sqlite3Fts5PoslistNext64(i1.aPoslist, i1.nPoslist, &iOff1, &iPos1);
-        sqlite3Fts5PoslistNext64(i2.aPoslist, i2.nPoslist, &iOff2, &iPos2);
+        sqlite3Fts5PoslistNext64(a1, i1.nPoslist, &iOff1, &iPos1);
+        sqlite3Fts5PoslistNext64(a2, i2.nPoslist, &iOff2, &iPos2);
 
         while( p->rc==SQLITE_OK && (iPos1>=0 || iPos2>=0) ){
           i64 iNew;
           if( iPos2<0 || (iPos1>=0 && iPos1<iPos2) ){
             iNew = iPos1;
-            sqlite3Fts5PoslistNext64(i1.aPoslist, i1.nPoslist, &iOff1, &iPos1);
+            sqlite3Fts5PoslistNext64(a1, i1.nPoslist, &iOff1, &iPos1);
           }else{
             iNew = iPos2;
-            sqlite3Fts5PoslistNext64(i2.aPoslist, i2.nPoslist, &iOff2, &iPos2);
+            sqlite3Fts5PoslistNext64(a2, i2.nPoslist, &iOff2, &iPos2);
             if( iPos1==iPos2 ){
-              sqlite3Fts5PoslistNext64(i1.aPoslist, i1.nPoslist, &iOff1,&iPos1);
+              sqlite3Fts5PoslistNext64(a1, i1.nPoslist, &iOff1,&iPos1);
             }
           }
           p->rc = sqlite3Fts5PoslistWriterAppend(&tmp, &writer, iNew);
@@ -4290,7 +4286,7 @@ static void fts5SetupPrefixIter(
         int iSave = doclist.n;
         assert( doclist.n!=0 || iLastRowid==0 );
         fts5BufferSafeAppendVarint(&doclist, iRowid - iLastRowid);
-        if( fts5MultiIterPoslist(p, p1, pColset, 1, &doclist) ){
+        if( fts5MultiIterPoslist(p, p1, pColset, &doclist) ){
           doclist.n = iSave;
         }else{
           iLastRowid = iRowid;
@@ -5239,7 +5235,7 @@ int sqlite3Fts5IndexIntegrityCheck(Fts5Index *p, u64 cksum){
     fts5TestTerm(p, &term, z, n, cksum2, &cksum3);
 
     poslist.n = 0;
-    fts5MultiIterPoslist(p, pIter, 0, 0, &poslist);
+    fts5SegiterPoslist(p, &pIter->aSeg[pIter->aFirst[1].iFirst] , 0, &poslist);
     while( 0==sqlite3Fts5PoslistNext64(poslist.p, poslist.n, &iOff, &iPos) ){
       int iCol = FTS5_POS2COLUMN(iPos);
       int iTokOff = FTS5_POS2OFFSET(iPos);
