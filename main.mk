@@ -35,9 +35,6 @@
 # LIBREADLINE      Linker options needed by programs using readline() must
 #                  link against.
 #
-# NAWK             Nawk compatible awk program.  Older (obsolete?) solaris
-#                  systems need this to avoid using the original AT&T AWK.
-#
 # Once the macros above are defined, the rest of this make script will
 # build the SQLite library and testing tools.
 ################################################################################
@@ -701,7 +698,7 @@ sqlite3_analyzer.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl
 	cat sqlite3.c $(TOP)/src/tclsqlite.c >> $@
 	echo "static const char *tclsh_main_loop(void){" >> $@
 	echo "static const char *zMainloop = " >> $@
-	$(NAWK) -f $(TOP)/tool/tostr.awk $(TOP)/tool/spaceanal.tcl >> $@
+	tclsh $(TOP)/tool/tostr.tcl $(TOP)/tool/spaceanal.tcl >> $@
 	echo "; return zMainloop; }" >> $@
 
 sqlite3_analyzer$(EXE): sqlite3_analyzer.c

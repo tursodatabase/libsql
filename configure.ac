@@ -90,7 +90,6 @@ fi
 #
 AC_PROG_LIBTOOL
 AC_PROG_INSTALL
-AC_PROG_AWK
 
 #########
 # Enable large file support (if special flags are necessary)
