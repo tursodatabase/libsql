@@ -1508,7 +1508,6 @@ static int fts5UpdateMethod(
     }
   }
 
- update_method_out:
   pTab->pConfig->pzErrmsg = 0;
   return rc;
 }
