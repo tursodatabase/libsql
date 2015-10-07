@@ -579,8 +579,8 @@ tclsqlite.o:	$(TOP)/src/tclsqlite.c $(HDR)
 
 # Rules to build opcodes.c and opcodes.h
 #
-opcodes.c:	opcodes.h $(TOP)/mkopcodec.awk
-	$(NAWK) -f $(TOP)/mkopcodec.awk opcodes.h >opcodes.c
+opcodes.c:	opcodes.h $(TOP)/tool/mkopcodec.tcl
+	tclsh $(TOP)/tool/mkopcodec.tcl opcodes.h >opcodes.c
 
 opcodes.h:	parse.h $(TOP)/src/vdbe.c $(TOP)/tool/mkopcodeh.tcl
 	cat parse.h $(TOP)/src/vdbe.c | \
