@@ -1,5 +1,5 @@
-C Fix\sfurther\sfts5\scompilation\sissues.
-D 2015-10-08T20:40:18.323
+C Further\stweaks\sto\smain.mk\sso\sthat\sfts5\sbuilds\sas\spart\sof\stestfixture.
+D 2015-10-08T21:00:46.491
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 336f9494810fe361b59aa4e0c5cd41fc64d83323
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -110,7 +110,7 @@ F ext/fts5/fts5Int.h ed6c05b803e0bacf85228a8d255853e89796f6f5
 F ext/fts5/fts5_aux.c b09aa27dcdaa3d50a30be433fddaa48a50aa827b
 F ext/fts5/fts5_buffer.c b2fb69c1ee3378956c0d9ee964d61b59d296afaf
 F ext/fts5/fts5_config.c 57ee5fe71578cb494574fc0e6e51acb9a22a8695
-F ext/fts5/fts5_expr.c d3a56928f8afdd2dca9126f8406f20b9831e4265
+F ext/fts5/fts5_expr.c 1df899afed24c9c6195eea1780dcc56fcd1d1139
 F ext/fts5/fts5_hash.c 4bf4b99708848357b8a2b5819e509eb6d3df9246
 F ext/fts5/fts5_index.c e03217c37f344f79673be385de6b03f732291000
 F ext/fts5/fts5_main.c d159079e618399f9b531ad1fe32772cff307ea91
@@ -264,7 +264,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk f890212d1fb0dc1dccbf29ca073e25049a035f9c
+F main.mk cabb44ec58598504aa60a73d0c7b2ed7867a5314
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
 F mkopcodeh.awk 0e7f04a8eb90f92259e47d80110e4e98d7ce337a
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
@@ -1390,7 +1390,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5343e601fb6f0f24f4e4d5d442f7b5b074734143
-R a5d6a1bbd24ea26e1ba62ab9db596efb
+P 0d7f301fb03c8546a5dbce5d061a1d74e3c86bcf
+R e1f9fdfa53cf5660ea6f21bb4b74b6a9
 U dan
-Z 4d77dbaecef082f61a7a492bc89aab25
+Z e14f76d968001b7f399b579a0b72354e

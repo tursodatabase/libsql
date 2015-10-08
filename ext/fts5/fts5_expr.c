@@ -33,6 +33,7 @@ void *sqlite3Fts5ParserAlloc(void *(*mallocProc)(u64));
 void sqlite3Fts5ParserFree(void*, void (*freeProc)(void*));
 void sqlite3Fts5Parser(void*, int, Fts5Token, Fts5Parse*);
 #ifndef NDEBUG
+#include <stdio.h>
 void sqlite3Fts5ParserTrace(FILE*, char*);
 #endif
 
