@@ -1,5 +1,5 @@
-C Further\soptimizations\sfor\sfts5\sprefix\squeries\swithout\sa\sprefix\sindex.
-D 2015-10-07T19:06:21.871
+C Remove\stwo\sunused\slines\sof\scode\s-\sdiscovered\sby\sscan-build.
+D 2015-10-08T02:44:42.485
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2143eeef6d0cc26006ae5fc4bb242a4a8b973412
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -415,7 +415,7 @@ F src/vdbeblob.c 565fabd302f5fca3bdf3d56cac330483616a39b6
 F src/vdbemem.c 19b3036aa4d676e7103b0fb5efd6327da455f915
 F src/vdbesort.c f5009e7a35e3065635d8918b9a31f498a499976b
 F src/vdbetrace.c 8befe829faff6d9e6f6e4dee5a7d3f85cc85f1a0
-F src/vtab.c 9a6d8818c8a2477ce547f064701b5e955b25d894
+F src/vtab.c 2a8b44aa372c33f6154208e7a7f6c44254549806
 F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 18b0ed49830cf04fe2d68224b41838a73ac6cd24
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
@@ -423,7 +423,7 @@ F src/walker.c 2e14d17f592d176b6dc879c33fbdec4fbccaa2ba
 F src/where.c 4c4646675e794ac71e701289edefd7cd81bac844
 F src/whereInt.h 7892bb54cf9ca0ae5c7e6094491b94c9286dc647
 F src/wherecode.c a32bf1f304f6328e3eefcb82e70bd86836cff343
-F src/whereexpr.c 2473e4350e30f9b55d1c6a8f66ca23c689f23f1d
+F src/whereexpr.c e63244ca06c503e5f3c5b7f3c9aea0db826089ed
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1390,7 +1390,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 13adcd038fc20dd1b6f344f79b449b4034f8f8f2
-R daa87d323013657b7e115de7ca0f256c
-U dan
-Z 2a38bec14f47e4ff1536197bd0ad1f10
+P 83dc1ff7fa010715ca7f406a572f4ee444a967d7
+R 23aa9f023fe3604f2c01d6814f9077e1
+U drh
+Z 20dd7ef754329d35cfe6df88eb2905f9
