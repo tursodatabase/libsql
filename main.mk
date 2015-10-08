@@ -60,7 +60,7 @@ LIBOBJ+= vdbe.o parse.o \
          fts3_tokenize_vtab.o \
 	 fts3_unicode.o fts3_unicode2.o \
          fts3_write.o func.o global.o hash.o \
-         icu.o insert.o journal.o legacy.o loadext.o \
+         icu.o insert.o journal.o json1.o legacy.o loadext.o \
          main.o malloc.o mem0.o mem1.o mem2.o mem3.o mem5.o \
          memjournal.o \
          mutex.o mutex_noop.o mutex_unix.o mutex_w32.o \
@@ -322,7 +322,6 @@ TESTSRC += \
   $(TOP)/ext/misc/fileio.c \
   $(TOP)/ext/misc/fuzzer.c \
   $(TOP)/ext/misc/ieee754.c \
-  $(TOP)/ext/misc/json1.c \
   $(TOP)/ext/misc/nextchar.c \
   $(TOP)/ext/misc/percentile.c \
   $(TOP)/ext/misc/regexp.c \
@@ -332,7 +331,8 @@ TESTSRC += \
   $(TOP)/ext/misc/wholenumber.c \
   $(TOP)/ext/misc/vfslog.c \
   $(TOP)/ext/fts5/fts5_tcl.c \
-  $(TOP)/ext/fts5/fts5_test_mi.c 
+  $(TOP)/ext/fts5/fts5_test_mi.c \
+  fts5.c
 
 
 #TESTSRC += $(TOP)/ext/fts2/fts2_tokenizer.c
@@ -669,8 +669,16 @@ fts3_unicode2.o:	$(TOP)/ext/fts3/fts3_unicode2.c $(HDR) $(EXTHDR)
 fts3_write.o:	$(TOP)/ext/fts3/fts3_write.c $(HDR) $(EXTHDR)
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_write.c
 
+fts5.o:	fts5.c
+	$(TCCX) -DSQLITE_CORE -c fts5.c
+
+json1.o:	$(TOP)/ext/misc/json1.c
+	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/misc/json1.c
+
 rtree.o:	$(TOP)/ext/rtree/rtree.c $(HDR) $(EXTHDR)
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/rtree/rtree.c
+
+
 
 fts5parse.c:	$(TOP)/ext/fts5/fts5parse.y lemon 
 	cp $(TOP)/ext/fts5/fts5parse.y .
@@ -718,9 +726,9 @@ testfixture$(EXE): $(TESTSRC2) libsqlite3.a $(TESTSRC) $(TOP)/src/tclsqlite.c
 		$(TESTSRC) $(TESTSRC2) $(TOP)/src/tclsqlite.c                \
 		-o testfixture$(EXE) $(LIBTCL) libsqlite3.a $(THREADLIB)
 
-amalgamation-testfixture$(EXE): sqlite3.c $(TESTSRC) $(TOP)/src/tclsqlite.c
+amalgamation-testfixture$(EXE): sqlite3.c fts5.c $(TESTSRC) $(TOP)/src/tclsqlite.c
 	$(TCCX) $(TCL_FLAGS) -DTCLSH=1 $(TESTFIXTURE_FLAGS)                  \
-		$(TESTSRC) $(TOP)/src/tclsqlite.c sqlite3.c                  \
+		$(TESTSRC) $(TOP)/src/tclsqlite.c sqlite3.c fts5.c           \
 		-o testfixture$(EXE) $(LIBTCL) $(THREADLIB)
 
 fts3-testfixture$(EXE): sqlite3.c fts3amal.c $(TESTSRC) $(TOP)/src/tclsqlite.c

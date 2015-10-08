@@ -25,6 +25,12 @@
 #ifdef SQLITE_ENABLE_ICU
 # include "sqliteicu.h"
 #endif
+#ifdef SQLITE_ENABLE_JSON1
+int sqlite3Json1Init(sqlite3*);
+#endif
+#ifdef SQLITE_ENABLE_FTS5
+int sqlite3Fts5Init(sqlite3*);
+#endif
 
 #ifndef SQLITE_AMALGAMATION
 /* IMPLEMENTATION-OF: R-46656-45156 The sqlite3_version[] string constant
@@ -2638,13 +2644,6 @@ int sqlite3ParseUri(
   return rc;
 }
 
-#ifdef SQLITE_ENABLE_FTS5
-#ifdef SQLITE_AMALGAMATION
-static int sqlite3Fts5Init(sqlite3*);
-#else
-extern int sqlite3Fts5Init(sqlite3*);
-#endif
-#endif
 
 /*
 ** This routine does the work of opening a database on behalf of
@@ -2911,7 +2910,6 @@ static int openDatabase(
 
 #ifdef SQLITE_ENABLE_JSON1
   if( !db->mallocFailed && rc==SQLITE_OK){
-    extern int sqlite3Json1Init(sqlite3*);
     rc = sqlite3Json1Init(db);
   }
 #endif

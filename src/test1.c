@@ -6377,7 +6377,6 @@ static int tclLoadStaticExtensionCmd(
   extern int sqlite3_fileio_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_fuzzer_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_ieee_init(sqlite3*,char**,const sqlite3_api_routines*);
-  extern int sqlite3_json_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_nextchar_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_percentile_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_regexp_init(sqlite3*,char**,const sqlite3_api_routines*);
@@ -6399,7 +6398,6 @@ static int tclLoadStaticExtensionCmd(
     { "fileio",                sqlite3_fileio_init               },
     { "fuzzer",                sqlite3_fuzzer_init               },
     { "ieee754",               sqlite3_ieee_init                 },
-    { "json",                  sqlite3_json_init                 },
     { "nextchar",              sqlite3_nextchar_init             },
     { "percentile",            sqlite3_percentile_init           },
     { "regexp",                sqlite3_regexp_init               },
@@ -6426,7 +6424,11 @@ static int tclLoadStaticExtensionCmd(
       Tcl_AppendResult(interp, "no such extension: ", zName, (char*)0);
       return TCL_ERROR;
     }
-    rc = aExtension[i].pInit(db, &zErrMsg, 0);
+    if( aExtension[i].pInit ){
+      rc = aExtension[i].pInit(db, &zErrMsg, 0);
+    }else{
+      rc = SQLITE_OK;
+    }
     if( rc!=SQLITE_OK || zErrMsg ){
       Tcl_AppendResult(interp, "initialization of ", zName, " failed: ", zErrMsg,
                        (char*)0);

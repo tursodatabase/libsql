@@ -175,7 +175,7 @@ LIBOBJS0 = alter.lo analyze.lo attach.lo auth.lo \
          fts3_unicode.lo fts3_unicode2.lo fts3_write.lo \
 	 fts5.lo \
          func.lo global.lo hash.lo \
-         icu.lo insert.lo journal.lo legacy.lo loadext.lo \
+         icu.lo insert.lo journal.lo json1.lo legacy.lo loadext.lo \
          main.lo malloc.lo mem0.lo mem1.lo mem2.lo mem3.lo mem5.lo \
          memjournal.lo \
          mutex.lo mutex_noop.lo mutex_unix.lo mutex_w32.lo \
@@ -346,7 +346,7 @@ SRC += \
   $(TOP)/ext/rtree/rtree.c
 SRC += \
   $(TOP)/ext/rbu/sqlite3rbu.h \
-  $(TOP)/ext/rbu/sqlite3rbu.c\
+  $(TOP)/ext/rbu/sqlite3rbu.c
 SRC += \
   $(TOP)/ext/misc/json1.c
 
@@ -420,7 +420,6 @@ TESTSRC += \
   $(TOP)/ext/fts5/fts5_tcl.c \
   $(TOP)/ext/fts5/fts5_test_mi.c \
   $(TOP)/ext/misc/ieee754.c \
-  $(TOP)/ext/misc/json1.c \
   $(TOP)/ext/misc/nextchar.c \
   $(TOP)/ext/misc/percentile.c \
   $(TOP)/ext/misc/regexp.c \
@@ -993,6 +992,9 @@ fts3_write.lo:	$(TOP)/ext/fts3/fts3_write.c $(HDR) $(EXTHDR)
 
 rtree.lo:	$(TOP)/ext/rtree/rtree.c $(HDR) $(EXTHDR)
 	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/rtree/rtree.c
+
+json1.lo:	$(TOP)/ext/misc/json1.c
+	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/misc/json1.c
 
 # FTS5 things
 #
