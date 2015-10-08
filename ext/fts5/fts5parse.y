@@ -67,6 +67,7 @@
 %left COLON.
 
 input ::= expr(X). { sqlite3Fts5ParseFinished(pParse, X); }
+%destructor input { (void)pParse; }
 
 %type cnearset    {Fts5ExprNode*}
 %type expr        {Fts5ExprNode*}

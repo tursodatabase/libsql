@@ -1,5 +1,5 @@
-C Fix\sa\scouple\sof\serrors\sin\sfts5\scompilation.\sThis\sbranch\sstill\sdoes\snot\sbuild\swith\s-Wall\s-Werror.
-D 2015-10-08T20:11:42.088
+C Fix\stwo\smore\swarnings\sin\sfts5\scode.
+D 2015-10-08T20:28:33.424
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 336f9494810fe361b59aa4e0c5cd41fc64d83323
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -107,7 +107,7 @@ F ext/fts3/unicode/parseunicode.tcl da577d1384810fb4e2b209bf3313074353193e95
 F ext/fts5/extract_api_docs.tcl a36e54ec777172ddd3f9a88daf593b00848368e0
 F ext/fts5/fts5.h 98f802fe41481f9d797fce496f0fefcad72c7782
 F ext/fts5/fts5Int.h ed6c05b803e0bacf85228a8d255853e89796f6f5
-F ext/fts5/fts5_aux.c 7a307760a9c57c750d043188ec0bad59f5b5ec7e
+F ext/fts5/fts5_aux.c b09aa27dcdaa3d50a30be433fddaa48a50aa827b
 F ext/fts5/fts5_buffer.c b2fb69c1ee3378956c0d9ee964d61b59d296afaf
 F ext/fts5/fts5_config.c 57ee5fe71578cb494574fc0e6e51acb9a22a8695
 F ext/fts5/fts5_expr.c 2054e550e75cffa117557c9416210c425934436d
@@ -121,7 +121,7 @@ F ext/fts5/fts5_tokenize.c f380f46f341af9c9a9908e1aade685ba1eaa157a
 F ext/fts5/fts5_unicode2.c 78273fbd588d1d9bd0a7e4e0ccc9207348bae33c
 F ext/fts5/fts5_varint.c 3f86ce09cab152e3d45490d7586b7ed2e40c13f1
 F ext/fts5/fts5_vocab.c 17320c476a5296ee475ab616d95fd10515bacfec
-F ext/fts5/fts5parse.y 38ab0ea7280a122f86f53b2264741422dd2424a0
+F ext/fts5/fts5parse.y e83dca6028e3309178d05b5bd920e372dc295d35
 F ext/fts5/mkportersteps.tcl 5acf962d2e0074f701620bb5308155fa1e4a63ba
 F ext/fts5/test/fts5_common.tcl b6e6a40ef5d069c8e86ca4fbad491e1195485dbc
 F ext/fts5/test/fts5aa.test 4804f237005bb4ba8ea4a76120d8011ebcb5d611
@@ -1390,7 +1390,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d820a1bd1b8dd702d1b3a099af393530cc5a5d51
-R 96d02cbeb876e62b710d9e30b09e4a10
+P e9e76e12812b9b42b1142246b71cea98e26903aa
+R 3ea307db4af2caf63f312c7ebd57ad22
 U dan
-Z ddb12ebcaa75b3e69205da1ca3e77d04
+Z bfe83218c323cc99da5efd4c0ac84f4a
