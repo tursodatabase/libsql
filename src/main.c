@@ -2872,9 +2872,16 @@ static int openDatabase(
   }
 #endif
 
-#ifdef SQLITE_ENABLE_FTS3
+#ifdef SQLITE_ENABLE_FTS3 /* automatically defined by SQLITE_ENABLE_FTS4 */
   if( !db->mallocFailed && rc==SQLITE_OK ){
     rc = sqlite3Fts3Init(db);
+  }
+#endif
+
+#ifdef SQLITE_ENABLE_FTS5
+  if( !db->mallocFailed && rc==SQLITE_OK ){
+    extern int sqlite3Fts5Init(sqlite3*);
+    rc = sqlite3Fts5Init(db);
   }
 #endif
 

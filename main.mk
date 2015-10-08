@@ -225,10 +225,11 @@ SRC += \
 SRC += \
   $(TOP)/ext/userauth/userauth.c \
   $(TOP)/ext/userauth/sqlite3userauth.h 
-
 SRC += \
   $(TOP)/ext/rbu/sqlite3rbu.c \
   $(TOP)/ext/rbu/sqlite3rbu.h
+SRC += \
+  $(TOP)/ext/misc/json1.c
 
 
 # FTS5 things
@@ -451,15 +452,15 @@ FUZZDATA = \
   $(TOP)/test/fuzzdata3.db \
   $(TOP)/test/fuzzdata4.db
 
-# Extra arguments for including json1 in the build of tools
-#
-JSON1_DEP = $(TOP)/ext/misc/json1.c sqlite3ext.h
-JSON1_OPT = -DSQLITE_SHELL_JSON1 -DSQLITE_CORE
-JSON1_SRC = $(TOP)/ext/misc/json1.c
-
 # Standard options to testfixture
 #
 TESTOPTS = --verbose=file --output=test-out.txt
+
+# Extra compiler options for various shell tools
+#
+SHELL_OPT = -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_FTS4 -DSQLITE_ENABLE_FTS5
+FUZZERSHELL_OPT = -DSQLITE_ENABLE_JSON1
+FUZZCHECK_OPT = -DSQLITE_ENABLE_JSON1
 
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
@@ -470,24 +471,23 @@ libsqlite3.a:	$(LIBOBJ)
 	$(AR) libsqlite3.a $(LIBOBJ)
 	$(RANLIB) libsqlite3.a
 
-sqlite3$(EXE):	$(TOP)/src/shell.c libsqlite3.a sqlite3.h $(JSON1_DEP)
-	$(TCCX) $(READLINE_FLAGS) $(JSON1_OPT) -o sqlite3$(EXE)  \
-		$(TOP)/src/shell.c $(JSON1_SRC) \
-		libsqlite3.a $(LIBREADLINE) $(TLIBS) $(THREADLIB)
+sqlite3$(EXE):	$(TOP)/src/shell.c libsqlite3.a sqlite3.h
+	$(TCCX) $(READLINE_FLAGS) -o sqlite3$(EXE) $(SHELL_OPT) \
+		$(TOP)/src/shell.c libsqlite3.a $(LIBREADLINE) $(TLIBS) $(THREADLIB)
 
 sqldiff$(EXE):	$(TOP)/tool/sqldiff.c sqlite3.c sqlite3.h
 	$(TCCX) -o sqldiff$(EXE) -DSQLITE_THREADSAFE=0 \
 		$(TOP)/tool/sqldiff.c sqlite3.c $(TLIBS) $(THREADLIB)
 
-fuzzershell$(EXE):	$(TOP)/tool/fuzzershell.c sqlite3.c sqlite3.h $(JSON1_DEP)
+fuzzershell$(EXE):	$(TOP)/tool/fuzzershell.c sqlite3.c sqlite3.h
 	$(TCCX) -o fuzzershell$(EXE) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
-	  $(JSON1_OPT)	$(TOP)/tool/fuzzershell.c $(JSON1_SRC) sqlite3.c \
+	  $(FUZZERSHELL_OPT) $(TOP)/tool/fuzzershell.c sqlite3.c \
 	  $(TLIBS) $(THREADLIB)
 
-fuzzcheck$(EXE):	$(TOP)/test/fuzzcheck.c sqlite3.c sqlite3.h $(JSON1_DEP)
+fuzzcheck$(EXE):	$(TOP)/test/fuzzcheck.c sqlite3.c sqlite3.h
 	$(TCCX) -o fuzzcheck$(EXE) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
-		-DSQLITE_ENABLE_MEMSYS5 $(JSON1_OPT) \
-		$(TOP)/test/fuzzcheck.c $(JSON1_SRC) sqlite3.c $(TLIBS) $(THREADLIB)
+		-DSQLITE_ENABLE_MEMSYS5 $(FUZZCHECK_OPT) \
+		$(TOP)/test/fuzzcheck.c sqlite3.c $(TLIBS) $(THREADLIB)
 
 mptester$(EXE):	sqlite3.c $(TOP)/mptest/mptest.c
 	$(TCCX) -o $@ -I. $(TOP)/mptest/mptest.c sqlite3.c \
@@ -515,13 +515,14 @@ sqlite3.o:	sqlite3.c
 # files are automatically generated.  This target takes care of
 # all that automatic generation.
 #
-target_source:	$(SRC) $(TOP)/tool/vdbe-compress.tcl
+target_source:	$(SRC) $(TOP)/tool/vdbe-compress.tcl fts5.c
 	rm -rf tsrc
 	mkdir tsrc
 	cp -f $(SRC) tsrc
 	rm tsrc/sqlite.h.in tsrc/parse.y
 	tclsh $(TOP)/tool/vdbe-compress.tcl $(OPTS) <tsrc/vdbe.c >vdbe.new
 	mv vdbe.new tsrc/vdbe.c
+	cp fts5.c fts5.h tsrc
 	touch target_source
 
 sqlite3.c:	target_source $(TOP)/tool/mksqlite3c.tcl

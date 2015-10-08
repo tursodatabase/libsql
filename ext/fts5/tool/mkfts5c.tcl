@@ -24,7 +24,7 @@ set G(src) [string map [list %dir% $srcdir] {
 
 set G(hdr) {
 
-#if !defined(SQLITE_TEST) || defined(SQLITE_ENABLE_FTS5) 
+#if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_FTS5) 
 
 #if !defined(NDEBUG) && !defined(SQLITE_DEBUG) 
 # define NDEBUG 1
@@ -37,7 +37,7 @@ set G(hdr) {
 
 set G(footer) {
     
-#endif /* !defined(SQLITE_TEST) || defined(SQLITE_ENABLE_FTS5) */
+#endif /* !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_FTS5) */
 }
 
 #-------------------------------------------------------------------------
@@ -107,7 +107,3 @@ proc fts5c_close {} {
 fts5c_init fts5.c
 foreach f $G(src) { fts5c_printfile $f }
 fts5c_close
-
-
-
-
