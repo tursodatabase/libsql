@@ -950,7 +950,6 @@ static void exprAnalyze(
         pNew = pTerm;
       }
       exprCommute(pParse, pDup);
-      pLeft = sqlite3ExprSkipCollate(pDup->pLeft);
       pNew->leftCursor = iCur;
       pNew->u.leftColumn = iColumn;
       testcase( (prereqLeft | extraRight) != prereqLeft );

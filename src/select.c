@@ -579,7 +579,7 @@ static void pushOntoSorter(
     }else{
       iLimit = pSelect->iLimit;
     }
-    addr = sqlite3VdbeAddOp3(v, OP_IfNotZero, iLimit, 0, -1); VdbeCoverage(v);
+    addr = sqlite3VdbeAddOp3(v, OP_IfNotZero, iLimit, 0, 1); VdbeCoverage(v);
     sqlite3VdbeAddOp1(v, OP_Last, pSort->iECursor);
     sqlite3VdbeAddOp1(v, OP_Delete, pSort->iECursor);
     sqlite3VdbeJumpHere(v, addr);
@@ -595,11 +595,8 @@ static void codeOffset(
   int iContinue     /* Jump here to skip the current record */
 ){
   if( iOffset>0 ){
-    int addr;
-    addr = sqlite3VdbeAddOp3(v, OP_IfNeg, iOffset, 0, -1); VdbeCoverage(v);
-    sqlite3VdbeGoto(v, iContinue);
-    VdbeComment((v, "skip OFFSET records"));
-    sqlite3VdbeJumpHere(v, addr);
+    sqlite3VdbeAddOp3(v, OP_IfPos, iOffset, iContinue, 1); VdbeCoverage(v);
+    VdbeComment((v, "OFFSET"));
   }
 }
 
@@ -1815,7 +1812,7 @@ static void computeLimitRegisters(Parse *pParse, Select *p, int iBreak){
   Vdbe *v = 0;
   int iLimit = 0;
   int iOffset;
-  int addr1, n;
+  int n;
   if( p->iLimit ) return;
 
   /* 
@@ -1850,14 +1847,10 @@ static void computeLimitRegisters(Parse *pParse, Select *p, int iBreak){
       sqlite3ExprCode(pParse, p->pOffset, iOffset);
       sqlite3VdbeAddOp1(v, OP_MustBeInt, iOffset); VdbeCoverage(v);
       VdbeComment((v, "OFFSET counter"));
-      addr1 = sqlite3VdbeAddOp1(v, OP_IfPos, iOffset); VdbeCoverage(v);
-      sqlite3VdbeAddOp2(v, OP_Integer, 0, iOffset);
-      sqlite3VdbeJumpHere(v, addr1);
+      sqlite3VdbeAddOp3(v, OP_SetIfNotPos, iOffset, iOffset, 0);
       sqlite3VdbeAddOp3(v, OP_Add, iLimit, iOffset, iOffset+1);
       VdbeComment((v, "LIMIT+OFFSET"));
-      addr1 = sqlite3VdbeAddOp1(v, OP_IfPos, iLimit); VdbeCoverage(v);
-      sqlite3VdbeAddOp2(v, OP_Integer, -1, iOffset+1);
-      sqlite3VdbeJumpHere(v, addr1);
+      sqlite3VdbeAddOp3(v, OP_SetIfNotPos, iLimit, iOffset+1, -1);
     }
   }
 }
@@ -2273,6 +2266,11 @@ static int multiSelect(
       if( p->iLimit ){
         addr = sqlite3VdbeAddOp1(v, OP_IfNot, p->iLimit); VdbeCoverage(v);
         VdbeComment((v, "Jump ahead if LIMIT reached"));
+        if( p->iOffset ){
+          sqlite3VdbeAddOp3(v, OP_SetIfNotPos, p->iOffset, p->iOffset, 0);
+          sqlite3VdbeAddOp3(v, OP_Add, p->iLimit, p->iOffset, p->iOffset+1);
+          sqlite3VdbeAddOp3(v, OP_SetIfNotPos, p->iLimit, p->iOffset+1, -1);
+        }
       }
       explainSetInteger(iSub2, pParse->iNextSelectId);
       rc = sqlite3Select(pParse, p, &dest);

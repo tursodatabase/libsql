@@ -793,125 +793,151 @@ static int fts3ExprBalance(Fts3Expr **pp, int nMaxDepth){
     rc = SQLITE_ERROR;
   }
 
-  if( rc==SQLITE_OK && (eType==FTSQUERY_AND || eType==FTSQUERY_OR) ){
-    Fts3Expr **apLeaf;
-    apLeaf = (Fts3Expr **)sqlite3_malloc(sizeof(Fts3Expr *) * nMaxDepth);
-    if( 0==apLeaf ){
-      rc = SQLITE_NOMEM;
-    }else{
-      memset(apLeaf, 0, sizeof(Fts3Expr *) * nMaxDepth);
-    }
-
-    if( rc==SQLITE_OK ){
-      int i;
-      Fts3Expr *p;
-
-      /* Set $p to point to the left-most leaf in the tree of eType nodes. */
-      for(p=pRoot; p->eType==eType; p=p->pLeft){
-        assert( p->pParent==0 || p->pParent->pLeft==p );
-        assert( p->pLeft && p->pRight );
-      }
-
-      /* This loop runs once for each leaf in the tree of eType nodes. */
-      while( 1 ){
-        int iLvl;
-        Fts3Expr *pParent = p->pParent;     /* Current parent of p */
-
-        assert( pParent==0 || pParent->pLeft==p );
-        p->pParent = 0;
-        if( pParent ){
-          pParent->pLeft = 0;
-        }else{
-          pRoot = 0;
-        }
-        rc = fts3ExprBalance(&p, nMaxDepth-1);
-        if( rc!=SQLITE_OK ) break;
-
-        for(iLvl=0; p && iLvl<nMaxDepth; iLvl++){
-          if( apLeaf[iLvl]==0 ){
-            apLeaf[iLvl] = p;
-            p = 0;
-          }else{
-            assert( pFree );
-            pFree->pLeft = apLeaf[iLvl];
-            pFree->pRight = p;
-            pFree->pLeft->pParent = pFree;
-            pFree->pRight->pParent = pFree;
-
-            p = pFree;
-            pFree = pFree->pParent;
-            p->pParent = 0;
-            apLeaf[iLvl] = 0;
-          }
-        }
-        if( p ){
-          sqlite3Fts3ExprFree(p);
-          rc = SQLITE_TOOBIG;
-          break;
-        }
-
-        /* If that was the last leaf node, break out of the loop */
-        if( pParent==0 ) break;
-
-        /* Set $p to point to the next leaf in the tree of eType nodes */
-        for(p=pParent->pRight; p->eType==eType; p=p->pLeft);
-
-        /* Remove pParent from the original tree. */
-        assert( pParent->pParent==0 || pParent->pParent->pLeft==pParent );
-        pParent->pRight->pParent = pParent->pParent;
-        if( pParent->pParent ){
-          pParent->pParent->pLeft = pParent->pRight;
-        }else{
-          assert( pParent==pRoot );
-          pRoot = pParent->pRight;
-        }
-
-        /* Link pParent into the free node list. It will be used as an
-        ** internal node of the new tree.  */
-        pParent->pParent = pFree;
-        pFree = pParent;
+  if( rc==SQLITE_OK ){
+    if( (eType==FTSQUERY_AND || eType==FTSQUERY_OR) ){
+      Fts3Expr **apLeaf;
+      apLeaf = (Fts3Expr **)sqlite3_malloc(sizeof(Fts3Expr *) * nMaxDepth);
+      if( 0==apLeaf ){
+        rc = SQLITE_NOMEM;
+      }else{
+        memset(apLeaf, 0, sizeof(Fts3Expr *) * nMaxDepth);
       }
 
       if( rc==SQLITE_OK ){
-        p = 0;
-        for(i=0; i<nMaxDepth; i++){
-          if( apLeaf[i] ){
-            if( p==0 ){
-              p = apLeaf[i];
-              p->pParent = 0;
+        int i;
+        Fts3Expr *p;
+
+        /* Set $p to point to the left-most leaf in the tree of eType nodes. */
+        for(p=pRoot; p->eType==eType; p=p->pLeft){
+          assert( p->pParent==0 || p->pParent->pLeft==p );
+          assert( p->pLeft && p->pRight );
+        }
+
+        /* This loop runs once for each leaf in the tree of eType nodes. */
+        while( 1 ){
+          int iLvl;
+          Fts3Expr *pParent = p->pParent;     /* Current parent of p */
+
+          assert( pParent==0 || pParent->pLeft==p );
+          p->pParent = 0;
+          if( pParent ){
+            pParent->pLeft = 0;
+          }else{
+            pRoot = 0;
+          }
+          rc = fts3ExprBalance(&p, nMaxDepth-1);
+          if( rc!=SQLITE_OK ) break;
+
+          for(iLvl=0; p && iLvl<nMaxDepth; iLvl++){
+            if( apLeaf[iLvl]==0 ){
+              apLeaf[iLvl] = p;
+              p = 0;
             }else{
-              assert( pFree!=0 );
+              assert( pFree );
+              pFree->pLeft = apLeaf[iLvl];
               pFree->pRight = p;
-              pFree->pLeft = apLeaf[i];
               pFree->pLeft->pParent = pFree;
               pFree->pRight->pParent = pFree;
 
               p = pFree;
               pFree = pFree->pParent;
               p->pParent = 0;
+              apLeaf[iLvl] = 0;
             }
           }
+          if( p ){
+            sqlite3Fts3ExprFree(p);
+            rc = SQLITE_TOOBIG;
+            break;
+          }
+
+          /* If that was the last leaf node, break out of the loop */
+          if( pParent==0 ) break;
+
+          /* Set $p to point to the next leaf in the tree of eType nodes */
+          for(p=pParent->pRight; p->eType==eType; p=p->pLeft);
+
+          /* Remove pParent from the original tree. */
+          assert( pParent->pParent==0 || pParent->pParent->pLeft==pParent );
+          pParent->pRight->pParent = pParent->pParent;
+          if( pParent->pParent ){
+            pParent->pParent->pLeft = pParent->pRight;
+          }else{
+            assert( pParent==pRoot );
+            pRoot = pParent->pRight;
+          }
+
+          /* Link pParent into the free node list. It will be used as an
+          ** internal node of the new tree.  */
+          pParent->pParent = pFree;
+          pFree = pParent;
         }
-        pRoot = p;
-      }else{
-        /* An error occurred. Delete the contents of the apLeaf[] array 
-        ** and pFree list. Everything else is cleaned up by the call to
-        ** sqlite3Fts3ExprFree(pRoot) below.  */
-        Fts3Expr *pDel;
-        for(i=0; i<nMaxDepth; i++){
-          sqlite3Fts3ExprFree(apLeaf[i]);
+
+        if( rc==SQLITE_OK ){
+          p = 0;
+          for(i=0; i<nMaxDepth; i++){
+            if( apLeaf[i] ){
+              if( p==0 ){
+                p = apLeaf[i];
+                p->pParent = 0;
+              }else{
+                assert( pFree!=0 );
+                pFree->pRight = p;
+                pFree->pLeft = apLeaf[i];
+                pFree->pLeft->pParent = pFree;
+                pFree->pRight->pParent = pFree;
+
+                p = pFree;
+                pFree = pFree->pParent;
+                p->pParent = 0;
+              }
+            }
+          }
+          pRoot = p;
+        }else{
+          /* An error occurred. Delete the contents of the apLeaf[] array 
+          ** and pFree list. Everything else is cleaned up by the call to
+          ** sqlite3Fts3ExprFree(pRoot) below.  */
+          Fts3Expr *pDel;
+          for(i=0; i<nMaxDepth; i++){
+            sqlite3Fts3ExprFree(apLeaf[i]);
+          }
+          while( (pDel=pFree)!=0 ){
+            pFree = pDel->pParent;
+            sqlite3_free(pDel);
+          }
         }
-        while( (pDel=pFree)!=0 ){
-          pFree = pDel->pParent;
-          sqlite3_free(pDel);
-        }
+
+        assert( pFree==0 );
+        sqlite3_free( apLeaf );
+      }
+    }else if( eType==FTSQUERY_NOT ){
+      Fts3Expr *pLeft = pRoot->pLeft;
+      Fts3Expr *pRight = pRoot->pRight;
+
+      pRoot->pLeft = 0;
+      pRoot->pRight = 0;
+      pLeft->pParent = 0;
+      pRight->pParent = 0;
+
+      rc = fts3ExprBalance(&pLeft, nMaxDepth-1);
+      if( rc==SQLITE_OK ){
+        rc = fts3ExprBalance(&pRight, nMaxDepth-1);
       }
 
-      assert( pFree==0 );
-      sqlite3_free( apLeaf );
+      if( rc!=SQLITE_OK ){
+        sqlite3Fts3ExprFree(pRight);
+        sqlite3Fts3ExprFree(pLeft);
+      }else{
+        assert( pLeft && pRight );
+        pRoot->pLeft = pLeft;
+        pLeft->pParent = pRoot;
+        pRoot->pRight = pRight;
+        pRight->pParent = pRoot;
+      }
     }
   }
-
+  
   if( rc!=SQLITE_OK ){
     sqlite3Fts3ExprFree(pRoot);
     pRoot = 0;

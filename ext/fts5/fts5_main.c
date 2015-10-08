@@ -441,6 +441,19 @@ static int fts5CreateMethod(
 #define FTS5_PLAN_ROWID          6       /* (rowid = ?) */
 
 /*
+** Set the SQLITE_INDEX_SCAN_UNIQUE flag in pIdxInfo->flags. Unless this
+** extension is currently being used by a version of SQLite too old to
+** support index-info flags. In that case this function is a no-op.
+*/
+static void fts5SetUniqueFlag(sqlite3_index_info *pIdxInfo){
+#if SQLITE_VERSION_NUMBER>=3008012
+  if( sqlite3_libversion_number()>=3008012 ){
+    pIdxInfo->idxFlags |= SQLITE_INDEX_SCAN_UNIQUE;
+  }
+#endif
+}
+
+/*
 ** Implementation of the xBestIndex method for FTS5 tables. Within the 
 ** WHERE constraint, it searches for the following:
 **
@@ -492,8 +505,10 @@ static int fts5BestIndexMethod(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
     int omit;                     /* True to omit this if found */
     int iConsIndex;               /* Index in pInfo->aConstraint[] */
   } aConstraint[] = {
-    {SQLITE_INDEX_CONSTRAINT_MATCH, FTS5_BI_MATCH,    1, 1, -1},
-    {SQLITE_INDEX_CONSTRAINT_MATCH, FTS5_BI_RANK,     2, 1, -1},
+    {SQLITE_INDEX_CONSTRAINT_MATCH|SQLITE_INDEX_CONSTRAINT_EQ, 
+                                    FTS5_BI_MATCH,    1, 1, -1},
+    {SQLITE_INDEX_CONSTRAINT_MATCH|SQLITE_INDEX_CONSTRAINT_EQ, 
+                                    FTS5_BI_RANK,     2, 1, -1},
     {SQLITE_INDEX_CONSTRAINT_EQ,    FTS5_BI_ROWID_EQ, 0, 0, -1},
     {SQLITE_INDEX_CONSTRAINT_LT|SQLITE_INDEX_CONSTRAINT_LE, 
                                     FTS5_BI_ROWID_LE, 0, 0, -1},
@@ -546,6 +561,7 @@ static int fts5BestIndexMethod(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
   bHasMatch = BitFlagTest(idxFlags, FTS5_BI_MATCH);
   if( BitFlagTest(idxFlags, FTS5_BI_ROWID_EQ) ){
     pInfo->estimatedCost = bHasMatch ? 100.0 : 10.0;
+    if( bHasMatch==0 ) fts5SetUniqueFlag(pInfo);
   }else if( BitFlagAllTest(idxFlags, FTS5_BI_ROWID_LE|FTS5_BI_ROWID_GE) ){
     pInfo->estimatedCost = bHasMatch ? 500.0 : 250000.0;
   }else if( BitFlagTest(idxFlags, FTS5_BI_ROWID_LE|FTS5_BI_ROWID_GE) ){
@@ -1284,15 +1300,14 @@ static void fts5SetVtabError(Fts5Table *p, const char *zFormat, ...){
 */
 static int fts5SpecialInsert(
   Fts5Table *pTab,                /* Fts5 table object */
-  sqlite3_value *pCmd,            /* Value inserted into special column */
+  const char *zCmd,               /* Text inserted into table-name column */
   sqlite3_value *pVal             /* Value inserted into rank column */
 ){
   Fts5Config *pConfig = pTab->pConfig;
-  const char *z = (const char*)sqlite3_value_text(pCmd);
   int rc = SQLITE_OK;
   int bError = 0;
 
-  if( 0==sqlite3_stricmp("delete-all", z) ){
+  if( 0==sqlite3_stricmp("delete-all", zCmd) ){
     if( pConfig->eContent==FTS5_CONTENT_NORMAL ){
       fts5SetVtabError(pTab, 
           "'delete-all' may only be used with a "
@@ -1302,7 +1317,7 @@ static int fts5SpecialInsert(
     }else{
       rc = sqlite3Fts5StorageDeleteAll(pTab->pStorage);
     }
-  }else if( 0==sqlite3_stricmp("rebuild", z) ){
+  }else if( 0==sqlite3_stricmp("rebuild", zCmd) ){
     if( pConfig->eContent==FTS5_CONTENT_NONE ){
       fts5SetVtabError(pTab, 
           "'rebuild' may not be used with a contentless fts5 table"
@@ -1311,27 +1326,27 @@ static int fts5SpecialInsert(
     }else{
       rc = sqlite3Fts5StorageRebuild(pTab->pStorage);
     }
-  }else if( 0==sqlite3_stricmp("optimize", z) ){
+  }else if( 0==sqlite3_stricmp("optimize", zCmd) ){
     rc = sqlite3Fts5StorageOptimize(pTab->pStorage);
-  }else if( 0==sqlite3_stricmp("merge", z) ){
+  }else if( 0==sqlite3_stricmp("merge", zCmd) ){
     int nMerge = sqlite3_value_int(pVal);
     rc = sqlite3Fts5StorageMerge(pTab->pStorage, nMerge);
-  }else if( 0==sqlite3_stricmp("integrity-check", z) ){
+  }else if( 0==sqlite3_stricmp("integrity-check", zCmd) ){
     rc = sqlite3Fts5StorageIntegrity(pTab->pStorage);
 #ifdef SQLITE_DEBUG
-  }else if( 0==sqlite3_stricmp("prefix-index", z) ){
+  }else if( 0==sqlite3_stricmp("prefix-index", zCmd) ){
     pConfig->bPrefixIndex = sqlite3_value_int(pVal);
 #endif
   }else{
     rc = sqlite3Fts5IndexLoadConfig(pTab->pIndex);
     if( rc==SQLITE_OK ){
-      rc = sqlite3Fts5ConfigSetValue(pTab->pConfig, z, pVal, &bError);
+      rc = sqlite3Fts5ConfigSetValue(pTab->pConfig, zCmd, pVal, &bError);
     }
     if( rc==SQLITE_OK ){
       if( bError ){
         rc = SQLITE_ERROR;
       }else{
-        rc = sqlite3Fts5StorageConfigValue(pTab->pStorage, z, pVal, 0);
+        rc = sqlite3Fts5StorageConfigValue(pTab->pStorage, zCmd, pVal, 0);
       }
     }
   }
@@ -1352,10 +1367,35 @@ static int fts5SpecialDelete(
   return rc;
 }
 
+static void fts5StorageInsert(
+  int *pRc, 
+  Fts5Table *pTab, 
+  sqlite3_value **apVal, 
+  i64 *piRowid
+){
+  int rc = *pRc;
+  if( rc==SQLITE_OK ){
+    rc = sqlite3Fts5StorageContentInsert(pTab->pStorage, apVal, piRowid);
+  }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3Fts5StorageIndexInsert(pTab->pStorage, apVal, *piRowid);
+  }
+  *pRc = rc;
+}
+
 /* 
 ** This function is the implementation of the xUpdate callback used by 
 ** FTS3 virtual tables. It is invoked by SQLite each time a row is to be
 ** inserted, updated or deleted.
+**
+** A delete specifies a single argument - the rowid of the row to remove.
+** 
+** Update and insert operations pass:
+**
+**   1. The "old" rowid, or NULL.
+**   2. The "new" rowid.
+**   3. Values for each of the nCol matchable columns.
+**   4. Values for the two hidden columns (<tablename> and "rank").
 */
 static int fts5UpdateMethod(
   sqlite3_vtab *pVtab,            /* Virtual table handle */
@@ -1366,65 +1406,108 @@ static int fts5UpdateMethod(
   Fts5Table *pTab = (Fts5Table*)pVtab;
   Fts5Config *pConfig = pTab->pConfig;
   int eType0;                     /* value_type() of apVal[0] */
-  int eConflict;                  /* ON CONFLICT for this DML */
   int rc = SQLITE_OK;             /* Return code */
 
   /* A transaction must be open when this is called. */
   assert( pTab->ts.eState==1 );
 
+  assert( pVtab->zErrMsg==0 );
+  assert( nArg==1 || nArg==(2+pConfig->nCol+2) );
+  assert( nArg==1 
+      || sqlite3_value_type(apVal[1])==SQLITE_INTEGER 
+      || sqlite3_value_type(apVal[1])==SQLITE_NULL 
+  );
   assert( pTab->pConfig->pzErrmsg==0 );
   pTab->pConfig->pzErrmsg = &pTab->base.zErrMsg;
 
-  /* A delete specifies a single argument - the rowid of the row to remove.
-  ** Update and insert operations pass:
-  **
-  **   1. The "old" rowid, or NULL.
-  **   2. The "new" rowid.
-  **   3. Values for each of the nCol matchable columns.
-  **   4. Values for the two hidden columns (<tablename> and "rank").
-  */
+  /* Put any active cursors into REQUIRE_SEEK state. */
+  fts5TripCursors(pTab);
 
   eType0 = sqlite3_value_type(apVal[0]);
-  eConflict = sqlite3_vtab_on_conflict(pConfig->db);
+  if( eType0==SQLITE_NULL 
+   && sqlite3_value_type(apVal[2+pConfig->nCol])!=SQLITE_NULL 
+  ){
+    /* A "special" INSERT op. These are handled separately. */
+    const char *z = (const char*)sqlite3_value_text(apVal[2+pConfig->nCol]);
+    if( pConfig->eContent!=FTS5_CONTENT_NORMAL 
+      && 0==sqlite3_stricmp("delete", z) 
+    ){
+      rc = fts5SpecialDelete(pTab, apVal, pRowid);
+    }else{
+      rc = fts5SpecialInsert(pTab, z, apVal[2 + pConfig->nCol + 1]);
+    }
+  }else{
+    /* A regular INSERT, UPDATE or DELETE statement. The trick here is that
+    ** any conflict on the rowid value must be detected before any 
+    ** modifications are made to the database file. There are 4 cases:
+    **
+    **   1) DELETE
+    **   2) UPDATE (rowid not modified)
+    **   3) UPDATE (rowid modified)
+    **   4) INSERT
+    **
+    ** Cases 3 and 4 may violate the rowid constraint.
+    */
+    int eConflict = sqlite3_vtab_on_conflict(pConfig->db);
 
-  assert( eType0==SQLITE_INTEGER || eType0==SQLITE_NULL );
-  assert( pVtab->zErrMsg==0 );
-  assert( (nArg==1 && eType0==SQLITE_INTEGER) || nArg==(2+pConfig->nCol+2) );
+    assert( eType0==SQLITE_INTEGER || eType0==SQLITE_NULL );
+    assert( nArg!=1 || eType0==SQLITE_INTEGER );
 
-  fts5TripCursors(pTab);
-  if( eType0==SQLITE_INTEGER ){
-    if( fts5IsContentless(pTab) ){
+    /* Filter out attempts to run UPDATE or DELETE on contentless tables.
+    ** This is not suported.  */
+    if( eType0==SQLITE_INTEGER && fts5IsContentless(pTab) ){
       pTab->base.zErrMsg = sqlite3_mprintf(
           "cannot %s contentless fts5 table: %s", 
           (nArg>1 ? "UPDATE" : "DELETE from"), pConfig->zName
       );
       rc = SQLITE_ERROR;
-    }else{
+    }
+
+    /* Case 1: DELETE */
+    else if( nArg==1 ){
       i64 iDel = sqlite3_value_int64(apVal[0]);  /* Rowid to delete */
       rc = sqlite3Fts5StorageDelete(pTab->pStorage, iDel);
     }
-  }else{
-    sqlite3_value *pCmd = apVal[2 + pConfig->nCol];
-    assert( nArg>1 );
-    if( SQLITE_NULL!=sqlite3_value_type(pCmd) ){
-      const char *z = (const char*)sqlite3_value_text(pCmd);
-      if( pConfig->eContent!=FTS5_CONTENT_NORMAL 
-       && 0==sqlite3_stricmp("delete", z) 
+
+    /* Case 2: INSERT */
+    else if( eType0!=SQLITE_INTEGER ){     
+      /* If this is a REPLACE, first remove the current entry (if any) */
+      if( eConflict==SQLITE_REPLACE 
+       && sqlite3_value_type(apVal[1])==SQLITE_INTEGER 
       ){
-        rc = fts5SpecialDelete(pTab, apVal, pRowid);
-      }else{
-        rc = fts5SpecialInsert(pTab, pCmd, apVal[2 + pConfig->nCol + 1]);
+        i64 iNew = sqlite3_value_int64(apVal[1]);  /* Rowid to delete */
+        rc = sqlite3Fts5StorageDelete(pTab->pStorage, iNew);
       }
-      goto update_method_out;
+      fts5StorageInsert(&rc, pTab, apVal, pRowid);
+    }
+
+    /* Case 2: UPDATE */
+    else{
+      i64 iOld = sqlite3_value_int64(apVal[0]);  /* Old rowid */
+      i64 iNew = sqlite3_value_int64(apVal[1]);  /* New rowid */
+      if( iOld!=iNew ){
+        if( eConflict==SQLITE_REPLACE ){
+          rc = sqlite3Fts5StorageDelete(pTab->pStorage, iOld);
+          if( rc==SQLITE_OK ){
+            rc = sqlite3Fts5StorageDelete(pTab->pStorage, iNew);
+          }
+          fts5StorageInsert(&rc, pTab, apVal, pRowid);
+        }else{
+          rc = sqlite3Fts5StorageContentInsert(pTab->pStorage, apVal, pRowid);
+          if( rc==SQLITE_OK ){
+            rc = sqlite3Fts5StorageDelete(pTab->pStorage, iOld);
+          }
+          if( rc==SQLITE_OK ){
+            rc = sqlite3Fts5StorageIndexInsert(pTab->pStorage, apVal, *pRowid);
+          }
+        }
+      }else{
+        rc = sqlite3Fts5StorageDelete(pTab->pStorage, iOld);
+        fts5StorageInsert(&rc, pTab, apVal, pRowid);
+      }
     }
   }
 
-
-  if( rc==SQLITE_OK && nArg>1 ){
-    rc = sqlite3Fts5StorageInsert(pTab->pStorage, apVal, eConflict, pRowid);
-  }
-
- update_method_out:
   pTab->pConfig->pzErrmsg = 0;
   return rc;
 }

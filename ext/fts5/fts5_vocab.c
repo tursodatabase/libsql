@@ -402,7 +402,7 @@ static int fts5VocabFilterMethod(
   const int flags = FTS5INDEX_QUERY_SCAN;
 
   fts5VocabResetCursor(pCsr);
-  rc = sqlite3Fts5IndexQuery(pCsr->pIndex, 0, 0, flags, &pCsr->pIter);
+  rc = sqlite3Fts5IndexQuery(pCsr->pIndex, 0, 0, flags, 0, &pCsr->pIter);
   if( rc==SQLITE_OK ){
     rc = fts5VocabNextMethod(pCursor);
   }
