@@ -89,6 +89,10 @@
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_RBU)
 #include "sqlite3rbu.h"
 
+#if defined(_WIN32_WCE)
+#include "windows.h"
+#endif
+
 /* Maximum number of prepared UPDATE statements held by this module */
 #define SQLITE_RBU_UPDATE_CACHESIZE 16
 
@@ -2382,6 +2386,30 @@ static void rbuLockDatabase(sqlite3rbu *p){
   }
 }
 
+#if defined(_WIN32_WCE)
+static LPWSTR rbuWinUtf8ToUnicode(const char *zFilename){
+  int nChar;
+  LPWSTR zWideFilename;
+
+  nChar = MultiByteToWideChar(CP_UTF8, 0, zFilename, -1, NULL, 0);
+  if( nChar==0 ){
+    return 0;
+  }
+  zWideFilename = sqlite3_malloc( nChar*sizeof(zWideFilename[0]) );
+  if( zWideFilename==0 ){
+    return 0;
+  }
+  memset(zWideFilename, 0, nChar*sizeof(zWideFilename[0]));
+  nChar = MultiByteToWideChar(CP_UTF8, 0, zFilename, -1, zWideFilename,
+                                nChar);
+  if( nChar==0 ){
+    sqlite3_free(zWideFilename);
+    zWideFilename = 0;
+  }
+  return zWideFilename;
+}
+#endif
+
 /*
 ** The RBU handle is currently in RBU_STAGE_OAL state, with a SHARED lock
 ** on the database file. This proc moves the *-oal file to the *-wal path,
@@ -2416,10 +2444,37 @@ static void rbuMoveOalFile(sqlite3rbu *p){
       rbuObjIterFinalize(&p->objiter);
       sqlite3_close(p->dbMain);
       sqlite3_close(p->dbRbu);
+      p->dbMain = 0;
+      p->dbRbu = 0;
+
+#if defined(_WIN32_WCE)
+      {
+        LPWSTR zWideOal;
+        LPWSTR zWideWal;
+
+        zWideOal = rbuWinUtf8ToUnicode(zOal);
+        if( zWideOal ){
+          zWideWal = rbuWinUtf8ToUnicode(zWal);
+          if( zWideWal ){
+            if( MoveFileW(zWideOal, zWideWal) ){
+              p->rc = SQLITE_OK;
+            }else{
+              p->rc = SQLITE_IOERR;
+            }
+            sqlite3_free(zWideWal);
+          }else{
+            p->rc = SQLITE_IOERR_NOMEM;
+          }
+          sqlite3_free(zWideOal);
+        }else{
+          p->rc = SQLITE_IOERR_NOMEM;
+        }
+      }
+#else
       p->rc = rename(zOal, zWal) ? SQLITE_IOERR : SQLITE_OK;
+#endif
+
       if( p->rc==SQLITE_OK ){
-        p->dbMain = 0;
-        p->dbRbu = 0;
         rbuOpenDatabase(p);
         rbuSetupCheckpoint(p, 0);
       }

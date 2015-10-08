@@ -1,5 +1,5 @@
-C Remove\stwo\sunused\slines\sof\scode\s-\sdiscovered\sby\sscan-build.
-D 2015-10-08T02:44:42.485
+C In\sthe\sRBU\sextension,\suse\sMoveFile()\sinstead\sof\srename()\son\sWindows\sCE.
+D 2015-10-08T17:35:51.419
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2143eeef6d0cc26006ae5fc4bb242a4a8b973412
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -232,7 +232,7 @@ F ext/rbu/rbufault.test cc0be8d5d392d98b0c2d6a51be377ea989250a89
 F ext/rbu/rbufault2.test 9a7f19edd6ea35c4c9f807d8a3db0a03a5670c06
 F ext/rbu/rbufts.test 828cd689da825f0a7b7c53ffc1f6f7fdb6fa5bda
 F ext/rbu/rbusave.test 0f43b6686084f426ddd040b878426452fd2c2f48
-F ext/rbu/sqlite3rbu.c 4ba82bd850aa012f73c31dd242d570f18c9cc35a
+F ext/rbu/sqlite3rbu.c ea47de615e911b3a69a8e7fb3be3866298403a25
 F ext/rbu/sqlite3rbu.h 5357f070cd8c0bcad459b620651ec1656859e4d0
 F ext/rbu/test_rbu.c 2a3652241fa45d5eaa141775e4ae68c1d3582c03
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
@@ -1390,7 +1390,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 83dc1ff7fa010715ca7f406a572f4ee444a967d7
-R 23aa9f023fe3604f2c01d6814f9077e1
-U drh
-Z 20dd7ef754329d35cfe6df88eb2905f9
+P 77b707b77496a08703fe9405e8e4521a4e5b419e
+R eb5e353b0e8d7971537e54b62cea0233
+U mistachkin
+Z 4af6b4774e4af64194b7825912a990a6
