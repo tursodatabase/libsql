@@ -2454,6 +2454,7 @@ int sqlite3Fts5Init(sqlite3 *db){
   return rc;
 }
 
+#ifndef SQLITE_CORE
 #ifdef _WIN32
 __declspec(dllexport)
 #endif
@@ -2466,6 +2467,7 @@ int sqlite3_fts_init(
   (void)pzErrMsg;  /* Unused parameter */
   return sqlite3Fts5Init(db);
 }
+#endif
 
 #ifdef _WIN32
 __declspec(dllexport)

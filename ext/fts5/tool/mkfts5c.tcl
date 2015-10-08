@@ -7,6 +7,7 @@ set G(src) [string map [list %dir% $srcdir] {
   %dir%/fts5.h
   %dir%/fts5Int.h
   fts5parse.h
+  fts5parse.c
   %dir%/fts5_aux.c
   %dir%/fts5_buffer.c
   %dir%/fts5_config.c
@@ -19,7 +20,6 @@ set G(src) [string map [list %dir% $srcdir] {
   %dir%/fts5_unicode2.c
   %dir%/fts5_varint.c
   %dir%/fts5_vocab.c
-  fts5parse.c
 }]
 
 set G(hdr) {
