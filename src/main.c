@@ -2638,6 +2638,13 @@ int sqlite3ParseUri(
   return rc;
 }
 
+#ifdef SQLITE_ENABLE_FTS5
+#ifdef SQLITE_AMALGAMATION
+static int sqlite3Fts5Init(sqlite3*);
+#else
+extern int sqlite3Fts5Init(sqlite3*);
+#endif
+#endif
 
 /*
 ** This routine does the work of opening a database on behalf of
@@ -2880,7 +2887,6 @@ static int openDatabase(
 
 #ifdef SQLITE_ENABLE_FTS5
   if( !db->mallocFailed && rc==SQLITE_OK ){
-    extern int sqlite3Fts5Init(sqlite3*);
     rc = sqlite3Fts5Init(db);
   }
 #endif

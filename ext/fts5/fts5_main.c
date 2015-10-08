@@ -2464,7 +2464,7 @@ int sqlite3_fts_init(
 ){
   SQLITE_EXTENSION_INIT2(pApi);
   (void)pzErrMsg;  /* Unused parameter */
-  return sqlite3FtsInit(db);
+  return sqlite3Fts5Init(db);
 }
 
 #ifdef _WIN32
@@ -2477,5 +2477,5 @@ int sqlite3_fts5_init(
 ){
   SQLITE_EXTENSION_INIT2(pApi);
   (void)pzErrMsg;  /* Unused parameter */
-  return sqlite3FtsInit(db);
+  return sqlite3Fts5Init(db);
 }

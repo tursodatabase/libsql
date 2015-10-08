@@ -1,5 +1,5 @@
-C First\sattempt\sto\sadd\sjson1\sand\sfts5\sto\sthe\samalgamation.\s\sThis\scheck-in\sdoes\nnot\scompile.
-D 2015-10-08T19:29:18.974
+C Fix\sa\scouple\sof\serrors\sin\sfts5\scompilation.\sThis\sbranch\sstill\sdoes\snot\sbuild\swith\s-Wall\s-Werror.
+D 2015-10-08T20:11:42.088
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 336f9494810fe361b59aa4e0c5cd41fc64d83323
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -113,9 +113,9 @@ F ext/fts5/fts5_config.c 57ee5fe71578cb494574fc0e6e51acb9a22a8695
 F ext/fts5/fts5_expr.c 2054e550e75cffa117557c9416210c425934436d
 F ext/fts5/fts5_hash.c 4bf4b99708848357b8a2b5819e509eb6d3df9246
 F ext/fts5/fts5_index.c e03217c37f344f79673be385de6b03f732291000
-F ext/fts5/fts5_main.c 1ae4d7ecfc2c27b3738f511113a804057e16341c
+F ext/fts5/fts5_main.c 77721fed36cf17c881a9f718e779d2bf33edf021
 F ext/fts5/fts5_storage.c df061a5caf9e50fbbd43113009b5b248362f4995
-F ext/fts5/fts5_tcl.c 6da58d6e8f42a93c4486b5ba9b187a7f995dee37
+F ext/fts5/fts5_tcl.c 3bf445e66de32137d4693694ff7b1fd6074e32bd
 F ext/fts5/fts5_test_mi.c e96be827aa8f571031e65e481251dc1981d608bf
 F ext/fts5/fts5_tokenize.c f380f46f341af9c9a9908e1aade685ba1eaa157a
 F ext/fts5/fts5_unicode2.c 78273fbd588d1d9bd0a7e4e0ccc9207348bae33c
@@ -308,7 +308,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c d344a95d60c24e2f490ee59db9784b1b17439012
 F src/loadext.c f0b66d28e377fd6c6d36cc9d92df1ff251ebee44
-F src/main.c 286aa6485809e43b9df8be708e728e007cfb8e5f
+F src/main.c 1bd3839327e6657ebb722085f02d9d5a48c4cd60
 F src/malloc.c 3a37ce6979a40f499d8cea9e9ab4e8517854d35d
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c abe6ee469b6c5a35c7f22bfeb9c9bac664a1c987
@@ -1390,10 +1390,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 77b707b77496a08703fe9405e8e4521a4e5b419e
-R b36b15e9683569a33dbd7dbda8478407
-T *branch * amalg-json1-fts5
-T *sym-amalg-json1-fts5 *
-T -sym-trunk *
-U drh
-Z 77663aaa3c104357ac781d9ff8201195
+P d820a1bd1b8dd702d1b3a099af393530cc5a5d51
+R 96d02cbeb876e62b710d9e30b09e4a10
+U dan
+Z ddb12ebcaa75b3e69205da1ca3e77d04
