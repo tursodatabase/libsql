@@ -65,7 +65,7 @@ TCC += -DSQLITE_THREADSAFE=@SQLITE_THREADSAFE@
 
 # Any target libraries which libsqlite must be linked against
 # 
-TLIBS = @LIBS@
+TLIBS = @LIBS@ $(LIBS)
 
 # Flags controlling use of the in memory btree implementation
 #
@@ -272,8 +272,8 @@ SRC = \
   $(TOP)/src/sqliteInt.h \
   $(TOP)/src/sqliteLimit.h \
   $(TOP)/src/table.c \
-  $(TOP)/src/threads.c \
   $(TOP)/src/tclsqlite.c \
+  $(TOP)/src/threads.c \
   $(TOP)/src/tokenize.c \
   $(TOP)/src/treeview.c \
   $(TOP)/src/trigger.c \

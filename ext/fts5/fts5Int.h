@@ -46,6 +46,10 @@ typedef sqlite3_uint64 u64;
 
 #endif
 
+#ifndef SQLITE_PRIVATE
+# define SQLITE_PRIVATE static
+#endif
+
 
 /*
 ** Maximum number of prefix indexes on single FTS5 table. This must be

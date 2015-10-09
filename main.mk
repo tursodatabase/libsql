@@ -12,6 +12,8 @@
 # THREADLIB        Specify any extra linker options needed to make the library
 #                  thread safe
 #
+# LIBS             Extra libraries options
+#
 # OPTS             Extra compiler command-line options.
 #
 # EXE              The suffix to add to executable files.  ".exe" for windows
@@ -48,6 +50,7 @@ TCCX =  $(TCC) $(OPTS) -I. -I$(TOP)/src -I$(TOP)
 TCCX += -I$(TOP)/ext/rtree -I$(TOP)/ext/icu -I$(TOP)/ext/fts3
 TCCX += -I$(TOP)/ext/async -I$(TOP)/ext/userauth
 TCCX += -I$(TOP)/ext/fts5
+THREADLIB += $(LIBS)
 
 # Object files for the SQLite library.
 #
@@ -59,7 +62,7 @@ LIBOBJ+= vdbe.o parse.o \
          fts3_snippet.o fts3_tokenizer.o fts3_tokenizer1.o \
          fts3_tokenize_vtab.o \
 	 fts3_unicode.o fts3_unicode2.o \
-         fts3_write.o func.o global.o hash.o \
+         fts3_write.o fts5.o func.o global.o hash.o \
          icu.o insert.o journal.o json1.o legacy.o loadext.o \
          main.o malloc.o mem0.o mem1.o mem2.o mem3.o mem5.o \
          memjournal.o \
@@ -331,8 +334,7 @@ TESTSRC += \
   $(TOP)/ext/misc/wholenumber.c \
   $(TOP)/ext/misc/vfslog.c \
   $(TOP)/ext/fts5/fts5_tcl.c \
-  $(TOP)/ext/fts5/fts5_test_mi.c \
-  fts5.c
+  $(TOP)/ext/fts5/fts5_test_mi.c
 
 
 #TESTSRC += $(TOP)/ext/fts2/fts2_tokenizer.c

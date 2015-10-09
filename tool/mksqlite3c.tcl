@@ -211,7 +211,8 @@ proc copy_file {filename} {
       puts $out "#if 0"
     } elseif {!$linemacros && [regexp {^#line} $line]} {
       # Skip #line directives.
-    } elseif {$addstatic && ![regexp {^(static|typedef)} $line]} {
+    } elseif {$addstatic
+               && ![regexp {^(static|typedef|SQLITE_PRIVATE)} $line]} {
       # Skip adding the SQLITE_PRIVATE or SQLITE_API keyword before
       # functions if this header file does not need it.
       if {![info exists varonly_hdr($tail)]

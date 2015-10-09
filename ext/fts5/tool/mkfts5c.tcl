@@ -88,7 +88,7 @@ proc fts5c_printfile {zIn} {
   foreach line [split $data "\n"] {
     if {[regexp {^#include.*fts5} $line]} continue
     if {[regexp {^(const )?[a-zA-Z][a-zA-Z0-9]* [*]?sqlite3Fts5} $line]} {
-      set line "static $line"
+      set line "SQLITE_PRIVATE $line"
     }
     set line [string map $sub_map $line]
     puts $G(fd) $line
