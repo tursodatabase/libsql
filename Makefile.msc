@@ -388,11 +388,11 @@ CORE_LINK_OPTS = /DEF:sqlite3.def
 
 # These are additional compiler options used for the shell executable.
 #
-!IFNDEF SHELL_OPT
+!IFNDEF SHELL_COMPILE_OPTS
 !IF $(DYNAMIC_SHELL)!=0
-SHELL_OPT = -DSQLITE_SHELL_JSON1 $(SHELL_CCONV_OPTS) -DSQLITE_API=__declspec(dllimport)
+SHELL_COMPILE_OPTS = -DSQLITE_SHELL_JSON1 $(SHELL_CCONV_OPTS) -DSQLITE_API=__declspec(dllimport)
 !ELSE
-SHELL_OPT = -DSQLITE_SHELL_JSON1 $(SHELL_CCONV_OPTS)
+SHELL_COMPILE_OPTS = -DSQLITE_SHELL_JSON1 $(SHELL_CCONV_OPTS)
 !ENDIF
 !ENDIF
 
@@ -1213,9 +1213,9 @@ FUZZDATA = \
 
 # Extra compiler options for various shell tools
 #
-SHELL_OPT = -DSQLITE_ENABLE_FTS4 -DSQLITE_ENABLE_FTS5
-FUZZERSHELL_OPT = -DSQLITE_ENABLE_JSON1
-FUZZCHECK_OPT = -DSQLITE_ENABLE_JSON1
+SHELL_COMPILE_OPTS = -DSQLITE_ENABLE_FTS4 -DSQLITE_ENABLE_FTS5
+FUZZERSHELL_COMPILE_OPTS = -DSQLITE_ENABLE_JSON1
+FUZZCHECK_COMPILE_OPTS = -DSQLITE_ENABLE_JSON1
 
 # Standard options to testfixture
 #
@@ -1233,18 +1233,18 @@ libtclsqlite3.lib:	tclsqlite.lo libsqlite3.lib
 	$(LTLIB) $(LTLIBOPTS) $(LTLIBPATHS) /OUT:$@ tclsqlite.lo libsqlite3.lib $(LIBTCL:tcl=tclstub) $(TLIBS)
 
 sqlite3.exe:	$(TOP)\src\shell.c $(SHELL_CORE_DEP) $(LIBRESOBJS) sqlite3.h
-	$(LTLINK) $(SHELL_COMPILE_OPTS) $(SHELL_OPT) $(READLINE_FLAGS) $(TOP)\src\shell.c \
+	$(LTLINK) $(SHELL_COMPILE_OPTS) $(SHELL_COMPILE_OPTS) $(READLINE_FLAGS) $(TOP)\src\shell.c \
 		/link /pdb:sqlite3sh.pdb $(LTLINKOPTS) $(SHELL_LINK_OPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LIBREADLINE) $(LTLIBS) $(TLIBS)
 
 sqldiff.exe:	$(TOP)\tool\sqldiff.c sqlite3.c sqlite3.h
 	$(LTLINK) $(NO_WARN) $(TOP)\tool\sqldiff.c sqlite3.c
 
 fuzzershell.exe:	$(TOP)\tool\fuzzershell.c sqlite3.c sqlite3.h
-	$(LTLINK) $(NO_WARN) $(FUZZERSHELL_OPT) \
+	$(LTLINK) $(NO_WARN) $(FUZZERSHELL_COMPILE_OPTS) \
 	  $(TOP)\tool\fuzzershell.c sqlite3.c
 
 fuzzcheck.exe:	$(TOP)\test\fuzzcheck.c sqlite3.c sqlite3.h
-	$(LTLINK) $(NO_WARN) $(FUZZCHECK_OPT) $(TOP)\test\fuzzcheck.c sqlite3.c
+	$(LTLINK) $(NO_WARN) $(FUZZCHECK_COMPILE_OPTS) $(TOP)\test\fuzzcheck.c sqlite3.c
 
 mptester.exe:	$(TOP)\mptest\mptest.c $(SHELL_CORE_DEP) $(LIBRESOBJS) sqlite3.h
 	$(LTLINK) $(NO_WARN) $(SHELL_COMPILE_OPTS) $(TOP)\mptest\mptest.c \
