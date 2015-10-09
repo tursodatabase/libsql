@@ -28,7 +28,7 @@
 SQLITE_EXTENSION_INIT1
 #include <assert.h>
 #include <string.h>
-#include <ctype.h>
+#include <ctype.h>  /* amalgamator: keep */
 #include <stdlib.h>
 #include <stdarg.h>
 
@@ -490,6 +490,7 @@ static void jsonReturn(
       while( z[0]>='0' && z[0]<='9' ){
         unsigned v = *(z++) - '0';
         if( i>=LARGEST_INT64/10 ){
+          if( i>LARGEST_INT64/10 ) goto int_as_real;
           if( z[0]>='0' && z[0]<='9' ) goto int_as_real;
           if( v==9 ) goto int_as_real;
           if( v==8 ){
