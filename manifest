@@ -1,12 +1,12 @@
-C Add\sthe\sJSON1\sand\sFTS5\sextensions\sto\sthe\samalgamation.\s\sAdd\snew\soptions\nto\s./configure:\s--enable-json1\sand\s--enable-fts5.
-D 2015-10-09T13:39:51.526
+C Change\sthe\sversion\snumber\sof\sthe\snext\srelease\sto\s3.9.0.
+D 2015-10-09T13:42:52.722
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f0088ff0d2ac949fce6de7c00f13a99ac5bdb663
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc cc5793c66d1d280d20c5a0652c176e0e115638df
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
-F VERSION ccfc4d1576dbfdeece0a4372a2e6a2e37d3e7975
+F VERSION cacf16a72f9a03cd06b939a764e32f6f53254c7f
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 9eb448a552d5c0185cf62c463f9c173cedae3811
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -38,7 +38,7 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 42b71ad3fe21c9e88fa59e8458ca1a6bc72eb0c0
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 6c28beb2c5adfea004c7eb0dc615ce5ebaca67ee x
+F configure 4561c28dbc22bd5c678e3d5dc631cf7ee7e78efb x
 F configure.ac 1e87304e51af110950c48a1eea6ffc7a577f600e
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 334dbf6621b8fb8790297ec1abf3cfa4621709d1
@@ -1390,8 +1390,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P df9ef61f1ba2e3a3420fae84e3eaa2e0e235bc28 c8a12082380991781b5ecd2f479ec65600f4f695
-R ff35e33c45066b639f8723b72567b740
-T +closed c8a12082380991781b5ecd2f479ec65600f4f695
+P 1eb769933108cf401b25c8d784ea23f27324a0bd
+R cd6778cbc7950f234a6f4e35497db7c8
 U drh
-Z 9e03a387129508847442535127adeb67
+Z 1e0fc771971e482332435479dc5f8b1d
