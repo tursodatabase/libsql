@@ -1,5 +1,5 @@
-C Add\s--enable-fts5\sand\s--enable-json1\soptions\sto\sthe\samalgamation\sautoconf\spackage.
-D 2015-10-09T14:37:15.899
+C Remove\sfts5\ssources\sfrom\sTESTSRC2\sin\smain.mk\sas\sthere\sis\sno\sSQLITE_TEST\scode\sin\ssaid\sfiles.
+D 2015-10-09T17:54:10.922
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f0088ff0d2ac949fce6de7c00f13a99ac5bdb663
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -264,7 +264,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 784763e87a5080abc749d6263198bbe5aa93fd20
+F main.mk 645d30a780fb304cf7fa79537b78728e32dd46fc
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
 F mkopcodeh.awk 0e7f04a8eb90f92259e47d80110e4e98d7ce337a
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
@@ -1390,7 +1390,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 92aa4b6b6fbb83f965e4c4be0aa21a8b7e330ed8
-R 22c99efaaba11dba793d1740711eaae0
+P 8a4e19888f512c3ee95aa3040924fc932fbdab1a
+R 38dcee8daf6135103e889e1478dbb9d1
 U dan
-Z b821d121ea8aa17674df3a472339de94
+Z 6a0f067a32a63752086ec828c1e4d102
