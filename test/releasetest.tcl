@@ -137,7 +137,7 @@ array set ::Configs [strip_comments {
     -DSQLITE_OMIT_PROGRESS_CALLBACK=1
     -DSQLITE_OMIT_VIRTUALTABLE=1
     -DSQLITE_TEMP_STORE=3
-    --enable-json1 --enable-fts5
+    --enable-json1
   }
   "Device-Two" {
     -DSQLITE_4_BYTE_ALIGNED_MALLOC=1

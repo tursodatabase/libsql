@@ -1,9 +1,9 @@
-C Add\sconfigure\sscript\soptions\s--enable-fts5\sand\s--enable-json1.\s\sAutomatically\nsearch\sfor\s-lm\swhen\susing\s--enable-fts5.
-D 2015-10-09T12:48:33.545
+C Fix\sa\stypo\sin\sthe\sMSVC\sMakefile
+D 2015-10-09T13:29:27.852
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f0088ff0d2ac949fce6de7c00f13a99ac5bdb663
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc f95e14e549addbf22304f6c01901b600aea10a6d
+F Makefile.msc cc5793c66d1d280d20c5a0652c176e0e115638df
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION ccfc4d1576dbfdeece0a4372a2e6a2e37d3e7975
@@ -947,7 +947,7 @@ F test/rbu.test 168573d353cd0fd10196b87b0caa322c144ef736
 F test/rdonly.test 64e2696c322e3538df0b1ed624e21f9a23ed9ff8
 F test/regexp1.test 497ea812f264d12b6198d6e50a76be4a1973a9d8
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
-F test/releasetest.tcl f52239d28ed829ca7979617845a442d2d1b08aaa
+F test/releasetest.tcl 67a82199e6ddee609211488bc04ed3f9ea3aa28a
 F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
 F test/rollback.test 458fe73eb3ffdfdf9f6ba3e9b7350a6220414dea
 F test/rollback2.test fc14cf6d1a2b250d2735ef16124b971bce152f14
@@ -1390,7 +1390,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6ebac32d8378e46f44a6eb55aaa30baf4d7dde7d
-R 15162ca8241950d9040673fb4e5f94d0
+P a0c44f1d46f1f31043d66f20c8dc0df53db15c30
+R 79fcc81444e121108889bba9b50309d6
 U drh
-Z 8ecad2a04d12126eee50b9755a0e6c68
+Z 6994955bda3f00155718d20bf831c8ed
