@@ -21,6 +21,7 @@
 ** This implementation parses JSON text at 250 MB/s, so it is hard to see
 ** how JSONB might improve on that.)
 */
+#if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_JSON1)
 #if !defined(_SQLITEINT_H_)
 #include "sqlite3ext.h"
 #endif
@@ -2007,3 +2008,4 @@ int sqlite3_json_init(
   (void)pzErrMsg;  /* Unused parameter */
   return sqlite3Json1Init(db);
 }
+#endif /* !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_JSON1) */

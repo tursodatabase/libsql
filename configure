@@ -902,6 +902,11 @@ with_readline_inc
 enable_debug
 enable_amalgamation
 enable_load_extension
+enable_fts3
+enable_fts4
+enable_fts5
+enable_json1
+enable_rtree
 enable_gcov
 '
       ac_precious_vars='build_alias
@@ -1544,6 +1549,11 @@ Optional Features:
                           separately
   --disable-load-extension
                           Disable loading of external extensions
+  --enable-fts3           Enable the FTS3 extension
+  --enable-fts4           Enable the FTS4 extension
+  --enable-fts5           Enable the FTS5 extension
+  --enable-json1          Enable the JSON1 extension
+  --enable-rtree          Enable the RTREE extension
   --enable-gcov           Enable coverage testing using gcov
 
 Optional Packages:
@@ -3911,13 +3921,13 @@ if ${lt_cv_nm_interface+:} false; then :
 else
   lt_cv_nm_interface="BSD nm"
   echo "int some_variable = 0;" > conftest.$ac_ext
-  (eval echo "\"\$as_me:3914: $ac_compile\"" >&5)
+  (eval echo "\"\$as_me:3924: $ac_compile\"" >&5)
   (eval "$ac_compile" 2>conftest.err)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:3917: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
+  (eval echo "\"\$as_me:3927: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
   (eval "$NM \"conftest.$ac_objext\"" 2>conftest.err > conftest.out)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:3920: output\"" >&5)
+  (eval echo "\"\$as_me:3930: output\"" >&5)
   cat conftest.out >&5
   if $GREP 'External.*some_variable' conftest.out > /dev/null; then
     lt_cv_nm_interface="MS dumpbin"
@@ -5123,7 +5133,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 5126 "configure"' > conftest.$ac_ext
+  echo '#line 5136 "configure"' > conftest.$ac_ext
   if { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_compile\""; } >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -6648,11 +6658,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6651: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:6661: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:6655: \$? = $ac_status" >&5
+   echo "$as_me:6665: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -6987,11 +6997,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6990: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7000: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:6994: \$? = $ac_status" >&5
+   echo "$as_me:7004: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -7092,11 +7102,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7095: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7105: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:7099: \$? = $ac_status" >&5
+   echo "$as_me:7109: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -7147,11 +7157,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7150: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7160: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:7154: \$? = $ac_status" >&5
+   echo "$as_me:7164: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -9527,7 +9537,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 9530 "configure"
+#line 9540 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -9623,7 +9633,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 9626 "configure"
+#line 9636 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -11221,6 +11231,177 @@ fi
 
 else
   OPT_FEATURE_FLAGS="-DSQLITE_OMIT_LOAD_EXTENSION=1"
+fi
+
+#########
+# See whether we should enable Full Text Search extensions
+# Check whether --enable-fts3 was given.
+if test "${enable_fts3+set}" = set; then :
+  enableval=$enable_fts3; enable_fts3=yes
+else
+  enable_fts3=no
+fi
+
+if test "${enable_fts3}" = "yes" ; then
+  OPT_FEATURE_FLAGS+=" -DSQLITE_ENABLE_FTS3"
+fi
+# Check whether --enable-fts4 was given.
+if test "${enable_fts4+set}" = set; then :
+  enableval=$enable_fts4; enable_fts4=yes
+else
+  enable_fts4=no
+fi
+
+if test "${enable_fts4}" = "yes" ; then
+  OPT_FEATURE_FLAGS+=" -DSQLITE_ENABLE_FTS4"
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing log" >&5
+$as_echo_n "checking for library containing log... " >&6; }
+if ${ac_cv_search_log+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char log ();
+int
+main ()
+{
+return log ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' m; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_search_log=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext
+  if ${ac_cv_search_log+:} false; then :
+  break
+fi
+done
+if ${ac_cv_search_log+:} false; then :
+
+else
+  ac_cv_search_log=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_log" >&5
+$as_echo "$ac_cv_search_log" >&6; }
+ac_res=$ac_cv_search_log
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+
+fi
+
+fi
+# Check whether --enable-fts5 was given.
+if test "${enable_fts5+set}" = set; then :
+  enableval=$enable_fts5; enable_fts5=yes
+else
+  enable_fts5=no
+fi
+
+if test "${enable_fts5}" = "yes" ; then
+  OPT_FEATURE_FLAGS+=" -DSQLITE_ENABLE_FTS5"
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing log" >&5
+$as_echo_n "checking for library containing log... " >&6; }
+if ${ac_cv_search_log+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char log ();
+int
+main ()
+{
+return log ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' m; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_search_log=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext
+  if ${ac_cv_search_log+:} false; then :
+  break
+fi
+done
+if ${ac_cv_search_log+:} false; then :
+
+else
+  ac_cv_search_log=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_log" >&5
+$as_echo "$ac_cv_search_log" >&6; }
+ac_res=$ac_cv_search_log
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+
+fi
+
+fi
+
+#########
+# See whether we should enable JSON1
+# Check whether --enable-json1 was given.
+if test "${enable_json1+set}" = set; then :
+  enableval=$enable_json1; enable_json1=yes
+else
+  enable_json1=no
+fi
+
+if test "${enable_json1}" = "yes" ; then
+  OPT_FEATURE_FLAGS+=" -DSQLITE_ENABLE_JSON1"
+fi
+
+#########
+# See whether we should enable RTREE
+# Check whether --enable-rtree was given.
+if test "${enable_rtree+set}" = set; then :
+  enableval=$enable_rtree; enable_rtree=yes
+else
+  enable_rtree=no
+fi
+
+if test "${enable_rtree}" = "yes" ; then
+  OPT_FEATURE_FLAGS+=" -DSQLITE_ENABLE_RTREE"
 fi
 
 #########

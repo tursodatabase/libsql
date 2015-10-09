@@ -2393,14 +2393,7 @@ static void fts5SourceIdFunc(
   sqlite3_result_text(pCtx, "--FTS5-SOURCE-ID--", -1, SQLITE_TRANSIENT);
 }
 
-#ifdef _WIN32
-__declspec(dllexport)
-#endif
-int sqlite3_fts5_init(
-  sqlite3 *db,
-  char **pzErrMsg,
-  const sqlite3_api_routines *pApi
-){
+static int fts5Init(sqlite3 *db){
   static const sqlite3_module fts5Mod = {
     /* iVersion      */ 2,
     /* xCreate       */ fts5CreateMethod,
@@ -2429,8 +2422,6 @@ int sqlite3_fts5_init(
 
   int rc;
   Fts5Global *pGlobal = 0;
-
-  SQLITE_EXTENSION_INIT2(pApi);
 
   pGlobal = (Fts5Global*)sqlite3_malloc(sizeof(Fts5Global));
   if( pGlobal==0 ){
@@ -2463,6 +2454,16 @@ int sqlite3_fts5_init(
   return rc;
 }
 
+/*
+** The following functions are used to register the module with SQLite. If
+** this module is being built as part of the SQLite core (SQLITE_CORE is
+** defined), then sqlite3_open() will call sqlite3Fts5Init() directly.
+**
+** Or, if this module is being built as a loadable extension, 
+** sqlite3Fts5Init() is omitted and the two standard entry points
+** sqlite3_fts_init() and sqlite3_fts5_init() defined instead.
+*/
+#ifndef SQLITE_CORE
 #ifdef _WIN32
 __declspec(dllexport)
 #endif
@@ -2471,7 +2472,26 @@ int sqlite3_fts_init(
   char **pzErrMsg,
   const sqlite3_api_routines *pApi
 ){
-  return sqlite3_fts5_init(db, pzErrMsg, pApi);
+  SQLITE_EXTENSION_INIT2(pApi);
+  (void)pzErrMsg;  /* Unused parameter */
+  return fts5Init(db);
 }
 
+#ifdef _WIN32
+__declspec(dllexport)
+#endif
+int sqlite3_fts5_init(
+  sqlite3 *db,
+  char **pzErrMsg,
+  const sqlite3_api_routines *pApi
+){
+  SQLITE_EXTENSION_INIT2(pApi);
+  (void)pzErrMsg;  /* Unused parameter */
+  return fts5Init(db);
+}
+#else
+int sqlite3Fts5Init(sqlite3 *db){
+  return fts5Init(db);
+}
+#endif
 

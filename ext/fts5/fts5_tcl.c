@@ -976,7 +976,6 @@ static int f5tTokenHash(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-  int bOld = sqlite3_fts5_may_be_corrupt;
   char *z;
   int n;
   unsigned int iVal;

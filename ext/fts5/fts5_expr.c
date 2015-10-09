@@ -32,6 +32,11 @@ typedef struct Fts5ExprTerm Fts5ExprTerm;
 void *sqlite3Fts5ParserAlloc(void *(*mallocProc)(u64));
 void sqlite3Fts5ParserFree(void*, void (*freeProc)(void*));
 void sqlite3Fts5Parser(void*, int, Fts5Token, Fts5Parse*);
+#ifndef NDEBUG
+#include <stdio.h>
+void sqlite3Fts5ParserTrace(FILE*, char*);
+#endif
+
 
 struct Fts5Expr {
   Fts5Index *pIndex;
@@ -2275,6 +2280,11 @@ int sqlite3Fts5ExprInit(Fts5Global *pGlobal, sqlite3 *db){
     struct Fts5ExprFunc *p = &aFunc[i];
     rc = sqlite3_create_function(db, p->z, -1, SQLITE_UTF8, pCtx, p->x, 0, 0);
   }
+
+  /* Avoid a warning indicating that sqlite3Fts5ParserTrace() is unused */
+#ifndef NDEBUG
+  (void)sqlite3Fts5ParserTrace;
+#endif
 
   return rc;
 }
