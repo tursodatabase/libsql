@@ -34,6 +34,11 @@ SQLITE_EXTENSION_INIT1
 
 #define UNUSED_PARAM(X)  (void)(X)
 
+#ifndef LARGEST_INT64
+# define LARGEST_INT64  (0xffffffff|(((sqlite3_int64)0x7fffffff)<<32))
+# define SMALLEST_INT64 (((sqlite3_int64)-1) - LARGEST_INT64)
+#endif
+
 /*
 ** Versions of isspace(), isalnum() and isdigit() to which it is safe
 ** to pass signed char values.
@@ -478,18 +483,35 @@ static void jsonReturn(
       sqlite3_result_int(pCtx, 0);
       break;
     }
-    case JSON_REAL: {
-      double r = strtod(pNode->u.zJContent, 0);
-      sqlite3_result_double(pCtx, r);
-      break;
-    }
     case JSON_INT: {
       sqlite3_int64 i = 0;
       const char *z = pNode->u.zJContent;
       if( z[0]=='-' ){ z++; }
-      while( z[0]>='0' && z[0]<='9' ){ i = i*10 + *(z++) - '0'; }
+      while( z[0]>='0' && z[0]<='9' ){
+        unsigned v = *(z++) - '0';
+        if( i>=LARGEST_INT64/10 ){
+          if( z[0]>='0' && z[0]<='9' ) goto int_as_real;
+          if( v==9 ) goto int_as_real;
+          if( v==8 ){
+            if( pNode->u.zJContent[0]=='-' ){
+              sqlite3_result_int64(pCtx, SMALLEST_INT64);
+              goto int_done;
+            }else{
+              goto int_as_real;
+            }
+          }
+        }
+        i = i*10 + v;
+      }
       if( pNode->u.zJContent[0]=='-' ){ i = -i; }
       sqlite3_result_int64(pCtx, i);
+      int_done:
+      break;
+      int_as_real: /* fall through to real */;
+    }
+    case JSON_REAL: {
+      double r = strtod(pNode->u.zJContent, 0);
+      sqlite3_result_double(pCtx, r);
       break;
     }
     case JSON_STRING: {
