@@ -1,5 +1,5 @@
-C In\sthe\sMSVC\smakefile,\sadjust\sthe\snames\sof\stwo\snmake\svariables\sfor\sconsistency.
-D 2015-10-09T14:23:56.143
+C Add\s--enable-fts5\sand\s--enable-json1\soptions\sto\sthe\samalgamation\sautoconf\spackage.
+D 2015-10-09T14:37:15.899
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f0088ff0d2ac949fce6de7c00f13a99ac5bdb663
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -13,12 +13,12 @@ F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
-F autoconf/Makefile.am 27de1af382c82e81f1fe36a7f38528fba004eb1a
+F autoconf/Makefile.am bd4a90972aa87f079af6624ddea3df3d58f26d2f
 F autoconf/README 14458f1046c118efa721aadec5f227e876d3cd38
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/config.guess 94cc57e2a3fdb9c235b362ace86d77e89d188cad x
 F autoconf/config.sub 1efb390a8fb4bfafd74783a15a8fb5311c84300e x
-F autoconf/configure.ac ba3e99ba1a8171d0682b68443517088fc5d6f13a
+F autoconf/configure.ac a1fe4eee429fd9d3170be41941514a2b7120ba4e
 F autoconf/depcomp 0b26f101e3bc9fd1ff0be1da9fb4a82371142f92 x
 F autoconf/install-sh 06ee6336e63bb845c8439d777c32eb2eccc4fbf1 x
 F autoconf/ltmain.sh 7a658a24028f02331c1d2446562758083c5eadd1
@@ -1390,7 +1390,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P aa8fdadf2defed00a28366a3b35a3e2eefecf0ed
-R 67a5030e734fab5c2a42f6160a4ca2ff
-U mistachkin
-Z a73711c3af55fff2b6c43d8879780308
+P 92aa4b6b6fbb83f965e4c4be0aa21a8b7e330ed8
+R 22c99efaaba11dba793d1740711eaae0
+U dan
+Z b821d121ea8aa17674df3a472339de94
