@@ -4935,13 +4935,6 @@ int SQLITE_CDECL main(int argc, char **argv){
   }
   data.out = stdout;
 
-#ifdef SQLITE_SHELL_JSON1
-  {
-    extern int sqlite3_json_init(sqlite3*);
-    sqlite3_auto_extension((void(*)(void))sqlite3_json_init);
-  }
-#endif
-
   /* Go ahead and open the database file if it already exists.  If the
   ** file does not exist, delay opening it.  This prevents empty database
   ** files from being created if a user mistypes the database name argument

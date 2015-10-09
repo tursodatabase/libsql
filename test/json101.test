@@ -15,7 +15,11 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-load_static_extension db json
+ifcapable !json1 {
+  finish_test
+  return
+}
+
 do_execsql_test json101-1.1.00 {
   SELECT json_array(1,2.5,null,'hello');
 } {[1,2.5,null,"hello"]}

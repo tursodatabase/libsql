@@ -13,7 +13,7 @@
 
 
 #include "fts5Int.h"
-#include <math.h>
+#include <math.h>                 /* amalgamator: keep */
 
 /*
 ** Object used to iterate through all "coalesced phrase instances" in 
