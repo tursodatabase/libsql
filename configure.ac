@@ -561,6 +561,47 @@ else
 fi
 
 #########
+# See whether we should enable Full Text Search extensions
+AC_ARG_ENABLE(fts3, AC_HELP_STRING([--enable-fts3],
+      [Enable the FTS3 extension]),
+      [enable_fts3=yes],[enable_fts3=no])
+if test "${enable_fts3}" = "yes" ; then
+  OPT_FEATURE_FLAGS+=" -DSQLITE_ENABLE_FTS3"
+fi
+AC_ARG_ENABLE(fts4, AC_HELP_STRING([--enable-fts4],
+      [Enable the FTS4 extension]),
+      [enable_fts4=yes],[enable_fts4=no])
+if test "${enable_fts4}" = "yes" ; then
+  OPT_FEATURE_FLAGS+=" -DSQLITE_ENABLE_FTS4"
+  AC_SEARCH_LIBS([log],[m])
+fi
+AC_ARG_ENABLE(fts5, AC_HELP_STRING([--enable-fts5],
+      [Enable the FTS5 extension]),
+      [enable_fts5=yes],[enable_fts5=no])
+if test "${enable_fts5}" = "yes" ; then
+  OPT_FEATURE_FLAGS+=" -DSQLITE_ENABLE_FTS5"
+  AC_SEARCH_LIBS([log],[m])
+fi
+
+#########
+# See whether we should enable JSON1
+AC_ARG_ENABLE(json1, AC_HELP_STRING([--enable-json1],
+      [Enable the JSON1 extension]),
+      [enable_json1=yes],[enable_json1=no])
+if test "${enable_json1}" = "yes" ; then
+  OPT_FEATURE_FLAGS+=" -DSQLITE_ENABLE_JSON1"
+fi
+
+#########
+# See whether we should enable RTREE
+AC_ARG_ENABLE(rtree, AC_HELP_STRING([--enable-rtree],
+      [Enable the RTREE extension]),
+      [enable_rtree=yes],[enable_rtree=no])
+if test "${enable_rtree}" = "yes" ; then
+  OPT_FEATURE_FLAGS+=" -DSQLITE_ENABLE_RTREE"
+fi
+
+#########
 # attempt to duplicate any OMITS and ENABLES into the $(OPT_FEATURE_FLAGS) parameter
 for option in $CFLAGS $CPPFLAGS
 do

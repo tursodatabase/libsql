@@ -252,6 +252,8 @@ int sqlite3FkLocateIndex(
           char *zDfltColl;                  /* Def. collation for column */
           char *zIdxCol;                    /* Name of indexed column */
 
+          if( iCol<0 ) break; /* No foreign keys against expression indexes */
+
           /* If the index uses a collation sequence that is different from
           ** the default collation sequence for the column, this index is
           ** unusable. Bail out early in this case.  */
@@ -404,6 +406,7 @@ static void fkLookupParent(
         for(i=0; i<nCol; i++){
           int iChild = aiCol[i]+1+regData;
           int iParent = pIdx->aiColumn[i]+1+regData;
+          assert( pIdx->aiColumn[i]>=0 );
           assert( aiCol[i]!=pTab->iPKey );
           if( pIdx->aiColumn[i]==pTab->iPKey ){
             /* The parent key is a composite key that includes the IPK column */
@@ -612,6 +615,7 @@ static void fkScanChildren(
       assert( pIdx!=0 );
       for(i=0; i<pPk->nKeyCol; i++){
         i16 iCol = pIdx->aiColumn[i];
+        assert( iCol>=0 );
         pLeft = exprTableRegister(pParse, pTab, regData, iCol);
         pRight = exprTableColumn(db, pTab, pSrc->a[0].iCursor, iCol);
         pEq = sqlite3PExpr(pParse, TK_EQ, pLeft, pRight, 0);
@@ -931,6 +935,7 @@ void sqlite3FkCheck(
       if( aiCol[i]==pTab->iPKey ){
         aiCol[i] = -1;
       }
+      assert( pIdx==0 || pIdx->aiColumn[i]>=0 );
 #ifndef SQLITE_OMIT_AUTHORIZATION
       /* Request permission to read the parent key columns. If the 
       ** authorization callback returns SQLITE_IGNORE, behave as if any
@@ -1062,7 +1067,10 @@ u32 sqlite3FkOldmask(
       Index *pIdx = 0;
       sqlite3FkLocateIndex(pParse, pTab, p, &pIdx, 0);
       if( pIdx ){
-        for(i=0; i<pIdx->nKeyCol; i++) mask |= COLUMN_MASK(pIdx->aiColumn[i]);
+        for(i=0; i<pIdx->nKeyCol; i++){
+          assert( pIdx->aiColumn[i]>=0 );
+          mask |= COLUMN_MASK(pIdx->aiColumn[i]);
+        }
       }
     }
   }
@@ -1185,6 +1193,7 @@ static Trigger *fkActionTrigger(
       iFromCol = aiCol ? aiCol[i] : pFKey->aCol[0].iFrom;
       assert( iFromCol>=0 );
       assert( pIdx!=0 || (pTab->iPKey>=0 && pTab->iPKey<pTab->nCol) );
+      assert( pIdx==0 || pIdx->aiColumn[i]>=0 );
       tToCol.z = pTab->aCol[pIdx ? pIdx->aiColumn[i] : pTab->iPKey].zName;
       tFromCol.z = pFKey->pFrom->aCol[iFromCol].zName;
 

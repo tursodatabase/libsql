@@ -860,10 +860,12 @@ static int fts3PendingTermsAdd(
 */
 static int fts3PendingTermsDocid(
   Fts3Table *p,                   /* Full-text table handle */
+  int bDelete,                    /* True if this op is a delete */
   int iLangid,                    /* Language id of row being written */
   sqlite_int64 iDocid             /* Docid of row being written */
 ){
   assert( iLangid>=0 );
+  assert( bDelete==1 || bDelete==0 );
 
   /* TODO(shess) Explore whether partially flushing the buffer on
   ** forced-flush would provide better performance.  I suspect that if
@@ -871,7 +873,8 @@ static int fts3PendingTermsDocid(
   ** buffer was half empty, that would let the less frequent terms
   ** generate longer doclists.
   */
-  if( iDocid<=p->iPrevDocid 
+  if( iDocid<p->iPrevDocid 
+   || (iDocid==p->iPrevDocid && p->bPrevDelete==0)
    || p->iPrevLangid!=iLangid
    || p->nPendingData>p->nMaxPendingData 
   ){
@@ -880,6 +883,7 @@ static int fts3PendingTermsDocid(
   }
   p->iPrevDocid = iDocid;
   p->iPrevLangid = iLangid;
+  p->bPrevDelete = bDelete;
   return SQLITE_OK;
 }
 
@@ -1069,7 +1073,8 @@ static void fts3DeleteTerms(
     if( SQLITE_ROW==sqlite3_step(pSelect) ){
       int i;
       int iLangid = langidFromSelect(p, pSelect);
-      rc = fts3PendingTermsDocid(p, iLangid, sqlite3_column_int64(pSelect, 0));
+      i64 iDocid = sqlite3_column_int64(pSelect, 0);
+      rc = fts3PendingTermsDocid(p, 1, iLangid, iDocid);
       for(i=1; rc==SQLITE_OK && i<=p->nColumn; i++){
         int iCol = i-1;
         if( p->abNotindexed[iCol]==0 ){
@@ -1317,14 +1322,19 @@ static int fts3SegReaderNext(
 
     if( fts3SegReaderIsPending(pReader) ){
       Fts3HashElem *pElem = *(pReader->ppNextElem);
-      if( pElem==0 ){
-        pReader->aNode = 0;
-      }else{
+      sqlite3_free(pReader->aNode);
+      pReader->aNode = 0;
+      if( pElem ){
+        char *aCopy;
         PendingList *pList = (PendingList *)fts3HashData(pElem);
+        int nCopy = pList->nData+1;
         pReader->zTerm = (char *)fts3HashKey(pElem);
         pReader->nTerm = fts3HashKeysize(pElem);
-        pReader->nNode = pReader->nDoclist = pList->nData + 1;
-        pReader->aNode = pReader->aDoclist = pList->aData;
+        aCopy = (char*)sqlite3_malloc(nCopy);
+        if( !aCopy ) return SQLITE_NOMEM;
+        memcpy(aCopy, pList->aData, nCopy);
+        pReader->nNode = pReader->nDoclist = nCopy;
+        pReader->aNode = pReader->aDoclist = aCopy;
         pReader->ppNextElem++;
         assert( pReader->aNode );
       }
@@ -1564,12 +1574,14 @@ int sqlite3Fts3MsrOvfl(
 ** second argument.
 */
 void sqlite3Fts3SegReaderFree(Fts3SegReader *pReader){
-  if( pReader && !fts3SegReaderIsPending(pReader) ){
-    sqlite3_free(pReader->zTerm);
+  if( pReader ){
+    if( !fts3SegReaderIsPending(pReader) ){
+      sqlite3_free(pReader->zTerm);
+    }
     if( !fts3SegReaderIsRootOnly(pReader) ){
       sqlite3_free(pReader->aNode);
-      sqlite3_blob_close(pReader->pBlob);
     }
+    sqlite3_blob_close(pReader->pBlob);
   }
   sqlite3_free(pReader);
 }
@@ -3512,7 +3524,7 @@ static int fts3DoRebuild(Fts3Table *p){
     while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
       int iCol;
       int iLangid = langidFromSelect(p, pStmt);
-      rc = fts3PendingTermsDocid(p, iLangid, sqlite3_column_int64(pStmt, 0));
+      rc = fts3PendingTermsDocid(p, 0, iLangid, sqlite3_column_int64(pStmt, 0));
       memset(aSz, 0, sizeof(aSz[0]) * (p->nColumn+1));
       for(iCol=0; rc==SQLITE_OK && iCol<p->nColumn; iCol++){
         if( p->abNotindexed[iCol]==0 ){
@@ -5617,7 +5629,7 @@ int sqlite3Fts3UpdateMethod(
       }
     }
     if( rc==SQLITE_OK && (!isRemove || *pRowid!=p->iPrevDocid ) ){
-      rc = fts3PendingTermsDocid(p, iLangid, *pRowid);
+      rc = fts3PendingTermsDocid(p, 0, iLangid, *pRowid);
     }
     if( rc==SQLITE_OK ){
       assert( p->iPrevDocid==*pRowid );

@@ -32,6 +32,11 @@ typedef struct Fts5ExprTerm Fts5ExprTerm;
 void *sqlite3Fts5ParserAlloc(void *(*mallocProc)(u64));
 void sqlite3Fts5ParserFree(void*, void (*freeProc)(void*));
 void sqlite3Fts5Parser(void*, int, Fts5Token, Fts5Parse*);
+#ifndef NDEBUG
+#include <stdio.h>
+void sqlite3Fts5ParserTrace(FILE*, char*);
+#endif
+
 
 struct Fts5Expr {
   Fts5Index *pIndex;
@@ -90,22 +95,12 @@ struct Fts5ExprPhrase {
 };
 
 /*
-** If a NEAR() clump may only match a specific set of columns, then
-** Fts5ExprNearset.pColset points to an object of the following type.
-** Each entry in the aiCol[] array
-*/
-struct Fts5ExprColset {
-  int nCol;
-  int aiCol[1];
-};
-
-/*
 ** One or more phrases that must appear within a certain token distance of
 ** each other within each matching document.
 */
 struct Fts5ExprNearset {
   int nNear;                      /* NEAR parameter */
-  Fts5ExprColset *pColset;        /* Columns to search (NULL -> all columns) */
+  Fts5Colset *pColset;            /* Columns to search (NULL -> all columns) */
   int nPhrase;                    /* Number of entries in aPhrase[] array */
   Fts5ExprPhrase *apPhrase[1];    /* Array of phrase pointers */
 };
@@ -276,7 +271,7 @@ void sqlite3Fts5ExprFree(Fts5Expr *p){
   }
 }
 
-static int fts5ExprColsetTest(Fts5ExprColset *pColset, int iCol){
+static int fts5ExprColsetTest(Fts5Colset *pColset, int iCol){
   int i;
   for(i=0; i<pColset->nCol; i++){
     if( pColset->aiCol[i]==iCol ) return 1;
@@ -405,7 +400,7 @@ static int fts5ExprSynonymPoslist(
 */
 static int fts5ExprPhraseIsMatch(
   Fts5ExprNode *pNode,            /* Node pPhrase belongs to */
-  Fts5ExprColset *pColset,        /* Restrict matches to these columns */
+  Fts5Colset *pColset,            /* Restrict matches to these columns */
   Fts5ExprPhrase *pPhrase,        /* Phrase object to initialize */
   int *pbMatch                    /* OUT: Set to true if really a match */
 ){
@@ -805,7 +800,7 @@ static int fts5ExprExtractCol(
 }
 
 static int fts5ExprExtractColset (
-  Fts5ExprColset *pColset,        /* Colset to filter on */
+  Fts5Colset *pColset,            /* Colset to filter on */
   const u8 *pPos, int nPos,       /* Position list */
   Fts5Buffer *pBuf                /* Output buffer */
 ){
@@ -868,7 +863,7 @@ static int fts5ExprTokenTest(
   Fts5ExprNearset *pNear = pNode->pNear;
   Fts5ExprPhrase *pPhrase = pNear->apPhrase[0];
   Fts5IndexIter *pIter = pPhrase->aTerm[0].pIter;
-  Fts5ExprColset *pColset = pNear->pColset;
+  Fts5Colset *pColset = pNear->pColset;
   const u8 *pPos;
   int nPos;
   int rc;
@@ -1002,6 +997,7 @@ static int fts5ExprNearInitAll(
             pExpr->pIndex, p->zTerm, strlen(p->zTerm),
             (pTerm->bPrefix ? FTS5INDEX_QUERY_PREFIX : 0) |
             (pExpr->bDesc ? FTS5INDEX_QUERY_DESC : 0),
+            pNear->pColset,
             &p->pIter
         );
         assert( rc==SQLITE_OK || p->pIter==0 );
@@ -1754,25 +1750,25 @@ void sqlite3Fts5ParseSetDistance(
 
 /*
 ** The second argument passed to this function may be NULL, or it may be
-** an existing Fts5ExprColset object. This function returns a pointer to
+** an existing Fts5Colset object. This function returns a pointer to
 ** a new colset object containing the contents of (p) with new value column
 ** number iCol appended. 
 **
 ** If an OOM error occurs, store an error code in pParse and return NULL.
 ** The old colset object (if any) is not freed in this case.
 */
-static Fts5ExprColset *fts5ParseColset(
+static Fts5Colset *fts5ParseColset(
   Fts5Parse *pParse,              /* Store SQLITE_NOMEM here if required */
-  Fts5ExprColset *p,              /* Existing colset object */
+  Fts5Colset *p,                  /* Existing colset object */
   int iCol                        /* New column to add to colset object */
 ){
   int nCol = p ? p->nCol : 0;     /* Num. columns already in colset object */
-  Fts5ExprColset *pNew;           /* New colset object to return */
+  Fts5Colset *pNew;               /* New colset object to return */
 
   assert( pParse->rc==SQLITE_OK );
   assert( iCol>=0 && iCol<pParse->pConfig->nCol );
 
-  pNew = sqlite3_realloc(p, sizeof(Fts5ExprColset) + sizeof(int)*nCol);
+  pNew = sqlite3_realloc(p, sizeof(Fts5Colset) + sizeof(int)*nCol);
   if( pNew==0 ){
     pParse->rc = SQLITE_NOMEM;
   }else{
@@ -1797,12 +1793,12 @@ static Fts5ExprColset *fts5ParseColset(
   return pNew;
 }
 
-Fts5ExprColset *sqlite3Fts5ParseColset(
+Fts5Colset *sqlite3Fts5ParseColset(
   Fts5Parse *pParse,              /* Store SQLITE_NOMEM here if required */
-  Fts5ExprColset *pColset,        /* Existing colset object */
+  Fts5Colset *pColset,            /* Existing colset object */
   Fts5Token *p
 ){
-  Fts5ExprColset *pRet = 0;
+  Fts5Colset *pRet = 0;
   int iCol;
   char *z;                        /* Dequoted copy of token p */
 
@@ -1832,7 +1828,7 @@ Fts5ExprColset *sqlite3Fts5ParseColset(
 void sqlite3Fts5ParseSetColset(
   Fts5Parse *pParse, 
   Fts5ExprNearset *pNear, 
-  Fts5ExprColset *pColset 
+  Fts5Colset *pColset 
 ){
   if( pNear ){
     pNear->pColset = pColset;
@@ -2284,6 +2280,11 @@ int sqlite3Fts5ExprInit(Fts5Global *pGlobal, sqlite3 *db){
     struct Fts5ExprFunc *p = &aFunc[i];
     rc = sqlite3_create_function(db, p->z, -1, SQLITE_UTF8, pCtx, p->x, 0, 0);
   }
+
+  /* Avoid a warning indicating that sqlite3Fts5ParserTrace() is unused */
+#ifndef NDEBUG
+  (void)sqlite3Fts5ParserTrace;
+#endif
 
   return rc;
 }
