@@ -61,7 +61,9 @@ IF NOT DEFINED TEMP (
 
 %_VECHO% Temp = '%TEMP%'
 
-SET TCLKIT_URI=http://tclsh.com/
+IF NOT DEFINED TCLKIT_URI (
+  SET TCLKIT_URI=http://tclsh.com/
+)
 
 %_VECHO% TclKitUri = '%TCLKIT_URI%'
 
