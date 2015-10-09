@@ -78,6 +78,7 @@ array set ::Configs [strip_comments {
     -DSQLITE_DEFAULT_FILE_FORMAT=4
     -DSQLITE_ENABLE_UPDATE_DELETE_LIMIT=1
     -DSQLITE_ENABLE_STMT_SCANSTATUS
+    --enable-json1
   }
   "Check-Symbols" {
     -DSQLITE_MEMDEBUG=1
@@ -95,6 +96,7 @@ array set ::Configs [strip_comments {
     -DSQLITE_ENABLE_OVERSIZE_CELL_CHECK=1
     -DSQLITE_ENABLE_STAT4
     -DSQLITE_ENABLE_STMT_SCANSTATUS
+    --enable-json1 --enable-fts5
   }
   "Debug-One" {
     --disable-shared
@@ -129,13 +131,13 @@ array set ::Configs [strip_comments {
     -DSQLITE_DISABLE_LFS=1
     -DSQLITE_ENABLE_ATOMIC_WRITE=1
     -DSQLITE_ENABLE_IOTRACE=1
-    -DSQLITE_ENABLE_JSON1=1
     -DSQLITE_ENABLE_MEMORY_MANAGEMENT=1
     -DSQLITE_MAX_PAGE_SIZE=4096
     -DSQLITE_OMIT_LOAD_EXTENSION=1
     -DSQLITE_OMIT_PROGRESS_CALLBACK=1
     -DSQLITE_OMIT_VIRTUALTABLE=1
     -DSQLITE_TEMP_STORE=3
+    --enable-json1 --enable-fts5
   }
   "Device-Two" {
     -DSQLITE_4_BYTE_ALIGNED_MALLOC=1
@@ -146,7 +148,6 @@ array set ::Configs [strip_comments {
     -DSQLITE_DEFAULT_TEMP_CACHE_SIZE=1000
     -DSQLITE_DISABLE_LFS=1
     -DSQLITE_ENABLE_FTS3=1
-    -DSQLITE_ENABLE_JSON1=1
     -DSQLITE_ENABLE_MEMORY_MANAGEMENT=1
     -DSQLITE_ENABLE_RTREE=1
     -DSQLITE_MAX_COMPOUND_SELECT=50
@@ -154,6 +155,7 @@ array set ::Configs [strip_comments {
     -DSQLITE_OMIT_TRACE=1
     -DSQLITE_TEMP_STORE=3
     -DSQLITE_THREADSAFE=2
+    --enable-json1 --enable-fts5
   }
   "Locking-Style" {
     -O2
@@ -177,6 +179,7 @@ array set ::Configs [strip_comments {
     -DSQLITE_DEBUG=1
     -DSQLITE_PREFER_PROXY_LOCKING=1
     -DSQLITE_ENABLE_API_ARMOR=1
+    --enable-json1 --enable-fts5
   }
   "Extra-Robustness" {
     -DSQLITE_ENABLE_OVERSIZE_CELL_CHECK=1
@@ -190,6 +193,7 @@ array set ::Configs [strip_comments {
     -DSQLITE_ENABLE_FTS4_PARENTHESIS
     -DSQLITE_DISABLE_FTS4_DEFERRED
     -DSQLITE_ENABLE_RTREE
+    --enable-json1 --enable-fts5
   }
   "No-lookaside" {
     -DSQLITE_TEST_REALLOC_STRESS=1
@@ -200,7 +204,7 @@ array set ::Configs [strip_comments {
     -DSQLITE_ENABLE_STAT4
     -DSQLITE_ENABLE_FTS4
     -DSQLITE_ENABLE_RTREE
-    -DSQLITE_ENABLE_JSON1=1
+    --enable-json1
   }
 
   # The next group of configurations are used only by the

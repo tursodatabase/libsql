@@ -1,5 +1,5 @@
-C Makefile\sand\sfts5\schanges\sso\sthat\sfts5\sworks\swith\smain.mk.\sStill\sdoes\snot\swork\swith\sMakefile.in.
-D 2015-10-09T11:09:47.175
+C Add\sconfigure\sscript\soptions\s--enable-fts5\sand\s--enable-json1.\s\sAutomatically\nsearch\sfor\s-lm\swhen\susing\s--enable-fts5.
+D 2015-10-09T12:48:33.545
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f0088ff0d2ac949fce6de7c00f13a99ac5bdb663
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -38,8 +38,8 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 42b71ad3fe21c9e88fa59e8458ca1a6bc72eb0c0
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 2f61915a1bdfbc589244334401cf97d3401e6a39 x
-F configure.ac 713de38000413e469188db2cb85bed759b56f322
+F configure 6c28beb2c5adfea004c7eb0dc615ce5ebaca67ee x
+F configure.ac 1e87304e51af110950c48a1eea6ffc7a577f600e
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 334dbf6621b8fb8790297ec1abf3cfa4621709d1
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
@@ -947,7 +947,7 @@ F test/rbu.test 168573d353cd0fd10196b87b0caa322c144ef736
 F test/rdonly.test 64e2696c322e3538df0b1ed624e21f9a23ed9ff8
 F test/regexp1.test 497ea812f264d12b6198d6e50a76be4a1973a9d8
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
-F test/releasetest.tcl 97e4e5ca5925b21ef470b3c97d4c46dd063cfec4
+F test/releasetest.tcl f52239d28ed829ca7979617845a442d2d1b08aaa
 F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
 F test/rollback.test 458fe73eb3ffdfdf9f6ba3e9b7350a6220414dea
 F test/rollback2.test fc14cf6d1a2b250d2735ef16124b971bce152f14
@@ -1390,7 +1390,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 206174f9b154c590a3e2e94236db38e111d64bdb
-R 7677b595a4a025d5b5c3743b20676b45
-U dan
-Z 2d1f0773394fa57beba698d5cfa49140
+P 6ebac32d8378e46f44a6eb55aaa30baf4d7dde7d
+R 15162ca8241950d9040673fb4e5f94d0
+U drh
+Z 8ecad2a04d12126eee50b9755a0e6c68
