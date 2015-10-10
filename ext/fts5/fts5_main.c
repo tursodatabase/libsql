@@ -2252,15 +2252,17 @@ static int fts5CreateTokenizer(
 ){
   Fts5Global *pGlobal = (Fts5Global*)pApi;
   Fts5TokenizerModule *pNew;
+  int nName;                      /* Size of zName and its \0 terminator */
   int nByte;                      /* Bytes of space to allocate */
   int rc = SQLITE_OK;
 
-  nByte = sizeof(Fts5TokenizerModule) + strlen(zName) + 1;
+  nName = (int)strlen(zName) + 1;
+  nByte = sizeof(Fts5TokenizerModule) + nName;
   pNew = (Fts5TokenizerModule*)sqlite3_malloc(nByte);
   if( pNew ){
     memset(pNew, 0, nByte);
     pNew->zName = (char*)&pNew[1];
-    strcpy(pNew->zName, zName);
+    memcpy(pNew->zName, zName, nName);
     pNew->pUserData = pUserData;
     pNew->x = *pTokenizer;
     pNew->xDestroy = xDestroy;
