@@ -75,10 +75,12 @@ IF /I "%PROCESSOR%" == "x86" (
   GOTO usage
 )
 
+%_VECHO% TclKitVersion = '%TCLKIT_VERSION%'
 %_VECHO% TclKitPatchLevel = '%TCLKIT_PATCHLEVEL%'
 %_VECHO% TclKitNoSdk = '%TCLKIT_NOSDK%'
 %_VECHO% TclKitExe = '%TCLKIT_EXE%'
 %_VECHO% TclKitLib = '%TCLKIT_LIB%'
+%_VECHO% TclKitLibStub = '%TCLKIT_LIB_STUB%'
 %_VECHO% TclKitSdk = '%TCLKIT_SDK%'
 %_VECHO% TclKitSdkZip = '%TCLKIT_SDK_ZIP%'
 %_VECHO% TclKitFiles = '%TCLKIT_FILES%'
@@ -125,11 +127,13 @@ SET PATH=%FRAMEWORKDIR%;%PATH%
 
 :skip_addToPath
 
-%__ECHO% csc.exe "/out:%TEMP%\GetFile.exe" /target:exe "%TOOLS%\GetFile.cs"
+IF NOT EXIST "%TEMP%\GetFile.exe" (
+  %__ECHO% csc.exe "/out:%TEMP%\GetFile.exe" /target:exe "%TOOLS%\GetFile.cs"
 
-IF ERRORLEVEL 1 (
-  ECHO Compilation of "%TOOLS%\GetFile.cs" failed.
-  GOTO errors
+  IF ERRORLEVEL 1 (
+    ECHO Compilation of "%TOOLS%\GetFile.cs" failed.
+    GOTO errors
+  )
 )
 
 FOR %%F IN (%TCLKIT_FILES%) DO (
@@ -170,6 +174,7 @@ IF DEFINED TCLKIT_NOSDK GOTO skip_sdkVariables
 %__ECHO% ECHO SET TCLINCDIR=%TEMP%\%TCLKIT_SDK%\include%APPEND%"%ROOT%\SetTclKitEnv.bat"
 %__ECHO% ECHO SET TCLLIBDIR=%TEMP%\%TCLKIT_SDK%\lib%APPEND%"%ROOT%\SetTclKitEnv.bat"
 %__ECHO% ECHO SET LIBTCL=%TCLKIT_LIB%%APPEND%"%ROOT%\SetTclKitEnv.bat"
+%__ECHO% ECHO SET LIBTCLSTUB=%TCLKIT_LIB_STUB%%APPEND%"%ROOT%\SetTclKitEnv.bat"
 
 :skip_sdkVariables
 
@@ -184,8 +189,11 @@ GOTO no_errors
   IF NOT DEFINED TCLKIT_PATCHLEVEL (
     SET TCLKIT_PATCHLEVEL=8.6.4
   )
+  SET TCLKIT_VERSION=%TCLKIT_PATCHLEVEL:.=%
+  SET TCLKIT_VERSION=%TCLKIT_VERSION:~0,2%
   SET TCLKIT_EXE=tclkit-%TCLKIT_PATCHLEVEL%.exe
   SET TCLKIT_LIB=libtclkit%TCLKIT_PATCHLEVEL:.=%.lib
+  SET TCLKIT_LIB_STUB=libtclstub%TCLKIT_VERSION:.=%.a
   SET TCLKIT_SDK=libtclkit-sdk-x86-%TCLKIT_PATCHLEVEL%
   SET TCLKIT_SDK_ZIP=%TCLKIT_SDK%.zip
   SET TCLKIT_FILES=%TCLKIT_EXE% unzip.exe %TCLKIT_SDK_ZIP%
@@ -204,7 +212,10 @@ GOTO no_errors
   ) ELSE (
     SET TCLKIT_EXE=tclkit-%TCLKIT_PATCHLEVEL%.exe
   )
+  SET TCLKIT_VERSION=%TCLKIT_PATCHLEVEL:.=%
+  SET TCLKIT_VERSION=%TCLKIT_VERSION:~0,2%
   SET TCLKIT_LIB=libtclkit%TCLKIT_PATCHLEVEL:.=%.lib
+  SET TCLKIT_LIB_STUB=libtclstub%TCLKIT_VERSION:.=%.a
   SET TCLKIT_SDK=libtclkit-sdk-x64-%TCLKIT_PATCHLEVEL%
   SET TCLKIT_SDK_ZIP=%TCLKIT_SDK%.zip
   SET TCLKIT_FILES=%TCLKIT_EXE% unzip.exe %TCLKIT_SDK_ZIP%

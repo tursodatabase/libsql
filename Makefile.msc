@@ -569,6 +569,10 @@ TCLLIBDIR = c:\tcl\lib
 LIBTCL = tcl85.lib
 !ENDIF
 
+!IFNDEF LIBTCLSTUB
+LIBTCLSTUB = tclstub85.lib
+!ENDIF
+
 # The locations of the ICU header and library files.  These variables
 # (ICUINCDIR, ICULIBDIR, and LIBICU) may be overridden via the environment
 # prior to running nmake in order to match the actual installed location on
@@ -1223,7 +1227,7 @@ libsqlite3.lib:	$(LIBOBJ)
 	$(LTLIB) $(LTLIBOPTS) /OUT:$@ $(LIBOBJ) $(TLIBS)
 
 libtclsqlite3.lib:	tclsqlite.lo libsqlite3.lib
-	$(LTLIB) $(LTLIBOPTS) $(LTLIBPATHS) /OUT:$@ tclsqlite.lo libsqlite3.lib $(LIBTCL:tcl=tclstub) $(TLIBS)
+	$(LTLIB) $(LTLIBOPTS) $(LTLIBPATHS) /OUT:$@ tclsqlite.lo libsqlite3.lib $(LIBTCLSTUB) $(TLIBS)
 
 sqlite3.exe:	$(TOP)\src\shell.c $(JSON1_DEP) $(SHELL_CORE_DEP) $(LIBRESOBJS) sqlite3.h
 	$(LTLINK) $(SHELL_COMPILE_OPTS) $(JSON1_OPT) $(READLINE_FLAGS) $(TOP)\src\shell.c $(JSON1_SRC) \
