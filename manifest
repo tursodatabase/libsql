@@ -1,5 +1,5 @@
-C Remove\sanother\sinstance\sof\sstrcpy()\sfrom\sFTS5,\sto\smollify\sOpenBSD.
-D 2015-10-10T15:57:20.187
+C Work\saround\sa\s"security\sfeature"\sbug\sin\smemcpy()\son\sOpenBSD.
+D 2015-10-10T16:41:28.969
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f0088ff0d2ac949fce6de7c00f13a99ac5bdb663
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -285,7 +285,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c c3a9c4209439b806c44cf30daf466955727bf46c
 F src/bitvec.c d1f21d7d91690747881f03940584f4cc548c9d3d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c a5a653087ae98dd743d12ae0920d5b64c5335960
+F src/btree.c 0b74bc28b2dc907cba03b5b4b3b81584273be699
 F src/btree.h 40189aefdc2b830d25c8b58fd7d56538481bfdd7
 F src/btreeInt.h 8177c9ab90d772d6d2c6c517e05bed774b7c92c0
 F src/build.c d6162335d690396dfc5c4bd59e8b2b0c14ba6285
@@ -1390,7 +1390,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P bc24a5bbfd95df3518611b221de69b73776111bc
-R 35f43270ac91020433e35fde493807ce
+P 35e6248abb4435a8b26d270092b856beff867406
+R 9fd826df5b8be6e5111bab176d72d145
 U drh
-Z 62a6607ac126b7b5aac408948416878c
+Z 61d2ace382c5fa85de2f4090e2c287bd
