@@ -2215,14 +2215,16 @@ static int fts5CreateAux(
   int rc = sqlite3_overload_function(pGlobal->db, zName, -1);
   if( rc==SQLITE_OK ){
     Fts5Auxiliary *pAux;
+    int nName;                      /* Size of zName in bytes, including \0 */
     int nByte;                      /* Bytes of space to allocate */
 
-    nByte = sizeof(Fts5Auxiliary) + strlen(zName) + 1;
+    nName = (int)strlen(zName) + 1;
+    nByte = sizeof(Fts5Auxiliary) + nName;
     pAux = (Fts5Auxiliary*)sqlite3_malloc(nByte);
     if( pAux ){
       memset(pAux, 0, nByte);
       pAux->zFunc = (char*)&pAux[1];
-      strcpy(pAux->zFunc, zName);
+      memcpy(pAux->zFunc, zName, nName);
       pAux->pGlobal = pGlobal;
       pAux->pUserData = pUserData;
       pAux->xFunc = xFunc;
@@ -2494,4 +2496,3 @@ int sqlite3Fts5Init(sqlite3 *db){
   return fts5Init(db);
 }
 #endif
-

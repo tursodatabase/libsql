@@ -1,5 +1,5 @@
-C Compiler\swarning\sfixes:\s\sRename\ssome\slocal\svariables\sfrom\s"j1"\sto\savoid\sa\nname\scollision\swith\sthe\sj1()\sbessel\sfunction\sin\sthe\smath\slibrary.\s\sOmit\sa\ndummy\sinitializer\sthat\sgcc\s4.6.3\sdoes\snot\slike.
-D 2015-10-10T14:41:28.105
+C Omit\sthe\suse\sof\sstrcpy()\sin\sFTS5\ssince\sOpenBSD\shates\sstrcpy().
+D 2015-10-10T15:11:49.700
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f0088ff0d2ac949fce6de7c00f13a99ac5bdb663
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -113,7 +113,7 @@ F ext/fts5/fts5_config.c 57ee5fe71578cb494574fc0e6e51acb9a22a8695
 F ext/fts5/fts5_expr.c 1df899afed24c9c6195eea1780dcc56fcd1d1139
 F ext/fts5/fts5_hash.c 4bf4b99708848357b8a2b5819e509eb6d3df9246
 F ext/fts5/fts5_index.c e03217c37f344f79673be385de6b03f732291000
-F ext/fts5/fts5_main.c 5125711e806d5d9382b4b12f71bd8a7b5e103ec6
+F ext/fts5/fts5_main.c 833150368303efe236def0f03ee17d3d4f1c1d4b
 F ext/fts5/fts5_storage.c df061a5caf9e50fbbd43113009b5b248362f4995
 F ext/fts5/fts5_tcl.c 3bf445e66de32137d4693694ff7b1fd6074e32bd
 F ext/fts5/fts5_test_mi.c e96be827aa8f571031e65e481251dc1981d608bf
@@ -1390,7 +1390,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P de28acd42f29693341feb884b7223cd3d2b96730
-R 7bd14eb389d990bdd306d4dfa0d204c7
+P 9ddef84d432813f3ece8012047d08441caa3315d
+R e5629b6e9c75c27b580d6b996849f5e2
 U drh
-Z 96e28de24d5c75afd93b95f0019483d4
+Z b54cdc21ac2ceff0ade7c4edde93839a
