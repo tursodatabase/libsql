@@ -809,12 +809,6 @@ LTLIBPATHS = $(LTLIBPATHS) /LIBPATH:$(ICULIBDIR)
 LTLIBS = $(LTLIBS) $(LIBICU)
 !ENDIF
 
-# nawk compatible awk.
-#
-!IFNDEF NAWK
-NAWK = gawk.exe
-!ENDIF
-
 # You should not have to change anything below this line
 ###############################################################################
 
@@ -1331,7 +1325,7 @@ $(LIBRESOBJS):	$(TOP)\src\sqlite3.rc $(HDR)
 	echo #ifndef SQLITE_RESOURCE_VERSION > sqlite3rc.h
 	for /F %%V in ('type "$(TOP)\VERSION"') do ( \
 		echo #define SQLITE_RESOURCE_VERSION %%V \
-			| $(NAWK) "/.*/ { gsub(/[.]/,\",\");print }" >> sqlite3rc.h \
+			| $(TCLSH_CMD) $(TOP)\tool\replace.tcl exact . ^, >> sqlite3rc.h \
 	)
 	echo #endif >> sqlite3rc.h
 	$(LTRCOMPILE) -fo $(LIBRESOBJS) $(TOP)\src\sqlite3.rc
@@ -1576,7 +1570,7 @@ opcodes.c:	opcodes.h $(TOP)\tool\mkopcodec.tcl
 	$(TCLSH_CMD) $(TOP)\tool\mkopcodec.tcl opcodes.h > opcodes.c
 
 opcodes.h:	parse.h $(TOP)\src\vdbe.c $(TOP)\tool\mkopcodeh.tcl
-	type parse.h $(TOP)\src\vdbe.c | $(TCLSH_CMD) $(TOP)\tool\mkopcodeh.awk > opcodes.h
+	type parse.h $(TOP)\src\vdbe.c | $(TCLSH_CMD) $(TOP)\tool\mkopcodeh.tcl > opcodes.h
 
 # Rules to build parse.c and parse.h - the outputs of lemon.
 #
@@ -1858,7 +1852,7 @@ dll: sqlite3.dll
 sqlite3.def: libsqlite3.lib
 	echo EXPORTS > sqlite3.def
 	dumpbin /all libsqlite3.lib \
-		| $(NAWK) "/ 1 _?sqlite3_/ { sub(/^.* _?/,\"\");print }" \
+		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl include "^\s+1 _?(sqlite3_.*)$$" "\1" \
 		| sort >> sqlite3.def
 
 sqlite3.dll: $(LIBOBJ) $(LIBRESOBJS) $(CORE_LINK_DEP)
