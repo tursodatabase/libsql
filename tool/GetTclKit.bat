@@ -133,7 +133,7 @@ IF ERRORLEVEL 1 (
 )
 
 FOR %%F IN (%TCLKIT_FILES%) DO (
-  IF NOT EXIST "%%F" (
+  IF NOT EXIST "%TEMP%\%%F" (
     %__ECHO% "%TEMP%\GetFile.exe" "%TCLKIT_URI%%%F"
 
     IF ERRORLEVEL 1 (
@@ -154,7 +154,7 @@ IF NOT EXIST "%TEMP%\%TCLKIT_SDK%" (
   )
 )
 
-%__ECHO% "%TEMP%\unzip.exe" -o "%TEMP%\%TCLKIT_SDK_ZIP%" -d "%TEMP%\%TCLKIT_SDK%"
+%__ECHO% "%TEMP%\unzip.exe" -n "%TEMP%\%TCLKIT_SDK_ZIP%" -d "%TEMP%\%TCLKIT_SDK%"
 
 IF ERRORLEVEL 1 (
   ECHO Could not unzip "%TEMP%\%TCLKIT_SDK_ZIP%" to "%TEMP%\%TCLKIT_SDK%".
@@ -172,6 +172,11 @@ IF DEFINED TCLKIT_NOSDK GOTO skip_sdkVariables
 %__ECHO% ECHO SET LIBTCL=%TCLKIT_LIB%%APPEND%"%ROOT%\SetTclKitEnv.bat"
 
 :skip_sdkVariables
+
+ECHO.
+ECHO Wrote "%ROOT%\SetTclKitEnv.bat".
+ECHO Please run it to set the necessary Tcl environment variables.
+ECHO.
 
 GOTO no_errors
 

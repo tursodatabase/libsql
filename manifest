@@ -1,5 +1,5 @@
-C Tweak\sbatch\stool\sadded\sin\sthe\sprevious\scheck-in\sto\spermit\sthe\sbase\sURI\sto\sbe\soverridden.
-D 2015-10-09T18:48:47.670
+C More\sfine-tuning\sto\sthe\snew\sTclKit\stools.
+D 2015-10-10T00:53:28.483
 F Makefile.in 2a247c733c2dd6fab703df04dd009b26413956f5
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 17ce18bb7e9ca2ad3abed9b0a1fcbef3fbe8f307
@@ -1331,8 +1331,8 @@ F test/without_rowid6.test 1f99644e6508447fb050f73697350c7ceca3392e
 F test/wordcount.c 9915e06cb33d8ca8109b8700791afe80d305afda
 F test/zeroblob.test 3857870fe681b8185654414a9bccfde80b62a0fa
 F test/zerodamage.test cf6748bad89553cc1632be51a6f54e487e4039ac
-F tool/GetFile.cs 963f7064b0b221b08feadb28894c3537916261ac
-F tool/GetTclKit.bat b9fb86e129c43d51f53fe0320e7f5ad7c1f6a56f
+F tool/GetFile.cs a15e08acb5dd7539b75ba23501581d7c2b462cb5
+F tool/GetTclKit.bat 786f6a075beaa0187bd0e6751263f77f831bff77
 F tool/addopcodes.tcl 7cc82ecca456a6b3148abf492b0419b83140881a
 F tool/build-all-msvc.bat 761d8c82a1a529261291812732a853a1b4256d85 x
 F tool/build-shell.sh 950f47c6174f1eea171319438b93ba67ff5bf367
@@ -1389,7 +1389,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 50673ddaf813335777673fa8585997a7551e5323
-R 633d2a263e4011119b12c5c71c6c891a
+P 1d2f82df6774f8d66bfc5d67d5dad9f068a1069c
+R e581949b3345aa5207b2c38f2d8bf17e
 U mistachkin
-Z 9124d78764e09fb7c7e86be9f7b744d5
+Z 2c1d38a7e80b3d62039ba691f1ca8a45

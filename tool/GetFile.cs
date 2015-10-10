@@ -350,7 +350,7 @@ namespace GetFile
 
             if (!Uri.TryCreate(args[0], UriKind.Absolute, out uri))
             {
-                Error("First argument is not an absolute URI.", false);
+                Error("Could not create absolute URI from argument.", false);
                 return (int)ExitCode.BadUri;
             }
 
