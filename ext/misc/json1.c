@@ -71,10 +71,13 @@ static const char jsonIsSpace[] = {
 };
 #define safe_isspace(x) (jsonIsSpace[(unsigned char)x])
 
-/* Unsigned integer types */
-typedef sqlite3_uint64 u64;
-typedef unsigned int u32;
-typedef unsigned char u8;
+#ifndef SQLITE_AMALGAMATION
+  /* Unsigned integer types.  These are already defined in the sqliteInt.h,
+  ** but the definitions need to be repeated for separate compilation. */
+  typedef sqlite3_uint64 u64;
+  typedef unsigned int u32;
+  typedef unsigned char u8;
+#endif
 
 /* Objects */
 typedef struct JsonString JsonString;
