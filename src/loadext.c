@@ -615,7 +615,7 @@ int sqlite3_enable_load_extension(sqlite3 *db, int onoff){
 ** dummy pointer.
 */
 #ifdef SQLITE_OMIT_LOAD_EXTENSION
-static const sqlite3_api_routines sqlite3Apis = { 0 };
+static const sqlite3_api_routines sqlite3Apis;
 #endif
 
 

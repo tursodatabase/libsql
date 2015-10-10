@@ -564,7 +564,7 @@ void sqlite3Update(
   }
 
   if( !isView ){
-    int j1 = 0;           /* Address of jump instruction */
+    int addr1 = 0;        /* Address of jump instruction */
     int bReplace = 0;     /* True if REPLACE conflict resolution might happen */
 
     /* Do constraint checks. */
@@ -580,9 +580,9 @@ void sqlite3Update(
     /* Delete the index entries associated with the current record.  */
     if( bReplace || chngKey ){
       if( pPk ){
-        j1 = sqlite3VdbeAddOp4Int(v, OP_NotFound, iDataCur, 0, regKey, nKey);
+        addr1 = sqlite3VdbeAddOp4Int(v, OP_NotFound, iDataCur, 0, regKey, nKey);
       }else{
-        j1 = sqlite3VdbeAddOp3(v, OP_NotExists, iDataCur, 0, regOldRowid);
+        addr1 = sqlite3VdbeAddOp3(v, OP_NotExists, iDataCur, 0, regOldRowid);
       }
       VdbeCoverageNeverTaken(v);
     }
@@ -593,7 +593,7 @@ void sqlite3Update(
       sqlite3VdbeAddOp2(v, OP_Delete, iDataCur, 0);
     }
     if( bReplace || chngKey ){
-      sqlite3VdbeJumpHere(v, j1);
+      sqlite3VdbeJumpHere(v, addr1);
     }
 
     if( hasFK ){
