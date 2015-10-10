@@ -1,8 +1,8 @@
-C Fix\stypo\sin\sthe\sMSVC\smakefile.\s\sReplace\sremaining\suses\sof\sAWK\sin\sthe\sMSVC\smakefile\swith\sa\sTcl\sscript.
-D 2015-10-10T01:55:57.399
+C Remove\sa\scouple\ssuperfluous\sdouble\squotes\sin\sthe\sMSVC\smakefile.
+D 2015-10-10T02:06:05.870
 F Makefile.in 2a247c733c2dd6fab703df04dd009b26413956f5
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc d40af03b1453a4f5b132cfa5ffef36a4c4fc3338
+F Makefile.msc b32cae4343a16d4eb1c0dec49ee6877e54ad9678
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION ccfc4d1576dbfdeece0a4372a2e6a2e37d3e7975
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -1390,7 +1390,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 43addd8aa04c3faceb9d303672e330294af01a16
-R 006632f80fd4c638e12a5eb804e62e4f
+P f8c2193b64979a2fe480fcf913573b5fac06235e
+R 7cc2a5813618966360cf80bf66f0084c
 U mistachkin
-Z 791ad8ca8445d57bc0ffe78a443c7839
+Z d70bac36f21bbf58c368f1d4e150ed30
