@@ -1266,7 +1266,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       if( pOrTerm->leftCursor==iCur || (pOrTerm->eOperator & WO_AND)!=0 ){
         WhereInfo *pSubWInfo;           /* Info for single OR-term scan */
         Expr *pOrExpr = pOrTerm->pExpr; /* Current OR clause term */
-        int j1 = 0;                     /* Address of jump operation */
+        int jmp1 = 0;                   /* Address of jump operation */
         if( pAndExpr && !ExprHasProperty(pOrExpr, EP_FromJoin) ){
           pAndExpr->pLeft = pOrExpr;
           pOrExpr = pAndExpr;
@@ -1293,7 +1293,8 @@ Bitmask sqlite3WhereCodeOneLoopStart(
             int iSet = ((ii==pOrWc->nTerm-1)?-1:ii);
             if( HasRowid(pTab) ){
               r = sqlite3ExprCodeGetColumn(pParse, pTab, -1, iCur, regRowid, 0);
-              j1 = sqlite3VdbeAddOp4Int(v, OP_RowSetTest, regRowset, 0, r,iSet);
+              jmp1 = sqlite3VdbeAddOp4Int(v, OP_RowSetTest, regRowset, 0,
+                                           r,iSet);
               VdbeCoverage(v);
             }else{
               Index *pPk = sqlite3PrimaryKeyIndex(pTab);
@@ -1323,7 +1324,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
               ** need to insert the key into the temp table, as it will never 
               ** be tested for.  */ 
               if( iSet ){
-                j1 = sqlite3VdbeAddOp4Int(v, OP_Found, regRowset, 0, r, nPk);
+                jmp1 = sqlite3VdbeAddOp4Int(v, OP_Found, regRowset, 0, r, nPk);
                 VdbeCoverage(v);
               }
               if( iSet>=0 ){
@@ -1342,7 +1343,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
 
           /* Jump here (skipping the main loop body subroutine) if the
           ** current sub-WHERE row is a duplicate from prior sub-WHEREs. */
-          if( j1 ) sqlite3VdbeJumpHere(v, j1);
+          if( jmp1 ) sqlite3VdbeJumpHere(v, jmp1);
 
           /* The pSubWInfo->untestedTerms flag means that this OR term
           ** contained one or more AND term from a notReady table.  The
