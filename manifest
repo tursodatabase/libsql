@@ -1,5 +1,5 @@
-C Remove\san\sunreachable\sbranch\sin\sthe\squery\sflattener\ssubstitution\slogic.
-D 2015-10-11T20:08:31.981
+C Detect\sand\sreport\scircularly\sdefined\sviews\seven\sif\sthe\sviews\shave\sthe\ncolumns\sdefined\sin\sthe\sCREATE\sVIEW\sstatement.
+D 2015-10-11T20:39:46.984
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f0088ff0d2ac949fce6de7c00f13a99ac5bdb663
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -343,7 +343,7 @@ F src/printf.c 0c4bcdd1c2e2521024f0a69cb5eb334f86b3652a
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 1954a0f01bf65d78d7d559aea3d5c67f33376d91
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c f70b36caa607655a8417198389f1802a56b1c8b6
+F src/select.c 0bc9cd2e1cacfdc9cdc9a83884cc100f166e80a4
 F src/shell.c d25df04168d6ba5a4fa05bdbf859df667f9eb621
 F src/sqlite.h.in 4b76d74d69af48c534c58fb723137dc6944bdedc
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
@@ -1253,7 +1253,7 @@ F test/vacuum3.test 77ecdd54592b45a0bcb133339f99f1ae0ae94d0d
 F test/vacuum4.test d3f8ecff345f166911568f397d2432c16d2867d9
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/veryquick.test 57ab846bacf7b90cf4e9a672721ea5c5b669b661
-F test/view.test 0d8935e64867ae01492347884f5cbb47f056f4c8
+F test/view.test f6c3a39e0c819891265e1d0754e99960d81ef6c9
 F test/vtab1.test 6210e076997f176bedc300a87ad6404651b601dd
 F test/vtab2.test f8cd1bb9aba7143eba97812d9617880a36d247ad
 F test/vtab3.test b45f47d20f225ccc9c28dc915d92740c2dee311e
@@ -1390,7 +1390,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3d0bd95e977db50c314d33ec292f99e0539d7b4a
-R 0631d5a91a7b127155b4e818909096dd
+P 46ee3453a31b5e793d5aaad471cec1b1a11ab2cf
+R f02e8925b44dc59b1569a7e5ccbd6813
 U drh
-Z ec249e682dee8ecef8754c1790b6f485
+Z 2390f857ae51a8bc2278cbec6c80566a

@@ -4248,6 +4248,7 @@ static int selectExpander(Walker *pWalker, Select *p){
       pTab->nRef++;
 #if !defined(SQLITE_OMIT_VIEW) || !defined (SQLITE_OMIT_VIRTUALTABLE)
       if( pTab->pSelect || IsVirtual(pTab) ){
+        i16 nCol;
         if( sqlite3ViewGetColumnNames(pParse, pTab) ) return WRC_Abort;
         assert( pFrom->pSelect==0 );
         if( pFrom->fg.isTabFunc && !IsVirtual(pTab) ){
@@ -4256,7 +4257,10 @@ static int selectExpander(Walker *pWalker, Select *p){
         }
         pFrom->pSelect = sqlite3SelectDup(db, pTab->pSelect, 0);
         sqlite3SelectSetName(pFrom->pSelect, pTab->zName);
+        nCol = pTab->nCol;
+        pTab->nCol = -1;
         sqlite3WalkSelect(pWalker, pFrom->pSelect);
+        pTab->nCol = nCol;
       }
 #endif
     }

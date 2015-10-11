@@ -499,6 +499,13 @@ do_test view-14.1 {
     SELECT * FROM temp.t1;
   }
 } {1 {view t1 is circularly defined}}
+do_test view-14.2 {
+  catchsql {
+    DROP VIEW IF EXISTS temp.t1;
+    CREATE TEMP VIEW t1(a,b) AS SELECT a,b FROM t1;
+    SELECT * FROM temp.t1;
+  }
+} {1 {view t1 is circularly defined}}
 
 # Tickets #1688, #1709
 #
