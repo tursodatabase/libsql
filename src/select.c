@@ -3156,12 +3156,11 @@ static void substSelect(
     p->pHaving = substExpr(db, p->pHaving, iTable, pEList);
     p->pWhere = substExpr(db, p->pWhere, iTable, pEList);
     pSrc = p->pSrc;
-    if( pSrc ){
-      for(i=pSrc->nSrc, pItem=pSrc->a; i>0; i--, pItem++){
-        substSelect(db, pItem->pSelect, iTable, pEList, 1);
-        if( pItem->fg.isTabFunc ){
-          substExprList(db, pItem->u1.pFuncArg, iTable, pEList);
-        }
+    assert( pSrc!=0 );
+    for(i=pSrc->nSrc, pItem=pSrc->a; i>0; i--, pItem++){
+      substSelect(db, pItem->pSelect, iTable, pEList, 1);
+      if( pItem->fg.isTabFunc ){
+        substExprList(db, pItem->u1.pFuncArg, iTable, pEList);
       }
     }
   }while( doPrior && (p = p->pPrior)!=0 );

@@ -1,5 +1,5 @@
-C Improved\ssubstitution\slogic\sin\sthe\squery\sflattener.\s\sSaves\scode\sspace,\sand\n(more\simportantly)\sworks\scorrectly\swith\stable-valued\sfunctions.
-D 2015-10-11T19:46:59.677
+C Remove\san\sunreachable\sbranch\sin\sthe\squery\sflattener\ssubstitution\slogic.
+D 2015-10-11T20:08:31.981
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f0088ff0d2ac949fce6de7c00f13a99ac5bdb663
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -343,7 +343,7 @@ F src/printf.c 0c4bcdd1c2e2521024f0a69cb5eb334f86b3652a
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 1954a0f01bf65d78d7d559aea3d5c67f33376d91
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c 0e0899675f9f2bdf93f5779906709f5c3009d465
+F src/select.c f70b36caa607655a8417198389f1802a56b1c8b6
 F src/shell.c d25df04168d6ba5a4fa05bdbf859df667f9eb621
 F src/sqlite.h.in 4b76d74d69af48c534c58fb723137dc6944bdedc
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
@@ -1390,7 +1390,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fab6f09044d033dd09ed8a22e06bc6a7851bbabf
-R 0a60e7c34e5485b5033bf31572e696c0
+P 3d0bd95e977db50c314d33ec292f99e0539d7b4a
+R 0631d5a91a7b127155b4e818909096dd
 U drh
-Z 976ba04014f2425afb980aca8bc89218
+Z ec249e682dee8ecef8754c1790b6f485
