@@ -1,5 +1,5 @@
-C The\sTclKit\sbatch\stool\sshould\snot\sdownload\sthe\sTclKit\sSDK\swhen\sthe\sTCLKIT_NOSDK\senvironment\svariable\sis\sset.
-D 2015-10-12T03:44:39.745
+C Remove\sAWK\srequirement\sfrom\sthe\sMSVC\sbatch\sbuild\stool.
+D 2015-10-12T03:56:21.327
 F Makefile.in 2a247c733c2dd6fab703df04dd009b26413956f5
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc f846966b1c38bdc12a384bd48bfbdb257fb5b558
@@ -1334,7 +1334,7 @@ F test/zerodamage.test cf6748bad89553cc1632be51a6f54e487e4039ac
 F tool/GetFile.cs a15e08acb5dd7539b75ba23501581d7c2b462cb5
 F tool/GetTclKit.bat f8159730269bdbf5c334383134011dda4df45511
 F tool/addopcodes.tcl 7cc82ecca456a6b3148abf492b0419b83140881a
-F tool/build-all-msvc.bat 761d8c82a1a529261291812732a853a1b4256d85 x
+F tool/build-all-msvc.bat 2b1703b322da121e56b955cb58de091107f777c3 x
 F tool/build-shell.sh 950f47c6174f1eea171319438b93ba67ff5bf367
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
 F tool/extract.c 054069d81b095fbdc189a6f5d4466e40380505e2
@@ -1390,7 +1390,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P bc6223b1d6c31a47c7b734cfb8a9ecf15ab809fc
-R 47fe09613250f52fb94741367469a8c4
+P 7c5d583bac89f8db94e7f73df09e1d04f0f24990
+R 47cd1b08f2579a86c3f7eed6daa15a48
 U mistachkin
-Z c3b529016ed8bb4851b8f9db9d7c6231
+Z 42590804f6e58f764778427b7ddbdea9
