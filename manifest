@@ -1,5 +1,5 @@
-C Fix\sa\scouple\sharmless\scompiler\swarnings.
-D 2015-10-12T22:20:29.991
+C Remove\sthe\sunused\sfts5ExprColsetTest()\sroutine.
+D 2015-10-12T22:31:02.804
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f0088ff0d2ac949fce6de7c00f13a99ac5bdb663
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -110,7 +110,7 @@ F ext/fts5/fts5Int.h 38667e39859ff3f3bc91f47efe672023a145a118
 F ext/fts5/fts5_aux.c b09aa27dcdaa3d50a30be433fddaa48a50aa827b
 F ext/fts5/fts5_buffer.c e99224a316cc5b2c574ccccdc7f2344bca54784d
 F ext/fts5/fts5_config.c 57ee5fe71578cb494574fc0e6e51acb9a22a8695
-F ext/fts5/fts5_expr.c 17a945210cbc0cd29f03a87fd30ab7bf994ed16c
+F ext/fts5/fts5_expr.c bc31478fd04de55150031f6e6a652939d3e335ac
 F ext/fts5/fts5_hash.c 4bf4b99708848357b8a2b5819e509eb6d3df9246
 F ext/fts5/fts5_index.c f73968357818455039ecb79dcd4b082c3baaeaeb
 F ext/fts5/fts5_main.c bf43550b8e9a68514abd179500f1917a2256cd7a
@@ -1390,7 +1390,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1c20c1c28b56411f106cf2f6961b3ad4b4d6f6c8
-R afbc852dad884213e6cdc034cff88444
-U mistachkin
-Z 86c808002d54e8263a5056aea0515a65
+P 7f896a971c5953d5370215ecd834d1fb711b4263
+R 9caea6f3d0d85e53ac44439278fad807
+U drh
+Z 910ebb884723e98753b60b18fc83ff4b

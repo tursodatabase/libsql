@@ -271,14 +271,6 @@ void sqlite3Fts5ExprFree(Fts5Expr *p){
   }
 }
 
-static int fts5ExprColsetTest(Fts5Colset *pColset, int iCol){
-  int i;
-  for(i=0; i<pColset->nCol; i++){
-    if( pColset->aiCol[i]==iCol ) return 1;
-  }
-  return 0;
-}
-
 /*
 ** Argument pTerm must be a synonym iterator. Return the current rowid
 ** that it points to.
@@ -2242,4 +2234,3 @@ int sqlite3Fts5ExprPoslist(Fts5Expr *pExpr, int iPhrase, const u8 **pa){
   }
   return nRet;
 }
-
