@@ -885,7 +885,7 @@ static int jsonParseFindParents(JsonParse *pParse){
 ** Compare the OBJECT label at pNode against zKey,nKey.  Return true on
 ** a match.
 */
-static int jsonLabelCompare(JsonNode *pNode, const char *zKey, int nKey){
+static int jsonLabelCompare(JsonNode *pNode, const char *zKey, u32 nKey){
   if( pNode->jnFlags & JNODE_RAW ){
     if( pNode->n!=nKey ) return 0;
     return strncmp(pNode->u.zJContent, zKey, nKey)==0;

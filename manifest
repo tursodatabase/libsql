@@ -1,5 +1,5 @@
-C Further\stweaks\sto\simprove\sfts5\sprefix\squery\sperformance.
-D 2015-10-12T19:12:29.091
+C Fix\sa\scouple\sharmless\scompiler\swarnings.
+D 2015-10-12T22:20:29.991
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f0088ff0d2ac949fce6de7c00f13a99ac5bdb663
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -198,7 +198,7 @@ F ext/misc/eval.c f971962e92ebb8b0a4e6b62949463ee454d88fa2
 F ext/misc/fileio.c d4171c815d6543a9edef8308aab2951413cd8d0f
 F ext/misc/fuzzer.c 4c84635c71c26cfa7c2e5848cf49fe2d2cfcd767
 F ext/misc/ieee754.c b0362167289170627659e84173f5d2e8fee8566e
-F ext/misc/json1.c e827cb3148e7db283e4b6ca36a0c16480bf8e743
+F ext/misc/json1.c d31022098b0c4c7c2c1781cb328180a4da6fbdb3
 F ext/misc/nextchar.c 35c8b8baacb96d92abbb34a83a997b797075b342
 F ext/misc/percentile.c bcbee3c061b884eccb80e21651daaae8e1e43c63
 F ext/misc/regexp.c af92cdaa5058fcec1451e49becc7ba44dba023dc
@@ -753,7 +753,7 @@ F test/fuzz2.test 76dc35b32b6d6f965259508508abce75a6c4d7e1
 F test/fuzz3.test 53fabcd5f0f430f8b221282f6c12c4d0903c21eb
 F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
 F test/fuzz_malloc.test 328f70aaca63adf29b4c6f06505ed0cf57ca7c26
-F test/fuzzcheck.c b8eb7ee40f6d28548a0b028e0676293522f3427f
+F test/fuzzcheck.c 73d7c49980c1a380f1dff52df9c6d67c854d92ea
 F test/fuzzdata1.db 7ee3227bad0e7ccdeb08a9e6822916777073c664
 F test/fuzzdata2.db f03a420d3b822cc82e4f894ca957618fbe9c4973
 F test/fuzzdata3.db c6586d3e3cef0fbc18108f9bb649aa77bfc38aba
@@ -1390,7 +1390,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6f2858f6817ca70c132f0437ac2f0f74deb273d2
-R 648c7563956f80fd03a6301b24b597df
-U dan
-Z 3852831c6b0a26fcaca66c9a24d96d73
+P 1c20c1c28b56411f106cf2f6961b3ad4b4d6f6c8
+R afbc852dad884213e6cdc034cff88444
+U mistachkin
+Z 86c808002d54e8263a5056aea0515a65
