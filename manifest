@@ -1,5 +1,5 @@
-C Detect\sand\sreport\scircularly\sdefined\sviews\seven\sif\sthe\sviews\shave\sthe\ncolumns\sdefined\sin\sthe\sCREATE\sVIEW\sstatement.
-D 2015-10-11T20:39:46.984
+C Change\sall\sreferences\sto\s3.8.12\sinto\s3.9.0.\s\sComment\schanges\sonly\s-\sno\nchanges\sto\scode.
+D 2015-10-12T04:56:12.349
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f0088ff0d2ac949fce6de7c00f13a99ac5bdb663
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -307,7 +307,7 @@ F src/insert.c 3c522beb5bf50a2efee1fca1e80fd40942e5817c
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c d344a95d60c24e2f490ee59db9784b1b17439012
-F src/loadext.c b3f1a529245b14c881b270a9f29fae6c5727cde8
+F src/loadext.c c5916a158f1fb74d955847c84f7ebdb6f5de9d8c
 F src/main.c fec97668771438033a7559883401067b139729e1
 F src/malloc.c 3a37ce6979a40f499d8cea9e9ab4e8517854d35d
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
@@ -345,9 +345,9 @@ F src/resolve.c 1954a0f01bf65d78d7d559aea3d5c67f33376d91
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 0bc9cd2e1cacfdc9cdc9a83884cc100f166e80a4
 F src/shell.c d25df04168d6ba5a4fa05bdbf859df667f9eb621
-F src/sqlite.h.in 4b76d74d69af48c534c58fb723137dc6944bdedc
+F src/sqlite.h.in dc35357824c6bb84a04acd4e99dee3e07299a8c6
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
-F src/sqlite3ext.h 64350bf36833a56ad675e27392a913f417c5c308
+F src/sqlite3ext.h 4b66e3e3435da4b4c8c83696d0349f0c503b3924
 F src/sqliteInt.h e21cc96bc24161df7373f6b24367cf580496889d
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c f266ad8a2892d659b74f0f50cb6a88b6e7c12179
@@ -1390,7 +1390,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 46ee3453a31b5e793d5aaad471cec1b1a11ab2cf
-R f02e8925b44dc59b1569a7e5ccbd6813
+P 9ab9c8c6d747647f8ade58c2c4812fc69a813368
+R 84edb3e7271e5a0e0aa256262a048c3a
 U drh
-Z 2390f857ae51a8bc2278cbec6c80566a
+Z 934ebb8a1ac47019300027e32a36b72c
