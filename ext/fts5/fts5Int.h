@@ -254,7 +254,6 @@ int sqlite3Fts5Get32(const u8*);
 typedef struct Fts5PoslistReader Fts5PoslistReader;
 struct Fts5PoslistReader {
   /* Variables used only by sqlite3Fts5PoslistIterXXX() functions. */
-  int iCol;                       /* If (iCol>=0), this column only */
   const u8 *a;                    /* Position list to iterate through */
   int n;                          /* Size of buffer at a[] in bytes */
   int i;                          /* Current offset in a[] */
@@ -266,7 +265,6 @@ struct Fts5PoslistReader {
   i64 iPos;                       /* (iCol<<32) + iPos */
 };
 int sqlite3Fts5PoslistReaderInit(
-  int iCol,                       /* If (iCol>=0), this column only */
   const u8 *a, int n,             /* Poslist buffer to iterate through */
   Fts5PoslistReader *pIter        /* Iterator object to initialize */
 );
@@ -347,7 +345,7 @@ int sqlite3Fts5IterEof(Fts5IndexIter*);
 int sqlite3Fts5IterNext(Fts5IndexIter*);
 int sqlite3Fts5IterNextFrom(Fts5IndexIter*, i64 iMatch);
 i64 sqlite3Fts5IterRowid(Fts5IndexIter*);
-int sqlite3Fts5IterPoslist(Fts5IndexIter*, const u8 **pp, int *pn, i64 *pi);
+int sqlite3Fts5IterPoslist(Fts5IndexIter*,Fts5Colset*, const u8**, int*, i64*);
 int sqlite3Fts5IterPoslistBuffer(Fts5IndexIter *pIter, Fts5Buffer *pBuf);
 
 /*

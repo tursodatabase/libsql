@@ -349,7 +349,7 @@ static int fts5VocabNextMethod(sqlite3_vtab_cursor *pCursor){
         i64 iPos = 0;               /* 64-bit position read from poslist */
         int iOff = 0;               /* Current offset within position list */
 
-        rc = sqlite3Fts5IterPoslist(pCsr->pIter, &pPos, &nPos, &dummy);
+        rc = sqlite3Fts5IterPoslist(pCsr->pIter, 0, &pPos, &nPos, &dummy);
         if( rc==SQLITE_OK ){
           if( pTab->eType==FTS5_VOCAB_ROW ){
             while( 0==sqlite3Fts5PoslistNext64(pPos, nPos, &iOff, &iPos) ){
