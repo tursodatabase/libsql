@@ -1051,7 +1051,6 @@ int main(int argc, char **argv){
   
     /* Print the description, if there is one */
     if( !quietFlag ){
-      int i;
       zDbName = azSrcDb[iSrcDb];
       i = strlen(zDbName) - 1;
       while( i>0 && zDbName[i-1]!='/' && zDbName[i-1]!='\\' ){ i--; }

@@ -1643,7 +1643,7 @@ static int fts5CacheInstArray(Fts5Cursor *pCsr){
     for(i=0; i<nIter; i++){
       const u8 *a;
       int n = fts5CsrPoslist(pCsr, i, &a);
-      sqlite3Fts5PoslistReaderInit(-1, a, n, &aIter[i]);
+      sqlite3Fts5PoslistReaderInit(a, n, &aIter[i]);
     }
 
     while( 1 ){

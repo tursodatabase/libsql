@@ -203,26 +203,20 @@ int sqlite3Fts5PoslistNext64(
 ** if the iterator reaches EOF, or false otherwise.
 */
 int sqlite3Fts5PoslistReaderNext(Fts5PoslistReader *pIter){
-  if( sqlite3Fts5PoslistNext64(pIter->a, pIter->n, &pIter->i, &pIter->iPos) 
-   || (pIter->iCol>=0 && (pIter->iPos >> 32) > pIter->iCol)
-  ){
+  if( sqlite3Fts5PoslistNext64(pIter->a, pIter->n, &pIter->i, &pIter->iPos) ){
     pIter->bEof = 1;
   }
   return pIter->bEof;
 }
 
 int sqlite3Fts5PoslistReaderInit(
-  int iCol,                       /* If (iCol>=0), this column only */
   const u8 *a, int n,             /* Poslist buffer to iterate through */
   Fts5PoslistReader *pIter        /* Iterator object to initialize */
 ){
   memset(pIter, 0, sizeof(*pIter));
   pIter->a = a;
   pIter->n = n;
-  pIter->iCol = iCol;
-  do {
-    sqlite3Fts5PoslistReaderNext(pIter);
-  }while( pIter->bEof==0 && (pIter->iPos >> 32)<iCol );
+  sqlite3Fts5PoslistReaderNext(pIter);
   return pIter->bEof;
 }
 
