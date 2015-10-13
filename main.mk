@@ -384,8 +384,7 @@ TESTSRC2 = \
   $(TOP)/ext/fts3/fts3_expr.c \
   $(TOP)/ext/fts3/fts3_tokenizer.c \
   $(TOP)/ext/fts3/fts3_write.c \
-  $(TOP)/ext/async/sqlite3async.c \
-  $(FTS5_SRC)
+  $(TOP)/ext/async/sqlite3async.c
 
 # Header files used by all library source files.
 #

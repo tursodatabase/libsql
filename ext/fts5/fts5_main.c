@@ -1643,7 +1643,7 @@ static int fts5CacheInstArray(Fts5Cursor *pCsr){
     for(i=0; i<nIter; i++){
       const u8 *a;
       int n = fts5CsrPoslist(pCsr, i, &a);
-      sqlite3Fts5PoslistReaderInit(-1, a, n, &aIter[i]);
+      sqlite3Fts5PoslistReaderInit(a, n, &aIter[i]);
     }
 
     while( 1 ){
@@ -2215,14 +2215,16 @@ static int fts5CreateAux(
   int rc = sqlite3_overload_function(pGlobal->db, zName, -1);
   if( rc==SQLITE_OK ){
     Fts5Auxiliary *pAux;
+    int nName;                      /* Size of zName in bytes, including \0 */
     int nByte;                      /* Bytes of space to allocate */
 
-    nByte = sizeof(Fts5Auxiliary) + strlen(zName) + 1;
+    nName = (int)strlen(zName) + 1;
+    nByte = sizeof(Fts5Auxiliary) + nName;
     pAux = (Fts5Auxiliary*)sqlite3_malloc(nByte);
     if( pAux ){
       memset(pAux, 0, nByte);
       pAux->zFunc = (char*)&pAux[1];
-      strcpy(pAux->zFunc, zName);
+      memcpy(pAux->zFunc, zName, nName);
       pAux->pGlobal = pGlobal;
       pAux->pUserData = pUserData;
       pAux->xFunc = xFunc;
@@ -2250,15 +2252,17 @@ static int fts5CreateTokenizer(
 ){
   Fts5Global *pGlobal = (Fts5Global*)pApi;
   Fts5TokenizerModule *pNew;
+  int nName;                      /* Size of zName and its \0 terminator */
   int nByte;                      /* Bytes of space to allocate */
   int rc = SQLITE_OK;
 
-  nByte = sizeof(Fts5TokenizerModule) + strlen(zName) + 1;
+  nName = (int)strlen(zName) + 1;
+  nByte = sizeof(Fts5TokenizerModule) + nName;
   pNew = (Fts5TokenizerModule*)sqlite3_malloc(nByte);
   if( pNew ){
     memset(pNew, 0, nByte);
     pNew->zName = (char*)&pNew[1];
-    strcpy(pNew->zName, zName);
+    memcpy(pNew->zName, zName, nName);
     pNew->pUserData = pUserData;
     pNew->x = *pTokenizer;
     pNew->xDestroy = xDestroy;
@@ -2494,4 +2498,3 @@ int sqlite3Fts5Init(sqlite3 *db){
   return fts5Init(db);
 }
 #endif
-

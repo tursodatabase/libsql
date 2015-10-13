@@ -5657,9 +5657,9 @@ struct sqlite3_module {
 ** to included crashing the application). The estimatedRows field should
 ** therefore only be used if [sqlite3_libversion_number()] returns a
 ** value greater than or equal to 3008002. Similarly, the idxFlags field
-** was added for version 3.8.12. It may therefore only be used if
+** was added for version 3.9.0. It may therefore only be used if
 ** sqlite3_libversion_number() returns a value greater than or equal to
-** 3008012.
+** 3009000.
 */
 struct sqlite3_index_info {
   /* Inputs */
@@ -5687,7 +5687,7 @@ struct sqlite3_index_info {
   double estimatedCost;           /* Estimated cost of using this index */
   /* Fields below are only available in SQLite 3.8.2 and later */
   sqlite3_int64 estimatedRows;    /* Estimated number of rows returned */
-  /* Fields below are only available in SQLite 3.8.12 and later */
+  /* Fields below are only available in SQLite 3.9.0 and later */
   int idxFlags;              /* Mask of SQLITE_INDEX_SCAN_* flags */
 };
 
