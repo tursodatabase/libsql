@@ -569,6 +569,10 @@ TCLLIBDIR = c:\tcl\lib
 LIBTCL = tcl85.lib
 !ENDIF
 
+!IFNDEF LIBTCLSTUB
+LIBTCLSTUB = tclstub85.lib
+!ENDIF
+
 # The locations of the ICU header and library files.  These variables
 # (ICUINCDIR, ICULIBDIR, and LIBICU) may be overridden via the environment
 # prior to running nmake in order to match the actual installed location on
@@ -807,12 +811,6 @@ LTLIBS = $(LIBTCL)
 !IF $(USE_ICU)!=0
 LTLIBPATHS = $(LTLIBPATHS) /LIBPATH:$(ICULIBDIR)
 LTLIBS = $(LTLIBS) $(LIBICU)
-!ENDIF
-
-# nawk compatible awk.
-#
-!IFNDEF NAWK
-NAWK = gawk.exe
 !ENDIF
 
 # You should not have to change anything below this line
@@ -1230,7 +1228,7 @@ libsqlite3.lib:	$(LIBOBJ)
 	$(LTLIB) $(LTLIBOPTS) /OUT:$@ $(LIBOBJ) $(TLIBS)
 
 libtclsqlite3.lib:	tclsqlite.lo libsqlite3.lib
-	$(LTLIB) $(LTLIBOPTS) $(LTLIBPATHS) /OUT:$@ tclsqlite.lo libsqlite3.lib $(LIBTCL:tcl=tclstub) $(TLIBS)
+	$(LTLIB) $(LTLIBOPTS) $(LTLIBPATHS) /OUT:$@ tclsqlite.lo libsqlite3.lib $(LIBTCLSTUB) $(TLIBS)
 
 sqlite3.exe:	$(TOP)\src\shell.c $(SHELL_CORE_DEP) $(LIBRESOBJS) sqlite3.h
 	$(LTLINK) $(SHELL_COMPILE_OPTS) $(SHELL_COMPILE_OPTS) $(READLINE_FLAGS) $(TOP)\src\shell.c \
@@ -1334,7 +1332,7 @@ $(LIBRESOBJS):	$(TOP)\src\sqlite3.rc $(HDR)
 	echo #ifndef SQLITE_RESOURCE_VERSION > sqlite3rc.h
 	for /F %%V in ('type "$(TOP)\VERSION"') do ( \
 		echo #define SQLITE_RESOURCE_VERSION %%V \
-			| $(NAWK) "/.*/ { gsub(/[.]/,\",\");print }" >> sqlite3rc.h \
+			| $(TCLSH_CMD) $(TOP)\tool\replace.tcl exact . ^, >> sqlite3rc.h \
 	)
 	echo #endif >> sqlite3rc.h
 	$(LTRCOMPILE) -fo $(LIBRESOBJS) $(TOP)\src\sqlite3.rc
@@ -1575,22 +1573,22 @@ tclsqlite3.exe:	tclsqlite-shell.lo $(SQLITE3C) $(LIBRESOBJS)
 
 # Rules to build opcodes.c and opcodes.h
 #
-opcodes.c:	opcodes.h $(TOP)\mkopcodec.awk
-	$(NAWK) -f $(TOP)\mkopcodec.awk opcodes.h > opcodes.c
+opcodes.c:	opcodes.h $(TOP)\tool\mkopcodec.tcl
+	$(TCLSH_CMD) $(TOP)\tool\mkopcodec.tcl opcodes.h > opcodes.c
 
-opcodes.h:	parse.h $(TOP)\src\vdbe.c $(TOP)\mkopcodeh.awk
-	type parse.h $(TOP)\src\vdbe.c | $(NAWK) -f $(TOP)\mkopcodeh.awk > opcodes.h
+opcodes.h:	parse.h $(TOP)\src\vdbe.c $(TOP)\tool\mkopcodeh.tcl
+	type parse.h $(TOP)\src\vdbe.c | $(TCLSH_CMD) $(TOP)\tool\mkopcodeh.tcl > opcodes.h
 
 # Rules to build parse.c and parse.h - the outputs of lemon.
 #
 parse.h:	parse.c
 
-parse.c:	$(TOP)\src\parse.y lemon.exe $(TOP)\addopcodes.awk
+parse.c:	$(TOP)\src\parse.y lemon.exe $(TOP)\tool\addopcodes.tcl
 	del /Q parse.y parse.h parse.h.temp 2>NUL
 	copy $(TOP)\src\parse.y .
 	.\lemon.exe $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS) $(OPTS) parse.y
 	move parse.h parse.h.temp
-	$(NAWK) -f $(TOP)\addopcodes.awk parse.h.temp > parse.h
+	$(TCLSH_CMD) $(TOP)\tool\addopcodes.tcl parse.h.temp > parse.h
 
 sqlite3.h:	$(TOP)\src\sqlite.h.in $(TOP)\manifest.uuid $(TOP)\VERSION
 	$(TCLSH_CMD) $(TOP)\tool\mksqlite3h.tcl $(TOP:\=/) > sqlite3.h
@@ -1777,7 +1775,7 @@ sqlite3_analyzer.c: $(SQLITE3C) $(TOP)\src\tclsqlite.c $(TOP)\tool\spaceanal.tcl
 	copy $@ + $(SQLITE3C) + $(TOP)\src\tclsqlite.c $@
 	echo static const char *tclsh_main_loop(void){ >> $@
 	echo static const char *zMainloop = >> $@
-	$(NAWK) -f $(TOP)\tool\tostr.awk $(TOP)\tool\spaceanal.tcl >> $@
+	$(TCLSH_CMD) $(TOP)\tool\tostr.tcl $(TOP)\tool\spaceanal.tcl >> $@
 	echo ; return zMainloop; } >> $@
 
 sqlite3_analyzer.exe:	sqlite3_analyzer.c $(LIBRESOBJS)
@@ -1861,7 +1859,7 @@ dll: sqlite3.dll
 sqlite3.def: libsqlite3.lib
 	echo EXPORTS > sqlite3.def
 	dumpbin /all libsqlite3.lib \
-		| $(NAWK) "/ 1 _?sqlite3_/ { sub(/^.* _?/,\"\");print }" \
+		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl include "^\s+1 _?(sqlite3_.*)$$" \1 \
 		| sort >> sqlite3.def
 
 sqlite3.dll: $(LIBOBJ) $(LIBRESOBJS) $(CORE_LINK_DEP)
