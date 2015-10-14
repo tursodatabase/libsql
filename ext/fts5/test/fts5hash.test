@@ -84,11 +84,13 @@ lappend vocab xyz
 do_execsql_test 1.1 {
   CREATE VIRTUAL TABLE vocab USING fts5vocab(eee, 'row'); 
   BEGIN;
-    WITH ii(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM ii WHERE i<100)
-    INSERT INTO eee SELECT r($vocab, 5), r($vocab, 7) FROM ii;
-    INSERT INTO eee(eee) VALUES('integrity-check');
 }
-
+do_test 1.2 {
+  for {set i 1} {$i <= 100} {incr i} {
+    execsql { INSERT INTO eee VALUES( r($vocab, 5), r($vocab, 7) ) }
+  }
+} {}
+  
 do_test 1.2 {
   db eval { SELECT term, doc FROM vocab } {
     set nRow [db one {SELECT count(*) FROM eee WHERE eee MATCH $term}]

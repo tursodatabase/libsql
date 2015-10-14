@@ -725,17 +725,7 @@ int sqlite3Fts5StorageContentInsert(
   }else{
     sqlite3_stmt *pInsert = 0;    /* Statement to write %_content table */
     int i;                        /* Counter variable */
-#if 0
-    if( eConflict==SQLITE_REPLACE ){
-      eStmt = FTS5_STMT_REPLACE_CONTENT;
-      rc = fts5StorageDeleteFromIndex(p, sqlite3_value_int64(apVal[1]));
-    }else{
-      eStmt = FTS5_STMT_INSERT_CONTENT;
-    }
-#endif
-    if( rc==SQLITE_OK ){
-      rc = fts5StorageGetStmt(p, FTS5_STMT_INSERT_CONTENT, &pInsert, 0);
-    }
+    rc = fts5StorageGetStmt(p, FTS5_STMT_INSERT_CONTENT, &pInsert, 0);
     for(i=1; rc==SQLITE_OK && i<=pConfig->nCol+1; i++){
       rc = sqlite3_bind_value(pInsert, i, apVal[i]);
     }
