@@ -1,5 +1,5 @@
-C Avoid\sexporting\ssqlite3_json_init()\sfrom\samalgamation\sbuilds.
-D 2015-10-14T18:45:42.476
+C Fix\sfuzzcheck.c\sso\sthat\sit\sassumes\sthat\sJSON1\sis\salready\scompiled\sin\sand\ndoes\snot\sneed\sto\sbe\sinitialized\sfurther.
+D 2015-10-14T19:44:42.477
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f0088ff0d2ac949fce6de7c00f13a99ac5bdb663
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -753,7 +753,7 @@ F test/fuzz2.test 76dc35b32b6d6f965259508508abce75a6c4d7e1
 F test/fuzz3.test 53fabcd5f0f430f8b221282f6c12c4d0903c21eb
 F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
 F test/fuzz_malloc.test 328f70aaca63adf29b4c6f06505ed0cf57ca7c26
-F test/fuzzcheck.c 73d7c49980c1a380f1dff52df9c6d67c854d92ea
+F test/fuzzcheck.c c84086021a514360268190a1bc6ae8ed78d7c94f
 F test/fuzzdata1.db 7ee3227bad0e7ccdeb08a9e6822916777073c664
 F test/fuzzdata2.db f03a420d3b822cc82e4f894ca957618fbe9c4973
 F test/fuzzdata3.db c6586d3e3cef0fbc18108f9bb649aa77bfc38aba
@@ -1390,7 +1390,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a721fc0d89495518fe5612e2e3bbc60befd2e90d
-R 91fe8986fc4249f600867bbdb41be531
-U dan
-Z 2ae4d2560a7d6d806cb90ab807854a5b
+P 8463f7e7908d0a96ed036377dfa3805328c62925
+R 143450f83083f2864dd76299804f842d
+U drh
+Z 0061d3e09dbd49242f0e67704e30ef02
