@@ -297,10 +297,10 @@ int sqlite3Fts5StorageOpen(
         int i;
         int iOff;
         sqlite3_snprintf(nDefn, zDefn, "id INTEGER PRIMARY KEY");
-        iOff = strlen(zDefn);
+        iOff = (int)strlen(zDefn);
         for(i=0; i<pConfig->nCol; i++){
           sqlite3_snprintf(nDefn-iOff, &zDefn[iOff], ", c%d", i);
-          iOff += strlen(&zDefn[iOff]);
+          iOff += (int)strlen(&zDefn[iOff]);
         }
         rc = sqlite3Fts5CreateTable(pConfig, "content", zDefn, 0, pzErr);
       }
