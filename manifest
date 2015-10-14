@@ -1,9 +1,9 @@
-C Fixes\sto\sthe\sJSON1\sextension\sand\sto\sits\suse\sby\sfuzzcheck\sto\savoid\sproblems\nwhen\sbuilding\sDLLs.
-D 2015-10-14T19:52:27.982
+C Enable\scross-compiling\sthe\svarious\stool\sEXEs\swith\sMSVC.
+D 2015-10-14T20:01:12.045
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f0088ff0d2ac949fce6de7c00f13a99ac5bdb663
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 0ed934b4ae6a5ec0b9d7e770104864f8372414ab
+F Makefile.msc c3b8393498780d2207278c7beae0042d9f881007
 F Makefile.vxworks e1b65dea203f054e71653415bd8f96dcaed47858
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION cacf16a72f9a03cd06b939a764e32f6f53254c7f
@@ -1390,8 +1390,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a721fc0d89495518fe5612e2e3bbc60befd2e90d ec003958359d6b69b1b1a75be2a988796268e063
-R 143450f83083f2864dd76299804f842d
-T +closed ec003958359d6b69b1b1a75be2a988796268e063
-U drh
-Z 9888e39b5177d6b3f8e12974b89fa09f
+P 01d3ee7bbe4feeb82dcedecbe3c9058c807b18f6
+R c40c01c72f42f25a92a8c4a83d0b3093
+U mistachkin
+Z fc9103245e653032cd30d15d9e8811ac
