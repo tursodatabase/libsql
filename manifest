@@ -1,8 +1,8 @@
-C Tests\sand\sminor\sfixes\sto\simprove\scoverage\sof\sFTS5\scode.
-D 2015-10-14T21:08:48.055
+C In\sthe\sMSVC\smakefile,\smake\ssure\sLDFLAGS\sis\sused\sfor\sthe\stool\sexecutables\sas\swell.
+D 2015-10-14T22:46:37.523
 F Makefile.in 2ea961bc09e441874eb3d1bf7398e04feb24f3ee
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 9660c072f65b2742595687b30f6d9ae55001ae06
+F Makefile.msc 25e270d443a0150cdb0e9cea8e44d10a9425234e
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION cacf16a72f9a03cd06b939a764e32f6f53254c7f
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -1391,7 +1391,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1c46c194a2da24fe613d77b5a8d727cc2fc9faa4
-R c2db5d42842de245a7c44c778b4b2af1
-U dan
-Z da86e8fefa3739a4535495784fceb3bf
+P f4de6d450e143cb1dd5447800d4b178e3db114c8
+R f21e720b2fd1a1ee15658a79880dca9b
+U mistachkin
+Z a9e509b9786949f69d8a61e653d14b96

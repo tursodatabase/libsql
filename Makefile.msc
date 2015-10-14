@@ -1311,7 +1311,7 @@ lempar.c:	$(TOP)\src\lempar.c
 
 lemon.exe:	$(TOP)\tool\lemon.c lempar.c
 	$(BCC) $(NO_WARN) -Daccess=_access \
-		-Fe$@ $(TOP)\tool\lemon.c /link $(NLTLINKOPTS) $(NLTLIBPATHS)
+		-Fe$@ $(TOP)\tool\lemon.c /link $(LDFLAGS) $(NLTLINKOPTS) $(NLTLIBPATHS)
 
 # Rules to build individual *.lo files from generated *.c files. This
 # applies to:
@@ -1598,7 +1598,7 @@ sqlite3ext.h: .target_source
 
 mkkeywordhash.exe:	$(TOP)\tool\mkkeywordhash.c
 	$(BCC) $(NO_WARN) -Fe$@ $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS) $(OPTS) \
-		$(TOP)\tool\mkkeywordhash.c /link $(NLTLINKOPTS) $(NLTLIBPATHS)
+		$(TOP)\tool\mkkeywordhash.c /link $(LDFLAGS) $(NLTLINKOPTS) $(NLTLIBPATHS)
 
 keywordhash.h:	$(TOP)\tool\mkkeywordhash.c mkkeywordhash.exe
 	.\mkkeywordhash.exe > keywordhash.h
