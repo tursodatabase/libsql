@@ -2022,6 +2022,7 @@ int sqlite3Json1Init(sqlite3 *db){
 }
 
 
+#ifndef SQLITE_CORE
 #ifdef _WIN32
 __declspec(dllexport)
 #endif
@@ -2034,4 +2035,5 @@ int sqlite3_json_init(
   (void)pzErrMsg;  /* Unused parameter */
   return sqlite3Json1Init(db);
 }
+#endif
 #endif /* !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_JSON1) */
