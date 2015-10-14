@@ -1,8 +1,8 @@
-C In\sthe\sMSVC\smakefile,\smake\ssure\sLDFLAGS\sis\sused\sfor\sthe\stool\sexecutables\sas\swell.
-D 2015-10-14T22:46:37.523
+C In\sthe\sMSVC\smakefile,\sadd\sLIBTCLPATH\svariable\sto\smake\sit\seasier\sto\srun\stests\swhen\sthe\sTcl\slibrary\sis\snot\salready\spresent\sin\sthe\sPATH.
+D 2015-10-14T23:04:08.909
 F Makefile.in 2ea961bc09e441874eb3d1bf7398e04feb24f3ee
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 25e270d443a0150cdb0e9cea8e44d10a9425234e
+F Makefile.msc 8e42cb55739cd8c12e1fd25401956e2019448f6a
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION cacf16a72f9a03cd06b939a764e32f6f53254c7f
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -1333,7 +1333,7 @@ F test/wordcount.c 9915e06cb33d8ca8109b8700791afe80d305afda
 F test/zeroblob.test 3857870fe681b8185654414a9bccfde80b62a0fa
 F test/zerodamage.test cf6748bad89553cc1632be51a6f54e487e4039ac
 F tool/GetFile.cs a15e08acb5dd7539b75ba23501581d7c2b462cb5
-F tool/GetTclKit.bat f8159730269bdbf5c334383134011dda4df45511
+F tool/GetTclKit.bat 8606413d3035c05373a0d7fae82ebf59ae9e16c3
 F tool/addopcodes.tcl 7cc82ecca456a6b3148abf492b0419b83140881a
 F tool/build-all-msvc.bat 2b1703b322da121e56b955cb58de091107f777c3 x
 F tool/build-shell.sh 950f47c6174f1eea171319438b93ba67ff5bf367
@@ -1391,7 +1391,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f4de6d450e143cb1dd5447800d4b178e3db114c8
-R f21e720b2fd1a1ee15658a79880dca9b
+P 0a17ee49c6895256fefd13425b790414935efb9d
+R 1075ec398f99a2676077ad2b69d4177b
 U mistachkin
-Z a9e509b9786949f69d8a61e653d14b96
+Z fbe9683597676160a5c93a00077b9b02
