@@ -96,11 +96,17 @@ static const char * const azCompileOpt[] = {
 #if SQLITE_ENABLE_FTS4
   "ENABLE_FTS4",
 #endif
+#if SQLITE_ENABLE_FTS5
+  "ENABLE_FTS5",
+#endif
 #if SQLITE_ENABLE_ICU
   "ENABLE_ICU",
 #endif
 #if SQLITE_ENABLE_IOTRACE
   "ENABLE_IOTRACE",
+#endif
+#if SQLITE_ENABLE_JSON1
+  "ENABLE_JSON1",
 #endif
 #if SQLITE_ENABLE_LOAD_EXTENSION
   "ENABLE_LOAD_EXTENSION",

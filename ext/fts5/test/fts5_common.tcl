@@ -17,7 +17,6 @@ source $testdir/tester.tcl
 
 catch { 
   sqlite3_fts5_may_be_corrupt 0 
-  append G(perm:dbconfig) "; load_static_extension \$::dbhandle fts5"
   reset_db
 }
 

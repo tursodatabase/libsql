@@ -5675,12 +5675,12 @@ case OP_MemMax: {        /* in2 */
 }
 #endif /* SQLITE_OMIT_AUTOINCREMENT */
 
-/* Opcode: IfPos P1 P2 * * *
-** Synopsis: if r[P1]>0 goto P2
+/* Opcode: IfPos P1 P2 P3 * *
+** Synopsis: if r[P1]>0 then r[P1]-=P3, goto P2
 **
 ** Register P1 must contain an integer.
-** If the value of register P1 is 1 or greater, jump to P2 and
-** add the literal value P3 to register P1.
+** If the value of register P1 is 1 or greater, subtract P3 from the
+** value in P1 and jump to P2.
 **
 ** If the initial value of register P1 is less than 1, then the
 ** value is unchanged and control passes through to the next instruction.
@@ -5689,38 +5689,44 @@ case OP_IfPos: {        /* jump, in1 */
   pIn1 = &aMem[pOp->p1];
   assert( pIn1->flags&MEM_Int );
   VdbeBranchTaken( pIn1->u.i>0, 2);
-  if( pIn1->u.i>0 ) goto jump_to_p2;
+  if( pIn1->u.i>0 ){
+    pIn1->u.i -= pOp->p3;
+    goto jump_to_p2;
+  }
   break;
 }
 
-/* Opcode: IfNeg P1 P2 P3 * *
-** Synopsis: r[P1]+=P3, if r[P1]<0 goto P2
+/* Opcode: SetIfNotPos P1 P2 P3 * *
+** Synopsis: if r[P1]<=0 then r[P2]=P3
 **
-** Register P1 must contain an integer.  Add literal P3 to the value in
-** register P1 then if the value of register P1 is less than zero, jump to P2. 
+** Register P1 must contain an integer.
+** If the value of register P1 is not positive (if it is less than 1) then
+** set the value of register P2 to be the integer P3.
 */
-case OP_IfNeg: {        /* jump, in1 */
+case OP_SetIfNotPos: {        /* in1, in2 */
   pIn1 = &aMem[pOp->p1];
   assert( pIn1->flags&MEM_Int );
-  pIn1->u.i += pOp->p3;
-  VdbeBranchTaken(pIn1->u.i<0, 2);
-  if( pIn1->u.i<0 ) goto jump_to_p2;
+  if( pIn1->u.i<=0 ){
+    pOut = out2Prerelease(p, pOp);
+    pOut->u.i = pOp->p3;
+  }
   break;
 }
 
 /* Opcode: IfNotZero P1 P2 P3 * *
-** Synopsis: if r[P1]!=0 then r[P1]+=P3, goto P2
+** Synopsis: if r[P1]!=0 then r[P1]-=P3, goto P2
 **
 ** Register P1 must contain an integer.  If the content of register P1 is
-** initially nonzero, then add P3 to P1 and jump to P2.  If register P1 is
-** initially zero, leave it unchanged and fall through.
+** initially nonzero, then subtract P3 from the value in register P1 and
+** jump to P2.  If register P1 is initially zero, leave it unchanged
+** and fall through.
 */
 case OP_IfNotZero: {        /* jump, in1 */
   pIn1 = &aMem[pOp->p1];
   assert( pIn1->flags&MEM_Int );
   VdbeBranchTaken(pIn1->u.i<0, 2);
   if( pIn1->u.i ){
-     pIn1->u.i += pOp->p3;
+     pIn1->u.i -= pOp->p3;
      goto jump_to_p2;
   }
   break;

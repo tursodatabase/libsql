@@ -192,6 +192,8 @@ void sqlite3FinishCoding(Parse *pParse){
           db->aDb[iDb].pSchema->iGeneration  /* P4 */
         );
         if( db->init.busy==0 ) sqlite3VdbeChangeP5(v, 1);
+        VdbeComment((v,
+              "usesStmtJournal=%d", pParse->mayAbort && pParse->isMultiWrite));
       }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
       for(i=0; i<pParse->nVtabLock; i++){
@@ -983,7 +985,7 @@ void sqlite3StartTable(
   ** now.
   */
   if( !db->init.busy && (v = sqlite3GetVdbe(pParse))!=0 ){
-    int j1;
+    int addr1;
     int fileFormat;
     int reg1, reg2, reg3;
     /* nullRow[] is an OP_Record encoding of a row containing 5 NULLs */
@@ -1004,14 +1006,14 @@ void sqlite3StartTable(
     reg3 = ++pParse->nMem;
     sqlite3VdbeAddOp3(v, OP_ReadCookie, iDb, reg3, BTREE_FILE_FORMAT);
     sqlite3VdbeUsesBtree(v, iDb);
-    j1 = sqlite3VdbeAddOp1(v, OP_If, reg3); VdbeCoverage(v);
+    addr1 = sqlite3VdbeAddOp1(v, OP_If, reg3); VdbeCoverage(v);
     fileFormat = (db->flags & SQLITE_LegacyFileFmt)!=0 ?
                   1 : SQLITE_MAX_FILE_FORMAT;
     sqlite3VdbeAddOp2(v, OP_Integer, fileFormat, reg3);
     sqlite3VdbeAddOp3(v, OP_SetCookie, iDb, BTREE_FILE_FORMAT, reg3);
     sqlite3VdbeAddOp2(v, OP_Integer, ENC(db), reg3);
     sqlite3VdbeAddOp3(v, OP_SetCookie, iDb, BTREE_TEXT_ENCODING, reg3);
-    sqlite3VdbeJumpHere(v, j1);
+    sqlite3VdbeJumpHere(v, addr1);
 
     /* This just creates a place-holder record in the sqlite_master table.
     ** The record created does not contain anything yet.  It will be replaced
@@ -2082,8 +2084,7 @@ void sqlite3CreateView(
 
   if( pParse->nVar>0 ){
     sqlite3ErrorMsg(pParse, "parameters are not allowed in views");
-    sqlite3SelectDelete(db, pSelect);
-    return;
+    goto create_view_fail;
   }
   sqlite3StartTable(pParse, pName1, pName2, isTemp, 1, 0, noErr);
   p = pParse->pNewTable;
@@ -3135,7 +3136,7 @@ Index *sqlite3CreateIndex(
   /* Analyze the list of expressions that form the terms of the index and
   ** report any errors.  In the common case where the expression is exactly
   ** a table column, store that column in aiColumn[].  For general expressions,
-  ** populate pIndex->aColExpr and store -2 in aiColumn[].
+  ** populate pIndex->aColExpr and store XN_EXPR (-2) in aiColumn[].
   **
   ** TODO: Issue a warning if two or more columns of the index are identical.
   ** TODO: Issue a warning if the table primary key is used as part of the
@@ -3164,8 +3165,8 @@ Index *sqlite3CreateIndex(
           pListItem = &pCopy->a[i];
         }
       }
-      j = -2;
-      pIndex->aiColumn[i] = -2;
+      j = XN_EXPR;
+      pIndex->aiColumn[i] = XN_EXPR;
       pIndex->uniqNotNull = 0;
     }else{
       j = pCExpr->iColumn;
@@ -3218,7 +3219,7 @@ Index *sqlite3CreateIndex(
     }
     assert( i==pIndex->nColumn );
   }else{
-    pIndex->aiColumn[i] = -1;
+    pIndex->aiColumn[i] = XN_ROWID;
     pIndex->azColl[i] = "BINARY";
   }
   sqlite3DefaultRowEst(pIndex);

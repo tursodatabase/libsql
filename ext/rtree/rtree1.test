@@ -34,6 +34,11 @@ set testprefix rtree1
 #
 #   rtree-12.*: Test that on-conflict clauses are supported.
 #   rtree-13.*: Test that bug [d2889096e7bdeac6d] has been fixed.
+#   rtree-14.*: Test if a non-integer is inserted into the PK column of an
+#               r-tree table, it is converted to an integer before being
+#               inserted. Also that if a non-numeric is inserted into one
+#               of the min/max dimension columns, it is converted to the
+#               required type before being inserted.
 #
 
 ifcapable !rtree {
@@ -534,5 +539,55 @@ do_execsql_test 13.2 {
   )
   SELECT * FROM r CROSS JOIN t9 WHERE id=x;
 } {1 1 0.0 0.0 2 2 0.0 0.0}
+
+#-------------------------------------------------------------------------
+# Test if a non-integer is inserted into the PK column of an r-tree
+# table, it is converted to an integer before being inserted. Also
+# that if a non-numeric is inserted into one of the min/max dimension
+# columns, it is converted to the required type before being inserted.
+#
+do_execsql_test 14.1 {
+  CREATE VIRTUAL TABLE t10 USING rtree(ii, x1, x2);
+}
+
+do_execsql_test 14.2 {
+  INSERT INTO t10 VALUES(NULL,   1, 2);
+  INSERT INTO t10 VALUES(NULL,   2, 3);
+  INSERT INTO t10 VALUES('4xxx', 3, 4);
+  INSERT INTO t10 VALUES(5.0,    4, 5);
+  INSERT INTO t10 VALUES(6.4,    5, 6);
+}
+do_execsql_test 14.3 {
+  SELECT * FROM t10;
+} {
+  1 1.0 2.0   2 2.0 3.0   4 3.0 4.0   5 4.0 5.0   6 5.0 6.0
+}
+
+do_execsql_test 14.4 {
+  DELETE FROM t10;
+  INSERT INTO t10 VALUES(1, 'one', 'two');
+  INSERT INTO t10 VALUES(2, '52xyz', '81...');
+}
+do_execsql_test 14.5 {
+  SELECT * FROM t10;
+} {
+  1 0.0 0.0
+  2 52.0 81.0
+}
+
+do_execsql_test 14.4 {
+  DROP TABLE t10;
+  CREATE VIRTUAL TABLE t10 USING rtree_i32(ii, x1, x2);
+  INSERT INTO t10 VALUES(1, 'one', 'two');
+  INSERT INTO t10 VALUES(2, '52xyz', '81...');
+  INSERT INTO t10 VALUES(3, 42.3, 49.9);
+}
+do_execsql_test 14.5 {
+  SELECT * FROM t10;
+} {
+  1 0 0
+  2 52 81
+  3 42 49
+}
 
 finish_test

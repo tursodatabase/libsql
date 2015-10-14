@@ -67,6 +67,7 @@
 %left COLON.
 
 input ::= expr(X). { sqlite3Fts5ParseFinished(pParse, X); }
+%destructor input { (void)pParse; }
 
 %type cnearset    {Fts5ExprNode*}
 %type expr        {Fts5ExprNode*}
@@ -101,9 +102,9 @@ cnearset(A) ::= colset(X) COLON nearset(Y). {
   A = sqlite3Fts5ParseNode(pParse, FTS5_STRING, 0, 0, Y); 
 }
 
-%type colset {Fts5ExprColset*}
+%type colset {Fts5Colset*}
 %destructor colset { sqlite3_free($$); }
-%type colsetlist {Fts5ExprColset*}
+%type colsetlist {Fts5Colset*}
 %destructor colsetlist { sqlite3_free($$); }
 
 colset(A) ::= LCP colsetlist(X) RCP. { A = X; }

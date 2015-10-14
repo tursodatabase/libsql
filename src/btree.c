@@ -661,7 +661,7 @@ static int saveCursorPosition(BtCursor *pCur){
     pCur->eState = CURSOR_REQUIRESEEK;
   }
 
-  invalidateOverflowCache(pCur);
+  pCur->curFlags &= ~(BTCF_ValidNKey|BTCF_ValidOvfl|BTCF_AtLast);
   return rc;
 }
 
@@ -6520,7 +6520,13 @@ static int pageInsertArray(
       if( pData<pBegin ) return 1;
       pSlot = pData;
     }
-    memcpy(pSlot, pCArray->apCell[i], sz);
+    /* pSlot and pCArray->apCell[i] will never overlap on a well-formed
+    ** database.  But they might for a corrupt database.  Hence use memmove()
+    ** since memcpy() sends SIGABORT with overlapping buffers on OpenBSD */
+    assert( (pSlot+sz)<=pCArray->apCell[i]
+         || pSlot>=(pCArray->apCell[i]+sz)
+         || CORRUPT_DB );
+    memmove(pSlot, pCArray->apCell[i], sz);
     put2byte(pCellptr, (pSlot - aData));
     pCellptr += 2;
   }
@@ -7645,7 +7651,7 @@ static int balance_nonroot(
     ** by smaller than the child due to the database header, and so all the
     ** free space needs to be up front.
     */
-    assert( nNew==1 );
+    assert( nNew==1 || CORRUPT_DB );
     rc = defragmentPage(apNew[0]);
     testcase( rc!=SQLITE_OK );
     assert( apNew[0]->nFree == 
