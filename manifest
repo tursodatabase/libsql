@@ -1,5 +1,5 @@
-C Remove\sthe\sunused\sfts5ExprColsetTest()\sroutine.
-D 2015-10-12T22:31:02.804
+C Add\sthe\smissing\s'extern\s"C"\s{...}'\sblocks\sto\sfts5.h\sand\ssqlite3rbu.h.
+D 2015-10-14T10:56:34.956
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f0088ff0d2ac949fce6de7c00f13a99ac5bdb663
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -105,7 +105,7 @@ F ext/fts3/unicode/UnicodeData.txt cd07314edb62d49fde34debdaf92fa2aa69011e7
 F ext/fts3/unicode/mkunicode.tcl 95cf7ec186e48d4985e433ff8a1c89090a774252
 F ext/fts3/unicode/parseunicode.tcl da577d1384810fb4e2b209bf3313074353193e95
 F ext/fts5/extract_api_docs.tcl a36e54ec777172ddd3f9a88daf593b00848368e0
-F ext/fts5/fts5.h 98f802fe41481f9d797fce496f0fefcad72c7782
+F ext/fts5/fts5.h 8b9a13b309b180e9fb88ea5666c0d8d73c6102d9
 F ext/fts5/fts5Int.h 38667e39859ff3f3bc91f47efe672023a145a118
 F ext/fts5/fts5_aux.c b09aa27dcdaa3d50a30be433fddaa48a50aa827b
 F ext/fts5/fts5_buffer.c e99224a316cc5b2c574ccccdc7f2344bca54784d
@@ -233,7 +233,7 @@ F ext/rbu/rbufault2.test 9a7f19edd6ea35c4c9f807d8a3db0a03a5670c06
 F ext/rbu/rbufts.test 828cd689da825f0a7b7c53ffc1f6f7fdb6fa5bda
 F ext/rbu/rbusave.test 0f43b6686084f426ddd040b878426452fd2c2f48
 F ext/rbu/sqlite3rbu.c ea47de615e911b3a69a8e7fb3be3866298403a25
-F ext/rbu/sqlite3rbu.h 5357f070cd8c0bcad459b620651ec1656859e4d0
+F ext/rbu/sqlite3rbu.h 1d568cb33738d7900975cc5c72e6f68049f15914
 F ext/rbu/test_rbu.c 2a3652241fa45d5eaa141775e4ae68c1d3582c03
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 0f9b595bd0debcbedf1d7a63d0e0678d619e6c9c
@@ -1390,7 +1390,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7f896a971c5953d5370215ecd834d1fb711b4263
-R 9caea6f3d0d85e53ac44439278fad807
-U drh
-Z 910ebb884723e98753b60b18fc83ff4b
+P 9ecafc0c94102dca6da192f400278399464086fb
+R 41ced18917e64acb8afddf6eb6ae0b31
+U dan
+Z ea28d4ccb4ab6552cc0b271363717ac2
