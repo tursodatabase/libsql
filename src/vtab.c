@@ -937,7 +937,9 @@ int sqlite3VtabBegin(sqlite3 *db, VTable *pVTab){
     if( rc==SQLITE_OK ){
       rc = pModule->xBegin(pVTab->pVtab);
       if( rc==SQLITE_OK ){
+        int iSvpt = db->nStatement + db->nSavepoint;
         addToVTrans(db, pVTab);
+        if( iSvpt ) rc = sqlite3VtabSavepoint(db, SAVEPOINT_BEGIN, iSvpt-1);
       }
     }
   }
@@ -1143,7 +1145,7 @@ int sqlite3VtabEponymousTableInit(Parse *pParse, Module *pMod){
 */
 void sqlite3VtabEponymousTableClear(sqlite3 *db, Module *pMod){
   Table *pTab = pMod->pEpoTab;
-  if( (pTab = pMod->pEpoTab)!=0 ){
+  if( pTab!=0 ){
     sqlite3DeleteColumnNames(db, pTab);
     sqlite3VtabClear(db, pTab);
     sqlite3DbFree(db, pTab);

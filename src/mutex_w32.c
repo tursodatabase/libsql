@@ -78,14 +78,19 @@ static int winMutexNotheld(sqlite3_mutex *p){
 #endif
 
 /*
-** Try to provide a memory barrier operation, needed for initialization only.
+** Try to provide a memory barrier operation, needed for initialization
+** and also for the xShmBarrier method of the VFS in cases when SQLite is
+** compiled without mutexes (SQLITE_THREADSAFE=0).
 */
 void sqlite3MemoryBarrier(void){
 #if defined(SQLITE_MEMORY_BARRIER)
   SQLITE_MEMORY_BARRIER;
 #elif defined(__GNUC__)
   __sync_synchronize();
-#else
+#elif !defined(SQLITE_DISABLE_INTRINSIC) && \
+      defined(_MSC_VER) && _MSC_VER>=1300
+  _ReadWriteBarrier();
+#elif defined(MemoryBarrier)
   MemoryBarrier();
 #endif
 }

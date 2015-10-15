@@ -264,6 +264,7 @@ struct Fts3Table {
   int nPendingData;               /* Current bytes of pending data */
   sqlite_int64 iPrevDocid;        /* Docid of most recently inserted document */
   int iPrevLangid;                /* Langid of recently inserted document */
+  int bPrevDelete;                /* True if last operation was a delete */
 
 #if defined(SQLITE_DEBUG) || defined(SQLITE_COVERAGE_TEST)
   /* State variables used for validating that the transaction control

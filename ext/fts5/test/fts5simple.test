@@ -19,7 +19,6 @@ ifcapable !fts5 {
   return
 }
 
-if 1 {
 #-------------------------------------------------------------------------
 #
 set doc "x x [string repeat {y } 50]z z"
@@ -137,8 +136,6 @@ do_execsql_test 5.4 {
   SELECT rowid FROM tt WHERE tt MATCH 'a*';
 } {1 2}
 
-}
-
 do_execsql_test 5.5 {
   DELETE FROM tt;
   BEGIN;
@@ -184,6 +181,146 @@ do_catchsql_test 6.3 {
   SELECT * FROM xyz WHERE xyz MATCH NULL 
 } {1 {fts5: syntax error near ""}}
 
+#-------------------------------------------------------------------------
+
+do_execsql_test 7.1 {
+  CREATE VIRTUAL TABLE ft2 USING fts5(content);
+  INSERT INTO ft2(rowid, content) VALUES(1, 'a b c');
+  INSERT INTO ft2(rowid, content) VALUES(2, 'a b d');
+} 
+
+do_catchsql_test 7.2 {
+  BEGIN;
+    UPDATE ft2 SET rowid=2 WHERE rowid=1;
+} {1 {constraint failed}} 
+
+do_execsql_test 7.3 {
+  COMMIT;
+  INSERT INTO ft2(ft2) VALUES('integrity-check');
+} {}
+
+do_execsql_test 7.4 {
+  SELECT * FROM ft2;
+} {{a b c} {a b d}}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 8.1 {
+  CREATE VIRTUAL TABLE ft2 USING fts5(content);
+  INSERT INTO ft2(rowid, content) VALUES(1, 'a b');
+}
+
+do_execsql_test 8.2 {
+  BEGIN;
+    INSERT INTO ft2(rowid, content) VALUES(4, 'a x');
+}
+
+do_execsql_test 8.3 {
+  INSERT INTO ft2(ft2) VALUES('integrity-check');
+}
+
+#-------------------------------------------------------------------------
+# Check that the "table function" syntax works.
+#
+reset_db
+do_execsql_test 9.1 {
+  CREATE VIRTUAL TABLE ft2 USING fts5(content);
+  INSERT INTO ft2(rowid, content) VALUES(1, 'a b');
+  INSERT INTO ft2(rowid, content) VALUES(2, 'a b c d');
+  INSERT INTO ft2(rowid, content) VALUES(3, 'c d e f');
+}
+
+do_execsql_test 9.2 {
+  SELECT rowid FROM ft2('a');
+} {1 2}
+
+do_execsql_test 9.3 {
+  SELECT rowid FROM ft2('b AND c');
+} {2}
+
+#-------------------------------------------------------------------------
+#
+do_execsql_test 10.0 {
+  CREATE VIRTUAL TABLE t3 USING fts5(a, b, c);
+  INSERT INTO t3 VALUES('bac aab bab', 'c bac c', 'acb aba abb'); -- 1
+  INSERT INTO t3 VALUES('bab abc c', 'acb c abb', 'c aaa c');     -- 2
+}
+
+do_execsql_test 10.1 {
+  SELECT rowid FROM t3('c: c*');
+} {2}
+
+do_execsql_test 10.2 {
+  SELECT rowid FROM t3('b: acb');
+} {2}
+
+#-------------------------------------------------------------------------
+# Test that character 0x1A is allowed in fts5 barewords.
+#
+do_test 11.0 {
+  execsql "CREATE VIRTUAL TABLE t4 USING fts5(x, tokenize=\"ascii tokenchars '\x1A'\")"
+  execsql "
+    INSERT INTO t4 VALUES('a b c \x1A');
+    INSERT INTO t4 VALUES('a b c d\x1A');
+    INSERT INTO t4 VALUES('a b c \x1Ad');
+    INSERT INTO t4 VALUES('a b c d');
+  "
+} {}
+
+do_test 11.1 {
+  execsql "SELECT rowid FROM t4('\x1A')"
+} {1}
+do_test 11.2 {
+  execsql "SELECT rowid FROM t4('\x1A*')"
+} {1 3}
+do_test 11.3 {
+  execsql "SELECT rowid FROM t4('d\x1A')"
+} {2}
+
+do_test 11.4 {
+  catchsql "SELECT rowid FROM t4('d\x1B')"
+} {/fts5: syntax error/}
+do_test 11.5 {
+  catchsql "SELECT rowid FROM t4('d\x19')"
+} {/fts5: syntax error/}
+
+#-------------------------------------------------------------------------
+#
+do_test 12.1 {
+  execsql {
+    CREATE VIRTUAL TABLE xx USING fts5(x,y);
+    BEGIN;
+      INSERT INTO xx VALUES('1 2 3', 'a b c');
+  }
+} {}
+
+do_execsql_test 12.2 {
+  SELECT rowid FROM xx('x:a');
+  COMMIT;
+} {}
+
+#-------------------------------------------------------------------------
+# Try an UPDATE OR REPLACE query.
+#
+do_execsql_test 13.1 {
+  CREATE VIRTUAL TABLE xy USING fts5(x);
+  INSERT INTO xy(rowid, x) VALUES(1, '1 2 3');
+  INSERT INTO xy(rowid, x) VALUES(2, '2 3 4');
+  INSERT INTO xy(rowid, x) VALUES(3, '3 4 5');
+}
+
+do_execsql_test 13.2 {
+  UPDATE OR REPLACE xy SET rowid=3 WHERE rowid = 2;
+  SELECT rowid, x FROM xy;
+} {
+  1 {1 2 3}
+  3 {2 3 4}
+}
+
+do_execsql_test 13.3 {
+  INSERT INTO xy(xy) VALUES('integrity-check');
+}
 
 finish_test
 

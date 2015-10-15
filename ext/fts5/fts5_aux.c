@@ -13,7 +13,7 @@
 
 
 #include "fts5Int.h"
-#include <math.h>
+#include <math.h>                 /* amalgamator: keep */
 
 /*
 ** Object used to iterate through all "coalesced phrase instances" in 
@@ -137,7 +137,7 @@ static void fts5HighlightAppend(
   const char *z, int n
 ){
   if( *pRc==SQLITE_OK ){
-    if( n<0 ) n = strlen(z);
+    if( n<0 ) n = (int)strlen(z);
     p->zOut = sqlite3_mprintf("%z%.*s", p->zOut, n, z);
     if( p->zOut==0 ) *pRc = SQLITE_NOMEM;
   }

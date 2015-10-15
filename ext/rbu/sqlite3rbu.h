@@ -269,6 +269,10 @@
 
 #include "sqlite3.h"              /* Required for error code definitions */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct sqlite3rbu sqlite3rbu;
 
 /*
@@ -446,5 +450,9 @@ int sqlite3rbu_create_vfs(const char *zName, const char *zParent);
 ** are undefined.
 */
 void sqlite3rbu_destroy_vfs(const char *zName);
+
+#ifdef __cplusplus
+}  /* end of the 'extern "C"' block */
+#endif
 
 #endif /* _SQLITE3RBU_H */

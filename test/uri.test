@@ -64,6 +64,14 @@ foreach {tn uri file} {
     if {$tn>14} break
 
     #
+    # NOTE: When running on Tcl 8.6 (or higher?) on Windows, a colon within
+    #       the file name no longer tries to access an alternate data stream
+    #       (ADS) named "test.db" for the "http" file, causing some spurious
+    #       failures of this test.
+    #
+    if {$tn==12 && $::tcl_version>=8.6} continue
+
+    #
     # NOTE: On Windows, we need to account for the fact that the current
     #       directory does not start with a forward slash.
     #

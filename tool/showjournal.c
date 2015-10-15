@@ -30,7 +30,7 @@ static unsigned char *read_content(int N, int iOfst){
   unsigned char *pBuf = malloc(N);
   if( pBuf==0 ) out_of_memory();
   fseek(db, iOfst, SEEK_SET);
-  got = fread(pBuf, 1, N, db);
+  got = (int)fread(pBuf, 1, N, db);
   if( got<0 ){
     fprintf(stderr, "I/O error reading %d bytes from %d\n", N, iOfst);
     memset(pBuf, 0, N);
@@ -53,7 +53,7 @@ static unsigned print_decode_line(
   unsigned val = aData[ofst];
   char zBuf[100];
   sprintf(zBuf, " %05x: %02x", ofst, aData[ofst]);
-  i = strlen(zBuf);
+  i = (int)strlen(zBuf);
   for(j=1; j<4; j++){
     if( j>=nByte ){
       sprintf(&zBuf[i], "   ");
@@ -61,7 +61,7 @@ static unsigned print_decode_line(
       sprintf(&zBuf[i], " %02x", aData[ofst+j]);
       val = val*256 + aData[ofst+j];
     }
-    i += strlen(&zBuf[i]);
+    i += (int)strlen(&zBuf[i]);
   }
   sprintf(&zBuf[i], "   %10u", val);
   printf("%s  %s\n", zBuf, zMsg);

@@ -88,6 +88,23 @@ do_execsql_test indexexpr1-160eqp {
    WHERE substr(a,27,3)=='ord' AND d>=29;
 } {/USING INDEX t1a2/}
 
+# ORDER BY using an indexed expression
+#
+do_execsql_test indexexpr1-170 {
+  CREATE INDEX t1alen ON t1(length(a));
+  SELECT length(a) FROM t1 ORDER BY length(a);
+} {20 25 27 29 38 52}
+do_execsql_test indexexpr1-170eqp {
+  EXPLAIN QUERY PLAN
+  SELECT length(a) FROM t1 ORDER BY length(a);
+} {/SCAN TABLE t1 USING INDEX t1alen/}
+do_execsql_test indexexpr1-171 {
+  SELECT length(a) FROM t1 ORDER BY length(a) DESC;
+} {52 38 29 27 25 20}
+do_execsql_test indexexpr1-171eqp {
+  EXPLAIN QUERY PLAN
+  SELECT length(a) FROM t1 ORDER BY length(a) DESC;
+} {/SCAN TABLE t1 USING INDEX t1alen/}
 
 do_execsql_test indexexpr1-200 {
   DROP TABLE t1;
@@ -193,7 +210,8 @@ do_execsql_test indexexpr1-400 {
     SELECT x, printf('ab%04xyz',x), random() FROM c;
   CREATE UNIQUE INDEX t3abc ON t3(CAST(a AS text), b, substr(c,1,3));
   SELECT a FROM t3 WHERE CAST(a AS text)<='10' ORDER BY +a;
-} {1 10}
+  PRAGMA integrity_check;
+} {1 10 ok}
 do_catchsql_test indexexpr1-410 {
   INSERT INTO t3 SELECT * FROM t3 WHERE rowid=10;
 } {1 {UNIQUE constraint failed: index 't3abc'}}
@@ -233,7 +251,61 @@ do_execsql_test indexexpr1-600 {
   SELECT i FROM t4 WHERE e=5;
 } {9}
 
+# Indexed expressions on both sides of an == in a WHERE clause.
+#
+do_execsql_test indexexpr1-700 {
+  DROP TABLE IF EXISTS t7;
+  CREATE TABLE t7(a,b,c);
+  INSERT INTO t7(a,b,c) VALUES(1,2,2),('abc','def','def'),(4,5,6);
+  CREATE INDEX t7b ON t7(+b);
+  CREATE INDEX t7c ON t7(+c);
+  SELECT *, '|' FROM t7 WHERE +b=+c ORDER BY +a;
+} {1 2 2 | abc def def |}
+do_execsql_test indexexpr1-710 {
+  CREATE TABLE t71(a,b,c);
+  CREATE INDEX t71bc ON t71(b+c);
+  CREATE TABLE t72(x,y,z);
+  CREATE INDEX t72yz ON t72(y+z);
+  INSERT INTO t71(a,b,c) VALUES(1,11,2),(2,7,15),(3,5,4);
+  INSERT INTO t72(x,y,z) VALUES(1,10,3),(2,8,14),(3,9,9);
+  SELECT a, x, '|' FROM t71, t72
+   WHERE b+c=y+z
+  ORDER BY +a, +x;
+} {1 1 | 2 2 |}
 
+# Collating sequences on indexes of expressions
+#
+do_execsql_test indexexpr1-800 {
+  DROP TABLE IF EXISTS t8;
+  CREATE TABLE t8(a INTEGER PRIMARY KEY, b TEXT);
+  CREATE UNIQUE INDEX t8bx ON t8(substr(b,2,4) COLLATE nocase);
+  INSERT INTO t8(a,b) VALUES(1,'Alice'),(2,'Bartholemew'),(3,'Cynthia');
+  SELECT * FROM t8 WHERE substr(b,2,4)='ARTH' COLLATE nocase;
+} {2 Bartholemew}
+do_catchsql_test indexexpr1-810 {
+  INSERT INTO t8(a,b) VALUES(4,'BARTHMERE');
+} {1 {UNIQUE constraint failed: index 't8bx'}}
+do_catchsql_test indexexpr1-820 {
+  DROP INDEX t8bx;
+  CREATE UNIQUE INDEX t8bx ON t8(substr(b,2,4) COLLATE rtrim);
+  INSERT INTO t8(a,b) VALUES(4,'BARTHMERE');
+} {0 {}}
+
+# Check that PRAGMA integrity_check works correctly on a
+# UNIQUE index that includes rowid and expression terms.
+#
+do_execsql_test indexexpr1-900 {
+  CREATE TABLE t9(a,b,c,d);
+  CREATE UNIQUE INDEX t9x1 ON t9(c,abs(d),b);
+  INSERT INTO t9(rowid,a,b,c,d) VALUES(1,2,3,4,5);
+  INSERT INTO t9(rowid,a,b,c,d) VALUES(2,NULL,NULL,NULL,NULL);
+  INSERT INTO t9(rowid,a,b,c,d) VALUES(3,NULL,NULL,NULL,NULL);
+  INSERT INTO t9(rowid,a,b,c,d) VALUES(4,5,6,7,8);
+  PRAGMA integrity_check;
+} {ok}
+do_catchsql_test indexexpr1-910 {
+  INSERT INTO t9(a,b,c,d) VALUES(5,6,7,-8);
+} {1 {UNIQUE constraint failed: index 't9x1'}}
 
 
 finish_test
