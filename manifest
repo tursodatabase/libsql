@@ -1,5 +1,5 @@
-C Remove\sa\ssuperfluous\sconditional\sfrom\sthe\smemory\sallocation\sinitialization.
-D 2015-10-15T17:21:35.142
+C Optimization\sto\sthe\sout2Prerelease()\shelper\sroutine\sin\sthe\sVDBE\sengine.
+D 2015-10-15T17:31:41.009
 F Makefile.in 2ea961bc09e441874eb3d1bf7398e04feb24f3ee
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8e42cb55739cd8c12e1fd25401956e2019448f6a
@@ -401,7 +401,7 @@ F src/update.c dc37664095ca8604293ff1de2d9a547c6efb5e6e
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c fc612367108b74573c5fd13a85d0a23027f438bd
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c 1e0bf8d6a2308ce916d444ef399921407fd5d972
+F src/vdbe.c eac089848a684b91affc534c05158a4562ca947c
 F src/vdbe.h 4bc88bd0e06f8046ee6ab7487c0015e85ad949ad
 F src/vdbeInt.h 8b867eac234e28627ffcace3cd4b4b79bbec664b
 F src/vdbeapi.c 020681b943e77766b32ae1cddf86d7831b7374ca
@@ -1391,7 +1391,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P cb65989b0710c65e4df69063b346344fdb1d12c7
-R a487354b2dba16d26964bcd9e3d80d3a
+P 9ccf8f8d35723f2a9b59010b6d5f37a14164a188
+R 3f72c1696a2c0bbe157c006cd1e8f7da
 U drh
-Z 021a2aefbc99b74fa479ea7f890a7d86
+Z ec1afe1b1807430ccd9064412c85cfed
