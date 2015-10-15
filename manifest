@@ -1,5 +1,5 @@
-C In\sthe\sMSVC\smakefile,\sadd\sLIBTCLPATH\svariable\sto\smake\sit\seasier\sto\srun\stests\swhen\sthe\sTcl\slibrary\sis\snot\salready\spresent\sin\sthe\sPATH.
-D 2015-10-14T23:04:08.909
+C Make\ssure\ssqlite.h\sis\snot\s#included\sby\sitself.
+D 2015-10-15T12:06:11.774
 F Makefile.in 2ea961bc09e441874eb3d1bf7398e04feb24f3ee
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8e42cb55739cd8c12e1fd25401956e2019448f6a
@@ -1358,7 +1358,7 @@ F tool/mkpragmatab.tcl 84af2b180484323a2ea22a2279e8bd9e3e1e492e
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 87240b09c20042999b41d5fabe091b7111287835
 F tool/mksqlite3c.tcl b66b4170f693602cd6985aed15d9509fe2f18c84
-F tool/mksqlite3h.tcl e3ac3f23897d86cb8f5f5df92e91643229fcc8d1
+F tool/mksqlite3h.tcl 1d41ab59bffb025121f75b76e183125ce41b3ec8
 F tool/mksqlite3internalh.tcl eb994013e833359137eb53a55acdad0b5ae1049b
 F tool/mkvsix.tcl bbe57cd9ae11c6cc70319241101ef8d2b8c3765b
 F tool/offsets.c fe4262fdfa378e8f5499a42136d17bf3b98f6091
@@ -1391,7 +1391,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0a17ee49c6895256fefd13425b790414935efb9d
-R 1075ec398f99a2676077ad2b69d4177b
-U mistachkin
-Z fbe9683597676160a5c93a00077b9b02
+P 54127602b9a555f73f5e446b91e460386cb8fb17
+R 219d21afa69a49de9570585e5a7cfcb4
+U drh
+Z dd00cfb1b41a16869084e0ea7bd3c8ac
