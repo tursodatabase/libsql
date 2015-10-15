@@ -1051,7 +1051,6 @@ int main(int argc, char **argv){
   
     /* Print the description, if there is one */
     if( !quietFlag ){
-      int i;
       zDbName = azSrcDb[iSrcDb];
       i = strlen(zDbName) - 1;
       while( i>0 && zDbName[i-1]!='/' && zDbName[i-1]!='\\' ){ i--; }
@@ -1127,12 +1126,6 @@ int main(int argc, char **argv){
         }
         rc = sqlite3_open_v2("main.db", &db, openFlags, zVfs);
         if( rc ) fatalError("cannot open inmem database");
-#ifdef SQLITE_ENABLE_JSON1
-        {
-          extern int sqlite3_json_init(sqlite3*);
-          sqlite3_json_init(db);
-        }
-#endif
         if( cellSzCkFlag ) runSql(db, "PRAGMA cell_size_check=ON", runFlags);
         setAlarm(iTimeout);
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK

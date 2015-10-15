@@ -21,30 +21,63 @@
 ** This implementation parses JSON text at 250 MB/s, so it is hard to see
 ** how JSONB might improve on that.)
 */
+#if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_JSON1)
 #if !defined(_SQLITEINT_H_)
 #include "sqlite3ext.h"
 #endif
 SQLITE_EXTENSION_INIT1
 #include <assert.h>
 #include <string.h>
-#include <ctype.h>
+#include <ctype.h>  /* amalgamator: keep */
 #include <stdlib.h>
 #include <stdarg.h>
 
 #define UNUSED_PARAM(X)  (void)(X)
 
+#ifndef LARGEST_INT64
+# define LARGEST_INT64  (0xffffffff|(((sqlite3_int64)0x7fffffff)<<32))
+# define SMALLEST_INT64 (((sqlite3_int64)-1) - LARGEST_INT64)
+#endif
+
 /*
 ** Versions of isspace(), isalnum() and isdigit() to which it is safe
 ** to pass signed char values.
 */
-#define safe_isspace(x) isspace((unsigned char)(x))
 #define safe_isdigit(x) isdigit((unsigned char)(x))
 #define safe_isalnum(x) isalnum((unsigned char)(x))
 
-/* Unsigned integer types */
-typedef sqlite3_uint64 u64;
-typedef unsigned int u32;
-typedef unsigned char u8;
+/*
+** Growing our own isspace() routine this way is twice as fast as
+** the library isspace() function, resulting in a 7% overall performance
+** increase for the parser.  (Ubuntu14.10 gcc 4.8.4 x64 with -Os).
+*/
+static const char jsonIsSpace[] = {
+  0, 0, 0, 0, 0, 0, 0, 0,     0, 1, 1, 0, 1, 1, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
+  1, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
+};
+#define safe_isspace(x) (jsonIsSpace[(unsigned char)x])
+
+#ifndef SQLITE_AMALGAMATION
+  /* Unsigned integer types.  These are already defined in the sqliteInt.h,
+  ** but the definitions need to be repeated for separate compilation. */
+  typedef sqlite3_uint64 u64;
+  typedef unsigned int u32;
+  typedef unsigned char u8;
+#endif
 
 /* Objects */
 typedef struct JsonString JsonString;
@@ -453,18 +486,36 @@ static void jsonReturn(
       sqlite3_result_int(pCtx, 0);
       break;
     }
-    case JSON_REAL: {
-      double r = strtod(pNode->u.zJContent, 0);
-      sqlite3_result_double(pCtx, r);
-      break;
-    }
     case JSON_INT: {
       sqlite3_int64 i = 0;
       const char *z = pNode->u.zJContent;
       if( z[0]=='-' ){ z++; }
-      while( z[0]>='0' && z[0]<='9' ){ i = i*10 + *(z++) - '0'; }
+      while( z[0]>='0' && z[0]<='9' ){
+        unsigned v = *(z++) - '0';
+        if( i>=LARGEST_INT64/10 ){
+          if( i>LARGEST_INT64/10 ) goto int_as_real;
+          if( z[0]>='0' && z[0]<='9' ) goto int_as_real;
+          if( v==9 ) goto int_as_real;
+          if( v==8 ){
+            if( pNode->u.zJContent[0]=='-' ){
+              sqlite3_result_int64(pCtx, SMALLEST_INT64);
+              goto int_done;
+            }else{
+              goto int_as_real;
+            }
+          }
+        }
+        i = i*10 + v;
+      }
       if( pNode->u.zJContent[0]=='-' ){ i = -i; }
       sqlite3_result_int64(pCtx, i);
+      int_done:
+      break;
+      int_as_real: /* fall through to real */;
+    }
+    case JSON_REAL: {
+      double r = strtod(pNode->u.zJContent, 0);
+      sqlite3_result_double(pCtx, r);
       break;
     }
     case JSON_STRING: {
@@ -548,6 +599,44 @@ static void jsonReturn(
   }
 }
 
+/* Forward reference */
+static int jsonParseAddNode(JsonParse*,u32,u32,const char*);
+
+/*
+** A macro to hint to the compiler that a function should not be
+** inlined.
+*/
+#if defined(__GNUC__)
+#  define JSON_NOINLINE  __attribute__((noinline))
+#elif defined(_MSC_VER) && _MSC_VER>=1310
+#  define JSON_NOINLINE  __declspec(noinline)
+#else
+#  define JSON_NOINLINE
+#endif
+
+
+static JSON_NOINLINE int jsonParseAddNodeExpand(
+  JsonParse *pParse,        /* Append the node to this object */
+  u32 eType,                /* Node type */
+  u32 n,                    /* Content size or sub-node count */
+  const char *zContent      /* Content */
+){
+  u32 nNew;
+  JsonNode *pNew;
+  assert( pParse->nNode>=pParse->nAlloc );
+  if( pParse->oom ) return -1;
+  nNew = pParse->nAlloc*2 + 10;
+  pNew = sqlite3_realloc(pParse->aNode, sizeof(JsonNode)*nNew);
+  if( pNew==0 ){
+    pParse->oom = 1;
+    return -1;
+  }
+  pParse->nAlloc = nNew;
+  pParse->aNode = pNew;
+  assert( pParse->nNode<pParse->nAlloc );
+  return jsonParseAddNode(pParse, eType, n, zContent);
+}
+
 /*
 ** Create a new JsonNode instance based on the arguments and append that
 ** instance to the JsonParse.  Return the index in pParse->aNode[] of the
@@ -561,17 +650,7 @@ static int jsonParseAddNode(
 ){
   JsonNode *p;
   if( pParse->nNode>=pParse->nAlloc ){
-    u32 nNew;
-    JsonNode *pNew;
-    if( pParse->oom ) return -1;
-    nNew = pParse->nAlloc*2 + 10;
-    pNew = sqlite3_realloc(pParse->aNode, sizeof(JsonNode)*nNew);
-    if( pNew==0 ){
-      pParse->oom = 1;
-      return -1;
-    }
-    pParse->nAlloc = nNew;
-    pParse->aNode = pNew;
+    return jsonParseAddNodeExpand(pParse, eType, n, zContent);
   }
   p = &pParse->aNode[pParse->nNode];
   p->eType = (u8)eType;
@@ -597,8 +676,7 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
   int x;
   JsonNode *pNode;
   while( safe_isspace(pParse->zJson[i]) ){ i++; }
-  if( (c = pParse->zJson[i])==0 ) return 0;
-  if( c=='{' ){
+  if( (c = pParse->zJson[i])=='{' ){
     /* Parse object */
     iThis = jsonParseAddNode(pParse, JSON_OBJECT, 0, 0);
     if( iThis<0 ) return -1;
@@ -718,6 +796,8 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
     return -2;  /* End of {...} */
   }else if( c==']' ){
     return -3;  /* End of [...] */
+  }else if( c==0 ){
+    return 0;   /* End of file */
   }else{
     return -1;  /* Syntax error */
   }
@@ -805,7 +885,7 @@ static int jsonParseFindParents(JsonParse *pParse){
 ** Compare the OBJECT label at pNode against zKey,nKey.  Return true on
 ** a match.
 */
-static int jsonLabelCompare(JsonNode *pNode, const char *zKey, int nKey){
+static int jsonLabelCompare(JsonNode *pNode, const char *zKey, u32 nKey){
   if( pNode->jnFlags & JNODE_RAW ){
     if( pNode->n!=nKey ) return 0;
     return strncmp(pNode->u.zJContent, zKey, nKey)==0;
@@ -1783,7 +1863,7 @@ static int jsonEachFilter(
     jsonEachCursorReset(p);
     return SQLITE_NOMEM;
   }else{
-    JsonNode *pNode;
+    JsonNode *pNode = 0;
     if( idxNum==3 ){
       const char *zErr = 0;
       zRoot = (const char*)sqlite3_value_text(argv[1]);
@@ -1884,19 +1964,12 @@ static sqlite3_module jsonTreeModule = {
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 
 /****************************************************************************
-** The following routine is the only publically visible identifier in this
-** file.  Call the following routine in order to register the various SQL
+** The following routines are the only publically visible identifiers in this
+** file.  Call the following routines in order to register the various SQL
 ** functions and the virtual table implemented by this file.
 ****************************************************************************/
 
-#ifdef _WIN32
-__declspec(dllexport)
-#endif
-int sqlite3_json_init(
-  sqlite3 *db, 
-  char **pzErrMsg, 
-  const sqlite3_api_routines *pApi
-){
+int sqlite3Json1Init(sqlite3 *db){
   int rc = SQLITE_OK;
   unsigned int i;
   static const struct {
@@ -1934,8 +2007,6 @@ int sqlite3_json_init(
     { "json_tree",            &jsonTreeModule               },
   };
 #endif
-  SQLITE_EXTENSION_INIT2(pApi);
-  (void)pzErrMsg;  /* Unused parameter */
   for(i=0; i<sizeof(aFunc)/sizeof(aFunc[0]) && rc==SQLITE_OK; i++){
     rc = sqlite3_create_function(db, aFunc[i].zName, aFunc[i].nArg,
                                  SQLITE_UTF8 | SQLITE_DETERMINISTIC, 
@@ -1949,3 +2020,20 @@ int sqlite3_json_init(
 #endif
   return rc;
 }
+
+
+#ifndef SQLITE_CORE
+#ifdef _WIN32
+__declspec(dllexport)
+#endif
+int sqlite3_json_init(
+  sqlite3 *db, 
+  char **pzErrMsg, 
+  const sqlite3_api_routines *pApi
+){
+  SQLITE_EXTENSION_INIT2(pApi);
+  (void)pzErrMsg;  /* Unused parameter */
+  return sqlite3Json1Init(db);
+}
+#endif
+#endif /* !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_JSON1) */

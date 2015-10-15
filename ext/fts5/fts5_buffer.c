@@ -92,7 +92,7 @@ void sqlite3Fts5BufferAppendString(
   Fts5Buffer *pBuf, 
   const char *zStr
 ){
-  int nStr = strlen(zStr);
+  int nStr = (int)strlen(zStr);
   sqlite3Fts5BufferAppendBlob(pRc, pBuf, nStr+1, (const u8*)zStr);
   pBuf->n--;
 }
@@ -185,11 +185,11 @@ int sqlite3Fts5PoslistNext64(
   }else{
     i64 iOff = *piOff;
     int iVal;
-    i += fts5GetVarint32(&a[i], iVal);
+    fts5FastGetVarint32(a, i, iVal);
     if( iVal==1 ){
-      i += fts5GetVarint32(&a[i], iVal);
+      fts5FastGetVarint32(a, i, iVal);
       iOff = ((i64)iVal) << 32;
-      i += fts5GetVarint32(&a[i], iVal);
+      fts5FastGetVarint32(a, i, iVal);
     }
     *piOff = iOff + (iVal-2);
     *pi = i;
@@ -203,26 +203,20 @@ int sqlite3Fts5PoslistNext64(
 ** if the iterator reaches EOF, or false otherwise.
 */
 int sqlite3Fts5PoslistReaderNext(Fts5PoslistReader *pIter){
-  if( sqlite3Fts5PoslistNext64(pIter->a, pIter->n, &pIter->i, &pIter->iPos) 
-   || (pIter->iCol>=0 && (pIter->iPos >> 32) > pIter->iCol)
-  ){
+  if( sqlite3Fts5PoslistNext64(pIter->a, pIter->n, &pIter->i, &pIter->iPos) ){
     pIter->bEof = 1;
   }
   return pIter->bEof;
 }
 
 int sqlite3Fts5PoslistReaderInit(
-  int iCol,                       /* If (iCol>=0), this column only */
   const u8 *a, int n,             /* Poslist buffer to iterate through */
   Fts5PoslistReader *pIter        /* Iterator object to initialize */
 ){
   memset(pIter, 0, sizeof(*pIter));
   pIter->a = a;
   pIter->n = n;
-  pIter->iCol = iCol;
-  do {
-    sqlite3Fts5PoslistReaderNext(pIter);
-  }while( pIter->bEof==0 && (pIter->iPos >> 32)<iCol );
+  sqlite3Fts5PoslistReaderNext(pIter);
   return pIter->bEof;
 }
 
@@ -233,13 +227,15 @@ int sqlite3Fts5PoslistWriterAppend(
 ){
   static const i64 colmask = ((i64)(0x7FFFFFFF)) << 32;
   int rc = SQLITE_OK;
-  if( (iPos & colmask) != (pWriter->iPrev & colmask) ){
-    fts5BufferAppendVarint(&rc, pBuf, 1);
-    fts5BufferAppendVarint(&rc, pBuf, (iPos >> 32));
-    pWriter->iPrev = (iPos & colmask);
+  if( 0==sqlite3Fts5BufferGrow(&rc, pBuf, 5+5+5) ){
+    if( (iPos & colmask) != (pWriter->iPrev & colmask) ){
+      pBuf->p[pBuf->n++] = 1;
+      pBuf->n += sqlite3Fts5PutVarint(&pBuf->p[pBuf->n], (iPos>>32));
+      pWriter->iPrev = (iPos & colmask);
+    }
+    pBuf->n += sqlite3Fts5PutVarint(&pBuf->p[pBuf->n], (iPos-pWriter->iPrev)+2);
+    pWriter->iPrev = iPos;
   }
-  fts5BufferAppendVarint(&rc, pBuf, (iPos - pWriter->iPrev) + 2);
-  pWriter->iPrev = iPos;
   return rc;
 }
 
@@ -268,7 +264,7 @@ char *sqlite3Fts5Strndup(int *pRc, const char *pIn, int nIn){
   char *zRet = 0;
   if( *pRc==SQLITE_OK ){
     if( nIn<0 ){
-      nIn = strlen(pIn);
+      nIn = (int)strlen(pIn);
     }
     zRet = (char*)sqlite3_malloc(nIn+1);
     if( zRet ){
@@ -290,11 +286,12 @@ char *sqlite3Fts5Strndup(int *pRc, const char *pIn, int nIn){
 **   * The 52 upper and lower case ASCII characters, and
 **   * The 10 integer ASCII characters.
 **   * The underscore character "_" (0x5F).
+**   * The unicode "subsitute" character (0x1A).
 */
 int sqlite3Fts5IsBareword(char t){
   u8 aBareword[128] = {
     0, 0, 0, 0, 0, 0, 0, 0,    0, 0, 0, 0, 0, 0, 0, 0,   /* 0x00 .. 0x0F */
-    0, 0, 0, 0, 0, 0, 0, 0,    0, 0, 0, 0, 0, 0, 0, 0,   /* 0x10 .. 0x1F */
+    0, 0, 0, 0, 0, 0, 0, 0,    0, 0, 1, 0, 0, 0, 0, 0,   /* 0x10 .. 0x1F */
     0, 0, 0, 0, 0, 0, 0, 0,    0, 0, 0, 0, 0, 0, 0, 0,   /* 0x20 .. 0x2F */
     1, 1, 1, 1, 1, 1, 1, 1,    1, 1, 0, 0, 0, 0, 0, 0,   /* 0x30 .. 0x3F */
     0, 1, 1, 1, 1, 1, 1, 1,    1, 1, 1, 1, 1, 1, 1, 1,   /* 0x40 .. 0x4F */

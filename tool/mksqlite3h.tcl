@@ -71,6 +71,7 @@ fconfigure stdout -translation lf
 set filelist [subst {
   $TOP/src/sqlite.h.in
   $TOP/ext/rtree/sqlite3rtree.h
+  $TOP/ext/fts5/fts5.h
 }]
 
 # These are the functions that accept a variable number of arguments.  They
@@ -97,7 +98,7 @@ foreach file $filelist {
     # File sqlite3rtree.h contains a line "#include <sqlite3.h>". Omit this
     # line when copying sqlite3rtree.h into sqlite3.h.
     #
-    if {[string match {*#include*<sqlite3.h>*} $line]} continue
+    if {[string match {*#include*[<"]sqlite3.h[>"]*} $line]} continue
   
     regsub -- --VERS--           $line $zVersion line
     regsub -- --VERSION-NUMBER-- $line $nVersion line

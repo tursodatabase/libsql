@@ -32,6 +32,11 @@ typedef struct Fts5ExprTerm Fts5ExprTerm;
 void *sqlite3Fts5ParserAlloc(void *(*mallocProc)(u64));
 void sqlite3Fts5ParserFree(void*, void (*freeProc)(void*));
 void sqlite3Fts5Parser(void*, int, Fts5Token, Fts5Parse*);
+#ifndef NDEBUG
+#include <stdio.h>
+void sqlite3Fts5ParserTrace(FILE*, char*);
+#endif
+
 
 struct Fts5Expr {
   Fts5Index *pIndex;
@@ -90,22 +95,12 @@ struct Fts5ExprPhrase {
 };
 
 /*
-** If a NEAR() clump may only match a specific set of columns, then
-** Fts5ExprNearset.pColset points to an object of the following type.
-** Each entry in the aiCol[] array
-*/
-struct Fts5ExprColset {
-  int nCol;
-  int aiCol[1];
-};
-
-/*
 ** One or more phrases that must appear within a certain token distance of
 ** each other within each matching document.
 */
 struct Fts5ExprNearset {
   int nNear;                      /* NEAR parameter */
-  Fts5ExprColset *pColset;        /* Columns to search (NULL -> all columns) */
+  Fts5Colset *pColset;            /* Columns to search (NULL -> all columns) */
   int nPhrase;                    /* Number of entries in aPhrase[] array */
   Fts5ExprPhrase *apPhrase[1];    /* Array of phrase pointers */
 };
@@ -276,14 +271,6 @@ void sqlite3Fts5ExprFree(Fts5Expr *p){
   }
 }
 
-static int fts5ExprColsetTest(Fts5ExprColset *pColset, int iCol){
-  int i;
-  for(i=0; i<pColset->nCol; i++){
-    if( pColset->aiCol[i]==iCol ) return 1;
-  }
-  return 0;
-}
-
 /*
 ** Argument pTerm must be a synonym iterator. Return the current rowid
 ** that it points to.
@@ -314,6 +301,7 @@ static i64 fts5ExprSynonymRowid(Fts5ExprTerm *pTerm, int bDesc, int *pbEof){
 */
 static int fts5ExprSynonymPoslist(
   Fts5ExprTerm *pTerm, 
+  Fts5Colset *pColset,
   i64 iRowid,
   int *pbDel,                     /* OUT: Caller should sqlite3_free(*pa) */
   u8 **pa, int *pn
@@ -332,7 +320,7 @@ static int fts5ExprSynonymPoslist(
       const u8 *a;
       int n;
       i64 dummy;
-      rc = sqlite3Fts5IterPoslist(pIter, &a, &n, &dummy);
+      rc = sqlite3Fts5IterPoslist(pIter, pColset, &a, &n, &dummy);
       if( rc!=SQLITE_OK ) goto synonym_poslist_out;
       if( nIter==nAlloc ){
         int nByte = sizeof(Fts5PoslistReader) * nAlloc * 2;
@@ -346,7 +334,7 @@ static int fts5ExprSynonymPoslist(
         if( aIter!=aStatic ) sqlite3_free(aIter);
         aIter = aNew;
       }
-      sqlite3Fts5PoslistReaderInit(-1, a, n, &aIter[nIter]);
+      sqlite3Fts5PoslistReaderInit(a, n, &aIter[nIter]);
       assert( aIter[nIter].bEof==0 );
       nIter++;
     }
@@ -405,7 +393,7 @@ static int fts5ExprSynonymPoslist(
 */
 static int fts5ExprPhraseIsMatch(
   Fts5ExprNode *pNode,            /* Node pPhrase belongs to */
-  Fts5ExprColset *pColset,        /* Restrict matches to these columns */
+  Fts5Colset *pColset,            /* Restrict matches to these columns */
   Fts5ExprPhrase *pPhrase,        /* Phrase object to initialize */
   int *pbMatch                    /* OUT: Set to true if really a match */
 ){
@@ -414,13 +402,7 @@ static int fts5ExprPhraseIsMatch(
   Fts5PoslistReader *aIter = aStatic;
   int i;
   int rc = SQLITE_OK;
-  int iCol = -1;
   
-  if( pColset && pColset->nCol==1 ){
-    iCol = pColset->aiCol[0];
-    pColset = 0;
-  }
-
   fts5BufferZero(&pPhrase->poslist);
 
   /* If the aStatic[] array is not large enough, allocate a large array
@@ -440,12 +422,14 @@ static int fts5ExprPhraseIsMatch(
     int bFlag = 0;
     const u8 *a = 0;
     if( pTerm->pSynonym ){
-      rc = fts5ExprSynonymPoslist(pTerm, pNode->iRowid, &bFlag, (u8**)&a, &n);
+      rc = fts5ExprSynonymPoslist(
+          pTerm, pColset, pNode->iRowid, &bFlag, (u8**)&a, &n
+      );
     }else{
-      rc = sqlite3Fts5IterPoslist(pTerm->pIter, &a, &n, &dummy);
+      rc = sqlite3Fts5IterPoslist(pTerm->pIter, pColset, &a, &n, &dummy);
     }
     if( rc!=SQLITE_OK ) goto ismatch_out;
-    sqlite3Fts5PoslistReaderInit(iCol, a, n, &aIter[i]);
+    sqlite3Fts5PoslistReaderInit(a, n, &aIter[i]);
     aIter[i].bFlag = bFlag;
     if( aIter[i].bEof ) goto ismatch_out;
   }
@@ -468,11 +452,9 @@ static int fts5ExprPhraseIsMatch(
       }
     }while( bMatch==0 );
 
-    if( pColset==0 || fts5ExprColsetTest(pColset, FTS5_POS2COLUMN(iPos)) ){
-      /* Append position iPos to the output */
-      rc = sqlite3Fts5PoslistWriterAppend(&pPhrase->poslist, &writer, iPos);
-      if( rc!=SQLITE_OK ) goto ismatch_out;
-    }
+    /* Append position iPos to the output */
+    rc = sqlite3Fts5PoslistWriterAppend(&pPhrase->poslist, &writer, iPos);
+    if( rc!=SQLITE_OK ) goto ismatch_out;
 
     for(i=0; i<pPhrase->nTerm; i++){
       if( sqlite3Fts5PoslistReaderNext(&aIter[i]) ) goto ismatch_out;
@@ -767,61 +749,6 @@ static int fts5ExprSynonymAdvanceto(
   return bEof;
 }
 
-/*
-** IN/OUT parameter (*pa) points to a position list n bytes in size. If
-** the position list contains entries for column iCol, then (*pa) is set
-** to point to the sub-position-list for that column and the number of
-** bytes in it returned. Or, if the argument position list does not
-** contain any entries for column iCol, return 0.
-*/
-static int fts5ExprExtractCol(
-  const u8 **pa,                  /* IN/OUT: Pointer to poslist */
-  int n,                          /* IN: Size of poslist in bytes */
-  int iCol                        /* Column to extract from poslist */
-){
-  int iCurrent = 0;
-  const u8 *p = *pa;
-  const u8 *pEnd = &p[n];         /* One byte past end of position list */
-  u8 prev = 0;
-
-  while( iCol!=iCurrent ){
-    /* Advance pointer p until it points to pEnd or an 0x01 byte that is
-    ** not part of a varint */
-    while( (prev & 0x80) || *p!=0x01 ){
-      prev = *p++;
-      if( p==pEnd ) return 0;
-    }
-    *pa = p++;
-    p += fts5GetVarint32(p, iCurrent);
-  }
-
-  /* Advance pointer p until it points to pEnd or an 0x01 byte that is
-  ** not part of a varint */
-  assert( (prev & 0x80)==0 );
-  while( p<pEnd && ((prev & 0x80) || *p!=0x01) ){
-    prev = *p++;
-  }
-  return p - (*pa);
-}
-
-static int fts5ExprExtractColset (
-  Fts5ExprColset *pColset,        /* Colset to filter on */
-  const u8 *pPos, int nPos,       /* Position list */
-  Fts5Buffer *pBuf                /* Output buffer */
-){
-  int rc = SQLITE_OK;
-  int i;
-
-  fts5BufferZero(pBuf);
-  for(i=0; i<pColset->nCol; i++){
-    const u8 *pSub = pPos;
-    int nSub = fts5ExprExtractCol(&pSub, nPos, pColset->aiCol[i]);
-    if( nSub ){
-      fts5BufferAppendBlob(&rc, pBuf, nSub, pSub);
-    }
-  }
-  return rc;
-}
 
 static int fts5ExprNearTest(
   int *pRc,
@@ -868,35 +795,16 @@ static int fts5ExprTokenTest(
   Fts5ExprNearset *pNear = pNode->pNear;
   Fts5ExprPhrase *pPhrase = pNear->apPhrase[0];
   Fts5IndexIter *pIter = pPhrase->aTerm[0].pIter;
-  Fts5ExprColset *pColset = pNear->pColset;
-  const u8 *pPos;
-  int nPos;
+  Fts5Colset *pColset = pNear->pColset;
   int rc;
 
   assert( pNode->eType==FTS5_TERM );
   assert( pNear->nPhrase==1 && pPhrase->nTerm==1 );
   assert( pPhrase->aTerm[0].pSynonym==0 );
 
-  rc = sqlite3Fts5IterPoslist(pIter, &pPos, &nPos, &pNode->iRowid);
-
-  /* If the term may match any column, then this must be a match. 
-  ** Return immediately in this case. Otherwise, try to find the
-  ** part of the poslist that corresponds to the required column.
-  ** If it can be found, return. If it cannot, the next iteration
-  ** of the loop will test the next rowid in the database for this
-  ** term.  */
-  if( pColset==0 ){
-    assert( pPhrase->poslist.nSpace==0 );
-    pPhrase->poslist.p = (u8*)pPos;
-    pPhrase->poslist.n = nPos;
-  }else if( pColset->nCol==1 ){
-    assert( pPhrase->poslist.nSpace==0 );
-    pPhrase->poslist.n = fts5ExprExtractCol(&pPos, nPos, pColset->aiCol[0]);
-    pPhrase->poslist.p = (u8*)pPos;
-  }else if( rc==SQLITE_OK ){
-    rc = fts5ExprExtractColset(pColset, pPos, nPos, &pPhrase->poslist);
-  }
-
+  rc = sqlite3Fts5IterPoslist(pIter, pColset, 
+      (const u8**)&pPhrase->poslist.p, &pPhrase->poslist.n, &pNode->iRowid
+  );
   pNode->bNomatch = (pPhrase->poslist.n==0);
   return rc;
 }
@@ -999,9 +907,10 @@ static int fts5ExprNearInitAll(
           p->pIter = 0;
         }
         rc = sqlite3Fts5IndexQuery(
-            pExpr->pIndex, p->zTerm, strlen(p->zTerm),
+            pExpr->pIndex, p->zTerm, (int)strlen(p->zTerm),
             (pTerm->bPrefix ? FTS5INDEX_QUERY_PREFIX : 0) |
             (pExpr->bDesc ? FTS5INDEX_QUERY_DESC : 0),
+            pNear->pColset,
             &p->pIter
         );
         assert( rc==SQLITE_OK || p->pIter==0 );
@@ -1609,7 +1518,7 @@ Fts5ExprPhrase *sqlite3Fts5ParseTerm(
     int flags = FTS5_TOKENIZE_QUERY | (bPrefix ? FTS5_TOKENIZE_QUERY : 0);
     int n;
     sqlite3Fts5Dequote(z);
-    n = strlen(z);
+    n = (int)strlen(z);
     rc = sqlite3Fts5Tokenize(pConfig, flags, z, n, &sCtx, fts5ParseTokenize);
   }
   sqlite3_free(z);
@@ -1682,7 +1591,8 @@ int sqlite3Fts5ExprClonePhrase(
     Fts5ExprTerm *p;
     for(p=&pOrig->aTerm[i]; p && rc==SQLITE_OK; p=p->pSynonym){
       const char *zTerm = p->zTerm;
-      rc = fts5ParseTokenize((void*)&sCtx, tflags, zTerm, strlen(zTerm), 0, 0);
+      rc = fts5ParseTokenize((void*)&sCtx, tflags, zTerm, (int)strlen(zTerm),
+          0, 0);
       tflags = FTS5_TOKEN_COLOCATED;
     }
     if( rc==SQLITE_OK ){
@@ -1754,25 +1664,25 @@ void sqlite3Fts5ParseSetDistance(
 
 /*
 ** The second argument passed to this function may be NULL, or it may be
-** an existing Fts5ExprColset object. This function returns a pointer to
+** an existing Fts5Colset object. This function returns a pointer to
 ** a new colset object containing the contents of (p) with new value column
 ** number iCol appended. 
 **
 ** If an OOM error occurs, store an error code in pParse and return NULL.
 ** The old colset object (if any) is not freed in this case.
 */
-static Fts5ExprColset *fts5ParseColset(
+static Fts5Colset *fts5ParseColset(
   Fts5Parse *pParse,              /* Store SQLITE_NOMEM here if required */
-  Fts5ExprColset *p,              /* Existing colset object */
+  Fts5Colset *p,                  /* Existing colset object */
   int iCol                        /* New column to add to colset object */
 ){
   int nCol = p ? p->nCol : 0;     /* Num. columns already in colset object */
-  Fts5ExprColset *pNew;           /* New colset object to return */
+  Fts5Colset *pNew;               /* New colset object to return */
 
   assert( pParse->rc==SQLITE_OK );
   assert( iCol>=0 && iCol<pParse->pConfig->nCol );
 
-  pNew = sqlite3_realloc(p, sizeof(Fts5ExprColset) + sizeof(int)*nCol);
+  pNew = sqlite3_realloc(p, sizeof(Fts5Colset) + sizeof(int)*nCol);
   if( pNew==0 ){
     pParse->rc = SQLITE_NOMEM;
   }else{
@@ -1797,12 +1707,12 @@ static Fts5ExprColset *fts5ParseColset(
   return pNew;
 }
 
-Fts5ExprColset *sqlite3Fts5ParseColset(
+Fts5Colset *sqlite3Fts5ParseColset(
   Fts5Parse *pParse,              /* Store SQLITE_NOMEM here if required */
-  Fts5ExprColset *pColset,        /* Existing colset object */
+  Fts5Colset *pColset,            /* Existing colset object */
   Fts5Token *p
 ){
-  Fts5ExprColset *pRet = 0;
+  Fts5Colset *pRet = 0;
   int iCol;
   char *z;                        /* Dequoted copy of token p */
 
@@ -1832,7 +1742,7 @@ Fts5ExprColset *sqlite3Fts5ParseColset(
 void sqlite3Fts5ParseSetColset(
   Fts5Parse *pParse, 
   Fts5ExprNearset *pNear, 
-  Fts5ExprColset *pColset 
+  Fts5Colset *pColset 
 ){
   if( pNear ){
     pNear->pColset = pColset;
@@ -1924,7 +1834,7 @@ static char *fts5ExprTermPrint(Fts5ExprTerm *pTerm){
 
   /* Determine the maximum amount of space required. */
   for(p=pTerm; p; p=p->pSynonym){
-    nByte += strlen(pTerm->zTerm) * 2 + 3 + 2;
+    nByte += (int)strlen(pTerm->zTerm) * 2 + 3 + 2;
   }
   zQuoted = sqlite3_malloc(nByte);
 
@@ -2285,6 +2195,11 @@ int sqlite3Fts5ExprInit(Fts5Global *pGlobal, sqlite3 *db){
     rc = sqlite3_create_function(db, p->z, -1, SQLITE_UTF8, pCtx, p->x, 0, 0);
   }
 
+  /* Avoid a warning indicating that sqlite3Fts5ParserTrace() is unused */
+#ifndef NDEBUG
+  (void)sqlite3Fts5ParserTrace;
+#endif
+
   return rc;
 }
 
@@ -2320,4 +2235,3 @@ int sqlite3Fts5ExprPoslist(Fts5Expr *pExpr, int iPhrase, const u8 **pa){
   }
   return nRet;
 }
-

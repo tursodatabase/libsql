@@ -250,8 +250,6 @@ foreach rowid [db eval {SELECT rowid FROM x1_data WHERE rowid>100}] {
   }
 }
 
-}
-
 #------------------------------------------------------------------------
 #
 reset_db
@@ -334,6 +332,44 @@ do_execsql_test 6.3.6 {
 do_catchsql_test 6.3.5 {
   INSERT INTO t1(t1) VALUES('integrity-check');
 } {1 {database disk image is malformed}}
+
+
+}
+
+#------------------------------------------------------------------------
+#
+reset_db
+reset_db
+proc rnddoc {n} {
+  set map [list a b c d]
+  set doc [list]
+  for {set i 0} {$i < $n} {incr i} {
+    lappend doc "x[lindex $map [expr int(rand()*4)]]"
+  }
+  set doc
+}
+
+db func rnddoc rnddoc
+do_test 7.0 {
+  execsql {
+    CREATE VIRTUAL TABLE t5 USING fts5(x);
+    INSERT INTO t5 VALUES( rnddoc(10000) );
+    INSERT INTO t5 VALUES( rnddoc(10000) );
+    INSERT INTO t5 VALUES( rnddoc(10000) );
+    INSERT INTO t5 VALUES( rnddoc(10000) );
+    INSERT INTO t5(t5) VALUES('optimize');
+  }
+} {}
+
+do_test 7.1 {
+  foreach i [db eval { SELECT rowid FROM t5_data WHERE rowid>100 }] {
+    db eval BEGIN  
+    db eval {DELETE FROM t5_data WHERE rowid = $i}
+    set r [catchsql { INSERT INTO t5(t5) VALUES('integrity-check')} ]
+    if {$r != "1 {database disk image is malformed}"} { error $r }
+    db eval ROLLBACK  
+  }
+} {}
 
 sqlite3_fts5_may_be_corrupt 0
 finish_test

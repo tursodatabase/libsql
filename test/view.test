@@ -161,6 +161,16 @@ do_test view-3.3.3 {
 do_catchsql_test view-3.3.4 {
   CREATE VIEW v1err(x,y DESC,z) AS SELECT a, b+c, c-b FROM t1;
 } {1 {syntax error after column name "y"}}
+do_catchsql_test view-3.3.5 {
+  DROP VIEW IF EXISTS v1err;
+  CREATE VIEW v1err(x,y) AS SELECT a, b+c, c-b FROM t1;
+  SELECT * FROM v1err;
+} {1 {expected 2 columns for 'v1err' but got 3}}
+do_catchsql_test view-3.3.6 {
+  DROP VIEW IF EXISTS v1err;
+  CREATE VIEW v1err(w,x,y,z) AS SELECT a, b+c, c-b FROM t1;
+  SELECT * FROM v1err;
+} {1 {expected 4 columns for 'v1err' but got 3}}
 
 ifcapable compound {
 do_test  view-3.4 {
@@ -464,6 +474,11 @@ do_test view-12.1 {
     CREATE VIEW v12 AS SELECT a FROM t1 WHERE b=?
   }
 } {1 {parameters are not allowed in views}}
+do_test view-12.2 {
+  catchsql {
+    CREATE VIEW v12(x) AS SELECT a FROM t1 WHERE b=?
+  }
+} {1 {parameters are not allowed in views}}
 
 ifcapable attach {
   do_test view-13.1 {
@@ -481,6 +496,13 @@ ifcapable attach {
 do_test view-14.1 {
   catchsql {
     CREATE TEMP VIEW t1 AS SELECT a,b FROM t1;
+    SELECT * FROM temp.t1;
+  }
+} {1 {view t1 is circularly defined}}
+do_test view-14.2 {
+  catchsql {
+    DROP VIEW IF EXISTS temp.t1;
+    CREATE TEMP VIEW t1(a,b) AS SELECT a,b FROM t1;
     SELECT * FROM temp.t1;
   }
 } {1 {view t1 is circularly defined}}
