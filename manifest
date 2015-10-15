@@ -1,5 +1,5 @@
-C Performance\soptimizations\sto\sthe\ssqlite3MallocSize()\sby\srequiring\sthe\nargument\sto\salways\sbe\snon-NULL.
-D 2015-10-15T16:20:57.639
+C Remove\sa\ssuperfluous\sconditional\sfrom\sthe\smemory\sallocation\sinitialization.
+D 2015-10-15T17:21:35.142
 F Makefile.in 2ea961bc09e441874eb3d1bf7398e04feb24f3ee
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8e42cb55739cd8c12e1fd25401956e2019448f6a
@@ -304,7 +304,7 @@ F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c d344a95d60c24e2f490ee59db9784b1b17439012
 F src/loadext.c 18586e45a215325f15096821e9c082035d4fb810
 F src/main.c fec97668771438033a7559883401067b139729e1
-F src/malloc.c 3eb27dfe5a440d361d052866e548ddfc2669610d
+F src/malloc.c 0a2e42b835c980ba91c17866e9b6a9810ff54d75
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 52485a88f22649c3b3b4f3eb15760505d49ccf71
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
@@ -1391,7 +1391,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6422d223dd10018703c6b083d29a3c35c837fc97
-R 61da1a642f1583d907f58e607b0973a0
+P cb65989b0710c65e4df69063b346344fdb1d12c7
+R a487354b2dba16d26964bcd9e3d80d3a
 U drh
-Z ba2748c928f977ad58dd71b47cc5c10d
+Z 021a2aefbc99b74fa479ea7f890a7d86
