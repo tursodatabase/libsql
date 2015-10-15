@@ -411,6 +411,7 @@ int sqlite3MallocSize(void *p){
   return sqlite3GlobalConfig.m.xSize(p);
 }
 int sqlite3DbMallocSize(sqlite3 *db, void *p){
+  assert( p!=0 );
   if( db==0 || !isLookaside(db,p) ){
 #if SQLITE_DEBUG
     if( db==0 ){
@@ -430,7 +431,7 @@ int sqlite3DbMallocSize(sqlite3 *db, void *p){
 sqlite3_uint64 sqlite3_msize(void *p){
   assert( sqlite3MemdebugNoType(p, (u8)~MEMTYPE_HEAP) );
   assert( sqlite3MemdebugHasType(p, MEMTYPE_HEAP) );
-  return (sqlite3_uint64)sqlite3GlobalConfig.m.xSize(p);
+  return p ? sqlite3GlobalConfig.m.xSize(p) : 0;
 }
 
 /*
@@ -456,7 +457,7 @@ void sqlite3_free(void *p){
 ** *db->pnBytesFreed.
 */
 static SQLITE_NOINLINE void measureAllocationSize(sqlite3 *db, void *p){
-  *db->pnBytesFreed += sqlite3DbMallocSize(db,p);
+  if( p ) *db->pnBytesFreed += sqlite3DbMallocSize(db,p);
 }
 
 /*

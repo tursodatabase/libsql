@@ -1,5 +1,5 @@
-C Change\ssqlite3StatusSet()\sinto\ssqlite3StatusHighwater()\sso\sthat\sonly\sthe\nhighwater\smark\sis\srecorded.\s\sThis\sgives\sa\ssmall\ssize\sreduction\sand\nperformance\simprovement.
-D 2015-10-15T15:28:56.847
+C Performance\soptimizations\sto\sthe\ssqlite3MallocSize()\sby\srequiring\sthe\nargument\sto\salways\sbe\snon-NULL.
+D 2015-10-15T16:20:57.639
 F Makefile.in 2ea961bc09e441874eb3d1bf7398e04feb24f3ee
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8e42cb55739cd8c12e1fd25401956e2019448f6a
@@ -304,12 +304,12 @@ F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c d344a95d60c24e2f490ee59db9784b1b17439012
 F src/loadext.c 18586e45a215325f15096821e9c082035d4fb810
 F src/main.c fec97668771438033a7559883401067b139729e1
-F src/malloc.c f2daeddf05f81c2b1cf3949d8c4281618d73f0a9
+F src/malloc.c 3eb27dfe5a440d361d052866e548ddfc2669610d
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
-F src/mem1.c abe6ee469b6c5a35c7f22bfeb9c9bac664a1c987
+F src/mem1.c 52485a88f22649c3b3b4f3eb15760505d49ccf71
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
-F src/mem3.c 61c9d47b792908c532ca3a62b999cf21795c6534
-F src/mem5.c 61eeb90134f9a5be6c2e68d8daae7628b25953fb
+F src/mem3.c 8768ac94694f31ffaf8b4d0ea5dc08af7010a35a
+F src/mem5.c c1ab1153bd6443bdf6f71e4213c6fb31221b9eb7
 F src/memjournal.c 3eb2c0b51adbd869cb6a44780323f05fa904dc85
 F src/msvc.h d9ba56c6851227ab44b3f228a35f3f5772296495
 F src/mutex.c 8e45800ee78e0cd1f1f3fe8e398853307f4a085c
@@ -345,7 +345,7 @@ F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 4b66e3e3435da4b4c8c83696d0349f0c503b3924
 F src/sqliteInt.h 1d888049aafa4fdeafe7c4152bdf394850313f90
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
-F src/status.c 3c4be54e8e315c27169b3080c145d1e8c0510e72
+F src/status.c 286f6398a4d2cd1e8ff0771e3d30f8dddb4768ea
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
 F src/tclsqlite.c d9439b6a910985b7fff43ba6756bcef00de22649
 F src/test1.c 8fff9c5aa63d6490f516d018b70c12a9cb9a4d8a
@@ -1391,7 +1391,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a61880c223c2229ecc3b4da7e5647eca17f7ddf5
-R 93b47b85dfb060db3756b8ecaab6f06d
+P 6422d223dd10018703c6b083d29a3c35c837fc97
+R 61da1a642f1583d907f58e607b0973a0
 U drh
-Z 7b0d80b3bcf3d2289e08ced4ae20156e
+Z ba2748c928f977ad58dd71b47cc5c10d
