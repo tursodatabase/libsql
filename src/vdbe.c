@@ -2368,6 +2368,7 @@ case OP_Column: {
   const u8 *zHdr;    /* Next unparsed byte of the header */
   const u8 *zEndHdr; /* Pointer to first byte after the header */
   u32 offset;        /* Offset into the data */
+  u64 offset64;      /* 64-bit offset */
   u32 szField;       /* Number of bytes in the content of a field */
   u32 avail;         /* Number of bytes of available data */
   u32 t;             /* A type code from the record header */
@@ -2494,7 +2495,7 @@ case OP_Column: {
   
       /* Fill in pC->aType[i] and aOffset[i] values through the p2-th field. */
       i = pC->nHdrParsed;
-      offset = aOffset[i];
+      offset64 = aOffset[i];
       zHdr = zData + pC->iHdrOffset;
       zEndHdr = zData + aOffset[0];
       assert( i<=p2 && zHdr<zEndHdr );
@@ -2507,13 +2508,9 @@ case OP_Column: {
         }
         pC->aType[i] = t;
         szField = sqlite3VdbeSerialTypeLen(t);
-        offset += szField;
-        if( offset<szField ){  /* True if offset overflows */
-          zHdr = &zEndHdr[1];  /* Forces SQLITE_CORRUPT return below */
-          break;
-        }
+        offset64 += szField;
         i++;
-        aOffset[i] = offset;
+        aOffset[i] = (u32)(offset64 & 0xffffffff);
       }while( i<=p2 && zHdr<zEndHdr );
       pC->nHdrParsed = i;
       pC->iHdrOffset = (u32)(zHdr - zData);
@@ -2526,12 +2523,12 @@ case OP_Column: {
       ** (1) the bytes of the header extend past the declared header size
       **          (zHdr>zEndHdr)
       ** (2) the entire header was used but not all data was used
-      **          (zHdr==zEndHdr && offset!=pC->payloadSize)
+      **          (zHdr==zEndHdr && offset64!=pC->payloadSize)
       ** (3) the end of the data extends beyond the end of the record.
-      **          (offset > pC->payloadSize)
+      **          (offset64 > pC->payloadSize)
       */
-      if( (zHdr>=zEndHdr && (zHdr>zEndHdr || offset!=pC->payloadSize))
-       || (offset > pC->payloadSize)
+      if( (zHdr>=zEndHdr && (zHdr>zEndHdr || offset64!=pC->payloadSize))
+       || (offset64 > pC->payloadSize)
       ){
         rc = SQLITE_CORRUPT_BKPT;
         goto op_column_error;

@@ -1,5 +1,5 @@
-C Enhance\sthe\suse\sof\sthe\scolumn\scache\sfor\sUPDATE\sstatements,\smaking\sthem\nmore\sefficient\sfor\sthe\scase\swhere\sa\scolumn\sis\smodified\sto\sbe\san\sexpression\nof\sother\sunmodified\scolumns.
-D 2015-10-15T19:21:51.254
+C Performance\soptimization\sfor\sthe\sOP_Column\sopcode.
+D 2015-10-15T21:30:24.579
 F Makefile.in 2ea961bc09e441874eb3d1bf7398e04feb24f3ee
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8e42cb55739cd8c12e1fd25401956e2019448f6a
@@ -401,7 +401,7 @@ F src/update.c aa10336a2719bd1b9f89004f3d7ba6d566623a49
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c fc612367108b74573c5fd13a85d0a23027f438bd
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c 61bd96c72f103d2e96de6ab7852dc009dc9bb6b3
+F src/vdbe.c c33faa487c474d41a082979206896988448c9df9
 F src/vdbe.h 4bc88bd0e06f8046ee6ab7487c0015e85ad949ad
 F src/vdbeInt.h 8b867eac234e28627ffcace3cd4b4b79bbec664b
 F src/vdbeapi.c 020681b943e77766b32ae1cddf86d7831b7374ca
@@ -1391,7 +1391,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3a2f73a4924860fde8ee41ad646e7a02d29ad9d5
-R 16722b48de28ae59c1a22e712b62a0b0
+P 871e091df651b2275a672c35ff938bd4b6db0d7f
+R 2a9ee0eee7d0527a150149dc10bab0fb
 U drh
-Z fcd4e595e3a40ac192e62fadc88a95a3
+Z 586c37c7b737d31273c8670597b9862e
