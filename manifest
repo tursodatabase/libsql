@@ -1,5 +1,5 @@
-C Enhance\sthe\suse\sof\sthe\scolumn\scache\sfor\sUPDATE\sstatements,\smaking\sthem\nmore\sefficient\sfor\sthe\scase\swhere\sa\scolumn\sis\smodified\sto\sbe\san\sexpression\nof\sother\sunmodified\scolumns.
-D 2015-10-15T19:21:51.254
+C Experiments\swith\san\sOP_Unpack\sopcode\sthat\sextracts\smultiple\scolumns\sfrom\na\srecord\swithout\scaching.
+D 2015-10-15T20:17:15.103
 F Makefile.in 2ea961bc09e441874eb3d1bf7398e04feb24f3ee
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8e42cb55739cd8c12e1fd25401956e2019448f6a
@@ -338,7 +338,7 @@ F src/printf.c 0c4bcdd1c2e2521024f0a69cb5eb334f86b3652a
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 1954a0f01bf65d78d7d559aea3d5c67f33376d91
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c dbf1fb82317043304da334a33206add211487f96
+F src/select.c a4478981ce53cb7e28d0252417deece6ad5fe693
 F src/shell.c d25df04168d6ba5a4fa05bdbf859df667f9eb621
 F src/sqlite.h.in 839c818e16ea68703d90d17bd2bb3607191debce
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
@@ -401,7 +401,7 @@ F src/update.c aa10336a2719bd1b9f89004f3d7ba6d566623a49
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c fc612367108b74573c5fd13a85d0a23027f438bd
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c 61bd96c72f103d2e96de6ab7852dc009dc9bb6b3
+F src/vdbe.c a0a2aea6a146e2479bdb7dba584f3e625ceccc30
 F src/vdbe.h 4bc88bd0e06f8046ee6ab7487c0015e85ad949ad
 F src/vdbeInt.h 8b867eac234e28627ffcace3cd4b4b79bbec664b
 F src/vdbeapi.c 020681b943e77766b32ae1cddf86d7831b7374ca
@@ -1391,7 +1391,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3a2f73a4924860fde8ee41ad646e7a02d29ad9d5
-R 16722b48de28ae59c1a22e712b62a0b0
+P 871e091df651b2275a672c35ff938bd4b6db0d7f
+R 12f17dff849f2a06a10012eebf93b957
+T *branch * unpack-opcode
+T *sym-unpack-opcode *
+T -sym-trunk *
 U drh
-Z fcd4e595e3a40ac192e62fadc88a95a3
+Z 51853eb094abb609c64d30de1af24213

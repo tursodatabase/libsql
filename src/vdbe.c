@@ -2614,6 +2614,51 @@ op_column_error:
   break;
 }
 
+/* Opcode: Unpack P1 P2 P3 P4 *
+** Synopsis: r[P2@P3] = unpack(P1)
+**
+** Decode the P3 fields of the record object held in register P1
+** start with the P4-th field and store the values in registers P2
+** and following.
+*/
+case OP_Unpack: {
+  const unsigned char *aKey;
+  int d; 
+  u32 idx;                        /* Offset in aKey[] to read from */
+  u16 u;                          /* Unsigned loop counter */
+  u32 szHdr;
+  int nField;     
+  u32 serial_type;
+  int iOfst;                      /* Skip this many fields */
+
+  pIn1 = &aMem[pOp->p1];
+  assert( pIn1->flags & MEM_Blob );
+  aKey = (const unsigned char*)pIn1->z;
+  pOut = &aMem[pOp->p2];
+  nField = pOp->p3;
+  assert( pOp->p4type==P4_INT32 );
+  iOfst = pOp->p4.i;
+  idx = getVarint32(aKey, szHdr);
+  d = szHdr;
+  u = 0;
+  while( idx<szHdr && d<=pIn1->n ){
+    idx += getVarint32(&aKey[idx], serial_type);
+    if( iOfst ){
+      iOfst--;
+      d += sqlite3VdbeSerialTypeLen(serial_type);
+    }else{
+      memAboutToChange(p, pOut);
+      sqlite3VdbeMemSetNull(pOut);
+      pOut->enc = encoding;
+      d += sqlite3VdbeSerialGet(&aKey[d], serial_type, pOut);
+      REGISTER_TRACE((int)(pOut - aMem), pOut);
+      pOut++;
+      if( (++u)>=nField ) break;
+    }
+  }
+  break;
+}
+
 /* Opcode: Affinity P1 P2 * P4 *
 ** Synopsis: affinity(r[P1@P2])
 **

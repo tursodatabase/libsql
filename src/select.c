@@ -1230,15 +1230,16 @@ static void generateSortTail(
     codeOffset(v, p->iOffset, addrContinue);
     sqlite3VdbeAddOp3(v, OP_SorterData, iTab, regSortOut, iSortTab);
     bSeq = 0;
+    sqlite3VdbeAddOp4Int(v, OP_Unpack, regSortOut, regRow, nSortData, nKey);
   }else{
     addr = 1 + sqlite3VdbeAddOp2(v, OP_Sort, iTab, addrBreak); VdbeCoverage(v);
     codeOffset(v, p->iOffset, addrContinue);
     iSortTab = iTab;
     bSeq = 1;
-  }
-  for(i=0; i<nSortData; i++){
-    sqlite3VdbeAddOp3(v, OP_Column, iSortTab, nKey+bSeq+i, regRow+i);
-    VdbeComment((v, "%s", aOutEx[i].zName ? aOutEx[i].zName : aOutEx[i].zSpan));
+    for(i=0; i<nSortData; i++){
+      sqlite3VdbeAddOp3(v, OP_Column, iSortTab, nKey+bSeq+i, regRow+i);
+      VdbeComment((v, "%s", aOutEx[i].zName ? aOutEx[i].zName : aOutEx[i].zSpan));
+    }
   }
   switch( eDest ){
     case SRT_EphemTab: {
@@ -5340,11 +5341,9 @@ int sqlite3Select(
       if( groupBySort ){
         sqlite3VdbeAddOp3(v, OP_SorterData, sAggInfo.sortingIdx,
                           sortOut, sortPTab);
-      }
-      for(j=0; j<pGroupBy->nExpr; j++){
-        if( groupBySort ){
-          sqlite3VdbeAddOp3(v, OP_Column, sortPTab, j, iBMem+j);
-        }else{
+        sqlite3VdbeAddOp4Int(v, OP_Unpack, sortOut, iBMem, pGroupBy->nExpr, 0);
+      }else{
+        for(j=0; j<pGroupBy->nExpr; j++){
           sAggInfo.directMode = 1;
           sqlite3ExprCode(pParse, pGroupBy->a[j].pExpr, iBMem+j);
         }
