@@ -65,7 +65,7 @@ TCC += -DSQLITE_THREADSAFE=@SQLITE_THREADSAFE@
 
 # Any target libraries which libsqlite must be linked against
 # 
-TLIBS = @LIBS@
+TLIBS = @LIBS@ $(LIBS)
 
 # Flags controlling use of the in memory btree implementation
 #
@@ -155,9 +155,6 @@ LTCOMPILE = $(LIBTOOL) --mode=compile --tag=CC $(TCC) $(LTCOMPILE_EXTRAS)
 LTLINK = $(LIBTOOL) --mode=link $(TCC) $(LTCOMPILE_EXTRAS) @LDFLAGS@ $(LTLINK_EXTRAS)
 LTINSTALL = $(LIBTOOL) --mode=install $(INSTALL)
 
-# nawk compatible awk.
-NAWK = @AWK@
-
 # You should not have to change anything below this line
 ###############################################################################
 
@@ -175,7 +172,7 @@ LIBOBJS0 = alter.lo analyze.lo attach.lo auth.lo \
          fts3_unicode.lo fts3_unicode2.lo fts3_write.lo \
 	 fts5.lo \
          func.lo global.lo hash.lo \
-         icu.lo insert.lo journal.lo legacy.lo loadext.lo \
+         icu.lo insert.lo journal.lo json1.lo legacy.lo loadext.lo \
          main.lo malloc.lo mem0.lo mem1.lo mem2.lo mem3.lo mem5.lo \
          memjournal.lo \
          mutex.lo mutex_noop.lo mutex_unix.lo mutex_w32.lo \
@@ -272,8 +269,8 @@ SRC = \
   $(TOP)/src/sqliteInt.h \
   $(TOP)/src/sqliteLimit.h \
   $(TOP)/src/table.c \
-  $(TOP)/src/threads.c \
   $(TOP)/src/tclsqlite.c \
+  $(TOP)/src/threads.c \
   $(TOP)/src/tokenize.c \
   $(TOP)/src/treeview.c \
   $(TOP)/src/trigger.c \
@@ -347,6 +344,9 @@ SRC += \
 SRC += \
   $(TOP)/ext/rbu/sqlite3rbu.h \
   $(TOP)/ext/rbu/sqlite3rbu.c
+SRC += \
+  $(TOP)/ext/misc/json1.c
+
 
 
 # Generated source code files
@@ -417,7 +417,6 @@ TESTSRC += \
   $(TOP)/ext/fts5/fts5_tcl.c \
   $(TOP)/ext/fts5/fts5_test_mi.c \
   $(TOP)/ext/misc/ieee754.c \
-  $(TOP)/ext/misc/json1.c \
   $(TOP)/ext/misc/nextchar.c \
   $(TOP)/ext/misc/percentile.c \
   $(TOP)/ext/misc/regexp.c \
@@ -541,15 +540,15 @@ FUZZDATA = \
   $(TOP)/test/fuzzdata3.db \
   $(TOP)/test/fuzzdata4.db
 
-# Extra arguments for including json1 in the build of tools
-#
-JSON1_DEP = $(TOP)/ext/misc/json1.c sqlite3ext.h
-JSON1_OPT = -DSQLITE_ENABLE_JSON1 -DSQLITE_CORE
-JSON1_SRC = $(TOP)/ext/misc/json1.c
-
 # Standard options to testfixture
 #
 TESTOPTS = --verbose=file --output=test-out.txt
+
+# Extra compiler options for various shell tools
+#
+SHELL_OPT = -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_FTS4 -DSQLITE_ENABLE_FTS5
+FUZZERSHELL_OPT = -DSQLITE_ENABLE_JSON1
+FUZZCHECK_OPT = -DSQLITE_ENABLE_JSON1
 
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
@@ -573,20 +572,20 @@ libtclsqlite3.la:	tclsqlite.lo libsqlite3.la
 		-version-info "8:6:8" \
 		-avoid-version
 
-sqlite3$(TEXE):	$(TOP)/src/shell.c libsqlite3.la sqlite3.h $(JSON1_DEP)
-	$(LTLINK) $(READLINE_FLAGS) $(JSON1_OPT) -o $@ \
-		$(TOP)/src/shell.c $(JSON1_SRC) libsqlite3.la \
+sqlite3$(TEXE):	$(TOP)/src/shell.c libsqlite3.la sqlite3.h
+	$(LTLINK) $(READLINE_FLAGS) $(SHELL_OPT) -o $@ \
+		$(TOP)/src/shell.c libsqlite3.la \
 		$(LIBREADLINE) $(TLIBS) -rpath "$(libdir)"
 
 sqldiff$(TEXE):	$(TOP)/tool/sqldiff.c sqlite3.c sqlite3.h
 	$(LTLINK) -o $@ $(TOP)/tool/sqldiff.c sqlite3.c $(TLIBS)
 
-fuzzershell$(TEXE):	$(TOP)/tool/fuzzershell.c sqlite3.c sqlite3.h $(JSON1_DEP)
-	$(LTLINK) -o $@ $(JSON1_OPT) \
-	  $(TOP)/tool/fuzzershell.c $(JSON1_SRC) sqlite3.c $(TLIBS)
+fuzzershell$(TEXE):	$(TOP)/tool/fuzzershell.c sqlite3.c sqlite3.h
+	$(LTLINK) -o $@ $(FUZZERSHELL_OPT) \
+	  $(TOP)/tool/fuzzershell.c sqlite3.c $(TLIBS)
 
-fuzzcheck$(TEXE):	$(TOP)/test/fuzzcheck.c sqlite3.c sqlite3.h $(JSON1_DEP)
-	$(LTLINK) -o $@ $(JSON1_OPT) $(TOP)/test/fuzzcheck.c $(JSON1_SRC) sqlite3.c $(TLIBS)
+fuzzcheck$(TEXE):	$(TOP)/test/fuzzcheck.c sqlite3.c sqlite3.h
+	$(LTLINK) -o $@ $(FUZZCHECK_OPT) $(TOP)/test/fuzzcheck.c sqlite3.c $(TLIBS)
 
 mptester$(TEXE):	sqlite3.c $(TOP)/mptest/mptest.c
 	$(LTLINK) -o $@ -I. $(TOP)/mptest/mptest.c sqlite3.c \
@@ -612,18 +611,22 @@ mptest:	mptester$(TEXE)
 # files are automatically generated.  This target takes care of
 # all that automatic generation.
 #
-.target_source:	$(SRC) $(TOP)/tool/vdbe-compress.tcl
+.target_source:	$(SRC) $(TOP)/tool/vdbe-compress.tcl fts5.c
 	rm -rf tsrc
 	mkdir tsrc
 	cp -f $(SRC) tsrc
 	rm tsrc/sqlite.h.in tsrc/parse.y
 	$(TCLSH_CMD) $(TOP)/tool/vdbe-compress.tcl $(OPTS) <tsrc/vdbe.c >vdbe.new
 	mv vdbe.new tsrc/vdbe.c
+	cp fts5.c fts5.h tsrc
 	touch .target_source
 
 sqlite3.c:	.target_source $(TOP)/tool/mksqlite3c.tcl
 	$(TCLSH_CMD) $(TOP)/tool/mksqlite3c.tcl
 	cp tsrc/shell.c tsrc/sqlite3ext.h .
+
+sqlite3ext.h:	.target_source
+	cp tsrc/sqlite3ext.h .
 
 tclsqlite3.c:	sqlite3.c
 	echo '#ifndef USE_SYSTEM_SQLITE' >tclsqlite3.c
@@ -896,22 +899,22 @@ tclsqlite3$(TEXE):	tclsqlite-shell.lo libsqlite3.la
 
 # Rules to build opcodes.c and opcodes.h
 #
-opcodes.c:	opcodes.h $(TOP)/mkopcodec.awk
-	$(NAWK) -f $(TOP)/mkopcodec.awk opcodes.h >opcodes.c
+opcodes.c:	opcodes.h $(TOP)/tool/mkopcodec.tcl
+	$(TCLSH_CMD) $(TOP)/tool/mkopcodec.tcl opcodes.h >opcodes.c
 
-opcodes.h:	parse.h $(TOP)/src/vdbe.c $(TOP)/mkopcodeh.awk
-	cat parse.h $(TOP)/src/vdbe.c | $(NAWK) -f $(TOP)/mkopcodeh.awk >opcodes.h
+opcodes.h:	parse.h $(TOP)/src/vdbe.c $(TOP)/tool/mkopcodeh.tcl
+	cat parse.h $(TOP)/src/vdbe.c | $(TCLSH_CMD) $(TOP)/tool/mkopcodeh.tcl >opcodes.h
 
 # Rules to build parse.c and parse.h - the outputs of lemon.
 #
 parse.h:	parse.c
 
-parse.c:	$(TOP)/src/parse.y lemon$(BEXE) $(TOP)/addopcodes.awk
+parse.c:	$(TOP)/src/parse.y lemon$(BEXE) $(TOP)/tool/addopcodes.tcl
 	cp $(TOP)/src/parse.y .
 	rm -f parse.h
 	./lemon$(BEXE) $(OPT_FEATURE_FLAGS) $(OPTS) parse.y
 	mv parse.h parse.h.temp
-	$(NAWK) -f $(TOP)/addopcodes.awk parse.h.temp >parse.h
+	$(TCLSH_CMD) $(TOP)/tool/addopcodes.tcl parse.h.temp >parse.h
 
 sqlite3.h:	$(TOP)/src/sqlite.h.in $(TOP)/manifest.uuid $(TOP)/VERSION
 	$(TCLSH_CMD) $(TOP)/tool/mksqlite3h.tcl $(TOP) >sqlite3.h
@@ -986,6 +989,9 @@ fts3_write.lo:	$(TOP)/ext/fts3/fts3_write.c $(HDR) $(EXTHDR)
 
 rtree.lo:	$(TOP)/ext/rtree/rtree.c $(HDR) $(EXTHDR)
 	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/rtree/rtree.c
+
+json1.lo:	$(TOP)/ext/misc/json1.c
+	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/misc/json1.c
 
 # FTS5 things
 #
@@ -1093,7 +1099,7 @@ sqlite3_analyzer.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl
 	cat sqlite3.c $(TOP)/src/tclsqlite.c >> $@
 	echo "static const char *tclsh_main_loop(void){" >> $@
 	echo "static const char *zMainloop = " >> $@
-	$(NAWK) -f $(TOP)/tool/tostr.awk $(TOP)/tool/spaceanal.tcl >> $@
+	$(TCLSH_CMD) $(TOP)/tool/tostr.tcl $(TOP)/tool/spaceanal.tcl >> $@
 	echo "; return zMainloop; }" >> $@
 
 sqlite3_analyzer$(TEXE): sqlite3_analyzer.c

@@ -7,6 +7,7 @@ set G(src) [string map [list %dir% $srcdir] {
   %dir%/fts5.h
   %dir%/fts5Int.h
   fts5parse.h
+  fts5parse.c
   %dir%/fts5_aux.c
   %dir%/fts5_buffer.c
   %dir%/fts5_config.c
@@ -19,12 +20,11 @@ set G(src) [string map [list %dir% $srcdir] {
   %dir%/fts5_unicode2.c
   %dir%/fts5_varint.c
   %dir%/fts5_vocab.c
-  fts5parse.c
 }]
 
 set G(hdr) {
 
-#if !defined(SQLITE_TEST) || defined(SQLITE_ENABLE_FTS5) 
+#if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_FTS5) 
 
 #if !defined(NDEBUG) && !defined(SQLITE_DEBUG) 
 # define NDEBUG 1
@@ -37,7 +37,7 @@ set G(hdr) {
 
 set G(footer) {
     
-#endif /* !defined(SQLITE_TEST) || defined(SQLITE_ENABLE_FTS5) */
+#endif /* !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_FTS5) */
 }
 
 #-------------------------------------------------------------------------
@@ -87,7 +87,9 @@ proc fts5c_printfile {zIn} {
 
   foreach line [split $data "\n"] {
     if {[regexp {^#include.*fts5} $line]} continue
-    if {[regexp {^(const )?[a-zA-Z][a-zA-Z0-9]* [*]?sqlite3Fts5} $line]} {
+    if { ![regexp { sqlite3Fts5Init\(} $line] 
+       && [regexp {^(const )?[a-zA-Z][a-zA-Z0-9]* [*]?sqlite3Fts5} $line]
+    } {
       set line "static $line"
     }
     set line [string map $sub_map $line]
@@ -107,7 +109,3 @@ proc fts5c_close {} {
 fts5c_init fts5.c
 foreach f $G(src) { fts5c_printfile $f }
 fts5c_close
-
-
-
-

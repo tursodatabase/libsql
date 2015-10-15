@@ -284,8 +284,6 @@ breakpoint
 do_faultsim_test 6 -faults oom* -prep {
   sqlite_orig db test.db
   sqlite3_db_config_lookaside db 0 0 0
-} -body {
-  load_static_extension db fts5
 } -test {
   faultsim_test_result {0 {}} {1 {initialization of fts5 failed: }}
   if {$testrc==0} {

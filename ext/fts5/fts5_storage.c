@@ -392,7 +392,7 @@ static int fts5StorageDeleteFromIndex(Fts5Storage *p, i64 iDel){
       Fts5InsertCtx ctx;
       ctx.pStorage = p;
       ctx.iCol = -1;
-      rc = sqlite3Fts5IndexBeginWrite(p->pIndex, iDel);
+      rc = sqlite3Fts5IndexBeginWrite(p->pIndex, 1, iDel);
       for(iCol=1; rc==SQLITE_OK && iCol<=pConfig->nCol; iCol++){
         if( pConfig->abUnindexed[iCol-1] ) continue;
         ctx.szCol = 0;
@@ -549,7 +549,7 @@ int sqlite3Fts5StorageSpecialDelete(
     ctx.pStorage = p;
     ctx.iCol = -1;
 
-    rc = sqlite3Fts5IndexBeginWrite(p->pIndex, iDel);
+    rc = sqlite3Fts5IndexBeginWrite(p->pIndex, 1, iDel);
     for(iCol=0; rc==SQLITE_OK && iCol<pConfig->nCol; iCol++){
       if( pConfig->abUnindexed[iCol] ) continue;
       ctx.szCol = 0;
@@ -639,7 +639,7 @@ int sqlite3Fts5StorageRebuild(Fts5Storage *p){
     i64 iRowid = sqlite3_column_int64(pScan, 0);
 
     sqlite3Fts5BufferZero(&buf);
-    rc = sqlite3Fts5IndexBeginWrite(p->pIndex, iRowid);
+    rc = sqlite3Fts5IndexBeginWrite(p->pIndex, 0, iRowid);
     for(ctx.iCol=0; rc==SQLITE_OK && ctx.iCol<pConfig->nCol; ctx.iCol++){
       ctx.szCol = 0;
       if( pConfig->abUnindexed[ctx.iCol]==0 ){
@@ -705,58 +705,69 @@ static int fts5StorageNewRowid(Fts5Storage *p, i64 *piRowid){
 }
 
 /*
-** Insert a new row into the FTS table.
+** Insert a new row into the FTS content table.
 */
-int sqlite3Fts5StorageInsert(
-  Fts5Storage *p,                 /* Storage module to write to */
-  sqlite3_value **apVal,          /* Array of values passed to xUpdate() */
-  int eConflict,                  /* on conflict clause */
-  i64 *piRowid                    /* OUT: rowid of new record */
+int sqlite3Fts5StorageContentInsert(
+  Fts5Storage *p, 
+  sqlite3_value **apVal, 
+  i64 *piRowid
+){
+  Fts5Config *pConfig = p->pConfig;
+  int rc = SQLITE_OK;
+
+  /* Insert the new row into the %_content table. */
+  if( pConfig->eContent!=FTS5_CONTENT_NORMAL ){
+    if( sqlite3_value_type(apVal[1])==SQLITE_INTEGER ){
+      *piRowid = sqlite3_value_int64(apVal[1]);
+    }else{
+      rc = fts5StorageNewRowid(p, piRowid);
+    }
+  }else{
+    sqlite3_stmt *pInsert = 0;    /* Statement to write %_content table */
+    int i;                        /* Counter variable */
+#if 0
+    if( eConflict==SQLITE_REPLACE ){
+      eStmt = FTS5_STMT_REPLACE_CONTENT;
+      rc = fts5StorageDeleteFromIndex(p, sqlite3_value_int64(apVal[1]));
+    }else{
+      eStmt = FTS5_STMT_INSERT_CONTENT;
+    }
+#endif
+    if( rc==SQLITE_OK ){
+      rc = fts5StorageGetStmt(p, FTS5_STMT_INSERT_CONTENT, &pInsert, 0);
+    }
+    for(i=1; rc==SQLITE_OK && i<=pConfig->nCol+1; i++){
+      rc = sqlite3_bind_value(pInsert, i, apVal[i]);
+    }
+    if( rc==SQLITE_OK ){
+      sqlite3_step(pInsert);
+      rc = sqlite3_reset(pInsert);
+    }
+    *piRowid = sqlite3_last_insert_rowid(pConfig->db);
+  }
+
+  return rc;
+}
+
+/*
+** Insert new entries into the FTS index and %_docsize table.
+*/
+int sqlite3Fts5StorageIndexInsert(
+  Fts5Storage *p, 
+  sqlite3_value **apVal, 
+  i64 iRowid
 ){
   Fts5Config *pConfig = p->pConfig;
   int rc = SQLITE_OK;             /* Return code */
-  sqlite3_stmt *pInsert = 0;      /* Statement used to write %_content table */
-  int eStmt = 0;                  /* Type of statement used on %_content */
-  int i;                          /* Counter variable */
   Fts5InsertCtx ctx;              /* Tokenization callback context object */
   Fts5Buffer buf;                 /* Buffer used to build up %_docsize blob */
 
   memset(&buf, 0, sizeof(Fts5Buffer));
+  ctx.pStorage = p;
   rc = fts5StorageLoadTotals(p, 1);
 
-  /* Insert the new row into the %_content table. */
   if( rc==SQLITE_OK ){
-    if( pConfig->eContent!=FTS5_CONTENT_NORMAL ){
-      if( sqlite3_value_type(apVal[1])==SQLITE_INTEGER ){
-        *piRowid = sqlite3_value_int64(apVal[1]);
-      }else{
-        rc = fts5StorageNewRowid(p, piRowid);
-      }
-    }else{
-      if( eConflict==SQLITE_REPLACE ){
-        eStmt = FTS5_STMT_REPLACE_CONTENT;
-        rc = fts5StorageDeleteFromIndex(p, sqlite3_value_int64(apVal[1]));
-      }else{
-        eStmt = FTS5_STMT_INSERT_CONTENT;
-      }
-      if( rc==SQLITE_OK ){
-        rc = fts5StorageGetStmt(p, eStmt, &pInsert, 0);
-      }
-      for(i=1; rc==SQLITE_OK && i<=pConfig->nCol+1; i++){
-        rc = sqlite3_bind_value(pInsert, i, apVal[i]);
-      }
-      if( rc==SQLITE_OK ){
-        sqlite3_step(pInsert);
-        rc = sqlite3_reset(pInsert);
-      }
-      *piRowid = sqlite3_last_insert_rowid(pConfig->db);
-    }
-  }
-
-  /* Add new entries to the FTS index */
-  if( rc==SQLITE_OK ){
-    rc = sqlite3Fts5IndexBeginWrite(p->pIndex, *piRowid);
-    ctx.pStorage = p;
+    rc = sqlite3Fts5IndexBeginWrite(p->pIndex, 0, iRowid);
   }
   for(ctx.iCol=0; rc==SQLITE_OK && ctx.iCol<pConfig->nCol; ctx.iCol++){
     ctx.szCol = 0;
@@ -776,7 +787,7 @@ int sqlite3Fts5StorageInsert(
 
   /* Write the %_docsize record */
   if( rc==SQLITE_OK ){
-    rc = fts5StorageInsertDocsize(p, *piRowid, &buf);
+    rc = fts5StorageInsertDocsize(p, iRowid, &buf);
   }
   sqlite3_free(buf.p);
 

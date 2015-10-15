@@ -118,11 +118,6 @@ READLINE_FLAGS =
 LIBREADLINE =
 #LIBREADLINE = -static -lreadline -ltermcap
 
-#### Which "awk" program provides nawk compatibilty
-#
-# NAWK = nawk
-NAWK = awk
-
 # You should not have to change anything below this line
 ###############################################################################
 include $(TOP)/main.mk
