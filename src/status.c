@@ -108,18 +108,21 @@ void sqlite3StatusDown(int op, int N){
 }
 
 /*
-** Set the value of a status to X.  The highwater mark is adjusted if
-** necessary.  The caller must hold the appropriate mutex.
+** Adjust the highwater mark if necessary.
+** The caller must hold the appropriate mutex.
 */
-void sqlite3StatusSet(int op, int X){
+void sqlite3StatusHighwater(int op, int X){
   wsdStatInit;
   assert( op>=0 && op<ArraySize(wsdStat.nowValue) );
   assert( op>=0 && op<ArraySize(statMutex) );
   assert( sqlite3_mutex_held(statMutex[op] ? sqlite3Pcache1Mutex()
                                            : sqlite3MallocMutex()) );
-  wsdStat.nowValue[op] = X;
-  if( wsdStat.nowValue[op]>wsdStat.mxValue[op] ){
-    wsdStat.mxValue[op] = wsdStat.nowValue[op];
+  assert( op==SQLITE_STATUS_MALLOC_SIZE
+          || op==SQLITE_STATUS_PAGECACHE_SIZE
+          || op==SQLITE_STATUS_SCRATCH_SIZE
+          || op==SQLITE_STATUS_PARSER_STACK );
+  if( X>wsdStat.mxValue[op] ){
+    wsdStat.mxValue[op] = X;
   }
 }
 

@@ -3209,7 +3209,7 @@ const sqlite3_mem_methods *sqlite3MemGetMemsys5(void);
 sqlite3_int64 sqlite3StatusValue(int);
 void sqlite3StatusUp(int, int);
 void sqlite3StatusDown(int, int);
-void sqlite3StatusSet(int, int);
+void sqlite3StatusHighwater(int, int);
 
 /* Access to mutexes used by sqlite3_status() */
 sqlite3_mutex *sqlite3Pcache1Mutex(void);

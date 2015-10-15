@@ -467,7 +467,7 @@ abort_parse:
   }
 #ifdef YYTRACKMAXSTACKDEPTH
   sqlite3_mutex_enter(sqlite3MallocMutex());
-  sqlite3StatusSet(SQLITE_STATUS_PARSER_STACK,
+  sqlite3StatusHighwater(SQLITE_STATUS_PARSER_STACK,
       sqlite3ParserStackPeak(pEngine)
   );
   sqlite3_mutex_leave(sqlite3MallocMutex());
