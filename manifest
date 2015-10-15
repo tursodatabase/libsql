@@ -1,5 +1,5 @@
-C Add\sthe\sOP_IntCopy\sopcode\s-\san\soptimized\sversion\sof\sOP_SCopy\sthat\sonly\sworks\nfor\sinteger\svalues.
-D 2015-10-15T18:04:59.304
+C Enhance\sthe\suse\sof\sthe\scolumn\scache\sfor\sUPDATE\sstatements,\smaking\sthem\nmore\sefficient\sfor\sthe\scase\swhere\sa\scolumn\sis\smodified\sto\sbe\san\sexpression\nof\sother\sunmodified\scolumns.
+D 2015-10-15T19:21:51.254
 F Makefile.in 2ea961bc09e441874eb3d1bf7398e04feb24f3ee
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8e42cb55739cd8c12e1fd25401956e2019448f6a
@@ -290,7 +290,7 @@ F src/ctime.c 509ef9c64d1321f42448f111da86400b1799218a
 F src/date.c fb1c99172017dcc8e237339132c91a21a0788584
 F src/dbstat.c e637e7a7ff40ef32132a418c6fdf1cfb63aa27c7
 F src/delete.c 35c939eb8bacc9dd8a6715964e5f69feb8c20e44
-F src/expr.c b89dfbb8a385a45411c487355597c01f4ea4c882
+F src/expr.c e8765542b21bc7ff801ca82d5cf11f0b13a219af
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 31900763094a3736a5fc887469202eb579fef2d0
 F src/func.c ecdd69ec6a1e406f04cc73324be2ebbf6354197f
@@ -338,12 +338,12 @@ F src/printf.c 0c4bcdd1c2e2521024f0a69cb5eb334f86b3652a
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 1954a0f01bf65d78d7d559aea3d5c67f33376d91
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c 0bc9cd2e1cacfdc9cdc9a83884cc100f166e80a4
+F src/select.c dbf1fb82317043304da334a33206add211487f96
 F src/shell.c d25df04168d6ba5a4fa05bdbf859df667f9eb621
 F src/sqlite.h.in 839c818e16ea68703d90d17bd2bb3607191debce
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 4b66e3e3435da4b4c8c83696d0349f0c503b3924
-F src/sqliteInt.h 1d888049aafa4fdeafe7c4152bdf394850313f90
+F src/sqliteInt.h 1ad779ee62efee60494af0a75d8d45592f9f53c3
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c 286f6398a4d2cd1e8ff0771e3d30f8dddb4768ea
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
@@ -397,7 +397,7 @@ F src/threads.c bbfb74450643cb5372a43ad4f6cffd7e9dfcecb0
 F src/tokenize.c 338bc8f7c9dd103188952cda7964696bacac6d22
 F src/treeview.c 154f0acc622fa3514de8777dcedf4c8a8802b4ce
 F src/trigger.c 322f23aad694e8f31d384dcfa386d52a48d3c52f
-F src/update.c dc37664095ca8604293ff1de2d9a547c6efb5e6e
+F src/update.c aa10336a2719bd1b9f89004f3d7ba6d566623a49
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c fc612367108b74573c5fd13a85d0a23027f438bd
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
@@ -417,7 +417,7 @@ F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 2e14d17f592d176b6dc879c33fbdec4fbccaa2ba
 F src/where.c 4c4646675e794ac71e701289edefd7cd81bac844
 F src/whereInt.h 7892bb54cf9ca0ae5c7e6094491b94c9286dc647
-F src/wherecode.c cdfff200d065e7fb1af827b3274ed46b10a91d65
+F src/wherecode.c b924b78acd9e623fb69bfa2cb65cd7d542166dd3
 F src/whereexpr.c e63244ca06c503e5f3c5b7f3c9aea0db826089ed
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -1391,7 +1391,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 79298fe8c42f64b6a6110a70b84033873ac0630d
-R 89187b0adfb4e11f457d8e4e8b2fb5a1
+P 3a2f73a4924860fde8ee41ad646e7a02d29ad9d5
+R 16722b48de28ae59c1a22e712b62a0b0
 U drh
-Z d5daf0c298c0bf1343696c75c4c1313f
+Z fcd4e595e3a40ac192e62fadc88a95a3
