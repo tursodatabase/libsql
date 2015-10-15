@@ -1273,6 +1273,22 @@ case OP_SCopy: {            /* out2 */
   break;
 }
 
+/* Opcode: IntCopy P1 P2 * * *
+** Synopsis: r[P2]=r[P1]
+**
+** Transfer the integer value held in register P1 into register P2.
+**
+** This is an optimized version of SCopy that works only for integer
+** values.
+*/
+case OP_IntCopy: {            /* out2 */
+  pIn1 = &aMem[pOp->p1];
+  assert( (pIn1->flags & MEM_Int)!=0 );
+  pOut = &aMem[pOp->p2];
+  sqlite3VdbeMemSetInt64(pOut, pIn1->u.i);
+  break;
+}
+
 /* Opcode: ResultRow P1 P2 * * *
 ** Synopsis:  output=r[P1@P2]
 **

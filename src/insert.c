@@ -1422,7 +1422,7 @@ void sqlite3GenerateConstraintChecks(
         }else{
           x = iField + regNewData + 1;
         }
-        sqlite3VdbeAddOp2(v, OP_SCopy, x, regIdx+i);
+        sqlite3VdbeAddOp2(v, iField<0 ? OP_IntCopy : OP_SCopy, x, regIdx+i);
         VdbeComment((v, "%s", iField<0 ? "rowid" : pTab->aCol[iField].zName));
       }
     }
