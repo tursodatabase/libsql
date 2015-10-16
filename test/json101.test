@@ -324,5 +324,22 @@ do_execsql_test json-6.4 {
   SELECT json_valid('["a",55,"b",72]');
 } {1}
 
+# White-space tests.  Note that form-feed is not white-space in JSON.
+# ticket [57eec374ae1d0a1d4a23077a95f4e173fe269113]
+# 
+foreach {tn isvalid ws} {
+  7.1  1  char(0x20)
+  7.2  1  char(0x09)
+  7.3  1  char(0x0A)
+  7.4  1  char(0x0D)
+  7.5  0  char(0x0C)
+  7.6  1  char(0x20,0x09,0x0a,0x0d,0x20)
+  7.7  0  char(0x20,0x09,0x0a,0x0c,0x0d,0x20)
+} {
+  do_execsql_test json-$tn.1 \
+    "SELECT json_valid(printf('%s{%s\"x\"%s:%s9%s}%s',
+         $::ws,$::ws,$::ws,$::ws,$::ws,$::ws));" \
+  $isvalid
+}
 
 finish_test
