@@ -2440,19 +2440,6 @@ case OP_Column: {
     pC->nHdrParsed = 0;
     aOffset[0] = offset;
 
-    /* Make sure a corrupt database has not given us an oversize header.
-    ** Do this now to avoid an oversize memory allocation.
-    **
-    ** Type entries can be between 1 and 5 bytes each.  But 4 and 5 byte
-    ** types use so much data space that there can only be 4096 and 32 of
-    ** them, respectively.  So the maximum header length results from a
-    ** 3-byte type for each of the maximum of 32768 columns plus three
-    ** extra bytes for the header length itself.  32768*3 + 3 = 98307.
-    */
-    if( offset > 98307 || offset > pC->payloadSize ){
-      rc = SQLITE_CORRUPT_BKPT;
-      goto op_column_error;
-    }
 
     if( avail<offset ){
       /* pC->aRow does not have to hold the entire row, but it does at least
@@ -2461,6 +2448,20 @@ case OP_Column: {
       ** dynamically allocated. */
       pC->aRow = 0;
       pC->szRow = 0;
+
+      /* Make sure a corrupt database has not given us an oversize header.
+      ** Do this now to avoid an oversize memory allocation.
+      **
+      ** Type entries can be between 1 and 5 bytes each.  But 4 and 5 byte
+      ** types use so much data space that there can only be 4096 and 32 of
+      ** them, respectively.  So the maximum header length results from a
+      ** 3-byte type for each of the maximum of 32768 columns plus three
+      ** extra bytes for the header length itself.  32768*3 + 3 = 98307.
+      */
+      if( offset > 98307 || offset > pC->payloadSize ){
+        rc = SQLITE_CORRUPT_BKPT;
+        goto op_column_error;
+      }
     }
 
     /* The following goto is an optimization.  It can be omitted and

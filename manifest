@@ -1,5 +1,5 @@
-C Improved\sheader\scomment\son\sthe\stool/vdbe_profile.tcl\sscript.\s\sNo\schanges\sto\scode.
-D 2015-10-16T12:39:52.666
+C OP_Column\soptimization:\s\sDo\snot\scheck\sfor\san\soversize\srow\sheader\sunless\sthe\nrow\sheader\ssize\sis\slarger\sthan\sthe\scontent\savailable\son\sthe\slocal\spage.
+D 2015-10-16T12:53:47.105
 F Makefile.in 2ea961bc09e441874eb3d1bf7398e04feb24f3ee
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8e42cb55739cd8c12e1fd25401956e2019448f6a
@@ -401,7 +401,7 @@ F src/update.c aa10336a2719bd1b9f89004f3d7ba6d566623a49
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c fc612367108b74573c5fd13a85d0a23027f438bd
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c c33faa487c474d41a082979206896988448c9df9
+F src/vdbe.c ece04358f56c3c0209e184b994b0e657b78db336
 F src/vdbe.h 4bc88bd0e06f8046ee6ab7487c0015e85ad949ad
 F src/vdbeInt.h 8b867eac234e28627ffcace3cd4b4b79bbec664b
 F src/vdbeapi.c 020681b943e77766b32ae1cddf86d7831b7374ca
@@ -1391,7 +1391,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 076be5474df628bbbfd2b645adba30e1e093acd0
-R 41e336dcb92acc074dc2ce69de55bbe0
+P b17ad8fc046ebc9529d1c146437a383e72217b01
+R a35b1b9c4fd8438c90eb28bd97a70f35
 U drh
-Z 806bf6a2db0196f2b81e8d59f452cb7d
+Z 6f8b13e7e2f3dcf3242bb4888fee1f34
