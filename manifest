@@ -1,5 +1,5 @@
-C Fix\sthe\sJSON1\sextension\sso\sthat\sit\sdoes\snot\sdepend\son\sisdigit()\sand\nstrtod()\sfrom\sthe\sstandard\slibrary\swhen\scompiled\sinto\sSQLite\sas\spart\sof\sthe\namalgamation.
-D 2015-10-16T15:35:39.846
+C Fix\sthe\sfuzzershell\sutility\sprogram\sso\sthat\sit\scompiles\swith\sthe\namalgamation\sthat\sincludes\sJSON1\ssupport.
+D 2015-10-16T15:42:50.298
 F Makefile.in 2ea961bc09e441874eb3d1bf7398e04feb24f3ee
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8e42cb55739cd8c12e1fd25401956e2019448f6a
@@ -1341,7 +1341,7 @@ F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
 F tool/extract.c 054069d81b095fbdc189a6f5d4466e40380505e2
 F tool/fast_vacuum.c 5ba0d6f5963a0a63bdc42840f678bad75b2ebce1
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
-F tool/fuzzershell.c 87cc3d6f00239d786d231954289f106131989cc7
+F tool/fuzzershell.c b36096cdbcb4af985a2d6c20093d61e55b49bfe1
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
@@ -1391,7 +1391,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 28957d635961c525f735a52b8ffe3e69ccf31382
-R c52fcc2e6376b553d4a08dc304f342ca
+P bc9a9a60c31ebf9b11ac89ae5f99a3b66d6efc67
+R 1fa840b60dfe445d09770ce98d6f21ab
 U drh
-Z 74777d79c7bc4ee5f8a88ff1109e65fc
+Z 76f00c6fa0ab4e9a2fefb67e0046eccb
