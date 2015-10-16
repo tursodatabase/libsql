@@ -1,5 +1,5 @@
-C Enhancements\sto\sthe\sMSVC\smakefile.
-D 2015-10-16T20:13:57.036
+C Fix\sa\scomment\sin\sexpr.c\sand\sadd\sa\sCORRUPT_DB\sto\san\sassert()\sin\sbtree.c.
+D 2015-10-16T23:55:08.882
 F Makefile.in 2ea961bc09e441874eb3d1bf7398e04feb24f3ee
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 4eb750e0fdf52050a06d881e1b060f4bb116ed7e
@@ -280,7 +280,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c c3a9c4209439b806c44cf30daf466955727bf46c
 F src/bitvec.c d1f21d7d91690747881f03940584f4cc548c9d3d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c 0b74bc28b2dc907cba03b5b4b3b81584273be699
+F src/btree.c ea8c62f65e57e49bd6b0988cd681aca7246b51af
 F src/btree.h 40189aefdc2b830d25c8b58fd7d56538481bfdd7
 F src/btreeInt.h 8177c9ab90d772d6d2c6c517e05bed774b7c92c0
 F src/build.c d6162335d690396dfc5c4bd59e8b2b0c14ba6285
@@ -290,7 +290,7 @@ F src/ctime.c 509ef9c64d1321f42448f111da86400b1799218a
 F src/date.c fb1c99172017dcc8e237339132c91a21a0788584
 F src/dbstat.c e637e7a7ff40ef32132a418c6fdf1cfb63aa27c7
 F src/delete.c 35c939eb8bacc9dd8a6715964e5f69feb8c20e44
-F src/expr.c e8765542b21bc7ff801ca82d5cf11f0b13a219af
+F src/expr.c d9896fda47a8f67d0ed203e1fa981444424200c6
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 31900763094a3736a5fc887469202eb579fef2d0
 F src/func.c ecdd69ec6a1e406f04cc73324be2ebbf6354197f
@@ -1391,7 +1391,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P eb2317429fc3fc81ccd92e6f84f873585829259d
-R c8195ddfd54e61d102ea2ab84cfcbce4
-U mistachkin
-Z 0b9815ef53884597c48f7e60955b08c9
+P 39e8a5d93fa370afb03223bf0c20ea0f3448b9fc
+R 7f916530a28273810e372e1a6552332a
+U drh
+Z 831fa17e60715846d1a74c0ef53a246d
