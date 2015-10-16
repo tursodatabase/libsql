@@ -211,7 +211,7 @@ static int fts5ConfigParseSpecial(
   char **pzErr                    /* OUT: Error message */
 ){
   int rc = SQLITE_OK;
-  int nCmd = strlen(zCmd);
+  int nCmd = (int)strlen(zCmd);
   if( sqlite3_strnicmp("prefix", zCmd, nCmd)==0 ){
     const int nByte = sizeof(int) * FTS5_MAX_PREFIX_INDEXES;
     const char *p;
@@ -248,7 +248,7 @@ static int fts5ConfigParseSpecial(
 
   if( sqlite3_strnicmp("tokenize", zCmd, nCmd)==0 ){
     const char *p = (const char*)zArg;
-    int nArg = strlen(zArg) + 1;
+    int nArg = (int)strlen(zArg) + 1;
     char **azArg = sqlite3Fts5MallocZero(&rc, sizeof(char*) * nArg);
     char *pDel = sqlite3Fts5MallocZero(&rc, nArg * 2);
     char *pSpace = pDel;
@@ -364,7 +364,7 @@ static const char *fts5ConfigGobbleWord(
 ){
   const char *zRet = 0;
 
-  int nIn = strlen(zIn);
+  int nIn = (int)strlen(zIn);
   char *zOut = sqlite3_malloc(nIn+1);
 
   assert( *pRc==SQLITE_OK );

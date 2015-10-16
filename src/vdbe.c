@@ -518,16 +518,24 @@ static int checkSavepointCount(sqlite3 *db){
 /*
 ** Return the register of pOp->p2 after first preparing it to be
 ** overwritten with an integer value.
-*/ 
+*/
+static SQLITE_NOINLINE Mem *out2PrereleaseWithClear(Mem *pOut){
+  sqlite3VdbeMemSetNull(pOut);
+  pOut->flags = MEM_Int;
+  return pOut;
+}
 static Mem *out2Prerelease(Vdbe *p, VdbeOp *pOp){
   Mem *pOut;
   assert( pOp->p2>0 );
   assert( pOp->p2<=(p->nMem-p->nCursor) );
   pOut = &p->aMem[pOp->p2];
   memAboutToChange(p, pOut);
-  if( VdbeMemDynamic(pOut) ) sqlite3VdbeMemSetNull(pOut);
-  pOut->flags = MEM_Int;
-  return pOut;
+  if( VdbeMemDynamic(pOut) ){
+    return out2PrereleaseWithClear(pOut);
+  }else{
+    pOut->flags = MEM_Int;
+    return pOut;
+  }
 }
 
 
@@ -1262,6 +1270,22 @@ case OP_SCopy: {            /* out2 */
 #ifdef SQLITE_DEBUG
   if( pOut->pScopyFrom==0 ) pOut->pScopyFrom = pIn1;
 #endif
+  break;
+}
+
+/* Opcode: IntCopy P1 P2 * * *
+** Synopsis: r[P2]=r[P1]
+**
+** Transfer the integer value held in register P1 into register P2.
+**
+** This is an optimized version of SCopy that works only for integer
+** values.
+*/
+case OP_IntCopy: {            /* out2 */
+  pIn1 = &aMem[pOp->p1];
+  assert( (pIn1->flags & MEM_Int)!=0 );
+  pOut = &aMem[pOp->p2];
+  sqlite3VdbeMemSetInt64(pOut, pIn1->u.i);
   break;
 }
 
@@ -2344,7 +2368,7 @@ case OP_Column: {
   const u8 *zHdr;    /* Next unparsed byte of the header */
   const u8 *zEndHdr; /* Pointer to first byte after the header */
   u32 offset;        /* Offset into the data */
-  u32 szField;       /* Number of bytes in the content of a field */
+  u64 offset64;      /* 64-bit offset */
   u32 avail;         /* Number of bytes of available data */
   u32 t;             /* A type code from the record header */
   u16 fx;            /* pDest->flags value */
@@ -2415,19 +2439,6 @@ case OP_Column: {
     pC->nHdrParsed = 0;
     aOffset[0] = offset;
 
-    /* Make sure a corrupt database has not given us an oversize header.
-    ** Do this now to avoid an oversize memory allocation.
-    **
-    ** Type entries can be between 1 and 5 bytes each.  But 4 and 5 byte
-    ** types use so much data space that there can only be 4096 and 32 of
-    ** them, respectively.  So the maximum header length results from a
-    ** 3-byte type for each of the maximum of 32768 columns plus three
-    ** extra bytes for the header length itself.  32768*3 + 3 = 98307.
-    */
-    if( offset > 98307 || offset > pC->payloadSize ){
-      rc = SQLITE_CORRUPT_BKPT;
-      goto op_column_error;
-    }
 
     if( avail<offset ){
       /* pC->aRow does not have to hold the entire row, but it does at least
@@ -2436,6 +2447,20 @@ case OP_Column: {
       ** dynamically allocated. */
       pC->aRow = 0;
       pC->szRow = 0;
+
+      /* Make sure a corrupt database has not given us an oversize header.
+      ** Do this now to avoid an oversize memory allocation.
+      **
+      ** Type entries can be between 1 and 5 bytes each.  But 4 and 5 byte
+      ** types use so much data space that there can only be 4096 and 32 of
+      ** them, respectively.  So the maximum header length results from a
+      ** 3-byte type for each of the maximum of 32768 columns plus three
+      ** extra bytes for the header length itself.  32768*3 + 3 = 98307.
+      */
+      if( offset > 98307 || offset > pC->payloadSize ){
+        rc = SQLITE_CORRUPT_BKPT;
+        goto op_column_error;
+      }
     }
 
     /* The following goto is an optimization.  It can be omitted and
@@ -2458,11 +2483,8 @@ case OP_Column: {
       /* Make sure zData points to enough of the record to cover the header. */
       if( pC->aRow==0 ){
         memset(&sMem, 0, sizeof(sMem));
-        rc = sqlite3VdbeMemFromBtree(pCrsr, 0, aOffset[0], 
-                                     !pC->isTable, &sMem);
-        if( rc!=SQLITE_OK ){
-          goto op_column_error;
-        }
+        rc = sqlite3VdbeMemFromBtree(pCrsr, 0, aOffset[0], !pC->isTable, &sMem);
+        if( rc!=SQLITE_OK ) goto op_column_error;
         zData = (u8*)sMem.z;
       }else{
         zData = pC->aRow;
@@ -2470,44 +2492,32 @@ case OP_Column: {
   
       /* Fill in pC->aType[i] and aOffset[i] values through the p2-th field. */
       i = pC->nHdrParsed;
-      offset = aOffset[i];
+      offset64 = aOffset[i];
       zHdr = zData + pC->iHdrOffset;
       zEndHdr = zData + aOffset[0];
       assert( i<=p2 && zHdr<zEndHdr );
       do{
-        if( zHdr[0]<0x80 ){
-          t = zHdr[0];
+        if( (t = zHdr[0])<0x80 ){
           zHdr++;
+          offset64 += sqlite3VdbeOneByteSerialTypeLen(t);
         }else{
           zHdr += sqlite3GetVarint32(zHdr, &t);
+          offset64 += sqlite3VdbeSerialTypeLen(t);
         }
-        pC->aType[i] = t;
-        szField = sqlite3VdbeSerialTypeLen(t);
-        offset += szField;
-        if( offset<szField ){  /* True if offset overflows */
-          zHdr = &zEndHdr[1];  /* Forces SQLITE_CORRUPT return below */
-          break;
-        }
-        i++;
-        aOffset[i] = offset;
+        pC->aType[i++] = t;
+        aOffset[i] = (u32)(offset64 & 0xffffffff);
       }while( i<=p2 && zHdr<zEndHdr );
       pC->nHdrParsed = i;
       pC->iHdrOffset = (u32)(zHdr - zData);
-      if( pC->aRow==0 ){
-        sqlite3VdbeMemRelease(&sMem);
-        sMem.flags = MEM_Null;
-      }
+      if( pC->aRow==0 ) sqlite3VdbeMemRelease(&sMem);
   
       /* The record is corrupt if any of the following are true:
       ** (1) the bytes of the header extend past the declared header size
-      **          (zHdr>zEndHdr)
       ** (2) the entire header was used but not all data was used
-      **          (zHdr==zEndHdr && offset!=pC->payloadSize)
       ** (3) the end of the data extends beyond the end of the record.
-      **          (offset > pC->payloadSize)
       */
-      if( (zHdr>=zEndHdr && (zHdr>zEndHdr || offset!=pC->payloadSize))
-       || (offset > pC->payloadSize)
+      if( (zHdr>=zEndHdr && (zHdr>zEndHdr || offset64!=pC->payloadSize))
+       || (offset64 > pC->payloadSize)
       ){
         rc = SQLITE_CORRUPT_BKPT;
         goto op_column_error;
@@ -2526,6 +2536,8 @@ case OP_Column: {
       }
       goto op_column_out;
     }
+  }else{
+    t = pC->aType[p2];
   }
 
   /* Extract the content for the p2+1-th column.  Control can only
@@ -2536,7 +2548,7 @@ case OP_Column: {
   assert( rc==SQLITE_OK );
   assert( sqlite3VdbeCheckMemInvariants(pDest) );
   if( VdbeMemDynamic(pDest) ) sqlite3VdbeMemSetNull(pDest);
-  t = pC->aType[p2];
+  assert( t==pC->aType[p2] );
   if( pC->szRow>=aOffset[p2+1] ){
     /* This is the common case where the desired content fits on the original
     ** page - where the content is not on an overflow page */
@@ -2648,7 +2660,7 @@ case OP_MakeRecord: {
   int file_format;       /* File format to use for encoding */
   int i;                 /* Space used in zNewRecord[] header */
   int j;                 /* Space used in zNewRecord[] content */
-  int len;               /* Length of a field */
+  u32 len;               /* Length of a field */
 
   /* Assuming the record contains N fields, the record format looks
   ** like this:
@@ -2698,8 +2710,7 @@ case OP_MakeRecord: {
   pRec = pLast;
   do{
     assert( memIsValid(pRec) );
-    pRec->uTemp = serial_type = sqlite3VdbeSerialType(pRec, file_format);
-    len = sqlite3VdbeSerialTypeLen(serial_type);
+    pRec->uTemp = serial_type = sqlite3VdbeSerialType(pRec, file_format, &len);
     if( pRec->flags & MEM_Zero ){
       if( nData ){
         if( sqlite3VdbeMemExpandBlob(pRec) ) goto no_mem;

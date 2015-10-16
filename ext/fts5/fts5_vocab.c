@@ -168,8 +168,8 @@ static int fts5VocabInitVtab(
     const char *zDb = bDb ? argv[3] : argv[1];
     const char *zTab = bDb ? argv[4] : argv[3];
     const char *zType = bDb ? argv[5] : argv[4];
-    int nDb = strlen(zDb)+1; 
-    int nTab = strlen(zTab)+1;
+    int nDb = (int)strlen(zDb)+1; 
+    int nTab = (int)strlen(zTab)+1;
     int eType;
     
     rc = fts5VocabTableType(zType, pzErr, &eType);
