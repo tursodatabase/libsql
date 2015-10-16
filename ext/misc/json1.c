@@ -28,7 +28,6 @@
 SQLITE_EXTENSION_INIT1
 #include <assert.h>
 #include <string.h>
-#include <ctype.h>  /* amalgamator: keep */
 #include <stdlib.h>
 #include <stdarg.h>
 
@@ -43,8 +42,17 @@ SQLITE_EXTENSION_INIT1
 ** Versions of isspace(), isalnum() and isdigit() to which it is safe
 ** to pass signed char values.
 */
-#define safe_isdigit(x) isdigit((unsigned char)(x))
-#define safe_isalnum(x) isalnum((unsigned char)(x))
+#ifdef sqlite3Isdigit
+   /* Use the SQLite core versions if this routine is part of the
+   ** SQLite amalgamation */
+#  define safe_isdigit(x) sqlite3Isdigit(x)
+#  define safe_isalnum(x) sqlite3Isalnum(x)
+#else
+   /* Use the standard library for separate compilation */
+#include <ctype.h>  /* amalgamator: keep */
+#  define safe_isdigit(x) isdigit((unsigned char)(x))
+#  define safe_isalnum(x) isalnum((unsigned char)(x))
+#endif
 
 /*
 ** Growing our own isspace() routine this way is twice as fast as
@@ -52,7 +60,7 @@ SQLITE_EXTENSION_INIT1
 ** increase for the parser.  (Ubuntu14.10 gcc 4.8.4 x64 with -Os).
 */
 static const char jsonIsSpace[] = {
-  0, 0, 0, 0, 0, 0, 0, 0,     0, 1, 1, 0, 1, 1, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,     0, 1, 1, 0, 0, 1, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
   1, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
@@ -514,7 +522,13 @@ static void jsonReturn(
       int_as_real: /* fall through to real */;
     }
     case JSON_REAL: {
-      double r = strtod(pNode->u.zJContent, 0);
+      double r;
+#ifdef SQLITE_AMALGAMATION
+      const char *z = pNode->u.zJContent;
+      sqlite3AtoF(z, &r, sqlite3Strlen30(z), SQLITE_UTF8);
+#else
+      r = strtod(pNode->u.zJContent, 0);
+#endif
       sqlite3_result_double(pCtx, r);
       break;
     }
@@ -2022,6 +2036,7 @@ int sqlite3Json1Init(sqlite3 *db){
 }
 
 
+#ifndef SQLITE_CORE
 #ifdef _WIN32
 __declspec(dllexport)
 #endif
@@ -2034,4 +2049,5 @@ int sqlite3_json_init(
   (void)pzErrMsg;  /* Unused parameter */
   return sqlite3Json1Init(db);
 }
+#endif
 #endif /* !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_JSON1) */
