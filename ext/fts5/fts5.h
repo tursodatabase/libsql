@@ -23,6 +23,10 @@
 
 #include "sqlite3.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*************************************************************************
 ** CUSTOM AUXILIARY FUNCTIONS
 **
@@ -507,6 +511,10 @@ struct fts5_api {
 /*
 ** END OF REGISTRATION API
 *************************************************************************/
+
+#ifdef __cplusplus
+}  /* end of the 'extern "C"' block */
+#endif
 
 #endif /* _FTS5_H */
 
