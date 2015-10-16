@@ -1,5 +1,5 @@
-C Performance\soptimization\sfor\sthe\sOP_Column\sopcode.
-D 2015-10-15T21:30:24.579
+C Improved\sheader\scomment\son\sthe\stool/vdbe_profile.tcl\sscript.\s\sNo\schanges\sto\scode.
+D 2015-10-16T12:39:52.666
 F Makefile.in 2ea961bc09e441874eb3d1bf7398e04feb24f3ee
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 8e42cb55739cd8c12e1fd25401956e2019448f6a
@@ -1387,11 +1387,11 @@ F tool/symbols.sh fec58532668296d7c7dc48be9c87f75ccdb5814f
 F tool/tostr.tcl 96022f35ada2194f6f8ccf6fd95809e90ed277c4
 F tool/varint.c 5d94cb5003db9dbbcbcc5df08d66f16071aee003
 F tool/vdbe-compress.tcl 5926c71f9c12d2ab73ef35c29376e756eb68361c
-F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
+F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 871e091df651b2275a672c35ff938bd4b6db0d7f
-R 2a9ee0eee7d0527a150149dc10bab0fb
+P 076be5474df628bbbfd2b645adba30e1e093acd0
+R 41e336dcb92acc074dc2ce69de55bbe0
 U drh
-Z 586c37c7b737d31273c8670597b9862e
+Z 806bf6a2db0196f2b81e8d59f452cb7d
