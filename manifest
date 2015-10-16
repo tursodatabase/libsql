@@ -1,5 +1,5 @@
-C Cherrypick\sthe\sjson\sform-feed\sfix,\sand\sother\s#ifdef\sand\sbuild\sscript\schanges\nto\saddress\sminor\sissues\sthat\scame\sto\slight\safter\sthe\s3.9.0\srelease.\s\sUpdate\nthe\sversion\snumber\sto\s3.9.0.\s\sNo\slogic\schanges\sexcept\sfor\sthe\sform-feed\nbug-fix\sin\sjson1\s(ticket\s[57eec374ae1d0a1d4a]).
-D 2015-10-16T15:56:27.896
+C Version\s3.9.1
+D 2015-10-16T17:31:12.550
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f0088ff0d2ac949fce6de7c00f13a99ac5bdb663
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1390,15 +1390,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a721fc0d89495518fe5612e2e3bbc60befd2e90d
-Q +01d3ee7bbe4feeb82dcedecbe3c9058c807b18f6
-Q +28957d635961c525f735a52b8ffe3e69ccf31382
-Q +a61880c223c2229ecc3b4da7e5647eca17f7ddf5
-Q +bc9a9a60c31ebf9b11ac89ae5f99a3b66d6efc67
-Q +d6fc616e4c8a024f71a044e61f0493dea7d9c812
+P 746fcd2fd412ddc27071827fb20eb6df0741dfb1
 R d66bf398f8de1fb81851cd37ab3877c3
-T *branch * branch-3.9.0
-T *sym-branch-3.9.0 *
-T -sym-trunk *
+T +bgcolor * #d0c0ff
+T +sym-release *
+T +sym-version-3.9.1 *
 U drh
-Z 61383512d73379cf77b67db14dfa95f8
+Z 1827cdee71f363c0f73376b432ed6e27
