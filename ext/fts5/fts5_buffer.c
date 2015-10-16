@@ -92,7 +92,7 @@ void sqlite3Fts5BufferAppendString(
   Fts5Buffer *pBuf, 
   const char *zStr
 ){
-  int nStr = strlen(zStr);
+  int nStr = (int)strlen(zStr);
   sqlite3Fts5BufferAppendBlob(pRc, pBuf, nStr+1, (const u8*)zStr);
   pBuf->n--;
 }
@@ -264,7 +264,7 @@ char *sqlite3Fts5Strndup(int *pRc, const char *pIn, int nIn){
   char *zRet = 0;
   if( *pRc==SQLITE_OK ){
     if( nIn<0 ){
-      nIn = strlen(pIn);
+      nIn = (int)strlen(pIn);
     }
     zRet = (char*)sqlite3_malloc(nIn+1);
     if( zRet ){

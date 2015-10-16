@@ -2497,9 +2497,12 @@ void sqlite3ExprCodeGetColumnOfTable(
 
 /*
 ** Generate code that will extract the iColumn-th column from
-** table pTab and store the column value in a register.  An effort
-** is made to store the column value in register iReg, but this is
-** not guaranteed.  The location of the column value is returned.
+** table pTab and store the column value in a register. 
+**
+** An effort is made to store the column value in register iReg.  This
+** is not garanteeed for GetColumn() - the result can be stored in
+** any register.  But the result is guaranteed to land in register iReg
+** for GetColumnToReg().
 **
 ** There must be an open cursor to pTab in iTable when this routine
 ** is called.  If iColumn<0 then code is generated that extracts the rowid.
@@ -2510,7 +2513,7 @@ int sqlite3ExprCodeGetColumn(
   int iColumn,     /* Index of the table column */
   int iTable,      /* The cursor pointing to the table */
   int iReg,        /* Store results here */
-  u8 p5            /* P5 value for OP_Column */
+  u8 p5            /* P5 value for OP_Column + FLAGS */
 ){
   Vdbe *v = pParse->pVdbe;
   int i;
@@ -2532,6 +2535,17 @@ int sqlite3ExprCodeGetColumn(
   }
   return iReg;
 }
+void sqlite3ExprCodeGetColumnToReg(
+  Parse *pParse,   /* Parsing and code generating context */
+  Table *pTab,     /* Description of the table we are reading from */
+  int iColumn,     /* Index of the table column */
+  int iTable,      /* The cursor pointing to the table */
+  int iReg         /* Store results here */
+){
+  int r1 = sqlite3ExprCodeGetColumn(pParse, pTab, iColumn, iTable, iReg, 0);
+  if( r1!=iReg ) sqlite3VdbeAddOp2(pParse->pVdbe, OP_SCopy, r1, iReg);
+}
+
 
 /*
 ** Clear all column cache entries.

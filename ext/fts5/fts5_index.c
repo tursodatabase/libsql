@@ -1766,6 +1766,7 @@ static void fts5SegIterNext(
         const u8 *pList = 0;
         const char *zTerm = 0;
         int nList = 0;
+        assert( (pIter->flags & FTS5_SEGITER_ONETERM) || pbNewTerm );
         if( 0==(pIter->flags & FTS5_SEGITER_ONETERM) ){
           sqlite3Fts5HashScanNext(p->pHash);
           sqlite3Fts5HashScanEntry(p->pHash, &zTerm, &pList, &nList);
@@ -1778,9 +1779,10 @@ static void fts5SegIterNext(
           pIter->pLeaf->nn = nList;
           pIter->pLeaf->szLeaf = nList;
           pIter->iEndofDoclist = nList+1;
-          sqlite3Fts5BufferSet(&p->rc, &pIter->term, strlen(zTerm), (u8*)zTerm);
+          sqlite3Fts5BufferSet(&p->rc, &pIter->term, (int)strlen(zTerm),
+              (u8*)zTerm);
           pIter->iLeafOffset = fts5GetVarint(pList, (u64*)&pIter->iRowid);
-          if( pbNewTerm ) *pbNewTerm = 1;
+          *pbNewTerm = 1;
         }
       }else{
         iOff = 0;
@@ -2185,7 +2187,7 @@ static void fts5SegIterHashInit(
   if( pTerm==0 || (flags & FTS5INDEX_QUERY_SCAN) ){
     p->rc = sqlite3Fts5HashScanInit(p->pHash, (const char*)pTerm, nTerm);
     sqlite3Fts5HashScanEntry(p->pHash, (const char**)&z, &pList, &nList);
-    n = (z ? strlen((const char*)z) : 0);
+    n = (z ? (int)strlen((const char*)z) : 0);
   }else{
     pIter->flags |= FTS5_SEGITER_ONETERM;
     sqlite3Fts5HashQuery(p->pHash, (const char*)pTerm, nTerm, &pList, &nList);
@@ -3758,7 +3760,7 @@ static void fts5FlushOneHash(Fts5Index *p){
 
       /* Write the term for this entry to disk. */
       sqlite3Fts5HashScanEntry(pHash, &zTerm, &pDoclist, &nDoclist);
-      fts5WriteAppendTerm(p, &writer, strlen(zTerm), (const u8*)zTerm);
+      fts5WriteAppendTerm(p, &writer, (int)strlen(zTerm), (const u8*)zTerm);
 
       assert( writer.bFirstRowidInPage==0 );
       if( pgsz>=(pBuf->n + pPgidx->n + nDoclist + 1) ){
@@ -4034,7 +4036,7 @@ static void fts5SegiterPoslist(
       PoslistCallbackCtx sCtx;
       sCtx.pBuf = pBuf;
       sCtx.pColset = pColset;
-      sCtx.eState = pColset ? fts5IndexColsetTest(pColset, 0) : 1;
+      sCtx.eState = fts5IndexColsetTest(pColset, 0);
       assert( sCtx.eState==0 || sCtx.eState==1 );
       fts5ChunkIterate(p, pSeg, (void*)&sCtx, fts5PoslistFilterCallback);
     }
@@ -5195,7 +5197,6 @@ static void fts5IndexIntegrityCheckSegment(
     }
     fts5DataRelease(pLeaf);
     if( p->rc ) break;
-
 
     /* Now check that the iter.nEmpty leaves following the current leaf
     ** (a) exist and (b) contain no terms. */

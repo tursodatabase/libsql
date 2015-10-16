@@ -292,9 +292,9 @@ NSDKLIBPATH = $(NSDKLIBPATH:\\=\)
 # will run on the platform that is doing the build.
 #
 !IF $(USE_FULLWARN)!=0
-BCC = $(NCC) -nologo -W4
+BCC = $(NCC) -nologo -W4 $(CCOPTS) $(BCCOPTS)
 !ELSE
-BCC = $(NCC) -nologo -W3
+BCC = $(NCC) -nologo -W3 $(CCOPTS) $(BCCOPTS)
 !ENDIF
 
 # Check if assembly code listings should be generated for the source
@@ -322,13 +322,13 @@ NLTLIBPATHS = $(NLTLIBPATHS) "/LIBPATH:$(NUCRTLIBPATH)"
 # same unless your are cross-compiling.)
 #
 !IF $(USE_FULLWARN)!=0
-TCC = $(CC) -nologo -W4 -DINCLUDE_MSVC_H=1
+TCC = $(CC) -nologo -W4 -DINCLUDE_MSVC_H=1 $(CCOPTS) $(TCCOPTS)
 !ELSE
-TCC = $(CC) -nologo -W3
+TCC = $(CC) -nologo -W3 $(CCOPTS) $(TCCOPTS)
 !ENDIF
 
 TCC = $(TCC) -DSQLITE_OS_WIN=1 -I. -I$(TOP) -I$(TOP)\src -fp:precise
-RCC = $(RC) -DSQLITE_OS_WIN=1 -I$(TOP) -I$(TOP)\src
+RCC = $(RC) -DSQLITE_OS_WIN=1 -I$(TOP) -I$(TOP)\src $(RCOPTS) $(RCCOPTS)
 
 # Check if we want to use the "stdcall" calling convention when compiling.
 # This is not supported by the compilers for non-x86 platforms.  It should
@@ -573,6 +573,10 @@ LIBTCL = tcl85.lib
 LIBTCLSTUB = tclstub85.lib
 !ENDIF
 
+!IFNDEF LIBTCLPATH
+LIBTCLPATH = c:\tcl\bin
+!ENDIF
+
 # The locations of the ICU header and library files.  These variables
 # (ICUINCDIR, ICULIBDIR, and LIBICU) may be overridden via the environment
 # prior to running nmake in order to match the actual installed location on
@@ -796,7 +800,9 @@ LTLINKOPTS = $(LTLINKOPTS) "/LIBPATH:$(PSDKLIBPATH)"
 # If either debugging or symbols are enabled, enable PDBs.
 #
 !IF $(DEBUG)>1 || $(SYMBOLS)!=0
-LDFLAGS = /DEBUG
+LDFLAGS = /DEBUG $(LDOPTS)
+!ELSE
+LDFLAGS = $(LDOPTS)
 !ENDIF
 
 # Start with the Tcl related linker options.
@@ -1311,7 +1317,7 @@ lempar.c:	$(TOP)\src\lempar.c
 
 lemon.exe:	$(TOP)\tool\lemon.c lempar.c
 	$(BCC) $(NO_WARN) -Daccess=_access \
-		-Fe$@ $(TOP)\tool\lemon.c /link $(NLTLINKOPTS) $(NLTLIBPATHS)
+		-Fe$@ $(TOP)\tool\lemon.c /link $(LDFLAGS) $(NLTLINKOPTS) $(NLTLIBPATHS)
 
 # Rules to build individual *.lo files from generated *.c files. This
 # applies to:
@@ -1598,7 +1604,7 @@ sqlite3ext.h: .target_source
 
 mkkeywordhash.exe:	$(TOP)\tool\mkkeywordhash.c
 	$(BCC) $(NO_WARN) -Fe$@ $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS) $(OPTS) \
-		$(TOP)\tool\mkkeywordhash.c /link $(NLTLINKOPTS) $(NLTLIBPATHS)
+		$(TOP)\tool\mkkeywordhash.c /link $(LDFLAGS) $(NLTLINKOPTS) $(NLTLIBPATHS)
 
 keywordhash.h:	$(TOP)\tool\mkkeywordhash.c mkkeywordhash.exe
 	.\mkkeywordhash.exe > keywordhash.h
@@ -1735,18 +1741,23 @@ testfixture.exe:	$(TESTFIXTURE_SRC) $(LIBRESOBJS) $(HDR)
 		/link $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LTLIBS) $(TLIBS)
 
 extensiontest: testfixture.exe testloadext.dll
+	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\loadext.test $(TESTOPTS)
 
 fulltest:	$(TESTPROGS) fuzztest
+	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\all.test $(TESTOPTS)
 
 soaktest:	$(TESTPROGS)
+	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\all.test -soak=1 $(TESTOPTS)
 
 fulltestonly:	$(TESTPROGS) fuzztest
+	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\full.test
 
 queryplantest:	testfixture.exe sqlite3.exe
+	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\permutations.test queryplanner $(TESTOPTS)
 
 fuzztest:	fuzzcheck.exe
@@ -1758,15 +1769,18 @@ fastfuzztest:	fuzzcheck.exe
 # Minimal testing that runs in less than 3 minutes (on a fast machine)
 #
 quicktest:	testfixture.exe
+	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\extraquick.test $(TESTOPTS)
 
 # This is the common case.  Run many tests that do not take too long,
 # including fuzzcheck, sqlite3_analyzer, and sqldiff tests.
 #
 test:	$(TESTPROGS) fastfuzztest
+	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\veryquick.test $(TESTOPTS)
 
 smoketest:	$(TESTPROGS)
+	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\main.test $(TESTOPTS)
 
 sqlite3_analyzer.c: $(SQLITE3C) $(TOP)\src\tclsqlite.c $(TOP)\tool\spaceanal.tcl

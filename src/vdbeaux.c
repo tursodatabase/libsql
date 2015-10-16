@@ -3036,11 +3036,13 @@ int sqlite3VdbeCursorMoveto(VdbeCursor *p){
 /*
 ** Return the serial-type for the value stored in pMem.
 */
-u32 sqlite3VdbeSerialType(Mem *pMem, int file_format){
+u32 sqlite3VdbeSerialType(Mem *pMem, int file_format, u32 *pLen){
   int flags = pMem->flags;
   u32 n;
 
+  assert( pLen!=0 );
   if( flags&MEM_Null ){
+    *pLen = 0;
     return 0;
   }
   if( flags&MEM_Int ){
@@ -3054,15 +3056,23 @@ u32 sqlite3VdbeSerialType(Mem *pMem, int file_format){
       u = i;
     }
     if( u<=127 ){
-      return ((i&1)==i && file_format>=4) ? 8+(u32)u : 1;
+      if( (i&1)==i && file_format>=4 ){
+        *pLen = 0;
+        return 8+(u32)u;
+      }else{
+        *pLen = 1;
+        return 1;
+      }
     }
-    if( u<=32767 ) return 2;
-    if( u<=8388607 ) return 3;
-    if( u<=2147483647 ) return 4;
-    if( u<=MAX_6BYTE ) return 5;
+    if( u<=32767 ){ *pLen = 2; return 2; }
+    if( u<=8388607 ){ *pLen = 3; return 3; }
+    if( u<=2147483647 ){ *pLen = 4; return 4; }
+    if( u<=MAX_6BYTE ){ *pLen = 6; return 5; }
+    *pLen = 8;
     return 6;
   }
   if( flags&MEM_Real ){
+    *pLen = 8;
     return 7;
   }
   assert( pMem->db->mallocFailed || flags&(MEM_Str|MEM_Blob) );
@@ -3071,25 +3081,45 @@ u32 sqlite3VdbeSerialType(Mem *pMem, int file_format){
   if( flags & MEM_Zero ){
     n += pMem->u.nZero;
   }
+  *pLen = n;
   return ((n*2) + 12 + ((flags&MEM_Str)!=0));
 }
 
 /*
-** The sizes for serial types less than 12
+** The sizes for serial types less than 128
 */
 static const u8 sqlite3SmallTypeSizes[] = {
-  0, 1, 2, 3, 4, 6, 8, 8, 0, 0, 0, 0
+        /*  0   1   2   3   4   5   6   7   8   9 */   
+/*   0 */   0,  1,  2,  3,  4,  6,  8,  8,  0,  0,
+/*  10 */   0,  0,  0,  0,  1,  1,  2,  2,  3,  3,
+/*  20 */   4,  4,  5,  5,  6,  6,  7,  7,  8,  8,
+/*  30 */   9,  9, 10, 10, 11, 11, 12, 12, 13, 13,
+/*  40 */  14, 14, 15, 15, 16, 16, 17, 17, 18, 18,
+/*  50 */  19, 19, 20, 20, 21, 21, 22, 22, 23, 23,
+/*  60 */  24, 24, 25, 25, 26, 26, 27, 27, 28, 28,
+/*  70 */  29, 29, 30, 30, 31, 31, 32, 32, 33, 33,
+/*  80 */  34, 34, 35, 35, 36, 36, 37, 37, 38, 38,
+/*  90 */  39, 39, 40, 40, 41, 41, 42, 42, 43, 43,
+/* 100 */  44, 44, 45, 45, 46, 46, 47, 47, 48, 48,
+/* 110 */  49, 49, 50, 50, 51, 51, 52, 52, 53, 53,
+/* 120 */  54, 54, 55, 55, 56, 56, 57, 57
 };
 
 /*
 ** Return the length of the data corresponding to the supplied serial-type.
 */
 u32 sqlite3VdbeSerialTypeLen(u32 serial_type){
-  if( serial_type>=12 ){
+  if( serial_type>=128 ){
     return (serial_type-12)/2;
   }else{
+    assert( serial_type<12 
+            || sqlite3SmallTypeSizes[serial_type]==(serial_type - 12)/2 );
     return sqlite3SmallTypeSizes[serial_type];
   }
+}
+u8 sqlite3VdbeOneByteSerialTypeLen(u8 serial_type){
+  assert( serial_type<128 );
+  return sqlite3SmallTypeSizes[serial_type];  
 }
 
 /*

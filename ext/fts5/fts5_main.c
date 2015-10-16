@@ -447,7 +447,10 @@ static int fts5CreateMethod(
 */
 static void fts5SetUniqueFlag(sqlite3_index_info *pIdxInfo){
 #if SQLITE_VERSION_NUMBER>=3008012
-  if( sqlite3_libversion_number()>=3008012 ){
+#ifndef SQLITE_CORE
+  if( sqlite3_libversion_number()>=3008012 )
+#endif
+  {
     pIdxInfo->idxFlags |= SQLITE_INDEX_SCAN_UNIQUE;
   }
 #endif
