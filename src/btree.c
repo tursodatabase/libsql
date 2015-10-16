@@ -4499,7 +4499,9 @@ static int accessPayload(
 
       /* If required, populate the overflow page-list cache. */
       if( (pCur->curFlags & BTCF_ValidOvfl)!=0 ){
-        assert(!pCur->aOverflow[iIdx] || pCur->aOverflow[iIdx]==nextPage);
+        assert( pCur->aOverflow[iIdx]==0
+                || pCur->aOverflow[iIdx]==nextPage
+                || CORRUPT_DB );
         pCur->aOverflow[iIdx] = nextPage;
       }
 

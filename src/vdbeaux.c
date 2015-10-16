@@ -518,21 +518,67 @@ int sqlite3VdbeAssertMayAbort(Vdbe *v, int mayAbort){
 ** (4) Initialize the p4.xAdvance pointer on opcodes that use it.
 **
 ** (5) Reclaim the memory allocated for storing labels.
+**
+** (6) Set the Op.opflags field on all opcodes, and especially the
+**     OPFLG_JMPDEST bit.
+**
+** (7) Reorders OP_Column opcodes against the same cursor so that the
+**     last column is extracted first.  This is a performance optimization.
 */
 static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
-  int i;
+  int i, m;
   int nMaxArgs = *pMaxFuncArgs;
   Op *pOp;
   Parse *pParse = p->pParse;
   int *aLabel = pParse->aLabel;
   p->readOnly = 1;
   p->bIsReader = 0;
-  for(pOp=p->aOp, i=p->nOp-1; i>=0; i--, pOp++){
-    u8 opcode = pOp->opcode;
 
+  /* First cut at the Op.opcode flags */
+  for(pOp=p->aOp, i=p->nOp-1; i>=0; i--, pOp++){
+    pOp->opflags = sqlite3OpcodeProperty[pOp->opcode];
+  }
+
+  /* Resolve goto labels.  And add OPFLG_JMPDEST flags to the
+  ** destinations of jumps. */
+  for(pOp=p->aOp, i=p->nOp-1; i>=0; i--, pOp++){
+    if( (pOp->opflags & OPFLG_JUMP)!=0 ){
+      if( pOp->p2<0 ){
+        assert( -1-pOp->p2<pParse->nLabel );
+        pOp->p2 = aLabel[-1-pOp->p2];
+      }
+      if( pOp->p2>0 && pOp->p2<p->nOp ){
+        p->aOp[pOp->p2].opflags |= OPFLG_JMPDEST;
+      }
+    }
+  }
+  sqlite3DbFree(p->db, pParse->aLabel);
+  pParse->aLabel = 0;
+  pParse->nLabel = 0;
+
+  /* Third pass: fix up opcodes */
+  for(pOp=p->aOp, i=m=0; i<p->nOp; i++, pOp++){
     /* NOTE: Be sure to update mkopcodeh.awk when adding or removing
     ** cases from this switch! */
-    switch( opcode ){
+    switch( pOp->opcode ){
+      case OP_Column: {
+        if( OptimizationEnabled(p->db, SQLITE_RowCache) && i>=m ){
+          /* Reorder OP_Column opcodes so that the right-most column is
+          ** extracted first.  This warms up the row cache and helps the
+          ** subsequent OP_Column opcodes to run faster */
+          int j;
+          int b = 0;
+          int p2 = pOp->p2;
+          for(j=1; pOp[j].opcode==OP_Column; j++){
+            if( pOp[j].p1!=pOp->p1 ) break;
+            if( pOp[j].opflags & OPFLG_JMPDEST ) break;
+            if( pOp[j].p2>p2 ){ b = j; p2 = pOp[j].p2; }
+          }
+          if( b ) SWAP(Op, pOp[0], pOp[b]);
+          m = i+j;
+        }
+        break;
+      }
       case OP_Transaction: {
         if( pOp->p2!=0 ) p->readOnly = 0;
         /* fall thru */
@@ -579,16 +625,7 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
         break;
       }
     }
-
-    pOp->opflags = sqlite3OpcodeProperty[opcode];
-    if( (pOp->opflags & OPFLG_JUMP)!=0 && pOp->p2<0 ){
-      assert( -1-pOp->p2<pParse->nLabel );
-      pOp->p2 = aLabel[-1-pOp->p2];
-    }
   }
-  sqlite3DbFree(p->db, pParse->aLabel);
-  pParse->aLabel = 0;
-  pParse->nLabel = 0;
   *pMaxFuncArgs = nMaxArgs;
   assert( p->bIsReader!=0 || DbMaskAllZero(p->btreeMask) );
 }

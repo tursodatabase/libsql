@@ -656,7 +656,7 @@ int sqlite3VdbeExec(
 
     /* Sanity checking on other operands */
 #ifdef SQLITE_DEBUG
-    assert( pOp->opflags==sqlite3OpcodeProperty[pOp->opcode] );
+    assert( (pOp->opflags&~OPFLG_JMPDEST)==sqlite3OpcodeProperty[pOp->opcode] );
     if( (pOp->opflags & OPFLG_IN1)!=0 ){
       assert( pOp->p1>0 );
       assert( pOp->p1<=(p->nMem-p->nCursor) );

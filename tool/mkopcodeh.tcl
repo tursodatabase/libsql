@@ -126,6 +126,7 @@ incr nOp
 # The following are the opcodes that are processed by resolveP2Values()
 #
 set rp2v_ops {
+  OP_Column
   OP_Transaction
   OP_AutoCommit
   OP_Savepoint
@@ -211,12 +212,13 @@ puts "/* Properties such as \"out2\" or \"jump\" that are specified in"
 puts "** comments following the \"case\" for each opcode in the vdbe.c"
 puts "** are encoded into bitvectors as follows:"
 puts "*/"
-puts "#define OPFLG_JUMP            0x0001  /* jump:  P2 holds jmp target */"
-puts "#define OPFLG_IN1             0x0002  /* in1:   P1 is an input */"
-puts "#define OPFLG_IN2             0x0004  /* in2:   P2 is an input */"
-puts "#define OPFLG_IN3             0x0008  /* in3:   P3 is an input */"
-puts "#define OPFLG_OUT2            0x0010  /* out2:  P2 is an output */"
-puts "#define OPFLG_OUT3            0x0020  /* out3:  P3 is an output */"
+puts "#define OPFLG_JUMP            0x01  /* jump:  P2 holds jmp target */"
+puts "#define OPFLG_IN1             0x02  /* in1:   P1 is an input */"
+puts "#define OPFLG_IN2             0x04  /* in2:   P2 is an input */"
+puts "#define OPFLG_IN3             0x08  /* in3:   P3 is an input */"
+puts "#define OPFLG_OUT2            0x10  /* out2:  P2 is an output */"
+puts "#define OPFLG_OUT3            0x20  /* out3:  P3 is an output */"
+puts "#define OPFLG_JMPDEST         0x40  /* A jump destination */"
 puts "#define OPFLG_INITIALIZER \173\\"
 for {set i 0} {$i<=$max} {incr i} {
   if {$i%8==0} {
