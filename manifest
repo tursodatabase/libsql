@@ -1,8 +1,8 @@
-C Merge\sthe\s3.9.1\schanges\sinto\strunk.\s\s(This\sonly\supdates\sthe\sversion\snumber\nand\sconfigure\sscript\ssince\sall\sthe\sother\schanges\sin\s3.9.1\swere\scherrypicked\nfrom\strunk.)
-D 2015-10-16T20:12:12.471
+C Enhancements\sto\sthe\sMSVC\smakefile.
+D 2015-10-16T20:13:57.036
 F Makefile.in 2ea961bc09e441874eb3d1bf7398e04feb24f3ee
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 8e42cb55739cd8c12e1fd25401956e2019448f6a
+F Makefile.msc 4eb750e0fdf52050a06d881e1b060f4bb116ed7e
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION a47917b59f38b632b3a8662d14fd20f94956bdd0
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -1391,7 +1391,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d6fc616e4c8a024f71a044e61f0493dea7d9c812 767c1727fec4ce11b83f25b3f1bfcfe68a2c8b02
-R 18e9c8e6d6f6d791d021b8710d206185
-U drh
-Z ab2147dc71d13d5bd253718a8a6d171b
+P eb2317429fc3fc81ccd92e6f84f873585829259d
+R c8195ddfd54e61d102ea2ab84cfcbce4
+U mistachkin
+Z 0b9815ef53884597c48f7e60955b08c9
