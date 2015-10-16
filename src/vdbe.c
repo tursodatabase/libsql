@@ -2660,7 +2660,7 @@ case OP_MakeRecord: {
   int file_format;       /* File format to use for encoding */
   int i;                 /* Space used in zNewRecord[] header */
   int j;                 /* Space used in zNewRecord[] content */
-  int len;               /* Length of a field */
+  u32 len;               /* Length of a field */
 
   /* Assuming the record contains N fields, the record format looks
   ** like this:
@@ -2710,8 +2710,7 @@ case OP_MakeRecord: {
   pRec = pLast;
   do{
     assert( memIsValid(pRec) );
-    pRec->uTemp = serial_type = sqlite3VdbeSerialType(pRec, file_format);
-    len = sqlite3VdbeSerialTypeLen(serial_type);
+    pRec->uTemp = serial_type = sqlite3VdbeSerialType(pRec, file_format, &len);
     if( pRec->flags & MEM_Zero ){
       if( nData ){
         if( sqlite3VdbeMemExpandBlob(pRec) ) goto no_mem;

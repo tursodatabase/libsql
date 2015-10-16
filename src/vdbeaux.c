@@ -2940,11 +2940,13 @@ int sqlite3VdbeCursorMoveto(VdbeCursor *p){
 /*
 ** Return the serial-type for the value stored in pMem.
 */
-u32 sqlite3VdbeSerialType(Mem *pMem, int file_format){
+u32 sqlite3VdbeSerialType(Mem *pMem, int file_format, u32 *pLen){
   int flags = pMem->flags;
   u32 n;
 
+  assert( pLen!=0 );
   if( flags&MEM_Null ){
+    *pLen = 0;
     return 0;
   }
   if( flags&MEM_Int ){
@@ -2958,15 +2960,23 @@ u32 sqlite3VdbeSerialType(Mem *pMem, int file_format){
       u = i;
     }
     if( u<=127 ){
-      return ((i&1)==i && file_format>=4) ? 8+(u32)u : 1;
+      if( (i&1)==i && file_format>=4 ){
+        *pLen = 0;
+        return 8+(u32)u;
+      }else{
+        *pLen = 1;
+        return 1;
+      }
     }
-    if( u<=32767 ) return 2;
-    if( u<=8388607 ) return 3;
-    if( u<=2147483647 ) return 4;
-    if( u<=MAX_6BYTE ) return 5;
+    if( u<=32767 ){ *pLen = 2; return 2; }
+    if( u<=8388607 ){ *pLen = 3; return 3; }
+    if( u<=2147483647 ){ *pLen = 4; return 4; }
+    if( u<=MAX_6BYTE ){ *pLen = 6; return 5; }
+    *pLen = 8;
     return 6;
   }
   if( flags&MEM_Real ){
+    *pLen = 8;
     return 7;
   }
   assert( pMem->db->mallocFailed || flags&(MEM_Str|MEM_Blob) );
@@ -2975,6 +2985,7 @@ u32 sqlite3VdbeSerialType(Mem *pMem, int file_format){
   if( flags & MEM_Zero ){
     n += pMem->u.nZero;
   }
+  *pLen = n;
   return ((n*2) + 12 + ((flags&MEM_Str)!=0));
 }
 
