@@ -2484,11 +2484,8 @@ case OP_Column: {
       /* Make sure zData points to enough of the record to cover the header. */
       if( pC->aRow==0 ){
         memset(&sMem, 0, sizeof(sMem));
-        rc = sqlite3VdbeMemFromBtree(pCrsr, 0, aOffset[0], 
-                                     !pC->isTable, &sMem);
-        if( rc!=SQLITE_OK ){
-          goto op_column_error;
-        }
+        rc = sqlite3VdbeMemFromBtree(pCrsr, 0, aOffset[0], !pC->isTable, &sMem);
+        if( rc!=SQLITE_OK ) goto op_column_error;
         zData = (u8*)sMem.z;
       }else{
         zData = pC->aRow;
@@ -2501,8 +2498,7 @@ case OP_Column: {
       zEndHdr = zData + aOffset[0];
       assert( i<=p2 && zHdr<zEndHdr );
       do{
-        if( zHdr[0]<0x80 ){
-          t = zHdr[0];
+        if( (t = zHdr[0])<0x80 ){
           zHdr++;
         }else{
           zHdr += sqlite3GetVarint32(zHdr, &t);
@@ -2515,18 +2511,12 @@ case OP_Column: {
       }while( i<=p2 && zHdr<zEndHdr );
       pC->nHdrParsed = i;
       pC->iHdrOffset = (u32)(zHdr - zData);
-      if( pC->aRow==0 ){
-        sqlite3VdbeMemRelease(&sMem);
-        sMem.flags = MEM_Null;
-      }
+      if( pC->aRow==0 ) sqlite3VdbeMemRelease(&sMem);
   
       /* The record is corrupt if any of the following are true:
       ** (1) the bytes of the header extend past the declared header size
-      **          (zHdr>zEndHdr)
       ** (2) the entire header was used but not all data was used
-      **          (zHdr==zEndHdr && offset64!=pC->payloadSize)
       ** (3) the end of the data extends beyond the end of the record.
-      **          (offset64 > pC->payloadSize)
       */
       if( (zHdr>=zEndHdr && (zHdr>zEndHdr || offset64!=pC->payloadSize))
        || (offset64 > pC->payloadSize)
@@ -2548,6 +2538,8 @@ case OP_Column: {
       }
       goto op_column_out;
     }
+  }else{
+    t = pC->aType[p2];
   }
 
   /* Extract the content for the p2+1-th column.  Control can only
@@ -2558,7 +2550,7 @@ case OP_Column: {
   assert( rc==SQLITE_OK );
   assert( sqlite3VdbeCheckMemInvariants(pDest) );
   if( VdbeMemDynamic(pDest) ) sqlite3VdbeMemSetNull(pDest);
-  t = pC->aType[p2];
+  assert( t==pC->aType[p2] );
   if( pC->szRow>=aOffset[p2+1] ){
     /* This is the common case where the desired content fits on the original
     ** page - where the content is not on an overflow page */
