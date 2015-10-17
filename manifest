@@ -1,5 +1,5 @@
-C Fix\sa\scomment\sin\sexpr.c\sand\sadd\sa\sCORRUPT_DB\sto\san\sassert()\sin\sbtree.c.
-D 2015-10-16T23:55:08.882
+C Change\sthe\scode\sgenerator\sfor\sUPDATE\sto\sgenerate\scode\sin\san\sorder\sthat\smight\nrun\smore\sefficiently\sin\smany\scases.
+D 2015-10-17T01:00:03.352
 F Makefile.in 2ea961bc09e441874eb3d1bf7398e04feb24f3ee
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 4eb750e0fdf52050a06d881e1b060f4bb116ed7e
@@ -397,7 +397,7 @@ F src/threads.c bbfb74450643cb5372a43ad4f6cffd7e9dfcecb0
 F src/tokenize.c 338bc8f7c9dd103188952cda7964696bacac6d22
 F src/treeview.c 154f0acc622fa3514de8777dcedf4c8a8802b4ce
 F src/trigger.c 322f23aad694e8f31d384dcfa386d52a48d3c52f
-F src/update.c aa10336a2719bd1b9f89004f3d7ba6d566623a49
+F src/update.c 04ed5f0334d313221cd084d46c5c2e0ad29ecb52
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c fc612367108b74573c5fd13a85d0a23027f438bd
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
@@ -1391,7 +1391,10 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 39e8a5d93fa370afb03223bf0c20ea0f3448b9fc
-R 7f916530a28273810e372e1a6552332a
+P 0df371d1a51c2028aefa4c704707773750317689
+R 54a047417394c2361e73646ac2a70fb9
+T *branch * improved-update
+T *sym-improved-update *
+T -sym-trunk *
 U drh
-Z 831fa17e60715846d1a74c0ef53a246d
+Z 6145fe123cad180747a41342b799e5b4

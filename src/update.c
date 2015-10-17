@@ -496,6 +496,13 @@ void sqlite3Update(
   ** table and index records, and as the values for any new.* references
   ** made by triggers.
   **
+  ** As an optimization, the array is loaded in two passes.  The first pass
+  ** loads unchanged values using OP_Column opcodes so that they can be
+  ** cached and potentially reused by subsequent expressions.  Also, the
+  ** OP_Columns are loaded in reverse order so that the row type/offset cache
+  ** inside the OP_Column implementation in the VDBE will warm up completely
+  ** on the first opcode, rather than incrementally across each opcode.
+  **
   ** If there are one or more BEFORE triggers, then do not populate the
   ** registers associated with columns that are (a) not modified by
   ** this UPDATE statement and (b) not accessed by new.* references. The
@@ -507,25 +514,21 @@ void sqlite3Update(
   newmask = sqlite3TriggerColmask(
       pParse, pTrigger, pChanges, 1, TRIGGER_BEFORE, pTab, onError
   );
-  for(i=0; i<pTab->nCol; i++){
-    if( i==pTab->iPKey ){
-      sqlite3VdbeAddOp2(v, OP_Null, 0, regNew+i);
+  for(i=pTab->nCol-1; i>=0; i--){
+    if( aXRef[i]>=0 && i!=pTab->iPKey ) continue;
+    if( i!=pTab->iPKey
+     && (0==(tmask&TRIGGER_BEFORE) || i>31 || (newmask & MASKBIT32(i))!=0)
+    ){
+      testcase( i==31 );
+      testcase( i==32 );
+      sqlite3ExprCodeGetColumnToReg(pParse, pTab, i, iDataCur, regNew+i);
     }else{
-      j = aXRef[i];
-      if( j>=0 ){
-        sqlite3ExprCode(pParse, pChanges->a[j].pExpr, regNew+i);
-      }else if( 0==(tmask&TRIGGER_BEFORE) || i>31 || (newmask & MASKBIT32(i)) ){
-        /* This branch loads the value of a column that will not be changed 
-        ** into a register. This is done if there are no BEFORE triggers, or
-        ** if there are one or more BEFORE triggers that use this value via
-        ** a new.* reference in a trigger program.
-        */
-        testcase( i==31 );
-        testcase( i==32 );
-        sqlite3ExprCodeGetColumnToReg(pParse, pTab, i, iDataCur, regNew+i);
-      }else{
-        sqlite3VdbeAddOp2(v, OP_Null, 0, regNew+i);
-      }
+      sqlite3VdbeAddOp2(v, OP_Null, 0, regNew+i);
+    }  
+  }
+  for(i=0; i<pTab->nCol; i++){
+    if( (j = aXRef[i])>=0 && i!=pTab->iPKey ){
+      sqlite3ExprCode(pParse, pChanges->a[j].pExpr, regNew+i);
     }
   }
 
