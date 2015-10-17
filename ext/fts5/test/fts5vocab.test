@@ -56,7 +56,7 @@ do_execsql_test 1.4.1 {
 
 do_execsql_test 1.4.2 {
   SELECT * FROM v2;
-} {x 0 2 4  y 0 1 1  z 0 1 1}
+} {x one 2 4  y one 1 1  z one 1 1}
 
 do_execsql_test 1.5.1 {
   BEGIN;
@@ -67,7 +67,7 @@ do_execsql_test 1.5.1 {
 do_execsql_test 1.5.2 {
     SELECT * FROM v2 WHERE term<'d';
   COMMIT;
-} {a 0 1 1  b 0 1 1  c 0 1 1}
+} {a one 1 1  b one 1 1  c one 1 1}
 
 do_execsql_test 1.6 {
   DELETE FROM t1 WHERE one = 'a b c';
@@ -91,14 +91,14 @@ do_execsql_test 2.0 {
 }
 
 set res_col {
-  a 0 6 11    a 1 7 9
-  b 0 6 7     b 1 7 7 
-  c 0 6 12    c 1 5 8 
-  d 0 4 6     d 1 9 13 
-  e 0 6 7     e 1 6 6 
-  f 0 9 10    f 1 7 10 
-  g 0 5 7     g 1 5 7
-  x 0 1 1     y 1 1 1
+  a a 6 11    a b 7 9
+  b a 6 7     b b 7 7 
+  c a 6 12    c b 5 8 
+  d a 4 6     d b 9 13 
+  e a 6 7     e b 6 6 
+  f a 9 10    f b 7 10 
+  g a 5 7     g b 5 7
+  x a 1 1     y b 1 1
 }
 set res_row {
   a 10 20   b 9 14   c 9 20   d 9 19   
@@ -212,6 +212,129 @@ do_catchsql_test 6.2 {
   CREATE VIRTUAL TABLE vocab3 USING fts5vocab(lll, row);
   SELECT * FROM vocab3;
 } {1 {no such fts5 table: main.lll}}
+
+#-------------------------------------------------------------------------
+# Test single term queries on fts5vocab tables (i.e. those with term=?
+# constraints in the WHERE clause).
+#
+do_execsql_test 7.0 {
+  CREATE VIRTUAL TABLE tx USING fts5(one, two);
+  INSERT INTO tx VALUES('g a ggg g a b eee',      'cc d aa ff g ee');
+  INSERT INTO tx VALUES('dd fff i a i jjj',       'f fff hh jj e f');
+  INSERT INTO tx VALUES('ggg a f f fff dd aa',    'd ggg f f j gg ddd');
+  INSERT INTO tx VALUES('e bb h jjj ii gg',       'e aa e f c fff');
+  INSERT INTO tx VALUES('j ff aa a h',            'h a j bbb bb');
+  INSERT INTO tx VALUES('cc i ff c d f',          'dd ii fff f c cc d');
+  INSERT INTO tx VALUES('jjj g i bb cc eee',      'hhh iii aaa b bbb aaa');
+  INSERT INTO tx VALUES('hhh hhh hhh bb fff f',   'fff gg aa ii h a');
+  INSERT INTO tx VALUES('b c cc aaa iii ggg f',   'iii ff ee a ff c cc');
+  INSERT INTO tx VALUES('hhh b hhh aaa j i i',    'dd ee ee aa bbb iii');
+  INSERT INTO tx VALUES('hh dd h b g ff i',       'ccc bb cc ccc f a d');
+  INSERT INTO tx VALUES('g d b ggg jj',           'fff jj ff jj g gg ee');
+  INSERT INTO tx VALUES('g ee ggg ggg cc bb eee', 'aa j jjj bbb dd eee ff');
+  INSERT INTO tx VALUES('c jjj hh ddd dd h',      'e aaa h jjj gg');
+
+  CREATE VIRTUAL TABLE txr USING fts5vocab(tx, row);
+  CREATE VIRTUAL TABLE txc USING fts5vocab(tx, col);
+}
+
+proc cont {L elem} {
+  set n 0
+  foreach e $L { if {$elem==$e} {incr n} }
+  set n
+}
+db func cont cont
+
+foreach {term} {
+  a aa aaa
+  b bb bbb
+  c cc ccc
+  d dd ddd
+  e ee eee
+  f ff fff
+  g gg ggg
+  h hh hhh
+  i ii iii
+  j jj jjj
+} {
+  set resr [db eval {
+    SELECT $term, 
+      sum(cont(one || ' ' || two, $term) > 0),
+      sum(cont(one || ' ' || two, $term))
+    FROM tx
+  }]
+  if {[lindex $resr 1]==0} {set resr [list]}
+
+  set r1 [db eval {
+    SELECT $term, 'one', sum(cont(one, $term)>0), sum(cont(one, $term)) FROM tx
+  }]
+  if {[lindex $r1 2]==0} {set r1 [list]}
+
+  set r2 [db eval {
+    SELECT $term, 'two', sum(cont(two, $term)>0), sum(cont(two, $term)) FROM tx
+  }]
+  if {[lindex $r2 2]==0} {set r2 [list]}
+
+  set resc [concat $r1 $r2]
+  do_execsql_test 7.$term.1 {SELECT * FROM txc WHERE term=$term} $resc
+  do_execsql_test 7.$term.2 {SELECT * FROM txr WHERE term=$term} $resr
+}
+
+do_execsql_test 7.1 {
+  CREATE TABLE txr_c AS SELECT * FROM txr;
+  CREATE TABLE txc_c AS SELECT * FROM txc;
+}
+
+# Test range queries on the fts5vocab tables created above.
+#
+foreach {tn a b} {
+  1   a   jjj
+  2   bb  j
+  3   ccc ddd
+  4   dd  xyz
+  5   xzy dd
+  6   h   hh
+} {
+  do_execsql_test 7.2.$tn.1 {
+    SELECT * FROM txr WHERE term>=$a
+  } [db eval {SELECT * FROM txr_c WHERE term>=$a}]
+  do_execsql_test 7.2.$tn.2 {
+    SELECT * FROM txr WHERE term<=$b
+  } [db eval {SELECT * FROM txr_c WHERE term <=$b}]
+  do_execsql_test 7.2.$tn.3 {
+    SELECT * FROM txr WHERE term>=$a AND term<=$b
+  } [db eval {SELECT * FROM txr_c WHERE term>=$a AND term <=$b}]
+
+  do_execsql_test 7.2.$tn.4 {
+    SELECT * FROM txc WHERE term>=$a
+  } [db eval {SELECT * FROM txc_c WHERE term>=$a}]
+  do_execsql_test 7.2.$tn.5 {
+    SELECT * FROM txc WHERE term<=$b
+  } [db eval {SELECT * FROM txc_c WHERE term <=$b}]
+  do_execsql_test 7.2.$tn.6 {
+    SELECT * FROM txc WHERE term>=$a AND term<=$b
+  } [db eval {SELECT * FROM txc_c WHERE term>=$a AND term <=$b}]
+
+  do_execsql_test 7.2.$tn.7 {
+    SELECT * FROM txr WHERE term>$a
+  } [db eval {SELECT * FROM txr_c WHERE term>$a}]
+  do_execsql_test 7.2.$tn.8 {
+    SELECT * FROM txr WHERE term<$b
+  } [db eval {SELECT * FROM txr_c WHERE term<$b}]
+  do_execsql_test 7.2.$tn.9 {
+    SELECT * FROM txr WHERE term>$a AND term<$b
+  } [db eval {SELECT * FROM txr_c WHERE term>$a AND term <$b}]
+
+  do_execsql_test 7.2.$tn.10 {
+    SELECT * FROM txc WHERE term>$a
+  } [db eval {SELECT * FROM txc_c WHERE term>$a}]
+  do_execsql_test 7.2.$tn.11 {
+    SELECT * FROM txc WHERE term<$b
+  } [db eval {SELECT * FROM txc_c WHERE term<$b}]
+  do_execsql_test 7.2.$tn.12 {
+    SELECT * FROM txc WHERE term>$a AND term<$b
+  } [db eval {SELECT * FROM txc_c WHERE term>$a AND term <$b}]
+}
 
 finish_test
 

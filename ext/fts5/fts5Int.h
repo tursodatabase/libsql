@@ -475,7 +475,7 @@ int sqlite3Fts5GetTokenizer(
   char **pzErr
 );
 
-Fts5Index *sqlite3Fts5IndexFromCsrid(Fts5Global*, i64, int*);
+Fts5Index *sqlite3Fts5IndexFromCsrid(Fts5Global*, i64, Fts5Config **);
 
 /*
 ** End of interface to code in fts5.c.

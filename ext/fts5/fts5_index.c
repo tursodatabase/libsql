@@ -4597,9 +4597,7 @@ int sqlite3Fts5IndexQuery(
   Fts5Buffer buf = {0, 0, 0};
 
   /* If the QUERY_SCAN flag is set, all other flags must be clear. */
-  assert( (flags & FTS5INDEX_QUERY_SCAN)==0
-       || (flags & FTS5INDEX_QUERY_SCAN)==FTS5INDEX_QUERY_SCAN
-  );
+  assert( (flags & FTS5INDEX_QUERY_SCAN)==0 || flags==FTS5INDEX_QUERY_SCAN );
 
   if( sqlite3Fts5BufferGrow(&p->rc, &buf, nToken+1)==0 ){
     memcpy(&buf.p[1], pToken, nToken);
