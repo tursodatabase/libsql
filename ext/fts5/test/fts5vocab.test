@@ -336,5 +336,14 @@ foreach {tn a b} {
   } [db eval {SELECT * FROM txc_c WHERE term>$a AND term <$b}]
 }
 
+do_execsql_test 7.3.1 {
+  SELECT count(*) FROM txr, txr_c WHERE txr.term = txr_c.term;
+} {30}
+
+do_execsql_test 7.3.2 {
+  SELECT count(*) FROM txc, txc_c 
+  WHERE txc.term = txc_c.term AND txc.col=txc_c.col;
+} {57}
+
 finish_test
 

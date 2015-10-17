@@ -262,7 +262,6 @@ static int fts5VocabBestIndexMethod(
   if( iTermEq>=0 ){
     idxNum |= FTS5_VOCAB_TERM_EQ;
     pInfo->aConstraintUsage[iTermEq].argvIndex = ++nArg;
-    pInfo->aConstraintUsage[iTermEq].omit = 1;
     pInfo->estimatedCost = 100;
   }else{
     pInfo->estimatedCost = 1000000;
