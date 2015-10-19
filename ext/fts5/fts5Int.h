@@ -224,6 +224,7 @@ struct Fts5Buffer {
   int nSpace;
 };
 
+int sqlite3Fts5BufferSize(int*, Fts5Buffer*, int);
 int sqlite3Fts5BufferGrow(int*, Fts5Buffer*, int);
 void sqlite3Fts5BufferAppendVarint(int*, Fts5Buffer*, i64);
 void sqlite3Fts5BufferAppendBlob(int*, Fts5Buffer*, int, const u8*);
@@ -237,12 +238,16 @@ void sqlite3Fts5BufferAppend32(int*, Fts5Buffer*, int);
 char *sqlite3Fts5Mprintf(int *pRc, const char *zFmt, ...);
 
 #define fts5BufferZero(x)             sqlite3Fts5BufferZero(x)
-#define fts5BufferGrow(a,b,c)         sqlite3Fts5BufferGrow(a,b,c)
 #define fts5BufferAppendVarint(a,b,c) sqlite3Fts5BufferAppendVarint(a,b,c)
 #define fts5BufferFree(a)             sqlite3Fts5BufferFree(a)
 #define fts5BufferAppendBlob(a,b,c,d) sqlite3Fts5BufferAppendBlob(a,b,c,d)
 #define fts5BufferSet(a,b,c,d)        sqlite3Fts5BufferSet(a,b,c,d)
 #define fts5BufferAppend32(a,b,c)     sqlite3Fts5BufferAppend32(a,b,c)
+
+#define fts5BufferGrow(pRc,pBuf,nn) ( \
+  (pBuf)->n + (nn) <= (pBuf)->nSpace ? 0 : \
+    sqlite3Fts5BufferSize((pRc),(pBuf),(nn)+(pBuf)->n) \
+)
 
 /* Write and decode big-endian 32-bit integer values */
 void sqlite3Fts5Put32(u8*, int);

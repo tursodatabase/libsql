@@ -1,5 +1,5 @@
-C Another\stweak\sto\simprove\sperformance\sof\sfts5\sprefix\squeries.
-D 2015-10-19T17:43:24.360
+C Another\soptimization\sfor\sfts5\sprefix\s(and\sother)\squeries.
+D 2015-10-19T20:49:10.124
 F Makefile.in 2ea961bc09e441874eb3d1bf7398e04feb24f3ee
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 4eb750e0fdf52050a06d881e1b060f4bb116ed7e
@@ -103,13 +103,13 @@ F ext/fts3/unicode/mkunicode.tcl 95cf7ec186e48d4985e433ff8a1c89090a774252
 F ext/fts3/unicode/parseunicode.tcl da577d1384810fb4e2b209bf3313074353193e95
 F ext/fts5/extract_api_docs.tcl a36e54ec777172ddd3f9a88daf593b00848368e0
 F ext/fts5/fts5.h 8b9a13b309b180e9fb88ea5666c0d8d73c6102d9
-F ext/fts5/fts5Int.h 0332d12fdca0f4fe2231df71bd7544b3cef81122
+F ext/fts5/fts5Int.h db1d5a18bae953c749198fe6d87862055ef55a1d
 F ext/fts5/fts5_aux.c 1f384972d606375b8fa078319f25ab4b5feb1b35
-F ext/fts5/fts5_buffer.c 9a3aa73a4e7b26b1c805b9c92c1344ba3d19d2a8
+F ext/fts5/fts5_buffer.c 6d4082daa71eef87812b8caa9d60ae57a6a9ebc0
 F ext/fts5/fts5_config.c 88a77f5d5e4dfbb2355b8f6cc9969b7f02d94685
 F ext/fts5/fts5_expr.c 28b15c9ae296204bc0a2e5cf7a667d840a9d2900
 F ext/fts5/fts5_hash.c a9d4c1efebc2a91d26ad7ebdfcbf2678ceac405f
-F ext/fts5/fts5_index.c 8468e41855bba133107760badda415bc7f86c12c
+F ext/fts5/fts5_index.c 38d7ddd4d5650007ee83000f0f96967ff83c710c
 F ext/fts5/fts5_main.c 520a29136ba07448331f73bdc36d0ffa1e9dcfef
 F ext/fts5/fts5_storage.c 9b30115742b758706de70595a8d1d084e940c978
 F ext/fts5/fts5_tcl.c 3bf445e66de32137d4693694ff7b1fd6074e32bd
@@ -1391,7 +1391,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 68ee426a6432ac63655909ff70cb22bde33cf28c
-R b1e8d85157aaa205dae46563b3080619
+P 69be427c864dc3de804ca3c5f1c6addcd33cd188
+R cf51e15890c7ae1ec9dc153fd0832e0a
 U dan
-Z e2816fa336eec46724399248fb4f473f
+Z 01b7158ec138174afd0e008584d0b467
