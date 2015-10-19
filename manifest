@@ -1,5 +1,5 @@
-C Add\stests\sto\scover\snew\sbranches\sadded\sto\sthe\sfts5\scode\sby\sthe\sprevious\scommit.
-D 2015-10-17T20:34:49.498
+C Fix\sa\sproblem\sin\sthe\sfts5txt2db.tcl\sscript\scausing\sit\sto\sfail\swhen\screating\stables\swith\smore\sthan\s8\scolumns.
+D 2015-10-19T15:59:08.318
 F Makefile.in 2ea961bc09e441874eb3d1bf7398e04feb24f3ee
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 4eb750e0fdf52050a06d881e1b060f4bb116ed7e
@@ -181,7 +181,7 @@ F ext/fts5/test/fts5unicode3.test 35c3d02aa7acf7d43d8de3bfe32c15ba96e8928e
 F ext/fts5/test/fts5unindexed.test e9539d5b78c677315e7ed8ea911d4fd25437c680
 F ext/fts5/test/fts5version.test 978f59541d8cef7e8591f8be2115ec5ccb863e2e
 F ext/fts5/test/fts5vocab.test c88a5554d0409494da95ba647bbdb4879b2624b0
-F ext/fts5/tool/fts5txt2db.tcl 3d19fb8ffb234031d33d7d2151acfbc55e9cfcc4
+F ext/fts5/tool/fts5txt2db.tcl c374c4c4797e8cdfadabdfaeeb5412dcd6686e84
 F ext/fts5/tool/loadfts5.tcl 58e90407cc5c2b1770460119488fd7c0090d4dd3
 F ext/fts5/tool/mkfts5c.tcl 09ce6a7997440508360f5ba1651ab7e923a8bf31
 F ext/fts5/tool/showfts5.tcl 9eaf6c3df352f98a2ab5ce1921dd94128ab1381d
@@ -1391,7 +1391,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6020d96ab47a0bebe41f691a3f44fd55d8b2d2b7
-R 22a259a71e3233ba8022de14ef31c49b
+P cf618334a8a05a067e844236e4d461b2e5706da6
+R 30a0ced4e8757449657c5453f9890b65
 U dan
-Z d5f5675976d14f9fce086eaa482cce6e
+Z 120618455a1082447e4825d9f82b93ec
