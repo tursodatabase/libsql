@@ -4111,15 +4111,6 @@ static int fts5AppendPoslist(
       int iSv2;
       int iData;
 
-      /* Append iDelta */
-      iSv1 = pBuf->n;
-      fts5BufferSafeAppendVarint(pBuf, iDelta);
-
-      /* WRITEPOSLISTSIZE */
-      iSv2 = pBuf->n;
-      fts5BufferSafeAppendVarint(pBuf, pSeg->nPos*2);
-      iData = pBuf->n;
-
       if( pSeg->iLeafOffset+pSeg->nPos<=pSeg->pLeaf->szLeaf 
        && (pColset==0 || pColset->nCol==1)
       ){
@@ -4127,24 +4118,37 @@ static int fts5AppendPoslist(
         int nPos;
         if( pColset ){
           nPos = fts5IndexExtractCol(&pPos, pSeg->nPos, pColset->aiCol[0]);
+          if( nPos==0 ) return 1;
         }else{
           nPos = pSeg->nPos;
         }
+        assert( nPos>0 );
+        fts5BufferSafeAppendVarint(pBuf, iDelta);
+        fts5BufferSafeAppendVarint(pBuf, nPos*2);
         fts5BufferSafeAppendBlob(pBuf, pPos, nPos);
       }else{
-        fts5SegiterPoslist(p, pSeg, pColset, pBuf);
-      }
+        /* Append iDelta */
+        iSv1 = pBuf->n;
+        fts5BufferSafeAppendVarint(pBuf, iDelta);
 
-      if( pColset ){
-        int nActual = pBuf->n - iData;
-        if( nActual!=pSeg->nPos ){
-          if( nActual==0 ){
-            pBuf->n = iSv1;
-            return 1;
-          }else{
-            int nReq = sqlite3Fts5GetVarintLen((u32)(nActual*2));
-            while( iSv2<(iData-nReq) ){ pBuf->p[iSv2++] = 0x80; }
-            sqlite3Fts5PutVarint(&pBuf->p[iSv2], nActual*2);
+        /* WRITEPOSLISTSIZE */
+        iSv2 = pBuf->n;
+        fts5BufferSafeAppendVarint(pBuf, pSeg->nPos*2);
+        iData = pBuf->n;
+
+        fts5SegiterPoslist(p, pSeg, pColset, pBuf);
+
+        if( pColset ){
+          int nActual = pBuf->n - iData;
+          if( nActual!=pSeg->nPos ){
+            if( nActual==0 ){
+              pBuf->n = iSv1;
+              return 1;
+            }else{
+              int nReq = sqlite3Fts5GetVarintLen((u32)(nActual*2));
+              while( iSv2<(iData-nReq) ){ pBuf->p[iSv2++] = 0x80; }
+              sqlite3Fts5PutVarint(&pBuf->p[iSv2], nActual*2);
+            }
           }
         }
       }
