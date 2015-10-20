@@ -1,5 +1,5 @@
-C Initialize\svariables\sin\sthe\sfts5\sintegrity-check\scode\sto\savoid\scompiler\swarnings.
-D 2015-10-20T15:49:02.194
+C Fix\s#line\sdirectives\sadded\sto\sgenerated\sfile\sfts5.c.
+D 2015-10-20T19:55:35.406
 F Makefile.in 2ea961bc09e441874eb3d1bf7398e04feb24f3ee
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 4eb750e0fdf52050a06d881e1b060f4bb116ed7e
@@ -109,7 +109,7 @@ F ext/fts5/fts5_buffer.c 6d4082daa71eef87812b8caa9d60ae57a6a9ebc0
 F ext/fts5/fts5_config.c 88a77f5d5e4dfbb2355b8f6cc9969b7f02d94685
 F ext/fts5/fts5_expr.c 28b15c9ae296204bc0a2e5cf7a667d840a9d2900
 F ext/fts5/fts5_hash.c a9d4c1efebc2a91d26ad7ebdfcbf2678ceac405f
-F ext/fts5/fts5_index.c 38d7ddd4d5650007ee83000f0f96967ff83c710c
+F ext/fts5/fts5_index.c 903ca7a882d6f7ae4a08575b233fc95894daaf0b
 F ext/fts5/fts5_main.c 520a29136ba07448331f73bdc36d0ffa1e9dcfef
 F ext/fts5/fts5_storage.c 8038a54a88d3beb94dc7f9db6428a3bc08b718bb
 F ext/fts5/fts5_tcl.c 3bf445e66de32137d4693694ff7b1fd6074e32bd
@@ -183,7 +183,7 @@ F ext/fts5/test/fts5version.test 978f59541d8cef7e8591f8be2115ec5ccb863e2e
 F ext/fts5/test/fts5vocab.test c88a5554d0409494da95ba647bbdb4879b2624b0
 F ext/fts5/tool/fts5txt2db.tcl c374c4c4797e8cdfadabdfaeeb5412dcd6686e84
 F ext/fts5/tool/loadfts5.tcl 58e90407cc5c2b1770460119488fd7c0090d4dd3
-F ext/fts5/tool/mkfts5c.tcl 09ce6a7997440508360f5ba1651ab7e923a8bf31
+F ext/fts5/tool/mkfts5c.tcl d1c2a9ab8e0ec690a52316f33dd9b1d379942f45
 F ext/fts5/tool/showfts5.tcl 9eaf6c3df352f98a2ab5ce1921dd94128ab1381d
 F ext/icu/README.txt d9fbbad0c2f647c3fdf715fc9fd64af53aedfc43
 F ext/icu/icu.c b2732aef0b076e4276d9b39b5a33cec7a05e1413
@@ -1391,7 +1391,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 60a8bde055a960c5b8cb4e231802c75617c942d8
-R 507ca9e6ed1f2a8dcb12d2eaeb7b0450
+P e979e2cccac257ad554803e6a1103558b0f159d8
+R 44b3b756f766dbcb6a6fd920376ac78a
 U dan
-Z c40a91b7d33ce0f422b5ec994684bd4f
+Z 5fc3ef172eb8863d82203d5aa10e31b9

@@ -374,26 +374,6 @@ struct Fts5SegWriter {
   int iBtPage;                    /* Page number corresponding to btterm */
 };
 
-/*
-** Object for iterating through the merged results of one or more segments,
-** visiting each term/rowid pair in the merged data.
-**
-** nSeg is always a power of two greater than or equal to the number of
-** segments that this object is merging data from. Both the aSeg[] and
-** aFirst[] arrays are sized at nSeg entries. The aSeg[] array is padded
-** with zeroed objects - these are handled as if they were iterators opened
-** on empty segments.
-**
-** The results of comparing segments aSeg[N] and aSeg[N+1], where N is an
-** even number, is stored in aFirst[(nSeg+N)/2]. The "result" of the 
-** comparison in this context is the index of the iterator that currently
-** points to the smaller term/rowid combination. Iterators at EOF are
-** considered to be greater than all other iterators.
-**
-** aFirst[1] contains the index in aSeg[] of the iterator that points to
-** the smallest key overall. aFirst[0] is unused. 
-*/
-
 typedef struct Fts5CResult Fts5CResult;
 struct Fts5CResult {
   u16 iFirst;                     /* aSeg[] index of firstest iterator */
@@ -500,6 +480,24 @@ struct Fts5SegIter {
 #define fts5LeafFirstRowidOff(x) (fts5GetU16((x)->p))
 
 /*
+** Object for iterating through the merged results of one or more segments,
+** visiting each term/rowid pair in the merged data.
+**
+** nSeg is always a power of two greater than or equal to the number of
+** segments that this object is merging data from. Both the aSeg[] and
+** aFirst[] arrays are sized at nSeg entries. The aSeg[] array is padded
+** with zeroed objects - these are handled as if they were iterators opened
+** on empty segments.
+**
+** The results of comparing segments aSeg[N] and aSeg[N+1], where N is an
+** even number, is stored in aFirst[(nSeg+N)/2]. The "result" of the 
+** comparison in this context is the index of the iterator that currently
+** points to the smaller term/rowid combination. Iterators at EOF are
+** considered to be greater than all other iterators.
+**
+** aFirst[1] contains the index in aSeg[] of the iterator that points to
+** the smallest key overall. aFirst[0] is unused. 
+**
 ** poslist:
 **   Used by sqlite3Fts5IterPoslist() when the poslist needs to be buffered.
 **   There is no way to tell if this is populated or not.
