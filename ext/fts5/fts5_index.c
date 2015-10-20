@@ -4360,7 +4360,7 @@ static void fts5SetupPrefixIter(
     Fts5IndexIter *p1 = 0;     /* Iterator used to gather data from index */
     Fts5Data *pData;
     Fts5Buffer doclist;
-    int bNewTerm;
+    int bNewTerm = 0;
 
     memset(&doclist, 0, sizeof(doclist));
     for(fts5MultiIterNew(p, pStruct, 1, flags, pToken, nToken, -1, 0, &p1);

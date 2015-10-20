@@ -462,7 +462,7 @@ static int fts5VocabFilterMethod(
   sqlite3_value **apVal           /* Arguments for the indexing scheme */
 ){
   Fts5VocabCursor *pCsr = (Fts5VocabCursor*)pCursor;
-  int rc;
+  int rc = SQLITE_OK;
 
   int iVal = 0;
   int f = FTS5INDEX_QUERY_SCAN;
@@ -479,16 +479,16 @@ static int fts5VocabFilterMethod(
   if( idxNum & FTS5_VOCAB_TERM_LE ) pLe = apVal[iVal++];
 
   if( pEq ){
-    zTerm = sqlite3_value_text(pEq);
+    zTerm = (const char *)sqlite3_value_text(pEq);
     nTerm = sqlite3_value_bytes(pEq);
     f = 0;
   }else{
     if( pGe ){
-      zTerm = sqlite3_value_text(pGe);
+      zTerm = (const char *)sqlite3_value_text(pGe);
       nTerm = sqlite3_value_bytes(pGe);
     }
     if( pLe ){
-      const char *zCopy = sqlite3_value_text(pLe);
+      const char *zCopy = (const char *)sqlite3_value_text(pLe);
       pCsr->nLeTerm = sqlite3_value_bytes(pLe);
       pCsr->zLeTerm = sqlite3_malloc(pCsr->nLeTerm+1);
       if( pCsr->zLeTerm==0 ){
