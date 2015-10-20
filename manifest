@@ -1,5 +1,5 @@
-C Fix\s#line\sdirectives\sadded\sto\sgenerated\sfile\sfts5.c.
-D 2015-10-20T19:55:35.406
+C More\soptimizations\sfor\sfts5\sprefix\squeries.
+D 2015-10-20T21:05:53.203
 F Makefile.in 2ea961bc09e441874eb3d1bf7398e04feb24f3ee
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 4eb750e0fdf52050a06d881e1b060f4bb116ed7e
@@ -109,7 +109,7 @@ F ext/fts5/fts5_buffer.c 6d4082daa71eef87812b8caa9d60ae57a6a9ebc0
 F ext/fts5/fts5_config.c 88a77f5d5e4dfbb2355b8f6cc9969b7f02d94685
 F ext/fts5/fts5_expr.c 28b15c9ae296204bc0a2e5cf7a667d840a9d2900
 F ext/fts5/fts5_hash.c a9d4c1efebc2a91d26ad7ebdfcbf2678ceac405f
-F ext/fts5/fts5_index.c 903ca7a882d6f7ae4a08575b233fc95894daaf0b
+F ext/fts5/fts5_index.c 45856922243dc5f9d5bdc3b677d68e27997df600
 F ext/fts5/fts5_main.c 520a29136ba07448331f73bdc36d0ffa1e9dcfef
 F ext/fts5/fts5_storage.c 8038a54a88d3beb94dc7f9db6428a3bc08b718bb
 F ext/fts5/fts5_tcl.c 3bf445e66de32137d4693694ff7b1fd6074e32bd
@@ -1391,7 +1391,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e979e2cccac257ad554803e6a1103558b0f159d8
-R 44b3b756f766dbcb6a6fd920376ac78a
+P 1f5f5804cd394a81b1c0712ce6d1052f228d0a40
+R 843f1263cb5ed99ae94cdac9953fa2b8
 U dan
-Z 5fc3ef172eb8863d82203d5aa10e31b9
+Z 0e003a47783a27c94ee2f0e7d256c7c6
