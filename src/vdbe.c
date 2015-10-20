@@ -2370,7 +2370,7 @@ case OP_Column: {
   u32 offset;        /* Offset into the data */
   u64 offset64;      /* 64-bit offset */
   u32 avail;         /* Number of bytes of available data */
-  u32 t;             /* A type code from the record header */
+  u32 t = 0;         /* A type code from the record header */
   u16 fx;            /* pDest->flags value */
   Mem *pReg;         /* PseudoTable input register */
 

@@ -112,6 +112,11 @@ void sqlite3StatusDown(int op, int N){
 ** The caller must hold the appropriate mutex.
 */
 void sqlite3StatusHighwater(int op, int X){
+#if SQLITE_PTRSIZE>4
+  sqlite3_int64 newValue = (sqlite3_int64)X;
+#else
+  u32 newValue = (u32)X;
+#endif
   wsdStatInit;
   assert( op>=0 && op<ArraySize(wsdStat.nowValue) );
   assert( op>=0 && op<ArraySize(statMutex) );
@@ -121,8 +126,8 @@ void sqlite3StatusHighwater(int op, int X){
           || op==SQLITE_STATUS_PAGECACHE_SIZE
           || op==SQLITE_STATUS_SCRATCH_SIZE
           || op==SQLITE_STATUS_PARSER_STACK );
-  if( X>wsdStat.mxValue[op] ){
-    wsdStat.mxValue[op] = X;
+  if( newValue>wsdStat.mxValue[op] ){
+    wsdStat.mxValue[op] = newValue;
   }
 }
 
