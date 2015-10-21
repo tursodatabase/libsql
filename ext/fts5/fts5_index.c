@@ -1828,7 +1828,14 @@ static void fts5SegIterNext(
             if( pbNewTerm ) *pbNewTerm = 1;
           }
         }else{
-          fts5SegIterLoadNPos(p, pIter);
+          /* The following could be done by calling fts5SegIterLoadNPos(). But
+          ** this block is particularly performance critical, so equivalent
+          ** code is inlined. */
+          int nSz;
+          assert( p->rc==SQLITE_OK );
+          fts5FastGetVarint32(pIter->pLeaf->p, pIter->iLeafOffset, nSz);
+          pIter->bDel = (nSz & 0x0001);
+          pIter->nPos = nSz>>1;
         }
       }
     }
