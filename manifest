@@ -1,5 +1,5 @@
-C Minor\soptimization\sfor\sfts5\squeries.
-D 2015-10-21T20:07:08.658
+C Remove\ssome\sbranches\smade\sunreachable\sby\srecent\schanges\sfrom\sfts5.
+D 2015-10-21T20:56:27.613
 F Makefile.in 2ea961bc09e441874eb3d1bf7398e04feb24f3ee
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 4eb750e0fdf52050a06d881e1b060f4bb116ed7e
@@ -103,13 +103,13 @@ F ext/fts3/unicode/mkunicode.tcl 95cf7ec186e48d4985e433ff8a1c89090a774252
 F ext/fts3/unicode/parseunicode.tcl da577d1384810fb4e2b209bf3313074353193e95
 F ext/fts5/extract_api_docs.tcl a36e54ec777172ddd3f9a88daf593b00848368e0
 F ext/fts5/fts5.h 8b9a13b309b180e9fb88ea5666c0d8d73c6102d9
-F ext/fts5/fts5Int.h db1d5a18bae953c749198fe6d87862055ef55a1d
+F ext/fts5/fts5Int.h dfe8390b65e84846e1bd7a2fccc076d350e83f8a
 F ext/fts5/fts5_aux.c 1f384972d606375b8fa078319f25ab4b5feb1b35
-F ext/fts5/fts5_buffer.c 6d4082daa71eef87812b8caa9d60ae57a6a9ebc0
+F ext/fts5/fts5_buffer.c 1e49512a535045e621246dc7f4f65f3593fa0fc2
 F ext/fts5/fts5_config.c 88a77f5d5e4dfbb2355b8f6cc9969b7f02d94685
 F ext/fts5/fts5_expr.c 28b15c9ae296204bc0a2e5cf7a667d840a9d2900
 F ext/fts5/fts5_hash.c a9d4c1efebc2a91d26ad7ebdfcbf2678ceac405f
-F ext/fts5/fts5_index.c 47ef0002b49b1dba5d5a49c8f2b02160a146a4ff
+F ext/fts5/fts5_index.c ffb95101cab310700ccedd641f4ac8a92b1bace8
 F ext/fts5/fts5_main.c 520a29136ba07448331f73bdc36d0ffa1e9dcfef
 F ext/fts5/fts5_storage.c 8038a54a88d3beb94dc7f9db6428a3bc08b718bb
 F ext/fts5/fts5_tcl.c 3bf445e66de32137d4693694ff7b1fd6074e32bd
@@ -1391,7 +1391,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b9c4aa521156d8ca09151a82a7e80aa8d1d7a313
-R 4d88206e8c01136d0ea377b3eae363fe
+P 363b36d50b6f3e3d3e79c538be1167b071a5a710
+R 78a6349126aa9306d06a1fd8711337ce
 U dan
-Z 08a5e9e12273e463d7b7c3c870bc7777
+Z 67153b352bb25ea8149714857c236ba9

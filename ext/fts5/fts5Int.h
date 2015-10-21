@@ -233,7 +233,6 @@ void sqlite3Fts5BufferFree(Fts5Buffer*);
 void sqlite3Fts5BufferZero(Fts5Buffer*);
 void sqlite3Fts5BufferSet(int*, Fts5Buffer*, int, const u8*);
 void sqlite3Fts5BufferAppendPrintf(int *, Fts5Buffer*, char *zFmt, ...);
-void sqlite3Fts5BufferAppend32(int*, Fts5Buffer*, int);
 
 char *sqlite3Fts5Mprintf(int *pRc, const char *zFmt, ...);
 
@@ -242,7 +241,6 @@ char *sqlite3Fts5Mprintf(int *pRc, const char *zFmt, ...);
 #define fts5BufferFree(a)             sqlite3Fts5BufferFree(a)
 #define fts5BufferAppendBlob(a,b,c,d) sqlite3Fts5BufferAppendBlob(a,b,c,d)
 #define fts5BufferSet(a,b,c,d)        sqlite3Fts5BufferSet(a,b,c,d)
-#define fts5BufferAppend32(a,b,c)     sqlite3Fts5BufferAppend32(a,b,c)
 
 #define fts5BufferGrow(pRc,pBuf,nn) ( \
   (pBuf)->n + (nn) <= (pBuf)->nSpace ? 0 : \

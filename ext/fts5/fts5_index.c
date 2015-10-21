@@ -1006,6 +1006,18 @@ static int fts5StructureCountSegments(Fts5Structure *pStruct){
 }
 #endif
 
+#define fts5BufferSafeAppendBlob(pBuf, pBlob, nBlob) {     \
+  assert( (pBuf)->nSpace>=((pBuf)->n+nBlob) );             \
+  memcpy(&(pBuf)->p[(pBuf)->n], pBlob, nBlob);             \
+  (pBuf)->n += nBlob;                                      \
+}
+
+#define fts5BufferSafeAppendVarint(pBuf, iVal) {                \
+  (pBuf)->n += sqlite3Fts5PutVarint(&(pBuf)->p[(pBuf)->n], (iVal));  \
+  assert( (pBuf)->nSpace>=(pBuf)->n );                          \
+}
+
+
 /*
 ** Serialize and store the "structure" record.
 **
@@ -1024,11 +1036,14 @@ static void fts5StructureWrite(Fts5Index *p, Fts5Structure *pStruct){
     /* Append the current configuration cookie */
     iCookie = p->pConfig->iCookie;
     if( iCookie<0 ) iCookie = 0;
-    fts5BufferAppend32(&p->rc, &buf, iCookie);
 
-    fts5BufferAppendVarint(&p->rc, &buf, pStruct->nLevel);
-    fts5BufferAppendVarint(&p->rc, &buf, pStruct->nSegment);
-    fts5BufferAppendVarint(&p->rc, &buf, (i64)pStruct->nWriteCounter);
+    if( 0==sqlite3Fts5BufferSize(&p->rc, &buf, 4+9+9+9) ){
+      sqlite3Fts5Put32(buf.p, iCookie);
+      buf.n = 4;
+      fts5BufferSafeAppendVarint(&buf, pStruct->nLevel);
+      fts5BufferSafeAppendVarint(&buf, pStruct->nSegment);
+      fts5BufferSafeAppendVarint(&buf, (i64)pStruct->nWriteCounter);
+    }
 
     for(iLvl=0; iLvl<pStruct->nLevel; iLvl++){
       int iSeg;                     /* Used to iterate through segments */
@@ -2603,6 +2618,7 @@ static void fts5MultiIterNext2(
   Fts5IndexIter *pIter,
   int *pbNewTerm                  /* OUT: True if *might* be new term */
 ){
+  assert( pIter->bSkipEmpty );
   if( p->rc==SQLITE_OK ){
     do {
       int iFirst = pIter->aFirst[1].iFirst;
@@ -2621,7 +2637,7 @@ static void fts5MultiIterNext2(
       }
       fts5AssertMultiIterSetup(p, pIter);
 
-    }while( pIter->bSkipEmpty && fts5MultiIterIsEmpty(p, pIter) );
+    }while( fts5MultiIterIsEmpty(p, pIter) );
   }
 }
 
@@ -3379,9 +3395,12 @@ static void fts5WriteInit(
   pWriter->bFirstTermInPage = 1;
   pWriter->iBtPage = 1;
 
+  assert( pWriter->writer.buf.n==0 );
+  assert( pWriter->writer.pgidx.n==0 );
+
   /* Grow the two buffers to pgsz + padding bytes in size. */
-  fts5BufferGrow(&p->rc, &pWriter->writer.pgidx, nBuffer);
-  fts5BufferGrow(&p->rc, &pWriter->writer.buf, nBuffer);
+  sqlite3Fts5BufferSize(&p->rc, &pWriter->writer.pgidx, nBuffer);
+  sqlite3Fts5BufferSize(&p->rc, &pWriter->writer.buf, nBuffer);
 
   if( p->pIdxWriter==0 ){
     Fts5Config *pConfig = p->pConfig;
@@ -3732,17 +3751,6 @@ static int fts5PoslistPrefix(const u8 *aBuf, int nMax){
     }
   }
   return ret;
-}
-
-#define fts5BufferSafeAppendBlob(pBuf, pBlob, nBlob) {     \
-  assert( (pBuf)->nSpace>=((pBuf)->n+nBlob) );             \
-  memcpy(&(pBuf)->p[(pBuf)->n], pBlob, nBlob);             \
-  (pBuf)->n += nBlob;                                      \
-}
-
-#define fts5BufferSafeAppendVarint(pBuf, iVal) {                \
-  (pBuf)->n += sqlite3Fts5PutVarint(&(pBuf)->p[(pBuf)->n], (iVal));  \
-  assert( (pBuf)->nSpace>=(pBuf)->n );                          \
 }
 
 /*
@@ -4276,7 +4284,7 @@ static void fts5MergePrefixLists(
     memset(&out, 0, sizeof(out));
     memset(&tmp, 0, sizeof(tmp));
 
-    fts5BufferGrow(&p->rc, &out, p1->n + p2->n);
+    sqlite3Fts5BufferSize(&p->rc, &out, p1->n + p2->n);
     fts5DoclistIterInit(p1, &i1);
     fts5DoclistIterInit(p2, &i2);
     while( p->rc==SQLITE_OK && (i1.aPoslist!=0 || i2.aPoslist!=0) ){
@@ -4642,7 +4650,7 @@ int sqlite3Fts5IndexQuery(
   /* If the QUERY_SCAN flag is set, all other flags must be clear. */
   assert( (flags & FTS5INDEX_QUERY_SCAN)==0 || flags==FTS5INDEX_QUERY_SCAN );
 
-  if( fts5BufferGrow(&p->rc, &buf, nToken+1)==0 ){
+  if( sqlite3Fts5BufferSize(&p->rc, &buf, nToken+1)==0 ){
     memcpy(&buf.p[1], pToken, nToken);
 
 #ifdef SQLITE_DEBUG

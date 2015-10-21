@@ -53,12 +53,6 @@ int sqlite3Fts5Get32(const u8 *aBuf){
   return (aBuf[0] << 24) + (aBuf[1] << 16) + (aBuf[2] << 8) + aBuf[3];
 }
 
-void sqlite3Fts5BufferAppend32(int *pRc, Fts5Buffer *pBuf, int iVal){
-  if( fts5BufferGrow(pRc, pBuf, 4) ) return;
-  sqlite3Fts5Put32(&pBuf->p[pBuf->n], iVal);
-  pBuf->n += 4;
-}
-
 /*
 ** Append buffer nData/pData to buffer pBuf. If an OOM error occurs, set 
 ** the error code in p. If an error has already occurred when this function
