@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sin\sFTS5.
-D 2015-10-20T23:27:14.365
+C Add\sextra\sdebugging\sfunction\sto\stest_rbu.c.\sEnhance\sthe\sdocumentation\sfor\ssqlite3rbu_db()\sto\sdefine\sthe\svalidity\sof\sthe\sreturned\sdatabase\shandles.
+D 2015-10-21T08:26:01.477
 F Makefile.in 2ea961bc09e441874eb3d1bf7398e04feb24f3ee
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 4eb750e0fdf52050a06d881e1b060f4bb116ed7e
@@ -230,8 +230,8 @@ F ext/rbu/rbufault2.test 9a7f19edd6ea35c4c9f807d8a3db0a03a5670c06
 F ext/rbu/rbufts.test 828cd689da825f0a7b7c53ffc1f6f7fdb6fa5bda
 F ext/rbu/rbusave.test 0f43b6686084f426ddd040b878426452fd2c2f48
 F ext/rbu/sqlite3rbu.c ea47de615e911b3a69a8e7fb3be3866298403a25
-F ext/rbu/sqlite3rbu.h 1d568cb33738d7900975cc5c72e6f68049f15914
-F ext/rbu/test_rbu.c 2a3652241fa45d5eaa141775e4ae68c1d3582c03
+F ext/rbu/sqlite3rbu.h 0bdeb3be211aaba7d85445fa36f4701a25a3dbde
+F ext/rbu/test_rbu.c 4a4cdcef4ef9379fc2a21f008805c80b27bcf573
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 0f9b595bd0debcbedf1d7a63d0e0678d619e6c9c
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
@@ -1391,7 +1391,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b8fb263ed1b36d085437131795505e53af103d26
-R 95702bd1633e56deaa7f0c8cd9294ab7
-U mistachkin
-Z 2868708b35b26115fe25354e42651fac
+P 0a903ec26bfbbe9bfd18bc34934e689ffdb01ce5
+R c0f5065bff60d0df79ae9d2bf6514716
+U dan
+Z 2c0acb856eea548f945a4e7fa327a156
