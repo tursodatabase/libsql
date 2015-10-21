@@ -1,8 +1,8 @@
-C Remove\ssome\sbranches\smade\sunreachable\sby\srecent\schanges\sfrom\sfts5.
-D 2015-10-21T20:56:27.613
+C Fix\scompilation\sof\s'testfixture'\swith\sMSVC\swhen\sthe\sFTS5\sand\sJSON1\sextensions\sare\senabled.
+D 2015-10-21T22:07:25.256
 F Makefile.in 2ea961bc09e441874eb3d1bf7398e04feb24f3ee
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
-F Makefile.msc 4eb750e0fdf52050a06d881e1b060f4bb116ed7e
+F Makefile.msc 702d3e98f3afc6587a78481257f3c4c900efc3a4
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
 F VERSION a47917b59f38b632b3a8662d14fd20f94956bdd0
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -1391,7 +1391,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 363b36d50b6f3e3d3e79c538be1167b071a5a710
-R 78a6349126aa9306d06a1fd8711337ce
-U dan
-Z 67153b352bb25ea8149714857c236ba9
+P ae350bfbfd59f912c469a51bf7d1409f3c8d958a
+R 94370da87418177dbfd07035771f078a
+U mistachkin
+Z b64a69f65dcbfbb052541ed7b4c602d1
