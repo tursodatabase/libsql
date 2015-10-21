@@ -180,7 +180,7 @@ static int fts5VocabInitVtab(
     const char *zType = bDb ? argv[5] : argv[4];
     int nDb = (int)strlen(zDb)+1; 
     int nTab = (int)strlen(zTab)+1;
-    int eType;
+    int eType = 0;
     
     rc = fts5VocabTableType(zType, pzErr, &eType);
     if( rc==SQLITE_OK ){

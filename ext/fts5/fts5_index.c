@@ -5335,9 +5335,11 @@ int sqlite3Fts5IndexIntegrityCheck(Fts5Index *p, u64 cksum){
   Fts5IndexIter *pIter;           /* Used to iterate through entire index */
   Fts5Structure *pStruct;         /* Index structure */
 
+#ifdef SQLITE_DEBUG
   /* Used by extra internal tests only run if NDEBUG is not defined */
   u64 cksum3 = 0;                 /* Checksum based on contents of indexes */
   Fts5Buffer term = {0,0,0};      /* Buffer used to hold most recent term */
+#endif
   
   /* Load the FTS index structure */
   pStruct = fts5StructureRead(p);
@@ -5393,7 +5395,9 @@ int sqlite3Fts5IndexIntegrityCheck(Fts5Index *p, u64 cksum){
   if( p->rc==SQLITE_OK && cksum!=cksum2 ) p->rc = FTS5_CORRUPT;
 
   fts5StructureRelease(pStruct);
+#ifdef SQLITE_DEBUG
   fts5BufferFree(&term);
+#endif
   fts5BufferFree(&poslist);
   return fts5IndexReturn(p);
 }

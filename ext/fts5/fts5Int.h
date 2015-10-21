@@ -225,7 +225,6 @@ struct Fts5Buffer {
 };
 
 int sqlite3Fts5BufferSize(int*, Fts5Buffer*, int);
-int sqlite3Fts5BufferGrow(int*, Fts5Buffer*, int);
 void sqlite3Fts5BufferAppendVarint(int*, Fts5Buffer*, i64);
 void sqlite3Fts5BufferAppendBlob(int*, Fts5Buffer*, int, const u8*);
 void sqlite3Fts5BufferAppendString(int *, Fts5Buffer*, const char*);
