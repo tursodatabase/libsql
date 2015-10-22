@@ -478,12 +478,13 @@ void sqlite3DeleteFrom(
     */
     if( !isView ){
       int iAddrOnce = 0;
+      u8 p5 = (eOnePass==ONEPASS_OFF ? 0 : OPFLAG_FORDELETE);
       if( eOnePass==ONEPASS_MULTI ){
         iAddrOnce = sqlite3CodeOnce(pParse); VdbeCoverage(v);
       }
       testcase( IsVirtual(pTab) );
-      sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenWrite, iTabCur, aToOpen,
-                                 &iDataCur, &iIdxCur);
+      sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenWrite, p5, iTabCur, 
+                                 aToOpen, &iDataCur, &iIdxCur);
       assert( pPk || IsVirtual(pTab) || iDataCur==iTabCur );
       assert( pPk || IsVirtual(pTab) || iIdxCur==iDataCur+1 );
       if( eOnePass==ONEPASS_MULTI ) sqlite3VdbeJumpHere(v, iAddrOnce);

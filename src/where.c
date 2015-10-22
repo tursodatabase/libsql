@@ -3991,6 +3991,7 @@ WhereInfo *sqlite3WhereBegin(
   int ii;                    /* Loop counter */
   sqlite3 *db;               /* Database connection */
   int rc;                    /* Return code */
+  u8 bFordelete = 0;
 
   assert( (wctrlFlags & WHERE_ONEPASS_MULTIROW)==0 || (
         (wctrlFlags & WHERE_ONEPASS_DESIRED)!=0 
@@ -4246,8 +4247,11 @@ WhereInfo *sqlite3WhereBegin(
        && 0==(wsFlags & WHERE_VIRTUALTABLE)
     )){
       pWInfo->eOnePass = bOnerow ? ONEPASS_SINGLE : ONEPASS_MULTI;
-      if( HasRowid(pTabList->a[0].pTab) ){
-        pWInfo->a[0].pWLoop->wsFlags &= ~WHERE_IDX_ONLY;
+      if( HasRowid(pTabList->a[0].pTab) && (wsFlags & WHERE_IDX_ONLY) ){
+        if( wctrlFlags & WHERE_ONEPASS_MULTIROW ){
+          bFordelete = OPFLAG_FORDELETE;
+        }
+        pWInfo->a[0].pWLoop->wsFlags = (wsFlags & ~WHERE_IDX_ONLY);
       }
     }
   }
@@ -4284,6 +4288,7 @@ WhereInfo *sqlite3WhereBegin(
         pWInfo->aiCurOnePass[0] = pTabItem->iCursor;
       };
       sqlite3OpenTable(pParse, pTabItem->iCursor, iDb, pTab, op);
+      sqlite3VdbeChangeP5(v, bFordelete);
       assert( pTabItem->iCursor==pLevel->iTabCur );
       testcase( pWInfo->eOnePass==ONEPASS_OFF && pTab->nCol==BMS-1 );
       testcase( pWInfo->eOnePass==ONEPASS_OFF && pTab->nCol==BMS );

@@ -429,7 +429,7 @@ void sqlite3Update(
       if( aiCurOnePass[0]>=0 ) aToOpen[aiCurOnePass[0]-iBaseCur] = 0;
       if( aiCurOnePass[1]>=0 ) aToOpen[aiCurOnePass[1]-iBaseCur] = 0;
     }
-    sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenWrite, iBaseCur, aToOpen,
+    sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenWrite, 0, iBaseCur, aToOpen,
                                0, 0);
   }
 

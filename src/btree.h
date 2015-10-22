@@ -165,6 +165,12 @@ int sqlite3BtreeNewDb(Btree *p);
 #define BTREE_BULKLOAD 0x00000001  /* Used to full index in sorted order */
 #define BTREE_SEEK_EQ  0x00000002  /* EQ seeks only - no range seeks */
 
+/* 
+** Flags passed as the third argument to sqlite3BtreeCursor().
+*/
+#define BTREE_WRCSR     0x00000004  /* read-write cursor */
+#define BTREE_FORDELETE 0x00000008  /* Cursor is for seek/delete only */
+
 int sqlite3BtreeCursor(
   Btree*,                              /* BTree containing table to open */
   int iTable,                          /* Index of root page */
