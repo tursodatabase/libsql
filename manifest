@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sin\sFTS5.
-D 2015-10-21T22:08:36.772
+C Alternate\scompiler\swarning\sfix\sfor\ssqlite3StatusHighwater.
+D 2015-10-22T18:06:40.381
 F Makefile.in 2ea961bc09e441874eb3d1bf7398e04feb24f3ee
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 702d3e98f3afc6587a78481257f3c4c900efc3a4
@@ -345,7 +345,7 @@ F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 4b66e3e3435da4b4c8c83696d0349f0c503b3924
 F src/sqliteInt.h 1ad779ee62efee60494af0a75d8d45592f9f53c3
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
-F src/status.c 286f6398a4d2cd1e8ff0771e3d30f8dddb4768ea
+F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
 F src/tclsqlite.c d9439b6a910985b7fff43ba6756bcef00de22649
 F src/test1.c 8fff9c5aa63d6490f516d018b70c12a9cb9a4d8a
@@ -1391,7 +1391,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e31aa97a9298e49507256036cfb8fa7517a48461
-R 606f7dfef62137a51a41fcb520dc155f
+P aa4e01ea1af327d1f8398ebea1c5bacc46698c3d
+R a22db3919509c137f252ea9c4c395816
 U mistachkin
-Z be7e8557e6be3b3a5f61a53f0769e842
+Z cd96591ebe18ee957344d1fc4f75aaa9
