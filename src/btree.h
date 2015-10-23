@@ -167,9 +167,19 @@ int sqlite3BtreeNewDb(Btree *p);
 
 /* 
 ** Flags passed as the third argument to sqlite3BtreeCursor().
+**
+** For read-only cursors the wrFlag argument is always zero. For read-write
+** cursors it may be set to either (BTREE_WRCSR|BTREE_FORDELETE) or
+** (BTREE_WRCSR). If the BTREE_FORDELETE flag is set, then the cursor will
+** only be used by SQLite for the following:
+**
+**   * to seek to and delete specific entries, and/or
+**
+**   * to read values that will be used to create keys that other
+**     BTREE_FORDELETE cursors will seek to and delete.
 */
-#define BTREE_WRCSR     0x00000004  /* read-write cursor */
-#define BTREE_FORDELETE 0x00000008  /* Cursor is for seek/delete only */
+#define BTREE_WRCSR     0x00000004     /* read-write cursor */
+#define BTREE_FORDELETE 0x00000008     /* Cursor is for seek/delete only */
 
 int sqlite3BtreeCursor(
   Btree*,                              /* BTree containing table to open */

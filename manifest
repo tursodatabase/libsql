@@ -1,5 +1,5 @@
-C Modifications\sto\spass\sa\sflag\sto\sinternal\sroutine\ssqlite3BtreeCursor()\swhen\sa\scursor\sthat\sis\sused\ssolely\sfor\sdeleting\sb-tree\sentries,\sor\sfor\sobtaining\sthe\scomponents\sof\skeys\sto\sdelete\sfrom\sother\sb-trees,\sis\sopened.
-D 2015-10-22T20:54:33.626
+C Remove\san\sunused\s#define\sfrom\swhereInt.h.\sAdd\scomments\sdescribing\sthe\snew\ssqlite3BtreeCursor()\sflags.
+D 2015-10-23T11:50:23.745
 F Makefile.in 2ea961bc09e441874eb3d1bf7398e04feb24f3ee
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 702d3e98f3afc6587a78481257f3c4c900efc3a4
@@ -281,7 +281,7 @@ F src/backup.c c3a9c4209439b806c44cf30daf466955727bf46c
 F src/bitvec.c d1f21d7d91690747881f03940584f4cc548c9d3d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
 F src/btree.c 9d684e19f84633323de7a767da2e2b8cf51fa600
-F src/btree.h ccc489437299e48ba5f7d957baa686a9adf2d1ba
+F src/btree.h cf936d962b3f4179948d53ea58f3580de9b2ed0c
 F src/btreeInt.h 8177c9ab90d772d6d2c6c517e05bed774b7c92c0
 F src/build.c d6162335d690396dfc5c4bd59e8b2b0c14ba6285
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
@@ -416,7 +416,7 @@ F src/wal.c 18b0ed49830cf04fe2d68224b41838a73ac6cd24
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 2e14d17f592d176b6dc879c33fbdec4fbccaa2ba
 F src/where.c 0bb01a0545afb9ee064d64e4821f34a79742a6cf
-F src/whereInt.h 87b0b66cf0a337c8b282a33e4233e9dad14b626b
+F src/whereInt.h 7892bb54cf9ca0ae5c7e6094491b94c9286dc647
 F src/wherecode.c b924b78acd9e623fb69bfa2cb65cd7d542166dd3
 F src/whereexpr.c e63244ca06c503e5f3c5b7f3c9aea0db826089ed
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1392,10 +1392,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4315d20200d578c9252dcb26e60739063a8eff1d
-R f9b9301d7918e2f3aec8c2ac058ff295
-T *branch * btree-fordelete-flag
-T *sym-btree-fordelete-flag *
-T -sym-trunk *
+P cdc92919e600007cae5eb61223684f48a65babc0
+R 372ed0826353f0987c018dd56c7ed9e6
 U dan
-Z 49648c9fd09be094288b39d12da5947c
+Z 7d97368360f9df42d106befc4db01e49
