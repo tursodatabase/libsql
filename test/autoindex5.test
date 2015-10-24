@@ -17,6 +17,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix autoindex5
 
 # Schema is from the Debian security database
 #
@@ -103,6 +104,26 @@ do_execsql_test autoindex5-1.1 {
             OR sp.release = 'wheezy' OR sp.release = 'squeeze' )
   ORDER BY sp.name, st.bug_name, sp.release, sp.subrelease;
 } {/SEARCH SUBQUERY 2 USING AUTOMATIC COVERING INDEX .bug_name=/}
+
+#-------------------------------------------------------------------------
+# Test that ticket [8a2adec1] has been fixed.
+#
+do_execsql_test 2.1 {
+  CREATE TABLE one(o);
+  INSERT INTO one DEFAULT VALUES;
+
+  CREATE TABLE t1(x, z);
+  INSERT INTO t1 VALUES('aaa', 4.0);
+  INSERT INTO t1 VALUES('aaa', 4.0);
+  CREATE VIEW vvv AS
+    SELECT * FROM t1
+    UNION ALL
+    SELECT 0, 0 WHERE 0;
+
+  SELECT (
+      SELECT sum(z) FROM vvv WHERE x='aaa'
+  ) FROM one;
+} {8.0}
     
 
 finish_test

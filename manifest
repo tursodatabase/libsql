@@ -1,5 +1,5 @@
-C Alternate\scompiler\swarning\sfix\sfor\ssqlite3StatusHighwater.
-D 2015-10-22T18:06:40.381
+C When\screating\san\sautomatic-index\son\sa\ssub-query,\sadd\sa\sunique\sinteger\sto\sthe\send\sof\seach\sindex\skey\sto\sensure\sthe\sentire\skey\sis\sunique.\sFix\sfor\s[8a2adec1].
+D 2015-10-24T20:31:22.639
 F Makefile.in 2ea961bc09e441874eb3d1bf7398e04feb24f3ee
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 702d3e98f3afc6587a78481257f3c4c900efc3a4
@@ -415,7 +415,7 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 18b0ed49830cf04fe2d68224b41838a73ac6cd24
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 2e14d17f592d176b6dc879c33fbdec4fbccaa2ba
-F src/where.c 4c4646675e794ac71e701289edefd7cd81bac844
+F src/where.c e3724b7b31d1e13869308ed4125305364f7d823a
 F src/whereInt.h 7892bb54cf9ca0ae5c7e6094491b94c9286dc647
 F src/wherecode.c b924b78acd9e623fb69bfa2cb65cd7d542166dd3
 F src/whereexpr.c e63244ca06c503e5f3c5b7f3c9aea0db826089ed
@@ -465,7 +465,7 @@ F test/autoindex1.test 14b63a9f1e405fe6d5bfc8c8d00249c2ebaf13ea
 F test/autoindex2.test af7e595c6864cc6ef5fc38d5db579a3e34940cb8
 F test/autoindex3.test a3be0d1a53a7d2edff208a5e442312957047e972
 F test/autoindex4.test 49d3cd791a9baa16fb461d7ea3de80d019a819cf
-F test/autoindex5.test 6f487290ce2a667c24517191651bfb8c7d86b6dc
+F test/autoindex5.test 96f084a5e6024ea07cace5888df3223f3ea86990
 F test/autovacuum.test 941892505d2c0f410a0cb5970dfa1c7c4e5f6e74
 F test/autovacuum_ioerr2.test 8a367b224183ad801e0e24dcb7d1501f45f244b4
 F test/avtrans.test 0252654f4295ddda3b2cce0e894812259e655a85
@@ -1391,7 +1391,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P aa4e01ea1af327d1f8398ebea1c5bacc46698c3d
-R a22db3919509c137f252ea9c4c395816
-U mistachkin
-Z cd96591ebe18ee957344d1fc4f75aaa9
+P 4315d20200d578c9252dcb26e60739063a8eff1d
+R dc911a631bba00e9a0808ae6a2dfaef0
+U dan
+Z 6491941420be3020676420319ae4eec9
