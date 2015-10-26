@@ -76,5 +76,55 @@ foreach {tn sql res} {
 } {
   do_adp_test 2.$tn $sql $res
 }
- 
+
+#-------------------------------------------------------------------------
+# Test that a record that consists of the bytes:
+#
+#   0x01 0x00
+#
+# is interpreted by OP_Column as a vector of NULL values (assuming the 
+# default column values are NULL). Also test that:
+#
+#   0x00
+#
+# is handled in the same way.
+#
+do_execsql_test 3.0 {
+  CREATE TABLE x1(a INTEGER PRIMARY KEY, b, c, d);
+  CREATE TABLE x2(a INTEGER PRIMARY KEY, b, c, d);
+}
+
+do_test 3.1 {
+  set root [db one { SELECT rootpage FROM sqlite_master WHERE name = 'x1' }]
+  db eval { 
+    BEGIN IMMEDIATE;
+  }
+  set bt [btree_from_db db]
+  set csr [btree_cursor $bt $root 1]
+  btree_insert $csr 5 "\000"
+  btree_close_cursor $csr
+  db eval { COMMIT }
+
+  db eval {
+    SELECT * FROM x1;
+  }
+} {5 {} {} {}}
+
+do_test 3.2 {
+  set root [db one { SELECT rootpage FROM sqlite_master WHERE name = 'x2' }]
+  db eval { 
+    BEGIN IMMEDIATE;
+  }
+  set bt [btree_from_db db]
+  set csr [btree_cursor $bt $root 1]
+  btree_insert $csr 6 "\000"
+  btree_close_cursor $csr
+  db eval { COMMIT }
+
+  db eval {
+    SELECT * FROM x2;
+  }
+} {6 {} {} {}}
+
 finish_test
+
