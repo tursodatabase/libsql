@@ -214,6 +214,7 @@ static int btree_cursor(
   pBt = sqlite3TestTextToPtr(argv[1]);
   if( Tcl_GetInt(interp, argv[2], &iTable) ) return TCL_ERROR;
   if( Tcl_GetBoolean(interp, argv[3], &wrFlag) ) return TCL_ERROR;
+  if( wrFlag ) wrFlag = BTREE_WRCSR;
   pCur = (BtCursor *)ckalloc(sqlite3BtreeCursorSize());
   memset(pCur, 0, sqlite3BtreeCursorSize());
   sqlite3BtreeEnter(pBt);

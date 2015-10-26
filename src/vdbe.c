@@ -3324,7 +3324,6 @@ case OP_ReopenIdx: {
 case OP_OpenRead:
 case OP_OpenWrite:
 
-  assert( (pOp->p5&(OPFLAG_P2ISREG|OPFLAG_BULKCSR|OPFLAG_SEEKEQ))==pOp->p5 );
   assert( pOp->opcode==OP_OpenWrite || pOp->p5==0 || pOp->p5==OPFLAG_SEEKEQ );
   assert( p->bIsReader );
   assert( pOp->opcode==OP_OpenRead || pOp->opcode==OP_ReopenIdx
@@ -3345,7 +3344,8 @@ case OP_OpenWrite:
   pX = pDb->pBt;
   assert( pX!=0 );
   if( pOp->opcode==OP_OpenWrite ){
-    wrFlag = 1;
+    assert( OPFLAG_FORDELETE==BTREE_FORDELETE );
+    wrFlag = BTREE_WRCSR | (pOp->p5 & OPFLAG_FORDELETE);
     assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
     if( pDb->pSchema->file_format < p->minWriteFileFormat ){
       p->minWriteFileFormat = pDb->pSchema->file_format;
@@ -3465,11 +3465,11 @@ case OP_OpenEphemeral: {
         assert( pKeyInfo->db==db );
         assert( pKeyInfo->enc==ENC(db) );
         pCx->pKeyInfo = pKeyInfo;
-        rc = sqlite3BtreeCursor(pCx->pBt, pgno, 1, pKeyInfo, pCx->pCursor);
+        rc = sqlite3BtreeCursor(pCx->pBt, pgno, BTREE_WRCSR, pKeyInfo, pCx->pCursor);
       }
       pCx->isTable = 0;
     }else{
-      rc = sqlite3BtreeCursor(pCx->pBt, MASTER_ROOT, 1, 0, pCx->pCursor);
+      rc = sqlite3BtreeCursor(pCx->pBt, MASTER_ROOT, BTREE_WRCSR, 0, pCx->pCursor);
       pCx->isTable = 1;
     }
   }
