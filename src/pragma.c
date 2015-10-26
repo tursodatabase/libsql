@@ -1482,7 +1482,7 @@ void sqlite3Pragma(
         sqlite3VdbeAddOp2(v, OP_Halt, 0, 0);
         sqlite3VdbeJumpHere(v, addr);
         sqlite3ExprCacheClear(pParse);
-        sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenRead,
+        sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenRead, 0,
                                    1, 0, &iDataCur, &iIdxCur);
         sqlite3VdbeAddOp2(v, OP_Integer, 0, 7);
         for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){

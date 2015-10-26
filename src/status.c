@@ -19,15 +19,15 @@
 /*
 ** Variables in which to record status information.
 */
+#if SQLITE_PTRSIZE>4
+typedef sqlite3_int64 sqlite3StatValueType;
+#else
+typedef u32 sqlite3StatValueType;
+#endif
 typedef struct sqlite3StatType sqlite3StatType;
 static SQLITE_WSD struct sqlite3StatType {
-#if SQLITE_PTRSIZE>4
-  sqlite3_int64 nowValue[10];         /* Current value */
-  sqlite3_int64 mxValue[10];          /* Maximum value */
-#else
-  u32 nowValue[10];                   /* Current value */
-  u32 mxValue[10];                    /* Maximum value */
-#endif
+  sqlite3StatValueType nowValue[10];  /* Current value */
+  sqlite3StatValueType mxValue[10];   /* Maximum value */
 } sqlite3Stat = { {0,}, {0,} };
 
 /*
@@ -108,18 +108,24 @@ void sqlite3StatusDown(int op, int N){
 }
 
 /*
-** Set the value of a status to X.  The highwater mark is adjusted if
-** necessary.  The caller must hold the appropriate mutex.
+** Adjust the highwater mark if necessary.
+** The caller must hold the appropriate mutex.
 */
-void sqlite3StatusSet(int op, int X){
+void sqlite3StatusHighwater(int op, int X){
+  sqlite3StatValueType newValue;
   wsdStatInit;
+  assert( X>=0 );
+  newValue = (sqlite3StatValueType)X;
   assert( op>=0 && op<ArraySize(wsdStat.nowValue) );
   assert( op>=0 && op<ArraySize(statMutex) );
   assert( sqlite3_mutex_held(statMutex[op] ? sqlite3Pcache1Mutex()
                                            : sqlite3MallocMutex()) );
-  wsdStat.nowValue[op] = X;
-  if( wsdStat.nowValue[op]>wsdStat.mxValue[op] ){
-    wsdStat.mxValue[op] = wsdStat.nowValue[op];
+  assert( op==SQLITE_STATUS_MALLOC_SIZE
+          || op==SQLITE_STATUS_PAGECACHE_SIZE
+          || op==SQLITE_STATUS_SCRATCH_SIZE
+          || op==SQLITE_STATUS_PARSER_STACK );
+  if( newValue>wsdStat.mxValue[op] ){
+    wsdStat.mxValue[op] = newValue;
   }
 }
 
@@ -252,10 +258,10 @@ int sqlite3_db_status(
             + pSchema->idxHash.count
             + pSchema->fkeyHash.count
           );
-          nByte += sqlite3MallocSize(pSchema->tblHash.ht);
-          nByte += sqlite3MallocSize(pSchema->trigHash.ht);
-          nByte += sqlite3MallocSize(pSchema->idxHash.ht);
-          nByte += sqlite3MallocSize(pSchema->fkeyHash.ht);
+          nByte += sqlite3_msize(pSchema->tblHash.ht);
+          nByte += sqlite3_msize(pSchema->trigHash.ht);
+          nByte += sqlite3_msize(pSchema->idxHash.ht);
+          nByte += sqlite3_msize(pSchema->fkeyHash.ht);
 
           for(p=sqliteHashFirst(&pSchema->trigHash); p; p=sqliteHashNext(p)){
             sqlite3DeleteTrigger(db, (Trigger*)sqliteHashData(p));

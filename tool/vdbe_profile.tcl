@@ -1,7 +1,15 @@
 #!/bin/tclsh
 #
+# SUMMARY:
 # Run this script in the same directory as the "vdbe_profile.out" file.
 # This script summarizes the results contained in that file.
+#
+# DETAILS:
+# Compile SQLite using the -DVDBE_PROFILE option on Linux.  This causes 
+# performance information about individual VDBE operations to be appended
+# to the "vdbe_profile.out" file.  After content has been accumulated in
+# vdbe_profile.out, run this script to analyze the output and generate a
+# report.
 #
 if {![file readable vdbe_profile.out]} {
   error "run this script in the same directory as the vdbe_profile.out file"

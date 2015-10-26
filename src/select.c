@@ -5295,13 +5295,8 @@ int sqlite3Select(
           struct AggInfo_col *pCol = &sAggInfo.aCol[i];
           if( pCol->iSorterColumn>=j ){
             int r1 = j + regBase;
-            int r2;
-
-            r2 = sqlite3ExprCodeGetColumn(pParse, 
-                               pCol->pTab, pCol->iColumn, pCol->iTable, r1, 0);
-            if( r1!=r2 ){
-              sqlite3VdbeAddOp2(v, OP_SCopy, r2, r1);
-            }
+            sqlite3ExprCodeGetColumnToReg(pParse, 
+                               pCol->pTab, pCol->iColumn, pCol->iTable, r1);
             j++;
           }
         }

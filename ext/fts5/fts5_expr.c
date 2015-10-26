@@ -907,7 +907,7 @@ static int fts5ExprNearInitAll(
           p->pIter = 0;
         }
         rc = sqlite3Fts5IndexQuery(
-            pExpr->pIndex, p->zTerm, strlen(p->zTerm),
+            pExpr->pIndex, p->zTerm, (int)strlen(p->zTerm),
             (pTerm->bPrefix ? FTS5INDEX_QUERY_PREFIX : 0) |
             (pExpr->bDesc ? FTS5INDEX_QUERY_DESC : 0),
             pNear->pColset,
@@ -1518,7 +1518,7 @@ Fts5ExprPhrase *sqlite3Fts5ParseTerm(
     int flags = FTS5_TOKENIZE_QUERY | (bPrefix ? FTS5_TOKENIZE_QUERY : 0);
     int n;
     sqlite3Fts5Dequote(z);
-    n = strlen(z);
+    n = (int)strlen(z);
     rc = sqlite3Fts5Tokenize(pConfig, flags, z, n, &sCtx, fts5ParseTokenize);
   }
   sqlite3_free(z);
@@ -1591,7 +1591,8 @@ int sqlite3Fts5ExprClonePhrase(
     Fts5ExprTerm *p;
     for(p=&pOrig->aTerm[i]; p && rc==SQLITE_OK; p=p->pSynonym){
       const char *zTerm = p->zTerm;
-      rc = fts5ParseTokenize((void*)&sCtx, tflags, zTerm, strlen(zTerm), 0, 0);
+      rc = fts5ParseTokenize((void*)&sCtx, tflags, zTerm, (int)strlen(zTerm),
+          0, 0);
       tflags = FTS5_TOKEN_COLOCATED;
     }
     if( rc==SQLITE_OK ){
@@ -1833,7 +1834,7 @@ static char *fts5ExprTermPrint(Fts5ExprTerm *pTerm){
 
   /* Determine the maximum amount of space required. */
   for(p=pTerm; p; p=p->pSynonym){
-    nByte += strlen(pTerm->zTerm) * 2 + 3 + 2;
+    nByte += (int)strlen(pTerm->zTerm) * 2 + 3 + 2;
   }
   zQuoted = sqlite3_malloc(nByte);
 

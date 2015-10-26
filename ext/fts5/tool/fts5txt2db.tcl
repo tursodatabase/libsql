@@ -25,7 +25,7 @@ is exhausted.
   exit -1
 }
 
-set O(aColsize)       [list 10 10 10]
+set O(aColSize)       [list 10 10 10]
 set O(tblname)        t1
 set O(fts)            fts5
 
@@ -61,22 +61,7 @@ if {$i > [llength $argv]-2} usage
 set O(db) [lindex $argv $i]
 set O(files) [lrange $argv [expr $i+1] end]
 
-foreach {k v} [lrange $argv 0 end-2] {
-  switch -- $k {
-    -colsize {
-      set O(aColSize) $v
-    }
-
-    -colsize {
-      set O(aColSize) $v
-    }
-  }
-
-}
-
 sqlite3 db $O(db)
-load_static_extension db fts5
-
 
 # Create the FTS table in the db. Return a list of the table columns.
 #
@@ -84,7 +69,7 @@ proc create_table {} {
   global O
   set cols [list a b c d e f g h i j k l m n o p q r s t u v w x y z]
 
-  set nCol [llength $O(aColsize)]
+  set nCol [llength $O(aColSize)]
   set cols [lrange $cols 0 [expr $nCol-1]]
 
   set sql    "CREATE VIRTUAL TABLE IF NOT EXISTS $O(tblname) USING $O(fts) ("
@@ -117,14 +102,14 @@ set i 0
 set cols [create_table]
 set sql "INSERT INTO $O(tblname) VALUES(\$[lindex $cols 0]"
 foreach c [lrange $cols 1 end] {
-  append sql ", \$$c"
+  append sql ", \$A($c)"
 }
 append sql ")"
 
 db eval BEGIN
   while {$i < $N} {
-    foreach c $cols s $O(aColsize) {
-      set $c [lrange $tokens $i [expr $i+$s-1]]
+    foreach c $cols s $O(aColSize) {
+      set A($c) [lrange $tokens $i [expr $i+$s-1]]
       incr i $s
     }
     db eval $sql

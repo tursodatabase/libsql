@@ -87,5 +87,26 @@ do_faultsim_test 1 -faults oom-t* -prep {
   faultsim_test_result {0 {}}
 }
 
+#-------------------------------------------------------------------------
+# Test fault-injection when a segment is promoted.
+#
+reset_db
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE xy USING fts5(x);
+  INSERT INTO xy(rowid, x) VALUES(1, '1 2 3');
+  INSERT INTO xy(rowid, x) VALUES(2, '2 3 4');
+  INSERT INTO xy(rowid, x) VALUES(3, '3 4 5');
+}
+faultsim_save_and_close
+
+do_faultsim_test 2 -faults oom-* -prep {
+  faultsim_restore_and_reopen
+} -body {
+  db eval { UPDATE OR REPLACE xy SET rowid=3 WHERE rowid = 2 }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+
 finish_test
 

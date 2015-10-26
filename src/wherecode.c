@@ -1305,11 +1305,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
               r = sqlite3GetTempRange(pParse, nPk);
               for(iPk=0; iPk<nPk; iPk++){
                 int iCol = pPk->aiColumn[iPk];
-                int rx;
-                rx = sqlite3ExprCodeGetColumn(pParse, pTab, iCol, iCur,r+iPk,0);
-                if( rx!=r+iPk ){
-                  sqlite3VdbeAddOp2(v, OP_SCopy, rx, r+iPk);
-                }
+                sqlite3ExprCodeGetColumnToReg(pParse, pTab, iCol, iCur, r+iPk);
               }
 
               /* Check if the temp table already contains this key. If so,

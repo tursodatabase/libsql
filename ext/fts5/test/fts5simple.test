@@ -300,5 +300,27 @@ do_execsql_test 12.2 {
   COMMIT;
 } {}
 
+#-------------------------------------------------------------------------
+# Try an UPDATE OR REPLACE query.
+#
+do_execsql_test 13.1 {
+  CREATE VIRTUAL TABLE xy USING fts5(x);
+  INSERT INTO xy(rowid, x) VALUES(1, '1 2 3');
+  INSERT INTO xy(rowid, x) VALUES(2, '2 3 4');
+  INSERT INTO xy(rowid, x) VALUES(3, '3 4 5');
+}
+
+do_execsql_test 13.2 {
+  UPDATE OR REPLACE xy SET rowid=3 WHERE rowid = 2;
+  SELECT rowid, x FROM xy;
+} {
+  1 {1 2 3}
+  3 {2 3 4}
+}
+
+do_execsql_test 13.3 {
+  INSERT INTO xy(xy) VALUES('integrity-check');
+}
+
 finish_test
 
