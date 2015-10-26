@@ -171,11 +171,12 @@ static void sqlite3MemFree(void *pPrior){
 ** or xRealloc().
 */
 static int sqlite3MemSize(void *pPrior){
-  assert( pPrior!=0 );
 #ifdef SQLITE_MALLOCSIZE
+  assert( pPrior!=0 );
   return (int)SQLITE_MALLOCSIZE(pPrior);
 #else
   sqlite3_int64 *p;
+  assert( pPrior!=0 );
   p = (sqlite3_int64*)pPrior;
   p--;
   return (int)p[0];

@@ -3372,6 +3372,10 @@ void sqlite3ExprCodeAndCache(Parse *pParse, Expr *pExpr, int target){
 **
 ** The SQLITE_ECEL_FACTOR argument allows constant arguments to be
 ** factored out into initialization code.
+**
+** The SQLITE_ECEL_REF flag means that expressions in the list with
+** ExprList.a[].u.x.iOrderByCol>0 have already been evaluated and stored
+** in registers at srcReg, and so the value can be copied from there.
 */
 int sqlite3ExprCodeExprList(
   Parse *pParse,     /* Parsing context */

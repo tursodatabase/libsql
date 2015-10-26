@@ -78,7 +78,7 @@ proc fts5c_printfile {zIn} {
   global G
   set data [readfile $zIn]
   set zTail [file tail $zIn]
-  puts $G(fd) "#line 2 \"$zTail\""
+  puts $G(fd) "#line 1 \"$zTail\""
 
   set sub_map [list --FTS5-SOURCE-ID-- [fts5_source_id $::srcdir]]
   if {$zTail=="fts5parse.c"} {
@@ -86,8 +86,10 @@ proc fts5c_printfile {zIn} {
   }
 
   foreach line [split $data "\n"] {
-    if {[regexp {^#include.*fts5} $line]} continue
-    if { ![regexp { sqlite3Fts5Init\(} $line] 
+    if {[regexp {^#include.*fts5} $line]} {
+      set line "/* $line */"
+    } elseif { 
+         ![regexp { sqlite3Fts5Init\(} $line] 
        && [regexp {^(const )?[a-zA-Z][a-zA-Z0-9]* [*]?sqlite3Fts5} $line]
     } {
       set line "static $line"
