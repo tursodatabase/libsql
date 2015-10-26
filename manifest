@@ -1,5 +1,5 @@
-C Provide\sthe\sBTREE_FORDELETE\sflag\sto\ssqlite3BtreeCursor()\sif\sthe\scursor\swill\nbe\sused\sonly\sfor\sdeletions\sand\sseeking.
-D 2015-10-26T17:50:54.107
+C Capture\sBTREE_FORDELETE\stest\scases\sthat\swere\smistakenly\somitted\sfrom\sthe\nprevious\smerge.
+D 2015-10-26T18:01:36.030
 F Makefile.in 2ea961bc09e441874eb3d1bf7398e04feb24f3ee
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 702d3e98f3afc6587a78481257f3c4c900efc3a4
@@ -350,7 +350,7 @@ F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
 F src/tclsqlite.c d9439b6a910985b7fff43ba6756bcef00de22649
 F src/test1.c 8fff9c5aa63d6490f516d018b70c12a9cb9a4d8a
 F src/test2.c 577961fe48961b2f2e5c8b56ee50c3f459d3359d
-F src/test3.c 11b13d561846e5d1ffd29653be340d2f4b59a723
+F src/test3.c f7ae1d6a4aa07aac257de18a43800c1199b513fc
 F src/test4.c d168f83cc78d02e8d35567bb5630e40dcd85ac1e
 F src/test5.c 5a34feec76d9b3a86aab30fd4f6cc9c48cbab4c1
 F src/test6.c 41cacf3b0dd180823919bf9e1fbab287c9266723
@@ -628,7 +628,7 @@ F test/fkey6.test abb59f866c1b44926fd02d1fdd217d831fe04f48
 F test/fkey7.test 72e915890ee4a005daaf3002cb208e8fe973ac13
 F test/fkey8.test 8f08203458321e6c19a263829de4cfc936274ab0
 F test/fkey_malloc.test 594a7ea1fbab553c036c70813cd8bd9407d63749
-F test/fordelete.test a30de567eb69a377e0c3ab1a8be4d74588de2a33
+F test/fordelete.test ba12ec1d27cc34a4c23db4446029126d773f3849
 F test/format4.test 1f0cac8ff3895e9359ed87e41aaabee982a812eb
 F test/fts-9fd058691.test 78b887e30ae6816df0e1fed6259de4b5a64ad33c
 F test/fts1a.test 46090311f85da51bb33bd5ce84f7948359c6d8d7
@@ -1392,7 +1392,8 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 138783b553602a055b3efdeac5947cf5ccd76b5d 4c0ba8be43bb7c7100456bd8cd6921c164be31e1
-R 143d09af526dc82b15672756b9445c77
+P 871b1c78bcbea1cb03d482f2f424c4e012633695 7849662ef94fa48fe53177db5623f46b3cb401e8
+R 410be704ee6d7da9328468f968a33ccc
+T +closed 7849662ef94fa48fe53177db5623f46b3cb401e8
 U drh
-Z 12d7ab5e58abc329d69f384e7229a11e
+Z 490c42bd7c47e077e17c4d7082be3a75
