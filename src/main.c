@@ -2955,6 +2955,21 @@ opendb_out:
     sqlite3GlobalConfig.xSqllog(pArg, db, zFilename, 0);
   }
 #endif
+#if defined(SQLITE_HAS_CODEC)
+  if( rc==SQLITE_OK ){
+    const char *zHexKey = sqlite3_uri_parameter(zOpen, "hexkey");
+    if( zHexKey && zHexKey[0] ){
+      u8 iByte;
+      int i;
+      char zKey[40];
+      for(i=0, iByte=0; i<sizeof(zKey)*2 && sqlite3Isxdigit(zHexKey[i]); i++){
+        iByte = (iByte<<4) + sqlite3HexToInt(zHexKey[i]);
+        if( (i&1)!=0 ) zKey[i/2] = iByte;
+      }
+      sqlite3_key_v2(db, 0, zKey, i/2);
+    }
+  }
+#endif
   return rc & 0xff;
 }
 

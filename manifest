@@ -1,5 +1,5 @@
-C Remove\san\sunreachable\sbranch\sin\smalloc.c.
-D 2015-10-26T12:55:56.255
+C When\scompiling\swith\sSQLITE_HAS_CODEC,\shonor\sthe\shexkey=\squery\sparameter\son\nURI\spathnames\sin\ssqlite3_open_v2().
+D 2015-10-26T14:41:35.868
 F Makefile.in 2ea961bc09e441874eb3d1bf7398e04feb24f3ee
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 702d3e98f3afc6587a78481257f3c4c900efc3a4
@@ -303,7 +303,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c d344a95d60c24e2f490ee59db9784b1b17439012
 F src/loadext.c 18586e45a215325f15096821e9c082035d4fb810
-F src/main.c fec97668771438033a7559883401067b139729e1
+F src/main.c 1cae029707c323292b5691e4d0a4c5c44561c877
 F src/malloc.c 337bbe9c7d436ef9b7d06b5dd10bbfc8f3025972
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 52485a88f22649c3b3b4f3eb15760505d49ccf71
@@ -1391,7 +1391,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P bfea226d0d226a046a8bfb7a7a6288850d69bd26
-R 71bd1944f2afa43b9641de175600fe9d
+P a36b7fe92372a13ff0b6e08f1704496045c6f62a
+R b06039a97a9cf0855388e699ea924396
 U drh
-Z a960b5da2c918e1209a303de326b24d2
+Z 746928cfbf856735825bc415cbbeefac
