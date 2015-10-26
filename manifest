@@ -1,5 +1,5 @@
-C When\screating\san\sautomatic-index\son\sa\ssub-query,\sadd\sa\sunique\sinteger\sto\sthe\send\sof\seach\sindex\skey\sto\sensure\sthe\sentire\skey\sis\sunique.\sFix\sfor\s[8a2adec1].
-D 2015-10-24T20:31:22.639
+C Remove\san\sunreachable\sbranch\sin\smalloc.c.
+D 2015-10-26T12:55:56.255
 F Makefile.in 2ea961bc09e441874eb3d1bf7398e04feb24f3ee
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 702d3e98f3afc6587a78481257f3c4c900efc3a4
@@ -304,7 +304,7 @@ F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c d344a95d60c24e2f490ee59db9784b1b17439012
 F src/loadext.c 18586e45a215325f15096821e9c082035d4fb810
 F src/main.c fec97668771438033a7559883401067b139729e1
-F src/malloc.c 0a2e42b835c980ba91c17866e9b6a9810ff54d75
+F src/malloc.c 337bbe9c7d436ef9b7d06b5dd10bbfc8f3025972
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 52485a88f22649c3b3b4f3eb15760505d49ccf71
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
@@ -1391,7 +1391,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4315d20200d578c9252dcb26e60739063a8eff1d
-R dc911a631bba00e9a0808ae6a2dfaef0
-U dan
-Z 6491941420be3020676420319ae4eec9
+P bfea226d0d226a046a8bfb7a7a6288850d69bd26
+R 71bd1944f2afa43b9641de175600fe9d
+U drh
+Z a960b5da2c918e1209a303de326b24d2
