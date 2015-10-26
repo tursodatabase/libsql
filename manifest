@@ -1,5 +1,5 @@
-C Test\sthat\sthe\sbinary\srecord\s"0x01\s0x00"\sis\sinterpreted\sby\sOP_Column\sas\sa\svector\sof\sNULL\s(or\sdefault)\svalues.
-D 2015-10-26T16:31:18.909
+C Fix\san\suninitialized\svariable\sproblem\sin\sthe\stest\scode\sadded\sby\sthe\sprevious\scommit.
+D 2015-10-26T16:34:13.792
 F Makefile.in 2ea961bc09e441874eb3d1bf7398e04feb24f3ee
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 702d3e98f3afc6587a78481257f3c4c900efc3a4
@@ -350,7 +350,7 @@ F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
 F src/tclsqlite.c d9439b6a910985b7fff43ba6756bcef00de22649
 F src/test1.c 8fff9c5aa63d6490f516d018b70c12a9cb9a4d8a
 F src/test2.c 577961fe48961b2f2e5c8b56ee50c3f459d3359d
-F src/test3.c 5d5e771bee407b2a8bee1602228eca167f8f649a
+F src/test3.c cf88d53cdd2e3d0f5f5cc20344d681f2a1417ce2
 F src/test4.c d168f83cc78d02e8d35567bb5630e40dcd85ac1e
 F src/test5.c 5a34feec76d9b3a86aab30fd4f6cc9c48cbab4c1
 F src/test6.c 41cacf3b0dd180823919bf9e1fbab287c9266723
@@ -1392,7 +1392,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4c0ba8be43bb7c7100456bd8cd6921c164be31e1
-R 034dc33437dfb21294c759656e936af8
+P 5bdc3c82bd10f924c12568eb0fa7a07393fc864f
+R 16eb9141567c1088c3120eb0503b5cc1
 U dan
-Z d7a6f95ed6a65ff4ab5499c664dec3c3
+Z 5262f0deb2fbfabd92647f1b6ad4a5a0

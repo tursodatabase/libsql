@@ -632,9 +632,7 @@ static int btree_insert(
   pCur = (BtCursor*)sqlite3TestTextToPtr(Tcl_GetString(objv[1]));
 
   sqlite3BtreeEnter(pCur->pBtree);
-  if( rc==SQLITE_OK ){
-    rc = sqlite3BtreeInsert(pCur, pKey, nKey, pData, nData, 0, 0, 0);
-  }
+  rc = sqlite3BtreeInsert(pCur, pKey, nKey, pData, nData, 0, 0, 0);
   sqlite3BtreeLeave(pCur->pBtree);
 
   Tcl_ResetResult(interp);
