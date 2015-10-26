@@ -1,5 +1,5 @@
-C When\scompiling\swith\sSQLITE_HAS_CODEC,\shonor\sthe\shexkey=\squery\sparameter\son\nURI\spathnames\sin\ssqlite3_open_v2().
-D 2015-10-26T14:41:35.868
+C Fix\sa\sC99-ism\sand\sa\sharmless\scompiler\swarning.
+D 2015-10-26T14:54:32.296
 F Makefile.in 2ea961bc09e441874eb3d1bf7398e04feb24f3ee
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 702d3e98f3afc6587a78481257f3c4c900efc3a4
@@ -306,7 +306,7 @@ F src/loadext.c 18586e45a215325f15096821e9c082035d4fb810
 F src/main.c 1cae029707c323292b5691e4d0a4c5c44561c877
 F src/malloc.c 337bbe9c7d436ef9b7d06b5dd10bbfc8f3025972
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
-F src/mem1.c 52485a88f22649c3b3b4f3eb15760505d49ccf71
+F src/mem1.c 6919bcf12f221868ea066eec27e579fed95ce98b
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
 F src/mem3.c 8768ac94694f31ffaf8b4d0ea5dc08af7010a35a
 F src/mem5.c c1ab1153bd6443bdf6f71e4213c6fb31221b9eb7
@@ -415,7 +415,7 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 18b0ed49830cf04fe2d68224b41838a73ac6cd24
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 2e14d17f592d176b6dc879c33fbdec4fbccaa2ba
-F src/where.c e3724b7b31d1e13869308ed4125305364f7d823a
+F src/where.c 7b9e8d72e3eb52cec98617a5d6a029191bf1bcc8
 F src/whereInt.h 7892bb54cf9ca0ae5c7e6094491b94c9286dc647
 F src/wherecode.c b924b78acd9e623fb69bfa2cb65cd7d542166dd3
 F src/whereexpr.c e63244ca06c503e5f3c5b7f3c9aea0db826089ed
@@ -1391,7 +1391,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a36b7fe92372a13ff0b6e08f1704496045c6f62a
-R b06039a97a9cf0855388e699ea924396
+P e0ce3fc089c2523b8b718b4a4f9ab8c4d0432fc7
+R 2133c21a41df33b66ecf042f1953a26d
 U drh
-Z 746928cfbf856735825bc415cbbeefac
+Z 7527955b7ce1cc200d4d1a233d6e1b75
