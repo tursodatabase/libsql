@@ -3401,8 +3401,8 @@ open_cursor_set_hints:
 #ifdef SQLITE_ENABLE_CURSOR_HINT
   testcase( pOp->p2 & OPFLAG_SEEKEQ );
 #endif
-  sqlite3BtreeCursorHint(pCur->pCursor, BTREE_HINT_FLAGS,
-                         (pOp->p5 & (OPFLAG_BULKCSR|OPFLAG_SEEKEQ)));
+  sqlite3BtreeCursorHintFlags(pCur->pCursor,
+                               (pOp->p5 & (OPFLAG_BULKCSR|OPFLAG_SEEKEQ)));
   break;
 }
 

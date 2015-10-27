@@ -153,12 +153,6 @@ int sqlite3BtreeNewDb(Btree *p);
 ** Kinds of hints that can be passed into the sqlite3BtreeCursorHint()
 ** interface.
 **
-** BTREE_HINT_FLAGS  (arguments: unsigned int)
-**
-**     Some combinatation of BTREE_BULKLOAD and BTREE_SEEK_EQ flags.  The
-**     argument is a single unsigned integer which overwrites all prior
-**     flag settings.
-**
 ** BTREE_HINT_RANGE  (arguments: Expr*, Mem*)
 **
 **     The first argument is an Expr* (which is guaranteed to be constant for
@@ -182,8 +176,7 @@ int sqlite3BtreeNewDb(Btree *p);
 ** the SQLite parser and code generator but substitute their own storage
 ** engine.
 */
-#define BTREE_HINT_FLAGS 1       /* Set flags indicating cursor usage */
-#define BTREE_HINT_RANGE 2       /* Range constraints on queries */
+#define BTREE_HINT_RANGE 0       /* Range constraints on queries */
 
 /*
 ** Values that may be OR'd together to form the argument to the
@@ -226,7 +219,10 @@ int sqlite3BtreeCursor(
 );
 int sqlite3BtreeCursorSize(void);
 void sqlite3BtreeCursorZero(BtCursor*);
+void sqlite3BtreeCursorHintFlags(BtCursor*, unsigned);
+#ifdef SQLITE_ENABLE_CURSOR_HINTS
 void sqlite3BtreeCursorHint(BtCursor*, int, ...);
+#endif
 
 int sqlite3BtreeCloseCursor(BtCursor*);
 int sqlite3BtreeMovetoUnpacked(
