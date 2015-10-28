@@ -1,5 +1,5 @@
-C Have\scontentless\sand\sexternal\scontent\sfts5\stables\signore\s"OR\sREPLACE"\sconflict\shandling.
-D 2015-10-27T20:04:53.777
+C Factor\sout\sadding\sNOT\sexpression\snodes\sin\sthe\sparser\sinto\sa\ssubroutine.
+D 2015-10-28T16:05:10.981
 F Makefile.in 2ea961bc09e441874eb3d1bf7398e04feb24f3ee
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 702d3e98f3afc6587a78481257f3c4c900efc3a4
@@ -329,7 +329,7 @@ F src/os_win.c 1716291e5ec2dbfc5a1fe0b32182030f1f7d8acf
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 2fbeeba28f4e6d08a15bc106f36c43346a81f09e
 F src/pager.h ac213f8143ebfee6a8bfb91cf4ca02c9a83343c5
-F src/parse.y f599aa5e871a493330d567ced93de696f61f48f7
+F src/parse.y 11078cd8e3af00f030505b6a86a06a4536cfdeaa
 F src/pcache.c 24be750c79272e0ca7b6e007bc94999700f3e5ef
 F src/pcache.h 9968603796240cdf83da7e7bef76edf90619cea9
 F src/pcache1.c 902e1bc7bdaa81b40f8543407c5e2ac8ef4dc035
@@ -1395,7 +1395,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3b5758c647530bd5c2e68d0ee3e9f58a96347ca4
-R 12dc88416f949cd01baa0c732f28f65c
-U dan
-Z bfdbdd08273e5e7ba3b496b0efa58731
+P a85c2a4758c27e8d5d0395751eb3cfd9985ce696
+R fb08eb2aea7ef14b6808d0fed46a7f2e
+U drh
+Z 776eb09f5d20f370f46eb3dbeaa8d2e2
