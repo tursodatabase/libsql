@@ -1,5 +1,5 @@
-C Factor\sout\sadding\sNOT\sexpression\snodes\sin\sthe\sparser\sinto\sa\ssubroutine.
-D 2015-10-28T16:05:10.981
+C Make\sthe\sinternal\ssqlite3PExpr()\sinterface\sresponsive\sto\sthe\s\nTKFLG_DONTFOLD\sflag\son\sthe\soperator\sparameter.
+D 2015-10-28T20:01:45.528
 F Makefile.in 2ea961bc09e441874eb3d1bf7398e04feb24f3ee
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 702d3e98f3afc6587a78481257f3c4c900efc3a4
@@ -292,7 +292,7 @@ F src/ctime.c 509ef9c64d1321f42448f111da86400b1799218a
 F src/date.c fb1c99172017dcc8e237339132c91a21a0788584
 F src/dbstat.c e637e7a7ff40ef32132a418c6fdf1cfb63aa27c7
 F src/delete.c c4c6fb9da78b946fcba2a6aac5b24bc5c15e752a
-F src/expr.c ea3e0c2981ffc7bd358714fa6d5132cb2cd5fc3a
+F src/expr.c 0080c0f12806eca91e75a23a121a68918e9da357
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 31900763094a3736a5fc887469202eb579fef2d0
 F src/func.c ecdd69ec6a1e406f04cc73324be2ebbf6354197f
@@ -419,7 +419,7 @@ F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 2e14d17f592d176b6dc879c33fbdec4fbccaa2ba
 F src/where.c 6aceb72cc58dc06922a9e1604d559c8ca4c3e728
 F src/whereInt.h 7892bb54cf9ca0ae5c7e6094491b94c9286dc647
-F src/wherecode.c 9aa2043685ec3eb73e87fa6f50aa4ec092f197dd
+F src/wherecode.c 4c96182e7b25e4be54008dee2da5b9c2f8480b9b
 F src/whereexpr.c e63244ca06c503e5f3c5b7f3c9aea0db826089ed
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -1338,7 +1338,7 @@ F test/zeroblob.test 3857870fe681b8185654414a9bccfde80b62a0fa
 F test/zerodamage.test cf6748bad89553cc1632be51a6f54e487e4039ac
 F tool/GetFile.cs a15e08acb5dd7539b75ba23501581d7c2b462cb5
 F tool/GetTclKit.bat 8606413d3035c05373a0d7fae82ebf59ae9e16c3
-F tool/addopcodes.tcl 7cc82ecca456a6b3148abf492b0419b83140881a
+F tool/addopcodes.tcl 26892c394964c194fe96b9a79b8b9f87347c7151
 F tool/build-all-msvc.bat 2b1703b322da121e56b955cb58de091107f777c3 x
 F tool/build-shell.sh 950f47c6174f1eea171319438b93ba67ff5bf367
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
@@ -1395,7 +1395,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a85c2a4758c27e8d5d0395751eb3cfd9985ce696
-R fb08eb2aea7ef14b6808d0fed46a7f2e
+P 001854181640bd9b088f2bc16083d84808c3da18
+R ca779455a4e2d31dd1a99251ed996c19
 U drh
-Z 776eb09f5d20f370f46eb3dbeaa8d2e2
+Z ce0b658ce638a8cefdcd82fe22a3bf7b
