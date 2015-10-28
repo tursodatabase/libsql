@@ -1,5 +1,5 @@
-C Factor\sout\sadding\sNOT\sexpression\snodes\sin\sthe\sparser\sinto\sa\ssubroutine.
-D 2015-10-28T16:05:10.981
+C Add\sexperimental\sAPI\ssqlite3_db_cacheflush().
+D 2015-10-28T19:46:57.460
 F Makefile.in 2ea961bc09e441874eb3d1bf7398e04feb24f3ee
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 702d3e98f3afc6587a78481257f3c4c900efc3a4
@@ -305,7 +305,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c d344a95d60c24e2f490ee59db9784b1b17439012
 F src/loadext.c 18586e45a215325f15096821e9c082035d4fb810
-F src/main.c 1cae029707c323292b5691e4d0a4c5c44561c877
+F src/main.c b9d020342b2a2b13808c6260792ef233d7af5b1d
 F src/malloc.c 337bbe9c7d436ef9b7d06b5dd10bbfc8f3025972
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 6919bcf12f221868ea066eec27e579fed95ce98b
@@ -327,8 +327,8 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c fc93d55f96bb978f0b0168c6ea7d6fc60b0e172c
 F src/os_win.c 1716291e5ec2dbfc5a1fe0b32182030f1f7d8acf
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
-F src/pager.c 2fbeeba28f4e6d08a15bc106f36c43346a81f09e
-F src/pager.h ac213f8143ebfee6a8bfb91cf4ca02c9a83343c5
+F src/pager.c 059991ce76b1a857cb84dd2469cfcfaaae1d77fa
+F src/pager.h 1c4fa826c330040c5659a384446c7cc6e8e4200c
 F src/parse.y 11078cd8e3af00f030505b6a86a06a4536cfdeaa
 F src/pcache.c 24be750c79272e0ca7b6e007bc94999700f3e5ef
 F src/pcache.h 9968603796240cdf83da7e7bef76edf90619cea9
@@ -342,7 +342,7 @@ F src/resolve.c 1954a0f01bf65d78d7d559aea3d5c67f33376d91
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 167b4e9058bc8e997d18d6b6b20ecbb0c9c457af
 F src/shell.c d25df04168d6ba5a4fa05bdbf859df667f9eb621
-F src/sqlite.h.in 070b49c253bd41607ec43505a16163aa4b537b83
+F src/sqlite.h.in e7da8d15141d0753bfe14945bd64592a42575c04
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 4b66e3e3435da4b4c8c83696d0349f0c503b3924
 F src/sqliteInt.h b1e72ffe282c91ae30a2bf403319126dbaebd556
@@ -350,7 +350,7 @@ F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
 F src/tclsqlite.c d9439b6a910985b7fff43ba6756bcef00de22649
-F src/test1.c 8fff9c5aa63d6490f516d018b70c12a9cb9a4d8a
+F src/test1.c 9ac5cbfe3c859ab7518edc5109a2959d6bf7b059
 F src/test2.c 577961fe48961b2f2e5c8b56ee50c3f459d3359d
 F src/test3.c f7ae1d6a4aa07aac257de18a43800c1199b513fc
 F src/test4.c d168f83cc78d02e8d35567bb5630e40dcd85ac1e
@@ -503,6 +503,7 @@ F test/btree02.test fe69453d474d8154d19b904157ff1db4812fed99
 F test/btreefault.test c2bcb542685eea44621275cfedbd8a13f65201e3
 F test/busy.test 76b4887f8b9160ba903c1ac22e8ff406ad6ae2f0
 F test/cache.test 13bc046b26210471ca6f2889aceb1ea52dc717de
+F test/cacheflush.test 95944e4210100c525ec301c060721e82210c33a5
 F test/capi2.test 011c16da245fdc0106a2785035de6b242c05e738
 F test/capi3.test bf6f0308bbbba1e770dac13aa08e5c2ac61c7324
 F test/capi3b.test efb2b9cfd127efa84433cd7a2d72ce0454ae0dc4
@@ -510,6 +511,7 @@ F test/capi3c.test fdc0d67a2cb8e8fc400d5b7735e330161ea057a2
 F test/capi3d.test 485048dc5cd07bc68011e4917ad035ad6047ab82
 F test/capi3e.test 3d49c01ef2a1a55f41d73cba2b23b5059ec460fe
 F test/cast.test 4c275cbdc8202d6f9c54a3596701719868ac7dc3
+F test/cffault.test 1383919788fa50db60f6119da5785c62fbc8b527
 F test/check.test 5831ddb6f2c687782eaf2e1a07b6e17f24c4f763
 F test/close.test 340bd24cc58b16c6bc01967402755027c37eb815
 F test/closure01.test b1703ba40639cfc9b295cf478d70739415eec6a4
@@ -1395,7 +1397,10 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a85c2a4758c27e8d5d0395751eb3cfd9985ce696
-R fb08eb2aea7ef14b6808d0fed46a7f2e
-U drh
-Z 776eb09f5d20f370f46eb3dbeaa8d2e2
+P 001854181640bd9b088f2bc16083d84808c3da18
+R 2dbc861fa3cf60b53d3ec06b17c9981a
+T *branch * cacheflush
+T *sym-cacheflush *
+T -sym-trunk *
+U dan
+Z c07109c8cca9fe678b00367209f93a20

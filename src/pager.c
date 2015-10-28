@@ -4473,6 +4473,23 @@ static int pagerStress(void *p, PgHdr *pPg){
   return pager_error(pPager, rc); 
 }
 
+/*
+** Flush all unreferenced dirty pages to disk.
+*/
+int sqlite3PagerFlush(Pager *pPager){
+  int rc = SQLITE_OK;
+  PgHdr *pList = sqlite3PcacheDirtyList(pPager->pPCache);
+
+  while( rc==SQLITE_OK && pList ){
+    PgHdr *pNext = pList->pDirty;
+    if( pList->nRef==0 ){
+      rc = pagerStress((void*)pPager, pList);
+    }
+    pList = pNext;
+  }
+
+  return rc;
+}
 
 /*
 ** Allocate and initialize a new Pager object and put a pointer to it
