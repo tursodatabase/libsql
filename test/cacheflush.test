@@ -202,6 +202,34 @@ do_test 2.2.6 {
 } {1 2 3 4 5 6 7 8 9 10 11 12 13 14}
 do_execsql_test 2.2.7 { COMMIT }
 
+#-------------------------------------------------------------------------
+# Test that nothing terrible happens if sqlite3_db_cacheflush() is
+# called on an in-memory database.
+#
+do_test 3.0 {
+  db close
+  sqlite3 db :memory:
+  db eval {
+    CREATE TABLE t1(x PRIMARY KEY);
+    CREATE TABLE t2(y PRIMARY KEY);
+    BEGIN;
+      INSERT INTO t1 VALUES(randomblob(100));
+      INSERT INTO t2 VALUES(randomblob(100));
+      INSERT INTO t1 VALUES(randomblob(100));
+      INSERT INTO t2 VALUES(randomblob(100));
+  }
+  sqlite3_db_cacheflush db
+} {}
+
+do_execsql_test 3.1 { PRAGMA integrity_check } ok
+do_execsql_test 3.2 { COMMIT }
+do_execsql_test 3.3 { PRAGMA integrity_check } ok
+do_execsql_test 3.4 { 
+  SELECT count(*) FROM t1;
+  SELECT count(*) FROM t2;
+} {2 2}
+
+
 test_restore_config_pagecache
 finish_test
 
