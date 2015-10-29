@@ -1,5 +1,5 @@
-C Make\sthe\sinternal\ssqlite3PExpr()\sinterface\sresponsive\sto\sthe\s\nTKFLG_DONTFOLD\sflag\son\sthe\soperator\sparameter.
-D 2015-10-28T20:01:45.528
+C Enhance\scomments\sin\sthe\sMSVC\sbatch\sbuild\stool.
+D 2015-10-29T01:11:39.776
 F Makefile.in 2ea961bc09e441874eb3d1bf7398e04feb24f3ee
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 702d3e98f3afc6587a78481257f3c4c900efc3a4
@@ -1339,7 +1339,7 @@ F test/zerodamage.test cf6748bad89553cc1632be51a6f54e487e4039ac
 F tool/GetFile.cs a15e08acb5dd7539b75ba23501581d7c2b462cb5
 F tool/GetTclKit.bat 8606413d3035c05373a0d7fae82ebf59ae9e16c3
 F tool/addopcodes.tcl 26892c394964c194fe96b9a79b8b9f87347c7151
-F tool/build-all-msvc.bat 2b1703b322da121e56b955cb58de091107f777c3 x
+F tool/build-all-msvc.bat e42141ca3c3812315432f9813ef9eb78aa8d99c9 x
 F tool/build-shell.sh 950f47c6174f1eea171319438b93ba67ff5bf367
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
 F tool/extract.c 054069d81b095fbdc189a6f5d4466e40380505e2
@@ -1395,7 +1395,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 001854181640bd9b088f2bc16083d84808c3da18
-R ca779455a4e2d31dd1a99251ed996c19
-U drh
-Z ce0b658ce638a8cefdcd82fe22a3bf7b
+P b10ab59fb8a696d11a269f3904e799c687246aea
+R cc38e20a3bed22c727ef2060f0363586
+U mistachkin
+Z f9c898158c1864e737c38818df859932

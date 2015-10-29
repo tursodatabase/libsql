@@ -95,6 +95,10 @@ REM example:
 REM
 REM                        SET NMAKE_ARGS=FOR_WINRT=1
 REM
+REM Using the above command before running this tool will cause the compiled
+REM binaries to target the WinRT environment, which provides a subset of the
+REM Win32 API.
+REM
 SETLOCAL
 
 REM SET __ECHO=ECHO
