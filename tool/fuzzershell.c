@@ -67,6 +67,7 @@
 #include <stdarg.h>
 #include <ctype.h>
 #include "sqlite3.h"
+#define ISDIGIT(X) isdigit((unsigned char)(X))
 
 /*
 ** All global variables are gathered into the "g" singleton.
@@ -383,7 +384,7 @@ static int integerValue(const char *zArg){
       zArg++;
     }
   }else{
-    while( isdigit(zArg[0]) ){
+    while( ISDIGIT(zArg[0]) ){
       v = v*10 + zArg[0] - '0';
       zArg++;
     }

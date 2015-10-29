@@ -603,8 +603,8 @@ SubstituteFile(
 	sp = fopen(substitutions, "rt");
 	if (sp != NULL) {
 	    while (fgets(szBuffer, cbBuffer, sp) != NULL) {
-		char *ks, *ke, *vs, *ve;
-		ks = szBuffer;
+		unsigned char *ks, *ke, *vs, *ve;
+		ks = (unsigned char*)szBuffer;
 		while (ks && *ks && isspace(*ks)) ++ks;
 		ke = ks;
 		while (ke && *ke && !isspace(*ke)) ++ke;
@@ -613,7 +613,7 @@ SubstituteFile(
 		ve = vs;
 		while (ve && *ve && !(*ve == '\r' || *ve == '\n')) ++ve;
 		*ke = 0, *ve = 0;
-		list_insert(&substPtr, ks, vs);
+		list_insert(&substPtr, (char*)ks, (char*)vs);
 	    }
 	    fclose(sp);
 	}
