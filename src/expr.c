@@ -534,34 +534,6 @@ void sqlite3ExprAttachSubtrees(
 }
 
 /*
-** Allocate an Expr node which joins as many as two subtrees.
-**
-** One or both of the subtrees can be NULL.  Return a pointer to the new
-** Expr node.  Or, if an OOM error occurs, set pParse->db->mallocFailed,
-** free the subtrees and return NULL.
-*/
-Expr *sqlite3PExpr(
-  Parse *pParse,          /* Parsing context */
-  int op,                 /* Expression opcode */
-  Expr *pLeft,            /* Left operand */
-  Expr *pRight,           /* Right operand */
-  const Token *pToken     /* Argument token */
-){
-  Expr *p;
-  if( op==TK_AND && pParse->nErr==0 ){
-    /* Take advantage of short-circuit false optimization for AND */
-    p = sqlite3ExprAnd(pParse->db, pLeft, pRight);
-  }else{
-    p = sqlite3ExprAlloc(pParse->db, op & TKFLG_MASK, pToken, 1);
-    sqlite3ExprAttachSubtrees(pParse->db, p, pLeft, pRight);
-  }
-  if( p ) {
-    sqlite3ExprCheckHeight(pParse, p->nHeight);
-  }
-  return p;
-}
-
-/*
 ** If the expression is always either TRUE or FALSE (respectively),
 ** then return 1.  If one cannot determine the truth value of the
 ** expression at compile-time return 0.
@@ -610,6 +582,62 @@ Expr *sqlite3ExprAnd(sqlite3 *db, Expr *pLeft, Expr *pRight){
     sqlite3ExprAttachSubtrees(db, pNew, pLeft, pRight);
     return pNew;
   }
+}
+
+/* Join expressions pLeft and pRight using OR.  Apply constant-folding
+** style optimizations.  For example,  "x OR 1" becomes just "1".
+*/
+static Expr *sqlite3ExprOr(sqlite3 *db, Expr *pLeft, Expr *pRight){
+  if( pLeft && exprAlwaysFalse(pLeft) ){
+    sqlite3ExprDelete(db, pLeft);
+    pLeft = 0;
+  }
+  if( pRight==0 || exprAlwaysFalse(pRight) ){
+    sqlite3ExprDelete(db, pRight);
+    if( pLeft ) return pLeft;
+    return sqlite3ExprAlloc(db, TK_INTEGER, &sqlite3IntTokens[0], 0);
+  }
+  if( pLeft==0 ) return pRight;
+  if( exprAlwaysTrue(pLeft) || exprAlwaysTrue(pRight) ){
+    sqlite3ExprDelete(db, pLeft);
+    sqlite3ExprDelete(db, pRight);
+    return sqlite3ExprAlloc(db, TK_INTEGER, &sqlite3IntTokens[1], 0);
+  }else{
+    Expr *pNew = sqlite3ExprAlloc(db, TK_OR, 0, 0);
+    sqlite3ExprAttachSubtrees(db, pNew, pLeft, pRight);
+    return pNew;
+  }
+}
+
+/*
+** Allocate an Expr node which joins as many as two subtrees.
+**
+** One or both of the subtrees can be NULL.  Return a pointer to the new
+** Expr node.  Or, if an OOM error occurs, set pParse->db->mallocFailed,
+** free the subtrees and return NULL.
+*/
+Expr *sqlite3PExpr(
+  Parse *pParse,          /* Parsing context */
+  int op,                 /* Expression opcode */
+  Expr *pLeft,            /* Left operand */
+  Expr *pRight,           /* Right operand */
+  const Token *pToken     /* Argument token */
+){
+  Expr *p;
+  if( pParse->nErr==0 && op==TK_AND ){
+    /* Take advantage of short-circuit false optimization for AND */
+    p = sqlite3ExprAnd(pParse->db, pLeft, pRight);
+  }else if( pParse->nErr==0 && op==TK_OR ){
+    /* Take advantage of short-circuit false optimization for OR */
+    p = sqlite3ExprOr(pParse->db, pLeft, pRight);
+  }else{
+    p = sqlite3ExprAlloc(pParse->db, op & TKFLG_MASK, pToken, 1);
+    sqlite3ExprAttachSubtrees(pParse->db, p, pLeft, pRight);
+  }
+  if( p ) {
+    sqlite3ExprCheckHeight(pParse, p->nHeight);
+  }
+  return p;
 }
 
 /*

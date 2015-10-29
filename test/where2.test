@@ -298,6 +298,7 @@ ifcapable subquery {
 # Verify that OR clauses get translated into IN operators.
 #
 set ::idx {}
+exit
 ifcapable subquery {set ::idx i1w}
 do_test where2-6.1.1 {
   queryplan {
