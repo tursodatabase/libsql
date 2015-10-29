@@ -1,5 +1,5 @@
-C Apply\soptimizations\sto\ssimplify\sOR\sclauses\sthat\scontain\sconstant\sterms.
-D 2015-10-29T12:27:38.220
+C Remove\san\s"exit"\scall\sin\sthe\swhere2.test\sscript\sthat\saccidentally\sleft\sin\sthe\ncode\sfollowing\sa\sdebugging\ssession.
+D 2015-10-29T14:29:01.051
 F Makefile.in 2ea961bc09e441874eb3d1bf7398e04feb24f3ee
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 702d3e98f3afc6587a78481257f3c4c900efc3a4
@@ -1299,7 +1299,7 @@ F test/walshared.test 0befc811dcf0b287efae21612304d15576e35417
 F test/walslow.test e7be6d9888f83aa5d3d3c7c08aa9b5c28b93609a
 F test/walthread.test de8dbaf6d9e41481c460ba31ca61e163d7348f8e
 F test/where.test 66d4c107e82dfe86c01a96277b77e7a8809aff0b
-F test/where2.test bf89ae340ec5232139c92dca73d1c7a63bff8a5a
+F test/where2.test af78c55589cbc82d793449493adba0dc3d659f23
 F test/where3.test 1ad55ba900bd7747f98b6082e65bd3e442c5004e
 F test/where4.test 44f506bf1737cf0fa4fc795e340208250f1fcd89
 F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
@@ -1395,10 +1395,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2964ce25864e8aec86272af741caf49c23c86590
-R 57486ab12cf1b6d70dfe1218fae485c0
-T *branch * simplify-or-clause
-T *sym-simplify-or-clause *
-T -sym-trunk *
+P d533e23f059621364bd5dac5fae794f5973b1349
+R 681ae505ea158e27f07d4e5eaf4d61f9
 U drh
-Z 9ae1cb934c0243b6a4710d4055ef8330
+Z 5c815017e5f9cb85ac94dd7802c21ff1
