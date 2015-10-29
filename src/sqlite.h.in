@@ -7814,7 +7814,6 @@ void sqlite3_stmt_scanstatus_reset(sqlite3_stmt*);
 ** If any other error occurs while flushing dirty pages to disk (for
 ** example an IO error or out-of-memory condition), then processing is
 ** abandoned and an SQLite error code returned to the caller immediately.
-** In this case the open transaction may be automatically rolled back.
 **
 ** Otherwise, if no error occurs, SQLITE_OK is returned.
 **

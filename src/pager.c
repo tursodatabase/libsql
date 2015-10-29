@@ -4477,9 +4477,10 @@ static int pagerStress(void *p, PgHdr *pPg){
 ** Flush all unreferenced dirty pages to disk.
 */
 int sqlite3PagerFlush(Pager *pPager){
-  int rc = SQLITE_OK;
+  int rc = pPager->errCode;
   PgHdr *pList = sqlite3PcacheDirtyList(pPager->pPCache);
 
+  assert( assert_pager_state(pPager) );
   while( rc==SQLITE_OK && pList ){
     PgHdr *pNext = pList->pDirty;
     if( pList->nRef==0 ){
@@ -6093,14 +6094,17 @@ int sqlite3PagerSync(Pager *pPager, const char *zMaster){
 ** returned.
 */
 int sqlite3PagerExclusiveLock(Pager *pPager){
-  int rc = SQLITE_OK;
-  assert( pPager->eState==PAGER_WRITER_CACHEMOD 
-       || pPager->eState==PAGER_WRITER_DBMOD 
-       || pPager->eState==PAGER_WRITER_LOCKED 
-  );
+  int rc = pPager->errCode;
   assert( assert_pager_state(pPager) );
-  if( 0==pagerUseWal(pPager) ){
-    rc = pager_wait_on_lock(pPager, EXCLUSIVE_LOCK);
+  if( rc==SQLITE_OK ){
+    assert( pPager->eState==PAGER_WRITER_CACHEMOD 
+         || pPager->eState==PAGER_WRITER_DBMOD 
+         || pPager->eState==PAGER_WRITER_LOCKED 
+    );
+    assert( assert_pager_state(pPager) );
+    if( 0==pagerUseWal(pPager) ){
+      rc = pager_wait_on_lock(pPager, EXCLUSIVE_LOCK);
+    }
   }
   return rc;
 }

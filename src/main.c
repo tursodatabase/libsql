@@ -765,9 +765,6 @@ int sqlite3_db_cacheflush(sqlite3 *db){
       }
     }
   }
-  if( rc!=SQLITE_OK ){
-    sqlite3RollbackAll(db, SQLITE_ABORT_ROLLBACK);
-  }
   sqlite3BtreeLeaveAll(db);
   sqlite3_mutex_leave(db->mutex);
   return ((rc==SQLITE_OK && bSeenBusy) ? SQLITE_BUSY : rc);
