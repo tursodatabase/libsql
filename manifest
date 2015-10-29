@@ -1,5 +1,5 @@
-C Add\sa\stest\scase\sthat\scalls\ssqlite3_db_cacheflush()\son\san\sin-memory\sdatabase.
-D 2015-10-29T20:57:06.654
+C Do\snot\sattempt\sto\sflush\sthe\spages\sof\san\sin-memory\sdatabase\sto\sdisk\sif\ssqlite3_db_cacheflush()\sis\scalled.
+D 2015-10-29T21:11:22.422
 F Makefile.in 2ea961bc09e441874eb3d1bf7398e04feb24f3ee
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 702d3e98f3afc6587a78481257f3c4c900efc3a4
@@ -327,7 +327,7 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c fc93d55f96bb978f0b0168c6ea7d6fc60b0e172c
 F src/os_win.c 1716291e5ec2dbfc5a1fe0b32182030f1f7d8acf
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
-F src/pager.c 2f9de81ebc87f92814ffc1e34f478a6de7c869b0
+F src/pager.c b588107ee55ff4121c114949ff51a56aab21f3ac
 F src/pager.h 1c4fa826c330040c5659a384446c7cc6e8e4200c
 F src/parse.y 11078cd8e3af00f030505b6a86a06a4536cfdeaa
 F src/pcache.c 24be750c79272e0ca7b6e007bc94999700f3e5ef
@@ -1397,7 +1397,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 370b5d520c6523526988d0db5299f1bd09567782
-R e469742ef6d00761a1fbbbbf9de3f4b1
+P f0cdfb547b0976e753e94958f29cb294edf31bed
+R dcdd2b431259b301d28dfb5e7d9d6d5d
 U dan
-Z 9ba99da9a0f7b492a3cba8ddbf944bbf
+Z 1371a31e24aaed4ace229bd9de4453e9

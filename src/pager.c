@@ -4478,15 +4478,16 @@ static int pagerStress(void *p, PgHdr *pPg){
 */
 int sqlite3PagerFlush(Pager *pPager){
   int rc = pPager->errCode;
-  PgHdr *pList = sqlite3PcacheDirtyList(pPager->pPCache);
-
-  assert( assert_pager_state(pPager) );
-  while( rc==SQLITE_OK && pList ){
-    PgHdr *pNext = pList->pDirty;
-    if( pList->nRef==0 ){
-      rc = pagerStress((void*)pPager, pList);
+  if( !MEMDB ){
+    PgHdr *pList = sqlite3PcacheDirtyList(pPager->pPCache);
+    assert( assert_pager_state(pPager) );
+    while( rc==SQLITE_OK && pList ){
+      PgHdr *pNext = pList->pDirty;
+      if( pList->nRef==0 ){
+        rc = pagerStress((void*)pPager, pList);
+      }
+      pList = pNext;
     }
-    pList = pNext;
   }
 
   return rc;
