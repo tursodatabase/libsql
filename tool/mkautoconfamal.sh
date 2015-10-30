@@ -56,7 +56,7 @@ mv $TMPSPACE/tmp $TMPSPACE/configure.ac
 cd $TMPSPACE
 aclocal
 autoconf
-automake
+automake --add-missing
 
 mkdir -p tea/generic
 echo "#ifdef USE_SYSTEM_SQLITE"      > tea/generic/tclsqlite3.c 
