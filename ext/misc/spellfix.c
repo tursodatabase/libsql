@@ -1851,7 +1851,7 @@ static char *spellfix1Dequote(const char *zIn){
   char *zOut;
   int i, j;
   char c;
-  while( isspace(zIn[0]) ) zIn++;
+  while( isspace((unsigned char)zIn[0]) ) zIn++;
   zOut = sqlite3_mprintf("%s", zIn);
   if( zOut==0 ) return 0;
   i = (int)strlen(zOut);

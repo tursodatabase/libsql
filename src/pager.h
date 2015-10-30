@@ -132,6 +132,7 @@ int sqlite3PagerGetJournalMode(Pager*);
 int sqlite3PagerOkToChangeJournalMode(Pager*);
 i64 sqlite3PagerJournalSizeLimit(Pager *, i64);
 sqlite3_backup **sqlite3PagerBackupPtr(Pager*);
+int sqlite3PagerFlush(Pager*);
 
 /* Functions used to obtain and release page references. */ 
 int sqlite3PagerAcquire(Pager *pPager, Pgno pgno, DbPage **ppPage, int clrFlag);

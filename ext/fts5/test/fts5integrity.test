@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# This file containst tests focused on the integrity-check procedure.
+# This file contains tests focused on the integrity-check procedure.
 #
 
 source [file join [file dirname [info script]] fts5_common.tcl]
@@ -102,6 +102,53 @@ do_catchsql_test 4.5 {
 #db eval {SELECT rowid, fts5_decode(rowid, block) aS r FROM zz_data} {puts $r}
 #exit
 
+execsql { ROLLBACK }
+
+
+#-------------------------------------------------------------------------
+# Test that integrity-check works on a reasonably large db with many
+# different terms.
+
+# Document generator command.
+proc rnddoc {n} {
+  set doc [list]
+  for {set i 0} {$i<$n} {incr i} {
+    lappend doc [format %.5d [expr int(rand()*10000)]]
+  }
+  return $doc
+}
+db func rnddoc rnddoc
+
+expr srand(0)
+do_execsql_test 5.0 {
+  CREATE VIRTUAL TABLE gg USING fts5(a, prefix="1,2,3");
+  INSERT INTO gg(gg, rank) VALUES('pgsz', 256);
+  INSERT INTO gg VALUES(rnddoc(20));
+  INSERT INTO gg SELECT rnddoc(20) FROM gg;
+  INSERT INTO gg SELECT rnddoc(20) FROM gg;
+  INSERT INTO gg SELECT rnddoc(20) FROM gg;
+  INSERT INTO gg SELECT rnddoc(20) FROM gg;
+  INSERT INTO gg SELECT rnddoc(20) FROM gg;
+  INSERT INTO gg SELECT rnddoc(20) FROM gg;
+  INSERT INTO gg SELECT rnddoc(20) FROM gg;
+  INSERT INTO gg SELECT rnddoc(20) FROM gg;
+  INSERT INTO gg SELECT rnddoc(20) FROM gg;
+  INSERT INTO gg SELECT rnddoc(20) FROM gg;
+  INSERT INTO gg SELECT rnddoc(20) FROM gg;
+}
+
+do_execsql_test 5.1 {
+  INSERT INTO gg(gg) VALUES('integrity-check');
+}
+
+do_execsql_test 5.2 {
+  INSERT INTO gg(gg) VALUES('optimize');
+}
+
+breakpoint
+do_execsql_test 5.3 {
+  INSERT INTO gg(gg) VALUES('integrity-check');
+}
 
 finish_test
 

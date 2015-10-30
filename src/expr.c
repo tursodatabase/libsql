@@ -548,11 +548,11 @@ Expr *sqlite3PExpr(
   const Token *pToken     /* Argument token */
 ){
   Expr *p;
-  if( op==TK_AND && pLeft && pRight && pParse->nErr==0 ){
+  if( op==TK_AND && pParse->nErr==0 ){
     /* Take advantage of short-circuit false optimization for AND */
     p = sqlite3ExprAnd(pParse->db, pLeft, pRight);
   }else{
-    p = sqlite3ExprAlloc(pParse->db, op, pToken, 1);
+    p = sqlite3ExprAlloc(pParse->db, op & TKFLG_MASK, pToken, 1);
     sqlite3ExprAttachSubtrees(pParse->db, p, pLeft, pRight);
   }
   if( p ) {
@@ -1414,6 +1414,22 @@ int sqlite3ExprIsConstantOrFunction(Expr *p, u8 isInit){
   assert( isInit==0 || isInit==1 );
   return exprIsConst(p, 4+isInit, 0);
 }
+
+#ifdef SQLITE_ENABLE_CURSOR_HINTS
+/*
+** Walk an expression tree.  Return 1 if the expression contains a
+** subquery of some kind.  Return 0 if there are no subqueries.
+*/
+int sqlite3ExprContainsSubquery(Expr *p){
+  Walker w;
+  memset(&w, 0, sizeof(w));
+  w.eCode = 1;
+  w.xExprCallback = sqlite3ExprWalkNoop;
+  w.xSelectCallback = selectNodeIsConstant;
+  sqlite3WalkExpr(&w, p);
+  return w.eCode==0;
+}
+#endif
 
 /*
 ** If the expression p codes a constant integer that is small enough

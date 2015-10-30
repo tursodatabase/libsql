@@ -70,6 +70,9 @@
 #include <stdarg.h>
 #include <ctype.h>
 #include "sqlite3.h"
+#define ISSPACE(X) isspace((unsigned char)(X))
+#define ISDIGIT(X) isdigit((unsigned char)(X))
+
 
 #ifdef __unix__
 # include <signal.h>
@@ -633,9 +636,9 @@ static void runSql(sqlite3 *db, const char *zSql, unsigned  runFlags){
     if( runFlags & SQL_TRACE ){
       const char *z = zSql;
       int n;
-      while( z<zMore && isspace(z[0]) ) z++;
+      while( z<zMore && ISSPACE(z[0]) ) z++;
       n = (int)(zMore - z);
-      while( n>0 && isspace(z[n-1]) ) n--;
+      while( n>0 && ISSPACE(z[n-1]) ) n--;
       if( n==0 ) break;
       if( pStmt==0 ){
         printf("TRACE: %.*s (error: %s)\n", n, z, sqlite3_errmsg(db));
@@ -757,7 +760,7 @@ static int integerValue(const char *zArg){
       zArg++;
     }
   }else{
-    while( isdigit(zArg[0]) ){
+    while( ISDIGIT(zArg[0]) ){
       v = v*10 + zArg[0] - '0';
       zArg++;
     }

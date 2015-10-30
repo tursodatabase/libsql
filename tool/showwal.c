@@ -7,6 +7,9 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+#define ISDIGIT(X)  isdigit((unsigned char)(X))
+#define ISPRINT(X)  isprint((unsigned char)(X))
+
 #if !defined(_MSC_VER)
 #include <unistd.h>
 #else
@@ -159,7 +162,7 @@ static void print_byte_range(
       if( i+j>nByte ){
         fprintf(stdout, " ");
       }else{
-        fprintf(stdout,"%c", isprint(aData[i+j]) ? aData[i+j] : '.');
+        fprintf(stdout,"%c", ISPRINT(aData[i+j]) ? aData[i+j] : '.');
       }
     }
     fprintf(stdout,"\n");
@@ -550,7 +553,7 @@ int main(int argc, char **argv){
         print_wal_header(0);
         continue;
       }
-      if( !isdigit(argv[i][0]) ){
+      if( !ISDIGIT(argv[i][0]) ){
         fprintf(stderr, "%s: unknown option: [%s]\n", argv[0], argv[i]);
         continue;
       }

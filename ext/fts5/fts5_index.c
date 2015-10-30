@@ -1499,6 +1499,7 @@ static void fts5SegIterLoadNPos(Fts5Index *p, Fts5SegIter *pIter){
     pIter->bDel = (nSz & 0x0001);
     pIter->nPos = nSz>>1;
     pIter->iLeafOffset = iOff;
+    assert_nc( pIter->nPos>=0 );
   }
 }
 
@@ -1672,12 +1673,13 @@ static void fts5SegIterReverseNewPage(Fts5Index *p, Fts5SegIter *pIter){
     if( pNew ){
       /* iTermLeafOffset may be equal to szLeaf if the term is the last
       ** thing on the page - i.e. the first rowid is on the following page.
-      ** In this case leaf pIter->pLeaf==0, this iterator is at EOF. */
-      if( pIter->iLeafPgno==pIter->iTermLeafPgno 
-       && pIter->iTermLeafOffset<pNew->szLeaf 
-      ){
-        pIter->pLeaf = pNew;
-        pIter->iLeafOffset = pIter->iTermLeafOffset;
+      ** In this case leave pIter->pLeaf==0, this iterator is at EOF. */
+      if( pIter->iLeafPgno==pIter->iTermLeafPgno ){
+        assert( pIter->pLeaf==0 );
+        if( pIter->iTermLeafOffset<pNew->szLeaf ){
+          pIter->pLeaf = pNew;
+          pIter->iLeafOffset = pIter->iTermLeafOffset;
+        }
       }else{
         int iRowidOff;
         iRowidOff = fts5LeafFirstRowidOff(pNew);
@@ -1851,6 +1853,7 @@ static void fts5SegIterNext(
           fts5FastGetVarint32(pIter->pLeaf->p, pIter->iLeafOffset, nSz);
           pIter->bDel = (nSz & 0x0001);
           pIter->nPos = nSz>>1;
+          assert_nc( pIter->nPos>=0 );
         }
       }
     }
@@ -2059,11 +2062,14 @@ static void fts5LeafSeek(
       if( pIter->pLeaf==0 ) return;
       a = pIter->pLeaf->p;
       if( fts5LeafIsTermless(pIter->pLeaf)==0 ){
-        fts5GetVarint32(&pIter->pLeaf->p[pIter->pLeaf->szLeaf], iOff);
+        iPgidx = pIter->pLeaf->szLeaf;
+        iPgidx += fts5GetVarint32(&pIter->pLeaf->p[iPgidx], iOff);
         if( iOff<4 || iOff>=pIter->pLeaf->szLeaf ){
           p->rc = FTS5_CORRUPT;
         }else{
           nKeep = 0;
+          iTermOff = iOff;
+          n = pIter->pLeaf->nn;
           iOff += fts5GetVarint32(&a[iOff], nNew);
           break;
         }
@@ -4375,7 +4381,7 @@ static void fts5SetupPrefixIter(
     Fts5IndexIter *p1 = 0;     /* Iterator used to gather data from index */
     Fts5Data *pData;
     Fts5Buffer doclist;
-    int bNewTerm = 0;
+    int bNewTerm = 1;
 
     memset(&doclist, 0, sizeof(doclist));
     for(fts5MultiIterNew(p, pStruct, 1, flags, pToken, nToken, -1, 0, &p1);
@@ -5582,8 +5588,9 @@ static int fts5DecodeDoclist(int *pRc, Fts5Buffer *pBuf, const u8 *a, int n){
   }
   while( iOff<n ){
     int nPos;
-    int bDummy;
-    iOff += fts5GetPoslistSize(&a[iOff], &nPos, &bDummy);
+    int bDel;
+    iOff += fts5GetPoslistSize(&a[iOff], &nPos, &bDel);
+    sqlite3Fts5BufferAppendPrintf(pRc, pBuf, " nPos=%d%s", nPos, bDel?"*":"");
     iOff += fts5DecodePoslist(pRc, pBuf, &a[iOff], MIN(n-iOff, nPos));
     if( iOff<n ){
       i64 iDelta;

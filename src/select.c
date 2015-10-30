@@ -4452,7 +4452,7 @@ static int selectExpander(Walker *pWalker, Select *p){
 ** Walker.xSelectCallback is set to do something useful for every 
 ** subquery in the parser tree.
 */
-static int exprWalkNoop(Walker *NotUsed, Expr *NotUsed2){
+int sqlite3ExprWalkNoop(Walker *NotUsed, Expr *NotUsed2){
   UNUSED_PARAMETER2(NotUsed, NotUsed2);
   return WRC_Continue;
 }
@@ -4473,7 +4473,7 @@ static int exprWalkNoop(Walker *NotUsed, Expr *NotUsed2){
 static void sqlite3SelectExpand(Parse *pParse, Select *pSelect){
   Walker w;
   memset(&w, 0, sizeof(w));
-  w.xExprCallback = exprWalkNoop;
+  w.xExprCallback = sqlite3ExprWalkNoop;
   w.pParse = pParse;
   if( pParse->hasCompound ){
     w.xSelectCallback = convertCompoundSelectToSubquery;
@@ -4540,7 +4540,7 @@ static void sqlite3SelectAddTypeInfo(Parse *pParse, Select *pSelect){
   Walker w;
   memset(&w, 0, sizeof(w));
   w.xSelectCallback2 = selectAddSubqueryTypeInfo;
-  w.xExprCallback = exprWalkNoop;
+  w.xExprCallback = sqlite3ExprWalkNoop;
   w.pParse = pParse;
   sqlite3WalkSelect(&w, pSelect);
 #endif
