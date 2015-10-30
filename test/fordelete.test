@@ -1,0 +1,130 @@
+# 2001 September 15
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing the SELECT statement.
+#
+# $Id: select1.test,v 1.70 2009/05/28 01:00:56 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set ::testprefix fordelete
+
+# This function returns a list of the tables or indexes opened with 
+# OP_OpenWrite instructions when the SQL statement passed as the only 
+# argument is executed. If the OPFLAG_FORDELETE flag is specified on
+# the OP_OpenWrite, an asterix is appended to the object name. The list 
+# is sorted in [lsort] order before it is returned.
+#
+proc analyze_delete_program {sql} {
+  # Build a map from root page to table/index name.
+  db eval {
+    SELECT name, rootpage FROM sqlite_master
+  } {
+    set T($rootpage) $name
+  }
+
+  # Calculate the results.
+  set res [list]
+  db eval "EXPLAIN $sql" R {
+    if {$R(opcode) == "OpenWrite"} {
+      set obj $T($R(p2))
+      if {"0x$R(p5)" & 0x08} { append obj *}
+      lappend res $obj
+    }
+  }
+
+  lsort $res
+}
+
+proc do_adp_test {tn sql res} {
+  uplevel [list do_test $tn [list analyze_delete_program $sql] [list {*}$res]]
+}
+
+do_execsql_test 1.0 {
+  CREATE TABLE t1(a PRIMARY KEY, b);
+}
+
+foreach {tn sql res} {
+  1 { DELETE FROM t1 WHERE a=?}          { sqlite_autoindex_t1_1  t1* }
+  2 { DELETE FROM t1 WHERE a=? AND b=? } { sqlite_autoindex_t1_1  t1 }
+  3 { DELETE FROM t1 WHERE a>? }         { sqlite_autoindex_t1_1  t1* }
+  4 { DELETE FROM t1 WHERE rowid=? }     { sqlite_autoindex_t1_1*  t1 }
+} {
+  do_adp_test 1.$tn $sql $res
+}
+
+do_execsql_test 2.0 {
+  CREATE TABLE t2(a, b, c);
+  CREATE INDEX t2a ON t2(a);
+  CREATE INDEX t2b ON t2(b);
+  CREATE INDEX t2c ON t2(c);
+}
+foreach {tn sql res} {
+  1 { DELETE FROM t2 WHERE a=?}          { t2* t2a t2b* t2c* }
+  2 { DELETE FROM t2 WHERE a=? AND +b=?} { t2 t2a t2b* t2c* }
+  3 { DELETE FROM t2 WHERE a=? OR b=?}   { t2 t2a* t2b* t2c* }
+  4 { DELETE FROM t2 WHERE +a=? }        { t2 t2a* t2b* t2c* }
+  5 { DELETE FROM t2 WHERE rowid=? }     { t2 t2a* t2b* t2c* }
+} {
+  do_adp_test 2.$tn $sql $res
+}
+
+#-------------------------------------------------------------------------
+# Test that a record that consists of the bytes:
+#
+#   0x01 0x00
+#
+# is interpreted by OP_Column as a vector of NULL values (assuming the 
+# default column values are NULL). Also test that:
+#
+#   0x00
+#
+# is handled in the same way.
+#
+do_execsql_test 3.0 {
+  CREATE TABLE x1(a INTEGER PRIMARY KEY, b, c, d);
+  CREATE TABLE x2(a INTEGER PRIMARY KEY, b, c, d);
+}
+
+do_test 3.1 {
+  set root [db one { SELECT rootpage FROM sqlite_master WHERE name = 'x1' }]
+  db eval { 
+    BEGIN IMMEDIATE;
+  }
+  set bt [btree_from_db db]
+  set csr [btree_cursor $bt $root 1]
+  btree_insert $csr 5 "\000"
+  btree_close_cursor $csr
+  db eval { COMMIT }
+
+  db eval {
+    SELECT * FROM x1;
+  }
+} {5 {} {} {}}
+
+do_test 3.2 {
+  set root [db one { SELECT rootpage FROM sqlite_master WHERE name = 'x2' }]
+  db eval { 
+    BEGIN IMMEDIATE;
+  }
+  set bt [btree_from_db db]
+  set csr [btree_cursor $bt $root 1]
+  btree_insert $csr 6 "\000"
+  btree_close_cursor $csr
+  db eval { COMMIT }
+
+  db eval {
+    SELECT * FROM x2;
+  }
+} {6 {} {} {}}
+
+finish_test
+

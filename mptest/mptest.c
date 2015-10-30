@@ -46,6 +46,9 @@
 #include <assert.h>
 #include <ctype.h>
 
+#define ISSPACE(X) isspace((unsigned char)(X))
+#define ISDIGIT(X) isdigit((unsigned char)(X))
+
 /* The suffix to append to the child command lines, if any */
 #if defined(_WIN32)
 # define GETPID (int)GetCurrentProcessId
@@ -187,10 +190,10 @@ int strglob(const char *zGlob, const char *z){
       }
       if( c2==0 || (seen ^ invert)==0 ) return 0;
     }else if( c=='#' ){
-      if( (z[0]=='-' || z[0]=='+') && isdigit(z[1]) ) z++;
-      if( !isdigit(z[0]) ) return 0;
+      if( (z[0]=='-' || z[0]=='+') && ISDIGIT(z[1]) ) z++;
+      if( !ISDIGIT(z[0]) ) return 0;
       z++;
-      while( isdigit(z[0]) ){ z++; }
+      while( ISDIGIT(z[0]) ){ z++; }
     }else{
       if( c!=(*(z++)) ) return 0;
     }
@@ -289,7 +292,7 @@ static void logMessage(const char *zFormat, ...){
 */
 static int clipLength(const char *z){
   int n = (int)strlen(z);
-  while( n>0 && isspace(z[n-1]) ){ n--; }
+  while( n>0 && ISSPACE(z[n-1]) ){ n--; }
   return n;
 }
 
@@ -444,7 +447,7 @@ static void stringAppendTerm(String *p, const char *z){
     stringAppend(p, "nil", 3);
     return;
   }
-  for(i=0; z[i] && !isspace(z[i]); i++){}
+  for(i=0; z[i] && !ISSPACE(z[i]); i++){}
   if( i>0 && z[i]==0 ){
     stringAppend(p, z, i);
     return;
@@ -699,7 +702,7 @@ static char *readFile(const char *zFilename){
 */
 static int tokenLength(const char *z, int *pnLine){
   int n = 0;
-  if( isspace(z[0]) || (z[0]=='/' && z[1]=='*') ){
+  if( ISSPACE(z[0]) || (z[0]=='/' && z[1]=='*') ){
     int inC = 0;
     int c;
     if( z[0]=='/' ){
@@ -708,7 +711,7 @@ static int tokenLength(const char *z, int *pnLine){
     }
     while( (c = z[n++])!=0 ){
       if( c=='\n' ) (*pnLine)++;
-      if( isspace(c) ) continue;
+      if( ISSPACE(c) ) continue;
       if( inC && c=='*' && z[n]=='/' ){
         n++;
         inC = 0;
@@ -734,7 +737,7 @@ static int tokenLength(const char *z, int *pnLine){
     }
   }else{
     int c;
-    for(n=1; (c = z[n])!=0 && !isspace(c) && c!='"' && c!='\'' && c!=';'; n++){}
+    for(n=1; (c = z[n])!=0 && !ISSPACE(c) && c!='"' && c!='\'' && c!=';'; n++){}
   }
   return n;
 }
@@ -748,7 +751,7 @@ static int extractToken(const char *zIn, int nIn, char *zOut, int nOut){
     zOut[0] = 0;
     return 0;
   }
-  for(i=0; i<nIn && i<nOut-1 && !isspace(zIn[i]); i++){ zOut[i] = zIn[i]; }
+  for(i=0; i<nIn && i<nOut-1 && !ISSPACE(zIn[i]); i++){ zOut[i] = zIn[i]; }
   zOut[i] = 0;
   return i;
 }
@@ -758,7 +761,7 @@ static int extractToken(const char *zIn, int nIn, char *zOut, int nOut){
 */
 static int findEnd(const char *z, int *pnLine){
   int n = 0;
-  while( z[n] && (strncmp(z+n,"--end",5) || !isspace(z[n+5])) ){
+  while( z[n] && (strncmp(z+n,"--end",5) || !ISSPACE(z[n+5])) ){
     n += tokenLength(z+n, pnLine);
   }
   return n;
@@ -773,12 +776,12 @@ static int findEndif(const char *z, int stopAtElse, int *pnLine){
   int n = 0;
   while( z[n] ){
     int len = tokenLength(z+n, pnLine);
-    if( (strncmp(z+n,"--endif",7)==0 && isspace(z[n+7]))
-     || (stopAtElse && strncmp(z+n,"--else",6)==0 && isspace(z[n+6]))
+    if( (strncmp(z+n,"--endif",7)==0 && ISSPACE(z[n+7]))
+     || (stopAtElse && strncmp(z+n,"--else",6)==0 && ISSPACE(z[n+6]))
     ){
       return n+len;
     }
-    if( strncmp(z+n,"--if",4)==0 && isspace(z[n+4]) ){
+    if( strncmp(z+n,"--if",4)==0 && ISSPACE(z[n+4]) ){
       int skip = findEndif(z+n+len, 0, pnLine);
       n += skip + len;
     }else{
@@ -888,7 +891,7 @@ static void runScript(
   while( (c = zScript[ii])!=0 ){
     prevLine = lineno;
     len = tokenLength(zScript+ii, &lineno);
-    if( isspace(c) || (c=='/' && zScript[ii+1]=='*') ){
+    if( ISSPACE(c) || (c=='/' && zScript[ii+1]=='*') ){
       ii += len;
       continue;
     }
@@ -909,7 +912,7 @@ static void runScript(
     if( g.iTrace>=2 ) logMessage("%.*s", len, zScript+ii);
     n = extractToken(zScript+ii+2, len-2, zCmd, sizeof(zCmd));
     for(nArg=0; n<len-2 && nArg<MX_ARG; nArg++){
-      while( n<len-2 && isspace(zScript[ii+2+n]) ){ n++; }
+      while( n<len-2 && ISSPACE(zScript[ii+2+n]) ){ n++; }
       if( n>=len-2 ) break;
       n += extractToken(zScript+ii+2+n, len-2-n,
                         azArg[nArg], sizeof(azArg[nArg]));
@@ -976,7 +979,7 @@ static void runScript(
     if( strcmp(zCmd, "match")==0 ){
       int jj;
       char *zAns = zScript+ii;
-      for(jj=7; jj<len-1 && isspace(zAns[jj]); jj++){}
+      for(jj=7; jj<len-1 && ISSPACE(zAns[jj]); jj++){}
       zAns += jj;
       if( len-jj-1!=sResult.n || strncmp(sResult.z, zAns, len-jj-1) ){
         errorMessage("line %d of %s:\nExpected [%.*s]\n     Got [%s]",
@@ -998,7 +1001,7 @@ static void runScript(
       char *zAns = zScript+ii;
       char *zCopy;
       int isGlob = (zCmd[0]=='g');
-      for(jj=9-3*isGlob; jj<len-1 && isspace(zAns[jj]); jj++){}
+      for(jj=9-3*isGlob; jj<len-1 && ISSPACE(zAns[jj]); jj++){}
       zAns += jj;
       zCopy = sqlite3_mprintf("%.*s", len-jj-1, zAns);
       if( (sqlite3_strglob(zCopy, sResult.z)==0)^isGlob ){
@@ -1050,7 +1053,7 @@ static void runScript(
     */
     if( strcmp(zCmd, "print")==0 ){
       int jj;
-      for(jj=7; jj<len && isspace(zScript[ii+jj]); jj++){}
+      for(jj=7; jj<len && ISSPACE(zScript[ii+jj]); jj++){}
       logMessage("%.*s", len-jj, zScript+ii+jj);
     }else
 
@@ -1062,7 +1065,7 @@ static void runScript(
     if( strcmp(zCmd, "if")==0 ){
       int jj, rc;
       sqlite3_stmt *pStmt;
-      for(jj=4; jj<len && isspace(zScript[ii+jj]); jj++){}
+      for(jj=4; jj<len && ISSPACE(zScript[ii+jj]); jj++){}
       pStmt = prepareSql("SELECT %.*s", len-jj, zScript+ii+jj);
       rc = sqlite3_step(pStmt);
       if( rc!=SQLITE_ROW || sqlite3_column_int(pStmt, 0)==0 ){

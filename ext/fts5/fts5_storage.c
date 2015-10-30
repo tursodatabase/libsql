@@ -513,13 +513,15 @@ int sqlite3Fts5StorageDelete(Fts5Storage *p, i64 iDel){
   }
 
   /* Delete the %_content record */
-  if( rc==SQLITE_OK ){
-    rc = fts5StorageGetStmt(p, FTS5_STMT_DELETE_CONTENT, &pDel, 0);
-  }
-  if( rc==SQLITE_OK ){
-    sqlite3_bind_int64(pDel, 1, iDel);
-    sqlite3_step(pDel);
-    rc = sqlite3_reset(pDel);
+  if( pConfig->eContent==FTS5_CONTENT_NORMAL ){
+    if( rc==SQLITE_OK ){
+      rc = fts5StorageGetStmt(p, FTS5_STMT_DELETE_CONTENT, &pDel, 0);
+    }
+    if( rc==SQLITE_OK ){
+      sqlite3_bind_int64(pDel, 1, iDel);
+      sqlite3_step(pDel);
+      rc = sqlite3_reset(pDel);
+    }
   }
 
   /* Write the averages record */
@@ -914,12 +916,12 @@ int sqlite3Fts5StorageIntegrity(Fts5Storage *p){
   /* Check that the %_docsize and %_content tables contain the expected
   ** number of rows.  */
   if( rc==SQLITE_OK && pConfig->eContent==FTS5_CONTENT_NORMAL ){
-    i64 nRow;
+    i64 nRow = 0;
     rc = fts5StorageCount(p, "content", &nRow);
     if( rc==SQLITE_OK && nRow!=p->nTotalRow ) rc = FTS5_CORRUPT;
   }
   if( rc==SQLITE_OK && pConfig->bColumnsize ){
-    i64 nRow;
+    i64 nRow = 0;
     rc = fts5StorageCount(p, "docsize", &nRow);
     if( rc==SQLITE_OK && nRow!=p->nTotalRow ) rc = FTS5_CORRUPT;
   }

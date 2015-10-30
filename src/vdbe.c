@@ -3356,7 +3356,6 @@ case OP_ReopenIdx: {
 case OP_OpenRead:
 case OP_OpenWrite:
 
-  assert( (pOp->p5&(OPFLAG_P2ISREG|OPFLAG_BULKCSR|OPFLAG_SEEKEQ))==pOp->p5 );
   assert( pOp->opcode==OP_OpenWrite || pOp->p5==0 || pOp->p5==OPFLAG_SEEKEQ );
   assert( p->bIsReader );
   assert( pOp->opcode==OP_OpenRead || pOp->opcode==OP_ReopenIdx
@@ -3377,7 +3376,8 @@ case OP_OpenWrite:
   pX = pDb->pBt;
   assert( pX!=0 );
   if( pOp->opcode==OP_OpenWrite ){
-    wrFlag = 1;
+    assert( OPFLAG_FORDELETE==BTREE_FORDELETE );
+    wrFlag = BTREE_WRCSR | (pOp->p5 & OPFLAG_FORDELETE);
     assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
     if( pDb->pSchema->file_format < p->minWriteFileFormat ){
       p->minWriteFileFormat = pDb->pSchema->file_format;
@@ -3429,8 +3429,12 @@ case OP_OpenWrite:
 open_cursor_set_hints:
   assert( OPFLAG_BULKCSR==BTREE_BULKLOAD );
   assert( OPFLAG_SEEKEQ==BTREE_SEEK_EQ );
-  sqlite3BtreeCursorHints(pCur->pCursor,
-                          (pOp->p5 & (OPFLAG_BULKCSR|OPFLAG_SEEKEQ)));
+  testcase( pOp->p5 & OPFLAG_BULKCSR );
+#ifdef SQLITE_ENABLE_CURSOR_HINT
+  testcase( pOp->p2 & OPFLAG_SEEKEQ );
+#endif
+  sqlite3BtreeCursorHintFlags(pCur->pCursor,
+                               (pOp->p5 & (OPFLAG_BULKCSR|OPFLAG_SEEKEQ)));
   break;
 }
 
@@ -3497,11 +3501,11 @@ case OP_OpenEphemeral: {
         assert( pKeyInfo->db==db );
         assert( pKeyInfo->enc==ENC(db) );
         pCx->pKeyInfo = pKeyInfo;
-        rc = sqlite3BtreeCursor(pCx->pBt, pgno, 1, pKeyInfo, pCx->pCursor);
+        rc = sqlite3BtreeCursor(pCx->pBt, pgno, BTREE_WRCSR, pKeyInfo, pCx->pCursor);
       }
       pCx->isTable = 0;
     }else{
-      rc = sqlite3BtreeCursor(pCx->pBt, MASTER_ROOT, 1, 0, pCx->pCursor);
+      rc = sqlite3BtreeCursor(pCx->pBt, MASTER_ROOT, BTREE_WRCSR, 0, pCx->pCursor);
       pCx->isTable = 1;
     }
   }
@@ -6627,6 +6631,26 @@ case OP_Init: {          /* jump */
   break;
 }
 
+#ifdef SQLITE_ENABLE_CURSOR_HINTS
+/* Opcode: CursorHint P1 * * P4 *
+**
+** Provide a hint to cursor P1 that it only needs to return rows that
+** satisfy the Expr in P4.  TK_REGISTER terms in the P4 expression refer
+** to values currently held in registers.  TK_COLUMN terms in the P4
+** expression refer to columns in the b-tree to which cursor P1 is pointing.
+*/
+case OP_CursorHint: {
+  VdbeCursor *pC;
+
+  assert( pOp->p1>=0 && pOp->p1<p->nCursor );
+  assert( pOp->p4type==P4_EXPR );
+  pC = p->apCsr[pOp->p1];
+  if( pC ){
+    sqlite3BtreeCursorHint(pC->pCursor, BTREE_HINT_RANGE, pOp->p4.pExpr, aMem);
+  }
+  break;
+}
+#endif /* SQLITE_ENABLE_CURSOR_HINTS */
 
 /* Opcode: Noop * * * * *
 **

@@ -741,6 +741,36 @@ int sqlite3_db_release_memory(sqlite3 *db){
 }
 
 /*
+** Flush any dirty pages in the pager-cache for any attached database
+** to disk.
+*/
+int sqlite3_db_cacheflush(sqlite3 *db){
+  int i;
+  int rc = SQLITE_OK;
+  int bSeenBusy = 0;
+
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( !sqlite3SafetyCheckOk(db) ) return SQLITE_MISUSE_BKPT;
+#endif
+  sqlite3_mutex_enter(db->mutex);
+  sqlite3BtreeEnterAll(db);
+  for(i=0; rc==SQLITE_OK && i<db->nDb; i++){
+    Btree *pBt = db->aDb[i].pBt;
+    if( pBt && sqlite3BtreeIsInTrans(pBt) ){
+      Pager *pPager = sqlite3BtreePager(pBt);
+      rc = sqlite3PagerFlush(pPager);
+      if( rc==SQLITE_BUSY ){
+        bSeenBusy = 1;
+        rc = SQLITE_OK;
+      }
+    }
+  }
+  sqlite3BtreeLeaveAll(db);
+  sqlite3_mutex_leave(db->mutex);
+  return ((rc==SQLITE_OK && bSeenBusy) ? SQLITE_BUSY : rc);
+}
+
+/*
 ** Configuration settings for an individual database connection
 */
 int sqlite3_db_config(sqlite3 *db, int op, ...){
@@ -2953,6 +2983,21 @@ opendb_out:
     /* Opening a db handle. Fourth parameter is passed 0. */
     void *pArg = sqlite3GlobalConfig.pSqllogArg;
     sqlite3GlobalConfig.xSqllog(pArg, db, zFilename, 0);
+  }
+#endif
+#if defined(SQLITE_HAS_CODEC)
+  if( rc==SQLITE_OK ){
+    const char *zHexKey = sqlite3_uri_parameter(zOpen, "hexkey");
+    if( zHexKey && zHexKey[0] ){
+      u8 iByte;
+      int i;
+      char zKey[40];
+      for(i=0, iByte=0; i<sizeof(zKey)*2 && sqlite3Isxdigit(zHexKey[i]); i++){
+        iByte = (iByte<<4) + sqlite3HexToInt(zHexKey[i]);
+        if( (i&1)!=0 ) zKey[i/2] = iByte;
+      }
+      sqlite3_key_v2(db, 0, zKey, i/2);
+    }
   }
 #endif
   return rc & 0xff;

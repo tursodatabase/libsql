@@ -56,20 +56,34 @@ static int test_sqlite3rbu_cmd(
 ){
   int ret = TCL_OK;
   sqlite3rbu *pRbu = (sqlite3rbu*)clientData;
-  const char *azMethod[] = { 
-    "step", "close", "create_rbu_delta", "savestate", 0 
+  struct RbuCmd {
+    const char *zName;
+    int nArg;
+    const char *zUsage;
+  } aCmd[] = {
+    {"step", 2, ""},              /* 0 */
+    {"close", 2, ""},             /* 1 */
+    {"create_rbu_delta", 2, ""},  /* 2 */
+    {"savestate", 2, ""},         /* 3 */
+    {"dbMain_eval", 3, "SQL"},    /* 4 */
+    {0,0,0}
   };
-  int iMethod;
+  int iCmd;
 
-  if( objc!=2 ){
+  if( objc<2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "METHOD");
     return TCL_ERROR;
   }
-  if( Tcl_GetIndexFromObj(interp, objv[1], azMethod, "method", 0, &iMethod) ){
+  ret = Tcl_GetIndexFromObjStruct(
+      interp, objv[1], aCmd, sizeof(aCmd[0]), "method", 0, &iCmd
+  );
+  if( ret ) return TCL_ERROR;
+  if( objc!=aCmd[iCmd].nArg ){
+    Tcl_WrongNumArgs(interp, 1, objv, aCmd[iCmd].zUsage);
     return TCL_ERROR;
   }
 
-  switch( iMethod ){
+  switch( iCmd ){
     case 0: /* step */ {
       int rc = sqlite3rbu_step(pRbu);
       Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
@@ -109,6 +123,16 @@ static int test_sqlite3rbu_cmd(
       int rc = sqlite3rbu_savestate(pRbu);
       Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
       ret = (rc==SQLITE_OK ? TCL_OK : TCL_ERROR);
+      break;
+    }
+
+    case 4: /* dbMain_eval */ {
+      sqlite3 *db = sqlite3rbu_db(pRbu, 0);
+      int rc = sqlite3_exec(db, Tcl_GetString(objv[2]), 0, 0, 0);
+      if( rc!=SQLITE_OK ){
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3_errmsg(db), -1));
+        ret = TCL_ERROR;
+      }
       break;
     }
 

@@ -486,10 +486,10 @@ static const char *closureValueOfKey(const char *zKey, const char *zStr){
   int i;
   if( nStr<nKey+1 ) return 0;
   if( memcmp(zStr, zKey, nKey)!=0 ) return 0;
-  for(i=nKey; isspace(zStr[i]); i++){}
+  for(i=nKey; isspace((unsigned char)zStr[i]); i++){}
   if( zStr[i]!='=' ) return 0;
   i++;
-  while( isspace(zStr[i]) ){ i++; }
+  while( isspace((unsigned char)zStr[i]) ){ i++; }
   return zStr+i;
 }
 

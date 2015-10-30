@@ -47,6 +47,8 @@ static const char zHelp[] =
 #include <stdarg.h>
 #include <string.h>
 #include <ctype.h>
+#define ISSPACE(X) isspace((unsigned char)(X))
+#define ISDIGIT(X) isdigit((unsigned char)(X))
 
 #if SQLITE_VERSION_NUMBER<3005000
 # define sqlite3_int64 sqlite_int64
@@ -315,7 +317,7 @@ void speedtest1_final(void){
 /* Print an SQL statement to standard output */
 static void printSql(const char *zSql){
   int n = (int)strlen(zSql);
-  while( n>0 && (zSql[n-1]==';' || isspace(zSql[n-1])) ){ n--; }
+  while( n>0 && (zSql[n-1]==';' || ISSPACE(zSql[n-1])) ){ n--; }
   if( g.bExplain ) printf("EXPLAIN ");
   printf("%.*s;\n", n, zSql);
   if( g.bExplain
@@ -414,7 +416,7 @@ void speedtest1_run(void){
 /* The sqlite3_trace() callback function */
 static void traceCallback(void *NotUsed, const char *zSql){
   int n = (int)strlen(zSql);
-  while( n>0 && (zSql[n-1]==';' || isspace(zSql[n-1])) ) n--;
+  while( n>0 && (zSql[n-1]==';' || ISSPACE(zSql[n-1])) ) n--;
   fprintf(stderr,"%.*s;\n", n, zSql);
 }
 

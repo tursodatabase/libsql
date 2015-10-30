@@ -455,7 +455,7 @@ void sqlite3_free(void *p){
 ** *db->pnBytesFreed.
 */
 static SQLITE_NOINLINE void measureAllocationSize(sqlite3 *db, void *p){
-  if( p ) *db->pnBytesFreed += sqlite3DbMallocSize(db,p);
+  *db->pnBytesFreed += sqlite3DbMallocSize(db,p);
 }
 
 /*

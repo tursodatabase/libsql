@@ -1054,6 +1054,26 @@ int sqlite3BtreeCursorRestore(BtCursor *pCur, int *pDifferentRow){
   return SQLITE_OK;
 }
 
+#ifdef SQLITE_ENABLE_CURSOR_HINTS
+/*
+** Provide hints to the cursor.  The particular hint given (and the type
+** and number of the varargs parameters) is determined by the eHintType
+** parameter.  See the definitions of the BTREE_HINT_* macros for details.
+*/
+void sqlite3BtreeCursorHint(BtCursor *pCur, int eHintType, ...){
+  /* Used only by system that substitute their own storage engine */
+}
+#endif
+
+/*
+** Provide flag hints to the cursor.
+*/
+void sqlite3BtreeCursorHintFlags(BtCursor *pCur, unsigned x){
+  assert( x==BTREE_SEEK_EQ || x==BTREE_BULKLOAD || x==0 );
+  pCur->hints = x;
+}
+
+
 #ifndef SQLITE_OMIT_AUTOVACUUM
 /*
 ** Given a page number of a regular database page, return the page
@@ -4451,13 +4471,16 @@ static int btreeCursor(
   BtCursor *pX;                          /* Looping over other all cursors */
 
   assert( sqlite3BtreeHoldsMutex(p) );
-  assert( wrFlag==0 || wrFlag==1 );
+  assert( wrFlag==0 
+       || wrFlag==BTREE_WRCSR 
+       || wrFlag==(BTREE_WRCSR|BTREE_FORDELETE) 
+  );
 
   /* The following assert statements verify that if this is a sharable 
   ** b-tree database, the connection is holding the required table locks, 
   ** and that no other connection has any open cursor that conflicts with 
   ** this lock.  */
-  assert( hasSharedCacheTableLock(p, iTable, pKeyInfo!=0, wrFlag+1) );
+  assert( hasSharedCacheTableLock(p, iTable, pKeyInfo!=0, (wrFlag?2:1)) );
   assert( wrFlag==0 || !hasReadConflicts(p, iTable) );
 
   /* Assert that the caller has opened the required transaction. */
@@ -4482,8 +4505,7 @@ static int btreeCursor(
   pCur->pKeyInfo = pKeyInfo;
   pCur->pBtree = p;
   pCur->pBt = pBt;
-  assert( wrFlag==0 || wrFlag==BTCF_WriteFlag );
-  pCur->curFlags = wrFlag;
+  pCur->curFlags = wrFlag ? BTCF_WriteFlag : 0;
   pCur->curPagerFlags = wrFlag ? 0 : PAGER_GET_READONLY;
   /* If there are two or more cursors on the same btree, then all such
   ** cursors *must* have the BTCF_Multiple flag set. */
@@ -4895,7 +4917,9 @@ static int accessPayload(
 
       /* If required, populate the overflow page-list cache. */
       if( (pCur->curFlags & BTCF_ValidOvfl)!=0 ){
-        assert(!pCur->aOverflow[iIdx] || pCur->aOverflow[iIdx]==nextPage);
+        assert( pCur->aOverflow[iIdx]==0
+                || pCur->aOverflow[iIdx]==nextPage
+                || CORRUPT_DB );
         pCur->aOverflow[iIdx] = nextPage;
       }
 
@@ -10026,14 +10050,6 @@ int sqlite3BtreeSetVersion(Btree *pBtree, int iVersion){
 
   pBt->btsFlags &= ~BTS_NO_WAL;
   return rc;
-}
-
-/*
-** set the mask of hint flags for cursor pCsr.
-*/
-void sqlite3BtreeCursorHints(BtCursor *pCsr, unsigned int mask){
-  assert( mask==BTREE_BULKLOAD || mask==BTREE_SEEK_EQ || mask==0 );
-  pCsr->hints = mask;
 }
 
 #ifdef SQLITE_DEBUG

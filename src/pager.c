@@ -4538,6 +4538,25 @@ static int pagerStress(void *p, PgHdr *pPg){
   return pager_error(pPager, rc); 
 }
 
+/*
+** Flush all unreferenced dirty pages to disk.
+*/
+int sqlite3PagerFlush(Pager *pPager){
+  int rc = pPager->errCode;
+  if( !MEMDB ){
+    PgHdr *pList = sqlite3PcacheDirtyList(pPager->pPCache);
+    assert( assert_pager_state(pPager) );
+    while( rc==SQLITE_OK && pList ){
+      PgHdr *pNext = pList->pDirty;
+      if( pList->nRef==0 ){
+        rc = pagerStress((void*)pPager, pList);
+      }
+      pList = pNext;
+    }
+  }
+
+  return rc;
+}
 
 /*
 ** Allocate and initialize a new Pager object and put a pointer to it
@@ -5974,9 +5993,10 @@ int sqlite3PagerWrite(PgHdr *pPg){
   Pager *pPager = pPg->pPager;
   assert( (pPg->flags & PGHDR_MMAP)==0 );
   assert( pPager->eState>=PAGER_WRITER_LOCKED );
-  assert( pPager->eState!=PAGER_ERROR );
   assert( assert_pager_state(pPager) );
-  if( (pPg->flags & PGHDR_WRITEABLE)!=0 && pPager->dbSize>=pPg->pgno ){
+  if( pPager->errCode ){
+    return pPager->errCode;
+  }else if( (pPg->flags & PGHDR_WRITEABLE)!=0 && pPager->dbSize>=pPg->pgno ){
     if( pPager->nSavepoint ) return subjournalPageIfRequired(pPg);
     return SQLITE_OK;
   }else if( pPager->sectorSize > (u32)pPager->pageSize ){
@@ -6163,30 +6183,33 @@ int sqlite3PagerSync(Pager *pPager, const char *zMaster){
 ** and SQLite error code is returned.
 */
 int sqlite3PagerExclusiveLock(Pager *pPager, PgHdr *pPage1){
-  int rc = SQLITE_OK;
-  assert( pPager->eState==PAGER_WRITER_CACHEMOD 
-       || pPager->eState==PAGER_WRITER_DBMOD 
-       || pPager->eState==PAGER_WRITER_LOCKED 
-  );
+  int rc = pPager->errCode;
   assert( assert_pager_state(pPager) );
-  if( 0==pagerUseWal(pPager) ){
-    rc = pager_wait_on_lock(pPager, EXCLUSIVE_LOCK);
-  }
-#ifndef SQLITE_OMIT_CONCURRENT
-  else{
-    if( pPager->pAllRead ){
-      /* This is an CONCURRENT transaction. Attempt to lock the wal database
-      ** here. If SQLITE_BUSY (but not SQLITE_BUSY_SNAPSHOT) is returned,
-      ** invoke the busy-handler and try again for as long as it returns
-      ** non-zero.  */
-      do {
-        rc = sqlite3WalLockForCommit(pPager->pWal, pPage1, pPager->pAllRead);
-      }while( rc==SQLITE_BUSY 
-           && pPager->xBusyHandler(pPager->pBusyHandlerArg) 
-      );
+  if( rc==SQLITE_OK ){
+    assert( pPager->eState==PAGER_WRITER_CACHEMOD 
+         || pPager->eState==PAGER_WRITER_DBMOD 
+         || pPager->eState==PAGER_WRITER_LOCKED 
+    );
+    assert( assert_pager_state(pPager) );
+    if( 0==pagerUseWal(pPager) ){
+      rc = pager_wait_on_lock(pPager, EXCLUSIVE_LOCK);
     }
-  }
+#ifndef SQLITE_OMIT_CONCURRENT
+    else{
+      if( pPager->pAllRead ){
+        /* This is an CONCURRENT transaction. Attempt to lock the wal database
+        ** here. If SQLITE_BUSY (but not SQLITE_BUSY_SNAPSHOT) is returned,
+        ** invoke the busy-handler and try again for as long as it returns
+        ** non-zero.  */
+        do {
+          rc = sqlite3WalLockForCommit(pPager->pWal, pPage1, pPager->pAllRead);
+        }while( rc==SQLITE_BUSY 
+             && pPager->xBusyHandler(pPager->pBusyHandlerArg) 
+        );
+      }
+    }
 #endif /* SQLITE_OMIT_CONCURRENT */
+  }
   return rc;
 }
 

@@ -460,11 +460,24 @@ AC_SUBST(HAVE_TCL)
 TARGET_READLINE_LIBS=""
 TARGET_READLINE_INC=""
 TARGET_HAVE_READLINE=0
+TARGET_HAVE_EDITLINE=0
+AC_ARG_ENABLE([editline],
+	[AC_HELP_STRING([--enable-editline],[enable BSD editline support])],
+	[with_editline=$enableval],
+	[with_editline=auto])
 AC_ARG_ENABLE([readline],
-	[AC_HELP_STRING([--disable-readline],[disable readline support [default=detect]])],
+	[AC_HELP_STRING([--disable-readline],[disable readline support])],
 	[with_readline=$enableval],
 	[with_readline=auto])
 
+if test x"$with_editline" != xno; then
+        sLIBS=$LIBS
+        LIBS=""
+	TARGET_HAVE_EDITLINE=1
+	AC_SEARCH_LIBS(readline,edit,[with_readline=no],[TARGET_HAVE_EDITLINE=0])
+        TARGET_READLINE_LIBS=$LIBS
+        LIBS=$sLIBS
+fi
 if test x"$with_readline" != xno; then
 	found="yes"
 
@@ -519,6 +532,7 @@ fi
 AC_SUBST(TARGET_READLINE_LIBS)
 AC_SUBST(TARGET_READLINE_INC)
 AC_SUBST(TARGET_HAVE_READLINE)
+AC_SUBST(TARGET_HAVE_EDITLINE)
 
 ##########
 # Figure out what C libraries are required to compile programs

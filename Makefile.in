@@ -54,6 +54,7 @@ LIBTCL = @TCL_LIB_SPEC@
 # Compiler options needed for programs that use the readline() library.
 #
 READLINE_FLAGS = -DHAVE_READLINE=@TARGET_HAVE_READLINE@ @TARGET_READLINE_INC@
+READLINE_FLAGS += -DHAVE_EDITLINE=@TARGET_HAVE_EDITLINE@
 
 # The library that programs using readline() must link against.
 #

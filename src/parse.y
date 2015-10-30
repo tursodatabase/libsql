@@ -946,6 +946,13 @@ term(A) ::= CTIME_KW(OP). {
     pOut->zStart = pLeft->zStart;
     pOut->zEnd = pRight->zEnd;
   }
+
+  /* If doNot is true, then add a TK_NOT Expr-node wrapper around the
+  ** outside of *ppExpr.
+  */
+  static void exprNot(Parse *pParse, int doNot, Expr **ppExpr){
+    if( doNot ) *ppExpr = sqlite3PExpr(pParse, TK_NOT, *ppExpr, 0, 0);
+  }
 }
 
 expr(A) ::= expr(X) AND(OP) expr(Y).    {spanBinaryExpr(&A,pParse,@OP,&X,&Y);}
@@ -968,7 +975,7 @@ expr(A) ::= expr(X) likeop(OP) expr(Y).  [LIKE_KW]  {
   pList = sqlite3ExprListAppend(pParse,0, Y.pExpr);
   pList = sqlite3ExprListAppend(pParse,pList, X.pExpr);
   A.pExpr = sqlite3ExprFunction(pParse, pList, &OP.eOperator);
-  if( OP.bNot ) A.pExpr = sqlite3PExpr(pParse, TK_NOT, A.pExpr, 0, 0);
+  exprNot(pParse, OP.bNot, &A.pExpr);
   A.zStart = X.zStart;
   A.zEnd = Y.zEnd;
   if( A.pExpr ) A.pExpr->flags |= EP_InfixFunc;
@@ -979,7 +986,7 @@ expr(A) ::= expr(X) likeop(OP) expr(Y) ESCAPE expr(E).  [LIKE_KW]  {
   pList = sqlite3ExprListAppend(pParse,pList, X.pExpr);
   pList = sqlite3ExprListAppend(pParse,pList, E.pExpr);
   A.pExpr = sqlite3ExprFunction(pParse, pList, &OP.eOperator);
-  if( OP.bNot ) A.pExpr = sqlite3PExpr(pParse, TK_NOT, A.pExpr, 0, 0);
+  exprNot(pParse, OP.bNot, &A.pExpr);
   A.zStart = X.zStart;
   A.zEnd = E.zEnd;
   if( A.pExpr ) A.pExpr->flags |= EP_InfixFunc;
@@ -1069,7 +1076,7 @@ expr(A) ::= expr(W) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
   }else{
     sqlite3ExprListDelete(pParse->db, pList);
   } 
-  if( N ) A.pExpr = sqlite3PExpr(pParse, TK_NOT, A.pExpr, 0, 0);
+  exprNot(pParse, N, &A.pExpr);
   A.zStart = W.zStart;
   A.zEnd = Y.zEnd;
 }
@@ -1124,7 +1131,7 @@ expr(A) ::= expr(W) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
       }else{
         sqlite3ExprListDelete(pParse->db, Y);
       }
-      if( N ) A.pExpr = sqlite3PExpr(pParse, TK_NOT, A.pExpr, 0, 0);
+      exprNot(pParse, N, &A.pExpr);
     }
     A.zStart = X.zStart;
     A.zEnd = &E.z[E.n];
@@ -1150,7 +1157,7 @@ expr(A) ::= expr(W) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
     }else{
       sqlite3SelectDelete(pParse->db, Y);
     }
-    if( N ) A.pExpr = sqlite3PExpr(pParse, TK_NOT, A.pExpr, 0, 0);
+    exprNot(pParse, N, &A.pExpr);
     A.zStart = X.zStart;
     A.zEnd = &E.z[E.n];
   }
@@ -1164,7 +1171,7 @@ expr(A) ::= expr(W) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
     }else{
       sqlite3SrcListDelete(pParse->db, pSrc);
     }
-    if( N ) A.pExpr = sqlite3PExpr(pParse, TK_NOT, A.pExpr, 0, 0);
+    exprNot(pParse, N, &A.pExpr);
     A.zStart = X.zStart;
     A.zEnd = Z.z ? &Z.z[Z.n] : &Y.z[Y.n];
   }

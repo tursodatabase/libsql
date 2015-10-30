@@ -8,17 +8,23 @@ proc usage {} {
   puts stderr "usage: $::argv0 ?OPTIONS? database table"
   puts stderr ""
   puts stderr "  -nterm                (count number of terms in each segment)"
+  puts stderr "  -segments             (output segment contents)"
   puts stderr ""
   exit 1
 }
 
 set O(nterm) 0
+set O(segments) 0
 
 if {[llength $argv]<2} usage
 foreach a [lrange $argv 0 end-2] {
   switch -- $a {
     -nterm {
       set O(nterm) 1
+    }
+
+    -segments {
+      set O(segments) 1
     }
 
     default {
@@ -75,6 +81,13 @@ db eval "SELECT fts5_decode(rowid, block) AS d FROM ${tbl}_data WHERE id=10" {
         puts [format "        % -28s" $seg]
       }
     }
+  }
+}
+
+if {$O(segments)} {
+  puts ""
+  db eval "SELECT fts5_decode(rowid, block) AS d FROM ${tbl}_data WHERE id>10" {
+    puts $d
   }
 }
 

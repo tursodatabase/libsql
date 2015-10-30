@@ -485,14 +485,20 @@ static LogEst estLog(LogEst N){
 ** Convert OP_Column opcodes to OP_Copy in previously generated code.
 **
 ** This routine runs over generated VDBE code and translates OP_Column
-** opcodes into OP_Copy, and OP_Rowid into OP_Null, when the table is being
-** accessed via co-routine instead of via table lookup.
+** opcodes into OP_Copy when the table is being accessed via co-routine 
+** instead of via table lookup.
+**
+** If the bIncrRowid parameter is 0, then any OP_Rowid instructions on
+** cursor iTabCur are transformed into OP_Null. Or, if bIncrRowid is non-zero,
+** then each OP_Rowid is transformed into an instruction to increment the
+** value stored in its output register.
 */
 static void translateColumnToCopy(
   Vdbe *v,            /* The VDBE containing code to translate */
   int iStart,         /* Translate from this opcode to the end */
   int iTabCur,        /* OP_Column/OP_Rowid references to this table */
-  int iRegister       /* The first column is in this register */
+  int iRegister,      /* The first column is in this register */
+  int bIncrRowid      /* If non-zero, transform OP_rowid to OP_AddImm(1) */
 ){
   VdbeOp *pOp = sqlite3VdbeGetOp(v, iStart);
   int iEnd = sqlite3VdbeCurrentAddr(v);
@@ -504,9 +510,16 @@ static void translateColumnToCopy(
       pOp->p2 = pOp->p3;
       pOp->p3 = 0;
     }else if( pOp->opcode==OP_Rowid ){
-      pOp->opcode = OP_Null;
-      pOp->p1 = 0;
-      pOp->p3 = 0;
+      if( bIncrRowid ){
+        /* Increment the value stored in the P2 operand of the OP_Rowid. */
+        pOp->opcode = OP_AddImm;
+        pOp->p1 = pOp->p2;
+        pOp->p2 = 1;
+      }else{
+        pOp->opcode = OP_Null;
+        pOp->p1 = 0;
+        pOp->p3 = 0;
+      }
     }
   }
 }
@@ -614,6 +627,8 @@ static void constructAutomaticIndex(
   Expr *pPartial = 0;         /* Partial Index Expression */
   int iContinue = 0;          /* Jump here to skip excluded rows */
   struct SrcList_item *pTabItem;  /* FROM clause term being indexed */
+  int addrCounter = 0;        /* Address where integer counter is initialized */
+  int regBase;                /* Array of registers where record is assembled */
 
   /* Generate code to skip over the creation and initialization of the
   ** transient index on 2nd and subsequent iterations of the loop. */
@@ -742,6 +757,7 @@ static void constructAutomaticIndex(
   pTabItem = &pWC->pWInfo->pTabList->a[pLevel->iFrom];
   if( pTabItem->fg.viaCoroutine ){
     int regYield = pTabItem->regReturn;
+    addrCounter = sqlite3VdbeAddOp2(v, OP_Integer, 0, 0);
     sqlite3VdbeAddOp3(v, OP_InitCoroutine, regYield, 0, pTabItem->addrFillSub);
     addrTop =  sqlite3VdbeAddOp1(v, OP_Yield, regYield);
     VdbeCoverage(v);
@@ -755,12 +771,15 @@ static void constructAutomaticIndex(
     pLoop->wsFlags |= WHERE_PARTIALIDX;
   }
   regRecord = sqlite3GetTempReg(pParse);
-  sqlite3GenerateIndexKey(pParse, pIdx, pLevel->iTabCur, regRecord, 0, 0, 0, 0);
+  regBase = sqlite3GenerateIndexKey(
+      pParse, pIdx, pLevel->iTabCur, regRecord, 0, 0, 0, 0
+  );
   sqlite3VdbeAddOp2(v, OP_IdxInsert, pLevel->iIdxCur, regRecord);
   sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
   if( pPartial ) sqlite3VdbeResolveLabel(v, iContinue);
   if( pTabItem->fg.viaCoroutine ){
-    translateColumnToCopy(v, addrTop, pLevel->iTabCur, pTabItem->regResult);
+    sqlite3VdbeChangeP2(v, addrCounter, regBase+n);
+    translateColumnToCopy(v, addrTop, pLevel->iTabCur, pTabItem->regResult, 1);
     sqlite3VdbeGoto(v, addrTop);
     pTabItem->fg.viaCoroutine = 0;
   }else{
@@ -3991,6 +4010,7 @@ WhereInfo *sqlite3WhereBegin(
   int ii;                    /* Loop counter */
   sqlite3 *db;               /* Database connection */
   int rc;                    /* Return code */
+  u8 bFordelete = 0;
 
   assert( (wctrlFlags & WHERE_ONEPASS_MULTIROW)==0 || (
         (wctrlFlags & WHERE_ONEPASS_DESIRED)!=0 
@@ -4246,8 +4266,11 @@ WhereInfo *sqlite3WhereBegin(
        && 0==(wsFlags & WHERE_VIRTUALTABLE)
     )){
       pWInfo->eOnePass = bOnerow ? ONEPASS_SINGLE : ONEPASS_MULTI;
-      if( HasRowid(pTabList->a[0].pTab) ){
-        pWInfo->a[0].pWLoop->wsFlags &= ~WHERE_IDX_ONLY;
+      if( HasRowid(pTabList->a[0].pTab) && (wsFlags & WHERE_IDX_ONLY) ){
+        if( wctrlFlags & WHERE_ONEPASS_MULTIROW ){
+          bFordelete = OPFLAG_FORDELETE;
+        }
+        pWInfo->a[0].pWLoop->wsFlags = (wsFlags & ~WHERE_IDX_ONLY);
       }
     }
   }
@@ -4294,6 +4317,14 @@ WhereInfo *sqlite3WhereBegin(
         sqlite3VdbeChangeP4(v, sqlite3VdbeCurrentAddr(v)-1, 
                             SQLITE_INT_TO_PTR(n), P4_INT32);
         assert( n<=pTab->nCol );
+      }
+#ifdef SQLITE_ENABLE_CURSOR_HINTS
+      if( pLoop->u.btree.pIndex!=0 ){
+        sqlite3VdbeChangeP5(v, OPFLAG_SEEKEQ|bFordelete);
+      }else
+#endif
+      {
+        sqlite3VdbeChangeP5(v, bFordelete);
       }
 #ifdef SQLITE_ENABLE_COLUMN_USED_MASK
       sqlite3VdbeAddOp4Dup8(v, OP_ColumnsUsed, pTabItem->iCursor, 0, 0,
@@ -4509,7 +4540,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     */
     if( pTabItem->fg.viaCoroutine && !db->mallocFailed ){
       translateColumnToCopy(v, pLevel->addrBody, pLevel->iTabCur,
-                            pTabItem->regResult);
+                            pTabItem->regResult, 0);
       continue;
     }
 
