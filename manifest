@@ -1,5 +1,5 @@
-C Increase\sthe\sversion\snumber\sto\s3.10.0,\sdue\sto\sthe\saddition\sof\sthe\nsqlite3_db_cacheflush()\sinterface.
-D 2015-10-30T16:36:42.626
+C Add\smutex\soperations\sto\stest\scode\sin\stest3.c\sto\savoid\striggering\sassert()\sfailures\sin\scertain\sconfigurations.
+D 2015-10-30T20:54:25.598
 F Makefile.in 4469ed8b02a9934fea9503d791165367d19db2f7
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 702d3e98f3afc6587a78481257f3c4c900efc3a4
@@ -352,7 +352,7 @@ F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
 F src/tclsqlite.c d9439b6a910985b7fff43ba6756bcef00de22649
 F src/test1.c 9ac5cbfe3c859ab7518edc5109a2959d6bf7b059
 F src/test2.c 577961fe48961b2f2e5c8b56ee50c3f459d3359d
-F src/test3.c f7ae1d6a4aa07aac257de18a43800c1199b513fc
+F src/test3.c a8887dabbbee3059af338f20d290084a63ed1b0f
 F src/test4.c d168f83cc78d02e8d35567bb5630e40dcd85ac1e
 F src/test5.c 5a34feec76d9b3a86aab30fd4f6cc9c48cbab4c1
 F src/test6.c 41cacf3b0dd180823919bf9e1fbab287c9266723
@@ -1397,7 +1397,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ad80d3073388c59f67171720efc6ef766e19886f
-R 05540c814207efb67f7c8e8b3a47d3f0
-U drh
-Z 14542ee53e71e033be97bac3859f7dcc
+P 7565b046ff939e8310631397a4526fbd98b99aaf
+R 614298574df997c982bceb820bb362b3
+U dan
+Z ee268c45e17adbdf740dc7b91893f898
