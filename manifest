@@ -1,5 +1,5 @@
-C Do\snot\sattempt\sto\sflush\sthe\spages\sof\san\sin-memory\sdatabase\sto\sdisk\sif\ssqlite3_db_cacheflush()\sis\scalled.
-D 2015-10-29T21:11:22.422
+C Test\sthat\scalling\ssqlite3_db_cacheflush()\sdoes\snot\sinterfere\swith\ssavepoints.
+D 2015-10-30T09:13:29.814
 F Makefile.in 2ea961bc09e441874eb3d1bf7398e04feb24f3ee
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 702d3e98f3afc6587a78481257f3c4c900efc3a4
@@ -503,7 +503,7 @@ F test/btree02.test fe69453d474d8154d19b904157ff1db4812fed99
 F test/btreefault.test c2bcb542685eea44621275cfedbd8a13f65201e3
 F test/busy.test 76b4887f8b9160ba903c1ac22e8ff406ad6ae2f0
 F test/cache.test 13bc046b26210471ca6f2889aceb1ea52dc717de
-F test/cacheflush.test 42855120d2b00ff75033b54ba7693927f1ce4de8
+F test/cacheflush.test a755c93482ce2e20c04825304bef27e7b7ea0111
 F test/capi2.test 011c16da245fdc0106a2785035de6b242c05e738
 F test/capi3.test bf6f0308bbbba1e770dac13aa08e5c2ac61c7324
 F test/capi3b.test efb2b9cfd127efa84433cd7a2d72ce0454ae0dc4
@@ -1397,7 +1397,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f0cdfb547b0976e753e94958f29cb294edf31bed
-R dcdd2b431259b301d28dfb5e7d9d6d5d
+P 9b79a390440a23542a370b591e567b31ebb35c42
+R b3b377e425858b0fc40d0f4a8e28ca4d
 U dan
-Z 1371a31e24aaed4ace229bd9de4453e9
+Z 2687c0f7a67bbeeb26b2f80bb787cd41

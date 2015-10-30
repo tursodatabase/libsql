@@ -229,6 +229,95 @@ do_execsql_test 3.4 {
   SELECT count(*) FROM t2;
 } {2 2}
 
+#-------------------------------------------------------------------------
+# Test that calling sqlite3_db_cacheflush() does not interfere with
+# savepoint transactions.
+#
+do_test 4.0 {
+  reset_db
+  execsql {
+    CREATE TABLE ta(a, aa);
+    CREATE TABLE tb(b, bb);
+    INSERT INTO ta VALUES('a', randomblob(500));
+    INSERT INTO tb VALUES('b', randomblob(500));
+    BEGIN;
+      UPDATE ta SET a = 'A';
+      SAVEPOINT one;
+        UPDATE tb SET b = 'B';
+  }
+
+  sqlite3_db_cacheflush db
+  diskquery test.db {
+    SELECT a FROM ta;
+    SELECT b FROM tb;
+  }
+} {A B}
+
+do_test 4.1 {
+  execsql { 
+    ROLLBACK TO one;
+  }
+  sqlite3_db_cacheflush db
+  diskquery test.db {
+    SELECT a FROM ta;
+    SELECT b FROM tb;
+  }
+} {A b}
+
+do_test 4.2 {
+  execsql { 
+    INSERT INTO tb VALUES('c', randomblob(10));
+    INSERT INTO tb VALUES('d', randomblob(10));
+    INSERT INTO tb VALUES('e', randomblob(10));
+  }
+  sqlite3_db_cacheflush db
+  diskquery test.db {
+    SELECT a FROM ta;
+    SELECT b FROM tb;
+  }
+} {A b c d e}
+
+do_test 4.3 {
+  execsql { 
+    SAVEPOINT two;
+    UPDATE tb SET b = upper(b);
+  }
+  sqlite3_db_cacheflush db
+  diskquery test.db {
+    SELECT a FROM ta;
+    SELECT b FROM tb;
+  }
+} {A B C D E}
+
+do_test 4.4 {
+  execsql { 
+    ROLLBACK TO two;
+  }
+  sqlite3_db_cacheflush db
+  diskquery test.db {
+    SELECT a FROM ta;
+    SELECT b FROM tb;
+  }
+} {A b c d e}
+
+do_test 4.4 {
+  execsql { 
+    ROLLBACK TO one;
+  }
+  sqlite3_db_cacheflush db
+  diskquery test.db {
+    SELECT a FROM ta;
+    SELECT b FROM tb;
+  }
+} {A b}
+
+do_test 4.5 {
+  execsql { 
+    ROLLBACK;
+    SELECT a FROM ta;
+    SELECT b FROM tb;
+  }
+} {a b}
 
 test_restore_config_pagecache
 finish_test
