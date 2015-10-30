@@ -1,5 +1,5 @@
-C Test\sthat\scalling\ssqlite3_db_cacheflush()\sdoes\snot\sinterfere\swith\ssavepoints.
-D 2015-10-30T09:13:29.814
+C Return\simmediately\sif\ssqlite3PagerWrite()\sis\scalled\swhen\sthe\spager\sis\sin\sPAGER_ERROR\sstate.
+D 2015-10-30T14:28:16.049
 F Makefile.in 2ea961bc09e441874eb3d1bf7398e04feb24f3ee
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 702d3e98f3afc6587a78481257f3c4c900efc3a4
@@ -327,7 +327,7 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c fc93d55f96bb978f0b0168c6ea7d6fc60b0e172c
 F src/os_win.c 1716291e5ec2dbfc5a1fe0b32182030f1f7d8acf
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
-F src/pager.c b588107ee55ff4121c114949ff51a56aab21f3ac
+F src/pager.c 9c1eec0d88133484b165fa0b5284a411c24b964c
 F src/pager.h 1c4fa826c330040c5659a384446c7cc6e8e4200c
 F src/parse.y 11078cd8e3af00f030505b6a86a06a4536cfdeaa
 F src/pcache.c 24be750c79272e0ca7b6e007bc94999700f3e5ef
@@ -1397,7 +1397,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9b79a390440a23542a370b591e567b31ebb35c42
-R b3b377e425858b0fc40d0f4a8e28ca4d
+P 0e09e4a26938cfe0f573449526a8f0f527cef921
+R f396f7a1d6ed17b52257ec59a2b63902
 U dan
-Z 2687c0f7a67bbeeb26b2f80bb787cd41
+Z 76885908163af131d9fcc88a11feb178
