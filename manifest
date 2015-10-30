@@ -1,10 +1,10 @@
-C Merge\slatest\strunk\schanges,\sincluding\ssqlite3_db_cacheflush(),\swith\sthis\sbranch.
-D 2015-10-30T16:23:03.670
+C Merge\sthe\s3.10.0\sversion\snumber\supdate\sfrom\strunk.
+D 2015-10-30T16:37:44.655
 F Makefile.in 3f4e9157bfb231338d7625610806599e4beb31b7
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 702d3e98f3afc6587a78481257f3c4c900efc3a4
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
-F VERSION a47917b59f38b632b3a8662d14fd20f94956bdd0
+F VERSION 8b9d3ac6f1962f94e06ba05462422a544f9c4e36
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
@@ -35,7 +35,7 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 42b71ad3fe21c9e88fa59e8458ca1a6bc72eb0c0
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 1d10fa35c71b5e830631bff0b8f94da164e0bc19 x
+F configure e511ceefe595e35051933a90c848ab4fa1d48add x
 F configure.ac fcfc67b323d32daaa3e46cf7782d9465ed423a6d
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 334dbf6621b8fb8790297ec1abf3cfa4621709d1
@@ -1402,7 +1402,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P bc195e1cd9dc1c7b97bd05cd7d0664fbc599a890 ad80d3073388c59f67171720efc6ef766e19886f
-R 26c1e36523a78c4e842623bbe1fde99e
-U dan
-Z 0aaa53f0923e9fdda33db802a2f0bf34
+P 6e4306efaf5c0d34a1aead8ad1fe5aa836b61ca1 7565b046ff939e8310631397a4526fbd98b99aaf
+R c80645a3ee52a862fddca56bcf9c8084
+U drh
+Z 1e7700dd2866b342be95806c5138e481
