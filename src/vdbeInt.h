@@ -27,6 +27,17 @@
 #endif
 
 /*
+** VDBE_DISPLAY_P4 is true or false depending on whether or not the
+** "explain" P4 display logic is enabled.
+*/
+#if !defined(SQLITE_OMIT_EXPLAIN) || !defined(NDEBUG) \
+     || defined(VDBE_PROFILE) || defined(SQLITE_DEBUG)
+# define VDBE_DISPLAY_P4 1
+#else
+# define VDBE_DISPLAY_P4 0
+#endif
+
+/*
 ** SQL is translated into a sequence of instructions to be
 ** executed by a virtual machine.  Each instruction is an instance
 ** of the following structure.
@@ -431,7 +442,8 @@ int sqlite3VdbeCursorRestore(VdbeCursor*);
 void sqlite3VdbePrintOp(FILE*, int, Op*);
 #endif
 u32 sqlite3VdbeSerialTypeLen(u32);
-u32 sqlite3VdbeSerialType(Mem*, int);
+u8 sqlite3VdbeOneByteSerialTypeLen(u8);
+u32 sqlite3VdbeSerialType(Mem*, int, u32*);
 u32 sqlite3VdbeSerialPut(unsigned char*, Mem*, u32);
 u32 sqlite3VdbeSerialGet(const unsigned char*, u32, Mem*);
 void sqlite3VdbeDeleteAuxData(Vdbe*, int, int);

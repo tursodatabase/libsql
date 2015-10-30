@@ -15,36 +15,30 @@
 
 #include "fts5Int.h"
 
-int sqlite3Fts5BufferGrow(int *pRc, Fts5Buffer *pBuf, int nByte){
-
-  if( (pBuf->n + nByte) > pBuf->nSpace ){
-    u8 *pNew;
-    int nNew = pBuf->nSpace ? pBuf->nSpace*2 : 64;
-
-    /* A no-op if an error has already occurred */
-    if( *pRc ) return 1;
-
-    while( nNew<(pBuf->n + nByte) ){
-      nNew = nNew * 2;
-    }
-    pNew = sqlite3_realloc(pBuf->p, nNew);
-    if( pNew==0 ){
-      *pRc = SQLITE_NOMEM;
-      return 1;
-    }else{
-      pBuf->nSpace = nNew;
-      pBuf->p = pNew;
-    }
+int sqlite3Fts5BufferSize(int *pRc, Fts5Buffer *pBuf, int nByte){
+  int nNew = pBuf->nSpace ? pBuf->nSpace*2 : 64;
+  u8 *pNew;
+  while( nNew<nByte ){
+    nNew = nNew * 2;
+  }
+  pNew = sqlite3_realloc(pBuf->p, nNew);
+  if( pNew==0 ){
+    *pRc = SQLITE_NOMEM;
+    return 1;
+  }else{
+    pBuf->nSpace = nNew;
+    pBuf->p = pNew;
   }
   return 0;
 }
+
 
 /*
 ** Encode value iVal as an SQLite varint and append it to the buffer object
 ** pBuf. If an OOM error occurs, set the error code in p.
 */
 void sqlite3Fts5BufferAppendVarint(int *pRc, Fts5Buffer *pBuf, i64 iVal){
-  if( sqlite3Fts5BufferGrow(pRc, pBuf, 9) ) return;
+  if( fts5BufferGrow(pRc, pBuf, 9) ) return;
   pBuf->n += sqlite3Fts5PutVarint(&pBuf->p[pBuf->n], iVal);
 }
 
@@ -59,12 +53,6 @@ int sqlite3Fts5Get32(const u8 *aBuf){
   return (aBuf[0] << 24) + (aBuf[1] << 16) + (aBuf[2] << 8) + aBuf[3];
 }
 
-void sqlite3Fts5BufferAppend32(int *pRc, Fts5Buffer *pBuf, int iVal){
-  if( sqlite3Fts5BufferGrow(pRc, pBuf, 4) ) return;
-  sqlite3Fts5Put32(&pBuf->p[pBuf->n], iVal);
-  pBuf->n += 4;
-}
-
 /*
 ** Append buffer nData/pData to buffer pBuf. If an OOM error occurs, set 
 ** the error code in p. If an error has already occurred when this function
@@ -77,7 +65,7 @@ void sqlite3Fts5BufferAppendBlob(
   const u8 *pData
 ){
   assert( *pRc || nData>=0 );
-  if( sqlite3Fts5BufferGrow(pRc, pBuf, nData) ) return;
+  if( fts5BufferGrow(pRc, pBuf, nData) ) return;
   memcpy(&pBuf->p[pBuf->n], pData, nData);
   pBuf->n += nData;
 }
@@ -92,7 +80,7 @@ void sqlite3Fts5BufferAppendString(
   Fts5Buffer *pBuf, 
   const char *zStr
 ){
-  int nStr = strlen(zStr);
+  int nStr = (int)strlen(zStr);
   sqlite3Fts5BufferAppendBlob(pRc, pBuf, nStr+1, (const u8*)zStr);
   pBuf->n--;
 }
@@ -227,7 +215,7 @@ int sqlite3Fts5PoslistWriterAppend(
 ){
   static const i64 colmask = ((i64)(0x7FFFFFFF)) << 32;
   int rc = SQLITE_OK;
-  if( 0==sqlite3Fts5BufferGrow(&rc, pBuf, 5+5+5) ){
+  if( 0==fts5BufferGrow(&rc, pBuf, 5+5+5) ){
     if( (iPos & colmask) != (pWriter->iPrev & colmask) ){
       pBuf->p[pBuf->n++] = 1;
       pBuf->n += sqlite3Fts5PutVarint(&pBuf->p[pBuf->n], (iPos>>32));
@@ -264,7 +252,7 @@ char *sqlite3Fts5Strndup(int *pRc, const char *pIn, int nIn){
   char *zRet = 0;
   if( *pRc==SQLITE_OK ){
     if( nIn<0 ){
-      nIn = strlen(pIn);
+      nIn = (int)strlen(pIn);
     }
     zRet = (char*)sqlite3_malloc(nIn+1);
     if( zRet ){

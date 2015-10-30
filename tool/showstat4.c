@@ -9,6 +9,8 @@
 #include <ctype.h>
 #include "sqlite3.h"
 
+#define ISPRINT(X)  isprint((unsigned char)(X))
+
 typedef sqlite3_int64 i64;   /* 64-bit signed integer type */
 
 
@@ -131,7 +133,7 @@ int main(int argc, char **argv){
         printf("%s\"", zSep);
         for(j=0; j<sz; j++){
           char c = (char)aSample[y+j];
-          if( isprint(c) ){
+          if( ISPRINT(c) ){
             if( c=='"' || c=='\\' ) putchar('\\');
             putchar(c);
           }else if( c=='\n' ){

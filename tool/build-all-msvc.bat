@@ -29,9 +29,9 @@ REM source tree for SQLite and "C:\Temp" represents the final destination
 REM directory for the generated output files.
 REM
 REM Please note that the SQLite build process performed by the Makefile
-REM associated with this batch script requires both Gawk ^(gawk.exe^) and Tcl
-REM 8.5 ^(tclsh85.exe^) to be present in a directory contained in the PATH
-REM environment variable unless a pre-existing amalgamation file is used.
+REM associated with this batch script requires a Tcl shell to be present
+REM in a directory contained in the PATH environment variable unless a
+REM pre-existing amalgamation file is used.
 REM
 REM There are several environment variables that may be set to modify the
 REM behavior of this batch script and its associated Makefile.  The list of
@@ -94,6 +94,10 @@ REM its other arguments.  This is used to specify additional NMAKE options, for
 REM example:
 REM
 REM                        SET NMAKE_ARGS=FOR_WINRT=1
+REM
+REM Using the above command before running this tool will cause the compiled
+REM binaries to target the WinRT environment, which provides a subset of the
+REM Win32 API.
 REM
 SETLOCAL
 
@@ -232,25 +236,22 @@ REM NOTE: Check for the external tools needed during the build process ^(i.e.
 REM       those that do not get compiled as part of the build process itself^)
 REM       along the PATH.
 REM
-FOR %%T IN (gawk.exe tclsh85.exe) DO (
+IF DEFINED TCLSH_CMD (
+  SET TCLSH_FILE=%TCLSH_CMD%
+) ELSE (
+  SET TCLSH_FILE=tclsh85.exe
+)
+
+FOR %%T IN (%TCLSH_FILE%) DO (
   SET %%T_PATH=%%~dp$PATH:T
 )
 
 REM
-REM NOTE: The Gawk executable "gawk.exe" is required during the SQLite build
-REM       process unless a pre-existing amalgamation file is used.
+REM NOTE: A Tcl shell executable is required during the SQLite build process
+REM       unless a pre-existing amalgamation file is used.
 REM
-IF NOT DEFINED gawk.exe_PATH (
-  ECHO The Gawk executable "gawk.exe" is required to be in the PATH.
-  GOTO errors
-)
-
-REM
-REM NOTE: The Tcl 8.5 executable "tclsh85.exe" is required during the SQLite
-REM       build process unless a pre-existing amalgamation file is used.
-REM
-IF NOT DEFINED tclsh85.exe_PATH (
-  ECHO The Tcl 8.5 executable "tclsh85.exe" is required to be in the PATH.
+IF NOT DEFINED %TCLSH_FILE%_PATH (
+  ECHO The Tcl shell executable "%TCLSH_FILE%" is required to be in the PATH.
   GOTO errors
 )
 
@@ -258,7 +259,7 @@ REM
 REM NOTE: Set the TOOLPATH variable to contain all the directories where the
 REM       external tools were found in the search above.
 REM
-SET TOOLPATH=%gawk.exe_PATH%;%tclsh85.exe_PATH%
+CALL :fn_CopyVariable %TCLSH_FILE%_PATH TOOLPATH
 
 %_VECHO% ToolPath = '%TOOLPATH%'
 

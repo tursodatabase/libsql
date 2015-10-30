@@ -205,13 +205,13 @@ static int getVarint32(const char *p, int *pi){
 */
 /* TODO(shess) Is __isascii() a portable version of (c&0x80)==0? */
 static int safe_isspace(char c){
-  return (c&0x80)==0 ? isspace(c) : 0;
+  return (c&0x80)==0 ? isspace((unsigned char)c) : 0;
 }
 static int safe_tolower(char c){
-  return (c&0x80)==0 ? tolower(c) : c;
+  return (c&0x80)==0 ? tolower((unsigned char)c) : c;
 }
 static int safe_isalnum(char c){
-  return (c&0x80)==0 ? isalnum(c) : 0;
+  return (c&0x80)==0 ? isalnum((unsigned char)c) : 0;
 }
 
 typedef enum DocListType {

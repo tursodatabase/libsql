@@ -15,7 +15,7 @@
 source [file join [file dirname [info script]] fts5_common.tcl]
 set testprefix fts5aa
 
-# If SQLITE_ENABLE_FTS3 is defined, omit this file.
+# If SQLITE_ENABLE_FTS5 is not defined, omit this file.
 ifcapable !fts5 {
   finish_test
   return
@@ -159,7 +159,18 @@ do_execsql_test 6.3 {
 }
 
 do_execsql_test 6.4 {
+  REPLACE INTO t1(x, y) VALUES('x y z', 'x y z');
+}
+
+do_execsql_test 6.5 {
   INSERT INTO t1(t1) VALUES('integrity-check') 
+}
+
+do_execsql_test 6.6 {
+  SELECT rowid, * FROM t1;
+} {
+  22 {l l l} {l l l}
+  23 {x y z} {x y z}
 }
 
 #-------------------------------------------------------------------------

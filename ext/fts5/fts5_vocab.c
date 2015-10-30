@@ -55,16 +55,18 @@ struct Fts5VocabCursor {
   int bEof;                       /* True if this cursor is at EOF */
   Fts5IndexIter *pIter;           /* Term/rowid iterator object */
 
+  int nLeTerm;                    /* Size of zLeTerm in bytes */
+  char *zLeTerm;                  /* (term <= $zLeTerm) paramater, or NULL */
+
   /* These are used by 'col' tables only */
-  int nCol;
+  Fts5Config *pConfig;            /* Fts5 table configuration */
   int iCol;
   i64 *aCnt;
   i64 *aDoc;
 
-  /* Output values */
+  /* Output values used by 'row' and 'col' tables */
   i64 rowid;                      /* This table's current rowid value */
   Fts5Buffer term;                /* Current value of 'term' column */
-  i64 aVal[3];                    /* Up to three columns left of 'term' */
 };
 
 #define FTS5_VOCAB_COL    0
@@ -72,6 +74,14 @@ struct Fts5VocabCursor {
 
 #define FTS5_VOCAB_COL_SCHEMA  "term, col, doc, cnt"
 #define FTS5_VOCAB_ROW_SCHEMA  "term, doc, cnt"
+
+/*
+** Bits for the mask used as the idxNum value by xBestIndex/xFilter.
+*/
+#define FTS5_VOCAB_TERM_EQ 0x01
+#define FTS5_VOCAB_TERM_GE 0x02
+#define FTS5_VOCAB_TERM_LE 0x04
+
 
 /*
 ** Translate a string containing an fts5vocab table type to an 
@@ -168,9 +178,9 @@ static int fts5VocabInitVtab(
     const char *zDb = bDb ? argv[3] : argv[1];
     const char *zTab = bDb ? argv[4] : argv[3];
     const char *zType = bDb ? argv[5] : argv[4];
-    int nDb = strlen(zDb)+1; 
-    int nTab = strlen(zTab)+1;
-    int eType;
+    int nDb = (int)strlen(zDb)+1; 
+    int nTab = (int)strlen(zTab)+1;
+    int eType = 0;
     
     rc = fts5VocabTableType(zType, pzErr, &eType);
     if( rc==SQLITE_OK ){
@@ -230,6 +240,45 @@ static int fts5VocabBestIndexMethod(
   sqlite3_vtab *pVTab, 
   sqlite3_index_info *pInfo
 ){
+  int i;
+  int iTermEq = -1;
+  int iTermGe = -1;
+  int iTermLe = -1;
+  int idxNum = 0;
+  int nArg = 0;
+
+  for(i=0; i<pInfo->nConstraint; i++){
+    struct sqlite3_index_constraint *p = &pInfo->aConstraint[i];
+    if( p->usable==0 ) continue;
+    if( p->iColumn==0 ){          /* term column */
+      if( p->op==SQLITE_INDEX_CONSTRAINT_EQ ) iTermEq = i;
+      if( p->op==SQLITE_INDEX_CONSTRAINT_LE ) iTermLe = i;
+      if( p->op==SQLITE_INDEX_CONSTRAINT_LT ) iTermLe = i;
+      if( p->op==SQLITE_INDEX_CONSTRAINT_GE ) iTermGe = i;
+      if( p->op==SQLITE_INDEX_CONSTRAINT_GT ) iTermGe = i;
+    }
+  }
+
+  if( iTermEq>=0 ){
+    idxNum |= FTS5_VOCAB_TERM_EQ;
+    pInfo->aConstraintUsage[iTermEq].argvIndex = ++nArg;
+    pInfo->estimatedCost = 100;
+  }else{
+    pInfo->estimatedCost = 1000000;
+    if( iTermGe>=0 ){
+      idxNum |= FTS5_VOCAB_TERM_GE;
+      pInfo->aConstraintUsage[iTermGe].argvIndex = ++nArg;
+      pInfo->estimatedCost = pInfo->estimatedCost / 2;
+    }
+    if( iTermLe>=0 ){
+      idxNum |= FTS5_VOCAB_TERM_LE;
+      pInfo->aConstraintUsage[iTermLe].argvIndex = ++nArg;
+      pInfo->estimatedCost = pInfo->estimatedCost / 2;
+    }
+  }
+
+  pInfo->idxNum = idxNum;
+
   return SQLITE_OK;
 }
 
@@ -242,12 +291,11 @@ static int fts5VocabOpenMethod(
 ){
   Fts5VocabTable *pTab = (Fts5VocabTable*)pVTab;
   Fts5Index *pIndex = 0;
-  int nCol = 0;
+  Fts5Config *pConfig = 0;
   Fts5VocabCursor *pCsr = 0;
   int rc = SQLITE_OK;
   sqlite3_stmt *pStmt = 0;
   char *zSql = 0;
-  int nByte;
 
   zSql = sqlite3Fts5Mprintf(&rc,
       "SELECT t.%Q FROM %Q.%Q AS t WHERE t.%Q MATCH '*id'",
@@ -262,7 +310,7 @@ static int fts5VocabOpenMethod(
 
   if( pStmt && sqlite3_step(pStmt)==SQLITE_ROW ){
     i64 iId = sqlite3_column_int64(pStmt, 0);
-    pIndex = sqlite3Fts5IndexFromCsrid(pTab->pGlobal, iId, &nCol);
+    pIndex = sqlite3Fts5IndexFromCsrid(pTab->pGlobal, iId, &pConfig);
   }
 
   if( rc==SQLITE_OK && pIndex==0 ){
@@ -276,14 +324,17 @@ static int fts5VocabOpenMethod(
     }
   }
 
-  nByte = nCol * sizeof(i64) * 2 + sizeof(Fts5VocabCursor);
-  pCsr = (Fts5VocabCursor*)sqlite3Fts5MallocZero(&rc, nByte);
+  if( rc==SQLITE_OK ){
+    int nByte = pConfig->nCol * sizeof(i64) * 2 + sizeof(Fts5VocabCursor);
+    pCsr = (Fts5VocabCursor*)sqlite3Fts5MallocZero(&rc, nByte);
+  }
+
   if( pCsr ){
     pCsr->pIndex = pIndex;
     pCsr->pStmt = pStmt;
-    pCsr->nCol = nCol;
+    pCsr->pConfig = pConfig;
     pCsr->aCnt = (i64*)&pCsr[1];
-    pCsr->aDoc = &pCsr->aCnt[nCol];
+    pCsr->aDoc = &pCsr->aCnt[pConfig->nCol];
   }else{
     sqlite3_finalize(pStmt);
   }
@@ -296,6 +347,9 @@ static void fts5VocabResetCursor(Fts5VocabCursor *pCsr){
   pCsr->rowid = 0;
   sqlite3Fts5IterClose(pCsr->pIter);
   pCsr->pIter = 0;
+  sqlite3_free(pCsr->zLeTerm);
+  pCsr->nLeTerm = -1;
+  pCsr->zLeTerm = 0;
 }
 
 /*
@@ -319,16 +373,17 @@ static int fts5VocabNextMethod(sqlite3_vtab_cursor *pCursor){
   Fts5VocabCursor *pCsr = (Fts5VocabCursor*)pCursor;
   Fts5VocabTable *pTab = (Fts5VocabTable*)pCursor->pVtab;
   int rc = SQLITE_OK;
+  int nCol = pCsr->pConfig->nCol;
 
   pCsr->rowid++;
 
   if( pTab->eType==FTS5_VOCAB_COL ){
-    for(pCsr->iCol++; pCsr->iCol<pCsr->nCol; pCsr->iCol++){
+    for(pCsr->iCol++; pCsr->iCol<nCol; pCsr->iCol++){
       if( pCsr->aCnt[pCsr->iCol] ) break;
     }
   }
 
-  if( pTab->eType==FTS5_VOCAB_ROW || pCsr->iCol>=pCsr->nCol ){
+  if( pTab->eType==FTS5_VOCAB_ROW || pCsr->iCol>=nCol ){
     if( sqlite3Fts5IterEof(pCsr->pIter) ){
       pCsr->bEof = 1;
     }else{
@@ -336,10 +391,18 @@ static int fts5VocabNextMethod(sqlite3_vtab_cursor *pCursor){
       int nTerm;
 
       zTerm = sqlite3Fts5IterTerm(pCsr->pIter, &nTerm);
+      if( pCsr->nLeTerm>=0 ){
+        int nCmp = MIN(nTerm, pCsr->nLeTerm);
+        int bCmp = memcmp(pCsr->zLeTerm, zTerm, nCmp);
+        if( bCmp<0 || (bCmp==0 && pCsr->nLeTerm<nTerm) ){
+          pCsr->bEof = 1;
+          return SQLITE_OK;
+        }
+      }
+
       sqlite3Fts5BufferSet(&rc, &pCsr->term, nTerm, (const u8*)zTerm);
-      memset(pCsr->aVal, 0, sizeof(pCsr->aVal));
-      memset(pCsr->aCnt, 0, pCsr->nCol * sizeof(i64));
-      memset(pCsr->aDoc, 0, pCsr->nCol * sizeof(i64));
+      memset(pCsr->aCnt, 0, nCol * sizeof(i64));
+      memset(pCsr->aDoc, 0, nCol * sizeof(i64));
       pCsr->iCol = 0;
 
       assert( pTab->eType==FTS5_VOCAB_COL || pTab->eType==FTS5_VOCAB_ROW );
@@ -353,9 +416,9 @@ static int fts5VocabNextMethod(sqlite3_vtab_cursor *pCursor){
         if( rc==SQLITE_OK ){
           if( pTab->eType==FTS5_VOCAB_ROW ){
             while( 0==sqlite3Fts5PoslistNext64(pPos, nPos, &iOff, &iPos) ){
-              pCsr->aVal[1]++;
+              pCsr->aCnt[0]++;
             }
-            pCsr->aVal[0]++;
+            pCsr->aDoc[0]++;
           }else{
             int iCol = -1;
             while( 0==sqlite3Fts5PoslistNext64(pPos, nPos, &iOff, &iPos) ){
@@ -369,9 +432,12 @@ static int fts5VocabNextMethod(sqlite3_vtab_cursor *pCursor){
           }
           rc = sqlite3Fts5IterNextScan(pCsr->pIter);
         }
+
         if( rc==SQLITE_OK ){
           zTerm = sqlite3Fts5IterTerm(pCsr->pIter, &nTerm);
-          if( nTerm!=pCsr->term.n || memcmp(zTerm, pCsr->term.p, nTerm) ) break;
+          if( nTerm!=pCsr->term.n || memcmp(zTerm, pCsr->term.p, nTerm) ){
+            break;
+          }
           if( sqlite3Fts5IterEof(pCsr->pIter) ) break;
         }
       }
@@ -380,9 +446,7 @@ static int fts5VocabNextMethod(sqlite3_vtab_cursor *pCursor){
 
   if( pCsr->bEof==0 && pTab->eType==FTS5_VOCAB_COL ){
     while( pCsr->aCnt[pCsr->iCol]==0 ) pCsr->iCol++;
-    pCsr->aVal[0] = pCsr->iCol;
-    pCsr->aVal[1] = pCsr->aDoc[pCsr->iCol];
-    pCsr->aVal[2] = pCsr->aCnt[pCsr->iCol];
+    assert( pCsr->iCol<pCsr->pConfig->nCol );
   }
   return rc;
 }
@@ -398,11 +462,47 @@ static int fts5VocabFilterMethod(
   sqlite3_value **apVal           /* Arguments for the indexing scheme */
 ){
   Fts5VocabCursor *pCsr = (Fts5VocabCursor*)pCursor;
-  int rc;
-  const int flags = FTS5INDEX_QUERY_SCAN;
+  int rc = SQLITE_OK;
+
+  int iVal = 0;
+  int f = FTS5INDEX_QUERY_SCAN;
+  const char *zTerm = 0;
+  int nTerm = 0;
+
+  sqlite3_value *pEq = 0;
+  sqlite3_value *pGe = 0;
+  sqlite3_value *pLe = 0;
 
   fts5VocabResetCursor(pCsr);
-  rc = sqlite3Fts5IndexQuery(pCsr->pIndex, 0, 0, flags, 0, &pCsr->pIter);
+  if( idxNum & FTS5_VOCAB_TERM_EQ ) pEq = apVal[iVal++];
+  if( idxNum & FTS5_VOCAB_TERM_GE ) pGe = apVal[iVal++];
+  if( idxNum & FTS5_VOCAB_TERM_LE ) pLe = apVal[iVal++];
+
+  if( pEq ){
+    zTerm = (const char *)sqlite3_value_text(pEq);
+    nTerm = sqlite3_value_bytes(pEq);
+    f = 0;
+  }else{
+    if( pGe ){
+      zTerm = (const char *)sqlite3_value_text(pGe);
+      nTerm = sqlite3_value_bytes(pGe);
+    }
+    if( pLe ){
+      const char *zCopy = (const char *)sqlite3_value_text(pLe);
+      pCsr->nLeTerm = sqlite3_value_bytes(pLe);
+      pCsr->zLeTerm = sqlite3_malloc(pCsr->nLeTerm+1);
+      if( pCsr->zLeTerm==0 ){
+        rc = SQLITE_NOMEM;
+      }else{
+        memcpy(pCsr->zLeTerm, zCopy, pCsr->nLeTerm+1);
+      }
+    }
+  }
+
+
+  if( rc==SQLITE_OK ){
+    rc = sqlite3Fts5IndexQuery(pCsr->pIndex, zTerm, nTerm, f, 0, &pCsr->pIter);
+  }
   if( rc==SQLITE_OK ){
     rc = fts5VocabNextMethod(pCursor);
   }
@@ -425,17 +525,29 @@ static int fts5VocabColumnMethod(
   int iCol                        /* Index of column to read value from */
 ){
   Fts5VocabCursor *pCsr = (Fts5VocabCursor*)pCursor;
-  switch( iCol ){
-    case 0: /* term */
-      sqlite3_result_text(
-          pCtx, (const char*)pCsr->term.p, pCsr->term.n, SQLITE_TRANSIENT
-      );
-      break;
 
-    default:
-      assert( iCol<4 && iCol>0 );
-      sqlite3_result_int64(pCtx, pCsr->aVal[iCol-1]);
-      break;
+  if( iCol==0 ){
+    sqlite3_result_text(
+        pCtx, (const char*)pCsr->term.p, pCsr->term.n, SQLITE_TRANSIENT
+    );
+  }
+  else if( ((Fts5VocabTable*)(pCursor->pVtab))->eType==FTS5_VOCAB_COL ){
+    assert( iCol==1 || iCol==2 || iCol==3 );
+    if( iCol==1 ){
+      const char *z = pCsr->pConfig->azCol[pCsr->iCol];
+      sqlite3_result_text(pCtx, z, -1, SQLITE_STATIC);
+    }else if( iCol==2 ){
+      sqlite3_result_int64(pCtx, pCsr->aDoc[pCsr->iCol]);
+    }else{
+      sqlite3_result_int64(pCtx, pCsr->aCnt[pCsr->iCol]);
+    }
+  }else{
+    assert( iCol==1 || iCol==2 );
+    if( iCol==1 ){
+      sqlite3_result_int64(pCtx, pCsr->aDoc[0]);
+    }else{
+      sqlite3_result_int64(pCtx, pCsr->aCnt[0]);
+    }
   }
   return SQLITE_OK;
 }

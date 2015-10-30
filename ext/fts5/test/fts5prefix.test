@@ -195,6 +195,108 @@ for {set x 0} {$x<2} {incr x} {
   execsql { INSERT INTO t3(t3) VALUES('integrity-check') }
 }
 
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE t2 USING fts5(c1, c2);
+  INSERT INTO t2 VALUES('xa xb', 'xb xa');
+
+  INSERT INTO t2 SELECT c1||' '||c1, c2||' '||c2 FROM t2; -- 2
+  INSERT INTO t2 SELECT c1||' '||c1, c2||' '||c2 FROM t2; -- 4
+  INSERT INTO t2 SELECT c1||' '||c1, c2||' '||c2 FROM t2; -- 8
+  INSERT INTO t2 SELECT c1||' '||c1, c2||' '||c2 FROM t2; -- 16
+  INSERT INTO t2 SELECT c1||' '||c1, c2||' '||c2 FROM t2; -- 32
+  INSERT INTO t2 SELECT c1||' '||c1, c2||' '||c2 FROM t2; -- 64
+  INSERT INTO t2 SELECT c1||' '||c1, c2||' '||c2 FROM t2; -- 128
+  INSERT INTO t2 SELECT c1||' '||c1, c2||' '||c2 FROM t2; -- 256
+  INSERT INTO t2 SELECT c1||' '||c1, c2||' '||c2 FROM t2; -- 512
+  INSERT INTO t2 SELECT c1||' '||c1, c2||' '||c2 FROM t2; -- 1024
+  INSERT INTO t2 SELECT c1||' '||c1, c2||' '||c2 FROM t2; -- 2048
+  INSERT INTO t2 SELECT c1||' '||c1, c2||' '||c2 FROM t2; -- 4096
+
+  SELECT count(*) FROM t2('x*');
+} {4096}
+
+do_execsql_test 4.1 {
+  UPDATE t2 SET c2 = 'ya yb';
+  SELECT count(*) FROM t2('c1:x*');
+  SELECT count(*) FROM t2('c2:x*');
+} {4096 0}
+
+do_execsql_test 4.2 {
+  UPDATE t2 SET c2 = 'xa';
+  SELECT count(*) FROM t2('c1:x*');
+  SELECT count(*) FROM t2('c2:x*');
+} {4096 4096}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+proc rnddoc {n} {
+  set map [list a b c d]
+  set doc [list]
+  for {set i 0} {$i < $n} {incr i} {
+    lappend doc "x[lindex $map [expr int(rand()*4)]]"
+  }
+  set doc
+}
+set cols [list]
+for {set i 1} {$i<250} {incr i} { 
+  lappend cols "c$i" 
+  lappend vals "'[rnddoc 10]'"
+}
+
+do_test 5.0 {
+  execsql "CREATE VIRTUAL TABLE t4 USING fts5([join $cols ,])"
+  execsql {INSERT INTO t4(t4, rank) VALUES('pgsz', 32)}
+  execsql "INSERT INTO t4 VALUES([join $vals ,])"
+  execsql "INSERT INTO t4 VALUES([join $vals ,])"
+  execsql "INSERT INTO t4 VALUES([join $vals ,])"
+  execsql "INSERT INTO t4 VALUES([join $vals ,])"
+} {}
+
+proc gmatch {col pattern} {
+  expr {[lsearch -glob $col $pattern]>=0}
+}
+db func gmatch gmatch
+foreach {tn col pattern} {
+  1 c100 {xa*}
+  2 c200 {xb*}
+} {
+  set res [db eval "SELECT rowid FROM t4 WHERE gmatch($col, \$pattern)"]
+  set query "$col : $pattern"
+  do_execsql_test 5.$tn { SELECT rowid FROM t4($query) } $res
+}
+
+reset_db
+db func fts5_rnddoc fts5_rnddoc
+do_test 6.0 {
+  execsql {
+    CREATE VIRTUAL TABLE t5 USING fts5(x, y);
+    INSERT INTO t5 VALUES( fts5_rnddoc(10000), fts5_rnddoc(10000) );
+    INSERT INTO t5 VALUES( fts5_rnddoc(10000), fts5_rnddoc(10000) );
+    INSERT INTO t5 VALUES( fts5_rnddoc(10000), fts5_rnddoc(10000) );
+    INSERT INTO t5 VALUES( fts5_rnddoc(10000), fts5_rnddoc(10000) );
+  }
+} {}
+
+proc gmatch {col pattern} {
+  expr {[lsearch -glob $col $pattern]>=0}
+}
+db func gmatch gmatch
+foreach {tn col pattern} {
+  1 y {xa*}
+  2 y {xb*}
+  3 y {xc*}
+  4 x {xa*}
+  5 x {xb*}
+  6 x {xc*}
+} {
+  set res [db eval "SELECT rowid FROM t5 WHERE gmatch($col, \$pattern)"]
+  set query "$col : $pattern"
+  do_execsql_test 6.$tn { SELECT rowid FROM t5($query) } $res
+}
 
 finish_test
 

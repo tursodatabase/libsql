@@ -292,9 +292,9 @@ NSDKLIBPATH = $(NSDKLIBPATH:\\=\)
 # will run on the platform that is doing the build.
 #
 !IF $(USE_FULLWARN)!=0
-BCC = $(NCC) -nologo -W4
+BCC = $(NCC) -nologo -W4 $(CCOPTS) $(BCCOPTS)
 !ELSE
-BCC = $(NCC) -nologo -W3
+BCC = $(NCC) -nologo -W3 $(CCOPTS) $(BCCOPTS)
 !ENDIF
 
 # Check if assembly code listings should be generated for the source
@@ -322,13 +322,13 @@ NLTLIBPATHS = $(NLTLIBPATHS) "/LIBPATH:$(NUCRTLIBPATH)"
 # same unless your are cross-compiling.)
 #
 !IF $(USE_FULLWARN)!=0
-TCC = $(CC) -nologo -W4 -DINCLUDE_MSVC_H=1
+TCC = $(CC) -nologo -W4 -DINCLUDE_MSVC_H=1 $(CCOPTS) $(TCCOPTS)
 !ELSE
-TCC = $(CC) -nologo -W3
+TCC = $(CC) -nologo -W3 $(CCOPTS) $(TCCOPTS)
 !ENDIF
 
 TCC = $(TCC) -DSQLITE_OS_WIN=1 -I. -I$(TOP) -I$(TOP)\src -fp:precise
-RCC = $(RC) -DSQLITE_OS_WIN=1 -I$(TOP) -I$(TOP)\src
+RCC = $(RC) -DSQLITE_OS_WIN=1 -I$(TOP) -I$(TOP)\src $(RCOPTS) $(RCCOPTS)
 
 # Check if we want to use the "stdcall" calling convention when compiling.
 # This is not supported by the compilers for non-x86 platforms.  It should
@@ -571,6 +571,14 @@ TCLLIBDIR = c:\tcl\lib
 LIBTCL = tcl85.lib
 !ENDIF
 
+!IFNDEF LIBTCLSTUB
+LIBTCLSTUB = tclstub85.lib
+!ENDIF
+
+!IFNDEF LIBTCLPATH
+LIBTCLPATH = c:\tcl\bin
+!ENDIF
+
 # The locations of the ICU header and library files.  These variables
 # (ICUINCDIR, ICULIBDIR, and LIBICU) may be overridden via the environment
 # prior to running nmake in order to match the actual installed location on
@@ -802,7 +810,9 @@ LTLINKOPTS = $(LTLINKOPTS) "/LIBPATH:$(PSDKLIBPATH)"
 # If either debugging or symbols are enabled, enable PDBs.
 #
 !IF $(DEBUG)>1 || $(SYMBOLS)!=0
-LDFLAGS = /DEBUG
+LDFLAGS = /DEBUG $(LDOPTS)
+!ELSE
+LDFLAGS = $(LDOPTS)
 !ENDIF
 
 # Start with the Tcl related linker options.
@@ -817,12 +827,6 @@ LTLIBS = $(LIBTCL)
 !IF $(USE_ICU)!=0
 LTLIBPATHS = $(LTLIBPATHS) /LIBPATH:$(ICULIBDIR)
 LTLIBS = $(LTLIBS) $(LIBICU)
-!ENDIF
-
-# nawk compatible awk.
-#
-!IFNDEF NAWK
-NAWK = gawk.exe
 !ENDIF
 
 # You should not have to change anything below this line
@@ -1094,11 +1098,9 @@ TESTEXT = \
   $(TOP)\ext\misc\eval.c \
   $(TOP)\ext\misc\fileio.c \
   $(TOP)\ext\misc\fuzzer.c \
-  fts5.c \
   $(TOP)\ext\fts5\fts5_tcl.c \
   $(TOP)\ext\fts5\fts5_test_mi.c \
   $(TOP)\ext\misc\ieee754.c \
-  $(TOP)\ext\misc\json1.c \
   $(TOP)\ext\misc\nextchar.c \
   $(TOP)\ext\misc\percentile.c \
   $(TOP)\ext\misc\regexp.c \
@@ -1254,25 +1256,25 @@ libsqlite3.lib:	$(LIBOBJ)
 	$(LTLIB) $(LTLIBOPTS) /OUT:$@ $(LIBOBJ) $(TLIBS)
 
 libtclsqlite3.lib:	tclsqlite.lo libsqlite3.lib
-	$(LTLIB) $(LTLIBOPTS) $(LTLIBPATHS) /OUT:$@ tclsqlite.lo libsqlite3.lib $(LIBTCL:tcl=tclstub) $(TLIBS)
+	$(LTLIB) $(LTLIBOPTS) $(LTLIBPATHS) /OUT:$@ tclsqlite.lo libsqlite3.lib $(LIBTCLSTUB) $(TLIBS)
 
 sqlite3.exe:	$(TOP)\src\shell.c $(SHELL_CORE_DEP) $(LIBRESOBJS) sqlite3.h
 	$(LTLINK) $(SHELL_COMPILE_OPTS) $(SHELL_COMPILE_OPTS) $(READLINE_FLAGS) $(TOP)\src\shell.c \
-		/link /pdb:sqlite3sh.pdb $(LTLINKOPTS) $(SHELL_LINK_OPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LIBREADLINE) $(LTLIBS) $(TLIBS)
+		/link /pdb:sqlite3sh.pdb $(LDFLAGS) $(LTLINKOPTS) $(SHELL_LINK_OPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LIBREADLINE) $(LTLIBS) $(TLIBS)
 
 sqldiff.exe:	$(TOP)\tool\sqldiff.c sqlite3.c sqlite3.h
-	$(LTLINK) $(NO_WARN) $(TOP)\tool\sqldiff.c sqlite3.c
+	$(LTLINK) $(NO_WARN) $(TOP)\tool\sqldiff.c sqlite3.c /link $(LDFLAGS) $(LTLINKOPTS)
 
 fuzzershell.exe:	$(TOP)\tool\fuzzershell.c sqlite3.c sqlite3.h
 	$(LTLINK) $(NO_WARN) $(FUZZERSHELL_COMPILE_OPTS) \
-	  $(TOP)\tool\fuzzershell.c sqlite3.c
+	  $(TOP)\tool\fuzzershell.c sqlite3.c /link $(LDFLAGS) $(LTLINKOPTS)
 
 fuzzcheck.exe:	$(TOP)\test\fuzzcheck.c sqlite3.c sqlite3.h
-	$(LTLINK) $(NO_WARN) $(FUZZCHECK_COMPILE_OPTS) $(TOP)\test\fuzzcheck.c sqlite3.c
+	$(LTLINK) $(NO_WARN) $(FUZZCHECK_COMPILE_OPTS) $(TOP)\test\fuzzcheck.c sqlite3.c /link $(LDFLAGS) $(LTLINKOPTS)
 
 mptester.exe:	$(TOP)\mptest\mptest.c $(SHELL_CORE_DEP) $(LIBRESOBJS) sqlite3.h
 	$(LTLINK) $(NO_WARN) $(SHELL_COMPILE_OPTS) $(TOP)\mptest\mptest.c \
-		/link $(LTLINKOPTS) $(LTLIBPATHS) $(SHELL_LINK_OPTS) $(LIBRESOBJS) $(LIBREADLINE) $(LTLIBS) $(TLIBS)
+		/link $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) $(SHELL_LINK_OPTS) $(LIBRESOBJS) $(LIBREADLINE) $(LTLIBS) $(TLIBS)
 
 MPTEST1 = mptester mptest.db $(TOP)\mptest\crash01.test --repeat 20
 MPTEST2 = mptester mptest.db $(TOP)\mptest\multiwrite01.test --repeat 20
@@ -1338,7 +1340,7 @@ lempar.c:	$(TOP)\src\lempar.c
 
 lemon.exe:	$(TOP)\tool\lemon.c lempar.c
 	$(BCC) $(NO_WARN) -Daccess=_access \
-		-Fe$@ $(TOP)\tool\lemon.c /link $(NLTLINKOPTS) $(NLTLIBPATHS)
+		-Fe$@ $(TOP)\tool\lemon.c /link $(LDFLAGS) $(NLTLINKOPTS) $(NLTLIBPATHS)
 
 # Rules to build individual *.lo files from generated *.c files. This
 # applies to:
@@ -1359,7 +1361,7 @@ $(LIBRESOBJS):	$(TOP)\src\sqlite3.rc $(HDR)
 	echo #ifndef SQLITE_RESOURCE_VERSION > sqlite3rc.h
 	for /F %%V in ('type "$(TOP)\VERSION"') do ( \
 		echo #define SQLITE_RESOURCE_VERSION %%V \
-			| $(NAWK) "/.*/ { gsub(/[.]/,\",\");print }" >> sqlite3rc.h \
+			| $(TCLSH_CMD) $(TOP)\tool\replace.tcl exact . ^, >> sqlite3rc.h \
 	)
 	echo #endif >> sqlite3rc.h
 	$(LTRCOMPILE) -fo $(LIBRESOBJS) $(TOP)\src\sqlite3.rc
@@ -1596,26 +1598,26 @@ tclsqlite-shell.lo:	$(TOP)\src\tclsqlite.c $(HDR)
 	$(LTCOMPILE) $(NO_WARN) -DTCLSH=1 -DBUILD_sqlite -I$(TCLINCDIR) -c $(TOP)\src\tclsqlite.c
 
 tclsqlite3.exe:	tclsqlite-shell.lo $(SQLITE3C) $(LIBRESOBJS)
-	$(LTLINK) $(SQLITE3C) /link $(LTLINKOPTS) $(LTLIBPATHS) /OUT:$@ tclsqlite-shell.lo $(LIBRESOBJS) $(LTLIBS) $(TLIBS)
+	$(LTLINK) $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) /OUT:$@ tclsqlite-shell.lo $(LIBRESOBJS) $(LTLIBS) $(TLIBS)
 
 # Rules to build opcodes.c and opcodes.h
 #
-opcodes.c:	opcodes.h $(TOP)\mkopcodec.awk
-	$(NAWK) -f $(TOP)\mkopcodec.awk opcodes.h > opcodes.c
+opcodes.c:	opcodes.h $(TOP)\tool\mkopcodec.tcl
+	$(TCLSH_CMD) $(TOP)\tool\mkopcodec.tcl opcodes.h > opcodes.c
 
-opcodes.h:	parse.h $(TOP)\src\vdbe.c $(TOP)\mkopcodeh.awk
-	type parse.h $(TOP)\src\vdbe.c | $(NAWK) -f $(TOP)\mkopcodeh.awk > opcodes.h
+opcodes.h:	parse.h $(TOP)\src\vdbe.c $(TOP)\tool\mkopcodeh.tcl
+	type parse.h $(TOP)\src\vdbe.c | $(TCLSH_CMD) $(TOP)\tool\mkopcodeh.tcl > opcodes.h
 
 # Rules to build parse.c and parse.h - the outputs of lemon.
 #
 parse.h:	parse.c
 
-parse.c:	$(TOP)\src\parse.y lemon.exe $(TOP)\addopcodes.awk
+parse.c:	$(TOP)\src\parse.y lemon.exe $(TOP)\tool\addopcodes.tcl
 	del /Q parse.y parse.h parse.h.temp 2>NUL
 	copy $(TOP)\src\parse.y .
 	.\lemon.exe $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS) $(OPTS) parse.y
 	move parse.h parse.h.temp
-	$(NAWK) -f $(TOP)\addopcodes.awk parse.h.temp > parse.h
+	$(TCLSH_CMD) $(TOP)\tool\addopcodes.tcl parse.h.temp > parse.h
 
 sqlite3.h:	$(TOP)\src\sqlite.h.in $(TOP)\manifest.uuid $(TOP)\VERSION
 	$(TCLSH_CMD) $(TOP)\tool\mksqlite3h.tcl $(TOP:\=/) > sqlite3.h
@@ -1625,7 +1627,7 @@ sqlite3ext.h: .target_source
 
 mkkeywordhash.exe:	$(TOP)\tool\mkkeywordhash.c
 	$(BCC) $(NO_WARN) -Fe$@ $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS) $(OPTS) \
-		$(TOP)\tool\mkkeywordhash.c /link $(NLTLINKOPTS) $(NLTLIBPATHS)
+		$(TOP)\tool\mkkeywordhash.c /link $(LDFLAGS) $(NLTLINKOPTS) $(NLTLIBPATHS)
 
 keywordhash.h:	$(TOP)\tool\mkkeywordhash.c mkkeywordhash.exe
 	.\mkkeywordhash.exe > keywordhash.h
@@ -1762,21 +1764,26 @@ testfixture.exe:	$(TESTFIXTURE_SRC) $(LIBRESOBJS) $(HDR)
 	$(LTLINK) -DSQLITE_NO_SYNC=1 $(TESTFIXTURE_FLAGS) \
 		-DBUILD_sqlite -I$(TCLINCDIR) \
 		$(TESTFIXTURE_SRC) \
-		/link $(LTLINKOPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LTLIBS) $(TLIBS)
+		/link $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LTLIBS) $(TLIBS)
 
 extensiontest: testfixture.exe testloadext.dll
+	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\loadext.test $(TESTOPTS)
 
 fulltest:	$(TESTPROGS) fuzztest
+	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\all.test $(TESTOPTS)
 
 soaktest:	$(TESTPROGS)
+	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\all.test -soak=1 $(TESTOPTS)
 
 fulltestonly:	$(TESTPROGS) fuzztest
+	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\full.test
 
 queryplantest:	testfixture.exe sqlite3.exe
+	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\permutations.test queryplanner $(TESTOPTS)
 
 fuzztest:	fuzzcheck.exe
@@ -1788,15 +1795,18 @@ fastfuzztest:	fuzzcheck.exe
 # Minimal testing that runs in less than 3 minutes (on a fast machine)
 #
 quicktest:	testfixture.exe
+	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\extraquick.test $(TESTOPTS)
 
 # This is the common case.  Run many tests that do not take too long,
 # including fuzzcheck, sqlite3_analyzer, and sqldiff tests.
 #
 test:	$(TESTPROGS) fastfuzztest
+	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\veryquick.test $(TESTOPTS)
 
 smoketest:	$(TESTPROGS)
+	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\main.test $(TESTOPTS)
 
 sqlite3_analyzer.c: $(SQLITE3C) $(TOP)\src\tclsqlite.c $(TOP)\tool\spaceanal.tcl
@@ -1805,12 +1815,12 @@ sqlite3_analyzer.c: $(SQLITE3C) $(TOP)\src\tclsqlite.c $(TOP)\tool\spaceanal.tcl
 	copy $@ + $(SQLITE3C) + $(TOP)\src\tclsqlite.c $@
 	echo static const char *tclsh_main_loop(void){ >> $@
 	echo static const char *zMainloop = >> $@
-	$(NAWK) -f $(TOP)\tool\tostr.awk $(TOP)\tool\spaceanal.tcl >> $@
+	$(TCLSH_CMD) $(TOP)\tool\tostr.tcl $(TOP)\tool\spaceanal.tcl >> $@
 	echo ; return zMainloop; } >> $@
 
 sqlite3_analyzer.exe:	sqlite3_analyzer.c $(LIBRESOBJS)
 	$(LTLINK) $(NO_WARN) -DBUILD_sqlite -I$(TCLINCDIR) sqlite3_analyzer.c \
-		/link $(LTLINKOPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LTLIBS) $(TLIBS)
+		/link $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LTLIBS) $(TLIBS)
 
 testloadext.lo:	$(TOP)\src\test_loadext.c
 	$(LTCOMPILE) $(NO_WARN) -c $(TOP)\src\test_loadext.c
@@ -1820,19 +1830,19 @@ testloadext.dll: testloadext.lo
 
 showdb.exe:	$(TOP)\tool\showdb.c $(SQLITE3C)
 	$(LTLINK) $(NO_WARN) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -Fe$@ \
-		$(TOP)\tool\showdb.c $(SQLITE3C)
+		$(TOP)\tool\showdb.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
 showstat4.exe:	$(TOP)\tool\showstat4.c $(SQLITE3C)
 	$(LTLINK) $(NO_WARN) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -Fe$@ \
-		$(TOP)\tool\showstat4.c $(SQLITE3C)
+		$(TOP)\tool\showstat4.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
 showjournal.exe:	$(TOP)\tool\showjournal.c $(SQLITE3C)
 	$(LTLINK) $(NO_WARN) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -Fe$@ \
-		$(TOP)\tool\showjournal.c $(SQLITE3C)
+		$(TOP)\tool\showjournal.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
 showwal.exe:	$(TOP)\tool\showwal.c $(SQLITE3C)
 	$(LTLINK) $(NO_WARN) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -Fe$@ \
-		$(TOP)\tool\showwal.c $(SQLITE3C)
+		$(TOP)\tool\showwal.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
 changeset.exe:	$(TOP)\ext\session\changeset.c $(SQLITE3C)
 	$(LTLINK) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -Fe$@ \
@@ -1840,22 +1850,22 @@ changeset.exe:	$(TOP)\ext\session\changeset.c $(SQLITE3C)
 
 fts3view.exe:	$(TOP)\ext\fts3\tool\fts3view.c $(SQLITE3C)
 	$(LTLINK) $(NO_WARN) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -Fe$@ \
-		$(TOP)\ext\fts3\tool\fts3view.c $(SQLITE3C)
+		$(TOP)\ext\fts3\tool\fts3view.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
 rollback-test.exe:	$(TOP)\tool\rollback-test.c $(SQLITE3C)
 	$(LTLINK) $(NO_WARN) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -Fe$@ \
-		$(TOP)\tool\rollback-test.c $(SQLITE3C)
+		$(TOP)\tool\rollback-test.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
 LogEst.exe:	$(TOP)\tool\logest.c sqlite3.h
-	$(LTLINK) $(NO_WARN) -Fe$@ $(TOP)\tool\LogEst.c
+	$(LTLINK) $(NO_WARN) -Fe$@ $(TOP)\tool\LogEst.c /link $(LDFLAGS) $(LTLINKOPTS)
 
 wordcount.exe:	$(TOP)\test\wordcount.c $(SQLITE3C)
 	$(LTLINK) $(NO_WARN) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -Fe$@ \
-		$(TOP)\test\wordcount.c $(SQLITE3C)
+		$(TOP)\test\wordcount.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
 speedtest1.exe:	$(TOP)\test\speedtest1.c $(SQLITE3C)
 	$(LTLINK) $(NO_WARN) -DSQLITE_OMIT_LOAD_EXTENSION -Fe$@ \
-		$(TOP)\test\speedtest1.c $(SQLITE3C)
+		$(TOP)\test\speedtest1.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
 clean:
 	del /Q *.exp *.lo *.ilk *.lib *.obj *.ncb *.pdb *.sdf *.suo 2>NUL
@@ -1894,7 +1904,7 @@ dll: sqlite3.dll
 sqlite3.def: libsqlite3.lib
 	echo EXPORTS > sqlite3.def
 	dumpbin /all libsqlite3.lib \
-		| $(NAWK) "/ 1 _?sqlite3_/ { sub(/^.* _?/,\"\");print }" \
+		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl include "^\s+1 _?(sqlite3_.*)$$" \1 \
 		| sort >> sqlite3.def
 
 sqlite3.dll: $(LIBOBJ) $(LIBRESOBJS) $(CORE_LINK_DEP)

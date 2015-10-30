@@ -170,7 +170,7 @@ static int fts5HashResize(Fts5Hash *pHash){
       int iHash;
       Fts5HashEntry *p = apOld[i];
       apOld[i] = p->pHashNext;
-      iHash = fts5HashKey(nNew, (u8*)p->zKey, strlen(p->zKey));
+      iHash = fts5HashKey(nNew, (u8*)p->zKey, (int)strlen(p->zKey));
       p->pHashNext = apNew[iHash];
       apNew[iHash] = p;
     }
@@ -458,7 +458,7 @@ void sqlite3Fts5HashScanEntry(
 ){
   Fts5HashEntry *p;
   if( (p = pHash->pScan) ){
-    int nTerm = strlen(p->zKey);
+    int nTerm = (int)strlen(p->zKey);
     fts5HashAddPoslistSize(p);
     *pzTerm = p->zKey;
     *ppDoclist = (const u8*)&p->zKey[nTerm+1];

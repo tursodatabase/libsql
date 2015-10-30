@@ -447,7 +447,10 @@ static int fts5CreateMethod(
 */
 static void fts5SetUniqueFlag(sqlite3_index_info *pIdxInfo){
 #if SQLITE_VERSION_NUMBER>=3008012
-  if( sqlite3_libversion_number()>=3008012 ){
+#ifndef SQLITE_CORE
+  if( sqlite3_libversion_number()>=3008012 )
+#endif
+  {
     pIdxInfo->idxFlags |= SQLITE_INDEX_SCAN_UNIQUE;
   }
 #endif
@@ -1448,7 +1451,10 @@ static int fts5UpdateMethod(
     **
     ** Cases 3 and 4 may violate the rowid constraint.
     */
-    int eConflict = sqlite3_vtab_on_conflict(pConfig->db);
+    int eConflict = SQLITE_ABORT;
+    if( pConfig->eContent==FTS5_CONTENT_NORMAL ){
+      eConflict = sqlite3_vtab_on_conflict(pConfig->db);
+    }
 
     assert( eType0==SQLITE_INTEGER || eType0==SQLITE_NULL );
     assert( nArg!=1 || eType0==SQLITE_INTEGER );
@@ -2018,20 +2024,20 @@ static void fts5ApiCallback(
 ** Given cursor id iId, return a pointer to the corresponding Fts5Index 
 ** object. Or NULL If the cursor id does not exist.
 **
-** If successful, set *pnCol to the number of indexed columns in the
-** table before returning.
+** If successful, set *ppConfig to point to the associated config object 
+** before returning.
 */
 Fts5Index *sqlite3Fts5IndexFromCsrid(
-  Fts5Global *pGlobal, 
-  i64 iCsrId, 
-  int *pnCol
+  Fts5Global *pGlobal,            /* FTS5 global context for db handle */
+  i64 iCsrId,                     /* Id of cursor to find */
+  Fts5Config **ppConfig           /* OUT: Configuration object */
 ){
   Fts5Cursor *pCsr;
   Fts5Table *pTab;
 
   pCsr = fts5CursorFromCsrid(pGlobal, iCsrId);
   pTab = (Fts5Table*)pCsr->base.pVtab;
-  *pnCol = pTab->pConfig->nCol;
+  *ppConfig = pTab->pConfig;
 
   return pTab->pIndex;
 }

@@ -80,6 +80,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include "sqlite3.h"
+#define ISALPHA(X) isalpha((unsigned char)(X))
 
 /* Return the current wall-clock time */
 static sqlite3_int64 realTime(void){
@@ -392,8 +393,8 @@ int main(int argc, char **argv){
   /* Process the input file */
   while( fgets(zInput, sizeof(zInput), in) ){
     for(i=0; zInput[i]; i++){
-      if( !isalpha(zInput[i]) ) continue;
-      for(j=i+1; isalpha(zInput[j]); j++){}
+      if( !ISALPHA(zInput[i]) ) continue;
+      for(j=i+1; ISALPHA(zInput[j]); j++){}
 
       /* Found a new word at zInput[i] that is j-i bytes long. 
       ** Process it into the wordcount table.  */

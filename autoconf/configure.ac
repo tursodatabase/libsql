@@ -18,7 +18,6 @@ AC_SYS_LARGEFILE
 
 # Check for required programs.
 AC_PROG_CC
-AC_PROG_RANLIB
 AC_PROG_LIBTOOL
 AC_PROG_MKDIR_P
 
@@ -30,12 +29,27 @@ AC_CONFIG_FILES([Makefile sqlite3.pc])
 AC_SUBST(BUILD_CFLAGS)
 
 #-----------------------------------------------------------------------
+#   --enable-editline
 #   --enable-readline
 #
+AC_ARG_ENABLE(editline, [AS_HELP_STRING(
+  [--enable-editline], 
+  [use BSD libedit])], 
+  [], [enable_editline=yes])
 AC_ARG_ENABLE(readline, [AS_HELP_STRING(
   [--enable-readline], 
-  [use readline in shell tool (yes, no) [default=yes]])], 
-  [], [enable_readline=yes])
+  [use readline])], 
+  [], [enable_readline=no])
+if test x"$enable_editline" != xno ; then
+  sLIBS=$LIBS
+  LIBS=""
+  AC_SEARCH_LIBS([readline],[edit],[enable_readline=no],[enable_editline=no])
+  READLINE_LIBS=$LIBS
+  if test x"$LIBS" != "x"; then
+     AC_DEFINE([HAVE_EDITLINE],1,Define to use BSD editline)
+  fi
+  LIBS=$sLIBS
+fi
 if test x"$enable_readline" != xno ; then
   sLIBS=$LIBS
   LIBS=""

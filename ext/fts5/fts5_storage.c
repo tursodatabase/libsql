@@ -297,10 +297,10 @@ int sqlite3Fts5StorageOpen(
         int i;
         int iOff;
         sqlite3_snprintf(nDefn, zDefn, "id INTEGER PRIMARY KEY");
-        iOff = strlen(zDefn);
+        iOff = (int)strlen(zDefn);
         for(i=0; i<pConfig->nCol; i++){
           sqlite3_snprintf(nDefn-iOff, &zDefn[iOff], ", c%d", i);
-          iOff += strlen(&zDefn[iOff]);
+          iOff += (int)strlen(&zDefn[iOff]);
         }
         rc = sqlite3Fts5CreateTable(pConfig, "content", zDefn, 0, pzErr);
       }
@@ -513,13 +513,15 @@ int sqlite3Fts5StorageDelete(Fts5Storage *p, i64 iDel){
   }
 
   /* Delete the %_content record */
-  if( rc==SQLITE_OK ){
-    rc = fts5StorageGetStmt(p, FTS5_STMT_DELETE_CONTENT, &pDel, 0);
-  }
-  if( rc==SQLITE_OK ){
-    sqlite3_bind_int64(pDel, 1, iDel);
-    sqlite3_step(pDel);
-    rc = sqlite3_reset(pDel);
+  if( pConfig->eContent==FTS5_CONTENT_NORMAL ){
+    if( rc==SQLITE_OK ){
+      rc = fts5StorageGetStmt(p, FTS5_STMT_DELETE_CONTENT, &pDel, 0);
+    }
+    if( rc==SQLITE_OK ){
+      sqlite3_bind_int64(pDel, 1, iDel);
+      sqlite3_step(pDel);
+      rc = sqlite3_reset(pDel);
+    }
   }
 
   /* Write the averages record */
@@ -725,17 +727,7 @@ int sqlite3Fts5StorageContentInsert(
   }else{
     sqlite3_stmt *pInsert = 0;    /* Statement to write %_content table */
     int i;                        /* Counter variable */
-#if 0
-    if( eConflict==SQLITE_REPLACE ){
-      eStmt = FTS5_STMT_REPLACE_CONTENT;
-      rc = fts5StorageDeleteFromIndex(p, sqlite3_value_int64(apVal[1]));
-    }else{
-      eStmt = FTS5_STMT_INSERT_CONTENT;
-    }
-#endif
-    if( rc==SQLITE_OK ){
-      rc = fts5StorageGetStmt(p, FTS5_STMT_INSERT_CONTENT, &pInsert, 0);
-    }
+    rc = fts5StorageGetStmt(p, FTS5_STMT_INSERT_CONTENT, &pInsert, 0);
     for(i=1; rc==SQLITE_OK && i<=pConfig->nCol+1; i++){
       rc = sqlite3_bind_value(pInsert, i, apVal[i]);
     }
@@ -924,12 +916,12 @@ int sqlite3Fts5StorageIntegrity(Fts5Storage *p){
   /* Check that the %_docsize and %_content tables contain the expected
   ** number of rows.  */
   if( rc==SQLITE_OK && pConfig->eContent==FTS5_CONTENT_NORMAL ){
-    i64 nRow;
+    i64 nRow = 0;
     rc = fts5StorageCount(p, "content", &nRow);
     if( rc==SQLITE_OK && nRow!=p->nTotalRow ) rc = FTS5_CORRUPT;
   }
   if( rc==SQLITE_OK && pConfig->bColumnsize ){
-    i64 nRow;
+    i64 nRow = 0;
     rc = fts5StorageCount(p, "docsize", &nRow);
     if( rc==SQLITE_OK && nRow!=p->nTotalRow ) rc = FTS5_CORRUPT;
   }
