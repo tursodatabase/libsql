@@ -1,5 +1,5 @@
-C Add\smutex\soperations\sto\stest\scode\sin\stest3.c\sto\savoid\striggering\sassert()\sfailures\sin\scertain\sconfigurations.
-D 2015-10-30T20:54:25.598
+C If\sa\stable-constraint\sPRIMARY\sKEY\slists\sa\ssingle\scolumn\sin\ssingle-quotes\sand\nthat\scolumn\shas\stype\sINTEGER,\sthen\smake\sthat\scolumn\san\sinteger\sprimary\skey,\nfor\shistorical\scompatibility.\s\sFix\sfor\sticket\s[ac661962a2aeab3c331].
+D 2015-11-01T21:19:13.044
 F Makefile.in 4469ed8b02a9934fea9503d791165367d19db2f7
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 702d3e98f3afc6587a78481257f3c4c900efc3a4
@@ -285,7 +285,7 @@ F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
 F src/btree.c 77343aac89c50bb5e06cbca3ace8c057c14de57c
 F src/btree.h b512723e4f27d7ba16b4b985cdecdb82c0f6d0c0
 F src/btreeInt.h 8177c9ab90d772d6d2c6c517e05bed774b7c92c0
-F src/build.c d6162335d690396dfc5c4bd59e8b2b0c14ba6285
+F src/build.c ca574d33ffb1763cfd2979383f4d507095bfbe19
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
 F src/ctime.c 509ef9c64d1321f42448f111da86400b1799218a
@@ -784,7 +784,7 @@ F test/incrvacuum3.test 75256fb1377e7c39ef2de62bfc42bbff67be295a
 F test/incrvacuum_ioerr.test 6ae2f783424e47a0033304808fe27789cf93e635
 F test/index.test fe3c7a1aad82af92623747e9c3f3aa94ccd51238
 F test/index2.test f835d5e13ca163bd78c4459ca15fd2e4ed487407
-F test/index3.test fa3e49bbaa4f38091c9c742e36a1abe67c4ef1fc
+F test/index3.test 81bc47890b8abfb181bc35f8d10b56c069803386
 F test/index4.test ab92e736d5946840236cd61ac3191f91a7856bf6
 F test/index5.test 8621491915800ec274609e42e02a97d67e9b13e7
 F test/index6.test 7102ec371414c42dfb1d5ca37eb4519aa9edc23a
@@ -1397,7 +1397,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7565b046ff939e8310631397a4526fbd98b99aaf
-R 614298574df997c982bceb820bb362b3
-U dan
-Z ee268c45e17adbdf740dc7b91893f898
+P 9f19420b0a79dff65fc3a9d548f4b3fc4955f9f9
+R 84796f7face623f0835cebd2cbfc3bf7
+U drh
+Z 6a5992b91acc5a2e6d8856fb63b43984
