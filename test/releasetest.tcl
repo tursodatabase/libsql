@@ -19,6 +19,7 @@ optional) are:
     --dryrun                           (Print what would have happened)
     --info                             (Show diagnostic info)
     --with-tcl=DIR                     (Use TCL build at DIR)
+    --jobs     N                       (Use N processes - default 1)
 
 The default value for --srcdir is the parent of the directory holding
 this script.
@@ -443,7 +444,13 @@ proc slave_fileevent {fd T tm1} {
     set rc [catch { close $fd }]
 
     set errmsg {}
-    count_tests_and_errors [file join $dir test.log] rc errmsg
+    set logfile [file join $dir test.log]
+    if {[file exists $logfile]} {
+      count_tests_and_errors [file join $dir test.log] rc errmsg
+    } elseif {$rc==0} {
+      set rc 1
+      set errmsg "no test.log file..."
+    }
 
     if {!$::TRACE} {
       set tm2 [clock seconds]
