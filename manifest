@@ -1,5 +1,5 @@
-C When\screating\san\sautomatic-index\son\sa\ssub-query,\sadd\sa\sunique\sinteger\sto\sthe\send\sof\seach\sindex\skey\sto\sensure\sthe\sentire\skey\sis\sunique.\sFix\sfor\s[8a2adec1].
-D 2015-11-02T11:19:06.607
+C Version\s3.9.2
+D 2015-11-02T18:31:45.544
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f0088ff0d2ac949fce6de7c00f13a99ac5bdb663
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1390,8 +1390,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c33a275bf1a0ea1021e723006a11bf0c3c36d59a
-Q +bfea226d0d226a046a8bfb7a7a6288850d69bd26
+P c0c4b6b39648be9aa9b1e218e6d281ab17812536
 R 56b278dd241b099a55f2d39b092fbea8
+T +bgcolor * #d0c0ff
+T +sym-release *
+T +sym-version-3.9.2 *
 U drh
-Z 9cb148a12424268b6b80d5e6a8ffc0ff
+Z ea2f853532ec0d2d6055c0d00a95dc82
