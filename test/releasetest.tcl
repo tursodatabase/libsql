@@ -460,7 +460,7 @@ proc slave_fileevent {fd T tm1} {
       }
 
       set n [string length $title]
-      PUTS "finished: ${title}[string repeat . [expr {63-$n}]] $status $tm"
+      PUTS "finished: ${title}[string repeat . [expr {53-$n}]] $status $tm"
       if {$errmsg!=""} {PUTS "     $errmsg"}
       flush stdout
     }
