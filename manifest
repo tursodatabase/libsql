@@ -1,5 +1,5 @@
-C Version\s3.9.2
-D 2015-11-02T11:10:13.111
+C When\screating\san\sautomatic-index\son\sa\ssub-query,\sadd\sa\sunique\sinteger\sto\sthe\send\sof\seach\sindex\skey\sto\sensure\sthe\sentire\skey\sis\sunique.\sFix\sfor\s[8a2adec1].
+D 2015-11-02T11:19:06.607
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f0088ff0d2ac949fce6de7c00f13a99ac5bdb663
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -420,7 +420,7 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 18b0ed49830cf04fe2d68224b41838a73ac6cd24
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 2e14d17f592d176b6dc879c33fbdec4fbccaa2ba
-F src/where.c 4c4646675e794ac71e701289edefd7cd81bac844
+F src/where.c e3724b7b31d1e13869308ed4125305364f7d823a
 F src/whereInt.h 7892bb54cf9ca0ae5c7e6094491b94c9286dc647
 F src/wherecode.c cdfff200d065e7fb1af827b3274ed46b10a91d65
 F src/whereexpr.c e63244ca06c503e5f3c5b7f3c9aea0db826089ed
@@ -470,7 +470,7 @@ F test/autoindex1.test 14b63a9f1e405fe6d5bfc8c8d00249c2ebaf13ea
 F test/autoindex2.test af7e595c6864cc6ef5fc38d5db579a3e34940cb8
 F test/autoindex3.test a3be0d1a53a7d2edff208a5e442312957047e972
 F test/autoindex4.test 49d3cd791a9baa16fb461d7ea3de80d019a819cf
-F test/autoindex5.test 6f487290ce2a667c24517191651bfb8c7d86b6dc
+F test/autoindex5.test 96f084a5e6024ea07cace5888df3223f3ea86990
 F test/autovacuum.test 941892505d2c0f410a0cb5970dfa1c7c4e5f6e74
 F test/autovacuum_ioerr2.test 8a367b224183ad801e0e24dcb7d1501f45f244b4
 F test/avtrans.test 0252654f4295ddda3b2cce0e894812259e655a85
@@ -1390,10 +1390,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 14bd4fbf317130800db823610d440af80ae9b90b
-R c040845863d383687ef96079093bab36
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.9.2 *
+P c33a275bf1a0ea1021e723006a11bf0c3c36d59a
+Q +bfea226d0d226a046a8bfb7a7a6288850d69bd26
+R 56b278dd241b099a55f2d39b092fbea8
 U drh
-Z 913a85f331c8529f81a9abc5256fe997
+Z 9cb148a12424268b6b80d5e6a8ffc0ff
