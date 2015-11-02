@@ -752,6 +752,9 @@ static struct unix_syscall {
   { "getpagesize",  (sqlite3_syscall_ptr)unixGetpagesize, 0 },
 #define osGetpagesize ((int(*)(void))aSyscall[24].pCurrent)
 
+  { "readlink",     (sqlite3_syscall_ptr)readlink,        0 },
+#define osReadlink ((ssize_t(*)(const char*,char*,size_t))aSyscall[25].pCurrent)
+
 #endif
 
 }; /* End of the overrideable system calls */
@@ -7225,6 +7228,7 @@ static int unixFullPathname(
   int nOut,                     /* Size of output buffer in bytes */
   char *zOut                    /* Output buffer */
 ){
+  int nByte;
 
   /* It's odd to simulate an io-error here, but really this is just
   ** using the io-error infrastructure to test that SQLite handles this
@@ -7236,17 +7240,53 @@ static int unixFullPathname(
   assert( pVfs->mxPathname==MAX_PATHNAME );
   UNUSED_PARAMETER(pVfs);
 
-  zOut[nOut-1] = '\0';
-  if( zPath[0]=='/' ){
-    sqlite3_snprintf(nOut, zOut, "%s", zPath);
+  /* Attempt to resolve the path as if it were a symbolic link. If it is
+  ** a symbolic link, the resolved path is stored in buffer zOut[]. Or, if
+  ** the identified file is not a symbolic link or does not exist, then
+  ** zPath is copied directly into zOut. Either way, nByte is left set to
+  ** the size of the string copied into zOut[] in bytes.  */
+  nByte = osReadlink(zPath, zOut, nOut-1);
+  if( nByte<0 ){
+    if( errno!=EINVAL && errno!=ENOENT ){
+      return unixLogError(SQLITE_CANTOPEN_BKPT, "readlink", zPath);
+    }
+    zOut[nOut-1] = '\0';
+    sqlite3_snprintf(nOut-1, zOut, "%s", zPath);
+    nByte = sqlite3Strlen30(zOut);
   }else{
+    zOut[nByte] = '\0';
+  }
+
+  /* If buffer zOut[] now contains an absolute path there is nothing more
+  ** to do. If it contains a relative path, do the following:
+  **
+  **   * move the relative path string so that it is at the end of th
+  **     zOut[] buffer.
+  **   * Call getcwd() to read the path of the current working directory 
+  **     into the start of the zOut[] buffer.
+  **   * Append a '/' character to the cwd string and move the 
+  **     relative path back within the buffer so that it immediately 
+  **     follows the '/'.
+  **
+  ** This code is written so that if the combination of the CWD and relative
+  ** path are larger than the allocated size of zOut[] the CWD is silently
+  ** truncated to make it fit. This is Ok, as SQLite refuses to open any
+  ** file for which this function returns a full path larger than (nOut-8)
+  ** bytes in size.  */
+  if( zOut[0]!='/' ){
     int nCwd;
-    if( osGetcwd(zOut, nOut-1)==0 ){
+    int nRem = nOut-nByte-1;
+    memmove(&zOut[nRem], zOut, nByte+1);
+    zOut[nRem-1] = '\0';
+    if( osGetcwd(zOut, nRem-1)==0 ){
       return unixLogError(SQLITE_CANTOPEN_BKPT, "getcwd", zPath);
     }
-    nCwd = (int)strlen(zOut);
-    sqlite3_snprintf(nOut-nCwd, &zOut[nCwd], "/%s", zPath);
+    nCwd = sqlite3Strlen30(zOut);
+    assert( nCwd<=nRem-1 );
+    zOut[nCwd] = '/';
+    memmove(&zOut[nCwd+1], &zOut[nRem], nByte+1);
   }
+
   return SQLITE_OK;
 }
 
@@ -8793,7 +8833,7 @@ int sqlite3_os_init(void){
 
   /* Double-check that the aSyscall[] array has been constructed
   ** correctly.  See ticket [bb3a86e890c8e96ab] */
-  assert( ArraySize(aSyscall)==25 );
+  assert( ArraySize(aSyscall)==26 );
 
   /* Register all VFSes defined in the aVfs[] array */
   for(i=0; i<(sizeof(aVfs)/sizeof(sqlite3_vfs)); i++){

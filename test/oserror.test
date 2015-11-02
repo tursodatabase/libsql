@@ -93,7 +93,9 @@ do_test 1.4.1 {
   list [catch { sqlite3 dbh /root/test.db } msg] $msg
 } {1 {unable to open database file}}
 
-do_re_test 1.4.2 { lindex $::log 0 } {^os_unix.c:\d*: \(\d+\) open\(.*test.db\) - }
+do_re_test 1.4.2 { 
+  lindex $::log 0
+} {^os_unix.c:\d*: \(\d+\) (open|readlink)\(.*test.db\) - }
 
 #--------------------------------------------------------------------------
 # Tests oserror-1.* test failures in the unlink() system call.
