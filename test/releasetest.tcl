@@ -408,7 +408,7 @@ proc count_tests_and_errors {logfile rcVar errmsgVar} {
 proc run_slave_test {} {
   # Read global vars configuration from stdin.
   set V [gets stdin]
-  foreach {::TRACE} $V {}
+  foreach {::TRACE ::MSVC ::DRYRUN} $V {}
 
   # Read the test-suite configuration from stdin.
   set T [gets stdin]
@@ -521,7 +521,7 @@ proc run_all_test_suites {alltests} {
       set fd [open "|[info nameofexecutable] [info script] --slave" r+]
       fconfigure $fd -blocking 0
       fileevent $fd readable [list slave_fileevent $fd $T $tm1]
-      puts $fd [list $::TRACE]
+      puts $fd [list $::TRACE $::MSVC $::DRYRUN]
       puts $fd [list {*}$T]
       flush $fd
     }

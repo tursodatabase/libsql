@@ -1,5 +1,5 @@
-C Fix\sreleasetest.tcl\sso\sthat\sit\sdoes\snot\schoke\sif\sa\stest\sfails\sso\sbadly\sthat\sthere\sis\sno\slog\sfile.\sAdd\sthe\s--jobs\sswitch\sto\sthe\susage\smessage.
-D 2015-11-02T20:28:48.981
+C Fix\sthe\s--dryrun\soption\son\sthe\sreleasetest.tcl\sscript.
+D 2015-11-02T20:52:20.250
 F Makefile.in 4469ed8b02a9934fea9503d791165367d19db2f7
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 702d3e98f3afc6587a78481257f3c4c900efc3a4
@@ -948,7 +948,7 @@ F test/rbu.test 168573d353cd0fd10196b87b0caa322c144ef736
 F test/rdonly.test 64e2696c322e3538df0b1ed624e21f9a23ed9ff8
 F test/regexp1.test 497ea812f264d12b6198d6e50a76be4a1973a9d8
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
-F test/releasetest.tcl 298556d91ee49375cf87c3c899483f50d4722a07
+F test/releasetest.tcl 1012f41f1a5fefd6a62331332b97a9938e1c64cc
 F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
 F test/rollback.test 458fe73eb3ffdfdf9f6ba3e9b7350a6220414dea
 F test/rollback2.test fc14cf6d1a2b250d2735ef16124b971bce152f14
@@ -1397,7 +1397,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P aef177fef049f9ffb0d138b947326dc0186b1f4f
-R 8b650d0156c14e56fe1cf3974aba955d
+P 20e96f521fce12ffeb6be788e57bce88f287cff5
+R f117a4a5b3ef13cab54d6f985044aa83
 U dan
-Z d28db9d91dacdee58d844fe7129a20ae
+Z a5ae3477937f7e46f7556e9e0025f641
