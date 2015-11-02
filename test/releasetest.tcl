@@ -285,6 +285,9 @@ array set ::Platforms [strip_comments {
 #########################################################################
 #########################################################################
 
+# Configuration verification: Check that each entry in the list of configs 
+# specified for each platforms exists.
+#
 foreach {key value} [array get ::Platforms] {
   foreach {v t} $value {
     if {0==[info exists ::Configs($v)]} {
@@ -386,7 +389,141 @@ proc count_tests_and_errors {logfile rcVar errmsgVar} {
   }
 }
 
-proc run_test_suite {name testtarget config} {
+#--------------------------------------------------------------------------
+# This command is invoked as the [main] routine for scripts run with the
+# "--slave" option. 
+#
+# For each test (i.e. "configure && make test" execution), the master
+# process spawns a process with the --slave option. It writes two lines
+# to the slaves stdin. The first contains a single boolean value - the 
+# value of ::TRACE to use in the slave script. The second line contains a 
+# list in the same format as each element of the list passed to the
+# [run_all_test_suites] command in the master process.
+#
+# The slave then runs the "configure && make test" commands specified. It
+# exits successfully if the tests passes, or with a non-zero error code
+# otherwise.
+#
+proc run_slave_test {} {
+  # Read global vars configuration from stdin.
+  set V [gets stdin]
+  foreach {::TRACE} $V {}
+
+  # Read the test-suite configuration from stdin.
+  set T [gets stdin]
+  foreach {title dir configOpts testtarget cflags opts} $T {}
+
+  # Create and switch to the test directory.
+  trace_cmd file mkdir $dir
+  trace_cmd cd $dir
+  catch {file delete core}
+  catch {file delete test.log}
+
+  # Run the "./configure && make" commands.
+  set rc 0
+  set rc [catch [configureCommand $configOpts]]
+  if {!$rc} {
+    set rc [catch [makeCommand $testtarget $cflags $opts]]
+  }
+
+  # Exis successfully if the test passed, or with a non-zero error code
+  # otherwise.
+  exit $rc
+}
+
+# This command is invoked in the master process each time a slave 
+# file-descriptor is readable.
+#
+proc slave_fileevent {fd T tm1} {
+  global G
+  foreach {title dir configOpts testtarget cflags opts} $T {}
+
+  if {[eof $fd]} {
+    fconfigure $fd -blocking 1
+    set rc [catch { close $fd }]
+
+    set errmsg {}
+    count_tests_and_errors [file join $dir test.log] rc errmsg
+
+    if {!$::TRACE} {
+      set tm2 [clock seconds]
+      set hours [expr {($tm2-$tm1)/3600}]
+      set minutes [expr {(($tm2-$tm1)/60)%60}]
+      set seconds [expr {($tm2-$tm1)%60}]
+      set tm [format (%02d:%02d:%02d) $hours $minutes $seconds]
+
+      if {$rc} {
+        set status FAIL
+        incr ::NERR
+      } else {
+        set status Ok
+      }
+
+      set n [string length $title]
+      PUTS "finished: ${title}[string repeat . [expr {63-$n}]] $status $tm"
+      if {$errmsg!=""} {PUTS "     $errmsg"}
+      flush stdout
+    }
+
+    incr G(nJob) -1
+  } else {
+    set line [gets $fd]
+    if {[string trim $line] != ""} {
+      puts "Trace   : $title - \"$line\""
+    }
+  }
+}
+
+#--------------------------------------------------------------------------
+# The only argument passed to this function is a list of test-suites to
+# run. Each "test-suite" is itself a list consisting of the following
+# elements:
+#
+#   * Test title (for display).
+#   * The name of the directory to run the test in.
+#   * The argument for [configureCommand]
+#   * The first argument for [makeCommand]
+#   * The second argument for [makeCommand]
+#   * The third argument for [makeCommand]
+#   
+proc run_all_test_suites {alltests} {
+  global G
+  set tests $alltests
+
+  set G(nJob) 0
+
+  while {[llength $tests]>0 || $G(nJob)>0} {
+    if {$G(nJob)>=$::JOBS || [llength $tests]==0} {
+      vwait G(nJob)
+    }
+
+    if {[llength $tests]>0} {
+      set T [lindex $tests 0]
+      set tests [lrange $tests 1 end]
+      foreach {title dir configOpts testtarget cflags opts} $T {}
+      if {!$::TRACE} {
+        set n [string length $title]
+        PUTS "starting: ${title}"
+        flush stdout
+      }
+
+      # Run the job.
+      #
+      set tm1 [clock seconds]
+      incr G(nJob)
+      set fd [open "|[info nameofexecutable] [info script] --slave" r+]
+      fconfigure $fd -blocking 0
+      fileevent $fd readable [list slave_fileevent $fd $T $tm1]
+      puts $fd [list $::TRACE]
+      puts $fd [list {*}$T]
+      flush $fd
+    }
+  }
+}
+
+proc add_test_suite {listvar name testtarget config} {
+  upvar $listvar alltests
+
   # Tcl variable $opts is used to build up the value used to set the
   # OPTS Makefile variable. Variable $cflags holds the value for
   # CFLAGS. The makefile will pass OPTS to both gcc and lemon, but
@@ -431,40 +568,7 @@ proc run_test_suite {name testtarget config} {
     append opts " -DSQLITE_OS_UNIX=1"
   }
 
-  if {!$::TRACE} {
-    set n [string length $title]
-    PUTS -nonewline "${title}[string repeat . [expr {63-$n}]]"
-    flush stdout
-  }
-
-  set rc 0
-  set tm1 [clock seconds]
-  set origdir [pwd]
-  trace_cmd file mkdir $dir
-  trace_cmd cd $dir
-  set errmsg {}
-  catch {file delete core}
-  set rc [catch [configureCommand $configOpts]]
-  if {!$rc} {
-    set rc [catch [makeCommand $testtarget $cflags $opts]]
-    count_tests_and_errors test.log rc errmsg
-  }
-  trace_cmd cd $origdir
-  set tm2 [clock seconds]
-
-  if {!$::TRACE} {
-    set hours [expr {($tm2-$tm1)/3600}]
-    set minutes [expr {(($tm2-$tm1)/60)%60}]
-    set seconds [expr {($tm2-$tm1)%60}]
-    set tm [format (%02d:%02d:%02d) $hours $minutes $seconds]
-    if {$rc} {
-      PUTS " FAIL $tm"
-      incr ::NERR
-    } else {
-      PUTS " Ok   $tm"
-    }
-    if {$errmsg!=""} {PUTS "     $errmsg"}
-  }
+  lappend alltests [list $title $dir $configOpts $testtarget $cflags $opts]
 }
 
 # The following procedure returns the "configure" command to be exectued for
@@ -507,9 +611,11 @@ proc trace_cmd {args} {
   if {$::TRACE} {
     PUTS $args
   }
+  set res ""
   if {!$::DRYRUN} {
-    uplevel 1 $args
+    set res [uplevel 1 $args]
   }
+  return $res
 }
 
 
@@ -526,6 +632,7 @@ proc process_options {argv} {
   set ::DRYRUN    0
   set ::EXEC      exec
   set ::TRACE     0
+  set ::JOBS      1
   set ::WITHTCL   {}
   set config {}
   set platform $::tcl_platform(os)-$::tcl_platform(machine)
@@ -534,6 +641,11 @@ proc process_options {argv} {
     set x [lindex $argv $i]
     if {[regexp {^--[a-z]} $x]} {set x [string range $x 1 end]}
     switch -glob -- $x {
+      -slave {
+        run_slave_test
+        exit
+      }
+
       -srcdir {
         incr i
         set ::SRCDIR [file normalize [lindex $argv $i]]
@@ -542,6 +654,11 @@ proc process_options {argv} {
       -platform {
         incr i
         set platform [lindex $argv $i]
+      }
+
+      -jobs {
+        incr i
+        set ::JOBS [lindex $argv $i]
       }
 
       -quick {
@@ -689,7 +806,7 @@ proc main {argv} {
     set config_options [concat $::Configs($zConfig) $::EXTRACONFIG]
 
     incr NTEST
-    run_test_suite $zConfig $target $config_options
+    add_test_suite all $zConfig $target $config_options
 
     # If the configuration included the SQLITE_DEBUG option, then remove
     # it and run veryquick.test. If it did not include the SQLITE_DEBUG option
@@ -703,15 +820,17 @@ proc main {argv} {
       if {$debug_idx < 0} {
         incr NTEST
         append config_options " -DSQLITE_DEBUG=1"
-        run_test_suite "${zConfig}_debug" $xtarget $config_options
+        add_test_suite all "${zConfig}_debug" $xtarget $config_options
       } else {
         incr NTEST
         regsub { *-DSQLITE_MEMDEBUG[^ ]* *} $config_options { } config_options
         regsub { *-DSQLITE_DEBUG[^ ]* *} $config_options { } config_options
-        run_test_suite "${zConfig}_ndebug" $xtarget $config_options
+        add_test_suite all "${zConfig}_ndebug" $xtarget $config_options
       }
     }
   }
+
+  run_all_test_suites $all
 
   set elapsetime [expr {[clock seconds]-$STARTTIME}]
   set hr [expr {$elapsetime/3600}]
