@@ -286,7 +286,7 @@ array set ::Platforms [strip_comments {
 #########################################################################
 #########################################################################
 
-# Configuration verification: Check that each entry in the list of configs 
+# Configuration verification: Check that each entry in the list of configs
 # specified for each platforms exists.
 #
 foreach {key value} [array get ::Platforms] {
@@ -392,12 +392,12 @@ proc count_tests_and_errors {logfile rcVar errmsgVar} {
 
 #--------------------------------------------------------------------------
 # This command is invoked as the [main] routine for scripts run with the
-# "--slave" option. 
+# "--slave" option.
 #
 # For each test (i.e. "configure && make test" execution), the master
 # process spawns a process with the --slave option. It writes two lines
-# to the slaves stdin. The first contains a single boolean value - the 
-# value of ::TRACE to use in the slave script. The second line contains a 
+# to the slaves stdin. The first contains a single boolean value - the
+# value of ::TRACE to use in the slave script. The second line contains a
 # list in the same format as each element of the list passed to the
 # [run_all_test_suites] command in the master process.
 #
@@ -412,7 +412,7 @@ proc run_slave_test {} {
 
   # Read the test-suite configuration from stdin.
   set T [gets stdin]
-  foreach {title dir configOpts testtarget cflags opts} $T {}
+  foreach {title dir configOpts testtarget makeOpts cflags opts} $T {}
 
   # Create and switch to the test directory.
   trace_cmd file mkdir $dir
@@ -430,7 +430,7 @@ proc run_slave_test {} {
       unset -nocomplain savedEnv(TCLSH_CMD)
     }
     set ::env(TCLSH_CMD) [file nativename [info nameofexecutable]]
-    set rc [catch [makeCommand $testtarget $cflags $opts]]
+    set rc [catch [makeCommand $testtarget $makeOpts $cflags $opts]]
     if {[info exists savedEnv(TCLSH_CMD)]} {
       set ::env(TCLSH_CMD) $savedEnv(TCLSH_CMD)
     } else {
@@ -443,12 +443,12 @@ proc run_slave_test {} {
   exit $rc
 }
 
-# This command is invoked in the master process each time a slave 
+# This command is invoked in the master process each time a slave
 # file-descriptor is readable.
 #
 proc slave_fileevent {fd T tm1} {
   global G
-  foreach {title dir configOpts testtarget cflags opts} $T {}
+  foreach {title dir configOpts testtarget makeOpts cflags opts} $T {}
 
   if {[eof $fd]} {
     fconfigure $fd -blocking 1
@@ -503,7 +503,7 @@ proc slave_fileevent {fd T tm1} {
 #   * The first argument for [makeCommand]
 #   * The second argument for [makeCommand]
 #   * The third argument for [makeCommand]
-#   
+#
 proc run_all_test_suites {alltests} {
   global G
   set tests $alltests
@@ -518,7 +518,7 @@ proc run_all_test_suites {alltests} {
     if {[llength $tests]>0} {
       set T [lindex $tests 0]
       set tests [lrange $tests 1 end]
-      foreach {title dir configOpts testtarget cflags opts} $T {}
+      foreach {title dir configOpts testtarget makeOpts cflags opts} $T {}
       if {!$::TRACE} {
         set n [string length $title]
         PUTS "starting: ${title}"
@@ -548,6 +548,7 @@ proc add_test_suite {listvar name testtarget config} {
   # CFLAGS. The makefile will pass OPTS to both gcc and lemon, but
   # CFLAGS is only passed to gcc.
   #
+  set makeOpts ""
   set cflags [expr {$::MSVC ? "-Zi" : "-g"}]
   set opts ""
   set title ${name}($testtarget)
@@ -560,34 +561,70 @@ proc add_test_suite {listvar name testtarget config} {
     } elseif {[regexp {^[A-Z]+=} $arg]} {
       lappend testtarget $arg
     } elseif {[regexp {^--(enable|disable)-} $arg]} {
+      if {$::MSVC} {
+        if {$arg eq "--disable-amalgamation"} {
+          lappend makeOpts USE_AMALGAMATION=0
+          continue
+        }
+        if {$arg eq "--disable-shared"} {
+          lappend makeOpts USE_CRT_DLL=0 DYNAMIC_SHELL=0
+          continue
+        }
+        if {$arg eq "--enable-fts5"} {
+          lappend opts -DSQLITE_ENABLE_FTS5
+          continue
+        }
+        if {$arg eq "--enable-json1"} {
+          lappend opts -DSQLITE_ENABLE_JSON1
+          continue
+        }
+      }
       lappend configOpts $arg
     } else {
+      if {$::MSVC} {
+        if {$arg eq "-g"} {
+          lappend cflags -Zi
+          continue
+        }
+        if {[regexp -- {^-O(\d+)$} $arg all level]} then {
+          lappend makeOpts OPTIMIZATIONS=$level
+          continue
+        }
+      }
       lappend cflags $arg
     }
   }
 
-  set cflags [join $cflags " "]
-  set opts   [join $opts " "]
-  append opts " -DSQLITE_NO_SYNC=1"
+  # Disable sync to make testing faster.
+  #
+  lappend opts -DSQLITE_NO_SYNC=1
 
   # Some configurations already set HAVE_USLEEP; in that case, skip it.
   #
-  if {![regexp { -DHAVE_USLEEP$} $opts]
-         && ![regexp { -DHAVE_USLEEP[ =]+} $opts]} {
-    append opts " -DHAVE_USLEEP=1"
+  if {[lsearch -regexp $opts {^-DHAVE_USLEEP(?:=|$)}]==-1} {
+    lappend opts -DHAVE_USLEEP=1
+  }
+
+  # Add the define for this platform.
+  #
+  if {$::tcl_platform(platform)=="windows"} {
+    lappend opts -DSQLITE_OS_WIN=1
+  } else {
+    lappend opts -DSQLITE_OS_UNIX=1
   }
 
   # Set the sub-directory to use.
   #
   set dir [string tolower [string map {- _ " " _} $name]]
 
-  if {$::tcl_platform(platform)=="windows"} {
-    append opts " -DSQLITE_OS_WIN=1"
-  } else {
-    append opts " -DSQLITE_OS_UNIX=1"
-  }
+  # Join option lists into strings, using space as delimiter.
+  #
+  set makeOpts [join $makeOpts " "]
+  set cflags   [join $cflags " "]
+  set opts     [join $opts " "]
 
-  lappend alltests [list $title $dir $configOpts $testtarget $cflags $opts]
+  lappend alltests [list \
+      $title $dir $configOpts $testtarget $makeOpts $cflags $opts]
 }
 
 # The following procedure returns the "configure" command to be exectued for
@@ -607,15 +644,19 @@ proc configureCommand {opts} {
 # The following procedure returns the "make" command to be executed for the
 # specified targets, compiler flags, and options.
 #
-proc makeCommand { targets cflags opts } {
+proc makeCommand { targets makeOpts cflags opts } {
   set result [list trace_cmd exec]
   if {$::MSVC} {
     set nmakeDir [file nativename $::SRCDIR]
     set nmakeFile [file join $nmakeDir Makefile.msc]
-    lappend result nmake /f $nmakeFile TOP=$nmakeDir clean
+    lappend result nmake /f $nmakeFile TOP=$nmakeDir
   } else {
-    lappend result make clean
+    lappend result make
   }
+  foreach makeOpt $makeOpts {
+    lappend result $makeOpt
+  }
+  lappend result clean
   foreach target $targets {
     lappend result $target
   }
@@ -733,11 +774,7 @@ proc process_options {argv} {
       }
 
       -g {
-        if {$::MSVC} {
-          lappend ::EXTRACONFIG -Zi
-        } else {
-          lappend ::EXTRACONFIG [lindex $argv $i]
-        }
+        lappend ::EXTRACONFIG [lindex $argv $i]
       }
 
       -with-tcl=* {
