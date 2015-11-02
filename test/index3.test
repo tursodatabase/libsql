@@ -62,6 +62,21 @@ do_execsql_test index3-2.2eqp {
   EXPLAIN QUERY PLAN
   SELECT a FROM t1 WHERE b='ab005xy' COLLATE nocase;
 } {/USING INDEX/}
+do_execsql_test index3-2.3 {
+  SELECT name FROM sqlite_master WHERE tbl_name='t1' ORDER BY name
+} {sqlite_autoindex_t1_1 sqlite_autoindex_t1_2 t1 t1c t1d}
+do_execsql_test index3-2.4 {
+  CREATE TABLE t2a(a integer, b, PRIMARY KEY(a));
+  CREATE TABLE t2b("a" integer, b, PRIMARY KEY("a"));
+  CREATE TABLE t2c([a] integer, b, PRIMARY KEY([a]));
+  CREATE TABLE t2d('a' integer, b, PRIMARY KEY('a'));
+}
+do_execsql_test index3-2.5 {
+  SELECT name FROM sqlite_master WHERE tbl_name LIKE 't2_' ORDER BY name
+} {t2a t2b t2c t2d}
+ 
+
+
 
 
 # This test corrupts the database file so it must be the last test

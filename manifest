@@ -1,5 +1,5 @@
-C Merge\sall\sthe\slatest\senhancements\sfrom\strunk.
-D 2015-10-30T16:50:00.513
+C Merge\sall\srecent\senhancements\sand\sfixes\sfrom\strunk.
+D 2015-11-02T18:57:26.691
 F Makefile.in 3229179cfbc7d1378aba248dcbdf5213fff6214a
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 2ed14817d36a6c26cb146e53b9c8a7318ba5bdd4
@@ -305,7 +305,7 @@ F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
 F src/btree.c 77343aac89c50bb5e06cbca3ace8c057c14de57c
 F src/btree.h b512723e4f27d7ba16b4b985cdecdb82c0f6d0c0
 F src/btreeInt.h 8177c9ab90d772d6d2c6c517e05bed774b7c92c0
-F src/build.c d6162335d690396dfc5c4bd59e8b2b0c14ba6285
+F src/build.c ca574d33ffb1763cfd2979383f4d507095bfbe19
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
 F src/ctime.c 509ef9c64d1321f42448f111da86400b1799218a
@@ -344,7 +344,7 @@ F src/os.c 8fd25588eeba74068d41102d26810e216999b6c8
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h abdb9a191a367793268fe553d25bab894e986a0e
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c fc93d55f96bb978f0b0168c6ea7d6fc60b0e172c
+F src/os_unix.c cf72e06e15839ebe7121e01d3eebf256c039b0ca
 F src/os_win.c 1716291e5ec2dbfc5a1fe0b32182030f1f7d8acf
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 9c1eec0d88133484b165fa0b5284a411c24b964c
@@ -372,7 +372,7 @@ F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
 F src/tclsqlite.c e2344bee0d192397f555a24ef3fab26f2ed93bcc
 F src/test1.c 9ac5cbfe3c859ab7518edc5109a2959d6bf7b059
 F src/test2.c 577961fe48961b2f2e5c8b56ee50c3f459d3359d
-F src/test3.c f7ae1d6a4aa07aac257de18a43800c1199b513fc
+F src/test3.c a8887dabbbee3059af338f20d290084a63ed1b0f
 F src/test4.c d168f83cc78d02e8d35567bb5630e40dcd85ac1e
 F src/test5.c 5a34feec76d9b3a86aab30fd4f6cc9c48cbab4c1
 F src/test6.c 41cacf3b0dd180823919bf9e1fbab287c9266723
@@ -804,7 +804,7 @@ F test/incrvacuum3.test 75256fb1377e7c39ef2de62bfc42bbff67be295a
 F test/incrvacuum_ioerr.test 6ae2f783424e47a0033304808fe27789cf93e635
 F test/index.test fe3c7a1aad82af92623747e9c3f3aa94ccd51238
 F test/index2.test f835d5e13ca163bd78c4459ca15fd2e4ed487407
-F test/index3.test fa3e49bbaa4f38091c9c742e36a1abe67c4ef1fc
+F test/index3.test 81bc47890b8abfb181bc35f8d10b56c069803386
 F test/index4.test ab92e736d5946840236cd61ac3191f91a7856bf6
 F test/index5.test 8621491915800ec274609e42e02a97d67e9b13e7
 F test/index6.test 7102ec371414c42dfb1d5ca37eb4519aa9edc23a
@@ -933,7 +933,7 @@ F test/orderby6.test 8b38138ab0972588240b3fca0985d2e400432859
 F test/orderby7.test 3d1383d52ade5b9eb3a173b3147fdd296f0202da
 F test/orderby8.test 23ef1a5d72bd3adcc2f65561c654295d1b8047bd
 F test/orderby9.test 87fb9548debcc2cd141c5299002dd94672fa76a3
-F test/oserror.test 14fec2796c2b6fe431c7823750e8a18a761176d7
+F test/oserror.test 361346396ae18462c7393c1ac5c3f17237bd89b2
 F test/ovfl.test 4f7ca651cba5c059a12d8c67dddd49bec5747799
 F test/pager1.test 1acbdb14c5952a72dd43129cabdbf69aaa3ed1fa
 F test/pager2.test 67b8f40ae98112bcdba1f2b2d03ea83266418c71
@@ -1067,8 +1067,9 @@ F test/subselect.test d24fd8757daf97dafd2e889c73ea4c4272dcf4e4
 F test/substr.test 18f57c4ca8a598805c4d64e304c418734d843c1a
 F test/subtype1.test 7fe09496352f97053af1437150751be2d0a0cae8
 F test/superlock.test 1cde669f68d2dd37d6c9bd35eee1d95491ae3fc2
+F test/symlink.test 2513f7c030df0f435c6415687ba8b739f3d312df
 F test/sync.test a34cd43e98b7fb84eabbf38f7ed8f7349b3f3d85
-F test/syscall.test d2fdaad713f103ac611fe7ef9b724c7b69f8149c
+F test/syscall.test fba9ebdc6905d05bba6a835e691f20ed9ea2cc88
 F test/sysfault.test fa776e60bf46bdd3ae69f0b73e46ee3977a58ae6
 F test/tabfunc01.test 03c4ad422c6ab596cff6dcaf86dd061a9f039525
 F test/table.test b708f3e5fa2542fa51dfab21fc07b36ea445cb2f
@@ -1418,7 +1419,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2bbb9595ccc4fdd854bf16a1efcddbc42a7ff14e 7565b046ff939e8310631397a4526fbd98b99aaf
-R 01665c5c372c0e12761e9c423a71cfd1
+P 395a153ff7b3c7a72f3d02b6fe76d72383f4e480 6d5ce3ede4c7038c19a77268a5a7b9d5650933c2
+R 108cce56953c38f03dac9fc0349473c4
 U drh
-Z b4b0651f582925800ad2e9fdf5ebff65
+Z a9e0c02c1ba22a50e60adc1f82d63108
