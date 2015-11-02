@@ -424,7 +424,18 @@ proc run_slave_test {} {
   set rc 0
   set rc [catch [configureCommand $configOpts]]
   if {!$rc} {
+    if {[info exists ::env(TCLSH_CMD)]} {
+      set savedEnv(TCLSH_CMD) $::env(TCLSH_CMD)
+    } else {
+      unset -nocomplain savedEnv(TCLSH_CMD)
+    }
+    set ::env(TCLSH_CMD) [file nativename [info nameofexecutable]]
     set rc [catch [makeCommand $testtarget $cflags $opts]]
+    if {[info exists savedEnv(TCLSH_CMD)]} {
+      set ::env(TCLSH_CMD) $savedEnv(TCLSH_CMD)
+    } else {
+      unset -nocomplain ::env(TCLSH_CMD)
+    }
   }
 
   # Exis successfully if the test passed, or with a non-zero error code
@@ -518,7 +529,8 @@ proc run_all_test_suites {alltests} {
       #
       set tm1 [clock seconds]
       incr G(nJob)
-      set fd [open "|[info nameofexecutable] [info script] --slave" r+]
+      set script [file normalize [info script]]
+      set fd [open "|[info nameofexecutable] $script --slave" r+]
       fconfigure $fd -blocking 0
       fileevent $fd readable [list slave_fileevent $fd $T $tm1]
       puts $fd [list $::TRACE $::MSVC $::DRYRUN]
