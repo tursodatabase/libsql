@@ -33,6 +33,12 @@ Every test begins with a fresh run of the configure script at the top
 of the SQLite source tree.
 }
 
+# Return a timestamp of the form HH:MM:SS
+#
+proc now {} {
+  return [clock format [clock seconds] -format %H:%M:%S]
+}
+
 # Omit comments (text between # and \n) in a long multi-line string.
 #
 proc strip_comments {in} {
@@ -458,7 +464,7 @@ proc slave_fileevent {fd T tm1} {
     set logfile [file join $dir test.log]
     if {[file exists $logfile]} {
       count_tests_and_errors [file join $dir test.log] rc errmsg
-    } elseif {$rc==0} {
+    } elseif {$rc==0 && !$::DRYRUN} {
       set rc 1
       set errmsg "no test.log file..."
     }
@@ -521,7 +527,7 @@ proc run_all_test_suites {alltests} {
       foreach {title dir configOpts testtarget makeOpts cflags opts} $T {}
       if {!$::TRACE} {
         set n [string length $title]
-        PUTS "starting: ${title}"
+        PUTS "starting: ${title} at [now]"
         flush stdout
       }
 
@@ -828,6 +834,7 @@ proc process_options {argv} {
      1 {PUTS -nonewline " --quick"}
      2 {PUTS -nonewline " --veryquick"}
   }
+  if {$::JOBS>1} {PUTS -nonewline " --jobs $::JOBS"}
   PUTS ""
 }
 
