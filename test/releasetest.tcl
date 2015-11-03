@@ -648,7 +648,7 @@ proc makeCommand { targets makeOpts cflags opts } {
   set result [list trace_cmd exec]
   if {$::MSVC} {
     set nmakeDir [file nativename $::SRCDIR]
-    set nmakeFile [file join $nmakeDir Makefile.msc]
+    set nmakeFile [file nativename [file join $nmakeDir Makefile.msc]]
     lappend result nmake /f $nmakeFile TOP=$nmakeDir
   } else {
     lappend result make
