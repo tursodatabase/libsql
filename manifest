@@ -1,6 +1,6 @@
-C In\s'e_uri.test',\smake\ssure\sall\screated\stest\sdatabase\sfiles\sget\sdeleted.
-D 2015-11-03T19:13:57.588
-F Makefile.in 4469ed8b02a9934fea9503d791165367d19db2f7
+C Increase\sthe\sfuzzcheck\stimeout\swhen\srunning\svalgrind.
+D 2015-11-03T23:39:47.015
+F Makefile.in 3a705bb4bd12e194212ddbdbf068310d17153cdb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 702d3e98f3afc6587a78481257f3c4c900efc3a4
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
@@ -263,7 +263,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 47b879ad92fe896895dcfc1bbec5c119ee2aa690
+F main.mk ac9746f24334056c85775dbe6b7279b84a6941d7
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -1398,7 +1398,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d969792f34c484bd055c933b1c2c5a99eb88b61b
-R bc8a3308fa5f3a98dc8f44513a86745d
-U mistachkin
-Z 1ea9d597c8201ae93c5c79757fbc7595
+P 40c4f4a65ef3ebda96e0de8bd791ce5ccb8d3ef5
+R dd632703962c77fc9d32d441840c19bf
+U drh
+Z 79cbe3a5a3a0d948dfe73ee60b9c239b
