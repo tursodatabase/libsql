@@ -20,6 +20,7 @@ optional) are:
     --info                             (Show diagnostic info)
     --with-tcl=DIR                     (Use TCL build at DIR)
     --jobs     N                       (Use N processes - default 1)
+    --progress                         (Show progress messages)
 
 The default value for --srcdir is the parent of the directory holding
 this script.
@@ -382,9 +383,8 @@ proc count_tests_and_errors {logfile rcVar errmsgVar} {
   }
   close $fd
   if {$::BUILDONLY} {
-    if {$rc==0} {
-      set errmsg "Build complete"
-    } else {
+    incr ::NTESTCASE
+    if {$rc!=0} {
       set errmsg "Build failed"
     }
   } elseif {!$seen} {
@@ -484,7 +484,11 @@ proc slave_fileevent {fd T tm1} {
       }
 
       set n [string length $title]
-      PUTS "finished: ${title}[string repeat . [expr {53-$n}]] $status $tm"
+      if {$::PROGRESS_MSGS} {
+        PUTS "finished: ${title}[string repeat . [expr {53-$n}]] $status $tm"
+      } else {
+        PUTS "${title}[string repeat . [expr {63-$n}]] $status $tm"
+      }
       if {$errmsg!=""} {PUTS "     $errmsg"}
       flush stdout
     }
@@ -525,7 +529,7 @@ proc run_all_test_suites {alltests} {
       set T [lindex $tests 0]
       set tests [lrange $tests 1 end]
       foreach {title dir configOpts testtarget makeOpts cflags opts} $T {}
-      if {!$::TRACE} {
+      if {$::PROGRESS_MSGS && !$::TRACE} {
         set n [string length $title]
         PUTS "starting: ${title} at [now]"
         flush stdout
@@ -696,13 +700,14 @@ proc trace_cmd {args} {
 #
 proc process_options {argv} {
   set ::SRCDIR    [file normalize [file dirname [file dirname $::argv0]]]
-  set ::QUICK     0
-  set ::MSVC      0
-  set ::BUILDONLY 0
-  set ::DRYRUN    0
-  set ::TRACE     0
-  set ::JOBS      1
-  set ::WITHTCL   {}
+  set ::QUICK          0
+  set ::MSVC           0
+  set ::BUILDONLY      0
+  set ::DRYRUN         0
+  set ::TRACE          0
+  set ::JOBS           1
+  set ::PROGRESS_MSGS  0
+  set ::WITHTCL        {}
   set config {}
   set platform $::tcl_platform(os)-$::tcl_platform(machine)
 
@@ -728,6 +733,10 @@ proc process_options {argv} {
       -jobs {
         incr i
         set ::JOBS [lindex $argv $i]
+      }
+
+      -progress {
+        set ::PROGRESS_MSGS 1
       }
 
       -quick {
@@ -827,6 +836,7 @@ proc process_options {argv} {
   PUTS "Running the following test configurations for $platform:"
   PUTS "    [string trim $::CONFIGLIST]"
   PUTS -nonewline "Flags:"
+  if {$::PROGRESS_MSGS} {PUTS -nonewline " --progress"}
   if {$::DRYRUN} {PUTS -nonewline " --dryrun"}
   if {$::BUILDONLY} {PUTS -nonewline " --buildonly"}
   if {$::MSVC} {PUTS -nonewline " --msvc"}
@@ -866,7 +876,9 @@ proc main {argv} {
       }
       if {$::BUILDONLY} {
         set target testfixture
-        if {$::MSVC} {append target .exe}
+        if {$::tcl_platform(platform)=="windows"} {
+          append target .exe
+        }
       }
     }
     set config_options [concat $::Configs($zConfig) $::EXTRACONFIG]
