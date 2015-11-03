@@ -74,7 +74,7 @@ pub trait ToSql {
 }
 
 /// A trait for types that can be created from a SQLite value.
-pub trait FromSql {
+pub trait FromSql: Sized {
     unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> SqliteResult<Self>;
 
     /// FromSql types can implement this method and use sqlite3_column_type to check that
