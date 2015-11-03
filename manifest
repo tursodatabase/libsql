@@ -1,5 +1,5 @@
-C In\sthe\sreleasetest.tcl\sscript,\sadd\sthe\s--progress\soption\sto\scause\sthe\sstart\nof\seach\ssubprocess\sto\sbe\sshown.\s\sOtherwise,\srevert\sto\sthe\sold-style\sdisplay.\nImprovements\sto\sthe\shandling\sof\sthe\s--buildonly\soption.
-D 2015-11-03T15:39:29.385
+C In\s'e_uri.test',\smake\ssure\sall\screated\stest\sdatabase\sfiles\sget\sdeleted.
+D 2015-11-03T19:13:57.588
 F Makefile.in 4469ed8b02a9934fea9503d791165367d19db2f7
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 702d3e98f3afc6587a78481257f3c4c900efc3a4
@@ -601,7 +601,7 @@ F test/e_select.test 52692ff3849541e828ad4661fe3773a9b8711763
 F test/e_select2.test aceb80ab927d46fba5ce7586ebabf23e2bb0604f
 F test/e_totalchanges.test b12ee5809d3e63aeb83238dd501a7bca7fd72c10
 F test/e_update.test f46c2554d915c9197548681e8d8c33a267e84528
-F test/e_uri.test 5ae33760fb2039c61aa2d90886f1664664173585
+F test/e_uri.test eed3eb41b22d051a1164110dacdc778899126e14
 F test/e_vacuum.test 5bfbdc21b65c0abf24398d0ba31dc88d93ca77a9
 F test/e_wal.test ae9a593207a77d711443ee69ffe081fda9243625
 F test/e_walauto.test 280714ddf14e1a47dcbc59d515cd0b026dfd5567
@@ -1398,7 +1398,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b75107778f67a4c4f33b1c003af87ca57e98ae4b
-R d01059a665fe222624fe97f190817272
-U drh
-Z 40892742cfa381a82150cc6e1d9e3183
+P d969792f34c484bd055c933b1c2c5a99eb88b61b
+R bc8a3308fa5f3a98dc8f44513a86745d
+U mistachkin
+Z 1ea9d597c8201ae93c5c79757fbc7595
