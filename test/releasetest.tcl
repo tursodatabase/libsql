@@ -578,6 +578,10 @@ proc add_test_suite {listvar name testtarget config} {
           lappend opts -DSQLITE_ENABLE_JSON1
           continue
         }
+        if {$arg eq "--enable-shared"} {
+          lappend makeOpts USE_CRT_DLL=1 DYNAMIC_SHELL=1
+          continue
+        }
       }
       lappend configOpts $arg
     } else {
@@ -690,7 +694,6 @@ proc process_options {argv} {
   set ::MSVC      0
   set ::BUILDONLY 0
   set ::DRYRUN    0
-  set ::EXEC      exec
   set ::TRACE     0
   set ::JOBS      1
   set ::WITHTCL   {}
