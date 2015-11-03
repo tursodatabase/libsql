@@ -1,3 +1,7 @@
+# Version 0.4.0 (2015-11-03)
+
+* Adds `Sized` bound to `FromSql` trait as required by RFC 1214.
+
 # Version 0.3.1 (2015-09-22)
 
 * Reset underlying SQLite statements as soon as possible after executing, as recommended by
