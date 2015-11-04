@@ -1,5 +1,5 @@
-C In\sreleasetest.tcl,\srun\slarger\stest\sfirst\sif\s--jobs\sis\sgreater\sthan\s1.\s\sRun\nsmaller\stests\scases\sfirst\sif\s--jobs\sis\s1.
-D 2015-11-04T16:34:58.015
+C Rename\sthe\ssqlite3PagerAcquire()\sfunction\sto\ssqlite3PagerGet().\s\sThe\sformer\nmacro\scalled\ssqlite3PagerGet()\shas\sbeen\sremoved.
+D 2015-11-04T20:22:37.219
 F Makefile.in 3a705bb4bd12e194212ddbdbf068310d17153cdb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 702d3e98f3afc6587a78481257f3c4c900efc3a4
@@ -279,18 +279,18 @@ F src/alter.c 9d649e46c780166e416fb11dbd23f8d49aab8267
 F src/analyze.c 4c308880cf53c558070cb8513bdff4ffb1a38a77
 F src/attach.c e944d0052b577703b9b83aac1638452ff42a8395
 F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
-F src/backup.c c3a9c4209439b806c44cf30daf466955727bf46c
+F src/backup.c 2869a76c03eb393ee795416e2387005553df72bc
 F src/bitvec.c d1f21d7d91690747881f03940584f4cc548c9d3d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c 77343aac89c50bb5e06cbca3ace8c057c14de57c
+F src/btree.c 692ca3e69ade4e86844899dd5f85b2220daf3d76
 F src/btree.h b512723e4f27d7ba16b4b985cdecdb82c0f6d0c0
-F src/btreeInt.h 8177c9ab90d772d6d2c6c517e05bed774b7c92c0
+F src/btreeInt.h 3ab435ed27adea54d040584b0bcc488ee7db1e38
 F src/build.c ca574d33ffb1763cfd2979383f4d507095bfbe19
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
 F src/ctime.c 509ef9c64d1321f42448f111da86400b1799218a
 F src/date.c fb1c99172017dcc8e237339132c91a21a0788584
-F src/dbstat.c e637e7a7ff40ef32132a418c6fdf1cfb63aa27c7
+F src/dbstat.c ffd63fc8ba7541476ced189b95e95d7f2bc63f78
 F src/delete.c c4c6fb9da78b946fcba2a6aac5b24bc5c15e752a
 F src/expr.c 0080c0f12806eca91e75a23a121a68918e9da357
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
@@ -327,8 +327,8 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c cf72e06e15839ebe7121e01d3eebf256c039b0ca
 F src/os_win.c 1716291e5ec2dbfc5a1fe0b32182030f1f7d8acf
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
-F src/pager.c 9c1eec0d88133484b165fa0b5284a411c24b964c
-F src/pager.h 1c4fa826c330040c5659a384446c7cc6e8e4200c
+F src/pager.c ed5cff11793b6a4146582aabb29ed8613a6cf89e
+F src/pager.h 7fc069c07f3120ee466ff3d48a9d376974ebffa7
 F src/parse.y 11078cd8e3af00f030505b6a86a06a4536cfdeaa
 F src/pcache.c 24be750c79272e0ca7b6e007bc94999700f3e5ef
 F src/pcache.h 9968603796240cdf83da7e7bef76edf90619cea9
@@ -351,7 +351,7 @@ F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
 F src/tclsqlite.c d9439b6a910985b7fff43ba6756bcef00de22649
 F src/test1.c 9ac5cbfe3c859ab7518edc5109a2959d6bf7b059
-F src/test2.c 577961fe48961b2f2e5c8b56ee50c3f459d3359d
+F src/test2.c 5586f43fcd9a1be0830793cf9d354082c261b25b
 F src/test3.c a8887dabbbee3059af338f20d290084a63ed1b0f
 F src/test4.c d168f83cc78d02e8d35567bb5630e40dcd85ac1e
 F src/test5.c 5a34feec76d9b3a86aab30fd4f6cc9c48cbab4c1
@@ -1398,7 +1398,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4f16e9686d827311d069ac5856771db23bd610ff
-R 98f8295aa06282e70a39acdf3a942e7d
+P 3fece5d02a8790701d8f0af18db4b4db33986369
+R ed171729fbc3a46f9021f6d576752c27
 U drh
-Z 5331364b3b6f9338e5229c347e8468cf
+Z bcdee87febad0b65031e24eb55987e22
