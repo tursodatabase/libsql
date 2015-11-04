@@ -231,6 +231,7 @@ array set ::Configs [strip_comments {
 array set ::Platforms [strip_comments {
   Linux-x86_64 {
     "Check-Symbols"           checksymbols
+    "Fast-One"                fuzztest
     "Debug-One"               "mptest test"
     "Have-Not"                test
     "Secure-Delete"           test
@@ -241,10 +242,9 @@ array set ::Platforms [strip_comments {
     "No-lookaside"            test
     "Devkit"                  test
     "Sanitize"                {QUICKTEST_OMIT=func4.test,nan.test test}
-    "Fast-One"                fuzztest
-    "Valgrind"                valgrindtest
-    "Default"                 "threadtest fulltest"
     "Device-One"              fulltest
+    "Default"                 "threadtest fulltest"
+    "Valgrind"                valgrindtest
   }
   Linux-i686 {
     "Devkit"                  test
@@ -265,12 +265,12 @@ array set ::Platforms [strip_comments {
     "OS-X"                    "threadtest fulltest"
   }
   "Windows NT-intel" {
-    "Default"                 "mptest fulltestonly"
     "Have-Not"                test
+    "Default"                 "mptest fulltestonly"
   }
   "Windows NT-amd64" {
-    "Default"                 "mptest fulltestonly"
     "Have-Not"                test
+    "Default"                 "mptest fulltestonly"
   }
 
   # The Failure-Detection platform runs various tests that deliberately
@@ -831,7 +831,15 @@ proc process_options {argv} {
     if {[llength $config]==1} {lappend config fulltest}
     set ::CONFIGLIST $config
   } else {
-    set ::CONFIGLIST $::Platforms($platform)
+    if {$::JOBS>1} {
+      set ::CONFIGLIST {}
+      foreach {target zConfig} [lreverse $::Platforms($platform)] {
+        append ::CONFIGLIST [format "    %-25s %s\n" \
+                               [list $zConfig] [list $target]]
+      }
+    } else {
+      set ::CONFIGLIST $::Platforms($platform)
+    }
   }
   PUTS "Running the following test configurations for $platform:"
   PUTS "    [string trim $::CONFIGLIST]"
