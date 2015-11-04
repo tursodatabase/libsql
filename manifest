@@ -1,5 +1,5 @@
-C Rename\sthe\ssqlite3PagerAcquire()\sfunction\sto\ssqlite3PagerGet().\s\sThe\sformer\nmacro\scalled\ssqlite3PagerGet()\shas\sbeen\sremoved.
-D 2015-11-04T20:22:37.219
+C Performance\simprovements\sin\sthe\sgetAndInitPage()\sroutine\sof\sbtree.c.
+D 2015-11-04T22:31:02.432
 F Makefile.in 3a705bb4bd12e194212ddbdbf068310d17153cdb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 702d3e98f3afc6587a78481257f3c4c900efc3a4
@@ -282,7 +282,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 2869a76c03eb393ee795416e2387005553df72bc
 F src/bitvec.c d1f21d7d91690747881f03940584f4cc548c9d3d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c 692ca3e69ade4e86844899dd5f85b2220daf3d76
+F src/btree.c 080c3cb5440261dac7e9a03c45a948553338e1de
 F src/btree.h b512723e4f27d7ba16b4b985cdecdb82c0f6d0c0
 F src/btreeInt.h 3ab435ed27adea54d040584b0bcc488ee7db1e38
 F src/build.c ca574d33ffb1763cfd2979383f4d507095bfbe19
@@ -1398,7 +1398,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3fece5d02a8790701d8f0af18db4b4db33986369
-R ed171729fbc3a46f9021f6d576752c27
+P 708253be34084b89987efe955c34557516171a3a
+R 95c8020c01e129a733cf3a0e93c349e0
 U drh
-Z bcdee87febad0b65031e24eb55987e22
+Z 87f3216156230480787028b4d8a81ee0
