@@ -1,5 +1,5 @@
-C Increase\sthe\sfuzzcheck\stimeout\swhen\srunning\svalgrind.
-D 2015-11-03T23:39:47.015
+C Exclude\scffault.test\sand\ssymlink.test\sfrom\sthe\s(incompatible)\sinmemory_journal\npermutation.
+D 2015-11-04T13:03:36.598
 F Makefile.in 3a705bb4bd12e194212ddbdbf068310d17153cdb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 702d3e98f3afc6587a78481257f3c4c900efc3a4
@@ -928,7 +928,7 @@ F test/parser1.test 222b5cbf3e2e659fec1bf7d723488c8b9c94f1d0
 F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
-F test/permutations.test ac3b00c299250cc087d4a527b5c75a0f8aef4e54
+F test/permutations.test 0be620cfc7309d72b0608b3f1cbadef1034417fa
 F test/pragma.test a44253f911e7d50127d4a08f927f47c861a4c772
 F test/pragma2.test b5e2ce4c892afceb308c6ae6163a9099b2a0d8d7
 F test/pragma3.test 6f849ccffeee7e496d2f2b5e74152306c0b8757c
@@ -1398,7 +1398,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 40c4f4a65ef3ebda96e0de8bd791ce5ccb8d3ef5
-R dd632703962c77fc9d32d441840c19bf
+P a5816877bdc7fae69ed83d1fc95c29bf390eb641
+R 9a7c6a9d73205d2500ddbad7f0038867
 U drh
-Z 79cbe3a5a3a0d948dfe73ee60b9c239b
+Z 02be6118e54bfa48669e3dd2b1b8b91c
