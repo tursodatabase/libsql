@@ -1,5 +1,5 @@
-C Performance\simprovements\sin\sthe\sgetAndInitPage()\sroutine\sof\sbtree.c.
-D 2015-11-04T22:31:02.432
+C Remove\sa\s#pragma\sused\sto\swork\saround\san\sissues\swith\sMSVC\s2012\sthat\shas\sbeen\novercome\sbut\ssubsequent\schanges.
+D 2015-11-05T11:47:48.838
 F Makefile.in 3a705bb4bd12e194212ddbdbf068310d17153cdb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 702d3e98f3afc6587a78481257f3c4c900efc3a4
@@ -282,7 +282,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 2869a76c03eb393ee795416e2387005553df72bc
 F src/bitvec.c d1f21d7d91690747881f03940584f4cc548c9d3d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c 080c3cb5440261dac7e9a03c45a948553338e1de
+F src/btree.c 233c1536927b12d820cb0a19c657c59837f9334f
 F src/btree.h b512723e4f27d7ba16b4b985cdecdb82c0f6d0c0
 F src/btreeInt.h 3ab435ed27adea54d040584b0bcc488ee7db1e38
 F src/build.c ca574d33ffb1763cfd2979383f4d507095bfbe19
@@ -1398,7 +1398,8 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 708253be34084b89987efe955c34557516171a3a
-R 95c8020c01e129a733cf3a0e93c349e0
+P 2aa50f6f2029e3c91a4cb91224df8ec1194f215e b9b22fae69000ca506656f9cf847e713c6304b75
+R 8f915e54b493516d25c62a2e6e65196c
+T +closed b9b22fae69000ca506656f9cf847e713c6304b75
 U drh
-Z 87f3216156230480787028b4d8a81ee0
+Z 3e3a650cde9c3d0b9f2c0083b06276a0
