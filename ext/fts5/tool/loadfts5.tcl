@@ -48,7 +48,7 @@ proc usage {} {
   puts stderr "  -crisismerge N (set the crisismerge parameter to N)"
   puts stderr "  -prefix PREFIX (comma separated prefix= argument)"
   puts stderr "  -trans N     (commit after N inserts - 0 == never)"
-  puts stderr "  -hashsize N  (set the fts5 hashsize parameteger to N)"
+  puts stderr "  -hashsize N  (set the fts5 hashsize parameter to N)"
   exit 1
 }
 
