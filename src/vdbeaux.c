@@ -3969,6 +3969,7 @@ int sqlite3VdbeRecordCompareWithSkip(
        || vdbeRecordCompareDebug(nKey1, pKey1, pPKey2, pPKey2->default_rc) 
        || pKeyInfo->db->mallocFailed
   );
+  pPKey2->eqSeen = 1;
   return pPKey2->default_rc;
 }
 int sqlite3VdbeRecordCompare(
@@ -4068,6 +4069,7 @@ static int vdbeRecordCompareInt(
     /* The first fields of the two keys are equal and there are no trailing
     ** fields. Return pPKey2->default_rc in this case. */
     res = pPKey2->default_rc;
+    pPKey2->eqSeen = 1;
   }
 
   assert( vdbeRecordCompareDebug(nKey1, pKey1, pPKey2, res) );
@@ -4114,6 +4116,7 @@ static int vdbeRecordCompareString(
           res = sqlite3VdbeRecordCompareWithSkip(nKey1, pKey1, pPKey2, 1);
         }else{
           res = pPKey2->default_rc;
+          pPKey2->eqSeen = 1;
         }
       }else if( res>0 ){
         res = pPKey2->r2;

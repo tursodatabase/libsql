@@ -1026,6 +1026,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     WhereTerm *pRangeEnd = 0;    /* Inequality constraint at range end */
     int startEq;                 /* True if range start uses ==, >= or <= */
     int endEq;                   /* True if range end uses ==, >= or <= */
+    int eqOnly;                  /* True if uses only == */
     int start_constraints;       /* Start of range is constrained */
     int nConstraint;             /* Number of constraint terms */
     Index *pIdx;                 /* The index we will be using */
@@ -1095,6 +1096,8 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       }
     }
     assert( pRangeEnd==0 || (pRangeEnd->wtFlags & TERM_VNULL)==0 );
+    eqOnly = nEq>0 && (pLoop->wsFlags & WHERE_COLUMN_RANGE)==0
+                   && (pWInfo->wctrlFlags&WHERE_ORDERBY_MIN)==0;
 
     /* If we are doing a reverse order scan on an ascending index, or
     ** a forward order scan on a descending index, interchange the 
@@ -1167,6 +1170,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     VdbeCoverageIf(v, op==OP_SeekGE);  testcase( op==OP_SeekGE );
     VdbeCoverageIf(v, op==OP_SeekLE);  testcase( op==OP_SeekLE );
     VdbeCoverageIf(v, op==OP_SeekLT);  testcase( op==OP_SeekLT );
+    if( eqOnly ) sqlite3VdbeChangeP5(v, OPFLAG_SEEKEQ);
 
     /* Load the value for the inequality constraint at the end of the
     ** range (if any).
@@ -1202,6 +1206,11 @@ Bitmask sqlite3WhereCodeOneLoopStart(
 
     /* Check if the index cursor is past the end of the range. */
     if( nConstraint ){
+      if( eqOnly ){
+        int bx = sqlite3VdbeCurrentAddr(v);
+        sqlite3VdbeAddOp2(v, OP_Goto, 0, bx+2);
+        pLevel->p2 = bx+1;
+      }
       op = aEndOp[bRev*2 + endEq];
       sqlite3VdbeAddOp4Int(v, op, iIdxCur, addrNxt, regBase, nConstraint);
       testcase( op==OP_IdxGT );  VdbeCoverageIf(v, op==OP_IdxGT );

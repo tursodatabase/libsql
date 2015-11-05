@@ -1,5 +1,5 @@
-C Add\sthe\s'hashsize'\sconfiguration\soption\sto\sfts5,\sfor\sconfiguring\sthe\samount\sof\smemory\sallocated\sto\sthe\sin-memory\shash\stable\swhile\swriting.
-D 2015-11-05T18:09:16.776
+C The\stop\sof\san\sindex\sequality\sloop\snormally\sstarts\swith\sOP_SeekGE\sand\sOP_IdxGT.\nThis\scheck-in\sadds\sa\sflag\sto\sOP_SeekGE\ssuch\sthat\sit\sfails\simmediately\sif\nthe\skey\sis\snot\sequal,\sthen\sjumps\sover\sthe\sOP_IdxGT,\ssaving\sa\scall\sto\sthe\skey\ncomparison\sfunctions.\s\sConsider\sthis\scheck-in\sa\sproof-of-concept.\s\sIt\sneeds\s\nimprovement\sbefore\sgoing\son\strunk.\s\sSome\stests\sfail,\sbut\sonly\sbecause\sthey\nnew\suse\sfewer\skey\scomparisons\sthan\sexpected\s(which\sis\sa\sgood\sthing!).
+D 2015-11-05T20:25:09.480
 F Makefile.in 3a705bb4bd12e194212ddbdbf068310d17153cdb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 702d3e98f3afc6587a78481257f3c4c900efc3a4
@@ -263,7 +263,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk ac9746f24334056c85775dbe6b7279b84a6941d7
+F main.mk 9bc37f24f513c077ca9f15879f9358abc1875483
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -345,7 +345,7 @@ F src/shell.c d25df04168d6ba5a4fa05bdbf859df667f9eb621
 F src/sqlite.h.in 3cfc86c55e57c63d86b9e1e92869e2bfb162ca8e
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 4b66e3e3435da4b4c8c83696d0349f0c503b3924
-F src/sqliteInt.h b1e72ffe282c91ae30a2bf403319126dbaebd556
+F src/sqliteInt.h 8769e43c68421bdd6b4b830290965c9303056c4f
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
@@ -403,11 +403,11 @@ F src/update.c 40e51cd0883cb5bfd6abb7d8a7cd8aa47fab2945
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c fc612367108b74573c5fd13a85d0a23027f438bd
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c dfbaae2570172c523bce14299021d352b8508f7f
+F src/vdbe.c 1f9ef1ef7e48e1d5268036a18b7c9b5cded49879
 F src/vdbe.h efb7a8c1459e31f3ea4377824c6a7e4cb5068637
 F src/vdbeInt.h 33403622c6a8feaaac5f0f3f17f5d1bf6df42286
 F src/vdbeapi.c 020681b943e77766b32ae1cddf86d7831b7374ca
-F src/vdbeaux.c 717bc2ae9cc0b58ef398fff44bd9164bfd96772a
+F src/vdbeaux.c 229c12a66944ce2cb86c3d6c935601b13da820c8
 F src/vdbeblob.c 565fabd302f5fca3bdf3d56cac330483616a39b6
 F src/vdbemem.c fdd1578e47bea61390d472de53c565781d81e045
 F src/vdbesort.c 8b23930a1289526f6d2a3a9f2e965bcc963e4a68
@@ -419,7 +419,7 @@ F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 2e14d17f592d176b6dc879c33fbdec4fbccaa2ba
 F src/where.c 6aceb72cc58dc06922a9e1604d559c8ca4c3e728
 F src/whereInt.h 7892bb54cf9ca0ae5c7e6094491b94c9286dc647
-F src/wherecode.c 4c96182e7b25e4be54008dee2da5b9c2f8480b9b
+F src/wherecode.c b45fe3878b0ea4962784d3072498ff63b233d958
 F src/whereexpr.c e63244ca06c503e5f3c5b7f3c9aea0db826089ed
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
@@ -1398,7 +1398,10 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8303e4cfed715464c710668c2bdc58a8e3d4cd9f
-R 430b0b0a24aaa42e32648f0a371f94b9
-U dan
-Z 6707a1116c6926e8f57d8eea48f7af2a
+P 445480095e6877cce8220b1c095f334bbb04c1c3
+R 05aade661a6de043d2b7f27fd40fb41a
+T *branch * seekeq-experiment
+T *sym-seekeq-experiment *
+T -sym-trunk *
+U drh
+Z 34383bd81ccfcce5590ebe9ba011f808

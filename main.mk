@@ -582,7 +582,7 @@ tclsqlite.o:	$(TOP)/src/tclsqlite.c $(HDR)
 opcodes.c:	opcodes.h $(TOP)/tool/mkopcodec.tcl
 	tclsh $(TOP)/tool/mkopcodec.tcl opcodes.h >opcodes.c
 
-opcodes.h:	parse.h $(TOP)/src/vdbe.c $(TOP)/tool/mkopcodeh.tcl
+opcodes.h:	parse.h $(TOP)/tool/mkopcodeh.tcl
 	cat parse.h $(TOP)/src/vdbe.c | \
 		tclsh $(TOP)/tool/mkopcodeh.tcl >opcodes.h
 

@@ -3691,11 +3691,13 @@ case OP_SeekGT: {       /* jump, in3 */
 #ifdef SQLITE_DEBUG
   if( sqlite3BtreeCursorHasHint(pC->pCursor, BTREE_SEEK_EQ) ){
     assert( pOp->opcode==OP_SeekGE || pOp->opcode==OP_SeekLE );
+#if 0
     assert( pOp[1].opcode==OP_IdxLT || pOp[1].opcode==OP_IdxGT );
     assert( pOp[1].p1==pOp[0].p1 );
     assert( pOp[1].p2==pOp[0].p2 );
     assert( pOp[1].p3==pOp[0].p3 );
     assert( pOp[1].p4.i==pOp[0].p4.i );
+#endif
   }
 #endif
  
@@ -3772,9 +3774,13 @@ case OP_SeekGT: {       /* jump, in3 */
     { int i; for(i=0; i<r.nField; i++) assert( memIsValid(&r.aMem[i]) ); }
 #endif
     ExpandBlob(r.aMem);
+    r.eqSeen = 0;
     rc = sqlite3BtreeMovetoUnpacked(pC->pCursor, &r, 0, 0, &res);
     if( rc!=SQLITE_OK ){
       goto abort_due_to_error;
+    }
+    if( (pOp->p5 & OPFLAG_SEEKEQ)!=0 && r.eqSeen==0 ){
+      goto take_the_jump;
     }
   }
   pC->deferredMoveto = 0;
@@ -3803,6 +3809,7 @@ case OP_SeekGT: {       /* jump, in3 */
       res = sqlite3BtreeEof(pC->pCursor);
     }
   }
+take_the_jump:
   assert( pOp->p2>0 );
   VdbeBranchTaken(res!=0,2);
   if( res ){
