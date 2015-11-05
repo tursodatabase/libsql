@@ -352,7 +352,7 @@ do_test collate4-2.1.2 {
   count {
     SELECT * FROM collate4t2, collate4t1 WHERE a = b;
   }
-} {A a A A 5}
+} {A a A A 4}
 do_test collate4-2.1.3 {
   count {
     SELECT * FROM collate4t2, collate4t1 WHERE b = a;
@@ -372,7 +372,7 @@ do_test collate4-2.1.5 {
   count {
     SELECT * FROM collate4t2, collate4t1 WHERE b = a;
   }
-} {A A 4}
+} {A A 3}
 ifcapable subquery {
   do_test collate4-2.1.6 {
     count {
@@ -389,12 +389,12 @@ ifcapable subquery {
       SELECT a FROM collate4t1 WHERE a IN (SELECT * FROM collate4t2)
        ORDER BY rowid
     }
-  } {a A 6}
+  } {a A 5}
   do_test collate4-2.1.8 {
     count {
       SELECT a FROM collate4t1 WHERE a IN ('z', 'a');
     }
-  } {a A 5}
+  } {a A 4}
   do_test collate4-2.1.9 {
     execsql {
       DROP INDEX collate4i1;
