@@ -48,6 +48,7 @@ proc usage {} {
   puts stderr "  -crisismerge N (set the crisismerge parameter to N)"
   puts stderr "  -prefix PREFIX (comma separated prefix= argument)"
   puts stderr "  -trans N     (commit after N inserts - 0 == never)"
+  puts stderr "  -hashsize N  (set the fts5 hashsize parameteger to N)"
   exit 1
 }
 
@@ -59,6 +60,7 @@ set O(automerge)  -1
 set O(crisismerge)  -1
 set O(prefix)     ""
 set O(trans)      0
+set O(hashsize)   -1
 
 if {[llength $argv]<2} usage
 set nOpt [expr {[llength $argv]-2}]
@@ -106,6 +108,11 @@ for {set i 0} {$i < $nOpt} {incr i} {
       set O(prefix) [lindex $argv $i]
     }
 
+    -hashsize {
+      if { [incr i]>=$nOpt } usage
+      set O(hashsize) [lindex $argv $i]
+    }
+
     default {
       usage
     }
@@ -126,6 +133,14 @@ db eval BEGIN
     db eval "CREATE VIRTUAL TABLE t1 USING $O(vtab) (path, content$O(tok)$pref)"
     db eval "INSERT INTO t1(t1, rank) VALUES('pgsz', 4050);"
   }
+
+  if {$O(hashsize)>=0} {
+    catch {
+      db eval "INSERT INTO t1(t1, rank) VALUES('hashsize', $O(hashsize));"
+    }
+  }
+
+
   if {$O(automerge)>=0} {
     if {$O(vtab) == "fts5"} {
       db eval { INSERT INTO t1(t1, rank) VALUES('automerge', $O(automerge)) }
@@ -141,6 +156,7 @@ db eval BEGIN
   }
   load_hierachy [lindex $argv end]
 db eval COMMIT
+puts ""
 
 
 

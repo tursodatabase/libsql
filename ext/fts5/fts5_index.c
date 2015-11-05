@@ -288,7 +288,6 @@ struct Fts5Index {
   ** in-memory hash tables before they are flushed to disk.
   */
   Fts5Hash *pHash;                /* Hash table for in-memory data */
-  int nMaxPendingData;            /* Max pending data before flush to disk */
   int nPendingData;               /* Current bytes of pending data */
   i64 iWriteRowid;                /* Rowid for current doc being written */
   int bDelete;                    /* Current write is a delete */
@@ -4448,12 +4447,15 @@ int sqlite3Fts5IndexBeginWrite(Fts5Index *p, int bDelete, i64 iRowid){
   /* Allocate the hash table if it has not already been allocated */
   if( p->pHash==0 ){
     p->rc = sqlite3Fts5HashNew(&p->pHash, &p->nPendingData);
+
+    /* Force the configuration to be loaded */
+    fts5StructureRelease(fts5StructureRead(p));
   }
 
   /* Flush the hash table to disk if required */
   if( iRowid<p->iWriteRowid 
    || (iRowid==p->iWriteRowid && p->bDelete==0)
-   || (p->nPendingData > p->nMaxPendingData) 
+   || (p->nPendingData > p->pConfig->nHashSize) 
   ){
     fts5IndexFlush(p);
   }
@@ -4519,7 +4521,6 @@ int sqlite3Fts5IndexOpen(
   if( rc==SQLITE_OK ){
     p->pConfig = pConfig;
     p->nWorkUnit = FTS5_WORK_UNIT;
-    p->nMaxPendingData = 1024*1024;
     p->zDataTbl = sqlite3Fts5Mprintf(&rc, "%s_data", pConfig->zName);
     if( p->zDataTbl && bCreate ){
       rc = sqlite3Fts5CreateTable(

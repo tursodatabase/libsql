@@ -20,6 +20,7 @@
 #define FTS5_DEFAULT_PAGE_SIZE   4050
 #define FTS5_DEFAULT_AUTOMERGE      4
 #define FTS5_DEFAULT_CRISISMERGE   16
+#define FTS5_DEFAULT_HASHSIZE    (1024*1024)
 
 /* Maximum allowed page size */
 #define FTS5_MAX_PAGE_SIZE (128*1024)
@@ -767,6 +768,18 @@ int sqlite3Fts5ConfigSetValue(
     }
   }
 
+  else if( 0==sqlite3_stricmp(zKey, "hashsize") ){
+    int nHashSize = -1;
+    if( SQLITE_INTEGER==sqlite3_value_numeric_type(pVal) ){
+      nHashSize = sqlite3_value_int(pVal);
+    }
+    if( nHashSize<=0 ){
+      *pbBadkey = 1;
+    }else{
+      pConfig->nHashSize = nHashSize;
+    }
+  }
+
   else if( 0==sqlite3_stricmp(zKey, "automerge") ){
     int nAutomerge = -1;
     if( SQLITE_INTEGER==sqlite3_value_numeric_type(pVal) ){
@@ -827,6 +840,7 @@ int sqlite3Fts5ConfigLoad(Fts5Config *pConfig, int iCookie){
   pConfig->pgsz = FTS5_DEFAULT_PAGE_SIZE;
   pConfig->nAutomerge = FTS5_DEFAULT_AUTOMERGE;
   pConfig->nCrisisMerge = FTS5_DEFAULT_CRISISMERGE;
+  pConfig->nHashSize = FTS5_DEFAULT_HASHSIZE;
 
   zSql = sqlite3Fts5Mprintf(&rc, zSelect, pConfig->zDb, pConfig->zName);
   if( zSql ){

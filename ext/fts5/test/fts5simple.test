@@ -18,7 +18,7 @@ ifcapable !fts5 {
   finish_test
   return
 }
-
+ 
 #-------------------------------------------------------------------------
 #
 set doc "x x [string repeat {y } 50]z z"
@@ -321,6 +321,20 @@ do_execsql_test 13.2 {
 do_execsql_test 13.3 {
   INSERT INTO xy(xy) VALUES('integrity-check');
 }
+
+#-------------------------------------------------------------------------
+#
+do_execsql_test 14.1 {
+  CREATE VIRTUAL TABLE ttt USING fts5(x);
+  BEGIN;
+    INSERT INTO ttt(rowid, x) VALUES(1, 'a b c');
+    INSERT INTO ttt(rowid, x) VALUES(2, 'a b c');
+    INSERT INTO ttt(rowid, x) VALUES(3, 'a b c');
+  COMMIT;
+}
+do_test 14.2 { 
+  fts5_level_segs ttt 
+} {1}
 
 finish_test
 
