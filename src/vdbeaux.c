@@ -3665,7 +3665,7 @@ int sqlite3MemCompare(const Mem *pMem1, const Mem *pMem2, const CollSeq *pColl){
   ** if both values are integers.
   */
   if( combined_flags&(MEM_Int|MEM_Real) ){
-    double r1, r2;
+    LONGDOUBLE_TYPE r1, r2;
     if( (f1 & f2 & MEM_Int)!=0 ){
       if( pMem1->u.i < pMem2->u.i ) return -1;
       if( pMem1->u.i > pMem2->u.i ) return 1;
@@ -3674,14 +3674,14 @@ int sqlite3MemCompare(const Mem *pMem1, const Mem *pMem2, const CollSeq *pColl){
     if( (f1&MEM_Real)!=0 ){
       r1 = pMem1->u.r;
     }else if( (f1&MEM_Int)!=0 ){
-      r1 = (double)pMem1->u.i;
+      r1 = (LONGDOUBLE_TYPE)pMem1->u.i;
     }else{
       return 1;
     }
     if( (f2&MEM_Real)!=0 ){
       r2 = pMem2->u.r;
     }else if( (f2&MEM_Int)!=0 ){
-      r2 = (double)pMem2->u.i;
+      r2 = (LONGDOUBLE_TYPE)pMem2->u.i;
     }else{
       return -1;
     }
@@ -3838,7 +3838,7 @@ int sqlite3VdbeRecordCompareWithSkip(
       }else if( serial_type==0 ){
         rc = -1;
       }else if( serial_type==7 ){
-        double rhs = (double)pRhs->u.i;
+        LONGDOUBLE_TYPE rhs = (LONGDOUBLE_TYPE)pRhs->u.i;
         sqlite3VdbeSerialGet(&aKey1[d1], serial_type, &mem1);
         if( mem1.u.r<rhs ){
           rc = -1;
@@ -3868,13 +3868,13 @@ int sqlite3VdbeRecordCompareWithSkip(
       }else if( serial_type==0 ){
         rc = -1;
       }else{
-        double rhs = pRhs->u.r;
-        double lhs;
+        LONGDOUBLE_TYPE rhs = pRhs->u.r;
+        LONGDOUBLE_TYPE lhs;
         sqlite3VdbeSerialGet(&aKey1[d1], serial_type, &mem1);
         if( serial_type==7 ){
           lhs = mem1.u.r;
         }else{
-          lhs = (double)mem1.u.i;
+          lhs = (LONGDOUBLE_TYPE)mem1.u.i;
         }
         if( lhs<rhs ){
           rc = -1;
