@@ -1,5 +1,5 @@
-C Test\scases\sfor\sthe\sieee754\sextension.
-D 2015-11-06T17:01:20.579
+C A\sproposed\spatch\sfor\sworking\saround\sa\sbug\sin\sthe\soptimizer\sfor\sthe\sHP\scompiler\nfound\son\sHP/UX\sItanium.
+D 2015-11-06T17:28:00.429
 F Makefile.in 3a705bb4bd12e194212ddbdbf068310d17153cdb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 702d3e98f3afc6587a78481257f3c4c900efc3a4
@@ -407,7 +407,7 @@ F src/vdbe.c dfbaae2570172c523bce14299021d352b8508f7f
 F src/vdbe.h efb7a8c1459e31f3ea4377824c6a7e4cb5068637
 F src/vdbeInt.h 33403622c6a8feaaac5f0f3f17f5d1bf6df42286
 F src/vdbeapi.c 020681b943e77766b32ae1cddf86d7831b7374ca
-F src/vdbeaux.c 717bc2ae9cc0b58ef398fff44bd9164bfd96772a
+F src/vdbeaux.c 5f7b42d82d1984c496927d2d739387f8363d6575
 F src/vdbeblob.c 565fabd302f5fca3bdf3d56cac330483616a39b6
 F src/vdbemem.c fdd1578e47bea61390d472de53c565781d81e045
 F src/vdbesort.c 8b23930a1289526f6d2a3a9f2e965bcc963e4a68
@@ -1399,7 +1399,10 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 33e6606f5e497e81119ec491cf2370f60bddafc0
-R 6a48cd86f6e2c59a9972f4901e737c7d
+P 840cbda88675b6012dae2423252bf42d0d563874
+R 7a881fe3a454259c48d7dca38381f204
+T *branch * hp-optimizer-fix
+T *sym-hp-optimizer-fix *
+T -sym-trunk *
 U drh
-Z 4f550f3fed6ca631b416aee9408c87ae
+Z b81d9efde52745233947ff97559d6a84

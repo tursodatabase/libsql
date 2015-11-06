@@ -3319,6 +3319,10 @@ u32 sqlite3VdbeSerialGet(
       /* EVIDENCE-OF: R-01849-26079 Value is a big-endian 32-bit
       ** twos-complement integer. */
       pMem->u.i = FOUR_BYTE_INT(buf);
+#ifdef __HP_cc 
+      /* Work around a sign-extension bug in the HP compiler for HP/UX */
+      if( buf[0]&0x80 ) pMem->u.i |= 0xffffffff80000000LL;
+#endif
       pMem->flags = MEM_Int;
       testcase( pMem->u.i<0 );
       return 4;
