@@ -1,5 +1,5 @@
-C A\sdifferent\sapproach\sto\shandling\sinteger/float\scomparisons.\s\sThis\sseems\sto\nwork\sbetter\son\ssystems\swhere\s"long\sdouble"\sand\s"double"\sare\sthe\ssame\stype,\nbut\sstill\sneeds\srefinement\sand\stesting.
-D 2015-11-06T14:59:07.361
+C Merge\sthe\sfixes\sand\stests\sfor\sthe\sieee754\sextension.
+D 2015-11-06T17:59:33.872
 F Makefile.in 3a705bb4bd12e194212ddbdbf068310d17153cdb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 702d3e98f3afc6587a78481257f3c4c900efc3a4
@@ -106,11 +106,11 @@ F ext/fts5/fts5.h 8b9a13b309b180e9fb88ea5666c0d8d73c6102d9
 F ext/fts5/fts5Int.h acf968e43d57b6b1caf7554d34ec35d6ed3b4fe8
 F ext/fts5/fts5_aux.c 1f384972d606375b8fa078319f25ab4b5feb1b35
 F ext/fts5/fts5_buffer.c 1e49512a535045e621246dc7f4f65f3593fa0fc2
-F ext/fts5/fts5_config.c 81ec07cb644e33df4cd58d46990016b2ce7c175c
+F ext/fts5/fts5_config.c 6fc92c0b1bda5244c28a54c9ba740736bd5513d9
 F ext/fts5/fts5_expr.c 28b15c9ae296204bc0a2e5cf7a667d840a9d2900
 F ext/fts5/fts5_hash.c a9d4c1efebc2a91d26ad7ebdfcbf2678ceac405f
-F ext/fts5/fts5_index.c 967d797282e4595f8671d152ed8ecf6cc7e640b5
-F ext/fts5/fts5_main.c 39358d3d8f0d6ea3757c40e0ddcbb6bc435604c3
+F ext/fts5/fts5_index.c b622a0a70f57a96469e6828da2dd70e0872aeb37
+F ext/fts5/fts5_main.c 0569cd9fc18f3b56f6eeac601836df8ed5fb54cb
 F ext/fts5/fts5_storage.c 9ea3d92178743758b6c54d9fe8836bbbdcc92e3b
 F ext/fts5/fts5_tcl.c 3bf445e66de32137d4693694ff7b1fd6074e32bd
 F ext/fts5/fts5_test_mi.c e96be827aa8f571031e65e481251dc1981d608bf
@@ -149,10 +149,10 @@ F ext/fts5/test/fts5dlidx.test ecba5e62ea8b26c33829961602069c546228046d
 F ext/fts5/test/fts5doclist.test 8edb5b57e5f144030ed74ec00ef6fa4294fed79b
 F ext/fts5/test/fts5ea.test b01e3a18cdfabbff8104a96a5242a06a68a998a0
 F ext/fts5/test/fts5eb.test 3e5869af2008cbc4ad03a175a0b6f6e58134cd43
-F ext/fts5/test/fts5fault1.test 7a562367cb4a735b57b410dbdb62dcc8d971faec
+F ext/fts5/test/fts5fault1.test 4b39c47ca3544615daa8a2f733b911fa08022c77
 F ext/fts5/test/fts5fault2.test 28c36c843bb39ae855ba79827417ecc37f114341
 F ext/fts5/test/fts5fault3.test d6e9577d4312e331a913c72931bf131704efc8f3
-F ext/fts5/test/fts5fault4.test 762991d526ee67c2b374351a17248097ea38bee7
+F ext/fts5/test/fts5fault4.test 4864f2b5c2c083440dbe85aff60897bc1aa04603
 F ext/fts5/test/fts5fault5.test f2b8645053d48982e8979749e93994c43011c118
 F ext/fts5/test/fts5fault6.test 9682664d679643ac6736e90c225526cc84073cda
 F ext/fts5/test/fts5fault7.test 01be274bfc8d9bf22451a3bf5892e9399d044f1b
@@ -170,11 +170,11 @@ F ext/fts5/test/fts5porter.test 7cdc07bef301d70eebbfa75dcaf45c3680e1d0e1
 F ext/fts5/test/fts5porter2.test 2e65633d58a1c525d5af0f6c01e5a59155bb3487
 F ext/fts5/test/fts5prefix.test 7ccbdf180ed561a912acef520519e85af8642239
 F ext/fts5/test/fts5query.test f5ec25f5f2fbb70033424113cdffc101b1985a40
-F ext/fts5/test/fts5rank.test 11dcebba31d822f7e99685b4ea2c2ae3ec0b16f1
+F ext/fts5/test/fts5rank.test 7e9e64eac7245637f6f2033aec4b292aaf611aab
 F ext/fts5/test/fts5rebuild.test 03935f617ace91ed23a6099c7c74d905227ff29b
 F ext/fts5/test/fts5restart.test c17728fdea26e7d0f617d22ad5b4b2862b994c17
 F ext/fts5/test/fts5rowid.test 400384798349d658eaf06aefa1e364957d5d4821
-F ext/fts5/test/fts5simple.test ec1c6a6f51890ba864f866387794878ff2994de9
+F ext/fts5/test/fts5simple.test 9bded45827b4ab8933c87b7b3bcc3cd47f7378a4
 F ext/fts5/test/fts5synonym.test cf88c0a56d5ea9591e3939ef1f6e294f7f2d0671
 F ext/fts5/test/fts5tokenizer.test ea4df698b35cc427ebf2ba22829d0e28386d8c89
 F ext/fts5/test/fts5unicode.test fbef8d8a3b4b88470536cc57604a82ca52e51841
@@ -196,7 +196,7 @@ F ext/misc/compress.c 122faa92d25033d6c3f07c39231de074ab3d2e83
 F ext/misc/eval.c f971962e92ebb8b0a4e6b62949463ee454d88fa2
 F ext/misc/fileio.c d4171c815d6543a9edef8308aab2951413cd8d0f
 F ext/misc/fuzzer.c 4c84635c71c26cfa7c2e5848cf49fe2d2cfcd767
-F ext/misc/ieee754.c b0362167289170627659e84173f5d2e8fee8566e
+F ext/misc/ieee754.c ca4a0a8fd2d4667a7ef10b761312c256bc734039
 F ext/misc/json1.c 4f45afd9dbcd6feca8c528251efbb7fc09299a09
 F ext/misc/nextchar.c 35c8b8baacb96d92abbb34a83a997b797075b342
 F ext/misc/percentile.c bcbee3c061b884eccb80e21651daaae8e1e43c63
@@ -765,6 +765,7 @@ F test/genesis.tcl 1e2e2e8e5cc4058549a154ff1892fe5c9de19f98
 F test/hexlit.test 1d312fa816dfd3650a3bb488093bc09a0c927f67
 F test/hook.test 162d7cef7a2d2b04839fe14402934e6a1b79442f
 F test/icu.test 70df4faca133254c042d02ae342c0a141f2663f4
+F test/ieee754.test 118b665a97a8df0e8f2fbdb07d113e596f4a6b53
 F test/imposter1.test c3f1db2d3db2c24611a6596a3fc0ffc14f1466c8
 F test/in.test 61a24ae38d4b64ec69f06ccdf022992f68a98176
 F test/in2.test 5d4c61d17493c832f7d2d32bef785119e87bde75
@@ -1399,7 +1400,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c220741a62808c64d42c6161152ab06af74cb48c
-R 657a004dd1109c7e46c85d0fcca1d027
+P a3f7614b2095fbc1eca54801b2da88f85f294ec5 840cbda88675b6012dae2423252bf42d0d563874
+R 281cdf2e28b38f35a9e781fe4ef44557
 U drh
-Z b71edcd294ef001f8419c54517ae11bb
+Z 35915d26f010e261a34e33f9bc3e14c7
