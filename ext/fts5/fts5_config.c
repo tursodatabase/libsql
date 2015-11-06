@@ -707,33 +707,37 @@ int sqlite3Fts5ConfigParseRank(
   *pzRank = 0;
   *pzRankArgs = 0;
 
-  p = fts5ConfigSkipWhitespace(p);
-  pRank = p;
-  p = fts5ConfigSkipBareword(p);
-
-  if( p ){
-    zRank = sqlite3Fts5MallocZero(&rc, 1 + p - pRank);
-    if( zRank ) memcpy(zRank, pRank, p-pRank);
-  }else{
+  if( p==0 ){
     rc = SQLITE_ERROR;
-  }
+  }else{
+    p = fts5ConfigSkipWhitespace(p);
+    pRank = p;
+    p = fts5ConfigSkipBareword(p);
 
-  if( rc==SQLITE_OK ){
-    p = fts5ConfigSkipWhitespace(p);
-    if( *p!='(' ) rc = SQLITE_ERROR;
-    p++;
-  }
-  if( rc==SQLITE_OK ){
-    const char *pArgs; 
-    p = fts5ConfigSkipWhitespace(p);
-    pArgs = p;
-    if( *p!=')' ){
-      p = fts5ConfigSkipArgs(p);
-      if( p==0 ){
-        rc = SQLITE_ERROR;
-      }else{
-        zRankArgs = sqlite3Fts5MallocZero(&rc, 1 + p - pArgs);
-        if( zRankArgs ) memcpy(zRankArgs, pArgs, p-pArgs);
+    if( p ){
+      zRank = sqlite3Fts5MallocZero(&rc, 1 + p - pRank);
+      if( zRank ) memcpy(zRank, pRank, p-pRank);
+    }else{
+      rc = SQLITE_ERROR;
+    }
+
+    if( rc==SQLITE_OK ){
+      p = fts5ConfigSkipWhitespace(p);
+      if( *p!='(' ) rc = SQLITE_ERROR;
+      p++;
+    }
+    if( rc==SQLITE_OK ){
+      const char *pArgs; 
+      p = fts5ConfigSkipWhitespace(p);
+      pArgs = p;
+      if( *p!=')' ){
+        p = fts5ConfigSkipArgs(p);
+        if( p==0 ){
+          rc = SQLITE_ERROR;
+        }else{
+          zRankArgs = sqlite3Fts5MallocZero(&rc, 1 + p - pArgs);
+          if( zRankArgs ) memcpy(zRankArgs, pArgs, p-pArgs);
+        }
       }
     }
   }

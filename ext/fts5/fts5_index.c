@@ -4447,9 +4447,6 @@ int sqlite3Fts5IndexBeginWrite(Fts5Index *p, int bDelete, i64 iRowid){
   /* Allocate the hash table if it has not already been allocated */
   if( p->pHash==0 ){
     p->rc = sqlite3Fts5HashNew(&p->pHash, &p->nPendingData);
-
-    /* Force the configuration to be loaded */
-    fts5StructureRelease(fts5StructureRead(p));
   }
 
   /* Flush the hash table to disk if required */
