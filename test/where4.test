@@ -91,7 +91,7 @@ do_test where4-1.10 {
 } {6 2}
 do_test where4-1.11 {
   count {SELECT rowid FROM t1 WHERE w=x'78' AND x IS NULL AND y=123}
-} {1}
+} {0}
 do_test where4-1.12 {
   count {SELECT rowid FROM t1 WHERE w=x'78' AND x IS NULL AND y=x'7A'}
 } {6 2}

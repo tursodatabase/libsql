@@ -3597,6 +3597,13 @@ case OP_ColumnsUsed: {
 ** is greater than or equal to the key value. If there are no records 
 ** greater than or equal to the key and P2 is not zero, then jump to P2.
 **
+** If the cursor P1 was opened using the OPFLAG_SEEKEQ flag, then this
+** opcode will always land on a record that equally equals the key, or
+** else jump immediately to P2.  When the cursor is OPFLAG_SEEKEQ, this
+** opcode must be followed by an IdxLE opcode with the same arguments.
+** The IdxLE opcode will be skipped if this opcode succeeds, but the
+** IdxLE opcode will be used on subsequent loop iterations.
+**
 ** This opcode leaves the cursor configured to move in forward order,
 ** from the beginning toward the end.  In other words, the cursor is
 ** configured to use Next, not Prev.
@@ -3655,18 +3662,26 @@ case OP_ColumnsUsed: {
 ** from the end toward the beginning.  In other words, the cursor is
 ** configured to use Prev, not Next.
 **
+** If the cursor P1 was opened using the OPFLAG_SEEKEQ flag, then this
+** opcode will always land on a record that equally equals the key, or
+** else jump immediately to P2.  When the cursor is OPFLAG_SEEKEQ, this
+** opcode must be followed by an IdxGE opcode with the same arguments.
+** The IdxGE opcode will be skipped if this opcode succeeds, but the
+** IdxGE opcode will be used on subsequent loop iterations.
+**
 ** See also: Found, NotFound, SeekGt, SeekGe, SeekLt
 */
 case OP_SeekLT:         /* jump, in3 */
 case OP_SeekLE:         /* jump, in3 */
 case OP_SeekGE:         /* jump, in3 */
 case OP_SeekGT: {       /* jump, in3 */
-  int res;
-  int oc;
-  VdbeCursor *pC;
-  UnpackedRecord r;
-  int nField;
-  i64 iKey;      /* The rowid we are to seek to */
+  int res;           /* Comparison result */
+  int oc;            /* Opcode */
+  VdbeCursor *pC;    /* The cursor to seek */
+  UnpackedRecord r;  /* The key to seek for */
+  int nField;        /* Number of columns or fields in the key */
+  i64 iKey;          /* The rowid we are to seek to */
+  int eqOnly = 0;    /* Only interested in == results */
 
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   assert( pOp->p2!=0 );
@@ -3688,8 +3703,8 @@ case OP_SeekGT: {       /* jump, in3 */
   ** OP_SeekLE opcodes are allowed, and these must be immediately followed
   ** by an OP_IdxGT or OP_IdxLT opcode, respectively, with the same key.
   */
-#ifdef SQLITE_DEBUG
   if( sqlite3BtreeCursorHasHint(pC->pCursor, BTREE_SEEK_EQ) ){
+    eqOnly = 1;
     assert( pOp->opcode==OP_SeekGE || pOp->opcode==OP_SeekLE );
     assert( pOp[1].opcode==OP_IdxLT || pOp[1].opcode==OP_IdxGT );
     assert( pOp[1].p1==pOp[0].p1 );
@@ -3697,7 +3712,6 @@ case OP_SeekGT: {       /* jump, in3 */
     assert( pOp[1].p3==pOp[0].p3 );
     assert( pOp[1].p4.i==pOp[0].p4.i );
   }
-#endif
  
   if( pC->isTable ){
     /* The input value in P3 might be of any type: integer, real, string,
@@ -3747,6 +3761,7 @@ case OP_SeekGT: {       /* jump, in3 */
     if( rc!=SQLITE_OK ){
       goto abort_due_to_error;
     }
+    if( eqOnly && res ) goto seek_not_found;
   }else{
     nField = pOp->p4.i;
     assert( pOp->p4type==P4_INT32 );
@@ -3772,9 +3787,14 @@ case OP_SeekGT: {       /* jump, in3 */
     { int i; for(i=0; i<r.nField; i++) assert( memIsValid(&r.aMem[i]) ); }
 #endif
     ExpandBlob(r.aMem);
+    r.eqSeen = 0;
     rc = sqlite3BtreeMovetoUnpacked(pC->pCursor, &r, 0, 0, &res);
     if( rc!=SQLITE_OK ){
       goto abort_due_to_error;
+    }
+    if( eqOnly && r.eqSeen==0 ){
+      assert( res!=0 );
+      goto seek_not_found;
     }
   }
   pC->deferredMoveto = 0;
@@ -3803,10 +3823,14 @@ case OP_SeekGT: {       /* jump, in3 */
       res = sqlite3BtreeEof(pC->pCursor);
     }
   }
+seek_not_found:
   assert( pOp->p2>0 );
   VdbeBranchTaken(res!=0,2);
   if( res ){
     goto jump_to_p2;
+  }else if( eqOnly ){
+    assert( pOp[1].opcode==OP_IdxLT || pOp[1].opcode==OP_IdxGT );
+    pOp++; /* Skip the OP_IdxLt or OP_IdxGT that follows */
   }
   break;
 }

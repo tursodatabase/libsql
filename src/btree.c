@@ -5041,6 +5041,8 @@ int sqlite3BtreeLast(BtCursor *pCur, int *pRes){
 **     *pRes>0      The cursor is left pointing at an entry that
 **                  is larger than intKey/pIdxKey.
 **
+** For index tables, the pIdxKey->eqSeen field is set to 1 if there
+** exists an entry in the table that exactly matches pIdxKey.  
 */
 int sqlite3BtreeMovetoUnpacked(
   BtCursor *pCur,          /* The cursor to be moved */
@@ -9644,7 +9646,6 @@ int sqlite3BtreeSetVersion(Btree *pBtree, int iVersion){
   return rc;
 }
 
-#ifdef SQLITE_DEBUG
 /*
 ** Return true if the cursor has a hint specified.  This routine is
 ** only used from within assert() statements
@@ -9652,7 +9653,6 @@ int sqlite3BtreeSetVersion(Btree *pBtree, int iVersion){
 int sqlite3BtreeCursorHasHint(BtCursor *pCsr, unsigned int mask){
   return (pCsr->hints & mask)!=0;
 }
-#endif
 
 /*
 ** Return true if the given Btree is read-only.
