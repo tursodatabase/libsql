@@ -1,5 +1,5 @@
-C More\stest\scases\sfor\sindexes\son\slarge\snumeric\svalues.
-D 2015-11-06T04:14:38.328
+C A\sdifferent\sapproach\sto\shandling\sinteger/float\scomparisons.\s\sThis\sseems\sto\nwork\sbetter\son\ssystems\swhere\s"long\sdouble"\sand\s"double"\sare\sthe\ssame\stype,\nbut\sstill\sneeds\srefinement\sand\stesting.
+D 2015-11-06T14:59:07.361
 F Makefile.in 3a705bb4bd12e194212ddbdbf068310d17153cdb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 702d3e98f3afc6587a78481257f3c4c900efc3a4
@@ -350,7 +350,7 @@ F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
 F src/tclsqlite.c d9439b6a910985b7fff43ba6756bcef00de22649
-F src/test1.c 9ac5cbfe3c859ab7518edc5109a2959d6bf7b059
+F src/test1.c a719afff3144f7f01c6dc3f7d118ac31d15e7527
 F src/test2.c 5586f43fcd9a1be0830793cf9d354082c261b25b
 F src/test3.c a8887dabbbee3059af338f20d290084a63ed1b0f
 F src/test4.c d168f83cc78d02e8d35567bb5630e40dcd85ac1e
@@ -407,7 +407,7 @@ F src/vdbe.c dfbaae2570172c523bce14299021d352b8508f7f
 F src/vdbe.h efb7a8c1459e31f3ea4377824c6a7e4cb5068637
 F src/vdbeInt.h 33403622c6a8feaaac5f0f3f17f5d1bf6df42286
 F src/vdbeapi.c 020681b943e77766b32ae1cddf86d7831b7374ca
-F src/vdbeaux.c debf7e021cf9008c65319da75f293f1edc1172cb
+F src/vdbeaux.c 869c95b0fc73026da1ca179e053807f563793e8f
 F src/vdbeblob.c 565fabd302f5fca3bdf3d56cac330483616a39b6
 F src/vdbemem.c fdd1578e47bea61390d472de53c565781d81e045
 F src/vdbesort.c 8b23930a1289526f6d2a3a9f2e965bcc963e4a68
@@ -453,7 +453,7 @@ F test/async2.test c0a9bd20816d7d6a2ceca7b8c03d3d69c28ffb8b
 F test/async3.test d73a062002376d7edc1fe3edff493edbec1fc2f7
 F test/async4.test 1787e3952128aa10238bf39945126de7ca23685a
 F test/async5.test 383ab533fdb9f7ad228cc99ee66e1acb34cc0dc0
-F test/atof1.test 08a61df9365c341f334a65f4348897312d8f3db7
+F test/atof1.test ff0b0156fd705b67c506e1f2bfe9e26102bea9bd
 F test/attach.test 437107943f14d131cf5efc2ae5305a94d7cb1d58
 F test/attach2.test 0ec5defa340363de6cd50fd595046465e9aaba2d
 F test/attach3.test 359eb65d00102cdfcef6fa4e81dc1648f8f80b27
@@ -1399,7 +1399,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1d642b73f9e93a1ba291bf265b3d17e46551d70e
-R 64855a7c14d6459f4208513a6a2213eb
+P c220741a62808c64d42c6161152ab06af74cb48c
+R 657a004dd1109c7e46c85d0fcca1d027
 U drh
-Z bbc2fe290cec56ea8698b9d9e249b3b7
+Z b71edcd294ef001f8419c54517ae11bb
