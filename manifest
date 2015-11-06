@@ -1,5 +1,5 @@
-C Increase\sthe\sprecision\sof\sinteger\svs.\sfloating-point\scomparisons.\nCandidate\sfix\sfor\sticket\s[38a97a87a6e4e8].
-D 2015-11-06T01:04:41.562
+C Some\ssimple\stest\scases\sfrom\sthe\smailing\slist.
+D 2015-11-06T03:37:02.272
 F Makefile.in 3a705bb4bd12e194212ddbdbf068310d17153cdb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 702d3e98f3afc6587a78481257f3c4c900efc3a4
@@ -902,6 +902,7 @@ F test/notify3.test 10ff25cde502e72a92053a2f215d64bece4ef934
 F test/notnull.test f8fcf58669ddba79274daa2770d61dfad8274f62
 F test/null.test 0dcce4f04284ec66108c503327ad6d224c0752b3
 F test/numcast.test 5d126f7f581432e86a90d1e35cac625164aec4a1
+F test/numindex1.test 6a72785828bd48deb0187480d1f821f643503254
 F test/offset1.test f06b83657bcf26f9ce805e67450e189e282143b2
 F test/openv2.test 0d3040974bf402e19b7df4b783e447289d7ab394
 F test/orderby1.test 870e150450437d3980badbde3d0166b81d9e33f6
@@ -1398,10 +1399,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 777ae8007f6ff303b120b25f2dc37d7ef6b6a4f8
-R cc9765cd257243db22c6bd69c3d99131
-T *branch * int-float-precision
-T *sym-int-float-precision *
-T -sym-trunk *
+P cfcaa0ff276b1936418abe72c7e0c99d90d37885
+R 935a655a72fb7279f445266ee8ecd942
 U drh
-Z d0948553cd93aaec56b5aa2032a41416
+Z 4bf13cc28fe21ef0ca61de36df50b42a
