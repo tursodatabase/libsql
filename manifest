@@ -1,5 +1,5 @@
-C Enforce\sconsistent\scomparison\sresults\sbetween\sinteger\sand\sfloating\spoint\nvalues.\s\sFix\sfor\sticket\s[38a97a87a6e4e83].
-D 2015-11-06T19:53:09.863
+C Test\schanges:\s\sOmit\snumindex1.test\sfrom\svalgrind,\ssince\svalgrind\suses\sa\nnone-standard\sfloating-point\sprocessor\swhich\sgives\sinconsistent\sanswers.\nRun\sone\sreleasetest.tcl\smodule\susing\sLONGDOUBLE_TYPE=double.
+D 2015-11-06T20:04:08.458
 F Makefile.in 3a705bb4bd12e194212ddbdbf068310d17153cdb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 702d3e98f3afc6587a78481257f3c4c900efc3a4
@@ -930,7 +930,7 @@ F test/parser1.test 222b5cbf3e2e659fec1bf7d723488c8b9c94f1d0
 F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
-F test/permutations.test 0be620cfc7309d72b0608b3f1cbadef1034417fa
+F test/permutations.test 4ea119731c62d2f7d0aa86dd5b184cbb61ca411b
 F test/pragma.test a44253f911e7d50127d4a08f927f47c861a4c772
 F test/pragma2.test b5e2ce4c892afceb308c6ae6163a9099b2a0d8d7
 F test/pragma3.test 6f849ccffeee7e496d2f2b5e74152306c0b8757c
@@ -950,7 +950,7 @@ F test/rbu.test 168573d353cd0fd10196b87b0caa322c144ef736
 F test/rdonly.test 64e2696c322e3538df0b1ed624e21f9a23ed9ff8
 F test/regexp1.test 497ea812f264d12b6198d6e50a76be4a1973a9d8
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
-F test/releasetest.tcl c12c4122a7b2ddec16b5f8fb9163f7a008886005
+F test/releasetest.tcl 2d000ceded3115758be96abb9c10a5669fb27862
 F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
 F test/rollback.test 458fe73eb3ffdfdf9f6ba3e9b7350a6220414dea
 F test/rollback2.test fc14cf6d1a2b250d2735ef16124b971bce152f14
@@ -1400,8 +1400,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 840cbda88675b6012dae2423252bf42d0d563874 7a9988d38cd7ab3df79eed97631ff23d5928b4ad
-R 281cdf2e28b38f35a9e781fe4ef44557
-T +closed 7a9988d38cd7ab3df79eed97631ff23d5928b4ad
+P 849e686da2d20fd7f938427475fc792384d2aa7c
+R bc805b9c9eb147f835a7b134914f33c0
 U drh
-Z 043f003e4fd28221190bc705626ad8a1
+Z 126ae0fefea0cf2ca80b12b014ca7256
