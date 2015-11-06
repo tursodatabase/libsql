@@ -3634,6 +3634,34 @@ static SQLITE_NOINLINE int sqlite3BlobCompare(const Mem *pB1, const Mem *pB2){
   return pB1->n - pB2->n;
 }
 
+/*
+** Do a comparison between a 64-bit signed integer and a 64-bit floating-point
+** number.  Return negative, zero, or positive if the first (i64) is less than,
+** equal to, or greater than the second (double).
+*/
+static int sqlite3IntFloatCompare(i64 i, double r){
+  if( sizeof(LONGDOUBLE_TYPE)>8 ){
+    LONGDOUBLE_TYPE x = (LONGDOUBLE_TYPE)i;
+    if( x<r ) return -1;
+    if( x>r ) return +1;
+    return 0;
+  }else{
+    i64 y;
+    double s;
+    if( r<-9223372036854775808.0 ) return +1;
+    if( r>9223372036854775807.0 ) return -1;
+    y = (i64)r;
+    if( i<y ) return -1;
+    if( i>y ){
+      if( y==SMALLEST_INT64 && r>0.0 ) return -1;
+      return +1;
+    }
+    s = (double)i;
+    if( s<r ) return -1;
+    if( s>r ) return +1;
+    return 0;
+  }
+}
 
 /*
 ** Compare the values contained by the two memory cells, returning
@@ -3660,34 +3688,34 @@ int sqlite3MemCompare(const Mem *pMem1, const Mem *pMem2, const CollSeq *pColl){
     return (f2&MEM_Null) - (f1&MEM_Null);
   }
 
-  /* If one value is a number and the other is not, the number is less.
-  ** If both are numbers, compare as reals if one is a real, or as integers
-  ** if both values are integers.
+  /* At least one of the two values is a number
   */
   if( combined_flags&(MEM_Int|MEM_Real) ){
-    double r1, r2;
     if( (f1 & f2 & MEM_Int)!=0 ){
       if( pMem1->u.i < pMem2->u.i ) return -1;
-      if( pMem1->u.i > pMem2->u.i ) return 1;
+      if( pMem1->u.i > pMem2->u.i ) return +1;
       return 0;
     }
+    if( (f1 & f2 & MEM_Real)!=0 ){
+      if( pMem1->u.r < pMem2->u.r ) return -1;
+      if( pMem1->u.r > pMem2->u.r ) return +1;
+      return 0;
+    }
+    if( (f1&MEM_Int)!=0 ){
+      if( (f2&MEM_Real)!=0 ){
+        return sqlite3IntFloatCompare(pMem1->u.i, pMem2->u.r);
+      }else{
+        return -1;
+      }
+    }
     if( (f1&MEM_Real)!=0 ){
-      r1 = pMem1->u.r;
-    }else if( (f1&MEM_Int)!=0 ){
-      r1 = (double)pMem1->u.i;
-    }else{
-      return 1;
+      if( (f2&MEM_Int)!=0 ){
+        return -sqlite3IntFloatCompare(pMem2->u.i, pMem1->u.r);
+      }else{
+        return -1;
+      }
     }
-    if( (f2&MEM_Real)!=0 ){
-      r2 = pMem2->u.r;
-    }else if( (f2&MEM_Int)!=0 ){
-      r2 = (double)pMem2->u.i;
-    }else{
-      return -1;
-    }
-    if( r1<r2 ) return -1;
-    if( r1>r2 ) return 1;
-    return 0;
+    return +1;
   }
 
   /* If one value is a string and the other is a blob, the string is less.
@@ -3838,13 +3866,8 @@ int sqlite3VdbeRecordCompareWithSkip(
       }else if( serial_type==0 ){
         rc = -1;
       }else if( serial_type==7 ){
-        double rhs = (double)pRhs->u.i;
         sqlite3VdbeSerialGet(&aKey1[d1], serial_type, &mem1);
-        if( mem1.u.r<rhs ){
-          rc = -1;
-        }else if( mem1.u.r>rhs ){
-          rc = +1;
-        }
+        rc = -sqlite3IntFloatCompare(pRhs->u.i, mem1.u.r);
       }else{
         i64 lhs = vdbeRecordDecodeInt(serial_type, &aKey1[d1]);
         i64 rhs = pRhs->u.i;
@@ -3868,18 +3891,15 @@ int sqlite3VdbeRecordCompareWithSkip(
       }else if( serial_type==0 ){
         rc = -1;
       }else{
-        double rhs = pRhs->u.r;
-        double lhs;
         sqlite3VdbeSerialGet(&aKey1[d1], serial_type, &mem1);
         if( serial_type==7 ){
-          lhs = mem1.u.r;
+          if( mem1.u.r<pRhs->u.r ){
+            rc = -1;
+          }else if( mem1.u.r>pRhs->u.r ){
+            rc = +1;
+          }
         }else{
-          lhs = (double)mem1.u.i;
-        }
-        if( lhs<rhs ){
-          rc = -1;
-        }else if( lhs>rhs ){
-          rc = +1;
+          rc = sqlite3IntFloatCompare(mem1.u.i, pRhs->u.r);
         }
       }
     }
@@ -4088,6 +4108,7 @@ static int vdbeRecordCompareString(
   int serial_type;
   int res;
 
+  assert( pPKey2->aMem[0].flags & MEM_Str );
   vdbeAssertFieldCountWithinLimits(nKey1, pKey1, pPKey2->pKeyInfo);
   getVarint32(&aKey1[1], serial_type);
   if( serial_type<12 ){
