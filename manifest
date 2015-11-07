@@ -1,5 +1,5 @@
-C The\sOPFLAG_SEEKEQ\soptimization\sis\sonly\sapplicable\sto\sequality\scomparisons\nagainst\san\sindex,\snot\sagainst\sa\srowid\stable.
-D 2015-11-07T01:19:00.997
+C Enhance\sTreeView\sto\sshow\sWITH\sclauses.\s\sAdd\san\sassert\sto\sdetect\sthe\ninfinite\sloop\sbehavior\swhen\scertain\skinds\sof\serrors\soccur\son\sa\snested\nWITH\sclause.
+D 2015-11-07T15:19:59.796
 F Makefile.in 3a705bb4bd12e194212ddbdbf068310d17153cdb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 702d3e98f3afc6587a78481257f3c4c900efc3a4
@@ -340,12 +340,12 @@ F src/printf.c 0c4bcdd1c2e2521024f0a69cb5eb334f86b3652a
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 1954a0f01bf65d78d7d559aea3d5c67f33376d91
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c 167b4e9058bc8e997d18d6b6b20ecbb0c9c457af
+F src/select.c f5b0518eeb623ab4e6883a04b19602e5f914cfd7
 F src/shell.c d25df04168d6ba5a4fa05bdbf859df667f9eb621
 F src/sqlite.h.in 3cfc86c55e57c63d86b9e1e92869e2bfb162ca8e
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 4b66e3e3435da4b4c8c83696d0349f0c503b3924
-F src/sqliteInt.h 12ff325b433c4ded39995b74b01b78aacc19805a
+F src/sqliteInt.h a6cddd46ae93372eb3b1acd4f2f23c4de02a94d6
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
@@ -397,7 +397,7 @@ F src/test_vfstrace.c bab9594adc976cbe696ff3970728830b4c5ed698
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c bbfb74450643cb5372a43ad4f6cffd7e9dfcecb0
 F src/tokenize.c 338bc8f7c9dd103188952cda7964696bacac6d22
-F src/treeview.c 154f0acc622fa3514de8777dcedf4c8a8802b4ce
+F src/treeview.c 78842e90c1f71269e7a73a1d4221b6fe360bab66
 F src/trigger.c 322f23aad694e8f31d384dcfa386d52a48d3c52f
 F src/update.c 40e51cd0883cb5bfd6abb7d8a7cd8aa47fab2945
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
@@ -1400,7 +1400,10 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P dd9a26ecdeaef7b0b9cbf4ff70448ab13a276b4e
-R 37fd8f25666e5cc61c467cdb94b7bb71
+P 0f5b147d1fe83c34d0fbeacc7422be94d8441bc1
+R 62a6359affd853c29ced84c847c76120
+T *branch * infinite-with-loop-bug
+T *sym-infinite-with-loop-bug *
+T -sym-trunk *
 U drh
-Z b3bf4f06c783a2156de71d3cb1963976
+Z 3b853d83f7a6a14368bd6ec3d809b3a9

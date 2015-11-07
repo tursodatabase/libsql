@@ -3972,7 +3972,7 @@ static int convertCompoundSelectToSubquery(Walker *pWalker, Select *p){
 ** object that the returned CTE belongs to.
 */
 static struct Cte *searchWith(
-  With *pWith,                    /* Current outermost WITH clause */
+  With *pWith,                    /* Current innermost WITH clause */
   struct SrcList_item *pItem,     /* FROM clause element to resolve */
   With **ppContext                /* OUT: WITH clause return value belongs to */
 ){
@@ -4005,6 +4005,7 @@ static struct Cte *searchWith(
 void sqlite3WithPush(Parse *pParse, With *pWith, u8 bFree){
   assert( bFree==0 || pParse->pWith==0 );
   if( pWith ){
+    assert( pParse->pWith!=pWith );
     pWith->pOuter = pParse->pWith;
     pParse->pWith = pWith;
     pParse->bFreeWith = bFree;
