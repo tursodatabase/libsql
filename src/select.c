@@ -4003,12 +4003,12 @@ static struct Cte *searchWith(
 ** statement with which it is associated.
 */
 void sqlite3WithPush(Parse *pParse, With *pWith, u8 bFree){
-  assert( bFree==0 || pParse->pWith==0 );
+  assert( bFree==0 || (pParse->pWith==0 && pParse->pWithToFree==0) );
   if( pWith ){
     assert( pParse->pWith!=pWith );
     pWith->pOuter = pParse->pWith;
     pParse->pWith = pWith;
-    pParse->bFreeWith = bFree;
+    if( bFree ) pParse->pWithToFree = pWith;
   }
 }
 
@@ -4101,6 +4101,7 @@ static int withExpand(
     pSavedWith = pParse->pWith;
     pParse->pWith = pWith;
     sqlite3WalkSelect(pWalker, bMayRecursive ? pSel->pPrior : pSel);
+    pParse->pWith = pWith;
 
     for(pLeft=pSel; pLeft->pPrior; pLeft=pLeft->pPrior);
     pEList = pLeft->pEList;

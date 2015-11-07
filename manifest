@@ -1,5 +1,5 @@
-C Enhance\sTreeView\sto\sshow\sWITH\sclauses.\s\sAdd\san\sassert\sto\sdetect\sthe\ninfinite\sloop\sbehavior\swhen\scertain\skinds\sof\serrors\soccur\son\sa\snested\nWITH\sclause.
-D 2015-11-07T15:19:59.796
+C Proposed\sfix\sfor\san\sinfinite\sloop\sbug\sin\sthe\sWITH\sclause\ssemantic\sanalysis\nlogic.
+D 2015-11-07T17:48:21.602
 F Makefile.in 3a705bb4bd12e194212ddbdbf068310d17153cdb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 702d3e98f3afc6587a78481257f3c4c900efc3a4
@@ -340,12 +340,12 @@ F src/printf.c 0c4bcdd1c2e2521024f0a69cb5eb334f86b3652a
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 1954a0f01bf65d78d7d559aea3d5c67f33376d91
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c f5b0518eeb623ab4e6883a04b19602e5f914cfd7
+F src/select.c 00a2a10d4298a685d0eeb05b09ef018a2bd81bf8
 F src/shell.c d25df04168d6ba5a4fa05bdbf859df667f9eb621
 F src/sqlite.h.in 3cfc86c55e57c63d86b9e1e92869e2bfb162ca8e
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 4b66e3e3435da4b4c8c83696d0349f0c503b3924
-F src/sqliteInt.h a6cddd46ae93372eb3b1acd4f2f23c4de02a94d6
+F src/sqliteInt.h bc6d24460fe544323517630b1e20539146379077
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
@@ -396,7 +396,7 @@ F src/test_vfs.c 3b65d42e18b262805716bd96178c81da8f2d9283
 F src/test_vfstrace.c bab9594adc976cbe696ff3970728830b4c5ed698
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c bbfb74450643cb5372a43ad4f6cffd7e9dfcecb0
-F src/tokenize.c 338bc8f7c9dd103188952cda7964696bacac6d22
+F src/tokenize.c b05b63e224a12531813efda3bcc73e9438958745
 F src/treeview.c 78842e90c1f71269e7a73a1d4221b6fe360bab66
 F src/trigger.c 322f23aad694e8f31d384dcfa386d52a48d3c52f
 F src/update.c 40e51cd0883cb5bfd6abb7d8a7cd8aa47fab2945
@@ -1331,6 +1331,7 @@ F test/win32lock.test fbf107c91d8f5512be5a5b87c4c42ab9fdd54972
 F test/win32longpath.test 169c75a3b2e43481f4a62122510210c67b08f26d
 F test/with1.test a1e8660be88e2eb4648f8860f831d1e38b5b5443
 F test/with2.test 2b40da883658eb74ad8ad06afabe11a408e7fb87
+F test/with3.test 511bacdbe41c49cf34f9fd1bd3245fe1575bca98
 F test/withM.test e97f2a8c506ab3ea9eab94e6f6072f6cc924c991
 F test/without_rowid1.test 1a7b9bd51b899928d327052df9741d2fe8dbe701
 F test/without_rowid2.test af260339f79d13cb220288b67cd287fbcf81ad99
@@ -1400,10 +1401,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0f5b147d1fe83c34d0fbeacc7422be94d8441bc1
-R 62a6359affd853c29ced84c847c76120
-T *branch * infinite-with-loop-bug
-T *sym-infinite-with-loop-bug *
-T -sym-trunk *
+P 2040d88e877bdb69de125a047cefb4a1558e89e8
+R 6cacd3ab17c16b2093b599a59893b257
 U drh
-Z 3b853d83f7a6a14368bd6ec3d809b3a9
+Z 3613be9f7ebbfaa0b17b40694bdae79f

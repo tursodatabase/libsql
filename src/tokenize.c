@@ -510,7 +510,7 @@ abort_parse:
     sqlite3DeleteTable(db, pParse->pNewTable);
   }
 
-  if( pParse->bFreeWith ) sqlite3WithDelete(db, pParse->pWith);
+  sqlite3WithDelete(db, pParse->pWithToFree);
   sqlite3DeleteTrigger(db, pParse->pNewTrigger);
   for(i=pParse->nzVar-1; i>=0; i--) sqlite3DbFree(db, pParse->azVar[i]);
   sqlite3DbFree(db, pParse->azVar);
