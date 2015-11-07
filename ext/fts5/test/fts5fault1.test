@@ -52,7 +52,7 @@ do_faultsim_test 2 -prep {
     INSERT INTO t1 VALUES('a b c', 'a bc def ghij klmno');
   }
 } -test {
-  faultsim_test_result {0 {}} 
+  faultsim_test_result {0 {}} {1 {vtable constructor failed: t1}}
 }
 
 reset_db
@@ -66,7 +66,7 @@ do_faultsim_test 3 -prep {
 } -body {
   execsql { DELETE FROM t1 }
 } -test {
-  faultsim_test_result {0 {}} 
+  faultsim_test_result {0 {}} {1 {vtable constructor failed: t1}}
 }
 
 reset_db
@@ -101,7 +101,7 @@ foreach {tn expr res} {
   } -body "
     execsql { SELECT rowid FROM t2 WHERE t2 MATCH '$expr' }
   " -test "
-    faultsim_test_result {[list 0 $res]}
+    faultsim_test_result {[list 0 $res]} {1 {vtable constructor failed: t2}}
   "
 }
 

@@ -768,7 +768,7 @@ fastfuzztest:	fuzzcheck$(EXE) $(FUZZDATA)
 	./fuzzcheck$(EXE) --limit-mem 100M $(FUZZDATA)
 
 valgrindfuzz:	fuzzcheck$(EXE) $(FUZZDATA)
-	valgrind ./fuzzcheck$(EXE) --cell-size-check --limit-mem 10M $(FUZZDATA)
+	valgrind ./fuzzcheck$(EXE) --cell-size-check --limit-mem 10M --timeout 600 $(FUZZDATA)
 
 # A very quick test using only testfixture and omitting all the slower
 # tests.  Designed to run in under 3 minutes on a workstation.

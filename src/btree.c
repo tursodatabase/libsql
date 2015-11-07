@@ -931,7 +931,7 @@ static void ptrmapPut(BtShared *pBt, Pgno key, u8 eType, Pgno parent, int *pRC){
     return;
   }
   iPtrmap = PTRMAP_PAGENO(pBt, key);
-  rc = sqlite3PagerGet(pBt->pPager, iPtrmap, &pDbPage);
+  rc = sqlite3PagerGet(pBt->pPager, iPtrmap, &pDbPage, 0);
   if( rc!=SQLITE_OK ){
     *pRC = rc;
     return;
@@ -974,7 +974,7 @@ static int ptrmapGet(BtShared *pBt, Pgno key, u8 *pEType, Pgno *pPgno){
   assert( sqlite3_mutex_held(pBt->mutex) );
 
   iPtrmap = PTRMAP_PAGENO(pBt, key);
-  rc = sqlite3PagerGet(pBt->pPager, iPtrmap, &pDbPage);
+  rc = sqlite3PagerGet(pBt->pPager, iPtrmap, &pDbPage, 0);
   if( rc!=0 ){
     return rc;
   }
@@ -1901,11 +1901,14 @@ static void zeroPage(MemPage *pPage, int flags){
 */
 static MemPage *btreePageFromDbPage(DbPage *pDbPage, Pgno pgno, BtShared *pBt){
   MemPage *pPage = (MemPage*)sqlite3PagerGetExtra(pDbPage);
-  pPage->aData = sqlite3PagerGetData(pDbPage);
-  pPage->pDbPage = pDbPage;
-  pPage->pBt = pBt;
-  pPage->pgno = pgno;
-  pPage->hdrOffset = pgno==1 ? 100 : 0;
+  if( pgno!=pPage->pgno ){
+    pPage->aData = sqlite3PagerGetData(pDbPage);
+    pPage->pDbPage = pDbPage;
+    pPage->pBt = pBt;
+    pPage->pgno = pgno;
+    pPage->hdrOffset = pgno==1 ? 100 : 0;
+  }
+  assert( pPage->aData==sqlite3PagerGetData(pDbPage) );
   return pPage; 
 }
 
@@ -1931,7 +1934,7 @@ static int btreeGetPage(
 
   assert( flags==0 || flags==PAGER_GET_NOCONTENT || flags==PAGER_GET_READONLY );
   assert( sqlite3_mutex_held(pBt->mutex) );
-  rc = sqlite3PagerAcquire(pBt->pPager, pgno, (DbPage**)&pDbPage, flags);
+  rc = sqlite3PagerGet(pBt->pPager, pgno, (DbPage**)&pDbPage, flags);
   if( rc ) return rc;
   *ppPage = btreePageFromDbPage(pDbPage, pgno, pBt);
   return SQLITE_OK;
@@ -1996,24 +1999,25 @@ static int getAndInitPage(
     rc = SQLITE_CORRUPT_BKPT;
     goto getAndInitPage_error;
   }
-  rc = sqlite3PagerAcquire(pBt->pPager, pgno, (DbPage**)&pDbPage, bReadOnly);
+  rc = sqlite3PagerGet(pBt->pPager, pgno, (DbPage**)&pDbPage, bReadOnly);
   if( rc ){
     goto getAndInitPage_error;
   }
-  *ppPage = btreePageFromDbPage(pDbPage, pgno, pBt);
+  *ppPage = (MemPage*)sqlite3PagerGetExtra(pDbPage);
   if( (*ppPage)->isInit==0 ){
+    btreePageFromDbPage(pDbPage, pgno, pBt);
     rc = btreeInitPage(*ppPage);
     if( rc!=SQLITE_OK ){
       releasePage(*ppPage);
       goto getAndInitPage_error;
     }
   }
+  assert( (*ppPage)->pgno==pgno );
+  assert( (*ppPage)->aData==sqlite3PagerGetData(pDbPage) );
 
   /* If obtaining a child page for a cursor, we must verify that the page is
   ** compatible with the root page. */
-  if( pCur
-   && ((*ppPage)->nCell<1 || (*ppPage)->intKey!=pCur->curIntKey)
-  ){
+  if( pCur && ((*ppPage)->nCell<1 || (*ppPage)->intKey!=pCur->curIntKey) ){
     rc = SQLITE_CORRUPT_BKPT;
     releasePage(*ppPage);
     goto getAndInitPage_error;
@@ -4593,7 +4597,7 @@ static int accessPayload(
 
         {
           DbPage *pDbPage;
-          rc = sqlite3PagerAcquire(pBt->pPager, nextPage, &pDbPage,
+          rc = sqlite3PagerGet(pBt->pPager, nextPage, &pDbPage,
               ((eOp&0x01)==0 ? PAGER_GET_READONLY : 0)
           );
           if( rc==SQLITE_OK ){
@@ -5037,6 +5041,8 @@ int sqlite3BtreeLast(BtCursor *pCur, int *pRes){
 **     *pRes>0      The cursor is left pointing at an entry that
 **                  is larger than intKey/pIdxKey.
 **
+** For index tables, the pIdxKey->eqSeen field is set to 1 if there
+** exists an entry in the table that exactly matches pIdxKey.  
 */
 int sqlite3BtreeMovetoUnpacked(
   BtCursor *pCur,          /* The cursor to be moved */
@@ -6960,9 +6966,6 @@ static void copyNodeContent(MemPage *pFrom, MemPage *pTo, int *pRC){
 ** If aOvflSpace is set to a null pointer, this function returns 
 ** SQLITE_NOMEM.
 */
-#if defined(_MSC_VER) && _MSC_VER >= 1700 && defined(_M_ARM)
-#pragma optimize("", off)
-#endif
 static int balance_nonroot(
   MemPage *pParent,               /* Parent page of siblings being balanced */
   int iParentIdx,                 /* Index of "the page" in pParent */
@@ -7708,9 +7711,6 @@ balance_cleanup:
 
   return rc;
 }
-#if defined(_MSC_VER) && _MSC_VER >= 1700 && defined(_M_ARM)
-#pragma optimize("", on)
-#endif
 
 
 /*
@@ -8909,7 +8909,7 @@ static void checkList(
       break;
     }
     if( checkRef(pCheck, iPage) ) break;
-    if( sqlite3PagerGet(pCheck->pPager, (Pgno)iPage, &pOvflPage) ){
+    if( sqlite3PagerGet(pCheck->pPager, (Pgno)iPage, &pOvflPage, 0) ){
       checkAppendMsg(pCheck, "failed to get page %d", iPage);
       break;
     }
@@ -9646,7 +9646,6 @@ int sqlite3BtreeSetVersion(Btree *pBtree, int iVersion){
   return rc;
 }
 
-#ifdef SQLITE_DEBUG
 /*
 ** Return true if the cursor has a hint specified.  This routine is
 ** only used from within assert() statements
@@ -9654,7 +9653,6 @@ int sqlite3BtreeSetVersion(Btree *pBtree, int iVersion){
 int sqlite3BtreeCursorHasHint(BtCursor *pCsr, unsigned int mask){
   return (pCsr->hints & mask)!=0;
 }
-#endif
 
 /*
 ** Return true if the given Btree is read-only.
