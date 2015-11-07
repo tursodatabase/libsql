@@ -865,4 +865,114 @@ do_catchsql_test 16.1 {
   SELECT * FROM i;
 } {1 {recursive aggregate queries not supported}}
 
+#-------------------------------------------------------------------------
+do_execsql_test 17.1 {
+  WITH x(a) AS (
+    WITH y(b) AS (SELECT 10)
+    SELECT 9 UNION ALL SELECT * FROM y
+  )
+  SELECT * FROM x
+} {9 10}
+
+do_execsql_test 17.2 {
+  WITH x AS (
+    WITH y(b) AS (SELECT 10)
+    SELECT * FROM y UNION ALL SELECT * FROM y
+  )
+  SELECT * FROM x
+} {10 10}
+
+do_test 17.2 {
+  db eval {
+    WITH x AS (
+        WITH y(b) AS (SELECT 10)
+        SELECT * FROM y UNION ALL SELECT * FROM y
+    )
+    SELECT * FROM x
+  } A {
+    # no op
+  }
+  set A(*)
+} {b}
+
+do_catchsql_test 17.3 {
+  WITH i AS (
+    WITH j AS (SELECT 5)
+    SELECT 5 FROM i UNION SELECT 8 FROM i
+  )
+  SELECT * FROM i;
+} {1 {circular reference: i}}
+
+do_catchsql_test 17.4 {
+  WITH i AS (
+    WITH j AS (SELECT 5)
+    SELECT 5 FROM t1 UNION SELECT 8 FROM t11
+  )
+  SELECT * FROM i;
+} {1 {no such table: t11}}
+
+do_execsql_test 17.5 {
+  WITH 
+  x1 AS (SELECT 10),
+  x2 AS (SELECT * FROM x1),
+  x3 AS (
+    WITH x1 AS (SELECT 11)
+    SELECT * FROM x2 UNION ALL SELECT * FROM x2
+  )
+  SELECT * FROM x3;
+} {10 10}
+
+do_execsql_test 17.6 {
+  WITH 
+  x1 AS (SELECT 10),
+  x2 AS (SELECT * FROM x1),
+  x3 AS (
+    WITH x1 AS (SELECT 11)
+    SELECT * FROM x2 UNION ALL SELECT * FROM x1
+  )
+  SELECT * FROM x3;
+} {10 11}
+
+do_execsql_test 17.7 {
+  WITH 
+  x1 AS (SELECT 10),
+  x2 AS (SELECT * FROM x1),
+  x3 AS (
+    WITH 
+      x1 AS ( SELECT 11 ),
+      x4 AS ( SELECT * FROM x2 )
+    SELECT * FROM x4 UNION ALL SELECT * FROM x1
+  )
+  SELECT * FROM x3;
+} {10 11}
+
+do_execsql_test 17.8 {
+  WITH 
+  x1 AS (SELECT 10),
+  x2 AS (SELECT * FROM x1),
+  x3 AS (
+    WITH 
+      x1 AS ( SELECT 11 ),
+      x4 AS ( SELECT * FROM x2 )
+    SELECT * FROM x4 UNION ALL SELECT * FROM x1
+  )
+  SELECT * FROM x3;
+} {10 11}
+
+do_execsql_test 17.9 {
+  WITH 
+  x1 AS (SELECT 10),
+  x2 AS (SELECT 11),
+  x3 AS (
+    SELECT * FROM x1 UNION ALL SELECT * FROM x2
+  ),
+  x4 AS (
+    WITH 
+    x1 AS (SELECT 12),
+    x2 AS (SELECT 13)
+    SELECT * FROM x3
+  )
+  SELECT * FROM x4;
+} {10 11}
+
 finish_test
