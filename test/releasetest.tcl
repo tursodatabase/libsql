@@ -19,6 +19,8 @@ optional) are:
     --dryrun                           (Print what would have happened)
     --info                             (Show diagnostic info)
     --with-tcl=DIR                     (Use TCL build at DIR)
+    --jobs     N                       (Use N processes - default 1)
+    --progress                         (Show progress messages)
 
 The default value for --srcdir is the parent of the directory holding
 this script.
@@ -30,6 +32,12 @@ platforms are "Linux-x86", "Linux-x86_64", "Darwin-i386",
 
 Every test begins with a fresh run of the configure script at the top
 of the SQLite source tree.
+}
+
+# Return a timestamp of the form HH:MM:SS
+#
+proc now {} {
+  return [clock format [clock seconds] -format %H:%M:%S]
 }
 
 # Omit comments (text between # and \n) in a long multi-line string.
@@ -120,6 +128,7 @@ array set ::Configs [strip_comments {
     -DSQLITE_ENABLE_STAT4
     -DSQLITE_ENABLE_RBU
     -DSQLITE_MAX_ATTACHED=125
+    -DLONGDOUBLE_TYPE=double
   }
   "Device-One" {
     -O2
@@ -223,6 +232,7 @@ array set ::Configs [strip_comments {
 array set ::Platforms [strip_comments {
   Linux-x86_64 {
     "Check-Symbols"           checksymbols
+    "Fast-One"                fuzztest
     "Debug-One"               "mptest test"
     "Have-Not"                test
     "Secure-Delete"           test
@@ -233,10 +243,9 @@ array set ::Platforms [strip_comments {
     "No-lookaside"            test
     "Devkit"                  test
     "Sanitize"                {QUICKTEST_OMIT=func4.test,nan.test test}
-    "Fast-One"                fuzztest
-    "Valgrind"                valgrindtest
-    "Default"                 "threadtest fulltest"
     "Device-One"              fulltest
+    "Default"                 "threadtest fulltest"
+    "Valgrind"                valgrindtest
   }
   Linux-i686 {
     "Devkit"                  test
@@ -257,12 +266,12 @@ array set ::Platforms [strip_comments {
     "OS-X"                    "threadtest fulltest"
   }
   "Windows NT-intel" {
-    "Default"                 "mptest fulltestonly"
     "Have-Not"                test
+    "Default"                 "mptest fulltestonly"
   }
   "Windows NT-amd64" {
-    "Default"                 "mptest fulltestonly"
     "Have-Not"                test
+    "Default"                 "mptest fulltestonly"
   }
 
   # The Failure-Detection platform runs various tests that deliberately
@@ -285,6 +294,9 @@ array set ::Platforms [strip_comments {
 #########################################################################
 #########################################################################
 
+# Configuration verification: Check that each entry in the list of configs
+# specified for each platforms exists.
+#
 foreach {key value} [array get ::Platforms] {
   foreach {v t} $value {
     if {0==[info exists ::Configs($v)]} {
@@ -372,9 +384,8 @@ proc count_tests_and_errors {logfile rcVar errmsgVar} {
   }
   close $fd
   if {$::BUILDONLY} {
-    if {$rc==0} {
-      set errmsg "Build complete"
-    } else {
+    incr ::NTESTCASE
+    if {$rc!=0} {
       set errmsg "Build failed"
     }
   } elseif {!$seen} {
@@ -386,12 +397,169 @@ proc count_tests_and_errors {logfile rcVar errmsgVar} {
   }
 }
 
-proc run_test_suite {name testtarget config} {
+#--------------------------------------------------------------------------
+# This command is invoked as the [main] routine for scripts run with the
+# "--slave" option.
+#
+# For each test (i.e. "configure && make test" execution), the master
+# process spawns a process with the --slave option. It writes two lines
+# to the slaves stdin. The first contains a single boolean value - the
+# value of ::TRACE to use in the slave script. The second line contains a
+# list in the same format as each element of the list passed to the
+# [run_all_test_suites] command in the master process.
+#
+# The slave then runs the "configure && make test" commands specified. It
+# exits successfully if the tests passes, or with a non-zero error code
+# otherwise.
+#
+proc run_slave_test {} {
+  # Read global vars configuration from stdin.
+  set V [gets stdin]
+  foreach {::TRACE ::MSVC ::DRYRUN} $V {}
+
+  # Read the test-suite configuration from stdin.
+  set T [gets stdin]
+  foreach {title dir configOpts testtarget makeOpts cflags opts} $T {}
+
+  # Create and switch to the test directory.
+  trace_cmd file mkdir $dir
+  trace_cmd cd $dir
+  catch {file delete core}
+  catch {file delete test.log}
+
+  # Run the "./configure && make" commands.
+  set rc 0
+  set rc [catch [configureCommand $configOpts]]
+  if {!$rc} {
+    if {[info exists ::env(TCLSH_CMD)]} {
+      set savedEnv(TCLSH_CMD) $::env(TCLSH_CMD)
+    } else {
+      unset -nocomplain savedEnv(TCLSH_CMD)
+    }
+    set ::env(TCLSH_CMD) [file nativename [info nameofexecutable]]
+    set rc [catch [makeCommand $testtarget $makeOpts $cflags $opts]]
+    if {[info exists savedEnv(TCLSH_CMD)]} {
+      set ::env(TCLSH_CMD) $savedEnv(TCLSH_CMD)
+    } else {
+      unset -nocomplain ::env(TCLSH_CMD)
+    }
+  }
+
+  # Exis successfully if the test passed, or with a non-zero error code
+  # otherwise.
+  exit $rc
+}
+
+# This command is invoked in the master process each time a slave
+# file-descriptor is readable.
+#
+proc slave_fileevent {fd T tm1} {
+  global G
+  foreach {title dir configOpts testtarget makeOpts cflags opts} $T {}
+
+  if {[eof $fd]} {
+    fconfigure $fd -blocking 1
+    set rc [catch { close $fd }]
+
+    set errmsg {}
+    set logfile [file join $dir test.log]
+    if {[file exists $logfile]} {
+      count_tests_and_errors [file join $dir test.log] rc errmsg
+    } elseif {$rc==0 && !$::DRYRUN} {
+      set rc 1
+      set errmsg "no test.log file..."
+    }
+
+    if {!$::TRACE} {
+      set tm2 [clock seconds]
+      set hours [expr {($tm2-$tm1)/3600}]
+      set minutes [expr {(($tm2-$tm1)/60)%60}]
+      set seconds [expr {($tm2-$tm1)%60}]
+      set tm [format (%02d:%02d:%02d) $hours $minutes $seconds]
+
+      if {$rc} {
+        set status FAIL
+        incr ::NERR
+      } else {
+        set status Ok
+      }
+
+      set n [string length $title]
+      if {$::PROGRESS_MSGS} {
+        PUTS "finished: ${title}[string repeat . [expr {53-$n}]] $status $tm"
+      } else {
+        PUTS "${title}[string repeat . [expr {63-$n}]] $status $tm"
+      }
+      if {$errmsg!=""} {PUTS "     $errmsg"}
+      flush stdout
+    }
+
+    incr G(nJob) -1
+  } else {
+    set line [gets $fd]
+    if {[string trim $line] != ""} {
+      puts "Trace   : $title - \"$line\""
+    }
+  }
+}
+
+#--------------------------------------------------------------------------
+# The only argument passed to this function is a list of test-suites to
+# run. Each "test-suite" is itself a list consisting of the following
+# elements:
+#
+#   * Test title (for display).
+#   * The name of the directory to run the test in.
+#   * The argument for [configureCommand]
+#   * The first argument for [makeCommand]
+#   * The second argument for [makeCommand]
+#   * The third argument for [makeCommand]
+#
+proc run_all_test_suites {alltests} {
+  global G
+  set tests $alltests
+
+  set G(nJob) 0
+
+  while {[llength $tests]>0 || $G(nJob)>0} {
+    if {$G(nJob)>=$::JOBS || [llength $tests]==0} {
+      vwait G(nJob)
+    }
+
+    if {[llength $tests]>0} {
+      set T [lindex $tests 0]
+      set tests [lrange $tests 1 end]
+      foreach {title dir configOpts testtarget makeOpts cflags opts} $T {}
+      if {$::PROGRESS_MSGS && !$::TRACE} {
+        set n [string length $title]
+        PUTS "starting: ${title} at [now]"
+        flush stdout
+      }
+
+      # Run the job.
+      #
+      set tm1 [clock seconds]
+      incr G(nJob)
+      set script [file normalize [info script]]
+      set fd [open "|[info nameofexecutable] $script --slave" r+]
+      fconfigure $fd -blocking 0
+      fileevent $fd readable [list slave_fileevent $fd $T $tm1]
+      puts $fd [list $::TRACE $::MSVC $::DRYRUN]
+      puts $fd [list {*}$T]
+      flush $fd
+    }
+  }
+}
+
+proc add_test_suite {listvar name testtarget config} {
+  upvar $listvar alltests
+
   # Tcl variable $opts is used to build up the value used to set the
   # OPTS Makefile variable. Variable $cflags holds the value for
   # CFLAGS. The makefile will pass OPTS to both gcc and lemon, but
   # CFLAGS is only passed to gcc.
   #
+  set makeOpts ""
   set cflags [expr {$::MSVC ? "-Zi" : "-g"}]
   set opts ""
   set title ${name}($testtarget)
@@ -404,67 +572,74 @@ proc run_test_suite {name testtarget config} {
     } elseif {[regexp {^[A-Z]+=} $arg]} {
       lappend testtarget $arg
     } elseif {[regexp {^--(enable|disable)-} $arg]} {
+      if {$::MSVC} {
+        if {$arg eq "--disable-amalgamation"} {
+          lappend makeOpts USE_AMALGAMATION=0
+          continue
+        }
+        if {$arg eq "--disable-shared"} {
+          lappend makeOpts USE_CRT_DLL=0 DYNAMIC_SHELL=0
+          continue
+        }
+        if {$arg eq "--enable-fts5"} {
+          lappend opts -DSQLITE_ENABLE_FTS5
+          continue
+        }
+        if {$arg eq "--enable-json1"} {
+          lappend opts -DSQLITE_ENABLE_JSON1
+          continue
+        }
+        if {$arg eq "--enable-shared"} {
+          lappend makeOpts USE_CRT_DLL=1 DYNAMIC_SHELL=1
+          continue
+        }
+      }
       lappend configOpts $arg
     } else {
+      if {$::MSVC} {
+        if {$arg eq "-g"} {
+          lappend cflags -Zi
+          continue
+        }
+        if {[regexp -- {^-O(\d+)$} $arg all level]} then {
+          lappend makeOpts OPTIMIZATIONS=$level
+          continue
+        }
+      }
       lappend cflags $arg
     }
   }
 
-  set cflags [join $cflags " "]
-  set opts   [join $opts " "]
-  append opts " -DSQLITE_NO_SYNC=1"
+  # Disable sync to make testing faster.
+  #
+  lappend opts -DSQLITE_NO_SYNC=1
 
   # Some configurations already set HAVE_USLEEP; in that case, skip it.
   #
-  if {![regexp { -DHAVE_USLEEP$} $opts]
-         && ![regexp { -DHAVE_USLEEP[ =]+} $opts]} {
-    append opts " -DHAVE_USLEEP=1"
+  if {[lsearch -regexp $opts {^-DHAVE_USLEEP(?:=|$)}]==-1} {
+    lappend opts -DHAVE_USLEEP=1
+  }
+
+  # Add the define for this platform.
+  #
+  if {$::tcl_platform(platform)=="windows"} {
+    lappend opts -DSQLITE_OS_WIN=1
+  } else {
+    lappend opts -DSQLITE_OS_UNIX=1
   }
 
   # Set the sub-directory to use.
   #
   set dir [string tolower [string map {- _ " " _} $name]]
 
-  if {$::tcl_platform(platform)=="windows"} {
-    append opts " -DSQLITE_OS_WIN=1"
-  } else {
-    append opts " -DSQLITE_OS_UNIX=1"
-  }
+  # Join option lists into strings, using space as delimiter.
+  #
+  set makeOpts [join $makeOpts " "]
+  set cflags   [join $cflags " "]
+  set opts     [join $opts " "]
 
-  if {!$::TRACE} {
-    set n [string length $title]
-    PUTS -nonewline "${title}[string repeat . [expr {63-$n}]]"
-    flush stdout
-  }
-
-  set rc 0
-  set tm1 [clock seconds]
-  set origdir [pwd]
-  trace_cmd file mkdir $dir
-  trace_cmd cd $dir
-  set errmsg {}
-  catch {file delete core}
-  set rc [catch [configureCommand $configOpts]]
-  if {!$rc} {
-    set rc [catch [makeCommand $testtarget $cflags $opts]]
-    count_tests_and_errors test.log rc errmsg
-  }
-  trace_cmd cd $origdir
-  set tm2 [clock seconds]
-
-  if {!$::TRACE} {
-    set hours [expr {($tm2-$tm1)/3600}]
-    set minutes [expr {(($tm2-$tm1)/60)%60}]
-    set seconds [expr {($tm2-$tm1)%60}]
-    set tm [format (%02d:%02d:%02d) $hours $minutes $seconds]
-    if {$rc} {
-      PUTS " FAIL $tm"
-      incr ::NERR
-    } else {
-      PUTS " Ok   $tm"
-    }
-    if {$errmsg!=""} {PUTS "     $errmsg"}
-  }
+  lappend alltests [list \
+      $title $dir $configOpts $testtarget $makeOpts $cflags $opts]
 }
 
 # The following procedure returns the "configure" command to be exectued for
@@ -484,15 +659,19 @@ proc configureCommand {opts} {
 # The following procedure returns the "make" command to be executed for the
 # specified targets, compiler flags, and options.
 #
-proc makeCommand { targets cflags opts } {
+proc makeCommand { targets makeOpts cflags opts } {
   set result [list trace_cmd exec]
   if {$::MSVC} {
     set nmakeDir [file nativename $::SRCDIR]
-    set nmakeFile [file join $nmakeDir Makefile.msc]
-    lappend result nmake /f $nmakeFile TOP=$nmakeDir clean
+    set nmakeFile [file nativename [file join $nmakeDir Makefile.msc]]
+    lappend result nmake /f $nmakeFile TOP=$nmakeDir
   } else {
-    lappend result make clean
+    lappend result make
   }
+  foreach makeOpt $makeOpts {
+    lappend result $makeOpt
+  }
+  lappend result clean
   foreach target $targets {
     lappend result $target
   }
@@ -507,9 +686,11 @@ proc trace_cmd {args} {
   if {$::TRACE} {
     PUTS $args
   }
+  set res ""
   if {!$::DRYRUN} {
-    uplevel 1 $args
+    set res [uplevel 1 $args]
   }
+  return $res
 }
 
 
@@ -520,13 +701,14 @@ proc trace_cmd {args} {
 #
 proc process_options {argv} {
   set ::SRCDIR    [file normalize [file dirname [file dirname $::argv0]]]
-  set ::QUICK     0
-  set ::MSVC      0
-  set ::BUILDONLY 0
-  set ::DRYRUN    0
-  set ::EXEC      exec
-  set ::TRACE     0
-  set ::WITHTCL   {}
+  set ::QUICK          0
+  set ::MSVC           0
+  set ::BUILDONLY      0
+  set ::DRYRUN         0
+  set ::TRACE          0
+  set ::JOBS           1
+  set ::PROGRESS_MSGS  0
+  set ::WITHTCL        {}
   set config {}
   set platform $::tcl_platform(os)-$::tcl_platform(machine)
 
@@ -534,6 +716,11 @@ proc process_options {argv} {
     set x [lindex $argv $i]
     if {[regexp {^--[a-z]} $x]} {set x [string range $x 1 end]}
     switch -glob -- $x {
+      -slave {
+        run_slave_test
+        exit
+      }
+
       -srcdir {
         incr i
         set ::SRCDIR [file normalize [lindex $argv $i]]
@@ -542,6 +729,15 @@ proc process_options {argv} {
       -platform {
         incr i
         set platform [lindex $argv $i]
+      }
+
+      -jobs {
+        incr i
+        set ::JOBS [lindex $argv $i]
+      }
+
+      -progress {
+        set ::PROGRESS_MSGS 1
       }
 
       -quick {
@@ -597,11 +793,7 @@ proc process_options {argv} {
       }
 
       -g {
-        if {$::MSVC} {
-          lappend ::EXTRACONFIG -Zi
-        } else {
-          lappend ::EXTRACONFIG [lindex $argv $i]
-        }
+        lappend ::EXTRACONFIG [lindex $argv $i]
       }
 
       -with-tcl=* {
@@ -640,11 +832,20 @@ proc process_options {argv} {
     if {[llength $config]==1} {lappend config fulltest}
     set ::CONFIGLIST $config
   } else {
-    set ::CONFIGLIST $::Platforms($platform)
+    if {$::JOBS>1} {
+      set ::CONFIGLIST {}
+      foreach {target zConfig} [lreverse $::Platforms($platform)] {
+        append ::CONFIGLIST [format "    %-25s %s\n" \
+                               [list $zConfig] [list $target]]
+      }
+    } else {
+      set ::CONFIGLIST $::Platforms($platform)
+    }
   }
   PUTS "Running the following test configurations for $platform:"
   PUTS "    [string trim $::CONFIGLIST]"
   PUTS -nonewline "Flags:"
+  if {$::PROGRESS_MSGS} {PUTS -nonewline " --progress"}
   if {$::DRYRUN} {PUTS -nonewline " --dryrun"}
   if {$::BUILDONLY} {PUTS -nonewline " --buildonly"}
   if {$::MSVC} {PUTS -nonewline " --msvc"}
@@ -652,6 +853,7 @@ proc process_options {argv} {
      1 {PUTS -nonewline " --quick"}
      2 {PUTS -nonewline " --veryquick"}
   }
+  if {$::JOBS>1} {PUTS -nonewline " --jobs $::JOBS"}
   PUTS ""
 }
 
@@ -683,13 +885,15 @@ proc main {argv} {
       }
       if {$::BUILDONLY} {
         set target testfixture
-        if {$::MSVC} {append target .exe}
+        if {$::tcl_platform(platform)=="windows"} {
+          append target .exe
+        }
       }
     }
     set config_options [concat $::Configs($zConfig) $::EXTRACONFIG]
 
     incr NTEST
-    run_test_suite $zConfig $target $config_options
+    add_test_suite all $zConfig $target $config_options
 
     # If the configuration included the SQLITE_DEBUG option, then remove
     # it and run veryquick.test. If it did not include the SQLITE_DEBUG option
@@ -703,15 +907,17 @@ proc main {argv} {
       if {$debug_idx < 0} {
         incr NTEST
         append config_options " -DSQLITE_DEBUG=1"
-        run_test_suite "${zConfig}_debug" $xtarget $config_options
+        add_test_suite all "${zConfig}_debug" $xtarget $config_options
       } else {
         incr NTEST
         regsub { *-DSQLITE_MEMDEBUG[^ ]* *} $config_options { } config_options
         regsub { *-DSQLITE_DEBUG[^ ]* *} $config_options { } config_options
-        run_test_suite "${zConfig}_ndebug" $xtarget $config_options
+        add_test_suite all "${zConfig}_ndebug" $xtarget $config_options
       }
     }
   }
+
+  run_all_test_suites $all
 
   set elapsetime [expr {[clock seconds]-$STARTTIME}]
   set hr [expr {$elapsetime/3600}]

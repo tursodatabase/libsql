@@ -26,7 +26,9 @@ proc parse_uri {uri} {
   set DB [sqlite3_open_v2 $uri {
     SQLITE_OPEN_READWRITE SQLITE_OPEN_CREATE SQLITE_OPEN_WAL
   } tvfs]
+  set fileName [sqlite3_db_filename $DB main]
   sqlite3_close $DB
+  forcedelete $fileName
   tvfs delete
   tvfs2 delete
 

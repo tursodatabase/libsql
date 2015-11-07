@@ -1080,7 +1080,7 @@ fastfuzztest:	fuzzcheck$(TEXE) $(FUZZDATA)
 	./fuzzcheck$(TEXE) --limit-mem 100M $(FUZZDATA)
 
 valgrindfuzz:	fuzzcheck$(TEXT) $(FUZZDATA)
-	valgrind ./fuzzcheck$(TEXE) --cell-size-check --limit-mem 10M $(FUZZDATA)
+	valgrind ./fuzzcheck$(TEXE) --cell-size-check --limit-mem 10M --timeout 600 $(FUZZDATA)
 
 # Minimal testing that runs in less than 3 minutes
 #

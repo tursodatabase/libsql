@@ -7,11 +7,13 @@ proc bc_find_binaries {zCaption} {
   # against.
   #
   set binaries [list]
-  set pattern "[file tail [info nameofexec]]?*"
+  set self [file tail [info nameofexec]]
+  set pattern "$self?*"
   if {$::tcl_platform(platform)=="windows"} {
     set pattern [string map {\.exe {}} $pattern]
   }
   foreach file [glob -nocomplain $pattern] {
+    if {$file==$self} continue
     if {[file executable $file] && [file isfile $file]} {lappend binaries $file}
   }
 

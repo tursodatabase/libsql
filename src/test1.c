@@ -7238,6 +7238,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
 
   };
   static int bitmask_size = sizeof(Bitmask)*8;
+  static int longdouble_size = sizeof(LONGDOUBLE_TYPE);
   int i;
   extern int sqlite3_sync_count, sqlite3_fullsync_count;
   extern int sqlite3_opentemp_count;
@@ -7338,6 +7339,8 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
       (char*)&sqlite3_data_directory, TCL_LINK_STRING);
   Tcl_LinkVar(interp, "bitmask_size",
       (char*)&bitmask_size, TCL_LINK_INT|TCL_LINK_READ_ONLY);
+  Tcl_LinkVar(interp, "longdouble_size",
+      (char*)&longdouble_size, TCL_LINK_INT|TCL_LINK_READ_ONLY);
   Tcl_LinkVar(interp, "sqlite_sync_count",
       (char*)&sqlite3_sync_count, TCL_LINK_INT);
   Tcl_LinkVar(interp, "sqlite_fullsync_count",

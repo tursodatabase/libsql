@@ -257,9 +257,7 @@ int sqlite3BtreePutData(BtCursor*, u32 offset, u32 amt, void*);
 void sqlite3BtreeIncrblobCursor(BtCursor *);
 void sqlite3BtreeClearCursor(BtCursor *);
 int sqlite3BtreeSetVersion(Btree *pBt, int iVersion);
-#ifdef SQLITE_DEBUG
 int sqlite3BtreeCursorHasHint(BtCursor*, unsigned int mask);
-#endif
 int sqlite3BtreeIsReadonly(Btree *pBt);
 int sqlite3HeaderSizeBtree(void);
 
