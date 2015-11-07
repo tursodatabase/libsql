@@ -1,5 +1,5 @@
-C Proposed\sfix\sfor\san\sinfinite\sloop\sbug\sin\sthe\sWITH\sclause\ssemantic\sanalysis\nlogic.
-D 2015-11-07T17:48:21.602
+C Add\stest\scases\sfor\sWITH\sclauses.
+D 2015-11-07T17:51:39.619
 F Makefile.in 3a705bb4bd12e194212ddbdbf068310d17153cdb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 702d3e98f3afc6587a78481257f3c4c900efc3a4
@@ -1329,7 +1329,7 @@ F test/wild001.test bca33f499866f04c24510d74baf1e578d4e44b1c
 F test/win32heap.test ea19770974795cff26e11575e12d422dbd16893c
 F test/win32lock.test fbf107c91d8f5512be5a5b87c4c42ab9fdd54972
 F test/win32longpath.test 169c75a3b2e43481f4a62122510210c67b08f26d
-F test/with1.test a1e8660be88e2eb4648f8860f831d1e38b5b5443
+F test/with1.test 05c8fc7f809f178a8a0519f02c21fe430948c895
 F test/with2.test 2b40da883658eb74ad8ad06afabe11a408e7fb87
 F test/with3.test 511bacdbe41c49cf34f9fd1bd3245fe1575bca98
 F test/withM.test e97f2a8c506ab3ea9eab94e6f6072f6cc924c991
@@ -1401,7 +1401,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2040d88e877bdb69de125a047cefb4a1558e89e8
-R 6cacd3ab17c16b2093b599a59893b257
-U drh
-Z 3613be9f7ebbfaa0b17b40694bdae79f
+P 028475cb17a4b50baf0e9aba9bd3403d0a5d03b0
+R 0a66e1cb90e0f88ea5b94da656f84e5f
+U dan
+Z 560670311488774642220bf984dfc3d3
