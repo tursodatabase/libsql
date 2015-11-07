@@ -103,7 +103,7 @@ static void ieee754func(
     if( e>0x7ff ) e = 0x7ff;
     a = m & ((((sqlite3_int64)1)<<52)-1);
     a |= e<<52;
-    if( isNeg ) a |= ((sqlite3_int64)1)<<63;
+    if( isNeg ) a |= ((sqlite3_uint64)1)<<63;
     memcpy(&r, &a, sizeof(r));
     sqlite3_result_double(context, r);
   }

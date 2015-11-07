@@ -1,5 +1,5 @@
-C Avoid\san\sunnecessary\skey\scomparison\swhen\sdoing\san\sindexed\slookup\sagainst\san\nequality\sconstraint.
-D 2015-11-06T20:22:25.475
+C Fix\sa\sharmless\ssanitizer\swarning\sin\sthe\sieee754\sextension.
+D 2015-11-07T00:51:15.328
 F Makefile.in 3a705bb4bd12e194212ddbdbf068310d17153cdb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 702d3e98f3afc6587a78481257f3c4c900efc3a4
@@ -196,7 +196,7 @@ F ext/misc/compress.c 122faa92d25033d6c3f07c39231de074ab3d2e83
 F ext/misc/eval.c f971962e92ebb8b0a4e6b62949463ee454d88fa2
 F ext/misc/fileio.c d4171c815d6543a9edef8308aab2951413cd8d0f
 F ext/misc/fuzzer.c 4c84635c71c26cfa7c2e5848cf49fe2d2cfcd767
-F ext/misc/ieee754.c ca4a0a8fd2d4667a7ef10b761312c256bc734039
+F ext/misc/ieee754.c f190d0cc5182529acb15babd177781be1ac1718c
 F ext/misc/json1.c 4f45afd9dbcd6feca8c528251efbb7fc09299a09
 F ext/misc/nextchar.c 35c8b8baacb96d92abbb34a83a997b797075b342
 F ext/misc/percentile.c bcbee3c061b884eccb80e21651daaae8e1e43c63
@@ -1400,8 +1400,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 46c36b1543d7a8156eaa866c67080526153fb10d 997ce6c90b454c03cc2ef6934752ee8dd2e520e3
-R d671b922284dee0f3690ad077e9da684
-T +closed 997ce6c90b454c03cc2ef6934752ee8dd2e520e3
+P d741e1ccdce96e6142e294fbdd20a0282296dcea
+R 09ac306f39fb272ed95e60baefe78a45
 U drh
-Z 296d234d0e2e95f43350e42db47ce3df
+Z d2d47fc2f78320b8e866fa5d7ad2519b
