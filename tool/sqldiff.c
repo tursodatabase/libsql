@@ -558,7 +558,7 @@ static void diff_one_table(const char *zTab, FILE *out){
   az = columnNames("main", zTab, &nPk, 0);
   az2 = columnNames("aux", zTab, &nPk2, 0);
   if( az && az2 ){
-    for(n=0; az[n]; n++){
+    for(n=0; az[n] && az2[n]; n++){
       if( sqlite3_stricmp(az[n],az2[n])!=0 ) break;
     }
   }
@@ -568,13 +568,15 @@ static void diff_one_table(const char *zTab, FILE *out){
    || az[n]
   ){
     /* Schema mismatch */
-    fprintf(out, "DROP TABLE %s;\n", zId);
+    fprintf(out, "DROP TABLE %s; -- due to schema mismatch\n", zId);
     dump_table(zTab, out);
     goto end_diff_one_table;
   }
 
   /* Build the comparison query */
-  for(n2=n; az[n2]; n2++){}
+  for(n2=n; az2[n2]; n2++){
+    fprintf(out, "ALTER TABLE %s ADD COLUMN %s;\n", zId, safeId(az2[n2]));
+  }
   nQ = nPk2+1+2*(n2-nPk2);
   if( n2>nPk2 ){
     zSep = "SELECT ";
@@ -585,7 +587,12 @@ static void diff_one_table(const char *zTab, FILE *out){
     strPrintf(&sql, ", 1%s -- changed row\n", nPk==n ? "" : ",");
     while( az[i] ){
       strPrintf(&sql, "       A.%s IS NOT B.%s, B.%s%s\n",
-                az[i], az[i], az[i], i==n2-1 ? "" : ",");
+                az[i], az2[i], az2[i], az2[i+1]==0 ? "" : ",");
+      i++;
+    }
+    while( az2[i] ){
+      strPrintf(&sql, "       B.%s IS NOT NULL, B.%s%s\n",
+                az2[i], az2[i], az2[i+1]==0 ? "" : ",");
       i++;
     }
     strPrintf(&sql, "  FROM main.%s A, aux.%s B\n", zId, zId);
@@ -597,7 +604,13 @@ static void diff_one_table(const char *zTab, FILE *out){
     zSep = "\n   AND (";
     while( az[i] ){
       strPrintf(&sql, "%sA.%s IS NOT B.%s%s\n",
-                zSep, az[i], az[i], i==n2-1 ? ")" : "");
+                zSep, az[i], az2[i], az2[i+1]==0 ? ")" : "");
+      zSep = "        OR ";
+      i++;
+    }
+    while( az2[i] ){
+      strPrintf(&sql, "%sB.%s IS NOT NULL%s\n",
+                zSep, az2[i], az2[i+1]==0 ? ")" : "");
       zSep = "        OR ";
       i++;
     }
@@ -609,7 +622,7 @@ static void diff_one_table(const char *zTab, FILE *out){
     zSep = ", ";
   }
   strPrintf(&sql, ", 2%s -- deleted row\n", nPk==n ? "" : ",");
-  while( az[i] ){
+  while( az2[i] ){
     strPrintf(&sql, "       NULL, NULL%s\n", i==n2-1 ? "" : ",");
     i++;
   }
@@ -628,7 +641,7 @@ static void diff_one_table(const char *zTab, FILE *out){
   }
   strPrintf(&sql, ", 3%s -- inserted row\n", nPk==n ? "" : ",");
   while( az2[i] ){
-    strPrintf(&sql, "       1, B.%s%s\n", az[i], i==n2-1 ? "" : ",");
+    strPrintf(&sql, "       1, B.%s%s\n", az2[i], az2[i+1]==0 ? "" : ",");
     i++;
   }
   strPrintf(&sql, "  FROM aux.%s B\n", zId);
