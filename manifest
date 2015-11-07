@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\ssanitizer\swarning\sin\sthe\sieee754\sextension.
-D 2015-11-07T00:51:15.328
+C The\sOPFLAG_SEEKEQ\soptimization\sis\sonly\sapplicable\sto\sequality\scomparisons\nagainst\san\sindex,\snot\sagainst\sa\srowid\stable.
+D 2015-11-07T01:19:00.997
 F Makefile.in 3a705bb4bd12e194212ddbdbf068310d17153cdb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 702d3e98f3afc6587a78481257f3c4c900efc3a4
@@ -403,7 +403,7 @@ F src/update.c 40e51cd0883cb5bfd6abb7d8a7cd8aa47fab2945
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c fc612367108b74573c5fd13a85d0a23027f438bd
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c a9b0ec9f8df86a805d593b625d1f21a8e71dcda5
+F src/vdbe.c 7a9b18027414368d800716e6319e2acd699c70db
 F src/vdbe.h efb7a8c1459e31f3ea4377824c6a7e4cb5068637
 F src/vdbeInt.h 33403622c6a8feaaac5f0f3f17f5d1bf6df42286
 F src/vdbeapi.c 020681b943e77766b32ae1cddf86d7831b7374ca
@@ -1400,7 +1400,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d741e1ccdce96e6142e294fbdd20a0282296dcea
-R 09ac306f39fb272ed95e60baefe78a45
+P dd9a26ecdeaef7b0b9cbf4ff70448ab13a276b4e
+R 37fd8f25666e5cc61c467cdb94b7bb71
 U drh
-Z d2d47fc2f78320b8e866fa5d7ad2519b
+Z b3bf4f06c783a2156de71d3cb1963976

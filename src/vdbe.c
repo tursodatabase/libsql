@@ -3681,7 +3681,7 @@ case OP_SeekGT: {       /* jump, in3 */
   UnpackedRecord r;  /* The key to seek for */
   int nField;        /* Number of columns or fields in the key */
   i64 iKey;          /* The rowid we are to seek to */
-  int eqOnly = 0;    /* Only interested in == results */
+  int eqOnly;        /* Only interested in == results */
 
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   assert( pOp->p2!=0 );
@@ -3694,26 +3694,16 @@ case OP_SeekGT: {       /* jump, in3 */
   assert( pC->isOrdered );
   assert( pC->pCursor!=0 );
   oc = pOp->opcode;
+  eqOnly = 0;
   pC->nullRow = 0;
 #ifdef SQLITE_DEBUG
   pC->seekOp = pOp->opcode;
 #endif
 
-  /* For a cursor with the BTREE_SEEK_EQ hint, only the OP_SeekGE and
-  ** OP_SeekLE opcodes are allowed, and these must be immediately followed
-  ** by an OP_IdxGT or OP_IdxLT opcode, respectively, with the same key.
-  */
-  if( sqlite3BtreeCursorHasHint(pC->pCursor, BTREE_SEEK_EQ) ){
-    eqOnly = 1;
-    assert( pOp->opcode==OP_SeekGE || pOp->opcode==OP_SeekLE );
-    assert( pOp[1].opcode==OP_IdxLT || pOp[1].opcode==OP_IdxGT );
-    assert( pOp[1].p1==pOp[0].p1 );
-    assert( pOp[1].p2==pOp[0].p2 );
-    assert( pOp[1].p3==pOp[0].p3 );
-    assert( pOp[1].p4.i==pOp[0].p4.i );
-  }
- 
   if( pC->isTable ){
+    /* The BTREE_SEEK_EQ flag is only set on index cursors */
+    assert( sqlite3BtreeCursorHasHint(pC->pCursor, BTREE_SEEK_EQ)==0 );
+
     /* The input value in P3 might be of any type: integer, real, string,
     ** blob, or NULL.  But it needs to be an integer before we can do
     ** the seek, so convert it. */
@@ -3761,8 +3751,21 @@ case OP_SeekGT: {       /* jump, in3 */
     if( rc!=SQLITE_OK ){
       goto abort_due_to_error;
     }
-    if( eqOnly && res ) goto seek_not_found;
   }else{
+    /* For a cursor with the BTREE_SEEK_EQ hint, only the OP_SeekGE and
+    ** OP_SeekLE opcodes are allowed, and these must be immediately followed
+    ** by an OP_IdxGT or OP_IdxLT opcode, respectively, with the same key.
+    */
+    if( sqlite3BtreeCursorHasHint(pC->pCursor, BTREE_SEEK_EQ) ){
+      eqOnly = 1;
+      assert( pOp->opcode==OP_SeekGE || pOp->opcode==OP_SeekLE );
+      assert( pOp[1].opcode==OP_IdxLT || pOp[1].opcode==OP_IdxGT );
+      assert( pOp[1].p1==pOp[0].p1 );
+      assert( pOp[1].p2==pOp[0].p2 );
+      assert( pOp[1].p3==pOp[0].p3 );
+      assert( pOp[1].p4.i==pOp[0].p4.i );
+    }
+
     nField = pOp->p4.i;
     assert( pOp->p4type==P4_INT32 );
     assert( nField>0 );
