@@ -61,6 +61,18 @@
 #define yytestcase(X) testcase(X)
 
 /*
+** Indicate that sqlite3ParserFree() will never be called with a null
+** pointer.
+*/
+#define YYPARSEFREENOTNULL 1
+
+/*
+** Alternative datatype for the argument to the malloc() routine passed
+** into sqlite3ParserAlloc().  The default is size_t.
+*/
+#define YYMALLOCARGTYPE  u64
+
+/*
 ** An instance of this structure holds information about the
 ** LIMIT clause of a SELECT statement.
 */
