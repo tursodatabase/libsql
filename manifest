@@ -1,5 +1,5 @@
-C Size\sreduction\sand\sperformance\simprovement\sin\sthe\sstack-popping\slogic\sof\nthe\sLemon-generated\sparser.
-D 2015-11-09T14:11:37.997
+C Avoid\srecursion\sin\sthe\syy_find_shift_action()\sroutine\sof\sthe\sLemon-generated\nparser,\sso\sthat\sroutine\scan\sbe\sinlined,\sfor\sa\ssize\sreduction\sand\sperformance\nincrease.
+D 2015-11-09T15:06:26.258
 F Makefile.in 3a705bb4bd12e194212ddbdbf068310d17153cdb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 702d3e98f3afc6587a78481257f3c4c900efc3a4
@@ -303,7 +303,7 @@ F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
 F src/insert.c 419a947f27ce2da18eebf440a5aa80cc825defae
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
-F src/lempar.c 68f7e1e9d7a19e97e81e921f35f28063cc57cc91
+F src/lempar.c 62dbf933df3bd95815a4207925f7e1cf31063443
 F src/loadext.c 18586e45a215325f15096821e9c082035d4fb810
 F src/main.c f393acc6e5d604cbe0054376d62f668a5560b3f1
 F src/malloc.c 337bbe9c7d436ef9b7d06b5dd10bbfc8f3025972
@@ -1357,7 +1357,7 @@ F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/lemon.c 799e73e19a33b8dd7767a7fa34618ed2a9c2397d
-F tool/lempar.c 5ea7cad700dd4df4486e825b9149f40137efcfbb
+F tool/lempar.c 4ff2afb0449e9367f6cb4c8513339e3333852099
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
 F tool/logest.c eef612f8adf4d0993dafed0416064cf50d5d33c6
 F tool/mkautoconfamal.sh 4bdf61548a143e5977bd86ab93d68b694d10c8fa
@@ -1403,7 +1403,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e0ed4c3e376248dfbf903e4b5845f910824fa6c6
-R 08c66b00ee44c1ce6bc53eab9d896126
+P 9748c48a4fbd5c06208bbf80e7bfcb159ec026d9
+R c9026e58b8922b5b815b58f78da1a9b7
 U drh
-Z 114def794faa9ab9a746aed1255c1eea
+Z 94abf9709b7d536396fc03122fef0eed
