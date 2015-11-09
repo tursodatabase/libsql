@@ -157,6 +157,12 @@ static void test_addop_breakpoint(void){
 ** the sqlite3VdbeChangeP4() function to change the value of the P4
 ** operand.
 */
+static SQLITE_NOINLINE int growOp3(Vdbe *p, int op, int p1, int p2, int p3){
+  assert( p->pParse->nOpAlloc<=p->nOp );
+  if( growOpArray(p, 1) ) return 1;
+  assert( p->pParse->nOpAlloc>p->nOp );
+  return sqlite3VdbeAddOp3(p, op, p1, p2, p3);
+}
 int sqlite3VdbeAddOp3(Vdbe *p, int op, int p1, int p2, int p3){
   int i;
   VdbeOp *pOp;
@@ -165,9 +171,7 @@ int sqlite3VdbeAddOp3(Vdbe *p, int op, int p1, int p2, int p3){
   assert( p->magic==VDBE_MAGIC_INIT );
   assert( op>0 && op<0xff );
   if( p->pParse->nOpAlloc<=i ){
-    if( growOpArray(p, 1) ){
-      return 1;
-    }
+    return growOp3(p, op, p1, p2, p3);
   }
   p->nOp++;
   pOp = &p->aOp[i];
