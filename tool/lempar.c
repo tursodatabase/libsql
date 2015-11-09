@@ -32,7 +32,8 @@
 ***************** Begin makeheaders token definitions *************************/
 %%
 /**************** End makeheaders token definitions ***************************/
-/* The next sections is a serices of control #defines.
+
+/* The next sections is a series of control #defines.
 ** various aspects of the generated parser.
 **    YYCODETYPE         is the data type used to store the integer codes
 **                       that represent terminal and non-terminal symbols.
