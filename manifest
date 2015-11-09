@@ -1,5 +1,5 @@
-C Avoid\sunnecessary\sfunction\sprologues\sin\sthe\ssqlite3VdbeAddOp3()\sroutine.
-D 2015-11-09T12:33:39.340
+C Check\sin\sthe\scg_anno.tcl\sand\srun-speed-test.sh\sscripts,\sas\san\shistorical\nrecord.
+D 2015-11-09T12:44:19.680
 F Makefile.in 3a705bb4bd12e194212ddbdbf068310d17153cdb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 702d3e98f3afc6587a78481257f3c4c900efc3a4
@@ -1347,6 +1347,7 @@ F tool/GetTclKit.bat 8606413d3035c05373a0d7fae82ebf59ae9e16c3
 F tool/addopcodes.tcl f1fd17b639910226749d1ae006beef8f60378274
 F tool/build-all-msvc.bat e42141ca3c3812315432f9813ef9eb78aa8d99c9 x
 F tool/build-shell.sh 950f47c6174f1eea171319438b93ba67ff5bf367
+F tool/cg_anno.tcl 692ce4b8693d59e3a3de77ca97f4139ecfa641b0 x
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
 F tool/extract.c 054069d81b095fbdc189a6f5d4466e40380505e2
 F tool/fast_vacuum.c 5ba0d6f5963a0a63bdc42840f678bad75b2ebce1
@@ -1377,6 +1378,7 @@ F tool/pagesig.c ff0ca355fd3c2398e933da5e22439bbff89b803b
 F tool/replace.tcl 7727c60a04299b65a92f5e1590896fea0f25b9e0
 F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
+F tool/run-speed-test.sh 0ae485af4fe9f826e2b494be8c81f8ca9e222a4a
 F tool/showdb.c d4476e000a64eca9f5e2c2f68741e747b9778e8d
 F tool/showjournal.c 5bad7ae8784a43d2b270d953060423b8bd480818
 F tool/showlocks.c 9920bcc64f58378ff1118caead34147201f48c68
@@ -1401,7 +1403,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d62cd757a69cc49c2d309e27c948610b5868632f
-R a904c99753c26b60df840fbeb9147fea
+P 7c6a19ba9b0bdb1cc0b9a9796b7c1c114944d927
+R 9d7a4cba8878c4f3f14011449d7a4d87
 U drh
-Z 04359d40d10a11f87d61acdb694f52aa
+Z cd8c6de9d269073054c5419c6ba867b6
