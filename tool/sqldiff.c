@@ -702,7 +702,7 @@ static void diff_one_table(const char *zTab, FILE *out){
         for(i=0; i<nPk; i++){
           fprintf(out, "%s %s=", zSep, az2[i]);
           printQuoted(out, sqlite3_column_value(pStmt,i));
-          zSep = ",";
+          zSep = " AND";
         }
         fprintf(out, ";\n");
       }else{                  /* Insert a row */
