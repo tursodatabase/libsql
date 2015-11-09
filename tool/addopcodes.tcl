@@ -18,7 +18,8 @@ while {![eof $in]} {
 }
 close $in
 
-# The following are the extra token codes to be added
+# The following are the extra token codes to be added.  SPACE and 
+# ILLEGAL *must* be the last two token codes and they must be in that order.
 #
 set extras {
   TO_TEXT
@@ -28,8 +29,6 @@ set extras {
   TO_REAL
   ISNOT
   END_OF_FILE
-  ILLEGAL
-  SPACE
   UNCLOSED_STRING
   FUNCTION
   COLUMN
@@ -38,6 +37,12 @@ set extras {
   UMINUS
   UPLUS
   REGISTER
+  SPACE
+  ILLEGAL
+}
+if {[lrange $extras end-1 end]!="SPACE ILLEGAL"} {
+  error "SPACE and ILLEGAL must be the last two token codes and they\
+         must be in that order"
 }
 foreach x $extras {
   incr max

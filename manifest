@@ -1,5 +1,5 @@
-C Enhance\sthe\ssqldiff\sutility\sto\sdeal\sgracefully\swith\sALTER\sTABLE\sADD\sCOLUMN.
-D 2015-11-07T18:32:17.087
+C Small\ssize\sreduction\sand\sperformance\sincrease\sin\sthe\sparser.
+D 2015-11-09T02:08:09.483
 F Makefile.in 3a705bb4bd12e194212ddbdbf068310d17153cdb
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc 702d3e98f3afc6587a78481257f3c4c900efc3a4
@@ -396,7 +396,7 @@ F src/test_vfs.c 3b65d42e18b262805716bd96178c81da8f2d9283
 F src/test_vfstrace.c bab9594adc976cbe696ff3970728830b4c5ed698
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c bbfb74450643cb5372a43ad4f6cffd7e9dfcecb0
-F src/tokenize.c b05b63e224a12531813efda3bcc73e9438958745
+F src/tokenize.c c1006aa773da5725ef55e8d48f69c11d7141d011
 F src/treeview.c 78842e90c1f71269e7a73a1d4221b6fe360bab66
 F src/trigger.c 322f23aad694e8f31d384dcfa386d52a48d3c52f
 F src/update.c 40e51cd0883cb5bfd6abb7d8a7cd8aa47fab2945
@@ -1344,7 +1344,7 @@ F test/zeroblob.test 3857870fe681b8185654414a9bccfde80b62a0fa
 F test/zerodamage.test cf6748bad89553cc1632be51a6f54e487e4039ac
 F tool/GetFile.cs a15e08acb5dd7539b75ba23501581d7c2b462cb5
 F tool/GetTclKit.bat 8606413d3035c05373a0d7fae82ebf59ae9e16c3
-F tool/addopcodes.tcl 26892c394964c194fe96b9a79b8b9f87347c7151
+F tool/addopcodes.tcl f1fd17b639910226749d1ae006beef8f60378274
 F tool/build-all-msvc.bat e42141ca3c3812315432f9813ef9eb78aa8d99c9 x
 F tool/build-shell.sh 950f47c6174f1eea171319438b93ba67ff5bf367
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
@@ -1401,7 +1401,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 088009efdd56160bb4eee0fbd829a529b141274e
-R 6849733f18d4f768e8de91b6fdec79e9
+P 7ea036ac37397ed8f6a0fa9f5bfc0994364b53dc
+R 3231bc9f57ce7558e058f50c744abb1e
 U drh
-Z e7f3d6622d7fdf445d9b0889f3775adc
+Z db3ec02e9e575bd3c4a05b8f4b24bc15

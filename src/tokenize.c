@@ -416,7 +416,7 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   assert( pParse->azVar==0 );
   enableLookaside = db->lookaside.bEnabled;
   if( db->lookaside.pStart ) db->lookaside.bEnabled = 1;
-  while( !db->mallocFailed && zSql[i]!=0 ){
+  while( zSql[i]!=0 ){
     assert( i>=0 );
     pParse->sLastToken.z = &zSql[i];
     pParse->sLastToken.n = sqlite3GetToken((unsigned char*)&zSql[i],&tokenType);
@@ -425,35 +425,25 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
       pParse->rc = SQLITE_TOOBIG;
       break;
     }
-    switch( tokenType ){
-      case TK_SPACE: {
-        if( db->u1.isInterrupted ){
-          sqlite3ErrorMsg(pParse, "interrupt");
-          pParse->rc = SQLITE_INTERRUPT;
-          goto abort_parse;
-        }
+    if( tokenType>=TK_SPACE ){
+      assert( tokenType==TK_SPACE || tokenType==TK_ILLEGAL );
+      if( db->u1.isInterrupted ){
+        sqlite3ErrorMsg(pParse, "interrupt");
+        pParse->rc = SQLITE_INTERRUPT;
         break;
       }
-      case TK_ILLEGAL: {
+      if( tokenType==TK_ILLEGAL ){
         sqlite3ErrorMsg(pParse, "unrecognized token: \"%T\"",
                         &pParse->sLastToken);
-        goto abort_parse;
-      }
-      case TK_SEMI: {
-        pParse->zTail = &zSql[i];
-        /* Fall thru into the default case */
-      }
-      default: {
-        sqlite3Parser(pEngine, tokenType, pParse->sLastToken, pParse);
-        lastTokenParsed = tokenType;
-        if( pParse->rc!=SQLITE_OK ){
-          goto abort_parse;
-        }
         break;
       }
+    }else{
+      if( tokenType==TK_SEMI ) pParse->zTail = &zSql[i];
+      sqlite3Parser(pEngine, tokenType, pParse->sLastToken, pParse);
+      lastTokenParsed = tokenType;
+      if( pParse->rc!=SQLITE_OK || db->mallocFailed ) break;
     }
   }
-abort_parse:
   assert( nErr==0 );
   if( pParse->rc==SQLITE_OK && db->mallocFailed==0 ){
     assert( zSql[i]==0 );
