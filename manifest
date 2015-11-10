@@ -1,5 +1,5 @@
-C Change\sall\sparsers\sto\suse\sthe\sstandard\s"lempar.c"\stemplate\sin\sthe\stool/\nfolder\sand\sremove\sthe\scustomized\slempar.c\sfrom\ssrc/,\splus\sother\scompiler\nperformance\sand\sspace\senhancements.
-D 2015-11-10T12:41:03.723
+C Save\sa\sfew\sbytes\sin\sthe\sparser\sby\susing\s"int"\sinstead\sof\s"u8"\sor\s"u16"\sfor\nall\ssmall\sinteger\stypes.
+D 2015-11-10T13:45:21.998
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -328,7 +328,7 @@ F src/os_win.c 1716291e5ec2dbfc5a1fe0b32182030f1f7d8acf
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c ed5cff11793b6a4146582aabb29ed8613a6cf89e
 F src/pager.h 7fc069c07f3120ee466ff3d48a9d376974ebffa7
-F src/parse.y 56cd095d669ad7cf50599a39525277f37f8148f9
+F src/parse.y 8a364a7a692e517dea8711b3c7f0d07fe32727d8
 F src/pcache.c 24be750c79272e0ca7b6e007bc94999700f3e5ef
 F src/pcache.h 9968603796240cdf83da7e7bef76edf90619cea9
 F src/pcache1.c 902e1bc7bdaa81b40f8543407c5e2ac8ef4dc035
@@ -1402,8 +1402,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0557a179f932296cc1fd5217f9a0d2f74e34ce1d 09752e51a18ac1b4c9642965e6ee1b6a32de00df
-R c4fc880f1c9308c0365b7757399767dc
-T +closed 09752e51a18ac1b4c9642965e6ee1b6a32de00df
+P 0e7fb24ad3c010884763a97e6ae7a3fd39d0e5a9
+R e95251a17c80e6e8bd0fe3b50f525483
 U drh
-Z 094c96712972b6d193fe37091ddcf067
+Z 63fd373db42b2e308a08a76dcf855a61
