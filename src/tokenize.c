@@ -369,8 +369,8 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
         break;
       }
       for(i=1; IdChar(z[i]); i++){}
-      *tokenType = keywordCode((char*)z, i);
-      return i;
+      *tokenType = TK_ID;
+      return keywordCode((char*)z, i, tokenType);
     }
   }
   *tokenType = TK_ILLEGAL;

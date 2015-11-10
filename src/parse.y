@@ -61,6 +61,18 @@
 #define yytestcase(X) testcase(X)
 
 /*
+** Indicate that sqlite3ParserFree() will never be called with a null
+** pointer.
+*/
+#define YYPARSEFREENOTNULL 1
+
+/*
+** Alternative datatype for the argument to the malloc() routine passed
+** into sqlite3ParserAlloc().  The default is size_t.
+*/
+#define YYMALLOCARGTYPE  u64
+
+/*
 ** An instance of this structure holds information about the
 ** LIMIT clause of a SELECT statement.
 */
@@ -639,7 +651,6 @@ dbnm(A) ::= DOT nm(X). {A = X;}
 fullname(A) ::= nm(X) dbnm(Y).  {A = sqlite3SrcListAppend(pParse->db,0,&X,&Y);}
 
 %type joinop {int}
-%type joinop2 {int}
 joinop(X) ::= COMMA|JOIN.              { X = JT_INNER; }
 joinop(X) ::= JOIN_KW(A) JOIN.         { X = sqlite3JoinType(pParse,&A,0,0); }
 joinop(X) ::= JOIN_KW(A) nm(B) JOIN.   { X = sqlite3JoinType(pParse,&A,&B,0); }

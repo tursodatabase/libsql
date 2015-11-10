@@ -1310,8 +1310,8 @@ sqlite3.lo:	$(SQLITE3C)
 
 # Rules to build the LEMON compiler generator
 #
-lempar.c:	$(TOP)\src\lempar.c
-	copy $(TOP)\src\lempar.c .
+lempar.c:	$(TOP)\tool\lempar.c
+	copy $(TOP)\tool\lempar.c .
 
 lemon.exe:	$(TOP)\tool\lemon.c lempar.c
 	$(BCC) $(NO_WARN) -Daccess=_access \
