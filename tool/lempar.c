@@ -539,15 +539,13 @@ static void yyStackOverflow(yyParser *yypParser, YYMINORTYPE *yypMinor){
 #ifndef NDEBUG
 static void yyTraceShift(yyParser *yypParser, int yyNewState){
   if( yyTraceFILE ){
-    int i;
     if( yyNewState<YYNSTATE ){
-      fprintf(yyTraceFILE,"%sShift %d\n",yyTracePrompt,yyNewState);
-      fprintf(yyTraceFILE,"%sStack:",yyTracePrompt);
-      for(i=1; i<=yypParser->yyidx; i++)
-        fprintf(yyTraceFILE," %s",yyTokenName[yypParser->yystack[i].major]);
-      fprintf(yyTraceFILE,"\n");
+      fprintf(yyTraceFILE,"%sShift '%s', go to state %d\n",
+         yyTracePrompt,yyTokenName[yypParser->yystack[yypParser->yyidx].major],
+         yyNewState);
     }else{
-      fprintf(yyTraceFILE,"%sShift *\n",yyTracePrompt);
+      fprintf(yyTraceFILE,"%sShift '%s'\n",
+         yyTracePrompt,yyTokenName[yypParser->yystack[yypParser->yyidx].major]);
     }
   }
 }
@@ -623,7 +621,7 @@ static void yy_reduce(
   if( yyTraceFILE && yyruleno>=0 
         && yyruleno<(int)(sizeof(yyRuleName)/sizeof(yyRuleName[0])) ){
     yysize = yyRuleInfo[yyruleno].nrhs;
-    fprintf(yyTraceFILE, "%sReduce [%s] -> state %d.\n", yyTracePrompt,
+    fprintf(yyTraceFILE, "%sReduce [%s], go to state %d.\n", yyTracePrompt,
       yyRuleName[yyruleno], yymsp[-yysize].stateno);
   }
 #endif /* NDEBUG */
@@ -779,6 +777,12 @@ void Parse(
     yypParser->yyerrcnt = -1;
     yypParser->yystack[0].stateno = 0;
     yypParser->yystack[0].major = 0;
+#ifndef NDEBUG
+    if( yyTraceFILE ){
+      fprintf(yyTraceFILE,"%sInitialize. Empty stack. State 0\n",
+              yyTracePrompt);
+    }
+#endif
   }
   yyminorunion.yy0 = yyminor;
 #if !defined(YYERRORSYMBOL) && !defined(YYNOERRORRECOVERY)
@@ -788,7 +792,7 @@ void Parse(
 
 #ifndef NDEBUG
   if( yyTraceFILE ){
-    fprintf(yyTraceFILE,"%sInput %s\n",yyTracePrompt,yyTokenName[yymajor]);
+    fprintf(yyTraceFILE,"%sInput '%s'\n",yyTracePrompt,yyTokenName[yymajor]);
   }
 #endif
 
@@ -902,7 +906,12 @@ void Parse(
   }while( yymajor!=YYNOCODE && yypParser->yyidx>=0 );
 #ifndef NDEBUG
   if( yyTraceFILE ){
-    fprintf(yyTraceFILE,"%sReturn\n",yyTracePrompt);
+    int i;
+    fprintf(yyTraceFILE,"%sReturn. Stack=",yyTracePrompt);
+    for(i=1; i<=yypParser->yyidx; i++)
+      fprintf(yyTraceFILE,"%c%s", i==1 ? '[' : ' ', 
+              yyTokenName[yypParser->yystack[i].major]);
+    fprintf(yyTraceFILE,"]\n");
   }
 #endif
   return;
