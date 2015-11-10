@@ -1,5 +1,5 @@
-C Save\sa\sfew\sbytes\sin\sthe\sparser\sby\susing\s"int"\sinstead\sof\s"u8"\sor\s"u16"\sfor\nall\ssmall\sinteger\stypes.
-D 2015-11-10T13:45:21.998
+C Make\sthe\soutput\sof\s"PRAGMA\sparser_trace"\sgo\sto\sstdout\sinstead\sof\sstderr.
+D 2015-11-10T14:27:17.622
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -332,7 +332,7 @@ F src/parse.y 8a364a7a692e517dea8711b3c7f0d07fe32727d8
 F src/pcache.c 24be750c79272e0ca7b6e007bc94999700f3e5ef
 F src/pcache.h 9968603796240cdf83da7e7bef76edf90619cea9
 F src/pcache1.c 902e1bc7bdaa81b40f8543407c5e2ac8ef4dc035
-F src/pragma.c 8fd4c8a12e25f0d916426f160255ebe25415eba7
+F src/pragma.c 9dbb9ba2453d79bfc5905be0398aa30342b066bb
 F src/pragma.h 631a91c8b0e6ca8f051a1d8a4a0da4150e04620a
 F src/prepare.c 82e5db1013846a819f198336fed72c44c974e7b1
 F src/printf.c 0c4bcdd1c2e2521024f0a69cb5eb334f86b3652a
@@ -1402,7 +1402,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0e7fb24ad3c010884763a97e6ae7a3fd39d0e5a9
-R e95251a17c80e6e8bd0fe3b50f525483
+P 5dcd212bf6489f4698a0ed0f21497c78379f7c0f
+R d246e800f7bbd35b4c91162f9a5cfe01
 U drh
-Z 63fd373db42b2e308a08a76dcf855a61
+Z 7a87ce17e8bd737f41d12f3fe2d64903

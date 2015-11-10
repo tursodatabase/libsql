@@ -1324,7 +1324,7 @@ void sqlite3Pragma(
   case PragTyp_PARSER_TRACE: {
     if( zRight ){
       if( sqlite3GetBoolean(zRight, 0) ){
-        sqlite3ParserTrace(stderr, "parser: ");
+        sqlite3ParserTrace(stdout, "parser: ");
       }else{
         sqlite3ParserTrace(0, 0);
       }
