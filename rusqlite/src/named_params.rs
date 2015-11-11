@@ -1,11 +1,11 @@
 //use std::collections::HashMap;
-use std::ffi::{CString};
-use libc::{c_int};
+use std::ffi::CString;
+use libc::c_int;
 
 use super::ffi;
 
 use {SqliteResult, SqliteError, SqliteConnection, SqliteStatement, SqliteRows, SqliteRow};
-use types::{ToSql};
+use types::ToSql;
 
 impl SqliteConnection {
     /// Convenience method to prepare and execute a single SQL statement with named parameter(s).
