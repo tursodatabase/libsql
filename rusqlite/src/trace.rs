@@ -83,17 +83,19 @@ mod test {
         super::config_log(None).unwrap();
     }
 
-    extern "C" fn trace_callback(_: *mut ::libc::c_void, sql: *const ::libc::c_char) {
+    extern "C" fn profile_callback(_: *mut ::libc::c_void, sql: *const ::libc::c_char, nanoseconds: u64) {
+        use std::time::Duration;
         unsafe {
             let c_slice = ::std::ffi::CStr::from_ptr(sql).to_bytes();
-            let _ = writeln!(::std::io::stderr(), "TRACE: {:?}", ::std::str::from_utf8(c_slice));
+            let d = Duration::from_millis(nanoseconds / 1_000_000);
+            let _ = writeln!(::std::io::stderr(), "PROFILE: {:?} ({})", ::std::str::from_utf8(c_slice), d);
         }
     }
 
     #[test]
-    fn test_trace() {
+    fn test_profile() {
         let mut db = SqliteConnection::open_in_memory().unwrap();
-        db.trace(Some(trace_callback));
+        db.profile(Some(profile_callback));
         db.execute_batch("PRAGMA application_id = 1").unwrap();
     }
 }
