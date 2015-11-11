@@ -75,11 +75,8 @@ mod test {
         }
     }
 
-    #[test]
+    #[test] #[ignore] // To avoid freezing tests
     fn test_log() {
-        if true { // To avoid freezing tests
-            return
-        }
         unsafe { ffi::sqlite3_shutdown() };
         super::config_log(Some(log_callback)).unwrap();
         //super::log(ffi::SQLITE_NOTICE, "message from rusqlite");
