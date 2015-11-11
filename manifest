@@ -1,5 +1,5 @@
-C Improvements\sto\sthe\sSQLITE_CONFIG_PAGECACHE\sdocumentation.\s\sEnhance\sthe\ncommand-line\sshell\sto\sbe\sable\sto\stake\sadvantage\sof\sthe\sfull\srange\sof\nSQLITE_CONFIG_PAGECACHE\scapabilities,\ssuch\sas\ssetting\spMem==NULL\sand\sN<0.
-D 2015-11-11T15:28:52.898
+C Fix\smissing\sword\sin\sa\sdocumentation\scomment.\s\sNo\schanges\sto\scode.
+D 2015-11-11T18:43:49.517
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -341,7 +341,7 @@ F src/resolve.c 1954a0f01bf65d78d7d559aea3d5c67f33376d91
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 00a2a10d4298a685d0eeb05b09ef018a2bd81bf8
 F src/shell.c acefb4593a9bf0338a757c968f1f1bb05690d830
-F src/sqlite.h.in 278df052181b0e5b0bcdb2089ff09596ae9eca15
+F src/sqlite.h.in fa62718f73553f06b2f2e362fd09ccb4e1cbb626
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 4b66e3e3435da4b4c8c83696d0349f0c503b3924
 F src/sqliteInt.h bc6d24460fe544323517630b1e20539146379077
@@ -1402,7 +1402,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e43e1171fd7837a08069dc25df4eac14db1c2afe
-R 9a1d72f8baac116c36385e92e48c0378
-U drh
-Z 9d52ec874b9a01b7b0eb1dab69dbb993
+P 2518d5c971c4b32d9227b3bb7259162e3e27b00b
+R 3dc308897daa57a7c4272c874c792ced
+U mistachkin
+Z 5a3c62c2da73a7a92ccd94cbe3857768
