@@ -4601,10 +4601,10 @@ int SQLITE_CDECL main(int argc, char **argv){
       int n, sz;
       sz = (int)integerValue(cmdline_option_value(argc,argv,++i));
       if( sz>70000 ) sz = 70000;
-      if( sz<800 ) sz = 800;
+      if( sz<0 ) sz = 0;
       n = (int)integerValue(cmdline_option_value(argc,argv,++i));
-      if( n<10 ) n = 10;
-      sqlite3_config(SQLITE_CONFIG_PAGECACHE, malloc(n*sz+1), sz, n);
+      sqlite3_config(SQLITE_CONFIG_PAGECACHE,
+                    (n>0 && sz>0) ? malloc(n*sz) : 0, sz, n);
       data.shellFlgs |= SHFLG_Pagecache;
     }else if( strcmp(z,"-lookaside")==0 ){
       int n, sz;
