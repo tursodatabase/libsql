@@ -55,10 +55,11 @@ extern crate libsqlite3_sys as ffi;
 #[macro_use] extern crate bitflags;
 
 use std::default::Default;
+use std::convert;
 use std::mem;
 use std::ptr;
 use std::fmt;
-use std::path::{Path};
+use std::path::{Path,PathBuf};
 use std::error;
 use std::rc::{Rc};
 use std::cell::{RefCell, Cell};
@@ -91,7 +92,7 @@ unsafe fn errmsg_to_string(errmsg: *const c_char) -> String {
 }
 
 /// Encompasses an error result from a call to the SQLite C API.
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct SqliteError {
     /// The error code returned by a SQLite C API call. See [SQLite Result
     /// Codes](http://www.sqlite.org/rescode.html) for details.
@@ -152,6 +153,7 @@ fn path_to_cstring(p: &Path) -> SqliteResult<CString> {
 /// prepare multiple statements at the same time).
 pub struct SqliteConnection {
     db: RefCell<InnerSqliteConnection>,
+    path: Option<PathBuf>,
 }
 
 unsafe impl Send for SqliteConnection {}
@@ -161,7 +163,7 @@ impl SqliteConnection {
     ///
     /// `SqliteConnection::open(path)` is equivalent to `SqliteConnection::open_with_flags(path,
     /// SQLITE_OPEN_READ_WRITE | SQLITE_OPEN_CREATE)`.
-    pub fn open<P: AsRef<Path>>(path: &P) -> SqliteResult<SqliteConnection> {
+    pub fn open<P: AsRef<Path>>(path: P) -> SqliteResult<SqliteConnection> {
         let flags = Default::default();
         SqliteConnection::open_with_flags(path, flags)
     }
@@ -176,11 +178,11 @@ impl SqliteConnection {
     ///
     /// Database Connection](http://www.sqlite.org/c3ref/open.html) for a description of valid
     /// flag combinations.
-    pub fn open_with_flags<P: AsRef<Path>>(path: &P, flags: SqliteOpenFlags)
+    pub fn open_with_flags<P: AsRef<Path>>(path: P, flags: SqliteOpenFlags)
             -> SqliteResult<SqliteConnection> {
         let c_path = try!(path_to_cstring(path.as_ref()));
         InnerSqliteConnection::open_with_flags(&c_path, flags).map(|db| {
-            SqliteConnection{ db: RefCell::new(db) }
+            SqliteConnection{ db: RefCell::new(db), path: Some(path.as_ref().to_path_buf()) }
         })
     }
 
@@ -191,7 +193,7 @@ impl SqliteConnection {
     pub fn open_in_memory_with_flags(flags: SqliteOpenFlags) -> SqliteResult<SqliteConnection> {
         let c_memory = try!(str_to_cstring(":memory:"));
         InnerSqliteConnection::open_with_flags(&c_memory, flags).map(|db| {
-            SqliteConnection{ db: RefCell::new(db) }
+            SqliteConnection{ db: RefCell::new(db), path: None }
         })
     }
 
@@ -302,6 +304,37 @@ impl SqliteConnection {
         }
     }
 
+    /// Convenience method to execute a query that is expected to return a single row,
+    /// and execute a mapping via `f` on that returned row with the possibility of failure.
+    /// The `Result` type of `f` must implement `std::convert::From<SqliteError>`.
+    ///
+    /// ## Example
+    ///
+    /// ```rust,no_run
+    /// # use rusqlite::{SqliteResult,SqliteConnection};
+    /// fn preferred_locale(conn: &SqliteConnection) -> SqliteResult<String> {
+    ///     conn.query_row_and_then("SELECT value FROM preferences WHERE name='locale'", &[], |row| {
+    ///         row.get_checked(0)
+    ///     })
+    /// }
+    /// ```
+    ///
+    /// If the query returns more than one row, all rows except the first are ignored.
+    pub fn query_row_and_then<T, E, F>(&self, sql: &str, params: &[&ToSql], f: F) -> Result<T, E>
+                           where F: FnOnce(SqliteRow) -> Result<T, E>,
+                                 E: convert::From<SqliteError> {
+        let mut stmt = try!(self.prepare(sql));
+        let mut rows = try!(stmt.query(params));
+
+        match rows.next() {
+            Some(row) => row.map_err(E::from).and_then(f),
+            None      => Err(E::from(SqliteError{
+                code: ffi::SQLITE_NOTICE,
+                message: "Query did not return a row".to_string(),
+            }))
+        }
+    }
+
     /// Convenience method to execute a query that is expected to return a single row.
     ///
     /// ## Example
@@ -394,10 +427,10 @@ impl SqliteConnection {
     /// fn load_my_extension(conn: &SqliteConnection) -> SqliteResult<()> {
     ///     let _guard = try!(SqliteLoadExtensionGuard::new(conn));
     ///
-    ///     conn.load_extension(Path::new("my_sqlite_extension"), None)
+    ///     conn.load_extension("my_sqlite_extension", None)
     /// }
     #[cfg(feature = "load_extension")]
-    pub fn load_extension<P: AsRef<Path>>(&self, dylib_path: &P, entry_point: Option<&str>) -> SqliteResult<()> {
+    pub fn load_extension<P: AsRef<Path>>(&self, dylib_path: P, entry_point: Option<&str>) -> SqliteResult<()> {
         self.db.borrow_mut().load_extension(dylib_path, entry_point)
     }
 
@@ -412,7 +445,7 @@ impl SqliteConnection {
 
 impl fmt::Debug for SqliteConnection {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "SqliteConnection()")
+        write!(f, "SqliteConnection( path: {:?} )", &self.path)
     }
 }
 
@@ -543,6 +576,12 @@ impl InnerSqliteConnection {
     fn prepare<'a>(&mut self,
                    conn: &'a SqliteConnection,
                    sql: &str) -> SqliteResult<SqliteStatement<'a>> {
+        if sql.len() >= ::std::i32::MAX as usize {
+            return Err(SqliteError {
+                code: ffi::SQLITE_TOOBIG,
+                message: "statement too long".to_string()
+            });
+        }
         let mut c_stmt: *mut ffi::sqlite3_stmt = unsafe { mem::uninitialized() };
         let c_sql = try!(str_to_cstring(sql));
         let r = unsafe {
@@ -572,16 +611,18 @@ pub struct SqliteStatement<'conn> {
     conn: &'conn SqliteConnection,
     stmt: *mut ffi::sqlite3_stmt,
     needs_reset: bool,
+    column_count: c_int,
 }
 
 impl<'conn> SqliteStatement<'conn> {
     fn new(conn: &SqliteConnection, stmt: *mut ffi::sqlite3_stmt) -> SqliteStatement {
-        SqliteStatement{ conn: conn, stmt: stmt, needs_reset: false }
+        SqliteStatement{ conn: conn, stmt: stmt, needs_reset: false,
+            column_count: unsafe { ffi::sqlite3_column_count(stmt) }}
     }
 
     /// Get all the column names in the result set of the prepared statement.
     pub fn column_names(&self) -> Vec<&str> {
-        let n = unsafe { ffi::sqlite3_column_count(self.stmt) };
+        let n = self.column_count;
         let mut cols = Vec::with_capacity(n as usize);
         for i in 0..n {
             let slice = unsafe {
@@ -612,22 +653,20 @@ impl<'conn> SqliteStatement<'conn> {
     /// }
     /// ```
     pub fn execute(&mut self, params: &[&ToSql]) -> SqliteResult<c_int> {
-        self.reset_if_needed();
-
         unsafe {
-            assert!(params.len() as c_int == ffi::sqlite3_bind_parameter_count(self.stmt),
-                    "incorrect number of parameters to execute(): expected {}, got {}",
-                    ffi::sqlite3_bind_parameter_count(self.stmt),
-                    params.len());
+            try!(self.bind_parameters(params));
 
-            for (i, p) in params.iter().enumerate() {
-                try!(self.conn.decode_result(p.bind_parameter(self.stmt, (i + 1) as c_int)));
-            }
-
-            self.needs_reset = true;
             let r = ffi::sqlite3_step(self.stmt);
+            ffi::sqlite3_reset(self.stmt);
             match r {
-                ffi::SQLITE_DONE => Ok(self.conn.changes()),
+                ffi::SQLITE_DONE => {
+                    if self.column_count != 0 {
+                        Err(SqliteError{ code: ffi::SQLITE_MISUSE,
+                            message: "Unexpected column count - did you mean to call query?".to_string() })
+                    } else {
+                        Ok(self.conn.changes())
+                    }
+                },
                 ffi::SQLITE_ROW => Err(SqliteError{ code: r,
                     message: "Unexpected row result - did you mean to call query?".to_string() }),
                 _ => Err(self.conn.decode_result(r).unwrap_err()),
@@ -661,6 +700,7 @@ impl<'conn> SqliteStatement<'conn> {
             try!(self.bind_parameters(params));
         }
 
+        self.needs_reset = true;
         Ok(SqliteRows::new(self))
     }
 
@@ -676,6 +716,25 @@ impl<'conn> SqliteStatement<'conn> {
         let row_iter = try!(self.query(params));
 
         Ok(MappedRows{
+            rows: row_iter,
+            map: f,
+        })
+    }
+
+    /// Executes the prepared statement and maps a function over the resulting
+    /// rows, where the function returns a `Result` with `Error` type implementing
+    /// `std::convert::From<SqliteError>` (so errors can be unified).
+    ///
+    /// Unlike the iterator produced by `query`, the returned iterator does not expose the possibility
+    /// for accessing stale rows.
+    pub fn query_and_then<'a, T, E, F>(&'a mut self, params: &[&ToSql], f: F)
+                                     -> SqliteResult<AndThenRows<'a, F>>
+                                     where T: 'static,
+                                           E: convert::From<SqliteError>,
+                                           F: FnMut(SqliteRow) -> Result<T, E> {
+        let row_iter = try!(self.query(params));
+
+        Ok(AndThenRows{
             rows: row_iter,
             map: f,
         })
@@ -699,8 +758,6 @@ impl<'conn> SqliteStatement<'conn> {
             try!(self.conn.decode_result(p.bind_parameter(self.stmt, (i + 1) as c_int)));
         }
 
-        self.needs_reset = true;
-
         Ok(())
     }
 
@@ -720,7 +777,11 @@ impl<'conn> SqliteStatement<'conn> {
 
 impl<'conn> fmt::Debug for SqliteStatement<'conn> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Statement( conn: {:?}, stmt: {:?} )", self.conn, self.stmt)
+        let sql = unsafe {
+            let c_slice = CStr::from_ptr(ffi::sqlite3_sql(self.stmt)).to_bytes();
+            str::from_utf8(c_slice)
+        };
+        write!(f, "SqliteStatement( conn: {:?}, stmt: {:?}, sql: {:?} )", self.conn, self.stmt, sql)
     }
 }
 
@@ -744,6 +805,26 @@ impl<'stmt, T, F> Iterator for MappedRows<'stmt, F>
 
     fn next(&mut self) -> Option<SqliteResult<T>> {
         self.rows.next().map(|row_result| row_result.map(|row| (self.map)(row)))
+    }
+}
+
+/// An iterator over the mapped resulting rows of a query, with an Error type
+/// unifying with SqliteError.
+pub struct AndThenRows<'stmt, F> {
+    rows: SqliteRows<'stmt>,
+    map: F,
+}
+
+impl<'stmt, T, E, F> Iterator for AndThenRows<'stmt, F>
+                        where T: 'static,
+                              E: convert::From<SqliteError>,
+                              F: FnMut(SqliteRow) -> Result<T, E> {
+    type Item = Result<T, E>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.rows.next().map(|row_result| row_result
+                             .map_err(E::from)
+                             .and_then(|row| (self.map)(row)))
     }
 }
 
@@ -857,7 +938,7 @@ impl<'stmt> SqliteRow<'stmt> {
     /// Panics if `idx` is outside the range of columns in the returned query or if this row
     /// is stale.
     pub fn get<T: FromSql>(&self, idx: c_int) -> T {
-        self.get_opt(idx).unwrap()
+        self.get_checked(idx).unwrap()
     }
 
     /// Get the value of a particular column of the result row.
@@ -867,40 +948,27 @@ impl<'stmt> SqliteRow<'stmt> {
     /// Returns a `SQLITE_MISMATCH`-coded `SqliteError` if the underlying SQLite column
     /// type is not a valid type as a source for `T`.
     ///
-    /// Panics if `idx` is outside the range of columns in the returned query or if this row
-    /// is stale.
-    pub fn get_checked<T: FromSql>(&self, idx: c_int) -> SqliteResult<T> {
-        let valid_column_type = unsafe {
-            T::column_has_valid_sqlite_type(self.stmt.stmt, idx)
-        };
-
-        if valid_column_type {
-            Ok(self.get(idx))
-        } else {
-            Err(SqliteError{
-                code: ffi::SQLITE_MISMATCH,
-                message: "Invalid column type".to_string(),
-            })
-        }
-    }
-
-    /// Attempt to get the value of a particular column of the result row.
-    ///
-    /// ## Failure
-    ///
     /// Returns a `SQLITE_MISUSE`-coded `SqliteError` if `idx` is outside the valid column range
     /// for this row or if this row is stale.
-    pub fn get_opt<T: FromSql>(&self, idx: c_int) -> SqliteResult<T> {
+    pub fn get_checked<T: FromSql>(&self, idx: c_int) -> SqliteResult<T> {
         if self.row_idx != self.current_row.get() {
             return Err(SqliteError{ code: ffi::SQLITE_MISUSE,
                 message: "Cannot get values from a row after advancing to next row".to_string() });
         }
         unsafe {
-            if idx < 0 || idx >= ffi::sqlite3_column_count(self.stmt.stmt) {
+            if idx < 0 || idx >= self.stmt.column_count {
                 return Err(SqliteError{ code: ffi::SQLITE_MISUSE,
                     message: "Invalid column index".to_string() });
             }
-            FromSql::column_result(self.stmt.stmt, idx)
+
+            if T::column_has_valid_sqlite_type(self.stmt.stmt, idx) {
+                FromSql::column_result(self.stmt.stmt, idx)
+            } else {
+                Err(SqliteError{
+                    code: ffi::SQLITE_MISMATCH,
+                    message: "Invalid column type".to_string(),
+                })
+            }
         }
     }
 }
@@ -909,8 +977,10 @@ impl<'stmt> SqliteRow<'stmt> {
 mod test {
     extern crate libsqlite3_sys as ffi;
     extern crate tempdir;
-    use super::*;
+    pub use super::*;
     use self::tempdir::TempDir;
+    pub use std::error::Error as StdError;
+    pub use std::fmt;
 
     // this function is never called, but is still type checked; in
     // particular, calls with specific instantiations will require
@@ -920,7 +990,7 @@ mod test {
         ensure_send::<SqliteConnection>();
     }
 
-    fn checked_memory_handle() -> SqliteConnection {
+    pub fn checked_memory_handle() -> SqliteConnection {
         SqliteConnection::open_in_memory().unwrap()
     }
 
@@ -992,6 +1062,14 @@ mod test {
         assert_eq!(db.execute("INSERT INTO foo(x) VALUES (?)", &[&2i32]).unwrap(), 1);
 
         assert_eq!(3i32, db.query_row("SELECT SUM(x) FROM foo", &[], |r| r.get(0)).unwrap());
+    }
+
+    #[test]
+    fn test_execute_select() {
+        let db = checked_memory_handle();
+        let err = db.execute("SELECT 1 WHERE 1 < ?", &[&1i32]).unwrap_err();
+        assert!(err.code == ffi::SQLITE_MISUSE);
+        assert!(err.message == "Unexpected column count - did you mean to call query?");
     }
 
     #[test]
@@ -1122,7 +1200,7 @@ mod test {
 
         assert_eq!(2i32, second.get(0));
 
-        let result = first.get_opt::<i32>(0);
+        let result = first.get_checked::<i32>(0);
         assert!(result.unwrap_err().message.contains("advancing to next row"));
     }
 
@@ -1139,5 +1217,218 @@ mod test {
             stmt.execute(&[]).unwrap();
         }
         assert_eq!(db.last_insert_rowid(), 10);
+    }
+
+    #[test]
+    fn test_statement_debugging() {
+        let db = checked_memory_handle();
+        let query = "SELECT 12345";
+        let stmt = db.prepare(query).unwrap();
+
+        assert!(format!("{:?}", stmt).contains(query));
+    }
+
+    mod query_and_then_tests {
+        extern crate libsqlite3_sys as ffi;
+        use super::*;
+
+        #[derive(Debug, PartialEq)]
+        enum CustomError {
+            SomeError,
+            Sqlite(SqliteError),
+        }
+
+        impl fmt::Display for CustomError {
+            fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+                match *self {
+                    CustomError::SomeError      => write!(f, "{}", self.description()),
+                    CustomError::Sqlite(ref se) => write!(f, "{}: {}", self.description(), se),
+                }
+            }
+        }
+
+        impl StdError for CustomError {
+            fn description(&self) -> &str { "my custom error" }
+            fn cause(&self) -> Option<&StdError> {
+                match *self {
+                    CustomError::SomeError      => None,
+                    CustomError::Sqlite(ref se) => Some(se),
+                }
+            }
+        }
+
+        impl From<SqliteError> for CustomError {
+            fn from(se: SqliteError) -> CustomError {
+                CustomError::Sqlite(se)
+            }
+        }
+
+        type CustomResult<T> = Result<T, CustomError>;
+
+        #[test]
+        fn test_query_and_then() {
+            let db = checked_memory_handle();
+            let sql = "BEGIN;
+                       CREATE TABLE foo(x INTEGER, y TEXT);
+                       INSERT INTO foo VALUES(4, \"hello\");
+                       INSERT INTO foo VALUES(3, \", \");
+                       INSERT INTO foo VALUES(2, \"world\");
+                       INSERT INTO foo VALUES(1, \"!\");
+                       END;";
+            db.execute_batch(sql).unwrap();
+
+            let mut query = db.prepare("SELECT x, y FROM foo ORDER BY x DESC").unwrap();
+            let results: SqliteResult<Vec<String>> = query
+                .query_and_then(&[], |row| row.get_checked(1))
+                .unwrap()
+                .collect();
+
+            assert_eq!(results.unwrap().concat(), "hello, world!");
+        }
+
+        #[test]
+        fn test_query_and_then_fails() {
+            let db = checked_memory_handle();
+            let sql = "BEGIN;
+                       CREATE TABLE foo(x INTEGER, y TEXT);
+                       INSERT INTO foo VALUES(4, \"hello\");
+                       INSERT INTO foo VALUES(3, \", \");
+                       INSERT INTO foo VALUES(2, \"world\");
+                       INSERT INTO foo VALUES(1, \"!\");
+                       END;";
+            db.execute_batch(sql).unwrap();
+
+            let mut query = db.prepare("SELECT x, y FROM foo ORDER BY x DESC").unwrap();
+            let bad_type: SqliteResult<Vec<f64>> = query
+                .query_and_then(&[], |row| row.get_checked(1))
+                .unwrap()
+                .collect();
+
+            assert_eq!(bad_type, Err(SqliteError{
+                code: ffi::SQLITE_MISMATCH,
+                message: "Invalid column type".to_owned(),
+            }));
+
+            let bad_idx: SqliteResult<Vec<String>> = query
+                .query_and_then(&[], |row| row.get_checked(3))
+                .unwrap()
+                .collect();
+
+            assert_eq!(bad_idx, Err(SqliteError{
+                code: ffi::SQLITE_MISUSE,
+                message: "Invalid column index".to_owned(),
+            }));
+        }
+
+        #[test]
+        fn test_query_and_then_custom_error() {
+            let db = checked_memory_handle();
+            let sql = "BEGIN;
+                       CREATE TABLE foo(x INTEGER, y TEXT);
+                       INSERT INTO foo VALUES(4, \"hello\");
+                       INSERT INTO foo VALUES(3, \", \");
+                       INSERT INTO foo VALUES(2, \"world\");
+                       INSERT INTO foo VALUES(1, \"!\");
+                       END;";
+            db.execute_batch(sql).unwrap();
+
+            let mut query = db.prepare("SELECT x, y FROM foo ORDER BY x DESC").unwrap();
+            let results: CustomResult<Vec<String>> = query
+                .query_and_then(&[], |row| row.get_checked(1).map_err(CustomError::Sqlite))
+                .unwrap()
+                .collect();
+
+            assert_eq!(results.unwrap().concat(), "hello, world!");
+        }
+
+        #[test]
+        fn test_query_and_then_custom_error_fails() {
+            let db = checked_memory_handle();
+            let sql = "BEGIN;
+                       CREATE TABLE foo(x INTEGER, y TEXT);
+                       INSERT INTO foo VALUES(4, \"hello\");
+                       INSERT INTO foo VALUES(3, \", \");
+                       INSERT INTO foo VALUES(2, \"world\");
+                       INSERT INTO foo VALUES(1, \"!\");
+                       END;";
+            db.execute_batch(sql).unwrap();
+
+            let mut query = db.prepare("SELECT x, y FROM foo ORDER BY x DESC").unwrap();
+            let bad_type: CustomResult<Vec<f64>> = query
+                .query_and_then(&[], |row| row.get_checked(1).map_err(CustomError::Sqlite))
+                .unwrap()
+                .collect();
+
+            assert_eq!(bad_type, Err(CustomError::Sqlite(SqliteError{
+                code: ffi::SQLITE_MISMATCH,
+                message: "Invalid column type".to_owned(),
+            })));
+
+            let bad_idx: CustomResult<Vec<String>> = query
+                .query_and_then(&[], |row| row.get_checked(3).map_err(CustomError::Sqlite))
+                .unwrap()
+                .collect();
+
+            assert_eq!(bad_idx, Err(CustomError::Sqlite(SqliteError{
+                code: ffi::SQLITE_MISUSE,
+                message: "Invalid column index".to_owned(),
+            })));
+
+            let non_sqlite_err: CustomResult<Vec<String>> = query
+                .query_and_then(&[], |_| Err(CustomError::SomeError))
+                .unwrap()
+                .collect();
+
+            assert_eq!(non_sqlite_err, Err(CustomError::SomeError));
+        }
+
+        #[test]
+        fn test_query_row_and_then_custom_error() {
+            let db = checked_memory_handle();
+            let sql = "BEGIN;
+                       CREATE TABLE foo(x INTEGER, y TEXT);
+                       INSERT INTO foo VALUES(4, \"hello\");
+                       END;";
+            db.execute_batch(sql).unwrap();
+
+            let query = "SELECT x, y FROM foo ORDER BY x DESC";
+            let results: CustomResult<String> = db
+                .query_row_and_then(query, &[], |row| row.get_checked(1).map_err(CustomError::Sqlite));
+
+            assert_eq!(results.unwrap(), "hello");
+        }
+
+        #[test]
+        fn test_query_row_and_then_custom_error_fails() {
+            let db = checked_memory_handle();
+            let sql = "BEGIN;
+                       CREATE TABLE foo(x INTEGER, y TEXT);
+                       INSERT INTO foo VALUES(4, \"hello\");
+                       END;";
+            db.execute_batch(sql).unwrap();
+
+            let query = "SELECT x, y FROM foo ORDER BY x DESC";
+            let bad_type: CustomResult<f64> = db
+                .query_row_and_then(query, &[], |row| row.get_checked(1).map_err(CustomError::Sqlite));
+
+            assert_eq!(bad_type, Err(CustomError::Sqlite(SqliteError{
+                code: ffi::SQLITE_MISMATCH,
+                message: "Invalid column type".to_owned(),
+            })));
+
+            let bad_idx: CustomResult<String> = db
+                .query_row_and_then(query, &[], |row| row.get_checked(3).map_err(CustomError::Sqlite));
+
+            assert_eq!(bad_idx, Err(CustomError::Sqlite(SqliteError{
+                code: ffi::SQLITE_MISUSE,
+                message: "Invalid column index".to_owned(),
+            })));
+
+            let non_sqlite_err: CustomResult<String> = db
+                .query_row_and_then(query, &[], |_| Err(CustomError::SomeError));
+
+            assert_eq!(non_sqlite_err, Err(CustomError::SomeError));
+        }
+
     }
 }
