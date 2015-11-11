@@ -1,5 +1,5 @@
-C Improvements\sto\sthe\sSQLITE_CONFIG_PAGECACHE\sdocumentation.\s\sEnhance\sthe\ncommand-line\sshell\sto\sbe\sable\sto\stake\sadvantage\sof\sthe\sfull\srange\sof\nSQLITE_CONFIG_PAGECACHE\scapabilities,\ssuch\sas\ssetting\spMem==NULL\sand\sN<0.
-D 2015-11-11T15:28:52.898
+C Add\sa\shack\sto\sdebug\sout\sa\sdescription\sof\sthe\sWHERE\sclause\sof\sa\sSELECT\s(or\sother)\sstatement.\sUse\sthis\sin\sscript\stool/schemalint.tcl\sto\sautomatically\srecommend\sindexes\sthat\smight\sspeed\sup\sspecific\squeries.
+D 2015-11-11T18:08:58.267
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -416,7 +416,7 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 18b0ed49830cf04fe2d68224b41838a73ac6cd24
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 2e14d17f592d176b6dc879c33fbdec4fbccaa2ba
-F src/where.c 6aceb72cc58dc06922a9e1604d559c8ca4c3e728
+F src/where.c 6176426332d5a67df4222adfeae8c22a933f8c84
 F src/whereInt.h 7892bb54cf9ca0ae5c7e6094491b94c9286dc647
 F src/wherecode.c 4c96182e7b25e4be54008dee2da5b9c2f8480b9b
 F src/whereexpr.c e63244ca06c503e5f3c5b7f3c9aea0db826089ed
@@ -972,6 +972,7 @@ F test/schema2.test 906408621ea881fdb496d878b1822572a34e32c5
 F test/schema3.test 1bc1008e1f8cb5654b248c55f27249366eb7ed38
 F test/schema4.test e6a66e20cc69f0e306667c08be7fda3d11707dc5
 F test/schema5.test 29699b4421f183c8f0e88bd28ce7d75d13ea653e
+F test/schemalint.test 22f26e6e9d8fe437b6344a97c91fd14c95e813a7
 F test/securedel.test 21749c32ccc30f1ea9e4b9f33295a6521ec20fa0
 F test/securedel2.test 2d54c28e46eb1fd6902089958b20b1b056c6f1c5
 F test/select1.test be62204d2bd9a5a8a149e9974cfddce893d8f686
@@ -1378,6 +1379,7 @@ F tool/replace.tcl 7727c60a04299b65a92f5e1590896fea0f25b9e0
 F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
 F tool/run-speed-test.sh 0ae485af4fe9f826e2b494be8c81f8ca9e222a4a
+F tool/schemalint.tcl 2eb60e950e91061c27d771582fe87e9518d0988d
 F tool/showdb.c d4476e000a64eca9f5e2c2f68741e747b9778e8d
 F tool/showjournal.c 5bad7ae8784a43d2b270d953060423b8bd480818
 F tool/showlocks.c 9920bcc64f58378ff1118caead34147201f48c68
@@ -1402,7 +1404,10 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e43e1171fd7837a08069dc25df4eac14db1c2afe
-R 9a1d72f8baac116c36385e92e48c0378
-U drh
-Z 9d52ec874b9a01b7b0eb1dab69dbb993
+P 2518d5c971c4b32d9227b3bb7259162e3e27b00b
+R 9a794d90ebfe5dc636fc86a7e99d61d5
+T *branch * schemalint
+T *sym-schemalint *
+T -sym-trunk *
+U dan
+Z 95ad0fe90f5fe7059fb61a18885ffca1

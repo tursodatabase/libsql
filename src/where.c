@@ -3901,6 +3901,155 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
   return 0;
 }
 
+#ifdef SQLITE_SCHEMA_LINT
+static char *whereAppendPrintf(sqlite3 *db, const char *zFmt, ...){
+  va_list ap;
+  char *zRes = 0;
+  va_start(ap, zFmt);
+  zRes = sqlite3_vmprintf(zFmt, ap);
+  if( zRes==0 ){
+    db->mallocFailed = 1;
+  }else if( db->mallocFailed ){
+    sqlite3_free(zRes);
+    zRes = 0;
+  }
+  va_end(ap);
+  return zRes;
+}
+
+/*
+** Append a representation of term pTerm to the string in zIn and return
+** the result. Or, if an OOM occurs, free zIn and return a NULL pointer.
+*/
+static char *whereAppendSingleTerm(
+  Parse *pParse,
+  Table *pTab,
+  int bOr,
+  char *zIn,
+  WhereTerm *pTerm
+){
+  char *zBuf;
+  sqlite3 *db = pParse->db;
+  Expr *pX = pTerm->pExpr;
+  CollSeq *pColl;
+  const char *zOp = 0;
+
+  if( pTerm->eOperator & (WO_IS|WO_EQ|WO_IN) ){
+    zOp = "eq";
+  }else if( pTerm->eOperator & (WO_LT|WO_LE|WO_GE|WO_GT) ){
+    zOp = "range";
+  }
+  pColl = sqlite3BinaryCompareCollSeq(pParse, pX->pLeft, pX->pRight);
+
+  if( zOp ){
+    const char *zFmt = bOr ? "%z{{%s %s %s %lld}}" : "%z{%s %s %s %lld}";
+    zBuf = whereAppendPrintf(db, zFmt, zIn, 
+        zOp, pTab->aCol[pTerm->u.leftColumn].zName, 
+        (pColl ? pColl->zName : "BINARY"),
+        pTerm->prereqRight
+    );
+  }else{
+    zBuf = zIn;
+  }
+
+  return zBuf;
+}
+
+static char *whereTraceWC(
+  Parse *pParse, 
+  struct SrcList_item *pItem,
+  char *zIn,
+  WhereClause *pWC
+){
+  sqlite3 *db = pParse->db;
+  Table *pTab = pItem->pTab;
+  char *zBuf = zIn;
+  int iCol;
+  int ii;
+  int bFirst = 1;
+
+  /* List of WO_SINGLE constraints */
+  for(iCol=0; iCol<pTab->nCol; iCol++){
+    int opMask = WO_SINGLE; 
+    WhereScan scan;
+    WhereTerm *pTerm;
+    for(pTerm=whereScanInit(&scan, pWC, pItem->iCursor, iCol, opMask, 0);
+        pTerm;
+        pTerm=whereScanNext(&scan)
+    ){
+      assert( iCol==pTerm->u.leftColumn );
+      if( bFirst==0 ) zBuf = whereAppendPrintf(db, "%z ", zBuf);
+      zBuf = whereAppendSingleTerm(pParse, pTab, pWC->op==TK_OR, zBuf, pTerm);
+      bFirst = 0;
+    }
+  }
+
+  /* Add composite - (WO_OR|WO_AND) - constraints */
+  for(ii=0; ii<pWC->nTerm; ii++){
+    WhereTerm *pTerm = &pWC->a[ii];
+    if( pTerm->eOperator & (WO_OR|WO_AND) ){
+      const char *zFmt = ((pTerm->eOperator&WO_OR) ? "%z%s{or " : "%z%s{");
+      zBuf = whereAppendPrintf(db, zFmt, zBuf, bFirst ? "" : " ");
+      zBuf = whereTraceWC(pParse, pItem, zBuf, &pTerm->u.pOrInfo->wc);
+      zBuf = whereAppendPrintf(db, "%z}", zBuf);
+      bFirst = 0;
+    }
+  }
+
+  return zBuf;
+}
+
+static void whereTraceBuilder(
+  Parse *pParse,
+  WhereLoopBuilder *p
+){
+  sqlite3 *db = pParse->db;
+  if( db->xTrace ){
+    WhereInfo *pWInfo = p->pWInfo;
+    int nTablist = pWInfo->pTabList->nSrc;
+    int ii;
+
+    /* Loop through each element of the FROM clause. Ignore any sub-selects
+    ** or views. Invoke the xTrace() callback once for each real table. */
+    for(ii=0; ii<nTablist; ii++){
+      char *zBuf = 0;
+      int iCol;
+      int nCol;
+      Table *pTab;
+
+      struct SrcList_item *pItem = &pWInfo->pTabList->a[ii];
+      if( pItem->pSelect ) continue;
+      pTab = pItem->pTab;
+      nCol = pTab->nCol;
+
+      /* Append the table name to the buffer. */
+      zBuf = whereAppendPrintf(db, "%s", pTab->zName);
+
+      /* Append the list of columns required to create a covering index */
+      zBuf = whereAppendPrintf(db, "%z {cols", zBuf);
+      if( 0==(pItem->colUsed & ((u64)1 << (sizeof(Bitmask)*8-1))) ){
+        for(iCol=0; iCol<nCol; iCol++){
+          if( iCol==(sizeof(Bitmask)*8-1) ) break;
+          if( pItem->colUsed & ((u64)1 << iCol) ){
+            zBuf = whereAppendPrintf(db, "%z %s", zBuf, pTab->aCol[iCol].zName);
+          }
+        }
+      }
+      zBuf = whereAppendPrintf(db, "%z} ", zBuf);
+
+      /* Append the contents of WHERE clause */
+      zBuf = whereTraceWC(pParse, pItem, zBuf, p->pWC);
+
+      /* Pass the buffer to the xTrace() callback, then free it */
+      db->xTrace(db->pTraceArg, zBuf);
+      sqlite3DbFree(db, zBuf);
+    }
+  }
+}
+#else
+# define whereTraceBuilder(x,y)
+#endif
+
 /*
 ** Generate the beginning of the loop used for WHERE clause processing.
 ** The return value is a pointer to an opaque structure that contains
@@ -4160,6 +4309,9 @@ WhereInfo *sqlite3WhereBegin(
     }
   }
 #endif
+
+  /* Schema-lint xTrace callback */
+  whereTraceBuilder(pParse, &sWLB);
 
   if( nTabList!=1 || whereShortCut(&sWLB)==0 ){
     rc = whereLoopAddAll(&sWLB);

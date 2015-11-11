@@ -1,0 +1,81 @@
+
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix schemalint
+
+proc xTrace {zMsg} {
+  lappend ::trace_out $zMsg
+}
+db trace xTrace
+
+proc do_trace_test {tn sql res} {
+  uplevel [list do_test $tn [subst -nocommands {
+    set ::trace_out [list]
+    set stmt [sqlite3_prepare db "$sql" -1 x]
+    sqlite3_finalize [set stmt]
+    set ::trace_out
+  }] [list {*}$res]]
+}
+
+
+do_execsql_test 1.0 {
+  CREATE TABLE t1(a, b, c);
+  CREATE TABLE t2(x, y, z);
+}
+
+do_trace_test 1.1 {
+  SELECT b, c, y, z FROM t1, t2 WHERE c=? AND z=?
+} {
+  {t1 {cols b c} {eq c BINARY 0}}
+  {t2 {cols y z} {eq z BINARY 0}}
+}
+
+do_trace_test 1.2 {
+  SELECT a FROM t1 WHERE b>10
+} {
+  {t1 {cols a b} {range b BINARY 0}}
+}
+
+do_trace_test 1.3 {
+  SELECT b FROM t1 WHERE b IN (10, 20, 30)
+} {
+  {t1 {cols b} {eq b BINARY 0}}
+}
+
+do_trace_test 1.4 {
+  SELECT * FROM t1, t2 WHERE x=a
+} {
+  {t1 {cols a b c} {eq a BINARY 2}} 
+  {t2 {cols x y z} {eq x BINARY 1}}
+}
+
+do_trace_test 1.5 {
+  SELECT * FROM t1 WHERE a IN (1, 2, 3)
+} {
+  {t1 {cols a b c} {eq a BINARY 0}}
+}
+
+#-----------------------------------------------------------------------
+# Cases involving OR clauses in the WHERE clause.
+#
+do_trace_test 2.1 {
+  SELECT * FROM t1 WHERE a=? OR b=?
+} {
+  {t1 {cols a b c} {or {{eq a BINARY 0}} {{eq b BINARY 0}}}}
+}
+
+do_trace_test 2.2 {
+  SELECT * FROM t1 WHERE a=? OR (b=? AND c=?)
+} {
+  {t1 {cols a b c} {or {{eq a BINARY 0}} {{eq b BINARY 0} {eq c BINARY 0}}}}
+}
+
+do_trace_test 2.3 {
+  SELECT * FROM t1 WHERE (a=? AND b=?) OR c=?
+} {
+  {t1 {cols a b c} {or {{eq c BINARY 0}} {{eq a BINARY 0} {eq b BINARY 0}}}}
+}
+
+finish_test
+
