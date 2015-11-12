@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\sthe\sSQLITE_SQLLOG_CONDITIONAL\senvironment\svariable\sto\sthe\slogging\scode\sin\stest_sqllog.c.\sWhen\sdefined,\slogging\sis\sonly\sperformed\sif\sthe\s"<database>-sqllog"\sfile\sis\spresent\sin\sthe\sfile\ssystem\swhen\sthe\smain\sdatabase\sis\sopened.
-D 2015-11-12T20:12:51.646
+C Add\sa\sspace\sbefore\seach\sline\sof\serror\soutput\sin\sthe\stest\sscripts\sso\sthat\sall\nerrors\scan\sbe\sconveniently\slocated\sin\slogs\sby\sdoing\s"grep\s'^\s'".
+D 2015-11-12T21:42:40.423
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -931,7 +931,7 @@ F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
 F test/permutations.test 4ea119731c62d2f7d0aa86dd5b184cbb61ca411b
 F test/pragma.test a44253f911e7d50127d4a08f927f47c861a4c772
-F test/pragma2.test a8e11a7a38e2a5053fe4b807fc806c937d9a7469
+F test/pragma2.test 1a4cc20b0cd8fc6411bd2f828cdc3ea1bdd570b9
 F test/pragma3.test 6f849ccffeee7e496d2f2b5e74152306c0b8757c
 F test/printf.test b3ff34e73d59124140eaf89f7672e21bc2ca5fcc
 F test/printf2.test 0b61566dd1c0f0b802f59dffa228c5dc5aa6b054
@@ -1060,7 +1060,7 @@ F test/tclsqlite.test 7fb866443c7deceed22b63948ccd6f76b52ad054
 F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
 F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptrigger.test 8ec228b0db5d7ebc4ee9b458fc28cb9e7873f5e1
-F test/tester.tcl 83cc29c89259490b25d2d7e47535d6f2ed5a57c7
+F test/tester.tcl 87a4d4533f55c586bc17bca5b96d381a7fe328e0
 F test/thread001.test 9f22fd3525a307ff42a326b6bc7b0465be1745a5
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -1278,7 +1278,7 @@ F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test ea8778d5b0df200adef2ca7c00c3c37d4375f772
 F test/wal.test dbfc482e10c7263298833bb1fc60b3ac9d6340a1
 F test/wal2.test 1f841d2048080d32f552942e333fd99ce541dada
-F test/wal3.test 2ab8e490afe0164bfc89b185c8b2572e0d821f23
+F test/wal3.test b1d425f68a1f61d12563f0fa1ee6fca7d5afabf4
 F test/wal4.test 4744e155cd6299c6bd99d3eab1c82f77db9cdb3c
 F test/wal5.test 88b5d9a6a3d1532497ee9f4296f010d66f07e33c
 F test/wal6.test 4421cd5a2fa99d29cc91ef12fb23bed171ed3a4c
@@ -1403,7 +1403,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f79d264db24a470d1a4571e15a99cd3d68b5166c
-R 832ba4972d7900eed0d1e5716cf55baa
-U dan
-Z 957802b71a98a3fb9167ff96a716895f
+P cab8126be9f63dd596719b12704ba77c128282bc
+R 285b415177be5b2cab525b82d9f69ae9
+U drh
+Z a7a38819a361f89adc4ae5f714679f1c
