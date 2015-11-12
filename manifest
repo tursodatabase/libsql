@@ -1,5 +1,5 @@
-C First\sattempt\sat\senhancing\sthe\s"PRAGMA\scache_spill"\sstatement\sto\saccept\sa\ncache\sthreashold\ssize.
-D 2015-11-12T14:57:19.268
+C Test\scases.\s\sMinor\sproblems\sfixed.\s\sAll\sappears\sto\swork\snow.
+D 2015-11-12T15:47:48.274
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -329,10 +329,10 @@ F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 18341e2b759b447cbc82fb9215d08d9c5864e92e
 F src/pager.h 87c4118a71ba3965184148b379a6d93179071091
 F src/parse.y 8a364a7a692e517dea8711b3c7f0d07fe32727d8
-F src/pcache.c f72f19956f8182ecd97cf9b7b0faa201711225b8
+F src/pcache.c 73895411fa6b7bd6f0091212feabbe833b358d23
 F src/pcache.h 1ff11adce609ba7de139b6abfabaf9a2bac947b5
 F src/pcache1.c 902e1bc7bdaa81b40f8543407c5e2ac8ef4dc035
-F src/pragma.c 26a612db31748a23dc17b97296e521cf2ef42081
+F src/pragma.c 0e91830e5cea31771121eb8967e8c110f7e8216a
 F src/pragma.h 31b110aaecb5603829c97747b99abfe491df5fa0
 F src/prepare.c 82e5db1013846a819f198336fed72c44c974e7b1
 F src/printf.c 0c4bcdd1c2e2521024f0a69cb5eb334f86b3652a
@@ -931,7 +931,7 @@ F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
 F test/permutations.test 4ea119731c62d2f7d0aa86dd5b184cbb61ca411b
 F test/pragma.test a44253f911e7d50127d4a08f927f47c861a4c772
-F test/pragma2.test 93ef4f24fb97a59d935859daf26078384b265c12
+F test/pragma2.test a8e11a7a38e2a5053fe4b807fc806c937d9a7469
 F test/pragma3.test 6f849ccffeee7e496d2f2b5e74152306c0b8757c
 F test/printf.test b3ff34e73d59124140eaf89f7672e21bc2ca5fcc
 F test/printf2.test 0b61566dd1c0f0b802f59dffa228c5dc5aa6b054
@@ -1402,10 +1402,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2518d5c971c4b32d9227b3bb7259162e3e27b00b
-R 337aa604616b296340bdf382cbd4b435
-T *branch * cache_spill=N
-T *sym-cache_spill=N *
-T -sym-trunk *
+P 549d42be0dac87dc04c3eeccfdc60615c3a6ad3f
+R 675bbffc41ae7c4e7c58162bf39590a3
 U drh
-Z e21337491dfb1b39176b63de38883141
+Z 4ec2916143a078881954f66921bb963f

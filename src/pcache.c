@@ -652,7 +652,7 @@ int sqlite3PcacheSetSpillsize(PCache *p, int mxPage){
   assert( p->pCache!=0 );
   if( mxPage ){
     if( mxPage<0 ){
-      mxPage = (int)((-1024*(i64)p->szCache)/(p->szPage+p->szExtra));
+      mxPage = (int)((-1024*(i64)mxPage)/(p->szPage+p->szExtra));
     }
     p->szSpill = mxPage;
   }

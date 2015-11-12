@@ -769,7 +769,6 @@ void sqlite3Pragma(
   ** not just the schema specified.
   */
   case PragTyp_CACHE_SPILL: {
-    int size;
     assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
     if( !zRight ){
       if( sqlite3ReadSchema(pParse) ) goto pragma_out;
@@ -777,14 +776,16 @@ void sqlite3Pragma(
          (db->flags & SQLITE_CacheSpill)==0 ? 0 : 
             sqlite3BtreeSetSpillSize(pDb->pBt,0));
     }else{
+      int size = 1;
       if( sqlite3GetInt32(zRight, &size) ){
         sqlite3BtreeSetSpillSize(pDb->pBt, size);
       }
-      if( sqlite3GetBoolean(zRight, 0) ){
+      if( sqlite3GetBoolean(zRight, size!=0) ){
         db->flags |= SQLITE_CacheSpill;
       }else{
         db->flags &= ~SQLITE_CacheSpill;
       }
+      setAllPagerFlags(db);
     }
     break;
   }
