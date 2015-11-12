@@ -1,5 +1,5 @@
-C Improvements\sto\sthe\sSQLITE_CONFIG_PAGECACHE\sdocumentation.\s\sEnhance\sthe\ncommand-line\sshell\sto\sbe\sable\sto\stake\sadvantage\sof\sthe\sfull\srange\sof\nSQLITE_CONFIG_PAGECACHE\scapabilities,\ssuch\sas\ssetting\spMem==NULL\sand\sN<0.
-D 2015-11-11T15:28:52.898
+C First\sattempt\sat\senhancing\sthe\s"PRAGMA\scache_spill"\sstatement\sto\saccept\sa\ncache\sthreashold\ssize.
+D 2015-11-12T14:57:19.268
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -282,8 +282,8 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 2869a76c03eb393ee795416e2387005553df72bc
 F src/bitvec.c d1f21d7d91690747881f03940584f4cc548c9d3d
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c 9e5d713bf54be8bfcae9b60210173dd53570f56d
-F src/btree.h 1b8bf2818b5e256c25a5e09126720113b1d783da
+F src/btree.c d3bdd8462a86492e2ebc9aca4a0168429017de25
+F src/btree.h 2d76dee44704c47eed323356a758662724b674a0
 F src/btreeInt.h 3ab435ed27adea54d040584b0bcc488ee7db1e38
 F src/build.c ca574d33ffb1763cfd2979383f4d507095bfbe19
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
@@ -326,14 +326,14 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c cf72e06e15839ebe7121e01d3eebf256c039b0ca
 F src/os_win.c 1716291e5ec2dbfc5a1fe0b32182030f1f7d8acf
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
-F src/pager.c ed5cff11793b6a4146582aabb29ed8613a6cf89e
-F src/pager.h 7fc069c07f3120ee466ff3d48a9d376974ebffa7
+F src/pager.c 18341e2b759b447cbc82fb9215d08d9c5864e92e
+F src/pager.h 87c4118a71ba3965184148b379a6d93179071091
 F src/parse.y 8a364a7a692e517dea8711b3c7f0d07fe32727d8
-F src/pcache.c 24be750c79272e0ca7b6e007bc94999700f3e5ef
-F src/pcache.h 9968603796240cdf83da7e7bef76edf90619cea9
+F src/pcache.c f72f19956f8182ecd97cf9b7b0faa201711225b8
+F src/pcache.h 1ff11adce609ba7de139b6abfabaf9a2bac947b5
 F src/pcache1.c 902e1bc7bdaa81b40f8543407c5e2ac8ef4dc035
-F src/pragma.c 9dbb9ba2453d79bfc5905be0398aa30342b066bb
-F src/pragma.h 631a91c8b0e6ca8f051a1d8a4a0da4150e04620a
+F src/pragma.c 26a612db31748a23dc17b97296e521cf2ef42081
+F src/pragma.h 31b110aaecb5603829c97747b99abfe491df5fa0
 F src/prepare.c 82e5db1013846a819f198336fed72c44c974e7b1
 F src/printf.c 0c4bcdd1c2e2521024f0a69cb5eb334f86b3652a
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
@@ -931,7 +931,7 @@ F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
 F test/permutations.test 4ea119731c62d2f7d0aa86dd5b184cbb61ca411b
 F test/pragma.test a44253f911e7d50127d4a08f927f47c861a4c772
-F test/pragma2.test b5e2ce4c892afceb308c6ae6163a9099b2a0d8d7
+F test/pragma2.test 93ef4f24fb97a59d935859daf26078384b265c12
 F test/pragma3.test 6f849ccffeee7e496d2f2b5e74152306c0b8757c
 F test/printf.test b3ff34e73d59124140eaf89f7672e21bc2ca5fcc
 F test/printf2.test 0b61566dd1c0f0b802f59dffa228c5dc5aa6b054
@@ -1364,7 +1364,7 @@ F tool/mkkeywordhash.c 37f9c2e62c31384b697ede8825e2d344e98db22c
 F tool/mkopcodec.tcl edde8adc42621b5e598127f8cdc6d52cfe21f52b
 F tool/mkopcodeh.tcl e04177031532b7aa9379ded50e820231ac4abd6e
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
-F tool/mkpragmatab.tcl 84af2b180484323a2ea22a2279e8bd9e3e1e492e
+F tool/mkpragmatab.tcl 473b6a156bc018d36aac5288d8479a879d570b93
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 87240b09c20042999b41d5fabe091b7111287835
 F tool/mksqlite3c.tcl b66b4170f693602cd6985aed15d9509fe2f18c84
@@ -1402,7 +1402,10 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e43e1171fd7837a08069dc25df4eac14db1c2afe
-R 9a1d72f8baac116c36385e92e48c0378
+P 2518d5c971c4b32d9227b3bb7259162e3e27b00b
+R 337aa604616b296340bdf382cbd4b435
+T *branch * cache_spill=N
+T *sym-cache_spill=N *
+T -sym-trunk *
 U drh
-Z 9d52ec874b9a01b7b0eb1dab69dbb993
+Z e21337491dfb1b39176b63de38883141

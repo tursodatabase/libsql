@@ -21,6 +21,7 @@ struct PCache {
   PgHdr *pSynced;                     /* Last synced page in dirty page list */
   int nRefSum;                        /* Sum of ref counts over all pages */
   int szCache;                        /* Configured cache size */
+  int szSpill;                        /* Size before spilling occurs */
   int szPage;                         /* Size of every page in this cache */
   int szExtra;                        /* Size of extra space for each page */
   u8 bPurgeable;                      /* True if pages are on backing store */
@@ -110,10 +111,8 @@ static void pcacheUnpin(PgHdr *p){
 }
 
 /*
-** Compute the number of pages of cache requested.  p->szCache is the
+** Compute the number of pages of cache requested.   p->szCache is the
 ** cache size requested by the "PRAGMA cache_size" statement.
-**
-**
 */
 static int numberOfCachePages(PCache *p){
   if( p->szCache>=0 ){
@@ -176,6 +175,7 @@ int sqlite3PcacheOpen(
   p->xStress = xStress;
   p->pStress = pStress;
   p->szCache = 100;
+  p->szSpill = 1;
   return sqlite3PcacheSetPageSize(p, szPage);
 }
 
@@ -271,32 +271,33 @@ int sqlite3PcacheFetchStress(
   PgHdr *pPg;
   if( pCache->eCreate==2 ) return 0;
 
-
-  /* Find a dirty page to write-out and recycle. First try to find a 
-  ** page that does not require a journal-sync (one with PGHDR_NEED_SYNC
-  ** cleared), but if that is not possible settle for any other 
-  ** unreferenced dirty page.
-  */
-  for(pPg=pCache->pSynced; 
-      pPg && (pPg->nRef || (pPg->flags&PGHDR_NEED_SYNC)); 
-      pPg=pPg->pDirtyPrev
-  );
-  pCache->pSynced = pPg;
-  if( !pPg ){
-    for(pPg=pCache->pDirtyTail; pPg && pPg->nRef; pPg=pPg->pDirtyPrev);
-  }
-  if( pPg ){
-    int rc;
+  if( sqlite3PcachePagecount(pCache)>pCache->szSpill ){
+    /* Find a dirty page to write-out and recycle. First try to find a 
+    ** page that does not require a journal-sync (one with PGHDR_NEED_SYNC
+    ** cleared), but if that is not possible settle for any other 
+    ** unreferenced dirty page.
+    */
+    for(pPg=pCache->pSynced; 
+        pPg && (pPg->nRef || (pPg->flags&PGHDR_NEED_SYNC)); 
+        pPg=pPg->pDirtyPrev
+    );
+    pCache->pSynced = pPg;
+    if( !pPg ){
+      for(pPg=pCache->pDirtyTail; pPg && pPg->nRef; pPg=pPg->pDirtyPrev);
+    }
+    if( pPg ){
+      int rc;
 #ifdef SQLITE_LOG_CACHE_SPILL
-    sqlite3_log(SQLITE_FULL, 
-                "spill page %d making room for %d - cache used: %d/%d",
-                pPg->pgno, pgno,
-                sqlite3GlobalConfig.pcache.xPagecount(pCache->pCache),
+      sqlite3_log(SQLITE_FULL, 
+                  "spill page %d making room for %d - cache used: %d/%d",
+                  pPg->pgno, pgno,
+                  sqlite3GlobalConfig.pcache.xPagecount(pCache->pCache),
                 numberOfCachePages(pCache));
 #endif
-    rc = pCache->xStress(pCache->pStress, pPg);
-    if( rc!=SQLITE_OK && rc!=SQLITE_BUSY ){
-      return rc;
+      rc = pCache->xStress(pCache->pStress, pPg);
+      if( rc!=SQLITE_OK && rc!=SQLITE_BUSY ){
+        return rc;
+      }
     }
   }
   *ppPage = sqlite3GlobalConfig.pcache2.xFetch(pCache->pCache, pgno, 2);
@@ -639,6 +640,25 @@ void sqlite3PcacheSetCachesize(PCache *pCache, int mxPage){
   pCache->szCache = mxPage;
   sqlite3GlobalConfig.pcache2.xCachesize(pCache->pCache,
                                          numberOfCachePages(pCache));
+}
+
+/*
+** Set the suggested cache-spill value.  Make no changes if if the
+** argument is zero.  Return the effective cache-spill size, which will
+** be the larger of the szSpill and szCache.
+*/
+int sqlite3PcacheSetSpillsize(PCache *p, int mxPage){
+  int res;
+  assert( p->pCache!=0 );
+  if( mxPage ){
+    if( mxPage<0 ){
+      mxPage = (int)((-1024*(i64)p->szCache)/(p->szPage+p->szExtra));
+    }
+    p->szSpill = mxPage;
+  }
+  res = numberOfCachePages(p);
+  if( res<p->szSpill ) res = p->szSpill; 
+  return res;
 }
 
 /*

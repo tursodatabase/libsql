@@ -279,7 +279,7 @@ const char *sqlite3JournalModename(int eMode){
 **
 ** Pragmas are of this form:
 **
-**      PRAGMA [database.]id [= value]
+**      PRAGMA [schema.]id [= value]
 **
 ** The identifier might also be a string.  The value is a string, and
 ** identifier, or a number.  If minusFlag is true, then the value is
@@ -291,8 +291,8 @@ const char *sqlite3JournalModename(int eMode){
 */
 void sqlite3Pragma(
   Parse *pParse, 
-  Token *pId1,        /* First part of [database.]id field */
-  Token *pId2,        /* Second part of [database.]id field, or NULL */
+  Token *pId1,        /* First part of [schema.]id field */
+  Token *pId2,        /* Second part of [schema.]id field, or NULL */
   Token *pValue,      /* Token for <value>, or NULL */
   int minusFlag       /* True if a '-' sign preceded <value> */
 ){
@@ -313,7 +313,7 @@ void sqlite3Pragma(
   sqlite3VdbeRunOnlyOnce(v);
   pParse->nMem = 2;
 
-  /* Interpret the [database.] part of the pragma statement. iDb is the
+  /* Interpret the [schema.] part of the pragma statement. iDb is the
   ** index of the database this pragma is being applied to in db.aDb[]. */
   iDb = sqlite3TwoPartName(pParse, pId1, pId2, &pId);
   if( iDb<0 ) return;
@@ -402,8 +402,8 @@ void sqlite3Pragma(
   
 #if !defined(SQLITE_OMIT_PAGER_PRAGMAS) && !defined(SQLITE_OMIT_DEPRECATED)
   /*
-  **  PRAGMA [database.]default_cache_size
-  **  PRAGMA [database.]default_cache_size=N
+  **  PRAGMA [schema.]default_cache_size
+  **  PRAGMA [schema.]default_cache_size=N
   **
   ** The first form reports the current persistent setting for the
   ** page cache size.  The value returned is the maximum number of
@@ -454,8 +454,8 @@ void sqlite3Pragma(
 
 #if !defined(SQLITE_OMIT_PAGER_PRAGMAS)
   /*
-  **  PRAGMA [database.]page_size
-  **  PRAGMA [database.]page_size=N
+  **  PRAGMA [schema.]page_size
+  **  PRAGMA [schema.]page_size=N
   **
   ** The first form reports the current setting for the
   ** database page size in bytes.  The second form sets the
@@ -481,8 +481,8 @@ void sqlite3Pragma(
   }
 
   /*
-  **  PRAGMA [database.]secure_delete
-  **  PRAGMA [database.]secure_delete=ON/OFF
+  **  PRAGMA [schema.]secure_delete
+  **  PRAGMA [schema.]secure_delete=ON/OFF
   **
   ** The first form reports the current setting for the
   ** secure_delete flag.  The second form changes the secure_delete
@@ -507,8 +507,8 @@ void sqlite3Pragma(
   }
 
   /*
-  **  PRAGMA [database.]max_page_count
-  **  PRAGMA [database.]max_page_count=N
+  **  PRAGMA [schema.]max_page_count
+  **  PRAGMA [schema.]max_page_count=N
   **
   ** The first form reports the current setting for the
   ** maximum number of pages in the database file.  The 
@@ -519,7 +519,7 @@ void sqlite3Pragma(
   ** change.  The only purpose is to provide an easy way to test
   ** the sqlite3AbsInt32() function.
   **
-  **  PRAGMA [database.]page_count
+  **  PRAGMA [schema.]page_count
   **
   ** Return the number of pages in the specified database.
   */
@@ -540,8 +540,8 @@ void sqlite3Pragma(
   }
 
   /*
-  **  PRAGMA [database.]locking_mode
-  **  PRAGMA [database.]locking_mode = (normal|exclusive)
+  **  PRAGMA [schema.]locking_mode
+  **  PRAGMA [schema.]locking_mode = (normal|exclusive)
   */
   case PragTyp_LOCKING_MODE: {
     const char *zRet = "normal";
@@ -586,8 +586,8 @@ void sqlite3Pragma(
   }
 
   /*
-  **  PRAGMA [database.]journal_mode
-  **  PRAGMA [database.]journal_mode =
+  **  PRAGMA [schema.]journal_mode
+  **  PRAGMA [schema.]journal_mode =
   **                      (delete|persist|off|truncate|memory|wal|off)
   */
   case PragTyp_JOURNAL_MODE: {
@@ -627,8 +627,8 @@ void sqlite3Pragma(
   }
 
   /*
-  **  PRAGMA [database.]journal_size_limit
-  **  PRAGMA [database.]journal_size_limit=N
+  **  PRAGMA [schema.]journal_size_limit
+  **  PRAGMA [schema.]journal_size_limit=N
   **
   ** Get or set the size limit on rollback journal files.
   */
@@ -647,8 +647,8 @@ void sqlite3Pragma(
 #endif /* SQLITE_OMIT_PAGER_PRAGMAS */
 
   /*
-  **  PRAGMA [database.]auto_vacuum
-  **  PRAGMA [database.]auto_vacuum=N
+  **  PRAGMA [schema.]auto_vacuum
+  **  PRAGMA [schema.]auto_vacuum=N
   **
   ** Get or set the value of the database 'auto-vacuum' parameter.
   ** The value is one of:  0 NONE 1 FULL 2 INCREMENTAL
@@ -699,7 +699,7 @@ void sqlite3Pragma(
 #endif
 
   /*
-  **  PRAGMA [database.]incremental_vacuum(N)
+  **  PRAGMA [schema.]incremental_vacuum(N)
   **
   ** Do N steps of incremental vacuuming on a database.
   */
@@ -722,8 +722,8 @@ void sqlite3Pragma(
 
 #ifndef SQLITE_OMIT_PAGER_PRAGMAS
   /*
-  **  PRAGMA [database.]cache_size
-  **  PRAGMA [database.]cache_size=N
+  **  PRAGMA [schema.]cache_size
+  **  PRAGMA [schema.]cache_size=N
   **
   ** The first form reports the current local setting for the
   ** page cache size. The second form sets the local
@@ -747,7 +747,50 @@ void sqlite3Pragma(
   }
 
   /*
-  **  PRAGMA [database.]mmap_size(N)
+  **  PRAGMA [schema.]cache_spill
+  **  PRAGMA cache_spill=BOOLEAN
+  **  PRAGMA [schema.]cache_spill=N
+  **
+  ** The first form reports the current local setting for the
+  ** page cache spill size. The second form turns cache spill on
+  ** or off.  When turnning cache spill on, the size is set to the
+  ** current cache_size.  The third form sets a spill size that
+  ** may be different form the cache size.
+  ** If N is positive then that is the
+  ** number of pages in the cache.  If N is negative, then the
+  ** number of pages is adjusted so that the cache uses -N kibibytes
+  ** of memory.
+  **
+  ** If the number of cache_spill pages is less then the number of
+  ** cache_size pages, no spilling occurs until the page count exceeds
+  ** the number of cache_size pages.
+  **
+  ** The cache_spill=BOOLEAN setting applies to all attached schemas,
+  ** not just the schema specified.
+  */
+  case PragTyp_CACHE_SPILL: {
+    int size;
+    assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
+    if( !zRight ){
+      if( sqlite3ReadSchema(pParse) ) goto pragma_out;
+      returnSingleInt(v, "cache_spill", 
+         (db->flags & SQLITE_CacheSpill)==0 ? 0 : 
+            sqlite3BtreeSetSpillSize(pDb->pBt,0));
+    }else{
+      if( sqlite3GetInt32(zRight, &size) ){
+        sqlite3BtreeSetSpillSize(pDb->pBt, size);
+      }
+      if( sqlite3GetBoolean(zRight, 0) ){
+        db->flags |= SQLITE_CacheSpill;
+      }else{
+        db->flags &= ~SQLITE_CacheSpill;
+      }
+    }
+    break;
+  }
+
+  /*
+  **  PRAGMA [schema.]mmap_size(N)
   **
   ** Used to set mapping size limit. The mapping size limit is
   ** used to limit the aggregate size of all memory mapped regions of the
@@ -891,8 +934,8 @@ void sqlite3Pragma(
 
 #if SQLITE_ENABLE_LOCKING_STYLE
   /*
-  **   PRAGMA [database.]lock_proxy_file
-  **   PRAGMA [database.]lock_proxy_file = ":auto:"|"lock_file_path"
+  **   PRAGMA [schema.]lock_proxy_file
+  **   PRAGMA [schema.]lock_proxy_file = ":auto:"|"lock_file_path"
   **
   ** Return or set the value of the lock_proxy_file flag.  Changing
   ** the value sets a specific file to be used for database access locks.
@@ -927,8 +970,8 @@ void sqlite3Pragma(
 #endif /* SQLITE_ENABLE_LOCKING_STYLE */      
     
   /*
-  **   PRAGMA [database.]synchronous
-  **   PRAGMA [database.]synchronous=OFF|ON|NORMAL|FULL
+  **   PRAGMA [schema.]synchronous
+  **   PRAGMA [schema.]synchronous=OFF|ON|NORMAL|FULL
   **
   ** Return or set the local value of the synchronous flag.  Changing
   ** the local value does not make changes to the disk file and the
@@ -1644,16 +1687,16 @@ void sqlite3Pragma(
 
 #ifndef SQLITE_OMIT_SCHEMA_VERSION_PRAGMAS
   /*
-  **   PRAGMA [database.]schema_version
-  **   PRAGMA [database.]schema_version = <integer>
+  **   PRAGMA [schema.]schema_version
+  **   PRAGMA [schema.]schema_version = <integer>
   **
-  **   PRAGMA [database.]user_version
-  **   PRAGMA [database.]user_version = <integer>
+  **   PRAGMA [schema.]user_version
+  **   PRAGMA [schema.]user_version = <integer>
   **
-  **   PRAGMA [database.]freelist_count = <integer>
+  **   PRAGMA [schema.]freelist_count = <integer>
   **
-  **   PRAGMA [database.]application_id
-  **   PRAGMA [database.]application_id = <integer>
+  **   PRAGMA [schema.]application_id
+  **   PRAGMA [schema.]application_id = <integer>
   **
   ** The pragma's schema_version and user_version are used to set or get
   ** the value of the schema-version and user-version, respectively. Both
@@ -1728,7 +1771,7 @@ void sqlite3Pragma(
 
 #ifndef SQLITE_OMIT_WAL
   /*
-  **   PRAGMA [database.]wal_checkpoint = passive|full|restart|truncate
+  **   PRAGMA [schema.]wal_checkpoint = passive|full|restart|truncate
   **
   ** Checkpoint the database.
   */
