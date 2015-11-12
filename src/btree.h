@@ -63,6 +63,7 @@ int sqlite3BtreeOpen(
 
 int sqlite3BtreeClose(Btree*);
 int sqlite3BtreeSetCacheSize(Btree*,int);
+int sqlite3BtreeSetSpillSize(Btree*,int);
 #if SQLITE_MAX_MMAP_SIZE>0
   int sqlite3BtreeSetMmapLimit(Btree*,sqlite3_int64);
 #endif

@@ -874,7 +874,6 @@ static int fts5CursorFirstSorted(Fts5Table *pTab, Fts5Cursor *pCsr, int bDesc){
   int nPhrase;
   int nByte;
   int rc = SQLITE_OK;
-  char *zSql;
   const char *zRank = pCsr->zRank;
   const char *zRankArgs = pCsr->zRankArgs;
   

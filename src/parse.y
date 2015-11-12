@@ -61,6 +61,18 @@
 #define yytestcase(X) testcase(X)
 
 /*
+** Indicate that sqlite3ParserFree() will never be called with a null
+** pointer.
+*/
+#define YYPARSEFREENEVERNULL 1
+
+/*
+** Alternative datatype for the argument to the malloc() routine passed
+** into sqlite3ParserAlloc().  The default is size_t.
+*/
+#define YYMALLOCARGTYPE  u64
+
+/*
 ** An instance of this structure holds information about the
 ** LIMIT clause of a SELECT statement.
 */
@@ -162,7 +174,7 @@ create_table_args ::= AS select(S). {
   sqlite3EndTable(pParse,0,0,0,S);
   sqlite3SelectDelete(pParse->db, S);
 }
-%type table_options {u8}
+%type table_options {int}
 table_options(A) ::= .    {A = 0;}
 table_options(A) ::= WITHOUT nm(X). {
   if( X.n==5 && sqlite3_strnicmp(X.z,"rowid",5)==0 ){
@@ -364,12 +376,12 @@ defer_subclause_opt(A) ::= defer_subclause(X).  {A = X;}
 // default behavior when there is a constraint conflict.
 //
 %type onconf {int}
-%type orconf {u8}
+%type orconf {int}
 %type resolvetype {int}
 onconf(A) ::= .                              {A = OE_Default;}
 onconf(A) ::= ON CONFLICT resolvetype(X).    {A = X;}
 orconf(A) ::= .                              {A = OE_Default;}
-orconf(A) ::= OR resolvetype(X).             {A = (u8)X;}
+orconf(A) ::= OR resolvetype(X).             {A = X;}
 resolvetype(A) ::= raisetype(X).             {A = X;}
 resolvetype(A) ::= IGNORE.                   {A = OE_Ignore;}
 resolvetype(A) ::= REPLACE.                  {A = OE_Replace;}
@@ -526,7 +538,7 @@ values(A) ::= values(X) COMMA LP exprlist(Y) RP. {
 // The "distinct" nonterminal is true (1) if the DISTINCT keyword is
 // present and false (0) if it is not.
 //
-%type distinct {u16}
+%type distinct {int}
 distinct(A) ::= DISTINCT.   {A = SF_Distinct;}
 distinct(A) ::= ALL.        {A = SF_All;}
 distinct(A) ::= .           {A = 0;}
@@ -639,7 +651,6 @@ dbnm(A) ::= DOT nm(X). {A = X;}
 fullname(A) ::= nm(X) dbnm(Y).  {A = sqlite3SrcListAppend(pParse->db,0,&X,&Y);}
 
 %type joinop {int}
-%type joinop2 {int}
 joinop(X) ::= COMMA|JOIN.              { X = JT_INNER; }
 joinop(X) ::= JOIN_KW(A) JOIN.         { X = sqlite3JoinType(pParse,&A,0,0); }
 joinop(X) ::= JOIN_KW(A) nm(B) JOIN.   { X = sqlite3JoinType(pParse,&A,&B,0); }
@@ -800,7 +811,7 @@ cmd ::= with(W) insert_cmd(R) INTO fullname(X) idlist_opt(F) DEFAULT VALUES.
   sqlite3Insert(pParse, X, 0, F, R);
 }
 
-%type insert_cmd {u8}
+%type insert_cmd {int}
 insert_cmd(A) ::= INSERT orconf(R).   {A = R;}
 insert_cmd(A) ::= REPLACE.            {A = OE_Replace;}
 

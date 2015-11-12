@@ -1,0 +1,64 @@
+# 2015-11-07
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing the WITH clause.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set ::testprefix with3
+
+ifcapable {!cte} {
+  finish_test
+  return
+}
+
+# Test problems found by Kostya Serebryany using 
+# LibFuzzer.  (http://llvm.org/docs/LibFuzzer.html)
+#
+do_catchsql_test 1.0 {
+  WITH i(x) AS (
+    WITH j AS (SELECT 10)
+    SELECT 5 FROM t0 UNION SELECT 8 FROM m
+  )
+  SELECT * FROM i;
+} {1 {no such table: m}}
+
+# Additional test cases that came out of the work to
+# fix for Kostya's problem.
+#
+do_execsql_test 2.0 {
+ WITH
+  x1 AS (SELECT 10),
+  x2 AS (SELECT 11),
+  x3 AS (
+    SELECT * FROM x1 UNION ALL SELECT * FROM x2
+  ),
+  x4 AS (
+    WITH
+    x1 AS (SELECT 12),
+    x2 AS (SELECT 13)
+    SELECT * FROM x3
+  )
+  SELECT * FROM x4;
+
+} {10 11}
+
+do_execsql_test 2.1 {
+  CREATE TABLE t1(x);
+  WITH
+    x1(a) AS (values(100))
+  INSERT INTO t1(x)
+    SELECT * FROM (WITH x2(y) AS (SELECT * FROM x1) SELECT y+a FROM x1, x2);
+  SELECT * FROM t1;
+} {200}
+
+finish_test

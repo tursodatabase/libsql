@@ -138,7 +138,7 @@ do_execsql_test pragma2-4.1 {
   PRAGMA cache_spill;
   PRAGMA main.cache_spill;
   PRAGMA temp.cache_spill;
-} {1 1 1}
+} {2000 2000 2000}
 do_execsql_test pragma2-4.2 {
   PRAGMA cache_spill=OFF;
   PRAGMA cache_spill;
@@ -178,21 +178,54 @@ do_test pragma2-4.4 {
     PRAGMA lock_status;
   }
 } {main exclusive temp unknown}  ;# EXCLUSIVE lock due to cache spill
-do_test pragma2-4.5 {
+do_test pragma2-4.5.1 {
   db eval {
-    COMMIT;
+    ROLLBACK;
     PRAGMA cache_spill=OFF;
+    PRAGMA Cache_Spill;
     BEGIN;
-    UPDATE t1 SET c=c-1;
+    UPDATE t1 SET c=c+1;
     PRAGMA lock_status;
   }
-} {main reserved temp unknown}   ;# No cache spill, so no exclusive lock
+} {0 main reserved temp unknown}   ;# No cache spill, so no exclusive lock
+do_test pragma2-4.5.2 {
+  db eval {
+    ROLLBACK;
+    PRAGMA cache_spill=100000;
+    PRAGMA cache_spill;
+    BEGIN;
+    UPDATE t1 SET c=c+1;
+    PRAGMA lock_status;
+  }
+} {100000 main reserved temp unknown}   ;# Big spill threshold -> no excl lock
+do_test pragma2-4.5.3 {
+  db eval {
+    ROLLBACK;
+    PRAGMA cache_spill=25;
+    PRAGMA main.cache_spill;
+    BEGIN;
+    UPDATE t1 SET c=c+1;
+    PRAGMA lock_status;
+  }
+} {50 main exclusive temp unknown}   ;# Small cache spill -> exclusive lock
+do_test pragma2-4.5.4 {
+  db eval {
+    ROLLBACK;
+    PRAGMA cache_spill(-25);
+    PRAGMA main.cache_spill;
+    BEGIN;
+    UPDATE t1 SET c=c+1;
+    PRAGMA lock_status;
+  }
+} {50 main exclusive temp unknown}   ;# Small cache spill -> exclusive lock
+
 
 # Verify that newly attached databases inherit the cache_spill=OFF
 # setting.
 #
 do_execsql_test pragma2-4.6 {
-  COMMIT;
+  ROLLBACK;
+  PRAGMA cache_spill=OFF;
   ATTACH 'test2.db' AS aux1;
   PRAGMA aux1.cache_size=50;
   BEGIN;
@@ -209,6 +242,26 @@ do_execsql_test pragma2-4.8 {
   UPDATE t2 SET c=c-1;
   PRAGMA lock_status;
 } {main unlocked temp unknown aux1 exclusive}
+db close
+forcedelete test.db
+sqlite3 db test.db
+
+breakpoint
+do_execsql_test pragma2-5.1 {
+  PRAGMA page_size=16384;
+  CREATE TABLE t1(x);
+  PRAGMA cache_size=2;
+  PRAGMA cache_spill=YES;
+  PRAGMA cache_spill;
+} {2}
+do_execsql_test pragma2-5.2 {
+  PRAGMA cache_spill=NO;
+  PRAGMA cache_spill;
+} {0}
+do_execsql_test pragma2-5.3 {
+  PRAGMA cache_spill(-51);
+  PRAGMA cache_spill;
+} {3}
    
 test_restore_config_pagecache
 finish_test

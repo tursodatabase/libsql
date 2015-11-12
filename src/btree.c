@@ -2562,19 +2562,11 @@ int sqlite3BtreeClose(Btree *p){
 }
 
 /*
-** Change the limit on the number of pages allowed in the cache.
-**
-** The maximum number of cache pages is set to the absolute
-** value of mxPage.  If mxPage is negative, the pager will
-** operate asynchronously - it will not stop to do fsync()s
-** to insure data is written to the disk surface before
-** continuing.  Transactions still work if synchronous is off,
-** and the database cannot be corrupted if this program
-** crashes.  But if the operating system crashes or there is
-** an abrupt power failure when synchronous is off, the database
-** could be left in an inconsistent and unrecoverable state.
-** Synchronous is on by default so database corruption is not
-** normally a worry.
+** Change the "soft" limit on the number of pages in the cache.
+** Unused and unmodified pages will be recycled when the number of
+** pages in the cache exceeds this soft limit.  But the size of the
+** cache is allowed to grow larger than this limit if it contains
+** dirty pages or pages still in active use.
 */
 int sqlite3BtreeSetCacheSize(Btree *p, int mxPage){
   BtShared *pBt = p->pBt;
@@ -2583,6 +2575,26 @@ int sqlite3BtreeSetCacheSize(Btree *p, int mxPage){
   sqlite3PagerSetCachesize(pBt->pPager, mxPage);
   sqlite3BtreeLeave(p);
   return SQLITE_OK;
+}
+
+/*
+** Change the "spill" limit on the number of pages in the cache.
+** If the number of pages exceeds this limit during a write transaction,
+** the pager might attempt to "spill" pages to the journal early in
+** order to free up memory.
+**
+** The value returned is the current spill size.  If zero is passed
+** as an argument, no changes are made to the spill size setting, so
+** using mxPage of 0 is a way to query the current spill size.
+*/
+int sqlite3BtreeSetSpillSize(Btree *p, int mxPage){
+  BtShared *pBt = p->pBt;
+  int res;
+  assert( sqlite3_mutex_held(p->db->mutex) );
+  sqlite3BtreeEnter(p);
+  res = sqlite3PagerSetSpillsize(pBt->pPager, mxPage);
+  sqlite3BtreeLeave(p);
+  return res;
 }
 
 #if SQLITE_MAX_MMAP_SIZE>0

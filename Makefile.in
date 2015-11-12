@@ -657,9 +657,9 @@ sqlite3.lo:	sqlite3.c
 
 # Rules to build the LEMON compiler generator
 #
-lemon$(BEXE):	$(TOP)/tool/lemon.c $(TOP)/src/lempar.c
+lemon$(BEXE):	$(TOP)/tool/lemon.c $(TOP)/tool/lempar.c
 	$(BCC) -o $@ $(TOP)/tool/lemon.c
-	cp $(TOP)/src/lempar.c .
+	cp $(TOP)/tool/lempar.c .
 
 # Rules to build individual *.o files from generated *.c files. This
 # applies to:

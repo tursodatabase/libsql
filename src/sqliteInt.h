@@ -2764,7 +2764,6 @@ struct Parse {
   int nVar;                 /* Number of '?' variables seen in the SQL so far */
   int nzVar;                /* Number of available slots in azVar[] */
   u8 iPkSortOrder;          /* ASC or DESC for INTEGER PRIMARY KEY */
-  u8 bFreeWith;             /* True if pWith should be freed with parser */
   u8 explain;               /* True if the EXPLAIN flag is found on the query */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   u8 declareVtab;           /* True if inside sqlite3_declare_vtab() */
@@ -2791,6 +2790,7 @@ struct Parse {
   Table *pZombieTab;        /* List of Table objects to delete after code gen */
   TriggerPrg *pTriggerPrg;  /* Linked list of coded triggers */
   With *pWith;              /* Current WITH clause, or NULL */
+  With *pWithToFree;        /* Free this WITH object at the end of the parse */
 };
 
 /*
@@ -3281,6 +3281,7 @@ char *sqlite3VMPrintf(sqlite3*,const char*, va_list);
   void sqlite3TreeViewExpr(TreeView*, const Expr*, u8);
   void sqlite3TreeViewExprList(TreeView*, const ExprList*, u8, const char*);
   void sqlite3TreeViewSelect(TreeView*, const Select*, u8);
+  void sqlite3TreeViewWith(TreeView*, const With*, u8);
 #endif
 
 
