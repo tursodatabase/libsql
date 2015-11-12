@@ -1,5 +1,5 @@
-C Fix\smissing\sword\sin\sa\sdocumentation\scomment.\s\sNo\schanges\sto\scode.
-D 2015-11-11T18:43:49.517
+C Fix\sa\s#define\sin\sparse.y\sthat\sdisabled\sunused\scode\sin\sthe\sgenerated\sparser.
+D 2015-11-12T15:04:05.278
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -328,7 +328,7 @@ F src/os_win.c 1716291e5ec2dbfc5a1fe0b32182030f1f7d8acf
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c ed5cff11793b6a4146582aabb29ed8613a6cf89e
 F src/pager.h 7fc069c07f3120ee466ff3d48a9d376974ebffa7
-F src/parse.y 8a364a7a692e517dea8711b3c7f0d07fe32727d8
+F src/parse.y aad5cc866dc23719f361fe7e0b8eaec8ce4861a4
 F src/pcache.c 24be750c79272e0ca7b6e007bc94999700f3e5ef
 F src/pcache.h 9968603796240cdf83da7e7bef76edf90619cea9
 F src/pcache1.c 902e1bc7bdaa81b40f8543407c5e2ac8ef4dc035
@@ -1402,7 +1402,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2518d5c971c4b32d9227b3bb7259162e3e27b00b
-R 3dc308897daa57a7c4272c874c792ced
-U mistachkin
-Z 5a3c62c2da73a7a92ccd94cbe3857768
+P ed24d302657e8495bef7f5ed698c7cca12717be9
+R d2bed45a676ff9fbad30132bc7912ff2
+U drh
+Z 9ab7252fe5fcd6a0ff588f1afe46df1d

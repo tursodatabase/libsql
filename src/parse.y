@@ -64,7 +64,7 @@
 ** Indicate that sqlite3ParserFree() will never be called with a null
 ** pointer.
 */
-#define YYPARSEFREENOTNULL 1
+#define YYPARSEFREENEVERNULL 1
 
 /*
 ** Alternative datatype for the argument to the malloc() routine passed
