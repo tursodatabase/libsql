@@ -135,6 +135,8 @@ delete_file test.db test.db-journal
 delete_file test2.db test2.db-journal
 sqlite3 db test.db
 do_execsql_test pragma2-4.1 {
+  PRAGMA main.cache_size=2000;
+  PRAGMA temp.cache_size=2000;
   PRAGMA cache_spill;
   PRAGMA main.cache_spill;
   PRAGMA temp.cache_spill;

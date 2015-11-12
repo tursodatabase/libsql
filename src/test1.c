@@ -2226,6 +2226,28 @@ static int test_stmt_scanstatus_reset(
 }
 #endif
 
+#ifdef SQLITE_ENABLE_SQLLOG
+/*
+** Usage:  sqlite3_config_sqllog
+**
+** Zero the SQLITE_CONFIG_SQLLOG configuration
+*/
+static int test_config_sqllog(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_stmt *pStmt;            /* First argument */
+  if( objc!=1 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "");
+    return TCL_ERROR;
+  }
+  sqlite3_config(SQLITE_CONFIG_SQLLOG, 0, 0);
+  return TCL_OK;
+}
+#endif
+
 /*
 ** Usage:  sqlite3_next_stmt  DB  STMT
 **
@@ -7234,6 +7256,9 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
      { "sqlite3_stmt_scanstatus",       test_stmt_scanstatus,   0 },
      { "sqlite3_stmt_scanstatus_reset", test_stmt_scanstatus_reset,   0 },
+#endif
+#ifdef SQLITE_ENABLE_SQLLOG
+     { "sqlite3_config_sqllog",         test_config_sqllog,   0 },
 #endif
 
   };
