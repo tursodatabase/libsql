@@ -1,5 +1,5 @@
-C Enhance\sthe\s"PRAGMA\scache_spill"\sstatement\sto\saccept\san\sinteger\sargument\swhich\nis\sthe\sthreshold\sat\swhich\sspilling\swill\sbegin.
-D 2015-11-12T16:44:40.812
+C Add\ssupport\sfor\sthe\sSQLITE_SQLLOG_CONDITIONAL\senvironment\svariable\sto\sthe\slogging\scode\sin\stest_sqllog.c.\sWhen\sdefined,\slogging\sis\sonly\sperformed\sif\sthe\s"<database>-sqllog"\sfile\sis\spresent\sin\sthe\sfile\ssystem\swhen\sthe\smain\sdatabase\sis\sopened.
+D 2015-11-12T20:12:51.646
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -304,7 +304,7 @@ F src/insert.c 419a947f27ce2da18eebf440a5aa80cc825defae
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/loadext.c 18586e45a215325f15096821e9c082035d4fb810
-F src/main.c f393acc6e5d604cbe0054376d62f668a5560b3f1
+F src/main.c bf26fbebab82069cd7d15c41a58110be8075c87e
 F src/malloc.c 337bbe9c7d436ef9b7d06b5dd10bbfc8f3025972
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 6919bcf12f221868ea066eec27e579fed95ce98b
@@ -344,12 +344,12 @@ F src/shell.c acefb4593a9bf0338a757c968f1f1bb05690d830
 F src/sqlite.h.in fa62718f73553f06b2f2e362fd09ccb4e1cbb626
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 4b66e3e3435da4b4c8c83696d0349f0c503b3924
-F src/sqliteInt.h bc6d24460fe544323517630b1e20539146379077
+F src/sqliteInt.h ebd88d3a2c03440f48145a47df51f0a502bbf24e
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
 F src/tclsqlite.c d9439b6a910985b7fff43ba6756bcef00de22649
-F src/test1.c a719afff3144f7f01c6dc3f7d118ac31d15e7527
+F src/test1.c 05df2a9e4f483b2fb642162209e3aeb11c24b44f
 F src/test2.c 5586f43fcd9a1be0830793cf9d354082c261b25b
 F src/test3.c a8887dabbbee3059af338f20d290084a63ed1b0f
 F src/test4.c d168f83cc78d02e8d35567bb5630e40dcd85ac1e
@@ -363,7 +363,7 @@ F src/test_autoext.c dea8a01a7153b9adc97bd26161e4226329546e12
 F src/test_backup.c 2e6e6a081870150f20c526a2e9d0d29cda47d803
 F src/test_blob.c e5a7a81d61a780da79101aeb1e60d300af169e07
 F src/test_btree.c 2e9978eca99a9a4bfa8cae949efb00886860a64f
-F src/test_config.c 426527fbb12fc23669a1e973ecdc8c5e92c2e2cf
+F src/test_config.c 7523f8bd7604aec88a9d1c303d93c925bcfcc9f9
 F src/test_demovfs.c 0de72c2c89551629f58486fde5734b7d90758852
 F src/test_devsym.c e7498904e72ba7491d142d5c83b476c4e76993bc
 F src/test_fs.c ced436e3d4b8e4681328409b8081051ce614e28f
@@ -386,7 +386,7 @@ F src/test_quota.h 2a8ad1952d1d2ca9af0ce0465e56e6c023b5e15d
 F src/test_rtree.c 43fff4c5a01576d6d213f27472598801a247890c
 F src/test_schema.c 2bdba21b82f601da69793e1f1d11bf481a79b091
 F src/test_server.c a2615049954cbb9cfb4a62e18e2f0616e4dc38fe
-F src/test_sqllog.c b690c12933f50ff46491e0d56a251f84ae16e914
+F src/test_sqllog.c 0d138a8180a312bf996b37fa66da5c5799d4d57b
 F src/test_superlock.c 06797157176eb7085027d9dd278c0d7a105e3ec9
 F src/test_syscall.c 2e21ca7f7dc54a028f1967b63f1e76155c356f9b
 F src/test_tclvar.c f4dc67d5f780707210d6bb0eb6016a431c04c7fa
@@ -1038,6 +1038,7 @@ F test/spellfix.test 0597065ff57042df1f138e6a2611ae19c2698135
 F test/spellfix2.test dfc8f519a3fc204cb2dfa8b4f29821ae90f6f8c3
 F test/sqldiff1.test 8f6bc7c6a5b3585d350d779c6078869ba402f8f5
 F test/sqllimits1.test 89b3d5aad05b99f707ee3786bdd4416dccf83304
+F test/sqllog.test a8faa2df39610a037dd372ed872d124260d32953
 F test/stat.test 8de91498c99f5298b303f70f1d1f3b9557af91bf
 F test/statfault.test f525a7bf633e50afd027700e9a486090684b1ac1
 F test/stmt.test 25d64e3dbf9a3ce89558667d7f39d966fe2a71b9
@@ -1226,7 +1227,7 @@ F test/trigger3.test aa640bb2bbb03edd5ff69c055117ea088f121945
 F test/trigger4.test 74700b76ebf3947b2f7a92405141eb2cf2a5d359
 F test/trigger5.test 619391a3e9fc194081d22cefd830d811e7badf83
 F test/trigger6.test 0e411654f122552da6590f0b4e6f781048a4a9b9
-F test/trigger7.test 200dd51e728c9cdc20c72d99d9e9d45c667248f8
+F test/trigger7.test 799c9d2561facef70340cc9e0dee98aee9b5bdfe
 F test/trigger8.test 30cb0530bd7c4728055420e3f739aa00412eafa4
 F test/trigger9.test 2226ec795a33b0460ab5cf8891e9054cc7edef41
 F test/triggerA.test fe5597f47ee21bacb4936dc827994ed94161e332
@@ -1402,8 +1403,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f84e3085c87cfffe4aba0eb4c4a3298b4027db83 9a431362dccbc9b8f93375f30a3b8955903cca79
-R 5f87cb60f8f27cae7787baa81cd88247
-T +closed 9a431362dccbc9b8f93375f30a3b8955903cca79
-U drh
-Z c0a66dbf9634d84e657f233ea4ee622f
+P f79d264db24a470d1a4571e15a99cd3d68b5166c
+R 832ba4972d7900eed0d1e5716cf55baa
+U dan
+Z 957802b71a98a3fb9167ff96a716895f
