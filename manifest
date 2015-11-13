@@ -1,5 +1,5 @@
-C Update\sthe\sSQLLOG\slogic\sso\sthat\sto\sbuilds\sin\saccordance\swith\sthe\sinstructions\nin\sthe\sheader\scomment.
-D 2015-11-12T23:48:08.393
+C Change\sthe\serror\smessages\sso\sthat\sthey\sbegin\scan\sbe\sgrepped\susing\s'^!'\sinstead\nof\s'^\s'.\s\sThere\sare\sfar\stoo\smany\sextraneous\soutputs\sthat\sbeing\swith\sa\sspace.
+D 2015-11-13T00:03:14.576
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -1060,7 +1060,7 @@ F test/tclsqlite.test 7fb866443c7deceed22b63948ccd6f76b52ad054
 F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
 F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptrigger.test 8ec228b0db5d7ebc4ee9b458fc28cb9e7873f5e1
-F test/tester.tcl 87a4d4533f55c586bc17bca5b96d381a7fe328e0
+F test/tester.tcl 9df86ab273a0877ffb4ec26c255166dcdca4c278
 F test/thread001.test 9f22fd3525a307ff42a326b6bc7b0465be1745a5
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -1403,7 +1403,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 12e7d9ec023db4dd837f76006c87defc5a3e9388
-R 47faba2f3865e3275bebdbc040497572
+P ee6f2feec7d777a969ddba6dc00fb571d64e57f8
+R 408d324b4f8f857ba19128e8367a34ed
 U drh
-Z 57e0c9a039c091174e5c94cdc0c6298e
+Z 9a6642a6fe3dd67383802a321d24cffd

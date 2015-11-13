@@ -747,7 +747,7 @@ proc do_test {name cmd expected} {
         #   error "no test prefix"
         # }
         output1 ""
-        output2 " $name expected: \[$expected\]\n $name got:      \[$result\]"
+        output2 "! $name expected: \[$expected\]\n! $name got:      \[$result\]"
         fail_test $name
       } else {
         output1 " Ok"
@@ -1031,7 +1031,7 @@ proc finalize_testing {} {
     output2 "$nErr errors out of $nTest tests"
   }
   if {$nErr>$nKnown} {
-    output2 -nonewline "Failures on these tests:"
+    output2 -nonewline "!Failures on these tests:"
     foreach x [set_test_counter fail_list] {
       if {![info exists known_error($x)]} {output2 -nonewline " $x"}
     }
