@@ -1,5 +1,5 @@
-C Disable\stwo\sPRAGMA\scache_spill\stests\swhen\sMEMORY_MANAGEMENT\sis\senabled.
-D 2015-11-13T12:32:01.756
+C Fix\sthe\sreleasetest-out.txt\slog\soutput\sfrom\sreleasetest.tcl\sso\sthat\sit\sworks\nwhen\sthe\s--jobs\soption\sis\sused.
+D 2015-11-13T12:52:34.131
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -949,7 +949,7 @@ F test/rbu.test 168573d353cd0fd10196b87b0caa322c144ef736
 F test/rdonly.test 64e2696c322e3538df0b1ed624e21f9a23ed9ff8
 F test/regexp1.test 497ea812f264d12b6198d6e50a76be4a1973a9d8
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
-F test/releasetest.tcl 2d000ceded3115758be96abb9c10a5669fb27862
+F test/releasetest.tcl 59a3682dbfddb141c86c7d0fc407155a5517a1db
 F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
 F test/rollback.test 458fe73eb3ffdfdf9f6ba3e9b7350a6220414dea
 F test/rollback2.test fc14cf6d1a2b250d2735ef16124b971bce152f14
@@ -1403,7 +1403,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 367ec0db49607559960d58891771113c205fd951
-R 9ab8fd3363ba53b73551ba52840dbe48
+P ebda77aad4d964593606ded2fdb19259ef9ebb8e
+R 0d2c22d081ef129ebfad482569c607ff
 U drh
-Z d2f99c38ca17fe2dc0162f34e1b5cb9f
+Z 0f5445a085b6cf791e190a6c97d0a451
