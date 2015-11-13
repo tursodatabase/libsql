@@ -1,5 +1,5 @@
-C Fix\sthe\sreleasetest-out.txt\slog\soutput\sfrom\sreleasetest.tcl\sso\sthat\sit\sworks\nwhen\sthe\s--jobs\soption\sis\sused.
-D 2015-11-13T12:52:34.131
+C Add\sthe\s--transaction\soption\sto\sthe\ssqldiff\stool.
+D 2015-11-13T13:15:42.017
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -1392,7 +1392,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 7ce07da76b5e745783e703a834417d725b7d45fd
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
-F tool/sqldiff.c 40e3458f0015290be8ecb6e03f9dbf1bb1e264c0
+F tool/sqldiff.c db1232df457fdd4cbf2a919a497fc44bb18fb933
 F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
 F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
 F tool/symbols.sh fec58532668296d7c7dc48be9c87f75ccdb5814f
@@ -1403,7 +1403,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ebda77aad4d964593606ded2fdb19259ef9ebb8e
-R 0d2c22d081ef129ebfad482569c607ff
+P 6bb314a5022c8bae63f6cdb48652915e05c06a38
+R 935905eff9b6be5b31cdb25ab8246ccb
 U drh
-Z 0f5445a085b6cf791e190a6c97d0a451
+Z 6be4f9e3d294b71573d3af5237a10dc6
