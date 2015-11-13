@@ -439,6 +439,7 @@ proc run_slave_test {} {
   foreach {title dir configOpts testtarget makeOpts cflags opts} $T {}
 
   # Create and switch to the test directory.
+  set ::env(SQLITE_TMPDIR) [file normalize $dir]
   trace_cmd file mkdir $dir
   trace_cmd cd $dir
   catch {file delete core}
