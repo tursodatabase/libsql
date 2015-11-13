@@ -87,7 +87,7 @@ static const struct sPragmaNames {
 #if !defined(SQLITE_OMIT_PAGER_PRAGMAS)
   { /* zName:     */ "cache_size",
     /* ePragTyp:  */ PragTyp_CACHE_SIZE,
-    /* ePragFlag: */ 0,
+    /* ePragFlag: */ PragFlag_NeedSchema,
     /* iArg:      */ 0 },
 #endif
 #if !defined(SQLITE_OMIT_FLAG_PRAGMAS)

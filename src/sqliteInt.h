@@ -527,15 +527,6 @@
 # define SQLITE_DEFAULT_PCACHE_INITSZ 100
 #endif
 
-/* 
-** If SQLITE_INIT_SQLLOG is defined, then SQLITE_ENABLE_SQLLOG is 
-** automatically defined as well.
-*/
-#if defined(SQLITE_INIT_SQLLOG) && !defined(SQLITE_ENABLE_SQLLOG)
-# define SQLITE_ENABLE_SQLLOG 1
-#endif
-
-
 /*
 ** GCC does not define the offsetof() macro so we'll have to do it
 ** ourselves.

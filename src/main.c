@@ -223,10 +223,10 @@ int sqlite3_initialize(void){
   if( sqlite3GlobalConfig.isInit==0 && sqlite3GlobalConfig.inProgress==0 ){
     FuncDefHash *pHash = &GLOBAL(FuncDefHash, sqlite3GlobalFunctions);
     sqlite3GlobalConfig.inProgress = 1;
-#ifdef SQLITE_INIT_SQLLOG
+#ifdef SQLITE_ENABLE_SQLLOG
     {
-      extern void SQLITE_INIT_SQLLOG(void);
-      SQLITE_INIT_SQLLOG();
+      extern void sqlite3_init_sqllog(void);
+      sqlite3_init_sqllog();
     }
 #endif
     memset(pHash, 0, sizeof(sqlite3GlobalFunctions));
