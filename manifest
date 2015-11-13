@@ -1,5 +1,5 @@
-C Change\sthe\serror\smessages\sso\sthat\sthey\sbegin\scan\sbe\sgrepped\susing\s'^!'\sinstead\nof\s'^\s'.\s\sThere\sare\sfar\stoo\smany\sextraneous\soutputs\sthat\sbeing\swith\sa\sspace.
-D 2015-11-13T00:03:14.576
+C Disable\stwo\sPRAGMA\scache_spill\stests\swhen\sMEMORY_MANAGEMENT\sis\senabled.
+D 2015-11-13T12:32:01.756
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -931,7 +931,7 @@ F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
 F test/permutations.test 4ea119731c62d2f7d0aa86dd5b184cbb61ca411b
 F test/pragma.test a44253f911e7d50127d4a08f927f47c861a4c772
-F test/pragma2.test 1a4cc20b0cd8fc6411bd2f828cdc3ea1bdd570b9
+F test/pragma2.test 00065068eeab2d15ea55465ec0f1e0a70e2c369e
 F test/pragma3.test 6f849ccffeee7e496d2f2b5e74152306c0b8757c
 F test/printf.test b3ff34e73d59124140eaf89f7672e21bc2ca5fcc
 F test/printf2.test 0b61566dd1c0f0b802f59dffa228c5dc5aa6b054
@@ -1403,7 +1403,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ee6f2feec7d777a969ddba6dc00fb571d64e57f8
-R 408d324b4f8f857ba19128e8367a34ed
+P 367ec0db49607559960d58891771113c205fd951
+R 9ab8fd3363ba53b73551ba52840dbe48
 U drh
-Z 9a6642a6fe3dd67383802a321d24cffd
+Z d2f99c38ca17fe2dc0162f34e1b5cb9f

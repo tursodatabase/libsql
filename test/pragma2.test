@@ -200,26 +200,28 @@ do_test pragma2-4.5.2 {
     PRAGMA lock_status;
   }
 } {100000 main reserved temp unknown}   ;# Big spill threshold -> no excl lock
-do_test pragma2-4.5.3 {
-  db eval {
-    ROLLBACK;
-    PRAGMA cache_spill=25;
-    PRAGMA main.cache_spill;
-    BEGIN;
-    UPDATE t1 SET c=c+1;
-    PRAGMA lock_status;
-  }
-} {50 main exclusive temp unknown}   ;# Small cache spill -> exclusive lock
-do_test pragma2-4.5.4 {
-  db eval {
-    ROLLBACK;
-    PRAGMA cache_spill(-25);
-    PRAGMA main.cache_spill;
-    BEGIN;
-    UPDATE t1 SET c=c+1;
-    PRAGMA lock_status;
-  }
-} {50 main exclusive temp unknown}   ;# Small cache spill -> exclusive lock
+ifcapable !memorymanage {
+  do_test pragma2-4.5.3 {
+    db eval {
+      ROLLBACK;
+      PRAGMA cache_spill=25;
+      PRAGMA main.cache_spill;
+      BEGIN;
+      UPDATE t1 SET c=c+1;
+      PRAGMA lock_status;
+    }
+  } {50 main exclusive temp unknown}   ;# Small cache spill -> exclusive lock
+  do_test pragma2-4.5.4 {
+    db eval {
+      ROLLBACK;
+      PRAGMA cache_spill(-25);
+      PRAGMA main.cache_spill;
+      BEGIN;
+      UPDATE t1 SET c=c+1;
+      PRAGMA lock_status;
+    }
+  } {50 main exclusive temp unknown}   ;# Small cache spill -> exclusive lock
+}
 
 
 # Verify that newly attached databases inherit the cache_spill=OFF
