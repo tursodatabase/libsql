@@ -1,5 +1,5 @@
-C Add\sthe\s--transaction\soption\sto\sthe\ssqldiff\stool.
-D 2015-11-13T13:15:42.017
+C Add\sthe\s"--enable-static-shell"\soption\sto\sthe\samalgamation\sautoconf\sscript.\sIf\sset\s(the\sdefault)\sthe\scompiled\sshell\stool\sis\sstatically\slinked\sagainst\ssqlite3.o.\sOtherwise,\sit\sis\slinked\sagainst\slibsqlite3.so.
+D 2015-11-13T16:59:00.913
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -10,12 +10,12 @@ F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
-F autoconf/Makefile.am bd4a90972aa87f079af6624ddea3df3d58f26d2f
+F autoconf/Makefile.am 089e5ecdb5761e64ea1013ded02feb4d8b29927d
 F autoconf/README 14458f1046c118efa721aadec5f227e876d3cd38
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/config.guess 94cc57e2a3fdb9c235b362ace86d77e89d188cad x
 F autoconf/config.sub 1efb390a8fb4bfafd74783a15a8fb5311c84300e x
-F autoconf/configure.ac bec3caf78cf1bdbaad903dcd5c6029292eda3d2d
+F autoconf/configure.ac 9a65da17e440466f9842288163f16f9b21298129
 F autoconf/depcomp 0b26f101e3bc9fd1ff0be1da9fb4a82371142f92 x
 F autoconf/install-sh 06ee6336e63bb845c8439d777c32eb2eccc4fbf1 x
 F autoconf/ltmain.sh 7a658a24028f02331c1d2446562758083c5eadd1
@@ -1403,7 +1403,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6bb314a5022c8bae63f6cdb48652915e05c06a38
-R 935905eff9b6be5b31cdb25ab8246ccb
-U drh
-Z 6be4f9e3d294b71573d3af5237a10dc6
+P 8882d1f3ef0fc53d7c19918c3af43c5bdd79e88f
+R 2523a6a90a9922264d529f15493b3cc7
+U dan
+Z 7b17a89a058e0f8db79be4630f564198
