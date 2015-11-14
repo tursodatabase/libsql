@@ -1622,7 +1622,6 @@ int sqlite3ColumnsFromExprList(
     p = sqlite3ExprSkipCollate(pEList->a[i].pExpr);
     if( (zName = pEList->a[i].zName)!=0 ){
       /* If the column contains an "AS <name>" phrase, use <name> as the name */
-      zName = sqlite3DbStrDup(db, zName);
     }else{
       Expr *pColExpr = p;  /* The expression that is the result column name */
       Table *pTab;         /* Table associated with this expression */
@@ -1635,30 +1634,26 @@ int sqlite3ColumnsFromExprList(
         int iCol = pColExpr->iColumn;
         pTab = pColExpr->pTab;
         if( iCol<0 ) iCol = pTab->iPKey;
-        zName = sqlite3MPrintf(db, "%s",
-                 iCol>=0 ? pTab->aCol[iCol].zName : "rowid");
+        zName = iCol>=0 ? pTab->aCol[iCol].zName : "rowid";
       }else if( pColExpr->op==TK_ID ){
         assert( !ExprHasProperty(pColExpr, EP_IntValue) );
-        zName = sqlite3MPrintf(db, "%s", pColExpr->u.zToken);
+        zName = pColExpr->u.zToken;
       }else{
         /* Use the original text of the column expression as its name */
-        zName = sqlite3MPrintf(db, "%s", pEList->a[i].zSpan);
+        zName = pEList->a[i].zSpan;
       }
     }
+    zName = sqlite3MPrintf(db, "%s", zName);
 
     /* Make sure the column name is unique.  If the name is not unique,
     ** append an integer to the name so that it becomes unique.
     */
     cnt = 0;
     while( zName && sqlite3HashFind(&ht, zName)!=0 ){
-      char *zNewName;
       nName = sqlite3Strlen30(zName);
       for(j=nName-1; j>0 && sqlite3Isdigit(zName[j]); j--){}
       if( zName[j]==':' ) nName = j;
-      zName[nName] = 0;
-      zNewName = sqlite3MPrintf(db, "%s:%u", zName, ++cnt);
-      sqlite3DbFree(db, zName);
-      zName = zNewName;
+      zName = sqlite3MPrintf(db, "%.*z:%u", nName, zName, ++cnt);
       if( cnt>3 ) sqlite3_randomness(sizeof(cnt), &cnt);
     }
     pCol->zName = zName;
