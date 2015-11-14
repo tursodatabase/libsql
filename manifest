@@ -1,5 +1,5 @@
-C Fix\sa\smemory\sleak\sin\sthe\sfuzzcheck\sutility.
-D 2015-11-13T20:52:49.277
+C Use\srandomness\sto\sprevent\sshowness\sin\sthe\sgenerated-column-name\suniqueness\nchecking.
+D 2015-11-14T16:47:23.463
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -339,7 +339,7 @@ F src/printf.c 0c4bcdd1c2e2521024f0a69cb5eb334f86b3652a
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 1954a0f01bf65d78d7d559aea3d5c67f33376d91
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c 00a2a10d4298a685d0eeb05b09ef018a2bd81bf8
+F src/select.c 7ef4a946893f171920843d4d8c30c2544a060fbe
 F src/shell.c acefb4593a9bf0338a757c968f1f1bb05690d830
 F src/sqlite.h.in fa62718f73553f06b2f2e362fd09ccb4e1cbb626
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
@@ -1403,7 +1403,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 499a02a34316cada9e197ef1d2e77c4cd75c41be
-R ffa98089b86396d49df8e3ddc3e3caf3
+P dfd6d9f4fbe902086f9158dfa5f37e781765a683
+R f75d239f0c3cc028f9c3bdc5405581af
 U drh
-Z 93ac31c4a1bdc9cbd2a68f004b288c50
+Z df73d438cc87e48519d39f020060cfa5

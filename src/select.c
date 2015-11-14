@@ -1596,7 +1596,7 @@ int sqlite3ColumnsFromExprList(
 ){
   sqlite3 *db = pParse->db;   /* Database connection */
   int i, j;                   /* Loop counters */
-  int cnt;                    /* Index added to make the name unique */
+  u32 cnt;                    /* Index added to make the name unique */
   Column *aCol, *pCol;        /* For looping over result columns */
   int nCol;                   /* Number of columns in the result set */
   Expr *p;                    /* Expression for a single result column */
@@ -1659,11 +1659,12 @@ int sqlite3ColumnsFromExprList(
         for(k=nName-1; k>1 && sqlite3Isdigit(zName[k]); k--){}
         if( k>=0 && zName[k]==':' ) nName = k;
         zName[nName] = 0;
-        zNewName = sqlite3MPrintf(db, "%s:%d", zName, ++cnt);
+        zNewName = sqlite3MPrintf(db, "%s:%u", zName, ++cnt);
         sqlite3DbFree(db, zName);
         zName = zNewName;
         j = -1;
         if( zName==0 ) break;
+        if( cnt>3 ) sqlite3_randomness(sizeof(cnt), &cnt);
       }
     }
     pCol->zName = zName;
