@@ -1651,8 +1651,10 @@ int sqlite3ColumnsFromExprList(
     cnt = 0;
     while( zName && sqlite3HashFind(&ht, zName)!=0 ){
       nName = sqlite3Strlen30(zName);
-      for(j=nName-1; j>0 && sqlite3Isdigit(zName[j]); j--){}
-      if( zName[j]==':' ) nName = j;
+      if( nName>0 ){
+        for(j=nName-1; j>0 && sqlite3Isdigit(zName[j]); j--){}
+        if( zName[j]==':' ) nName = j;
+      }
       zName = sqlite3MPrintf(db, "%.*z:%u", nName, zName, ++cnt);
       if( cnt>3 ) sqlite3_randomness(sizeof(cnt), &cnt);
     }
