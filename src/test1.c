@@ -2238,7 +2238,6 @@ static int test_config_sqllog(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-  sqlite3_stmt *pStmt;            /* First argument */
   if( objc!=1 ){
     Tcl_WrongNumArgs(interp, 1, objv, "");
     return TCL_ERROR;
@@ -2247,6 +2246,28 @@ static int test_config_sqllog(
   return TCL_OK;
 }
 #endif
+
+/*
+** Usage: vfs_current_time_int64
+**
+** Return the value returned by the default VFS's xCurrentTimeInt64 method.
+*/
+static int vfsCurrentTimeInt64(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  i64 t;
+  sqlite3_vfs *pVfs = sqlite3_vfs_find(0);
+  if( objc!=1 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "");
+    return TCL_ERROR;
+  }
+  pVfs->xCurrentTimeInt64(pVfs, &t);
+  Tcl_SetObjResult(interp, Tcl_NewWideIntObj(t));
+  return TCL_OK;
+}
 
 /*
 ** Usage:  sqlite3_next_stmt  DB  STMT
@@ -7061,7 +7082,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
 #ifdef SQLITE_ENABLE_SQLLOG
      { "sqlite3_config_sqllog",         test_config_sqllog,   0 },
 #endif
-
+     { "vfs_current_time_int64",           vfsCurrentTimeInt64,   0 },
   };
   static int bitmask_size = sizeof(Bitmask)*8;
   static int longdouble_size = sizeof(LONGDOUBLE_TYPE);
