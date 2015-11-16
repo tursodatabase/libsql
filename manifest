@@ -1,5 +1,5 @@
-C In\sthe\sshell\stool,\savoid\stesting\sif\s(sqlite3_vfs.xGetCurrentInt64)\sis\sNULL\sfor\sa\sversion\s1\sVFS.\sThis\sfield\sis\sonly\sdefined\sfor\sversion\s2\sand\sgreater.
-D 2015-11-16T08:54:10.841
+C Import\sthe\sLSM\scode\sfrom\sSQLite4\sfor\suse\sin\san\sexperimental\svirtual\stable.\nNB:\sThis\sis\sa\sspeculative\sexperiment\sand\scould\seasily\sresult\sin\sa\sdead-end\nbranch.
+D 2015-11-16T16:00:22.063
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -190,6 +190,21 @@ F ext/fts5/tool/showfts5.tcl d54da0e067306663e2d5d523965ca487698e722c
 F ext/icu/README.txt d9fbbad0c2f647c3fdf715fc9fd64af53aedfc43
 F ext/icu/icu.c b2732aef0b076e4276d9b39b5a33cec7a05e1413
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
+F ext/lsm1/Makefile a921a54e7364814897a6ea74638741c672f42f07
+F ext/lsm1/lsm.h d88fce3ea06730f7967159b7459b037e01d82df5
+F ext/lsm1/lsmInt.h bc270dd81b3355c7410b06a6d54dd3eb9493a3e8
+F ext/lsm1/lsm_ckpt.c e7907e782fe2e95de0833675e35e726e487cc4cd
+F ext/lsm1/lsm_file.c 63796f5741422064b146cfbffbaeaeda14b70175
+F ext/lsm1/lsm_log.c 5b3e855fcfb85de9fb86fcbf65696cc6886d3231
+F ext/lsm1/lsm_main.c f52eada2910f8a57bd4cafcee39c6c375f6b7ed8
+F ext/lsm1/lsm_mem.c 4c51ea9fa285ee6e35301b33491642d071740a0a
+F ext/lsm1/lsm_mutex.c 378edf0a2b142b4f7640ee982df06d50b98788ea
+F ext/lsm1/lsm_shared.c 54cc3a5157c6abd77f7d3ae60708b9f7bf022b3c
+F ext/lsm1/lsm_sorted.c aca377f4091263a1103cf409340130bcafd87939
+F ext/lsm1/lsm_str.c 77ebdd5040ddf267a6f724d4c83132d2dce8a226
+F ext/lsm1/lsm_tree.c 5d9fb2bc58a1a70c75126bd8d7198f7b627e165b
+F ext/lsm1/lsm_unix.c fcaf5b6738713f1229dc0e1a90393ecf24f787f2
+F ext/lsm1/lsm_varint.c b19ae9bd26b5a1e8402fb8a564b25d9542338a41
 F ext/misc/amatch.c a1a8f66c29d40bd71b075546ddeddb477b17a2bb
 F ext/misc/closure.c 0d2a038df8fbae7f19de42e7c7d71f2e4dc88704
 F ext/misc/compress.c 122faa92d25033d6c3f07c39231de074ab3d2e83
@@ -1403,7 +1418,10 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 791761ebac26c82ab67bdf867117ec5b5d8b20b0
-R a635725b446415a63ce3c96185f06f0a
-U dan
-Z ecc9df21b64c8edc0682f60d01379dbf
+P ad5fcaa583ef743d143b6c030e0d78019709fe71
+R c1b42294f3f880839d2371f275775b59
+T *branch * lsm-vtab
+T *sym-lsm-vtab *
+T -sym-trunk *
+U drh
+Z b1fe55788e9f370521e84a28fea017e9
