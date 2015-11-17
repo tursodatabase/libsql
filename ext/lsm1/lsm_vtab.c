@@ -75,7 +75,7 @@ static int lsm1Connect(
     rc = SQLITE_ERROR;
     goto connect_failed;
   }
-  rc = lsm_open(pNew->pDb, argv[0]);
+  rc = lsm_open(pNew->pDb, argv[3]);
   if( rc ){
     *pzErr = sqlite3_mprintf("lsm_open failed with %d", rc);
     rc = SQLITE_ERROR;
@@ -187,7 +187,7 @@ static int lsm1Column(
     case LSM1_COLUMN_KEY: {
       const void *pVal;
       int nVal;
-      if( lsm_csr_value(pCur->pLsmCur, (const void**)&pVal, &nVal)==LSM_OK ){
+      if( lsm_csr_key(pCur->pLsmCur, (const void**)&pVal, &nVal)==LSM_OK ){
         sqlite3_result_blob(ctx, pVal, nVal, SQLITE_TRANSIENT);
       }
       break;
@@ -249,25 +249,24 @@ static int lsm1Filter(
   int argc, sqlite3_value **argv
 ){
   lsm1_cursor *pCur = (lsm1_cursor *)pVtabCursor;
-  int rc;
+  int rc = LSM_OK;
+  pCur->atEof = 1;
   if( idxNum==1 ){
     assert( argc==1 );
     pCur->isDesc = 0;
     pCur->bUnique = 1;
-    pCur->atEof = 1;
     if( sqlite3_value_type(argv[0])==SQLITE_BLOB ){
       const void *pVal = sqlite3_value_blob(argv[0]);
       int nVal = sqlite3_value_bytes(argv[0]);
       rc = lsm_csr_seek(pCur->pLsmCur, pVal, nVal, LSM_SEEK_EQ);
-      if( rc==LSM_OK && lsm_csr_valid(pCur->pLsmCur)!=0 ){
-        pCur->atEof = 0;
-      }
     }
   }else{
     rc = lsm_csr_first(pCur->pLsmCur);
-    pCur->atEof = 0;
     pCur->isDesc = 0;
     pCur->bUnique = 0;
+  }
+  if( rc==LSM_OK && lsm_csr_valid(pCur->pLsmCur)!=0 ){
+    pCur->atEof = 0;
   }
   return rc==LSM_OK ? SQLITE_OK : SQLITE_ERROR;
 }
@@ -398,7 +397,7 @@ int lsm1Update(
       }else{
         *(double*)&x = sqlite3_value_double(pValue);
       }
-      for(i=9; i>=1; i--){
+      for(i=8; i>=1; i--){
         aVal[i] = x & 0xff;
         x >>= 8;
       }
