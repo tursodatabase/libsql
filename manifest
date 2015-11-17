@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarning.
-D 2015-11-17T19:16:39.306
+C Fix\suninitialized\svariable\sin\sthe\scommand\sline\sshell.
+D 2015-11-17T19:17:14.024
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -340,7 +340,7 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 1954a0f01bf65d78d7d559aea3d5c67f33376d91
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c 4c58ae319df6862e5ea237e757b5d317c4491798
-F src/shell.c 0092cd4e1da5322b7bc35bedbec1f0dea627451e
+F src/shell.c f0f59ea60ad297f671b7ae0fb957a736ad17c92c
 F src/sqlite.h.in fa62718f73553f06b2f2e362fd09ccb4e1cbb626
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 4b66e3e3435da4b4c8c83696d0349f0c503b3924
@@ -1403,7 +1403,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f79d5b1853b3d4316ea08de8206ffca33e44c395
-R 2de2a0c3dc7ccab5c10590e17dcb5ba5
+P eea26b6caea37422c9b46a7a3a538b0c9575f392
+R cc64f84be685bae79d5a153d40e5e973
 U mistachkin
-Z 23c5ff0945aadd15158110acb76ae975
+Z 3d10a1734b384a6c71eab8ba5f61ca6f
