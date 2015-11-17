@@ -18,7 +18,8 @@ LSMOBJ    = \
   lsm_str.o \
   lsm_tree.o \
   lsm_unix.o \
-  lsm_varint.o
+  lsm_varint.o \
+  lsm_vtab.o
 
 LSMHDR   = \
   lsm.h \

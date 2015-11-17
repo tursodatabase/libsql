@@ -70,7 +70,6 @@
 #ifndef _LSM_INT_H
 # include "lsmInt.h"
 #endif
-#include "sqlite3.h"            /* only for sqlite3_snprintf() */
 
 #define LSM_LOG_STRUCTURE 0
 #define LSM_LOG_DATA      0
@@ -5470,16 +5469,17 @@ static int fileToString(
     char *zSeg;
 
     zSeg = segToString(pDb->pEnv, pSeg, nMin);
-    sqlite3_snprintf(nBuf-i, &aBuf[i], "%s", zSeg);
+    snprintf(&aBuf[i], nBuf-i, "%s", zSeg);
     i += strlen(&aBuf[i]);
     lsmFree(pDb->pEnv, zSeg);
 
 #ifdef LSM_LOG_FREELIST
     lsmInfoArrayStructure(pDb, 1, pSeg->iFirst, &zSeg);
-    sqlite3_snprintf(nBuf-i, &aBuf[i], "    (%s)", zSeg);
+    snprintf(&aBuf[i], nBuf-1, "    (%s)", zSeg);
     i += strlen(&aBuf[i]);
     lsmFree(pDb->pEnv, zSeg);
 #endif
+    aBuf[nBuf] = 0;
   }else{
     aBuf[0] = '\0';
   }
@@ -5880,7 +5880,7 @@ void lsmSortedDumpStructure(
         }
 
         if( i==0 ){
-          sqlite3_snprintf(sizeof(zLevel), zLevel, "L%d: (age=%d) (flags=%.4x)",
+          snprintf(zLevel, sizeof(zLevel), "L%d: (age=%d) (flags=%.4x)",
               iLevel, (int)pLevel->iAge, (int)pLevel->flags
           );
         }else{

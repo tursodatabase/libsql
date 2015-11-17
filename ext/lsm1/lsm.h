@@ -620,10 +620,10 @@ int lsm_csr_last(lsm_cursor *pCsr);
 ** <li> At least one seek function must have been called on the cursor.
 ** <li> To call lsm_csr_next(), the most recent call to a seek function must
 ** have been either lsm_csr_first() or a call to lsm_csr_seek() specifying
-** LSM_SEEK_GE. 
+** LSM_SEEK_GE.
 ** <li> To call lsm_csr_prev(), the most recent call to a seek function must
-** have been either lsm_csr_first() or a call to lsm_csr_seek() specifying
-** LSM_SEEK_GE. 
+** have been either lsm_csr_last() or a call to lsm_csr_seek() specifying
+** LSM_SEEK_LE.
 ** </ul>
 **
 ** Otherwise, if the above conditions are not met when lsm_csr_next or 
