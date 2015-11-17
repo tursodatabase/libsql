@@ -1,5 +1,5 @@
-C Fix\suninitialized\svariable\sin\sthe\scommand\sline\sshell.
-D 2015-11-17T19:17:14.024
+C When\susing\smmap\smode\son\sunix,\suse\sa\sread-only\smapping\sby\sdefault.\sWrite\sto\sthe\sdatabase\sfile\susing\swrite().\sUnless\sSQLITE_MMAP_READWRITE\sis\sdefined,\sin\swhich\scase\suse\sa\sread/write\smapping\sand\swrite\sinto\sthe\sfile\susing\smemcpy().
+D 2015-11-17T20:56:06.787
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -323,7 +323,7 @@ F src/os.c 8fd25588eeba74068d41102d26810e216999b6c8
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h abdb9a191a367793268fe553d25bab894e986a0e
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c cf72e06e15839ebe7121e01d3eebf256c039b0ca
+F src/os_unix.c eb24e0340fbe3cfd0eabfb15a71476953e54fa73
 F src/os_win.c 1716291e5ec2dbfc5a1fe0b32182030f1f7d8acf
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 18341e2b759b447cbc82fb9215d08d9c5864e92e
@@ -1403,7 +1403,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P eea26b6caea37422c9b46a7a3a538b0c9575f392
-R cc64f84be685bae79d5a153d40e5e973
-U mistachkin
-Z 3d10a1734b384a6c71eab8ba5f61ca6f
+P dc2ac024d31a898bbc3e7fc824d806e63e993234
+R 84fe0eec79106a76020c4d6d9eb9fda8
+U dan
+Z e25a64e1e3c268c6ee1a9c7b42e3911f
