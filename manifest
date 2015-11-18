@@ -1,5 +1,5 @@
-C Add\stests\sfor\sviews\sto\shidden.test.
-D 2015-11-18T20:59:47.725
+C Get\sthe\s__hidden__\scolumn\smechanism\sworking\son\sviews\swith\sINSTEAD\sOF\striggers.
+D 2015-11-18T21:22:02.852
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -300,7 +300,7 @@ F src/global.c 508e4087f7b41d688e4762dcf4d4fe28cfbc87f9
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
 F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c 0b376795f688aafd264ff0c5a6538e5a4cc6c213
+F src/insert.c 0cf9a847a0a03b4fe932f1adfa69165802d5250b
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/loadext.c 18586e45a215325f15096821e9c082035d4fb810
@@ -1404,7 +1404,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3071ba2bdbda7018d0a285eceb04b8527209ec1e
-R 2baa1dc83be9c7315702795a7e6fe14b
-U dan
-Z 4e931d86c42c505d1f09dcba4c9d7ade
+P 27d4b6f5756c7b19c00c95d46a77280c8b6f03a4
+R d79a926a0045cbb3f30ec72ca51f379c
+U drh
+Z c4fa45b9d058451cddc1ea846764a52e

@@ -833,15 +833,14 @@ void sqlite3Insert(
 
     /* Create the new column data
     */
-    for(i=0; i<pTab->nCol; i++){
-      if( pColumn==0 ){
-        j = i;
-      }else{
+    for(i=j=0; i<pTab->nCol; i++){
+      if( pColumn ){
         for(j=0; j<pColumn->nId; j++){
           if( pColumn->a[j].idx==i ) break;
         }
       }
-      if( (!useTempTable && !pList) || (pColumn && j>=pColumn->nId) ){
+      if( (!useTempTable && !pList) || (pColumn && j>=pColumn->nId)
+            || (pColumn==0 && IsHiddenColumn(&pTab->aCol[i])) ){
         sqlite3ExprCode(pParse, pTab->aCol[i].pDflt, regCols+i+1);
       }else if( useTempTable ){
         sqlite3VdbeAddOp3(v, OP_Column, srcTab, j, regCols+i+1); 
@@ -849,6 +848,7 @@ void sqlite3Insert(
         assert( pSelect==0 ); /* Otherwise useTempTable is true */
         sqlite3ExprCodeAndCache(pParse, pList->a[j].pExpr, regCols+i+1);
       }
+      if( pColumn==0 && !IsHiddenColumn(&pTab->aCol[i]) ) j++;
     }
 
     /* If this is an INSERT on a view with an INSTEAD OF INSERT trigger,
