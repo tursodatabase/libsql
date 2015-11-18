@@ -1,5 +1,5 @@
-C Add\sa\stest\sfor\sthe\s__hidden__\shack\son\sthis\sbranch.
-D 2015-11-18T20:07:12.847
+C Honor\sthe\s"__hidden__"\sprefix\son\sthe\scolumns\sof\sviews.
+D 2015-11-18T20:57:50.853
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -339,7 +339,7 @@ F src/printf.c f8fc8f04e75b1e983ef2793c27ec7a43b287e94a
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 1954a0f01bf65d78d7d559aea3d5c67f33376d91
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c 2fa981f5bc793fb6b48f013c82662bcc969e3af5
+F src/select.c 7996cf4b5730e80dd44a080019736e70eaef4377
 F src/shell.c f0f59ea60ad297f671b7ae0fb957a736ad17c92c
 F src/sqlite.h.in fa62718f73553f06b2f2e362fd09ccb4e1cbb626
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
@@ -1404,7 +1404,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2dbffb3a3b20dba7d7d86c8ad2e34633f616c78a
-R 83cf7865dae52d6bb8a186c1aa991823
-U dan
-Z 1a0e4ed515d3bb3eb2db7f71110d453e
+P ebf4bbffec58111a670c46a9eb469bfd2440b0b1
+R 573da8ac7642b42a39f669032b202b69
+U drh
+Z f6d6ca2e7f0fda6cda94eef3aaa048a9

@@ -1659,8 +1659,12 @@ int sqlite3ColumnsFromExprList(
       if( cnt>3 ) sqlite3_randomness(sizeof(cnt), &cnt);
     }
     pCol->zName = zName;
-    if( zName && sqlite3HashInsert(&ht, zName, pCol)==pCol ){
-      db->mallocFailed = 1;
+    if( zName ){
+      if( sqlite3HashInsert(&ht, zName, pCol)==pCol ){
+        db->mallocFailed = 1;
+      }else if( sqlite3_strnicmp(zName, "__hidden__", 10)==0 ){
+        pCol->colFlags |= COLFLAG_HIDDEN;
+      }
     }
   }
   sqlite3HashClear(&ht);
