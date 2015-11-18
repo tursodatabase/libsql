@@ -1,0 +1,51 @@
+# 2015 November 18
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# Test the __hidden__ hack.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix hidden
+
+do_execsql_test 1.1 {
+  CREATE TABLE t1(__hidden__a, b);
+  INSERT INTO t1 VALUES('1');
+  INSERT INTO t1(__hidden__a, b) VALUES('x', 'y');
+} {}
+
+do_execsql_test 1.2 {
+  SELECT * FROM t1;
+} {1 y}
+
+do_execsql_test 1.3 {
+  SELECT __hidden__a, * FROM t1;
+} {{} 1 x y}
+
+#do_execsql_test 2.1 {
+  #CREATE TABLE x1(a, b, c);
+  #INSERT INTO x1 VALUES(1, 2, 3);
+  #CREATE VIEW v1(a, b, __hidden__c) AS SELECT a, b, c FROM x1;
+  #SELECT * FROM v1;
+#} {1 2}
+
+do_execsql_test 2.2 {
+  PRAGMA table_info(v1);
+} {
+0 a {} 0 {} 0 
+1 b {} 0 {} 0 
+2 __hidden__c {} 0 {} 0
+}
+
+
+
+  
+finish_test

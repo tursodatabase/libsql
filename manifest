@@ -1,5 +1,5 @@
-C If\sa\stable\scolumn\sname\sbegins\swith\s"__hidden__"\sthen\sdo\snot\sinclude\sthat\ncolumn\sin\s"*"\sexpansions\sin\sSELECT\sstatements,\snor\sfill\sin\sthat\scolumn\sin\nan\sINSERT\sINTO\sthat\somits\sthe\scolumn\slist.\s\s<b>This\sbranch\sis\sa\s\nproof-of-concept\sonly\sand\sis\snot\sintended\sto\sever\sbe\smerged\sinto\strunk.</b>
-D 2015-11-18T18:43:15.107
+C Add\sa\stest\sfor\sthe\s__hidden__\shack\son\sthis\sbranch.
+D 2015-11-18T20:07:12.847
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -762,6 +762,7 @@ F test/fuzzer1.test d4c52aaf3ef923da293a2653cfab33d02f718a36
 F test/fuzzerfault.test 8792cd77fd5bce765b05d0c8e01b9edcf8af8536
 F test/genesis.tcl 1e2e2e8e5cc4058549a154ff1892fe5c9de19f98
 F test/hexlit.test 1d312fa816dfd3650a3bb488093bc09a0c927f67
+F test/hidden.test b48497a68ad5fc428533e08df7f3743ef919e168
 F test/hook.test 162d7cef7a2d2b04839fe14402934e6a1b79442f
 F test/icu.test 70df4faca133254c042d02ae342c0a141f2663f4
 F test/ieee754.test 118b665a97a8df0e8f2fbdb07d113e596f4a6b53
@@ -1403,10 +1404,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4f521b5bb36a1117db324e92dcf80abd2f1a5bc1
-R 935d388c6bd4428c029b70918e7ca51f
-T *branch * hidden-columns-in-tables
-T *sym-hidden-columns-in-tables *
-T -sym-trunk *
-U drh
-Z 5682a263851a58e238bd47d4c8fd6809
+P 2dbffb3a3b20dba7d7d86c8ad2e34633f616c78a
+R 83cf7865dae52d6bb8a186c1aa991823
+U dan
+Z 1a0e4ed515d3bb3eb2db7f71110d453e
