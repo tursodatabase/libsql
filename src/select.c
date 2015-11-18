@@ -4365,7 +4365,8 @@ static int selectExpander(Walker *pWalker, Select *p){
             ** result-set list.
             */
             if( IsHiddenColumn(&pTab->aCol[j]) ){
-              assert(IsVirtual(pTab));
+              assert( IsVirtual(pTab)
+               || sqlite3_strnicmp(pTab->aCol[j].zName,"__hidden__", 10)==0 );
               continue;
             }
             tableSeen = 1;

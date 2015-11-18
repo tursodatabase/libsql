@@ -1104,6 +1104,9 @@ void sqlite3AddColumn(Parse *pParse, Token *pName){
   pCol = &p->aCol[p->nCol];
   memset(pCol, 0, sizeof(p->aCol[0]));
   pCol->zName = z;
+  if( sqlite3_strnicmp(z, "__hidden__", 10)==0 ){
+    pCol->colFlags |= COLFLAG_HIDDEN;
+  }
  
   /* If there is no type specified, columns have the default affinity
   ** 'BLOB'. If there is a type specified, then sqlite3AddColumnType() will

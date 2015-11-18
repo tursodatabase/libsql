@@ -1,5 +1,5 @@
-C When\susing\smmap\smode\son\sWin32,\suse\sa\sread-only\smapping\sby\sdefault.\sWrite\sto\sthe\sdatabase\sfile\susing\sWriteFile().\sUnless\sSQLITE_MMAP_READWRITE\sis\sdefined,\sin\swhich\scase\suse\sa\sread/write\smapping\sand\swrite\sinto\sthe\sfile\susing\smemcpy().
-D 2015-11-17T21:42:32.347
+C If\sa\stable\scolumn\sname\sbegins\swith\s"__hidden__"\sthen\sdo\snot\sinclude\sthat\ncolumn\sin\s"*"\sexpansions\sin\sSELECT\sstatements,\snor\sfill\sin\sthat\scolumn\sin\nan\sINSERT\sINTO\sthat\somits\sthe\scolumn\slist.\s\s<b>This\sbranch\sis\sa\s\nproof-of-concept\sonly\sand\sis\snot\sintended\sto\sever\sbe\smerged\sinto\strunk.</b>
+D 2015-11-18T18:43:15.107
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -285,7 +285,7 @@ F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
 F src/btree.c d3bdd8462a86492e2ebc9aca4a0168429017de25
 F src/btree.h 2d76dee44704c47eed323356a758662724b674a0
 F src/btreeInt.h 3ab435ed27adea54d040584b0bcc488ee7db1e38
-F src/build.c ca574d33ffb1763cfd2979383f4d507095bfbe19
+F src/build.c a62cef335439eca53f8b0b12fae4b6925ff5b980
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
 F src/ctime.c 509ef9c64d1321f42448f111da86400b1799218a
@@ -300,7 +300,7 @@ F src/global.c 508e4087f7b41d688e4762dcf4d4fe28cfbc87f9
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
 F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c 419a947f27ce2da18eebf440a5aa80cc825defae
+F src/insert.c 0b376795f688aafd264ff0c5a6538e5a4cc6c213
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/loadext.c 18586e45a215325f15096821e9c082035d4fb810
@@ -339,7 +339,7 @@ F src/printf.c f8fc8f04e75b1e983ef2793c27ec7a43b287e94a
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 1954a0f01bf65d78d7d559aea3d5c67f33376d91
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c 4c58ae319df6862e5ea237e757b5d317c4491798
+F src/select.c 2fa981f5bc793fb6b48f013c82662bcc969e3af5
 F src/shell.c f0f59ea60ad297f671b7ae0fb957a736ad17c92c
 F src/sqlite.h.in fa62718f73553f06b2f2e362fd09ccb4e1cbb626
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
@@ -1403,7 +1403,10 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 67c5d3c646c8198c8637069140aca952b802df25
-R d582abf646ba97a05dcf7955b3e63a88
-U mistachkin
-Z 3d22a16f35aefddddac7e9c38e41c6d4
+P 4f521b5bb36a1117db324e92dcf80abd2f1a5bc1
+R 935d388c6bd4428c029b70918e7ca51f
+T *branch * hidden-columns-in-tables
+T *sym-hidden-columns-in-tables *
+T -sym-trunk *
+U drh
+Z 5682a263851a58e238bd47d4c8fd6809

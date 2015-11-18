@@ -736,10 +736,8 @@ void sqlite3Insert(
   /* Make sure the number of columns in the source data matches the number
   ** of columns to be inserted into the table.
   */
-  if( IsVirtual(pTab) ){
-    for(i=0; i<pTab->nCol; i++){
-      nHidden += (IsHiddenColumn(&pTab->aCol[i]) ? 1 : 0);
-    }
+  for(i=0; i<pTab->nCol; i++){
+    nHidden += (IsHiddenColumn(&pTab->aCol[i]) ? 1 : 0);
   }
   if( pColumn==0 && nColumn && nColumn!=(pTab->nCol-nHidden) ){
     sqlite3ErrorMsg(pParse, 
@@ -934,7 +932,8 @@ void sqlite3Insert(
       }
       if( pColumn==0 ){
         if( IsHiddenColumn(&pTab->aCol[i]) ){
-          assert( IsVirtual(pTab) );
+          assert( IsVirtual(pTab)
+                || sqlite3_strnicmp(pTab->aCol[i].zName,"__hidden__",10)==0 );
           j = -1;
           nHidden++;
         }else{
