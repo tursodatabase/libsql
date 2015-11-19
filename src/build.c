@@ -1050,19 +1050,6 @@ begin_table_error:
 }
 
 /*
-** This macro is used to compare two strings in a case-insensitive manner.
-** It is slightly faster than calling sqlite3StrICmp() directly, but
-** produces larger code.
-**
-** WARNING: This macro is not compatible with the strcmp() family. It
-** returns true if the two strings are equal, otherwise false.
-*/
-#define STRICMP(x, y) (\
-sqlite3UpperToLower[*(unsigned char *)(x)]==   \
-sqlite3UpperToLower[*(unsigned char *)(y)]     \
-&& sqlite3StrICmp((x)+1,(y)+1)==0 )
-
-/*
 ** Add a new column to the table currently being constructed.
 **
 ** The parser calls this routine once for each column declaration
@@ -1086,7 +1073,7 @@ void sqlite3AddColumn(Parse *pParse, Token *pName){
   z = sqlite3NameFromToken(db, pName);
   if( z==0 ) return;
   for(i=0; i<p->nCol; i++){
-    if( STRICMP(z, p->aCol[i].zName) ){
+    if( sqlite3_stricmp(z, p->aCol[i].zName)==0 ){
       sqlite3ErrorMsg(pParse, "duplicate column name: %s", z);
       sqlite3DbFree(db, z);
       return;
