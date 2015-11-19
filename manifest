@@ -1,5 +1,5 @@
-C When\smanifesting\sa\sview\sas\spart\sof\san\sDELETE\sor\sUPDATE,\sbe\ssure\sto\sinclude\nthe\shidden\scolumns\sin\sthe\smanifestation.
-D 2015-11-19T17:55:11.376
+C Fix\sa\sproblem\swith\sVACUUM\sand\s__hidden__\scolumns.
+D 2015-11-19T18:09:05.518
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -300,7 +300,7 @@ F src/global.c 508e4087f7b41d688e4762dcf4d4fe28cfbc87f9
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
 F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c edb295a0b669e2dedba65cd546789770ae061277
+F src/insert.c e1d20ae8979e25519c2670233718676bedcfedc9
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/loadext.c 18586e45a215325f15096821e9c082035d4fb810
@@ -762,7 +762,7 @@ F test/fuzzer1.test d4c52aaf3ef923da293a2653cfab33d02f718a36
 F test/fuzzerfault.test 8792cd77fd5bce765b05d0c8e01b9edcf8af8536
 F test/genesis.tcl 1e2e2e8e5cc4058549a154ff1892fe5c9de19f98
 F test/hexlit.test 1d312fa816dfd3650a3bb488093bc09a0c927f67
-F test/hidden.test df1540ad1017b49a0681ba3b01e0cde051dbeb58
+F test/hidden.test 23c1393a79e846d68fd902d72c85d5e5dcf98711
 F test/hook.test 162d7cef7a2d2b04839fe14402934e6a1b79442f
 F test/icu.test 70df4faca133254c042d02ae342c0a141f2663f4
 F test/ieee754.test 118b665a97a8df0e8f2fbdb07d113e596f4a6b53
@@ -1404,7 +1404,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 59bd0ec7d4327852ee8c0206b2c59d0a12484db8
-R 626878acc4dd3cd8e822d0d9711e48d6
-U drh
-Z 65ef55c8781837190650d43297c4895a
+P 28df5dc4a9569f388af2ee0d1f016afbea132277
+R 223c84fbd92f4a39a8e2bec8517a666e
+U dan
+Z 81a0a463975756dda288ce492d814635

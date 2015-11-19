@@ -98,4 +98,56 @@ do_execsql_test 3.2.3 {
   SELECT __hidden__a FROM t5;
 } {{} {} {}}
 
+
+do_execsql_test 3.3.1 {
+  CREATE TABLE t5a(a, b, __hidden__c);
+  CREATE TABLE t6a(a, b, __hidden__c);
+  INSERT INTO t6a(a, b, __hidden__c) VALUES(1, 2, 3);
+  INSERT INTO t6a(a, b, __hidden__c) VALUES(4, 5, 6);
+  INSERT INTO t6a(a, b, __hidden__c) VALUES(7, 8, 9);
+}
+
+do_execsql_test 3.3.2 {
+  INSERT INTO t5a SELECT * FROM t6a;
+  SELECT * FROM t5a;
+} {1 2   4 5   7 8}
+
+do_execsql_test 3.3.3 {
+  SELECT __hidden__c FROM t5a;
+} {{} {} {}}
+
+do_execsql_test 3.4.1 {
+  CREATE TABLE t5b(a, __hidden__b, c);
+  CREATE TABLE t6b(a, b, __hidden__c);
+  INSERT INTO t6b(a, b, __hidden__c) VALUES(1, 2, 3);
+  INSERT INTO t6b(a, b, __hidden__c) VALUES(4, 5, 6);
+  INSERT INTO t6b(a, b, __hidden__c) VALUES(7, 8, 9);
+}
+
+do_execsql_test 3.4.2 {
+  INSERT INTO t5b SELECT * FROM t6b;
+  SELECT * FROM t5b;
+} {1 2   4 5   7 8}
+
+do_execsql_test 3.4.3 {
+  SELECT __hidden__b FROM t5b;
+} {{} {} {}}
+
+#-------------------------------------------------------------------------
+# Test VACUUM
+#
+reset_db
+do_execsql_test 4.1 {
+  CREATE TABLE t1(a, __hidden__b, c UNIQUE);
+  INSERT INTO t1(a, __hidden__b, c) VALUES(1, 2, 3);
+  INSERT INTO t1(a, __hidden__b, c) VALUES(4, 5, 6);
+  INSERT INTO t1(a, __hidden__b, c) VALUES(7, 8, 9);
+  DELETE FROM t1 WHERE __hidden__b = 5;
+  SELECT rowid, a, __hidden__b, c FROM t1;
+} {1 1 2 3   3 7 8 9}
+do_execsql_test 4.2 {
+  VACUUM;
+  SELECT rowid, a, __hidden__b, c FROM t1;
+} {1 1 2 3   3 7 8 9}
+
 finish_test

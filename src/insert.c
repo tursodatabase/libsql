@@ -1910,7 +1910,9 @@ static int xferOptimization(
     Column *pDestCol = &pDest->aCol[i];
     Column *pSrcCol = &pSrc->aCol[i];
 #ifdef SQLITE_ENABLE_HIDDEN_COLUMNS
-    if( (pDestCol->colFlags | pSrcCol->colFlags) & COLFLAG_HIDDEN ){
+    if( (db->flags & SQLITE_Vacuum)==0 
+     && (pDestCol->colFlags | pSrcCol->colFlags) & COLFLAG_HIDDEN 
+    ){
       return 0;    /* Neither table may have __hidden__ columns */
     }
 #endif
