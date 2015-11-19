@@ -1873,7 +1873,7 @@ static int xferOptimization(
     return 0;   /* The result set must have exactly one column */
   }
   assert( pEList->a[0].pExpr );
-  if( pEList->a[0].pExpr->op!=TK_ALL ){
+  if( pEList->a[0].pExpr->op!=TK_ASTERISK ){
     return 0;   /* The result set must be the special operator "*" */
   }
 
