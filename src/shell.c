@@ -165,7 +165,7 @@ static sqlite3_int64 timeOfDay(void){
   static sqlite3_vfs *clockVfs = 0;
   sqlite3_int64 t;
   if( clockVfs==0 ) clockVfs = sqlite3_vfs_find(0);
-  if( clockVfs->iVersion>=1 && clockVfs->xCurrentTimeInt64!=0 ){
+  if( clockVfs->iVersion>=2 && clockVfs->xCurrentTimeInt64!=0 ){
     clockVfs->xCurrentTimeInt64(clockVfs, &t);
   }else{
     double r;
@@ -2560,7 +2560,7 @@ static int shell_dbinfo_command(ShellState *p, int nArg, char **azArg){
      { "schema size:",
        "SELECT total(length(sql)) FROM %s" },
   };
-  sqlite3_file *pFile;
+  sqlite3_file *pFile = 0;
   int i;
   char *zSchemaTab;
   char *zDb = nArg>=2 ? azArg[1] : "main";

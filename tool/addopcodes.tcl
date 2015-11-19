@@ -37,6 +37,7 @@ set extras {
   UMINUS
   UPLUS
   REGISTER
+  ASTERISK
   SPACE
   ILLEGAL
 }

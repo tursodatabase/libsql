@@ -125,6 +125,12 @@ static void set_options(Tcl_Interp *interp){
   Tcl_SetVar2(interp, "sqlite_options", "cursorhints", "0", TCL_GLOBAL_ONLY);
 #endif
 
+#ifdef SQLITE_ENABLE_HIDDEN_COLUMNS
+  Tcl_SetVar2(interp, "sqlite_options", "hiddencolumns", "1", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "hiddencolumns", "0", TCL_GLOBAL_ONLY);
+#endif
+
 #ifdef SQLITE_ENABLE_MEMSYS3
   Tcl_SetVar2(interp, "sqlite_options", "mem3", "1", TCL_GLOBAL_ONLY);
 #else

@@ -546,7 +546,7 @@ distinct(A) ::= .           {A = 0;}
 // selcollist is a list of expressions that are to become the return
 // values of the SELECT statement.  The "*" in statements like
 // "SELECT * FROM ..." is encoded as a special expression with an
-// opcode of TK_ALL.
+// opcode of TK_ASTERISK.
 //
 %type selcollist {ExprList*}
 %destructor selcollist {sqlite3ExprListDelete(pParse->db, $$);}
@@ -560,11 +560,11 @@ selcollist(A) ::= sclp(P) expr(X) as(Y).     {
    sqlite3ExprListSetSpan(pParse,A,&X);
 }
 selcollist(A) ::= sclp(P) STAR. {
-  Expr *p = sqlite3Expr(pParse->db, TK_ALL, 0);
+  Expr *p = sqlite3Expr(pParse->db, TK_ASTERISK, 0);
   A = sqlite3ExprListAppend(pParse, P, p);
 }
 selcollist(A) ::= sclp(P) nm(X) DOT STAR(Y). {
-  Expr *pRight = sqlite3PExpr(pParse, TK_ALL, 0, 0, &Y);
+  Expr *pRight = sqlite3PExpr(pParse, TK_ASTERISK, 0, 0, &Y);
   Expr *pLeft = sqlite3PExpr(pParse, TK_ID, 0, 0, &X);
   Expr *pDot = sqlite3PExpr(pParse, TK_DOT, pLeft, pRight, 0);
   A = sqlite3ExprListAppend(pParse,P, pDot);

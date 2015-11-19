@@ -118,7 +118,7 @@ Select *sqlite3SelectNew(
     memset(pNew, 0, sizeof(*pNew));
   }
   if( pEList==0 ){
-    pEList = sqlite3ExprListAppend(pParse, 0, sqlite3Expr(db,TK_ALL,0));
+    pEList = sqlite3ExprListAppend(pParse, 0, sqlite3Expr(db,TK_ASTERISK,0));
   }
   pNew->pEList = pEList;
   if( pSrc==0 ) pSrc = sqlite3DbMallocZero(db, sizeof(*pSrc));
@@ -1596,13 +1596,15 @@ int sqlite3ColumnsFromExprList(
 ){
   sqlite3 *db = pParse->db;   /* Database connection */
   int i, j;                   /* Loop counters */
-  int cnt;                    /* Index added to make the name unique */
+  u32 cnt;                    /* Index added to make the name unique */
   Column *aCol, *pCol;        /* For looping over result columns */
   int nCol;                   /* Number of columns in the result set */
   Expr *p;                    /* Expression for a single result column */
   char *zName;                /* Column name */
   int nName;                  /* Size of name in zName[] */
+  Hash ht;                    /* Hash table of column names */
 
+  sqlite3HashInit(&ht);
   if( pEList ){
     nCol = pEList->nExpr;
     aCol = sqlite3DbMallocZero(db, sizeof(aCol[0])*nCol);
@@ -1614,13 +1616,12 @@ int sqlite3ColumnsFromExprList(
   *pnCol = nCol;
   *paCol = aCol;
 
-  for(i=0, pCol=aCol; i<nCol; i++, pCol++){
+  for(i=0, pCol=aCol; i<nCol && !db->mallocFailed; i++, pCol++){
     /* Get an appropriate name for the column
     */
     p = sqlite3ExprSkipCollate(pEList->a[i].pExpr);
     if( (zName = pEList->a[i].zName)!=0 ){
       /* If the column contains an "AS <name>" phrase, use <name> as the name */
-      zName = sqlite3DbStrDup(db, zName);
     }else{
       Expr *pColExpr = p;  /* The expression that is the result column name */
       Table *pTab;         /* Table associated with this expression */
@@ -1633,41 +1634,37 @@ int sqlite3ColumnsFromExprList(
         int iCol = pColExpr->iColumn;
         pTab = pColExpr->pTab;
         if( iCol<0 ) iCol = pTab->iPKey;
-        zName = sqlite3MPrintf(db, "%s",
-                 iCol>=0 ? pTab->aCol[iCol].zName : "rowid");
+        zName = iCol>=0 ? pTab->aCol[iCol].zName : "rowid";
       }else if( pColExpr->op==TK_ID ){
         assert( !ExprHasProperty(pColExpr, EP_IntValue) );
-        zName = sqlite3MPrintf(db, "%s", pColExpr->u.zToken);
+        zName = pColExpr->u.zToken;
       }else{
         /* Use the original text of the column expression as its name */
-        zName = sqlite3MPrintf(db, "%s", pEList->a[i].zSpan);
+        zName = pEList->a[i].zSpan;
       }
     }
-    if( db->mallocFailed ){
-      sqlite3DbFree(db, zName);
-      break;
-    }
+    zName = sqlite3MPrintf(db, "%s", zName);
 
     /* Make sure the column name is unique.  If the name is not unique,
     ** append an integer to the name so that it becomes unique.
     */
-    nName = sqlite3Strlen30(zName);
-    for(j=cnt=0; j<i; j++){
-      if( sqlite3StrICmp(aCol[j].zName, zName)==0 ){
-        char *zNewName;
-        int k;
-        for(k=nName-1; k>1 && sqlite3Isdigit(zName[k]); k--){}
-        if( k>=0 && zName[k]==':' ) nName = k;
-        zName[nName] = 0;
-        zNewName = sqlite3MPrintf(db, "%s:%d", zName, ++cnt);
-        sqlite3DbFree(db, zName);
-        zName = zNewName;
-        j = -1;
-        if( zName==0 ) break;
+    cnt = 0;
+    while( zName && sqlite3HashFind(&ht, zName)!=0 ){
+      nName = sqlite3Strlen30(zName);
+      if( nName>0 ){
+        for(j=nName-1; j>0 && sqlite3Isdigit(zName[j]); j--){}
+        if( zName[j]==':' ) nName = j;
       }
+      zName = sqlite3MPrintf(db, "%.*z:%u", nName, zName, ++cnt);
+      if( cnt>3 ) sqlite3_randomness(sizeof(cnt), &cnt);
     }
     pCol->zName = zName;
+    sqlite3ColumnPropertiesFromName(0, pCol);
+    if( zName && sqlite3HashInsert(&ht, zName, pCol)==pCol ){
+      db->mallocFailed = 1;
+    }
   }
+  sqlite3HashClear(&ht);
   if( db->mallocFailed ){
     for(j=0; j<i; j++){
       sqlite3DbFree(db, aCol[j].zName);
@@ -3941,7 +3938,7 @@ static int convertCompoundSelectToSubquery(Walker *pWalker, Select *p){
   if( pNewSrc==0 ) return WRC_Abort;
   *pNew = *p;
   p->pSrc = pNewSrc;
-  p->pEList = sqlite3ExprListAppend(pParse, 0, sqlite3Expr(db, TK_ALL, 0));
+  p->pEList = sqlite3ExprListAppend(pParse, 0, sqlite3Expr(db, TK_ASTERISK, 0));
   p->op = TK_SELECT;
   p->pWhere = 0;
   pNew->pGroupBy = 0;
@@ -4282,19 +4279,20 @@ static int selectExpander(Walker *pWalker, Select *p){
   /* For every "*" that occurs in the column list, insert the names of
   ** all columns in all tables.  And for every TABLE.* insert the names
   ** of all columns in TABLE.  The parser inserted a special expression
-  ** with the TK_ALL operator for each "*" that it found in the column list.
-  ** The following code just has to locate the TK_ALL expressions and expand
-  ** each one to the list of all columns in all tables.
+  ** with the TK_ASTERISK operator for each "*" that it found in the column
+  ** list.  The following code just has to locate the TK_ASTERISK
+  ** expressions and expand each one to the list of all columns in
+  ** all tables.
   **
   ** The first loop just checks to see if there are any "*" operators
   ** that need expanding.
   */
   for(k=0; k<pEList->nExpr; k++){
     pE = pEList->a[k].pExpr;
-    if( pE->op==TK_ALL ) break;
+    if( pE->op==TK_ASTERISK ) break;
     assert( pE->op!=TK_DOT || pE->pRight!=0 );
     assert( pE->op!=TK_DOT || (pE->pLeft!=0 && pE->pLeft->op==TK_ID) );
-    if( pE->op==TK_DOT && pE->pRight->op==TK_ALL ) break;
+    if( pE->op==TK_DOT && pE->pRight->op==TK_ASTERISK ) break;
   }
   if( k<pEList->nExpr ){
     /*
@@ -4312,7 +4310,9 @@ static int selectExpander(Walker *pWalker, Select *p){
       pE = a[k].pExpr;
       pRight = pE->pRight;
       assert( pE->op!=TK_DOT || pRight!=0 );
-      if( pE->op!=TK_ALL && (pE->op!=TK_DOT || pRight->op!=TK_ALL) ){
+      if( pE->op!=TK_ASTERISK
+       && (pE->op!=TK_DOT || pRight->op!=TK_ASTERISK)
+      ){
         /* This particular expression does not need to be expanded.
         */
         pNew = sqlite3ExprListAppend(pParse, pNew, a[k].pExpr);
@@ -4364,12 +4364,13 @@ static int selectExpander(Walker *pWalker, Select *p){
               continue;
             }
 
-            /* If a column is marked as 'hidden' (currently only possible
-            ** for virtual tables), do not include it in the expanded
-            ** result-set list.
+            /* If a column is marked as 'hidden', omit it from the expanded
+            ** result-set list unless the SELECT has the SF_IncludeHidden
+            ** bit set.
             */
-            if( IsHiddenColumn(&pTab->aCol[j]) ){
-              assert(IsVirtual(pTab));
+            if( (p->selFlags & SF_IncludeHidden)==0
+             && IsHiddenColumn(&pTab->aCol[j]) 
+            ){
               continue;
             }
             tableSeen = 1;

@@ -726,7 +726,7 @@ void sqlite3VXPrintf(
     if( width>0 && flag_leftjustify ) sqlite3AppendChar(pAccum, width, ' ');
 
     if( zExtra ){
-      sqlite3_free(zExtra);
+      sqlite3DbFree(pAccum->db, zExtra);
       zExtra = 0;
     }
   }/* End for loop over the format string */

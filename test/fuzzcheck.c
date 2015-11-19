@@ -838,6 +838,7 @@ int main(int argc, char **argv){
   int nMem = 0;                /* Memory limit */
   char *zExpDb = 0;            /* Write Databases to files in this directory */
   char *zExpSql = 0;           /* Write SQL to files in this directory */
+  void *pHeap = 0;             /* Heap for use by SQLite */
 
   iBegin = timeOfDay();
 #ifdef __unix__
@@ -1085,7 +1086,6 @@ int main(int argc, char **argv){
 
     /* Limit available memory, if requested */
     if( nMem>0 ){
-      void *pHeap;
       sqlite3_shutdown();
       pHeap = malloc(nMem);
       if( pHeap==0 ){
@@ -1184,5 +1184,6 @@ int main(int argc, char **argv){
            sqlite3_libversion(), sqlite3_sourceid());
   }
   free(azSrcDb);
+  free(pHeap);
   return 0;
 }
