@@ -4,6 +4,8 @@
 #
 #   --enable-threadsafe
 #   --enable-readline
+#   --enable-editline
+#   --enable-static-shell
 #   --enable-dynamic-extensions
 #
 
@@ -115,6 +117,21 @@ if test x"$enable_json1" == "xyes"; then
   JSON1_FLAGS=-DSQLITE_ENABLE_JSON1
 fi
 AC_SUBST(JSON1_FLAGS)
+#-----------------------------------------------------------------------
+
+#-----------------------------------------------------------------------
+#   --enable-static-shell
+#
+AC_ARG_ENABLE(static-shell, [AS_HELP_STRING(
+  [--enable-static-shell], 
+  [statically link libsqlite3 into shell tool [default=yes]])], 
+  [], [enable_static_shell=yes])
+if test x"$enable_static_shell" == "xyes"; then
+  EXTRA_SHELL_OBJ=sqlite3.$OBJEXT
+else
+  EXTRA_SHELL_OBJ=libsqlite3.la
+fi
+AC_SUBST(EXTRA_SHELL_OBJ)
 #-----------------------------------------------------------------------
 
 AC_CHECK_FUNCS(posix_fallocate)

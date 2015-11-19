@@ -79,6 +79,45 @@ static void sqlite3TreeViewItem(TreeView *p, const char *zLabel,u8 moreFollows){
   sqlite3TreeViewLine(p, "%s", zLabel);
 }
 
+/*
+** Generate a human-readable description of a WITH clause.
+*/
+void sqlite3TreeViewWith(TreeView *pView, const With *pWith, u8 moreToFollow){
+  int i;
+  if( pWith==0 ) return;
+  if( pWith->nCte==0 ) return;
+  if( pWith->pOuter ){
+    sqlite3TreeViewLine(pView, "WITH (0x%p, pOuter=0x%p)",pWith,pWith->pOuter);
+  }else{
+    sqlite3TreeViewLine(pView, "WITH (0x%p)", pWith);
+  }
+  if( pWith->nCte>0 ){
+    pView = sqlite3TreeViewPush(pView, 1);
+    for(i=0; i<pWith->nCte; i++){
+      StrAccum x;
+      char zLine[1000];
+      const struct Cte *pCte = &pWith->a[i];
+      sqlite3StrAccumInit(&x, 0, zLine, sizeof(zLine), 0);
+      sqlite3XPrintf(&x, 0, "%s", pCte->zName);
+      if( pCte->pCols && pCte->pCols->nExpr>0 ){
+        char cSep = '(';
+        int j;
+        for(j=0; j<pCte->pCols->nExpr; j++){
+          sqlite3XPrintf(&x, 0, "%c%s", cSep, pCte->pCols->a[j].zName);
+          cSep = ',';
+        }
+        sqlite3XPrintf(&x, 0, ")");
+      }
+      sqlite3XPrintf(&x, 0, " AS");
+      sqlite3StrAccumFinish(&x);
+      sqlite3TreeViewItem(pView, zLine, i<pWith->nCte-1);
+      sqlite3TreeViewSelect(pView, pCte->pSelect, 0);
+      sqlite3TreeViewPop(pView);
+    }
+    sqlite3TreeViewPop(pView);
+  }
+}
+
 
 /*
 ** Generate a human-readable description of a the Select object.
@@ -87,6 +126,11 @@ void sqlite3TreeViewSelect(TreeView *pView, const Select *p, u8 moreToFollow){
   int n = 0;
   int cnt = 0;
   pView = sqlite3TreeViewPush(pView, moreToFollow);
+  if( p->pWith ){
+    sqlite3TreeViewWith(pView, p->pWith, 1);
+    cnt = 1;
+    sqlite3TreeViewPush(pView, 1);
+  }
   do{
     sqlite3TreeViewLine(pView, "SELECT%s%s (0x%p) selFlags=0x%x",
       ((p->selFlags & SF_Distinct) ? " DISTINCT" : ""),
