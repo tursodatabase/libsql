@@ -1049,6 +1049,18 @@ begin_table_error:
   return;
 }
 
+/* Set properties of a table column based on the (magical)
+** name of the column.
+*/
+void sqlite3ColumnPropertiesFromName(Column *pCol){
+#if SQLITE_ENABLE_HIDDEN_COLUMNS
+  if( sqlite3_strnicmp(pCol->zName, "__hidden__", 10)==0 ){
+    pCol->colFlags |= COLFLAG_HIDDEN;
+  }
+#endif
+}
+
+
 /*
 ** Add a new column to the table currently being constructed.
 **
@@ -1091,6 +1103,7 @@ void sqlite3AddColumn(Parse *pParse, Token *pName){
   pCol = &p->aCol[p->nCol];
   memset(pCol, 0, sizeof(p->aCol[0]));
   pCol->zName = z;
+  sqlite3ColumnPropertiesFromName(pCol);
  
   /* If there is no type specified, columns have the default affinity
   ** 'BLOB'. If there is a type specified, then sqlite3AddColumnType() will

@@ -1,5 +1,5 @@
-C Fix\sa\s10-year-old\smisguided\sattempt\sat\sparser\sperformance\simprovement\sthat\nactually\smade\sparsing\sslightly\sslower.
-D 2015-11-19T13:21:31.911
+C If\scompiled\swith\sSQLITE_ENABLE_HIDDEN_COLUMNS,\sthen\scolumns\sin\sordinary\ntables\sand\sviews\sthat\shave\snames\sbeginning\swith\s"__hidden__"\sare\somitted\sfrom\nthe\s"*"\sexpansion\sin\sSELECT\sstatements\sand\sfrom\sthe\sautomatic\slist\sof\scolumns\nfollowing\sthe\stable\sname\sin\san\sINSERT\sINTO\sstatement.
+D 2015-11-19T14:11:58.858
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -285,7 +285,7 @@ F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
 F src/btree.c d3bdd8462a86492e2ebc9aca4a0168429017de25
 F src/btree.h 2d76dee44704c47eed323356a758662724b674a0
 F src/btreeInt.h 3ab435ed27adea54d040584b0bcc488ee7db1e38
-F src/build.c baee971344208e212573c08f6bd5579023cc5d14
+F src/build.c c909d178ef900f56aaafa4a509fd1b12a7d52ea6
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
 F src/ctime.c 509ef9c64d1321f42448f111da86400b1799218a
@@ -300,7 +300,7 @@ F src/global.c 508e4087f7b41d688e4762dcf4d4fe28cfbc87f9
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
 F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c 419a947f27ce2da18eebf440a5aa80cc825defae
+F src/insert.c 6677454f256e7992c68a6460b0224a7ec60ef5ed
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/loadext.c 18586e45a215325f15096821e9c082035d4fb810
@@ -339,12 +339,12 @@ F src/printf.c f8fc8f04e75b1e983ef2793c27ec7a43b287e94a
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 1954a0f01bf65d78d7d559aea3d5c67f33376d91
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c 4c58ae319df6862e5ea237e757b5d317c4491798
+F src/select.c ac980e5b70478aab235d12b4565a745814453858
 F src/shell.c f0f59ea60ad297f671b7ae0fb957a736ad17c92c
 F src/sqlite.h.in fa62718f73553f06b2f2e362fd09ccb4e1cbb626
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 4b66e3e3435da4b4c8c83696d0349f0c503b3924
-F src/sqliteInt.h 1b8c1b37f0bd2cec784c9f257e449f72096b37f8
+F src/sqliteInt.h 339067553cebac9ba7ec0c616b135db7905c20c9
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
@@ -363,7 +363,7 @@ F src/test_autoext.c dea8a01a7153b9adc97bd26161e4226329546e12
 F src/test_backup.c 2e6e6a081870150f20c526a2e9d0d29cda47d803
 F src/test_blob.c e5a7a81d61a780da79101aeb1e60d300af169e07
 F src/test_btree.c 2e9978eca99a9a4bfa8cae949efb00886860a64f
-F src/test_config.c 7523f8bd7604aec88a9d1c303d93c925bcfcc9f9
+F src/test_config.c f2824de39f59d8d621e2d6ec5cc67006d000b2eb
 F src/test_demovfs.c 0de72c2c89551629f58486fde5734b7d90758852
 F src/test_devsym.c e7498904e72ba7491d142d5c83b476c4e76993bc
 F src/test_fs.c ced436e3d4b8e4681328409b8081051ce614e28f
@@ -762,6 +762,7 @@ F test/fuzzer1.test d4c52aaf3ef923da293a2653cfab33d02f718a36
 F test/fuzzerfault.test 8792cd77fd5bce765b05d0c8e01b9edcf8af8536
 F test/genesis.tcl 1e2e2e8e5cc4058549a154ff1892fe5c9de19f98
 F test/hexlit.test 1d312fa816dfd3650a3bb488093bc09a0c927f67
+F test/hidden.test 9de6b1631ac23b27801868abaccd1a7f3e96a6f2
 F test/hook.test 162d7cef7a2d2b04839fe14402934e6a1b79442f
 F test/icu.test 70df4faca133254c042d02ae342c0a141f2663f4
 F test/ieee754.test 118b665a97a8df0e8f2fbdb07d113e596f4a6b53
@@ -949,7 +950,7 @@ F test/rbu.test 168573d353cd0fd10196b87b0caa322c144ef736
 F test/rdonly.test 64e2696c322e3538df0b1ed624e21f9a23ed9ff8
 F test/regexp1.test 497ea812f264d12b6198d6e50a76be4a1973a9d8
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
-F test/releasetest.tcl 30cf0851a6fb0343b65f27dc89ab7bed3c3cc77d
+F test/releasetest.tcl 622f2381b217facdf429584a5c292cc1fc47e7c0
 F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
 F test/rollback.test 458fe73eb3ffdfdf9f6ba3e9b7350a6220414dea
 F test/rollback2.test fc14cf6d1a2b250d2735ef16124b971bce152f14
@@ -1403,7 +1404,8 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4f521b5bb36a1117db324e92dcf80abd2f1a5bc1
-R cfcad521008e112c6b761003fe8dc627
+P 3833cbac0706ecac9a641d70b786d26f7e1a42b1 5490646b2eb74ea8bd5ab2690f69b9c707a0165f
+R 4afe49c98c7e846f7bc0bfa4d2728afc
+T +closed 5490646b2eb74ea8bd5ab2690f69b9c707a0165f
 U drh
-Z 7e2a0f5e909f9722ed5527dda015ff6e
+Z 1e726fa67e18842e3c05f4f72e06c5dc

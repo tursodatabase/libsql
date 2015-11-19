@@ -1659,6 +1659,7 @@ int sqlite3ColumnsFromExprList(
       if( cnt>3 ) sqlite3_randomness(sizeof(cnt), &cnt);
     }
     pCol->zName = zName;
+    sqlite3ColumnPropertiesFromName(pCol);
     if( zName && sqlite3HashInsert(&ht, zName, pCol)==pCol ){
       db->mallocFailed = 1;
     }
@@ -4360,12 +4361,10 @@ static int selectExpander(Walker *pWalker, Select *p){
               continue;
             }
 
-            /* If a column is marked as 'hidden' (currently only possible
-            ** for virtual tables), do not include it in the expanded
-            ** result-set list.
+            /* If a column is marked as 'hidden', do not include it in
+            ** the expanded result-set list.
             */
             if( IsHiddenColumn(&pTab->aCol[j]) ){
-              assert(IsVirtual(pTab));
               continue;
             }
             tableSeen = 1;
