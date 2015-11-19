@@ -1,5 +1,5 @@
-C Fix\sproblems\swith\sINSERT\sINTO\s...\sSELECT\s...\sstatements\sthat\swrite\sto\stables\swith\s__hidden__\scolumns.
-D 2015-11-19T16:46:46.075
+C When\smanifesting\sa\sview\sas\spart\sof\san\sDELETE\sor\sUPDATE,\sbe\ssure\sto\sinclude\nthe\shidden\scolumns\sin\sthe\smanifestation.
+D 2015-11-19T17:55:11.376
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -291,7 +291,7 @@ F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
 F src/ctime.c 509ef9c64d1321f42448f111da86400b1799218a
 F src/date.c fb1c99172017dcc8e237339132c91a21a0788584
 F src/dbstat.c ffd63fc8ba7541476ced189b95e95d7f2bc63f78
-F src/delete.c c4c6fb9da78b946fcba2a6aac5b24bc5c15e752a
+F src/delete.c 00af9f08a15ddc5cba5962d3d3e5bf2d67b2e7da
 F src/expr.c 0080c0f12806eca91e75a23a121a68918e9da357
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 31900763094a3736a5fc887469202eb579fef2d0
@@ -339,12 +339,12 @@ F src/printf.c f8fc8f04e75b1e983ef2793c27ec7a43b287e94a
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 1954a0f01bf65d78d7d559aea3d5c67f33376d91
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c 3492a2794b8ff04dce2a91a284492df5725045f5
+F src/select.c 2376d320907a5c28c55290f18fd94aa3400bf97c
 F src/shell.c f0f59ea60ad297f671b7ae0fb957a736ad17c92c
 F src/sqlite.h.in fa62718f73553f06b2f2e362fd09ccb4e1cbb626
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 4b66e3e3435da4b4c8c83696d0349f0c503b3924
-F src/sqliteInt.h 921678cb43bb7f63364e56757c07f3e6e0eb45c6
+F src/sqliteInt.h d8dc20e7b0e12cf5fd85f43a2abad99eb6f66d9b
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
@@ -1404,7 +1404,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 201ac6d449431dadc6b29faecd68b559bd64bc9f
-R 1ed430a49a13a08f14d4334a2efebccc
-U dan
-Z 390e482d41754a020737571e763bbfaa
+P 59bd0ec7d4327852ee8c0206b2c59d0a12484db8
+R 626878acc4dd3cd8e822d0d9711e48d6
+U drh
+Z 65ef55c8781837190650d43297c4895a

@@ -4364,10 +4364,13 @@ static int selectExpander(Walker *pWalker, Select *p){
               continue;
             }
 
-            /* If a column is marked as 'hidden', do not include it in
-            ** the expanded result-set list.
+            /* If a column is marked as 'hidden', omit it from the expanded
+            ** result-set list unless the SELECT has the SF_IncludeHidden
+            ** bit set.
             */
-            if( IsHiddenColumn(&pTab->aCol[j]) ){
+            if( (p->selFlags & SF_IncludeHidden)==0
+             && IsHiddenColumn(&pTab->aCol[j]) 
+            ){
               continue;
             }
             tableSeen = 1;

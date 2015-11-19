@@ -1673,7 +1673,7 @@ struct Table {
 /*
 ** Allowed values for Table.tabFlags.
 **
-** TF_OOOHidden applies to virtual tables that have hidden columns that are
+** TF_OOOHidden applies to tables or view that have hidden columns that are
 ** followed by non-hidden columns.  Example:  "CREATE VIRTUAL TABLE x USING
 ** vtab1(a HIDDEN, b);".  Since "b" is a non-hidden column but "a" is hidden,
 ** the TF_OOOHidden attribute would apply in this case.  Such tables require
@@ -2512,6 +2512,7 @@ struct Select {
 #define SF_MinMaxAgg       0x1000  /* Aggregate containing min() or max() */
 #define SF_Recursive       0x2000  /* The recursive part of a recursive CTE */
 #define SF_Converted       0x4000  /* By convertCompoundSelectToSubquery() */
+#define SF_IncludeHidden   0x8000  /* Include hidden columns in output */
 
 
 /*
