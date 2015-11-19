@@ -3331,7 +3331,7 @@ void sqlite3OpenMasterTable(Parse *, int);
 Index *sqlite3PrimaryKeyIndex(Table*);
 i16 sqlite3ColumnOfIndex(Index*, i16);
 void sqlite3StartTable(Parse*,Token*,Token*,int,int,int,int);
-void sqlite3ColumnPropertiesFromName(Column*);
+void sqlite3ColumnPropertiesFromName(Table*, Column*);
 void sqlite3AddColumn(Parse*,Token*);
 void sqlite3AddNotNull(Parse*, int);
 void sqlite3AddPrimaryKey(Parse*, ExprList*, int, int, int);

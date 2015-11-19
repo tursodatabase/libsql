@@ -1659,7 +1659,7 @@ int sqlite3ColumnsFromExprList(
       if( cnt>3 ) sqlite3_randomness(sizeof(cnt), &cnt);
     }
     pCol->zName = zName;
-    sqlite3ColumnPropertiesFromName(pCol);
+    sqlite3ColumnPropertiesFromName(0, pCol);
     if( zName && sqlite3HashInsert(&ht, zName, pCol)==pCol ){
       db->mallocFailed = 1;
     }

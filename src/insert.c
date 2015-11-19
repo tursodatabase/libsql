@@ -1909,6 +1909,11 @@ static int xferOptimization(
   for(i=0; i<pDest->nCol; i++){
     Column *pDestCol = &pDest->aCol[i];
     Column *pSrcCol = &pSrc->aCol[i];
+#ifdef SQLITE_ENABLE_HIDDEN_COLUMNS
+    if( (pDestCol->colFlags | pSrcCol->colFlags) & COLFLAG_HIDDEN ){
+      return 0;    /* Neither table may have __hidden__ columns */
+    }
+#endif
     if( pDestCol->affinity!=pSrcCol->affinity ){
       return 0;    /* Affinity must be the same on all columns */
     }

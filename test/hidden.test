@@ -70,5 +70,32 @@ foreach {tn view} {
     SELECT * FROM x1;
   } {1 2 3 4 5 {} 7 8 9}
 }
-  
+
+#-------------------------------------------------------------------------
+# Test INSERT INTO ... SELECT ... statements that write to tables with
+# hidden columns.
+#
+do_execsql_test 3.1 {
+  CREATE TABLE t4(a, __hidden__b, c);
+  INSERT INTO t4 SELECT 1, 2;
+  SELECT a, __hidden__b, c FROM t4;
+} {1 {} 2}
+
+do_execsql_test 3.2.1 {
+  CREATE TABLE t5(__hidden__a, b, c);
+  CREATE TABLE t6(__hidden__a, b, c);
+  INSERT INTO t6(__hidden__a, b, c) VALUES(1, 2, 3);
+  INSERT INTO t6(__hidden__a, b, c) VALUES(4, 5, 6);
+  INSERT INTO t6(__hidden__a, b, c) VALUES(7, 8, 9);
+}
+
+do_execsql_test 3.2.2 {
+  INSERT INTO t5 SELECT * FROM t6;
+  SELECT * FROM t5;
+} {2 3   5 6   8 9}
+
+do_execsql_test 3.2.3 {
+  SELECT __hidden__a FROM t5;
+} {{} {} {}}
+
 finish_test

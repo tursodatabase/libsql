@@ -1,5 +1,5 @@
-C Create\sthe\snew\sTK_ASTERISK\stoken\sto\srepresent\sthe\s"*"\sin\s"SELECT\s*".\s\sFormerly\nthat\soperator\swas\sTK_ALL,\swhich\swas\salso\sused\sfor\sUNION\sALL.\s\sLess\sconfusion\sif\nthey\soperator\ssymbols\sare\sdistinct.
-D 2015-11-19T16:33:31.729
+C Fix\sproblems\swith\sINSERT\sINTO\s...\sSELECT\s...\sstatements\sthat\swrite\sto\stables\swith\s__hidden__\scolumns.
+D 2015-11-19T16:46:46.075
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -285,7 +285,7 @@ F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
 F src/btree.c d3bdd8462a86492e2ebc9aca4a0168429017de25
 F src/btree.h 2d76dee44704c47eed323356a758662724b674a0
 F src/btreeInt.h 3ab435ed27adea54d040584b0bcc488ee7db1e38
-F src/build.c c909d178ef900f56aaafa4a509fd1b12a7d52ea6
+F src/build.c 5a3b71786e2b96d2bb92d40f190eb1fe736f25ca
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
 F src/ctime.c 509ef9c64d1321f42448f111da86400b1799218a
@@ -300,7 +300,7 @@ F src/global.c 508e4087f7b41d688e4762dcf4d4fe28cfbc87f9
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
 F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c 7aa0846b25ab53e33a16fc3b9417ff87b3c60183
+F src/insert.c edb295a0b669e2dedba65cd546789770ae061277
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/loadext.c 18586e45a215325f15096821e9c082035d4fb810
@@ -339,12 +339,12 @@ F src/printf.c f8fc8f04e75b1e983ef2793c27ec7a43b287e94a
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c 1954a0f01bf65d78d7d559aea3d5c67f33376d91
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c e8eccb5b4482965f56fc46c69e75ce2da941b18e
+F src/select.c 3492a2794b8ff04dce2a91a284492df5725045f5
 F src/shell.c f0f59ea60ad297f671b7ae0fb957a736ad17c92c
 F src/sqlite.h.in fa62718f73553f06b2f2e362fd09ccb4e1cbb626
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 4b66e3e3435da4b4c8c83696d0349f0c503b3924
-F src/sqliteInt.h 339067553cebac9ba7ec0c616b135db7905c20c9
+F src/sqliteInt.h 921678cb43bb7f63364e56757c07f3e6e0eb45c6
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
@@ -762,7 +762,7 @@ F test/fuzzer1.test d4c52aaf3ef923da293a2653cfab33d02f718a36
 F test/fuzzerfault.test 8792cd77fd5bce765b05d0c8e01b9edcf8af8536
 F test/genesis.tcl 1e2e2e8e5cc4058549a154ff1892fe5c9de19f98
 F test/hexlit.test 1d312fa816dfd3650a3bb488093bc09a0c927f67
-F test/hidden.test 9de6b1631ac23b27801868abaccd1a7f3e96a6f2
+F test/hidden.test df1540ad1017b49a0681ba3b01e0cde051dbeb58
 F test/hook.test 162d7cef7a2d2b04839fe14402934e6a1b79442f
 F test/icu.test 70df4faca133254c042d02ae342c0a141f2663f4
 F test/ieee754.test 118b665a97a8df0e8f2fbdb07d113e596f4a6b53
@@ -1404,7 +1404,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 011904cad2be2ce34e2f37ffae8ff2f1044a2969
-R 40ad63765b750992e100464bfa82981f
-U drh
-Z 1545ad0787e026d6592cfaa98e731337
+P 201ac6d449431dadc6b29faecd68b559bd64bc9f
+R 1ed430a49a13a08f14d4334a2efebccc
+U dan
+Z 390e482d41754a020737571e763bbfaa
