@@ -1696,11 +1696,28 @@ struct Table {
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #  define IsVirtual(X)      (((X)->tabFlags & TF_Virtual)!=0)
-#  define IsHiddenColumn(X) (((X)->colFlags & COLFLAG_HIDDEN)!=0)
 #else
 #  define IsVirtual(X)      0
 #  define IsHiddenColumn(X) 0
 #endif
+
+/*
+** Macros to determine if a column is hidden.  IsOrdinaryHiddenColumn()
+** only works for non-virtual tables (ordinary tables and views) and is
+** always false unless SQLITE_ENABLE_HIDDEN_COLUMNS is defined.  The
+** IsHiddenColumn() macro is general purpose.
+*/
+#if defined(SQLITE_ENABLE_HIDDEN_COLUMNS)
+#  define IsHiddenColumn(X)         (((X)->colFlags & COLFLAG_HIDDEN)!=0)
+#  define IsOrdinaryHiddenColumn(X) (((X)->colFlags & COLFLAG_HIDDEN)!=0)
+#elif !defined(SQLITE_OMIT_VIRTUAL)
+#  define IsHiddenColumn(X)         (((X)->colFlags & COLFLAG_HIDDEN)!=0)
+#  define IsOrdinaryHiddenColumn(X) 0
+#else
+#  define IsHiddenColumn(X)         0
+#  define IsOrdinaryHiddenColumn(X) 0
+#endif
+
 
 /* Does the table have a rowid */
 #define HasRowid(X)     (((X)->tabFlags & TF_WithoutRowid)==0)
@@ -3314,6 +3331,7 @@ void sqlite3OpenMasterTable(Parse *, int);
 Index *sqlite3PrimaryKeyIndex(Table*);
 i16 sqlite3ColumnOfIndex(Index*, i16);
 void sqlite3StartTable(Parse*,Token*,Token*,int,int,int,int);
+void sqlite3ColumnPropertiesFromName(Column*);
 void sqlite3AddColumn(Parse*,Token*);
 void sqlite3AddNotNull(Parse*, int);
 void sqlite3AddPrimaryKey(Parse*, ExprList*, int, int, int);

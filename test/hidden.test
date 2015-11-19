@@ -16,6 +16,11 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix hidden
 
+ifcapable !hiddencolumns {
+  finish_test
+  return
+}
+
 do_execsql_test 1.1 {
   CREATE TABLE t1(__hidden__a, b);
   INSERT INTO t1 VALUES('1');
@@ -65,9 +70,5 @@ foreach {tn view} {
     SELECT * FROM x1;
   } {1 2 3 4 5 {} 7 8 9}
 }
-
-
-
-
   
 finish_test

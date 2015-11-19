@@ -1049,6 +1049,18 @@ begin_table_error:
   return;
 }
 
+/* Set properties of a table column based on the (magical)
+** name of the column.
+*/
+void sqlite3ColumnPropertiesFromName(Column *pCol){
+#if SQLITE_ENABLE_HIDDEN_COLUMNS
+  if( sqlite3_strnicmp(pCol->zName, "__hidden__", 10)==0 ){
+    pCol->colFlags |= COLFLAG_HIDDEN;
+  }
+#endif
+}
+
+
 /*
 ** This macro is used to compare two strings in a case-insensitive manner.
 ** It is slightly faster than calling sqlite3StrICmp() directly, but
@@ -1104,9 +1116,7 @@ void sqlite3AddColumn(Parse *pParse, Token *pName){
   pCol = &p->aCol[p->nCol];
   memset(pCol, 0, sizeof(p->aCol[0]));
   pCol->zName = z;
-  if( sqlite3_strnicmp(z, "__hidden__", 10)==0 ){
-    pCol->colFlags |= COLFLAG_HIDDEN;
-  }
+  sqlite3ColumnPropertiesFromName(pCol);
  
   /* If there is no type specified, columns have the default affinity
   ** 'BLOB'. If there is a type specified, then sqlite3AddColumnType() will
