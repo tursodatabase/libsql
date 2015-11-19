@@ -119,6 +119,7 @@ array set ::Configs [strip_comments {
     -DSQLITE_ENABLE_MEMSYS3=1
     -DSQLITE_ENABLE_COLUMN_METADATA=1
     -DSQLITE_ENABLE_STAT4
+    -DSQLITE_ENABLE_HIDDEN_COLUMNS
     -DSQLITE_MAX_ATTACHED=125
   }
   "Fast-One" {
@@ -145,6 +146,7 @@ array set ::Configs [strip_comments {
     -DSQLITE_OMIT_LOAD_EXTENSION=1
     -DSQLITE_OMIT_PROGRESS_CALLBACK=1
     -DSQLITE_OMIT_VIRTUALTABLE=1
+    -DSQLITE_ENABLE_HIDDEN_COLUMNS
     -DSQLITE_TEMP_STORE=3
     --enable-json1
   }
@@ -213,6 +215,7 @@ array set ::Configs [strip_comments {
     -DSQLITE_ENABLE_STAT4
     -DSQLITE_ENABLE_FTS4
     -DSQLITE_ENABLE_RTREE
+    -DSQLITE_ENABLE_HIDDEN_COLUMNS
     --enable-json1
   }
 

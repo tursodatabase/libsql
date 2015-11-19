@@ -4,7 +4,7 @@
 # Replace with something more portable, if the experiments actually work out.
 #
 CC     = gcc
-CFLAGS =-g -fPIC -Wall -I. -I/home/drh/sqlite/bld
+CFLAGS =-g -fPIC -Wall -I. -I../..
 
 LSMOBJ    = \
   lsm_ckpt.o \

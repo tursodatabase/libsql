@@ -328,7 +328,7 @@ static Keyword *findById(int id){
 ** output.
 */
 int main(int argc, char **argv){
-  int i, j, k, h, m;
+  int i, j, k, h;
   int bestSize, bestCount;
   int count;
   int nChar;
