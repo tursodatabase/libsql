@@ -1698,7 +1698,6 @@ struct Table {
 #  define IsVirtual(X)      (((X)->tabFlags & TF_Virtual)!=0)
 #else
 #  define IsVirtual(X)      0
-#  define IsHiddenColumn(X) 0
 #endif
 
 /*
@@ -1710,7 +1709,7 @@ struct Table {
 #if defined(SQLITE_ENABLE_HIDDEN_COLUMNS)
 #  define IsHiddenColumn(X)         (((X)->colFlags & COLFLAG_HIDDEN)!=0)
 #  define IsOrdinaryHiddenColumn(X) (((X)->colFlags & COLFLAG_HIDDEN)!=0)
-#elif !defined(SQLITE_OMIT_VIRTUAL)
+#elif !defined(SQLITE_OMIT_VIRTUALTABLE)
 #  define IsHiddenColumn(X)         (((X)->colFlags & COLFLAG_HIDDEN)!=0)
 #  define IsOrdinaryHiddenColumn(X) 0
 #else
