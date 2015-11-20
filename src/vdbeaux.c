@@ -157,6 +157,12 @@ static void test_addop_breakpoint(void){
 ** the sqlite3VdbeChangeP4() function to change the value of the P4
 ** operand.
 */
+static SQLITE_NOINLINE int growOp3(Vdbe *p, int op, int p1, int p2, int p3){
+  assert( p->pParse->nOpAlloc<=p->nOp );
+  if( growOpArray(p, 1) ) return 1;
+  assert( p->pParse->nOpAlloc>p->nOp );
+  return sqlite3VdbeAddOp3(p, op, p1, p2, p3);
+}
 int sqlite3VdbeAddOp3(Vdbe *p, int op, int p1, int p2, int p3){
   int i;
   VdbeOp *pOp;
@@ -165,9 +171,7 @@ int sqlite3VdbeAddOp3(Vdbe *p, int op, int p1, int p2, int p3){
   assert( p->magic==VDBE_MAGIC_INIT );
   assert( op>0 && op<0xff );
   if( p->pParse->nOpAlloc<=i ){
-    if( growOpArray(p, 1) ){
-      return 1;
-    }
+    return growOp3(p, op, p1, p2, p3);
   }
   p->nOp++;
   pOp = &p->aOp[i];
@@ -3337,6 +3341,10 @@ u32 sqlite3VdbeSerialGet(
       /* EVIDENCE-OF: R-01849-26079 Value is a big-endian 32-bit
       ** twos-complement integer. */
       pMem->u.i = FOUR_BYTE_INT(buf);
+#ifdef __HP_cc 
+      /* Work around a sign-extension bug in the HP compiler for HP/UX */
+      if( buf[0]&0x80 ) pMem->u.i |= 0xffffffff80000000LL;
+#endif
       pMem->flags = MEM_Int;
       testcase( pMem->u.i<0 );
       return 4;
@@ -3652,6 +3660,34 @@ static SQLITE_NOINLINE int sqlite3BlobCompare(const Mem *pB1, const Mem *pB2){
   return pB1->n - pB2->n;
 }
 
+/*
+** Do a comparison between a 64-bit signed integer and a 64-bit floating-point
+** number.  Return negative, zero, or positive if the first (i64) is less than,
+** equal to, or greater than the second (double).
+*/
+static int sqlite3IntFloatCompare(i64 i, double r){
+  if( sizeof(LONGDOUBLE_TYPE)>8 ){
+    LONGDOUBLE_TYPE x = (LONGDOUBLE_TYPE)i;
+    if( x<r ) return -1;
+    if( x>r ) return +1;
+    return 0;
+  }else{
+    i64 y;
+    double s;
+    if( r<-9223372036854775808.0 ) return +1;
+    if( r>9223372036854775807.0 ) return -1;
+    y = (i64)r;
+    if( i<y ) return -1;
+    if( i>y ){
+      if( y==SMALLEST_INT64 && r>0.0 ) return -1;
+      return +1;
+    }
+    s = (double)i;
+    if( s<r ) return -1;
+    if( s>r ) return +1;
+    return 0;
+  }
+}
 
 /*
 ** Compare the values contained by the two memory cells, returning
@@ -3678,34 +3714,34 @@ int sqlite3MemCompare(const Mem *pMem1, const Mem *pMem2, const CollSeq *pColl){
     return (f2&MEM_Null) - (f1&MEM_Null);
   }
 
-  /* If one value is a number and the other is not, the number is less.
-  ** If both are numbers, compare as reals if one is a real, or as integers
-  ** if both values are integers.
+  /* At least one of the two values is a number
   */
   if( combined_flags&(MEM_Int|MEM_Real) ){
-    double r1, r2;
     if( (f1 & f2 & MEM_Int)!=0 ){
       if( pMem1->u.i < pMem2->u.i ) return -1;
-      if( pMem1->u.i > pMem2->u.i ) return 1;
+      if( pMem1->u.i > pMem2->u.i ) return +1;
       return 0;
     }
+    if( (f1 & f2 & MEM_Real)!=0 ){
+      if( pMem1->u.r < pMem2->u.r ) return -1;
+      if( pMem1->u.r > pMem2->u.r ) return +1;
+      return 0;
+    }
+    if( (f1&MEM_Int)!=0 ){
+      if( (f2&MEM_Real)!=0 ){
+        return sqlite3IntFloatCompare(pMem1->u.i, pMem2->u.r);
+      }else{
+        return -1;
+      }
+    }
     if( (f1&MEM_Real)!=0 ){
-      r1 = pMem1->u.r;
-    }else if( (f1&MEM_Int)!=0 ){
-      r1 = (double)pMem1->u.i;
-    }else{
-      return 1;
+      if( (f2&MEM_Int)!=0 ){
+        return -sqlite3IntFloatCompare(pMem2->u.i, pMem1->u.r);
+      }else{
+        return -1;
+      }
     }
-    if( (f2&MEM_Real)!=0 ){
-      r2 = pMem2->u.r;
-    }else if( (f2&MEM_Int)!=0 ){
-      r2 = (double)pMem2->u.i;
-    }else{
-      return -1;
-    }
-    if( r1<r2 ) return -1;
-    if( r1>r2 ) return 1;
-    return 0;
+    return +1;
   }
 
   /* If one value is a string and the other is a blob, the string is less.
@@ -3856,13 +3892,8 @@ int sqlite3VdbeRecordCompareWithSkip(
       }else if( serial_type==0 ){
         rc = -1;
       }else if( serial_type==7 ){
-        double rhs = (double)pRhs->u.i;
         sqlite3VdbeSerialGet(&aKey1[d1], serial_type, &mem1);
-        if( mem1.u.r<rhs ){
-          rc = -1;
-        }else if( mem1.u.r>rhs ){
-          rc = +1;
-        }
+        rc = -sqlite3IntFloatCompare(pRhs->u.i, mem1.u.r);
       }else{
         i64 lhs = vdbeRecordDecodeInt(serial_type, &aKey1[d1]);
         i64 rhs = pRhs->u.i;
@@ -3886,18 +3917,15 @@ int sqlite3VdbeRecordCompareWithSkip(
       }else if( serial_type==0 ){
         rc = -1;
       }else{
-        double rhs = pRhs->u.r;
-        double lhs;
         sqlite3VdbeSerialGet(&aKey1[d1], serial_type, &mem1);
         if( serial_type==7 ){
-          lhs = mem1.u.r;
+          if( mem1.u.r<pRhs->u.r ){
+            rc = -1;
+          }else if( mem1.u.r>pRhs->u.r ){
+            rc = +1;
+          }
         }else{
-          lhs = (double)mem1.u.i;
-        }
-        if( lhs<rhs ){
-          rc = -1;
-        }else if( lhs>rhs ){
-          rc = +1;
+          rc = sqlite3IntFloatCompare(mem1.u.i, pRhs->u.r);
         }
       }
     }
@@ -3987,6 +4015,7 @@ int sqlite3VdbeRecordCompareWithSkip(
        || vdbeRecordCompareDebug(nKey1, pKey1, pPKey2, pPKey2->default_rc) 
        || pKeyInfo->db->mallocFailed
   );
+  pPKey2->eqSeen = 1;
   return pPKey2->default_rc;
 }
 int sqlite3VdbeRecordCompare(
@@ -4086,6 +4115,7 @@ static int vdbeRecordCompareInt(
     /* The first fields of the two keys are equal and there are no trailing
     ** fields. Return pPKey2->default_rc in this case. */
     res = pPKey2->default_rc;
+    pPKey2->eqSeen = 1;
   }
 
   assert( vdbeRecordCompareDebug(nKey1, pKey1, pPKey2, res) );
@@ -4106,6 +4136,7 @@ static int vdbeRecordCompareString(
   int serial_type;
   int res;
 
+  assert( pPKey2->aMem[0].flags & MEM_Str );
   vdbeAssertFieldCountWithinLimits(nKey1, pKey1, pPKey2->pKeyInfo);
   getVarint32(&aKey1[1], serial_type);
   if( serial_type<12 ){
@@ -4132,6 +4163,7 @@ static int vdbeRecordCompareString(
           res = sqlite3VdbeRecordCompareWithSkip(nKey1, pKey1, pPKey2, 1);
         }else{
           res = pPKey2->default_rc;
+          pPKey2->eqSeen = 1;
         }
       }else if( res>0 ){
         res = pPKey2->r2;

@@ -58,6 +58,18 @@
 */
 #define yytestcase(X) testcase(X)
 
+/*
+** Indicate that sqlite3ParserFree() will never be called with a null
+** pointer.
+*/
+#define YYPARSEFREENOTNULL 1
+
+/*
+** Alternative datatype for the argument to the malloc() routine passed
+** into sqlite3ParserAlloc().  The default is size_t.
+*/
+#define YYMALLOCARGTYPE  u64
+
 } // end %include
 
 %left OR.
@@ -168,7 +180,3 @@ phrase(A) ::= STRING(Y) star_opt(Z). {
 
 star_opt(A) ::= STAR. { A = 1; }
 star_opt(A) ::= . { A = 0; }
-
-
-
-

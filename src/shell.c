@@ -165,7 +165,7 @@ static sqlite3_int64 timeOfDay(void){
   static sqlite3_vfs *clockVfs = 0;
   sqlite3_int64 t;
   if( clockVfs==0 ) clockVfs = sqlite3_vfs_find(0);
-  if( clockVfs->iVersion>=1 && clockVfs->xCurrentTimeInt64!=0 ){
+  if( clockVfs->iVersion>=2 && clockVfs->xCurrentTimeInt64!=0 ){
     clockVfs->xCurrentTimeInt64(clockVfs, &t);
   }else{
     double r;
@@ -2560,7 +2560,7 @@ static int shell_dbinfo_command(ShellState *p, int nArg, char **azArg){
      { "schema size:",
        "SELECT total(length(sql)) FROM %s" },
   };
-  sqlite3_file *pFile;
+  sqlite3_file *pFile = 0;
   int i;
   char *zSchemaTab;
   char *zDb = nArg>=2 ? azArg[1] : "main";
@@ -4601,10 +4601,10 @@ int SQLITE_CDECL main(int argc, char **argv){
       int n, sz;
       sz = (int)integerValue(cmdline_option_value(argc,argv,++i));
       if( sz>70000 ) sz = 70000;
-      if( sz<800 ) sz = 800;
+      if( sz<0 ) sz = 0;
       n = (int)integerValue(cmdline_option_value(argc,argv,++i));
-      if( n<10 ) n = 10;
-      sqlite3_config(SQLITE_CONFIG_PAGECACHE, malloc(n*sz+1), sz, n);
+      sqlite3_config(SQLITE_CONFIG_PAGECACHE,
+                    (n>0 && sz>0) ? malloc(n*sz) : 0, sz, n);
       data.shellFlgs |= SHFLG_Pagecache;
     }else if( strcmp(z,"-lookaside")==0 ){
       int n, sz;

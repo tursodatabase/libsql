@@ -527,7 +527,6 @@
 # define SQLITE_DEFAULT_PCACHE_INITSZ 100
 #endif
 
-
 /*
 ** GCC does not define the offsetof() macro so we'll have to do it
 ** ourselves.
@@ -1384,7 +1383,8 @@ struct FuncDestructor {
 
 /*
 ** Possible values for FuncDef.flags.  Note that the _LENGTH and _TYPEOF
-** values must correspond to OPFLAG_LENGTHARG and OPFLAG_TYPEOFARG.  There
+** values must correspond to OPFLAG_LENGTHARG and OPFLAG_TYPEOFARG.  And
+** SQLITE_FUNC_CONSTANT must be the same as SQLITE_DETERMINISTIC.  There
 ** are assert() statements in the code to verify this.
 */
 #define SQLITE_FUNC_ENCMASK  0x0003 /* SQLITE_UTF8, SQLITE_UTF16BE or UTF16LE */
@@ -1675,7 +1675,7 @@ struct Table {
 /*
 ** Allowed values for Table.tabFlags.
 **
-** TF_OOOHidden applies to virtual tables that have hidden columns that are
+** TF_OOOHidden applies to tables or view that have hidden columns that are
 ** followed by non-hidden columns.  Example:  "CREATE VIRTUAL TABLE x USING
 ** vtab1(a HIDDEN, b);".  Since "b" is a non-hidden column but "a" is hidden,
 ** the TF_OOOHidden attribute would apply in this case.  Such tables require
@@ -1698,11 +1698,27 @@ struct Table {
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #  define IsVirtual(X)      (((X)->tabFlags & TF_Virtual)!=0)
-#  define IsHiddenColumn(X) (((X)->colFlags & COLFLAG_HIDDEN)!=0)
 #else
 #  define IsVirtual(X)      0
-#  define IsHiddenColumn(X) 0
 #endif
+
+/*
+** Macros to determine if a column is hidden.  IsOrdinaryHiddenColumn()
+** only works for non-virtual tables (ordinary tables and views) and is
+** always false unless SQLITE_ENABLE_HIDDEN_COLUMNS is defined.  The
+** IsHiddenColumn() macro is general purpose.
+*/
+#if defined(SQLITE_ENABLE_HIDDEN_COLUMNS)
+#  define IsHiddenColumn(X)         (((X)->colFlags & COLFLAG_HIDDEN)!=0)
+#  define IsOrdinaryHiddenColumn(X) (((X)->colFlags & COLFLAG_HIDDEN)!=0)
+#elif !defined(SQLITE_OMIT_VIRTUALTABLE)
+#  define IsHiddenColumn(X)         (((X)->colFlags & COLFLAG_HIDDEN)!=0)
+#  define IsOrdinaryHiddenColumn(X) 0
+#else
+#  define IsHiddenColumn(X)         0
+#  define IsOrdinaryHiddenColumn(X) 0
+#endif
+
 
 /* Does the table have a rowid */
 #define HasRowid(X)     (((X)->tabFlags & TF_WithoutRowid)==0)
@@ -1813,9 +1829,8 @@ struct KeyInfo {
 };
 
 /*
-** An instance of the following structure holds information about a
-** single index record that has already been parsed out into individual
-** values.
+** This object holds a record which has been parsed out into individual
+** fields, for the purposes of doing a comparison.
 **
 ** A record is an object that contains one or more fields of data.
 ** Records are used to store the content of a table row and to store
@@ -1823,20 +1838,40 @@ struct KeyInfo {
 ** the OP_MakeRecord opcode of the VDBE and is disassembled by the
 ** OP_Column opcode.
 **
-** This structure holds a record that has already been disassembled
-** into its constituent fields.
+** An instance of this object serves as a "key" for doing a search on
+** an index b+tree. The goal of the search is to find the entry that
+** is closed to the key described by this object.  This object might hold
+** just a prefix of the key.  The number of fields is given by
+** pKeyInfo->nField.
 **
-** The r1 and r2 member variables are only used by the optimized comparison
-** functions vdbeRecordCompareInt() and vdbeRecordCompareString().
+** The r1 and r2 fields are the values to return if this key is less than
+** or greater than a key in the btree, respectively.  These are normally
+** -1 and +1 respectively, but might be inverted to +1 and -1 if the b-tree
+** is in DESC order.
+**
+** The key comparison functions actually return default_rc when they find
+** an equals comparison.  default_rc can be -1, 0, or +1.  If there are
+** multiple entries in the b-tree with the same key (when only looking
+** at the first pKeyInfo->nFields,) then default_rc can be set to -1 to 
+** cause the search to find the last match, or +1 to cause the search to
+** find the first match.
+**
+** The key comparison functions will set eqSeen to true if they ever
+** get and equal results when comparing this structure to a b-tree record.
+** When default_rc!=0, the search might end up on the record immediately
+** before the first match or immediately after the last match.  The
+** eqSeen field will indicate whether or not an exact match exists in the
+** b-tree.
 */
 struct UnpackedRecord {
   KeyInfo *pKeyInfo;  /* Collation and sort-order information */
+  Mem *aMem;          /* Values */
   u16 nField;         /* Number of entries in apMem[] */
   i8 default_rc;      /* Comparison result if keys are equal */
   u8 errCode;         /* Error detected by xRecordCompare (CORRUPT or NOMEM) */
-  Mem *aMem;          /* Values */
-  int r1;             /* Value to return if (lhs > rhs) */
-  int r2;             /* Value to return if (rhs < lhs) */
+  i8 r1;              /* Value to return if (lhs > rhs) */
+  i8 r2;              /* Value to return if (rhs < lhs) */
+  u8 eqSeen;          /* True if an equality comparison has been seen */
 };
 
 
@@ -2478,6 +2513,7 @@ struct Select {
 #define SF_MinMaxAgg       0x1000  /* Aggregate containing min() or max() */
 #define SF_Recursive       0x2000  /* The recursive part of a recursive CTE */
 #define SF_Converted       0x4000  /* By convertCompoundSelectToSubquery() */
+#define SF_IncludeHidden   0x8000  /* Include hidden columns in output */
 
 
 /*
@@ -2736,7 +2772,6 @@ struct Parse {
   int nVar;                 /* Number of '?' variables seen in the SQL so far */
   int nzVar;                /* Number of available slots in azVar[] */
   u8 iPkSortOrder;          /* ASC or DESC for INTEGER PRIMARY KEY */
-  u8 bFreeWith;             /* True if pWith should be freed with parser */
   u8 explain;               /* True if the EXPLAIN flag is found on the query */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   u8 declareVtab;           /* True if inside sqlite3_declare_vtab() */
@@ -2763,6 +2798,7 @@ struct Parse {
   Table *pZombieTab;        /* List of Table objects to delete after code gen */
   TriggerPrg *pTriggerPrg;  /* Linked list of coded triggers */
   With *pWith;              /* Current WITH clause, or NULL */
+  With *pWithToFree;        /* Free this WITH object at the end of the parse */
 };
 
 /*
@@ -3253,6 +3289,7 @@ char *sqlite3VMPrintf(sqlite3*,const char*, va_list);
   void sqlite3TreeViewExpr(TreeView*, const Expr*, u8);
   void sqlite3TreeViewExprList(TreeView*, const ExprList*, u8, const char*);
   void sqlite3TreeViewSelect(TreeView*, const Select*, u8);
+  void sqlite3TreeViewWith(TreeView*, const With*, u8);
 #endif
 
 
@@ -3296,6 +3333,7 @@ void sqlite3OpenMasterTable(Parse *, int);
 Index *sqlite3PrimaryKeyIndex(Table*);
 i16 sqlite3ColumnOfIndex(Index*, i16);
 void sqlite3StartTable(Parse*,Token*,Token*,int,int,int,int);
+void sqlite3ColumnPropertiesFromName(Table*, Column*);
 void sqlite3AddColumn(Parse*,Token*);
 void sqlite3AddNotNull(Parse*, int);
 void sqlite3AddPrimaryKey(Parse*, ExprList*, int, int, int);

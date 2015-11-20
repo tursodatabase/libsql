@@ -386,7 +386,7 @@ static int statDecodePage(Btree *pBt, StatPage *p){
             int rc;
             u32 iPrev = pCell->aOvfl[j-1];
             DbPage *pPg = 0;
-            rc = sqlite3PagerGet(sqlite3BtreePager(pBt), iPrev, &pPg);
+            rc = sqlite3PagerGet(sqlite3BtreePager(pBt), iPrev, &pPg, 0);
             if( rc!=SQLITE_OK ){
               assert( pPg==0 );
               return rc;
@@ -454,7 +454,7 @@ statNextRestart:
         pCsr->isEof = 1;
         return sqlite3_reset(pCsr->pStmt);
       }
-      rc = sqlite3PagerGet(pPager, iRoot, &pCsr->aPage[0].pPg);
+      rc = sqlite3PagerGet(pPager, iRoot, &pCsr->aPage[0].pPg, 0);
       pCsr->aPage[0].iPgno = iRoot;
       pCsr->aPage[0].iCell = 0;
       pCsr->aPage[0].zPath = z = sqlite3_mprintf("/");
@@ -514,7 +514,7 @@ statNextRestart:
     }else{
       p[1].iPgno = p->aCell[p->iCell].iChildPg;
     }
-    rc = sqlite3PagerGet(pPager, p[1].iPgno, &p[1].pPg);
+    rc = sqlite3PagerGet(pPager, p[1].iPgno, &p[1].pPg, 0);
     p[1].iCell = 0;
     p[1].zPath = z = sqlite3_mprintf("%s%.3x/", p->zPath, p->iCell);
     p->iCell++;

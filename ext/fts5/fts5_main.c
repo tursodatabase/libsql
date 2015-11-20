@@ -395,6 +395,15 @@ static int fts5InitVtab(
     rc = sqlite3Fts5ConfigDeclareVtab(pConfig);
   }
 
+  /* Load the initial configuration */
+  if( rc==SQLITE_OK ){
+    assert( pConfig->pzErrmsg==0 );
+    pConfig->pzErrmsg = pzErr;
+    rc = sqlite3Fts5IndexLoadConfig(pTab->pIndex);
+    sqlite3Fts5IndexRollback(pTab->pIndex);
+    pConfig->pzErrmsg = 0;
+  }
+
   if( rc!=SQLITE_OK ){
     fts5FreeVtab(pTab);
     pTab = 0;
@@ -829,13 +838,42 @@ static int fts5NextMethod(sqlite3_vtab_cursor *pCursor){
   return rc;
 }
 
+
+static sqlite3_stmt *fts5PrepareStatement(
+  int *pRc,
+  Fts5Config *pConfig, 
+  const char *zFmt,
+  ...
+){
+  sqlite3_stmt *pRet = 0;
+  va_list ap;
+  va_start(ap, zFmt);
+
+  if( *pRc==SQLITE_OK ){
+    int rc;
+    char *zSql = sqlite3_vmprintf(zFmt, ap);
+    if( zSql==0 ){
+      rc = SQLITE_NOMEM; 
+    }else{
+      rc = sqlite3_prepare_v2(pConfig->db, zSql, -1, &pRet, 0);
+      if( rc!=SQLITE_OK ){
+        *pConfig->pzErrmsg = sqlite3_mprintf("%s", sqlite3_errmsg(pConfig->db));
+      }
+      sqlite3_free(zSql);
+    }
+    *pRc = rc;
+  }
+
+  va_end(ap);
+  return pRet;
+} 
+
 static int fts5CursorFirstSorted(Fts5Table *pTab, Fts5Cursor *pCsr, int bDesc){
   Fts5Config *pConfig = pTab->pConfig;
   Fts5Sorter *pSorter;
   int nPhrase;
   int nByte;
   int rc = SQLITE_OK;
-  char *zSql;
   const char *zRank = pCsr->zRank;
   const char *zRankArgs = pCsr->zRankArgs;
   
@@ -853,17 +891,13 @@ static int fts5CursorFirstSorted(Fts5Table *pTab, Fts5Cursor *pCsr, int bDesc){
   ** table, saving it creates a circular reference.
   **
   ** If SQLite a built-in statement cache, this wouldn't be a problem. */
-  zSql = sqlite3Fts5Mprintf(&rc, 
+  pSorter->pStmt = fts5PrepareStatement(&rc, pConfig,
       "SELECT rowid, rank FROM %Q.%Q ORDER BY %s(%s%s%s) %s",
       pConfig->zDb, pConfig->zName, zRank, pConfig->zName,
       (zRankArgs ? ", " : ""),
       (zRankArgs ? zRankArgs : ""),
       bDesc ? "DESC" : "ASC"
   );
-  if( zSql ){
-    rc = sqlite3_prepare_v2(pConfig->db, zSql, -1, &pSorter->pStmt, 0);
-    sqlite3_free(zSql);
-  }
 
   pCsr->pSorter = pSorter;
   if( rc==SQLITE_OK ){

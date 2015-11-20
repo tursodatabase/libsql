@@ -1049,18 +1049,19 @@ begin_table_error:
   return;
 }
 
-/*
-** This macro is used to compare two strings in a case-insensitive manner.
-** It is slightly faster than calling sqlite3StrICmp() directly, but
-** produces larger code.
-**
-** WARNING: This macro is not compatible with the strcmp() family. It
-** returns true if the two strings are equal, otherwise false.
+/* Set properties of a table column based on the (magical)
+** name of the column.
 */
-#define STRICMP(x, y) (\
-sqlite3UpperToLower[*(unsigned char *)(x)]==   \
-sqlite3UpperToLower[*(unsigned char *)(y)]     \
-&& sqlite3StrICmp((x)+1,(y)+1)==0 )
+void sqlite3ColumnPropertiesFromName(Table *pTab, Column *pCol){
+#if SQLITE_ENABLE_HIDDEN_COLUMNS
+  if( sqlite3_strnicmp(pCol->zName, "__hidden__", 10)==0 ){
+    pCol->colFlags |= COLFLAG_HIDDEN;
+  }else if( pTab && pCol!=pTab->aCol && (pCol[-1].colFlags & COLFLAG_HIDDEN) ){
+    pTab->tabFlags |= TF_OOOHidden;
+  }
+#endif
+}
+
 
 /*
 ** Add a new column to the table currently being constructed.
@@ -1086,7 +1087,7 @@ void sqlite3AddColumn(Parse *pParse, Token *pName){
   z = sqlite3NameFromToken(db, pName);
   if( z==0 ) return;
   for(i=0; i<p->nCol; i++){
-    if( STRICMP(z, p->aCol[i].zName) ){
+    if( sqlite3_stricmp(z, p->aCol[i].zName)==0 ){
       sqlite3ErrorMsg(pParse, "duplicate column name: %s", z);
       sqlite3DbFree(db, z);
       return;
@@ -1104,6 +1105,7 @@ void sqlite3AddColumn(Parse *pParse, Token *pName){
   pCol = &p->aCol[p->nCol];
   memset(pCol, 0, sizeof(p->aCol[0]));
   pCol->zName = z;
+  sqlite3ColumnPropertiesFromName(p, pCol);
  
   /* If there is no type specified, columns have the default affinity
   ** 'BLOB'. If there is a type specified, then sqlite3AddColumnType() will
@@ -1272,6 +1274,30 @@ void sqlite3AddDefaultValue(Parse *pParse, ExprSpan *pSpan){
 }
 
 /*
+** Backwards Compatibility Hack:
+** 
+** Historical versions of SQLite accepted strings as column names in
+** indexes and PRIMARY KEY constraints and in UNIQUE constraints.  Example:
+**
+**     CREATE TABLE xyz(a,b,c,d,e,PRIMARY KEY('a'),UNIQUE('b','c' COLLATE trim)
+**     CREATE INDEX abc ON xyz('c','d' DESC,'e' COLLATE nocase DESC);
+**
+** This is goofy.  But to preserve backwards compatibility we continue to
+** accept it.  This routine does the necessary conversion.  It converts
+** the expression given in its argument from a TK_STRING into a TK_ID
+** if the expression is just a TK_STRING with an optional COLLATE clause.
+** If the epxression is anything other than TK_STRING, the expression is
+** unchanged.
+*/
+static void sqlite3StringToId(Expr *p){
+  if( p->op==TK_STRING ){
+    p->op = TK_ID;
+  }else if( p->op==TK_COLLATE && p->pLeft->op==TK_STRING ){
+    p->pLeft->op = TK_ID;
+  }
+}
+
+/*
 ** Designate the PRIMARY KEY for the table.  pList is a list of names 
 ** of columns that form the primary key.  If pList is NULL, then the
 ** most recently added column of the table is the primary key.
@@ -1317,6 +1343,7 @@ void sqlite3AddPrimaryKey(
     for(i=0; i<nTerm; i++){
       Expr *pCExpr = sqlite3ExprSkipCollate(pList->a[i].pExpr);
       assert( pCExpr!=0 );
+      sqlite3StringToId(pCExpr);
       if( pCExpr->op==TK_ID ){
         const char *zCName = pCExpr->u.zToken;
         for(iCol=0; iCol<pTab->nCol; iCol++){
@@ -2853,30 +2880,6 @@ Index *sqlite3AllocateIndexObject(
     *ppExtra = ((char*)p) + nByte;
   }
   return p;
-}
-
-/*
-** Backwards Compatibility Hack:
-** 
-** Historical versions of SQLite accepted strings as column names in
-** indexes and PRIMARY KEY constraints and in UNIQUE constraints.  Example:
-**
-**     CREATE TABLE xyz(a,b,c,d,e,PRIMARY KEY('a'),UNIQUE('b','c' COLLATE trim)
-**     CREATE INDEX abc ON xyz('c','d' DESC,'e' COLLATE nocase DESC);
-**
-** This is goofy.  But to preserve backwards compatibility we continue to
-** accept it.  This routine does the necessary conversion.  It converts
-** the expression given in its argument from a TK_STRING into a TK_ID
-** if the expression is just a TK_STRING with an optional COLLATE clause.
-** If the epxression is anything other than TK_STRING, the expression is
-** unchanged.
-*/
-static void sqlite3StringToId(Expr *p){
-  if( p->op==TK_STRING ){
-    p->op = TK_ID;
-  }else if( p->op==TK_COLLATE && p->pLeft->op==TK_STRING ){
-    p->pLeft->op = TK_ID;
-  }
 }
 
 /*

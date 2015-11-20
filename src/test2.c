@@ -322,7 +322,7 @@ static int page_get(
   if( Tcl_GetInt(interp, argv[2], &pgno) ) return TCL_ERROR;
   rc = sqlite3PagerSharedLock(pPager);
   if( rc==SQLITE_OK ){
-    rc = sqlite3PagerGet(pPager, pgno, &pPage);
+    rc = sqlite3PagerGet(pPager, pgno, &pPage, 0);
   }
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);

@@ -412,22 +412,22 @@ ifcapable subquery {
     count {
       SELECT * FROM t1 WHERE w IN (-1,1,2,3) order by 1;
     }
-  } {1 0 4 2 1 9 3 1 16 13}
+  } {1 0 4 2 1 9 3 1 16 12}
   do_test where-5.3b {
     count {
       SELECT * FROM t1 WHERE w IN (3,-1,1,2) order by 1;
     }
-  } {1 0 4 2 1 9 3 1 16 13}
+  } {1 0 4 2 1 9 3 1 16 12}
   do_test where-5.3c {
     count {
       SELECT * FROM t1 WHERE w IN (3,2,-1,1,2) order by 1;
     }
-  } {1 0 4 2 1 9 3 1 16 13}
+  } {1 0 4 2 1 9 3 1 16 12}
   do_test where-5.3d {
     count {
       SELECT * FROM t1 WHERE w IN (-1,1,2,3) order by 1 DESC;
     }
-  } {3 1 16 2 1 9 1 0 4 12}
+  } {3 1 16 2 1 9 1 0 4 11}
   do_test where-5.4 {
     count {
       SELECT * FROM t1 WHERE w+0 IN (-1,1,2,3) order by 1;
@@ -465,7 +465,7 @@ ifcapable subquery {
     count {
       SELECT * FROM t1 WHERE x IN (1,7) ORDER BY 1;
     }
-  } {2 1 9 3 1 16 7}
+  } {2 1 9 3 1 16 6}
   do_test where-5.10 {
     count {
       SELECT * FROM t1 WHERE x+0 IN (1,7) ORDER BY 1;
@@ -485,17 +485,17 @@ ifcapable subquery {
     count {
       SELECT * FROM t1 WHERE x IN (1,7) AND y NOT IN (6400,8100) ORDER BY 1;
     }
-  } {2 1 9 3 1 16 7}
+  } {2 1 9 3 1 16 6}
   do_test where-5.14 {
     count {
       SELECT * FROM t1 WHERE x IN (1,7) AND y IN (9,10) ORDER BY 1;
     }
-  } {2 1 9 8}
+  } {2 1 9 5}
   do_test where-5.15 {
     count {
       SELECT * FROM t1 WHERE x IN (1,7) AND y IN (9,16) ORDER BY 1;
     }
-  } {2 1 9 3 1 16 11}
+  } {2 1 9 3 1 16 9}
   do_test where-5.100 {
     db eval {
       SELECT w, x, y FROM t1 WHERE x IN (1,5) AND y IN (9,8,3025,1000,3969)

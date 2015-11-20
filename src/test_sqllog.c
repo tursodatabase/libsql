@@ -46,6 +46,12 @@
 **   separate copy is taken each time the database file is opened or attached)
 **   by setting the environment variable SQLITE_SQLLOG_REUSE_FILES to 0.
 **
+**   If the environment variable SQLITE_SQLLOG_CONDITIONAL is defined, then
+**   logging is only done for database connections if a file named
+**   "<database>-sqllog" exists in the same directly as the main database
+**   file when it is first opened ("<database>" is replaced by the actual 
+**   name of the main database file).
+**
 ** OUTPUT:
 **
 **   The SQLITE_SQLLOG_DIR is populated with three types of files:
@@ -88,6 +94,7 @@ static int getProcessId(void){
 /* Names of environment variables to be used */
 #define ENVIRONMENT_VARIABLE1_NAME "SQLITE_SQLLOG_DIR"
 #define ENVIRONMENT_VARIABLE2_NAME "SQLITE_SQLLOG_REUSE_FILES"
+#define ENVIRONMENT_VARIABLE3_NAME "SQLITE_SQLLOG_CONDITIONAL"
 
 /* Assume that all database and database file names are shorted than this. */
 #define SQLLOG_NAMESZ 512
@@ -116,6 +123,7 @@ static struct SLGlobal {
   int nConn;                      /* Size of aConn[] array */
 
   /* Protected by SLGlobal.mutex */
+  int bConditional;               /* Only trace if *-sqllog file is present */
   int bReuse;                     /* True to avoid extra copies of db files */
   char zPrefix[SQLLOG_NAMESZ];    /* Prefix for all created files */
   char zIdx[SQLLOG_NAMESZ];       /* Full path to *.idx file */
@@ -215,7 +223,7 @@ static char *sqllogFindFile(const char *zFile){
 }
 
 static int sqllogFindAttached(
-  struct SLConn *p,               /* Database connection */
+  sqlite3 *db,                    /* Database connection */
   const char *zSearch,            /* Name to search for (or NULL) */
   char *zName,                    /* OUT: Name of attached database */
   char *zFile                     /* OUT: Name of attached file */
@@ -228,7 +236,7 @@ static int sqllogFindAttached(
   ** described by the last row returned.  */
   assert( sqllogglobal.bRec==0 );
   sqllogglobal.bRec = 1;
-  rc = sqlite3_prepare_v2(p->db, "PRAGMA database_list", -1, &pStmt, 0);
+  rc = sqlite3_prepare_v2(db, "PRAGMA database_list", -1, &pStmt, 0);
   if( rc==SQLITE_OK ){
     while( SQLITE_ROW==sqlite3_step(pStmt) ){
       const char *zVal1; int nVal1;
@@ -236,7 +244,9 @@ static int sqllogFindAttached(
 
       zVal1 = (const char*)sqlite3_column_text(pStmt, 1);
       nVal1 = sqlite3_column_bytes(pStmt, 1);
-      memcpy(zName, zVal1, nVal1+1);
+      if( zName ){
+        memcpy(zName, zVal1, nVal1+1);
+      }
 
       zVal2 = (const char*)sqlite3_column_text(pStmt, 2);
       nVal2 = sqlite3_column_bytes(pStmt, 2);
@@ -285,7 +295,7 @@ static void sqllogCopydb(struct SLConn *p, const char *zSearch, int bLog){
   char *zInit = 0;
   int rc;
 
-  rc = sqllogFindAttached(p, zSearch, zName, zFile);
+  rc = sqllogFindAttached(p->db, zSearch, zName, zFile);
   if( rc!=SQLITE_OK ) return;
 
   if( zFile[0]=='\0' ){
@@ -406,6 +416,35 @@ static void testSqllogStmt(struct SLConn *p, const char *zSql){
 }
 
 /*
+** The database handle passed as the only argument has just been opened.
+** Return true if this module should log initial databases and SQL 
+** statements for this connection, or false otherwise.
+**
+** If an error occurs, sqlite3_log() is invoked to report it to the user
+** and zero returned.
+*/
+static int sqllogTraceDb(sqlite3 *db){
+  int bRet = 1;
+  if( sqllogglobal.bConditional ){
+    char zFile[SQLLOG_NAMESZ];      /* Attached database name */
+    int rc = sqllogFindAttached(db, "main", 0, zFile);
+    if( rc==SQLITE_OK ){
+      int nFile = strlen(zFile);
+      if( (SQLLOG_NAMESZ-nFile)<8 ){
+        sqlite3_log(SQLITE_IOERR, 
+            "sqllogTraceDb(): database name too long (%d bytes)", nFile
+        );
+        bRet = 0;
+      }else{
+        memcpy(&zFile[nFile], "-sqllog", 8);
+        bRet = !access(zFile, F_OK);
+      }
+    }
+  }
+  return bRet;
+}
+
+/*
 ** The SQLITE_CONFIG_SQLLOG callback registered by sqlite3_init_sqllog().
 **
 ** The eType parameter has the following values:
@@ -439,15 +478,19 @@ static void testSqllog(void *pCtx, sqlite3 *db, const char *zSql, int eType){
     if( sqllogglobal.mutex==0 ){
       sqllogglobal.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_RECURSIVE);
     }
-    p = &sqllogglobal.aConn[sqllogglobal.nConn++];
-    p->fd = 0;
-    p->db = db;
-    p->iLog = sqllogglobal.iNextLog++;
     sqlite3_mutex_leave(master);
 
-    /* Open the log and take a copy of the main database file */
     sqlite3_mutex_enter(sqllogglobal.mutex);
-    if( sqllogglobal.bRec==0 ){
+    if( sqllogglobal.bRec==0 && sqllogTraceDb(db) ){
+
+      sqlite3_mutex_enter(master);
+      p = &sqllogglobal.aConn[sqllogglobal.nConn++];
+      p->fd = 0;
+      p->db = db;
+      p->iLog = sqllogglobal.iNextLog++;
+      sqlite3_mutex_leave(master);
+
+      /* Open the log and take a copy of the main database file */
       sqllogOpenlog(p);
       if( p->fd ) sqllogCopydb(p, "main", 0);
     }
@@ -461,20 +504,21 @@ static void testSqllog(void *pCtx, sqlite3 *db, const char *zSql, int eType){
       p = &sqllogglobal.aConn[i];
       if( p->db==db ) break;
     }
-    if( i==sqllogglobal.nConn ) return;
 
     /* A database handle close command */
     if( eType==2 ){
       sqlite3_mutex_enter(master);
-      if( p->fd ) fclose(p->fd);
-      p->db = 0;
-      p->fd = 0;
+      if( i<sqllogglobal.nConn ){
+        if( p->fd ) fclose(p->fd);
+        p->db = 0;
+        p->fd = 0;
+        sqllogglobal.nConn--;
+      }
 
-      sqllogglobal.nConn--;
       if( sqllogglobal.nConn==0 ){
         sqlite3_mutex_free(sqllogglobal.mutex);
         sqllogglobal.mutex = 0;
-      }else{
+      }else if( i<sqllogglobal.nConn ){
         int nShift = &sqllogglobal.aConn[sqllogglobal.nConn] - p;
         if( nShift>0 ){
           memmove(p, &p[1], nShift*sizeof(struct SLConn));
@@ -483,7 +527,7 @@ static void testSqllog(void *pCtx, sqlite3 *db, const char *zSql, int eType){
       sqlite3_mutex_leave(master);
 
     /* An ordinary SQL command. */
-    }else if( p->fd ){
+    }else if( i<sqllogglobal.nConn && p->fd ){
       sqlite3_mutex_enter(sqllogglobal.mutex);
       if( sqllogglobal.bRec==0 ){
         testSqllogStmt(p, zSql);
@@ -504,6 +548,9 @@ void sqlite3_init_sqllog(void){
     if( SQLITE_OK==sqlite3_config(SQLITE_CONFIG_SQLLOG, testSqllog, 0) ){
       memset(&sqllogglobal, 0, sizeof(sqllogglobal));
       sqllogglobal.bReuse = 1;
+      if( getenv(ENVIRONMENT_VARIABLE3_NAME) ){
+        sqllogglobal.bConditional = 1;
+      }
     }
   }
 }

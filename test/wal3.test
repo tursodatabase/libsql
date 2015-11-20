@@ -275,9 +275,9 @@ proc lock_callback {method filename handle lock} {
   if {$lock == "1 7 lock exclusive"} { return SQLITE_BUSY }
   return SQLITE_OK
 }
-puts "  Warning: This next test case causes SQLite to call xSleep(1) 100 times."
-puts "  Normally this equates to a 100ms delay, but if SQLite is built on unix"
-puts "  without HAVE_USLEEP defined, it may be 100 seconds."
+puts "# Warning: This next test case causes SQLite to call xSleep(1) 100 times."
+puts "# Normally this equates to a 100ms delay, but if SQLite is built on unix"
+puts "# without HAVE_USLEEP defined, it may be 100 seconds."
 do_test wal3-4.3 {
   db close
   set ::locks [list]
@@ -285,7 +285,7 @@ do_test wal3-4.3 {
   catchsql { SELECT * FROM x }
 } {1 {locking protocol}}
 
-puts "  Warning: Same again!"
+puts "# Warning: Same again!"
 proc lock_callback {method filename handle lock} {
   if {$lock == "0 1 lock exclusive"} { return SQLITE_BUSY }
   return SQLITE_OK
