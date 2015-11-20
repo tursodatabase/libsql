@@ -961,11 +961,12 @@ int sqlite3VdbeSorterInit(
 #endif
 
   assert( pCsr->pKeyInfo && pCsr->pBt==0 );
+  assert( pCsr->eCurType==CURTYPE_SORTER );
   szKeyInfo = sizeof(KeyInfo) + (pCsr->pKeyInfo->nField-1)*sizeof(CollSeq*);
   sz = sizeof(VdbeSorter) + nWorker * sizeof(SortSubtask);
 
   pSorter = (VdbeSorter*)sqlite3DbMallocZero(db, sz + szKeyInfo);
-  pCsr->pSorter = pSorter;
+  pCsr->uc.pSorter = pSorter;
   if( pSorter==0 ){
     rc = SQLITE_NOMEM;
   }else{
@@ -1249,12 +1250,14 @@ void sqlite3VdbeSorterReset(sqlite3 *db, VdbeSorter *pSorter){
 ** Free any cursor components allocated by sqlite3VdbeSorterXXX routines.
 */
 void sqlite3VdbeSorterClose(sqlite3 *db, VdbeCursor *pCsr){
-  VdbeSorter *pSorter = pCsr->pSorter;
+  VdbeSorter *pSorter;
+  assert( pCsr->eCurType==CURTYPE_SORTER );
+  pSorter = pCsr->uc.pSorter;
   if( pSorter ){
     sqlite3VdbeSorterReset(db, pSorter);
     sqlite3_free(pSorter->list.aMemory);
     sqlite3DbFree(db, pSorter);
-    pCsr->pSorter = 0;
+    pCsr->uc.pSorter = 0;
   }
 }
 
@@ -1752,15 +1755,16 @@ int sqlite3VdbeSorterWrite(
   const VdbeCursor *pCsr,         /* Sorter cursor */
   Mem *pVal                       /* Memory cell containing record */
 ){
-  VdbeSorter *pSorter = pCsr->pSorter;
+  VdbeSorter *pSorter;
   int rc = SQLITE_OK;             /* Return Code */
   SorterRecord *pNew;             /* New list element */
-
   int bFlush;                     /* True to flush contents of memory to PMA */
   int nReq;                       /* Bytes of memory required */
   int nPMA;                       /* Bytes of PMA space required */
   int t;                          /* serial type of first record field */
 
+  assert( pCsr->eCurType==CURTYPE_SORTER );
+  pSorter = pCsr->uc.pSorter;
   getVarint32((const u8*)&pVal->z[1], t);
   if( t>0 && t<10 && t!=7 ){
     pSorter->typeMask &= SORTER_TYPE_INTEGER;
@@ -2552,9 +2556,11 @@ static int vdbeSorterSetupMerge(VdbeSorter *pSorter){
 ** in sorted order.
 */
 int sqlite3VdbeSorterRewind(const VdbeCursor *pCsr, int *pbEof){
-  VdbeSorter *pSorter = pCsr->pSorter;
+  VdbeSorter *pSorter;
   int rc = SQLITE_OK;             /* Return code */
 
+  assert( pCsr->eCurType==CURTYPE_SORTER );
+  pSorter = pCsr->uc.pSorter;
   assert( pSorter );
 
   /* If no data has been written to disk, then do not do so now. Instead,
@@ -2598,9 +2604,11 @@ int sqlite3VdbeSorterRewind(const VdbeCursor *pCsr, int *pbEof){
 ** Advance to the next element in the sorter.
 */
 int sqlite3VdbeSorterNext(sqlite3 *db, const VdbeCursor *pCsr, int *pbEof){
-  VdbeSorter *pSorter = pCsr->pSorter;
+  VdbeSorter *pSorter;
   int rc;                         /* Return code */
 
+  assert( pCsr->eCurType==CURTYPE_SORTER );
+  pSorter = pCsr->uc.pSorter;
   assert( pSorter->bUsePMA || (pSorter->pReader==0 && pSorter->pMerger==0) );
   if( pSorter->bUsePMA ){
     assert( pSorter->pReader==0 || pSorter->pMerger==0 );
@@ -2660,9 +2668,11 @@ static void *vdbeSorterRowkey(
 ** Copy the current sorter key into the memory cell pOut.
 */
 int sqlite3VdbeSorterRowkey(const VdbeCursor *pCsr, Mem *pOut){
-  VdbeSorter *pSorter = pCsr->pSorter;
+  VdbeSorter *pSorter;
   void *pKey; int nKey;           /* Sorter key to copy into pOut */
 
+  assert( pCsr->eCurType==CURTYPE_SORTER );
+  pSorter = pCsr->uc.pSorter;
   pKey = vdbeSorterRowkey(pSorter, &nKey);
   if( sqlite3VdbeMemClearAndResize(pOut, nKey) ){
     return SQLITE_NOMEM;
@@ -2696,12 +2706,16 @@ int sqlite3VdbeSorterCompare(
   int nKeyCol,                    /* Compare this many columns */
   int *pRes                       /* OUT: Result of comparison */
 ){
-  VdbeSorter *pSorter = pCsr->pSorter;
-  UnpackedRecord *r2 = pSorter->pUnpacked;
-  KeyInfo *pKeyInfo = pCsr->pKeyInfo;
+  VdbeSorter *pSorter;
+  UnpackedRecord *r2;
+  KeyInfo *pKeyInfo;
   int i;
   void *pKey; int nKey;           /* Sorter key to compare pVal with */
 
+  assert( pCsr->eCurType==CURTYPE_SORTER );
+  pSorter = pCsr->uc.pSorter;
+  r2 = pSorter->pUnpacked;
+  pKeyInfo = pCsr->pKeyInfo;
   if( r2==0 ){
     char *p;
     r2 = pSorter->pUnpacked = sqlite3VdbeAllocUnpackedRecord(pKeyInfo,0,0,&p);

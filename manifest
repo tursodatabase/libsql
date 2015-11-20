@@ -1,5 +1,5 @@
-C In\sthe\sOP_Column\sopcode,\sonly\stest\sthe\sbtree\spayload\ssize\sfor\sexceeding\sthe\nstring\slength\slimit\sif\sthe\spayload\sdoes\snot\sfit\son\sa\ssingle\spage.
-D 2015-11-20T13:33:56.212
+C Refactor\sthe\sVdbeCursor\sobject.\s\sIt\sis\snow\sslightly\ssmaller\sand\sfaster\sand\sis\neasier\sto\sunderstand.
+D 2015-11-20T19:22:01.706
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -402,14 +402,14 @@ F src/update.c 40e51cd0883cb5bfd6abb7d8a7cd8aa47fab2945
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c fc612367108b74573c5fd13a85d0a23027f438bd
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c 7a4efb964a050fd3cd733b051ce2ef1c8d609f53
+F src/vdbe.c 9ef1b1701e133d1cdb7dc66598863993b925b069
 F src/vdbe.h efb7a8c1459e31f3ea4377824c6a7e4cb5068637
-F src/vdbeInt.h 33403622c6a8feaaac5f0f3f17f5d1bf6df42286
+F src/vdbeInt.h 75c2e82ee3357e9210c06474f8d9bdf12c81105d
 F src/vdbeapi.c 020681b943e77766b32ae1cddf86d7831b7374ca
-F src/vdbeaux.c da9eddc62e025148e30267600a6fe3882d5e912f
-F src/vdbeblob.c 565fabd302f5fca3bdf3d56cac330483616a39b6
+F src/vdbeaux.c b660c995256e3d3e2cb47ccd20b82a1c342fa093
+F src/vdbeblob.c fdc4a81605ae7a35ae94a55bd768b66d6be16f15
 F src/vdbemem.c fdd1578e47bea61390d472de53c565781d81e045
-F src/vdbesort.c 8b23930a1289526f6d2a3a9f2e965bcc963e4a68
+F src/vdbesort.c a7ec02da4494c59dfd071126dd3726be5a11459d
 F src/vdbetrace.c 8befe829faff6d9e6f6e4dee5a7d3f85cc85f1a0
 F src/vtab.c 2a8b44aa372c33f6154208e7a7f6c44254549806
 F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
@@ -1404,7 +1404,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5446ae64d7f92444ca40aae2108015d1d77bc03f
-R a5098759debd354cc66c1a03fdae8b41
+P 35c7f6cba6febf2480de01fca9d61b8065bf1c12
+R ae691eb0177fe2d5adc77d9ff2c7f6f3
 U drh
-Z f951ff158d10f4e00f2e4ba144c0ce20
+Z 018ade43e937d593f3f9dd76ba8e9c12
