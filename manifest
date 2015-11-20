@@ -1,5 +1,5 @@
-C Enhancements\sto\sa\scomment\sin\ssqliteInt.h.\s\sNo\schanges\sto\scode.
-D 2015-11-20T13:17:29.368
+C In\sthe\sOP_Column\sopcode,\sonly\stest\sthe\sbtree\spayload\ssize\sfor\sexceeding\sthe\nstring\slength\slimit\sif\sthe\spayload\sdoes\snot\sfit\son\sa\ssingle\spage.
+D 2015-11-20T13:33:56.212
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -402,7 +402,7 @@ F src/update.c 40e51cd0883cb5bfd6abb7d8a7cd8aa47fab2945
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c fc612367108b74573c5fd13a85d0a23027f438bd
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c 7a9b18027414368d800716e6319e2acd699c70db
+F src/vdbe.c 7a4efb964a050fd3cd733b051ce2ef1c8d609f53
 F src/vdbe.h efb7a8c1459e31f3ea4377824c6a7e4cb5068637
 F src/vdbeInt.h 33403622c6a8feaaac5f0f3f17f5d1bf6df42286
 F src/vdbeapi.c 020681b943e77766b32ae1cddf86d7831b7374ca
@@ -1404,7 +1404,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 126b998cf163dcdd5a222634f1e929f04db3c700
-R 039797124bfe4b260998bebf04e01b11
+P 5446ae64d7f92444ca40aae2108015d1d77bc03f
+R a5098759debd354cc66c1a03fdae8b41
 U drh
-Z 94dd81621cb18a68b28885d578a9299b
+Z f951ff158d10f4e00f2e4ba144c0ce20
