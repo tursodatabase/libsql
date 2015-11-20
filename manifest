@@ -1,5 +1,5 @@
-C Fix\sproblems\swith\sthe\sway\sthe\sIsHiddenColumn()\smacro\sis\sdefined.
-D 2015-11-19T18:11:20.451
+C Enhancements\sto\sa\scomment\sin\ssqliteInt.h.\s\sNo\schanges\sto\scode.
+D 2015-11-20T13:17:29.368
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -344,7 +344,7 @@ F src/shell.c f0f59ea60ad297f671b7ae0fb957a736ad17c92c
 F src/sqlite.h.in fa62718f73553f06b2f2e362fd09ccb4e1cbb626
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 4b66e3e3435da4b4c8c83696d0349f0c503b3924
-F src/sqliteInt.h 25d0792e6d355a27975dc7c49c4514b3f6eb2294
+F src/sqliteInt.h 64256d193a16a147d9f6317cc4e095fdd3e0a2e9
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
@@ -1404,7 +1404,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 13995756ad8b80568aa2f74387788a8cab1123ef
-R 7d5fbb49b212de9edfd34eb075dc8992
+P 126b998cf163dcdd5a222634f1e929f04db3c700
+R 039797124bfe4b260998bebf04e01b11
 U drh
-Z bc25bafe8827ab2ba48c52405ca8c198
+Z 94dd81621cb18a68b28885d578a9299b
