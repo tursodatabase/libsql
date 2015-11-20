@@ -77,5 +77,24 @@ do_trace_test 2.3 {
   {t1 {cols a b c} {or {{eq c BINARY 0}} {{eq a BINARY 0} {eq b BINARY 0}}}}
 }
 
+#-----------------------------------------------------------------------
+# Cases involving ORDER BY.
+#
+do_trace_test 3.1 {
+  SELECT * FROM t1 ORDER BY a;
+} {{t1 {cols a b c} {orderby a BINARY ASC}}}
+
+do_trace_test 3.2 {
+  SELECT * FROM t1 WHERE a=? ORDER BY b;
+} {{t1 {cols a b c} {eq a BINARY 0} {orderby b BINARY ASC}}}
+
+do_trace_test 3.3 {
+  SELECT min(a) FROM t1;
+} {{t1 {cols a} {orderby a BINARY ASC}}}
+
+do_trace_test 3.4 {
+  SELECT max(a) FROM t1;
+} {{t1 {cols a} {orderby a BINARY DESC}}}
+
 finish_test
 

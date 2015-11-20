@@ -115,6 +115,9 @@ proc expand_eq_list {L} {
   return $ll
 }
 
+#--------------------------------------------------------------------------
+# Formulate a CREATE INDEX statement that creates an index on table $tname.
+#
 proc eqset_to_index {tname eqset {range {}}} {
   global G
   set lCols [list]
@@ -166,6 +169,10 @@ proc find_trial_indexes {} {
   foreach t $G(trace) {
     set tname [lindex $t 0]
     catch { array unset mask }
+
+    if {[lindex $t end 0]=="orderby"} {
+      set orderby [lrange [lindex $t end] 1 end]
+    }
 
     foreach lCons [expand_or_cons [lrange $t 2 end]] {
       set constraints [list]

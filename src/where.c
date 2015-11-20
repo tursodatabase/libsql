@@ -3957,6 +3957,7 @@ static char *whereAppendSingleTerm(
 
 static char *whereTraceWC(
   Parse *pParse, 
+  int bInitialSpace,
   struct SrcList_item *pItem,
   char *zIn,
   WhereClause *pWC
@@ -3966,7 +3967,7 @@ static char *whereTraceWC(
   char *zBuf = zIn;
   int iCol;
   int ii;
-  int bFirst = 1;
+  int bFirst = !bInitialSpace;
 
   /* List of WO_SINGLE constraints */
   for(iCol=0; iCol<pTab->nCol; iCol++){
@@ -3990,7 +3991,7 @@ static char *whereTraceWC(
     if( pTerm->eOperator & (WO_OR|WO_AND) ){
       const char *zFmt = ((pTerm->eOperator&WO_OR) ? "%z%s{or " : "%z%s{");
       zBuf = whereAppendPrintf(db, zFmt, zBuf, bFirst ? "" : " ");
-      zBuf = whereTraceWC(pParse, pItem, zBuf, &pTerm->u.pOrInfo->wc);
+      zBuf = whereTraceWC(pParse, 0, pItem, zBuf, &pTerm->u.pOrInfo->wc);
       zBuf = whereAppendPrintf(db, "%z}", zBuf);
       bFirst = 0;
     }
@@ -4005,6 +4006,7 @@ static void whereTraceBuilder(
 ){
   sqlite3 *db = pParse->db;
   if( db->xTrace ){
+    ExprList *pOrderBy = p->pOrderBy;
     WhereInfo *pWInfo = p->pWInfo;
     int nTablist = pWInfo->pTabList->nSrc;
     int ii;
@@ -4035,10 +4037,33 @@ static void whereTraceBuilder(
           }
         }
       }
-      zBuf = whereAppendPrintf(db, "%z} ", zBuf);
+      zBuf = whereAppendPrintf(db, "%z}",zBuf);
 
       /* Append the contents of WHERE clause */
-      zBuf = whereTraceWC(pParse, pItem, zBuf, p->pWC);
+      zBuf = whereTraceWC(pParse, 1, pItem, zBuf, p->pWC);
+
+      /* Append the ORDER BY clause, if any */
+      if( pOrderBy ){
+        int i;
+        int bFirst = 1;
+        for(i=0; i<pOrderBy->nExpr; i++){
+          Expr *pExpr = pOrderBy->a[i].pExpr; 
+          CollSeq *pColl = sqlite3ExprCollSeq(pParse, pExpr);
+
+          pExpr = sqlite3ExprSkipCollate(pExpr);
+          if( pExpr->op==TK_COLUMN && pExpr->iTable==pItem->iCursor ){
+            if( pExpr->iColumn>=0 ){
+              const char *zName = pTab->aCol[pExpr->iColumn].zName;
+              zBuf = whereAppendPrintf(db, "%z%s%s %s %s", zBuf,
+                  bFirst ? " {orderby " : " ", zName, pColl->zName,
+                  (pOrderBy->a[i].sortOrder ? "DESC" : "ASC")
+              );
+              bFirst = 0;
+            }
+          }
+        }
+        if( bFirst==0 ) zBuf = whereAppendPrintf(db, "%z}", zBuf);
+      }
 
       /* Pass the buffer to the xTrace() callback, then free it */
       db->xTrace(db->pTraceArg, zBuf);
