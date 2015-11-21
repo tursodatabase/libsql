@@ -874,6 +874,17 @@ do_test sqllimits1-16.2 {
   }
 } {1 {string or blob too big}}
 
+do_catchsql_test sqllimits1.17.0 {
+  SELECT *,*,*,*,*,*,*,* FROM (
+  SELECT *,*,*,*,*,*,*,* FROM (
+  SELECT *,*,*,*,*,*,*,* FROM (
+  SELECT *,*,*,*,*,*,*,* FROM (
+  SELECT *,*,*,*,*,*,*,* FROM (
+    SELECT 1,2,3,4,5,6,7,8,9,10
+  )
+  ))))
+} "1 {too many columns in result set}"
+
 
 foreach {key value} [array get saved] {
   catch {set $key $value}

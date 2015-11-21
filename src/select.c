@@ -1613,6 +1613,7 @@ int sqlite3ColumnsFromExprList(
     nCol = 0;
     aCol = 0;
   }
+  assert( nCol==(i16)nCol );
   *pnCol = nCol;
   *paCol = aCol;
 
@@ -4455,6 +4456,7 @@ static int selectExpander(Walker *pWalker, Select *p){
 #if SQLITE_MAX_COLUMN
   if( p->pEList && p->pEList->nExpr>db->aLimit[SQLITE_LIMIT_COLUMN] ){
     sqlite3ErrorMsg(pParse, "too many columns in result set");
+    return WRC_Abort;
   }
 #endif
   return WRC_Continue;
