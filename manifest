@@ -1,5 +1,5 @@
-C Do\snot\sallow\stable-valued\sfunction\ssyntax\son\sordinary\stables\sand\sviews\sas\sthose\nobjects\sare\snot\stable-valued\sfunctions.\nFix\sfor\sticket\s[73eba7ba5c7c0fc].
-D 2015-11-21T13:24:46.175
+C Fix\sover-length\ssource\scode\slines.\s\sNo\slogic\schanges.
+D 2015-11-21T17:27:42.127
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -280,7 +280,7 @@ F src/analyze.c 4c308880cf53c558070cb8513bdff4ffb1a38a77
 F src/attach.c e944d0052b577703b9b83aac1638452ff42a8395
 F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 2869a76c03eb393ee795416e2387005553df72bc
-F src/bitvec.c d1f21d7d91690747881f03940584f4cc548c9d3d
+F src/bitvec.c 1a78d450a17c5016710eec900bedfc5729bf9bdf
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
 F src/btree.c d3bdd8462a86492e2ebc9aca4a0168429017de25
 F src/btree.h 2d76dee44704c47eed323356a758662724b674a0
@@ -292,7 +292,7 @@ F src/ctime.c 509ef9c64d1321f42448f111da86400b1799218a
 F src/date.c fb1c99172017dcc8e237339132c91a21a0788584
 F src/dbstat.c ffd63fc8ba7541476ced189b95e95d7f2bc63f78
 F src/delete.c 00af9f08a15ddc5cba5962d3d3e5bf2d67b2e7da
-F src/expr.c 0080c0f12806eca91e75a23a121a68918e9da357
+F src/expr.c dfccb439a2a981d71970ce3d15effeb59b258798
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 31900763094a3736a5fc887469202eb579fef2d0
 F src/func.c ecdd69ec6a1e406f04cc73324be2ebbf6354197f
@@ -310,21 +310,21 @@ F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 6919bcf12f221868ea066eec27e579fed95ce98b
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
 F src/mem3.c 8768ac94694f31ffaf8b4d0ea5dc08af7010a35a
-F src/mem5.c c1ab1153bd6443bdf6f71e4213c6fb31221b9eb7
+F src/mem5.c 5c267678ba9f745a2ee58102a9f482d64a58577a
 F src/memjournal.c 3eb2c0b51adbd869cb6a44780323f05fa904dc85
 F src/msvc.h d9ba56c6851227ab44b3f228a35f3f5772296495
 F src/mutex.c 8e45800ee78e0cd1f1f3fe8e398853307f4a085c
 F src/mutex.h 779d588e3b7756ec3ecf7d78cde1d84aba414f85
 F src/mutex_noop.c 9d4309c075ba9cc7249e19412d3d62f7f94839c4
-F src/mutex_unix.c a94b46f3f7beba307dde1b298b0f99f9c3677a93
+F src/mutex_unix.c fc54f25b2a750d53b32512a4a728cec28039ae2a
 F src/mutex_w32.c 5e6fe1c298fb5a8a15aaed4161d5759311431c17
 F src/notify.c 9711a7575036f0d3040ba61bc6e217f13a9888e7
 F src/os.c 8fd25588eeba74068d41102d26810e216999b6c8
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h abdb9a191a367793268fe553d25bab894e986a0e
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c eb24e0340fbe3cfd0eabfb15a71476953e54fa73
-F src/os_win.c 2d77dab5c555a18c0aff379c6a692fc3499044d9
+F src/os_unix.c bddde71dc024574ace03ffee859abb99d152fd4a
+F src/os_win.c 386fba30419e8458b13209781c2af5590eab2811
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 18341e2b759b447cbc82fb9215d08d9c5864e92e
 F src/pager.h 87c4118a71ba3965184148b379a6d93179071091
@@ -400,9 +400,9 @@ F src/treeview.c 78842e90c1f71269e7a73a1d4221b6fe360bab66
 F src/trigger.c 322f23aad694e8f31d384dcfa386d52a48d3c52f
 F src/update.c 40e51cd0883cb5bfd6abb7d8a7cd8aa47fab2945
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
-F src/util.c fc612367108b74573c5fd13a85d0a23027f438bd
+F src/util.c e802e8e311a0d6c48cd1b3e89db164f6f0248d70
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c 9ef1b1701e133d1cdb7dc66598863993b925b069
+F src/vdbe.c b56b2fc9b2f2d0a99d1dbd02d47efaacec253a4c
 F src/vdbe.h efb7a8c1459e31f3ea4377824c6a7e4cb5068637
 F src/vdbeInt.h 75c2e82ee3357e9210c06474f8d9bdf12c81105d
 F src/vdbeapi.c 020681b943e77766b32ae1cddf86d7831b7374ca
@@ -419,7 +419,7 @@ F src/walker.c 2e14d17f592d176b6dc879c33fbdec4fbccaa2ba
 F src/where.c 6aceb72cc58dc06922a9e1604d559c8ca4c3e728
 F src/whereInt.h 7892bb54cf9ca0ae5c7e6094491b94c9286dc647
 F src/wherecode.c 4c96182e7b25e4be54008dee2da5b9c2f8480b9b
-F src/whereexpr.c fa36d793a96dfdec5260085baf59ee3cc39be9d5
+F src/whereexpr.c bd4877cd4dd11f6ab551ef0054535ca3c6224950
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1404,7 +1404,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9b1d174d862500a627840008ffac4c8419dc97e2
-R 8fd11c528c94e9e37286e19e744014c6
+P ff5716b89f99d9c4568a39f1f52524528a631623
+R 558d15295cc22b403e8d5cb8c3ebd48a
 U drh
-Z b8d6aae555aa179b5937cf64dce6701d
+Z 0a3988f827c1f289bd36fdbbf324f548

@@ -1222,7 +1222,8 @@ void sqlite3WhereClauseInit(
 
 /*
 ** Deallocate a WhereClause structure.  The WhereClause structure
-** itself is not freed.  This routine is the inverse of sqlite3WhereClauseInit().
+** itself is not freed.  This routine is the inverse of
+** sqlite3WhereClauseInit().
 */
 void sqlite3WhereClauseClear(WhereClause *pWC){
   int i;
@@ -1318,7 +1319,7 @@ void sqlite3WhereTabFuncArgs(
   pArgs = pItem->u1.pFuncArg;
   if( pArgs==0 ) return;
   for(j=k=0; j<pArgs->nExpr; j++){
-    while( k<pTab->nCol && (pTab->aCol[k].colFlags & COLFLAG_HIDDEN)==0 ){ k++; }
+    while( k<pTab->nCol && (pTab->aCol[k].colFlags & COLFLAG_HIDDEN)==0 ){k++;}
     if( k>=pTab->nCol ){
       sqlite3ErrorMsg(pParse, "too many arguments on %s() - max %d",
                       pTab->zName, j);
