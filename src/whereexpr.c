@@ -1316,7 +1316,7 @@ void sqlite3WhereTabFuncArgs(
   pTab = pItem->pTab;
   assert( pTab!=0 );
   pArgs = pItem->u1.pFuncArg;
-  assert( pArgs!=0 );
+  if( pArgs==0 ) return;
   for(j=k=0; j<pArgs->nExpr; j++){
     while( k<pTab->nCol && (pTab->aCol[k].colFlags & COLFLAG_HIDDEN)==0 ){ k++; }
     if( k>=pTab->nCol ){
