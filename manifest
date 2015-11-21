@@ -1,5 +1,5 @@
-C Fix\sover-length\ssource\scode\slines.\s\sNo\slogic\schanges.
-D 2015-11-21T17:27:42.127
+C Add\sa\snew\sOP_BColumn\sopcode\swhere\sthe\scursor\sis\sguaranteed\sto\sbe\sof\stype\nCURTYPE_BTREE\sand\sis\sthus\sable\sto\sskip\ssome\schecks\sand\srun\sslightly\sfaster.
+D 2015-11-21T17:53:06.758
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -402,11 +402,11 @@ F src/update.c 40e51cd0883cb5bfd6abb7d8a7cd8aa47fab2945
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c e802e8e311a0d6c48cd1b3e89db164f6f0248d70
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
-F src/vdbe.c b56b2fc9b2f2d0a99d1dbd02d47efaacec253a4c
+F src/vdbe.c 8694c0e6497cd21e19e30ac059f933ac5d9abea2
 F src/vdbe.h efb7a8c1459e31f3ea4377824c6a7e4cb5068637
 F src/vdbeInt.h 75c2e82ee3357e9210c06474f8d9bdf12c81105d
 F src/vdbeapi.c 020681b943e77766b32ae1cddf86d7831b7374ca
-F src/vdbeaux.c b660c995256e3d3e2cb47ccd20b82a1c342fa093
+F src/vdbeaux.c 16e21a6ae0c290f17f6e7395d80686622cafeaa2
 F src/vdbeblob.c fdc4a81605ae7a35ae94a55bd768b66d6be16f15
 F src/vdbemem.c fdd1578e47bea61390d472de53c565781d81e045
 F src/vdbesort.c a7ec02da4494c59dfd071126dd3726be5a11459d
@@ -1404,7 +1404,10 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ff5716b89f99d9c4568a39f1f52524528a631623
-R 558d15295cc22b403e8d5cb8c3ebd48a
+P 198d191b2f5ef7d63ac0093c701955c9052fd734
+R 047e676af06478b15f87435c78af3c91
+T *branch * btree-column-opcode
+T *sym-btree-column-opcode *
+T -sym-trunk *
 U drh
-Z 0a3988f827c1f289bd36fdbbf324f548
+Z d7290cc1ec32ea2c40df94d6965d7340

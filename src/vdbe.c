@@ -2375,12 +2375,20 @@ case OP_Column: {
   u16 fx;            /* pDest->flags value */
   Mem *pReg;         /* PseudoTable input register */
 
+  pC = p->apCsr[pOp->p1];
+  if( pC->eCurType==CURTYPE_PSEUDO ) goto skip_moveto;
+  pOp->opcode = OP_BColumn;
+
+case OP_BColumn:
+  pC = p->apCsr[pOp->p1];
+  rc = sqlite3VdbeCursorMoveto(pC);
+  if( rc ) goto abort_due_to_error;
+skip_moveto:
   p2 = pOp->p2;
   assert( pOp->p3>0 && pOp->p3<=(p->nMem-p->nCursor) );
   pDest = &aMem[pOp->p3];
   memAboutToChange(p, pDest);
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
-  pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
   assert( p2<pC->nField );
   aOffset = pC->aOffset;
@@ -2390,8 +2398,6 @@ case OP_Column: {
   pCrsr = pC->uc.pCursor;
 
   /* If the cursor cache is stale, bring it up-to-date */
-  rc = sqlite3VdbeCursorMoveto(pC);
-  if( rc ) goto abort_due_to_error;
   if( pC->cacheStatus!=p->cacheCtr ){
     if( pC->nullRow ){
       if( pC->eCurType==CURTYPE_PSEUDO ){

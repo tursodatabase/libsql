@@ -3000,13 +3000,12 @@ int sqlite3VdbeCursorRestore(VdbeCursor *p){
 ** not been deleted out from under the cursor, then this routine is a no-op.
 */
 int sqlite3VdbeCursorMoveto(VdbeCursor *p){
-  if( p->eCurType==CURTYPE_BTREE ){
-    if( p->deferredMoveto ){
-      return handleDeferredMoveto(p);
-    }
-    if( sqlite3BtreeCursorHasMoved(p->uc.pCursor) ){
-      return handleMovedCursor(p);
-    }
+  assert( p->eCurType==CURTYPE_BTREE );
+  if( p->deferredMoveto ){
+    return handleDeferredMoveto(p);
+  }
+  if( sqlite3BtreeCursorHasMoved(p->uc.pCursor) ){
+    return handleMovedCursor(p);
   }
   return SQLITE_OK;
 }
