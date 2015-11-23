@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\sORDER\sBY\sclauses\sto\sschemalint.tcl.
-D 2015-11-20T20:55:27.428
+C Fix\sORDER\sBY\shandling\sin\sthe\sschemalint.tcl\sscript.\sAdd\sinternal\sself-tests\sto\sthe\ssame\sscript.
+D 2015-11-23T17:10:51.938
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -1379,7 +1379,7 @@ F tool/replace.tcl 7727c60a04299b65a92f5e1590896fea0f25b9e0
 F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
 F tool/run-speed-test.sh 0ae485af4fe9f826e2b494be8c81f8ca9e222a4a
-F tool/schemalint.tcl 160fe2ed74df02e859ab32a522fa1f2e8e0c4230
+F tool/schemalint.tcl e49c9b25c8c43f0531eca96edaf85ce8bd7f308b
 F tool/showdb.c d4476e000a64eca9f5e2c2f68741e747b9778e8d
 F tool/showjournal.c 5bad7ae8784a43d2b270d953060423b8bd480818
 F tool/showlocks.c 9920bcc64f58378ff1118caead34147201f48c68
@@ -1404,7 +1404,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c6fa01c28ef7ceea2963a92dfffe62eed451b05c
-R 6fc6a71e3dbe84052a5d99204cd615ee
+P 93bdf70e859915ff3696ba0fc68f91ceb2e1a971
+R 4554e59743437c1fee4689a6514241d8
 U dan
-Z 64248603e4a564821f72e660b22a8811
+Z f43cf07c3dedebc0e4a9e76dc40982d5
