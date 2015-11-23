@@ -1,5 +1,5 @@
-C Merge\slatest\strunk\schanges\swith\sthis\sbranch.
-D 2015-11-23T17:14:03.947
+C In\sthe\sCREATE\sINDEX\sstatements\soutput\sby\sschemalint.tcl,\savoid\sdeclaring\san\sexplicit\scollation\ssequence\sthat\sis\sthe\ssame\sas\sthe\scolumn's\sdefault.
+D 2015-11-23T18:28:07.584
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -1381,7 +1381,7 @@ F tool/replace.tcl 7727c60a04299b65a92f5e1590896fea0f25b9e0
 F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
 F tool/run-speed-test.sh 0ae485af4fe9f826e2b494be8c81f8ca9e222a4a
-F tool/schemalint.tcl e49c9b25c8c43f0531eca96edaf85ce8bd7f308b
+F tool/schemalint.tcl ad61083d39cb40e848b9acc1273e4c487bb55cd7
 F tool/showdb.c d4476e000a64eca9f5e2c2f68741e747b9778e8d
 F tool/showjournal.c 5bad7ae8784a43d2b270d953060423b8bd480818
 F tool/showlocks.c 9920bcc64f58378ff1118caead34147201f48c68
@@ -1406,7 +1406,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b8f277c9b45c4b30e6690e838a30311aa8d84876 60de5f23424552c98aa760ac89149a3d51f895be
-R 00875769a91e68d074e499acf18a7d59
+P 8f1ef0904d055b5510ec9043810ebf22a8c5e253
+R 4b9b445c1607ad5c9f9bdcf33b4eb416
 U dan
-Z 5eb820ab8a7550b698dcf8a7d000e044
+Z 6d9149db2c512107280c4e32c490b8cb

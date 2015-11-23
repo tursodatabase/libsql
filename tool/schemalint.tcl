@@ -124,32 +124,33 @@ proc expand_eq_list {L} {
 #--------------------------------------------------------------------------
 # Formulate a CREATE INDEX statement that creates an index on table $tname.
 #
-proc eqset_to_index {ctxvar tname eqset {range {}}} {
+proc eqset_to_index {ctxvar aCollVar tname eqset {range {}}} {
   upvar $ctxvar G
+  upvar $aCollVar aColl
+
+  set rangeset [list]
+  foreach e [lsort $eqset] {
+    lappend rangeset [lindex $e 0] [lindex $e 1] ASC
+  }
+  set rangeset [concat $rangeset $range]
 
   set lCols [list]
   set idxname $tname
-  foreach e [lsort $eqset] { 
-    if {[llength $e]==0} continue
-    foreach {c collate} $e {}
-    lappend lCols "$c collate $collate"
-    append idxname "_$c"
-    if {[string compare -nocase binary $collate]!=0} {
-      append idxname [string tolower $collate]
-    }
-  }
 
-  foreach {c collate dir} $range {
+  foreach {c collate dir} $rangeset {
     append idxname "_$c"
-    if {[string compare -nocase binary $collate]!=0} {
+    set coldef $c
+
+    if {[string compare -nocase $collate $aColl($c)]!=0} {
       append idxname [string tolower $collate]
+      append coldef " COLLATE $collate"
     }
+
     if {$dir=="DESC"} {
-      lappend lCols "$c collate $collate DESC"
+      append coldef " DESC"
       append idxname "desc"
-    } else {
-      lappend lCols "$c collate $collate"
     }
+    lappend lCols $coldef
   }
 
   set create_index "CREATE INDEX $idxname ON ${tname}("
@@ -184,11 +185,29 @@ proc expand_or_cons {L} {
   return $lRet
 }
 
+proc sqlidx_get_coll_map {tname arrayvar} {
+  upvar $arrayvar aColl
+  set colnames [list]
+  db eval "PRAGMA table_info = $tname" x { lappend colnames $x(name) }
+  db eval "CREATE INDEX schemalint_test ON ${tname}([join $colnames ,])"
+
+  db eval "PRAGMA index_xinfo = schemalint_test" x { 
+    set aColl($x(name)) $x(coll)
+  }
+  db eval "DROP INDEX schemalint_test"
+}
+
 proc find_trial_indexes {ctxvar} {
   upvar $ctxvar G
   foreach t $G(trace) {
     set tname [lindex $t 0]
     catch { array unset mask }
+
+    # Invoke "PRAGMA table_info" on the table. Use the results to create
+    # an array mapping from column name to collation sequence. Store the
+    # array in local variable aColl.
+    #
+    sqlidx_get_coll_map $tname aColl
 
     set orderby [list]
     if {[lindex $t end 0]=="orderby"} {
@@ -258,7 +277,7 @@ proc find_trial_indexes {ctxvar} {
 
         foreach eqset [expand_eq_list [array get eq]] {
           if {$eqset != ""} {
-            eqset_to_index G $tname $eqset
+            eqset_to_index G aColl $tname $eqset
           }
 
           foreach r $ranges {
@@ -274,7 +293,7 @@ proc find_trial_indexes {ctxvar} {
               if {$bSeen==0} { lappend tail {*}$r }
             }
             if {[llength $tail]} {
-              eqset_to_index G $tname $eqset $r
+              eqset_to_index G aColl $tname $eqset $r
             }
           }
         }
@@ -361,8 +380,8 @@ proc sqlidx_internal_tests {} {
   } {
     SELECT a FROM t1, t2 WHERE a=? AND x=c
   } {
-    {CREATE INDEX t2_x ON t2(x collate BINARY);}
-    {CREATE INDEX t1_a_c ON t1(a collate BINARY, c collate BINARY);}
+    {CREATE INDEX t2_x ON t2(x);}
+    {CREATE INDEX t1_a_c ON t1(a, c);}
   }
 
   sqlidx_one_test 2 {
@@ -370,7 +389,7 @@ proc sqlidx_internal_tests {} {
   } {
     SELECT * FROM t1 WHERE b>?;
   } {
-    {CREATE INDEX t1_b ON t1(b collate BINARY);}
+    {CREATE INDEX t1_b ON t1(b);}
   }
 
   sqlidx_one_test 3 {
@@ -378,7 +397,7 @@ proc sqlidx_internal_tests {} {
   } {
     SELECT * FROM t1 WHERE b COLLATE nocase BETWEEN ? AND ?
   } {
-    {CREATE INDEX t1_bnocase ON t1(b collate NOCASE);}
+    {CREATE INDEX t1_bnocase ON t1(b COLLATE NOCASE);}
   }
 
   sqlidx_one_test 4 {
@@ -386,7 +405,7 @@ proc sqlidx_internal_tests {} {
   } {
     SELECT a FROM t1 ORDER BY b;
   } {
-    {CREATE INDEX t1_b ON t1(b collate BINARY);}
+    {CREATE INDEX t1_b ON t1(b);}
   }
 
   sqlidx_one_test 5 {
@@ -394,7 +413,7 @@ proc sqlidx_internal_tests {} {
   } {
     SELECT a FROM t1 WHERE a=? ORDER BY b;
   } {
-    {CREATE INDEX t1_a_b ON t1(a collate BINARY, b collate BINARY);}
+    {CREATE INDEX t1_a_b ON t1(a, b);}
   }
 
   sqlidx_one_test 5 {
@@ -402,7 +421,7 @@ proc sqlidx_internal_tests {} {
   } {
     SELECT min(a) FROM t1
   } {
-    {CREATE INDEX t1_a ON t1(a collate BINARY);}
+    {CREATE INDEX t1_a ON t1(a);}
   }
 
   sqlidx_one_test 6 {
@@ -410,7 +429,15 @@ proc sqlidx_internal_tests {} {
   } {
     SELECT * FROM t1 ORDER BY a ASC, b COLLATE nocase DESC, c ASC;
   } {
-    {CREATE INDEX t1_a_bnocasedesc_c ON t1(a collate BINARY, b collate NOCASE DESC, c collate BINARY);}
+    {CREATE INDEX t1_a_bnocasedesc_c ON t1(a, b COLLATE NOCASE DESC, c);}
+  }
+
+  sqlidx_one_test 7 {
+    CREATE TABLE t1(a COLLATE NOCase, b, c);
+  } {
+    SELECT * FROM t1 WHERE a=?
+  } {
+    {CREATE INDEX t1_a ON t1(a);}
   }
 
   exit
