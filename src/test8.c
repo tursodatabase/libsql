@@ -849,6 +849,12 @@ static int echoBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
           zOp = ">="; break;
         case SQLITE_INDEX_CONSTRAINT_MATCH:
           zOp = "LIKE"; break;
+        case SQLITE_INDEX_CONSTRAINT_LIKE:
+          zOp = "like"; break;
+        case SQLITE_INDEX_CONSTRAINT_GLOB:
+          zOp = "glob"; break;
+        case SQLITE_INDEX_CONSTRAINT_REGEXP:
+          zOp = "regexp"; break;
       }
       if( zOp[0]=='L' ){
         zNew = sqlite3_mprintf(" %s %s LIKE (SELECT '%%'||?||'%%')", 

@@ -1,0 +1,49 @@
+# 2015 Nov 24
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix vtabH
+
+ifcapable !vtab {
+  finish_test
+  return
+}
+
+register_echo_module db
+
+do_execsql_test 1.0 {
+  CREATE TABLE t6(a, b TEXT);
+  CREATE INDEX i6 ON t6(b, a);
+  CREATE VIRTUAL TABLE e6 USING echo(t6);
+}
+
+foreach {tn sql expect} {
+  1 "SELECT * FROM e6 WHERE b LIKE 'abc'" {
+    xBestIndex {SELECT rowid, * FROM 't6' WHERE b like ?} 
+    xFilter {SELECT rowid, * FROM 't6' WHERE b like ?} abc
+  }
+
+  2 "SELECT * FROM e6 WHERE b GLOB 'abc'" {
+    xBestIndex {SELECT rowid, * FROM 't6' WHERE b glob ?} 
+    xFilter {SELECT rowid, * FROM 't6' WHERE b glob ?} abc
+  }
+} {
+  do_test 1.$tn {
+    set echo_module {}
+    execsql $sql
+    set ::echo_module
+  } [list {*}$expect]
+}
+
+finish_test

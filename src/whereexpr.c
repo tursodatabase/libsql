@@ -282,14 +282,22 @@ static int isLikeOrGlob(
 ** If it is then return TRUE.  If not, return FALSE.
 */
 static int isMatchOfColumn(
-  Expr *pExpr      /* Test this expression */
+  Expr *pExpr,                    /* Test this expression */
+  unsigned char *peOp2            /* OUT: 0 for MATCH, or else an op2 value */
 ){
+  struct Op2 {
+    const char *zOp;
+    unsigned char eOp2;
+  } aOp[] = {
+    { "match", SQLITE_INDEX_CONSTRAINT_MATCH },
+    { "glob",  SQLITE_INDEX_CONSTRAINT_GLOB },
+    { "like",  SQLITE_INDEX_CONSTRAINT_LIKE },
+    { "regex", SQLITE_INDEX_CONSTRAINT_REGEXP }
+  };
   ExprList *pList;
+  int i;
 
   if( pExpr->op!=TK_FUNCTION ){
-    return 0;
-  }
-  if( sqlite3StrICmp(pExpr->u.zToken,"match")!=0 ){
     return 0;
   }
   pList = pExpr->x.pList;
@@ -299,7 +307,13 @@ static int isMatchOfColumn(
   if( pList->a[1].pExpr->op != TK_COLUMN ){
     return 0;
   }
-  return 1;
+  for(i=0; i<ArraySize(aOp); i++){
+    if( sqlite3StrICmp(pExpr->u.zToken, aOp[i].zOp)==0 ){
+      *peOp2 = aOp[i].eOp2;
+      return 1;
+    }
+  }
+  return 0;
 }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 
@@ -876,6 +890,7 @@ static void exprAnalyze(
   int op;                          /* Top-level operator.  pExpr->op */
   Parse *pParse = pWInfo->pParse;  /* Parsing context */
   sqlite3 *db = pParse->db;        /* Database connection */
+  unsigned char eOp2;              /* op2 value for LIKE/REGEXP/GLOB */
 
   if( db->mallocFailed ){
     return;
@@ -1099,7 +1114,7 @@ static void exprAnalyze(
   ** virtual tables.  The native query optimizer does not attempt
   ** to do anything with MATCH functions.
   */
-  if( isMatchOfColumn(pExpr) ){
+  if( isMatchOfColumn(pExpr, &eOp2) ){
     int idxNew;
     Expr *pRight, *pLeft;
     WhereTerm *pNewTerm;
@@ -1120,6 +1135,7 @@ static void exprAnalyze(
       pNewTerm->leftCursor = pLeft->iTable;
       pNewTerm->u.leftColumn = pLeft->iColumn;
       pNewTerm->eOperator = WO_MATCH;
+      pNewTerm->eMatchOp = eOp2;
       markTermAsChild(pWC, idxNew, idxTerm);
       pTerm = &pWC->a[idxTerm];
       pTerm->wtFlags |= TERM_COPIED;
