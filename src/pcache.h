@@ -146,6 +146,13 @@ void sqlite3PcacheSetCachesize(PCache *, int);
 int sqlite3PcacheGetCachesize(PCache *);
 #endif
 
+/* Set or get the suggested spill-size for the specified pager-cache.
+**
+** The spill-size is the minimum number of pages in cache before the cache
+** will attempt to spill dirty pages by calling xStress.
+*/
+int sqlite3PcacheSetSpillsize(PCache *, int);
+
 /* Free up as much memory as possible from the page cache */
 void sqlite3PcacheShrink(PCache*);
 

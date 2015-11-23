@@ -1741,6 +1741,7 @@ static void showHelp(void){
 "  --schema              Show only differences in the schema\n"
 "  --summary             Show only a summary of the differences\n"
 "  --table TAB           Show only differences in table TAB\n"
+"  --transaction         Show SQL output inside a transaction\n"
   );
 }
 
@@ -1757,6 +1758,8 @@ int main(int argc, char **argv){
   void (*xDiff)(const char*,FILE*) = diff_one_table;
   int nExt = 0;
   char **azExt = 0;
+  int useTransaction = 0;
+  int neverUseTransaction = 0;
 
   g.zArgv0 = argv[0];
   sqlite3_config(SQLITE_CONFIG_SINGLETHREAD);
@@ -1770,6 +1773,7 @@ int main(int argc, char **argv){
         out = fopen(argv[++i], "wb");
         if( out==0 ) cmdlineError("cannot open: %s", argv[i]);
         xDiff = changeset_one_table;
+        neverUseTransaction = 1;
       }else
       if( strcmp(z,"debug")==0 ){
         if( i==argc-1 ) cmdlineError("missing argument to %s", argv[i]);
@@ -1802,6 +1806,9 @@ int main(int argc, char **argv){
       if( strcmp(z,"table")==0 ){
         if( i==argc-1 ) cmdlineError("missing argument to %s", argv[i]);
         zTab = argv[++i];
+      }else
+      if( strcmp(z,"transaction")==0 ){
+        useTransaction = 1;
       }else
       {
         cmdlineError("unknown option: %s", argv[i]);
@@ -1845,6 +1852,8 @@ int main(int argc, char **argv){
     cmdlineError("\"%s\" does not appear to be a valid SQLite database", zDb2);
   }
 
+  if( neverUseTransaction ) useTransaction = 0;
+  if( useTransaction ) printf("BEGIN TRANSACTION;\n");
   if( zTab ){
     xDiff(zTab, out);
   }else{
@@ -1862,6 +1871,7 @@ int main(int argc, char **argv){
     }
     sqlite3_finalize(pStmt);
   }
+  if( useTransaction ) printf("COMMIT;\n");
 
   /* TBD: Handle trigger differences */
   /* TBD: Handle view differences */

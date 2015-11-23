@@ -123,6 +123,7 @@ void sqlite3PagerAlignReserve(Pager*,Pager*);
 #endif
 int sqlite3PagerMaxPageCount(Pager*, int);
 void sqlite3PagerSetCachesize(Pager*, int);
+int sqlite3PagerSetSpillsize(Pager*, int);
 void sqlite3PagerSetMmapLimit(Pager *, sqlite3_int64);
 void sqlite3PagerShrink(Pager*);
 void sqlite3PagerSetFlags(Pager*,unsigned);

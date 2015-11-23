@@ -119,6 +119,7 @@ array set ::Configs [strip_comments {
     -DSQLITE_ENABLE_MEMSYS3=1
     -DSQLITE_ENABLE_COLUMN_METADATA=1
     -DSQLITE_ENABLE_STAT4
+    -DSQLITE_ENABLE_HIDDEN_COLUMNS
     -DSQLITE_MAX_ATTACHED=125
   }
   "Fast-One" {
@@ -145,6 +146,7 @@ array set ::Configs [strip_comments {
     -DSQLITE_OMIT_LOAD_EXTENSION=1
     -DSQLITE_OMIT_PROGRESS_CALLBACK=1
     -DSQLITE_OMIT_VIRTUALTABLE=1
+    -DSQLITE_ENABLE_HIDDEN_COLUMNS
     -DSQLITE_TEMP_STORE=3
     --enable-json1
   }
@@ -213,6 +215,7 @@ array set ::Configs [strip_comments {
     -DSQLITE_ENABLE_STAT4
     -DSQLITE_ENABLE_FTS4
     -DSQLITE_ENABLE_RTREE
+    -DSQLITE_ENABLE_HIDDEN_COLUMNS
     --enable-json1
   }
 
@@ -306,22 +309,39 @@ foreach {key value} [array get ::Platforms] {
   }
 }
 
-# Output log
+# Output log.   Disabled for slave interpreters.
 #
-set LOG [open releasetest-out.txt w]
-proc PUTS {args} {
-  if {[llength $args]==2} {
-    puts [lindex $args 0] [lindex $args 1]
-    puts $::LOG [lindex $args 1]
-  } else {
-    puts [lindex $args 0]
-    puts $::LOG [lindex $args 0]
+if {[lindex $argv end]!="--slave"} {
+  set LOG [open releasetest-out.txt w]
+  proc PUTS {txt} {
+    puts $txt
+    puts $::LOG $txt
+    flush $::LOG
   }
-  flush $::LOG
+  proc PUTSNNL {txt} {
+    puts -nonewline $txt
+    puts -nonewline $::LOG $txt
+    flush $::LOG
+  }
+  proc PUTSERR {txt} {
+    puts stderr $txt
+    puts $::LOG $txt
+    flush $::LOG
+  }
+  puts $LOG "$argv0 $argv"
+  set tm0 [clock format [clock seconds] -format {%Y-%m-%d %H:%M:%S} -gmt 1]
+  puts $LOG "start-time: $tm0 UTC"
+} else {
+  proc PUTS {txt} {
+    puts $txt
+  }
+  proc PUTSNNL {txt} {
+    puts -nonewline $txt
+  }
+  proc PUTSERR {txt} {
+    puts stderr $txt
+  }
 }
-puts $LOG "$argv0 $argv"
-set tm0 [clock format [clock seconds] -format {%Y-%m-%d %H:%M:%S} -gmt 1]
-puts $LOG "start-time: $tm0 UTC"
 
 # Open the file $logfile and look for a report on the number of errors
 # and the number of test cases run.  Add these values to the global
@@ -422,6 +442,7 @@ proc run_slave_test {} {
   foreach {title dir configOpts testtarget makeOpts cflags opts} $T {}
 
   # Create and switch to the test directory.
+  set ::env(SQLITE_TMPDIR) [file normalize $dir]
   trace_cmd file mkdir $dir
   trace_cmd cd $dir
   catch {file delete core}
@@ -809,8 +830,8 @@ proc process_options {argv} {
       }
 
       default {
-        PUTS stderr ""
-        PUTS stderr [string trim $::USAGE_MESSAGE]
+        PUTSERR stderr ""
+        PUTSERR stderr [string trim $::USAGE_MESSAGE]
         exit -1
       }
     }
@@ -818,7 +839,7 @@ proc process_options {argv} {
 
   if {0==[info exists ::Platforms($platform)]} {
     PUTS "Unknown platform: $platform"
-    PUTS -nonewline "Set the -platform option to "
+    PUTSNNL "Set the -platform option to "
     set print [list]
     foreach p [array names ::Platforms] {
       lappend print "\"$p\""
@@ -844,16 +865,16 @@ proc process_options {argv} {
   }
   PUTS "Running the following test configurations for $platform:"
   PUTS "    [string trim $::CONFIGLIST]"
-  PUTS -nonewline "Flags:"
-  if {$::PROGRESS_MSGS} {PUTS -nonewline " --progress"}
-  if {$::DRYRUN} {PUTS -nonewline " --dryrun"}
-  if {$::BUILDONLY} {PUTS -nonewline " --buildonly"}
-  if {$::MSVC} {PUTS -nonewline " --msvc"}
+  PUTSNNL "Flags:"
+  if {$::PROGRESS_MSGS} {PUTSNNL " --progress"}
+  if {$::DRYRUN} {PUTSNNL " --dryrun"}
+  if {$::BUILDONLY} {PUTSNNL " --buildonly"}
+  if {$::MSVC} {PUTSNNL " --msvc"}
   switch -- $::QUICK {
-     1 {PUTS -nonewline " --quick"}
-     2 {PUTS -nonewline " --veryquick"}
+     1 {PUTSNNL " --quick"}
+     2 {PUTSNNL " --veryquick"}
   }
-  if {$::JOBS>1} {PUTS -nonewline " --jobs $::JOBS"}
+  if {$::JOBS>1} {PUTSNNL " --jobs $::JOBS"}
   PUTS ""
 }
 
