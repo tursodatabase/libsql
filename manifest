@@ -1,5 +1,5 @@
-C Merge\slatest\strunk\schanges\swith\sthis\sbranch.
-D 2015-11-24T17:44:26.959
+C Fix\sharmless\scompiler\swarnings\sin\sthe\sTCL\stest\sharness\slogic.
+D 2015-11-24T18:04:39.335
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -389,7 +389,7 @@ F src/test_server.c a2615049954cbb9cfb4a62e18e2f0616e4dc38fe
 F src/test_sqllog.c 0d138a8180a312bf996b37fa66da5c5799d4d57b
 F src/test_superlock.c 06797157176eb7085027d9dd278c0d7a105e3ec9
 F src/test_syscall.c 2e21ca7f7dc54a028f1967b63f1e76155c356f9b
-F src/test_tclvar.c 2fd910e9f0ef7686889f50f448d33810c895da86
+F src/test_tclvar.c d86412527da65468ee6fa1b8607c65d0af736bc4
 F src/test_thread.c af391ec03d23486dffbcc250b7e58e073f172af9
 F src/test_vfs.c 3b65d42e18b262805716bd96178c81da8f2d9283
 F src/test_vfstrace.c bab9594adc976cbe696ff3970728830b4c5ed698
@@ -1405,7 +1405,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c5e9fd0dc92a07db3d3b5f5c5ad8fb63b3425c2b 20256177072caa4f2b4114038ad1c8f6e26bc562
-R f66db3dfd01f74a8efe805dce920d093
-U dan
-Z 1605220e9da94a8d162b093db7a72a24
+P 99222bb3e5f9b2a9a10d9561a9fd8c0f717baaff
+R a81a9eaa4d026b7ec9f13ce6cc6dd8d0
+U drh
+Z 1d3e92ad91e9ae564e61187f77c574d6

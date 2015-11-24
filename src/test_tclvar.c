@@ -176,19 +176,19 @@ static int tclvarFilter(
   for(i=0; idxStr[i]; i++){
     switch( idxStr[i] ){
       case TCLVAR_NAME_EQ:
-        zEq = sqlite3_value_text(argv[i]);
+        zEq = (const char*)sqlite3_value_text(argv[i]);
         break;
       case TCLVAR_NAME_MATCH:
-        zMatch = sqlite3_value_text(argv[i]);
+        zMatch = (const char*)sqlite3_value_text(argv[i]);
         break;
       case TCLVAR_VALUE_GLOB:
-        zGlob = sqlite3_value_text(argv[i]);
+        zGlob = (const char*)sqlite3_value_text(argv[i]);
         break;
       case TCLVAR_VALUE_REGEXP:
-        zRegexp = sqlite3_value_text(argv[i]);
+        zRegexp = (const char*)sqlite3_value_text(argv[i]);
         break;
       case TCLVAR_VALUE_LIKE:
-        zLike = sqlite3_value_text(argv[i]);
+        zLike = (const char*)sqlite3_value_text(argv[i]);
         break;
       default:
         assert( 0 );
