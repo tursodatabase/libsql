@@ -1,5 +1,5 @@
-C Fix\san\sobscure\smemory\sleak\sfound\sby\slibfuzzer\sthat\smay\soccur\sunder\ssome\scircumstances\sif\sexpanding\sa\s"*"\sexpression\scauses\sa\sSELECT\sto\sreturn\smore\sthan\s32767\scolumns.
-D 2015-11-21T19:43:29.760
+C Do\snot\stry\sto\seliminate\sNo-ops\sat\sthe\send\sof\sVDBE\sprogram\sas\sthis\scan\scause\nproblems\sfor\ssome\sDISTINCT\shandling\salgorithms,\sand\sdoes\snot\simprove\nperformance.\s\sThis\salso\sfixes\san\sassertion\sfault\sfound\sby\slibFuzzer.
+D 2015-11-24T00:49:44.712
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -406,7 +406,7 @@ F src/vdbe.c b56b2fc9b2f2d0a99d1dbd02d47efaacec253a4c
 F src/vdbe.h efb7a8c1459e31f3ea4377824c6a7e4cb5068637
 F src/vdbeInt.h 75c2e82ee3357e9210c06474f8d9bdf12c81105d
 F src/vdbeapi.c 020681b943e77766b32ae1cddf86d7831b7374ca
-F src/vdbeaux.c b660c995256e3d3e2cb47ccd20b82a1c342fa093
+F src/vdbeaux.c 9a234c9aaab4ad725daf94667cfed441a437c52d
 F src/vdbeblob.c fdc4a81605ae7a35ae94a55bd768b66d6be16f15
 F src/vdbemem.c fdd1578e47bea61390d472de53c565781d81e045
 F src/vdbesort.c a7ec02da4494c59dfd071126dd3726be5a11459d
@@ -1404,7 +1404,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 198d191b2f5ef7d63ac0093c701955c9052fd734
-R 8ed8d9e954ea81e19ae35a6836359b00
-U dan
-Z f96d100152be981f85597b50bc9a8134
+P 60de5f23424552c98aa760ac89149a3d51f895be
+R 22b08ad19af1727f96b09a8caa1d2b95
+U drh
+Z 5e461470e8ebbd6a466d30753f42166b
