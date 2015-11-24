@@ -277,7 +277,10 @@ static int isLikeOrGlob(
 /*
 ** Check to see if the given expression is of the form
 **
-**         column MATCH expr
+**         column OP expr
+**
+** where OP is one of MATCH, GLOB, LIKE or REGEXP and "column" is a 
+** column of a virtual table.
 **
 ** If it is then return TRUE.  If not, return FALSE.
 */
@@ -289,12 +292,13 @@ static int isMatchOfColumn(
     const char *zOp;
     unsigned char eOp2;
   } aOp[] = {
-    { "match", SQLITE_INDEX_CONSTRAINT_MATCH },
-    { "glob",  SQLITE_INDEX_CONSTRAINT_GLOB },
-    { "like",  SQLITE_INDEX_CONSTRAINT_LIKE },
-    { "regex", SQLITE_INDEX_CONSTRAINT_REGEXP }
+    { "match",  SQLITE_INDEX_CONSTRAINT_MATCH },
+    { "glob",   SQLITE_INDEX_CONSTRAINT_GLOB },
+    { "like",   SQLITE_INDEX_CONSTRAINT_LIKE },
+    { "regexp", SQLITE_INDEX_CONSTRAINT_REGEXP }
   };
   ExprList *pList;
+  Expr *pCol;                     /* Column reference */
   int i;
 
   if( pExpr->op!=TK_FUNCTION ){
@@ -304,7 +308,8 @@ static int isMatchOfColumn(
   if( pList->nExpr!=2 ){
     return 0;
   }
-  if( pList->a[1].pExpr->op != TK_COLUMN ){
+  pCol = pList->a[1].pExpr;
+  if( pCol->op!=TK_COLUMN || !IsVirtual(pCol->pTab) ){
     return 0;
   }
   for(i=0; i<ArraySize(aOp); i++){
