@@ -1,5 +1,5 @@
-C Fix\sa\scomment\stypo\sin\sthe\sunix\sVFS.\s\sNo\schanges\sto\scode.
-D 2015-11-24T15:12:47.482
+C Remove\sfrom\sos_unix.c\spointless\slogic\sthat\stries\sto\sprevent\sa\srecurrence\sof\na\swarning\smessage\sthat\scan\sonly\soccur\sonce.
+D 2015-11-24T16:40:23.118
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -323,7 +323,7 @@ F src/os.c 8fd25588eeba74068d41102d26810e216999b6c8
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h abdb9a191a367793268fe553d25bab894e986a0e
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c 3ca4a23db3ad0b809a0b8d7f879cf66f56b693d5
+F src/os_unix.c 80ec49758dbce979e4f89eda7695bbc01b0c4cd3
 F src/os_win.c 386fba30419e8458b13209781c2af5590eab2811
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 18341e2b759b447cbc82fb9215d08d9c5864e92e
@@ -1404,7 +1404,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6c2ddea65e1871b2fcb4991c5b3e6992993db3ea
-R 81ff6ba247633e5ac5ffc463969dd7f1
+P 32e138796c66c88e8cbb77aa3a4282a38d1f959a
+R 39dda72890996a1a2961e4723fcfeb24
 U drh
-Z 2bab8f8a8131461afe24bb3f0bfc9cb2
+Z 6e0fb81bf9792119f74030230681d485

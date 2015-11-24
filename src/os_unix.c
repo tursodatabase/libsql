@@ -258,8 +258,7 @@ static pid_t randomnessPid = 0;
 #define UNIXFILE_DELETE      0x20     /* Delete on close */
 #define UNIXFILE_URI         0x40     /* Filename might have query parameters */
 #define UNIXFILE_NOLOCK      0x80     /* Do no file locking */
-#define UNIXFILE_WARNED    0x0100     /* verifyDbFile() warnings issued */
-#define UNIXFILE_BLOCK     0x0200     /* Next SHM lock might block */
+#define UNIXFILE_BLOCK     0x0100     /* Next SHM lock might block */
 
 /*
 ** Include code that is common to all os_*.c files
@@ -1360,30 +1359,21 @@ static int fileHasMoved(unixFile *pFile){
 static void verifyDbFile(unixFile *pFile){
   struct stat buf;
   int rc;
-  if( pFile->ctrlFlags & UNIXFILE_WARNED ){
-    /* One or more of the following warnings have already been issued.  Do not
-    ** repeat them so as not to clutter the error log */
-    return;
-  }
   rc = osFstat(pFile->h, &buf);
   if( rc!=0 ){
     sqlite3_log(SQLITE_WARNING, "cannot fstat db file %s", pFile->zPath);
-    pFile->ctrlFlags |= UNIXFILE_WARNED;
     return;
   }
   if( buf.st_nlink==0 && (pFile->ctrlFlags & UNIXFILE_DELETE)==0 ){
     sqlite3_log(SQLITE_WARNING, "file unlinked while open: %s", pFile->zPath);
-    pFile->ctrlFlags |= UNIXFILE_WARNED;
     return;
   }
   if( buf.st_nlink>1 ){
     sqlite3_log(SQLITE_WARNING, "multiple links to file: %s", pFile->zPath);
-    pFile->ctrlFlags |= UNIXFILE_WARNED;
     return;
   }
   if( fileHasMoved(pFile) ){
     sqlite3_log(SQLITE_WARNING, "file renamed while open: %s", pFile->zPath);
-    pFile->ctrlFlags |= UNIXFILE_WARNED;
     return;
   }
 }
