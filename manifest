@@ -1,5 +1,5 @@
-C Do\snot\stry\sto\seliminate\sNo-ops\sat\sthe\send\sof\sVDBE\sprogram\sas\sthis\scan\scause\nproblems\sfor\ssome\sDISTINCT\shandling\salgorithms,\sand\sdoes\snot\simprove\nperformance.\s\sThis\salso\sfixes\san\sassertion\sfault\sfound\sby\slibFuzzer.
-D 2015-11-24T00:49:44.712
+C Add\sa\sclarifying\scomment\sto\sthe\svirtual\stable\stest\smodule\s'test8'.
+D 2015-11-24T01:17:01.246
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -356,7 +356,7 @@ F src/test4.c d168f83cc78d02e8d35567bb5630e40dcd85ac1e
 F src/test5.c 5a34feec76d9b3a86aab30fd4f6cc9c48cbab4c1
 F src/test6.c 41cacf3b0dd180823919bf9e1fbab287c9266723
 F src/test7.c 9c89a4f1ed6bb13af0ed805b8d782bd83fcd57e3
-F src/test8.c 610e3d523018ca63b08081795e76794a2121ec38
+F src/test8.c 697c9c84a13e08c72ea95a3637d4374caf54fc93
 F src/test9.c bea1e8cf52aa93695487badedd6e1886c321ea60
 F src/test_async.c 21e11293a2f72080eda70e1124e9102044531cd8
 F src/test_autoext.c dea8a01a7153b9adc97bd26161e4226329546e12
@@ -1404,7 +1404,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 60de5f23424552c98aa760ac89149a3d51f895be
-R 22b08ad19af1727f96b09a8caa1d2b95
-U drh
-Z 5e461470e8ebbd6a466d30753f42166b
+P 19d9f9ce691963310fa73ac5ff728ea8dea9d2b2
+R 5f2e3f4f59d38b9500a642209d9901f8
+U mistachkin
+Z 92cc12dd9fcb76285889b066a4a2f02e
