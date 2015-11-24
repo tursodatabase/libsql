@@ -305,7 +305,7 @@ static int isMatchOfColumn(
     return 0;
   }
   pList = pExpr->x.pList;
-  if( pList->nExpr!=2 ){
+  if( pList==0 || pList->nExpr!=2 ){
     return 0;
   }
   pCol = pList->a[1].pExpr;

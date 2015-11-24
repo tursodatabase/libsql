@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sin\sthe\sTCL\stest\sharness\slogic.
-D 2015-11-24T18:04:39.335
+C Fix\sa\sproblem\sin\swhereexpr.c\scausing\sa\scrash\swhile\sprocessing\sa\suser-function\staht\saccepts\szero\sarguments.
+D 2015-11-24T18:16:15.798
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -419,7 +419,7 @@ F src/walker.c 2e14d17f592d176b6dc879c33fbdec4fbccaa2ba
 F src/where.c 6687fb2675d9c1c1936ceca77529e2f21fb3a769
 F src/whereInt.h 6afc0d70cf6213e58e8fbe10b6e50d1aa16f122f
 F src/wherecode.c 4c96182e7b25e4be54008dee2da5b9c2f8480b9b
-F src/whereexpr.c 17d62d8bb7fd357920b46ee86851b5d6629412bf
+F src/whereexpr.c eebba8340c90de73b3d3bbe8c43b84559b8e6e2c
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test a6d901b436328bd67a79b41bb0ac2663918fe3bd
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1405,7 +1405,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 99222bb3e5f9b2a9a10d9561a9fd8c0f717baaff
-R a81a9eaa4d026b7ec9f13ce6cc6dd8d0
-U drh
-Z 1d3e92ad91e9ae564e61187f77c574d6
+P 2fba7a96566b5448f527a4ec6a26e860c4889813
+R f36b8e4e640480a045269560fe77bd48
+U dan
+Z 2212cd97f0c21ee66344a63115e7e327
