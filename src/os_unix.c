@@ -1104,7 +1104,7 @@ static unixInodeInfo *inodeList = 0;
 
 /*
 **
-** This function - unixLogError_x(), is only ever called via the macro
+** This function - unixLogErrorAtLine(), is only ever called via the macro
 ** unixLogError().
 **
 ** It is invoked after an error occurs in an OS function and errno has been
