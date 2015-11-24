@@ -848,6 +848,13 @@ static int echoBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
         case SQLITE_INDEX_CONSTRAINT_GE:
           zOp = ">="; break;
         case SQLITE_INDEX_CONSTRAINT_MATCH:
+          /* Purposely translate the MATCH operator into a LIKE, which
+          ** will be used by the next block of code to construct a new
+          ** query.  It should also be noted here that the next block
+          ** of code requires the first letter of this operator to be
+          ** in upper-case to trigger the special MATCH handling (i.e.
+          ** wrapping the bound parameter with literal '%'s).
+          */
           zOp = "LIKE"; break;
         case SQLITE_INDEX_CONSTRAINT_LIKE:
           zOp = "like"; break;

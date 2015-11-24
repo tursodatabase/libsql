@@ -258,8 +258,7 @@ static pid_t randomnessPid = 0;
 #define UNIXFILE_DELETE      0x20     /* Delete on close */
 #define UNIXFILE_URI         0x40     /* Filename might have query parameters */
 #define UNIXFILE_NOLOCK      0x80     /* Do no file locking */
-#define UNIXFILE_WARNED    0x0100     /* verifyDbFile() warnings issued */
-#define UNIXFILE_BLOCK     0x0200     /* Next SHM lock might block */
+#define UNIXFILE_BLOCK     0x0100     /* Next SHM lock might block */
 
 /*
 ** Include code that is common to all os_*.c files
@@ -322,19 +321,6 @@ static pid_t randomnessPid = 0;
 */
 static int posixOpen(const char *zFile, int flags, int mode){
   return open(zFile, flags, mode);
-}
-
-/*
-** On some systems, calls to fchown() will trigger a message in a security
-** log if they come from non-root processes.  So avoid calling fchown() if
-** we are not running as root.
-*/
-static int posixFchown(int fd, uid_t uid, gid_t gid){
-#if OS_VXWORKS
-  return 0;
-#else
-  return geteuid() ? 0 : fchown(fd,uid,gid);
-#endif
 }
 
 /* Forward reference */
@@ -423,7 +409,7 @@ static struct unix_syscall {
 #define osPwrite64  ((ssize_t(*)(int,const void*,size_t,off_t))\
                     aSyscall[13].pCurrent)
 
-  { "fchmod",       (sqlite3_syscall_ptr)fchmod,     0  },
+  { "fchmod",       (sqlite3_syscall_ptr)fchmod,          0  },
 #define osFchmod    ((int(*)(int,mode_t))aSyscall[14].pCurrent)
 
 #if defined(HAVE_POSIX_FALLOCATE) && HAVE_POSIX_FALLOCATE
@@ -445,31 +431,49 @@ static struct unix_syscall {
   { "rmdir",        (sqlite3_syscall_ptr)rmdir,           0 },
 #define osRmdir     ((int(*)(const char*))aSyscall[19].pCurrent)
 
-  { "fchown",       (sqlite3_syscall_ptr)posixFchown,     0 },
+  { "fchown",       (sqlite3_syscall_ptr)fchown,          0 },
 #define osFchown    ((int(*)(int,uid_t,gid_t))aSyscall[20].pCurrent)
+
+  { "geteuid",      (sqlite3_syscall_ptr)geteuid,         0 },
+#define osGeteuid   ((uid_t(*)(void))aSyscall[21].pCurrent)
 
 #if !defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0
   { "mmap",       (sqlite3_syscall_ptr)mmap,     0 },
-#define osMmap ((void*(*)(void*,size_t,int,int,int,off_t))aSyscall[21].pCurrent)
+#define osMmap ((void*(*)(void*,size_t,int,int,int,off_t))aSyscall[22].pCurrent)
 
   { "munmap",       (sqlite3_syscall_ptr)munmap,          0 },
-#define osMunmap ((void*(*)(void*,size_t))aSyscall[22].pCurrent)
+#define osMunmap ((void*(*)(void*,size_t))aSyscall[23].pCurrent)
 
 #if HAVE_MREMAP
   { "mremap",       (sqlite3_syscall_ptr)mremap,          0 },
 #else
   { "mremap",       (sqlite3_syscall_ptr)0,               0 },
 #endif
-#define osMremap ((void*(*)(void*,size_t,size_t,int,...))aSyscall[23].pCurrent)
+#define osMremap ((void*(*)(void*,size_t,size_t,int,...))aSyscall[24].pCurrent)
+
   { "getpagesize",  (sqlite3_syscall_ptr)unixGetpagesize, 0 },
-#define osGetpagesize ((int(*)(void))aSyscall[24].pCurrent)
+#define osGetpagesize ((int(*)(void))aSyscall[25].pCurrent)
 
   { "readlink",     (sqlite3_syscall_ptr)readlink,        0 },
-#define osReadlink ((ssize_t(*)(const char*,char*,size_t))aSyscall[25].pCurrent)
+#define osReadlink ((ssize_t(*)(const char*,char*,size_t))aSyscall[26].pCurrent)
 
 #endif
 
 }; /* End of the overrideable system calls */
+
+
+/*
+** On some systems, calls to fchown() will trigger a message in a security
+** log if they come from non-root processes.  So avoid calling fchown() if
+** we are not running as root.
+*/
+static int robustFchown(int fd, uid_t uid, gid_t gid){
+#if OS_VXWORKS
+  return 0;
+#else
+  return osGeteuid() ? 0 : osFchown(fd,uid,gid);
+#endif
+}
 
 /*
 ** This is the xSetSystemCall() method of sqlite3_vfs for all of the
@@ -1099,7 +1103,7 @@ static unixInodeInfo *inodeList = 0;
 
 /*
 **
-** This function - unixLogError_x(), is only ever called via the macro
+** This function - unixLogErrorAtLine(), is only ever called via the macro
 ** unixLogError().
 **
 ** It is invoked after an error occurs in an OS function and errno has been
@@ -1355,30 +1359,21 @@ static int fileHasMoved(unixFile *pFile){
 static void verifyDbFile(unixFile *pFile){
   struct stat buf;
   int rc;
-  if( pFile->ctrlFlags & UNIXFILE_WARNED ){
-    /* One or more of the following warnings have already been issued.  Do not
-    ** repeat them so as not to clutter the error log */
-    return;
-  }
   rc = osFstat(pFile->h, &buf);
   if( rc!=0 ){
     sqlite3_log(SQLITE_WARNING, "cannot fstat db file %s", pFile->zPath);
-    pFile->ctrlFlags |= UNIXFILE_WARNED;
     return;
   }
   if( buf.st_nlink==0 && (pFile->ctrlFlags & UNIXFILE_DELETE)==0 ){
     sqlite3_log(SQLITE_WARNING, "file unlinked while open: %s", pFile->zPath);
-    pFile->ctrlFlags |= UNIXFILE_WARNED;
     return;
   }
   if( buf.st_nlink>1 ){
     sqlite3_log(SQLITE_WARNING, "multiple links to file: %s", pFile->zPath);
-    pFile->ctrlFlags |= UNIXFILE_WARNED;
     return;
   }
   if( fileHasMoved(pFile) ){
     sqlite3_log(SQLITE_WARNING, "file renamed while open: %s", pFile->zPath);
-    pFile->ctrlFlags |= UNIXFILE_WARNED;
     return;
   }
 }
@@ -4343,7 +4338,7 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
       ** is owned by the same user that owns the original database.  Otherwise,
       ** the original owner will not be able to connect.
       */
-      osFchown(pShmNode->h, sStat.st_uid, sStat.st_gid);
+      robustFchown(pShmNode->h, sStat.st_uid, sStat.st_gid);
   
       /* Check to see if another process is holding the dead-man switch.
       ** If not, truncate the file to zero length. 
@@ -5827,7 +5822,7 @@ static int unixOpen(
     ** the same as the original database.
     */
     if( flags & (SQLITE_OPEN_WAL|SQLITE_OPEN_MAIN_JOURNAL) ){
-      osFchown(fd, uid, gid);
+      robustFchown(fd, uid, gid);
     }
   }
   assert( fd>=0 );
@@ -7584,7 +7579,7 @@ int sqlite3_os_init(void){
 
   /* Double-check that the aSyscall[] array has been constructed
   ** correctly.  See ticket [bb3a86e890c8e96ab] */
-  assert( ArraySize(aSyscall)==26 );
+  assert( ArraySize(aSyscall)==27 );
 
   /* Register all VFSes defined in the aVfs[] array */
   for(i=0; i<(sizeof(aVfs)/sizeof(sqlite3_vfs)); i++){
