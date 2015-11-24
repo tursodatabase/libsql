@@ -990,7 +990,7 @@ static void analyzeOneTable(
     /* Do not gather statistics on views or virtual tables */
     return;
   }
-  if( sqlite3_strnicmp(pTab->zName, "sqlite_", 7)==0 ){
+  if( sqlite3_strlike("sqlite_%", pTab->zName, 0)==0 ){
     /* Do not gather statistics on system tables */
     return;
   }
