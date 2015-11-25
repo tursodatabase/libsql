@@ -6227,6 +6227,7 @@ static int unixCurrentTimeInt64(sqlite3_vfs *NotUsed, sqlite3_int64 *piNow){
   return rc;
 }
 
+#if 0 /* Not used */
 /*
 ** Find the current time (in Universal Coordinated Time).  Write the
 ** current time and date as a Julian Day number into *prNow and
@@ -6240,7 +6241,11 @@ static int unixCurrentTime(sqlite3_vfs *NotUsed, double *prNow){
   *prNow = i/86400000.0;
   return rc;
 }
+#else
+# define unixCurrentTime 0
+#endif
 
+#if 0  /* Not used */
 /*
 ** We added the xGetLastError() method with the intention of providing
 ** better low-level error messages when operating-system problems come up
@@ -6254,6 +6259,9 @@ static int unixGetLastError(sqlite3_vfs *NotUsed, int NotUsed2, char *NotUsed3){
   UNUSED_PARAMETER(NotUsed3);
   return 0;
 }
+#else
+# define unixGetLastError 0
+#endif
 
 
 /*
