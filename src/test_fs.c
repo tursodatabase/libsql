@@ -241,7 +241,6 @@ static int fsdirFilter(
   int argc, sqlite3_value **argv
 ){
   FsdirCsr *pCsr = (FsdirCsr*)pVtabCursor;
-  int rc;
   const char *zDir;
   int nDir;
 
@@ -443,7 +442,7 @@ static int fstreeNext(sqlite3_vtab_cursor *cur){
     pCsr->pStmt = 0;
   }else{
     rc = SQLITE_OK;
-    pCsr->fd = open(sqlite3_column_text(pCsr->pStmt, 0), O_RDONLY);
+    pCsr->fd = open((const char*)sqlite3_column_text(pCsr->pStmt, 0), O_RDONLY);
   }
 
   return rc;
