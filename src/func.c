@@ -764,6 +764,13 @@ int sqlite3_strglob(const char *zGlobPattern, const char *zString){
 }
 
 /*
+** The sqlite3_strlike() interface.
+*/
+int sqlite3_strlike(const char *zPattern, const char *zStr, unsigned int esc){
+  return patternCompare((u8*)zPattern, (u8*)zStr, &likeInfoNorm, esc)==0;
+}
+
+/*
 ** Count the number of times that the LIKE operator (or GLOB which is
 ** just a variation of LIKE) gets called.  This is used for testing
 ** only.
