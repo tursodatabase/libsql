@@ -5940,29 +5940,19 @@ static int unixAccess(
   int flags,              /* What do we want to learn about the zPath file? */
   int *pResOut            /* Write result boolean here */
 ){
-  int amode = 0;
   UNUSED_PARAMETER(NotUsed);
   SimulateIOError( return SQLITE_IOERR_ACCESS; );
-  switch( flags ){
-    case SQLITE_ACCESS_EXISTS:
-      amode = F_OK;
-      break;
-    case SQLITE_ACCESS_READWRITE:
-      amode = W_OK|R_OK;
-      break;
-    case SQLITE_ACCESS_READ:
-      amode = R_OK;
-      break;
+  assert( pResOut!=0 );
 
-    default:
-      assert(!"Invalid flags argument");
-  }
-  *pResOut = (osAccess(zPath, amode)==0);
-  if( flags==SQLITE_ACCESS_EXISTS && *pResOut ){
+  /* The spec says there are three possible values for flags.  But only
+  ** two of them are actually used */
+  assert( flags==SQLITE_ACCESS_EXISTS || flags==SQLITE_ACCESS_READWRITE );
+
+  if( flags==SQLITE_ACCESS_EXISTS ){
     struct stat buf;
-    if( 0==osStat(zPath, &buf) && buf.st_size==0 ){
-      *pResOut = 0;
-    }
+    *pResOut = (0==osStat(zPath, &buf) && buf.st_size>0);
+  }else{
+    *pResOut = osAccess(zPath, W_OK|R_OK)==0;
   }
   return SQLITE_OK;
 }
@@ -6005,8 +5995,7 @@ static int unixFullPathname(
     if( errno!=EINVAL && errno!=ENOENT ){
       return unixLogError(SQLITE_CANTOPEN_BKPT, "readlink", zPath);
     }
-    zOut[nOut-1] = '\0';
-    sqlite3_snprintf(nOut-1, zOut, "%s", zPath);
+    sqlite3_snprintf(nOut, zOut, "%s", zPath);
     nByte = sqlite3Strlen30(zOut);
   }else{
     zOut[nByte] = '\0';
