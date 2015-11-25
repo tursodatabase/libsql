@@ -1,5 +1,5 @@
-C Fix\sthe\sfts5\s"prefix="\soption\sto\smatch\sthe\sdocumentation\s(space\sseparated\slist,\smultiple\sprefix=\soptions\ssupported).\sThe\sundocumented\scomma-separated\sformat\s(compatible\swith\sfts4)\sstill\sworks.
-D 2015-11-25T11:56:24.532
+C Simplification\sof\sthe\serror\scode\stranslator\sin\sos_unix.c.\s\sCode\scleanup\sonly.\nThe\slogic\sis\sunchanged.
+D 2015-11-25T14:00:07.501
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -323,7 +323,7 @@ F src/os.c 8fd25588eeba74068d41102d26810e216999b6c8
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h abdb9a191a367793268fe553d25bab894e986a0e
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c 80ec49758dbce979e4f89eda7695bbc01b0c4cd3
+F src/os_unix.c cedce5fdeec172e9392a54805979423cf5720159
 F src/os_win.c 386fba30419e8458b13209781c2af5590eab2811
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 18341e2b759b447cbc82fb9215d08d9c5864e92e
@@ -1405,7 +1405,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a6bfd4692c3f8b107546fbcaeb985d2c1817b3c1
-R 1d5b11516958faf6b08e74d20f3f2fa4
-U dan
-Z 6f4c4e6edf8914578c51e0efeab8cf04
+P 11eb8e877e2ba859ef6b44318f286597186dfaf2
+R 6dd872f66c2b35bfdd31a4b155581f40
+U drh
+Z ffd91438f4f00e7137108dd3e9d6d335
