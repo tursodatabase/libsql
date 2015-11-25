@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sin\stest_fs.c.\s\sFix\stypos\sand\sclean\sup\sthe\stext\nof\sthe\sdocumentation\sfor\ssqlite3_strglob()\sand\ssqlite3_strlike().
-D 2015-11-25T18:40:38.741
+C Simplify\sthe\stemporary\sfilename\sgenerator\sand\sthe\stime-of-day\sfunctions\sin\nthe\sunix\sVFS.
+D 2015-11-25T23:13:14.833
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -323,7 +323,7 @@ F src/os.c 8fd25588eeba74068d41102d26810e216999b6c8
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h abdb9a191a367793268fe553d25bab894e986a0e
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c 066d6f8e4ea9c9b82e93eef2daee3cf25759fa36
+F src/os_unix.c 3f22d7f2577b963261e9ef3b177b10a3083ed518
 F src/os_win.c 386fba30419e8458b13209781c2af5590eab2811
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 18341e2b759b447cbc82fb9215d08d9c5864e92e
@@ -1405,7 +1405,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6ef6578c03b7cfbeaaf3627b9eea2febf501ace5
-R 6a7e3073277459e34ef3bc33d986fb8e
+P 697b20534c2d780cdd8cc165d2930f6e56480770
+R 8a05f9924f5556e21d4d47be27f99435
 U drh
-Z 86f0abe6c80c8309344887b29ae04a0c
+Z fea2e37220480a85fb0635b776213ee8
