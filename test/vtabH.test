@@ -92,7 +92,6 @@ foreach ::tclvar_set_omit {0 1} {
     2 {value LIKE '%ac%'}  {x1 aback x7 backbone x8 backarrow} 300
     3 {value REGEXP '^......$'}  {x5 babble x6 baboon x9 castle} 30000
   } {
-  if {$tn==3} breakpoint
     db cache flush
     set ::gfunc 0
     if {$::tclvar_set_omit} {set cnt 0}
@@ -107,4 +106,83 @@ foreach ::tclvar_set_omit {0 1} {
   }
 }
 
+#-------------------------------------------------------------------------
+#
+if {$::tcl_platform(platform)=="unix"} {
+  reset_db
+  register_fs_module db
+  do_execsql_test 3.0 {
+    SELECT name FROM fsdir WHERE dir = '.' AND name = 'test.db';
+    SELECT name FROM fsdir WHERE dir = '.' AND name = '.'
+  } {test.db .}
+  
+  # Read the first 5 entries from the root directory.
+  #
+  set res [list]
+  foreach p [lrange [exec ls -U /] 0 4] {
+    lappend res "/$p"
+  }
+  do_execsql_test 3.1 {
+    SELECT path FROM fstree LIMIT 5;
+  } $res
+  
+  # Read all entries in the current directory.
+  #
+  proc contents {pattern} {
+    set res [list]
+    foreach f [glob -nocomplain $pattern] {
+      lappend res $f
+      if {[file isdir $f]} {
+        set res [concat $res [contents "$f/*"]]
+      }
+    }
+    set res
+  }
+  set pwd "[pwd]/*"
+  set res [contents $pwd]
+  do_execsql_test 3.2 {
+    SELECT path FROM fstree WHERE path GLOB $pwd ORDER BY 1
+  } [lsort $res]
+  
+  # Add some sub-directories and files to the current directory.
+  #
+  do_test 3.3 {
+    catch { file delete -force subdir }
+    foreach {path sz} {
+      subdir/x1.txt     143
+      subdir/x2.txt     153
+    } { 
+      set dir [file dirname $path]
+      catch { file mkdir $dir }
+      set fd [open $path w]
+      puts -nonewline $fd [string repeat 1 $sz]
+      close $fd
+    }
+  } {}
+  
+  set pwd [pwd]
+  do_execsql_test 3.5 {
+    SELECT path, size FROM fstree WHERE path GLOB $pwd || '/subdir/*' ORDER BY 1
+  } [list \
+    "$pwd/subdir/x1.txt" 143 \
+    "$pwd/subdir/x2.txt" 153 \
+  ]
+  do_execsql_test 3.6 {
+    SELECT path, size FROM fstree WHERE path LIKE $pwd || '/subdir/%' ORDER BY 1
+  } [list \
+    "$pwd/subdir/x1.txt" 143 \
+    "$pwd/subdir/x2.txt" 153 \
+  ]
+  do_execsql_test 3.7 {
+    SELECT sum(size) FROM fstree WHERE path LIKE $pwd || '/subdir/%'
+  } 296
+  do_execsql_test 3.8 {
+    SELECT size FROM fstree WHERE path = $pwd || '/subdir/x1.txt'
+  } 143
+
+}
+
+
 finish_test
+
+
