@@ -1,5 +1,5 @@
-C Simplify\slogic\sfor\ssyncing\sdirectories\safter\screating\sor\sdeleting\sa\sfile\sin\nthe\sunix\sVFS.
-D 2015-11-26T10:37:05.218
+C Fix\sa\sproblem\swith\sthe\suserauth\sextension\sand\sno-authentication\sdatabases.\sRun\sthe\stests\sfor\sthis\sextension\sas\spart\sof\sthe\sDebug-One\smodule\sin\sreleasetest.tcl.
+D 2015-11-26T15:51:55.157
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -285,7 +285,7 @@ F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
 F src/btree.c d3bdd8462a86492e2ebc9aca4a0168429017de25
 F src/btree.h 2d76dee44704c47eed323356a758662724b674a0
 F src/btreeInt.h 3ab435ed27adea54d040584b0bcc488ee7db1e38
-F src/build.c 19f7585c9747d5043dae64bc82f9cac759f69700
+F src/build.c e83da4d004a4e050c01acbb821ff7a7b1019c29b
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c addcd8160b081131005d5bc2d34adf20c1c5c92f
 F src/ctime.c 509ef9c64d1321f42448f111da86400b1799218a
@@ -950,7 +950,7 @@ F test/rbu.test 168573d353cd0fd10196b87b0caa322c144ef736
 F test/rdonly.test 64e2696c322e3538df0b1ed624e21f9a23ed9ff8
 F test/regexp1.test 497ea812f264d12b6198d6e50a76be4a1973a9d8
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
-F test/releasetest.tcl 622f2381b217facdf429584a5c292cc1fc47e7c0
+F test/releasetest.tcl 7e1cda0cf50a41a0eb9f4de0ac8198d4db0423d3
 F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
 F test/rollback.test 458fe73eb3ffdfdf9f6ba3e9b7350a6220414dea
 F test/rollback2.test fc14cf6d1a2b250d2735ef16124b971bce152f14
@@ -1405,7 +1405,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 96e7d638ecdabbf84a152036eb01d408d142839e
-R d6c3f6ff43a112db1f417e3ad4527c02
-U drh
-Z aa5e5077b0093450034838901b6e8de8
+P eb180b4f04d412dcd0af138e2dd7f62fbb5ac439
+R f2567fd8ad211c2f6878e625db7a4000
+U dan
+Z 033052b1e1d9566ff82c655910d67041
