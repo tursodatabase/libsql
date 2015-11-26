@@ -1,5 +1,5 @@
-C Small\ssimplification\sto\sthe\sxOpen\smethod\sin\sthe\sunix\sVFS.
-D 2015-11-26T02:21:05.964
+C Simplify\slogic\sfor\ssyncing\sdirectories\safter\screating\sor\sdeleting\sa\sfile\sin\nthe\sunix\sVFS.
+D 2015-11-26T10:37:05.218
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -323,7 +323,7 @@ F src/os.c 8fd25588eeba74068d41102d26810e216999b6c8
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h abdb9a191a367793268fe553d25bab894e986a0e
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c 9b3a586ea41129a0a09c13fe421b2d9464964330
+F src/os_unix.c 8b35dc3b8b0a789052855cfc6eab6cd1d206fb81
 F src/os_win.c 386fba30419e8458b13209781c2af5590eab2811
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c 18341e2b759b447cbc82fb9215d08d9c5864e92e
@@ -1405,7 +1405,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6c5621ce1b1a65913b088ed8be65f9b689260d2c
-R 8d655a3f1e63bc6ba67ee6f8b2910653
+P 96e7d638ecdabbf84a152036eb01d408d142839e
+R d6c3f6ff43a112db1f417e3ad4527c02
 U drh
-Z 1746dd40560755829f1cb168fd739f6f
+Z aa5e5077b0093450034838901b6e8de8
