@@ -1,5 +1,5 @@
-C Disable\stesting\swith\sSQLITE_USER_AUTHENTICATION\sas\sthe\smakefiles\sare\snot\sset\nup\sto\sdo\sthat.
-D 2015-11-28T17:38:22.785
+C Add\sthe\sSQLITE_FCNTL_VFS_POINTER\sfile\scontrol\swhich\sobtains\sa\spointer\sto\nthe\stop-level\sVFS\sin\suse\sby\sa\sdatabase\sconnection.
+D 2015-11-28T18:06:36.652
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -304,7 +304,7 @@ F src/insert.c e1d20ae8979e25519c2670233718676bedcfedc9
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/loadext.c 18586e45a215325f15096821e9c082035d4fb810
-F src/main.c 91feb5c7e393ad8f0c434754114a3493c3b0617a
+F src/main.c 3f2828fce1e45c3ad096c69eee1e96962c7281c5
 F src/malloc.c 337bbe9c7d436ef9b7d06b5dd10bbfc8f3025972
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 6919bcf12f221868ea066eec27e579fed95ce98b
@@ -326,8 +326,8 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c 8b35dc3b8b0a789052855cfc6eab6cd1d206fb81
 F src/os_win.c 386fba30419e8458b13209781c2af5590eab2811
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
-F src/pager.c 18341e2b759b447cbc82fb9215d08d9c5864e92e
-F src/pager.h 87c4118a71ba3965184148b379a6d93179071091
+F src/pager.c f92aacd5216d8815136c9e0190041783c602641a
+F src/pager.h 9153c71a89dc82a5a77e485f3929792116c70aae
 F src/parse.y 23737e649c26ce327603799e57f5c2ff50e5e6ba
 F src/pcache.c 73895411fa6b7bd6f0091212feabbe833b358d23
 F src/pcache.h 1ff11adce609ba7de139b6abfabaf9a2bac947b5
@@ -340,8 +340,8 @@ F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c f4c897ca76ca6d5e0b3f0499c627392ffe657c8e
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c e10586c750d87211caa8f4b239e2bfa6a2049e5b
-F src/shell.c f0f59ea60ad297f671b7ae0fb957a736ad17c92c
-F src/sqlite.h.in 1340aa105f53fbc6fd5b9918b54b64c64e910ee7
+F src/shell.c 2796237990d42e6a5a7beafee65ef70cc8767d21
+F src/sqlite.h.in 4334a48781a59d6cedd99d4033a1febf33e6bd08
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 41ef50b0418a7c5ad1337bb80db5a7928dee764f
 F src/sqliteInt.h 64256d193a16a147d9f6317cc4e095fdd3e0a2e9
@@ -1405,7 +1405,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5e14cadff09d7425c8e1cc5e817f2b0609e52a46
-R 7798aa5b56dd0b98eb234cc9b845071b
+P 14bbcdc64ecc21f47aed8935858788928ca63107
+R 52e474e0d673136d0f27ca1064e30322
 U drh
-Z b2af84eb02809218e4429ecabdfe0703
+Z 722f1d3b58c0811ab92bc5ee1b6e0186
