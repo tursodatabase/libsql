@@ -5397,19 +5397,17 @@ static const char *unixTempFileDir(void){
   static const char *azDirs[] = {
      0,
      0,
-     0,
      "/var/tmp",
      "/usr/tmp",
      "/tmp",
-     0        /* List terminator */
+     "."
   };
   unsigned int i;
   struct stat buf;
-  const char *zDir = 0;
+  const char *zDir = sqlite3_temp_directory;
 
-  azDirs[0] = sqlite3_temp_directory;
-  if( !azDirs[1] ) azDirs[1] = getenv("SQLITE_TMPDIR");
-  if( !azDirs[2] ) azDirs[2] = getenv("TMPDIR");
+  if( !azDirs[0] ) azDirs[0] = getenv("SQLITE_TMPDIR");
+  if( !azDirs[1] ) azDirs[1] = getenv("TMPDIR");
   for(i=0; i<sizeof(azDirs)/sizeof(azDirs[0]); zDir=azDirs[i++]){
     if( zDir==0 ) continue;
     if( osStat(zDir, &buf) ) continue;
@@ -5427,6 +5425,7 @@ static const char *unixTempFileDir(void){
 */
 static int unixGetTempname(int nBuf, char *zBuf){
   const char *zDir;
+  int iLimit = 0;
 
   /* It's odd to simulate an io-error here, but really this is just
   ** using the io-error infrastructure to test that SQLite handles this
@@ -5435,7 +5434,6 @@ static int unixGetTempname(int nBuf, char *zBuf){
   SimulateIOError( return SQLITE_IOERR );
 
   zDir = unixTempFileDir();
-  if( zDir==0 ) zDir = ".";
   do{
     u64 r;
     sqlite3_randomness(sizeof(r), &r);
@@ -5443,7 +5441,7 @@ static int unixGetTempname(int nBuf, char *zBuf){
     zBuf[nBuf-2] = 0;
     sqlite3_snprintf(nBuf, zBuf, "%s/"SQLITE_TEMP_FILE_PREFIX"%llx%c",
                      zDir, r, 0);
-    if( zBuf[nBuf-2]!=0 ) return SQLITE_ERROR;
+    if( zBuf[nBuf-2]!=0 || (iLimit++)>10 ) return SQLITE_ERROR;
   }while( osAccess(zBuf,0)==0 );
   return SQLITE_OK;
 }
@@ -5715,7 +5713,7 @@ static int unixOpen(
   }else if( !zName ){
     /* If zName is NULL, the upper layer is requesting a temp file. */
     assert(isDelete && !syncDir);
-    rc = unixGetTempname(MAX_PATHNAME+2, zTmpname);
+    rc = unixGetTempname(pVfs->mxPathname, zTmpname);
     if( rc!=SQLITE_OK ){
       return rc;
     }

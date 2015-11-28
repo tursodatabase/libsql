@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_FCNTL_VFS_POINTER\sfile\scontrol\swhich\sobtains\sa\spointer\sto\nthe\stop-level\sVFS\sin\suse\sby\sa\sdatabase\sconnection.
-D 2015-11-28T18:06:36.652
+C Improvements\sto\stemporary\sfile\screation\slogic\sin\sthe\sunix\sVFS.
+D 2015-11-28T21:49:53.832
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -323,7 +323,7 @@ F src/os.c 8fd25588eeba74068d41102d26810e216999b6c8
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h abdb9a191a367793268fe553d25bab894e986a0e
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c 8b35dc3b8b0a789052855cfc6eab6cd1d206fb81
+F src/os_unix.c 951ef130fd491531d03f4ab07ba4ac4df7861364
 F src/os_win.c 386fba30419e8458b13209781c2af5590eab2811
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c f92aacd5216d8815136c9e0190041783c602641a
@@ -1405,7 +1405,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 14bbcdc64ecc21f47aed8935858788928ca63107
-R 52e474e0d673136d0f27ca1064e30322
+P 7c6a809e25138950f50554e1fb96e0b6ebbe0bd4
+R ca93330e61d31cc358456a5d19f9fb0f
 U drh
-Z 722f1d3b58c0811ab92bc5ee1b6e0186
+Z a3585e71cbbc630dcd21f2a2025e8592
