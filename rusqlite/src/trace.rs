@@ -2,6 +2,7 @@
 
 use libc::{c_char, c_int, c_void};
 use std::ffi::{CStr, CString};
+use std::mem;
 use std::ptr;
 use std::str;
 
@@ -55,9 +56,6 @@ pub fn log(err_code: c_int, msg: &str) {
     }
 }
 
-/// The trace callback function signature.
-pub type TraceCallback =
-    Option<extern "C" fn (p_arg: *mut c_void, z_sql: *const c_char)>;
 /// The profile callback function signature.
 pub type ProfileCallback =
     Option<extern "C" fn (p_arg: *mut c_void, z_sql: *const c_char, nanoseconds: u64)>;
@@ -68,10 +66,22 @@ impl SqliteConnection {
     /// Prepared statement placeholders are replaced/logged with their assigned values.
     /// There can only be a single tracer defined for each database connection.
     /// Setting a new tracer clears the old one.
-    pub fn trace(&mut self, x_trace: TraceCallback) {
+    pub fn trace(&mut self, trace_fn: Option<fn(&str)>) {
+        extern "C" fn trace_callback (p_arg: *mut c_void, z_sql: *const c_char) {
+            let trace_fn: fn(&str) = unsafe { mem::transmute(p_arg) };
+            let c_slice = unsafe { CStr::from_ptr(z_sql).to_bytes() };
+            if let Ok(s) = str::from_utf8(c_slice) {
+                trace_fn(s);
+            }
+        }
+
         let c = self.db.borrow_mut();
-        unsafe { ffi::sqlite3_trace(c.db(), x_trace, ptr::null_mut()); }
+        match trace_fn {
+            Some(f) => unsafe { ffi::sqlite3_trace(c.db(), Some(trace_callback), mem::transmute(f)); },
+            None    => unsafe { ffi::sqlite3_trace(c.db(), None, ptr::null_mut()); },
+        }
     }
+
     /// Register or clear a callback function that can be used for profiling the execution of SQL statements.
     ///
     /// There can only be a single profiler defined for each database connection.
@@ -85,8 +95,37 @@ impl SqliteConnection {
 #[cfg(test)]
 mod test {
     use std::io::Write;
+    use std::sync::Mutex;
 
     use SqliteConnection;
+
+    #[test]
+    fn test_trace() {
+        lazy_static! {
+            static ref TRACED_STMTS: Mutex<Vec<String>> = Mutex::new(Vec::new());
+        }
+        fn tracer(s: &str) {
+            let mut traced_stmts = TRACED_STMTS.lock().unwrap();
+            traced_stmts.push(s.to_owned());
+        }
+
+        let mut db = SqliteConnection::open_in_memory().unwrap();
+        db.trace(Some(tracer));
+        {
+            let _ = db.query_row("SELECT ?", &[&1i32], |_| {});
+            let _ = db.query_row("SELECT ?", &[&"hello"], |_| {});
+        }
+        db.trace(None);
+        {
+            let _ = db.query_row("SELECT ?", &[&2i32], |_| {});
+            let _ = db.query_row("SELECT ?", &[&"goodbye"], |_| {});
+        }
+
+        let traced_stmts = TRACED_STMTS.lock().unwrap();
+        assert_eq!(traced_stmts.len(), 2);
+        assert_eq!(traced_stmts[0], "SELECT 1");
+        assert_eq!(traced_stmts[1], "SELECT 'hello'");
+    }
 
     extern "C" fn profile_callback(_: *mut ::libc::c_void, sql: *const ::libc::c_char, nanoseconds: u64) {
         use std::time::Duration;
