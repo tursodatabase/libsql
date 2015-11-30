@@ -23,7 +23,12 @@ libc = "~0.1"
 
 [dev-dependencies]
 tempdir = "~0.3.4"
+lazy_static = "~0.1"
 
 [dependencies.libsqlite3-sys]
 path = "libsqlite3-sys"
 version = "0.2.0"
+
+[[test]]
+name = "config_log"
+harness = false
