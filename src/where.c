@@ -2864,6 +2864,7 @@ static int whereLoopAddVirtual(
     pIdxInfo->estimatedCost = SQLITE_BIG_DBL / (double)2;
     pIdxInfo->estimatedRows = 25;
     pIdxInfo->idxFlags = 0;
+    pIdxInfo->colUsed = (sqlite3_int64)pSrc->colUsed;
     rc = vtabBestIndex(pParse, pTab, pIdxInfo);
     if( rc ) goto whereLoopAddVtab_exit;
     pIdxCons = *(struct sqlite3_index_constraint**)&pIdxInfo->aConstraint;

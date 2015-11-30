@@ -32,8 +32,8 @@ do_test tkt3871-1.3 {
   execsql { SELECT * FROM e WHERE a = 1 OR a = 2 }
   set echo_module
 } [list \
-  xFilter {SELECT rowid, * FROM 't1' WHERE a = ?} 1 \
-  xFilter {SELECT rowid, * FROM 't1' WHERE a = ?} 2 \
+  xFilter {SELECT rowid, a, b FROM 't1' WHERE a = ?} 1 \
+  xFilter {SELECT rowid, a, b FROM 't1' WHERE a = ?} 2 \
 ]
 
 do_test tkt3871-1.4 {
@@ -44,9 +44,9 @@ do_test tkt3871-1.5 {
   execsql { SELECT * FROM e WHERE a = 1 OR a = 2 OR b = 9 }
   set echo_module
 } [list \
-  xFilter {SELECT rowid, * FROM 't1' WHERE a = ?} 1 \
-  xFilter {SELECT rowid, * FROM 't1' WHERE a = ?} 2 \
-  xFilter {SELECT rowid, * FROM 't1' WHERE b = ?} 9
+  xFilter {SELECT rowid, a, b FROM 't1' WHERE a = ?} 1 \
+  xFilter {SELECT rowid, a, b FROM 't1' WHERE a = ?} 2 \
+  xFilter {SELECT rowid, a, b FROM 't1' WHERE b = ?} 9
 ]
 
 

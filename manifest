@@ -1,5 +1,5 @@
-C Simplifications\sto\sthe\slocking\slogic\sin\sthe\sunix-dotfile\sVFS.
-D 2015-11-30T00:05:39.456
+C Add\sthe\s"colUsed"\sfield\sto\sthe\ssqlite3_index_info\sstructure\spassed\sto\svirtual\stable\sxBestIndex\smethods.\sTo\sindicate\sthe\ssubset\sof\sthe\svirtual\stable\scolumns\sthat\smay\sbe\srequired\sby\sthe\scurrent\sscan.
+D 2015-11-30T12:01:37.135
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -341,7 +341,7 @@ F src/resolve.c f4c897ca76ca6d5e0b3f0499c627392ffe657c8e
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c e10586c750d87211caa8f4b239e2bfa6a2049e5b
 F src/shell.c 2796237990d42e6a5a7beafee65ef70cc8767d21
-F src/sqlite.h.in 4334a48781a59d6cedd99d4033a1febf33e6bd08
+F src/sqlite.h.in 5bd83191711d3dc85030326daa9e8e5226a495e7
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 41ef50b0418a7c5ad1337bb80db5a7928dee764f
 F src/sqliteInt.h 64256d193a16a147d9f6317cc4e095fdd3e0a2e9
@@ -356,7 +356,7 @@ F src/test4.c d168f83cc78d02e8d35567bb5630e40dcd85ac1e
 F src/test5.c 5a34feec76d9b3a86aab30fd4f6cc9c48cbab4c1
 F src/test6.c 41cacf3b0dd180823919bf9e1fbab287c9266723
 F src/test7.c 9c89a4f1ed6bb13af0ed805b8d782bd83fcd57e3
-F src/test8.c 85b8c6a0309130300d560e2334ee71e70391785e
+F src/test8.c b3a416298dab54537d5aec68697a8b31f5ddf69c
 F src/test9.c bea1e8cf52aa93695487badedd6e1886c321ea60
 F src/test_async.c 21e11293a2f72080eda70e1124e9102044531cd8
 F src/test_autoext.c dea8a01a7153b9adc97bd26161e4226329546e12
@@ -398,7 +398,7 @@ F src/threads.c bbfb74450643cb5372a43ad4f6cffd7e9dfcecb0
 F src/tokenize.c 5606871a377f390af7040ec3c12e0d183512d785
 F src/treeview.c 78842e90c1f71269e7a73a1d4221b6fe360bab66
 F src/trigger.c 322f23aad694e8f31d384dcfa386d52a48d3c52f
-F src/update.c 40e51cd0883cb5bfd6abb7d8a7cd8aa47fab2945
+F src/update.c 17332f9fe818cbc0444c36a811800af8498af4c3
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c e802e8e311a0d6c48cd1b3e89db164f6f0248d70
 F src/vacuum.c 2ddd5cad2a7b9cef7f9e431b8c7771634c6b1701
@@ -416,7 +416,7 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 18b0ed49830cf04fe2d68224b41838a73ac6cd24
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 2e14d17f592d176b6dc879c33fbdec4fbccaa2ba
-F src/where.c 6687fb2675d9c1c1936ceca77529e2f21fb3a769
+F src/where.c 9c04982ba9ecfc7751c670ed5a3bddc81d7eb74c
 F src/whereInt.h 6afc0d70cf6213e58e8fbe10b6e50d1aa16f122f
 F src/wherecode.c 4c96182e7b25e4be54008dee2da5b9c2f8480b9b
 F src/whereexpr.c eebba8340c90de73b3d3bbe8c43b84559b8e6e2c
@@ -1204,7 +1204,7 @@ F test/tkt3824.test 150aa00bb6220672e5f0eb14dc8eaa36750425f0
 F test/tkt3832.test 2300d10d57562b89875b72148338ac3e14f8847d
 F test/tkt3838.test 292e72489101cd1320d7278dc111c173ebf334d4
 F test/tkt3841.test 4659845bc53f809a5932c61c6ce8c5bb9d6b947f
-F test/tkt3871.test 43ecbc8d90dc83908e2a454aef345acc9d160c6f
+F test/tkt3871.test d921703d07c68f4fd5312073215a17fa34b0401d
 F test/tkt3879.test 2ad5bef2c87e9991ce941e054c31abe26ef7fb90
 F test/tkt3911.test 74cd324f3ba653040cc6d94cc4857b290d12d633
 F test/tkt3918.test ea78bf164e4d55cbde0d83c671ef6fbe930a0032
@@ -1259,10 +1259,10 @@ F test/vacuum4.test d3f8ecff345f166911568f397d2432c16d2867d9
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/veryquick.test 57ab846bacf7b90cf4e9a672721ea5c5b669b661
 F test/view.test f6c3a39e0c819891265e1d0754e99960d81ef6c9
-F test/vtab1.test ec5cb767277d7e0eff34d3a02824c1dd959a5959
+F test/vtab1.test 7c4b81abd88361ada9cbe414c459efca26be6bda
 F test/vtab2.test f8cd1bb9aba7143eba97812d9617880a36d247ad
 F test/vtab3.test b45f47d20f225ccc9c28dc915d92740c2dee311e
-F test/vtab4.test 942f8b8280b3ea8a41dae20e7822d065ca1cb275
+F test/vtab4.test 8e73ed268f3d596bc3590f45fc948fb40f28e9c3
 F test/vtab5.test 889f444970393c73f1e077e2bdc5d845e157a391
 F test/vtab6.test d2986cf418dc51e7fb81d12366bea2caa8b812df
 F test/vtab7.test ae560ebea870ed04e9aa4177cc302f910faaabb5
@@ -1274,7 +1274,8 @@ F test/vtabC.test 4528f459a13136f982e75614d120aef165f17292
 F test/vtabD.test 05b3f1d77117271671089e48719524b676842e96
 F test/vtabE.test d5024aa42754962f6bb0afd261681686488e7afe
 F test/vtabF.test fd5ad376f5a34fe0891df1f3cddb4fe7c3eb077e
-F test/vtabH.test 2030e7183e41c3cc7521c06aa7bc5a232f7e8986
+F test/vtabH.test 186f118d6a4dd25fdb36adfd471993003f83790c
+F test/vtabI.test 751b07636700dbdea328e4265b6077ccd6811a3f
 F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test ea8778d5b0df200adef2ca7c00c3c37d4375f772
@@ -1405,7 +1406,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 64263ccb8f9835c615242de6e28db24f953422fa
-R dc472c39e1975a0a69aca2b2404edc3d
-U drh
-Z 57f1db7fea7d09de3a215136ff8d3a37
+P 583813525888c7e106f3e8cb46c1a507006daee6 116b206494eb8ba963c7c5acfbf9e7b6db11c79c
+R 85fc84cc9bc3e1532ec1e735dc703c3b
+U dan
+Z eb992ed0e070d727cd79b36741d8ea82

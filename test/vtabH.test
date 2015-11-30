@@ -32,13 +32,13 @@ do_execsql_test 1.0 {
 
 foreach {tn sql expect} {
   1 "SELECT * FROM e6 WHERE b LIKE 'abc'" {
-    xBestIndex {SELECT rowid, * FROM 't6' WHERE b like ?} 
-    xFilter {SELECT rowid, * FROM 't6' WHERE b like ?} abc
+    xBestIndex {SELECT rowid, a, b FROM 't6' WHERE b like ?} 
+    xFilter {SELECT rowid, a, b FROM 't6' WHERE b like ?} abc
   }
 
   2 "SELECT * FROM e6 WHERE b GLOB 'abc'" {
-    xBestIndex {SELECT rowid, * FROM 't6' WHERE b glob ?} 
-    xFilter {SELECT rowid, * FROM 't6' WHERE b glob ?} abc
+    xBestIndex {SELECT rowid, a, b FROM 't6' WHERE b glob ?} 
+    xFilter {SELECT rowid, a, b FROM 't6' WHERE b glob ?} abc
   }
 } {
   do_test 1.$tn {
