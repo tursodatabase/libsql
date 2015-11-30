@@ -715,6 +715,20 @@ sqlite3_analyzer.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl
 sqlite3_analyzer$(EXE): sqlite3_analyzer.c
 	$(TCCX) $(TCL_FLAGS) sqlite3_analyzer.c -o $@ $(LIBTCL) $(THREADLIB) 
 
+sqlite3_schemalint.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/schemalint.tcl
+	echo "#define TCLSH 2" > $@
+	echo "#define SQLITE_ENABLE_DBSTAT_VTAB 1" >> $@
+	cat sqlite3.c $(TOP)/src/tclsqlite.c >> $@
+	echo "static const char *tclsh_main_loop(void){" >> $@
+	echo "static const char *zMainloop = " >> $@
+	tclsh $(TOP)/tool/tostr.tcl $(TOP)/tool/schemalint.tcl >> $@
+	echo "; return zMainloop; }" >> $@
+
+sqlite3_schemalint$(EXE): $(TESTSRC) sqlite3_schemalint.c
+	$(TCCX) $(TCL_FLAGS) $(TESTFIXTURE_FLAGS)                  \
+		sqlite3_schemalint.c $(TESTSRC)               \
+		-o sqlite3_schemalint$(EXE) $(LIBTCL) $(THREADLIB)
+
 # Rules to build the 'testfixture' application.
 #
 TESTFIXTURE_FLAGS  = -DSQLITE_TEST=1 -DSQLITE_CRASH_TEST=1

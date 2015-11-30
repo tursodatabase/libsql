@@ -1,5 +1,5 @@
-C Fix\sthe\sschemalint.tcl\sscript\sto\shandle\sidentifiers\sthat\srequire\squoting.
-D 2015-11-30T18:17:55.036
+C Add\sa\srule\sto\smain.mk\sto\sbuild\sthe\sschemalint.tcl\sscript\sinto\san\sexecutable.\sSimilar\sto\sthe\sway\sthe\ssqlite3_analyzer\sexecutable\sis\sbuilt.
+D 2015-11-30T19:16:00.031
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -263,7 +263,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk ae99be5eb22933b1ecf80f94d41d25a3ea80aaf3
+F main.mk 0aec7410e847a886ed8260b829e4e72f060b0431
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -1381,7 +1381,7 @@ F tool/replace.tcl 7727c60a04299b65a92f5e1590896fea0f25b9e0
 F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
 F tool/run-speed-test.sh 0ae485af4fe9f826e2b494be8c81f8ca9e222a4a
-F tool/schemalint.tcl 2f44d0874061a948f6ef53505062db4ac9806cf7
+F tool/schemalint.tcl 045481a427ecdb72d11a0b0ef8725e7b892a09b9
 F tool/showdb.c d4476e000a64eca9f5e2c2f68741e747b9778e8d
 F tool/showjournal.c 5bad7ae8784a43d2b270d953060423b8bd480818
 F tool/showlocks.c 9920bcc64f58378ff1118caead34147201f48c68
@@ -1406,7 +1406,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d3aa067c830e98f2074630c4613c557b0ce90a57
-R aed657578ea11902053a31be3048325d
+P 451e0fafbe5b7e9c67d9b584d5e16796c3196881
+R 8aa86746f90305c3990fbec7bea3f626
 U dan
-Z 94438cf65b515737c9a10851485e87ac
+Z e9b16724c3379c54748ede3fe8135436

@@ -1,3 +1,4 @@
+if {[catch {
 
 set ::VERBOSE 0
 
@@ -553,10 +554,17 @@ proc sqlidx_internal_tests {} {
 # End of internal test code.
 #-------------------------------------------------------------------------
 
+if {[info exists ::argv0]==0} { set ::argv0 [info nameofexec] }
+if {[info exists ::argv]==0} usage
 sqlidx_init_context D
-process_cmdline_args D $argv
+process_cmdline_args D $::argv
 open_database D
 analyze_selects D
 find_trial_indexes D
 foreach idx [run_trials D] { puts $idx }
 
+} err]} {
+  puts "ERROR: $err"
+  puts $errorInfo
+  exit 1
+}
