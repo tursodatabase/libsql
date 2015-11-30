@@ -1,5 +1,5 @@
-C Add\sthe\s"colUsed"\sfield\sto\sthe\ssqlite3_index_info\sstructure\spassed\sto\svirtual\stable\sxBestIndex\smethods.\sTo\sindicate\sthe\ssubset\sof\sthe\svirtual\stable\scolumns\sthat\smay\sbe\srequired\sby\sthe\scurrent\sscan.
-D 2015-11-30T12:01:37.135
+C Fix\sthe\sthreadtest3\stest\sprogram\sso\sthat\sit\sworks\swith\sVFSes\sthat\somit\sthe\nxCurrentTime()\smethod\sand\ssupply\sonly\sxCurrentTimeInt64().
+D 2015-11-30T19:15:25.436
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -1072,7 +1072,7 @@ F test/thread2.test f35d2106452b77523b3a2b7d1dcde2e5ee8f9e46
 F test/thread_common.tcl 334639cadcb9f912bf82aa73f49efd5282e6cadd
 F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
 F test/threadtest2.c a70a8e94bef23339d34226eb9521015ef99f4df8
-F test/threadtest3.c 9ab4b168681c3a6f70f6c833ba08e0d48dd4af9b
+F test/threadtest3.c 0707c28e0954acbef654f91675e14f3573cf9a10
 F test/threadtest4.c c1e67136ceb6c7ec8184e56ac61db28f96bd2925
 F test/tkt-02a8e81d44.test 6c80d9c7514e2a42d4918bf87bf6bc54f379110c
 F test/tkt-26ff0c2d1e.test 888324e751512972c6e0d1a09df740d8f5aaf660
@@ -1406,7 +1406,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 583813525888c7e106f3e8cb46c1a507006daee6 116b206494eb8ba963c7c5acfbf9e7b6db11c79c
-R 85fc84cc9bc3e1532ec1e735dc703c3b
-U dan
-Z eb992ed0e070d727cd79b36741d8ea82
+P 47f10b7e5d8c1d965df891990090623444933cc9
+R 585e8fe5d4364350ebf759c316009b08
+U drh
+Z a830d371ea8bc3ea09f7879f209590a2
