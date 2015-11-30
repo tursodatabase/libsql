@@ -444,7 +444,9 @@ impl SqliteConnection {
 
 impl fmt::Debug for SqliteConnection {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "SqliteConnection( path: {:?} )", &self.path)
+        f.debug_struct("SqliteConnection")
+            .field("path", &self.path)
+            .finish()
     }
 }
 
@@ -780,7 +782,11 @@ impl<'conn> fmt::Debug for SqliteStatement<'conn> {
             let c_slice = CStr::from_ptr(ffi::sqlite3_sql(self.stmt)).to_bytes();
             str::from_utf8(c_slice)
         };
-        write!(f, "SqliteStatement( conn: {:?}, stmt: {:?}, sql: {:?} )", self.conn, self.stmt, sql)
+        f.debug_struct("SqliteStatement")
+            .field("conn", self.conn)
+            .field("stmt", &self.stmt)
+            .field("sql", &sql)
+            .finish()
     }
 }
 
