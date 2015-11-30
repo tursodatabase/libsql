@@ -1,5 +1,5 @@
-C The\sEOVERFLOW\serrors\sfrom\sfstat()\sis\snot\spossible\sunless\sSQLite\shas\sbeen\ncompiled\swith\sSQLITE_DISABLE_LFS.
-D 2015-11-30T20:36:26.173
+C Fix\sa\sproblem\sin\sxFullPathname\sfor\sthe\sunix\sVFS.\s\sThe\sproblem\swas\sfound\sby\nKostya\sSerebryany\susing\slibFuzzer.
+D 2015-11-30T22:22:23.455
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -323,7 +323,7 @@ F src/os.c 8fd25588eeba74068d41102d26810e216999b6c8
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h abdb9a191a367793268fe553d25bab894e986a0e
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c 641b7da6960b5bfa2120a97464578da436f4876c
+F src/os_unix.c 88d9fd1da4f3d26c64ef954fb32cce583605eba0
 F src/os_win.c 386fba30419e8458b13209781c2af5590eab2811
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c f92aacd5216d8815136c9e0190041783c602641a
@@ -1049,7 +1049,7 @@ F test/subselect.test d24fd8757daf97dafd2e889c73ea4c4272dcf4e4
 F test/substr.test 18f57c4ca8a598805c4d64e304c418734d843c1a
 F test/subtype1.test 7fe09496352f97053af1437150751be2d0a0cae8
 F test/superlock.test 1cde669f68d2dd37d6c9bd35eee1d95491ae3fc2
-F test/symlink.test 2513f7c030df0f435c6415687ba8b739f3d312df
+F test/symlink.test cbf6cb8c6c4b63a39e9f0f6b0d5c99e249dbc102
 F test/sync.test a34cd43e98b7fb84eabbf38f7ed8f7349b3f3d85
 F test/syscall.test 2aa9e111b79fb385681ff8940124def6f8faab87
 F test/sysfault.test fa776e60bf46bdd3ae69f0b73e46ee3977a58ae6
@@ -1406,7 +1406,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3b155855f3d5918f1df7dbd19783215b3da0ca3e
-R 8c60b47a7d3bee2b87d7070795b628ee
+P 8cfb7a50bb70ba1e021c1d12d31563e98a20d291
+R f79c0be9f023b27dbe04efacb9601efe
 U drh
-Z 055a22d7d501db707cd4b91440df8d3a
+Z cf313c6c46c31a94ce13dac473c0da9d

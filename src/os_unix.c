@@ -5981,7 +5981,9 @@ static int unixFullPathname(
   ** truncated to make it fit. This is Ok, as SQLite refuses to open any
   ** file for which this function returns a full path larger than (nOut-8)
   ** bytes in size.  */
-  if( zOut[0]!='/' ){
+  testcase( nByte==nOut-5 );
+  testcase( nByte==nOut-4 );
+  if( zOut[0]!='/' && nByte<nOut-4 ){
     int nCwd;
     int nRem = nOut-nByte-1;
     memmove(&zOut[nRem], zOut, nByte+1);
