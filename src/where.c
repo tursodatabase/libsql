@@ -3942,7 +3942,8 @@ static char *whereAppendSingleTerm(
   pColl = sqlite3BinaryCompareCollSeq(pParse, pX->pLeft, pX->pRight);
 
   if( zOp ){
-    const char *zFmt = bOr ? "%z{{%s %s %s %lld}}" : "%z{%s %s %s %lld}";
+    const char *zFmt = bOr ? "%z{{%s \"%w\" \"%w\" %lld}}" :
+                             "%z{%s \"%w\" \"%w\" %lld}";
     zBuf = whereAppendPrintf(db, zFmt, zIn, 
         zOp, pTab->aCol[pTerm->u.leftColumn].zName, 
         (pColl ? pColl->zName : "BINARY"),
@@ -4025,7 +4026,7 @@ static void whereTraceBuilder(
       nCol = pTab->nCol;
 
       /* Append the table name to the buffer. */
-      zBuf = whereAppendPrintf(db, "%s", pTab->zName);
+      zBuf = whereAppendPrintf(db, "\"%w\"", pTab->zName);
 
       /* Append the list of columns required to create a covering index */
       zBuf = whereAppendPrintf(db, "%z {cols", zBuf);
@@ -4033,7 +4034,8 @@ static void whereTraceBuilder(
         for(iCol=0; iCol<nCol; iCol++){
           if( iCol==(sizeof(Bitmask)*8-1) ) break;
           if( pItem->colUsed & ((u64)1 << iCol) ){
-            zBuf = whereAppendPrintf(db, "%z %s", zBuf, pTab->aCol[iCol].zName);
+            const char *zName = pTab->aCol[iCol].zName;
+            zBuf = whereAppendPrintf(db, "%z \"%w\"", zBuf, zName);
           }
         }
       }
@@ -4054,7 +4056,7 @@ static void whereTraceBuilder(
           if( pExpr->op==TK_COLUMN && pExpr->iTable==pItem->iCursor ){
             if( pExpr->iColumn>=0 ){
               const char *zName = pTab->aCol[pExpr->iColumn].zName;
-              zBuf = whereAppendPrintf(db, "%z%s%s %s %s", zBuf,
+              zBuf = whereAppendPrintf(db, "%z%s\"%w\" \"%w\" %s", zBuf,
                   bFirst ? " {orderby " : " ", zName, pColl->zName,
                   (pOrderBy->a[i].sortOrder ? "DESC" : "ASC")
               );

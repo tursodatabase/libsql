@@ -1,5 +1,5 @@
-C In\sthe\sCREATE\sINDEX\sstatements\soutput\sby\sschemalint.tcl,\savoid\sdeclaring\san\sexplicit\scollation\ssequence\sthat\sis\sthe\ssame\sas\sthe\scolumn's\sdefault.
-D 2015-11-23T18:28:07.584
+C Fix\sthe\sschemalint.tcl\sscript\sto\shandle\sidentifiers\sthat\srequire\squoting.
+D 2015-11-30T18:17:55.036
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -416,7 +416,7 @@ F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
 F src/wal.c 18b0ed49830cf04fe2d68224b41838a73ac6cd24
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 2e14d17f592d176b6dc879c33fbdec4fbccaa2ba
-F src/where.c 5804902239731a7025240f4338d98cdc57315636
+F src/where.c be09f4a0513f885845ae481324c2e07603f88b38
 F src/whereInt.h 7892bb54cf9ca0ae5c7e6094491b94c9286dc647
 F src/wherecode.c 4c96182e7b25e4be54008dee2da5b9c2f8480b9b
 F src/whereexpr.c bd4877cd4dd11f6ab551ef0054535ca3c6224950
@@ -973,7 +973,7 @@ F test/schema2.test 906408621ea881fdb496d878b1822572a34e32c5
 F test/schema3.test 1bc1008e1f8cb5654b248c55f27249366eb7ed38
 F test/schema4.test e6a66e20cc69f0e306667c08be7fda3d11707dc5
 F test/schema5.test 29699b4421f183c8f0e88bd28ce7d75d13ea653e
-F test/schemalint.test 7fba0e262353c8c3dd5ee406cb11cf90f8b566fe
+F test/schemalint.test cee9f375637fcc8c6e77d971abe044445c23e024
 F test/securedel.test 21749c32ccc30f1ea9e4b9f33295a6521ec20fa0
 F test/securedel2.test 2d54c28e46eb1fd6902089958b20b1b056c6f1c5
 F test/select1.test be62204d2bd9a5a8a149e9974cfddce893d8f686
@@ -1381,7 +1381,7 @@ F tool/replace.tcl 7727c60a04299b65a92f5e1590896fea0f25b9e0
 F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
 F tool/run-speed-test.sh 0ae485af4fe9f826e2b494be8c81f8ca9e222a4a
-F tool/schemalint.tcl ad61083d39cb40e848b9acc1273e4c487bb55cd7
+F tool/schemalint.tcl 2f44d0874061a948f6ef53505062db4ac9806cf7
 F tool/showdb.c d4476e000a64eca9f5e2c2f68741e747b9778e8d
 F tool/showjournal.c 5bad7ae8784a43d2b270d953060423b8bd480818
 F tool/showlocks.c 9920bcc64f58378ff1118caead34147201f48c68
@@ -1406,7 +1406,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8f1ef0904d055b5510ec9043810ebf22a8c5e253
-R 4b9b445c1607ad5c9f9bdcf33b4eb416
+P d3aa067c830e98f2074630c4613c557b0ce90a57
+R aed657578ea11902053a31be3048325d
 U dan
-Z 6d9149db2c512107280c4e32c490b8cb
+Z 94438cf65b515737c9a10851485e87ac

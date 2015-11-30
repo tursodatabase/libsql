@@ -11,6 +11,41 @@ proc usage {} {
   exit
 }
 
+# Return the quoted version of identfier $id. Quotes are only added if 
+# they are required by SQLite.
+#
+# This command currently assumes that quotes are required if the 
+# identifier contains any ASCII-range characters that are not 
+# alpha-numeric or underscores.
+#
+proc quote {id} {
+  if {[requires_quote $id]} {
+    set x [string map {\" \"\"} $id]
+    return "\"$x\""
+  }
+  return $id
+}
+proc requires_quote {id} {
+  foreach c [split $id {}] {
+    if {[string is alnum $c]==0 && $c!="_"} {
+      return 1
+    }
+  }
+  return 0
+}
+
+# The argument passed to this command is a Tcl list of identifiers. The
+# value returned is the same list, except with each item quoted and the
+# elements comma-separated.
+#
+proc list_to_sql {L} {
+  set ret [list]
+  foreach l $L {
+    lappend ret [quote $l]
+  }
+  join $ret ", "
+}
+
 proc process_cmdline_args {ctxvar argv} {
   upvar $ctxvar G
   set nArg [llength $argv]
@@ -139,11 +174,11 @@ proc eqset_to_index {ctxvar aCollVar tname eqset {range {}}} {
 
   foreach {c collate dir} $rangeset {
     append idxname "_$c"
-    set coldef $c
+    set coldef [quote $c]
 
     if {[string compare -nocase $collate $aColl($c)]!=0} {
       append idxname [string tolower $collate]
-      append coldef " COLLATE $collate"
+      append coldef " COLLATE [quote $collate]"
     }
 
     if {$dir=="DESC"} {
@@ -153,7 +188,7 @@ proc eqset_to_index {ctxvar aCollVar tname eqset {range {}}} {
     lappend lCols $coldef
   }
 
-  set create_index "CREATE INDEX $idxname ON ${tname}("
+  set create_index "CREATE INDEX [quote $idxname] ON [quote $tname]("
   append create_index [join $lCols ", "]
   append create_index ");"
 
@@ -185,12 +220,27 @@ proc expand_or_cons {L} {
   return $lRet
 }
 
+#--------------------------------------------------------------------------
+# Argument $tname is the name of a table in the main database opened by
+# database handle [db]. $arrayvar is the name of an array variable in the
+# caller's context. This command populates the array with an entry mapping 
+# from column name to default collation sequence for each column of table
+# $tname. For example, if a table is declared:
+#
+#   CREATE TABLE t1(a COLLATE nocase, b, c COLLATE binary)
+#
+# the mapping is populated with:
+#
+#   map(a) -> "nocase"
+#   map(b) -> "binary"
+#   map(c) -> "binary"
+#
 proc sqlidx_get_coll_map {tname arrayvar} {
   upvar $arrayvar aColl
   set colnames [list]
-  db eval "PRAGMA table_info = $tname" x { lappend colnames $x(name) }
-  db eval "CREATE INDEX schemalint_test ON ${tname}([join $colnames ,])"
-
+  set qname [quote $tname]
+  db eval "PRAGMA table_info = $qname" x { lappend colnames $x(name) }
+  db eval "CREATE INDEX schemalint_test ON ${qname}([list_to_sql $colnames])"
   db eval "PRAGMA index_xinfo = schemalint_test" x { 
     set aColl($x(name)) $x(coll)
   }
@@ -348,6 +398,7 @@ proc sqlidx_one_test {tn schema select expected} {
   sqlidx_init_context C
 
   sqlite3 db ""
+  db collate "a b c" [list string compare]
   db eval $schema
   lappend C(lSelect) $select
   analyze_selects C
@@ -362,9 +413,14 @@ proc sqlidx_one_test {tn schema select expected} {
   }
 
   db close
+
+  upvar nTest nTest
+  incr nTest
 }
 
 proc sqlidx_internal_tests {} {
+  set nTest 0
+
 
   # No indexes for a query with no constraints.
   sqlidx_one_test 0 {
@@ -440,6 +496,58 @@ proc sqlidx_internal_tests {} {
     {CREATE INDEX t1_a ON t1(a);}
   }
 
+  # Tables with names that require quotes.
+  #
+  sqlidx_one_test 8.1 {
+    CREATE TABLE "t t"(a, b, c);
+  } {
+    SELECT * FROM "t t" WHERE a=?
+  } {
+    {CREATE INDEX "t t_a" ON "t t"(a);}
+  }
+  sqlidx_one_test 8.2 {
+    CREATE TABLE "t t"(a, b, c);
+  } {
+    SELECT * FROM "t t" WHERE b BETWEEN ? AND ?
+  } {
+    {CREATE INDEX "t t_b" ON "t t"(b);}
+  }
+  
+  # Columns with names that require quotes.
+  #
+  sqlidx_one_test 9.1 {
+    CREATE TABLE t3(a, "b b", c);
+  } {
+    SELECT * FROM t3 WHERE "b b" = ?
+  } {
+    {CREATE INDEX "t3_b b" ON t3("b b");}
+  }
+  sqlidx_one_test 9.2 {
+    CREATE TABLE t3(a, "b b", c);
+  } {
+    SELECT * FROM t3 ORDER BY "b b"
+  } {
+    {CREATE INDEX "t3_b b" ON t3("b b");}
+  }
+
+  # Collations with names that require quotes.
+  #
+  sqlidx_one_test 10.1 {
+    CREATE TABLE t4(a, b, c);
+  } {
+    SELECT * FROM t4 ORDER BY c COLLATE "a b c"
+  } {
+    {CREATE INDEX "t4_ca b c" ON t4(c COLLATE "a b c");}
+  }
+  sqlidx_one_test 10.2 {
+    CREATE TABLE t4(a, b, c);
+  } {
+    SELECT * FROM t4 WHERE c = ? COLLATE "a b c"
+  } {
+    {CREATE INDEX "t4_ca b c" ON t4(c COLLATE "a b c");}
+  }
+
+  puts "All $nTest tests passed"
   exit
 }
 # End of internal test code.
