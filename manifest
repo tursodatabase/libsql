@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\sxFullPathname\sfor\sthe\sunix\sVFS.\s\sThe\sproblem\swas\sfound\sby\nKostya\sSerebryany\susing\slibFuzzer.
-D 2015-11-30T22:22:23.455
+C Add\sthe\sSQLITE_PRINTF_PRECISION_LIMIT\scompile-time\soption.
+D 2015-11-30T22:52:14.011
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -335,7 +335,7 @@ F src/pcache1.c 46a110be31a8d9f9b41431733836822ca0dd27ab
 F src/pragma.c f3e7147299ca05ef4304a36f1fd6e002729c72c6
 F src/pragma.h 3d94aebbebd2089899fecc01909bf2608b39507d
 F src/prepare.c 82e5db1013846a819f198336fed72c44c974e7b1
-F src/printf.c f8fc8f04e75b1e983ef2793c27ec7a43b287e94a
+F src/printf.c ca05561795ad6c2fa47acdd007702586282f7feb
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c f4c897ca76ca6d5e0b3f0499c627392ffe657c8e
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
@@ -1406,7 +1406,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8cfb7a50bb70ba1e021c1d12d31563e98a20d291
-R f79c0be9f023b27dbe04efacb9601efe
+P bb1e2c4df0b81327923f121dd6c002845486a314
+R d3b18adc3009f6c25adcd36c4f052eab
 U drh
-Z cf313c6c46c31a94ce13dac473c0da9d
+Z 7ba0fba490eff520c14229730eb61dd8
