@@ -1,5 +1,5 @@
-C Fix\sthe\ssqldiff\sutility\sprogram\sso\sthat\sit\sworks\sfor\sschemas\sthat\shave\ntables\swith\szero-length\scolumn\snames.
-D 2015-11-29T21:46:19.675
+C Simplifications\sto\sthe\slocking\slogic\sin\sthe\sunix-dotfile\sVFS.
+D 2015-11-30T00:05:39.456
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -323,7 +323,7 @@ F src/os.c 8fd25588eeba74068d41102d26810e216999b6c8
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h abdb9a191a367793268fe553d25bab894e986a0e
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c 951ef130fd491531d03f4ab07ba4ac4df7861364
+F src/os_unix.c d4ca37d4fa3d65d2d553751f147e61276f5e06bf
 F src/os_win.c 386fba30419e8458b13209781c2af5590eab2811
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c f92aacd5216d8815136c9e0190041783c602641a
@@ -1405,7 +1405,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d6e177fd09c83d46adc5b5d36e9a439aa5397450
-R 6d96f803f67943fdc4d03a972304e707
+P 64263ccb8f9835c615242de6e28db24f953422fa
+R dc472c39e1975a0a69aca2b2404edc3d
 U drh
-Z e1ff9fd256204ded8600114936035e27
+Z 57f1db7fea7d09de3a215136ff8d3a37
