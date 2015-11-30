@@ -73,9 +73,16 @@
 #if SQLITE_OS_UNIX
 # include <unistd.h>
 # include <dirent.h>
+# ifndef DIRENT
+#  define DIRENT dirent
+# endif
 #endif
 #if SQLITE_OS_WIN
 # include <io.h>
+# include "test_windirent.h"
+# ifndef S_ISREG
+#  define S_ISREG(mode) (((mode) & S_IFMT) == S_IFREG)
+# endif
 #endif
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
@@ -116,7 +123,7 @@ struct FsdirCsr {
   char *zDir;                     /* Buffer containing directory scanned */
   DIR *pDir;                      /* Open directory */
   sqlite3_int64 iRowid;
-  struct dirent entry;            /* Current entry */
+  struct DIRENT entry;            /* Current entry */
 };
 
 /*
@@ -220,7 +227,7 @@ static int fsdirNext(sqlite3_vtab_cursor *cur){
   FsdirCsr *pCsr = (FsdirCsr*)cur;
 
   if( pCsr->pDir ){
-    struct dirent *pRes = 0;
+    struct DIRENT *pRes = 0;
     readdir_r(pCsr->pDir, &pCsr->entry, &pRes);
     if( pRes==0 ){
       closedir(pCsr->pDir);
@@ -461,15 +468,34 @@ static int fstreeFilter(
   int rc;
   const char *zSql = 
 "WITH r(d) AS ("
-"  SELECT CASE WHEN dir='/' THEN '' ELSE dir END || '/' || name "
-"    FROM fsdir WHERE dir=? AND name NOT LIKE '.%'"
+"  SELECT CASE WHEN dir=?2 THEN ?3 ELSE dir END || '/' || name "
+"    FROM fsdir WHERE dir=?1 AND name NOT LIKE '.%'"
 "  UNION ALL"
 "  SELECT dir || '/' || name FROM r, fsdir WHERE dir=d AND name NOT LIKE '.%'"
 ") SELECT d FROM r;";
 
-  const char *zDir = "/";
-  int nDir = 1;
-  char aWild[2] = {'\0', '\0' };
+  char *zRoot;
+  int nRoot;
+  char *zPrefix;
+  int nPrefix;
+  const char *zDir;
+  int nDir;
+  char aWild[2] = { '\0', '\0' };
+
+#if SQLITE_OS_WIN
+  zRoot = sqlite3_mprintf("%s%c", getenv("SystemDrive"), '/');
+  nRoot = strlen(zRoot);
+  zPrefix = sqlite3_mprintf("%s", getenv("SystemDrive"));
+  nPrefix = strlen(zPrefix);
+#else
+  zRoot = "/";
+  nRoot = 1;
+  zPrefix = "";
+  nPrefix = 0;
+#endif
+
+  zDir = zRoot;
+  nDir = nRoot;
 
   fstreeCloseFd(pCsr);
   sqlite3_finalize(pCsr->pStmt);
@@ -490,9 +516,9 @@ static int fstreeFilter(
         break;
     }
 
-    if( zQuery[0]=='/' ){
+    if( sqlite3_strnicmp(zQuery, zPrefix, nPrefix)==0 ){
       int i;
-      for(i=1; zQuery[i]; i++){
+      for(i=nPrefix; zQuery[i]; i++){
         if( zQuery[i]==aWild[0] || zQuery[i]==aWild[1] ) break;
         if( zQuery[i]=='/' ) nDir = i;
       }
@@ -501,6 +527,13 @@ static int fstreeFilter(
   }
 
   sqlite3_bind_text(pCsr->pStmt, 1, zDir, nDir, SQLITE_TRANSIENT);
+  sqlite3_bind_text(pCsr->pStmt, 2, zRoot, nRoot, SQLITE_TRANSIENT);
+  sqlite3_bind_text(pCsr->pStmt, 3, zPrefix, nPrefix, SQLITE_TRANSIENT);
+
+#if SQLITE_OS_WIN
+  sqlite3_free(zPrefix);
+  sqlite3_free(zRoot);
+#endif
 
   return fstreeNext(pVtabCursor); 
 }

@@ -108,7 +108,7 @@ foreach ::tclvar_set_omit {0 1} {
 
 #-------------------------------------------------------------------------
 #
-if {$::tcl_platform(platform)=="unix"} {
+if {1} {
   reset_db
   register_fs_module db
   do_execsql_test 3.0 {
@@ -116,11 +116,41 @@ if {$::tcl_platform(platform)=="unix"} {
     SELECT name FROM fsdir WHERE dir = '.' AND name = '.'
   } {test.db .}
   
+  proc list_root_files {} {
+    if {$::tcl_platform(platform) eq "windows"} {
+      set res [list]
+      foreach name [glob -directory $::env(SystemDrive)/ -- *] {
+        if {[string index [file tail $name] 0] eq "."} continue
+        lappend res $name
+      }
+      return $res
+    } else {
+      return [exec ls -U /]
+    }
+  }
+
+  proc list_files { pattern } {
+    if {$::tcl_platform(platform) eq "windows"} {
+      set res [list]
+      foreach name [glob -nocomplain $pattern] {
+        if {[string index [file tail $name] 0] eq "."} continue
+        lappend res $name
+      }
+      return $res
+    } else {
+      return [glob -nocomplain $pattern]
+    }
+  }
+
   # Read the first 5 entries from the root directory.
   #
   set res [list]
-  foreach p [lrange [exec ls -U /] 0 4] {
-    lappend res "/$p"
+  foreach p [lrange [list_root_files] 0 4] {
+    if {$::tcl_platform(platform) eq "windows"} {
+      lappend res $p
+    } else {
+      lappend res "/$p"
+    }
   }
   do_execsql_test 3.1 {
     SELECT path FROM fstree LIMIT 5;
@@ -130,7 +160,7 @@ if {$::tcl_platform(platform)=="unix"} {
   #
   proc contents {pattern} {
     set res [list]
-    foreach f [glob -nocomplain $pattern] {
+    foreach f [list_files $pattern] {
       lappend res $f
       if {[file isdir $f]} {
         set res [concat $res [contents "$f/*"]]

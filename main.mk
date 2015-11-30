@@ -312,6 +312,7 @@ TESTSRC = \
   $(TOP)/src/test_tclvar.c \
   $(TOP)/src/test_thread.c \
   $(TOP)/src/test_vfs.c \
+  $(TOP)/src/test_windirent.c \
   $(TOP)/src/test_wsd.c
 
 # Extensions to be statically loaded.
