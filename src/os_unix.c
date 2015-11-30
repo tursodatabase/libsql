@@ -1229,7 +1229,7 @@ static int findInodeInfo(
   rc = osFstat(fd, &statbuf);
   if( rc!=0 ){
     storeLastErrno(pFile, errno);
-#ifdef EOVERFLOW
+#if defined(EOVERFLOW) && defined(SQLITE_DISABLE_LFS)
     if( pFile->lastErrno==EOVERFLOW ) return SQLITE_NOLFS;
 #endif
     return SQLITE_IOERR;
