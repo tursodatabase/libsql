@@ -3662,16 +3662,12 @@ static int fcntlSizeHint(unixFile *pFile, i64 nByte){
       int nWrite = 0;             /* Number of bytes written by seekAndWrite */
       i64 iWrite;                 /* Next offset to write to */
 
-      iWrite = ((buf.st_size + 2*nBlk - 1)/nBlk)*nBlk-1;
+      iWrite = (buf.st_size/nBlk)*nBlk + nBlk - 1;
       assert( iWrite>=buf.st_size );
-      assert( (iWrite/nBlk)==((buf.st_size+nBlk-1)/nBlk) );
       assert( ((iWrite+1)%nBlk)==0 );
-      for(/*no-op*/; iWrite<nSize; iWrite+=nBlk ){
+      for(/*no-op*/; iWrite<nSize+nBlk-1; iWrite+=nBlk ){
+        if( iWrite>=nSize ) iWrite = nSize - 1;
         nWrite = seekAndWrite(pFile, iWrite, "", 1);
-        if( nWrite!=1 ) return SQLITE_IOERR_WRITE;
-      }
-      if( nWrite==0 || (nSize%nBlk) ){
-        nWrite = seekAndWrite(pFile, nSize-1, "", 1);
         if( nWrite!=1 ) return SQLITE_IOERR_WRITE;
       }
 #endif
