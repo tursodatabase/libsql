@@ -64,13 +64,21 @@ do_test where8-1.3 {
   execsql_status2 { SELECT c FROM t1 WHERE a > 8 OR b = 'two' }
 } {IX X II 0 0 6}
 
-do_test where8-1.4 { 
-  execsql_status2 { SELECT c FROM t1 WHERE a > 8 OR b GLOB 't*' }
-} {IX X III II 0 0 10}
-
-do_test where8-1.5 { 
-  execsql_status2 { SELECT c FROM t1 WHERE a > 8 OR b GLOB 'f*' }
-} {IX X V IV 0 0 10}
+ifcapable like_match_blobs {
+  do_test where8-1.4a { 
+    execsql_status2 { SELECT c FROM t1 WHERE a > 8 OR b GLOB 't*' }
+  } {IX X III II 0 0 10}
+  do_test where8-1.5a { 
+    execsql_status2 { SELECT c FROM t1 WHERE a > 8 OR b GLOB 'f*' }
+  } {IX X V IV 0 0 10}
+} else {
+  do_test where8-1.4b { 
+    execsql_status2 { SELECT c FROM t1 WHERE a > 8 OR b GLOB 't*' }
+  } {IX X III II 0 0 9}
+  do_test where8-1.5 { 
+    execsql_status2 { SELECT c FROM t1 WHERE a > 8 OR b GLOB 'f*' }
+  } {IX X V IV 0 0 9}
+}
 
 do_test where8-1.6 { 
   execsql_status { SELECT c FROM t1 WHERE a = 1 OR b = 'three' ORDER BY rowid }

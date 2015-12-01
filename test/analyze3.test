@@ -283,9 +283,17 @@ do_eqp_test analyze3-2.3 {
   SELECT count(a) FROM t1 WHERE b LIKE '%a'
 } {0 0 0 {SCAN TABLE t1}}
 
+# Return the first argument if like_match_blobs is true (the default)
+# or the second argument if not
+#
+proc ilmb {a b} {
+  ifcapable like_match_blobs {return $a}
+  return $b
+}
+
 do_test analyze3-2.4 {
   sf_execsql { SELECT count(*) FROM t1 WHERE b LIKE 'a%' }
-} {102 0 100}
+} [list [ilmb 102 101] 0 100]
 do_test analyze3-2.5 {
   sf_execsql { SELECT count(*) FROM t1 WHERE b LIKE '%a' }
 } {999 999 100}
@@ -293,7 +301,7 @@ do_test analyze3-2.5 {
 do_test analyze3-2.6 {
   set like "a%"
   sf_execsql { SELECT count(*) FROM t1 WHERE b LIKE $like }
-} {102 0 100}
+} [list [ilmb 102 101] 0 100]
 do_test analyze3-2.7 {
   set like "%a"
   sf_execsql { SELECT count(*) FROM t1 WHERE b LIKE $like }
@@ -301,19 +309,19 @@ do_test analyze3-2.7 {
 do_test analyze3-2.8 {
   set like "a"
   sf_execsql { SELECT count(*) FROM t1 WHERE b LIKE $like }
-} {102 0 0}
+} [list [ilmb 102 101] 0 0]
 do_test analyze3-2.9 {
   set like "ab"
   sf_execsql { SELECT count(*) FROM t1 WHERE b LIKE $like }
-} {12 0 0}
+} [list [ilmb 12 11] 0 0]
 do_test analyze3-2.10 {
   set like "abc"
   sf_execsql { SELECT count(*) FROM t1 WHERE b LIKE $like }
-} {3 0 1}
+} [list [ilmb 3 2] 0 1]
 do_test analyze3-2.11 {
   set like "a_c"
   sf_execsql { SELECT count(*) FROM t1 WHERE b LIKE $like }
-} {102 0 10}
+} [list [ilmb 102 101] 0 10]
 
 
 #-------------------------------------------------------------------------

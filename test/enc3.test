@@ -62,7 +62,7 @@ ifcapable {bloblit && utf16} {
     execsql {
       CREATE TABLE t2(a);
       INSERT INTO t2 VALUES(x'61006200630064006500');
-      SELECT CAST(a AS text) FROM t2 WHERE a LIKE 'abc%';
+      SELECT CAST(a AS text) FROM t2 WHERE CAST(a AS text) LIKE 'abc%';
     }
   } {abcde}
   do_test enc3-2.3 {
@@ -72,7 +72,8 @@ ifcapable {bloblit && utf16} {
   } {abcde}
   do_test enc3-2.4 {
     execsql {
-      SELECT rowid FROM t2 WHERE a LIKE x'610062002500';
+      SELECT rowid FROM t2
+       WHERE CAST(a AS text) LIKE CAST(x'610062002500' AS text);
     }
   } {1}
 }
