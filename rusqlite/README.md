@@ -91,7 +91,7 @@ There are other, less obvious things that may result in a panic as well, such as
 `collect()` on a `SqliteRows` and then trying to use the collected rows.
 
 Strongly consider using the method `query_map()` instead, if you can.
-`query_map()` returns an iterator over rows-mapped-to-some-`'static`-type. This
+`query_map()` returns an iterator over rows-mapped-to-some-type. This
 iterator does not have any of the above issues with panics due to attempting to
 access stale rows.
 
