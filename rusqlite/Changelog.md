@@ -1,5 +1,6 @@
-# Version UPCOMDING (TBD)
+# Version UPCOMING (TBD)
 
+* Adds `trace` feature that allows the use of SQLite's logging, tracing, and profiling hooks.
 * Slight change to the closure types passed to `query_map` and `query_and_then`:
     * Remove the `'static` requirement on the closure's output type.
     * Give the closure a `&SqliteRow` instead of a `SqliteRow`.

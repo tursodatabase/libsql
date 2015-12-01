@@ -53,6 +53,7 @@
 extern crate libc;
 extern crate libsqlite3_sys as ffi;
 #[macro_use] extern crate bitflags;
+#[cfg(test)] #[macro_use] extern crate lazy_static;
 
 use std::default::Default;
 use std::convert;
@@ -80,6 +81,7 @@ pub use transaction::{SqliteTransactionBehavior,
 pub mod types;
 mod transaction;
 #[cfg(feature = "load_extension")] mod load_extension_guard;
+#[cfg(feature = "trace")] pub mod trace;
 
 /// A typedef of the result returned by many methods.
 pub type SqliteResult<T> = Result<T, SqliteError>;
@@ -141,15 +143,6 @@ fn path_to_cstring(p: &Path) -> SqliteResult<CString> {
 }
 
 /// A connection to a SQLite database.
-///
-/// ## Warning
-///
-/// Note that despite the fact that most `SqliteConnection` methods take an immutable reference to
-/// `self`, `SqliteConnection` is NOT threadsafe, and using it from multiple threads may result in
-/// runtime panics or data races. The SQLite connection handle has at least two pieces of internal
-/// state (the last insertion ID and the last error message) that rusqlite uses, but wrapping these
-/// APIs in a safe way from Rust would be too restrictive (for example, you would not be able to
-/// prepare multiple statements at the same time).
 pub struct SqliteConnection {
     db: RefCell<InnerSqliteConnection>,
     path: Option<PathBuf>,
