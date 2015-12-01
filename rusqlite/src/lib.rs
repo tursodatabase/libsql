@@ -128,14 +128,14 @@ impl SqliteError {
 fn str_to_cstring(s: &str) -> SqliteResult<CString> {
     CString::new(s).map_err(|_| SqliteError{
         code: ffi::SQLITE_MISUSE,
-        message: "Could not convert path to C-combatible string".to_string()
+        message: format!("Could not convert string {} to C-combatible string", s),
     })
 }
 
 fn path_to_cstring(p: &Path) -> SqliteResult<CString> {
     let s = try!(p.to_str().ok_or(SqliteError{
         code: ffi::SQLITE_MISUSE,
-        message: "Could not convert path to UTF-8 string".to_string()
+        message: format!("Could not convert path {} to UTF-8 string", p.to_string_lossy()),
     }));
     str_to_cstring(s)
 }
