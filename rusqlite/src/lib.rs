@@ -162,12 +162,21 @@ impl SqliteConnection {
     ///
     /// `SqliteConnection::open(path)` is equivalent to `SqliteConnection::open_with_flags(path,
     /// SQLITE_OPEN_READ_WRITE | SQLITE_OPEN_CREATE)`.
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if `path` cannot be converted to a C-compatible string or if the
+    /// underlying SQLite open call fails.
     pub fn open<P: AsRef<Path>>(path: P) -> SqliteResult<SqliteConnection> {
         let flags = Default::default();
         SqliteConnection::open_with_flags(path, flags)
     }
 
     /// Open a new connection to an in-memory SQLite database.
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if the underlying SQLite open call fails.
     pub fn open_in_memory() -> SqliteResult<SqliteConnection> {
         let flags = Default::default();
         SqliteConnection::open_in_memory_with_flags(flags)
@@ -177,6 +186,11 @@ impl SqliteConnection {
     ///
     /// Database Connection](http://www.sqlite.org/c3ref/open.html) for a description of valid
     /// flag combinations.
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if `path` cannot be converted to a C-compatible string or if the
+    /// underlying SQLite open call fails.
     pub fn open_with_flags<P: AsRef<Path>>(path: P, flags: SqliteOpenFlags)
             -> SqliteResult<SqliteConnection> {
         let c_path = try!(path_to_cstring(path.as_ref()));
@@ -189,6 +203,10 @@ impl SqliteConnection {
     ///
     /// Database Connection](http://www.sqlite.org/c3ref/open.html) for a description of valid
     /// flag combinations.
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if the underlying SQLite open call fails.
     pub fn open_in_memory_with_flags(flags: SqliteOpenFlags) -> SqliteResult<SqliteConnection> {
         let c_memory = try!(str_to_cstring(":memory:"));
         InnerSqliteConnection::open_with_flags(&c_memory, flags).map(|db| {
@@ -216,6 +234,10 @@ impl SqliteConnection {
     ///     tx.commit()
     /// }
     /// ```
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if the underlying SQLite call fails.
     pub fn transaction<'a>(&'a self) -> SqliteResult<SqliteTransaction<'a>> {
         SqliteTransaction::new(self, SqliteTransactionDeferred)
     }
@@ -223,6 +245,10 @@ impl SqliteConnection {
     /// Begin a new transaction with a specified behavior.
     ///
     /// See `transaction`.
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if the underlying SQLite call fails.
     pub fn transaction_with_behavior<'a>(&'a self, behavior: SqliteTransactionBehavior)
             -> SqliteResult<SqliteTransaction<'a>> {
         SqliteTransaction::new(self, behavior)
@@ -243,6 +269,11 @@ impl SqliteConnection {
     ///                         COMMIT;")
     /// }
     /// ```
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if `sql` cannot be converted to a C-compatible string or if the
+    /// underlying SQLite call fails.
     pub fn execute_batch(&self, sql: &str) -> SqliteResult<()> {
         self.db.borrow_mut().execute_batch(sql)
     }
@@ -263,6 +294,11 @@ impl SqliteConnection {
     ///     }
     /// }
     /// ```
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if `sql` cannot be converted to a C-compatible string or if the
+    /// underlying SQLite call fails.
     pub fn execute(&self, sql: &str, params: &[&ToSql]) -> SqliteResult<c_int> {
         self.prepare(sql).and_then(|mut stmt| stmt.execute(params))
     }
@@ -289,6 +325,11 @@ impl SqliteConnection {
     /// ```
     ///
     /// If the query returns more than one row, all rows except the first are ignored.
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if `sql` cannot be converted to a C-compatible string or if the
+    /// underlying SQLite call fails.
     pub fn query_row<T, F>(&self, sql: &str, params: &[&ToSql], f: F) -> SqliteResult<T>
                            where F: FnOnce(SqliteRow) -> T {
         let mut stmt = try!(self.prepare(sql));
@@ -319,6 +360,11 @@ impl SqliteConnection {
     /// ```
     ///
     /// If the query returns more than one row, all rows except the first are ignored.
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if `sql` cannot be converted to a C-compatible string or if the
+    /// underlying SQLite call fails.
     pub fn query_row_and_then<T, E, F>(&self, sql: &str, params: &[&ToSql], f: F) -> Result<T, E>
                            where F: FnOnce(SqliteRow) -> Result<T, E>,
                                  E: convert::From<SqliteError> {
@@ -371,6 +417,11 @@ impl SqliteConnection {
     ///     Ok(())
     /// }
     /// ```
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if `sql` cannot be converted to a C-compatible string or if the
+    /// underlying SQLite call fails.
     pub fn prepare<'a>(&'a self, sql: &str) -> SqliteResult<SqliteStatement<'a>> {
         self.db.borrow_mut().prepare(self, sql)
     }
@@ -379,6 +430,10 @@ impl SqliteConnection {
     ///
     /// This is functionally equivalent to the `Drop` implementation for `SqliteConnection` except
     /// that it returns any error encountered to the caller.
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if the underlying SQLite call fails.
     pub fn close(self) -> SqliteResult<()> {
         let mut db = self.db.borrow_mut();
         db.close()
@@ -398,6 +453,10 @@ impl SqliteConnection {
     ///     conn.load_extension_disable()
     /// }
     /// ```
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if the underlying SQLite call fails.
     #[cfg(feature = "load_extension")]
     pub fn load_extension_enable(&self) -> SqliteResult<()> {
         self.db.borrow_mut().enable_load_extension(1)
@@ -406,6 +465,10 @@ impl SqliteConnection {
     /// Disable loading of SQLite extensions.
     ///
     /// See `load_extension_enable` for an example.
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if the underlying SQLite call fails.
     #[cfg(feature = "load_extension")]
     pub fn load_extension_disable(&self) -> SqliteResult<()> {
         self.db.borrow_mut().enable_load_extension(0)
@@ -428,6 +491,10 @@ impl SqliteConnection {
     ///
     ///     conn.load_extension("my_sqlite_extension", None)
     /// }
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if the underlying SQLite call fails.
     #[cfg(feature = "load_extension")]
     pub fn load_extension<P: AsRef<Path>>(&self, dylib_path: P, entry_point: Option<&str>) -> SqliteResult<()> {
         self.db.borrow_mut().load_extension(dylib_path, entry_point)
@@ -653,6 +720,11 @@ impl<'conn> SqliteStatement<'conn> {
     ///     Ok(())
     /// }
     /// ```
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if binding parameters fails, the executed statement returns rows (in
+    /// which case `query` should be used instead), or the underling SQLite call fails.
     pub fn execute(&mut self, params: &[&ToSql]) -> SqliteResult<c_int> {
         unsafe {
             try!(self.bind_parameters(params));
@@ -694,6 +766,10 @@ impl<'conn> SqliteStatement<'conn> {
     ///     Ok(names)
     /// }
     /// ```
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if binding parameters fails.
     pub fn query<'a>(&'a mut self, params: &[&ToSql]) -> SqliteResult<SqliteRows<'a>> {
         self.reset_if_needed();
 
@@ -710,6 +786,10 @@ impl<'conn> SqliteStatement<'conn> {
     ///
     /// Unlike the iterator produced by `query`, the returned iterator does not expose the possibility
     /// for accessing stale rows.
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if binding parameters fails.
     pub fn query_map<'a, T, F>(&'a mut self, params: &[&ToSql], f: F)
                                      -> SqliteResult<MappedRows<'a, F>>
                                      where F: FnMut(&SqliteRow) -> T {
@@ -727,6 +807,10 @@ impl<'conn> SqliteStatement<'conn> {
     ///
     /// Unlike the iterator produced by `query`, the returned iterator does not expose the possibility
     /// for accessing stale rows.
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if binding parameters fails.
     pub fn query_and_then<'a, T, E, F>(&'a mut self, params: &[&ToSql], f: F)
                                      -> SqliteResult<AndThenRows<'a, F>>
                                      where E: convert::From<SqliteError>,
@@ -743,6 +827,10 @@ impl<'conn> SqliteStatement<'conn> {
     ///
     /// Functionally equivalent to the `Drop` implementation, but allows callers to see any errors
     /// that occur.
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if the underlying SQLite call fails.
     pub fn finalize(mut self) -> SqliteResult<()> {
         self.finalize_()
     }
