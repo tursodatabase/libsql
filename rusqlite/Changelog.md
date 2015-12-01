@@ -3,6 +3,8 @@
 * Slight change to the closure types passed to `query_map` and `query_and_then`:
     * Remove the `'static` requirement on the closure's output type.
     * Give the closure a `&SqliteRow` instead of a `SqliteRow`.
+* When building, the environment variable `SQLITE3_LIB_DIR` now takes precedence over pkg-config.
+* If `pkg-config` is not available, we will try to find `libsqlite3` in `/usr/lib`.
 
 # Version 0.4.0 (2015-11-03)
 
