@@ -5,6 +5,7 @@ use std::ffi::{CStr, CString};
 use std::mem;
 use std::ptr;
 use std::str;
+use std::time::Duration;
 
 use super::ffi;
 use {SqliteError, SqliteResult, SqliteConnection};
@@ -56,10 +57,6 @@ pub fn log(err_code: c_int, msg: &str) {
     }
 }
 
-/// The profile callback function signature.
-pub type ProfileCallback =
-    Option<extern "C" fn (p_arg: *mut c_void, z_sql: *const c_char, nanoseconds: u64)>;
-
 impl SqliteConnection {
     /// Register or clear a callback function that can be used for tracing the execution of SQL statements.
     ///
@@ -86,16 +83,31 @@ impl SqliteConnection {
     ///
     /// There can only be a single profiler defined for each database connection.
     /// Setting a new profiler clears the old one.
-    pub fn profile(&mut self, x_profile: ProfileCallback) {
+    pub fn profile(&mut self, profile_fn: Option<fn(&str, Duration)>) {
+        extern "C" fn profile_callback(p_arg: *mut c_void, z_sql: *const c_char, nanoseconds: u64) {
+            let profile_fn: fn(&str, Duration) = unsafe { mem::transmute(p_arg) };
+            let c_slice = unsafe { CStr::from_ptr(z_sql).to_bytes() };
+            if let Ok(s) = str::from_utf8(c_slice) {
+                const NANOS_PER_SEC: u64 = 1_000_000_000;
+
+                let duration = Duration::new(nanoseconds / NANOS_PER_SEC,
+                                             (nanoseconds % NANOS_PER_SEC) as u32);
+                profile_fn(s, duration);
+            }
+        }
+
         let c = self.db.borrow_mut();
-        unsafe { ffi::sqlite3_profile(c.db(), x_profile, ptr::null_mut()); }
+        match profile_fn {
+            Some(f) => unsafe { ffi::sqlite3_profile(c.db(), Some(profile_callback), mem::transmute(f)) },
+            None    => unsafe { ffi::sqlite3_profile(c.db(), None, ptr::null_mut()) },
+        };
     }
 }
 
 #[cfg(test)]
 mod test {
-    use std::io::Write;
     use std::sync::Mutex;
+    use std::time::Duration;
 
     use SqliteConnection;
 
@@ -127,19 +139,24 @@ mod test {
         assert_eq!(traced_stmts[1], "SELECT 'hello'");
     }
 
-    extern "C" fn profile_callback(_: *mut ::libc::c_void, sql: *const ::libc::c_char, nanoseconds: u64) {
-        use std::time::Duration;
-        unsafe {
-            let c_slice = ::std::ffi::CStr::from_ptr(sql).to_bytes();
-            let d = Duration::from_millis(nanoseconds / 1_000_000);
-            let _ = writeln!(::std::io::stderr(), "PROFILE: {:?} ({:?})", ::std::str::from_utf8(c_slice), d);
-        }
-    }
-
     #[test]
     fn test_profile() {
+        lazy_static! {
+            static ref PROFILED: Mutex<Vec<(String, Duration)>> = Mutex::new(Vec::new());
+        }
+        fn profiler(s: &str, d: Duration) {
+            let mut profiled = PROFILED.lock().unwrap();
+            profiled.push((s.to_owned(), d));
+        }
+
         let mut db = SqliteConnection::open_in_memory().unwrap();
-        db.profile(Some(profile_callback));
+        db.profile(Some(profiler));
         db.execute_batch("PRAGMA application_id = 1").unwrap();
+        db.profile(None);
+        db.execute_batch("PRAGMA application_id = 2").unwrap();
+
+        let profiled = PROFILED.lock().unwrap();
+        assert_eq!(profiled.len(), 1);
+        assert_eq!(profiled[0].0, "PRAGMA application_id = 1");
     }
 }
