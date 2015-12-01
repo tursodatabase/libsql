@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_PRINTF_PRECISION_LIMIT\scompile-time\soption.
-D 2015-11-30T22:52:14.011
+C Simplification\sto\sthe\sread\sand\swrite\sprimatives\sin\sthe\sunix\sVFS.
+D 2015-12-01T16:21:35.045
 F Makefile.in d828db6afa6c1fa060d01e33e4674408df1942a1
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e928e68168df69b353300ac87c10105206653a03
@@ -323,7 +323,7 @@ F src/os.c 8fd25588eeba74068d41102d26810e216999b6c8
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h abdb9a191a367793268fe553d25bab894e986a0e
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c 88d9fd1da4f3d26c64ef954fb32cce583605eba0
+F src/os_unix.c 7d56433ac85e77423d2d613fd5e53db08c5868ed
 F src/os_win.c 386fba30419e8458b13209781c2af5590eab2811
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c f92aacd5216d8815136c9e0190041783c602641a
@@ -1406,7 +1406,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P bb1e2c4df0b81327923f121dd6c002845486a314
-R d3b18adc3009f6c25adcd36c4f052eab
+P ecad75d69e0d5c83dd3584d363e557e84b65f7f2
+R bca4975588f4da52a9a8fe0cd42dc56d
 U drh
-Z 7ba0fba490eff520c14229730eb61dd8
+Z 462bb50cf4ea1a0b7483c62da14af105

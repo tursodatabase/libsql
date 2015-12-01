@@ -3086,13 +3086,9 @@ static int seekAndRead(unixFile *id, sqlite3_int64 offset, void *pBuf, int cnt){
     SimulateIOError( got = -1 );
 #else
     newOffset = lseek(id->h, offset, SEEK_SET);
-    SimulateIOError( newOffset-- );
-    if( newOffset!=offset ){
-      if( newOffset == -1 ){
-        storeLastErrno((unixFile*)id, errno);
-      }else{
-        storeLastErrno((unixFile*)id, 0);
-      }
+    SimulateIOError( newOffset = -1 );
+    if( newOffset<0 ){
+      storeLastErrno((unixFile*)id, errno);
       return -1;
     }
     got = osRead(id->h, pBuf, cnt);
@@ -3191,6 +3187,7 @@ static int seekAndWriteFd(
 
   assert( nBuf==(nBuf&0x1ffff) );
   assert( fd>2 );
+  assert( piErrno!=0 );
   nBuf &= 0x1ffff;
   TIMER_START;
 
@@ -3201,11 +3198,10 @@ static int seekAndWriteFd(
 #else
   do{
     i64 iSeek = lseek(fd, iOff, SEEK_SET);
-    SimulateIOError( iSeek-- );
-
-    if( iSeek!=iOff ){
-      if( piErrno ) *piErrno = (iSeek==-1 ? errno : 0);
-      return -1;
+    SimulateIOError( iSeek = -1 );
+    if( iSeek<0 ){
+      rc = -1;
+      break;
     }
     rc = osWrite(fd, pBuf, nBuf);
   }while( rc<0 && errno==EINTR );
@@ -3214,7 +3210,7 @@ static int seekAndWriteFd(
   TIMER_END;
   OSTRACE(("WRITE   %-3d %5d %7lld %llu\n", fd, rc, iOff, TIMER_ELAPSED));
 
-  if( rc<0 && piErrno ) *piErrno = errno;
+  if( rc<0 ) *piErrno = errno;
   return rc;
 }
 
@@ -4410,7 +4406,8 @@ static int unixShmMap(
           /* Write to the last byte of each newly allocated or extended page */
           assert( (nByte % pgsz)==0 );
           for(iPg=(sStat.st_size/pgsz); iPg<(nByte/pgsz); iPg++){
-            if( seekAndWriteFd(pShmNode->h, iPg*pgsz + pgsz-1, "", 1, 0)!=1 ){
+            int x = 0;
+            if( seekAndWriteFd(pShmNode->h, iPg*pgsz + pgsz-1, "", 1, &x)!=1 ){
               const char *zFile = pShmNode->zFilename;
               rc = unixLogError(SQLITE_IOERR_SHMSIZE, "write", zFile);
               goto shmpage_out;
