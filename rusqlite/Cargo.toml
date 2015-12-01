@@ -19,7 +19,7 @@ trace = []
 [dependencies]
 time = "~0.1.0"
 bitflags = "~0.1"
-libc = "~0.1"
+libc = "~0.2"
 
 [dev-dependencies]
 tempdir = "~0.3.4"

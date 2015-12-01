@@ -705,8 +705,7 @@ impl<'conn> SqliteStatement<'conn> {
     /// for accessing stale rows.
     pub fn query_map<'a, T, F>(&'a mut self, params: &[&ToSql], f: F)
                                      -> SqliteResult<MappedRows<'a, F>>
-                                     where T: 'static,
-                                           F: FnMut(SqliteRow) -> T {
+                                     where F: FnMut(&SqliteRow) -> T {
         let row_iter = try!(self.query(params));
 
         Ok(MappedRows{
@@ -723,9 +722,8 @@ impl<'conn> SqliteStatement<'conn> {
     /// for accessing stale rows.
     pub fn query_and_then<'a, T, E, F>(&'a mut self, params: &[&ToSql], f: F)
                                      -> SqliteResult<AndThenRows<'a, F>>
-                                     where T: 'static,
-                                           E: convert::From<SqliteError>,
-                                           F: FnMut(SqliteRow) -> Result<T, E> {
+                                     where E: convert::From<SqliteError>,
+                                           F: FnMut(&SqliteRow) -> Result<T, E> {
         let row_iter = try!(self.query(params));
 
         Ok(AndThenRows{
@@ -797,12 +795,11 @@ pub struct MappedRows<'stmt, F> {
 }
 
 impl<'stmt, T, F> Iterator for MappedRows<'stmt, F>
-                        where T: 'static,
-                              F: FnMut(SqliteRow) -> T {
+                        where F: FnMut(&SqliteRow) -> T {
     type Item = SqliteResult<T>;
 
     fn next(&mut self) -> Option<SqliteResult<T>> {
-        self.rows.next().map(|row_result| row_result.map(|row| (self.map)(row)))
+        self.rows.next().map(|row_result| row_result.map(|row| (self.map)(&row)))
     }
 }
 
@@ -814,15 +811,14 @@ pub struct AndThenRows<'stmt, F> {
 }
 
 impl<'stmt, T, E, F> Iterator for AndThenRows<'stmt, F>
-                        where T: 'static,
-                              E: convert::From<SqliteError>,
-                              F: FnMut(SqliteRow) -> Result<T, E> {
+                        where E: convert::From<SqliteError>,
+                              F: FnMut(&SqliteRow) -> Result<T, E> {
     type Item = Result<T, E>;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.rows.next().map(|row_result| row_result
                              .map_err(E::from)
-                             .and_then(|row| (self.map)(row)))
+                             .and_then(|row| (self.map)(&row)))
     }
 }
 
