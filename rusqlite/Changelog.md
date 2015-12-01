@@ -1,3 +1,7 @@
+# Version UPCOMING (TBD)
+
+* Adds `trace` feature that allows the use of SQLite's logging, tracing, and profiling hooks.
+
 # Version 0.4.0 (2015-11-03)
 
 * Adds `Sized` bound to `FromSql` trait as required by RFC 1214.
