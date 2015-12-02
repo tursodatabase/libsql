@@ -275,6 +275,8 @@ struct sqlite3_api_routines {
   /* Version 3.9.0 and later */
   unsigned int (*value_subtype)(sqlite3_value*);
   void (*result_subtype)(sqlite3_context*,unsigned int);
+  /* Version 3.10.0 and later */
+  int (*strlike)(const char*,const char*,unsigned int);
 };
 
 /*
@@ -514,6 +516,8 @@ struct sqlite3_api_routines {
 /* Version 3.9.0 and later */
 #define sqlite3_value_subtype          sqlite3_api->value_subtype
 #define sqlite3_result_subtype         sqlite3_api->result_subtype
+/* Version 3.10.0 and later */
+#define sqlite3_strlike                sqlite3_api->strlike
 #endif /* !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION) */
 
 #if !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION)
