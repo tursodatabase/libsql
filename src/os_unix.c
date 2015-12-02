@@ -258,7 +258,6 @@ static pid_t randomnessPid = 0;
 #define UNIXFILE_DELETE      0x20     /* Delete on close */
 #define UNIXFILE_URI         0x40     /* Filename might have query parameters */
 #define UNIXFILE_NOLOCK      0x80     /* Do no file locking */
-#define UNIXFILE_BLOCK     0x0100     /* Next SHM lock might block */
 
 /*
 ** Include code that is common to all os_*.c files
@@ -3717,10 +3716,6 @@ static int unixGetTempname(int nBuf, char *zBuf);
 static int unixFileControl(sqlite3_file *id, int op, void *pArg){
   unixFile *pFile = (unixFile*)id;
   switch( op ){
-    case SQLITE_FCNTL_WAL_BLOCK: {
-      /* pFile->ctrlFlags |= UNIXFILE_BLOCK; // Deferred feature */
-      return SQLITE_OK;
-    }
     case SQLITE_FCNTL_LOCKSTATE: {
       *(int*)pArg = pFile->eFileLock;
       return SQLITE_OK;
@@ -4050,7 +4045,6 @@ static int unixShmSystemLock(
   assert( n>=1 && n<SQLITE_SHM_NLOCK );
 
   if( pShmNode->h>=0 ){
-    int lkType;
     /* Initialize the locking parameters */
     memset(&f, 0, sizeof(f));
     f.l_type = lockType;
@@ -4058,10 +4052,8 @@ static int unixShmSystemLock(
     f.l_start = ofst;
     f.l_len = n;
 
-    lkType = (pFile->ctrlFlags & UNIXFILE_BLOCK)!=0 ? F_SETLKW : F_SETLK;
-    rc = osFcntl(pShmNode->h, lkType, &f);
+    rc = osFcntl(pShmNode->h, F_SETLK, &f);
     rc = (rc!=(-1)) ? SQLITE_OK : SQLITE_BUSY;
-    pFile->ctrlFlags &= ~UNIXFILE_BLOCK;
   }
 
   /* Update the global lock state and do debug tracing */
