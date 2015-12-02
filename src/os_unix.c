@@ -4123,7 +4123,7 @@ static int unixShmRegionPerMap(void){
 static void unixShmPurge(unixFile *pFd){
   unixShmNode *p = pFd->pInode->pShmNode;
   assert( unixMutexHeld() );
-  if( p && p->nRef==0 ){
+  if( p && ALWAYS(p->nRef==0) ){
     int nShmPerMap = unixShmRegionPerMap();
     int i;
     assert( p->pInode==pFd->pInode );
@@ -4210,7 +4210,7 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
     ** a new *-shm file is created, an attempt will be made to create it
     ** with the same permissions.
     */
-    if( osFstat(pDbFd->h, &sStat) && pInode->bProcessLock==0 ){
+    if( osFstat(pDbFd->h, &sStat) ){
       rc = SQLITE_IOERR_FSTAT;
       goto shm_open_err;
     }
@@ -4766,17 +4766,13 @@ static void unixRemapfile(
 ** recreated as a result of outstanding references) or an SQLite error
 ** code otherwise.
 */
-static int unixMapfile(unixFile *pFd, i64 nByte){
-  i64 nMap = nByte;
-  int rc;
-
+static int unixMapfile(unixFile *pFd, i64 nMap){
   assert( nMap>=0 || pFd->nFetchOut==0 );
   if( pFd->nFetchOut>0 ) return SQLITE_OK;
 
   if( nMap<0 ){
     struct stat statbuf;          /* Low-level file information */
-    rc = osFstat(pFd->h, &statbuf);
-    if( rc!=SQLITE_OK ){
+    if( osFstat(pFd->h, &statbuf) ){
       return SQLITE_IOERR_FSTAT;
     }
     nMap = statbuf.st_size;
