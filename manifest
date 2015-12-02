@@ -1,5 +1,5 @@
-C Remove\sall\straces\sof\sSQLITE_FCNTL_WAL_BLOCK\sfrom\sthe\sunix\sVFS\s-\sthat\sfeature\nhad\sbeen\sdisabled\sfor\sa\slong\stime\sand\snever\sactually\sworked.
-D 2015-12-02T00:05:26.857
+C Simplification\sof\sthe\slogic\sused\sto\stake\sthe\sprocess-wide\slock\sin\sthe\nunix-excl\sVFS.
+D 2015-12-02T01:04:33.889
 F Makefile.in 23d9a63484a383fc64951b25ef44067930f98dc6
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e8fdca1cb89a1b58b5f4d3a130ea9a3d28cb314d
@@ -323,7 +323,7 @@ F src/os.c 8fd25588eeba74068d41102d26810e216999b6c8
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h abdb9a191a367793268fe553d25bab894e986a0e
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c 8f8f11b64aa5b20f75f0a9e4ed494e51a641e62f
+F src/os_unix.c 207fef7c47f3d77cf8a52edd5ebd53b67e731fd1
 F src/os_win.c 386fba30419e8458b13209781c2af5590eab2811
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c f92aacd5216d8815136c9e0190041783c602641a
@@ -1408,7 +1408,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 74934d3f60ad9f6550297410eada0f288e0123c4
-R 1d7fdc365e66b6a0c98551c7522b87df
+P e1d5320ca089336e26d200305b744b06ce883be4
+R 529fef7e01cd9bbdb6610da9a8964270
 U drh
-Z 0a345589f1af443a2c8f5dbd810973ee
+Z 697c3f68f06eec6f2193816dd17daae9
