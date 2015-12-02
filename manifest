@@ -1,5 +1,5 @@
-C Remove\smore\s(dead)\sSQLITE_FCNTL_WAL_BLOCK\slogic\sfrom\swal.c\s-\scode\sthat\swas\nmissed\sduring\sthe\s[e1d5320ca08933]\scheck-in.
-D 2015-12-02T16:10:16.198
+C Fix\san\sincorrect,\sthough\sharmless,\sassert()\sin\sthe\sunix\sVFS.
+D 2015-12-02T17:40:13.058
 F Makefile.in 23d9a63484a383fc64951b25ef44067930f98dc6
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e8fdca1cb89a1b58b5f4d3a130ea9a3d28cb314d
@@ -323,7 +323,7 @@ F src/os.c 8fd25588eeba74068d41102d26810e216999b6c8
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h abdb9a191a367793268fe553d25bab894e986a0e
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c b2482c403890fc94ee6810a939c667911d871656
+F src/os_unix.c 60997373a8d90bd17e1c0e49d11ef361b713439b
 F src/os_win.c 386fba30419e8458b13209781c2af5590eab2811
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c f92aacd5216d8815136c9e0190041783c602641a
@@ -1408,7 +1408,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b50f67bc46e65fe4e51667d48b4add58706a9443
-R b4ba7b1cdaa73453f30b9d196a7f9fe7
+P 58c15c6af964563ac7ece8606d16730ccf9ee72b
+R b2d2115192da5a36c6008a1f85419e31
 U drh
-Z 22cdb6e0aa6d053c442a36686d71e782
+Z a2ea6ee7bac71fd2eda9f163b8a48c3e

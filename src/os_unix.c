@@ -4045,7 +4045,7 @@ static int unixShmSystemLock(
   assert( n==1 || lockType!=F_RDLCK );
 
   /* Locks are within range */
-  assert( n>=1 && n<SQLITE_SHM_NLOCK );
+  assert( n>=1 && n<=SQLITE_SHM_NLOCK );
 
   if( pShmNode->h>=0 ){
     /* Initialize the locking parameters */
