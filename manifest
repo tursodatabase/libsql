@@ -1,5 +1,5 @@
-C Fix\san\sincorrect,\sthough\sharmless,\sassert()\sin\sthe\sunix\sVFS.
-D 2015-12-02T17:40:13.058
+C Have\sthe\ssqlite3_column_decltype()\sAPI\sreport\sthe\sdeclared\stypes\sfor\sthe\sleft-most\sSELECT\sstatement\sin\sa\scompound\sSELECT.
+D 2015-12-02T18:59:44.537
 F Makefile.in 23d9a63484a383fc64951b25ef44067930f98dc6
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e8fdca1cb89a1b58b5f4d3a130ea9a3d28cb314d
@@ -339,7 +339,7 @@ F src/printf.c ca05561795ad6c2fa47acdd007702586282f7feb
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c f4c897ca76ca6d5e0b3f0499c627392ffe657c8e
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c e10586c750d87211caa8f4b239e2bfa6a2049e5b
+F src/select.c dd04f017d1402e1a8cbacb13f53c279dc48543b4
 F src/shell.c 2796237990d42e6a5a7beafee65ef70cc8767d21
 F src/sqlite.h.in 5bd83191711d3dc85030326daa9e8e5226a495e7
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
@@ -508,7 +508,7 @@ F test/cacheflush.test a755c93482ce2e20c04825304bef27e7b7ea0111
 F test/capi2.test 011c16da245fdc0106a2785035de6b242c05e738
 F test/capi3.test bf6f0308bbbba1e770dac13aa08e5c2ac61c7324
 F test/capi3b.test efb2b9cfd127efa84433cd7a2d72ce0454ae0dc4
-F test/capi3c.test fdc0d67a2cb8e8fc400d5b7735e330161ea057a2
+F test/capi3c.test 06f6261f9e9b4ef6f76afcd9900f3665408af1c8
 F test/capi3d.test 485048dc5cd07bc68011e4917ad035ad6047ab82
 F test/capi3e.test 3d49c01ef2a1a55f41d73cba2b23b5059ec460fe
 F test/cast.test 4c275cbdc8202d6f9c54a3596701719868ac7dc3
@@ -1408,7 +1408,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 58c15c6af964563ac7ece8606d16730ccf9ee72b
-R b2d2115192da5a36c6008a1f85419e31
-U drh
-Z a2ea6ee7bac71fd2eda9f163b8a48c3e
+P 4692ae84f93530e27d7c106a60236355e176b7fd
+R cccfb2982bfd6a0aab4098f75a44ccf8
+U dan
+Z e453763f88995e08cd02dca755bc7590
