@@ -1,5 +1,5 @@
-C Fix\sa\s(harmless)\soff-by-one\serror\sin\sthe\sunix\sVFS\slogic\sthat\sfsync()s\sa\ndirectory\safter\sdeleting\sa\sfile.
-D 2015-12-02T02:08:30.997
+C Change\sthe\sSQLITE_NO_SYNC\scompile-time\soption\sto\scall\sfstat()\sin\splace\sof\nfsync()\srather\sthan\sbeing\sa\stotal\sno-op.
+D 2015-12-02T02:33:36.549
 F Makefile.in 23d9a63484a383fc64951b25ef44067930f98dc6
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e8fdca1cb89a1b58b5f4d3a130ea9a3d28cb314d
@@ -323,7 +323,7 @@ F src/os.c 8fd25588eeba74068d41102d26810e216999b6c8
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h abdb9a191a367793268fe553d25bab894e986a0e
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c 27a7ead71bfca5d90ad965f2ac46b37b63f07189
+F src/os_unix.c badd3d7b007daa74df6a12c1e5a89a8504ef3594
 F src/os_win.c 386fba30419e8458b13209781c2af5590eab2811
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c f92aacd5216d8815136c9e0190041783c602641a
@@ -1408,7 +1408,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 73defd52bb0e3e5db763d3bfbeebc972b645867e
-R e028288719c771a5625e51b4f5de27be
+P 3d02711a709a7e708edb0ea8ca5d17b39dd307f6
+R 32c34918a379a944fbe8e3ec0a4b5179
 U drh
-Z 2550f7a73cc643eb4c13a681e63731c8
+Z d4a14e46436f968eb1bd48b7a43684a4

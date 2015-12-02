@@ -3391,10 +3391,15 @@ static int full_fsync(int fd, int fullSync, int dataOnly){
 #endif
 
   /* If we compiled with the SQLITE_NO_SYNC flag, then syncing is a
-  ** no-op
+  ** no-op.  But go ahead and call fstat() to validate the file
+  ** descriptor as we need a method to provoke a failure during
+  ** coverate testing.
   */
 #ifdef SQLITE_NO_SYNC
-  rc = SQLITE_OK;
+  {
+    struct stat buf;
+    rc = osFstat(fd, &buf);
+  }
 #elif HAVE_FULLFSYNC
   if( fullSync ){
     rc = osFcntl(fd, F_FULLFSYNC, 0);
