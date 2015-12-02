@@ -155,6 +155,7 @@ static char *safeId(const char *zId){
     "WITH", "WITHOUT",
   };
   int lwr, upr, mid, c, i, x;
+  if( zId[0]==0 ) return sqlite3_mprintf("\"\"");
   for(i=x=0; (c = zId[i])!=0; i++){
     if( !isalpha(c) && c!='_' ){
       if( i>0 && isdigit(c) ){

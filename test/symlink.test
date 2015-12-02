@@ -116,4 +116,14 @@ do_execsql_test 2.5 {
   SELECT * FROM t1;
 } {1 2}
 
+# Try to open a ridiculously long pathname.  Bug found by
+# Kostya Serebryany using libFuzzer on 2015-11-30.
+#
+do_test 3.1 {
+  db close
+  catch {sqlite3 db [string repeat [string repeat x 100]/ 6]} res
+  set res
+} {unable to open database file}
+
+
 finish_test

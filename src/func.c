@@ -764,6 +764,13 @@ int sqlite3_strglob(const char *zGlobPattern, const char *zString){
 }
 
 /*
+** The sqlite3_strlike() interface.
+*/
+int sqlite3_strlike(const char *zPattern, const char *zStr, unsigned int esc){
+  return patternCompare((u8*)zPattern, (u8*)zStr, &likeInfoNorm, esc)==0;
+}
+
+/*
 ** Count the number of times that the LIKE operator (or GLOB which is
 ** just a variation of LIKE) gets called.  This is used for testing
 ** only.
@@ -795,6 +802,17 @@ static void likeFunc(
   int nPat;
   sqlite3 *db = sqlite3_context_db_handle(context);
 
+#ifdef SQLITE_LIKE_DOESNT_MATCH_BLOBS
+  if( sqlite3_value_type(argv[0])==SQLITE_BLOB
+   || sqlite3_value_type(argv[1])==SQLITE_BLOB
+  ){
+#ifdef SQLITE_TEST
+    sqlite3_like_count++;
+#endif
+    sqlite3_result_int(context, 0);
+    return;
+  }
+#endif
   zB = sqlite3_value_text(argv[0]);
   zA = sqlite3_value_text(argv[1]);
 

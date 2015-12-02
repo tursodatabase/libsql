@@ -109,6 +109,9 @@ do_execsql_test hexlit-301 {
 do_catchsql_test hexlist-400 {
   SELECT 0x10000000000000000;
 } {1 {hex literal too big: 0x10000000000000000}}
+do_catchsql_test hexlist-401 {
+  SELECT DISTINCT 0x10000000000000000;
+} {1 {hex literal too big: 0x10000000000000000}}
 do_catchsql_test hexlist-410 {
   DROP TABLE IF EXISTS t1;
   CREATE TABLE t1(x);

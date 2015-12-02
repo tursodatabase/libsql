@@ -376,12 +376,7 @@ Table *sqlite3LocateTable(
     }
     pParse->checkSchema = 1;
   }
-#if SQLITE_USER_AUTHENTICATION
-  else if( pParse->db->auth.authLevel<UAUTH_User ){
-    sqlite3ErrorMsg(pParse, "user not authenticated");
-    p = 0;
-  }
-#endif
+
   return p;
 }
 
@@ -3876,7 +3871,7 @@ void sqlite3SrcListIndexedBy(Parse *pParse, SrcList *p, Token *pIndexedBy){
 ** table-valued-function.
 */
 void sqlite3SrcListFuncArgs(Parse *pParse, SrcList *p, ExprList *pList){
-  if( p && pList ){
+  if( p ){
     struct SrcList_item *pItem = &p->a[p->nSrc-1];
     assert( pItem->fg.notIndexed==0 );
     assert( pItem->fg.isIndexedBy==0 );

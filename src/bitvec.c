@@ -41,7 +41,8 @@
 
 /* Round the union size down to the nearest pointer boundary, since that's how 
 ** it will be aligned within the Bitvec struct. */
-#define BITVEC_USIZE     (((BITVEC_SZ-(3*sizeof(u32)))/sizeof(Bitvec*))*sizeof(Bitvec*))
+#define BITVEC_USIZE \
+    (((BITVEC_SZ-(3*sizeof(u32)))/sizeof(Bitvec*))*sizeof(Bitvec*))
 
 /* Type of the array "element" for the bitmap representation. 
 ** Should be a power of 2, and ideally, evenly divide into BITVEC_USIZE. 

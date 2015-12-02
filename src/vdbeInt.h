@@ -58,42 +58,48 @@ typedef struct Explain Explain;
 /* Elements of the linked list at Vdbe.pAuxData */
 typedef struct AuxData AuxData;
 
+/* Types of VDBE cursors */
+#define CURTYPE_BTREE       0
+#define CURTYPE_SORTER      1
+#define CURTYPE_VTAB        2
+#define CURTYPE_PSEUDO      3
+
 /*
-** A cursor is a pointer into a single BTree within a database file.
-** The cursor can seek to a BTree entry with a particular key, or
-** loop over all entries of the Btree.  You can also insert new BTree
-** entries or retrieve the key or data from the entry that the cursor
-** is currently pointing to.
+** A VdbeCursor is an superclass (a wrapper) for various cursor objects:
 **
-** Cursors can also point to virtual tables, sorters, or "pseudo-tables".
-** A pseudo-table is a single-row table implemented by registers.
-** 
-** Every cursor that the virtual machine has open is represented by an
-** instance of the following structure.
+**      * A b-tree cursor
+**          -  In the main database or in an ephemeral database
+**          -  On either an index or a table
+**      * A sorter
+**      * A virtual table
+**      * A one-row "pseudotable" stored in a single register
 */
 struct VdbeCursor {
-  BtCursor *pCursor;    /* The cursor structure of the backend */
-  Btree *pBt;           /* Separate file holding temporary table */
-  KeyInfo *pKeyInfo;    /* Info about index keys needed by index cursors */
-  int seekResult;       /* Result of previous sqlite3BtreeMoveto() */
-  int pseudoTableReg;   /* Register holding pseudotable content. */
-  i16 nField;           /* Number of fields in the header */
-  u16 nHdrParsed;       /* Number of header fields parsed so far */
-#ifdef SQLITE_DEBUG
-  u8 seekOp;            /* Most recent seek operation on this cursor */
-#endif
+  u8 eCurType;          /* One of the CURTYPE_* values above */
   i8 iDb;               /* Index of cursor database in db->aDb[] (or -1) */
   u8 nullRow;           /* True if pointing to a row with no data */
   u8 deferredMoveto;    /* A call to sqlite3BtreeMoveto() is needed */
+  u8 isTable;           /* True for rowid tables.  False for indexes */
+#ifdef SQLITE_DEBUG
+  u8 seekOp;            /* Most recent seek operation on this cursor */
+#endif
   Bool isEphemeral:1;   /* True for an ephemeral table */
   Bool useRandomRowid:1;/* Generate new record numbers semi-randomly */
-  Bool isTable:1;       /* True if a table requiring integer keys */
   Bool isOrdered:1;     /* True if the underlying table is BTREE_UNORDERED */
   Pgno pgnoRoot;        /* Root page of the open btree cursor */
-  sqlite3_vtab_cursor *pVtabCursor;  /* The cursor for a virtual table */
+  i16 nField;           /* Number of fields in the header */
+  u16 nHdrParsed;       /* Number of header fields parsed so far */
+  union {
+    BtCursor *pCursor;          /* CURTYPE_BTREE.  Btree cursor */
+    sqlite3_vtab_cursor *pVCur; /* CURTYPE_VTAB.   Vtab cursor */
+    int pseudoTableReg;         /* CURTYPE_PSEUDO. Reg holding content. */
+    VdbeSorter *pSorter;        /* CURTYPE_SORTER. Sorter object */
+  } uc;
+  Btree *pBt;           /* Separate file holding temporary table */
+  KeyInfo *pKeyInfo;    /* Info about index keys needed by index cursors */
+  int seekResult;       /* Result of previous sqlite3BtreeMoveto() */
   i64 seqCount;         /* Sequence counter */
   i64 movetoTarget;     /* Argument to the deferred sqlite3BtreeMoveto() */
-  VdbeSorter *pSorter;  /* Sorter object for OP_SorterOpen cursors */
 #ifdef SQLITE_ENABLE_COLUMN_USED_MASK
   u64 maskUsed;         /* Mask of columns used by this cursor */
 #endif

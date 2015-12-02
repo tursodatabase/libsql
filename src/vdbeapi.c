@@ -1644,11 +1644,11 @@ int sqlite3_preupdate_old(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
     u32 nRec;
     u8 *aRec;
 
-    rc = sqlite3BtreeDataSize(p->pCsr->pCursor, &nRec);
+    rc = sqlite3BtreeDataSize(p->pCsr->uc.pCursor, &nRec);
     if( rc!=SQLITE_OK ) goto preupdate_old_out;
     aRec = sqlite3DbMallocRaw(db, nRec);
     if( !aRec ) goto preupdate_old_out;
-    rc = sqlite3BtreeData(p->pCsr->pCursor, 0, nRec, aRec);
+    rc = sqlite3BtreeData(p->pCsr->uc.pCursor, 0, nRec, aRec);
     if( rc==SQLITE_OK ){
       p->pUnpacked = vdbeUnpackRecord(&p->keyinfo, nRec, aRec);
       if( !p->pUnpacked ) rc = SQLITE_NOMEM;

@@ -46,3 +46,5 @@ do_test vtabE-1 {
      ORDER BY t1.value, t2.value;
   }
 } {vtabE vtabE1 11 vtabE1 w x {} vtabE vtabE1 11 vtabE1 y z {} vtabE vtabE2 22 vtabE2 a b {} vtabE vtabE2 22 vtabE2 c d {}}
+
+finish_test
