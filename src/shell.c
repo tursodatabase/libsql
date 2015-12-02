@@ -1847,6 +1847,7 @@ static char zHelp[] =
   ".timeout MS            Try opening locked tables for MS milliseconds\n"
   ".timer on|off          Turn SQL timer on or off\n"
   ".trace FILE|off        Output each SQL statement as it is run\n"
+  ".vfsinfo ?AUX?         Information about the top-level VFS\n"
   ".vfsname ?AUX?         Print the name of the VFS stack\n"
   ".width NUM1 NUM2 ...   Set column widths for \"column\" mode\n"
   "                         Negative values right-justify\n"
@@ -4065,6 +4066,20 @@ static int do_meta_command(char *zLine, ShellState *p){
   if( c=='v' && strncmp(azArg[0], "version", n)==0 ){
     fprintf(p->out, "SQLite %s %s\n" /*extra-version-info*/,
         sqlite3_libversion(), sqlite3_sourceid());
+  }else
+
+  if( c=='v' && strncmp(azArg[0], "vfsinfo", n)==0 ){
+    const char *zDbName = nArg==2 ? azArg[1] : "main";
+    sqlite3_vfs *pVfs;
+    if( p->db ){
+      sqlite3_file_control(p->db, zDbName, SQLITE_FCNTL_VFS_POINTER, &pVfs);
+      if( pVfs ){
+        fprintf(p->out, "vfs.zName      = \"%s\"\n", pVfs->zName);
+        fprintf(p->out, "vfs.iVersion   = %d\n", pVfs->iVersion);
+        fprintf(p->out, "vfs.szOsFile   = %d\n", pVfs->szOsFile);
+        fprintf(p->out, "vfs.mxPathname = %d\n", pVfs->mxPathname);
+      }
+    }
   }else
 
   if( c=='v' && strncmp(azArg[0], "vfsname", n)==0 ){

@@ -837,7 +837,6 @@ void sqlite3VdbeChangeToNoop(Vdbe *p, int addr){
     freeP4(db, pOp->p4type, pOp->p4.p);
     memset(pOp, 0, sizeof(pOp[0]));
     pOp->opcode = OP_Noop;
-    if( addr==p->nOp-1 ) p->nOp--;
   }
 }
 
@@ -1930,23 +1929,34 @@ void sqlite3VdbeFreeCursor(Vdbe *p, VdbeCursor *pCx){
   if( pCx==0 ){
     return;
   }
-  sqlite3VdbeSorterClose(p->db, pCx);
-  if( pCx->pBt ){
-    sqlite3BtreeClose(pCx->pBt);
-    /* The pCx->pCursor will be close automatically, if it exists, by
-    ** the call above. */
-  }else if( pCx->pCursor ){
-    sqlite3BtreeCloseCursor(pCx->pCursor);
-  }
+  assert( pCx->pBt==0 || pCx->eCurType==CURTYPE_BTREE );
+  switch( pCx->eCurType ){
+    case CURTYPE_SORTER: {
+      sqlite3VdbeSorterClose(p->db, pCx);
+      break;
+    }
+    case CURTYPE_BTREE: {
+      if( pCx->pBt ){
+        sqlite3BtreeClose(pCx->pBt);
+        /* The pCx->pCursor will be close automatically, if it exists, by
+        ** the call above. */
+      }else{
+        assert( pCx->uc.pCursor!=0 );
+        sqlite3BtreeCloseCursor(pCx->uc.pCursor);
+      }
+      break;
+    }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-  else if( pCx->pVtabCursor ){
-    sqlite3_vtab_cursor *pVtabCursor = pCx->pVtabCursor;
-    const sqlite3_module *pModule = pVtabCursor->pVtab->pModule;
-    assert( pVtabCursor->pVtab->nRef>0 );
-    pVtabCursor->pVtab->nRef--;
-    pModule->xClose(pVtabCursor);
-  }
+    case CURTYPE_VTAB: {
+      sqlite3_vtab_cursor *pVCur = pCx->uc.pVCur;
+      const sqlite3_module *pModule = pVCur->pVtab->pModule;
+      assert( pVCur->pVtab->nRef>0 );
+      pVCur->pVtab->nRef--;
+      pModule->xClose(pVCur);
+      break;
+    }
 #endif
+  }
 }
 
 /*
@@ -2951,7 +2961,8 @@ static int SQLITE_NOINLINE handleDeferredMoveto(VdbeCursor *p){
 #endif
   assert( p->deferredMoveto );
   assert( p->isTable );
-  rc = sqlite3BtreeMovetoUnpacked(p->pCursor, 0, p->movetoTarget, 0, &res);
+  assert( p->eCurType==CURTYPE_BTREE );
+  rc = sqlite3BtreeMovetoUnpacked(p->uc.pCursor, 0, p->movetoTarget, 0, &res);
   if( rc ) return rc;
   if( res!=0 ) return SQLITE_CORRUPT_BKPT;
 #ifdef SQLITE_TEST
@@ -2971,9 +2982,10 @@ static int SQLITE_NOINLINE handleDeferredMoveto(VdbeCursor *p){
 */
 static int SQLITE_NOINLINE handleMovedCursor(VdbeCursor *p){
   int isDifferentRow, rc;
-  assert( p->pCursor!=0 );
-  assert( sqlite3BtreeCursorHasMoved(p->pCursor) );
-  rc = sqlite3BtreeCursorRestore(p->pCursor, &isDifferentRow);
+  assert( p->eCurType==CURTYPE_BTREE );
+  assert( p->uc.pCursor!=0 );
+  assert( sqlite3BtreeCursorHasMoved(p->uc.pCursor) );
+  rc = sqlite3BtreeCursorRestore(p->uc.pCursor, &isDifferentRow);
   p->cacheStatus = CACHE_STALE;
   if( isDifferentRow ) p->nullRow = 1;
   return rc;
@@ -2984,7 +2996,8 @@ static int SQLITE_NOINLINE handleMovedCursor(VdbeCursor *p){
 ** if need be.  Return any I/O error from the restore operation.
 */
 int sqlite3VdbeCursorRestore(VdbeCursor *p){
-  if( sqlite3BtreeCursorHasMoved(p->pCursor) ){
+  assert( p->eCurType==CURTYPE_BTREE );
+  if( sqlite3BtreeCursorHasMoved(p->uc.pCursor) ){
     return handleMovedCursor(p);
   }
   return SQLITE_OK;
@@ -3004,11 +3017,13 @@ int sqlite3VdbeCursorRestore(VdbeCursor *p){
 ** not been deleted out from under the cursor, then this routine is a no-op.
 */
 int sqlite3VdbeCursorMoveto(VdbeCursor *p){
-  if( p->deferredMoveto ){
-    return handleDeferredMoveto(p);
-  }
-  if( p->pCursor && sqlite3BtreeCursorHasMoved(p->pCursor) ){
-    return handleMovedCursor(p);
+  if( p->eCurType==CURTYPE_BTREE ){
+    if( p->deferredMoveto ){
+      return handleDeferredMoveto(p);
+    }
+    if( sqlite3BtreeCursorHasMoved(p->uc.pCursor) ){
+      return handleMovedCursor(p);
+    }
   }
   return SQLITE_OK;
 }
@@ -4321,9 +4336,11 @@ int sqlite3VdbeIdxKeyCompare(
 ){
   i64 nCellKey = 0;
   int rc;
-  BtCursor *pCur = pC->pCursor;
+  BtCursor *pCur;
   Mem m;
 
+  assert( pC->eCurType==CURTYPE_BTREE );
+  pCur = pC->uc.pCursor;
   assert( sqlite3BtreeCursorIsValid(pCur) );
   VVA_ONLY(rc =) sqlite3BtreeKeySize(pCur, &nCellKey);
   assert( rc==SQLITE_OK );    /* pCur is always valid so KeySize cannot fail */
@@ -4334,7 +4351,7 @@ int sqlite3VdbeIdxKeyCompare(
     return SQLITE_CORRUPT_BKPT;
   }
   sqlite3VdbeMemInit(&m, db, 0);
-  rc = sqlite3VdbeMemFromBtree(pC->pCursor, 0, (u32)nCellKey, 1, &m);
+  rc = sqlite3VdbeMemFromBtree(pCur, 0, (u32)nCellKey, 1, &m);
   if( rc ){
     return rc;
   }

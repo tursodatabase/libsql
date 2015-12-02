@@ -183,7 +183,7 @@ u32 sqlite3PagerDataVersion(Pager*);
 #endif
 int sqlite3PagerMemUsed(Pager*);
 const char *sqlite3PagerFilename(Pager*, int);
-const sqlite3_vfs *sqlite3PagerVfs(Pager*);
+sqlite3_vfs *sqlite3PagerVfs(Pager*);
 sqlite3_file *sqlite3PagerFile(Pager*);
 const char *sqlite3PagerJournalname(Pager*);
 int sqlite3PagerNosync(Pager*);

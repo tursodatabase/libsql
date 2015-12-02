@@ -270,6 +270,12 @@ void sqlite3VXPrintf(
       testcase( wx>0x7fffffff );
       width = wx & 0x7fffffff;
     }
+    assert( width>=0 );
+#ifdef SQLITE_PRINTF_PRECISION_LIMIT
+    if( width>SQLITE_PRINTF_PRECISION_LIMIT ){
+      width = SQLITE_PRINTF_PRECISION_LIMIT;
+    }
+#endif
 
     /* Get the precision */
     if( c=='.' ){
@@ -296,6 +302,14 @@ void sqlite3VXPrintf(
     }else{
       precision = -1;
     }
+    assert( precision>=(-1) );
+#ifdef SQLITE_PRINTF_PRECISION_LIMIT
+    if( precision>SQLITE_PRINTF_PRECISION_LIMIT ){
+      precision = SQLITE_PRINTF_PRECISION_LIMIT;
+    }
+#endif
+
+
     /* Get the conversion type modifier */
     if( c=='l' ){
       flag_long = 1;

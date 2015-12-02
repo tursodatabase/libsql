@@ -158,6 +158,9 @@ static const char * const azCompileOpt[] = {
 #ifdef SQLITE_INT64_TYPE
   "INT64_TYPE",
 #endif
+#ifdef SQLITE_LIKE_DOESNT_MATCH_BLOBS
+  "LIKE_DOESNT_MATCH_BLOBS",
+#endif
 #if SQLITE_LOCK_TRACE
   "LOCK_TRACE",
 #endif

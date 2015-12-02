@@ -354,7 +354,7 @@ do_execsql_test 8.1 {
   INSERT INTO kv SELECT NULL, randomblob(750) FROM kv;
   DELETE FROM kv WHERE rowid%2;
   PRAGMA freelist_count;
-} {wal 33}
+} {wal 34}
 do_execsql_test 8.2 { PRAGMA integrity_check } ok
 do_execsql_test 8.3 { 
   BEGIN CONCURRENT;
@@ -550,4 +550,3 @@ do_multiclient_test tn {
 
 
 finish_test
-
