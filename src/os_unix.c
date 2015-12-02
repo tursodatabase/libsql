@@ -4768,6 +4768,7 @@ static void unixRemapfile(
 */
 static int unixMapfile(unixFile *pFd, i64 nMap){
   assert( nMap>=0 || pFd->nFetchOut==0 );
+  assert( nMap>0 || (pFd->mmapSize==0 && pFd->pMapRegion==0) );
   if( pFd->nFetchOut>0 ) return SQLITE_OK;
 
   if( nMap<0 ){
@@ -4781,12 +4782,9 @@ static int unixMapfile(unixFile *pFd, i64 nMap){
     nMap = pFd->mmapSizeMax;
   }
 
+  assert( nMap>0 || (pFd->mmapSize==0 && pFd->pMapRegion==0) );
   if( nMap!=pFd->mmapSize ){
-    if( nMap>0 ){
-      unixRemapfile(pFd, nMap);
-    }else{
-      unixUnmapfile(pFd);
-    }
+    unixRemapfile(pFd, nMap);
   }
 
   return SQLITE_OK;
