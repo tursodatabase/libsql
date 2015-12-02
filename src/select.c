@@ -1340,7 +1340,8 @@ static const char *columnTypeImpl(
   char const *zOrigCol = 0;
 #endif
 
-  if( NEVER(pExpr==0) || pNC->pSrcList==0 ) return 0;
+  assert( pExpr!=0 );
+  assert( pNC->pSrcList!=0 );
   switch( pExpr->op ){
     case TK_AGG_COLUMN:
     case TK_COLUMN: {
@@ -1528,6 +1529,7 @@ static void generateColumnNames(
   }
 #endif
 
+  assert( pTabList!=0 );
   if( pParse->colNamesSet || NEVER(v==0) || db->mallocFailed ) return;
   pParse->colNamesSet = 1;
   fullNames = (db->flags & SQLITE_FullColNames)!=0;
@@ -1540,7 +1542,7 @@ static void generateColumnNames(
     if( pEList->a[i].zName ){
       char *zName = pEList->a[i].zName;
       sqlite3VdbeSetColName(v, i, COLNAME_NAME, zName, SQLITE_TRANSIENT);
-    }else if( (p->op==TK_COLUMN || p->op==TK_AGG_COLUMN) && pTabList ){
+    }else if( p->op==TK_COLUMN || p->op==TK_AGG_COLUMN ){
       Table *pTab;
       char *zCol;
       int iCol = p->iColumn;

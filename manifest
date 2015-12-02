@@ -1,5 +1,5 @@
-C Have\sthe\ssqlite3_column_decltype()\sAPI\sreport\sthe\sdeclared\stypes\sfor\sthe\sleft-most\sSELECT\sstatement\sin\sa\scompound\sSELECT.
-D 2015-12-02T18:59:44.537
+C Remove\sunreachable\sbranches\sfrom\sthe\sdecltype\scomputation\slogic\sin\sthe\squery\nplanner.
+D 2015-12-02T19:46:12.775
 F Makefile.in 23d9a63484a383fc64951b25ef44067930f98dc6
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e8fdca1cb89a1b58b5f4d3a130ea9a3d28cb314d
@@ -339,7 +339,7 @@ F src/printf.c ca05561795ad6c2fa47acdd007702586282f7feb
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c f4c897ca76ca6d5e0b3f0499c627392ffe657c8e
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c dd04f017d1402e1a8cbacb13f53c279dc48543b4
+F src/select.c 1611828a7116e5f6cc1e69cd07d59b0d2c662ea9
 F src/shell.c 2796237990d42e6a5a7beafee65ef70cc8767d21
 F src/sqlite.h.in 5bd83191711d3dc85030326daa9e8e5226a495e7
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
@@ -1408,7 +1408,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4692ae84f93530e27d7c106a60236355e176b7fd
-R cccfb2982bfd6a0aab4098f75a44ccf8
-U dan
-Z e453763f88995e08cd02dca755bc7590
+P 3e1d71fcaf57c0223ab9a7366c8607f8f66bb21c
+R 0397cf9717330ffe9055735c8207c81a
+U drh
+Z 6381d064415ccbeec9de47fb6017aaa8
