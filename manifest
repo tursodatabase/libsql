@@ -1,5 +1,5 @@
-C Fix\sthreadtest3\sso\sthat\sit\sbuilds\susing\sthe\sautoconf\sbuild\ssystem.
-D 2015-12-03T12:01:54.310
+C Make\sthe\ssqlite3_status64(),\ssqlite3_strlike(),\sand\nsqlite3_db_cacheflush()\sAPIs\savailable\sto\sloadable\sextensions.
+D 2015-12-03T13:43:07.848
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e8fdca1cb89a1b58b5f4d3a130ea9a3d28cb314d
@@ -303,7 +303,7 @@ F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
 F src/insert.c e1d20ae8979e25519c2670233718676bedcfedc9
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
-F src/loadext.c 18586e45a215325f15096821e9c082035d4fb810
+F src/loadext.c 84996d7d70a605597d79c1f1d7b2012a5fd34f2b
 F src/main.c 3f2828fce1e45c3ad096c69eee1e96962c7281c5
 F src/malloc.c 337bbe9c7d436ef9b7d06b5dd10bbfc8f3025972
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
@@ -343,7 +343,7 @@ F src/select.c 1611828a7116e5f6cc1e69cd07d59b0d2c662ea9
 F src/shell.c 2796237990d42e6a5a7beafee65ef70cc8767d21
 F src/sqlite.h.in 5bd83191711d3dc85030326daa9e8e5226a495e7
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
-F src/sqlite3ext.h 41ef50b0418a7c5ad1337bb80db5a7928dee764f
+F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
 F src/sqliteInt.h 64256d193a16a147d9f6317cc4e095fdd3e0a2e9
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
@@ -1408,7 +1408,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9d2c62b04e3a9ac5d9adea2aac7ec3f3bc3e88bd
-R 614db3259b048bd04399b66e7b5154a7
-U dan
-Z 6db6492a66042b93eb13e3c236809127
+P d96de532cc4a192cfebae900701dcee0a7d29273
+R ea1163e38de91a0ef50bee8a60cd0c9a
+U drh
+Z 21e053713b9d8cfc5b99a96ebe62cd3d

@@ -410,7 +410,11 @@ static const sqlite3_api_routines sqlite3Apis = {
   sqlite3_bind_zeroblob64,
   /* Version 3.9.0 and later */
   sqlite3_value_subtype,
-  sqlite3_result_subtype
+  sqlite3_result_subtype,
+  /* Version 3.10.0 and later */
+  sqlite3_status64,
+  sqlite3_strlike,
+  sqlite3_db_cacheflush
 };
 
 /*
