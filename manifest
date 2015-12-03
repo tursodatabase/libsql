@@ -1,6 +1,6 @@
-C Improve\sconcurrency\sin\stest_multiplex.c.\sAdd\sa\sswitch\sto\s"threadtest3"\sallowing\sit\sto\srun\susing\sthe\smultiplexor\sVFS.
-D 2015-12-03T11:51:18.767
-F Makefile.in 23d9a63484a383fc64951b25ef44067930f98dc6
+C Fix\sthreadtest3\sso\sthat\sit\sbuilds\susing\sthe\sautoconf\sbuild\ssystem.
+D 2015-12-03T12:01:54.310
+F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e8fdca1cb89a1b58b5f4d3a130ea9a3d28cb314d
 F README.md 8ecc12493ff9f820cdea6520a9016001cb2e59b7
@@ -263,7 +263,7 @@ F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 2a1196d5e10ce062862b24a4cf9a985fe477de34
+F main.mk ed77cbb97848c8dae1ab928245432f74b0580162
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -1074,7 +1074,7 @@ F test/thread2.test f35d2106452b77523b3a2b7d1dcde2e5ee8f9e46
 F test/thread_common.tcl 334639cadcb9f912bf82aa73f49efd5282e6cadd
 F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
 F test/threadtest2.c a70a8e94bef23339d34226eb9521015ef99f4df8
-F test/threadtest3.c 469ea7fe7030d75bd67dcf8047b16c1deea5210d
+F test/threadtest3.c 7ca82330041456afa52e4968196bb0867371f91b
 F test/threadtest4.c c1e67136ceb6c7ec8184e56ac61db28f96bd2925
 F test/tkt-02a8e81d44.test 6c80d9c7514e2a42d4918bf87bf6bc54f379110c
 F test/tkt-26ff0c2d1e.test 888324e751512972c6e0d1a09df740d8f5aaf660
@@ -1408,7 +1408,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4f7f355021f9eb048fffc84e559bfb3fdb1e1e69
-R 17fe6dc83cb64fc6198b93af9ffea9ca
+P 9d2c62b04e3a9ac5d9adea2aac7ec3f3bc3e88bd
+R 614db3259b048bd04399b66e7b5154a7
 U dan
-Z de557aa3ec0a739d4121e9d650d8e092
+Z 6db6492a66042b93eb13e3c236809127

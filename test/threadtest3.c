@@ -90,6 +90,11 @@
 
 #include "test_multiplex.h"
 
+/* Required to link test_multiplex.c */
+#ifndef SQLITE_OMIT_WSD
+int sqlite3PendingByte = 0x40000000;
+#endif
+
 /*
  * This code implements the MD5 message-digest algorithm.
  * The algorithm is due to Ron Rivest.  This code was
