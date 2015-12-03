@@ -88,6 +88,8 @@
 #include <fcntl.h>
 #include <errno.h>
 
+#include "test_multiplex.h"
+
 /*
  * This code implements the MD5 message-digest algorithm.
  * The algorithm is due to Ron Rivest.  This code was
@@ -1460,13 +1462,36 @@ int main(int argc, char **argv){
     argc = 2;
     argv = substArgv;
   }
+
+  /* Loop through the command-line arguments to ensure that each argument
+  ** selects at least one test. If not, assume there is a typo on the 
+  ** command-line and bail out with the usage message.  */
   for(iArg=1; iArg<argc; iArg++){
+    const char *zArg = argv[iArg];
+    if( zArg[0]=='-' ){
+      if( sqlite3_stricmp(zArg, "-multiplexor")==0 ){
+        /* Install the multiplexor VFS as the default */
+        int rc = sqlite3_multiplex_initialize(0, 1);
+        if( rc!=SQLITE_OK ){
+          fprintf(stderr, "Failed to install multiplexor VFS (%d)\n", rc);
+          return 253;
+        }
+      }
+      else {
+        goto usage;
+      }
+
+      continue;
+    }
+
     for(i=0; i<sizeof(aTest)/sizeof(aTest[0]); i++){
-      if( sqlite3_strglob(argv[iArg],aTest[i].zTest)==0 ) break;
+      if( sqlite3_strglob(zArg, aTest[i].zTest)==0 ) break;
     }
     if( i>=sizeof(aTest)/sizeof(aTest[0]) ) goto usage;   
   }
+
   for(iArg=1; iArg<argc; iArg++){
+    if( argv[iArg][0]=='-' ) continue;
     for(i=0; i<sizeof(aTest)/sizeof(aTest[0]); i++){
       char const *z = aTest[i].zTest;
       if( sqlite3_strglob(argv[iArg],z)==0 ){
@@ -1483,7 +1508,7 @@ int main(int argc, char **argv){
   return (nGlobalErr>0 ? 255 : 0);
 
  usage:
-  printf("Usage: %s [testname|testprefix*]...\n", argv[0]);
+  printf("Usage: %s [-multiplexor] [testname|testprefix*]...\n", argv[0]);
   printf("Available tests are:\n");
   for(i=0; i<sizeof(aTest)/sizeof(aTest[0]); i++){
     printf("   %s\n", aTest[i].zTest);

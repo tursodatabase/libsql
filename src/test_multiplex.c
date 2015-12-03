@@ -189,8 +189,11 @@ static struct {
   int isInitialized;
 
   /* For run-time access any of the other global data structures in this
-  ** shim, the following mutex must be held.
-  */
+  ** shim, the following mutex must be held. In practice, all this mutex
+  ** protects is add/remove operations to/from the linked list of group objects
+  ** starting at pGroups below. More specifically, it protects the value of
+  ** pGroups itself, and the pNext/pPrev fields of each multiplexGroup
+  ** structure.  */
   sqlite3_mutex *pMutex;
 
   /* List of multiplexGroup objects.
@@ -758,11 +761,8 @@ static int multiplexRead(
   multiplexConn *p = (multiplexConn*)pConn;
   multiplexGroup *pGroup = p->pGroup;
   int rc = SQLITE_OK;
-  int nMutex = 0;
-  multiplexEnter(); nMutex++;
   if( !pGroup->bEnabled ){
     sqlite3_file *pSubOpen = multiplexSubOpen(pGroup, 0, &rc, NULL, 0);
-    multiplexLeave(); nMutex--;
     if( pSubOpen==0 ){
       rc = SQLITE_IOERR_READ;
     }else{
@@ -772,9 +772,7 @@ static int multiplexRead(
     while( iAmt > 0 ){
       int i = (int)(iOfst / pGroup->szChunk);
       sqlite3_file *pSubOpen;
-      if( nMutex==0 ){ multiplexEnter(); nMutex++; }
       pSubOpen = multiplexSubOpen(pGroup, i, &rc, NULL, 1);
-      multiplexLeave(); nMutex--;
       if( pSubOpen ){
         int extra = ((int)(iOfst % pGroup->szChunk) + iAmt) - pGroup->szChunk;
         if( extra<0 ) extra = 0;
@@ -791,8 +789,7 @@ static int multiplexRead(
       }
     }
   }
-  assert( nMutex==0 || nMutex==1 );
-  if( nMutex ) multiplexLeave();
+
   return rc;
 }
 
@@ -809,7 +806,6 @@ static int multiplexWrite(
   multiplexConn *p = (multiplexConn*)pConn;
   multiplexGroup *pGroup = p->pGroup;
   int rc = SQLITE_OK;
-  multiplexEnter();
   if( !pGroup->bEnabled ){
     sqlite3_file *pSubOpen = multiplexSubOpen(pGroup, 0, &rc, NULL, 0);
     if( pSubOpen==0 ){
@@ -834,7 +830,6 @@ static int multiplexWrite(
       }
     }
   }
-  multiplexLeave();
   return rc;
 }
 
