@@ -1,5 +1,5 @@
-C Make\sthe\sSQLITE_ENABLE_8_3_NAMES\scompile-time\soption\savailable\sto\nsqlite3_compileoption_used().
-D 2015-12-03T20:50:10.543
+C Improved\sOOM\srecovery\sin\sthe\sSELECT\scode\sgenerator\slogic.
+D 2015-12-03T21:47:30.716
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e8fdca1cb89a1b58b5f4d3a130ea9a3d28cb314d
@@ -339,7 +339,7 @@ F src/printf.c ca05561795ad6c2fa47acdd007702586282f7feb
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c f4c897ca76ca6d5e0b3f0499c627392ffe657c8e
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
-F src/select.c 1611828a7116e5f6cc1e69cd07d59b0d2c662ea9
+F src/select.c f8fded11fc443a9f5a73cc5db069d06b34460e2f
 F src/shell.c 2796237990d42e6a5a7beafee65ef70cc8767d21
 F src/sqlite.h.in 5bd83191711d3dc85030326daa9e8e5226a495e7
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
@@ -1408,7 +1408,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9e489a71f2aeb1f13f9ca6f106b9144d07ca25aa
-R 75c2a8b340ff172a704bb3359504d6a3
+P 06338201f3f00151232e5c6a40edcdbea04d7553
+R 145702191e68cee758981a8fb775b160
 U drh
-Z b1df76d2c021fec1e48360d9f33aa631
+Z 9a3c93cbb014714fd53297dd3e278abb
