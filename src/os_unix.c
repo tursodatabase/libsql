@@ -5521,16 +5521,19 @@ static int findCreateFileMode(
     ** used by the test_multiplex.c module.
     */
     nDb = sqlite3Strlen30(zPath) - 1; 
-#ifdef SQLITE_ENABLE_8_3_NAMES
-    while( nDb>0 && sqlite3Isalnum(zPath[nDb]) ) nDb--;
-    if( nDb==0 || zPath[nDb]!='-' ) return SQLITE_OK;
-#else
     while( zPath[nDb]!='-' ){
+#ifndef SQLITE_ENABLE_8_3_NAMES
+      /* In the normal case (8+3 filenames disabled) the journal filename
+      ** is guaranteed to contain a '-' character. */
       assert( nDb>0 );
-      assert( zPath[nDb]!='\n' );
+      assert( sqlite3Isalnum(zPath[nDb]) );
+#else
+      /* If 8+3 names are possible, then the journal file might not contain
+      ** a '-' character.  So check for that case and return early. */
+      if( nDb==0 || zPath[nDb]=='.' ) return SQLITE_OK;
+#endif
       nDb--;
     }
-#endif
     memcpy(zDb, zPath, nDb);
     zDb[nDb] = '\0';
 
