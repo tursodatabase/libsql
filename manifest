@@ -1,5 +1,5 @@
-C Remove\sunreachable\sbranches\sfrom\sthe\sdecltype\scomputation\slogic\sin\sthe\squery\nplanner.
-D 2015-12-02T19:46:12.775
+C A\sunix\sVFS\schange\sreplaces\sfsync()\swith\sfstat()\swhen\susing\sSQLITE_NO_SYNC,\sso\nset\sPRAGMA\ssynchronous=OFF\sin\sthe\ssysfault-3\stest\sto\savoid\serroneously\scausing\nerrors\sin\sxSync.
+D 2015-12-03T01:48:32.232
 F Makefile.in 23d9a63484a383fc64951b25ef44067930f98dc6
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e8fdca1cb89a1b58b5f4d3a130ea9a3d28cb314d
@@ -1054,7 +1054,7 @@ F test/superlock.test 1cde669f68d2dd37d6c9bd35eee1d95491ae3fc2
 F test/symlink.test cbf6cb8c6c4b63a39e9f0f6b0d5c99e249dbc102
 F test/sync.test a34cd43e98b7fb84eabbf38f7ed8f7349b3f3d85
 F test/syscall.test 2aa9e111b79fb385681ff8940124def6f8faab87
-F test/sysfault.test fa776e60bf46bdd3ae69f0b73e46ee3977a58ae6
+F test/sysfault.test c9f2b0d8d677558f74de750c75e12a5454719d04
 F test/tabfunc01.test cc33684f9480fcf1fd5ce287ac28d22971cad1cc
 F test/table.test b708f3e5fa2542fa51dfab21fc07b36ea445cb2f
 F test/tableapi.test 2674633fa95d80da917571ebdd759a14d9819126
@@ -1408,7 +1408,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3e1d71fcaf57c0223ab9a7366c8607f8f66bb21c
-R 0397cf9717330ffe9055735c8207c81a
+P 4f2bcff94c672312805be1400050a7026f93a9d7
+R 029751c01b929451cff95b86da0868ac
 U drh
-Z 6381d064415ccbeec9de47fb6017aaa8
+Z 7f6ec6c824be76681c81bd551b601799
