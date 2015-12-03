@@ -445,9 +445,10 @@ int sqlite3_config(int op, ...){
       break;
     }
     case SQLITE_CONFIG_PAGECACHE: {
-      /* EVIDENCE-OF: R-31408-40510 There are three arguments to
-      ** SQLITE_CONFIG_PAGECACHE: A pointer to 8-byte aligned memory, the size
-      ** of each page buffer (sz), and the number of pages (N). */
+      /* EVIDENCE-OF: R-18761-36601 There are three arguments to
+      ** SQLITE_CONFIG_PAGECACHE: A pointer to 8-byte aligned memory (pMem),
+      ** the size of each page cache line (sz), and the number of cache lines
+      ** (N). */
       sqlite3GlobalConfig.pPage = va_arg(ap, void*);
       sqlite3GlobalConfig.szPage = va_arg(ap, int);
       sqlite3GlobalConfig.nPage = va_arg(ap, int);
