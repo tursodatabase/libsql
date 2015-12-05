@@ -21,6 +21,11 @@ pub enum SeekFrom {
 
 impl SqliteConnection {
     /// Open a handle to the BLOB located in `row`, `column`, `table` in database `db` ('main', 'temp', ...)
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if `db`/`table`/`column` cannot be converted to a C-compatible string or if the
+    /// underlying SQLite BLOB open call fails.
     pub fn blob_open<'a>(&'a self, db: &str, table: &str, column: &str, row: i64, read_only: bool) -> SqliteResult<SqliteBlob<'a>> {
         let mut c = self.db.borrow_mut();
         let mut blob = ptr::null_mut();
@@ -36,6 +41,10 @@ impl SqliteConnection {
 
 impl<'conn> SqliteBlob<'conn> {
     /// Move a BLOB handle to a new row
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if the underlying SQLite BLOB reopen call fails.
     pub fn reopen(&mut self, row: i64) -> SqliteResult<()> {
         let rc = unsafe{ ffi::sqlite3_blob_reopen(self.blob, row) };
         if rc != ffi::SQLITE_OK {
@@ -51,6 +60,10 @@ impl<'conn> SqliteBlob<'conn> {
     }
 
     /// Read data from a BLOB incrementally
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if `buf` length > i32 max value or if the underlying SQLite read call fails.
     pub fn read(&mut self, buf: &mut [u8]) -> SqliteResult<i32> {
         if buf.len() > ::std::i32::MAX as usize {
             return Err(SqliteError {
@@ -76,6 +89,11 @@ impl<'conn> SqliteBlob<'conn> {
     /// Write data into a BLOB incrementally
     ///
     /// This function may only modify the contents of the BLOB; it is not possible to increase the size of a BLOB using this API.
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if `buf` length > i32 max value or if `buf` length + offset > BLOB size
+    /// or if the underlying SQLite write call fails.
     pub fn write(&mut self, buf: &[u8]) -> SqliteResult<i32> {
         if buf.len() > ::std::i32::MAX as usize {
             return Err(SqliteError {
@@ -108,6 +126,10 @@ impl<'conn> SqliteBlob<'conn> {
     }
 
     /// Close a BLOB handle
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if the underlying SQLite close call fails.
     pub fn close(mut self) -> SqliteResult<()> {
         self.close_()
     }
