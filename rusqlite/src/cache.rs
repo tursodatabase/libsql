@@ -2,7 +2,7 @@
 extern crate lru_cache;
 
 use {SqliteResult, SqliteConnection, SqliteStatement};
-use lru_cache::LruCache;
+use self::lru_cache::LruCache;
 
 /// Prepared statements cache.
 ///
