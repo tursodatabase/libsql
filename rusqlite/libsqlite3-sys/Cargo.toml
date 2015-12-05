@@ -15,4 +15,4 @@ load_extension = []
 pkg-config = "~0.3"
 
 [dependencies]
-libc = "~0.1"
+libc = "~0.2"

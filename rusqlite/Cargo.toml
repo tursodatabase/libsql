@@ -15,14 +15,16 @@ name = "rusqlite"
 [features]
 load_extension = ["libsqlite3-sys/load_extension"]
 cache = ["lru-cache"]
+trace = []
 
 [dependencies]
 time = "~0.1.0"
 bitflags = "~0.1"
-libc = "~0.1"
+libc = "~0.2"
 
 [dev-dependencies]
 tempdir = "~0.3.4"
+lazy_static = "~0.1"
 
 [dependencies.libsqlite3-sys]
 path = "libsqlite3-sys"
@@ -31,3 +33,7 @@ version = "0.2.0"
 [dependencies.lru-cache]
 version = "~0.0.4"
 optional = true
+
+[[test]]
+name = "config_log"
+harness = false
