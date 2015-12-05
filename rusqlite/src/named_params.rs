@@ -9,6 +9,20 @@ use types::ToSql;
 
 impl SqliteConnection {
     /// Convenience method to prepare and execute a single SQL statement with named parameter(s).
+    ///
+    /// ## Example
+    ///
+    /// ```rust,no_run
+    /// # use rusqlite::{SqliteConnection, SqliteResult};
+    /// fn insert(conn: &SqliteConnection) -> SqliteResult<i32> {
+    ///   conn.execute_named("INSERT INTO test (id, name, flag) VALUES (:id, :name, :flag)", &[(":name", &"one")])
+    /// }
+    /// ```
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if `sql` cannot be converted to a C-compatible string or if the
+    /// underlying SQLite call fails.
     pub fn execute_named(&self, sql: &str, params: &[(&str, &ToSql)]) -> SqliteResult<c_int> {
         self.prepare(sql).and_then(|mut stmt| stmt.execute_named(params))
     }
@@ -16,6 +30,11 @@ impl SqliteConnection {
     /// Convenience method to execute a query with named parameter(s) that is expected to return a single row.
     ///
     /// If the query returns more than one row, all rows except the first are ignored.
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if `sql` cannot be converted to a C-compatible string or if the
+    /// underlying SQLite call fails.
     pub fn query_named_row<T, F>(&self, sql: &str, params: &[(&str, &ToSql)], f: F) -> SqliteResult<T>
                            where F: FnOnce(SqliteRow) -> T {
         let mut stmt = try!(self.prepare(sql));
@@ -47,7 +66,8 @@ impl<'conn> SqliteStatement<'conn> {
 
     /// Return the index of an SQL parameter given its name.
     ///
-    /// ## Failures
+    /// # Failure
+    ///
     /// Return None if `name` is invalid (NulError) or if no matching parameter is found.
     pub fn parameter_index(&self, name: &str) -> Option<i32> {
         unsafe {
@@ -65,6 +85,21 @@ impl<'conn> SqliteStatement<'conn> {
     ///
     /// On success, returns the number of rows that were changed or inserted or deleted (via
     /// `sqlite3_changes`).
+    ///
+    /// ## Example
+    ///
+    /// ```rust,no_run
+    /// # use rusqlite::{SqliteConnection, SqliteResult};
+    /// fn insert(conn: &SqliteConnection) -> SqliteResult<i32> {
+    ///   let mut stmt = try!(conn.prepare("INSERT INTO test (id, name, flag) VALUES (:id, :name, :flag)"));
+    ///   return stmt.execute_named(&[(":name", &"one")]);
+    /// }
+    /// ```
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if binding parameters fails, the executed statement returns rows (in
+    /// which case `query` should be used instead), or the underling SQLite call fails.
     pub fn execute_named(&mut self, params: &[(&str, &ToSql)]) -> SqliteResult<c_int> {
         unsafe {
             try!(self.bind_named_parameters(params));
@@ -73,6 +108,24 @@ impl<'conn> SqliteStatement<'conn> {
     }
 
     /// Execute the prepared statement with named parameter(s), returning an iterator over the resulting rows.
+    ///
+    /// ## Example
+    ///
+    /// ```rust,no_run
+    /// # use rusqlite::{SqliteConnection, SqliteResult, SqliteRows};
+    /// fn query(conn: &SqliteConnection) -> SqliteResult<()> {
+    ///   let mut stmt = try!(conn.prepare("SELECT * FROM test where name = :name"));
+    ///   let mut rows = try!(stmt.query_named(&[(":name", &"one")]));
+    ///   for row in rows {
+    ///   // ...
+    ///   }
+    ///   return Ok(())
+    /// }
+    /// ```
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if binding parameters fails.
     pub fn query_named<'a>(&'a mut self, params: &[(&str, &ToSql)]) -> SqliteResult<SqliteRows<'a>> {
         self.reset_if_needed();
 
