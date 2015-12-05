@@ -434,6 +434,9 @@ struct Wal {
 #ifdef SQLITE_DEBUG
   u8 lockError;              /* True if a locking error has occurred */
 #endif
+#ifdef SQLITE_ENABLE_SNAPSHOT
+  WalIndexHdr *pSnapshot;
+#endif
 };
 
 /*
@@ -2147,6 +2150,7 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
   int mxI;                        /* Index of largest aReadMark[] value */
   int i;                          /* Loop counter */
   int rc = SQLITE_OK;             /* Return code  */
+  int mxFrame;                    /* Wal frame to lock to */
 
   assert( pWal->readLock<0 );     /* Not currently locked */
 
@@ -2210,7 +2214,12 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
   }
 
   pInfo = walCkptInfo(pWal);
-  if( !useWal && pInfo->nBackfill==pWal->hdr.mxFrame ){
+  if( !useWal && pInfo->nBackfill==pWal->hdr.mxFrame 
+#ifdef SQLITE_ENABLE_SNAPSHOT
+   && (pWal->pSnapshot==0 || pWal->hdr.mxFrame==0
+     || 0==memcmp(&pWal->hdr, pWal->pSnapshot, sizeof(WalIndexHdr)))
+#endif
+  ){
     /* The WAL has been completely backfilled (or it is empty).
     ** and can be safely ignored.
     */
@@ -2248,9 +2257,13 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
   */
   mxReadMark = 0;
   mxI = 0;
+  mxFrame = pWal->hdr.mxFrame;
+#ifdef SQLITE_ENABLE_SNAPSHOT
+  if( pWal->pSnapshot ) mxFrame = pWal->pSnapshot->mxFrame;
+#endif
   for(i=1; i<WAL_NREADER; i++){
     u32 thisMark = pInfo->aReadMark[i];
-    if( mxReadMark<=thisMark && thisMark<=pWal->hdr.mxFrame ){
+    if( mxReadMark<=thisMark && thisMark<=mxFrame ){
       assert( thisMark!=READMARK_NOT_USED );
       mxReadMark = thisMark;
       mxI = i;
@@ -2259,12 +2272,12 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
   /* There was once an "if" here. The extra "{" is to preserve indentation. */
   {
     if( (pWal->readOnly & WAL_SHM_RDONLY)==0
-     && (mxReadMark<pWal->hdr.mxFrame || mxI==0)
+     && (mxReadMark<mxFrame || mxI==0)
     ){
       for(i=1; i<WAL_NREADER; i++){
         rc = walLockExclusive(pWal, WAL_READ_LOCK(i), 1);
         if( rc==SQLITE_OK ){
-          mxReadMark = pInfo->aReadMark[i] = pWal->hdr.mxFrame;
+          mxReadMark = pInfo->aReadMark[i] = mxFrame;
           mxI = i;
           walUnlockExclusive(pWal, WAL_READ_LOCK(i), 1);
           break;
@@ -2349,6 +2362,14 @@ int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
   int rc;                         /* Return code */
   int cnt = 0;                    /* Number of TryBeginRead attempts */
 
+#ifdef SQLITE_ENABLE_SNAPSHOT
+  int bChanged = 0;
+  WalIndexHdr *pSnapshot = pWal->pSnapshot;
+  if( pSnapshot && memcmp(pSnapshot, &pWal->hdr, sizeof(WalIndexHdr))){
+    bChanged = 1;
+  }
+#endif
+
   do{
     rc = walTryBeginRead(pWal, pChanged, 0, ++cnt);
   }while( rc==WAL_RETRY );
@@ -2356,6 +2377,32 @@ int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
   testcase( (rc&0xff)==SQLITE_IOERR );
   testcase( rc==SQLITE_PROTOCOL );
   testcase( rc==SQLITE_OK );
+
+#ifdef SQLITE_ENABLE_SNAPSHOT
+  if( rc==SQLITE_OK ){
+    if( pSnapshot && memcmp(pSnapshot, &pWal->hdr, sizeof(WalIndexHdr)) ){
+      volatile WalCkptInfo *pInfo = walCkptInfo(pWal);
+      rc = walLockShared(pWal, WAL_READ_LOCK(0));
+      if( rc==SQLITE_OK ){
+        if( pInfo->nBackfill<=pSnapshot->mxFrame 
+         && pSnapshot->aSalt[0]==pWal->hdr.aSalt[0]
+         && pSnapshot->aSalt[1]==pWal->hdr.aSalt[1]
+        ){
+          assert( pWal->readLock>0 );
+          assert( pInfo->aReadMark[pWal->readLock]<=pSnapshot->mxFrame );
+          memcpy(&pWal->hdr, pSnapshot, sizeof(WalIndexHdr));
+          *pChanged = bChanged;
+        }else{
+          rc = SQLITE_BUSY_SNAPSHOT;
+        }
+        walUnlockShared(pWal, WAL_READ_LOCK(0));
+      }
+      if( rc!=SQLITE_OK ){
+        sqlite3WalEndReadTransaction(pWal);
+      }
+    }
+  }
+#endif
   return rc;
 }
 
@@ -3164,6 +3211,29 @@ int sqlite3WalExclusiveMode(Wal *pWal, int op){
 int sqlite3WalHeapMemory(Wal *pWal){
   return (pWal && pWal->exclusiveMode==WAL_HEAPMEMORY_MODE );
 }
+
+#ifdef SQLITE_ENABLE_SNAPSHOT
+int sqlite3WalSnapshotGet(Wal *pWal, sqlite3_snapshot **ppSnapshot){
+  int rc = SQLITE_OK;
+  WalIndexHdr *pRet;
+
+  assert( pWal->readLock>=0 && pWal->writeLock==0 );
+
+  pRet = (WalIndexHdr*)sqlite3_malloc(sizeof(WalIndexHdr));
+  if( pRet==0 ){
+    rc = SQLITE_NOMEM;
+  }else{
+    memcpy(pRet, &pWal->hdr, sizeof(WalIndexHdr));
+    *ppSnapshot = (sqlite3_snapshot*)pRet;
+  }
+
+  return rc;
+}
+
+void sqlite3WalSnapshotOpen(Wal *pWal, sqlite3_snapshot *pSnapshot){
+  pWal->pSnapshot = (WalIndexHdr*)pSnapshot;
+}
+#endif /* SQLITE_ENABLE_SNAPSHOT */
 
 #ifdef SQLITE_ENABLE_ZIPVFS
 /*

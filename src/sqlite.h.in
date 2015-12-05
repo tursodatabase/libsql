@@ -7879,6 +7879,29 @@ void sqlite3_stmt_scanstatus_reset(sqlite3_stmt*);
 int sqlite3_db_cacheflush(sqlite3*);
 
 /*
+** CAPI3REF: Open old database snapshots.
+**
+** The second argument passed to sqlite3_snapshot_get() must be the name
+** of a database file attached to the database handle passed as the first.
+** The database handle must have an open read transaction on the named 
+** database, which must be in wal mode. 
+**
+** If successful, sqlite3_snapshot_get() sets *ppSnapshot to point to a new
+** snapshot handle that may be used with sqlite3_snapshot_open() and returns
+** SQLITE_OK.
+**
+** If the specified database does not exist, or is not a wal mode database, 
+** or the database handle does not have an open read transaction on it,
+** SQLITE_ERROR is returned. If any other error occurs, for example an IO 
+** error or an OOM condition, the corresponding SQLite error code is 
+** returned.
+*/
+typedef struct sqlite3_snapshot sqlite3_snapshot;
+int sqlite3_snapshot_get(sqlite3*, const char*, sqlite3_snapshot **ppSnapshot);
+int sqlite3_snapshot_open(sqlite3*, const char*, sqlite3_snapshot*);
+void sqlite3_snapshot_free(sqlite3_snapshot*);
+
+/*
 ** Undo the hack that converts floating point types to integer for
 ** builds on processors without floating point support.
 */
