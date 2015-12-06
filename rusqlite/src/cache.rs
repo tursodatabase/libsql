@@ -21,6 +21,10 @@ impl<'conn> StatementCache<'conn> {
 
     /// Search the cache for a prepared-statement object that implements `sql`.
     // If no such prepared-statement can be found, allocate and prepare a new one.
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if no cached statement can be found and the underlying SQLite prepare call fails.
     pub fn get(&mut self, sql: &str) -> SqliteResult<SqliteStatement<'conn>> {
         let stmt = self.cache.remove(sql);
         match stmt {
@@ -32,11 +36,16 @@ impl<'conn> StatementCache<'conn> {
     /// If `discard` is true, then the statement is deleted immediately.
     /// Otherwise it is added to the LRU list and may be returned
     /// by a subsequent call to `get()`.
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if `stmt` (or the already cached statement implementing the same SQL) statement is `discard`ed
+    /// and the underlying SQLite finalize call fails.
     pub fn release(&mut self, stmt: SqliteStatement<'conn>, discard: bool) -> SqliteResult<()> {
         if discard {
             return stmt.finalize();
         }
-        // FIXME stmt.reset_if_needed();
+        stmt.reset_if_needed();
         // clear bindings ???
         self.cache.insert(stmt.sql(), stmt).map_or(Ok(()), |stmt| stmt.finalize())
     }
