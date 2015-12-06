@@ -106,7 +106,7 @@ impl ToResult for Null {
 // sqlite3_result_value
 
 /// A trait for types that can be created from a SQLite function parameter value.
-pub trait FromValue {
+pub trait FromValue: Sized {
     unsafe fn parameter_value(v: *mut sqlite3_value) -> SqliteResult<Self>;
 
     /// FromValue types can implement this method and use sqlite3_value_type to check that

@@ -1,3 +1,31 @@
+# Version UPCOMING (TBD)
+
+* Adds `trace` feature that allows the use of SQLite's logging, tracing, and profiling hooks.
+* Slight change to the closure types passed to `query_map` and `query_and_then`:
+    * Remove the `'static` requirement on the closure's output type.
+    * Give the closure a `&SqliteRow` instead of a `SqliteRow`.
+* Add more documentation for failure modes of functions that return `SqliteResult`s.
+
+# Version 0.4.0 (2015-11-03)
+
+* Adds `Sized` bound to `FromSql` trait as required by RFC 1214.
+
+# Version 0.3.1 (2015-09-22)
+
+* Reset underlying SQLite statements as soon as possible after executing, as recommended by
+  http://www.sqlite.org/cvstrac/wiki?p=ScrollingCursor.
+
+# Version 0.3.0 (2015-09-21)
+
+* Removes `get_opt`. Use `get_checked` instead.
+* Add `query_row_and_then` and `query_and_then` convenience functions. These are analogous to
+  `query_row` and `query_map` but allow functions that can fail by returning `Result`s.
+* Relax uses of `P: AsRef<...>` from `&P` to `P`.
+* Add additional error check for calling `execute` when `query` was intended.
+* Improve debug formatting of `SqliteStatement` and `SqliteConnection`.
+* Changes documentation of `get_checked` to correctly indicate that it returns errors (not panics)
+  when given invalid types or column indices.
+
 # Version 0.2.0 (2015-07-26)
 
 * Add `column_names()` to `SqliteStatement`.

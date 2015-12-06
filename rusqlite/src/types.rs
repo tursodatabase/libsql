@@ -74,7 +74,7 @@ pub trait ToSql {
 }
 
 /// A trait for types that can be created from a SQLite value.
-pub trait FromSql {
+pub trait FromSql: Sized {
     unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> SqliteResult<Self>;
 
     /// FromSql types can implement this method and use sqlite3_column_type to check that
@@ -111,8 +111,12 @@ impl ToSql for bool {
 
 impl<'a> ToSql for &'a str {
     unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
+        let length = self.len();
+        if length > ::std::i32::MAX as usize {
+            return ffi::SQLITE_TOOBIG;
+        }
         match str_to_cstring(self) {
-            Ok(c_str) => ffi::sqlite3_bind_text(stmt, col, c_str.as_ptr(), -1,
+            Ok(c_str) => ffi::sqlite3_bind_text(stmt, col, c_str.as_ptr(), length as c_int,
                                                 ffi::SQLITE_TRANSIENT()),
             Err(_)    => ffi::SQLITE_MISUSE,
         }
@@ -127,6 +131,9 @@ impl ToSql for String {
 
 impl<'a> ToSql for &'a [u8] {
     unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
+        if self.len() > ::std::i32::MAX as usize {
+            return ffi::SQLITE_TOOBIG;
+        }
         ffi::sqlite3_bind_blob(
             stmt, col, mem::transmute(self.as_ptr()), self.len() as c_int, ffi::SQLITE_TRANSIENT())
     }
