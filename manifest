@@ -1,5 +1,5 @@
-C Changes\sto\savoid\sobscure,\stheoretical\sundefined\sbehavior.\sThis\sis\spreventative\nmeasures\sonly\s-\sno\sactual\sproblems\sobserved\son\stested\scompilers.
-D 2015-12-07T16:43:44.102
+C Fix\sthe\sopenDirectory()\sroutine\sin\sthe\sunix\sVFS\sso\sthat\sit\sworks\sfor\sdatabases\nlocated\sin\sthe\sroot\sof\sthe\sfilesystem\sand\sfor\sdatabase\sfiles\sthat\shave\sno\npathname\sat\sall.
+D 2015-12-07T18:18:33.086
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e8fdca1cb89a1b58b5f4d3a130ea9a3d28cb314d
@@ -323,7 +323,7 @@ F src/os.c 8fd25588eeba74068d41102d26810e216999b6c8
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h abdb9a191a367793268fe553d25bab894e986a0e
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c 2563734669b06432cea640cbb4f7e9d543f227b9
+F src/os_unix.c 0ca6d8710366fbb01a275160f018334cd347cbda
 F src/os_win.c 386fba30419e8458b13209781c2af5590eab2811
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c f92aacd5216d8815136c9e0190041783c602641a
@@ -1408,7 +1408,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4ecbc75b465533cf80e166a9d0879b9afd3fe2be
-R 52003d35f295f961555bc017c6dea8be
+P a9e819082ba19e72db03bba37edfb7702ff489a5
+R 24074b14133d8cbad307bf1c20e69806
 U drh
-Z df68b9901f4a3c159da303c7427e83e3
+Z bce64672fed9a01eb65d3786fa37a9f1
