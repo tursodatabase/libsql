@@ -1,5 +1,5 @@
-C Add\sthe\s".changes\sON|OFF"\scommand\sto\sthe\ssqlite3.exe\scommand-line\sshell,\sfor\ntesting\sand\sverifying\sthe\ssqlite3_changes()\sand\nsqlite3_total_changes()\sinterfaces.
-D 2015-12-07T21:46:19.114
+C Update\sMSVC\sbatch\sbuild\stool\sto\sthe\slatest\sWindows\s10\sSDK\sversion.
+D 2015-12-07T23:31:59.191
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e8fdca1cb89a1b58b5f4d3a130ea9a3d28cb314d
@@ -1350,7 +1350,7 @@ F test/zerodamage.test cf6748bad89553cc1632be51a6f54e487e4039ac
 F tool/GetFile.cs a15e08acb5dd7539b75ba23501581d7c2b462cb5
 F tool/GetTclKit.bat 8606413d3035c05373a0d7fae82ebf59ae9e16c3
 F tool/addopcodes.tcl 4ca9c3ef196f08da30add5d07ce0c9458dc8c633
-F tool/build-all-msvc.bat e42141ca3c3812315432f9813ef9eb78aa8d99c9 x
+F tool/build-all-msvc.bat 204a039f985d5a4f4f9df3a3aa594fd17848c37e x
 F tool/build-shell.sh 950f47c6174f1eea171319438b93ba67ff5bf367
 F tool/cg_anno.tcl 692ce4b8693d59e3a3de77ca97f4139ecfa641b0 x
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
@@ -1408,7 +1408,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e7ae120d04cffafd9bc2b4ecd68571c17e05ed72
-R 73237b31faf24d2547a2561196384a88
-U drh
-Z 44232263f2d956132c0ce354e853bbb1
+P 9bbe1afc1521b111a0a93803b41ff04e0ee55630
+R 09e1a6b4b7c25190447a2783c034d72c
+U mistachkin
+Z e9b23e5e87abed46d08ef4a9e1279cbf
