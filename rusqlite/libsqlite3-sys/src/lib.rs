@@ -92,3 +92,5 @@ pub fn code_to_str(code: c_int) -> &'static str {
         _                => "Unknown error code",
     }
 }
+
+pub const SQLITE_CONFIG_LOG  : c_int = 16;
