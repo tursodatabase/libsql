@@ -2259,7 +2259,9 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
   mxI = 0;
   mxFrame = pWal->hdr.mxFrame;
 #ifdef SQLITE_ENABLE_SNAPSHOT
-  if( pWal->pSnapshot ) mxFrame = pWal->pSnapshot->mxFrame;
+  if( pWal->pSnapshot && pWal->pSnapshot->mxFrame<mxFrame ){
+    mxFrame = pWal->pSnapshot->mxFrame;
+  }
 #endif
   for(i=1; i<WAL_NREADER; i++){
     u32 thisMark = pInfo->aReadMark[i];
