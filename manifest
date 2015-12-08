@@ -1,5 +1,5 @@
-C Add\sa\stest\scase\sof\sthe\sform\s"WHERE\sa<2\sOR\sa<3"\susing\sPRAGMA\scount_changes.\nThis\stest\scase\swas\sfailing\sbefore\sthe\s3.9.0\srelease.
-D 2015-12-08T04:18:33.696
+C Avoid\sdoing\scomparisons\swith\spointers\sthat\smight\shave\sbeen\spreviously\sbeen\npassed\sto\srealloc()\sand/or\sfree().
+D 2015-12-08T16:08:10.872
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e8fdca1cb89a1b58b5f4d3a130ea9a3d28cb314d
@@ -335,7 +335,7 @@ F src/pcache1.c 46a110be31a8d9f9b41431733836822ca0dd27ab
 F src/pragma.c f3e7147299ca05ef4304a36f1fd6e002729c72c6
 F src/pragma.h 3d94aebbebd2089899fecc01909bf2608b39507d
 F src/prepare.c 82e5db1013846a819f198336fed72c44c974e7b1
-F src/printf.c 9a9105464fbbdf84b81fb902f2eaf1f771896af1
+F src/printf.c af589a27b7d40f6f4f704e9eea99f02f18ad6d32
 F src/random.c ba2679f80ec82c4190062d756f22d0c358180696
 F src/resolve.c a83b41104e6ff69855d03cd0aaa09e93927ec39f
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
@@ -344,7 +344,7 @@ F src/shell.c abbc74ea43dbf2f306ea18282d666683fb5efab2
 F src/sqlite.h.in 1248a78548024bdc8ef5893faa0ff9552b4cceb4
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
-F src/sqliteInt.h 64256d193a16a147d9f6317cc4e095fdd3e0a2e9
+F src/sqliteInt.h 5caacf37a776f9d6178e519cb0b5248ca22a3828
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
@@ -1408,7 +1408,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 07e5199c6f868cc02a0b708865254056c4f3daf3
-R 17b34bcad46ec764b462c91813dd5909
+P 177862c1d50ba899d890fbc35f35e7423bc6aed5
+R 428581991da630a9c7b367e41a5c2afb
 U drh
-Z 86e126efc794a5aaf900005c30a5cf69
+Z 910de169aa0a3078fbedf4d83c3245e1
