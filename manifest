@@ -1,5 +1,5 @@
-C Avoid\sdoing\scomparisons\swith\spointers\sthat\smight\shave\sbeen\spreviously\sbeen\npassed\sto\srealloc()\sand/or\sfree().
-D 2015-12-08T16:08:10.872
+C Changes\sto\savoid\sundefined\sbehavior\sin\smemset()\sand\smemcpy()\sand\sin\sthe\ncomparisons\sof\spointers\sfrom\sdifferent\sallocations.\s\sAll\sproblems\sare\sfound\nby\sanalysis\stools\s-\snone\shave\sbeen\sseen\sin\sthe\swild.
+D 2015-12-08T16:58:45.426
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e8fdca1cb89a1b58b5f4d3a130ea9a3d28cb314d
@@ -282,7 +282,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 2869a76c03eb393ee795416e2387005553df72bc
 F src/bitvec.c 1a78d450a17c5016710eec900bedfc5729bf9bdf
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c d3bdd8462a86492e2ebc9aca4a0168429017de25
+F src/btree.c 81d041421359bbffc091c8a95dd0507aa4f09093
 F src/btree.h 2d76dee44704c47eed323356a758662724b674a0
 F src/btreeInt.h 3ab435ed27adea54d040584b0bcc488ee7db1e38
 F src/build.c e83da4d004a4e050c01acbb821ff7a7b1019c29b
@@ -292,7 +292,7 @@ F src/ctime.c 60e135af364d777a9ab41c97e5e89cd224da6198
 F src/date.c fb1c99172017dcc8e237339132c91a21a0788584
 F src/dbstat.c ffd63fc8ba7541476ced189b95e95d7f2bc63f78
 F src/delete.c 00af9f08a15ddc5cba5962d3d3e5bf2d67b2e7da
-F src/expr.c cb1a419508e5b27769a91e00e36e94724e7b1d51
+F src/expr.c ccb93d7b7e1ac5d187c9b153bae145933f93ee5c
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 31900763094a3736a5fc887469202eb579fef2d0
 F src/func.c fe50a9ab977acc0bb0fcd46741e0071fa388888e
@@ -408,7 +408,7 @@ F src/vdbe.c 4d75375fa8bf911aa76ab8383d6f7eea0dec0fda
 F src/vdbe.h efb7a8c1459e31f3ea4377824c6a7e4cb5068637
 F src/vdbeInt.h 75c2e82ee3357e9210c06474f8d9bdf12c81105d
 F src/vdbeapi.c 020681b943e77766b32ae1cddf86d7831b7374ca
-F src/vdbeaux.c f7a3e80d96e0e383bf5b636bbb770d452f52cea2
+F src/vdbeaux.c 8405f7441cb75c5d1816d1731a041d450e9ff2e9
 F src/vdbeblob.c fdc4a81605ae7a35ae94a55bd768b66d6be16f15
 F src/vdbemem.c fdd1578e47bea61390d472de53c565781d81e045
 F src/vdbesort.c a7ec02da4494c59dfd071126dd3726be5a11459d
@@ -1408,7 +1408,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 177862c1d50ba899d890fbc35f35e7423bc6aed5
-R 428581991da630a9c7b367e41a5c2afb
+P f20396adb2cff12a17a3fc90b36241ae3fdfd62a
+R 70bc46af51bec4fcd5f5ac34f7fbc9eb
 U drh
-Z 910de169aa0a3078fbedf4d83c3245e1
+Z 9b6f69f2c38f1825e156d39e6c72b0a2
