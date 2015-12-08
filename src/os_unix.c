@@ -1315,6 +1315,10 @@ static int fileHasMoved(unixFile *pFile){
 static void verifyDbFile(unixFile *pFile){
   struct stat buf;
   int rc;
+
+  /* These verifications occurs for the main database only */
+  if( pFile->ctrlFlags & UNIXFILE_NOLOCK ) return;
+
   rc = osFstat(pFile->h, &buf);
   if( rc!=0 ){
     sqlite3_log(SQLITE_WARNING, "cannot fstat db file %s", pFile->zPath);
@@ -5761,9 +5765,6 @@ static int unixOpen(
     p->openFlags = openFlags;
   }
 #endif
-
-  noLock = eType!=SQLITE_OPEN_MAIN_DB;
-
   
 #if defined(__APPLE__) || SQLITE_ENABLE_LOCKING_STYLE
   if( fstatfs(fd, &fsInfo) == -1 ){
@@ -5782,6 +5783,7 @@ static int unixOpen(
   /* Set up appropriate ctrlFlags */
   if( isDelete )                ctrlFlags |= UNIXFILE_DELETE;
   if( isReadonly )              ctrlFlags |= UNIXFILE_RDONLY;
+  noLock = eType!=SQLITE_OPEN_MAIN_DB;
   if( noLock )                  ctrlFlags |= UNIXFILE_NOLOCK;
   if( syncDir )                 ctrlFlags |= UNIXFILE_DIRSYNC;
   if( flags & SQLITE_OPEN_URI ) ctrlFlags |= UNIXFILE_URI;

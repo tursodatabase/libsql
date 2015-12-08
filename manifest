@@ -1,5 +1,5 @@
-C Add\sa\stest\scase\sof\sthe\sform\s"WHERE\sa<2\sOR\sa<3"\susing\sPRAGMA\scount_changes.\nThis\stest\scase\swas\sfailing\sbefore\sthe\s3.9.0\srelease.
-D 2015-12-08T04:18:33.696
+C Avoid\sunnecessary\swork\sinside\sof\sverifyDbFile()\sin\sthe\sunix\sVFS.
+D 2015-12-08T14:37:16.738
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e8fdca1cb89a1b58b5f4d3a130ea9a3d28cb314d
@@ -323,7 +323,7 @@ F src/os.c 8fd25588eeba74068d41102d26810e216999b6c8
 F src/os.h 3e57a24e2794a94d3cf2342c6d9a884888cd96bf
 F src/os_common.h abdb9a191a367793268fe553d25bab894e986a0e
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c 0ca6d8710366fbb01a275160f018334cd347cbda
+F src/os_unix.c 2f3bb1da50782128edf31fb17d22dc46f14c6eae
 F src/os_win.c 386fba30419e8458b13209781c2af5590eab2811
 F src/os_win.h eb7a47aa17b26b77eb97e4823f20a00b8bda12ca
 F src/pager.c f92aacd5216d8815136c9e0190041783c602641a
@@ -1408,7 +1408,10 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 07e5199c6f868cc02a0b708865254056c4f3daf3
-R 17b34bcad46ec764b462c91813dd5909
+P 177862c1d50ba899d890fbc35f35e7423bc6aed5
+R cc3c3a45cf6a02d31e382067a458ce71
+T *branch * unix-vfs-optimization
+T *sym-unix-vfs-optimization *
+T -sym-trunk *
 U drh
-Z 86e126efc794a5aaf900005c30a5cf69
+Z fcbe6020f6a9bf3f613adea5032fb70c
