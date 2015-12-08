@@ -47,6 +47,18 @@ do_test where7-1.1 {
     SELECT * FROM t1;
   }
 } {1 2 3 4 2 3 4 5 3 4 6 8 4 5 10 15 5 10 100 1000}
+do_execsql_test where7-1.1.1 {
+  CREATE TABLE t(a);
+  CREATE INDEX ta ON t(a);
+  INSERT INTO t(a) VALUES(1),(2);
+  SELECT * FROM t ORDER BY a;
+  SELECT * FROM t WHERE a<2 OR a<3 ORDER BY a;
+  PRAGMA count_changes=ON;
+  DELETE FROM t WHERE a<2 OR a<3;
+  SELECT * FROM t;
+  PRAGMA count_changes=OFF;
+  DROP TABLE t;
+} {1 2 1 2 2}
 do_test where7-1.2 {
   count_steps {
     SELECT a FROM t1 WHERE b=3 OR c=6 ORDER BY a

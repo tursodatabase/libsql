@@ -1,5 +1,5 @@
-C Update\sthe\sTclKit\sdownload\sURL.
-D 2015-12-08T00:47:32.597
+C Add\sa\stest\scase\sof\sthe\sform\s"WHERE\sa<2\sOR\sa<3"\susing\sPRAGMA\scount_changes.\nThis\stest\scase\swas\sfailing\sbefore\sthe\s3.9.0\srelease.
+D 2015-12-08T04:18:33.696
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e8fdca1cb89a1b58b5f4d3a130ea9a3d28cb314d
@@ -1314,7 +1314,7 @@ F test/where3.test 1ad55ba900bd7747f98b6082e65bd3e442c5004e
 F test/where4.test 4a371bfcc607f41d233701bdec33ac2972908ba8
 F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
 F test/where6.test 5da5a98cec820d488e82708301b96cb8c18a258b
-F test/where7.test 5a4b0abc207d71da4deecd734ad8579e8dd40aa8
+F test/where7.test f520bcec2c3d12dc4615623b06b2aec7c2d67e94
 F test/where8.test 98eedca0d375fb400b8377269c4b4686582dfb45
 F test/where8m.test da346596e19d54f0aba35ebade032a7c47d79739
 F test/where9.test 729c3ba9b47e8f9f1aab96bae7dad2a524f1d1a2
@@ -1408,7 +1408,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2ad5017190334b7dd53294a30c3b3232e0c35869
-R 3561bc5f3aaa22b7dbf4b237affa0cef
-U mistachkin
-Z 2e63742234f7b704fba2b32627d437ce
+P 07e5199c6f868cc02a0b708865254056c4f3daf3
+R 17b34bcad46ec764b462c91813dd5909
+U drh
+Z 86e126efc794a5aaf900005c30a5cf69
