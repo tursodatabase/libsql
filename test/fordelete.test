@@ -70,7 +70,7 @@ do_execsql_test 2.0 {
 foreach {tn sql res} {
   1 { DELETE FROM t2 WHERE a=?}          { t2* t2a t2b* t2c* }
   2 { DELETE FROM t2 WHERE a=? AND +b=?} { t2 t2a t2b* t2c* }
-  3 { DELETE FROM t2 WHERE a=? OR b=?}   { t2 t2a* t2b* t2c* }
+  3 { DELETE FROM t2 WHERE a=? OR b=?}   { t2* t2* t2a t2a* t2b t2b* t2c* t2c* }
   4 { DELETE FROM t2 WHERE +a=? }        { t2 t2a* t2b* t2c* }
   5 { DELETE FROM t2 WHERE rowid=? }     { t2 t2a* t2b* t2c* }
 } {

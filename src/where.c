@@ -1774,7 +1774,7 @@ static void whereLoopDelete(sqlite3 *db, WhereLoop *p){
 /*
 ** Free a WhereInfo structure
 */
-static void whereInfoFree(sqlite3 *db, WhereInfo *pWInfo){
+void sqlite3WhereInfoFree(sqlite3 *db, WhereInfo *pWInfo){
   if( ALWAYS(pWInfo) ){
     int i;
     for(i=0; i<pWInfo->nLevel; i++){
@@ -1791,6 +1791,52 @@ static void whereInfoFree(sqlite3 *db, WhereInfo *pWInfo){
     }
     sqlite3DbFree(db, pWInfo);
   }
+}
+
+/*
+** This function may only be called if sqlite3WhereOkOnePass() on the same
+** WhereInfo object has returned ONEPASS_SPLIT_DELETE, indicating that the
+** WHERE clause consists of a series of sub-expressions connected by OR 
+** operators. This function is used to access elements of this set of 
+** sub-expressions.
+**
+** OR-connected sub-expressions are numbered contiguously starting from 
+** zero. The sub-expression to return is identified by the iExpr parameter
+** passed to this function. If iExpr is equal to or greater than the number
+** of sub-expressions, NULL is returned. Otherwise, a pointer to a copy of 
+** sub-expression iExpr is returned. The caller is responsible for eventually
+** deleting this object using sqlite3ExprDelete().
+**
+** If an OOM error occurs, NULL is returned. In this case the mallocFailed
+** field of the database handle (pWInfo->pParse->db->mallocFailed) is set 
+** to record the error.
+*/
+Expr *sqlite3WhereSplitExpr(WhereInfo *pWInfo, int iExpr){
+  sqlite3 *db = pWInfo->pParse->db;
+  WhereLoop *pLoop = pWInfo->pLoops;
+  WhereTerm *pTerm = pLoop->aLTerm[0];
+  WhereClause *pOrWC = &pTerm->u.pOrInfo->wc;
+  Expr *pExpr = 0;
+
+  assert( pWInfo->eOnePass==ONEPASS_SPLIT_DELETE );
+  assert( pLoop->pNextLoop==0 );
+  assert( (pTerm->wtFlags & TERM_ORINFO)!=0 );
+
+  if( iExpr<pOrWC->nTerm ){
+    pExpr = sqlite3ExprDup(db, pOrWC->a[iExpr].pExpr, 0);
+    if( pExpr ){
+      WhereClause *pWC = &pWInfo->sWC;
+      int ii;
+      for(ii=0; ii<pWC->nTerm; ii++){
+        if( &pWC->a[ii]!=pTerm ){
+          Expr *pLeft = sqlite3ExprDup(db, pWC->a[ii].pExpr, 0);
+          pExpr = sqlite3ExprAnd(db, pLeft, pExpr);
+        }
+      }
+    }
+  }
+
+  return pExpr;
 }
 
 /*
@@ -4255,7 +4301,6 @@ WhereInfo *sqlite3WhereBegin(
     }
   }
   WHERETRACE(0xffff,("*** Optimizer Finished ***\n"));
-  pWInfo->pParse->nQueryLoop += pWInfo->nRowOut;
 
   /* If the caller is an UPDATE or DELETE statement that is requesting
   ** to use a one-pass algorithm, determine if this is appropriate.
@@ -4269,6 +4314,10 @@ WhereInfo *sqlite3WhereBegin(
     if( bOnerow || ( (wctrlFlags & WHERE_ONEPASS_MULTIROW)
        && 0==(wsFlags & WHERE_VIRTUALTABLE)
     )){
+      if( (wsFlags & WHERE_MULTI_OR) && (wctrlFlags & WHERE_ONEPASS_MULTIROW) ){
+        pWInfo->eOnePass = ONEPASS_SPLIT_DELETE;
+        return pWInfo;
+      }
       pWInfo->eOnePass = bOnerow ? ONEPASS_SINGLE : ONEPASS_MULTI;
       if( HasRowid(pTabList->a[0].pTab) && (wsFlags & WHERE_IDX_ONLY) ){
         if( wctrlFlags & WHERE_ONEPASS_MULTIROW ){
@@ -4278,6 +4327,7 @@ WhereInfo *sqlite3WhereBegin(
       }
     }
   }
+  pWInfo->pParse->nQueryLoop += pWInfo->nRowOut;
 
   /* Open all tables in the pTabList and any indices selected for
   ** searching those tables.
@@ -4437,7 +4487,7 @@ WhereInfo *sqlite3WhereBegin(
 whereBeginError:
   if( pWInfo ){
     pParse->nQueryLoop = pWInfo->savedNQueryLoop;
-    whereInfoFree(db, pWInfo);
+    sqlite3WhereInfoFree(db, pWInfo);
   }
   return 0;
 }
@@ -4621,6 +4671,6 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
   /* Final cleanup
   */
   pParse->nQueryLoop = pWInfo->savedNQueryLoop;
-  whereInfoFree(db, pWInfo);
+  sqlite3WhereInfoFree(db, pWInfo);
   return;
 }

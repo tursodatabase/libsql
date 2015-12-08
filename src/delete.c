@@ -208,6 +208,311 @@ limit_where_cleanup_2:
 #endif /* defined(SQLITE_ENABLE_UPDATE_DELETE_LIMIT) */
        /*      && !defined(SQLITE_OMIT_SUBQUERY) */
 
+
+
+/*
+** sqlite3WalkExpr() callback used by deleteSetColUsed().
+*/
+static int deleteSetColUsedExpr(Walker *pWalker, Expr *pExpr){
+  if( pExpr->op==TK_COLUMN ){
+    int i = pExpr->iColumn;
+    if( i>=0 ){
+      pWalker->u.pSrcList->a[0].colUsed |= ((Bitmask)1)<<(i>=BMS ? BMS-1 : i);
+    }
+  }
+  return WRC_Continue;
+}
+
+/*
+** No-op sqlite3WalkExpr() callback used by deleteSetColUsed().
+*/
+static void deleteSetColUsedSelect(Walker *pWalker, Select *pSelect){
+  UNUSED_PARAMETER2(pWalker, pSelect);
+}
+
+/*
+** Argument pSrc is guaranteed to contain a single table. All column
+** references within expression pExpr have already been successfully
+** resolved to this table. This function sets the pSrc->a[0].colUsed
+** field to reflect the set of table columns used by pExpr (and no 
+** others).
+*/
+static void deleteSetColUsed(Parse *pParse, SrcList *pSrc, Expr *pExpr){
+  Walker w;
+  memset(&w, 0, sizeof(w));
+  w.pParse = pParse;
+  w.u.pSrcList = pSrc;
+  w.xExprCallback = deleteSetColUsedExpr;
+  w.xSelectCallback2 = deleteSetColUsedSelect;
+  pSrc->a[0].colUsed = 0;
+  sqlite3WalkExpr(&w, pExpr);
+}
+
+/*
+** Generate code for a DELETE statement. This function is called by
+** sqlite3DeleteFrom() after all table names and column references have
+** been resolved. SQLITE_OK is returned if successful, or an SQLite 
+** error code otherwise.
+**
+**     DELETE FROM table_wxyz WHERE a<5 AND b NOT NULL;
+**                 \________/       \________________/
+**                  pTabList              pWhere
+*/
+int deleteFrom(
+  Parse *pParse,                  /* The parser context */
+  SrcList *pTabList,              /* Table from which we should delete things */
+  Expr *pWhere,                   /* The WHERE clause.  May be null */
+  int isView,                     /* True if attempting to delete from a view */
+  Trigger *pTrigger,              /* List of table triggers, if required */
+  int bComplex,                   /* True if there are either triggers or FKs */
+  int memCnt,                     /* Cell used for count-changes */
+  int nIdx                        /* Number of indexes on table */
+){
+  Vdbe *v = pParse->pVdbe;  /* VM being coded */
+  sqlite3 *db = pParse->db; /* Database handle */
+  int iEphCur = 0;          /* Ephemeral table holding all primary key values */
+  int iRowSet = 0;          /* Register for rowset of rows to delete */
+  int iKey;                 /* Memory cell holding key of row to be deleted */
+  i16 nKey;                 /* Number of memory cells in the row key */
+  int addrBypass = 0;       /* Address of jump over the delete logic */
+  int addrLoop = 0;         /* Top of the delete loop */
+  int addrEphOpen = 0;      /* Instruction to open the Ephemeral table */
+  WhereInfo *pWInfo;        /* Information about the WHERE clause */
+  int eOnePass;             /* ONEPASS_OFF or _SINGLE or _MULTI */
+  int aiCurOnePass[2];      /* The write cursors opened by WHERE_ONEPASS */
+  u8 *aToOpen = 0;          /* Open cursor iTabCur+j if aToOpen[j] is true */
+  Index *pPk = 0;           /* The PRIMARY KEY index on the table */
+  int iPk = 0;              /* First of nPk reg holding PRIMARY KEY value */
+  i16 nPk = 1;              /* Number of columns in the PRIMARY KEY */
+  int iTabCur;              /* Cursor number for the table */
+  int iDataCur = 0;         /* VDBE cursor for the canonical data source */
+  int iIdxCur = 0;          /* Cursor number of the first index */
+  Table *pTab = pTabList->a[0].pTab;
+  u16 wcf = WHERE_ONEPASS_DESIRED|WHERE_DUPLICATES_OK;
+
+  iTabCur = pTabList->a[0].iCursor;
+  if( !HasRowid(pTab) ){
+    pPk = sqlite3PrimaryKeyIndex(pTab);
+    assert( pPk!=0 );
+    nPk = pPk->nKeyCol;
+    iPk = pParse->nMem+1;
+    pParse->nMem += nPk;
+  }
+
+  if( isView ){
+    iDataCur = iIdxCur = iTabCur;
+  }
+
+  /* If there are triggers to fire or foreign keys to enforce, or the 
+  ** table is a virtual table, the two pass strategy may be required. In
+  ** this case allocate either the rowset register (IPK tables) or an
+  ** ephemeral table (WITHOUT ROWID tables) in which the list of rows
+  ** to delete will be accumulated. 
+  **
+  ** Otherwise, if there are no triggers or foreign keys and this is not
+  ** a virtual table, set the WHERE_ONEPASS_MULTIROW flag on the mask of
+  ** flags that will be passed to sqlite3WhereBegin(). */
+  if( bComplex || IsVirtual(pTab) ){
+    if( HasRowid(pTab) ){
+      /* For a rowid table, initialize the RowSet to an empty set */
+      pPk = 0;
+      nPk = 1;
+      iRowSet = ++pParse->nMem;
+      sqlite3VdbeAddOp2(v, OP_Null, 0, iRowSet);
+    }else{
+      /* For a WITHOUT ROWID table, create an ephemeral table used to
+      ** hold all primary keys for rows to be deleted. */
+      iEphCur = pParse->nTab++;
+      addrEphOpen = sqlite3VdbeAddOp2(v, OP_OpenEphemeral, iEphCur, nPk);
+      sqlite3VdbeSetP4KeyInfo(pParse, pPk);
+    }
+  }else{
+    wcf |= WHERE_ONEPASS_MULTIROW;
+  }
+
+  /* Construct a query to find the rowid or primary key for every row
+  ** to be deleted, based on the WHERE clause. Set variable eOnePass
+  ** to indicate the strategy used to implement this delete:
+  **
+  **  ONEPASS_OFF:    Two-pass approach - use a FIFO for rowids/PK values.
+  **  ONEPASS_SINGLE: One-pass approach - at most one row deleted.
+  **  ONEPASS_MULTI:  One-pass approach - any number of rows may be deleted.
+  **  ONEPASS_SPLIT_DELETE:  See special case below.
+  */
+  pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, 0, 0, wcf, iTabCur+1);
+  if( pWInfo==0 ) return SQLITE_NOMEM;
+  eOnePass = sqlite3WhereOkOnePass(pWInfo, aiCurOnePass);
+  assert( IsVirtual(pTab)==0 || eOnePass!=ONEPASS_MULTI );
+  assert( IsVirtual(pTab) || bComplex || eOnePass!=ONEPASS_OFF );
+
+  /* If sqlite3WhereOkOnePass() returns SPLIT_DELETE, then the WHERE clause
+  ** consists of one or more indexable terms connected by OR operators. In
+  ** this case it is more efficient to run a separate delete program for
+  ** each OR'd term.  */
+  if( eOnePass==ONEPASS_SPLIT_DELETE ){
+    int rc = SQLITE_OK;           /* Return code */
+    Expr *pExpr = 0;              /* OR'd expression */
+    int i;                        /* Counter variable */
+    assert( !IsVirtual(pTab) && bComplex==0 );
+
+    /* This loop iterates once for each OR-connected term in the WHERE clause */
+    for(i=0; rc==SQLITE_OK && (pExpr=sqlite3WhereSplitExpr(pWInfo, i)); i++){
+      if( db->mallocFailed ) break;
+      deleteSetColUsed(pParse, pTabList, pExpr);
+      rc = deleteFrom(pParse, pTabList, pExpr, 0, 0, 0, memCnt, nIdx);
+      sqlite3ExprDelete(db, pExpr);
+    }
+    sqlite3WhereInfoFree(db, pWInfo);
+    return rc;
+  }
+
+  /* Keep track of the number of rows to be deleted */
+  if( db->flags & SQLITE_CountRows ){
+    sqlite3VdbeAddOp2(v, OP_AddImm, memCnt, 1);
+  }
+
+  /* Extract the rowid or primary key for the current row */
+  if( pPk ){
+    int i;
+    for(i=0; i<nPk; i++){
+      assert( pPk->aiColumn[i]>=0 );
+      sqlite3ExprCodeGetColumnOfTable(v, pTab, iTabCur,
+          pPk->aiColumn[i], iPk+i);
+    }
+    iKey = iPk;
+  }else{
+    iKey = pParse->nMem + 1;
+    iKey = sqlite3ExprCodeGetColumn(pParse, pTab, -1, iTabCur, iKey, 0);
+    if( iKey>pParse->nMem ) pParse->nMem = iKey;
+  }
+
+  if( eOnePass!=ONEPASS_OFF ){
+    /* For ONEPASS, no need to store the rowid/primary-key. There is only
+    ** one, so just keep it in its register(s) and fall through to the
+    ** delete code.  */
+    nKey = nPk; /* OP_Found will use an unpacked key */
+    aToOpen = sqlite3DbMallocRaw(db, nIdx+2);
+    if( aToOpen==0 ){
+      sqlite3WhereEnd(pWInfo);
+      return SQLITE_NOMEM;
+    }
+    memset(aToOpen, 1, nIdx+1);
+    aToOpen[nIdx+1] = 0;
+    if( aiCurOnePass[0]>=0 ) aToOpen[aiCurOnePass[0]-iTabCur] = 0;
+    if( aiCurOnePass[1]>=0 ) aToOpen[aiCurOnePass[1]-iTabCur] = 0;
+    if( addrEphOpen ) sqlite3VdbeChangeToNoop(v, addrEphOpen);
+  }else{
+    if( pPk ){
+      /* Add the PK key for this row to the temporary table */
+      iKey = ++pParse->nMem;
+      nKey = 0;   /* Zero tells OP_Found to use a composite key */
+      sqlite3VdbeAddOp4(v, OP_MakeRecord, iPk, nPk, iKey,
+          sqlite3IndexAffinityStr(pParse->db, pPk), nPk);
+      sqlite3VdbeAddOp2(v, OP_IdxInsert, iEphCur, iKey);
+    }else{
+      /* Add the rowid of the row to be deleted to the RowSet */
+      nKey = 1;  /* OP_Seek always uses a single rowid */
+      sqlite3VdbeAddOp2(v, OP_RowSetAdd, iRowSet, iKey);
+    }
+  }
+
+  /* If this DELETE cannot use the ONEPASS strategy, this is the 
+  ** end of the WHERE loop */
+  if( eOnePass!=ONEPASS_OFF ){
+    addrBypass = sqlite3VdbeMakeLabel(v);
+  }else{
+    sqlite3WhereEnd(pWInfo);
+  }
+
+  /* Unless this is a view, open cursors for the table we are 
+  ** deleting from and all its indices. If this is a view, then the
+  ** only effect this statement has is to fire the INSTEAD OF 
+  ** triggers.
+  */
+  if( !isView ){
+    int iAddrOnce = 0;
+    u8 p5 = (eOnePass==ONEPASS_OFF ? 0 : OPFLAG_FORDELETE);
+    if( eOnePass==ONEPASS_MULTI ){
+      iAddrOnce = sqlite3CodeOnce(pParse); VdbeCoverage(v);
+    }
+    testcase( IsVirtual(pTab) );
+    sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenWrite, p5, iTabCur, 
+        aToOpen, &iDataCur, &iIdxCur);
+    assert( pPk || IsVirtual(pTab) || iDataCur==iTabCur );
+    assert( pPk || IsVirtual(pTab) || iIdxCur==iDataCur+1 );
+    if( eOnePass==ONEPASS_MULTI ) sqlite3VdbeJumpHere(v, iAddrOnce);
+  }
+
+  /* Set up a loop over the rowids/primary-keys that were found in the
+  ** where-clause loop above.
+  */
+  if( eOnePass!=ONEPASS_OFF ){
+    assert( nKey==nPk );  /* OP_Found will use an unpacked key */
+    if( !IsVirtual(pTab) && aToOpen[iDataCur-iTabCur] ){
+      assert( pPk!=0 || pTab->pSelect!=0 );
+      sqlite3VdbeAddOp4Int(v, OP_NotFound, iDataCur, addrBypass, iKey, nKey);
+      VdbeCoverage(v);
+    }
+  }else if( pPk ){
+    addrLoop = sqlite3VdbeAddOp1(v, OP_Rewind, iEphCur); VdbeCoverage(v);
+    sqlite3VdbeAddOp2(v, OP_RowKey, iEphCur, iKey);
+    assert( nKey==0 );  /* OP_Found will use a composite key */
+  }else{
+    addrLoop = sqlite3VdbeAddOp3(v, OP_RowSetRead, iRowSet, 0, iKey);
+    VdbeCoverage(v);
+    assert( nKey==1 );
+  }  
+
+  /* Delete the row */
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+  if( IsVirtual(pTab) ){
+    const char *pVTab = (const char *)sqlite3GetVTable(db, pTab);
+    sqlite3VtabMakeWritable(pParse, pTab);
+    sqlite3VdbeAddOp4(v, OP_VUpdate, 0, 1, iKey, pVTab, P4_VTAB);
+    sqlite3VdbeChangeP5(v, OE_Abort);
+    assert( eOnePass==ONEPASS_OFF || eOnePass==ONEPASS_SINGLE );
+    sqlite3MayAbort(pParse);
+    if( eOnePass==ONEPASS_SINGLE && sqlite3IsToplevel(pParse) ){
+      pParse->isMultiWrite = 0;
+    }
+  }else
+#endif
+  {
+    int count = (pParse->nested==0);    /* True to count changes */
+    int iIdxNoSeek = -1;
+    if( bComplex==0 && aiCurOnePass[1]!=iDataCur ){
+      iIdxNoSeek = aiCurOnePass[1];
+    }
+    sqlite3GenerateRowDelete(pParse, pTab, pTrigger, iDataCur, iIdxCur,
+        iKey, nKey, count, OE_Default, eOnePass, iIdxNoSeek);
+  }
+
+  /* End of the loop over all rowids/primary-keys. */
+  if( eOnePass!=ONEPASS_OFF ){
+    sqlite3VdbeResolveLabel(v, addrBypass);
+    sqlite3WhereEnd(pWInfo);
+  }else if( pPk ){
+    sqlite3VdbeAddOp2(v, OP_Next, iEphCur, addrLoop+1); VdbeCoverage(v);
+    sqlite3VdbeJumpHere(v, addrLoop);
+  }else{
+    sqlite3VdbeGoto(v, addrLoop);
+    sqlite3VdbeJumpHere(v, addrLoop);
+  }     
+
+  /* Close the cursors open on the table and its indexes. */
+  if( !isView && !IsVirtual(pTab) ){
+    Index *pIdx;
+    int i;
+    if( !pPk ) sqlite3VdbeAddOp1(v, OP_Close, iDataCur);
+    for(i=0, pIdx=pTab->pIndex; pIdx; i++, pIdx=pIdx->pNext){
+      sqlite3VdbeAddOp1(v, OP_Close, iIdxCur + i);
+    }
+  }
+
+  sqlite3DbFree(db, aToOpen);
+  return SQLITE_OK;
+}
+
 /*
 ** Generate code for a DELETE FROM statement.
 **
@@ -220,35 +525,21 @@ void sqlite3DeleteFrom(
   SrcList *pTabList,     /* The table from which we should delete things */
   Expr *pWhere           /* The WHERE clause.  May be null */
 ){
+  sqlite3 *db;
   Vdbe *v;               /* The virtual database engine */
   Table *pTab;           /* The table from which records will be deleted */
   const char *zDb;       /* Name of database holding pTab */
   int i;                 /* Loop counter */
-  WhereInfo *pWInfo;     /* Information about the WHERE clause */
   Index *pIdx;           /* For looping over indices of the table */
   int iTabCur;           /* Cursor number for the table */
   int iDataCur = 0;      /* VDBE cursor for the canonical data source */
   int iIdxCur = 0;       /* Cursor number of the first index */
   int nIdx;              /* Number of indices */
-  sqlite3 *db;           /* Main database structure */
   AuthContext sContext;  /* Authorization context */
   NameContext sNC;       /* Name context to resolve expressions in */
   int iDb;               /* Database number */
   int memCnt = -1;       /* Memory cell used for change counting */
   int rcauth;            /* Value returned by authorization callback */
-  int eOnePass;          /* ONEPASS_OFF or _SINGLE or _MULTI */
-  int aiCurOnePass[2];   /* The write cursors opened by WHERE_ONEPASS */
-  u8 *aToOpen = 0;       /* Open cursor iTabCur+j if aToOpen[j] is true */
-  Index *pPk;            /* The PRIMARY KEY index on the table */
-  int iPk = 0;           /* First of nPk registers holding PRIMARY KEY value */
-  i16 nPk = 1;           /* Number of columns in the PRIMARY KEY */
-  int iKey;              /* Memory cell holding key of row to be deleted */
-  i16 nKey;              /* Number of memory cells in the row key */
-  int iEphCur = 0;       /* Ephemeral table holding all primary key values */
-  int iRowSet = 0;       /* Register for rowset of rows to delete */
-  int addrBypass = 0;    /* Address of jump over the delete logic */
-  int addrLoop = 0;      /* Top of the delete loop */
-  int addrEphOpen = 0;   /* Instruction to open the Ephemeral table */
  
 #ifndef SQLITE_OMIT_TRIGGER
   int isView;                  /* True if attempting to delete from a view */
@@ -379,180 +670,12 @@ void sqlite3DeleteFrom(
     }
   }else
 #endif /* SQLITE_OMIT_TRUNCATE_OPTIMIZATION */
+
   {
-    u16 wcf = WHERE_ONEPASS_DESIRED|WHERE_DUPLICATES_OK;
-    wcf |= (bComplex ? 0 : WHERE_ONEPASS_MULTIROW);
-    if( HasRowid(pTab) ){
-      /* For a rowid table, initialize the RowSet to an empty set */
-      pPk = 0;
-      nPk = 1;
-      iRowSet = ++pParse->nMem;
-      sqlite3VdbeAddOp2(v, OP_Null, 0, iRowSet);
-    }else{
-      /* For a WITHOUT ROWID table, create an ephemeral table used to
-      ** hold all primary keys for rows to be deleted. */
-      pPk = sqlite3PrimaryKeyIndex(pTab);
-      assert( pPk!=0 );
-      nPk = pPk->nKeyCol;
-      iPk = pParse->nMem+1;
-      pParse->nMem += nPk;
-      iEphCur = pParse->nTab++;
-      addrEphOpen = sqlite3VdbeAddOp2(v, OP_OpenEphemeral, iEphCur, nPk);
-      sqlite3VdbeSetP4KeyInfo(pParse, pPk);
-    }
-  
-    /* Construct a query to find the rowid or primary key for every row
-    ** to be deleted, based on the WHERE clause. Set variable eOnePass
-    ** to indicate the strategy used to implement this delete:
-    **
-    **  ONEPASS_OFF:    Two-pass approach - use a FIFO for rowids/PK values.
-    **  ONEPASS_SINGLE: One-pass approach - at most one row deleted.
-    **  ONEPASS_MULTI:  One-pass approach - any number of rows may be deleted.
-    */
-    pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, 0, 0, wcf, iTabCur+1);
-    if( pWInfo==0 ) goto delete_from_cleanup;
-    eOnePass = sqlite3WhereOkOnePass(pWInfo, aiCurOnePass);
-    assert( IsVirtual(pTab)==0 || eOnePass!=ONEPASS_MULTI );
-    assert( IsVirtual(pTab) || bComplex || eOnePass!=ONEPASS_OFF );
-  
-    /* Keep track of the number of rows to be deleted */
-    if( db->flags & SQLITE_CountRows ){
-      sqlite3VdbeAddOp2(v, OP_AddImm, memCnt, 1);
-    }
-  
-    /* Extract the rowid or primary key for the current row */
-    if( pPk ){
-      for(i=0; i<nPk; i++){
-        assert( pPk->aiColumn[i]>=0 );
-        sqlite3ExprCodeGetColumnOfTable(v, pTab, iTabCur,
-                                        pPk->aiColumn[i], iPk+i);
-      }
-      iKey = iPk;
-    }else{
-      iKey = pParse->nMem + 1;
-      iKey = sqlite3ExprCodeGetColumn(pParse, pTab, -1, iTabCur, iKey, 0);
-      if( iKey>pParse->nMem ) pParse->nMem = iKey;
-    }
-  
-    if( eOnePass!=ONEPASS_OFF ){
-      /* For ONEPASS, no need to store the rowid/primary-key. There is only
-      ** one, so just keep it in its register(s) and fall through to the
-      ** delete code.  */
-      nKey = nPk; /* OP_Found will use an unpacked key */
-      aToOpen = sqlite3DbMallocRaw(db, nIdx+2);
-      if( aToOpen==0 ){
-        sqlite3WhereEnd(pWInfo);
-        goto delete_from_cleanup;
-      }
-      memset(aToOpen, 1, nIdx+1);
-      aToOpen[nIdx+1] = 0;
-      if( aiCurOnePass[0]>=0 ) aToOpen[aiCurOnePass[0]-iTabCur] = 0;
-      if( aiCurOnePass[1]>=0 ) aToOpen[aiCurOnePass[1]-iTabCur] = 0;
-      if( addrEphOpen ) sqlite3VdbeChangeToNoop(v, addrEphOpen);
-    }else{
-      if( pPk ){
-        /* Add the PK key for this row to the temporary table */
-        iKey = ++pParse->nMem;
-        nKey = 0;   /* Zero tells OP_Found to use a composite key */
-        sqlite3VdbeAddOp4(v, OP_MakeRecord, iPk, nPk, iKey,
-            sqlite3IndexAffinityStr(pParse->db, pPk), nPk);
-        sqlite3VdbeAddOp2(v, OP_IdxInsert, iEphCur, iKey);
-      }else{
-        /* Add the rowid of the row to be deleted to the RowSet */
-        nKey = 1;  /* OP_Seek always uses a single rowid */
-        sqlite3VdbeAddOp2(v, OP_RowSetAdd, iRowSet, iKey);
-      }
-    }
-  
-    /* If this DELETE cannot use the ONEPASS strategy, this is the 
-    ** end of the WHERE loop */
-    if( eOnePass!=ONEPASS_OFF ){
-      addrBypass = sqlite3VdbeMakeLabel(v);
-    }else{
-      sqlite3WhereEnd(pWInfo);
-    }
-  
-    /* Unless this is a view, open cursors for the table we are 
-    ** deleting from and all its indices. If this is a view, then the
-    ** only effect this statement has is to fire the INSTEAD OF 
-    ** triggers.
-    */
-    if( !isView ){
-      int iAddrOnce = 0;
-      u8 p5 = (eOnePass==ONEPASS_OFF ? 0 : OPFLAG_FORDELETE);
-      if( eOnePass==ONEPASS_MULTI ){
-        iAddrOnce = sqlite3CodeOnce(pParse); VdbeCoverage(v);
-      }
-      testcase( IsVirtual(pTab) );
-      sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenWrite, p5, iTabCur, 
-                                 aToOpen, &iDataCur, &iIdxCur);
-      assert( pPk || IsVirtual(pTab) || iDataCur==iTabCur );
-      assert( pPk || IsVirtual(pTab) || iIdxCur==iDataCur+1 );
-      if( eOnePass==ONEPASS_MULTI ) sqlite3VdbeJumpHere(v, iAddrOnce);
-    }
-  
-    /* Set up a loop over the rowids/primary-keys that were found in the
-    ** where-clause loop above.
-    */
-    if( eOnePass!=ONEPASS_OFF ){
-      assert( nKey==nPk );  /* OP_Found will use an unpacked key */
-      if( !IsVirtual(pTab) && aToOpen[iDataCur-iTabCur] ){
-        assert( pPk!=0 || pTab->pSelect!=0 );
-        sqlite3VdbeAddOp4Int(v, OP_NotFound, iDataCur, addrBypass, iKey, nKey);
-        VdbeCoverage(v);
-      }
-    }else if( pPk ){
-      addrLoop = sqlite3VdbeAddOp1(v, OP_Rewind, iEphCur); VdbeCoverage(v);
-      sqlite3VdbeAddOp2(v, OP_RowKey, iEphCur, iKey);
-      assert( nKey==0 );  /* OP_Found will use a composite key */
-    }else{
-      addrLoop = sqlite3VdbeAddOp3(v, OP_RowSetRead, iRowSet, 0, iKey);
-      VdbeCoverage(v);
-      assert( nKey==1 );
-    }  
-  
-    /* Delete the row */
-#ifndef SQLITE_OMIT_VIRTUALTABLE
-    if( IsVirtual(pTab) ){
-      const char *pVTab = (const char *)sqlite3GetVTable(db, pTab);
-      sqlite3VtabMakeWritable(pParse, pTab);
-      sqlite3VdbeAddOp4(v, OP_VUpdate, 0, 1, iKey, pVTab, P4_VTAB);
-      sqlite3VdbeChangeP5(v, OE_Abort);
-      assert( eOnePass==ONEPASS_OFF || eOnePass==ONEPASS_SINGLE );
-      sqlite3MayAbort(pParse);
-      if( eOnePass==ONEPASS_SINGLE && sqlite3IsToplevel(pParse) ){
-        pParse->isMultiWrite = 0;
-      }
-    }else
-#endif
-    {
-      int count = (pParse->nested==0);    /* True to count changes */
-      int iIdxNoSeek = -1;
-      if( bComplex==0 && aiCurOnePass[1]!=iDataCur ){
-        iIdxNoSeek = aiCurOnePass[1];
-      }
-      sqlite3GenerateRowDelete(pParse, pTab, pTrigger, iDataCur, iIdxCur,
-          iKey, nKey, count, OE_Default, eOnePass, iIdxNoSeek);
-    }
-  
-    /* End of the loop over all rowids/primary-keys. */
-    if( eOnePass!=ONEPASS_OFF ){
-      sqlite3VdbeResolveLabel(v, addrBypass);
-      sqlite3WhereEnd(pWInfo);
-    }else if( pPk ){
-      sqlite3VdbeAddOp2(v, OP_Next, iEphCur, addrLoop+1); VdbeCoverage(v);
-      sqlite3VdbeJumpHere(v, addrLoop);
-    }else{
-      sqlite3VdbeGoto(v, addrLoop);
-      sqlite3VdbeJumpHere(v, addrLoop);
-    }     
-  
-    /* Close the cursors open on the table and its indexes. */
-    if( !isView && !IsVirtual(pTab) ){
-      if( !pPk ) sqlite3VdbeAddOp1(v, OP_Close, iDataCur);
-      for(i=0, pIdx=pTab->pIndex; pIdx; i++, pIdx=pIdx->pNext){
-        sqlite3VdbeAddOp1(v, OP_Close, iIdxCur + i);
-      }
+    if( deleteFrom(pParse, pTabList, pWhere, isView, pTrigger, bComplex, 
+          memCnt, nIdx)
+    ){
+      goto delete_from_cleanup;
     }
   } /* End non-truncate path */
 
@@ -578,7 +701,6 @@ delete_from_cleanup:
   sqlite3AuthContextPop(&sContext);
   sqlite3SrcListDelete(db, pTabList);
   sqlite3ExprDelete(db, pWhere);
-  sqlite3DbFree(db, aToOpen);
   return;
 }
 /* Make sure "isView" and other macros defined above are undefined. Otherwise
