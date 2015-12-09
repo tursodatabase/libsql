@@ -82,6 +82,7 @@ pub mod types;
 mod transaction;
 #[cfg(feature = "load_extension")] mod load_extension_guard;
 #[cfg(feature = "trace")] pub mod trace;
+#[cfg(feature = "backup")] pub mod backup;
 
 /// A typedef of the result returned by many methods.
 pub type SqliteResult<T> = Result<T, SqliteError>;
