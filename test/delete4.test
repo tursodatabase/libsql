@@ -162,7 +162,6 @@ foreach {tn tbl} {
     execsql { DROP TABLE IF EXISTS t5 }
     execsql $tbl
 
-
     for {set i 1} {$i <= 100} {incr i} {
       set a [expr $i*2]
       set b [expr ($i*7 % 100)]
@@ -174,6 +173,10 @@ foreach {tn tbl} {
   foreach {tn2 sql} {
     1 { DELETE FROM t5 WHERE a=4 OR b=10 OR c=17 }
     2 { DELETE FROM t5 WHERE (a=4 OR b=22) AND c=98 }
+    3 { DELETE FROM t5 WHERE (b=49 AND c=93) OR a=14 }
+    4 { DELETE FROM t5 WHERE (b=70 AND c=90) OR a=150 }
+    5 { DELETE FROM t5 WHERE (a BETWEEN 2 AND 20) OR (b BETWEEN 1 AND 10) }
+    6 { DELETE FROM t5 WHERE a IN (2, 4, 6, 8) OR b IN (63, 70, 77) }
   } {
     execsql BEGIN
     execsql $sql

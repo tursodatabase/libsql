@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sthe\sDROP\sTABLE\scommand\son\sthis\sbranch.
-D 2015-12-09T16:08:22.445
+C Add\sextra\stest\scases\sto\sdelete4.test.
+D 2015-12-09T17:45:58.308
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e8fdca1cb89a1b58b5f4d3a130ea9a3d28cb314d
@@ -576,7 +576,7 @@ F test/default.test 0cb49b1c315a0d81c81d775e407f66906a2a604d
 F test/delete.test e1bcdf8926234e27aac24b346ad83d3329ec8b6f
 F test/delete2.test 3a03f2cca1f9a67ec469915cb8babd6485db43fa
 F test/delete3.test 555e84a00a99230b7d049d477a324a631126a6ab
-F test/delete4.test 174f0a46aeceae3fd96d5a52ecd1db63cebc6c56
+F test/delete4.test fb95a3f0640789cb95ca19f5f9b28731611a6295
 F test/descidx1.test 6d03b44c8538fe0eb4924e19fba10cdd8f3c9240
 F test/descidx2.test 9f1a0c83fd57f8667c82310ca21b30a350888b5d
 F test/descidx3.test 09ddbe3f5295f482d2f8b687cf6db8bad7acd9a2
@@ -1408,7 +1408,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 10ca7357b27d0657127d553738be3ae6d715b74a
-R 735093e69dd7362edf05f8837215e3f4
+P c80bbf14b365d2131210a849f26a69a5ea15101d
+R fe254f2ce86170e9ef3cfc20b10d1bdc
 U dan
-Z 4c802a239f2e7bc26c443feae4434d58
+Z 9a61083e3852e4abddb9cdf1dba864e8
