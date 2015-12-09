@@ -1,5 +1,5 @@
-C Simplification\sof\sthe\sDROP\sTRIGGER\slogic\susing\ssqlite3NestedParse()\sinstead\nof\shand-coded\sVDBE\scode.\s\sThis\sis\sa\smanual\scherry-pick\sof\sthe\skey\schange\sfrom\ncheck-in\s[c80bbf14b365d].
-D 2015-12-09T16:26:38.759
+C Further\ssimplifications\sto\sthe\sVDBE\scode\sgeneration\slogic\sthat\sflow\sout\nof\sthe\sprevious\scheck-in.
+D 2015-12-09T17:23:12.345
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e8fdca1cb89a1b58b5f4d3a130ea9a3d28cb314d
@@ -408,7 +408,7 @@ F src/vdbe.c 4d75375fa8bf911aa76ab8383d6f7eea0dec0fda
 F src/vdbe.h efb7a8c1459e31f3ea4377824c6a7e4cb5068637
 F src/vdbeInt.h 75c2e82ee3357e9210c06474f8d9bdf12c81105d
 F src/vdbeapi.c 020681b943e77766b32ae1cddf86d7831b7374ca
-F src/vdbeaux.c 8405f7441cb75c5d1816d1731a041d450e9ff2e9
+F src/vdbeaux.c e07b2c8d14064f2094d20d002a2a1082913bbd2a
 F src/vdbeblob.c fdc4a81605ae7a35ae94a55bd768b66d6be16f15
 F src/vdbemem.c fdd1578e47bea61390d472de53c565781d81e045
 F src/vdbesort.c a7ec02da4494c59dfd071126dd3726be5a11459d
@@ -1408,7 +1408,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 901d0b8f3b72e96ffa8e9436993a12980f5ebd51
-R e560f751f53c5733305e8b0ee0bd6c81
+P 8021b4c8139ba56d6b1e2e26aeec4f9bf77f37c9
+R 9fa6094a1e8a72da130ce9bebe3afcb3
 U drh
-Z 957e158965f07497a4d00489add5865f
+Z e514ce3bd686c655a7118cedbf26535f
