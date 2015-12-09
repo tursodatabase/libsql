@@ -214,10 +214,11 @@ limit_where_cleanup_2:
 ** sqlite3WalkExpr() callback used by deleteSetColUsed().
 */
 static int deleteSetColUsedExpr(Walker *pWalker, Expr *pExpr){
-  if( pExpr->op==TK_COLUMN ){
-    int i = pExpr->iColumn;
-    if( i>=0 ){
-      pWalker->u.pSrcList->a[0].colUsed |= ((Bitmask)1)<<(i>=BMS ? BMS-1 : i);
+  int iCol;
+  if( pExpr->op==TK_COLUMN && (iCol = pExpr->iColumn)>=0 ){
+    struct SrcList_item *pItem = &pWalker->u.pSrcList->a[0];
+    if( pItem->iCursor==pExpr->iTable ){
+      pItem->colUsed |= ((Bitmask)1)<<(iCol>=BMS ? BMS-1 : iCol);
     }
   }
   return WRC_Continue;

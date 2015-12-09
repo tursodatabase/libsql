@@ -1813,13 +1813,12 @@ void sqlite3WhereInfoFree(sqlite3 *db, WhereInfo *pWInfo){
 */
 Expr *sqlite3WhereSplitExpr(WhereInfo *pWInfo, int iExpr){
   sqlite3 *db = pWInfo->pParse->db;
-  WhereLoop *pLoop = pWInfo->pLoops;
+  WhereLoop *pLoop = pWInfo->a[0].pWLoop;
   WhereTerm *pTerm = pLoop->aLTerm[0];
   WhereClause *pOrWC = &pTerm->u.pOrInfo->wc;
   Expr *pExpr = 0;
 
   assert( pWInfo->eOnePass==ONEPASS_SPLIT_DELETE );
-  assert( pLoop->pNextLoop==0 );
   assert( (pTerm->wtFlags & TERM_ORINFO)!=0 );
 
   if( iExpr<pOrWC->nTerm ){

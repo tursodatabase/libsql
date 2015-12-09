@@ -61,7 +61,7 @@ foreach {tn sql res} {
   do_adp_test 1.$tn $sql $res
 }
 
-do_execsql_test 2.0 {
+do_execsql_test 2.1.0 {
   CREATE TABLE t2(a, b, c);
   CREATE INDEX t2a ON t2(a);
   CREATE INDEX t2b ON t2(b);
@@ -74,7 +74,38 @@ foreach {tn sql res} {
   4 { DELETE FROM t2 WHERE +a=? }        { t2 t2a* t2b* t2c* }
   5 { DELETE FROM t2 WHERE rowid=? }     { t2 t2a* t2b* t2c* }
 } {
-  do_adp_test 2.$tn $sql $res
+  do_adp_test 2.1.$tn $sql $res
+}
+
+foreach {tn where res} {
+  1 { a=? OR b=? }             { t2* t2* t2a t2a* t2b t2b* t2c* t2c* }
+  2 { a=? OR (b=? AND +c=?) }  { t2 t2* t2a t2a* t2b t2b* t2c* t2c* }
+  3 { (a=? OR b=?) AND +c=? }  { t2 t2 t2a t2a* t2b t2b* t2c* t2c* }
+  4 { (c=? OR b=?) }           { t2* t2* t2a* t2a* t2b t2b* t2c t2c* }
+  5 { (c=? OR b=?) AND EXISTS (SELECT 1 FROM t1 WHERE t1.a=?) }
+                               { t2* t2* t2a* t2a* t2b t2b* t2c t2c* }
+} {
+  do_adp_test 2.2.$tn "DELETE FROM t2 WHERE $where" $res
+}
+
+do_execsql_test 2.3.0 {
+  CREATE TABLE t3(x, y, z);
+  CREATE INDEX t3xy ON t3(x, y);
+  CREATE INDEX t3zy ON t3(z, y);
+  CREATE INDEX t3zx ON t3(z, x);
+  CREATE INDEX t3x ON t3(x);
+}
+
+foreach {tn where res} {
+  1 { x=? OR z=? }          
+    { t3* t3* t3x t3x* t3xy* t3xy* t3zx t3zx* t3zy* t3zy* }
+
+  2 { (x=? OR z=?) AND y=? }   
+    { t3* t3* t3x* t3x* t3xy t3xy* t3zx* t3zx* t3zy t3zy* }
+
+  3 { (y=? OR z=?) AND x=? }   { t3 t3x t3xy* t3zx* t3zy* }
+} {
+  do_adp_test 2.3.$tn "DELETE FROM t3 WHERE $where" $res
 }
 
 #-------------------------------------------------------------------------
