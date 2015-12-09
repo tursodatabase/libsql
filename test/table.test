@@ -834,6 +834,16 @@ do_execsql_test table-19.1 {
   SELECT name FROM t19 ORDER BY name;
 } {{} savepoint t10 t11 t12 t13 t16 t2 t3 t3\"xyz t4\"abc t7 t8 t9 tablet8 test1 weird}
 
+# At one point the DROP TABLE in the following was causing problems on an
+# experimental branch.
+#
+do_execsql_test 20.0 {
+  CREATE TABLE t20(a PRIMARY KEY, b, c);
+  CREATE TRIGGER tr6 AFTER INSERT ON t20 BEGIN SELECT 1+1+1; END;
+  ANALYZE;
+  DROP TABLE t20;
+  SELECT name FROM sqlite_master
+} {sqlite_stat1 sqlite_stat4}
 
 
 finish_test

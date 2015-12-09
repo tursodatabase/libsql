@@ -1,5 +1,5 @@
-C Add\ssimple\stests\sand\sbugfixes\sfor\sDELETE\sstatements\sthat\squalify\sfor\sthe\sOR-optimization.
-D 2015-12-09T10:06:24.300
+C Fix\sa\sproblem\swith\sthe\sDROP\sTABLE\scommand\son\sthis\sbranch.
+D 2015-12-09T16:08:22.445
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e8fdca1cb89a1b58b5f4d3a130ea9a3d28cb314d
@@ -399,7 +399,7 @@ F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c bbfb74450643cb5372a43ad4f6cffd7e9dfcecb0
 F src/tokenize.c 5606871a377f390af7040ec3c12e0d183512d785
 F src/treeview.c 78842e90c1f71269e7a73a1d4221b6fe360bab66
-F src/trigger.c 322f23aad694e8f31d384dcfa386d52a48d3c52f
+F src/trigger.c de3ed31ad3218a20d7d7e18bf1b3b734e78bda66
 F src/update.c 17332f9fe818cbc0444c36a811800af8498af4c3
 F src/utf.c fc6b889ba0779b7722634cdeaa25f1930d93820c
 F src/util.c e802e8e311a0d6c48cd1b3e89db164f6f0248d70
@@ -576,7 +576,7 @@ F test/default.test 0cb49b1c315a0d81c81d775e407f66906a2a604d
 F test/delete.test e1bcdf8926234e27aac24b346ad83d3329ec8b6f
 F test/delete2.test 3a03f2cca1f9a67ec469915cb8babd6485db43fa
 F test/delete3.test 555e84a00a99230b7d049d477a324a631126a6ab
-F test/delete4.test 3ac0b8d23689ba764c2e8b78c1b56b8f1b942fa2
+F test/delete4.test 174f0a46aeceae3fd96d5a52ecd1db63cebc6c56
 F test/descidx1.test 6d03b44c8538fe0eb4924e19fba10cdd8f3c9240
 F test/descidx2.test 9f1a0c83fd57f8667c82310ca21b30a350888b5d
 F test/descidx3.test 09ddbe3f5295f482d2f8b687cf6db8bad7acd9a2
@@ -1056,7 +1056,7 @@ F test/sync.test a34cd43e98b7fb84eabbf38f7ed8f7349b3f3d85
 F test/syscall.test 2aa9e111b79fb385681ff8940124def6f8faab87
 F test/sysfault.test c9f2b0d8d677558f74de750c75e12a5454719d04
 F test/tabfunc01.test cc33684f9480fcf1fd5ce287ac28d22971cad1cc
-F test/table.test b708f3e5fa2542fa51dfab21fc07b36ea445cb2f
+F test/table.test f85f8694f94ac1275cee81f84bdea66cdcc494c5
 F test/tableapi.test 2674633fa95d80da917571ebdd759a14d9819126
 F test/tableopts.test dba698ba97251017b7c80d738c198d39ab747930
 F test/tclsqlite.test 7fb866443c7deceed22b63948ccd6f76b52ad054
@@ -1408,7 +1408,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P dc236f11181e235ddfe58a7943a462686679bf94
-R de0ef9c8056887209ad87620155e0e85
+P 10ca7357b27d0657127d553738be3ae6d715b74a
+R 735093e69dd7362edf05f8837215e3f4
 U dan
-Z 30ab9b4c4efed643a26b238b5eccdd20
+Z 4c802a239f2e7bc26c443feae4434d58

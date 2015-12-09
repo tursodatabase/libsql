@@ -139,7 +139,55 @@ do_execsql_test 4.12 {
   PRAGMA integrity_check;
 } {ok}
 
+#-------------------------------------------------------------------------
+# Further tests for DELETE statements that use the OR optimization.
+#
+array unset -nocomplain res
+foreach {tn tbl} {
+  0 { CREATE TABLE t5(i INTEGER, a, b, c) }
+  1 { 
+    CREATE TABLE t5(i INTEGER PRIMARY KEY, a, b, c);
+    CREATE INDEX t5a ON t5(a);
+    CREATE INDEX t5bc ON t5(b, c);
+    CREATE INDEX t5c ON t5(c);
+  }
+  2 { 
+    CREATE TABLE t5(i INT PRIMARY KEY, a, b, c) WITHOUT ROWID;
+    CREATE INDEX t5a ON t5(a);
+    CREATE INDEX t5bc ON t5(b, c);
+    CREATE INDEX t5c ON t5(c);
+  }
+} {
+  do_test 5.$tn.0 {
+    execsql { DROP TABLE IF EXISTS t5 }
+    execsql $tbl
 
 
+    for {set i 1} {$i <= 100} {incr i} {
+      set a [expr $i*2]
+      set b [expr ($i*7 % 100)]
+      set c [expr 100-$i]
+      execsql { INSERT INTO t5 VALUES($i, $a, $b, $c) }
+    }
+  } {}
+
+  foreach {tn2 sql} {
+    1 { DELETE FROM t5 WHERE a=4 OR b=10 OR c=17 }
+    2 { DELETE FROM t5 WHERE (a=4 OR b=22) AND c=98 }
+  } {
+    execsql BEGIN
+    execsql $sql
+    do_execsql_test 5.$tn.$tn2.1 { PRAGMA integrity_check } ok
+    if {$tn==0} { 
+      set res($tn2) [db eval { SELECT count(*), md5sum(i, a, b, c) FROM t5 }]
+    }
+
+    do_execsql_test 5.$tn.$tn2.2 { 
+      SELECT count(*), md5sum(i, a, b, c) FROM t5 
+    } $res($tn2)
+     
+    execsql ROLLBACK
+  }
+}
 
 finish_test
