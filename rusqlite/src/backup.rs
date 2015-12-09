@@ -56,21 +56,21 @@ pub enum StepResult {
 
 /// Name for the database to back up. Can be specified for both the source and
 /// destination.
-pub enum BackupName {
+pub enum BackupName<'a> {
     /// The main database. This is typically what you want.
     Main,
     /// Back up the temporary database (e.g., any "CREATE TEMPORARY TABLE" tables).
     Temp,
     /// Backup a database that has been attached via "ATTACH DATABASE ...".
-    Attached(String),
+    Attached(&'a str),
 }
 
-impl BackupName {
+impl<'a> BackupName<'a> {
     fn to_cstring(self) -> SqliteResult<CString> {
         match self {
             BackupName::Main => str_to_cstring("main"),
             BackupName::Temp => str_to_cstring("temp"),
-            BackupName::Attached(s) => str_to_cstring(&s),
+            BackupName::Attached(s) => str_to_cstring(s),
         }
     }
 }
@@ -303,7 +303,7 @@ mod test {
         let mut dst = SqliteConnection::open_in_memory().unwrap();
 
         {
-            let backup = Backup::new_with_names(&src, BackupName::Attached("my_attached".into()),
+            let backup = Backup::new_with_names(&src, BackupName::Attached("my_attached"),
                                                 &mut dst, BackupName::Main).unwrap();
             backup.step(-1).unwrap();
         }
@@ -314,7 +314,7 @@ mod test {
         src.execute_batch("INSERT INTO foo VALUES(43)").unwrap();
 
         {
-            let backup = Backup::new_with_names(&src, BackupName::Attached("my_attached".into()),
+            let backup = Backup::new_with_names(&src, BackupName::Attached("my_attached"),
                                                 &mut dst, BackupName::Main).unwrap();
             backup.run_to_completion(5, Duration::from_millis(250), None).unwrap();
         }
