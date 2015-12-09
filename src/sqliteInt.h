@@ -2952,6 +2952,7 @@ struct StrAccum {
   int  nAlloc;         /* Amount of space allocated in zText */
   int  mxAlloc;        /* Maximum allowed allocation.  0 for no malloc usage */
   u8   accError;       /* STRACCUM_NOMEM or STRACCUM_TOOBIG */
+  u8   bMalloced;      /* zText points to allocated space */
 };
 #define STRACCUM_NOMEM   1
 #define STRACCUM_TOOBIG  2

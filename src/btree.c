@@ -7521,8 +7521,13 @@ static int balance_nonroot(
       ** overflow cell), we can skip updating the pointer map entries.  */
       if( iOld>=nNew
        || pNew->pgno!=aPgno[iOld]
+#ifdef HAVE_STDINT_H
+       || (intptr_t)pCell<(intptr_t)aOld
+       || (intptr_t)pCell>=(intptr_t)&aOld[usableSize]
+#else
        || pCell<aOld
        || pCell>=&aOld[usableSize]
+#endif
       ){
         if( !leafCorrection ){
           ptrmapPut(pBt, get4byte(pCell), PTRMAP_BTREE, pNew->pgno, &rc);
