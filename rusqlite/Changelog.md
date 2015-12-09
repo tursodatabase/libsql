@@ -1,4 +1,4 @@
-# Version UPCOMING (TBD)
+# Version 0.5.0 (2015-12-08)
 
 * Adds `trace` feature that allows the use of SQLite's logging, tracing, and profiling hooks.
 * Slight change to the closure types passed to `query_map` and `query_and_then`:
@@ -7,6 +7,7 @@
 * When building, the environment variable `SQLITE3_LIB_DIR` now takes precedence over pkg-config.
 * If `pkg-config` is not available, we will try to find `libsqlite3` in `/usr/lib`.
 * Add more documentation for failure modes of functions that return `SqliteResult`s.
+* Updates `libc` dependency to 0.2, fixing builds on ARM for Rust 1.6 or newer.
 
 # Version 0.4.0 (2015-11-03)
 
