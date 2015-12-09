@@ -1725,30 +1725,31 @@ void sqlite3VdbeIOTraceSql(Vdbe *p){
 **
 ** nByte is the number of bytes of space needed.
 **
-** *ppFrom points to available space and pEnd points to the end of the
-** available space.  When space is allocated, *ppFrom is advanced past
-** the end of the allocated space.
+** pFrom points to *pnFrom bytes of available space.  New space is allocated
+** from the end of the pFrom buffer and *pnFrom is decremented.
 **
-** *pnByte is a counter of the number of bytes of space that have failed
-** to allocate.  If there is insufficient space in *ppFrom to satisfy the
-** request, then increment *pnByte by the amount of the request.
+** *pnNeeded is a counter of the number of bytes of space that have failed
+** to allocate.  If there is insufficient space in pFrom to satisfy the
+** request, then increment *pnNeeded by the amount of the request.
 */
 static void *allocSpace(
   void *pBuf,          /* Where return pointer will be stored */
   int nByte,           /* Number of bytes to allocate */
-  u8 **ppFrom,         /* IN/OUT: Allocate from *ppFrom */
-  u8 *pEnd,            /* Pointer to 1 byte past the end of *ppFrom buffer */
-  int *pnByte          /* If allocation cannot be made, increment *pnByte */
+  u8 *pFrom,           /* Memory available for allocation */
+  int *pnFrom,         /* IN/OUT: Space available at pFrom */
+  int *pnNeeded        /* If allocation cannot be made, increment *pnByte */
 ){
-  assert( EIGHT_BYTE_ALIGNMENT(*ppFrom) );
-  if( pBuf ) return pBuf;
-  nByte = ROUND8(nByte);
-  if( &(*ppFrom)[nByte] <= pEnd ){
-    pBuf = (void*)*ppFrom;
-    *ppFrom += nByte;
-  }else{
-    *pnByte += nByte;
+  assert( EIGHT_BYTE_ALIGNMENT(pFrom) );
+  if( pBuf==0 ){
+    nByte = ROUND8(nByte);
+    if( nByte <= *pnFrom ){
+      *pnFrom -= nByte;
+      pBuf = &pFrom[*pnFrom];
+    }else{
+      *pnNeeded += nByte;
+    }
   }
+  assert( EIGHT_BYTE_ALIGNMENT(pBuf) );
   return pBuf;
 }
 
@@ -1821,8 +1822,8 @@ void sqlite3VdbeMakeReady(
   int nArg;                      /* Number of arguments in subprograms */
   int nOnce;                     /* Number of OP_Once instructions */
   int n;                         /* Loop counter */
+  int nFree;                     /* Available free space */
   u8 *zCsr;                      /* Memory available for allocation */
-  u8 *zEnd;                      /* First byte past allocated memory */
   int nByte;                     /* How much extra memory is needed */
 
   assert( p!=0 );
@@ -1854,14 +1855,15 @@ void sqlite3VdbeMakeReady(
   ** an array to marshal SQL function arguments in.
   */
   zCsr = (u8*)&p->aOp[p->nOp];            /* Memory avaliable for allocation */
-  zEnd = (u8*)&p->aOp[pParse->nOpAlloc];  /* First byte past end of zCsr[] */
+  assert( pParse->nOpAlloc*sizeof(Op) <= 0x7fffff00 );
+  nFree = (pParse->nOpAlloc - p->nOp)*sizeof(p->aOp[0]); /* Available space */
 
   resolveP2Values(p, &nArg);
   p->usesStmtJournal = (u8)(pParse->isMultiWrite && pParse->mayAbort);
   if( pParse->explain && nMem<10 ){
     nMem = 10;
   }
-  memset(zCsr, 0, zEnd-zCsr);
+  memset(zCsr, 0, nFree);
   zCsr += (zCsr - (u8*)0)&7;
   assert( EIGHT_BYTE_ALIGNMENT(zCsr) );
   p->expired = 0;
@@ -1878,21 +1880,21 @@ void sqlite3VdbeMakeReady(
   */
   do {
     nByte = 0;
-    p->aMem = allocSpace(p->aMem, nMem*sizeof(Mem), &zCsr, zEnd, &nByte);
-    p->aVar = allocSpace(p->aVar, nVar*sizeof(Mem), &zCsr, zEnd, &nByte);
-    p->apArg = allocSpace(p->apArg, nArg*sizeof(Mem*), &zCsr, zEnd, &nByte);
-    p->azVar = allocSpace(p->azVar, nVar*sizeof(char*), &zCsr, zEnd, &nByte);
+    p->aMem = allocSpace(p->aMem, nMem*sizeof(Mem), zCsr, &nFree, &nByte);
+    p->aVar = allocSpace(p->aVar, nVar*sizeof(Mem), zCsr, &nFree, &nByte);
+    p->apArg = allocSpace(p->apArg, nArg*sizeof(Mem*), zCsr, &nFree, &nByte);
+    p->azVar = allocSpace(p->azVar, nVar*sizeof(char*), zCsr, &nFree, &nByte);
     p->apCsr = allocSpace(p->apCsr, nCursor*sizeof(VdbeCursor*),
-                          &zCsr, zEnd, &nByte);
-    p->aOnceFlag = allocSpace(p->aOnceFlag, nOnce, &zCsr, zEnd, &nByte);
+                          zCsr, &nFree, &nByte);
+    p->aOnceFlag = allocSpace(p->aOnceFlag, nOnce, zCsr, &nFree, &nByte);
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
-    p->anExec = allocSpace(p->anExec, p->nOp*sizeof(i64), &zCsr, zEnd, &nByte);
+    p->anExec = allocSpace(p->anExec, p->nOp*sizeof(i64), zCsr, &nFree, &nByte);
 #endif
     if( nByte ){
       p->pFree = sqlite3DbMallocZero(db, nByte);
     }
     zCsr = p->pFree;
-    zEnd = &zCsr[nByte];
+    nFree = nByte;
   }while( nByte && !db->mallocFailed );
 
   p->nCursor = nCursor;
@@ -3235,7 +3237,7 @@ u32 sqlite3VdbeSerialPut(u8 *buf, Mem *pMem, u32 serial_type){
     assert( pMem->n + ((pMem->flags & MEM_Zero)?pMem->u.nZero:0)
              == (int)sqlite3VdbeSerialTypeLen(serial_type) );
     len = pMem->n;
-    memcpy(buf, pMem->z, len);
+    if( len>0 ) memcpy(buf, pMem->z, len);
     return len;
   }
 

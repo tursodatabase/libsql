@@ -2269,6 +2269,7 @@ static int vfsCurrentTimeInt64(
   return TCL_OK;
 }
 
+#ifdef SQLITE_ENABLE_SNAPSHOT
 /*
 ** Usage: sqlite3_snapshot_get DB DBNAME
 */
@@ -2301,7 +2302,9 @@ static int test_snapshot_get(
   }
   return TCL_OK;
 }
+#endif /* SQLITE_ENABLE_SNAPSHOT */
 
+#ifdef SQLITE_ENABLE_SNAPSHOT
 /*
 ** Usage: sqlite3_snapshot_open DB DBNAME SNAPSHOT
 */
@@ -2331,7 +2334,9 @@ static int test_snapshot_open(
   }
   return TCL_OK;
 }
+#endif /* SQLITE_ENABLE_SNAPSHOT */
 
+#ifdef SQLITE_ENABLE_SNAPSHOT
 /*
 ** Usage: sqlite3_snapshot_free SNAPSHOT
 */
@@ -2350,6 +2355,7 @@ static int test_snapshot_free(
   sqlite3_snapshot_free(pSnapshot);
   return TCL_OK;
 }
+#endif /* SQLITE_ENABLE_SNAPSHOT */
 
 /*
 ** Usage:  sqlite3_next_stmt  DB  STMT
@@ -5988,13 +5994,13 @@ static int test_sqlite3_log(
     Tcl_DecrRefCount(logcallback.pObj);
     logcallback.pObj = 0;
     logcallback.pInterp = 0;
-    sqlite3_config(SQLITE_CONFIG_LOG, 0, 0);
+    sqlite3_config(SQLITE_CONFIG_LOG, (void*)0, (void*)0);
   }
   if( objc>1 ){
     logcallback.pObj = objv[1];
     Tcl_IncrRefCount(logcallback.pObj);
     logcallback.pInterp = interp;
-    sqlite3_config(SQLITE_CONFIG_LOG, xLogcallback, 0);
+    sqlite3_config(SQLITE_CONFIG_LOG, xLogcallback, (void*)0);
   }
   return TCL_OK;
 }

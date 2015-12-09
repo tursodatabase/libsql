@@ -3465,13 +3465,16 @@ static int openDirectory(const char *zFilename, int *pFd){
   char zDirname[MAX_PATHNAME+1];
 
   sqlite3_snprintf(MAX_PATHNAME, zDirname, "%s", zFilename);
-  for(ii=(int)strlen(zDirname); ii>1 && zDirname[ii]!='/'; ii--);
-  if( ii>1 ){
+  for(ii=(int)strlen(zDirname); ii>0 && zDirname[ii]!='/'; ii--);
+  if( ii>0 ){
     zDirname[ii] = '\0';
-    fd = robust_open(zDirname, O_RDONLY|O_BINARY, 0);
-    if( fd>=0 ){
-      OSTRACE(("OPENDIR %-3d %s\n", fd, zDirname));
-    }
+  }else{
+    if( zDirname[0]!='/' ) zDirname[0] = '.';
+    zDirname[1] = 0;
+  }
+  fd = robust_open(zDirname, O_RDONLY|O_BINARY, 0);
+  if( fd>=0 ){
+    OSTRACE(("OPENDIR %-3d %s\n", fd, zDirname));
   }
   *pFd = fd;
   if( fd>=0 ) return SQLITE_OK;
