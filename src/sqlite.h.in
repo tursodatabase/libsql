@@ -7895,11 +7895,39 @@ int sqlite3_db_cacheflush(sqlite3*);
 ** SQLITE_ERROR is returned. If any other error occurs, for example an IO 
 ** error or an OOM condition, the corresponding SQLite error code is 
 ** returned.
+**
+** Each successful call to sqlite3_snapshot_get() must be matched by a call
+** to sqlite3_snapshot_free() to delete the snapshot handle. Not doing so
+** is a memory leak. The results of using a snapshot handle after it has 
+** been deleted by sqlite3_snapshot_free() are undefined.
+**
+** Given a snapshot handle, the sqlite3_snapshot_open() API function may be
+** used to open a read transaction on the same database snapshot that was
+** being read when sqlite3_snapshot_get() was called to obtain it. The
+** combination of the first two arguments to sqlite3_snapshot_open() - a
+** database handle and the name (e.g. "main") of one of its attached 
+** databases - must refer to the same database file as that identified by 
+** the arguments passed to the sqlite3_snapshot_get() call. The database
+** handle must not have an open read or write transaction on this database
+** file, and must not be in auto-commit mode.
+**
+** An old database snapshot may only be opened if SQLite is able to 
+** determine that it is still valid. The only way for an application to 
+** guarantee that a snapshot remains valid is by holding an open 
+** read-transaction on it or on an older snapshot of the same database 
+** file. If SQLite cannot determine that the snapshot identified by the
+** snapshot handle, SQLITE_BUSY_SNAPSHOT is returned.
+**
+** Otherwise, if the read transaction is successfully opened, SQLITE_OK is
+** returned. If the named database is not in wal mode or if the database
+** handle already has an open read or write transaction on it, or if the 
+** database handle is in auto-commit mode, SQLITE_ERROR is returned. If
+** an OOM or IO error occurs, the associated SQLite error code is returned.
 */
 typedef struct sqlite3_snapshot sqlite3_snapshot;
 int sqlite3_snapshot_get(sqlite3*, const char*, sqlite3_snapshot **ppSnapshot);
-int sqlite3_snapshot_open(sqlite3*, const char*, sqlite3_snapshot*);
 void sqlite3_snapshot_free(sqlite3_snapshot*);
+int sqlite3_snapshot_open(sqlite3*, const char*, sqlite3_snapshot*);
 
 /*
 ** Undo the hack that converts floating point types to integer for

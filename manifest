@@ -1,5 +1,5 @@
-C Merge\sunrelated\sfixes\sfrom\strunk.
-D 2015-12-09T16:04:06.348
+C Update\ssqlite3_snapshot_open()\sto\sreduce\sthe\schances\sof\sreading\sa\scorrupt\ssnapshot\screated\sby\sa\scheckpointer\sprocess\sexiting\sunexpectedly.
+D 2015-12-09T20:05:27.534
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e8fdca1cb89a1b58b5f4d3a130ea9a3d28cb314d
@@ -341,7 +341,7 @@ F src/resolve.c a83b41104e6ff69855d03cd0aaa09e93927ec39f
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c f8fded11fc443a9f5a73cc5db069d06b34460e2f
 F src/shell.c abbc74ea43dbf2f306ea18282d666683fb5efab2
-F src/sqlite.h.in fc8a2875a318df1b9dabd82cb00b1ac98081423a
+F src/sqlite.h.in 19dea4862ccfcc1a733d0fd18d4744b02a505ac6
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
 F src/sqliteInt.h 5caacf37a776f9d6178e519cb0b5248ca22a3828
@@ -415,7 +415,7 @@ F src/vdbesort.c a7ec02da4494c59dfd071126dd3726be5a11459d
 F src/vdbetrace.c 8befe829faff6d9e6f6e4dee5a7d3f85cc85f1a0
 F src/vtab.c 2a8b44aa372c33f6154208e7a7f6c44254549806
 F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
-F src/wal.c abce669053edf5cd1cd1751d654d48d74ed47839
+F src/wal.c 0bd8aa8e0db924493af4c72f527afc9b9e22257a
 F src/wal.h 907943dfdef10b583e81906679a347e0ec6f1b1b
 F src/walker.c 2e14d17f592d176b6dc879c33fbdec4fbccaa2ba
 F src/where.c b18edbb9e5afabb77f4f27550c471c5c824e0fe7
@@ -1020,7 +1020,7 @@ F test/skipscan2.test d1d1450952b7275f0b0a3a981f0230532743951a
 F test/skipscan3.test ec5bab3f81c7038b43450e7b3062e04a198bdbb5
 F test/skipscan5.test 67817a4b6857c47e0e33ba3e506da6f23ef68de2
 F test/skipscan6.test 5866039d03a56f5bd0b3d172a012074a1d90a15b
-F test/snapshot.test 061dc75b77ca65c0e9c5976499625abe5be7a5c0
+F test/snapshot.test 800e0be4488acb88dd38ff9e9b83edb71d9d5a9d
 F test/soak.test 0b5b6375c9f4110c828070b826b3b4b0bb65cd5f
 F test/softheap1.test 843cd84db9891b2d01b9ab64cef3e9020f98d087
 F test/sort.test 3f492e5b7be1d3f756728d2ff6edf4f6091e84cb
@@ -1409,7 +1409,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 502cc6f353358946080d9bcd335aed526825b88a 901d0b8f3b72e96ffa8e9436993a12980f5ebd51
-R 9b1d7228446872f8d72f41cfd12e515e
-U drh
-Z 3ae5744205bfcf5cc63a2630633fbd47
+P 362615b4df94358d0264b0991c3090a0878f054c
+R cfc950fbd468350b7777662be2b401a3
+U dan
+Z 51de2f0ad57bbe117dc864890e31b83c

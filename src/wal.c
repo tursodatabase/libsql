@@ -2275,6 +2275,9 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
   {
     if( (pWal->readOnly & WAL_SHM_RDONLY)==0
      && (mxReadMark<mxFrame || mxI==0)
+#ifdef SQLITE_ENABLE_SNAPSHOT
+     && pWal->pSnapshot==0
+#endif
     ){
       for(i=1; i<WAL_NREADER; i++){
         rc = walLockExclusive(pWal, WAL_READ_LOCK(i), 1);
@@ -2289,6 +2292,9 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
       }
     }
     if( mxI==0 ){
+#ifdef SQLITE_ENABLE_SNAPSHOT
+      if( pWal->pSnapshot ) return SQLITE_BUSY_SNAPSHOT;
+#endif
       assert( rc==SQLITE_BUSY || (pWal->readOnly & WAL_SHM_RDONLY)!=0 );
       return rc==SQLITE_BUSY ? WAL_RETRY : SQLITE_READONLY_CANTLOCK;
     }
@@ -2383,22 +2389,54 @@ int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
 #ifdef SQLITE_ENABLE_SNAPSHOT
   if( rc==SQLITE_OK ){
     if( pSnapshot && memcmp(pSnapshot, &pWal->hdr, sizeof(WalIndexHdr)) ){
+      /* At this point the client has a lock on an aReadMark[] slot holding
+      ** a value equal to or smaller than pSnapshot->mxFrame. This client
+      ** did not populate the aReadMark[] slot. pWal->hdr is populated with
+      ** the wal-index header for the snapshot currently at the head of the
+      ** wal file, which is different from pSnapshot.
+      **
+      ** The presence of the aReadMark[] slot entry makes it very likely 
+      ** that either there is currently another read-transaction open on
+      ** pSnapshot, or that there has been one more recently than the last
+      ** checkpoint of any frames greater than pSnapshot->mxFrame was 
+      ** started. There is an exception though: client 1 may have called
+      ** walTryBeginRead and started to open snapshot pSnapshot, setting
+      ** the aReadMark[] slot to do so. At the same time, client 2 may 
+      ** have committed a new snapshot to disk and started a checkpoint.
+      ** In this circumstance client 1 does not end up reading pSnapshot,
+      ** but may leave the aReadMark[] slot populated.
+      **
+      ** The race condition above is difficult to detect. One approach would
+      ** be to check the aReadMark[] slot for another client. But this is
+      ** prone to false-positives from other snapshot clients. And there
+      ** is no equivalent to xCheckReservedLock() for wal locks. Another
+      ** approach would be to take the checkpointer lock and check that
+      ** fewer than pSnapshot->mxFrame frames have been checkpointed. But
+      ** that does not account for checkpointer processes that failed after
+      ** checkpointing frames but before updating WalCkptInfo.nBackfill.
+      ** And it would mean that this function would block on checkpointers
+      ** and vice versa.
+      **
+      ** TODO: For now, this race condition is ignored.
+      */
       volatile WalCkptInfo *pInfo = walCkptInfo(pWal);
-      rc = walLockShared(pWal, WAL_READ_LOCK(0));
-      if( rc==SQLITE_OK ){
-        if( pInfo->nBackfill<=pSnapshot->mxFrame 
-         && pSnapshot->aSalt[0]==pWal->hdr.aSalt[0]
-         && pSnapshot->aSalt[1]==pWal->hdr.aSalt[1]
-        ){
-          assert( pWal->readLock>0 );
-          assert( pInfo->aReadMark[pWal->readLock]<=pSnapshot->mxFrame );
-          memcpy(&pWal->hdr, pSnapshot, sizeof(WalIndexHdr));
-          *pChanged = bChanged;
-        }else{
-          rc = SQLITE_BUSY_SNAPSHOT;
-        }
-        walUnlockShared(pWal, WAL_READ_LOCK(0));
+
+      assert( pWal->readLock>0 );
+      assert( pInfo->aReadMark[pWal->readLock]<=pSnapshot->mxFrame );
+
+      /* Check that the wal file has not been wrapped. Assuming it has not,
+      ** overwrite pWal->hdr with *pSnapshot and set *pChanged as appropriate
+      ** for opening the snapshot. Or, if the wal file has been wrapped
+      ** since pSnapshot was written, return SQLITE_BUSY_SNAPSHOT. */
+      if( pSnapshot->aSalt[0]==pWal->hdr.aSalt[0]
+       && pSnapshot->aSalt[1]==pWal->hdr.aSalt[1]
+      ){
+        memcpy(&pWal->hdr, pSnapshot, sizeof(WalIndexHdr));
+        *pChanged = bChanged;
+      }else{
+        rc = SQLITE_BUSY_SNAPSHOT;
       }
+
       if( rc!=SQLITE_OK ){
         sqlite3WalEndReadTransaction(pWal);
       }
