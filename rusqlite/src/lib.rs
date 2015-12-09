@@ -484,13 +484,14 @@ impl SqliteConnection {
     ///
     ///     conn.load_extension("my_sqlite_extension", None)
     /// }
+    /// ```
     ///
     /// # Failure
     ///
     /// Will return `Err` if the underlying SQLite call fails.
     #[cfg(feature = "load_extension")]
     pub fn load_extension<P: AsRef<Path>>(&self, dylib_path: P, entry_point: Option<&str>) -> SqliteResult<()> {
-        self.db.borrow_mut().load_extension(dylib_path, entry_point)
+        self.db.borrow_mut().load_extension(dylib_path.as_ref(), entry_point)
     }
 
     fn decode_result(&self, code: c_int) -> SqliteResult<()> {
