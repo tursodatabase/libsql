@@ -26,7 +26,6 @@
 //! }
 //! ```
 
-use std::ffi::CString;
 use std::marker::PhantomData;
 
 use libc::c_int;
@@ -35,7 +34,7 @@ use std::time::Duration;
 
 use ffi;
 
-use {SqliteConnection, SqliteError, SqliteResult, str_to_cstring};
+use {DatabaseName, SqliteConnection, SqliteError, SqliteResult};
 
 /// Possible successful results of calling `Backup::step`.
 pub enum StepResult {
@@ -52,27 +51,6 @@ pub enum StepResult {
     /// The step failed because the source connection was writing to the
     /// database. This is not a fatal error - the step can be retried.
     Locked,
-}
-
-/// Name for the database to back up. Can be specified for both the source and
-/// destination.
-pub enum BackupName<'a> {
-    /// The main database. This is typically what you want.
-    Main,
-    /// Back up the temporary database (e.g., any "CREATE TEMPORARY TABLE" tables).
-    Temp,
-    /// Backup a database that has been attached via "ATTACH DATABASE ...".
-    Attached(&'a str),
-}
-
-impl<'a> BackupName<'a> {
-    fn to_cstring(self) -> SqliteResult<CString> {
-        match self {
-            BackupName::Main => str_to_cstring("main"),
-            BackupName::Temp => str_to_cstring("temp"),
-            BackupName::Attached(s) => str_to_cstring(s),
-        }
-    }
 }
 
 /// Struct specifying the progress of a backup. The percentage completion can
@@ -107,7 +85,7 @@ impl<'a, 'b> Backup<'a, 'b> {
     /// `NULL`.
     pub fn new(from: &'a SqliteConnection,
                to: &'b mut SqliteConnection) -> SqliteResult<Backup<'a, 'b>> {
-        Backup::new_with_names(from, BackupName::Main, to, BackupName::Main)
+        Backup::new_with_names(from, DatabaseName::Main, to, DatabaseName::Main)
     }
 
     /// Attempt to create a new handle that will allow backups from the
@@ -119,8 +97,8 @@ impl<'a, 'b> Backup<'a, 'b> {
     ///
     /// Will return `Err` if the underlying `sqlite3_backup_init` call returns
     /// `NULL`.
-    pub fn new_with_names(from: &'a SqliteConnection, from_name: BackupName,
-                          to: &'b mut SqliteConnection, to_name: BackupName)
+    pub fn new_with_names(from: &'a SqliteConnection, from_name: DatabaseName,
+                          to: &'b mut SqliteConnection, to_name: DatabaseName)
         -> SqliteResult<Backup<'a, 'b>>
     {
         let to_name = try!(to_name.to_cstring());
@@ -224,9 +202,9 @@ impl<'a, 'b> Drop for Backup<'a, 'b> {
 
 #[cfg(test)]
 mod test {
-    use SqliteConnection;
+    use {SqliteConnection, DatabaseName};
     use std::time::Duration;
-    use super::{Backup, BackupName};
+    use super::Backup;
 
     #[test]
     fn test_backup() {
@@ -270,7 +248,7 @@ mod test {
         let mut dst = SqliteConnection::open_in_memory().unwrap();
 
         {
-            let backup = Backup::new_with_names(&src, BackupName::Temp, &mut dst, BackupName::Main)
+            let backup = Backup::new_with_names(&src, DatabaseName::Temp, &mut dst, DatabaseName::Main)
                 .unwrap();
             backup.step(-1).unwrap();
         }
@@ -281,7 +259,7 @@ mod test {
         src.execute_batch("INSERT INTO foo VALUES(43)").unwrap();
 
         {
-            let backup = Backup::new_with_names(&src, BackupName::Temp, &mut dst, BackupName::Main)
+            let backup = Backup::new_with_names(&src, DatabaseName::Temp, &mut dst, DatabaseName::Main)
                 .unwrap();
             backup.run_to_completion(5, Duration::from_millis(250), None).unwrap();
         }
@@ -303,8 +281,8 @@ mod test {
         let mut dst = SqliteConnection::open_in_memory().unwrap();
 
         {
-            let backup = Backup::new_with_names(&src, BackupName::Attached("my_attached"),
-                                                &mut dst, BackupName::Main).unwrap();
+            let backup = Backup::new_with_names(&src, DatabaseName::Attached("my_attached"),
+                                                &mut dst, DatabaseName::Main).unwrap();
             backup.step(-1).unwrap();
         }
 
@@ -314,8 +292,8 @@ mod test {
         src.execute_batch("INSERT INTO foo VALUES(43)").unwrap();
 
         {
-            let backup = Backup::new_with_names(&src, BackupName::Attached("my_attached"),
-                                                &mut dst, BackupName::Main).unwrap();
+            let backup = Backup::new_with_names(&src, DatabaseName::Attached("my_attached"),
+                                                &mut dst, DatabaseName::Main).unwrap();
             backup.run_to_completion(5, Duration::from_millis(250), None).unwrap();
         }
 

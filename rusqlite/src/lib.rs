@@ -143,6 +143,32 @@ fn path_to_cstring(p: &Path) -> SqliteResult<CString> {
     str_to_cstring(s)
 }
 
+/// Name for a database within a SQLite connection.
+pub enum DatabaseName<'a> {
+    /// The main database.
+    Main,
+
+    /// The temporary database (e.g., any "CREATE TEMPORARY TABLE" tables).
+    Temp,
+
+    /// A database that has been attached via "ATTACH DATABASE ...".
+    Attached(&'a str),
+}
+
+// Currently DatabaseName is only used by the backup mod, so hide this (private)
+// impl to avoid dead code warnings.
+#[cfg(feature = "backup")]
+impl<'a> DatabaseName<'a> {
+    fn to_cstring(self) -> SqliteResult<CString> {
+        use self::DatabaseName::{Main, Temp, Attached};
+        match self {
+            Main        => str_to_cstring("main"),
+            Temp        => str_to_cstring("temp"),
+            Attached(s) => str_to_cstring(s),
+        }
+    }
+}
+
 /// A connection to a SQLite database.
 pub struct SqliteConnection {
     db: RefCell<InnerSqliteConnection>,
