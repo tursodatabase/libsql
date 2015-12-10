@@ -1,5 +1,5 @@
-C Further\ssimplifications\sto\sthe\sVDBE\scode\sgeneration\slogic\sthat\sflow\sout\nof\sthe\sprevious\scheck-in.
-D 2015-12-09T17:23:12.345
+C Move\spointer\srange\scomparisons\sinto\sa\smacro,\swhere\sthey\scan\sbe\sdealt\swith\nin\sa\smore\sportable\sway.
+D 2015-12-10T15:09:17.462
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e8fdca1cb89a1b58b5f4d3a130ea9a3d28cb314d
@@ -282,7 +282,7 @@ F src/auth.c b56c78ebe40a2110fd361379f7e8162d23f92240
 F src/backup.c 2869a76c03eb393ee795416e2387005553df72bc
 F src/bitvec.c 1a78d450a17c5016710eec900bedfc5729bf9bdf
 F src/btmutex.c 45a968cc85afed9b5e6cf55bf1f42f8d18107f79
-F src/btree.c 81d041421359bbffc091c8a95dd0507aa4f09093
+F src/btree.c 450950ce366159c3215736ae43d1062e7c06f741
 F src/btree.h 2d76dee44704c47eed323356a758662724b674a0
 F src/btreeInt.h 3ab435ed27adea54d040584b0bcc488ee7db1e38
 F src/build.c e83da4d004a4e050c01acbb821ff7a7b1019c29b
@@ -305,7 +305,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/loadext.c 84996d7d70a605597d79c1f1d7b2012a5fd34f2b
 F src/main.c a950e48920e8c0f0ff82b2b2ccfe11aa89ca11d4
-F src/malloc.c 337bbe9c7d436ef9b7d06b5dd10bbfc8f3025972
+F src/malloc.c 8f787669e79de26efc42272b5797bc00fff527c6
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 6919bcf12f221868ea066eec27e579fed95ce98b
 F src/mem2.c f1940d9e91948dd6a908fbb9ce3835c36b5d83c3
@@ -344,7 +344,7 @@ F src/shell.c abbc74ea43dbf2f306ea18282d666683fb5efab2
 F src/sqlite.h.in 1248a78548024bdc8ef5893faa0ff9552b4cceb4
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
-F src/sqliteInt.h 5caacf37a776f9d6178e519cb0b5248ca22a3828
+F src/sqliteInt.h d9b64d12231789a5fae72e380da5544ad1a34d9f
 F src/sqliteLimit.h 216557999cb45f2e3578ed53ebefe228d779cb46
 F src/status.c 70912d7be68e9e2dbc4010c93d344af61d4c59ba
 F src/table.c 51b46b2a62d1b3a959633d593b89bab5e2c9155e
@@ -1408,7 +1408,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8021b4c8139ba56d6b1e2e26aeec4f9bf77f37c9
-R 9fa6094a1e8a72da130ce9bebe3afcb3
+P 6a5dfe85b519b920ce8c842057767a8793d92236
+R a58d43459fedbad83f2fea42e9df49aa
 U drh
-Z e514ce3bd686c655a7118cedbf26535f
+Z 0494ab55e74ae33c389abc3bd2b83951
