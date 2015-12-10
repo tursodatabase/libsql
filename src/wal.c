@@ -1217,7 +1217,7 @@ finished:
     */
     pInfo = walCkptInfo(pWal);
     pInfo->nBackfill = 0;
-    pInfo->nBackfillAttempted = 0;
+    pInfo->nBackfillAttempted = pWal->hdr.mxFrame;
     pInfo->aReadMark[0] = 0;
     for(i=1; i<WAL_NREADER; i++) pInfo->aReadMark[i] = READMARK_NOT_USED;
     if( pWal->hdr.mxFrame ) pInfo->aReadMark[1] = pWal->hdr.mxFrame;
@@ -1757,7 +1757,6 @@ static int walCheckpoint(
     ** cannot be backfilled from the WAL.
     */
     mxSafeFrame = pWal->hdr.mxFrame;
-    pInfo->nBackfillAttempted = mxSafeFrame;
     mxPage = pWal->hdr.nPage;
     for(i=1; i<WAL_NREADER; i++){
       /* Thread-sanitizer reports that the following is an unsafe read,
@@ -1789,6 +1788,8 @@ static int walCheckpoint(
     ){
       i64 nSize;                    /* Current size of database file */
       u32 nBackfill = pInfo->nBackfill;
+
+      pInfo->nBackfillAttempted = mxSafeFrame;
 
       /* Sync the WAL to disk */
       if( sync_flags ){
@@ -2296,9 +2297,6 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
   }
   if( (pWal->readOnly & WAL_SHM_RDONLY)==0
    && (mxReadMark<mxFrame || mxI==0)
-#ifdef SQLITE_ENABLE_SNAPSHOT
-   && pWal->pSnapshot==0
-#endif
   ){
     for(i=1; i<WAL_NREADER; i++){
       rc = walLockExclusive(pWal, WAL_READ_LOCK(i), 1);
@@ -2313,9 +2311,6 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
     }
   }
   if( mxI==0 ){
-#ifdef SQLITE_ENABLE_SNAPSHOT
-    if( pWal->pSnapshot ) return SQLITE_BUSY_SNAPSHOT;
-#endif
     assert( rc==SQLITE_BUSY || (pWal->readOnly & WAL_SHM_RDONLY)!=0 );
     return rc==SQLITE_BUSY ? WAL_RETRY : SQLITE_READONLY_CANTLOCK;
   }
@@ -2410,9 +2405,10 @@ int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
   if( rc==SQLITE_OK ){
     if( pSnapshot && memcmp(pSnapshot, &pWal->hdr, sizeof(WalIndexHdr))!=0 ){
       /* At this point the client has a lock on an aReadMark[] slot holding
-      ** a value equal to or smaller than pSnapshot->mxFrame.  Verify that
-      ** pSnapshot is still valid before continuing.  Reasons why pSnapshot
-      ** might no longer be valid:
+      ** a value equal to or smaller than pSnapshot->mxFrame, but pWal->hdr
+      ** is populated with the wal-index header corresponding to the head
+      ** of the wal file. Verify that pSnapshot is still valid before
+      ** continuing.  Reasons why pSnapshot might no longer be valid:
       **
       **    (1)  The WAL file has been reset since the snapshot was taken.
       **         In this case, the salt will have changed.
@@ -2426,10 +2422,22 @@ int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
       assert( pWal->readLock>0 );
       assert( pInfo->aReadMark[pWal->readLock]<=pSnapshot->mxFrame );
 
-      /* Check that the wal file has not been wrapped. Assuming it has not,
-      ** overwrite pWal->hdr with *pSnapshot and set *pChanged as appropriate
-      ** for opening the snapshot. Or, if the wal file has been wrapped
-      ** since pSnapshot was written, return SQLITE_BUSY_SNAPSHOT. */
+      /* It is possible that there is a checkpointer thread running 
+      ** concurrent with this code. If this is the case, it may be that the
+      ** checkpointer has already determined that it will checkpoint 
+      ** snapshot X, where X is later in the wal file than pSnapshot, but 
+      ** has not yet set the pInfo->nBackfillAttempted variable to indicate 
+      ** its intent. To avoid the race condition this leads to, ensure that
+      ** there is no checkpointer process by taking a shared CKPT lock 
+      ** before checking pInfo->nBackfillAttempted.  */
+      rc = walLockShared(pWal, WAL_CKPT_LOCK);
+
+      /* Check that the wal file has not been wrapped. Assuming that it has
+      ** not, also check that no checkpointer has attempted to checkpoint
+      ** any frames beyond pSnapshot->mxFrame. If either of these conditions
+      ** are true, return SQLTIE_BUSY_SNAPSHOT. Otherwise, overwrite pWal->hdr
+      ** with *pSnapshot and set *pChanged as appropriate for opening the
+      ** snapshot.  */
       if( memcmp(pSnapshot->aSalt, pWal->hdr.aSalt, sizeof(pWal->hdr.aSalt))==0
        && pSnapshot->mxFrame>=pInfo->nBackfillAttempted
       ){
@@ -2438,6 +2446,9 @@ int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
       }else{
         rc = SQLITE_BUSY_SNAPSHOT;
       }
+
+      /* Release the shared CKPT lock obtained above. */
+      walUnlockShared(pWal, WAL_CKPT_LOCK);
 
       if( rc!=SQLITE_OK ){
         sqlite3WalEndReadTransaction(pWal);
