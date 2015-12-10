@@ -3269,6 +3269,10 @@ int sqlite3WalHeapMemory(Wal *pWal){
 }
 
 #ifdef SQLITE_ENABLE_SNAPSHOT
+/* Create a snapshot object.  The content of a snapshot is opaque to
+** every other subsystem, so the WAL module can put whatever it needs
+** in the object.
+*/
 int sqlite3WalSnapshotGet(Wal *pWal, sqlite3_snapshot **ppSnapshot){
   int rc = SQLITE_OK;
   WalIndexHdr *pRet;
@@ -3286,6 +3290,8 @@ int sqlite3WalSnapshotGet(Wal *pWal, sqlite3_snapshot **ppSnapshot){
   return rc;
 }
 
+/* Try to open on pSnapshot when the next read-transaction starts
+*/
 void sqlite3WalSnapshotOpen(Wal *pWal, sqlite3_snapshot *pSnapshot){
   pWal->pSnapshot = (WalIndexHdr*)pSnapshot;
 }

@@ -4405,8 +4405,8 @@ unsigned int sqlite3_value_subtype(sqlite3_value*);
 ** previously obtained from [sqlite3_value_dup()].  ^If V is a NULL pointer
 ** then sqlite3_value_free(V) is a harmless no-op.
 */
-SQLITE_EXPERIMENTAL sqlite3_value *sqlite3_value_dup(const sqlite3_value*);
-SQLITE_EXPERIMENTAL void sqlite3_value_free(sqlite3_value*);
+sqlite3_value *sqlite3_value_dup(const sqlite3_value*);
+void sqlite3_value_free(sqlite3_value*);
 
 /*
 ** CAPI3REF: Obtain Aggregate Function Context
@@ -7851,85 +7851,109 @@ void sqlite3_stmt_scanstatus_reset(sqlite3_stmt*);
 /*
 ** CAPI3REF: Flush caches to disk mid-transaction
 **
-** If a write-transaction is open when this function is called, any dirty
+** ^If a write-transaction is open on [database connection] D when the
+** [sqlite3_db_cacheflush(D)] interface invoked, any dirty
 ** pages in the pager-cache that are not currently in use are written out 
 ** to disk. A dirty page may be in use if a database cursor created by an
 ** active SQL statement is reading from it, or if it is page 1 of a database
-** file (page 1 is always "in use"). Dirty pages are flushed for all
-** databases - "main", "temp" and any attached databases.
+** file (page 1 is always "in use").  ^The [sqlite3_db_cacheflush(D)]
+** interface flushes caches for all schemas - "main", "temp", and
+** any [attached] databases.
 **
-** If this function needs to obtain extra database locks before dirty pages 
-** can be flushed to disk, it does so. If said locks cannot be obtained 
+** ^If this function needs to obtain extra database locks before dirty pages 
+** can be flushed to disk, it does so. ^If those locks cannot be obtained 
 ** immediately and there is a busy-handler callback configured, it is invoked
-** in the usual manner. If the required lock still cannot be obtained, then
+** in the usual manner. ^If the required lock still cannot be obtained, then
 ** the database is skipped and an attempt made to flush any dirty pages
-** belonging to the next (if any) database. If any databases are skipped
+** belonging to the next (if any) database. ^If any databases are skipped
 ** because locks cannot be obtained, but no other error occurs, this
 ** function returns SQLITE_BUSY.
 **
-** If any other error occurs while flushing dirty pages to disk (for
+** ^If any other error occurs while flushing dirty pages to disk (for
 ** example an IO error or out-of-memory condition), then processing is
-** abandoned and an SQLite error code returned to the caller immediately.
+** abandoned and an SQLite [error code] is returned to the caller immediately.
 **
-** Otherwise, if no error occurs, SQLITE_OK is returned.
+** ^Otherwise, if no error occurs, [sqlite3_db_cacheflush()] returns SQLITE_OK.
 **
-** This function does not set the database handle error code or message
-** returned by the sqlite3_errcode() and sqlite3_errmsg() functions.
+** ^This function does not set the database handle error code or message
+** returned by the [sqlite3_errcode()] and [sqlite3_errmsg()] functions.
 */
 int sqlite3_db_cacheflush(sqlite3*);
 
 /*
-** CAPI3REF: Open old database snapshots.
+** CAPI3REF: Database Snapshot
+** KEYWORDS: {snapshot}
+** EXPERIMENTAL
 **
-** The second argument passed to sqlite3_snapshot_get() must be the name
-** of a database file attached to the database handle passed as the first.
-** The database handle must not have an open write transaction on the named 
-** database, which must be in wal mode. If the database handle does not
-** have an open read transaction on the named file, this function opens
-** one.
+** An instance of the snapshot object records the state of a [WAL mode]
+** database for some specific point in history.
 **
-** If successful, sqlite3_snapshot_get() sets *ppSnapshot to point to a new
-** snapshot handle that may be used with sqlite3_snapshot_open() and returns
-** SQLITE_OK.
+** In [WAL mode], multiple [database connections] that are open on the
+** same database file can each be reading a different historical version
+** of the database file.  When a [database connection] begins a read
+** transaction, that connection sees an unchanging copy of the database
+** as it existed for the point in time when the transaction first started.
+** Subsequent changes to the database from other connections are not seen
+** by the reader until a new read transaction is started.
 **
-** If the specified database does not exist, or is not a wal mode database, 
-** or the database handle does not have an open read transaction on it,
-** SQLITE_ERROR is returned. If any other error occurs, for example an IO 
-** error or an OOM condition, the corresponding SQLite error code is 
-** returned.
+** The sqlite3_snapshot object records state information about an historical
+** version of the database file so that it is possible to later open a new read
+** transaction that sees that historical version of the database rather than
+** the most recent version.
 **
-** Each successful call to sqlite3_snapshot_get() must be matched by a call
-** to sqlite3_snapshot_free() to delete the snapshot handle. Not doing so
-** is a memory leak. The results of using a snapshot handle after it has 
-** been deleted by sqlite3_snapshot_free() are undefined.
-**
-** Given a snapshot handle, the sqlite3_snapshot_open() API function may be
-** used to open a read transaction on the same database snapshot that was
-** being read when sqlite3_snapshot_get() was called to obtain it. The
-** combination of the first two arguments to sqlite3_snapshot_open() - a
-** database handle and the name (e.g. "main") of one of its attached 
-** databases - must refer to the same database file as that identified by 
-** the arguments passed to the sqlite3_snapshot_get() call. The database
-** handle must not have an open read or write transaction on this database
-** file, and must not be in auto-commit mode.
-**
-** An old database snapshot may only be opened if SQLite is able to 
-** determine that it is still valid. The only way for an application to 
-** guarantee that a snapshot remains valid is by holding an open 
-** read-transaction on it or on an older snapshot of the same database 
-** file. If SQLite cannot determine that the snapshot identified by the
-** snapshot handle, SQLITE_BUSY_SNAPSHOT is returned.
-**
-** Otherwise, if the read transaction is successfully opened, SQLITE_OK is
-** returned. If the named database is not in wal mode or if the database
-** handle already has an open read or write transaction on it, or if the 
-** database handle is in auto-commit mode, SQLITE_ERROR is returned. If
-** an OOM or IO error occurs, the associated SQLite error code is returned.
+** The constructor for this object is [sqlite3_snapshot_get()].  The
+** [sqlite3_snapshot_open()] method causes a fresh read transaction to refer
+** to an historical snapshot (if possible).  The destructor for 
+** sqlite3_snapshot objects is [sqlite3_snapshot_free()].
 */
 typedef struct sqlite3_snapshot sqlite3_snapshot;
-int sqlite3_snapshot_get(sqlite3*, const char*, sqlite3_snapshot **ppSnapshot);
-void sqlite3_snapshot_free(sqlite3_snapshot*);
-int sqlite3_snapshot_open(sqlite3*, const char*, sqlite3_snapshot*);
+
+/*
+** CAPI3REF: Record A Database Snapshot
+** EXPERIMENTAL
+**
+** ^The [sqlite3_snapshot_get(D,S,P)] interface attempts to make a
+** new [sqlite3_snapshot] object that records the current state of
+** schema S in database connection D.  ^On success, the
+** [sqlite3_snapshot_get(D,S,P)] interface writes a pointer to the newly
+** created [sqlite3_snapshot] object into *P and returns SQLITE_OK.
+** ^If schema S of [database connection] D is not a [WAL mode] database
+** that is in a read transaction, then [sqlite3_snapshot_get(D,S,P)]
+** leaves the *P value unchanged and returns an appropriate [error code].
+**
+** The [sqlite3_snapshot] object returned from a successful call to
+** [sqlite3_snapshot_get()] must be freed using [sqlite3_snapshot_free()]
+** to avoid a memory leak.
+*/
+SQLITE_EXPERIMENTAL int sqlite3_snapshot_get(sqlite3*,const char*,sqlite3_snapshot **ppSnapshot);
+
+/*
+** CAPI3REF: Start a read transaction on an historical snapshot
+** EXPERIMENTAL
+**
+** ^The [sqlite3_snapshot_open(D,S,P)] interface attempts to move the
+** read transaction that is currently open on schema S of
+** [database connection] D so that it refers to historical [snapshot] P.
+** ^The [sqlite3_snapshot_open()] interface returns SQLITE_OK on success
+** or an appropriate [error code] if it fails.
+**
+** ^In order to succeed, a call to [sqlite3_snapshot_open(D,S,P)] must be
+** the first operation, apart from other sqlite3_snapshot_open() calls,
+** following the [BEGIN] that starts a new read transaction.
+** ^A [snapshot] will fail to open if it has been overwritten by a 
+** [checkpoint].  
+*/
+SQLITE_EXPERIMENTAL int sqlite3_snapshot_open(sqlite3*,const char*,sqlite3_snapshot*);
+
+/*
+** CAPI3REF: Destroy a snapshot
+** EXPERIMENTAL
+**
+** ^The [sqlite3_snapshot_free(P)] interface destroys [sqlite3_snapshot] P.
+** The application must eventually free every [sqlite3_snapshot] object
+** using this routine to avoid a memory leak.
+*/
+SQLITE_EXPERIMENTAL void sqlite3_snapshot_free(sqlite3_snapshot*);
 
 /*
 ** Undo the hack that converts floating point types to integer for
