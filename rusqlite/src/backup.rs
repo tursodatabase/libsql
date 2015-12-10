@@ -27,6 +27,8 @@
 //! ```
 
 use std::marker::PhantomData;
+use std::path::Path;
+use std::ptr;
 
 use libc::c_int;
 use std::thread;
@@ -36,7 +38,92 @@ use ffi;
 
 use {DatabaseName, SqliteConnection, SqliteError, SqliteResult};
 
+impl SqliteConnection {
+    /// Back up the `name` database to the given destination path.
+    /// If `progress` is not `None`, it will be called periodically
+    /// until the backup completes.
+    ///
+    /// For more fine-grained control over the backup process (e.g.,
+    /// to sleep periodically during the backup or to back up to an
+    /// already-open database connection), see the `backup` module.
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if the destination path cannot be opened
+    /// or if the backup fails.
+    pub fn backup<P: AsRef<Path>>(&self,
+                                  name: DatabaseName,
+                                  dst_path: P,
+                                  progress: Option<fn(Progress)>)
+                                  -> SqliteResult<()> {
+        use self::StepResult::{More, Done, Busy, Locked};
+        let mut dst = try!(SqliteConnection::open(dst_path));
+        let backup = try!(Backup::new_with_names(self, name, &mut dst, DatabaseName::Main));
+
+        let mut r = More;
+        while r == More {
+            r = try!(backup.step(100));
+            if let Some(f) = progress {
+                f(backup.progress());
+            }
+        }
+
+        match r {
+            Done => Ok(()),
+            Busy => Err(SqliteError::from_handle(ptr::null_mut(), ffi::SQLITE_BUSY)),
+            Locked => Err(SqliteError::from_handle(ptr::null_mut(), ffi::SQLITE_LOCKED)),
+            More => unreachable!(),
+        }
+    }
+
+    /// Restore the given source path into the `name` database.
+    /// If `progress` is not `None`, it will be called periodically
+    /// until the restore completes.
+    ///
+    /// For more fine-grained control over the restore process (e.g.,
+    /// to sleep periodically during the restore or to restore from an
+    /// already-open database connection), see the `backup` module.
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if the destination path cannot be opened
+    /// or if the restore fails.
+    pub fn restore<P: AsRef<Path>>(&mut self,
+                                   name: DatabaseName,
+                                   src_path: P,
+                                   progress: Option<fn(Progress)>)
+                                   -> SqliteResult<()> {
+        use self::StepResult::{More, Done, Busy, Locked};
+        let src = try!(SqliteConnection::open(src_path));
+        let restore = try!(Backup::new_with_names(&src, DatabaseName::Main, self, name));
+
+        let mut r = More;
+        let mut busy_count = 0i32;
+        'restore_loop: while r == More || r == Busy {
+            r = try!(restore.step(100));
+            if let Some(f) = progress {
+                f(restore.progress());
+            }
+            if r == Busy {
+                busy_count += 1;
+                if busy_count >= 3 {
+                    break 'restore_loop;
+                }
+                thread::sleep(Duration::from_millis(100));
+            }
+        }
+
+        match r {
+            Done => Ok(()),
+            Busy => Err(SqliteError::from_handle(ptr::null_mut(), ffi::SQLITE_BUSY)),
+            Locked => Err(SqliteError::from_handle(ptr::null_mut(), ffi::SQLITE_LOCKED)),
+            More => unreachable!(),
+        }
+    }
+}
+
 /// Possible successful results of calling `Backup::step`.
+#[derive(Copy,Clone,Debug,PartialEq,Eq)]
 pub enum StepResult {
     /// The backup is complete.
     Done,
