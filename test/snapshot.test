@@ -246,5 +246,49 @@ do_test 4.2.4 {
   sqlite3_snapshot_free $snapshot
 } {}
 
+#-------------------------------------------------------------------------
+# Check that SQLITE_BUSY is returned if a checkpoint is running when
+# sqlite3_snapshot_open() is called.
+#
+reset_db
+db close
+testvfs tvfs
+sqlite3 db test.db -vfs tvfs
+
+do_execsql_test 5.1 {
+  PRAGMA journal_mode = wal;
+  CREATE TABLE x1(x, xx, xxx);
+  INSERT INTO x1 VALUES('z', 'zz', 'zzz');
+  BEGIN;
+    SELECT * FROM x1;
+} {wal z zz zzz}
+
+do_test 5.2 {
+  set ::snapshot [sqlite3_snapshot_get db main]
+  sqlite3 db2 test.db -vfs tvfs
+  execsql {
+    INSERT INTO x1 VALUES('a', 'aa', 'aaa');
+    COMMIT;
+  }
+} {}
+
+set t53 0
+proc write_callback {args} {
+breakpoint
+  do_test 5.3.[incr ::t53] {
+    execsql BEGIN
+    list [catch { sqlite3_snapshot_open db main $::snapshot } msg] $msg
+  } {1 SQLITE_BUSY}
+  catchsql COMMIT
+}
+
+tvfs filter xWrite
+tvfs script write_callback
+db2 eval { PRAGMA wal_checkpoint }
+db close
+db2 close
+tvfs delete
+sqlite3_snapshot_free $snapshot
+
 finish_test
 

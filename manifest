@@ -1,5 +1,5 @@
-C Add\stests\sto\sensure\sthat\san\ssqlite3_snapshot_open()\sclient\scannot\sbe\stricked\sinto\sreading\sa\scorrupt\ssnapshot\seven\sif\sanother\sprocess\sfails\smid-checkpoint.
-D 2015-12-10T18:06:21.050
+C Return\sSQLITE_BUSY\s(not\sSQLITE_BUSY_SNAPSHOT)\sif\ssqlite3_snapshot_open()\sfails\sto\sobtain\sthe\sshared\scheckpointer\slock.
+D 2015-12-10T19:11:34.013
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e8fdca1cb89a1b58b5f4d3a130ea9a3d28cb314d
@@ -415,7 +415,7 @@ F src/vdbesort.c a7ec02da4494c59dfd071126dd3726be5a11459d
 F src/vdbetrace.c 8befe829faff6d9e6f6e4dee5a7d3f85cc85f1a0
 F src/vtab.c 2a8b44aa372c33f6154208e7a7f6c44254549806
 F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
-F src/wal.c 32ee7dc4b689321d1650fba2e937ddc3bccfb06f
+F src/wal.c 94576d273e7feeae598188ebec641906a5b93a2f
 F src/wal.h 907943dfdef10b583e81906679a347e0ec6f1b1b
 F src/walker.c 2e14d17f592d176b6dc879c33fbdec4fbccaa2ba
 F src/where.c b18edbb9e5afabb77f4f27550c471c5c824e0fe7
@@ -1020,7 +1020,7 @@ F test/skipscan2.test d1d1450952b7275f0b0a3a981f0230532743951a
 F test/skipscan3.test ec5bab3f81c7038b43450e7b3062e04a198bdbb5
 F test/skipscan5.test 67817a4b6857c47e0e33ba3e506da6f23ef68de2
 F test/skipscan6.test 5866039d03a56f5bd0b3d172a012074a1d90a15b
-F test/snapshot.test 5631669a133c96aaa228f7233989f6d2d069fb02
+F test/snapshot.test 184c7ed21f204a5bd909246560edfac308467609
 F test/snapshot_fault.test 06472056c516be4610834de4688ea3357e8bde01
 F test/soak.test 0b5b6375c9f4110c828070b826b3b4b0bb65cd5f
 F test/softheap1.test 843cd84db9891b2d01b9ab64cef3e9020f98d087
@@ -1410,7 +1410,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8084eae0bc4f6513b1147fb890a6b2813f1c0a09
-R b7a6ff87063d246e894cc3fd88f3e89f
+P b908048b6cfa1ee2fe1f7a17bae475ddd9d0376c
+R 1311c20224293debd3e251bf775d0f5c
 U dan
-Z 1fe7db1e51b0eef5aa529631bb7527d1
+Z ae2ff3e1ce7fc4e495f8fcae9626097f
