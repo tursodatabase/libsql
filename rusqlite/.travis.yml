@@ -8,7 +8,11 @@ env:
 script:
     - cargo build
     - cargo test
-    - cargo doc --no-deps
+    - cargo test --features backup
+    - cargo test --features load_extension
+    - cargo test --features trace
+    - cargo test --features "backup load_extension trace"
+    - cargo doc --no-deps --features "backup load_extension trace"
 
 after_success: |
     [ $TRAVIS_BRANCH = master ] &&

@@ -82,6 +82,7 @@ pub mod types;
 mod transaction;
 #[cfg(feature = "load_extension")] mod load_extension_guard;
 #[cfg(feature = "trace")] pub mod trace;
+#[cfg(feature = "backup")] pub mod backup;
 
 /// A typedef of the result returned by many methods.
 pub type SqliteResult<T> = Result<T, SqliteError>;
@@ -140,6 +141,32 @@ fn path_to_cstring(p: &Path) -> SqliteResult<CString> {
         message: format!("Could not convert path {} to UTF-8 string", p.to_string_lossy()),
     }));
     str_to_cstring(s)
+}
+
+/// Name for a database within a SQLite connection.
+pub enum DatabaseName<'a> {
+    /// The main database.
+    Main,
+
+    /// The temporary database (e.g., any "CREATE TEMPORARY TABLE" tables).
+    Temp,
+
+    /// A database that has been attached via "ATTACH DATABASE ...".
+    Attached(&'a str),
+}
+
+// Currently DatabaseName is only used by the backup mod, so hide this (private)
+// impl to avoid dead code warnings.
+#[cfg(feature = "backup")]
+impl<'a> DatabaseName<'a> {
+    fn to_cstring(self) -> SqliteResult<CString> {
+        use self::DatabaseName::{Main, Temp, Attached};
+        match self {
+            Main        => str_to_cstring("main"),
+            Temp        => str_to_cstring("temp"),
+            Attached(s) => str_to_cstring(s),
+        }
+    }
 }
 
 /// A connection to a SQLite database.
