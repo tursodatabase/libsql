@@ -82,6 +82,7 @@ pub use load_extension_guard::SqliteLoadExtensionGuard;
 
 pub mod types;
 mod transaction;
+mod named_params;
 #[cfg(feature = "load_extension")]mod load_extension_guard;
 #[cfg(feature = "trace")]pub mod trace;
 #[cfg(feature = "backup")]pub mod backup;
@@ -790,29 +791,32 @@ impl<'conn> SqliteStatement<'conn> {
     pub fn execute(&mut self, params: &[&ToSql]) -> SqliteResult<c_int> {
         unsafe {
             try!(self.bind_parameters(params));
+            self.execute_()
+        }
+    }
 
-            let r = ffi::sqlite3_step(self.stmt);
-            ffi::sqlite3_reset(self.stmt);
-            match r {
-                ffi::SQLITE_DONE => {
-                    if self.column_count != 0 {
-                        Err(SqliteError {
-                            code: ffi::SQLITE_MISUSE,
-                            message: "Unexpected column count - did you mean to call query?"
-                            .to_string(),
-                        })
-                    } else {
-                        Ok(self.conn.changes())
-                    }
-                }
-                ffi::SQLITE_ROW => {
+    unsafe fn execute_(&mut self) -> SqliteResult<c_int> {
+        let r = ffi::sqlite3_step(self.stmt);
+        ffi::sqlite3_reset(self.stmt);
+        match r {
+            ffi::SQLITE_DONE => {
+                if self.column_count != 0 {
                     Err(SqliteError {
-                        code: r,
-                        message: "Unexpected row result - did you mean to call query?".to_string(),
+                        code: ffi::SQLITE_MISUSE,
+                        message: "Unexpected column count - did you mean to call query?"
+                        .to_string(),
                     })
+                } else {
+                    Ok(self.conn.changes())
                 }
-                _ => Err(self.conn.decode_result(r).unwrap_err()),
             }
+            ffi::SQLITE_ROW => {
+                Err(SqliteError {
+                    code: r,
+                    message: "Unexpected row result - did you mean to call query?".to_string(),
+                })
+            }
+            _ => Err(self.conn.decode_result(r).unwrap_err()),
         }
     }
 
