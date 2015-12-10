@@ -84,7 +84,8 @@ impl<'a, 'b> Backup<'a, 'b> {
     /// Will return `Err` if the underlying `sqlite3_backup_init` call returns
     /// `NULL`.
     pub fn new(from: &'a SqliteConnection,
-               to: &'b mut SqliteConnection) -> SqliteResult<Backup<'a, 'b>> {
+               to: &'b mut SqliteConnection)
+               -> SqliteResult<Backup<'a, 'b>> {
         Backup::new_with_names(from, DatabaseName::Main, to, DatabaseName::Main)
     }
 
@@ -97,25 +98,28 @@ impl<'a, 'b> Backup<'a, 'b> {
     ///
     /// Will return `Err` if the underlying `sqlite3_backup_init` call returns
     /// `NULL`.
-    pub fn new_with_names(from: &'a SqliteConnection, from_name: DatabaseName,
-                          to: &'b mut SqliteConnection, to_name: DatabaseName)
-        -> SqliteResult<Backup<'a, 'b>>
-    {
+    pub fn new_with_names(from: &'a SqliteConnection,
+                          from_name: DatabaseName,
+                          to: &'b mut SqliteConnection,
+                          to_name: DatabaseName)
+                          -> SqliteResult<Backup<'a, 'b>> {
         let to_name = try!(to_name.to_cstring());
         let from_name = try!(from_name.to_cstring());
 
         let to_db = to.db.borrow_mut().db;
 
         let b = unsafe {
-            let b = ffi::sqlite3_backup_init(to_db, to_name.as_ptr(),
-                                             from.db.borrow_mut().db, from_name.as_ptr());
+            let b = ffi::sqlite3_backup_init(to_db,
+                                             to_name.as_ptr(),
+                                             from.db.borrow_mut().db,
+                                             from_name.as_ptr());
             if b.is_null() {
                 return Err(SqliteError::from_handle(to_db, ffi::sqlite3_errcode(to_db)));
             }
             b
         };
 
-        Ok(Backup{
+        Ok(Backup {
             phantom_from: PhantomData,
             phantom_to: PhantomData,
             b: b,
@@ -125,7 +129,7 @@ impl<'a, 'b> Backup<'a, 'b> {
     /// Gets the progress of the backup as of the last call to `step`.
     pub fn progress(&self) -> Progress {
         unsafe {
-            Progress{
+            Progress {
                 remaining: ffi::sqlite3_backup_remaining(self.b),
                 pagecount: ffi::sqlite3_backup_pagecount(self.b),
             }
@@ -147,16 +151,18 @@ impl<'a, 'b> Backup<'a, 'b> {
     pub fn step(&self, num_pages: c_int) -> SqliteResult<StepResult> {
         use self::StepResult::{Done, More, Busy, Locked};
 
-        let rc = unsafe {
-            ffi::sqlite3_backup_step(self.b, num_pages)
-        };
+        let rc = unsafe { ffi::sqlite3_backup_step(self.b, num_pages) };
         match rc {
-            ffi::SQLITE_DONE   => Ok(Done),
-            ffi::SQLITE_OK     => Ok(More),
-            ffi::SQLITE_BUSY   => Ok(Busy),
+            ffi::SQLITE_DONE => Ok(Done),
+            ffi::SQLITE_OK => Ok(More),
+            ffi::SQLITE_BUSY => Ok(Busy),
             ffi::SQLITE_LOCKED => Ok(Locked),
-            rc =>
-                Err(SqliteError{ code: rc, message: ffi::code_to_str(rc).into() })
+            rc => {
+                Err(SqliteError {
+                    code: rc,
+                    message: ffi::code_to_str(rc).into(),
+                })
+            }
         }
     }
 
@@ -175,8 +181,11 @@ impl<'a, 'b> Backup<'a, 'b> {
     /// # Failure
     ///
     /// Will return `Err` if any of the calls to `step` return `Err`.
-    pub fn run_to_completion(&self, pages_per_step: c_int, pause_between_pages: Duration,
-                             progress: Option<fn(Progress)>) -> SqliteResult<()> {
+    pub fn run_to_completion(&self,
+                             pages_per_step: c_int,
+                             pause_between_pages: Duration,
+                             progress: Option<fn(Progress)>)
+                             -> SqliteResult<()> {
         use self::StepResult::{Done, More, Busy, Locked};
 
         assert!(pages_per_step > 0, "pages_per_step must be positive");
@@ -207,6 +216,7 @@ mod test {
     use super::Backup;
 
     #[test]
+    #[cfg_attr(rustfmt, rustfmt_skip)]
     fn test_backup() {
         let src = SqliteConnection::open_in_memory().unwrap();
         let sql = "BEGIN;
@@ -237,6 +247,7 @@ mod test {
     }
 
     #[test]
+    #[cfg_attr(rustfmt, rustfmt_skip)]
     fn test_backup_temp() {
         let src = SqliteConnection::open_in_memory().unwrap();
         let sql = "BEGIN;
@@ -248,8 +259,11 @@ mod test {
         let mut dst = SqliteConnection::open_in_memory().unwrap();
 
         {
-            let backup = Backup::new_with_names(&src, DatabaseName::Temp, &mut dst, DatabaseName::Main)
-                .unwrap();
+            let backup = Backup::new_with_names(&src,
+                                                DatabaseName::Temp,
+                                                &mut dst,
+                                                DatabaseName::Main)
+                             .unwrap();
             backup.step(-1).unwrap();
         }
 
@@ -259,8 +273,11 @@ mod test {
         src.execute_batch("INSERT INTO foo VALUES(43)").unwrap();
 
         {
-            let backup = Backup::new_with_names(&src, DatabaseName::Temp, &mut dst, DatabaseName::Main)
-                .unwrap();
+            let backup = Backup::new_with_names(&src,
+                                                DatabaseName::Temp,
+                                                &mut dst,
+                                                DatabaseName::Main)
+                             .unwrap();
             backup.run_to_completion(5, Duration::from_millis(250), None).unwrap();
         }
 
@@ -269,6 +286,7 @@ mod test {
     }
 
     #[test]
+    #[cfg_attr(rustfmt, rustfmt_skip)]
     fn test_backup_attached() {
         let src = SqliteConnection::open_in_memory().unwrap();
         let sql = "ATTACH DATABASE ':memory:' AS my_attached;
@@ -281,8 +299,11 @@ mod test {
         let mut dst = SqliteConnection::open_in_memory().unwrap();
 
         {
-            let backup = Backup::new_with_names(&src, DatabaseName::Attached("my_attached"),
-                                                &mut dst, DatabaseName::Main).unwrap();
+            let backup = Backup::new_with_names(&src,
+                                                DatabaseName::Attached("my_attached"),
+                                                &mut dst,
+                                                DatabaseName::Main)
+                             .unwrap();
             backup.step(-1).unwrap();
         }
 
@@ -292,8 +313,11 @@ mod test {
         src.execute_batch("INSERT INTO foo VALUES(43)").unwrap();
 
         {
-            let backup = Backup::new_with_names(&src, DatabaseName::Attached("my_attached"),
-                                                &mut dst, DatabaseName::Main).unwrap();
+            let backup = Backup::new_with_names(&src,
+                                                DatabaseName::Attached("my_attached"),
+                                                &mut dst,
+                                                DatabaseName::Main)
+                             .unwrap();
             backup.run_to_completion(5, Duration::from_millis(250), None).unwrap();
         }
 
