@@ -1,5 +1,5 @@
-C Have\ssqlite3_snapshot_open()\savoid\sa\srace\scondition\sby\staking\sa\sshared\sCHECKPOINTER\slock\swhile\schecking\spInfo->nBackfillAttempted.
-D 2015-12-10T15:45:15.186
+C Add\stests\sto\sensure\sthat\san\ssqlite3_snapshot_open()\sclient\scannot\sbe\stricked\sinto\sreading\sa\scorrupt\ssnapshot\seven\sif\sanother\sprocess\sfails\smid-checkpoint.
+D 2015-12-10T18:06:21.050
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e8fdca1cb89a1b58b5f4d3a130ea9a3d28cb314d
@@ -1020,7 +1020,8 @@ F test/skipscan2.test d1d1450952b7275f0b0a3a981f0230532743951a
 F test/skipscan3.test ec5bab3f81c7038b43450e7b3062e04a198bdbb5
 F test/skipscan5.test 67817a4b6857c47e0e33ba3e506da6f23ef68de2
 F test/skipscan6.test 5866039d03a56f5bd0b3d172a012074a1d90a15b
-F test/snapshot.test f91d907460e7acc01d531834d068e1215ccac7e4
+F test/snapshot.test 5631669a133c96aaa228f7233989f6d2d069fb02
+F test/snapshot_fault.test 06472056c516be4610834de4688ea3357e8bde01
 F test/soak.test 0b5b6375c9f4110c828070b826b3b4b0bb65cd5f
 F test/softheap1.test 843cd84db9891b2d01b9ab64cef3e9020f98d087
 F test/sort.test 3f492e5b7be1d3f756728d2ff6edf4f6091e84cb
@@ -1409,7 +1410,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3a18526fc2253658dad84c5e600481c8a62efe40
-R 7bb35c02cb12ea2ff304c777229238a5
+P 8084eae0bc4f6513b1147fb890a6b2813f1c0a09
+R b7a6ff87063d246e894cc3fd88f3e89f
 U dan
-Z 0b9f17bd41106b46c64f60d98c85b1e3
+Z 1fe7db1e51b0eef5aa529631bb7527d1
