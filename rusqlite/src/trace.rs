@@ -35,7 +35,7 @@ pub unsafe fn config_log(callback: Option<fn(c_int, &str)>) -> SqliteResult<()> 
         Some(f) => {
             let p_arg: *mut c_void = mem::transmute(f);
             ffi::sqlite3_config(ffi::SQLITE_CONFIG_LOG, Some(log_callback), p_arg)
-        },
+        }
         None => {
             let nullptr: *mut c_void = ptr::null_mut();
             ffi::sqlite3_config(ffi::SQLITE_CONFIG_LOG, nullptr, nullptr)
@@ -43,7 +43,10 @@ pub unsafe fn config_log(callback: Option<fn(c_int, &str)>) -> SqliteResult<()> 
     };
 
     if rc != ffi::SQLITE_OK {
-        return Err(SqliteError{ code: rc, message: "sqlite3_config(SQLITE_CONFIG_LOG, ...)".to_string() });
+        return Err(SqliteError {
+            code: rc,
+            message: "sqlite3_config(SQLITE_CONFIG_LOG, ...)".to_string(),
+        });
     }
 
     Ok(())
@@ -64,7 +67,7 @@ impl SqliteConnection {
     /// There can only be a single tracer defined for each database connection.
     /// Setting a new tracer clears the old one.
     pub fn trace(&mut self, trace_fn: Option<fn(&str)>) {
-        extern "C" fn trace_callback (p_arg: *mut c_void, z_sql: *const c_char) {
+        extern "C" fn trace_callback(p_arg: *mut c_void, z_sql: *const c_char) {
             let trace_fn: fn(&str) = unsafe { mem::transmute(p_arg) };
             let c_slice = unsafe { CStr::from_ptr(z_sql).to_bytes() };
             if let Ok(s) = str::from_utf8(c_slice) {
@@ -74,8 +77,12 @@ impl SqliteConnection {
 
         let c = self.db.borrow_mut();
         match trace_fn {
-            Some(f) => unsafe { ffi::sqlite3_trace(c.db(), Some(trace_callback), mem::transmute(f)); },
-            None    => unsafe { ffi::sqlite3_trace(c.db(), None, ptr::null_mut()); },
+            Some(f) => unsafe {
+                ffi::sqlite3_trace(c.db(), Some(trace_callback), mem::transmute(f));
+            },
+            None => unsafe {
+                ffi::sqlite3_trace(c.db(), None, ptr::null_mut());
+            },
         }
     }
 
@@ -84,7 +91,9 @@ impl SqliteConnection {
     /// There can only be a single profiler defined for each database connection.
     /// Setting a new profiler clears the old one.
     pub fn profile(&mut self, profile_fn: Option<fn(&str, Duration)>) {
-        extern "C" fn profile_callback(p_arg: *mut c_void, z_sql: *const c_char, nanoseconds: u64) {
+        extern "C" fn profile_callback(p_arg: *mut c_void,
+                                       z_sql: *const c_char,
+                                       nanoseconds: u64) {
             let profile_fn: fn(&str, Duration) = unsafe { mem::transmute(p_arg) };
             let c_slice = unsafe { CStr::from_ptr(z_sql).to_bytes() };
             if let Ok(s) = str::from_utf8(c_slice) {
@@ -98,8 +107,10 @@ impl SqliteConnection {
 
         let c = self.db.borrow_mut();
         match profile_fn {
-            Some(f) => unsafe { ffi::sqlite3_profile(c.db(), Some(profile_callback), mem::transmute(f)) },
-            None    => unsafe { ffi::sqlite3_profile(c.db(), None, ptr::null_mut()) },
+            Some(f) => unsafe {
+                ffi::sqlite3_profile(c.db(), Some(profile_callback), mem::transmute(f))
+            },
+            None => unsafe { ffi::sqlite3_profile(c.db(), None, ptr::null_mut()) },
         };
     }
 }

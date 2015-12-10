@@ -1,9 +1,7 @@
 use {SqliteResult, SqliteConnection};
 
-pub use SqliteTransactionBehavior::{
-    SqliteTransactionDeferred,
-    SqliteTransactionImmediate,
-    SqliteTransactionExclusive};
+pub use SqliteTransactionBehavior::{SqliteTransactionDeferred, SqliteTransactionImmediate,
+                                    SqliteTransactionExclusive};
 
 /// Options for transaction behavior. See [BEGIN
 /// TRANSACTION](http://www.sqlite.org/lang_transaction.html) for details.
@@ -46,14 +44,20 @@ pub struct SqliteTransaction<'conn> {
 impl<'conn> SqliteTransaction<'conn> {
     /// Begin a new transaction. Cannot be nested; see `savepoint` for nested transactions.
     pub fn new(conn: &SqliteConnection,
-               behavior: SqliteTransactionBehavior) -> SqliteResult<SqliteTransaction> {
+               behavior: SqliteTransactionBehavior)
+               -> SqliteResult<SqliteTransaction> {
         let query = match behavior {
             SqliteTransactionDeferred => "BEGIN DEFERRED",
             SqliteTransactionImmediate => "BEGIN IMMEDIATE",
             SqliteTransactionExclusive => "BEGIN EXCLUSIVE",
         };
         conn.execute_batch(query).map(|_| {
-            SqliteTransaction{ conn: conn, depth: 0, commit: false, finished: false }
+            SqliteTransaction {
+                conn: conn,
+                depth: 0,
+                commit: false,
+                finished: false,
+            }
         })
     }
 
@@ -85,8 +89,11 @@ impl<'conn> SqliteTransaction<'conn> {
     /// ```
     pub fn savepoint<'a>(&'a self) -> SqliteResult<SqliteTransaction<'a>> {
         self.conn.execute_batch("SAVEPOINT sp").map(|_| {
-            SqliteTransaction{
-                conn: self.conn, depth: self.depth + 1, commit: false, finished: false
+            SqliteTransaction {
+                conn: self.conn,
+                depth: self.depth + 1,
+                commit: false,
+                finished: false,
             }
         })
     }
@@ -118,7 +125,11 @@ impl<'conn> SqliteTransaction<'conn> {
 
     fn commit_(&mut self) -> SqliteResult<()> {
         self.finished = true;
-        self.conn.execute_batch(if self.depth == 0 { "COMMIT" } else { "RELEASE sp" })
+        self.conn.execute_batch(if self.depth == 0 {
+            "COMMIT"
+        } else {
+            "RELEASE sp"
+        })
     }
 
     /// A convenience method which consumes and rolls back a transaction.
@@ -128,7 +139,11 @@ impl<'conn> SqliteTransaction<'conn> {
 
     fn rollback_(&mut self) -> SqliteResult<()> {
         self.finished = true;
-        self.conn.execute_batch(if self.depth == 0 { "ROLLBACK" } else { "ROLLBACK TO sp" })
+        self.conn.execute_batch(if self.depth == 0 {
+            "ROLLBACK"
+        } else {
+            "ROLLBACK TO sp"
+        })
     }
 
     /// Consumes the transaction, committing or rolling back according to the current setting
@@ -181,7 +196,8 @@ mod test {
         }
         {
             let _tx = db.transaction().unwrap();
-            assert_eq!(2i32, db.query_row("SELECT SUM(x) FROM foo", &[], |r| r.get(0)).unwrap());
+            assert_eq!(2i32,
+                       db.query_row("SELECT SUM(x) FROM foo", &[], |r| r.get(0)).unwrap());
         }
     }
 
@@ -200,7 +216,8 @@ mod test {
         }
         {
             let _tx = db.transaction().unwrap();
-            assert_eq!(2i32, db.query_row("SELECT SUM(x) FROM foo", &[], |r| r.get(0)).unwrap());
+            assert_eq!(2i32,
+                       db.query_row("SELECT SUM(x) FROM foo", &[], |r| r.get(0)).unwrap());
         }
     }
 
@@ -228,6 +245,7 @@ mod test {
                 }
             }
         }
-        assert_eq!(3i32, db.query_row("SELECT SUM(x) FROM foo", &[], |r| r.get(0)).unwrap());
+        assert_eq!(3i32,
+                   db.query_row("SELECT SUM(x) FROM foo", &[], |r| r.get(0)).unwrap());
     }
 }

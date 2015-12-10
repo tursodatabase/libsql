@@ -21,7 +21,7 @@ impl<'conn> SqliteLoadExtensionGuard<'conn> {
     /// Attempt to enable loading extensions. Loading extensions will be disabled when this
     /// guard goes out of scope. Cannot be meaningfully nested.
     pub fn new(conn: &SqliteConnection) -> SqliteResult<SqliteLoadExtensionGuard> {
-        conn.load_extension_enable().map(|_| SqliteLoadExtensionGuard{ conn: conn })
+        conn.load_extension_enable().map(|_| SqliteLoadExtensionGuard { conn: conn })
     }
 }
 
