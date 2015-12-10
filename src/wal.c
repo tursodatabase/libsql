@@ -332,7 +332,7 @@ struct WalIndexHdr {
 ** nBackfillAttempted is the largest value of nBackfill that a checkpoint
 ** has attempted to achieve.  Normally nBackfill==nBackfillAtempted, however
 ** the nBackfillAttempted is set before any backfilling is done and the
-** nBackfill is only set afte rall backfilling completes.  So if a checkpoint
+** nBackfill is only set after all backfilling completes.  So if a checkpoint
 ** crashes, nBackfillAttempted might be larger than nBackfill.  The
 ** WalIndexHdr.mxFrame must never be less than nBackfillAttempted.
 **
