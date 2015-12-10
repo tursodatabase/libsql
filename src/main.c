@@ -3891,10 +3891,11 @@ int sqlite3_snapshot_get(
   iDb = sqlite3FindDbName(db, zDb);
   if( iDb==0 || iDb>1 ){
     Btree *pBt = db->aDb[iDb].pBt;
-    if( 0!=sqlite3BtreeIsInReadTrans(pBt) 
-     && 0==sqlite3BtreeIsInTrans(pBt)
-    ){
-      rc = sqlite3PagerSnapshotGet(sqlite3BtreePager(pBt), ppSnapshot);
+    if( 0==sqlite3BtreeIsInTrans(pBt) ){
+      rc = sqlite3BtreeBeginTrans(pBt, 0);
+      if( rc==SQLITE_OK ){
+        rc = sqlite3PagerSnapshotGet(sqlite3BtreePager(pBt), ppSnapshot);
+      }
     }
   }
 

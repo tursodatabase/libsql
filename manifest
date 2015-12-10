@@ -1,5 +1,5 @@
-C Add\stests\sto\ssnapshot.test.
-D 2015-12-10T19:44:34.237
+C Update\sthe\ssqlite3_snapshot_get()\sAPI\sso\sthat\sif\sthe\scaller\sdoes\snot\shave\san\sopen\sread\stransaction\son\sthe\snamed\sdatabase,\sone\sis\sautomatically\sopened.
+D 2015-12-10T20:03:08.672
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e8fdca1cb89a1b58b5f4d3a130ea9a3d28cb314d
@@ -304,7 +304,7 @@ F src/insert.c e1d20ae8979e25519c2670233718676bedcfedc9
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/loadext.c 84996d7d70a605597d79c1f1d7b2012a5fd34f2b
-F src/main.c 3dc84d9bd722fb16c196a867d39acf86b8f72b70
+F src/main.c 2f33510a6a392c606fe64964e695e55ad124242f
 F src/malloc.c 337bbe9c7d436ef9b7d06b5dd10bbfc8f3025972
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 6919bcf12f221868ea066eec27e579fed95ce98b
@@ -341,7 +341,7 @@ F src/resolve.c a83b41104e6ff69855d03cd0aaa09e93927ec39f
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c f8fded11fc443a9f5a73cc5db069d06b34460e2f
 F src/shell.c abbc74ea43dbf2f306ea18282d666683fb5efab2
-F src/sqlite.h.in 19dea4862ccfcc1a733d0fd18d4744b02a505ac6
+F src/sqlite.h.in fa2c9d85cb144fad389864f9e40c4f59336d31ed
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
 F src/sqliteInt.h 5caacf37a776f9d6178e519cb0b5248ca22a3828
@@ -1020,7 +1020,7 @@ F test/skipscan2.test d1d1450952b7275f0b0a3a981f0230532743951a
 F test/skipscan3.test ec5bab3f81c7038b43450e7b3062e04a198bdbb5
 F test/skipscan5.test 67817a4b6857c47e0e33ba3e506da6f23ef68de2
 F test/skipscan6.test 5866039d03a56f5bd0b3d172a012074a1d90a15b
-F test/snapshot.test 62983ac46f05b898d5317a8d1b91a7bd8a355988
+F test/snapshot.test bfcf728577d674d85b7da4bc69786ecafd2acebe
 F test/snapshot_fault.test 06472056c516be4610834de4688ea3357e8bde01
 F test/soak.test 0b5b6375c9f4110c828070b826b3b4b0bb65cd5f
 F test/softheap1.test 843cd84db9891b2d01b9ab64cef3e9020f98d087
@@ -1410,7 +1410,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5343060bcc6c99029f731f8020d2cba3f405f207
-R cf3f8934dbec5c5165c0ac82e4a8ba25
+P f3b743623a4501833478c8a86c0922931955aeb6
+R 50bb5d50d586d96f69cac8095fa25e56
 U dan
-Z 7e377350f279588c8392c3c3e03a4f17
+Z 07077a92d084d80e6cdd7a283dbdc283
