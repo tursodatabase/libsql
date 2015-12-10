@@ -274,7 +274,6 @@ do_test 5.2 {
 
 set t53 0
 proc write_callback {args} {
-breakpoint
   do_test 5.3.[incr ::t53] {
     execsql BEGIN
     list [catch { sqlite3_snapshot_open db main $::snapshot } msg] $msg
@@ -288,6 +287,34 @@ db2 eval { PRAGMA wal_checkpoint }
 db close
 db2 close
 tvfs delete
+sqlite3_snapshot_free $snapshot
+
+#-------------------------------------------------------------------------
+# Test that sqlite3_snapshot_get() may be called immediately after
+# "BEGIN; PRAGMA user_version;". And that sqlite3_snapshot_open() may
+# be called after opening the db handle and running the script
+# "PRAGMA user_version; BEGIN".
+reset_db
+do_execsql_test 6.1 {
+  PRAGMA journal_mode = wal;
+  CREATE TABLE x1(x, xx, xxx);
+  INSERT INTO x1 VALUES('z', 'zz', 'zzz');
+  BEGIN;
+    PRAGMA user_version;
+} {wal 0}
+do_test 6.2 {
+  set ::snapshot [sqlite3_snapshot_get db main]
+  execsql {
+    INSERT INTO x1 VALUES('a', 'aa', 'aaa');
+    COMMIT;
+  }
+} {}
+do_test 6.3 {
+  sqlite3 db2 test.db 
+  db2 eval "PRAGMA user_version ; BEGIN"
+  sqlite3_snapshot_open db2 main $::snapshot
+  db2 eval { SELECT * FROM x1 }
+} {z zz zzz}
 sqlite3_snapshot_free $snapshot
 
 finish_test

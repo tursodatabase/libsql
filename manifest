@@ -1,5 +1,5 @@
-C Return\sSQLITE_BUSY\s(not\sSQLITE_BUSY_SNAPSHOT)\sif\ssqlite3_snapshot_open()\sfails\sto\sobtain\sthe\sshared\scheckpointer\slock.
-D 2015-12-10T19:11:34.013
+C Add\stests\sto\ssnapshot.test.
+D 2015-12-10T19:44:34.237
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e8fdca1cb89a1b58b5f4d3a130ea9a3d28cb314d
@@ -1020,7 +1020,7 @@ F test/skipscan2.test d1d1450952b7275f0b0a3a981f0230532743951a
 F test/skipscan3.test ec5bab3f81c7038b43450e7b3062e04a198bdbb5
 F test/skipscan5.test 67817a4b6857c47e0e33ba3e506da6f23ef68de2
 F test/skipscan6.test 5866039d03a56f5bd0b3d172a012074a1d90a15b
-F test/snapshot.test 184c7ed21f204a5bd909246560edfac308467609
+F test/snapshot.test 62983ac46f05b898d5317a8d1b91a7bd8a355988
 F test/snapshot_fault.test 06472056c516be4610834de4688ea3357e8bde01
 F test/soak.test 0b5b6375c9f4110c828070b826b3b4b0bb65cd5f
 F test/softheap1.test 843cd84db9891b2d01b9ab64cef3e9020f98d087
@@ -1410,7 +1410,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b908048b6cfa1ee2fe1f7a17bae475ddd9d0376c
-R 1311c20224293debd3e251bf775d0f5c
+P 5343060bcc6c99029f731f8020d2cba3f405f207
+R cf3f8934dbec5c5165c0ac82e4a8ba25
 U dan
-Z ae2ff3e1ce7fc4e495f8fcae9626097f
+Z 7e377350f279588c8392c3c3e03a4f17
