@@ -278,16 +278,16 @@ mod test {
     }
 
     extern "C" fn regexp_free(raw: *mut c_void) {
-        unsafe {
-            Box::from_raw(raw);
-        }
+        let _: Box<Regex> = unsafe {
+            Box::from_raw(mem::transmute(raw))
+        };
     }
 
     extern "C" fn regexp(ctx: *mut sqlite3_context, _: c_int, argv: *mut *mut sqlite3_value) {
         unsafe {
             let mut re_ptr = ffi::sqlite3_get_auxdata(ctx, 0) as *const Regex;
-            let mut re_opt = None;
-            if re_ptr.is_null() {
+            let need_re = re_ptr.is_null();
+            if need_re {
                 let raw = String::parameter_value(*argv.offset(0));
                 if raw.is_err() {
                     let msg = CString::new(format!("{}", raw.unwrap_err())).unwrap();
@@ -300,9 +300,8 @@ mod test {
                     ffi::sqlite3_result_error(ctx, msg.as_ptr(), -1);
                     return
                 }
-                let re = comp.unwrap();
-                re_ptr = &re as *const Regex;
-                re_opt = Some(re);
+                let re = Box::new(comp.unwrap());
+                re_ptr = Box::into_raw(re);
             }
 
             let text = String::parameter_value(*argv.offset(1));
@@ -311,8 +310,8 @@ mod test {
                 (*re_ptr).is_match(text.as_ref()).set_result(ctx);
             }
 
-            if re_opt.is_some() {
-                ffi::sqlite3_set_auxdata(ctx, 0, mem::transmute(Box::into_raw(Box::new(re_opt.unwrap()))), Some(regexp_free));
+            if need_re {
+                ffi::sqlite3_set_auxdata(ctx, 0, mem::transmute(re_ptr), Some(regexp_free));
             }
         }
     }
