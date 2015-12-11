@@ -10,12 +10,15 @@ use types::ToSql;
 impl SqliteConnection {
     /// Convenience method to prepare and execute a single SQL statement with named parameter(s).
     ///
+    /// On success, returns the number of rows that were changed or inserted or deleted (via
+    /// `sqlite3_changes`).
+    ///
     /// ## Example
     ///
     /// ```rust,no_run
     /// # use rusqlite::{SqliteConnection, SqliteResult};
     /// fn insert(conn: &SqliteConnection) -> SqliteResult<i32> {
-    ///   conn.execute_named("INSERT INTO test (id, name, flag) VALUES (:id, :name, :flag)", &[(":name", &"one")])
+    ///     conn.execute_named("INSERT INTO test (name) VALUES (:name)", &[(":name", &"one")])
     /// }
     /// ```
     ///
@@ -27,7 +30,8 @@ impl SqliteConnection {
         self.prepare(sql).and_then(|mut stmt| stmt.execute_named(params))
     }
 
-    /// Convenience method to execute a query with named parameter(s) that is expected to return a single row.
+    /// Convenience method to execute a query with named parameter(s) that is expected to return
+    /// a single row.
     ///
     /// If the query returns more than one row, all rows except the first are ignored.
     ///
@@ -75,7 +79,7 @@ impl<'conn> SqliteStatement<'conn> {
     ///
     /// # Failure
     ///
-    /// Return None if `name` is invalid (NulError) or if no matching parameter is found.
+    /// Return None if `name` is invalid or if no matching parameter is found.
     pub fn parameter_index(&self, name: &str) -> Option<i32> {
         unsafe {
             CString::new(name).ok().and_then(|c_name| {
@@ -98,8 +102,8 @@ impl<'conn> SqliteStatement<'conn> {
     /// ```rust,no_run
     /// # use rusqlite::{SqliteConnection, SqliteResult};
     /// fn insert(conn: &SqliteConnection) -> SqliteResult<i32> {
-    ///   let mut stmt = try!(conn.prepare("INSERT INTO test (id, name, flag) VALUES (:id, :name, :flag)"));
-    ///   return stmt.execute_named(&[(":name", &"one")]);
+    ///     let mut stmt = try!(conn.prepare("INSERT INTO test (name) VALUES (:name)"));
+    ///     stmt.execute_named(&[(":name", &"one")])
     /// }
     /// ```
     ///
@@ -114,19 +118,20 @@ impl<'conn> SqliteStatement<'conn> {
         }
     }
 
-    /// Execute the prepared statement with named parameter(s), returning an iterator over the resulting rows.
+    /// Execute the prepared statement with named parameter(s), returning an iterator over the
+    /// resulting rows.
     ///
     /// ## Example
     ///
     /// ```rust,no_run
     /// # use rusqlite::{SqliteConnection, SqliteResult, SqliteRows};
     /// fn query(conn: &SqliteConnection) -> SqliteResult<()> {
-    ///   let mut stmt = try!(conn.prepare("SELECT * FROM test where name = :name"));
-    ///   let mut rows = try!(stmt.query_named(&[(":name", &"one")]));
-    ///   for row in rows {
-    ///   // ...
-    ///   }
-    ///   return Ok(())
+    ///     let mut stmt = try!(conn.prepare("SELECT * FROM test where name = :name"));
+    ///     let mut rows = try!(stmt.query_named(&[(":name", &"one")]));
+    ///     for row in rows {
+    ///         // ...
+    ///     }
+    ///     Ok(())
     /// }
     /// ```
     ///
