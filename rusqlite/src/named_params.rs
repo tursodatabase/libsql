@@ -147,6 +147,25 @@ impl<'conn> SqliteStatement<'conn> {
     }
 
     unsafe fn bind_named_parameters(&mut self, params: &[(&str, &ToSql)]) -> SqliteResult<()> {
+        // Always check that the number of parameters is correct.
+        assert!(params.len() as c_int == ffi::sqlite3_bind_parameter_count(self.stmt),
+                "incorrect number of parameters to query(): expected {}, got {}",
+                ffi::sqlite3_bind_parameter_count(self.stmt),
+                params.len());
+
+        // In debug, also sanity check that we got distinct parameter names.
+        debug_assert!({
+                          use std::collections::HashSet;
+
+                          let mut s = HashSet::with_capacity(params.len());
+                          for &(name, _) in params {
+                              s.insert(name);
+                          }
+
+                          s.len() == params.len()
+                      },
+                      "named parameters must be unique");
+
         for &(name, value) in params {
             let i = try!(self.parameter_index(name).ok_or(SqliteError {
                 code: ffi::SQLITE_MISUSE,
@@ -186,8 +205,7 @@ mod test {
                    INTEGER)";
         db.execute_batch(sql).unwrap();
 
-        let mut stmt = db.prepare("INSERT INTO test (id, name, flag) VALUES (:id, :name, :flag)")
-                         .unwrap();
+        let mut stmt = db.prepare("INSERT INTO test (name) VALUES (:name)").unwrap();
         stmt.execute_named(&[(":name", &"one")]).unwrap();
 
         assert_eq!(1i32,
@@ -206,5 +224,24 @@ mod test {
 
         let mut stmt = db.prepare("SELECT * FROM test where name = :name").unwrap();
         stmt.query_named(&[(":name", &"one")]).unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_panic_on_incorrect_number_of_parameters() {
+        let db = SqliteConnection::open_in_memory().unwrap();
+
+        let mut stmt = db.prepare("SELECT 1 WHERE 1 = :one AND 2 = :two").unwrap();
+        let _ = stmt.query_named(&[(":one", &1i32)]);
+    }
+
+    #[test]
+    #[cfg(debug_assertions)]
+    #[should_panic]
+    fn test_debug_panic_on_incorrect_parameter_names() {
+        let db = SqliteConnection::open_in_memory().unwrap();
+
+        let mut stmt = db.prepare("SELECT 1 WHERE 1 = :one AND 2 = :two").unwrap();
+        let _ = stmt.query_named(&[(":one", &1i32), (":one", &2i32)]);
     }
 }
