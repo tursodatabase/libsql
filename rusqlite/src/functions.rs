@@ -1,6 +1,7 @@
 //! Create or redefine SQL functions
 use std::ffi::CStr;
 use std::mem;
+use std::ptr;
 use std::slice;
 use std::str;
 use libc::{c_int, c_double, c_char, c_void};
@@ -281,6 +282,10 @@ impl SqliteConnection {
     {
         self.db.borrow_mut().create_scalar_function(fn_name, n_arg, deterministic, x_func)
     }
+
+    pub fn remove_function(&self, fn_name: &str, n_arg: c_int) -> SqliteResult<()> {
+        self.db.borrow_mut().remove_function(fn_name, n_arg)
+    }
 }
 
 impl InnerSqliteConnection {
@@ -337,6 +342,22 @@ impl InnerSqliteConnection {
         };
         self.decode_result(r)
     }
+
+    fn remove_function(&mut self, fn_name: &str, n_arg: c_int) -> SqliteResult<()> {
+        let c_name = try!(str_to_cstring(fn_name));
+        let r = unsafe {
+            ffi::sqlite3_create_function_v2(self.db(),
+                                            c_name.as_ptr(),
+                                            n_arg,
+                                            ffi::SQLITE_UTF8,
+                                            ptr::null_mut(),
+                                            None,
+                                            None,
+                                            None,
+                                            None)
+        };
+        self.decode_result(r)
+    }
 }
 
 #[cfg(test)]
@@ -364,6 +385,18 @@ mod test {
         let result = db.query_row("SELECT half(6)", &[], |r| r.get::<f64>(0));
 
         assert_eq!(3f64, result.unwrap());
+    }
+
+    #[test]
+    fn test_remove_function() {
+        let db = SqliteConnection::open_in_memory().unwrap();
+        db.create_scalar_function("half", 1, true, half).unwrap();
+        let result = db.query_row("SELECT half(6)", &[], |r| r.get::<f64>(0));
+        assert_eq!(3f64, result.unwrap());
+
+        db.remove_function("half", 1).unwrap();
+        let result = db.query_row("SELECT half(6)", &[], |r| r.get::<f64>(0));
+        assert!(result.is_err());
     }
 
     // This implementation of a regexp scalar function uses SQLite's auxilliary data
