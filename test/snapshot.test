@@ -14,6 +14,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+ifcapable !snapshot {finish_test; return}
 set testprefix snapshot
 
 #-------------------------------------------------------------------------
@@ -337,4 +338,3 @@ do_test 6.3 {
 sqlite3_snapshot_free $snapshot
 
 finish_test
-

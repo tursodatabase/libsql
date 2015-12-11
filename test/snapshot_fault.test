@@ -14,6 +14,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+ifcapable !snapshot {finish_test; return}
 set testprefix snapshot_fault
 
 #-------------------------------------------------------------------------
@@ -161,4 +162,3 @@ do_faultsim_test 3.0 -prep {
 
 
 finish_test
-
