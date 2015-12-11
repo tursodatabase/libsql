@@ -1,4 +1,3 @@
-// use std::collections::HashMap;
 use std::ffi::CString;
 use libc::c_int;
 
@@ -62,19 +61,6 @@ impl SqliteConnection {
 }
 
 impl<'conn> SqliteStatement<'conn> {
-    // pub fn parameter_names(&self) -> HashMap<String, i32> {
-    // let n = unsafe { ffi::sqlite3_bind_parameter_count(self.stmt) };
-    // let mut index_by_name = HashMap::with_capacity(n as usize);
-    // for i in 1..n+1 {
-    // let c_name = unsafe { ffi::sqlite3_bind_parameter_name(self.stmt, i) };
-    // if !c_name.is_null() {
-    // let c_slice = unsafe { CStr::from_ptr(c_name).to_bytes() };
-    // index_by_name.insert(str::from_utf8(c_slice).unwrap().to_string(), n);
-    // }
-    // }
-    // index_by_name
-    // }
-
     /// Return the index of an SQL parameter given its name.
     ///
     /// # Failure
