@@ -328,7 +328,6 @@ static int lookupName(
         }
         if( iCol>=pTab->nCol && sqlite3IsRowid(zCol) && VisibleRowid(pTab) ){
           /* IMP: R-51414-32910 */
-          /* IMP: R-44911-55124 */
           iCol = -1;
         }
         if( iCol<pTab->nCol ){
@@ -363,7 +362,7 @@ static int lookupName(
      && VisibleRowid(pMatch->pTab)
     ){
       cnt = 1;
-      pExpr->iColumn = -1;     /* IMP: R-44911-55124 */
+      pExpr->iColumn = -1;
       pExpr->affinity = SQLITE_AFF_INTEGER;
     }
 

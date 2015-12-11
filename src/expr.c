@@ -853,6 +853,7 @@ static int dupedExprSize(Expr *p, int flags){
 */
 static Expr *exprDup(sqlite3 *db, Expr *p, int flags, u8 **pzBuffer){
   Expr *pNew = 0;                      /* Value to return */
+  assert( flags==0 || flags==EXPRDUP_REDUCE );
   if( p ){
     const int isReduced = (flags&EXPRDUP_REDUCE);
     u8 *zAlloc;
@@ -889,7 +890,9 @@ static Expr *exprDup(sqlite3 *db, Expr *p, int flags, u8 **pzBuffer){
       }else{
         int nSize = exprStructSize(p);
         memcpy(zAlloc, p, nSize);
-        memset(&zAlloc[nSize], 0, EXPR_FULLSIZE-nSize);
+        if( nSize<EXPR_FULLSIZE ){ 
+          memset(&zAlloc[nSize], 0, EXPR_FULLSIZE-nSize);
+        }
       }
 
       /* Set the EP_Reduced, EP_TokenOnly, and EP_Static flags appropriately. */
@@ -979,6 +982,7 @@ static With *withDup(sqlite3 *db, With *p){
 ** part of the in-memory representation of the database schema.
 */
 Expr *sqlite3ExprDup(sqlite3 *db, Expr *p, int flags){
+  assert( flags==0 || flags==EXPRDUP_REDUCE );
   return exprDup(db, p, flags, 0);
 }
 ExprList *sqlite3ExprListDup(sqlite3 *db, ExprList *p, int flags){

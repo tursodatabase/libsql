@@ -7548,8 +7548,7 @@ static int balance_nonroot(
       ** overflow cell), we can skip updating the pointer map entries.  */
       if( iOld>=nNew
        || pNew->pgno!=aPgno[iOld]
-       || pCell<aOld
-       || pCell>=&aOld[usableSize]
+       || !SQLITE_WITHIN(pCell,aOld,&aOld[usableSize])
       ){
         if( !leafCorrection ){
           ptrmapPut(pBt, get4byte(pCell), PTRMAP_BTREE, pNew->pgno, &rc);

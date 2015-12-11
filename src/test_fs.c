@@ -202,7 +202,10 @@ static int fsdirBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
 */
 static int fsdirOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
   FsdirCsr *pCur;
-  pCur = (FsdirCsr*)sqlite3_malloc(sizeof(FsdirCsr));
+  /* Allocate an extra 256 bytes because it is undefined how big dirent.d_name
+  ** is and we need enough space.  Linux provides plenty already, but
+  ** Solaris only provides one byte. */
+  pCur = (FsdirCsr*)sqlite3_malloc(sizeof(FsdirCsr)+256);
   if( pCur==0 ) return SQLITE_NOMEM;
   memset(pCur, 0, sizeof(FsdirCsr));
   *ppCursor = &pCur->base;

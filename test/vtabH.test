@@ -125,7 +125,7 @@ if {1} {
       }
       return $res
     } else {
-      return [exec ls -U /]
+      return [string map {/ {}} [glob /*]]
     }
   }
 
@@ -214,5 +214,3 @@ if {1} {
 
 
 finish_test
-
-
