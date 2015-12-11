@@ -1,15 +1,15 @@
 //! Create or redefine SQL functions
-use std::ffi::{CStr};
+use std::ffi::CStr;
 use std::mem;
 use std::ptr;
 use std::str;
 use libc::{c_int, c_double, c_char};
 
 use ffi;
-pub use ffi::sqlite3_context as sqlite3_context;
-pub use ffi::sqlite3_value as sqlite3_value;
-pub use ffi::sqlite3_value_type as sqlite3_value_type;
-pub use ffi::sqlite3_value_numeric_type as sqlite3_value_numeric_type;
+pub use ffi::sqlite3_context;
+pub use ffi::sqlite3_value;
+pub use ffi::sqlite3_value_type;
+pub use ffi::sqlite3_value_numeric_type;
 
 use types::Null;
 
@@ -49,12 +49,16 @@ impl<'a> ToResult for &'a str {
         let length = self.len();
         if length > ::std::i32::MAX as usize {
             ffi::sqlite3_result_error_toobig(ctx);
-            return
+            return;
         }
         match str_to_cstring(self) {
-            Ok(c_str) => ffi::sqlite3_result_text(ctx, c_str.as_ptr(), length as c_int,
-                                                ffi::SQLITE_TRANSIENT()),
-            Err(_)    => ffi::sqlite3_result_error_code(ctx, ffi::SQLITE_MISUSE), // TODO sqlite3_result_error
+            Ok(c_str) => {
+                ffi::sqlite3_result_text(ctx,
+                                         c_str.as_ptr(),
+                                         length as c_int,
+                                         ffi::SQLITE_TRANSIENT())
+            }
+            Err(_) => ffi::sqlite3_result_error_code(ctx, ffi::SQLITE_MISUSE), // TODO sqlite3_result_error
         }
     }
 }
@@ -69,10 +73,12 @@ impl<'a> ToResult for &'a [u8] {
     unsafe fn set_result(&self, ctx: *mut sqlite3_context) {
         if self.len() > ::std::i32::MAX as usize {
             ffi::sqlite3_result_error_toobig(ctx);
-            return
+            return;
         }
-        ffi::sqlite3_result_blob(
-            ctx, mem::transmute(self.as_ptr()), self.len() as c_int, ffi::SQLITE_TRANSIENT())
+        ffi::sqlite3_result_blob(ctx,
+                                 mem::transmute(self.as_ptr()),
+                                 self.len() as c_int,
+                                 ffi::SQLITE_TRANSIENT())
     }
 }
 
@@ -155,7 +161,8 @@ impl FromValue for c_double {
     }
 
     unsafe fn parameter_has_valid_sqlite_type(v: *mut sqlite3_value) -> bool {
-        sqlite3_value_numeric_type(v) == ffi::SQLITE_FLOAT || sqlite3_value_numeric_type(v) == ffi::SQLITE_INTEGER
+        sqlite3_value_numeric_type(v) == ffi::SQLITE_FLOAT ||
+        sqlite3_value_numeric_type(v) == ffi::SQLITE_INTEGER
     }
 }
 
@@ -167,9 +174,13 @@ impl FromValue for String {
         } else {
             let c_slice = CStr::from_ptr(c_text as *const c_char).to_bytes();
             let utf8_str = str::from_utf8(c_slice);
-            utf8_str
-                .map(|s| { s.to_string() })
-                .map_err(|e| { SqliteError{code: 0, message: e.to_string()} })
+            utf8_str.map(|s| s.to_string())
+                    .map_err(|e| {
+                        SqliteError {
+                            code: 0,
+                            message: e.to_string(),
+                        }
+                    })
         }
     }
 
@@ -184,7 +195,8 @@ impl FromValue for Vec<u8> {
         let c_blob = ffi::sqlite3_value_blob(v);
         let len = ffi::sqlite3_value_bytes(v);
 
-        assert!(len >= 0, "unexpected negative return from sqlite3_value_bytes");
+        assert!(len >= 0,
+                "unexpected negative return from sqlite3_value_bytes");
         let len = len as usize;
 
         Ok(from_raw_parts(mem::transmute(c_blob), len).to_vec())
@@ -205,8 +217,7 @@ impl<T: FromValue> FromValue for Option<T> {
     }
 
     unsafe fn parameter_has_valid_sqlite_type(v: *mut sqlite3_value) -> bool {
-        sqlite3_value_type(v) == ffi::SQLITE_NULL ||
-            T::parameter_has_valid_sqlite_type(v)
+        sqlite3_value_type(v) == ffi::SQLITE_NULL || T::parameter_has_valid_sqlite_type(v)
     }
 }
 
@@ -214,25 +225,45 @@ impl<T: FromValue> FromValue for Option<T> {
 // sqlite3_get_auxdata
 // sqlite3_set_auxdata
 
-pub type ScalarFunc =
-    Option<extern "C" fn (ctx: *mut sqlite3_context, argc: c_int, argv: *mut *mut sqlite3_value)>;
+pub type ScalarFunc = Option<extern "C" fn(ctx: *mut sqlite3_context,
+                                           argc: c_int,
+                                           argv: *mut *mut sqlite3_value)
+                                          >;
 
 impl SqliteConnection {
     // TODO pApp
-    pub fn create_scalar_function(&self, fn_name: &str, n_arg: c_int, deterministic: bool, x_func: ScalarFunc) -> SqliteResult<()> {
+    pub fn create_scalar_function(&self,
+                                  fn_name: &str,
+                                  n_arg: c_int,
+                                  deterministic: bool,
+                                  x_func: ScalarFunc)
+                                  -> SqliteResult<()> {
         self.db.borrow_mut().create_scalar_function(fn_name, n_arg, deterministic, x_func)
     }
 }
 
 impl InnerSqliteConnection {
-    pub fn create_scalar_function(&mut self, fn_name: &str, n_arg: c_int, deterministic: bool, x_func: ScalarFunc) -> SqliteResult<()> {
+    pub fn create_scalar_function(&mut self,
+                                  fn_name: &str,
+                                  n_arg: c_int,
+                                  deterministic: bool,
+                                  x_func: ScalarFunc)
+                                  -> SqliteResult<()> {
         let c_name = try!(str_to_cstring(fn_name));
         let mut flags = ffi::SQLITE_UTF8;
         if deterministic {
             flags |= ffi::SQLITE_DETERMINISTIC;
         }
         let r = unsafe {
-            ffi::sqlite3_create_function_v2(self.db(), c_name.as_ptr(), n_arg, flags, ptr::null_mut(), x_func, None, None, None)
+            ffi::sqlite3_create_function_v2(self.db(),
+                                            c_name.as_ptr(),
+                                            n_arg,
+                                            flags,
+                                            ptr::null_mut(),
+                                            x_func,
+                                            None,
+                                            None,
+                                            None)
         };
         self.decode_result(r)
     }
@@ -243,16 +274,16 @@ mod test {
     extern crate regex;
 
     use std::boxed::Box;
-    use std::ffi::{CString};
+    use std::ffi::CString;
     use std::mem;
     use libc::{c_int, c_double, c_void};
     use self::regex::Regex;
 
     use SqliteConnection;
     use ffi;
-    use ffi::sqlite3_context as sqlite3_context;
-    use ffi::sqlite3_value as sqlite3_value;
-    use functions::{FromValue,ToResult};
+    use ffi::sqlite3_context;
+    use ffi::sqlite3_value;
+    use functions::{FromValue, ToResult};
 
     extern "C" fn half(ctx: *mut sqlite3_context, _: c_int, argv: *mut *mut sqlite3_value) {
         unsafe {
@@ -270,17 +301,13 @@ mod test {
     fn test_half() {
         let db = SqliteConnection::open_in_memory().unwrap();
         db.create_scalar_function("half", 1, true, Some(half)).unwrap();
-        let result = db.query_row("SELECT half(6)",
-                                           &[],
-                                           |r| r.get::<f64>(0));
+        let result = db.query_row("SELECT half(6)", &[], |r| r.get::<f64>(0));
 
         assert_eq!(3f64, result.unwrap());
     }
 
     extern "C" fn regexp_free(raw: *mut c_void) {
-        let _: Box<Regex> = unsafe {
-            Box::from_raw(mem::transmute(raw))
-        };
+        let _: Box<Regex> = unsafe { Box::from_raw(mem::transmute(raw)) };
     }
 
     extern "C" fn regexp(ctx: *mut sqlite3_context, _: c_int, argv: *mut *mut sqlite3_value) {
@@ -292,13 +319,13 @@ mod test {
                 if raw.is_err() {
                     let msg = CString::new(format!("{}", raw.unwrap_err())).unwrap();
                     ffi::sqlite3_result_error(ctx, msg.as_ptr(), -1);
-                    return
+                    return;
                 }
                 let comp = Regex::new(raw.unwrap().as_ref());
                 if comp.is_err() {
                     let msg = CString::new(format!("{}", comp.unwrap_err())).unwrap();
                     ffi::sqlite3_result_error(ctx, msg.as_ptr(), -1);
-                    return
+                    return;
                 }
                 let re = Box::new(comp.unwrap());
                 re_ptr = Box::into_raw(re);
@@ -321,8 +348,8 @@ mod test {
         let db = SqliteConnection::open_in_memory().unwrap();
         db.create_scalar_function("regexp", 2, true, Some(regexp)).unwrap();
         let result = db.query_row("SELECT regexp('l.s[aeiouy]', 'lisa')",
-                                           &[],
-                                           |r| r.get::<bool>(0));
+                                  &[],
+                                  |r| r.get::<bool>(0));
 
         assert_eq!(true, result.unwrap());
     }
