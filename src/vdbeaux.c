@@ -1859,6 +1859,7 @@ void sqlite3VdbeMakeReady(
     nMem = 10;
   }
   memset(zCsr, 0, nFree);
+  nFree -= (zCsr - (u8*)0)&7;
   zCsr += (zCsr - (u8*)0)&7;
   assert( EIGHT_BYTE_ALIGNMENT(zCsr) );
   p->expired = 0;

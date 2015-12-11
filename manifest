@@ -1,5 +1,5 @@
-C Move\spointer\srange\scomparisons\sinto\sa\smacro,\swhere\sthey\scan\sbe\sdealt\swith\sin\sa\smore\sportable\sway.
-D 2015-12-10T17:59:50.898
+C Fix\sa\smemory\sallocation\sbug\sintroduced\slast\sweek\sby\scheck-in\n[a9e819082ba].\s\sThe\sbug\sonly\sappears\son\ssystems\swhere\sthe\ssize\sof\sa\sstructure\nis\snot\salways\sa\smultiple\sof\s8\s-\swhich\sin\spractice\smeans\sonly\son\s32-bit\s\nwindows\ssystems.
+D 2015-12-11T04:11:17.453
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e8fdca1cb89a1b58b5f4d3a130ea9a3d28cb314d
@@ -408,7 +408,7 @@ F src/vdbe.c 4d75375fa8bf911aa76ab8383d6f7eea0dec0fda
 F src/vdbe.h efb7a8c1459e31f3ea4377824c6a7e4cb5068637
 F src/vdbeInt.h 75c2e82ee3357e9210c06474f8d9bdf12c81105d
 F src/vdbeapi.c 020681b943e77766b32ae1cddf86d7831b7374ca
-F src/vdbeaux.c e07b2c8d14064f2094d20d002a2a1082913bbd2a
+F src/vdbeaux.c 864b9ec26adca0562a32fb8dee7b0b366304bfd9
 F src/vdbeblob.c fdc4a81605ae7a35ae94a55bd768b66d6be16f15
 F src/vdbemem.c fdd1578e47bea61390d472de53c565781d81e045
 F src/vdbesort.c a7ec02da4494c59dfd071126dd3726be5a11459d
@@ -1408,8 +1408,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6a5dfe85b519b920ce8c842057767a8793d92236 ad3124c834b080aaaf24934d6f08b3601ac3ae53
-R 75f5679e87cfa35a03ab3e382e1e81d9
-T +closed ad3124c834b080aaaf24934d6f08b3601ac3ae53
+P 05bc4f920ce23da48d1da6cd36a956fd6fd7c862
+R bb8ff31fbee90cb95998ef6668cbcbeb
 U drh
-Z de945a489cd52e6561e642ec19b99047
+Z dbc67560cb8111f117bbc951b94851d2
