@@ -1,4 +1,55 @@
-//! Create or redefine SQL functions
+//! Create or redefine SQL functions.
+//!
+//! # Example
+//!
+//! Adding a `regexp` function to a connection in which compiled regular expressions
+//! are cached in a `HashMap`. For an alternative implementation that uses SQLite's
+//! [Function Auxilliary Data](https://www.sqlite.org/c3ref/get_auxdata.html) interface
+//! to avoid recompiling regular expressions, see the unit tests for this module.
+//!
+//! ```rust
+//! extern crate libsqlite3_sys;
+//! extern crate rusqlite;
+//! extern crate regex;
+//!
+//! use rusqlite::{SqliteConnection, SqliteError, SqliteResult};
+//! use std::collections::HashMap;
+//! use regex::Regex;
+//!
+//! fn add_regexp_function(db: &SqliteConnection) -> SqliteResult<()> {
+//!     let mut cached_regexes = HashMap::new();
+//!     db.create_scalar_function("regexp", 2, true, move |ctx| {
+//!         let regex_s = try!(ctx.get::<String>(0));
+//!         let entry = cached_regexes.entry(regex_s.clone());
+//!         let regex = {
+//!             use std::collections::hash_map::Entry::{Occupied, Vacant};
+//!             match entry {
+//!                 Occupied(occ) => occ.into_mut(),
+//!                 Vacant(vac) => {
+//!                     let r = try!(Regex::new(&regex_s).map_err(|e| SqliteError {
+//!                         code: libsqlite3_sys::SQLITE_ERROR,
+//!                         message: format!("Invalid regular expression: {}", e),
+//!                     }));
+//!                     vac.insert(r)
+//!                 }
+//!             }
+//!         };
+//!
+//!         let text = try!(ctx.get::<String>(1));
+//!         Ok(regex.is_match(&text))
+//!     })
+//! }
+//!
+//! fn main() {
+//!     let db = SqliteConnection::open_in_memory().unwrap();
+//!     add_regexp_function(&db).unwrap();
+//!
+//!     let is_match = db.query_row("SELECT regexp('[aeiou]*', 'aaaaeeeiii')", &[],
+//!                                 |row| row.get::<bool>(0)).unwrap();
+//!
+//!     assert!(is_match);
+//! }
+//! ```
 use std::ffi::CStr;
 use std::mem;
 use std::ptr;
@@ -118,7 +169,7 @@ pub trait FromValue: Sized {
 
     /// FromValue types can implement this method and use sqlite3_value_type to check that
     /// the type reported by SQLite matches a type suitable for Self. This method is used
-    /// by `???` to confirm that the parameter contains a valid type before
+    /// by `Context::get` to confirm that the parameter contains a valid type before
     /// attempting to retrieve the value.
     unsafe fn parameter_has_valid_sqlite_type(_: *mut sqlite3_value) -> bool {
         true
@@ -226,16 +277,25 @@ unsafe extern "C" fn free_boxed_value<T>(p: *mut c_void) {
     let _: Box<T> = Box::from_raw(mem::transmute(p));
 }
 
+/// Context is a wrapper for the SQLite function evaluation context.
 pub struct Context<'a> {
     ctx: *mut sqlite3_context,
     args: &'a [*mut sqlite3_value],
 }
 
 impl<'a> Context<'a> {
+    /// Returns the number of arguments to the function.
     pub fn len(&self) -> usize {
         self.args.len()
     }
 
+    /// Returns the `idx`th argument as a `T`.
+    ///
+    /// # Failure
+    ///
+    /// Will panic if `idx` is greater than or equal to `self.len()`.
+    ///
+    /// Will return Err if the underlying SQLite type cannot be converted to a `T`.
     pub fn get<T: FromValue>(&self, idx: usize) -> SqliteResult<T> {
         let arg = self.args[idx];
         unsafe {
@@ -250,6 +310,9 @@ impl<'a> Context<'a> {
         }
     }
 
+    /// Sets the auxilliary data associated with a particular parameter. See
+    /// https://www.sqlite.org/c3ref/get_auxdata.html for a discussion of
+    /// this feature, or the unit tests of this module for an example.
     pub fn set_aux<T>(&self, arg: c_int, value: T) {
         let boxed = Box::into_raw(Box::new(value));
         unsafe {
@@ -260,6 +323,14 @@ impl<'a> Context<'a> {
         };
     }
 
+    /// Gets the auxilliary data that was associated with a given parameter
+    /// via `set_aux`. Returns `None` if no data has been associated.
+    ///
+    /// # Unsafety
+    ///
+    /// This function is unsafe as there is no guarantee that the type `T`
+    /// requested matches the type `T` that was provided to `set_aux`. The
+    /// types must be identical.
     pub unsafe fn get_aux<T>(&self, arg: c_int) -> Option<&T> {
         let p = ffi::sqlite3_get_auxdata(self.ctx, arg) as *mut T;
         if p.is_null() {
@@ -271,6 +342,36 @@ impl<'a> Context<'a> {
 }
 
 impl SqliteConnection {
+    /// Attach a user-defined scalar function to this database connection.
+    ///
+    /// `fn_name` is the name the function will be accessible from SQL.
+    /// `n_arg` is the number of arguments to the function. Use `-1` for a variable
+    /// number. If the function always returns the same value given the same
+    /// input, `deterministic` should be `true`.
+    ///
+    /// The function will remain available until the connection is closed or
+    /// until it is explicitly removed via `remove_function`.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use rusqlite::{SqliteConnection, SqliteResult};
+    /// # type c_double = f64;
+    /// fn scalar_function_example(db: SqliteConnection) -> SqliteResult<()> {
+    ///     try!(db.create_scalar_function("halve", 1, true, |ctx| {
+    ///         let value = try!(ctx.get::<c_double>(0));
+    ///         Ok(value / 2f64)
+    ///     }));
+    ///
+    ///     let six_halved = try!(db.query_row("SELECT halve(6)", &[], |r| r.get::<f64>(0)));
+    ///     assert_eq!(six_halved, 3f64);
+    ///     Ok(())
+    /// }
+    /// ```
+    ///
+    /// # Failure
+    ///
+    /// Will return Err if the function could not be attached to the connection.
     pub fn create_scalar_function<F, T>(&self,
                                         fn_name: &str,
                                         n_arg: c_int,
@@ -283,6 +384,14 @@ impl SqliteConnection {
         self.db.borrow_mut().create_scalar_function(fn_name, n_arg, deterministic, x_func)
     }
 
+    /// Removes a user-defined function from this database connection.
+    ///
+    /// `fn_name` and `n_arg` should match the name and number of arguments
+    /// given to `create_scalar_function`.
+    ///
+    /// # Failure
+    ///
+    /// Will return Err if the function could not be removed.
     pub fn remove_function(&self, fn_name: &str, n_arg: c_int) -> SqliteResult<()> {
         self.db.borrow_mut().remove_function(fn_name, n_arg)
     }
