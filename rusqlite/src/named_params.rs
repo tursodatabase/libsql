@@ -88,7 +88,7 @@ impl<'conn> SqliteStatement<'conn> {
     /// Will return `Err` if binding parameters fails, the executed statement returns rows (in
     /// which case `query` should be used instead), or the underling SQLite call fails.
     pub fn execute_named(&mut self, params: &[(&str, &ToSql)]) -> SqliteResult<c_int> {
-        try!(self.bind_named_parameters(params));
+        try!(self.bind_parameters_named(params));
         unsafe {
             self.execute_()
         }
@@ -118,13 +118,13 @@ impl<'conn> SqliteStatement<'conn> {
                            params: &[(&str, &ToSql)])
                            -> SqliteResult<SqliteRows<'a>> {
         self.reset_if_needed();
-        try!(self.bind_named_parameters(params));
+        try!(self.bind_parameters_named(params));
 
         self.needs_reset = true;
         Ok(SqliteRows::new(self))
     }
 
-    fn bind_named_parameters(&mut self, params: &[(&str, &ToSql)]) -> SqliteResult<()> {
+    fn bind_parameters_named(&mut self, params: &[(&str, &ToSql)]) -> SqliteResult<()> {
         // Always check that the number of parameters is correct.
         assert!(params.len() as c_int == unsafe { ffi::sqlite3_bind_parameter_count(self.stmt) },
                 "incorrect number of parameters to query(): expected {}, got {}",
