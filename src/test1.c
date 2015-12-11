@@ -2269,6 +2269,94 @@ static int vfsCurrentTimeInt64(
   return TCL_OK;
 }
 
+#ifdef SQLITE_ENABLE_SNAPSHOT
+/*
+** Usage: sqlite3_snapshot_get DB DBNAME
+*/
+static int test_snapshot_get(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int rc;
+  sqlite3 *db;
+  char *zName;
+  sqlite3_snapshot *pSnapshot = 0;
+
+  if( objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB DBNAME");
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  zName = Tcl_GetString(objv[2]);
+
+  rc = sqlite3_snapshot_get(db, zName, &pSnapshot);
+  if( rc!=SQLITE_OK ){
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
+    return TCL_ERROR;
+  }else{
+    char zBuf[100];
+    if( sqlite3TestMakePointerStr(interp, zBuf, pSnapshot) ) return TCL_ERROR;
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(zBuf, -1));
+  }
+  return TCL_OK;
+}
+#endif /* SQLITE_ENABLE_SNAPSHOT */
+
+#ifdef SQLITE_ENABLE_SNAPSHOT
+/*
+** Usage: sqlite3_snapshot_open DB DBNAME SNAPSHOT
+*/
+static int test_snapshot_open(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int rc;
+  sqlite3 *db;
+  char *zName;
+  sqlite3_snapshot *pSnapshot;
+
+  if( objc!=4 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB DBNAME SNAPSHOT");
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  zName = Tcl_GetString(objv[2]);
+  pSnapshot = (sqlite3_snapshot*)sqlite3TestTextToPtr(Tcl_GetString(objv[3]));
+
+  rc = sqlite3_snapshot_open(db, zName, pSnapshot);
+  if( rc!=SQLITE_OK ){
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
+    return TCL_ERROR;
+  }
+  return TCL_OK;
+}
+#endif /* SQLITE_ENABLE_SNAPSHOT */
+
+#ifdef SQLITE_ENABLE_SNAPSHOT
+/*
+** Usage: sqlite3_snapshot_free SNAPSHOT
+*/
+static int test_snapshot_free(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_snapshot *pSnapshot;
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "SNAPSHOT");
+    return TCL_ERROR;
+  }
+  pSnapshot = (sqlite3_snapshot*)sqlite3TestTextToPtr(Tcl_GetString(objv[1]));
+  sqlite3_snapshot_free(pSnapshot);
+  return TCL_OK;
+}
+#endif /* SQLITE_ENABLE_SNAPSHOT */
+
 /*
 ** Usage:  sqlite3_next_stmt  DB  STMT
 **
@@ -7083,6 +7171,11 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_config_sqllog",         test_config_sqllog,   0 },
 #endif
      { "vfs_current_time_int64",           vfsCurrentTimeInt64,   0 },
+#ifdef SQLITE_ENABLE_SNAPSHOT
+     { "sqlite3_snapshot_get", test_snapshot_get, 0 },
+     { "sqlite3_snapshot_open", test_snapshot_open, 0 },
+     { "sqlite3_snapshot_free", test_snapshot_free, 0 },
+#endif
   };
   static int bitmask_size = sizeof(Bitmask)*8;
   static int longdouble_size = sizeof(LONGDOUBLE_TYPE);
