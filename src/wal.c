@@ -2442,6 +2442,7 @@ int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
         if( !memcmp(pSnapshot->aSalt, pWal->hdr.aSalt, sizeof(pWal->hdr.aSalt))
          && pSnapshot->mxFrame>=pInfo->nBackfillAttempted
         ){
+          assert( pWal->readLock>0 );
           memcpy(&pWal->hdr, pSnapshot, sizeof(WalIndexHdr));
           *pChanged = bChanged;
         }else{
