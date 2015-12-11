@@ -2419,7 +2419,7 @@ int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
       */
       volatile WalCkptInfo *pInfo = walCkptInfo(pWal);
 
-      assert( pWal->readLock>0 );
+      assert( pWal->readLock>0 || pWal->hdr.mxFrame==0 );
       assert( pInfo->aReadMark[pWal->readLock]<=pSnapshot->mxFrame );
 
       /* It is possible that there is a checkpointer thread running 
