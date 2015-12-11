@@ -2174,7 +2174,7 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
   int mxI;                        /* Index of largest aReadMark[] value */
   int i;                          /* Loop counter */
   int rc = SQLITE_OK;             /* Return code  */
-  int mxFrame;                    /* Wal frame to lock to */
+  u32 mxFrame;                    /* Wal frame to lock to */
 
   assert( pWal->readLock<0 );     /* Not currently locked */
 

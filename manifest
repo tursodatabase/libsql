@@ -1,5 +1,5 @@
-C Fix\sa\sbad\sassert\srelated\sto\ssnapshots.
-D 2015-12-11T01:22:22.051
+C Fix\sa\svariable\stype\smismatch\sproblem\sin\sthe\ssnapshot\slogic.
+D 2015-12-11T03:16:54.491
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e8fdca1cb89a1b58b5f4d3a130ea9a3d28cb314d
@@ -415,7 +415,7 @@ F src/vdbesort.c a7ec02da4494c59dfd071126dd3726be5a11459d
 F src/vdbetrace.c 8befe829faff6d9e6f6e4dee5a7d3f85cc85f1a0
 F src/vtab.c 2a8b44aa372c33f6154208e7a7f6c44254549806
 F src/vxworks.h c18586c8edc1bddbc15c004fa16aeb1e1342b4fb
-F src/wal.c 9f6568377ace5b49bca27b1331bfa39c932ba07e
+F src/wal.c cb709aa42fc11b1ea92a00c8c7e6214de0995fa3
 F src/wal.h 907943dfdef10b583e81906679a347e0ec6f1b1b
 F src/walker.c 2e14d17f592d176b6dc879c33fbdec4fbccaa2ba
 F src/where.c b18edbb9e5afabb77f4f27550c471c5c824e0fe7
@@ -1410,7 +1410,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ef51a398a04963508389ffe2f9d8359c1ec48261
-R e1d10abd98dcf1e7229a5f36920c7ecf
+P 767ee30efa5dd469e3a51d4e44cbe473061819b9
+R eb5f4e9ed632ef0781ac556c357a0ce5
 U drh
-Z 7fb95d54ba87149061a67ceb88009af9
+Z feb7b065ed13d6bdb0be293940a48a66
