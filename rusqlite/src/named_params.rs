@@ -48,15 +48,7 @@ impl SqliteConnection {
         let mut stmt = try!(self.prepare(sql));
         let mut rows = try!(stmt.query_named(params));
 
-        match rows.next() {
-            Some(row) => row.map(f),
-            None => {
-                Err(SqliteError {
-                    code: ffi::SQLITE_NOTICE,
-                    message: "Query did not return a row".to_string(),
-                })
-            }
-        }
+        rows.get_expected_row().map(f)
     }
 }
 
