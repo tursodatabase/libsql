@@ -189,6 +189,12 @@ mod test {
         let mut stmt = db.prepare("INSERT INTO test (id, name, flag) VALUES (:id, :name, :flag)")
                          .unwrap();
         stmt.execute_named(&[(":name", &"one")]).unwrap();
+
+        assert_eq!(1i32,
+                   db.query_named_row("SELECT COUNT(*) FROM test WHERE name = :name",
+                                      &[(":name", &"one")],
+                                      |r| r.get(0))
+                     .unwrap());
     }
 
     #[test]
