@@ -68,7 +68,10 @@ impl<'conn> SqliteStatement<'conn> {
         })
     }
 
-    /// Execute the prepared statement with named parameter(s).
+    /// Execute the prepared statement with named parameter(s). If any parameters
+    /// that were in the prepared statement are not included in `params`, they
+    /// will continue to use the most-recently bound value from a previous call
+    /// to `execute_named`, or `NULL` if they have never been bound.
     ///
     /// On success, returns the number of rows that were changed or inserted or deleted (via
     /// `sqlite3_changes`).
@@ -95,7 +98,9 @@ impl<'conn> SqliteStatement<'conn> {
     }
 
     /// Execute the prepared statement with named parameter(s), returning an iterator over the
-    /// resulting rows.
+    /// resulting rows. If any parameters that were in the prepared statement are not included in
+    /// `params`, they will continue to use the most-recently bound value from a previous call to
+    /// `query_named`, or `NULL` if they have never been bound.
     ///
     /// ## Example
     ///
@@ -125,25 +130,6 @@ impl<'conn> SqliteStatement<'conn> {
     }
 
     fn bind_parameters_named(&mut self, params: &[(&str, &ToSql)]) -> SqliteResult<()> {
-        // Always check that the number of parameters is correct.
-        assert!(params.len() as c_int == unsafe { ffi::sqlite3_bind_parameter_count(self.stmt) },
-                "incorrect number of parameters to query(): expected {}, got {}",
-                unsafe { ffi::sqlite3_bind_parameter_count(self.stmt) },
-                params.len());
-
-        // In debug, also sanity check that we got distinct parameter names.
-        debug_assert!({
-                          use std::collections::HashSet;
-
-                          let mut s = HashSet::with_capacity(params.len());
-                          for &(name, _) in params {
-                              s.insert(name);
-                          }
-
-                          s.len() == params.len()
-                      },
-                      "named parameters must be unique");
-
         for &(name, value) in params {
             if let Some(i) = try!(self.parameter_index(name)) {
                 try!(self.conn.decode_result(unsafe { value.bind_parameter(self.stmt, i) }));
@@ -208,21 +194,31 @@ mod test {
     }
 
     #[test]
-    #[should_panic]
-    fn test_panic_on_incorrect_number_of_parameters() {
+    fn test_unbound_parameters_are_null() {
         let db = SqliteConnection::open_in_memory().unwrap();
+        let sql = "CREATE TABLE test (x TEXT, y TEXT)";
+        db.execute_batch(sql).unwrap();
 
-        let mut stmt = db.prepare("SELECT 1 WHERE 1 = :one AND 2 = :two").unwrap();
-        let _ = stmt.query_named(&[(":one", &1i32)]);
+        let mut stmt = db.prepare("INSERT INTO test (x, y) VALUES (:x, :y)").unwrap();
+        stmt.execute_named(&[(":x", &"one")]).unwrap();
+
+        let result = db.query_row("SELECT y FROM test WHERE x = 'one'", &[],
+                                  |row| row.get::<Option<String>>(0)).unwrap();
+        assert!(result.is_none());
     }
 
     #[test]
-    #[cfg(debug_assertions)]
-    #[should_panic]
-    fn test_debug_panic_on_incorrect_parameter_names() {
+    fn test_unbound_parameters_are_reused() {
         let db = SqliteConnection::open_in_memory().unwrap();
+        let sql = "CREATE TABLE test (x TEXT, y TEXT)";
+        db.execute_batch(sql).unwrap();
 
-        let mut stmt = db.prepare("SELECT 1 WHERE 1 = :one AND 2 = :two").unwrap();
-        let _ = stmt.query_named(&[(":one", &1i32), (":one", &2i32)]);
+        let mut stmt = db.prepare("INSERT INTO test (x, y) VALUES (:x, :y)").unwrap();
+        stmt.execute_named(&[(":x", &"one")]).unwrap();
+        stmt.execute_named(&[(":y", &"two")]).unwrap();
+
+        let result = db.query_row("SELECT x FROM test WHERE y = 'two'", &[],
+                                  |row| row.get::<String>(0)).unwrap();
+        assert_eq!(result, "one");
     }
 }
