@@ -1,5 +1,5 @@
-C Disable\sthe\ssnapshot\stest\sscripts\sif\snot\scompiled\swith\sSQLITE_ENABLE_SNAPSHOT.
-D 2015-12-11T03:20:39.887
+C Mention\sthat\sthe\ssnapshot\sinterfaces\sare\sonly\savailable\sif\sSQLite\sis\scompiled\nwith\sSQLITE_ENABLE_SNAPSHOT.
+D 2015-12-11T03:27:36.868
 F Makefile.in 28bcd6149e050dff35d4dcfd97e890cd387a499d
 F Makefile.linux-gcc 7bc79876b875010e8c8f9502eb935ca92aa3c434
 F Makefile.msc e8fdca1cb89a1b58b5f4d3a130ea9a3d28cb314d
@@ -341,7 +341,7 @@ F src/resolve.c a83b41104e6ff69855d03cd0aaa09e93927ec39f
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c f8fded11fc443a9f5a73cc5db069d06b34460e2f
 F src/shell.c abbc74ea43dbf2f306ea18282d666683fb5efab2
-F src/sqlite.h.in e24a1d2e36970ca46beb8002623e1c73eab32063
+F src/sqlite.h.in 7d87d71b9a4689c51fa092f48f16590ff71558e3
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h dfbe62ffd95b99afe2140d8c35b180d11924072d
 F src/sqliteInt.h 5caacf37a776f9d6178e519cb0b5248ca22a3828
@@ -1410,7 +1410,7 @@ F tool/vdbe_profile.tcl 246d0da094856d72d2c12efec03250d71639d19f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 48bd54594752d5be3337f12c72f28d2080cb630b
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 93fb8010e4999b6b832d63a7c5a152f65d4415a3
-R f04d367372fb1067c3ab40fd75809ec7
+P 5fd008f0433833e4341d526dcc2387570ffe1fea
+R debac3c9c8655611fddbcca7514e6f4e
 U drh
-Z 1fa92043878ab0279cb81464491eddf8
+Z a48afa3f9104a922fecee9583a7109ec

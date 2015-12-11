@@ -7924,8 +7924,15 @@ typedef struct sqlite3_snapshot sqlite3_snapshot;
 ** The [sqlite3_snapshot] object returned from a successful call to
 ** [sqlite3_snapshot_get()] must be freed using [sqlite3_snapshot_free()]
 ** to avoid a memory leak.
+**
+** The [sqlite3_snapshot_get()] interface is only available when the
+** SQLITE_ENABLE_SNAPSHOT compile-time option is used.
 */
-SQLITE_EXPERIMENTAL int sqlite3_snapshot_get(sqlite3*,const char*,sqlite3_snapshot **ppSnapshot);
+SQLITE_EXPERIMENTAL int sqlite3_snapshot_get(
+  sqlite3 *db,
+  const char *zSchema,
+  sqlite3_snapshot **ppSnapshot
+);
 
 /*
 ** CAPI3REF: Start a read transaction on an historical snapshot
@@ -7942,8 +7949,15 @@ SQLITE_EXPERIMENTAL int sqlite3_snapshot_get(sqlite3*,const char*,sqlite3_snapsh
 ** following the [BEGIN] that starts a new read transaction.
 ** ^A [snapshot] will fail to open if it has been overwritten by a 
 ** [checkpoint].  
+**
+** The [sqlite3_snapshot_open()] interface is only available when the
+** SQLITE_ENABLE_SNAPSHOT compile-time option is used.
 */
-SQLITE_EXPERIMENTAL int sqlite3_snapshot_open(sqlite3*,const char*,sqlite3_snapshot*);
+SQLITE_EXPERIMENTAL int sqlite3_snapshot_open(
+  sqlite3 *db,
+  const char *zSchema,
+  sqlite3_snapshot *pSnapshot
+);
 
 /*
 ** CAPI3REF: Destroy a snapshot
@@ -7952,6 +7966,9 @@ SQLITE_EXPERIMENTAL int sqlite3_snapshot_open(sqlite3*,const char*,sqlite3_snaps
 ** ^The [sqlite3_snapshot_free(P)] interface destroys [sqlite3_snapshot] P.
 ** The application must eventually free every [sqlite3_snapshot] object
 ** using this routine to avoid a memory leak.
+**
+** The [sqlite3_snapshot_free()] interface is only available when the
+** SQLITE_ENABLE_SNAPSHOT compile-time option is used.
 */
 SQLITE_EXPERIMENTAL void sqlite3_snapshot_free(sqlite3_snapshot*);
 
