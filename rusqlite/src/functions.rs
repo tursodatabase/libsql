@@ -221,16 +221,12 @@ impl<T: FromValue> FromValue for Option<T> {
     }
 }
 
-// sqlite3_user_data
-// sqlite3_get_auxdata
-// sqlite3_set_auxdata
-
 unsafe extern "C" fn free_boxed_value<T>(p: *mut c_void) {
     let _: Box<T> = Box::from_raw(mem::transmute(p));
 }
 
 pub struct Context<'a> {
-    pub ctx: *mut sqlite3_context,
+    ctx: *mut sqlite3_context,
     args: &'a [*mut sqlite3_value],
 }
 
@@ -274,31 +270,34 @@ impl<'a> Context<'a> {
 }
 
 impl SqliteConnection {
-    pub fn create_scalar_function<F>(&self,
-                                     fn_name: &str,
-                                     n_arg: c_int,
-                                     deterministic: bool,
-                                     x_func: F)
-                                     -> SqliteResult<()>
-        where F: FnMut(&Context)
+    pub fn create_scalar_function<F, T>(&self,
+                                        fn_name: &str,
+                                        n_arg: c_int,
+                                        deterministic: bool,
+                                        x_func: F)
+                                        -> SqliteResult<()>
+        where F: FnMut(&Context) -> SqliteResult<T>,
+              T: ToResult
     {
         self.db.borrow_mut().create_scalar_function(fn_name, n_arg, deterministic, x_func)
     }
 }
 
 impl InnerSqliteConnection {
-    fn create_scalar_function<F>(&mut self,
-                                 fn_name: &str,
-                                 n_arg: c_int,
-                                 deterministic: bool,
-                                 x_func: F)
-                                 -> SqliteResult<()>
-        where F: FnMut(&Context)
+    fn create_scalar_function<F, T>(&mut self,
+                                    fn_name: &str,
+                                    n_arg: c_int,
+                                    deterministic: bool,
+                                    x_func: F)
+                                    -> SqliteResult<()>
+        where F: FnMut(&Context) -> SqliteResult<T>,
+              T: ToResult
     {
-        extern "C" fn call_boxed_closure<F>(ctx: *mut sqlite3_context,
-                                            argc: c_int,
-                                            argv: *mut *mut sqlite3_value)
-            where F: FnMut(&Context)
+        extern "C" fn call_boxed_closure<F, T>(ctx: *mut sqlite3_context,
+                                               argc: c_int,
+                                               argv: *mut *mut sqlite3_value)
+            where F: FnMut(&Context) -> SqliteResult<T>,
+                  T: ToResult
         {
             unsafe {
                 let ctx = Context {
@@ -307,7 +306,15 @@ impl InnerSqliteConnection {
                 };
                 let boxed_f: *mut F = mem::transmute(ffi::sqlite3_user_data(ctx.ctx));
                 assert!(!boxed_f.is_null(), "Internal error - null function pointer");
-                (*boxed_f)(&ctx);
+                match (*boxed_f)(&ctx) {
+                    Ok(r) => r.set_result(ctx.ctx),
+                    Err(e) => {
+                        ffi::sqlite3_result_error_code(ctx.ctx, e.code);
+                        if let Ok(cstr) = str_to_cstring(&e.message) {
+                            ffi::sqlite3_result_error(ctx.ctx, cstr.as_ptr(), -1);
+                        }
+                    },
+                }
             }
         }
 
@@ -323,7 +330,7 @@ impl InnerSqliteConnection {
                                             n_arg,
                                             flags,
                                             mem::transmute(boxed_f),
-                                            Some(call_boxed_closure::<F>),
+                                            Some(call_boxed_closure::<F, T>),
                                             None,
                                             None,
                                             Some(mem::transmute(free_boxed_value::<F>)))
@@ -336,20 +343,17 @@ impl InnerSqliteConnection {
 mod test {
     extern crate regex;
 
-    use std::ffi::CString;
     use libc::c_double;
     use self::regex::Regex;
 
-    use SqliteConnection;
+    use {SqliteConnection, SqliteError, SqliteResult};
     use ffi;
-    use functions::{Context, ToResult};
+    use functions::Context;
 
-    fn half(ctx: &Context) {
+    fn half(ctx: &Context) -> SqliteResult<c_double> {
         assert!(ctx.len() == 1, "called with unexpected number of arguments");
-        match ctx.get::<c_double>(0) {
-            Ok(value) => unsafe { (value / 2f64).set_result(ctx.ctx) },
-            Err(err) => unsafe { ffi::sqlite3_result_error_code(ctx.ctx, err.code) },
-        }
+        let value = try!(ctx.get::<c_double>(0));
+        Ok(value / 2f64)
     }
 
     #[test]
@@ -361,50 +365,34 @@ mod test {
         assert_eq!(3f64, result.unwrap());
     }
 
-    fn regexp(ctx: &Context) {
+    fn regexp(ctx: &Context) -> SqliteResult<bool> {
         assert!(ctx.len() == 2, "called with unexpected number of arguments");
 
         let saved_re: Option<&Regex> = unsafe { ctx.get_aux(0) };
         let new_re = match saved_re {
-            None => unsafe {
-                let raw = ctx.get::<String>(0);
-                if raw.is_err() {
-                    let msg = CString::new(format!("{}", raw.unwrap_err())).unwrap();
-                    ffi::sqlite3_result_error(ctx.ctx, msg.as_ptr(), -1);
-                    return;
-                }
-                let comp = Regex::new(raw.unwrap().as_ref());
-                if comp.is_err() {
-                    let msg = CString::new(format!("{}", comp.unwrap_err())).unwrap();
-                    ffi::sqlite3_result_error(ctx.ctx, msg.as_ptr(), -1);
-                    return;
-                }
-                Some(comp.unwrap())
+            None => {
+                let s = try!(ctx.get::<String>(0));
+                let r = try!(Regex::new(&s).map_err(|e| SqliteError {
+                    code: ffi::SQLITE_ERROR,
+                    message: format!("Invalid regular expression: {}", e),
+                }));
+                Some(r)
             },
             Some(_) => None,
         };
 
-        {
+        let is_match = {
             let re = saved_re.unwrap_or_else(|| new_re.as_ref().unwrap());
 
-            let text = ctx.get::<String>(1);
-            if text.is_ok() {
-                let text = text.unwrap();
-                unsafe {
-                    re.is_match(text.as_ref()).set_result(ctx.ctx);
-                }
-            } else {
-                let msg = CString::new(format!("{}", text.unwrap_err())).unwrap();
-                unsafe {
-                    ffi::sqlite3_result_error(ctx.ctx, msg.as_ptr(), -1);
-                }
-                return;
-            }
-        }
+            let text = try!(ctx.get::<String>(1));
+            re.is_match(&text)
+        };
 
         if let Some(re) = new_re {
             ctx.set_aux(0, re);
         }
+
+        Ok(is_match)
     }
 
     #[test]
