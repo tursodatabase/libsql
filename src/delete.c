@@ -530,11 +530,8 @@ void sqlite3DeleteFrom(
   Vdbe *v;               /* The virtual database engine */
   Table *pTab;           /* The table from which records will be deleted */
   const char *zDb;       /* Name of database holding pTab */
-  int i;                 /* Loop counter */
   Index *pIdx;           /* For looping over indices of the table */
   int iTabCur;           /* Cursor number for the table */
-  int iDataCur = 0;      /* VDBE cursor for the canonical data source */
-  int iIdxCur = 0;       /* Cursor number of the first index */
   int nIdx;              /* Number of indices */
   AuthContext sContext;  /* Authorization context */
   NameContext sNC;       /* Name context to resolve expressions in */
@@ -628,7 +625,6 @@ void sqlite3DeleteFrom(
 #if !defined(SQLITE_OMIT_VIEW) && !defined(SQLITE_OMIT_TRIGGER)
   if( isView ){
     sqlite3MaterializeView(pParse, pTab, pWhere, iTabCur);
-    iDataCur = iIdxCur = iTabCur;
   }
 #endif
 

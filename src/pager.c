@@ -7301,6 +7301,34 @@ int sqlite3PagerCloseWal(Pager *pPager){
   return rc;
 }
 
+#ifdef SQLITE_ENABLE_SNAPSHOT
+/*
+** If this is a WAL database, obtain a snapshot handle for the snapshot
+** currently open. Otherwise, return an error.
+*/
+int sqlite3PagerSnapshotGet(Pager *pPager, sqlite3_snapshot **ppSnapshot){
+  int rc = SQLITE_ERROR;
+  if( pPager->pWal ){
+    rc = sqlite3WalSnapshotGet(pPager->pWal, ppSnapshot);
+  }
+  return rc;
+}
+
+/*
+** If this is a WAL database, store a pointer to pSnapshot. Next time a
+** read transaction is opened, attempt to read from the snapshot it 
+** identifies. If this is not a WAL database, return an error.
+*/
+int sqlite3PagerSnapshotOpen(Pager *pPager, sqlite3_snapshot *pSnapshot){
+  int rc = SQLITE_OK;
+  if( pPager->pWal ){
+    sqlite3WalSnapshotOpen(pPager->pWal, pSnapshot);
+  }else{
+    rc = SQLITE_ERROR;
+  }
+  return rc;
+}
+#endif /* SQLITE_ENABLE_SNAPSHOT */
 #endif /* !SQLITE_OMIT_WAL */
 
 #ifdef SQLITE_ENABLE_ZIPVFS

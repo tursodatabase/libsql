@@ -174,6 +174,21 @@
 #endif
 
 /*
+** The SQLITE_WITHIN(P,S,E) macro checks to see if pointer P points to
+** something between S (inclusive) and E (exclusive).
+**
+** In other words, S is a buffer and E is a pointer to the first byte after
+** the end of buffer S.  This macro returns true if P points to something
+** contained within the buffer S.
+*/
+#if defined(HAVE_STDINT_H)
+# define SQLITE_WITHIN(P,S,E) \
+    ((uintptr_t)(P)>=(uintptr_t)(S) && (uintptr_t)(P)<(uintptr_t)(E))
+#else
+# define SQLITE_WITHIN(P,S,E) ((P)>=(S) && (P)<(E))
+#endif
+
+/*
 ** A macro to hint to the compiler that a function should not be
 ** inlined.
 */
