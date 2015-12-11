@@ -313,7 +313,7 @@ impl InnerSqliteConnection {
                         if let Ok(cstr) = str_to_cstring(&e.message) {
                             ffi::sqlite3_result_error(ctx.ctx, cstr.as_ptr(), -1);
                         }
-                    },
+                    }
                 }
             }
         }
@@ -343,6 +343,7 @@ impl InnerSqliteConnection {
 mod test {
     extern crate regex;
 
+    use std::collections::HashMap;
     use libc::c_double;
     use self::regex::Regex;
 
@@ -365,19 +366,24 @@ mod test {
         assert_eq!(3f64, result.unwrap());
     }
 
-    fn regexp(ctx: &Context) -> SqliteResult<bool> {
+    // This implementation of a regexp scalar function uses SQLite's auxilliary data
+    // (https://www.sqlite.org/c3ref/get_auxdata.html) to avoid recompiling the regular
+    // expression multiple times within one query.
+    fn regexp_with_auxilliary(ctx: &Context) -> SqliteResult<bool> {
         assert!(ctx.len() == 2, "called with unexpected number of arguments");
 
         let saved_re: Option<&Regex> = unsafe { ctx.get_aux(0) };
         let new_re = match saved_re {
             None => {
                 let s = try!(ctx.get::<String>(0));
-                let r = try!(Regex::new(&s).map_err(|e| SqliteError {
-                    code: ffi::SQLITE_ERROR,
-                    message: format!("Invalid regular expression: {}", e),
+                let r = try!(Regex::new(&s).map_err(|e| {
+                    SqliteError {
+                        code: ffi::SQLITE_ERROR,
+                        message: format!("Invalid regular expression: {}", e),
+                    }
                 }));
                 Some(r)
-            },
+            }
             Some(_) => None,
         };
 
@@ -397,7 +403,7 @@ mod test {
 
     #[test]
     #[cfg_attr(rustfmt, rustfmt_skip)]
-    fn test_function_regexp() {
+    fn test_function_regexp_with_auxilliary() {
         let db = SqliteConnection::open_in_memory().unwrap();
         db.execute_batch("BEGIN;
                          CREATE TABLE foo (x string);
@@ -405,7 +411,58 @@ mod test {
                          INSERT INTO foo VALUES ('lXsi');
                          INSERT INTO foo VALUES ('lisX');
                          END;").unwrap();
-        db.create_scalar_function("regexp", 2, true, regexp).unwrap();
+        db.create_scalar_function("regexp", 2, true, regexp_with_auxilliary).unwrap();
+
+        let result = db.query_row("SELECT regexp('l.s[aeiouy]', 'lisa')",
+                                  &[],
+                                  |r| r.get::<bool>(0));
+
+        assert_eq!(true, result.unwrap());
+
+        let result = db.query_row("SELECT COUNT(*) FROM foo WHERE regexp('l.s[aeiouy]', x) == 1",
+                                  &[],
+                                  |r| r.get::<i64>(0));
+
+        assert_eq!(2, result.unwrap());
+    }
+
+    #[test]
+    #[cfg_attr(rustfmt, rustfmt_skip)]
+    fn test_function_regexp_with_hashmap_cache() {
+        let db = SqliteConnection::open_in_memory().unwrap();
+        db.execute_batch("BEGIN;
+                         CREATE TABLE foo (x string);
+                         INSERT INTO foo VALUES ('lisa');
+                         INSERT INTO foo VALUES ('lXsi');
+                         INSERT INTO foo VALUES ('lisX');
+                         END;").unwrap();
+
+        // This implementation of a regexp scalar function uses a captured HashMap
+        // to keep cached regular expressions around (even across multiple queries)
+        // until the function is removed.
+        let mut cached_regexes = HashMap::new();
+        db.create_scalar_function("regexp", 2, true, move |ctx| {
+            assert!(ctx.len() == 2, "called with unexpected number of arguments");
+
+            let regex_s = try!(ctx.get::<String>(0));
+            let entry = cached_regexes.entry(regex_s.clone());
+            let regex = {
+                use std::collections::hash_map::Entry::{Occupied, Vacant};
+                match entry {
+                    Occupied(occ) => occ.into_mut(),
+                    Vacant(vac) => {
+                        let r = try!(Regex::new(&regex_s).map_err(|e| SqliteError {
+                            code: ffi::SQLITE_ERROR,
+                            message: format!("Invalid regular expression: {}", e),
+                        }));
+                        vac.insert(r)
+                    }
+                }
+            };
+
+            let text = try!(ctx.get::<String>(1));
+            Ok(regex.is_match(&text))
+        }).unwrap();
 
         let result = db.query_row("SELECT regexp('l.s[aeiouy]', 'lisa')",
                                   &[],
