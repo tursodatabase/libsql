@@ -1,9 +1,9 @@
-use std::ffi::CString;
 use libc::c_int;
 
 use super::ffi;
 
-use {SqliteResult, SqliteError, SqliteConnection, SqliteStatement, SqliteRows, SqliteRow};
+use {SqliteResult, SqliteError, SqliteConnection, SqliteStatement, SqliteRows, SqliteRow,
+     str_to_cstring};
 use types::ToSql;
 
 impl SqliteConnection {
@@ -65,17 +65,15 @@ impl<'conn> SqliteStatement<'conn> {
     ///
     /// # Failure
     ///
-    /// Return None if `name` is invalid or if no matching parameter is found.
-    pub fn parameter_index(&self, name: &str) -> Option<i32> {
-        unsafe {
-            CString::new(name).ok().and_then(|c_name| {
-                match ffi::sqlite3_bind_parameter_index(self.stmt, c_name.as_ptr()) {
-                    0 => None, // A zero is returned if no matching parameter is found.
-                    n => Some(n),
-                }
-            })
-
-        }
+    /// Will return Err if `name` is invalid. Will return Ok(None) if the name
+    /// is valid but not a bound parameter of this statement.
+    pub fn parameter_index(&self, name: &str) -> SqliteResult<Option<i32>> {
+        let c_name = try!(str_to_cstring(name));
+        let c_index = unsafe { ffi::sqlite3_bind_parameter_index(self.stmt, c_name.as_ptr()) };
+        Ok(match c_index {
+            0 => None, // A zero is returned if no matching parameter is found.
+            n => Some(n),
+        })
     }
 
     /// Execute the prepared statement with named parameter(s).
@@ -98,8 +96,8 @@ impl<'conn> SqliteStatement<'conn> {
     /// Will return `Err` if binding parameters fails, the executed statement returns rows (in
     /// which case `query` should be used instead), or the underling SQLite call fails.
     pub fn execute_named(&mut self, params: &[(&str, &ToSql)]) -> SqliteResult<c_int> {
+        try!(self.bind_named_parameters(params));
         unsafe {
-            try!(self.bind_named_parameters(params));
             self.execute_()
         }
     }
@@ -128,20 +126,17 @@ impl<'conn> SqliteStatement<'conn> {
                            params: &[(&str, &ToSql)])
                            -> SqliteResult<SqliteRows<'a>> {
         self.reset_if_needed();
-
-        unsafe {
-            try!(self.bind_named_parameters(params));
-        }
+        try!(self.bind_named_parameters(params));
 
         self.needs_reset = true;
         Ok(SqliteRows::new(self))
     }
 
-    unsafe fn bind_named_parameters(&mut self, params: &[(&str, &ToSql)]) -> SqliteResult<()> {
+    fn bind_named_parameters(&mut self, params: &[(&str, &ToSql)]) -> SqliteResult<()> {
         // Always check that the number of parameters is correct.
-        assert!(params.len() as c_int == ffi::sqlite3_bind_parameter_count(self.stmt),
+        assert!(params.len() as c_int == unsafe { ffi::sqlite3_bind_parameter_count(self.stmt) },
                 "incorrect number of parameters to query(): expected {}, got {}",
-                ffi::sqlite3_bind_parameter_count(self.stmt),
+                unsafe { ffi::sqlite3_bind_parameter_count(self.stmt) },
                 params.len());
 
         // In debug, also sanity check that we got distinct parameter names.
@@ -158,11 +153,14 @@ impl<'conn> SqliteStatement<'conn> {
                       "named parameters must be unique");
 
         for &(name, value) in params {
-            let i = try!(self.parameter_index(name).ok_or(SqliteError {
-                code: ffi::SQLITE_MISUSE,
-                message: format!("Invalid parameter name: {}", name),
-            }));
-            try!(self.conn.decode_result(value.bind_parameter(self.stmt, i)));
+            if let Some(i) = try!(self.parameter_index(name)) {
+                try!(self.conn.decode_result(unsafe { value.bind_parameter(self.stmt, i) }));
+            } else {
+                return Err(SqliteError {
+                    code: ffi::SQLITE_MISUSE,
+                    message: format!("Invalid parameter name: {}", name),
+                });
+            }
         }
         Ok(())
     }
