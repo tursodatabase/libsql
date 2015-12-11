@@ -38,7 +38,7 @@ impl SqliteConnection {
     ///
     /// Will return `Err` if `sql` cannot be converted to a C-compatible string or if the
     /// underlying SQLite call fails.
-    pub fn query_named_row<T, F>(&self,
+    pub fn query_row_named<T, F>(&self,
                                  sql: &str,
                                  params: &[(&str, &ToSql)],
                                  f: F)
@@ -183,7 +183,7 @@ mod test {
                    1);
 
         assert_eq!(3i32,
-                   db.query_named_row("SELECT SUM(x) FROM foo WHERE x > :x",
+                   db.query_row_named("SELECT SUM(x) FROM foo WHERE x > :x",
                                       &[(":x", &0i32)],
                                       |r| r.get(0))
                      .unwrap());
@@ -200,7 +200,7 @@ mod test {
         stmt.execute_named(&[(":name", &"one")]).unwrap();
 
         assert_eq!(1i32,
-                   db.query_named_row("SELECT COUNT(*) FROM test WHERE name = :name",
+                   db.query_row_named("SELECT COUNT(*) FROM test WHERE name = :name",
                                       &[(":name", &"one")],
                                       |r| r.get(0))
                      .unwrap());
