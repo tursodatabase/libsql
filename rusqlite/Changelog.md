@@ -1,7 +1,9 @@
 # Version UPCOMING (TBD)
 
-* Adds `backup` feature that exposes SQLite's online backup API.
 * Adds a variety of `..._named` methods for executing queries using named placeholder parameters.
+* Adds `backup` feature that exposes SQLite's online backup API.
+* Adds `functions` feature that allows user-defined scalar functions to be added to
+  open `SqliteConnection`s.
 
 # Version 0.5.0 (2015-12-08)
 

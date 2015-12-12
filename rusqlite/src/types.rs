@@ -100,6 +100,15 @@ raw_to_impl!(c_int, sqlite3_bind_int);
 raw_to_impl!(i64, sqlite3_bind_int64);
 raw_to_impl!(c_double, sqlite3_bind_double);
 
+impl ToSql for bool {
+    unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
+        match *self {
+            true => ffi::sqlite3_bind_int(stmt, col, 1),
+            _ => ffi::sqlite3_bind_int(stmt, col, 0),
+        }
+    }
+}
+
 impl<'a> ToSql for &'a str {
     unsafe fn bind_parameter(&self, stmt: *mut sqlite3_stmt, col: c_int) -> c_int {
         let length = self.len();
@@ -202,6 +211,19 @@ macro_rules! raw_from_impl(
 raw_from_impl!(c_int, sqlite3_column_int, ffi::SQLITE_INTEGER);
 raw_from_impl!(i64, sqlite3_column_int64, ffi::SQLITE_INTEGER);
 raw_from_impl!(c_double, sqlite3_column_double, ffi::SQLITE_FLOAT);
+
+impl FromSql for bool {
+    unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> SqliteResult<bool> {
+        match ffi::sqlite3_column_int(stmt, col) {
+            0 => Ok(false),
+            _ => Ok(true),
+        }
+    }
+
+    unsafe fn column_has_valid_sqlite_type(stmt: *mut sqlite3_stmt, col: c_int) -> bool {
+        sqlite3_column_type(stmt, col) == ffi::SQLITE_INTEGER
+    }
+}
 
 impl FromSql for String {
     unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> SqliteResult<String> {

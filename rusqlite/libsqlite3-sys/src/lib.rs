@@ -94,3 +94,5 @@ pub fn code_to_str(code: c_int) -> &'static str {
 }
 
 pub const SQLITE_CONFIG_LOG  : c_int = 16;
+pub const SQLITE_UTF8  : c_int = 1;
+pub const SQLITE_DETERMINISTIC  : c_int = 0x800;
