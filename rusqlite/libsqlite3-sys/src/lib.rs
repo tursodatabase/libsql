@@ -1,3 +1,5 @@
+// bindgen.rs was created with bindgen 0.15.0 against sqlite3 3.8.10
+
 #![allow(non_snake_case)]
 
 extern crate libc;
