@@ -1807,9 +1807,11 @@ void sqlite3WhereInfoFree(sqlite3 *db, WhereInfo *pWInfo){
 ** sub-expression iExpr is returned. The caller is responsible for eventually
 ** deleting this object using sqlite3ExprDelete().
 **
-** If an OOM error occurs, NULL is returned. In this case the mallocFailed
-** field of the database handle (pWInfo->pParse->db->mallocFailed) is set 
-** to record the error.
+** If an OOM error occurs, the mallocFailed field of the database handle
+** (pWInfo->pParse->db->mallocFailed) is set to record the error. Even
+** if an OOM error occurs, this function may return a non-NULL pointer. In
+** this case the caller is still responsible for deleting the returned
+** object, even though it is not safe to use.
 */
 Expr *sqlite3WhereSplitExpr(WhereInfo *pWInfo, int iExpr){
   sqlite3 *db = pWInfo->pParse->db;
@@ -4314,6 +4316,13 @@ WhereInfo *sqlite3WhereBegin(
        && 0==(wsFlags & WHERE_VIRTUALTABLE)
     )){
       if( (wsFlags & WHERE_MULTI_OR) && (wctrlFlags & WHERE_ONEPASS_MULTIROW) ){
+        /* This call is being made as part of a DELETE program and the
+        ** optimizer has indicated that the OR-optimization is the best
+        ** approach. In this case it is better to let the caller generate
+        ** a separate loop for each OR'd term than to actually go ahead
+        ** and code the OR-optimized loop. Set the value returned by
+        ** sqlite3WhereOkOnePass() to ONEPASS_SPLIT_DELETE to communicate 
+        ** this to the caller and return early.  */
         pWInfo->eOnePass = ONEPASS_SPLIT_DELETE;
         return pWInfo;
       }

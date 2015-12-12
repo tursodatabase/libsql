@@ -193,4 +193,38 @@ foreach {tn tbl} {
   }
 }
 
+#-------------------------------------------------------------------------
+# Test that nested OR optimizations work.
+#
+do_execsql_test 6.0 {
+  CREATE TABLE t6(a, b, c, d);
+  CREATE INDEX t6a ON t6(a);
+  CREATE INDEX t6b ON t6(b);
+  CREATE INDEX t6c ON t6(c);
+  WITH s(i) AS ( SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<1000 ) 
+  INSERT INTO t6 SELECT i, i*2, i*3, i%2 FROM s;
+}
+
+proc do_61_test {tn sql lDel} {
+  uplevel [list do_execsql_test $tn "
+    BEGIN;
+      $sql;
+      WITH s(i) AS ( SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<1000 ) 
+      SELECT i FROM s EXCEPT SELECT a FROM t6 ORDER BY 1;
+    ROLLBACK;
+  " $lDel]
+}
+
+do_61_test 6.1 {
+  DELETE FROM t6 WHERE a=22 OR b=90 OR (d=0 AND (b=400 OR c=303));
+} {22 45 200}
+
+do_61_test 6.2 {
+  DELETE FROM t6 WHERE a=22 OR b=90 OR (d=1 AND (b=400 OR c=303));
+} {22 45 101}
+
+do_61_test 6.3 {
+  DELETE FROM t6 WHERE (d=0 AND (a=100 OR b=150)) OR (d=1 AND (b=50 OR c=603));
+} {25 100 201}
+
 finish_test

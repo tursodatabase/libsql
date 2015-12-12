@@ -240,6 +240,7 @@ static void deleteSetColUsedSelect(Walker *pWalker, Select *pSelect){
 */
 static void deleteSetColUsed(Parse *pParse, SrcList *pSrc, Expr *pExpr){
   Walker w;
+  assert( pSrc->nSrc==1 );
   memset(&w, 0, sizeof(w));
   w.pParse = pParse;
   w.u.pSrcList = pSrc;
@@ -358,9 +359,10 @@ int deleteFrom(
 
     /* This loop iterates once for each OR-connected term in the WHERE clause */
     for(i=0; rc==SQLITE_OK && (pExpr=sqlite3WhereSplitExpr(pWInfo, i)); i++){
-      if( db->mallocFailed ) break;
-      deleteSetColUsed(pParse, pTabList, pExpr);
-      rc = deleteFrom(pParse, pTabList, pExpr, 0, 0, 0, memCnt, nIdx);
+      if( db->mallocFailed==0 ){
+        deleteSetColUsed(pParse, pTabList, pExpr);
+        rc = deleteFrom(pParse, pTabList, pExpr, 0, 0, 0, memCnt, nIdx);
+      }
       sqlite3ExprDelete(db, pExpr);
     }
     sqlite3WhereInfoFree(db, pWInfo);

@@ -837,7 +837,8 @@ do_execsql_test table-19.1 {
 # At one point the DROP TABLE in the following was causing problems on an
 # experimental branch.
 #
-do_execsql_test 20.0 {
+reset_db
+do_execsql_test table-20.0 {
   CREATE TABLE t20(a PRIMARY KEY, b, c);
   CREATE TRIGGER tr6 AFTER INSERT ON t20 BEGIN SELECT 1+1+1; END;
   ANALYZE;

@@ -1,0 +1,50 @@
+# 2015 December 10
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library. The focus
+# of this file is fault-injection into DELETE statements.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix delete_fault
+
+do_execsql_test 1.0 {
+  CREATE TABLE t6(a, b, c, d);
+  CREATE INDEX t6a ON t6(a);
+  CREATE INDEX t6b ON t6(b);
+  CREATE INDEX t6c ON t6(c);
+  WITH s(i) AS ( SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<1000 ) 
+  INSERT INTO t6 SELECT i, i*2, i*3, i%2 FROM s;
+}
+faultsim_save_and_close
+
+proc deleted_t6_rows {} {
+  db eval {
+    WITH s(i) AS ( SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<1000 ) 
+    SELECT i FROM s EXCEPT SELECT a FROM t6 ORDER BY 1;
+  }
+}
+
+do_faultsim_test 1 -faults oom-t* -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql {
+    DELETE FROM t6 WHERE (d=0 AND (a=100 OR b=150)) OR (d=1 AND (b=50 OR c=603))
+  }
+} -test {
+  faultsim_test_result {0 {}}
+  if {$testrc==0} {
+    set lDel [deleted_t6_rows]
+    if {$lDel != "25 100 201"} { error "lDel is $lDel" }
+  }
+}
+
+finish_test

@@ -3451,7 +3451,7 @@ int sqlite3WhereOkOnePass(WhereInfo*, int*);
 #define ONEPASS_OFF          0    /* Use of ONEPASS not allowed */
 #define ONEPASS_SINGLE       1    /* ONEPASS valid for a single row update */
 #define ONEPASS_MULTI        2    /* ONEPASS is valid for multiple rows */
-#define ONEPASS_SPLIT_DELETE 3
+#define ONEPASS_SPLIT_DELETE 3    /* DELETE should be split into multiple ops */
 void sqlite3ExprCodeLoadIndexColumn(Parse*, Index*, int, int, int);
 int sqlite3ExprCodeGetColumn(Parse*, Table*, int, int, int, u8);
 void sqlite3ExprCodeGetColumnToReg(Parse*, Table*, int, int, int);

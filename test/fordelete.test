@@ -108,6 +108,40 @@ foreach {tn where res} {
   do_adp_test 2.3.$tn "DELETE FROM t3 WHERE $where" $res
 }
 
+do_execsql_test 2.4.0 {
+  CREATE TABLE t6(a, b, c, d);
+  CREATE INDEX t6a ON t6(a);
+  CREATE INDEX t6b ON t6(b);
+  CREATE INDEX t6c ON t6(c);
+}
+
+do_adp_test 2.4.1 {
+  DELETE FROM t6 WHERE a=22 OR b=90 OR (d=0 AND (b=400 OR c=303));
+} [lsort {
+  t6* t6a t6b* t6c*
+  t6* t6a* t6b t6c*
+  t6 t6a* t6b t6c*
+  t6 t6a* t6b* t6c
+}]
+
+do_adp_test 2.4.2 {
+  DELETE FROM t6 WHERE a=22 OR b=90 OR (d=1 AND (b=400 OR c=303));
+} [lsort {
+  t6* t6a t6b* t6c*
+  t6* t6a* t6b t6c*
+  t6 t6a* t6b t6c*
+  t6 t6a* t6b* t6c
+}]
+
+do_adp_test 2.4.3 {
+  DELETE FROM t6 WHERE (d=0 AND (a=100 OR b=150)) OR (d=1 AND (b=50 OR c=603));
+} [lsort {
+  t6 t6a t6b* t6c*
+  t6 t6a* t6b t6c*
+  t6 t6a* t6b t6c*
+  t6 t6a* t6b* t6c
+}]
+
 #-------------------------------------------------------------------------
 # Test that a record that consists of the bytes:
 #
