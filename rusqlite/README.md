@@ -56,6 +56,20 @@ fn main() {
 }
 ```
 
+### Optional Features
+
+Rusqlite provides several features that are behind [Cargo
+features](http://doc.crates.io/manifest.html#the-features-section). They are:
+
+* [`load_extension`](http://jgallagher.github.io/rusqlite/rusqlite/struct.LoadExtensionGuard.html)
+  allows loading dynamic library-based SQLite extensions.
+* [`backup`](http://jgallagher.github.io/rusqlite/rusqlite/backup/index.html)
+  allows use of SQLite's online backup API.
+* [`functions`](http://jgallagher.github.io/rusqlite/rusqlite/functions/index.html)
+  allows you to load Rust closures into SQLite connections for use in queries.
+* [`trace`](http://jgallagher.github.io/rusqlite/rusqlite/trace/index.html)
+  allows hooks into SQLite's tracing and profiling APIs.
+
 ### Design of Rows and Row
 
 To retrieve the result rows from a query, SQLite requires you to call
