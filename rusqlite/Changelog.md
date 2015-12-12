@@ -10,6 +10,7 @@
     * `SqliteOpenFlags` is now `OpenFlags`
     * `SqliteTransaction` is now `Transaction`.
     * `SqliteTransactionBehavior` is now `TransactionBehavior`.
+    * `SqliteLoadExtensionGuard` is now `LoadExtensionGuard`.
   The old, prefixed names are still exported but are deprecated.
 * Adds a variety of `..._named` methods for executing queries using named placeholder parameters.
 * Adds `backup` feature that exposes SQLite's online backup API.

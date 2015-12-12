@@ -74,12 +74,12 @@ use libc::{c_int, c_void, c_char};
 
 use types::{ToSql, FromSql};
 
-pub use transaction::Transaction;
+pub use transaction::{SqliteTransaction, Transaction};
 pub use transaction::{TransactionBehavior, TransactionDeferred,
                       TransactionImmediate, TransactionExclusive};
 
 #[cfg(feature = "load_extension")]
-pub use load_extension_guard::SqliteLoadExtensionGuard;
+pub use load_extension_guard::{SqliteLoadExtensionGuard, LoadExtensionGuard};
 
 pub mod types;
 mod transaction;
@@ -478,7 +478,7 @@ impl Connection {
         db.close()
     }
 
-    /// Enable loading of SQLite extensions. Strongly consider using `SqliteLoadExtensionGuard`
+    /// Enable loading of SQLite extensions. Strongly consider using `LoadExtensionGuard`
     /// instead of this function.
     ///
     /// ## Example
@@ -523,10 +523,10 @@ impl Connection {
     /// ## Example
     ///
     /// ```rust,no_run
-    /// # use rusqlite::{Connection, Result, SqliteLoadExtensionGuard};
+    /// # use rusqlite::{Connection, Result, LoadExtensionGuard};
     /// # use std::path::{Path};
     /// fn load_my_extension(conn: &Connection) -> Result<()> {
-    ///     let _guard = try!(SqliteLoadExtensionGuard::new(conn));
+    ///     let _guard = try!(LoadExtensionGuard::new(conn));
     ///
     ///     conn.load_extension("my_sqlite_extension", None)
     /// }
