@@ -2,8 +2,7 @@ use libc::c_int;
 
 use super::ffi;
 
-use {Result, Error, Connection, SqliteStatement, SqliteRows, SqliteRow,
-     str_to_cstring};
+use {Result, Error, Connection, Statement, SqliteRows, SqliteRow, str_to_cstring};
 use types::ToSql;
 
 impl Connection {
@@ -52,7 +51,7 @@ impl Connection {
     }
 }
 
-impl<'conn> SqliteStatement<'conn> {
+impl<'conn> Statement<'conn> {
     /// Return the index of an SQL parameter given its name.
     ///
     /// # Failure

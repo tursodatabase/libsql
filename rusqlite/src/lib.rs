@@ -461,7 +461,7 @@ impl Connection {
     ///
     /// Will return `Err` if `sql` cannot be converted to a C-compatible string or if the
     /// underlying SQLite call fails.
-    pub fn prepare<'a>(&'a self, sql: &str) -> Result<SqliteStatement<'a>> {
+    pub fn prepare<'a>(&'a self, sql: &str) -> Result<Statement<'a>> {
         self.db.borrow_mut().prepare(self, sql)
     }
 
@@ -698,7 +698,7 @@ impl InnerConnection {
     fn prepare<'a>(&mut self,
                    conn: &'a Connection,
                    sql: &str)
-        -> Result<SqliteStatement<'a>> {
+        -> Result<Statement<'a>> {
             if sql.len() >= ::std::i32::MAX as usize {
                 return Err(Error {
                     code: ffi::SQLITE_TOOBIG,
@@ -715,7 +715,7 @@ impl InnerConnection {
                 &mut c_stmt,
                 ptr::null_mut())
             };
-            self.decode_result(r).map(|_| SqliteStatement::new(conn, c_stmt))
+            self.decode_result(r).map(|_| Statement::new(conn, c_stmt))
         }
 
     fn changes(&mut self) -> c_int {
@@ -730,17 +730,20 @@ impl Drop for InnerConnection {
     }
 }
 
+/// Old name for `Statement`. `SqliteStatement` is deprecated.
+pub type SqliteStatement<'conn> = Statement<'conn>;
+
 /// A prepared statement.
-pub struct SqliteStatement<'conn> {
+pub struct Statement<'conn> {
     conn: &'conn Connection,
     stmt: *mut ffi::sqlite3_stmt,
     needs_reset: bool,
     column_count: c_int,
 }
 
-impl<'conn> SqliteStatement<'conn> {
-    fn new(conn: &Connection, stmt: *mut ffi::sqlite3_stmt) -> SqliteStatement {
-        SqliteStatement {
+impl<'conn> Statement<'conn> {
+    fn new(conn: &Connection, stmt: *mut ffi::sqlite3_stmt) -> Statement {
+        Statement {
             conn: conn,
             stmt: stmt,
             needs_reset: false,
@@ -938,13 +941,13 @@ impl<'conn> SqliteStatement<'conn> {
     }
 }
 
-impl<'conn> fmt::Debug for SqliteStatement<'conn> {
+impl<'conn> fmt::Debug for Statement<'conn> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let sql = unsafe {
             let c_slice = CStr::from_ptr(ffi::sqlite3_sql(self.stmt)).to_bytes();
             str::from_utf8(c_slice)
         };
-        f.debug_struct("SqliteStatement")
+        f.debug_struct("Statement")
             .field("conn", self.conn)
             .field("stmt", &self.stmt)
             .field("sql", &sql)
@@ -952,7 +955,7 @@ impl<'conn> fmt::Debug for SqliteStatement<'conn> {
     }
 }
 
-impl<'conn> Drop for SqliteStatement<'conn> {
+impl<'conn> Drop for Statement<'conn> {
     #[allow(unused_must_use)]
     fn drop(&mut self) {
         self.finalize_();
@@ -1031,13 +1034,13 @@ where E: convert::From<Error>,
 /// functions which are useful (such as support for `for ... in ...` looping, `map`, `filter`,
 /// etc.).
 pub struct SqliteRows<'stmt> {
-    stmt: &'stmt SqliteStatement<'stmt>,
+    stmt: &'stmt Statement<'stmt>,
     current_row: Rc<Cell<c_int>>,
     failed: bool,
 }
 
 impl<'stmt> SqliteRows<'stmt> {
-    fn new(stmt: &'stmt SqliteStatement<'stmt>) -> SqliteRows<'stmt> {
+    fn new(stmt: &'stmt Statement<'stmt>) -> SqliteRows<'stmt> {
         SqliteRows {
             stmt: stmt,
             current_row: Rc::new(Cell::new(0)),
@@ -1086,7 +1089,7 @@ impl<'stmt> Iterator for SqliteRows<'stmt> {
 
 /// A single result row of a query.
 pub struct SqliteRow<'stmt> {
-    stmt: &'stmt SqliteStatement<'stmt>,
+    stmt: &'stmt Statement<'stmt>,
     current_row: Rc<Cell<c_int>>,
     row_idx: c_int,
 }
