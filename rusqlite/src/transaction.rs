@@ -1,7 +1,5 @@
 use {Result, Connection};
 
-pub use TransactionBehavior::{TransactionDeferred, TransactionImmediate, TransactionExclusive};
-
 /// Old name for `TransactionBehavior`. `SqliteTransactionBehavior` is deprecated.
 pub type SqliteTransactionBehavior = TransactionBehavior;
 
@@ -9,9 +7,9 @@ pub type SqliteTransactionBehavior = TransactionBehavior;
 /// TRANSACTION](http://www.sqlite.org/lang_transaction.html) for details.
 #[derive(Copy,Clone)]
 pub enum TransactionBehavior {
-    TransactionDeferred,
-    TransactionImmediate,
-    TransactionExclusive,
+    Deferred,
+    Immediate,
+    Exclusive,
 }
 
 /// Old name for `Transaction`. `SqliteTransaction` is deprecated.
@@ -53,9 +51,9 @@ impl<'conn> Transaction<'conn> {
                behavior: TransactionBehavior)
                -> Result<Transaction> {
         let query = match behavior {
-            TransactionDeferred => "BEGIN DEFERRED",
-            TransactionImmediate => "BEGIN IMMEDIATE",
-            TransactionExclusive => "BEGIN EXCLUSIVE",
+            TransactionBehavior::Deferred => "BEGIN DEFERRED",
+            TransactionBehavior::Immediate => "BEGIN IMMEDIATE",
+            TransactionBehavior::Exclusive => "BEGIN EXCLUSIVE",
         };
         conn.execute_batch(query).map(|_| {
             Transaction {

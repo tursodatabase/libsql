@@ -74,9 +74,7 @@ use libc::{c_int, c_void, c_char};
 
 use types::{ToSql, FromSql};
 
-pub use transaction::{SqliteTransaction, Transaction};
-pub use transaction::{TransactionBehavior, TransactionDeferred,
-                      TransactionImmediate, TransactionExclusive};
+pub use transaction::{SqliteTransaction, Transaction, TransactionBehavior};
 
 #[cfg(feature = "load_extension")]
 pub use load_extension_guard::{SqliteLoadExtensionGuard, LoadExtensionGuard};
@@ -286,7 +284,7 @@ impl Connection {
     ///
     /// Will return `Err` if the underlying SQLite call fails.
     pub fn transaction<'a>(&'a self) -> Result<Transaction<'a>> {
-        Transaction::new(self, TransactionDeferred)
+        Transaction::new(self, TransactionBehavior::Deferred)
     }
 
     /// Begin a new transaction with a specified behavior.

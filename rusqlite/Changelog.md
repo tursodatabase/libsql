@@ -1,5 +1,9 @@
 # Version UPCOMING (TBD)
 
+* BREAKING CHANGE: `SqliteTransactionDeferred`, `SqliteTransactionImmediate`, and
+  `SqliteTransactionExclusive` are no longer exported. Instead, use
+  `TransactionBehavior::Deferred`, `TransactionBehavior::Immediate`, and
+  `TransactionBehavior::Exclusive`.
 * Removed `Sqlite` prefix on many types:
     * `SqliteConnection` is now `Connection`
     * `SqliteError` is now `Error`
