@@ -26,7 +26,7 @@
 //! extern crate libc;
 //!
 //! use rusqlite::types::{FromSql, ToSql, sqlite3_stmt};
-//! use rusqlite::{SqliteResult};
+//! use rusqlite::{Result};
 //! use libc::c_int;
 //! use time;
 //!
@@ -34,7 +34,7 @@
 //!
 //! impl FromSql for TimespecSql {
 //!     unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int)
-//!             -> SqliteResult<TimespecSql> {
+//!             -> Result<TimespecSql> {
 //!         let as_f64_result = FromSql::column_result(stmt, col);
 //!         as_f64_result.map(|as_f64: f64| {
 //!             TimespecSql(time::Timespec{ sec: as_f64.trunc() as i64,
@@ -59,7 +59,7 @@ use std::ffi::CStr;
 use std::mem;
 use std::str;
 use super::ffi;
-use super::{SqliteResult, Error, str_to_cstring};
+use super::{Result, Error, str_to_cstring};
 
 pub use ffi::sqlite3_stmt;
 pub use ffi::sqlite3_column_type;
@@ -75,7 +75,7 @@ pub trait ToSql {
 
 /// A trait for types that can be created from a SQLite value.
 pub trait FromSql: Sized {
-    unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> SqliteResult<Self>;
+    unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> Result<Self>;
 
     /// FromSql types can implement this method and use sqlite3_column_type to check that
     /// the type reported by SQLite matches a type suitable for Self. This method is used
@@ -176,12 +176,12 @@ impl<T: ToSql> ToSql for Option<T> {
 /// ```rust,no_run
 /// # extern crate libc;
 /// # extern crate rusqlite;
-/// # use rusqlite::{Connection, SqliteResult};
+/// # use rusqlite::{Connection, Result};
 /// # use rusqlite::types::{Null};
 /// # use libc::{c_int};
 /// fn main() {
 /// }
-/// fn insert_null(conn: &Connection) -> SqliteResult<c_int> {
+/// fn insert_null(conn: &Connection) -> Result<c_int> {
 ///     conn.execute("INSERT INTO people (name) VALUES (?)", &[&Null])
 /// }
 /// ```
@@ -197,7 +197,7 @@ impl ToSql for Null {
 macro_rules! raw_from_impl(
     ($t:ty, $f:ident, $c:expr) => (
         impl FromSql for $t {
-            unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> SqliteResult<$t> {
+            unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> Result<$t> {
                 Ok(ffi::$f(stmt, col))
             }
 
@@ -213,7 +213,7 @@ raw_from_impl!(i64, sqlite3_column_int64, ffi::SQLITE_INTEGER);
 raw_from_impl!(c_double, sqlite3_column_double, ffi::SQLITE_FLOAT);
 
 impl FromSql for bool {
-    unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> SqliteResult<bool> {
+    unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> Result<bool> {
         match ffi::sqlite3_column_int(stmt, col) {
             0 => Ok(false),
             _ => Ok(true),
@@ -226,7 +226,7 @@ impl FromSql for bool {
 }
 
 impl FromSql for String {
-    unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> SqliteResult<String> {
+    unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> Result<String> {
         let c_text = ffi::sqlite3_column_text(stmt, col);
         if c_text.is_null() {
             Ok("".to_string())
@@ -249,7 +249,7 @@ impl FromSql for String {
 }
 
 impl FromSql for Vec<u8> {
-    unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> SqliteResult<Vec<u8>> {
+    unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> Result<Vec<u8>> {
         use std::slice::from_raw_parts;
         let c_blob = ffi::sqlite3_column_blob(stmt, col);
         let len = ffi::sqlite3_column_bytes(stmt, col);
@@ -269,7 +269,7 @@ impl FromSql for Vec<u8> {
 }
 
 impl FromSql for time::Timespec {
-    unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> SqliteResult<time::Timespec> {
+    unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> Result<time::Timespec> {
         let col_str = FromSql::column_result(stmt, col);
         col_str.and_then(|txt: String| {
             time::strptime(&txt, SQLITE_DATETIME_FMT)
@@ -289,7 +289,7 @@ impl FromSql for time::Timespec {
 }
 
 impl<T: FromSql> FromSql for Option<T> {
-    unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> SqliteResult<Option<T>> {
+    unsafe fn column_result(stmt: *mut sqlite3_stmt, col: c_int) -> Result<Option<T>> {
         if sqlite3_column_type(stmt, col) == ffi::SQLITE_NULL {
             Ok(None)
         } else {

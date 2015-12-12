@@ -14,12 +14,12 @@
 //! documentation](https://www.sqlite.org/backup.html).
 //!
 //! ```rust,no_run
-//! # use rusqlite::{backup, Connection, SqliteResult};
+//! # use rusqlite::{backup, Connection, Result};
 //! # use std::path::Path;
 //! # use std::time;
 //!
 //! fn backupDb<P: AsRef<Path>>(src: &Connection, dst: P, progress: fn(backup::Progress))
-//!     -> SqliteResult<()> {
+//!     -> Result<()> {
 //!     let mut dst = try!(Connection::open(dst));
 //!     let backup = try!(backup::Backup::new(src, &mut dst));
 //!     backup.run_to_completion(5, time::Duration::from_millis(250), Some(progress))
@@ -36,7 +36,7 @@ use std::time::Duration;
 
 use ffi;
 
-use {DatabaseName, Connection, Error, SqliteResult};
+use {DatabaseName, Connection, Error, Result};
 
 impl Connection {
     /// Back up the `name` database to the given destination path.
@@ -55,7 +55,7 @@ impl Connection {
                                   name: DatabaseName,
                                   dst_path: P,
                                   progress: Option<fn(Progress)>)
-                                  -> SqliteResult<()> {
+                                  -> Result<()> {
         use self::StepResult::{More, Done, Busy, Locked};
         let mut dst = try!(Connection::open(dst_path));
         let backup = try!(Backup::new_with_names(self, name, &mut dst, DatabaseName::Main));
@@ -92,7 +92,7 @@ impl Connection {
                                    name: DatabaseName,
                                    src_path: P,
                                    progress: Option<fn(Progress)>)
-                                   -> SqliteResult<()> {
+                                   -> Result<()> {
         use self::StepResult::{More, Done, Busy, Locked};
         let src = try!(Connection::open(src_path));
         let restore = try!(Backup::new_with_names(&src, DatabaseName::Main, self, name));
@@ -172,7 +172,7 @@ impl<'a, 'b> Backup<'a, 'b> {
     /// `NULL`.
     pub fn new(from: &'a Connection,
                to: &'b mut Connection)
-               -> SqliteResult<Backup<'a, 'b>> {
+               -> Result<Backup<'a, 'b>> {
         Backup::new_with_names(from, DatabaseName::Main, to, DatabaseName::Main)
     }
 
@@ -189,7 +189,7 @@ impl<'a, 'b> Backup<'a, 'b> {
                           from_name: DatabaseName,
                           to: &'b mut Connection,
                           to_name: DatabaseName)
-                          -> SqliteResult<Backup<'a, 'b>> {
+                          -> Result<Backup<'a, 'b>> {
         let to_name = try!(to_name.to_cstring());
         let from_name = try!(from_name.to_cstring());
 
@@ -235,7 +235,7 @@ impl<'a, 'b> Backup<'a, 'b> {
     /// an error code other than `DONE`, `OK`, `BUSY`, or `LOCKED`. `BUSY` and
     /// `LOCKED` are transient errors and are therefore returned as possible
     /// `Ok` values.
-    pub fn step(&self, num_pages: c_int) -> SqliteResult<StepResult> {
+    pub fn step(&self, num_pages: c_int) -> Result<StepResult> {
         use self::StepResult::{Done, More, Busy, Locked};
 
         let rc = unsafe { ffi::sqlite3_backup_step(self.b, num_pages) };
@@ -272,7 +272,7 @@ impl<'a, 'b> Backup<'a, 'b> {
                              pages_per_step: c_int,
                              pause_between_pages: Duration,
                              progress: Option<fn(Progress)>)
-                             -> SqliteResult<()> {
+                             -> Result<()> {
         use self::StepResult::{Done, More, Busy, Locked};
 
         assert!(pages_per_step > 0, "pages_per_step must be positive");

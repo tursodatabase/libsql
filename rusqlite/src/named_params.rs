@@ -2,7 +2,7 @@ use libc::c_int;
 
 use super::ffi;
 
-use {SqliteResult, Error, Connection, SqliteStatement, SqliteRows, SqliteRow,
+use {Result, Error, Connection, SqliteStatement, SqliteRows, SqliteRow,
      str_to_cstring};
 use types::ToSql;
 
@@ -15,8 +15,8 @@ impl Connection {
     /// ## Example
     ///
     /// ```rust,no_run
-    /// # use rusqlite::{Connection, SqliteResult};
-    /// fn insert(conn: &Connection) -> SqliteResult<i32> {
+    /// # use rusqlite::{Connection, Result};
+    /// fn insert(conn: &Connection) -> Result<i32> {
     ///     conn.execute_named("INSERT INTO test (name) VALUES (:name)", &[(":name", &"one")])
     /// }
     /// ```
@@ -25,7 +25,7 @@ impl Connection {
     ///
     /// Will return `Err` if `sql` cannot be converted to a C-compatible string or if the
     /// underlying SQLite call fails.
-    pub fn execute_named(&self, sql: &str, params: &[(&str, &ToSql)]) -> SqliteResult<c_int> {
+    pub fn execute_named(&self, sql: &str, params: &[(&str, &ToSql)]) -> Result<c_int> {
         self.prepare(sql).and_then(|mut stmt| stmt.execute_named(params))
     }
 
@@ -42,7 +42,7 @@ impl Connection {
                                  sql: &str,
                                  params: &[(&str, &ToSql)],
                                  f: F)
-                                 -> SqliteResult<T>
+                                 -> Result<T>
         where F: FnOnce(SqliteRow) -> T
     {
         let mut stmt = try!(self.prepare(sql));
@@ -59,7 +59,7 @@ impl<'conn> SqliteStatement<'conn> {
     ///
     /// Will return Err if `name` is invalid. Will return Ok(None) if the name
     /// is valid but not a bound parameter of this statement.
-    pub fn parameter_index(&self, name: &str) -> SqliteResult<Option<i32>> {
+    pub fn parameter_index(&self, name: &str) -> Result<Option<i32>> {
         let c_name = try!(str_to_cstring(name));
         let c_index = unsafe { ffi::sqlite3_bind_parameter_index(self.stmt, c_name.as_ptr()) };
         Ok(match c_index {
@@ -79,8 +79,8 @@ impl<'conn> SqliteStatement<'conn> {
     /// ## Example
     ///
     /// ```rust,no_run
-    /// # use rusqlite::{Connection, SqliteResult};
-    /// fn insert(conn: &Connection) -> SqliteResult<i32> {
+    /// # use rusqlite::{Connection, Result};
+    /// fn insert(conn: &Connection) -> Result<i32> {
     ///     let mut stmt = try!(conn.prepare("INSERT INTO test (name) VALUES (:name)"));
     ///     stmt.execute_named(&[(":name", &"one")])
     /// }
@@ -90,7 +90,7 @@ impl<'conn> SqliteStatement<'conn> {
     ///
     /// Will return `Err` if binding parameters fails, the executed statement returns rows (in
     /// which case `query` should be used instead), or the underling SQLite call fails.
-    pub fn execute_named(&mut self, params: &[(&str, &ToSql)]) -> SqliteResult<c_int> {
+    pub fn execute_named(&mut self, params: &[(&str, &ToSql)]) -> Result<c_int> {
         try!(self.bind_parameters_named(params));
         unsafe {
             self.execute_()
@@ -105,8 +105,8 @@ impl<'conn> SqliteStatement<'conn> {
     /// ## Example
     ///
     /// ```rust,no_run
-    /// # use rusqlite::{Connection, SqliteResult, SqliteRows};
-    /// fn query(conn: &Connection) -> SqliteResult<()> {
+    /// # use rusqlite::{Connection, Result, SqliteRows};
+    /// fn query(conn: &Connection) -> Result<()> {
     ///     let mut stmt = try!(conn.prepare("SELECT * FROM test where name = :name"));
     ///     let mut rows = try!(stmt.query_named(&[(":name", &"one")]));
     ///     for row in rows {
@@ -121,7 +121,7 @@ impl<'conn> SqliteStatement<'conn> {
     /// Will return `Err` if binding parameters fails.
     pub fn query_named<'a>(&'a mut self,
                            params: &[(&str, &ToSql)])
-                           -> SqliteResult<SqliteRows<'a>> {
+                           -> Result<SqliteRows<'a>> {
         self.reset_if_needed();
         try!(self.bind_parameters_named(params));
 
@@ -129,7 +129,7 @@ impl<'conn> SqliteStatement<'conn> {
         Ok(SqliteRows::new(self))
     }
 
-    fn bind_parameters_named(&mut self, params: &[(&str, &ToSql)]) -> SqliteResult<()> {
+    fn bind_parameters_named(&mut self, params: &[(&str, &ToSql)]) -> Result<()> {
         for &(name, value) in params {
             if let Some(i) = try!(self.parameter_index(name)) {
                 try!(self.conn.decode_result(unsafe { value.bind_parameter(self.stmt, i) }));

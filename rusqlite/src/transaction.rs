@@ -1,4 +1,4 @@
-use {SqliteResult, Connection};
+use {Result, Connection};
 
 pub use SqliteTransactionBehavior::{SqliteTransactionDeferred, SqliteTransactionImmediate,
                                     SqliteTransactionExclusive};
@@ -22,10 +22,10 @@ pub enum SqliteTransactionBehavior {
 /// ## Example
 ///
 /// ```rust,no_run
-/// # use rusqlite::{Connection, SqliteResult};
-/// # fn do_queries_part_1(conn: &Connection) -> SqliteResult<()> { Ok(()) }
-/// # fn do_queries_part_2(conn: &Connection) -> SqliteResult<()> { Ok(()) }
-/// fn perform_queries(conn: &Connection) -> SqliteResult<()> {
+/// # use rusqlite::{Connection, Result};
+/// # fn do_queries_part_1(conn: &Connection) -> Result<()> { Ok(()) }
+/// # fn do_queries_part_2(conn: &Connection) -> Result<()> { Ok(()) }
+/// fn perform_queries(conn: &Connection) -> Result<()> {
 ///     let tx = try!(conn.transaction());
 ///
 ///     try!(do_queries_part_1(conn)); // tx causes rollback if this fails
@@ -45,7 +45,7 @@ impl<'conn> SqliteTransaction<'conn> {
     /// Begin a new transaction. Cannot be nested; see `savepoint` for nested transactions.
     pub fn new(conn: &Connection,
                behavior: SqliteTransactionBehavior)
-               -> SqliteResult<SqliteTransaction> {
+               -> Result<SqliteTransaction> {
         let query = match behavior {
             SqliteTransactionDeferred => "BEGIN DEFERRED",
             SqliteTransactionImmediate => "BEGIN IMMEDIATE",
@@ -71,9 +71,9 @@ impl<'conn> SqliteTransaction<'conn> {
     /// ## Example
     ///
     /// ```rust,no_run
-    /// # use rusqlite::{Connection, SqliteResult};
+    /// # use rusqlite::{Connection, Result};
     /// # fn perform_queries_part_1_succeeds(conn: &Connection) -> bool { true }
-    /// fn perform_queries(conn: &Connection) -> SqliteResult<()> {
+    /// fn perform_queries(conn: &Connection) -> Result<()> {
     ///     let tx = try!(conn.transaction());
     ///
     ///     {
@@ -87,7 +87,7 @@ impl<'conn> SqliteTransaction<'conn> {
     ///     tx.commit()
     /// }
     /// ```
-    pub fn savepoint<'a>(&'a self) -> SqliteResult<SqliteTransaction<'a>> {
+    pub fn savepoint<'a>(&'a self) -> Result<SqliteTransaction<'a>> {
         self.conn.execute_batch("SAVEPOINT sp").map(|_| {
             SqliteTransaction {
                 conn: self.conn,
@@ -119,11 +119,11 @@ impl<'conn> SqliteTransaction<'conn> {
     }
 
     /// A convenience method which consumes and commits a transaction.
-    pub fn commit(mut self) -> SqliteResult<()> {
+    pub fn commit(mut self) -> Result<()> {
         self.commit_()
     }
 
-    fn commit_(&mut self) -> SqliteResult<()> {
+    fn commit_(&mut self) -> Result<()> {
         self.finished = true;
         self.conn.execute_batch(if self.depth == 0 {
             "COMMIT"
@@ -133,11 +133,11 @@ impl<'conn> SqliteTransaction<'conn> {
     }
 
     /// A convenience method which consumes and rolls back a transaction.
-    pub fn rollback(mut self) -> SqliteResult<()> {
+    pub fn rollback(mut self) -> Result<()> {
         self.rollback_()
     }
 
-    fn rollback_(&mut self) -> SqliteResult<()> {
+    fn rollback_(&mut self) -> Result<()> {
         self.finished = true;
         self.conn.execute_batch(if self.depth == 0 {
             "ROLLBACK"
@@ -151,11 +151,11 @@ impl<'conn> SqliteTransaction<'conn> {
     ///
     /// Functionally equivalent to the `Drop` implementation, but allows callers to see any
     /// errors that occur.
-    pub fn finish(mut self) -> SqliteResult<()> {
+    pub fn finish(mut self) -> Result<()> {
         self.finish_()
     }
 
-    fn finish_(&mut self) -> SqliteResult<()> {
+    fn finish_(&mut self) -> Result<()> {
         match (self.finished, self.commit) {
             (true, _) => Ok(()),
             (false, true) => self.commit_(),

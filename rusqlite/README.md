@@ -72,7 +72,7 @@ performing checks at runtime to ensure you do not try to retrieve the values of 
 will panic if you do so. A specific example that will panic:
 
 ```rust
-fn bad_function_will_panic(conn: &Connection) -> SqliteResult<i64> {
+fn bad_function_will_panic(conn: &Connection) -> Result<i64> {
     let mut stmt = try!(conn.prepare("SELECT id FROM my_table"));
     let mut rows = try!(stmt.query(&[]));
 

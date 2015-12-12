@@ -1,7 +1,10 @@
 # Version UPCOMING (TBD)
 
-* Renamed `SqliteConnection` to `Connection`. The old name remains as a typealias.
-* Renamed `SqliteError` to `Error`. The old name remains as a typealias.
+* Removed `Sqlite` prefix on many types:
+    * `SqliteConnection` is now `Connection`
+    * `SqliteError` is now `Error`
+    * `SqliteResult` is now `Result`
+  The old, prefixed names are still exported should be considered deprecated.
 * Adds a variety of `..._named` methods for executing queries using named placeholder parameters.
 * Adds `backup` feature that exposes SQLite's online backup API.
 * Adds `functions` feature that allows user-defined scalar functions to be added to
