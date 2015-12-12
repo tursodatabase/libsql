@@ -2,7 +2,7 @@ use libc::c_int;
 
 use super::ffi;
 
-use {Result, Error, Connection, Statement, SqliteRows, SqliteRow, str_to_cstring};
+use {Result, Error, Connection, Statement, Rows, SqliteRow, str_to_cstring};
 use types::ToSql;
 
 impl Connection {
@@ -104,7 +104,7 @@ impl<'conn> Statement<'conn> {
     /// ## Example
     ///
     /// ```rust,no_run
-    /// # use rusqlite::{Connection, Result, SqliteRows};
+    /// # use rusqlite::{Connection, Result, Rows};
     /// fn query(conn: &Connection) -> Result<()> {
     ///     let mut stmt = try!(conn.prepare("SELECT * FROM test where name = :name"));
     ///     let mut rows = try!(stmt.query_named(&[(":name", &"one")]));
@@ -120,12 +120,12 @@ impl<'conn> Statement<'conn> {
     /// Will return `Err` if binding parameters fails.
     pub fn query_named<'a>(&'a mut self,
                            params: &[(&str, &ToSql)])
-                           -> Result<SqliteRows<'a>> {
+                           -> Result<Rows<'a>> {
         self.reset_if_needed();
         try!(self.bind_parameters_named(params));
 
         self.needs_reset = true;
-        Ok(SqliteRows::new(self))
+        Ok(Rows::new(self))
     }
 
     fn bind_parameters_named(&mut self, params: &[(&str, &ToSql)]) -> Result<()> {

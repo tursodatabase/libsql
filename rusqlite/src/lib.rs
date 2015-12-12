@@ -841,7 +841,7 @@ impl<'conn> Statement<'conn> {
     /// # Failure
     ///
     /// Will return `Err` if binding parameters fails.
-    pub fn query<'a>(&'a mut self, params: &[&ToSql]) -> Result<SqliteRows<'a>> {
+    pub fn query<'a>(&'a mut self, params: &[&ToSql]) -> Result<Rows<'a>> {
         self.reset_if_needed();
 
         unsafe {
@@ -849,7 +849,7 @@ impl<'conn> Statement<'conn> {
         }
 
         self.needs_reset = true;
-        Ok(SqliteRows::new(self))
+        Ok(Rows::new(self))
     }
 
     /// Executes the prepared statement and maps a function over the resulting
@@ -964,7 +964,7 @@ impl<'conn> Drop for Statement<'conn> {
 
 /// An iterator over the mapped resulting rows of a query.
 pub struct MappedRows<'stmt, F> {
-    rows: SqliteRows<'stmt>,
+    rows: Rows<'stmt>,
     map: F,
 }
 
@@ -980,7 +980,7 @@ impl<'stmt, T, F> Iterator for MappedRows<'stmt, F> where F: FnMut(&SqliteRow) -
 /// An iterator over the mapped resulting rows of a query, with an Error type
 /// unifying with Error.
 pub struct AndThenRows<'stmt, F> {
-    rows: SqliteRows<'stmt>,
+    rows: Rows<'stmt>,
     map: F,
 }
 
@@ -998,12 +998,15 @@ where E: convert::From<Error>,
     }
 }
 
+/// Old name for `Rows`. `SqliteRows` is deprecated.
+pub type SqliteRows<'stmt> = Rows<'stmt>;
+
 /// An iterator over the resulting rows of a query.
 ///
 /// ## Warning
 ///
 /// Due to the way SQLite returns result rows of a query, it is not safe to attempt to get values
-/// from a row after it has become stale (i.e., `next()` has been called again on the `SqliteRows`
+/// from a row after it has become stale (i.e., `next()` has been called again on the `Rows`
 /// iterator). For example:
 ///
 /// ```rust,no_run
@@ -1033,15 +1036,15 @@ where E: convert::From<Error>,
 /// no longer implement `Iterator`, and therefore you would lose access to the majority of
 /// functions which are useful (such as support for `for ... in ...` looping, `map`, `filter`,
 /// etc.).
-pub struct SqliteRows<'stmt> {
+pub struct Rows<'stmt> {
     stmt: &'stmt Statement<'stmt>,
     current_row: Rc<Cell<c_int>>,
     failed: bool,
 }
 
-impl<'stmt> SqliteRows<'stmt> {
-    fn new(stmt: &'stmt Statement<'stmt>) -> SqliteRows<'stmt> {
-        SqliteRows {
+impl<'stmt> Rows<'stmt> {
+    fn new(stmt: &'stmt Statement<'stmt>) -> Rows<'stmt> {
+        Rows {
             stmt: stmt,
             current_row: Rc::new(Cell::new(0)),
             failed: false,
@@ -1061,7 +1064,7 @@ impl<'stmt> SqliteRows<'stmt> {
     }
 }
 
-impl<'stmt> Iterator for SqliteRows<'stmt> {
+impl<'stmt> Iterator for Rows<'stmt> {
     type Item = Result<SqliteRow<'stmt>>;
 
     fn next(&mut self) -> Option<Result<SqliteRow<'stmt>>> {
