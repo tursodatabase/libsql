@@ -390,9 +390,9 @@ int deleteFrom(
   }
 
   if( eOnePass!=ONEPASS_OFF ){
-    /* For ONEPASS, no need to store the rowid/primary-key. There is only
-    ** one, so just keep it in its register(s) and fall through to the
-    ** delete code.  */
+    /* For a one-pass strategy, no need to store the rowid/primary-key in
+    ** a RowSet or temporary table. It is read directly from its register(s) 
+    ** by the delete code below. */
     nKey = nPk; /* OP_Found will use an unpacked key */
     aToOpen = sqlite3DbMallocRaw(db, nIdx+2);
     if( aToOpen==0 ){
@@ -419,8 +419,9 @@ int deleteFrom(
     }
   }
 
-  /* If this DELETE cannot use the ONEPASS strategy, this is the 
-  ** end of the WHERE loop */
+  /* If not using a one-pass strategy, this is the end of the first loop.
+  ** A second loop, to iterate through the contents of the RowSet or
+  ** temporary table populated above, is opened below. */
   if( eOnePass!=ONEPASS_OFF ){
     addrBypass = sqlite3VdbeMakeLabel(v);
   }else{
@@ -430,8 +431,7 @@ int deleteFrom(
   /* Unless this is a view, open cursors for the table we are 
   ** deleting from and all its indices. If this is a view, then the
   ** only effect this statement has is to fire the INSTEAD OF 
-  ** triggers.
-  */
+  ** triggers.  */
   if( !isView ){
     int iAddrOnce = 0;
     u8 p5 = (eOnePass==ONEPASS_OFF ? 0 : OPFLAG_FORDELETE);
@@ -446,9 +446,11 @@ int deleteFrom(
     if( eOnePass==ONEPASS_MULTI ) sqlite3VdbeJumpHere(v, iAddrOnce);
   }
 
-  /* Set up a loop over the rowids/primary-keys that were found in the
-  ** where-clause loop above.
-  */
+  /* If using a one-pass strategy, seek the data-cursor to the entry
+  ** in the main table b-tree if where.c has not already done so.
+  **
+  ** If using the two-pass strategy, start a loop over the contents
+  ** of the RowSet or temporary table populated by the first loop.  */
   if( eOnePass!=ONEPASS_OFF ){
     assert( nKey==nPk );  /* OP_Found will use an unpacked key */
     if( !IsVirtual(pTab) && aToOpen[iDataCur-iTabCur] ){
@@ -490,7 +492,9 @@ int deleteFrom(
         iKey, nKey, count, OE_Default, eOnePass, iIdxNoSeek);
   }
 
-  /* End of the loop over all rowids/primary-keys. */
+  /* For a one-pass strategy, this is the end of the single loop. For a 
+  ** two-pass strategy, the end of the loop over the rowids/primary-keys
+  ** stored in the RowSet/temporary table.  */
   if( eOnePass!=ONEPASS_OFF ){
     sqlite3VdbeResolveLabel(v, addrBypass);
     sqlite3WhereEnd(pWInfo);
