@@ -82,6 +82,7 @@ pub use load_extension_guard::SqliteLoadExtensionGuard;
 
 pub mod types;
 mod transaction;
+mod named_params;
 #[cfg(feature = "load_extension")]mod load_extension_guard;
 #[cfg(feature = "trace")]pub mod trace;
 #[cfg(feature = "backup")]pub mod backup;
@@ -368,20 +369,12 @@ impl SqliteConnection {
     /// underlying SQLite call fails.
     pub fn query_row<T, F>(&self, sql: &str, params: &[&ToSql], f: F) -> SqliteResult<T>
         where F: FnOnce(SqliteRow) -> T
-        {
-            let mut stmt = try!(self.prepare(sql));
-            let mut rows = try!(stmt.query(params));
+    {
+        let mut stmt = try!(self.prepare(sql));
+        let mut rows = try!(stmt.query(params));
 
-            match rows.next() {
-                Some(row) => row.map(f),
-                None => {
-                    Err(SqliteError {
-                        code: ffi::SQLITE_NOTICE,
-                        message: "Query did not return a row".to_string(),
-                    })
-                }
-            }
-        }
+        rows.get_expected_row().map(f)
+    }
 
     /// Convenience method to execute a query that is expected to return a single row,
     /// and execute a mapping via `f` on that returned row with the possibility of failure.
@@ -407,20 +400,12 @@ impl SqliteConnection {
     pub fn query_row_and_then<T, E, F>(&self, sql: &str, params: &[&ToSql], f: F) -> Result<T, E>
         where F: FnOnce(SqliteRow) -> Result<T, E>,
               E: convert::From<SqliteError>
-              {
-                  let mut stmt = try!(self.prepare(sql));
-                  let mut rows = try!(stmt.query(params));
+    {
+        let mut stmt = try!(self.prepare(sql));
+        let mut rows = try!(stmt.query(params));
 
-                  match rows.next() {
-                      Some(row) => row.map_err(E::from).and_then(f),
-                      None => {
-                          Err(E::from(SqliteError {
-                              code: ffi::SQLITE_NOTICE,
-                              message: "Query did not return a row".to_string(),
-                          }))
-                      }
-                  }
-              }
+        rows.get_expected_row().map_err(E::from).and_then(f)
+    }
 
     /// Convenience method to execute a query that is expected to return a single row.
     ///
@@ -790,29 +775,32 @@ impl<'conn> SqliteStatement<'conn> {
     pub fn execute(&mut self, params: &[&ToSql]) -> SqliteResult<c_int> {
         unsafe {
             try!(self.bind_parameters(params));
+            self.execute_()
+        }
+    }
 
-            let r = ffi::sqlite3_step(self.stmt);
-            ffi::sqlite3_reset(self.stmt);
-            match r {
-                ffi::SQLITE_DONE => {
-                    if self.column_count != 0 {
-                        Err(SqliteError {
-                            code: ffi::SQLITE_MISUSE,
-                            message: "Unexpected column count - did you mean to call query?"
-                            .to_string(),
-                        })
-                    } else {
-                        Ok(self.conn.changes())
-                    }
-                }
-                ffi::SQLITE_ROW => {
+    unsafe fn execute_(&mut self) -> SqliteResult<c_int> {
+        let r = ffi::sqlite3_step(self.stmt);
+        ffi::sqlite3_reset(self.stmt);
+        match r {
+            ffi::SQLITE_DONE => {
+                if self.column_count != 0 {
                     Err(SqliteError {
-                        code: r,
-                        message: "Unexpected row result - did you mean to call query?".to_string(),
+                        code: ffi::SQLITE_MISUSE,
+                        message: "Unexpected column count - did you mean to call query?"
+                        .to_string(),
                     })
+                } else {
+                    Ok(self.conn.changes())
                 }
-                _ => Err(self.conn.decode_result(r).unwrap_err()),
             }
+            ffi::SQLITE_ROW => {
+                Err(SqliteError {
+                    code: r,
+                    message: "Unexpected row result - did you mean to call query?".to_string(),
+                })
+            }
+            _ => Err(self.conn.decode_result(r).unwrap_err()),
         }
     }
 
@@ -1043,6 +1031,18 @@ impl<'stmt> SqliteRows<'stmt> {
             stmt: stmt,
             current_row: Rc::new(Cell::new(0)),
             failed: false,
+        }
+    }
+
+    fn get_expected_row(&mut self) -> SqliteResult<SqliteRow<'stmt>> {
+        match self.next() {
+            Some(row) => row,
+            None => {
+                Err(SqliteError {
+                    code: ffi::SQLITE_NOTICE,
+                    message: "Query did not return a row".to_string(),
+                })
+            }
         }
     }
 }
