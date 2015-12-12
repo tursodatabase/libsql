@@ -1,6 +1,6 @@
 //! Online SQLite backup API.
 //!
-//! To create a `Backup`, you must have two distinct `SqliteConnection`s - one
+//! To create a `Backup`, you must have two distinct `Connection`s - one
 //! for the source (which can be used while the backup is running) and one for
 //! the destination (which cannot).  A `Backup` handle exposes three methods:
 //! `step` will attempt to back up a specified number of pages, `progress` gets
@@ -14,13 +14,13 @@
 //! documentation](https://www.sqlite.org/backup.html).
 //!
 //! ```rust,no_run
-//! # use rusqlite::{backup, SqliteConnection, SqliteResult};
+//! # use rusqlite::{backup, Connection, SqliteResult};
 //! # use std::path::Path;
 //! # use std::time;
 //!
-//! fn backupDb<P: AsRef<Path>>(src: &SqliteConnection, dst: P, progress: fn(backup::Progress))
+//! fn backupDb<P: AsRef<Path>>(src: &Connection, dst: P, progress: fn(backup::Progress))
 //!     -> SqliteResult<()> {
-//!     let mut dst = try!(SqliteConnection::open(dst));
+//!     let mut dst = try!(Connection::open(dst));
 //!     let backup = try!(backup::Backup::new(src, &mut dst));
 //!     backup.run_to_completion(5, time::Duration::from_millis(250), Some(progress))
 //! }
@@ -36,9 +36,9 @@ use std::time::Duration;
 
 use ffi;
 
-use {DatabaseName, SqliteConnection, SqliteError, SqliteResult};
+use {DatabaseName, Connection, SqliteError, SqliteResult};
 
-impl SqliteConnection {
+impl Connection {
     /// Back up the `name` database to the given destination path.
     /// If `progress` is not `None`, it will be called periodically
     /// until the backup completes.
@@ -57,7 +57,7 @@ impl SqliteConnection {
                                   progress: Option<fn(Progress)>)
                                   -> SqliteResult<()> {
         use self::StepResult::{More, Done, Busy, Locked};
-        let mut dst = try!(SqliteConnection::open(dst_path));
+        let mut dst = try!(Connection::open(dst_path));
         let backup = try!(Backup::new_with_names(self, name, &mut dst, DatabaseName::Main));
 
         let mut r = More;
@@ -94,7 +94,7 @@ impl SqliteConnection {
                                    progress: Option<fn(Progress)>)
                                    -> SqliteResult<()> {
         use self::StepResult::{More, Done, Busy, Locked};
-        let src = try!(SqliteConnection::open(src_path));
+        let src = try!(Connection::open(src_path));
         let restore = try!(Backup::new_with_names(&src, DatabaseName::Main, self, name));
 
         let mut r = More;
@@ -170,8 +170,8 @@ impl<'a, 'b> Backup<'a, 'b> {
     ///
     /// Will return `Err` if the underlying `sqlite3_backup_init` call returns
     /// `NULL`.
-    pub fn new(from: &'a SqliteConnection,
-               to: &'b mut SqliteConnection)
+    pub fn new(from: &'a Connection,
+               to: &'b mut Connection)
                -> SqliteResult<Backup<'a, 'b>> {
         Backup::new_with_names(from, DatabaseName::Main, to, DatabaseName::Main)
     }
@@ -185,9 +185,9 @@ impl<'a, 'b> Backup<'a, 'b> {
     ///
     /// Will return `Err` if the underlying `sqlite3_backup_init` call returns
     /// `NULL`.
-    pub fn new_with_names(from: &'a SqliteConnection,
+    pub fn new_with_names(from: &'a Connection,
                           from_name: DatabaseName,
-                          to: &'b mut SqliteConnection,
+                          to: &'b mut Connection,
                           to_name: DatabaseName)
                           -> SqliteResult<Backup<'a, 'b>> {
         let to_name = try!(to_name.to_cstring());
@@ -298,21 +298,21 @@ impl<'a, 'b> Drop for Backup<'a, 'b> {
 
 #[cfg(test)]
 mod test {
-    use {SqliteConnection, DatabaseName};
+    use {Connection, DatabaseName};
     use std::time::Duration;
     use super::Backup;
 
     #[test]
     #[cfg_attr(rustfmt, rustfmt_skip)]
     fn test_backup() {
-        let src = SqliteConnection::open_in_memory().unwrap();
+        let src = Connection::open_in_memory().unwrap();
         let sql = "BEGIN;
                    CREATE TABLE foo(x INTEGER);
                    INSERT INTO foo VALUES(42);
                    END;";
         src.execute_batch(sql).unwrap();
 
-        let mut dst = SqliteConnection::open_in_memory().unwrap();
+        let mut dst = Connection::open_in_memory().unwrap();
 
         {
             let backup = Backup::new(&src, &mut dst).unwrap();
@@ -336,14 +336,14 @@ mod test {
     #[test]
     #[cfg_attr(rustfmt, rustfmt_skip)]
     fn test_backup_temp() {
-        let src = SqliteConnection::open_in_memory().unwrap();
+        let src = Connection::open_in_memory().unwrap();
         let sql = "BEGIN;
                    CREATE TEMPORARY TABLE foo(x INTEGER);
                    INSERT INTO foo VALUES(42);
                    END;";
         src.execute_batch(sql).unwrap();
 
-        let mut dst = SqliteConnection::open_in_memory().unwrap();
+        let mut dst = Connection::open_in_memory().unwrap();
 
         {
             let backup = Backup::new_with_names(&src,
@@ -375,7 +375,7 @@ mod test {
     #[test]
     #[cfg_attr(rustfmt, rustfmt_skip)]
     fn test_backup_attached() {
-        let src = SqliteConnection::open_in_memory().unwrap();
+        let src = Connection::open_in_memory().unwrap();
         let sql = "ATTACH DATABASE ':memory:' AS my_attached;
                    BEGIN;
                    CREATE TABLE my_attached.foo(x INTEGER);
@@ -383,7 +383,7 @@ mod test {
                    END;";
         src.execute_batch(sql).unwrap();
 
-        let mut dst = SqliteConnection::open_in_memory().unwrap();
+        let mut dst = Connection::open_in_memory().unwrap();
 
         {
             let backup = Backup::new_with_names(&src,

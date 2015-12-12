@@ -11,7 +11,7 @@ extern crate rusqlite;
 extern crate time;
 
 use time::Timespec;
-use rusqlite::SqliteConnection;
+use rusqlite::Connection;
 
 #[derive(Debug)]
 struct Person {
@@ -22,7 +22,7 @@ struct Person {
 }
 
 fn main() {
-    let conn = SqliteConnection::open_in_memory().unwrap();
+    let conn = Connection::open_in_memory().unwrap();
 
     conn.execute("CREATE TABLE person (
                   id              INTEGER PRIMARY KEY,
@@ -72,7 +72,7 @@ performing checks at runtime to ensure you do not try to retrieve the values of 
 will panic if you do so. A specific example that will panic:
 
 ```rust
-fn bad_function_will_panic(conn: &SqliteConnection) -> SqliteResult<i64> {
+fn bad_function_will_panic(conn: &Connection) -> SqliteResult<i64> {
     let mut stmt = try!(conn.prepare("SELECT id FROM my_table"));
     let mut rows = try!(stmt.query(&[]));
 

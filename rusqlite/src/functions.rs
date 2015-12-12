@@ -12,11 +12,11 @@
 //! extern crate rusqlite;
 //! extern crate regex;
 //!
-//! use rusqlite::{SqliteConnection, SqliteError, SqliteResult};
+//! use rusqlite::{Connection, SqliteError, SqliteResult};
 //! use std::collections::HashMap;
 //! use regex::Regex;
 //!
-//! fn add_regexp_function(db: &SqliteConnection) -> SqliteResult<()> {
+//! fn add_regexp_function(db: &Connection) -> SqliteResult<()> {
 //!     let mut cached_regexes = HashMap::new();
 //!     db.create_scalar_function("regexp", 2, true, move |ctx| {
 //!         let regex_s = try!(ctx.get::<String>(0));
@@ -41,7 +41,7 @@
 //! }
 //!
 //! fn main() {
-//!     let db = SqliteConnection::open_in_memory().unwrap();
+//!     let db = Connection::open_in_memory().unwrap();
 //!     add_regexp_function(&db).unwrap();
 //!
 //!     let is_match = db.query_row("SELECT regexp('[aeiou]*', 'aaaaeeeiii')", &[],
@@ -65,7 +65,7 @@ pub use ffi::sqlite3_value_numeric_type;
 
 use types::Null;
 
-use {SqliteResult, SqliteError, SqliteConnection, str_to_cstring, InnerSqliteConnection};
+use {SqliteResult, SqliteError, Connection, str_to_cstring, InnerConnection};
 
 /// A trait for types that can be converted into the result of an SQL function.
 pub trait ToResult {
@@ -341,7 +341,7 @@ impl<'a> Context<'a> {
     }
 }
 
-impl SqliteConnection {
+impl Connection {
     /// Attach a user-defined scalar function to this database connection.
     ///
     /// `fn_name` is the name the function will be accessible from SQL.
@@ -355,9 +355,9 @@ impl SqliteConnection {
     /// # Example
     ///
     /// ```rust
-    /// # use rusqlite::{SqliteConnection, SqliteResult};
+    /// # use rusqlite::{Connection, SqliteResult};
     /// # type c_double = f64;
-    /// fn scalar_function_example(db: SqliteConnection) -> SqliteResult<()> {
+    /// fn scalar_function_example(db: Connection) -> SqliteResult<()> {
     ///     try!(db.create_scalar_function("halve", 1, true, |ctx| {
     ///         let value = try!(ctx.get::<c_double>(0));
     ///         Ok(value / 2f64)
@@ -397,7 +397,7 @@ impl SqliteConnection {
     }
 }
 
-impl InnerSqliteConnection {
+impl InnerConnection {
     fn create_scalar_function<F, T>(&mut self,
                                     fn_name: &str,
                                     n_arg: c_int,
@@ -477,7 +477,7 @@ mod test {
     use libc::c_double;
     use self::regex::Regex;
 
-    use {SqliteConnection, SqliteError, SqliteResult};
+    use {Connection, SqliteError, SqliteResult};
     use ffi;
     use functions::Context;
 
@@ -489,7 +489,7 @@ mod test {
 
     #[test]
     fn test_function_half() {
-        let db = SqliteConnection::open_in_memory().unwrap();
+        let db = Connection::open_in_memory().unwrap();
         db.create_scalar_function("half", 1, true, half).unwrap();
         let result = db.query_row("SELECT half(6)", &[], |r| r.get::<f64>(0));
 
@@ -498,7 +498,7 @@ mod test {
 
     #[test]
     fn test_remove_function() {
-        let db = SqliteConnection::open_in_memory().unwrap();
+        let db = Connection::open_in_memory().unwrap();
         db.create_scalar_function("half", 1, true, half).unwrap();
         let result = db.query_row("SELECT half(6)", &[], |r| r.get::<f64>(0));
         assert_eq!(3f64, result.unwrap());
@@ -546,7 +546,7 @@ mod test {
     #[test]
     #[cfg_attr(rustfmt, rustfmt_skip)]
     fn test_function_regexp_with_auxilliary() {
-        let db = SqliteConnection::open_in_memory().unwrap();
+        let db = Connection::open_in_memory().unwrap();
         db.execute_batch("BEGIN;
                          CREATE TABLE foo (x string);
                          INSERT INTO foo VALUES ('lisa');
@@ -571,7 +571,7 @@ mod test {
     #[test]
     #[cfg_attr(rustfmt, rustfmt_skip)]
     fn test_function_regexp_with_hashmap_cache() {
-        let db = SqliteConnection::open_in_memory().unwrap();
+        let db = Connection::open_in_memory().unwrap();
         db.execute_batch("BEGIN;
                          CREATE TABLE foo (x string);
                          INSERT INTO foo VALUES ('lisa');
@@ -621,7 +621,7 @@ mod test {
 
     #[test]
     fn test_varargs_function() {
-        let db = SqliteConnection::open_in_memory().unwrap();
+        let db = Connection::open_in_memory().unwrap();
         db.create_scalar_function("my_concat", -1, true, |ctx| {
               let mut ret = String::new();
 

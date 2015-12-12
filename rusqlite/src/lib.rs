@@ -6,7 +6,7 @@
 //! extern crate time;
 //!
 //! use time::Timespec;
-//! use rusqlite::SqliteConnection;
+//! use rusqlite::Connection;
 //!
 //! #[derive(Debug)]
 //! struct Person {
@@ -17,7 +17,7 @@
 //! }
 //!
 //! fn main() {
-//!     let conn = SqliteConnection::open_in_memory().unwrap();
+//!     let conn = Connection::open_in_memory().unwrap();
 //!
 //!     conn.execute("CREATE TABLE person (
 //!                   id              INTEGER PRIMARY KEY,
@@ -179,27 +179,30 @@ impl<'a> DatabaseName<'a> {
     }
 }
 
+/// Old name for `Connection`. `SqliteConnection` is deprecated.
+pub type SqliteConnection = Connection;
+
 /// A connection to a SQLite database.
-pub struct SqliteConnection {
-    db: RefCell<InnerSqliteConnection>,
+pub struct Connection {
+    db: RefCell<InnerConnection>,
     path: Option<PathBuf>,
 }
 
-unsafe impl Send for SqliteConnection {}
+unsafe impl Send for Connection {}
 
-impl SqliteConnection {
+impl Connection {
     /// Open a new connection to a SQLite database.
     ///
-    /// `SqliteConnection::open(path)` is equivalent to `SqliteConnection::open_with_flags(path,
+    /// `Connection::open(path)` is equivalent to `Connection::open_with_flags(path,
     /// SQLITE_OPEN_READ_WRITE | SQLITE_OPEN_CREATE)`.
     ///
     /// # Failure
     ///
     /// Will return `Err` if `path` cannot be converted to a C-compatible string or if the
     /// underlying SQLite open call fails.
-    pub fn open<P: AsRef<Path>>(path: P) -> SqliteResult<SqliteConnection> {
+    pub fn open<P: AsRef<Path>>(path: P) -> SqliteResult<Connection> {
         let flags = Default::default();
-        SqliteConnection::open_with_flags(path, flags)
+        Connection::open_with_flags(path, flags)
     }
 
     /// Open a new connection to an in-memory SQLite database.
@@ -207,9 +210,9 @@ impl SqliteConnection {
     /// # Failure
     ///
     /// Will return `Err` if the underlying SQLite open call fails.
-    pub fn open_in_memory() -> SqliteResult<SqliteConnection> {
+    pub fn open_in_memory() -> SqliteResult<Connection> {
         let flags = Default::default();
-        SqliteConnection::open_in_memory_with_flags(flags)
+        Connection::open_in_memory_with_flags(flags)
     }
 
     /// Open a new connection to a SQLite database.
@@ -223,10 +226,10 @@ impl SqliteConnection {
     /// underlying SQLite open call fails.
     pub fn open_with_flags<P: AsRef<Path>>(path: P,
                                            flags: SqliteOpenFlags)
-        -> SqliteResult<SqliteConnection> {
+        -> SqliteResult<Connection> {
             let c_path = try!(path_to_cstring(path.as_ref()));
-            InnerSqliteConnection::open_with_flags(&c_path, flags).map(|db| {
-                SqliteConnection {
+            InnerConnection::open_with_flags(&c_path, flags).map(|db| {
+                Connection {
                     db: RefCell::new(db),
                     path: Some(path.as_ref().to_path_buf()),
                 }
@@ -241,10 +244,10 @@ impl SqliteConnection {
     /// # Failure
     ///
     /// Will return `Err` if the underlying SQLite open call fails.
-    pub fn open_in_memory_with_flags(flags: SqliteOpenFlags) -> SqliteResult<SqliteConnection> {
+    pub fn open_in_memory_with_flags(flags: SqliteOpenFlags) -> SqliteResult<Connection> {
         let c_memory = try!(str_to_cstring(":memory:"));
-        InnerSqliteConnection::open_with_flags(&c_memory, flags).map(|db| {
-            SqliteConnection {
+        InnerConnection::open_with_flags(&c_memory, flags).map(|db| {
+            Connection {
                 db: RefCell::new(db),
                 path: None,
             }
@@ -259,10 +262,10 @@ impl SqliteConnection {
     /// ## Example
     ///
     /// ```rust,no_run
-    /// # use rusqlite::{SqliteConnection, SqliteResult};
-    /// # fn do_queries_part_1(conn: &SqliteConnection) -> SqliteResult<()> { Ok(()) }
-    /// # fn do_queries_part_2(conn: &SqliteConnection) -> SqliteResult<()> { Ok(()) }
-    /// fn perform_queries(conn: &SqliteConnection) -> SqliteResult<()> {
+    /// # use rusqlite::{Connection, SqliteResult};
+    /// # fn do_queries_part_1(conn: &Connection) -> SqliteResult<()> { Ok(()) }
+    /// # fn do_queries_part_2(conn: &Connection) -> SqliteResult<()> { Ok(()) }
+    /// fn perform_queries(conn: &Connection) -> SqliteResult<()> {
     ///     let tx = try!(conn.transaction());
     ///
     ///     try!(do_queries_part_1(conn)); // tx causes rollback if this fails
@@ -299,8 +302,8 @@ impl SqliteConnection {
     /// ## Example
     ///
     /// ```rust,no_run
-    /// # use rusqlite::{SqliteConnection, SqliteResult};
-    /// fn create_tables(conn: &SqliteConnection) -> SqliteResult<()> {
+    /// # use rusqlite::{Connection, SqliteResult};
+    /// fn create_tables(conn: &Connection) -> SqliteResult<()> {
     ///     conn.execute_batch("BEGIN;
     ///                         CREATE TABLE foo(x INTEGER);
     ///                         CREATE TABLE bar(y TEXT);
@@ -324,8 +327,8 @@ impl SqliteConnection {
     /// ## Example
     ///
     /// ```rust,no_run
-    /// # use rusqlite::{SqliteConnection};
-    /// fn update_rows(conn: &SqliteConnection) {
+    /// # use rusqlite::{Connection};
+    /// fn update_rows(conn: &Connection) {
     ///     match conn.execute("UPDATE foo SET bar = 'baz' WHERE qux = ?", &[&1i32]) {
     ///         Ok(updated) => println!("{} rows were updated", updated),
     ///         Err(err) => println!("update failed: {}", err),
@@ -354,8 +357,8 @@ impl SqliteConnection {
     /// ## Example
     ///
     /// ```rust,no_run
-    /// # use rusqlite::{SqliteResult,SqliteConnection};
-    /// fn preferred_locale(conn: &SqliteConnection) -> SqliteResult<String> {
+    /// # use rusqlite::{SqliteResult,Connection};
+    /// fn preferred_locale(conn: &Connection) -> SqliteResult<String> {
     ///     conn.query_row("SELECT value FROM preferences WHERE name='locale'", &[], |row| {
     ///         row.get(0)
     ///     })
@@ -384,8 +387,8 @@ impl SqliteConnection {
     /// ## Example
     ///
     /// ```rust,no_run
-    /// # use rusqlite::{SqliteResult,SqliteConnection};
-    /// fn preferred_locale(conn: &SqliteConnection) -> SqliteResult<String> {
+    /// # use rusqlite::{SqliteResult,Connection};
+    /// fn preferred_locale(conn: &Connection) -> SqliteResult<String> {
     ///     conn.query_row_and_then("SELECT value FROM preferences WHERE name='locale'", &[], |row| {
     ///         row.get_checked(0)
     ///     })
@@ -413,8 +416,8 @@ impl SqliteConnection {
     /// ## Example
     ///
     /// ```rust,no_run
-    /// # use rusqlite::{SqliteResult,SqliteConnection};
-    /// fn preferred_locale(conn: &SqliteConnection) -> SqliteResult<String> {
+    /// # use rusqlite::{SqliteResult,Connection};
+    /// fn preferred_locale(conn: &Connection) -> SqliteResult<String> {
     ///     conn.query_row_safe("SELECT value FROM preferences WHERE name='locale'", &[], |row| {
     ///         row.get(0)
     ///     })
@@ -438,8 +441,8 @@ impl SqliteConnection {
     /// ## Example
     ///
     /// ```rust,no_run
-    /// # use rusqlite::{SqliteConnection, SqliteResult};
-    /// fn insert_new_people(conn: &SqliteConnection) -> SqliteResult<()> {
+    /// # use rusqlite::{Connection, SqliteResult};
+    /// fn insert_new_people(conn: &Connection) -> SqliteResult<()> {
     ///     let mut stmt = try!(conn.prepare("INSERT INTO People (name) VALUES (?)"));
     ///     try!(stmt.execute(&[&"Joe Smith"]));
     ///     try!(stmt.execute(&[&"Bob Jones"]));
@@ -457,7 +460,7 @@ impl SqliteConnection {
 
     /// Close the SQLite connection.
     ///
-    /// This is functionally equivalent to the `Drop` implementation for `SqliteConnection` except
+    /// This is functionally equivalent to the `Drop` implementation for `Connection` except
     /// that it returns any error encountered to the caller.
     ///
     /// # Failure
@@ -474,9 +477,9 @@ impl SqliteConnection {
     /// ## Example
     ///
     /// ```rust,no_run
-    /// # use rusqlite::{SqliteConnection, SqliteResult};
+    /// # use rusqlite::{Connection, SqliteResult};
     /// # use std::path::{Path};
-    /// fn load_my_extension(conn: &SqliteConnection) -> SqliteResult<()> {
+    /// fn load_my_extension(conn: &Connection) -> SqliteResult<()> {
     ///     try!(conn.load_extension_enable());
     ///     try!(conn.load_extension(Path::new("my_sqlite_extension"), None));
     ///     conn.load_extension_disable()
@@ -513,9 +516,9 @@ impl SqliteConnection {
     /// ## Example
     ///
     /// ```rust,no_run
-    /// # use rusqlite::{SqliteConnection, SqliteResult, SqliteLoadExtensionGuard};
+    /// # use rusqlite::{Connection, SqliteResult, SqliteLoadExtensionGuard};
     /// # use std::path::{Path};
-    /// fn load_my_extension(conn: &SqliteConnection) -> SqliteResult<()> {
+    /// fn load_my_extension(conn: &Connection) -> SqliteResult<()> {
     ///     let _guard = try!(SqliteLoadExtensionGuard::new(conn));
     ///
     ///     conn.load_extension("my_sqlite_extension", None)
@@ -542,15 +545,15 @@ impl SqliteConnection {
     }
 }
 
-impl fmt::Debug for SqliteConnection {
+impl fmt::Debug for Connection {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("SqliteConnection")
+        f.debug_struct("Connection")
             .field("path", &self.path)
             .finish()
     }
 }
 
-struct InnerSqliteConnection {
+struct InnerConnection {
     db: *mut ffi::Struct_sqlite3,
 }
 
@@ -577,10 +580,10 @@ impl Default for SqliteOpenFlags {
     }
 }
 
-impl InnerSqliteConnection {
+impl InnerConnection {
     fn open_with_flags(c_path: &CString,
                        flags: SqliteOpenFlags)
-        -> SqliteResult<InnerSqliteConnection> {
+        -> SqliteResult<InnerConnection> {
             unsafe {
                 let mut db: *mut ffi::sqlite3 = mem::uninitialized();
                 let r = ffi::sqlite3_open_v2(c_path.as_ptr(), &mut db, flags.bits(), ptr::null());
@@ -604,7 +607,7 @@ impl InnerSqliteConnection {
                     ffi::sqlite3_close(db);
                     return Err(e);
                 }
-                Ok(InnerSqliteConnection { db: db })
+                Ok(InnerConnection { db: db })
             }
         }
 
@@ -686,7 +689,7 @@ impl InnerSqliteConnection {
     }
 
     fn prepare<'a>(&mut self,
-                   conn: &'a SqliteConnection,
+                   conn: &'a Connection,
                    sql: &str)
         -> SqliteResult<SqliteStatement<'a>> {
             if sql.len() >= ::std::i32::MAX as usize {
@@ -713,7 +716,7 @@ impl InnerSqliteConnection {
     }
 }
 
-impl Drop for InnerSqliteConnection {
+impl Drop for InnerConnection {
     #[allow(unused_must_use)]
     fn drop(&mut self) {
         self.close();
@@ -722,14 +725,14 @@ impl Drop for InnerSqliteConnection {
 
 /// A prepared statement.
 pub struct SqliteStatement<'conn> {
-    conn: &'conn SqliteConnection,
+    conn: &'conn Connection,
     stmt: *mut ffi::sqlite3_stmt,
     needs_reset: bool,
     column_count: c_int,
 }
 
 impl<'conn> SqliteStatement<'conn> {
-    fn new(conn: &SqliteConnection, stmt: *mut ffi::sqlite3_stmt) -> SqliteStatement {
+    fn new(conn: &Connection, stmt: *mut ffi::sqlite3_stmt) -> SqliteStatement {
         SqliteStatement {
             conn: conn,
             stmt: stmt,
@@ -758,8 +761,8 @@ impl<'conn> SqliteStatement<'conn> {
     /// ## Example
     ///
     /// ```rust,no_run
-    /// # use rusqlite::{SqliteConnection, SqliteResult};
-    /// fn update_rows(conn: &SqliteConnection) -> SqliteResult<()> {
+    /// # use rusqlite::{Connection, SqliteResult};
+    /// fn update_rows(conn: &Connection) -> SqliteResult<()> {
     ///     let mut stmt = try!(conn.prepare("UPDATE foo SET bar = 'baz' WHERE qux = ?"));
     ///
     ///     try!(stmt.execute(&[&1i32]));
@@ -810,8 +813,8 @@ impl<'conn> SqliteStatement<'conn> {
     /// ## Example
     ///
     /// ```rust,no_run
-    /// # use rusqlite::{SqliteConnection, SqliteResult};
-    /// fn get_names(conn: &SqliteConnection) -> SqliteResult<Vec<String>> {
+    /// # use rusqlite::{Connection, SqliteResult};
+    /// fn get_names(conn: &Connection) -> SqliteResult<Vec<String>> {
     ///     let mut stmt = try!(conn.prepare("SELECT name FROM people"));
     ///     let mut rows = try!(stmt.query(&[]));
     ///
@@ -994,8 +997,8 @@ where E: convert::From<SqliteError>,
 /// iterator). For example:
 ///
 /// ```rust,no_run
-/// # use rusqlite::{SqliteConnection, SqliteResult};
-/// fn bad_function_will_panic(conn: &SqliteConnection) -> SqliteResult<i64> {
+/// # use rusqlite::{Connection, SqliteResult};
+/// fn bad_function_will_panic(conn: &Connection) -> SqliteResult<i64> {
 ///     let mut stmt = try!(conn.prepare("SELECT id FROM my_table"));
 ///     let mut rows = try!(stmt.query(&[]));
 ///
@@ -1090,8 +1093,8 @@ impl<'stmt> SqliteRow<'stmt> {
     /// for example) this isn't an issue, but it means you cannot do something like this:
     ///
     /// ```rust,no_run
-    /// # use rusqlite::{SqliteConnection, SqliteResult};
-    /// fn bad_function_will_panic(conn: &SqliteConnection) -> SqliteResult<i64> {
+    /// # use rusqlite::{Connection, SqliteResult};
+    /// fn bad_function_will_panic(conn: &Connection) -> SqliteResult<i64> {
     ///     let mut stmt = try!(conn.prepare("SELECT id FROM my_table"));
     ///     let mut rows = try!(stmt.query(&[]));
     ///
@@ -1164,11 +1167,11 @@ mod test {
     // that those types are `Send`.
     #[allow(dead_code, unconditional_recursion)]
     fn ensure_send<T: Send>() {
-        ensure_send::<SqliteConnection>();
+        ensure_send::<Connection>();
     }
 
-    pub fn checked_memory_handle() -> SqliteConnection {
-        SqliteConnection::open_in_memory().unwrap()
+    pub fn checked_memory_handle() -> Connection {
+        Connection::open_in_memory().unwrap()
     }
 
     #[test]
@@ -1178,7 +1181,7 @@ mod test {
         let path = temp_dir.path().join("test.db3");
 
         {
-            let db = SqliteConnection::open(&path).unwrap();
+            let db = Connection::open(&path).unwrap();
             let sql = "BEGIN;
                    CREATE TABLE foo(x INTEGER);
                    INSERT INTO foo VALUES(42);
@@ -1187,7 +1190,7 @@ mod test {
         }
 
         let path_string = path.to_str().unwrap();
-        let db = SqliteConnection::open(&path_string).unwrap();
+        let db = Connection::open(&path_string).unwrap();
         let the_answer = db.query_row("SELECT x FROM foo", &[], |r| r.get::<i64>(0));
 
         assert_eq!(42i64, the_answer.unwrap());
@@ -1195,7 +1198,7 @@ mod test {
 
     #[test]
     fn test_open() {
-        assert!(SqliteConnection::open_in_memory().is_ok());
+        assert!(Connection::open_in_memory().is_ok());
 
         let db = checked_memory_handle();
         assert!(db.close().is_ok());
@@ -1207,7 +1210,7 @@ mod test {
         SQLITE_OPEN_READ_ONLY | SQLITE_OPEN_READ_WRITE,
         SQLITE_OPEN_READ_ONLY | SQLITE_OPEN_CREATE]
             .iter() {
-                assert!(SqliteConnection::open_in_memory_with_flags(*bad_flags).is_err());
+                assert!(Connection::open_in_memory_with_flags(*bad_flags).is_err());
             }
     }
 

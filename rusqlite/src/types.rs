@@ -176,12 +176,12 @@ impl<T: ToSql> ToSql for Option<T> {
 /// ```rust,no_run
 /// # extern crate libc;
 /// # extern crate rusqlite;
-/// # use rusqlite::{SqliteConnection, SqliteResult};
+/// # use rusqlite::{Connection, SqliteResult};
 /// # use rusqlite::types::{Null};
 /// # use libc::{c_int};
 /// fn main() {
 /// }
-/// fn insert_null(conn: &SqliteConnection) -> SqliteResult<c_int> {
+/// fn insert_null(conn: &Connection) -> SqliteResult<c_int> {
 ///     conn.execute("INSERT INTO people (name) VALUES (?)", &[&Null])
 /// }
 /// ```
@@ -305,13 +305,13 @@ impl<T: FromSql> FromSql for Option<T> {
 
 #[cfg(test)]
 mod test {
-    use SqliteConnection;
+    use Connection;
     use ffi;
     use super::time;
     use libc::{c_int, c_double};
 
-    fn checked_memory_handle() -> SqliteConnection {
-        let db = SqliteConnection::open_in_memory().unwrap();
+    fn checked_memory_handle() -> Connection {
+        let db = Connection::open_in_memory().unwrap();
         db.execute_batch("CREATE TABLE foo (b BLOB, t TEXT, i INTEGER, f FLOAT, n)").unwrap();
         db
     }

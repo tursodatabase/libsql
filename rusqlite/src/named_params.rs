@@ -2,11 +2,11 @@ use libc::c_int;
 
 use super::ffi;
 
-use {SqliteResult, SqliteError, SqliteConnection, SqliteStatement, SqliteRows, SqliteRow,
+use {SqliteResult, SqliteError, Connection, SqliteStatement, SqliteRows, SqliteRow,
      str_to_cstring};
 use types::ToSql;
 
-impl SqliteConnection {
+impl Connection {
     /// Convenience method to prepare and execute a single SQL statement with named parameter(s).
     ///
     /// On success, returns the number of rows that were changed or inserted or deleted (via
@@ -15,8 +15,8 @@ impl SqliteConnection {
     /// ## Example
     ///
     /// ```rust,no_run
-    /// # use rusqlite::{SqliteConnection, SqliteResult};
-    /// fn insert(conn: &SqliteConnection) -> SqliteResult<i32> {
+    /// # use rusqlite::{Connection, SqliteResult};
+    /// fn insert(conn: &Connection) -> SqliteResult<i32> {
     ///     conn.execute_named("INSERT INTO test (name) VALUES (:name)", &[(":name", &"one")])
     /// }
     /// ```
@@ -79,8 +79,8 @@ impl<'conn> SqliteStatement<'conn> {
     /// ## Example
     ///
     /// ```rust,no_run
-    /// # use rusqlite::{SqliteConnection, SqliteResult};
-    /// fn insert(conn: &SqliteConnection) -> SqliteResult<i32> {
+    /// # use rusqlite::{Connection, SqliteResult};
+    /// fn insert(conn: &Connection) -> SqliteResult<i32> {
     ///     let mut stmt = try!(conn.prepare("INSERT INTO test (name) VALUES (:name)"));
     ///     stmt.execute_named(&[(":name", &"one")])
     /// }
@@ -105,8 +105,8 @@ impl<'conn> SqliteStatement<'conn> {
     /// ## Example
     ///
     /// ```rust,no_run
-    /// # use rusqlite::{SqliteConnection, SqliteResult, SqliteRows};
-    /// fn query(conn: &SqliteConnection) -> SqliteResult<()> {
+    /// # use rusqlite::{Connection, SqliteResult, SqliteRows};
+    /// fn query(conn: &Connection) -> SqliteResult<()> {
     ///     let mut stmt = try!(conn.prepare("SELECT * FROM test where name = :name"));
     ///     let mut rows = try!(stmt.query_named(&[(":name", &"one")]));
     ///     for row in rows {
@@ -146,11 +146,11 @@ impl<'conn> SqliteStatement<'conn> {
 
 #[cfg(test)]
 mod test {
-    use SqliteConnection;
+    use Connection;
 
     #[test]
     fn test_execute_named() {
-        let db = SqliteConnection::open_in_memory().unwrap();
+        let db = Connection::open_in_memory().unwrap();
         db.execute_batch("CREATE TABLE foo(x INTEGER)").unwrap();
 
         assert_eq!(db.execute_named("INSERT INTO foo(x) VALUES (:x)", &[(":x", &1i32)]).unwrap(),
@@ -167,7 +167,7 @@ mod test {
 
     #[test]
     fn test_stmt_execute_named() {
-        let db = SqliteConnection::open_in_memory().unwrap();
+        let db = Connection::open_in_memory().unwrap();
         let sql = "CREATE TABLE test (id INTEGER PRIMARY KEY NOT NULL, name TEXT NOT NULL, flag \
                    INTEGER)";
         db.execute_batch(sql).unwrap();
@@ -184,7 +184,7 @@ mod test {
 
     #[test]
     fn test_query_named() {
-        let db = SqliteConnection::open_in_memory().unwrap();
+        let db = Connection::open_in_memory().unwrap();
         let sql = "CREATE TABLE test (id INTEGER PRIMARY KEY NOT NULL, name TEXT NOT NULL, flag \
                    INTEGER)";
         db.execute_batch(sql).unwrap();
@@ -195,7 +195,7 @@ mod test {
 
     #[test]
     fn test_unbound_parameters_are_null() {
-        let db = SqliteConnection::open_in_memory().unwrap();
+        let db = Connection::open_in_memory().unwrap();
         let sql = "CREATE TABLE test (x TEXT, y TEXT)";
         db.execute_batch(sql).unwrap();
 
@@ -209,7 +209,7 @@ mod test {
 
     #[test]
     fn test_unbound_parameters_are_reused() {
-        let db = SqliteConnection::open_in_memory().unwrap();
+        let db = Connection::open_in_memory().unwrap();
         let sql = "CREATE TABLE test (x TEXT, y TEXT)";
         db.execute_batch(sql).unwrap();
 
