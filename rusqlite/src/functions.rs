@@ -12,11 +12,11 @@
 //! extern crate rusqlite;
 //! extern crate regex;
 //!
-//! use rusqlite::{SqliteConnection, SqliteError, SqliteResult};
+//! use rusqlite::{Connection, Error, Result};
 //! use std::collections::HashMap;
 //! use regex::Regex;
 //!
-//! fn add_regexp_function(db: &SqliteConnection) -> SqliteResult<()> {
+//! fn add_regexp_function(db: &Connection) -> Result<()> {
 //!     let mut cached_regexes = HashMap::new();
 //!     db.create_scalar_function("regexp", 2, true, move |ctx| {
 //!         let regex_s = try!(ctx.get::<String>(0));
@@ -26,7 +26,7 @@
 //!             match entry {
 //!                 Occupied(occ) => occ.into_mut(),
 //!                 Vacant(vac) => {
-//!                     let r = try!(Regex::new(&regex_s).map_err(|e| SqliteError {
+//!                     let r = try!(Regex::new(&regex_s).map_err(|e| Error {
 //!                         code: libsqlite3_sys::SQLITE_ERROR,
 //!                         message: format!("Invalid regular expression: {}", e),
 //!                     }));
@@ -41,7 +41,7 @@
 //! }
 //!
 //! fn main() {
-//!     let db = SqliteConnection::open_in_memory().unwrap();
+//!     let db = Connection::open_in_memory().unwrap();
 //!     add_regexp_function(&db).unwrap();
 //!
 //!     let is_match = db.query_row("SELECT regexp('[aeiou]*', 'aaaaeeeiii')", &[],
@@ -65,7 +65,7 @@ pub use ffi::sqlite3_value_numeric_type;
 
 use types::Null;
 
-use {SqliteResult, SqliteError, SqliteConnection, str_to_cstring, InnerSqliteConnection};
+use {Result, Error, Connection, str_to_cstring, InnerConnection};
 
 /// A trait for types that can be converted into the result of an SQL function.
 pub trait ToResult {
@@ -165,7 +165,7 @@ impl ToResult for Null {
 
 /// A trait for types that can be created from a SQLite function parameter value.
 pub trait FromValue: Sized {
-    unsafe fn parameter_value(v: *mut sqlite3_value) -> SqliteResult<Self>;
+    unsafe fn parameter_value(v: *mut sqlite3_value) -> Result<Self>;
 
     /// FromValue types can implement this method and use sqlite3_value_type to check that
     /// the type reported by SQLite matches a type suitable for Self. This method is used
@@ -180,7 +180,7 @@ pub trait FromValue: Sized {
 macro_rules! raw_from_impl(
     ($t:ty, $f:ident, $c:expr) => (
         impl FromValue for $t {
-            unsafe fn parameter_value(v: *mut sqlite3_value) -> SqliteResult<$t> {
+            unsafe fn parameter_value(v: *mut sqlite3_value) -> Result<$t> {
                 Ok(ffi::$f(v))
             }
 
@@ -195,7 +195,7 @@ raw_from_impl!(c_int, sqlite3_value_int, ffi::SQLITE_INTEGER);
 raw_from_impl!(i64, sqlite3_value_int64, ffi::SQLITE_INTEGER);
 
 impl FromValue for bool {
-    unsafe fn parameter_value(v: *mut sqlite3_value) -> SqliteResult<bool> {
+    unsafe fn parameter_value(v: *mut sqlite3_value) -> Result<bool> {
         match ffi::sqlite3_value_int(v) {
             0 => Ok(false),
             _ => Ok(true),
@@ -208,7 +208,7 @@ impl FromValue for bool {
 }
 
 impl FromValue for c_double {
-    unsafe fn parameter_value(v: *mut sqlite3_value) -> SqliteResult<c_double> {
+    unsafe fn parameter_value(v: *mut sqlite3_value) -> Result<c_double> {
         Ok(ffi::sqlite3_value_double(v))
     }
 
@@ -219,7 +219,7 @@ impl FromValue for c_double {
 }
 
 impl FromValue for String {
-    unsafe fn parameter_value(v: *mut sqlite3_value) -> SqliteResult<String> {
+    unsafe fn parameter_value(v: *mut sqlite3_value) -> Result<String> {
         let c_text = ffi::sqlite3_value_text(v);
         if c_text.is_null() {
             Ok("".to_string())
@@ -228,7 +228,7 @@ impl FromValue for String {
             let utf8_str = str::from_utf8(c_slice);
             utf8_str.map(|s| s.to_string())
                     .map_err(|e| {
-                        SqliteError {
+                        Error {
                             code: 0,
                             message: e.to_string(),
                         }
@@ -242,7 +242,7 @@ impl FromValue for String {
 }
 
 impl FromValue for Vec<u8> {
-    unsafe fn parameter_value(v: *mut sqlite3_value) -> SqliteResult<Vec<u8>> {
+    unsafe fn parameter_value(v: *mut sqlite3_value) -> Result<Vec<u8>> {
         use std::slice::from_raw_parts;
         let c_blob = ffi::sqlite3_value_blob(v);
         let len = ffi::sqlite3_value_bytes(v);
@@ -260,7 +260,7 @@ impl FromValue for Vec<u8> {
 }
 
 impl<T: FromValue> FromValue for Option<T> {
-    unsafe fn parameter_value(v: *mut sqlite3_value) -> SqliteResult<Option<T>> {
+    unsafe fn parameter_value(v: *mut sqlite3_value) -> Result<Option<T>> {
         if sqlite3_value_type(v) == ffi::SQLITE_NULL {
             Ok(None)
         } else {
@@ -296,13 +296,13 @@ impl<'a> Context<'a> {
     /// Will panic if `idx` is greater than or equal to `self.len()`.
     ///
     /// Will return Err if the underlying SQLite type cannot be converted to a `T`.
-    pub fn get<T: FromValue>(&self, idx: usize) -> SqliteResult<T> {
+    pub fn get<T: FromValue>(&self, idx: usize) -> Result<T> {
         let arg = self.args[idx];
         unsafe {
             if T::parameter_has_valid_sqlite_type(arg) {
                 T::parameter_value(arg)
             } else {
-                Err(SqliteError {
+                Err(Error {
                     code: ffi::SQLITE_MISMATCH,
                     message: "Invalid value type".to_string(),
                 })
@@ -341,7 +341,7 @@ impl<'a> Context<'a> {
     }
 }
 
-impl SqliteConnection {
+impl Connection {
     /// Attach a user-defined scalar function to this database connection.
     ///
     /// `fn_name` is the name the function will be accessible from SQL.
@@ -355,9 +355,9 @@ impl SqliteConnection {
     /// # Example
     ///
     /// ```rust
-    /// # use rusqlite::{SqliteConnection, SqliteResult};
+    /// # use rusqlite::{Connection, Result};
     /// # type c_double = f64;
-    /// fn scalar_function_example(db: SqliteConnection) -> SqliteResult<()> {
+    /// fn scalar_function_example(db: Connection) -> Result<()> {
     ///     try!(db.create_scalar_function("halve", 1, true, |ctx| {
     ///         let value = try!(ctx.get::<c_double>(0));
     ///         Ok(value / 2f64)
@@ -377,8 +377,8 @@ impl SqliteConnection {
                                         n_arg: c_int,
                                         deterministic: bool,
                                         x_func: F)
-                                        -> SqliteResult<()>
-        where F: FnMut(&Context) -> SqliteResult<T>,
+                                        -> Result<()>
+        where F: FnMut(&Context) -> Result<T>,
               T: ToResult
     {
         self.db.borrow_mut().create_scalar_function(fn_name, n_arg, deterministic, x_func)
@@ -392,25 +392,25 @@ impl SqliteConnection {
     /// # Failure
     ///
     /// Will return Err if the function could not be removed.
-    pub fn remove_function(&self, fn_name: &str, n_arg: c_int) -> SqliteResult<()> {
+    pub fn remove_function(&self, fn_name: &str, n_arg: c_int) -> Result<()> {
         self.db.borrow_mut().remove_function(fn_name, n_arg)
     }
 }
 
-impl InnerSqliteConnection {
+impl InnerConnection {
     fn create_scalar_function<F, T>(&mut self,
                                     fn_name: &str,
                                     n_arg: c_int,
                                     deterministic: bool,
                                     x_func: F)
-                                    -> SqliteResult<()>
-        where F: FnMut(&Context) -> SqliteResult<T>,
+                                    -> Result<()>
+        where F: FnMut(&Context) -> Result<T>,
               T: ToResult
     {
         extern "C" fn call_boxed_closure<F, T>(ctx: *mut sqlite3_context,
                                                argc: c_int,
                                                argv: *mut *mut sqlite3_value)
-            where F: FnMut(&Context) -> SqliteResult<T>,
+            where F: FnMut(&Context) -> Result<T>,
                   T: ToResult
         {
             unsafe {
@@ -452,7 +452,7 @@ impl InnerSqliteConnection {
         self.decode_result(r)
     }
 
-    fn remove_function(&mut self, fn_name: &str, n_arg: c_int) -> SqliteResult<()> {
+    fn remove_function(&mut self, fn_name: &str, n_arg: c_int) -> Result<()> {
         let c_name = try!(str_to_cstring(fn_name));
         let r = unsafe {
             ffi::sqlite3_create_function_v2(self.db(),
@@ -477,11 +477,11 @@ mod test {
     use libc::c_double;
     use self::regex::Regex;
 
-    use {SqliteConnection, SqliteError, SqliteResult};
+    use {Connection, Error, Result};
     use ffi;
     use functions::Context;
 
-    fn half(ctx: &Context) -> SqliteResult<c_double> {
+    fn half(ctx: &Context) -> Result<c_double> {
         assert!(ctx.len() == 1, "called with unexpected number of arguments");
         let value = try!(ctx.get::<c_double>(0));
         Ok(value / 2f64)
@@ -489,7 +489,7 @@ mod test {
 
     #[test]
     fn test_function_half() {
-        let db = SqliteConnection::open_in_memory().unwrap();
+        let db = Connection::open_in_memory().unwrap();
         db.create_scalar_function("half", 1, true, half).unwrap();
         let result = db.query_row("SELECT half(6)", &[], |r| r.get::<f64>(0));
 
@@ -498,7 +498,7 @@ mod test {
 
     #[test]
     fn test_remove_function() {
-        let db = SqliteConnection::open_in_memory().unwrap();
+        let db = Connection::open_in_memory().unwrap();
         db.create_scalar_function("half", 1, true, half).unwrap();
         let result = db.query_row("SELECT half(6)", &[], |r| r.get::<f64>(0));
         assert_eq!(3f64, result.unwrap());
@@ -511,7 +511,7 @@ mod test {
     // This implementation of a regexp scalar function uses SQLite's auxilliary data
     // (https://www.sqlite.org/c3ref/get_auxdata.html) to avoid recompiling the regular
     // expression multiple times within one query.
-    fn regexp_with_auxilliary(ctx: &Context) -> SqliteResult<bool> {
+    fn regexp_with_auxilliary(ctx: &Context) -> Result<bool> {
         assert!(ctx.len() == 2, "called with unexpected number of arguments");
 
         let saved_re: Option<&Regex> = unsafe { ctx.get_aux(0) };
@@ -519,7 +519,7 @@ mod test {
             None => {
                 let s = try!(ctx.get::<String>(0));
                 let r = try!(Regex::new(&s).map_err(|e| {
-                    SqliteError {
+                    Error {
                         code: ffi::SQLITE_ERROR,
                         message: format!("Invalid regular expression: {}", e),
                     }
@@ -546,7 +546,7 @@ mod test {
     #[test]
     #[cfg_attr(rustfmt, rustfmt_skip)]
     fn test_function_regexp_with_auxilliary() {
-        let db = SqliteConnection::open_in_memory().unwrap();
+        let db = Connection::open_in_memory().unwrap();
         db.execute_batch("BEGIN;
                          CREATE TABLE foo (x string);
                          INSERT INTO foo VALUES ('lisa');
@@ -571,7 +571,7 @@ mod test {
     #[test]
     #[cfg_attr(rustfmt, rustfmt_skip)]
     fn test_function_regexp_with_hashmap_cache() {
-        let db = SqliteConnection::open_in_memory().unwrap();
+        let db = Connection::open_in_memory().unwrap();
         db.execute_batch("BEGIN;
                          CREATE TABLE foo (x string);
                          INSERT INTO foo VALUES ('lisa');
@@ -593,7 +593,7 @@ mod test {
                 match entry {
                     Occupied(occ) => occ.into_mut(),
                     Vacant(vac) => {
-                        let r = try!(Regex::new(&regex_s).map_err(|e| SqliteError {
+                        let r = try!(Regex::new(&regex_s).map_err(|e| Error {
                             code: ffi::SQLITE_ERROR,
                             message: format!("Invalid regular expression: {}", e),
                         }));
@@ -621,7 +621,7 @@ mod test {
 
     #[test]
     fn test_varargs_function() {
-        let db = SqliteConnection::open_in_memory().unwrap();
+        let db = Connection::open_in_memory().unwrap();
         db.create_scalar_function("my_concat", -1, true, |ctx| {
               let mut ret = String::new();
 

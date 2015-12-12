@@ -1,17 +1,21 @@
-use {SqliteResult, SqliteConnection};
+use {Result, Connection};
 
-pub use SqliteTransactionBehavior::{SqliteTransactionDeferred, SqliteTransactionImmediate,
-                                    SqliteTransactionExclusive};
+/// Old name for `TransactionBehavior`. `SqliteTransactionBehavior` is deprecated.
+pub type SqliteTransactionBehavior = TransactionBehavior;
 
 /// Options for transaction behavior. See [BEGIN
 /// TRANSACTION](http://www.sqlite.org/lang_transaction.html) for details.
 #[derive(Copy,Clone)]
-pub enum SqliteTransactionBehavior {
-    SqliteTransactionDeferred,
-    SqliteTransactionImmediate,
-    SqliteTransactionExclusive,
+pub enum TransactionBehavior {
+    Deferred,
+    Immediate,
+    Exclusive,
 }
 
+/// Old name for `Transaction`. `SqliteTransaction` is deprecated.
+pub type SqliteTransaction<'conn> = Transaction<'conn>;
+
+///
 /// Represents a transaction on a database connection.
 ///
 /// ## Note
@@ -22,10 +26,10 @@ pub enum SqliteTransactionBehavior {
 /// ## Example
 ///
 /// ```rust,no_run
-/// # use rusqlite::{SqliteConnection, SqliteResult};
-/// # fn do_queries_part_1(conn: &SqliteConnection) -> SqliteResult<()> { Ok(()) }
-/// # fn do_queries_part_2(conn: &SqliteConnection) -> SqliteResult<()> { Ok(()) }
-/// fn perform_queries(conn: &SqliteConnection) -> SqliteResult<()> {
+/// # use rusqlite::{Connection, Result};
+/// # fn do_queries_part_1(conn: &Connection) -> Result<()> { Ok(()) }
+/// # fn do_queries_part_2(conn: &Connection) -> Result<()> { Ok(()) }
+/// fn perform_queries(conn: &Connection) -> Result<()> {
 ///     let tx = try!(conn.transaction());
 ///
 ///     try!(do_queries_part_1(conn)); // tx causes rollback if this fails
@@ -34,25 +38,25 @@ pub enum SqliteTransactionBehavior {
 ///     tx.commit()
 /// }
 /// ```
-pub struct SqliteTransaction<'conn> {
-    conn: &'conn SqliteConnection,
+pub struct Transaction<'conn> {
+    conn: &'conn Connection,
     depth: u32,
     commit: bool,
     finished: bool,
 }
 
-impl<'conn> SqliteTransaction<'conn> {
+impl<'conn> Transaction<'conn> {
     /// Begin a new transaction. Cannot be nested; see `savepoint` for nested transactions.
-    pub fn new(conn: &SqliteConnection,
-               behavior: SqliteTransactionBehavior)
-               -> SqliteResult<SqliteTransaction> {
+    pub fn new(conn: &Connection,
+               behavior: TransactionBehavior)
+               -> Result<Transaction> {
         let query = match behavior {
-            SqliteTransactionDeferred => "BEGIN DEFERRED",
-            SqliteTransactionImmediate => "BEGIN IMMEDIATE",
-            SqliteTransactionExclusive => "BEGIN EXCLUSIVE",
+            TransactionBehavior::Deferred => "BEGIN DEFERRED",
+            TransactionBehavior::Immediate => "BEGIN IMMEDIATE",
+            TransactionBehavior::Exclusive => "BEGIN EXCLUSIVE",
         };
         conn.execute_batch(query).map(|_| {
-            SqliteTransaction {
+            Transaction {
                 conn: conn,
                 depth: 0,
                 commit: false,
@@ -71,9 +75,9 @@ impl<'conn> SqliteTransaction<'conn> {
     /// ## Example
     ///
     /// ```rust,no_run
-    /// # use rusqlite::{SqliteConnection, SqliteResult};
-    /// # fn perform_queries_part_1_succeeds(conn: &SqliteConnection) -> bool { true }
-    /// fn perform_queries(conn: &SqliteConnection) -> SqliteResult<()> {
+    /// # use rusqlite::{Connection, Result};
+    /// # fn perform_queries_part_1_succeeds(conn: &Connection) -> bool { true }
+    /// fn perform_queries(conn: &Connection) -> Result<()> {
     ///     let tx = try!(conn.transaction());
     ///
     ///     {
@@ -87,9 +91,9 @@ impl<'conn> SqliteTransaction<'conn> {
     ///     tx.commit()
     /// }
     /// ```
-    pub fn savepoint<'a>(&'a self) -> SqliteResult<SqliteTransaction<'a>> {
+    pub fn savepoint<'a>(&'a self) -> Result<Transaction<'a>> {
         self.conn.execute_batch("SAVEPOINT sp").map(|_| {
-            SqliteTransaction {
+            Transaction {
                 conn: self.conn,
                 depth: self.depth + 1,
                 commit: false,
@@ -119,11 +123,11 @@ impl<'conn> SqliteTransaction<'conn> {
     }
 
     /// A convenience method which consumes and commits a transaction.
-    pub fn commit(mut self) -> SqliteResult<()> {
+    pub fn commit(mut self) -> Result<()> {
         self.commit_()
     }
 
-    fn commit_(&mut self) -> SqliteResult<()> {
+    fn commit_(&mut self) -> Result<()> {
         self.finished = true;
         self.conn.execute_batch(if self.depth == 0 {
             "COMMIT"
@@ -133,11 +137,11 @@ impl<'conn> SqliteTransaction<'conn> {
     }
 
     /// A convenience method which consumes and rolls back a transaction.
-    pub fn rollback(mut self) -> SqliteResult<()> {
+    pub fn rollback(mut self) -> Result<()> {
         self.rollback_()
     }
 
-    fn rollback_(&mut self) -> SqliteResult<()> {
+    fn rollback_(&mut self) -> Result<()> {
         self.finished = true;
         self.conn.execute_batch(if self.depth == 0 {
             "ROLLBACK"
@@ -151,11 +155,11 @@ impl<'conn> SqliteTransaction<'conn> {
     ///
     /// Functionally equivalent to the `Drop` implementation, but allows callers to see any
     /// errors that occur.
-    pub fn finish(mut self) -> SqliteResult<()> {
+    pub fn finish(mut self) -> Result<()> {
         self.finish_()
     }
 
-    fn finish_(&mut self) -> SqliteResult<()> {
+    fn finish_(&mut self) -> Result<()> {
         match (self.finished, self.commit) {
             (true, _) => Ok(()),
             (false, true) => self.commit_(),
@@ -165,7 +169,7 @@ impl<'conn> SqliteTransaction<'conn> {
 }
 
 #[allow(unused_must_use)]
-impl<'conn> Drop for SqliteTransaction<'conn> {
+impl<'conn> Drop for Transaction<'conn> {
     fn drop(&mut self) {
         self.finish_();
     }
@@ -173,10 +177,10 @@ impl<'conn> Drop for SqliteTransaction<'conn> {
 
 #[cfg(test)]
 mod test {
-    use SqliteConnection;
+    use Connection;
 
-    fn checked_memory_handle() -> SqliteConnection {
-        let db = SqliteConnection::open_in_memory().unwrap();
+    fn checked_memory_handle() -> Connection {
+        let db = Connection::open_in_memory().unwrap();
         db.execute_batch("CREATE TABLE foo (x INTEGER)").unwrap();
         db
     }

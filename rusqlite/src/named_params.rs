@@ -2,11 +2,10 @@ use libc::c_int;
 
 use super::ffi;
 
-use {SqliteResult, SqliteError, SqliteConnection, SqliteStatement, SqliteRows, SqliteRow,
-     str_to_cstring};
+use {Result, Error, Connection, Statement, Rows, Row, str_to_cstring};
 use types::ToSql;
 
-impl SqliteConnection {
+impl Connection {
     /// Convenience method to prepare and execute a single SQL statement with named parameter(s).
     ///
     /// On success, returns the number of rows that were changed or inserted or deleted (via
@@ -15,8 +14,8 @@ impl SqliteConnection {
     /// ## Example
     ///
     /// ```rust,no_run
-    /// # use rusqlite::{SqliteConnection, SqliteResult};
-    /// fn insert(conn: &SqliteConnection) -> SqliteResult<i32> {
+    /// # use rusqlite::{Connection, Result};
+    /// fn insert(conn: &Connection) -> Result<i32> {
     ///     conn.execute_named("INSERT INTO test (name) VALUES (:name)", &[(":name", &"one")])
     /// }
     /// ```
@@ -25,7 +24,7 @@ impl SqliteConnection {
     ///
     /// Will return `Err` if `sql` cannot be converted to a C-compatible string or if the
     /// underlying SQLite call fails.
-    pub fn execute_named(&self, sql: &str, params: &[(&str, &ToSql)]) -> SqliteResult<c_int> {
+    pub fn execute_named(&self, sql: &str, params: &[(&str, &ToSql)]) -> Result<c_int> {
         self.prepare(sql).and_then(|mut stmt| stmt.execute_named(params))
     }
 
@@ -42,8 +41,8 @@ impl SqliteConnection {
                                  sql: &str,
                                  params: &[(&str, &ToSql)],
                                  f: F)
-                                 -> SqliteResult<T>
-        where F: FnOnce(SqliteRow) -> T
+                                 -> Result<T>
+        where F: FnOnce(Row) -> T
     {
         let mut stmt = try!(self.prepare(sql));
         let mut rows = try!(stmt.query_named(params));
@@ -52,14 +51,14 @@ impl SqliteConnection {
     }
 }
 
-impl<'conn> SqliteStatement<'conn> {
+impl<'conn> Statement<'conn> {
     /// Return the index of an SQL parameter given its name.
     ///
     /// # Failure
     ///
     /// Will return Err if `name` is invalid. Will return Ok(None) if the name
     /// is valid but not a bound parameter of this statement.
-    pub fn parameter_index(&self, name: &str) -> SqliteResult<Option<i32>> {
+    pub fn parameter_index(&self, name: &str) -> Result<Option<i32>> {
         let c_name = try!(str_to_cstring(name));
         let c_index = unsafe { ffi::sqlite3_bind_parameter_index(self.stmt, c_name.as_ptr()) };
         Ok(match c_index {
@@ -79,8 +78,8 @@ impl<'conn> SqliteStatement<'conn> {
     /// ## Example
     ///
     /// ```rust,no_run
-    /// # use rusqlite::{SqliteConnection, SqliteResult};
-    /// fn insert(conn: &SqliteConnection) -> SqliteResult<i32> {
+    /// # use rusqlite::{Connection, Result};
+    /// fn insert(conn: &Connection) -> Result<i32> {
     ///     let mut stmt = try!(conn.prepare("INSERT INTO test (name) VALUES (:name)"));
     ///     stmt.execute_named(&[(":name", &"one")])
     /// }
@@ -90,7 +89,7 @@ impl<'conn> SqliteStatement<'conn> {
     ///
     /// Will return `Err` if binding parameters fails, the executed statement returns rows (in
     /// which case `query` should be used instead), or the underling SQLite call fails.
-    pub fn execute_named(&mut self, params: &[(&str, &ToSql)]) -> SqliteResult<c_int> {
+    pub fn execute_named(&mut self, params: &[(&str, &ToSql)]) -> Result<c_int> {
         try!(self.bind_parameters_named(params));
         unsafe {
             self.execute_()
@@ -105,8 +104,8 @@ impl<'conn> SqliteStatement<'conn> {
     /// ## Example
     ///
     /// ```rust,no_run
-    /// # use rusqlite::{SqliteConnection, SqliteResult, SqliteRows};
-    /// fn query(conn: &SqliteConnection) -> SqliteResult<()> {
+    /// # use rusqlite::{Connection, Result, Rows};
+    /// fn query(conn: &Connection) -> Result<()> {
     ///     let mut stmt = try!(conn.prepare("SELECT * FROM test where name = :name"));
     ///     let mut rows = try!(stmt.query_named(&[(":name", &"one")]));
     ///     for row in rows {
@@ -121,20 +120,20 @@ impl<'conn> SqliteStatement<'conn> {
     /// Will return `Err` if binding parameters fails.
     pub fn query_named<'a>(&'a mut self,
                            params: &[(&str, &ToSql)])
-                           -> SqliteResult<SqliteRows<'a>> {
+                           -> Result<Rows<'a>> {
         self.reset_if_needed();
         try!(self.bind_parameters_named(params));
 
         self.needs_reset = true;
-        Ok(SqliteRows::new(self))
+        Ok(Rows::new(self))
     }
 
-    fn bind_parameters_named(&mut self, params: &[(&str, &ToSql)]) -> SqliteResult<()> {
+    fn bind_parameters_named(&mut self, params: &[(&str, &ToSql)]) -> Result<()> {
         for &(name, value) in params {
             if let Some(i) = try!(self.parameter_index(name)) {
                 try!(self.conn.decode_result(unsafe { value.bind_parameter(self.stmt, i) }));
             } else {
-                return Err(SqliteError {
+                return Err(Error {
                     code: ffi::SQLITE_MISUSE,
                     message: format!("Invalid parameter name: {}", name),
                 });
@@ -146,11 +145,11 @@ impl<'conn> SqliteStatement<'conn> {
 
 #[cfg(test)]
 mod test {
-    use SqliteConnection;
+    use Connection;
 
     #[test]
     fn test_execute_named() {
-        let db = SqliteConnection::open_in_memory().unwrap();
+        let db = Connection::open_in_memory().unwrap();
         db.execute_batch("CREATE TABLE foo(x INTEGER)").unwrap();
 
         assert_eq!(db.execute_named("INSERT INTO foo(x) VALUES (:x)", &[(":x", &1i32)]).unwrap(),
@@ -167,7 +166,7 @@ mod test {
 
     #[test]
     fn test_stmt_execute_named() {
-        let db = SqliteConnection::open_in_memory().unwrap();
+        let db = Connection::open_in_memory().unwrap();
         let sql = "CREATE TABLE test (id INTEGER PRIMARY KEY NOT NULL, name TEXT NOT NULL, flag \
                    INTEGER)";
         db.execute_batch(sql).unwrap();
@@ -184,7 +183,7 @@ mod test {
 
     #[test]
     fn test_query_named() {
-        let db = SqliteConnection::open_in_memory().unwrap();
+        let db = Connection::open_in_memory().unwrap();
         let sql = "CREATE TABLE test (id INTEGER PRIMARY KEY NOT NULL, name TEXT NOT NULL, flag \
                    INTEGER)";
         db.execute_batch(sql).unwrap();
@@ -195,7 +194,7 @@ mod test {
 
     #[test]
     fn test_unbound_parameters_are_null() {
-        let db = SqliteConnection::open_in_memory().unwrap();
+        let db = Connection::open_in_memory().unwrap();
         let sql = "CREATE TABLE test (x TEXT, y TEXT)";
         db.execute_batch(sql).unwrap();
 
@@ -209,7 +208,7 @@ mod test {
 
     #[test]
     fn test_unbound_parameters_are_reused() {
-        let db = SqliteConnection::open_in_memory().unwrap();
+        let db = Connection::open_in_memory().unwrap();
         let sql = "CREATE TABLE test (x TEXT, y TEXT)";
         db.execute_batch(sql).unwrap();
 

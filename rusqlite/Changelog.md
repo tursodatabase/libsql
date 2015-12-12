@@ -1,5 +1,21 @@
 # Version UPCOMING (TBD)
 
+* BREAKING CHANGE: `SqliteTransactionDeferred`, `SqliteTransactionImmediate`, and
+  `SqliteTransactionExclusive` are no longer exported. Instead, use
+  `TransactionBehavior::Deferred`, `TransactionBehavior::Immediate`, and
+  `TransactionBehavior::Exclusive`.
+* Removed `Sqlite` prefix on many types:
+    * `SqliteConnection` is now `Connection`
+    * `SqliteError` is now `Error`
+    * `SqliteResult` is now `Result`
+    * `SqliteStatement` is now `Statement`
+    * `SqliteRows` is now `Rows`
+    * `SqliteRow` is now `Row`
+    * `SqliteOpenFlags` is now `OpenFlags`
+    * `SqliteTransaction` is now `Transaction`.
+    * `SqliteTransactionBehavior` is now `TransactionBehavior`.
+    * `SqliteLoadExtensionGuard` is now `LoadExtensionGuard`.
+  The old, prefixed names are still exported but are deprecated.
 * Adds a variety of `..._named` methods for executing queries using named placeholder parameters.
 * Adds `backup` feature that exposes SQLite's online backup API.
 * Adds `functions` feature that allows user-defined scalar functions to be added to

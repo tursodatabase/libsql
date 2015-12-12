@@ -8,7 +8,7 @@ use std::str;
 use std::time::Duration;
 
 use super::ffi;
-use {SqliteError, SqliteResult, SqliteConnection};
+use {Error, Result, Connection};
 
 /// Set up the process-wide SQLite error logging callback.
 /// This function is marked unsafe for two reasons:
@@ -21,7 +21,7 @@ use {SqliteError, SqliteResult, SqliteConnection};
 ///     * It must be threadsafe if SQLite is used in a multithreaded way.
 ///
 /// cf [The Error And Warning Log](http://sqlite.org/errlog.html).
-pub unsafe fn config_log(callback: Option<fn(c_int, &str)>) -> SqliteResult<()> {
+pub unsafe fn config_log(callback: Option<fn(c_int, &str)>) -> Result<()> {
     extern "C" fn log_callback(p_arg: *mut c_void, err: c_int, msg: *const c_char) {
         let c_slice = unsafe { CStr::from_ptr(msg).to_bytes() };
         let callback: fn(c_int, &str) = unsafe { mem::transmute(p_arg) };
@@ -43,7 +43,7 @@ pub unsafe fn config_log(callback: Option<fn(c_int, &str)>) -> SqliteResult<()> 
     };
 
     if rc != ffi::SQLITE_OK {
-        return Err(SqliteError {
+        return Err(Error {
             code: rc,
             message: "sqlite3_config(SQLITE_CONFIG_LOG, ...)".to_string(),
         });
@@ -60,7 +60,7 @@ pub fn log(err_code: c_int, msg: &str) {
     }
 }
 
-impl SqliteConnection {
+impl Connection {
     /// Register or clear a callback function that can be used for tracing the execution of SQL statements.
     ///
     /// Prepared statement placeholders are replaced/logged with their assigned values.
@@ -120,7 +120,7 @@ mod test {
     use std::sync::Mutex;
     use std::time::Duration;
 
-    use SqliteConnection;
+    use Connection;
 
     #[test]
     fn test_trace() {
@@ -132,7 +132,7 @@ mod test {
             traced_stmts.push(s.to_owned());
         }
 
-        let mut db = SqliteConnection::open_in_memory().unwrap();
+        let mut db = Connection::open_in_memory().unwrap();
         db.trace(Some(tracer));
         {
             let _ = db.query_row("SELECT ?", &[&1i32], |_| {});
@@ -160,7 +160,7 @@ mod test {
             profiled.push((s.to_owned(), d));
         }
 
-        let mut db = SqliteConnection::open_in_memory().unwrap();
+        let mut db = Connection::open_in_memory().unwrap();
         db.profile(Some(profiler));
         db.execute_batch("PRAGMA application_id = 1").unwrap();
         db.profile(None);
