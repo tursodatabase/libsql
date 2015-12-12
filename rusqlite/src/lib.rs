@@ -232,7 +232,7 @@ impl Connection {
     /// Will return `Err` if `path` cannot be converted to a C-compatible string or if the
     /// underlying SQLite open call fails.
     pub fn open_with_flags<P: AsRef<Path>>(path: P,
-                                           flags: SqliteOpenFlags)
+                                           flags: OpenFlags)
         -> Result<Connection> {
             let c_path = try!(path_to_cstring(path.as_ref()));
             InnerConnection::open_with_flags(&c_path, flags).map(|db| {
@@ -251,7 +251,7 @@ impl Connection {
     /// # Failure
     ///
     /// Will return `Err` if the underlying SQLite open call fails.
-    pub fn open_in_memory_with_flags(flags: SqliteOpenFlags) -> Result<Connection> {
+    pub fn open_in_memory_with_flags(flags: OpenFlags) -> Result<Connection> {
         let c_memory = try!(str_to_cstring(":memory:"));
         InnerConnection::open_with_flags(&c_memory, flags).map(|db| {
             Connection {
@@ -564,11 +564,14 @@ struct InnerConnection {
     db: *mut ffi::Struct_sqlite3,
 }
 
+/// Old name for `OpenFlags`. `SqliteOpenFlags` is deprecated.
+pub type SqliteOpenFlags = OpenFlags;
+
 bitflags! {
     #[doc = "Flags for opening SQLite database connections."]
     #[doc = "See [sqlite3_open_v2](http://www.sqlite.org/c3ref/open.html) for details."]
     #[repr(C)]
-    flags SqliteOpenFlags: c_int {
+    flags OpenFlags: c_int {
         const SQLITE_OPEN_READ_ONLY     = 0x00000001,
         const SQLITE_OPEN_READ_WRITE    = 0x00000002,
         const SQLITE_OPEN_CREATE        = 0x00000004,
@@ -581,15 +584,15 @@ bitflags! {
     }
 }
 
-impl Default for SqliteOpenFlags {
-    fn default() -> SqliteOpenFlags {
+impl Default for OpenFlags {
+    fn default() -> OpenFlags {
         SQLITE_OPEN_READ_WRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_NO_MUTEX | SQLITE_OPEN_URI
     }
 }
 
 impl InnerConnection {
     fn open_with_flags(c_path: &CString,
-                       flags: SqliteOpenFlags)
+                       flags: OpenFlags)
         -> Result<InnerConnection> {
             unsafe {
                 let mut db: *mut ffi::sqlite3 = mem::uninitialized();
@@ -1222,7 +1225,7 @@ mod test {
 
     #[test]
     fn test_open_with_flags() {
-        for bad_flags in [SqliteOpenFlags::empty(),
+        for bad_flags in [OpenFlags::empty(),
         SQLITE_OPEN_READ_ONLY | SQLITE_OPEN_READ_WRITE,
         SQLITE_OPEN_READ_ONLY | SQLITE_OPEN_CREATE]
             .iter() {
