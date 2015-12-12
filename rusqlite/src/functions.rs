@@ -12,7 +12,7 @@
 //! extern crate rusqlite;
 //! extern crate regex;
 //!
-//! use rusqlite::{Connection, SqliteError, SqliteResult};
+//! use rusqlite::{Connection, Error, SqliteResult};
 //! use std::collections::HashMap;
 //! use regex::Regex;
 //!
@@ -26,7 +26,7 @@
 //!             match entry {
 //!                 Occupied(occ) => occ.into_mut(),
 //!                 Vacant(vac) => {
-//!                     let r = try!(Regex::new(&regex_s).map_err(|e| SqliteError {
+//!                     let r = try!(Regex::new(&regex_s).map_err(|e| Error {
 //!                         code: libsqlite3_sys::SQLITE_ERROR,
 //!                         message: format!("Invalid regular expression: {}", e),
 //!                     }));
@@ -65,7 +65,7 @@ pub use ffi::sqlite3_value_numeric_type;
 
 use types::Null;
 
-use {SqliteResult, SqliteError, Connection, str_to_cstring, InnerConnection};
+use {SqliteResult, Error, Connection, str_to_cstring, InnerConnection};
 
 /// A trait for types that can be converted into the result of an SQL function.
 pub trait ToResult {
@@ -228,7 +228,7 @@ impl FromValue for String {
             let utf8_str = str::from_utf8(c_slice);
             utf8_str.map(|s| s.to_string())
                     .map_err(|e| {
-                        SqliteError {
+                        Error {
                             code: 0,
                             message: e.to_string(),
                         }
@@ -302,7 +302,7 @@ impl<'a> Context<'a> {
             if T::parameter_has_valid_sqlite_type(arg) {
                 T::parameter_value(arg)
             } else {
-                Err(SqliteError {
+                Err(Error {
                     code: ffi::SQLITE_MISMATCH,
                     message: "Invalid value type".to_string(),
                 })
@@ -477,7 +477,7 @@ mod test {
     use libc::c_double;
     use self::regex::Regex;
 
-    use {Connection, SqliteError, SqliteResult};
+    use {Connection, Error, SqliteResult};
     use ffi;
     use functions::Context;
 
@@ -519,7 +519,7 @@ mod test {
             None => {
                 let s = try!(ctx.get::<String>(0));
                 let r = try!(Regex::new(&s).map_err(|e| {
-                    SqliteError {
+                    Error {
                         code: ffi::SQLITE_ERROR,
                         message: format!("Invalid regular expression: {}", e),
                     }
@@ -593,7 +593,7 @@ mod test {
                 match entry {
                     Occupied(occ) => occ.into_mut(),
                     Vacant(vac) => {
-                        let r = try!(Regex::new(&regex_s).map_err(|e| SqliteError {
+                        let r = try!(Regex::new(&regex_s).map_err(|e| Error {
                             code: ffi::SQLITE_ERROR,
                             message: format!("Invalid regular expression: {}", e),
                         }));

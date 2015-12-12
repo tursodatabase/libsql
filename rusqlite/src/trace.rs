@@ -8,7 +8,7 @@ use std::str;
 use std::time::Duration;
 
 use super::ffi;
-use {SqliteError, SqliteResult, Connection};
+use {Error, SqliteResult, Connection};
 
 /// Set up the process-wide SQLite error logging callback.
 /// This function is marked unsafe for two reasons:
@@ -43,7 +43,7 @@ pub unsafe fn config_log(callback: Option<fn(c_int, &str)>) -> SqliteResult<()> 
     };
 
     if rc != ffi::SQLITE_OK {
-        return Err(SqliteError {
+        return Err(Error {
             code: rc,
             message: "sqlite3_config(SQLITE_CONFIG_LOG, ...)".to_string(),
         });

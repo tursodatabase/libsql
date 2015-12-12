@@ -89,7 +89,7 @@ mod named_params;
 #[cfg(feature = "functions")] pub mod functions;
 
 /// A typedef of the result returned by many methods.
-pub type SqliteResult<T> = Result<T, SqliteError>;
+pub type SqliteResult<T> = Result<T, Error>;
 
 unsafe fn errmsg_to_string(errmsg: *const c_char) -> String {
     let c_slice = CStr::from_ptr(errmsg).to_bytes();
@@ -97,9 +97,12 @@ unsafe fn errmsg_to_string(errmsg: *const c_char) -> String {
     utf8_str.unwrap_or("Invalid string encoding").to_string()
 }
 
+/// Old name for `Error`. `SqliteError` is deprecated.
+pub type SqliteError = Error;
+
 /// Encompasses an error result from a call to the SQLite C API.
 #[derive(Debug, PartialEq)]
-pub struct SqliteError {
+pub struct Error {
     /// The error code returned by a SQLite C API call. See [SQLite Result
     /// Codes](http://www.sqlite.org/rescode.html) for details.
     pub code: c_int,
@@ -109,26 +112,26 @@ pub struct SqliteError {
     pub message: String,
 }
 
-impl fmt::Display for SqliteError {
+impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{} (SQLite error {})", self.message, self.code)
     }
 }
 
-impl error::Error for SqliteError {
+impl error::Error for Error {
     fn description(&self) -> &str {
         &self.message
     }
 }
 
-impl SqliteError {
-    fn from_handle(db: *mut ffi::Struct_sqlite3, code: c_int) -> SqliteError {
+impl Error {
+    fn from_handle(db: *mut ffi::Struct_sqlite3, code: c_int) -> Error {
         let message = if db.is_null() {
             ffi::code_to_str(code).to_string()
         } else {
             unsafe { errmsg_to_string(ffi::sqlite3_errmsg(db)) }
         };
-        SqliteError {
+        Error {
             code: code,
             message: message,
         }
@@ -137,7 +140,7 @@ impl SqliteError {
 
 fn str_to_cstring(s: &str) -> SqliteResult<CString> {
     CString::new(s).map_err(|_| {
-        SqliteError {
+        Error {
             code: ffi::SQLITE_MISUSE,
             message: format!("Could not convert string {} to C-combatible string", s),
         }
@@ -145,7 +148,7 @@ fn str_to_cstring(s: &str) -> SqliteResult<CString> {
 }
 
 fn path_to_cstring(p: &Path) -> SqliteResult<CString> {
-    let s = try!(p.to_str().ok_or(SqliteError {
+    let s = try!(p.to_str().ok_or(Error {
         code: ffi::SQLITE_MISUSE,
         message: format!("Could not convert path {} to UTF-8 string",
                          p.to_string_lossy()),
@@ -382,7 +385,7 @@ impl Connection {
 
     /// Convenience method to execute a query that is expected to return a single row,
     /// and execute a mapping via `f` on that returned row with the possibility of failure.
-    /// The `Result` type of `f` must implement `std::convert::From<SqliteError>`.
+    /// The `Result` type of `f` must implement `std::convert::From<Error>`.
     ///
     /// ## Example
     ///
@@ -403,7 +406,7 @@ impl Connection {
     /// underlying SQLite call fails.
     pub fn query_row_and_then<T, E, F>(&self, sql: &str, params: &[&ToSql], f: F) -> Result<T, E>
         where F: FnOnce(SqliteRow) -> Result<T, E>,
-              E: convert::From<SqliteError>
+              E: convert::From<Error>
     {
         let mut stmt = try!(self.prepare(sql));
         let mut rows = try!(stmt.query(params));
@@ -589,12 +592,12 @@ impl InnerConnection {
                 let r = ffi::sqlite3_open_v2(c_path.as_ptr(), &mut db, flags.bits(), ptr::null());
                 if r != ffi::SQLITE_OK {
                     let e = if db.is_null() {
-                        SqliteError {
+                        Error {
                             code: r,
                             message: ffi::code_to_str(r).to_string(),
                         }
                     } else {
-                        let e = SqliteError::from_handle(db, r);
+                        let e = Error::from_handle(db, r);
                         ffi::sqlite3_close(db);
                         e
                     };
@@ -603,7 +606,7 @@ impl InnerConnection {
                 }
                 let r = ffi::sqlite3_busy_timeout(db, 5000);
                 if r != ffi::SQLITE_OK {
-                    let e = SqliteError::from_handle(db, r);
+                    let e = Error::from_handle(db, r);
                     ffi::sqlite3_close(db);
                     return Err(e);
                 }
@@ -619,7 +622,7 @@ impl InnerConnection {
         if code == ffi::SQLITE_OK {
             Ok(())
         } else {
-            Err(SqliteError::from_handle(self.db(), code))
+            Err(Error::from_handle(self.db(), code))
         }
     }
 
@@ -632,7 +635,7 @@ impl InnerConnection {
             } else {
                 let message = errmsg_to_string(&*errmsg);
                 ffi::sqlite3_free(errmsg as *mut c_void);
-                Err(SqliteError {
+                Err(Error {
                     code: code,
                     message: message,
                 })
@@ -693,7 +696,7 @@ impl InnerConnection {
                    sql: &str)
         -> SqliteResult<SqliteStatement<'a>> {
             if sql.len() >= ::std::i32::MAX as usize {
-                return Err(SqliteError {
+                return Err(Error {
                     code: ffi::SQLITE_TOOBIG,
                     message: "statement too long".to_string(),
                 });
@@ -789,7 +792,7 @@ impl<'conn> SqliteStatement<'conn> {
         match r {
             ffi::SQLITE_DONE => {
                 if self.column_count != 0 {
-                    Err(SqliteError {
+                    Err(Error {
                         code: ffi::SQLITE_MISUSE,
                         message: "Unexpected column count - did you mean to call query?"
                         .to_string(),
@@ -799,7 +802,7 @@ impl<'conn> SqliteStatement<'conn> {
                 }
             }
             ffi::SQLITE_ROW => {
-                Err(SqliteError {
+                Err(Error {
                     code: r,
                     message: "Unexpected row result - did you mean to call query?".to_string(),
                 })
@@ -867,7 +870,7 @@ impl<'conn> SqliteStatement<'conn> {
 
     /// Executes the prepared statement and maps a function over the resulting
     /// rows, where the function returns a `Result` with `Error` type implementing
-    /// `std::convert::From<SqliteError>` (so errors can be unified).
+    /// `std::convert::From<Error>` (so errors can be unified).
     ///
     /// Unlike the iterator produced by `query`, the returned iterator does not expose the possibility
     /// for accessing stale rows.
@@ -879,7 +882,7 @@ impl<'conn> SqliteStatement<'conn> {
                                        params: &[&ToSql],
                                        f: F)
         -> SqliteResult<AndThenRows<'a, F>>
-        where E: convert::From<SqliteError>,
+        where E: convert::From<Error>,
               F: FnMut(&SqliteRow) -> Result<T, E>
               {
                   let row_iter = try!(self.query(params));
@@ -968,14 +971,14 @@ impl<'stmt, T, F> Iterator for MappedRows<'stmt, F> where F: FnMut(&SqliteRow) -
 }
 
 /// An iterator over the mapped resulting rows of a query, with an Error type
-/// unifying with SqliteError.
+/// unifying with Error.
 pub struct AndThenRows<'stmt, F> {
     rows: SqliteRows<'stmt>,
     map: F,
 }
 
 impl<'stmt, T, E, F> Iterator for AndThenRows<'stmt, F>
-where E: convert::From<SqliteError>,
+where E: convert::From<Error>,
       F: FnMut(&SqliteRow) -> Result<T, E>
 {
     type Item = Result<T, E>;
@@ -1042,7 +1045,7 @@ impl<'stmt> SqliteRows<'stmt> {
         match self.next() {
             Some(row) => row,
             None => {
-                Err(SqliteError {
+                Err(Error {
                     code: ffi::SQLITE_NOTICE,
                     message: "Query did not return a row".to_string(),
                 })
@@ -1121,21 +1124,21 @@ impl<'stmt> SqliteRow<'stmt> {
     ///
     /// ## Failure
     ///
-    /// Returns a `SQLITE_MISMATCH`-coded `SqliteError` if the underlying SQLite column
+    /// Returns a `SQLITE_MISMATCH`-coded `Error` if the underlying SQLite column
     /// type is not a valid type as a source for `T`.
     ///
-    /// Returns a `SQLITE_MISUSE`-coded `SqliteError` if `idx` is outside the valid column range
+    /// Returns a `SQLITE_MISUSE`-coded `Error` if `idx` is outside the valid column range
     /// for this row or if this row is stale.
     pub fn get_checked<T: FromSql>(&self, idx: c_int) -> SqliteResult<T> {
         if self.row_idx != self.current_row.get() {
-            return Err(SqliteError {
+            return Err(Error {
                 code: ffi::SQLITE_MISUSE,
                 message: "Cannot get values from a row after advancing to next row".to_string(),
             });
         }
         unsafe {
             if idx < 0 || idx >= self.stmt.column_count {
-                return Err(SqliteError {
+                return Err(Error {
                     code: ffi::SQLITE_MISUSE,
                     message: "Invalid column index".to_string(),
                 });
@@ -1144,7 +1147,7 @@ impl<'stmt> SqliteRow<'stmt> {
             if T::column_has_valid_sqlite_type(self.stmt.stmt, idx) {
                 FromSql::column_result(self.stmt.stmt, idx)
             } else {
-                Err(SqliteError {
+                Err(Error {
                     code: ffi::SQLITE_MISMATCH,
                     message: "Invalid column type".to_string(),
                 })
@@ -1418,7 +1421,7 @@ mod test {
         #[derive(Debug, PartialEq)]
         enum CustomError {
             SomeError,
-            Sqlite(SqliteError),
+            Sqlite(Error),
         }
 
         impl fmt::Display for CustomError {
@@ -1442,8 +1445,8 @@ mod test {
             }
         }
 
-        impl From<SqliteError> for CustomError {
-            fn from(se: SqliteError) -> CustomError {
+        impl From<Error> for CustomError {
+            fn from(se: Error) -> CustomError {
                 CustomError::Sqlite(se)
             }
         }
@@ -1492,7 +1495,7 @@ mod test {
                 .collect();
 
             assert_eq!(bad_type,
-                       Err(SqliteError {
+                       Err(Error {
                            code: ffi::SQLITE_MISMATCH,
                            message: "Invalid column type".to_owned(),
                        }));
@@ -1503,7 +1506,7 @@ mod test {
                 .collect();
 
             assert_eq!(bad_idx,
-                       Err(SqliteError {
+                       Err(Error {
                            code: ffi::SQLITE_MISUSE,
                            message: "Invalid column index".to_owned(),
                        }));
@@ -1555,7 +1558,7 @@ mod test {
                 .collect();
 
             assert_eq!(bad_type,
-                       Err(CustomError::Sqlite(SqliteError {
+                       Err(CustomError::Sqlite(Error {
                            code: ffi::SQLITE_MISMATCH,
                            message: "Invalid column type".to_owned(),
                        })));
@@ -1568,7 +1571,7 @@ mod test {
                 .collect();
 
             assert_eq!(bad_idx,
-                       Err(CustomError::Sqlite(SqliteError {
+                       Err(CustomError::Sqlite(Error {
                            code: ffi::SQLITE_MISUSE,
                            message: "Invalid column index".to_owned(),
                        })));
@@ -1616,7 +1619,7 @@ mod test {
             });
 
             assert_eq!(bad_type,
-                       Err(CustomError::Sqlite(SqliteError {
+                       Err(CustomError::Sqlite(Error {
                            code: ffi::SQLITE_MISMATCH,
                            message: "Invalid column type".to_owned(),
                        })));
@@ -1626,7 +1629,7 @@ mod test {
             });
 
             assert_eq!(bad_idx,
-                       Err(CustomError::Sqlite(SqliteError {
+                       Err(CustomError::Sqlite(Error {
                            code: ffi::SQLITE_MISUSE,
                            message: "Invalid column index".to_owned(),
                        })));

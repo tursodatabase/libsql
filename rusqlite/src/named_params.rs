@@ -2,7 +2,7 @@ use libc::c_int;
 
 use super::ffi;
 
-use {SqliteResult, SqliteError, Connection, SqliteStatement, SqliteRows, SqliteRow,
+use {SqliteResult, Error, Connection, SqliteStatement, SqliteRows, SqliteRow,
      str_to_cstring};
 use types::ToSql;
 
@@ -134,7 +134,7 @@ impl<'conn> SqliteStatement<'conn> {
             if let Some(i) = try!(self.parameter_index(name)) {
                 try!(self.conn.decode_result(unsafe { value.bind_parameter(self.stmt, i) }));
             } else {
-                return Err(SqliteError {
+                return Err(Error {
                     code: ffi::SQLITE_MISUSE,
                     message: format!("Invalid parameter name: {}", name),
                 });

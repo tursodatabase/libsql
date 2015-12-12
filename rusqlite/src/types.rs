@@ -59,7 +59,7 @@ use std::ffi::CStr;
 use std::mem;
 use std::str;
 use super::ffi;
-use super::{SqliteResult, SqliteError, str_to_cstring};
+use super::{SqliteResult, Error, str_to_cstring};
 
 pub use ffi::sqlite3_stmt;
 pub use ffi::sqlite3_column_type;
@@ -235,7 +235,7 @@ impl FromSql for String {
             let utf8_str = str::from_utf8(c_slice);
             utf8_str.map(|s| s.to_string())
                     .map_err(|e| {
-                        SqliteError {
+                        Error {
                             code: 0,
                             message: e.to_string(),
                         }
@@ -275,7 +275,7 @@ impl FromSql for time::Timespec {
             time::strptime(&txt, SQLITE_DATETIME_FMT)
                 .map(|tm| tm.to_timespec())
                 .map_err(|parse_error| {
-                    SqliteError {
+                    Error {
                         code: ffi::SQLITE_MISMATCH,
                         message: format!("{}", parse_error),
                     }

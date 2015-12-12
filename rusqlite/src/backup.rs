@@ -36,7 +36,7 @@ use std::time::Duration;
 
 use ffi;
 
-use {DatabaseName, Connection, SqliteError, SqliteResult};
+use {DatabaseName, Connection, Error, SqliteResult};
 
 impl Connection {
     /// Back up the `name` database to the given destination path.
@@ -70,8 +70,8 @@ impl Connection {
 
         match r {
             Done => Ok(()),
-            Busy => Err(SqliteError::from_handle(ptr::null_mut(), ffi::SQLITE_BUSY)),
-            Locked => Err(SqliteError::from_handle(ptr::null_mut(), ffi::SQLITE_LOCKED)),
+            Busy => Err(Error::from_handle(ptr::null_mut(), ffi::SQLITE_BUSY)),
+            Locked => Err(Error::from_handle(ptr::null_mut(), ffi::SQLITE_LOCKED)),
             More => unreachable!(),
         }
     }
@@ -115,8 +115,8 @@ impl Connection {
 
         match r {
             Done => Ok(()),
-            Busy => Err(SqliteError::from_handle(ptr::null_mut(), ffi::SQLITE_BUSY)),
-            Locked => Err(SqliteError::from_handle(ptr::null_mut(), ffi::SQLITE_LOCKED)),
+            Busy => Err(Error::from_handle(ptr::null_mut(), ffi::SQLITE_BUSY)),
+            Locked => Err(Error::from_handle(ptr::null_mut(), ffi::SQLITE_LOCKED)),
             More => unreachable!(),
         }
     }
@@ -201,7 +201,7 @@ impl<'a, 'b> Backup<'a, 'b> {
                                              from.db.borrow_mut().db,
                                              from_name.as_ptr());
             if b.is_null() {
-                return Err(SqliteError::from_handle(to_db, ffi::sqlite3_errcode(to_db)));
+                return Err(Error::from_handle(to_db, ffi::sqlite3_errcode(to_db)));
             }
             b
         };
@@ -245,7 +245,7 @@ impl<'a, 'b> Backup<'a, 'b> {
             ffi::SQLITE_BUSY => Ok(Busy),
             ffi::SQLITE_LOCKED => Ok(Locked),
             rc => {
-                Err(SqliteError {
+                Err(Error {
                     code: rc,
                     message: ffi::code_to_str(rc).into(),
                 })
