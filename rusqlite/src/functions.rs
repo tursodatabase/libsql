@@ -618,4 +618,27 @@ mod test {
 
         assert_eq!(2, result.unwrap());
     }
+
+    #[test]
+    fn test_varargs_function() {
+        let db = SqliteConnection::open_in_memory().unwrap();
+        db.create_scalar_function("my_concat", -1, true, |ctx| {
+              let mut ret = String::new();
+
+              for idx in 0..ctx.len() {
+                  let s = try!(ctx.get::<String>(idx));
+                  ret.push_str(&s);
+              }
+
+              Ok(ret)
+          })
+          .unwrap();
+
+        for &(expected, query) in &[("", "SELECT my_concat()"),
+                                    ("onetwo", "SELECT my_concat('one', 'two')"),
+                                    ("abc", "SELECT my_concat('a', 'b', 'c')")] {
+            let result: String = db.query_row(query, &[], |r| r.get(0)).unwrap();
+            assert_eq!(expected, result);
+        }
+    }
 }
