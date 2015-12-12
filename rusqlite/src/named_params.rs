@@ -2,7 +2,7 @@ use libc::c_int;
 
 use super::ffi;
 
-use {Result, Error, Connection, Statement, Rows, SqliteRow, str_to_cstring};
+use {Result, Error, Connection, Statement, Rows, Row, str_to_cstring};
 use types::ToSql;
 
 impl Connection {
@@ -42,7 +42,7 @@ impl Connection {
                                  params: &[(&str, &ToSql)],
                                  f: F)
                                  -> Result<T>
-        where F: FnOnce(SqliteRow) -> T
+        where F: FnOnce(Row) -> T
     {
         let mut stmt = try!(self.prepare(sql));
         let mut rows = try!(stmt.query_named(params));

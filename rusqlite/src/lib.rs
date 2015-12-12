@@ -379,7 +379,7 @@ impl Connection {
     /// Will return `Err` if `sql` cannot be converted to a C-compatible string or if the
     /// underlying SQLite call fails.
     pub fn query_row<T, F>(&self, sql: &str, params: &[&ToSql], f: F) -> Result<T>
-        where F: FnOnce(SqliteRow) -> T
+        where F: FnOnce(Row) -> T
     {
         let mut stmt = try!(self.prepare(sql));
         let mut rows = try!(stmt.query(params));
@@ -409,7 +409,7 @@ impl Connection {
     /// Will return `Err` if `sql` cannot be converted to a C-compatible string or if the
     /// underlying SQLite call fails.
     pub fn query_row_and_then<T, E, F>(&self, sql: &str, params: &[&ToSql], f: F) -> result::Result<T, E>
-        where F: FnOnce(SqliteRow) -> result::Result<T, E>,
+        where F: FnOnce(Row) -> result::Result<T, E>,
               E: convert::From<Error>
     {
         let mut stmt = try!(self.prepare(sql));
@@ -438,7 +438,7 @@ impl Connection {
     /// This method should be considered deprecated. Use `query_row` instead, which now
     /// does exactly the same thing.
     pub fn query_row_safe<T, F>(&self, sql: &str, params: &[&ToSql], f: F) -> Result<T>
-        where F: FnOnce(SqliteRow) -> T
+        where F: FnOnce(Row) -> T
         {
             self.query_row(sql, params, f)
         }
@@ -865,7 +865,7 @@ impl<'conn> Statement<'conn> {
                                params: &[&ToSql],
                                f: F)
         -> Result<MappedRows<'a, F>>
-        where F: FnMut(&SqliteRow) -> T
+        where F: FnMut(&Row) -> T
         {
             let row_iter = try!(self.query(params));
 
@@ -890,7 +890,7 @@ impl<'conn> Statement<'conn> {
                                        f: F)
         -> Result<AndThenRows<'a, F>>
         where E: convert::From<Error>,
-              F: FnMut(&SqliteRow) -> result::Result<T, E>
+              F: FnMut(&Row) -> result::Result<T, E>
               {
                   let row_iter = try!(self.query(params));
 
@@ -968,7 +968,7 @@ pub struct MappedRows<'stmt, F> {
     map: F,
 }
 
-impl<'stmt, T, F> Iterator for MappedRows<'stmt, F> where F: FnMut(&SqliteRow) -> T
+impl<'stmt, T, F> Iterator for MappedRows<'stmt, F> where F: FnMut(&Row) -> T
 {
     type Item = Result<T>;
 
@@ -986,7 +986,7 @@ pub struct AndThenRows<'stmt, F> {
 
 impl<'stmt, T, E, F> Iterator for AndThenRows<'stmt, F>
 where E: convert::From<Error>,
-      F: FnMut(&SqliteRow) -> result::Result<T, E>
+      F: FnMut(&Row) -> result::Result<T, E>
 {
     type Item = result::Result<T, E>;
 
@@ -1051,7 +1051,7 @@ impl<'stmt> Rows<'stmt> {
         }
     }
 
-    fn get_expected_row(&mut self) -> Result<SqliteRow<'stmt>> {
+    fn get_expected_row(&mut self) -> Result<Row<'stmt>> {
         match self.next() {
             Some(row) => row,
             None => {
@@ -1065,9 +1065,9 @@ impl<'stmt> Rows<'stmt> {
 }
 
 impl<'stmt> Iterator for Rows<'stmt> {
-    type Item = Result<SqliteRow<'stmt>>;
+    type Item = Result<Row<'stmt>>;
 
-    fn next(&mut self) -> Option<Result<SqliteRow<'stmt>>> {
+    fn next(&mut self) -> Option<Result<Row<'stmt>>> {
         if self.failed {
             return None;
         }
@@ -1075,7 +1075,7 @@ impl<'stmt> Iterator for Rows<'stmt> {
             ffi::SQLITE_ROW => {
                 let current_row = self.current_row.get() + 1;
                 self.current_row.set(current_row);
-                Some(Ok(SqliteRow {
+                Some(Ok(Row {
                     stmt: self.stmt,
                     current_row: self.current_row.clone(),
                     row_idx: current_row,
@@ -1090,17 +1090,20 @@ impl<'stmt> Iterator for Rows<'stmt> {
     }
 }
 
+/// Old name for `Row`. `SqliteRow` is deprecated.
+pub type SqliteRow<'stmt> = Row<'stmt>;
+
 /// A single result row of a query.
-pub struct SqliteRow<'stmt> {
+pub struct Row<'stmt> {
     stmt: &'stmt Statement<'stmt>,
     current_row: Rc<Cell<c_int>>,
     row_idx: c_int,
 }
 
-impl<'stmt> SqliteRow<'stmt> {
+impl<'stmt> Row<'stmt> {
     /// Get the value of a particular column of the result row.
     ///
-    /// Note that `SqliteRow` can panic at runtime if you use it incorrectly. When you are
+    /// Note that `Row` can panic at runtime if you use it incorrectly. When you are
     /// retrieving the rows of a query, a row becomes stale once you have requested the next row,
     /// and the values can no longer be retrieved. In general (when using looping over the rows,
     /// for example) this isn't an issue, but it means you cannot do something like this:

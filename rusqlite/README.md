@@ -56,7 +56,7 @@ fn main() {
 }
 ```
 
-### Design of SqliteRows and SqliteRow
+### Design of Rows and Row
 
 To retrieve the result rows from a query, SQLite requires you to call
 [sqlite3_step()](https://www.sqlite.org/c3ref/step.html) on a prepared statement. You can only
@@ -67,7 +67,7 @@ satisfy the [Iterator](http://doc.rust-lang.org/std/iter/trait.Iterator.html) tr
 you cannot (as easily) loop over the rows, or use many of the helpful Iterator methods like `map`
 and `filter`.
 
-Instead, Rusqlite's `SqliteRows` handle does conform to `Iterator`. It ensures safety by
+Instead, Rusqlite's `Rows` handle does conform to `Iterator`. It ensures safety by
 performing checks at runtime to ensure you do not try to retrieve the values of a "stale" row, and
 will panic if you do so. A specific example that will panic:
 
@@ -88,7 +88,7 @@ fn bad_function_will_panic(conn: &Connection) -> Result<i64> {
 ```
 
 There are other, less obvious things that may result in a panic as well, such as calling
-`collect()` on a `SqliteRows` and then trying to use the collected rows.
+`collect()` on a `Rows` and then trying to use the collected rows.
 
 Strongly consider using the method `query_map()` instead, if you can.
 `query_map()` returns an iterator over rows-mapped-to-some-type. This

@@ -6,6 +6,7 @@
     * `SqliteResult` is now `Result`
     * `SqliteStatement` is now `Statement`
     * `SqliteRows` is now `Rows`
+    * `SqliteRow` is now `Row`
   The old, prefixed names are still exported should be considered deprecated.
 * Adds a variety of `..._named` methods for executing queries using named placeholder parameters.
 * Adds `backup` feature that exposes SQLite's online backup API.
