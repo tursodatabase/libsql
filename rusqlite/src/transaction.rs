@@ -1,17 +1,23 @@
 use {Result, Connection};
 
-pub use SqliteTransactionBehavior::{SqliteTransactionDeferred, SqliteTransactionImmediate,
-                                    SqliteTransactionExclusive};
+pub use TransactionBehavior::{TransactionDeferred, TransactionImmediate, TransactionExclusive};
+
+/// Old name for `TransactionBehavior`. `SqliteTransactionBehavior` is deprecated.
+pub type SqliteTransactionBehavior = TransactionBehavior;
 
 /// Options for transaction behavior. See [BEGIN
 /// TRANSACTION](http://www.sqlite.org/lang_transaction.html) for details.
 #[derive(Copy,Clone)]
-pub enum SqliteTransactionBehavior {
-    SqliteTransactionDeferred,
-    SqliteTransactionImmediate,
-    SqliteTransactionExclusive,
+pub enum TransactionBehavior {
+    TransactionDeferred,
+    TransactionImmediate,
+    TransactionExclusive,
 }
 
+/// Old name for `Transaction`. `SqliteTransaction` is deprecated.
+pub type SqliteTransaction<'conn> = Transaction<'conn>;
+
+///
 /// Represents a transaction on a database connection.
 ///
 /// ## Note
@@ -34,25 +40,25 @@ pub enum SqliteTransactionBehavior {
 ///     tx.commit()
 /// }
 /// ```
-pub struct SqliteTransaction<'conn> {
+pub struct Transaction<'conn> {
     conn: &'conn Connection,
     depth: u32,
     commit: bool,
     finished: bool,
 }
 
-impl<'conn> SqliteTransaction<'conn> {
+impl<'conn> Transaction<'conn> {
     /// Begin a new transaction. Cannot be nested; see `savepoint` for nested transactions.
     pub fn new(conn: &Connection,
-               behavior: SqliteTransactionBehavior)
-               -> Result<SqliteTransaction> {
+               behavior: TransactionBehavior)
+               -> Result<Transaction> {
         let query = match behavior {
-            SqliteTransactionDeferred => "BEGIN DEFERRED",
-            SqliteTransactionImmediate => "BEGIN IMMEDIATE",
-            SqliteTransactionExclusive => "BEGIN EXCLUSIVE",
+            TransactionDeferred => "BEGIN DEFERRED",
+            TransactionImmediate => "BEGIN IMMEDIATE",
+            TransactionExclusive => "BEGIN EXCLUSIVE",
         };
         conn.execute_batch(query).map(|_| {
-            SqliteTransaction {
+            Transaction {
                 conn: conn,
                 depth: 0,
                 commit: false,
@@ -87,9 +93,9 @@ impl<'conn> SqliteTransaction<'conn> {
     ///     tx.commit()
     /// }
     /// ```
-    pub fn savepoint<'a>(&'a self) -> Result<SqliteTransaction<'a>> {
+    pub fn savepoint<'a>(&'a self) -> Result<Transaction<'a>> {
         self.conn.execute_batch("SAVEPOINT sp").map(|_| {
-            SqliteTransaction {
+            Transaction {
                 conn: self.conn,
                 depth: self.depth + 1,
                 commit: false,
@@ -165,7 +171,7 @@ impl<'conn> SqliteTransaction<'conn> {
 }
 
 #[allow(unused_must_use)]
-impl<'conn> Drop for SqliteTransaction<'conn> {
+impl<'conn> Drop for Transaction<'conn> {
     fn drop(&mut self) {
         self.finish_();
     }

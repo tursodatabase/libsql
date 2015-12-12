@@ -74,9 +74,9 @@ use libc::{c_int, c_void, c_char};
 
 use types::{ToSql, FromSql};
 
-pub use transaction::SqliteTransaction;
-pub use transaction::{SqliteTransactionBehavior, SqliteTransactionDeferred,
-SqliteTransactionImmediate, SqliteTransactionExclusive};
+pub use transaction::Transaction;
+pub use transaction::{TransactionBehavior, TransactionDeferred,
+                      TransactionImmediate, TransactionExclusive};
 
 #[cfg(feature = "load_extension")]
 pub use load_extension_guard::SqliteLoadExtensionGuard;
@@ -285,8 +285,8 @@ impl Connection {
     /// # Failure
     ///
     /// Will return `Err` if the underlying SQLite call fails.
-    pub fn transaction<'a>(&'a self) -> Result<SqliteTransaction<'a>> {
-        SqliteTransaction::new(self, SqliteTransactionDeferred)
+    pub fn transaction<'a>(&'a self) -> Result<Transaction<'a>> {
+        Transaction::new(self, TransactionDeferred)
     }
 
     /// Begin a new transaction with a specified behavior.
@@ -297,9 +297,9 @@ impl Connection {
     ///
     /// Will return `Err` if the underlying SQLite call fails.
     pub fn transaction_with_behavior<'a>(&'a self,
-                                         behavior: SqliteTransactionBehavior)
-        -> Result<SqliteTransaction<'a>> {
-            SqliteTransaction::new(self, behavior)
+                                         behavior: TransactionBehavior)
+        -> Result<Transaction<'a>> {
+            Transaction::new(self, behavior)
         }
 
     /// Convenience method to run multiple SQL statements (that cannot take any parameters).

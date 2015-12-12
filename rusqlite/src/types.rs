@@ -79,7 +79,7 @@ pub trait FromSql: Sized {
 
     /// FromSql types can implement this method and use sqlite3_column_type to check that
     /// the type reported by SQLite matches a type suitable for Self. This method is used
-    /// by `SqliteRow::get_checked` to confirm that the column contains a valid type before
+    /// by `Row::get_checked` to confirm that the column contains a valid type before
     /// attempting to retrieve the value.
     unsafe fn column_has_valid_sqlite_type(_: *mut sqlite3_stmt, _: c_int) -> bool {
         true
