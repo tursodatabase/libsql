@@ -64,7 +64,6 @@ use std::mem;
 use std::ptr;
 use std::fmt;
 use std::path::{Path, PathBuf};
-use std::error;
 use std::rc::Rc;
 use std::cell::{RefCell, Cell};
 use std::ffi::{CStr, CString};
@@ -73,8 +72,10 @@ use std::str;
 use libc::{c_int, c_char};
 
 use types::{ToSql, FromSql};
+use error::{error_from_sqlite_code, error_from_handle};
 
 pub use transaction::{SqliteTransaction, Transaction, TransactionBehavior};
+pub use error::{SqliteError, Error};
 
 #[cfg(feature = "load_extension")]
 pub use load_extension_guard::{SqliteLoadExtensionGuard, LoadExtensionGuard};
@@ -82,6 +83,7 @@ pub use load_extension_guard::{SqliteLoadExtensionGuard, LoadExtensionGuard};
 pub mod types;
 mod transaction;
 mod named_params;
+mod error;
 #[cfg(feature = "load_extension")]mod load_extension_guard;
 #[cfg(feature = "trace")]pub mod trace;
 #[cfg(feature = "backup")]pub mod backup;
@@ -98,126 +100,6 @@ unsafe fn errmsg_to_string(errmsg: *const c_char) -> String {
     let c_slice = CStr::from_ptr(errmsg).to_bytes();
     let utf8_str = str::from_utf8(c_slice);
     utf8_str.unwrap_or("Invalid string encoding").to_string()
-}
-
-/// Old name for `Error`. `SqliteError` is deprecated.
-pub type SqliteError = Error;
-
-#[derive(Debug)]
-pub enum Error {
-    SqliteFailure(ffi::Error, Option<String>),
-    FromSqlConversionFailure(Box<error::Error>),
-    Utf8Error(str::Utf8Error),
-    NulError(std::ffi::NulError),
-    InvalidParameterName(String),
-    InvalidPath(PathBuf),
-    ExecuteReturnedResults,
-    QueryReturnedNoRows,
-    GetFromStaleRow,
-    InvalidColumnIndex(c_int),
-    InvalidColumnType,
-
-    #[cfg(feature = "functions")]
-    InvalidFunctionParameterType,
-    #[cfg(feature = "functions")]
-    #[allow(dead_code)]
-    UserFunctionError(Box<std::error::Error>),
-}
-
-impl From<str::Utf8Error> for Error {
-    fn from(err: str::Utf8Error) -> Error {
-        Error::Utf8Error(err)
-    }
-}
-
-impl From<std::ffi::NulError> for Error {
-    fn from(err: std::ffi::NulError) -> Error {
-        Error::NulError(err)
-    }
-}
-
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            &Error::SqliteFailure(ref err, None) => err.fmt(f),
-            &Error::SqliteFailure(_, Some(ref s)) => write!(f, "{}", s),
-            &Error::FromSqlConversionFailure(ref err) => err.fmt(f),
-            &Error::Utf8Error(ref err) => err.fmt(f),
-            &Error::NulError(ref err) => err.fmt(f),
-            &Error::InvalidParameterName(ref name) => write!(f, "Invalid parameter name: {}", name),
-            &Error::InvalidPath(ref p) => write!(f, "Invalid path: {}", p.to_string_lossy()),
-            &Error::ExecuteReturnedResults => write!(f, "Execute returned results - did you mean to call query?"),
-            &Error::QueryReturnedNoRows => write!(f, "Query returned no rows"),
-            &Error::GetFromStaleRow => write!(f, "Attempted to get a value from a stale row"),
-            &Error::InvalidColumnIndex(i) => write!(f, "Invalid column index: {}", i),
-            &Error::InvalidColumnType => write!(f, "Invalid column type"),
-
-            #[cfg(feature = "functions")]
-            &Error::InvalidFunctionParameterType => write!(f, "Invalid function parameter type"),
-            #[cfg(feature = "functions")]
-            &Error::UserFunctionError(ref err) => err.fmt(f),
-        }
-    }
-}
-
-impl error::Error for Error {
-    fn description(&self) -> &str {
-        match self {
-            &Error::SqliteFailure(ref err, None) => err.description(),
-            &Error::SqliteFailure(_, Some(ref s)) => s,
-            &Error::FromSqlConversionFailure(ref err) => err.description(),
-            &Error::Utf8Error(ref err) => err.description(),
-            &Error::InvalidParameterName(_) => "invalid parameter name",
-            &Error::NulError(ref err) => err.description(),
-            &Error::InvalidPath(_) => "invalid path",
-            &Error::ExecuteReturnedResults => "execute returned results - did you mean to call query?",
-            &Error::QueryReturnedNoRows => "query returned no rows",
-            &Error::GetFromStaleRow => "attempted to get a value from a stale row",
-            &Error::InvalidColumnIndex(_) => "invalid column index",
-            &Error::InvalidColumnType => "invalid column type",
-
-            #[cfg(feature = "functions")]
-            &Error::InvalidFunctionParameterType => "invalid function parameter type",
-            #[cfg(feature = "functions")]
-            &Error::UserFunctionError(ref err) => err.description(),
-        }
-    }
-
-    fn cause(&self) -> Option<&error::Error> {
-        match self {
-            &Error::SqliteFailure(ref err, _) => Some(err),
-            &Error::FromSqlConversionFailure(ref err) => Some(&**err),
-            &Error::Utf8Error(ref err) => Some(err),
-            &Error::NulError(ref err) => Some(err),
-            &Error::InvalidParameterName(_) => None,
-            &Error::InvalidPath(_) => None,
-            &Error::ExecuteReturnedResults => None,
-            &Error::QueryReturnedNoRows => None,
-            &Error::GetFromStaleRow => None,
-            &Error::InvalidColumnIndex(_) => None,
-            &Error::InvalidColumnType => None,
-
-            #[cfg(feature = "functions")]
-            &Error::InvalidFunctionParameterType => None,
-            #[cfg(feature = "functions")]
-            &Error::UserFunctionError(ref err) => Some(&**err),
-        }
-    }
-}
-
-impl Error {
-    fn from_sqlite_code(code: c_int, message: Option<String>) -> Error {
-        Error::SqliteFailure(ffi::Error::new(code), message)
-    }
-
-    fn from_handle(db: *mut ffi::Struct_sqlite3, code: c_int) -> Error {
-        let message = if db.is_null() {
-            None
-        } else {
-            Some(unsafe { errmsg_to_string(ffi::sqlite3_errmsg(db)) })
-        };
-        Error::from_sqlite_code(code, message)
-    }
 }
 
 fn str_to_cstring(s: &str) -> Result<CString> {
@@ -668,9 +550,9 @@ impl InnerConnection {
                 let r = ffi::sqlite3_open_v2(c_path.as_ptr(), &mut db, flags.bits(), ptr::null());
                 if r != ffi::SQLITE_OK {
                     let e = if db.is_null() {
-                        Error::from_sqlite_code(r, None)
+                        error_from_sqlite_code(r, None)
                     } else {
-                        let e = Error::from_handle(db, r);
+                        let e = error_from_handle(db, r);
                         ffi::sqlite3_close(db);
                         e
                     };
@@ -679,7 +561,7 @@ impl InnerConnection {
                 }
                 let r = ffi::sqlite3_busy_timeout(db, 5000);
                 if r != ffi::SQLITE_OK {
-                    let e = Error::from_handle(db, r);
+                    let e = error_from_handle(db, r);
                     ffi::sqlite3_close(db);
                     return Err(e);
                 }
@@ -699,7 +581,7 @@ impl InnerConnection {
         if code == ffi::SQLITE_OK {
             Ok(())
         } else {
-            Err(Error::from_handle(self.db(), code))
+            Err(error_from_handle(self.db(), code))
         }
     }
 
@@ -748,7 +630,7 @@ impl InnerConnection {
             } else {
                 let message = errmsg_to_string(&*errmsg);
                 ffi::sqlite3_free(errmsg as *mut libc::c_void);
-                Err(Error::from_sqlite_code(r, Some(message)))
+                Err(error_from_sqlite_code(r, Some(message)))
             }
         }
     }
@@ -762,7 +644,7 @@ impl InnerConnection {
                    sql: &str)
         -> Result<Statement<'a>> {
             if sql.len() >= ::std::i32::MAX as usize {
-                return Err(Error::from_sqlite_code(ffi::SQLITE_TOOBIG, None));
+                return Err(error_from_sqlite_code(ffi::SQLITE_TOOBIG, None));
             }
             let mut c_stmt: *mut ffi::sqlite3_stmt = unsafe { mem::uninitialized() };
             let c_sql = try!(str_to_cstring(sql));
