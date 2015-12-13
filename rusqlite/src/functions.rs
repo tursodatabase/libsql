@@ -407,26 +407,24 @@ impl InnerConnection {
         where F: FnMut(&Context) -> Result<T>,
               T: ToResult
     {
-        extern "C" fn call_boxed_closure<F, T>(ctx: *mut sqlite3_context,
-                                               argc: c_int,
-                                               argv: *mut *mut sqlite3_value)
+        unsafe extern "C" fn call_boxed_closure<F, T>(ctx: *mut sqlite3_context,
+                                                      argc: c_int,
+                                                      argv: *mut *mut sqlite3_value)
             where F: FnMut(&Context) -> Result<T>,
                   T: ToResult
         {
-            unsafe {
-                let ctx = Context {
-                    ctx: ctx,
-                    args: slice::from_raw_parts(argv, argc as usize),
-                };
-                let boxed_f: *mut F = mem::transmute(ffi::sqlite3_user_data(ctx.ctx));
-                assert!(!boxed_f.is_null(), "Internal error - null function pointer");
-                match (*boxed_f)(&ctx) {
-                    Ok(r) => r.set_result(ctx.ctx),
-                    Err(e) => {
-                        ffi::sqlite3_result_error_code(ctx.ctx, e.code);
-                        if let Ok(cstr) = str_to_cstring(&e.message) {
-                            ffi::sqlite3_result_error(ctx.ctx, cstr.as_ptr(), -1);
-                        }
+            let ctx = Context {
+                ctx: ctx,
+                args: slice::from_raw_parts(argv, argc as usize),
+            };
+            let boxed_f: *mut F = mem::transmute(ffi::sqlite3_user_data(ctx.ctx));
+            assert!(!boxed_f.is_null(), "Internal error - null function pointer");
+            match (*boxed_f)(&ctx) {
+                Ok(r) => r.set_result(ctx.ctx),
+                Err(e) => {
+                    ffi::sqlite3_result_error_code(ctx.ctx, e.code);
+                    if let Ok(cstr) = str_to_cstring(&e.message) {
+                        ffi::sqlite3_result_error(ctx.ctx, cstr.as_ptr(), -1);
                     }
                 }
             }

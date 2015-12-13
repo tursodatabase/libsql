@@ -67,9 +67,9 @@ impl Connection {
     /// There can only be a single tracer defined for each database connection.
     /// Setting a new tracer clears the old one.
     pub fn trace(&mut self, trace_fn: Option<fn(&str)>) {
-        extern "C" fn trace_callback(p_arg: *mut c_void, z_sql: *const c_char) {
-            let trace_fn: fn(&str) = unsafe { mem::transmute(p_arg) };
-            let c_slice = unsafe { CStr::from_ptr(z_sql).to_bytes() };
+        unsafe extern "C" fn trace_callback(p_arg: *mut c_void, z_sql: *const c_char) {
+            let trace_fn: fn(&str) = mem::transmute(p_arg);
+            let c_slice = CStr::from_ptr(z_sql).to_bytes();
             if let Ok(s) = str::from_utf8(c_slice) {
                 trace_fn(s);
             }
@@ -91,11 +91,11 @@ impl Connection {
     /// There can only be a single profiler defined for each database connection.
     /// Setting a new profiler clears the old one.
     pub fn profile(&mut self, profile_fn: Option<fn(&str, Duration)>) {
-        extern "C" fn profile_callback(p_arg: *mut c_void,
-                                       z_sql: *const c_char,
-                                       nanoseconds: u64) {
-            let profile_fn: fn(&str, Duration) = unsafe { mem::transmute(p_arg) };
-            let c_slice = unsafe { CStr::from_ptr(z_sql).to_bytes() };
+        unsafe extern "C" fn profile_callback(p_arg: *mut c_void,
+                                              z_sql: *const c_char,
+                                              nanoseconds: u64) {
+            let profile_fn: fn(&str, Duration) = mem::transmute(p_arg);
+            let c_slice = CStr::from_ptr(z_sql).to_bytes();
             if let Ok(s) = str::from_utf8(c_slice) {
                 const NANOS_PER_SEC: u64 = 1_000_000_000;
 

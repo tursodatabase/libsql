@@ -70,7 +70,7 @@ use std::cell::{RefCell, Cell};
 use std::ffi::{CStr, CString};
 use std::result;
 use std::str;
-use libc::{c_int, c_void, c_char};
+use libc::{c_int, c_char};
 
 use types::{ToSql, FromSql};
 
@@ -631,22 +631,6 @@ impl InnerConnection {
         }
     }
 
-    unsafe fn decode_result_with_errmsg(&self,
-                                        code: c_int,
-                                        errmsg: *mut c_char)
-        -> Result<()> {
-            if code == ffi::SQLITE_OK {
-                Ok(())
-            } else {
-                let message = errmsg_to_string(&*errmsg);
-                ffi::sqlite3_free(errmsg as *mut c_void);
-                Err(Error {
-                    code: code,
-                    message: message,
-                })
-            }
-        }
-
     fn close(&mut self) -> Result<()> {
         unsafe {
             let r = ffi::sqlite3_close(self.db());
@@ -687,7 +671,16 @@ impl InnerConnection {
             } else {
                 ffi::sqlite3_load_extension(self.db, dylib_str.as_ptr(), ptr::null(), &mut errmsg)
             };
-            self.decode_result_with_errmsg(r, errmsg)
+            if r == ffi::SQLITE_OK {
+                Ok(())
+            } else {
+                let message = errmsg_to_string(&*errmsg);
+                ffi::sqlite3_free(errmsg as *mut libc::c_void);
+                Err(Error {
+                    code: r,
+                    message: message,
+                })
+            }
         }
     }
 
