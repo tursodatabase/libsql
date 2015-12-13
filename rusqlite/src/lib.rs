@@ -658,13 +658,12 @@ impl InnerConnection {
     fn execute_batch(&mut self, sql: &str) -> Result<()> {
         let c_sql = try!(str_to_cstring(sql));
         unsafe {
-            let mut errmsg: *mut c_char = mem::uninitialized();
             let r = ffi::sqlite3_exec(self.db(),
             c_sql.as_ptr(),
             None,
             ptr::null_mut(),
-            &mut errmsg);
-            self.decode_result_with_errmsg(r, errmsg)
+            ptr::null_mut());
+            self.decode_result(r)
         }
     }
 
