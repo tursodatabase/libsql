@@ -11,7 +11,7 @@ extern crate rusqlite;
 extern crate time;
 
 use time::Timespec;
-use rusqlite::SqliteConnection;
+use rusqlite::Connection;
 
 #[derive(Debug)]
 struct Person {
@@ -22,7 +22,7 @@ struct Person {
 }
 
 fn main() {
-    let conn = SqliteConnection::open_in_memory().unwrap();
+    let conn = Connection::open_in_memory().unwrap();
 
     conn.execute("CREATE TABLE person (
                   id              INTEGER PRIMARY KEY,
@@ -56,7 +56,21 @@ fn main() {
 }
 ```
 
-### Design of SqliteRows and SqliteRow
+### Optional Features
+
+Rusqlite provides several features that are behind [Cargo
+features](http://doc.crates.io/manifest.html#the-features-section). They are:
+
+* [`load_extension`](http://jgallagher.github.io/rusqlite/rusqlite/struct.LoadExtensionGuard.html)
+  allows loading dynamic library-based SQLite extensions.
+* [`backup`](http://jgallagher.github.io/rusqlite/rusqlite/backup/index.html)
+  allows use of SQLite's online backup API.
+* [`functions`](http://jgallagher.github.io/rusqlite/rusqlite/functions/index.html)
+  allows you to load Rust closures into SQLite connections for use in queries.
+* [`trace`](http://jgallagher.github.io/rusqlite/rusqlite/trace/index.html)
+  allows hooks into SQLite's tracing and profiling APIs.
+
+### Design of Rows and Row
 
 To retrieve the result rows from a query, SQLite requires you to call
 [sqlite3_step()](https://www.sqlite.org/c3ref/step.html) on a prepared statement. You can only
@@ -67,12 +81,12 @@ satisfy the [Iterator](http://doc.rust-lang.org/std/iter/trait.Iterator.html) tr
 you cannot (as easily) loop over the rows, or use many of the helpful Iterator methods like `map`
 and `filter`.
 
-Instead, Rusqlite's `SqliteRows` handle does conform to `Iterator`. It ensures safety by
+Instead, Rusqlite's `Rows` handle does conform to `Iterator`. It ensures safety by
 performing checks at runtime to ensure you do not try to retrieve the values of a "stale" row, and
 will panic if you do so. A specific example that will panic:
 
 ```rust
-fn bad_function_will_panic(conn: &SqliteConnection) -> SqliteResult<i64> {
+fn bad_function_will_panic(conn: &Connection) -> Result<i64> {
     let mut stmt = try!(conn.prepare("SELECT id FROM my_table"));
     let mut rows = try!(stmt.query(&[]));
 
@@ -88,7 +102,7 @@ fn bad_function_will_panic(conn: &SqliteConnection) -> SqliteResult<i64> {
 ```
 
 There are other, less obvious things that may result in a panic as well, such as calling
-`collect()` on a `SqliteRows` and then trying to use the collected rows.
+`collect()` on a `Rows` and then trying to use the collected rows.
 
 Strongly consider using the method `query_map()` instead, if you can.
 `query_map()` returns an iterator over rows-mapped-to-some-type. This
