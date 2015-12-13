@@ -616,6 +616,10 @@ impl InnerConnection {
                     ffi::sqlite3_close(db);
                     return Err(e);
                 }
+
+                // attempt to turn on extended results code; don't fail if we can't.
+                ffi::sqlite3_extended_result_codes(db, 1);
+
                 Ok(InnerConnection { db: db })
             }
         }
@@ -1419,6 +1423,18 @@ mod test {
         let stmt = db.prepare(query).unwrap();
 
         assert!(format!("{:?}", stmt).contains(query));
+    }
+
+    #[test]
+    fn test_notnull_constraint_error() {
+        let db = checked_memory_handle();
+        db.execute_batch("CREATE TABLE foo(x NOT NULL)").unwrap();
+
+        let result = db.execute("INSERT INTO foo (x) VALUES (NULL)", &[]);
+        assert!(result.is_err());
+
+        let err = result.err().unwrap();
+        assert_eq!(err.code, ffi::SQLITE_CONSTRAINT_NOTNULL);
     }
 
     mod query_and_then_tests {
