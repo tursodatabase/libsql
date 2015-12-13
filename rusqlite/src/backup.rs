@@ -244,12 +244,7 @@ impl<'a, 'b> Backup<'a, 'b> {
             ffi::SQLITE_OK => Ok(More),
             ffi::SQLITE_BUSY => Ok(Busy),
             ffi::SQLITE_LOCKED => Ok(Locked),
-            rc => {
-                Err(Error {
-                    code: rc,
-                    message: ffi::code_to_str(rc).into(),
-                })
-            }
+            _ => Err(Error::from_sqlite_code(rc, None)),
         }
     }
 

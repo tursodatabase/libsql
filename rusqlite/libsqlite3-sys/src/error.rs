@@ -1,4 +1,5 @@
 use libc::c_int;
+use std::error;
 use std::fmt;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -74,6 +75,12 @@ impl Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Error code {}: {}", self.extended_code, code_to_str(self.extended_code))
+    }
+}
+
+impl error::Error for Error {
+    fn description(&self) -> &str {
+        code_to_str(self.extended_code)
     }
 }
 

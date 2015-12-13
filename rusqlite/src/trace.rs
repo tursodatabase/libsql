@@ -42,14 +42,11 @@ pub unsafe fn config_log(callback: Option<fn(c_int, &str)>) -> Result<()> {
         }
     };
 
-    if rc != ffi::SQLITE_OK {
-        return Err(Error {
-            code: rc,
-            message: "sqlite3_config(SQLITE_CONFIG_LOG, ...)".to_string(),
-        });
+    if rc == ffi::SQLITE_OK {
+        Ok(())
+    } else {
+        Err(Error::from_sqlite_code(rc, None))
     }
-
-    Ok(())
 }
 
 /// Write a message into the error log established by `config_log`.
