@@ -1,4 +1,81 @@
 use libc::c_int;
+use std::fmt;
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ErrorCode {
+    InternalMalfunction,
+    PermissionDenied,
+    OperationAborted,
+    DatabaseBusy,
+    DatabaseLocked,
+    OutOfMemory,
+    ReadOnly,
+    OperationInterrupted,
+    SystemIOFailure,
+    DatabaseCorrupt,
+    NotFound,
+    DiskFull,
+    CannotOpen,
+    FileLockingProtocolFailed,
+    SchemaChanged,
+    TooBig,
+    ConstraintViolation,
+    TypeMismatch,
+    APIMisuse,
+    NoLargeFileSupport,
+    AuthorizationForStatementDenied,
+    ParameterOutOfRange,
+    NotADatabase,
+    Unknown,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Error {
+    pub code: ErrorCode,
+    pub extended_code: c_int,
+}
+
+impl Error {
+    pub fn new(result_code: c_int) -> Error {
+        let code = match result_code & 0xff {
+            SQLITE_INTERNAL  => ErrorCode::InternalMalfunction,
+            SQLITE_PERM      => ErrorCode::PermissionDenied,
+            SQLITE_ABORT     => ErrorCode::OperationAborted,
+            SQLITE_BUSY      => ErrorCode::DatabaseBusy,
+            SQLITE_LOCKED    => ErrorCode::DatabaseLocked,
+            SQLITE_NOMEM     => ErrorCode::OutOfMemory,
+            SQLITE_READONLY  => ErrorCode::ReadOnly,
+            SQLITE_INTERRUPT => ErrorCode::OperationInterrupted,
+            SQLITE_IOERR     => ErrorCode::SystemIOFailure,
+            SQLITE_CORRUPT   => ErrorCode::DatabaseCorrupt,
+            SQLITE_NOTFOUND  => ErrorCode::NotFound,
+            SQLITE_FULL      => ErrorCode::DiskFull,
+            SQLITE_CANTOPEN  => ErrorCode::CannotOpen,
+            SQLITE_PROTOCOL  => ErrorCode::FileLockingProtocolFailed,
+            SQLITE_SCHEMA    => ErrorCode::SchemaChanged,
+            SQLITE_TOOBIG    => ErrorCode::TooBig,
+            SQLITE_CONSTRAINT=> ErrorCode::ConstraintViolation,
+            SQLITE_MISMATCH  => ErrorCode::TypeMismatch,
+            SQLITE_MISUSE    => ErrorCode::APIMisuse,
+            SQLITE_NOLFS     => ErrorCode::NoLargeFileSupport,
+            SQLITE_AUTH      => ErrorCode::AuthorizationForStatementDenied,
+            SQLITE_RANGE     => ErrorCode::ParameterOutOfRange,
+            SQLITE_NOTADB    => ErrorCode::NotADatabase,
+            _                => ErrorCode::Unknown,
+        };
+
+        Error {
+            code: code,
+            extended_code: result_code,
+        }
+    }
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Error code {}: {}", self.extended_code, code_to_str(self.extended_code))
+    }
+}
 
 // Result codes.
 
