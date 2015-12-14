@@ -1,4 +1,52 @@
-//! incremental BLOB I/O
+//! Incremental BLOB I/O.
+//!
+//! Note that SQLite does not provide API-level access to change the size of a BLOB; that must
+//! be performed through SQL statements.
+//!
+//! `Blob` conforms to `std::io::Read`, `std::io::Write`, and `std::io::Seek`, so it plays
+//! nicely with other types that build on these (such as `std::io::BufReader` and
+//! `std::io::BufWriter`). However, you must be careful with the size of the blob. For example,
+//! when using a `BufWriter`, the `BufWriter` will accept more data than the `Blob` will allow,
+//! so make sure to call `flush` and check for errors. (See the unit tests in this module for
+//! an example.)
+//!
+//! ## Example
+//!
+//! ```rust
+//! extern crate libsqlite3_sys;
+//! extern crate rusqlite;
+//!
+//! use rusqlite::{Connection, DatabaseName};
+//! use std::io::{Read, Write, Seek, SeekFrom};
+//!
+//! fn main() {
+//!     let db = Connection::open_in_memory().unwrap();
+//!     db.execute_batch("CREATE TABLE test (content BLOB);").unwrap();
+//!     db.execute("INSERT INTO test (content) VALUES (ZEROBLOB(10))", &[]).unwrap();
+//!
+//!     let rowid = db.last_insert_rowid();
+//!     let mut blob = db.blob_open(DatabaseName::Main, "test", "content", rowid, false).unwrap();
+//!
+//!     // Make sure to test that the number of bytes written matches what you expect;
+//!     // if you try to write too much, the data will be truncated to the size of the BLOB.
+//!     let bytes_written = blob.write(b"01234567").unwrap();
+//!     assert_eq!(bytes_written, 8);
+//!
+//!     // Same guidance - make sure you check the number of bytes read!
+//!     blob.seek(SeekFrom::Start(0)).unwrap();
+//!     let mut buf = [0u8; 20];
+//!     let bytes_read = blob.read(&mut buf[..]).unwrap();
+//!     assert_eq!(bytes_read, 10); // note we read 10 bytes because the blob has size 10
+//!
+//!     db.execute("INSERT INTO test (content) VALUES (ZEROBLOB(64))", &[]).unwrap();
+//!
+//!     // given a new row ID, we can reopen the blob on that row
+//!     let rowid = db.last_insert_rowid();
+//!     blob.reopen(rowid).unwrap();
+//!
+//!     assert_eq!(blob.size(), 64);
+//! }
+//! ```
 use std::io;
 use std::cmp::min;
 use std::mem;
@@ -7,7 +55,7 @@ use std::ptr;
 use super::ffi;
 use {Result, Connection, DatabaseName};
 
-/// Handle to an open BLOB
+/// Handle to an open BLOB.
 pub struct Blob<'conn> {
     conn: &'conn Connection,
     blob: *mut ffi::sqlite3_blob,
@@ -19,8 +67,8 @@ impl Connection {
     ///
     /// # Failure
     ///
-    /// Will return `Err` if `db`/`table`/`column` cannot be converted to a C-compatible string or if the
-    /// underlying SQLite BLOB open call fails.
+    /// Will return `Err` if `db`/`table`/`column` cannot be converted to a C-compatible string
+    /// or if the underlying SQLite BLOB open call fails.
     pub fn blob_open<'a>(&'a self,
                          db: DatabaseName,
                          table: &str,
@@ -57,7 +105,7 @@ impl Connection {
 }
 
 impl<'conn> Blob<'conn> {
-    /// Move a BLOB handle to a new row
+    /// Move a BLOB handle to a new row.
     ///
     /// # Failure
     ///
@@ -71,12 +119,15 @@ impl<'conn> Blob<'conn> {
         Ok(())
     }
 
-    /// Return the size in bytes of the BLOB
+    /// Return the size in bytes of the BLOB.
     pub fn size(&self) -> i32 {
         unsafe { ffi::sqlite3_blob_bytes(self.blob) }
     }
 
-    /// Close a BLOB handle
+    /// Close a BLOB handle.
+    ///
+    /// Calling `close` explicitly is not required (the BLOB will be closed when the
+    /// `Blob` is dropped), but it is available so you can get any errors that occur.
     ///
     /// # Failure
     ///
@@ -93,7 +144,8 @@ impl<'conn> Blob<'conn> {
 }
 
 impl<'conn> io::Read for Blob<'conn> {
-    /// Read data from a BLOB incrementally
+    /// Read data from a BLOB incrementally. Will return Ok(0) if the end of the blob
+    /// has been reached.
     ///
     /// # Failure
     ///
@@ -118,7 +170,8 @@ impl<'conn> io::Read for Blob<'conn> {
 }
 
 impl<'conn> io::Write for Blob<'conn> {
-    /// Write data into a BLOB incrementally
+    /// Write data into a BLOB incrementally. Will return `Ok(0)` if the end of the blob
+    /// has been reached.
     ///
     /// This function may only modify the contents of the BLOB; it is not possible to increase
     /// the size of a BLOB using this API.
