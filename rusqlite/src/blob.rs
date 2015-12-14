@@ -82,41 +82,6 @@ impl<'conn> Blob<'conn> {
         unsafe { ffi::sqlite3_blob_bytes(self.blob) }
     }
 
-    /// Write data into a BLOB incrementally
-    ///
-    /// This function may only modify the contents of the BLOB; it is not possible to increase the size of a BLOB using this API.
-    ///
-    /// # Failure
-    ///
-    /// Will return `Err` if `buf` length > i32 max value or if `buf` length + offset > BLOB size
-    /// or if the underlying SQLite write call fails.
-    pub fn write(&mut self, buf: &[u8]) -> Result<i32> {
-        if buf.len() > ::std::i32::MAX as usize {
-            return Err(Error {
-                code: ffi::SQLITE_TOOBIG,
-                message: "buffer too long".to_string(),
-            });
-        }
-        let n = buf.len() as i32;
-        let size = self.size();
-        if self.pos + n > size {
-            return Err(Error {
-                code: ffi::SQLITE_MISUSE,
-                message: format!("pos = {} + n = {} > size = {}", self.pos, n, size),
-            });
-        }
-        if n <= 0 {
-            return Ok(0);
-        }
-        let rc = unsafe {
-            ffi::sqlite3_blob_write(self.blob, mem::transmute(buf.as_ptr()), n, self.pos)
-        };
-        self.conn.decode_result(rc).map(|_| {
-            self.pos += n;
-            n
-        })
-    }
-
     /// Seek to an offset, in bytes, in BLOB.
     pub fn seek(&mut self, pos: SeekFrom) {
         self.pos = match pos {
@@ -173,6 +138,47 @@ impl<'conn> io::Read for Blob<'conn> {
     }
 }
 
+impl<'conn> io::Write for Blob<'conn> {
+    /// Write data into a BLOB incrementally
+    ///
+    /// This function may only modify the contents of the BLOB; it is not possible to increase the size of a BLOB using this API.
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if `buf` length > i32 max value or if `buf` length + offset > BLOB size
+    /// or if the underlying SQLite write call fails.
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        if buf.len() > ::std::i32::MAX as usize {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, Error {
+                code: ffi::SQLITE_TOOBIG,
+                message: "buffer too long".to_string(),
+            }));
+        }
+        let n = buf.len() as i32;
+        let size = self.size();
+        if self.pos + n > size {
+            return Err(io::Error::new(io::ErrorKind::Other, Error {
+                code: ffi::SQLITE_MISUSE,
+                message: format!("pos = {} + n = {} > size = {}", self.pos, n, size),
+            }));
+        }
+        if n <= 0 {
+            return Ok(0);
+        }
+        let rc = unsafe {
+            ffi::sqlite3_blob_write(self.blob, mem::transmute(buf.as_ptr()), n, self.pos)
+        };
+        self.conn.decode_result(rc).map(|_| {
+            self.pos += n;
+            n as usize
+        }).map_err(|err| io::Error::new(io::ErrorKind::Other, err))
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        Ok(())
+    }
+}
+
 #[allow(unused_must_use)]
 impl<'conn> Drop for Blob<'conn> {
     fn drop(&mut self) {
@@ -182,7 +188,7 @@ impl<'conn> Drop for Blob<'conn> {
 
 #[cfg(test)]
 mod test {
-    use std::io::Read;
+    use std::io::{Read, Write};
     use {Connection, DatabaseName};
 
     #[test]
