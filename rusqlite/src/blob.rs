@@ -161,9 +161,9 @@ impl<'conn> io::Seek for Blob<'conn> {
         if pos < 0 {
             Err(io::Error::new(io::ErrorKind::InvalidInput,
                                "invalid seek to negative position"))
-        } else if pos > ::std::i32::MAX as i64 {
+        } else if pos > self.size() as i64 {
             Err(io::Error::new(io::ErrorKind::InvalidInput,
-                               "invalid seek to position > i32::MAX"))
+                               "invalid seek to position past end of blob"))
         } else {
             self.pos = pos as i32;
             Ok(pos as u64)
@@ -231,6 +231,11 @@ mod test {
         blob.reopen(rowid).unwrap();
         assert_eq!(5, blob.read(&mut bytes[..]).unwrap());
         assert_eq!(&bytes, b"Clob5");
+
+        // should not be able to seek negative or past end
+        assert!(blob.seek(SeekFrom::Current(-20)).is_err());
+        assert!(blob.seek(SeekFrom::End(0)).is_ok());
+        assert!(blob.seek(SeekFrom::Current(1)).is_err());
     }
 
     #[test]
