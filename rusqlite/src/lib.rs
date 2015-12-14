@@ -86,6 +86,7 @@ mod named_params;
 #[cfg(feature = "trace")]pub mod trace;
 #[cfg(feature = "backup")]pub mod backup;
 #[cfg(feature = "functions")] pub mod functions;
+#[cfg(feature = "blob")] pub mod blob;
 
 /// Old name for `Result`. `SqliteResult` is deprecated.
 pub type SqliteResult<T> = Result<T>;
